@@ -442,7 +442,12 @@ var BrowserApp = {
 
     this.deck = document.getElementById("browsers");
 
-    BrowserEventHandler.init();
+    
+    
+    if (!AppConstants.MOZ_ANDROID_APZ) {
+      BrowserEventHandler.init();
+    }
+
     ViewportHandler.init();
 
     Services.androidBridge.browserApp = this;
@@ -7088,10 +7093,10 @@ var IdentityHandler = {
   IDENTITY_MODE_UNKNOWN: "unknown",
 
   
-  IDENTITY_MODE_IDENTIFIED: "identified",
+  IDENTITY_MODE_DOMAIN_VERIFIED: "verified",
 
   
-  IDENTITY_MODE_VERIFIED: "verified",
+  IDENTITY_MODE_IDENTIFIED: "identified",
 
   
   
@@ -7100,10 +7105,10 @@ var IdentityHandler = {
   MIXED_MODE_UNKNOWN: "unknown",
 
   
-  MIXED_MODE_CONTENT_BLOCKED: "blocked",
+  MIXED_MODE_CONTENT_BLOCKED: "mixed_content_blocked",
 
   
-  MIXED_MODE_CONTENT_LOADED: "loaded",
+  MIXED_MODE_CONTENT_LOADED: "mixed_content_loaded",
 
   
   
@@ -7159,37 +7164,25 @@ var IdentityHandler = {
 
   getIdentityMode: function getIdentityMode(aState) {
     if (aState & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL) {
-      return this.IDENTITY_MODE_VERIFIED;
+      return this.IDENTITY_MODE_IDENTIFIED;
     }
 
     if (aState & Ci.nsIWebProgressListener.STATE_IS_SECURE) {
-      return this.IDENTITY_MODE_IDENTIFIED;
+      return this.IDENTITY_MODE_DOMAIN_VERIFIED;
     }
 
     return this.IDENTITY_MODE_UNKNOWN;
   },
 
-  getMixedDisplayMode: function getMixedDisplayMode(aState) {
-    if (aState & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT) {
-        return this.MIXED_MODE_CONTENT_LOADED;
+  getMixedMode: function getMixedMode(aState) {
+    if (aState & Ci.nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT) {
+      return this.MIXED_MODE_CONTENT_BLOCKED;
     }
 
-    if (aState & Ci.nsIWebProgressListener.STATE_BLOCKED_MIXED_DISPLAY_CONTENT) {
-        return this.MIXED_MODE_CONTENT_BLOCKED;
-    }
-
-    return this.MIXED_MODE_UNKNOWN;
-  },
-
-  getMixedActiveMode: function getActiveDisplayMode(aState) {
     
     if ((aState & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT) &&
          !Services.prefs.getBoolPref("security.mixed_content.block_active_content")) {
       return this.MIXED_MODE_CONTENT_LOADED;
-    }
-
-    if (aState & Ci.nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT) {
-      return this.MIXED_MODE_CONTENT_BLOCKED;
     }
 
     return this.MIXED_MODE_UNKNOWN;
@@ -7242,15 +7235,13 @@ var IdentityHandler = {
     this._lastLocation = locationObj;
 
     let identityMode = this.getIdentityMode(aState);
-    let mixedDisplay = this.getMixedDisplayMode(aState);
-    let mixedActive = this.getMixedActiveMode(aState);
+    let mixedMode = this.getMixedMode(aState);
     let trackingMode = this.getTrackingMode(aState, aBrowser);
     let result = {
       origin: locationObj.origin,
       mode: {
         identity: identityMode,
-        mixed_display: mixedDisplay,
-        mixed_active: mixedActive,
+        mixed: mixedMode,
         tracking: trackingMode
       }
     };
@@ -7258,12 +7249,10 @@ var IdentityHandler = {
     
     
     if (identityMode == this.IDENTITY_MODE_UNKNOWN || aState & Ci.nsIWebProgressListener.STATE_IS_BROKEN) {
-      result.secure = false;
       return result;
     }
 
-    result.secure = true;
-
+    result.encrypted = true;
     result.host = this.getEffectiveHost();
 
     let iData = this.getIdentityData();
