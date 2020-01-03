@@ -27,7 +27,7 @@ class WebVTTListener;
 class HTMLTrackElement MOZ_FINAL : public nsGenericHTMLElement
 {
 public:
-  explicit HTMLTrackElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
+  HTMLTrackElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
 
   
   NS_DECL_ISUPPORTS_INHERITED

@@ -269,7 +269,7 @@ public:
     
     nsCOMPtr<nsIAtom> mTag;
 
-    explicit nsTemplateQuerySet(int32_t aPriority)
+    nsTemplateQuerySet(int32_t aPriority)
         : mPriority(aPriority)
     {
         MOZ_COUNT_CTOR(nsTemplateQuerySet);

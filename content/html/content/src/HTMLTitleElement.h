@@ -24,7 +24,7 @@ public:
   using Element::GetText;
   using Element::SetText;
 
-  explicit HTMLTitleElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
+  HTMLTitleElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
 
   
   NS_DECL_ISUPPORTS_INHERITED
