@@ -1311,6 +1311,12 @@ NS_StartCORSPreflight(nsIChannel* aRequestChannel,
 
   rv = preHttp->SetRequestMethod(NS_LITERAL_CSTRING("OPTIONS"));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsCOMPtr<nsIHttpChannelInternal> preInternal = do_QueryInterface(preflightChannel);
+  if (preInternal) {
+    preInternal->ForceNoIntercept();
+  }
   
   
   nsCOMPtr<nsIStreamListener> preflightListener =
