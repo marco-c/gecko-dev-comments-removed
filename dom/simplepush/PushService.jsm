@@ -56,8 +56,6 @@ const kUDP_WAKEUP_WS_STATUS_CODE = 4774;
 const kCHILD_PROCESS_MESSAGES = ["Push:Register", "Push:Unregister",
                                  "Push:Registrations"];
 
-const kWS_MAX_WENTDOWN = 2;
-
 
 this.PushDB = function PushDB() {
   debug("PushDB()");
@@ -491,12 +489,6 @@ this.PushService = {
 
 
 
-  _wsWentDownCounter: 0,
-
-  
-
-
-
   _wsSendMessage: function(msg) {
     if (!this._ws) {
       debug("No WebSocket initialized. Cannot send a message.");
@@ -690,11 +682,6 @@ this.PushService = {
       return;
     }
 
-    if (!wsWentDown) {
-      debug('Setting websocket down counter to 0');
-      this._wsWentDownCounter = 0;
-    }
-
     if (!this._recalculatePing && !wsWentDown) {
       debug('We do not need to recalculate the ping now, based on previous data');
       return;
@@ -739,23 +726,6 @@ this.PushService = {
 
     let nextPingInterval;
     let lastTriedPingInterval = prefs.get('pingInterval');
-
-    if (!this._recalculatePing && wsWentDown) {
-      debug('Websocket disconnected without ping adaptative algorithm running');
-      this._wsWentDownCounter++;
-      if (this._wsWentDownCounter > kWS_MAX_WENTDOWN) {
-        debug('Too many disconnects. Reenabling ping adaptative algoritm');
-        this._wsWentDownCounter = 0;
-        this._recalculatePing = true;
-        this._lastGoodPingInterval = Math.floor(lastTriedPingInterval / 2);
-        nextPingInterval = this._lastGoodPingInterval;
-        prefs.set('pingInterval', nextPingInterval);
-        this._save(ns, nextPingInterval);
-        return;
-      }
-
-      debug('We do not need to recalculate the ping, based on previous data');
-    }
 
     if (wsWentDown) {
       debug('The WebSocket was disconnected, calculating next ping');
@@ -805,10 +775,6 @@ this.PushService = {
     debug('Setting the pingInterval to ' + nextPingInterval);
     prefs.set('pingInterval', nextPingInterval);
 
-    this._save(ns, nextPingInterval);
-  },
-
-  _save: function(ns, nextPingInterval){
     
     if (ns.ip) {
       prefs.set('pingInterval.mobile', nextPingInterval);
