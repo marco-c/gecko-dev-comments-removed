@@ -4983,6 +4983,7 @@ nsHttpChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *context)
 
     if (ShouldIntercept()) {
         mInterceptCache = MAYBE_INTERCEPT;
+        mResponseCouldBeSynthesized = true;
     }
 
     
