@@ -2023,19 +2023,10 @@ CASE(JSOP_BINDNAME)
 
     
     RootedObject &scope = rootObject1;
-    RootedShape &shape = rootShape0;
-    if (!LookupNameUnqualified(cx, name, scopeChain, &scope, &shape))
+    if (!LookupNameUnqualified(cx, name, scopeChain, &scope))
         goto error;
 
-    
-    
-    
-    
-    
-    if (IsUninitializedLexicalSlot(scope, shape))
-        PUSH_NULL();
-    else
-        PUSH_OBJECT(*scope);
+    PUSH_OBJECT(*scope);
 }
 END_CASE(JSOP_BINDNAME)
 
@@ -2422,16 +2413,6 @@ CASE(JSOP_SETNAME)
 {
     RootedObject &scope = rootObject0;
     scope = REGS.sp[-2].toObjectOrNull();
-
-    
-    
-    if (!scope) {
-        RootedPropertyName &name = rootName0;
-        name = script->getName(REGS.pc);
-        ReportUninitializedLexical(cx, name);
-        goto error;
-    }
-
     HandleValue value = REGS.stackHandleAt(-1);
 
     if (!SetNameOperation(cx, script, REGS.pc, scope, value))
@@ -2668,8 +2649,7 @@ CASE(JSOP_IMPLICITTHIS)
     scopeObj = REGS.fp()->scopeChain();
 
     RootedObject &scope = rootObject1;
-    RootedShape &shape = rootShape0;
-    if (!LookupNameWithGlobalDefault(cx, name, scopeObj, &scope, &shape))
+    if (!LookupNameWithGlobalDefault(cx, name, scopeObj, &scope))
         goto error;
 
     RootedValue &v = rootValue0;
@@ -3900,8 +3880,7 @@ js::ImplicitThisOperation(JSContext *cx, HandleObject scopeObj, HandlePropertyNa
                           MutableHandleValue res)
 {
     RootedObject obj(cx);
-    RootedShape shape(cx);
-    if (!LookupNameWithGlobalDefault(cx, name, scopeObj, &obj, &shape))
+    if (!LookupNameWithGlobalDefault(cx, name, scopeObj, &obj))
         return false;
 
     return ComputeImplicitThis(cx, obj, res);
