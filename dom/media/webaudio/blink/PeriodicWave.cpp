@@ -194,26 +194,21 @@ void PeriodicWave::createBandLimitedTables(const float* realData, const float* i
         nsAutoArrayPtr<float> imagP(new float[halfSize + 1]);
 
         
-        float scale = fftSize;
-        AudioBufferCopyWithScale(realData, scale, realP, numberOfComponents);
-        AudioBufferCopyWithScale(imagData, scale, imagP, numberOfComponents);
+        
+        
+        unsigned numberOfPartials = numberOfPartialsForRange(rangeIndex);
+        
+        numberOfPartials = std::min(numberOfPartials, numberOfComponents - 1);
 
         
-        
-        for (i = numberOfComponents; i < halfSize + 1; ++i) {
-            realP[i] = 0;
-            imagP[i] = 0;
-        }
+        float scale = fftSize;
+        AudioBufferCopyWithScale(realData, scale, realP, numberOfPartials + 1);
+        AudioBufferCopyWithScale(imagData, scale, imagP, numberOfPartials + 1);
 
         
         
         float minusOne = -1;
-        AudioBufferInPlaceScale(imagP, minusOne, halfSize + 1);
-
-        
-        
-        
-        unsigned numberOfPartials = numberOfPartialsForRange(rangeIndex);
+        AudioBufferInPlaceScale(imagP, minusOne, numberOfPartials + 1);
 
         
         for (i = numberOfPartials + 1; i < halfSize + 1; ++i) {
