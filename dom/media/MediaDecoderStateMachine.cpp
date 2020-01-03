@@ -386,7 +386,9 @@ void MediaDecoderStateMachine::SendStreamData()
     
     
     
-    if (a && a->mTime <= clockTime) {
+    
+    
+    if (a && a->mTime < clockTime) {
       nsRefPtr<MediaData> releaseMe = AudioQueue().PopFront();
       continue;
     }
@@ -1551,10 +1553,6 @@ MediaDecoderStateMachine::InitiateSeek()
   NS_ASSERTION(seekTime >= 0 && seekTime <= end,
                "Can only seek in range [0,duration]");
   mCurrentSeek.mTarget.mTime = seekTime;
-
-  if (mAudioCaptured) {
-    mDecodedStream->RecreateData();
-  }
 
   mDropAudioUntilNextDiscontinuity = HasAudio();
   mDropVideoUntilNextDiscontinuity = HasVideo();
