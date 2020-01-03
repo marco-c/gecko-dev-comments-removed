@@ -76,7 +76,7 @@ struct EventTypeTraits<void> {
 
 
 template <typename T>
-class TakeArgsHelper {
+class TakeArgs {
   template <typename C> static FalseType test(void(C::*)(), int);
   template <typename C> static FalseType test(void(C::*)() const, int);
   template <typename C> static FalseType test(void(C::*)() volatile, int);
@@ -86,9 +86,6 @@ class TakeArgsHelper {
 public:
   typedef decltype(test(DeclVal<T>(), 0)) Type;
 };
-
-template <typename T>
-struct TakeArgs : public TakeArgsHelper<T>::Type {};
 
 template <typename T> struct EventTarget;
 
@@ -119,193 +116,6 @@ public:
   T* get() const { return mPtr; }
 private:
   T* const mPtr;
-};
-
-
-
-
-
-template<typename Target, typename Function>
-class ListenerHelper {
-  
-  
-  
-  template <typename T>
-  class R : public nsRunnable {
-    typedef typename RemoveCV<typename RemoveReference<T>::Type>::Type ArgType;
-  public:
-    template <typename U>
-    R(RevocableToken* aToken, const Function& aFunction, U&& aEvent)
-      : mToken(aToken), mFunction(aFunction), mEvent(Forward<U>(aEvent)) {}
-
-    NS_IMETHOD Run() override {
-      
-      if (!mToken->IsRevoked()) {
-        
-        mFunction(Move(mEvent));
-      }
-      return NS_OK;
-    }
-
-  private:
-    nsRefPtr<RevocableToken> mToken;
-    Function mFunction;
-    ArgType mEvent;
-  };
-
-public:
-  ListenerHelper(RevocableToken* aToken, Target* aTarget, const Function& aFunc)
-    : mToken(aToken), mTarget(aTarget), mFunction(aFunc) {}
-
-  
-  template <typename F, typename T>
-  typename EnableIf<TakeArgs<F>::value, void>::Type
-  Dispatch(const F& aFunc, T&& aEvent) {
-    nsCOMPtr<nsIRunnable> r = new R<T>(mToken, aFunc, Forward<T>(aEvent));
-    EventTarget<Target>::Dispatch(mTarget.get(), r.forget());
-  }
-
-  
-  template <typename F, typename T>
-  typename EnableIf<!TakeArgs<F>::value, void>::Type
-  Dispatch(const F& aFunc, T&&) {
-    const nsRefPtr<RevocableToken>& token = mToken;
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-      
-      if (!token->IsRevoked()) {
-        aFunc();
-      }
-    });
-    EventTarget<Target>::Dispatch(mTarget.get(), r.forget());
-  }
-
-  template <typename T>
-  void Dispatch(T&& aEvent) {
-    Dispatch(mFunction, Forward<T>(aEvent));
-  }
-
-private:
-  nsRefPtr<RevocableToken> mToken;
-  const nsRefPtr<Target> mTarget;
-  Function mFunction;
-};
-
-
-
-
-
-
-
-
-enum class EventPassMode : int8_t {
-  Copy,
-  Move,
-  Both
-};
-
-class ListenerBase {
-public:
-  ListenerBase() : mToken(new RevocableToken()) {}
-  ~ListenerBase() {
-    MOZ_ASSERT(Token()->IsRevoked(), "Must disconnect the listener.");
-  }
-  RevocableToken* Token() const {
-    return mToken;
-  }
-private:
-  const nsRefPtr<RevocableToken> mToken;
-};
-
-
-
-
-
-
-template <typename ArgType, EventPassMode Mode = EventPassMode::Copy>
-class Listener : public ListenerBase {
-public:
-  virtual ~Listener() {}
-  virtual void Dispatch(const ArgType& aEvent) = 0;
-};
-
-template <typename ArgType>
-class Listener<ArgType, EventPassMode::Both> : public ListenerBase {
-public:
-  virtual ~Listener() {}
-  virtual void Dispatch(const ArgType& aEvent) = 0;
-  virtual void Dispatch(ArgType&& aEvent) = 0;
-};
-
-template <typename ArgType>
-class Listener<ArgType, EventPassMode::Move> : public ListenerBase {
-public:
-  virtual ~Listener() {}
-  virtual void Dispatch(ArgType&& aEvent) = 0;
-};
-
-
-
-
-
-template <typename Target, typename Function, typename ArgType, EventPassMode>
-class ListenerImpl : public Listener<ArgType, EventPassMode::Copy> {
-public:
-  ListenerImpl(Target* aTarget, const Function& aFunction)
-    : mHelper(ListenerBase::Token(), aTarget, aFunction) {}
-  void Dispatch(const ArgType& aEvent) override {
-    mHelper.Dispatch(aEvent);
-  }
-private:
-  ListenerHelper<Target, Function> mHelper;
-};
-
-template <typename Target, typename Function, typename ArgType>
-class ListenerImpl<Target, Function, ArgType, EventPassMode::Both>
-  : public Listener<ArgType, EventPassMode::Both> {
-public:
-  ListenerImpl(Target* aTarget, const Function& aFunction)
-    : mHelper(ListenerBase::Token(), aTarget, aFunction) {}
-  void Dispatch(const ArgType& aEvent) override {
-    mHelper.Dispatch(aEvent);
-  }
-  void Dispatch(ArgType&& aEvent) override {
-    mHelper.Dispatch(Move(aEvent));
-  }
-private:
-  ListenerHelper<Target, Function> mHelper;
-};
-
-template <typename Target, typename Function, typename ArgType>
-class ListenerImpl<Target, Function, ArgType, EventPassMode::Move>
-  : public Listener<ArgType, EventPassMode::Move> {
-public:
-  ListenerImpl(Target* aTarget, const Function& aFunction)
-    : mHelper(ListenerBase::Token(), aTarget, aFunction) {}
-  void Dispatch(ArgType&& aEvent) override {
-    mHelper.Dispatch(Move(aEvent));
-  }
-private:
-  ListenerHelper<Target, Function> mHelper;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename ArgType, ListenerMode Mode>
-struct PassModePicker {
-  
-  
-  static const EventPassMode Value =
-    Mode == ListenerMode::NonExclusive ?
-    EventPassMode::Copy : EventPassMode::Move;
 };
 
 } 
@@ -357,15 +167,89 @@ template <typename EventType, ListenerMode Mode = ListenerMode::NonExclusive>
 class MediaEventSource {
   static_assert(!IsReference<EventType>::value, "Ref-type not supported!");
   typedef typename detail::EventTypeTraits<EventType>::ArgType ArgType;
-  static const detail::EventPassMode PassMode
-    = detail::PassModePicker<ArgType, Mode>::Value;
-  typedef detail::Listener<ArgType, PassMode> Listener;
 
-  template<typename Target, typename Func>
-  using ListenerImpl = detail::ListenerImpl<Target, Func, ArgType, PassMode>;
+  
 
-  template <typename Method>
-  using TakeArgs = detail::TakeArgs<Method>;
+
+  class Listener {
+  public:
+    Listener() : mToken(new RevocableToken()) {}
+
+    virtual ~Listener() {
+      MOZ_ASSERT(Token()->IsRevoked(), "Must disconnect the listener.");
+    }
+
+    virtual void Dispatch(const ArgType& aEvent) = 0;
+
+    RevocableToken* Token() const {
+      return mToken;
+    }
+
+  private:
+    const nsRefPtr<RevocableToken> mToken;
+  };
+
+  
+
+
+
+  template<typename Target, typename Function>
+  class ListenerImpl : public Listener {
+  public:
+    explicit ListenerImpl(Target* aTarget, const Function& aFunction)
+      : mTarget(aTarget), mFunction(aFunction) {}
+
+    
+    void Dispatch(const ArgType& aEvent, TrueType) {
+      
+      
+      
+      class R : public nsRunnable {
+      public:
+        R(RevocableToken* aToken,
+          const Function& aFunction, const ArgType& aEvent)
+          : mToken(aToken), mFunction(aFunction), mEvent(aEvent) {}
+
+        NS_IMETHOD Run() override {
+          
+          if (!mToken->IsRevoked()) {
+            
+            mFunction(Move(mEvent));
+          }
+          return NS_OK;
+        }
+
+      private:
+        nsRefPtr<RevocableToken> mToken;
+        Function mFunction;
+        ArgType mEvent;
+      };
+
+      nsCOMPtr<nsIRunnable> r = new R(this->Token(), mFunction, aEvent);
+      detail::EventTarget<Target>::Dispatch(mTarget.get(), r.forget());
+    }
+
+    
+    void Dispatch(const ArgType& aEvent, FalseType) {
+      nsRefPtr<RevocableToken> token = this->Token();
+      const Function& function = mFunction;
+      nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
+        
+        if (!token->IsRevoked()) {
+          function();
+        }
+      });
+      detail::EventTarget<Target>::Dispatch(mTarget.get(), r.forget());
+    }
+
+    void Dispatch(const ArgType& aEvent) override {
+      Dispatch(aEvent, typename detail::TakeArgs<Function>::Type());
+    }
+
+  private:
+    const nsRefPtr<Target> mTarget;
+    Function mFunction;
+  };
 
   template<typename Target, typename Function>
   MediaEventListener
@@ -379,8 +263,8 @@ class MediaEventSource {
 
   
   template <typename Target, typename This, typename Method>
-  typename EnableIf<TakeArgs<Method>::value, MediaEventListener>::Type
-  ConnectInternal(Target* aTarget, This* aThis, Method aMethod) {
+  MediaEventListener
+  ConnectInternal(Target* aTarget, This* aThis, Method aMethod, TrueType) {
     detail::RawPtr<This> thiz(aThis);
     auto f = [=] (ArgType&& aEvent) {
       (thiz.get()->*aMethod)(Move(aEvent));
@@ -390,8 +274,8 @@ class MediaEventSource {
 
   
   template <typename Target, typename This, typename Method>
-  typename EnableIf<!TakeArgs<Method>::value, MediaEventListener>::Type
-  ConnectInternal(Target* aTarget, This* aThis, Method aMethod) {
+  MediaEventListener
+  ConnectInternal(Target* aTarget, This* aThis, Method aMethod, FalseType) {
     detail::RawPtr<This> thiz(aThis);
     auto f = [=] () {
       (thiz.get()->*aMethod)();
@@ -434,20 +318,21 @@ public:
   template <typename This, typename Method>
   MediaEventListener
   Connect(AbstractThread* aTarget, This* aThis, Method aMethod) {
-    return ConnectInternal(aTarget, aThis, aMethod);
+    return ConnectInternal(aTarget, aThis, aMethod,
+      typename detail::TakeArgs<Method>::Type());
   }
 
   template <typename This, typename Method>
   MediaEventListener
   Connect(nsIEventTarget* aTarget, This* aThis, Method aMethod) {
-    return ConnectInternal(aTarget, aThis, aMethod);
+    return ConnectInternal(aTarget, aThis, aMethod,
+      typename detail::TakeArgs<Method>::Type());
   }
 
 protected:
   MediaEventSource() : mMutex("MediaEventSource::mMutex") {}
 
-  template <typename T>
-  void NotifyInternal(T&& aEvent) {
+  void NotifyInternal(const ArgType& aEvent) {
     MutexAutoLock lock(mMutex);
     for (int32_t i = mListeners.Length() - 1; i >= 0; --i) {
       auto&& l = mListeners[i];
@@ -457,7 +342,7 @@ protected:
         mListeners.RemoveElementAt(i);
         continue;
       }
-      l->Dispatch(Forward<T>(aEvent));
+      l->Dispatch(aEvent);
     }
   }
 
@@ -474,9 +359,8 @@ private:
 template <typename EventType, ListenerMode Mode = ListenerMode::NonExclusive>
 class MediaEventProducer : public MediaEventSource<EventType, Mode> {
 public:
-  template <typename T>
-  void Notify(T&& aEvent) {
-    this->NotifyInternal(Forward<T>(aEvent));
+  void Notify(const EventType& aEvent) {
+    this->NotifyInternal(aEvent);
   }
 };
 

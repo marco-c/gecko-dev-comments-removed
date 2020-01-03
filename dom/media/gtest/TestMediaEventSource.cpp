@@ -6,7 +6,6 @@
 #include "gtest/gtest.h"
 
 #include "mozilla/TaskQueue.h"
-#include "mozilla/UniquePtr.h"
 #include "MediaEventSource.h"
 #include "VideoUtils.h"
 
@@ -294,30 +293,4 @@ TEST(MediaEventSource, CopyEvent2)
   EXPECT_EQ(i, 0);
   listener1.Disconnect();
   listener2.Disconnect();
-}
-
-
-
-
-TEST(MediaEventSource, MoveOnly)
-{
-  nsRefPtr<TaskQueue> queue = new TaskQueue(
-    GetMediaThreadPool(MediaThreadType::PLAYBACK));
-
-  MediaEventProducer<UniquePtr<int>, ListenerMode::Exclusive> source;
-
-  auto func = [] (UniquePtr<int>&& aEvent) {
-    EXPECT_EQ(*aEvent, 20);
-  };
-  MediaEventListener listener = source.Connect(queue, func);
-
-  
-  source.Notify(UniquePtr<int>(new int(20)));
-  
-  
-  
-
-  queue->BeginShutdown();
-  queue->AwaitShutdownAndIdle();
-  listener.Disconnect();
 }
