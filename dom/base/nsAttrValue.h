@@ -25,6 +25,9 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/BindingDeclarations.h"
 
+
+#undef LoadImage
+
 class nsAString;
 class nsIDocument;
 class nsStyledElementNotElementCSSInlineStyle;
