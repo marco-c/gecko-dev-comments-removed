@@ -151,8 +151,10 @@ nsStyledElementNotElementCSSInlineStyle::ParseStyleAttribute(const nsAString& aV
                                                              bool aForceInDataDoc)
 {
   nsIDocument* doc = OwnerDoc();
+  bool isNativeAnon = IsInNativeAnonymousSubtree();
 
-  if (!nsStyleUtil::CSPAllowsInlineStyle(nullptr, NodePrincipal(),
+  if (!isNativeAnon &&
+      !nsStyleUtil::CSPAllowsInlineStyle(nullptr, NodePrincipal(),
                                          doc->GetDocumentURI(), 0, aValue,
                                          nullptr))
     return;
@@ -162,8 +164,7 @@ nsStyledElementNotElementCSSInlineStyle::ParseStyleAttribute(const nsAString& aV
       doc->IsStaticDocument()) {
     bool isCSS = true; 
 
-    if (!IsInNativeAnonymousSubtree()) {  
-                                          
+    if (!isNativeAnon) {  
       nsAutoString styleType;
       doc->GetHeaderData(nsGkAtoms::headerContentStyleType, styleType);
       if (!styleType.IsEmpty()) {
