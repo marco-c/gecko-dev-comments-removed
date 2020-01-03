@@ -54,10 +54,6 @@ XPCOMUtils.defineLazyServiceGetter(this,
                                    "ResProtocolHandler",
                                    "@mozilla.org/network/protocol;1?name=resource",
                                    "nsIResProtocolHandler");
-XPCOMUtils.defineLazyServiceGetter(this,
-                                   "AddonPolicyService",
-                                   "@mozilla.org/addons/policy-service;1",
-                                   "nsIAddonPolicyService");
 
 XPCOMUtils.defineLazyGetter(this, "CertUtils", function certUtilsLazyGetter() {
   let certUtils = {};
@@ -202,13 +198,21 @@ const TYPES = {
   experiment: 128,
 };
 
+
+
+const TYPE_ALIASES = {
+  "webextension": "extension",
+};
+
 const RESTARTLESS_TYPES = new Set([
+  "webextension",
   "dictionary",
   "experiment",
   "locale",
 ]);
 
 const SIGNED_TYPES = new Set([
+  "webextension",
   "extension",
   "experiment",
 ]);
@@ -639,6 +643,46 @@ function createAddonDetails(id, aAddon) {
     version: aAddon.version,
     multiprocessCompatible: aAddon.multiprocessCompatible
   };
+}
+
+
+
+
+
+
+
+
+function getExternalType(aType) {
+  if (aType in TYPE_ALIASES)
+    return TYPE_ALIASES[aType];
+  return aType;
+}
+
+
+
+
+
+
+
+
+
+function getAllAliasesForTypes(aTypes) {
+  if (!aTypes)
+    return null;
+
+  
+  let typeset = new Set(aTypes);
+
+  for (let alias of Object.keys(TYPE_ALIASES)) {
+    
+    typeset.delete(alias);
+
+    
+    if (typeset.has(TYPE_ALIASES[alias]))
+      typeset.add(alias);
+  }
+
+  return [...typeset];
 }
 
 
@@ -3959,7 +4003,9 @@ this.XPIProvider = {
 
 
   getAddonsByTypes: function XPI_getAddonsByTypes(aTypes, aCallback) {
-    XPIDatabase.getVisibleAddons(aTypes, function getAddonsByTypes_getVisibleAddons(aAddons) {
+    let typesToGet = getAllAliasesForTypes(aTypes);
+
+    XPIDatabase.getVisibleAddons(typesToGet, function getAddonsByTypes_getVisibleAddons(aAddons) {
       aCallback([createWrapper(a) for each (a in aAddons)]);
     });
   },
@@ -3988,7 +4034,9 @@ this.XPIProvider = {
 
   getAddonsWithOperationsByTypes:
   function XPI_getAddonsWithOperationsByTypes(aTypes, aCallback) {
-    XPIDatabase.getVisibleAddonsWithPendingOperations(aTypes,
+    let typesToGet = getAllAliasesForTypes(aTypes);
+
+    XPIDatabase.getVisibleAddonsWithPendingOperations(typesToGet,
       function getAddonsWithOpsByTypes_getVisibleAddonsWithPendingOps(aAddons) {
       let results = [createWrapper(a) for each (a in aAddons)];
       XPIProvider.installs.forEach(function(aInstall) {
@@ -4012,7 +4060,7 @@ this.XPIProvider = {
   getInstallsByTypes: function XPI_getInstallsByTypes(aTypes, aCallback) {
     let results = [];
     this.installs.forEach(function(aInstall) {
-      if (!aTypes || aTypes.indexOf(aInstall.type) >= 0)
+      if (!aTypes || aTypes.indexOf(getExternalType(aInstall.type)) >= 0)
         results.push(aInstall.wrapper);
     });
     aCallback(results);
@@ -4032,10 +4080,6 @@ this.XPIProvider = {
 
 
   mapURIToAddonID: function XPI_mapURIToAddonID(aURI) {
-    if (aURI.scheme == "moz-extension") {
-      return AddonPolicyService.extensionURIToAddonId(aURI);
-    }
-
     let resolved = this._resolveURIToFile(aURI);
     if (!resolved || !(resolved instanceof Ci.nsIFileURL))
       return null;
@@ -6155,10 +6199,12 @@ function AddonInstallWrapper(aInstall) {
   });
 #endif
 
-  ["name", "type", "version", "icons", "releaseNotesURI", "file", "state", "error",
+  ["name", "version", "icons", "releaseNotesURI", "file", "state", "error",
    "progress", "maxProgress", "certificate", "certName"].forEach(function(aProp) {
     this.__defineGetter__(aProp, function AIW_propertyGetter() aInstall[aProp]);
   }, this);
+
+  this.__defineGetter__("type", () => getExternalType(aInstall.type));
 
   this.__defineGetter__("iconURL", function AIW_iconURL() aInstall.icons[32]);
 
@@ -6742,13 +6788,15 @@ function AddonWrapper(aAddon) {
     return [objValue, false];
   }
 
-  ["id", "syncGUID", "version", "type", "isCompatible", "isPlatformCompatible",
+  ["id", "syncGUID", "version", "isCompatible", "isPlatformCompatible",
    "providesUpdatesSecurely", "blocklistState", "blocklistURL", "appDisabled",
    "softDisabled", "skinnable", "size", "foreignInstall", "hasBinaryComponents",
    "strictCompatibility", "compatibilityOverrides", "updateURL",
    "getDataDirectory", "multiprocessCompatible", "signedState"].forEach(function(aProp) {
      this.__defineGetter__(aProp, function AddonWrapper_propertyGetter() aAddon[aProp]);
   }, this);
+
+  this.__defineGetter__("type", () => getExternalType(aAddon.type));
 
   ["fullDescription", "developerComments", "eula", "supportURL",
    "contributionURL", "contributionAmount", "averageRating", "reviewCount",
