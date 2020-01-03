@@ -52,6 +52,8 @@ pref("extensions.getAddons.link.url", "https://addons.mozilla.org/%LOCALE%/firef
 
 
 pref("extensions.blocklist.enabled", true);
+
+
 pref("extensions.blocklist.interval", 86400);
 
 
@@ -1707,6 +1709,8 @@ pref("image.mem.max_decoded_image_kb", 256000);
 pref("loop.enabled", true);
 pref("loop.textChat.enabled", true);
 pref("loop.server", "https://loop.services.mozilla.com/v0");
+pref("loop.seenToS", "unseen");
+pref("loop.showPartnerLogo", true);
 pref("loop.gettingStarted.seen", false);
 pref("loop.gettingStarted.url", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/hello/start/");
 pref("loop.gettingStarted.resumeOnFirstJoin", false);
@@ -1761,7 +1765,7 @@ pref("security.cert_pinning.enforcement_level", 1);
 
 
 
-pref("security.onecrl.maximum_staleness_in_seconds", 0);
+pref("security.onecrl.maximum_staleness_in_seconds", 108000);
 
 
 pref("plain_text.wrap_long_lines", true);
