@@ -467,7 +467,7 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     collection->UpdateCheckGeneration(mPresContext);
     collection->mNeedsRefreshes = true;
     TimeStamp now = mPresContext->RefreshDriver()->MostRecentRefresh();
-    collection->EnsureStyleRuleFor(now, EnsureStyleRule_IsNotThrottled);
+    collection->EnsureStyleRuleFor(now);
   }
 
   
@@ -824,9 +824,7 @@ nsTransitionManager::UpdateCascadeResults(AnimationCollection* aTransitions,
   
   if (aAnimations) {
     TimeStamp now = mPresContext->RefreshDriver()->MostRecentRefresh();
-    
-    
-    aAnimations->EnsureStyleRuleFor(now, EnsureStyleRule_IsThrottled);
+    aAnimations->EnsureStyleRuleFor(now);
 
     if (aAnimations->mStyleRule) {
       aAnimations->mStyleRule->AddPropertiesToSet(propertiesUsed);

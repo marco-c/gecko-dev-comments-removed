@@ -534,7 +534,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
   UpdateCascadeResults(aStyleContext, collection);
 
   TimeStamp refreshTime = mPresContext->RefreshDriver()->MostRecentRefresh();
-  collection->EnsureStyleRuleFor(refreshTime, EnsureStyleRule_IsNotThrottled);
+  collection->EnsureStyleRuleFor(refreshTime);
   
   
   
