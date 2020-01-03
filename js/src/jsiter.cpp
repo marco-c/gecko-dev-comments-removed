@@ -1369,10 +1369,14 @@ ForOfIterator::init(HandleValue iterable, NonIterableBehavior nonIterableBehavio
     
     
     
+    if (nonIterableBehavior == AllowNonIterable && callee.isUndefined())
+        return true;
+
+    
+    
+    
     
     if (!callee.isObject() || !callee.toObject().isCallable()) {
-        if (nonIterableBehavior == AllowNonIterable)
-            return true;
         char *bytes = DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, iterable, NullPtr());
         if (!bytes)
             return false;
