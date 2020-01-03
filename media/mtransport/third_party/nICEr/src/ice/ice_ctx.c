@@ -316,7 +316,7 @@ int nr_ice_fetch_turn_servers(int ct, nr_ice_turn_server **out)
   }
 #endif 
 
-#define MAXADDRS 100 // Ridiculously high
+#define MAXADDRS 100 /* Ridiculously high */
 int nr_ice_ctx_create(char *label, UINT4 flags, nr_ice_ctx **ctxp)
   {
     nr_ice_ctx *ctx=0;
@@ -399,6 +399,14 @@ int nr_ice_ctx_create(char *label, UINT4 flags, nr_ice_ctx **ctxp)
 
     if (r=nr_socket_factory_create_int(NULL, &default_socket_factory_vtbl, &ctx->socket_factory))
       ABORT(r);
+
+    if ((r=NR_reg_get_string((char *)NR_ICE_REG_PREF_FORCE_INTERFACE_NAME, ctx->force_net_interface, sizeof(ctx->force_net_interface)))) {
+      if (r == R_NOT_FOUND) {
+        ctx->force_net_interface[0] = 0;
+      } else {
+        ABORT(r);
+      }
+    }
 
     STAILQ_INIT(&ctx->streams);
     STAILQ_INIT(&ctx->sockets);
@@ -640,6 +648,23 @@ static int nr_ice_get_local_addresses(nr_ice_ctx *ctx)
         ABORT(r);
       }
 
+      if (ctx->force_net_interface[0]) {
+        
+        int force_addr_ct = 0;
+        for(i=0;i<addr_ct;i++){
+          if (!strcmp(local_addrs[i].addr.ifname, ctx->force_net_interface)) {
+            
+            if (i != force_addr_ct) {
+              if (r=nr_local_addr_copy(&local_addrs[force_addr_ct], &local_addrs[i])) {
+                ABORT(r);
+              }
+            }
+            force_addr_ct++;
+          }
+        }
+        addr_ct = force_addr_ct;
+      }
+
       if (ctx->flags & NR_ICE_CTX_FLAGS_ONLY_DEFAULT_ADDRS) {
         
         if(!nr_ice_get_default_local_address(ctx, NR_IPV4, local_addrs, addr_ct,
@@ -801,8 +826,6 @@ static int nr_ice_random_string(char *str, int len)
 
     if(needed>sizeof(bytes)) ABORT(R_BAD_ARGS);
 
-    
-
     if(r=nr_crypto_random_bytes(bytes,needed))
       ABORT(r);
 
@@ -930,4 +953,3 @@ int nr_ice_ctx_hide_candidate(nr_ice_ctx *ctx, nr_ice_candidate *cand)
 
     return 0;
   }
-
