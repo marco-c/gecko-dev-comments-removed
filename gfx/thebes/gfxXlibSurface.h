@@ -85,10 +85,6 @@ public:
     
     bool GetColormapAndVisual(Colormap* colormap, Visual **visual);
 
-    
-    
-    virtual gfxMemoryLocation GetMemoryLocation() const override;
-
 #if defined(GL_PROVIDER_GLX)
     GLXPixmap GetGLXPixmap();
 #endif

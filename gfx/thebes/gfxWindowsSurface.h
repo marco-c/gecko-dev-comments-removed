@@ -65,10 +65,6 @@ public:
 
     const mozilla::gfx::IntSize GetSize() const;
 
-    
-    
-    virtual gfxMemoryLocation GetMemoryLocation() const;
-
 private:
     void MakeInvalid(mozilla::gfx::IntSize& size);
 

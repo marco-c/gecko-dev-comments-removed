@@ -159,12 +159,6 @@ public:
     
     virtual bool SizeOfIsMeasured() const { return false; }
 
-    
-
-
-
-    virtual gfxMemoryLocation GetMemoryLocation() const;
-
     static int32_t BytePerPixelFromFormat(gfxImageFormat format);
 
     virtual const mozilla::gfx::IntSize GetSize() const;
