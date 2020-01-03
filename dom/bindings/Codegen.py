@@ -4929,6 +4929,11 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             return JSToNativeConversionInfo(template, declType=declType,
                                             dealWithOptional=isOptional)
 
+        if descriptor.interface.identifier.name == "AbortablePromise":
+            raise TypeError("Need to figure out what argument conversion "
+                            "should look like for AbortablePromise: %s" %
+                            sourceDescription)
+
         
         
 
@@ -4945,10 +4950,13 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         
         
         
-        forceOwningType = ((descriptor.interface.isCallback() and
-                            not descriptor.workers) or
-                           isMember or
-                           isCallbackReturnValue)
+        
+        
+        
+        
+        assert not descriptor.interface.isCallback()
+        isPromise = descriptor.interface.identifier.name == "Promise"
+        forceOwningType = isMember or isCallbackReturnValue or isPromise
 
         typeName = descriptor.nativeType
         typePtr = typeName + "*"
@@ -4975,7 +4983,29 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         templateBody = ""
         if forceOwningType:
             templateBody += 'static_assert(IsRefcounted<%s>::value, "We can only store refcounted classes.");' % typeName
-        if not descriptor.skipGen and not descriptor.interface.isConsequential() and not descriptor.interface.isExternal():
+
+        if isPromise:
+            templateBody = fill(
+                """
+                { // Scope for our GlobalObject and ErrorResult
+
+                  // Might as well use CurrentGlobalOrNull here; that will at
+                  // least give us the same behavior as if the caller just called
+                  // Promise.resolve() themselves.
+                  GlobalObject promiseGlobal(cx, JS::CurrentGlobalOrNull(cx));
+                  if (promiseGlobal.Failed()) {
+                    $*{exceptionCode}
+                  }
+                  ErrorResult promiseRv;
+                  $${declName} = Promise::Resolve(promiseGlobal, $${val}, promiseRv);
+                  if (promiseRv.Failed()) {
+                    ThrowMethodFailed(cx, promiseRv);
+                    $*{exceptionCode}
+                  }
+                }
+                """,
+                exceptionCode=exceptionCode)
+        elif not descriptor.skipGen and not descriptor.interface.isConsequential() and not descriptor.interface.isExternal():
             if failureCode is not None:
                 templateBody += str(CastableObjectUnwrapper(
                     descriptor,
@@ -5016,11 +5046,24 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             
             templateBody += "${declName} = ${holderName};\n"
 
-        
-        
-        
-        templateBody = wrapObjectTemplate(templateBody, type,
-                                          "${declName} = nullptr;\n", failureCode)
+        if isPromise:
+            if type.nullable():
+                codeToSetNull = "${declName} = nullptr;\n"
+                templateBody = CGIfElseWrapper(
+                    "${val}.isNullOrUndefined()",
+                    CGGeneric(codeToSetNull),
+                    CGGeneric(templateBody)).define()
+                if isinstance(defaultValue, IDLNullValue):
+                    templateBody = handleDefault(templateBody, codeToSetNull)
+            else:
+                assert defaultValue is None
+        else:
+            
+            
+            
+            templateBody = wrapObjectTemplate(templateBody, type,
+                                              "${declName} = nullptr;\n",
+                                              failureCode)
 
         declType = CGGeneric(declType)
         if holderType is not None:
@@ -13186,7 +13229,8 @@ class CGNativeMember(ClassMethod):
         if type.isGeckoInterface() and not type.isCallbackInterface():
             iface = type.unroll().inner
             argIsPointer = type.nullable() or iface.isExternal()
-            forceOwningType = iface.isCallback() or isMember
+            forceOwningType = (iface.isCallback() or isMember or
+                               iface.identifier.name == "Promise")
             if argIsPointer:
                 if (optional or isMember) and forceOwningType:
                     typeDecl = "nsRefPtr<%s>"
