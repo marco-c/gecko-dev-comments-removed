@@ -183,7 +183,8 @@ class OsiIndex
 
 
 
-static const uintptr_t FRAMESIZE_SHIFT = 4;
+static const uintptr_t FRAMESIZE_SHIFT = 5;
+static const uintptr_t HASCACHEDSAVEDFRAME_BIT = 1 << 4;
 static const uintptr_t FRAMETYPE_BITS = 4;
 
 
@@ -282,7 +283,7 @@ void UpdateJitActivationsForMinorGC(JSRuntime* rt, JSTracer* trc);
 static inline uint32_t
 MakeFrameDescriptor(uint32_t frameSize, FrameType type)
 {
-    return (frameSize << FRAMESIZE_SHIFT) | type;
+    return 0 | (frameSize << FRAMESIZE_SHIFT) | type;
 }
 
 
@@ -343,7 +344,13 @@ class CommonFrameLayout
         return descriptor_ >> FRAMESIZE_SHIFT;
     }
     void setFrameDescriptor(size_t size, FrameType type) {
-        descriptor_ = (size << FRAMESIZE_SHIFT) | type;
+        descriptor_ = 0 | (size << FRAMESIZE_SHIFT) | type;
+    }
+    bool hasCachedSavedFrame() const {
+        return descriptor_ & HASCACHEDSAVEDFRAME_BIT;
+    }
+    void setHasCachedSavedFrame() {
+        descriptor_ |= HASCACHEDSAVEDFRAME_BIT;
     }
     uint8_t* returnAddress() const {
         return returnAddress_;

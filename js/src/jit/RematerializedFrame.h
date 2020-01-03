@@ -36,6 +36,11 @@ class RematerializedFrame
     bool isConstructing_;
 
     
+    
+    
+    bool hasCachedSavedFrame_;
+
+    
     uint8_t* top_;
 
     
@@ -167,6 +172,14 @@ class RematerializedFrame
 
     bool isConstructing() const {
         return isConstructing_;
+    }
+
+    bool hasCachedSavedFrame() const {
+        return hasCachedSavedFrame_;
+    }
+
+    void setHasCachedSavedFrame() {
+        hasCachedSavedFrame_ = true;
     }
 
     unsigned numFormalArgs() const {
