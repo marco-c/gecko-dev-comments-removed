@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/Recover.h"
 
@@ -66,8 +66,8 @@ MResumePoint::writeRecoverData(CompactBufferWriter &writer) const
     uint32_t exprStack = stackDepth() - bb->info().ninvoke();
 
 #ifdef DEBUG
-    // Ensure that all snapshot which are encoded can safely be used for
-    // bailouts.
+    
+    
     if (GetIonContext()->cx) {
         uint32_t stackDepth;
         bool reachablePC;
@@ -84,33 +84,33 @@ MResumePoint::writeRecoverData(CompactBufferWriter &writer) const
 
         if (reachablePC) {
             if (JSOp(*bailPC) == JSOP_FUNCALL) {
-                // For fun.call(this, ...); the reconstructStackDepth will
-                // include the this. When inlining that is not included.  So the
-                // exprStackSlots will be one less.
+                
+                
+                
                 MOZ_ASSERT(stackDepth - exprStack <= 1);
             } else if (JSOp(*bailPC) != JSOP_FUNAPPLY &&
                        !IsGetPropPC(bailPC) && !IsSetPropPC(bailPC))
             {
-                // For fun.apply({}, arguments) the reconstructStackDepth will
-                // have stackdepth 4, but it could be that we inlined the
-                // funapply. In that case exprStackSlots, will have the real
-                // arguments in the slots and not be 4.
+                
+                
+                
+                
 
-                // With accessors, we have different stack depths depending on
-                // whether or not we inlined the accessor, as the inlined stack
-                // contains a callee function that should never have been there
-                // and we might just be capturing an uneventful property site,
-                // in which case there won't have been any violence.
+                
+                
+                
+                
+                
                 MOZ_ASSERT(exprStack == stackDepth);
             }
         }
     }
 #endif
 
-    // Test if we honor the maximum of arguments at all times.  This is a sanity
-    // check and not an algorithm limit. So check might be a bit too loose.  +4
-    // to account for scope chain, return value, this value and maybe
-    // arguments_object.
+    
+    
+    
+    
     MOZ_ASSERT(CountArgSlots(script, fun) < SNAPSHOT_MAX_NARGS + 4);
 
     uint32_t implicit = StartArgSlot(script);
@@ -351,8 +351,8 @@ RAdd::recover(JSContext *cx, SnapshotIterator &iter) const
     if (!js::AddValues(cx, &lhs, &rhs, &result))
         return false;
 
-    // MIRType_Float32 is a specialization embedding the fact that the result is
-    // rounded to a Float32.
+    
+    
     if (isFloatOperation_ && !RoundFloat32(cx, result, &result))
         return false;
 
@@ -385,8 +385,8 @@ RSub::recover(JSContext *cx, SnapshotIterator &iter) const
     if (!js::SubValues(cx, &lhs, &rhs, &result))
         return false;
 
-    // MIRType_Float32 is a specialization embedding the fact that the result is
-    // rounded to a Float32.
+    
+    
     if (isFloatOperation_ && !RoundFloat32(cx, result, &result))
         return false;
 
@@ -418,8 +418,8 @@ RMul::recover(JSContext *cx, SnapshotIterator &iter) const
     if (!js::MulValues(cx, &lhs, &rhs, &result))
         return false;
 
-    // MIRType_Float32 is a specialization embedding the fact that the result is
-    // rounded to a Float32.
+    
+    
     if (isFloatOperation_ && !RoundFloat32(cx, result, &result))
         return false;
 
@@ -451,8 +451,8 @@ RDiv::recover(JSContext *cx, SnapshotIterator &iter) const
     if (!js::DivValues(cx, &lhs, &rhs, &result))
         return false;
 
-    // MIRType_Float32 is a specialization embedding the fact that the result is
-    // rounded to a Float32.
+    
+    
     if (isFloatOperation_ && !RoundFloat32(cx, result, &result))
         return false;
 
@@ -809,8 +809,8 @@ RSqrt::recover(JSContext *cx, SnapshotIterator &iter) const
     if (!math_sqrt_handle(cx, num, &result))
         return false;
 
-    // MIRType_Float32 is a specialization embedding the fact that the result is
-    // rounded to a Float32.
+    
+    
     if (isFloatOperation_ && !RoundFloat32(cx, result, &result))
         return false;
 
@@ -876,8 +876,8 @@ RStringSplit::recover(JSContext *cx, SnapshotIterator &iter) const
 
     RootedValue result(cx);
 
-    // Use AutoEnterAnalysis to avoid invoking the object metadata callback,
-    // which could try to walk the stack while bailing out.
+    
+    
     types::AutoEnterAnalysis enter(cx);
 
     JSObject *res = str_split_string(cx, typeObj, str, sep);
@@ -1007,11 +1007,11 @@ RNewObject::recover(JSContext *cx, SnapshotIterator &iter) const
     RootedValue result(cx);
     JSObject *resultObject = nullptr;
 
-    // Use AutoEnterAnalysis to avoid invoking the object metadata callback
-    // while bailing out, which could try to walk the stack.
+    
+    
     types::AutoEnterAnalysis enter(cx);
 
-    // See CodeGenerator::visitNewObjectVMCall
+    
     if (templateObjectIsClassPrototype_)
         resultObject = NewInitObjectWithClassPrototype(cx, templateObject);
     else
@@ -1048,11 +1048,11 @@ RNewArray::recover(JSContext *cx, SnapshotIterator &iter) const
     RootedValue result(cx);
     RootedTypeObject type(cx);
 
-    // Use AutoEnterAnalysis to avoid invoking the object metadata callback
-    // while bailing out, which could try to walk the stack.
+    
+    
     types::AutoEnterAnalysis enter(cx);
 
-    // See CodeGenerator::visitNewArrayCallVM
+    
     if (!templateObject->hasSingletonType())
         type = templateObject->type();
 
@@ -1083,11 +1083,11 @@ RNewDerivedTypedObject::recover(JSContext *cx, SnapshotIterator &iter) const
     Rooted<TypedObject *> owner(cx, &iter.read().toObject().as<TypedObject>());
     int32_t offset = iter.read().toInt32();
 
-    // Use AutoEnterAnalysis to avoid invoking the object metadata callback
-    // while bailing out, which could try to walk the stack.
+    
+    
     types::AutoEnterAnalysis enter(cx);
 
-    JSObject *obj = TypedObject::createDerived(cx, descr, owner, offset);
+    JSObject *obj = OwnedTypedObject::createDerived(cx, descr, owner, offset);
     if (!obj)
         return false;
 
@@ -1115,11 +1115,11 @@ RCreateThisWithTemplate::recover(JSContext *cx, SnapshotIterator &iter) const
 {
     RootedObject templateObject(cx, &iter.read().toObject());
 
-    // Use AutoEnterAnalysis to avoid invoking the object metadata callback
-    // while bailing out, which could try to walk the stack.
+    
+    
     types::AutoEnterAnalysis enter(cx);
 
-    // See CodeGenerator::visitCreateThisWithTemplate
+    
     gc::AllocKind allocKind = templateObject->asTenured()->getAllocKind();
     gc::InitialHeap initialHeap = tenuredHeap_ ? gc::TenuredHeap : gc::DefaultHeap;
     JSObject *resultObject = JSObject::copy(cx, allocKind, initialHeap, templateObject);
