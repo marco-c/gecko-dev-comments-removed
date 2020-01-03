@@ -40,6 +40,11 @@
 #include <dlfcn.h>
 #endif
 
+#ifdef MOZ_DMD
+#include "base/process_util.h"
+#include "nsMemoryInfoDumper.h"
+#endif
+
 
 
 #define NS_IMPL_REFCNT_LOGGING
@@ -945,6 +950,35 @@ NS_LogTerm()
   mozilla::LogTerm();
 }
 
+#ifdef MOZ_DMD
+
+
+
+
+
+
+
+
+
+static void
+LogDMDFile()
+{
+  const char* dmdFilePrefix = PR_GetEnv("MOZ_DMD_SHUTDOWN_LOG");
+  if (!dmdFilePrefix) {
+    return;
+  }
+
+  const char* logProcessEnv = PR_GetEnv("MOZ_DMD_LOG_PROCESS");
+  if (logProcessEnv && !!strcmp(logProcessEnv, XRE_ChildProcessTypeToString(XRE_GetProcessType()))) {
+    return;
+  }
+
+  nsPrintfCString fileName("%sdmd-%d.log.gz", dmdFilePrefix, base::GetCurrentProcId());
+  FILE* logFile = fopen(fileName.get(), "w");
+  nsMemoryInfoDumper::DumpDMDToFile(logFile);
+}
+#endif
+
 namespace mozilla {
 void
 LogTerm()
@@ -977,6 +1011,10 @@ LogTerm()
 #ifdef NS_IMPL_REFCNT_LOGGING
     nsTraceRefcnt::SetActivityIsLegal(false);
     gActivityTLS = BAD_TLS_INDEX;
+#endif
+
+#ifdef MOZ_DMD
+    LogDMDFile();
 #endif
   }
 }
