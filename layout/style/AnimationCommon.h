@@ -249,6 +249,7 @@ struct AnimationCollection : public PRCList
     , mAnimationGeneration(0)
     , mCheckGeneration(0)
     , mNeedsRefreshes(true)
+    , mHasPendingAnimationRestyle(false)
 #ifdef DEBUG
     , mCalledPropertyDtor(false)
 #endif
@@ -289,6 +290,16 @@ struct AnimationCollection : public PRCList
     
     CanAnimate_AllowPartial = 2
   };
+
+  enum class RestyleType {
+    
+    
+    
+    Throttled,
+    
+    Standard
+  };
+  void RequestRestyle(RestyleType aRestyleType);
 
 private:
   static bool
@@ -433,6 +444,12 @@ public:
   
   
   bool mNeedsRefreshes;
+
+private:
+  
+  
+  
+  bool mHasPendingAnimationRestyle;
 
 #ifdef DEBUG
   bool mCalledPropertyDtor;
