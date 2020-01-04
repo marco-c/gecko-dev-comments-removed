@@ -214,8 +214,7 @@ public:
 
   virtual void SyncWithObject(SyncObject* aFence) {};
 
-  
-  virtual void FinalizeOnIPDLThread(TextureClient*) {}
+  virtual TextureFlags GetTextureFlags() const { return TextureFlags::NO_FLAGS; }
 };
 
 
@@ -448,13 +447,11 @@ public:
 
   bool IsSharedWithCompositor() const;
 
-  bool ShouldDeallocateInDestructor() const;
-
   
 
 
 
-  bool IsValid() const { return mValid; }
+  bool IsValid() const { return !!mData; }
 
   
 
@@ -466,16 +463,6 @@ public:
 
 
   bool IsAddedToCompositableClient() const { return mAddedToCompositableClient; }
-
-  
-
-
-
-
-
-
-
-  void KeepUntilFullDeallocation(UniquePtr<KeepAlive> aKeep, bool aMainThreadOnly = false);
 
   
 
@@ -554,8 +541,6 @@ public:
 
   void SyncWithObject(SyncObject* aFence) { mData->SyncWithObject(aFence); }
 
-  void MarkShared() { mShared = true; }
-
   ISurfaceAllocator* GetAllocator() { return mAllocator; }
 
    TextureClientRecycleAllocator* GetRecycleAllocator() { return mRecycleAllocator; }
@@ -575,23 +560,11 @@ private:
 
 
 
-  B2G_ACL_EXPORT void Finalize();
-
-  
-
-
-
-  void FinalizeOnIPDLThread();
+  B2G_ACL_EXPORT void Finalize() {}
 
   friend class AtomicRefCountedWithFinalize<TextureClient>;
   friend class gl::SharedSurface_Gralloc;
 protected:
-  
-
-
-
-  void MarkInvalid() { mValid = false; }
-
   
 
 
@@ -620,9 +593,8 @@ protected:
   DebugOnly<uint32_t> mExpectedDtRefs;
   bool mIsLocked;
 
-  bool mShared;
-  bool mValid;
   bool mAddedToCompositableClient;
+  bool mWorkaroundAnnoyingSharedSurfaceLifetimeIssues;
 
   RefPtr<TextureReadbackSink> mReadbackSink;
 
