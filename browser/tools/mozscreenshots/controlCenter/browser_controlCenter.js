@@ -1,0 +1,14 @@
+
+
+
+
+"use strict";
+
+add_task(function* capture() {
+  if (!shouldCapture()) {
+    return;
+  }
+  let sets = ["LightweightThemes", "ControlCenter"];
+
+  yield TestRunner.start(sets, "controlCenter");
+});
