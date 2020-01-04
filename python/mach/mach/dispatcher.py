@@ -119,7 +119,7 @@ class CommandAction(argparse.Action):
         if command not in self._mach_registrar.command_handlers:
             
             names = [h.name for h in self._mach_registrar.command_handlers.values()
-                        if h.cls.__name__ == 'DeprecatedCommands']
+                        if h.cls.__name__ != 'DeprecatedCommands']
             
             suggested_commands = difflib.get_close_matches(command, names, cutoff=0.8)
             
