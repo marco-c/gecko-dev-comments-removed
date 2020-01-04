@@ -72,6 +72,7 @@ DeviceStorageStatics::InitializeDirs()
 DeviceStorageStatics::DeviceStorageStatics()
   : mInitialized(false)
   , mPromptTesting(false)
+  , mLowDiskSpace(false)
 {
   DS_LOG_INFO("");
 }
@@ -358,6 +359,16 @@ DeviceStorageStatics::IsPromptTesting()
   return sInstance->mPromptTesting;
 }
 
+ bool
+DeviceStorageStatics::LowDiskSpace()
+{
+  StaticMutexAutoLock lock(sMutex);
+  if (NS_WARN_IF(!sInstance)) {
+    return false;
+  }
+  return sInstance->mLowDiskSpace;
+}
+
  void
 DeviceStorageStatics::GetWritableName(nsString& aName)
 {
@@ -605,27 +616,29 @@ DeviceStorageStatics::Observe(nsISupports* aSubject,
   }
 
   if (!strcmp(aTopic, kDiskSpaceWatcher)) {
-    
-    
-    
-    
-    bool lowDiskSpace = false;
-    if (!NS_strcmp(aData, MOZ_UTF16("full"))) {
-      lowDiskSpace = true;
-    } else if (NS_strcmp(aData, MOZ_UTF16("free"))) {
-      return NS_OK;
-    }
-
     StaticMutexAutoLock lock(sMutex);
     if (NS_WARN_IF(!sInstance)) {
       return NS_OK;
     }
 
+    
+    
+    
+    
+    if (!NS_strcmp(aData, MOZ_UTF16("full"))) {
+      sInstance->mLowDiskSpace = true;
+    } else if (!NS_strcmp(aData, MOZ_UTF16("free"))) {
+      sInstance->mLowDiskSpace = false;
+    } else {
+      return NS_OK;
+    }
+
+
     uint32_t i = mListeners.Length();
-    DS_LOG_INFO("disk space %d (%u)", lowDiskSpace, i);
+    DS_LOG_INFO("disk space %d (%u)", sInstance->mLowDiskSpace, i);
     while (i > 0) {
       --i;
-      mListeners[i]->OnDiskSpaceWatcher(lowDiskSpace);
+      mListeners[i]->OnDiskSpaceWatcher(sInstance->mLowDiskSpace);
     }
     return NS_OK;
   }
