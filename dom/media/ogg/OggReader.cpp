@@ -472,9 +472,9 @@ nsresult OggReader::ReadMetadata(MediaInfo* aInfo,
   if (HasAudio() || HasVideo()) {
     ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
 
-    if (mInfo.mMetadataDuration.isNothing() && !mDecoder->IsOggDecoderShutdown() &&
-        mResource.GetLength() >= 0 && mDecoder->IsMediaSeekable())
-    {
+    if (mInfo.mMetadataDuration.isNothing() &&
+        !mDecoder->IsOggDecoderShutdown() &&
+        mResource.GetLength() >= 0) {
       
       
       int64_t length = mResource.GetLength();
