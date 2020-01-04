@@ -137,6 +137,7 @@ pref("browser.sessionstore.resume_from_crash", true);
 pref("browser.sessionstore.interval", 10000); 
 pref("browser.sessionstore.max_tabs_undo", 5);
 pref("browser.sessionstore.max_resumed_crashes", 1);
+pref("browser.sessionstore.recent_crashes", 0);
 pref("browser.sessionstore.privacy_level", 0); 
 pref("browser.sessionstore.debug_logging", false);
 
@@ -313,6 +314,9 @@ pref("browser.search.order.US.3", "chrome://browser/locale/region.properties");
 
 
 pref("browser.search.update", false);
+
+
+pref("privacy.trackingprotection.pbmode.enabled", true);
 
 
 pref("browser.search.suggest.enabled", false);
@@ -608,7 +612,11 @@ pref("apz.overscroll.enabled", true);
 #endif
 
 pref("layers.progressive-paint", true);
+#ifdef NIGHTLY_BUILD
+pref("layers.low-precision-buffer", false);
+#else
 pref("layers.low-precision-buffer", true);
+#endif
 pref("layers.low-precision-resolution", "0.25");
 pref("layers.low-precision-opacity", "1.0");
 
@@ -654,9 +662,48 @@ pref("media.mediasource.enabled", true);
 
 pref("image.downscale-during-decode.enabled", true);
 
+#ifdef MOZ_SAFE_BROWSING
+pref("browser.safebrowsing.enabled", true);
+pref("browser.safebrowsing.malware.enabled", true);
 pref("browser.safebrowsing.downloads.enabled", false);
+pref("browser.safebrowsing.downloads.remote.enabled", false);
+pref("browser.safebrowsing.downloads.remote.timeout_ms", 10000);
+pref("browser.safebrowsing.downloads.remote.url", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_API_KEY%");
+pref("browser.safebrowsing.downloads.remote.block_dangerous",            true);
+pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       true);
+pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", false);
+pref("browser.safebrowsing.downloads.remote.block_uncommon",             false);
+pref("browser.safebrowsing.debug", false);
+
+pref("browser.safebrowsing.provider.google.lists", "goog-badbinurl-shavar,goog-downloadwhite-digest256,goog-phish-shavar,goog-malware-shavar,goog-unwanted-shavar");
+pref("browser.safebrowsing.provider.google.updateURL", "https://safebrowsing.google.com/safebrowsing/downloads?client=SAFEBROWSING_ID&appver=%VERSION%&pver=2.2&key=%GOOGLE_API_KEY%");
+pref("browser.safebrowsing.provider.google.gethashURL", "https://safebrowsing.google.com/safebrowsing/gethash?client=SAFEBROWSING_ID&appver=%VERSION%&pver=2.2");
+pref("browser.safebrowsing.provider.google.reportURL", "https://safebrowsing.google.com/safebrowsing/diagnostic?client=%NAME%&hl=%LOCALE%&site=");
+
+pref("browser.safebrowsing.reportPhishMistakeURL", "https://%LOCALE%.phish-error.mozilla.com/?hl=%LOCALE%&url=");
+pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozilla.com/?hl=%LOCALE%&url=");
+pref("browser.safebrowsing.reportMalwareMistakeURL", "https://%LOCALE%.malware-error.mozilla.com/?hl=%LOCALE%&url=");
 
 pref("browser.safebrowsing.id", @MOZ_APP_UA_NAME@);
+
+
+
+pref("urlclassifier.alternate_error_page", "blocked");
+
+
+pref("urlclassifier.gethashnoise", 4);
+
+
+pref("urlclassifier.gethash.timeout_ms", 5000);
+
+
+
+
+pref("urlclassifier.max-complete-age", 2700);
+
+
+pref("urlclassifier.downloadBlockTable", "goog-badbinurl-shavar");
+#endif
 
 
 pref("browser.firstrun.show.uidiscovery", true);
@@ -767,6 +814,10 @@ pref("layout.framevisibility.numscrollportwidths", 1);
 pref("layout.framevisibility.numscrollportheights", 1);
 
 pref("layers.enable-tiles", true);
+#ifdef NIGHTLY_BUILD
+pref("layers.tiles.fade-in.enabled", true);
+pref("layers.tiles.fade-in.duration-ms", 250);
+#endif
 
 
 pref("browser.chrome.dynamictoolbar", true);
