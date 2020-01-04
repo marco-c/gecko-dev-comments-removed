@@ -653,7 +653,10 @@ FxAccountsInternal.prototype = {
   },
 
   _signOutServer: function signOutServer(sessionToken) {
-    return this.fxAccountsClient.signOut(sessionToken);
+    
+    
+    
+    return this.fxAccountsClient.signOut(sessionToken, {service: "sync"});
   },
 
   
