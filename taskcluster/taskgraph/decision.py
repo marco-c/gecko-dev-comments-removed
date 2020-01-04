@@ -16,10 +16,16 @@ from .create import create_tasks
 from .parameters import Parameters
 from .target_tasks import get_method
 
-logger = logging.getLogger(__name__)
-ARTIFACTS_DIR = 'artifacts'
+from taskgraph.util.templates import Templates
+from taskgraph.util.time import (
+    json_time_from_now,
+    current_json_time,
+)
 
 logger = logging.getLogger(__name__)
+
+ARTIFACTS_DIR = 'artifacts'
+GECKO = os.path.realpath(os.path.join(__file__, '..', '..', '..'))
 
 
 
@@ -63,6 +69,9 @@ def taskgraph_decision(options):
 
     
     write_artifact('parameters.yml', dict(**parameters))
+
+    
+    write_artifact('action.yml', get_action_yml(parameters))
 
     
     write_artifact('full-task-graph.json', tgg.full_task_graph.to_json())
@@ -123,3 +132,15 @@ def write_artifact(filename, data):
             json.dump(data, f, sort_keys=True, indent=2, separators=(',', ': '))
     else:
         raise TypeError("Don't know how to write to {}".format(filename))
+
+
+def get_action_yml(parameters):
+    templates = Templates(os.path.join(GECKO, "taskcluster/taskgraph"))
+    action_parameters = parameters.copy()
+    action_parameters.update({
+        "decision_task_id": "{{decision_task_id}}",
+        "task_labels": "{{task_labels}}",
+        "from_now": json_time_from_now,
+        "now": current_json_time()
+    })
+    return templates.load('action.yml', action_parameters)
