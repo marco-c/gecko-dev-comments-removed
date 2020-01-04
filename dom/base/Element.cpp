@@ -918,7 +918,7 @@ already_AddRefed<DOMRect>
 Element::GetBoundingClientRect()
 {
   RefPtr<DOMRect> rect = new DOMRect(this);
-  
+
   nsIFrame* frame = GetPrimaryFrame(Flush_Layout);
   if (!frame) {
     
@@ -1462,7 +1462,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   if (xulElem) {
     xulElem->SetXULBindingParent(aBindingParent);
   }
-  else 
+  else
 #endif
   {
     if (aBindingParent) {
@@ -2538,7 +2538,7 @@ Element::GetAttrInfo(int32_t aNamespaceID, nsIAtom* aName) const
 
   return nsAttrInfo(nullptr, nullptr);
 }
-  
+
 
 bool
 Element::GetAttr(int32_t aNameSpaceID, nsIAtom* aName,
@@ -2559,7 +2559,7 @@ Element::FindAttrValueIn(int32_t aNameSpaceID,
   NS_ASSERTION(aName, "Must have attr name");
   NS_ASSERTION(aNameSpaceID != kNameSpaceID_Unknown, "Must have namespace");
   NS_ASSERTION(aValues, "Null value array");
-  
+
   const nsAttrValue* val = mAttrsAndChildren.GetAttr(aName, aNameSpaceID);
   if (val) {
     for (int32_t i = 0; aValues[i]; ++i) {
@@ -2763,7 +2763,7 @@ Element::List(FILE* out, int32_t aIndent,
   nsIContent* child = GetFirstChild();
   if (child) {
     fputs("\n", out);
-    
+
     for (; child; child = child->GetNextSibling()) {
       child->List(out, aIndent + 1);
     }
@@ -2772,7 +2772,7 @@ Element::List(FILE* out, int32_t aIndent,
   }
 
   fputs(">\n", out);
-  
+
   Element* nonConstThis = const_cast<Element*>(this);
 
   
@@ -3520,7 +3520,7 @@ Element::InsertAdjacentHTML(const nsAString& aPosition, const nsAString& aText,
   
   mozAutoDocUpdate updateBatch(doc, UPDATE_CONTENT_MODEL, true);
   nsAutoScriptLoaderDisabler sld(doc);
-  
+
   
   mozAutoSubtreeModified subtree(doc, nullptr);
 
