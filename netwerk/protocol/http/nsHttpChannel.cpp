@@ -1568,6 +1568,39 @@ nsHttpChannel::ProcessResponse()
         LOG(("  continuation state has been reset"));
     }
 
+    if (mAPIRedirectToURI && !mCanceled) {
+        MOZ_ASSERT(!mOnStartRequestCalled);
+        nsCOMPtr<nsIURI> redirectTo;
+        mAPIRedirectToURI.swap(redirectTo);
+
+        PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse1);
+        rv = StartRedirectChannelToURI(redirectTo, nsIChannelEventSink::REDIRECT_TEMPORARY);
+        if (NS_SUCCEEDED(rv)) {
+            return NS_OK;
+        }
+        PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse1);
+    }
+
+    
+    
+    
+    return ContinueProcessResponse1(NS_BINDING_FAILED);
+}
+
+nsresult
+nsHttpChannel::ContinueProcessResponse1(nsresult rv)
+{
+    if (NS_SUCCEEDED(rv)) {
+        
+        
+        
+        return NS_OK;
+    }
+
+    rv = NS_OK;
+
+    uint32_t httpStatus = mResponseHead->Status();
+
     bool successfulReval = false;
 
     
@@ -1610,10 +1643,10 @@ nsHttpChannel::ProcessResponse()
 #endif
         
         MaybeInvalidateCacheEntryForSubsequentGet();
-        PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse);
+        PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse2);
         rv = AsyncProcessRedirection(httpStatus);
         if (NS_FAILED(rv)) {
-            PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse);
+            PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse2);
             LOG(("AsyncProcessRedirection failed [rv=%x]\n", rv));
             
             if (mCacheEntry)
@@ -1622,7 +1655,7 @@ nsHttpChannel::ProcessResponse()
                 mStatus = rv;
                 DoNotifyListener();
             } else {
-                rv = ContinueProcessResponse(rv);
+                rv = ContinueProcessResponse2(rv);
             }
         }
         break;
@@ -1697,7 +1730,7 @@ nsHttpChannel::ProcessResponse()
 }
 
 nsresult
-nsHttpChannel::ContinueProcessResponse(nsresult rv)
+nsHttpChannel::ContinueProcessResponse2(nsresult rv)
 {
     bool doNotRender = DoNotRender3xxBody(rv);
 
@@ -1713,7 +1746,7 @@ nsHttpChannel::ContinueProcessResponse(nsresult rv)
             
             
             
-            LOG(("ContinueProcessResponse detected rejected Non-HTTP Redirection"));
+            LOG(("ContinueProcessResponse2 detected rejected Non-HTTP Redirection"));
             doNotRender = true;
             rv = NS_ERROR_CORRUPTED_CONTENT;
         }
@@ -1739,7 +1772,7 @@ nsHttpChannel::ContinueProcessResponse(nsresult rv)
         return NS_OK;
     }
 
-    LOG(("ContinueProcessResponse got failure result [rv=%x]\n", rv));
+    LOG(("ContinueProcessResponse2 got failure result [rv=%x]\n", rv));
     if (mTransaction->ProxyConnectFailed()) {
         return ProcessFailedProxyConnect(mRedirectType);
     }
@@ -2009,8 +2042,13 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
 nsresult
 nsHttpChannel::ContinueAsyncRedirectChannelToURI(nsresult rv)
 {
-    if (NS_SUCCEEDED(rv))
+    
+    
+    mAPIRedirectToURI = nullptr;
+
+    if (NS_SUCCEEDED(rv)) {
         rv = OpenRedirectChannel(rv);
+    }
 
     if (NS_FAILED(rv)) {
         
@@ -2019,8 +2057,9 @@ nsHttpChannel::ContinueAsyncRedirectChannelToURI(nsresult rv)
         mStatus = rv;
     }
 
-    if (mLoadGroup)
+    if (mLoadGroup) {
         mLoadGroup->RemoveRequest(this, nullptr, mStatus);
+    }
 
     if (NS_FAILED(rv)) {
         
@@ -5703,6 +5742,8 @@ nsHttpChannel::OnStartSignedPackageRequest(const nsACString& aPackageId)
 NS_IMETHODIMP
 nsHttpChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 {
+    nsresult rv;
+
     PROFILER_LABEL("nsHttpChannel", "OnStartRequest",
         js::ProfileEntry::Category::NETWORK);
 
@@ -5758,34 +5799,69 @@ nsHttpChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
     }
 
     
-    if (mConnectionInfo->ProxyInfo() &&
-       (mStatus == NS_ERROR_PROXY_CONNECTION_REFUSED ||
-        mStatus == NS_ERROR_UNKNOWN_PROXY_HOST ||
-        mStatus == NS_ERROR_NET_TIMEOUT)) {
+    
+    if (mAPIRedirectToURI && !mCanceled) {
+        nsAutoCString redirectToSpec;
+        mAPIRedirectToURI->GetAsciiSpec(redirectToSpec);
+        LOG(("  redirectTo called with uri=%s", redirectToSpec.BeginReading()));
+
+        MOZ_ASSERT(!mOnStartRequestCalled);
+
+        nsCOMPtr<nsIURI> redirectTo;
+        mAPIRedirectToURI.swap(redirectTo);
 
         PushRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest1);
-        if (NS_SUCCEEDED(ProxyFailover()))
+        rv = StartRedirectChannelToURI(redirectTo, nsIChannelEventSink::REDIRECT_TEMPORARY);
+        if (NS_SUCCEEDED(rv)) {
             return NS_OK;
+        }
         PopRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest1);
     }
 
-    return ContinueOnStartRequest2(NS_OK);
+    
+    
+    
+    return ContinueOnStartRequest1(NS_BINDING_FAILED);
 }
 
 nsresult
 nsHttpChannel::ContinueOnStartRequest1(nsresult result)
 {
-    
-    
-    if (NS_SUCCEEDED(result))
+    if (NS_SUCCEEDED(result)) {
+        
+        
+        
         return NS_OK;
+    }
 
-    return ContinueOnStartRequest2(result);
+    
+    if (mConnectionInfo->ProxyInfo() &&
+       (mStatus == NS_ERROR_PROXY_CONNECTION_REFUSED ||
+        mStatus == NS_ERROR_UNKNOWN_PROXY_HOST ||
+        mStatus == NS_ERROR_NET_TIMEOUT)) {
+
+        PushRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest2);
+        if (NS_SUCCEEDED(ProxyFailover()))
+            return NS_OK;
+        PopRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest2);
+    }
+
+    
+    
+    
+    return ContinueOnStartRequest2(NS_BINDING_FAILED);
 }
 
 nsresult
 nsHttpChannel::ContinueOnStartRequest2(nsresult result)
 {
+    if (NS_SUCCEEDED(result)) {
+        
+        
+        
+        return NS_OK;
+    }
+
     
     if (NS_FAILED(mStatus)) {
         PushRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest3);
