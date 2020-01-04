@@ -189,8 +189,7 @@ void
 PresentationConnection::Terminate(ErrorResult& aRv)
 {
   
-  if (NS_WARN_IF(mState != PresentationConnectionState::Connected &&
-                 mState != PresentationConnectionState::Connecting)) {
+  if (NS_WARN_IF(mState != PresentationConnectionState::Connected)) {
     return;
   }
 
@@ -282,6 +281,11 @@ PresentationConnection::ProcessStateChanged(nsresult aReason)
       return RemoveFromLoadGroup();
     }
     case PresentationConnectionState::Terminated: {
+      
+      RefPtr<AsyncEventDispatcher> asyncDispatcher =
+        new AsyncEventDispatcher(this, NS_LITERAL_STRING("terminate"), false);
+      NS_WARN_IF(NS_FAILED(asyncDispatcher->PostDOMEvent()));
+
       nsCOMPtr<nsIPresentationService> service =
         do_GetService(PRESENTATION_SERVICE_CONTRACTID);
       if (NS_WARN_IF(!service)) {
@@ -292,10 +296,6 @@ PresentationConnection::ProcessStateChanged(nsresult aReason)
       if(NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-
-      RefPtr<AsyncEventDispatcher> asyncDispatcher =
-        new AsyncEventDispatcher(this, NS_LITERAL_STRING("terminate"), false);
-      NS_WARN_IF(NS_FAILED(asyncDispatcher->PostDOMEvent()));
 
       return RemoveFromLoadGroup();
     }

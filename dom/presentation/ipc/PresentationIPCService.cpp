@@ -8,6 +8,7 @@
 #include "mozilla/dom/PPresentation.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
+#include "nsGlobalWindow.h"
 #include "nsIPresentationListener.h"
 #include "PresentationCallbacks.h"
 #include "PresentationChild.h"
@@ -341,6 +342,18 @@ NS_IMETHODIMP
 PresentationIPCService::UntrackSessionInfo(const nsAString& aSessionId,
                                            uint8_t aRole)
 {
+  if (nsIPresentationService::ROLE_RECEIVER == aRole) {
+    
+    uint64_t windowId;
+    if (NS_SUCCEEDED(GetWindowIdBySessionIdInternal(aSessionId, &windowId))) {
+      NS_DispatchToMainThread(NS_NewRunnableFunction([windowId]() -> void {
+        if (auto* window = nsGlobalWindow::GetInnerWindowWithId(windowId)) {
+          window->Close();
+        }
+      }));
+    }
+  }
+
   
   RemoveRespondingSessionId(aSessionId);
   if (mSessionInfos.Contains(aSessionId)) {
