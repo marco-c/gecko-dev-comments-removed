@@ -13,6 +13,7 @@
 #include "jspubtd.h"
 #include "nsIException.h"
 #include "nsStringGlue.h"
+#include "jsapi.h"
 
 class nsIStackFrame;
 class nsPIDOMWindowInner;
@@ -57,11 +58,8 @@ GetCurrentJSStack(int32_t aMaxDepth = -1);
 
 namespace exceptions {
 
-
-
-
 already_AddRefed<nsIStackFrame>
-CreateStack(JSContext* aCx, int32_t aMaxDepth = -1);
+CreateStack(JSContext* aCx, JS::StackCapture&& aCaptureMode);
 
 } 
 } 
