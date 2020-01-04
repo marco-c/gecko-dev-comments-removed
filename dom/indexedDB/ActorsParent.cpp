@@ -13811,6 +13811,14 @@ Database::ConnectionClosedCallback()
   mDirectoryLock = nullptr;
 
   CleanupMetadata();
+
+  if (IsInvalidated() && IsActorAlive()) {
+    
+    
+    
+    
+    Unused << SendCloseAfterInvalidationComplete();
+  }
 }
 
 void
@@ -14937,7 +14945,7 @@ TransactionBase::Invalidate()
     mInvalidated = true;
     mInvalidatedOnAnyThread = true;
 
-    Abort(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR,  true);
+    Abort(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR,  false);
   }
 }
 
@@ -16186,10 +16194,6 @@ Cursor::Start(const OpenCursorParams& aParams)
       aParams.get_IndexOpenCursorParams().optionalKeyRange() :
       aParams.get_IndexOpenKeyCursorParams().optionalKeyRange();
 
-  if (mTransaction->IsInvalidated()) {
-    return true;
-  }
-
   RefPtr<OpenOp> openOp = new OpenOp(this, optionalKeyRange);
 
   if (NS_WARN_IF(!openOp->Init(mTransaction))) {
@@ -16347,10 +16351,6 @@ Cursor::RecvContinue(const CursorRequestParams& aParams, const Key& aKey)
   if (NS_WARN_IF(mTransaction->mCommitOrAbortReceived)) {
     ASSERT_UNLESS_FUZZING();
     return false;
-  }
-
-  if (mTransaction->IsInvalidated()) {
-    return true;
   }
 
   RefPtr<ContinueOp> continueOp = new ContinueOp(this, aParams, aKey);
@@ -22744,12 +22744,9 @@ TransactionDatabaseOperationBase::RunOnConnectionThread()
 
   
 
-  if (mTransactionIsAborted) {
+  if (mTransactionIsAborted || mTransaction->IsInvalidatedOnAnyThread()) {
     
     mResultCode = NS_ERROR_DOM_INDEXEDDB_ABORT_ERR;
-  } else if (mTransaction->IsInvalidatedOnAnyThread()) {
-    
-    mResultCode = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
   } else if (!OperationMayProceed()) {
     
     
@@ -22820,9 +22817,7 @@ TransactionDatabaseOperationBase::RunOnOwningThread()
       mResultCode = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
     }
   } else {
-    if (mTransaction->IsInvalidated()) {
-      mResultCode = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-    } else if (mTransaction->IsAborted()) {
+    if (mTransaction->IsInvalidated() || mTransaction->IsAborted()) {
       
       
       mResultCode = NS_ERROR_DOM_INDEXEDDB_ABORT_ERR;
@@ -26740,6 +26735,14 @@ CursorOpBase::SendFailureResult(nsresult aResultCode)
 
   if (!IsActorDestroyed()) {
     mResponse = ClampResultCode(aResultCode);
+
+    
+    
+    
+    
+    if (Transaction()->IsInvalidated() && !mFiles.IsEmpty()) {
+      mFiles.Clear();
+    }
 
     mCursor->SendResponseInternal(mResponse, mFiles);
   }

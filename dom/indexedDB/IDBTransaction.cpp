@@ -376,7 +376,7 @@ IDBTransaction::OnRequestFinished(bool aActorDestroyedNormally)
 
   --mPendingRequestCount;
 
-  if (!mPendingRequestCount && !mDatabase->IsInvalidated()) {
+  if (!mPendingRequestCount) {
     mReadyState = COMMITTING;
 
     if (aActorDestroyedNormally) {
@@ -640,15 +640,6 @@ IDBTransaction::AbortInternal(nsresult aAbortCode,
   const bool isVersionChange = mMode == VERSION_CHANGE;
   const bool isInvalidated = mDatabase->IsInvalidated();
   bool needToSendAbort = mReadyState == INITIAL && !isInvalidated;
-
-  if (isInvalidated) {
-#ifdef DEBUG
-    mSentCommitOrAbort = true;
-#endif
-    
-    
-    IDBRequest::NextSerialNumber();
-  }
 
   mAbortCode = aAbortCode;
   mReadyState = DONE;
