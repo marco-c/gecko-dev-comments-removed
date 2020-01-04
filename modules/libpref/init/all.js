@@ -2128,6 +2128,9 @@ pref("general.smoothScroll.other", true);
 
 pref("general.smoothScroll.durationToIntervalRatio", 200);
 
+pref("general.smoothScroll.currentVelocityWeighting", "0.25");
+pref("general.smoothScroll.stopDecelerationWeighting", "0.4");
+
 pref("profile.confirm_automigration",true);
 
 
