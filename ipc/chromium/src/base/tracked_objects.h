@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "base/lock.h"
+#include "mozilla/StaticMutex.h"
 #include "base/message_loop.h"
 #include "base/thread_local_storage.h"
 #include "base/tracked.h"
@@ -428,7 +429,7 @@ class ThreadData {
   
   static ThreadData* first_;
   
-  static Lock list_lock_;
+  static mozilla::StaticMutex list_lock_;
 
 
   
