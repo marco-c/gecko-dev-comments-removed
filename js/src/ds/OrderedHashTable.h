@@ -284,7 +284,9 @@ class OrderedHashTable
     {
         friend class OrderedHashTable;
 
-        OrderedHashTable& ht;
+        
+        
+        OrderedHashTable* ht;
 
         
         uint32_t i;
@@ -312,7 +314,7 @@ class OrderedHashTable
 
 
 
-        explicit Range(OrderedHashTable& ht) : ht(ht), i(0), count(0), prevp(&ht.ranges), next(ht.ranges) {
+        explicit Range(OrderedHashTable* ht) : ht(ht), i(0), count(0), prevp(&ht->ranges), next(ht->ranges) {
             *prevp = this;
             if (next)
                 next->prevp = &next;
@@ -321,7 +323,7 @@ class OrderedHashTable
 
       public:
         Range(const Range& other)
-            : ht(other.ht), i(other.i), count(other.count), prevp(&ht.ranges), next(ht.ranges)
+            : ht(other.ht), i(other.i), count(other.count), prevp(&ht->ranges), next(ht->ranges)
         {
             *prevp = this;
             if (next)
@@ -339,7 +341,7 @@ class OrderedHashTable
         Range& operator=(const Range& other) = delete;
 
         void seek() {
-            while (i < ht.dataLength && Ops::isEmpty(Ops::getKey(ht.data[i].element)))
+            while (i < ht->dataLength && Ops::isEmpty(Ops::getKey(ht->data[i].element)))
                 i++;
         }
 
@@ -385,7 +387,7 @@ class OrderedHashTable
       public:
         bool empty() const {
             MOZ_ASSERT(valid());
-            return i >= ht.dataLength;
+            return i >= ht->dataLength;
         }
 
         
@@ -399,7 +401,7 @@ class OrderedHashTable
         T& front() {
             MOZ_ASSERT(valid());
             MOZ_ASSERT(!empty());
-            return ht.data[i].element;
+            return ht->data[i].element;
         }
 
         
@@ -414,7 +416,7 @@ class OrderedHashTable
         void popFront() {
             MOZ_ASSERT(valid());
             MOZ_ASSERT(!empty());
-            MOZ_ASSERT(!Ops::isEmpty(Ops::getKey(ht.data[i].element)));
+            MOZ_ASSERT(!Ops::isEmpty(Ops::getKey(ht->data[i].element)));
             count++;
             i++;
             seek();
@@ -429,9 +431,9 @@ class OrderedHashTable
 
         void rekeyFront(const Key& k) {
             MOZ_ASSERT(valid());
-            Data& entry = ht.data[i];
-            HashNumber oldHash = prepareHash(Ops::getKey(entry.element)) >> ht.hashShift;
-            HashNumber newHash = prepareHash(k) >> ht.hashShift;
+            Data& entry = ht->data[i];
+            HashNumber oldHash = prepareHash(Ops::getKey(entry.element)) >> ht->hashShift;
+            HashNumber newHash = prepareHash(k) >> ht->hashShift;
             Ops::setKey(entry.element, k);
             if (newHash != oldHash) {
                 
@@ -439,7 +441,7 @@ class OrderedHashTable
                 
                 
                 
-                Data** ep = &ht.hashTable[oldHash];
+                Data** ep = &ht->hashTable[oldHash];
                 while (*ep != &entry)
                     ep = &(*ep)->chain;
                 *ep = entry.chain;
@@ -450,7 +452,7 @@ class OrderedHashTable
                 
                 
                 
-                ep = &ht.hashTable[newHash];
+                ep = &ht->hashTable[newHash];
                 while (*ep && *ep > &entry)
                     ep = &(*ep)->chain;
                 entry.chain = *ep;
@@ -459,7 +461,7 @@ class OrderedHashTable
         }
     };
 
-    Range all() { return Range(*this); }
+    Range all() { return Range(this); }
 
     
 
