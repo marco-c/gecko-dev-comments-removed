@@ -2565,6 +2565,14 @@ public:
                                     bool aDescendentsOnly,
                                     nsAString& aOut);
 
+  
+
+
+
+
+
+  static bool IsSpecificAboutPage(JSObject* aGlobal, const char* aUri);
+
 private:
   static bool InitializeEventTable();
 

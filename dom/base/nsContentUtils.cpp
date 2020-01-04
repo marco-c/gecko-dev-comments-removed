@@ -8894,3 +8894,37 @@ nsContentUtils::SerializeNodeToMarkup(nsINode* aRoot,
     }
   }
 }
+
+bool
+nsContentUtils::IsSpecificAboutPage(JSObject* aGlobal, const char* aUri)
+{
+  
+  MOZ_ASSERT(strncmp(aUri, "about:", 6) == 0);
+
+  
+  nsGlobalWindow* win = xpc::WindowGlobalOrNull(aGlobal);
+  if (!win) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsIPrincipal> principal = win->GetPrincipal();
+  NS_ENSURE_TRUE(principal, false);
+  nsCOMPtr<nsIURI> uri;
+  principal->GetURI(getter_AddRefs(uri));
+  if (!uri) {
+    return false;
+  }
+
+  
+  bool isAbout = false;
+  uri->SchemeIs("about", &isAbout);
+  if (!isAbout) {
+    return false;
+  }
+
+  
+  nsAutoCString spec;
+  uri->GetSpec(spec);
+  return spec.EqualsASCII(aUri);
+}
