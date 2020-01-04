@@ -204,6 +204,14 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
   }
 
   
+  if (mathFont) {
+    subDrop = mathFont->
+      GetMathConstant(gfxFontEntry::SubscriptBaselineDropMin, oneDevPixel);
+    supDrop = mathFont->
+      GetMathConstant(gfxFontEntry::SuperscriptBaselineDropMax, oneDevPixel);
+  }
+
+  
   nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
   scriptSpace = std::max(onePixel, scriptSpace);
 
@@ -390,8 +398,11 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
         
         subScriptFrame = childFrame;
         GetReflowAndBoundingMetricsFor(subScriptFrame, subScriptSize, bmSubScript);
-        
-        GetSubDropFromChild (subScriptFrame, subDrop, aFontSizeInflation);
+        if (!mathFont) {
+          
+          GetSubDropFromChild (subScriptFrame, subDrop, aFontSizeInflation);
+        }
+
         
         minSubScriptShift = bmBase.descent + subDrop;
         trySubScriptShift = std::max(minSubScriptShift,subScriptShift);
@@ -431,8 +442,10 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
         
         supScriptFrame = childFrame;
         GetReflowAndBoundingMetricsFor(supScriptFrame, supScriptSize, bmSupScript);
-        
-        GetSupDropFromChild (supScriptFrame, supDrop, aFontSizeInflation);
+        if (!mathFont) {
+          
+          GetSupDropFromChild (supScriptFrame, supDrop, aFontSizeInflation);
+        }
         
         minSupScriptShift = bmBase.ascent - supDrop;
         nscoord superscriptBottomMin;
