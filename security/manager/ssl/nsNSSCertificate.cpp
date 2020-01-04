@@ -57,7 +57,7 @@
 using namespace mozilla;
 using namespace mozilla::psm;
 
-extern LazyLogModule gPIPNSSLog;
+extern PRLogModuleInfo* gPIPNSSLog;
 
 
 

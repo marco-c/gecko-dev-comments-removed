@@ -13,7 +13,8 @@
 
 namespace mozilla { namespace psm {
 
-mozilla::LazyLogModule gPublicKeyPinningTelemetryLog("PublicKeyPinningTelemetryService");
+PRLogModuleInfo* gPublicKeyPinningTelemetryLog =
+  PR_NewLogModule("PublicKeyPinningTelemetryService");
 
 
 

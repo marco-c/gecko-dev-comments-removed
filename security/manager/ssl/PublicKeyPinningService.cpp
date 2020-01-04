@@ -23,7 +23,8 @@ using namespace mozilla;
 using namespace mozilla::pkix;
 using namespace mozilla::psm;
 
-LazyLogModule gPublicKeyPinningLog("PublicKeyPinningService");
+PRLogModuleInfo* gPublicKeyPinningLog =
+  PR_NewLogModule("PublicKeyPinningService");
 
 
 

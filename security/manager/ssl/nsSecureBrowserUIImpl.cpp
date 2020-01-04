@@ -49,7 +49,7 @@ using namespace mozilla;
 
 
 
-LazyLogModule gSecureDocLog("nsSecureBrowserUI");
+PRLogModuleInfo* gSecureDocLog = nullptr;
 
 struct RequestHashEntry : PLDHashEntryHdr {
     void *r;
@@ -117,6 +117,9 @@ nsSecureBrowserUIImpl::nsSecureBrowserUIImpl()
   MOZ_ASSERT(NS_IsMainThread());
 
   ResetStateTracking();
+
+  if (!gSecureDocLog)
+    gSecureDocLog = PR_NewLogModule("nsSecureBrowserUI");
 }
 
 NS_IMPL_ISUPPORTS(nsSecureBrowserUIImpl,
