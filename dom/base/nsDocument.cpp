@@ -11386,20 +11386,21 @@ LogFullScreenDenied(bool aLogFailure, const char* aMessage, nsIDocument* aDoc)
 void
 nsDocument::CleanupFullscreenState()
 {
-  if (!mFullScreenStack.IsEmpty()) {
-    
-    
-    
-    Element* top = FullScreenStackTop();
-    NS_ASSERTION(top, "Should have a top when full-screen stack isn't empty");
-    if (top) {
+  
+  
+  
+  
+  
+  
+  
+  for (nsWeakPtr& weakPtr : Reversed(mFullScreenStack)) {
+    if (nsCOMPtr<Element> element = do_QueryReferent(weakPtr)) {
       
-      top->DeleteProperty(nsGkAtoms::vr_state);
-
-      EventStateManager::SetFullScreenState(top, false);
+      element->DeleteProperty(nsGkAtoms::vr_state);
+      EventStateManager::SetFullScreenState(element, false);
     }
-    mFullScreenStack.Clear();
   }
+  mFullScreenStack.Clear();
   mFullscreenRoot = nullptr;
 }
 
@@ -11410,12 +11411,6 @@ nsDocument::FullScreenStackPush(Element* aElement)
   Element* top = FullScreenStackTop();
   if (top == aElement || !aElement) {
     return false;
-  }
-  if (top) {
-    
-    
-    
-    EventStateManager::SetFullScreenState(top, false);
   }
   EventStateManager::SetFullScreenState(aElement, true);
   mFullScreenStack.AppendElement(do_GetWeakReference(aElement));
@@ -11456,8 +11451,6 @@ nsDocument::FullScreenStackPop()
       mFullScreenStack.RemoveElementAt(last);
     } else {
       
-      
-      EventStateManager::SetFullScreenState(element, true);
       break;
     }
   }
