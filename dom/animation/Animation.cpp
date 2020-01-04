@@ -193,6 +193,17 @@ Animation::GetCurrentTime() const
 void
 Animation::SetCurrentTime(const TimeDuration& aSeekTime)
 {
+  
+  
+  
+  
+  if (mPendingState != PendingState::PausePending &&
+      Nullable<TimeDuration>(aSeekTime) == GetCurrentTime()) {
+    return;
+  }
+
+  AutoMutationBatchForAnimation mb(*this);
+
   SilentlySetCurrentTime(aSeekTime);
 
   if (mPendingState == PendingState::PausePending) {
@@ -207,6 +218,9 @@ Animation::SetCurrentTime(const TimeDuration& aSeekTime)
   }
 
   UpdateTiming(SeekFlag::DidSeek, SyncNotifyFlag::Async);
+  if (IsRelevant()) {
+    nsNodeUtils::AnimationChanged(this);
+  }
   PostUpdate();
 }
 
@@ -226,9 +240,19 @@ Animation::SetPlaybackRate(double aPlaybackRate)
     SetCurrentTime(previousTime.Value());
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  UpdateTiming(SeekFlag::DidSeek, SyncNotifyFlag::Async);
   if (IsRelevant()) {
     nsNodeUtils::AnimationChanged(this);
   }
+  PostUpdate();
 }
 
 
