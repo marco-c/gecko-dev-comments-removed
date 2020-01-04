@@ -2425,6 +2425,12 @@ struct nsStyleDisplay {
 
 
   inline bool IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const;
+
+  
+  
+  
+  inline uint8_t PhysicalFloats(mozilla::WritingMode aWM) const;
+  inline uint8_t PhysicalBreakType(mozilla::WritingMode aWM) const;
 };
 
 struct nsStyleTable {
