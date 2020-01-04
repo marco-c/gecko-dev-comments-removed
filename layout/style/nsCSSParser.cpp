@@ -3414,6 +3414,13 @@ CSSParserImpl::ParseMediaQueryExpression(nsMediaQuery* aQuery)
   uint8_t satisfiedReqFlags = 0;
 
   
+  if (sWebkitPrefixedAliasesEnabled &&
+      StringBeginsWith(featureString, NS_LITERAL_STRING("-webkit-"))) {
+    satisfiedReqFlags |= nsMediaFeature::eHasWebkitPrefix;
+    featureString.Rebind(featureString, 8);
+  }
+
+  
   if (StringBeginsWith(featureString, NS_LITERAL_STRING("min-"))) {
     expr->mRange = nsMediaExpression::eMin;
     featureString.Rebind(featureString, 4);
