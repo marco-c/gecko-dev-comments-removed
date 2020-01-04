@@ -231,7 +231,7 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         self.options = options
         self.device = devmgr
         self.pathMapping = []
-        self.remoteTestRoot = "%s/xpcshell" % self.device.deviceRoot
+        self.remoteTestRoot = "%s/xpc" % self.device.deviceRoot
         
         
         
