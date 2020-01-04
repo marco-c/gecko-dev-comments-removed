@@ -47,6 +47,8 @@ static const unsigned AST_LIFO_DEFAULT_CHUNK_SIZE = 4096;
 
 
 
+namespace {
+
 class WasmAstExpr;
 
 template <class T>
@@ -467,8 +469,12 @@ class WasmAstConversionOperator final : public WasmAstExpr
     WasmAstExpr* op() const { return op_; }
 };
 
+} 
 
 
+
+
+namespace {
 
 class WasmToken
 {
@@ -1481,9 +1487,12 @@ WasmToken WasmTokenStream::next()
     return fail(begin);
 }
 
+} 
 
 
 
+
+namespace {
 
 struct WasmParseContext
 {
@@ -2212,6 +2221,8 @@ ParseModule(const char16_t* text, LifoAlloc& lifo, UniqueChars* error)
 
     return module;
 }
+
+} 
 
 
 
