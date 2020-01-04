@@ -96,6 +96,10 @@ public:
   void SetCDMProxy(CDMProxy* aProxy) override;
 #endif
 
+  
+  
+  void GetMozDebugReaderData(nsAString& aString);
+
 private:
   bool HasVideo() { return mVideo.mTrackDemuxer; }
   bool HasAudio() { return mAudio.mTrackDemuxer; }
@@ -226,6 +230,7 @@ private:
       , mNumSamplesInput(0)
       , mNumSamplesOutput(0)
       , mNumSamplesOutputTotal(0)
+      , mNumSamplesSkippedTotal(0)
       , mSizeOfQueue(0)
       , mIsHardwareAccelerated(false)
       , mLastStreamSourceID(UINT32_MAX)
@@ -289,6 +294,7 @@ private:
     uint64_t mNumSamplesInput;
     uint64_t mNumSamplesOutput;
     uint64_t mNumSamplesOutputTotal;
+    uint64_t mNumSamplesSkippedTotal;
 
     
     
