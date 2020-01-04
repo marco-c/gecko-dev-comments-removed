@@ -1,0 +1,80 @@
+
+
+
+
+
+package org.mozilla.gecko.tests;
+
+import org.mozilla.gecko.AppConstants;
+import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.GeckoEvent;
+import org.mozilla.gecko.Tab;
+import org.mozilla.gecko.Tabs;
+
+import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+public class testAccessibleCarets extends JavascriptTest {
+    private static final String LOGTAG = "testAccessibleCarets";
+    private static final String TAB_CHANGE_EVENT = "testAccessibleCarets:TabChange";
+
+    private final TabsListener tabsListener;
+
+
+    public testAccessibleCarets() {
+        super("testAccessibleCarets.js");
+
+        tabsListener = new TabsListener();
+    }
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+
+        Tabs.registerOnTabsChangedListener(tabsListener);
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        Tabs.unregisterOnTabsChangedListener(tabsListener);
+
+        super.tearDown();
+    }
+
+    @Override
+    public void testJavascript() throws Exception {
+        
+        if (!AppConstants.NIGHTLY_BUILD) {
+            mAsserter.dumpLog(LOGTAG + " is disabled on non-Nightly builds: returning");
+            return;
+        }
+        super.testJavascript();
+    }
+
+    
+
+
+    private class TabsListener implements Tabs.OnTabsChangedListener {
+        @Override
+        public void onTabChanged(Tab tab, Tabs.TabEvents msg, Object data) {
+            switch (msg) {
+                case STOP:
+                    final JSONObject args = new JSONObject();
+                    try {
+                        args.put("tabId", tab.getId());
+                        args.put("event", msg.toString());
+                    } catch (JSONException e) {
+                        Log.e(LOGTAG, "Error building JSON arguments for " + TAB_CHANGE_EVENT, e);
+                        return;
+                    }
+                    final GeckoEvent event =
+                        GeckoEvent.createBroadcastEvent(TAB_CHANGE_EVENT, args.toString());
+                    GeckoAppShell.sendEventToGecko(event);
+                    break;
+            }
+        }
+    }
+}
