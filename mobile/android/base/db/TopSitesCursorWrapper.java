@@ -486,7 +486,7 @@ public class TopSitesCursorWrapper implements Cursor {
         throw new UnsupportedOperationException();
     }
 
-    
+    @Override
     public void setExtras(Bundle extras) {
         throw new UnsupportedOperationException();
     }
