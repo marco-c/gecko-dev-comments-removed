@@ -1339,14 +1339,7 @@ DateObject::fillLocalTimeSlots()
     int weekday = WeekDay(localTime);
     setReservedSlot(LOCAL_DAY_SLOT, Int32Value(weekday));
 
-    int seconds = yearSeconds % 60;
-    setReservedSlot(LOCAL_SECONDS_SLOT, Int32Value(seconds));
-
-    int minutes = (yearSeconds / 60) % 60;
-    setReservedSlot(LOCAL_MINUTES_SLOT, Int32Value(minutes));
-
-    int hours = (yearSeconds / (60 * 60)) % 24;
-    setReservedSlot(LOCAL_HOURS_SLOT, Int32Value(hours));
+    setReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT, Int32Value(yearSeconds));
 }
 
 inline double
@@ -1547,7 +1540,15 @@ DateObject::getHours_impl(JSContext* cx, const CallArgs& args)
     DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
     dateObj->fillLocalTimeSlots();
 
-    args.rval().set(dateObj->getReservedSlot(LOCAL_HOURS_SLOT));
+    
+    
+    Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
+    if (yearSeconds.isDouble()) {
+        MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
+        args.rval().set(yearSeconds);
+    } else {
+        args.rval().setInt32((yearSeconds.toInt32() / int(SecondsPerHour)) % int(HoursPerDay));
+    }
     return true;
 }
 
@@ -1582,7 +1583,15 @@ DateObject::getMinutes_impl(JSContext* cx, const CallArgs& args)
     DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
     dateObj->fillLocalTimeSlots();
 
-    args.rval().set(dateObj->getReservedSlot(LOCAL_MINUTES_SLOT));
+    
+    
+    Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
+    if (yearSeconds.isDouble()) {
+        MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
+        args.rval().set(yearSeconds);
+    } else {
+        args.rval().setInt32((yearSeconds.toInt32() / int(SecondsPerMinute)) % int(MinutesPerHour));
+    }
     return true;
 }
 
@@ -1613,13 +1622,31 @@ date_getUTCMinutes(JSContext* cx, unsigned argc, Value* vp)
 
 
 
+
+
+
+
+
+
+
+
+
+
  MOZ_ALWAYS_INLINE bool
 DateObject::getUTCSeconds_impl(JSContext* cx, const CallArgs& args)
 {
     DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
     dateObj->fillLocalTimeSlots();
 
-    args.rval().set(dateObj->getReservedSlot(LOCAL_SECONDS_SLOT));
+    
+    
+    Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
+    if (yearSeconds.isDouble()) {
+        MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
+        args.rval().set(yearSeconds);
+    } else {
+        args.rval().setInt32(yearSeconds.toInt32() % int(SecondsPerMinute));
+    }
     return true;
 }
 
@@ -1629,6 +1656,11 @@ date_getUTCSeconds(JSContext* cx, unsigned argc, Value* vp)
     CallArgs args = CallArgsFromVp(argc, vp);
     return CallNonGenericMethod<IsDate, DateObject::getUTCSeconds_impl>(cx, args);
 }
+
+
+
+
+
 
 
 
