@@ -65,24 +65,6 @@ GetAudioChannelsSuperset(uint32_t aChannels1, uint32_t aChannels2);
 
 
 
-
-
-
-
-
-void
-AudioChannelsUpMix(nsTArray<const void*>* aChannelArray,
-                   uint32_t aOutputChannelCount,
-                   const void* aZeroChannel);
-
-
-
-
-
-
-
-
-
 struct DownMixMatrix {
   
   
@@ -124,19 +106,19 @@ gDownMixMatrices[CUSTOM_CHANNEL_LAYOUTS*(CUSTOM_CHANNEL_LAYOUTS - 1)/2] =
 
 
 template<typename T>
-void AudioChannelsDownMix(const nsTArray<const void*>& aChannelArray,
-                     T** aOutputChannels,
-                     uint32_t aOutputChannelCount,
-                     uint32_t aDuration)
+void AudioChannelsDownMix(const nsTArray<const T*>& aChannelArray,
+                          T** aOutputChannels,
+                          uint32_t aOutputChannelCount,
+                          uint32_t aDuration)
 {
   uint32_t inputChannelCount = aChannelArray.Length();
-  const void* const* inputChannels = aChannelArray.Elements();
+  const T* const* inputChannels = aChannelArray.Elements();
   NS_ASSERTION(inputChannelCount > aOutputChannelCount, "Nothing to do");
 
   if (inputChannelCount > 6) {
     
     for (uint32_t o = 0; o < aOutputChannelCount; ++o) {
-      memcpy(aOutputChannels[o], inputChannels[o], aDuration*sizeof(T));
+      PodCopy(aOutputChannels[o], inputChannels[o], aDuration);
     }
     return;
   }
@@ -153,8 +135,7 @@ void AudioChannelsDownMix(const nsTArray<const void*>& aChannelArray,
   for (uint32_t s = 0; s < aDuration; ++s) {
     
     
-    T outputChannels[CUSTOM_CHANNEL_LAYOUTS + 1];
-    memset(outputChannels, 0, sizeof(T)*(CUSTOM_CHANNEL_LAYOUTS));
+    T outputChannels[CUSTOM_CHANNEL_LAYOUTS + 1] = {0};
     for (uint32_t c = 0; c < inputChannelCount; ++c) {
       outputChannels[m.mInputDestination[c]] +=
         m.mInputCoefficient[c]*(static_cast<const T*>(inputChannels[c]))[s];
@@ -171,6 +152,94 @@ void AudioChannelsDownMix(const nsTArray<const void*>& aChannelArray,
   }
 }
 
+
+
+
+
+struct UpMixMatrix {
+  uint8_t mInputDestination[CUSTOM_CHANNEL_LAYOUTS];
+};
+
+static const UpMixMatrix
+gUpMixMatrices[CUSTOM_CHANNEL_LAYOUTS*(CUSTOM_CHANNEL_LAYOUTS - 1)/2] =
+{
+  
+  { { 0, 0 } },
+  { { 0, IGNORE, IGNORE } },
+  { { 0, 0, IGNORE, IGNORE } },
+  { { 0, IGNORE, IGNORE, IGNORE, IGNORE } },
+  { { IGNORE, IGNORE, 0, IGNORE, IGNORE, IGNORE } },
+  
+  { { 0, 1, IGNORE } },
+  { { 0, 1, IGNORE, IGNORE } },
+  { { 0, 1, IGNORE, IGNORE, IGNORE } },
+  { { 0, 1, IGNORE, IGNORE, IGNORE, IGNORE } },
+  
+  { { 0, 1, 2, IGNORE } },
+  { { 0, 1, 2, IGNORE, IGNORE } },
+  { { 0, 1, 2, IGNORE, IGNORE, IGNORE } },
+  
+  { { 0, 1, 2, 3, IGNORE } },
+  { { 0, 1, IGNORE, IGNORE, 2, 3 } },
+  
+  { { 0, 1, 2, 3, 4, IGNORE } }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
+void
+AudioChannelsUpMix(nsTArray<const T*>* aChannelArray,
+                   uint32_t aOutputChannelCount,
+                   const T* aZeroChannel)
+{
+  uint32_t inputChannelCount = aChannelArray->Length();
+  uint32_t outputChannelCount =
+    GetAudioChannelsSuperset(aOutputChannelCount, inputChannelCount);
+  NS_ASSERTION(outputChannelCount > inputChannelCount,
+               "No up-mix needed");
+  MOZ_ASSERT(inputChannelCount > 0, "Bad number of channels");
+  MOZ_ASSERT(outputChannelCount > 0, "Bad number of channels");
+
+  aChannelArray->SetLength(outputChannelCount);
+
+  if (inputChannelCount < CUSTOM_CHANNEL_LAYOUTS &&
+      outputChannelCount <= CUSTOM_CHANNEL_LAYOUTS) {
+    const UpMixMatrix& m = gUpMixMatrices[
+      gMixingMatrixIndexByChannels[inputChannelCount - 1] +
+      outputChannelCount - inputChannelCount - 1];
+
+    const T* outputChannels[CUSTOM_CHANNEL_LAYOUTS];
+
+    for (uint32_t i = 0; i < outputChannelCount; ++i) {
+      uint8_t channelIndex = m.mInputDestination[i];
+      if (channelIndex == IGNORE) {
+        outputChannels[i] = aZeroChannel;
+      } else {
+        outputChannels[i] = aChannelArray->ElementAt(channelIndex);
+      }
+    }
+    for (uint32_t i = 0; i < outputChannelCount; ++i) {
+      aChannelArray->ElementAt(i) = outputChannels[i];
+    }
+    return;
+  }
+
+  for (uint32_t i = inputChannelCount; i < outputChannelCount; ++i) {
+    aChannelArray->ElementAt(i) = aZeroChannel;
+  }
+}
 
 } 
 
