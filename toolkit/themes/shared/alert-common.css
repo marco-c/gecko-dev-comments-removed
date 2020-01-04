@@ -26,6 +26,12 @@
   animation-name: alert-closing-animation;
 }
 
+#alertBox[animate]:not([clicked]):not([closing]):hover {
+  
+
+  opacity: 1 !important;
+}
+
 @keyframes alert-animation {
   from {
     opacity: 0;
