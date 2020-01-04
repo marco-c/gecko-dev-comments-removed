@@ -7,6 +7,7 @@ this.EXPORTED_SYMBOLS = ["PopupNotifications"];
 var Cc = Components.classes, Ci = Components.interfaces, Cu = Components.utils;
 
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 
 const NOTIFICATION_EVENT_DISMISSED = "dismissed";
@@ -20,6 +21,21 @@ const ICON_ATTRIBUTE_SHOWING = "showing";
 const ICON_ANCHOR_ATTRIBUTE = "popupnotificationanchor";
 
 const PREF_SECURITY_DELAY = "security.notification_enable_delay";
+
+
+const TELEMETRY_STAT_OFFERED = 0;
+const TELEMETRY_STAT_ACTION_1 = 1;
+const TELEMETRY_STAT_ACTION_2 = 2;
+const TELEMETRY_STAT_ACTION_3 = 3;
+const TELEMETRY_STAT_ACTION_LAST = 4;
+const TELEMETRY_STAT_DISMISSAL_CLICK_ELSEWHERE = 5;
+const TELEMETRY_STAT_DISMISSAL_LEAVE_PAGE = 6;
+const TELEMETRY_STAT_DISMISSAL_CLOSE_BUTTON = 7;
+const TELEMETRY_STAT_DISMISSAL_NOT_NOW = 8;
+const TELEMETRY_STAT_OPEN_SUBMENU = 10;
+const TELEMETRY_STAT_LEARN_MORE = 11;
+
+const TELEMETRY_STAT_REOPENED_OFFSET = 20;
 
 var popupNotificationsMap = new WeakMap();
 var gNotificationParents = new WeakMap;
@@ -54,6 +70,13 @@ function Notification(id, message, anchorID, mainAction, secondaryActions,
   this.browser = browser;
   this.owner = owner;
   this.options = options || {};
+
+  this._dismissed = false;
+  this.wasDismissed = false;
+  this.recordedTelemetryStats = new Set();
+  this.isPrivate = PrivateBrowsingUtils.isWindowPrivate(
+                                        this.browser.ownerDocument.defaultView);
+  this.timeCreated = this.owner.window.performance.now();
 }
 
 Notification.prototype = {
@@ -67,6 +90,20 @@ Notification.prototype = {
   owner: null,
   options: null,
   timeShown: null,
+
+  
+
+
+  set dismissed(value) {
+    this._dismissed = value;
+    if (value) {
+      
+      this.wasDismissed = true;
+    }
+  },
+  get dismissed() {
+    return this._dismissed;
+  },
 
   
 
@@ -95,7 +132,45 @@ Notification.prototype = {
 
   reshow: function() {
     this.owner._reshowNotifications(this.anchorElement, this.browser);
-  }
+  },
+
+  
+
+
+  _recordTelemetry(histogramId, value) {
+    if (this.isPrivate) {
+      
+      
+      
+      
+      
+      
+      
+      return;
+    }
+    let histogram = Services.telemetry.getKeyedHistogramById(histogramId);
+    histogram.add("(all)", value);
+    histogram.add(this.id, value);
+  },
+
+  
+
+
+
+
+
+
+
+
+  _recordTelemetryStat(value) {
+    if (this.wasDismissed) {
+      value += TELEMETRY_STAT_REOPENED_OFFSET;
+    }
+    if (!this.recordedTelemetryStats.has(value)) {
+      this.recordedTelemetryStats.add(value);
+      this._recordTelemetry("POPUP_NOTIFICATION_STATS", value);
+    }
+  },
 };
 
 
@@ -418,6 +493,12 @@ PopupNotifications.prototype = {
         let self = this;
         
         
+        
+        
+        
+        this.nextDismissReason = TELEMETRY_STAT_DISMISSAL_LEAVE_PAGE;
+        
+        
         this.window.setTimeout(function () {
           self._update();
         }, 0);
@@ -465,7 +546,11 @@ PopupNotifications.prototype = {
   
 
 
-  _dismiss: function PopupNotifications_dismiss() {
+  _dismiss: function PopupNotifications_dismiss(telemetryReason) {
+    if (telemetryReason) {
+      this.nextDismissReason = telemetryReason;
+    }
+
     let browser = this.panel.firstChild &&
                   this.panel.firstChild.notification.browser;
     this.panel.hidePopup();
@@ -546,17 +631,21 @@ PopupNotifications.prototype = {
       popupnotification.setAttribute("label", n.message);
       popupnotification.setAttribute("id", popupnotificationID);
       popupnotification.setAttribute("popupid", n.id);
-      popupnotification.setAttribute("closebuttoncommand", "PopupNotifications._dismiss();");
+      popupnotification.setAttribute("closebuttoncommand", `PopupNotifications._dismiss(${TELEMETRY_STAT_DISMISSAL_CLOSE_BUTTON});`);
       if (n.mainAction) {
         popupnotification.setAttribute("buttonlabel", n.mainAction.label);
         popupnotification.setAttribute("buttonaccesskey", n.mainAction.accessKey);
-        popupnotification.setAttribute("buttoncommand", "PopupNotifications._onButtonCommand(event);");
+        popupnotification.setAttribute("buttoncommand", "PopupNotifications._onButtonEvent(event, 'buttoncommand');");
+        popupnotification.setAttribute("buttonpopupshown", "PopupNotifications._onButtonEvent(event, 'buttonpopupshown');");
+        popupnotification.setAttribute("learnmoreclick", "PopupNotifications._onButtonEvent(event, 'learnmoreclick');");
         popupnotification.setAttribute("menucommand", "PopupNotifications._onMenuCommand(event);");
-        popupnotification.setAttribute("closeitemcommand", "PopupNotifications._dismiss();event.stopPropagation();");
+        popupnotification.setAttribute("closeitemcommand", `PopupNotifications._dismiss(${TELEMETRY_STAT_DISMISSAL_NOT_NOW});event.stopPropagation();`);
       } else {
         popupnotification.removeAttribute("buttonlabel");
         popupnotification.removeAttribute("buttonaccesskey");
         popupnotification.removeAttribute("buttoncommand");
+        popupnotification.removeAttribute("buttonpopupshown");
+        popupnotification.removeAttribute("learnmoreclick");
         popupnotification.removeAttribute("menucommand");
         popupnotification.removeAttribute("closeitemcommand");
       }
@@ -588,6 +677,8 @@ PopupNotifications.prototype = {
       popupnotification.notification = n;
 
       if (n.secondaryActions) {
+        let telemetryStatId = TELEMETRY_STAT_ACTION_2;
+
         n.secondaryActions.forEach(function (a) {
           let item = doc.createElementNS(XUL_NS, "menuitem");
           item.setAttribute("label", a.label);
@@ -596,6 +687,13 @@ PopupNotifications.prototype = {
           item.action = a;
 
           popupnotification.appendChild(item);
+
+          
+          
+          item.action.telemetryStatId = telemetryStatId;
+          if (telemetryStatId < TELEMETRY_STAT_ACTION_LAST) {
+            telemetryStatId++;
+          }
         }, this);
 
         if (n.options.hideNotNow) {
@@ -659,8 +757,17 @@ PopupNotifications.prototype = {
       this.panel.setAttribute("popupid", this.panel.firstChild.getAttribute("popupid"));
       notificationsToShow.forEach(function (n) {
         
+        
+        
+        n._recordTelemetryStat(TELEMETRY_STAT_OFFERED);
+        
         n.timeShown = this.window.performance.now();
       }, this);
+
+      
+      
+      this.nextDismissReason = TELEMETRY_STAT_DISMISSAL_CLICK_ELSEWHERE;
+
       this.panel.openPopup(anchorElement, "bottomcenter topleft");
       notificationsToShow.forEach(function (n) {
         this._fireCallback(n, NOTIFICATION_EVENT_SHOWN);
@@ -981,6 +1088,16 @@ PopupNotifications.prototype = {
 
       
       
+      let timeSinceShown = this.window.performance.now() - notificationObj.timeShown;
+      if (!notificationObj.wasDismissed &&
+          !notificationObj.recordedTelemetryMainAction) {
+        notificationObj._recordTelemetry("POPUP_NOTIFICATION_DISMISSAL_MS",
+                                         timeSinceShown);
+      }
+      notificationObj._recordTelemetryStat(this.nextDismissReason);
+
+      
+      
       if (notificationObj.options.removeOnDismissal) {
         this._remove(notificationObj);
       } else {
@@ -990,7 +1107,7 @@ PopupNotifications.prototype = {
     }, this);
   },
 
-  _onButtonCommand: function PopupNotifications_onButtonCommand(event) {
+  _onButtonEvent(event, type) {
     
     
     
@@ -1002,27 +1119,42 @@ PopupNotifications.prototype = {
       notificationEl = parent;
 
     if (!notificationEl)
-      throw "PopupNotifications_onButtonCommand: couldn't find notification element";
+      throw "PopupNotifications._onButtonEvent: couldn't find notification element";
 
     if (!notificationEl.notification)
-      throw "PopupNotifications_onButtonCommand: couldn't find notification";
+      throw "PopupNotifications._onButtonEvent: couldn't find notification";
 
     let notification = notificationEl.notification;
-    let timeSinceShown = this.window.performance.now() - notification.timeShown;
 
-    
-    if (!notification.timeMainActionFirstTriggered) {
-      notification.timeMainActionFirstTriggered = timeSinceShown;
-      Services.telemetry.getHistogramById("POPUP_NOTIFICATION_MAINACTION_TRIGGERED_MS").
-                         add(timeSinceShown);
+    if (type == "buttonpopupshown") {
+      notification._recordTelemetryStat(TELEMETRY_STAT_OPEN_SUBMENU);
+      return;
     }
 
+    if (type == "learnmoreclick") {
+      notification._recordTelemetryStat(TELEMETRY_STAT_LEARN_MORE);
+      return;
+    }
+
+    
+    
+    let timeSinceCreated = this.window.performance.now() - notification.timeCreated;
+    if (!notification.recordedTelemetryMainAction) {
+      notification.recordedTelemetryMainAction = true;
+      notification._recordTelemetry("POPUP_NOTIFICATION_MAIN_ACTION_MS",
+                                    timeSinceCreated);
+    }
+
+    let timeSinceShown = this.window.performance.now() - notification.timeShown;
     if (timeSinceShown < this.buttonDelay) {
-      Services.console.logStringMessage("PopupNotifications_onButtonCommand: " +
+      Services.console.logStringMessage("PopupNotifications._onButtonEvent: " +
                                         "Button click happened before the security delay: " +
                                         timeSinceShown + "ms");
       return;
     }
+
+    notification._recordTelemetryStat(TELEMETRY_STAT_ACTION_1);
+
     try {
       notification.mainAction.callback.call();
     } catch(error) {
@@ -1044,6 +1176,9 @@ PopupNotifications.prototype = {
       throw "menucommand target has no associated action/notification";
 
     event.stopPropagation();
+
+    target.notification._recordTelemetryStat(target.action.telemetryStatId);
+
     try {
       target.action.callback.call();
     } catch(error) {
