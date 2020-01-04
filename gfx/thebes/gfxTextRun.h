@@ -717,7 +717,7 @@ private:
 
     
     
-    AutoTArray<GlyphRun,1>        mGlyphRuns;
+    nsAutoTArray<GlyphRun,1>        mGlyphRuns;
 
     void             *mUserData;
     gfxFontGroup     *mFontGroup; 

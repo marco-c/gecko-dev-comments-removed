@@ -112,7 +112,7 @@ PowerManagerService::Notify(const WakeLockInformation& aWakeLockInfo)
 
 
 
-  AutoTArray<nsCOMPtr<nsIDOMMozWakeLockListener>, 2> listeners(mWakeLockListeners);
+  nsAutoTArray<nsCOMPtr<nsIDOMMozWakeLockListener>, 2> listeners(mWakeLockListeners);
 
   for (uint32_t i = 0; i < listeners.Length(); ++i) {
     listeners[i]->Callback(aWakeLockInfo.topic(), state);

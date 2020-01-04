@@ -87,7 +87,7 @@ private:
 
 
 
-  AutoTArray<TimeStamp, kMaxFrames> mFrameTimestamps;
+  nsAutoTArray<TimeStamp, kMaxFrames> mFrameTimestamps;
   int mWriteIndex;      
   int mIteratorIndex;   
   const char* mFPSName;

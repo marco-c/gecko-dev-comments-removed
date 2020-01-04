@@ -32,14 +32,14 @@ nsTArray_base<Alloc, Copy>::GetAutoArrayBufferUnsafe(size_t aElemAlign) const
   
 
   const void* autoBuf =
-    &reinterpret_cast<const AutoTArray<nsTArray<uint32_t>, 1>*>(this)->mAutoBuf;
+    &reinterpret_cast<const nsAutoArrayBase<nsTArray<uint32_t>, 1>*>(this)->mAutoBuf;
 
   
   
 
   static_assert(sizeof(void*) != 4 ||
                 (MOZ_ALIGNOF(mozilla::AlignedElem<8>) == 8 &&
-                 sizeof(AutoTArray<mozilla::AlignedElem<8>, 1>) ==
+                 sizeof(nsAutoTArray<mozilla::AlignedElem<8>, 1>) ==
                    sizeof(void*) + sizeof(nsTArrayHeader) +
                    4 + sizeof(mozilla::AlignedElem<8>)),
                 "auto array padding wasn't what we expected");
@@ -403,7 +403,7 @@ nsTArray_base<Alloc, Copy>::SwapArrayElements(nsTArray_base<Allocator,
   
   
   
-  AutoTArray<nsTArray_Impl<uint8_t, ActualAlloc>, 64> temp;
+  nsAutoArrayBase<nsTArray_Impl<uint8_t, ActualAlloc>, 64> temp;
   if (!ActualAlloc::Successful(temp.template EnsureCapacity<ActualAlloc>(smallerLength,
                                                                          aElemSize))) {
     return ActualAlloc::FailureResult();

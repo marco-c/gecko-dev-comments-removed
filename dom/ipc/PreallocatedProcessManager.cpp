@@ -72,7 +72,7 @@ private:
 
   
   
-  AutoTArray<RefPtr<ContentParent>, 4> mSpareProcesses;
+  nsAutoTArray<RefPtr<ContentParent>, 4> mSpareProcesses;
 
   
   bool mIsNuwaReady;

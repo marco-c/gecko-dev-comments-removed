@@ -605,7 +605,7 @@ protected:
   nsClassHashtable<nsISupportsHashKey,
                    nsCOMArray<nsMutationReceiver> >  mTransientReceivers;
   
-  AutoTArray<nsDOMMutationRecord*, 4>              mCurrentMutations;
+  nsAutoTArray<nsDOMMutationRecord*, 4>              mCurrentMutations;
   
   
   RefPtr<nsDOMMutationRecord>                      mFirstPendingMutation;
@@ -621,11 +621,11 @@ protected:
   uint64_t                                           mId;
 
   static uint64_t                                    sCount;
-  static AutoTArray<RefPtr<nsDOMMutationObserver>, 4>* sScheduledMutationObservers;
+  static nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>* sScheduledMutationObservers;
   static nsDOMMutationObserver*                      sCurrentObserver;
 
   static uint32_t                                    sMutationLevel;
-  static AutoTArray<AutoTArray<RefPtr<nsDOMMutationObserver>, 4>, 4>*
+  static nsAutoTArray<nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>, 4>*
                                                      sCurrentlyHandlingObservers;
 };
 
@@ -740,7 +740,7 @@ private:
   
   static nsAutoMutationBatch* sCurrentBatch;
   nsAutoMutationBatch* mPreviousBatch;
-  AutoTArray<BatchObserver, 2> mObservers;
+  nsAutoTArray<BatchObserver, 2> mObservers;
   nsTArray<nsCOMPtr<nsIContent> > mRemovedNodes;
   nsTArray<nsCOMPtr<nsIContent> > mAddedNodes;
   nsINode* mBatchTarget;
@@ -907,7 +907,7 @@ private:
   };
 
   static nsAutoAnimationMutationBatch* sCurrentBatch;
-  AutoTArray<nsDOMMutationObserver*, 2> mObservers;
+  nsAutoTArray<nsDOMMutationObserver*, 2> mObservers;
   typedef nsTArray<Entry> EntryArray;
   nsClassHashtable<nsPtrHashKey<nsINode>, EntryArray> mEntryTable;
   

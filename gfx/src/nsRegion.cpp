@@ -305,7 +305,7 @@ void nsRegion::SimplifyOutwardByArea(uint32_t aThreshold)
   pixman_box32_t *topRects = boxes;
 
   
-  AutoTArray<pixman_box32_t, 10> tmpStorage;
+  nsAutoTArray<pixman_box32_t, 10> tmpStorage;
   tmpStorage.SetCapacity(n);
   pixman_box32_t *tmpRect = tmpStorage.Elements();
 

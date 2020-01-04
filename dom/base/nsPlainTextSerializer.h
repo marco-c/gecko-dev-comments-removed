@@ -199,10 +199,10 @@ private:
   RefPtr<mozilla::dom::Element> mElement;
 
   
-  AutoTArray<bool, 8> mHasWrittenCellsForRow;
+  nsAutoTArray<bool, 8> mHasWrittenCellsForRow;
   
   
-  AutoTArray<bool, 8> mIsInCiteBlockquote;
+  nsAutoTArray<bool, 8> mIsInCiteBlockquote;
 
   
   nsAString*            mOutputString;

@@ -553,7 +553,7 @@ private:
 
   
   
-  AutoTArray<SheetLoadData*, 8> mParsingDatas;
+  nsAutoTArray<SheetLoadData*, 8> mParsingDatas;
 
   
   

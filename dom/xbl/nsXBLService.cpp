@@ -188,7 +188,7 @@ private:
   ~nsXBLStreamListener();
 
   nsCOMPtr<nsIStreamListener> mInner;
-  AutoTArray<nsXBLBindingRequest*, 8> mBindingRequests;
+  nsAutoTArray<nsXBLBindingRequest*, 8> mBindingRequests;
 
   nsCOMPtr<nsIWeakReference> mBoundDocument;
   nsCOMPtr<nsIXMLContentSink> mSink; 
@@ -647,7 +647,7 @@ nsXBLService::GetBinding(nsIContent* aBoundElement, nsIURI* aURI,
                          bool* aIsReady, nsXBLBinding** aResult)
 {
   
-  AutoTArray<nsCOMPtr<nsIURI>, 6> uris;
+  nsAutoTArray<nsCOMPtr<nsIURI>, 6> uris;
   return GetBinding(aBoundElement, aURI, aPeekOnly, aOriginPrincipal, aIsReady,
                     aResult, uris);
 }

@@ -150,7 +150,7 @@ public:
     }
 
   private:
-    AutoTArray<PermissionEntry, 1> mPermissions;
+    nsAutoTArray<PermissionEntry, 1> mPermissions;
   };
 
   

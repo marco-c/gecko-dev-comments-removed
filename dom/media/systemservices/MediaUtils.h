@@ -321,7 +321,7 @@ private:
     static uint32_t counter = 0;
     return ++counter;
   };
-  AutoTArray<Element, 3> mElements;
+  nsAutoTArray<Element, 3> mElements;
 };
 
 

@@ -119,7 +119,7 @@ protected:
 
   nsWeakPtr mOwnerWindow;
   
-  AutoTArray<JS::Heap<JSObject*>, 2> mJSChannels;
+  nsAutoTArray<JS::Heap<JSObject*>, 2> mJSChannels;
 
   
   

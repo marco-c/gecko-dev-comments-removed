@@ -155,7 +155,7 @@ protected:
   nsCOMPtr<nsINode> mCommonParent;
 
   
-  AutoTArray<int32_t, 8> mIndexes;
+  nsAutoTArray<int32_t, 8> mIndexes;
 
   
   
@@ -1058,8 +1058,8 @@ nsContentIterator::PositionAt(nsINode* aCurNode)
 
   
   
-  AutoTArray<nsINode*, 8>     oldParentStack;
-  AutoTArray<int32_t, 8>      newIndexes;
+  nsAutoTArray<nsINode*, 8>     oldParentStack;
+  nsAutoTArray<int32_t, 8>      newIndexes;
 
   
   
@@ -1213,8 +1213,8 @@ protected:
   RefPtr<nsRange> mRange;
 
   
-  AutoTArray<nsIContent*, 8> mEndNodes;
-  AutoTArray<int32_t, 8>     mEndOffsets;
+  nsAutoTArray<nsIContent*, 8> mEndNodes;
+  nsAutoTArray<int32_t, 8>     mEndOffsets;
 };
 
 NS_IMPL_ADDREF_INHERITED(nsContentSubtreeIterator, nsContentIterator)

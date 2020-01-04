@@ -157,7 +157,7 @@ ProfileUnlockerWin::Unlock(uint32_t aSeverity)
   }
 
   
-  AutoTArray<RM_PROCESS_INFO, 1> info;
+  nsAutoTArray<RM_PROCESS_INFO, 1> info;
   UINT numEntries;
   UINT numEntriesNeeded = 1;
   error = ERROR_MORE_DATA;

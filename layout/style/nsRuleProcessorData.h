@@ -336,7 +336,7 @@ struct MOZ_STACK_CLASS TreeMatchContext {
   nsRuleWalker::VisitedHandlingType mVisitedHandling;
 
   
-  AutoTArray<mozilla::dom::Element*, 1> mScopes;
+  nsAutoTArray<mozilla::dom::Element*, 1> mScopes;
  public:
   
   nsIDocument* const mDocument;
@@ -380,7 +380,7 @@ struct MOZ_STACK_CLASS TreeMatchContext {
 
   
   
-  AutoTArray<mozilla::dom::Element*, 1> mStyleScopes;
+  nsAutoTArray<mozilla::dom::Element*, 1> mStyleScopes;
 
   
   mozilla::dom::Element* mCurrentStyleScope;

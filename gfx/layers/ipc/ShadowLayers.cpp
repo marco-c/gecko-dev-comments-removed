@@ -387,7 +387,7 @@ ShadowLayerForwarder::UseTextures(CompositableClient* aCompositable,
 {
   MOZ_ASSERT(aCompositable && aCompositable->IsConnected());
 
-  AutoTArray<TimedTexture,4> textures;
+  nsAutoTArray<TimedTexture,4> textures;
 
   for (auto& t : aTextures) {
     MOZ_ASSERT(t.mTextureClient);
@@ -668,7 +668,7 @@ ShadowLayerForwarder::EndTransaction(InfallibleTArray<EditReply>* aReplies,
     mTxn->AddEdit(OpSetLayerAttributes(nullptr, Shadow(shadow), attrs));
   }
 
-  AutoTArray<Edit, 10> cset;
+  AutoInfallibleTArray<Edit, 10> cset;
   size_t nCsets = mTxn->mCset.size() + mTxn->mPaints.size();
   MOZ_ASSERT(nCsets > 0 || mTxn->RotationChanged(), "should have bailed by now");
 

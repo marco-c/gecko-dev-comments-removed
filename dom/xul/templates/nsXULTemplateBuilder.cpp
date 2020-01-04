@@ -2358,7 +2358,7 @@ nsXULTemplateBuilder::AddSimpleRuleBindings(nsTemplateRule* aRule,
     
     
 
-    AutoTArray<nsIContent*, 8> elements;
+    nsAutoTArray<nsIContent*, 8> elements;
 
     if (elements.AppendElement(aElement) == nullptr)
         return NS_ERROR_OUT_OF_MEMORY;

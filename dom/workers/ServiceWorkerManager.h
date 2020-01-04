@@ -205,7 +205,7 @@ private:
   
   
   
-  AutoTArray<ServiceWorker*, 1> mInstances;
+  nsAutoTArray<ServiceWorker*, 1> mInstances;
 
   RefPtr<ServiceWorkerPrivate> mServiceWorkerPrivate;
   bool mSkipWaitingFlag;

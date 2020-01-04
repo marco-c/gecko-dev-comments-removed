@@ -617,7 +617,7 @@ public:
     
     nsCOMPtr<nsITransferable> mTransferable;
     
-    AutoTArray<mozilla::FontRange, 1> mFontRanges;
+    nsAutoTArray<mozilla::FontRange, 1> mFontRanges;
     
     bool mReversed;
     

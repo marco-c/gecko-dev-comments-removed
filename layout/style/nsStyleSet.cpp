@@ -1025,7 +1025,7 @@ nsStyleSet::AddImportantRules(nsRuleNode* aCurrLevelNode,
   NS_ASSERTION(aCurrLevelNode &&
                aCurrLevelNode != aLastPrevLevelNode, "How did we get here?");
 
-  AutoTArray<nsIStyleRule*, 16> importantRules;
+  nsAutoTArray<nsIStyleRule*, 16> importantRules;
   for (nsRuleNode *node = aCurrLevelNode; node != aLastPrevLevelNode;
        node = node->GetParent()) {
     
@@ -1523,7 +1523,7 @@ nsStyleSet::RuleNodeWithReplacement(Element* aElement,
 
   
   
-  AutoTArray<RuleNodeInfo, 30> rules;
+  nsAutoTArray<RuleNodeInfo, 30> rules;
   for (nsRuleNode* ruleNode = aOldRuleNode; !ruleNode->IsRoot();
        ruleNode = ruleNode->GetParent()) {
     RuleNodeInfo* curRule = rules.AppendElement();
@@ -2474,7 +2474,7 @@ nsStyleSet::MediumFeaturesChanged()
 bool
 nsStyleSet::EnsureUniqueInnerOnCSSSheets()
 {
-  AutoTArray<CSSStyleSheet*, 32> queue;
+  nsAutoTArray<CSSStyleSheet*, 32> queue;
   for (SheetType type : gCSSSheetTypes) {
     for (CSSStyleSheet* sheet : mSheets[type]) {
       queue.AppendElement(sheet);

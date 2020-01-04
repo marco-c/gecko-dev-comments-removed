@@ -264,7 +264,7 @@ protected:
         enum { ALLOW_MEMMOVE = false };
     private:
         
-        AutoTArray<nsCountedRef<FcPattern>,1> mFonts;
+        nsAutoTArray<nsCountedRef<FcPattern>,1> mFonts;
     };
 
     class LangSupportEntry : public CopiedFcStrEntry {

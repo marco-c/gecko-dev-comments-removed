@@ -43,7 +43,7 @@ private:
   uint32_t mNumberOfScreens;
 
     
-  AutoTArray<ScreenListItem, 8> mScreenList;
+  nsAutoTArray<ScreenListItem, 8> mScreenList;
 
 };
 

@@ -1310,7 +1310,7 @@ nsFrameConstructorState::ProcessFrameInsertions(nsAbsoluteItems& aFrameItems,
     nsIFrame* firstNewFrame = aFrameItems.FirstChild();
 
     
-    AutoTArray<nsIFrame*, 20> firstNewFrameAncestors;
+    nsAutoTArray<nsIFrame*, 20> firstNewFrameAncestors;
     nsIFrame* notCommonAncestor = nullptr;
     if (lastChild) {
       notCommonAncestor = nsLayoutUtils::FillAncestors(firstNewFrame,
@@ -1328,7 +1328,7 @@ nsFrameConstructorState::ProcessFrameInsertions(nsAbsoluteItems& aFrameItems,
     } else {
       
       
-      AutoTArray<nsIFrame*, 128> children;
+      nsAutoTArray<nsIFrame*, 128> children;
       for (nsIFrame* f = childList.FirstChild(); f != lastChild;
            f = f->GetNextSibling()) {
         children.AppendElement(f);
@@ -2840,7 +2840,7 @@ nsCSSFrameConstructor::ConstructAnonymousContentForCanvas(nsFrameConstructorStat
 {
   NS_ASSERTION(aFrame->GetType() == nsGkAtoms::canvasFrame, "aFrame should be canvas frame!");
 
-  AutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> anonymousItems;
+  nsAutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> anonymousItems;
   GetAnonymousContent(aDocElement, aFrame, anonymousItems);
   if (anonymousItems.IsEmpty()) {
     return;
@@ -3968,7 +3968,7 @@ nsCSSFrameConstructor::CreateAnonymousFrames(nsFrameConstructorState& aState,
                                              PendingBinding*          aPendingBinding,
                                              nsFrameItems&            aChildItems)
 {
-  AutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> newAnonymousItems;
+  nsAutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> newAnonymousItems;
   nsresult rv = GetAnonymousContent(aParent, aParentFrame, newAnonymousItems);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -10381,7 +10381,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
   
   
   
-  AutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> anonymousItems;
+  nsAutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> anonymousItems;
   GetAnonymousContent(aContent, aPossiblyLeafFrame, anonymousItems);
 #ifdef DEBUG
   for (uint32_t i = 0; i < anonymousItems.Length(); ++i) {

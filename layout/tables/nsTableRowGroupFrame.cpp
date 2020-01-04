@@ -1433,7 +1433,7 @@ nsTableRowGroupFrame::AppendFrames(ChildListID     aListID,
 
   
   
-  AutoTArray<nsTableRowFrame*, 8> rows;
+  nsAutoTArray<nsTableRowFrame*, 8> rows;
   for (nsFrameList::Enumerator e(aFrameList); !e.AtEnd(); e.Next()) {
     nsTableRowFrame *rowFrame = do_QueryFrame(e.get());
     NS_ASSERTION(rowFrame, "Unexpected frame; frame constructor screwed up");

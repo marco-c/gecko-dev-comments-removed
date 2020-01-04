@@ -137,7 +137,7 @@ protected:
     
     virtual nsresult
     CopyFontTable(uint32_t aTableTag,
-                  nsTArray<uint8_t>& aBuffer) override;
+                  FallibleTArray<uint8_t>& aBuffer) override;
 
     
     void MaybeReleaseFTFace();

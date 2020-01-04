@@ -383,7 +383,7 @@ struct ContainerLayerProperties : public LayerPropertiesBase
   }
 
   
-  AutoTArray<UniquePtr<LayerPropertiesBase>,1> mChildren;
+  nsAutoTArray<UniquePtr<LayerPropertiesBase>,1> mChildren;
   float mPreXScale;
   float mPreYScale;
 };

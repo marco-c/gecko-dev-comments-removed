@@ -641,7 +641,7 @@ struct nsStyleImageLayers {
   
   
   
-  AutoTArray<Layer, 1> mLayers;
+  nsAutoTArray<Layer, 1> mLayers;
 
   const Layer& BottomLayer() const { return mLayers[mImageCount - 1]; }
 
@@ -2392,7 +2392,7 @@ struct nsStyleDisplay
                                 
                                 
                                 
-  AutoTArray<nsString, 1> mWillChange;
+  nsAutoTArray<nsString, 1> mWillChange;
 
   uint8_t mTouchAction;         
   uint8_t mScrollBehavior;      
@@ -2415,7 +2415,7 @@ struct nsStyleDisplay
   nsStyleCoord mChildPerspective; 
   nsStyleCoord mPerspectiveOrigin[2]; 
 
-  AutoTArray<mozilla::StyleTransition, 1> mTransitions; 
+  nsAutoTArray<mozilla::StyleTransition, 1> mTransitions; 
   
   
   uint32_t mTransitionTimingFunctionCount,
@@ -2423,7 +2423,7 @@ struct nsStyleDisplay
            mTransitionDelayCount,
            mTransitionPropertyCount;
 
-  AutoTArray<mozilla::StyleAnimation, 1> mAnimations; 
+  nsAutoTArray<mozilla::StyleAnimation, 1> mAnimations; 
   
   
   uint32_t mAnimationTimingFunctionCount,

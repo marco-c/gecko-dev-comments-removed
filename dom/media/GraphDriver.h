@@ -519,7 +519,7 @@ private:
 
   nsCOMPtr<nsIThread> mInitShutdownThread;
   
-  AutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
+  nsAutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
   
   dom::AudioChannel mAudioChannel;
   

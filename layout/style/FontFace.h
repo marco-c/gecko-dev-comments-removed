@@ -55,14 +55,14 @@ public:
 
     virtual void SetLoadState(UserFontLoadState aLoadState) override;
     virtual void GetUserFontSets(nsTArray<gfxUserFontSet*>& aResult) override;
-    const AutoTArray<FontFace*,1>& GetFontFaces() { return mFontFaces; }
+    const nsAutoTArray<FontFace*,1>& GetFontFaces() { return mFontFaces; }
 
   protected:
     
     
     
     
-    AutoTArray<FontFace*,1> mFontFaces;
+    nsAutoTArray<FontFace*,1> mFontFaces;
   };
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS

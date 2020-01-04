@@ -165,8 +165,8 @@ levenshteinDistance(const nsAString &aStringS,
     
 
     
-    AutoTArray<int, nsAutoString::kDefaultStorageSize> row1;
-    AutoTArray<int, nsAutoString::kDefaultStorageSize> row2;
+    nsAutoTArray<int, nsAutoString::kDefaultStorageSize> row1;
+    nsAutoTArray<int, nsAutoString::kDefaultStorageSize> row2;
 
     
     int *prevRow = row1.AppendElements(sLen + 1);

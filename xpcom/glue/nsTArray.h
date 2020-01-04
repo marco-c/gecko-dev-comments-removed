@@ -103,6 +103,13 @@ struct TileClient;
 
 
 
+
+
+
+
+
+
+
 struct nsTArrayFallibleResult
 {
   
@@ -2201,51 +2208,47 @@ public:
 
 
 
-template<class E, size_t N>
-class MOZ_NON_MEMMOVABLE AutoTArray : public nsTArray<E>
+template<class TArrayBase, size_t N>
+class MOZ_NON_MEMMOVABLE nsAutoArrayBase : public TArrayBase
 {
-  static_assert(N != 0, "AutoTArray<E, 0> should be specialized");
+  static_assert(N != 0, "nsAutoArrayBase<TArrayBase, 0> should be specialized");
 public:
-  typedef AutoTArray<E, N> self_type;
-  typedef nsTArray<E> base_type;
+  typedef nsAutoArrayBase<TArrayBase, N> self_type;
+  typedef TArrayBase base_type;
   typedef typename base_type::Header Header;
   typedef typename base_type::elem_type elem_type;
-
-  AutoTArray()
-  {
-    Init();
-  }
-
-  AutoTArray(const self_type& aOther)
-  {
-    Init();
-    this->AppendElements(aOther);
-  }
-
-  explicit AutoTArray(const base_type& aOther)
-  {
-    Init();
-    this->AppendElements(aOther);
-  }
-
-  template<typename Allocator>
-  explicit AutoTArray(nsTArray_Impl<elem_type, Allocator>&& aOther)
-  {
-    Init();
-    this->SwapElements(aOther);
-  }
-
-  self_type& operator=(const self_type& aOther)
-  {
-    base_type::operator=(aOther);
-    return *this;
-  }
 
   template<typename Allocator>
   self_type& operator=(const nsTArray_Impl<elem_type, Allocator>& aOther)
   {
     base_type::operator=(aOther);
     return *this;
+  }
+
+protected:
+  nsAutoArrayBase() { Init(); }
+
+  
+  
+  
+  
+  nsAutoArrayBase(const self_type& aOther)
+  {
+    Init();
+    this->AppendElements(aOther);
+  }
+
+  explicit nsAutoArrayBase(const TArrayBase &aOther)
+  {
+    Init();
+    this->AppendElements(aOther);
+  }
+
+  template<typename Allocator>
+  explicit nsAutoArrayBase(nsTArray_Impl<elem_type, Allocator>&& aOther)
+  {
+    Init();
+    this->SwapElements(aOther);
   }
 
 private:
@@ -2298,15 +2301,93 @@ private:
 
 
 
-template<class E>
-class AutoTArray<E, 0> : public nsTArray<E>
+template<class TArrayBase>
+class nsAutoArrayBase<TArrayBase, 0> : public TArrayBase
 {
+};
+
+
+
+
+
+
+
+
+
+template<class E, size_t N>
+class nsAutoTArray : public nsAutoArrayBase<nsTArray<E>, N>
+{
+  typedef nsAutoTArray<E, N> self_type;
+  typedef nsAutoArrayBase<nsTArray<E>, N> Base;
+
+public:
+  nsAutoTArray() {}
+
+  template<typename Allocator>
+  explicit nsAutoTArray(const nsTArray_Impl<E, Allocator>& aOther)
+  {
+    Base::AppendElements(aOther);
+  }
+  template<typename Allocator>
+  explicit nsAutoTArray(nsTArray_Impl<E, Allocator>&& aOther)
+    : Base(mozilla::Move(aOther))
+  {
+  }
+
+  template<typename Allocator>
+  self_type& operator=(const nsTArray_Impl<E, Allocator>& other)
+  {
+    Base::operator=(other);
+    return *this;
+  }
+
+  operator const AutoFallibleTArray<E, N>&() const
+  {
+    return *reinterpret_cast<const AutoFallibleTArray<E, N>*>(this);
+  }
+};
+
+
+
+
+
+template<class E, size_t N>
+class AutoFallibleTArray : public nsAutoArrayBase<FallibleTArray<E>, N>
+{
+  typedef AutoFallibleTArray<E, N> self_type;
+  typedef nsAutoArrayBase<FallibleTArray<E>, N> Base;
+
+public:
+  AutoFallibleTArray() {}
+
+  template<typename Allocator>
+  explicit AutoFallibleTArray(const nsTArray_Impl<E, Allocator>& aOther)
+  {
+    Base::AppendElements(aOther);
+  }
+  template<typename Allocator>
+  explicit AutoFallibleTArray(nsTArray_Impl<E, Allocator>&& aOther)
+    : Base(mozilla::Move(aOther))
+  {
+  }
+
+  template<typename Allocator>
+  self_type& operator=(const nsTArray_Impl<E, Allocator>& other)
+  {
+    Base::operator=(other);
+    return *this;
+  }
+
+  operator const nsAutoTArray<E, N>&() const
+  {
+    return *reinterpret_cast<const nsAutoTArray<E, N>*>(this);
+  }
 };
 
 template<class E, size_t N>
-struct nsTArray_CopyChooser<AutoTArray<E, N>>
+struct nsTArray_CopyChooser<nsAutoTArray<E, N>>
 {
-  typedef nsTArray_CopyWithConstructors<AutoTArray<E, N>> Type;
+  typedef nsTArray_CopyWithConstructors<nsAutoTArray<E, N>> Type;
 };
 
 
@@ -2322,9 +2403,9 @@ struct nsTArray_CopyChooser<AutoTArray<E, N>>
 
 
 
-static_assert(sizeof(AutoTArray<uint32_t, 2>) ==
+static_assert(sizeof(nsAutoTArray<uint32_t, 2>) ==
               sizeof(void*) + sizeof(nsTArrayHeader) + sizeof(uint32_t) * 2,
-              "AutoTArray shouldn't contain any extra padding, "
+              "nsAutoTArray shouldn't contain any extra padding, "
               "see the comment");
 
 

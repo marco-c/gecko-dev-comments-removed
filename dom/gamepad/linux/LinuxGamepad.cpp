@@ -77,7 +77,7 @@ private:
   struct udev_monitor* mMonitor;
   guint mMonitorSourceID;
   
-  AutoTArray<Gamepad,4> mGamepads;
+  nsAutoTArray<Gamepad,4> mGamepads;
 };
 
 

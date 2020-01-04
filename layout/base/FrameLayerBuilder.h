@@ -489,7 +489,7 @@ public:
     RefPtr<Layer> mLayer;
     RefPtr<Layer> mOptLayer;
     RefPtr<BasicLayerManager> mInactiveManager;
-    AutoTArray<nsIFrame*, 1> mFrameList;
+    nsAutoTArray<nsIFrame*, 1> mFrameList;
     nsAutoPtr<nsDisplayItemGeometry> mGeometry;
     DisplayItemClip mClip;
     uint32_t        mDisplayItemKey;
@@ -501,7 +501,7 @@ public:
 
 
     nsDisplayItem* mItem;
-    AutoTArray<nsIFrame*, 1> mFrameListChanges;
+    nsAutoTArray<nsIFrame*, 1> mFrameListChanges;
 
     
 

@@ -65,7 +65,7 @@ private:
 
 
   RefPtr<nsITimer> mTimer;
-  typedef AutoTArray<nsCOMPtr<nsIURI>, RECENTLY_VISITED_URI_SIZE> PendingVisitArray;
+  typedef nsAutoTArray<nsCOMPtr<nsIURI>, RECENTLY_VISITED_URI_SIZE> PendingVisitArray;
   PendingVisitArray mPendingVisitURIs;
 
   bool RemovePendingVisitURI(nsIURI* aURI);
@@ -75,7 +75,7 @@ private:
 
 
 
-  typedef AutoTArray<nsCOMPtr<nsIURI>, RECENTLY_VISITED_URI_SIZE> RecentlyVisitedArray;
+  typedef nsAutoTArray<nsCOMPtr<nsIURI>, RECENTLY_VISITED_URI_SIZE> RecentlyVisitedArray;
   RecentlyVisitedArray mRecentlyVisitedURIs;
   RecentlyVisitedArray::index_type mRecentlyVisitedURIsNextIndex;
 
@@ -86,7 +86,7 @@ private:
 
 
 
-  typedef AutoTArray<nsCOMPtr<nsIURI>, EMBED_URI_SIZE> EmbedArray;
+  typedef nsAutoTArray<nsCOMPtr<nsIURI>, EMBED_URI_SIZE> EmbedArray;
   EmbedArray::index_type mEmbedURIsNextIndex;
   EmbedArray mEmbedURIs;
 

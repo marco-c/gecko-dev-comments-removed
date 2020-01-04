@@ -390,7 +390,7 @@ private:
                                 const RestyleHintData& aRestyleHintData);
 
   typedef nsClassHashtable<nsISupportsHashKey, RestyleData> PendingRestyleTable;
-  typedef AutoTArray< RefPtr<Element>, 32> RestyleRootArray;
+  typedef nsAutoTArray< RefPtr<Element>, 32> RestyleRootArray;
   
   
   

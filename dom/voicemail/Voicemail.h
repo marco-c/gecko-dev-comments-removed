@@ -87,7 +87,7 @@ private:
   
   
   
-  AutoTArray<RefPtr<VoicemailStatus>, 1> mStatuses;
+  nsAutoTArray<RefPtr<VoicemailStatus>, 1> mStatuses;
 
   
   

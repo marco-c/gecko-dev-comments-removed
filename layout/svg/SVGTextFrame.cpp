@@ -1739,13 +1739,13 @@ private:
 
 
 
-  AutoTArray<nsIFrame*, 1> mTextPathFrames;
+  nsAutoTArray<nsIFrame*, 1> mTextPathFrames;
 
   
 
 
 
-  AutoTArray<uint8_t, 8> mBaselines;
+  nsAutoTArray<uint8_t, 8> mBaselines;
 
   
 

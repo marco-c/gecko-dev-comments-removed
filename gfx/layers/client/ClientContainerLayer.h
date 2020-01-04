@@ -50,7 +50,7 @@ public:
     
     DefaultComputeSupportsComponentAlphaChildren();
 
-    AutoTArray<Layer*, 12> children;
+    nsAutoTArray<Layer*, 12> children;
     SortChildrenBy3DZOrder(children);
 
     ReadbackProcessor readback;

@@ -500,7 +500,7 @@ private:
   
   nsTArray<nsCString> mInitializedOrigins;
 
-  AutoTArray<RefPtr<Client>, Client::TYPE_MAX> mClients;
+  nsAutoTArray<RefPtr<Client>, Client::TYPE_MAX> mClients;
 
   nsString mIndexedDBPath;
   nsString mStoragePath;

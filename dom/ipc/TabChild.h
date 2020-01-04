@@ -706,7 +706,7 @@ private:
   
   bool mAppPackageFileDescriptorRecved;
   
-  AutoTArray<nsAutoPtr<CachedFileDescriptorInfo>, 1>
+  nsAutoTArray<nsAutoPtr<CachedFileDescriptorInfo>, 1>
       mCachedFileDescriptorInfos;
   nscolor mLastBackgroundColor;
   bool mDidFakeShow;
@@ -734,7 +734,7 @@ private:
   CSSSize mUnscaledInnerSize;
   bool mDidSetRealShowInfo;
 
-  AutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
+  nsAutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };

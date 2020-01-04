@@ -313,7 +313,7 @@ OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
   }
 
   
-  AutoTArray<AudioDataValue, 9600> pcm;
+  nsAutoTArray<AudioDataValue, 9600> pcm;
   pcm.SetLength(GetPacketDuration() * mChannels);
   AudioSegment::ChunkIterator iter(mSourceSegment);
   int frameCopied = 0;
@@ -344,7 +344,7 @@ OpusTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
   audiodata->SetFrameType(EncodedFrame::OPUS_AUDIO_FRAME);
   int framesInPCM = frameCopied;
   if (mResampler) {
-    AutoTArray<AudioDataValue, 9600> resamplingDest;
+    nsAutoTArray<AudioDataValue, 9600> resamplingDest;
     
     
     

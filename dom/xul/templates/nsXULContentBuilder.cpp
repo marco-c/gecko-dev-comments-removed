@@ -1270,7 +1270,7 @@ nsXULContentBuilder::RemoveGeneratedContent(nsIContent* aElement)
 {
     
     
-    AutoTArray<nsIContent*, 8> ungenerated;
+    nsAutoTArray<nsIContent*, 8> ungenerated;
     if (ungenerated.AppendElement(aElement) == nullptr)
         return NS_ERROR_OUT_OF_MEMORY;
 

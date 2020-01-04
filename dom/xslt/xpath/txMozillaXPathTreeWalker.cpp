@@ -604,7 +604,7 @@ txXPathNodeUtils::comparePosition(const txXPathNode& aNode,
     
 
     
-    AutoTArray<nsINode*, 8> parents, otherParents;
+    nsAutoTArray<nsINode*, 8> parents, otherParents;
     nsINode* node = aNode.mNode;
     nsINode* otherNode = aOtherNode.mNode;
     nsINode* parent;

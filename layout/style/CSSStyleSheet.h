@@ -110,7 +110,7 @@ private:
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  AutoTArray<CSSStyleSheet*, 8> mSheets;
+  nsAutoTArray<CSSStyleSheet*, 8> mSheets;
   nsCOMPtr<nsIURI>       mSheetURI; 
   nsCOMPtr<nsIURI>       mOriginalSheetURI;  
   nsCOMPtr<nsIURI>       mBaseURI; 
@@ -426,7 +426,7 @@ protected:
 
   CSSStyleSheetInner*   mInner;
 
-  AutoTArray<nsCSSRuleProcessor*, 8>* mRuleProcessors;
+  nsAutoTArray<nsCSSRuleProcessor*, 8>* mRuleProcessors;
   nsTArray<nsStyleSet*> mStyleSets;
 
   friend class ::nsMediaList;

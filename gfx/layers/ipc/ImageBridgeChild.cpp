@@ -146,7 +146,7 @@ ImageBridgeChild::UseTextures(CompositableClient* aCompositable,
   MOZ_ASSERT(aCompositable->GetIPDLActor());
   MOZ_ASSERT(aCompositable->IsConnected());
 
-  AutoTArray<TimedTexture,4> textures;
+  nsAutoTArray<TimedTexture,4> textures;
 
   for (auto& t : aTextures) {
     MOZ_ASSERT(t.mTextureClient);
@@ -654,7 +654,7 @@ ImageBridgeChild::EndTransaction()
     return;
   }
 
-  AutoTArray<CompositableOperation, 10> cset;
+  AutoInfallibleTArray<CompositableOperation, 10> cset;
   cset.SetCapacity(mTxn->mOperations.size());
   if (!mTxn->mOperations.empty()) {
     cset.AppendElements(&mTxn->mOperations.front(), mTxn->mOperations.size());
@@ -664,7 +664,7 @@ ImageBridgeChild::EndTransaction()
     ShadowLayerForwarder::PlatformSyncBeforeUpdate();
   }
 
-  AutoTArray<EditReply, 10> replies;
+  AutoInfallibleTArray<EditReply, 10> replies;
 
   if (mTxn->mSwapRequired) {
     if (!SendUpdate(cset, mTxn->mDestroyedActors, &replies)) {
