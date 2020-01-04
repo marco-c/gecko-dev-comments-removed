@@ -120,6 +120,11 @@ Decoder::Decode(NotNull<IResumable*> aOnResume)
   MOZ_ASSERT(mIterator, "Should have a SourceBufferIterator");
 
   
+  if (GetDecodeDone()) {
+    return HasError() ? NS_ERROR_FAILURE : NS_OK;
+  }
+
+  
   
   while (!GetDecodeDone() && !HasError()) {
     auto newState = mIterator->AdvanceOrScheduleResume(aOnResume.get());
