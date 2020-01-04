@@ -19,6 +19,10 @@
 extern unsigned int _gdb_sleep_duration;
 #endif
 
+#ifdef MOZ_CRASHREPORTER
+#include "nsICrashReporter.h"
+#endif
+
 
 
 
@@ -40,6 +44,15 @@ TestCrashyOperation(void (*aCrashyOperation)())
   ASSERT_NE(pid, -1);
 
   if (pid == 0) {
+    
+    
+    
+#ifdef MOZ_CRASHREPORTER
+    nsCOMPtr<nsICrashReporter> crashreporter =
+      do_GetService("@mozilla.org/toolkit/crash-reporter;1");
+    crashreporter->SetEnabled(false);
+#endif
+
     
     aCrashyOperation();
     fprintf(stderr, "TestCrashyOperation: didn't crash?!\n");
