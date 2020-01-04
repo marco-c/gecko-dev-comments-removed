@@ -140,7 +140,7 @@ const initCssProperties = Task.async(function* (toolbox) {
     if (!serverDB.properties && !serverDB.margin) {
       db = CSS_PROPERTIES_DB;
     } else {
-      db = normalizeCssData(serverDB);
+      db = serverDB;
     }
   } else {
     
@@ -148,10 +148,7 @@ const initCssProperties = Task.async(function* (toolbox) {
     db = CSS_PROPERTIES_DB;
   }
 
-  
-  reattachCssColorValues(db);
-
-  const cssProperties = new CssProperties(db);
+  const cssProperties = new CssProperties(normalizeCssData(db));
   cachedCssProperties.set(client, {cssProperties, front});
   return {cssProperties, front};
 });
@@ -175,6 +172,14 @@ function getCssProperties(toolbox) {
 
 
 
+function getClientCssPropertiesForTests() {
+  return new CssProperties(normalizeCssData(CSS_PROPERTIES_DB));
+}
+
+
+
+
+
 function getClientBrowserVersion(toolbox) {
   if (!toolbox._host) {
     return "0";
@@ -190,33 +195,38 @@ function getClientBrowserVersion(toolbox) {
 
 
 
+
 function normalizeCssData(db) {
-  
-  
-  if (!db.properties) {
-    db = { properties: db };
-  }
+  if (db !== CSS_PROPERTIES_DB) {
+    
+    
+    if (!db.properties) {
+      db = { properties: db };
+    }
 
-  
-  db = Object.assign({}, CSS_PROPERTIES_DB, db);
+    
+    db = Object.assign({}, CSS_PROPERTIES_DB, db);
 
-  
-  if (!db.properties.color.supports) {
-    for (let name in db.properties) {
-      if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
-        db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
+    
+    if (!db.properties.color.supports) {
+      for (let name in db.properties) {
+        if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
+          db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
+        }
+      }
+    }
+
+    
+    if (!db.properties.color.values) {
+      for (let name in db.properties) {
+        if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
+          db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
+        }
       }
     }
   }
 
-  
-  if (!db.properties.color.values) {
-    for (let name in db.properties) {
-      if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
-        db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
-      }
-    }
-  }
+  reattachCssColorValues(db);
 
   return db;
 }
@@ -243,5 +253,6 @@ module.exports = {
   CssPropertiesFront,
   CssProperties,
   getCssProperties,
+  getClientCssPropertiesForTests,
   initCssProperties
 };
