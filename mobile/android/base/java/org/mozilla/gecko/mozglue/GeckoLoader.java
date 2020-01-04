@@ -162,32 +162,14 @@ public final class GeckoLoader {
         f = context.getCacheDir();
         putenv("CACHE_DIRECTORY=" + f.getPath());
 
-        
-
-
-
-
-
-
-
-
-
-
-
-        try {
-            Object userManager = context.getSystemService("user");
-            if (userManager != null) {
-                
-                
-                Object userHandle = android.os.Process.class.getMethod("myUserHandle", (Class[])null).invoke(null);
-                Object userSerial = userManager.getClass().getMethod("getSerialNumberForUser", userHandle.getClass()).invoke(userManager, userHandle);
-                putenv("MOZ_ANDROID_USER_SERIAL_NUMBER=" + userSerial.toString());
+        if (AppConstants.Versions.feature17Plus) {
+            android.os.UserManager um = (android.os.UserManager)context.getSystemService(Context.USER_SERVICE);
+            if (um != null) {
+                putenv("MOZ_ANDROID_USER_SERIAL_NUMBER=" + um.getSerialNumberForUser(android.os.Process.myUserHandle()));
+            } else {
+                Log.d(LOGTAG, "Unable to obtain user manager service on a device with SDK version " + Build.VERSION.SDK_INT);
             }
-        } catch (Exception e) {
-            
-            Log.d(LOGTAG, "Unable to set the user serial number", e);
         }
-
         setupLocaleEnvironment();
 
         
