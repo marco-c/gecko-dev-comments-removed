@@ -57,6 +57,7 @@ public class URLMetadataTable extends BaseTable {
         
         if (newVersion >= 21 && oldVersion < 21) {
             onCreate(db);
+            return;
         }
 
         
