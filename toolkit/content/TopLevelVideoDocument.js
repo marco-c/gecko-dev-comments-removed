@@ -16,7 +16,7 @@ document.addEventListener("keypress", ev => {
 
   
   
-  if (ev.key == "F11") {
+  if (ev.key == "F11" && videoElement.videoWidth != 0 && videoElement.videoHeight != 0) {
     
     
     
