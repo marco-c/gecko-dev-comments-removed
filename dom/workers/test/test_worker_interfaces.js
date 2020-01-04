@@ -85,6 +85,8 @@ var interfaceNamesInGlobalScope =
 
     "CacheStorage",
 
+    "Crypto",
+
     "CustomEvent",
 
     "DedicatedWorkerGlobalScope",
@@ -174,6 +176,8 @@ var interfaceNamesInGlobalScope =
     "Response",
 
     { name: "ServiceWorkerRegistration", b2g: false },
+
+    "SubtleCrypto",
 
     "TextDecoder",
 

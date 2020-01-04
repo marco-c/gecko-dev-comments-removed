@@ -89,6 +89,8 @@ var interfaceNamesInGlobalScope =
 
     "Clients",
 
+    "Crypto",
+
     "CustomEvent",
 
     { name: "DataStore", b2g: true },
@@ -192,6 +194,8 @@ var interfaceNamesInGlobalScope =
     "ServiceWorkerGlobalScope",
 
     "ServiceWorkerRegistration",
+
+    "SubtleCrypto",
 
     "TextDecoder",
 
