@@ -2337,11 +2337,7 @@ pref("layout.css.scroll-snap.prediction-max-velocity", 2000);
 pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
 
 
-#ifdef RELEASE_BUILD
 pref("layout.css.clip-path-shapes.enabled", false);
-#else
-pref("layout.css.clip-path-shapes.enabled", true);
-#endif
 
 
 pref("layout.css.DOMPoint.enabled", true);
