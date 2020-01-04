@@ -2289,100 +2289,6 @@ NeedFrameFor(const nsFrameConstructorState& aState,
 
 
 
-static bool CheckOverflow(nsPresContext* aPresContext,
-                            const nsStyleDisplay* aDisplay)
-{
-  if (aDisplay->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE &&
-      aDisplay->mScrollBehavior == NS_STYLE_SCROLL_BEHAVIOR_AUTO &&
-      aDisplay->mScrollSnapTypeX == NS_STYLE_SCROLL_SNAP_TYPE_NONE &&
-      aDisplay->mScrollSnapTypeY == NS_STYLE_SCROLL_SNAP_TYPE_NONE &&
-      aDisplay->mScrollSnapPointsX == nsStyleCoord(eStyleUnit_None) &&
-      aDisplay->mScrollSnapPointsY == nsStyleCoord(eStyleUnit_None) &&
-      !aDisplay->mScrollSnapDestination.mXPosition.mHasPercent &&
-      !aDisplay->mScrollSnapDestination.mYPosition.mHasPercent &&
-      aDisplay->mScrollSnapDestination.mXPosition.mLength == 0 &&
-      aDisplay->mScrollSnapDestination.mYPosition.mLength == 0) {
-    return false;
-  }
-
-  if (aDisplay->mOverflowX == NS_STYLE_OVERFLOW_CLIP) {
-    aPresContext->SetViewportScrollbarStylesOverride(
-                                    ScrollbarStyles(NS_STYLE_OVERFLOW_HIDDEN,
-                                                    NS_STYLE_OVERFLOW_HIDDEN,
-                                                    aDisplay));
-  } else {
-    aPresContext->SetViewportScrollbarStylesOverride(
-                                    ScrollbarStyles(aDisplay));
-  }
-  return true;
-}
-
-
-
-
-
-
-
-
-
-nsIContent*
-nsCSSFrameConstructor::PropagateScrollToViewport()
-{
-  
-  nsPresContext* presContext = mPresShell->GetPresContext();
-  presContext->SetViewportScrollbarStylesOverride(
-                             ScrollbarStyles(NS_STYLE_OVERFLOW_AUTO,
-                                             NS_STYLE_OVERFLOW_AUTO));
-
-  
-  
-  if (presContext->IsPaginated()) {
-    return nullptr;
-  }
-
-  Element* docElement = mDocument->GetRootElement();
-
-  
-  nsStyleSet *styleSet = mPresShell->StyleSet();
-  nsRefPtr<nsStyleContext> rootStyle;
-  rootStyle = styleSet->ResolveStyleFor(docElement, nullptr);
-  if (CheckOverflow(presContext, rootStyle->StyleDisplay())) {
-    
-    return docElement;
-  }
-
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIDOMHTMLDocument> htmlDoc(do_QueryInterface(mDocument));
-  if (!htmlDoc || !docElement->IsHTMLElement()) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIDOMHTMLElement> body;
-  htmlDoc->GetBody(getter_AddRefs(body));
-  nsCOMPtr<nsIContent> bodyElement = do_QueryInterface(body);
-
-  if (!bodyElement ||
-      !bodyElement->NodeInfo()->Equals(nsGkAtoms::body)) {
-    
-    return nullptr;
-  }
-
-  nsRefPtr<nsStyleContext> bodyStyle;
-  bodyStyle = styleSet->ResolveStyleFor(bodyElement->AsElement(), rootStyle);
-
-  if (CheckOverflow(presContext, bodyStyle->StyleDisplay())) {
-    
-    return bodyElement;
-  }
-
-  return nullptr;
-}
-
 nsIFrame*
 nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocElement,
                                                 nsILayoutHistoryState*   aFrameState)
@@ -2404,10 +2310,10 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   
   
-#ifdef DEBUG
-  nsIContent* propagatedScrollFrom =
-#endif
-    PropagateScrollToViewport();
+  DebugOnly<nsIContent*> propagatedScrollFrom;
+  if (nsPresContext* presContext = mPresShell->GetPresContext()) {
+    propagatedScrollFrom = presContext->PropagateScrollToViewport();
+  }
 
   SetUpDocElementContainingBlock(aDocElement);
 
@@ -2481,12 +2387,10 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
 
   
 
-#ifdef DEBUG
   NS_ASSERTION(!display->IsScrollableOverflow() ||
                state.mPresContext->IsPaginated() ||
                propagatedScrollFrom == aDocElement,
                "Scrollbars should have been propagated to the viewport");
-#endif
 
   if (MOZ_UNLIKELY(display->mDisplay == NS_STYLE_DISPLAY_NONE)) {
     SetUndisplayedContent(aDocElement, styleContext);
@@ -4519,8 +4423,10 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay* aDisplay,
   
   bool propagatedScrollToViewport = false;
   if (aElement->IsHTMLElement(nsGkAtoms::body)) {
-    propagatedScrollToViewport =
-      PropagateScrollToViewport() == aElement;
+    if (nsPresContext* presContext = mPresShell->GetPresContext()) {
+      propagatedScrollToViewport =
+        presContext->PropagateScrollToViewport() == aElement;
+    }
   }
 
   NS_ASSERTION(!propagatedScrollToViewport ||

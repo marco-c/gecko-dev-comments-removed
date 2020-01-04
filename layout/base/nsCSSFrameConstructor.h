@@ -1606,8 +1606,6 @@ public:
   nsContainerFrame* GetFloatContainingBlock(nsIFrame* aFrame);
 
 private:
-  nsIContent* PropagateScrollToViewport();
-
   
   
   

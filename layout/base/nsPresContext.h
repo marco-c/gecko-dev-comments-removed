@@ -674,6 +674,8 @@ public:
     return mViewportStyleScrollbar;
   }
 
+  nsIContent* PropagateScrollToViewport();
+
   
 
 
