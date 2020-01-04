@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/ImageBitmap.h"
+
 #include "mozilla/dom/ImageBitmapBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/StructuredCloneTags.h"
@@ -491,6 +492,31 @@ ImageBitmap::PrepareForDrawTarget(gfx::DrawTarget* aTarget)
 
   RefPtr<gfx::SourceSurface> surface(mSurface);
   return surface.forget();
+}
+
+ImageBitmapCloneData*
+ImageBitmap::ToCloneData()
+{
+  ImageBitmapCloneData* result = new ImageBitmapCloneData();
+  result->mPictureRect = mPictureRect;
+  RefPtr<SourceSurface> surface = mData->GetAsSourceSurface();
+  result->mSurface = surface->GetDataSurface();
+  MOZ_ASSERT(result->mSurface);
+
+  return result;
+}
+
+ already_AddRefed<ImageBitmap>
+ImageBitmap::CreateFromCloneData(nsIGlobalObject* aGlobal,
+                                 ImageBitmapCloneData* aData)
+{
+  RefPtr<layers::Image> data =
+    CreateImageFromSurface(aData->mSurface);
+
+  RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data);
+  ErrorResult rv;
+  ret->SetPictureRect(aData->mPictureRect, rv);
+  return ret.forget();
 }
 
  already_AddRefed<ImageBitmap>
@@ -1154,7 +1180,7 @@ ImageBitmap::Create(nsIGlobalObject* aGlobal, const ImageBitmapSource& aSrc,
 ImageBitmap::ReadStructuredClone(JSContext* aCx,
                                  JSStructuredCloneReader* aReader,
                                  nsIGlobalObject* aParent,
-                                 const nsTArray<RefPtr<layers::Image>>& aClonedImages,
+                                 const nsTArray<RefPtr<DataSourceSurface>>& aClonedSurfaces,
                                  uint32_t aIndex)
 {
   MOZ_ASSERT(aCx);
@@ -1177,8 +1203,8 @@ ImageBitmap::ReadStructuredClone(JSContext* aCx,
   int32_t picRectHeight = BitwiseCast<int32_t>(picRectHeight_);
 
   
-  MOZ_ASSERT(!aClonedImages.IsEmpty());
-  MOZ_ASSERT(aIndex < aClonedImages.Length());
+  MOZ_ASSERT(!aClonedSurfaces.IsEmpty());
+  MOZ_ASSERT(aIndex < aClonedSurfaces.Length());
 
   
   
@@ -1187,8 +1213,9 @@ ImageBitmap::ReadStructuredClone(JSContext* aCx,
   
   JS::Rooted<JS::Value> value(aCx);
   {
+    RefPtr<layers::Image> img = CreateImageFromSurface(aClonedSurfaces[aIndex]);
     RefPtr<ImageBitmap> imageBitmap =
-      new ImageBitmap(aParent, aClonedImages[aIndex]);
+      new ImageBitmap(aParent, img);
 
     ErrorResult error;
     imageBitmap->SetPictureRect(IntRect(picRectX, picRectY,
@@ -1208,7 +1235,7 @@ ImageBitmap::ReadStructuredClone(JSContext* aCx,
 
  bool
 ImageBitmap::WriteStructuredClone(JSStructuredCloneWriter* aWriter,
-                                  nsTArray<RefPtr<layers::Image>>& aClonedImages,
+                                  nsTArray<RefPtr<DataSourceSurface>>& aClonedSurfaces,
                                   ImageBitmap* aImageBitmap)
 {
   MOZ_ASSERT(aWriter);
@@ -1220,7 +1247,7 @@ ImageBitmap::WriteStructuredClone(JSStructuredCloneWriter* aWriter,
   const uint32_t picRectHeight = BitwiseCast<uint32_t>(aImageBitmap->mPictureRect.height);
 
   
-  uint32_t index = aClonedImages.Length();
+  uint32_t index = aClonedSurfaces.Length();
 
   if (NS_WARN_IF(!JS_WriteUint32Pair(aWriter, SCTAG_DOM_IMAGEBITMAP, index)) ||
       NS_WARN_IF(!JS_WriteUint32Pair(aWriter, picRectX, picRectY)) ||
@@ -1228,8 +1255,24 @@ ImageBitmap::WriteStructuredClone(JSStructuredCloneWriter* aWriter,
     return false;
   }
 
-  aClonedImages.AppendElement(aImageBitmap->mData);
-
+  RefPtr<SourceSurface> surface =
+    aImageBitmap->mData->GetAsSourceSurface();
+  RefPtr<DataSourceSurface> snapshot = surface->GetDataSurface();
+  RefPtr<DataSourceSurface> dstDataSurface;
+  {
+    
+    
+    
+    DataSourceSurface::ScopedMap map(snapshot, DataSourceSurface::READ);
+    dstDataSurface =
+      Factory::CreateDataSourceSurfaceWithStride(snapshot->GetSize(),
+                                                 snapshot->GetFormat(),
+                                                 map.GetStride(),
+                                                 true);
+  }
+  MOZ_ASSERT(dstDataSurface);
+  Factory::CopyDataSourceSurface(snapshot, dstDataSurface);
+  aClonedSurfaces.AppendElement(dstDataSurface);
   return true;
 }
 
