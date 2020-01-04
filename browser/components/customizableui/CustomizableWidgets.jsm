@@ -316,9 +316,11 @@ const CustomizableWidgets = [
         link.className = "text-link remotetabs-promo-link";
         return link.outerHTML;
       });
-      
-      let contents = bundle.getFormattedString("appMenuRemoteTabs.mobilePromo", formatArgs);
       let promoParentElt = doc.getElementById("PanelUI-remotetabs-mobile-promo");
+      let fxAccountsBrand = promoParentElt.getAttribute("fxAccountsBrand");
+      formatArgs.push(fxAccountsBrand);
+      
+      let contents = bundle.getFormattedString("appMenuRemoteTabs.mobilePromo.text", formatArgs);
       promoParentElt.innerHTML = contents;
       
       
