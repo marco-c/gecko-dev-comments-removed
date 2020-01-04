@@ -278,6 +278,11 @@ nsHttpChannelAuthProvider::Cancel(nsresult status)
         mAsyncPromptAuthCancelable->Cancel(status);
         mAsyncPromptAuthCancelable = nullptr;
     }
+
+    if (mGenerateCredentialsCancelable) {
+        mGenerateCredentialsCancelable->Cancel(status);
+        mGenerateCredentialsCancelable = nullptr;
+    }
     return NS_OK;
 }
 
@@ -289,6 +294,11 @@ nsHttpChannelAuthProvider::Disconnect(nsresult status)
     if (mAsyncPromptAuthCancelable) {
         mAsyncPromptAuthCancelable->Cancel(status);
         mAsyncPromptAuthCancelable = nullptr;
+    }
+
+    if (mGenerateCredentialsCancelable) {
+        mGenerateCredentialsCancelable->Cancel(status);
+        mGenerateCredentialsCancelable = nullptr;
     }
 
     NS_IF_RELEASE(mProxyAuthContinuationState);
@@ -366,11 +376,6 @@ nsHttpChannelAuthProvider::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
                                                char                    **result)
 {
     nsresult rv;
-    uint32_t authFlags;
-
-    rv = auth->GetAuthFlags(&authFlags);
-    if (NS_FAILED(rv)) return rv;
-
     nsISupports *ss = sessionState;
 
     
@@ -382,6 +387,22 @@ nsHttpChannelAuthProvider::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
         continuationState = &mProxyAuthContinuationState;
     } else {
         continuationState = &mAuthContinuationState;
+    }
+
+    rv = auth->GenerateCredentialsAsync(mAuthChannel,
+                                       this,
+                                       challenge,
+                                       proxyAuth,
+                                       ident.Domain(),
+                                       ident.User(),
+                                       ident.Password(),
+                                       ss,
+                                       *continuationState,
+                                       getter_AddRefs(mGenerateCredentialsCancelable));
+    if (NS_SUCCEEDED(rv)) {
+        
+        
+        return NS_ERROR_IN_PROGRESS;
     }
 
     uint32_t generateFlags;
@@ -404,6 +425,29 @@ nsHttpChannelAuthProvider::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
     LOG(("generated creds: %s\n", *result));
 #endif
 
+    return UpdateCache(auth, scheme, host, port, directory, realm,
+            challenge, ident, *result, generateFlags, sessionState);
+}
+
+nsresult
+nsHttpChannelAuthProvider::UpdateCache(nsIHttpAuthenticator *auth,
+                                       const char           *scheme,
+                                       const char           *host,
+                                       int32_t               port,
+                                       const char           *directory,
+                                       const char           *realm,
+                                       const char           *challenge,
+                                       const nsHttpAuthIdentity &ident,
+                                       const char           *creds,
+                                       uint32_t              generateFlags,
+                                       nsISupports          *sessionState)
+{
+    nsresult rv;
+
+    uint32_t authFlags;
+    rv = auth->GetAuthFlags(&authFlags);
+    if (NS_FAILED(rv)) return rv;
+
     
     
     bool saveCreds =
@@ -421,6 +465,7 @@ nsHttpChannelAuthProvider::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
     nsAutoCString suffix;
     GetOriginAttributesSuffix(chan, suffix);
 
+
     
     
     
@@ -428,12 +473,13 @@ nsHttpChannelAuthProvider::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
     
     
     rv = authCache->SetAuthEntry(scheme, host, port, directory, realm,
-                                 saveCreds ? *result : nullptr,
+                                 saveCreds ? creds : nullptr,
                                  saveChallenge ? challenge : nullptr,
                                  suffix,
                                  saveIdentity ? &ident : nullptr,
                                  sessionState);
     return rv;
+
 }
 
 nsresult
@@ -1271,6 +1317,63 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthCancelled(nsISupports *aContext,
     return NS_OK;
 }
 
+NS_IMETHODIMP nsHttpChannelAuthProvider::OnCredsGenerated(const char *aGeneratedCreds,
+                                                          uint32_t aFlags,
+                                                          nsresult aResult,
+                                                          nsISupports* aSessionState,
+                                                          nsISupports* aContinuationState)
+{
+    nsresult rv;
+
+    MOZ_ASSERT(NS_IsMainThread());
+
+    
+    if (!mAuthChannel) {
+        return NS_OK;
+    }
+
+    mGenerateCredentialsCancelable = nullptr;
+
+    if (NS_FAILED(aResult)) {
+        return OnAuthCancelled(nullptr, true);
+    }
+
+    
+    
+    nsCOMPtr<nsISupports> contState(aContinuationState);
+    if (mProxyAuth) {
+        contState.swap(mProxyAuthContinuationState);
+    } else {
+        contState.swap(mAuthContinuationState);
+    }
+
+    nsCOMPtr<nsIHttpAuthenticator> auth;
+    nsAutoCString unused;
+    rv = GetAuthenticator(mCurrentChallenge.get(), unused, getter_AddRefs(auth));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    const char *host;
+    int32_t port;
+    nsHttpAuthIdentity *ident;
+    nsAutoCString directory, scheme;
+    nsISupports **unusedContinuationState;
+
+    
+    nsAutoCString realm;
+    ParseRealm(mCurrentChallenge.get(), realm);
+
+    rv = GetAuthorizationMembers(mProxyAuth, scheme, host, port,
+                                 directory, ident, unusedContinuationState);
+    if (NS_FAILED(rv)) return rv;
+
+    UpdateCache(auth, scheme.get(), host, port, directory.get(), realm.get(),
+            mCurrentChallenge.get(), *ident, aGeneratedCreds, aFlags, aSessionState);
+    mCurrentChallenge.Truncate();
+
+    ContinueOnAuthAvailable(nsDependentCString(aGeneratedCreds));
+    return NS_OK;
+}
+
 nsresult
 nsHttpChannelAuthProvider::ContinueOnAuthAvailable(const nsCSubstring& creds)
 {
@@ -1505,7 +1608,7 @@ nsHttpChannelAuthProvider::GetCurrentPath(nsACString &path)
 }
 
 NS_IMPL_ISUPPORTS(nsHttpChannelAuthProvider, nsICancelable,
-                  nsIHttpChannelAuthProvider, nsIAuthPromptCallback)
+                  nsIHttpChannelAuthProvider, nsIAuthPromptCallback, nsIHttpAuthenticatorCallback)
 
 } 
 } 
