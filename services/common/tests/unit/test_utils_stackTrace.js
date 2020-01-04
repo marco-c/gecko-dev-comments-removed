@@ -2,8 +2,8 @@
 
 
 _("Define some functions in well defined line positions for the test");
-function foo(v) bar(v + 1); 
-function bar(v) baz(v + 1); 
+function foo(v) { return bar(v + 1); } 
+function bar(v) { return baz(v + 1); } 
 function baz(v) { throw new Error(v + 1); } 
 
 _("Make sure lazy constructor calling/assignment works");

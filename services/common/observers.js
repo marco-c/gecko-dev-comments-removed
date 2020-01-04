@@ -62,9 +62,9 @@ this.Observers = {
     
     
     
-    let [observer] = this._cache.filter(function(v) v.topic      == topic    &&
-                                                    v.callback   == callback &&
-                                                    v.thisObject == thisObject);
+    let [observer] = this._cache.filter(v => v.topic      == topic    &&
+                                             v.callback   == callback &&
+                                             v.thisObject == thisObject);
     if (observer) {
       this._service.removeObserver(observer, topic);
       this._cache.splice(this._cache.indexOf(observer), 1);
