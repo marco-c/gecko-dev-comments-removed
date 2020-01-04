@@ -27,6 +27,7 @@
 #include "DisplayListClipState.h"
 #include "LayerState.h"
 #include "FrameMetrics.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/UserData.h"
 
@@ -4375,6 +4376,8 @@ public:
   
   nscoord mVisIStartEdge;
   nscoord mVisIEndEdge;
+  
+  mutable mozilla::Maybe<bool> mIsFrameSelected;
 };
 
 
