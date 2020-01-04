@@ -1359,7 +1359,7 @@ nsMenuFrame::SizeToPopup(nsBoxLayoutState& aState, nsSize& aSize)
       
       
       nsMargin borderPadding;
-      GetBorderAndPadding(borderPadding);
+      GetXULBorderAndPadding(borderPadding);
 
       
       nsIScrollableFrame* scrollFrame = do_QueryFrame(popupFrame->PrincipalChildList().FirstChild());

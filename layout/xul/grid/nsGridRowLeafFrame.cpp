@@ -33,10 +33,10 @@ NS_IMPL_FRAMEARENA_HELPERS(nsGridRowLeafFrame)
 
 
 nsresult
-nsGridRowLeafFrame::GetBorderAndPadding(nsMargin& aBorderAndPadding)
+nsGridRowLeafFrame::GetXULBorderAndPadding(nsMargin& aBorderAndPadding)
 {
   
-  nsresult rv = nsBoxFrame::GetBorderAndPadding(aBorderAndPadding);
+  nsresult rv = nsBoxFrame::GetXULBorderAndPadding(aBorderAndPadding);
 
   nsIGridPart* part = nsGrid::GetPartFromBox(this);
   if (!part)

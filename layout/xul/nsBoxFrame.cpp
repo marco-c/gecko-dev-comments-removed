@@ -597,7 +597,7 @@ nsBoxFrame::GetMinISize(nsRenderingContext *aRenderingContext)
   
   
   nsMargin bp;
-  GetBorderAndPadding(bp);
+  GetXULBorderAndPadding(bp);
 
   result = minSize.width - bp.LeftRight();
   result = std::max(result, 0);
@@ -619,7 +619,7 @@ nsBoxFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
   
   
   nsMargin bp;
-  GetBorderAndPadding(bp);
+  GetXULBorderAndPadding(bp);
 
   result = prefSize.width - bp.LeftRight();
   result = std::max(result, 0);
@@ -1723,7 +1723,7 @@ nsBoxFrame::DisplayDebugInfoFor(nsIFrame*  aBox,
     nsRect insideBorder(aBox->mRect);
     insideBorder.MoveTo(0,0):
     nsMargin border(0,0,0,0);
-    aBox->GetBorderAndPadding(border);
+    aBox->GetXULBorderAndPadding(border);
     insideBorder.Deflate(border);
 
     bool isHorizontal = IsHorizontal();

@@ -138,7 +138,7 @@ nsLeafBoxFrame::GetMinISize(nsRenderingContext *aRenderingContext)
   
   
   nsMargin bp;
-  GetBorderAndPadding(bp);
+  GetXULBorderAndPadding(bp);
 
   result = minSize.ISize(wm) - LogicalMargin(wm, bp).IStartEnd(wm);
 
@@ -160,7 +160,7 @@ nsLeafBoxFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
   
   
   nsMargin bp;
-  GetBorderAndPadding(bp);
+  GetXULBorderAndPadding(bp);
 
   result = prefSize.ISize(wm) - LogicalMargin(wm, bp).IStartEnd(wm);
 

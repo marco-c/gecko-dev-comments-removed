@@ -256,7 +256,7 @@ nsGridRowGroupLayout::GetTotalMargin(nsIFrame* aBox, bool aIsHorizontal)
 
   
   nsMargin borderPadding(0,0,0,0);
-  aBox->GetBorderAndPadding(borderPadding);
+  aBox->GetXULBorderAndPadding(borderPadding);
   margin += borderPadding;
 
   return margin;

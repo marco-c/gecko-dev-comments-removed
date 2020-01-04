@@ -2911,7 +2911,7 @@ public:
   nsresult XULLayout(nsBoxLayoutState& aBoxLayoutState);
   
   
-  virtual nsresult GetBorderAndPadding(nsMargin& aBorderAndPadding);
+  virtual nsresult GetXULBorderAndPadding(nsMargin& aBorderAndPadding);
   virtual nsresult GetBorder(nsMargin& aBorder)=0;
   virtual nsresult GetPadding(nsMargin& aBorderAndPadding)=0;
   virtual nsresult GetMargin(nsMargin& aMargin)=0;
