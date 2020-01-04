@@ -6679,15 +6679,7 @@ Parser<ParseHandler>::shouldParseLetDeclaration(bool* parseDeclOut)
       case TOK_LC:
       case TOK_LB:
         
-        
-        
         *parseDeclOut = true;
-        break;
-
-      case TOK_LP:
-        
-        
-        *parseDeclOut = versionNumber() == JSVERSION_1_7 || versionNumber() == JSVERSION_1_8;
         break;
 
       default:
