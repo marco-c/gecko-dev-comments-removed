@@ -1005,13 +1005,13 @@ gfxFcFontSet::SortPreferredFonts(bool &aWaitForUserFont)
         
         
         
-        gfxFontconfigUtils::DepFcStrEntry *entry =
+        gfxFontconfigUtils::DepFcStrEntry *familyEntry =
             existingFamilies.PutEntry(family);
-        if (entry) {
-            if (entry->mKey) 
+        if (familyEntry) {
+            if (familyEntry->mKey) 
                 continue;
 
-            entry->mKey = family; 
+            familyEntry->mKey = family; 
         }
 
         for (uint32_t f = 0; f < familyFonts->Length(); ++f) {
@@ -1032,10 +1032,10 @@ gfxFcFontSet::SortPreferredFonts(bool &aWaitForUserFont)
                 continue;
 
             for (uint32_t r = 0; r < requiredLangs.Length(); ++r) {
-                const LangSupportEntry& entry = requiredLangs[r];
+                const LangSupportEntry& langEntry = requiredLangs[r];
                 FcLangResult support =
-                    gfxFontconfigUtils::GetLangSupport(font, entry.mLang);
-                if (support <= entry.mBestSupport) { 
+                    gfxFontconfigUtils::GetLangSupport(font, langEntry.mLang);
+                if (support <= langEntry.mBestSupport) { 
                     requiredLangs.RemoveElementAt(r);
                     --r;
                 }
@@ -2158,4 +2158,3 @@ gfxFcFont::GetGlyphRenderingOptions(const TextRunDrawParams* aRunParams)
   return mozilla::gfx::Factory::CreateCairoGlyphRenderingOptions(hinting, false, aaMode);
 }
 #endif
-
