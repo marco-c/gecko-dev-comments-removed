@@ -8,7 +8,7 @@ import os
 import sys
 
 from collections import Iterable
-from types import StringTypes
+from types import StringTypes, ModuleType
 
 import mozpack.path as mozpath
 
@@ -45,6 +45,12 @@ class BuildConfig(object):
         
         
         if not path in code_cache or code_cache[path][0] != mtime:
+            
+            
+            mod = ModuleType('config.status')
+            mod.__file__ = path
+            sys.modules['config.status'] = mod
+
             with open(path, 'rt') as fh:
                 source = fh.read()
                 code_cache[path] = (

@@ -64,15 +64,31 @@ def main(argv):
             
             
             
-            if isinstance(ret, set) and ret:
-                ret |= set(iter_modules_in_path(buildconfig.topsrcdir,
-                                                buildconfig.topobjdir))
-                mk = Makefile()
-                mk.create_rule([args.output_file]).add_dependencies(ret)
-                with FileAvoidWrite(args.dep_file) as dep_file:
-                    mk.dump(dep_file)
+            
+            
+            
+            
+            
+            
+            
+            
+            if isinstance(ret, set):
+                deps = ret
                 
                 ret = None
+            else:
+                deps = set()
+
+            
+            if not ret:
+                
+                
+                deps |= set(iter_modules_in_path(buildconfig.topsrcdir,
+                                                 buildconfig.topobjdir))
+                mk = Makefile()
+                mk.create_rule([args.output_file]).add_dependencies(deps)
+                with FileAvoidWrite(args.dep_file) as dep_file:
+                    mk.dump(dep_file)
         
         
         
