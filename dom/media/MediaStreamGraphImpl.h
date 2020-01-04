@@ -185,10 +185,6 @@ public:
 
 
   void ForceShutDown(ShutdownTicket* aShutdownTicket);
-  
-
-
-  void ShutdownThreads();
 
   
 
