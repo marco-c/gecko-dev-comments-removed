@@ -79,28 +79,26 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
                                      RequestType aType)
 {
   EME_LOG("MediaKeySystemAccessManager::Request %s", NS_ConvertUTF16toUTF8(aKeySystem).get());
-  if (!Preferences::GetBool("media.eme.enabled", false)) {
+
+  
+  nsAutoString keySystem;
+  int32_t minCdmVersion = NO_CDM_VERSION;
+  if (!ParseKeySystem(aKeySystem, keySystem, minCdmVersion)) {
     
+    
+    aPromise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+                          NS_LITERAL_CSTRING("Key system string is invalid,"
+                                             " or key system is unsupported"));
+    return;
+  }
+
+  if (!Preferences::GetBool("media.eme.enabled", false)) {
     
     MediaKeySystemAccess::NotifyObservers(mWindow,
                                           aKeySystem,
                                           MediaKeySystemStatus::Api_disabled);
     aPromise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
                           NS_LITERAL_CSTRING("EME has been preffed off"));
-    return;
-  }
-
-  
-  nsAutoString keySystem;
-  int32_t minCdmVersion = NO_CDM_VERSION;
-  if (!ParseKeySystem(aKeySystem,
-                      keySystem,
-                      minCdmVersion)) {
-    
-    
-    MediaKeySystemAccess::NotifyObservers(mWindow, aKeySystem, MediaKeySystemStatus::Cdm_not_supported);
-    aPromise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-                          NS_LITERAL_CSTRING("Key system string is invalid, or key system is unsupported"));
     return;
   }
 
@@ -168,9 +166,10 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
     aPromise->MaybeResolve(access);
     return;
   }
-
+  
+  
   aPromise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-                        NS_LITERAL_CSTRING("Key system is not supported"));
+                        NS_LITERAL_CSTRING("Key system configuration is not supported"));
 }
 
 MediaKeySystemAccessManager::PendingRequest::PendingRequest(DetailedPromise* aPromise,
