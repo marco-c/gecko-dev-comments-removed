@@ -12046,11 +12046,6 @@ nsDocument::UpdateVisibilityState()
                                          NS_LITERAL_STRING("visibilitychange"),
                                           true,
                                           false);
-    nsContentUtils::DispatchTrustedEvent(this, static_cast<nsIDocument*>(this),
-                                         NS_LITERAL_STRING("mozvisibilitychange"),
-                                          true,
-                                          false);
-
     EnumerateActivityObservers(NotifyActivityChanged, nullptr);
   }
 
@@ -12110,24 +12105,10 @@ nsDocument::MaybeActiveMediaComponents()
 }
 
 NS_IMETHODIMP
-nsDocument::GetMozHidden(bool* aHidden)
-{
-  *aHidden = MozHidden();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsDocument::GetHidden(bool* aHidden)
 {
   *aHidden = Hidden();
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocument::GetMozVisibilityState(nsAString& aState)
-{
-  WarnOnceAbout(ePrefixedVisibilityAPI);
-  return GetVisibilityState(aState);
 }
 
 NS_IMETHODIMP
