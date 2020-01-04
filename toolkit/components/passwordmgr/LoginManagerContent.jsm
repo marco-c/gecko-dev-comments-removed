@@ -44,7 +44,6 @@ var gEnabled, gAutofillForms, gStoreWhenAutocompleteOff;
 var observer = {
   QueryInterface : XPCOMUtils.generateQI([Ci.nsIObserver,
                                           Ci.nsIFormSubmitObserver,
-                                          Ci.nsIWebProgressListener,
                                           Ci.nsISupportsWeakReference]),
 
   
@@ -69,45 +68,6 @@ var observer = {
     gEnabled = Services.prefs.getBoolPref("signon.rememberSignons");
     gAutofillForms = Services.prefs.getBoolPref("signon.autofillForms");
     gStoreWhenAutocompleteOff = Services.prefs.getBoolPref("signon.storeWhenAutocompleteOff");
-  },
-
-  
-  onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
-    
-    if (!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) ||
-        !(aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_PUSHSTATE)) {
-      return;
-    }
-
-    log("onLocationChange handled:", aLocation.spec, aWebProgress.DOMWindow.document);
-
-    LoginManagerContent._onNavigation(aWebProgress.DOMWindow.document);
-  },
-
-  onStateChange(aWebProgress, aRequest, aState, aStatus) {
-    if (!(aState & Ci.nsIWebProgressListener.STATE_START)) {
-      return;
-    }
-
-    
-    
-    
-    let channel = aRequest.QueryInterface(Ci.nsIChannel);
-    let triggeringPrincipal = channel.loadInfo.triggeringPrincipal;
-    if (triggeringPrincipal.isNullPrincipal ||
-        triggeringPrincipal.equals(Services.scriptSecurityManager.getSystemPrincipal())) {
-      return;
-    }
-
-    
-    
-    if (!(aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_NORMAL)) {
-      log("onStateChange: loadType isn't LOAD_CMD_NORMAL:", aWebProgress.loadType);
-      return;
-    }
-
-    log("onStateChange handled:", channel);
-    LoginManagerContent._onNavigation(aWebProgress.DOMWindow.document);
   },
 };
 
@@ -319,25 +279,6 @@ var LoginManagerContent = {
                              messageData);
   },
 
-  setupProgressListener(window) {
-    if (!LoginHelper.formlessCaptureEnabled) {
-      return;
-    }
-
-    try {
-      let webProgress = window.QueryInterface(Ci.nsIInterfaceRequestor).
-                        getInterface(Ci.nsIWebNavigation).
-                        QueryInterface(Ci.nsIDocShell).
-                        QueryInterface(Ci.nsIInterfaceRequestor).
-                        getInterface(Ci.nsIWebProgress);
-      webProgress.addProgressListener(observer,
-                                      Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT |
-                                      Ci.nsIWebProgress.NOTIFY_LOCATION);
-    } catch (ex) {
-      
-    }
-  },
-
   onDOMFormHasPassword(event, window) {
     if (!event.isTrusted) {
       return;
@@ -353,8 +294,6 @@ var LoginManagerContent = {
     if (!event.isTrusted) {
       return;
     }
-
-    this.setupProgressListener(window);
 
     let pwField = event.target;
     if (pwField.form) {
@@ -377,6 +316,7 @@ var LoginManagerContent = {
         log("Running deferred processing of onDOMInputPasswordAdded", formLike2);
         this._deferredPasswordAddedTasksByRootElement.delete(formLike2.rootElement);
         this._fetchLoginsFromParentAndFillForm(formLike2, window);
+        this._formLikeByRootElement.delete(formLike.rootElement);
       }.bind(this), PASSWORD_INPUT_ADDED_COALESCING_THRESHOLD_MS);
 
       this._deferredPasswordAddedTasksByRootElement.set(formLike.rootElement, deferredTask);
@@ -408,6 +348,9 @@ var LoginManagerContent = {
 
 
   _fetchLoginsFromParentAndFillForm(form, window) {
+    
+    this.stateForDocument(form.ownerDocument).loginForm = form;
+
     this._updateLoginFormPresence(window);
 
     let messageManager = messageManagerFromWindow(window);
@@ -439,9 +382,7 @@ var LoginManagerContent = {
   stateForDocument(document) {
     let loginFormState = this.loginFormStateByDocument.get(document);
     if (!loginFormState) {
-      loginFormState = {
-        loginFormRootElements: new Set(),
-      };
+      loginFormState = {};
       this.loginFormStateByDocument.set(document, loginFormState);
     }
     return loginFormState;
@@ -453,7 +394,6 @@ var LoginManagerContent = {
 
 
   _updateLoginFormPresence(topWindow) {
-    log("_updateLoginFormPresence", topWindow.location.href);
     
     
     
@@ -463,9 +403,9 @@ var LoginManagerContent = {
     
     
     let getFirstLoginForm = thisWindow => {
-      let loginForms = this.stateForDocument(thisWindow.document).loginFormRootElements;
-      if (loginForms.size) {
-        return [...loginForms][0];
+      let loginForm = this.stateForDocument(thisWindow.document).loginForm;
+      if (loginForm) {
+        return loginForm;
       }
       for (let i = 0; i < thisWindow.frames.length; i++) {
         let frame = thisWindow.frames[i];
@@ -485,7 +425,7 @@ var LoginManagerContent = {
     let hasInsecureLoginForms = (thisWindow, parentIsInsecure) => {
       let doc = thisWindow.document;
       let isInsecure = parentIsInsecure || !this.isDocumentSecure(doc);
-      let hasLoginForm = this.stateForDocument(doc).loginFormRootElements.size > 0;
+      let hasLoginForm = !!this.stateForDocument(doc).loginForm;
       return (hasLoginForm && isInsecure) ||
              Array.some(thisWindow.frames,
                         frame => hasInsecureLoginForms(frame, isInsecure));
@@ -494,7 +434,6 @@ var LoginManagerContent = {
     
     let topState = this.stateForDocument(topWindow.document);
     topState.loginFormForFill = getFirstLoginForm(topWindow);
-    log("_updateLoginFormPresence: topState.loginFormForFill", topState.loginFormForFill);
 
     
     let messageManager = messageManagerFromWindow(topWindow);
@@ -800,11 +739,8 @@ var LoginManagerContent = {
     }
 
     log("Password field (new) id/name is: ", newPasswordField.id, " / ", newPasswordField.name);
-    if (oldPasswordField) {
+    if (oldPasswordField)
       log("Password field (old) id/name is: ", oldPasswordField.id, " / ", oldPasswordField.name);
-    } else {
-      log("Password field (old):", oldPasswordField);
-    }
     return [usernameField, newPasswordField, oldPasswordField];
   },
 
@@ -825,39 +761,7 @@ var LoginManagerContent = {
 
 
 
-
-
-
-  _onNavigation(aDocument) {
-    let state = this.stateForDocument(aDocument);
-    let loginFormRootElements = state.loginFormRootElements;
-    log("_onNavigation: state:", state, "loginFormRootElements size:", loginFormRootElements.size,
-        "document:", aDocument);
-
-    for (let formRoot of state.loginFormRootElements) {
-      if (formRoot instanceof Ci.nsIDOMHTMLFormElement) {
-        
-        
-        
-        log("Ignoring navigation for the form root to avoid multiple prompts " +
-            "since it was for a real <form>");
-        continue;
-      }
-      let formLike = this._formLikeByRootElement.get(formRoot);
-      this._onFormSubmit(formLike);
-    }
-  },
-
-  
-
-
-
-
-
-
-
   _onFormSubmit(form) {
-    log("_onFormSubmit", form);
     var doc = form.ownerDocument;
     var win = doc.defaultView;
 
@@ -952,7 +856,6 @@ var LoginManagerContent = {
 
   _fillForm(form, autofillForm, clobberUsername, clobberPassword,
                         userTriggered, foundLogins, recipes, {inputElement} = {}) {
-    log("_fillForm", form.elements);
     let ignoreAutocomplete = true;
     const AUTOFILL_RESULT = {
       FILLED: 0,
@@ -1260,7 +1163,6 @@ var LoginUtils = {
       if (allowJS && uri.scheme == "javascript")
         return "javascript:";
 
-      
       realm = uri.scheme + "://" + uri.hostPort;
     } catch (e) {
       
@@ -1411,12 +1313,6 @@ var FormLikeFactory = {
     }
 
     this._addToJSONProperty(formLike);
-
-    let state = LoginManagerContent.stateForDocument(formLike.ownerDocument);
-    state.loginFormRootElements.add(formLike.rootElement);
-    log("adding", formLike.rootElement, "to loginFormRootElements for", formLike.ownerDocument);
-
-    LoginManagerContent._formLikeByRootElement.set(formLike.rootElement, formLike);
     return formLike;
   },
 
@@ -1464,13 +1360,6 @@ var FormLikeFactory = {
       ownerDocument: doc,
       rootElement: doc.documentElement,
     };
-
-    let state = LoginManagerContent.stateForDocument(formLike.ownerDocument);
-    state.loginFormRootElements.add(formLike.rootElement);
-    log("adding", formLike.rootElement, "to loginFormRootElements for", formLike.ownerDocument);
-
-
-    LoginManagerContent._formLikeByRootElement.set(formLike.rootElement, formLike);
 
     this._addToJSONProperty(formLike);
     return formLike;
