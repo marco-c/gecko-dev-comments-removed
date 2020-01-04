@@ -110,9 +110,7 @@ MarionetteComponent.prototype.observe = function(subj, topic, data) {
       
       this.observerService.addObserver(this, "final-ui-startup", false);
 #ifdef ENABLE_MARIONETTE
-      try {
-        this.enabled = Services.prefs.getBoolPref(ENABLED_PREF);
-      } catch(e) {}
+      this.enabled = Preferences.get(ENABLED_PREF, false);
       if (this.enabled) {
         this.logger.debug("Marionette enabled via build flag and pref");
 
@@ -165,11 +163,9 @@ MarionetteComponent.prototype.init = function() {
 
   this.loaded_ = true;
 
-  let forceLocal = Services.appinfo.name == "B2G" ? false : true;
-  try {
-    forceLocal = Services.prefs.getBoolPref(FORCELOCAL_PREF);
-  } catch (e) {}
-  Services.prefs.setBoolPref(FORCELOCAL_PREF, forceLocal);
+  let forceLocal = Preferences.get(FORCELOCAL_PREF,
+      Services.appinfo.name == "B2G" ? false : true);
+  Preferences.set(FORCELOCAL_PREF, forceLocal);
 
   if (!forceLocal) {
     
@@ -182,10 +178,7 @@ MarionetteComponent.prototype.init = function() {
     insaneSacrificialGoat.asyncListen(this);
   }
 
-  let port = DEFAULT_PORT;
-  try {
-    port = Services.prefs.getIntPref(PORT_PREF);
-  } catch (e) {}
+  let port = Preferences.get(PORT_PREF, DEFAULT_PORT);
 
   let s;
   try {
