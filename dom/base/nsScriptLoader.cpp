@@ -1046,7 +1046,7 @@ nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest, const nsAString &aType,
   MOZ_ASSERT(aRequest->IsLoading());
 
   
-  if (mDocument->GetSandboxFlags() & SANDBOXED_SCRIPTS) {
+  if (mDocument->HasScriptsBlockedBySandbox()) {
     return NS_OK;
   }
 
@@ -1488,7 +1488,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
 
   
   
-  if (mDocument->GetSandboxFlags() & SANDBOXED_SCRIPTS) {
+  if (mDocument->HasScriptsBlockedBySandbox()) {
     return false;
   }
 

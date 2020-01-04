@@ -830,7 +830,7 @@ EventListenerManager::SetEventHandler(nsIAtom* aName,
   if (doc) {
     
     
-    if (doc->GetSandboxFlags() & SANDBOXED_SCRIPTS) {
+    if (doc->HasScriptsBlockedBySandbox()) {
       return NS_ERROR_DOM_SECURITY_ERR;
     }
 
