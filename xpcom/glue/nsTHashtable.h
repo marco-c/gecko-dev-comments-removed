@@ -122,6 +122,11 @@ public:
   
 
 
+  bool IsEmpty() const { return Count() == 0; }
+
+  
+
+
 
 
 
