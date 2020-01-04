@@ -1288,6 +1288,9 @@ protected:
   RefPtr<DOMMediaStream> mSrcStream;
 
   
+  bool mSrcStreamTracksAvailable;
+
+  
   
   double mSrcStreamPausedCurrentTime;
 
