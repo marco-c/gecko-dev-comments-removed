@@ -27,6 +27,7 @@
 #include "mozilla/widget/IMEData.h"
 #include "nsDataHashtable.h"
 #include "nsIObserver.h"
+#include "nsIWidgetListener.h"
 #include "FrameMetrics.h"
 #include "Units.h"
 
@@ -35,7 +36,6 @@ class   nsIRollupListener;
 class   imgIContainer;
 class   nsIContent;
 class   ViewWrapper;
-class   nsIWidgetListener;
 class   nsIntRegion;
 class   nsIScreen;
 class   nsIRunnable;
@@ -763,13 +763,13 @@ class nsIWidget : public nsISupports {
 
 
 
-    NS_IMETHOD SetSizeMode(int32_t aMode) = 0;
+    NS_IMETHOD SetSizeMode(nsSizeMode aMode) = 0;
 
     
 
 
 
-    virtual int32_t SizeMode() = 0;
+    virtual nsSizeMode SizeMode() = 0;
 
     
 

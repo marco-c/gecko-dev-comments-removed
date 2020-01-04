@@ -1665,7 +1665,8 @@ NS_METHOD nsWindow::PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
 }
 
 
-NS_IMETHODIMP nsWindow::SetSizeMode(int32_t aMode) {
+NS_IMETHODIMP
+nsWindow::SetSizeMode(nsSizeMode aMode) {
 
   nsresult rv;
 
