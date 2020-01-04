@@ -5186,10 +5186,18 @@ WorkerPrivate::CancelAllTimeouts(JSContext* aCx)
       mTimeouts[index]->mCanceled = true;
     }
 
-    if (!RunExpiredTimeouts(aCx)) {
-      JS_ReportPendingException(aCx);
+    
+    
+    
+    if (!mRunningExpiredTimeouts) {
+      mTimeouts.Clear();
+      ModifyBusyCountFromWorker(false);
     }
 
+    
+    
+    
+    
     mTimerRunning = false;
   }
 #ifdef DEBUG
