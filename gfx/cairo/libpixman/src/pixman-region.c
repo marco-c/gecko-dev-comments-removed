@@ -298,6 +298,13 @@ PREFIX (_equal) (region_type_t *reg1, region_type_t *reg2)
     box_type_t *rects1;
     box_type_t *rects2;
 
+    
+
+
+
+    if (PIXREGION_NIL (reg1) && PIXREGION_NIL(reg2))
+        return TRUE;
+
     if (reg1->extents.x1 != reg2->extents.x1)
 	return FALSE;
     
