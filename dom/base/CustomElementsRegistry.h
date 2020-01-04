@@ -96,66 +96,28 @@ private:
   virtual ~CustomElementData() {}
 };
 
-class CustomElementHashKey : public PLDHashEntryHdr
-{
-public:
-  typedef CustomElementHashKey *KeyType;
-  typedef const CustomElementHashKey *KeyTypePointer;
-
-  CustomElementHashKey(int32_t aNamespaceID, nsIAtom *aAtom)
-    : mNamespaceID(aNamespaceID),
-      mAtom(aAtom)
-  {}
-  explicit CustomElementHashKey(const CustomElementHashKey* aKey)
-    : mNamespaceID(aKey->mNamespaceID),
-      mAtom(aKey->mAtom)
-  {}
-  ~CustomElementHashKey()
-  {}
-
-  KeyType GetKey() const { return const_cast<KeyType>(this); }
-  bool KeyEquals(const KeyTypePointer aKey) const
-  {
-    MOZ_ASSERT(mNamespaceID != kNameSpaceID_Unknown,
-               "This equals method is not transitive, nor symmetric. "
-               "A key with a namespace of kNamespaceID_Unknown should "
-               "not be stored in a hashtable.");
-    return (kNameSpaceID_Unknown == aKey->mNamespaceID ||
-            mNamespaceID == aKey->mNamespaceID) &&
-           aKey->mAtom == mAtom;
-  }
-
-  static KeyTypePointer KeyToPointer(KeyType aKey) { return aKey; }
-  static PLDHashNumber HashKey(const KeyTypePointer aKey)
-  {
-    return aKey->mAtom->hash();
-  }
-  enum { ALLOW_MEMMOVE = true };
-
-private:
-  int32_t mNamespaceID;
-  nsCOMPtr<nsIAtom> mAtom;
-};
-
 
 
 struct CustomElementDefinition
 {
-  CustomElementDefinition(JSObject* aPrototype,
-                          nsIAtom* aType,
+  CustomElementDefinition(nsIAtom* aType,
                           nsIAtom* aLocalName,
+                          JSObject* aConstructor,
+                          JSObject* aPrototype,
                           mozilla::dom::LifecycleCallbacks* aCallbacks,
-                          uint32_t aNamespaceID,
                           uint32_t aDocOrder);
-
-  
-  JS::Heap<JSObject *> mPrototype;
 
   
   nsCOMPtr<nsIAtom> mType;
 
   
   nsCOMPtr<nsIAtom> mLocalName;
+
+  
+  JS::Heap<JSObject *> mConstructor;
+
+  
+  JS::Heap<JSObject *> mPrototype;
 
   
   nsAutoPtr<mozilla::dom::LifecycleCallbacks> mCallbacks;
@@ -165,7 +127,7 @@ struct CustomElementDefinition
   bool mElementIsBeingCreated;
 
   
-  int32_t mNamespaceID;
+  
 
   
   uint32_t mDocOrder;
@@ -225,9 +187,13 @@ private:
   void RegisterUnresolvedElement(Element* aElement,
                                  nsIAtom* aTypeName = nullptr);
 
-  typedef nsClassHashtable<CustomElementHashKey, CustomElementDefinition>
+  void UpgradeCandidates(JSContext* aCx,
+                         nsIAtom* aKey,
+                         CustomElementDefinition* aDefinition);
+
+  typedef nsClassHashtable<nsISupportsHashKey, CustomElementDefinition>
     DefinitionMap;
-  typedef nsClassHashtable<CustomElementHashKey, nsTArray<nsWeakPtr>>
+  typedef nsClassHashtable<nsISupportsHashKey, nsTArray<nsWeakPtr>>
     CandidateMap;
 
   
@@ -249,6 +215,28 @@ private:
   
   
   static mozilla::Maybe<nsTArray<RefPtr<CustomElementData>>> sProcessingStack;
+
+  
+  bool mIsCustomDefinitionRunning;
+
+private:
+  class MOZ_RAII AutoSetRunningFlag final {
+    public:
+      explicit AutoSetRunningFlag(CustomElementsRegistry* aRegistry)
+        : mRegistry(aRegistry)
+      {
+        MOZ_ASSERT(!mRegistry->mIsCustomDefinitionRunning,
+                   "IsCustomDefinitionRunning flag should be initially false");
+        mRegistry->mIsCustomDefinitionRunning = true;
+      }
+
+      ~AutoSetRunningFlag() {
+        mRegistry->mIsCustomDefinitionRunning = false;
+      }
+
+    private:
+      CustomElementsRegistry* mRegistry;
+  };
 
 public:
   nsISupports* GetParentObject() const;

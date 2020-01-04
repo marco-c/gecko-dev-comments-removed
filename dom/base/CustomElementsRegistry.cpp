@@ -7,7 +7,10 @@
 #include "mozilla/dom/CustomElementsRegistry.h"
 
 #include "mozilla/dom/CustomElementsRegistryBinding.h"
+#include "mozilla/dom/HTMLElementBinding.h"
 #include "mozilla/dom/WebComponentsBinding.h"
+#include "nsIParserService.h"
+#include "jsapi.h"
 
 namespace mozilla {
 namespace dom {
@@ -138,6 +141,9 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(CustomElementsRegistry)
   for (auto iter = tmp->mCustomDefinitions.Iter(); !iter.Done(); iter.Next()) {
+    aCallbacks.Trace(&iter.UserData()->mConstructor,
+                     "mCustomDefinitions constructor",
+                     aClosure);
     aCallbacks.Trace(&iter.UserData()->mPrototype,
                      "mCustomDefinitions prototype",
                      aClosure);
@@ -175,8 +181,8 @@ CustomElementsRegistry::Create(nsPIDOMWindowInner* aWindow)
     return nullptr;
   }
 
-  if (!Preferences::GetBool("dom.webcomponents.enabled") &&
-      !Preferences::GetBool("dom.webcomponents.customelement.enabled")) {
+  if (!Preferences::GetBool("dom.webcomponents.customelements.enabled") &&
+      !Preferences::GetBool("dom.webcomponents.enabled")) {
     return nullptr;
   }
 
@@ -224,6 +230,7 @@ CustomElementsRegistry::sProcessingStack;
 
 CustomElementsRegistry::CustomElementsRegistry(nsPIDOMWindowInner* aWindow)
  : mWindow(aWindow)
+ , mIsCustomDefinitionRunning(false)
 {
   mozilla::HoldJSObjects(this);
 
@@ -246,8 +253,7 @@ CustomElementsRegistry::LookupCustomElementDefinition(const nsAString& aLocalNam
   nsCOMPtr<nsIAtom> localNameAtom = NS_Atomize(aLocalName);
   nsCOMPtr<nsIAtom> typeAtom = aIs ? NS_Atomize(*aIs) : localNameAtom;
 
-  CustomElementHashKey key(kNameSpaceID_XHTML, typeAtom);
-  CustomElementDefinition* data = mCustomDefinitions.Get(&key);
+  CustomElementDefinition* data = mCustomDefinitions.Get(typeAtom);
   if (data && data->mLocalName == localNameAtom) {
     return data;
   }
@@ -268,18 +274,11 @@ CustomElementsRegistry::RegisterUnresolvedElement(Element* aElement, nsIAtom* aT
     typeName = info->NameAtom();
   }
 
-  CustomElementHashKey key(info->NamespaceID(), typeName);
-  if (mCustomDefinitions.Get(&key)) {
+  if (mCustomDefinitions.Get(typeName)) {
     return;
   }
 
-  nsTArray<nsWeakPtr>* unresolved = mCandidatesMap.Get(&key);
-  if (!unresolved) {
-    unresolved = new nsTArray<nsWeakPtr>();
-    
-    mCandidatesMap.Put(&key, unresolved);
-  }
-
+  nsTArray<nsWeakPtr>* unresolved = mCandidatesMap.LookupOrAdd(typeName);
   nsWeakPtr* elem = unresolved->AppendElement();
   *elem = do_GetWeakReference(aElement);
   aElement->AddStates(NS_EVENT_STATE_UNRESOLVED);
@@ -342,8 +341,7 @@ CustomElementsRegistry::EnqueueLifecycleCallback(nsIDocument::ElementCallbackTyp
     nsCOMPtr<nsIAtom> typeAtom = elementData ?
       elementData->mType.get() : info->NameAtom();
 
-    CustomElementHashKey key(info->NamespaceID(), typeAtom);
-    definition = mCustomDefinitions.Get(&key);
+    definition = mCustomDefinitions.Get(typeAtom);
     if (!definition || definition->mLocalName != info->NameAtom()) {
       
       
@@ -453,12 +451,58 @@ void
 CustomElementsRegistry::GetCustomPrototype(nsIAtom* aAtom,
                                            JS::MutableHandle<JSObject*> aPrototype)
 {
-  mozilla::dom::CustomElementHashKey key(kNameSpaceID_XHTML, aAtom);
-  mozilla::dom::CustomElementDefinition* definition = mCustomDefinitions.Get(&key);
+  mozilla::dom::CustomElementDefinition* definition = mCustomDefinitions.Get(aAtom);
   if (definition) {
     aPrototype.set(definition->mPrototype);
   } else {
     aPrototype.set(nullptr);
+  }
+}
+
+void
+CustomElementsRegistry::UpgradeCandidates(JSContext* aCx,
+                                          nsIAtom* aKey,
+                                          CustomElementDefinition* aDefinition)
+{
+  nsAutoPtr<nsTArray<nsWeakPtr>> candidates;
+  mCandidatesMap.RemoveAndForget(aKey, candidates);
+  if (candidates) {
+    for (size_t i = 0; i < candidates->Length(); ++i) {
+      nsCOMPtr<Element> elem = do_QueryReferent(candidates->ElementAt(i));
+      if (!elem) {
+        continue;
+      }
+
+      elem->RemoveStates(NS_EVENT_STATE_UNRESOLVED);
+
+      
+      
+      
+      if (elem->NodeInfo()->NameAtom() != aDefinition->mLocalName) {
+        
+        continue;
+      }
+
+      MOZ_ASSERT(elem->IsHTMLElement(aDefinition->mLocalName));
+      nsWrapperCache* cache;
+      CallQueryInterface(elem, &cache);
+      MOZ_ASSERT(cache, "Element doesn't support wrapper cache?");
+
+      
+      
+      
+      
+      JS::RootedObject wrapper(aCx);
+      JS::Rooted<JSObject*> prototype(aCx, aDefinition->mPrototype);
+      if ((wrapper = cache->GetWrapper()) && JS_WrapObject(aCx, &wrapper)) {
+        if (!JS_SetPrototype(aCx, wrapper, prototype)) {
+          continue;
+        }
+      }
+
+      nsContentUtils::EnqueueLifecycleCallback(
+        elem->OwnerDoc(), nsIDocument::eCreated, elem, nullptr, aDefinition);
+    }
   }
 }
 
@@ -473,14 +517,278 @@ nsISupports* CustomElementsRegistry::GetParentObject() const
   return mWindow;
 }
 
+static const char* kLifeCycleCallbackNames[] = {
+  "connectedCallback",
+  "disconnectedCallback",
+  "adoptedCallback",
+  "attributeChangedCallback",
+  
+  "createdCallback",
+  "attachedCallback",
+  "detachedCallback"
+};
+
+static void
+CheckLifeCycleCallbacks(JSContext* aCx,
+                        JS::Handle<JSObject*> aConstructor,
+                        ErrorResult& aRv)
+{
+  for (size_t i = 0; i < ArrayLength(kLifeCycleCallbackNames); ++i) {
+    const char* callbackName = kLifeCycleCallbackNames[i];
+    JS::Rooted<JS::Value> callbackValue(aCx);
+    if (!JS_GetProperty(aCx, aConstructor, callbackName, &callbackValue)) {
+      aRv.StealExceptionFromJSContext(aCx);
+      return;
+    }
+    if (!callbackValue.isUndefined()) {
+      if (!callbackValue.isObject()) {
+        aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_ConvertASCIItoUTF16(callbackName));
+        return;
+      }
+      JS::Rooted<JSObject*> callback(aCx, &callbackValue.toObject());
+      if (!JS::IsCallable(callback)) {
+        aRv.ThrowTypeError<MSG_NOT_CALLABLE>(NS_ConvertASCIItoUTF16(callbackName));
+        return;
+      }
+    }
+  }
+}
+
+
 void
 CustomElementsRegistry::Define(const nsAString& aName,
                                Function& aFunctionConstructor,
                                const ElementDefinitionOptions& aOptions,
                                ErrorResult& aRv)
 {
+  aRv.MightThrowJSException();
+
+  AutoJSAPI jsapi;
+  if (NS_WARN_IF(!jsapi.Init(mWindow))) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
+  JSContext *cx = jsapi.cx();
+  JS::Rooted<JSObject*> constructor(cx, aFunctionConstructor.Callable());
+
   
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+
+
+
+  
+  
+  JS::Rooted<JSObject*> constructorUnwrapped(cx, js::CheckedUnwrap(constructor));
+  if (!constructorUnwrapped) {
+    
+    
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
+
+  if (!JS::IsConstructor(constructorUnwrapped)) {
+    aRv.ThrowTypeError<MSG_NOT_CONSTRUCTOR>(NS_LITERAL_STRING("Argument 2 of CustomElementsRegistry.define"));
+    return;
+  }
+
+  
+
+
+
+  nsCOMPtr<nsIAtom> nameAtom(NS_Atomize(aName));
+  if (!nsContentUtils::IsCustomElementName(nameAtom)) {
+    aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+    return;
+  }
+
+  
+
+
+
+  if (mCustomDefinitions.Get(nameAtom)) {
+    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return;
+  }
+
+  
+
+
+
+  
+  
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsAutoString localName(aName);
+  if (aOptions.mExtends.WasPassed()) {
+    nsCOMPtr<nsIAtom> extendsAtom(NS_Atomize(aOptions.mExtends.Value()));
+    if (nsContentUtils::IsCustomElementName(extendsAtom)) {
+      aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+      return;
+    }
+
+    nsIParserService* ps = nsContentUtils::GetParserService();
+    if (!ps) {
+      aRv.Throw(NS_ERROR_UNEXPECTED);
+      return;
+    }
+
+    
+    int32_t tag = ps->HTMLCaseSensitiveAtomTagToId(extendsAtom);
+    if (tag == eHTMLTag_userdefined ||
+        tag == eHTMLTag_bgsound ||
+        tag == eHTMLTag_multicol) {
+      aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+      return;
+    }
+
+    localName.Assign(aOptions.mExtends.Value());
+  }
+
+  
+
+
+
+  if (mIsCustomDefinitionRunning) {
+    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return;
+  }
+
+  JS::Rooted<JSObject*> constructorPrototype(cx);
+  nsAutoPtr<LifecycleCallbacks> callbacksHolder(new LifecycleCallbacks());
+  { 
+    
+
+
+    AutoSetRunningFlag as(this);
+
+    { 
+      
+
+
+      JSAutoCompartment ac(cx, constructor);
+      JS::Rooted<JS::Value> prototypev(cx);
+      
+      
+      
+      if (!JS_GetProperty(cx, constructor, "prototype", &prototypev)) {
+        aRv.StealExceptionFromJSContext(cx);
+        return;
+      }
+
+      
+
+
+      if (!prototypev.isObject()) {
+        aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("constructor.prototype"));
+        return;
+      }
+
+      constructorPrototype = &prototypev.toObject();
+    } 
+
+    JS::Rooted<JSObject*> constructorProtoUnwrapped(cx, js::CheckedUnwrap(constructorPrototype));
+    if (!constructorProtoUnwrapped) {
+      
+      
+      aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+      return;
+    }
+
+    { 
+      JSAutoCompartment ac(cx, constructorProtoUnwrapped);
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+      
+      CheckLifeCycleCallbacks(cx, constructorProtoUnwrapped, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+      
+
+      
+      
+      JS::RootedValue rootedv(cx, JS::ObjectValue(*constructorProtoUnwrapped));
+      if (!JS_WrapValue(cx, &rootedv) || !callbacksHolder->Init(cx, rootedv)) {
+        aRv.Throw(NS_ERROR_FAILURE);
+        return;
+      }
+    } 
+  } 
+
+  
+
+
+
+
+
+  
+  nsCOMPtr<nsIAtom> localNameAtom(NS_Atomize(localName));
+  LifecycleCallbacks* callbacks = callbacksHolder.forget();
+  CustomElementDefinition* definition =
+    new CustomElementDefinition(nameAtom,
+                                localNameAtom,
+                                constructor,
+                                constructorPrototype,
+                                callbacks,
+                                0 );
+
+  
+
+
+  mCustomDefinitions.Put(nameAtom, definition);
+
+  
+
+
+  
+  UpgradeCandidates(cx, nameAtom, definition);
+
+  
+
+
+
+
+
+
+
+  
 }
 
 void
@@ -500,17 +808,17 @@ CustomElementsRegistry::WhenDefined(const nsAString& name, ErrorResult& aRv)
   return nullptr;
 }
 
-CustomElementDefinition::CustomElementDefinition(JSObject* aPrototype,
-                                                 nsIAtom* aType,
+CustomElementDefinition::CustomElementDefinition(nsIAtom* aType,
                                                  nsIAtom* aLocalName,
+                                                 JSObject* aConstructor,
+                                                 JSObject* aPrototype,
                                                  LifecycleCallbacks* aCallbacks,
-                                                 uint32_t aNamespaceID,
                                                  uint32_t aDocOrder)
-  : mPrototype(aPrototype),
-    mType(aType),
+  : mType(aType),
     mLocalName(aLocalName),
+    mConstructor(aConstructor),
+    mPrototype(aPrototype),
     mCallbacks(aCallbacks),
-    mNamespaceID(aNamespaceID),
     mDocOrder(aDocOrder)
 {
 }
