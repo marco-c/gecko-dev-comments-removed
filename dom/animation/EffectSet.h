@@ -24,8 +24,9 @@ class EffectSet
 {
 public:
   EffectSet()
+    : mCascadeNeedsUpdate(false)
 #ifdef DEBUG
-    : mCalledPropertyDtor(false)
+    , mCalledPropertyDtor(false)
 #endif
   {
     MOZ_COUNT_CTOR(EffectSet);
@@ -120,6 +121,10 @@ public:
   }
   bool IsEmpty() const { return mEffects.IsEmpty(); }
 
+  bool CascadeNeedsUpdate() const { return mCascadeNeedsUpdate; }
+  void MarkCascadeNeedsUpdate() { mCascadeNeedsUpdate = true; }
+  void MarkCascadeUpdated() { mCascadeNeedsUpdate = false; }
+
   static nsIAtom** GetEffectSetPropertyAtoms();
 
 private:
@@ -127,6 +132,13 @@ private:
                                              aPseudoType);
 
   OwningEffectSet mEffects;
+
+  
+  
+  
+  
+  
+  bool mCascadeNeedsUpdate;
 
 #ifdef DEBUG
   bool mCalledPropertyDtor;
