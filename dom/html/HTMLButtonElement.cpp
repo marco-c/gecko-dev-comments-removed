@@ -355,7 +355,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
         break;
 
         
-      case NS_MOUSE_OUT:
+      case eMouseOut:
         {
           aVisitor.mPresContext->EventStateManager()->
             SetContentState(nullptr, NS_EVENT_STATE_HOVER);

@@ -616,7 +616,7 @@ nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
   
   
 
-  if (aEvent->mMessage == NS_MOUSE_OUT && mChange)
+  if (aEvent->mMessage == eMouseOut && mChange)
      HandleRelease(aPresContext, aEvent, aEventStatus);
 
   return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
