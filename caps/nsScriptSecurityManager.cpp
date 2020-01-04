@@ -674,37 +674,32 @@ EqualOrSubdomain(nsIURI* aProbeArg, nsIURI* aBase)
 static bool
 AllSchemesMatch(nsIURI* aURI, nsIURI* aOtherURI)
 {
-    nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(aURI);
-    nsCOMPtr<nsINestedURI> nestedOtherURI = do_QueryInterface(aOtherURI);
     auto stringComparator = nsCaseInsensitiveCStringComparator();
-    if (!nestedURI && !nestedOtherURI) {
-        
-        nsAutoCString scheme, otherScheme;
-        aURI->GetScheme(scheme);
-        aOtherURI->GetScheme(otherScheme);
-        return scheme.Equals(otherScheme, stringComparator);
-    }
-    while (nestedURI && nestedOtherURI) {
-        nsCOMPtr<nsIURI> currentURI = do_QueryInterface(nestedURI);
-        nsCOMPtr<nsIURI> currentOtherURI = do_QueryInterface(nestedOtherURI);
+    nsCOMPtr<nsIURI> currentURI = aURI;
+    nsCOMPtr<nsIURI> currentOtherURI = aOtherURI;
+    while (currentURI && currentOtherURI) {
         nsAutoCString scheme, otherScheme;
         currentURI->GetScheme(scheme);
         currentOtherURI->GetScheme(otherScheme);
         if (!scheme.Equals(otherScheme, stringComparator)) {
             return false;
         }
-
+        nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(currentURI);
+        nsCOMPtr<nsINestedURI> nestedOtherURI = do_QueryInterface(currentOtherURI);
+        
+        
+        if (!nestedURI && !nestedOtherURI) {
+            return true;
+        }
+        
+        if (!nestedURI != !nestedOtherURI) {
+            return false;
+        }
+        
         nestedURI->GetInnerURI(getter_AddRefs(currentURI));
         nestedOtherURI->GetInnerURI(getter_AddRefs(currentOtherURI));
-        nestedURI = do_QueryInterface(currentURI);
-        nestedOtherURI = do_QueryInterface(currentOtherURI);
     }
-    if (!!nestedURI != !!nestedOtherURI) {
-        
-        
-        return false;
-    }
-    return true;
+    return false;
 }
 
 NS_IMETHODIMP
