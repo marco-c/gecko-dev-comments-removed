@@ -18,6 +18,7 @@
 #include "mozilla/layers/APZUtils.h"    
 #include "mozilla/layers/TouchCounter.h"
 #include "mozilla/Monitor.h"            
+#include "mozilla/TimeStamp.h"          
 #include "mozilla/Vector.h"             
 #include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
@@ -395,6 +396,9 @@ public:
                      nsRefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
                      bool aHandoff);
 
+  void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
+                          const AsyncDragMetrics& aDragMetrics);
+
   
 
 
@@ -457,6 +461,9 @@ private:
   nsEventStatus ProcessEvent(WidgetInputEvent& inputEvent,
                              ScrollableLayerGuid* aOutTargetGuid,
                              uint64_t* aOutInputBlockId);
+  nsEventStatus ProcessMouseEvent(WidgetMouseEventBase& aInput,
+                                  ScrollableLayerGuid* aOutTargetGuid,
+                                  uint64_t* aOutInputBlockId);
   void UpdateWheelTransaction(WidgetInputEvent& aEvent);
   void UpdateZoomConstraintsRecursively(HitTestingTreeNode* aNode,
                                         const ZoomConstraints& aConstraints);
