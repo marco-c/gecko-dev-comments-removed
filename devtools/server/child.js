@@ -85,17 +85,21 @@ try {
     addMessageListener("debug:setup-in-child", onSetupInChild);
 
     let onDisconnect = DevToolsUtils.makeInfallible(function (msg) {
-      removeMessageListener("debug:disconnect", onDisconnect);
-
-      
-      
-      
       let prefix = msg.data.prefix;
       let conn = connections.get(prefix);
-      if (conn) {
-        conn.close();
-        connections.delete(prefix);
+      if (!conn) {
+        
+        
+        
+        return;
       }
+
+      removeMessageListener("debug:disconnect", onDisconnect);
+      
+      
+      
+      conn.close();
+      connections.delete(prefix);
     });
     addMessageListener("debug:disconnect", onDisconnect);
 
