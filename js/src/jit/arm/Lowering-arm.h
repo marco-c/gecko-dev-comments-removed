@@ -27,7 +27,6 @@ class LIRGeneratorARM : public LIRGeneratorShared
     
     
     LAllocation useByteOpRegister(MDefinition* mir);
-    LAllocation useByteOpRegisterAtStart(MDefinition* mir);
     LAllocation useByteOpRegisterOrNonDoubleConstant(MDefinition* mir);
     LDefinition tempByteOpRegister();
 
