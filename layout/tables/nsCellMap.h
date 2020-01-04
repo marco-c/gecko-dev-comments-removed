@@ -198,8 +198,6 @@ protected:
                               TableArea&                  aDamageArea);
 
 public:
-  void ExpandZeroColSpans();
-
   void ResetBStartStart(mozilla::LogicalSide aSide,
                         nsCellMap& aCellMap,
                         uint32_t   aYPos,
@@ -355,22 +353,6 @@ public:
                        TableArea&        aDamageArea,
                        int32_t*          aBeginSearchAtCol = nullptr);
 
-  
-
-
-
-
-
-
-
-
-
-
-  void CollapseZeroColSpan(nsTableCellMap& aMap,
-                           CellData*       aOrigData,
-                           int32_t         aRowIndex,
-                           int32_t         aColIndex);
-
   void InsertCells(nsTableCellMap&              aMap,
                    nsTArray<nsTableCellFrame*>& aCellFrames,
                    int32_t                      aRowIndex,
@@ -416,8 +398,6 @@ public:
   bool RowHasSpanningCells(int32_t aRowIndex,
                              int32_t aNumEffCols) const;
 
-  void ExpandZeroColSpans(nsTableCellMap& aMap);
-
   
 
 
@@ -435,8 +415,7 @@ public:
 
   int32_t GetEffectiveColSpan(const nsTableCellMap& aMap,
                               int32_t     aRowIndex,
-                              int32_t     aColIndex,
-                              bool&     aIsZeroColSpan) const;
+                              int32_t     aColIndex) const;
 
   typedef nsTArray<CellData*> CellDataArray;
 
@@ -540,18 +519,12 @@ protected:
                           int32_t aStartColIndex,
                           int32_t aEndColIndex) const;
 
-  void ExpandForZeroSpan(nsTableCellFrame* aCellFrame,
-                         int32_t           aNumColsInTable);
-
   bool CreateEmptyRow(int32_t aRowIndex,
                         int32_t aNumCols);
 
   int32_t GetRowSpanForNewCell(nsTableCellFrame* aCellFrameToAdd,
                                int32_t           aRowIndex,
                                bool&           aIsZeroRowSpan) const;
-
-  int32_t GetColSpanForNewCell(nsTableCellFrame& aCellFrameToAdd,
-                               bool&           aIsZeroColSpan) const;
 
   
   

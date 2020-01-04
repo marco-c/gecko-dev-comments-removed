@@ -599,6 +599,7 @@ nsHTMLEditor::InsertTableRow(int32_t aNumber, bool aAfter)
     
     
     
+    
     cellsInRow = colCount;
 
     
