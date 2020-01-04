@@ -1346,32 +1346,6 @@ nsContentUtils::GetParserService()
   return sParserService;
 }
 
-
-
-
-
-
-
-
-uint32_t
-nsContentUtils::ParseSandboxAttributeToFlags(const nsAttrValue* sandboxAttr)
-{
-  
-  if (!sandboxAttr) { return 0; }
-
-  
-  uint32_t out = SANDBOX_ALL_FLAGS;
-
-
-#define SANDBOX_KEYWORD(string, atom, flags)                             \
-  if (sandboxAttr->Contains(nsGkAtoms::atom, eIgnoreCase)) { out &= ~(flags); }
-
-#include "IframeSandboxKeywordList.h"
-
-  return out;
-#undef SANDBOX_KEYWORD
-}
-
 nsIBidiKeyboard*
 nsContentUtils::GetBidiKeyboard()
 {

@@ -910,15 +910,6 @@ public:
   
 
 
-
-
-
-
-  static uint32_t ParseSandboxAttributeToFlags(const nsAttrValue* sandboxAttr);
-
-  
-
-
   static nsresult GenerateUUIDInPlace(nsID& aUUID);
 
   static bool PrefetchEnabled(nsIDocShell* aDocShell);
