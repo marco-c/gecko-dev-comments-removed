@@ -549,6 +549,32 @@ protected:
     return newAction;
   }
 
+  
+
+
+
+
+
+
+
+
+
+  bool WasTextInsertedWithoutCompositionAt(LONG aStart, LONG aLength) const
+  {
+    if (mPendingActions.Length() < 2) {
+      return false;
+    }
+    const PendingAction& pendingLastAction = mPendingActions.LastElement();
+    if (pendingLastAction.mType != PendingAction::COMPOSITION_END ||
+        pendingLastAction.mData.Length() != aLength) {
+      return false;
+    }
+    const PendingAction& pendingPreLastAction =
+      mPendingActions[mPendingActions.Length() - 2];
+    return pendingPreLastAction.mType == PendingAction::COMPOSITION_START &&
+           pendingPreLastAction.mSelectionStart == aStart;
+  }
+
   bool IsPendingCompositionUpdateIncomplete() const
   {
     if (mPendingActions.IsEmpty()) {
@@ -642,6 +668,23 @@ protected:
     void StartComposition(ITfCompositionView* aCompositionView,
                           const PendingAction& aCompStart,
                           bool aPreserveSelection);
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    void RestoreCommittedComposition(
+                         ITfCompositionView* aCompositionView,
+                         const PendingAction& aPendingCompositionStart,
+                         const PendingAction& aCanceledCompositionEnd);
     void EndComposition(const PendingAction& aCompEnd);
 
     const nsString& Text() const
