@@ -30,14 +30,14 @@ public:
 
   nsresult Init(nsICryptoHash* aHasher);
 
-  void SetCurrentTable(const nsACString& aTable);
+  virtual void SetCurrentTable(const nsACString& aTable) = 0;
 
   nsresult Begin();
-  virtual nsresult AppendStream(const nsACString& aData);
+  virtual nsresult AppendStream(const nsACString& aData) = 0;
 
   
   
-  virtual void End();
+  virtual void End() = 0;
 
   
   
@@ -46,11 +46,49 @@ public:
   nsTArray<TableUpdate*> &GetTableUpdates() { return mTableUpdates; }
 
   
-  const nsTArray<ForwardedUpdate> &Forwards() const { return mForwards; }
-  int32_t UpdateWait() { return mUpdateWait; }
-  bool ResetRequested() { return mResetRequested; }
+  
+  
+  
+  virtual const nsTArray<ForwardedUpdate> &Forwards() const { return mForwards; }
+  virtual int32_t UpdateWait() { return 0; }
+  virtual bool ResetRequested() { return false; }
+
+protected:
+  virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const = 0;
+
+  nsCString mPending;
+  nsresult mUpdateStatus;
+
+  
+  nsTArray<TableUpdate*> mTableUpdates;
+
+  nsTArray<ForwardedUpdate> mForwards;
+  nsCOMPtr<nsICryptoHash> mCryptoHash;
 
 private:
+  void CleanupUpdates();
+};
+
+
+
+
+class ProtocolParserV2 final : public ProtocolParser {
+public:
+  ProtocolParserV2();
+  virtual ~ProtocolParserV2();
+
+  virtual void SetCurrentTable(const nsACString& aTable) override;
+  virtual nsresult AppendStream(const nsACString& aData) override;
+  virtual void End() override;
+
+  
+  virtual const nsTArray<ForwardedUpdate> &Forwards() const override { return mForwards; }
+  virtual int32_t UpdateWait() override { return mUpdateWait; }
+  virtual bool ResetRequested() override { return mResetRequested; }
+
+private:
+  virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const override;
+
   nsresult ProcessControl(bool* aDone);
   nsresult ProcessExpirations(const nsCString& aLine);
   nsresult ProcessChunkControl(const nsCString& aLine);
@@ -76,13 +114,6 @@ private:
   nsresult ProcessDigestSub(const nsACString& aChunk);
   bool NextLine(nsACString& aLine);
 
-  void CleanupUpdates();
-
-protected:
-  nsCString mPending;
-  nsresult mUpdateStatus;
-
-private:
   enum ParserState {
     PROTOCOL_STATE_CONTROL,
     PROTOCOL_STATE_CHUNK
@@ -108,16 +139,11 @@ private:
   };
   ChunkState mChunkState;
 
-  nsCOMPtr<nsICryptoHash> mCryptoHash;
-
   uint32_t mUpdateWait;
   bool mResetRequested;
 
-  nsTArray<ForwardedUpdate> mForwards;
   
-  nsTArray<TableUpdate*> mTableUpdates;
-  
-  TableUpdate *mTableUpdate;
+  TableUpdateV2 *mTableUpdate;
 };
 
 
@@ -129,18 +155,27 @@ public:
 public:
   ProtocolParserProtobuf();
 
+  virtual void SetCurrentTable(const nsACString& aTable) override;
   virtual nsresult AppendStream(const nsACString& aData) override;
   virtual void End() override;
 
 private:
   virtual ~ProtocolParserProtobuf();
 
+  virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const override;
+
   
   nsresult ProcessOneResponse(const ListUpdateResponse& aResponse);
-  nsresult ProcessAdditionOrRemoval(const ThreatEntrySetList& aUpdate,
+
+  nsresult ProcessAdditionOrRemoval(TableUpdateV4& aTableUpdate,
+                                    const ThreatEntrySetList& aUpdate,
                                     bool aIsAddition);
-  nsresult ProcessRawAddition(const ThreatEntrySet& aAddition);
-  nsresult ProcessRawRemoval(const ThreatEntrySet& aRemoval);
+
+  nsresult ProcessRawAddition(TableUpdateV4& aTableUpdate,
+                              const ThreatEntrySet& aAddition);
+
+  nsresult ProcessRawRemoval(TableUpdateV4& aTableUpdate,
+                             const ThreatEntrySet& aRemoval);
 };
 
 } 

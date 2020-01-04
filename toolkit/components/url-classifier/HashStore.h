@@ -13,6 +13,9 @@
 #include "nsIFile.h"
 #include "nsIFileStreams.h"
 #include "nsCOMPtr.h"
+#include "nsClassHashtable.h"
+#include "safebrowsing.pb.h"
+#include <string>
 
 namespace mozilla {
 namespace safebrowsing {
@@ -22,11 +25,39 @@ namespace safebrowsing {
 
 class TableUpdate {
 public:
-  explicit TableUpdate(const nsACString& aTable)
-      : mTable(aTable) {}
+  TableUpdate(const nsACString& aTable)
+    : mTable(aTable)
+  {
+  }
+
+  virtual ~TableUpdate() {}
+
+  
+  virtual bool Empty() const = 0;
+
+  
   const nsCString& TableName() const { return mTable; }
 
-  bool Empty() const {
+  template<typename T>
+  static T* Cast(TableUpdate* aThat) {
+    return (T::TAG == aThat->Tag() ? reinterpret_cast<T*>(aThat) : nullptr);
+  }
+
+private:
+  virtual int Tag() const = 0;
+
+  nsCString mTable;
+};
+
+
+
+
+class TableUpdateV2 : public TableUpdate {
+public:
+  explicit TableUpdateV2(const nsACString& aTable)
+    : TableUpdate(aTable) {}
+
+  bool Empty() const override {
     return mAddChunks.Length() == 0 &&
       mSubChunks.Length() == 0 &&
       mAddExpirations.Length() == 0 &&
@@ -74,8 +105,10 @@ public:
   AddCompleteArray& AddCompletes() { return mAddCompletes; }
   SubCompleteArray& SubCompletes() { return mSubCompletes; }
 
+  
+  static const int TAG = 2;
+
 private:
-  nsCString mTable;
 
   
   ChunkSet mAddChunks;
@@ -90,6 +123,58 @@ private:
   
   AddCompleteArray mAddCompletes;
   SubCompleteArray mSubCompletes;
+
+  virtual int Tag() const override { return TAG; }
+};
+
+
+
+
+class TableUpdateV4 : public TableUpdate {
+public:
+  struct PrefixString {
+  private:
+    std::string mStorage;
+    nsDependentCSubstring mString;
+
+  public:
+    explicit PrefixString(std::string& aString)
+    {
+      aString.swap(mStorage);
+      mString.Rebind(mStorage.data(), mStorage.size());
+    };
+
+    const nsACString& GetPrefixString() const { return mString; };
+  };
+
+  typedef nsClassHashtable<nsUint32HashKey, PrefixString> PrefixesStringMap;
+  typedef nsTArray<int32_t> RemovalIndiceArray;
+
+public:
+  explicit TableUpdateV4(const nsACString& aTable)
+    : TableUpdate(aTable)
+  {
+  }
+
+  bool Empty() const override
+  {
+    return mPrefixesMap.IsEmpty() && mRemovalIndiceArray.IsEmpty();
+  }
+
+  PrefixesStringMap& Prefixes() { return mPrefixesMap; }
+  RemovalIndiceArray& RemovalIndices() { return mRemovalIndiceArray; }
+
+  
+  static const int TAG = 4;
+
+  void NewPrefixes(int32_t aSize, std::string& aPrefixes);
+  void NewRemovalIndices(const uint32_t* aIndices, size_t aNumOfIndices);
+
+private:
+  virtual int Tag() const override { return TAG; }
+
+  PrefixesStringMap mPrefixesMap;
+  RemovalIndiceArray mRemovalIndiceArray;
 };
 
 
