@@ -1,4 +1,4 @@
-
+"use strict"; 
 
 
 
@@ -8,7 +8,7 @@
 
 var loop = loop || {};
 loop.shared = loop.shared || {};
-loop.shared.mixins = (function() {
+loop.shared.mixins = function () {
   "use strict";
 
   
@@ -26,8 +26,8 @@ loop.shared.mixins = (function() {
 
 
   function setRootObject(obj) {
-    rootObject = obj;
-  }
+    rootObject = obj;}
+
 
   
 
@@ -35,52 +35,37 @@ loop.shared.mixins = (function() {
 
 
 
-  var UrlHashChangeMixin = {
-    componentDidMount: function() {
-      rootObject.addEventListener("hashchange", this.onUrlHashChange, false);
-    },
+  var UrlHashChangeMixin = { 
+    componentDidMount: function componentDidMount() {
+      rootObject.addEventListener("hashchange", this.onUrlHashChange, false);}, 
 
-    componentWillUnmount: function() {
-      rootObject.removeEventListener("hashchange", this.onUrlHashChange, false);
-    }
-  };
+
+    componentWillUnmount: function componentWillUnmount() {
+      rootObject.removeEventListener("hashchange", this.onUrlHashChange, false);} };
+
+
 
   
 
 
 
 
-  var DocumentLocationMixin = {
-    locationReload: function() {
-      rootObject.location.reload();
-    }
-  };
+  var DocumentLocationMixin = { 
+    locationReload: function locationReload() {
+      rootObject.location.reload();} };
+
+
 
   
 
 
 
 
-  var DocumentTitleMixin = {
-    setTitle: function(newTitle) {
-      rootObject.document.title = newTitle;
-    }
-  };
-
-  
+  var DocumentTitleMixin = { 
+    setTitle: function setTitle(newTitle) {
+      rootObject.document.title = newTitle;} };
 
 
-
-
-
-
-
-
-  var WindowCloseMixin = {
-    closeWindow: function() {
-      rootObject.close();
-    }
-  };
 
   
 
@@ -91,29 +76,44 @@ loop.shared.mixins = (function() {
 
 
 
+  var WindowCloseMixin = { 
+    closeWindow: function closeWindow() {
+      rootObject.close();} };
 
-  var DropdownMenuMixin = function(boundingBoxSelector) {
-    return {
+
+
+  
+
+
+
+
+
+
+
+
+
+  var DropdownMenuMixin = function DropdownMenuMixin(boundingBoxSelector) {
+    return { 
       get documentBody() {
-        return rootObject.document.body;
-      },
+        return rootObject.document.body;}, 
 
-      getInitialState: function() {
-        return {
-          showMenu: false
-        };
-      },
+
+      getInitialState: function getInitialState() {
+        return { 
+          showMenu: false };}, 
+
+
 
       
 
 
 
-      _onBodyClick: function(event) {
-        var menuButton = this.refs["menu-button"] && this.refs["menu-button"].getDOMNode();
+      _onBodyClick: function _onBodyClick(event) {
+        var menuButton = this.refs["menu-button"];
 
         if (this.refs.anchor) {
-          menuButton = this.refs.anchor.getDOMNode();
-        }
+          menuButton = this.refs.anchor;}
+
 
         
 
@@ -123,27 +123,27 @@ loop.shared.mixins = (function() {
 
 
 
-        if (event.target.classList.contains("dropdown-menu-item") ||
-            event.target.classList.contains("dropdown-menu-button")) {
-          return;
-        }
+        if (event.target.classList.contains("dropdown-menu-item") || 
+        event.target.classList.contains("dropdown-menu-button")) {
+          return;}
+
 
         if (event.target !== menuButton) {
-          this.setState({ showMenu: false });
-        }
-      },
+          this.setState({ showMenu: false });}}, 
 
-      _correctMenuPosition: function() {
-        var menu = this.refs.menu && this.refs.menu.getDOMNode();
+
+
+      _correctMenuPosition: function _correctMenuPosition() {
+        var menu = this.refs.menu;
         if (!menu) {
-          return;
-        }
+          return;}
+
         if (menu.style.maxWidth) {
-          menu.style.maxWidth = "none";
-        }
+          menu.style.maxWidth = "none";}
+
         if (menu.style.maxHeight) {
-          menu.style.maxHeight = "none";
-        }
+          menu.style.maxHeight = "none";}
+
 
         
         var x, y, boundingBox, boundingRect;
@@ -156,17 +156,17 @@ loop.shared.mixins = (function() {
         if (boundingBoxSelector) {
           boundingBox = this.documentBody.querySelector(boundingBoxSelector);
           if (boundingBox) {
-            boundingRect = boundingBox.getBoundingClientRect();
-          }
-        }
+            boundingRect = boundingBox.getBoundingClientRect();}}
+
+
         if (!boundingRect) {
-          boundingRect = {
-            height: this.documentBody.offsetHeight,
-            left: 0,
-            top: 0,
-            width: this.documentBody.offsetWidth
-          };
-        }
+          boundingRect = { 
+            height: this.documentBody.offsetHeight, 
+            left: 0, 
+            top: 0, 
+            width: this.documentBody.offsetWidth };}
+
+
         
         
         boundingRect.width -= boundOffset;
@@ -176,16 +176,16 @@ loop.shared.mixins = (function() {
         y = menuNodeRect.top;
 
         
-        var anchor = this.refs.anchor && this.refs.anchor.getDOMNode();
+        var anchor = this.refs.anchor && ReactDOM.findDOMNode(this.refs.anchor);
         if (anchor) {
           
           
           var anchorNodeRect = anchor.getBoundingClientRect();
           
           
-          x = Math.floor(anchorNodeRect.left - (menuNodeRect.width / 2) + (anchorNodeRect.width / 2));
-          y = Math.floor(anchorNodeRect.top - menuNodeRect.height - anchorNodeRect.height);
-        }
+          x = Math.floor(anchorNodeRect.left - menuNodeRect.width / 2 + anchorNodeRect.width / 2);
+          y = Math.floor(anchorNodeRect.top - menuNodeRect.height - anchorNodeRect.height);}
+
 
         var overflowX = false;
         var overflowY = false;
@@ -193,14 +193,14 @@ loop.shared.mixins = (function() {
         if (x + menuNodeRect.width > boundingRect.width) {
           
           x = Math.floor(boundingRect.width - ((anchor ? 0 : x) + menuNodeRect.width));
-          overflowX = true;
-        }
+          overflowX = true;}
+
         
         if (y + menuNodeRect.height > boundingRect.height) {
           
           y = Math.floor(boundingRect.height - ((anchor ? 0 : y) + menuNodeRect.height));
-          overflowY = true;
-        }
+          overflowY = true;}
+
 
         if (anchor || overflowX) {
           
@@ -209,65 +209,65 @@ loop.shared.mixins = (function() {
           
           if (menuNodeRect.width > boundingRect.width) {
             menu.classList.add("overflow");
-            menu.style.maxWidth = boundingRect.width + "px";
-          }
-          menu.style.marginLeft = x + "px";
-        } else if (!menu.style.marginLeft) {
-          menu.style.marginLeft = "auto";
-        }
+            menu.style.maxWidth = boundingRect.width + "px";}
+
+          menu.style.marginLeft = x + "px";} else 
+        if (!menu.style.marginLeft) {
+          menu.style.marginLeft = "auto";}
+
 
         if (anchor || overflowY) {
-          if (menuNodeRect.height > (boundingRect.height + y)) {
+          if (menuNodeRect.height > boundingRect.height + y) {
             menu.classList.add("overflow");
             
             
-            menu.style.maxHeight = (boundingRect.height + y) + "px";
+            menu.style.maxHeight = boundingRect.height + y + "px";
             
             
             
-            y += menuNodeRect.height - (boundingRect.height + y);
-          }
-          menu.style.marginTop = y + "px";
-        } else if (!menu.style.marginLeft) {
-          menu.style.marginTop = "auto";
-        }
+            y += menuNodeRect.height - (boundingRect.height + y);}
+
+          menu.style.marginTop = y + "px";} else 
+        if (!menu.style.marginLeft) {
+          menu.style.marginTop = "auto";}
+
 
         
         
         if (this._repositionMenu) {
-          this._repositionMenu();
-        }
-        menu.style.visibility = "visible";
-      },
+          this._repositionMenu();}
 
-      componentDidMount: function() {
+        menu.style.visibility = "visible";}, 
+
+
+      componentDidMount: function componentDidMount() {
         this.documentBody.addEventListener("click", this._onBodyClick);
-        rootObject.addEventListener("blur", this.hideDropdownMenu);
-      },
+        rootObject.addEventListener("blur", this.hideDropdownMenu);}, 
 
-      componentWillUnmount: function() {
+
+      componentWillUnmount: function componentWillUnmount() {
         this.documentBody.removeEventListener("click", this._onBodyClick);
-        rootObject.removeEventListener("blur", this.hideDropdownMenu);
-      },
+        rootObject.removeEventListener("blur", this.hideDropdownMenu);}, 
 
-      showDropdownMenu: function() {
-        this.setState({ showMenu: true }, this._correctMenuPosition);
-      },
 
-      hideDropdownMenu: function() {
-        this.setState({ showMenu: false }, function() {
-          var menu = this.refs.menu && this.refs.menu.getDOMNode();
+      showDropdownMenu: function showDropdownMenu() {
+        this.setState({ showMenu: true }, this._correctMenuPosition);}, 
+
+
+      hideDropdownMenu: function hideDropdownMenu() {
+        this.setState({ showMenu: false }, function () {
+          var menu = this.refs.menu && ReactDOM.findDOMNode(this.refs.menu);
           if (menu) {
-            menu.style.visibility = "hidden";
-          }
-        });
-      },
+            menu.style.visibility = "hidden";}});}, 
 
-      toggleDropdownMenu: function() {
-        this[this.state.showMenu ? "hideDropdownMenu" : "showDropdownMenu"]();
-      }
-    };
-  };
+
+
+
+      toggleDropdownMenu: function toggleDropdownMenu() {
+        this[this.state.showMenu ? "hideDropdownMenu" : "showDropdownMenu"]();} };};
+
+
+
 
   
 
@@ -278,78 +278,78 @@ loop.shared.mixins = (function() {
 
 
 
-  var DocumentVisibilityMixin = {
-    _onDocumentVisibilityChanged: function(event) {
+  var DocumentVisibilityMixin = { 
+    _onDocumentVisibilityChanged: function _onDocumentVisibilityChanged(event) {
       if (!this.isMounted()) {
-        return;
-      }
+        return;}
+
 
       var hidden = event.target.hidden;
       if (hidden && typeof this.onDocumentHidden === "function") {
-        this.onDocumentHidden();
-      }
+        this.onDocumentHidden();}
+
       if (!hidden && typeof this.onDocumentVisible === "function") {
-        this.onDocumentVisible();
-      }
-    },
+        this.onDocumentVisible();}}, 
 
-    componentDidMount: function() {
+
+
+    componentDidMount: function componentDidMount() {
       rootObject.document.addEventListener(
-        "visibilitychange", this._onDocumentVisibilityChanged);
+      "visibilitychange", this._onDocumentVisibilityChanged);
       
       
-      this._onDocumentVisibilityChanged({ target: rootObject.document });
-    },
+      this._onDocumentVisibilityChanged({ target: rootObject.document });}, 
 
-    componentWillUnmount: function() {
+
+    componentWillUnmount: function componentWillUnmount() {
       rootObject.document.removeEventListener(
-        "visibilitychange", this._onDocumentVisibilityChanged);
-    }
-  };
+      "visibilitychange", this._onDocumentVisibilityChanged);} };
+
+
 
   
 
 
 
-  var MediaSetupMixin = {
+  var MediaSetupMixin = { 
     
 
 
 
 
 
-    getDefaultPublisherConfig: function(options) {
+    getDefaultPublisherConfig: function getDefaultPublisherConfig(options) {
       options = options || {};
       if (!("publishVideo" in options)) {
-        throw new Error("missing option publishVideo");
-      }
+        throw new Error("missing option publishVideo");}
+
 
       
       
-      return {
-        insertMode: "append",
-        fitMode: "contain",
-        width: "100%",
-        height: "100%",
-        publishVideo: options.publishVideo,
-        showControls: false
-      };
-    }
-  };
+      return { 
+        insertMode: "append", 
+        fitMode: "contain", 
+        width: "100%", 
+        height: "100%", 
+        publishVideo: options.publishVideo, 
+        showControls: false };} };
+
+
+
 
   
 
 
 
-  var AudioMixin = {
-    audio: null,
-    _audioRequest: null,
+  var AudioMixin = { 
+    audio: null, 
+    _audioRequest: null, 
 
-    _isLoopDesktop: function() {
-      var isUIShowcase = !!(rootObject.document.querySelector &&
-        rootObject.document.querySelector("#main > .showcase"));
-      return loop.shared.utils.isDesktop() || isUIShowcase;
-    },
+    _isLoopDesktop: function _isLoopDesktop() {
+      var isUIShowcase = !!(rootObject.document.querySelector && 
+      rootObject.document.querySelector("#main > .showcase"));
+      return loop.shared.utils.isDesktop() || isUIShowcase;}, 
+
 
     
 
@@ -358,18 +358,18 @@ loop.shared.mixins = (function() {
 
 
 
-    _canPlay: function() {
-      return new Promise(function(resolve) {
+    _canPlay: function _canPlay() {
+      return new Promise(function (resolve) {
         if (!this._isLoopDesktop()) {
           resolve(true);
-          return;
-        }
+          return;}
 
-        loop.request("GetDoNotDisturb").then(function(mayNotDisturb) {
-          resolve(!mayNotDisturb);
-        });
-      }.bind(this));
-     },
+
+        loop.request("GetDoNotDisturb").then(function (mayNotDisturb) {
+          resolve(!mayNotDisturb);});}.
+
+      bind(this));}, 
+
 
     
 
@@ -378,164 +378,162 @@ loop.shared.mixins = (function() {
 
 
 
-    play: function(name, options) {
-      this._canPlay().then(function(canPlay) {
+    play: function play(name, options) {
+      this._canPlay().then(function (canPlay) {
         if (!canPlay) {
-          return;
-        }
+          return;}
+
 
         options = options || {};
         options.loop = options.loop || false;
 
         this._ensureAudioStopped();
-        this._getAudioBlob(name, function(error, blob) {
+        this._getAudioBlob(name, function (error, blob) {
           if (error) {
             console.error(error);
-            return;
-          }
+            return;}
+
           if (!blob) {
-            return;
-          }
+            return;}
+
 
           var url = URL.createObjectURL(blob);
           this.audio = new Audio(url);
           this.audio.loop = options.loop;
-          this.audio.play();
-        }.bind(this));
-      }.bind(this));
-    },
+          this.audio.play();}.
+        bind(this));}.
+      bind(this));}, 
 
-    _getAudioBlob: function(name, callback) {
-      this._canPlay().then(function(canPlay) {
+
+    _getAudioBlob: function _getAudioBlob(name, callback) {
+      this._canPlay().then(function (canPlay) {
         if (!canPlay) {
           callback();
-          return;
-        }
+          return;}
+
 
         if (this._isLoopDesktop()) {
-          loop.request("GetAudioBlob", name).then(function(result) {
+          loop.request("GetAudioBlob", name).then(function (result) {
             if (result && result.isError) {
               callback(result);
-              return;
-            }
-            callback(null, result);
-          });
-          return;
-        }
+              return;}
+
+            callback(null, result);});
+
+          return;}
+
 
         var url = "shared/sounds/" + name + ".ogg";
         this._audioRequest = new XMLHttpRequest();
         this._audioRequest.open("GET", url, true);
         this._audioRequest.responseType = "arraybuffer";
-        this._audioRequest.onload = function() {
+        this._audioRequest.onload = function () {
           var request = this._audioRequest;
           var error;
           if (request.status < 200 || request.status >= 300) {
             error = new Error(request.status + " " + request.statusText);
             callback(error);
-            return;
-          }
+            return;}
+
 
           var type = request.getResponseHeader("Content-Type");
           var blob = new Blob([request.response], { type: type });
-          callback(null, blob);
-        }.bind(this);
+          callback(null, blob);}.
+        bind(this);
 
-        this._audioRequest.send(null);
-      }.bind(this));
-    },
+        this._audioRequest.send(null);}.
+      bind(this));}, 
+
 
     
 
 
-    _ensureAudioStopped: function() {
+    _ensureAudioStopped: function _ensureAudioStopped() {
       if (this._audioRequest) {
         this._audioRequest.abort();
-        delete this._audioRequest;
-      }
+        delete this._audioRequest;}
+
 
       if (this.audio) {
         this.audio.pause();
         this.audio.removeAttribute("src");
-        delete this.audio;
-      }
-    },
+        delete this.audio;}}, 
+
+
 
     
 
 
-    componentWillUnmount: function() {
-      this._ensureAudioStopped();
-    }
-  };
+    componentWillUnmount: function componentWillUnmount() {
+      this._ensureAudioStopped();} };
+
+
 
   
 
 
 
-  var RoomsAudioMixin = {
-    mixins: [AudioMixin],
+  var RoomsAudioMixin = { 
+    mixins: [AudioMixin], 
 
-    componentWillUpdate: function(nextProps, nextState) {
+    componentWillUpdate: function componentWillUpdate(nextProps, nextState) {
       var ROOM_STATES = loop.store.ROOM_STATES;
 
       function isConnectedToRoom(state) {
-        return state === ROOM_STATES.HAS_PARTICIPANTS ||
-               state === ROOM_STATES.SESSION_CONNECTED;
-      }
+        return state === ROOM_STATES.HAS_PARTICIPANTS || 
+        state === ROOM_STATES.SESSION_CONNECTED;}
+
 
       function notConnectedToRoom(state) {
         
         
         
-        return state === ROOM_STATES.INIT ||
-               state === ROOM_STATES.GATHER ||
-               state === ROOM_STATES.READY ||
-               state === ROOM_STATES.JOINED ||
-               state === ROOM_STATES.ENDED;
-      }
+        return state === ROOM_STATES.INIT || 
+        state === ROOM_STATES.GATHER || 
+        state === ROOM_STATES.READY || 
+        state === ROOM_STATES.JOINED || 
+        state === ROOM_STATES.ENDED;}
+
 
       
-      if (notConnectedToRoom(this.state.roomState) &&
-          isConnectedToRoom(nextState.roomState)) {
-        this.play("room-joined");
-      }
+      if (notConnectedToRoom(this.state.roomState) && 
+      isConnectedToRoom(nextState.roomState)) {
+        this.play("room-joined");}
+
 
       
-      if (this.state.roomState === ROOM_STATES.SESSION_CONNECTED &&
-          nextState.roomState === ROOM_STATES.HAS_PARTICIPANTS) {
-        this.play("room-joined-in");
-      }
+      if (this.state.roomState === ROOM_STATES.SESSION_CONNECTED && 
+      nextState.roomState === ROOM_STATES.HAS_PARTICIPANTS) {
+        this.play("room-joined-in");}
 
-      if (this.state.roomState === ROOM_STATES.HAS_PARTICIPANTS &&
-          nextState.roomState === ROOM_STATES.SESSION_CONNECTED) {
-        this.play("room-left");
-      }
 
-      
-      if (isConnectedToRoom(this.state.roomState) &&
-          notConnectedToRoom(nextState.roomState)) {
-        this.play("room-left");
-      }
+      if (this.state.roomState === ROOM_STATES.HAS_PARTICIPANTS && 
+      nextState.roomState === ROOM_STATES.SESSION_CONNECTED) {
+        this.play("room-left");}
+
 
       
-      if (nextState.roomState === ROOM_STATES.FAILED ||
-          nextState.roomState === ROOM_STATES.FULL) {
-        this.play("failure");
-      }
-    }
-  };
+      if (isConnectedToRoom(this.state.roomState) && 
+      notConnectedToRoom(nextState.roomState)) {
+        this.play("room-left");}
 
-  return {
-    AudioMixin: AudioMixin,
-    RoomsAudioMixin: RoomsAudioMixin,
-    setRootObject: setRootObject,
-    DropdownMenuMixin: DropdownMenuMixin,
-    DocumentVisibilityMixin: DocumentVisibilityMixin,
-    DocumentLocationMixin: DocumentLocationMixin,
-    DocumentTitleMixin: DocumentTitleMixin,
-    MediaSetupMixin: MediaSetupMixin,
-    UrlHashChangeMixin: UrlHashChangeMixin,
-    WindowCloseMixin: WindowCloseMixin
-  };
-})();
+
+      
+      if (nextState.roomState === ROOM_STATES.FAILED || 
+      nextState.roomState === ROOM_STATES.FULL) {
+        this.play("failure");}} };
+
+
+
+
+  return { 
+    AudioMixin: AudioMixin, 
+    RoomsAudioMixin: RoomsAudioMixin, 
+    setRootObject: setRootObject, 
+    DropdownMenuMixin: DropdownMenuMixin, 
+    DocumentVisibilityMixin: DocumentVisibilityMixin, 
+    DocumentLocationMixin: DocumentLocationMixin, 
+    DocumentTitleMixin: DocumentTitleMixin, 
+    MediaSetupMixin: MediaSetupMixin, 
+    UrlHashChangeMixin: UrlHashChangeMixin, 
+    WindowCloseMixin: WindowCloseMixin };}();

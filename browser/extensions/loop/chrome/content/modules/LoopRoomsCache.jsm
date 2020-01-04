@@ -1,22 +1,22 @@
 
 
 
-"use strict";
+"use strict";var _Components = 
 
-const { utils: Cu } = Components;
+Components;var Cu = _Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
-const { MozLoopService, LOOP_SESSION_TYPE } =
-  Cu.import("chrome://loop/content/modules/MozLoopService.jsm", {});
-XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils",
-                                  "resource://services-common/utils.js");
+Cu.import("resource://gre/modules/Task.jsm");var _Cu$import = 
+
+Cu.import("chrome://loop/content/modules/MozLoopService.jsm", {});var MozLoopService = _Cu$import.MozLoopService;var LOOP_SESSION_TYPE = _Cu$import.LOOP_SESSION_TYPE;
+XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils", 
+"resource://services-common/utils.js");
 XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
 this.EXPORTED_SYMBOLS = ["LoopRoomsCache"];
 
-const LOOP_ROOMS_CACHE_FILENAME = "loopRoomsCache.json";
+var LOOP_ROOMS_CACHE_FILENAME = "loopRoomsCache.json";
 XPCOMUtils.defineConstant(this, "LOOP_ROOMS_CACHE_FILENAME", LOOP_ROOMS_CACHE_FILENAME);
 
 
@@ -47,26 +47,25 @@ function LoopRoomsCache(options) {
 
   this.baseDir = options.baseDir || OS.Constants.Path.profileDir;
   this.path = OS.Path.join(
-    this.baseDir,
-    options.filename || LOOP_ROOMS_CACHE_FILENAME
-  );
-  this._cache = null;
-}
+  this.baseDir, 
+  options.filename || LOOP_ROOMS_CACHE_FILENAME);
 
-LoopRoomsCache.prototype = {
+  this._cache = null;}
+
+
+LoopRoomsCache.prototype = { 
   
 
 
 
 
 
-  _setCache: function(contents) {
+  _setCache: function _setCache(contents) {var _this = this;
     this._cache = contents;
 
-    return OS.File.makeDir(this.baseDir, { ignoreExisting: true }).then(() => {
-        return CommonUtils.writeJSON(contents, this.path);
-      });
-  },
+    return OS.File.makeDir(this.baseDir, { ignoreExisting: true }).then(function () {return (
+        CommonUtils.writeJSON(contents, _this.path));});}, 
+
 
   
 
@@ -76,28 +75,28 @@ LoopRoomsCache.prototype = {
 
   _getCache: Task.async(function* () {
     if (this._cache) {
-      return this._cache;
-    }
+      return this._cache;}
+
 
     try {
-      return (this._cache = yield CommonUtils.readJSON(this.path));
-    } catch (error) {
+      return this._cache = yield CommonUtils.readJSON(this.path);} 
+    catch (error) {
       if (!error.becauseNoSuchFile) {
-        MozLoopService.log.debug("Error reading the cache:", error);
-      }
-      return (this._cache = {});
-    }
-  }),
+        MozLoopService.log.debug("Error reading the cache:", error);}
+
+      return this._cache = {};}}), 
+
+
 
   
 
 
 
 
-  clear: function() {
+  clear: function clear() {
     this._cache = null;
-    return OS.File.remove(this.path);
-  },
+    return OS.File.remove(this.path);}, 
+
 
   
 
@@ -109,16 +108,16 @@ LoopRoomsCache.prototype = {
 
   getKey: Task.async(function* (sessionType, roomToken) {
     if (sessionType != LOOP_SESSION_TYPE.FXA) {
-      return null;
-    }
+      return null;}
 
-    let sessionData = (yield this._getCache())[sessionType];
+
+    var sessionData = (yield this._getCache())[sessionType];
 
     if (!sessionData || !sessionData[roomToken]) {
-      return null;
-    }
-    return sessionData[roomToken].key;
-  }),
+      return null;}
+
+    return sessionData[roomToken].key;}), 
+
 
   
 
@@ -131,30 +130,28 @@ LoopRoomsCache.prototype = {
 
   setKey: Task.async(function* (sessionType, roomToken, roomKey) {
     if (sessionType != LOOP_SESSION_TYPE.FXA) {
-      return Promise.resolve();
-    }
+      return Promise.resolve();}
 
-    let cache = yield this._getCache();
+
+    var cache = yield this._getCache();
 
     
     
     
     
     if (!cache[sessionType]) {
-      cache[sessionType] = {};
-    }
+      cache[sessionType] = {};}
+
 
     if (!cache[sessionType][roomToken]) {
-      cache[sessionType][roomToken] = {};
-    }
+      cache[sessionType][roomToken] = {};}
+
 
     
-    if (!cache[sessionType][roomToken].key ||
-        cache[sessionType][roomToken].key != roomKey) {
+    if (!cache[sessionType][roomToken].key || 
+    cache[sessionType][roomToken].key != roomKey) {
       cache[sessionType][roomToken].key = roomKey;
-      return yield this._setCache(cache);
-    }
+      return yield this._setCache(cache);}
 
-    return Promise.resolve();
-  })
-};
+
+    return Promise.resolve();}) };

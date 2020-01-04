@@ -1,44 +1,33 @@
-
+"use strict"; 
 
 
 
 var loop = loop || {};
 loop.store = loop.store || {};
 
-loop.store.createStore = (function() {
+loop.store.createStore = function () {
   "use strict";
 
-  var baseStorePrototype = {
-    __registerActions: function(actions) {
+  var baseStorePrototype = { 
+    __registerActions: function __registerActions(actions) {
       
-      actions.forEach(function(handler) {
+      actions.forEach(function (handler) {
         if (typeof this[handler] !== "function") {
-          throw new Error("Store should implement an action handler for " +
-                          handler);
-        }
-      }, this);
-      this.dispatcher.register(this, actions);
-    },
+          throw new Error("Store should implement an action handler for " + 
+          handler);}}, 
+
+      this);
+      this.dispatcher.register(this, actions);}, 
+
 
     
 
 
 
 
-    dispatchAction: function(action) {
-      this.dispatcher.dispatch(action);
-    },
+    dispatchAction: function dispatchAction(action) {
+      this.dispatcher.dispatch(action);}, 
 
-    
-
-
-
-
-
-
-    getStoreState: function(key) {
-      return key ? this._storeState[key] : this._storeState;
-    },
 
     
 
@@ -46,25 +35,36 @@ loop.store.createStore = (function() {
 
 
 
-    setStoreState: function(newState) {
-      for (var key in newState) {
+
+    getStoreState: function getStoreState(key) {
+      return key ? this._storeState[key] : this._storeState;}, 
+
+
+    
+
+
+
+
+
+    setStoreState: function setStoreState(newState) {
+      Object.keys(newState).forEach(function (key) {
         this._storeState[key] = newState[key];
-        this.trigger("change:" + key);
-      }
-      this.trigger("change");
-    },
+        this.trigger("change:" + key);}.
+      bind(this));
+      this.trigger("change");}, 
+
 
     
 
 
-    resetStoreState: function() {
+    resetStoreState: function resetStoreState() {
       if (typeof this.getInitialStoreState === "function") {
-        this._storeState = this.getInitialStoreState();
-      } else {
-        this._storeState = {};
-      }
-    }
-  };
+        this._storeState = this.getInitialStoreState();} else 
+      {
+        this._storeState = {};}} };
+
+
+
 
   
 
@@ -73,37 +73,35 @@ loop.store.createStore = (function() {
 
 
   function createStore(storeProto) {
-    var BaseStore = function(dispatcher, options) {
+    var BaseStore = function BaseStore(dispatcher, options) {
       options = options || {};
 
       if (!dispatcher) {
-        throw new Error("Missing required dispatcher");
-      }
+        throw new Error("Missing required dispatcher");}
+
       this.dispatcher = dispatcher;
       if (Array.isArray(this.actions)) {
-        this.__registerActions(this.actions);
-      }
+        this.__registerActions(this.actions);}
+
 
       if (typeof this.initialize === "function") {
-        this.initialize(options);
-      }
+        this.initialize(options);}
+
 
       if (typeof this.getInitialStoreState === "function") {
-        this._storeState = this.getInitialStoreState();
-      } else {
-        this._storeState = {};
-      }
-    };
+        this._storeState = this.getInitialStoreState();} else 
+      {
+        this._storeState = {};}};
+
+
     BaseStore.prototype = _.extend({}, 
-                                   Backbone.Events,
-                                   baseStorePrototype,
-                                   storeProto);
-    return BaseStore;
-  }
+    Backbone.Events, 
+    baseStorePrototype, 
+    storeProto);
+    return BaseStore;}
 
-  return createStore;
-})();
 
+  return createStore;}();
 
 
 
@@ -112,43 +110,44 @@ loop.store.createStore = (function() {
 
 
 
-loop.store.StoreMixin = (function() {
+
+
+loop.store.StoreMixin = function () {
   "use strict";
 
   var _stores = {};
   function StoreMixin(id) {
-    return {
-      getStore: function() {
+    return { 
+      getStore: function getStore() {
         
         if (id in this.props) {
-          return this.props[id];
-        }
+          return this.props[id];}
+
         if (!_stores[id]) {
-          throw new Error("Unavailable store " + id);
-        }
-        return _stores[id];
-      },
-      getStoreState: function() {
-        return this.getStore().getStoreState();
-      },
-      componentWillMount: function() {
-        this.getStore().on("change", function() {
-          this.setState(this.getStoreState());
-        }, this);
-      },
-      componentWillUnmount: function() {
-        this.getStore().off("change", null, this);
-      }
-    };
-  }
-  StoreMixin.register = function(stores) {
-    _.extend(_stores, stores);
-  };
+          throw new Error("Unavailable store " + id);}
+
+        return _stores[id];}, 
+
+      getStoreState: function getStoreState() {
+        return this.getStore().getStoreState();}, 
+
+      componentWillMount: function componentWillMount() {
+        this.getStore().on("change", function () {
+          this.setState(this.getStoreState());}, 
+        this);}, 
+
+      componentWillUnmount: function componentWillUnmount() {
+        this.getStore().off("change", null, this);} };}
+
+
+
+  StoreMixin.register = function (stores) {
+    _.extend(_stores, stores);};
+
   
 
 
-  StoreMixin.clearRegisteredStores = function() {
-    _stores = {};
-  };
-  return StoreMixin;
-})();
+  StoreMixin.clearRegisteredStores = function () {
+    _stores = {};};
+
+  return StoreMixin;}();

@@ -1,4 +1,4 @@
-
+"use strict"; 
 
 
 
@@ -9,7 +9,7 @@ loop.store = loop.store || {};
 
 
 
-loop.store.ConversationAppStore = (function() {
+loop.store.ConversationAppStore = function () {
   "use strict";
 
   
@@ -18,89 +18,84 @@ loop.store.ConversationAppStore = (function() {
 
 
 
-  var ConversationAppStore = function(options) {
-    if (!options.activeRoomStore) {
-      throw new Error("Missing option activeRoomStore");
-    }
-    if (!options.dispatcher) {
-      throw new Error("Missing option dispatcher");
-    }
-    if (!("feedbackPeriod" in options)) {
-      throw new Error("Missing option feedbackPeriod");
-    }
-    if (!("feedbackTimestamp" in options)) {
-      throw new Error("Missing option feedbackTimestamp");
-    }
+  var ConversationAppStore = loop.store.createStore({ 
+    initialize: function initialize(options) {
+      if (!options.activeRoomStore) {
+        throw new Error("Missing option activeRoomStore");}
 
-    this._activeRoomStore = options.activeRoomStore;
-    this._dispatcher = options.dispatcher;
-    this._facebookEnabled = options.facebookEnabled;
-    this._feedbackPeriod = options.feedbackPeriod;
-    this._feedbackTimestamp = options.feedbackTimestamp;
-    this._rootObj = ("rootObject" in options) ? options.rootObject : window;
-    this._storeState = this.getInitialStoreState();
+      if (!("feedbackPeriod" in options)) {
+        throw new Error("Missing option feedbackPeriod");}
 
-    
-    this._eventHandlers = {};
-    ["unload", "LoopHangupNow", "socialFrameAttached", "socialFrameDetached", "ToggleBrowserSharing"]
-      .forEach(function(eventName) {
+      if (!("feedbackTimestamp" in options)) {
+        throw new Error("Missing option feedbackTimestamp");}
+
+      this._activeRoomStore = options.activeRoomStore;
+      this._facebookEnabled = options.facebookEnabled;
+      this._feedbackPeriod = options.feedbackPeriod;
+      this._feedbackTimestamp = options.feedbackTimestamp;
+      this._rootObj = "rootObject" in options ? options.rootObject : window;
+      this._storeState = this.getInitialStoreState();
+
+      
+      this._eventHandlers = {};
+      ["unload", "LoopHangupNow", "socialFrameAttached", "socialFrameDetached", "ToggleBrowserSharing"].
+      forEach(function (eventName) {
         var handlerName = eventName + "Handler";
         this._eventHandlers[eventName] = this[handlerName].bind(this);
-        this._rootObj.addEventListener(eventName, this._eventHandlers[eventName]);
-      }.bind(this));
+        this._rootObj.addEventListener(eventName, this._eventHandlers[eventName]);}.
+      bind(this));
 
-    this._dispatcher.register(this, [
-      "getWindowData",
-      "showFeedbackForm",
-      "leaveConversation"
-    ]);
-  };
+      this.dispatcher.register(this, [
+      "getWindowData", 
+      "showFeedbackForm", 
+      "leaveConversation"]);}, 
 
-  ConversationAppStore.prototype = _.extend({
-    getInitialStoreState: function() {
-      return {
-        chatWindowDetached: false,
-        facebookEnabled: this._facebookEnabled,
+
+
+    getInitialStoreState: function getInitialStoreState() {
+      return { 
+        chatWindowDetached: false, 
+        facebookEnabled: this._facebookEnabled, 
         
-        feedbackPeriod: this._feedbackPeriod * 1000,
+        feedbackPeriod: this._feedbackPeriod * 1000, 
         
-        feedbackTimestamp: this._feedbackTimestamp * 1000,
-        showFeedbackForm: false
-      };
-    },
+        feedbackTimestamp: this._feedbackTimestamp * 1000, 
+        showFeedbackForm: false };}, 
+
+
 
     
 
 
 
 
-    getStoreState: function() {
-      return this._storeState;
-    },
+    getStoreState: function getStoreState() {
+      return this._storeState;}, 
+
 
     
 
 
 
 
-    setStoreState: function(state) {
+    setStoreState: function setStoreState(state) {
       this._storeState = _.extend({}, this._storeState, state);
-      this.trigger("change");
-    },
+      this.trigger("change");}, 
+
 
     
 
 
 
-    showFeedbackForm: function() {
+    showFeedbackForm: function showFeedbackForm() {
       var timestamp = Math.floor(new Date().getTime() / 1000);
 
       loop.request("SetLoopPref", "feedback.dateLastSeenSec", timestamp);
 
-      this.setStoreState({
-        showFeedbackForm: true
-      });
-    },
+      this.setStoreState({ 
+        showFeedbackForm: true });}, 
+
+
 
     
 
@@ -108,21 +103,21 @@ loop.store.ConversationAppStore = (function() {
 
 
 
-    getWindowData: function(actionData) {
-      var windowData = loop.getStoredRequest(["GetConversationWindowData",
-        actionData.windowId]);
+    getWindowData: function getWindowData(actionData) {
+      var windowData = loop.getStoredRequest(["GetConversationWindowData", 
+      actionData.windowId]);
 
       if (!windowData) {
         console.error("Failed to get the window data");
         this.setStoreState({ windowType: "failed" });
-        return;
-      }
+        return;}
+
 
       this.setStoreState({ windowType: windowData.type });
 
-      this._dispatcher.dispatch(new loop.shared.actions.SetupWindowData(_.extend({
-        windowId: actionData.windowId }, windowData)));
-    },
+      this.dispatcher.dispatch(new loop.shared.actions.SetupWindowData(_.extend({ 
+        windowId: actionData.windowId }, windowData)));}, 
+
 
     
 
@@ -130,16 +125,16 @@ loop.store.ConversationAppStore = (function() {
 
 
 
-    unloadHandler: function() {
-      this._dispatcher.dispatch(new loop.shared.actions.WindowUnload());
+    unloadHandler: function unloadHandler() {
+      this.dispatcher.dispatch(new loop.shared.actions.WindowUnload());
 
       
       var eventNames = Object.getOwnPropertyNames(this._eventHandlers);
-      eventNames.forEach(function(eventName) {
-        this._rootObj.removeEventListener(eventName, this._eventHandlers[eventName]);
-      }.bind(this));
-      this._eventHandlers = null;
-    },
+      eventNames.forEach(function (eventName) {
+        this._rootObj.removeEventListener(eventName, this._eventHandlers[eventName]);}.
+      bind(this));
+      this._eventHandlers = null;}, 
+
 
     
 
@@ -147,66 +142,64 @@ loop.store.ConversationAppStore = (function() {
 
 
 
-    LoopHangupNowHandler: function() {
-      this._dispatcher.dispatch(new loop.shared.actions.LeaveConversation());
-    },
+    LoopHangupNowHandler: function LoopHangupNowHandler() {
+      this.dispatcher.dispatch(new loop.shared.actions.LeaveConversation());}, 
+
 
     
 
 
 
-    leaveConversation: function() {
-      if (this.getStoreState().windowType !== "room" ||
-          !this._activeRoomStore.getStoreState().used ||
-          this.getStoreState().showFeedbackForm) {
+    leaveConversation: function leaveConversation() {
+      if (this.getStoreState().windowType !== "room" || 
+      !this._activeRoomStore.getStoreState().used || 
+      this.getStoreState().showFeedbackForm) {
         loop.shared.mixins.WindowCloseMixin.closeWindow();
-        return;
-      }
+        return;}
+
 
       var delta = new Date() - new Date(this.getStoreState().feedbackTimestamp);
 
       
       
-      if (this.getStoreState().feedbackTimestamp === 0 ||
-          delta >= this.getStoreState().feedbackPeriod) {
-        this._dispatcher.dispatch(new loop.shared.actions.LeaveRoom({
-          windowStayingOpen: true
-        }));
-        this._dispatcher.dispatch(new loop.shared.actions.ShowFeedbackForm());
-        return;
-      }
+      if (this.getStoreState().feedbackTimestamp === 0 || 
+      delta >= this.getStoreState().feedbackPeriod) {
+        this.dispatcher.dispatch(new loop.shared.actions.LeaveRoom({ 
+          windowStayingOpen: true }));
 
-      loop.shared.mixins.WindowCloseMixin.closeWindow();
-    },
+        this.dispatcher.dispatch(new loop.shared.actions.ShowFeedbackForm());
+        return;}
+
+
+      loop.shared.mixins.WindowCloseMixin.closeWindow();}, 
+
 
     
 
 
 
 
-    ToggleBrowserSharingHandler: function(actionData) {
-      this._dispatcher.dispatch(new loop.shared.actions.ToggleBrowserSharing({
-        enabled: !actionData.detail
-      }));
-    },
+    ToggleBrowserSharingHandler: function ToggleBrowserSharingHandler(actionData) {
+      this.dispatcher.dispatch(new loop.shared.actions.ToggleBrowserSharing({ 
+        enabled: !actionData.detail }));}, 
+
+
 
     
 
 
 
-    socialFrameAttachedHandler: function() {
-      this.setStoreState({ chatWindowDetached: false });
-    },
+    socialFrameAttachedHandler: function socialFrameAttachedHandler() {
+      this.setStoreState({ chatWindowDetached: false });}, 
+
 
     
 
 
 
-    socialFrameDetachedHandler: function() {
-      this.setStoreState({ chatWindowDetached: true });
-    }
-  }, Backbone.Events);
+    socialFrameDetachedHandler: function socialFrameDetachedHandler() {
+      this.setStoreState({ chatWindowDetached: true });} });
 
-  return ConversationAppStore;
 
-})();
+
+  return ConversationAppStore;}();

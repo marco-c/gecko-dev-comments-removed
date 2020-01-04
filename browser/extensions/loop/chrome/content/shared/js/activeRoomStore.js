@@ -1,38 +1,38 @@
-
+"use strict"; 
 
 
 
 var loop = loop || {};
 loop.store = loop.store || {};
 
-loop.store.ROOM_STATES = {
-    
-    INIT: "room-init",
-    
-    GATHER: "room-gather",
-    
-    READY: "room-ready",
-    
-    MEDIA_WAIT: "room-media-wait",
-    
-    JOINING: "room-joining",
-    
-    JOINED: "room-joined",
-    
-    SESSION_CONNECTED: "room-session-connected",
-    
-    HAS_PARTICIPANTS: "room-has-participants",
-    
-    FAILED: "room-failed",
-    
-    FULL: "room-full",
-    
-    ENDED: "room-ended",
-    
-    CLOSING: "room-closing"
-};
+loop.store.ROOM_STATES = { 
+  
+  INIT: "room-init", 
+  
+  GATHER: "room-gather", 
+  
+  READY: "room-ready", 
+  
+  MEDIA_WAIT: "room-media-wait", 
+  
+  JOINING: "room-joining", 
+  
+  JOINED: "room-joined", 
+  
+  SESSION_CONNECTED: "room-session-connected", 
+  
+  HAS_PARTICIPANTS: "room-has-participants", 
+  
+  FAILED: "room-failed", 
+  
+  FULL: "room-full", 
+  
+  ENDED: "room-ended", 
+  
+  CLOSING: "room-closing" };
 
-loop.store.ActiveRoomStore = (function(mozL10n) {
+
+loop.store.ActiveRoomStore = function (mozL10n) {
   "use strict";
 
   var sharedActions = loop.shared.actions;
@@ -49,15 +49,15 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
   var ROOM_INFO_FAILURES = loop.shared.utils.ROOM_INFO_FAILURES;
 
-  var OPTIONAL_ROOMINFO_FIELDS = {
-    participants: "participants",
-    roomContextUrls: "roomContextUrls",
-    roomDescription: "roomDescription",
-    roomInfoFailure: "roomInfoFailure",
-    roomName: "roomName",
-    roomState: "roomState",
-    socialShareProviders: "socialShareProviders"
-  };
+  var OPTIONAL_ROOMINFO_FIELDS = { 
+    participants: "participants", 
+    roomContextUrls: "roomContextUrls", 
+    roomDescription: "roomDescription", 
+    roomInfoFailure: "roomInfoFailure", 
+    roomName: "roomName", 
+    roomState: "roomState", 
+    socialShareProviders: "socialShareProviders" };
+
 
   var updateContextTimer = null;
 
@@ -69,30 +69,30 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-  var ActiveRoomStore = loop.store.createStore({
+  var ActiveRoomStore = loop.store.createStore({ 
     
 
 
 
-    expiresTimeFactor: 0.9,
+    expiresTimeFactor: 0.9, 
 
     
     
     
     
     actions: [
-      "setupWindowData",
-      "fetchServerData"
-    ],
+    "setupWindowData", 
+    "fetchServerData"], 
 
-    initialize: function(options) {
+
+    initialize: function initialize(options) {
       if (!options.sdkDriver) {
-        throw new Error("Missing option sdkDriver");
-      }
+        throw new Error("Missing option sdkDriver");}
+
       this._sdkDriver = options.sdkDriver;
 
-      this._isDesktop = options.isDesktop || false;
-    },
+      this._isDesktop = options.isDesktop || false;}, 
+
 
     
 
@@ -103,22 +103,22 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
     _statesToResetOnLeave: [
-      "audioMuted",
-      "chatMessageExchanged",
-      "localSrcMediaElement",
-      "localVideoDimensions",
-      "mediaConnected",
-      "receivingScreenShare",
-      "remoteAudioEnabled",
-      "remotePeerDisconnected",
-      "remoteSrcMediaElement",
-      "remoteVideoDimensions",
-      "remoteVideoEnabled",
-      "streamPaused",
-      "screenSharingState",
-      "screenShareMediaElement",
-      "videoMuted"
-    ],
+    "audioMuted", 
+    "chatMessageExchanged", 
+    "localSrcMediaElement", 
+    "localVideoDimensions", 
+    "mediaConnected", 
+    "receivingScreenShare", 
+    "remoteAudioEnabled", 
+    "remotePeerDisconnected", 
+    "remoteSrcMediaElement", 
+    "remoteVideoDimensions", 
+    "remoteVideoEnabled", 
+    "streamPaused", 
+    "screenSharingState", 
+    "screenShareMediaElement", 
+    "videoMuted"], 
+
 
     
 
@@ -126,54 +126,54 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    getInitialStoreState: function() {
-      return {
-        roomState: ROOM_STATES.INIT,
-        audioMuted: false,
-        videoMuted: false,
-        remoteAudioEnabled: false,
-        remoteVideoEnabled: false,
-        failureReason: undefined,
+    getInitialStoreState: function getInitialStoreState() {
+      return { 
+        roomState: ROOM_STATES.INIT, 
+        audioMuted: false, 
+        videoMuted: false, 
+        remoteAudioEnabled: false, 
+        remoteVideoEnabled: false, 
+        failureReason: undefined, 
         
         
-        userAgentHandlesRoom: undefined,
+        userAgentHandlesRoom: undefined, 
         
         
         
         
-        used: false,
-        localVideoDimensions: {},
-        remoteVideoDimensions: {},
-        screenSharingState: SCREEN_SHARE_STATES.INACTIVE,
-        sharingPaused: false,
-        receivingScreenShare: false,
-        remotePeerDisconnected: false,
+        used: false, 
+        localVideoDimensions: {}, 
+        remoteVideoDimensions: {}, 
+        screenSharingState: SCREEN_SHARE_STATES.INACTIVE, 
+        sharingPaused: false, 
+        receivingScreenShare: false, 
+        remotePeerDisconnected: false, 
         
-        roomContextUrls: null,
+        roomContextUrls: null, 
         
-        roomDescription: null,
+        roomDescription: null, 
         
-        roomInfoFailure: null,
+        roomInfoFailure: null, 
         
-        roomName: null,
+        roomName: null, 
         
-        streamPaused: false,
+        streamPaused: false, 
         
-        socialShareProviders: null,
+        socialShareProviders: null, 
         
-        mediaConnected: false,
+        mediaConnected: false, 
         
         
-        chatMessageExchanged: false
-      };
-    },
+        chatMessageExchanged: false };}, 
+
+
 
     
 
 
 
 
-    roomFailure: function(actionData) {
+    roomFailure: function roomFailure(actionData) {
       function getReason(serverCode) {
         switch (serverCode) {
           case REST_ERRNOS.INVALID_TOKEN:
@@ -183,42 +183,42 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
             
             return FAILURE_DETAILS.COULD_NOT_CONNECT;
           default:
-            return FAILURE_DETAILS.UNKNOWN;
-        }
-      }
+            return FAILURE_DETAILS.UNKNOWN;}}
 
-      console.error("Error in state `" + this._storeState.roomState + "`:",
-        actionData.error);
 
-      var exitState = this._storeState.roomState !== ROOM_STATES.FAILED ?
-        this._storeState.roomState : this._storeState.failureExitState;
 
-      this.setStoreState({
-        error: actionData.error,
-        failureReason: getReason(actionData.error.errno),
-        failureExitState: exitState
-      });
+      console.error("Error in state `" + this._storeState.roomState + "`:", 
+      actionData.error);
 
-      this._leaveRoom(actionData.error.errno === REST_ERRNOS.ROOM_FULL ?
-          ROOM_STATES.FULL : ROOM_STATES.FAILED, actionData.failedJoinRequest);
-    },
+      var exitState = this._storeState.roomState !== ROOM_STATES.FAILED ? 
+      this._storeState.roomState : this._storeState.failureExitState;
+
+      this.setStoreState({ 
+        error: actionData.error, 
+        failureReason: getReason(actionData.error.errno), 
+        failureExitState: exitState });
+
+
+      this._leaveRoom(actionData.error.errno === REST_ERRNOS.ROOM_FULL ? 
+      ROOM_STATES.FULL : ROOM_STATES.FAILED, actionData.failedJoinRequest);}, 
+
 
     
 
 
-    retryAfterRoomFailure: function() {
+    retryAfterRoomFailure: function retryAfterRoomFailure() {
       if (this._storeState.failureReason === FAILURE_DETAILS.EXPIRED_OR_INVALID) {
         console.error("Invalid retry attempt for expired or invalid url");
-        return;
-      }
+        return;}
+
 
       switch (this._storeState.failureExitState) {
         case ROOM_STATES.GATHER:
-          this.dispatchAction(new sharedActions.FetchServerData({
-            cryptoKey: this._storeState.roomCryptoKey,
-            token: this._storeState.roomToken,
-            windowType: "room"
-          }));
+          this.dispatchAction(new sharedActions.FetchServerData({ 
+            cryptoKey: this._storeState.roomCryptoKey, 
+            token: this._storeState.roomToken, 
+            windowType: "room" }));
+
           return;
         case ROOM_STATES.INIT:
         case ROOM_STATES.ENDED:
@@ -230,60 +230,60 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
           
           
           this.joinRoom();
-          return;
-      }
-    },
+          return;}}, 
+
+
 
     
 
 
 
-    _registerPostSetupActions: function() {
+    _registerPostSetupActions: function _registerPostSetupActions() {
       
       
       
       if (this._registeredActions) {
-        return;
-      }
+        return;}
+
 
       this._registeredActions = true;
 
       var actions = [
-        "roomFailure",
-        "retryAfterRoomFailure",
-        "updateRoomInfo",
-        "userAgentHandlesRoom",
-        "gotMediaPermission",
-        "joinRoom",
-        "joinedRoom",
-        "connectedToSdkServers",
-        "connectionFailure",
-        "setMute",
-        "screenSharingState",
-        "receivingScreenShare",
-        "remotePeerDisconnected",
-        "remotePeerConnected",
-        "windowUnload",
-        "leaveRoom",
-        "feedbackComplete",
-        "mediaStreamCreated",
-        "mediaStreamDestroyed",
-        "remoteVideoStatus",
-        "videoDimensionsChanged",
-        "startBrowserShare",
-        "endScreenShare",
-        "toggleBrowserSharing",
-        "updateSocialShareInfo",
-        "connectionStatus",
-        "mediaConnected",
-        "videoScreenStreamChanged"
-      ];
+      "roomFailure", 
+      "retryAfterRoomFailure", 
+      "updateRoomInfo", 
+      "userAgentHandlesRoom", 
+      "gotMediaPermission", 
+      "joinRoom", 
+      "joinedRoom", 
+      "connectedToSdkServers", 
+      "connectionFailure", 
+      "setMute", 
+      "screenSharingState", 
+      "receivingScreenShare", 
+      "remotePeerDisconnected", 
+      "remotePeerConnected", 
+      "windowUnload", 
+      "leaveRoom", 
+      "feedbackComplete", 
+      "mediaStreamCreated", 
+      "mediaStreamDestroyed", 
+      "remoteVideoStatus", 
+      "videoDimensionsChanged", 
+      "startBrowserShare", 
+      "endScreenShare", 
+      "toggleBrowserSharing", 
+      "updateSocialShareInfo", 
+      "connectionStatus", 
+      "mediaConnected", 
+      "videoScreenStreamChanged"];
+
       
       if (this._isDesktop) {
         
         
-        actions.push("receivedTextChatMessage", "sendTextChatMessage");
-      }
+        actions.push("receivedTextChatMessage", "sendTextChatMessage");}
+
       this.dispatcher.register(this, actions);
 
       this._onUpdateListener = this._handleRoomUpdate.bind(this);
@@ -294,8 +294,8 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       loop.request("Rooms:PushSubscription", ["delete:" + roomToken, "update:" + roomToken]);
       loop.subscribe("Rooms:Delete:" + roomToken, this._handleRoomDelete.bind(this));
       loop.subscribe("Rooms:Update:" + roomToken, this._handleRoomUpdate.bind(this));
-      loop.subscribe("SocialProvidersChanged", this._onSocialShareUpdate);
-    },
+      loop.subscribe("SocialProvidersChanged", this._onSocialShareUpdate);}, 
+
 
     
 
@@ -305,50 +305,50 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    setupWindowData: function(actionData) {
+    setupWindowData: function setupWindowData(actionData) {
       if (actionData.type !== "room") {
         
-        return Promise.resolve();
-      }
+        return Promise.resolve();}
 
-      this.setStoreState({
-        roomState: ROOM_STATES.GATHER,
-        roomToken: actionData.roomToken,
-        windowId: actionData.windowId
-      });
+
+      this.setStoreState({ 
+        roomState: ROOM_STATES.GATHER, 
+        roomToken: actionData.roomToken, 
+        windowId: actionData.windowId });
+
 
       this._registerPostSetupActions();
 
       
       return loop.requestMulti(
-        ["Rooms:Get", actionData.roomToken],
-        ["GetSocialShareProviders"])
-        .then(function(results) {
-          var room = results[0];
-          var socialShareProviders = results[1];
+      ["Rooms:Get", actionData.roomToken], 
+      ["GetSocialShareProviders"]).
+      then(function (results) {
+        var room = results[0];
+        var socialShareProviders = results[1];
 
-          if (room.isError) {
-            this.dispatchAction(new sharedActions.RoomFailure({
-              error: room,
-              failedJoinRequest: false
-            }));
-            return;
-          }
+        if (room.isError) {
+          this.dispatchAction(new sharedActions.RoomFailure({ 
+            error: room, 
+            failedJoinRequest: false }));
 
-          this.dispatchAction(new sharedActions.UpdateRoomInfo({
-            participants: room.participants,
-            roomContextUrls: room.decryptedContext.urls,
-            roomDescription: room.decryptedContext.description,
-            roomName: room.decryptedContext.roomName,
-            roomState: ROOM_STATES.READY,
-            roomUrl: room.roomUrl,
-            socialShareProviders: socialShareProviders
-          }));
+          return;}
 
-          
-          this.dispatchAction(new sharedActions.JoinRoom());
-        }.bind(this));
-    },
+
+        this.dispatchAction(new sharedActions.UpdateRoomInfo({ 
+          participants: room.participants, 
+          roomContextUrls: room.decryptedContext.urls, 
+          roomDescription: room.decryptedContext.description, 
+          roomName: room.decryptedContext.roomName, 
+          roomState: ROOM_STATES.READY, 
+          roomUrl: room.roomUrl, 
+          socialShareProviders: socialShareProviders }));
+
+
+        
+        this.dispatchAction(new sharedActions.JoinRoom());}.
+      bind(this));}, 
+
 
     
 
@@ -361,18 +361,18 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    fetchServerData: function(actionData) {
+    fetchServerData: function fetchServerData(actionData) {
       if (actionData.windowType !== "room") {
         
-        return Promise.resolve();
-      }
+        return Promise.resolve();}
 
-      this.setStoreState({
-        roomState: ROOM_STATES.GATHER,
-        roomToken: actionData.token,
-        roomCryptoKey: actionData.cryptoKey,
-        standalone: true
-      });
+
+      this.setStoreState({ 
+        roomState: ROOM_STATES.GATHER, 
+        roomToken: actionData.token, 
+        roomCryptoKey: actionData.cryptoKey, 
+        standalone: true });
+
 
       this._registerPostSetupActions();
 
@@ -380,12 +380,12 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
       var userAgentHandlesPromise = this._promiseDetectUserAgentHandles();
 
-      return Promise.all([dataPromise, userAgentHandlesPromise]).then(function(results) {
-        results.forEach(function(result) {
-          this.dispatcher.dispatch(result);
-        }.bind(this));
-      }.bind(this));
-    },
+      return Promise.all([dataPromise, userAgentHandlesPromise]).then(function (results) {
+        results.forEach(function (result) {
+          this.dispatcher.dispatch(result);}.
+        bind(this));}.
+      bind(this));}, 
+
 
     
 
@@ -394,67 +394,67 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    _getRoomDataForStandalone: function(roomCryptoKey) {
-      return new Promise(function(resolve) {
-        loop.request("Rooms:Get", this._storeState.roomToken).then(function(result) {
+    _getRoomDataForStandalone: function _getRoomDataForStandalone(roomCryptoKey) {
+      return new Promise(function (resolve) {
+        loop.request("Rooms:Get", this._storeState.roomToken).then(function (result) {
           if (result.isError) {
-            resolve(new sharedActions.RoomFailure({
-              error: result,
-              failedJoinRequest: false
-            }));
-            return;
-          }
+            resolve(new sharedActions.RoomFailure({ 
+              error: result, 
+              failedJoinRequest: false }));
 
-          var roomInfoData = new sharedActions.UpdateRoomInfo({
+            return;}
+
+
+          var roomInfoData = new sharedActions.UpdateRoomInfo({ 
             
             
             
             
-            roomState: ROOM_STATES.READY,
-            roomUrl: result.roomUrl
-          });
+            roomState: ROOM_STATES.READY, 
+            roomUrl: result.roomUrl });
+
 
           if (!result.context && !result.roomName) {
             roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.NO_DATA;
             resolve(roomInfoData);
-            return;
-          }
+            return;}
+
 
           
           if (result.roomName && !result.context) {
             roomInfoData.roomName = result.roomName;
             resolve(roomInfoData);
-            return;
-          }
+            return;}
+
 
           if (!crypto.isSupported()) {
             roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.WEB_CRYPTO_UNSUPPORTED;
             resolve(roomInfoData);
-            return;
-          }
+            return;}
+
 
           if (!roomCryptoKey) {
             roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.NO_CRYPTO_KEY;
             resolve(roomInfoData);
-            return;
-          }
+            return;}
 
-          crypto.decryptBytes(roomCryptoKey, result.context.value)
-                .then(function(decryptedResult) {
+
+          crypto.decryptBytes(roomCryptoKey, result.context.value).
+          then(function (decryptedResult) {
             var realResult = JSON.parse(decryptedResult);
 
             roomInfoData.roomDescription = realResult.description;
             roomInfoData.roomContextUrls = realResult.urls;
             roomInfoData.roomName = realResult.roomName;
 
-            resolve(roomInfoData);
-          }, function() {
+            resolve(roomInfoData);}, 
+          function () {
             roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.DECRYPT_FAILED;
-            resolve(roomInfoData);
-          });
-        }.bind(this));
-      }.bind(this));
-    },
+            resolve(roomInfoData);});}.
+
+        bind(this));}.
+      bind(this));}, 
+
 
     
 
@@ -463,20 +463,20 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    _promiseDetectUserAgentHandles: function() {
-      return new Promise(function(resolve) {
+    _promiseDetectUserAgentHandles: function _promiseDetectUserAgentHandles() {
+      return new Promise(function (resolve) {
         function resolveWithNotHandlingResponse() {
-          resolve(new sharedActions.UserAgentHandlesRoom({
-            handlesRoom: false
-          }));
-        }
+          resolve(new sharedActions.UserAgentHandlesRoom({ 
+            handlesRoom: false }));}
+
+
 
         
         
         if (!loop.shared.utils.isFirefox(navigator.userAgent)) {
           resolveWithNotHandlingResponse();
-          return;
-        }
+          return;}
+
 
         
         var timer = setTimeout(resolveWithNotHandlingResponse, 250);
@@ -485,8 +485,8 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
         
         function webChannelListener(e) {
           if (e.detail.id !== "loop-link-clicker") {
-            return;
-          }
+            return;}
+
 
           
           clearTimeout(timer);
@@ -495,46 +495,46 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
           window.removeEventListener("WebChannelMessageToContent", webChannelListenerFunc);
 
           
-          resolve(new sharedActions.UserAgentHandlesRoom({
-            handlesRoom: !!e.detail.message && e.detail.message.response
-          }));
-        }
+          resolve(new sharedActions.UserAgentHandlesRoom({ 
+            handlesRoom: !!e.detail.message && e.detail.message.response }));}
+
+
 
         webChannelListenerFunc = webChannelListener.bind(this);
 
         window.addEventListener("WebChannelMessageToContent", webChannelListenerFunc);
 
         
-        window.dispatchEvent(new window.CustomEvent("WebChannelMessageToChrome", {
-          detail: {
-            id: "loop-link-clicker",
-            message: {
-              command: "checkWillOpenRoom",
-              roomToken: this._storeState.roomToken
-            }
-          }
-        }));
-      }.bind(this));
-    },
+        window.dispatchEvent(new window.CustomEvent("WebChannelMessageToChrome", { 
+          detail: { 
+            id: "loop-link-clicker", 
+            message: { 
+              command: "checkWillOpenRoom", 
+              roomToken: this._storeState.roomToken } } }));}.
+
+
+
+      bind(this));}, 
+
 
     
 
 
 
 
-    updateRoomInfo: function(actionData) {
-      var newState = {
-        roomUrl: actionData.roomUrl
-      };
+    updateRoomInfo: function updateRoomInfo(actionData) {
+      var newState = { 
+        roomUrl: actionData.roomUrl };
+
       
       
-      Object.keys(OPTIONAL_ROOMINFO_FIELDS).forEach(function(field) {
+      Object.keys(OPTIONAL_ROOMINFO_FIELDS).forEach(function (field) {
         if (actionData[field] !== undefined) {
-          newState[OPTIONAL_ROOMINFO_FIELDS[field]] = actionData[field];
-        }
-      });
-      this.setStoreState(newState);
-    },
+          newState[OPTIONAL_ROOMINFO_FIELDS[field]] = actionData[field];}});
+
+
+      this.setStoreState(newState);}, 
+
 
     
 
@@ -542,11 +542,11 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    userAgentHandlesRoom: function(actionData) {
-      this.setStoreState({
-        userAgentHandlesRoom: actionData.handlesRoom
-      });
-    },
+    userAgentHandlesRoom: function userAgentHandlesRoom(actionData) {
+      this.setStoreState({ 
+        userAgentHandlesRoom: actionData.handlesRoom });}, 
+
+
 
     
 
@@ -554,178 +554,176 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    updateSocialShareInfo: function(actionData) {
-      this.setStoreState({
-        socialShareProviders: actionData.socialShareProviders
-      });
-    },
+    updateSocialShareInfo: function updateSocialShareInfo(actionData) {
+      this.setStoreState({ 
+        socialShareProviders: actionData.socialShareProviders });}, 
+
+
 
     
 
 
 
 
-    _handleRoomUpdate: function(roomData) {
-      this.dispatchAction(new sharedActions.UpdateRoomInfo({
-        roomContextUrls: roomData.decryptedContext.urls,
-        roomDescription: roomData.decryptedContext.description,
-        participants: roomData.participants,
-        roomName: roomData.decryptedContext.roomName,
-        roomUrl: roomData.roomUrl
-      }));
-    },
+    _handleRoomUpdate: function _handleRoomUpdate(roomData) {
+      this.dispatchAction(new sharedActions.UpdateRoomInfo({ 
+        roomContextUrls: roomData.decryptedContext.urls, 
+        roomDescription: roomData.decryptedContext.description, 
+        participants: roomData.participants, 
+        roomName: roomData.decryptedContext.roomName, 
+        roomUrl: roomData.roomUrl }));}, 
+
+
 
     
 
 
 
-    _handleRoomDelete: function() {
-      this._sdkDriver.forceDisconnectAll(function() {
-        window.close();
-      });
-    },
+    _handleRoomDelete: function _handleRoomDelete() {
+      this._sdkDriver.forceDisconnectAll(function () {
+        window.close();});}, 
+
+
 
     
 
 
 
-    _handleSocialShareUpdate: function() {
-      loop.request("GetSocialShareProviders").then(function(result) {
-        this.dispatchAction(new sharedActions.UpdateSocialShareInfo({
-          socialShareProviders: result
-        }));
-      }.bind(this));
-    },
+    _handleSocialShareUpdate: function _handleSocialShareUpdate() {
+      loop.request("GetSocialShareProviders").then(function (result) {
+        this.dispatchAction(new sharedActions.UpdateSocialShareInfo({ 
+          socialShareProviders: result }));}.
+
+      bind(this));}, 
+
 
     
 
 
 
 
-    _checkDevicesAndJoinRoom: function() {
+    _checkDevicesAndJoinRoom: function _checkDevicesAndJoinRoom() {
       
       
       
-      loop.shared.utils.hasAudioOrVideoDevices(function(hasDevices) {
+      loop.shared.utils.hasAudioOrVideoDevices(function (hasDevices) {
         if (hasDevices) {
           
           
-          this.setStoreState({ roomState: ROOM_STATES.MEDIA_WAIT });
-        } else {
-          this.dispatchAction(new sharedActions.ConnectionFailure({
-            reason: FAILURE_DETAILS.NO_MEDIA
-          }));
-        }
-      }.bind(this));
-    },
+          this.setStoreState({ roomState: ROOM_STATES.MEDIA_WAIT });} else 
+        {
+          this.dispatchAction(new sharedActions.ConnectionFailure({ 
+            reason: FAILURE_DETAILS.NO_MEDIA }));}}.
+
+
+      bind(this));}, 
+
 
     
 
 
-    _handoffRoomJoin: function() {
+    _handoffRoomJoin: function _handoffRoomJoin() {
       var channelListener;
 
       function handleRoomJoinResponse(e) {
         if (e.detail.id !== "loop-link-clicker") {
-          return;
-        }
+          return;}
+
 
         window.removeEventListener("WebChannelMessageToContent", channelListener);
 
         if (!e.detail.message || !e.detail.message.response) {
           
           
-          console.error("Firefox didn't handle room it said it could.");
-        } else {
-          if (e.detail.message.alreadyOpen) {
-            this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-              reason: FAILURE_DETAILS.ROOM_ALREADY_OPEN
-            }));
-          } else {
-            this.dispatcher.dispatch(new sharedActions.JoinedRoom({
-              apiKey: "",
-              sessionToken: "",
-              sessionId: "",
-              expires: 0
-            }));
-          }
-        }
-      }
+          console.error("Firefox didn't handle room it said it could.");} else 
+        if (e.detail.message.alreadyOpen) {
+          this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
+            reason: FAILURE_DETAILS.ROOM_ALREADY_OPEN }));} else 
+
+        {
+          this.dispatcher.dispatch(new sharedActions.JoinedRoom({ 
+            apiKey: "", 
+            sessionToken: "", 
+            sessionId: "", 
+            expires: 0 }));}}
+
+
+
 
       channelListener = handleRoomJoinResponse.bind(this);
 
       window.addEventListener("WebChannelMessageToContent", channelListener);
 
       
-      window.dispatchEvent(new window.CustomEvent("WebChannelMessageToChrome", {
-        detail: {
-          id: "loop-link-clicker",
-          message: {
-            command: "openRoom",
-            roomToken: this._storeState.roomToken
-          }
-        }
-      }));
-    },
+      window.dispatchEvent(new window.CustomEvent("WebChannelMessageToChrome", { 
+        detail: { 
+          id: "loop-link-clicker", 
+          message: { 
+            command: "openRoom", 
+            roomToken: this._storeState.roomToken } } }));}, 
+
+
+
+
 
     
 
 
-    joinRoom: function() {
+    joinRoom: function joinRoom() {
       
       if (this.getStoreState().failureReason) {
-        this.setStoreState({ failureReason: undefined });
-      }
+        this.setStoreState({ failureReason: undefined });}
+
 
       
       
       if (this._storeState.standalone && this._storeState.userAgentHandlesRoom) {
-        this.dispatcher.dispatch(new sharedActions.MetricsLogJoinRoom({
-          userAgentHandledRoom: true,
-          ownRoom: true
-        }));
-        this._handoffRoomJoin();
-        return;
-      }
+        this.dispatcher.dispatch(new sharedActions.MetricsLogJoinRoom({ 
+          userAgentHandledRoom: true, 
+          ownRoom: true }));
 
-      this.dispatcher.dispatch(new sharedActions.MetricsLogJoinRoom({
-        userAgentHandledRoom: false
-      }));
+        this._handoffRoomJoin();
+        return;}
+
+
+      this.dispatcher.dispatch(new sharedActions.MetricsLogJoinRoom({ 
+        userAgentHandledRoom: false }));
+
 
       
-      this._checkDevicesAndJoinRoom();
-    },
+      this._checkDevicesAndJoinRoom();}, 
+
 
     
 
 
 
-    gotMediaPermission: function() {
+    gotMediaPermission: function gotMediaPermission() {
       this.setStoreState({ roomState: ROOM_STATES.JOINING });
 
-      loop.request("Rooms:Join", this._storeState.roomToken,
-                   mozL10n.get("display_name_guest")).then(function(result) {
+      loop.request("Rooms:Join", this._storeState.roomToken, 
+      mozL10n.get("display_name_guest")).then(function (result) {
         if (result.isError) {
-          this.dispatchAction(new sharedActions.RoomFailure({
-            error: result,
+          this.dispatchAction(new sharedActions.RoomFailure({ 
+            error: result, 
             
             
             
             
             
-            failedJoinRequest: true
-          }));
-          return;
-        }
+            failedJoinRequest: true }));
 
-        this.dispatchAction(new sharedActions.JoinedRoom({
-          apiKey: result.apiKey,
-          sessionToken: result.sessionToken,
-          sessionId: result.sessionId,
-          expires: result.expires
-        }));
-      }.bind(this));
-    },
+          return;}
+
+
+        this.dispatchAction(new sharedActions.JoinedRoom({ 
+          apiKey: result.apiKey, 
+          sessionToken: result.sessionToken, 
+          sessionId: result.sessionId, 
+          expires: result.expires }));}.
+
+      bind(this));}, 
+
 
     
 
@@ -734,22 +732,22 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    joinedRoom: function(actionData) {
+    joinedRoom: function joinedRoom(actionData) {
       
       
       if (this._storeState.standalone && this._storeState.userAgentHandlesRoom) {
-        this.setStoreState({
-          roomState: ROOM_STATES.JOINED
-        });
-        return;
-      }
+        this.setStoreState({ 
+          roomState: ROOM_STATES.JOINED });
 
-      this.setStoreState({
-        apiKey: actionData.apiKey,
-        sessionToken: actionData.sessionToken,
-        sessionId: actionData.sessionId,
-        roomState: ROOM_STATES.JOINED
-      });
+        return;}
+
+
+      this.setStoreState({ 
+        apiKey: actionData.apiKey, 
+        sessionToken: actionData.sessionToken, 
+        sessionId: actionData.sessionId, 
+        roomState: ROOM_STATES.JOINED });
+
 
       this._setRefreshTimeout(actionData.expires);
 
@@ -758,143 +756,143 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
       this._sdkDriver.connectSession(actionData);
 
-      loop.request("AddConversationContext", this._storeState.windowId,
-        actionData.sessionId, "");
-    },
+      loop.request("AddConversationContext", this._storeState.windowId, 
+      actionData.sessionId, "");}, 
+
 
     
 
 
-    connectedToSdkServers: function() {
-      this.setStoreState({
-        roomState: ROOM_STATES.SESSION_CONNECTED
-      });
-    },
-
-    
+    connectedToSdkServers: function connectedToSdkServers() {
+      this.setStoreState({ 
+        roomState: ROOM_STATES.SESSION_CONNECTED });}, 
 
 
-
-
-    connectionFailure: function(actionData) {
-      var exitState = this._storeState.roomState === ROOM_STATES.FAILED ?
-        this._storeState.failureExitState : this._storeState.roomState;
-
-      
-      
-      
-      this.setStoreState({
-        failureReason: actionData.reason,
-        failureExitState: exitState
-      });
-
-      this._leaveRoom(ROOM_STATES.FAILED);
-    },
 
     
 
 
 
 
-    setMute: function(actionData) {
+    connectionFailure: function connectionFailure(actionData) {
+      var exitState = this._storeState.roomState === ROOM_STATES.FAILED ? 
+      this._storeState.failureExitState : this._storeState.roomState;
+
+      
+      
+      
+      this.setStoreState({ 
+        failureReason: actionData.reason, 
+        failureExitState: exitState });
+
+
+      this._leaveRoom(ROOM_STATES.FAILED);}, 
+
+
+    
+
+
+
+
+    setMute: function setMute(actionData) {
       var muteState = {};
       muteState[actionData.type + "Muted"] = !actionData.enabled;
-      this.setStoreState(muteState);
-    },
+      this.setStoreState(muteState);}, 
+
 
     
 
 
 
 
-    mediaStreamCreated: function(actionData) {
+    mediaStreamCreated: function mediaStreamCreated(actionData) {
       if (actionData.isLocal) {
-        this.setStoreState({
-          localAudioEnabled: actionData.hasAudio,
-          localVideoEnabled: actionData.hasVideo,
-          localSrcMediaElement: actionData.srcMediaElement
-        });
-        return;
-      }
+        this.setStoreState({ 
+          localAudioEnabled: actionData.hasAudio, 
+          localVideoEnabled: actionData.hasVideo, 
+          localSrcMediaElement: actionData.srcMediaElement });
 
-      this.setStoreState({
-        remoteAudioEnabled: actionData.hasAudio,
-        remoteVideoEnabled: actionData.hasVideo,
-        remoteSrcMediaElement: actionData.srcMediaElement
-      });
-    },
+        return;}
+
+
+      this.setStoreState({ 
+        remoteAudioEnabled: actionData.hasAudio, 
+        remoteVideoEnabled: actionData.hasVideo, 
+        remoteSrcMediaElement: actionData.srcMediaElement });}, 
+
+
 
     
 
 
 
 
-    mediaStreamDestroyed: function(actionData) {
+    mediaStreamDestroyed: function mediaStreamDestroyed(actionData) {
       if (actionData.isLocal) {
-        this.setStoreState({
-          localSrcMediaElement: null
-        });
-        return;
-      }
+        this.setStoreState({ 
+          localSrcMediaElement: null });
 
-      this.setStoreState({
-        remoteSrcMediaElement: null
-      });
-    },
+        return;}
+
+
+      this.setStoreState({ 
+        remoteSrcMediaElement: null });}, 
+
+
 
     
 
 
 
 
-    remoteVideoStatus: function(actionData) {
-      this.setStoreState({
-        remoteVideoEnabled: actionData.videoEnabled
-      });
-    },
+    remoteVideoStatus: function remoteVideoStatus(actionData) {
+      this.setStoreState({ 
+        remoteVideoEnabled: actionData.videoEnabled });}, 
+
+
 
     
 
 
-    mediaConnected: function() {
-      this.setStoreState({ mediaConnected: true });
-    },
+    mediaConnected: function mediaConnected() {
+      this.setStoreState({ mediaConnected: true });}, 
+
 
     
 
 
-    screenSharingState: function(actionData) {
+    screenSharingState: function screenSharingState(actionData) {
       this.setStoreState({ screenSharingState: actionData.state });
 
-      loop.request("SetScreenShareState", this.getStoreState().windowId,
-        actionData.state === SCREEN_SHARE_STATES.ACTIVE);
-    },
+      loop.request("SetScreenShareState", this.getStoreState().windowId, 
+      actionData.state === SCREEN_SHARE_STATES.ACTIVE);}, 
+
 
     
 
 
 
 
-    receivingScreenShare: function(actionData) {
-      if (!actionData.receiving &&
-          this.getStoreState().remoteVideoDimensions.screen) {
+    receivingScreenShare: function receivingScreenShare(actionData) {
+      if (!actionData.receiving && 
+      this.getStoreState().remoteVideoDimensions.screen) {
         
         
         var newDimensions = _.extend(this.getStoreState().remoteVideoDimensions);
         delete newDimensions.screen;
-        this.setStoreState({
-          receivingScreenShare: actionData.receiving,
-          remoteVideoDimensions: newDimensions,
-          screenShareMediaElement: null
-        });
-      } else {
-        this.setStoreState({
-          receivingScreenShare: actionData.receiving,
-          screenShareMediaElement: actionData.srcMediaElement ?
-                                  actionData.srcMediaElement : null
-        });
-      }
-    },
+        this.setStoreState({ 
+          receivingScreenShare: actionData.receiving, 
+          remoteVideoDimensions: newDimensions, 
+          screenShareMediaElement: null });} else 
+
+      {
+        this.setStoreState({ 
+          receivingScreenShare: actionData.receiving, 
+          screenShareMediaElement: actionData.srcMediaElement ? 
+          actionData.srcMediaElement : null });}}, 
+
+
+
 
     
 
@@ -902,189 +900,189 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    _handleSwitchBrowserShare: function(windowId) {
+    _handleSwitchBrowserShare: function _handleSwitchBrowserShare(windowId) {
       if (Array.isArray(windowId)) {
-        windowId = windowId[0];
-      }
+        windowId = windowId[0];}
+
       if (!windowId) {
-        return;
-      }
+        return;}
+
       if (windowId.isError) {
         console.error("Error getting the windowId: " + windowId.message);
-        this.dispatchAction(new sharedActions.ScreenSharingState({
-          state: SCREEN_SHARE_STATES.INACTIVE
-        }));
-        return;
-      }
+        this.dispatchAction(new sharedActions.ScreenSharingState({ 
+          state: SCREEN_SHARE_STATES.INACTIVE }));
+
+        return;}
+
 
       var screenSharingState = this.getStoreState().screenSharingState;
 
       if (screenSharingState === SCREEN_SHARE_STATES.PENDING) {
         
-        var options = {
-          videoSource: "browser",
-          constraints: {
-            browserWindow: windowId,
-            scrollWithPage: true
-          }
-        };
-        this._sdkDriver.startScreenShare(options);
-      } else if (screenSharingState === SCREEN_SHARE_STATES.ACTIVE) {
+        var options = { 
+          videoSource: "browser", 
+          constraints: { 
+            browserWindow: windowId, 
+            scrollWithPage: true } };
+
+
+        this._sdkDriver.startScreenShare(options);} else 
+      if (screenSharingState === SCREEN_SHARE_STATES.ACTIVE) {
         
-        this._sdkDriver.switchAcquiredWindow(windowId);
-      } else {
-        console.error("Unexpectedly received windowId for browser sharing when pending");
-      }
+        this._sdkDriver.switchAcquiredWindow(windowId);} else 
+      {
+        console.error("Unexpectedly received windowId for browser sharing when pending");}
+
 
       
       if (!this.getStoreState().sharingPaused && this._hasParticipants()) {
-        this._checkTabContext();
-      }
-    },
+        this._checkTabContext();}}, 
+
+
 
     
 
 
-    _checkTabContext: function() {
-      loop.request("GetSelectedTabMetadata").then(function(meta) {
+    _checkTabContext: function _checkTabContext() {
+      loop.request("GetSelectedTabMetadata").then(function (meta) {
         
         if (!meta || !meta.url) {
-          return;
-        }
+          return;}
+
 
         if (updateContextTimer) {
-          clearTimeout(updateContextTimer);
-        }
+          clearTimeout(updateContextTimer);}
 
-        updateContextTimer = setTimeout(function() {
-          this.dispatchAction(new sharedActions.UpdateRoomContext({
-            newRoomDescription: meta.title || meta.description || meta.url,
-            newRoomThumbnail: meta.favicon,
-            newRoomURL: meta.url,
-            roomToken: this.getStoreState().roomToken
-          }));
-          updateContextTimer = null;
-        }.bind(this), 500);
-      }.bind(this));
-    },
+
+        updateContextTimer = setTimeout(function () {
+          this.dispatchAction(new sharedActions.UpdateRoomContext({ 
+            newRoomDescription: meta.title || meta.description || meta.url, 
+            newRoomThumbnail: meta.favicon, 
+            newRoomURL: meta.url, 
+            roomToken: this.getStoreState().roomToken }));
+
+          updateContextTimer = null;}.
+        bind(this), 500);}.
+      bind(this));}, 
+
 
     
 
 
 
 
-    startBrowserShare: function() {
+    startBrowserShare: function startBrowserShare() {
       if (this._storeState.screenSharingState !== SCREEN_SHARE_STATES.INACTIVE) {
         console.error("Attempting to start browser sharing when already running.");
-        return;
-      }
+        return;}
+
 
       
       
       
       this.setStoreState({ screenSharingState: SCREEN_SHARE_STATES.PENDING });
-      this.dispatchAction(new sharedActions.ScreenSharingState({
-        state: SCREEN_SHARE_STATES.PENDING
-      }));
+      this.dispatchAction(new sharedActions.ScreenSharingState({ 
+        state: SCREEN_SHARE_STATES.PENDING }));
+
 
       this._browserSharingListener = this._handleSwitchBrowserShare.bind(this);
 
       
       
       
-      loop.request("AddBrowserSharingListener", this.getStoreState().windowId)
-        .then(this._browserSharingListener);
-      loop.subscribe("BrowserSwitch", this._browserSharingListener);
-    },
+      loop.request("AddBrowserSharingListener", this.getStoreState().windowId).
+      then(this._browserSharingListener);
+      loop.subscribe("BrowserSwitch", this._browserSharingListener);}, 
+
 
     
 
 
-    endScreenShare: function() {
+    endScreenShare: function endScreenShare() {
       if (this._browserSharingListener) {
         
         loop.request("RemoveBrowserSharingListener", this.getStoreState().windowId);
         loop.unsubscribe("BrowserSwitch", this._browserSharingListener);
-        this._browserSharingListener = null;
-      }
+        this._browserSharingListener = null;}
+
 
       if (this._sdkDriver.endScreenShare()) {
-        this.dispatchAction(new sharedActions.ScreenSharingState({
-          state: SCREEN_SHARE_STATES.INACTIVE
-        }));
-      }
-    },
+        this.dispatchAction(new sharedActions.ScreenSharingState({ 
+          state: SCREEN_SHARE_STATES.INACTIVE }));}}, 
+
+
+
 
     
 
 
 
 
-    toggleBrowserSharing: function(actionData) {
-      this.setStoreState({
-        sharingPaused: !actionData.enabled
-      });
+    toggleBrowserSharing: function toggleBrowserSharing(actionData) {
+      this.setStoreState({ 
+        sharingPaused: !actionData.enabled });
+
 
       
       if (actionData.enabled) {
-        this._checkTabContext();
-      }
-    },
+        this._checkTabContext();}}, 
+
+
 
     
 
 
-    remotePeerConnected: function() {
-      this.setStoreState({
-        remotePeerDisconnected: false,
-        roomState: ROOM_STATES.HAS_PARTICIPANTS,
-        used: true
-      });
-    },
+    remotePeerConnected: function remotePeerConnected() {
+      this.setStoreState({ 
+        remotePeerDisconnected: false, 
+        roomState: ROOM_STATES.HAS_PARTICIPANTS, 
+        used: true });}, 
+
+
 
     
 
 
 
 
-    remotePeerDisconnected: function() {
+    remotePeerDisconnected: function remotePeerDisconnected() {
       
       var participants = this.getStoreState("participants");
       if (participants) {
-        participants = participants.filter(function(participant) {
-          return participant.owner;
-        });
-      }
+        participants = participants.filter(function (participant) {
+          return participant.owner;});}
 
-      this.setStoreState({
-        mediaConnected: false,
-        participants: participants,
-        roomState: ROOM_STATES.SESSION_CONNECTED,
-        remotePeerDisconnected: true,
-        remoteSrcMediaElement: null,
-        streamPaused: false
-      });
-    },
+
+
+      this.setStoreState({ 
+        mediaConnected: false, 
+        participants: participants, 
+        roomState: ROOM_STATES.SESSION_CONNECTED, 
+        remotePeerDisconnected: true, 
+        remoteSrcMediaElement: null, 
+        streamPaused: false });}, 
+
+
 
     
 
 
 
 
-    connectionStatus: function(actionData) {
-      loop.request("Rooms:SendConnectionStatus", this.getStoreState("roomToken"),
-        this.getStoreState("sessionToken"), actionData);
-    },
+    connectionStatus: function connectionStatus(actionData) {
+      loop.request("Rooms:SendConnectionStatus", this.getStoreState("roomToken"), 
+      this.getStoreState("sessionToken"), actionData);}, 
+
 
     
 
 
-    windowUnload: function() {
+    windowUnload: function windowUnload() {
       this._leaveRoom(ROOM_STATES.CLOSING);
 
       if (!this._onUpdateListener) {
-        return;
-      }
+        return;}
+
 
       
       var roomToken = this.getStoreState().roomToken;
@@ -1094,49 +1092,49 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       delete this._onUpdateListener;
       delete this._onDeleteListener;
       delete this._onShareWidgetUpdate;
-      delete this._onSocialProvidersUpdate;
-    },
+      delete this._onSocialProvidersUpdate;}, 
+
 
     
 
 
 
 
-    leaveRoom: function(actionData) {
-      this._leaveRoom(ROOM_STATES.ENDED,
-                      false,
-                      actionData && actionData.windowStayingOpen);
-    },
+    leaveRoom: function leaveRoom(actionData) {
+      this._leaveRoom(ROOM_STATES.ENDED, 
+      false, 
+      actionData && actionData.windowStayingOpen);}, 
+
 
     
 
 
 
 
-    _setRefreshTimeout: function(expireTime) {
-      this._timeout = setTimeout(this._refreshMembership.bind(this),
-        expireTime * this.expiresTimeFactor * 1000);
-    },
+    _setRefreshTimeout: function _setRefreshTimeout(expireTime) {
+      this._timeout = setTimeout(this._refreshMembership.bind(this), 
+      expireTime * this.expiresTimeFactor * 1000);}, 
+
 
     
 
 
 
-    _refreshMembership: function() {
-      loop.request("Rooms:RefreshMembership", this._storeState.roomToken,
-        this._storeState.sessionToken)
-        .then(function(result) {
-          if (result.isError) {
-            this.dispatchAction(new sharedActions.RoomFailure({
-              error: result,
-              failedJoinRequest: false
-            }));
-            return;
-          }
+    _refreshMembership: function _refreshMembership() {
+      loop.request("Rooms:RefreshMembership", this._storeState.roomToken, 
+      this._storeState.sessionToken).
+      then(function (result) {
+        if (result.isError) {
+          this.dispatchAction(new sharedActions.RoomFailure({ 
+            error: result, 
+            failedJoinRequest: false }));
 
-          this._setRefreshTimeout(result.expires);
-        }.bind(this));
-    },
+          return;}
+
+
+        this._setRefreshTimeout(result.expires);}.
+      bind(this));}, 
+
 
     
 
@@ -1153,25 +1151,25 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    _leaveRoom: function(nextState, failedJoinRequest, windowStayingOpen) {
+    _leaveRoom: function _leaveRoom(nextState, failedJoinRequest, windowStayingOpen) {
       if (this._storeState.standalone && this._storeState.userAgentHandlesRoom) {
         
         
-        this.setStoreState({
-          roomState: nextState
-        });
-        return;
-      }
+        this.setStoreState({ 
+          roomState: nextState });
+
+        return;}
+
 
       if (loop.standaloneMedia) {
-        loop.standaloneMedia.multiplexGum.reset();
-      }
+        loop.standaloneMedia.multiplexGum.reset();}
+
 
       if (this._browserSharingListener) {
         
         loop.unsubscribe("BrowserSwitch", this._browserSharingListener);
-        this._browserSharingListener = null;
-      }
+        this._browserSharingListener = null;}
+
 
       
       this._sdkDriver.disconnectSession();
@@ -1180,41 +1178,41 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       var originalStoreState = this.getInitialStoreState();
       var newStoreState = {};
 
-      this._statesToResetOnLeave.forEach(function(state) {
-        newStoreState[state] = originalStoreState[state];
-      });
+      this._statesToResetOnLeave.forEach(function (state) {
+        newStoreState[state] = originalStoreState[state];});
+
       this.setStoreState(newStoreState);
 
       if (this._timeout) {
         clearTimeout(this._timeout);
-        delete this._timeout;
-      }
+        delete this._timeout;}
+
 
       
       
       
       
-      if ((nextState === ROOM_STATES.FAILED || windowStayingOpen || !this._isDesktop) &&
-          !failedJoinRequest) {
-        loop.request("HangupNow", this._storeState.roomToken,
-          this._storeState.sessionToken, this._storeState.windowId);
-      }
+      if ((nextState === ROOM_STATES.FAILED || windowStayingOpen || !this._isDesktop) && 
+      !failedJoinRequest) {
+        loop.request("HangupNow", this._storeState.roomToken, 
+        this._storeState.sessionToken, this._storeState.windowId);}
 
-      this.setStoreState({ roomState: nextState });
-    },
+
+      this.setStoreState({ roomState: nextState });}, 
+
 
     
 
 
 
-    feedbackComplete: function() {
-      this.setStoreState({
-        roomState: ROOM_STATES.READY,
+    feedbackComplete: function feedbackComplete() {
+      this.setStoreState({ 
+        roomState: ROOM_STATES.READY, 
         
         
-        used: false
-      });
-    },
+        used: false });}, 
+
+
 
     
 
@@ -1222,7 +1220,7 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    videoDimensionsChanged: function(actionData) {
+    videoDimensionsChanged: function videoDimensionsChanged(actionData) {
       
       
       
@@ -1230,8 +1228,8 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       var nextState = {};
       nextState[storeProp] = this.getStoreState()[storeProp];
       nextState[storeProp][actionData.videoType] = actionData.dimensions;
-      this.setStoreState(nextState);
-    },
+      this.setStoreState(nextState);}, 
+
 
     
 
@@ -1239,11 +1237,11 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    videoScreenStreamChanged: function(actionData) {
-      this.setStoreState({
-        streamPaused: !actionData.hasVideo
-      });
-    },
+    videoScreenStreamChanged: function videoScreenStreamChanged(actionData) {
+      this.setStoreState({ 
+        streamPaused: !actionData.hasVideo });}, 
+
+
 
     
 
@@ -1255,58 +1253,58 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    _handleTextChatMessage: function(actionData) {
-      if (!this._isDesktop || this.getStoreState().chatMessageExchanged ||
-          actionData.contentType !== CHAT_CONTENT_TYPES.TEXT) {
-        return;
-      }
+    _handleTextChatMessage: function _handleTextChatMessage(actionData) {
+      if (!this._isDesktop || this.getStoreState().chatMessageExchanged || 
+      actionData.contentType !== CHAT_CONTENT_TYPES.TEXT) {
+        return;}
+
 
       this.setStoreState({ chatMessageExchanged: true });
       
       this.dispatcher.unregister(this, [
-        "receivedTextChatMessage",
-        "sendTextChatMessage"
-      ]);
+      "receivedTextChatMessage", 
+      "sendTextChatMessage"]);
+
       
-      loop.request("TelemetryAddValue", "LOOP_ROOM_SESSION_WITHCHAT", 1);
-    },
+      loop.request("TelemetryAddValue", "LOOP_ROOM_SESSION_WITHCHAT", 1);}, 
+
 
     
 
 
 
 
-    receivedTextChatMessage: function(actionData) {
-      this._handleTextChatMessage(actionData);
-    },
+    receivedTextChatMessage: function receivedTextChatMessage(actionData) {
+      this._handleTextChatMessage(actionData);}, 
+
 
     
 
 
 
 
-    sendTextChatMessage: function(actionData) {
-      this._handleTextChatMessage(actionData);
-    },
+    sendTextChatMessage: function sendTextChatMessage(actionData) {
+      this._handleTextChatMessage(actionData);}, 
+
 
     
 
 
 
-    _hasParticipants: function() {
+    _hasParticipants: function _hasParticipants() {
       
       var participants = this.getStoreState("participants");
       if (participants) {
-        participants = participants.filter(function(participant) {
-          return !participant.owner;
-        });
+        participants = participants.filter(function (participant) {
+          return !participant.owner;});
 
-        return participants.length > 0;
-      }
 
-      return false;
-    }
-  });
+        return participants.length > 0;}
 
-  return ActiveRoomStore;
-})(navigator.mozL10n || document.mozL10n);
+
+      return false;} });
+
+
+
+  return ActiveRoomStore;}(
+navigator.mozL10n || document.mozL10n);

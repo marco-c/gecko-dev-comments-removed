@@ -1,4 +1,4 @@
-
+"use strict"; 
 
 
 
@@ -12,34 +12,34 @@
 
 
 var loop = loop || {};
-loop.Dispatcher = (function() {
+loop.Dispatcher = function () {
   "use strict";
 
   function Dispatcher() {
     this._eventData = {};
     this._actionQueue = [];
     this._debug = false;
-    loop.shared.utils.getBoolPreference("debug.dispatcher", function(enabled) {
-      this._debug = enabled;
-    }.bind(this));
-  }
+    loop.shared.utils.getBoolPreference("debug.dispatcher", function (enabled) {
+      this._debug = enabled;}.
+    bind(this));}
 
-  Dispatcher.prototype = {
+
+  Dispatcher.prototype = { 
     
 
 
 
 
 
-    register: function(store, eventTypes) {
-      eventTypes.forEach(function(type) {
+    register: function register(store, eventTypes) {
+      eventTypes.forEach(function (type) {
         if (this._eventData.hasOwnProperty(type)) {
-          this._eventData[type].push(store);
-        } else {
-          this._eventData[type] = [store];
-        }
-      }.bind(this));
-    },
+          this._eventData[type].push(store);} else 
+        {
+          this._eventData[type] = [store];}}.
+
+      bind(this));}, 
+
 
     
 
@@ -47,38 +47,38 @@ loop.Dispatcher = (function() {
 
 
 
-    unregister: function(store, eventTypes) {
-      eventTypes.forEach(function(type) {
+    unregister: function unregister(store, eventTypes) {
+      eventTypes.forEach(function (type) {
         if (!this._eventData.hasOwnProperty(type)) {
-          return;
-        }
+          return;}
+
         var idx = this._eventData[type].indexOf(store);
         if (idx === -1) {
-          return;
-        }
+          return;}
+
         this._eventData[type].splice(idx, 1);
         if (!this._eventData[type].length) {
-          delete this._eventData[type];
-        }
-      }.bind(this));
-    },
+          delete this._eventData[type];}}.
+
+      bind(this));}, 
+
 
     
 
 
-    dispatch: function(action) {
+    dispatch: function dispatch(action) {
       
       this._actionQueue.push(action);
-      this._dispatchNextAction();
-    },
+      this._dispatchNextAction();}, 
+
 
     
 
 
-    _dispatchNextAction: function() {
+    _dispatchNextAction: function _dispatchNextAction() {
       if (!this._actionQueue.length || this._active) {
-        return;
-      }
+        return;}
+
 
       var action = this._actionQueue.shift();
       var type = action.name;
@@ -86,27 +86,26 @@ loop.Dispatcher = (function() {
       var registeredStores = this._eventData[type];
       if (!registeredStores) {
         console.warn("No stores registered for event type ", type);
-        return;
-      }
+        return;}
+
 
       this._active = true;
 
       if (this._debug) {
-        console.log("[Dispatcher] Dispatching action", action);
-      }
+        console.log("[Dispatcher] Dispatching action", action);}
 
-      registeredStores.forEach(function(store) {
+
+      registeredStores.forEach(function (store) {
         try {
-          store[type](action);
-        } catch (x) {
-          console.error("[Dispatcher] Dispatching action caused an exception: ", x);
-        }
-      });
+          store[type](action);} 
+        catch (x) {
+          console.error("[Dispatcher] Dispatching action caused an exception: ", x);}});
+
+
 
       this._active = false;
-      this._dispatchNextAction();
-    }
-  };
+      this._dispatchNextAction();} };
 
-  return Dispatcher;
-})();
+
+
+  return Dispatcher;}();

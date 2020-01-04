@@ -1,59 +1,59 @@
 
 
 
-"use strict";
+"use strict";var _slicedToArray = function () {function sliceIterator(arr, i) {var _arr = [];var _n = true;var _d = false;var _e = undefined;try {for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {_arr.push(_s.value);if (i && _arr.length === i) break;}} catch (err) {_d = true;_e = err;} finally {try {if (!_n && _i["return"]) _i["return"]();} finally {if (_d) throw _e;}}return _arr;}return function (arr, i) {if (Array.isArray(arr)) {return arr;} else if (Symbol.iterator in Object(arr)) {return sliceIterator(arr, i);} else {throw new TypeError("Invalid attempt to destructure non-iterable instance");}};}();function _toConsumableArray(arr) {if (Array.isArray(arr)) {for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {arr2[i] = arr[i];}return arr2;} else {return Array.from(arr);}}var _Components = 
 
-const { utils: Cu } = Components;
+Components;var Cu = _Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
-Cu.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");var _Cu$import = 
 
-const { MozLoopService, LOOP_SESSION_TYPE } = Cu.import("chrome://loop/content/modules/MozLoopService.jsm", {});
-XPCOMUtils.defineLazyModuleGetter(this, "Promise",
-                                  "resource://gre/modules/Promise.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils",
-                                  "resource://services-common/utils.js");
-XPCOMUtils.defineLazyModuleGetter(this, "WebChannel",
-                                  "resource://gre/modules/WebChannel.jsm");
+Cu.import("chrome://loop/content/modules/MozLoopService.jsm", {});var MozLoopService = _Cu$import.MozLoopService;var LOOP_SESSION_TYPE = _Cu$import.LOOP_SESSION_TYPE;
+XPCOMUtils.defineLazyModuleGetter(this, "Promise", 
+"resource://gre/modules/Promise.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils", 
+"resource://services-common/utils.js");
+XPCOMUtils.defineLazyModuleGetter(this, "WebChannel", 
+"resource://gre/modules/WebChannel.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "eventEmitter", function() {
-  const { EventEmitter } = Cu.import("resource://devtools/shared/event-emitter.js", {});
-  return new EventEmitter();
-});
+XPCOMUtils.defineLazyGetter(this, "eventEmitter", function () {var _Cu$import2 = 
+  Cu.import("resource://devtools/shared/event-emitter.js", {});var EventEmitter = _Cu$import2.EventEmitter;
+  return new EventEmitter();});
 
-XPCOMUtils.defineLazyModuleGetter(this, "DomainWhitelist",
-  "chrome://loop/content/modules/DomainWhitelist.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "LoopRoomsCache",
-  "chrome://loop/content/modules/LoopRoomsCache.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "loopUtils",
-  "chrome://loop/content/modules/utils.js", "utils");
-XPCOMUtils.defineLazyModuleGetter(this, "loopCrypto",
-  "chrome://loop/content/shared/js/crypto.js", "LoopCrypto");
-XPCOMUtils.defineLazyModuleGetter(this, "ObjectUtils",
-  "resource://gre/modules/ObjectUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "DomainWhitelist", 
+"chrome://loop/content/modules/DomainWhitelist.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "LoopRoomsCache", 
+"chrome://loop/content/modules/LoopRoomsCache.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "loopUtils", 
+"chrome://loop/content/modules/utils.js", "utils");
+XPCOMUtils.defineLazyModuleGetter(this, "loopCrypto", 
+"chrome://loop/content/shared/js/crypto.js", "LoopCrypto");
+XPCOMUtils.defineLazyModuleGetter(this, "ObjectUtils", 
+"resource://gre/modules/ObjectUtils.jsm");
 
 
 
 this.EXPORTED_SYMBOLS = ["LoopRooms", "roomsPushNotification"];
 
 
-const CLIENT_MAX_SIZE = 2;
+var CLIENT_MAX_SIZE = 2;
 
 
-const MIN_TIME_BEFORE_ENCRYPTION = 5 * 1000;
+var MIN_TIME_BEFORE_ENCRYPTION = 5 * 1000;
 
-const MAX_TIME_BEFORE_ENCRYPTION = 30 * 60 * 1000;
+var MAX_TIME_BEFORE_ENCRYPTION = 30 * 60 * 1000;
 
-const TIME_BETWEEN_ENCRYPTIONS = 1000;
+var TIME_BETWEEN_ENCRYPTIONS = 1000;
 
 
-const LINKCLICKER_URL_PREFNAME = "loop.linkClicker.url";
+var LINKCLICKER_URL_PREFNAME = "loop.linkClicker.url";
 
-const roomsPushNotification = function(version, channelID) {
-  return LoopRoomsInternal.onNotification(version, channelID);
-};
+var roomsPushNotification = function roomsPushNotification(version, channelID) {
+  return LoopRoomsInternal.onNotification(version, channelID);};
+
 
 
 
@@ -75,31 +75,11 @@ var gGetAllPromise = null;
 
 
 
-const extend = function(target, source) {
-  for (let key of Object.getOwnPropertyNames(source)) {
-    target[key] = source[key];
-  }
-  return target;
-};
+var extend = function extend(target, source) {var _iteratorNormalCompletion = true;var _didIteratorError = false;var _iteratorError = undefined;try {
+    for (var _iterator = Object.getOwnPropertyNames(source)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {var key = _step.value;
+      target[key] = source[key];}} catch (err) {_didIteratorError = true;_iteratorError = err;} finally {try {if (!_iteratorNormalCompletion && _iterator.return) {_iterator.return();}} finally {if (_didIteratorError) {throw _iteratorError;}}}
 
-
-
-
-
-
-
-
-
-
-
-const containsParticipant = function(room, participant) {
-  for (let user of room.participants) {
-    if (user.roomConnectionId == participant.roomConnectionId) {
-      return true;
-    }
-  }
-  return false;
-};
+  return target;};
 
 
 
@@ -112,47 +92,47 @@ const containsParticipant = function(room, participant) {
 
 
 
-const checkForParticipantsUpdate = function(room, updatedRoom) {
+var containsParticipant = function containsParticipant(room, participant) {var _iteratorNormalCompletion2 = true;var _didIteratorError2 = false;var _iteratorError2 = undefined;try {
+    for (var _iterator2 = room.participants[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {var user = _step2.value;
+      if (user.roomConnectionId == participant.roomConnectionId) {
+        return true;}}} catch (err) {_didIteratorError2 = true;_iteratorError2 = err;} finally {try {if (!_iteratorNormalCompletion2 && _iterator2.return) {_iterator2.return();}} finally {if (_didIteratorError2) {throw _iteratorError2;}}}
+
+
+  return false;};
+
+
+
+
+
+
+
+
+
+
+
+
+
+var checkForParticipantsUpdate = function checkForParticipantsUpdate(room, updatedRoom) {
   
   
   if (!("participants" in room)) {
-    return;
-  }
+    return;}
 
-  let participant;
+
+  var participant = void 0;
   
-  for (participant of updatedRoom.participants) {
-    if (!containsParticipant(room, participant)) {
-      eventEmitter.emit("joined", room, participant);
-      eventEmitter.emit("joined:" + room.roomToken, participant);
-    }
-  }
-
-  
-  for (participant of room.participants) {
-    if (!containsParticipant(updatedRoom, participant)) {
-      eventEmitter.emit("left", room, participant);
-      eventEmitter.emit("left:" + room.roomToken, participant);
-    }
-  }
-};
+  var _iteratorNormalCompletion3 = true;var _didIteratorError3 = false;var _iteratorError3 = undefined;try {for (var _iterator3 = updatedRoom.participants[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {participant = _step3.value;
+      if (!containsParticipant(room, participant)) {
+        eventEmitter.emit("joined", room, participant);
+        eventEmitter.emit("joined:" + room.roomToken, participant);}}
 
 
 
-
-
-var timerHandlers = {
-  
-
-
-
-
-
-
-  startTimer(callback, delay) {
-    return setTimeout(callback, delay);
-  }
-};
+    
+  } catch (err) {_didIteratorError3 = true;_iteratorError3 = err;} finally {try {if (!_iteratorNormalCompletion3 && _iterator3.return) {_iterator3.return();}} finally {if (_didIteratorError3) {throw _iteratorError3;}}}var _iteratorNormalCompletion4 = true;var _didIteratorError4 = false;var _iteratorError4 = undefined;try {for (var _iterator4 = room.participants[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {participant = _step4.value;
+      if (!containsParticipant(updatedRoom, participant)) {
+        eventEmitter.emit("left", room, participant);
+        eventEmitter.emit("left:" + room.roomToken, participant);}}} catch (err) {_didIteratorError4 = true;_iteratorError4 = err;} finally {try {if (!_iteratorNormalCompletion4 && _iterator4.return) {_iterator4.return();}} finally {if (_didIteratorError4) {throw _iteratorError4;}}}};
 
 
 
@@ -161,88 +141,108 @@ var timerHandlers = {
 
 
 
-var LoopRoomsInternal = {
+var timerHandlers = { 
   
 
 
-  rooms: new Map(),
+
+
+
+
+  startTimer: function startTimer(callback, delay) {
+    return setTimeout(callback, delay);} };
+
+
+
+
+
+
+
+
+
+
+var LoopRoomsInternal = { 
+  
+
+
+  rooms: new Map(), 
 
   get roomsCache() {
     if (!gRoomsCache) {
-      gRoomsCache = new LoopRoomsCache();
-    }
-    return gRoomsCache;
-  },
+      gRoomsCache = new LoopRoomsCache();}
+
+    return gRoomsCache;}, 
+
 
   
 
 
 
-  encryptionQueue: {
-    queue: [],
-    timer: null,
-    reset: function() {
+  encryptionQueue: { 
+    queue: [], 
+    timer: null, 
+    reset: function reset() {
       this.queue = [];
-      this.timer = null;
-    }
-  },
+      this.timer = null;} }, 
+
+
 
   
 
 
-  init: function() {
-    Services.prefs.addObserver(LINKCLICKER_URL_PREFNAME,
-      this.setupLinkClickerListener.bind(this), false);
+  init: function init() {
+    Services.prefs.addObserver(LINKCLICKER_URL_PREFNAME, 
+    this.setupLinkClickerListener.bind(this), false);
 
-    this.setupLinkClickerListener();
-  },
+    this.setupLinkClickerListener();}, 
+
 
   
 
 
 
-  setupLinkClickerListener: function() {
+  setupLinkClickerListener: function setupLinkClickerListener() {
     
     if (gLinkClickerChannel) {
       gLinkClickerChannel.stopListening();
-      gLinkClickerChannel = null;
-    }
+      gLinkClickerChannel = null;}
 
-    let linkClickerUrl = Services.prefs.getCharPref(LINKCLICKER_URL_PREFNAME);
+
+    var linkClickerUrl = Services.prefs.getCharPref(LINKCLICKER_URL_PREFNAME);
 
     
     if (!linkClickerUrl) {
-      return;
-    }
+      return;}
 
-    let uri = Services.io.newURI(linkClickerUrl, null, null);
+
+    var uri = Services.io.newURI(linkClickerUrl, null, null);
 
     gLinkClickerChannel = new WebChannel("loop-link-clicker", uri);
-    gLinkClickerChannel.listen(this._handleLinkClickerMessage.bind(this));
-  },
+    gLinkClickerChannel.listen(this._handleLinkClickerMessage.bind(this));}, 
+
 
   
 
 
   get sessionType() {
-    return MozLoopService.userProfile ? LOOP_SESSION_TYPE.FXA :
-                                        LOOP_SESSION_TYPE.GUEST;
-  },
+    return MozLoopService.userProfile ? LOOP_SESSION_TYPE.FXA : 
+    LOOP_SESSION_TYPE.GUEST;}, 
+
 
   
 
 
 
   get participantsCount() {
-    let count = 0;
-    for (let room of this.rooms.values()) {
-      if (room.deleted || !("participants" in room)) {
-        continue;
-      }
-      count += room.participants.length;
-    }
-    return count;
-  },
+    var count = 0;var _iteratorNormalCompletion5 = true;var _didIteratorError5 = false;var _iteratorError5 = undefined;try {
+      for (var _iterator5 = this.rooms.values()[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {var room = _step5.value;
+        if (room.deleted || !("participants" in room)) {
+          continue;}
+
+        count += room.participants.length;}} catch (err) {_didIteratorError5 = true;_iteratorError5 = err;} finally {try {if (!_iteratorNormalCompletion5 && _iterator5.return) {_iterator5.return();}} finally {if (_didIteratorError5) {throw _iteratorError5;}}}
+
+    return count;}, 
+
 
   
 
@@ -252,30 +252,30 @@ var LoopRoomsInternal = {
 
 
   processEncryptionQueue: Task.async(function* () {
-    let roomToken = this.encryptionQueue.queue.shift();
+    var roomToken = this.encryptionQueue.queue.shift();
 
     
     
-    let roomData = this.rooms.get(roomToken);
+    var roomData = this.rooms.get(roomToken);
 
     if (roomData) {
       try {
         
         
-        yield LoopRooms.promise("update", roomToken, {});
-      } catch (error) {
+        yield LoopRooms.promise("update", roomToken, {});} 
+      catch (error) {
         MozLoopService.log.error("Upgrade encryption of room failed", error);
         
-      }
-    }
+      }}
+
 
     if (this.encryptionQueue.queue.length) {
-      this.encryptionQueue.timer =
-        timerHandlers.startTimer(this.processEncryptionQueue.bind(this), TIME_BETWEEN_ENCRYPTIONS);
-    } else {
-      this.encryptionQueue.timer = null;
-    }
-  }),
+      this.encryptionQueue.timer = 
+      timerHandlers.startTimer(this.processEncryptionQueue.bind(this), TIME_BETWEEN_ENCRYPTIONS);} else 
+    {
+      this.encryptionQueue.timer = null;}}), 
+
+
 
   
 
@@ -284,10 +284,10 @@ var LoopRoomsInternal = {
 
 
 
-  queueForEncryption: function(roomToken) {
+  queueForEncryption: function queueForEncryption(roomToken) {
     if (this.encryptionQueue.queue.indexOf(roomToken) == -1) {
-      this.encryptionQueue.queue.push(roomToken);
-    }
+      this.encryptionQueue.queue.push(roomToken);}
+
 
     
     
@@ -295,12 +295,12 @@ var LoopRoomsInternal = {
     
     
     if (!this.encryptionQueue.timer) {
-      let waitTime = (MAX_TIME_BEFORE_ENCRYPTION - MIN_TIME_BEFORE_ENCRYPTION) *
-        Math.random() + MIN_TIME_BEFORE_ENCRYPTION;
-      this.encryptionQueue.timer =
-        timerHandlers.startTimer(this.processEncryptionQueue.bind(this), waitTime);
-    }
-  },
+      var waitTime = (MAX_TIME_BEFORE_ENCRYPTION - MIN_TIME_BEFORE_ENCRYPTION) * 
+      Math.random() + MIN_TIME_BEFORE_ENCRYPTION;
+      this.encryptionQueue.timer = 
+      timerHandlers.startTimer(this.processEncryptionQueue.bind(this), waitTime);}}, 
+
+
 
   
 
@@ -312,11 +312,11 @@ var LoopRoomsInternal = {
 
   promiseGetOrCreateRoomKey: Task.async(function* (roomData) {
     if (roomData.roomKey) {
-      return roomData.roomKey;
-    }
+      return roomData.roomKey;}
 
-    return yield loopCrypto.generateKey();
-  }),
+
+    return yield loopCrypto.generateKey();}), 
+
 
   
 
@@ -326,11 +326,11 @@ var LoopRoomsInternal = {
 
 
   promiseEncryptedRoomKey: Task.async(function* (key) {
-    let profileKey = yield MozLoopService.promiseProfileEncryptionKey();
+    var profileKey = yield MozLoopService.promiseProfileEncryptionKey();
 
-    let encryptedRoomKey = yield loopCrypto.encryptBytes(profileKey, key);
-    return encryptedRoomKey;
-  }),
+    var encryptedRoomKey = yield loopCrypto.encryptBytes(profileKey, key);
+    return encryptedRoomKey;}), 
+
 
   
 
@@ -339,11 +339,11 @@ var LoopRoomsInternal = {
 
 
   promiseDecryptRoomKey: Task.async(function* (encryptedKey) {
-    let profileKey = yield MozLoopService.promiseProfileEncryptionKey();
+    var profileKey = yield MozLoopService.promiseProfileEncryptionKey();
 
-    let decryptedRoomKey = yield loopCrypto.decryptBytes(profileKey, encryptedKey);
-    return decryptedRoomKey;
-  }),
+    var decryptedRoomKey = yield loopCrypto.decryptBytes(profileKey, encryptedKey);
+    return decryptedRoomKey;}), 
+
 
   
 
@@ -353,12 +353,12 @@ var LoopRoomsInternal = {
 
 
 
-  refreshRoomUrlWithNewKey: function(roomUrl, roomKey) {
+  refreshRoomUrlWithNewKey: function refreshRoomUrlWithNewKey(roomUrl, roomKey) {
     
     roomUrl = roomUrl.split("#")[0];
     
-    return roomUrl + "#" + roomKey;
-  },
+    return roomUrl + "#" + roomKey;}, 
+
 
   
 
@@ -380,17 +380,17 @@ var LoopRoomsInternal = {
     var newRoomData = extend({}, roomData);
 
     if (!newRoomData.context) {
-      newRoomData.context = {};
-    }
+      newRoomData.context = {};}
+
 
     
-    let key = yield this.promiseGetOrCreateRoomKey(newRoomData);
+    var key = yield this.promiseGetOrCreateRoomKey(newRoomData);
 
     newRoomData.context.wrappedKey = yield this.promiseEncryptedRoomKey(key);
 
     
-    newRoomData.context.value = yield loopCrypto.encryptBytes(key,
-      JSON.stringify(newRoomData.decryptedContext));
+    newRoomData.context.value = yield loopCrypto.encryptBytes(key, 
+    JSON.stringify(newRoomData.decryptedContext));
 
     
     
@@ -403,11 +403,11 @@ var LoopRoomsInternal = {
     delete serverRoomData.decryptedContext;
     delete serverRoomData.roomKey;
 
-    return {
-      encrypted: serverRoomData,
-      all: newRoomData
-    };
-  }),
+    return { 
+      encrypted: serverRoomData, 
+      all: newRoomData };}), 
+
+
 
   
 
@@ -417,56 +417,56 @@ var LoopRoomsInternal = {
 
   promiseDecryptRoomData: Task.async(function* (roomData) {
     if (!roomData.context) {
-      return roomData;
-    }
+      return roomData;}
+
 
     if (!roomData.context.wrappedKey) {
-      throw new Error("Missing wrappedKey");
-    }
+      throw new Error("Missing wrappedKey");}
 
-    let savedRoomKey = yield this.roomsCache.getKey(this.sessionType, roomData.roomToken);
-    let fallback = false;
-    let key;
+
+    var savedRoomKey = yield this.roomsCache.getKey(this.sessionType, roomData.roomToken);
+    var fallback = false;
+    var key = void 0;
 
     try {
-      key = yield this.promiseDecryptRoomKey(roomData.context.wrappedKey);
-    } catch (error) {
+      key = yield this.promiseDecryptRoomKey(roomData.context.wrappedKey);} 
+    catch (error) {
       
       if (!savedRoomKey) {
-        throw error;
-      }
+        throw error;}
+
 
       
       
       key = savedRoomKey;
-      fallback = true;
-    }
+      fallback = true;}
 
-    let decryptedData = yield loopCrypto.decryptBytes(key, roomData.context.value);
+
+    var decryptedData = yield loopCrypto.decryptBytes(key, roomData.context.value);
 
     if (fallback) {
       
       
-      MozLoopService.log.debug("Fell back to saved key, queuing for encryption",
-        roomData.roomToken);
-      this.queueForEncryption(roomData.roomToken);
-    } else if (!savedRoomKey || key != savedRoomKey) {
+      MozLoopService.log.debug("Fell back to saved key, queuing for encryption", 
+      roomData.roomToken);
+      this.queueForEncryption(roomData.roomToken);} else 
+    if (!savedRoomKey || key != savedRoomKey) {
       
       try {
-        yield this.roomsCache.setKey(this.sessionType, roomData.roomToken, key);
-      }
+        yield this.roomsCache.setKey(this.sessionType, roomData.roomToken, key);} 
+
       catch (error) {
-        MozLoopService.log.error("Failed to save room key:", error);
-      }
-    }
+        MozLoopService.log.error("Failed to save room key:", error);}}
+
+
 
     roomData.roomKey = key;
     roomData.decryptedContext = JSON.parse(decryptedData);
 
     roomData.roomUrl = this.refreshRoomUrlWithNewKey(roomData.roomUrl, roomData.roomKey);
 
-    return roomData;
-  }),
+    return roomData;}), 
+
 
   
 
@@ -474,13 +474,13 @@ var LoopRoomsInternal = {
 
 
 
-  saveAndNotifyUpdate: function(roomData, isUpdate) {
+  saveAndNotifyUpdate: function saveAndNotifyUpdate(roomData, isUpdate) {
     this.rooms.set(roomData.roomToken, roomData);
 
-    let eventName = isUpdate ? "update" : "add";
+    var eventName = isUpdate ? "update" : "add";
     eventEmitter.emit(eventName, roomData);
-    eventEmitter.emit(eventName + ":" + roomData.roomToken, roomData);
-  },
+    eventEmitter.emit(eventName + ":" + roomData.roomToken, roomData);}, 
+
 
   
 
@@ -498,34 +498,34 @@ var LoopRoomsInternal = {
       
 
       
-      room.decryptedContext = {
-        roomName: room.roomName
-      };
+      room.decryptedContext = { 
+        roomName: room.roomName };
+
       delete room.roomName;
 
       
       
       this.queueForEncryption(room.roomToken);
 
-      this.saveAndNotifyUpdate(room, isUpdate);
-    } else {
+      this.saveAndNotifyUpdate(room, isUpdate);} else 
+    {
       
       
       
       
       
       try {
-        let roomData = yield this.promiseDecryptRoomData(room);
+        var roomData = yield this.promiseDecryptRoomData(room);
 
-        this.saveAndNotifyUpdate(roomData, isUpdate);
-      } catch (error) {
+        this.saveAndNotifyUpdate(roomData, isUpdate);} 
+      catch (error) {
         MozLoopService.log.error("Failed to decrypt room data: ", error);
         
         room.decryptedContext = {};
-        this.saveAndNotifyUpdate(room, isUpdate);
-      }
-    }
-  }),
+        this.saveAndNotifyUpdate(room, isUpdate);}}}), 
+
+
+
 
   
 
@@ -535,64 +535,64 @@ var LoopRoomsInternal = {
 
 
 
-  getAll: function(version) {
+  getAll: function getAll(version) {
     if (gGetAllPromise && !version) {
-      return gGetAllPromise;
-    }
+      return gGetAllPromise;}
+
 
     if (!gDirty) {
-      return Promise.resolve([...this.rooms.values()]);
-    }
+      return Promise.resolve([].concat(_toConsumableArray(this.rooms.values())));}
+
 
     gGetAllPromise = Task.spawn(function* () {
       
-      let url = "/rooms" + (version ? "?version=" + encodeURIComponent(version) : "");
-      let response = yield MozLoopService.hawkRequest(this.sessionType, url, "GET");
-      let roomsList = JSON.parse(response.body);
+      var url = "/rooms" + (version ? "?version=" + encodeURIComponent(version) : "");
+      var response = yield MozLoopService.hawkRequest(this.sessionType, url, "GET");
+      var roomsList = JSON.parse(response.body);
       if (!Array.isArray(roomsList)) {
-        throw new Error("Missing array of rooms in response.");
-      }
+        throw new Error("Missing array of rooms in response.");}var _iteratorNormalCompletion6 = true;var _didIteratorError6 = false;var _iteratorError6 = undefined;try {
 
-      for (let room of roomsList) {
+
+        for (var _iterator6 = roomsList[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {var room = _step6.value;
+          
+          var orig = this.rooms.get(room.roomToken);
+
+          if (room.deleted) {
+            
+            
+            if (orig) {
+              this.rooms.delete(room.roomToken);}
+
+
+            eventEmitter.emit("delete", room);
+            eventEmitter.emit("delete:" + room.roomToken, room);} else 
+          {
+            yield this.addOrUpdateRoom(room, !!orig);
+
+            if (orig) {
+              checkForParticipantsUpdate(orig, room);}}}
+
+
+
+
         
-        let orig = this.rooms.get(room.roomToken);
+        
+      } catch (err) {_didIteratorError6 = true;_iteratorError6 = err;} finally {try {if (!_iteratorNormalCompletion6 && _iterator6.return) {_iterator6.return();}} finally {if (_didIteratorError6) {throw _iteratorError6;}}}if (this.sessionType == LOOP_SESSION_TYPE.GUEST && !this.rooms.size) {
+        this.setGuestCreatedRoom(false);}
 
-        if (room.deleted) {
-          
-          
-          if (orig) {
-            this.rooms.delete(room.roomToken);
-          }
-
-          eventEmitter.emit("delete", room);
-          eventEmitter.emit("delete:" + room.roomToken, room);
-        } else {
-          yield this.addOrUpdateRoom(room, !!orig);
-
-          if (orig) {
-            checkForParticipantsUpdate(orig, room);
-          }
-        }
-      }
-
-      
-      
-      if (this.sessionType == LOOP_SESSION_TYPE.GUEST && !this.rooms.size) {
-        this.setGuestCreatedRoom(false);
-      }
 
       
       gDirty = false;
       gGetAllPromise = null;
-      return [...this.rooms.values()];
-    }.bind(this)).catch(error => {
+      return [].concat(_toConsumableArray(this.rooms.values()));}.
+    bind(this)).catch(function (error) {
       gGetAllPromise = null;
       
-      throw error;
-    });
+      throw error;});
 
-    return gGetAllPromise;
-  },
+
+    return gGetAllPromise;}, 
+
 
   
 
@@ -601,19 +601,19 @@ var LoopRoomsInternal = {
 
 
 
-  getNumParticipants: function(roomToken) {
+  getNumParticipants: function getNumParticipants(roomToken) {
     try {
       if (this.rooms && this.rooms.has(roomToken)) {
-        return this.rooms.get(roomToken).participants.length;
-      }
-      return 0;
-    }
+        return this.rooms.get(roomToken).participants.length;}
+
+      return 0;} 
+
     catch (ex) {
       
       MozLoopService.log.error("No room found in current session: ", ex);
-      return 0;
-    }
-  },
+      return 0;}}, 
+
+
 
   
 
@@ -625,22 +625,22 @@ var LoopRoomsInternal = {
 
 
 
-  get: function(roomToken, callback) {
-    let room = this.rooms.has(roomToken) ? this.rooms.get(roomToken) : {};
+  get: function get(roomToken, callback) {
+    var room = this.rooms.has(roomToken) ? this.rooms.get(roomToken) : {};
     
-    let needsUpdate = !("participants" in room);
+    var needsUpdate = !("participants" in room);
     if (!gDirty && !needsUpdate) {
       
       
       callback(null, room);
-      return;
-    }
+      return;}
+
 
     Task.spawn(function* () {
-      let response = yield MozLoopService.hawkRequest(this.sessionType,
-        "/rooms/" + encodeURIComponent(roomToken), "GET");
+      var response = yield MozLoopService.hawkRequest(this.sessionType, 
+      "/rooms/" + encodeURIComponent(roomToken), "GET");
 
-      let data = JSON.parse(response.body);
+      var data = JSON.parse(response.body);
 
       room.roomToken = roomToken;
 
@@ -649,15 +649,15 @@ var LoopRoomsInternal = {
 
         extend(room, data);
         eventEmitter.emit("delete", room);
-        eventEmitter.emit("delete:" + room.roomToken, room);
-      } else {
+        eventEmitter.emit("delete:" + room.roomToken, room);} else 
+      {
         yield this.addOrUpdateRoom(data, !needsUpdate);
 
-        checkForParticipantsUpdate(room, data);
-      }
-      callback(null, room);
-    }.bind(this)).catch(callback);
-  },
+        checkForParticipantsUpdate(room, data);}
+
+      callback(null, room);}.
+    bind(this)).catch(callback);}, 
+
 
   
 
@@ -668,24 +668,24 @@ var LoopRoomsInternal = {
 
 
 
-  create: function(room, callback) {
+  create: function create(room, callback) {
     if (!("decryptedContext" in room) || !("maxSize" in room)) {
       callback(new Error("Missing required property to create a room"));
-      return;
-    }
+      return;}
+
 
     if (!("roomOwner" in room)) {
-      room.roomOwner = "-";
-    }
+      room.roomOwner = "-";}
 
-    Task.spawn(function* () {
-      let { all, encrypted } = yield this.promiseEncryptRoomData(room);
+
+    Task.spawn(function* () {var _ref = 
+      yield this.promiseEncryptRoomData(room);var all = _ref.all;var encrypted = _ref.encrypted;
 
       
       room = all;
       
-      let response = yield MozLoopService.hawkRequest(this.sessionType, "/rooms",
-        "POST", encrypted);
+      var response = yield MozLoopService.hawkRequest(this.sessionType, "/rooms", 
+      "POST", encrypted);
 
       extend(room, JSON.parse(response.body));
       
@@ -695,53 +695,53 @@ var LoopRoomsInternal = {
       this.rooms.set(room.roomToken, room);
 
       if (this.sessionType == LOOP_SESSION_TYPE.GUEST) {
-        this.setGuestCreatedRoom(true);
-      }
+        this.setGuestCreatedRoom(true);}
+
 
       
       yield this.roomsCache.setKey(this.sessionType, room.roomToken, room.roomKey);
 
       eventEmitter.emit("add", room);
-      callback(null, room);
-    }.bind(this)).catch(callback);
-  },
+      callback(null, room);}.
+    bind(this)).catch(callback);}, 
+
 
   
 
 
 
 
-  setGuestCreatedRoom: function(created) {
+  setGuestCreatedRoom: function setGuestCreatedRoom(created) {
     if (created) {
-      Services.prefs.setBoolPref("loop.createdRoom", created);
-    } else {
-      Services.prefs.clearUserPref("loop.createdRoom");
-    }
-  },
+      Services.prefs.setBoolPref("loop.createdRoom", created);} else 
+    {
+      Services.prefs.clearUserPref("loop.createdRoom");}}, 
+
+
 
   
 
 
-  getGuestCreatedRoom: function() {
+  getGuestCreatedRoom: function getGuestCreatedRoom() {
     try {
-      return Services.prefs.getBoolPref("loop.createdRoom");
-    } catch (x) {
-      return false;
-    }
-  },
+      return Services.prefs.getBoolPref("loop.createdRoom");} 
+    catch (x) {
+      return false;}}, 
 
-  open: function(roomToken) {
-    let windowData = {
-      roomToken: roomToken,
-      type: "room"
-    };
+
+
+  open: function open(roomToken) {
+    var windowData = { 
+      roomToken: roomToken, 
+      type: "room" };
+
 
     eventEmitter.emit("open", roomToken);
 
-    return MozLoopService.openChatWindow(windowData, () => {
-      eventEmitter.emit("close");
-    });
-  },
+    return MozLoopService.openChatWindow(windowData, function () {
+      eventEmitter.emit("close");});}, 
+
+
 
   
 
@@ -751,19 +751,19 @@ var LoopRoomsInternal = {
 
 
 
-  delete: function(roomToken, callback) {
+  delete: function _delete(roomToken, callback) {var _this = this;
     
     
-    let room = this.rooms.get(roomToken);
-    let url = "/rooms/" + encodeURIComponent(roomToken);
-    MozLoopService.hawkRequest(this.sessionType, url, "DELETE")
-      .then(() => {
-        this.rooms.delete(roomToken);
-        eventEmitter.emit("delete", room);
-        eventEmitter.emit("delete:" + room.roomToken, room);
-        callback(null, room);
-      }, error => callback(error)).catch(error => callback(error));
-  },
+    var room = this.rooms.get(roomToken);
+    var url = "/rooms/" + encodeURIComponent(roomToken);
+    MozLoopService.hawkRequest(this.sessionType, url, "DELETE").
+    then(function () {
+      _this.rooms.delete(roomToken);
+      eventEmitter.emit("delete", room);
+      eventEmitter.emit("delete:" + room.roomToken, room);
+      callback(null, room);}, 
+    function (error) {return callback(error);}).catch(function (error) {return callback(error);});}, 
+
 
   
 
@@ -774,18 +774,18 @@ var LoopRoomsInternal = {
 
 
 
-  _postToRoom(roomToken, postData, callback) {
-    let url = "/rooms/" + encodeURIComponent(roomToken);
-    MozLoopService.hawkRequest(this.sessionType, url, "POST", postData).then(response => {
+  _postToRoom: function _postToRoom(roomToken, postData, callback) {var _this2 = this;
+    var url = "/rooms/" + encodeURIComponent(roomToken);
+    MozLoopService.hawkRequest(this.sessionType, url, "POST", postData).then(function (response) {
       
-      let joinData = response.body ? JSON.parse(response.body) : {};
+      var joinData = response.body ? JSON.parse(response.body) : {};
       if ("sessionToken" in joinData) {
-        let room = this.rooms.get(roomToken);
-        room.sessionToken = joinData.sessionToken;
-      }
-      callback(null, joinData);
-    }, error => callback(error)).catch(error => callback(error));
-  },
+        var room = _this2.rooms.get(roomToken);
+        room.sessionToken = joinData.sessionToken;}
+
+      callback(null, joinData);}, 
+    function (error) {return callback(error);}).catch(function (error) {return callback(error);});}, 
+
 
   
 
@@ -797,13 +797,13 @@ var LoopRoomsInternal = {
 
 
 
-  join: function(roomToken, displayName, callback) {
-    this._postToRoom(roomToken, {
-      action: "join",
-      displayName: displayName,
-      clientMaxSize: CLIENT_MAX_SIZE
-    }, callback);
-  },
+  join: function join(roomToken, displayName, callback) {
+    this._postToRoom(roomToken, { 
+      action: "join", 
+      displayName: displayName, 
+      clientMaxSize: CLIENT_MAX_SIZE }, 
+    callback);}, 
+
 
   
 
@@ -815,12 +815,12 @@ var LoopRoomsInternal = {
 
 
 
-  refreshMembership: function(roomToken, sessionToken, callback) {
-    this._postToRoom(roomToken, {
-      action: "refresh",
-      sessionToken: sessionToken
-    }, callback);
-  },
+  refreshMembership: function refreshMembership(roomToken, sessionToken, callback) {
+    this._postToRoom(roomToken, { 
+      action: "refresh", 
+      sessionToken: sessionToken }, 
+    callback);}, 
+
 
   
 
@@ -833,27 +833,27 @@ var LoopRoomsInternal = {
 
 
 
-  leave: function(roomToken, sessionToken, callback) {
+  leave: function leave(roomToken, sessionToken, callback) {
     if (!callback) {
-      callback = function(error) {
+      callback = function callback(error) {
         if (error) {
-          MozLoopService.log.error(error);
-        }
-      };
-    }
-    let room = this.rooms.get(roomToken);
+          MozLoopService.log.error(error);}};}
+
+
+
+    var room = this.rooms.get(roomToken);
     if (!sessionToken && room && room.sessionToken) {
       if (!room || !room.sessionToken) {
-        return;
-      }
+        return;}
+
       sessionToken = room.sessionToken;
-      delete room.sessionToken;
-    }
-    this._postToRoom(roomToken, {
-      action: "leave",
-      sessionToken: sessionToken
-    }, callback);
-  },
+      delete room.sessionToken;}
+
+    this._postToRoom(roomToken, { 
+      action: "leave", 
+      sessionToken: sessionToken }, 
+    callback);}, 
+
 
   
 
@@ -867,29 +867,29 @@ var LoopRoomsInternal = {
 
 
 
-  sendConnectionStatus: function(roomToken, sessionToken, status, callback) {
+  sendConnectionStatus: function sendConnectionStatus(roomToken, sessionToken, status, callback) {
     if (!callback) {
-      callback = function(error) {
+      callback = function callback(error) {
         if (error) {
-          MozLoopService.log.error(error);
-        }
-      };
-    }
-    this._postToRoom(roomToken, {
-      action: "status",
-      event: status.event,
-      state: status.state,
-      connections: status.connections,
-      sendStreams: status.sendStreams,
-      recvStreams: status.recvStreams,
-      sessionToken: sessionToken
-    }, callback);
-  },
+          MozLoopService.log.error(error);}};}
 
-  _domainLog: {
-    domainMap: new Map(),
-    roomToken: null
-  },
+
+
+    this._postToRoom(roomToken, { 
+      action: "status", 
+      event: status.event, 
+      state: status.state, 
+      connections: status.connections, 
+      sendStreams: status.sendStreams, 
+      recvStreams: status.recvStreams, 
+      sessionToken: sessionToken }, 
+    callback);}, 
+
+
+  _domainLog: { 
+    domainMap: new Map(), 
+    roomToken: null }, 
+
 
   
 
@@ -897,36 +897,36 @@ var LoopRoomsInternal = {
 
 
 
-  _recordUrl(roomToken, url) {
+  _recordUrl: function _recordUrl(roomToken, url) {
     
     if (this._domainLog.roomToken !== roomToken) {
       this._domainLog.roomToken = roomToken;
-      this._domainLog.domainMap.clear();
-    }
+      this._domainLog.domainMap.clear();}
 
-    let domain;
+
+    var domain = void 0;
     try {
-      domain = Services.eTLD.getBaseDomain(Services.io.newURI(url, null, null));
-    }
+      domain = Services.eTLD.getBaseDomain(Services.io.newURI(url, null, null));} 
+
     catch (ex) {
       
-      return;
-    }
+      return;}
+
 
     
     if (!DomainWhitelist.check(domain)) {
-      return;
-    }
+      return;}
+
 
     
     if (this._domainLog.domainMap.has(domain)) {
-      this._domainLog.domainMap.get(domain).count++;
-    }
+      this._domainLog.domainMap.get(domain).count++;}
+
     
     else {
-      this._domainLog.domainMap.set(domain, { count: 1, domain });
-    }
-  },
+        this._domainLog.domainMap.set(domain, { count: 1, domain: domain });}}, 
+
+
 
   
 
@@ -936,29 +936,29 @@ var LoopRoomsInternal = {
 
 
 
-  logDomains(roomToken, callback) {
+  logDomains: function logDomains(roomToken, callback) {
     if (!callback) {
-      callback = error => {
+      callback = function callback(error) {
         if (error) {
-          MozLoopService.log.error(error);
-        }
-      };
-    }
+          MozLoopService.log.error(error);}};}
+
+
+
 
     
-    if (this._domainLog.roomToken === roomToken &&
-        this._domainLog.domainMap.size > 0) {
-      this._postToRoom(roomToken, {
-        action: "logDomain",
-        domains: [...this._domainLog.domainMap.values()]
-      }, callback);
-      this._domainLog.domainMap.clear();
-    }
+    if (this._domainLog.roomToken === roomToken && 
+    this._domainLog.domainMap.size > 0) {
+      this._postToRoom(roomToken, { 
+        action: "logDomain", 
+        domains: [].concat(_toConsumableArray(this._domainLog.domainMap.values())) }, 
+      callback);
+      this._domainLog.domainMap.clear();}
+
     
     else {
-      callback(null);
-    }
-  },
+        callback(null);}}, 
+
+
 
   
 
@@ -973,53 +973,53 @@ var LoopRoomsInternal = {
 
 
 
-  update: function(roomToken, roomData, callback) {
-    let room = this.rooms.get(roomToken);
-    let url = "/rooms/" + encodeURIComponent(roomToken);
+  update: function update(roomToken, roomData, callback) {
+    var room = this.rooms.get(roomToken);
+    var url = "/rooms/" + encodeURIComponent(roomToken);
     if (!room.decryptedContext) {
-      room.decryptedContext = {
-        roomName: roomData.roomName || room.roomName
-      };
-    } else {
+      room.decryptedContext = { 
+        roomName: roomData.roomName || room.roomName };} else 
+
+    {
       
       
-      room.decryptedContext.roomName = roomData.roomName ||
-                                       room.decryptedContext.roomName ||
-                                       room.roomName;
-    }
+      room.decryptedContext.roomName = roomData.roomName || 
+      room.decryptedContext.roomName || 
+      room.roomName;}
+
     if (roomData.urls && roomData.urls.length) {
       
-      let context = roomData.urls[0];
+      var context = roomData.urls[0];
       room.decryptedContext.urls = [context];
 
       
       if (Services.prefs.getBoolPref("loop.logDomains")) {
-        this._recordUrl(roomToken, context.location);
-      }
-    }
+        this._recordUrl(roomToken, context.location);}}
 
-    Task.spawn(function* () {
-      let { all, encrypted } = yield this.promiseEncryptRoomData(room);
+
+
+    Task.spawn(function* () {var _ref2 = 
+      yield this.promiseEncryptRoomData(room);var all = _ref2.all;var encrypted = _ref2.encrypted;
 
       
-      let sendData = {
-        context: encrypted.context
-      };
+      var sendData = { 
+        context: encrypted.context };
+
 
       
       
       yield this.roomsCache.setKey(this.sessionType, all.roomToken, all.roomKey);
 
-      let response = yield MozLoopService.hawkRequest(this.sessionType,
-          url, "PATCH", sendData);
+      var response = yield MozLoopService.hawkRequest(this.sessionType, 
+      url, "PATCH", sendData);
 
-      let newRoomData = all;
+      var newRoomData = all;
 
       extend(newRoomData, JSON.parse(response.body));
       this.rooms.set(roomToken, newRoomData);
-      callback(null, newRoomData);
-    }.bind(this)).catch(callback);
-  },
+      callback(null, newRoomData);}.
+    bind(this)).catch(callback);}, 
+
 
   
 
@@ -1027,22 +1027,22 @@ var LoopRoomsInternal = {
 
 
 
-  onNotification: function(version, channelID) {
+  onNotification: function onNotification(version, channelID) {
     
-    let channelIDs = MozLoopService.channelIDs;
-    if ((this.sessionType == LOOP_SESSION_TYPE.GUEST && channelID != channelIDs.roomsGuest) ||
-        (this.sessionType == LOOP_SESSION_TYPE.FXA && channelID != channelIDs.roomsFxA)) {
-      return;
-    }
+    var channelIDs = MozLoopService.channelIDs;
+    if (this.sessionType == LOOP_SESSION_TYPE.GUEST && channelID != channelIDs.roomsGuest || 
+    this.sessionType == LOOP_SESSION_TYPE.FXA && channelID != channelIDs.roomsFxA) {
+      return;}
 
-    let oldDirty = gDirty;
+
+    var oldDirty = gDirty;
     gDirty = true;
 
     
     
     
-    this.getAll(oldDirty ? null : version, () => {});
-  },
+    this.getAll(oldDirty ? null : version, function () {});}, 
+
 
   
 
@@ -1050,19 +1050,19 @@ var LoopRoomsInternal = {
 
 
 
-  maybeRefresh: function(user = null) {
+  maybeRefresh: function maybeRefresh() {var user = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
     if (gCurrentUser == user) {
-      return;
-    }
+      return;}
+
 
     gCurrentUser = user;
     if (!gDirty) {
       gDirty = true;
       this.rooms.clear();
       eventEmitter.emit("refresh");
-      this.getAll(null, () => {});
-    }
-  },
+      this.getAll(null, function () {});}}, 
+
+
 
   
 
@@ -1071,19 +1071,19 @@ var LoopRoomsInternal = {
 
 
 
-  _handleLinkClickerMessage: function(id, message, sendingContext) {
+  _handleLinkClickerMessage: function _handleLinkClickerMessage(id, message, sendingContext) {
     if (!message) {
-      return;
-    }
+      return;}
 
-    let sendResponse = (response, alreadyOpen) => {
-      gLinkClickerChannel.send({
-        response: response,
-        alreadyOpen: alreadyOpen
-      }, sendingContext);
-    };
 
-    let hasRoom = this.rooms.has(message.roomToken);
+    var sendResponse = function sendResponse(response, alreadyOpen) {
+      gLinkClickerChannel.send({ 
+        response: response, 
+        alreadyOpen: alreadyOpen }, 
+      sendingContext);};
+
+
+    var hasRoom = this.rooms.has(message.roomToken);
 
     switch (message.command) {
       case "checkWillOpenRoom":
@@ -1092,21 +1092,21 @@ var LoopRoomsInternal = {
       case "openRoom":
         if (hasRoom) {
           if (MozLoopService.isChatWindowOpen(message.roomToken)) {
-            sendResponse(hasRoom, true);
-          } else {
+            sendResponse(hasRoom, true);} else 
+          {
             this.open(message.roomToken);
-            sendResponse(hasRoom, false);
-          }
-        } else {
-          sendResponse(hasRoom, false);
-        }
+            sendResponse(hasRoom, false);}} else 
+
+        {
+          sendResponse(hasRoom, false);}
+
         break;
       default:
         sendResponse(false, false);
-        break;
-    }
-  }
-};
+        break;}} };
+
+
+
 Object.freeze(LoopRoomsInternal);
 
 
@@ -1125,77 +1125,77 @@ Object.freeze(LoopRoomsInternal);
 
 
 
-this.LoopRooms = {
-  init: function() {
-    LoopRoomsInternal.init();
-  },
+this.LoopRooms = { 
+  init: function init() {
+    LoopRoomsInternal.init();}, 
+
 
   get participantsCount() {
-    return LoopRoomsInternal.participantsCount;
-  },
+    return LoopRoomsInternal.participantsCount;}, 
 
-  getAll: function(version, callback) {
+
+  getAll: function getAll(version, callback) {
     if (!callback) {
       callback = version;
-      version = null;
-    }
+      version = null;}
 
-    LoopRoomsInternal.getAll(version).then(result => callback(null, result))
-      .catch(error => callback(error));
-  },
 
-  get: function(roomToken, callback) {
-    return LoopRoomsInternal.get(roomToken, callback);
-  },
+    LoopRoomsInternal.getAll(version).then(function (result) {return callback(null, result);}).
+    catch(function (error) {return callback(error);});}, 
 
-  create: function(options, callback) {
-    return LoopRoomsInternal.create(options, callback);
-  },
 
-  open: function(roomToken) {
-    return LoopRoomsInternal.open(roomToken);
-  },
+  get: function get(roomToken, callback) {
+    return LoopRoomsInternal.get(roomToken, callback);}, 
 
-  delete: function(roomToken, callback) {
-    return LoopRoomsInternal.delete(roomToken, callback);
-  },
 
-  join: function(roomToken, displayName, callback) {
-    return LoopRoomsInternal.join(roomToken, displayName, callback);
-  },
+  create: function create(options, callback) {
+    return LoopRoomsInternal.create(options, callback);}, 
 
-  refreshMembership: function(roomToken, sessionToken, callback) {
-    return LoopRoomsInternal.refreshMembership(roomToken, sessionToken,
-      callback);
-  },
 
-  leave: function(roomToken, sessionToken, callback) {
-    return LoopRoomsInternal.leave(roomToken, sessionToken, callback);
-  },
+  open: function open(roomToken) {
+    return LoopRoomsInternal.open(roomToken);}, 
 
-  sendConnectionStatus: function(roomToken, sessionToken, status, callback) {
-    return LoopRoomsInternal.sendConnectionStatus(roomToken, sessionToken, status, callback);
-  },
 
-  logDomains(roomToken, callback) {
-    return LoopRoomsInternal.logDomains(roomToken, callback);
-  },
+  delete: function _delete(roomToken, callback) {
+    return LoopRoomsInternal.delete(roomToken, callback);}, 
 
-  update: function(roomToken, roomData, callback) {
-    return LoopRoomsInternal.update(roomToken, roomData, callback);
-  },
 
-  getGuestCreatedRoom: function() {
-    return LoopRoomsInternal.getGuestCreatedRoom();
-  },
+  join: function join(roomToken, displayName, callback) {
+    return LoopRoomsInternal.join(roomToken, displayName, callback);}, 
 
-  maybeRefresh: function(user) {
-    return LoopRoomsInternal.maybeRefresh(user);
-  },
 
-  getNumParticipants: function(roomToken) {
-    return LoopRoomsInternal.getNumParticipants(roomToken);
-  },
+  refreshMembership: function refreshMembership(roomToken, sessionToken, callback) {
+    return LoopRoomsInternal.refreshMembership(roomToken, sessionToken, 
+    callback);}, 
+
+
+  leave: function leave(roomToken, sessionToken, callback) {
+    return LoopRoomsInternal.leave(roomToken, sessionToken, callback);}, 
+
+
+  sendConnectionStatus: function sendConnectionStatus(roomToken, sessionToken, status, callback) {
+    return LoopRoomsInternal.sendConnectionStatus(roomToken, sessionToken, status, callback);}, 
+
+
+  logDomains: function logDomains(roomToken, callback) {
+    return LoopRoomsInternal.logDomains(roomToken, callback);}, 
+
+
+  update: function update(roomToken, roomData, callback) {
+    return LoopRoomsInternal.update(roomToken, roomData, callback);}, 
+
+
+  getGuestCreatedRoom: function getGuestCreatedRoom() {
+    return LoopRoomsInternal.getGuestCreatedRoom();}, 
+
+
+  maybeRefresh: function maybeRefresh(user) {
+    return LoopRoomsInternal.maybeRefresh(user);}, 
+
+
+  getNumParticipants: function getNumParticipants(roomToken) {
+    return LoopRoomsInternal.getNumParticipants(roomToken);}, 
+
 
   
 
@@ -1203,42 +1203,42 @@ this.LoopRooms = {
 
 
 
-  stubCache: function(stub) {
+  stubCache: function stubCache(stub) {
     LoopRoomsInternal.rooms.clear();
     if (stub) {
       
-      for (let [key, value] of stub.entries()) {
-        LoopRoomsInternal.rooms.set(key, value);
-      }
-      gDirty = false;
-    } else {
-      
-      
-      gDirty = true;
-    }
-  },
+      var _iteratorNormalCompletion7 = true;var _didIteratorError7 = false;var _iteratorError7 = undefined;try {for (var _iterator7 = stub.entries()[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {var _ref3 = _step7.value;var _ref4 = _slicedToArray(_ref3, 2);var key = _ref4[0];var value = _ref4[1];
+          LoopRoomsInternal.rooms.set(key, value);}} catch (err) {_didIteratorError7 = true;_iteratorError7 = err;} finally {try {if (!_iteratorNormalCompletion7 && _iterator7.return) {_iterator7.return();}} finally {if (_didIteratorError7) {throw _iteratorError7;}}}
 
-  promise: function(method, ...params) {
+      gDirty = false;} else 
+    {
+      
+      
+      gDirty = true;}}, 
+
+
+
+  promise: function promise(method) {var _this3 = this;for (var _len = arguments.length, params = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {params[_key - 1] = arguments[_key];}
     if (method == "getAll") {
-      return LoopRoomsInternal.getAll(...params);
-    }
+      return LoopRoomsInternal.getAll.apply(LoopRoomsInternal, params);}
 
-    return new Promise((resolve, reject) => {
-      this[method](...params, (error, result) => {
+
+    return new Promise(function (resolve, reject) {
+      _this3[method].apply(_this3, params.concat([function (error, result) {
         if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      });
-    });
-  },
+          reject(error);} else 
+        {
+          resolve(result);}}]));});}, 
 
-  on: (...params) => eventEmitter.on(...params),
 
-  once: (...params) => eventEmitter.once(...params),
 
-  off: (...params) => eventEmitter.off(...params),
+
+
+  on: function on() {var _eventEmitter;return (_eventEmitter = eventEmitter).on.apply(_eventEmitter, arguments);}, 
+
+  once: function once() {var _eventEmitter2;return (_eventEmitter2 = eventEmitter).once.apply(_eventEmitter2, arguments);}, 
+
+  off: function off() {var _eventEmitter3;return (_eventEmitter3 = eventEmitter).off.apply(_eventEmitter3, arguments);}, 
 
   
 
@@ -1247,22 +1247,22 @@ this.LoopRooms = {
 
 
 
-  _setRoomsCache: function(roomsCache, orig) {
+  _setRoomsCache: function _setRoomsCache(roomsCache, orig) {
     LoopRoomsInternal.rooms.clear();
     gDirty = true;
 
     if (roomsCache) {
       
-      for (let [key, value] of roomsCache) {
+      var _iteratorNormalCompletion8 = true;var _didIteratorError8 = false;var _iteratorError8 = undefined;try {for (var _iterator8 = roomsCache[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {var _ref5 = _step8.value;var _ref6 = _slicedToArray(_ref5, 2);var key = _ref6[0];var value = _ref6[1];
 
-        LoopRoomsInternal.rooms.set(key, value);
-        if (orig) {
-          checkForParticipantsUpdate(orig, value);
-        }
-      }
+          LoopRoomsInternal.rooms.set(key, value);
+          if (orig) {
+            checkForParticipantsUpdate(orig, value);}}} catch (err) {_didIteratorError8 = true;_iteratorError8 = err;} finally {try {if (!_iteratorNormalCompletion8 && _iterator8.return) {_iterator8.return();}} finally {if (_didIteratorError8) {throw _iteratorError8;}}}
+
+
       gGetAllPromise = null;
-      gDirty = false;
-    }
-  }
-};
+      gDirty = false;}} };
+
+
+
 Object.freeze(this.LoopRooms);

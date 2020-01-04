@@ -1,11 +1,11 @@
-
+"use strict"; 
 
 
 
 var loop = loop || {};
 loop.store = loop.store || {};
 
-(function(mozL10n) {
+(function (mozL10n) {
   "use strict";
 
   
@@ -26,28 +26,28 @@ loop.store = loop.store || {};
 
 
 
-  var roomSchema = {
-    roomToken: String,
-    roomUrl: String,
+  var roomSchema = { 
+    roomToken: String, 
+    roomUrl: String, 
     
     
-    maxSize: Number,
-    participants: Array,
-    ctime: Number
-  };
+    maxSize: Number, 
+    participants: Array, 
+    ctime: Number };
+
 
   
 
 
 
 
-  function Room(values) {
-    var validatedData = new loop.validate.Validator(roomSchema || {})
-                                         .validate(values || {});
-    for (var prop in validatedData) {
-      this[prop] = validatedData[prop];
-    }
-  }
+  function Room(values) {var _this = this;
+    var validatedData = new loop.validate.Validator(roomSchema || {}).
+    validate(values || {});
+    Object.keys(validatedData).forEach(function (prop) {
+      _this[prop] = validatedData[prop];});}
+
+
 
   loop.store.Room = Room;
 
@@ -63,43 +63,43 @@ loop.store = loop.store || {};
 
 
 
-  loop.store.RoomStore = loop.store.createStore({
+  loop.store.RoomStore = loop.store.createStore({ 
     
 
 
 
 
 
-    maxRoomCreationSize: MAX_ROOM_CREATION_SIZE,
+    maxRoomCreationSize: MAX_ROOM_CREATION_SIZE, 
 
     
 
 
 
     actions: [
-      "addSocialShareProvider",
-      "createRoom",
-      "createdRoom",
-      "createRoomError",
-      "copyRoomUrl",
-      "deleteRoom",
-      "deleteRoomError",
-      "emailRoomUrl",
-      "facebookShareRoomUrl",
-      "getAllRooms",
-      "getAllRoomsError",
-      "openRoom",
-      "shareRoomUrl",
-      "updateRoomContext",
-      "updateRoomContextDone",
-      "updateRoomContextError",
-      "updateRoomList"
-    ],
+    "addSocialShareProvider", 
+    "createRoom", 
+    "createdRoom", 
+    "createRoomError", 
+    "copyRoomUrl", 
+    "deleteRoom", 
+    "deleteRoomError", 
+    "emailRoomUrl", 
+    "facebookShareRoomUrl", 
+    "getAllRooms", 
+    "getAllRoomsError", 
+    "openRoom", 
+    "shareRoomUrl", 
+    "updateRoomContext", 
+    "updateRoomContextDone", 
+    "updateRoomContextError", 
+    "updateRoomList"], 
 
-    initialize: function(options) {
+
+    initialize: function initialize(options) {
       if (!options.constants) {
-        throw new Error("Missing option constants");
-      }
+        throw new Error("Missing option constants");}
+
 
       this._notifications = options.notifications;
       this._constants = options.constants;
@@ -107,132 +107,132 @@ loop.store = loop.store || {};
 
       if (options.activeRoomStore) {
         this.activeRoomStore = options.activeRoomStore;
-        this.activeRoomStore.on("change",
-                                this._onActiveRoomStoreChange.bind(this));
-      }
-    },
+        this.activeRoomStore.on("change", 
+        this._onActiveRoomStoreChange.bind(this));}}, 
 
-    getInitialStoreState: function() {
-      return {
-        activeRoom: this.activeRoomStore ? this.activeRoomStore.getStoreState() : {},
-        closingNewRoom: false,
-        error: null,
-        lastCreatedRoom: null,
-        openedRoom: null,
-        pendingCreation: false,
-        pendingInitialRetrieval: true,
-        rooms: [],
-        savingContext: false
-      };
-    },
+
+
+    getInitialStoreState: function getInitialStoreState() {
+      return { 
+        activeRoom: this.activeRoomStore ? this.activeRoomStore.getStoreState() : {}, 
+        closingNewRoom: false, 
+        error: null, 
+        lastCreatedRoom: null, 
+        openedRoom: null, 
+        pendingCreation: false, 
+        pendingInitialRetrieval: true, 
+        rooms: [], 
+        savingContext: false };}, 
+
+
 
     
 
 
-    startListeningToRoomEvents: function() {
+    startListeningToRoomEvents: function startListeningToRoomEvents() {
       
-      loop.request("Rooms:PushSubscription", ["add", "close", "delete", "open",
-        "refresh", "update"]);
+      loop.request("Rooms:PushSubscription", ["add", "close", "delete", "open", 
+      "refresh", "update"]);
       loop.subscribe("Rooms:Add", this._onRoomAdded.bind(this));
       loop.subscribe("Rooms:Close", this._onRoomClose.bind(this));
       loop.subscribe("Rooms:Open", this._onRoomOpen.bind(this));
       loop.subscribe("Rooms:Update", this._onRoomUpdated.bind(this));
       loop.subscribe("Rooms:Delete", this._onRoomRemoved.bind(this));
-      loop.subscribe("Rooms:Refresh", this._onRoomsRefresh.bind(this));
-    },
+      loop.subscribe("Rooms:Refresh", this._onRoomsRefresh.bind(this));}, 
+
 
     
 
 
-    _onActiveRoomStoreChange: function() {
-      this.setStoreState({ activeRoom: this.activeRoomStore.getStoreState() });
-    },
+    _onActiveRoomStoreChange: function _onActiveRoomStoreChange() {
+      this.setStoreState({ activeRoom: this.activeRoomStore.getStoreState() });}, 
+
 
     
 
 
 
 
-    _onRoomAdded: function(addedRoomData) {
+    _onRoomAdded: function _onRoomAdded(addedRoomData) {
       addedRoomData.participants = addedRoomData.participants || [];
       addedRoomData.ctime = addedRoomData.ctime || new Date().getTime();
 
-      this.dispatchAction(new sharedActions.UpdateRoomList({
+      this.dispatchAction(new sharedActions.UpdateRoomList({ 
         
-        roomList: this._storeState.rooms.filter(function(room) {
-          return addedRoomData.roomToken !== room.roomToken;
-        }).concat(new Room(addedRoomData))
-      }));
-    },
+        roomList: this._storeState.rooms.filter(function (room) {
+          return addedRoomData.roomToken !== room.roomToken;}).
+        concat(new Room(addedRoomData)) }));}, 
+
+
 
     
 
 
-    _onRoomClose: function() {
-      let state = this.getStoreState();
+    _onRoomClose: function _onRoomClose() {
+      var state = this.getStoreState();
 
       
       if (state.lastCreatedRoom && state.openedRoom === state.lastCreatedRoom) {
-        this.setStoreState({
-          closingNewRoom: true
-        });
-        loop.request("SetNameNewRoom");
-      }
+        this.setStoreState({ 
+          closingNewRoom: true });
+
+        loop.request("SetNameNewRoom");}
+
 
       
-      this.setStoreState({
-        closingNewRoom: false,
-        lastCreatedRoom: null,
-        openedRoom: null
-      });
-    },
+      this.setStoreState({ 
+        closingNewRoom: false, 
+        lastCreatedRoom: null, 
+        openedRoom: null });}, 
+
+
 
     
 
 
 
 
-    _onRoomOpen: function(roomToken) {
-      this.setStoreState({
-        openedRoom: roomToken
-      });
-    },
+    _onRoomOpen: function _onRoomOpen(roomToken) {
+      this.setStoreState({ 
+        openedRoom: roomToken });}, 
+
+
 
     
 
 
 
 
-    _onRoomUpdated: function(updatedRoomData) {
-      this.dispatchAction(new sharedActions.UpdateRoomList({
-        roomList: this._storeState.rooms.map(function(room) {
-          return room.roomToken === updatedRoomData.roomToken ?
-                 updatedRoomData : room;
-        })
-      }));
-    },
+    _onRoomUpdated: function _onRoomUpdated(updatedRoomData) {
+      this.dispatchAction(new sharedActions.UpdateRoomList({ 
+        roomList: this._storeState.rooms.map(function (room) {
+          return room.roomToken === updatedRoomData.roomToken ? 
+          updatedRoomData : room;}) }));}, 
+
+
+
 
     
 
 
 
 
-    _onRoomRemoved: function(removedRoomData) {
-      this.dispatchAction(new sharedActions.UpdateRoomList({
-        roomList: this._storeState.rooms.filter(function(room) {
-          return room.roomToken !== removedRoomData.roomToken;
-        })
-      }));
-    },
+    _onRoomRemoved: function _onRoomRemoved(removedRoomData) {
+      this.dispatchAction(new sharedActions.UpdateRoomList({ 
+        roomList: this._storeState.rooms.filter(function (room) {
+          return room.roomToken !== removedRoomData.roomToken;}) }));}, 
+
+
+
 
     
 
 
-    _onRoomsRefresh: function() {
-      this.dispatchAction(new sharedActions.UpdateRoomList({
-        roomList: []
-      }));
-    },
+    _onRoomsRefresh: function _onRoomsRefresh() {
+      this.dispatchAction(new sharedActions.UpdateRoomList({ 
+        roomList: [] }));}, 
+
+
 
     
 
@@ -240,189 +240,189 @@ loop.store = loop.store || {};
 
 
 
-    _processRoomList: function(rawRoomList) {
+    _processRoomList: function _processRoomList(rawRoomList) {
       if (!rawRoomList) {
-        return [];
-      }
-      return rawRoomList
-        .map(function(rawRoom) {
-          return new Room(rawRoom);
-        })
-        .slice()
-        .sort(function(a, b) {
-          return b.ctime - a.ctime;
-        });
-    },
+        return [];}
+
+      return rawRoomList.
+      map(function (rawRoom) {
+        return new Room(rawRoom);}).
+
+      slice().
+      sort(function (a, b) {
+        return b.ctime - a.ctime;});}, 
+
+
 
     
 
 
 
 
-    createRoom: function(actionData) {
-      this.setStoreState({
-        pendingCreation: true,
-        error: null
-      });
+    createRoom: function createRoom(actionData) {
+      this.setStoreState({ 
+        pendingCreation: true, 
+        error: null });
 
-      var roomCreationData = {
-        decryptedContext: {},
-        maxSize: this.maxRoomCreationSize
-      };
+
+      var roomCreationData = { 
+        decryptedContext: {}, 
+        maxSize: this.maxRoomCreationSize };
+
 
       if ("urls" in actionData) {
-        roomCreationData.decryptedContext.urls = actionData.urls;
-      }
+        roomCreationData.decryptedContext.urls = actionData.urls;}
+
 
       this._notifications.remove("create-room-error");
-      loop.request("Rooms:Create", roomCreationData).then(function(result) {
+      loop.request("Rooms:Create", roomCreationData).then(function (result) {
         var buckets = this._constants.ROOM_CREATE;
         if (!result || result.isError) {
           loop.request("TelemetryAddValue", "LOOP_ROOM_CREATE", buckets.CREATE_FAIL);
-          this.dispatchAction(new sharedActions.CreateRoomError({
-            error: result ? result : new Error("no result")
-          }));
-          return;
-        }
+          this.dispatchAction(new sharedActions.CreateRoomError({ 
+            error: result ? result : new Error("no result") }));
+
+          return;}
+
 
         
-        this.setStoreState({
-          lastCreatedRoom: result.roomToken
-        });
+        this.setStoreState({ 
+          lastCreatedRoom: result.roomToken });
 
-        this.dispatchAction(new sharedActions.CreatedRoom({
-          decryptedContext: result.decryptedContext,
-          roomToken: result.roomToken,
-          roomUrl: result.roomUrl
-        }));
-        loop.request("TelemetryAddValue", "LOOP_ROOM_CREATE", buckets.CREATE_SUCCESS);
-      }.bind(this));
-    },
+
+        this.dispatchAction(new sharedActions.CreatedRoom({ 
+          decryptedContext: result.decryptedContext, 
+          roomToken: result.roomToken, 
+          roomUrl: result.roomUrl }));
+
+        loop.request("TelemetryAddValue", "LOOP_ROOM_CREATE", buckets.CREATE_SUCCESS);}.
+      bind(this));}, 
+
 
     
 
 
-    createdRoom: function(actionData) {
-      this.setStoreState({
-        activeRoom: {
-          decryptedContext: actionData.decryptedContext,
-          roomToken: actionData.roomToken,
-          roomUrl: actionData.roomUrl
-        },
-        pendingCreation: false
-      });
-    },
+    createdRoom: function createdRoom(actionData) {
+      this.setStoreState({ 
+        activeRoom: { 
+          decryptedContext: actionData.decryptedContext, 
+          roomToken: actionData.roomToken, 
+          roomUrl: actionData.roomUrl }, 
+
+        pendingCreation: false });}, 
+
+
 
     
 
 
 
 
-    createRoomError: function(actionData) {
-      this.setStoreState({
-        error: actionData.error,
-        pendingCreation: false
-      });
+    createRoomError: function createRoomError(actionData) {
+      this.setStoreState({ 
+        error: actionData.error, 
+        pendingCreation: false });
+
 
       
-      this._notifications.set({
-        id: "create-room-error",
-        level: "error",
-        message: mozL10n.get("generic_failure_message")
-      });
-    },
+      this._notifications.set({ 
+        id: "create-room-error", 
+        level: "error", 
+        message: mozL10n.get("generic_failure_message") });}, 
+
+
 
     
 
 
 
 
-    copyRoomUrl: function(actionData) {
+    copyRoomUrl: function copyRoomUrl(actionData) {
       loop.requestMulti(
-        ["CopyString", actionData.roomUrl],
-        ["NotifyUITour", "Loop:RoomURLCopied"]);
+      ["CopyString", actionData.roomUrl], 
+      ["NotifyUITour", "Loop:RoomURLCopied"]);
 
       var from = actionData.from;
       var bucket = this._constants.SHARING_ROOM_URL["COPY_FROM_" + from.toUpperCase()];
       if (typeof bucket === "undefined") {
         console.error("No URL sharing type bucket found for '" + from + "'");
-        return;
-      }
+        return;}
+
       loop.requestMulti(
-        ["TelemetryAddValue", "LOOP_SHARING_ROOM_URL", bucket],
-        ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_SHARE]
-      );
-    },
+      ["TelemetryAddValue", "LOOP_SHARING_ROOM_URL", bucket], 
+      ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_SHARE]);}, 
+
+
 
     
 
 
 
 
-    emailRoomUrl: function(actionData) {
+    emailRoomUrl: function emailRoomUrl(actionData) {
       var from = actionData.from;
-      loop.shared.utils.composeCallUrlEmail(actionData.roomUrl, null,
-        actionData.roomDescription);
+      loop.shared.utils.composeCallUrlEmail(actionData.roomUrl, null, 
+      actionData.roomDescription);
 
       var bucket = this._constants.SHARING_ROOM_URL[
-        "EMAIL_FROM_" + (from || "").toUpperCase()
-      ];
+      "EMAIL_FROM_" + (from || "").toUpperCase()];
+
       if (typeof bucket === "undefined") {
         console.error("No URL sharing type bucket found for '" + from + "'");
-        return;
-      }
+        return;}
+
       loop.requestMulti(
-        ["NotifyUITour", "Loop:RoomURLEmailed"],
-        ["TelemetryAddValue", "LOOP_SHARING_ROOM_URL", bucket],
-        ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_SHARE]
-      );
-    },
+      ["NotifyUITour", "Loop:RoomURLEmailed"], 
+      ["TelemetryAddValue", "LOOP_SHARING_ROOM_URL", bucket], 
+      ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_SHARE]);}, 
+
+
 
     
 
 
 
 
-    facebookShareRoomUrl: function(actionData) {
+    facebookShareRoomUrl: function facebookShareRoomUrl(actionData) {
       var encodedRoom = encodeURIComponent(actionData.roomUrl);
 
       loop.requestMulti(
-        ["GetLoopPref", "facebook.appId"],
-        ["GetLoopPref", "facebook.fallbackUrl"],
-        ["GetLoopPref", "facebook.shareUrl"]
-      ).then(results => {
+      ["GetLoopPref", "facebook.appId"], 
+      ["GetLoopPref", "facebook.fallbackUrl"], 
+      ["GetLoopPref", "facebook.shareUrl"]).
+      then(function (results) {
         var app_id = results[0];
         var fallback_url = results[1];
-        var redirect_url = encodeURIComponent(actionData.originUrl ||
-                                              fallback_url);
+        var redirect_url = encodeURIComponent(actionData.originUrl || 
+        fallback_url);
 
-        var finalURL = results[2].replace("%ROOM_URL%", encodedRoom)
-                                 .replace("%APP_ID%", app_id)
-                                 .replace("%REDIRECT_URI%", redirect_url);
+        var finalURL = results[2].replace("%ROOM_URL%", encodedRoom).
+        replace("%APP_ID%", app_id).
+        replace("%REDIRECT_URI%", redirect_url);
 
-        return loop.request("OpenURL", finalURL);
-      }).then(() => {
-        loop.request("NotifyUITour", "Loop:RoomURLShared");
-      });
+        return loop.request("OpenURL", finalURL);}).
+      then(function () {
+        loop.request("NotifyUITour", "Loop:RoomURLShared");});
+
 
       var from = actionData.from;
       var bucket = this._constants.SHARING_ROOM_URL["FACEBOOK_FROM_" + from.toUpperCase()];
       if (typeof bucket === "undefined") {
         console.error("No URL sharing type bucket found for '" + from + "'");
-        return;
-      }
+        return;}
+
       loop.requestMulti(
-        ["TelemetryAddValue", "LOOP_SHARING_ROOM_URL", bucket],
-        ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_SHARE]
-      );
-    },
+      ["TelemetryAddValue", "LOOP_SHARING_ROOM_URL", bucket], 
+      ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_SHARE]);}, 
+
+
 
     
 
 
 
 
-    shareRoomUrl: function(actionData) {
+    shareRoomUrl: function shareRoomUrl(actionData) {
       var providerOrigin = new URL(actionData.provider.origin).hostname;
       var shareTitle = "";
       var shareBody = null;
@@ -430,81 +430,81 @@ loop.store = loop.store || {};
       switch (providerOrigin) {
         case "mail.google.com":
           shareTitle = mozL10n.get("share_email_subject7");
-          shareBody = mozL10n.get("share_email_body7", {
-            callUrl: actionData.roomUrl
-          });
+          shareBody = mozL10n.get("share_email_body7", { 
+            callUrl: actionData.roomUrl });
+
           shareBody += mozL10n.get("share_email_footer2");
           break;
         case "twitter.com":
         default:
-          shareTitle = mozL10n.get("share_tweet", {
-            clientShortname2: mozL10n.get("clientShortname2")
-          });
-          break;
-      }
+          shareTitle = mozL10n.get("share_tweet", { 
+            clientShortname2: mozL10n.get("clientShortname2") });
+
+          break;}
+
 
       loop.requestMulti(
-        ["SocialShareRoom", actionData.provider.origin, actionData.roomUrl,
-         shareTitle, shareBody],
-        ["NotifyUITour", "Loop:RoomURLShared"]);
-    },
+      ["SocialShareRoom", actionData.provider.origin, actionData.roomUrl, 
+      shareTitle, shareBody], 
+      ["NotifyUITour", "Loop:RoomURLShared"]);}, 
+
 
     
 
 
-    addSocialShareProvider: function() {
-      loop.request("AddSocialShareProvider");
-    },
+    addSocialShareProvider: function addSocialShareProvider() {
+      loop.request("AddSocialShareProvider");}, 
+
 
     
 
 
 
 
-    deleteRoom: function(actionData) {
-      loop.request("Rooms:Delete", actionData.roomToken).then(function(result) {
-        var isError = (result && result.isError);
+    deleteRoom: function deleteRoom(actionData) {
+      loop.request("Rooms:Delete", actionData.roomToken).then(function (result) {
+        var isError = result && result.isError;
         if (isError) {
-          this.dispatchAction(new sharedActions.DeleteRoomError({ error: result }));
-        }
+          this.dispatchAction(new sharedActions.DeleteRoomError({ error: result }));}
+
         var buckets = this._constants.ROOM_DELETE;
         loop.requestMulti(
-          ["TelemetryAddValue", "LOOP_ROOM_DELETE", buckets[isError ?
-            "DELETE_FAIL" : "DELETE_SUCCESS"]],
-          ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_DELETE]
-        );
-      }.bind(this));
-    },
+        ["TelemetryAddValue", "LOOP_ROOM_DELETE", buckets[isError ? 
+        "DELETE_FAIL" : "DELETE_SUCCESS"]], 
+        ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_DELETE]);}.
+
+      bind(this));}, 
+
 
     
 
 
 
 
-    deleteRoomError: function(actionData) {
-      this.setStoreState({ error: actionData.error });
-    },
+    deleteRoomError: function deleteRoomError(actionData) {
+      this.setStoreState({ error: actionData.error });}, 
+
 
     
 
 
-    getAllRooms: function() {
+    getAllRooms: function getAllRooms() {
       
       
       if (this._gotAllRooms) {
-        return;
-      }
+        return;}
 
-      loop.request("Rooms:GetAll", null).then(function(result) {
+
+      loop.request("Rooms:GetAll", null).then(function (result) {
         var action;
 
         this.setStoreState({ pendingInitialRetrieval: false });
 
         if (result && result.isError) {
-          action = new sharedActions.GetAllRoomsError({ error: result });
-        } else {
-          action = new sharedActions.UpdateRoomList({ roomList: result });
-        }
+          action = new sharedActions.GetAllRoomsError({ error: result });} else 
+        {
+          action = new sharedActions.UpdateRoomList({ roomList: result });}
+
 
         this.dispatchAction(action);
 
@@ -512,74 +512,74 @@ loop.store = loop.store || {};
 
         
         
-        this.startListeningToRoomEvents();
-      }.bind(this));
-    },
+        this.startListeningToRoomEvents();}.
+      bind(this));}, 
+
 
     
 
 
 
 
-    getAllRoomsError: function(actionData) {
-      this.setStoreState({ error: actionData.error });
-    },
+    getAllRoomsError: function getAllRoomsError(actionData) {
+      this.setStoreState({ error: actionData.error });}, 
+
 
     
 
 
 
 
-    updateRoomList: function(actionData) {
-      this.setStoreState({
-        error: undefined,
-        rooms: this._processRoomList(actionData.roomList)
-      });
-    },
+    updateRoomList: function updateRoomList(actionData) {
+      this.setStoreState({ 
+        error: undefined, 
+        rooms: this._processRoomList(actionData.roomList) });}, 
+
+
 
     
 
 
 
 
-    openRoom: function(actionData) {
+    openRoom: function openRoom(actionData) {
       loop.requestMulti(
-        ["Rooms:Open", actionData.roomToken],
-        ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_OPEN]
-      );
-    },
+      ["Rooms:Open", actionData.roomToken], 
+      ["TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", this._constants.LOOP_MAU_TYPE.ROOM_OPEN]);}, 
+
+
 
     
 
 
 
 
-    updateRoomContext: function(actionData) {
+    updateRoomContext: function updateRoomContext(actionData) {
       this.setStoreState({ savingContext: true });
-      loop.request("Rooms:Get", actionData.roomToken).then(function(result) {
+      loop.request("Rooms:Get", actionData.roomToken).then(function (result) {
         if (result.isError) {
-          this.dispatchAction(new sharedActions.UpdateRoomContextError({
-            error: result
-          }));
-          return;
-        }
+          this.dispatchAction(new sharedActions.UpdateRoomContextError({ 
+            error: result }));
+
+          return;}
+
 
         var roomData = {};
         var context = result.decryptedContext;
         var oldRoomName = context.roomName;
         var newRoomName = (actionData.newRoomName || "").trim();
         if (newRoomName && oldRoomName !== newRoomName) {
-          roomData.roomName = newRoomName;
-        }
+          roomData.roomName = newRoomName;}
+
         var oldRoomURLs = context.urls;
         var oldRoomURL = oldRoomURLs && oldRoomURLs[0];
         
         
-        var newRoomURL = loop.shared.utils.stripFalsyValues({
-          location: (actionData.newRoomURL || "").trim(),
-          thumbnail: (actionData.newRoomThumbnail || "").trim(),
-          description: (actionData.newRoomDescription || "").trim()
-        });
+        var newRoomURL = loop.shared.utils.stripFalsyValues({ 
+          location: (actionData.newRoomURL || "").trim(), 
+          thumbnail: (actionData.newRoomThumbnail || "").trim(), 
+          description: (actionData.newRoomDescription || "").trim() });
+
         
         
         
@@ -589,14 +589,14 @@ loop.store = loop.store || {};
           newRoomURL = _.extend(oldRoomURL || {}, newRoomURL);
           var isValidURL = false;
           try {
-            isValidURL = new URL(newRoomURL.location);
-          } catch (ex) {
+            isValidURL = new URL(newRoomURL.location);} 
+          catch (ex) {
             
           }
           if (isValidURL) {
-            roomData.urls = [newRoomURL];
-          }
-        }
+            roomData.urls = [newRoomURL];}}
+
+
         
         
         
@@ -606,40 +606,40 @@ loop.store = loop.store || {};
         if (!Object.getOwnPropertyNames(roomData).length) {
           
           
-          setTimeout(function() {
-            this.dispatchAction(new sharedActions.UpdateRoomContextDone());
-          }.bind(this), 0);
-          return;
-        }
+          setTimeout(function () {
+            this.dispatchAction(new sharedActions.UpdateRoomContextDone());}.
+          bind(this), 0);
+          return;}
+
 
         this.setStoreState({ error: null });
-        loop.request("Rooms:Update", actionData.roomToken, roomData).then(function(result2) {
-          var isError = (result2 && result2.isError);
-          var action = isError ?
-            new sharedActions.UpdateRoomContextError({ error: result2 }) :
-            new sharedActions.UpdateRoomContextDone();
-          this.dispatchAction(action);
-        }.bind(this));
-      }.bind(this));
-    },
+        loop.request("Rooms:Update", actionData.roomToken, roomData).then(function (result2) {
+          var isError = result2 && result2.isError;
+          var action = isError ? 
+          new sharedActions.UpdateRoomContextError({ error: result2 }) : 
+          new sharedActions.UpdateRoomContextDone();
+          this.dispatchAction(action);}.
+        bind(this));}.
+      bind(this));}, 
+
 
     
 
 
-    updateRoomContextDone: function() {
-      this.setStoreState({ savingContext: false });
-    },
+    updateRoomContextDone: function updateRoomContextDone() {
+      this.setStoreState({ savingContext: false });}, 
+
 
     
 
 
 
 
-    updateRoomContextError: function(actionData) {
-      this.setStoreState({
-        error: actionData.error,
-        savingContext: false
-      });
-    }
-  });
-})(document.mozL10n || navigator.mozL10n);
+    updateRoomContextError: function updateRoomContextError(actionData) {
+      this.setStoreState({ 
+        error: actionData.error, 
+        savingContext: false });} });})(
+
+
+
+document.mozL10n || navigator.mozL10n);

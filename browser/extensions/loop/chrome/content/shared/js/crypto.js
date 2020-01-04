@@ -1,4 +1,4 @@
-
+"use strict"; 
 
 
 
@@ -7,7 +7,7 @@
 var loop = loop || {};
 var inChrome = typeof Components != "undefined" && "utils" in Components;
 
-(function(rootObject) {
+(function (rootObject) {
   "use strict";
 
   var sharedUtils;
@@ -15,13 +15,13 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     this.EXPORTED_SYMBOLS = ["LoopCrypto"];
     var Cu = Components.utils;
     Cu.importGlobalProperties(["crypto"]);
-    rootObject = {
-      crypto: crypto
-    };
-    sharedUtils = Cu.import("chrome://loop/content/shared/js/utils.js", {}).utils;
-  } else {
-    sharedUtils = this.shared.utils;
-  }
+    rootObject = { 
+      crypto: crypto };
+
+    sharedUtils = Cu.import("chrome://loop/content/shared/js/utils.js", {}).utils;} else 
+  {
+    sharedUtils = this.shared.utils;}
+
 
   var ALGORITHM = "AES-GCM";
   var KEY_LENGTH = 128;
@@ -43,8 +43,8 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
 
   function setRootObject(obj) {
-    rootObject = obj;
-  }
+    rootObject = obj;}
+
 
   
 
@@ -52,8 +52,8 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
 
   function isSupported() {
-    return "crypto" in rootObject;
-  }
+    return "crypto" in rootObject;}
+
 
   
 
@@ -63,27 +63,27 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
   function generateKey() {
     if (!isSupported()) {
-      throw new Error("Web Crypto is not supported");
-    }
+      throw new Error("Web Crypto is not supported");}
 
-    return new Promise(function(resolve, reject) {
+
+    return new Promise(function (resolve, reject) {
       
-      rootObject.crypto.subtle.generateKey({ name: ALGORITHM, length: KEY_LENGTH },
+      rootObject.crypto.subtle.generateKey({ name: ALGORITHM, length: KEY_LENGTH }, 
+      
+      true, 
+      
+      ["encrypt", "decrypt"]).
+      then(function (cryptoKey) {
         
-        true,
+        return rootObject.crypto.subtle.exportKey(KEY_FORMAT, cryptoKey);}).
+      then(function (exportedKey) {
         
-        ["encrypt", "decrypt"]
-      ).then(function(cryptoKey) {
-        
-        return rootObject.crypto.subtle.exportKey(KEY_FORMAT, cryptoKey);
-      }).then(function(exportedKey) {
-        
-        resolve(exportedKey.k);
-      }).catch(function(error) {
-        reject(error);
-      });
-    });
-  }
+        resolve(exportedKey.k);}).
+      catch(function (error) {
+        reject(error);});});}
+
+
+
 
   
 
@@ -97,21 +97,21 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
   function encryptBytes(key, data) {
     if (!isSupported()) {
-      throw new Error("Web Crypto is not supported");
-    }
+      throw new Error("Web Crypto is not supported");}
+
 
     var iv = new Uint8Array(INITIALIZATION_VECTOR_LENGTH);
 
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       
-      rootObject.crypto.subtle.importKey(KEY_FORMAT,
-        { k: key, kty: KEY_TYPE },
-        ALGORITHM,
-        
-        true,
-        
-        ["encrypt"]
-      ).then(function(cryptoKey) {
+      rootObject.crypto.subtle.importKey(KEY_FORMAT, 
+      { k: key.replace(/=/g, ""), kty: KEY_TYPE }, 
+      ALGORITHM, 
+      
+      true, 
+      
+      ["encrypt"]).
+      then(function (cryptoKey) {
         
 
         
@@ -121,25 +121,25 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
         
         rootObject.crypto.getRandomValues(iv);
 
-        return rootObject.crypto.subtle.encrypt({
-            name: ALGORITHM,
-            iv: iv,
-            tagLength: ENCRYPT_TAG_LENGTH
-          }, cryptoKey,
-          dataBuffer);
-      }).then(function(cipherText) {
+        return rootObject.crypto.subtle.encrypt({ 
+          name: ALGORITHM, 
+          iv: iv, 
+          tagLength: ENCRYPT_TAG_LENGTH }, 
+        cryptoKey, 
+        dataBuffer);}).
+      then(function (cipherText) {
         
         var joinedData = _mergeIVandCipherText(iv, new DataView(cipherText));
 
         
         var encryptedData = sharedUtils.btoa(joinedData);
 
-        resolve(encryptedData);
-      }).catch(function(error) {
-        reject(error);
-      });
-    });
-  }
+        resolve(encryptedData);}).
+      catch(function (error) {
+        reject(error);});});}
+
+
+
 
   
 
@@ -152,35 +152,35 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
   function decryptBytes(key, encryptedData) {
     if (!isSupported()) {
-      throw new Error("Web Crypto is not supported");
-    }
+      throw new Error("Web Crypto is not supported");}
 
-    return new Promise(function(resolve, reject) {
+
+    return new Promise(function (resolve, reject) {
       
-      rootObject.crypto.subtle.importKey(KEY_FORMAT,
-        { k: key, kty: KEY_TYPE },
-        ALGORITHM,
-        
-        true,
-        
-        ["decrypt"]
-      ).then(function(cryptoKey) {
+      rootObject.crypto.subtle.importKey(KEY_FORMAT, 
+      { k: key.replace(/=/g, ""), kty: KEY_TYPE }, 
+      ALGORITHM, 
+      
+      true, 
+      
+      ["decrypt"]).
+      then(function (cryptoKey) {
         
         var splitData = _splitIVandCipherText(encryptedData);
 
-        return rootObject.crypto.subtle.decrypt({
-          name: ALGORITHM,
-          iv: splitData.iv,
-          tagLength: ENCRYPT_TAG_LENGTH
-        }, cryptoKey, splitData.cipherText);
-      }).then(function(plainText) {
+        return rootObject.crypto.subtle.decrypt({ 
+          name: ALGORITHM, 
+          iv: splitData.iv, 
+          tagLength: ENCRYPT_TAG_LENGTH }, 
+        cryptoKey, splitData.cipherText);}).
+      then(function (plainText) {
         
-        resolve(sharedUtils.Uint8ArrayToStr(new Uint8Array(plainText)));
-      }).catch(function(error) {
-        reject(error);
-      });
-    });
-  }
+        resolve(sharedUtils.Uint8ArrayToStr(new Uint8Array(plainText)));}).
+      catch(function (error) {
+        reject(error);});});}
+
+
+
 
   
 
@@ -200,15 +200,15 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
     var i;
     for (i = 0; i < INITIALIZATION_VECTOR_LENGTH; i++) {
-      joinedContext[i] = ivArray[i];
-    }
+      joinedContext[i] = ivArray[i];}
+
 
     for (i = 0; i < cipherTextLength; i++) {
-      joinedContext[i + INITIALIZATION_VECTOR_LENGTH] = cipherText[i];
-    }
+      joinedContext[i + INITIALIZATION_VECTOR_LENGTH] = cipherText[i];}
 
-    return joinedContext;
-  }
+
+    return joinedContext;}
+
 
   
 
@@ -224,20 +224,20 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
     
     var iv = encryptedDataArray.slice(0, INITIALIZATION_VECTOR_LENGTH);
-    var cipherText = encryptedDataArray.slice(INITIALIZATION_VECTOR_LENGTH,
-                                              encryptedDataArray.length);
+    var cipherText = encryptedDataArray.slice(INITIALIZATION_VECTOR_LENGTH, 
+    encryptedDataArray.length);
 
-    return {
-      iv: iv,
-      cipherText: cipherText
-    };
-  }
+    return { 
+      iv: iv, 
+      cipherText: cipherText };}
 
-  this[inChrome ? "LoopCrypto" : "crypto"] = {
-    decryptBytes: decryptBytes,
-    encryptBytes: encryptBytes,
-    generateKey: generateKey,
-    isSupported: isSupported,
-    setRootObject: setRootObject
-  };
-}).call(inChrome ? this : loop, this);
+
+
+  this[inChrome ? "LoopCrypto" : "crypto"] = { 
+    decryptBytes: decryptBytes, 
+    encryptBytes: encryptBytes, 
+    generateKey: generateKey, 
+    isSupported: isSupported, 
+    setRootObject: setRootObject };}).
+
+call(inChrome ? this : loop, this);

@@ -1,4 +1,4 @@
-
+"use strict"; 
 
 
 
@@ -8,7 +8,6 @@ loop.shared.views = function (_, mozL10n) {
   "use strict";
 
   var sharedActions = loop.shared.actions;
-  var sharedMixins = loop.shared.mixins;
 
   
 
@@ -17,26 +16,28 @@ loop.shared.views = function (_, mozL10n) {
 
 
 
-  var HangUpControlButton = React.createClass({
-    displayName: "HangUpControlButton",
+  var HangUpControlButton = React.createClass({ displayName: "HangUpControlButton", 
+    mixins: [
+    React.addons.PureRenderMixin], 
 
-    mixins: [React.addons.PureRenderMixin],
 
-    propTypes: {
-      action: React.PropTypes.func.isRequired,
-      title: React.PropTypes.string
-    },
+    propTypes: { 
+      action: React.PropTypes.func.isRequired, 
+      title: React.PropTypes.string }, 
 
-    handleClick: function () {
-      this.props.action();
-    },
 
-    render: function () {
-      return React.createElement("button", { className: "btn btn-hangup",
-        onClick: this.handleClick,
-        title: this.props.title });
-    }
-  });
+    handleClick: function handleClick() {
+      this.props.action();}, 
+
+
+    render: function render() {
+      return (
+        React.createElement("button", { className: "btn btn-hangup", 
+          onClick: this.handleClick, 
+          title: this.props.title }));} });
+
+
+
 
   
 
@@ -47,143 +48,141 @@ loop.shared.views = function (_, mozL10n) {
 
 
 
-  var MediaControlButton = React.createClass({
-    displayName: "MediaControlButton",
+  var MediaControlButton = React.createClass({ displayName: "MediaControlButton", 
+    propTypes: { 
+      action: React.PropTypes.func.isRequired, 
+      disabled: React.PropTypes.bool, 
+      muted: React.PropTypes.bool.isRequired, 
+      scope: React.PropTypes.string.isRequired, 
+      title: React.PropTypes.string, 
+      type: React.PropTypes.string.isRequired, 
+      visible: React.PropTypes.bool.isRequired }, 
 
-    propTypes: {
-      action: React.PropTypes.func.isRequired,
-      disabled: React.PropTypes.bool,
-      muted: React.PropTypes.bool.isRequired,
-      scope: React.PropTypes.string.isRequired,
-      title: React.PropTypes.string,
-      type: React.PropTypes.string.isRequired,
-      visible: React.PropTypes.bool.isRequired
-    },
 
-    getDefaultProps: function () {
-      return {
-        disabled: false,
-        muted: false,
-        visible: true
-      };
-    },
+    getDefaultProps: function getDefaultProps() {
+      return { 
+        disabled: false, 
+        muted: false, 
+        visible: true };}, 
 
-    handleClick: function () {
-      this.props.action();
-    },
 
-    _getClasses: function () {
+
+    handleClick: function handleClick() {
+      this.props.action();}, 
+
+
+    _getClasses: function _getClasses() {
       var cx = classNames;
       
-      var classesObj = {
-        "btn": true,
-        "media-control": true,
-        "transparent-button": true,
-        "local-media": this.props.scope === "local",
-        "muted": this.props.muted || this.props.disabled,
-        "hide": !this.props.visible,
-        "disabled": this.props.disabled
-      };
-      classesObj["btn-mute-" + this.props.type] = true;
-      return cx(classesObj);
-    },
+      var classesObj = { 
+        "btn": true, 
+        "media-control": true, 
+        "transparent-button": true, 
+        "local-media": this.props.scope === "local", 
+        "muted": this.props.muted || this.props.disabled, 
+        "hide": !this.props.visible, 
+        "disabled": this.props.disabled };
 
-    _getTitle: function () {
+      classesObj["btn-mute-" + this.props.type] = true;
+      return cx(classesObj);}, 
+
+
+    _getTitle: function _getTitle() {
       if (this.props.title) {
-        return this.props.title;
-      }
+        return this.props.title;}
+
 
       var prefix = this.props.muted || this.props.disabled ? "unmute" : "mute";
       var suffix = this.props.type === "video" ? "button_title2" : "button_title";
       var msgId = [prefix, this.props.scope, this.props.type, suffix].join("_");
-      return mozL10n.get(msgId);
-    },
+      return mozL10n.get(msgId);}, 
 
-    render: function () {
-      return React.createElement("button", { className: this._getClasses(),
-        onClick: this.handleClick,
-        title: this._getTitle() });
-    }
-  });
+
+    render: function render() {
+      return (
+        React.createElement("button", { className: this._getClasses(), 
+          onClick: this.handleClick, 
+          title: this._getTitle() }));} });
+
+
+
 
   
 
 
-  var ConversationToolbar = React.createClass({
-    displayName: "ConversationToolbar",
+  var ConversationToolbar = React.createClass({ displayName: "ConversationToolbar", 
+    getDefaultProps: function getDefaultProps() {
+      return { 
+        video: { enabled: true, visible: true }, 
+        audio: { enabled: true, visible: true }, 
+        showHangup: true };}, 
 
-    getDefaultProps: function () {
-      return {
-        video: { enabled: true, visible: true },
-        audio: { enabled: true, visible: true },
-        showHangup: true
-      };
-    },
 
-    getInitialState: function () {
-      return {
-        idle: false
-      };
-    },
 
-    propTypes: {
-      audio: React.PropTypes.object.isRequired,
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired,
-      hangup: React.PropTypes.func.isRequired,
-      showHangup: React.PropTypes.bool,
-      video: React.PropTypes.object.isRequired
-    },
+    getInitialState: function getInitialState() {
+      return { 
+        idle: false };}, 
 
-    handleClickHangup: function () {
-      this.props.hangup();
-    },
 
-    componentDidMount: function () {
+
+    propTypes: { 
+      audio: React.PropTypes.object.isRequired, 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired, 
+      hangup: React.PropTypes.func.isRequired, 
+      showHangup: React.PropTypes.bool, 
+      video: React.PropTypes.object.isRequired }, 
+
+
+    handleClickHangup: function handleClickHangup() {
+      this.props.hangup();}, 
+
+
+    componentDidMount: function componentDidMount() {
       this.userActivity = false;
       this.startIdleCountDown();
-      document.body.addEventListener("mousemove", this._onBodyMouseMove);
-    },
+      document.body.addEventListener("mousemove", this._onBodyMouseMove);}, 
 
-    componentWillUnmount: function () {
+
+    componentWillUnmount: function componentWillUnmount() {
       clearTimeout(this.inactivityTimeout);
       clearInterval(this.inactivityPollInterval);
-      document.body.removeEventListener("mousemove", this._onBodyMouseMove);
-    },
+      document.body.removeEventListener("mousemove", this._onBodyMouseMove);}, 
+
 
     
 
 
 
-    _onBodyMouseMove: function () {
+    _onBodyMouseMove: function _onBodyMouseMove() {
       if (this.state.idle) {
         this.setState({ idle: false });
-        this.startIdleCountDown();
-      } else {
-        this.userActivity = true;
-      }
-    },
+        this.startIdleCountDown();} else 
+      {
+        this.userActivity = true;}}, 
+
+
 
     
 
 
 
 
-    checkUserActivity: function () {
+    checkUserActivity: function checkUserActivity() {
       this.inactivityPollInterval = setInterval(function () {
         if (this.userActivity) {
           this.userActivity = false;
-          this.restartIdleCountDown();
-        }
-      }.bind(this), 4000);
-    },
+          this.restartIdleCountDown();}}.
+
+      bind(this), 4000);}, 
+
 
     
 
 
-    restartIdleCountDown: function () {
+    restartIdleCountDown: function restartIdleCountDown() {
       clearTimeout(this.inactivityTimeout);
-      this.startIdleCountDown();
-    },
+      this.startIdleCountDown();}, 
+
 
     
 
@@ -191,402 +190,295 @@ loop.shared.views = function (_, mozL10n) {
 
 
 
-    startIdleCountDown: function () {
+    startIdleCountDown: function startIdleCountDown() {
       this.checkUserActivity();
       this.inactivityTimeout = setTimeout(function () {
         this.setState({ idle: true });
-        clearInterval(this.inactivityPollInterval);
-      }.bind(this), 6000);
-    },
+        clearInterval(this.inactivityPollInterval);}.
+      bind(this), 6000);}, 
 
-    render: function () {
+
+    render: function render() {
       var cx = classNames;
-      var conversationToolbarCssClasses = cx({
-        "conversation-toolbar": true,
-        "idle": this.state.idle
-      });
+      var conversationToolbarCssClasses = cx({ 
+        "conversation-toolbar": true, 
+        "idle": this.state.idle });
+
       var showButtons = this.props.video.visible || this.props.audio.visible;
-      var mediaButtonGroupCssClasses = cx({
-        "conversation-toolbar-media-btn-group-box": true,
-        "hide": !showButtons
-      });
-      return React.createElement(
-        "ul",
-        { className: conversationToolbarCssClasses },
-        this.props.showHangup && showButtons ? React.createElement(
-          "li",
-          { className: "conversation-toolbar-btn-box btn-hangup-entry" },
-          React.createElement(HangUpControlButton, { action: this.handleClickHangup,
-            title: mozL10n.get("rooms_leave_button_label") })
-        ) : null,
-        React.createElement(
-          "li",
-          { className: "conversation-toolbar-btn-box" },
-          React.createElement(
-            "div",
-            { className: mediaButtonGroupCssClasses },
-            React.createElement(VideoMuteButton, { dispatcher: this.props.dispatcher,
-              muted: !this.props.video.enabled }),
-            React.createElement(AudioMuteButton, { dispatcher: this.props.dispatcher,
-              muted: !this.props.audio.enabled })
-          )
-        )
-      );
-    }
-  });
+      var mediaButtonGroupCssClasses = cx({ 
+        "conversation-toolbar-media-btn-group-box": true, 
+        "hide": !showButtons });
 
-  var AudioMuteButton = React.createClass({
-    displayName: "AudioMuteButton",
+      return (
+        React.createElement("ul", { className: conversationToolbarCssClasses }, 
 
-    propTypes: {
-      disabled: React.PropTypes.bool,
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher),
-      muted: React.PropTypes.bool.isRequired
-    },
+        this.props.showHangup && showButtons ? 
+        React.createElement("li", { className: "conversation-toolbar-btn-box btn-hangup-entry" }, 
+        React.createElement(HangUpControlButton, { action: this.handleClickHangup, 
+          title: mozL10n.get("rooms_leave_button_label") })) : 
+        null, 
 
-    getDefaultProps: function () {
-      return {
-        disabled: false
-      };
-    },
 
-    toggleAudio: function () {
+        React.createElement("li", { className: "conversation-toolbar-btn-box" }, 
+        React.createElement("div", { className: mediaButtonGroupCssClasses }, 
+        React.createElement(VideoMuteButton, { dispatcher: this.props.dispatcher, 
+          muted: !this.props.video.enabled }), 
+        React.createElement(AudioMuteButton, { dispatcher: this.props.dispatcher, 
+          muted: !this.props.audio.enabled })))));} });
+
+
+
+
+
+
+
+  var AudioMuteButton = React.createClass({ displayName: "AudioMuteButton", 
+    propTypes: { 
+      disabled: React.PropTypes.bool, 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher), 
+      muted: React.PropTypes.bool.isRequired }, 
+
+
+    getDefaultProps: function getDefaultProps() {
+      return { 
+        disabled: false };}, 
+
+
+
+    toggleAudio: function toggleAudio() {
       if (this.props.disabled) {
-        return;
-      }
+        return;}
 
-      this.props.dispatcher.dispatch(new sharedActions.SetMute({ type: "audio", enabled: this.props.muted }));
-    },
 
-    render: function () {
-      return React.createElement(MediaControlButton, { action: this.toggleAudio,
-        disabled: this.props.disabled,
-        muted: this.props.muted,
-        scope: "local",
-        type: "audio" });
-    }
-  });
+      this.props.dispatcher.dispatch(
+      new sharedActions.SetMute({ type: "audio", enabled: this.props.muted }));}, 
 
-  var VideoMuteButton = React.createClass({
-    displayName: "VideoMuteButton",
 
-    propTypes: {
-      disabled: React.PropTypes.bool,
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher),
-      muted: React.PropTypes.bool.isRequired
-    },
 
-    getDefaultProps: function () {
-      return {
-        disabled: false
-      };
-    },
+    render: function render() {
+      return (
+        React.createElement(MediaControlButton, { action: this.toggleAudio, 
+          disabled: this.props.disabled, 
+          muted: this.props.muted, 
+          scope: "local", 
+          type: "audio" }));} });
 
-    toggleVideo: function () {
+
+
+
+  var VideoMuteButton = React.createClass({ displayName: "VideoMuteButton", 
+    propTypes: { 
+      disabled: React.PropTypes.bool, 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher), 
+      muted: React.PropTypes.bool.isRequired }, 
+
+
+    getDefaultProps: function getDefaultProps() {
+      return { 
+        disabled: false };}, 
+
+
+
+    toggleVideo: function toggleVideo() {
       if (this.props.disabled) {
-        return;
-      }
-
-      this.props.dispatcher.dispatch(new sharedActions.SetMute({ type: "video", enabled: this.props.muted }));
-    },
-
-    render: function () {
-      return React.createElement(MediaControlButton, { action: this.toggleVideo,
-        disabled: this.props.disabled,
-        muted: this.props.muted || this.props.disabled,
-        scope: "local",
-        type: "video" });
-    }
-  });
-
-  
+        return;}
 
 
-  var NotificationView = React.createClass({
-    displayName: "NotificationView",
-
-    mixins: [Backbone.Events],
-
-    propTypes: {
-      notification: React.PropTypes.object.isRequired
-    },
-
-    render: function () {
-      var notification = this.props.notification;
-      return React.createElement(
-        "div",
-        { className: "notificationContainer" },
-        React.createElement(
-          "div",
-          { className: "alert alert-" + notification.get("level") },
-          React.createElement(
-            "span",
-            { className: "message" },
-            notification.get("message")
-          )
-        ),
-        React.createElement(
-          "div",
-          { className: "detailsBar details-" + notification.get("level"),
-            hidden: !notification.get("details") },
-          React.createElement(
-            "button",
-            { className: "detailsButton btn-info",
-              hidden: !notification.get("detailsButtonLabel") || !notification.get("detailsButtonCallback"),
-              onClick: notification.get("detailsButtonCallback") },
-            notification.get("detailsButtonLabel")
-          ),
-          React.createElement(
-            "span",
-            { className: "details" },
-            notification.get("details")
-          )
-        )
-      );
-    }
-  });
-
-  
+      this.props.dispatcher.dispatch(
+      new sharedActions.SetMute({ type: "video", enabled: this.props.muted }));}, 
 
 
-  var NotificationListView = React.createClass({
-    displayName: "NotificationListView",
 
-    mixins: [Backbone.Events, sharedMixins.DocumentVisibilityMixin],
-
-    propTypes: {
-      clearOnDocumentHidden: React.PropTypes.bool,
-      notifications: React.PropTypes.object.isRequired
-    },
-
-    getDefaultProps: function () {
-      return { clearOnDocumentHidden: false };
-    },
-
-    componentDidMount: function () {
-      this.listenTo(this.props.notifications, "reset add remove", function () {
-        this.forceUpdate();
-      });
-    },
-
-    componentWillUnmount: function () {
-      this.stopListening(this.props.notifications);
-    },
-
-    
+    render: function render() {
+      return (
+        React.createElement(MediaControlButton, { action: this.toggleVideo, 
+          disabled: this.props.disabled, 
+          muted: this.props.muted || this.props.disabled, 
+          scope: "local", 
+          type: "video" }));} });
 
 
 
 
-    onDocumentHidden: function () {
-      if (this.props.clearOnDocumentHidden && this.props.notifications.length > 0) {
-        
-        
-        
-        this.props.notifications.reset([], { silent: true });
-        this.forceUpdate();
-      }
-    },
+  var Button = React.createClass({ displayName: "Button", 
+    propTypes: { 
+      additionalClass: React.PropTypes.string, 
+      caption: React.PropTypes.string.isRequired, 
+      children: React.PropTypes.element, 
+      disabled: React.PropTypes.bool, 
+      htmlId: React.PropTypes.string, 
+      onClick: React.PropTypes.func.isRequired }, 
 
-    render: function () {
-      return React.createElement(
-        "div",
-        { className: "messages" },
-        this.props.notifications.map(function (notification, key) {
-          return React.createElement(NotificationView, { key: key, notification: notification });
-        })
-      );
-    }
-  });
 
-  var Button = React.createClass({
-    displayName: "Button",
+    getDefaultProps: function getDefaultProps() {
+      return { 
+        disabled: false, 
+        additionalClass: "", 
+        htmlId: "" };}, 
 
-    propTypes: {
-      additionalClass: React.PropTypes.string,
-      caption: React.PropTypes.string.isRequired,
-      children: React.PropTypes.element,
-      disabled: React.PropTypes.bool,
-      htmlId: React.PropTypes.string,
-      onClick: React.PropTypes.func.isRequired
-    },
 
-    getDefaultProps: function () {
-      return {
-        disabled: false,
-        additionalClass: "",
-        htmlId: ""
-      };
-    },
 
-    render: function () {
+    render: function render() {
       var cx = classNames;
       var classObject = { button: true, disabled: this.props.disabled };
       if (this.props.additionalClass) {
-        classObject[this.props.additionalClass] = true;
-      }
-      return React.createElement(
-        "button",
-        { className: cx(classObject),
-          disabled: this.props.disabled,
-          id: this.props.htmlId,
-          onClick: this.props.onClick },
-        React.createElement(
-          "span",
-          { className: "button-caption" },
-          this.props.caption
-        ),
-        this.props.children
-      );
-    }
-  });
+        classObject[this.props.additionalClass] = true;}
 
-  var ButtonGroup = React.createClass({
-    displayName: "ButtonGroup",
+      return (
+        React.createElement("button", { className: cx(classObject), 
+          disabled: this.props.disabled, 
+          id: this.props.htmlId, 
+          onClick: this.props.onClick }, 
+        React.createElement("span", { className: "button-caption" }, this.props.caption), 
+        this.props.children));} });
 
-    propTypes: {
-      additionalClass: React.PropTypes.string,
-      children: React.PropTypes.oneOfType([React.PropTypes.element, React.PropTypes.arrayOf(React.PropTypes.element)])
-    },
 
-    getDefaultProps: function () {
-      return {
-        additionalClass: ""
-      };
-    },
 
-    render: function () {
+
+
+  var ButtonGroup = React.createClass({ displayName: "ButtonGroup", 
+    propTypes: { 
+      additionalClass: React.PropTypes.string, 
+      children: React.PropTypes.oneOfType([
+      React.PropTypes.element, 
+      React.PropTypes.arrayOf(React.PropTypes.element)]) }, 
+
+
+
+    getDefaultProps: function getDefaultProps() {
+      return { 
+        additionalClass: "" };}, 
+
+
+
+    render: function render() {
       var cx = classNames;
       var classObject = { "button-group": true };
       if (this.props.additionalClass) {
-        classObject[this.props.additionalClass] = true;
-      }
-      return React.createElement(
-        "div",
-        { className: cx(classObject) },
-        this.props.children
-      );
-    }
-  });
+        classObject[this.props.additionalClass] = true;}
 
-  var Checkbox = React.createClass({
-    displayName: "Checkbox",
+      return (
+        React.createElement("div", { className: cx(classObject) }, 
+        this.props.children));} });
 
-    propTypes: {
-      additionalClass: React.PropTypes.string,
-      checked: React.PropTypes.bool,
-      disabled: React.PropTypes.bool,
-      label: React.PropTypes.string,
-      onChange: React.PropTypes.func.isRequired,
+
+
+
+
+  var Checkbox = React.createClass({ displayName: "Checkbox", 
+    propTypes: { 
+      additionalClass: React.PropTypes.string, 
+      checked: React.PropTypes.bool, 
+      disabled: React.PropTypes.bool, 
+      label: React.PropTypes.string, 
+      onChange: React.PropTypes.func.isRequired, 
       
       
-      useEllipsis: React.PropTypes.bool,
+      useEllipsis: React.PropTypes.bool, 
       
       
-      value: React.PropTypes.string
-    },
+      value: React.PropTypes.string }, 
 
-    getDefaultProps: function () {
-      return {
-        additionalClass: "",
-        checked: false,
-        disabled: false,
-        label: null,
-        useEllipsis: false,
-        value: ""
-      };
-    },
 
-    componentWillReceiveProps: function (nextProps) {
+    getDefaultProps: function getDefaultProps() {
+      return { 
+        additionalClass: "", 
+        checked: false, 
+        disabled: false, 
+        label: null, 
+        useEllipsis: false, 
+        value: "" };}, 
+
+
+
+    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
       
       
-      if (this.props.checked !== nextProps.checked && this.state.checked !== nextProps.checked) {
-        this.setState({ checked: nextProps.checked });
-      }
-    },
+      if (this.props.checked !== nextProps.checked && 
+      this.state.checked !== nextProps.checked) {
+        this.setState({ checked: nextProps.checked });}}, 
 
-    getInitialState: function () {
-      return {
-        checked: this.props.checked,
-        value: this.props.checked ? this.props.value : ""
-      };
-    },
 
-    _handleClick: function (event) {
+
+    getInitialState: function getInitialState() {
+      return { 
+        checked: this.props.checked, 
+        value: this.props.checked ? this.props.value : "" };}, 
+
+
+
+    _handleClick: function _handleClick(event) {
       event.preventDefault();
 
-      var newState = {
-        checked: !this.state.checked,
-        value: this.state.checked ? "" : this.props.value
-      };
-      this.setState(newState);
-      this.props.onChange(newState);
-    },
+      var newState = { 
+        checked: !this.state.checked, 
+        value: this.state.checked ? "" : this.props.value };
 
-    render: function () {
+      this.setState(newState);
+      this.props.onChange(newState);}, 
+
+
+    render: function render() {
       var cx = classNames;
-      var wrapperClasses = {
-        "checkbox-wrapper": true,
-        disabled: this.props.disabled
-      };
-      var checkClasses = {
-        checkbox: true,
-        checked: this.state.checked,
-        disabled: this.props.disabled
-      };
-      var labelClasses = {
-        "checkbox-label": true,
-        "ellipsis": this.props.useEllipsis
-      };
+      var wrapperClasses = { 
+        "checkbox-wrapper": true, 
+        disabled: this.props.disabled };
+
+      var checkClasses = { 
+        checkbox: true, 
+        checked: this.state.checked, 
+        disabled: this.props.disabled };
+
+      var labelClasses = { 
+        "checkbox-label": true, 
+        "ellipsis": this.props.useEllipsis };
+
 
       if (this.props.additionalClass) {
-        wrapperClasses[this.props.additionalClass] = true;
-      }
-      return React.createElement(
-        "div",
-        { className: cx(wrapperClasses),
-          disabled: this.props.disabled,
-          onClick: this._handleClick },
-        React.createElement("div", { className: cx(checkClasses) }),
-        this.props.label ? React.createElement(
-          "div",
-          { className: cx(labelClasses),
-            title: this.props.useEllipsis ? this.props.label : "" },
-          this.props.label
-        ) : null
-      );
-    }
-  });
+        wrapperClasses[this.props.additionalClass] = true;}
+
+      return (
+        React.createElement("div", { className: cx(wrapperClasses), 
+          disabled: this.props.disabled, 
+          onClick: this._handleClick }, 
+        React.createElement("div", { className: cx(checkClasses) }), 
+
+        this.props.label ? 
+        React.createElement("div", { className: cx(labelClasses), 
+          title: this.props.useEllipsis ? this.props.label : "" }, 
+        this.props.label) : 
+        null));} });
+
+
+
+
+
 
   
 
 
-  var AvatarView = React.createClass({
-    displayName: "AvatarView",
+  var AvatarView = React.createClass({ displayName: "AvatarView", 
+    mixins: [React.addons.PureRenderMixin], 
 
-    mixins: [React.addons.PureRenderMixin],
+    render: function render() {
+      return React.createElement("div", { className: "avatar" });} });
 
-    render: function () {
-      return React.createElement("div", { className: "avatar" });
-    }
-  });
+
 
   
 
 
-  var LoadingView = React.createClass({
-    displayName: "LoadingView",
+  var LoadingView = React.createClass({ displayName: "LoadingView", 
+    mixins: [React.addons.PureRenderMixin], 
 
-    mixins: [React.addons.PureRenderMixin],
+    render: function render() {
+      return (
+        React.createElement("div", { className: "loading-background" }, 
+        React.createElement("div", { className: "loading-stream" })));} });
 
-    render: function () {
-      return React.createElement(
-        "div",
-        { className: "loading-background" },
-        React.createElement("div", { className: "loading-stream" })
-      );
-    }
-  });
+
+
+
 
   
 
@@ -601,49 +493,47 @@ loop.shared.views = function (_, mozL10n) {
 
 
 
-  var ContextUrlLink = React.createClass({
-    displayName: "ContextUrlLink",
+  var ContextUrlLink = React.createClass({ displayName: "ContextUrlLink", 
+    mixins: [React.addons.PureRenderMixin], 
 
-    mixins: [React.addons.PureRenderMixin],
+    propTypes: { 
+      allowClick: React.PropTypes.bool.isRequired, 
+      children: React.PropTypes.node, 
+      description: React.PropTypes.string, 
+      handleClick: React.PropTypes.func, 
+      url: React.PropTypes.string }, 
 
-    propTypes: {
-      allowClick: React.PropTypes.bool.isRequired,
-      children: React.PropTypes.node,
-      description: React.PropTypes.string,
-      handleClick: React.PropTypes.func,
-      url: React.PropTypes.string
-    },
 
-    render: function () {
+    render: function render() {
       var sanitizedURL = loop.shared.utils.formatSanitizedContextURL(this.props.url);
 
       var opts = {};
-      opts.classNames = classNames({
-        "context-wrapper": true,
-        "clicks-allowed": this.props.allowClick
-      });
-      if (this.props.allowClick && sanitizedURL) {
-        opts.href = sanitizedURL.location;
-      }
-      if (this.props.handleClick) {
-        opts.onClick = this.props.handleClick;
-      }
-      if (this.props.description) {
-        opts.title = this.props.description;
-      }
+      opts.classNames = classNames({ 
+        "context-wrapper": true, 
+        "clicks-allowed": this.props.allowClick });
 
-      return React.createElement(
-        "a",
-        { className: opts.classNames,
-          href: opts.href,
-          onClick: opts.onClick,
-          rel: "noreferrer",
-          target: "_blank",
-          title: opts.title },
-        this.props.children
-      );
-    }
-  });
+      if (this.props.allowClick && sanitizedURL) {
+        opts.href = sanitizedURL.location;}
+
+      if (this.props.handleClick) {
+        opts.onClick = this.props.handleClick;}
+
+      if (this.props.description) {
+        opts.title = this.props.description;}
+
+
+      return (
+        React.createElement("a", { className: opts.classNames, 
+          href: opts.href, 
+          onClick: opts.onClick, 
+          rel: "noreferrer", 
+          target: "_blank", 
+          title: opts.title }, 
+        this.props.children));} });
+
+
+
+
 
   
 
@@ -658,33 +548,31 @@ loop.shared.views = function (_, mozL10n) {
 
 
 
-  var ContextUrlView = React.createClass({
-    displayName: "ContextUrlView",
+  var ContextUrlView = React.createClass({ displayName: "ContextUrlView", 
+    mixins: [React.addons.PureRenderMixin], 
 
-    mixins: [React.addons.PureRenderMixin],
+    propTypes: { 
+      allowClick: React.PropTypes.bool.isRequired, 
+      description: React.PropTypes.string, 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher), 
+      thumbnail: React.PropTypes.string, 
+      url: React.PropTypes.string }, 
 
-    propTypes: {
-      allowClick: React.PropTypes.bool.isRequired,
-      description: React.PropTypes.string,
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher),
-      thumbnail: React.PropTypes.string,
-      url: React.PropTypes.string
-    },
 
     
 
 
-    handleLinkClick: function () {
+    handleLinkClick: function handleLinkClick() {
       if (!this.props.allowClick) {
-        return;
-      }
+        return;}
 
-      this.props.dispatcher.dispatch(new sharedActions.RecordClick({
-        linkInfo: "Shared URL"
-      }));
-    },
 
-    render: function () {
+      this.props.dispatcher.dispatch(new sharedActions.RecordClick({ 
+        linkInfo: "Shared URL" }));}, 
+
+
+
+    render: function render() {
       var description = this.props.description || null;
       var thumbnail = this.props.thumbnail;
       var url = this.props.url || null;
@@ -692,152 +580,150 @@ loop.shared.views = function (_, mozL10n) {
       var hostname = sanitizedURL.hostname || null;
 
       if (!thumbnail) {
-        thumbnail = "shared/img/icons-16x16.svg#globe";
-      }
+        thumbnail = "shared/img/icons-16x16.svg#globe";}
 
-      return React.createElement(
-        "div",
-        { className: "context-content" },
-        React.createElement(
-          ContextUrlLink,
-          { allowClick: this.props.allowClick,
-            description: description,
-            handleClick: this.handleLinkClick,
-            url: url },
-          React.createElement("img", { className: "context-preview", src: thumbnail }),
-          React.createElement(
-            "span",
-            { className: "context-info" },
-            description,
-            React.createElement(
-              "span",
-              { className: "context-url" },
-              hostname
-            )
-          )
-        )
-      );
-    }
-  });
+
+      return (
+        React.createElement("div", { className: "context-content" }, 
+        React.createElement(ContextUrlLink, { allowClick: this.props.allowClick, 
+          description: description, 
+          handleClick: this.handleLinkClick, 
+          url: url }, 
+        React.createElement("img", { className: "context-preview", src: thumbnail }), 
+        React.createElement("span", { className: "context-info" }, 
+        description, 
+        React.createElement("span", { className: "context-url" }, 
+        hostname)))));} });
+
+
+
+
+
+
+
 
   
 
 
 
-  var MediaView = React.createClass({
-    displayName: "MediaView",
-
+  var MediaView = React.createClass({ displayName: "MediaView", 
     
     
-    mixins: [React.addons.PureRenderMixin],
+    mixins: [React.addons.PureRenderMixin], 
 
-    propTypes: {
-      cursorStore: React.PropTypes.instanceOf(loop.store.RemoteCursorStore),
-      dispatcher: React.PropTypes.object,
-      displayAvatar: React.PropTypes.bool.isRequired,
-      isLoading: React.PropTypes.bool.isRequired,
-      mediaType: React.PropTypes.string.isRequired,
-      posterUrl: React.PropTypes.string,
-      screenSharingPaused: React.PropTypes.bool,
-      shareCursor: React.PropTypes.bool,
+    propTypes: { 
+      cursorStore: React.PropTypes.instanceOf(loop.store.RemoteCursorStore), 
+      dispatcher: React.PropTypes.object, 
+      displayAvatar: React.PropTypes.bool.isRequired, 
+      isLoading: React.PropTypes.bool.isRequired, 
+      mediaType: React.PropTypes.string.isRequired, 
+      posterUrl: React.PropTypes.string, 
+      screenSharingPaused: React.PropTypes.bool, 
+      shareCursor: React.PropTypes.bool, 
       
-      srcMediaElement: React.PropTypes.object
-    },
+      srcMediaElement: React.PropTypes.object }, 
 
-    getInitialState: function () {
-      return {
-        videoElementSize: null
-      };
-    },
 
-    componentDidMount: function () {
+    getInitialState: function getInitialState() {
+      return { 
+        videoElementSize: null };}, 
+
+
+
+    componentDidMount: function componentDidMount() {
       if (!this.props.displayAvatar) {
-        this.attachVideo(this.props.srcMediaElement);
-      }
+        this.attachVideo(this.props.srcMediaElement);}
+
 
       if (this.props.shareCursor) {
         this.handleVideoDimensions();
-        window.addEventListener("resize", this.handleVideoDimensions);
-      }
-    },
+        window.addEventListener("resize", this.handleVideoDimensions);}}, 
 
-    componentWillUnmount: function () {
-      var videoElement = this.getDOMNode().querySelector("video");
+
+
+    componentWillUnmount: function componentWillUnmount() {
+      var videoElement = ReactDOM.findDOMNode(this).querySelector("video");
       if (!this.props.shareCursor || !videoElement) {
-        return;
-      }
+        return;}
+
 
       window.removeEventListener("resize", this.handleVideoDimensions);
       videoElement.removeEventListener("loadeddata", this.handleVideoDimensions);
       videoElement.removeEventListener("mousemove", this.handleMousemove);
-      videoElement.removeEventListener("click", this.handleMouseClick);
-    },
+      videoElement.removeEventListener("click", this.handleMouseClick);}, 
 
-    componentDidUpdate: function () {
+
+    componentDidUpdate: function componentDidUpdate() {
       if (!this.props.displayAvatar) {
-        this.attachVideo(this.props.srcMediaElement);
-      }
-    },
+        this.attachVideo(this.props.srcMediaElement);}}, 
 
-    handleVideoDimensions: function () {
-      var videoElement = this.getDOMNode().querySelector("video");
+
+
+    handleVideoDimensions: function handleVideoDimensions() {
+      var videoElement = ReactDOM.findDOMNode(this).querySelector("video");
       if (!videoElement) {
-        return;
-      }
+        return;}
 
-      this.setState({
-        videoElementSize: {
-          clientWidth: videoElement.clientWidth,
-          clientHeight: videoElement.clientHeight
-        }
-      });
-    },
 
-    MIN_CURSOR_DELTA: 3,
-    MIN_CURSOR_INTERVAL: 100,
-    lastCursorTime: 0,
-    lastCursorX: -1,
-    lastCursorY: -1,
+      this.setState({ 
+        videoElementSize: { 
+          clientWidth: videoElement.clientWidth, 
+          clientHeight: videoElement.clientHeight } });}, 
 
-    handleMouseMove: function (event) {
+
+
+
+    MIN_CURSOR_DELTA: 3, 
+    MIN_CURSOR_INTERVAL: 100, 
+    lastCursorTime: 0, 
+    lastCursorX: -1, 
+    lastCursorY: -1, 
+
+    handleMouseMove: function handleMouseMove(event) {
       
       var now = Date.now();
       if (now - this.lastCursorTime < this.MIN_CURSOR_INTERVAL) {
-        return;
-      }
+        return;}
+
       this.lastCursorTime = now;
 
       var storeState = this.props.cursorStore.getStoreState();
 
       
-      var video = this.getDOMNode().querySelector("video");
+      var video = ReactDOM.findDOMNode(this).querySelector("video");
       var offset = video.getBoundingClientRect();
 
-      var deltaX = event.clientX - storeState.videoLetterboxing.left - offset.left;
-      var deltaY = event.clientY - storeState.videoLetterboxing.top - offset.top;
+      var deltaX = event.clientX - 
+      storeState.videoLetterboxing.left - 
+      offset.left;
+      var deltaY = event.clientY - 
+      storeState.videoLetterboxing.top - 
+      offset.top;
 
       
-      if (deltaX < 0 || deltaX > storeState.streamVideoWidth || deltaY < 0 || deltaY > storeState.streamVideoHeight ||
+      if (deltaX < 0 || deltaX > storeState.streamVideoWidth || 
+      deltaY < 0 || deltaY > storeState.streamVideoHeight || 
       
-      Math.abs(deltaX - this.lastCursorX) < this.MIN_CURSOR_DELTA && Math.abs(deltaY - this.lastCursorY) < this.MIN_CURSOR_DELTA) {
-        return;
-      }
+      Math.abs(deltaX - this.lastCursorX) < this.MIN_CURSOR_DELTA && 
+      Math.abs(deltaY - this.lastCursorY) < this.MIN_CURSOR_DELTA) {
+        return;}
+
 
       this.lastCursorX = deltaX;
       this.lastCursorY = deltaY;
 
-      this.props.dispatcher.dispatch(new sharedActions.SendCursorData({
-        ratioX: deltaX / storeState.streamVideoWidth,
-        ratioY: deltaY / storeState.streamVideoHeight,
-        type: loop.shared.utils.CURSOR_MESSAGE_TYPES.POSITION
-      }));
-    },
+      this.props.dispatcher.dispatch(new sharedActions.SendCursorData({ 
+        ratioX: deltaX / storeState.streamVideoWidth, 
+        ratioY: deltaY / storeState.streamVideoHeight, 
+        type: loop.shared.utils.CURSOR_MESSAGE_TYPES.POSITION }));}, 
 
-    handleMouseClick: function () {
-      this.props.dispatcher.dispatch(new sharedActions.SendCursorData({
-        type: loop.shared.utils.CURSOR_MESSAGE_TYPES.CLICK
-      }));
-    },
+
+
+    handleMouseClick: function handleMouseClick() {
+      this.props.dispatcher.dispatch(new sharedActions.SendCursorData({ 
+        type: loop.shared.utils.CURSOR_MESSAGE_TYPES.CLICK }));}, 
+
+
 
     
 
@@ -849,60 +735,61 @@ loop.shared.views = function (_, mozL10n) {
 
 
 
-    attachVideo: function (srcMediaElement) {
+    attachVideo: function attachVideo(srcMediaElement) {
       if (!srcMediaElement) {
         
-        return;
-      }
+        return;}
 
-      var videoElement = this.getDOMNode().querySelector("video");
+
+      var videoElement = ReactDOM.findDOMNode(this).querySelector("video");
       if (!videoElement || videoElement.tagName.toLowerCase() !== "video") {
         
-        return;
-      }
+        return;}
+
 
       if (this.props.shareCursor && !this.props.screenSharingPaused) {
         videoElement.addEventListener("loadeddata", this.handleVideoDimensions);
         videoElement.addEventListener("mousemove", this.handleMouseMove);
-        videoElement.addEventListener("click", this.handleMouseClick);
-      }
+        videoElement.addEventListener("click", this.handleMouseClick);}
+
 
       
       var attrName = "";
       if ("srcObject" in videoElement) {
         
-        attrName = "srcObject";
-      } else if ("mozSrcObject" in videoElement) {
+        attrName = "srcObject";} else 
+      if ("mozSrcObject" in videoElement) {
         
-        attrName = "mozSrcObject";
-      } else if ("src" in videoElement) {
+        attrName = "mozSrcObject";} else 
+      if ("src" in videoElement) {
         
-        attrName = "src";
-      } else {
-        console.error("Error attaching stream to element - no supported" + "attribute found");
-        return;
-      }
+        attrName = "src";} else 
+      {
+        console.error("Error attaching stream to element - no supported" + 
+        "attribute found");
+        return;}
+
 
       
       if (videoElement[attrName] !== srcMediaElement[attrName]) {
-        videoElement[attrName] = srcMediaElement[attrName];
-      }
+        videoElement[attrName] = srcMediaElement[attrName];}
 
-      videoElement.play();
-    },
 
-    render: function () {
+      videoElement.play();}, 
+
+
+    render: function render() {
       if (this.props.isLoading) {
-        return React.createElement(LoadingView, null);
-      }
+        return React.createElement(LoadingView, null);}
+
 
       if (this.props.displayAvatar) {
-        return React.createElement(AvatarView, null);
-      }
+        return React.createElement(AvatarView, null);}
+
 
       if (!this.props.srcMediaElement && !this.props.posterUrl) {
-        return React.createElement("div", { className: "no-video" });
-      }
+        return React.createElement("div", { className: "no-video" });}
+
 
       
       
@@ -913,249 +800,249 @@ loop.shared.views = function (_, mozL10n) {
       
       
       
-      return React.createElement(
-        "div",
-        { className: "remote-video-box" },
-        this.state.videoElementSize && this.props.shareCursor ? React.createElement(RemoteCursorView, {
-          videoElementSize: this.state.videoElementSize }) : null,
-        React.createElement("video", { className: this.props.mediaType + "-video",
-          muted: true,
-          poster: this.props.posterUrl })
-      );
-    }
-  });
+      return (
+        React.createElement("div", { className: "remote-video-box" }, 
+        this.state.videoElementSize && this.props.shareCursor ? 
+        React.createElement(RemoteCursorView, { 
+          videoElementSize: this.state.videoElementSize }) : 
+        null, 
+        React.createElement("video", { className: this.props.mediaType + "-video", 
+          muted: true, 
+          poster: this.props.posterUrl })));} });
 
-  var MediaLayoutView = React.createClass({
-    displayName: "MediaLayoutView",
 
-    propTypes: {
-      children: React.PropTypes.node,
-      cursorStore: React.PropTypes.instanceOf(loop.store.RemoteCursorStore).isRequired,
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired,
-      displayScreenShare: React.PropTypes.bool.isRequired,
-      isLocalLoading: React.PropTypes.bool.isRequired,
-      isRemoteLoading: React.PropTypes.bool.isRequired,
-      isScreenShareLoading: React.PropTypes.bool.isRequired,
-      
-      localPosterUrl: React.PropTypes.string,
-      localSrcMediaElement: React.PropTypes.object,
-      localVideoMuted: React.PropTypes.bool.isRequired,
-      
-      
-      matchMedia: React.PropTypes.func.isRequired,
-      remotePosterUrl: React.PropTypes.string,
-      remoteSrcMediaElement: React.PropTypes.object,
-      renderRemoteVideo: React.PropTypes.bool.isRequired,
-      screenShareMediaElement: React.PropTypes.object,
-      screenSharePosterUrl: React.PropTypes.string,
-      screenSharingPaused: React.PropTypes.bool,
-      showInitialContext: React.PropTypes.bool.isRequired,
-      showMediaWait: React.PropTypes.bool.isRequired,
-      showTile: React.PropTypes.bool.isRequired
-    },
 
-    isLocalMediaAbsolutelyPositioned: function (matchMedia) {
+
+
+  var MediaLayoutView = React.createClass({ displayName: "MediaLayoutView", 
+    propTypes: { 
+      children: React.PropTypes.node, 
+      cursorStore: React.PropTypes.instanceOf(loop.store.RemoteCursorStore).isRequired, 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired, 
+      displayScreenShare: React.PropTypes.bool.isRequired, 
+      isLocalLoading: React.PropTypes.bool.isRequired, 
+      isRemoteLoading: React.PropTypes.bool.isRequired, 
+      isScreenShareLoading: React.PropTypes.bool.isRequired, 
+      
+      localPosterUrl: React.PropTypes.string, 
+      localSrcMediaElement: React.PropTypes.object, 
+      localVideoMuted: React.PropTypes.bool.isRequired, 
+      
+      
+      matchMedia: React.PropTypes.func.isRequired, 
+      remotePosterUrl: React.PropTypes.string, 
+      remoteSrcMediaElement: React.PropTypes.object, 
+      renderRemoteVideo: React.PropTypes.bool.isRequired, 
+      screenShareMediaElement: React.PropTypes.object, 
+      screenSharePosterUrl: React.PropTypes.string, 
+      screenSharingPaused: React.PropTypes.bool, 
+      showInitialContext: React.PropTypes.bool.isRequired, 
+      showMediaWait: React.PropTypes.bool.isRequired, 
+      showTile: React.PropTypes.bool.isRequired }, 
+
+
+    isLocalMediaAbsolutelyPositioned: function isLocalMediaAbsolutelyPositioned(matchMedia) {
       if (!matchMedia) {
-        matchMedia = this.props.matchMedia;
-      }
+        matchMedia = this.props.matchMedia;}
+
       return matchMedia && (
       
-      matchMedia("screen and (max-width:640px)").matches && !this.props.displayScreenShare ||
+      matchMedia("screen and (max-width:640px)").matches && 
+      !this.props.displayScreenShare || 
       
-      matchMedia("screen and (max-width:300px)").matches);
-    },
+      matchMedia("screen and (max-width:300px)").matches);}, 
 
-    getInitialState: function () {
-      return {
-        localMediaAboslutelyPositioned: this.isLocalMediaAbsolutelyPositioned()
-      };
-    },
 
-    componentWillReceiveProps: function (nextProps) {
+    getInitialState: function getInitialState() {
+      return { 
+        localMediaAboslutelyPositioned: this.isLocalMediaAbsolutelyPositioned() };}, 
+
+
+
+    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
       
       if (this.props.matchMedia !== nextProps.matchMedia) {
-        this.updateLocalMediaState(null, nextProps.matchMedia);
-      }
-    },
+        this.updateLocalMediaState(null, nextProps.matchMedia);}}, 
 
-    componentDidMount: function () {
-      window.addEventListener("resize", this.updateLocalMediaState);
-    },
 
-    componentWillUnmount: function () {
-      window.removeEventListener("resize", this.updateLocalMediaState);
-    },
 
-    updateLocalMediaState: function (event, matchMedia) {
+    componentDidMount: function componentDidMount() {
+      window.addEventListener("resize", this.updateLocalMediaState);}, 
+
+
+    componentWillUnmount: function componentWillUnmount() {
+      window.removeEventListener("resize", this.updateLocalMediaState);}, 
+
+
+    updateLocalMediaState: function updateLocalMediaState(event, matchMedia) {
       var newState = this.isLocalMediaAbsolutelyPositioned(matchMedia);
       if (this.state.localMediaAboslutelyPositioned !== newState) {
-        this.setState({
-          localMediaAboslutelyPositioned: newState
-        });
-      }
-    },
+        this.setState({ 
+          localMediaAboslutelyPositioned: newState });}}, 
 
-    renderLocalVideo: function () {
-      return React.createElement(
-        "div",
-        { className: "local" },
-        React.createElement(MediaView, {
-          displayAvatar: this.props.localVideoMuted,
-          isLoading: this.props.isLocalLoading,
-          mediaType: "local",
-          posterUrl: this.props.localPosterUrl,
-          srcMediaElement: this.props.localSrcMediaElement })
-      );
-    },
 
-    renderMediaWait: function () {
-      var msg = mozL10n.get("call_progress_getting_media_description", { clientShortname: mozL10n.get("clientShortname2") });
+
+
+    renderLocalVideo: function renderLocalVideo() {
+      return (
+        React.createElement("div", { className: "local" }, 
+        React.createElement(MediaView, { 
+          displayAvatar: this.props.localVideoMuted, 
+          isLoading: this.props.isLocalLoading, 
+          mediaType: "local", 
+          posterUrl: this.props.localPosterUrl, 
+          srcMediaElement: this.props.localSrcMediaElement })));}, 
+
+
+
+
+    renderMediaWait: function renderMediaWait() {
+      var msg = mozL10n.get("call_progress_getting_media_description", 
+      { clientShortname: mozL10n.get("clientShortname2") });
       var utils = loop.shared.utils;
       var isChrome = utils.isChrome(navigator.userAgent);
       var isFirefox = utils.isFirefox(navigator.userAgent);
       var isOpera = utils.isOpera(navigator.userAgent);
-      var promptMediaMessageClasses = classNames({
-        "prompt-media-message": true,
-        "chrome": isChrome,
-        "firefox": isFirefox,
-        "opera": isOpera,
-        "other": !isChrome && !isFirefox && !isOpera
-      });
-      return React.createElement(
-        "div",
-        { className: "prompt-media-message-wrapper" },
-        React.createElement(
-          "p",
-          { className: promptMediaMessageClasses },
-          msg
-        )
-      );
-    },
+      var promptMediaMessageClasses = classNames({ 
+        "prompt-media-message": true, 
+        "chrome": isChrome, 
+        "firefox": isFirefox, 
+        "opera": isOpera, 
+        "other": !isChrome && !isFirefox && !isOpera });
 
-    render: function () {
-      var remoteStreamClasses = classNames({
-        "remote": true,
-        "focus-stream": !this.props.displayScreenShare
-      });
+      return (
+        React.createElement("div", { className: "prompt-media-message-wrapper" }, 
+        React.createElement("p", { className: promptMediaMessageClasses }, 
+        msg)));}, 
 
-      var screenShareStreamClasses = classNames({
-        "screen": true,
-        "focus-stream": this.props.displayScreenShare,
-        "screen-sharing-paused": this.props.screenSharingPaused
-      });
 
-      var mediaWrapperClasses = classNames({
-        "media-wrapper": true,
-        "receiving-screen-share": this.props.displayScreenShare,
-        "showing-local-streams": this.props.localSrcMediaElement || this.props.localPosterUrl,
-        "showing-media-wait": this.props.showMediaWait,
-        "showing-remote-streams": this.props.remoteSrcMediaElement || this.props.remotePosterUrl || this.props.isRemoteLoading
-      });
 
-      return React.createElement(
-        "div",
-        { className: "media-layout" },
-        React.createElement(
-          "div",
-          { className: mediaWrapperClasses },
-          React.createElement(
-            "span",
-            { className: "self-view-hidden-message" },
-            mozL10n.get("self_view_hidden_message")
-          ),
-          React.createElement(
-            "div",
-            { className: remoteStreamClasses },
-            React.createElement(MediaView, {
-              displayAvatar: !this.props.renderRemoteVideo,
-              isLoading: this.props.isRemoteLoading,
-              mediaType: "remote",
-              posterUrl: this.props.remotePosterUrl,
-              srcMediaElement: this.props.remoteSrcMediaElement }),
-            this.state.localMediaAboslutelyPositioned ? this.renderLocalVideo() : null,
-            this.props.displayScreenShare ? null : this.props.children
-          ),
-          React.createElement(
-            "div",
-            { className: screenShareStreamClasses },
-            React.createElement(MediaView, {
-              cursorStore: this.props.cursorStore,
-              dispatcher: this.props.dispatcher,
-              displayAvatar: false,
-              isLoading: this.props.isScreenShareLoading,
-              mediaType: "screen-share",
-              posterUrl: this.props.screenSharePosterUrl,
-              screenSharingPaused: this.props.screenSharingPaused,
-              shareCursor: true,
-              srcMediaElement: this.props.screenShareMediaElement }),
-            this.props.displayScreenShare ? this.props.children : null
-          ),
-          React.createElement(loop.shared.views.chat.TextChatView, {
-            dispatcher: this.props.dispatcher,
-            showInitialContext: this.props.showInitialContext,
-            showTile: this.props.showTile }),
-          this.state.localMediaAboslutelyPositioned ? null : this.renderLocalVideo(),
-          this.props.showMediaWait ? this.renderMediaWait() : null
-        )
-      );
-    }
-  });
 
-  var RemoteCursorView = React.createClass({
-    displayName: "RemoteCursorView",
 
-    statics: {
-      TRIGGERED_RESET_DELAY: 1000
-    },
+    render: function render() {
+      var remoteStreamClasses = classNames({ 
+        "remote": true, 
+        "focus-stream": !this.props.displayScreenShare });
 
-    mixins: [React.addons.PureRenderMixin, loop.store.StoreMixin("remoteCursorStore")],
 
-    propTypes: {
-      videoElementSize: React.PropTypes.object
-    },
+      var screenShareStreamClasses = classNames({ 
+        "screen": true, 
+        "focus-stream": this.props.displayScreenShare, 
+        "screen-sharing-paused": this.props.screenSharingPaused });
 
-    getInitialState: function () {
-      return this.getStoreState();
-    },
 
-    componentWillMount: function () {
+      var mediaWrapperClasses = classNames({ 
+        "media-wrapper": true, 
+        "receiving-screen-share": this.props.displayScreenShare, 
+        "showing-local-streams": this.props.localSrcMediaElement || 
+        this.props.localPosterUrl, 
+        "showing-media-wait": this.props.showMediaWait, 
+        "showing-remote-streams": this.props.remoteSrcMediaElement || 
+        this.props.remotePosterUrl || this.props.isRemoteLoading });
+
+
+      return (
+        React.createElement("div", { className: "media-layout" }, 
+        React.createElement("div", { className: mediaWrapperClasses }, 
+        React.createElement("span", { className: "self-view-hidden-message" }, 
+        mozL10n.get("self_view_hidden_message")), 
+
+        React.createElement("div", { className: remoteStreamClasses }, 
+        React.createElement(MediaView, { 
+          displayAvatar: !this.props.renderRemoteVideo, 
+          isLoading: this.props.isRemoteLoading, 
+          mediaType: "remote", 
+          posterUrl: this.props.remotePosterUrl, 
+          srcMediaElement: this.props.remoteSrcMediaElement }), 
+        this.state.localMediaAboslutelyPositioned ? 
+        this.renderLocalVideo() : null, 
+        this.props.displayScreenShare ? null : this.props.children), 
+
+        React.createElement("div", { className: screenShareStreamClasses }, 
+        React.createElement(MediaView, { 
+          cursorStore: this.props.cursorStore, 
+          dispatcher: this.props.dispatcher, 
+          displayAvatar: false, 
+          isLoading: this.props.isScreenShareLoading, 
+          mediaType: "screen-share", 
+          posterUrl: this.props.screenSharePosterUrl, 
+          screenSharingPaused: this.props.screenSharingPaused, 
+          shareCursor: true, 
+          srcMediaElement: this.props.screenShareMediaElement }), 
+        this.props.displayScreenShare ? this.props.children : null), 
+
+        React.createElement(loop.shared.views.chat.TextChatView, { 
+          dispatcher: this.props.dispatcher, 
+          showInitialContext: this.props.showInitialContext, 
+          showTile: this.props.showTile }), 
+        this.state.localMediaAboslutelyPositioned ? 
+        null : this.renderLocalVideo(), 
+        this.props.showMediaWait ? 
+        this.renderMediaWait() : null)));} });
+
+
+
+
+
+
+  var RemoteCursorView = React.createClass({ displayName: "RemoteCursorView", 
+    statics: { 
+      TRIGGERED_RESET_DELAY: 1000 }, 
+
+
+    mixins: [
+    React.addons.PureRenderMixin, 
+    loop.store.StoreMixin("remoteCursorStore")], 
+
+
+    propTypes: { 
+      videoElementSize: React.PropTypes.object }, 
+
+
+    getInitialState: function getInitialState() {
+      return this.getStoreState();}, 
+
+
+    componentWillMount: function componentWillMount() {
       if (!this.state.realVideoSize) {
-        return;
-      }
+        return;}
 
-      this._calculateVideoLetterboxing();
-    },
 
-    componentWillReceiveProps: function (nextProps) {
+      this._calculateVideoLetterboxing();}, 
+
+
+    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
       if (!this.state.realVideoSize) {
-        return;
-      }
+        return;}
+
 
       
       
-      this._calculateVideoLetterboxing(this.state.realVideoSize, nextProps.videoElementSize);
-    },
+      this._calculateVideoLetterboxing(this.state.realVideoSize, 
+      nextProps.videoElementSize);}, 
 
-    componentWillUpdate: function (nextProps, nextState) {
+
+    componentWillUpdate: function componentWillUpdate(nextProps, nextState) {
       if (!this.state.realVideoSize || !nextState.realVideoSize) {
-        return;
-      }
+        return;}
+
 
       if (!this.state.videoLetterboxing) {
         
         
         this._calculateVideoLetterboxing(nextState.realVideoSize);
-        return;
-      }
+        return;}
 
-      if (nextState.realVideoSize.width !== this.state.realVideoSize.width || nextState.realVideoSize.height !== this.state.realVideoSize.height) {
+
+      if (nextState.realVideoSize.width !== this.state.realVideoSize.width || 
+      nextState.realVideoSize.height !== this.state.realVideoSize.height) {
         
         
-        this._calculateVideoLetterboxing(nextState.realVideoSize);
-      }
-    },
+        this._calculateVideoLetterboxing(nextState.realVideoSize);}}, 
 
-    _calculateVideoLetterboxing: function (realVideoSize, videoElementSize) {
+
+
+    _calculateVideoLetterboxing: function _calculateVideoLetterboxing(realVideoSize, videoElementSize) {
       realVideoSize = realVideoSize || this.state.realVideoSize;
       videoElementSize = videoElementSize || this.props.videoElementSize;
 
@@ -1173,17 +1060,17 @@ loop.shared.views = function (_, mozL10n) {
       var streamVideoHeight = isWider ? clientHeight : clientWidth / realVideoRatio;
       var streamVideoWidth = isWider ? clientHeight * realVideoRatio : clientWidth;
 
-      this.getStore().setStoreState({
-        videoLetterboxing: {
-          left: (clientWidth - streamVideoWidth) / 2,
-          top: (clientHeight - streamVideoHeight) / 2
-        },
-        streamVideoHeight: streamVideoHeight,
-        streamVideoWidth: streamVideoWidth
-      });
-    },
+      this.getStore().setStoreState({ 
+        videoLetterboxing: { 
+          left: (clientWidth - streamVideoWidth) / 2, 
+          top: (clientHeight - streamVideoHeight) / 2 }, 
 
-    calculateCursorPosition: function () {
+        streamVideoHeight: streamVideoHeight, 
+        streamVideoWidth: streamVideoWidth });}, 
+
+
+
+    calculateCursorPosition: function calculateCursorPosition() {
       
       
       var remoteCursorPosition = this.state.remoteCursorPosition;
@@ -1193,120 +1080,109 @@ loop.shared.views = function (_, mozL10n) {
       var cursorPositionX = this.state.streamVideoWidth * ratioX;
       var cursorPositionY = this.state.streamVideoHeight * ratioY;
 
-      return {
-        left: cursorPositionX + this.state.videoLetterboxing.left,
-        top: cursorPositionY + this.state.videoLetterboxing.top
-      };
-    },
+      return { 
+        left: cursorPositionX + this.state.videoLetterboxing.left, 
+        top: cursorPositionY + this.state.videoLetterboxing.top };}, 
 
-    resetClickState: function () {
-      this.getStore().setStoreState({
-        remoteCursorClick: false
-      });
-    },
 
-    render: function () {
+
+    resetClickState: function resetClickState() {
+      this.getStore().setStoreState({ 
+        remoteCursorClick: false });}, 
+
+
+
+    render: function render() {
       if (!this.state.remoteCursorPosition || !this.state.videoLetterboxing) {
-        return null;
-      }
+        return null;}
+
 
       var cx = classNames;
-      var cursorClasses = cx({
-        "remote-cursor-container": true,
-        "remote-cursor-clicked": this.state.remoteCursorClick
-      });
+      var cursorClasses = cx({ 
+        "remote-cursor-container": true, 
+        "remote-cursor-clicked": this.state.remoteCursorClick });
+
 
       if (this.state.remoteCursorClick) {
-        setTimeout(this.resetClickState, this.constructor.TRIGGERED_RESET_DELAY);
-      }
+        setTimeout(this.resetClickState, this.constructor.TRIGGERED_RESET_DELAY);}
 
-      return React.createElement(
-        "div",
-        { className: cursorClasses, style: this.calculateCursorPosition() },
-        React.createElement("div", { className: "remote-cursor" })
-      );
-    }
-  });
 
-  var AdsTileView = React.createClass({
-    displayName: "AdsTileView",
+      return (
+        React.createElement("div", { className: cursorClasses, style: this.calculateCursorPosition() }, 
+        React.createElement("div", { className: "remote-cursor" })));} });
 
-    propTypes: {
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired,
-      showTile: React.PropTypes.bool.isRequired
-    },
 
-    componentDidMount: function () {
+
+
+
+  var AdsTileView = React.createClass({ displayName: "AdsTileView", 
+    propTypes: { 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired, 
+      showTile: React.PropTypes.bool.isRequired }, 
+
+
+    componentDidMount: function componentDidMount() {
       
-      window.addEventListener("message", this.recordTileClick);
-    },
+      window.addEventListener("message", this.recordTileClick);}, 
 
-    componentWillUnmount: function () {
-      window.removeEventListener("message", this.recordTileClick);
-    },
 
-    recordTileClick: function (event) {
+    componentWillUnmount: function componentWillUnmount() {
+      window.removeEventListener("message", this.recordTileClick);}, 
+
+
+    recordTileClick: function recordTileClick(event) {
       if (event.data === "tile-click") {
-        this.props.dispatcher.dispatch(new sharedActions.RecordClick({
-          linkInfo: "Tiles iframe click"
-        }));
-      }
-    },
+        this.props.dispatcher.dispatch(new sharedActions.RecordClick({ 
+          linkInfo: "Tiles iframe click" }));}}, 
 
-    recordTilesSupport: function () {
-      this.props.dispatcher.dispatch(new sharedActions.RecordClick({
-        linkInfo: "Tiles support link click"
-      }));
-    },
 
-    render: function () {
+
+
+    recordTilesSupport: function recordTilesSupport() {
+      this.props.dispatcher.dispatch(new sharedActions.RecordClick({ 
+        linkInfo: "Tiles support link click" }));}, 
+
+
+
+    render: function render() {
       if (!this.props.showTile) {
         window.removeEventListener("message", this.recordTileClick);
-        return null;
-      }
+        return null;}
 
-      return React.createElement(
-        "div",
-        { className: "ads-tile" },
-        React.createElement(
-          "div",
-          { className: "ads-wrapper" },
-          React.createElement(
-            "p",
-            null,
-            mozL10n.get("rooms_read_while_wait_offer2")
-          ),
-          React.createElement(
-            "a",
-            { href: loop.config.tilesSupportUrl,
-              onClick: this.recordTilesSupport,
-              rel: "noreferrer",
-              target: "_blank" },
-            React.createElement("i", { className: "room-waiting-help" })
-          ),
-          React.createElement("iframe", { className: "room-waiting-tile", src: loop.config.tilesIframeUrl })
-        )
-      );
-    }
-  });
 
-  return {
-    AdsTileView: AdsTileView,
-    AudioMuteButton: AudioMuteButton,
-    AvatarView: AvatarView,
-    Button: Button,
-    ButtonGroup: ButtonGroup,
-    Checkbox: Checkbox,
-    ContextUrlLink: ContextUrlLink,
-    ContextUrlView: ContextUrlView,
-    ConversationToolbar: ConversationToolbar,
-    HangUpControlButton: HangUpControlButton,
-    MediaControlButton: MediaControlButton,
-    MediaLayoutView: MediaLayoutView,
-    MediaView: MediaView,
-    LoadingView: LoadingView,
-    NotificationListView: NotificationListView,
-    RemoteCursorView: RemoteCursorView,
-    VideoMuteButton: VideoMuteButton
-  };
-}(_, navigator.mozL10n || document.mozL10n);
+      return (
+        React.createElement("div", { className: "ads-tile" }, 
+        React.createElement("div", { className: "ads-wrapper" }, 
+        React.createElement("p", null, mozL10n.get("rooms_read_while_wait_offer2")), 
+        React.createElement("a", { href: loop.config.tilesSupportUrl, 
+          onClick: this.recordTilesSupport, 
+          rel: "noreferrer", 
+          target: "_blank" }, 
+        React.createElement("i", { className: "room-waiting-help" })), 
+
+        React.createElement("iframe", { className: "room-waiting-tile", src: loop.config.tilesIframeUrl }))));} });
+
+
+
+
+
+
+  return { 
+    AdsTileView: AdsTileView, 
+    AudioMuteButton: AudioMuteButton, 
+    AvatarView: AvatarView, 
+    Button: Button, 
+    ButtonGroup: ButtonGroup, 
+    Checkbox: Checkbox, 
+    ContextUrlLink: ContextUrlLink, 
+    ContextUrlView: ContextUrlView, 
+    ConversationToolbar: ConversationToolbar, 
+    HangUpControlButton: HangUpControlButton, 
+    MediaControlButton: MediaControlButton, 
+    MediaLayoutView: MediaLayoutView, 
+    MediaView: MediaView, 
+    LoadingView: LoadingView, 
+    RemoteCursorView: RemoteCursorView, 
+    VideoMuteButton: VideoMuteButton };}(
+
+_, navigator.mozL10n || document.mozL10n);

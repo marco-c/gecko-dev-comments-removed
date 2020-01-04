@@ -1,4 +1,4 @@
-
+"use strict"; 
 
 
 
@@ -17,253 +17,253 @@ loop.shared.views.chat = function (mozL10n) {
   
 
 
-  var TextChatEntry = React.createClass({
-    displayName: "TextChatEntry",
+  var TextChatEntry = React.createClass({ displayName: "TextChatEntry", 
+    mixins: [React.addons.PureRenderMixin], 
 
-    mixins: [React.addons.PureRenderMixin],
+    propTypes: { 
+      contentType: React.PropTypes.string.isRequired, 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher), 
+      extraData: React.PropTypes.object, 
+      message: React.PropTypes.string.isRequired, 
+      showTimestamp: React.PropTypes.bool.isRequired, 
+      timestamp: React.PropTypes.string.isRequired, 
+      type: React.PropTypes.string.isRequired }, 
 
-    propTypes: {
-      contentType: React.PropTypes.string.isRequired,
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher),
-      extraData: React.PropTypes.object,
-      message: React.PropTypes.string.isRequired,
-      showTimestamp: React.PropTypes.bool.isRequired,
-      timestamp: React.PropTypes.string.isRequired,
-      type: React.PropTypes.string.isRequired
-    },
 
     
 
 
 
 
-    _renderTimestamp: function () {
+    _renderTimestamp: function _renderTimestamp() {
       var date = new Date(this.props.timestamp);
 
-      return React.createElement(
-        "span",
-        { className: "text-chat-entry-timestamp" },
-        date.toLocaleTimeString(mozL10n.language.code, { hour: "numeric", minute: "numeric",
-          hour12: false })
-      );
-    },
+      return (
+        React.createElement("span", { className: "text-chat-entry-timestamp" }, 
+        date.toLocaleTimeString(mozL10n.language.code, 
+        { hour: "numeric", minute: "numeric", 
+          hour12: false })));}, 
 
-    render: function () {
-      var classes = classNames({
-        "text-chat-entry": this.props.contentType !== CHAT_CONTENT_TYPES.NOTIFICATION,
-        "received": this.props.type === CHAT_MESSAGE_TYPES.RECEIVED,
-        "sent": this.props.type === CHAT_MESSAGE_TYPES.SENT,
-        "special": this.props.type === CHAT_MESSAGE_TYPES.SPECIAL,
-        "room-name": this.props.contentType === CHAT_CONTENT_TYPES.ROOM_NAME,
-        "text-chat-notif": this.props.contentType === CHAT_CONTENT_TYPES.NOTIFICATION
-      });
+
+
+
+    render: function render() {
+      var classes = classNames({ 
+        "text-chat-entry": this.props.contentType !== CHAT_CONTENT_TYPES.NOTIFICATION, 
+        "received": this.props.type === CHAT_MESSAGE_TYPES.RECEIVED, 
+        "sent": this.props.type === CHAT_MESSAGE_TYPES.SENT, 
+        "special": this.props.type === CHAT_MESSAGE_TYPES.SPECIAL, 
+        "text-chat-notif": this.props.contentType === CHAT_CONTENT_TYPES.NOTIFICATION });
+
 
       if (this.props.contentType === CHAT_CONTENT_TYPES.CONTEXT_TILE) {
-        return React.createElement(
-          "div",
-          { className: classes },
-          React.createElement(sharedViews.ContextUrlView, {
-            allowClick: true,
-            description: this.props.message,
-            dispatcher: this.props.dispatcher,
-            thumbnail: this.props.extraData.newRoomThumbnail,
-            url: this.props.extraData.newRoomURL }),
-          this.props.showTimestamp ? this._renderTimestamp() : null
-        );
-      }
+        return (
+          React.createElement("div", { className: classes }, 
+          React.createElement(sharedViews.ContextUrlView, { 
+            allowClick: true, 
+            description: this.props.message, 
+            dispatcher: this.props.dispatcher, 
+            thumbnail: this.props.extraData.newRoomThumbnail, 
+            url: this.props.extraData.newRoomURL }), 
+          this.props.showTimestamp ? this._renderTimestamp() : null));}
+
+
+
 
       if (this.props.contentType === CHAT_CONTENT_TYPES.NOTIFICATION) {
-        return React.createElement(
-          "div",
-          { className: classes },
-          React.createElement(
-            "div",
-            { className: "content-wrapper" },
-            React.createElement("img", { className: "notification-icon", src: "shared/img/leave_notification.svg" }),
-            React.createElement(
-              "p",
-              null,
-              mozL10n.get(this.props.message)
-            )
-          ),
-          this.props.showTimestamp ? this._renderTimestamp() : null
-        );
-      }
+        return (
+          React.createElement("div", { className: classes }, 
+          React.createElement("div", { className: "content-wrapper" }, 
+          React.createElement("img", { className: "notification-icon", 
+            src: this.props.extraData && 
+            this.props.extraData.peerStatus === "connected" ? 
+            "shared/img/join_notification.svg" : 
+            "shared/img/leave_notification.svg" }), 
+
+          React.createElement("p", null, mozL10n.get(this.props.message))), 
+
+          this.props.showTimestamp ? this._renderTimestamp() : null));}
+
+
+
 
       var linkClickHandler;
       if (loop.shared.utils.isDesktop()) {
-        linkClickHandler = function (url) {
-          loop.request("OpenURL", url);
-        };
-      }
+        linkClickHandler = function linkClickHandler(url) {
+          loop.request("OpenURL", url);};}
 
-      return React.createElement(
-        "div",
-        { className: classes },
-        React.createElement(sharedViews.LinkifiedTextView, {
-          linkClickHandler: linkClickHandler,
-          rawText: this.props.message }),
-        React.createElement("span", { className: "text-chat-arrow" }),
-        this.props.showTimestamp ? this._renderTimestamp() : null
-      );
-    }
-  });
 
-  var TextChatRoomName = React.createClass({
-    displayName: "TextChatRoomName",
 
-    mixins: [React.addons.PureRenderMixin],
+      return (
+        React.createElement("div", { className: classes }, 
+        React.createElement(sharedViews.LinkifiedTextView, { 
+          linkClickHandler: linkClickHandler, 
+          rawText: this.props.message }), 
+        React.createElement("span", { className: "text-chat-arrow" }), 
+        this.props.showTimestamp ? this._renderTimestamp() : null));} });
 
-    propTypes: {
-      message: React.PropTypes.string.isRequired
-    },
 
-    render: function () {
-      return React.createElement(
-        "div",
-        { className: "text-chat-header special room-name" },
-        React.createElement(
-          "p",
-          null,
-          mozL10n.get("rooms_welcome_title", { conversationName: this.props.message })
-        )
-      );
-    }
-  });
+
+
+
+  var TextChatHeader = React.createClass({ displayName: "TextChatHeader", 
+    mixins: [React.addons.PureRenderMixin], 
+
+    propTypes: { 
+      chatHeaderName: React.PropTypes.string.isRequired }, 
+
+
+    render: function render() {
+      return (
+        React.createElement("div", { className: "text-chat-header special" }, 
+        React.createElement("p", null, mozL10n.get("room_you_have_joined_title", { chatHeaderName: this.props.chatHeaderName }))));} });
+
+
+
+
 
   
 
 
 
 
-  var TextChatEntriesView = React.createClass({
-    displayName: "TextChatEntriesView",
+  var TextChatEntriesView = React.createClass({ displayName: "TextChatEntriesView", 
+    mixins: [
+    React.addons.PureRenderMixin, 
+    sharedMixins.AudioMixin], 
 
-    mixins: [React.addons.PureRenderMixin, sharedMixins.AudioMixin],
 
-    statics: {
-      ONE_MINUTE: 60
-    },
+    statics: { 
+      ONE_MINUTE: 60 }, 
 
-    propTypes: {
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired,
-      messageList: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
-      showInitialContext: React.PropTypes.bool.isRequired
-    },
 
-    getInitialState: function () {
-      return {
-        receivedMessageCount: 0
-      };
-    },
+    propTypes: { 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired, 
+      messageList: React.PropTypes.arrayOf(React.PropTypes.object).isRequired, 
+      roomName: React.PropTypes.string, 
+      showInitialContext: React.PropTypes.bool.isRequired }, 
 
-    _hasChatMessages: function () {
+
+    getInitialState: function getInitialState() {
+      return { 
+        receivedMessageCount: 0 };}, 
+
+
+
+    _hasChatMessages: function _hasChatMessages() {
       return this.props.messageList.some(function (message) {
-        return message.contentType !== CHAT_CONTENT_TYPES.ROOM_NAME && message.contentType !== CHAT_CONTENT_TYPES.CONTEXT;
-      });
-    },
+        return message.contentType !== CHAT_CONTENT_TYPES.CONTEXT;});}, 
 
-    componentWillUpdate: function () {
-      var node = this.getDOMNode();
+
+
+    componentWillUpdate: function componentWillUpdate() {
+      var node = ReactDOM.findDOMNode(this);
       if (!node) {
-        return;
-      }
-      
-      
-      this.shouldScroll = !this._hasChatMessages() || node.scrollHeight === node.scrollTop + node.clientHeight;
-    },
+        return;}
 
-    componentWillReceiveProps: function (nextProps) {
+      
+      
+      this.shouldScroll = !this._hasChatMessages() || 
+      node.scrollHeight === node.scrollTop + node.clientHeight;}, 
+
+
+    componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
       var receivedMessageCount = nextProps.messageList.filter(function (message) {
-        return message.type === CHAT_MESSAGE_TYPES.RECEIVED;
-      }).length;
+        return message.type === CHAT_MESSAGE_TYPES.RECEIVED;}).
+      length;
 
       
       if (receivedMessageCount > this.state.receivedMessageCount) {
         this.play("message");
-        this.setState({ receivedMessageCount: receivedMessageCount });
-      }
-    },
+        this.setState({ receivedMessageCount: receivedMessageCount });}}, 
 
-    componentDidUpdate: function () {
+
+
+    componentDidUpdate: function componentDidUpdate() {
       
       
       if (this.shouldScroll && this._hasChatMessages()) {
         
         window.requestAnimationFrame(function () {
           try {
-            var node = this.getDOMNode();
-            node.scrollTop = node.scrollHeight - node.clientHeight;
-          } catch (ex) {
-            console.error("TextChatEntriesView.componentDidUpdate exception", ex);
-          }
-        }.bind(this));
-      }
-    },
+            var node = ReactDOM.findDOMNode(this);
+            node.scrollTop = node.scrollHeight - node.clientHeight;} 
+          catch (ex) {
+            console.error("TextChatEntriesView.componentDidUpdate exception", ex);}}.
 
-    render: function () {
+        bind(this));}}, 
+
+
+
+    render: function render() {
       
       var lastTimestamp = 0;
 
-      var entriesClasses = classNames({
-        "text-chat-entries": true
-      });
+      var entriesClasses = classNames({ 
+        "text-chat-entries": true, 
+        
+        "custom-room-name": this.props.roomName && this.props.roomName.length > 0 });
 
-      return React.createElement(
-        "div",
-        { className: entriesClasses },
-        React.createElement(
-          "div",
-          { className: "text-chat-scroller" },
-          this.props.messageList.map(function (entry, i) {
-            if (entry.type === CHAT_MESSAGE_TYPES.SPECIAL) {
-              if (!this.props.showInitialContext) {
-                return null;
-              }
-              switch (entry.contentType) {
-                case CHAT_CONTENT_TYPES.ROOM_NAME:
-                  return React.createElement(TextChatRoomName, {
-                    key: i,
-                    message: entry.message });
-                case CHAT_CONTENT_TYPES.CONTEXT:
-                  return React.createElement(
-                    "div",
-                    { className: "context-url-view-wrapper", key: i },
-                    React.createElement(sharedViews.ContextUrlView, {
-                      allowClick: true,
-                      description: entry.message,
-                      dispatcher: this.props.dispatcher,
-                      thumbnail: entry.extraData.thumbnail,
-                      url: entry.extraData.location })
-                  );
-                default:
-                  console.error("Unsupported contentType", entry.contentType);
-                  return null;
-              }
-            }
 
-            
-            var timestamp = entry.receivedTimestamp || entry.sentTimestamp;
+      var headerName = this.props.roomName || mozL10n.get("clientShortname2");
 
-            var timeDiff = this._isOneMinDelta(timestamp, lastTimestamp);
-            var shouldShowTimestamp = this._shouldShowTimestamp(i, timeDiff);
+      return (
+        React.createElement("div", { className: entriesClasses }, 
+        React.createElement("div", { className: "text-chat-scroller" }, 
 
-            if (shouldShowTimestamp) {
-              lastTimestamp = timestamp;
-            }
+        loop.shared.utils.isDesktop() ? null : 
+        React.createElement(TextChatHeader, { chatHeaderName: headerName }), 
 
-            return React.createElement(TextChatEntry, { contentType: entry.contentType,
-              dispatcher: this.props.dispatcher,
-              extraData: entry.extraData,
-              key: i,
-              message: entry.message,
-              showTimestamp: shouldShowTimestamp,
-              timestamp: timestamp,
-              type: entry.type });
-          }, this)
-        )
-      );
-    },
+
+        this.props.messageList.map(function (entry, i) {
+          if (entry.type === CHAT_MESSAGE_TYPES.SPECIAL) {
+            if (!this.props.showInitialContext) {return null;}
+            switch (entry.contentType) {
+              case CHAT_CONTENT_TYPES.CONTEXT:
+                return (
+                  React.createElement("div", { className: "context-url-view-wrapper", key: i }, 
+                  React.createElement(sharedViews.ContextUrlView, { 
+                    allowClick: true, 
+                    description: entry.message, 
+                    dispatcher: this.props.dispatcher, 
+                    thumbnail: entry.extraData.thumbnail, 
+                    url: entry.extraData.location })));
+
+
+              default:
+                console.error("Unsupported contentType", 
+                entry.contentType);
+                return null;}}
+
+
+
+          
+          var timestamp = entry.receivedTimestamp || entry.sentTimestamp;
+
+          var timeDiff = this._isOneMinDelta(timestamp, lastTimestamp);
+          var shouldShowTimestamp = this._shouldShowTimestamp(i, 
+          timeDiff);
+
+          if (shouldShowTimestamp) {
+            lastTimestamp = timestamp;}
+
+
+          return (
+            React.createElement(TextChatEntry, { contentType: entry.contentType, 
+              dispatcher: this.props.dispatcher, 
+              extraData: entry.extraData, 
+              key: i, 
+              message: entry.message, 
+              showTimestamp: shouldShowTimestamp, 
+              timestamp: timestamp, 
+              type: entry.type }));}, 
+
+        this))));}, 
+
+
+
+
+
 
     
 
@@ -274,18 +274,19 @@ loop.shared.views.chat = function (mozL10n) {
 
 
 
-    _shouldShowTimestamp: function (idx, timeDiff) {
+    _shouldShowTimestamp: function _shouldShowTimestamp(idx, timeDiff) {
       if (!idx) {
-        return true;
-      }
+        return true;}
+
 
       
-      if (this.props.messageList[idx].type !== this.props.messageList[idx - 1].type) {
-        return true;
-      }
+      if (this.props.messageList[idx].type !== 
+      this.props.messageList[idx - 1].type) {
+        return true;}
 
-      return timeDiff;
-    },
+
+      return timeDiff;}, 
+
 
     
 
@@ -296,18 +297,18 @@ loop.shared.views.chat = function (mozL10n) {
 
 
 
-    _isOneMinDelta: function (currTime, prevTime) {
+    _isOneMinDelta: function _isOneMinDelta(currTime, prevTime) {
       var date1 = new Date(currTime);
       var date2 = new Date(prevTime);
       var delta = date1 - date2;
 
       if (delta / 1000 >= this.constructor.ONE_MINUTE) {
-        return true;
-      }
+        return true;}
 
-      return false;
-    }
-  });
+
+      return false;} });
+
+
 
   
 
@@ -317,22 +318,26 @@ loop.shared.views.chat = function (mozL10n) {
 
 
 
-  var TextChatInputView = React.createClass({
-    displayName: "TextChatInputView",
+  var TextChatInputView = React.createClass({ displayName: "TextChatInputView", 
+    mixins: [
+    React.addons.PureRenderMixin], 
 
-    mixins: [React.addons.LinkedStateMixin, React.addons.PureRenderMixin],
 
-    propTypes: {
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired,
-      showPlaceholder: React.PropTypes.bool.isRequired,
-      textChatEnabled: React.PropTypes.bool.isRequired
-    },
+    propTypes: { 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired, 
+      showPlaceholder: React.PropTypes.bool.isRequired, 
+      textChatEnabled: React.PropTypes.bool.isRequired }, 
 
-    getInitialState: function () {
-      return {
-        messageDetail: ""
-      };
-    },
+
+    getInitialState: function getInitialState() {
+      return { 
+        messageDetail: "" };}, 
+
+
+
+    handleChange: function handleChange(event) {
+      this.setState({ messageDetail: event.target.value });}, 
+
 
     
 
@@ -340,55 +345,54 @@ loop.shared.views.chat = function (mozL10n) {
 
 
 
-    handleKeyDown: function (event) {
+    handleKeyDown: function handleKeyDown(event) {
       if (event.which === 13) {
-        this.handleFormSubmit(event);
-      }
-    },
+        this.handleFormSubmit(event);}}, 
+
+
 
     
 
 
 
 
-    handleFormSubmit: function (event) {
+    handleFormSubmit: function handleFormSubmit(event) {
       event.preventDefault();
 
       
       if (!this.state.messageDetail) {
-        return;
-      }
+        return;}
 
-      this.props.dispatcher.dispatch(new sharedActions.SendTextChatMessage({
-        contentType: CHAT_CONTENT_TYPES.TEXT,
-        message: this.state.messageDetail,
-        sentTimestamp: new Date().toISOString()
-      }));
+
+      this.props.dispatcher.dispatch(new sharedActions.SendTextChatMessage({ 
+        contentType: CHAT_CONTENT_TYPES.TEXT, 
+        message: this.state.messageDetail, 
+        sentTimestamp: new Date().toISOString() }));
+
 
       
-      this.setState({ messageDetail: "" });
-    },
+      this.setState({ messageDetail: "" });}, 
 
-    render: function () {
+
+    render: function render() {
       if (!this.props.textChatEnabled) {
-        return null;
-      }
+        return null;}
 
-      return React.createElement(
-        "div",
-        { className: "text-chat-box" },
-        React.createElement(
-          "form",
-          { onSubmit: this.handleFormSubmit },
-          React.createElement("input", {
-            onKeyDown: this.handleKeyDown,
-            placeholder: this.props.showPlaceholder ? mozL10n.get("chat_textbox_placeholder") : "",
-            type: "text",
-            valueLink: this.linkState("messageDetail") })
-        )
-      );
-    }
-  });
+
+      return (
+        React.createElement("div", { className: "text-chat-box" }, 
+        React.createElement("form", { onSubmit: this.handleFormSubmit }, 
+        React.createElement("input", { 
+          onChange: this.handleChange, 
+          onKeyDown: this.handleKeyDown, 
+          placeholder: this.props.showPlaceholder ? mozL10n.get("chat_textbox_placeholder") : "", 
+          type: "text", 
+          value: this.state.messageDetail }))));} });
+
+
+
+
+
 
   
 
@@ -398,64 +402,66 @@ loop.shared.views.chat = function (mozL10n) {
 
 
 
-  var TextChatView = React.createClass({
-    displayName: "TextChatView",
+  var TextChatView = React.createClass({ displayName: "TextChatView", 
+    mixins: [
+    loop.store.StoreMixin("textChatStore")], 
 
-    mixins: [React.addons.LinkedStateMixin, loop.store.StoreMixin("textChatStore")],
 
-    propTypes: {
-      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired,
-      showInitialContext: React.PropTypes.bool.isRequired,
-      showTile: React.PropTypes.bool.isRequired
-    },
+    propTypes: { 
+      dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired, 
+      showInitialContext: React.PropTypes.bool.isRequired, 
+      showTile: React.PropTypes.bool.isRequired }, 
 
-    getInitialState: function () {
-      return this.getStoreState();
-    },
 
-    render: function () {
+    getInitialState: function getInitialState() {
+      return this.getStoreState();}, 
+
+
+    render: function render() {
       var messageList = this.state.messageList;
 
       
       
       if (!this.props.showInitialContext) {
         messageList = messageList.filter(function (item) {
-          return item.type !== CHAT_MESSAGE_TYPES.SPECIAL || item.contentType !== CHAT_CONTENT_TYPES.ROOM_NAME && item.contentType !== CHAT_CONTENT_TYPES.CONTEXT;
-        });
-      }
+          return item.type !== CHAT_MESSAGE_TYPES.SPECIAL || 
+          item.contentType !== CHAT_CONTENT_TYPES.CONTEXT;});}
+
+
 
       
       var hasSentMessages = messageList.some(function (item) {
-        return item.type === CHAT_MESSAGE_TYPES.SENT;
-      });
+        return item.type === CHAT_MESSAGE_TYPES.SENT;});
 
-      var textChatViewClasses = classNames({
-        "text-chat-view": true,
-        "text-chat-entries-empty": !messageList.length,
-        "text-chat-disabled": !this.state.textChatEnabled
-      });
 
-      return React.createElement(
-        "div",
-        { className: textChatViewClasses },
-        React.createElement(TextChatEntriesView, {
-          dispatcher: this.props.dispatcher,
-          messageList: messageList,
-          showInitialContext: this.props.showInitialContext }),
-        React.createElement(TextChatInputView, {
-          dispatcher: this.props.dispatcher,
-          showPlaceholder: !hasSentMessages,
-          textChatEnabled: this.state.textChatEnabled }),
-        React.createElement(sharedViews.AdsTileView, {
-          dispatcher: this.props.dispatcher,
-          showTile: this.props.showTile })
-      );
-    }
-  });
+      var textChatViewClasses = classNames({ 
+        "text-chat-view": true, 
+        "text-chat-entries-empty": !messageList.length, 
+        "text-chat-disabled": !this.state.textChatEnabled });
 
-  return {
-    TextChatEntriesView: TextChatEntriesView,
-    TextChatEntry: TextChatEntry,
-    TextChatView: TextChatView
-  };
-}(navigator.mozL10n || document.mozL10n);
+
+      return (
+        React.createElement("div", { className: textChatViewClasses }, 
+        React.createElement(TextChatEntriesView, { 
+          dispatcher: this.props.dispatcher, 
+          messageList: messageList, 
+          roomName: this.state.roomName, 
+          showInitialContext: this.props.showInitialContext }), 
+        React.createElement(TextChatInputView, { 
+          dispatcher: this.props.dispatcher, 
+          showPlaceholder: !hasSentMessages, 
+          textChatEnabled: this.state.textChatEnabled }), 
+        React.createElement(sharedViews.AdsTileView, { 
+          dispatcher: this.props.dispatcher, 
+          showTile: this.props.showTile })));} });
+
+
+
+
+
+  return { 
+    TextChatEntriesView: TextChatEntriesView, 
+    TextChatEntry: TextChatEntry, 
+    TextChatView: TextChatView };}(
+
+navigator.mozL10n || document.mozL10n);

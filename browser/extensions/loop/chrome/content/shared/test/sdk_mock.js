@@ -1,3 +1,4 @@
+"use strict"; 
 
 
 
@@ -6,19 +7,17 @@
 
 
 
-
-(function(window) {
+(function (window) {
   "use strict";
 
   if (!window.OT) {
-    window.OT = {};
-  }
+    window.OT = {};}
 
-  window.OT.checkSystemRequirements = function() {
-    return true;
-  };
 
-  window.OT.setLogLevel = function() {};
+  window.OT.checkSystemRequirements = function () {
+    return true;};
 
-})(window);
 
+  window.OT.setLogLevel = function () {};})(
+
+window);

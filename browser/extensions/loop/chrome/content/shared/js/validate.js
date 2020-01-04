@@ -1,9 +1,9 @@
-
+"use strict"; 
 
 
 
 var loop = loop || {};
-loop.validate = (function() {
+loop.validate = function () {
   "use strict";
 
   
@@ -14,10 +14,10 @@ loop.validate = (function() {
 
 
   function difference(arr1, arr2) {
-    return arr1.filter(function(item) {
-      return arr2.indexOf(item) === -1;
-    });
-  }
+    return arr1.filter(function (item) {
+      return arr2.indexOf(item) === -1;});}
+
+
 
   
 
@@ -28,19 +28,19 @@ loop.validate = (function() {
 
   function typeName(obj) {
     if (obj === null) {
-      return "null";
-    }
+      return "null";}
+
 
     if (typeof obj === "function") {
-      return obj.name || obj.toString().match(/^function\s?([^\s(]*)/)[1];
-    }
+      return obj.name || obj.toString().match(/^function\s?([^\s(]*)/)[1];}
+
 
     if (typeof obj.constructor === "function") {
-      return typeName(obj.constructor);
-    }
+      return typeName(obj.constructor);}
 
-    return "unknown";
-  }
+
+    return "unknown";}
+
 
   
 
@@ -49,10 +49,10 @@ loop.validate = (function() {
 
 
   function Validator(schema) {
-    this.schema = schema || {};
-  }
+    this.schema = schema || {};}
 
-  Validator.prototype = {
+
+  Validator.prototype = { 
     
 
 
@@ -60,11 +60,11 @@ loop.validate = (function() {
 
 
 
-    validate: function(values) {
+    validate: function validate(values) {
       this._checkRequiredProperties(values);
       this._checkRequiredTypes(values);
-      return values;
-    },
+      return values;}, 
+
 
     
 
@@ -73,17 +73,17 @@ loop.validate = (function() {
 
 
 
-    _checkRequiredTypes: function(values) {
-      Object.keys(this.schema).forEach(function(name) {
+    _checkRequiredTypes: function _checkRequiredTypes(values) {
+      Object.keys(this.schema).forEach(function (name) {
         var types = this.schema[name];
         types = Array.isArray(types) ? types : [types];
         if (!this._dependencyMatchTypes(values[name], types)) {
-          throw new TypeError("invalid dependency: " + name +
-                              "; expected " + types.map(typeName).join(", ") +
-                              ", got " + typeName(values[name]));
-        }
-      }, this);
-    },
+          throw new TypeError("invalid dependency: " + name + 
+          "; expected " + types.map(typeName).join(", ") + 
+          ", got " + typeName(values[name]));}}, 
+
+      this);}, 
+
 
     
 
@@ -92,15 +92,15 @@ loop.validate = (function() {
 
 
 
-    _checkRequiredProperties: function(values) {
-      var definedProperties = Object.keys(values).filter(function(name) {
-        return typeof values[name] !== "undefined";
-      });
+    _checkRequiredProperties: function _checkRequiredProperties(values) {
+      var definedProperties = Object.keys(values).filter(function (name) {
+        return typeof values[name] !== "undefined";});
+
       var diff = difference(Object.keys(this.schema), definedProperties);
       if (diff.length > 0) {
-        throw new TypeError("missing required " + diff.join(", "));
-      }
-    },
+        throw new TypeError("missing required " + diff.join(", "));}}, 
+
+
 
     
 
@@ -110,22 +110,20 @@ loop.validate = (function() {
 
 
 
-    _dependencyMatchTypes: function(value, types) {
-      return types.some(function(Type) {
+    _dependencyMatchTypes: function _dependencyMatchTypes(value, types) {
+      return types.some(function (Type) {
         try {
           return typeof Type === "undefined" || 
-                 Type === null && value === null || 
-                 value.constructor === Type || 
-                 Type.prototype.isPrototypeOf(value) || 
-                 typeName(value) === typeName(Type);    
+          Type === null && value === null || 
+          value.constructor === Type || 
+          Type.prototype.isPrototypeOf(value) || 
+          typeName(value) === typeName(Type); 
         } catch (e) {
-          return false;
-        }
-      });
-    }
-  };
+          return false;}});} };
 
-  return {
-    Validator: Validator
-  };
-})();
+
+
+
+
+  return { 
+    Validator: Validator };}();

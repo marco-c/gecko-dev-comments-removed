@@ -13,10 +13,8 @@
 
 
 
-addEventListener("DOMTitleChanged", ({ target }) => {
-  sendAsyncMessage("loop@mozilla.org:DOMTitleChanged", {
-    details: "titleChanged"
-  }, {
-     target: target
-  });
-});
+addEventListener("DOMTitleChanged", function (_ref) {var target = _ref.target;
+  sendAsyncMessage("loop@mozilla.org:DOMTitleChanged", { 
+    details: "titleChanged" }, 
+  { 
+    target: target });});

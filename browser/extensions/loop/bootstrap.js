@@ -3,67 +3,67 @@
 
 "use strict";
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {return typeof obj;} : function (obj) {return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;};function _toConsumableArray(arr) {if (Array.isArray(arr)) {for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {arr2[i] = arr[i];}return arr2;} else {return Array.from(arr);}}var _Components = 
+
+Components;var Ci = _Components.interfaces;var Cu = _Components.utils;var Cc = _Components.classes;
+
+var kNSXUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+var kBrowserSharingNotificationId = "loop-sharing-notification";
+
+var CURSOR_MIN_DELTA = 3;
+var CURSOR_MIN_INTERVAL = 100;
+var CURSOR_CLICK_DELAY = 1000;
 
 
-const { interfaces: Ci, utils: Cu, classes: Cc } = Components;
-
-const kNSXUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-const kBrowserSharingNotificationId = "loop-sharing-notification";
-
-const CURSOR_MIN_DELTA = 3;
-const CURSOR_MIN_INTERVAL = 100;
-const CURSOR_CLICK_DELAY = 1000;
-
-
-const FRAME_SCRIPT = "chrome://loop/content/modules/tabFrame.js?" + Math.random();
+var FRAME_SCRIPT = "chrome://loop/content/modules/tabFrame.js?" + Math.random();
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
-  "resource:///modules/CustomizableUI.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-  "resource://gre/modules/Task.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils", 
+"resource://gre/modules/PrivateBrowsingUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI", 
+"resource:///modules/CustomizableUI.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Task", 
+"resource://gre/modules/Task.jsm");
 
 
-const PREF_LOG_LEVEL = "loop.debug.loglevel";
+var PREF_LOG_LEVEL = "loop.debug.loglevel";
 
-XPCOMUtils.defineLazyGetter(this, "log", () => {
-  let ConsoleAPI = Cu.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
-  let consoleOptions = {
-    maxLogLevelPref: PREF_LOG_LEVEL,
-    prefix: "Loop"
-  };
-  return new ConsoleAPI(consoleOptions);
-});
+XPCOMUtils.defineLazyGetter(this, "log", function () {
+  var ConsoleAPI = Cu.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
+  var consoleOptions = { 
+    maxLogLevelPref: PREF_LOG_LEVEL, 
+    prefix: "Loop" };
 
-
+  return new ConsoleAPI(consoleOptions);});
 
 
 
-var WindowListener = {
+
+
+
+var WindowListener = { 
   
-  addonVersion: "unknown",
+  addonVersion: "unknown", 
 
   
 
 
 
 
-  setupBrowserUI: function(window) {
-    let document = window.document;
-    let { gBrowser, gURLBar } = window;
-    let xhrClass = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"];
-    let FileReader = window.FileReader;
-    let menuItem = null;
-    let isSlideshowOpen = false;
-    let titleChangedListener = null;
+  setupBrowserUI: function setupBrowserUI(window) {
+    var document = window.document;var 
+    gBrowser = window.gBrowser;var gURLBar = window.gURLBar;
+    var xhrClass = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"];
+    var FileReader = window.FileReader;
+    var menuItem = null;
+    var isSlideshowOpen = false;
+    var titleChangedListener = null;
 
     
-    var LoopUI = {
+    var LoopUI = { 
       
 
 
@@ -71,73 +71,73 @@ var WindowListener = {
 
       get toolbarButton() {
         delete this.toolbarButton;
-        return (this.toolbarButton = CustomizableUI.getWidget("loop-button").forWindow(window));
-      },
+        return this.toolbarButton = CustomizableUI.getWidget("loop-button").forWindow(window);}, 
+
 
       
 
 
       get panel() {
         delete this.panel;
-        return (this.panel = document.getElementById("loop-notification-panel"));
-      },
+        return this.panel = document.getElementById("loop-notification-panel");}, 
+
 
       
 
 
 
       get browser() {
-        let browser = document.querySelector("#loop-notification-panel > #loop-panel-iframe");
+        var browser = document.querySelector("#loop-notification-panel > #loop-panel-iframe");
         if (browser) {
           delete this.browser;
-          this.browser = browser;
-        }
-        return browser;
-      },
+          this.browser = browser;}
+
+        return browser;}, 
+
 
       get isSlideshowOpen() {
-        return isSlideshowOpen;
-      },
+        return isSlideshowOpen;}, 
+
 
       set isSlideshowOpen(aOpen) {
         isSlideshowOpen = aOpen;
-        this.updateToolbarState();
-      },
+        this.updateToolbarState();}, 
+
       
 
 
-      get constants() {
+      get constants() {var _this = this;
         if (!this._constants) {
           
-          this.LoopAPI.sendMessageToHandler({
-            name: "GetAllConstants"
-          }, result => {
-            this._constants = result;
-          });
-        }
+          this.LoopAPI.sendMessageToHandler({ 
+            name: "GetAllConstants" }, 
+          function (result) {
+            _this._constants = result;});}
 
-        return this._constants;
-      },
+
+
+        return this._constants;}, 
+
 
       get mm() {
-        return window.getGroupMessageManager("browsers");
-      },
+        return window.getGroupMessageManager("browsers");}, 
+
 
       
 
 
-      promiseDocumentVisible(aDocument) {
+      promiseDocumentVisible: function promiseDocumentVisible(aDocument) {
         if (!aDocument.hidden) {
-          return Promise.resolve(aDocument);
-        }
+          return Promise.resolve(aDocument);}
 
-        return new Promise((resolve) => {
+
+        return new Promise(function (resolve) {
           aDocument.addEventListener("visibilitychange", function onVisibilityChanged() {
             aDocument.removeEventListener("visibilitychange", onVisibilityChanged);
-            resolve(aDocument);
-          });
-        });
-      },
+            resolve(aDocument);});});}, 
+
+
+
 
       
 
@@ -146,44 +146,44 @@ var WindowListener = {
 
 
 
-      togglePanel: function(event) {
-        if (!this.panel) {
-          
-          let obs = win => {
-            Services.obs.removeObserver(obs, "browser-delayed-startup-finished");
-            win.LoopUI.togglePanel(event);
-          };
-          Services.obs.addObserver(obs, "browser-delayed-startup-finished", false);
-          return window.OpenBrowserWindow();
-        }
+      togglePanel: function togglePanel(event) {var _this2 = this;
+        if (!this.panel) {var _ret = function () {
+            
+            var obs = function obs(win) {
+              Services.obs.removeObserver(obs, "browser-delayed-startup-finished");
+              win.LoopUI.togglePanel(event);};
+
+            Services.obs.addObserver(obs, "browser-delayed-startup-finished", false);
+            return { v: window.OpenBrowserWindow() };}();if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;}
+
         if (this.panel.state == "open") {
-          return new Promise(resolve => {
-            this.panel.hidePopup();
-            resolve();
-          });
-        }
+          return new Promise(function (resolve) {
+            _this2.panel.hidePopup();
+            resolve();});}
+
+
 
         if (this.isSlideshowOpen) {
-          return Promise.resolve();
-        }
+          return Promise.resolve();}
 
-        return this.openPanel(event).then(mm => {
+
+        return this.openPanel(event).then(function (mm) {
           if (mm) {
-            mm.sendAsyncMessage("Social:EnsureFocusElement");
-          }
-        }).catch(err => {
-          Cu.reportError(err);
-        });
-      },
+            mm.sendAsyncMessage("Social:EnsureFocusElement");}}).
+
+        catch(function (err) {
+          Cu.reportError(err);});}, 
+
+
 
       
 
 
 
 
-      renameRoom: function() {
-        this.openPanel();
-      },
+      renameRoom: function renameRoom() {
+        this.openPanel();}, 
+
 
       
 
@@ -192,63 +192,63 @@ var WindowListener = {
 
 
 
-      openPanel: function(event) {
+      openPanel: function openPanel(event) {var _this3 = this;
         if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-          return Promise.reject();
-        }
+          return Promise.reject();}
 
-        return new Promise((resolve) => {
-          let callback = iframe => {
-            let mm = iframe.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader.messageManager;
+
+        return new Promise(function (resolve) {
+          var callback = function callback(iframe) {
+            var mm = iframe.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader.messageManager;
             if (!("messageManager" in iframe)) {
-              iframe.messageManager = mm;
-            }
+              iframe.messageManager = mm;}
 
-            if (!this._panelInitialized) {
-              this.hookWindowCloseForPanelClose(iframe);
-              this._panelInitialized = true;
-            }
+
+            if (!_this3._panelInitialized) {
+              _this3.hookWindowCloseForPanelClose(iframe);
+              _this3._panelInitialized = true;}
+
 
             mm.sendAsyncMessage("Social:WaitForDocumentVisible");
             mm.addMessageListener("Social:DocumentVisible", function onDocumentVisible() {
               mm.removeMessageListener("Social:DocumentVisible", onDocumentVisible);
-              resolve(mm);
-            });
+              resolve(mm);});
 
-            let buckets = this.constants.LOOP_MAU_TYPE;
-            this.LoopAPI.sendMessageToHandler({
-              name: "TelemetryAddValue",
-              data: ["LOOP_ACTIVITY_COUNTER", buckets.OPEN_PANEL]
-            });
-          };
+
+            var buckets = _this3.constants.LOOP_MAU_TYPE;
+            _this3.LoopAPI.sendMessageToHandler({ 
+              name: "TelemetryAddValue", 
+              data: ["LOOP_ACTIVITY_COUNTER", buckets.OPEN_PANEL] });};
+
+
 
           
           Services.obs.notifyObservers(null, "loop-status-changed", null);
 
-          this.shouldResumeTour().then((resume) => {
+          _this3.shouldResumeTour().then(function (resume) {
             if (resume) {
               
               
               
-              this.MozLoopService.resumeTour("waiting");
+              _this3.MozLoopService.resumeTour("waiting");
               resolve(null);
-              return;
-            }
+              return;}
 
-            this.LoopAPI.initialize();
 
-            let anchor = event ? event.target : this.toolbarButton.anchor;
-            this.PanelFrame.showPopup(
-              window,
-              anchor,
-              "loop", 
-              null,   
-              "about:looppanel", 
-              null, 
-              callback);
-          });
-        });
-      },
+            _this3.LoopAPI.initialize();
+
+            var anchor = event ? event.target : _this3.toolbarButton.anchor;
+            _this3.PanelFrame.showPopup(
+            window, 
+            anchor, 
+            "loop", 
+            null, 
+            "about:looppanel", 
+            null, 
+            callback);});});}, 
+
+
+
 
       
 
@@ -257,9 +257,9 @@ var WindowListener = {
 
 
 
-      openCallPanel: function(event) {
-        return this.openPanel(event);
-      },
+      openCallPanel: function openCallPanel(event) {
+        return this.openPanel(event);}, 
+
 
       
 
@@ -273,248 +273,248 @@ var WindowListener = {
         
         
         if (!Services.prefs.getBoolPref("loop.gettingStarted.resumeOnFirstJoin")) {
-          return false;
-        }
+          return false;}
+
 
         if (!this.LoopRooms.participantsCount) {
           
-          return false;
-        }
+          return false;}
 
-        let roomsWithNonOwners = yield this.roomsWithNonOwners();
+
+        var roomsWithNonOwners = yield this.roomsWithNonOwners();
         if (!roomsWithNonOwners.length) {
           
-          return false;
-        }
+          return false;}
 
-        return true;
-      }),
+
+        return true;}), 
+
 
       
 
 
-      roomsWithNonOwners: function() {
-        return new Promise(resolve => {
-          this.LoopRooms.getAll((error, rooms) => {
-            let roomsWithNonOwners = [];
-            for (let room of rooms) {
-              if (!("participants" in room)) {
-                continue;
-              }
-              let numNonOwners = room.participants.filter(participant => !participant.owner).length;
-              if (!numNonOwners) {
-                continue;
-              }
-              roomsWithNonOwners.push(room);
-            }
-            resolve(roomsWithNonOwners);
-          });
-        });
-      },
+      roomsWithNonOwners: function roomsWithNonOwners() {var _this4 = this;
+        return new Promise(function (resolve) {
+          _this4.LoopRooms.getAll(function (error, rooms) {
+            var roomsWithNonOwners = [];var _iteratorNormalCompletion = true;var _didIteratorError = false;var _iteratorError = undefined;try {
+              for (var _iterator = rooms[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {var room = _step.value;
+                if (!("participants" in room)) {
+                  continue;}
+
+                var numNonOwners = room.participants.filter(function (participant) {return !participant.owner;}).length;
+                if (!numNonOwners) {
+                  continue;}
+
+                roomsWithNonOwners.push(room);}} catch (err) {_didIteratorError = true;_iteratorError = err;} finally {try {if (!_iteratorNormalCompletion && _iterator.return) {_iterator.return();}} finally {if (_didIteratorError) {throw _iteratorError;}}}
+
+            resolve(roomsWithNonOwners);});});}, 
+
+
+
 
       
 
 
 
-      init: function() {
+      init: function init() {var _this5 = this;
         
         
-        this.MozLoopService.initialize(WindowListener.addonVersion).catch(ex => {
-          if (!ex.message ||
-              (!ex.message.contains("not enabled") &&
-               !ex.message.contains("not needed"))) {
-            console.error(ex);
-          }
-        });
+        this.MozLoopService.initialize(WindowListener.addonVersion).catch(function (ex) {
+          if (!ex.message || 
+          !ex.message.contains("not enabled") && 
+          !ex.message.contains("not needed")) {
+            console.error(ex);}});
+
+
 
         
         
         if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-          return;
-        }
+          return;}
+
 
         this.addMenuItem();
 
         
         
         if (window == Services.appShell.hiddenDOMWindow) {
-          return;
-        }
+          return;}
+
 
         
         
         this.mm.loadFrameScript(FRAME_SCRIPT, true);
 
         
-        window.addEventListener("unload", () => {
-          Services.obs.removeObserver(this, "loop-status-changed");
-        });
+        window.addEventListener("unload", function () {
+          Services.obs.removeObserver(_this5, "loop-status-changed");});
+
 
         Services.obs.addObserver(this, "loop-status-changed", false);
 
         this.maybeAddCopyPanel();
-        this.updateToolbarState();
-      },
+        this.updateToolbarState();}, 
+
 
       
 
 
 
-      addMenuItem: function() {
-        let menu = document.getElementById("menu_ToolsPopup");
+      addMenuItem: function addMenuItem() {var _this6 = this;
+        var menu = document.getElementById("menu_ToolsPopup");
         if (!menu || menuItem) {
-          return;
-        }
+          return;}
+
 
         menuItem = document.createElementNS(kNSXUL, "menuitem");
         menuItem.setAttribute("id", "menu_openLoop");
         menuItem.setAttribute("label", this._getString("loopMenuItem_label"));
         menuItem.setAttribute("accesskey", this._getString("loopMenuItem_accesskey"));
 
-        menuItem.addEventListener("command", () => this.togglePanel());
+        menuItem.addEventListener("command", function () {return _this6.togglePanel();});
 
-        menu.insertBefore(menuItem, document.getElementById("sync-setup"));
-      },
+        menu.insertBefore(menuItem, document.getElementById("sync-setup"));}, 
+
 
       
 
 
-      removeMenuItem: function() {
+      removeMenuItem: function removeMenuItem() {
         if (menuItem) {
-          menuItem.parentNode.removeChild(menuItem);
-        }
-      },
+          menuItem.parentNode.removeChild(menuItem);}}, 
+
+
 
       
 
 
 
-      maybeAddCopyPanel() {
+      maybeAddCopyPanel: function maybeAddCopyPanel() {var _this7 = this;
         
         
-        if (PrivateBrowsingUtils.isWindowPrivate(window) ||
-            Services.prefs.getBoolPref("loop.copy.shown") ||
-            Services.prefs.getIntPref("loop.copy.showLimit") <= 0) {
-          return Promise.resolve();
-        }
+        if (PrivateBrowsingUtils.isWindowPrivate(window) || 
+        Services.prefs.getBoolPref("loop.copy.shown") || 
+        Services.prefs.getIntPref("loop.copy.showLimit") <= 0) {
+          return Promise.resolve();}
 
-        return Throttler.check("loop.copy").then(() => this.addCopyPanel());
-      },
+
+        return Throttler.check("loop.copy").then(function () {return _this7.addCopyPanel();});}, 
+
 
       
 
 
 
-      addCopyPanel(onClickHandled) {
+      addCopyPanel: function addCopyPanel(onClickHandled) {var _this8 = this, _arguments = arguments;
         
-        let copy = this.panel.cloneNode(false);
+        var copy = this.panel.cloneNode(false);
         copy.id = "loop-copy-notification-panel";
         this.panel.parentNode.appendChild(copy);
 
         
-        let addTelemetry = bucket => {
-          this.LoopAPI.sendMessageToHandler({
-            data: ["LOOP_COPY_PANEL_ACTIONS", this.constants.COPY_PANEL[bucket]],
-            name: "TelemetryAddValue"
-          });
-        };
+        var addTelemetry = function addTelemetry(bucket) {
+          _this8.LoopAPI.sendMessageToHandler({ 
+            data: ["LOOP_COPY_PANEL_ACTIONS", _this8.constants.COPY_PANEL[bucket]], 
+            name: "TelemetryAddValue" });};
+
+
 
         
-        let onIframe = iframe => {
+        var onIframe = function onIframe(iframe) {
           
           iframe.addEventListener("DOMContentLoaded", function onLoad() {
             iframe.removeEventListener("DOMContentLoaded", onLoad);
 
             
-            iframe.contentWindow.requestAnimationFrame(() => {
-              let height = iframe.contentDocument.documentElement.offsetHeight;
+            iframe.contentWindow.requestAnimationFrame(function () {
+              var height = iframe.contentDocument.documentElement.offsetHeight;
               height += copy.boxObject.height - iframe.boxObject.height;
-              copy.style.height = height + "px";
-            });
+              copy.style.height = height + "px";});
+
 
             
-            iframe.contentWindow.addEventListener("CopyPanelClick", event => {
+            iframe.contentWindow.addEventListener("CopyPanelClick", function (event) {
               iframe.parentNode.hidePopup();
 
               
-              let { accept, stop } = event.detail;
+              var _event$detail = event.detail;var accept = _event$detail.accept;var stop = _event$detail.stop;
               if (accept) {
-                LoopUI.openPanel();
-              }
+                LoopUI.openPanel();}
+
 
               
               if (stop) {
                 LoopUI.removeCopyPanel();
-                Services.prefs.setBoolPref("loop.copy.shown", true);
-              }
+                Services.prefs.setBoolPref("loop.copy.shown", true);}
+
 
               
               
-              let probe = (accept ? "YES" : "NO") + "_" + (stop ? "NEVER" : "AGAIN");
+              var probe = (accept ? "YES" : "NO") + "_" + (stop ? "NEVER" : "AGAIN");
               addTelemetry(probe);
 
               
               try {
-                onClickHandled(event.detail);
-              } catch (ex) {
+                onClickHandled(event.detail);} 
+              catch (ex) {
                 
-              }
-            });
-          });
-        };
+              }});});};
+
+
+
 
         
-        let controller = gURLBar._copyCutController;
+        var controller = gURLBar._copyCutController;
         controller._doCommand = controller.doCommand;
-        controller.doCommand = () => {
+        controller.doCommand = function () {
           
-          controller._doCommand.apply(controller, arguments);
+          controller._doCommand.apply(controller, _arguments);
 
           
-          let showLimit = Services.prefs.getIntPref("loop.copy.showLimit");
+          var showLimit = Services.prefs.getIntPref("loop.copy.showLimit");
           if (showLimit <= 0) {
             LoopUI.removeCopyPanel();
-            return;
-          }
+            return;}
+
 
           
-          if (this.MozLoopService.screenShareActive) {
-            return;
-          }
+          if (_this8.MozLoopService.screenShareActive) {
+            return;}
+
 
           
           Services.prefs.setIntPref("loop.copy.showLimit", showLimit - 1);
           addTelemetry("SHOWN");
 
           
-          LoopUI.PanelFrame.showPopup(window, LoopUI.toolbarButton.anchor, "loop-copy",
-            null, "chrome://loop/content/panels/copy.html", null, onIframe);
-        };
-      },
+          LoopUI.PanelFrame.showPopup(window, LoopUI.toolbarButton.anchor, "loop-copy", 
+          null, "chrome://loop/content/panels/copy.html", null, onIframe);};}, 
+
+
 
       
 
 
-      removeCopyPanel() {
-        let controller = gURLBar && gURLBar._copyCutController;
+      removeCopyPanel: function removeCopyPanel() {
+        var controller = gURLBar && gURLBar._copyCutController;
         if (controller && controller._doCommand) {
           controller.doCommand = controller._doCommand;
-          delete controller._doCommand;
-        }
+          delete controller._doCommand;}
 
-        let copy = document.getElementById("loop-copy-notification-panel");
+
+        var copy = document.getElementById("loop-copy-notification-panel");
         if (copy) {
-          copy.parentNode.removeChild(copy);
-        }
-      },
+          copy.parentNode.removeChild(copy);}}, 
+
+
 
       
-      observe: function(subject, topic, data) {
+      observe: function observe(subject, topic, data) {
         if (topic != "loop-status-changed") {
-          return;
-        }
-        this.updateToolbarState(data);
-      },
+          return;}
+
+        this.updateToolbarState(data);}, 
+
 
       
 
@@ -527,49 +527,49 @@ var WindowListener = {
 
 
 
-      updateToolbarState: function(aReason = null) {
+      updateToolbarState: function updateToolbarState() {var _this9 = this;var aReason = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
         if (!this.toolbarButton.node) {
-          return;
-        }
-        let state = "";
-        let mozL10nId = "loop-call-button3";
-        let suffix = ".tooltiptext";
+          return;}
+
+        var state = "";
+        var mozL10nId = "loop-call-button3";
+        var suffix = ".tooltiptext";
         if (this.MozLoopService.errors.size) {
           state = "error";
-          mozL10nId += "-error";
-        } else if (this.isSlideshowOpen) {
-          state = "slideshow";
-        } else if (this.MozLoopService.screenShareActive) {
+          mozL10nId += "-error";} else 
+        if (this.isSlideshowOpen) {
+          state = "slideshow";} else 
+        if (this.MozLoopService.screenShareActive) {
           state = "action";
-          mozL10nId += "-screensharing";
-        } else if (aReason == "login" && this.MozLoopService.userProfile) {
+          mozL10nId += "-screensharing";} else 
+        if (aReason == "login" && this.MozLoopService.userProfile) {
           state = "active";
           mozL10nId += "-active";
-          suffix += "2";
-        } else if (this.MozLoopService.doNotDisturb) {
+          suffix += "2";} else 
+        if (this.MozLoopService.doNotDisturb) {
           state = "disabled";
-          mozL10nId += "-donotdisturb";
-        } else if (this.MozLoopService.roomsParticipantsCount > 0) {
+          mozL10nId += "-donotdisturb";} else 
+        if (this.MozLoopService.roomsParticipantsCount > 0) {
           state = "active";
-          this.roomsWithNonOwners().then(roomsWithNonOwners => {
+          this.roomsWithNonOwners().then(function (roomsWithNonOwners) {
             if (roomsWithNonOwners.length > 0) {
-              mozL10nId += "-participantswaiting";
-            } else {
-              mozL10nId += "-active";
-            }
+              mozL10nId += "-participantswaiting";} else 
+            {
+              mozL10nId += "-active";}
+
 
             suffix += "2";
-            this.updateTooltiptext(mozL10nId + suffix);
-            this.toolbarButton.node.setAttribute("state", state);
-          });
-          return;
-        } else {
-          suffix += "2";
-        }
+            _this9.updateTooltiptext(mozL10nId + suffix);
+            _this9.toolbarButton.node.setAttribute("state", state);});
+
+          return;} else 
+        {
+          suffix += "2";}
+
 
         this.toolbarButton.node.setAttribute("state", state);
-        this.updateTooltiptext(mozL10nId + suffix);
-      },
+        this.updateTooltiptext(mozL10nId + suffix);}, 
+
 
       
 
@@ -578,11 +578,11 @@ var WindowListener = {
 
 
 
-      updateTooltiptext: function(mozL10nId) {
+      updateTooltiptext: function updateTooltiptext(mozL10nId) {
         this.toolbarButton.node.setAttribute("tooltiptext", mozL10nId);
         var tooltiptext = CustomizableUI.getLocalizedProperty(this.toolbarButton, "tooltiptext");
-        this.toolbarButton.node.setAttribute("tooltiptext", tooltiptext);
-      },
+        this.toolbarButton.node.setAttribute("tooltiptext", tooltiptext);}, 
+
 
       
 
@@ -600,71 +600,71 @@ var WindowListener = {
 
 
 
-      showNotification: function(options) {
+      showNotification: function showNotification(options) {var _this10 = this;
         if (this.MozLoopService.doNotDisturb) {
-          return;
-        }
+          return;}
+
 
         if (!options.title) {
-          throw new Error("Missing title, can not display notification");
-        }
+          throw new Error("Missing title, can not display notification");}
 
-        let notificationOptions = {
-          body: options.message || ""
-        };
+
+        var notificationOptions = { 
+          body: options.message || "" };
+
         if (options.icon) {
-          notificationOptions.icon = options.icon;
-        }
+          notificationOptions.icon = options.icon;}
+
         if (options.sound) {
           
-          notificationOptions.mozbehavior = {
-            soundFile: ""
-          };
-          this.playSound(options.sound);
-        }
+          notificationOptions.mozbehavior = { 
+            soundFile: "" };
 
-        let notification = new window.Notification(options.title, notificationOptions);
-        notification.addEventListener("click", () => {
+          this.playSound(options.sound);}
+
+
+        var notification = new window.Notification(options.title, notificationOptions);
+        notification.addEventListener("click", function () {
           if (window.closed) {
-            return;
-          }
+            return;}
+
 
           try {
-            window.focus();
-          } catch (ex) {
-            
-          }
+            window.focus();} 
+          catch (ex) {}
+          
+
 
           
           
-          window.setTimeout(() => {
+          window.setTimeout(function () {
             if (typeof options.onclick == "function") {
-              options.onclick();
-            } else {
+              options.onclick();} else 
+            {
               
-              this.openPanel(null, options.selectTab || null);
-            }
-          }, 0);
-        });
-      },
+              _this10.openPanel(null, options.selectTab || null);}}, 
+
+          0);});}, 
+
+
 
       
 
 
 
 
-      playSound: function(name) {
+      playSound: function playSound(name) {var _this11 = this;
         if (this.ActiveSound || this.MozLoopService.doNotDisturb) {
-          return;
-        }
+          return;}
+
 
         this.activeSound = new window.Audio();
-        this.activeSound.src = `chrome://loop/content/shared/sounds/${name}.ogg`;
+        this.activeSound.src = "chrome://loop/content/shared/sounds/" + name + ".ogg";
         this.activeSound.load();
         this.activeSound.play();
 
-        this.activeSound.addEventListener("ended", () => { this.activeSound = undefined; }, false);
-      },
+        this.activeSound.addEventListener("ended", function () {_this11.activeSound = undefined;}, false);}, 
+
 
       
 
@@ -674,7 +674,7 @@ var WindowListener = {
 
 
 
-      startBrowserSharing: function(roomToken) {
+      startBrowserSharing: function startBrowserSharing(roomToken) {var _this12 = this;
         if (!this._listeningToTabSelect) {
           gBrowser.tabContainer.addEventListener("TabSelect", this);
           this._listeningToTabSelect = true;
@@ -688,43 +688,43 @@ var WindowListener = {
 
           
           
-          this.mm.addMessageListener("loop@mozilla.org:DOMTitleChanged",
-            titleChangedListener);
+          this.mm.addMessageListener("loop@mozilla.org:DOMTitleChanged", 
+          titleChangedListener);
 
           this._browserSharePaused = false;
 
           
           
           gBrowser.addEventListener("mousemove", this);
-          gBrowser.addEventListener("click", this);
-        }
+          gBrowser.addEventListener("click", this);}
+
 
         this._currentRoomToken = roomToken;
         this._maybeShowBrowserSharingInfoBar(roomToken);
 
         
-        let browser = gBrowser.selectedBrowser;
-        return new Promise(resolve => {
+        var browser = gBrowser.selectedBrowser;
+        return new Promise(function (resolve) {
           if (browser.outerWindowID) {
             resolve(browser.outerWindowID);
-            return;
-          }
+            return;}
+
 
           browser.messageManager.addMessageListener("Browser:Init", function initListener() {
             browser.messageManager.removeMessageListener("Browser:Init", initListener);
-            resolve(browser.outerWindowID);
-          });
-        }).then(outerWindowID =>
-          this.LoopAPI.broadcastPushMessage("BrowserSwitch", outerWindowID));
-      },
+            resolve(browser.outerWindowID);});}).
+
+        then(function (outerWindowID) {return (
+            _this12.LoopAPI.broadcastPushMessage("BrowserSwitch", outerWindowID));});}, 
+
 
       
 
 
-      stopBrowserSharing: function() {
+      stopBrowserSharing: function stopBrowserSharing() {
         if (!this._listeningToTabSelect) {
-          return;
-        }
+          return;}
+
 
         this._hideBrowserSharingInfoBar();
         gBrowser.tabContainer.removeEventListener("TabSelect", this);
@@ -732,10 +732,10 @@ var WindowListener = {
         this.LoopRooms.off("left", this._roomsListener);
 
         if (titleChangedListener) {
-          this.mm.removeMessageListener("loop@mozilla.org:DOMTitleChanged",
-            titleChangedListener);
-          titleChangedListener = null;
-        }
+          this.mm.removeMessageListener("loop@mozilla.org:DOMTitleChanged", 
+          titleChangedListener);
+          titleChangedListener = null;}
+
 
         
         gBrowser.removeEventListener("mousemove", this);
@@ -746,40 +746,40 @@ var WindowListener = {
         this._browserSharePaused = false;
         this._currentRoomToken = null;
 
-        this._sendTelemetryEventsIfNeeded();
-      },
+        this._sendTelemetryEventsIfNeeded();}, 
+
 
       
 
 
-      _sendTelemetryEventsIfNeeded: function() {
+      _sendTelemetryEventsIfNeeded: function _sendTelemetryEventsIfNeeded() {
         
         if (!this._pauseButtonClicked) {
-          return;
-        }
+          return;}
 
-        let buckets = this.constants.SHARING_SCREEN;
-        this.LoopAPI.sendMessageToHandler({
-          name: "TelemetryAddValue",
+
+        var buckets = this.constants.SHARING_SCREEN;
+        this.LoopAPI.sendMessageToHandler({ 
+          name: "TelemetryAddValue", 
           data: [
-            "LOOP_INFOBAR_ACTION_BUTTONS",
-            buckets.PAUSED
-          ]
-        });
+          "LOOP_INFOBAR_ACTION_BUTTONS", 
+          buckets.PAUSED] });
+
+
 
         if (this._resumeButtonClicked) {
-          this.LoopAPI.sendMessageToHandler({
-            name: "TelemetryAddValue",
+          this.LoopAPI.sendMessageToHandler({ 
+            name: "TelemetryAddValue", 
             data: [
-              "LOOP_INFOBAR_ACTION_BUTTONS",
-              buckets.RESUMED
-            ]
-          });
-        }
+            "LOOP_INFOBAR_ACTION_BUTTONS", 
+            buckets.RESUMED] });}
+
+
+
 
         this._pauseButtonClicked = false;
-        this._resumeButtonClicked = false;
-      },
+        this._resumeButtonClicked = false;}, 
+
 
       
 
@@ -791,17 +791,17 @@ var WindowListener = {
 
 
 
-      addRemoteCursor: function(cursorData) {
+      addRemoteCursor: function addRemoteCursor(cursorData) {
         if (this._browserSharePaused || !this._listeningToTabSelect) {
-          return;
-        }
+          return;}
 
-        let browser = gBrowser.selectedBrowser;
-        let cursor = document.getElementById("loop-remote-cursor");
+
+        var browser = gBrowser.selectedBrowser;
+        var cursor = document.getElementById("loop-remote-cursor");
         if (!cursor) {
           
           
-          let cursorContainer = document.createElement("div");
+          var cursorContainer = document.createElement("div");
           cursorContainer.setAttribute("id", "loop-remote-cursor-container");
 
           cursor = document.createElement("img");
@@ -809,15 +809,15 @@ var WindowListener = {
           cursorContainer.appendChild(cursor);
           
           
-          browser.parentNode.appendChild(cursorContainer);
-        }
+          browser.parentNode.appendChild(cursorContainer);}
+
 
         
-        cursor.style.left =
-          Math.abs(cursorData.ratioX * browser.boxObject.width) + "px";
-        cursor.style.top =
-          Math.abs(cursorData.ratioY * browser.boxObject.height) + "px";
-      },
+        cursor.style.left = 
+        Math.abs(cursorData.ratioX * browser.boxObject.width) + "px";
+        cursor.style.top = 
+        Math.abs(cursorData.ratioY * browser.boxObject.height) + "px";}, 
+
 
       
 
@@ -829,35 +829,35 @@ var WindowListener = {
 
 
 
-      clickRemoteCursor: function(clickData) {
+      clickRemoteCursor: function clickRemoteCursor(clickData) {
         if (!clickData || !this._listeningToTabSelect) {
-          return;
-        }
+          return;}
 
-        let class_name = "clicked";
-        let cursor = document.getElementById("loop-remote-cursor");
+
+        var class_name = "clicked";
+        var cursor = document.getElementById("loop-remote-cursor");
         if (!cursor) {
-          return;
-        }
+          return;}
+
 
         cursor.classList.add(class_name);
 
         
-        window.setTimeout(() => {
-          cursor.classList.remove(class_name);
-        }, CURSOR_CLICK_DELAY);
-      },
+        window.setTimeout(function () {
+          cursor.classList.remove(class_name);}, 
+        CURSOR_CLICK_DELAY);}, 
+
 
       
 
 
-      removeRemoteCursor: function() {
-        let cursor = document.getElementById("loop-remote-cursor");
+      removeRemoteCursor: function removeRemoteCursor() {
+        var cursor = document.getElementById("loop-remote-cursor");
 
         if (cursor) {
-          cursor.parentNode.removeChild(cursor);
-        }
-      },
+          cursor.parentNode.removeChild(cursor);}}, 
+
+
 
       
 
@@ -866,46 +866,46 @@ var WindowListener = {
 
 
 
-      _getString: function(key) {
-        let str = this.MozLoopService.getStrings(key);
+      _getString: function _getString(key) {
+        var str = this.MozLoopService.getStrings(key);
         if (str) {
-          str = JSON.parse(str).textContent;
-        }
-        return str;
-      },
+          str = JSON.parse(str).textContent;}
+
+        return str;}, 
+
 
       
 
 
 
-      _setInfoBarStrings: function(nonOwnerParticipants, sharePaused) {
-        let message;
+      _setInfoBarStrings: function _setInfoBarStrings(nonOwnerParticipants, sharePaused) {
+        var message = void 0;
         if (nonOwnerParticipants) {
           
           message = this._getString(
-            sharePaused ? "infobar_screenshare_stop_sharing_message2" :
-                          "infobar_screenshare_browser_message3");
+          sharePaused ? "infobar_screenshare_stop_sharing_message2" : 
+          "infobar_screenshare_browser_message3");} else 
 
-        } else {
+        {
           
           message = this._getString(
-            sharePaused ? "infobar_screenshare_stop_no_guest_message" :
-                          "infobar_screenshare_no_guest_message");
-        }
-        let label = this._getString(
-          sharePaused ? "infobar_button_restart_label2" : "infobar_button_stop_label2");
-        let accessKey = this._getString(
-          sharePaused ? "infobar_button_restart_accesskey" : "infobar_button_stop_accesskey");
+          sharePaused ? "infobar_screenshare_stop_no_guest_message" : 
+          "infobar_screenshare_no_guest_message");}
 
-        return { message: message, label: label, accesskey: accessKey };
-      },
+        var label = this._getString(
+        sharePaused ? "infobar_button_restart_label2" : "infobar_button_stop_label2");
+        var accessKey = this._getString(
+        sharePaused ? "infobar_button_restart_accesskey" : "infobar_button_stop_accesskey");
+
+        return { message: message, label: label, accesskey: accessKey };}, 
+
 
       
 
 
 
 
-      _browserSharePaused: false,
+      _browserSharePaused: false, 
 
       
 
@@ -914,63 +914,63 @@ var WindowListener = {
 
 
 
-      _maybeShowBrowserSharingInfoBar: function(currentRoomToken) {
+      _maybeShowBrowserSharingInfoBar: function _maybeShowBrowserSharingInfoBar(currentRoomToken) {var _this13 = this;
         this._hideBrowserSharingInfoBar();
 
-        let participantsCount = this.LoopRooms.getNumParticipants(currentRoomToken);
+        var participantsCount = this.LoopRooms.getNumParticipants(currentRoomToken);
 
-        let initStrings = this._setInfoBarStrings(participantsCount > 1, this._browserSharePaused);
+        var initStrings = this._setInfoBarStrings(participantsCount > 1, this._browserSharePaused);
 
-        let box = gBrowser.getNotificationBox();
-        let bar = box.appendNotification(
-          initStrings.message,            
-          kBrowserSharingNotificationId,  
-          
-          null,                           
-          box.PRIORITY_WARNING_LOW,       
-          [{                              
-            label: initStrings.label,
-            accessKey: initStrings.accesskey,
-            isDefault: false,
-            callback: (event, buttonInfo, buttonNode) => {
-              this._browserSharePaused = !this._browserSharePaused;
-              let guestPresent = this.LoopRooms.getNumParticipants(this._currentRoomToken) > 1;
-              let stringObj = this._setInfoBarStrings(guestPresent, this._browserSharePaused);
-              bar.label = stringObj.message;
-              bar.classList.toggle("paused", this._browserSharePaused);
-              buttonNode.label = stringObj.label;
-              buttonNode.accessKey = stringObj.accesskey;
-              LoopUI.MozLoopService.toggleBrowserSharing(this._browserSharePaused);
-              if (this._browserSharePaused) {
-                this._pauseButtonClicked = true;
-                
-                this.removeRemoteCursor();
-              } else {
-                this._resumeButtonClicked = true;
-              }
-              return true;
-            },
-            type: "pause"
-          },
-          {
-            label: this._getString("infobar_button_disconnect_label"),
-            accessKey: this._getString("infobar_button_disconnect_accesskey"),
-            isDefault: true,
-            callback: () => {
-              this.removeRemoteCursor();
-              this._hideBrowserSharingInfoBar();
-              LoopUI.MozLoopService.hangupAllChatWindows();
-            },
-            type: "stop"
-          }]
-        );
+        var box = gBrowser.getNotificationBox();
+        var bar = box.appendNotification(
+        initStrings.message, 
+        kBrowserSharingNotificationId, 
+        
+        null, 
+        box.PRIORITY_WARNING_LOW, 
+        [{ 
+          label: initStrings.label, 
+          accessKey: initStrings.accesskey, 
+          isDefault: false, 
+          callback: function callback(event, buttonInfo, buttonNode) {
+            _this13._browserSharePaused = !_this13._browserSharePaused;
+            var guestPresent = _this13.LoopRooms.getNumParticipants(_this13._currentRoomToken) > 1;
+            var stringObj = _this13._setInfoBarStrings(guestPresent, _this13._browserSharePaused);
+            bar.label = stringObj.message;
+            bar.classList.toggle("paused", _this13._browserSharePaused);
+            buttonNode.label = stringObj.label;
+            buttonNode.accessKey = stringObj.accesskey;
+            LoopUI.MozLoopService.toggleBrowserSharing(_this13._browserSharePaused);
+            if (_this13._browserSharePaused) {
+              _this13._pauseButtonClicked = true;
+              
+              _this13.removeRemoteCursor();} else 
+            {
+              _this13._resumeButtonClicked = true;}
+
+            return true;}, 
+
+          type: "pause" }, 
+
+        { 
+          label: this._getString("infobar_button_disconnect_label"), 
+          accessKey: this._getString("infobar_button_disconnect_accesskey"), 
+          isDefault: true, 
+          callback: function callback() {
+            _this13.removeRemoteCursor();
+            _this13._hideBrowserSharingInfoBar();
+            LoopUI.MozLoopService.hangupAllChatWindows();}, 
+
+          type: "stop" }]);
+
+
 
         
         bar.classList.toggle("paused", !!this._browserSharePaused);
 
         
-        bar.persistence = -1;
-      },
+        bar.persistence = -1;}, 
+
 
       
 
@@ -980,141 +980,141 @@ var WindowListener = {
 
 
 
-      _hideBrowserSharingInfoBar: function(browser) {
+      _hideBrowserSharingInfoBar: function _hideBrowserSharingInfoBar(browser) {
         browser = browser || gBrowser.selectedBrowser;
-        let box = gBrowser.getNotificationBox(browser);
-        let notification = box.getNotificationWithValue(kBrowserSharingNotificationId);
-        let removed = false;
+        var box = gBrowser.getNotificationBox(browser);
+        var notification = box.getNotificationWithValue(kBrowserSharingNotificationId);
+        var removed = false;
         if (notification) {
           box.removeNotification(notification);
-          removed = true;
-        }
+          removed = true;}
 
-        return removed;
-      },
+
+        return removed;}, 
+
 
       
 
 
-      _notifyBrowserSwitch: function() {
-         
-        this.LoopAPI.broadcastPushMessage("BrowserSwitch",
-          gBrowser.selectedBrowser.outerWindowID);
-      },
+      _notifyBrowserSwitch: function _notifyBrowserSwitch() {
+        
+        this.LoopAPI.broadcastPushMessage("BrowserSwitch", 
+        gBrowser.selectedBrowser.outerWindowID);}, 
+
 
       
 
 
 
-      handleRoomJoinedOrLeft: function() {
+      handleRoomJoinedOrLeft: function handleRoomJoinedOrLeft() {
         
         if (!this._listeningToTabSelect) {
-          return;
-        }
-        this._maybeShowBrowserSharingInfoBar(this._currentRoomToken);
-      },
+          return;}
+
+        this._maybeShowBrowserSharingInfoBar(this._currentRoomToken);}, 
+
 
       
 
 
 
 
-      handleDOMTitleChanged: function(message) {
+      handleDOMTitleChanged: function handleDOMTitleChanged(message) {
         if (!this._listeningToTabSelect || this._browserSharePaused) {
-          return;
-        }
+          return;}
+
 
         if (gBrowser.selectedBrowser == message.target) {
           
-          this._notifyBrowserSwitch();
-        }
-      },
+          this._notifyBrowserSwitch();}}, 
+
+
 
       
 
 
-      handleEvent: function(event) {
+      handleEvent: function handleEvent(event) {
 
         switch (event.type) {
-          case "TabSelect": {
-            let wasVisible = false;
-            
-            if (event.detail.previousTab) {
-              wasVisible = this._hideBrowserSharingInfoBar(
-                            event.detail.previousTab.linkedBrowser);
+          case "TabSelect":{
+              var wasVisible = false;
               
-              this.removeRemoteCursor();
-            }
+              if (event.detail.previousTab) {
+                wasVisible = this._hideBrowserSharingInfoBar(
+                event.detail.previousTab.linkedBrowser);
+                
+                this.removeRemoteCursor();}
 
-            
-            this._notifyBrowserSwitch();
 
-            if (wasVisible) {
               
-              
-              this._maybeShowBrowserSharingInfoBar(this._currentRoomToken);
-            }
-            break;
-          }
+              this._notifyBrowserSwitch();
+
+              if (wasVisible) {
+                
+                
+                this._maybeShowBrowserSharingInfoBar(this._currentRoomToken);}
+
+              break;}
+
           case "mousemove":
             this.handleMousemove(event);
             break;
           case "click":
             this.handleMouseClick(event);
-            break;
-          }
-      },
+            break;}}, 
+
+
 
       
 
 
 
 
-      handleMousemove: function(event) {
+      handleMousemove: function handleMousemove(event) {
         
         if (this._browserSharePaused || !this._listeningToTabSelect) {
-          return;
-        }
+          return;}
+
 
         
-        let now = Date.now();
+        var now = Date.now();
         if (now - this.lastCursorTime < CURSOR_MIN_INTERVAL) {
-          return;
-        }
+          return;}
+
         this.lastCursorTime = now;
 
         
-        let browserBox = gBrowser.selectedBrowser.boxObject;
-        let deltaX = event.screenX - browserBox.screenX;
-        let deltaY = event.screenY - browserBox.screenY;
-        if (deltaX < 0 || deltaX > browserBox.width ||
-            deltaY < 0 || deltaY > browserBox.height ||
-            (Math.abs(deltaX - this.lastCursorX) < CURSOR_MIN_DELTA &&
-             Math.abs(deltaY - this.lastCursorY) < CURSOR_MIN_DELTA)) {
-          return;
-        }
+        var browserBox = gBrowser.selectedBrowser.boxObject;
+        var deltaX = event.screenX - browserBox.screenX;
+        var deltaY = event.screenY - browserBox.screenY;
+        if (deltaX < 0 || deltaX > browserBox.width || 
+        deltaY < 0 || deltaY > browserBox.height || 
+        Math.abs(deltaX - this.lastCursorX) < CURSOR_MIN_DELTA && 
+        Math.abs(deltaY - this.lastCursorY) < CURSOR_MIN_DELTA) {
+          return;}
+
         this.lastCursorX = deltaX;
         this.lastCursorY = deltaY;
 
-        this.LoopAPI.broadcastPushMessage("CursorPositionChange", {
-          ratioX: deltaX / browserBox.width,
-          ratioY: deltaY / browserBox.height
-        });
-      },
+        this.LoopAPI.broadcastPushMessage("CursorPositionChange", { 
+          ratioX: deltaX / browserBox.width, 
+          ratioY: deltaY / browserBox.height });}, 
+
+
 
       
 
 
 
 
-      handleMouseClick: function() {
+      handleMouseClick: function handleMouseClick() {
         
         if (this._browserSharePaused) {
-          return;
-        }
+          return;}
 
-        this.LoopAPI.broadcastPushMessage("CursorClick");
-      },
+
+        this.LoopAPI.broadcastPushMessage("CursorClick");}, 
+
 
       
 
@@ -1124,39 +1124,39 @@ var WindowListener = {
 
 
 
-      getFavicon: function(callback) {
-        let pageURI = gBrowser.selectedTab.linkedBrowser.currentURI.spec;
+      getFavicon: function getFavicon(callback) {
+        var pageURI = gBrowser.selectedTab.linkedBrowser.currentURI.spec;
         
         if (!/^https?:/.test(pageURI)) {
           callback();
-          return;
-        }
+          return;}
 
-        this.PlacesUtils.promiseFaviconLinkUrl(pageURI).then(uri => {
+
+        this.PlacesUtils.promiseFaviconLinkUrl(pageURI).then(function (uri) {
           
           
-          let xhr = xhrClass.createInstance(Ci.nsIXMLHttpRequest);
+          var xhr = xhrClass.createInstance(Ci.nsIXMLHttpRequest);
           xhr.open("get", uri.spec, true);
           xhr.responseType = "blob";
           xhr.overrideMimeType("image/x-icon");
-          xhr.onload = () => {
+          xhr.onload = function () {
             if (xhr.status != 200) {
               callback(new Error("Invalid status code received for favicon XHR: " + xhr.status));
-              return;
-            }
+              return;}
 
-            let reader = new FileReader();
-            reader.onload = reader.onload = () => callback(null, reader.result);
+
+            var reader = new FileReader();
+            reader.onload = reader.onload = function () {return callback(null, reader.result);};
             reader.onerror = callback;
-            reader.readAsDataURL(xhr.response);
-          };
+            reader.readAsDataURL(xhr.response);};
+
           xhr.onerror = callback;
-          xhr.send();
-        }).catch(err => {
-          callback(err || new Error("No favicon found"));
-        });
-      }
-    };
+          xhr.send();}).
+        catch(function (err) {
+          callback(err || new Error("No favicon found"));});} };
+
+
+
 
     XPCOMUtils.defineLazyModuleGetter(LoopUI, "hookWindowCloseForPanelClose", "resource://gre/modules/MozSocialAPI.jsm");
     XPCOMUtils.defineLazyModuleGetter(LoopUI, "LoopAPI", "chrome://loop/content/modules/MozLoopAPI.jsm");
@@ -1169,8 +1169,8 @@ var WindowListener = {
     window.LoopUI = LoopUI;
 
     
-    window.LoopThrottler = Throttler;
-  },
+    window.LoopThrottler = Throttler;}, 
+
 
   
 
@@ -1178,7 +1178,7 @@ var WindowListener = {
 
 
 
-  tearDownBrowserUI: function(window) {
+  tearDownBrowserUI: function tearDownBrowserUI(window) {
     if (window.LoopUI) {
       window.LoopUI.removeCopyPanel();
       window.LoopUI.removeMenuItem();
@@ -1188,14 +1188,14 @@ var WindowListener = {
       window.LoopUI.mm.removeDelayedFrameScript(FRAME_SCRIPT);
 
       
-    }
-  },
+    }}, 
+
 
   
-  onOpenWindow: function(xulWindow) {
+  onOpenWindow: function onOpenWindow(xulWindow) {
     
-    let domWindow = xulWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                             .getInterface(Ci.nsIDOMWindow);
+    var domWindow = xulWindow.QueryInterface(Ci.nsIInterfaceRequestor).
+    getInterface(Ci.nsIDOMWindow);
 
     
     domWindow.addEventListener("load", function listener() {
@@ -1203,17 +1203,15 @@ var WindowListener = {
 
       
       if (domWindow.document.documentElement.getAttribute("windowtype") == "navigator:browser") {
-        WindowListener.setupBrowserUI(domWindow);
-      }
-    }, false);
-  },
+        WindowListener.setupBrowserUI(domWindow);}}, 
 
-  onCloseWindow: function() {
-  },
+    false);}, 
 
-  onWindowTitleChange: function() {
-  }
-};
+
+  onCloseWindow: function onCloseWindow() {}, 
+
+
+  onWindowTitleChange: function onWindowTitleChange() {} };
 
 
 
@@ -1223,52 +1221,54 @@ var WindowListener = {
 
 
 
-let Throttler = {
+
+
+var Throttler = { 
   
   
-  TICKET_LIMIT: 255,
+  TICKET_LIMIT: 255, 
 
   
-  _dns: Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService),
+  _dns: Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService), 
 
   
 
 
 
 
-  check(prefPrefix) {
-    return new Promise((resolve, reject) => {
+  check: function check(prefPrefix) {var _this14 = this;
+    return new Promise(function (resolve, reject) {
       
-      let prefTicket = prefPrefix + ".ticket";
-      let ticket = Services.prefs.getIntPref(prefTicket);
+      var prefTicket = prefPrefix + ".ticket";
+      var ticket = Services.prefs.getIntPref(prefTicket);
       if (ticket < 0) {
-        ticket = Math.floor(Math.random() * this.TICKET_LIMIT);
-        Services.prefs.setIntPref(prefTicket, ticket);
-      }
-      
-      else if (ticket >= this.TICKET_LIMIT) {
-        resolve();
-        return;
-      }
+        ticket = Math.floor(Math.random() * _this14.TICKET_LIMIT);
+        Services.prefs.setIntPref(prefTicket, ticket);}
 
       
-      let onDNS = (request, record) => {
+      else if (ticket >= _this14.TICKET_LIMIT) {
+          resolve();
+          return;}
+
+
+      
+      var onDNS = function onDNS(request, record) {
         
         if (record === null) {
           reject();
-          return;
-        }
+          return;}
+
 
         
-        let ipBlocks = record.getNextAddrAsString().split(".");
+        var ipBlocks = record.getNextAddrAsString().split(".");
         if (ipBlocks[0] !== "127") {
           reject();
-          return;
-        }
+          return;}
+
 
         
         
-        let index = 1;
+        var index = 1;
         switch (Services.prefs.getCharPref("app.update.channel")) {
           case "beta":
             index = 2;
@@ -1276,27 +1276,27 @@ let Throttler = {
           case "aurora":
           case "nightly":
             index = 3;
-            break;
-        }
+            break;}
+
 
         
         
         if (ticket < ipBlocks[index]) {
           
-          Services.prefs.setIntPref(prefTicket, this.TICKET_LIMIT);
-          resolve();
-        }
-        else {
-          reject();
-        }
-      };
+          Services.prefs.setIntPref(prefTicket, _this14.TICKET_LIMIT);
+          resolve();} else 
+
+        {
+          reject();}};
+
+
 
       
-      this._dns.asyncResolve(Services.prefs.getCharPref(prefPrefix + ".throttler"),
-        this._dns.RESOLVE_DISABLE_IPV6, onDNS, Services.tm.mainThread);
-    });
-  }
-};
+      _this14._dns.asyncResolve(Services.prefs.getCharPref(prefPrefix + ".throttler"), 
+      _this14._dns.RESOLVE_DISABLE_IPV6, onDNS, Services.tm.mainThread);});} };
+
+
+
 
 
 
@@ -1304,45 +1304,45 @@ let Throttler = {
 
 
 function createLoopButton() {
-  CustomizableUI.createWidget({
-    id: "loop-button",
-    type: "custom",
-    label: "loop-call-button3.label",
-    tooltiptext: "loop-call-button3.tooltiptext2",
-    privateBrowsingTooltiptext: "loop-call-button3-pb.tooltiptext",
-    defaultArea: CustomizableUI.AREA_NAVBAR,
-    removable: true,
-    onBuild: function(aDocument) {
+  CustomizableUI.createWidget({ 
+    id: "loop-button", 
+    type: "custom", 
+    label: "loop-call-button3.label", 
+    tooltiptext: "loop-call-button3.tooltiptext2", 
+    privateBrowsingTooltiptext: "loop-call-button3-pb.tooltiptext", 
+    defaultArea: CustomizableUI.AREA_NAVBAR, 
+    removable: true, 
+    onBuild: function onBuild(aDocument) {
       
       if (!Services.prefs.getBoolPref("loop.enabled")) {
-        return null;
-      }
+        return null;}
 
-      let isWindowPrivate = PrivateBrowsingUtils.isWindowPrivate(aDocument.defaultView);
 
-      let node = aDocument.createElementNS(kNSXUL, "toolbarbutton");
+      var isWindowPrivate = PrivateBrowsingUtils.isWindowPrivate(aDocument.defaultView);
+
+      var node = aDocument.createElementNS(kNSXUL, "toolbarbutton");
       node.setAttribute("id", this.id);
       node.classList.add("toolbarbutton-1");
       node.classList.add("chromeclass-toolbar-additional");
       node.classList.add("badged-button");
       node.setAttribute("label", CustomizableUI.getLocalizedProperty(this, "label"));
       if (isWindowPrivate) {
-        node.setAttribute("disabled", "true");
-      }
-      let tooltiptext = isWindowPrivate ?
-        CustomizableUI.getLocalizedProperty(this, "privateBrowsingTooltiptext",
-          [CustomizableUI.getLocalizedProperty(this, "label")]) :
-        CustomizableUI.getLocalizedProperty(this, "tooltiptext");
+        node.setAttribute("disabled", "true");}
+
+      var tooltiptext = isWindowPrivate ? 
+      CustomizableUI.getLocalizedProperty(this, "privateBrowsingTooltiptext", 
+      [CustomizableUI.getLocalizedProperty(this, "label")]) : 
+      CustomizableUI.getLocalizedProperty(this, "tooltiptext");
       node.setAttribute("tooltiptext", tooltiptext);
       node.setAttribute("removable", "true");
-      node.addEventListener("command", function(event) {
-        aDocument.defaultView.LoopUI.togglePanel(event);
-      });
+      node.addEventListener("command", function (event) {
+        aDocument.defaultView.LoopUI.togglePanel(event);});
 
-      return node;
-    }
-  });
-}
+
+      return node;} });}
+
+
+
 
 
 
@@ -1350,14 +1350,14 @@ function createLoopButton() {
 
 function loadDefaultPrefs() {
   var branch = Services.prefs.getDefaultBranch("");
-  Services.scriptloader.loadSubScript("chrome://loop/content/preferences/prefs.js", {
-    pref: (key, val) => {
+  Services.scriptloader.loadSubScript("chrome://loop/content/preferences/prefs.js", { 
+    pref: function pref(key, val) {
       
       
       if (branch.getPrefType(key) != branch.PREF_INVALID) {
-        return;
-      }
-      switch (typeof val) {
+        return;}
+
+      switch (typeof val === "undefined" ? "undefined" : _typeof(val)) {
         case "boolean":
           branch.setBoolPref(key, val);
           break;
@@ -1366,22 +1366,15 @@ function loadDefaultPrefs() {
           break;
         case "string":
           branch.setCharPref(key, val);
-          break;
-      }
-    }
-  });
+          break;}} });
+
+
+
 
   if (Services.vc.compare(Services.appinfo.version, "47.0a1") < 0) {
-    branch.setBoolPref("loop.remote.autostart", false);
-  }
+    branch.setBoolPref("loop.remote.autostart", false);}}
 
-  
-  
-  if (Services.vc.compare(Services.appinfo.version, "47.0a1") >= 0 &&
-      Services.vc.compare(Services.appinfo.version, "48.0a1") < 0) {
-    branch.setBoolPref("loop.conversationPopOut.enabled", false);
-  }
-}
+
 
 
 
@@ -1392,51 +1385,51 @@ function startup(data) {
 
   loadDefaultPrefs();
   if (!Services.prefs.getBoolPref("loop.enabled")) {
-    return;
-  }
+    return;}
+
 
   createLoopButton();
 
   
   if (AppConstants.platform == "macosx") {
     try {
-      WindowListener.setupBrowserUI(Services.appShell.hiddenDOMWindow);
-    } catch (ex) {
-      
-      let topic = "browser-delayed-startup-finished";
-      Services.obs.addObserver(function observer() {
-        Services.obs.removeObserver(observer, topic);
-        WindowListener.setupBrowserUI(Services.appShell.hiddenDOMWindow);
-      }, topic, false);
-    }
-  }
+      WindowListener.setupBrowserUI(Services.appShell.hiddenDOMWindow);} 
+    catch (ex) {(function () {
+        
+        var topic = "browser-delayed-startup-finished";
+        Services.obs.addObserver(function observer() {
+          Services.obs.removeObserver(observer, topic);
+          WindowListener.setupBrowserUI(Services.appShell.hiddenDOMWindow);}, 
+        topic, false);})();}}
+
+
 
   
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-  let windows = wm.getEnumerator("navigator:browser");
+  var wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+  var windows = wm.getEnumerator("navigator:browser");
   while (windows.hasMoreElements()) {
-    let domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
-    WindowListener.setupBrowserUI(domWindow);
-  }
+    var domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
+    WindowListener.setupBrowserUI(domWindow);}
+
 
   
   wm.addListener(WindowListener);
 
   
-  let styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"]
-    .getService(Components.interfaces.nsIStyleSheetService);
-  let sheets = ["chrome://loop-shared/skin/loop.css"];
+  var styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].
+  getService(Components.interfaces.nsIStyleSheetService);
+  var sheets = ["chrome://loop-shared/skin/loop.css"];
 
   if (AppConstants.platform != "linux") {
-    sheets.push("chrome://loop/skin/platform.css");
-  }
+    sheets.push("chrome://loop/skin/platform.css");}var _iteratorNormalCompletion2 = true;var _didIteratorError2 = false;var _iteratorError2 = undefined;try {
 
-  for (let sheet of sheets) {
-    let styleSheetURI = Services.io.newURI(sheet, null, null);
-    styleSheetService.loadAndRegisterSheet(styleSheetURI,
-                                           styleSheetService.AUTHOR_SHEET);
-  }
-}
+
+    for (var _iterator2 = sheets[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {var sheet = _step2.value;
+      var styleSheetURI = Services.io.newURI(sheet, null, null);
+      styleSheetService.loadAndRegisterSheet(styleSheetURI, 
+      styleSheetService.AUTHOR_SHEET);}} catch (err) {_didIteratorError2 = true;_iteratorError2 = err;} finally {try {if (!_iteratorNormalCompletion2 && _iterator2.return) {_iterator2.return();}} finally {if (_didIteratorError2) {throw _iteratorError2;}}}}
+
+
 
 
 
@@ -1445,23 +1438,23 @@ function startup(data) {
 function shutdown(data, reason) {
   
   Cu.import("resource:///modules/Chat.jsm");
-  let isLoopURL = ({ src }) => /^about:loopconversation#/.test(src);
-  [...Chat.chatboxes].filter(isLoopURL).forEach(chatbox => {
-    chatbox.content.contentWindow.close();
-  });
+  var isLoopURL = function isLoopURL(_ref) {var src = _ref.src;return (/^about:loopconversation#/.test(src));};
+  [].concat(_toConsumableArray(Chat.chatboxes)).filter(isLoopURL).forEach(function (chatbox) {
+    chatbox.content.contentWindow.close();});
+
 
   
   if (AppConstants.platform == "macosx") {
-    WindowListener.tearDownBrowserUI(Services.appShell.hiddenDOMWindow);
-  }
+    WindowListener.tearDownBrowserUI(Services.appShell.hiddenDOMWindow);}
+
 
   
-  let wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-  let windows = wm.getEnumerator("navigator:browser");
+  var wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+  var windows = wm.getEnumerator("navigator:browser");
   while (windows.hasMoreElements()) {
-    let domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
-    WindowListener.tearDownBrowserUI(domWindow);
-  }
+    var domWindow = windows.getNext().QueryInterface(Ci.nsIDOMWindow);
+    WindowListener.tearDownBrowserUI(domWindow);}
+
 
   
   wm.removeListener(WindowListener);
@@ -1469,30 +1462,30 @@ function shutdown(data, reason) {
   
   
   if (reason == APP_SHUTDOWN) {
-    return;
-  }
+    return;}
+
 
   CustomizableUI.destroyWidget("loop-button");
 
   
-  let styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"]
-    .getService(Components.interfaces.nsIStyleSheetService);
-  let sheets = ["chrome://loop/content/addon/css/loop.css",
-                "chrome://loop/skin/platform.css"];
-  for (let sheet of sheets) {
-    let styleSheetURI = Services.io.newURI(sheet, null, null);
-    if (styleSheetService.sheetRegistered(styleSheetURI,
-                                          styleSheetService.AUTHOR_SHEET)) {
-      styleSheetService.unregisterSheet(styleSheetURI,
-                                        styleSheetService.AUTHOR_SHEET);
-    }
-  }
+  var styleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"].
+  getService(Components.interfaces.nsIStyleSheetService);
+  var sheets = ["chrome://loop/content/addon/css/loop.css", 
+  "chrome://loop/skin/platform.css"];var _iteratorNormalCompletion3 = true;var _didIteratorError3 = false;var _iteratorError3 = undefined;try {
+    for (var _iterator3 = sheets[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {var sheet = _step3.value;
+      var styleSheetURI = Services.io.newURI(sheet, null, null);
+      if (styleSheetService.sheetRegistered(styleSheetURI, 
+      styleSheetService.AUTHOR_SHEET)) {
+        styleSheetService.unregisterSheet(styleSheetURI, 
+        styleSheetService.AUTHOR_SHEET);}}
 
-  
-  Cu.unload("chrome://loop/content/modules/MozLoopAPI.jsm");
+
+
+    
+  } catch (err) {_didIteratorError3 = true;_iteratorError3 = err;} finally {try {if (!_iteratorNormalCompletion3 && _iterator3.return) {_iterator3.return();}} finally {if (_didIteratorError3) {throw _iteratorError3;}}}Cu.unload("chrome://loop/content/modules/MozLoopAPI.jsm");
   Cu.unload("chrome://loop/content/modules/LoopRooms.jsm");
-  Cu.unload("chrome://loop/content/modules/MozLoopService.jsm");
-}
+  Cu.unload("chrome://loop/content/modules/MozLoopService.jsm");}
+
 
 function install() {}
 

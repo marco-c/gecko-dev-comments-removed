@@ -423,12 +423,6 @@ html[dir="rtl"] .rename-container > .input-group {
 }
 
 
-.room-list > .room-entry > h2 > button,
-.room-list > .room-entry > h2 > span {
-  vertical-align: middle;
-}
-
-
 .room-entry-context-actions {
   display: none;
   vertical-align: top;

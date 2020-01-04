@@ -2,34 +2,34 @@
 
 
 
-"use strict";
+"use strict";function _toConsumableArray(arr) {if (Array.isArray(arr)) {for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) {arr2[i] = arr[i];}return arr2;} else {return Array.from(arr);}}var _Components = 
 
-const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+Components;var Cc = _Components.classes;var Ci = _Components.interfaces;var Cu = _Components.utils;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");var _Cu$import = 
 
-const { MozLoopService } = Cu.import("chrome://loop/content/modules/MozLoopService.jsm", {});
-const consoleLog = MozLoopService.log;
+Cu.import("chrome://loop/content/modules/MozLoopService.jsm", {});var MozLoopService = _Cu$import.MozLoopService;
+var consoleLog = MozLoopService.log;
 
 
 
 this.EXPORTED_SYMBOLS = ["MozLoopPushHandler"];
 
-const CONNECTION_STATE_CLOSED = 0;
-const CONNECTION_STATE_CONNECTING = 1;
-const CONNECTION_STATE_OPEN = 2;
+var CONNECTION_STATE_CLOSED = 0;
+var CONNECTION_STATE_CONNECTING = 1;
+var CONNECTION_STATE_OPEN = 2;
 
-const SERVICE_STATE_OFFLINE = 0;
-const SERVICE_STATE_PENDING = 1;
-const SERVICE_STATE_ACTIVE = 2;
+var SERVICE_STATE_OFFLINE = 0;
+var SERVICE_STATE_PENDING = 1;
+var SERVICE_STATE_ACTIVE = 2;
 
-function PushSocket(webSocket = null) {
-  this._websocket = webSocket;
-}
+function PushSocket() {var webSocket = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+  this._websocket = webSocket;}
 
-PushSocket.prototype = {
+
+PushSocket.prototype = { 
 
   
 
@@ -47,43 +47,43 @@ PushSocket.prototype = {
 
 
 
-  connect: function(pushUri, onMsg, onStart, onClose) {
+  connect: function connect(pushUri, onMsg, onStart, onClose) {
     if (!pushUri || !onMsg || !onStart || !onClose) {
-      throw new Error("PushSocket: missing required parameter(s):" +
-                      (pushUri ? "" : " pushUri") +
-                      (onMsg ? "" : " onMsg") +
-                      (onStart ? "" : " onStart") +
-                      (onClose ? "" : " onClose"));
-    }
+      throw new Error("PushSocket: missing required parameter(s):" + (
+      pushUri ? "" : " pushUri") + (
+      onMsg ? "" : " onMsg") + (
+      onStart ? "" : " onStart") + (
+      onClose ? "" : " onClose"));}
+
 
     this._onMsg = onMsg;
     this._onStart = onStart;
     this._onClose = onClose;
 
     if (!this._websocket) {
-      this._websocket = Cc["@mozilla.org/network/protocol;1?name=wss"]
-                          .createInstance(Ci.nsIWebSocketChannel);
+      this._websocket = Cc["@mozilla.org/network/protocol;1?name=wss"].
+      createInstance(Ci.nsIWebSocketChannel);
       this._websocket.initLoadInfo(null, 
-                                   Services.scriptSecurityManager.getSystemPrincipal(),
-                                   null, 
-                                   Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                                   Ci.nsIContentPolicy.TYPE_WEBSOCKET);
-    }
+      Services.scriptSecurityManager.getSystemPrincipal(), 
+      null, 
+      Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL, 
+      Ci.nsIContentPolicy.TYPE_WEBSOCKET);}
 
-    let uri = Services.io.newURI(pushUri, null, null);
+
+    var uri = Services.io.newURI(pushUri, null, null);
     this._websocket.protocol = "push-notification";
-    this._websocket.asyncOpen(uri, pushUri, 0, this, null);
-  },
+    this._websocket.asyncOpen(uri, pushUri, 0, this, null);}, 
+
 
   
 
 
 
 
-  onStart: function() {
+  onStart: function onStart() {
     this._socketOpen = true;
-    this._onStart();
-  },
+    this._onStart();}, 
+
 
   
 
@@ -91,10 +91,10 @@ PushSocket.prototype = {
 
 
 
-  onStop: function(aContext, aStatusCode) {
+  onStop: function onStop(aContext, aStatusCode) {
     this._socketOpen = false;
-    this._onClose(aStatusCode, "websocket onStop");
-  },
+    this._onClose(aStatusCode, "websocket onStop");}, 
+
 
   
 
@@ -104,10 +104,10 @@ PushSocket.prototype = {
 
 
 
-  onServerClose: function(aContext, aCode, aReason) {
+  onServerClose: function onServerClose(aContext, aCode, aReason) {
     this._socketOpen = false;
-    this._onClose(aCode, aReason);
-  },
+    this._onClose(aCode, aReason);}, 
+
 
   
 
@@ -116,20 +116,20 @@ PushSocket.prototype = {
 
 
 
-  onMessageAvailable: function(aContext, aMsg) {
+  onMessageAvailable: function onMessageAvailable(aContext, aMsg) {
     consoleLog.log("PushSocket: Message received: ", aMsg);
     if (!this._socketOpen) {
       consoleLog.error("Message received in Winsocket closed state");
-      return;
-    }
+      return;}
+
 
     try {
-      this._onMsg(JSON.parse(aMsg));
-    }
+      this._onMsg(JSON.parse(aMsg));} 
+
     catch (error) {
-      consoleLog.error("PushSocket: error parsing message payload - ", error);
-    }
-  },
+      consoleLog.error("PushSocket: error parsing message payload - ", error);}}, 
+
+
 
   
 
@@ -139,20 +139,20 @@ PushSocket.prototype = {
 
 
 
-  onBinaryMessageAvailable: function(aContext, aMsg) {
+  onBinaryMessageAvailable: function onBinaryMessageAvailable(aContext, aMsg) {
     consoleLog.log("PushSocket: Binary message received: ", aMsg);
     if (!this._socketOpen) {
       consoleLog.error("PushSocket: message receive in Winsocket closed state");
-      return;
-    }
+      return;}
+
 
     try {
-      this._onMsg(JSON.parse(aMsg));
-    }
+      this._onMsg(JSON.parse(aMsg));} 
+
     catch (error) {
-      consoleLog.error("PushSocket: error parsing message payload - ", error);
-    }
-  },
+      consoleLog.error("PushSocket: error parsing message payload - ", error);}}, 
+
+
 
   
 
@@ -161,58 +161,58 @@ PushSocket.prototype = {
 
 
 
-  send: function(aMsg) {
+  send: function send(aMsg) {
     if (!this._socketOpen) {
       consoleLog.error("PushSocket: attempt to send before websocket is open");
-      return false;
-    }
+      return false;}
 
-    let msg;
+
+    var msg = void 0;
     try {
-      msg = JSON.stringify(aMsg);
-    }
+      msg = JSON.stringify(aMsg);} 
+
     catch (error) {
       consoleLog.error("PushSocket: JSON generation error - ", error);
-      return false;
-    }
+      return false;}
+
 
     try {
       this._websocket.sendMsg(msg);
-      consoleLog.log("PushSocket: Message sent: ", msg);
-    }
+      consoleLog.log("PushSocket: Message sent: ", msg);}
+
     
     catch (e) {
       consoleLog.warn("PushSocket: websocket send error", e);
-      return false;
-    }
+      return false;}
 
-    return true;
-  },
+
+    return true;}, 
+
 
   
 
 
-  close: function() {
+  close: function close() {
     if (!this._socketOpen) {
-      return;
-    }
+      return;}
+
 
     this._socketOpen = false;
     consoleLog.info("PushSocket: websocket closing");
 
     
-    this._onStart = function() {};
+    this._onStart = function () {};
     this._onMsg = this._onStart;
     this._onClose = this._onStart;
 
     try {
-      this._websocket.close(this._websocket.CLOSE_NORMAL);
-    }
+      this._websocket.close(this._websocket.CLOSE_NORMAL);} 
+
     catch (e) {
       
-    }
-  }
-};
+    }} };
+
+
 
 
 
@@ -226,46 +226,46 @@ PushSocket.prototype = {
 
 function RetryManager(startDelay, maxDelay) {
   if (!startDelay || !maxDelay) {
-    throw new Error("RetryManager: missing required parameters(s)" +
-                     (startDelay ? "" : " startDelay") +
-                     (maxDelay ? "" : " maxDelay"));
-  }
+    throw new Error("RetryManager: missing required parameters(s)" + (
+    startDelay ? "" : " startDelay") + (
+    maxDelay ? "" : " maxDelay"));}
+
 
   this._startDelay = startDelay;
   
-  this._maxDelay = maxDelay > startDelay ? maxDelay : startDelay;
-}
+  this._maxDelay = maxDelay > startDelay ? maxDelay : startDelay;}
 
-RetryManager.prototype = {
+
+RetryManager.prototype = { 
   
 
 
 
 
-  retry: function(delayedOp) {
+  retry: function retry(delayedOp) {
     if (!this._timeoutID) {
-      this._retryDelay = this._startDelay;
-    } else {
+      this._retryDelay = this._startDelay;} else 
+    {
       clearTimeout(this._timeoutID);
-      let nextDelay = this._retryDelay * 2;
-      this._retryDelay = nextDelay > this._maxDelay ? this._maxDelay : nextDelay;
-    }
+      var nextDelay = this._retryDelay * 2;
+      this._retryDelay = nextDelay > this._maxDelay ? this._maxDelay : nextDelay;}
+
 
     this._timeoutID = setTimeout(delayedOp, this._retryDelay);
-    consoleLog.log("PushHandler: retry delay set for ", this._retryDelay);
-  },
+    consoleLog.log("PushHandler: retry delay set for ", this._retryDelay);}, 
+
 
   
 
 
 
-  reset: function() {
+  reset: function reset() {
     if (this._timeoutID) {
       clearTimeout(this._timeoutID);
-      this._timeoutID = null;
-    }
-  }
-};
+      this._timeoutID = null;}} };
+
+
+
 
 
 
@@ -285,143 +285,143 @@ RetryManager.prototype = {
 
 function PingMonitor(pingFunc, onTimeout, interval, timeout) {
   if (!pingFunc || !onTimeout || !interval || !timeout) {
-    throw new Error("PingMonitor: missing required parameters");
-  }
+    throw new Error("PingMonitor: missing required parameters");}
+
   this._onTimeout = onTimeout;
   this._pingFunc = pingFunc;
   this._pingInterval = interval;
-  this._pingTimeout = timeout;
-}
+  this._pingTimeout = timeout;}
 
-PingMonitor.prototype = {
+
+PingMonitor.prototype = { 
   
 
 
-  restart: function() {
+  restart: function restart() {var _this = this;
     consoleLog.info("PushHandler: ping timeout restart");
     this.stop();
-    this._pingTimerID = setTimeout(() => { this._pingSend(); }, this._pingInterval);
-  },
+    this._pingTimerID = setTimeout(function () {return _this._pingSend();}, this._pingInterval);}, 
+
 
   
 
 
-  stop: function() {
+  stop: function stop() {
     if (this._pingTimerID) {
       clearTimeout(this._pingTimerID);
-      this._pingTimerID = undefined;
-    }
-  },
+      this._pingTimerID = undefined;}}, 
 
-  _pingSend: function() {
+
+
+  _pingSend: function _pingSend() {
     consoleLog.info("PushHandler: ping sent");
     this._pingTimerID = setTimeout(this._onTimeout, this._pingTimeout);
-    this._pingFunc();
-  }
-};
+    this._pingFunc();} };
 
 
 
 
 
 
-var MozLoopPushHandler = {
+
+
+var MozLoopPushHandler = { 
   
-  pushServerUri: undefined,
+  pushServerUri: undefined, 
   
   
-  channels: new Map(),
+  channels: new Map(), 
   
-  uaID: undefined,
+  uaID: undefined, 
   
-  registeredChannels: {},
+  registeredChannels: {}, 
   
-  serviceState: SERVICE_STATE_OFFLINE,
+  serviceState: SERVICE_STATE_OFFLINE, 
   
-  connectionState: CONNECTION_STATE_CLOSED,
+  connectionState: CONNECTION_STATE_CLOSED, 
   
-  _channelsToRegister: [],
+  _channelsToRegister: [], 
 
   get _startRetryDelay_ms() {
     try {
-      return Services.prefs.getIntPref("loop.retry_delay.start");
-    }
+      return Services.prefs.getIntPref("loop.retry_delay.start");} 
+
     catch (e) {
       return 60000; 
-    }
-  },
+    }}, 
+
 
   get _maxRetryDelay_ms() {
     try {
-      return Services.prefs.getIntPref("loop.retry_delay.limit");
-    }
+      return Services.prefs.getIntPref("loop.retry_delay.limit");} 
+
     catch (e) {
       return 300000; 
-    }
-  },
+    }}, 
+
 
   get _pingInterval_ms() {
     try {
-      return Services.prefs.getIntPref("loop.ping.interval");
-    }
+      return Services.prefs.getIntPref("loop.ping.interval");} 
+
     catch (e) {
       return 18000000; 
-    }
-  },
+    }}, 
+
 
   get _pingTimeout_ms() {
     try {
-      return Services.prefs.getIntPref("loop.ping.timeout");
-    }
+      return Services.prefs.getIntPref("loop.ping.timeout");} 
+
     catch (e) {
       return 10000; 
-    }
-  },
+    }}, 
 
-   
-
-
-
-
-
-
-
-
-  initialize: function(options = {}) {
-    consoleLog.info("PushHandler: initialize options = ", options);
-
-    if (this._initDone) {
-      return;
-    }
-
-    this._initDone = true;
-    this._retryManager = new RetryManager(this._startRetryDelay_ms,
-                                          this._maxRetryDelay_ms);
-    
-    
-    this._pingMonitor = new PingMonitor(() => this._pushSocket.send({}),
-                                        () => this._restartConnection(),
-                                        this._pingInterval_ms,
-                                        this._pingTimeout_ms);
-
-    if ("mockWebSocket" in options) {
-      this._mockWebSocket = options.mockWebSocket;
-    }
-
-    this.pushServerUri = Services.prefs.getCharPref("dom.push.serverURL");
-
-    this._openSocket();
-  },
 
   
 
 
 
-  shutdown: function() {
+
+
+
+
+
+  initialize: function initialize() {var _this2 = this;var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+    consoleLog.info("PushHandler: initialize options = ", options);
+
+    if (this._initDone) {
+      return;}
+
+
+    this._initDone = true;
+    this._retryManager = new RetryManager(this._startRetryDelay_ms, 
+    this._maxRetryDelay_ms);
+    
+    
+    this._pingMonitor = new PingMonitor(function () {return _this2._pushSocket.send({});}, 
+    function () {return _this2._restartConnection();}, 
+    this._pingInterval_ms, 
+    this._pingTimeout_ms);
+
+    if ("mockWebSocket" in options) {
+      this._mockWebSocket = options.mockWebSocket;}
+
+
+    this.pushServerUri = Services.prefs.getCharPref("dom.push.serverURL");
+
+    this._openSocket();}, 
+
+
+  
+
+
+
+  shutdown: function shutdown() {var _this3 = this;
     consoleLog.info("PushHandler: shutdown");
     if (!this._initDone) {
-      return;
-    }
+      return;}
+
 
     this._initDone = false;
     this._retryManager.reset();
@@ -429,13 +429,13 @@ var MozLoopPushHandler = {
 
     
     if (this.connectionState === CONNECTION_STATE_OPEN) {
-      Object.keys(this.registeredChannels).forEach((id) => {
-        let unRegMsg = { messageType: "unregister",
-                        channelID: id };
-        this._pushSocket.send(unRegMsg);
-      });
-      this.registeredChannels = {};
-    }
+      Object.keys(this.registeredChannels).forEach(function (id) {
+        var unRegMsg = { messageType: "unregister", 
+          channelID: id };
+        _this3._pushSocket.send(unRegMsg);});
+
+      this.registeredChannels = {};}
+
 
     this.connectionState = CONNECTION_STATE_CLOSED;
     this.serviceState = SERVICE_STATE_OFFLINE;
@@ -446,12 +446,10 @@ var MozLoopPushHandler = {
     this.channels.clear();
     this.uaID = undefined;
     this.pushUrl = undefined;
-    this.pushServerUri = undefined;
-  },
-
-   
+    this.pushServerUri = undefined;}, 
 
 
+  
 
 
 
@@ -478,61 +476,63 @@ var MozLoopPushHandler = {
 
 
 
-  register: function(channelID, onRegistered, onNotification) {
+
+
+  register: function register(channelID, onRegistered, onNotification) {
     if (!channelID || !onRegistered || !onNotification) {
-      throw new Error("missing required parameter(s):" +
-                      (channelID ? "" : " channelID") +
-                      (onRegistered ? "" : " onRegistered") +
-                      (onNotification ? "" : " onNotification"));
-    }
+      throw new Error("missing required parameter(s):" + (
+      channelID ? "" : " channelID") + (
+      onRegistered ? "" : " onRegistered") + (
+      onNotification ? "" : " onNotification"));}
+
 
     consoleLog.info("PushHandler: channel registration: ", channelID);
     if (this.channels.has(channelID)) {
       
       
       if (this.registeredChannels[channelID]) {
-        onRegistered(null, this.registeredChannels[channelID], channelID);
-      }
-      
-      this.channels.set(channelID, { onRegistered: onRegistered,
-                        onNotification: onNotification });
-      return;
-    }
+        onRegistered(null, this.registeredChannels[channelID], channelID);}
 
-    this.channels.set(channelID, { onRegistered: onRegistered,
-                                  onNotification: onNotification });
+      
+      this.channels.set(channelID, { onRegistered: onRegistered, 
+        onNotification: onNotification });
+      return;}
+
+
+    this.channels.set(channelID, { onRegistered: onRegistered, 
+      onNotification: onNotification });
     this._channelsToRegister.push(channelID);
-    this._registerChannels();
-  },
+    this._registerChannels();}, 
+
 
   
 
 
 
 
-  unregister: function(channelID) {
+  unregister: function unregister(channelID) {
     consoleLog.info("MozLoopPushHandler: un-register channel ", channelID);
     if (!this.channels.has(channelID)) {
-      return;
-    }
+      return;}
+
 
     this.channels.delete(channelID);
 
     if (this.registeredChannels[channelID]) {
       delete this.registeredChannels[channelID];
       if (this.connectionState === CONNECTION_STATE_OPEN) {
-        this._pushSocket.send({ messageType: "unregister",
-                               channelID: channelID });
-      }
-    }
-  },
+        this._pushSocket.send({ messageType: "unregister", 
+          channelID: channelID });}}}, 
+
+
+
 
   
 
 
 
 
-  _onStart: function() {
+  _onStart: function _onStart() {var _this4 = this;
     consoleLog.info("PushHandler: websocket open, sending 'hello' to PushServer");
     this.connectionState = CONNECTION_STATE_OPEN;
     
@@ -540,19 +540,19 @@ var MozLoopPushHandler = {
     
     
     this.serviceState = SERVICE_STATE_PENDING;
-    let helloMsg = {
-      messageType: "hello",
-      uaid: this.uaID || "",
-      channelIDs: this.uaID ? Object.keys(this.registeredChannels) : []
-    };
+    var helloMsg = { 
+      messageType: "hello", 
+      uaid: this.uaID || "", 
+      channelIDs: this.uaID ? Object.keys(this.registeredChannels) : [] };
+
     
     
     
     
     this._retryManager.reset();
-    this._retryManager.retry(() => this._restartConnection());
-    this._pushSocket.send(helloMsg);
-  },
+    this._retryManager.retry(function () {return _this4._restartConnection();});
+    this._pushSocket.send(helloMsg);}, 
+
 
   
 
@@ -560,11 +560,11 @@ var MozLoopPushHandler = {
 
 
 
-  _onClose: function(aCode) {
+  _onClose: function _onClose(aCode) {var _this5 = this;
     this._pingMonitor.stop();
 
     switch (this.connectionState) {
-    case CONNECTION_STATE_OPEN:
+      case CONNECTION_STATE_OPEN:
         this.connectionState = CONNECTION_STATE_CLOSED;
         consoleLog.info("PushHandler: websocket closed: begin reconnect - ", aCode);
         
@@ -575,31 +575,31 @@ var MozLoopPushHandler = {
       case CONNECTION_STATE_CONNECTING:
         
         consoleLog.info("PushHandler: websocket closed: delay and retry - ", aCode);
-        this._retryManager.retry(() => this._openSocket());
-        break;
-     }
-   },
+        this._retryManager.retry(function () {return _this5._openSocket();});
+        break;}}, 
+
+
 
   
 
 
 
 
-  _onMsg: function(aMsg) {
+  _onMsg: function _onMsg(aMsg) {
     
     
     if (aMsg.error) {
       consoleLog.error("PushHandler: received error response msg: ", aMsg.error);
-      return;
-    }
+      return;}
+
 
     
     
     if (!aMsg.messageType && this.serviceState === SERVICE_STATE_ACTIVE) {
       
       this._pingMonitor.restart();
-      return;
-    }
+      return;}
+
 
     switch (aMsg.messageType) {
       case "hello":
@@ -618,11 +618,11 @@ var MozLoopPushHandler = {
         consoleLog.warn("PushHandler: unknown message type = ", aMsg.messageType);
         if (this.serviceState === SERVICE_STATE_ACTIVE) {
           
-          this._pingMonitor.restart();
-        }
-        break;
-     }
-   },
+          this._pingMonitor.restart();}
+
+        break;}}, 
+
+
 
   
 
@@ -632,11 +632,11 @@ var MozLoopPushHandler = {
 
 
 
-  _onHello: function(aMsg) {
+  _onHello: function _onHello(aMsg) {
     if (this.serviceState !== SERVICE_STATE_PENDING) {
       consoleLog.error("PushHandler: extra 'hello' response received from PushServer");
-      return;
-    }
+      return;}
+
 
     
     this._retryManager.reset();
@@ -650,12 +650,12 @@ var MozLoopPushHandler = {
       consoleLog.log("PushHandler: registering all channels");
       this.uaID = aMsg.uaid;
       
-      this._channelsToRegister = [...this.channels.keys()];
-      this.registeredChannels = {};
-    }
+      this._channelsToRegister = [].concat(_toConsumableArray(this.channels.keys()));
+      this.registeredChannels = {};}
+
     
-    this._registerChannels();
-  },
+    this._registerChannels();}, 
+
 
   
 
@@ -667,53 +667,53 @@ var MozLoopPushHandler = {
 
 
 
-  _onNotification: function(aMsg) {
-    if (this.serviceState !== SERVICE_STATE_ACTIVE ||
-       this.registeredChannels.length === 0) {
+  _onNotification: function _onNotification(aMsg) {var _this6 = this;
+    if (this.serviceState !== SERVICE_STATE_ACTIVE || 
+    this.registeredChannels.length === 0) {
       
       
       consoleLog.error("PushHandler: protocol error - notification received in wrong state");
       this._restartConnection();
-      return;
-    }
+      return;}
+
 
     this._pingMonitor.restart();
-    if (Array.isArray(aMsg.updates) && aMsg.updates.length > 0) {
-      let ackChannels = [];
-      aMsg.updates.forEach(update => {
-        if (update.channelID in this.registeredChannels) {
-          consoleLog.log("PushHandler: notification: version = ", update.version,
-                         ", channelID = ", update.channelID);
-          this.channels.get(update.channelID)
-            .onNotification(update.version, update.channelID);
-          ackChannels.push(update);
-        } else {
-          consoleLog.error("PushHandler: notification received for unknown channelID: ",
-                           update.channelID);
-        }
-      });
+    if (Array.isArray(aMsg.updates) && aMsg.updates.length > 0) {(function () {
+        var ackChannels = [];
+        aMsg.updates.forEach(function (update) {
+          if (update.channelID in _this6.registeredChannels) {
+            consoleLog.log("PushHandler: notification: version = ", update.version, 
+            ", channelID = ", update.channelID);
+            _this6.channels.get(update.channelID).
+            onNotification(update.version, update.channelID);
+            ackChannels.push(update);} else 
+          {
+            consoleLog.error("PushHandler: notification received for unknown channelID: ", 
+            update.channelID);}});
 
-      consoleLog.log("PushHandler: PusherServer 'ack': ", ackChannels);
-      this._pushSocket.send({ messageType: "ack",
-                             updates: ackChannels });
-     }
-   },
+
+
+        consoleLog.log("PushHandler: PusherServer 'ack': ", ackChannels);
+        _this6._pushSocket.send({ messageType: "ack", 
+          updates: ackChannels });})();}}, 
+
+
 
   
 
 
 
 
-  _onRegister: function(msg) {
-    if (this.serviceState !== SERVICE_STATE_ACTIVE ||
-        msg.channelID != this._pendingChannelID) {
+  _onRegister: function _onRegister(msg) {var _this7 = this;
+    if (this.serviceState !== SERVICE_STATE_ACTIVE || 
+    msg.channelID != this._pendingChannelID) {
       
       
       
       consoleLog.error("PushHandler: registration protocol error");
       this._restartConnection();
-      return;
-    }
+      return;}
+
 
     this._retryManager.reset();
     this._pingMonitor.restart();
@@ -722,21 +722,21 @@ var MozLoopPushHandler = {
       case 200:
         consoleLog.info("PushHandler: channel registered: ", msg.channelID);
         this.registeredChannels[msg.channelID] = msg.pushEndpoint;
-        this.channels.get(msg.channelID)
-          .onRegistered(null, msg.pushEndpoint, msg.channelID);
+        this.channels.get(msg.channelID).
+        onRegistered(null, msg.pushEndpoint, msg.channelID);
         this._registerNext();
         break;
 
       case 500:
-        consoleLog.info("PushHandler: eeceived a 500 retry response from the PushServer: ",
-                        msg.channelID);
+        consoleLog.info("PushHandler: eeceived a 500 retry response from the PushServer: ", 
+        msg.channelID);
         
-        this._retryManager.retry(() => this._sendRegistration(msg.channelID));
+        this._retryManager.retry(function () {return _this7._sendRegistration(msg.channelID);});
         break;
 
       case 409:
-        consoleLog.error("PushHandler: received a 409 response from the PushServer: ",
-                         msg.channelID);
+        consoleLog.error("PushHandler: received a 409 response from the PushServer: ", 
+        msg.channelID);
         this.channels.get(this._pendingChannelID).onRegistered("409");
         
         this.channels.delete(this._pendingChannelID);
@@ -744,14 +744,14 @@ var MozLoopPushHandler = {
         break;
 
       default:
-        consoleLog.error("PushHandler: received error ", msg.status,
-                         " from the PushServer: ", msg.channelID);
+        consoleLog.error("PushHandler: received error ", msg.status, 
+        " from the PushServer: ", msg.channelID);
         this.channels.get(this._pendingChannelID).onRegistered(msg.status);
         this.channels.delete(this._pendingChannelID);
         this._registerNext();
-        break;
-    }
-  },
+        break;}}, 
+
+
 
   
 
@@ -761,23 +761,23 @@ var MozLoopPushHandler = {
 
 
 
-  _openSocket: function() {
+  _openSocket: function _openSocket() {var _this8 = this;
     this.connectionState = CONNECTION_STATE_CONNECTING;
     
     this._pushSocket = new PushSocket(this._mockWebSocket);
 
     consoleLog.info("PushHandler: attempt to open websocket to PushServer: ", this.pushServerUri);
-    this._pushSocket.connect(this.pushServerUri,
-                             (aMsg) => this._onMsg(aMsg),
-                             () => this._onStart(),
-                             (aCode, aReason) => this._onClose(aCode, aReason));
+    this._pushSocket.connect(this.pushServerUri, 
+    function (aMsg) {return _this8._onMsg(aMsg);}, 
+    function () {return _this8._onStart();}, 
+    function (aCode, aReason) {return _this8._onClose(aCode, aReason);});}, 
 
-  },
+
 
   
 
 
-  _restartConnection: function() {
+  _restartConnection: function _restartConnection() {
     this._retryManager.reset();
     this._pingMonitor.stop();
     this.serviceState = SERVICE_STATE_OFFLINE;
@@ -788,40 +788,37 @@ var MozLoopPushHandler = {
       this.connectionState = CONNECTION_STATE_CLOSED;
       this._pushSocket.close();
       consoleLog.warn("PushHandler: connection error: re-establishing connection to PushServer");
-      this._openSocket();
-    }
-  },
+      this._openSocket();}}, 
+
+
 
   
 
 
-  _registerChannels: function() {
+  _registerChannels: function _registerChannels() {
     
     
-    if (this.serviceState !== SERVICE_STATE_ACTIVE ||
-       this._pendingChannelID) {
-      return;
-    }
-    this._registerNext();
-  },
+    if (this.serviceState !== SERVICE_STATE_ACTIVE || 
+    this._pendingChannelID) {
+      return;}
+
+    this._registerNext();}, 
+
 
   
 
 
-  _registerNext: function() {
+  _registerNext: function _registerNext() {
     this._pendingChannelID = this._channelsToRegister.pop();
-    this._sendRegistration(this._pendingChannelID);
-  },
+    this._sendRegistration(this._pendingChannelID);}, 
+
 
   
 
 
 
 
-  _sendRegistration: function(channelID) {
+  _sendRegistration: function _sendRegistration(channelID) {
     if (channelID) {
-      this._pushSocket.send({ messageType: "register",
-                             channelID: channelID });
-    }
-  }
-};
+      this._pushSocket.send({ messageType: "register", 
+        channelID: channelID });}} };

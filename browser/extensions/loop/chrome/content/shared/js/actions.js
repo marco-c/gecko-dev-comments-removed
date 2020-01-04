@@ -1,10 +1,10 @@
-
+"use strict"; 
 
 
 
 var loop = loop || {};
 loop.shared = loop.shared || {};
-loop.shared.actions = (function() {
+loop.shared.actions = function () {
   "use strict";
 
   
@@ -15,259 +15,259 @@ loop.shared.actions = (function() {
 
 
   function Action(name, schema, values) {
-    var validatedData = new loop.validate.Validator(schema || {})
-                                         .validate(values || {});
-    for (var prop in validatedData) {
-      this[prop] = validatedData[prop];
-    }
+    var validatedData = new loop.validate.Validator(schema || {}).
+    validate(values || {});
+    Object.keys(validatedData).forEach(function (prop) {
+      this[prop] = validatedData[prop];}.
+    bind(this));
 
-    this.name = name;
-  }
-
-  Action.define = function(name, schema) {
-    return Action.bind(null, name, schema);
-  };
-
-  return {
-    Action: Action,
-
-    
+    this.name = name;}
 
 
-    GetWindowData: Action.define("getWindowData", {
-      windowId: String
-    }),
+  Action.define = function (name, schema) {
+    return Action.bind(null, name, schema);};
+
+
+  return { 
+    Action: Action, 
 
     
 
 
-    ExtractTokenInfo: Action.define("extractTokenInfo", {
-      windowPath: String,
-      windowHash: String
-    }),
+    GetWindowData: Action.define("getWindowData", { 
+      windowId: String }), 
+
+
+    
+
+
+    ExtractTokenInfo: Action.define("extractTokenInfo", { 
+      windowPath: String, 
+      windowHash: String }), 
+
 
     
 
 
 
-    SetupWindowData: Action.define("setupWindowData", {
-      windowId: String,
+    SetupWindowData: Action.define("setupWindowData", { 
+      windowId: String, 
       type: String
 
       
       
       
-    }),
+    }), 
 
     
 
 
 
-    FetchServerData: Action.define("fetchServerData", {
+    FetchServerData: Action.define("fetchServerData", { 
       
-      token: String,
-      windowType: String
-    }),
+      token: String, 
+      windowType: String }), 
+
 
     
 
 
-    WindowUnload: Action.define("windowUnload", {
-    }),
+    WindowUnload: Action.define("windowUnload", {}), 
+
 
     
 
 
 
 
-    RemotePeerDisconnected: Action.define("remotePeerDisconnected", {
-      peerHungup: Boolean
-    }),
+    RemotePeerDisconnected: Action.define("remotePeerDisconnected", { 
+      peerHungup: Boolean }), 
+
 
     
 
 
-    ConnectionFailure: Action.define("connectionFailure", {
+    ConnectionFailure: Action.define("connectionFailure", { 
       
-      reason: String
-    }),
+      reason: String }), 
+
 
     
 
 
-    ConnectedToSdkServers: Action.define("connectedToSdkServers", {
-    }),
+    ConnectedToSdkServers: Action.define("connectedToSdkServers", {}), 
+
 
     
 
 
-    RemotePeerConnected: Action.define("remotePeerConnected", {
-    }),
+    RemotePeerConnected: Action.define("remotePeerConnected", {}), 
+
 
     
 
 
-    DataChannelsAvailable: Action.define("dataChannelsAvailable", {
-      available: Boolean
-    }),
+    DataChannelsAvailable: Action.define("dataChannelsAvailable", { 
+      available: Boolean }), 
+
 
     
 
 
-    SendTextChatMessage: Action.define("sendTextChatMessage", {
-      contentType: String,
-      message: String,
-      sentTimestamp: String
-    }),
+    SendTextChatMessage: Action.define("sendTextChatMessage", { 
+      contentType: String, 
+      message: String, 
+      sentTimestamp: String }), 
+
 
     
 
 
-    ReceivedTextChatMessage: Action.define("receivedTextChatMessage", {
-      contentType: String,
-      message: String,
+    ReceivedTextChatMessage: Action.define("receivedTextChatMessage", { 
+      contentType: String, 
+      message: String, 
       receivedTimestamp: String
       
-    }),
+    }), 
 
     
 
 
-    SendCursorData: Action.define("sendCursorData", {
+    SendCursorData: Action.define("sendCursorData", { 
       
       
-      type: String
-    }),
+      type: String }), 
+
 
     
 
 
-    ReceivedCursorData: Action.define("receivedCursorData", {
+    ReceivedCursorData: Action.define("receivedCursorData", { 
       
       
-      type: String
-    }),
+      type: String }), 
+
 
     
 
 
 
-    SetupStreamElements: Action.define("setupStreamElements", {
+    SetupStreamElements: Action.define("setupStreamElements", { 
       
-      publisherConfig: Object
-    }),
+      publisherConfig: Object }), 
+
 
     
 
 
-    TileShown: Action.define("tileShown", {
-    }),
+    TileShown: Action.define("tileShown", {}), 
+
 
     
 
 
-    GotMediaPermission: Action.define("gotMediaPermission", {
-    }),
+    GotMediaPermission: Action.define("gotMediaPermission", {}), 
+
 
     
 
 
-    MediaConnected: Action.define("mediaConnected", {
-    }),
+    MediaConnected: Action.define("mediaConnected", {}), 
 
-    
-
-
-
-    VideoDimensionsChanged: Action.define("videoDimensionsChanged", {
-      isLocal: Boolean,
-      videoType: String,
-      dimensions: Object
-    }),
-
-    
-
-
-    VideoScreenStreamChanged: Action.define("videoScreenStreamChanged", {
-      hasVideo: Boolean
-    }),
-
-    
-
-
-    MediaStreamCreated: Action.define("mediaStreamCreated", {
-      hasAudio: Boolean,
-      hasVideo: Boolean,
-      isLocal: Boolean,
-      srcMediaElement: Object
-    }),
-
-    
-
-
-    MediaStreamDestroyed: Action.define("mediaStreamDestroyed", {
-      isLocal: Boolean
-    }),
 
     
 
 
 
+    VideoDimensionsChanged: Action.define("videoDimensionsChanged", { 
+      isLocal: Boolean, 
+      videoType: String, 
+      dimensions: Object }), 
 
-
-
-
-    RemoteVideoStatus: Action.define("remoteVideoStatus", {
-      videoEnabled: Boolean
-    }),
 
     
 
 
-    SetMute: Action.define("setMute", {
+    VideoScreenStreamChanged: Action.define("videoScreenStreamChanged", { 
+      hasVideo: Boolean }), 
+
+
+    
+
+
+    MediaStreamCreated: Action.define("mediaStreamCreated", { 
+      hasAudio: Boolean, 
+      hasVideo: Boolean, 
+      isLocal: Boolean, 
+      srcMediaElement: Object }), 
+
+
+    
+
+
+    MediaStreamDestroyed: Action.define("mediaStreamDestroyed", { 
+      isLocal: Boolean }), 
+
+
+    
+
+
+
+
+
+
+
+    RemoteVideoStatus: Action.define("remoteVideoStatus", { 
+      videoEnabled: Boolean }), 
+
+
+    
+
+
+    SetMute: Action.define("setMute", { 
       
-      type: String,
+      type: String, 
       
-      enabled: Boolean
-    }),
+      enabled: Boolean }), 
+
 
     
 
 
-    StartBrowserShare: Action.define("startBrowserShare", {
-    }),
+    StartBrowserShare: Action.define("startBrowserShare", {}), 
+
 
     
 
 
-    EndScreenShare: Action.define("endScreenShare", {
-    }),
+    EndScreenShare: Action.define("endScreenShare", {}), 
+
 
     
 
 
-    ToggleBrowserSharing: Action.define("toggleBrowserSharing", {
+    ToggleBrowserSharing: Action.define("toggleBrowserSharing", { 
       
-      enabled: Boolean
-    }),
+      enabled: Boolean }), 
+
 
     
 
 
-    ScreenSharingState: Action.define("screenSharingState", {
+    ScreenSharingState: Action.define("screenSharingState", { 
       
-      state: String
-    }),
+      state: String }), 
+
 
     
 
 
 
 
-    ReceivingScreenShare: Action.define("receivingScreenShare", {
+    ReceivingScreenShare: Action.define("receivingScreenShare", { 
       receiving: Boolean
       
-    }),
+    }), 
 
     
 
@@ -276,107 +276,107 @@ loop.shared.actions = (function() {
     CreateRoom: Action.define("createRoom", {
       
       
-    }),
+    }), 
 
     
 
 
 
-    CreatedRoom: Action.define("createdRoom", {
-      decryptedContext: Object,
-      roomToken: String,
-      roomUrl: String
-    }),
+    CreatedRoom: Action.define("createdRoom", { 
+      decryptedContext: Object, 
+      roomToken: String, 
+      roomUrl: String }), 
+
 
     
 
 
 
-    CreateRoomError: Action.define("createRoomError", {
+    CreateRoomError: Action.define("createRoomError", { 
       
       
       
-      error: Object
-    }),
+      error: Object }), 
+
 
     
 
 
 
-    DeleteRoom: Action.define("deleteRoom", {
+    DeleteRoom: Action.define("deleteRoom", { 
+      roomToken: String }), 
+
+
+    
+
+
+
+    DeleteRoomError: Action.define("deleteRoomError", { 
+      
+      
+      
+      error: Object }), 
+
+
+    
+
+
+
+    GetAllRooms: Action.define("getAllRooms", {}), 
+
+
+    
+
+
+
+    GetAllRoomsError: Action.define("getAllRoomsError", { 
+      
+      
+      
+      error: [Error, Object] }), 
+
+
+    
+
+
+
+    UpdateRoomList: Action.define("updateRoomList", { 
+      roomList: Array }), 
+
+
+    
+
+
+
+    OpenRoom: Action.define("openRoom", { 
+      roomToken: String }), 
+
+
+    
+
+
+
+    UpdateRoomContext: Action.define("updateRoomContext", { 
       roomToken: String
-    }),
+      
+      
+      
+      
+      
+    }), 
 
     
 
 
+    UpdateRoomContextError: Action.define("updateRoomContextError", { 
+      error: [Error, Object] }), 
 
-    DeleteRoomError: Action.define("deleteRoomError", {
-      
-      
-      
-      error: Object
-    }),
 
     
 
 
+    UpdateRoomContextDone: Action.define("updateRoomContextDone", {}), 
 
-    GetAllRooms: Action.define("getAllRooms", {
-    }),
-
-    
-
-
-
-    GetAllRoomsError: Action.define("getAllRoomsError", {
-      
-      
-      
-      error: [Error, Object]
-    }),
-
-    
-
-
-
-    UpdateRoomList: Action.define("updateRoomList", {
-      roomList: Array
-    }),
-
-    
-
-
-
-    OpenRoom: Action.define("openRoom", {
-      roomToken: String
-    }),
-
-    
-
-
-
-    UpdateRoomContext: Action.define("updateRoomContext", {
-      roomToken: String
-      
-      
-      
-      
-      
-    }),
-
-    
-
-
-    UpdateRoomContextError: Action.define("updateRoomContextError", {
-      error: [Error, Object]
-    }),
-
-    
-
-
-    UpdateRoomContextDone: Action.define("updateRoomContextDone", {
-    }),
 
     
 
@@ -385,10 +385,10 @@ loop.shared.actions = (function() {
 
 
 
-    CopyRoomUrl: Action.define("copyRoomUrl", {
-      from: String,
-      roomUrl: String
-    }),
+    CopyRoomUrl: Action.define("copyRoomUrl", { 
+      from: String, 
+      roomUrl: String }), 
+
 
     
 
@@ -397,11 +397,11 @@ loop.shared.actions = (function() {
 
 
 
-    EmailRoomUrl: Action.define("emailRoomUrl", {
-      from: String,
+    EmailRoomUrl: Action.define("emailRoomUrl", { 
+      from: String, 
       roomUrl: String
       
-    }),
+    }), 
 
     
 
@@ -411,11 +411,11 @@ loop.shared.actions = (function() {
 
 
 
-    FacebookShareRoomUrl: Action.define("facebookShareRoomUrl", {
-      from: String,
+    FacebookShareRoomUrl: Action.define("facebookShareRoomUrl", { 
+      from: String, 
       roomUrl: String
       
-    }),
+    }), 
 
     
 
@@ -423,26 +423,26 @@ loop.shared.actions = (function() {
 
 
 
-    ShareRoomUrl: Action.define("shareRoomUrl", {
-      provider: Object,
-      roomUrl: String
-    }),
+    ShareRoomUrl: Action.define("shareRoomUrl", { 
+      provider: Object, 
+      roomUrl: String }), 
+
 
     
 
 
 
-    AddSocialShareProvider: Action.define("addSocialShareProvider", {
-    }),
+    AddSocialShareProvider: Action.define("addSocialShareProvider", {}), 
+
 
     
 
 
-    RoomFailure: Action.define("roomFailure", {
-      error: Object,
+    RoomFailure: Action.define("roomFailure", { 
+      error: Object, 
       
-      failedJoinRequest: Boolean
-    }),
+      failedJoinRequest: Boolean }), 
+
 
     
 
@@ -450,7 +450,7 @@ loop.shared.actions = (function() {
 
 
 
-    UpdateRoomInfo: Action.define("updateRoomInfo", {
+    UpdateRoomInfo: Action.define("updateRoomInfo", { 
       
       
       
@@ -460,59 +460,46 @@ loop.shared.actions = (function() {
       
       roomUrl: String
       
-    }),
+    }), 
 
     
 
 
-    UserAgentHandlesRoom: Action.define("userAgentHandlesRoom", {
-      handlesRoom: Boolean
-    }),
+    UserAgentHandlesRoom: Action.define("userAgentHandlesRoom", { 
+      handlesRoom: Boolean }), 
 
-    
-
-
-
-    UpdateSocialShareInfo: Action.define("updateSocialShareInfo", {
-      socialShareProviders: Array
-    }),
 
     
 
 
 
-    JoinRoom: Action.define("joinRoom", {
-    }),
+    UpdateSocialShareInfo: Action.define("updateSocialShareInfo", { 
+      socialShareProviders: Array }), 
+
+
+    
+
+
+
+    JoinRoom: Action.define("joinRoom", {}), 
+
 
     
 
 
 
 
-    MetricsLogJoinRoom: Action.define("metricsLogJoinRoom", {
+    MetricsLogJoinRoom: Action.define("metricsLogJoinRoom", { 
       userAgentHandledRoom: Boolean
       
-    }),
+    }), 
 
     
 
 
 
-    RetryAfterRoomFailure: Action.define("retryAfterRoomFailure", {
-    }),
+    RetryAfterRoomFailure: Action.define("retryAfterRoomFailure", {}), 
 
-    
-
-
-
-
-
-    JoinedRoom: Action.define("joinedRoom", {
-      apiKey: String,
-      sessionToken: String,
-      sessionId: String,
-      expires: Number
-    }),
 
     
 
@@ -520,8 +507,21 @@ loop.shared.actions = (function() {
 
 
 
-    LeaveConversation: Action.define("leaveConversation", {
-    }),
+    JoinedRoom: Action.define("joinedRoom", { 
+      apiKey: String, 
+      sessionToken: String, 
+      sessionId: String, 
+      expires: Number }), 
+
+
+    
+
+
+
+
+
+    LeaveConversation: Action.define("leaveConversation", {}), 
+
 
     
 
@@ -530,35 +530,32 @@ loop.shared.actions = (function() {
       
       
       
-    }),
+    }), 
 
     
 
 
-    ShowFeedbackForm: Action.define("showFeedbackForm", {
-    }),
+    ShowFeedbackForm: Action.define("showFeedbackForm", {}), 
+
 
     
 
 
-    RecordClick: Action.define("recordClick", {
+    RecordClick: Action.define("recordClick", { 
       
       
       
       
-      linkInfo: String
-    }),
+      linkInfo: String }), 
+
 
     
 
 
 
-    ConnectionStatus: Action.define("connectionStatus", {
-      event: String,
-      state: String,
-      connections: Number,
-      sendStreams: Number,
-      recvStreams: Number
-    })
-  };
-})();
+    ConnectionStatus: Action.define("connectionStatus", { 
+      event: String, 
+      state: String, 
+      connections: Number, 
+      sendStreams: Number, 
+      recvStreams: Number }) };}();

@@ -1,9 +1,9 @@
-
+"use strict"; 
 
 
 
 var loop = loop || {};
-loop.OTSdkDriver = (function() {
+loop.OTSdkDriver = function () {
   "use strict";
 
   var sharedActions = loop.shared.actions;
@@ -15,16 +15,16 @@ loop.OTSdkDriver = (function() {
 
 
 
-  var OTSdkDriver = function(options) {
+  var OTSdkDriver = function OTSdkDriver(options) {
     if (!options.constants) {
-      throw new Error("Missing option constants");
-    }
+      throw new Error("Missing option constants");}
+
     if (!options.dispatcher) {
-      throw new Error("Missing option dispatcher");
-    }
+      throw new Error("Missing option dispatcher");}
+
     if (!options.sdk) {
-      throw new Error("Missing option sdk");
-    }
+      throw new Error("Missing option sdk");}
+
 
     this.dispatcher = options.dispatcher;
     this.sdk = options.sdk;
@@ -40,30 +40,30 @@ loop.OTSdkDriver = (function() {
     this._resetMetrics();
 
     this.dispatcher.register(this, [
-      "setupStreamElements",
-      "setMute",
-      "toggleBrowserSharing"
-    ]);
+    "setupStreamElements", 
+    "setMute", 
+    "toggleBrowserSharing"]);
+
 
     
     
     
     
     
-    loop.shared.utils.getBoolPreference("debug.twoWayMediaTelemetry", function(enabled) {
-      this._debugTwoWayMediaTelemetry = enabled;
-    }.bind(this));
+    loop.shared.utils.getBoolPreference("debug.twoWayMediaTelemetry", function (enabled) {
+      this._debugTwoWayMediaTelemetry = enabled;}.
+    bind(this));
 
     
     
-    loop.shared.utils.getBoolPreference("debug.sdk", function(enabled) {
+    loop.shared.utils.getBoolPreference("debug.sdk", function (enabled) {
       
       
       
       if (enabled) {
-        this.sdk.setLogLevel(this.sdk.DEBUG);
-      }
-    }.bind(this));
+        this.sdk.setLogLevel(this.sdk.DEBUG);}}.
+
+    bind(this));
 
     
 
@@ -74,59 +74,59 @@ loop.OTSdkDriver = (function() {
       
       
       
-      window.MediaStreamTrack.getSources = function(callback) {
-        navigator.mediaDevices.enumerateDevices().then(function(devices) {
+      window.MediaStreamTrack.getSources = function (callback) {
+        navigator.mediaDevices.enumerateDevices().then(function (devices) {
           var result = [];
-          devices.forEach(function(device) {
+          devices.forEach(function (device) {
             if (device.kind === "audioinput") {
-              result.push({ kind: "audio" });
-            }
-            if (device.kind === "videoinput") {
-              result.push({ kind: "video" });
-            }
-          });
-          callback(result);
-        });
-      };
-    }
-  };
+              result.push({ kind: "audio" });}
 
-  OTSdkDriver.prototype = {
+            if (device.kind === "videoinput") {
+              result.push({ kind: "video" });}});
+
+
+          callback(result);});};}};
+
+
+
+
+
+  OTSdkDriver.prototype = { 
     
 
 
 
     get _getCopyPublisherConfig() {
-      return _.extend({}, this.publisherConfig);
-    },
+      return _.extend({}, this.publisherConfig);}, 
+
 
     
 
 
     get _getDataChannelSettings() {
-      return {
-        channels: {
+      return { 
+        channels: { 
           
           
           
-          text: {},
-          cursor: {
-            reliable: true
-          }
-        }
-      };
-    },
+          text: {}, 
+          cursor: { 
+            reliable: true } } };}, 
+
+
+
+
 
     
 
 
-    _resetMetrics: function() {
-      this._metrics = {
-        connections: 0,
-        sendStreams: 0,
-        recvStreams: 0
-      };
-    },
+    _resetMetrics: function _resetMetrics() {
+      this._metrics = { 
+        connections: 0, 
+        sendStreams: 0, 
+        recvStreams: 0 };}, 
+
+
 
     
 
@@ -135,7 +135,7 @@ loop.OTSdkDriver = (function() {
 
 
 
-    setupStreamElements: function(actionData) {
+    setupStreamElements: function setupStreamElements(actionData) {
       this.publisherConfig = actionData.publisherConfig;
 
       this.sdk.on("exception", this._onOTException.bind(this));
@@ -147,17 +147,17 @@ loop.OTSdkDriver = (function() {
       
       
       
-      this.publisher = this.sdk.initPublisher(this._mockPublisherEl,
-        _.extend(this._getDataChannelSettings, this._getCopyPublisherConfig),
-        this._onPublishComplete.bind(this));
+      this.publisher = this.sdk.initPublisher(this._mockPublisherEl, 
+      _.extend(this._getDataChannelSettings, this._getCopyPublisherConfig), 
+      this._onPublishComplete.bind(this));
 
       this.publisher.on("streamCreated", this._onLocalStreamCreated.bind(this));
       this.publisher.on("streamDestroyed", this._onLocalStreamDestroyed.bind(this));
       this.publisher.on("accessAllowed", this._onPublishAllowed.bind(this));
       this.publisher.on("accessDenied", this._onPublishDenied.bind(this));
-      this.publisher.on("accessDialogOpened",
-        this._onAccessDialogOpened.bind(this));
-    },
+      this.publisher.on("accessDialogOpened", 
+      this._onAccessDialogOpened.bind(this));}, 
+
 
     
 
@@ -166,13 +166,13 @@ loop.OTSdkDriver = (function() {
 
 
 
-    setMute: function(actionData) {
+    setMute: function setMute(actionData) {
       if (actionData.type === "audio") {
-        this.publisher.publishAudio(actionData.enabled);
-      } else {
-        this.publisher.publishVideo(actionData.enabled);
-      }
-    },
+        this.publisher.publishAudio(actionData.enabled);} else 
+      {
+        this.publisher.publishVideo(actionData.enabled);}}, 
+
+
 
     
 
@@ -189,37 +189,37 @@ loop.OTSdkDriver = (function() {
 
 
 
-    startScreenShare: function(options) {
+    startScreenShare: function startScreenShare(options) {
       
       
       if (options.videoSource === "browser") {
-        this._windowId = options.constraints.browserWindow;
-      }
+        this._windowId = options.constraints.browserWindow;}
+
 
       var config = _.extend(this._getCopyPublisherConfig, options);
 
       this._mockScreenSharePreviewEl = document.createElement("div");
 
-      this.screenshare = this.sdk.initPublisher(this._mockScreenSharePreviewEl,
-        config, this._onScreenSharePublishComplete.bind(this));
+      this.screenshare = this.sdk.initPublisher(this._mockScreenSharePreviewEl, 
+      config, this._onScreenSharePublishComplete.bind(this));
       this.screenshare.on("accessAllowed", this._onScreenShareGranted.bind(this));
       this.screenshare.on("accessDenied", this._onScreenSharePublishError.bind(this));
-      this.screenshare.on("streamCreated", this._onScreenShareStreamCreated.bind(this));
-    },
+      this.screenshare.on("streamCreated", this._onScreenShareStreamCreated.bind(this));}, 
+
 
     
 
 
 
 
-    switchAcquiredWindow: function(windowId) {
+    switchAcquiredWindow: function switchAcquiredWindow(windowId) {
       if (windowId === this._windowId) {
-        return;
-      }
+        return;}
+
 
       this._windowId = windowId;
-      this.screenshare._.switchAcquiredWindow(windowId);
-    },
+      this.screenshare._.switchAcquiredWindow(windowId);}, 
+
 
     
 
@@ -227,10 +227,10 @@ loop.OTSdkDriver = (function() {
 
 
 
-    endScreenShare: function() {
+    endScreenShare: function endScreenShare() {
       if (!this.screenshare) {
-        return false;
-      }
+        return false;}
+
 
       this._notifyMetricsEvent("Publisher.streamDestroyed");
 
@@ -240,8 +240,8 @@ loop.OTSdkDriver = (function() {
       delete this.screenshare;
       delete this._mockScreenSharePreviewEl;
       delete this._windowId;
-      return true;
-    },
+      return true;}, 
+
 
     
 
@@ -249,9 +249,9 @@ loop.OTSdkDriver = (function() {
 
 
 
-    toggleBrowserSharing: function(actionData) {
-      this.screenshare.publishVideo(actionData.enabled);
-    },
+    toggleBrowserSharing: function toggleBrowserSharing(actionData) {
+      this.screenshare.publishVideo(actionData.enabled);}, 
+
 
     
 
@@ -268,58 +268,58 @@ loop.OTSdkDriver = (function() {
 
 
 
-    connectSession: function(sessionData) {
+    connectSession: function connectSession(sessionData) {
       this.session = this.sdk.initSession(sessionData.sessionId);
 
       this._sendTwoWayMediaTelemetry = !!sessionData.sendTwoWayMediaTelemetry;
       this._setTwoWayMediaStartTime(this.CONNECTION_START_TIME_UNINITIALIZED);
 
-      this.session.on("sessionDisconnected",
-        this._onSessionDisconnected.bind(this));
+      this.session.on("sessionDisconnected", 
+      this._onSessionDisconnected.bind(this));
       this.session.on("connectionCreated", this._onConnectionCreated.bind(this));
-      this.session.on("connectionDestroyed",
-        this._onConnectionDestroyed.bind(this));
+      this.session.on("connectionDestroyed", 
+      this._onConnectionDestroyed.bind(this));
       this.session.on("streamCreated", this._onRemoteStreamCreated.bind(this));
       this.session.on("streamDestroyed", this._onRemoteStreamDestroyed.bind(this));
       this.session.on("streamPropertyChanged", this._onStreamPropertyChanged.bind(this));
       this.session.on("signal:readyForDataChannel", this._onReadyForDataChannel.bind(this));
 
       
-      this.session.connect(sessionData.apiKey, sessionData.sessionToken,
-        this._onSessionConnectionCompleted.bind(this));
-    },
+      this.session.connect(sessionData.apiKey, sessionData.sessionToken, 
+      this._onSessionConnectionCompleted.bind(this));}, 
+
 
     
 
 
-    disconnectSession: function() {
+    disconnectSession: function disconnectSession() {
       this.endScreenShare();
 
-      this.dispatcher.dispatch(new sharedActions.DataChannelsAvailable({
-        available: false
-      }));
-      this.dispatcher.dispatch(new sharedActions.MediaStreamDestroyed({
-        isLocal: true
-      }));
-      this.dispatcher.dispatch(new sharedActions.MediaStreamDestroyed({
-        isLocal: false
-      }));
+      this.dispatcher.dispatch(new sharedActions.DataChannelsAvailable({ 
+        available: false }));
+
+      this.dispatcher.dispatch(new sharedActions.MediaStreamDestroyed({ 
+        isLocal: true }));
+
+      this.dispatcher.dispatch(new sharedActions.MediaStreamDestroyed({ 
+        isLocal: false }));
+
 
       if (this.session) {
-        this.session.off("sessionDisconnected streamCreated streamDestroyed " +
-                         "connectionCreated connectionDestroyed " +
-                         "streamPropertyChanged signal:readyForDataChannel");
+        this.session.off("sessionDisconnected streamCreated streamDestroyed " + 
+        "connectionCreated connectionDestroyed " + 
+        "streamPropertyChanged signal:readyForDataChannel");
         this.session.disconnect();
         delete this.session;
 
-        this._notifyMetricsEvent("Session.connectionDestroyed", "local");
-      }
+        this._notifyMetricsEvent("Session.connectionDestroyed", "local");}
+
       if (this.publisher) {
-        this.publisher.off("accessAllowed accessDenied accessDialogOpened " +
-                           "streamCreated streamDestroyed");
+        this.publisher.off("accessAllowed accessDenied accessDialogOpened " + 
+        "streamCreated streamDestroyed");
         this.publisher.destroy();
-        delete this.publisher;
-      }
+        delete this.publisher;}
+
 
       
       this._resetMetrics();
@@ -335,8 +335,8 @@ loop.OTSdkDriver = (function() {
       delete this._publisherChannel;
       delete this._subscriberChannel;
       this.connections = {};
-      this._setTwoWayMediaStartTime(this.CONNECTION_START_TIME_UNINITIALIZED);
-    },
+      this._setTwoWayMediaStartTime(this.CONNECTION_START_TIME_UNINITIALIZED);}, 
+
 
     
 
@@ -345,36 +345,36 @@ loop.OTSdkDriver = (function() {
 
 
 
-    forceDisconnectAll: function(callback) {
+    forceDisconnectAll: function forceDisconnectAll(callback) {
       if (!this._sessionConnected) {
         callback();
-        return;
-      }
+        return;}
+
 
       var connectionNames = Object.keys(this.connections);
       if (connectionNames.length === 0) {
         callback();
-        return;
-      }
+        return;}
+
       var disconnectCount = 0;
-      connectionNames.forEach(function(id) {
+      connectionNames.forEach(function (id) {
         var connection = this.connections[id];
-        this.session.forceDisconnect(connection, function() {
+        this.session.forceDisconnect(connection, function () {
           
           
           if (++disconnectCount === connectionNames.length) {
-            callback();
-          }
-        });
-      }, this);
-    },
+            callback();}});}, 
+
+
+      this);}, 
+
 
     
 
 
 
 
-    _onSessionConnectionCompleted: function(error) {
+    _onSessionConnectionCompleted: function _onSessionConnectionCompleted(error) {
       if (error) {
         console.error("Failed to complete connection", error);
         
@@ -382,16 +382,16 @@ loop.OTSdkDriver = (function() {
         
         
         this._notifyMetricsEvent("sdk.exception." + error.code);
-        this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-          reason: FAILURE_DETAILS.COULD_NOT_CONNECT
-        }));
-        return;
-      }
+        this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
+          reason: FAILURE_DETAILS.COULD_NOT_CONNECT }));
+
+        return;}
+
 
       this.dispatcher.dispatch(new sharedActions.ConnectedToSdkServers());
       this._sessionConnected = true;
-      this._maybePublishLocalStream();
-    },
+      this._maybePublishLocalStream();}, 
+
 
     
 
@@ -399,20 +399,20 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onConnectionDestroyed: function(event) {
+    _onConnectionDestroyed: function _onConnectionDestroyed(event) {
       var connection = event.connection;
-      if (connection && (connection.id in this.connections)) {
-        delete this.connections[connection.id];
-      }
+      if (connection && connection.id in this.connections) {
+        delete this.connections[connection.id];}
+
 
       this._notifyMetricsEvent("Session.connectionDestroyed", "peer");
 
       this._noteConnectionLengthIfNeeded(this._getTwoWayMediaStartTime(), performance.now());
 
-      this.dispatcher.dispatch(new sharedActions.RemotePeerDisconnected({
-        peerHungup: event.reason === "clientDisconnected"
-      }));
-    },
+      this.dispatcher.dispatch(new sharedActions.RemotePeerDisconnected({ 
+        peerHungup: event.reason === "clientDisconnected" }));}, 
+
+
 
     
 
@@ -421,7 +421,7 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onSessionDisconnected: function(event) {
+    _onSessionDisconnected: function _onSessionDisconnected(event) {
       var reason;
       switch (event.reason) {
         case "networkDisconnected":
@@ -432,16 +432,16 @@ loop.OTSdkDriver = (function() {
           break;
         default:
           
-          return;
-      }
+          return;}
 
-      this._noteConnectionLengthIfNeeded(this._getTwoWayMediaStartTime(),
-        performance.now());
+
+      this._noteConnectionLengthIfNeeded(this._getTwoWayMediaStartTime(), 
+      performance.now());
       this._notifyMetricsEvent("Session." + event.reason);
-      this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-        reason: reason
-      }));
-    },
+      this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
+        reason: reason }));}, 
+
+
 
     
 
@@ -449,33 +449,33 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onConnectionCreated: function(event) {
+    _onConnectionCreated: function _onConnectionCreated(event) {
       var connection = event.connection;
       if (this.session.connection.id === connection.id) {
         
         this._notifyMetricsEvent("Session.connectionCreated", "local");
-        return;
-      }
+        return;}
+
       this.connections[connection.id] = connection;
       this._notifyMetricsEvent("Session.connectionCreated", "peer");
-      this.dispatcher.dispatch(new sharedActions.RemotePeerConnected());
-    },
+      this.dispatcher.dispatch(new sharedActions.RemotePeerConnected());}, 
+
 
     
 
 
 
-    _getConnectionState: function() {
+    _getConnectionState: function _getConnectionState() {
       if (this._metrics.sendStreams) {
-        return this._metrics.recvStreams ? "sendrecv" : "sending";
-      }
+        return this._metrics.recvStreams ? "sendrecv" : "sending";}
+
 
       if (this._metrics.recvStreams) {
-        return "receiving";
-      }
+        return "receiving";}
 
-      return "starting";
-    },
+
+      return "starting";}, 
+
 
     
 
@@ -485,10 +485,10 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _notifyMetricsEvent: function(eventName, clientType) {
+    _notifyMetricsEvent: function _notifyMetricsEvent(eventName, clientType) {
       if (!eventName) {
-        return;
-      }
+        return;}
+
 
       var state;
 
@@ -499,18 +499,18 @@ loop.OTSdkDriver = (function() {
         case "Session.connectionCreated":
           this._metrics.connections++;
           if (clientType === "local") {
-            state = "waiting";
-          }
+            state = "waiting";}
+
           break;
         case "Session.connectionDestroyed":
           this._metrics.connections--;
           if (clientType === "local") {
             
             
-            return;
-          } else if (!this._metrics.connections) {
-            state = "waiting";
-          }
+            return;} else 
+          if (!this._metrics.connections) {
+            state = "waiting";}
+
           break;
         case "Publisher.streamCreated":
           this._metrics.sendStreams++;
@@ -532,21 +532,21 @@ loop.OTSdkDriver = (function() {
           
           if (!/^sdk\.(exception|datachannel)/.test(eventName)) {
             console.error("Unexpected event name", eventName);
-            return;
-          }
-      }
-      if (!state) {
-        state = this._getConnectionState();
-      }
+            return;}}
 
-      this.dispatcher.dispatch(new sharedActions.ConnectionStatus({
-        event: eventName,
-        state: state,
-        connections: this._metrics.connections,
-        sendStreams: this._metrics.sendStreams,
-        recvStreams: this._metrics.recvStreams
-      }));
-    },
+
+      if (!state) {
+        state = this._getConnectionState();}
+
+
+      this.dispatcher.dispatch(new sharedActions.ConnectionStatus({ 
+        event: eventName, 
+        state: state, 
+        connections: this._metrics.connections, 
+        sendStreams: this._metrics.sendStreams, 
+        recvStreams: this._metrics.recvStreams }));}, 
+
+
 
     
 
@@ -556,26 +556,26 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _handleRemoteScreenShareCreated: function(stream) {
+    _handleRemoteScreenShareCreated: function _handleRemoteScreenShareCreated(stream) {
       
       
       if (!stream[STREAM_PROPERTIES.HAS_VIDEO]) {
-        this.dispatcher.dispatch(new sharedActions.VideoScreenStreamChanged({
-          hasVideo: false
-        }));
-      }
+        this.dispatcher.dispatch(new sharedActions.VideoScreenStreamChanged({ 
+          hasVideo: false }));}
+
+
 
       
-      this.dispatcher.dispatch(new sharedActions.ReceivingScreenShare({
-        receiving: true
-      }));
+      this.dispatcher.dispatch(new sharedActions.ReceivingScreenShare({ 
+        receiving: true }));
+
 
       
       this._mockScreenShareEl = document.createElement("div");
-      this.session.subscribe(stream, this._mockScreenShareEl,
-        this._getCopyPublisherConfig,
-        this._onScreenShareSubscribeCompleted.bind(this));
-    },
+      this.session.subscribe(stream, this._mockScreenShareEl, 
+      this._getCopyPublisherConfig, 
+      this._onScreenShareSubscribeCompleted.bind(this));}, 
+
 
     
 
@@ -583,21 +583,21 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onRemoteStreamCreated: function(event) {
+    _onRemoteStreamCreated: function _onRemoteStreamCreated(event) {
       this._notifyMetricsEvent("Session.streamCreated");
 
       if (event.stream[STREAM_PROPERTIES.HAS_VIDEO]) {
-        this.dispatcher.dispatch(new sharedActions.VideoDimensionsChanged({
-          isLocal: false,
-          videoType: event.stream.videoType,
-          dimensions: event.stream[STREAM_PROPERTIES.VIDEO_DIMENSIONS]
-        }));
-      }
+        this.dispatcher.dispatch(new sharedActions.VideoDimensionsChanged({ 
+          isLocal: false, 
+          videoType: event.stream.videoType, 
+          dimensions: event.stream[STREAM_PROPERTIES.VIDEO_DIMENSIONS] }));}
+
+
 
       if (event.stream.videoType === "screen") {
         this._handleRemoteScreenShareCreated(event.stream);
-        return;
-      }
+        return;}
+
 
       
       
@@ -610,10 +610,10 @@ loop.OTSdkDriver = (function() {
       
       this._mockSubscribeEl = document.createElement("div");
 
-      this.subscriber = this.session.subscribe(event.stream,
-        this._mockSubscribeEl, this._getCopyPublisherConfig,
-        this._onSubscribeCompleted.bind(this));
-    },
+      this.subscriber = this.session.subscribe(event.stream, 
+      this._mockSubscribeEl, this._getCopyPublisherConfig, 
+      this._onSubscribeCompleted.bind(this));}, 
+
 
     
 
@@ -623,37 +623,37 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onSubscribeCompleted: function(err, sdkSubscriberObject, subscriberVideo) {
+    _onSubscribeCompleted: function _onSubscribeCompleted(err, sdkSubscriberObject, subscriberVideo) {
       
       if (err) {
         console.log("subscribe error:", err);
-        return;
-      }
+        return;}
 
-      var sdkSubscriberVideo = subscriberVideo ? subscriberVideo :
-        this._mockSubscribeEl.querySelector("video");
+
+      var sdkSubscriberVideo = subscriberVideo ? subscriberVideo : 
+      this._mockSubscribeEl.querySelector("video");
       if (!sdkSubscriberVideo) {
-        console.error("sdkSubscriberVideo unexpectedly falsy!");
-      }
+        console.error("sdkSubscriberVideo unexpectedly falsy!");}
+
 
       sdkSubscriberObject.on("videoEnabled", this._onVideoEnabled.bind(this));
       sdkSubscriberObject.on("videoDisabled", this._onVideoDisabled.bind(this));
 
-      this.dispatcher.dispatch(new sharedActions.MediaStreamCreated({
-        hasAudio: sdkSubscriberObject.stream[STREAM_PROPERTIES.HAS_AUDIO],
-        hasVideo: sdkSubscriberObject.stream[STREAM_PROPERTIES.HAS_VIDEO],
-        isLocal: false,
-        srcMediaElement: sdkSubscriberVideo
-      }));
+      this.dispatcher.dispatch(new sharedActions.MediaStreamCreated({ 
+        hasAudio: sdkSubscriberObject.stream[STREAM_PROPERTIES.HAS_AUDIO], 
+        hasVideo: sdkSubscriberObject.stream[STREAM_PROPERTIES.HAS_VIDEO], 
+        isLocal: false, 
+        srcMediaElement: sdkSubscriberVideo }));
+
 
       this._subscribedRemoteStream = true;
       if (this._checkAllStreamsConnected()) {
         this._setTwoWayMediaStartTime(performance.now());
-        this.dispatcher.dispatch(new sharedActions.MediaConnected());
-      }
+        this.dispatcher.dispatch(new sharedActions.MediaConnected());}
 
-      this._setupDataChannelIfNeeded(sdkSubscriberObject);
-    },
+
+      this._setupDataChannelIfNeeded(sdkSubscriberObject);}, 
+
 
     
 
@@ -663,24 +663,24 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onScreenShareSubscribeCompleted: function(err, sdkSubscriberObject, subscriberVideo) {
+    _onScreenShareSubscribeCompleted: function _onScreenShareSubscribeCompleted(err, sdkSubscriberObject, subscriberVideo) {
       
       if (err) {
         console.log("subscribe error:", err);
-        return;
-      }
+        return;}
 
-      var sdkSubscriberVideo = subscriberVideo ? subscriberVideo :
-        this._mockScreenShareEl.querySelector("video");
+
+      var sdkSubscriberVideo = subscriberVideo ? subscriberVideo : 
+      this._mockScreenShareEl.querySelector("video");
 
       
       
       
-      this.dispatcher.dispatch(new sharedActions.ReceivingScreenShare({
-        receiving: true, srcMediaElement: sdkSubscriberVideo
-      }));
+      this.dispatcher.dispatch(new sharedActions.ReceivingScreenShare({ 
+        receiving: true, srcMediaElement: sdkSubscriberVideo }));}, 
 
-    },
+
+
 
     
 
@@ -690,70 +690,72 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _setupDataChannelIfNeeded: function(sdkSubscriberObject) {
+    _setupDataChannelIfNeeded: function _setupDataChannelIfNeeded(sdkSubscriberObject) {
       if (!this._useDataChannels) {
-        return;
-      }
+        return;}
 
-      this.session.signal({
-        type: "readyForDataChannel",
-        to: sdkSubscriberObject.stream.connection
-      }, function(signalError) {
+
+      this.session.signal({ 
+        type: "readyForDataChannel", 
+        to: sdkSubscriberObject.stream.connection }, 
+      function (signalError) {
         if (signalError) {
-          console.error(signalError);
-        }
-      });
+          console.error(signalError);}});
+
+
 
       
       var dataChannels = [
-        ["text",
-         function(message) {
-           
-           message.receivedTimestamp = (new Date()).toISOString();
-           this.dispatcher.dispatch(new sharedActions.ReceivedTextChatMessage(message));
-         }.bind(this),
-         function(channel) {
-           this._subscriberChannel = channel;
-           this._checkDataChannelsAvailable();
-         }.bind(this)],
-        ["cursor",
-         function(message) {
-            this.dispatcher.dispatch(new sharedActions.ReceivedCursorData(message));
-         }.bind(this),
-         function(channel) {
-           this._subscriberCursorChannel = channel;
-         }.bind(this)]
-      ];
+      ["text", 
+      function (message) {
+        
+        message.receivedTimestamp = new Date().toISOString();
+        this.dispatcher.dispatch(new sharedActions.ReceivedTextChatMessage(message));}.
+      bind(this), 
+      function (channel) {
+        this._subscriberChannel = channel;
+        this._checkDataChannelsAvailable();}.
+      bind(this)], 
+      ["cursor", 
+      function (message) {
+        this.dispatcher.dispatch(new sharedActions.ReceivedCursorData(message));}.
+      bind(this), 
+      function (channel) {
+        this._subscriberCursorChannel = channel;}.
+      bind(this)]];
 
-      dataChannels.forEach(function(args) {
-        var type = args[0], onMessage = args[1], onChannel = args[2];
-        sdkSubscriberObject._.getDataChannel(type, {}, function(err, channel) {
+
+      dataChannels.forEach(function (args) {
+        var type = args[0], 
+        onMessage = args[1], 
+        onChannel = args[2];
+        sdkSubscriberObject._.getDataChannel(type, {}, function (err, channel) {
           
           if (err) {
             console.error(err);
             this._notifyMetricsEvent("sdk.datachannel.sub." + type + "." + err.message);
-            return;
-          }
+            return;}
 
-          channel.on({
-            message: function(ev) {
+
+          channel.on({ 
+            message: function message(ev) {
               try {
                 var message = JSON.parse(ev.data);
-                onMessage(message);
-              } catch (ex) {
-                console.error("Failed to process incoming chat message", ex);
-              }
-            },
+                onMessage(message);} 
+              catch (ex) {
+                console.error("Failed to process incoming chat message", ex);}}, 
 
-            close: function() {
+
+
+            close: function close() {
               
-              console.log("Subscribed " + type + " data channel closed!");
-            }
-          });
-          onChannel(channel);
-        }.bind(this));
-      }.bind(this));
-    },
+              console.log("Subscribed " + type + " data channel closed!");} });
+
+
+          onChannel(channel);}.
+        bind(this));}.
+      bind(this));}, 
+
 
     
 
@@ -764,81 +766,82 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onReadyForDataChannel: function() {
+    _onReadyForDataChannel: function _onReadyForDataChannel() {
       
       
       if (!this._useDataChannels) {
-        return;
-      }
+        return;}
+
 
       
       var dataChannels = [
-        ["text",
-         function(channel) {
-           this._publisherChannel = channel;
-           this._checkDataChannelsAvailable();
-         }.bind(this)],
-         ["cursor",
-          function(channel) {
-            this._publisherCursorChannel = channel;
-          }.bind(this)]
-        ];
+      ["text", 
+      function (channel) {
+        this._publisherChannel = channel;
+        this._checkDataChannelsAvailable();}.
+      bind(this)], 
+      ["cursor", 
+      function (channel) {
+        this._publisherCursorChannel = channel;}.
+      bind(this)]];
+
 
       
-      dataChannels.forEach(function(args) {
-        var type = args[0], onChannel = args[1];
-        this.publisher._.getDataChannel(type, {}, function(err, channel) {
+      dataChannels.forEach(function (args) {
+        var type = args[0], 
+        onChannel = args[1];
+        this.publisher._.getDataChannel(type, {}, function (err, channel) {
           if (err) {
             console.error(err);
             this._notifyMetricsEvent("sdk.datachannel.pub." + type + "." + err.message);
-            return;
-          }
+            return;}
 
-          channel.on({
-            close: function() {
+
+          channel.on({ 
+            close: function close() {
               
-              console.log("Published " + type + " data channel closed!");
-            }
-          });
-          onChannel(channel);
-        }.bind(this));
-      }.bind(this));
-    },
+              console.log("Published " + type + " data channel closed!");} });
+
+
+          onChannel(channel);}.
+        bind(this));}.
+      bind(this));}, 
+
 
     
 
 
 
-    _checkDataChannelsAvailable: function() {
+    _checkDataChannelsAvailable: function _checkDataChannelsAvailable() {
       if (this._publisherChannel && this._subscriberChannel) {
-        this.dispatcher.dispatch(new sharedActions.DataChannelsAvailable({
-          available: true
-        }));
-      }
-    },
+        this.dispatcher.dispatch(new sharedActions.DataChannelsAvailable({ 
+          available: true }));}}, 
+
+
+
 
     
 
 
 
 
-    sendTextChatMessage: function(message) {
-      this._publisherChannel.send(JSON.stringify(message));
-    },
+    sendTextChatMessage: function sendTextChatMessage(message) {
+      this._publisherChannel.send(JSON.stringify(message));}, 
+
 
     
 
 
 
 
-    sendCursorMessage: function(message) {
+    sendCursorMessage: function sendCursorMessage(message) {
       if (!this._publisherCursorChannel || !this._subscriberCursorChannel) {
-        return;
-      }
+        return;}
+
 
       message.userID = this.session.sessionId;
-      this._publisherCursorChannel.send(JSON.stringify(message));
-    },
+      this._publisherCursorChannel.send(JSON.stringify(message));}, 
+
 
     
 
@@ -846,29 +849,29 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onLocalStreamCreated: function(event) {
+    _onLocalStreamCreated: function _onLocalStreamCreated(event) {
       this._notifyMetricsEvent("Publisher.streamCreated");
 
       var sdkLocalVideo = this._mockPublisherEl.querySelector("video");
       var hasVideo = event.stream[STREAM_PROPERTIES.HAS_VIDEO];
       var hasAudio = event.stream[STREAM_PROPERTIES.HAS_AUDIO];
 
-      this.dispatcher.dispatch(new sharedActions.MediaStreamCreated({
-        hasAudio: hasAudio,
-        hasVideo: hasVideo,
-        isLocal: true,
-        srcMediaElement: sdkLocalVideo
-      }));
+      this.dispatcher.dispatch(new sharedActions.MediaStreamCreated({ 
+        hasAudio: hasAudio, 
+        hasVideo: hasVideo, 
+        isLocal: true, 
+        srcMediaElement: sdkLocalVideo }));
+
 
       
       if (hasVideo) {
-        this.dispatcher.dispatch(new sharedActions.VideoDimensionsChanged({
-          isLocal: true,
-          videoType: event.stream.videoType,
-          dimensions: event.stream[STREAM_PROPERTIES.VIDEO_DIMENSIONS]
-        }));
-      }
-    },
+        this.dispatcher.dispatch(new sharedActions.VideoDimensionsChanged({ 
+          isLocal: true, 
+          videoType: event.stream.videoType, 
+          dimensions: event.stream[STREAM_PROPERTIES.VIDEO_DIMENSIONS] }));}}, 
+
+
+
 
     
 
@@ -876,19 +879,19 @@ loop.OTSdkDriver = (function() {
 
 
 
-    __twoWayMediaStartTime: undefined,
+    __twoWayMediaStartTime: undefined, 
 
     
 
 
 
-    CONNECTION_START_TIME_UNINITIALIZED: -1,
+    CONNECTION_START_TIME_UNINITIALIZED: -1, 
 
     
 
 
 
-    CONNECTION_START_TIME_ALREADY_NOTED: -2,
+    CONNECTION_START_TIME_ALREADY_NOTED: -2, 
 
     
 
@@ -906,20 +909,20 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _setTwoWayMediaStartTime: function(start) {
+    _setTwoWayMediaStartTime: function _setTwoWayMediaStartTime(start) {
       if (!this._sendTwoWayMediaTelemetry) {
-        return;
-      }
+        return;}
+
 
       this.__twoWayMediaStartTime = start;
       if (this._debugTwoWayMediaTelemetry) {
-        console.log("Loop Telemetry: noted two-way connection start, " +
-                    "start time in ms:", start);
-      }
-    },
-    _getTwoWayMediaStartTime: function() {
-      return this.__twoWayMediaStartTime;
-    },
+        console.log("Loop Telemetry: noted two-way connection start, " + 
+        "start time in ms:", start);}}, 
+
+
+    _getTwoWayMediaStartTime: function _getTwoWayMediaStartTime() {
+      return this.__twoWayMediaStartTime;}, 
+
 
     
 
@@ -927,43 +930,43 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onRemoteStreamDestroyed: function(event) {
+    _onRemoteStreamDestroyed: function _onRemoteStreamDestroyed(event) {
       this._notifyMetricsEvent("Session.streamDestroyed");
 
       if (event.stream.videoType !== "screen") {
-        this.dispatcher.dispatch(new sharedActions.DataChannelsAvailable({
-          available: false
-        }));
-        this.dispatcher.dispatch(new sharedActions.MediaStreamDestroyed({
-          isLocal: false
-        }));
+        this.dispatcher.dispatch(new sharedActions.DataChannelsAvailable({ 
+          available: false }));
+
+        this.dispatcher.dispatch(new sharedActions.MediaStreamDestroyed({ 
+          isLocal: false }));
+
         delete this._subscriberChannel;
         delete this._mockSubscribeEl;
-        return;
-      }
+        return;}
+
 
       
       
-      this.dispatcher.dispatch(new sharedActions.ReceivingScreenShare({
-        receiving: false
-      }));
-      delete this._mockScreenShareEl;
-    },
+      this.dispatcher.dispatch(new sharedActions.ReceivingScreenShare({ 
+        receiving: false }));
+
+      delete this._mockScreenShareEl;}, 
+
 
     
 
 
-    _onLocalStreamDestroyed: function() {
+    _onLocalStreamDestroyed: function _onLocalStreamDestroyed() {
       this._notifyMetricsEvent("Publisher.streamDestroyed");
-      this.dispatcher.dispatch(new sharedActions.DataChannelsAvailable({
-        available: false
-      }));
-      this.dispatcher.dispatch(new sharedActions.MediaStreamDestroyed({
-        isLocal: true
-      }));
+      this.dispatcher.dispatch(new sharedActions.DataChannelsAvailable({ 
+        available: false }));
+
+      this.dispatcher.dispatch(new sharedActions.MediaStreamDestroyed({ 
+        isLocal: true }));
+
       delete this._publisherChannel;
-      delete this._mockPublisherEl;
-    },
+      delete this._mockPublisherEl;}, 
+
 
     
 
@@ -972,23 +975,23 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onAccessDialogOpened: function(event) {
-      event.preventDefault();
-    },
+    _onAccessDialogOpened: function _onAccessDialogOpened(event) {
+      event.preventDefault();}, 
+
 
     
 
 
 
 
-    _onPublishAllowed: function(event) {
+    _onPublishAllowed: function _onPublishAllowed(event) {
       event.preventDefault();
       this._publisherReady = true;
 
       this.dispatcher.dispatch(new sharedActions.GotMediaPermission());
 
-      this._maybePublishLocalStream();
-    },
+      this._maybePublishLocalStream();}, 
+
 
     
 
@@ -996,20 +999,20 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onPublishComplete: function(error) {
+    _onPublishComplete: function _onPublishComplete(error) {
       if (!error) {
         
-        return;
-      }
+        return;}
+
 
       if (error.message && error.message === "DENIED") {
         
-        return;
-      }
+        return;}
+
 
       if (!this.publisher) {
-        return;
-      }
+        return;}
+
 
       
       
@@ -1018,47 +1021,47 @@ loop.OTSdkDriver = (function() {
       delete this.publisher;
       delete this._mockPublisherEl;
 
-      this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-        reason: FAILURE_DETAILS.UNABLE_TO_PUBLISH_MEDIA
-      }));
+      this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
+        reason: FAILURE_DETAILS.UNABLE_TO_PUBLISH_MEDIA }));
+
 
       
-    },
+    }, 
 
     
 
 
 
 
-    _onPublishDenied: function(event) {
+    _onPublishDenied: function _onPublishDenied(event) {
       
       event.preventDefault();
 
-      this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-        reason: FAILURE_DETAILS.MEDIA_DENIED
-      }));
+      this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
+        reason: FAILURE_DETAILS.MEDIA_DENIED }));
 
-      delete this._mockPublisherEl;
-    },
+
+      delete this._mockPublisherEl;}, 
+
 
     
 
 
 
 
-    _onOTException: function(event) {
+    _onOTException: function _onOTException(event) {
       switch (event.code) {
         case OT.ExceptionCodes.PUBLISHER_ICE_WORKFLOW_FAILED:
         case OT.ExceptionCodes.SUBSCRIBER_ICE_WORKFLOW_FAILED:
-          this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-            reason: FAILURE_DETAILS.ICE_FAILED
-          }));
+          this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
+            reason: FAILURE_DETAILS.ICE_FAILED }));
+
           this._notifyMetricsEvent("sdk.exception." + event.code);
           break;
         case OT.ExceptionCodes.TERMS_OF_SERVICE_FAILURE:
-          this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-            reason: FAILURE_DETAILS.TOS_FAILURE
-          }));
+          this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
+            reason: FAILURE_DETAILS.TOS_FAILURE }));
+
           
           
           this._notifyMetricsEvent("sdk.exception." + event.code);
@@ -1069,38 +1072,38 @@ loop.OTSdkDriver = (function() {
           if (event.message !== "GetUserMedia") {
             var baseException = "sdk.exception.";
             if (event.target && event.target === this.screenshare) {
-              baseException += "screen.";
-            }
-            this._notifyMetricsEvent(baseException + event.code + "." + event.message);
-          }
+              baseException += "screen.";}
+
+            this._notifyMetricsEvent(baseException + event.code + "." + event.message);}
+
           break;
         default:
           this._notifyMetricsEvent("sdk.exception." + event.code);
-          break;
-      }
-    },
+          break;}}, 
+
+
 
     
 
 
-    _onStreamPropertyChanged: function(event) {
+    _onStreamPropertyChanged: function _onStreamPropertyChanged(event) {
       switch (event.changedProperty) {
         case STREAM_PROPERTIES.VIDEO_DIMENSIONS:
-          this.dispatcher.dispatch(new sharedActions.VideoDimensionsChanged({
-            isLocal: event.stream.connection.id === this.session.connection.id,
-            videoType: event.stream.videoType,
-            dimensions: event.stream[STREAM_PROPERTIES.VIDEO_DIMENSIONS]
-          }));
+          this.dispatcher.dispatch(new sharedActions.VideoDimensionsChanged({ 
+            isLocal: event.stream.connection.id === this.session.connection.id, 
+            videoType: event.stream.videoType, 
+            dimensions: event.stream[STREAM_PROPERTIES.VIDEO_DIMENSIONS] }));
+
           break;
         case STREAM_PROPERTIES.HAS_VIDEO:
           if (event.stream.videoType === "screen") {
-            this.dispatcher.dispatch(new sharedActions.VideoScreenStreamChanged({
-              hasVideo: event.newValue
-            }));
-          }
-          break;
-      }
-    },
+            this.dispatcher.dispatch(new sharedActions.VideoScreenStreamChanged({ 
+              hasVideo: event.newValue }));}
+
+
+          break;}}, 
+
+
 
     
 
@@ -1111,16 +1114,16 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onVideoEnabled: function() {
+    _onVideoEnabled: function _onVideoEnabled() {
       var sdkSubscriberVideo = this._mockSubscribeEl.querySelector("video");
       if (!sdkSubscriberVideo) {
-        console.error("sdkSubscriberVideo unexpectedly falsy!");
-      }
+        console.error("sdkSubscriberVideo unexpectedly falsy!");}
 
-      this.dispatcher.dispatch(new sharedActions.RemoteVideoStatus({
-        videoEnabled: true
-      }));
-    },
+
+      this.dispatcher.dispatch(new sharedActions.RemoteVideoStatus({ 
+        videoEnabled: true }));}, 
+
+
 
     
 
@@ -1129,17 +1132,17 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onVideoDisabled: function() {
-      this.dispatcher.dispatch(new sharedActions.RemoteVideoStatus({
-        videoEnabled: false
-      }));
-    },
+    _onVideoDisabled: function _onVideoDisabled() {
+      this.dispatcher.dispatch(new sharedActions.RemoteVideoStatus({ 
+        videoEnabled: false }));}, 
+
+
 
     
 
 
 
-    _maybePublishLocalStream: function() {
+    _maybePublishLocalStream: function _maybePublishLocalStream() {
       if (this._sessionConnected && this._publisherReady) {
         
         this.session.publish(this.publisher);
@@ -1148,79 +1151,71 @@ loop.OTSdkDriver = (function() {
         this._publishedLocalStream = true;
         if (this._checkAllStreamsConnected()) {
           this._setTwoWayMediaStartTime(performance.now());
-          this.dispatcher.dispatch(new sharedActions.MediaConnected());
-        }
-      }
-    },
+          this.dispatcher.dispatch(new sharedActions.MediaConnected());}}}, 
+
+
+
 
     
 
 
 
-    _checkAllStreamsConnected: function() {
-      return this._publishedLocalStream &&
-        this._subscribedRemoteStream;
-    },
+    _checkAllStreamsConnected: function _checkAllStreamsConnected() {
+      return this._publishedLocalStream && 
+      this._subscribedRemoteStream;}, 
+
 
     
 
 
-    _onScreenShareGranted: function() {
+    _onScreenShareGranted: function _onScreenShareGranted() {
       this.session.publish(this.screenshare);
-      this.dispatcher.dispatch(new sharedActions.ScreenSharingState({
-        state: SCREEN_SHARE_STATES.ACTIVE
-      }));
-    },
+      this.dispatcher.dispatch(new sharedActions.ScreenSharingState({ 
+        state: SCREEN_SHARE_STATES.ACTIVE }));}, 
+
+
 
     
 
 
 
 
-    _onScreenSharePublishComplete: function(error) {
+    _onScreenSharePublishComplete: function _onScreenSharePublishComplete(error) {
       if (!error) {
         
-        return;
-      }
+        return;}
+
 
       
       this.screenshare.off("accessAllowed accessDenied streamCreated");
       this.screenshare.destroy();
       delete this.screenshare;
       delete this._mockScreenSharePreviewEl;
-      this.dispatcher.dispatch(new sharedActions.ScreenSharingState({
-        state: SCREEN_SHARE_STATES.INACTIVE
-      }));
+      this.dispatcher.dispatch(new sharedActions.ScreenSharingState({ 
+        state: SCREEN_SHARE_STATES.INACTIVE }));
+
 
       
-    },
+    }, 
 
     
 
 
-    _onScreenSharePublishError: function() {
-      this.dispatcher.dispatch(new sharedActions.ScreenSharingState({
-        state: SCREEN_SHARE_STATES.INACTIVE
-      }));
+    _onScreenSharePublishError: function _onScreenSharePublishError() {
+      this.dispatcher.dispatch(new sharedActions.ScreenSharingState({ 
+        state: SCREEN_SHARE_STATES.INACTIVE }));
+
       this.screenshare.off("accessAllowed accessDenied streamCreated");
       this.screenshare.destroy();
       delete this.screenshare;
-      delete this._mockScreenSharePreviewEl;
-    },
+      delete this._mockScreenSharePreviewEl;}, 
+
 
     
 
 
-    _onScreenShareStreamCreated: function() {
-      this._notifyMetricsEvent("Publisher.streamCreated");
-    },
-
-    
-
-
-
-
-
+    _onScreenShareStreamCreated: function _onScreenShareStreamCreated() {
+      this._notifyMetricsEvent("Publisher.streamCreated");}, 
 
 
     
@@ -1231,7 +1226,15 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _connectionLengthNotedCalls: 0,
+    
+
+
+
+
+
+
+
+    _connectionLengthNotedCalls: 0, 
 
     
 
@@ -1241,27 +1244,27 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _noteConnectionLength: function(callLengthSeconds) {
+    _noteConnectionLength: function _noteConnectionLength(callLengthSeconds) {
       var buckets = this._constants.TWO_WAY_MEDIA_CONN_LENGTH;
 
       var bucket = buckets.SHORTER_THAN_10S;
       if (callLengthSeconds >= 10 && callLengthSeconds <= 30) {
-        bucket = buckets.BETWEEN_10S_AND_30S;
-      } else if (callLengthSeconds > 30 && callLengthSeconds <= 300) {
-        bucket = buckets.BETWEEN_30S_AND_5M;
-      } else if (callLengthSeconds > 300) {
-        bucket = buckets.MORE_THAN_5M;
-      }
+        bucket = buckets.BETWEEN_10S_AND_30S;} else 
+      if (callLengthSeconds > 30 && callLengthSeconds <= 300) {
+        bucket = buckets.BETWEEN_30S_AND_5M;} else 
+      if (callLengthSeconds > 300) {
+        bucket = buckets.MORE_THAN_5M;}
+
 
       loop.request("TelemetryAddValue", "LOOP_TWO_WAY_MEDIA_CONN_LENGTH_1", bucket);
       this._setTwoWayMediaStartTime(this.CONNECTION_START_TIME_ALREADY_NOTED);
 
       this._connectionLengthNotedCalls++;
       if (this._debugTwoWayMediaTelemetry) {
-        console.log("Loop Telemetry: noted two-way media connection " +
-          "in bucket: ", bucket);
-      }
-    },
+        console.log("Loop Telemetry: noted two-way media connection " + 
+        "in bucket: ", bucket);}}, 
+
+
 
     
 
@@ -1272,34 +1275,32 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _noteConnectionLengthIfNeeded: function(startTime, endTime) {
+    _noteConnectionLengthIfNeeded: function _noteConnectionLengthIfNeeded(startTime, endTime) {
       if (!this._sendTwoWayMediaTelemetry) {
-        return;
-      }
+        return;}
 
-      if (startTime === this.CONNECTION_START_TIME_ALREADY_NOTED ||
-          startTime === this.CONNECTION_START_TIME_UNINITIALIZED ||
-          startTime > endTime) {
+
+      if (startTime === this.CONNECTION_START_TIME_ALREADY_NOTED || 
+      startTime === this.CONNECTION_START_TIME_UNINITIALIZED || 
+      startTime > endTime) {
         if (this._debugTwoWayMediaTelemetry) {
-          console.log("_noteConnectionLengthIfNeeded called with " +
-            " invalid params, either the calls were never" +
-            " connected or there is a bug; startTime:", startTime,
-            "endTime:", endTime);
-        }
-        return;
-      }
+          console.log("_noteConnectionLengthIfNeeded called with " + 
+          " invalid params, either the calls were never" + 
+          " connected or there is a bug; startTime:", startTime, 
+          "endTime:", endTime);}
+
+        return;}
+
 
       var callLengthSeconds = (endTime - startTime) / 1000;
-      this._noteConnectionLength(callLengthSeconds);
-    },
+      this._noteConnectionLength(callLengthSeconds);}, 
+
 
     
 
 
 
-    _debugTwoWayMediaTelemetry: false
-  };
+    _debugTwoWayMediaTelemetry: false };
 
-  return OTSdkDriver;
 
-})();
+  return OTSdkDriver;}();

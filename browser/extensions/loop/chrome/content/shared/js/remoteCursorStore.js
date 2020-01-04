@@ -1,4 +1,4 @@
-
+"use strict"; 
 
 
 
@@ -8,7 +8,7 @@ loop.store = loop.store || {};
 
 
 
-loop.store.RemoteCursorStore = (function() {
+loop.store.RemoteCursorStore = function () {
   "use strict";
 
   var CURSOR_MESSAGE_TYPES = loop.shared.utils.CURSOR_MESSAGE_TYPES;
@@ -16,13 +16,13 @@ loop.store.RemoteCursorStore = (function() {
   
 
 
-  var RemoteCursorStore = loop.store.createStore({
+  var RemoteCursorStore = loop.store.createStore({ 
     actions: [
-      "sendCursorData",
-      "receivedCursorData",
-      "videoDimensionsChanged",
-      "videoScreenStreamChanged"
-    ],
+    "sendCursorData", 
+    "receivedCursorData", 
+    "videoDimensionsChanged", 
+    "videoScreenStreamChanged"], 
+
 
     
 
@@ -32,55 +32,39 @@ loop.store.RemoteCursorStore = (function() {
 
 
 
-    initialize: function(options) {
+    initialize: function initialize(options) {
       options = options || {};
 
       if (!options.sdkDriver) {
-        throw new Error("Missing option sdkDriver");
-      }
+        throw new Error("Missing option sdkDriver");}
+
 
       this._sdkDriver = options.sdkDriver;
 
-      loop.subscribe("CursorPositionChange",
-                     this._cursorPositionChangeListener.bind(this));
-      loop.subscribe("CursorClick", this._cursorClickListener.bind(this));
-    },
+      loop.subscribe("CursorPositionChange", 
+      this._cursorPositionChangeListener.bind(this));
+      loop.subscribe("CursorClick", this._cursorClickListener.bind(this));}, 
+
 
     
 
 
-    getInitialStoreState: function() {
-      return {
-        realVideoSize: null,
-        remoteCursorClick: null,
-        remoteCursorPosition: null
-      };
-    },
+    getInitialStoreState: function getInitialStoreState() {
+      return { 
+        realVideoSize: null, 
+        remoteCursorClick: null, 
+        remoteCursorPosition: null };}, 
+
+
 
     
 
 
-    _cursorClickListener: function() {
-      this.sendCursorData({
-        type: CURSOR_MESSAGE_TYPES.CLICK
-      });
-    },
-
-    
+    _cursorClickListener: function _cursorClickListener() {
+      this.sendCursorData({ 
+        type: CURSOR_MESSAGE_TYPES.CLICK });}, 
 
 
-
-
-
-
-
-    _cursorPositionChangeListener: function(event) {
-      this.sendCursorData({
-        ratioX: event.ratioX,
-        ratioY: event.ratioY,
-        type: CURSOR_MESSAGE_TYPES.POSITION
-      });
-    },
 
     
 
@@ -90,60 +74,76 @@ loop.store.RemoteCursorStore = (function() {
 
 
 
+    _cursorPositionChangeListener: function _cursorPositionChangeListener(event) {
+      this.sendCursorData({ 
+        ratioX: event.ratioX, 
+        ratioY: event.ratioY, 
+        type: CURSOR_MESSAGE_TYPES.POSITION });}, 
+
+
+
+    
 
 
 
 
 
-    sendCursorData: function(actionData) {
+
+
+
+
+
+
+
+    sendCursorData: function sendCursorData(actionData) {
       switch (actionData.type) {
         case CURSOR_MESSAGE_TYPES.POSITION:
         case CURSOR_MESSAGE_TYPES.CLICK:
           this._sdkDriver.sendCursorMessage(actionData);
-          break;
-      }
-    },
+          break;}}, 
+
+
 
     
 
 
 
 
-    receivedCursorData: function(actionData) {
+    receivedCursorData: function receivedCursorData(actionData) {
       switch (actionData.type) {
         case CURSOR_MESSAGE_TYPES.POSITION:
-          this.setStoreState({
-            remoteCursorPosition: {
-              ratioX: actionData.ratioX,
-              ratioY: actionData.ratioY
-            }
-          });
+          this.setStoreState({ 
+            remoteCursorPosition: { 
+              ratioX: actionData.ratioX, 
+              ratioY: actionData.ratioY } });
+
+
           break;
         case CURSOR_MESSAGE_TYPES.CLICK:
-          this.setStoreState({
-            remoteCursorClick: true
-          });
-          break;
-      }
-    },
+          this.setStoreState({ 
+            remoteCursorClick: true });
+
+          break;}}, 
+
+
 
     
 
 
 
 
-    videoDimensionsChanged: function(actionData) {
+    videoDimensionsChanged: function videoDimensionsChanged(actionData) {
       if (actionData.videoType !== "screen") {
-        return;
-      }
+        return;}
 
-      this.setStoreState({
-        realVideoSize: {
-          height: actionData.dimensions.height,
-          width: actionData.dimensions.width
-        }
-      });
-    },
+
+      this.setStoreState({ 
+        realVideoSize: { 
+          height: actionData.dimensions.height, 
+          width: actionData.dimensions.width } });}, 
+
+
+
 
     
 
@@ -152,16 +152,15 @@ loop.store.RemoteCursorStore = (function() {
 
 
 
-    videoScreenStreamChanged: function(actionData) {
+    videoScreenStreamChanged: function videoScreenStreamChanged(actionData) {
       if (actionData.hasVideo) {
-        return;
-      }
+        return;}
 
-      this.setStoreState({
-        remoteCursorPosition: null
-      });
-    }
-  });
 
-  return RemoteCursorStore;
-})();
+      this.setStoreState({ 
+        remoteCursorPosition: null });} });
+
+
+
+
+  return RemoteCursorStore;}();
