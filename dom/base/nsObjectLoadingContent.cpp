@@ -21,7 +21,6 @@
 #include "nsIDOMHTMLAppletElement.h"
 #include "nsIExternalProtocolHandler.h"
 #include "nsIInterfaceRequestorUtils.h"
-#include "nsIHttpChannelInternal.h"
 #include "nsIObjectFrame.h"
 #include "nsIPermissionManager.h"
 #include "nsPluginHost.h"
@@ -1882,7 +1881,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
       
       
       nsAutoCString parsedMime, dummy;
-      NS_ParseContentType(newMime, parsedMime, dummy);
+      NS_ParseResponseContentType(newMime, parsedMime, dummy);
       if (!parsedMime.IsEmpty()) {
         mChannel->SetContentType(parsedMime);
       }
@@ -2535,7 +2534,8 @@ nsObjectLoadingContent::OpenChannel()
                      group, 
                      shim,  
                      nsIChannel::LOAD_CALL_CONTENT_SNIFFERS |
-                     nsIChannel::LOAD_CLASSIFY_URI);
+                     nsIChannel::LOAD_CLASSIFY_URI |
+                     nsIChannel::LOAD_BYPASS_SERVICE_WORKER);
 
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -2556,13 +2556,6 @@ nsObjectLoadingContent::OpenChannel()
   if (scriptChannel) {
     
     scriptChannel->SetExecutionPolicy(nsIScriptChannel::EXECUTE_NORMAL);
-  }
-
-  nsCOMPtr<nsIHttpChannelInternal> internalChannel = do_QueryInterface(httpChan);
-  if (internalChannel) {
-    
-    
-    internalChannel->ForceNoIntercept();
   }
 
   

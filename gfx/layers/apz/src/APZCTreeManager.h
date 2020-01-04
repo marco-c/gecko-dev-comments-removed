@@ -214,15 +214,6 @@ public:
 
 
 
-
-  void TransformCoordinateToGecko(const ScreenIntPoint& aPoint,
-                                  LayoutDeviceIntPoint* aOutTransformedPoint);
-
-  
-
-
-
-
   void ZoomToRect(const ScrollableLayerGuid& aGuid,
                   const CSSRect& aRect);
 

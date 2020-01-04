@@ -1347,6 +1347,14 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
   rv = aRequestChannel->GetLoadFlags(&loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  
+  
+  
+  
+  loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+
   nsCOMPtr<nsIChannel> preflightChannel;
   rv = NS_NewChannelInternal(getter_AddRefs(preflightChannel),
                              uri,
@@ -1362,17 +1370,6 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
   rv = preHttp->SetRequestMethod(NS_LITERAL_CSTRING("OPTIONS"));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  nsCOMPtr<nsIHttpChannelInternal> preInternal = do_QueryInterface(preflightChannel);
-  if (preInternal) {
-    
-    
-    
-    
-    
-    preInternal->ForceNoIntercept();
-  }
-  
   
   nsCOMPtr<nsIStreamListener> preflightListener =
     new nsCORSPreflightListener(aRequestChannel, aListener, nullptr, aPrincipal,

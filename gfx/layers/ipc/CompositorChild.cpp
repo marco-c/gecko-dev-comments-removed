@@ -318,6 +318,9 @@ CompositorChild::RecvUpdatePluginConfigurations(const nsIntPoint& aContentOffset
   
   
   nsIWidget::UpdateRegisteredPluginWindowVisibility((uintptr_t)parent, visiblePluginIds);
+#if defined(XP_WIN)
+  SendRemotePluginsReady();
+#endif
   return true;
 #endif 
 }
@@ -333,6 +336,9 @@ CompositorChild::RecvHideAllPlugins(const uintptr_t& aParentWidget)
   MOZ_ASSERT(NS_IsMainThread());
   nsTArray<uintptr_t> list;
   nsIWidget::UpdateRegisteredPluginWindowVisibility(aParentWidget, list);
+#if defined(XP_WIN)
+  SendRemotePluginsReady();
+#endif
   return true;
 #endif 
 }

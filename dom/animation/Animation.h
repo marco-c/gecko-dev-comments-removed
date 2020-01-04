@@ -238,11 +238,11 @@ public:
 
   bool HasInPlayEffect() const
   {
-    return GetEffect() && GetEffect()->IsInPlay(*this);
+    return GetEffect() && GetEffect()->IsInPlay();
   }
   bool HasCurrentEffect() const
   {
-    return GetEffect() && GetEffect()->IsCurrent(*this);
+    return GetEffect() && GetEffect()->IsCurrent();
   }
   bool IsInEffect() const
   {
@@ -291,20 +291,7 @@ public:
 
   void ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
                     nsCSSPropertySet& aSetProperties,
-                    bool& aNeedsRefreshes);
-
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool HasEndEventToQueue() const { return false; }
+                    bool& aStyleChanging);
 
   void NotifyEffectTimingUpdated();
 

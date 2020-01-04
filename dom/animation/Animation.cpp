@@ -51,15 +51,17 @@ Animation::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 void
 Animation::SetEffect(KeyframeEffectReadOnly* aEffect)
 {
+  nsRefPtr<Animation> kungFuDeathGrip(this);
+
   if (mEffect == aEffect) {
     return;
   }
   if (mEffect) {
-    mEffect->SetParentTime(Nullable<TimeDuration>());
+    mEffect->SetAnimation(nullptr);
   }
   mEffect = aEffect;
   if (mEffect) {
-    mEffect->SetParentTime(GetCurrentTime());
+    mEffect->SetAnimation(this);
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
@@ -85,6 +87,7 @@ Animation::SetTimeline(AnimationTimeline* aTimeline)
   
   
 }
+
 
 void
 Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime)
@@ -162,6 +165,7 @@ Animation::SetCurrentTime(const TimeDuration& aSeekTime)
   PostUpdate();
 }
 
+
 void
 Animation::SetPlaybackRate(double aPlaybackRate)
 {
@@ -171,6 +175,7 @@ Animation::SetPlaybackRate(double aPlaybackRate)
     SetCurrentTime(previousTime.Value());
   }
 }
+
 
 AnimationPlayState
 Animation::PlayState() const
@@ -295,6 +300,7 @@ Animation::Pause(ErrorResult& aRv)
   PostUpdate();
 }
 
+
 void
 Animation::Reverse(ErrorResult& aRv)
 {
@@ -356,13 +362,16 @@ Animation::Tick()
 {
   
   
-  
-  
   if (mPendingState != PendingState::NotPending &&
       !mPendingReadyTime.IsNull() &&
       mTimeline &&
-      !mTimeline->GetCurrentTime().IsNull() &&
-      mPendingReadyTime.Value() <= mTimeline->GetCurrentTime().Value()) {
+      !mTimeline->GetCurrentTime().IsNull()) {
+    
+    
+    
+    
+    mPendingReadyTime.SetValue(std::min(mTimeline->GetCurrentTime().Value(),
+                                        mPendingReadyTime.Value()));
     FinishPendingAt(mPendingReadyTime.Value());
     mPendingReadyTime.SetNull();
   }
@@ -477,6 +486,7 @@ Animation::SilentlySetPlaybackRate(double aPlaybackRate)
   }
 }
 
+
 void
 Animation::DoCancel()
 {
@@ -566,7 +576,7 @@ Animation::CanThrottle() const
 void
 Animation::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
                         nsCSSPropertySet& aSetProperties,
-                        bool& aNeedsRefreshes)
+                        bool& aStyleChanging)
 {
   if (!mEffect) {
     return;
@@ -574,9 +584,8 @@ Animation::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
 
   AnimationPlayState playState = PlayState();
   if (playState == AnimationPlayState::Running ||
-      playState == AnimationPlayState::Pending ||
-      HasEndEventToQueue()) {
-    aNeedsRefreshes = true;
+      playState == AnimationPlayState::Pending) {
+    aStyleChanging = true;
   }
 
   if (!IsInEffect()) {
@@ -848,6 +857,7 @@ Animation::UpdateTiming(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag)
   }
 }
 
+
 void
 Animation::UpdateFinishedState(SeekFlag aSeekFlag,
                                SyncNotifyFlag aSyncNotifyFlag)
@@ -902,7 +912,6 @@ void
 Animation::UpdateEffect()
 {
   if (mEffect) {
-    mEffect->SetParentTime(GetCurrentTime());
     UpdateRelevance();
   }
 }

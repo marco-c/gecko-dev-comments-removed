@@ -117,14 +117,21 @@ AudioContext::AudioContext(nsPIDOMWindow* aWindow,
   }
 }
 
-void
+nsresult
 AudioContext::Init()
 {
   
   
   
-  mDestination->CreateAudioChannelAgent();
-  mDestination->SetIsOnlyNodeForContext(true);
+  if (!mIsOffline) {
+    nsresult rv = mDestination->CreateAudioChannelAgent();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    mDestination->SetIsOnlyNodeForContext(true);
+  }
+
+  return NS_OK;
 }
 
 AudioContext::~AudioContext()
@@ -151,20 +158,9 @@ AudioContext::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 AudioContext::Constructor(const GlobalObject& aGlobal,
                           ErrorResult& aRv)
 {
-  nsCOMPtr<nsPIDOMWindow> window = do_QueryInterface(aGlobal.GetAsSupports());
-  if (!window) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  nsRefPtr<AudioContext> object =
-    new AudioContext(window, false,
-                     AudioChannelService::GetDefaultAudioChannel());
-  object->Init();
-
-  RegisterWeakMemoryReporter(object);
-
-  return object.forget();
+  return AudioContext::Constructor(aGlobal,
+                                   AudioChannelService::GetDefaultAudioChannel(),
+                                   aRv);
 }
 
  already_AddRefed<AudioContext>
@@ -179,7 +175,10 @@ AudioContext::Constructor(const GlobalObject& aGlobal,
   }
 
   nsRefPtr<AudioContext> object = new AudioContext(window, false, aChannel);
-  object->Init();
+  aRv = object->Init();
+  if (NS_WARN_IF(aRv.Failed())) {
+     return nullptr;
+  }
 
   RegisterWeakMemoryReporter(object);
 

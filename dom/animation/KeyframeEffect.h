@@ -202,6 +202,8 @@ struct ElementPropertyTransition;
 
 namespace dom {
 
+class Animation;
+
 class KeyframeEffectReadOnly : public AnimationEffectReadOnly
 {
 public:
@@ -245,24 +247,15 @@ public:
     aPseudoType = mPseudoType;
   }
 
-  void SetParentTime(Nullable<TimeDuration> aParentTime);
-
   const AnimationTiming& Timing() const {
     return mTiming;
   }
   AnimationTiming& Timing() {
     return mTiming;
   }
+  void SetTiming(const AnimationTiming& aTiming);
 
-  
-  
-  void SetTiming(const AnimationTiming& aTiming, Animation& aOwningAnimtion);
-
-  Nullable<TimeDuration> GetLocalTime() const {
-    
-    
-    return mParentTime;
-  }
+  Nullable<TimeDuration> GetLocalTime() const;
 
   
   
@@ -289,9 +282,11 @@ public:
   static StickyTimeDuration
   ActiveDuration(const AnimationTiming& aTiming);
 
-  bool IsInPlay(const Animation& aAnimation) const;
-  bool IsCurrent(const Animation& aAnimation) const;
+  bool IsInPlay() const;
+  bool IsCurrent() const;
   bool IsInEffect() const;
+
+  void SetAnimation(Animation* aAnimation);
 
   const AnimationProperty*
   GetAnimationOfProperty(nsCSSProperty aProperty) const;
@@ -317,11 +312,11 @@ public:
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
 
 protected:
-  virtual ~KeyframeEffectReadOnly() { }
+  virtual ~KeyframeEffectReadOnly();
   void ResetIsRunningOnCompositor();
 
   nsCOMPtr<Element> mTarget;
-  Nullable<TimeDuration> mParentTime;
+  nsRefPtr<Animation> mAnimation;
 
   AnimationTiming mTiming;
   nsCSSPseudoElements::Type mPseudoType;

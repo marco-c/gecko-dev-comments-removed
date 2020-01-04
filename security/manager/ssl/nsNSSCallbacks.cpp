@@ -102,7 +102,8 @@ nsHTTPDownloadEvent::Run()
   if (priorityChannel)
     priorityChannel->AdjustPriority(nsISupportsPriority::PRIORITY_HIGHEST);
 
-  chan->SetLoadFlags(nsIRequest::LOAD_ANONYMOUS);
+  chan->SetLoadFlags(nsIRequest::LOAD_ANONYMOUS |
+                     nsIChannel::LOAD_BYPASS_SERVICE_WORKER);
 
   
   
@@ -133,9 +134,6 @@ nsHTTPDownloadEvent::Run()
   nsCOMPtr<nsIHttpChannelInternal> internalChannel = do_QueryInterface(chan);
   if (internalChannel) {
     rv = internalChannel->SetAllowSpdy(false);
-    NS_ENSURE_SUCCESS(rv, rv);
-    
-    rv = internalChannel->ForceNoIntercept();
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

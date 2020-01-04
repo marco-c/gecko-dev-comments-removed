@@ -26,6 +26,7 @@ class AsyncPanZoomController;
 class Layer;
 class LayerManagerComposite;
 class AutoResolveRefLayers;
+class CompositorParent;
 
 
 struct ViewTransform {
@@ -186,7 +187,15 @@ private:
 
 
 
-  void ResolveRefLayers();
+
+
+
+
+
+
+  void ResolveRefLayers(CompositorParent* aCompositor, bool* aHasRemoteContent,
+                        bool* aResolvePlugins);
+
   
 
 
@@ -224,10 +233,14 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AsyncCompositionManager::TransformsToSkip)
 
 class MOZ_STACK_CLASS AutoResolveRefLayers {
 public:
-  explicit AutoResolveRefLayers(AsyncCompositionManager* aManager) : mManager(aManager)
+  explicit AutoResolveRefLayers(AsyncCompositionManager* aManager,
+                                CompositorParent* aCompositor = nullptr,
+                                bool* aHasRemoteContent = nullptr,
+                                bool* aResolvePlugins = nullptr) :
+    mManager(aManager)
   {
     if (mManager) {
-      mManager->ResolveRefLayers();
+      mManager->ResolveRefLayers(aCompositor, aHasRemoteContent, aResolvePlugins);
     }
   }
 

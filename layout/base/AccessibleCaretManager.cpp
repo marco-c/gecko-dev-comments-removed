@@ -908,19 +908,57 @@ AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint)
   return NS_OK;
 }
 
+nsRect
+AccessibleCaretManager::GetContentBoundaryForFrame(nsIFrame* aFrame) const
+{
+  nsRect resultRect;
+  nsIFrame* rootFrame = mPresShell->GetRootFrame();
+
+  for (; aFrame; aFrame = aFrame->GetNextContinuation()) {
+    nsRect rect = aFrame->GetContentRectRelativeToSelf();
+    nsLayoutUtils::TransformRect(aFrame, rootFrame, rect);
+    resultRect = resultRect.Union(rect);
+
+    nsIFrame::ChildListIterator lists(aFrame);
+    for (; !lists.IsDone(); lists.Next()) {
+      
+      for (nsIFrame* child : lists.CurrentList()) {
+        nsRect overflowRect = child->GetScrollableOverflowRect();
+        nsLayoutUtils::TransformRect(child, rootFrame, overflowRect);
+        resultRect = resultRect.Union(overflowRect);
+      }
+    }
+  }
+
+  
+  resultRect.Deflate(kBoundaryAppUnits);
+  return resultRect;
+}
+
 nsPoint
 AccessibleCaretManager::AdjustDragBoundary(const nsPoint& aPoint) const
 {
-  
-  
-  
-  
-  
-  
-  
   nsPoint adjustedPoint = aPoint;
 
+  int32_t focusOffset = 0;
+  nsIFrame* focusFrame =
+    nsCaret::GetFrameAndOffset(GetSelection(), nullptr, 0, &focusOffset);
+  Element* editingHost = GetEditingHostForFrame(focusFrame);
+
+  if (editingHost) {
+    nsRect boundary =
+      GetContentBoundaryForFrame(editingHost->GetPrimaryFrame());
+    adjustedPoint = boundary.ClampPoint(adjustedPoint);
+  }
+
   if (GetCaretMode() == CaretMode::Selection) {
+    
+    
+    
+    
+    
+    
+    
     if (mActiveCaret == mFirstCaret.get()) {
       nscoord dragDownBoundaryY = mSecondCaret->LogicalPosition().y;
       if (dragDownBoundaryY > 0 && adjustedPoint.y > dragDownBoundaryY) {

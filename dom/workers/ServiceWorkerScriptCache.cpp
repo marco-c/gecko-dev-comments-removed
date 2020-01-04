@@ -117,7 +117,9 @@ public:
                        uri, aPrincipal,
                        nsILoadInfo::SEC_NORMAL,
                        nsIContentPolicy::TYPE_INTERNAL_SCRIPT,
-                       loadGroup);
+                       loadGroup,
+                       nullptr, 
+                       nsIChannel::LOAD_BYPASS_SERVICE_WORKER);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -138,12 +140,6 @@ public:
     if (httpChannel) {
       
       httpChannel->SetRedirectionLimit(0);
-    }
-
-    
-    nsCOMPtr<nsIHttpChannelInternal> internalChannel = do_QueryInterface(mChannel);
-    if (internalChannel) {
-      internalChannel->ForceNoIntercept();
     }
 
     nsCOMPtr<nsIStreamLoader> loader;

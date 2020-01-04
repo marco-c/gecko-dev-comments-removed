@@ -2243,7 +2243,7 @@ HttpChannelChild::ResetInterception()
 
   
   
-  ForceNoIntercept();
+  mLoadFlags |= LOAD_BYPASS_SERVICE_WORKER;
 
   
   nsresult rv = ContinueAsyncOpen();

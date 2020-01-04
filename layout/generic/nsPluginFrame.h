@@ -24,6 +24,7 @@
 #undef GetClassName
 #undef GetBinaryType
 #undef RemoveDirectory
+#undef LoadIcon
 #endif
 
 class nsPresContext;
@@ -199,6 +200,11 @@ public:
 
   void SetInstanceOwner(nsPluginInstanceOwner* aOwner);
 
+  
+
+
+  void SetScrollVisibility(bool aState);
+
 protected:
   explicit nsPluginFrame(nsStyleContext* aContext);
   virtual ~nsPluginFrame();
@@ -302,6 +308,10 @@ private:
   
   
   nsRefPtr<nsRootPresContext> mRootPresContextRegisteredWith;
+
+  
+  
+  bool mIsHiddenDueToScroll;
 };
 
 class nsDisplayPlugin : public nsDisplayItem {

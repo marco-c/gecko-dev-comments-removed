@@ -808,11 +808,6 @@ private:
   
   nsRefPtr<MediaDecoderStateMachine> mDecoderStateMachine;
 
-  
-  
-  
-  ReentrantMonitor mReentrantMonitor;
-
 #ifdef MOZ_EME
   MozPromiseHolder<CDMProxyPromise> mCDMProxyPromiseHolder;
   nsRefPtr<CDMProxyPromise> mCDMProxyPromise;
