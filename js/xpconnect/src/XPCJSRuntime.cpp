@@ -132,20 +132,6 @@ xpc::SharedMemoryEnabled() { return sSharedMemoryEnabled; }
 
 
 
-bool
-XPCJSRuntime::CustomContextCallback(JSContext* cx, unsigned operation)
-{
-    if (operation == JSCONTEXT_NEW) {
-        if (!OnJSContextNew(cx)) {
-            return false;
-        }
-    } else if (operation == JSCONTEXT_DESTROY) {
-        delete XPCContext::GetXPCContext(cx);
-    }
-
-    return true;
-}
-
 class AsyncFreeSnowWhite : public Runnable
 {
 public:
@@ -3662,7 +3648,7 @@ XPCJSRuntime::newXPCJSRuntime()
 }
 
 bool
-XPCJSRuntime::OnJSContextNew(JSContext* cx)
+XPCJSRuntime::InitXPCContext(JSContext* cx)
 {
     
     
