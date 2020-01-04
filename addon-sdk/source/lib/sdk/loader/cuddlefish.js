@@ -26,7 +26,7 @@ const xulappURI = module.uri.replace("loader/cuddlefish.js",
 
 
 
-const loaderSandbox = loadSandbox(loaderURI);
+var loaderSandbox = loadSandbox(loaderURI);
 const loaderModule = loaderSandbox.exports;
 
 const { incompatibility } = Cu.import(xulappURI, {}).XulApp;
