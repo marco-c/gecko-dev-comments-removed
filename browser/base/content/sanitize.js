@@ -278,16 +278,39 @@ Sanitizer.prototype = {
         }
 
         
+        
+        
+        
+        
+        
+        
+        
+        let promiseClearPluginCookies;
         TelemetryStopwatch.start("FX_SANITIZE_PLUGINS", refObj);
         try {
-          yield this.promiseClearPluginCookies(range);
+          
+          promiseClearPluginCookies = this.promiseClearPluginCookies(range);
+
+          
+          yield Promise.race([
+            promiseClearPluginCookies,
+            new Promise(resolve => setTimeout(resolve, 10000 ))
+          ]);
         } catch (ex) {
           seenException = ex;
-        } finally {
-          TelemetryStopwatch.finish("FX_SANITIZE_PLUGINS", refObj);
         }
 
-        TelemetryStopwatch.finish("FX_SANITIZE_COOKIES", refObj);
+        
+        promiseClearPluginCookies.catch(() => {
+          
+          
+          
+        }).then(() => {
+          
+          TelemetryStopwatch.finish("FX_SANITIZE_PLUGINS", refObj);
+          TelemetryStopwatch.finish("FX_SANITIZE_COOKIES", refObj);
+        });
+
         if (seenException) {
           throw seenException;
         }
