@@ -1264,6 +1264,7 @@ StaticRefPtr<TSFTextStore> TSFTextStore::sEnabledTextStore;
 DWORD TSFTextStore::sClientId  = 0;
 
 bool TSFTextStore::sCreateNativeCaretForLegacyATOK = false;
+bool TSFTextStore::sDoNotReturnNoLayoutErrorToATOKOfCompositionString = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToMSSimplifiedTIP = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToMSTraditionalTIP = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToFreeChangJie = false;
@@ -3746,6 +3747,22 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
     
     
     
+    
+    
+    
+    
+    else if (sDoNotReturnNoLayoutErrorToATOKOfCompositionString &&
+             kSink->IsATOKActive() &&
+             (!kSink->IsATOKReferringNativeCaretActive() ||
+              !sCreateNativeCaretForLegacyATOK) &&
+             mComposition.mStart == acpStart &&
+             mComposition.EndOffset() == acpEnd) {
+      dontReturnNoLayoutError = true;
+    }
+    
+    
+    
+    
     else if ((sDoNotReturnNoLayoutErrorToFreeChangJie &&
               kSink->IsFreeChangJieActive()) ||
              (sDoNotReturnNoLayoutErrorToEasyChangjei &&
@@ -5751,6 +5768,10 @@ TSFTextStore::Initialize()
 
   sCreateNativeCaretForLegacyATOK =
     Preferences::GetBool("intl.tsf.hack.atok.create_native_caret", true);
+  sDoNotReturnNoLayoutErrorToATOKOfCompositionString =
+    Preferences::GetBool(
+      "intl.tsf.hack.atok.do_not_return_no_layout_error_of_composition_string",
+      true);
   sDoNotReturnNoLayoutErrorToMSSimplifiedTIP =
     Preferences::GetBool(
       "intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error",
@@ -5785,6 +5806,7 @@ TSFTextStore::Initialize()
      "sClientId=0x%08X, sDisplayAttrMgr=0x%p, "
      "sCategoryMgr=0x%p, sDisabledDocumentMgr=0x%p, sDisabledContext=%p, "
      "sCreateNativeCaretForLegacyATOK=%s, "
+     "sDoNotReturnNoLayoutErrorToATOKOfCompositionString=%s, "
      "sDoNotReturnNoLayoutErrorToFreeChangJie=%s, "
      "sDoNotReturnNoLayoutErrorToEasyChangjei=%s, "
      "sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar=%s, "
@@ -5792,6 +5814,7 @@ TSFTextStore::Initialize()
      sThreadMgr.get(), sClientId, sDisplayAttrMgr.get(),
      sCategoryMgr.get(), sDisabledDocumentMgr.get(), sDisabledContext.get(),
      GetBoolName(sCreateNativeCaretForLegacyATOK),
+     GetBoolName(sDoNotReturnNoLayoutErrorToATOKOfCompositionString),
      GetBoolName(sDoNotReturnNoLayoutErrorToFreeChangJie),
      GetBoolName(sDoNotReturnNoLayoutErrorToEasyChangjei),
      GetBoolName(sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar),

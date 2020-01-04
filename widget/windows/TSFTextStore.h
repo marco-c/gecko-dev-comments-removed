@@ -986,6 +986,7 @@ protected:
 
   
   static bool sCreateNativeCaretForLegacyATOK;
+  static bool sDoNotReturnNoLayoutErrorToATOKOfCompositionString;
   static bool sDoNotReturnNoLayoutErrorToMSSimplifiedTIP;
   static bool sDoNotReturnNoLayoutErrorToMSTraditionalTIP;
   static bool sDoNotReturnNoLayoutErrorToFreeChangJie;
