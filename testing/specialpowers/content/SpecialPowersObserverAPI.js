@@ -551,9 +551,23 @@ SpecialPowersObserverAPI.prototype = {
       }
 
       case "SPStartupExtension": {
+        let {ExtensionData} = Components.utils.import("resource://gre/modules/Extension.jsm", {});
+
         let id = aMessage.data.id;
         let extension = this._extensions.get(id);
-        extension.startup().then(() => {
+
+        
+        
+        
+        let extensionData = new ExtensionData(extension.rootURI);
+        extensionData.readManifest().then(() => {
+          return extensionData.initAllLocales();
+        }).then(() => {
+          if (extensionData.errors.length) {
+            return Promise.reject("Extension contains packaging errors");
+          }
+          return extension.startup();
+        }).then(() => {
           this._sendReply(aMessage, "SPExtensionMessage", {id, type: "extensionStarted", args: []});
         }).catch(e => {
           this._sendReply(aMessage, "SPExtensionMessage", {id, type: "extensionFailed", args: []});
