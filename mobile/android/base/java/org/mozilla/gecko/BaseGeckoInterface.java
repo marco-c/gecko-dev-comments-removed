@@ -59,12 +59,6 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
 
     
     @Override
-    public SensorEventListener getSensorEventListener() {
-        return null;
-    }
-
-    
-    @Override
     public void doRestart() {}
 
     @Override
