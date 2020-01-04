@@ -378,9 +378,6 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
     
     
     
-    
-    
-    
 
     CommonFrameLayout* prev = nullptr;
     size_t entryIndex = *start;
@@ -467,22 +464,13 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
             if (info) {
                 MOZ_ASSERT(info->pc == pc);
                 MOZ_ASSERT(info->frameKind == kind);
-
-                
-                MOZ_ASSERT_IF(script->baselineScript()->hasDebugInstrumentation(),
-                              kind == ICEntry::Kind_CallVM ||
-                              kind == ICEntry::Kind_WarmupCounter ||
-                              kind == ICEntry::Kind_StackCheck ||
-                              kind == ICEntry::Kind_EarlyStackCheck ||
-                              kind == ICEntry::Kind_DebugTrap ||
-                              kind == ICEntry::Kind_DebugPrologue ||
-                              kind == ICEntry::Kind_DebugEpilogue);
-                
-                MOZ_ASSERT_IF(!script->baselineScript()->hasDebugInstrumentation(),
-                              kind == ICEntry::Kind_CallVM ||
-                              kind == ICEntry::Kind_WarmupCounter||
-                              kind == ICEntry::Kind_StackCheck ||
-                              kind == ICEntry::Kind_EarlyStackCheck);
+                MOZ_ASSERT(kind == ICEntry::Kind_CallVM ||
+                           kind == ICEntry::Kind_WarmupCounter ||
+                           kind == ICEntry::Kind_StackCheck ||
+                           kind == ICEntry::Kind_EarlyStackCheck ||
+                           kind == ICEntry::Kind_DebugTrap ||
+                           kind == ICEntry::Kind_DebugPrologue ||
+                           kind == ICEntry::Kind_DebugEpilogue);
 
                 
                 
