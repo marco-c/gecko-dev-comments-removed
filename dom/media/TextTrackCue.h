@@ -315,12 +315,6 @@ public:
   PositionAlignSetting ComputedPositionAlign();
 
   
-  bool
-  operator==(const TextTrackCue& rhs) const
-  {
-    return mId.Equals(rhs.mId);
-  }
-
   const nsAString& Id() const
   {
     return mId;
