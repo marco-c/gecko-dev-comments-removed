@@ -25,6 +25,8 @@ class SdpMediaSection
 {
 public:
   enum MediaType { kAudio, kVideo, kText, kApplication, kMessage };
+  
+  static const size_t kMediaTypes = static_cast<size_t>(kMessage) + 1;
 
   enum Protocol {
     kRtpAvp,            
