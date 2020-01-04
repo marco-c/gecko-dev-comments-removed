@@ -997,8 +997,14 @@ InspectorPanel.prototype = {
 
     
     
-    if (isVisible && !sidePane.hasAttribute("width")) {
-      sidePane.setAttribute("width", sidePane.getBoundingClientRect().width);
+    if (isVisible) {
+      let rect = sidePane.getBoundingClientRect();
+      if (!sidePane.hasAttribute("width")) {
+        sidePane.setAttribute("width", rect.width);
+      }
+      
+      
+      sidePane.setAttribute("height", rect.height);
     }
 
     ViewHelpers.togglePane({

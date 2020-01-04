@@ -236,6 +236,7 @@ this.ViewHelpers = {
 
 
 
+
   togglePane: function(aFlags, aPane) {
     
     if (!aPane) {
@@ -246,9 +247,7 @@ this.ViewHelpers = {
     aPane.removeAttribute("hidden");
 
     
-    if (!aPane.classList.contains("generic-toggled-side-pane")) {
-      aPane.classList.add("generic-toggled-side-pane");
-    }
+    aPane.classList.add("generic-toggled-pane");
 
     
     if (aFlags.visible == !aPane.hasAttribute("pane-collapsed")) {
@@ -265,14 +264,20 @@ this.ViewHelpers = {
 
     
     let doToggle = () => {
+      
+      
+      
       if (aFlags.visible) {
         aPane.style.marginLeft = "0";
         aPane.style.marginRight = "0";
+        aPane.style.marginBottom = "0";
         aPane.removeAttribute("pane-collapsed");
       } else {
-        let margin = ~~(aPane.getAttribute("width")) + 1;
-        aPane.style.marginLeft = -margin + "px";
-        aPane.style.marginRight = -margin + "px";
+        let width = Math.floor(aPane.getAttribute("width")) + 1;
+        let height = Math.floor(aPane.getAttribute("height")) + 1;
+        aPane.style.marginLeft = -width + "px";
+        aPane.style.marginRight = -width + "px";
+        aPane.style.marginBottom = -height + "px";
         aPane.setAttribute("pane-collapsed", "");
       }
 
@@ -280,14 +285,16 @@ this.ViewHelpers = {
       if (aFlags.animated) {
         aPane.addEventListener("transitionend", function onEvent() {
           aPane.removeEventListener("transitionend", onEvent, false);
+          
+          
+          aPane.removeAttribute("animated");
           if (aFlags.callback) aFlags.callback();
         }, false);
-      }
-      
-      else {
+      } else {
+        
         if (aFlags.callback) aFlags.callback();
       }
-    }
+    };
 
     
     
