@@ -2186,12 +2186,6 @@ extern JS_PUBLIC_API(void*)
 JS_GetInstancePrivate(JSContext* cx, JS::Handle<JSObject*> obj, const JSClass* clasp,
                       JS::CallArgs* args);
 
-extern JS_PUBLIC_API(bool)
-JS_GetPrototype(JSContext* cx, JS::HandleObject obj, JS::MutableHandleObject protop);
-
-extern JS_PUBLIC_API(bool)
-JS_SetPrototype(JSContext* cx, JS::HandleObject obj, JS::HandleObject proto);
-
 extern JS_PUBLIC_API(JSObject*)
 JS_GetConstructor(JSContext* cx, JS::Handle<JSObject*> proto);
 
@@ -2417,10 +2411,6 @@ JS_FireOnNewGlobalObject(JSContext* cx, JS::HandleObject global);
 extern JS_PUBLIC_API(JSObject*)
 JS_NewObject(JSContext* cx, const JSClass* clasp);
 
-
-extern JS_PUBLIC_API(bool)
-JS_IsExtensible(JSContext* cx, JS::HandleObject obj, bool* extensible);
-
 extern JS_PUBLIC_API(bool)
 JS_IsNative(JSObject* obj);
 
@@ -2451,26 +2441,6 @@ JS_DeepFreezeObject(JSContext* cx, JS::Handle<JSObject*> obj);
 
 extern JS_PUBLIC_API(bool)
 JS_FreezeObject(JSContext* cx, JS::Handle<JSObject*> obj);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_PreventExtensions(JSContext* cx, JS::HandleObject obj, JS::ObjectOpResult& result);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_SetImmutablePrototype(JSContext* cx, JS::HandleObject obj, bool* succeeded);
 
 extern JS_PUBLIC_API(JSObject*)
 JS_New(JSContext* cx, JS::HandleObject ctor, const JS::HandleValueArray& args);
@@ -2766,6 +2736,81 @@ ObjectToCompletePropertyDescriptor(JSContext* cx,
                                    JS::MutableHandle<JSPropertyDescriptor> desc);
 
 } 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_GetPrototype(JSContext* cx, JS::HandleObject obj, JS::MutableHandleObject result);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_SetPrototype(JSContext* cx, JS::HandleObject obj, JS::HandleObject proto);
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_IsExtensible(JSContext* cx, JS::HandleObject obj, bool* extensible);
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_PreventExtensions(JSContext* cx, JS::HandleObject obj, JS::ObjectOpResult& result);
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_SetImmutablePrototype(JSContext* cx, JS::HandleObject obj, bool* succeeded);
 
 
 
