@@ -507,7 +507,9 @@ loop.OTSdkDriver = (function() {
         case "Session.forceDisconnected":
           break;
         default:
-          if (eventName.indexOf("sdk.exception") === -1) {
+          
+          
+          if (!/^sdk\.(exception|datachannel)/.test(eventName)) {
             console.error("Unexpected event name", eventName);
             return;
           }
@@ -676,6 +678,7 @@ loop.OTSdkDriver = (function() {
         
         if (err) {
           console.error(err);
+          this._notifyMetricsEvent("sdk.datachannel.sub." + err.message);
           return;
         }
 
@@ -726,6 +729,7 @@ loop.OTSdkDriver = (function() {
       this.publisher._.getDataChannel("text", {}, function(err, channel) {
         if (err) {
           console.error(err);
+          this._notifyMetricsEvent("sdk.datachannel.pub." + err.message);
           return;
         }
 
