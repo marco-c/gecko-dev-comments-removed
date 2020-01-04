@@ -1814,7 +1814,7 @@ nsContainerFrame::FrameStartsCounterScope(nsIFrame* aFrame)
 }
 
 bool
-nsContainerFrame::RenumberLists()
+nsContainerFrame::RenumberList()
 {
   if (!FrameStartsCounterScope(this)) {
     
@@ -1996,7 +1996,7 @@ nsContainerFrame::AttributeChanged(int32_t         aNameSpaceID,
        mContent->IsHTMLElement(nsGkAtoms::ol))) {
 
     
-    if (RenumberLists()) {
+    if (RenumberList()) {
       PresContext()->PresShell()->
         FrameNeedsReflow(this, nsIPresShell::eStyleChange,
                          NS_FRAME_HAS_DIRTY_CHILDREN);

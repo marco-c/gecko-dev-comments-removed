@@ -473,7 +473,7 @@ public:
 
 
 
-  bool RenumberLists();
+  bool RenumberList();
 
   
 
