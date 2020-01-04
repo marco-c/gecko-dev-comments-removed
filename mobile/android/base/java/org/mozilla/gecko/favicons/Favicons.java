@@ -149,6 +149,32 @@ public class Favicons {
 
 
 
+
+
+    public static int selectBestSizeFromList(final List<Integer> sizes, final int preferredSize) {
+        Collections.sort(sizes);
+
+        for (int size : sizes) {
+            if (size >= preferredSize) {
+                return size;
+            }
+        }
+
+        
+        
+        if (sizes.size() > 0) {
+            return sizes.get(sizes.size() - 1);
+        } else {
+            
+            return -1;
+        }
+    }
+
+    
+
+
+
+
     static int dispatchResult(final String pageUrl, final String faviconURL, final Bitmap image,
             final OnFaviconLoadedListener listener) {
         if (listener == null) {
