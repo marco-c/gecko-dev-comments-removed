@@ -6,6 +6,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Components.utils.import("resource://gre/modules/Task.jsm");
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+Components.utils.import("resource://gre/modules/Timer.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
@@ -82,3 +83,28 @@ var promiseConsoleOutput = Task.async(function* (task) {
     Services.console.unregisterListener(listener);
   }
 });
+
+
+
+
+function cleanupDir(dir) {
+  let count = 0;
+  return new Promise((resolve, reject) => {
+    function tryToRemoveDir() {
+      count += 1;
+      try {
+        dir.remove(true);
+      } catch (e) {
+        
+      }
+      if (!dir.exists()) {
+        return resolve();
+      }
+      if (count >= 25) {
+        return reject(`Failed to cleanup directory: ${dir}`);
+      }
+      setTimeout(tryToRemoveDir, 100);
+    }
+    tryToRemoveDir();
+  });
+}
