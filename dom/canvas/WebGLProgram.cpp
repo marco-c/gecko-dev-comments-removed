@@ -786,14 +786,8 @@ WebGLProgram::GetUniformLocation(const nsAString& userName_wide) const
     const NS_LossyConvertUTF16toASCII userName(userName_wide);
 
     nsDependentCString baseUserName;
-    bool isArray = false;
-    
-    
-    
-    
-    
-    
-    size_t arrayIndex = 0;
+    bool isArray;
+    size_t arrayIndex;
     if (!ParseName(userName, &baseUserName, &isArray, &arrayIndex))
         return nullptr;
 
@@ -818,8 +812,7 @@ WebGLProgram::GetUniformLocation(const nsAString& userName_wide) const
         return nullptr;
 
     RefPtr<WebGLUniformLocation> locObj = new WebGLUniformLocation(mContext, LinkInfo(),
-                                                                   loc, arrayIndex,
-                                                                   activeInfo);
+                                                                     loc, activeInfo);
     return locObj.forget();
 }
 
