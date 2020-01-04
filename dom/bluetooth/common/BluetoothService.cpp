@@ -532,8 +532,6 @@ BluetoothService::HandleShutdown()
   
   
 
-  sInShutdown = true;
-
   Cleanup();
 
   AutoInfallibleTArray<BluetoothParent*, 10> childActors;
@@ -633,6 +631,13 @@ BluetoothService::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
+    
+
+
+
+
+    sInShutdown = true;
+
     return HandleShutdown();
   }
 
