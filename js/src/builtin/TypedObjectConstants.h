@@ -104,11 +104,10 @@
 
 
 
-
-#define JS_SIMDTYPEREPR_INT8          0
-#define JS_SIMDTYPEREPR_INT16         1
-#define JS_SIMDTYPEREPR_INT32         2
-#define JS_SIMDTYPEREPR_FLOAT32       3
-#define JS_SIMDTYPEREPR_FLOAT64       4
+#define JS_SIMDTYPEREPR_INT8X16         0
+#define JS_SIMDTYPEREPR_INT16X8         1
+#define JS_SIMDTYPEREPR_INT32X4         2
+#define JS_SIMDTYPEREPR_FLOAT32X4       3
+#define JS_SIMDTYPEREPR_FLOAT64X2       4
 
 #endif
