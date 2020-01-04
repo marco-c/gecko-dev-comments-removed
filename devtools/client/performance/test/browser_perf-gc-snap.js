@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -142,3 +143,4 @@ var GC_MARKERS = [
   marker.end = marker.start + 9;
   return marker;
 });
+

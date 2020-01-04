@@ -13,7 +13,8 @@ const { CATEGORY_MASK } = require("devtools/client/performance/modules/categorie
 const RecordingUtils = require("devtools/shared/performance/recording-utils");
 
 add_task(function () {
-  let threadNode = new ThreadNode(gProfile.threads[0], { startTime: 0, endTime: 20, contentOnly: true });
+  let threadNode = new ThreadNode(gProfile.threads[0], { startTime: 0, endTime: 20,
+                                                         contentOnly: true });
 
   
   threadNode.calls = threadNode.calls[0].calls;

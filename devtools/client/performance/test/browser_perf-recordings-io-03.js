@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -52,3 +53,4 @@ function asyncCopy(data, file) {
 
   return deferred.promise;
 }
+

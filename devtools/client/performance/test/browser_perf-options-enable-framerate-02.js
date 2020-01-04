@@ -18,7 +18,7 @@ add_task(function* () {
     win: window
   });
 
-  let { $, PerformanceController } = panel.panelWin;
+  let { PerformanceController } = panel.panelWin;
 
   
   Services.prefs.setBoolPref(UI_ENABLE_FRAMERATE_PREF, false);

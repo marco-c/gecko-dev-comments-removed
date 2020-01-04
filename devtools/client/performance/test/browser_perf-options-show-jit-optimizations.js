@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 requestLongerTimeout(2);
@@ -256,3 +257,4 @@ gThread.frameTable.data.forEach((frame) => {
       break;
   }
 });
+

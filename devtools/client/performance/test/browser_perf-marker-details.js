@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -142,3 +143,4 @@ function shouldHaveLabel($, name, value, marker) {
   let $value = $name.parentNode.querySelector(".marker-details-labelvalue");
   is($value.getAttribute("value"), value, `${marker.name} has correct label for ${name}:${value}`);
 }
+

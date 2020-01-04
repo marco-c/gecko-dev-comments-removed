@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -39,3 +40,4 @@ var test = Task.async(function* () {
   yield teardown(panel);
   finish();
 });
+

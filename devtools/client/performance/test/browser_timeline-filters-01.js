@@ -5,6 +5,7 @@
 
 
 
+
 const EPSILON = 0.00000001;
 
 function* spawnTest() {
@@ -115,3 +116,4 @@ function waitForOverviewAndCommand(overview, item) {
   let menuitemCommandDispatched = once(item, "command");
   return Promise.all([overviewRendered, menuitemCommandDispatched]);
 }
+

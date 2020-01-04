@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -150,3 +151,4 @@ gThread.frameTable.data.forEach((frame) => {
       break;
   }
 });
+

@@ -27,23 +27,24 @@ add_task(function* () {
   checkViews(DetailsView, $, "waterfall");
 
   
-  let viewChanged = once(DetailsView, EVENTS.UI_DETAILS_VIEW_SELECTED, { spreadArgs: true });
+  let viewChanged = once(DetailsView, EVENTS.UI_DETAILS_VIEW_SELECTED,
+                         { spreadArgs: true });
   command($("toolbarbutton[data-view='js-calltree']"));
-  let [_, viewName] = yield viewChanged;
+  let [, viewName] = yield viewChanged;
   is(viewName, "js-calltree", "UI_DETAILS_VIEW_SELECTED fired with view name");
   checkViews(DetailsView, $, "js-calltree");
 
   
   viewChanged = once(DetailsView, EVENTS.UI_DETAILS_VIEW_SELECTED, { spreadArgs: true });
   command($("toolbarbutton[data-view='js-flamegraph']"));
-  [_, viewName] = yield viewChanged;
+  [, viewName] = yield viewChanged;
   is(viewName, "js-flamegraph", "UI_DETAILS_VIEW_SELECTED fired with view name");
   checkViews(DetailsView, $, "js-flamegraph");
 
   
   viewChanged = once(DetailsView, EVENTS.UI_DETAILS_VIEW_SELECTED, { spreadArgs: true });
   command($("toolbarbutton[data-view='waterfall']"));
-  [_, viewName] = yield viewChanged;
+  [, viewName] = yield viewChanged;
   is(viewName, "waterfall", "UI_DETAILS_VIEW_SELECTED fired with view name");
   checkViews(DetailsView, $, "waterfall");
 

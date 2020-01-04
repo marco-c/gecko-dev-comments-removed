@@ -6,6 +6,7 @@
 
 
 
+
 const { SIMPLE_URL } = require("devtools/client/performance/test/helpers/urls");
 const { UI_ENABLE_ALLOCATIONS_PREF, UI_INVERT_FLAME_PREF } = require("devtools/client/performance/test/helpers/prefs");
 const { initPerformanceInNewTab, teardownToolboxAndRemoveTab } = require("devtools/client/performance/test/helpers/panel-utils");

@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -93,3 +94,4 @@ function evalInDebuggee(script) {
 
   return deferred.promise;
 }
+

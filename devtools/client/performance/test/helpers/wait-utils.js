@@ -15,10 +15,12 @@ const { once, observeOnce } = require("devtools/client/performance/test/helpers/
 exports.busyWait = function (time) {
   dump(`Busy waiting for: ${time} milliseconds.\n`);
   let start = Date.now();
+  
   let stack;
   while (Date.now() - start < time) {
     stack = CC.stack;
   }
+  
 };
 
 

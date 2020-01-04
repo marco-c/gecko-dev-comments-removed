@@ -6,6 +6,7 @@
 
 
 
+
 const { SIMPLE_URL } = require("devtools/client/performance/test/helpers/urls");
 const { UI_FLATTEN_RECURSION_PREF, UI_ENABLE_ALLOCATIONS_PREF } = require("devtools/client/performance/test/helpers/prefs");
 const { initPerformanceInNewTab, teardownToolboxAndRemoveTab } = require("devtools/client/performance/test/helpers/panel-utils");
@@ -18,7 +19,14 @@ add_task(function* () {
     win: window
   });
 
-  let { EVENTS, PerformanceController, DetailsView, MemoryFlameGraphView, RecordingUtils, FlameGraphUtils } = panel.panelWin;
+  let {
+    EVENTS,
+    PerformanceController,
+    DetailsView,
+    MemoryFlameGraphView,
+    RecordingUtils,
+    FlameGraphUtils
+  } = panel.panelWin;
 
   
   Services.prefs.setBoolPref(UI_ENABLE_ALLOCATIONS_PREF, true);
