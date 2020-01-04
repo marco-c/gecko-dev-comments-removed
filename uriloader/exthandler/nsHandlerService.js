@@ -219,7 +219,7 @@ HandlerService.prototype = {
     var schemes = {};
 
     
-    for each (var schemePrefName in schemePrefList) {
+    for (var schemePrefName of schemePrefList) {
 
       let [scheme, handlerNumber, attribute] = schemePrefName.split(".");
 
@@ -259,8 +259,8 @@ HandlerService.prototype = {
       
       let possibleHandlers = protoInfo.possibleApplicationHandlers;
 
-      for each (var handlerPrefs in schemes[scheme]) {
-
+      for (let handlerNumber in schemes[scheme]) {
+        let handlerPrefs = schemes[scheme][handlerNumber];
         let handlerApp = Cc["@mozilla.org/uriloader/web-handler-app;1"].
                          createInstance(Ci.nsIWebHandlerApp);
 
@@ -369,7 +369,7 @@ HandlerService.prototype = {
     
     
     if (aHandlerInfo instanceof Ci.nsIMIMEInfo)
-      for each (let fileExtension in this._retrieveFileExtensions(typeID))
+      for (let fileExtension of this._retrieveFileExtensions(typeID))
         aHandlerInfo.appendExtension(fileExtension);
   },
 
@@ -430,7 +430,7 @@ HandlerService.prototype = {
 
     
     
-    for each (let possibleHandlerID in possibleHandlerIDs)
+    for (let possibleHandlerID of possibleHandlerIDs)
       if (!this._existsResourceTarget(NC_POSSIBLE_APP, possibleHandlerID))
         this._removeAssertions(possibleHandlerID);
 
