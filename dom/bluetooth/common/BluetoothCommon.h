@@ -371,103 +371,6 @@ struct BluetoothActivityEnergyInfo {
   uint64_t mEnergyUsed; 
 };
 
-
-
-
-
-
-struct BluetoothAddress {
-
-  static const BluetoothAddress ANY;
-  static const BluetoothAddress ALL;
-  static const BluetoothAddress LOCAL;
-
-  uint8_t mAddr[6];
-
-  BluetoothAddress()
-    : mAddr{0x00, 0x00, 0x00, 0x00, 0x00, 0x00} 
-  { }
-
-  BluetoothAddress(const BluetoothAddress&) MOZ_IMPLICIT = default;
-  BluetoothAddress(BluetoothAddress&&) MOZ_IMPLICIT = default;
-
-  BluetoothAddress(uint8_t aAddr0, uint8_t aAddr1,
-                   uint8_t aAddr2, uint8_t aAddr3,
-                   uint8_t aAddr4, uint8_t aAddr5)
-    : mAddr{aAddr0, aAddr1, aAddr2, aAddr3, aAddr4, aAddr5}
-  { }
-
-  BluetoothAddress& operator=(const BluetoothAddress&) = default;
-  BluetoothAddress& operator=(BluetoothAddress&&) = default;
-
-  bool operator==(const BluetoothAddress& aRhs) const
-  {
-    return !memcmp(mAddr, aRhs.mAddr, sizeof(mAddr));
-  }
-
-  bool operator!=(const BluetoothAddress& aRhs) const
-  {
-    return !operator==(aRhs);
-  }
-
-  
-
-
-  void Clear()
-  {
-    operator=(ANY);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  uint32_t GetLAP() const
-  {
-    return (static_cast<uint32_t>(mAddr[0])) |
-           (static_cast<uint32_t>(mAddr[1]) << 8) |
-           (static_cast<uint32_t>(mAddr[2]) << 16);
-  }
-
-  void SetLAP(uint32_t aLAP)
-  {
-    MOZ_ASSERT(!(aLAP & 0xff000000)); 
-
-    mAddr[0] = aLAP;
-    mAddr[1] = aLAP >> 8;
-    mAddr[2] = aLAP >> 16;
-  }
-
-  uint8_t GetUAP() const
-  {
-    return mAddr[3];
-  }
-
-  void SetUAP(uint8_t aUAP)
-  {
-    mAddr[3] = aUAP;
-  }
-
-  uint16_t GetNAP() const
-  {
-    return (static_cast<uint16_t>(mAddr[4])) |
-           (static_cast<uint16_t>(mAddr[5]) << 8);
-  }
-
-  void SetNAP(uint16_t aNAP)
-  {
-    mAddr[4] = aNAP;
-    mAddr[5] = aNAP >> 8;
-  }
-
-};
-
 struct BluetoothUuid {
   uint8_t mUuid[16];
 
@@ -507,9 +410,7 @@ struct BluetoothProperty {
 
 
   
-  BluetoothAddress mBdAddress;
 
-  
 
   nsString mString;
 
@@ -517,7 +418,7 @@ struct BluetoothProperty {
   nsTArray<BluetoothUuid> mUuidArray;
 
   
-  nsTArray<BluetoothAddress> mBdAddressArray;
+  nsTArray<nsString> mStringArray;
 
   
 
@@ -910,7 +811,7 @@ struct BluetoothGattWriteParam {
 };
 
 struct BluetoothGattNotifyParam {
-  BluetoothAddress mBdAddr;
+  nsString mBdAddr;
   BluetoothGattServiceId mServiceId;
   BluetoothGattId mCharId;
   uint16_t mLength;
@@ -919,7 +820,7 @@ struct BluetoothGattNotifyParam {
 };
 
 struct BluetoothGattTestParam {
-  BluetoothAddress mBdAddr;
+  nsString mBdAddr;
   BluetoothUuid mUuid;
   uint16_t mU1;
   uint16_t mU2;

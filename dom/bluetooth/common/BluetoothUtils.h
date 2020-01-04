@@ -27,16 +27,6 @@ class BluetoothValue;
 
 
 
-void
-AddressToString(const BluetoothAddress& aAddress, nsAString& aString);
-
-nsresult
-StringToAddress(const nsAString& aString, BluetoothAddress& aAddress);
-
-
-
-
-
 
 
 
