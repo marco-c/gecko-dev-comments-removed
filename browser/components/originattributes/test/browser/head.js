@@ -271,7 +271,10 @@ this.IsolationTestTools = {
 
 
 
-  runTests(aURL, aGetResultFuncs, aCompareResultFunc) {
+
+
+
+  runTests(aURL, aGetResultFuncs, aCompareResultFunc, aBeforeFunc) {
     let pageURL;
     let firstFrameSetting;
     let secondFrameSetting;
@@ -297,6 +300,11 @@ this.IsolationTestTools = {
       let tabSettingA = 0;
 
       for (let tabSettingB of [0, 1]) {
+        
+        if (aBeforeFunc) {
+          yield aBeforeFunc();
+        }
+
         
         let tabInfoA = yield IsolationTestTools._addTab(aMode,
                                                         pageURL,
