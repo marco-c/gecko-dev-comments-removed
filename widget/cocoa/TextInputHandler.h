@@ -973,17 +973,22 @@ private:
   
 
 
-  void OnStartIMEComposition();
-
-  
-
-
   void OnUpdateIMEComposition(NSString* aIMECompositionString);
 
   
 
 
   void OnEndIMEComposition();
+
+  
+
+
+
+
+
+
+
+  bool DispatchCompositionStartEvent();
 
   
   
