@@ -86,6 +86,16 @@ enum class StyleClipPathGeometryBox : uint8_t {
 };
 
 
+
+enum class StyleFloat : uint8_t {
+  None_,
+  Left,
+  Right,
+  InlineStart,
+  InlineEnd
+};
+
+
 enum class StyleFloatEdge : uint8_t {
   ContentBox,
   MarginBox,
@@ -583,13 +593,6 @@ enum class FillMode : uint32_t;
 #define NS_STYLE_JUSTIFY_CONTENT_CENTER         NS_STYLE_JUSTIFY_CENTER
 #define NS_STYLE_JUSTIFY_CONTENT_SPACE_BETWEEN  NS_STYLE_JUSTIFY_SPACE_BETWEEN
 #define NS_STYLE_JUSTIFY_CONTENT_SPACE_AROUND   NS_STYLE_JUSTIFY_SPACE_AROUND
-
-
-#define NS_STYLE_FLOAT_NONE                     0
-#define NS_STYLE_FLOAT_LEFT                     1
-#define NS_STYLE_FLOAT_RIGHT                    2
-#define NS_STYLE_FLOAT_INLINE_START             3
-#define NS_STYLE_FLOAT_INLINE_END               4
 
 
 #define NS_STYLE_FILTER_NONE                    0

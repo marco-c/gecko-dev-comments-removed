@@ -2830,9 +2830,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mContain;             
   uint8_t mAppearance;          
   uint8_t mPosition;            
-  uint8_t mFloat;               
-  uint8_t mOriginalFloat;       
-                                
+
+  
+  mozilla::StyleFloat mFloat;
+  
+  mozilla::StyleFloat mOriginalFloat;
+
   uint8_t mBreakType;           
   uint8_t mBreakInside;         
   bool mBreakBefore;    
@@ -2956,7 +2959,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   }
 
   bool IsFloatingStyle() const {
-    return NS_STYLE_FLOAT_NONE != mFloat;
+    return mozilla::StyleFloat::None_ != mFloat;
   }
 
   bool IsAbsolutelyPositionedStyle() const {
@@ -3051,7 +3054,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
   
   
-  inline uint8_t PhysicalFloats(mozilla::WritingMode aWM) const;
+  inline mozilla::StyleFloat PhysicalFloats(mozilla::WritingMode aWM) const;
   inline uint8_t PhysicalBreakType(mozilla::WritingMode aWM) const;
 };
 

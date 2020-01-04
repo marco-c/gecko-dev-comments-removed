@@ -779,10 +779,9 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   
   
-  uint8_t floatStyle = floatDisplay->PhysicalFloats(wm);
-  NS_ASSERTION((NS_STYLE_FLOAT_LEFT == floatStyle) ||
-               (NS_STYLE_FLOAT_RIGHT == floatStyle),
-               "invalid float type");
+  StyleFloat floatStyle = floatDisplay->PhysicalFloats(wm);
+  MOZ_ASSERT(StyleFloat::Left == floatStyle || StyleFloat::Right == floatStyle,
+             "Invalid float type!");
 
   
   bool keepFloatOnSameLine = false;
@@ -876,7 +875,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   
   LogicalPoint floatPos(wm);
-  bool leftFloat = NS_STYLE_FLOAT_LEFT == floatStyle;
+  bool leftFloat = floatStyle == StyleFloat::Left;
 
   if (leftFloat == wm.IsBidiLTR()) {
     floatPos.I(wm) = floatAvailableSpace.mRect.IStart(wm);
@@ -1036,12 +1035,12 @@ BlockReflowInput::PushFloatPastBreak(nsIFrame *aFloat)
   
   
   
-  uint8_t floatStyle =
+  StyleFloat floatStyle =
     aFloat->StyleDisplay()->PhysicalFloats(mReflowInput.GetWritingMode());
-  if (floatStyle == NS_STYLE_FLOAT_LEFT) {
+  if (floatStyle == StyleFloat::Left) {
     mFloatManager->SetPushedLeftFloatPastBreak();
   } else {
-    MOZ_ASSERT(floatStyle == NS_STYLE_FLOAT_RIGHT, "unexpected float value");
+    MOZ_ASSERT(floatStyle == StyleFloat::Right, "Unexpected float value!");
     mFloatManager->SetPushedRightFloatPastBreak();
   }
 
