@@ -200,10 +200,6 @@ Reflect_enumerate(JSContext* cx, unsigned argc, Value* vp)
 #endif
 
 
-
-
-
-
 static bool
 Reflect_get(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -221,16 +217,10 @@ Reflect_get(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    RootedValue receiver(cx, argc > 2 ? args[2] : args.get(0));
+    RootedValue receiver(cx, args.length() > 2 ? args[2] : args.get(0));
 
     
-    
-    RootedObject receiverObj(cx, NonNullObject(cx, receiver));
-    if (!receiverObj)
-        return false;
-
-    
-    return GetProperty(cx, obj, receiverObj, key, args.rval());
+    return GetProperty(cx, obj, receiver, key, args.rval());
 }
 
 
@@ -336,7 +326,7 @@ Reflect_set(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    RootedValue receiver(cx, argc > 3 ? args[3] : args.get(0));
+    RootedValue receiver(cx, args.length() > 3 ? args[3] : args.get(0));
 
     
     ObjectOpResult result;

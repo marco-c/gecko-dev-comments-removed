@@ -2,9 +2,7 @@
 
 Object.defineProperty(String.prototype, "toString", {
     get() {
-        
-        
-        assertEq(typeof this, "object");
+        assertEq(typeof this, "string");
 
         return function() { return typeof this; };
     }

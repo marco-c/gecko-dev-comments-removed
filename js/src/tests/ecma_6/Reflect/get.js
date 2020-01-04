@@ -65,20 +65,7 @@ assertEq(Reflect.get(obj, "itself", Math), Math);
 assertEq(Reflect.get(Object.create(obj), "itself", Math), Math);
 
 
-
-
-var result;
-try {
-    result = Reflect.get(obj, "x", 37.2);
-} catch (exc) {
-    result = exc;
-}
-if (result === 37.2) {
-    throw new Error("Congratulations on fixing bug 603201! " +
-                    "Please update this test for 1 karma point.");
-}
-assertEq(result instanceof TypeError, true);
-
+assertEq(Reflect.get(obj, "itself", 37.2), 37.2);
 
 
 
