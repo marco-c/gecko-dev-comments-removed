@@ -242,7 +242,7 @@ FormAutoComplete.prototype = {
                 let entry = entries[i];
                 
                 
-                if(searchTokens.some(tok => entry.textLowerCase.indexOf(tok) < 0))
+                if(searchTokens.some(function (tok) entry.textLowerCase.indexOf(tok) < 0))
                     continue;
                 this._calculateScore(entry, searchString, searchTokens);
                 this.log("Reusing autocomplete entry '" + entry.text +

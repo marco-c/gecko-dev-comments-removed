@@ -51,21 +51,15 @@ this.Downloads = {
   
 
 
-  get PUBLIC() {
-    return "{Downloads.PUBLIC}";
-  },
+  get PUBLIC() "{Downloads.PUBLIC}",
   
 
 
-  get PRIVATE() {
-    return "{Downloads.PRIVATE}";
-  },
+  get PRIVATE() "{Downloads.PRIVATE}",
   
 
 
-  get ALL() {
-    return "{Downloads.ALL}";
-  },
+  get ALL() "{Downloads.ALL}",
 
   
 

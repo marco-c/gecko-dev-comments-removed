@@ -141,7 +141,7 @@ CommonDialog.prototype = {
         
         let icon = this.ui.infoIcon;
         if (icon)
-            this.iconClass.forEach((el,idx,arr) => icon.classList.add(el));
+            this.iconClass.forEach(function(el,idx,arr) icon.classList.add(el));
 
         
         this.args.ok = false;

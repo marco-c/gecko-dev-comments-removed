@@ -506,9 +506,8 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
 
 
 
-function fixupSearchText(spec) {
-  return textURIService.unEscapeURIForUI("UTF-8", stripPrefix(spec));
-}
+function fixupSearchText(spec)
+  textURIService.unEscapeURIForUI("UTF-8", stripPrefix(spec));
 
 
 
@@ -520,9 +519,8 @@ function fixupSearchText(spec) {
 
 
 
-function getUnfilteredSearchTokens(searchString) {
-  return searchString.length ? searchString.split(REGEXP_SPACES) : [];
-}
+function getUnfilteredSearchTokens(searchString)
+  searchString.length ? searchString.split(REGEXP_SPACES) : [];
 
 
 
@@ -1574,20 +1572,18 @@ Search.prototype = {
 
 
 
-  get _switchToTabQuery() {
-    return [
-      SQL_SWITCHTAB_QUERY,
-      {
-        query_type: QUERYTYPE_FILTERED,
-        matchBehavior: this._matchBehavior,
-        searchBehavior: this._behavior,
-        
-        
-        searchString: this._searchTokens.join(" "),
-        maxResults: Prefs.maxRichResults
-      }
-    ];
-  },
+  get _switchToTabQuery() [
+    SQL_SWITCHTAB_QUERY,
+    {
+      query_type: QUERYTYPE_FILTERED,
+      matchBehavior: this._matchBehavior,
+      searchBehavior: this._behavior,
+      
+      
+      searchString: this._searchTokens.join(" "),
+      maxResults: Prefs.maxRichResults
+    }
+  ],
 
   
 
@@ -1595,18 +1591,16 @@ Search.prototype = {
 
 
 
-  get _adaptiveQuery() {
-    return [
-      SQL_ADAPTIVE_QUERY,
-      {
-        parent: PlacesUtils.tagsFolderId,
-        search_string: this._searchString,
-        query_type: QUERYTYPE_FILTERED,
-        matchBehavior: this._matchBehavior,
-        searchBehavior: this._behavior
-      }
-    ];
-  },
+  get _adaptiveQuery() [
+    SQL_ADAPTIVE_QUERY,
+    {
+      parent: PlacesUtils.tagsFolderId,
+      search_string: this._searchString,
+      query_type: QUERYTYPE_FILTERED,
+      matchBehavior: this._matchBehavior,
+      searchBehavior: this._behavior
+    }
+  ],
 
   
 

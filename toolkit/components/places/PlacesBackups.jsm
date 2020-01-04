@@ -91,9 +91,7 @@ this.PlacesBackups = {
 
 
 
-  get filenamesRegex() {
-    return filenamesRegex;
-  },
+  get filenamesRegex() filenamesRegex,
 
   get folder() {
     Deprecated.warning(
@@ -135,9 +133,7 @@ this.PlacesBackups = {
     }.bind(this));
   },
 
-  get profileRelativeFolderPath() {
-    return "bookmarkbackups";
-  },
+  get profileRelativeFolderPath() "bookmarkbackups",
 
   
 
