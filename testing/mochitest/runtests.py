@@ -2263,11 +2263,8 @@ class MochitestDesktop(MochitestBase):
         
         
         
-        
-        
-        
         if 'MOZ_DISABLE_NONLOCAL_CONNECTIONS' in self.browserEnv:
-            if mozinfo.info.get('buildapp') == 'mulet' or options.subsuite == 'push':
+            if mozinfo.info.get('buildapp') == 'mulet':
                 del self.browserEnv['MOZ_DISABLE_NONLOCAL_CONNECTIONS']
                 os.environ["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "0"
 
