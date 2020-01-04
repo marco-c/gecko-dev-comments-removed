@@ -2,10 +2,60 @@
 
 
 
+
+function ModuleGetExportedNames(exportStarSet = [])
+{
+    if (!IsObject(this) || !IsModule(this)) {
+        return callFunction(CallModuleMethodIfWrapped, this, exportStarSet,
+                            "ModuleGetExportedNames");
+    }
+
+    
+    let module = this;
+
+    
+    if (module in exportStarSet)
+        return [];
+
+    
+    exportStarSet.push(module);
+
+    
+    let exportedNames = [];
+
+    
+    let localExportEntries = module.localExportEntries;
+    for (let i = 0; i < localExportEntries.length; i++) {
+        let e = localExportEntries[i];
+        exportedNames.push(e.exportName);
+    }
+
+    
+    let indirectExportEntries = module.indirectExportEntries;
+    for (let i = 0; i < indirectExportEntries.length; i++) {
+        let e = indirectExportEntries[i];
+        exportedNames.push(e.exportName);
+    }
+
+    
+    let starExportEntries = module.starExportEntries;
+    for (let i = 0; i < starExportEntries.length; i++) {
+        let e = starExportEntries[i];
+        let requestedModule = HostResolveImportedModule(module, e.moduleRequest);
+        let starNames = requestedModule.getExportedNames(exportStarSet);
+        for (let j = 0; j < starNames.length; j++) {
+            let n = starNames[j];
+            if (n !== "default" && !(n in exportedNames))
+                exportedNames.push(n);
+        }
+    }
+
+    return exportedNames;
+}
+
+
 function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
 {
-    
-
     if (!IsObject(this) || !IsModule(this)) {
         return callFunction(CallModuleMethodIfWrapped, this, exportName, resolveSet,
                             exportStarSet, "ModuleResolveExport");
@@ -88,6 +138,50 @@ function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
 }
 
 
+function GetModuleNamespace(module)
+{
+    
+    let namespace = module.namespace;
+
+    
+    if (typeof namespace === "undefined") {
+        let exportedNames = module.getExportedNames();
+        let unambiguousNames = [];
+        for (let i = 0; i < exportedNames.length; i++) {
+            let name = exportedNames[i];
+            let resolution = module.resolveExport(name);
+            if (resolution === null)
+                ThrowSyntaxError(JSMSG_MISSING_NAMESPACE_EXPORT);
+            if (resolution !== "ambiguous")
+                unambiguousNames.push(name);
+        }
+        namespace = ModuleNamespaceCreate(module, unambiguousNames);
+    }
+
+    
+    return namespace;
+}
+
+
+function ModuleNamespaceCreate(module, exports)
+{
+    exports.sort();
+
+    let ns = NewModuleNamespace(module, exports);
+
+    
+    
+    for (let i = 0; i < exports.length; i++) {
+        let name = exports[i];
+        let binding = module.resolveExport(name);
+        assert(binding !== null && binding !== "ambiguous", "Failed to resolve binding");
+        AddModuleNamespaceBinding(ns, name, binding.module, binding.bindingName);
+    }
+
+    return ns;
+}
+
+
 function ModuleDeclarationInstantiation()
 {
     if (!IsObject(this) || !IsModule(this))
@@ -129,9 +223,8 @@ function ModuleDeclarationInstantiation()
         let imp = importEntries[i];
         let importedModule = HostResolveImportedModule(module, imp.moduleRequest);
         if (imp.importName === "*") {
-            
-            
-            
+            let namespace = GetModuleNamespace(importedModule);
+            CreateNamespaceBinding(env, imp.localName, namespace);
         } else {
             let resolution = importedModule.resolveExport(imp.importName);
             if (resolution === null)
@@ -168,4 +261,12 @@ function ModuleEvaluation()
     }
 
     return EvaluateModule(module);
+}
+
+function ModuleNamespaceEnumerate()
+{
+    if (!IsObject(this) || !IsModuleNamespace(this))
+        return callFunction(CallModuleMethodIfWrapped, this, "ModuleNamespaceEnumerate");
+
+    return CreateListIterator(ModuleNamespaceExports(this));
 }
