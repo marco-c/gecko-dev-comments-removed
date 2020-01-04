@@ -173,6 +173,9 @@ RootActor.prototype = {
     
     
     profilerDataFilterable: true,
+    
+    
+    heapSnapshots: true,
   },
 
   
