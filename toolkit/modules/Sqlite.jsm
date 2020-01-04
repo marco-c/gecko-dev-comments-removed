@@ -39,6 +39,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "console",
                                   "resource://gre/modules/devtools/shared/Console.jsm");
 
 
+var likeSqlRegex = /\bLIKE\b\s(?![@:?])/i;
+
+
 
 var connectionCounters = new Map();
 
@@ -59,6 +62,17 @@ var Debugging = {
   
   failTestsOnAutoClose: true
 };
+
+
+
+
+
+
+
+
+function isInvalidBoundLikeQuery(sql) {
+  return likeSqlRegex.test(sql);
+}
 
 
 function logScriptError(message) {
@@ -1273,6 +1287,9 @@ OpenedConnection.prototype = Object.freeze({
 
 
   executeCached: function (sql, params=null, onRow=null) {
+    if (isInvalidBoundLikeQuery(sql)) {
+      throw new Error("Please enter a LIKE clause with bindings");
+    }
     return this._connectionData.executeCached(sql, params, onRow);
   },
 
@@ -1292,6 +1309,9 @@ OpenedConnection.prototype = Object.freeze({
 
 
   execute: function (sql, params=null, onRow=null) {
+    if (isInvalidBoundLikeQuery(sql)) {
+      throw new Error("Please enter a LIKE clause with bindings");
+    }
     return this._connectionData.execute(sql, params, onRow);
   },
 
