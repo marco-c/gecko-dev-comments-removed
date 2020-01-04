@@ -147,6 +147,7 @@ public:
     bool GetThreadNameJavaProfiling(uint32_t aThreadId, nsCString & aResult);
     bool GetFrameNameJavaProfiling(uint32_t aThreadId, uint32_t aSampleId, uint32_t aFrameId, nsCString & aResult);
 
+    nsresult CaptureZoomedView(mozIDOMWindowProxy *window, nsIntRect zoomedViewRect, jni::ByteBuffer::Param buffer, float zoomFactor);
     void GetDisplayPort(bool aPageSizeUpdate, bool aIsBrowserContentDisplayed, int32_t tabId, nsIAndroidViewport* metrics, nsIAndroidDisplayport** displayPort);
     void ContentDocumentChanged();
     bool IsContentDocumentDisplayed();
@@ -175,6 +176,22 @@ public:
 
     bool GetClipboardText(nsAString& aText);
 
+    void ShowPersistentAlertNotification(const nsAString& aPersistentData,
+                                         const nsAString& aImageUrl,
+                                         const nsAString& aAlertTitle,
+                                         const nsAString& aAlertText,
+                                         const nsAString& aAlertCookie,
+                                         const nsAString& aAlertName,
+                                         nsIPrincipal* aPrincipal);
+
+    void ShowAlertNotification(const nsAString& aImageUrl,
+                               const nsAString& aAlertTitle,
+                               const nsAString& aAlertText,
+                               const nsAString& aAlertCookie,
+                               nsIObserver *aAlertListener,
+                               const nsAString& aAlertName,
+                               nsIPrincipal* aPrincipal);
+
     int GetDPI();
     int GetScreenDepth();
 
@@ -189,27 +206,9 @@ public:
     bool GetStaticIntField(const char *className, const char *fieldName, int32_t* aInt, JNIEnv* env = nullptr);
 
     
-    bool HasNativeBitmapAccess();
-
-    bool ValidateBitmap(jobject bitmap, int width, int height);
-
-    void *LockBitmap(jobject bitmap);
-
-    
     
     
     jobject GetGlobalContextRef(void);
-
-    void UnlockBitmap(jobject bitmap);
-
-    
-    enum {
-        WINDOW_FORMAT_RGBA_8888          = 1,
-        WINDOW_FORMAT_RGBX_8888          = 2,
-        WINDOW_FORMAT_RGB_565            = 4
-    };
-
-    bool HasNativeWindowAccess();
 
     void *AcquireNativeWindow(JNIEnv* aEnv, jobject aSurface);
     void ReleaseNativeWindow(void *window);
@@ -376,23 +375,6 @@ protected:
     jni::Object::GlobalRef mMessageQueue;
     jfieldID mMessageQueueMessages;
     jmethodID mMessageQueueNext;
-
-    
-    int (* AndroidBitmap_getInfo)(JNIEnv *env, jobject bitmap, void *info);
-    int (* AndroidBitmap_lockPixels)(JNIEnv *env, jobject bitmap, void **buffer);
-    int (* AndroidBitmap_unlockPixels)(JNIEnv *env, jobject bitmap);
-
-    void* (*ANativeWindow_fromSurface)(JNIEnv *env, jobject surface);
-    void (*ANativeWindow_release)(void *window);
-    int (*ANativeWindow_setBuffersGeometry)(void *window, int width, int height, int format);
-
-    int (* ANativeWindow_getWidth)(void * window);
-    int (* ANativeWindow_getHeight)(void * window);
-
-    int (* Surface_lock)(void* surface, void* surfaceInfo, void* region, bool block);
-    int (* Surface_unlockAndPost)(void* surface);
-    void (* Region_constructor)(void* region);
-    void (* Region_set)(void* region, void* rect);
 
 private:
     class DelayedTask;
