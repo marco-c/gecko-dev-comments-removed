@@ -143,12 +143,6 @@ SVGImageElement::AfterSetAttr(int32_t aNamespaceID, nsIAtom* aName,
     
     
     if (!GetPrimaryFrame()) {
-
-      
-      if (nsContentUtils::IsImageSrcSetDisabled()) {
-        return NS_OK;
-      }
-
       if (aValue) {
         LoadSVGImage(true, aNotify);
       } else {

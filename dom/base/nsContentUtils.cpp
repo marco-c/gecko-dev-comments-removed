@@ -2118,14 +2118,6 @@ nsContentUtils::IsCallerContentXBL()
 
 
 bool
-nsContentUtils::IsImageSrcSetDisabled()
-{
-  return Preferences::GetBool("dom.disable_image_src_set") &&
-         !IsCallerChrome();
-}
-
-
-bool
 nsContentUtils::LookupBindingMember(JSContext* aCx, nsIContent *aContent,
                                     JS::Handle<jsid> aId,
                                     JS::MutableHandle<JSPropertyDescriptor> aDesc)

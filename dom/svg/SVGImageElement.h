@@ -68,8 +68,6 @@ public:
 
   void MaybeLoadSVGImage();
 
-  bool IsImageSrcSetDisabled() const;
-
   
   already_AddRefed<SVGAnimatedLength> X();
   already_AddRefed<SVGAnimatedLength> Y();
