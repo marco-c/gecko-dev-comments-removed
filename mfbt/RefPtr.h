@@ -19,6 +19,24 @@ class nsCOMPtr_helper;
 
 namespace mozilla {
 template<class T> class OwningNonNull;
+
+
+
+
+
+
+
+template<class U>
+struct RefPtrTraits
+{
+  static void AddRef(U* aPtr) {
+    aPtr->AddRef();
+  }
+  static void Release(U* aPtr) {
+    aPtr->Release();
+  }
+};
+
 } 
 
 template <class T>
@@ -340,21 +358,6 @@ private:
   
   
   
-  static MOZ_ALWAYS_INLINE void
-  AddRefTraitsAddRefHelper(typename mozilla::RemoveConst<T>::Type* aPtr)
-  {
-    aPtr->AddRef();
-  }
-  static MOZ_ALWAYS_INLINE void
-  AddRefTraitsReleaseHelper(typename mozilla::RemoveConst<T>::Type* aPtr)
-  {
-    aPtr->Release();
-  }
-
-  
-  
-  
-  
   
   
   
@@ -365,20 +368,20 @@ private:
   struct ConstRemovingRefPtrTraits
   {
     static void AddRef(U* aPtr) {
-      RefPtr<T>::AddRefTraitsAddRefHelper(aPtr);
+      mozilla::RefPtrTraits<U>::AddRef(aPtr);
     }
     static void Release(U* aPtr) {
-      RefPtr<T>::AddRefTraitsReleaseHelper(aPtr);
+      mozilla::RefPtrTraits<U>::Release(aPtr);
     }
   };
   template<class U>
   struct ConstRemovingRefPtrTraits<const U>
   {
     static void AddRef(const U* aPtr) {
-      RefPtr<T>::AddRefTraitsAddRefHelper(const_cast<U*>(aPtr));
+      mozilla::RefPtrTraits<typename mozilla::RemoveConst<U>::Type>::AddRef(const_cast<U*>(aPtr));
     }
     static void Release(const U* aPtr) {
-      RefPtr<T>::AddRefTraitsReleaseHelper(const_cast<U*>(aPtr));
+      mozilla::RefPtrTraits<typename mozilla::RemoveConst<U>::Type>::Release(const_cast<U*>(aPtr));
     }
   };
 };
