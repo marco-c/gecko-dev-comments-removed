@@ -486,11 +486,6 @@ protected:
   
   
   
-  nsresult EnqueueDecodeMetadataTask();
-
-  
-  
-  
   void EnqueueLoadedMetadataEvent();
 
   void EnqueueFirstFrameLoadedEvent();
