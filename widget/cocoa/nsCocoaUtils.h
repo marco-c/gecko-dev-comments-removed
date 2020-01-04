@@ -327,8 +327,12 @@ public:
 
   static void InitInputEvent(mozilla::WidgetInputEvent &aInputEvent,
                              NSEvent* aNativeEvent);
-  static void InitInputEvent(mozilla::WidgetInputEvent &aInputEvent,
-                             NSUInteger aModifiers);
+
+  
+
+
+
+  static mozilla::Modifiers ModifiersForEvent(NSEvent* aNativeEvent);
 
   
 
