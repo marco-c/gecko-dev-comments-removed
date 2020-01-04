@@ -584,18 +584,23 @@ struct JS_PUBLIC_API(MovableCellHasher<JS::Heap<T>>)
 
 namespace js {
 
+
+
+
+
+
+
+
+
 template <typename T>
-class DispatchWrapper
+class alignas(8) DispatchWrapper
 {
     static_assert(JS::MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
                   "DispatchWrapper is intended only for usage with a Traceable");
 
     using TraceFn = void (*)(JSTracer*, T*, const char*);
     TraceFn tracer;
-#if JS_BITS_PER_WORD == 32
-    uint32_t padding; 
-#endif
-    T storage;
+    alignas(gc::CellSize) T storage;
 
   public:
     template <typename U>
@@ -1059,7 +1064,6 @@ class PersistentRooted : public js::PersistentRootedBase<T>,
         MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
         js::DispatchWrapper<T>,
         T>::Type;
-
     MaybeWrapped ptr;
 } JS_HAZ_ROOTED;
 
