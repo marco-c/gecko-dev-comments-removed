@@ -414,7 +414,7 @@ const CustomizableWidgets = [
 
         this.setDeckIndex(this.deckIndices.DECKINDEX_TABS);
         this._clearTabList();
-        this._sortFilterClientsAndTabs(clients);
+        SyncedTabs.sortTabClientsByLastUsed(clients, 50 );
         let fragment = doc.createDocumentFragment();
 
         for (let client of clients) {
@@ -487,29 +487,6 @@ const CustomizableWidgets = [
         CustomizableUI.hidePanelForNode(item);
       });
       return item;
-    },
-    _sortFilterClientsAndTabs(clients) {
-      
-      
-      
-      const maxTabs = 50;
-      for (let client of clients) {
-        let tabs = client.tabs;
-        tabs.sort((a, b) => b.lastUsed - a.lastUsed);
-        client.tabs = tabs.slice(0, maxTabs);
-      }
-      
-      
-      
-      clients.sort((a, b) => {
-        if (a.tabs.length == 0) {
-          return 1; 
-        }
-        if (b.tabs.length == 0) {
-          return -1; 
-        }
-        return b.tabs[0].lastUsed - a.tabs[0].lastUsed;
-      });
     },
   }, {
     id: "privatebrowsing-button",
