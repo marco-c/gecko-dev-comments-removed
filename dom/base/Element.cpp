@@ -1233,9 +1233,11 @@ Element::GetAttributeNode(const nsAString& aName)
 already_AddRefed<Attr>
 Element::SetAttributeNode(Attr& aNewAttr, ErrorResult& aError)
 {
+  
+  
   OwnerDoc()->WarnOnceAbout(nsIDocument::eSetAttributeNode);
 
-  return Attributes()->SetNamedItem(aNewAttr, aError);
+  return Attributes()->SetNamedItemNS(aNewAttr, aError);
 }
 
 already_AddRefed<Attr>
