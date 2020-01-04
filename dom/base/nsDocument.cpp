@@ -3886,7 +3886,7 @@ void
 nsDocument::DeleteShell()
 {
   mExternalResourceMap.HideViewers();
-  if (IsEventHandlingEnabled()) {
+  if (IsEventHandlingEnabled() && !AnimationsPaused()) {
     RevokeAnimationFrameNotifications();
   }
   if (nsPresContext* presContext = mPresShell->GetPresContext()) {
@@ -4632,7 +4632,7 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
     
     mLayoutHistoryState = GetLayoutHistoryState();
 
-    if (mPresShell && !EventHandlingSuppressed()) {
+    if (mPresShell && !EventHandlingSuppressed() && !AnimationsPaused()) {
       RevokeAnimationFrameNotifications();
     }
 
@@ -7892,9 +7892,9 @@ nsDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
   
   float fullZoom = context ? context->DeviceContext()->GetFullZoom() : 1.0;
   fullZoom = (fullZoom == 0.0) ? 1.0 : fullZoom;
-  CSSToLayoutDeviceScale layoutDeviceScale(
-    (float)nsPresContext::AppUnitsPerCSSPixel() /
-    context->AppUnitsPerDevPixel());
+  nsIWidget *widget = nsContentUtils::WidgetForDocument(this);
+  float widgetScale = widget ? widget->GetDefaultScale().scale : 1.0f;
+  CSSToLayoutDeviceScale layoutDeviceScale(widgetScale * fullZoom);
 
   CSSToScreenScale defaultScale = layoutDeviceScale
                                 * LayoutDeviceToScreenScale(1.0);
@@ -10318,7 +10318,8 @@ nsIDocument::ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
   DebugOnly<FrameRequest*> request =
     mFrameRequestCallbacks.AppendElement(FrameRequest(aCallback, newHandle));
   NS_ASSERTION(request, "This is supposed to be infallible!");
-  if (!alreadyRegistered && mPresShell && IsEventHandlingEnabled()) {
+  if (!alreadyRegistered && mPresShell && IsEventHandlingEnabled() &&
+      !AnimationsPaused()) {
     mPresShell->GetPresContext()->RefreshDriver()->
       ScheduleFrameRequestCallbacks(this);
   }
