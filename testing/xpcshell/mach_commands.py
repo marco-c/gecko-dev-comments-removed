@@ -59,8 +59,6 @@ class XPCShellRunner(MozbuildObject):
 
     def run_test(self, **kwargs):
         """Runs an individual xpcshell test."""
-        from mozbuild.testing import TestResolver
-        from manifestparser import TestManifest
 
         
         build_path = os.path.join(self.topobjdir, 'build')
@@ -84,12 +82,15 @@ class XPCShellRunner(MozbuildObject):
         self.log_manager.enable_unstructured()
 
         tests_dir = os.path.join(self.topobjdir, '_tests', 'xpcshell')
-        modules_dir = os.path.join(self.topobjdir, '_tests', 'modules')
         
         
-        single_test = (kwargs["testPaths"] is not None or
-                       (manifest and len(manifest.test_paths())==1))
-        sequential = kwargs["sequential"] or single_test
+        single_test = (len(kwargs["testPaths"]) == 1 and
+                       os.path.isfile(kwargs["testPaths"][0]) or
+                       kwargs["manifest"] and
+                       (len(kwargs["manifest"].test_paths()) == 1))
+
+        if single_test:
+            kwargs["verbose"] = True
 
         if kwargs["xpcshell"] is None:
             kwargs["xpcshell"] = self.get_binary_path('xpcshell')
@@ -334,9 +335,14 @@ class MachCommands(MachCommandBase):
              description='Run XPCOM Shell tests (API direct unit testing)',
              conditions=[lambda *args: True],
              parser=get_parser)
-
-    def run_xpcshell_test(self, **params):
+    def run_xpcshell_test(self, test_objects=None, **params):
         from mozbuild.controller.building import BuildDriver
+
+        if test_objects is not None:
+            from manifestparser import TestManifest
+            m = TestManifest()
+            m.tests.extend(test_objects)
+            params['manifest'] = m
 
         
         
