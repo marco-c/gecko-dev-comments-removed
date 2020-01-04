@@ -1294,9 +1294,6 @@ class Assembler : public AssemblerShared
     
     
     js::Vector<RelativePatch, 8, SystemAllocPolicy> jumps_;
-    js::Vector<BufferOffset, 0, SystemAllocPolicy> tmpJumpRelocations_;
-    js::Vector<BufferOffset, 0, SystemAllocPolicy> tmpDataRelocations_;
-    js::Vector<BufferOffset, 0, SystemAllocPolicy> tmpPreBarriers_;
 
     CompactBufferWriter jumpRelocations_;
     CompactBufferWriter dataRelocations_;
@@ -1361,7 +1358,7 @@ class Assembler : public AssemblerShared
     
     void trace(JSTracer* trc);
     void writeRelocation(BufferOffset src) {
-        tmpJumpRelocations_.append(src);
+        jumpRelocations_.writeUnsigned(src.getOffset());
     }
 
     
@@ -1371,11 +1368,11 @@ class Assembler : public AssemblerShared
             if (gc::IsInsideNursery(ptr.value))
                 embedsNurseryPointers_ = true;
             if (ptr.value)
-                tmpDataRelocations_.append(nextOffset());
+                dataRelocations_.writeUnsigned(nextOffset().getOffset());
         }
     }
     void writePrebarrierOffset(CodeOffsetLabel label) {
-        tmpPreBarriers_.append(BufferOffset(label.offset()));
+        preBarriers_.writeUnsigned(label.offset());
     }
 
     enum RelocBranchStyle {
