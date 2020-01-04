@@ -7797,11 +7797,11 @@ SetGridTrackList(const nsCSSValue& aValue,
       
       
       aResult.mIsSubgrid = false;
-      for (;;) {
+      for (int32_t line = 1;  ; ++line) {
         AppendGridLineNames(item->mValue, aResult);
         item = item->mNext;
 
-        if (!item) {
+        if (!item || line == nsStyleGridLine::kMaxLine) {
           break;
         }
 
