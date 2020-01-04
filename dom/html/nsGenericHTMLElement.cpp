@@ -228,12 +228,12 @@ nsGenericHTMLElement::CopyInnerTo(Element* aDst)
     value->ToString(valStr);
 
     if (name->Equals(nsGkAtoms::style, kNameSpaceID_None) &&
-        value->Type() == nsAttrValue::eCSSDeclaration) {
+        value->Type() == nsAttrValue::eGeckoCSSDeclaration) {
       
       
       
       RefPtr<css::Declaration> declClone =
-        new css::Declaration(*value->GetCSSDeclarationValue());
+        new css::Declaration(*value->GetGeckoCSSDeclarationValue());
 
       rv = aDst->SetInlineStyleDeclaration(declClone, &valStr, false);
       NS_ENSURE_SUCCESS(rv, rv);

@@ -31,7 +31,7 @@ struct MiscContainer final
         nscolor mColor;
         uint32_t mEnumValue;
         int32_t mPercent;
-        mozilla::css::Declaration* mCSSDeclaration;
+        mozilla::css::Declaration* mGeckoCSSDeclaration;
         mozilla::css::URLValue* mURL;
         mozilla::css::ImageValue* mImage;
         nsAttrValue::AtomArray* mAtomArray;
@@ -86,7 +86,7 @@ public:
     
     
     
-    return mType == nsAttrValue::eCSSDeclaration;
+    return mType == nsAttrValue::eGeckoCSSDeclaration;
   }
 
   inline int32_t AddRef() {
@@ -147,10 +147,10 @@ nsAttrValue::GetAtomArrayValue() const
 }
 
 inline mozilla::css::Declaration*
-nsAttrValue::GetCSSDeclarationValue() const
+nsAttrValue::GetGeckoCSSDeclarationValue() const
 {
-  NS_PRECONDITION(Type() == eCSSDeclaration, "wrong type");
-  return GetMiscContainer()->mValue.mCSSDeclaration;
+  NS_PRECONDITION(Type() == eGeckoCSSDeclaration, "wrong type");
+  return GetMiscContainer()->mValue.mGeckoCSSDeclaration;
 }
 
 inline mozilla::css::URLValue*
@@ -198,7 +198,7 @@ nsAttrValue::StoresOwnData() const
     return true;
   }
   ValueType t = Type();
-  return t != eCSSDeclaration && !IsSVGType(t);
+  return t != eGeckoCSSDeclaration && !IsSVGType(t);
 }
 
 inline void
