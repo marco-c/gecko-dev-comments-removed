@@ -219,6 +219,15 @@ FrameTreeInternal.prototype = {
       return;
     }
 
+    
+    
+    
+    
+    
+    if (!this._chromeGlobal.docShell.hasLoadedNonBlankURI) {
+      return;
+    }
+
     if (stateFlags & Ci.nsIWebProgressListener.STATE_START) {
       
       this._frames.clear();
