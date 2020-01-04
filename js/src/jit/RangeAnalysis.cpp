@@ -2804,6 +2804,7 @@ ComputeRequestedTruncateKind(MDefinition* candidate, bool* shouldClone)
 {
     bool isCapturedResult = false;
     bool isObservableResult = false;
+    bool isRecoverableResult = true;
     bool hasUseRemoved = candidate->isUseRemoved();
 
     MDefinition::TruncateKind kind = MDefinition::Truncate;
@@ -2816,6 +2817,8 @@ ComputeRequestedTruncateKind(MDefinition* candidate, bool* shouldClone)
             isCapturedResult = true;
             isObservableResult = isObservableResult ||
                 use->consumer()->toResumePoint()->isObservableOperand(*use);
+            isRecoverableResult = isRecoverableResult &&
+                use->consumer()->toResumePoint()->isRecoverableOperand(*use);
             continue;
         }
 
@@ -2850,22 +2853,21 @@ ComputeRequestedTruncateKind(MDefinition* candidate, bool* shouldClone)
         
         
         
-        
-        
-        
-        
-        
-        if (hasUseRemoved && !isObservableResult && candidate->canRecoverOnBailout())
+        if ((hasUseRemoved || (isObservableResult && isRecoverableResult)) &&
+            candidate->canRecoverOnBailout())
+        {
+            
+            
             *shouldClone = true;
 
-        
-        
-        
-        
-        
-        else if (hasUseRemoved || isObservableResult)
+        } else if (hasUseRemoved || isObservableResult) {
+            
+            
+            
+            
+            
             kind = Min(kind, MDefinition::TruncateAfterBailouts);
-
+        }
     }
 
     return kind;
