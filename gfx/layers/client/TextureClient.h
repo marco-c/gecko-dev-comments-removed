@@ -195,6 +195,9 @@ public:
                          TextureFlags aFlags = TextureFlags::DEFAULT);
   virtual ~TextureClient();
 
+  static already_AddRefed<TextureClient>
+  CreateWithData(TextureData* aData, TextureFlags aFlags, ISurfaceAllocator* aAllocator);
+
   
   static already_AddRefed<TextureClient>
   CreateForDrawing(CompositableForwarder* aAllocator,
@@ -639,9 +642,16 @@ public:
 
   virtual bool UpdateFromSurface(gfx::SourceSurface* aSurface) { return false; };
 
+  virtual bool ReadBack(TextureReadbackSink* aReadbackSink) { return false; }
+
   
   
   virtual void WaitForFence(FenceHandle* aFence) {};
+
+  virtual void SyncWithObject(SyncObject* aFence) {};
+
+  
+  virtual void FinalizeOnIPDLThread(TextureClient*) {}
 };
 
 
@@ -687,11 +697,16 @@ public:
   
   virtual void WaitForBufferOwnership(bool aWaitReleaseFence = true) override;
 
+  virtual void SyncWithObject(SyncObject* aFence) override { mData->SyncWithObject(aFence); }
+
   
   virtual bool IsAllocated() const override { return true; }
 
   
   virtual TextureData* GetInternalData() override { return mData; }
+
+  virtual void FinalizeOnIPDLThread() override;
+
 protected:
   TextureData* mData;
   RefPtr<gfx::DrawTarget> mBorrowedDrawTarget;
