@@ -475,44 +475,67 @@ GeckoChildProcessHost::SetAlreadyDead()
 
 int32_t GeckoChildProcessHost::mChildCounter = 0;
 
+void
+GeckoChildProcessHost::SetChildLogName(const char* varName, const char* origLogName)
+{
+  
+  
+  
+  
+  nsAutoCString setChildLogName(varName);
+  setChildLogName.Append(origLogName);
 
+  
+  setChildLogName.AppendLiteral(".child-");
+  setChildLogName.AppendInt(mChildCounter);
 
+  
+  
+  PR_SetEnv(setChildLogName.get());
+}
 
 bool
 GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, base::ProcessArchitecture arch)
 {
   
-  const char* origLogName = PR_GetEnv("NSPR_LOG_FILE");
-  if (!origLogName) {
+  const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
+  const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
+  if (!origNSPRLogName && !origMozLogName) {
     return PerformAsyncLaunchInternal(aExtraOpts, arch);
   }
 
-  
-  
-  
-  
-  nsAutoCString setChildLogName("NSPR_LOG_FILE=");
-  setChildLogName.Append(origLogName);
+  ++mChildCounter;
 
   
   
   
-  
-  static char* restoreOrigLogName = 0;
-  if (!restoreOrigLogName)
-    restoreOrigLogName = strdup(setChildLogName.get());
+  static nsAutoCString restoreOrigNSPRLogName;
+  static nsAutoCString restoreOrigMozLogName;
 
-  
-  setChildLogName.AppendLiteral(".child-");
-  setChildLogName.AppendInt(++mChildCounter);
+  if (origNSPRLogName) {
+    if (restoreOrigNSPRLogName.IsEmpty()) {
+      restoreOrigNSPRLogName.AssignLiteral("NSPR_LOG_FILE=");
+      restoreOrigNSPRLogName.Append(origNSPRLogName);
+    }
+    SetChildLogName("NSPR_LOG_FILE=", origNSPRLogName);
+  }
+  if (origMozLogName) {
+    if (restoreOrigMozLogName.IsEmpty()) {
+      restoreOrigMozLogName.AssignLiteral("MOZ_LOG_FILE=");
+      restoreOrigMozLogName.Append(origMozLogName);
+    }
+    SetChildLogName("MOZ_LOG_FILE=", origMozLogName);
+  }
 
-  
-  
-  PR_SetEnv(setChildLogName.get());
   bool retval = PerformAsyncLaunchInternal(aExtraOpts, arch);
 
   
-  PR_SetEnv(restoreOrigLogName);
+  if (origNSPRLogName) {
+    PR_SetEnv(restoreOrigNSPRLogName.get());
+  }
+  if (origMozLogName) {
+    PR_SetEnv(restoreOrigMozLogName.get());
+  }
 
   return retval;
 }

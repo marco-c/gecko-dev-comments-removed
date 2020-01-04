@@ -191,6 +191,8 @@ private:
 
   static void GetPathToBinary(FilePath& exePath);
 
+  void SetChildLogName(const char* varName, const char* origLogName);
+
   
   
   
