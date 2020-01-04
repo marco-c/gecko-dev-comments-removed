@@ -36,11 +36,9 @@ class DisplayItemClip;
 
 
 
-
 class DisplayItemScrollClip {
 public:
   DisplayItemScrollClip(const DisplayItemScrollClip* aParent,
-                        const DisplayItemScrollClip* aCrossStackingContextParent,
                         nsIScrollableFrame* aScrollableFrame,
                         const DisplayItemClip* aClip,
                         bool aIsAsyncScrollable)
@@ -48,9 +46,7 @@ public:
     , mScrollableFrame(aScrollableFrame)
     , mClip(aClip)
     , mIsAsyncScrollable(aIsAsyncScrollable)
-    , mCrossStackingContextParent(aCrossStackingContextParent)
-    , mCrossStackingContextDepth(aCrossStackingContextParent ?
-        aCrossStackingContextParent->mCrossStackingContextDepth + 1 : 1)
+    , mDepth(aParent ? aParent->mDepth + 1 : 1)
   {
     MOZ_ASSERT(mScrollableFrame);
   }
@@ -118,14 +114,9 @@ public:
 
 private:
   static uint32_t Depth(const DisplayItemScrollClip* aSC)
-  { return aSC ? aSC->mCrossStackingContextDepth : 0; }
+  { return aSC ? aSC->mDepth : 0; }
 
-  
-
-
-  const DisplayItemScrollClip* mCrossStackingContextParent;
-
-  const uint32_t mCrossStackingContextDepth;
+  const uint32_t mDepth;
 };
 
 } 
