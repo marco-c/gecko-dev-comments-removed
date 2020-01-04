@@ -17,7 +17,8 @@ const protocol = require("devtools/shared/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
 const {LongStringActor} = require("devtools/server/actors/string");
 const {fetch} = require("devtools/shared/DevToolsUtils");
-const {oldStyleSheetSpec, styleEditorSpec} = require("devtools/shared/specs/styleeditor");
+const {OldStyleSheetFront} = require("devtools/shared/fronts/styleeditor");
+const {oldStyleSheetSpec} = require("devtools/shared/specs/styleeditor");
 
 loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css-logic").CssLogic);
 
@@ -553,13 +554,13 @@ var StyleEditorFront = protocol.FrontClass(StyleEditorActor, {
   }
 });
 
-exports.OldStyleSheetActor = OldStyleSheetActor;
 
 
 
 
+var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
+  typeName: "styleeditor",
 
-var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(styleEditorSpec, {
   
 
 
@@ -572,6 +573,13 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
 
   get document() {
     return this.window.document;
+  },
+
+  events: {
+    "document-load" : {
+      type: "documentLoad",
+      styleSheets: Arg(0, "array:old-stylesheet")
+    }
   },
 
   form: function ()
@@ -601,7 +609,6 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
 
 
   newDocument: method(function () {
-  newDocument: function () {
     
     this._clearStyleSheetActors();
 
@@ -614,7 +621,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
       this.window.addEventListener("load", this._onDocumentLoaded, false);
     }
     return {};
-  },
+  }),
 
   
 
@@ -736,7 +743,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
 
 
 
-  newStyleSheet: function (text) {
+  newStyleSheet: method(function (text) {
     let parent = this.document.documentElement;
     let style = this.document.createElementNS("http://www.w3.org/1999/xhtml", "style");
     style.setAttribute("type", "text/css");
@@ -748,6 +755,35 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
 
     let actor = this._createStyleSheetActor(style.sheet);
     return actor;
+  }, {
+    request: { text: Arg(0, "string") },
+    response: { styleSheet: RetVal("old-stylesheet") }
+  })
+});
+
+
+
+
+var StyleEditorFront = protocol.FrontClass(StyleEditorActor, {
+  initialize: function (client, tabForm) {
+    protocol.Front.prototype.initialize.call(this, client);
+    this.actorID = tabForm.styleEditorActor;
+    this.manage(this);
+  },
+
+  getStyleSheets: function () {
+    let deferred = promise.defer();
+
+    events.once(this, "document-load", (styleSheets) => {
+      deferred.resolve(styleSheets);
+    });
+    this.newDocument();
+
+    return deferred.promise;
+  },
+
+  addStyleSheet: function (text) {
+    return this.newStyleSheet(text);
   }
 });
 
@@ -756,6 +792,10 @@ XPCOMUtils.defineLazyGetter(this, "DOMUtils", function () {
 });
 
 exports.StyleEditorActor = StyleEditorActor;
+exports.StyleEditorFront = StyleEditorFront;
+
+exports.OldStyleSheetActor = OldStyleSheetActor;
+exports.OldStyleSheetFront = OldStyleSheetFront;
 
 
 
