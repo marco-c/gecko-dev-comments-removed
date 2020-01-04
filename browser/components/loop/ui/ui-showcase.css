@@ -2,7 +2,7 @@
 
 
 
-html[dir="rtl"]:not(.outer-html) {
+html[dir="rtl"]:not(#outer-html) {
   
 
 
