@@ -128,8 +128,6 @@ void TransportLayerIce::PostSetup() {
                                         &TransportLayerIce::IcePacketReceived);
   if (stream_->state() == NrIceMediaStream::ICE_OPEN) {
     TL_SET_STATE(TS_OPEN);
-    
-    ResetOldStream();
   }
 }
 
@@ -150,6 +148,7 @@ void TransportLayerIce::RestoreOldStream() {
   if (old_stream_ == nullptr) {
     return; 
   }
+  
   MOZ_MTLOG(ML_INFO, LAYER_INFO << "RestoreOldStream(" << old_stream_->name()
                                 << ")");
   stream_->SignalReady.disconnect(this);
@@ -201,8 +200,6 @@ void TransportLayerIce::IceReady(NrIceMediaStream *stream) {
   MOZ_MTLOG(ML_INFO, LAYER_INFO << "ICE Ready(" << stream->name() << ","
     << component_ << ")");
   TL_SET_STATE(TS_OPEN);
-  
-  ResetOldStream();
 }
 
 void TransportLayerIce::IceFailed(NrIceMediaStream *stream) {

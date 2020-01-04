@@ -38,6 +38,9 @@ class TransportLayerIce : public TransportLayer {
                      RefPtr<NrIceMediaStream> stream,
                      int component);
 
+  void ResetOldStream(); 
+  void RestoreOldStream(); 
+
   
   virtual TransportResult SendPacket(const unsigned char *data, size_t len);
 
@@ -53,8 +56,6 @@ class TransportLayerIce : public TransportLayer {
  private:
   DISALLOW_COPY_ASSIGN(TransportLayerIce);
   void PostSetup();
-  void ResetOldStream(); 
-  void RestoreOldStream(); 
 
   const std::string name_;
   RefPtr<NrIceCtx> ctx_;

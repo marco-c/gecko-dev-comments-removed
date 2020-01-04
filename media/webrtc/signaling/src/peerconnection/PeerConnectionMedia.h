@@ -288,6 +288,11 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
  public:
   explicit PeerConnectionMedia(PeerConnectionImpl *parent);
 
+  enum IceRestartState { ICE_RESTART_NONE,
+                         ICE_RESTART_PROVISIONAL,
+                         ICE_RESTART_COMMITTED
+  };
+
   PeerConnectionImpl* GetPC() { return mParent; }
   nsresult Init(const std::vector<NrIceStunServer>& stun_servers,
                 const std::vector<NrIceTurnServer>& turn_servers,
@@ -316,9 +321,14 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   void StartIceChecks(const JsepSession& session);
 
+  bool IsIceRestarting() const;
+  IceRestartState GetIceRestartState() const;
+
   
   void BeginIceRestart(const std::string& ufrag,
                        const std::string& pwd);
+  
+  void CommitIceRestart();
   
   void FinalizeIceRestart();
   
@@ -612,6 +622,9 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   UniquePtr<NrIceProxyServer> mProxyServer;
+
+  
+  IceRestartState mIceRestartState;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PeerConnectionMedia)
 };
