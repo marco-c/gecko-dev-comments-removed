@@ -70,8 +70,16 @@ const key = (id, win = window) => {
   registerCleanupFunction(() => {
     info(`finish() was called, cleaning up...`);
     DevToolsUtils.testing = false;
+
     PrefUtils.rollbackPrefsToDefault();
     stopObservingPrefs();
+
+    
+    
+    
+    
+    let nsIProfilerModule = Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
+    nsIProfilerModule.StopProfiler();
 
     
     
