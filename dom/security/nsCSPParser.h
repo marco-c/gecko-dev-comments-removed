@@ -115,24 +115,25 @@ class nsCSPParser {
 
 
     
-    nsCSPPolicy*    policy();
-    void            directive();
-    nsCSPDirective* directiveName();
-    void            directiveValue(nsTArray<nsCSPBaseSrc*>& outSrcs);
-    void            referrerDirectiveValue();
-    void            sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs);
-    nsCSPBaseSrc*   sourceExpression();
-    nsCSPSchemeSrc* schemeSource();
-    nsCSPHostSrc*   hostSource();
-    nsCSPBaseSrc*   keywordSource();
-    nsCSPNonceSrc*  nonceSource();
-    nsCSPHashSrc*   hashSource();
-    nsCSPHostSrc*   appHost(); 
-    nsCSPHostSrc*   host();
-    bool            hostChar();
-    bool            schemeChar();
-    bool            port();
-    bool            path(nsCSPHostSrc* aCspHost);
+    nsCSPPolicy*        policy();
+    void                directive();
+    nsCSPDirective*     directiveName();
+    void                directiveValue(nsTArray<nsCSPBaseSrc*>& outSrcs);
+    void                requireSRIForDirectiveValue(nsRequireSRIForDirective* aDir);
+    void                referrerDirectiveValue();
+    void                sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs);
+    nsCSPBaseSrc*       sourceExpression();
+    nsCSPSchemeSrc*     schemeSource();
+    nsCSPHostSrc*       hostSource();
+    nsCSPBaseSrc*       keywordSource();
+    nsCSPNonceSrc*      nonceSource();
+    nsCSPHashSrc*       hashSource();
+    nsCSPHostSrc*       appHost(); 
+    nsCSPHostSrc*       host();
+    bool                hostChar();
+    bool                schemeChar();
+    bool                port();
+    bool                path(nsCSPHostSrc* aCspHost);
 
     bool subHost();                                       
     bool atValidUnreservedChar();                         

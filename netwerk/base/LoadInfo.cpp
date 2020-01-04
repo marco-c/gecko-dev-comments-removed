@@ -10,6 +10,7 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "mozIThirdPartyUtil.h"
 #include "nsFrameLoader.h"
+#include "nsIContentSecurityPolicy.h"
 #include "nsIDocShell.h"
 #include "nsIDocument.h"
 #include "nsIDOMDocument.h"
@@ -146,6 +147,24 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
       }
     }
   }
+
+    
+    
+    if (!mEnforceSRI) {
+      
+      
+      
+      nsCOMPtr<nsIContentSecurityPolicy> csp;
+      if (aLoadingPrincipal) {
+        aLoadingPrincipal->GetCsp(getter_AddRefs(csp));
+        
+        if (csp) {
+          uint32_t loadType =
+            nsContentUtils::InternalContentPolicyTypeToExternal(aContentPolicyType);
+          csp->RequireSRIForType(loadType, &mEnforceSRI);
+        }
+      }
+    }
 
   if (!(mSecurityFlags & nsILoadInfo::SEC_FORCE_PRIVATE_BROWSING)) {
     if (aLoadingContext) {

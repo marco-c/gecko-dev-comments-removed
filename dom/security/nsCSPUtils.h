@@ -54,13 +54,15 @@ void CSP_LogMessage(const nsAString& aMessage,
 
 
 
-#define INLINE_STYLE_VIOLATION_OBSERVER_TOPIC   "violated base restriction: Inline Stylesheets will not apply"
-#define INLINE_SCRIPT_VIOLATION_OBSERVER_TOPIC  "violated base restriction: Inline Scripts will not execute"
-#define EVAL_VIOLATION_OBSERVER_TOPIC           "violated base restriction: Code will not be created from strings"
-#define SCRIPT_NONCE_VIOLATION_OBSERVER_TOPIC   "Inline Script had invalid nonce"
-#define STYLE_NONCE_VIOLATION_OBSERVER_TOPIC    "Inline Style had invalid nonce"
-#define SCRIPT_HASH_VIOLATION_OBSERVER_TOPIC    "Inline Script had invalid hash"
-#define STYLE_HASH_VIOLATION_OBSERVER_TOPIC     "Inline Style had invalid hash"
+#define INLINE_STYLE_VIOLATION_OBSERVER_TOPIC        "violated base restriction: Inline Stylesheets will not apply"
+#define INLINE_SCRIPT_VIOLATION_OBSERVER_TOPIC       "violated base restriction: Inline Scripts will not execute"
+#define EVAL_VIOLATION_OBSERVER_TOPIC                "violated base restriction: Code will not be created from strings"
+#define SCRIPT_NONCE_VIOLATION_OBSERVER_TOPIC        "Inline Script had invalid nonce"
+#define STYLE_NONCE_VIOLATION_OBSERVER_TOPIC         "Inline Style had invalid nonce"
+#define SCRIPT_HASH_VIOLATION_OBSERVER_TOPIC         "Inline Script had invalid hash"
+#define STYLE_HASH_VIOLATION_OBSERVER_TOPIC          "Inline Style had invalid hash"
+#define REQUIRE_SRI_SCRIPT_VIOLATION_OBSERVER_TOPIC  "Missing required Subresource Integrity for Script"
+#define REQUIRE_SRI_STYLE_VIOLATION_OBSERVER_TOPIC   "Missing required Subresource Integrity for Style"
 
 
 
@@ -89,7 +91,9 @@ static const char* CSPStrDirectives[] = {
   "manifest-src",              
   "upgrade-insecure-requests", 
   "child-src",                 
-  "block-all-mixed-content"    
+  "block-all-mixed-content",   
+  "require-sri-for"            
+
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir)
@@ -121,6 +125,7 @@ enum CSPKeyword {
   CSP_UNSAFE_EVAL,
   CSP_NONE,
   CSP_NONCE,
+  CSP_REQUIRE_SRI_FOR,
   
   
   CSP_LAST_KEYWORD_VALUE,
@@ -136,6 +141,7 @@ static const char* CSPStrKeywords[] = {
   "'unsafe-eval'",   
   "'none'",          
   "'nonce-",         
+  "require-sri-for"  
   
 };
 
@@ -481,6 +487,25 @@ class nsUpgradeInsecureDirective : public nsCSPDirective {
 
 
 
+class nsRequireSRIForDirective : public nsCSPDirective {
+  public:
+    explicit nsRequireSRIForDirective(CSPDirective aDirective);
+    ~nsRequireSRIForDirective();
+
+    void toString(nsAString& outStr) const;
+
+    void addType(nsContentPolicyType aType)
+      { mTypes.AppendElement(aType); }
+    bool hasType(nsContentPolicyType aType) const;
+    bool restrictsContentType(nsContentPolicyType aType) const;
+    bool allows(enum CSPKeyword aKeyword, const nsAString& aHashOrNonce) const;
+
+  private:
+    nsTArray<nsContentPolicyType> mTypes;
+};
+
+
+
 class nsCSPPolicy {
   public:
     nsCSPPolicy();
@@ -532,6 +557,8 @@ class nsCSPPolicy {
                                           nsAString& outDirective) const;
 
     void getDirectiveAsString(CSPDirective aDir, nsAString& outDirective) const;
+
+    bool requireSRIForType(nsContentPolicyType aContentType);
 
     inline uint32_t getNumDirectives() const
       { return mDirectives.Length(); }
