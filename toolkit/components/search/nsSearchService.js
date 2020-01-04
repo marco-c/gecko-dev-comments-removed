@@ -1400,8 +1400,6 @@ Engine.prototype = {
   
   _hasPreferredIcon: null,
   
-  _hidden: null,
-  
   _name: null,
   
   _queryCharset: null,
@@ -2174,7 +2172,6 @@ Engine.prototype = {
       this._hasPreferredIcon = true;
     else
       this._hasPreferredIcon = false;
-    this._hidden = aJson._hidden;
     this._queryCharset = aJson.queryCharset || DEFAULT_QUERY_CHARSET;
     this.__searchForm = aJson.__searchForm;
     this.__installLocation = aJson._installLocation || SEARCH_APP_DIR;
@@ -2208,7 +2205,6 @@ Engine.prototype = {
     var json = {
       _id: this._id,
       _name: this._name,
-      _hidden: this.hidden,
       description: this.description,
       __searchForm: this.__searchForm,
       _iconURL: this._iconURL,
@@ -2401,14 +2397,11 @@ Engine.prototype = {
   },
 
   get hidden() {
-    if (this._hidden === null)
-      this._hidden = engineMetadataService.getAttr(this, "hidden") || false;
-    return this._hidden;
+    return engineMetadataService.getAttr(this, "hidden") || false;
   },
   set hidden(val) {
     var value = !!val;
-    if (value != this._hidden) {
-      this._hidden = value;
+    if (value != this.hidden) {
       engineMetadataService.setAttr(this, "hidden", value);
       notifyAction(this, SEARCH_ENGINE_CHANGED);
     }
