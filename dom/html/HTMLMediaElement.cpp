@@ -1875,10 +1875,6 @@ HTMLMediaElement::CaptureStreamInternal(bool aFinishWhenEnded,
   out->mFinishWhenEnded = aFinishWhenEnded;
 
   mAudioCaptured = true;
-  
-  
-  
-  out->mStream->GetStream()->ChangeExplicitBlockerCount(1);
   if (mDecoder) {
     mDecoder->AddOutputStream(out->mStream->GetStream()->AsProcessedStream(),
                               aFinishWhenEnded);

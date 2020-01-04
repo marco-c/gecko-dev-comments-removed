@@ -217,9 +217,6 @@ OutputStreamData::Connect(MediaStream* aStream)
   MOZ_ASSERT(!mStream->IsDestroyed(), "Can't connect a destroyed stream.");
 
   mPort = mStream->AllocateInputPort(aStream, 0);
-  
-  
-  mStream->ChangeExplicitBlockerCount(-1);
 }
 
 bool
@@ -239,9 +236,6 @@ OutputStreamData::Disconnect()
     mPort->Destroy();
     mPort = nullptr;
   }
-  
-  
-  mStream->ChangeExplicitBlockerCount(1);
   return true;
 }
 
