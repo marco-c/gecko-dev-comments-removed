@@ -154,10 +154,11 @@ uint32_t GfxInfo::OperatingSystemVersion()
 }
 
 nsresult
-GfxInfo::GetFeatureStatusImpl(int32_t , 
-                              int32_t *aStatus, 
+GfxInfo::GetFeatureStatusImpl(int32_t ,
+                              int32_t *aStatus,
                               nsAString & ,
-                              const nsTArray<GfxDriverInfo>& , 
+                              const nsTArray<GfxDriverInfo>& ,
+                              nsACString& aFailureId,
                               OperatingSystem*  )
 {
   NS_ENSURE_ARG_POINTER(aStatus);
