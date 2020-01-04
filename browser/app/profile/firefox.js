@@ -70,6 +70,9 @@ pref("extensions.hotfix.certs.1.sha1Fingerprint", "91:53:98:0C:C1:86:DF:47:8F:35
 pref("extensions.hotfix.certs.2.sha1Fingerprint", "39:E7:2B:7A:5B:CF:37:78:F9:5D:4A:E0:53:2D:2F:3D:68:53:C5:60");
 
 
+pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/SystemAddons/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
+
+
 
 pref("extensions.autoDisableScopes", 15);
 
@@ -1627,16 +1630,16 @@ pref("browser.pocket.enabledLocales", "cs de en-GB en-US en-ZA es-ES es-MX fr hu
 
 pref("view_source.tab", true);
 
-#ifndef RELEASE_BUILD
 
 
 pref("dom.serviceWorkers.enabled", true);
 
+#ifndef RELEASE_BUILD
 pref("dom.serviceWorkers.interception.enabled", true);
+#endif
 
 
 pref("dom.push.enabled", true);
-#endif
 
 
 
