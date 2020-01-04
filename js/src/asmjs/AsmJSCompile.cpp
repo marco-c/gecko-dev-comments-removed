@@ -124,6 +124,11 @@ class ModuleCompiler
                                   const AsmJSFunctionLabels& labels)
     {
         
+        
+        if (masm().oom())
+            return false;
+
+        
         unsigned line = func.lineno();
         unsigned column = func.column();
         PropertyName* funcName = func.name();
