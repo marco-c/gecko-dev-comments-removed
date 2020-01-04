@@ -60,10 +60,10 @@ this.getCryptoParams = function(headers) {
     return null;
   }
 
-  var requiresAuthenticationSecret = true;
   var keymap;
   var padSize;
   if (headers.encoding == AESGCM_ENCODING) {
+    
     
     
     keymap = getEncryptionKeyParams(headers.crypto_key);
@@ -71,13 +71,8 @@ this.getCryptoParams = function(headers) {
   } else if (headers.encoding == AESGCM128_ENCODING) {
     
     
-    keymap = getEncryptionKeyParams(headers.crypto_key);
+    keymap = getEncryptionKeyParams(headers.encryption_key);
     padSize = 1;
-    if (!keymap) {
-      
-      requiresAuthenticationSecret = false;
-      keymap = getEncryptionKeyParams(headers.encryption_key);
-    }
   }
   if (!keymap) {
     return null;
@@ -94,7 +89,7 @@ this.getCryptoParams = function(headers) {
   if (!dh || !salt || isNaN(rs) || (rs <= padSize)) {
     return null;
   }
-  return {dh, salt, rs, auth: requiresAuthenticationSecret, padSize};
+  return {dh, salt, rs, padSize};
 }
 
 var parseHeaderFieldParams = (m, v) => {
@@ -269,9 +264,7 @@ this.PushCrypto = {
     
     
     
-    
-    
-    if (authenticationSecret) {
+    if (padSize == 2) {
       
       
       var authKdf = new hkdf(authenticationSecret, ikm);
@@ -279,19 +272,13 @@ this.PushCrypto = {
         .then(ikm2 => new hkdf(salt, ikm2));
 
       
-      
       context = concatArray([
         new Uint8Array([0]), P256DH_INFO,
         this._encodeLength(receiverKey), receiverKey,
         this._encodeLength(senderKey), senderKey
       ]);
-      
-      encryptInfo = padSize == 2 ? AESGCM_ENCRYPT_INFO :
-                                   AESGCM128_ENCRYPT_INFO;
+      encryptInfo = AESGCM_ENCRYPT_INFO;
     } else {
-      if (padSize == 2) {
-        throw new Error("aesgcm encoding requires an authentication secret");
-      }
       kdfPromise = Promise.resolve(new hkdf(salt, ikm));
       context = new Uint8Array(0);
       encryptInfo = AESGCM128_ENCRYPT_INFO;
