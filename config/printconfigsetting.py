@@ -2,7 +2,10 @@
 
 
 
-import configobj, sys
+import configobj
+import sys
+import re
+from StringIO import StringIO
 
 try:
     (file, section, key) = sys.argv[1:]
@@ -10,7 +13,10 @@ except ValueError:
     print "Usage: printconfigsetting.py <file> <section> <setting>"
     sys.exit(1)
 
-c = configobj.ConfigObj(file)
+with open(file) as fh:
+    content = re.sub('^\s*;', '#', fh.read(), flags=re.M)
+
+c = configobj.ConfigObj(StringIO(content))
 
 try:
     s = c[section]
