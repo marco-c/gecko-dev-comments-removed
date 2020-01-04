@@ -98,12 +98,9 @@ Node* DepthFirstSearch(Node* aRoot, const Condition& aCondition)
 
 
 
-
-
-
-
 template <typename Node, typename Action>
-void ForEachNode(Node* aRoot, const Action& aAction)
+auto ForEachNode(Node* aRoot, const Action& aAction) ->
+typename EnableIf<IsSame<decltype(aAction(aRoot)), TraversalFlag>::value, void>::Type
 {
   if (!aRoot) {
     return;
@@ -124,6 +121,31 @@ void ForEachNode(Node* aRoot, const Action& aAction)
            child = child->GetPrevSibling()) {
         stack.push(child);
       }
+    }
+  }
+}
+
+template <typename Node, typename Action>
+auto ForEachNode(Node* aRoot, const Action& aAction) ->
+typename EnableIf<IsSame<decltype(aAction(aRoot)), void>::value, void>::Type
+{
+  if (!aRoot) {
+    return;
+  }
+
+  std::stack<Node*> stack;
+  stack.push(aRoot);
+
+  while (!stack.empty()) {
+    Node* node = stack.top();
+    stack.pop();
+
+    aAction(node);
+
+    for (Node* child = node->GetLastChild();
+         child;
+         child = child->GetPrevSibling()) {
+      stack.push(child);
     }
   }
 }
