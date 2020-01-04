@@ -288,7 +288,7 @@ ChromeActions.prototype = {
       try {
         
         channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
-        if (self.contentDispositionFilename) {
+        if (self.contentDispositionFilename && !data.isAttachment) {
           channel.contentDispositionFilename = self.contentDispositionFilename;
         } else {
           channel.contentDispositionFilename = filename;
