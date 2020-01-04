@@ -322,13 +322,13 @@ void ConvolveHorizontally(const unsigned char* src_data,
                           bool has_alpha, bool use_simd) {
   int width = filter.num_values();
   int processed = 0;
-#if defined(USE_SSE2)
+#if defined(USE_SSE2) || defined(_MIPS_ARCH_LOONGSON3A)
   int simd_width = width & ~3;
   if (use_simd && simd_width) {
     
     
     
-    ConvolveHorizontally_SSE2(src_data, filter, out_row);
+    ConvolveHorizontally_SIMD(src_data, filter, out_row);
     processed = simd_width;
   }
 #endif
