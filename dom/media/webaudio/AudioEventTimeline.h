@@ -459,8 +459,8 @@ public:
         }
       }
 
-      
       if (!bailOut && lastEventId < mEvents.Length()) {
+        
         MOZ_ASSERT(TimesEqual(aTime, mEvents[lastEventId].template Time<TimeType>()));
 
         
