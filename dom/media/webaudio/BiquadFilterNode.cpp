@@ -78,7 +78,6 @@ class BiquadFilterNodeEngine final : public AudioNodeEngine
 public:
   BiquadFilterNodeEngine(AudioNode* aNode, AudioDestinationNode* aDestination)
     : AudioNodeEngine(aNode)
-    , mSource(nullptr)
     , mDestination(aDestination->Stream())
     
     
@@ -88,11 +87,6 @@ public:
     , mQ(1.f)
     , mGain(0.f)
   {
-  }
-
-  void SetSourceStream(AudioNodeStream* aSource)
-  {
-    mSource = aSource;
   }
 
   enum Parameteres {
@@ -113,10 +107,9 @@ public:
   void RecvTimelineEvent(uint32_t aIndex,
                          AudioTimelineEvent& aEvent) override
   {
-    MOZ_ASSERT(mSource && mDestination);
+    MOZ_ASSERT(mDestination);
 
     WebAudioUtils::ConvertAudioTimelineEventToTicks(aEvent,
-                                                    mSource,
                                                     mDestination);
 
     switch (aIndex) {
@@ -223,7 +216,6 @@ public:
     
     
     
-    
     size_t amount = AudioNodeEngine::SizeOfExcludingThis(aMallocSizeOf);
     amount += mBiquads.ShallowSizeOfExcludingThis(aMallocSizeOf);
     return amount;
@@ -235,7 +227,6 @@ public:
   }
 
 private:
-  AudioNodeStream* mSource;
   AudioNodeStream* mDestination;
   BiquadFilterType mType;
   AudioParamTimeline mFrequency;
@@ -259,7 +250,6 @@ BiquadFilterNode::BiquadFilterNode(AudioContext* aContext)
   BiquadFilterNodeEngine* engine = new BiquadFilterNodeEngine(this, aContext->Destination());
   mStream = AudioNodeStream::Create(aContext, engine,
                                     AudioNodeStream::NO_STREAM_FLAGS);
-  engine->SetSourceStream(mStream);
 }
 
 BiquadFilterNode::~BiquadFilterNode()

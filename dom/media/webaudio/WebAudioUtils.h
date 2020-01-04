@@ -64,7 +64,6 @@ namespace WebAudioUtils {
 
 
   void ConvertAudioTimelineEventToTicks(AudioTimelineEvent& aEvent,
-                                        AudioNodeStream* aSource,
                                         AudioNodeStream* aDest);
 
   

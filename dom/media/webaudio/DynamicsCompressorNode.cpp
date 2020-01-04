@@ -36,7 +36,6 @@ public:
   explicit DynamicsCompressorNodeEngine(AudioNode* aNode,
                                         AudioDestinationNode* aDestination)
     : AudioNodeEngine(aNode)
-    , mSource(nullptr)
     , mDestination(aDestination->Stream())
     
     
@@ -49,11 +48,6 @@ public:
   {
   }
 
-  void SetSourceStream(AudioNodeStream* aSource)
-  {
-    mSource = aSource;
-  }
-
   enum Parameters {
     THRESHOLD,
     KNEE,
@@ -64,10 +58,9 @@ public:
   void RecvTimelineEvent(uint32_t aIndex,
                          AudioTimelineEvent& aEvent) override
   {
-    MOZ_ASSERT(mSource && mDestination);
+    MOZ_ASSERT(mDestination);
 
     WebAudioUtils::ConvertAudioTimelineEventToTicks(aEvent,
-                                                    mSource,
                                                     mDestination);
 
     switch (aIndex) {
@@ -135,7 +128,6 @@ public:
     
     
     
-    
     size_t amount = AudioNodeEngine::SizeOfExcludingThis(aMallocSizeOf);
     amount += mCompressor->sizeOfIncludingThis(aMallocSizeOf);
     return amount;
@@ -180,7 +172,6 @@ private:
   }
 
 private:
-  AudioNodeStream* mSource;
   AudioNodeStream* mDestination;
   AudioParamTimeline mThreshold;
   AudioParamTimeline mKnee;
@@ -205,7 +196,6 @@ DynamicsCompressorNode::DynamicsCompressorNode(AudioContext* aContext)
   DynamicsCompressorNodeEngine* engine = new DynamicsCompressorNodeEngine(this, aContext->Destination());
   mStream = AudioNodeStream::Create(aContext, engine,
                                     AudioNodeStream::NO_STREAM_FLAGS);
-  engine->SetSourceStream(mStream);
 }
 
 DynamicsCompressorNode::~DynamicsCompressorNode()
