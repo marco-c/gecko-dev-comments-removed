@@ -412,8 +412,8 @@ private:
 
 
 template<typename ArrayType>
-class MOZ_RAII RootedTypedArray : public ArrayType,
-                                  private TypedArrayRooter<ArrayType>
+class MOZ_RAII RootedTypedArray final : public ArrayType,
+                                        private TypedArrayRooter<ArrayType>
 {
 public:
   explicit RootedTypedArray(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM) :
