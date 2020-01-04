@@ -93,9 +93,6 @@ PR_IMPLEMENT(void) PL_InitArenaPool(
         pool->mask = PR_BITMASK(PR_CeilingLog2(align));
 
     pool->first.next = NULL;
-    
-
-
     pool->first.base = pool->first.avail = pool->first.limit =
         (PRUword)PL_ARENA_ALIGN(pool, &pool->first + 1);
     pool->current = &pool->first;
@@ -147,14 +144,10 @@ PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
 {
     PLArena *a;   
     char *rp;     
-    PRUint32 nbOld;
 
     PR_ASSERT((nb & pool->mask) == 0);
     
-    nbOld = nb;
     nb = (PRUword)PL_ARENA_ALIGN(pool, nb); 
-    if (nb < nbOld)
-        return NULL;
 
     
     {
@@ -215,7 +208,6 @@ PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
             PL_MAKE_MEM_NOACCESS((void*)a->avail, a->limit - a->avail);
             rp = (char *)a->avail;
             a->avail += nb;
-            PR_ASSERT(a->avail <= a->limit);
             
 
             a->next = pool->current->next;
@@ -238,8 +230,6 @@ PR_IMPLEMENT(void *) PL_ArenaGrow(
 {
     void *newp;
 
-    if (PR_UINT32_MAX - size < incr)
-        return NULL;
     PL_ARENA_ALLOCATE(newp, pool, size + incr);
     if (newp)
         memcpy(newp, p, size);
