@@ -224,7 +224,7 @@ class MachCommands(MachCommandBase):
         
         
         success = self.callProcess("eslint",
-                                   [npmPath, "install", "eslint@1.10.3", "-g"])
+                                   [npmPath, "install", "eslint@2.7.0", "-g"])
         if not success:
             return 1
 
@@ -237,13 +237,13 @@ class MachCommands(MachCommandBase):
 
         
         success = self.callProcess("eslint-plugin-html",
-                                   [npmPath, "install", "eslint-plugin-html", "-g"])
+                                   [npmPath, "install", "eslint-plugin-html@1.4.0", "-g"])
         if not success:
             return 1
 
         
         success = self.callProcess("eslint-plugin-react",
-                                   [npmPath, "install", "eslint-plugin-react", "-g"])
+                                   [npmPath, "install", "eslint-plugin-react@4.2.3", "-g"])
         if not success:
             return 1
 
