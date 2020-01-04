@@ -5742,7 +5742,7 @@ WorkerPrivate::ScheduleKillCloseEventRunnable()
 }
 
 void
-WorkerPrivate::ReportError(JSContext* aCx, const char* aMessage,
+WorkerPrivate::ReportError(JSContext* aCx, const char* aFallbackMessage,
                            JSErrorReport* aReport)
 {
   AssertIsOnWorkerThread();
@@ -5764,18 +5764,8 @@ WorkerPrivate::ReportError(JSContext* aCx, const char* aMessage,
 
   if (aReport) {
     
-    
-    
-    
-    
-    JS::Rooted<JSString*> messageStr(aCx,
-                                     js::ErrorReportToString(aCx, aReport));
-    if (messageStr) {
-      nsAutoJSString autoStr;
-      if (autoStr.init(aCx, messageStr)) {
-        message = autoStr;
-      }
-    }
+    xpc::ErrorReport::ErrorReportToMessageString(aReport, message);
+
     filename = NS_ConvertUTF8toUTF16(aReport->filename);
     line = aReport->uclinebuf;
     lineNumber = aReport->lineno;
@@ -5791,7 +5781,7 @@ WorkerPrivate::ReportError(JSContext* aCx, const char* aMessage,
   }
 
   if (message.IsEmpty()) {
-    message = NS_ConvertUTF8toUTF16(aMessage);
+    message = NS_ConvertUTF8toUTF16(aFallbackMessage);
   }
 
   mErrorHandlerRecursionCount++;

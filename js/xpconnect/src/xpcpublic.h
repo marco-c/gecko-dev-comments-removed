@@ -513,6 +513,12 @@ class ErrorReport {
     void LogToConsole();
     void LogToConsoleWithStack(JS::HandleObject aStack);
 
+    
+    
+    
+    static void ErrorReportToMessageString(JSErrorReport* aReport,
+                                           nsAString& aString);
+
   public:
 
     nsCString mCategory;

@@ -637,23 +637,40 @@ IsDuckTypedErrorObject(JSContext* cx, HandleObject exnObject, const char** filen
     return true;
 }
 
-JS_FRIEND_API(JSString*)
-js::ErrorReportToString(JSContext* cx, JSErrorReport* reportp)
+static JSString*
+ErrorReportToString(JSContext* cx, JSErrorReport* reportp)
 {
+    
+
+
+
+
+
     JSExnType type = static_cast<JSExnType>(reportp->exnType);
-    RootedString str(cx, cx->runtime()->emptyString);
+    RootedString str(cx);
     if (type != JSEXN_NONE)
         str = ClassName(GetExceptionProtoKey(type), cx);
-    RootedString toAppend(cx, JS_NewUCStringCopyN(cx, MOZ_UTF16(": "), 2));
-    if (!str || !toAppend)
+    
+
+
+
+    if (str) {
+        RootedString separator(cx, JS_NewUCStringCopyN(cx, MOZ_UTF16(": "), 2));
+        if (!separator)
+            return nullptr;
+        str = ConcatStrings<CanGC>(cx, str, separator);
+        if (!str)
+            return nullptr;
+    }
+
+    RootedString message(cx, JS_NewUCStringCopyZ(cx, reportp->ucmessage));
+    if (!message)
         return nullptr;
-    str = ConcatStrings<CanGC>(cx, str, toAppend);
+
     if (!str)
-        return nullptr;
-    toAppend = JS_NewUCStringCopyZ(cx, reportp->ucmessage);
-    if (toAppend)
-        str = ConcatStrings<CanGC>(cx, str, toAppend);
-    return str;
+        return message;
+
+    return ConcatStrings<CanGC>(cx, str, message);
 }
 
 bool

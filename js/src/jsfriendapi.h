@@ -1379,13 +1379,6 @@ class MOZ_STACK_CLASS AutoStableStringChars
     void operator=(const AutoStableStringChars& other) = delete;
 };
 
-
-
-
-
-extern JS_FRIEND_API(JSString*)
-ErrorReportToString(JSContext* cx, JSErrorReport* reportp);
-
 struct MOZ_STACK_CLASS JS_FRIEND_API(ErrorReport)
 {
     explicit ErrorReport(JSContext* cx);
