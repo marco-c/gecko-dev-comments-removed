@@ -259,8 +259,6 @@ pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.prop
 
 pref("browser.search.defaultenginename", "chrome://browser/locale/region.properties");
 
-pref("browser.search.param.maxSuggestions", "4");
-
 pref("browser.ssl_override_behavior", 2);
 pref("browser.xul.error_pages.expert_bad_cert", false);
 

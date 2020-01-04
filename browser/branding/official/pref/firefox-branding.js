@@ -29,9 +29,5 @@ pref("app.update.checkInstallTime.days", 63);
 pref("app.update.badgeWaitTime", 0);
 
 
-pref("browser.search.param.yahoo-fr", "moz35");
-pref("browser.search.param.yahoo-fr-ja", "mozff");
-
-
 
 pref("devtools.selfxss.count", 0);
