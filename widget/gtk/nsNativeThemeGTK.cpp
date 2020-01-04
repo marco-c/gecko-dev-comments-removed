@@ -193,205 +193,199 @@ nsNativeThemeGTK::GetGtkWidgetAndState(uint8_t aWidgetType, nsIFrame* aFrame,
                                        gint* aWidgetFlags)
 {
   if (aState) {
-    if (!aFrame) {
-      
-      memset(aState, 0, sizeof(GtkWidgetState));
-    } else {
+    
+    
+    nsIFrame *stateFrame = aFrame;
+    if (aFrame && ((aWidgetFlags && (aWidgetType == NS_THEME_CHECKBOX ||
+                                     aWidgetType == NS_THEME_RADIO)) ||
+                   aWidgetType == NS_THEME_CHECKBOX_LABEL ||
+                   aWidgetType == NS_THEME_RADIO_LABEL)) {
 
-      
-      
-      nsIFrame *stateFrame = aFrame;
-      if (aFrame && ((aWidgetFlags && (aWidgetType == NS_THEME_CHECKBOX ||
-                                       aWidgetType == NS_THEME_RADIO)) ||
-                     aWidgetType == NS_THEME_CHECKBOX_LABEL ||
-                     aWidgetType == NS_THEME_RADIO_LABEL)) {
-
-        nsIAtom* atom = nullptr;
-        if (IsFrameContentNodeInNamespace(aFrame, kNameSpaceID_XUL)) {
-          if (aWidgetType == NS_THEME_CHECKBOX_LABEL ||
-              aWidgetType == NS_THEME_RADIO_LABEL) {
-            
-            stateFrame = aFrame = aFrame->GetParent()->GetParent();
-          } else {
-            
-            
-            aFrame = aFrame->GetParent();
-          }
-          if (aWidgetFlags) {
-            if (!atom) {
-              atom = (aWidgetType == NS_THEME_CHECKBOX ||
-                      aWidgetType == NS_THEME_CHECKBOX_LABEL) ? nsGkAtoms::checked
-                                                              : nsGkAtoms::selected;
-            }
-            *aWidgetFlags = CheckBooleanAttr(aFrame, atom);
-          }
-        } else {
-          if (aWidgetFlags) {
-            nsCOMPtr<nsIDOMHTMLInputElement> inputElt(do_QueryInterface(aFrame->GetContent()));
-            *aWidgetFlags = 0;
-            if (inputElt) {
-              bool isHTMLChecked;
-              inputElt->GetChecked(&isHTMLChecked);
-              if (isHTMLChecked)
-                *aWidgetFlags |= MOZ_GTK_WIDGET_CHECKED;
-            }
-
-            if (GetIndeterminate(aFrame))
-              *aWidgetFlags |= MOZ_GTK_WIDGET_INCONSISTENT;
-          }
-        }
-      } else if (aWidgetType == NS_THEME_TOOLBARBUTTON_DROPDOWN ||
-                 aWidgetType == NS_THEME_TREEHEADERSORTARROW ||
-                 aWidgetType == NS_THEME_BUTTON_ARROW_PREVIOUS ||
-                 aWidgetType == NS_THEME_BUTTON_ARROW_NEXT ||
-                 aWidgetType == NS_THEME_BUTTON_ARROW_UP ||
-                 aWidgetType == NS_THEME_BUTTON_ARROW_DOWN) {
-        
-        stateFrame = aFrame = aFrame->GetParent();
-      }
-
-      EventStates eventState = GetContentState(stateFrame, aWidgetType);
-
-      aState->disabled = IsDisabled(aFrame, eventState) || IsReadOnly(aFrame);
-      aState->active  = eventState.HasState(NS_EVENT_STATE_ACTIVE);
-      aState->focused = eventState.HasState(NS_EVENT_STATE_FOCUS);
-      aState->inHover = eventState.HasState(NS_EVENT_STATE_HOVER);
-      aState->isDefault = IsDefaultButton(aFrame);
-      aState->canDefault = FALSE; 
-      aState->depressed = FALSE;
-
-      if (aWidgetType == NS_THEME_FOCUS_OUTLINE) {
-        aState->disabled = FALSE;
-        aState->active  = FALSE;
-        aState->inHover = FALSE;
-        aState->isDefault = FALSE;
-        aState->canDefault = FALSE;
-
-        aState->focused = TRUE;
-        aState->depressed = TRUE; 
-      } else if (aWidgetType == NS_THEME_BUTTON ||
-                 aWidgetType == NS_THEME_TOOLBARBUTTON ||
-                 aWidgetType == NS_THEME_DUALBUTTON ||
-                 aWidgetType == NS_THEME_TOOLBARBUTTON_DROPDOWN ||
-                 aWidgetType == NS_THEME_MENULIST ||
-                 aWidgetType == NS_THEME_MENULIST_BUTTON) {
-        aState->active &= aState->inHover;
-      }
-
+      nsIAtom* atom = nullptr;
       if (IsFrameContentNodeInNamespace(aFrame, kNameSpaceID_XUL)) {
-        
-        
-        
-        if (aWidgetType == NS_THEME_NUMBER_INPUT ||
-            aWidgetType == NS_THEME_TEXTFIELD ||
-            aWidgetType == NS_THEME_TEXTFIELD_MULTILINE ||
-            aWidgetType == NS_THEME_MENULIST_TEXTFIELD ||
-            aWidgetType == NS_THEME_SPINNER_TEXTFIELD ||
-            aWidgetType == NS_THEME_RADIO_CONTAINER ||
+        if (aWidgetType == NS_THEME_CHECKBOX_LABEL ||
             aWidgetType == NS_THEME_RADIO_LABEL) {
-          aState->focused = IsFocused(aFrame);
-        } else if (aWidgetType == NS_THEME_RADIO ||
-                   aWidgetType == NS_THEME_CHECKBOX) {
           
-          aState->focused = FALSE;
+          stateFrame = aFrame = aFrame->GetParent()->GetParent();
+        } else {
+          
+          
+          aFrame = aFrame->GetParent();
         }
-
-        if (aWidgetType == NS_THEME_SCROLLBARTHUMB_VERTICAL ||
-            aWidgetType == NS_THEME_SCROLLBARTHUMB_HORIZONTAL) {
-          
-          
-          nsIFrame *tmpFrame = aFrame->GetParent()->GetParent();
-
-          aState->curpos = CheckIntAttr(tmpFrame, nsGkAtoms::curpos, 0);
-          aState->maxpos = CheckIntAttr(tmpFrame, nsGkAtoms::maxpos, 100);
-
-          if (CheckBooleanAttr(aFrame, nsGkAtoms::active)) {
-            aState->active = TRUE;
-            
-            aState->inHover = TRUE;
+        if (aWidgetFlags) {
+          if (!atom) {
+            atom = (aWidgetType == NS_THEME_CHECKBOX ||
+                    aWidgetType == NS_THEME_CHECKBOX_LABEL) ? nsGkAtoms::checked
+                                                            : nsGkAtoms::selected;
           }
+          *aWidgetFlags = CheckBooleanAttr(aFrame, atom);
         }
-
-        if (aWidgetType == NS_THEME_SCROLLBARBUTTON_UP ||
-            aWidgetType == NS_THEME_SCROLLBARBUTTON_DOWN ||
-            aWidgetType == NS_THEME_SCROLLBARBUTTON_LEFT ||
-            aWidgetType == NS_THEME_SCROLLBARBUTTON_RIGHT) {
-          
-          
-          int32_t curpos = CheckIntAttr(aFrame, nsGkAtoms::curpos, 0);
-          int32_t maxpos = CheckIntAttr(aFrame, nsGkAtoms::maxpos, 100);
-          if (ShouldScrollbarButtonBeDisabled(curpos, maxpos, aWidgetType)) {
-            aState->disabled = true;
+      } else {
+        if (aWidgetFlags) {
+          nsCOMPtr<nsIDOMHTMLInputElement> inputElt(do_QueryInterface(aFrame->GetContent()));
+          *aWidgetFlags = 0;
+          if (inputElt) {
+            bool isHTMLChecked;
+            inputElt->GetChecked(&isHTMLChecked);
+            if (isHTMLChecked)
+              *aWidgetFlags |= MOZ_GTK_WIDGET_CHECKED;
           }
 
-          
-          
-          
-          
-          else if (CheckBooleanAttr(aFrame, nsGkAtoms::active))
-            aState->active = true;
+          if (GetIndeterminate(aFrame))
+            *aWidgetFlags |= MOZ_GTK_WIDGET_INCONSISTENT;
+        }
+      }
+    } else if (aWidgetType == NS_THEME_TOOLBARBUTTON_DROPDOWN ||
+               aWidgetType == NS_THEME_TREEHEADERSORTARROW ||
+               aWidgetType == NS_THEME_BUTTON_ARROW_PREVIOUS ||
+               aWidgetType == NS_THEME_BUTTON_ARROW_NEXT ||
+               aWidgetType == NS_THEME_BUTTON_ARROW_UP ||
+               aWidgetType == NS_THEME_BUTTON_ARROW_DOWN) {
+      
+      stateFrame = aFrame = aFrame->GetParent();
+    }
 
-          if (aWidgetFlags) {
-            *aWidgetFlags = GetScrollbarButtonType(aFrame);
-            if (aWidgetType - NS_THEME_SCROLLBARBUTTON_UP < 2)
-              *aWidgetFlags |= MOZ_GTK_STEPPER_VERTICAL;
-          }
+    EventStates eventState = GetContentState(stateFrame, aWidgetType);
+
+    aState->disabled = IsDisabled(aFrame, eventState) || IsReadOnly(aFrame);
+    aState->active  = eventState.HasState(NS_EVENT_STATE_ACTIVE);
+    aState->focused = eventState.HasState(NS_EVENT_STATE_FOCUS);
+    aState->inHover = eventState.HasState(NS_EVENT_STATE_HOVER);
+    aState->isDefault = IsDefaultButton(aFrame);
+    aState->canDefault = FALSE; 
+    aState->depressed = FALSE;
+
+    if (aWidgetType == NS_THEME_FOCUS_OUTLINE) {
+      aState->disabled = FALSE;
+      aState->active  = FALSE;
+      aState->inHover = FALSE;
+      aState->isDefault = FALSE;
+      aState->canDefault = FALSE;
+
+      aState->focused = TRUE;
+      aState->depressed = TRUE; 
+    } else if (aWidgetType == NS_THEME_BUTTON ||
+               aWidgetType == NS_THEME_TOOLBARBUTTON ||
+               aWidgetType == NS_THEME_DUALBUTTON ||
+               aWidgetType == NS_THEME_TOOLBARBUTTON_DROPDOWN ||
+               aWidgetType == NS_THEME_MENULIST ||
+               aWidgetType == NS_THEME_MENULIST_BUTTON) {
+      aState->active &= aState->inHover;
+    }
+
+    if (IsFrameContentNodeInNamespace(aFrame, kNameSpaceID_XUL)) {
+      
+      
+      
+      if (aWidgetType == NS_THEME_NUMBER_INPUT ||
+          aWidgetType == NS_THEME_TEXTFIELD ||
+          aWidgetType == NS_THEME_TEXTFIELD_MULTILINE ||
+          aWidgetType == NS_THEME_MENULIST_TEXTFIELD ||
+          aWidgetType == NS_THEME_SPINNER_TEXTFIELD ||
+          aWidgetType == NS_THEME_RADIO_CONTAINER ||
+          aWidgetType == NS_THEME_RADIO_LABEL) {
+        aState->focused = IsFocused(aFrame);
+      } else if (aWidgetType == NS_THEME_RADIO ||
+                 aWidgetType == NS_THEME_CHECKBOX) {
+        
+        aState->focused = FALSE;
+      }
+
+      if (aWidgetType == NS_THEME_SCROLLBARTHUMB_VERTICAL ||
+          aWidgetType == NS_THEME_SCROLLBARTHUMB_HORIZONTAL) {
+        
+        
+        nsIFrame *tmpFrame = aFrame->GetParent()->GetParent();
+
+        aState->curpos = CheckIntAttr(tmpFrame, nsGkAtoms::curpos, 0);
+        aState->maxpos = CheckIntAttr(tmpFrame, nsGkAtoms::maxpos, 100);
+
+        if (CheckBooleanAttr(aFrame, nsGkAtoms::active)) {
+          aState->active = TRUE;
+          
+          aState->inHover = TRUE;
+        }
+      }
+
+      if (aWidgetType == NS_THEME_SCROLLBARBUTTON_UP ||
+          aWidgetType == NS_THEME_SCROLLBARBUTTON_DOWN ||
+          aWidgetType == NS_THEME_SCROLLBARBUTTON_LEFT ||
+          aWidgetType == NS_THEME_SCROLLBARBUTTON_RIGHT) {
+        
+        
+        int32_t curpos = CheckIntAttr(aFrame, nsGkAtoms::curpos, 0);
+        int32_t maxpos = CheckIntAttr(aFrame, nsGkAtoms::maxpos, 100);
+        if (ShouldScrollbarButtonBeDisabled(curpos, maxpos, aWidgetType)) {
+          aState->disabled = true;
         }
 
         
         
         
         
+        else if (CheckBooleanAttr(aFrame, nsGkAtoms::active))
+          aState->active = true;
 
-        if (aWidgetType == NS_THEME_MENUITEM ||
-            aWidgetType == NS_THEME_CHECKMENUITEM ||
-            aWidgetType == NS_THEME_RADIOMENUITEM ||
-            aWidgetType == NS_THEME_MENUSEPARATOR ||
-            aWidgetType == NS_THEME_MENUARROW) {
-          bool isTopLevel = false;
-          nsMenuFrame *menuFrame = do_QueryFrame(aFrame);
-          if (menuFrame) {
-            isTopLevel = menuFrame->IsOnMenuBar();
-          }
+        if (aWidgetFlags) {
+          *aWidgetFlags = GetScrollbarButtonType(aFrame);
+          if (aWidgetType - NS_THEME_SCROLLBARBUTTON_UP < 2)
+            *aWidgetFlags |= MOZ_GTK_STEPPER_VERTICAL;
+        }
+      }
 
-          if (isTopLevel) {
-            aState->inHover = menuFrame->IsOpen();
-          } else {
-            aState->inHover = CheckBooleanAttr(aFrame, nsGkAtoms::menuactive);
-          }
+      
+      
+      
+      
 
-          aState->active = FALSE;
-        
-          if (aWidgetType == NS_THEME_CHECKMENUITEM ||
-              aWidgetType == NS_THEME_RADIOMENUITEM) {
-            *aWidgetFlags = 0;
-            if (aFrame && aFrame->GetContent()) {
-              *aWidgetFlags = aFrame->GetContent()->
-                AttrValueIs(kNameSpaceID_None, nsGkAtoms::checked,
-                            nsGkAtoms::_true, eIgnoreCase);
-            }
-          }
+      if (aWidgetType == NS_THEME_MENUITEM ||
+          aWidgetType == NS_THEME_CHECKMENUITEM ||
+          aWidgetType == NS_THEME_RADIOMENUITEM ||
+          aWidgetType == NS_THEME_MENUSEPARATOR ||
+          aWidgetType == NS_THEME_MENUARROW) {
+        bool isTopLevel = false;
+        nsMenuFrame *menuFrame = do_QueryFrame(aFrame);
+        if (menuFrame) {
+          isTopLevel = menuFrame->IsOnMenuBar();
         }
 
-        
-        
-        if (aWidgetType == NS_THEME_BUTTON ||
-            aWidgetType == NS_THEME_TOOLBARBUTTON ||
-            aWidgetType == NS_THEME_DUALBUTTON ||
-            aWidgetType == NS_THEME_TOOLBARBUTTON_DROPDOWN ||
-            aWidgetType == NS_THEME_MENULIST ||
-            aWidgetType == NS_THEME_MENULIST_BUTTON) {
-          bool menuOpen = IsOpenButton(aFrame);
-          aState->depressed = IsCheckedButton(aFrame) || menuOpen;
-          
-          aState->inHover = aState->inHover && !menuOpen;
+        if (isTopLevel) {
+          aState->inHover = menuFrame->IsOpen();
+        } else {
+          aState->inHover = CheckBooleanAttr(aFrame, nsGkAtoms::menuactive);
         }
 
-        
-        
-        if (aWidgetType == NS_THEME_MENULIST_BUTTON && aWidgetFlags) {
-          *aWidgetFlags = CheckBooleanAttr(aFrame, nsGkAtoms::parentfocused);
+        aState->active = FALSE;
+
+        if (aWidgetType == NS_THEME_CHECKMENUITEM ||
+            aWidgetType == NS_THEME_RADIOMENUITEM) {
+          *aWidgetFlags = 0;
+          if (aFrame && aFrame->GetContent()) {
+            *aWidgetFlags = aFrame->GetContent()->
+              AttrValueIs(kNameSpaceID_None, nsGkAtoms::checked,
+                          nsGkAtoms::_true, eIgnoreCase);
+          }
         }
+      }
+
+      
+      
+      if (aWidgetType == NS_THEME_BUTTON ||
+          aWidgetType == NS_THEME_TOOLBARBUTTON ||
+          aWidgetType == NS_THEME_DUALBUTTON ||
+          aWidgetType == NS_THEME_TOOLBARBUTTON_DROPDOWN ||
+          aWidgetType == NS_THEME_MENULIST ||
+          aWidgetType == NS_THEME_MENULIST_BUTTON) {
+        bool menuOpen = IsOpenButton(aFrame);
+        aState->depressed = IsCheckedButton(aFrame) || menuOpen;
+        
+        aState->inHover = aState->inHover && !menuOpen;
+      }
+
+      
+      
+      if (aWidgetType == NS_THEME_MENULIST_BUTTON && aWidgetFlags) {
+        *aWidgetFlags = CheckBooleanAttr(aFrame, nsGkAtoms::parentfocused);
       }
     }
   }
