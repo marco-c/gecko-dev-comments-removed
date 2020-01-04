@@ -1113,6 +1113,7 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
     
     
     if (subjectPrincipal &&
+        !subjectPrincipal->GetIsExpandedPrincipal() &&
         docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
       DocShellOriginAttributes attrs;
       attrs.InheritFromDocToChildDocShell(BasePrincipal::Cast(subjectPrincipal)->OriginAttributesRef());
