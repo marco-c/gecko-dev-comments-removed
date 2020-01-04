@@ -660,13 +660,6 @@ AudioCallbackDriver::Init()
       return;
     }
   }
-#ifdef XP_MACOSX
-  
-  bool aec;
-  Unused << mGraphImpl->AudioTrackPresent(aec);
-  SetMicrophoneActive(aec);
-#endif
-
   cubeb_stream_register_device_changed_callback(mAudioStream,
                                                 AudioCallbackDriver::DeviceChangedCallback_s);
 
@@ -1070,7 +1063,6 @@ void AudioCallbackDriver::PanOutputIfNeeded(bool aMicrophoneActive)
 
 void
 AudioCallbackDriver::DeviceChangedCallback() {
-#ifdef XP_MACOSX
   MonitorAutoLock mon(mGraphImpl->GetMonitor());
   PanOutputIfNeeded(mMicrophoneActive);
   
@@ -1079,7 +1071,7 @@ AudioCallbackDriver::DeviceChangedCallback() {
   
   
   
-
+#ifdef XP_MACOSX
   
   
   
@@ -1104,13 +1096,11 @@ AudioCallbackDriver::DeviceChangedCallback() {
 void
 AudioCallbackDriver::SetMicrophoneActive(bool aActive)
 {
-#ifdef XP_MACOSX
   MonitorAutoLock mon(mGraphImpl->GetMonitor());
 
   mMicrophoneActive = aActive;
 
   PanOutputIfNeeded(mMicrophoneActive);
-#endif
 }
 
 uint32_t
