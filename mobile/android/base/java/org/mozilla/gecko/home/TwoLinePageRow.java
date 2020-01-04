@@ -9,6 +9,9 @@ import java.lang.ref.WeakReference;
 
 import org.mozilla.gecko.AboutPages;
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.db.BrowserContract;
+import org.mozilla.gecko.distribution.PartnerBookmarksProviderProxy;
+import org.mozilla.gecko.favicons.LoadFaviconTask;
 import org.mozilla.gecko.reader.SavedReaderViewHelper;
 import org.mozilla.gecko.reader.ReaderModeUtils;
 import org.mozilla.gecko.Tab;
@@ -271,7 +274,7 @@ public class TwoLinePageRow extends LinearLayout
         if (mShowIcons) {
             
             
-            final boolean isBookmark = bookmarkId != 0;
+            final boolean isBookmark = bookmarkId > 0;
 
             updateStatusIcon(isBookmark, hasReaderCacheItem);
         } else {
@@ -293,9 +296,23 @@ public class TwoLinePageRow extends LinearLayout
 
         
         
-        final String pageURL = AboutPages.isAboutReader(url) ?
-            ReaderModeUtils.getUrlFromAboutReader(url) : url;
-        mLoadFaviconJobId = Favicons.getSizedFaviconForPageFromLocal(getContext(), pageURL, mFaviconListener);
+        final String pageURL = AboutPages.isAboutReader(url) ? ReaderModeUtils.getUrlFromAboutReader(url) : url;
+
+        if (bookmarkId < BrowserContract.Bookmarks.FAKE_PARTNER_BOOKMARKS_START) {
+            mLoadFaviconJobId = Favicons.getSizedFavicon(
+                    getContext(),
+                    pageURL,
+                    PartnerBookmarksProviderProxy.getUriForIcon(getContext(), bookmarkId).toString(),
+                    Favicons.LoadType.PRIVILEGED,
+                    Favicons.defaultFaviconSize,
+                    
+                    
+                    
+                    LoadFaviconTask.FLAG_NO_DOWNLOAD_FROM_GUESSED_DEFAULT_URL,
+                    mFaviconListener);
+        } else {
+            mLoadFaviconJobId = Favicons.getSizedFaviconForPageFromLocal(getContext(), pageURL, mFaviconListener);
+        }
 
         updateDisplayedUrl(url, hasReaderCacheItem);
     }

@@ -6,9 +6,16 @@ package org.mozilla.gecko.favicons.decoders;
 
 import android.graphics.Bitmap;
 import android.util.Log;
+import android.util.SparseArray;
+
+import org.mozilla.gecko.favicons.Favicons;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 
@@ -73,4 +80,29 @@ public class LoadFaviconResult {
         return null;
     }
 
+    public Bitmap getBestBitmap(int targetWidthAndHeight) {
+        final SparseArray<Bitmap> iconMap = new SparseArray<>();
+        final List<Integer> sizes = new ArrayList<>();
+
+        while (bitmapsDecoded.hasNext()) {
+            final Bitmap b = bitmapsDecoded.next();
+
+            
+            
+            if (b != null) {
+                iconMap.put(b.getWidth(), b);
+                sizes.add(b.getWidth());
+            }
+        }
+
+        int bestSize = Favicons.selectBestSizeFromList(sizes, targetWidthAndHeight);
+
+        if (bestSize == -1) {
+            
+            
+            return null;
+        }
+
+        return iconMap.get(bestSize);
+    }
 }
