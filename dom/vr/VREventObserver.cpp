@@ -41,6 +41,11 @@ VREventObserver::~VREventObserver()
 void
 VREventObserver::NotifyVRDisplayConnect()
 {
+  
+
+
+
+
   if (mWindow->AsInner()->IsCurrentInnerWindow()) {
     MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
     mWindow->GetOuterWindow()->DispatchCustomEvent(
@@ -52,6 +57,7 @@ void
 VREventObserver::NotifyVRDisplayDisconnect()
 {
   if (mWindow->AsInner()->IsCurrentInnerWindow()) {
+    mWindow->NotifyActiveVRDisplaysChanged();
     MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
     mWindow->GetOuterWindow()->DispatchCustomEvent(
       NS_LITERAL_STRING("vrdisplaydisconnected"));
@@ -62,6 +68,7 @@ void
 VREventObserver::NotifyVRDisplayPresentChange()
 {
   if (mWindow->AsInner()->IsCurrentInnerWindow()) {
+    mWindow->NotifyActiveVRDisplaysChanged();
     MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
     mWindow->GetOuterWindow()->DispatchCustomEvent(
       NS_LITERAL_STRING("vrdisplaypresentchange"));

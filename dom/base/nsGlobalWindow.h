@@ -811,6 +811,10 @@ public:
 
   
   bool UpdateVRDisplays(nsTArray<RefPtr<mozilla::dom::VRDisplay>>& aDisplays);
+  
+  
+  
+  void NotifyActiveVRDisplaysChanged();
 
 #define EVENT(name_, id_, type_, struct_)                                     \
   mozilla::dom::EventHandlerNonNull* GetOn##name_()                           \

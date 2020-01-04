@@ -2011,6 +2011,29 @@ Navigator::GetVRDisplays(ErrorResult& aRv)
 }
 
 void
+Navigator::GetActiveVRDisplays(nsTArray<RefPtr<VRDisplay>>& aDisplays) const
+{
+  
+
+
+
+
+  if (!mWindow || !mWindow->GetDocShell()) {
+    return;
+  }
+  nsGlobalWindow* win = nsGlobalWindow::Cast(mWindow);
+  win->NotifyVREventListenerAdded();
+  nsTArray<RefPtr<VRDisplay>> displays;
+  if (win->UpdateVRDisplays(displays)) {
+    for (auto display : displays) {
+      if (display->IsPresenting()) {
+        aDisplays.AppendElement(display);
+      }
+    }
+  }
+}
+
+void
 Navigator::NotifyVRDisplaysUpdated()
 {
   
@@ -2028,6 +2051,12 @@ Navigator::NotifyVRDisplaysUpdated()
     }
   }
   mVRGetDisplaysPromises.Clear();
+}
+
+void
+Navigator::NotifyActiveVRDisplaysChanged()
+{
+  NavigatorBinding::ClearCachedActiveVRDisplaysValue(this);
 }
 
 
