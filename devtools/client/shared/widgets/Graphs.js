@@ -910,17 +910,33 @@ AbstractCanvasGraph.prototype = {
       };
     }
 
-    let quad = this._canvas.getBoxQuads({
-      relativeTo: this._topWindow.document
-    })[0];
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!this._boundingBox || this._maybeDirtyBoundingBox) {
+      let topDocument = this._topWindow.document;
+      let boxQuad = this._canvas.getBoxQuads({ relativeTo: topDocument })[0];
+      this._boundingBox = boxQuad;
+      this._maybeDirtyBoundingBox = false;
+    }
 
-    let x = (e.screenX - this._topWindow.screenX) - quad.p1.x;
-    let y = (e.screenY - this._topWindow.screenY) - quad.p1.y;
+    let bb = this._boundingBox;
+    let x = (e.screenX - this._topWindow.screenX) - bb.p1.x;
+    let y = (e.screenY - this._topWindow.screenY) - bb.p1.y;
 
     
     
-    let maxX = quad.p2.x - quad.p1.x;
-    let maxY = quad.p3.y - quad.p1.y;
+    let maxX = bb.p2.x - bb.p1.x;
+    let maxY = bb.p3.y - bb.p1.y;
     let mouseX = Math.max(0, Math.min(x, maxX)) * this._pixelRatio;
     let mouseY = Math.max(0, Math.min(x, maxY)) * this._pixelRatio;
 
@@ -1185,6 +1201,11 @@ AbstractCanvasGraph.prototype = {
 
   _onResize: function() {
     if (this.hasData()) {
+      
+      
+      
+      
+      this._maybeDirtyBoundingBox = true;
       setNamedTimeout(this._uid, GRAPH_RESIZE_EVENTS_DRAIN, this.refresh);
     }
   }
