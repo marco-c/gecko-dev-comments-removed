@@ -253,7 +253,8 @@ class MercurialConfig(object):
             
             '{label("grep.user", author|user)}'
             
-            '{label("log.tag", if(tags," {tags}"))} '
+            '{label("log.tag", if(tags," {tags}"))}'
+            '{label("log.tag", if(fxheads," {fxheads}"))} '
             '{label("log.bookmark", if(bookmarks," {bookmarks}"))}'
             '\\n'
             
