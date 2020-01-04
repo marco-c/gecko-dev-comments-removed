@@ -37,6 +37,6 @@ specTests.push("runaway-recursion.wast");
 
 
 
-
+specTests.push("switch.wast");
 
 specTests.push("unreachable.wast");
