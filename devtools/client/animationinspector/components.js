@@ -38,7 +38,8 @@ const TIME_GRADUATION_MIN_SPACING = 40;
 const PLAYBACK_RATES = [.1, .25, .5, 1, 2, 5, 10];
 
 
-const FAST_TRACK_ICON_SIZE = 20;
+
+const TIMELINE_BACKGROUND_RESIZE_DEBOUNCE_TIMER = 50;
 
 
 
@@ -481,10 +482,9 @@ var TimeScale = {
 
 
 
-
-  startTimeToDistance: function(time, containerWidth) {
+  startTimeToDistance: function(time) {
     time -= this.minStartTime;
-    return this.durationToDistance(time, containerWidth);
+    return this.durationToDistance(time);
   },
 
   
@@ -492,9 +492,8 @@ var TimeScale = {
 
 
 
-
-  durationToDistance: function(duration, containerWidth) {
-    return containerWidth * duration / (this.maxEndTime - this.minStartTime);
+  durationToDistance: function(duration) {
+    return duration * 100 / (this.maxEndTime - this.minStartTime);
   },
 
   
@@ -502,10 +501,9 @@ var TimeScale = {
 
 
 
-
-  distanceToTime: function(distance, containerWidth) {
+  distanceToTime: function(distance) {
     return this.minStartTime +
-      ((this.maxEndTime - this.minStartTime) * distance / containerWidth);
+      ((this.maxEndTime - this.minStartTime) * distance / 100);
   },
 
   
@@ -514,9 +512,8 @@ var TimeScale = {
 
 
 
-
-  distanceToRelativeTime: function(distance, containerWidth) {
-    let time = this.distanceToTime(distance, containerWidth);
+  distanceToRelativeTime: function(distance) {
+    let time = this.distanceToTime(distance);
     return time - this.minStartTime;
   },
 
@@ -560,12 +557,15 @@ function AnimationsTimeline(inspector) {
   this.targetNodes = [];
   this.timeBlocks = [];
   this.inspector = inspector;
+
   this.onAnimationStateChanged = this.onAnimationStateChanged.bind(this);
   this.onScrubberMouseDown = this.onScrubberMouseDown.bind(this);
   this.onScrubberMouseUp = this.onScrubberMouseUp.bind(this);
   this.onScrubberMouseOut = this.onScrubberMouseOut.bind(this);
   this.onScrubberMouseMove = this.onScrubberMouseMove.bind(this);
   this.onAnimationSelected = this.onAnimationSelected.bind(this);
+  this.onWindowResize = this.onWindowResize.bind(this);
+
   EventEmitter.decorate(this);
 }
 
@@ -582,8 +582,13 @@ AnimationsTimeline.prototype = {
       }
     });
 
-    this.scrubberEl = createNode({
+    let scrubberContainer = createNode({
       parent: this.rootWrapperEl,
+      attributes: {"class": "scrubber-wrapper"}
+    });
+
+    this.scrubberEl = createNode({
+      parent: scrubberContainer,
       attributes: {
         "class": "scrubber"
       }
@@ -612,12 +617,15 @@ AnimationsTimeline.prototype = {
         "class": "animations"
       }
     });
+
+    this.win.addEventListener("resize", this.onWindowResize);
   },
 
   destroy: function() {
     this.stopAnimatingScrubber();
     this.unrender();
 
+    this.win.removeEventListener("resize", this.onWindowResize);
     this.timeHeaderEl.removeEventListener("mousedown",
       this.onScrubberMouseDown);
     this.scrubberHandleEl.removeEventListener("mousedown",
@@ -658,6 +666,16 @@ AnimationsTimeline.prototype = {
     this.destroyTargetNodes();
     this.destroyTimeBlocks();
     this.animationsEl.innerHTML = "";
+  },
+
+  onWindowResize: function() {
+    if (this.windowResizeTimer) {
+      this.win.clearTimeout(this.windowResizeTimer);
+    }
+
+    this.windowResizeTimer = this.win.setTimeout(() => {
+      this.drawHeaderAndBackground();
+    }, TIMELINE_BACKGROUND_RESIZE_DEBOUNCE_TIMER);
   },
 
   onAnimationSelected: function(e, animation) {
@@ -713,15 +731,18 @@ AnimationsTimeline.prototype = {
   moveScrubberTo: function(pageX) {
     this.stopAnimatingScrubber();
 
-    let offset = pageX - this.scrubberEl.offsetWidth;
+    
+    
+    
+    let offset = (pageX - this.timeHeaderEl.offsetLeft) * 100 /
+                 this.timeHeaderEl.offsetWidth;
     if (offset < 0) {
       offset = 0;
     }
 
-    this.scrubberEl.style.left = offset + "px";
+    this.scrubberEl.style.left = offset + "%";
 
-    let time = TimeScale.distanceToRelativeTime(offset,
-      this.timeHeaderEl.offsetWidth);
+    let time = TimeScale.distanceToRelativeTime(offset);
 
     this.emit("timeline-data-changed", {
       isPaused: true,
@@ -817,8 +838,8 @@ AnimationsTimeline.prototype = {
   },
 
   startAnimatingScrubber: function(time) {
-    let x = TimeScale.startTimeToDistance(time, this.timeHeaderEl.offsetWidth);
-    this.scrubberEl.style.left = x + "px";
+    let x = TimeScale.startTimeToDistance(time);
+    this.scrubberEl.style.left = x + "%";
 
     
     
@@ -833,7 +854,7 @@ AnimationsTimeline.prototype = {
         isPaused: !this.isAtLeastOneAnimationPlaying(),
         isMoving: false,
         isUserDrag: false,
-        time: TimeScale.distanceToRelativeTime(x, this.timeHeaderEl.offsetWidth)
+        time: TimeScale.distanceToRelativeTime(x)
       });
       return;
     }
@@ -842,7 +863,7 @@ AnimationsTimeline.prototype = {
       isPaused: false,
       isMoving: true,
       isUserDrag: false,
-      time: TimeScale.distanceToRelativeTime(x, this.timeHeaderEl.offsetWidth)
+      time: TimeScale.distanceToRelativeTime(x)
     });
 
     let now = this.win.performance.now();
@@ -878,15 +899,15 @@ AnimationsTimeline.prototype = {
     this.timeHeaderEl.innerHTML = "";
     let interval = findOptimalTimeInterval(scale, TIME_GRADUATION_MIN_SPACING);
     for (let i = 0; i < width; i += interval) {
+      let pos = 100 * i / width;
       createNode({
         parent: this.timeHeaderEl,
         nodeType: "span",
         attributes: {
           "class": "time-tick",
-          "style": `left:${i}px`
+          "style": `left:${pos}%`
         },
-        textContent: TimeScale.formatTime(
-          TimeScale.distanceToRelativeTime(i, width))
+        textContent: TimeScale.formatTime(TimeScale.distanceToRelativeTime(pos))
       });
     }
   }
@@ -922,8 +943,6 @@ AnimationTimeBlock.prototype = {
     this.animation = animation;
     let {state} = this.animation;
 
-    let width = this.containerEl.offsetWidth;
-
     
     
     
@@ -933,10 +952,10 @@ AnimationTimeBlock.prototype = {
     let count = state.iterationCount;
     let delay = state.delay || 0;
 
-    let x = TimeScale.startTimeToDistance(start + (delay / rate), width);
-    let w = TimeScale.durationToDistance(duration / rate, width);
+    let x = TimeScale.startTimeToDistance(start + (delay / rate));
+    let w = TimeScale.durationToDistance(duration / rate);
     let iterationW = w * (count || 1);
-    let delayW = TimeScale.durationToDistance(Math.abs(delay) / rate, width);
+    let delayW = TimeScale.durationToDistance(Math.abs(delay) / rate);
 
     let iterations = createNode({
       parent: this.containerEl,
@@ -944,9 +963,9 @@ AnimationTimeBlock.prototype = {
         "class": state.type + " iterations" + (count ? "" : " infinite"),
         
         
-        "style": `left:${x}px;
-                  width:${iterationW}px;
-                  background-size:${Math.max(w, 2)}px 100%;`
+        "style": `left:${x}%;
+                  width:${iterationW}%;
+                  background-size:${100 / (count || 1)}% 100%;`
       }
     });
 
@@ -960,10 +979,7 @@ AnimationTimeBlock.prototype = {
         "class": "name",
         "title": this.getTooltipText(state),
         
-        
-        "style": "background-position:" +
-                 (iterationW - FAST_TRACK_ICON_SIZE - negativeDelayW) +
-                 "px center;margin-left:" + negativeDelayW + "px"
+        "style": `margin-left:${negativeDelayW}%`
       },
       textContent: state.name
     });
@@ -971,14 +987,13 @@ AnimationTimeBlock.prototype = {
     
     if (delay) {
       
-      let delayX = TimeScale.durationToDistance(
-        (delay < 0 ? 0 : delay) / rate, width);
+      let delayX = TimeScale.durationToDistance((delay < 0 ? 0 : delay) / rate);
       createNode({
         parent: iterations,
         attributes: {
           "class": "delay" + (delay < 0 ? " negative" : ""),
-          "style": `left:-${delayX}px;
-                    width:${delayW}px;`
+          "style": `left:-${delayX}%;
+                    width:${delayW}%;`
         }
       });
     }
