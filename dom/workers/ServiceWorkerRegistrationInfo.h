@@ -27,6 +27,7 @@ class ServiceWorkerRegistrationInfo final
 
   uint64_t mLastUpdateCheckTime;
 
+  RefPtr<ServiceWorkerInfo> mEvaluatingWorker;
   RefPtr<ServiceWorkerInfo> mActiveWorker;
   RefPtr<ServiceWorkerInfo> mWaitingWorker;
   RefPtr<ServiceWorkerInfo> mInstallingWorker;
@@ -122,6 +123,9 @@ public:
   CheckAndClearIfUpdateNeeded();
 
   ServiceWorkerInfo*
+  GetEvaluating() const;
+
+  ServiceWorkerInfo*
   GetInstalling() const;
 
   ServiceWorkerInfo*
@@ -133,13 +137,22 @@ public:
   
   
   void
+  SetEvaluating(ServiceWorkerInfo* aServiceWorker);
+
+  
+  
+  void
+  ClearEvaluating();
+
+  
+  
+  void
   ClearInstalling();
 
   
   
-  
   void
-  SetInstalling(ServiceWorkerInfo* aServiceWorker);
+  TransitionEvaluatingToInstalling();
 
   
   
