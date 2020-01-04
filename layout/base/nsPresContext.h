@@ -42,6 +42,7 @@
 #include "Units.h"
 #include "mozilla/RestyleManagerHandle.h"
 #include "prenv.h"
+#include "mozilla/StaticPresData.h"
 
 class nsAString;
 class nsIPrintSettings;
@@ -135,7 +136,9 @@ class nsRootPresContext;
 class nsPresContext : public nsIObserver {
 public:
   typedef mozilla::FramePropertyTable FramePropertyTable;
+  typedef mozilla::LangGroupFontPrefs LangGroupFontPrefs;
   typedef mozilla::ScrollbarStyles ScrollbarStyles;
+  typedef mozilla::StaticPresData StaticPresData;
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -367,21 +370,13 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
   const nsFont* GetDefaultFont(uint8_t aFontID,
-                                           nsIAtom *aLanguage) const;
+                               nsIAtom *aLanguage) const
+  {
+    nsIAtom* lang = aLanguage ? aLanguage : mLanguage.get();
+    return StaticPresData::Get()->GetDefaultFontHelper(aFontID, lang,
+                                                       GetFontPrefsForLang(lang));
+  }
 
   
   
@@ -1126,63 +1121,13 @@ protected:
   void GetUserPreferences();
 
   
-  
-  struct LangGroupFontPrefs;
-  friend class nsAutoPtr<LangGroupFontPrefs>;
-  struct LangGroupFontPrefs {
-    
-    LangGroupFontPrefs()
-      : mLangGroup(nullptr)
-      , mMinimumFontSize(0)
-      , mDefaultVariableFont(mozilla::eFamily_serif, 0)
-      , mDefaultFixedFont(mozilla::eFamily_monospace, 0)
-      , mDefaultSerifFont(mozilla::eFamily_serif, 0)
-      , mDefaultSansSerifFont(mozilla::eFamily_sans_serif, 0)
-      , mDefaultMonospaceFont(mozilla::eFamily_monospace, 0)
-      , mDefaultCursiveFont(mozilla::eFamily_cursive, 0)
-      , mDefaultFantasyFont(mozilla::eFamily_fantasy, 0)
-    {}
-
-    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-      size_t n = 0;
-      LangGroupFontPrefs *curr = mNext;
-      while (curr) {
-        n += aMallocSizeOf(curr);
-
-        
-        
-        
-        
-
-        curr = curr->mNext;
-      }
-      return n;
-    }
-
-    nsCOMPtr<nsIAtom> mLangGroup;
-    nscoord mMinimumFontSize;
-    nsFont mDefaultVariableFont;
-    nsFont mDefaultFixedFont;
-    nsFont mDefaultSerifFont;
-    nsFont mDefaultSansSerifFont;
-    nsFont mDefaultMonospaceFont;
-    nsFont mDefaultCursiveFont;
-    nsFont mDefaultFantasyFont;
-    nsAutoPtr<LangGroupFontPrefs> mNext;
-  };
-
-  
 
 
 
-  const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom *aLanguage) const;
-
-  void ResetCachedFontPrefs() {
-    
-    mLangGroupFontPrefs.mNext = nullptr;
-
-    
-    mLangGroupFontPrefs.mLangGroup = nullptr;
+  const LangGroupFontPrefs* GetFontPrefsForLang(nsIAtom *aLanguage) const
+  {
+    nsIAtom* lang = aLanguage ? aLanguage : mLanguage.get();
+    return StaticPresData::Get()->GetFontPrefsForLangHelper(lang, &mLangGroupFontPrefs);
   }
 
   void UpdateCharSet(const nsCString& aCharSet);
@@ -1332,6 +1277,11 @@ protected:
   uint16_t              mImageAnimationMode;
   uint16_t              mImageAnimationModePref;
 
+  
+  
+  
+  
+  
   LangGroupFontPrefs    mLangGroupFontPrefs;
 
   nscoord               mBorderWidthTable[3];
@@ -1432,18 +1382,6 @@ protected:
 protected:
 
   virtual ~nsPresContext();
-
-  
-  enum {
-    eDefaultFont_Variable,
-    eDefaultFont_Fixed,
-    eDefaultFont_Serif,
-    eDefaultFont_SansSerif,
-    eDefaultFont_Monospace,
-    eDefaultFont_Cursive,
-    eDefaultFont_Fantasy,
-    eDefaultFont_COUNT
-  };
 
   nscolor MakeColorPref(const nsString& aColor);
 
