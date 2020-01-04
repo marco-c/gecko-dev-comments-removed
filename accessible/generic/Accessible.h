@@ -397,6 +397,11 @@ public:
   virtual bool RemoveChild(Accessible* aChild);
 
   
+
+
+  void MoveChild(uint32_t aNewIndex, Accessible* aChild);
+
+  
   
 
   

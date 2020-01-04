@@ -113,6 +113,27 @@ function isLogged(aModule)
 
 
 
+function dumpTree(aId, aMsg)
+{
+  function dumpTreeIntl(acc, indent)
+  {
+    dump(indent + prettyName(acc) + "\n");
+
+    var children = acc.children;
+    for (var i = 0; i < children.length; i++) {
+      var child = children.queryElementAt(i, nsIAccessible);
+      dumpTreeIntl(child, indent + "  ");
+    }
+  }
+
+  dump(aMsg + "\n");
+  var root = getAccessible(aId);
+  dumpTreeIntl(root, "  ");
+}
+
+
+
+
 
 
 
