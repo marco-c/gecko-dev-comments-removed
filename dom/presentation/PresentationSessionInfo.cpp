@@ -121,21 +121,21 @@ PresentationNetworkHelper::OnGetWifiIPAddress(const nsACString& aIPAddress)
 
 #endif 
 
-class TCPPresentationChannelDescription final : public nsIPresentationChannelDescription
+class PresentationChannelDescription final : public nsIPresentationChannelDescription
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRESENTATIONCHANNELDESCRIPTION
 
-  TCPPresentationChannelDescription(const nsACString& aAddress,
-                                    uint16_t aPort)
+  PresentationChannelDescription(const nsACString& aAddress,
+                                 uint16_t aPort)
     : mAddress(aAddress)
     , mPort(aPort)
   {
   }
 
 private:
-  ~TCPPresentationChannelDescription() {}
+  ~PresentationChannelDescription() {}
 
   nsCString mAddress;
   uint16_t mPort;
@@ -144,10 +144,10 @@ private:
 } 
 } 
 
-NS_IMPL_ISUPPORTS(TCPPresentationChannelDescription, nsIPresentationChannelDescription)
+NS_IMPL_ISUPPORTS(PresentationChannelDescription, nsIPresentationChannelDescription)
 
 NS_IMETHODIMP
-TCPPresentationChannelDescription::GetType(uint8_t* aRetVal)
+PresentationChannelDescription::GetType(uint8_t* aRetVal)
 {
   if (NS_WARN_IF(!aRetVal)) {
     return NS_ERROR_INVALID_POINTER;
@@ -160,7 +160,7 @@ TCPPresentationChannelDescription::GetType(uint8_t* aRetVal)
 }
 
 NS_IMETHODIMP
-TCPPresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal)
+PresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal)
 {
   if (NS_WARN_IF(!aRetVal)) {
     return NS_ERROR_INVALID_POINTER;
@@ -189,7 +189,7 @@ TCPPresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal)
 }
 
 NS_IMETHODIMP
-TCPPresentationChannelDescription::GetTcpPort(uint16_t* aRetVal)
+PresentationChannelDescription::GetTcpPort(uint16_t* aRetVal)
 {
   if (NS_WARN_IF(!aRetVal)) {
     return NS_ERROR_INVALID_POINTER;
@@ -200,7 +200,7 @@ TCPPresentationChannelDescription::GetTcpPort(uint16_t* aRetVal)
 }
 
 NS_IMETHODIMP
-TCPPresentationChannelDescription::GetDataChannelSDP(nsAString& aDataChannelSDP)
+PresentationChannelDescription::GetDataChannelSDP(nsAString& aDataChannelSDP)
 {
   
   
@@ -214,8 +214,7 @@ TCPPresentationChannelDescription::GetDataChannelSDP(nsAString& aDataChannelSDP)
 
 NS_IMPL_ISUPPORTS(PresentationSessionInfo,
                   nsIPresentationSessionTransportCallback,
-                  nsIPresentationControlChannelListener,
-                  nsIPresentationSessionTransportBuilderListener);
+                  nsIPresentationControlChannelListener);
 
  nsresult
 PresentationSessionInfo::Init(nsIPresentationControlChannel* aControlChannel)
@@ -408,31 +407,6 @@ PresentationSessionInfo::NotifyData(const nsACString& aData)
 }
 
 
-NS_IMETHODIMP
-PresentationSessionInfo::OnSessionTransport(nsIPresentationSessionTransport* transport)
-{
-  mTransport = transport;
-
-  nsresult rv = mTransport->SetCallback(this);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  if (mListener) {
-    mTransport->EnableDataNotification();
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-PresentationSessionInfo::OnError(nsresult reason)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-
-
 
 
 
@@ -596,8 +570,8 @@ PresentationControllingInfo::OnGetAddress(const nsACString& aAddress)
     return rv;
   }
 
-  RefPtr<TCPPresentationChannelDescription> description =
-    new TCPPresentationChannelDescription(aAddress, static_cast<uint16_t>(port));
+  RefPtr<PresentationChannelDescription> description =
+    new PresentationChannelDescription(aAddress, static_cast<uint16_t>(port));
   return mControlChannel->SendOffer(description);
 }
 
@@ -671,13 +645,22 @@ PresentationControllingInfo::OnSocketAccepted(nsIServerSocket* aServerSocket,
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder =
-    do_CreateInstance(PRESENTATION_TCP_SESSION_TRANSPORT_CONTRACTID);
-  if (NS_WARN_IF(!builder)) {
+  mTransport = do_CreateInstance(PRESENTATION_SESSION_TRANSPORT_CONTRACTID);
+  if (NS_WARN_IF(!mTransport)) {
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
-  return builder->BuildTCPSenderTransport(aTransport, this);
+  rv = mTransport->InitWithSocketTransport(aTransport, this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  if (mListener) {
+    return mTransport->EnableDataNotification();
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -762,11 +745,28 @@ PresentationPresentingInfo::Shutdown(nsresult aReason)
   mPromise = nullptr;
 }
 
-
-NS_IMETHODIMP
-PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* transport)
+nsresult
+PresentationPresentingInfo::InitTransportAndSendAnswer()
 {
-  PresentationSessionInfo::OnSessionTransport(transport);
+  
+  
+  mTransport = do_CreateInstance(PRESENTATION_SESSION_TRANSPORT_CONTRACTID);
+  if (NS_WARN_IF(!mTransport)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv = mTransport->InitWithChannelDescription(mRequesterDescription, this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  if (mListener) {
+    rv = mTransport->EnableDataNotification();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
 
   
   
@@ -775,7 +775,7 @@ PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* 
   
   
   nsCOMPtr<nsINetAddr> selfAddr;
-  nsresult rv = mTransport->GetSelfAddress(getter_AddRefs(selfAddr));
+  rv = mTransport->GetSelfAddress(getter_AddRefs(selfAddr));
   NS_WARN_IF(NS_FAILED(rv));
 
   nsCString address;
@@ -785,29 +785,9 @@ PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* 
     selfAddr->GetPort(&port);
   }
   nsCOMPtr<nsIPresentationChannelDescription> description =
-    new TCPPresentationChannelDescription(address, port);
+    new PresentationChannelDescription(address, port);
 
   return mControlChannel->SendAnswer(description);
-}
-
-NS_IMETHODIMP
-PresentationPresentingInfo::OnError(nsresult reason)
-{
-  return PresentationSessionInfo::OnError(reason);
-}
-
-nsresult
-PresentationPresentingInfo::InitTransportAndSendAnswer()
-{
-  
-  
-  nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder =
-    do_CreateInstance(PRESENTATION_TCP_SESSION_TRANSPORT_CONTRACTID);
-  if (NS_WARN_IF(!builder)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  return builder->BuildTCPReceiverTransport(mRequesterDescription, this);
 }
 
 nsresult
