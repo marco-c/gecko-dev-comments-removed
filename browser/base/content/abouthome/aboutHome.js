@@ -21,7 +21,7 @@ const DATABASE_NAME = "abouthome";
 const DATABASE_VERSION = 1;
 const DATABASE_STORAGE = "persistent";
 const SNIPPETS_OBJECTSTORE_NAME = "snippets";
-var searchText, findKey;
+var searchText;
 
 
 var gInitialized = false;
@@ -55,14 +55,20 @@ window.addEventListener("pagehide", function() {
   window.removeEventListener("resize", fitToWidth);
 });
 
-
 window.addEventListener("keypress", ev => {
   
-  let modifiers = ev.ctrlKey + ev.altKey + ev.shiftKey + ev.metaKey;
-  if (ev.getModifierState("Accel") && modifiers == 1 && ev.key == findKey) {
-    searchText.focus();
-    ev.preventDefault();
-  }
+  if (document.activeElement.id == "searchText") 
+    return;
+
+  let modifiers = ev.ctrlKey + ev.altKey + ev.metaKey;
+  
+  
+  if (modifiers != 0 || ev.charCode == 0 || ev.charCode == 32)
+    return;
+
+  searchText.focus();
+  
+  searchText.value += ev.key;
 });
 
 
@@ -195,7 +201,6 @@ function setupSearch()
     searchText.removeEventListener("blur", searchText_onBlur);
     searchText.removeAttribute("autofocus");
   });
-  findKey = searchText.dataset.findkey;
 
   if (!gContentSearchController) {
     gContentSearchController =
