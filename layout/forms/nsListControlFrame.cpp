@@ -271,7 +271,9 @@ GetMaxOptionBSize(nsIFrame* aContainer, WritingMode aWM)
     if (nsCOMPtr<nsIDOMHTMLOptGroupElement>
         (do_QueryInterface(option->GetContent()))) {
       
-      optionBSize = GetMaxOptionBSize(option->GetContentInsertionFrame(), aWM);
+      
+      auto frame = option->GetContentInsertionFrame();
+      optionBSize = frame ? GetMaxOptionBSize(frame, aWM) : 0;
     } else {
       
       optionBSize = option->BSize(aWM);
