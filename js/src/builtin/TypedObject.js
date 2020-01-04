@@ -690,6 +690,24 @@ function SimdTypeToLength(type) {
   return undefined;
 }
 
+
+
+
+
+
+
+function SimdValueOf() {
+  if (!IsObject(this) || !ObjectIsTypedObject(this))
+    ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "SIMD", "valueOf", typeof this);
+
+  var descr = TypedObjectTypeDescr(this);
+
+  if (DESCR_KIND(descr) != JS_TYPEREPR_SIMD_KIND)
+    ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "SIMD", "valueOf", typeof this);
+
+  ThrowTypeError(JSMSG_SIMD_TO_NUMBER);
+}
+
 function SimdToSource() {
   if (!IsObject(this) || !ObjectIsTypedObject(this))
     ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "SIMD.*", "toSource", typeof this);
