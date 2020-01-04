@@ -8,6 +8,7 @@
 
 #include "AsyncEventRunner.h"
 #include "DecoderTraits.h"
+#include "Benchmark.h"
 #include "MediaSourceUtils.h"
 #include "SourceBuffer.h"
 #include "SourceBufferList.h"
@@ -72,13 +73,14 @@ static const char* const gMediaSourceTypes[6] = {
 
 
 
+
 static bool
 IsWebMForced()
 {
   bool mp4supported =
     DecoderTraits::IsMP4TypeAndEnabled(NS_LITERAL_CSTRING("video/mp4"));
   bool hwsupported = gfxPlatform::GetPlatform()->CanUseHardwareVideoDecoding();
-  return !mp4supported || !hwsupported;
+  return !mp4supported || !hwsupported || Benchmark::IsVP9DecodeFast();
 }
 
 static nsresult
