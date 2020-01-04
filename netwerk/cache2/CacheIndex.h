@@ -1020,6 +1020,7 @@ private:
   
   
   nsTArray<CacheIndexRecord *>  mFrecencyArray;
+  bool                          mFrecencyArraySorted;
 
   nsTArray<CacheIndexIterator *> mIterators;
 
