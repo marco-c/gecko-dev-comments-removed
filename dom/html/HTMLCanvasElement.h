@@ -266,7 +266,7 @@ public:
 
 
 
-  void RegisterFrameCaptureListener(FrameCaptureListener* aListener);
+  nsresult RegisterFrameCaptureListener(FrameCaptureListener* aListener);
 
   
 
