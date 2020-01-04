@@ -10,7 +10,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/TimeStamp.h"
-#include "gfx2DGlue.h"
 #include "gfxTypes.h"
 #include "imgFrame.h"
 #include "nsCOMPtr.h"
@@ -104,7 +103,7 @@ private:
   friend class FrameAnimator;
 
   
-  nsIntRect mFirstFrameRefreshArea;
+  gfx::IntRect mFirstFrameRefreshArea;
 
   
   TimeStamp mCurrentAnimationFrameTime;
@@ -164,7 +163,7 @@ struct RefreshResult
 class FrameAnimator
 {
 public:
-  FrameAnimator(RasterImage* aImage, gfx::IntSize aSize)
+  FrameAnimator(RasterImage* aImage, const gfx::IntSize& aSize)
     : mImage(aImage)
     , mSize(aSize)
     , mLastCompositedFrameIndex(-1)
@@ -231,7 +230,7 @@ private:
 
   TimeStamp GetCurrentImgFrameEndTime(AnimationState& aState) const;
 
-  bool DoBlend(nsIntRect* aDirtyRect,
+  bool DoBlend(gfx::IntRect* aDirtyRect,
                uint32_t aPrevFrameIndex,
                uint32_t aNextFrameIndex);
 
@@ -242,15 +241,15 @@ private:
 
 
 
-  static void ClearFrame(uint8_t* aFrameData, const nsIntRect& aFrameRect);
+  static void ClearFrame(uint8_t* aFrameData, const gfx::IntRect& aFrameRect);
 
   
-  static void ClearFrame(uint8_t* aFrameData, const nsIntRect& aFrameRect,
-                         const nsIntRect& aRectToClear);
+  static void ClearFrame(uint8_t* aFrameData, const gfx::IntRect& aFrameRect,
+                         const gfx::IntRect& aRectToClear);
 
   
-  static bool CopyFrameImage(const uint8_t* aDataSrc, const nsIntRect& aRectSrc,
-                             uint8_t* aDataDest, const nsIntRect& aRectDest);
+  static bool CopyFrameImage(const uint8_t* aDataSrc, const gfx::IntRect& aRectSrc,
+                             uint8_t* aDataDest, const gfx::IntRect& aRectDest);
 
   
 
@@ -269,11 +268,11 @@ private:
 
 
   static nsresult DrawFrameTo(const uint8_t* aSrcData,
-                              const nsIntRect& aSrcRect,
+                              const gfx::IntRect& aSrcRect,
                               uint32_t aSrcPaletteLength, bool aSrcHasAlpha,
-                              uint8_t* aDstPixels, const nsIntRect& aDstRect,
+                              uint8_t* aDstPixels, const gfx::IntRect& aDstRect,
                               BlendMethod aBlendMethod,
-                              const Maybe<nsIntRect>& aBlendRect);
+                              const Maybe<gfx::IntRect>& aBlendRect);
 
 private: 
   
