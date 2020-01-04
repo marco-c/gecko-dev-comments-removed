@@ -136,6 +136,10 @@ public:
     return mCaretElementHolder->GetContentNode();
   }
 
+  
+  
+  void EnsureApzAware();
+
 protected:
   
   void SetCaretElementStyle(const nsRect& aRect, float aZoomLevel);

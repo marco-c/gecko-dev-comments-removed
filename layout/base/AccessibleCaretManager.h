@@ -98,6 +98,10 @@ public:
   
   virtual void OnKeyboardEvent();
 
+  
+  
+  virtual void OnFrameReconstruction();
+
 protected:
   
   enum class CaretMode : uint8_t {

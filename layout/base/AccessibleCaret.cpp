@@ -188,6 +188,18 @@ AccessibleCaret::Contains(const nsPoint& aPoint) const
 }
 
 void
+AccessibleCaret::EnsureApzAware()
+{
+  
+  
+  
+  if (!CaretElement()->IsApzAware()) {
+    CaretElement()->AddEventListener(NS_LITERAL_STRING("touchstart"),
+                                     mDummyTouchListener, false);
+  }
+}
+
+void
 AccessibleCaret::InjectCaretElement(nsIDocument* aDocument)
 {
   ErrorResult rv;
@@ -200,8 +212,7 @@ AccessibleCaret::InjectCaretElement(nsIDocument* aDocument)
   
   
   
-  CaretElement()->AddEventListener(NS_LITERAL_STRING("touchstart"),
-                                   mDummyTouchListener, false);
+  EnsureApzAware();
 }
 
 already_AddRefed<Element>
