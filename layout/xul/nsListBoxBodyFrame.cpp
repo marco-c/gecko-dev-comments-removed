@@ -1008,7 +1008,7 @@ nsListBoxBodyFrame::CreateRows()
 {
   
   nsRect clientRect;
-  GetClientRect(clientRect);
+  GetXULClientRect(clientRect);
 
   
   

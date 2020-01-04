@@ -190,7 +190,7 @@ nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState)
 
   
   nsRect clientRect;
-  aBox->GetClientRect(clientRect);
+  aBox->GetXULClientRect(clientRect);
 
   
   
@@ -924,7 +924,7 @@ nsSprocketLayout::AlignChildren(nsIFrame* aBox,
   GetFrameState(aBox, frameState);
   bool isHorizontal = (frameState & NS_STATE_IS_HORIZONTAL) != 0;
   nsRect clientRect;
-  aBox->GetClientRect(clientRect);
+  aBox->GetXULClientRect(clientRect);
 
   NS_PRECONDITION(!(frameState & NS_STATE_AUTO_STRETCH),
                   "Only AlignChildren() with non-stretch alignment");

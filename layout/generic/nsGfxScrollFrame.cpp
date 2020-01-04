@@ -4810,7 +4810,7 @@ nsXULScrollFrame::XULLayout(nsBoxLayoutState& aState)
 
   
   nsRect clientRect(0,0,0,0);
-  GetClientRect(clientRect);
+  GetXULClientRect(clientRect);
 
   nsRect oldScrollAreaBounds = mHelper.mScrollPort;
   nsPoint oldScrollPosition = mHelper.GetLogicalScrollPosition();

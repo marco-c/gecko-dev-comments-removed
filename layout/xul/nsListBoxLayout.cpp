@@ -120,7 +120,7 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
 
   
   nsRect clientRect;
-  aBox->GetClientRect(clientRect);
+  aBox->GetXULClientRect(clientRect);
 
   
   
