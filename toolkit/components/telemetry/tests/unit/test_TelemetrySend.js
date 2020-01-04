@@ -69,14 +69,13 @@ var checkPingsSaved = Task.async(function* (pingIds) {
   return allFound;
 });
 
-function run_test() {
+add_task(function* test_setup() {
   
   do_get_profile(true);
   
-  setEmptyPrefWatchlist();
+  yield setEmptyPrefWatchlist();
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
-  run_next_test();
-}
+});
 
 
 add_task(function* test_sendPendingPings() {

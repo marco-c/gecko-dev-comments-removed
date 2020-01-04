@@ -31,26 +31,21 @@ function getSimpleMeasurementsFromTelemetryController() {
   return TelemetrySession.getPayload().simpleMeasurements;
 }
 
-function initialiseTelemetry() {
-  return TelemetryController.testSetup();
-}
-
-function run_test() {
+add_task(function* test_setup() {
   
   loadAddonManager();
   
   do_get_profile();
 
   
-  setEmptyPrefWatchlist();
+  yield setEmptyPrefWatchlist();
 
-  do_test_pending();
-  const Telemetry = Services.telemetry;
-  Telemetry.asyncFetchTelemetryData(run_next_test);
-}
+  yield new Promise(resolve =>
+    Services.telemetry.asyncFetchTelemetryData(resolve));
+});
 
 add_task(function* actualTest() {
-  yield initialiseTelemetry();
+  yield TelemetryController.testSetup();
 
   
   let tmp = {};
@@ -89,6 +84,4 @@ add_task(function* actualTest() {
   do_check_eq(undefined, simpleMeasurements.baz); 
 
   yield TelemetryController.testShutdown();
-
-  do_test_finished();
 });

@@ -56,22 +56,20 @@ function setMinimumPolicyVersion(aNewPolicyVersion) {
   Preferences.set(PREF_MINIMUM_POLICY_VERSION, aNewPolicyVersion);
 }
 
-function run_test() {
+add_task(function* test_setup() {
   
   do_get_profile(true);
   loadAddonManager("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
   
-  setEmptyPrefWatchlist();
+  yield setEmptyPrefWatchlist();
 
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
   
   Services.prefs.setBoolPref(PREF_BYPASS_NOTIFICATION, false);
 
   TelemetryReportingPolicy.setup();
-
-  run_next_test();
-}
+});
 
 add_task(function* test_firstRun() {
   const PREF_FIRST_RUN = "toolkit.telemetry.reportingpolicy.firstRun";

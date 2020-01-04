@@ -73,7 +73,7 @@ add_task(function*() {
   yield TelemetryController.testSetup();
   if (runningInParent) {
     
-    setEmptyPrefWatchlist();
+    yield setEmptyPrefWatchlist();
   }
 
   

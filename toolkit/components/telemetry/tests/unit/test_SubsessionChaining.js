@@ -84,19 +84,17 @@ var promiseValidateArchivedPings = Task.async(function*(aExpectedReasons) {
   }
 });
 
-function run_test() {
+add_task(function* test_setup() {
   do_test_pending();
 
   
   do_get_profile();
   loadAddonManager("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
   
-  setEmptyPrefWatchlist();
+  yield setEmptyPrefWatchlist();
 
   Preferences.set(PREF_TELEMETRY_ENABLED, true);
-
-  run_next_test();
-}
+});
 
 add_task(function* test_subsessionsChaining() {
   if (gIsAndroid) {
