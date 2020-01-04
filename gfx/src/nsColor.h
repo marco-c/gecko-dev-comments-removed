@@ -77,6 +77,22 @@ NS_HexToRGBA(const nsAString& aBuf, nsHexColorType aType, nscolor* aResult);
 
 nscolor NS_ComposeColors(nscolor aBG, nscolor aFG);
 
+namespace mozilla {
+
+inline uint32_t RoundingDivideBy255(uint32_t n)
+{
+  
+  
+  
+  return (n + 127) / 255;
+}
+
+
+
+nscolor LinearBlendColors(nscolor aBg, nscolor aFg, uint_fast8_t aFgRatio);
+
+} 
+
 
 
 
