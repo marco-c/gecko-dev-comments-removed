@@ -4005,6 +4005,10 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot,
                                              clipPtr,
                                              uniformColorPtr);
+      } else if (!clipMovesWithLayer) {
+        mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRootForClip,
+                                             clipPtr,
+                                             uniformColorPtr);
       } else {
         
         
