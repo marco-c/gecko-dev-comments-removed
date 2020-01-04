@@ -1,0 +1,21 @@
+
+
+
+
+
+package org.mozilla.gecko.icons.processing;
+
+import org.mozilla.gecko.icons.IconRequest;
+import org.mozilla.gecko.icons.IconResponse;
+
+
+
+
+
+
+public interface Processor {
+    
+
+
+    void process(IconRequest request, IconResponse response);
+}

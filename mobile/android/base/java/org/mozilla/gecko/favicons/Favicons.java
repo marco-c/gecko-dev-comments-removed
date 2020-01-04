@@ -497,7 +497,7 @@ public class Favicons {
         faviconsCache = new FaviconCache(FAVICON_CACHE_SIZE_BYTES, largestFaviconSize);
 
         
-        for (String url : AboutPages.getDefaultIconPages()) {
+        for (String url : AboutPages.DEFAULT_ICON_PAGES) {
             pageURLMappings.putWithoutEviction(url, BUILT_IN_FAVICON_URL);
         }
 

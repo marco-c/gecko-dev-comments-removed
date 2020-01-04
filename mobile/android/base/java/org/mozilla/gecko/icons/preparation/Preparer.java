@@ -1,0 +1,19 @@
+
+
+
+
+
+package org.mozilla.gecko.icons.preparation;
+
+import org.mozilla.gecko.icons.IconRequest;
+
+
+
+
+
+public interface Preparer {
+    
+
+
+    void prepare(IconRequest request);
+}

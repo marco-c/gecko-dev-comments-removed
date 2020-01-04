@@ -1,0 +1,13 @@
+
+
+
+
+
+package org.mozilla.gecko.icons;
+
+
+
+
+public interface IconCallback {
+    void onIconResponse(IconResponse response);
+}
