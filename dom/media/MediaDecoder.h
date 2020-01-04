@@ -577,7 +577,7 @@ private:
 
   
   
-  bool CanPlayThrough();
+  virtual bool CanPlayThrough();
 
   void SetAudioChannel(dom::AudioChannel aChannel) { mAudioChannel = aChannel; }
   dom::AudioChannel GetAudioChannel() { return mAudioChannel; }

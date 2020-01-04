@@ -16,6 +16,7 @@
 #include "MediaFormatReader.h"
 #include "MediaSourceDemuxer.h"
 #include "SourceBufferList.h"
+#include <algorithm>
 
 extern mozilla::LogModule* GetMediaSourceLog();
 
@@ -263,6 +264,32 @@ MediaSourceDecoder::NextFrameBufferedStatus()
   return GetBuffered().Contains(interval)
     ? MediaDecoderOwner::NEXT_FRAME_AVAILABLE
     : MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
+}
+
+bool
+MediaSourceDecoder::CanPlayThrough()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (IsNaN(mMediaSource->Duration())) {
+    
+    return false;
+  }
+  TimeUnit duration = TimeUnit::FromSeconds(mMediaSource->Duration());
+  TimeUnit currentPosition = TimeUnit::FromMicroseconds(CurrentPosition());
+  if (duration.IsInfinite()) {
+    
+    return true;
+  } else if (duration <= currentPosition) {
+    return true;
+  }
+  
+  
+  TimeUnit timeAhead =
+    std::min(duration, currentPosition + TimeUnit::FromSeconds(30));
+  TimeInterval interval(currentPosition,
+                        timeAhead,
+                        MediaSourceDemuxer::EOS_FUZZ);
+  return GetBuffered().Contains(interval);
 }
 
 #undef MSE_DEBUG
