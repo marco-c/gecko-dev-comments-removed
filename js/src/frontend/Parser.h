@@ -306,7 +306,17 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
     }
 
     bool atGlobalLevel() {
-        return atBodyLevel() && !sc->isFunctionBox() && !innermostScopeStmt();
+        return atBodyLevel() && sc->isGlobalContext() && !innermostScopeStmt();
+    }
+
+    
+    bool atModuleLevel() {
+        return atBodyLevel() && sc->isModuleBox();
+    }
+
+    
+    bool atModuleScope() {
+        return sc->isModuleBox() && !innermostScopeStmt();
     }
 
     

@@ -275,15 +275,16 @@ class NullFramePtr : public AbstractFramePtr
 
 enum InitialFrameFlags {
     INITIAL_NONE           =          0,
-    INITIAL_CONSTRUCT      =       0x10, 
+    INITIAL_CONSTRUCT      =       0x20, 
 };
 
 enum ExecuteType {
     EXECUTE_GLOBAL         =        0x1, 
-    EXECUTE_DIRECT_EVAL    =        0x4, 
-    EXECUTE_INDIRECT_EVAL  =        0x5, 
-    EXECUTE_DEBUG          =        0xc, 
-    EXECUTE_DEBUG_GLOBAL   =        0xd  
+    EXECUTE_MODULE         =        0x4, 
+    EXECUTE_DIRECT_EVAL    =        0x8, 
+    EXECUTE_INDIRECT_EVAL  =        0x9, 
+    EXECUTE_DEBUG          =       0x18, 
+    EXECUTE_DEBUG_GLOBAL   =       0x19  
 };
 
 
@@ -295,9 +296,10 @@ class InterpreterFrame
         
         GLOBAL                 =        0x1,  
         FUNCTION               =        0x2,  
+        MODULE                 =        0x4,  
 
         
-        EVAL                   =        0x4,  
+        EVAL                   =        0x8,  
 
 
         
@@ -312,11 +314,11 @@ class InterpreterFrame
 
 
 
-        DEBUGGER_EVAL          =        0x8,
+        DEBUGGER_EVAL          =       0x10,
 
-        CONSTRUCTING           =       0x10,  
+        CONSTRUCTING           =       0x20,  
 
-        RESUMED_GENERATOR      =       0x20,  
+        RESUMED_GENERATOR      =       0x40,  
 
         
 
@@ -363,6 +365,7 @@ class InterpreterFrame
     union {                             
         JSScript*       script;        
         JSFunction*     fun;           
+        ModuleObject*   module;        
     } exec;
     union {                             
         unsigned        nactual;        
@@ -468,12 +471,17 @@ class InterpreterFrame
 
 
 
+
     bool isFunctionFrame() const {
         return !!(flags_ & FUNCTION);
     }
 
     bool isGlobalFrame() const {
         return !!(flags_ & GLOBAL);
+    }
+
+    bool isModuleFrame() const {
+        return !!(flags_ & MODULE);
     }
 
     
@@ -651,11 +659,10 @@ class InterpreterFrame
 
 
     JSScript* script() const {
-        return isFunctionFrame()
-               ? isEvalFrame()
-                 ? u.evalScript
-                 : fun()->nonLazyScript()
-               : exec.script;
+        if (isFunctionFrame())
+            return isEvalFrame() ? u.evalScript : fun()->nonLazyScript();
+        MOZ_ASSERT(isGlobalFrame() || isModuleFrame());
+        return exec.script;
     }
 
     
@@ -686,6 +693,17 @@ class InterpreterFrame
 
     JSFunction* maybeFun() const {
         return isFunctionFrame() ? fun() : nullptr;
+    }
+
+    
+
+    ModuleObject* module() const {
+        MOZ_ASSERT(isModuleFrame());
+        return exec.module;
+    }
+
+    ModuleObject* maybeModule() const {
+        return isModuleFrame() ? module() : nullptr;
     }
 
     
