@@ -1962,16 +1962,9 @@ public:
 
 
 
-
-
-
     virtual mozilla::LayoutDeviceIntRect GetNaturalBounds() {
-        nsIntRect tmp = GetNaturalBoundsUntyped();
-        return mozilla::LayoutDeviceIntRect::FromUnknownRect(tmp);
-    }
-    virtual nsIntRect GetNaturalBoundsUntyped() {
-        nsIntRect bounds;
-        GetBoundsUntyped(bounds);
+        mozilla::LayoutDeviceIntRect bounds;
+        GetBounds(bounds);
         return bounds;
     }
 
