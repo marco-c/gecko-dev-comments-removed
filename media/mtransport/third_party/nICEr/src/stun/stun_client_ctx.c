@@ -73,33 +73,34 @@ int nr_stun_client_ctx_create(char *label, nr_socket *sock, nr_transport_addr *p
     nr_socket_getaddr(sock,&ctx->my_addr);
     nr_transport_addr_copy(&ctx->peer_addr,peer);
 
-    if (NR_reg_get_uint4(NR_STUN_REG_PREF_CLNT_RETRANSMIT_TIMEOUT, &ctx->rto_ms)) {
-        if (RTO != 0)
-            ctx->rto_ms = RTO;
-        else
-            ctx->rto_ms = 100;
+    if (RTO != 0) {
+      ctx->rto_ms = RTO;
+    } else if (NR_reg_get_uint4(NR_STUN_REG_PREF_CLNT_RETRANSMIT_TIMEOUT, &ctx->rto_ms)) {
+      ctx->rto_ms = 100;
     }
 
     if (NR_reg_get_double(NR_STUN_REG_PREF_CLNT_RETRANSMIT_BACKOFF, &ctx->retransmission_backoff_factor))
-        ctx->retransmission_backoff_factor = 2.0;
+      ctx->retransmission_backoff_factor = 2.0;
 
     if (NR_reg_get_uint4(NR_STUN_REG_PREF_CLNT_MAXIMUM_TRANSMITS, &ctx->maximum_transmits))
-        ctx->maximum_transmits = 7;
+      ctx->maximum_transmits = 7;
 
-    if (NR_reg_get_uint4(NR_STUN_REG_PREF_CLNT_FINAL_RETRANSMIT_BACKOFF, &ctx->final_retransmit_backoff_ms))
-        ctx->final_retransmit_backoff_ms = 16 * ctx->rto_ms;
+    if (NR_reg_get_uint4(NR_STUN_REG_PREF_CLNT_FINAL_RETRANSMIT_BACKOFF, &ctx->maximum_transmits_timeout_ms))
+      ctx->maximum_transmits_timeout_ms = 16 * ctx->rto_ms;
 
-     ctx->mapped_addr_check_mask = NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
-     if (NR_reg_get_char(NR_STUN_REG_PREF_ALLOW_LOOPBACK_ADDRS, &allow_loopback) ||
-         !allow_loopback) {
-       ctx->mapped_addr_check_mask |= NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK;
-     }
-
-    
-
+    ctx->mapped_addr_check_mask = NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
+    if (NR_reg_get_char(NR_STUN_REG_PREF_ALLOW_LOOPBACK_ADDRS, &allow_loopback) ||
+        !allow_loopback) {
+      ctx->mapped_addr_check_mask |= NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK;
+    }
 
     if (ctx->my_addr.protocol == IPPROTO_TCP) {
-      ctx->timeout_ms = ctx->final_retransmit_backoff_ms;
+      
+
+
+      ctx->maximum_transmits_timeout_ms = ctx->rto_ms *
+                        pow(ctx->retransmission_backoff_factor,
+                            ctx->maximum_transmits);
       ctx->maximum_transmits = 1;
     }
 
@@ -393,18 +394,25 @@ static int nr_stun_client_send_request(nr_stun_client_ctx *ctx)
 
     }
     else {
-        if (ctx->request_ct < ctx->maximum_transmits) {
-            ctx->timeout_ms *= ctx->retransmission_backoff_factor;
-            ctx->timeout_ms += ctx->rto_ms;
+        if (ctx->request_ct >= ctx->maximum_transmits) {
+          
+
+          ctx->timeout_ms += ctx->maximum_transmits_timeout_ms;
+        }
+        else if (ctx->timeout_ms) {
+          
+          ctx->timeout_ms *= ctx->retransmission_backoff_factor;
         }
         else {
-            ctx->timeout_ms += ctx->final_retransmit_backoff_ms;
+          
+          ctx->timeout_ms = ctx->rto_ms;
         }
 
         r_log(NR_LOG_STUN,LOG_DEBUG,"STUN-CLIENT(%s): Next timer will fire in %u ms",ctx->label, ctx->timeout_ms);
 
         gettimeofday(&ctx->timer_set, 0);
 
+        assert(ctx->timeout_ms);
         NR_ASYNC_TIMER_SET(ctx->timeout_ms, nr_stun_client_timer_expired_cb, ctx, &ctx->timer_handle);
     }
 
