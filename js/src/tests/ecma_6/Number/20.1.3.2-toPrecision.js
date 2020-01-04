@@ -38,6 +38,9 @@ assertEq(x, 20);
 
 assertThrows(() => Number.prototype.toPrecision.call(NaN, { valueOf() { throw "hello"; } }));
 
+
+assertThrowsInstanceOf(() => Number.prototype.toPrecision.call("Hello"), TypeError);
+
 if (typeof reportCompare === "function") {
   reportCompare(true, true);
 }

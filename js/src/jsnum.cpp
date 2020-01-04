@@ -911,11 +911,15 @@ DToStrResult(JSContext* cx, double d, JSDToStrMode mode, int precision, const Ca
 
 
 
+
 MOZ_ALWAYS_INLINE bool
 num_toFixed_impl(JSContext* cx, const CallArgs& args)
 {
+    
     MOZ_ASSERT(IsNumber(args.thisv()));
+    double d = Extract(args.thisv());
 
+    
     int precision;
     if (args.length() == 0) {
         precision = 0;
@@ -928,6 +932,24 @@ num_toFixed_impl(JSContext* cx, const CallArgs& args)
             return false;
     }
 
+    
+    if (mozilla::IsNaN(d)) {
+        args.rval().setString(cx->names().NaN);
+        return true;
+    }
+
+    
+    if (mozilla::IsInfinite(d)) {
+        if(d > 0) {
+            args.rval().setString(cx->names().Infinity);
+            return true;
+        }
+
+        args.rval().setString(cx->names().NegativeInfinity);
+        return true;
+    }
+
+    
     return DToStrResult(cx, Extract(args.thisv()), DTOSTR_FIXED, precision, args);
 }
 
@@ -971,18 +993,7 @@ num_toExponential_impl(JSContext* cx, const CallArgs& args)
             return true;
         }
 
-        StringBuffer sb(cx);
-        if (!sb.append("-"))
-            return false;
-
-        if (!sb.append(cx->names().Infinity))
-            return false;
-
-        JSString* str = sb.finishString();
-        if (!str)
-            return false;
-
-        args.rval().setString(str);
+        args.rval().setString(cx->names().NegativeInfinity);
         return true;
     }
 
@@ -1040,18 +1051,7 @@ num_toPrecision_impl(JSContext* cx, const CallArgs& args)
             return true;
         }
 
-        StringBuffer sb(cx);
-        if (!sb.append("-"))
-            return false;
-
-        if (!sb.append(cx->names().Infinity))
-            return false;
-
-        JSString* str = sb.finishString();
-        if (!str)
-            return false;
-
-        args.rval().setString(str);
+        args.rval().setString(cx->names().NegativeInfinity);
         return true;
     }
 
