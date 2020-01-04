@@ -193,6 +193,15 @@ StyleSheetEditor.prototype = {
   
 
 
+
+
+  get transitionsEnabled() {
+    return Services.prefs.getBoolPref(TRANSITION_PREF);
+  },
+
+  
+
+
   linkCSSFile: function() {
     if (!this.styleSheet.isOriginalSource) {
       return;
@@ -495,9 +504,7 @@ StyleSheetEditor.prototype = {
       this._state.text = this.sourceEditor.getText();
     }
 
-    let transitionsEnabled = Services.prefs.getBoolPref(TRANSITION_PREF);
-
-    this.styleSheet.update(this._state.text, transitionsEnabled)
+    this.styleSheet.update(this._state.text, this.transitionsEnabled)
                    .then(null, Cu.reportError);
   },
 
@@ -683,7 +690,7 @@ StyleSheetEditor.prototype = {
       let text = decoder.decode(array);
 
       let relatedSheet = this.styleSheet.relatedStyleSheet;
-      relatedSheet.update(text, true);
+      relatedSheet.update(text, this.transitionsEnabled);
     }, this.markLinkedFileBroken);
   },
 
