@@ -144,11 +144,13 @@ public:
 
 
 
+
   void SelectBitrates(unsigned short width,
                       unsigned short height,
+                      unsigned int cap,
                       mozilla::Atomic<int32_t, mozilla::Relaxed>& aLastFramerateTenths,
-                      unsigned int& out_start,
                       unsigned int& out_min,
+                      unsigned int& out_start,
                       unsigned int& out_max);
 
   

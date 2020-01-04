@@ -682,6 +682,8 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
 #endif
     video_codec.qpMax = 56;
     video_codec.numberOfSimulcastStreams = 1;
+    video_codec.simulcastStream[0].jsScaleDownBy =
+        codecConfig->mEncodingConstraints.scaleDownBy;
     video_codec.mode = mCodecMode;
 
     codecFound = true;
@@ -979,6 +981,12 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
   return kMediaConduitNoError;
 }
 
+template<typename T>
+T MinIgnoreZero(const T& a, const T& b)
+{
+  return std::min(a? a:b, b? b:a);
+}
+
 struct ResolutionAndBitrateLimits {
   uint32_t resolution_in_mb;
   uint16_t min_bitrate;
@@ -986,7 +994,7 @@ struct ResolutionAndBitrateLimits {
   uint16_t max_bitrate;
 };
 
-#define MB_OF(w,h) ((unsigned int)((((w)>>4))*((unsigned int)((h)>>4))))
+#define MB_OF(w,h) ((unsigned int)((((w+15)>>4))*((unsigned int)((h+15)>>4))))
 
 
 
@@ -1007,24 +1015,25 @@ static ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
 void
 WebrtcVideoConduit::SelectBitrates(unsigned short width,
                                    unsigned short height,
+                                   unsigned int cap,
                                    mozilla::Atomic<int32_t, mozilla::Relaxed>& aLastFramerateTenths,
-                                   unsigned int& out_start,
                                    unsigned int& out_min,
+                                   unsigned int& out_start,
                                    unsigned int& out_max)
 {
   
   
-  unsigned int fs, mb_width, mb_height;
-
-  mb_width = (width + 15) >> 4;
-  mb_height = (height + 15) >> 4;
-  fs = mb_width * mb_height;
+  unsigned int fs = MB_OF(width, height);
 
   for (ResolutionAndBitrateLimits resAndLimits : kResolutionAndBitrateLimits) {
-    if (fs > resAndLimits.resolution_in_mb) {
-      out_min = resAndLimits.min_bitrate;
-      out_start = resAndLimits.start_bitrate;
-      out_max = resAndLimits.max_bitrate;
+    if (fs > resAndLimits.resolution_in_mb &&
+        
+        
+        (!cap || resAndLimits.start_bitrate <= cap ||
+         resAndLimits.resolution_in_mb == 0)) {
+      out_min = MinIgnoreZero((unsigned int)resAndLimits.min_bitrate, cap);
+      out_start = MinIgnoreZero((unsigned int)resAndLimits.start_bitrate, cap);
+      out_max = MinIgnoreZero((unsigned int)resAndLimits.max_bitrate, cap);
       break;
     }
   }
@@ -1069,19 +1078,16 @@ static void ConstrainPreservingAspectRatioExact(uint32_t max_fs,
                                                 unsigned short* width,
                                                 unsigned short* height)
 {
-  unsigned int mb_width = (*width + 15) >> 4;
-  unsigned int mb_height = (*height + 15) >> 4;
-
   
   
-  for (size_t d = 1; d < std::min(mb_width, mb_height); ++d) {
-    if ((mb_width % d) || (mb_height % d)) {
+  for (size_t d = 1; d < std::min(*width, *height); ++d) {
+    if ((*width % d) || (*height % d)) {
       continue; 
     }
 
-    if ((mb_width*mb_height)/(d*d) <= max_fs) {
-      *width = 16 * mb_width / d;
-      *height = 16 * mb_height / d;
+    if (((*width) * (*height))/(d*d) <= max_fs) {
+      *width /= d;
+      *height /= d;
       return;
     }
   }
@@ -1278,45 +1284,44 @@ WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
     vie_codec.width = width;
     vie_codec.height = height;
     vie_codec.maxFramerate = mSendingFramerate;
-    SelectBitrates(vie_codec.width, vie_codec.height,
+    SelectBitrates(vie_codec.width, vie_codec.height, 0,
                    mLastFramerateTenths,
-                   vie_codec.startBitrate,
                    vie_codec.minBitrate,
+                   vie_codec.startBitrate,
                    vie_codec.maxBitrate);
 
-    
-    
-    
-    
     for (size_t i = vie_codec.numberOfSimulcastStreams; i > 0; --i) {
       webrtc::SimulcastStream& stream(vie_codec.simulcastStream[i - 1]);
-      if (stream.maxBitrate && (stream.maxBitrate < vie_codec.minBitrate)) {
-        
-        
-        stream.width = 0;
-        stream.height = 0;
-        uint32_t max_fs_in_mb = kResolutionAndBitrateLimits[0].resolution_in_mb;
-        for (ResolutionAndBitrateLimits resAndLimits :
-             kResolutionAndBitrateLimits) {
-          if (resAndLimits.min_bitrate < stream.maxBitrate) {
-            
-            unsigned short adjusted_width = width;
-            unsigned short adjusted_height = height;
-            
-            
-            ConstrainPreservingAspectRatioExact(max_fs_in_mb,
-                                                &adjusted_width,
-                                                &adjusted_height);
-            stream.width = adjusted_width;
-            stream.height = adjusted_height;
-            break;
-          }
-          max_fs_in_mb = resAndLimits.resolution_in_mb;
+      stream.width = width;
+      stream.height = height;
+      MOZ_ASSERT(stream.jsScaleDownBy >= 1.0);
+      uint32_t new_width = uint32_t(width / stream.jsScaleDownBy);
+      uint32_t new_height = uint32_t(height / stream.jsScaleDownBy);
+      
+      if (new_width != width || new_height != height) {
+        if (vie_codec.numberOfSimulcastStreams == 1) {
+          
+          ConstrainPreservingAspectRatio(new_width, new_height,
+                                         &stream.width, &stream.height);
+        } else {
+          
+          
+          ConstrainPreservingAspectRatioExact(new_width*new_height,
+                                              &stream.width, &stream.height);
         }
-      } else {
-        stream.width = width;
-        stream.height = height;
       }
+      
+      
+      SelectBitrates(stream.width, stream.height, stream.jsMaxBitrate,
+                     mLastFramerateTenths,
+                     stream.minBitrate,
+                     stream.targetBitrate,
+                     stream.maxBitrate);
+
+      vie_codec.minBitrate = std::min(stream.minBitrate, vie_codec.minBitrate);
+      vie_codec.startBitrate += stream.targetBitrate;
+      vie_codec.maxBitrate = std::max(stream.maxBitrate, vie_codec.maxBitrate);
+
       
       
       if (i == vie_codec.numberOfSimulcastStreams) {
@@ -1324,7 +1329,9 @@ WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
         vie_codec.height = stream.height;
       }
     }
-
+    if (vie_codec.numberOfSimulcastStreams != 0) {
+      vie_codec.startBitrate /= vie_codec.numberOfSimulcastStreams;
+    }
     if ((err = mPtrViECodec->SetSendCodec(mChannel, vie_codec)) != 0)
     {
       CSFLogError(logTag, "%s: SetSendCodec(%ux%u) failed, err %d",
@@ -1787,18 +1794,6 @@ WebrtcVideoConduit::DeliverI420Frame(const webrtc::I420VideoFrame& webrtc_frame)
   return -1;
 }
 
-template<typename T>
-T MinIgnoreZero(const T& a, const T& b)
-{
-  if (!a) {
-    return b;
-  } else if (!b) {
-    return a;
-  } else {
-    return std::min(a, b);
-  }
-}
-
 
 
 
@@ -1895,14 +1890,24 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
           stream.height,
           (unsigned short)encoding.constraints.maxHeight);
 
-      if (encoding.constraints.maxBr) {
-        
-        stream.maxBitrate = encoding.constraints.maxBr/1000;
-        stream.minBitrate = MinIgnoreZero(stream.minBitrate, stream.maxBitrate);
-        stream.targetBitrate = MinIgnoreZero(stream.targetBitrate,
-                                             stream.maxBitrate);
-      }
+      
+      stream.jsMaxBitrate = encoding.constraints.maxBr/1000;
+      stream.jsScaleDownBy = encoding.constraints.scaleDownBy;
 
+      MOZ_ASSERT(stream.jsScaleDownBy >= 1.0);
+      uint32_t width = stream.width? stream.width : 640;
+      uint32_t height = stream.height? stream.height : 480;
+      uint32_t new_width = uint32_t(width / stream.jsScaleDownBy);
+      uint32_t new_height = uint32_t(height / stream.jsScaleDownBy);
+
+      if (new_width != width || new_height != height) {
+        
+        SelectBitrates(new_width, new_height, stream.jsMaxBitrate,
+                       mLastFramerateTenths,
+                       stream.minBitrate,
+                       stream.targetBitrate,
+                       stream.maxBitrate);
+      }
       
       
       cinst.simulcastStream[codecInfo->mSimulcastEncodings.size()-i-1] = stream;
