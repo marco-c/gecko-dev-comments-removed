@@ -76,7 +76,7 @@ def main():
     
     
     
-    cmd = ['nm', '-u', '-C', '-l', args.file]
+    cmd = ['nm', '-u', '-C', '-A', args.file]
     lines = subprocess.check_output(cmd, universal_newlines=True,
                                     stderr=subprocess.PIPE).split('\n')
 
@@ -114,24 +114,28 @@ def main():
     
     
     
-    alloc_fns_re = r'U (' + r'|'.join(alloc_fns) + r').*\/([\w\.]+):(\d+)$'
+    alloc_fns_re = r'([^:/ ]+):\s+U (' + r'|'.join(alloc_fns) + r')'
 
     
     jsutil_cpp = set([])
+
+    
+    emit_line_info = False
 
     for line in lines:
         m = re.search(alloc_fns_re, line)
         if m is None:
             continue
 
-        fn = m.group(1)
-        filename = m.group(2)
-        linenum = m.group(3)
-        if filename == 'jsutil.cpp':
+        filename = m.group(1)
+        fn = m.group(2)
+        if filename == 'jsutil.o':
             jsutil_cpp.add(fn)
         else:
             
-            fail("'" + fn + "' present at " + filename + ':' + linenum)
+            fail("'" + fn + "' present in " + filename)
+            
+            emit_line_info = True
 
 
     
@@ -146,6 +150,34 @@ def main():
     if jsutil_cpp:
         fail('unexpected allocation fns used in jsutil.cpp: ' +
              ', '.join(jsutil_cpp))
+
+    
+    
+    
+    
+    if emit_line_info:
+        print('check_vanilla_allocations.py: Source lines with allocation calls:')
+        print('check_vanilla_allocations.py: Accurate in unoptimized builds; jsutil.cpp expected.')
+
+        
+        
+        
+        
+        cmd = ['nm', '-u', '-C', '-l', args.file]
+        lines = subprocess.check_output(cmd, universal_newlines=True,
+                                        stderr=subprocess.PIPE).split('\n')
+
+        
+        
+        
+        
+        
+        alloc_lines_re = r'U ((' + r'|'.join(alloc_fns) + r').*)\s+(\S+:\d+)$'
+
+        for line in lines:
+            m = re.search(alloc_lines_re, line)
+            if m:
+                print('check_vanilla_allocations.py:', m.group(1), 'called at', m.group(3))
 
     if has_failed:
         sys.exit(1)
