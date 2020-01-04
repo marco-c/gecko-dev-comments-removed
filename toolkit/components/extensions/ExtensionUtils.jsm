@@ -1187,6 +1187,25 @@ class ChildAPIManager {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function normalizeTime(date) {
+  
+  
+  const result = new Date((typeof date == "string" && /^\d+$/.test(date))
+                        ? parseInt(date, 10) : date);
+  return result.valueOf();
+}
+
 this.ExtensionUtils = {
   detectLanguage,
   extend,
@@ -1194,6 +1213,7 @@ this.ExtensionUtils = {
   ignoreEvent,
   injectAPI,
   instanceOf,
+  normalizeTime,
   promiseDocumentReady,
   runSafe,
   runSafeSync,

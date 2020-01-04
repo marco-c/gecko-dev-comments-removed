@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 const {
   ignoreEvent,
+  normalizeTime,
   runSafeSync,
   SingletonEventManager,
 } = ExtensionUtils;
@@ -241,22 +242,16 @@ function downloadQuery(query) {
     }
   }
 
-  function normalizeTime(arg, before) {
+  function normalizeDownloadTime(arg, before) {
     if (arg == null) {
       return before ? Number.MAX_VALUE : 0;
+    } else {
+      return normalizeTime(arg);
     }
-
-    
-    
-    
-    
-    const date = new Date((typeof arg == "string" && /^\d+$/.test(arg))
-                          ? parseInt(arg, 10) : arg);
-    return date.valueOf();
   }
 
-  const startedBefore = normalizeTime(query.startedBefore, true);
-  const startedAfter = normalizeTime(query.startedAfter, false);
+  const startedBefore = normalizeDownloadTime(query.startedBefore, true);
+  const startedAfter = normalizeDownloadTime(query.startedAfter, false);
   
   
 
