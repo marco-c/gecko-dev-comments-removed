@@ -275,7 +275,6 @@ public:
 private:
   
   mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
-  bool IsObserved() const { return !!mObserved; }
 
   
   
@@ -290,8 +289,6 @@ private:
     nsDocShell*, const char*, const TimeStamp&, MarkerTracingType);
   friend void mozilla::TimelineConsumers::AddMarkerForDocShell(
     nsDocShell*, UniquePtr<AbstractTimelineMarker>&&);
-  friend void mozilla::TimelineConsumers::AddOTMTMarkerForDocShell(
-    nsDocShell*, UniquePtr<AbstractTimelineMarker>&);
 
 public:
   

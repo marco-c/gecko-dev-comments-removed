@@ -62,9 +62,9 @@ nsView::~nsView()
   if (mViewManager)
   {
     DropMouseGrabbing();
-  
+
     nsView *rootView = mViewManager->GetRootView();
-    
+
     if (rootView)
     {
       
@@ -83,7 +83,7 @@ nsView::~nsView()
     {
       mParent->RemoveChild(this);
     }
-    
+
     mViewManager = nullptr;
   }
   else if (mParent)
@@ -589,7 +589,7 @@ nsresult nsView::CreateWidget(nsWidgetInitData *aWidgetInitData,
   if (!mWindow) {
     return NS_ERROR_FAILURE;
   }
- 
+
   InitializeWindow(aEnableDragDrop, aResetVisibility);
 
   return NS_OK;
@@ -672,7 +672,7 @@ nsView::InitializeWindow(bool aEnableDragDrop, bool aResetVisibility)
   if (aEnableDragDrop) {
     mWindow->EnableDragDrop(true);
   }
-      
+
   
   UpdateNativeWidgetZIndexes(this, FindNonAutoZIndex(this));
 
@@ -747,7 +747,7 @@ nsresult nsView::DetachFromTopLevelWidget()
   mWindow = nullptr;
 
   mWidgetIsTopLevel = false;
-  
+
   return NS_OK;
 }
 
@@ -756,7 +756,7 @@ void nsView::SetZIndex(bool aAuto, int32_t aZIndex)
   bool oldIsAuto = GetZIndexIsAuto();
   mVFlags = (mVFlags & ~NS_VIEW_FLAG_AUTO_ZINDEX) | (aAuto ? NS_VIEW_FLAG_AUTO_ZINDEX : 0);
   mZIndex = aZIndex;
-  
+
   if (HasWidget() || !oldIsAuto || !aAuto) {
     UpdateNativeWidgetZIndexes(this, FindNonAutoZIndex(this));
   }
@@ -1094,11 +1094,14 @@ nsView::DidCompositeWindow(const TimeStamp& aCompositeStart,
     }
 
     nsIDocShell* docShell = context->GetDocShell();
+    RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();
 
-    TimelineConsumers::AddMarkerForDocShell(docShell,
-      "Composite", aCompositeStart, MarkerTracingType::START);
-    TimelineConsumers::AddMarkerForDocShell(docShell,
-      "Composite", aCompositeEnd, MarkerTracingType::END);
+    if (timelines && timelines->HasConsumer(docShell)) {
+      timelines->AddMarkerForDocShell(docShell,
+        "Composite", aCompositeStart, MarkerTracingType::START);
+      timelines->AddMarkerForDocShell(docShell,
+        "Composite", aCompositeEnd, MarkerTracingType::END);
+    }
   }
 }
 

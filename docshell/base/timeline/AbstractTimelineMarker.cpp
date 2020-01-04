@@ -35,6 +35,14 @@ AbstractTimelineMarker::Clone()
   return nullptr;
 }
 
+bool
+AbstractTimelineMarker::Equals(const AbstractTimelineMarker& aOther)
+{
+  
+  
+  return strcmp(mName, aOther.mName) == 0;
+}
+
 AbstractTimelineMarker::~AbstractTimelineMarker()
 {
   MOZ_COUNT_DTOR(AbstractTimelineMarker);
@@ -52,6 +60,12 @@ AbstractTimelineMarker::SetCustomTime(const TimeStamp& aTime)
 {
   bool isInconsistent = false;
   mTime = (aTime - TimeStamp::ProcessCreation(isInconsistent)).ToMilliseconds();
+}
+
+void
+AbstractTimelineMarker::SetCustomTime(DOMHighResTimeStamp aTime)
+{
+  mTime = aTime;
 }
 
 } 

@@ -3,108 +3,116 @@
 
 
 
-
 #ifndef mozilla_TimelineConsumers_h_
 #define mozilla_TimelineConsumers_h_
 
+#include "nsIObserver.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/Vector.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/Mutex.h"
-
-#include "TimelineMarkerEnums.h"
+#include "mozilla/StaticMutex.h"
+#include "TimelineMarkerEnums.h" 
 
 class nsDocShell;
 class nsIDocShell;
 
 namespace mozilla {
-class ObservedDocShell;
+class TimeStamp;
+class MarkersStorage;
 class AbstractTimelineMarker;
 
-class TimelineConsumers
+class TimelineConsumers : public nsIObserver
 {
-private:
-  
-  static unsigned long sActiveConsumers;
-  static LinkedList<ObservedDocShell>* sObservedDocShells;
-  static LinkedList<ObservedDocShell>& GetOrCreateObservedDocShellsList();
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
-  
-  static Mutex* sLock;
+private:
+  TimelineConsumers();
+  TimelineConsumers(const TimelineConsumers& aOther) = delete;
+  void operator=(const TimelineConsumers& aOther) = delete;
+  virtual ~TimelineConsumers() = default;
+
+  bool Init();
+  bool RemoveObservers();
 
 public:
-  static Mutex& GetLock();
-
-  static void AddConsumer(nsDocShell* aDocShell);
-  static void RemoveConsumer(nsDocShell* aDocShell);
-  static bool IsEmpty();
-  static bool GetKnownDocShells(Vector<RefPtr<nsDocShell>>& aStore);
-
-  
-  
-  
+  static already_AddRefed<TimelineConsumers> Get();
 
   
   
   
   
+  
+  void AddConsumer(nsDocShell* aDocShell);
+  void RemoveConsumer(nsDocShell* aDocShell);
+
+  bool HasConsumer(nsIDocShell* aDocShell);
 
   
   
-  static void AddMarkerForDocShell(nsDocShell* aDocShell,
-                                   const char* aName,
-                                   MarkerTracingType aTracingType);
-  static void AddMarkerForDocShell(nsIDocShell* aDocShell,
-                                   const char* aName,
-                                   MarkerTracingType aTracingType);
-
-  static void AddMarkerForDocShell(nsDocShell* aDocShell,
-                                   const char* aName,
-                                   const TimeStamp& aTime,
-                                   MarkerTracingType aTracingType);
-  static void AddMarkerForDocShell(nsIDocShell* aDocShell,
-                                   const char* aName,
-                                   const TimeStamp& aTime,
-                                   MarkerTracingType aTracingType);
+  bool IsEmpty();
 
   
   
-  static void AddMarkerForDocShell(nsDocShell* aDocShell,
-                                   UniquePtr<AbstractTimelineMarker>&& aMarker);
-  static void AddMarkerForDocShell(nsIDocShell* aDocShell,
-                                   UniquePtr<AbstractTimelineMarker>&& aMarker);
+  
+  
+  
+  
+  
 
   
-  static void AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
-                                        const char* aName,
+  
+  
+  void AddMarkerForDocShell(nsDocShell* aDocShell,
+                            const char* aName,
+                            MarkerTracingType aTracingType);
+  void AddMarkerForDocShell(nsIDocShell* aDocShell,
+                            const char* aName,
+                            MarkerTracingType aTracingType);
+
+  void AddMarkerForDocShell(nsDocShell* aDocShell,
+                            const char* aName,
+                            const TimeStamp& aTime,
+                            MarkerTracingType aTracingType);
+  void AddMarkerForDocShell(nsIDocShell* aDocShell,
+                            const char* aName,
+                            const TimeStamp& aTime,
+                            MarkerTracingType aTracingType);
+
+  
+  
+  
+  void AddMarkerForDocShell(nsDocShell* aDocShell,
+                            UniquePtr<AbstractTimelineMarker>&& aMarker);
+  void AddMarkerForDocShell(nsIDocShell* aDocShell,
+                            UniquePtr<AbstractTimelineMarker>&& aMarker);
+
+  
+  
+  
+  void AddMarkerForAllObservedDocShells(const char* aName,
                                         MarkerTracingType aTracingType);
-  static void AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
-                                        const char* aName,
+  void AddMarkerForAllObservedDocShells(const char* aName,
                                         const TimeStamp& aTime,
                                         MarkerTracingType aTracingType);
-  static void AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
-                                        UniquePtr<AbstractTimelineMarker>& aMarker);
 
   
   
-  static void AddMarkerForAllObservedDocShells(const char* aName,
-                                               MarkerTracingType aTracingType);
-  static void AddMarkerForAllObservedDocShells(const char* aName,
-                                               const TimeStamp& aTime,
-                                               MarkerTracingType aTracingType);
-  static void AddMarkerForAllObservedDocShells(UniquePtr<AbstractTimelineMarker>& aMarker);
+  
+  void AddMarkerForAllObservedDocShells(UniquePtr<AbstractTimelineMarker>& aMarker);
+
+private:
+  static StaticRefPtr<TimelineConsumers> sInstance;
+  static bool sInShutdown;
 
   
   
-  static void AddOTMTMarkerForDocShell(nsDocShell* aDocShell,
-                                       UniquePtr<AbstractTimelineMarker>& aMarker);
-  static void AddOTMTMarkerForDocShell(nsIDocShell* aDocShell,
-                                       UniquePtr<AbstractTimelineMarker>& aMarker);
-  static void AddOTMTMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
-                                            UniquePtr<AbstractTimelineMarker>& aMarker);
-  static void AddOTMTMarkerForAllObservedDocShells(UniquePtr<AbstractTimelineMarker>& aMarker);
+  unsigned long mActiveConsumers;
+  LinkedList<MarkersStorage> mMarkersStores;
 
+  
+  static StaticMutex sMutex;
 };
 
 } 

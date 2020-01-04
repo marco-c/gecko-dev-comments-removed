@@ -13,8 +13,8 @@
 
 namespace mozilla {
 
-ObservedDocShell::ObservedDocShell(nsDocShell* aDocShell)
-  : OTMTMarkerReceiver("ObservedDocShellMutex")
+ObservedDocShell::ObservedDocShell(nsIDocShell* aDocShell)
+  : MarkersStorage("ObservedDocShellMutex")
   , mDocShell(aDocShell)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -23,24 +23,31 @@ ObservedDocShell::ObservedDocShell(nsDocShell* aDocShell)
 void
 ObservedDocShell::AddMarker(UniquePtr<AbstractTimelineMarker>&& aMarker)
 {
+  
+  
+  
   MOZ_ASSERT(NS_IsMainThread());
   mTimelineMarkers.AppendElement(Move(aMarker));
 }
 
 void
-ObservedDocShell::AddOTMTMarkerClone(UniquePtr<AbstractTimelineMarker>& aMarker)
+ObservedDocShell::AddOTMTMarker(UniquePtr<AbstractTimelineMarker>&& aMarker)
 {
+  
+  
+  
+  
   MOZ_ASSERT(!NS_IsMainThread());
-  MutexAutoLock lock(GetLock());
-  UniquePtr<AbstractTimelineMarker> cloned = aMarker->Clone();
-  mTimelineMarkers.AppendElement(Move(cloned));
+  MutexAutoLock lock(GetLock()); 
+  mOffTheMainThreadTimelineMarkers.AppendElement(Move(aMarker));
 }
 
 void
 ObservedDocShell::ClearMarkers()
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  MutexAutoLock lock(GetLock()); 
   mTimelineMarkers.Clear();
+  mOffTheMainThreadTimelineMarkers.Clear();
 }
 
 void
@@ -48,13 +55,19 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
                              nsTArray<dom::ProfileTimelineMarker>& aStore)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  MutexAutoLock lock(GetLock()); 
+
+  
+  
+  
+  mTimelineMarkers.AppendElements(Move(mOffTheMainThreadTimelineMarkers));
 
   
   
   nsTArray<UniquePtr<AbstractTimelineMarker>> keptStartMarkers;
 
   for (uint32_t i = 0; i < mTimelineMarkers.Length(); ++i) {
-    UniquePtr<AbstractTimelineMarker>& startPayload = mTimelineMarkers[i];
+    UniquePtr<AbstractTimelineMarker>& startPayload = mTimelineMarkers.ElementAt(i);
 
     
     
@@ -93,12 +106,13 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
       
       
       for (uint32_t j = i + 1; j < mTimelineMarkers.Length(); ++j) {
-        UniquePtr<AbstractTimelineMarker>& endPayload = mTimelineMarkers[j];
+        UniquePtr<AbstractTimelineMarker>& endPayload = mTimelineMarkers.ElementAt(j);
         bool endIsLayerType = strcmp(endPayload->GetName(), "Layer") == 0;
 
         
         if (startIsPaintType && endIsLayerType) {
-          LayerTimelineMarker* layerPayload = static_cast<LayerTimelineMarker*>(endPayload.get());
+          AbstractTimelineMarker* raw = endPayload.get();
+          LayerTimelineMarker* layerPayload = static_cast<LayerTimelineMarker*>(raw);
           layerPayload->AddLayerRectangles(layerRectangles);
           hasSeenLayerType = true;
         }
@@ -133,7 +147,7 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
 
       
       if (!hasSeenEnd) {
-        keptStartMarkers.AppendElement(Move(mTimelineMarkers[i]));
+        keptStartMarkers.AppendElement(Move(mTimelineMarkers.ElementAt(i)));
         mTimelineMarkers.RemoveElementAt(i);
         --i;
       }

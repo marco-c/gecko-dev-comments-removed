@@ -25,14 +25,6 @@ TimelineMarker::TimelineMarker(const char* aName,
   CaptureStackIfNecessary(aTracingType, aStackRequest);
 }
 
-bool
-TimelineMarker::Equals(const AbstractTimelineMarker& aOther)
-{
-  
-  
-  return strcmp(GetName(), aOther.GetName()) == 0;
-}
-
 void
 TimelineMarker::AddDetails(JSContext* aCx, dom::ProfileTimelineMarker& aMarker)
 {

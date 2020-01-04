@@ -4,79 +4,174 @@
 
 
 
-#include "mozilla/TimelineConsumers.h"
+#include "TimelineConsumers.h"
+
+#include "mozilla/ClearOnShutdown.h"
+#include "nsAppRunner.h" 
+#include "nsDocShell.h"
 
 namespace mozilla {
 
-unsigned long TimelineConsumers::sActiveConsumers = 0;
-LinkedList<ObservedDocShell>* TimelineConsumers::sObservedDocShells = nullptr;
-Mutex* TimelineConsumers::sLock = nullptr;
+NS_IMPL_ISUPPORTS(TimelineConsumers, nsIObserver);
 
-LinkedList<ObservedDocShell>&
-TimelineConsumers::GetOrCreateObservedDocShellsList()
+StaticMutex TimelineConsumers::sMutex;
+
+
+
+
+
+
+StaticRefPtr<TimelineConsumers> TimelineConsumers::sInstance;
+
+
+
+
+bool TimelineConsumers::sInShutdown = false;
+
+already_AddRefed<TimelineConsumers>
+TimelineConsumers::Get()
 {
-  if (!sObservedDocShells) {
-    sObservedDocShells = new LinkedList<ObservedDocShell>();
+  
+  
+  
+  
+  MOZ_ASSERT(XRE_IsContentProcess() || XRE_IsParentProcess());
+
+  
+  
+  if (sInShutdown) {
+    return nullptr;
   }
-  return *sObservedDocShells;
+
+  
+  
+  
+  
+  
+  static bool firstTime = true;
+  if (firstTime) {
+    firstTime = false;
+
+    StaticMutexAutoLock lock(sMutex);
+    sInstance = new TimelineConsumers();
+
+    
+    
+    if (sInstance->Init()) {
+      ClearOnShutdown(&sInstance);
+    } else {
+      NS_WARNING("TimelineConsumers could not be initialized.");
+      sInstance->RemoveObservers();
+      sInstance = nullptr;
+    }
+  }
+
+  RefPtr<TimelineConsumers> copy = sInstance.get();
+  return copy.forget();
 }
 
-Mutex&
-TimelineConsumers::GetLock()
+bool
+TimelineConsumers::Init()
 {
-  if (!sLock) {
-    sLock = new Mutex("TimelineConsumersMutex");
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (!obs) {
+    return false;
   }
-  return *sLock;
+  if (NS_WARN_IF(NS_FAILED(
+    obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false)))) {
+    return false;
+  }
+  return true;
+}
+
+bool
+TimelineConsumers::RemoveObservers()
+{
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (!obs) {
+    return false;
+  }
+  if (NS_WARN_IF(NS_FAILED(
+    obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID)))) {
+    return false;
+  }
+  return true;
+}
+
+nsresult
+TimelineConsumers::Observe(nsISupports* aSubject,
+                           const char* aTopic,
+                           const char16_t* aData)
+{
+  if (!nsCRT::strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
+    sInShutdown = true;
+    RemoveObservers();
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(false, "TimelineConsumers got unexpected topic!");
+  return NS_ERROR_UNEXPECTED;
+}
+
+TimelineConsumers::TimelineConsumers()
+  : mActiveConsumers(0)
+{
 }
 
 void
 TimelineConsumers::AddConsumer(nsDocShell* aDocShell)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  UniquePtr<ObservedDocShell>& observed = aDocShell->mObserved;
+  StaticMutexAutoLock lock(sMutex); 
 
+  UniquePtr<ObservedDocShell>& observed = aDocShell->mObserved;
   MOZ_ASSERT(!observed);
-  sActiveConsumers++;
-  observed.reset(new ObservedDocShell(aDocShell));
-  GetOrCreateObservedDocShellsList().insertFront(observed.get());
+
+  mActiveConsumers++;
+
+  ObservedDocShell* obsDocShell = new ObservedDocShell(aDocShell);
+  MarkersStorage* storage = static_cast<MarkersStorage*>(obsDocShell);
+
+  observed.reset(obsDocShell);
+  mMarkersStores.insertFront(storage);
 }
 
 void
 TimelineConsumers::RemoveConsumer(nsDocShell* aDocShell)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  UniquePtr<ObservedDocShell>& observed = aDocShell->mObserved;
+  StaticMutexAutoLock lock(sMutex); 
 
+  UniquePtr<ObservedDocShell>& observed = aDocShell->mObserved;
   MOZ_ASSERT(observed);
-  sActiveConsumers--;
+
+  mActiveConsumers--;
+
+  
   observed.get()->ClearMarkers();
+  
   observed.get()->remove();
+  
   observed.reset(nullptr);
+}
+
+bool
+TimelineConsumers::HasConsumer(nsIDocShell* aDocShell)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!aDocShell) {
+    return false;
+  }
+  bool isTimelineRecording = false;
+  aDocShell->GetRecordProfileTimelineMarkers(&isTimelineRecording);
+  return isTimelineRecording;
 }
 
 bool
 TimelineConsumers::IsEmpty()
 {
-  MOZ_ASSERT(NS_IsMainThread());
-  return sActiveConsumers == 0;
-}
-
-bool
-TimelineConsumers::GetKnownDocShells(Vector<RefPtr<nsDocShell>>& aStore)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  const LinkedList<ObservedDocShell>& docShells = GetOrCreateObservedDocShellsList();
-
-  for (const ObservedDocShell* rds = docShells.getFirst();
-       rds != nullptr;
-       rds = rds->getNext()) {
-    if (!aStore.append(**rds)) {
-      return false;
-    }
-  }
-
-  return true;
+  StaticMutexAutoLock lock(sMutex); 
+  return mActiveConsumers == 0;
 }
 
 void
@@ -85,7 +180,7 @@ TimelineConsumers::AddMarkerForDocShell(nsDocShell* aDocShell,
                                         MarkerTracingType aTracingType)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (aDocShell->IsObserved()) {
+  if (HasConsumer(aDocShell)) {
     aDocShell->mObserved->AddMarker(Move(MakeUnique<TimelineMarker>(aName, aTracingType)));
   }
 }
@@ -97,7 +192,7 @@ TimelineConsumers::AddMarkerForDocShell(nsDocShell* aDocShell,
                                         MarkerTracingType aTracingType)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (aDocShell->IsObserved()) {
+  if (HasConsumer(aDocShell)) {
     aDocShell->mObserved->AddMarker(Move(MakeUnique<TimelineMarker>(aName, aTime, aTracingType)));
   }
 }
@@ -107,19 +202,8 @@ TimelineConsumers::AddMarkerForDocShell(nsDocShell* aDocShell,
                                         UniquePtr<AbstractTimelineMarker>&& aMarker)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (aDocShell->IsObserved()) {
+  if (HasConsumer(aDocShell)) {
     aDocShell->mObserved->AddMarker(Move(aMarker));
-  }
-}
-
-void
-TimelineConsumers::AddOTMTMarkerForDocShell(nsDocShell* aDocShell,
-                                            UniquePtr<AbstractTimelineMarker>& aMarker)
-{
-  MOZ_ASSERT(!NS_IsMainThread());
-  GetLock().AssertCurrentThreadOwns();
-  if (aDocShell->IsObserved()) {
-    aDocShell->mObserved->AddOTMTMarkerClone(aMarker);
   }
 }
 
@@ -151,75 +235,22 @@ TimelineConsumers::AddMarkerForDocShell(nsIDocShell* aDocShell,
 }
 
 void
-TimelineConsumers::AddOTMTMarkerForDocShell(nsIDocShell* aDocShell,
-                                            UniquePtr<AbstractTimelineMarker>& aMarker)
-{
-  MOZ_ASSERT(!NS_IsMainThread());
-  GetLock().AssertCurrentThreadOwns();
-  AddOTMTMarkerForDocShell(static_cast<nsDocShell*>(aDocShell), aMarker);
-}
-
-void
-TimelineConsumers::AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
-                                             const char* aName,
-                                             MarkerTracingType aTracingType)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  for (Vector<RefPtr<nsDocShell>>::Range range = aDocShells.all();
-       !range.empty();
-       range.popFront()) {
-    AddMarkerForDocShell(range.front(), aName, aTracingType);
-  }
-}
-
-void
-TimelineConsumers::AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
-                                             const char* aName,
-                                             const TimeStamp& aTime,
-                                             MarkerTracingType aTracingType)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  for (Vector<RefPtr<nsDocShell>>::Range range = aDocShells.all();
-       !range.empty();
-       range.popFront()) {
-    AddMarkerForDocShell(range.front(), aName, aTime, aTracingType);
-  }
-}
-
-void
-TimelineConsumers::AddMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
-                                             UniquePtr<AbstractTimelineMarker>& aMarker)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  for (Vector<RefPtr<nsDocShell>>::Range range = aDocShells.all();
-       !range.empty();
-       range.popFront()) {
-    UniquePtr<AbstractTimelineMarker> cloned = aMarker->Clone();
-    AddMarkerForDocShell(range.front(), Move(cloned));
-  }
-}
-
-void
-TimelineConsumers::AddOTMTMarkerForDocShellsList(Vector<RefPtr<nsDocShell>>& aDocShells,
-                                                 UniquePtr<AbstractTimelineMarker>& aMarker)
-{
-  MOZ_ASSERT(!NS_IsMainThread());
-  GetLock().AssertCurrentThreadOwns();
-  for (Vector<RefPtr<nsDocShell>>::Range range = aDocShells.all();
-       !range.empty();
-       range.popFront()) {
-    AddOTMTMarkerForDocShell(range.front(), aMarker);
-  }
-}
-
-void
 TimelineConsumers::AddMarkerForAllObservedDocShells(const char* aName,
                                                     MarkerTracingType aTracingType)
 {
-  MOZ_ASSERT(NS_IsMainThread());
-  Vector<RefPtr<nsDocShell>> docShells;
-  if (GetKnownDocShells(docShells)) {
-    AddMarkerForDocShellsList(docShells, aName, aTracingType);
+  bool isMainThread = NS_IsMainThread();
+  StaticMutexAutoLock lock(sMutex); 
+
+  for (MarkersStorage* storage = mMarkersStores.getFirst();
+       storage != nullptr;
+       storage = storage->getNext()) {
+    UniquePtr<AbstractTimelineMarker> marker =
+      MakeUnique<TimelineMarker>(aName, aTracingType);
+    if (isMainThread) {
+      storage->AddMarker(Move(marker));
+    } else {
+      storage->AddOTMTMarker(Move(marker));
+    }
   }
 }
 
@@ -228,31 +259,37 @@ TimelineConsumers::AddMarkerForAllObservedDocShells(const char* aName,
                                                     const TimeStamp& aTime,
                                                     MarkerTracingType aTracingType)
 {
-  MOZ_ASSERT(NS_IsMainThread());
-  Vector<RefPtr<nsDocShell>> docShells;
-  if (GetKnownDocShells(docShells)) {
-    AddMarkerForDocShellsList(docShells, aName, aTime, aTracingType);
+  bool isMainThread = NS_IsMainThread();
+  StaticMutexAutoLock lock(sMutex); 
+
+  for (MarkersStorage* storage = mMarkersStores.getFirst();
+       storage != nullptr;
+       storage = storage->getNext()) {
+    UniquePtr<AbstractTimelineMarker> marker =
+      MakeUnique<TimelineMarker>(aName, aTime, aTracingType);
+    if (isMainThread) {
+      storage->AddMarker(Move(marker));
+    } else {
+      storage->AddOTMTMarker(Move(marker));
+    }
   }
 }
 
 void
 TimelineConsumers::AddMarkerForAllObservedDocShells(UniquePtr<AbstractTimelineMarker>& aMarker)
 {
-  MOZ_ASSERT(NS_IsMainThread());
-  Vector<RefPtr<nsDocShell>> docShells;
-  if (GetKnownDocShells(docShells)) {
-    AddMarkerForDocShellsList(docShells, aMarker);
-  }
-}
+  bool isMainThread = NS_IsMainThread();
+  StaticMutexAutoLock lock(sMutex); 
 
-void
-TimelineConsumers::AddOTMTMarkerForAllObservedDocShells(UniquePtr<AbstractTimelineMarker>& aMarker)
-{
-  MOZ_ASSERT(!NS_IsMainThread());
-  GetLock().AssertCurrentThreadOwns();
-  Vector<RefPtr<nsDocShell>> docShells;
-  if (GetKnownDocShells(docShells)) {
-    AddOTMTMarkerForDocShellsList(docShells, aMarker);
+  for (MarkersStorage* storage = mMarkersStores.getFirst();
+       storage != nullptr;
+       storage = storage->getNext()) {
+    UniquePtr<AbstractTimelineMarker> clone = aMarker->Clone();
+    if (isMainThread) {
+      storage->AddMarker(Move(clone));
+    } else {
+      storage->AddOTMTMarker(Move(clone));
+    }
   }
 }
 
