@@ -22,18 +22,14 @@ import android.widget.PopupWindow;
 public class MenuPopup extends PopupWindow {
     private final FrameLayout mPanel;
 
-    private final int mYOffset;
     private final int mPopupWidth;
-    private final int mPopupMinHeight;
 
     public MenuPopup(Context context) {
         super(context);
 
         setFocusable(true);
 
-        mYOffset = context.getResources().getDimensionPixelSize(R.dimen.menu_popup_offset);
         mPopupWidth = context.getResources().getDimensionPixelSize(R.dimen.menu_popup_width);
-        mPopupMinHeight = context.getResources().getDimensionPixelSize(R.dimen.menu_item_row_height);
 
         
         setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -73,6 +69,6 @@ public class MenuPopup extends PopupWindow {
         
         
         final int xOffset = anchor.getWidth() / 2 - mPopupWidth / 2;
-        showAsDropDown(anchor, xOffset, -mYOffset);
+        showAsDropDown(anchor, xOffset, -anchor.getHeight());
     }
 }
