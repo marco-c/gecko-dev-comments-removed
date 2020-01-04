@@ -1290,6 +1290,8 @@ bool TSFTextStore::sDoNotReturnNoLayoutErrorToMSSimplifiedTIP = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToMSTraditionalTIP = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToFreeChangJie = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToEasyChangjei = false;
+bool TSFTextStore::sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar = false;
+bool TSFTextStore::sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToGoogleJaInputAtFirstChar = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToGoogleJaInputAtCaret = false;
 bool TSFTextStore::sHackQueryInsertForMSSimplifiedTIP = false;
@@ -3514,9 +3516,45 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
   if (mComposition.IsComposing() && mComposition.mStart < acpEnd &&
       mLockedContent.IsLayoutChangedAfter(acpEnd)) {
     const Selection& currentSel = CurrentSelection();
-    if ((sDoNotReturnNoLayoutErrorToGoogleJaInputAtFirstChar ||
-         sDoNotReturnNoLayoutErrorToGoogleJaInputAtCaret) &&
-        kSink->IsGoogleJapaneseInputActive()) {
+    if ((sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar ||
+         sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret) &&
+        kSink->IsMSJapaneseIMEActive()) {
+      
+      
+      
+      if (IsWin8OrLater()) {
+        
+        
+        
+        
+        
+        if (sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar &&
+            !mLockedContent.IsLayoutChangedAfter(acpStart) &&
+            acpStart < acpEnd) {
+          acpEnd = acpStart;
+          MOZ_LOG(sTextStoreLog, LogLevel::Debug,
+                 ("TSF: 0x%p   TSFTextStore::GetTextExt() hacked the offsets "
+                  "of the first character of changing range of the composition "
+                  "string for TIP acpStart=%d, acpEnd=%d",
+                  this, acpStart, acpEnd));
+        }
+        
+        
+        
+        
+        else if (sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret &&
+                 acpStart == acpEnd &&
+                 currentSel.IsCollapsed() && currentSel.EndOffset() == acpEnd) {
+          acpEnd = acpStart = mLockedContent.MinOffsetOfLayoutChanged();
+          MOZ_LOG(sTextStoreLog, LogLevel::Debug,
+                 ("TSF: 0x%p   TSFTextStore::GetTextExt() hacked the offsets "
+                  "of the caret of the composition string for TIP acpStart=%d, "
+                  "acpEnd=%d", this, acpStart, acpEnd));
+        }
+      }
+    } else if ((sDoNotReturnNoLayoutErrorToGoogleJaInputAtFirstChar ||
+                sDoNotReturnNoLayoutErrorToGoogleJaInputAtCaret) &&
+               kSink->IsGoogleJapaneseInputActive()) {
       
       
       
@@ -5244,6 +5282,14 @@ TSFTextStore::Initialize()
   sDoNotReturnNoLayoutErrorToEasyChangjei =
     Preferences::GetBool(
       "intl.tsf.hack.easy_changjei.do_not_return_no_layout_error", true);
+  sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar =
+    Preferences::GetBool(
+      "intl.tsf.hack.ms_japanese_ime."
+      "do_not_return_no_layout_error_at_first_char", true);
+  sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret =
+    Preferences::GetBool(
+      "intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_caret",
+      true);
   sDoNotReturnNoLayoutErrorToGoogleJaInputAtFirstChar =
     Preferences::GetBool(
       "intl.tsf.hack.google_ja_input."
@@ -5266,6 +5312,8 @@ TSFTextStore::Initialize()
      "sCreateNativeCaretForATOK=%s, "
      "sDoNotReturnNoLayoutErrorToFreeChangJie=%s, "
      "sDoNotReturnNoLayoutErrorToEasyChangjei=%s, "
+     "sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar=%s, "
+     "sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret=%s, "
      "sDoNotReturnNoLayoutErrorToGoogleJaInputAtFirstChar=%s, "
      "sDoNotReturnNoLayoutErrorToGoogleJaInputAtCaret=%s",
      sThreadMgr.get(), sClientId, sDisplayAttrMgr.get(),
@@ -5273,6 +5321,8 @@ TSFTextStore::Initialize()
      GetBoolName(sCreateNativeCaretForATOK),
      GetBoolName(sDoNotReturnNoLayoutErrorToFreeChangJie),
      GetBoolName(sDoNotReturnNoLayoutErrorToEasyChangjei),
+     GetBoolName(sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar),
+     GetBoolName(sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret),
      GetBoolName(sDoNotReturnNoLayoutErrorToGoogleJaInputAtFirstChar),
      GetBoolName(sDoNotReturnNoLayoutErrorToGoogleJaInputAtCaret)));
 }
