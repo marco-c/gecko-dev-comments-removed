@@ -796,21 +796,49 @@ nsBMPDecoder::ReadPixelRow(const char* aData)
           mH.mBpp == 32) {
         
         
+        
+        
+        
+        
+        
         while (lpos > 0) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          if (src[3] != 0) {
+          if (!mDoesHaveTransparency && src[3] != 0) {
+            
+            
+            
+
+            
+            if (mDownscaler) {
+              mDownscaler->ResetForNextProgressivePass();
+            }
+
+            
+            MOZ_ASSERT(mCurrentPos == 0);
+            int32_t currentRow = mCurrentRow;
+            mCurrentRow = AbsoluteHeight();
+            while (mCurrentRow > currentRow) {
+              dst = RowBuffer();
+              for (int32_t i = 0; i < mH.mWidth; i++) {
+                SetPixel(dst, 0, 0, 0, 0);
+              }
+              FinishRow();
+            }
+
+            
+            dst = RowBuffer();
+            int32_t n = mH.mWidth - lpos;
+            for (int32_t i = 0; i < n; i++) {
+              SetPixel(dst, 0, 0, 0, 0);
+            }
+
             MOZ_ASSERT(mMayHaveTransparency);
             mDoesHaveTransparency = true;
           }
-          SetPixel(dst, src[2], src[1], src[0], src[3]);
+
+          
+          
+          SetPixel(dst, src[2], src[1], src[0],
+                   mDoesHaveTransparency ? src[3] : 0xff);
           src += 4;
           --lpos;
         }
