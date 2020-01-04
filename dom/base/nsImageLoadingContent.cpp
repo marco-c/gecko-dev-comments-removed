@@ -673,7 +673,7 @@ nsImageLoadingContent::ForceReload(const mozilla::dom::Optional<bool>& aNotify,
   ImageLoadType loadType = \
     (mCurrentRequestFlags & REQUEST_IS_IMAGESET) ? eImageLoadType_Imageset
                                                  : eImageLoadType_Normal;
-  nsresult rv = LoadImage(currentURI, true, notify, loadType, nullptr,
+  nsresult rv = LoadImage(currentURI, true, notify, loadType, true, nullptr,
                           nsIRequest::VALIDATE_ALWAYS);
   if (NS_FAILED(rv)) {
     aError.Throw(rv);
@@ -758,6 +758,9 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
   }
 
   
+  FireEvent(NS_LITERAL_STRING("loadstart"));
+
+  
   nsCOMPtr<nsIURI> imageURI;
   nsresult rv = StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
   if (NS_FAILED(rv)) {
@@ -788,7 +791,7 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
 
   NS_TryToSetImmutable(imageURI);
 
-  return LoadImage(imageURI, aForce, aNotify, aImageLoadType, doc);
+  return LoadImage(imageURI, aForce, aNotify, aImageLoadType, false, doc);
 }
 
 nsresult
@@ -796,9 +799,15 @@ nsImageLoadingContent::LoadImage(nsIURI* aNewURI,
                                  bool aForce,
                                  bool aNotify,
                                  ImageLoadType aImageLoadType,
+                                 bool aLoadStart,
                                  nsIDocument* aDocument,
                                  nsLoadFlags aLoadFlags)
 {
+  
+  if (aLoadStart) {
+    FireEvent(NS_LITERAL_STRING("loadstart"));
+  }
+
   if (!mLoadingEnabled) {
     
     
