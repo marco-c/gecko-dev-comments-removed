@@ -624,6 +624,23 @@ function waitForStyleEditor(toolbox, href) {
 
 
 
+
+
+
+
+
+function waitForClipboard(setup, expected) {
+  let def = defer();
+  SimpleTest.waitForClipboard(expected, setup, def.resolve, def.reject);
+  return def.promise;
+}
+
+
+
+
+
+
+
 function containsFocus(doc, container) {
   let elm = doc.activeElement;
   while (elm) {
