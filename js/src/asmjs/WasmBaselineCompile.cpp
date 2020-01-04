@@ -1727,12 +1727,6 @@ class BaseCompiler
     bool endFunction() {
         
         
-
-        if (maxFramePushed_ > 256 * 1024)
-            return false;
-
-        
-        
         
 
         masm.bind(&outOfLinePrologue_);
@@ -1771,6 +1765,12 @@ class BaseCompiler
             return false;
 
         compileResults_.offsets().end = masm.currentOffset();
+
+        
+        
+
+        if (maxFramePushed_ > 256 * 1024)
+            return false;
 
         return true;
     }
