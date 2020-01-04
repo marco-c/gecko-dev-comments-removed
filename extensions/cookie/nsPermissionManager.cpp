@@ -122,6 +122,9 @@ GetOriginFromPrincipal(nsIPrincipal* aPrincipal, nsACString& aOrigin)
   
   attrs.mPrivateBrowsingId = 0;
 
+  
+  attrs.mUserContextId = nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
+
   attrs.CreateSuffix(suffix);
   aOrigin.Append(suffix);
   return NS_OK;
