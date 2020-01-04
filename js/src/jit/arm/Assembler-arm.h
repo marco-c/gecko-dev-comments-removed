@@ -648,32 +648,12 @@ class Imm8 : public Operand2
   public:
     static datastore::Imm8mData EncodeImm(uint32_t imm) {
         
-        if (imm == 0)
-            return datastore::Imm8mData(0, 0);
-        int left = mozilla::CountLeadingZeroes32(imm) & 30;
         
-        
-        
-        if (left >= 24)
-            return datastore::Imm8mData(imm, 0);
-
-        
-        
-        int no_imm = imm & ~(0xff << (24 - left));
-        if (no_imm == 0) {
-            return  datastore::Imm8mData(imm >> (24 - left), ((8 + left) >> 1));
+        for (int rot = 0; rot < 16; rot++) {
+            uint32_t rotimm = mozilla::RotateLeft(imm, rot*2);
+            if (rotimm <= 0xFF)
+                return datastore::Imm8mData(rotimm, rot);
         }
-        
-        int right = 32 - (mozilla::CountLeadingZeroes32(no_imm) & 30);
-        
-        
-        if (right >= 8)
-            return datastore::Imm8mData();
-        
-        
-        unsigned int mask = imm << (8 - right) | imm >> (24 + right);
-        if (mask <= 0xff)
-            return datastore::Imm8mData(mask, (8 - right) >> 1);
         return datastore::Imm8mData();
     }
 
