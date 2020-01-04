@@ -86,16 +86,6 @@ enum class StyleClipPathGeometryBox : uint8_t {
 };
 
 
-
-enum class StyleFloat : uint8_t {
-  None_,
-  Left,
-  Right,
-  InlineStart,
-  InlineEnd
-};
-
-
 enum class StyleFloatEdge : uint8_t {
   ContentBox,
   MarginBox,
@@ -133,17 +123,19 @@ enum class StyleUserFocus : uint8_t {
 };
 
 
-#define NS_STYLE_USER_SELECT_NONE       0
-#define NS_STYLE_USER_SELECT_TEXT       1
-#define NS_STYLE_USER_SELECT_ELEMENT    2
-#define NS_STYLE_USER_SELECT_ELEMENTS   3
-#define NS_STYLE_USER_SELECT_ALL        4
-#define NS_STYLE_USER_SELECT_TOGGLE     5
-#define NS_STYLE_USER_SELECT_TRI_STATE  6
-#define NS_STYLE_USER_SELECT_AUTO       7 // internal value - please use nsFrame::IsSelectable()
-#define NS_STYLE_USER_SELECT_MOZ_ALL    8 // force selection of all children, unless an ancestor has NONE set - bug 48096
-#define NS_STYLE_USER_SELECT_MOZ_NONE   9 // Like NONE, but doesn't change selection behavior for descendants whose user-select is not AUTO.
-#define NS_STYLE_USER_SELECT_MOZ_TEXT   10 // Like TEXT, except that it won't get overridden by ancestors having ALL.
+enum class StyleUserSelect : uint8_t {
+  None_,
+  Text,
+  Element,
+  Elements,
+  All,
+  Toggle,
+  TriState,
+  Auto,     
+  MozAll,   
+  MozNone,  
+  MozText,  
+};
 
 
 #define NS_STYLE_USER_INPUT_NONE      0
@@ -593,6 +585,13 @@ enum class FillMode : uint32_t;
 #define NS_STYLE_JUSTIFY_CONTENT_CENTER         NS_STYLE_JUSTIFY_CENTER
 #define NS_STYLE_JUSTIFY_CONTENT_SPACE_BETWEEN  NS_STYLE_JUSTIFY_SPACE_BETWEEN
 #define NS_STYLE_JUSTIFY_CONTENT_SPACE_AROUND   NS_STYLE_JUSTIFY_SPACE_AROUND
+
+
+#define NS_STYLE_FLOAT_NONE                     0
+#define NS_STYLE_FLOAT_LEFT                     1
+#define NS_STYLE_FLOAT_RIGHT                    2
+#define NS_STYLE_FLOAT_INLINE_START             3
+#define NS_STYLE_FLOAT_INLINE_END               4
 
 
 #define NS_STYLE_FILTER_NONE                    0

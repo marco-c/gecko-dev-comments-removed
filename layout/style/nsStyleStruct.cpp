@@ -2977,8 +2977,8 @@ nsStyleDisplay::nsStyleDisplay(StyleStructContext aContext)
   , mContain(NS_STYLE_CONTAIN_NONE)
   , mAppearance(NS_THEME_NONE)
   , mPosition(NS_STYLE_POSITION_STATIC)
-  , mFloat(StyleFloat::None_)
-  , mOriginalFloat(StyleFloat::None_)
+  , mFloat(NS_STYLE_FLOAT_NONE)
+  , mOriginalFloat(NS_STYLE_FLOAT_NONE)
   , mBreakType(NS_STYLE_CLEAR_NONE)
   , mBreakInside(NS_STYLE_PAGE_BREAK_AUTO)
   , mBreakBefore(false)
@@ -3103,7 +3103,7 @@ nsStyleDisplay::CalcDifference(const nsStyleDisplay& aNewData) const
       || mPosition != aNewData.mPosition
       || mDisplay != aNewData.mDisplay
       || mContain != aNewData.mContain
-      || (mFloat == StyleFloat::None_) != (aNewData.mFloat == StyleFloat::None_)
+      || (mFloat == NS_STYLE_FLOAT_NONE) != (aNewData.mFloat == NS_STYLE_FLOAT_NONE)
       || mOverflowX != aNewData.mOverflowX
       || mOverflowY != aNewData.mOverflowY
       || mScrollBehavior != aNewData.mScrollBehavior
@@ -4043,7 +4043,7 @@ nsStyleUserInterface::CopyCursorArrayFrom(const nsStyleUserInterface& aSource)
 
 
 nsStyleUIReset::nsStyleUIReset(StyleStructContext aContext)
-  : mUserSelect(NS_STYLE_USER_SELECT_AUTO)
+  : mUserSelect(StyleUserSelect::Auto)
   , mForceBrokenImageIcon(0)
   , mIMEMode(NS_STYLE_IME_MODE_AUTO)
   , mWindowDragging(NS_STYLE_WINDOW_DRAGGING_DEFAULT)

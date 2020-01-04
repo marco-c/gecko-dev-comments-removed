@@ -2830,12 +2830,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mContain;             
   uint8_t mAppearance;          
   uint8_t mPosition;            
-
-  
-  mozilla::StyleFloat mFloat;
-  
-  mozilla::StyleFloat mOriginalFloat;
-
+  uint8_t mFloat;               
+  uint8_t mOriginalFloat;       
+                                
   uint8_t mBreakType;           
   uint8_t mBreakInside;         
   bool mBreakBefore;    
@@ -2959,7 +2956,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   }
 
   bool IsFloatingStyle() const {
-    return mozilla::StyleFloat::None_ != mFloat;
+    return NS_STYLE_FLOAT_NONE != mFloat;
   }
 
   bool IsAbsolutelyPositionedStyle() const {
@@ -3054,7 +3051,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
   
   
-  inline mozilla::StyleFloat PhysicalFloats(mozilla::WritingMode aWM) const;
+  inline uint8_t PhysicalFloats(mozilla::WritingMode aWM) const;
   inline uint8_t PhysicalBreakType(mozilla::WritingMode aWM) const;
 };
 
@@ -3332,7 +3329,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset
            nsChangeHint_ClearAncestorIntrinsics;
   }
 
-  uint8_t   mUserSelect;      
+  mozilla::StyleUserSelect mUserSelect;   
   uint8_t   mForceBrokenImageIcon; 
   uint8_t   mIMEMode;         
   uint8_t   mWindowDragging;  
