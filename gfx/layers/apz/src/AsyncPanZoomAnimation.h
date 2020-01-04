@@ -23,8 +23,7 @@ class AsyncPanZoomAnimation {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AsyncPanZoomAnimation)
 
 public:
-  explicit AsyncPanZoomAnimation(const TimeDuration& aRepaintInterval)
-    : mRepaintInterval(aRepaintInterval)
+  explicit AsyncPanZoomAnimation()
   { }
 
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
@@ -49,13 +48,6 @@ public:
   Vector<Task*> TakeDeferredTasks() {
     return Move(mDeferredTasks);
   }
-
-  
-
-
-
-
-  TimeDuration mRepaintInterval;
 
 public:
   virtual WheelScrollAnimation* AsWheelScrollAnimation() {
