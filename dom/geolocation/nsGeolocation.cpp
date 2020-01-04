@@ -531,6 +531,13 @@ nsGeolocationRequest::Allow(JS::HandleValue aChoices)
     Update(lastPosition.position);
   } else {
     
+    
+    if (mOptions && mOptions->mTimeout == 0 && !mIsWatchPositionRequest) {
+      NotifyError(nsIDOMGeoPositionError::TIMEOUT);
+      return NS_OK;
+    }
+
+    
     nsresult rv = gs->StartDevice(GetPrincipal());
 
     if (NS_FAILED(rv)) {
