@@ -525,12 +525,6 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason, ObjectGroupList
     }
     TIME_END(pretenure);
 
-    TIME_START(logPromotionsToTenured);
-    for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
-        zone->logPromotionsToTenured();
-    }
-    TIME_END(logPromotionsToTenured);
-
     
     
     
@@ -569,8 +563,7 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason, ObjectGroupList
             {" clrSB", TIME_TOTAL(clearStoreBuffer)},
             {" sweep", TIME_TOTAL(sweep)},
             {"resize", TIME_TOTAL(resize)},
-            {"pretnr", TIME_TOTAL(pretenure)},
-            {"logPtT", TIME_TOTAL(logPromotionsToTenured)}
+            {"pretnr", TIME_TOTAL(pretenure)}
         };
         static int printedHeader = 0;
         if ((printedHeader++ % 200) == 0) {
