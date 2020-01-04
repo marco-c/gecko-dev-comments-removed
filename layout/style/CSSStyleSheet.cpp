@@ -1533,27 +1533,6 @@ CSSStyleSheet::AppendStyleSheet(CSSStyleSheet* aSheet)
 }
 
 void
-CSSStyleSheet::InsertStyleSheetAt(CSSStyleSheet* aSheet, int32_t aIndex)
-{
-  NS_PRECONDITION(nullptr != aSheet, "null arg");
-
-  WillDirty();
-  RefPtr<CSSStyleSheet>* tail = &mInner->mFirstChild;
-  while (*tail && aIndex) {
-    --aIndex;
-    tail = &(*tail)->mNext;
-  }
-  aSheet->mNext = *tail;
-  *tail = aSheet;
-
-  
-  
-  aSheet->mParent = this;
-  aSheet->mDocument = mDocument;
-  DidDirty();
-}
-
-void
 CSSStyleSheet::AppendStyleRule(css::Rule* aRule)
 {
   NS_PRECONDITION(nullptr != aRule, "null arg");
