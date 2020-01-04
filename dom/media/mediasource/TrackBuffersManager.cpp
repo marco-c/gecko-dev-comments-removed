@@ -1050,7 +1050,8 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
     
     for (uint32_t i = 0; i < crypto->mInitDatas.Length(); i++) {
       NS_DispatchToMainThread(
-        new DispatchKeyNeededEvent(mParentDecoder, crypto->mInitDatas[i].mInitData, NS_LITERAL_STRING("cenc")));
+        new DispatchKeyNeededEvent(mParentDecoder, crypto->mInitDatas[i].mInitData,
+                                   crypto->mInitDatas[i].mType));
     }
 #endif 
     info.mCrypto = *crypto;
