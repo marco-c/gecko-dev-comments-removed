@@ -167,7 +167,8 @@ public:
       nscolor mColor;
     } mPaintDefinition;
 
-    nsIFrame* mFrame;
+    
+    MOZ_INIT_OUTSIDE_CTOR nsIFrame* mFrame;
     
     gfxMatrix mContextMatrix;
     nsStyleSVGPaintType mPaintType;
