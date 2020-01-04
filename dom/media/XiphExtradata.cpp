@@ -69,7 +69,7 @@ bool XiphExtradataToHeaders(nsTArray<unsigned char*>& aHeaders,
     
     total += headerLen;
   }
-  aHeaderLens.AppendElement(aAvailable);
+  aHeaderLens.AppendElement(aAvailable - total);
   for (int i = 0; i < nHeaders; i++) {
     aHeaders.AppendElement(aData);
     aData += aHeaderLens[i];
