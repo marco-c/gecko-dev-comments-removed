@@ -7419,23 +7419,6 @@ var gIdentityHandler = {
       SitePermissions.remove(gBrowser.currentURI, aPermission.id);
       this._permissionJustRemoved = true;
       this.updatePermissionHint();
-
-      
-      let histogram = Services.telemetry.getKeyedHistogramById("WEB_PERMISSION_CLEARED");
-
-      let permissionType;
-      if (aPermission.state == SitePermissions.ALLOW) {
-        
-        permissionType = 1;
-      } else if (aPermission.state == SitePermissions.BLOCK) {
-        
-        permissionType = 2;
-      }
-      
-      
-
-      histogram.add("(all)", permissionType);
-      histogram.add(aPermission.id, permissionType);
     });
 
     container.appendChild(img);
