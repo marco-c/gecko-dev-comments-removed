@@ -81,7 +81,7 @@ public:
                             Layer::ScrollDirection aDirection) const;
 
   
-  bool HasApzcPannedIntoOverscroll() const;
+  bool HasOverscrolledApzc() const;
 
   
   bool HasFastFlungApzc() const;

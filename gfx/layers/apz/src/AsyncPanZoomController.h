@@ -791,9 +791,6 @@ private:
 
 
   static bool IsTransformingState(PanZoomState aState);
-  bool IsInPanningState() const;
-
-
 
   
 
@@ -1035,9 +1032,7 @@ public:
     return mX.IsOverscrolled() || mY.IsOverscrolled();
   }
 
-  bool IsPannedIntoOverscroll() const {
-    return IsOverscrolled() && IsInPanningState();
-  }
+  bool IsInPanningState() const;
 
 private:
   
