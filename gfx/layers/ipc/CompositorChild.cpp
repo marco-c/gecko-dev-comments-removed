@@ -415,18 +415,22 @@ CompositorChild::RecvClearCachedResources(const uint64_t& aId)
 void
 CompositorChild::ActorDestroy(ActorDestroyReason aWhy)
 {
-  MOZ_ASSERT(!mCanSend);
   MOZ_ASSERT(sCompositor == this);
 
+  if (aWhy == AbnormalShutdown) {
 #ifdef MOZ_B2G
   
   
   
   
-  if (aWhy == AbnormalShutdown) {
     NS_RUNTIMEABORT("ActorDestroy by IPC channel failure at CompositorChild");
-  }
 #endif
+
+    
+    
+    mCanSend = false;
+    gfxCriticalNote << "Receive IPC close with reason=" << aWhy;
+  }
 
   MessageLoop::current()->PostTask(
     FROM_HERE,
