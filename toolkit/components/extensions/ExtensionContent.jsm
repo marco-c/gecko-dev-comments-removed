@@ -55,6 +55,8 @@ var {
   ChildAPIManager,
 } = ExtensionUtils;
 
+XPCOMUtils.defineLazyGetter(this, "console", ExtensionUtils.getConsole);
+
 function isWhenBeforeOrSame(when1, when2) {
   let table = {"document_start": 0,
                "document_end": 1,
@@ -415,13 +417,21 @@ class ExtensionContext extends BaseContext {
     
     Cu.waiveXrays(this.sandbox).chrome = this.chromeObj;
 
+    let apis = {
+      "storage": "chrome://extensions/content/schemas/storage.json",
+      "test": "chrome://extensions/content/schemas/test.json",
+    };
+
     let incognito = PrivateBrowsingUtils.isContentWindowPrivate(this.contentWindow);
-    this.childManager = new ChildAPIManager(this, mm, ["storage", "test"], {
+    this.childManager = new ChildAPIManager(this, mm, Object.keys(apis), {
       type: "content_script",
       url,
       incognito,
     });
 
+    for (let api in apis) {
+      Schemas.load(apis[api]);
+    }
     Schemas.inject(this.chromeObj, this.childManager);
 
     injectAPI(api(this), this.chromeObj);
@@ -795,10 +805,6 @@ BrowserExtensionContent.prototype = {
 
   localize(...args) {
     return this.localeData.localize(...args);
-  },
-
-  hasPermission(perm) {
-    return this.permissions.has(perm);
   },
 };
 

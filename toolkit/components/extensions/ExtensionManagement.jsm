@@ -11,14 +11,14 @@ const Cc = Components.classes;
 const Cu = Components.utils;
 const Cr = Components.results;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "UUIDMap", () => {
-  let {UUIDMap} = Cu.import("resource://gre/modules/Extension.jsm", {});
-  return UUIDMap;
-});
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionUtils",
+                                  "resource://gre/modules/ExtensionUtils.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "console", () => ExtensionUtils.getConsole());
 
 
 
@@ -110,15 +110,6 @@ var APIs = {
   },
 };
 
-function getURLForExtension(id, path = "") {
-  let uuid = UUIDMap.get(id, false);
-  if (!uuid) {
-    Cu.reportError(`Called getURLForExtension on unmapped extension ${id}`);
-    return null;
-  }
-  return `moz-extension://${uuid}/${path}`;
-}
-
 
 
 
@@ -166,7 +157,6 @@ var Service = {
     handler.setSubstitution(uuid, uri);
 
     this.uuidMap.set(uuid, extension);
-    this.aps.setAddonHasPermissionCallback(extension.id, extension.hasPermission.bind(extension));
     this.aps.setAddonLoadURICallback(extension.id, this.checkAddonMayLoad.bind(this, extension));
     this.aps.setAddonLocalizeCallback(extension.id, extension.localize.bind(extension));
     this.aps.setAddonCSP(extension.id, extension.manifest.content_security_policy);
@@ -177,7 +167,6 @@ var Service = {
   shutdownExtension(uuid) {
     let extension = this.uuidMap.get(uuid);
     this.uuidMap.delete(uuid);
-    this.aps.setAddonHasPermissionCallback(extension.id, null);
     this.aps.setAddonLoadURICallback(extension.id, null);
     this.aps.setAddonLocalizeCallback(extension.id, null);
     this.aps.setAddonCSP(extension.id, null);
@@ -315,8 +304,6 @@ this.ExtensionManagement = {
 
   getFrameId: Frames.getId.bind(Frames),
   getParentFrameId: Frames.getParentId.bind(Frames),
-
-  getURLForExtension,
 
   
   getAddonIdForWindow,
