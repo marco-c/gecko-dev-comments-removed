@@ -883,7 +883,7 @@ nsSVGElement::GetAttributeChangeHint(const nsIAtom* aAttribute,
     
     
     
-    NS_UpdateHint(retval, nsChangeHint_ReconstructFrame);
+    retval |= nsChangeHint_ReconstructFrame;
   }
   return retval;
 }

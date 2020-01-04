@@ -916,18 +916,17 @@ nsChangeHint nsStyleSVG::CalcDifference(const nsStyleSVG& aOther) const
     
     
     
-    NS_UpdateHint(hint, nsChangeHint_UpdateEffects);
-    NS_UpdateHint(hint, nsChangeHint_NeedReflow);
-    NS_UpdateHint(hint, nsChangeHint_NeedDirtyReflow); 
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
-    return hint;
+    return nsChangeHint_UpdateEffects |
+           nsChangeHint_NeedReflow |
+           nsChangeHint_NeedDirtyReflow | 
+           nsChangeHint_RepaintFrame;
   }
 
   if (mFill != aOther.mFill ||
       mStroke != aOther.mStroke ||
       mFillOpacity != aOther.mFillOpacity ||
       mStrokeOpacity != aOther.mStrokeOpacity) {
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_RepaintFrame;
     if (HasStroke() != aOther.HasStroke() ||
         (!HasStroke() && HasFill() != aOther.HasFill())) {
       
@@ -936,12 +935,12 @@ nsChangeHint nsStyleSVG::CalcDifference(const nsStyleSVG& aOther) const
       
       
       
-      NS_UpdateHint(hint, nsChangeHint_NeedReflow);
-      NS_UpdateHint(hint, nsChangeHint_NeedDirtyReflow); 
+      hint |= nsChangeHint_NeedReflow |
+              nsChangeHint_NeedDirtyReflow; 
     }
     if (PaintURIChanged(mFill, aOther.mFill) ||
         PaintURIChanged(mStroke, aOther.mStroke)) {
-      NS_UpdateHint(hint, nsChangeHint_UpdateEffects);
+      hint |= nsChangeHint_UpdateEffects;
     }
   }
 
@@ -955,10 +954,10 @@ nsChangeHint nsStyleSVG::CalcDifference(const nsStyleSVG& aOther) const
       mStrokeLinecap         != aOther.mStrokeLinecap         ||
       mStrokeLinejoin        != aOther.mStrokeLinejoin        ||
       mTextAnchor            != aOther.mTextAnchor) {
-    NS_UpdateHint(hint, nsChangeHint_NeedReflow);
-    NS_UpdateHint(hint, nsChangeHint_NeedDirtyReflow); 
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
-    return hint;
+    return hint |
+           nsChangeHint_NeedReflow |
+           nsChangeHint_NeedDirtyReflow | 
+           nsChangeHint_RepaintFrame;
   }
 
   if (hint & nsChangeHint_RepaintFrame) {
@@ -978,16 +977,15 @@ nsChangeHint nsStyleSVG::CalcDifference(const nsStyleSVG& aOther) const
        mStrokeDasharrayFromObject != aOther.mStrokeDasharrayFromObject ||
        mStrokeDashoffsetFromObject != aOther.mStrokeDashoffsetFromObject ||
        mStrokeWidthFromObject != aOther.mStrokeWidthFromObject) {
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
-    return hint;
+    return hint | nsChangeHint_RepaintFrame;
   }
 
   
-  for (uint32_t i=0; i<mStrokeDasharrayLength; i++)
+  for (uint32_t i=0; i<mStrokeDasharrayLength; i++) {
     if (mStrokeDasharray[i] != aOther.mStrokeDasharray[i]) {
-      NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
-      return hint;
+      return hint | nsChangeHint_RepaintFrame;
     }
+  }
 
   return hint;
 }
@@ -1286,32 +1284,32 @@ nsChangeHint nsStyleSVGReset::CalcDifference(const nsStyleSVGReset& aOther) cons
   nsChangeHint hint = nsChangeHint(0);
 
   if (mClipPath != aOther.mClipPath) {
-    NS_UpdateHint(hint, nsChangeHint_UpdateEffects);
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_UpdateEffects |
+            nsChangeHint_RepaintFrame;
     
     
-    NS_UpdateHint(hint, nsChangeHint_UpdateOverflow);
+    hint |= nsChangeHint_UpdateOverflow;
   }
 
   if (mDominantBaseline != aOther.mDominantBaseline) {
     
-    NS_UpdateHint(hint, NS_STYLE_HINT_REFLOW);
+    hint |= NS_STYLE_HINT_REFLOW;
   } else if (mVectorEffect  != aOther.mVectorEffect) {
     
     
     
     
     
-    NS_UpdateHint(hint, nsChangeHint_NeedReflow);
-    NS_UpdateHint(hint, nsChangeHint_NeedDirtyReflow); 
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_NeedReflow |
+            nsChangeHint_NeedDirtyReflow | 
+            nsChangeHint_RepaintFrame;
   } else if (mStopColor     != aOther.mStopColor     ||
              mFloodColor    != aOther.mFloodColor    ||
              mLightingColor != aOther.mLightingColor ||
              mStopOpacity   != aOther.mStopOpacity   ||
              mFloodOpacity  != aOther.mFloodOpacity  ||
              mMaskType      != aOther.mMaskType) {
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_RepaintFrame;
   }
 
   hint |= mMask.CalcDifference(aOther.mMask);
@@ -1513,7 +1511,7 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
 
   
   if (mZIndex != aOther.mZIndex) {
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_RepaintFrame;
   }
 
   
@@ -1521,8 +1519,8 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
   
   if (mObjectFit != aOther.mObjectFit ||
       mObjectPosition != aOther.mObjectPosition) {
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame |
-                        nsChangeHint_NeedReflow);
+    hint |= nsChangeHint_RepaintFrame |
+            nsChangeHint_NeedReflow;
   }
 
   if (mOrder != aOther.mOrder) {
@@ -1599,13 +1597,13 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
   if (mJustifyContent != aOther.mJustifyContent ||
       mJustifyItems != aOther.mJustifyItems ||
       mJustifySelf != aOther.mJustifySelf) {
-    NS_UpdateHint(hint, nsChangeHint_NeedReflow);
+    hint |= nsChangeHint_NeedReflow;
   }
 
   
   
   if (mAlignContent != aOther.mAlignContent) {
-    NS_UpdateHint(hint, nsChangeHint_NeedReflow);
+    hint |= nsChangeHint_NeedReflow;
   }
 
   bool widthChanged = mWidth != aOther.mWidth ||
@@ -1634,22 +1632,22 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
       
       
       
-      NS_UpdateHint(hint, nsChangeHint_NeedReflow |
-          nsChangeHint_UpdateComputedBSize |
-          nsChangeHint_ReflowChangesSizeOrPosition);
+      hint |= nsChangeHint_NeedReflow |
+              nsChangeHint_UpdateComputedBSize |
+              nsChangeHint_ReflowChangesSizeOrPosition;
     }
 
     if (isVertical ? heightChanged : widthChanged) {
       
       
       
-      NS_UpdateHint(hint, nsChangeHint_AllReflowHints &
-                          ~(nsChangeHint_ClearDescendantIntrinsics |
-                            nsChangeHint_NeedDirtyReflow));
+      hint |= nsChangeHint_AllReflowHints &
+              ~(nsChangeHint_ClearDescendantIntrinsics |
+                nsChangeHint_NeedDirtyReflow);
     }
   } else {
     if (widthChanged || heightChanged) {
-      NS_UpdateHint(hint, nsChangeHint_NeutralChange);
+      hint |= nsChangeHint_NeutralChange;
     }
   }
 
@@ -1662,10 +1660,10 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
   
   if (mOffset != aOther.mOffset) {
     if (IsAutonessEqual(mOffset, aOther.mOffset)) {
-      NS_UpdateHint(hint, nsChangeHint(nsChangeHint_RecomputePosition |
-                                       nsChangeHint_UpdateParentOverflow));
+      hint |= nsChangeHint_RecomputePosition |
+              nsChangeHint_UpdateParentOverflow;
     } else {
-      NS_UpdateHint(hint, nsChangeHint_AllReflowHints);
+      hint |= nsChangeHint_AllReflowHints;
     }
   }
   return hint;
@@ -2364,7 +2362,7 @@ nsStyleImageLayers::CalcDifference(const nsStyleImageLayers& aOther) const
       mPositionXCount != aOther.mPositionXCount ||
       mPositionYCount != aOther.mPositionYCount ||
       mSizeCount != aOther.mSizeCount) {
-    NS_UpdateHint(hint, nsChangeHint_NeutralChange);
+    hint |= nsChangeHint_NeutralChange;
   }
 
   return hint;
@@ -2582,11 +2580,11 @@ nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aOthe
 {
   nsChangeHint hint = nsChangeHint(0);
   if (!EqualURIs(mSourceURI, aOther.mSourceURI)) {
-    NS_UpdateHint(hint, nsChangeHint_UpdateEffects);
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_UpdateEffects |
+            nsChangeHint_RepaintFrame;
     
     
-    NS_UpdateHint(hint, nsChangeHint_UpdateOverflow);
+    hint |= nsChangeHint_UpdateOverflow;
   } else if (mAttachment != aOther.mAttachment ||
              mClip != aOther.mClip ||
              mOrigin != aOther.mOrigin ||
@@ -2945,7 +2943,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
       || mScrollSnapDestination != aOther.mScrollSnapDestination
       || mTopLayer != aOther.mTopLayer
       || mResize != aOther.mResize)
-    NS_UpdateHint(hint, nsChangeHint_ReconstructFrame);
+    hint |= nsChangeHint_ReconstructFrame;
 
   
 
@@ -2974,15 +2972,15 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
 
   if (mFloats != aOther.mFloats) {
     
-    NS_UpdateHint(hint, nsChangeHint_AllReflowHints &
-                        ~(nsChangeHint_ClearDescendantIntrinsics |
-                          nsChangeHint_NeedDirtyReflow));
+    hint |= nsChangeHint_AllReflowHints &
+            ~(nsChangeHint_ClearDescendantIntrinsics |
+              nsChangeHint_NeedDirtyReflow);
   }
 
   if (mVerticalAlign != aOther.mVerticalAlign) {
     
     
-    NS_UpdateHint(hint, NS_STYLE_HINT_REFLOW);
+    hint |= NS_STYLE_HINT_REFLOW;
   }
 
   
@@ -2994,11 +2992,11 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
       || mAppearance != aOther.mAppearance
       || mOrient != aOther.mOrient
       || mOverflowClipBox != aOther.mOverflowClipBox)
-    NS_UpdateHint(hint, nsChangeHint_AllReflowHints |
-                        nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_AllReflowHints |
+            nsChangeHint_RepaintFrame;
 
   if (mIsolation != aOther.mIsolation) {
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_RepaintFrame;
   }
 
   
@@ -3008,9 +3006,9 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
     
     
     
-    NS_UpdateHint(hint, nsChangeHint_UpdateContainingBlock |
-                        nsChangeHint_UpdateOverflow |
-                        nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_UpdateContainingBlock |
+            nsChangeHint_UpdateOverflow |
+            nsChangeHint_RepaintFrame;
   } else {
     
 
@@ -3027,13 +3025,13 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
     if (!mSpecifiedTransform != !aOther.mSpecifiedTransform ||
         (mSpecifiedTransform &&
          *mSpecifiedTransform != *aOther.mSpecifiedTransform)) {
-      NS_UpdateHint(transformHint, nsChangeHint_UpdateTransformLayer);
+      transformHint |= nsChangeHint_UpdateTransformLayer;
 
       if (mSpecifiedTransform &&
           aOther.mSpecifiedTransform) {
-        NS_UpdateHint(transformHint, nsChangeHint_UpdatePostTransformOverflow);
+        transformHint |= nsChangeHint_UpdatePostTransformOverflow;
       } else {
-        NS_UpdateHint(transformHint, nsChangeHint_UpdateOverflow);
+        transformHint |= nsChangeHint_UpdateOverflow;
       }
     }
 
@@ -3041,35 +3039,35 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
       nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
     for (uint8_t index = 0; index < 3; ++index)
       if (mTransformOrigin[index] != aOther.mTransformOrigin[index]) {
-        NS_UpdateHint(transformHint, nsChangeHint_UpdateTransformLayer |
-                                     nsChangeHint_UpdatePostTransformOverflow);
+        transformHint |= nsChangeHint_UpdateTransformLayer |
+                         nsChangeHint_UpdatePostTransformOverflow;
         break;
       }
     
     for (uint8_t index = 0; index < 2; ++index)
       if (mPerspectiveOrigin[index] != aOther.mPerspectiveOrigin[index]) {
-        NS_UpdateHint(transformHint, kUpdateOverflowAndRepaintHint);
+        transformHint |= kUpdateOverflowAndRepaintHint;
         break;
       }
 
     if (HasPerspectiveStyle() != aOther.HasPerspectiveStyle()) {
       
-      NS_UpdateHint(hint, nsChangeHint_UpdateContainingBlock);
+      hint |= nsChangeHint_UpdateContainingBlock;
     }
 
     if (mChildPerspective != aOther.mChildPerspective ||
         mTransformStyle != aOther.mTransformStyle ||
         mTransformBox != aOther.mTransformBox)
-      NS_UpdateHint(transformHint, kUpdateOverflowAndRepaintHint);
+      transformHint |= kUpdateOverflowAndRepaintHint;
 
     if (mBackfaceVisibility != aOther.mBackfaceVisibility)
-      NS_UpdateHint(transformHint, nsChangeHint_RepaintFrame);
+      transformHint |= nsChangeHint_RepaintFrame;
 
     if (transformHint) {
       if (HasTransformStyle()) {
-        NS_UpdateHint(hint, transformHint);
+        hint |= transformHint;
       } else {
-        NS_UpdateHint(hint, nsChangeHint_NeutralChange);
+        hint |= nsChangeHint_NeutralChange;
       }
     }
   }
@@ -3084,11 +3082,11 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
   if (willChangeBitsChanged & (NS_STYLE_WILL_CHANGE_STACKING_CONTEXT |
                                NS_STYLE_WILL_CHANGE_SCROLL |
                                NS_STYLE_WILL_CHANGE_OPACITY)) {
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_RepaintFrame;
   }
 
   if (willChangeBitsChanged & NS_STYLE_WILL_CHANGE_FIXPOS_CB) {
-    NS_UpdateHint(hint, nsChangeHint_UpdateContainingBlock);
+    hint |= nsChangeHint_UpdateContainingBlock;
   }
 
   
@@ -3127,7 +3125,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
        mAnimationPlayStateCount != aOther.mAnimationPlayStateCount ||
        mAnimationIterationCountCount != aOther.mAnimationIterationCountCount ||
        mScrollSnapCoordinate != aOther.mScrollSnapCoordinate)) {
-    NS_UpdateHint(hint, nsChangeHint_NeutralChange);
+    hint |= nsChangeHint_NeutralChange;
   }
 
   return hint;
@@ -3170,29 +3168,29 @@ nsChangeHint nsStyleVisibility::CalcDifference(const nsStyleVisibility& aOther) 
     
     
     
-    NS_UpdateHint(hint, nsChangeHint_ReconstructFrame);
+    hint |= nsChangeHint_ReconstructFrame;
   } else {
     if ((mImageOrientation != aOther.mImageOrientation)) {
-      NS_UpdateHint(hint, nsChangeHint_AllReflowHints);
-      NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+      hint |= nsChangeHint_AllReflowHints |
+              nsChangeHint_RepaintFrame;
     }
     if (mVisible != aOther.mVisible) {
       if ((NS_STYLE_VISIBILITY_COLLAPSE == mVisible) ||
           (NS_STYLE_VISIBILITY_COLLAPSE == aOther.mVisible)) {
-        NS_UpdateHint(hint, NS_STYLE_HINT_REFLOW);
+        hint |= NS_STYLE_HINT_REFLOW;
       } else {
-        NS_UpdateHint(hint, NS_STYLE_HINT_VISUAL);
+        hint |= NS_STYLE_HINT_VISUAL;
       }
     }
     if (mTextOrientation != aOther.mTextOrientation) {
-      NS_UpdateHint(hint, NS_STYLE_HINT_REFLOW);
+      hint |= NS_STYLE_HINT_REFLOW;
     }
     if (mImageRendering != aOther.mImageRendering) {
       hint |= nsChangeHint_RepaintFrame;
     }
     if (mColorAdjust != aOther.mColorAdjust) {
       
-      NS_UpdateHint(hint, nsChangeHint_NeutralChange);
+      hint |= nsChangeHint_NeutralChange;
     }
   }
   return hint;
@@ -3680,8 +3678,8 @@ nsChangeHint nsStyleText::CalcDifference(const nsStyleText& aOther) const
       mWebkitTextFillColor != aOther.mWebkitTextFillColor ||
       mWebkitTextStrokeColorForeground != aOther.mWebkitTextStrokeColorForeground ||
       mWebkitTextStrokeColor != aOther.mWebkitTextStrokeColor) {
-    NS_UpdateHint(hint, nsChangeHint_SchedulePaint);
-    NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+    hint |= nsChangeHint_SchedulePaint |
+            nsChangeHint_RepaintFrame;
   }
 
   if (hint) {
@@ -3783,12 +3781,12 @@ nsChangeHint nsStyleUserInterface::CalcDifference(const nsStyleUserInterface& aO
 {
   nsChangeHint hint = nsChangeHint(0);
   if (mCursor != aOther.mCursor)
-    NS_UpdateHint(hint, nsChangeHint_UpdateCursor);
+    hint |= nsChangeHint_UpdateCursor;
 
   
   
   if (mCursorArrayLength > 0 || aOther.mCursorArrayLength > 0)
-    NS_UpdateHint(hint, nsChangeHint_UpdateCursor);
+    hint |= nsChangeHint_UpdateCursor;
 
   if (mPointerEvents != aOther.mPointerEvents) {
     
@@ -3799,19 +3797,19 @@ nsChangeHint nsStyleUserInterface::CalcDifference(const nsStyleUserInterface& aO
   }
 
   if (mUserModify != aOther.mUserModify)
-    NS_UpdateHint(hint, NS_STYLE_HINT_VISUAL);
+    hint |= NS_STYLE_HINT_VISUAL;
   
   if (mUserInput != aOther.mUserInput) {
     if (NS_STYLE_USER_INPUT_NONE == mUserInput ||
         NS_STYLE_USER_INPUT_NONE == aOther.mUserInput) {
-      NS_UpdateHint(hint, NS_STYLE_HINT_FRAMECHANGE);
+      hint |= NS_STYLE_HINT_FRAMECHANGE;
     } else {
-      NS_UpdateHint(hint, nsChangeHint_NeutralChange);
+      hint |= nsChangeHint_NeutralChange;
     }
   }
 
   if (mUserFocus != aOther.mUserFocus) {
-    NS_UpdateHint(hint, nsChangeHint_NeutralChange);
+    hint |= nsChangeHint_NeutralChange;
   }
 
   return hint;

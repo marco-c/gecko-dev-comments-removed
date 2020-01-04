@@ -4954,20 +4954,20 @@ HTMLInputElement::GetAttributeChangeHint(const nsIAtom* aAttribute,
       
       
       aAttribute == nsGkAtoms::directory) {
-    NS_UpdateHint(retval, NS_STYLE_HINT_FRAMECHANGE);
+    retval |= NS_STYLE_HINT_FRAMECHANGE;
   } else if (mType == NS_FORM_INPUT_IMAGE &&
              (aAttribute == nsGkAtoms::alt ||
               aAttribute == nsGkAtoms::value)) {
     
     
-    NS_UpdateHint(retval, NS_STYLE_HINT_FRAMECHANGE);
+    retval |= NS_STYLE_HINT_FRAMECHANGE;
   } else if (aAttribute == nsGkAtoms::value) {
-    NS_UpdateHint(retval, NS_STYLE_HINT_REFLOW);
+    retval |= NS_STYLE_HINT_REFLOW;
   } else if (aAttribute == nsGkAtoms::size &&
              IsSingleLineTextControl(false)) {
-    NS_UpdateHint(retval, NS_STYLE_HINT_REFLOW);
+    retval |= NS_STYLE_HINT_REFLOW;
   } else if (PlaceholderApplies() && aAttribute == nsGkAtoms::placeholder) {
-    NS_UpdateHint(retval, NS_STYLE_HINT_FRAMECHANGE);
+    retval |= NS_STYLE_HINT_FRAMECHANGE;
   }
   return retval;
 }

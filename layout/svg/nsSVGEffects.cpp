@@ -326,12 +326,12 @@ nsSVGFilterProperty::DoUpdate()
   if (frame && frame->IsFrameOfType(nsIFrame::eSVG)) {
     
     
-    NS_UpdateHint(changeHint, nsChangeHint_InvalidateRenderingObservers);
+    changeHint |= nsChangeHint_InvalidateRenderingObservers;
   }
 
   
   if (!(frame->GetStateBits() & NS_FRAME_IN_REFLOW)) {
-    NS_UpdateHint(changeHint, nsChangeHint_UpdateOverflow);
+    changeHint |= nsChangeHint_UpdateOverflow;
   }
   frame->PresContext()->RestyleManager()->PostRestyleEvent(
     frame->GetContent()->AsElement(), nsRestyleHint(0), changeHint);
@@ -354,7 +354,7 @@ nsSVGMarkerProperty::DoUpdate()
 
   
   if (!(frame->GetStateBits() & NS_FRAME_IN_REFLOW)) {
-    NS_UpdateHint(changeHint, nsChangeHint_InvalidateRenderingObservers);
+    changeHint |= nsChangeHint_InvalidateRenderingObservers;
     
     
     
