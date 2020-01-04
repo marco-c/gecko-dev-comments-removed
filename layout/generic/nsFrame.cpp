@@ -1600,7 +1600,7 @@ nsIFrame::DisableVisibilityTracking()
   }
 
   
-  OnVisibilityChange(Visibility::NONVISIBLE);
+  OnVisibilityChange(previousVisibility, Visibility::NONVISIBLE);
 }
 
 void
@@ -1636,7 +1636,7 @@ nsIFrame::DecVisibilityCount(VisibilityCounter aCounter,
   }
 
   
-  OnVisibilityChange(newVisibility, aNonvisibleAction);
+  OnVisibilityChange(previousVisibility, newVisibility, aNonvisibleAction);
 }
 
 void
@@ -1667,16 +1667,21 @@ nsIFrame::IncVisibilityCount(VisibilityCounter aCounter)
   }
 
   
-  OnVisibilityChange(newVisibility);
+  OnVisibilityChange(previousVisibility, newVisibility);
 }
 
 void
-nsIFrame::OnVisibilityChange(Visibility aNewVisibility,
+nsIFrame::OnVisibilityChange(Visibility aOldVisibility,
+                             Visibility aNewVisibility,
                              Maybe<OnNonvisible> aNonvisibleAction
                                )
 {
   
   
+  MOZ_ASSERT(aOldVisibility != Visibility::UNTRACKED,
+             "Should've started at Visibility::NONVISIBLE");
+  MOZ_ASSERT(aNewVisibility != Visibility::UNTRACKED,
+             "Shouldn't notify for Visibility::UNTRACKED");
 }
 
 static nsIFrame*

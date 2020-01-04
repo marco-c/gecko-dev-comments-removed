@@ -1169,7 +1169,9 @@ protected:
 
 
 
-  virtual void OnVisibilityChange(Visibility aNewVisibility,
+
+  virtual void OnVisibilityChange(Visibility aOldVisibility,
+                                  Visibility aNewVisibility,
                                   Maybe<OnNonvisible> aNonvisibleAction = Nothing());
 
 public:
