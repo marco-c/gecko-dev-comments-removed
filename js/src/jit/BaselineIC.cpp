@@ -7763,6 +7763,20 @@ TryAttachInstanceOfStub(JSContext* cx, BaselineFrame* frame, ICInstanceOf_Fallba
     if (fun->isBoundFunction())
         return true;
 
+    
+    
+    if (!js::FunctionHasDefaultHasInstance(fun, cx->wellKnownSymbols()))
+        return true;
+
+    
+    
+    if (!fun->hasStaticPrototype() || fun->hasUncacheableProto())
+        return true;
+
+    Value funProto = cx->global()->getPrototype(JSProto_Function);
+    if (funProto.isObject() && fun->staticPrototype() != &funProto.toObject())
+        return true;
+
     Shape* shape = fun->lookupPure(cx->names().prototype);
     if (!shape || !shape->hasSlot() || !shape->hasDefaultGetter())
         return true;
