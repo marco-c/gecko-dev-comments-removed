@@ -4698,11 +4698,13 @@ nsHttpChannel::ContinueProcessRedirectionAfterFallback(nsresult rv)
         redirectingBackToSameURI)
             mCacheEntry->AsyncDoom(nullptr);
 
+    bool hasRef = false;
+    rv = mRedirectURI->GetHasRef(&hasRef);
+
     
     
-    nsAutoCString ref;
-    rv = mRedirectURI->GetRef(ref);
-    if (NS_SUCCEEDED(rv) && ref.IsEmpty()) {
+    if (NS_SUCCEEDED(rv) && !hasRef) {
+        nsAutoCString ref;
         mURI->GetRef(ref);
         if (!ref.IsEmpty()) {
             
