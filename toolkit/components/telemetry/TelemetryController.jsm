@@ -956,6 +956,11 @@ var Impl = {
   getCurrentPingData: function(aSubsession) {
     this._log.trace("getCurrentPingData - subsession: " + aSubsession)
 
+    
+    if (!Telemetry.canRecordBase) {
+      return null;
+    }
+
     const reason = aSubsession ? REASON_GATHER_SUBSESSION_PAYLOAD : REASON_GATHER_PAYLOAD;
     const type = PING_TYPE_MAIN;
     const payload = TelemetrySession.getPayload(reason);
