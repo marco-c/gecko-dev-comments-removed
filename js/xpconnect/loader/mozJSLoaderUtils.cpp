@@ -65,8 +65,11 @@ WriteCachedScript(StartupCache* cache, nsACString& uri, JSContext* cx,
 
     uint32_t size;
     void* data = JS_EncodeScript(cx, script, &size);
-    if (!data)
-        return NS_ERROR_OUT_OF_MEMORY;
+    if (!data) {
+        
+        JS_ClearPendingException(cx);
+        return NS_ERROR_FAILURE;
+    }
 
     MOZ_ASSERT(size);
     nsresult rv = cache->PutBuffer(PromiseFlatCString(uri).get(), static_cast<char*>(data), size);
@@ -79,6 +82,9 @@ WriteCachedFunction(StartupCache* cache, nsACString& uri, JSContext* cx,
                     nsIPrincipal* systemPrincipal, JSFunction* function)
 {
     return NS_ERROR_FAILURE;
+
+
+
 
 
 
