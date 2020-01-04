@@ -917,6 +917,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     bool wrapDebuggeeValue(JSContext* cx, MutableHandleValue vp);
+    bool wrapDebuggeeObject(JSContext* cx, MutableHandleObject obj);
 
     
 
@@ -1076,6 +1077,12 @@ class DebuggerObject : public NativeObject
     static bool executeInGlobal(JSContext* cx, Handle<DebuggerObject*> object,
                                 mozilla::Range<const char16_t> chars, HandleObject bindings,
                                 const EvalOptions& options, MutableHandleValue result);
+    static bool makeDebuggeeValue(JSContext* cx, Handle<DebuggerObject*> object,
+                                  HandleValue value, MutableHandleValue result);
+    static bool unsafeDereference(JSContext* cx, Handle<DebuggerObject*> object,
+                                  MutableHandleObject result);
+    static bool unwrap(JSContext* cx, Handle<DebuggerObject*> object,
+                       MutableHandle<DebuggerObject*> result);
 
   private:
     enum {
