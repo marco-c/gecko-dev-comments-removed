@@ -385,13 +385,7 @@ MediaFormatReader::EnsureDecodersCreated()
       
       
       
-      {
-        MOZ_ASSERT(mCDMProxy);
-        CDMCaps::AutoLock caps(mCDMProxy->Capabilites());
-        mInfo.mVideo.mIsRenderedExternally = caps.CanRenderVideo();
-        mInfo.mAudio.mIsRenderedExternally = caps.CanRenderAudio();
-      }
-
+      MOZ_ASSERT(mCDMProxy);
       mPlatform = PlatformDecoderModule::CreateCDMWrapper(mCDMProxy);
       NS_ENSURE_TRUE(mPlatform, false);
 #else
