@@ -555,7 +555,9 @@ nsFrame::Init(nsIContent*       aContent,
     }
   }
   const nsStyleDisplay *disp = StyleDisplay();
-  if (disp->HasTransform(this)) {
+  if (disp->HasTransform(this) ||
+      EffectCompositor::HasAnimationsForCompositor(this,
+                                                   eCSSProperty_transform)) {
     
     
     mState |= NS_FRAME_MAY_BE_TRANSFORMED;
