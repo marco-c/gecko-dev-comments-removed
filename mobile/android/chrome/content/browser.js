@@ -5565,7 +5565,12 @@ var FormAssistant = {
 
           if (this._showValidationMessage(focused))
             break;
-          this._showAutoCompleteSuggestions(focused, function () {});
+          let checkResultsClick = hasResults => {
+            if (!hasResults) {
+              this._hideFormAssistPopup();
+            }
+          };
+          this._showAutoCompleteSuggestions(focused, checkResultsClick);
         } else {
           
           this._hideFormAssistPopup();
