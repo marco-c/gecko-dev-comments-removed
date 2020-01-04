@@ -94,6 +94,42 @@ TestCJKWithFlowedDelSp()
   return NS_OK;
 }
 
+
+nsresult
+TestCJKWithDisallowLineBreaking()
+{
+  nsString test;
+  nsString result;
+
+  test.AssignLiteral("<html><body>");
+  for (uint32_t i = 0; i < 400; i++) {
+    
+    test.Append(0x5341);
+  }
+  test.AppendLiteral("</body></html>");
+
+  ConvertBufToPlainText(test, nsIDocumentEncoder::OutputFormatted |
+                              nsIDocumentEncoder::OutputCRLineBreak |
+                              nsIDocumentEncoder::OutputLFLineBreak |
+                              nsIDocumentEncoder::OutputFormatFlowed |
+                              nsIDocumentEncoder::OutputDisallowLineBreaking);
+
+  
+  for (uint32_t i = 0; i < 400; i++) {
+    result.Append(0x5341);
+  }
+  result.AppendLiteral("\r\n");
+
+  if (!test.Equals(result)) {
+    fail("Wrong HTML to CJK text serialization with OutputDisallowLineBreaking");
+    return NS_ERROR_FAILURE;
+  }
+
+  passed("HTML to CJK text serialization with OutputDisallowLineBreaking");
+
+  return NS_OK;
+}
+
 nsresult
 TestPrettyPrintedHtml()
 {
@@ -226,6 +262,9 @@ TestPlainTextSerializer()
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = TestPreWrapElementForThunderbird();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = TestCJKWithDisallowLineBreaking();
   NS_ENSURE_SUCCESS(rv, rv);
 
   
