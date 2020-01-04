@@ -438,21 +438,6 @@ MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 
 
 
-void
-MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rhs, Label* label)
-{
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    if (rhs != scratch)
-        movePtr(rhs, scratch);
-    
-    rshiftPtr(Imm32(1), scratch);
-    branchPtr(cond, lhs, scratch, label);
-}
-
-
-
-
 template <typename T>
 void
 MacroAssemblerCompat::addToStackPtr(T t)

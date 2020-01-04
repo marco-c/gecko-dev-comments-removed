@@ -258,15 +258,6 @@ MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 
 
 
-void
-MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rhs, Label* label)
-{
-    branchPtr(cond, lhs, rhs, label);
-}
-
-
-
-
 
 void
 MacroAssemblerX86::convertUInt32ToDouble(Register src, FloatRegister dest)
