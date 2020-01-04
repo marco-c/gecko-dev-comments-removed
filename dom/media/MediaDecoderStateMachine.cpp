@@ -2931,6 +2931,15 @@ MediaDecoderStateMachine::SetAudioCaptured(bool aCaptured)
 
   mAudioCaptured = aCaptured;
   ScheduleStateMachine();
+
+  
+  
+  mAmpleAudioThresholdUsecs = mAudioCaptured ?
+                              detail::AMPLE_AUDIO_USECS / 2 :
+                              detail::AMPLE_AUDIO_USECS;
+  if (mIsAudioPrerolling && DonePrerollingAudio()) {
+    StopPrerollingAudio();
+  }
 }
 
 uint32_t MediaDecoderStateMachine::GetAmpleVideoFrames() const
