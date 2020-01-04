@@ -96,30 +96,10 @@ int ReverbAccumulationBuffer::accumulate(const float* source, size_t numberOfFra
     if (!isSafe)
         return 0;
 
-#ifdef USE_SSE2
-    
-    
-    
-    
-    
-    
-    
-    for (uint32_t i = 0; i < numberOfFrames1; ++i) {
-      destination[writeIndex + i] += source[i];
-    }
-
-    
-    if (numberOfFrames2 > 0) {
-        for (uint32_t i = 0; i < numberOfFrames2; ++i) {
-          destination[i] += source[numberOfFrames1 + i];
-        }
-    }
-#else
     AudioBufferAddWithScale(source, 1.0f, destination + writeIndex, numberOfFrames1);
     if (numberOfFrames2 > 0) {
         AudioBufferAddWithScale(source + numberOfFrames1, 1.0f, destination, numberOfFrames2);
     }
-#endif
 
     return writeIndex;
 }
