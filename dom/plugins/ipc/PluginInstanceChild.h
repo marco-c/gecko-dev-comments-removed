@@ -514,7 +514,7 @@ private:
     
     void PaintRectToSurface(const nsIntRect& aRect,
                             gfxASurface* aSurface,
-                            const gfxRGBA& aColor);
+                            const gfx::Color& aColor);
 
     
     
