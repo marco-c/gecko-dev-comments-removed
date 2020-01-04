@@ -53,6 +53,7 @@
 #include "PluginQuirks.h"
 extern const wchar_t* kFlashFullscreenClass;
 #elif defined(MOZ_WIDGET_GTK)
+#include "mozilla/dom/ContentChild.h"
 #include <gdk/gdk.h>
 #elif defined(XP_MACOSX)
 #include <ApplicationServices/ApplicationServices.h>
@@ -1234,7 +1235,15 @@ PluginInstanceParent::NPP_HandleEvent(void* event)
 #  ifdef MOZ_WIDGET_GTK
         
         
-        gdk_pointer_ungrab(npevent->xbutton.time);
+        
+        
+        
+        if (XRE_IsContentProcess()) {
+          dom::ContentChild* cp = dom::ContentChild::GetSingleton();
+          cp->SendUngrabPointer(npevent->xbutton.time);
+        } else {
+          gdk_pointer_ungrab(npevent->xbutton.time);
+        }
 #  else
         XUngrabPointer(dpy, npevent->xbutton.time);
 #  endif
