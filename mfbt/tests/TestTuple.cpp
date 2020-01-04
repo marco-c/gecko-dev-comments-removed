@@ -27,12 +27,6 @@ using mozilla::UniquePtr;
 using mozilla::Unused;
 using std::pair;
 
-#if (_MSC_VER == 1800)
-
-
-#pragma optimize("", off)
-#endif
-
 #define CHECK(c) \
   do { \
     bool cond = !!(c); \
