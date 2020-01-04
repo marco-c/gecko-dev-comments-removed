@@ -155,6 +155,10 @@ class TypedArrayObject : public NativeObject
 
     void notifyBufferDetached(void* newData);
 
+    static bool
+    GetTemplateObjectForNative(JSContext* cx, Native native, uint32_t len,
+                               MutableHandleObject res);
+
     
 
 
@@ -266,6 +270,9 @@ class TypedArrayObject : public NativeObject
 
     static bool set(JSContext* cx, unsigned argc, Value* vp);
 };
+
+extern TypedArrayObject*
+TypedArrayCreateWithTemplate(JSContext* cx, HandleObject templateObj);
 
 inline bool
 IsTypedArrayClass(const Class* clasp)

@@ -212,11 +212,8 @@ ObjectGroup::useSingletonForAllocationSite(JSScript* script, jsbytecode* pc, JSP
     if (script->functionNonDelazifying() && !script->treatAsRunOnce())
         return GenericObject;
 
-    if (key != JSProto_Object &&
-        !(key >= JSProto_Int8Array && key <= JSProto_Uint8ClampedArray))
-    {
+    if (key != JSProto_Object)
         return GenericObject;
-    }
 
     
 
