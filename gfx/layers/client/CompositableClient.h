@@ -16,6 +16,7 @@
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureClient.h"  
+#include "mozilla/layers/TextureClientRecycleAllocator.h" 
 #include "nsISupportsImpl.h"            
 
 namespace mozilla {
@@ -27,7 +28,6 @@ class ImageContainer;
 class CompositableForwarder;
 class CompositableChild;
 class PCompositableChild;
-class TextureClientRecycleAllocator;
 
 
 

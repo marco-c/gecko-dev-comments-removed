@@ -38,7 +38,40 @@ public:
 
   virtual TextureForwarder* AsTextureForwarder() override { return this; }
 
+  virtual int32_t GetMaxTextureSize() const override
+  {
+    return mTextureFactoryIdentifier.mMaxTextureSize;
+  }
+
+  
+
+
+
+
+  LayersBackend GetCompositorBackendType() const
+  {
+    return mTextureFactoryIdentifier.mParentBackend;
+  }
+
+  bool SupportsTextureBlitting() const
+  {
+    return mTextureFactoryIdentifier.mSupportsTextureBlitting;
+  }
+
+  bool SupportsPartialUploads() const
+  {
+    return mTextureFactoryIdentifier.mSupportsPartialUploads;
+  }
+
+  const TextureFactoryIdentifier& GetTextureFactoryIdentifier() const
+  {
+    return mTextureFactoryIdentifier;
+  }
+
   virtual FixedSizeSmallShmemSectionAllocator* GetTileLockAllocator();
+
+protected:
+  TextureFactoryIdentifier mTextureFactoryIdentifier;
 
 private:
   FixedSizeSmallShmemSectionAllocator* mSectionAllocator;
