@@ -1901,8 +1901,11 @@ SnapshotIterator::maybeRead(const RValueAllocation& a, MaybeReadFallback& fallba
         return allocationValue(a);
 
     if (fallback.canRecoverResults()) {
+        
+        
+        AutoEnterOOMUnsafeRegion oomUnsafe;
         if (!initInstructionResults(fallback))
-            MOZ_CRASH("Unable to recover allocations.");
+            oomUnsafe.crash("js::jit::SnapshotIterator::maybeRead");
 
         if (allocationReadable(a))
             return allocationValue(a);
