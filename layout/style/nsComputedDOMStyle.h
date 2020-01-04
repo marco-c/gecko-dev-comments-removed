@@ -9,6 +9,8 @@
 #define nsComputedDOMStyle_h__
 
 #include "nsAutoPtr.h"
+#include "mozilla/ArenaRefPtr.h"
+#include "mozilla/ArenaRefPtrInlines.h"
 #include "mozilla/Attributes.h"
 #include "nsCOMPtr.h"
 #include "nscore.h"
@@ -600,7 +602,18 @@ private:
 
 
 
-  nsRefPtr<nsStyleContext> mStyleContext;
+
+
+
+
+
+
+
+
+
+
+
+  mozilla::ArenaRefPtr<nsStyleContext> mStyleContext;
   nsCOMPtr<nsIAtom> mPseudo;
 
   
@@ -626,7 +639,19 @@ private:
 
   StyleType mStyleType;
 
+  
+
+
+
+  uint64_t mStyleContextGeneration;
+
   bool mExposeVisitedStyle;
+
+  
+
+
+
+  bool mResolvedStyleContext;
 
 #ifdef DEBUG
   bool mFlushedPendingReflows;

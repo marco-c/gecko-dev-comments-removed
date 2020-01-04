@@ -222,7 +222,9 @@ nsComputedDOMStyle::nsComputedDOMStyle(dom::Element* aElement,
   : mDocumentWeak(nullptr), mOuterFrame(nullptr),
     mInnerFrame(nullptr), mPresShell(nullptr),
     mStyleType(aStyleType),
-    mExposeVisitedStyle(false)
+    mStyleContextGeneration(0),
+    mExposeVisitedStyle(false),
+    mResolvedStyleContext(false)
 {
   MOZ_ASSERT(aElement && aPresShell);
 
@@ -572,10 +574,10 @@ nsComputedDOMStyle::GetCSSParsingEnvironment(CSSParsingEnvironment& aCSSParseEnv
 void
 nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 {
-  MOZ_ASSERT(!mStyleContext);
-
   nsCOMPtr<nsIDocument> document = do_QueryReferent(mDocumentWeak);
   if (!document) {
+    mResolvedStyleContext = false;
+    mStyleContext = nullptr;
     return;
   }
 
@@ -593,7 +595,22 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 
   mPresShell = document->GetShell();
   if (!mPresShell || !mPresShell->GetPresContext()) {
+    mResolvedStyleContext = false;
+    mStyleContext = nullptr;
     return;
+  }
+
+  uint64_t currentGeneration =
+    mPresShell->GetPresContext()->GetRestyleGeneration();
+
+  if (mStyleContext) {
+    if (mStyleContextGeneration == currentGeneration) {
+      
+      return;
+    }
+    
+    
+    mStyleContext = nullptr;
   }
 
   
@@ -616,6 +633,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
       }
 
       mStyleContext = mInnerFrame->StyleContext();
+      mResolvedStyleContext = false;
       NS_ASSERTION(mStyleContext, "Frame without style context?");
     }
   }
@@ -649,9 +667,19 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
                                                     mPresShell,
                                                     mStyleType);
     if (!mStyleContext) {
+      mResolvedStyleContext = false;
       return;
     }
 
+    
+    
+    NS_ASSERTION(mPresShell &&
+                 currentGeneration ==
+                   mPresShell->GetPresContext()->GetRestyleGeneration(),
+                 "why should we have flushed style again?");
+
+    mResolvedStyleContext = true;
+    mStyleContextGeneration = currentGeneration;
     NS_ASSERTION(mPseudo || !mStyleContext->HasPseudoElementData(),
                  "should not have pseudo-element data");
   }
@@ -677,7 +705,10 @@ nsComputedDOMStyle::ClearCurrentStyleSources()
 
   
   
-  mStyleContext = nullptr;
+  
+  if (!mResolvedStyleContext) {
+    mStyleContext = nullptr;
+  }
 }
 
 already_AddRefed<CSSValue>
