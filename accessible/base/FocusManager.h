@@ -16,6 +16,7 @@ namespace a11y {
 
 class AccEvent;
 class Accessible;
+class ProxyAccessible;
 class DocAccessible;
 
 
@@ -29,13 +30,18 @@ public:
   
 
 
-  Accessible* FocusedAccessible() const;
+  Accessible* FocusedAccessible() const { return mFocusedAcc; }
 
   
 
 
-  bool IsFocused(const Accessible* aAccessible) const;
+  ProxyAccessible* FocusedRemoteAccessible() const { return mFocusedProxy; }
 
+  
+
+
+  bool IsFocused(const Accessible* aAccessible) const
+    { return aAccessible == mFocusedAcc; }
   
 
 
@@ -88,6 +94,11 @@ public:
   
 
 
+  void RemoteFocusChanged(ProxyAccessible* aProxy) { mFocusedProxy = aProxy; }
+
+  
+
+
   void ForceFocusEvent();
 
   
@@ -124,6 +135,8 @@ private:
   nsIDocument* FocusedDOMDocument() const;
 
 private:
+  RefPtr<Accessible> mFocusedAcc;
+  ProxyAccessible* mFocusedProxy;
   RefPtr<Accessible> mActiveItem;
   RefPtr<Accessible> mActiveARIAMenubar;
 };
