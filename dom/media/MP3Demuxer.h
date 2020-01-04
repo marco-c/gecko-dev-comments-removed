@@ -314,6 +314,10 @@ public:
 
   
   
+  void ResetFrameData();
+
+  
+  
   
   
   void EndFrameSession();
@@ -394,6 +398,11 @@ private:
   
   media::TimeUnit ScanUntil(const media::TimeUnit& aTime);
 
+  
+  
+  MediaByteRange FindFirstFrame();
+
+  
   
   MediaByteRange FindNextFrame();
 
