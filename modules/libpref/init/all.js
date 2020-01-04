@@ -4332,9 +4332,6 @@ pref("layers.tiles.edge-padding", true);
 pref("layers.offmainthreadcomposition.testing.enabled", false);
 
 
-pref("layers.offmainthreadcomposition.force-basic", false);
-
-
 pref("layers.offmainthreadcomposition.async-animations", true);
 
 

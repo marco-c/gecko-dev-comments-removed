@@ -38,8 +38,9 @@ public:
 
 
 
+
     static already_AddRefed<GLContext>
-    CreateForWindow(nsIWidget* widget);
+    CreateForWindow(nsIWidget* widget, bool aForceAccelerated);
 
     
 

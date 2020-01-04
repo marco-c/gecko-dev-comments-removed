@@ -83,9 +83,11 @@ public:
       return true;
     }
 
-    bool SupportsBasicCompositor() const override {
+    bool RequiresAcceleratedGLContextForCompositorOGL() const override {
       
-      return false;
+      
+      
+      return true;
     }
 
     bool UseAcceleratedCanvas();

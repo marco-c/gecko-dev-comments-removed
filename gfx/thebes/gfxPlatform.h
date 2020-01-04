@@ -644,6 +644,12 @@ public:
       return false;
     }
 
+    
+    
+    virtual bool RequiresAcceleratedGLContextForCompositorOGL() const {
+      return false;
+    }
+
 protected:
     gfxPlatform();
     virtual ~gfxPlatform();
@@ -658,11 +664,6 @@ protected:
 
     
     virtual void GetAcceleratedCompositorBackends(nsTArray<mozilla::layers::LayersBackend>& aBackends);
-
-    
-    virtual bool SupportsBasicCompositor() const {
-      return true;
-    }
 
     
 
