@@ -315,13 +315,6 @@ class JSFunction : public js::NativeObject
 
     JSAtom* name() const { return hasGuessedAtom() ? nullptr : atom_.get(); }
 
-    
-    
-    
-    
-    
-    JSAtom* functionName(JSContext* cx) const;
-
     void initAtom(JSAtom* atom) { atom_.init(atom); }
 
     void setAtom(JSAtom* atom) { atom_ = atom; }
