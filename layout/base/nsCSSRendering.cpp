@@ -3036,6 +3036,30 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
   }
 }
 
+static CompositionOp
+DetermineCompositionOp(const nsCSSRendering::PaintBGParams& aParams,
+                       const nsStyleImageLayers& aLayers,
+                       uint32_t aLayerIndex)
+{
+  if (aParams.layer >= 0) {
+    
+    return aParams.compositionOp;
+  }
+
+  const nsStyleImageLayers::Layer& layer = aLayers.mLayers[aLayerIndex];
+  
+  if (aParams.paintFlags & nsCSSRendering::PAINTBG_MASK_IMAGE) {
+    
+    if (aLayerIndex == (aLayers.mImageCount - 1)) {
+      return CompositionOp::OP_OVER;
+    }
+
+    return nsCSSRendering::GetGFXCompositeMode(layer.mComposite);
+  }
+
+  return nsCSSRendering::GetGFXBlendMode(layer.mBlendMode);
+}
+
 DrawResult
 nsCSSRendering::PaintBackgroundWithSC(const PaintBGParams& aParams,
                                       nsStyleContext *aBackgroundSC,
@@ -3226,21 +3250,14 @@ nsCSSRendering::PaintBackgroundWithSC(const PaintBGParams& aParams,
       }
       if ((aParams.layer < 0 || i == (uint32_t)startLayer) &&
           !clipState.mDirtyRectGfx.IsEmpty()) {
-        
-        
-        CompositionOp co = (aParams.layer >= 0) ? aParams.compositionOp :
-          (paintMask ? GetGFXCompositeMode(layer.mComposite) :
-                       GetGFXBlendMode(layer.mBlendMode));
+        CompositionOp co = DetermineCompositionOp(aParams, layers, i);
         nsBackgroundLayerState state =
           PrepareImageLayer(&aParams.presCtx, aParams.frame,
                             aParams.paintFlags, paintBorderArea, clipState.mBGClipArea,
                             layer, nullptr, co);
         result &= state.mImageRenderer.PrepareResult();
         if (!state.mFillArea.IsEmpty()) {
-          
-          bool isBottomMaskLayer = paintMask ?
-                                   (i == (layers.mImageCount - 1)) : false;
-          if (co != CompositionOp::OP_OVER && !isBottomMaskLayer) {
+          if (co != CompositionOp::OP_OVER) {
             NS_ASSERTION(ctx->CurrentOp() == CompositionOp::OP_OVER,
                          "It is assumed the initial op is OP_OVER, when it is restored later");
             ctx->SetOp(co);
