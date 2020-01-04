@@ -353,11 +353,23 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
   
   
   var streamerMap = { tableList: null, tableNames: {}, request: "" };
+  let useProtobuf = false;
   for (var tableName in this.tablesData) {
     
     if (this.tablesData[tableName].updateUrl != updateUrl) {
       continue;
     }
+
+    
+    
+    
+    let isCurTableProto = tableName.endsWith('-proto');
+    if (useProtobuf && !isCurTableProto) {
+      log('ERROR: Tables for the same updateURL should all be "proto" or none. ' +
+          'Check "browser.safebrowsing.provider.google4.lists"');
+    }
+    useProtobuf = isCurTableProto;
+
     if (this.needsUpdate_[this.tablesData[tableName].updateUrl][tableName]) {
       streamerMap.tableNames[tableName] = true;
     }
@@ -367,21 +379,27 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
       streamerMap.tableList += "," + tableName;
     }
   }
-  
-  
-  var lines = tableData.split("\n");
-  for (var i = 0; i < lines.length; i++) {
-    var fields = lines[i].split(";");
-    var name = fields[0];
-    if (streamerMap.tableNames[name]) {
-      streamerMap.request += lines[i] + "\n";
-      delete streamerMap.tableNames[name];
+
+  if (useProtobuf) {
+    
+    streamerMap.request = "";
+  } else {
+    
+    
+    var lines = tableData.split("\n");
+    for (var i = 0; i < lines.length; i++) {
+      var fields = lines[i].split(";");
+      var name = fields[0];
+      if (streamerMap.tableNames[name]) {
+        streamerMap.request += lines[i] + "\n";
+        delete streamerMap.tableNames[name];
+      }
     }
-  }
-  
-  
-  for (let tableName in streamerMap.tableNames) {
-    streamerMap.request += tableName + ";\n";
+    
+    
+    for (let tableName in streamerMap.tableNames) {
+      streamerMap.request += tableName + ";\n";
+    }
   }
 
   log("update request: " + JSON.stringify(streamerMap, undefined, 2) + "\n");
