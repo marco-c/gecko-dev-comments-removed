@@ -981,10 +981,14 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     
     
     
-    bool checkYieldNameValidity();
     bool yieldExpressionsSupported() {
         return versionNumber() >= JSVERSION_1_7 || pc->isGenerator();
     }
+
+    
+    
+    
+    PropertyName* bindingIdentifier(YieldHandling yieldHandling);
 
     virtual bool strictMode() { return pc->sc()->strict(); }
     bool setLocalStrictMode(bool strict) {
@@ -1206,7 +1210,21 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     Node classDefinition(YieldHandling yieldHandling, ClassContext classContext,
                          DefaultHandling defaultHandling);
 
-    Node identifierName(YieldHandling yieldHandling);
+    PropertyName* labelOrIdentifierReference(YieldHandling yieldHandling);
+
+    PropertyName* labelIdentifier(YieldHandling yieldHandling) {
+        return labelOrIdentifierReference(yieldHandling);
+    }
+
+    PropertyName* identifierReference(YieldHandling yieldHandling) {
+        return labelOrIdentifierReference(yieldHandling);
+    }
+
+    PropertyName* importedBinding() {
+        return bindingIdentifier(YieldIsName);
+    }
+
+    Node identifierReference(Handle<PropertyName*> name);
 
     bool matchLabel(YieldHandling yieldHandling, MutableHandle<PropertyName*> label);
 
