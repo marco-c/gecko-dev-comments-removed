@@ -40,9 +40,7 @@ static const unsigned MaxArgsPerFunc  =   4 * 1024;
 
 
 static const uint32_t MagicNumber     = 0x6d736100; 
-static const uint32_t EncodingVersion = 0xa;        
-                                                    
-                                                    
+static const uint32_t EncodingVersion = -1;     
 
 
 static const char SigLabel[]          = "sig";

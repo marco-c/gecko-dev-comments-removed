@@ -1,16 +1,16 @@
 load(libdir + "wasm.js");
 
 
-const magic0 = 0x00;  
-const magic1 = 0x61;  
-const magic2 = 0x73;  
-const magic3 = 0x6d;  
+const magic0 = 0;
+const magic1 = 97;  
+const magic2 = 115; 
+const magic3 = 109; 
 
 
-const ver0 = 0x0a;
-const ver1 = 0x00;
-const ver2 = 0x00;
-const ver3 = 0x00;
+const ver0 = 0xff;
+const ver1 = 0xff;
+const ver2 = 0xff;
+const ver3 = 0xff;
 
 
 const sigLabel = "sig";
