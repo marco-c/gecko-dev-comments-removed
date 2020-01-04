@@ -380,6 +380,11 @@ BrowserGlue.prototype = {
           if (win) {
             data = JSON.parse(data);
             let where = win.whereToOpenLink(data);
+            
+            
+            if (where == "current") {
+              where = "tab";
+            }
             win.openUILinkIn(data.href, where);
             linkHandled.data = true;
           }
