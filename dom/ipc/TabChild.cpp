@@ -1948,8 +1948,11 @@ TabChild::RecvPluginEvent(const WidgetPluginEvent& aEvent)
 {
   WidgetPluginEvent localEvent(aEvent);
   localEvent.widget = mPuppetWidget;
-  APZCCallbackHelper::DispatchWidgetEvent(localEvent);
-  
+  nsEventStatus status = APZCCallbackHelper::DispatchWidgetEvent(localEvent);
+  if (status != nsEventStatus_eConsumeNoDefault) {
+    
+    SendDefaultProcOfPluginEvent(aEvent);
+  }
   return true;
 }
 
