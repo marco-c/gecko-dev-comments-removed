@@ -25,7 +25,7 @@ add_task(function* () {
 
   
   
-  let variable = view.getScopeAtIndex(0).get("");
+  let variable = view.getScopeAtIndex(0).get(undefined);
   ok(variable, "variable object");
 
   yield findVariableViewProperties(variable, [
