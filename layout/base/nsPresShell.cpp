@@ -5702,6 +5702,9 @@ NotifyCompositorOfVisibleRegionsChange(PresShell* aPresShell,
   }
 
   
+  compositorChild->SendClearApproximatelyVisibleRegions(layersId, presShellId);
+
+  
   for (auto iter = aRegions->ConstIter(); !iter.Done(); iter.Next()) {
     const ViewID viewId = iter.Key();
     const CSSIntRegion* region = iter.UserData();
