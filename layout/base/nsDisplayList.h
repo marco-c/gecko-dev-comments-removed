@@ -864,6 +864,13 @@ public:
 
   NS_DECLARE_FRAME_PROPERTY(OutOfFlowDisplayDataProperty,
                             DeleteValue<OutOfFlowDisplayData>)
+
+  static OutOfFlowDisplayData* GetOutOfFlowData(nsIFrame* aFrame)
+  {
+    return static_cast<OutOfFlowDisplayData*>(
+      aFrame->Properties().Get(OutOfFlowDisplayDataProperty()));
+  }
+
   NS_DECLARE_FRAME_PROPERTY(Preserve3DDirtyRectProperty, DeleteValue<nsRect>)
 
   nsPresContext* CurrentPresContext() {
@@ -2363,7 +2370,7 @@ public:
   void SetNeedsCustomScrollClip() { mNeedsCustomScrollClip = true; }
 
 protected:
-  RefPtr<nsCaret> mCaret;
+  nsRefPtr<nsCaret> mCaret;
   nsRect mBounds;
   bool mNeedsCustomScrollClip;
 };
@@ -2582,7 +2589,7 @@ protected:
   
   const nsStyleBackground* mBackgroundStyle;
   nsCOMPtr<imgIContainer> mImage;
-  RefPtr<ImageContainer> mImageContainer;
+  nsRefPtr<ImageContainer> mImageContainer;
   LayoutDeviceRect mDestRect;
   
   nsRect mBounds;
@@ -3789,7 +3796,7 @@ public:
     }
 
     const nsIFrame* mFrame;
-    RefPtr<nsCSSValueSharedList> mTransformList;
+    nsRefPtr<nsCSSValueSharedList> mTransformList;
     const Point3D mToTransformOrigin;
     nscoord mChildPerspective;
 
@@ -3984,7 +3991,7 @@ public:
                                              const ContainerLayerParameters& aContainerParameters) override;
 
 protected:
-  RefPtr<mozilla::gfx::VRHMDInfo> mHMD;
+  nsRefPtr<mozilla::gfx::VRHMDInfo> mHMD;
 };
 
 #endif
