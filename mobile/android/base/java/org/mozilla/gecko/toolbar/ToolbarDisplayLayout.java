@@ -281,6 +281,11 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
         
         
         
+        strippedURL = StringUtils.forceLTR(strippedURL);
+
+        
+        
+        
         setContentDescription(strippedURL);
 
         final SiteIdentity siteIdentity = tab.getSiteIdentity();
