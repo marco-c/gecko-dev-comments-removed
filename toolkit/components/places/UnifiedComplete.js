@@ -263,6 +263,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesSearchAutocompleteProvider",
                                   "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesRemoteTabsAutocompleteProvider",
+                                  "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "textURIService",
                                    "@mozilla.org/intl/texttosuburi;1",
@@ -588,6 +590,42 @@ function makeActionURL(action, params) {
 
 
 
+
+
+
+function makeKeyForURL(actionUrl) {
+  
+  if (!actionUrl.startsWith("moz-action:")) {
+    return stripHttpAndTrim(actionUrl);
+  }
+  let [, type, params] = actionUrl.match(/^moz-action:([^,]+),(.*)$/);
+  try {
+    params = JSON.parse(params);
+  } catch (ex) {
+    
+    return stripHttpAndTrim(actionUrl);
+  }
+  
+  switch (type) {
+    case "remotetab":
+    case "switchtab":
+      if (params.url) {
+        return "moz-action:tab:" + stripHttpAndTrim(params.url);
+      }
+      break;
+      
+      
+    default:
+      
+      
+      
+  }
+  return stripHttpAndTrim(actionUrl);
+}
+
+
+
+
 function looksLikeUrl(str) {
   
   return !REGEXP_SPACES.test(str) &&
@@ -864,6 +902,9 @@ Search.prototype = {
     yield this._matchFirstHeuristicResult(conn);
     this._addingHeuristicFirstMatch = false;
 
+    
+    
+    
     yield this._sleep(Prefs.delay);
     if (!this.pending)
       return;
@@ -874,6 +915,12 @@ Search.prototype = {
 
     for (let [query, params] of queries) {
       yield conn.executeCached(query, params, this._onResultRow.bind(this));
+      if (!this.pending)
+        return;
+    }
+
+    if (this._enableActions && this.hasBehavior("openpage")) {
+      yield this._matchRemoteTabs();
       if (!this.pending)
         return;
     }
@@ -1188,6 +1235,35 @@ Search.prototype = {
     });
   },
 
+  *_matchRemoteTabs() {
+    let matches = yield PlacesRemoteTabsAutocompleteProvider.getMatches(this._originalSearchString);
+    for (let {url, title, icon, deviceClass, deviceName} of matches) {
+      
+      
+      if (!icon) {
+        try {
+          let favicon = yield PlacesUtils.promiseFaviconLinkUrl(url);
+          if (favicon) {
+            icon = favicon.spec;
+          }
+        } catch (ex) {} 
+      }
+
+      let match = {
+        
+        
+        value: makeActionURL("remotetab", { url, deviceName }),
+        comment: title || url,
+        style: "action",
+        
+        
+        frecency: FRECENCY_DEFAULT + 1,
+        icon,
+      }
+      this._addMatch(match);
+    }
+  },
+
   
   
   _matchUnknownUrl: function* () {
@@ -1307,7 +1383,7 @@ Search.prototype = {
       return;
 
     
-    let urlMapKey = stripHttpAndTrim(match.value);
+    let urlMapKey = makeKeyForURL(match.value);
     if ((match.placeId && this._usedPlaceIds.has(match.placeId)) ||
         this._usedURLs.has(urlMapKey)) {
       return;
