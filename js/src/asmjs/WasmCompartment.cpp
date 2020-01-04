@@ -126,7 +126,11 @@ Instance*
 Compartment::lookupInstanceDeprecated(const void* pc) const
 {
     
-    MOZ_ASSERT(!mutatingInstances_);
+    
+    
+    
+    if (mutatingInstances_)
+        return nullptr;
 
     size_t index;
     if (!BinarySearchIf(instances_, 0, instances_.length(), PCComparator(pc), &index))
