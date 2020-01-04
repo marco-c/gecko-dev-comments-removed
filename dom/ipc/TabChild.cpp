@@ -23,6 +23,9 @@
 #include "mozilla/plugins/PluginWidgetChild.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/ipc/DocumentRendererChild.h"
+#ifdef MOZ_NUWA_PROCESS
+#include "ipc/Nuwa.h"
+#endif
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZCTreeManager.h"
@@ -450,10 +453,67 @@ TabChild::FindTabChild(const TabId& aTabId)
   return tabChild.forget();
 }
 
+static void
+PreloadSlowThingsPostFork(void* aUnused)
+{
+    nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+    observerService->NotifyObservers(nullptr, "preload-postfork", nullptr);
+}
+
+#ifdef MOZ_NUWA_PROCESS
+class MessageChannelAutoBlock MOZ_STACK_CLASS
+{
+public:
+    MessageChannelAutoBlock()
+    {
+        SetMessageChannelBlocked(true);
+    }
+
+    ~MessageChannelAutoBlock()
+    {
+        SetMessageChannelBlocked(false);
+    }
+
+private:
+    void SetMessageChannelBlocked(bool aBlock)
+    {
+        if (!IsNuwaProcess()) {
+            return;
+        }
+
+        mozilla::dom::ContentChild* content =
+            mozilla::dom::ContentChild::GetSingleton();
+        if (aBlock) {
+            content->GetIPCChannel()->Block();
+        } else {
+            content->GetIPCChannel()->Unblock();
+        }
+
+        nsTArray<IToplevelProtocol*> actors;
+        content->GetOpenedActors(actors);
+        for (size_t j = 0; j < actors.Length(); j++) {
+            IToplevelProtocol* actor = actors[j];
+            if (aBlock) {
+                actor->GetIPCChannel()->Block();
+            } else {
+                actor->GetIPCChannel()->Unblock();
+            }
+        }
+    }
+};
+#endif
+
+static bool sPreloaded = false;
+
  void
 TabChild::PreloadSlowThings()
 {
-    MOZ_ASSERT(!sPreallocatedTab);
+    if (sPreloaded) {
+        
+        return;
+    }
+    sPreloaded = true;
 
     
     
@@ -465,12 +525,29 @@ TabChild::PreloadSlowThings()
         !tab->InitTabChildGlobal(DONT_LOAD_SCRIPTS)) {
         return;
     }
+
+#ifdef MOZ_NUWA_PROCESS
+    
+    
+    MessageChannelAutoBlock autoblock;
+#endif
+
     
     tab->TryCacheLoadAndCompileScript(BROWSER_ELEMENT_CHILD_SCRIPT, true);
     
     tab->RecvLoadRemoteScript(
         NS_LITERAL_STRING("chrome://global/content/preload.js"),
         true);
+
+#ifdef MOZ_NUWA_PROCESS
+    if (IsNuwaProcess()) {
+        NuwaAddFinalConstructor(PreloadSlowThingsPostFork, nullptr);
+    } else {
+      PreloadSlowThingsPostFork(nullptr);
+    }
+#else
+    PreloadSlowThingsPostFork(nullptr);
+#endif
 
     nsCOMPtr<nsIDocShell> docShell = do_GetInterface(tab->WebNavigation());
     if (nsIPresShell* presShell = docShell->GetPresShell()) {

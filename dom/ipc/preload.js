@@ -9,6 +9,17 @@
 
 const BrowserElementIsPreloaded = true;
 
+const DoPreloadPostfork = function(aCallback) {
+  Services.obs.addObserver({
+    _callback: aCallback,
+
+    observe: function() {
+      this._callback();
+      Services.obs.removeObserver(this, "preload-postfork");
+    }
+  }, "preload-postfork", false);
+};
+
 (function (global) {
   "use strict";
 
@@ -16,7 +27,6 @@ const BrowserElementIsPreloaded = true;
   let Cc = Components.classes;
   let Ci = Components.interfaces;
 
-  Cu.import("resource://gre/modules/AppsServiceChild.jsm");
   Cu.import("resource://gre/modules/AppsUtils.jsm");
   Cu.import("resource://gre/modules/BrowserElementPromptService.jsm");
   Cu.import("resource://gre/modules/DOMRequestHelper.jsm");
@@ -30,12 +40,10 @@ const BrowserElementIsPreloaded = true;
 
   Cc["@mozilla.org/appshell/appShellService;1"].getService(Ci["nsIAppShellService"]);
   Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci["nsIWindowMediator"]);
-  Cc["@mozilla.org/AppsService;1"].getService(Ci["nsIAppsService"]);
   Cc["@mozilla.org/base/telemetry;1"].getService(Ci["nsITelemetry"]);
   Cc["@mozilla.org/categorymanager;1"].getService(Ci["nsICategoryManager"]);
   Cc["@mozilla.org/childprocessmessagemanager;1"].getService(Ci["nsIMessageSender"]);
   Cc["@mozilla.org/consoleservice;1"].getService(Ci["nsIConsoleService"]);
-  Cc["@mozilla.org/cookieService;1"].getService(Ci["nsICookieService"]);
   Cc["@mozilla.org/docshell/urifixup;1"].getService(Ci["nsIURIFixup"]);
   Cc["@mozilla.org/dom/dom-request-service;1"].getService(Ci["nsIDOMRequestService"]);
   Cc["@mozilla.org/embedcomp/prompt-service;1"].getService(Ci["nsIPromptService"]);
@@ -53,14 +61,12 @@ const BrowserElementIsPreloaded = true;
   Cc["@mozilla.org/network/idn-service;1"].getService(Ci["nsIIDNService"]);
   Cc["@mozilla.org/network/io-service;1"].getService(Ci["nsIIOService2"]);
   Cc["@mozilla.org/network/mime-hdrparam;1"].getService(Ci["nsIMIMEHeaderParam"]);
-  Cc["@mozilla.org/network/protocol-proxy-service;1"].getService(Ci["nsIProtocolProxyService"]);
   Cc["@mozilla.org/network/socket-transport-service;1"].getService(Ci["nsISocketTransportService"]);
   Cc["@mozilla.org/network/stream-transport-service;1"].getService(Ci["nsIStreamTransportService"]);
   Cc["@mozilla.org/network/url-parser;1?auth=maybe"].getService(Ci["nsIURLParser"]);
   Cc["@mozilla.org/network/url-parser;1?auth=no"].getService(Ci["nsIURLParser"]);
   Cc["@mozilla.org/network/url-parser;1?auth=yes"].getService(Ci["nsIURLParser"]);
   Cc["@mozilla.org/observer-service;1"].getService(Ci["nsIObserverService"]);
-  Cc["@mozilla.org/permissionmanager;1"].getService(Ci["nsIPermissionManager"]);
   Cc["@mozilla.org/preferences-service;1"].getService(Ci["nsIPrefBranch"]);
   Cc["@mozilla.org/scriptsecuritymanager;1"].getService(Ci["nsIScriptSecurityManager"]);
   Cc["@mozilla.org/storage/service;1"].getService(Ci["mozIStorageService"]);
@@ -70,7 +76,6 @@ const BrowserElementIsPreloaded = true;
   Cc["@mozilla.org/uriloader;1"].getService(Ci["nsIURILoader"]);
   Cc["@mozilla.org/cspcontext;1"].createInstance(Ci["nsIContentSecurityPolicy"]);
   Cc["@mozilla.org/settingsManager;1"].createInstance(Ci["nsISupports"]);
-  Cc["@mozilla.org/webapps;1"].createInstance(Ci["nsISupports"]);
 
   
   try {
@@ -104,7 +109,44 @@ const BrowserElementIsPreloaded = true;
   Services.io.getProtocolHandler("app");
   Services.io.getProtocolHandler("default");
 
-  docShell.isActive = false;
-  docShell.createAboutBlankContentViewer(null);
+  
+  
+  DoPreloadPostfork(function () {
+    
+    
+    Cu.import("resource://gre/modules/AppsServiceChild.jsm");
 
+    
+    
+    try {
+      if (Services.prefs.getBoolPref("dom.apps.customization.enabled")) {
+        Cu.import("resource://gre/modules/UserCustomizations.jsm");
+      }
+    } catch(e) {}
+
+    
+    
+    Cc["@mozilla.org/AppsService;1"].getService(Ci["nsIAppsService"]);
+
+    
+    
+    Cc["@mozilla.org/cookieService;1"].getService(Ci["nsICookieService"]);
+
+    
+    
+    Cc["@mozilla.org/permissionmanager;1"].getService(Ci["nsIPermissionManager"]);
+
+    
+    Cc["@mozilla.org/webapps;1"].createInstance(Ci["nsISupports"]);
+
+    
+    
+    Cc["@mozilla.org/network/protocol-proxy-service;1"].getService(Ci["nsIProtocolProxyService"]);
+
+    
+    
+    docShell.createAboutBlankContentViewer(null);
+    docShell.isActive = false;
+  });
 })(this);
+

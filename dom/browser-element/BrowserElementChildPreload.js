@@ -1757,4 +1757,13 @@ BrowserElementChild.prototype = {
   }
 };
 
-var api = new BrowserElementChild();
+var api = null;
+if ('DoPreloadPostfork' in this && typeof this.DoPreloadPostfork === 'function') {
+  
+  
+  this.DoPreloadPostfork(function() {
+    api = new BrowserElementChild();
+  });
+} else {
+  api = new BrowserElementChild();
+}

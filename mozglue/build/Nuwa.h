@@ -186,6 +186,16 @@ MFBT_API bool IsNuwaProcess();
 
 
 MFBT_API bool IsNuwaReady();
+
+#if defined(DEBUG) || defined(ENABLE_TESTS)
+
+
+
+MFBT_API void NuwaAssertNotFrozen(unsigned int aThread,
+                                  const char* aThreadName);
+#else
+#define NuwaAssertNotFrozen(aThread, aThreadName) do {} while(0);
+#endif
 };
 
 #endif 

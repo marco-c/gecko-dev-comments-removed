@@ -235,6 +235,8 @@ public:
 
     void GetOpenedActors(nsTArray<IToplevelProtocol*>& aActors);
 
+    virtual MessageChannel* GetIPCChannel() = 0;
+
     
     
     
