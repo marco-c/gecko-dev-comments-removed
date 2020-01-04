@@ -18,11 +18,12 @@ function notifyAndPromiseUIUpdated(topic) {
     
     let oldPromiseUpdateUI = gSyncUI._promiseUpdateUI.bind(gSyncUI);
     gSyncUI._promiseUpdateUI = function() {
+      let calledAt = Date.now();
       return oldPromiseUpdateUI().then(() => {
         
         gSyncUI._promiseUpdateUI = oldPromiseUpdateUI;
         
-        resolve();
+        resolve(calledAt);
       });
     };
     
@@ -144,14 +145,19 @@ function checkButtonsStatus(shouldBeActive) {
   }
 }
 
-function* testButtonActions(startNotification, endNotification, expectActive = true) {
+function* testButtonActions(startNotification, endNotification, expectActive = true, updateDelay = 0) {
   checkButtonsStatus(false);
   
+  let startTime = Date.now();
   yield notifyAndPromiseUIUpdated(startNotification);
   checkButtonsStatus(expectActive);
   
-  yield notifyAndPromiseUIUpdated(endNotification);
+  let endTime = yield notifyAndPromiseUIUpdated(endNotification);
   checkButtonsStatus(false);
+  let actualDelay = endTime - startTime;
+  Assert.ok(actualDelay >= updateDelay, `Expected a minimum ${
+    updateDelay}ms delay before updating UI, but only waited ${
+      actualDelay}`);
 }
 
 function *doTestButtonActivities() {
@@ -161,8 +167,8 @@ function *doTestButtonActivities() {
   yield testButtonActions("weave:service:login:start", "weave:service:login:error", false);
 
   
-  yield testButtonActions("weave:service:sync:start", "weave:service:sync:finish");
-  yield testButtonActions("weave:service:sync:start", "weave:service:sync:error");
+  yield testButtonActions("weave:service:sync:start", "weave:service:sync:finish", true, 1600);
+  yield testButtonActions("weave:service:sync:start", "weave:service:sync:error", true, 1600);
 
   
   yield notifyAndPromiseUIUpdated("weave:service:sync:start");
