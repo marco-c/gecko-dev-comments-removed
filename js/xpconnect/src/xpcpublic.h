@@ -618,6 +618,11 @@ namespace dom {
 
 bool IsChromeOrXBL(JSContext* cx, JSObject* );
 
+
+
+
+bool ThreadSafeIsChromeOrXBL(JSContext* cx, JSObject* obj);
+
 } 
 } 
 
