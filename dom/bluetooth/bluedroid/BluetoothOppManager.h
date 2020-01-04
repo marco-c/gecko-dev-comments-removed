@@ -148,6 +148,18 @@ private:
   
 
 
+
+  bool mNeedsUpdatingSdpRecords;
+
+  
+
+
+
+  mozilla::TimeStamp mLastServiceChannelCheck;
+
+  
+
+
   bool mAbortFlag;
 
   

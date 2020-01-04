@@ -56,6 +56,10 @@ namespace {
   static const uint32_t kPutRequestAppendHeaderSize = 5;
 
   
+  
+  static const double kSdpUpdatingTimeoutMs = 3000.0;
+
+  
   static const BluetoothUuid kObexObjectPush = {
     {
       0x00, 0x00, 0x11, 0x05, 0x00, 0x00, 0x10, 0x00,
@@ -198,6 +202,7 @@ BluetoothOppManager::BluetoothOppManager() : mConnected(false)
                                            , mPacketLength(0)
                                            , mPutPacketReceivedLength(0)
                                            , mBodySegmentLength(0)
+                                           , mNeedsUpdatingSdpRecords(false)
                                            , mAbortFlag(false)
                                            , mNewFileFlag(false)
                                            , mPutFinalFlag(false)
@@ -294,10 +299,17 @@ BluetoothOppManager::ConnectInternal(const nsAString& aDeviceAddress)
     return;
   }
 
+  mNeedsUpdatingSdpRecords = true;
+
+  nsString uuid;
+  BluetoothUuidHelper::GetString(BluetoothServiceClass::OBJECT_PUSH, uuid);
+
+  if (NS_FAILED(bs->GetServiceChannel(aDeviceAddress, uuid, this))) {
+    OnSocketConnectError(mSocket);
+    return;
+  }
+
   mSocket = new BluetoothSocket(this);
-  mSocket->Connect(aDeviceAddress, kObexObjectPush,
-                   BluetoothSocketType::RFCOMM, -1,
-                   false, true);
 }
 
 void
@@ -1609,13 +1621,56 @@ BluetoothOppManager::OnGetServiceChannel(const nsAString& aDeviceAddress,
                                          const nsAString& aServiceUuid,
                                          int aChannel)
 {
-  MOZ_ASSERT(false);
+  BluetoothUuid serviceUuid;
+  StringToUuid(aServiceUuid, serviceUuid);
+
+  if (aChannel < 0) {
+    BluetoothService* bs = BluetoothService::Get();
+    if (!bs || sInShutdown) {
+      OnSocketConnectError(mSocket);
+      return;
+    }
+
+    if (mNeedsUpdatingSdpRecords) {
+      mNeedsUpdatingSdpRecords = false;
+      mLastServiceChannelCheck = TimeStamp::Now();
+    } else {
+      
+      
+      TimeDuration duration = TimeStamp::Now() - mLastServiceChannelCheck;
+      if (duration.ToMilliseconds() >= kSdpUpdatingTimeoutMs) {
+        OnSocketConnectError(mSocket);
+        return;
+      }
+    }
+
+    if (!bs->UpdateSdpRecords(aDeviceAddress, this)) {
+      OnSocketConnectError(mSocket);
+      return;
+    }
+  }
+
+  mSocket->Connect(aDeviceAddress, serviceUuid,
+                   BluetoothSocketType::RFCOMM, aChannel,
+                   false, true);
 }
 
 void
 BluetoothOppManager::OnUpdateSdpRecords(const nsAString& aDeviceAddress)
 {
-  MOZ_ASSERT(false);
+  BluetoothService* bs = BluetoothService::Get();
+  if (!bs || sInShutdown) {
+    OnSocketConnectError(mSocket);
+    return;
+  }
+
+  nsString uuid;
+  BluetoothUuidHelper::GetString(BluetoothServiceClass::OBJECT_PUSH, uuid);
+
+  if (NS_FAILED(bs->GetServiceChannel(aDeviceAddress, uuid, this))) {
+    OnSocketConnectError(mSocket);
+    return;
+  }
 }
 
 void
