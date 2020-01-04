@@ -3375,12 +3375,28 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
             (gHttpHandler->SessionStartTime() > lastModifiedTime);
 
     
+    mCachedResponseHead = new nsHttpResponseHead();
+
+    
+    
+    
+    
+    rv = entry->GetMetaDataElement("original-response-headers", getter_Copies(buf));
+    if (NS_SUCCEEDED(rv)) {
+        mCachedResponseHead->ParseCachedOriginalHeaders((char *) buf.get());
+    }
+
+    buf.Adopt(0);
+    
+    
+    
     rv = entry->GetMetaDataElement("response-head", getter_Copies(buf));
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    mCachedResponseHead = new nsHttpResponseHead();
-    rv = mCachedResponseHead->Parse((char *) buf.get());
+    
+    
+    rv = mCachedResponseHead->ParseCachedHead((char *) buf.get());
     NS_ENSURE_SUCCESS(rv, rv);
     buf.Adopt(0);
 
@@ -4624,6 +4640,10 @@ DoAddCacheEntryHeaders(nsHttpChannel *self,
     nsAutoCString head;
     responseHead->Flatten(head, true);
     rv = entry->SetMetaDataElement("response-head", head.get());
+    if (NS_FAILED(rv)) return rv;
+    head.Truncate();
+    responseHead->FlattenNetworkOriginalHeaders(head);
+    rv = entry->SetMetaDataElement("original-response-headers", head.get());
     if (NS_FAILED(rv)) return rv;
 
     

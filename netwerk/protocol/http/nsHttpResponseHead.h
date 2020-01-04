@@ -81,11 +81,17 @@ public:
     
     
     void Flatten(nsACString &, bool pruneTransients);
-    void FlattenOriginalHeader(nsACString &buf);
+    void FlattenNetworkOriginalHeaders(nsACString &buf);
 
     
     
-    nsresult Parse(char *block);
+    
+    
+    
+    
+    
+    nsresult ParseCachedHead(char *block);
+    nsresult ParseCachedOriginalHeaders(char *block);
 
     
     void ParseStatusLine(const char *line);
@@ -139,7 +145,7 @@ private:
     void ParsePragma(const char *);
 
     void ParseStatusLine_locked(const char *line);
-    nsresult ParseHeaderLine_locked(const char *line);
+    nsresult ParseHeaderLine_locked(const char *line, bool originalFromNetHeaders);
 
     
     nsresult ParseDateHeader(nsHttpAtom header, uint32_t *result) const;
