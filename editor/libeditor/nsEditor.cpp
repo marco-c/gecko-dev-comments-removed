@@ -24,6 +24,7 @@
 #include "JoinNodeTransaction.h"        
 #include "PlaceholderTransaction.h"     
 #include "SplitNodeTransaction.h"       
+#include "StyleSheetTransactions.h"     
 #include "TextEditUtils.h"              
 #include "mozFlushType.h"               
 #include "mozInlineSpellChecker.h"      
@@ -98,7 +99,6 @@
 #include "nsStringFwd.h"                
 #include "nsStyleConsts.h"              
 #include "nsStyleContext.h"             
-#include "nsStyleSheetTxns.h"           
 #include "nsStyleStruct.h"              
 #include "nsStyleStructFwd.h"           
 #include "nsTextNode.h"                 
@@ -4246,14 +4246,14 @@ nsEditor::CreateTxnForComposition(const nsAString& aStringToInsert)
 }
 
 NS_IMETHODIMP
-nsEditor::CreateTxnForAddStyleSheet(StyleSheetHandle aSheet, AddStyleSheetTxn* *aTxn)
+nsEditor::CreateTxnForAddStyleSheet(StyleSheetHandle aSheet,
+                                    AddStyleSheetTransaction** aTransaction)
 {
-  RefPtr<AddStyleSheetTxn> txn = new AddStyleSheetTxn();
+  RefPtr<AddStyleSheetTransaction> transaction = new AddStyleSheetTransaction();
 
-  nsresult rv = txn->Init(this, aSheet);
-  if (NS_SUCCEEDED(rv))
-  {
-    txn.forget(aTxn);
+  nsresult rv = transaction->Init(this, aSheet);
+  if (NS_SUCCEEDED(rv)) {
+    transaction.forget(aTransaction);
   }
 
   return rv;
@@ -4262,14 +4262,16 @@ nsEditor::CreateTxnForAddStyleSheet(StyleSheetHandle aSheet, AddStyleSheetTxn* *
 
 
 NS_IMETHODIMP
-nsEditor::CreateTxnForRemoveStyleSheet(StyleSheetHandle aSheet, RemoveStyleSheetTxn* *aTxn)
+nsEditor::CreateTxnForRemoveStyleSheet(
+            StyleSheetHandle aSheet,
+            RemoveStyleSheetTransaction** aTransaction)
 {
-  RefPtr<RemoveStyleSheetTxn> txn = new RemoveStyleSheetTxn();
+  RefPtr<RemoveStyleSheetTransaction> transaction =
+    new RemoveStyleSheetTransaction();
 
-  nsresult rv = txn->Init(this, aSheet);
-  if (NS_SUCCEEDED(rv))
-  {
-    txn.forget(aTxn);
+  nsresult rv = transaction->Init(this, aSheet);
+  if (NS_SUCCEEDED(rv)) {
+    transaction.forget(aTransaction);
   }
 
   return rv;

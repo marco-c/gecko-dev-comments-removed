@@ -1,0 +1,71 @@
+
+
+
+
+
+#ifndef StylesheetTransactions_h
+#define StylesheetTransactions_h
+
+#include "EditTxn.h"                    
+#include "mozilla/StyleSheetHandle.h"   
+#include "nsCycleCollectionParticipant.h"
+#include "nsID.h"                       
+#include "nscore.h"                     
+
+class nsIEditor;
+
+namespace mozilla {
+
+class AddStyleSheetTransaction final : public EditTxn
+{
+public:
+  
+
+
+
+
+  NS_IMETHOD Init(nsIEditor* aEditor, StyleSheetHandle aSheet);
+
+  AddStyleSheetTransaction();
+
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AddStyleSheetTransaction, EditTxn)
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
+
+  NS_DECL_EDITTXN
+
+protected:
+  
+  nsIEditor* mEditor;
+  
+  mozilla::StyleSheetHandle::RefPtr mSheet;
+};
+
+
+class RemoveStyleSheetTransaction final : public EditTxn
+{
+public:
+  
+
+
+
+
+  NS_IMETHOD Init(nsIEditor* aEditor, StyleSheetHandle aSheet);
+
+  RemoveStyleSheetTransaction();
+
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(RemoveStyleSheetTransaction, EditTxn)
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
+
+  NS_DECL_EDITTXN
+
+protected:
+  
+  nsIEditor* mEditor;
+  
+  StyleSheetHandle::RefPtr mSheet;
+
+};
+
+} 
+
+#endif 

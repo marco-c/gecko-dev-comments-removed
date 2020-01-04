@@ -27,8 +27,6 @@
 #include "nsWeakReference.h"            
 #include "nscore.h"                     
 
-class AddStyleSheetTxn;
-class RemoveStyleSheetTxn;
 class nsIAtom;
 class nsIContent;
 class nsIDOMDocument;
@@ -52,6 +50,7 @@ class nsString;
 class nsTransactionManager;
 
 namespace mozilla {
+class AddStyleSheetTransaction;
 class AutoRules;
 class AutoSelectionRestorer;
 class AutoTransactionsConserveSelection;
@@ -65,6 +64,7 @@ class ErrorResult;
 class InsertNodeTransaction;
 class InsertTextTransaction;
 class JoinNodeTransaction;
+class RemoveStyleSheetTransaction;
 class SplitNodeTransaction;
 class TextComposition;
 struct EditorDOMPoint;
@@ -316,13 +316,15 @@ protected:
 
   
 
-  NS_IMETHOD CreateTxnForAddStyleSheet(mozilla::StyleSheetHandle aSheet,
-                                       AddStyleSheetTxn* *aTxn);
+  NS_IMETHOD CreateTxnForAddStyleSheet(
+               mozilla::StyleSheetHandle aSheet,
+               mozilla::AddStyleSheetTransaction** aTransaction);
 
   
 
-  NS_IMETHOD CreateTxnForRemoveStyleSheet(mozilla::StyleSheetHandle aSheet,
-                                          RemoveStyleSheetTxn* *aTxn);
+  NS_IMETHOD CreateTxnForRemoveStyleSheet(
+               mozilla::StyleSheetHandle aSheet,
+               mozilla::RemoveStyleSheetTransaction** aTransaction);
 
   nsresult DeleteText(nsGenericDOMDataNode& aElement,
                       uint32_t aOffset, uint32_t aLength);
