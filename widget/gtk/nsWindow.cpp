@@ -117,6 +117,7 @@ using namespace mozilla::widget;
 #include "mozilla/layers/CompositorThread.h"
 
 #ifdef MOZ_X11
+#include "X11CompositorWidget.h"
 #include "gfxXlibSurface.h"
 #include "WindowSurfaceX11Image.h"
 #include "WindowSurfaceX11SHM.h"
@@ -2489,6 +2490,13 @@ nsWindow::OnSizeAllocate(GtkAllocation *aAllocation)
 
     mBounds.SizeTo(size);
 
+#ifdef MOZ_X11
+    
+    if (mCompositorWidgetDelegate) {
+      mCompositorWidgetDelegate->NotifyClientSizeChanged(GetClientSize());
+    }
+#endif
+
     
     
     
@@ -3990,6 +3998,8 @@ nsWindow::Create(nsIWidget* aParent,
       GdkVisual* gdkVisual = gdk_window_get_visual(mGdkWindow);
       mXVisual = gdk_x11_visual_get_xvisual(gdkVisual);
       mXDepth = gdk_visual_get_depth(gdkVisual);
+
+      mSurfaceProvider.Initialize(mXDisplay, mXWindow, mXVisual, mXDepth);
     }
 #endif
 
@@ -4091,6 +4101,14 @@ nsWindow::NativeResize()
         gdk_window_resize(mGdkWindow, size.width, size.height);
     }
 
+#ifdef MOZ_X11
+    
+    
+    if (mCompositorWidgetDelegate) {
+      mCompositorWidgetDelegate->NotifyClientSizeChanged(GetClientSize());
+    }
+#endif
+
     
     if (mNeedsShow && mIsShown) {
         NativeShow(true);
@@ -4138,6 +4156,14 @@ nsWindow::NativeMoveResize()
         gdk_window_move_resize(mGdkWindow,
                                topLeft.x, topLeft.y, size.width, size.height);
     }
+
+#ifdef MOZ_X11
+    
+    
+    if (mCompositorWidgetDelegate) {
+      mCompositorWidgetDelegate->NotifyClientSizeChanged(GetClientSize());
+    }
+#endif
 
     
     if (mNeedsShow && mIsShown) {
@@ -6535,34 +6561,14 @@ nsWindow::GetDrawTargetForGdkDrawable(GdkDrawable* aDrawable,
 already_AddRefed<DrawTarget>
 nsWindow::StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion, BufferMode* aBufferMode)
 {
-  if (aInvalidRegion.IsEmpty())
-    return nullptr;
-
-  if (!mWindowSurface) {
-    mWindowSurface = CreateWindowSurface();
-    if (!mWindowSurface)
-      return nullptr;
-  }
-
-  *aBufferMode = BufferMode::BUFFER_NONE;
-  RefPtr<DrawTarget> dt = nullptr;
-  if (!(dt = mWindowSurface->Lock(aInvalidRegion))) {
-#ifdef MOZ_X11
-    if (mIsX11Display) {
-      gfxWarningOnce() << "Failed to lock WindowSurface, falling back to XPutImage backend.";
-      mWindowSurface = MakeUnique<WindowSurfaceX11Image>(mXDisplay, mXWindow, mXVisual, mXDepth);
-    }
-#endif 
-  }
-  return dt.forget();
+  return mSurfaceProvider.StartRemoteDrawingInRegion(aInvalidRegion, aBufferMode);
 }
 
 void
 nsWindow::EndRemoteDrawingInRegion(DrawTarget* aDrawTarget,
                                    LayoutDeviceIntRegion& aInvalidRegion)
 {
-  if (mWindowSurface)
-    mWindowSurface->Commit(aInvalidRegion);
+  mSurfaceProvider.EndRemoteDrawingInRegion(aDrawTarget, aInvalidRegion);
 }
 
 
@@ -6999,45 +7005,15 @@ nsWindow::RoundsWidgetCoordinatesTo()
     return GdkScaleFactor();
 }
 
-UniquePtr<WindowSurface>
-nsWindow::CreateWindowSurface()
+void nsWindow::GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData)
 {
-  if (!mGdkWindow)
-    return nullptr;
+  #ifdef MOZ_X11
+  Display* xDisplay = (Display*)GetNativeData(NS_NATIVE_COMPOSITOR_DISPLAY);
+  char* xDisplayString = XDisplayString(xDisplay);
 
-  
-  
-  if (!mIsX11Display)
-    return nullptr;
-
-#ifdef MOZ_X11
-  
-  
-  
-  
-
-#ifdef MOZ_WIDGET_GTK
-  if (gfxVars::UseXRender()) {
-    LOGDRAW(("Drawing to nsWindow %p using XRender\n", (void*)this));
-    return MakeUnique<WindowSurfaceXRender>(mXDisplay, mXWindow, mXVisual, mXDepth);
-  }
-#endif 
-
-  Display* display;
-  if (CompositorThreadHolder::IsInCompositorThread()) {
-    display = gfxPlatformGtk::GetPlatform()->GetCompositorDisplay();
-  } else {
-    display = mXDisplay;
-  }
-
-#ifdef MOZ_HAVE_SHMIMAGE
-  if (nsShmImage::UseShm()) {
-    LOGDRAW(("Drawing to nsWindow %p using MIT-SHM\n", (void*)this));
-    return MakeUnique<WindowSurfaceX11SHM>(display, mXWindow, mXVisual, mXDepth);
-  }
-#endif 
-
-  LOGDRAW(("Drawing to nsWindow %p using XPutImage\n", (void*)this));
-  return MakeUnique<WindowSurfaceX11Image>(display, mXWindow, mXVisual, mXDepth);
-#endif 
+  *aInitData = mozilla::widget::CompositorWidgetInitData(
+                                  mXWindow,
+                                  nsCString(xDisplayString),
+                                  GetClientSize());
+  #endif
 }
