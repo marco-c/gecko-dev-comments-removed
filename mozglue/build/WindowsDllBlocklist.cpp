@@ -219,9 +219,6 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   { "rlls.dll", ALL_VERSIONS },
   { "rlls64.dll", ALL_VERSIONS },
 
-  
-  { "qipcap.dll", MAKE_VERSION(7, 6, 818, 1) },
-
   { nullptr, 0 }
 };
 
