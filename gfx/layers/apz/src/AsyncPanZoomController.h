@@ -318,6 +318,15 @@ public:
   
 
 
+
+
+
+
+  void AdjustScrollForSurfaceShift(const ScreenPoint& aShift);
+
+  
+
+
   void ClearOverscroll();
 
   
