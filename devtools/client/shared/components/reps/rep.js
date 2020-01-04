@@ -11,8 +11,6 @@ define(function(require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
 
-  const { isGrip } = require("./rep-utils");
-
   
   const { Undefined } = require("./undefined");
   const { Null } = require("./null");
@@ -22,45 +20,10 @@ define(function(require, exports, module) {
   const { Obj } = require("./object");
 
   
-  const { Attribute } = require("./attribute");
-  const { DateTime } = require("./date-time");
-  const { Document } = require("./document");
-  const { Event } = require("./event");
-  const { Func } = require("./function");
-  const { NamedNodeMap } = require("./named-node-map");
-  const { RegExp } = require("./regexp");
-  const { StyleSheet } = require("./stylesheet");
-  const { TextNode } = require("./text-node");
-  const { Window } = require("./window");
-  const { ObjectWithText } = require("./object-with-text");
-  const { ObjectWithURL } = require("./object-with-url");
-  const { GripArray } = require("./grip-array");
-  const { Grip } = require("./grip");
-
   
   
-  
-  let reps = [
-    RegExp,
-    StyleSheet,
-    Event,
-    DateTime,
-    TextNode,
-    NamedNodeMap,
-    Attribute,
-    Func,
-    ArrayRep,
-    Document,
-    Window,
-    ObjectWithText,
-    ObjectWithURL,
-    GripArray,
-    Grip,
-    Undefined,
-    Null,
-    StringRep,
-    Number,
-  ];
+  let reps = [Undefined, Null, StringRep, Number, ArrayRep, Obj];
+  let defaultRep;
 
   
 
@@ -69,15 +32,10 @@ define(function(require, exports, module) {
 
 
   const Rep = React.createClass({
-    propTypes: {
-      object: React.PropTypes.any,
-      defaultRep: React.PropTypes.object,
-    },
-
     displayName: "Rep",
 
     render: function() {
-      let rep = getRep(this.props.object, this.props.defaultRep);
+      let rep = getRep(this.props.object);
       return rep(this.props);
     },
   });
@@ -92,10 +50,7 @@ define(function(require, exports, module) {
 
 
 
-
-
-
-  function getRep(object, defaultRep = Obj) {
+  function getRep(object) {
     let type = typeof object;
     if (type == "object" && object instanceof String) {
       type = "string";
@@ -115,11 +70,15 @@ define(function(require, exports, module) {
           return React.createFactory(rep.rep);
         }
       } catch (err) {
-        console.error(err);
+        console.error("reps.getRep; EXCEPTION ", err, err);
       }
     }
 
     return React.createFactory(defaultRep.rep);
+  }
+
+  function isGrip(object) {
+    return object && object.actor;
   }
 
   

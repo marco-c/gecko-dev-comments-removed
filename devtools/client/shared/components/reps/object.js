@@ -15,19 +15,28 @@ define(function(require, exports, module) {
   const { Caption } = createFactories(require("./caption"));
 
   
-  const { span } = React.DOM;
+  const DOM = React.DOM;
 
   
 
 
 
   const Obj = React.createClass({
-    propTypes: {
-      object: React.PropTypes.object,
-      mode: React.PropTypes.string,
-    },
-
     displayName: "Obj",
+
+    render: function() {
+      let object = this.props.object;
+      let props = this.shortPropIterator(object);
+
+      return (
+        ObjectBox({className: "object"},
+          DOM.span({className: "objectTitle"}, this.getTitle(object)),
+          DOM.span({className: "objectLeftBrace", role: "presentation"}, "{"),
+          props,
+          DOM.span({className: "objectRightBrace"}, "}")
+        )
+      );
+    },
 
     getTitle: function() {
       return "";
@@ -52,10 +61,10 @@ define(function(require, exports, module) {
     },
 
     propIterator: function(object, max) {
-      let isInterestingProp = (t, value) => {
-        
-        return (t == "boolean" || t == "number" || (t == "string" && value));
-      };
+      function isInterestingProp(t, value) {
+        return (t == "boolean" || t == "number" || (t == "string" && value) ||
+          (t == "object" && value && value.toString));
+      }
 
       
       if (Object.prototype.toString.call(object) === "[object Generator]") {
@@ -64,15 +73,16 @@ define(function(require, exports, module) {
 
       
       
-      let props = this.getProps(object, max, isInterestingProp);
+      let props = [];
+      this.getProps(props, object, max, isInterestingProp);
 
       if (props.length <= max) {
         
         
         
-        props = props.concat(this.getProps(object, max, (t, value) => {
+        this.getProps(props, object, max, function(t, value) {
           return !isInterestingProp(t, value);
-        }));
+        });
       }
 
       if (props.length > max) {
@@ -90,12 +100,10 @@ define(function(require, exports, module) {
       return props;
     },
 
-    getProps: function(object, max, filter) {
-      let props = [];
-
+    getProps: function(props, object, max, filter) {
       max = max || 3;
       if (!object) {
-        return props;
+        return [];
       }
 
       let mode = this.props.mode;
@@ -103,7 +111,7 @@ define(function(require, exports, module) {
       try {
         for (let name in object) {
           if (props.length > max) {
-            return props;
+            return [];
           }
 
           let value;
@@ -129,21 +137,7 @@ define(function(require, exports, module) {
         console.error(err);
       }
 
-      return props;
-    },
-
-    render: function() {
-      let object = this.props.object;
-      let props = this.shortPropIterator(object);
-
-      return (
-        ObjectBox({className: "object"},
-          span({className: "objectTitle"}, this.getTitle(object)),
-          span({className: "objectLeftBrace", role: "presentation"}, "{"),
-          props,
-          span({className: "objectRightBrace"}, "}")
-        )
-      );
+      return [];
     },
   });
 
@@ -151,14 +145,6 @@ define(function(require, exports, module) {
 
 
   let PropRep = React.createFactory(React.createClass({
-    propTypes: {
-      object: React.PropTypes.any,
-      mode: React.PropTypes.string,
-      name: React.PropTypes.string,
-      equal: React.PropTypes.string,
-      delim: React.PropTypes.string,
-    },
-
     displayName: "PropRep",
 
     render: function() {
@@ -167,12 +153,12 @@ define(function(require, exports, module) {
       let mode = this.props.mode;
 
       return (
-        span({},
-          span({
+        DOM.span({},
+          DOM.span({
             "className": "nodeName"},
             this.props.name
           ),
-          span({
+          DOM.span({
             "className": "objectEqual",
             role: "presentation"},
             this.props.equal
@@ -181,7 +167,7 @@ define(function(require, exports, module) {
             object: object,
             mode: mode
           }),
-          span({
+          DOM.span({
             "className": "objectComma",
             role: "presentation"},
             this.props.delim
