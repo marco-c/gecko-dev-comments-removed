@@ -333,7 +333,8 @@ public:
 
     already_AddRefed<Layer>
     GetCanvasLayer(nsDisplayListBuilder* builder, Layer* oldLayer,
-                   LayerManager* manager) override;
+                   LayerManager* manager,
+                   bool aMirror = false) override;
 
     
     
@@ -941,12 +942,6 @@ public:
     }
 
     
-    
-public:
-    bool ValidateUnpackPixels(const char* funcName, uint32_t fullRows,
-                              uint32_t tailPixels, const webgl::TexUnpackBlob* blob);
-
-protected:
     bool ValidateTexImageSpecification(const char* funcName, uint8_t funcDims,
                                        GLenum texImageTarget, GLint level,
                                        GLsizei width, GLsizei height, GLsizei depth,
@@ -961,13 +956,6 @@ protected:
                                    TexImageTarget* const out_target,
                                    WebGLTexture** const out_texture,
                                    WebGLTexture::ImageInfo** const out_imageInfo);
-
-    bool GetUnpackValuesForImage(const char* funcName, uint32_t srcImageWidth,
-                                 uint32_t srcImageHeight, uint32_t* const out_rowLength,
-                                 uint32_t* const out_imageHeight);
-
-    bool ValidateUnpackInfo(const char* funcName, GLenum format, GLenum type,
-                            webgl::PackingInfo* const out);
 
 
 

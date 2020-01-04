@@ -135,7 +135,8 @@ public:
   
   virtual already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* builder,
                                                  Layer *oldLayer,
-                                                 LayerManager *manager) = 0;
+                                                 LayerManager *manager,
+                                                 bool aMirror = false) = 0;
 
   
   

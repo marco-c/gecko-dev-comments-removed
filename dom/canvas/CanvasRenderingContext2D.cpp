@@ -5811,8 +5811,14 @@ CanvasRenderingContext2D::GetBufferProvider(LayerManager* aManager)
 already_AddRefed<Layer>
 CanvasRenderingContext2D::GetCanvasLayer(nsDisplayListBuilder* aBuilder,
                                          Layer *aOldLayer,
-                                         LayerManager *aManager)
+                                         LayerManager *aManager,
+                                         bool aMirror )
 {
+  if (aMirror) {
+    
+    return nullptr;
+  }
+
   if (mOpaque || mIsSkiaGL) {
     
     

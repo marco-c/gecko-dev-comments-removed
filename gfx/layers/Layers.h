@@ -2375,6 +2375,7 @@ public:
       , mSize(0,0)
       , mHasAlpha(false)
       , mIsGLAlphaPremult(true)
+      , mIsMirror(false)
     { }
 
     
@@ -2393,6 +2394,10 @@ public:
 
     
     bool mIsGLAlphaPremult;
+
+    
+    
+    bool mIsMirror;
   };
 
   

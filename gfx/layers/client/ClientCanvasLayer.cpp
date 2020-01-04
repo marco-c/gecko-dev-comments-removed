@@ -67,7 +67,7 @@ ClientCanvasLayer::Initialize(const Data& aData)
 
   UniquePtr<SurfaceFactory> factory = GLScreenBuffer::CreateFactory(mGLContext, caps, forwarder, mFlags);
 
-  if (mGLFrontbuffer) {
+  if (mGLFrontbuffer || aData.mIsMirror) {
     
     
     mFactory = Move(factory);
