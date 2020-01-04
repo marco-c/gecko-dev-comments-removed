@@ -120,6 +120,9 @@ var handleContentContextMenu = function (event) {
   let loginFillInfo = LoginManagerContent.getFieldContext(event.target);
 
   
+  let parentAllowsMixedContent = !!docShell.mixedContentChannel;
+
+  
   
   
   if (Services.prefs.getBoolPref("network.http.enablePerElementReferrer")) {
@@ -180,7 +183,7 @@ var handleContentContextMenu = function (event) {
                      principal, docLocation, charSet, baseURI, referrer,
                      referrerPolicy, contentType, contentDisposition,
                      frameOuterWindowID, selectionInfo, disableSetDesktopBg,
-                     loginFillInfo, },
+                     loginFillInfo, parentAllowsMixedContent },
                    { event, popupNode: event.target });
   }
   else {
@@ -203,6 +206,7 @@ var handleContentContextMenu = function (event) {
       selectionInfo: selectionInfo,
       disableSetDesktopBackground: disableSetDesktopBg,
       loginFillInfo,
+      parentAllowsMixedContent,
     };
   }
 }

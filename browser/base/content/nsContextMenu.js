@@ -985,7 +985,7 @@ nsContextMenu.prototype = {
     
     let persistAllowMixedContentInChildTab = false;
 
-    if (this.browser.docShell && this.browser.docShell.mixedContentChannel) {
+    if (gContextMenuContentData.parentAllowsMixedContent) {
       const sm = Services.scriptSecurityManager;
       try {
         let targetURI = this.linkURI;
