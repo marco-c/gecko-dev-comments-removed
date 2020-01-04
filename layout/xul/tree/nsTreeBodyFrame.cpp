@@ -3609,24 +3609,33 @@ nsTreeBodyFrame::PaintImage(int32_t              aRowIndex,
 
     
     
-    
-    nsRect sourceRect = GetImageSourceRect(imageContext, useImageRegion, image);
-
-    
-    
-    
-    
-    
-    
-    
-    
+    nsRect wholeImageDest;
     CSSIntSize rawImageCSSIntSize;
-    image->GetWidth(&rawImageCSSIntSize.width);
-    image->GetHeight(&rawImageCSSIntSize.height);
-    nsSize rawImageSize(CSSPixel::ToAppUnits(rawImageCSSIntSize));
-    nsRect wholeImageDest =
-      nsLayoutUtils::GetWholeImageDestination(rawImageSize, sourceRect,
-          nsRect(destRect.TopLeft(), imageDestSize));
+    if (NS_SUCCEEDED(image->GetWidth(&rawImageCSSIntSize.width)) &&
+        NS_SUCCEEDED(image->GetHeight(&rawImageCSSIntSize.height))) {
+      
+      
+      
+      nsRect sourceRect = GetImageSourceRect(imageContext, useImageRegion, image);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      nsSize rawImageSize(CSSPixel::ToAppUnits(rawImageCSSIntSize));
+      wholeImageDest =
+        nsLayoutUtils::GetWholeImageDestination(rawImageSize, sourceRect,
+                                                nsRect(destRect.TopLeft(),
+                                                       imageDestSize));
+    } else {
+      
+      
+      wholeImageDest = destRect;
+    }
 
     gfxContext* ctx = aRenderingContext.ThebesContext();
     if (opacity != 1.0f) {
