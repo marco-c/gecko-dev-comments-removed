@@ -142,6 +142,9 @@ private:
   CompletionArray mUpdateCompletions;
   
   CompletionArray mGetHashCache;
+
+  
+  friend class PerProviderDirectoryTestUtils;
 };
 
 } 
