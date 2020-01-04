@@ -1,0 +1,4 @@
+
+
+postMessage("Hello World");
+close();
