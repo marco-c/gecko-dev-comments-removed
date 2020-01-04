@@ -159,6 +159,7 @@ protected:
   static bool sAndroidMCDecoderPreferred;
   static bool sAndroidMCDecoderEnabled;
   static bool sGMPDecoderEnabled;
+  static bool sEnableFuzzingWrapper;
 };
 
 
