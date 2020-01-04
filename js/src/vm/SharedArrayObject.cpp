@@ -164,15 +164,15 @@ SharedArrayRawBuffer::New(JSContext* cx, uint32_t length)
 void
 SharedArrayRawBuffer::addReference()
 {
-    MOZ_ASSERT(this->refcount > 0);
-    ++this->refcount; 
+    MOZ_ASSERT(this->refcount_ > 0);
+    ++this->refcount_; 
 }
 
 void
 SharedArrayRawBuffer::dropReference()
 {
     
-    uint32_t refcount = --this->refcount; 
+    uint32_t refcount = --this->refcount_; 
 
     
     if (refcount == 0) {
@@ -330,7 +330,15 @@ SharedArrayBufferObject::Finalize(FreeOp* fop, JSObject* obj)
 SharedArrayBufferObject::addSizeOfExcludingThis(JSObject* obj, mozilla::MallocSizeOf mallocSizeOf,
                                                 JS::ClassInfo* info)
 {
-    info->objectsNonHeapElementsMapped += obj->as<SharedArrayBufferObject>().byteLength();
+    
+    
+    
+    
+    
+    
+    const SharedArrayBufferObject& buf = obj->as<SharedArrayBufferObject>();
+    info->objectsNonHeapElementsShared +=
+        buf.byteLength() / buf.rawBufferObject()->refcount();
 }
 
 const Class SharedArrayBufferObject::protoClass = {
