@@ -88,7 +88,9 @@ AccountState.prototype = {
   whenKeysReadyDeferred: null,
 
   
-  get isCurrent() this.storageManager != null,
+  get isCurrent() {
+    return this.storageManager != null;
+  },
 
   abort() {
     if (this.whenVerifiedDeferred) {
