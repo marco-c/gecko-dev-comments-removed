@@ -60,9 +60,6 @@ public:
 protected:
   virtual ~HTMLLIAccessible() { }
 
-  
-  virtual void CacheChildren() override;
-
 private:
   RefPtr<HTMLListBulletAccessible> mBullet;
 };

@@ -378,11 +378,6 @@ public:
   
 
 
-  void EnsureChildren();
-
-  
-
-
   bool AppendChild(Accessible* aChild)
     { return InsertChildAt(mChildren.Length(), aChild); }
   virtual bool InsertChildAt(uint32_t aIndex, Accessible* aChild);
@@ -982,11 +977,6 @@ protected:
 
 
   void LastRelease();
-
-  
-
-
-  virtual void CacheChildren();
 
   
 

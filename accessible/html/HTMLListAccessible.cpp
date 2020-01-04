@@ -133,19 +133,6 @@ HTMLLIAccessible::UpdateBullet(bool aHasBullet)
 
 
 
-void
-HTMLLIAccessible::CacheChildren()
-{
-  if (mBullet)
-    AppendChild(mBullet);
-
-  
-  AccessibleWrap::CacheChildren();
-}
-
-
-
-
 HTMLListBulletAccessible::
   HTMLListBulletAccessible(nsIContent* aContent, DocAccessible* aDoc) :
   LeafAccessible(aContent, aDoc)
