@@ -8,11 +8,14 @@
 #define mozilla_EffectSet_h
 
 #include "nsCSSPseudoElements.h" 
+#include "nsHashKeys.h" 
+#include "nsTHashtable.h" 
 
 namespace mozilla {
 
 namespace dom {
 class Element;
+class KeyframeEffectReadOnly;
 } 
 
 
@@ -42,9 +45,20 @@ public:
   static EffectSet* GetOrCreateEffectSet(dom::Element* aElement,
                                          nsCSSPseudoElements::Type aPseudoType);
 
+  void AddEffect(dom::KeyframeEffectReadOnly& aEffect);
+  void RemoveEffect(dom::KeyframeEffectReadOnly& aEffect);
+
 private:
+  
+  
+  
+  
+  typedef nsTHashtable<nsPtrHashKey<dom::KeyframeEffectReadOnly>> EffectPtrSet;
+
   static nsIAtom* GetEffectSetPropertyAtom(nsCSSPseudoElements::Type
                                              aPseudoType);
+
+  EffectPtrSet mEffects;
 
 #ifdef DEBUG
   bool mCalledPropertyDtor;
