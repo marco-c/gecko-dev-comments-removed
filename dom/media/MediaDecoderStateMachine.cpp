@@ -2352,13 +2352,6 @@ nsresult MediaDecoderStateMachine::RunStateMachine()
       
       StopPlayback();
 
-      if (mState != DECODER_STATE_COMPLETED) {
-        
-        
-        NS_ASSERTION(IsStateMachineScheduled(), "Must have timer scheduled");
-        return NS_OK;
-      }
-
       if (mPlayState == MediaDecoder::PLAY_STATE_PLAYING &&
           !mSentPlaybackEndedEvent)
       {
