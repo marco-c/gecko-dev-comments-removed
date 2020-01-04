@@ -40,7 +40,7 @@ FFmpegLibWrapper::Link()
   uint32_t version = avcodec_version();
   mVersion = (version >> 16) & 0xff;
   uint32_t micro = version & 0xff;
-  if (mVersion == 57 && micro != 100) {
+  if (mVersion == 57 && micro < 100) {
     
     
     
