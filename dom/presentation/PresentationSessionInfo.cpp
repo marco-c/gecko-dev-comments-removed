@@ -192,10 +192,17 @@ PresentationSessionInfo::Close(nsresult aReason)
 {
   
   
-  if (!IsSessionReady() && NS_SUCCEEDED(aReason) && mListener) {
-    nsresult rv = mListener->NotifyStateChange(mSessionId,
-                                               nsIPresentationSessionListener::STATE_TERMINATED);
-    NS_WARN_IF(NS_FAILED(rv));
+  if (!IsSessionReady() && NS_SUCCEEDED(aReason)) {
+    if (mListener) {
+      
+      
+      nsresult rv = mListener->NotifyStateChange(mSessionId,
+                                                 nsIPresentationSessionListener::STATE_TERMINATED);
+      NS_WARN_IF(NS_FAILED(rv));
+    } else {
+      
+      NS_WARN_IF(NS_FAILED(UntrackFromService()));
+    }
   }
 
   Shutdown(aReason);
@@ -231,14 +238,27 @@ PresentationSessionInfo::ReplyError(nsresult aError)
   }
 
   
+  return UntrackFromService();
+}
+
+ nsresult
+PresentationSessionInfo::UntrackFromService()
+{
   nsCOMPtr<nsIPresentationService> service =
     do_GetService(PRESENTATION_SERVICE_CONTRACTID);
   if (NS_WARN_IF(!service)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-  static_cast<PresentationService*>(service.get())->RemoveSessionInfo(mSessionId);
+  static_cast<PresentationService*>(service.get())->UntrackSessionInfo(mSessionId);
 
   return NS_OK;
+}
+
+ bool
+PresentationSessionInfo::IsAccessible(base::ProcessId aProcessId)
+{
+  
+  return true;
 }
 
 
@@ -280,12 +300,17 @@ PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
 
   Shutdown(aReason);
 
+  uint16_t state = (NS_WARN_IF(NS_FAILED(aReason))) ?
+                   nsIPresentationSessionListener::STATE_DISCONNECTED :
+                   nsIPresentationSessionListener::STATE_TERMINATED;
   if (mListener) {
     
-    uint16_t state = (NS_WARN_IF(NS_FAILED(aReason))) ?
-                     nsIPresentationSessionListener::STATE_DISCONNECTED :
-                     nsIPresentationSessionListener::STATE_TERMINATED;
+    
+    
     return mListener->NotifyStateChange(mSessionId, state);
+  } else if (state == nsIPresentationSessionListener::STATE_TERMINATED) {
+    
+    return UntrackFromService();
   }
 
   return NS_OK;
@@ -640,6 +665,34 @@ PresentationResponderInfo::InitTransportAndSendAnswer()
  }
 
 nsresult
+PresentationResponderInfo::UntrackFromService()
+{
+  
+  if (mContentParent) {
+    NS_WARN_IF(!static_cast<ContentParent*>(mContentParent.get())->SendNotifyPresentationReceiverCleanUp(mSessionId));
+  }
+
+  
+  nsCOMPtr<nsIPresentationService> service =
+    do_GetService(PRESENTATION_SERVICE_CONTRACTID);
+  if (NS_WARN_IF(!service)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  static_cast<PresentationService*>(service.get())->UntrackSessionInfo(mSessionId);
+
+  return NS_OK;
+}
+
+bool
+PresentationResponderInfo::IsAccessible(base::ProcessId aProcessId)
+{
+  
+  return (mContentParent) ?
+          aProcessId == static_cast<ContentParent*>(mContentParent.get())->OtherPid() :
+          false;
+}
+
+nsresult
 PresentationResponderInfo::NotifyResponderReady()
 {
   if (mTimer) {
@@ -774,8 +827,10 @@ PresentationResponderInfo::ResolvedCallback(JSContext* aCx,
   nsRefPtr<TabParent> tabParent = TabParent::GetFrom(frameLoader);
   if (tabParent) {
     
-    nsCOMPtr<nsIContentParent> cp = tabParent->Manager();
-    NS_WARN_IF(!static_cast<ContentParent*>(cp.get())->SendNotifyPresentationReceiverLaunched(tabParent, mSessionId));
+    
+    
+    mContentParent = tabParent->Manager();
+    NS_WARN_IF(!static_cast<ContentParent*>(mContentParent.get())->SendNotifyPresentationReceiverLaunched(tabParent, mSessionId));
   } else {
     
     nsCOMPtr<nsIDocShell> docShell;
@@ -785,6 +840,7 @@ PresentationResponderInfo::ResolvedCallback(JSContext* aCx,
       return;
     }
 
+    
     mLoadingCallback = new PresentationResponderLoadingCallback(mSessionId);
     rv = mLoadingCallback->Init(docShell);
     if (NS_WARN_IF(NS_FAILED(rv))) {

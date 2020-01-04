@@ -81,7 +81,7 @@ Presentation::Init()
   
   
   nsAutoString sessionId;
-  rv = service->GetExistentSessionIdAtLaunch(sessionId);
+  rv = service->GetExistentSessionIdAtLaunch(GetOwner()->WindowID(), sessionId);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }

@@ -48,6 +48,14 @@ private:
   nsTObserverArray<nsCOMPtr<nsIPresentationListener> > mListeners;
   nsRefPtrHashtable<nsStringHashKey, nsIPresentationSessionListener> mSessionListeners;
   nsRefPtr<PresentationResponderLoadingCallback> mCallback;
+
+  
+  
+  
+  
+  
+  nsClassHashtable<nsUint64HashKey, nsString> mRespondingSessionIds;
+  nsDataHashtable<nsStringHashKey, uint64_t> mRespondingWindowIds;
 };
 
 } 
