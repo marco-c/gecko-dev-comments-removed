@@ -1005,12 +1005,6 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
         MOZ_ASSERT_IF(!funCon && !fun->isArrow(),
                       src->length() > 0 && src->latin1OrTwoByteChar(0) == '(');
 
-        
-        
-        
-        
-        bool addUseStrict = script->strict() && !script->explicitUseStrict() && !fun->isArrow();
-
         bool buildBody = funCon;
         if (buildBody) {
             
@@ -1036,44 +1030,8 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen)
             if (!out.append(") {\n"))
                 return nullptr;
         }
-        if (addUseStrict) {
-            
-            
-            size_t bodyStart = 0, bodyEnd;
-
-            
-            
-            if (!funCon) {
-                MOZ_ASSERT(!buildBody);
-                if (!FindBody(cx, fun, src, &bodyStart, &bodyEnd))
-                    return nullptr;
-            } else {
-                bodyEnd = src->length();
-            }
-
-            if (addUseStrict) {
-                
-                if (!out.appendSubstring(src, 0, bodyStart))
-                    return nullptr;
-                if (exprBody) {
-                    
-                    
-                    
-                    if (!out.append("/* use strict */ "))
-                        return nullptr;
-                } else {
-                    if (!out.append("\n\"use strict\";\n"))
-                        return nullptr;
-                }
-            }
-
-            
-            if (!out.appendSubstring(src, bodyStart, src->length() - bodyStart))
-                return nullptr;
-        } else {
-            if (!out.append(src))
-                return nullptr;
-        }
+        if (!out.append(src))
+            return nullptr;
         if (buildBody) {
             if (!out.append("\n}"))
                 return nullptr;
