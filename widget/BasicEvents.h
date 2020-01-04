@@ -89,7 +89,7 @@ public:
   bool    mIsSynthesizedForTests : 1;
   
   
-  bool    mExceptionHasBeenRisen : 1;
+  bool    mExceptionWasRaised : 1;
   
   
   bool    mRetargetToNonNativeAnonymous : 1;
