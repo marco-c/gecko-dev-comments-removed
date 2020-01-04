@@ -232,7 +232,7 @@ function getAPILevelForWindow(window, addonId) {
 
   
   
-  if (!addonId && getAddonIdForWindow(window) != addonId) {
+  if (!addonId || getAddonIdForWindow(window) != addonId) {
     return NO_PRIVILEGES;
   }
 
