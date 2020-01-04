@@ -221,9 +221,6 @@ class VirtualenvMixin(object):
                 command = [pip, "install"]
             if no_deps:
                 command += ["--no-deps"]
-            virtualenv_cache_dir = c.get("virtualenv_cache_dir", os.path.join(venv_path, "cache"))
-            if virtualenv_cache_dir:
-                command += ["--download-cache", virtualenv_cache_dir]
             
             
             command += ['--timeout', str(c.get('pip_timeout', 120))]
