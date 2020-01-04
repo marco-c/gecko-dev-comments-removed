@@ -540,17 +540,14 @@ static void tonality_analysis(TonalityAnalysisState *tonal, const CELTMode *celt
        
        float speech0;
        float music0;
+       float p, q;
 
        
        tau = .00005f*frame_probs[1];
-       beta = .05f;
-       if (1) {
-          
-          float p, q;
-          p = MAX16(.05f,MIN16(.95f,frame_probs[0]));
-          q = MAX16(.05f,MIN16(.95f,tonal->music_prob));
-          beta = .01f+.05f*ABS16(p-q)/(p*(1-q)+q*(1-p));
-       }
+       
+       p = MAX16(.05f,MIN16(.95f,frame_probs[0]));
+       q = MAX16(.05f,MIN16(.95f,tonal->music_prob));
+       beta = .01f+.05f*ABS16(p-q)/(p*(1-q)+q*(1-p));
        
 
 

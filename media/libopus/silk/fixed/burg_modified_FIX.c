@@ -150,8 +150,11 @@ void silk_burg_modified_c(
                     C_first_row[ k ] = silk_MLA( C_first_row[ k ], x1, x_ptr[ n - k - 1 ]            ); 
                     C_last_row[ k ]  = silk_MLA( C_last_row[ k ],  x2, x_ptr[ subfr_length - n + k ] ); 
                     Atmp1 = silk_RSHIFT_ROUND( Af_QA[ k ], QA - 17 );                                   
-                    tmp1 = silk_MLA( tmp1, x_ptr[ n - k - 1 ],            Atmp1 );                      
-                    tmp2 = silk_MLA( tmp2, x_ptr[ subfr_length - n + k ], Atmp1 );                      
+                    
+
+
+                    tmp1 = silk_MLA_ovflw( tmp1, x_ptr[ n - k - 1 ],            Atmp1 );                      
+                    tmp2 = silk_MLA_ovflw( tmp2, x_ptr[ subfr_length - n + k ], Atmp1 );                      
                 }
                 tmp1 = -tmp1;                                                                           
                 tmp2 = -tmp2;                                                                           
@@ -200,12 +203,14 @@ void silk_burg_modified_c(
             
             tmp2 = ( (opus_int32)1 << 30 ) - silk_DIV32_varQ( minInvGain_Q30, invGain_Q30, 30 );            
             rc_Q31 = silk_SQRT_APPROX( tmp2 );                                                  
-            
-            rc_Q31 = silk_RSHIFT32( rc_Q31 + silk_DIV32( tmp2, rc_Q31 ), 1 );                   
-            rc_Q31 = silk_LSHIFT32( rc_Q31, 16 );                                               
-            if( num < 0 ) {
+            if( rc_Q31 > 0 ) {
                 
-                rc_Q31 = -rc_Q31;
+                rc_Q31 = silk_RSHIFT32( rc_Q31 + silk_DIV32( tmp2, rc_Q31 ), 1 );                       
+                rc_Q31 = silk_LSHIFT32( rc_Q31, 16 );                                                   
+                if( num < 0 ) {
+                    
+                    rc_Q31 = -rc_Q31;
+                }
             }
             invGain_Q30 = minInvGain_Q30;
             reached_max_gain = 1;

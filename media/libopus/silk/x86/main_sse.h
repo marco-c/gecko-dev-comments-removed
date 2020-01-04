@@ -207,7 +207,8 @@ void silk_noise_shape_quantizer(
     opus_int            offset_Q10,             
     opus_int            length,                 
     opus_int            shapingLPCOrder,        
-    opus_int            predictLPCOrder         
+    opus_int            predictLPCOrder,        
+    int                 arch                    
 );
 
 

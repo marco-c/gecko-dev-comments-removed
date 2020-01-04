@@ -62,7 +62,8 @@ static inline void silk_noise_shape_quantizer_del_dec(
     opus_int            warping_Q16,            
     opus_int            nStatesDelayedDecision, 
     opus_int            *smpl_buf_idx,          
-    opus_int            decisionDelay           
+    opus_int            decisionDelay,          
+    int                 arch                    
 )
 {
     opus_int     i, j, k, Winner_ind, RDmin_ind, RDmax_ind, last_smple_idx;
@@ -81,6 +82,9 @@ static inline void silk_noise_shape_quantizer_del_dec(
     opus_int16 a_Q12_14, a_Q12_15;
 
     opus_int32 cur, prev, next;
+
+    
+    (void)arch;
 
     
     b_Q14_0 = b_Q14[ 0 ];
