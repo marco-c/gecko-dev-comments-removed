@@ -8,8 +8,6 @@
 
 #include "mozilla/dom/Element.h"
 
-NS_IMPL_ISUPPORTS(nsContentSecurityManager, nsIContentSecurityManager)
-
 nsresult
 ValidateSecurityFlags(nsILoadInfo* aLoadInfo)
 {
@@ -345,21 +343,5 @@ nsContentSecurityManager::doContentSecurityCheck(nsIChannel* aChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  return NS_OK;
-}
-
-
-
-
-NS_IMETHODIMP
-nsContentSecurityManager::PerformSecurityCheck(nsIChannel* aChannel,
-                                               nsIStreamListener* aStreamListener,
-                                               nsIStreamListener** outStreamListener)
-{
-  nsCOMPtr<nsIStreamListener> inAndOutListener = aStreamListener;
-  nsresult rv = doContentSecurityCheck(aChannel, inAndOutListener);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  inAndOutListener.forget(outStreamListener);
   return NS_OK;
 }
