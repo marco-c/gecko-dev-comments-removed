@@ -236,7 +236,7 @@ GenerateEntry(ModuleGenerator& mg, unsigned exportIndex, bool usesHeap)
     
     masm.assertStackAlignment(AsmJSStackAlignment);
     Label target;
-    target.bind(mg.funcEntryOffsets()[mg.exportFuncIndex(exportIndex)]);
+    target.bind(mg.exportEntryOffset(exportIndex));
     masm.call(CallSiteDesc(CallSiteDesc::Relative), &target);
 
     
