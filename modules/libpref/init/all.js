@@ -518,9 +518,6 @@ pref("media.video-queue.send-to-compositor-size", 9999);
 pref("media.video_stats.enabled", true);
 
 
-pref("media.audio_data.enabled", false);
-
-
 pref("layers.async-pan-zoom.enabled", false);
 
 
