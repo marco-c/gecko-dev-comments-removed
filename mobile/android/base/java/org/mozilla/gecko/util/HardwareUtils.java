@@ -90,7 +90,8 @@ public final class HardwareUtils {
     }
 
     public static boolean hasMenuButton() {
-        return sHasMenuButton;
+        
+        return false;
     }
 
     public static int getMemSize() {
