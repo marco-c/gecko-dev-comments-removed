@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
@@ -20,8 +21,8 @@ add_task(function* () {
   HUD = outputNode = null;
 });
 
-function consoleOpened(aHud) {
-  HUD = aHud;
+function consoleOpened(hud) {
+  HUD = hud;
 
   let deferred = promise.defer();
 
@@ -34,7 +35,8 @@ function consoleOpened(aHud) {
                                .getControllerForCommand("cmd_copy");
   is(controller.isCommandEnabled("cmd_copy"), false, "cmd_copy is disabled");
 
-  content.console.log("Hello world! bug587617");
+  ContentTask.spawn(gBrowser.selectedBrowser, null,
+    "() => content.console.log('Hello world! bug587617')");
 
   waitForMessages({
     webconsole: HUD,
