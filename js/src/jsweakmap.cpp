@@ -36,35 +36,6 @@ WeakMapBase::~WeakMapBase()
 }
 
 void
-WeakMapBase::trace(JSTracer* tracer)
-{
-    MOZ_ASSERT(isInList());
-    if (tracer->isMarkingTracer()) {
-        marked = true;
-        if (tracer->weakMapAction() == DoNotTraceWeakMaps) {
-            
-            
-            
-            
-        } else {
-            MOZ_ASSERT(tracer->weakMapAction() == ExpandWeakMaps);
-            markEphemeronEntries(tracer);
-        }
-    } else {
-        
-        
-        
-        
-        if (tracer->weakMapAction() == DoNotTraceWeakMaps)
-            return;
-
-        nonMarkingTraceValues(tracer);
-        if (tracer->weakMapAction() == TraceWeakMapKeysValues)
-            nonMarkingTraceKeys(tracer);
-    }
-}
-
-void
 WeakMapBase::unmarkZone(JS::Zone* zone)
 {
     for (WeakMapBase* m : zone->gcWeakMapList)
@@ -87,7 +58,7 @@ WeakMapBase::markZoneIteratively(JS::Zone* zone, JSTracer* tracer)
 {
     bool markedAny = false;
     for (WeakMapBase* m : zone->gcWeakMapList) {
-        if (m->marked && m->markIteratively(tracer))
+        if (m->marked && m->traceEntries(tracer))
             markedAny = true;
     }
     return markedAny;
