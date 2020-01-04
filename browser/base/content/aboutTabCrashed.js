@@ -2,96 +2,257 @@
 
 
 
-function parseQueryString() {
-  let URL = document.documentURI;
-  let queryString = URL.replace(/^about:tabcrashed?e=tabcrashed/, "");
+var AboutTabCrashed = {
+  
 
-  let titleMatch = queryString.match(/d=([^&]*)/);
-  let URLMatch = queryString.match(/u=([^&]*)/);
-  return {
-    title: titleMatch && titleMatch[1] ? decodeURIComponent(titleMatch[1]) : "",
-    URL: URLMatch && URLMatch[1] ? decodeURIComponent(URLMatch[1]) : "",
-  };
-}
 
-function displayUI() {
-  if (!hasReport()) {
-    return;
-  }
 
-  let sendCrashReport = document.getElementById("sendReport").checked;
-  let container = document.getElementById("crash-reporter-container");
-  container.hidden = !sendCrashReport;
-}
+  hasReport: false,
 
-function hasReport() {
-  return document.documentElement.classList.contains("crashDumpAvailable");
-}
+  
 
-function sendEvent(message) {
-  let comments = "";
-  let email = "";
-  let URL = "";
-  let sendCrashReport = false;
-  let emailMe = false;
-  let includeURL = false;
 
-  if (hasReport()) {
-    sendCrashReport = document.getElementById("sendReport").checked;
-    if (sendCrashReport) {
-      comments = document.getElementById("comments").value.trim();
+  MESSAGES: [
+    "SetCrashReportAvailable",
+    "CrashReportSent",
+    "UpdateCount",
+  ],
 
-      includeURL = document.getElementById("includeURL").checked;
-      if (includeURL) {
-        URL = parseQueryString().URL.trim();
+  
+
+
+  CLICK_TARGETS: [
+    "closeTab",
+    "restoreTab",
+    "restoreAll",
+    "sendReport",
+  ],
+
+  
+
+
+
+
+
+
+
+
+  get pageData() {
+    delete this.pageData;
+
+    let URL = document.documentURI;
+    let queryString = URL.replace(/^about:tabcrashed?e=tabcrashed/, "");
+
+    let titleMatch = queryString.match(/d=([^&]*)/);
+    let URLMatch = queryString.match(/u=([^&]*)/);
+
+    return this.pageData = {
+      title: titleMatch && titleMatch[1] ? decodeURIComponent(titleMatch[1]) : "",
+      URL: URLMatch && URLMatch[1] ? decodeURIComponent(URLMatch[1]) : "",
+    };
+  },
+
+  init() {
+    this.MESSAGES.forEach((msg) => addMessageListener(msg, this.receiveMessage.bind(this)));
+    addEventListener("DOMContentLoaded", this);
+
+    document.title = this.pageData.title;
+  },
+
+  receiveMessage(message) {
+    switch(message.name) {
+      case "UpdateCount": {
+        this.showRestoreAll(message.data.count > 1);
+        break;
       }
-
-      emailMe = document.getElementById("emailMe").checked;
-      if (emailMe) {
-        email = document.getElementById("email").value.trim();
+      case "SetCrashReportAvailable": {
+        this.onSetCrashReportAvailable(message);
+        break;
+      }
+      case "CrashReportSent": {
+        this.onCrashReportSent();
+        break;
       }
     }
-  }
+  },
 
-  let event = new CustomEvent("AboutTabCrashedMessage", {
-    bubbles: true,
-    detail: {
-      message,
-      sendCrashReport,
+  handleEvent(event) {
+    switch (event.type) {
+      case "DOMContentLoaded": {
+        this.onDOMContentLoaded();
+        break;
+      }
+      case "click": {
+        this.onClick(event);
+        break;
+      }
+    }
+  },
+
+  onDOMContentLoaded() {
+    this.CLICK_TARGETS.forEach((targetID) => {
+      let el = document.getElementById(targetID);
+      el.addEventListener("click", this);
+    });
+
+    
+    let event = new CustomEvent("AboutTabCrashedLoad", {bubbles:true});
+    document.dispatchEvent(event);
+
+    sendAsyncMessage("Load");
+  },
+
+  onClick(event) {
+    switch(event.target.id) {
+      case "closeTab": {
+        this.sendMessage("closeTab");
+        break;
+      }
+
+      case "restoreTab": {
+        this.sendMessage("restoreTab");
+        break;
+      }
+
+      case "restoreAll": {
+        this.sendMessage("restoreAll");
+        break;
+      }
+
+      case "sendReport": {
+        this.showCrashReportUI(event.target.checked);
+        break;
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onSetCrashReportAvailable(message) {
+    if (message.data.hasReport) {
+      this.hasReport = true;
+      document.documentElement.classList.add("crashDumpAvailable");
+
+      let data = message.data;
+      document.getElementById("sendReport").checked = data.sendReport;
+      document.getElementById("includeURL").checked = data.includeURL;
+      document.getElementById("emailMe").checked = data.emailMe;
+      if (data.emailMe) {
+        document.getElementById("email").value = data.email;
+      }
+    }
+
+    let event = new CustomEvent("AboutTabCrashedReady", {bubbles:true});
+    document.dispatchEvent(event);
+  },
+
+  
+
+
+
+  onCrashReportSent() {
+    document.documentElement.classList.remove("crashDumpAvailable");
+    document.documentElement.classList.add("crashDumpSubmitted");
+  },
+
+  
+
+
+
+
+
+  showCrashReportUI(shouldShow) {
+    let container = document.getElementById("crash-reporter-container");
+    container.hidden = !shouldShow;
+  },
+
+  
+
+
+
+
+
+  showRestoreAll(shouldShow) {
+    let restoreAll = document.getElementById("restoreAll");
+    let restoreTab = document.getElementById("restoreTab");
+    if (shouldShow) {
+      restoreAll.removeAttribute("hidden");
+      restoreTab.classList.remove("primary");
+    } else {
+      restoreAll.setAttribute("hidden", true);
+      restoreTab.classList.add("primary");
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  sendMessage(messageName) {
+    let comments = "";
+    let email = "";
+    let URL = "";
+    let sendReport = false;
+    let emailMe = false;
+    let includeURL = false;
+
+    if (this.hasReport) {
+      sendReport = document.getElementById("sendReport").checked;
+      if (sendReport) {
+        comments = document.getElementById("comments").value.trim();
+
+        includeURL = document.getElementById("includeURL").checked;
+        if (includeURL) {
+          URL = this.pageData.URL.trim();
+        }
+
+        emailMe = document.getElementById("emailMe").checked;
+        if (emailMe) {
+          email = document.getElementById("email").value.trim();
+        }
+      }
+    }
+
+    sendAsyncMessage(messageName, {
+      sendReport,
       comments,
       email,
       emailMe,
       includeURL,
       URL,
-    },
-  });
+    });
+  },
+};
 
-  document.dispatchEvent(event);
-}
-
-function closeTab() {
-  sendEvent("closeTab");
-}
-
-function restoreTab() {
-  sendEvent("restoreTab");
-}
-
-function restoreAll() {
-  sendEvent("restoreAll");
-}
-
-document.title = parseQueryString().title;
-
-
-var event = new CustomEvent("AboutTabCrashedLoad", {bubbles:true});
-document.dispatchEvent(event);
-
-addEventListener("DOMContentLoaded", function() {
-  let sendReport = document.getElementById("sendReport");
-  sendReport.addEventListener("click", function() {
-    displayUI();
-  });
-
-  displayUI();
-});
+AboutTabCrashed.init();
