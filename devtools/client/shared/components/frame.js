@@ -210,8 +210,11 @@ module.exports = createClass({
 
     
     
-    let sourceInnerEl = dom.span({ className: "frame-link-source-inner" },
-      sourceElements);
+    let sourceInnerEl = dom.span({
+      className: "frame-link-source-inner",
+      title: isLinkable ?
+        l10n.getFormatStr("frame.viewsourceindebugger", tooltip) : tooltip,
+    }, sourceElements);
 
     
     
@@ -224,12 +227,10 @@ module.exports = createClass({
         href: source,
         className: "frame-link-source",
         draggable: false,
-        title: l10n.getFormatStr("frame.viewsourceindebugger", tooltip)
       }, sourceInnerEl);
     } else {
       sourceEl = dom.span({
         className: "frame-link-source",
-        title: tooltip,
       }, sourceInnerEl);
     }
     elements.push(sourceEl);
