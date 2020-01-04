@@ -395,11 +395,22 @@ DrawTargetRecording::FillGlyphs(ScaledFont *aFont,
     RecordedFontData fontData(aFont);
     RecordedFontDetails fontDetails;
     if (fontData.GetFontDetails(fontDetails)) {
+      
+      
       if (!mRecorder->HasStoredFontData(fontDetails.fontDataKey)) {
         mRecorder->RecordEvent(fontData);
         mRecorder->AddStoredFontData(fontDetails.fontDataKey);
       }
       mRecorder->RecordEvent(RecordedScaledFontCreation(aFont, fontDetails));
+    } else {
+      
+      
+      RecordedFontDescriptor fontDesc(aFont);
+      if (fontDesc.IsValid()) {
+        mRecorder->RecordEvent(fontDesc);
+      } else {
+        gfxWarning() << "DrawTargetRecording::FillGlyphs failed to serialise ScaledFont";
+      }
     }
 #endif
     RecordingFontUserData *userData = new RecordingFontUserData;
