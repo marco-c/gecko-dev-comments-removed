@@ -315,7 +315,8 @@ var BookmarkPropertiesPanel = {
     switch (this._action) {
       case ACTION_EDIT:
         gEditItemOverlay.initPanel({ node: this._node
-                                   , hiddenRows: this._hiddenRows });
+                                   , hiddenRows: this._hiddenRows
+                                   , focusedElement: "first" });
         acceptButton.disabled = gEditItemOverlay.readOnly;
         break;
       case ACTION_ADD:
@@ -323,7 +324,8 @@ var BookmarkPropertiesPanel = {
         
         gEditItemOverlay.initPanel({ node: this._node
                                    , hiddenRows: this._hiddenRows
-                                   , postData: this._postData });
+                                   , postData: this._postData
+                                   , focusedElement: "first" });
 
         
         
