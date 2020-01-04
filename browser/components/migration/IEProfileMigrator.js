@@ -84,8 +84,7 @@ History.prototype = {
       let transitionType = this._typedURLs[uri.spec] ?
                              Ci.nsINavHistoryService.TRANSITION_TYPED :
                              Ci.nsINavHistoryService.TRANSITION_LINK;
-      
-      let lastVisitTime = entry.get("time") || Date.now();
+      let lastVisitTime = entry.get("time");
 
       places.push(
         { uri: uri,
