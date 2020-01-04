@@ -82,6 +82,9 @@ exports.getTestActorWithoutToolbox = Task.async(function* (tab) {
   client.connect(deferred.resolve);
   yield deferred.promise;
 
+  
+  yield registerTestActor(client);
+
   return getTestActor(client, tab);
 });
 
