@@ -1015,6 +1015,7 @@ pref("security.exthelperapp.disable_background_handling", true);
 
 pref("osfile.reset_worker_delay", 5000);
 
+pref("apz.displayport_expiry_ms", 0);
 
 pref("apz.axis_lock.mode", 2); 
 pref("apz.fling_curve_function_x1", "0.41");
