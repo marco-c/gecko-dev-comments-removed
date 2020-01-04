@@ -142,6 +142,8 @@ public abstract class GeckoApp
     public static final String ACTION_LOAD                 = "org.mozilla.gecko.LOAD";
     public static final String ACTION_INIT_PW              = "org.mozilla.gecko.INIT_PW";
 
+    public static final String INTENT_REGISTER_STUMBLER_LISTENER = "org.mozilla.gecko.STUMBLER_REGISTER_LOCAL_LISTENER";
+
     public static final String EXTRA_STATE_BUNDLE          = "stateBundle";
 
     public static final String PREFS_ALLOW_STATE_BUNDLE    = "allowStateBundle";
@@ -1127,6 +1129,13 @@ public abstract class GeckoApp
         } catch (Exception e) {
             Log.e(LOGTAG, "Exception starting favicon cache. Corrupt resources?", e);
         }
+
+        
+        
+        
+        getApplicationContext().sendBroadcast(
+                new Intent(INTENT_REGISTER_STUMBLER_LISTENER)
+        );
 
         
         

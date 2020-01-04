@@ -14,13 +14,6 @@ public class GlobalConstants {
   public static final String BROWSER_INTENT_PACKAGE = AppConstants.ANDROID_PACKAGE_NAME;
   public static final String BROWSER_INTENT_CLASS = AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS;
 
-  
-
-
-
-
-  public static final String PER_ANDROID_PACKAGE_PERMISSION = AppConstants.ANDROID_PACKAGE_NAME + ".permission.PER_ANDROID_PACKAGE";
-
   public static final int SHARED_PREFERENCES_MODE = 0;
 
   
