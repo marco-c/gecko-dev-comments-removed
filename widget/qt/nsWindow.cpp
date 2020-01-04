@@ -1202,7 +1202,7 @@ nsWindow::keyPressEvent(QKeyEvent* aEvent)
             return DispatchCommandEvent(nsGkAtoms::Home);
         case Qt::Key_Copy:
         case Qt::Key_F16: 
-            return DispatchContentCommandEvent(NS_CONTENT_COMMAND_COPY);
+            return DispatchContentCommandEvent(eContentCommandCopy);
         case Qt::Key_Cut:
         case Qt::Key_F20:
             return DispatchContentCommandEvent(eContentCommandCut);

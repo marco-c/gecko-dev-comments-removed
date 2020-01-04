@@ -3037,7 +3037,7 @@ nsWindow::OnKeyPressEvent(GdkEventKey *aEvent)
             return DispatchCommandEvent(nsGkAtoms::Home);
         case XF86XK_Copy:
         case GDK_F16:  
-            return DispatchContentCommandEvent(NS_CONTENT_COMMAND_COPY);
+            return DispatchContentCommandEvent(eContentCommandCopy);
         case XF86XK_Cut:
         case GDK_F20:
             return DispatchContentCommandEvent(eContentCommandCut);
