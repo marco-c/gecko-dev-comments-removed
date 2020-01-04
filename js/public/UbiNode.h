@@ -967,7 +967,8 @@ class MOZ_STACK_CLASS RootList {
     
     bool init();
     
-    bool init(ZoneSet& debuggees);
+    bool init(CompartmentSet& debuggees);
+    
     
     bool init(HandleObject debuggees);
 

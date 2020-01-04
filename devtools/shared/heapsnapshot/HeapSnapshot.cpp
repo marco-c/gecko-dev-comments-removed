@@ -31,6 +31,7 @@
 #include "mozilla/Telemetry.h"
 
 #include "jsapi.h"
+#include "jsfriendapi.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsCRTGlue.h"
 #include "nsDirectoryServiceDefs.h"
@@ -725,14 +726,14 @@ HeapSnapshot::ComputeShortestPaths(JSContext*cx, uint64_t start,
 
 
 static bool
-PopulateZonesWithGlobals(ZoneSet& zones, AutoObjectVector& globals)
+PopulateCompartmentsWithGlobals(CompartmentSet& compartments, AutoObjectVector& globals)
 {
-  if (!zones.init())
+  if (!compartments.init())
     return false;
 
   unsigned length = globals.length();
   for (unsigned i = 0; i < length; i++) {
-    if (!zones.put(GetObjectZone(globals[i])))
+    if (!compartments.put(GetObjectCompartment(globals[i])))
       return false;
   }
 
@@ -764,15 +765,16 @@ AddGlobalsAsRoots(AutoObjectVector& globals, ubi::RootList& roots)
 
 
 
+
 static bool
 EstablishBoundaries(JSContext* cx,
                     ErrorResult& rv,
                     const HeapSnapshotBoundaries& boundaries,
                     ubi::RootList& roots,
-                    ZoneSet& zones)
+                    CompartmentSet& compartments)
 {
   MOZ_ASSERT(!roots.initialized());
-  MOZ_ASSERT(!zones.initialized());
+  MOZ_ASSERT(!compartments.initialized());
 
   bool foundBoundaryProperty = false;
 
@@ -805,8 +807,8 @@ EstablishBoundaries(JSContext* cx,
 
     AutoObjectVector globals(cx);
     if (!dbg::GetDebuggeeGlobals(cx, *dbgObj, globals) ||
-        !PopulateZonesWithGlobals(zones, globals) ||
-        !roots.init(zones) ||
+        !PopulateCompartmentsWithGlobals(compartments, globals) ||
+        !roots.init(compartments) ||
         !AddGlobalsAsRoots(globals, roots))
     {
       rv.Throw(NS_ERROR_OUT_OF_MEMORY);
@@ -840,8 +842,8 @@ EstablishBoundaries(JSContext* cx,
       }
     }
 
-    if (!PopulateZonesWithGlobals(zones, globals) ||
-        !roots.init(zones) ||
+    if (!PopulateCompartmentsWithGlobals(compartments, globals) ||
+        !roots.init(compartments) ||
         !AddGlobalsAsRoots(globals, roots))
     {
       rv.Throw(NS_ERROR_OUT_OF_MEMORY);
@@ -855,8 +857,8 @@ EstablishBoundaries(JSContext* cx,
   }
 
   MOZ_ASSERT(roots.initialized());
-  MOZ_ASSERT_IF(boundaries.mDebugger.WasPassed(), zones.initialized());
-  MOZ_ASSERT_IF(boundaries.mGlobals.WasPassed(), zones.initialized());
+  MOZ_ASSERT_IF(boundaries.mDebugger.WasPassed(), compartments.initialized());
+  MOZ_ASSERT_IF(boundaries.mGlobals.WasPassed(), compartments.initialized());
   return true;
 }
 
@@ -1321,8 +1323,8 @@ public:
 
 class MOZ_STACK_CLASS HeapSnapshotHandler
 {
-  CoreDumpWriter& writer;
-  JS::ZoneSet*    zones;
+  CoreDumpWriter&     writer;
+  JS::CompartmentSet* compartments;
 
 public:
   
@@ -1330,9 +1332,9 @@ public:
   uint32_t edgeCount;
 
   HeapSnapshotHandler(CoreDumpWriter& writer,
-                      JS::ZoneSet* zones)
+                      JS::CompartmentSet* compartments)
     : writer(writer),
-      zones(zones)
+      compartments(compartments)
   { }
 
   
@@ -1360,7 +1362,7 @@ public:
 
     const JS::ubi::Node& referent = edge.referent;
 
-    if (!zones)
+    if (!compartments)
       
       
       return writer.writeNode(referent, CoreDumpWriter::INCLUDE_EDGES);
@@ -1372,9 +1374,9 @@ public:
     
     
 
-    JS::Zone* zone = referent.zone();
+    JSCompartment* compartment = referent.compartment();
 
-    if (zones->has(zone))
+    if (compartments->has(compartment))
       return writer.writeNode(referent, CoreDumpWriter::INCLUDE_EDGES);
 
     traversal.abandonReferent();
@@ -1388,7 +1390,7 @@ WriteHeapGraph(JSContext* cx,
                const JS::ubi::Node& node,
                CoreDumpWriter& writer,
                bool wantNames,
-               JS::ZoneSet* zones,
+               JS::CompartmentSet* compartments,
                JS::AutoCheckCannotGC& noGC,
                uint32_t& outNodeCount,
                uint32_t& outEdgeCount)
@@ -1402,7 +1404,7 @@ WriteHeapGraph(JSContext* cx,
   
   
 
-  HeapSnapshotHandler handler(writer, zones);
+  HeapSnapshotHandler handler(writer, compartments);
   HeapSnapshotHandler::Traversal traversal(JS_GetRuntime(cx), handler, noGC);
   if (!traversal.init())
     return false;
@@ -1548,7 +1550,7 @@ ThreadSafeChromeUtils::SaveHeapSnapshot(GlobalObject& global,
   auto start = TimeStamp::Now();
 
   bool wantNames = true;
-  ZoneSet zones;
+  CompartmentSet compartments;
   uint32_t nodeCount = 0;
   uint32_t edgeCount = 0;
 
@@ -1569,7 +1571,7 @@ ThreadSafeChromeUtils::SaveHeapSnapshot(GlobalObject& global,
   {
     Maybe<AutoCheckCannotGC> maybeNoGC;
     ubi::RootList rootList(JS_GetRuntime(cx), maybeNoGC, wantNames);
-    if (!EstablishBoundaries(cx, rv, boundaries, rootList, zones))
+    if (!EstablishBoundaries(cx, rv, boundaries, rootList, compartments))
       return;
 
     MOZ_ASSERT(maybeNoGC.isSome());
@@ -1583,7 +1585,7 @@ ThreadSafeChromeUtils::SaveHeapSnapshot(GlobalObject& global,
                         roots,
                         writer,
                         wantNames,
-                        zones.initialized() ? &zones : nullptr,
+                        compartments.initialized() ? &compartments : nullptr,
                         maybeNoGC.ref(),
                         nodeCount,
                         edgeCount))

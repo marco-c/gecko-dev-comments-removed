@@ -7,7 +7,7 @@
 
 #include "DevTools.h"
 
-DEF_TEST(DoesntCrossZoneBoundaries, {
+DEF_TEST(DoesCrossCompartmentBoundaries, {
     
     JS::CompartmentOptions options;
     JS::RootedObject newGlobal(cx, JS_NewGlobalObject(cx,
@@ -16,31 +16,34 @@ DEF_TEST(DoesntCrossZoneBoundaries, {
                                                       JS::FireOnNewGlobalHook,
                                                       options));
     ASSERT_TRUE(newGlobal);
-    JS::Zone* newZone = nullptr;
+    JSCompartment* newCompartment = nullptr;
     {
       JSAutoCompartment ac(cx, newGlobal);
       ASSERT_TRUE(JS_InitStandardClasses(cx, newGlobal));
-      newZone = js::GetContextZone(cx);
+      newCompartment = js::GetContextCompartment(cx);
     }
-    ASSERT_TRUE(newZone);
-    ASSERT_NE(newZone, zone);
+    ASSERT_TRUE(newCompartment);
+    ASSERT_NE(newCompartment, compartment);
 
     
-    
-    JS::ZoneSet targetZones;
-    ASSERT_TRUE(targetZones.init());
-    ASSERT_TRUE(targetZones.put(zone));
+    JS::CompartmentSet targetCompartments;
+    ASSERT_TRUE(targetCompartments.init());
+    ASSERT_TRUE(targetCompartments.put(compartment));
+    ASSERT_TRUE(targetCompartments.put(newCompartment));
 
     FakeNode nodeA;
     FakeNode nodeB;
     FakeNode nodeC;
+    FakeNode nodeD;
 
-    nodeA.zone = zone;
-    nodeB.zone = nullptr;
-    nodeC.zone = newZone;
+    nodeA.compartment = compartment;
+    nodeB.compartment = nullptr;
+    nodeC.compartment = newCompartment;
+    nodeD.compartment = nullptr;
 
     AddEdge(nodeA, nodeB);
-    AddEdge(nodeB, nodeC);
+    AddEdge(nodeA, nodeC);
+    AddEdge(nodeB, nodeD);
 
     ::testing::NiceMock<MockWriter> writer;
 
@@ -52,6 +55,11 @@ DEF_TEST(DoesntCrossZoneBoundaries, {
     ExpectWriteNode(writer, nodeB);
 
     
+    
+    ExpectWriteNode(writer, nodeC);
+
+    
+    
 
     JS::AutoCheckCannotGC noGC(rt);
 
@@ -59,6 +67,6 @@ DEF_TEST(DoesntCrossZoneBoundaries, {
                                JS::ubi::Node(&nodeA),
                                writer,
                                 false,
-                               &targetZones,
+                               &targetCompartments,
                                noGC));
   });
