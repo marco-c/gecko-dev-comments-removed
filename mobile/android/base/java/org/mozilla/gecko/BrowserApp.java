@@ -3219,6 +3219,8 @@ public class BrowserApp extends GeckoApp
                                                         new HashSet<String>()).isEmpty();
         aMenu.findItem(R.id.quit).setVisible(visible);
 
+        
+        
         if (tab == null || tab.getURL() == null) {
             bookmark.setEnabled(false);
             back.setEnabled(false);
@@ -3242,8 +3244,14 @@ public class BrowserApp extends GeckoApp
             return true;
         }
 
+        
+        
+        
+        
+
         final boolean inGuestMode = GeckoProfile.get(this).inGuestMode();
 
+        bookmark.setEnabled(true); 
         bookmark.setVisible(!inGuestMode);
         bookmark.setCheckable(true);
         bookmark.setChecked(tab.isBookmark());
