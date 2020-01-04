@@ -532,7 +532,10 @@ AlphaBoxBlur::Blur(uint8_t* aData)
       }
       delete [] tmpData;
     } else {
-      size_t integralImageStride = GetAlignedStride<16>(integralImageSize.width * 4);
+      size_t integralImageStride = GetAlignedStride<16>(integralImageSize.width, 4);
+      if (integralImageStride == 0) {
+        return;
+      }
 
       
       

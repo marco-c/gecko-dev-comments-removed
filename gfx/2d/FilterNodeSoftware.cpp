@@ -752,7 +752,7 @@ FilterNodeSoftware::GetInputDataSourceSurface(uint32_t aInputEnumIndex,
        
        
       result->Unmap();
-      if (map.mStride != GetAlignedStride<16>(map.mStride) ||
+      if (map.mStride != GetAlignedStride<16>(map.mStride, 1) ||
           reinterpret_cast<uintptr_t>(map.mData) % 16 != 0) {
         
         result = CloneAligned(result);

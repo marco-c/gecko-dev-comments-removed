@@ -228,12 +228,16 @@ private:
 
 
 template<int alignment>
-int32_t GetAlignedStride(int32_t aStride)
+int32_t GetAlignedStride(int32_t aWidth, int32_t aBytesPerPixel)
 {
   static_assert(alignment > 0 && (alignment & (alignment-1)) == 0,
                 "This implementation currently require power-of-two alignment");
   const int32_t mask = alignment - 1;
-  return (aStride + mask) & ~mask;
+  CheckedInt32 stride = CheckedInt32(aWidth) * CheckedInt32(aBytesPerPixel) + CheckedInt32(mask);
+  if (stride.isValid()) {
+    return stride.value() & ~mask;
+  }
+  return 0;
 }
 
 } 

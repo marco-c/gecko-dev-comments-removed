@@ -1841,7 +1841,7 @@ DrawTargetCG::Init(CGContextRef cgContext, const IntSize &aSize)
 bool
 DrawTargetCG::Init(BackendType aType, const IntSize &aSize, SurfaceFormat &aFormat)
 {
-  int32_t stride = GetAlignedStride<16>(aSize.width * BytesPerPixel(aFormat));
+  int32_t stride = GetAlignedStride<16>(aSize.width, BytesPerPixel(aFormat));
   
   
   return Init(aType, nullptr, aSize, stride, aFormat);
