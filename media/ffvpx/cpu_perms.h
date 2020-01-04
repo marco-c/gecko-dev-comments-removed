@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+#ifndef MOZILLA_AVCPU_PERMS_H
+#define MOZILLA_AVCPU_PERMS_H
+
+#pragma GCC visibility push(default)
+#include "libavutil/cpu.h"
+#pragma GCC visibility pop
+
+#endif 
