@@ -572,9 +572,17 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
     }
     nsPoint origin;
     if (aItem) {
+      
+      
       origin = aItem->ToReferenceFrame();
     } else {
-      nsIFrame* referenceFrame = nsLayoutUtils::GetReferenceFrame(aFrame);
+      
+      
+      
+      
+      
+      nsIFrame* referenceFrame =
+        nsLayoutUtils::GetReferenceFrame(nsLayoutUtils::GetCrossDocParentFrame(aFrame));
       origin = aFrame->GetOffsetToCrossDoc(referenceFrame);
     }
 
