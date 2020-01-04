@@ -328,6 +328,10 @@ public:
     mGlobal = nullptr;
     mFiles.Clear();
     mPromises.Clear();
+    mCallbacks.Clear();
+
+    MutexAutoLock lock(mMutex);
+    mCanceled = true;
   }
 
   void Traverse(nsCycleCollectionTraversalCallback &cb)
@@ -344,6 +348,8 @@ private:
     , mRecursiveFlag(aRecursiveFlag)
     , mListingCompleted(false)
     , mErrorResult(NS_OK)
+    , mMutex("GetFilesHelper::mMutex")
+    , mCanceled(false)
   {
     MOZ_ASSERT(aGlobal);
   }
@@ -352,6 +358,13 @@ private:
   SetDirectoryPath(const nsAString& aDirectoryPath)
   {
     mDirectoryPath = aDirectoryPath;
+  }
+
+  bool
+  IsCanceled()
+  {
+    MutexAutoLock lock(mMutex);
+    return mCanceled;
   }
 
   NS_IMETHOD
@@ -364,7 +377,20 @@ private:
     
     if (!NS_IsMainThread()) {
       RunIO();
+
+      
+      
+      if (IsCanceled()) {
+        return NS_OK;
+      }
+
       return NS_DispatchToMainThread(this);
+    }
+
+    
+    
+    if (IsCanceled()) {
+      return NS_OK;
     }
 
     RunMainThread();
@@ -453,6 +479,11 @@ private:
   {
     MOZ_ASSERT(!NS_IsMainThread());
     MOZ_ASSERT(aFile);
+
+    
+    if (IsCanceled()) {
+      return NS_OK;
+    }
 
     nsCOMPtr<nsISimpleEnumerator> entries;
     nsresult rv = aFile->GetDirectoryEntries(getter_AddRefs(entries));
@@ -577,6 +608,11 @@ private:
 
   nsTArray<RefPtr<Promise>> mPromises;
   nsTArray<RefPtr<GetFilesCallback>> mCallbacks;
+
+  Mutex mMutex;
+
+  
+  bool mCanceled;
 };
 
 
