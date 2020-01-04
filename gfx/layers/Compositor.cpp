@@ -358,7 +358,8 @@ gfx::IntRect
 Compositor::ComputeBackdropCopyRect(const gfx::Rect& aRect,
                                     const gfx::Rect& aClipRect,
                                     const gfx::Matrix4x4& aTransform,
-                                    gfx::Matrix4x4* aOutTransform)
+                                    gfx::Matrix4x4* aOutTransform,
+                                    gfx::Rect* aOutLayerQuad)
 {
   
   gfx::IntPoint rtOffset = GetCurrentRenderTarget()->GetOrigin();
@@ -376,6 +377,10 @@ Compositor::ComputeBackdropCopyRect(const gfx::Rect& aRect,
 
   
   dest.IntersectRect(dest, gfx::RectDouble(0, 0, rtSize.width, rtSize.height));
+
+  if (aOutLayerQuad) {
+    *aOutLayerQuad = gfx::Rect(dest.x, dest.y, dest.width, dest.height);
+  }
 
   
   gfx::IntRect result;

@@ -519,10 +519,15 @@ protected:
 
 
 
+
+
+
   gfx::IntRect ComputeBackdropCopyRect(
     const gfx::Rect& aRect,
     const gfx::Rect& aClipRect,
-    const gfx::Matrix4x4& aTransform);
+    const gfx::Matrix4x4& aTransform,
+    gfx::Matrix4x4* aOutTransform,
+    gfx::Rect* aOutLayerQuad = nullptr);
 
   
 
