@@ -138,8 +138,10 @@ var CastingApps = {
     SimpleServiceDiscovery.registerDevice(mediaPlayerDevice);
 
     
-    fxOSTVDevice.init();
-    SimpleServiceDiscovery.registerDevice(fxOSTVDevice);
+    if (window.PresentationRequest) {
+      fxOSTVDevice.init();
+      SimpleServiceDiscovery.registerDevice(fxOSTVDevice);
+    }
 
     
     SimpleServiceDiscovery.search(this._interval);
