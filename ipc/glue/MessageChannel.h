@@ -57,6 +57,8 @@ enum class SyncSendError {
     ReplyError,
 };
 
+class AutoEnterTransaction;
+
 class MessageChannel : HasResultCodes
 {
     friend class ProcessLink;
@@ -156,7 +158,7 @@ class MessageChannel : HasResultCodes
         return !mCxxStackFrames.empty();
     }
 
-    bool IsInTransaction() const { return mCurrentTransaction != 0; }
+    bool IsInTransaction() const;
     void CancelCurrentTransaction();
 
     
@@ -263,7 +265,7 @@ class MessageChannel : HasResultCodes
     bool InterruptEventOccurred();
     bool HasPendingEvents();
 
-    void ProcessPendingRequests(int seqno, int transaction);
+    void ProcessPendingRequests(AutoEnterTransaction& aTransaction);
     bool ProcessPendingRequest(const Message &aUrgent);
 
     void MaybeUndeferIncall();
@@ -366,15 +368,6 @@ class MessageChannel : HasResultCodes
         return mInterruptStack.size();
     }
 
-    
-    bool AwaitingSyncReply() const {
-        mMonitor->AssertCurrentThreadOwns();
-        return mAwaitingSyncReply;
-    }
-    int AwaitingSyncReplyPriority() const {
-        mMonitor->AssertCurrentThreadOwns();
-        return mAwaitingSyncReplyPriority;
-    }
     bool AwaitingInterruptReply() const {
         mMonitor->AssertCurrentThreadOwns();
         return !mInterruptStack.empty();
@@ -405,16 +398,6 @@ class MessageChannel : HasResultCodes
     friend class AutoEnterWaitForIncoming;
 
     
-    bool DispatchingSyncMessage() const {
-        AssertWorkerThread();
-        return mDispatchingSyncMessage;
-    }
-
-    int DispatchingSyncMessagePriority() const {
-        AssertWorkerThread();
-        return mDispatchingSyncMessagePriority;
-    }
-
     bool DispatchingAsyncMessage() const {
         AssertWorkerThread();
         return mDispatchingAsyncMessage;
@@ -560,15 +543,6 @@ class MessageChannel : HasResultCodes
         T mNew;
     };
 
-    
-    bool mAwaitingSyncReply;
-    int mAwaitingSyncReplyPriority;
-
-    
-    
-    bool mDispatchingSyncMessage;
-    int mDispatchingSyncMessagePriority;
-
     bool mDispatchingAsyncMessage;
     int mDispatchingAsyncMessagePriority;
 
@@ -590,56 +564,16 @@ class MessageChannel : HasResultCodes
     
     
 
-    
-    int32_t mCurrentTransaction;
+    friend class AutoEnterTransaction;
+    AutoEnterTransaction *mTransactionStack;
 
-    
-    
-    
-    
-    
-    int mPendingSendPriorities;
+    int32_t CurrentHighPriorityTransaction() const;
 
-    class AutoEnterTransaction
-    {
-     public:
-       explicit AutoEnterTransaction(MessageChannel *aChan, int32_t aMsgSeqno)
-        : mChan(aChan),
-          mNewTransaction(INT32_MAX),
-          mOldTransaction(mChan->mCurrentTransaction)
-       {
-           mChan->mMonitor->AssertCurrentThreadOwns();
-           if (mChan->mCurrentTransaction == 0) {
-               mNewTransaction = aMsgSeqno;
-               mChan->mCurrentTransaction = aMsgSeqno;
-           }
-       }
-       explicit AutoEnterTransaction(MessageChannel *aChan, const Message &aMessage)
-        : mChan(aChan),
-          mNewTransaction(aMessage.transaction_id()),
-          mOldTransaction(mChan->mCurrentTransaction)
-       {
-           mChan->mMonitor->AssertCurrentThreadOwns();
+    bool AwaitingSyncReply() const;
+    int AwaitingSyncReplyPriority() const;
 
-           if (!aMessage.is_sync())
-               return;
-
-           MOZ_DIAGNOSTIC_ASSERT(
-               !(mChan->mSide == ParentSide && mOldTransaction != aMessage.transaction_id()) ||
-               !mOldTransaction || aMessage.priority() > mChan->AwaitingSyncReplyPriority());
-           mChan->mCurrentTransaction = aMessage.transaction_id();
-       }
-       ~AutoEnterTransaction() {
-           mChan->mMonitor->AssertCurrentThreadOwns();
-           if (mChan->mCurrentTransaction == mNewTransaction) {
-               mChan->mCurrentTransaction = mOldTransaction;
-           }
-       }
-
-      private:
-       MessageChannel *mChan;
-       int32_t mNewTransaction, mOldTransaction;
-    };
+    bool DispatchingSyncMessage() const;
+    int DispatchingSyncMessagePriority() const;
 
     
     
@@ -656,14 +590,6 @@ class MessageChannel : HasResultCodes
     
     int32_t mTimedOutMessageSeqno;
     int mTimedOutMessagePriority;
-
-    
-    
-    nsAutoPtr<Message> mRecvd;
-
-    
-    
-    size_t mRecvdErrors;
 
     
     
