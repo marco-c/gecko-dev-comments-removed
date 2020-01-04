@@ -1157,6 +1157,14 @@ protected:
 
 
 
+  bool IsValidMonth(const nsAString& aValue) const;
+
+  
+
+
+
+
+
   bool IsValidDate(const nsAString& aValue) const;
 
   
@@ -1165,10 +1173,32 @@ protected:
 
 
 
-  bool GetValueAsDate(const nsAString& aValue,
-                      uint32_t* aYear,
-                      uint32_t* aMonth,
-                      uint32_t* aDay) const;
+
+
+  bool ParseYear(const nsAString& aValue, uint32_t* aYear) const;
+
+  
+
+
+
+
+
+
+  bool ParseMonth(const nsAString& aValue,
+                  uint32_t* aYear,
+                  uint32_t* aMonth) const;
+
+  
+
+
+
+
+
+
+  bool ParseDate(const nsAString& aValue,
+                 uint32_t* aYear,
+                 uint32_t* aMonth,
+                 uint32_t* aDay) const;
 
   
 
