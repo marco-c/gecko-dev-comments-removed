@@ -90,13 +90,8 @@ IsNeckoChild()
   static bool amChild = false;
 
   if (!didCheck) {
-    
-    
-    
-    const char * e = PR_GetEnv("NECKO_SEPARATE_STACKS");
-    if (!e) 
-      amChild = XRE_IsContentProcess();
     didCheck = true;
+    amChild = (XRE_GetProcessType() == GeckoProcessType_Content);
   }
   return amChild;
 }
