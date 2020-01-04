@@ -46,10 +46,14 @@
 #include "nsIDOMHTMLMapElement.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStates.h"
+#include "mozilla/net/ReferrerPolicy.h"
 
 #include "nsLayoutUtils.h"
 
 #include "mozilla/Preferences.h"
+
+using namespace mozilla::net;
+
 static const char *kPrefSrcsetEnabled = "dom.image.srcset.enabled";
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Image)
@@ -512,7 +516,7 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                           nsIAtom* aPrefix, const nsAString& aValue,
                           bool aNotify)
 {
-  bool forceReloadWithNewCORSMode = false;
+  bool forceReload = false;
   
   
   
@@ -558,7 +562,19 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     ParseCORSValue(aValue, attrValue);
     if (GetCORSMode() != AttrValueToCORSMode(&attrValue)) {
       
-      forceReloadWithNewCORSMode = true;
+      forceReload = true;
+    }
+  } else if (aName == nsGkAtoms::referrerpolicy &&
+      aNameSpaceID == kNameSpaceID_None &&
+      aNotify) {
+    ReferrerPolicy referrerPolicy = ReferrerPolicyFromString(aValue);
+    if (!InResponsiveMode() && referrerPolicy != GetImageReferrerPolicy()) {
+      
+      
+      
+      
+      
+      forceReload = true;
     }
   }
 
@@ -568,7 +584,7 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   
   
   
-  if (forceReloadWithNewCORSMode) {
+  if (forceReload) {
     if (InResponsiveMode()) {
       
       
