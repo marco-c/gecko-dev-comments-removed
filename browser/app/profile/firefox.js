@@ -1500,7 +1500,6 @@ pref("ui.key.menuAccessKeyFocuses", true);
 
 
 pref("media.eme.enabled", true);
-pref("media.eme.apiVisible", true);
 
 
 
@@ -1588,9 +1587,6 @@ pref("browser.defaultbrowser.notificationbar", false);
 
 
 pref("dom.ipc.cpow.timeout", 500);
-
-
-pref("dom.ipc.cpows.forbid-unsafe-from-browser", true);
 
 
 

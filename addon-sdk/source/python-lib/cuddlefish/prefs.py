@@ -238,7 +238,6 @@ DEFAULT_TEST_PREFS = {
     'dom.mozApps.debug': True,
     'dom.apps.customization.enabled': True,
     'media.eme.enabled': True,
-    'media.eme.apiVisible': True,
     
     'dom.ipc.tabs.shutdownTimeoutSecs': 0,
     'general.useragent.locale': "en-US",
