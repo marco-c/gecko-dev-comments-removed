@@ -219,6 +219,7 @@ public:
   const AnimationTiming& Timing() const { return mTiming; }
   AnimationTiming& Timing() { return mTiming; }
   void SetTiming(const AnimationTiming& aTiming);
+  void NotifyAnimationTimingUpdated() { UpdateTargetRegistration(); }
 
   Nullable<TimeDuration> GetLocalTime() const;
 
@@ -296,6 +297,18 @@ public:
 protected:
   virtual ~KeyframeEffectReadOnly();
   void ResetIsRunningOnCompositor();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void UpdateTargetRegistration();
+  void UnregisterFromTarget();
 
   static AnimationTiming ConvertKeyframeEffectOptions(
     const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions);

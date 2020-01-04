@@ -69,10 +69,18 @@ GetComputedTimingDictionary(const ComputedTiming& aComputedTiming,
 
 namespace dom {
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(KeyframeEffectReadOnly,
-                                   AnimationEffectReadOnly,
-                                   mTarget,
-                                   mAnimation)
+NS_IMPL_CYCLE_COLLECTION_CLASS(KeyframeEffectReadOnly)
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(KeyframeEffectReadOnly,
+                                                AnimationEffectReadOnly)
+  tmp->UnregisterFromTarget();
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTarget, mAnimation)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(KeyframeEffectReadOnly,
+                                                  AnimationEffectReadOnly)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTarget, mAnimation)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(KeyframeEffectReadOnly,
                                                AnimationEffectReadOnly)
@@ -127,6 +135,9 @@ KeyframeEffectReadOnly::SetTiming(const AnimationTiming& aTiming)
   if (mAnimation) {
     mAnimation->NotifyEffectTimingUpdated();
   }
+  
+  
+  
 }
 
 Nullable<TimeDuration>
@@ -336,6 +347,7 @@ void
 KeyframeEffectReadOnly::SetAnimation(Animation* aAnimation)
 {
   mAnimation = aAnimation;
+  NotifyAnimationTimingUpdated();
 }
 
 const AnimationProperty*
@@ -511,10 +523,9 @@ KeyframeEffectReadOnly::SetIsRunningOnCompositor(nsCSSProperty aProperty,
   }
 }
 
-
-
 KeyframeEffectReadOnly::~KeyframeEffectReadOnly()
 {
+  UnregisterFromTarget();
 }
 
 void
@@ -522,6 +533,47 @@ KeyframeEffectReadOnly::ResetIsRunningOnCompositor()
 {
   for (bool& isPropertyRunningOnCompositor : mIsPropertyRunningOnCompositor) {
     isPropertyRunningOnCompositor = false;
+  }
+}
+
+void
+KeyframeEffectReadOnly::UpdateTargetRegistration()
+{
+  if (!mTarget) {
+    return;
+  }
+
+  bool isRelevant = mAnimation && mAnimation->IsRelevant();
+
+  
+  
+  
+  
+  MOZ_ASSERT(isRelevant == IsCurrent() || IsInEffect(),
+             "Out of date Animation::IsRelevant value");
+
+  if (isRelevant) {
+    EffectSet* effectSet = EffectSet::GetOrCreateEffectSet(mTarget,
+                                                           mPseudoType);
+    effectSet->AddEffect(*this);
+  } else {
+    EffectSet* effectSet = EffectSet::GetEffectSet(mTarget, mPseudoType);
+    if (effectSet) {
+      effectSet->RemoveEffect(*this);
+    }
+  }
+}
+
+void
+KeyframeEffectReadOnly::UnregisterFromTarget()
+{
+  if (!mTarget) {
+    return;
+  }
+
+  EffectSet* effectSet = EffectSet::GetEffectSet(mTarget, mPseudoType);
+  if (effectSet) {
+    effectSet->RemoveEffect(*this);
   }
 }
 
