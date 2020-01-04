@@ -301,7 +301,7 @@ IMContextWrapper::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
         case NOTIFY_IME_OF_POSITION_CHANGE:
             OnLayoutChange();
             return NS_OK;
-        case NOTIFY_IME_OF_COMPOSITION_UPDATE:
+        case NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED:
             OnUpdateComposition();
             return NS_OK;
         case NOTIFY_IME_OF_SELECTION_CHANGE: {
@@ -988,6 +988,7 @@ IMContextWrapper::OnSelectionChange(nsWindow* aCaller,
     }
 
     if (!IsComposing()) {
+        
         
         
         mSetCursorPositionOnKeyEvent = true;

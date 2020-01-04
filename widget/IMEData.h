@@ -442,7 +442,12 @@ enum IMEMessage : IMEMessageType
   
   NOTIFY_IME_OF_TEXT_CHANGE,
   
-  NOTIFY_IME_OF_COMPOSITION_UPDATE,
+  
+  
+  
+  
+  
+  NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED,
   
   NOTIFY_IME_OF_POSITION_CHANGE,
   
@@ -454,6 +459,9 @@ enum IMEMessage : IMEMessageType
   
   REQUEST_TO_CANCEL_COMPOSITION
 };
+
+
+const char* ToChar(IMEMessage aIMEMessage);
 
 struct IMENotification final
 {
@@ -560,7 +568,7 @@ struct IMENotification final
         mTextChangeData += aNotification.mTextChangeData;
         break;
       case NOTIFY_IME_OF_POSITION_CHANGE:
-      case NOTIFY_IME_OF_COMPOSITION_UPDATE:
+      case NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED:
         MOZ_ASSERT(aNotification.mMessage == mMessage);
         break;
       default:
