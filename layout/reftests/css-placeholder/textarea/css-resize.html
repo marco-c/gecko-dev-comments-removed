@@ -8,11 +8,13 @@
     textarea {
       resize: none;
     }
-    textarea::-moz-placeholder {
+    textarea::-moz-placeholder,
+    textarea::placeholder {
       resize: both;
     }
   </style>
   <body>
     <textarea placeholder='foo'></textarea>
+    <textarea placeholder='bar'></textarea>
   </body>
 </html>

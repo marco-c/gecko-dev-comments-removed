@@ -5963,7 +5963,8 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
 
   
   
-  if (pseudoElementType == CSSPseudoElementType::mozPlaceholder &&
+  
+  if (pseudoElementType == CSSPseudoElementType::placeholder &&
       pseudoClassType == CSSPseudoClassType::mozPlaceholder) {
     if (parsingPseudoElement) {
       pseudoClassType = CSSPseudoClassType::NotPseudo;

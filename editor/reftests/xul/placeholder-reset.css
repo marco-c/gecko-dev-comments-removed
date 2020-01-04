@@ -2,7 +2,7 @@
 @namespace html url('http://www.w3.org/1999/xhtml');
 
 
-html|input::-moz-placeholder {
+html|input::placeholder {
   opacity: 1.0;
   color: graytext;
 }

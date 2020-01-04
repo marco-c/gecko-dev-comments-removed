@@ -351,7 +351,7 @@ nsTextControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
     NS_ENSURE_TRUE(placeholderNode, NS_ERROR_OUT_OF_MEMORY);
 
     
-    CSSPseudoElementType pseudoType = CSSPseudoElementType::mozPlaceholder;
+    CSSPseudoElementType pseudoType = CSSPseudoElementType::placeholder;
 
     
     
@@ -1464,7 +1464,7 @@ nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 mozilla::dom::Element*
 nsTextControlFrame::GetPseudoElement(CSSPseudoElementType aType)
 {
-  if (aType == CSSPseudoElementType::mozPlaceholder) {
+  if (aType == CSSPseudoElementType::placeholder) {
     nsCOMPtr<nsITextControlElement> txtCtrl = do_QueryInterface(GetContent());
     return txtCtrl->GetPlaceholderNode();
   }
