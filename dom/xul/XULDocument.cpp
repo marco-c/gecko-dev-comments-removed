@@ -916,6 +916,11 @@ ShouldPersistAttribute(Element* aElement, nsIAtom* aAttribute)
     if (aElement->IsXULElement(nsGkAtoms::window)) {
         
         
+        if (aElement->OwnerDoc()->GetParentDocument()) {
+            return true;
+        }
+        
+        
         if (aAttribute == nsGkAtoms::screenX ||
             aAttribute == nsGkAtoms::screenY ||
             aAttribute == nsGkAtoms::width ||
