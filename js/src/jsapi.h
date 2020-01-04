@@ -4149,6 +4149,16 @@ EvaluateSelfHosted(JSRuntime* rt, const char* bytes, size_t length, const char* 
 extern JS_PUBLIC_API(bool)
 EvaluateSelfHosted(JSRuntime* rt, const char* filename);
 
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+AddSelfHostingIntrinsics(JSRuntime* rt, const JSFunctionSpec* intrinsicFunctions);
+
 } 
 
 extern JS_PUBLIC_API(bool)
