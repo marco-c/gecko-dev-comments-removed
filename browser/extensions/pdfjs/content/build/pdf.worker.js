@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdfWorker = {}));
   
   'use strict';
 
-var pdfjsVersion = '1.5.345';
-var pdfjsBuild = '10f9f11';
+var pdfjsVersion = '1.5.365';
+var pdfjsBuild = '19105f0';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -36516,7 +36516,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var preEvaluatedFont = this.preEvaluateFont(font, xref);
       var descriptor = preEvaluatedFont.descriptor;
-      var fontID = fontRef.num + '_' + fontRef.gen;
+
+      var fontRefIsRef = isRef(fontRef), fontID;
+      if (fontRefIsRef) {
+        fontID = fontRef.toString();
+      }
+
       if (isDict(descriptor)) {
         if (!descriptor.fontAliases) {
           descriptor.fontAliases = Object.create(null);
@@ -36526,19 +36531,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var hash = preEvaluatedFont.hash;
         if (fontAliases[hash]) {
           var aliasFontRef = fontAliases[hash].aliasRef;
-          if (aliasFontRef && this.fontCache.has(aliasFontRef)) {
+          if (fontRefIsRef && aliasFontRef &&
+              this.fontCache.has(aliasFontRef)) {
             this.fontCache.putAlias(fontRef, aliasFontRef);
             return this.fontCache.get(fontRef);
           }
-        }
-
-        if (!fontAliases[hash]) {
+        } else {
           fontAliases[hash] = {
             fontID: Font.getFontID()
           };
         }
 
-        fontAliases[hash].aliasRef = fontRef;
+        if (fontRefIsRef) {
+          fontAliases[hash].aliasRef = fontRef;
+        }
         fontID = fontAliases[hash].fontID;
       }
 
@@ -36547,15 +36553,31 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       
       
       
-      var fontRefIsDict = isDict(fontRef);
-      if (!fontRefIsDict) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (fontRefIsRef) {
         this.fontCache.put(fontRef, fontCapability.promise);
+      } else {
+        if (!fontID) {
+          fontID = (this.uniquePrefix || 'F_') + (++this.idCounters.obj);
+        }
+        this.fontCache.put('id_' + fontID, fontCapability.promise);
       }
+      assert(fontID, 'The "fontID" must be defined.');
 
       
       
-      font.loadedName = 'g_' + this.pdfManager.docId + '_f' + (fontRefIsDict ?
-        fontName.replace(/\W/g, '') : fontID);
+      font.loadedName = 'g_' + this.pdfManager.docId + '_f' + fontID;
 
       font.translated = fontCapability.promise;
 
@@ -36954,7 +36976,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     getTextContent:
         function PartialEvaluator_getTextContent(stream, task, resources,
                                                  stateManager,
-                                                 normalizeWhitespace) {
+                                                 normalizeWhitespace,
+                                                 combineTextItems) {
 
       stateManager = (stateManager || new StateManager(new TextState()));
 
@@ -37265,7 +37288,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var isSameTextLine = !textState.font ? false :
                 ((textState.font.vertical ? args[0] : args[1]) === 0);
               advance = args[0] - args[1];
-              if (isSameTextLine && textContentItem.initialized &&
+              if (combineTextItems &&
+                  isSameTextLine && textContentItem.initialized &&
                   advance > 0 &&
                   advance <= textContentItem.fakeMultiSpaceMax) {
                 textState.translateTextLineMatrix(args[0], args[1]);
@@ -37297,7 +37321,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               
               advance = textState.calcTextLineMatrixAdvance(
                 args[0], args[1], args[2], args[3], args[4], args[5]);
-              if (advance !== null && textContentItem.initialized &&
+              if (combineTextItems &&
+                  advance !== null && textContentItem.initialized &&
                   advance.value > 0 &&
                   advance.value <= textContentItem.fakeMultiSpaceMax) {
                 textState.translateTextLineMatrix(advance.width,
@@ -37438,7 +37463,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
               next(self.getTextContent(xobj, task,
                    xobj.dict.get('Resources') || resources, stateManager,
-                   normalizeWhitespace).then(function (formTextContent) {
+                   normalizeWhitespace, combineTextItems).then(
+                function (formTextContent) {
                   Util.appendToArray(textContent.items, formTextContent.items);
                   Util.extendObj(textContent.styles, formTextContent.styles);
                   stateManager.restore();
@@ -37594,7 +37620,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       
       
       
-      var toUnicode, charcode;
+      var toUnicode, charcode, glyphName;
       if (!properties.composite ) {
         toUnicode = [];
         var encoding = properties.defaultEncoding.slice();
@@ -37602,12 +37628,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         
         var differences = properties.differences;
         for (charcode in differences) {
-          encoding[charcode] = differences[charcode];
+          glyphName = differences[charcode];
+          if (glyphName === '.notdef') {
+            
+            
+            continue;
+          }
+          encoding[charcode] = glyphName;
         }
         var glyphsUnicodeMap = getGlyphsUnicode();
         for (charcode in encoding) {
           
-          var glyphName = encoding[charcode];
+          glyphName = encoding[charcode];
           
           
           if (glyphName === '') {
@@ -37959,7 +37991,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (isName(encoding)) {
           hash.update(encoding.name);
         } else if (isRef(encoding)) {
-          hash.update(encoding.num + '_' + encoding.gen);
+          hash.update(encoding.toString());
         } else if (isDict(encoding)) {
           var keys = encoding.getKeys();
           for (var i = 0, ii = keys.length; i < ii; i++) {
@@ -37967,7 +37999,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             if (isName(entry)) {
               hash.update(entry.name);
             } else if (isRef(entry)) {
-              hash.update(entry.num + '_' + entry.gen);
+              hash.update(entry.toString());
             } else if (isArray(entry)) { 
               
               
@@ -39165,13 +39197,14 @@ AnnotationFactory.prototype =  {
 
     
     var subtype = dict.get('Subtype');
-    subtype = isName(subtype) ? subtype.name : '';
+    subtype = isName(subtype) ? subtype.name : null;
 
     
     var parameters = {
       xref: xref,
       dict: dict,
-      ref: ref
+      ref: ref,
+      subtype: subtype,
     };
 
     switch (subtype) {
@@ -39207,8 +39240,12 @@ AnnotationFactory.prototype =  {
         return new FileAttachmentAnnotation(parameters);
 
       default:
-        warn('Unimplemented annotation type "' + subtype + '", ' +
-             'falling back to base annotation');
+        if (!subtype) {
+          warn('Annotation is missing the required /Subtype.');
+        } else {
+          warn('Unimplemented annotation type "' + subtype + '", ' +
+               'falling back to base annotation.');
+        }
         return new Annotation(parameters);
     }
   }
@@ -39272,7 +39309,7 @@ var Annotation = (function AnnotationClosure() {
     
     this.data = {};
     this.data.id = params.ref.toString();
-    this.data.subtype = dict.get('Subtype').name;
+    this.data.subtype = params.subtype;
     this.data.annotationFlags = this.flags;
     this.data.rect = this.rectangle;
     this.data.color = this.color;
@@ -40280,7 +40317,8 @@ var Page = (function PageClosure() {
     },
 
     extractTextContent: function Page_extractTextContent(task,
-                                                         normalizeWhitespace) {
+                                                         normalizeWhitespace,
+                                                         combineTextItems) {
       var handler = {
         on: function nullHandlerOn() {},
         send: function nullHandlerSend() {}
@@ -40313,7 +40351,8 @@ var Page = (function PageClosure() {
                                                task,
                                                self.resources,
                                                 null,
-                                               normalizeWhitespace);
+                                               normalizeWhitespace,
+                                               combineTextItems);
       });
     },
 
@@ -41577,12 +41616,14 @@ var WorkerMessageHandler = {
     handler.on('GetTextContent', function wphExtractText(data) {
       var pageIndex = data.pageIndex;
       var normalizeWhitespace = data.normalizeWhitespace;
+      var combineTextItems = data.combineTextItems;
       return pdfManager.getPage(pageIndex).then(function(page) {
         var task = new WorkerTask('GetTextContent: page ' + pageIndex);
         startWorkerTask(task);
         var pageNum = pageIndex + 1;
         var start = Date.now();
-        return page.extractTextContent(task, normalizeWhitespace).then(
+        return page.extractTextContent(task, normalizeWhitespace,
+                                       combineTextItems).then(
             function(textContent) {
           finishWorkerTask(task);
           info('text indexing: page=' + pageNum + ' - time=' +

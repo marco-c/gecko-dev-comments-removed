@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdf = {}));
   
   'use strict';
 
-var pdfjsVersion = '1.5.345';
-var pdfjsBuild = '10f9f11';
+var pdfjsVersion = '1.5.365';
+var pdfjsBuild = '19105f0';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -6847,6 +6847,8 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
 
 
 
+
+
 var PDFPageProxy = (function PDFPageProxyClosure() {
   function PDFPageProxy(pageIndex, pageInfo, transport) {
     this.pageIndex = pageIndex;
@@ -7062,11 +7064,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
 
     getTextContent: function PDFPageProxy_getTextContent(params) {
-      var normalizeWhitespace = (params && params.normalizeWhitespace) || false;
-
       return this.transport.messageHandler.sendWithPromise('GetTextContent', {
         pageIndex: this.pageNumber - 1,
-        normalizeWhitespace: normalizeWhitespace,
+        normalizeWhitespace: (params && params.normalizeWhitespace === true ?
+                              true :  false),
+        combineTextItems: (params && params.disableCombineTextItems === true ?
+                           false :  true),
       });
     },
 
