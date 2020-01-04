@@ -421,6 +421,9 @@ GMPExtractor.prototype = {
         }
         zipReader.extract(entry, outFile);
         extractedPaths.push(outFile.path);
+        
+        
+        outFile.permissions |= parseInt("0700", 8);
         log.info(entry + " was successfully extracted to: " +
             outFile.path);
       });
