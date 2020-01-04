@@ -398,7 +398,7 @@ var BrowserApp = {
       });
     }, false);
 
-    window.addEventListener("fullscreenchange", function(e) {
+    window.addEventListener("fullscreenchange", (e) => {
       
       
       
@@ -410,8 +410,14 @@ var BrowserApp = {
         rootElement: doc.fullscreenElement == doc.documentElement
       });
 
-      if (doc.fullscreenElement)
+      if (doc.fullscreenElement) {
         showFullScreenWarning();
+      } else if (this.fullscreenTransitionTab) {
+        
+        let tab = this.fullscreenTransitionTab;
+        this.fullscreenTransitionTab = null;
+        this._handleTabSelected(tab);
+      }
     }, false);
 
     
@@ -1280,7 +1286,13 @@ var BrowserApp = {
     if (aTab == this.selectedTab)
       return;
 
-    this.selectedBrowser.contentDocument.exitFullscreen();
+    let doc = this.selectedBrowser.contentDocument;
+    if (doc.fullscreenElement) {
+      
+      
+      this.fullscreenTransitionTab = aTab;
+      doc.exitFullscreen();
+    }
 
     let message = {
       type: "Tab:Select",
@@ -1342,6 +1354,11 @@ var BrowserApp = {
   
   
   _handleTabSelected: function _handleTabSelected(aTab) {
+    if (this.fullscreenTransitionTab) {
+      
+      
+      return;
+    }
     this.selectedTab = aTab;
 
     let evt = document.createEvent("UIEvents");
