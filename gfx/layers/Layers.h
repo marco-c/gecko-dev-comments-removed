@@ -784,7 +784,7 @@ public:
 
 
 
-    CONTENT_PRESERVE_3D = 0x08,
+    CONTENT_EXTEND_3D_CONTEXT = 0x08,
     
 
 
