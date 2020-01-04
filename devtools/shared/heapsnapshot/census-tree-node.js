@@ -384,7 +384,7 @@ CensusTreeNodeVisitor.prototype.root = function () {
 
 
 
-function CensusTreeNode (name) {
+function CensusTreeNode(name) {
   this.name = name;
   this.bytes = 0;
   this.totalBytes = 0;
@@ -442,6 +442,47 @@ function compareBySelf(node1, node2) {
 
 
 
+
+
+function insertOrMergeNode(parentCacheValue, node) {
+  if (!parentCacheValue.children) {
+    parentCacheValue.children = new CensusTreeNodeCache();
+  }
+
+  let val = CensusTreeNodeCache.lookupNode(parentCacheValue.children, node);
+
+  if (val) {
+    val.node.count += node.count;
+    val.node.totalCount += node.totalCount;
+    val.node.bytes += node.bytes;
+    val.node.totalBytes += node.totalBytes;
+  } else {
+    val = new CensusTreeNodeCacheValue();
+
+    val.node = new CensusTreeNode(node.name);
+    val.node.count = node.count;
+    val.node.totalCount = node.totalCount;
+    val.node.bytes = node.bytes;
+    val.node.totalBytes = node.totalBytes;
+
+    addChild(parentCacheValue.node, val.node);
+    CensusTreeNodeCache.insertNode(parentCacheValue.children, val);
+  }
+
+  return val;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 function invert(tree) {
   const inverted = new CensusTreeNodeCacheValue();
   inverted.node = new CensusTreeNode(null);
@@ -460,39 +501,9 @@ function invert(tree) {
       }
     } else {
       
-
-      let current = inverted;
+      let currentCacheValue = inverted;
       for (let i = path.length - 1; i >= 0; i--) {
-        const node = path[i];
-
-        if (!current.children) {
-          current.children = new CensusTreeNodeCache();
-        }
-
-        
-        
-        
-        
-        let val = CensusTreeNodeCache.lookupNode(current.children, node);
-        if (val) {
-          val.node.count += node.count;
-          val.node.totalCount += node.totalCount;
-          val.node.bytes += node.bytes;
-          val.node.totalBytes += node.totalBytes;
-        } else {
-          val = new CensusTreeNodeCacheValue();
-
-          val.node = new CensusTreeNode(node.name);
-          val.node.count = node.count;
-          val.node.totalCount = node.totalCount;
-          val.node.bytes = node.bytes;
-          val.node.totalBytes = node.totalBytes;
-
-          addChild(current.node, val.node);
-          CensusTreeNodeCache.insertNode(current.children, val);
-        }
-
-        current = val;
+        currentCacheValue = insertOrMergeNode(currentCacheValue, path[i]);
       }
     }
 
@@ -526,6 +537,88 @@ function invert(tree) {
 
 
 
+function filter(tree, predicate) {
+  const filtered = new CensusTreeNodeCacheValue();
+  filtered.node = new CensusTreeNode(null);
+  filtered.node.count = tree.count;
+  filtered.node.totalCount = tree.totalCount;
+  filtered.node.bytes = tree.bytes;
+  filtered.node.totalBytes = tree.totalBytes;
+
+  
+  
+
+  const path = [];
+  let match = false;
+
+  function addMatchingNodes(node) {
+    path.push(node);
+
+    let oldMatch = match;
+    if (!match && predicate(node)) {
+      match = true;
+    }
+
+    if (node.children) {
+      for (let i = 0, length = node.children.length; i < length; i++) {
+        addMatchingNodes(node.children[i]);
+      }
+    } else if (match) {
+      
+      let currentCacheValue = filtered;
+      for (let i = 0, length = path.length; i < length; i++) {
+        currentCacheValue = insertOrMergeNode(currentCacheValue, path[i]);
+      }
+    }
+
+    match = oldMatch;
+    path.pop();
+  }
+
+  if (tree.children) {
+    for (let i = 0, length = tree.children.length; i < length; i++) {
+      addMatchingNodes(tree.children[i]);
+    }
+  }
+
+  return filtered.node;
+};
+
+
+
+
+
+
+
+
+function makeFilterPredicate(filterString) {
+  return function (node) {
+    if (!node.name) {
+      return false;
+    }
+
+    if (isSavedFrame(node.name)) {
+      return node.name.source.contains(filterString)
+        || (node.name.functionDisplayName || "").contains(filterString)
+        || (node.name.asyncCause || "").contains(filterString);
+    }
+
+    return String(node.name).contains(filterString);
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -545,9 +638,15 @@ function invert(tree) {
 
 
 exports.censusReportToCensusTreeNode = function (breakdown, report,
-                                                 options = { invert: false }) {
+                                                 options = {
+                                                   invert: false,
+                                                   filter: null
+                                                 }) {
   const visitor = new CensusTreeNodeVisitor();
   walk(breakdown, report, visitor);
   const root = visitor.root();
-  return options.invert ? invert(root) : root;
+  const result = options.invert ? invert(root) : root;
+  return typeof options.filter === "string"
+    ? filter(result, makeFilterPredicate(options.filter))
+    : result;
 };
