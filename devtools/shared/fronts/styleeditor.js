@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { ShortLongString } = require("devtools/server/actors/string");
+const { SimpleStringFront } = require("devtools/server/actors/string");
 const { Front, FrontClassWithSpec } = require("devtools/shared/protocol");
 const {
   oldStyleSheetSpec,
@@ -46,7 +46,7 @@ const OldStyleSheetFront = FrontClassWithSpec(oldStyleSheetSpec, {
     let deferred = promise.defer();
 
     events.once(this, "source-load", (source) => {
-      let longStr = new ShortLongString(source);
+      let longStr = new SimpleStringFront(source);
       deferred.resolve(longStr);
     });
     this.fetchSource();
