@@ -6799,8 +6799,9 @@ nsBlockFrame::Init(nsIContent*       aContent,
 {
   if (aPrevInFlow) {
     
-    SetFlags(aPrevInFlow->GetStateBits() &
-             (NS_BLOCK_FLAGS_MASK & ~NS_BLOCK_FLAGS_NON_INHERITED_MASK));
+    RemoveStateBits(NS_BLOCK_FLAGS_MASK);
+    AddStateBits(aPrevInFlow->GetStateBits() &
+                 (NS_BLOCK_FLAGS_MASK & ~NS_BLOCK_FLAGS_NON_INHERITED_MASK));
   }
 
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);

@@ -396,11 +396,6 @@ protected:
                    bool*        aInOverflowLines,
                    FrameLines** aOverflowLines);
 
-  void SetFlags(nsFrameState aFlags) {
-    mState &= ~NS_BLOCK_FLAGS_MASK;
-    mState |= aFlags;
-  }
-
   
 
 

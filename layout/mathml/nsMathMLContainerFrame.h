@@ -418,7 +418,7 @@ public:
   NS_DECL_FRAMEARENA_HELPERS
 
   friend nsContainerFrame* NS_NewMathMLmathBlockFrame(nsIPresShell* aPresShell,
-          nsStyleContext* aContext, nsFrameState aFlags);
+          nsStyleContext* aContext);
 
   
   
@@ -481,7 +481,8 @@ protected:
   explicit nsMathMLmathBlockFrame(nsStyleContext* aContext) : nsBlockFrame(aContext) {
     
     
-    AddStateBits(NS_BLOCK_FLOAT_MGR);
+    
+    
   }
   virtual ~nsMathMLmathBlockFrame() {}
 };
