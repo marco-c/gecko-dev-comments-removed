@@ -1399,16 +1399,13 @@ LocalSourceStreamInfo::TakePipelineFrom(RefPtr<LocalSourceStreamInfo>& info,
 
 
 bool
-PeerConnectionMedia::AnyLocalStreamHasPeerIdentity() const
+PeerConnectionMedia::AnyLocalTrackHasPeerIdentity() const
 {
   ASSERT_ON_THREAD(mMainThread);
 
   for (uint32_t u = 0; u < mLocalSourceStreams.Length(); u++) {
-    DOMMediaStream* stream = mLocalSourceStreams[u]->GetMediaStream();
-    nsTArray<RefPtr<MediaStreamTrack>> tracks;
-    stream->GetTracks(tracks);
-    for (const RefPtr<MediaStreamTrack>& track : tracks) {
-      if (track->GetPeerIdentity() != nullptr) {
+    for (auto pair : mLocalSourceStreams[u]->GetMediaStreamTracks()) {
+      if (pair.second->GetPeerIdentity() != nullptr) {
         return true;
       }
     }
