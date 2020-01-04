@@ -405,7 +405,6 @@ protected:
   void OnAudioPopped(const RefPtr<MediaData>& aSample);
   void OnVideoPopped(const RefPtr<MediaData>& aSample);
 
-  void CheckIsAudible(const MediaData* aSample);
   void VolumeChanged();
   void LogicalPlaybackRateChanged();
   void PreservesPitchChanged();
@@ -1196,9 +1195,6 @@ private:
   
   bool mAudioOffloading;
 
-  
-  uint32_t mSilentDataDuration;
-
 #ifdef MOZ_EME
   void OnCDMProxyReady(RefPtr<CDMProxy> aProxy);
   void OnCDMProxyNotReady();
@@ -1267,9 +1263,6 @@ private:
   
   Canonical<int64_t> mPlaybackOffset;
 
-  
-  Canonical<bool> mIsAudioDataAudible;
-
 public:
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() {
     return mReader->CanonicalBuffered();
@@ -1288,9 +1281,6 @@ public:
   }
   AbstractCanonical<int64_t>* CanonicalPlaybackOffset() {
     return &mPlaybackOffset;
-  }
-  AbstractCanonical<bool>* CanonicalIsAudioDataAudible() {
-    return &mIsAudioDataAudible;
   }
 };
 
