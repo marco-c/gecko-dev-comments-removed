@@ -1873,7 +1873,7 @@ public:
 
 
 
-    NS_IMETHOD ReparentNativeWidget(nsIWidget* aNewParent) = 0;
+    virtual void ReparentNativeWidget(nsIWidget* aNewParent) = 0;
 
     
 

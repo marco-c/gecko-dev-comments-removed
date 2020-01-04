@@ -127,8 +127,6 @@ public:
 #if defined(XP_WIN)
   void SetNativeData(uint32_t aDataType, uintptr_t aVal) override;
 #endif
-  NS_IMETHOD ReparentNativeWidget(nsIWidget* aNewParent) override
-  { return NS_ERROR_UNEXPECTED; }
 
   
   NS_IMETHOD SetTitle(const nsAString& aTitle) override

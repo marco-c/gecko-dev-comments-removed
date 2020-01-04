@@ -108,8 +108,6 @@ public:
 
 
 
-    NS_IMETHOD         ReparentNativeWidget(nsIWidget* aNewParent) override;
-
 protected:
     virtual ~nsWindow();
     void BringToFront();
