@@ -110,6 +110,12 @@ public:
 
   const OriginAttributes& OriginAttributesRef() const;
 
+  
+
+
+
+  const nsACString& SignedPkgOriginNoSuffix() const;
+
 protected:
   friend class MaybeInvalidTabContext;
 
@@ -136,7 +142,8 @@ protected:
 
   bool SetTabContext(mozIApplication* aOwnApp,
                      mozIApplication* aAppFrameOwnerApp,
-                     const OriginAttributes& aOriginAttributes);
+                     const OriginAttributes& aOriginAttributes,
+                     const nsACString& aSignedPkgOriginNoSuffix);
 
 private:
   
@@ -167,6 +174,13 @@ private:
 
   OriginAttributes mOriginAttributes;
 
+  
+
+
+
+
+
+  nsCString mSignedPkgOriginNoSuffix;
 };
 
 
@@ -184,11 +198,13 @@ public:
 
   bool SetTabContext(mozIApplication* aOwnApp,
                      mozIApplication* aAppFrameOwnerApp,
-                     const OriginAttributes& aOriginAttributes)
+                     const OriginAttributes& aOriginAttributes,
+                     const nsACString& aSignedPkgOriginNoSuffix = EmptyCString())
   {
     return TabContext::SetTabContext(aOwnApp,
                                      aAppFrameOwnerApp,
-                                     aOriginAttributes);
+                                     aOriginAttributes,
+                                     aSignedPkgOriginNoSuffix);
   }
 };
 

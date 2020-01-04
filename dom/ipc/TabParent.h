@@ -456,7 +456,8 @@ public:
 
     
     
-    void OnStartSignedPackageRequest(nsIChannel* aChannel);
+    void OnStartSignedPackageRequest(nsIChannel* aChannel,
+                                     const nsACString& aPackageId);
 
 protected:
     bool ReceiveMessage(const nsString& aMessage,
