@@ -1031,6 +1031,24 @@ WebGLTexture::TexImage(const char* funcName, TexImageTarget target, GLint level,
     auto dstUsage = fua->GetSizedTexUsage(internalFormat);
     if (!dstUsage) {
         if (internalFormat != unpackFormat) {
+            if (!fua->AreUnpackEnumsValid(unpackFormat, unpackType)) {
+                mContext->ErrorInvalidEnum("%s: Invalid unpack format/type:"
+                                           " 0x%04x/0x%04x",
+                                           funcName, unpackFormat, unpackType);
+                return;
+            }
+
+            if (!fua->IsInternalFormatEnumValid(internalFormat)) {
+                mContext->ErrorInvalidValue("%s: Invalid internalformat: 0x%04x",
+                                            funcName, internalFormat);
+                return;
+            }
+
+            
+
+
+
+
             mContext->ErrorInvalidOperation("%s: Unsized internalFormat must match"
                                             " unpack format.",
                                             funcName);
@@ -1041,19 +1059,17 @@ WebGLTexture::TexImage(const char* funcName, TexImageTarget target, GLint level,
     }
 
     if (!dstUsage) {
-        if (!mContext->IsWebGL2()) {
-            if (!fua->IsInternalFormatEnumValid(internalFormat)) {
-                mContext->ErrorInvalidValue("%s: Invalid internalformat: 0x%04x",
-                                            funcName, internalFormat);
-                return;
-            }
+        if (!fua->IsInternalFormatEnumValid(internalFormat)) {
+            mContext->ErrorInvalidValue("%s: Invalid internalformat: 0x%04x",
+                                        funcName, internalFormat);
+            return;
+        }
 
-            if (!fua->AreUnpackEnumsValid(unpackFormat, unpackType)) {
-                mContext->ErrorInvalidEnum("%s: Invalid unpack format/type:"
-                                           " 0x%04x/0x%04x",
-                                           funcName, unpackFormat, unpackType);
-                return;
-            }
+        if (!fua->AreUnpackEnumsValid(unpackFormat, unpackType)) {
+            mContext->ErrorInvalidEnum("%s: Invalid unpack format/type:"
+                                       " 0x%04x/0x%04x",
+                                       funcName, unpackFormat, unpackType);
+            return;
         }
 
         mContext->ErrorInvalidOperation("%s: Invalid internalformat/format/type:"
@@ -1183,14 +1199,12 @@ WebGLTexture::TexSubImage(const char* funcName, TexImageTarget target, GLint lev
     const webgl::PackingInfo srcPacking = { unpackFormat, unpackType };
     const webgl::DriverUnpackInfo* driverUnpackInfo;
     if (!dstUsage->IsUnpackValid(srcPacking, &driverUnpackInfo)) {
-        if (!mContext->IsWebGL2()) {
-            const auto& fua = mContext->mFormatUsage;
-            if (!fua->AreUnpackEnumsValid(unpackFormat, unpackType)) {
-                mContext->ErrorInvalidEnum("%s: Invalid unpack format/type:"
-                                           " 0x%04x/0x%04x",
-                                           funcName, unpackFormat, unpackType);
-                return;
-            }
+        const auto& fua = mContext->mFormatUsage;
+        if (!fua->AreUnpackEnumsValid(unpackFormat, unpackType)) {
+            mContext->ErrorInvalidEnum("%s: Invalid unpack format/type:"
+                                       " 0x%04x/0x%04x",
+                                       funcName, unpackFormat, unpackType);
+            return;
         }
 
         mContext->ErrorInvalidOperation("%s: Mismatched internalFormat and format/type:"
