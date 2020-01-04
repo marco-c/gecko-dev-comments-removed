@@ -962,8 +962,25 @@ nsFrameLoader::SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (mRemoteBrowser->OriginAttributesRef() !=
-      aOther->mRemoteBrowser->OriginAttributesRef()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  DocShellOriginAttributes ourOriginAttributes =
+    mRemoteBrowser->OriginAttributesRef();
+  rv = PopulateUserContextIdFromAttribute(ourOriginAttributes);
+  NS_ENSURE_SUCCESS(rv,rv);
+
+  DocShellOriginAttributes otherOriginAttributes =
+    aOther->mRemoteBrowser->OriginAttributesRef();
+  rv = aOther->PopulateUserContextIdFromAttribute(otherOriginAttributes);
+  NS_ENSURE_SUCCESS(rv,rv);
+
+  if (ourOriginAttributes != otherOriginAttributes) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -1343,8 +1360,25 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  if (ourDocshell->GetOriginAttributes() !=
-      otherDocshell->GetOriginAttributes()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  DocShellOriginAttributes ourOriginAttributes =
+    ourDocshell->GetOriginAttributes();
+  rv = PopulateUserContextIdFromAttribute(ourOriginAttributes);
+  NS_ENSURE_SUCCESS(rv,rv);
+
+  DocShellOriginAttributes otherOriginAttributes =
+    otherDocshell->GetOriginAttributes();
+  rv = aOther->PopulateUserContextIdFromAttribute(otherOriginAttributes);
+  NS_ENSURE_SUCCESS(rv,rv);
+
+  if (ourOriginAttributes != otherOriginAttributes) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -2107,13 +2141,9 @@ nsFrameLoader::MaybeCreateDocShell()
   }
 
   
-  nsAutoString userContextIdStr;
-  if ((namespaceID == kNameSpaceID_XUL) &&
-      mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::usercontextid, userContextIdStr) &&
-      !userContextIdStr.IsEmpty()) {
-    nsresult rv;
-    attrs.mUserContextId = userContextIdStr.ToInteger(&rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = PopulateUserContextIdFromAttribute(attrs);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   nsDocShell::Cast(mDocShell)->SetOriginAttributes(attrs);
@@ -3370,6 +3400,27 @@ nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
                                signedPkgOrigin,
                                presentationURLStr);
   NS_ENSURE_STATE(tabContextUpdated);
+
+  return NS_OK;
+}
+
+nsresult
+nsFrameLoader::PopulateUserContextIdFromAttribute(DocShellOriginAttributes& aAttr)
+{
+  if (aAttr.mUserContextId ==
+        nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID)  {
+    
+    nsAutoString userContextIdStr;
+    int32_t namespaceID = mOwnerContent->GetNameSpaceID();
+    if ((namespaceID == kNameSpaceID_XUL) &&
+        mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::usercontextid,
+                               userContextIdStr) &&
+        !userContextIdStr.IsEmpty()) {
+      nsresult rv;
+      aAttr.mUserContextId = userContextIdStr.ToInteger(&rv);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
 
   return NS_OK;
 }
