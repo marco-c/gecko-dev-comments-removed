@@ -217,7 +217,7 @@ def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
                         
                         
                         
-                        f = expand_variables(f, config.substs)
+                        f = expand_variables(f, config.substs).split()
                         if not f:
                             continue
                         
