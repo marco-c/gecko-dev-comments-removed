@@ -35,29 +35,24 @@ class FileDescriptor;
 
 
 
-
-
-
-
-
-
-
-
 class SandboxBroker final
   : private SandboxBrokerCommon
   , public PlatformThread::Delegate
 {
  public:
   enum Perms {
-    MAY_ACCESS = 1 << 0,
-    MAY_READ = 1 << 1,
-    MAY_WRITE = 1 << 2,
-    MAY_CREATE = 1 << 3,
+    MAY_ACCESS    = 1 << 0,
+    MAY_READ      = 1 << 1,
+    MAY_WRITE     = 1 << 2,
+    MAY_CREATE    = 1 << 3,
     
     
     
     
     CRASH_INSTEAD = 1 << 4,
+    
+    
+    RECURSIVE     = 1 << 5,
   };
   
   
@@ -82,6 +77,9 @@ class SandboxBroker final
     
     void AddTree(int aPerms, const char* aPath);
     
+    
+    void AddDir(int aPerms, const char* aPath);
+    
     void AddPrefix(int aPerms, const char* aDir, const char* aPrefix);
     
     
@@ -93,6 +91,13 @@ class SandboxBroker final
     int Lookup(const char* aPath) const {
       return Lookup(nsDependentCString(aPath));
     }
+  private:
+    
+    
+    
+    
+    
+    bool ValidatePath(const char* path) const;
   };
 
   
