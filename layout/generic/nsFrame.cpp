@@ -732,6 +732,56 @@ nsFrame::GetOffsets(int32_t &aStart, int32_t &aEnd) const
   return NS_OK;
 }
 
+static
+void
+AddAndRemoveImageAssociations(nsFrame* aFrame,
+                              const nsStyleImageLayers* aOldLayers,
+                              const nsStyleImageLayers* aNewLayers)
+{
+   ImageLoader* imageLoader =
+     aFrame->PresContext()->Document()->StyleImageLoader();
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (aOldLayers) {
+    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, (*aOldLayers)) {
+      
+      if (i >= aNewLayers->mImageCount ||
+          !aOldLayers->mLayers[i].mImage.ImageDataEquals(
+            aNewLayers->mLayers[i].mImage)) {
+        const nsStyleImage& oldImage = aOldLayers->mLayers[i].mImage;
+        if (oldImage.GetType() != eStyleImageType_Image) {
+          continue;
+        }
+
+        imageLoader->DisassociateRequestFromFrame(oldImage.GetImageData(),
+                                                   aFrame);
+      }
+    }
+  }
+
+  NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, (*aNewLayers)) {
+    
+    if (!aOldLayers || i >= aOldLayers->mImageCount ||
+        !aNewLayers->mLayers[i].mImage.ImageDataEquals(
+          aOldLayers->mLayers[i].mImage)) {
+      const nsStyleImage& newImage = aNewLayers->mLayers[i].mImage;
+      if (newImage.GetType() != eStyleImageType_Image) {
+        continue;
+      }
+
+      imageLoader->AssociateRequestToFrame(newImage.GetImageData(), aFrame);
+    }
+  }
+}
+
 
  void
 nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
@@ -756,50 +806,16 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
     }
   }
 
-  ImageLoader* imageLoader = PresContext()->Document()->StyleImageLoader();
+  const nsStyleImageLayers *oldLayers = aOldStyleContext ?
+                              &aOldStyleContext->StyleBackground()->mLayers :
+                              nullptr;
+  const nsStyleImageLayers *newLayers = &StyleBackground()->mLayers;
+  AddAndRemoveImageAssociations(this, oldLayers, newLayers);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  const nsStyleBackground *oldBG = aOldStyleContext ?
-                                   aOldStyleContext->StyleBackground() :
-                                   nullptr;
-  const nsStyleBackground *newBG = StyleBackground();
-  const nsStyleImageLayers& oldBGLayers = oldBG->mLayers;
-  const nsStyleImageLayers& newBGLayers = newBG->mLayers;
-  if (oldBG) {
-    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, oldBGLayers) {
-      
-      if (i >= newBGLayers.mImageCount ||
-          !oldBGLayers.mLayers[i].mImage.ImageDataEquals(newBGLayers.mLayers[i].mImage)) {
-        const nsStyleImage& oldImage = oldBGLayers.mLayers[i].mImage;
-        if (oldImage.GetType() != eStyleImageType_Image) {
-          continue;
-        }
-
-        imageLoader->DisassociateRequestFromFrame(oldImage.GetImageData(),
-                                                  this);
-      }
-    }
-  }
-
-  NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, newBGLayers) {
-    
-    if (!oldBG || i >= oldBGLayers.mImageCount ||
-        !newBGLayers.mLayers[i].mImage.ImageDataEquals(oldBGLayers.mLayers[i].mImage)) {
-      const nsStyleImage& newImage = newBGLayers.mLayers[i].mImage;
-      if (newImage.GetType() != eStyleImageType_Image) {
-        continue;
-      }
-
-      imageLoader->AssociateRequestToFrame(newImage.GetImageData(), this);
-    }
-  }
+  oldLayers = aOldStyleContext ? &aOldStyleContext->StyleSVGReset()->mLayers :
+                                  nullptr;
+  newLayers = &StyleSVGReset()->mLayers;
+  AddAndRemoveImageAssociations(this, oldLayers, newLayers);
 
   if (aOldStyleContext) {
     
@@ -837,6 +853,7 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
     }
   }
 
+  ImageLoader* imageLoader = PresContext()->Document()->StyleImageLoader();
   imgIRequest *oldBorderImage = aOldStyleContext
     ? aOldStyleContext->StyleBorder()->GetBorderImageRequest()
     : nullptr;

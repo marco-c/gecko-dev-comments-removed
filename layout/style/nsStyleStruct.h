@@ -405,6 +405,21 @@ struct nsStyleImageLayers {
     MOZ_COUNT_DTOR(nsStyleImageLayers);
   }
 
+  
+  enum {
+    shorthand = 0,
+    color,
+    image,
+    repeat,
+    position,
+    clip,
+    origin,
+    size,
+    attachment,
+    maskMode,
+    composite
+  };
+
   struct Position;
   friend struct Position;
   struct Position {
@@ -413,6 +428,8 @@ struct nsStyleImageLayers {
 
     
     Position() {}
+
+    bool IsInitialValue() const;
 
     
     
@@ -449,6 +466,10 @@ struct nsStyleImageLayers {
       }
     };
     Dimension mWidth, mHeight;
+
+    bool IsInitialValue() const {
+      return mWidthType == eAuto && mHeightType == eAuto;
+    }
 
     nscoord ResolveWidthLengthPercentage(const nsSize& aBgPositioningArea) const {
       MOZ_ASSERT(mWidthType == eLengthPercentage,
@@ -503,6 +524,11 @@ struct nsStyleImageLayers {
     
     Repeat() {}
 
+    bool IsInitialValue() const {
+      return mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT &&
+             mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
+    }
+
     
     void SetInitialValues();
 
@@ -530,6 +556,18 @@ struct nsStyleImageLayers {
                                   
                                   
     uint8_t       mBlendMode;     
+                                  
+                                  
+                                  
+                                  
+                                  
+    uint8_t       mComposite;     
+                                  
+                                  
+                                  
+                                  
+                                  
+    uint8_t       mMaskMode;      
                                   
                                   
                                   
@@ -579,7 +617,9 @@ struct nsStyleImageLayers {
            mPositionCount,
            mImageCount,
            mSizeCount,
-           mBlendModeCount;
+           mMaskModeCount,
+           mBlendModeCount,
+           mCompositeCount;
 
   
   
@@ -604,6 +644,14 @@ struct nsStyleImageLayers {
     for (uint32_t i = 0; i < mImageCount; ++i)
       mLayers[i].UntrackImages(aContext);
   }
+
+  nsChangeHint CalcDifference(const nsStyleImageLayers& aOther) const;
+
+  bool HasLayerWithImage() const;
+
+  static const nsCSSProperty kBackgroundLayerTable[];
+  static const nsCSSProperty kMaskLayerTable[];
+
   #define NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(var_, layers_) \
     for (uint32_t var_ = (layers_).mImageCount; var_-- != 0; )
   #define NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT_WITH_RANGE(var_, layers_, start_, count_) \
@@ -3401,16 +3449,14 @@ struct nsStyleSVGReset
     return aContext->PresShell()->
       AllocateByObjectID(mozilla::eArenaObjectID_nsStyleSVGReset, sz);
   }
-  void Destroy(nsPresContext* aContext) {
-    this->~nsStyleSVGReset();
-    aContext->PresShell()->
-      FreeByObjectID(mozilla::eArenaObjectID_nsStyleSVGReset, this);
-  }
+  void Destroy(nsPresContext* aContext);
 
   nsChangeHint CalcDifference(const nsStyleSVGReset& aOther) const;
   static nsChangeHint MaxDifference() {
-    return NS_CombineHint(nsChangeHint_UpdateEffects,
-            NS_CombineHint(nsChangeHint_UpdateOverflow, NS_STYLE_HINT_REFLOW));
+    return nsChangeHint_UpdateEffects |
+           nsChangeHint_UpdateOverflow |
+           nsChangeHint_NeutralChange |
+           NS_STYLE_HINT_REFLOW;
   }
   static nsChangeHint DifferenceAlwaysHandledForDescendants() {
     
@@ -3428,6 +3474,7 @@ struct nsStyleSVGReset
     return mVectorEffect == NS_STYLE_VECTOR_EFFECT_NON_SCALING_STROKE;
   }
 
+  nsStyleImageLayers    mLayers;
   nsStyleClipPath mClipPath;          
   nsTArray<nsStyleFilter> mFilters;   
   nsCOMPtr<nsIURI> mMask;             

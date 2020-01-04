@@ -303,6 +303,11 @@ enum class FillMode : uint32_t;
 #define NS_STYLE_IMAGELAYER_SIZE_COVER               1
 
 
+#define NS_STYLE_MASK_MODE_ALPHA                0
+#define NS_STYLE_MASK_MODE_LUMINANCE            1
+#define NS_STYLE_MASK_MODE_AUTO                 2
+
+
 #define NS_STYLE_BG_INLINE_POLICY_EACH_BOX      0
 #define NS_STYLE_BG_INLINE_POLICY_CONTINUOUS    1
 #define NS_STYLE_BG_INLINE_POLICY_BOUNDING_BOX  2
@@ -1150,6 +1155,12 @@ enum class FillMode : uint32_t;
 #define NS_STYLE_BLEND_SATURATION                   13
 #define NS_STYLE_BLEND_COLOR                        14
 #define NS_STYLE_BLEND_LUMINOSITY                   15
+
+
+#define NS_STYLE_MASK_COMPOSITE_ADD                 0
+#define NS_STYLE_MASK_COMPOSITE_SUBSTRACT           1
+#define NS_STYLE_MASK_COMPOSITE_INTERSECT           2
+#define NS_STYLE_MASK_COMPOSITE_EXCLUDE             3
 
 
 #define NS_STYLE_CONTROL_CHARACTER_VISIBILITY_HIDDEN  0
