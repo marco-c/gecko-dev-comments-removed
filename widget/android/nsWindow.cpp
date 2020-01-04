@@ -2691,6 +2691,10 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
     MOZ_ALWAYS_TRUE(NS_SUCCEEDED(IMEStateManager::GetFocusSelectionAndRoot(
             getter_AddRefs(imeSelection), getter_AddRefs(imeRoot))));
 
+    
+    
+    NS_ENSURE_TRUE_VOID(imeRoot->IsInComposedDoc());
+
     RefPtr<nsWindow> kungFuDeathGrip(&window);
     window.UserActivity();
 
