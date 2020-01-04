@@ -32,6 +32,7 @@ struct CSSTransformedLayerPixel;
 struct RenderTargetPixel;
 struct ScreenPixel;
 struct ParentLayerPixel;
+struct DesktopPixel;
 
 template<> struct IsPixel<CSSPixel>          : TrueType {};
 template<> struct IsPixel<LayoutDevicePixel> : TrueType {};
@@ -40,6 +41,7 @@ template<> struct IsPixel<CSSTransformedLayerPixel> : TrueType {};
 template<> struct IsPixel<RenderTargetPixel> : TrueType {};
 template<> struct IsPixel<ScreenPixel>       : TrueType {};
 template<> struct IsPixel<ParentLayerPixel>  : TrueType {};
+template<> struct IsPixel<DesktopPixel>      : TrueType {};
 
 typedef gfx::CoordTyped<CSSPixel> CSSCoord;
 typedef gfx::IntCoordTyped<CSSPixel> CSSIntCoord;
@@ -123,6 +125,15 @@ typedef gfx::MarginTyped<ParentLayerPixel> ParentLayerMargin;
 typedef gfx::IntMarginTyped<ParentLayerPixel> ParentLayerIntMargin;
 typedef gfx::IntRegionTyped<ParentLayerPixel> ParentLayerIntRegion;
 
+typedef gfx::CoordTyped<DesktopPixel> DesktopCoord;
+typedef gfx::IntCoordTyped<DesktopPixel> DesktopIntCoord;
+typedef gfx::PointTyped<DesktopPixel> DesktopPoint;
+typedef gfx::IntPointTyped<DesktopPixel> DesktopIntPoint;
+typedef gfx::SizeTyped<DesktopPixel> DesktopSize;
+typedef gfx::IntSizeTyped<DesktopPixel> DesktopIntSize;
+typedef gfx::RectTyped<DesktopPixel> DesktopRect;
+typedef gfx::IntRectTyped<DesktopPixel> DesktopIntRect;
+
 typedef gfx::ScaleFactor<CSSPixel, LayoutDevicePixel> CSSToLayoutDeviceScale;
 typedef gfx::ScaleFactor<CSSPixel, LayerPixel> CSSToLayerScale;
 typedef gfx::ScaleFactor<CSSPixel, ScreenPixel> CSSToScreenScale;
@@ -144,6 +155,7 @@ typedef gfx::ScaleFactor<ScreenPixel, ParentLayerPixel> ScreenToParentLayerScale
 typedef gfx::ScaleFactor<ParentLayerPixel, LayerPixel> ParentLayerToLayerScale;
 typedef gfx::ScaleFactor<ParentLayerPixel, ScreenPixel> ParentLayerToScreenScale;
 typedef gfx::ScaleFactor<ParentLayerPixel, ParentLayerPixel> ParentLayerToParentLayerScale;
+typedef gfx::ScaleFactor<DesktopPixel, LayoutDevicePixel> DesktopToLayoutDeviceScale;
 
 typedef gfx::ScaleFactors2D<CSSPixel, LayoutDevicePixel> CSSToLayoutDeviceScale2D;
 typedef gfx::ScaleFactors2D<CSSPixel, LayerPixel> CSSToLayerScale2D;
@@ -383,6 +395,23 @@ struct ScreenPixel {
 
 
 struct ParentLayerPixel {
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct DesktopPixel {
 };
 
 
