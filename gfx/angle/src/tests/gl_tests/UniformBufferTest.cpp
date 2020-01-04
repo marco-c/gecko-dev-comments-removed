@@ -75,10 +75,42 @@ class UniformBufferTest : public ANGLETest
 };
 
 
+TEST_P(UniformBufferTest, Simple)
+{
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    float floatData[4] = {0.5f, 0.75f, 0.25f, 1.0f};
+
+    glBindBuffer(GL_UNIFORM_BUFFER, mUniformBuffer);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(float) * 4, floatData, GL_STATIC_DRAW);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, mUniformBuffer);
+
+    glUniformBlockBinding(mProgram, mUniformBufferIndex, 0);
+    drawQuad(mProgram, "position", 0.5f);
+
+    ASSERT_GL_NO_ERROR();
+    EXPECT_PIXEL_NEAR(0, 0, 128, 191, 64, 255, 1);
+}
+
+
 
 
 TEST_P(UniformBufferTest, UniformBufferRange)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 
@@ -150,6 +182,13 @@ TEST_P(UniformBufferTest, UniformBufferRange)
 
 TEST_P(UniformBufferTest, UniformBufferBindings)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 
@@ -206,6 +245,13 @@ TEST_P(UniformBufferTest, UnboundUniformBuffer)
 
 TEST_P(UniformBufferTest, UniformBufferManyUpdates)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 
@@ -239,6 +285,13 @@ TEST_P(UniformBufferTest, UniformBufferManyUpdates)
 
 TEST_P(UniformBufferTest, ManyUniformBufferRange)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     int px = getWindowWidth() / 2;
     int py = getWindowHeight() / 2;
 

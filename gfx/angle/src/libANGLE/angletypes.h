@@ -273,6 +273,9 @@ struct PixelPackState
 
 
 typedef std::bitset<MAX_VERTEX_ATTRIBS> AttributesMask;
+
+
+typedef std::bitset<IMPLEMENTATION_MAX_COMBINED_SHADER_UNIFORM_BUFFERS> UniformBlockBindingMask;
 }
 
 namespace rx

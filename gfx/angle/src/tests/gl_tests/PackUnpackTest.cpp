@@ -150,6 +150,15 @@ TEST_P(PackUnpackTest, PackUnpackSnormNormal)
 TEST_P(PackUnpackTest, PackUnpackHalfNormal)
 {
     
+#if defined(ANGLE_PLATFORM_APPLE)
+    if (isIntel() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    {
+        std::cout << "Test skipped on Intel on Mac." << std::endl;
+        return;
+    }
+#endif
+
+    
     compareBeforeAfter(mHalfProgram, 0.5f, -0.2f);
     compareBeforeAfter(mHalfProgram, -0.35f, 0.75f);
     compareBeforeAfter(mHalfProgram, 0.00392f, -0.99215f);

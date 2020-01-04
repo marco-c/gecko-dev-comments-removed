@@ -27,31 +27,29 @@ void TranslatorHLSL::translate(TIntermNode *root, int compileOptions)
 
     SeparateDeclarations(root);
 
-    unsigned int temporaryIndex = 0;
-
     
-    UnfoldShortCircuitToIf(root, &temporaryIndex);
+    UnfoldShortCircuitToIf(root, getTemporaryIndex());
 
-    SeparateExpressionsReturningArrays(root, &temporaryIndex);
+    SeparateExpressionsReturningArrays(root, getTemporaryIndex());
 
     
     SeparateArrayInitialization(root);
 
     
     
-    ArrayReturnValueToOutParameter(root, &temporaryIndex);
+    ArrayReturnValueToOutParameter(root, getTemporaryIndex());
 
     if (!shouldRunLoopAndIndexingValidation(compileOptions))
     {
         
-        RemoveDynamicIndexing(root, &temporaryIndex, getSymbolTable(), getShaderVersion());
+        RemoveDynamicIndexing(root, getTemporaryIndex(), getSymbolTable(), getShaderVersion());
     }
 
     
     
     if (getOutputType() == SH_HLSL9_OUTPUT && getShaderType() == GL_VERTEX_SHADER)
     {
-        sh::RewriteElseBlocks(root, &temporaryIndex);
+        sh::RewriteElseBlocks(root, getTemporaryIndex());
     }
 
     sh::OutputHLSL outputHLSL(getShaderType(), getShaderVersion(), getExtensionBehavior(),

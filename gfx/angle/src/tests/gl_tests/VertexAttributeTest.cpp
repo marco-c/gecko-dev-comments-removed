@@ -289,9 +289,9 @@ TEST_P(VertexAttributeTest, ShortNormalized)
 TEST_P(VertexAttributeTest, MaxAttribs)
 {
     
-    if (isAMD() && (GetParam() == ES2_OPENGL() || GetParam() == ES3_OPENGL()))
+    if ((isIntel() || isAMD()) && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
     {
-        std::cout << "Test disabled on AMD/OpenGL" << std::endl;
+        std::cout << "Test skipped on Intel and AMD." << std::endl;
         return;
     }
 
@@ -336,6 +336,13 @@ TEST_P(VertexAttributeTest, MaxAttribsPlusOne)
 
 TEST_P(VertexAttributeTest, SimpleBindAttribLocation)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     
     GLuint program = compileMultiAttribProgram(1);
     glBindAttribLocation(program, 2, "position");

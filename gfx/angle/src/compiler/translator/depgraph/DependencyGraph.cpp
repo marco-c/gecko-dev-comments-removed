@@ -4,8 +4,6 @@
 
 
 
-#pragma warning(disable: 4718)
-
 #include "compiler/translator/depgraph/DependencyGraph.h"
 #include "compiler/translator/depgraph/DependencyGraphBuilder.h"
 

@@ -24,6 +24,10 @@ class FunctionsWGL : angle::NonCopyable
     void initialize(HMODULE glModule, HDC context);
 
     
+    std::vector<std::string> extensions;
+    bool hasExtension(const std::string &ext) const;
+
+    
     PFNWGLCOPYCONTEXTPROC copyContext;
     PFNWGLCREATECONTEXTPROC createContext;
     PFNWGLCREATELAYERCONTEXTPROC createLayerContext;

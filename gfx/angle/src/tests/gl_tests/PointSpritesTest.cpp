@@ -42,6 +42,13 @@ class PointSpritesTest : public ANGLETest
 
 TEST_P(PointSpritesTest, PointCoordAndPointSizeCompliance)
 {
+    
+    if (isIntel() && GetParam() == ES2_D3D9())
+    {
+        std::cout << "Test skipped on Intel due to failures." << std::endl;
+        return;
+    }
+
     const std::string fs = SHADER_SOURCE
     (
         precision mediump float;

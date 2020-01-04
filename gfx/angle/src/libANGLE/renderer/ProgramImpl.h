@@ -35,9 +35,6 @@ class ProgramImpl : angle::NonCopyable
     ProgramImpl(const gl::Program::Data &data) : mData(data) {}
     virtual ~ProgramImpl() {}
 
-    virtual int getShaderVersion() const = 0;
-
-    virtual GLenum getBinaryFormat() = 0;
     virtual LinkResult load(gl::InfoLog &infoLog, gl::BinaryInputStream *stream) = 0;
     virtual gl::Error save(gl::BinaryOutputStream *stream) = 0;
 
@@ -67,8 +64,16 @@ class ProgramImpl : angle::NonCopyable
     virtual void setUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) = 0;
 
     
-    virtual void gatherUniformBlockInfo(std::vector<gl::UniformBlock> *uniformBlocks,
-                                        std::vector<gl::LinkedUniform> *uniforms) = 0;
+    virtual void setUniformBlockBinding(GLuint uniformBlockIndex, GLuint uniformBlockBinding) = 0;
+
+    
+    
+    virtual bool getUniformBlockSize(const std::string &blockName, size_t *sizeOut) const = 0;
+
+    
+    
+    virtual bool getUniformBlockMemberInfo(const std::string &memberUniformName,
+                                           sh::BlockMemberInfo *memberInfoOut) const = 0;
 
   protected:
     const gl::Program::Data &mData;

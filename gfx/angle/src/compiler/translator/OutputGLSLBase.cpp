@@ -1075,8 +1075,12 @@ bool TOutputGLSLBase::visitLoop(Visit visit, TIntermLoop *node)
     TInfoSinkBase &out = objSink();
 
     incrementDepth(node);
-    
+
     TLoopType loopType = node->getType();
+
+    
+    ASSERT(!node->getUnrollFlag() || loopType == ELoopFor);
+
     if (loopType == ELoopFor)  
     {
         if (!node->getUnrollFlag())
@@ -1093,6 +1097,8 @@ bool TOutputGLSLBase::visitLoop(Visit visit, TIntermLoop *node)
             if (node->getExpression())
                 node->getExpression()->traverse(this);
             out << ")\n";
+
+            visitCodeBlock(node->getBody());
         }
         else
         {
@@ -1105,6 +1111,16 @@ bool TOutputGLSLBase::visitLoop(Visit visit, TIntermLoop *node)
             out << "for (int " << name << " = 0; "
                 << name << " < 1; "
                 << "++" << name << ")\n";
+
+            out << "{\n";
+            mLoopUnrollStack.push(node);
+            while (mLoopUnrollStack.satisfiesLoopCondition())
+            {
+                visitCodeBlock(node->getBody());
+                mLoopUnrollStack.step();
+            }
+            mLoopUnrollStack.pop();
+            out << "}\n";
         }
     }
     else if (loopType == ELoopWhile)  
@@ -1113,39 +1129,22 @@ bool TOutputGLSLBase::visitLoop(Visit visit, TIntermLoop *node)
         ASSERT(node->getCondition() != NULL);
         node->getCondition()->traverse(this);
         out << ")\n";
+
+        visitCodeBlock(node->getBody());
     }
     else  
     {
         ASSERT(loopType == ELoopDoWhile);
         out << "do\n";
-    }
 
-    
-    if (node->getUnrollFlag())
-    {
-        out << "{\n";
-        mLoopUnrollStack.push(node);
-        while (mLoopUnrollStack.satisfiesLoopCondition())
-        {
-            visitCodeBlock(node->getBody());
-            mLoopUnrollStack.step();
-        }
-        mLoopUnrollStack.pop();
-        out << "}\n";
-    }
-    else
-    {
         visitCodeBlock(node->getBody());
-    }
 
-    
-    if (loopType == ELoopDoWhile)  
-    {
         out << "while (";
         ASSERT(node->getCondition() != NULL);
         node->getCondition()->traverse(this);
         out << ");\n";
     }
+
     decrementDepth();
 
     

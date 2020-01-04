@@ -15,7 +15,11 @@ namespace rx
 struct WorkaroundsGL
 {
     WorkaroundsGL()
-        : avoid1BitAlphaTextureFormats(false), rgba4IsNotSupportedForColorRendering(false)
+        : avoid1BitAlphaTextureFormats(false),
+          rgba4IsNotSupportedForColorRendering(false),
+          doesSRGBClearsOnLinearFramebufferAttachments(false),
+          doWhileGLSLCausesGPUHang(false),
+          finishDoesNotCauseQueriesToBeAvailable(false)
     {
     }
 
@@ -32,6 +36,26 @@ struct WorkaroundsGL
     
     
     bool rgba4IsNotSupportedForColorRendering;
+
+    
+    
+    
+    
+    bool doesSRGBClearsOnLinearFramebufferAttachments;
+
+    
+    
+    
+    
+    
+    
+    
+    bool doWhileGLSLCausesGPUHang;
+
+    
+    
+    
+    bool finishDoesNotCauseQueriesToBeAvailable;
 };
 }
 

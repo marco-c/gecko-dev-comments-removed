@@ -283,6 +283,13 @@ TEST_F(EGLSurfaceTest, MessageLoopBugContext)
 
 TEST_F(EGLSurfaceTest, MakeCurrentTwice)
 {
+#if defined(ANGLE_PLATFORM_APPLE) && !defined(ANGLE_STANDALONE_BUILD)
+    
+    
+    std::cout << "Test skipped temporarily skipped on the Mac trybots" << std::endl;
+    return;
+#endif
+
     initializeDisplay(EGL_PLATFORM_ANGLE_TYPE_DEFAULT_ANGLE);
     initializeSurfaceWithDefaultConfig();
 

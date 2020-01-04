@@ -127,6 +127,13 @@ TEST_P(TransformFeedbackTest, ZeroSizedViewport)
 TEST_P(TransformFeedbackTest, RecordAndDraw)
 {
     
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
+    
     const GLchar* transformFeedbackVaryings[] =
     {
         "gl_Position"

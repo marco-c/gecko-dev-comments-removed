@@ -670,6 +670,26 @@ TEST_P(TextureTest, TextureNPOT_GL_ALPHA_UBYTE)
 
 
 
+TEST_P(TextureTest, NPOTSubImageParameters)
+{
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mTexture2D);
+
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 8, 8, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    
+    
+    glTexSubImage2D(GL_TEXTURE_2D, 1, 0, 0, 3, 3, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    EXPECT_GL_NO_ERROR();
+}
+
+
+
 
 TEST_P(TextureTestES3, RedefineInittableArray)
 {
@@ -916,6 +936,13 @@ class TextureLimitsTest : public ANGLETest
 
 TEST_P(TextureLimitsTest, MaxVertexTextures)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     compileProgramWithTextureCounts("tex", mMaxVertexTextures, mMaxVertexTextures, "tex", 0, 0);
     ASSERT_NE(0u, mProgram);
     ASSERT_GL_NO_ERROR();
@@ -926,6 +953,13 @@ TEST_P(TextureLimitsTest, MaxVertexTextures)
 
 TEST_P(TextureLimitsTest, MaxFragmentTextures)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     compileProgramWithTextureCounts("tex", 0, 0, "tex", mMaxFragmentTextures, mMaxFragmentTextures);
     ASSERT_NE(0u, mProgram);
     ASSERT_GL_NO_ERROR();
@@ -936,6 +970,13 @@ TEST_P(TextureLimitsTest, MaxFragmentTextures)
 
 TEST_P(TextureLimitsTest, MaxCombinedTextures)
 {
+    
+    if (isIntel() && GetParam() == ES2_OPENGL())
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     GLint vertexTextures = mMaxVertexTextures;
 
     if (vertexTextures + mMaxFragmentTextures > mMaxCombinedTextures)
@@ -970,6 +1011,13 @@ TEST_P(TextureLimitsTest, ExcessiveFragmentTextures)
 
 TEST_P(TextureLimitsTest, MaxActiveVertexTextures)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     compileProgramWithTextureCounts("tex", mMaxVertexTextures + 4, mMaxVertexTextures, "tex", 0, 0);
     ASSERT_NE(0u, mProgram);
     ASSERT_GL_NO_ERROR();
@@ -980,6 +1028,13 @@ TEST_P(TextureLimitsTest, MaxActiveVertexTextures)
 
 TEST_P(TextureLimitsTest, MaxActiveFragmentTextures)
 {
+    
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    {
+        std::cout << "Test skipped on Intel." << std::endl;
+        return;
+    }
+
     compileProgramWithTextureCounts("tex", 0, 0, "tex", mMaxFragmentTextures + 4,
                                     mMaxFragmentTextures);
     ASSERT_NE(0u, mProgram);

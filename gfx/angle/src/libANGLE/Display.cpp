@@ -76,19 +76,6 @@ void InitDefaultPlatformImpl()
     }
 }
 
-void DeinitDefaultPlatformImpl()
-{
-    if (defaultPlatform != nullptr)
-    {
-        if (ANGLEPlatformCurrent() == defaultPlatform)
-        {
-            ANGLEPlatformShutdown();
-        }
-
-        SafeDelete(defaultPlatform);
-    }
-}
-
 typedef std::map<EGLNativeWindowType, Surface*> WindowSurfaceMap;
 
 

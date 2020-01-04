@@ -199,6 +199,10 @@ typedef enum {
   
   
   SH_REMOVE_POW_WITH_CONSTANT_EXPONENT = 0x200000,
+
+  
+  
+  SH_REWRITE_DO_WHILE_LOOPS = 0x400000,
 } ShCompileOptions;
 
 

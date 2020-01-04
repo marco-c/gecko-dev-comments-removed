@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_REWRITEDOWHILE_H_
+#define COMPILER_TRANSLATOR_REWRITEDOWHILE_H_
+
+class TIntermNode;
+void RewriteDoWhile(TIntermNode *root, unsigned int *temporaryIndex);
+
+#endif  

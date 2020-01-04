@@ -49,9 +49,7 @@ void TranslatorESSL::translate(TIntermNode *root, int) {
         emulatePrecision.writeEmulationHelpers(sink, SH_ESSL_OUTPUT);
     }
 
-    unsigned int temporaryIndex = 0;
-
-    RecordConstantPrecision(root, &temporaryIndex);
+    RecordConstantPrecision(root, getTemporaryIndex());
 
     
     if (!getBuiltInFunctionEmulator().IsOutputEmpty())
