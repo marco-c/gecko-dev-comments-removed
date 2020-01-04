@@ -1705,7 +1705,7 @@ protected:
 };
 
 struct nsStyleText {
-  nsStyleText(void);
+  explicit nsStyleText(nsPresContext* aPresContext);
   nsStyleText(const nsStyleText& aOther);
   ~nsStyleText(void);
 
@@ -1736,6 +1736,7 @@ struct nsStyleText {
   uint8_t mTextAlignLast;               
   bool mTextAlignTrue : 1;              
   bool mTextAlignLastTrue : 1;          
+  bool mTextEmphasisColorForeground : 1;
   uint8_t mTextTransform;               
   uint8_t mWhiteSpace;                  
   uint8_t mWordBreak;                   
@@ -1746,7 +1747,10 @@ struct nsStyleText {
   uint8_t mTextSizeAdjust;              
   uint8_t mTextCombineUpright;          
   uint8_t mControlCharacterVisibility;  
+  uint8_t mTextEmphasisPosition;        
+  uint8_t mTextEmphasisStyle;           
   int32_t mTabSize;                     
+  nscolor mTextEmphasisColor;           
 
   nsStyleCoord mWordSpacing;            
   nsStyleCoord mLetterSpacing;          
@@ -1754,6 +1758,8 @@ struct nsStyleText {
   nsStyleCoord mTextIndent;             
 
   RefPtr<nsCSSShadowArray> mTextShadow; 
+
+  nsString mTextEmphasisStyleString;    
 
   bool WhiteSpaceIsSignificant() const {
     return mWhiteSpace == NS_STYLE_WHITESPACE_PRE ||
@@ -1788,6 +1794,10 @@ struct nsStyleText {
   bool WordCanWrapStyle() const {
     return WhiteSpaceCanWrapStyle() &&
            mWordWrap == NS_STYLE_WORDWRAP_BREAK_WORD;
+  }
+
+  bool HasTextEmphasis() const {
+    return !mTextEmphasisStyleString.IsEmpty();
   }
 
   
