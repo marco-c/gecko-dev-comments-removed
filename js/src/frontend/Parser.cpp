@@ -9542,7 +9542,6 @@ Parser<ParseHandler>::parenExprOrGeneratorComprehension(YieldHandling yieldHandl
 
 
 
-
 template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::exprInParens(InHandling inHandling, YieldHandling yieldHandling)
