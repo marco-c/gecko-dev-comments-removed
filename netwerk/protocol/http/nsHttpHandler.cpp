@@ -326,7 +326,7 @@ nsHttpHandler::Init()
     mSchedulingContextService =
         do_GetService("@mozilla.org/network/scheduling-context-service;1");
 
-#ifdef ANDROID
+#if defined(ANDROID) || defined(MOZ_MULET)
     mProductSub.AssignLiteral(MOZILLA_UAVERSION);
 #else
     mProductSub.AssignLiteral("20100101");
@@ -777,7 +777,7 @@ nsHttpHandler::InitUserAgentComponents()
     }
 #endif 
 
-#ifdef FXOS_SIMULATOR
+#ifdef MOZ_MULET
     {
         
         
