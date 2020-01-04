@@ -143,13 +143,6 @@ const URLTYPE_SUGGEST_JSON = "application/x-suggestions+json";
 const URLTYPE_SEARCH_HTML  = "text/html";
 const URLTYPE_OPENSEARCH   = "application/opensearchdescription+xml";
 
-
-const EMPTY_DOC = "<?xml version=\"1.0\"?>\n" +
-                  "<" + MOZSEARCH_LOCALNAME +
-                  " xmlns=\"" + MOZSEARCH_NS_10 + "\"" +
-                  " xmlns:os=\"" + OPENSEARCH_NS_11 + "\"" +
-                  "/>";
-
 const BROWSER_SEARCH_PREF = "browser.search.";
 const LOCALE_PREF = "general.useragent.locale";
 
@@ -1288,36 +1281,6 @@ EngineURL.prototype = {
     json.params = this.params.map(collapseMozParams, this);
 
     return json;
-  },
-
-  
-
-
-
-
-
-
-
-
-  _serializeToElement: function SRCH_EURL_serializeToEl(aDoc, aElement) {
-    var url = aDoc.createElementNS(OPENSEARCH_NS_11, "Url");
-    url.setAttribute("type", this.type);
-    url.setAttribute("method", this.method);
-    url.setAttribute("template", this.template);
-    if (this.rels.length)
-      url.setAttribute("rel", this.rels.join(" "));
-    if (this.resultDomain)
-      url.setAttribute("resultDomain", this.resultDomain);
-
-    for (var i = 0; i < this.params.length; ++i) {
-      var param = aDoc.createElementNS(OPENSEARCH_NS_11, "Param");
-      param.setAttribute("name", this.params[i].name);
-      param.setAttribute("value", this.params[i].value);
-      url.appendChild(aDoc.createTextNode("\n  "));
-      url.appendChild(param);
-    }
-    url.appendChild(aDoc.createTextNode("\n"));
-    aElement.appendChild(url);
   }
 };
 
@@ -1441,8 +1404,6 @@ Engine.prototype = {
   _updateURL: null,
   
   _iconUpdateURL: null,
-  
-  _lazySerializeTask: null,
   
   _extensionID: null,
 
@@ -1785,11 +1746,6 @@ Engine.prototype = {
 
     
     
-    if (!aEngine._readOnly)
-      aEngine._serializeToFile();
-
-    
-    
     notifyAction(aEngine, SEARCH_ENGINE_LOADED);
 
     
@@ -1906,14 +1862,6 @@ Engine.prototype = {
             aEngine._addIconToMap(aWidth, aHeight, dataURL)
           }
 
-          
-          
-          
-          
-          
-          if (aEngine._file && !aEngine._readOnly)
-            aEngine._serializeToFile();
-
           notifyAction(aEngine, SEARCH_ENGINE_CHANGED);
           aEngine._hasPreferredIcon = aIsPreferred;
         }
@@ -1972,8 +1920,6 @@ Engine.prototype = {
     this._description = aDescription;
     this._setIcon(aIconURL, true);
     this._extensionID = aExtensionID;
-
-    this._serializeToFile();
   },
 
   
@@ -2206,102 +2152,6 @@ Engine.prototype = {
     }
 
     return json;
-  },
-
-  
-
-
-
-  _serializeToElement: function SRCH_ENG_serializeToEl() {
-    function appendTextNode(aNameSpace, aLocalName, aValue) {
-      if (!aValue)
-        return null;
-      var node = doc.createElementNS(aNameSpace, aLocalName);
-      node.appendChild(doc.createTextNode(aValue));
-      docElem.appendChild(node);
-      docElem.appendChild(doc.createTextNode("\n"));
-      return node;
-    }
-
-    var parser = Cc["@mozilla.org/xmlextras/domparser;1"].
-                 createInstance(Ci.nsIDOMParser);
-
-    var doc = parser.parseFromString(EMPTY_DOC, "text/xml");
-    var docElem = doc.documentElement;
-
-    docElem.appendChild(doc.createTextNode("\n"));
-
-    appendTextNode(OPENSEARCH_NS_11, "ShortName", this.name);
-    appendTextNode(OPENSEARCH_NS_11, "Description", this._description);
-    appendTextNode(OPENSEARCH_NS_11, "InputEncoding", this._queryCharset);
-
-    if (this._iconURI) {
-      var imageNode = appendTextNode(OPENSEARCH_NS_11, "Image",
-                                     this._iconURI.spec);
-      if (imageNode) {
-        imageNode.setAttribute("width", "16");
-        imageNode.setAttribute("height", "16");
-      }
-    }
-
-    appendTextNode(MOZSEARCH_NS_10, "UpdateInterval", this._updateInterval);
-    appendTextNode(MOZSEARCH_NS_10, "UpdateUrl", this._updateURL);
-    appendTextNode(MOZSEARCH_NS_10, "IconUpdateUrl", this._iconUpdateURL);
-    appendTextNode(MOZSEARCH_NS_10, "SearchForm", this._searchForm);
-
-    if (this._extensionID) {
-      appendTextNode(MOZSEARCH_NS_10, "ExtensionID", this._extensionID);
-    }
-
-    for (var i = 0; i < this._urls.length; ++i)
-      this._urls[i]._serializeToElement(doc, docElem);
-    docElem.appendChild(doc.createTextNode("\n"));
-
-    return doc;
-  },
-
-  get lazySerializeTask() {
-    if (!this._lazySerializeTask) {
-      let task = function taskCallback() {
-        this._serializeToFile();
-      }.bind(this);
-      this._lazySerializeTask = new DeferredTask(task, LAZY_SERIALIZE_DELAY);
-    }
-
-    return this._lazySerializeTask;
-  },
-
-  
-
-
-  _serializeToFile: function SRCH_ENG_serializeToFile() {
-    var file = this._file;
-    ENSURE_WARN(!this._readOnly, "Can't serialize a read only engine!",
-                Cr.NS_ERROR_FAILURE);
-    ENSURE_WARN(file && file.exists(), "Can't serialize: file doesn't exist!",
-                Cr.NS_ERROR_UNEXPECTED);
-
-    var fos = Cc["@mozilla.org/network/safe-file-output-stream;1"].
-              createInstance(Ci.nsIFileOutputStream);
-
-    
-    
-    var doc = this._serializeToElement();
-
-    fos.init(file, (MODE_WRONLY | MODE_TRUNCATE), FileUtils.PERMS_FILE, 0);
-
-    try {
-      var serializer = Cc["@mozilla.org/xmlextras/xmlserializer;1"].
-                       createInstance(Ci.nsIDOMSerializer);
-      serializer.serializeToStream(doc.documentElement, fos, null);
-    } catch (e) {
-      LOG("_serializeToFile: Error serializing engine:\n" + e);
-    }
-
-    closeSafeOutputStream(fos);
-
-    Services.obs.notifyObservers(file.clone(), SEARCH_SERVICE_TOPIC,
-                                 "write-engine-to-disk-complete");
   },
 
   
@@ -2626,9 +2476,6 @@ Engine.prototype = {
            Cr.NS_ERROR_FAILURE);
 
     url.addParam(aName, aValue);
-
-    
-    this.lazySerializeTask.arm();
   },
 
 #ifdef ANDROID
@@ -4137,13 +3984,6 @@ SearchService.prototype = {
       engineToRemove.hidden = true;
       engineToRemove.alias = null;
     } else {
-      
-      
-      if (engineToRemove._lazySerializeTask) {
-        engineToRemove._lazySerializeTask.disarm();
-        engineToRemove._lazySerializeTask = null;
-      }
-
       
       engineToRemove._remove();
       engineToRemove._file = null;
