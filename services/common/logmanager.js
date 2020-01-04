@@ -196,12 +196,6 @@ LogManager.prototype = {
     
     for (let logName of logNames) {
       let log = Log.repository.getLogger(logName);
-      
-      
-      
-      
-      
-      log.level = Log.Level.All;
       for (let appender of [fapp, dumpAppender, consoleAppender]) {
         log.addAppender(appender);
       }
