@@ -71,7 +71,7 @@ add_UITour_task(function* test_availableTargets_changeWidgets() {
      "Targets should not be cached after reset");
 });
 
-add_UITour_task(function test_availableTargets_exceptionFromGetTarget() {
+add_UITour_task(function* test_availableTargets_exceptionFromGetTarget() {
   
   
   CustomizableUI.removeWidgetFromArea("search-container");
