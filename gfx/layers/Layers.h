@@ -1676,7 +1676,7 @@ public:
 
 
 
-  const gfx::TiledIntRegion& GetInvalidRegion() { return mInvalidRegion; }
+  const virtual gfx::TiledIntRegion& GetInvalidRegion() { return mInvalidRegion; }
   void AddInvalidRegion(const nsIntRegion& aRegion) {
     mInvalidRegion.Add(aRegion);
   }

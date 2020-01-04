@@ -111,6 +111,14 @@ public:
     CompositableHost::DumpTextureHost(aStream, mTextureHost);
   }
 
+  
+
+
+
+
+
+  float GetFadeInOpacity(float aOpacity);
+
   RefPtr<gfxSharedReadLock> mSharedLock;
   CompositableTextureHostRef mTextureHost;
   CompositableTextureHostRef mTextureHostOnWhite;
@@ -118,6 +126,7 @@ public:
   mutable CompositableTextureSourceRef mTextureSourceOnWhite;
   
   TileIntPoint mTilePosition;
+  TimeStamp mFadeStart;
 };
 
 class TiledLayerBufferComposite
@@ -146,6 +155,7 @@ public:
 
   void SetCompositor(Compositor* aCompositor);
 
+  void AddAnimationInvalidation(nsIntRegion& aRegion);
 protected:
 
   CSSToParentLayerScale2D mFrameResolution;
@@ -262,6 +272,8 @@ public:
                     bool aDumpHtml=false) override;
 
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+
+  virtual void AddAnimationInvalidation(nsIntRegion& aRegion) override;
 
 private:
 
