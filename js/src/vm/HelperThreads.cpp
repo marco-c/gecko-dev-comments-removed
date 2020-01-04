@@ -1277,7 +1277,8 @@ HelperThread::handleParseWorkload()
 
     
     
-    HelperThreadState().parseFinishedList().append(parseTask);
+    if (!HelperThreadState().parseFinishedList().append(parseTask))
+        CrashAtUnhandlableOOM("handleParseWorkload");
 
     parseTask = nullptr;
 
