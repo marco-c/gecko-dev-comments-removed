@@ -361,6 +361,9 @@ public:
     if (mVideoDevice) {
       mVideoDevice->GetSource()->GetSettings(aOutSettings);
     }
+    if (mAudioDevice) {
+      mAudioDevice->GetSource()->GetSettings(aOutSettings);
+    }
   }
 
   
