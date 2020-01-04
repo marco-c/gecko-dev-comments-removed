@@ -1,12 +1,12 @@
 
+import platform
 import os
 
+HG_SHARE_BASE_DIR = "/builds/hg-shared"
+
 config = {
-    "exes": {
-        'python': '/tools/buildbot/bin/python',
-        'virtualenv': ['/tools/buildbot/bin/python', '/tools/misc-python/virtualenv.py'],
-        'tooltool.py': "/tools/tooltool.py",
-    },
+    
+    "vcs_share_base": HG_SHARE_BASE_DIR,
 
     "find_links": [
         "http://pypi.pvt.build.mozilla.org/pub",
@@ -14,12 +14,19 @@ config = {
     ],
     "pip_index": False,
 
-    "buildbot_json_path": "buildprops.json",
-
+    "default_actions": [
+        'clobber',
+        'download-and-extract',
+        'create-virtualenv',
+        'install',
+        'run-tests',
+    ],
     "download_symbols": "ondemand",
-    "download_minidump_stackwalk": True,
+    
+    "download_minidump_stackwalk": False,
     "default_blob_upload_servers": [
         "https://blobupload.elasticbeanstalk.com",
     ],
     "blob_uploader_auth_file": os.path.join(os.getcwd(), "oauth.txt"),
+    "vcs_output_timeout": 1760,
 }
