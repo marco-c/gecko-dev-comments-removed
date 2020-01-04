@@ -51,7 +51,9 @@ const WorkerChild = Class({
 
     this.sandbox = WorkerSandbox(this, this.window);
 
-    this.frozen = false;
+    
+    
+    this.frozen = this.window.document.readyState == "loading";
     this.frozenMessages = [];
     this.on('pageshow', () => {
       this.frozen = false;

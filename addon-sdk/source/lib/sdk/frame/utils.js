@@ -57,25 +57,23 @@ function create(target, options) {
   frame.setAttribute('type', options.type || 'content');
   frame.setAttribute('src', options.uri || 'about:blank');
 
+  
+  if (remote && isXUL) {
+    
+    
+    
+    frame.setAttribute('style', '-moz-binding: none;');
+    frame.setAttribute('remote', 'true');
+  }
+
   target.appendChild(frame);
 
   
   
-  if (remote) {
-    if (isXUL) {
-      
-      
-      
-      frame.setAttribute('style', '-moz-binding: none;');
-      frame.setAttribute('remote', 'true');
-    }
-    else {
-      frame.QueryInterface(Ci.nsIMozBrowserFrame);
-      frame.createRemoteFrameLoader(null);
-    }
+  if (remote && !isXUL) {
+    frame.QueryInterface(Ci.nsIMozBrowserFrame);
+    frame.createRemoteFrameLoader(null);
   }
-
-
 
   
   if (!remote) {
@@ -83,12 +81,7 @@ function create(target, options) {
     docShell.allowAuth = options.allowAuth || false;
     docShell.allowJavascript = options.allowJavascript || false;
     docShell.allowPlugins = options.allowPlugins || false;
-
-    
-    
-    
-    if ("allowWindowControl" in docShell && "allowWindowControl" in options)
-      docShell.allowWindowControl = !!options.allowWindowControl;
+    docShell.allowWindowControl = options.allowWindowControl || false;
   }
 
   return frame;

@@ -53,7 +53,7 @@ function isWindowInTab(window) {
   if (isChildLoader) {
     let { frames } = require('../remote/child');
     let frame = frames.getFrameForWindow(window.top);
-    return frame.isTab;
+    return frame && frame.isTab;
   }
   else {
     
