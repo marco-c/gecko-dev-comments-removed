@@ -5914,11 +5914,11 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
 
   
   bool isTreePseudo = false;
+  CSSEnabledState enabledState = EnabledState();
   CSSPseudoElementType pseudoElementType =
     nsCSSPseudoElements::GetPseudoType(pseudo);
   CSSPseudoClassType pseudoClassType =
-    nsCSSPseudoClasses::GetPseudoType(pseudo, AgentRulesEnabled(),
-                                      ChromeRulesEnabled());
+    nsCSSPseudoClasses::GetPseudoType(pseudo, enabledState);
   bool pseudoClassIsUserAction =
     nsCSSPseudoClasses::IsUserActionPseudoClass(pseudoClassType);
 

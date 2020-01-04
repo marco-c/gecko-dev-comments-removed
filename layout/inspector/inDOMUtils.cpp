@@ -1211,7 +1211,8 @@ GetStatesForPseudoClass(const nsAString& aStatePseudo)
                 "Length of PseudoClassStates array is incorrect");
 
   nsCOMPtr<nsIAtom> atom = NS_Atomize(aStatePseudo);
-  CSSPseudoClassType type = nsCSSPseudoClasses::GetPseudoType(atom, true, true);
+  CSSPseudoClassType type = nsCSSPseudoClasses::
+    GetPseudoType(atom, CSSEnabledState::eIgnoreEnabledState);
 
   
   
