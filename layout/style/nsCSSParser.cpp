@@ -9685,6 +9685,15 @@ CSSParserImpl::ParseGridLine(nsCSSValue& aValue)
   Maybe<int32_t> integer;
   nsCSSValue ident;
 
+#ifdef MOZ_VALGRIND
+  
+  
+  
+  
+  integer.emplace(0);
+  integer.reset();
+#endif
+
   if (!GetToken(true)) {
     return false;
   }
