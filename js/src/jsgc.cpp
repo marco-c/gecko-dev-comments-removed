@@ -2447,6 +2447,26 @@ GCRuntime::updateCellPointers(MovingTracer* trc, Zone* zone, AllocKinds kinds, s
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const AllocKinds UpdatePhaseBaseShapes {
     AllocKind::BASE_SHAPE
 };
