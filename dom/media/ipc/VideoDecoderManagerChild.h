@@ -19,7 +19,6 @@ public:
 
   static VideoDecoderManagerChild* GetSingleton();
   static nsIThread* GetManagerThread();
-  static AbstractThread* GetManagerAbstractThread();
 
   
   void DeallocateSurfaceDescriptorGPUVideo(const SurfaceDescriptorGPUVideo& aSD);
