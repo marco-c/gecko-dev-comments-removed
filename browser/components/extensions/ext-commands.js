@@ -228,8 +228,7 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-extensions.registerSchemaAPI("commands", context => {
-  let {extension} = context;
+extensions.registerSchemaAPI("commands", (extension, context) => {
   return {
     commands: {
       getAll() {

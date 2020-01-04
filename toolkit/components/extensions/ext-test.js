@@ -25,8 +25,7 @@ extensions.on("test-message", (type, extension, ...args) => {
 });
 
 
-extensions.registerSchemaAPI("test", context => {
-  let {extension} = context;
+extensions.registerSchemaAPI("test", (extension, context) => {
   return {
     test: {
       sendMessage: function(...args) {
