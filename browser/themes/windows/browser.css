@@ -170,6 +170,7 @@
   overflow: -moz-hidden-unscrollable;
   max-height: 4em;
   transition: min-height 170ms ease-out, max-height 170ms ease-out;
+  padding: 0 5px;
 }
 
 #navigator-toolbox > toolbar:not(#toolbar-menubar):not(#TabsToolbar):not(#nav-bar):not(#addon-bar)[collapsed=true] {
@@ -1391,13 +1392,10 @@ html|*.urlbar-input:-moz-lwtheme::-moz-placeholder,
 
 @keyframes urlbar-zoom-reset-pulse {
   0% {
-    transform: scale(0);
-  }
-  75% {
-    transform: scale(1.5);
+  transform: scale(0);
   }
   100% {
-    transform: scale(1.0);
+  transform: scale(1.5);
   }
 }
 
