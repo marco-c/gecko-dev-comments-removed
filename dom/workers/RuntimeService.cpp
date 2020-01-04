@@ -699,6 +699,111 @@ AsmJSCacheOpenEntryForWrite(JS::Handle<JSObject*> aGlobal,
                                        aSize, aMemory, aHandle);
 }
 
+class AsyncTaskRunnable final
+  : public WorkerControlRunnable, public WorkerHolder
+{
+  JS::AsyncTask* mTask;
+
+  ~AsyncTaskRunnable()
+  {
+    MOZ_ASSERT_IF(WorkerHolder::mWorkerPrivate, !mTask);
+  }
+
+  WorkerPrivate* Worker() const
+  {
+    
+    return WorkerHolder::mWorkerPrivate;
+  }
+
+  
+  
+
+  bool PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  {
+    return true;
+  }
+
+  void PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
+  { }
+
+public:
+  AsyncTaskRunnable(WorkerPrivate* aWorker, JS::AsyncTask* aTask)
+    : WorkerControlRunnable(aWorker, WorkerThreadUnchangedBusyCount),
+      mTask(aTask)
+  {
+    MOZ_ASSERT(mTask);
+  }
+
+  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    MOZ_ASSERT(aWorkerPrivate == Worker());
+    MOZ_ASSERT(aCx == Worker()->GetJSContext());
+    MOZ_ASSERT(mTask);
+
+    AutoJSAPI jsapi;
+    jsapi.Init();
+
+    mTask->finish(Worker()->GetJSContext());
+    mTask = nullptr;  
+
+    return true;
+  }
+
+  nsresult Cancel() override
+  {
+    MOZ_ASSERT(mTask);
+
+    AutoJSAPI jsapi;
+    jsapi.Init();
+
+    mTask->cancel(Worker()->GetJSContext());
+    mTask = nullptr;  
+
+    
+    
+    return WorkerRunnable::Cancel();
+  }
+
+  bool Notify(Status aStatus) override
+  {
+    
+    
+    return true;
+  }
+};
+
+static bool
+StartAsyncTaskCallback(JSContext* aCx, JS::AsyncTask* aTask)
+{
+  WorkerPrivate* worker = GetWorkerPrivateFromContext(aCx);
+  worker->AssertIsOnWorkerThread();
+
+  RefPtr<AsyncTaskRunnable> runnable = new AsyncTaskRunnable(worker, aTask);
+  if (!runnable->HoldWorker(worker, Status::Closing)) {
+    return false;
+  }
+
+  
+  
+  aTask->user = runnable.forget().take();
+  return true;
+}
+
+static bool
+FinishAsyncTaskCallback(JS::AsyncTask* aTask)
+{
+  
+  
+
+  
+  RefPtr<AsyncTaskRunnable> runnable =
+    already_AddRefed<AsyncTaskRunnable>(
+      static_cast<AsyncTaskRunnable*>(aTask->user));
+
+  MOZ_ALWAYS_TRUE(runnable->Dispatch());
+  return true;
+}
+
 class WorkerJSRuntime;
 
 class WorkerThreadContextPrivate : private PerThreadAtomCache
@@ -793,6 +898,8 @@ InitJSContextForWorker(WorkerPrivate* aWorkerPrivate, JSContext* aWorkerCx)
     asmjscache::CloseEntryForWrite
   };
   JS::SetAsmJSCacheOps(aWorkerCx, &asmJSCacheOps);
+
+  JS::SetAsyncTaskCallbacks(aWorkerCx, StartAsyncTaskCallback, FinishAsyncTaskCallback);
 
   if (!JS::InitSelfHostedCode(aWorkerCx)) {
     NS_WARNING("Could not init self-hosted code!");
