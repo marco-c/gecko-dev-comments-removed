@@ -1564,11 +1564,14 @@ void MacroAssembler::Claim(const Operand& size) {
     }
   }
 
-  if (!sp.Is(GetStackPointer64())) {
-    BumpSystemStackPointer(size);
-  }
-
   Sub(GetStackPointer64(), GetStackPointer64(), size);
+
+  
+  
+  
+  if (!sp.Is(GetStackPointer64())) {
+    Mov(sp, GetStackPointer64());
+  }
 }
 
 
