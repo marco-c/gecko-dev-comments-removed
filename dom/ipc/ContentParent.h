@@ -185,6 +185,11 @@ public:
 
     ContentParentIterator begin()
     {
+      
+      while (mPolicy != eAll && mCurrent && !mCurrent->mIsAlive) {
+        mCurrent = mCurrent->LinkedListElement<ContentParent>::getNext();
+      }
+
       return *this;
     }
     ContentParentIterator end()
