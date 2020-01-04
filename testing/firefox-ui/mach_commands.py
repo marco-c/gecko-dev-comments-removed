@@ -67,7 +67,13 @@ def run_firefox_ui_test(testtype=None, topsrcdir=None, **kwargs):
         kwargs['server_root'] = os.path.join(fxui_dir, 'resources')
 
     
-    if not kwargs.get('tests'):
+    if 'test_objects' in kwargs:
+        tests = []
+        for obj in kwargs['test_objects']:
+            tests.append(obj['file_relpath'])
+        kwargs['tests'] = tests
+    elif not kwargs.get('tests'):
+        
         kwargs['tests'] = [os.path.join(fxui_dir, 'tests', test)
                            for test in test_types[testtype]['default_tests']]
 
