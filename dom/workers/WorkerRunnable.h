@@ -269,8 +269,12 @@ protected:
 
   
   
+  
+  
+  
+  
   virtual void
-  MaybeSetException(JSContext* aCx)
+  MaybeSetException()
   { }
 
 private:
