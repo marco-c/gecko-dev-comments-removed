@@ -576,6 +576,12 @@ this.ADN_MAX_BCD_NUMBER_BYTES = 11;
 this.ADN_MAX_NUMBER_DIGITS = 20;
 
 
+this.EXT_MAX_BCD_NUMBER_BYTES = 10;
+
+
+this.EXT_MAX_NUMBER_DIGITS = 20;
+
+
 this.READ_RECORD_ABSOLUTE_MODE = 4;
 
 
@@ -1262,10 +1268,13 @@ this.GECKO_ICC_SERVICES = {
     FDN: 3,
     PLMNSEL: 7,
     MSISDN: 9,
+    EXT1: 10,
+    EXT2: 11,
     CBMI: 14,
     GID1: 15,
     SPN: 17,
     SDN: 18,
+    EXT3: 19,
     DATA_DOWNLOAD_SMS_CB: 25,
     DATA_DOWNLOAD_SMS_PP: 26,
     CBMIR: 30,
@@ -1280,7 +1289,9 @@ this.GECKO_ICC_SERVICES = {
   
   usim: {
     FDN: 2,
+    EXT2: 3,
     SDN: 4,
+    EXT3: 5,
     BDN: 6,
     CBMI: 15,
     CBMIR: 16,
@@ -1300,8 +1311,11 @@ this.GECKO_ICC_SERVICES = {
   ruim: {
     FDN: 3,
     ENHANCED_PHONEBOOK: 6,
+    EXT1: 10,
+    EXT2: 11,
     SPN: 17,
-    SDN: 18
+    SDN: 18,
+    EXT3: 19,
   },
   
   
