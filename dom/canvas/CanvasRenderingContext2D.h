@@ -46,6 +46,7 @@ class OwningStringOrCanvasGradientOrCanvasPattern;
 class TextMetrics;
 class CanvasFilterChainObserver;
 class CanvasPath;
+class OwningHTMLCanvasElementOrOffscreenCanvas;
 
 extern const mozilla::gfx::Float SIGMA_MAX;
 
@@ -78,6 +79,10 @@ public:
     
     return mCanvasElement->GetOriginalCanvas();
   }
+
+  void GetCanvas(Nullable<dom::OwningHTMLCanvasElementOrOffscreenCanvas>& aRetval);
+
+  void Commit();
 
   void Save();
   void Restore();
@@ -543,6 +548,7 @@ public:
   
   bool GetHitRegionRect(Element* aElement, nsRect& aRect) override;
 
+  static bool PrefCanvasPathEnabled(JSContext* aCx, JSObject* aObj);
 protected:
   nsresult GetImageDataArray(JSContext* aCx, int32_t aX, int32_t aY,
                              uint32_t aWidth, uint32_t aHeight,
