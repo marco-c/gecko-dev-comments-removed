@@ -468,9 +468,6 @@ pref("media.realtime_decoder.enabled", true);
 pref("dom.mozTCPSocket.enabled", true);
 
 
-pref("dom.mozPay.enabled", true);
-
-
 
 
 
