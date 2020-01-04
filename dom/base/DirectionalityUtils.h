@@ -89,14 +89,14 @@ bool TextNodeWillChangeDirection(nsIContent* aTextNode, Directionality* aOldDir,
 
 
 
-void TextNodeChangedDirection(nsIContent* aTextNode, Directionality aOldDir,
+void TextNodeChangedDirection(nsTextNode* aTextNode, Directionality aOldDir,
                               bool aNotify);
 
 
 
 
 
-void SetDirectionFromNewTextNode(nsIContent* aTextNode);
+void SetDirectionFromNewTextNode(nsTextNode* aTextNode);
 
 
 

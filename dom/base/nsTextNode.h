@@ -49,6 +49,7 @@ public:
 
   
   NS_FORWARD_NSIDOMNODE_TO_NSINODE
+  using mozilla::dom::Text::GetParentElement;
 
   
   NS_FORWARD_NSIDOMCHARACTERDATA(nsGenericDOMDataNode::)
