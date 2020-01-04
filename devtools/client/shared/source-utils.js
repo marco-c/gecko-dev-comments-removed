@@ -3,7 +3,6 @@
 
 "use strict";
 
-const { URL } = require("sdk/url");
 const { LocalizationHelper } = require("devtools/client/shared/l10n");
 
 const l10n = new LocalizationHelper("chrome://devtools/locale/components.properties");
@@ -45,10 +44,6 @@ const gSourceNamesStore = new Map();
 
 
 
-
-
-
-
 function parseURL(location) {
   let url = gURLStore.get(location);
 
@@ -61,26 +56,37 @@ function parseURL(location) {
     
     
     
-    
-    
+    url = {
+      href: url.href,
+      protocol: url.protocol,
+      host: url.host,
+      hostname: url.hostname,
+      port: url.port || null,
+      pathname: url.pathname,
+      search: url.search,
+      hash: url.hash,
+      username: url.username,
+      password: url.password,
+      origin: url.origin,
+    };
+
     
     
     
     
     let isChrome = isChromeScheme(location);
-    let fileName = url.fileName || "/";
-    let hostname, host;
+
+    url.fileName = url.pathname ?
+      (url.pathname.slice(url.pathname.lastIndexOf("/") + 1) || "/") :
+      "/";
+
     if (isChrome) {
-      hostname = null;
-      host = null;
-    } else {
-      hostname = url.hostname;
-      host = url.port ? `${url.host}:${url.port}` : url.host;
+      url.hostname = null;
+      url.host = null;
     }
 
-    let parsed = Object.assign({}, url, { host, fileName, hostname });
-    gURLStore.set(location, parsed);
-    return parsed;
+    gURLStore.set(location, url);
+    return url;
   } catch (e) {
     gURLStore.set(location, null);
     return null;

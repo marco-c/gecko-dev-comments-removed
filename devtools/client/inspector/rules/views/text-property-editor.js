@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {Cc, Ci} = require("chrome");
+const {Ci} = require("chrome");
 const {CssLogic} = require("devtools/shared/inspector/css-logic");
 const {InplaceEditor, editableField} =
       require("devtools/client/shared/inplace-editor");
@@ -21,8 +21,6 @@ const {
 } = require("devtools/shared/css-parsing-utils");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
-const IOService = Cc["@mozilla.org/network/io-service;1"]
-                  .getService(Ci.nsIIOService);
 
 
 
@@ -256,38 +254,6 @@ TextPropertyEditor.prototype = {
   
 
 
-
-
-
-  get sheetURI() {
-    if (this._sheetURI === undefined) {
-      if (this.sheetHref) {
-        this._sheetURI = IOService.newURI(this.sheetHref, null, null);
-      } else {
-        this._sheetURI = null;
-      }
-    }
-
-    return this._sheetURI;
-  },
-
-  
-
-
-
-
-
-
-  resolveURI: function (relativePath) {
-    if (this.sheetURI) {
-      relativePath = this.sheetURI.resolve(relativePath);
-    }
-    return relativePath;
-  },
-
-  
-
-
   update: function () {
     if (this.ruleView.isDestroyed) {
       return;
@@ -353,7 +319,7 @@ TextPropertyEditor.prototype = {
       angleClass: "ruleview-angle",
       defaultColorType: !propDirty,
       urlClass: "theme-link",
-      baseURI: this.sheetURI
+      baseURI: this.sheetHref
     };
     let frag = outputParser.parseCssProperty(name, val, parserOptions);
     this.valueSpan.innerHTML = "";
@@ -478,7 +444,7 @@ TextPropertyEditor.prototype = {
         computed.name, computed.value, {
           colorSwatchClass: "ruleview-swatch ruleview-colorswatch",
           urlClass: "theme-link",
-          baseURI: this.sheetURI
+          baseURI: this.sheetHref
         }
       );
 
