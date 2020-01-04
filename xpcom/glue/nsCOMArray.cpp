@@ -7,6 +7,7 @@
 #include "nsCOMArray.h"
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/OperatorNewExtensions.h"
 
 #include "nsCOMPtr.h"
 
@@ -20,13 +21,13 @@ public:
   
   static inline void Construct(E* aE)
   {
-    new (static_cast<void*>(aE)) E();
+    new (mozilla::KnownNotNull, static_cast<void*>(aE)) E();
   }
   
   template<class A>
   static inline void Construct(E* aE, const A& aArg)
   {
-    new (static_cast<void*>(aE)) E(aArg);
+    new (mozilla::KnownNotNull, static_cast<void*>(aE)) E(aArg);
   }
   
   static inline void Destruct(E* aE)
