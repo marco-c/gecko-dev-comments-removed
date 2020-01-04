@@ -140,112 +140,44 @@ this.PushServiceWebSocket = {
   },
 
   observe: function(aSubject, aTopic, aData) {
-    if (aTopic == "nsPref:changed" && aData == "dom.push.userAgentID") {
-      this._onUAIDChanged();
-    } else if (aTopic == "timer-callback") {
-      this._onTimerFired(aSubject);
-    }
-  },
 
-  
-
-
-
-
-  _onUAIDChanged() {
-    console.debug("onUAIDChanged()");
-
-    this._shutdownWS();
-    this._startBackoffTimer();
-  },
-
-  
-  _onTimerFired(timer) {
-    console.debug("onTimerFired()");
-
-    if (timer == this._pingTimer) {
-      this._sendPing();
-      return;
-    }
-
-    if (timer == this._backoffTimer) {
-      console.debug("onTimerFired: Reconnecting after backoff");
-      if (this._reconnectTestCallback) {
-        
-        let actualRetryTimeout = Date.now() - this._lastDisconnect;
-        this._reconnectTestCallback(actualRetryTimeout);
+    switch (aTopic) {
+    case "nsPref:changed":
+      if (aData == "dom.push.userAgentID") {
+        this._shutdownWS();
+        this._reconnectAfterBackoff();
       }
-      this._beginWSSetup();
-      return;
-    }
+      break;
+    case "timer-callback":
+      if (aSubject == this._requestTimeoutTimer) {
+        if (Object.keys(this._registerRequests).length === 0) {
+          this._requestTimeoutTimer.cancel();
+        }
 
-    if (timer == this._requestTimeoutTimer) {
-      this._timeOutRequests();
-      return;
-    }
-  },
+        
+        let requestTimedOut = false;
+        for (let channelID in this._registerRequests) {
+          let duration = Date.now() - this._registerRequests[channelID].ctime;
+          
+          
+          
+          if (requestTimedOut || duration > this._requestTimeout) {
+            requestTimedOut = true;
+            this._registerRequests[channelID]
+              .reject(new Error("Register request timed out for channel ID " +
+                  channelID));
 
-  
+            delete this._registerRequests[channelID];
+          }
+        }
 
-
-
-
-  _sendPing() {
-    console.debug("sendPing()");
-
-    this._startRequestTimeoutTimer();
-    try {
-      this._wsSendMessage({});
-      this._lastPingTime = Date.now();
-    } catch (e) {
-      console.debug("sendPing: Error sending ping", e);
-      this._reconnect();
-    }
-  },
-
-  
-  _timeOutRequests() {
-    console.debug("timeOutRequests()");
-
-    if (!this._hasPendingRequests()) {
-      
-      
-      this._requestTimeoutTimer.cancel();
-      return;
-    }
-
-    let now = Date.now();
-
-    
-    
-    let requestTimedOut = false;
-
-    if (this._lastPingTime > 0 &&
-        now - this._lastPingTime > this._requestTimeout) {
-
-      console.debug("timeOutRequests: Did not receive pong in time");
-      requestTimedOut = true;
-
-    } else {
-      for (let [channelID, request] of this._registerRequests) {
-        let duration = now - request.ctime;
         
         
-        
-        requestTimedOut |= duration > this._requestTimeout;
         if (requestTimedOut) {
-          request.reject(new Error(
-            "Register request timed out for channel ID " + channelID));
-
-          this._registerRequests.delete(channelID);
+          this._reconnect();
         }
       }
-    }
-
-    
-    
-    if (requestTimedOut) {
-      this._reconnect();
+      break;
     }
   },
 
@@ -268,7 +200,7 @@ this.PushServiceWebSocket = {
   },
 
   _ws: null,
-  _registerRequests: new Map(),
+  _registerRequests: {},
   _currentState: STATE_SHUT_DOWN,
   _requestTimeout: 0,
   _requestTimeoutTimer: null,
@@ -328,34 +260,6 @@ this.PushServiceWebSocket = {
 
 
 
-
-  _lastPingTime: 0,
-
-  
-  _lastDisconnect: 0,
-
-  
-
-
-
-  _pingTimer: null,
-
-  
-  _backoffTimer: null,
-
-  
-
-
-
-
-
-
-  _reconnectTestCallback: null,
-
-  
-
-
-
   _wsSendMessage: function(msg) {
     if (!this._ws) {
       console.warn("wsSendMessage: No WebSocket initialized.",
@@ -402,7 +306,7 @@ this.PushServiceWebSocket = {
   _reconnect: function () {
     console.debug("reconnect()");
     this._shutdownWS(false);
-    this._startBackoffTimer();
+    this._reconnectAfterBackoff();
   },
 
   _shutdownWS: function(shouldCancelPending = true) {
@@ -420,10 +324,11 @@ this.PushServiceWebSocket = {
     } catch (e) {}
     this._ws = null;
 
-    this._lastPingTime = 0;
-
-    if (this._pingTimer) {
-      this._pingTimer.cancel();
+    this._waitingForPong = false;
+    if (this._mainPushService) {
+      this._mainPushService.stopAlarm();
+    } else {
+      console.error("shutdownWS: Uninitialized push service");
     }
 
     if (shouldCancelPending) {
@@ -434,8 +339,6 @@ this.PushServiceWebSocket = {
       this._notifyRequestQueue();
       this._notifyRequestQueue = null;
     }
-
-    this._lastDisconnect = Date.now();
   },
 
   uninit: function() {
@@ -449,9 +352,6 @@ this.PushServiceWebSocket = {
     
     this._shutdownWS();
 
-    if (this._backoffTimer) {
-      this._backoffTimer.cancel();
-    }
     if (this._requestTimeoutTimer) {
       this._requestTimeoutTimer.cancel();
     }
@@ -475,8 +375,11 @@ this.PushServiceWebSocket = {
 
 
 
-  _startBackoffTimer() {
-    console.debug("startBackoffTimer()");
+
+
+
+  _reconnectAfterBackoff: function() {
+    console.debug("reconnectAfterBackoff()");
     
     this._calculateAdaptivePing(true );
 
@@ -487,46 +390,13 @@ this.PushServiceWebSocket = {
 
     this._retryFailCount++;
 
-    console.debug("startBackoffTimer: Retry in", retryTimeout,
+    console.debug("reconnectAfterBackoff: Retry in", retryTimeout,
       "Try number", this._retryFailCount);
-
-    if (!this._backoffTimer) {
-      this._backoffTimer = Cc["@mozilla.org/timer;1"]
-                               .createInstance(Ci.nsITimer);
+    if (this._mainPushService) {
+      this._mainPushService.setAlarm(retryTimeout);
+    } else {
+      console.error("reconnectAfterBackoff: Uninitialized push service");
     }
-    this._backoffTimer.init(this, retryTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
-  },
-
-  
-  _hasPendingRequests() {
-    return this._lastPingTime > 0 || this._registerRequests.size > 0;
-  },
-
-  
-
-
-
-  _startRequestTimeoutTimer() {
-    if (this._hasPendingRequests()) {
-      return;
-    }
-    if (!this._requestTimeoutTimer) {
-      this._requestTimeoutTimer = Cc["@mozilla.org/timer;1"]
-                                    .createInstance(Ci.nsITimer);
-    }
-    this._requestTimeoutTimer.init(this,
-                                   this._requestTimeout,
-                                   Ci.nsITimer.TYPE_REPEATING_SLACK);
-  },
-
-  
-  _startPingTimer() {
-    if (!this._pingTimer) {
-      this._pingTimer = Cc["@mozilla.org/timer;1"]
-                          .createInstance(Ci.nsITimer);
-    }
-    this._pingTimer.init(this, prefs.get("pingInterval"),
-                         Ci.nsITimer.TYPE_ONE_SHOT);
   },
 
   
@@ -710,8 +580,8 @@ this.PushServiceWebSocket = {
     }
 
     
-    if (this._backoffTimer) {
-      this._backoffTimer.cancel();
+    if (this._mainPushService) {
+      this._mainPushService.stopAlarm();
     }
 
     let uri = this._serverURI;
@@ -751,6 +621,74 @@ this.PushServiceWebSocket = {
 
   isConnected: function() {
     return !!this._ws;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onAlarmFired: function() {
+    
+    
+    if (this._waitingForPong) {
+      console.debug("onAlarmFired: Did not receive pong in time.",
+        "Reconnecting WebSocket");
+      this._reconnect();
+    }
+    else if (this._currentState == STATE_READY) {
+      
+      
+      
+      
+      
+      
+      try {
+        this._wsSendMessage({});
+      } catch (e) {
+      }
+
+      this._waitingForPong = true;
+      this._mainPushService.setAlarm(prefs.get("requestTimeout"));
+    }
+    else if (this._mainPushService && this._mainPushService._alarmID !== null) {
+      console.debug("onAlarmFired: reconnect alarm fired");
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      this._beginWSSetup();
+    }
   },
 
   _acquireWakeLock: function() {
@@ -880,13 +818,14 @@ this.PushServiceWebSocket = {
   _handleRegisterReply: function(reply) {
     console.debug("handleRegisterReply()");
     if (typeof reply.channelID !== "string" ||
-        !this._registerRequests.has(reply.channelID)) {
+        typeof this._registerRequests[reply.channelID] !== "object") {
       return;
     }
 
-    let tmp = this._registerRequests.get(reply.channelID);
-    this._registerRequests.delete(reply.channelID);
-    if (!this._hasPendingRequests()) {
+    let tmp = this._registerRequests[reply.channelID];
+    delete this._registerRequests[reply.channelID];
+    if (Object.keys(this._registerRequests).length === 0 &&
+        this._requestTimeoutTimer) {
       this._requestTimeoutTimer.cancel();
     }
 
@@ -1025,20 +964,27 @@ this.PushServiceWebSocket = {
   request: function(action, record) {
     console.debug("request() ", action);
 
-    
-    this._startRequestTimeoutTimer();
+    if (Object.keys(this._registerRequests).length === 0) {
+      
+      if (!this._requestTimeoutTimer) {
+        this._requestTimeoutTimer = Cc["@mozilla.org/timer;1"]
+                                      .createInstance(Ci.nsITimer);
+      }
+      this._requestTimeoutTimer.init(this,
+                                     this._requestTimeout,
+                                     Ci.nsITimer.TYPE_REPEATING_SLACK);
+    }
 
     if (action == "register") {
       let data = {channelID: this._generateID(),
                   messageType: action};
 
       return new Promise((resolve, reject) => {
-        this._registerRequests.set(data.channelID, {
-          record: record,
-          resolve: resolve,
-          reject: reject,
-          ctime: Date.now(),
-        });
+        this._registerRequests[data.channelID] = {record: record,
+                                                 resolve: resolve,
+                                                 reject: reject,
+                                                 ctime: Date.now()
+                                                };
         this._queueRequest(data);
       }).then(record => {
         if (!this._dataEnabled) {
@@ -1075,7 +1021,7 @@ this.PushServiceWebSocket = {
   _send(data) {
     if (this._currentState == STATE_READY) {
       if (data.messageType != "register" ||
-          this._registerRequests.has(data.channelID)) {
+        typeof this._registerRequests[data.channelID] == "object") {
 
         
         this._wsSendMessage(data);
@@ -1084,14 +1030,12 @@ this.PushServiceWebSocket = {
   },
 
   _sendRegisterRequests() {
-    this._enqueue(_ => {
-      for (let channelID of this._registerRequests.keys()) {
-        this._send({
-          messageType: "register",
-          channelID: channelID,
-        });
-      }
-    });
+    this._enqueue(_ => Promise.all(Object.keys(this._registerRequests).map(channelID =>
+      this._send({
+        messageType: "register",
+        channelID: channelID,
+      })
+    )));
   },
 
   _queueRequest(data) {
@@ -1204,8 +1148,7 @@ this.PushServiceWebSocket = {
   _wsOnMessageAvailable: function(context, message) {
     console.debug("wsOnMessageAvailable()", message);
 
-    
-    this._lastPingTime = 0;
+    this._waitingForPong = false;
 
     let reply;
     try {
@@ -1232,7 +1175,7 @@ this.PushServiceWebSocket = {
 
     
     
-    this._startPingTimer();
+    this._mainPushService.setAlarm(prefs.get("pingInterval"));
 
     
     if (doNotHandle) {
@@ -1289,10 +1232,11 @@ this.PushServiceWebSocket = {
 
 
   _cancelRegisterRequests: function() {
-    for (let request of this._registerRequests.values()) {
+    for (let channelID in this._registerRequests) {
+      let request = this._registerRequests[channelID];
+      delete this._registerRequests[channelID];
       request.reject(new Error("Register request aborted"));
     }
-    this._registerRequests.clear();
   },
 
   _makeUDPSocket: function() {
