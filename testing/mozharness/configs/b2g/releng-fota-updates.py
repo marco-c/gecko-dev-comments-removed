@@ -14,7 +14,7 @@ config = {
         
         
         
-        'submit-to-balrog',
+        
     ],
     "upload": {
         "default": {
