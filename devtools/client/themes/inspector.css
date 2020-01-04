@@ -3,17 +3,14 @@
 
 
 
-%ifdef XP_MACOSX
 
-#inspector-toolbar:-moz-locale-dir(ltr) {
+:root[platform="mac"] #inspector-toolbar:-moz-locale-dir(ltr) {
   padding-left: 2px;
 }
 
-#inspector-toolbar:-moz-locale-dir(rtl) {
+:root[platform="mac"] #inspector-toolbar:-moz-locale-dir(rtl) {
   padding-left: 4px;
 }
-
-%endif
 
 #inspector-searchlabel {
   overflow: hidden;

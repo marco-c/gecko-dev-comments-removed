@@ -574,13 +574,11 @@ a {
   }
 }
 
-%ifdef XP_WIN
 
 
 
 
 
-.hud-filter-box {
+:root[platform="win"] .hud-filter-box {
   width: 200px;
 }
-%endif
