@@ -728,18 +728,6 @@ function test() {
     checkThrow(() => view.getFloat64(2147483649), RangeError);
 
     
-    
-    
-    checkThrow(() => view.getInt8(), TypeError);
-    checkThrow(() => view.getUint8(), TypeError);
-    checkThrow(() => view.getInt16(), TypeError);
-    checkThrow(() => view.getUint16(), TypeError);
-    checkThrow(() => view.getInt32(), TypeError);
-    checkThrow(() => view.getUint32(), TypeError);
-    checkThrow(() => view.getFloat32(), TypeError);
-    checkThrow(() => view.getFloat64(), TypeError);
-
-    
     checkThrow(() => view.getInt8.apply("dead", [0]), TypeError);
     checkThrow(() => view.getUint8.apply("puppies", [0]), TypeError);
     checkThrow(() => view.getInt16.apply("aren", [0]), TypeError);
@@ -1512,24 +1500,6 @@ function test() {
     checkThrow(() => view.setUint32(2147483649, 1), RangeError);
     checkThrow(() => view.setFloat32(2147483649, 1), RangeError);
     checkThrow(() => view.setFloat64(2147483649, 1), RangeError);
-
-    
-    checkThrow(() => view.setInt8(), Error);
-    checkThrow(() => view.setUint8(), Error);
-    checkThrow(() => view.setInt16(), Error);
-    checkThrow(() => view.setUint16(), Error);
-    checkThrow(() => view.setInt32(), Error);
-    checkThrow(() => view.setUint32(), Error);
-    checkThrow(() => view.setFloat32(), Error);
-    checkThrow(() => view.setFloat64(), Error);
-    checkThrow(() => view.setInt8(1), Error);
-    checkThrow(() => view.setUint8(1), Error);
-    checkThrow(() => view.setInt16(1), Error);
-    checkThrow(() => view.setUint16(1), Error);
-    checkThrow(() => view.setInt32(1), Error);
-    checkThrow(() => view.setUint32(1), Error);
-    checkThrow(() => view.setFloat32(1), Error);
-    checkThrow(() => view.setFloat64(1), Error);
 
     
     var intArray1 = [0, 1, 2, 3, 100, 101, 102, 103, 128, 129, 130, 131, 252, 253, 254, 255];
