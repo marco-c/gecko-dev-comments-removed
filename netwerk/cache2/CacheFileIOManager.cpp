@@ -537,7 +537,6 @@ public:
   ShutdownEvent()
     : mMonitor("ShutdownEvent.mMonitor")
     , mNotified(false)
-    , mPrepare(true)
   {
     MOZ_COUNT_CTOR(ShutdownEvent);
   }
@@ -551,21 +550,6 @@ protected:
 public:
   NS_IMETHOD Run()
   {
-    if (mPrepare) {
-      MOZ_ASSERT(CacheFileIOManager::gInstance->mIOThread->IsCurrentThread());
-
-      mPrepare = false;
-
-      
-      
-      
-      CacheFileIOManager::gInstance->mShutdownDemandedTime = TimeStamp::NowLoRes();
-
-      
-      CacheFileIOManager::gInstance->mIOThread->Dispatch(this, CacheIOThread::CLOSE);
-      return NS_OK;
-    }
-
     MonitorAutoLock mon(mMonitor);
 
     CacheFileIOManager::gInstance->ShutdownInternal();
@@ -581,10 +565,8 @@ public:
     MonitorAutoLock mon(mMonitor);
 
     DebugOnly<nsresult> rv;
-    nsCOMPtr<nsIEventTarget> ioTarget =
-      CacheFileIOManager::gInstance->mIOThread->Target();
-    MOZ_ASSERT(ioTarget);
-    rv = ioTarget->Dispatch(this, nsIEventTarget::DISPATCH_NORMAL);
+    rv = CacheFileIOManager::gInstance->mIOThread->Dispatch(
+      this, CacheIOThread::CLOSE);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     while (!mNotified) {
       mon.Wait();
@@ -594,7 +576,6 @@ public:
 protected:
   mozilla::Monitor mMonitor;
   bool             mNotified;
-  bool             mPrepare;
 };
 
 class OpenFileEvent : public Runnable {
@@ -735,7 +716,7 @@ public:
       
       
       
-      rv = (CacheFileIOManager::gInstance->IsPastShutdownIOLag() ||
+      rv = (CacheObserver::IsPastShutdownIOLag() ||
             CacheFileIOManager::gInstance->mShuttingDown)
         ? NS_OK
         : NS_ERROR_NOT_INITIALIZED;
@@ -1176,8 +1157,6 @@ CacheFileIOManager::Shutdown()
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  gInstance->mShutdownDemanded = true;
-
   Telemetry::AutoTimer<Telemetry::NETWORK_DISK_CACHE_SHUTDOWN_V2> shutdownTimer;
 
   CacheIndex::PreShutdown();
@@ -1272,26 +1251,6 @@ CacheFileIOManager::ShutdownInternal()
   }
 
   return NS_OK;
-}
-
-bool
-CacheFileIOManager::IsPastShutdownIOLag()
-{
-#ifdef DEBUG
-  return false;
-#endif
-
-  if (mShutdownDemandedTime.IsNull()) {
-    return false;
-  }
-
-  TimeDuration const& preferredIOLag = CacheObserver::MaxShutdownIOLag();
-  if (preferredIOLag < TimeDuration(0)) {
-    return false;
-  }
-
-  TimeDuration currentIOLag = TimeStamp::NowLoRes() - mShutdownDemandedTime;
-  return currentIOLag > preferredIOLag;
 }
 
 
@@ -1979,7 +1938,7 @@ CacheFileIOManager::WriteInternal(CacheFileHandle *aHandle, int64_t aOffset,
 
   nsresult rv;
 
-  if (IsPastShutdownIOLag()) {
+  if (CacheObserver::IsPastShutdownIOLag()) {
     LOG(("  past the shutdown I/O lag, nothing written"));
     
     
@@ -2306,9 +2265,11 @@ CacheFileIOManager::ReleaseNSPRHandleInternal(CacheFileHandle *aHandle,
   
   if (
 #ifndef DEBUG
-      ((aHandle->mInvalid || aHandle->mIsDoomed) && MOZ_UNLIKELY(mShutdownDemanded)) ||
+      ((aHandle->mInvalid || aHandle->mIsDoomed) &&
+      MOZ_UNLIKELY(CacheObserver::ShuttingDown())) ||
 #endif
-      MOZ_UNLIKELY(!aIgnoreShutdownLag && IsPastShutdownIOLag())) {
+      MOZ_UNLIKELY(!aIgnoreShutdownLag &&
+                   CacheObserver::IsPastShutdownIOLag())) {
     
     
     

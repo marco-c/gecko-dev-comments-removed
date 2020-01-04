@@ -433,19 +433,10 @@ private:
   nsresult UpdateSmartCacheSize(int64_t aFreeSpace);
 
   
-  
-  bool IsPastShutdownIOLag();
-
-  
   size_t SizeOfExcludingThisInternal(mozilla::MallocSizeOf mallocSizeOf) const;
 
   static CacheFileIOManager           *gInstance;
   TimeStamp                            mStartTime;
-  
-  
-  TimeStamp                            mShutdownDemandedTime;
-  
-  Atomic<bool, Relaxed>                mShutdownDemanded;
   
   
   bool                                 mShuttingDown;
