@@ -67,16 +67,10 @@ add_task(function* no_request_if_prefed_off() {
   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
   yield asyncInit();
   checkNoRequest();
+  yield promiseAfterCache();
 
   
   do_check_eq(Services.search.currentEngine.name, getDefaultEngineName(false));
-
-  
-  
-  let commitPromise = promiseAfterCache();
-  Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
-  Services.search.resetToOriginalDefaultEngine();
-  yield commitPromise;
 
   
   let metadata = yield promiseGlobalMetadata();
