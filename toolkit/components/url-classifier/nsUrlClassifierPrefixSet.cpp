@@ -24,6 +24,7 @@
 #include "mozilla/FileUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/unused.h"
+#include <algorithm>
 
 using namespace mozilla;
 
@@ -34,6 +35,9 @@ static const PRLogModuleInfo *gUrlClassifierPrefixSetLog = nullptr;
 
 NS_IMPL_ISUPPORTS(
   nsUrlClassifierPrefixSet, nsIUrlClassifierPrefixSet, nsIMemoryReporter)
+
+
+const uint32_t nsUrlClassifierPrefixSet::MAX_BUFFER_SIZE;
 
 nsUrlClassifierPrefixSet::nsUrlClassifierPrefixSet()
   : mLock("nsUrlClassifierPrefixSet.mLock")
@@ -316,7 +320,20 @@ nsUrlClassifierPrefixSet::LoadFromFile(nsIFile* aFile)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsIInputStream> in = NS_BufferInputStream(localInFile, BUFFER_SIZE);
+  
+  int64_t fileSize;
+  rv = aFile->GetFileSize(&fileSize);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (fileSize < 0 || fileSize > UINT32_MAX) {
+    return NS_ERROR_FAILURE;
+  }
+
+  uint32_t bufferSize = std::min<uint32_t>(static_cast<uint32_t>(fileSize),
+                                           MAX_BUFFER_SIZE);
+
+  
+  nsCOMPtr<nsIInputStream> in = NS_BufferInputStream(localInFile, bufferSize);
 
   uint32_t magic;
   uint32_t read;
@@ -401,22 +418,25 @@ nsUrlClassifierPrefixSet::StoreToFile(nsIFile* aFile)
                                             PR_WRONLY | PR_TRUNCATE | PR_CREATE_FILE);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  uint32_t fileSize;
+
   
   {
     nsCOMPtr<nsIFileOutputStream> fos(do_QueryInterface(localOutFile));
     Telemetry::AutoTimer<Telemetry::URLCLASSIFIER_PS_FALLOCATE_TIME> timer;
-    int64_t size = 4 * sizeof(uint32_t);
+    fileSize = 4 * sizeof(uint32_t);
     uint32_t deltas = mTotalPrefixes - mIndexPrefixes.Length();
-    size += 2 * mIndexPrefixes.Length() * sizeof(uint32_t);
-    size += deltas * sizeof(uint16_t);
+    fileSize += 2 * mIndexPrefixes.Length() * sizeof(uint32_t);
+    fileSize += deltas * sizeof(uint16_t);
 
     
     
-    Unused << fos->Preallocate(size);
+    Unused << fos->Preallocate(fileSize);
   }
 
   
-  nsCOMPtr<nsIOutputStream> out = NS_BufferOutputStream(localOutFile, BUFFER_SIZE);
+  nsCOMPtr<nsIOutputStream> out =
+    NS_BufferOutputStream(localOutFile, std::min(fileSize, MAX_BUFFER_SIZE));
 
   uint32_t written;
   uint32_t writelen = sizeof(uint32_t);
