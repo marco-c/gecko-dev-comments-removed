@@ -133,6 +133,7 @@
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/TextEvents.h" 
 #include "nsThemeConstants.h"
+#include "nsIFrame.h"
 
 #include "nsIGfxInfo.h"
 #include "nsUXThemeConstants.h"
