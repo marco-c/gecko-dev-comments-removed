@@ -250,8 +250,12 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
   while (!iter.IsEnded()) {
     VideoChunk chunk = *iter;
     mTotalFrameDuration += chunk.GetDuration();
+    mLastFrameDuration += chunk.GetDuration();
     
-    if (mLastFrame != chunk.mFrame) {
+    
+    
+    if ((mLastFrame != chunk.mFrame) ||
+        (mLastFrameDuration >= mTrackRate)) {
       RefPtr<layers::Image> image = chunk.mFrame.GetImage();
       
       
@@ -261,11 +265,11 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
       
       if (image) {
         mRawSegment.AppendFrame(image.forget(),
-                                mTotalFrameDuration,
+                                mLastFrameDuration,
                                 chunk.mFrame.GetIntrinsicSize(),
                                 PRINCIPAL_HANDLE_NONE,
                                 chunk.mFrame.GetForceBlack());
-        mTotalFrameDuration = 0;
+        mLastFrameDuration = 0;
       }
     }
     mLastFrame.TakeFrom(&chunk.mFrame);

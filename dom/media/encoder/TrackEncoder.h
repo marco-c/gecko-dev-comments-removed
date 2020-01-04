@@ -261,6 +261,7 @@ public:
     , mDisplayHeight(0)
     , mTrackRate(0)
     , mTotalFrameDuration(0)
+    , mLastFrameDuration(0)
     , mVideoBitrate(0)
   {}
 
@@ -341,6 +342,7 @@ protected:
 
 
   VideoFrame mLastFrame;
+  StreamTime mLastFrameDuration;
 
   
 
