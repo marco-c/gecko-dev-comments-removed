@@ -196,26 +196,8 @@ FinderHighlighter.prototype = {
         found = true;
       });
     } else {
-      
-      let sel = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
-      sel.removeAllRanges();
-
-      this.hide();
+      this.hide(window);
       this.clear();
-
-      
-      
-      if (this._editors) {
-        for (let x = this._editors.length - 1; x >= 0; --x) {
-          if (this._editors[x].document == doc) {
-            sel = this._editors[x].selectionController
-                                  .getSelection(Ci.nsISelectionController.SELECTION_FIND);
-            sel.removeAllRanges();
-            
-            this._unhookListenersAtIndex(x);
-          }
-        }
-      }
 
       
       found = true;
@@ -282,13 +264,33 @@ FinderHighlighter.prototype = {
 
 
   hide(window = null) {
+    window = window || this.finder._getWindow();
+
+    let doc = window.document;
+    let controller = this.finder._getSelectionController(window);
+    let sel = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
+    sel.removeAllRanges();
+
+    
+    
+    if (this._editors) {
+      for (let x = this._editors.length - 1; x >= 0; --x) {
+        if (this._editors[x].document == doc) {
+          sel = this._editors[x].selectionController
+                                .getSelection(Ci.nsISelectionController.SELECTION_FIND);
+          sel.removeAllRanges();
+          
+          this._unhookListenersAtIndex(x);
+        }
+      }
+    }
+
     if (!this._modal)
       return;
 
     if (this._modalHighlightOutline)
       this._modalHighlightOutline.setAttributeForElement(kModalOutlineId, "hidden", "true");
 
-    window = window || this.finder._getWindow();
     this._removeHighlightAllMask(window);
     this._removeModalHighlightListeners(window);
     delete this._brightText;
