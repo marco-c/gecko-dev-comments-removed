@@ -406,7 +406,6 @@ a {
 .jsterm-input-node,
 .jsterm-complete-node {
   border: none;
-  padding: 4px;
   padding-inline-start: 20px;
   margin: 0;
   -moz-appearance: none;
@@ -441,6 +440,10 @@ a {
 :-moz-any(.jsterm-input-node,
           .jsterm-complete-node) > .textbox-input-box > .textbox-textarea {
   overflow-x: hidden;
+  
+
+
+  padding: 4px 0 !important;
 }
 
 .inlined-variables-view .message-body {
