@@ -436,11 +436,6 @@ AccurateSeekTask::OnAudioNotDecoded(MediaDecoderReader::NotDecodedReason aReason
     MOZ_ASSERT(mReader->IsWaitForDataSupported(),
                "Readers that send WAITING_FOR_DATA need to implement WaitForData");
     mReader->WaitForData(MediaData::AUDIO_DATA);
-
-    
-    
-    
-    mNeedToStopPrerollingAudio = true;
     return;
   }
 
@@ -527,11 +522,6 @@ AccurateSeekTask::OnVideoNotDecoded(MediaDecoderReader::NotDecodedReason aReason
     MOZ_ASSERT(mReader->IsWaitForDataSupported(),
                "Readers that send WAITING_FOR_DATA need to implement WaitForData");
     mReader->WaitForData(MediaData::VIDEO_DATA);
-
-    
-    
-    
-    mNeedToStopPrerollingVideo = true;
     return;
   }
 
