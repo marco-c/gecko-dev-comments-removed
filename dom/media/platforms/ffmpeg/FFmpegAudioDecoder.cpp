@@ -21,10 +21,8 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
 {
   MOZ_COUNT_CTOR(FFmpegAudioDecoder);
   
-  if (aConfig.mCodecSpecificConfig && aConfig.mCodecSpecificConfig->Length()) {
-    mExtraData = new MediaByteBuffer;
-    mExtraData->AppendElements(*aConfig.mCodecSpecificConfig);
-  }
+  mExtraData = new MediaByteBuffer;
+  mExtraData->AppendElements(*aConfig.mCodecSpecificConfig);
 }
 
 RefPtr<MediaDataDecoder::InitPromise>
@@ -93,25 +91,6 @@ CopyAndPackAudio(AVFrame* aFrame, uint32_t aNumChannels, uint32_t aNumAFrames)
         *tmp++ = AudioSampleToFloat(data[channel][frame]);
       }
     }
-  } else if (aFrame->format == AV_SAMPLE_FMT_S32) {
-    
-    AudioDataValue* tmp = audio.get();
-    int32_t* data = reinterpret_cast<int32_t**>(aFrame->data)[0];
-    for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
-      for (uint32_t channel = 0; channel < aNumChannels; channel++) {
-        *tmp++ = AudioSampleToFloat(*data++);
-      }
-    }
-  } else if (aFrame->format == AV_SAMPLE_FMT_S32P) {
-    
-    
-    AudioDataValue* tmp = audio.get();
-    int32_t** data = reinterpret_cast<int32_t**>(aFrame->data);
-    for (uint32_t frame = 0; frame < aNumAFrames; frame++) {
-      for (uint32_t channel = 0; channel < aNumChannels; channel++) {
-        *tmp++ = AudioSampleToFloat(data[channel][frame]);
-      }
-    }
   }
 
   return audio;
@@ -141,16 +120,6 @@ FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample)
 
     if (bytesConsumed < 0) {
       NS_WARNING("FFmpeg audio decoder error.");
-      return DecodeResult::DECODE_ERROR;
-    }
-
-    if (mFrame->format != AV_SAMPLE_FMT_FLT &&
-        mFrame->format != AV_SAMPLE_FMT_FLTP &&
-        mFrame->format != AV_SAMPLE_FMT_S16 &&
-        mFrame->format != AV_SAMPLE_FMT_S16P &&
-        mFrame->format != AV_SAMPLE_FMT_S32 &&
-        mFrame->format != AV_SAMPLE_FMT_S32P) {
-      NS_WARNING("FFmpeg audio decoder outputs unsupported audio format.");
       return DecodeResult::DECODE_ERROR;
     }
 
@@ -207,9 +176,9 @@ FFmpegAudioDecoder<LIBAV_VER>::GetCodecId(const nsACString& aMimeType)
 {
   if (aMimeType.EqualsLiteral("audio/mpeg")) {
     return AV_CODEC_ID_MP3;
-  } else if (aMimeType.EqualsLiteral("audio/flac")) {
-    return AV_CODEC_ID_FLAC;
-  } else if (aMimeType.EqualsLiteral("audio/mp4a-latm")) {
+  }
+
+  if (aMimeType.EqualsLiteral("audio/mp4a-latm")) {
     return AV_CODEC_ID_AAC;
   }
 
