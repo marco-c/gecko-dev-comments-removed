@@ -361,7 +361,9 @@ WebGLContext::DrawElements_check(GLsizei count, GLenum type,
     }
 
     
-    if (!mCurrentProgram) {
+    if (!mActiveProgramLinkInfo) {
+        
+        
         ErrorInvalidOperation("%s: null CURRENT_PROGRAM", info);
         return false;
     }

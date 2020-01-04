@@ -1088,14 +1088,19 @@ WebGLContext::LinkProgram(WebGLProgram* prog)
 
     prog->LinkProgram();
 
-    if (prog->IsLinked()) {
+    if (!prog->IsLinked()) {
+        
+        
+        return;
+    }
+
+    if (prog == mCurrentProgram) {
         mActiveProgramLinkInfo = prog->LinkInfo();
 
         if (gl->WorkAroundDriverBugs() &&
             gl->Vendor() == gl::GLVendor::NVIDIA)
         {
-            if (mCurrentProgram == prog)
-                gl->fUseProgram(prog->mGLName);
+            gl->fUseProgram(prog->mGLName);
         }
     }
 }
