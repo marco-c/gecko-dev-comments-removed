@@ -9,6 +9,7 @@
 #include <stddef.h>                     
 #include <stdint.h>                     
 #include "nscore.h"                     
+#include "nsCoord.h"                    
 
 class nsAString;
 class nsString;
@@ -32,6 +33,22 @@ typedef uint32_t nscolor;
 #define NS_GET_G(_rgba) ((uint8_t) (((_rgba) >> 8) & 0xff))
 #define NS_GET_B(_rgba) ((uint8_t) (((_rgba) >> 16) & 0xff))
 #define NS_GET_A(_rgba) ((uint8_t) (((_rgba) >> 24) & 0xff))
+
+namespace mozilla {
+
+template<typename T>
+inline uint8_t ClampColor(T aColor)
+{
+  if (aColor >= 255) {
+    return 255;
+  }
+  if (aColor <= 0) {
+    return 0;
+  }
+  return NSToIntRound(aColor);
+}
+
+} 
 
 
 
