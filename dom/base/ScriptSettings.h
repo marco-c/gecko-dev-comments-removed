@@ -127,6 +127,15 @@ inline JSObject& IncumbentJSGlobal()
 
 bool IsJSAPIActive();
 
+namespace danger {
+
+
+
+
+JSContext* GetJSContext();
+
+} 
+
 class ScriptSettingsStack;
 class ScriptSettingsStackEntry {
   friend class ScriptSettingsStack;
