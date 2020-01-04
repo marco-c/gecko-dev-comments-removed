@@ -29,6 +29,11 @@ public:
 
   
 
+
+  void SetRestoreResolution(float aResolution);
+
+  
+
   void RequestReflow();
 
   
@@ -50,6 +55,10 @@ private:
   void RefreshSPCSPS();
 
   
+  mozilla::CSSToScreenScale ClampZoom(const mozilla::CSSToScreenScale& aZoom,
+                                      const nsViewportInfo& aViewportInfo);
+
+  
   mozilla::CSSToScreenScale UpdateResolution(const nsViewportInfo& aViewportInfo,
                                              const mozilla::ScreenIntSize& aDisplaySize,
                                              const mozilla::CSSSize& aViewport,
@@ -67,6 +76,7 @@ private:
   bool mPainted;
   mozilla::LayoutDeviceIntSize mDisplaySize;
   mozilla::CSSSize mMobileViewportSize;
+  mozilla::Maybe<float> mRestoreResolution;
 };
 
 #endif

@@ -1439,6 +1439,12 @@ public:
 
 
 
+  virtual void SetRestoreResolution(float aResolution) = 0;
+
+  
+
+
+
   bool InDrawWindowNotFlushing() const
   { return mRenderFlags & STATE_DRAWWINDOW_NOT_FLUSHING; }
 
