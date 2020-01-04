@@ -796,8 +796,6 @@ var Impl = {
 
 
 
-
-
   packHistogram: function packHistogram(hgram) {
     let r = hgram.ranges;;
     let c = hgram.counts;
@@ -809,10 +807,7 @@ var Impl = {
       sum: hgram.sum
     };
 
-    if (hgram.histogram_type == Telemetry.HISTOGRAM_EXPONENTIAL) {
-      retgram.log_sum = hgram.log_sum;
-      retgram.log_sum_squares = hgram.log_sum_squares;
-    } else {
+    if (hgram.histogram_type != Telemetry.HISTOGRAM_EXPONENTIAL) {
       retgram.sum_squares_lo = hgram.sum_squares_lo;
       retgram.sum_squares_hi = hgram.sum_squares_hi;
     }

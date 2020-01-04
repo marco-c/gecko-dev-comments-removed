@@ -293,7 +293,6 @@ class Histogram {
   enum Flags {
     kNoFlags = 0,
     kUmaTargetedHistogramFlag = 0x1,  
-    kExtendedStatisticsFlag = 0x2, 
 
     
     
@@ -336,10 +335,6 @@ class Histogram {
 
     
     void AccumulateWithLinearStats(Sample value, Count count, size_t index);
-    
-    
-    void AccumulateWithExponentialStats(Sample value, Count count, size_t index,
-					bool computeExtendedStatistics);
 
     
     Count counts(size_t i) const { return counts_[i]; }
