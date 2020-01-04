@@ -280,6 +280,61 @@ GetPageFaultCount()
     return pmc.PageFaultCount;
 }
 
+
+
+void*
+AllocateMappedContent(int fd, size_t offset, size_t length, size_t alignment)
+{
+    
+    
+    
+    if (allocGranularity % alignment != 0 || offset % alignment != 0)
+        return nullptr;
+
+    
+    HANDLE hFile = reinterpret_cast<HANDLE>(intptr_t(fd));
+    MOZ_ASSERT(hFile != INVALID_HANDLE_VALUE);
+
+    uint32_t fSizeHgh;
+    uint32_t fSizeLow = GetFileSize(hFile, LPDWORD(&fSizeHgh));
+    if (fSizeLow == INVALID_FILE_SIZE && GetLastError() != NO_ERROR)
+        return nullptr;
+
+    uint64_t fSize = (uint64_t(fSizeHgh) << 32) + fSizeLow;
+    if (offset >= size_t(fSize) || length == 0 || length > fSize - offset)
+        return nullptr;
+
+    uint64_t mapSize = length + offset;
+    HANDLE hMap = CreateFileMapping(hFile, nullptr, PAGE_READONLY, mapSize >> 32, mapSize, nullptr);
+    if (!hMap)
+        return nullptr;
+
+    
+    
+    size_t alignOffset = offset - (offset % allocGranularity);
+    size_t alignLength = length + (offset % allocGranularity);
+    void* map = MapViewOfFile(hMap, FILE_MAP_COPY, 0, alignOffset, alignLength);
+    CloseHandle(hMap);
+    if (!map)
+        return nullptr;
+
+    return reinterpret_cast<void*>(uintptr_t(map) + (offset - alignOffset));
+}
+
+void
+DeallocateMappedContent(void* p, size_t )
+{
+    if (!p)
+        return;
+
+    
+    
+    
+    
+    uintptr_t map = uintptr_t(p) - (uintptr_t(p) % allocGranularity);
+    MOZ_ALWAYS_TRUE(UnmapViewOfFile(reinterpret_cast<void*>(map)));
+}
+
 #  else 
 
 void*
@@ -328,8 +383,6 @@ GetPageFaultCount()
     return 0;
 }
 
-#  endif
-
 void*
 AllocateMappedContent(int fd, size_t offset, size_t length, size_t alignment)
 {
@@ -343,6 +396,8 @@ DeallocateMappedContent(void* p, size_t length)
 {
     
 }
+
+#  endif
 
 #elif defined(SOLARIS)
 

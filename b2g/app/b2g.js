@@ -1021,9 +1021,7 @@ pref("identity.fxaccounts.remote.profile.uri", "https://profile.accounts.firefox
 pref("identity.fxaccounts.skipDeviceRegistration", true);
 
 
-#ifndef XP_WIN
 pref("dom.mapped_arraybuffer.enabled", true);
-#endif
 
 
 pref("dom.system_update.enabled", true);
