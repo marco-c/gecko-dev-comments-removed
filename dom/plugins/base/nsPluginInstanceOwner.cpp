@@ -1706,7 +1706,7 @@ nsPluginInstanceOwner::HandleEvent(nsIDOMEvent* aEvent)
   }
   if (eventType.EqualsLiteral("MozPerformDelayedBlur")) {
     if (mShouldBlurOnActivate) {
-      WidgetGUIEvent blurEvent(true, NS_BLUR_CONTENT, nullptr);
+      WidgetGUIEvent blurEvent(true, eBlur, nullptr);
       ProcessEvent(blurEvent);
       mShouldBlurOnActivate = false;
     }
@@ -1831,7 +1831,7 @@ CocoaEventTypeForEvent(const WidgetGUIEvent& anEvent, nsIFrame* aObjectFrame)
     case eKeyUp:
       return NPCocoaEventKeyUp;
     case eFocus:
-    case NS_BLUR_CONTENT:
+    case eBlur:
       return NPCocoaEventFocusChanged;
     case NS_MOUSE_SCROLL:
       return NPCocoaEventScrollWheel;
@@ -1936,7 +1936,7 @@ TranslateToNPCocoaEvent(WidgetGUIEvent* anEvent, nsIFrame* aObjectFrame)
       break;
     }
     case eFocus:
-    case NS_BLUR_CONTENT:
+    case eBlur:
       cocoaEvent.data.focus.hasFocus = (anEvent->mMessage == eFocus);
       break;
     default:
@@ -1975,8 +1975,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
   
   
   nsCOMPtr<nsIContent> content = do_QueryReferent(mContent);
-  if (anEvent.mMessage == NS_BLUR_CONTENT &&
-      ContentIsFocusedWithinWindow(content)) {
+  if (anEvent.mMessage == eBlur && ContentIsFocusedWithinWindow(content)) {
     mShouldBlurOnActivate = true;
     return nsEventStatus_eIgnore;
   }
@@ -1993,7 +1992,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
   
   
   
-  if (anEvent.mMessage == eFocus || anEvent.mMessage == NS_BLUR_CONTENT) {
+  if (anEvent.mMessage == eFocus || anEvent.mMessage == eBlur) {
     mLastContentFocused = (anEvent.mMessage == eFocus);
     mShouldBlurOnActivate = false;
     PerformDelayedBlurs();
@@ -2127,7 +2126,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
         pluginEvent.lParam = 0;
         pPluginEvent = &pluginEvent;
         break;
-      case NS_BLUR_CONTENT:
+      case eBlur:
         pluginEvent.event = WM_KILLFOCUS;
         pluginEvent.wParam = 0;
         pluginEvent.lParam = 0;
@@ -2321,7 +2320,7 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const WidgetGUIEvent& anEvent)
     default:
       switch (anEvent.mMessage) {
         case eFocus:
-        case NS_BLUR_CONTENT:
+        case eBlur:
           {
             XFocusChangeEvent &event = pluginEvent.xfocus;
             event.type = anEvent.mMessage == eFocus ? FocusIn : FocusOut;

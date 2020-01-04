@@ -1522,7 +1522,7 @@ HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
     
     
-  } else if (aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+  } else if (aVisitor.mEvent->mMessage == eBlur) {
     mCanShowInvalidUI = true;
     mCanShowValidUI = true;
 

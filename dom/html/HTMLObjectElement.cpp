@@ -220,7 +220,7 @@ HTMLObjectElement::HandleFocusBlurPlugin(Element* aElement,
       OnFocusBlurPlugin(aElement, true);
       break;
     }
-    case NS_BLUR_CONTENT: {
+    case eBlur: {
       OnFocusBlurPlugin(aElement, false);
       break;
     }

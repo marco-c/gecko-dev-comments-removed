@@ -3162,7 +3162,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   aVisitor.mItemFlags |= mType;
 
   
-  if (aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+  if (aVisitor.mEvent->mMessage == eBlur) {
     
     
     
@@ -3178,7 +3178,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
 
   if (mType == NS_FORM_INPUT_RANGE &&
       (aVisitor.mEvent->mMessage == eFocus ||
-       aVisitor.mEvent->mMessage == NS_BLUR_CONTENT)) {
+       aVisitor.mEvent->mMessage == eBlur)) {
     
     
     nsIFrame* frame = GetPrimaryFrame();
@@ -3232,7 +3232,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
       }
     }
     if (aVisitor.mEvent->mMessage == eFocus ||
-        aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+        aVisitor.mEvent->mMessage == eBlur) {
       if (aVisitor.mEvent->mMessage == eFocus) {
         
         
@@ -3588,14 +3588,14 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
   }
 
   if (aVisitor.mEvent->mMessage == eFocus ||
-      aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+      aVisitor.mEvent->mMessage == eBlur) {
     if (aVisitor.mEvent->mMessage == eFocus &&
         MayFireChangeOnBlur() &&
         !mIsDraggingRange) { 
       GetValue(mFocusedValue);
     }
 
-    if (aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+    if (aVisitor.mEvent->mMessage == eBlur) {
       if (mIsDraggingRange) {
         FinishRangeThumbDrag();
       } else if (mNumberControlSpinnerIsSpinning) {

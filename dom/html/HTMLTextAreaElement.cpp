@@ -506,7 +506,7 @@ HTMLTextAreaElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   }
 
   
-  if (aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+  if (aVisitor.mEvent->mMessage == eBlur) {
     FireChangeEventIfNeeded();
   }
 
@@ -539,7 +539,7 @@ HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
   }
 
   if (aVisitor.mEvent->mMessage == eFocus ||
-      aVisitor.mEvent->mMessage == NS_BLUR_CONTENT) {
+      aVisitor.mEvent->mMessage == eBlur) {
     if (aVisitor.mEvent->mMessage == eFocus) {
       
       
