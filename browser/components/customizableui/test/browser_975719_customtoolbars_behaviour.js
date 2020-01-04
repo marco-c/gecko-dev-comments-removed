@@ -4,6 +4,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 const kXULWidgetId = "a-test-button"; 
 
 add_task(function setup() {
