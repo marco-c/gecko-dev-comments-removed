@@ -416,7 +416,6 @@ ConvertColormap(uint32_t* aColormap, uint32_t aColors)
       qcms_transform_data(transform, aColormap, aColormap, aColors);
     }
   }
-
   
   
   uint8_t* from = ((uint8_t*)aColormap) + 3 * aColors;
@@ -891,10 +890,7 @@ nsGIFDecoder2::ReadImageDescriptor(const char* aData)
     const size_t size = 3 << depth;
     if (mColormapSize > size) {
       
-      
-      
-      
-      memset(reinterpret_cast<uint8_t*>(mColormap) + size, 0xFF,
+      memset(reinterpret_cast<uint8_t*>(mColormap) + size, 0,
              mColormapSize - size);
     }
 
