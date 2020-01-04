@@ -236,11 +236,13 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
+
+
+
   MOZ_WARN_UNUSED_RESULT
-  virtual bool AppendEndOfElementStart(nsIContent *aOriginalElement,
-                                       nsIAtom * aName,
-                                       int32_t aNamespaceID,
-                                       nsAString& aStr);
+  bool AppendEndOfElementStart(mozilla::dom::Element* aEleemnt,
+                               mozilla::dom::Element* aOriginalElement,
+                               nsAString& aStr);
 
   
 
@@ -260,9 +262,9 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
 
-  virtual bool CheckElementEnd(nsIContent * aContent,
-                                 bool & aForceFormat,
-                                 nsAString& aStr);
+  virtual bool CheckElementEnd(mozilla::dom::Element* aElement,
+                               bool& aForceFormat,
+                               nsAString& aStr);
 
   
 

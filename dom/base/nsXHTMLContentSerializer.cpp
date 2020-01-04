@@ -412,47 +412,6 @@ nsXHTMLContentSerializer::SerializeAttributes(nsIContent* aContent,
   return true;
 }
 
-
-bool
-nsXHTMLContentSerializer::AppendEndOfElementStart(nsIContent *aOriginalElement,
-                                                  nsIAtom * aName,
-                                                  int32_t aNamespaceID,
-                                                  nsAString& aStr)
-{
-  
-  
-  NS_ASSERTION(!mIsHTMLSerializer, "nsHTMLContentSerializer shouldn't call this method !");
-
-  if (kNameSpaceID_XHTML != aNamespaceID) {
-    return nsXMLContentSerializer::AppendEndOfElementStart(aOriginalElement, aName,
-                                                           aNamespaceID, aStr);
-  }
-
-  nsIContent* content = aOriginalElement;
-
-  
-  
-  
-  if (HasNoChildren(content)) {
-
-    nsIParserService* parserService = nsContentUtils::GetParserService();
-  
-    if (parserService) {
-      bool isContainer;
-      parserService->
-        IsContainer(parserService->HTMLCaseSensitiveAtomTagToId(aName),
-                    isContainer);
-      if (!isContainer) {
-        
-        
-        
-        return AppendToString(NS_LITERAL_STRING(" />"), aStr);
-      }
-    }
-  }
-  return AppendToString(kGreaterThan, aStr);
-}
-
 bool
 nsXHTMLContentSerializer::AfterElementStart(nsIContent* aContent,
                                             nsIContent* aOriginalElement,
@@ -552,52 +511,26 @@ nsXHTMLContentSerializer::CheckElementStart(nsIContent * aContent,
 }
 
 bool
-nsXHTMLContentSerializer::CheckElementEnd(nsIContent * aContent,
-                                          bool & aForceFormat,
+nsXHTMLContentSerializer::CheckElementEnd(Element* aElement,
+                                          bool& aForceFormat,
                                           nsAString& aStr)
 {
   NS_ASSERTION(!mIsHTMLSerializer, "nsHTMLContentSerializer shouldn't call this method !");
 
   aForceFormat = !(mFlags & nsIDocumentEncoder::OutputIgnoreMozDirty) &&
-                 aContent->HasAttr(kNameSpaceID_None, nsGkAtoms::mozdirty);
+                 aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::mozdirty);
 
-  
-  
-  if (aContent->IsHTMLElement()) {
-    if (mIsCopying && aContent->IsHTMLElement(nsGkAtoms::ol)) {
-      NS_ASSERTION((!mOLStateStack.IsEmpty()), "Cannot have an empty OL Stack");
-      
+  if (mIsCopying && aElement->IsHTMLElement(nsGkAtoms::ol)) {
+    NS_ASSERTION((!mOLStateStack.IsEmpty()), "Cannot have an empty OL Stack");
+    
 
-      if (!mOLStateStack.IsEmpty()) {
+    if (!mOLStateStack.IsEmpty()) {
         mOLStateStack.RemoveElementAt(mOLStateStack.Length() -1);
-      }
     }
-
-    if (HasNoChildren(aContent)) {
-      nsIParserService* parserService = nsContentUtils::GetParserService();
-
-      if (parserService) {
-        bool isContainer;
-
-        parserService->
-          IsContainer(parserService->HTMLCaseSensitiveAtomTagToId(
-                        aContent->NodeInfo()->NameAtom()),
-                      isContainer);
-        if (!isContainer) {
-          
-          
-          return false;
-        }
-      }
-    }
-    
-    
-    
-    return true;
   }
 
   bool dummyFormat;
-  return nsXMLContentSerializer::CheckElementEnd(aContent, dummyFormat, aStr);
+  return nsXMLContentSerializer::CheckElementEnd(aElement, dummyFormat, aStr);
 }
 
 bool

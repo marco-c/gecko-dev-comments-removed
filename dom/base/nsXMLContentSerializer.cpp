@@ -960,8 +960,7 @@ nsXMLContentSerializer::AppendElementStart(Element* aElement,
                                      name, aStr, skipAttr, addNSAttr),
                  NS_ERROR_OUT_OF_MEMORY);
 
-  NS_ENSURE_TRUE(AppendEndOfElementStart(aOriginalElement, name,
-                                         content->GetNameSpaceID(), aStr),
+  NS_ENSURE_TRUE(AppendEndOfElementStart(aElement, aOriginalElement, aStr),
                  NS_ERROR_OUT_OF_MEMORY);
 
   if ((mDoFormat || forceFormat) && !mDoRaw && !PreLevel()
@@ -974,19 +973,56 @@ nsXMLContentSerializer::AppendElementStart(Element* aElement,
   return NS_OK;
 }
 
+
+
+static bool
+ElementNeedsSeparateEndTag(Element* aElement, Element* aOriginalElement)
+{
+  if (aOriginalElement->GetChildCount()) {
+    
+    
+    
+    return true;
+  }
+
+  if (!aElement->IsHTMLElement()) {
+    
+    return false;
+  }
+
+  
+  
+  
+  bool isHTMLContainer = true; 
+  nsIParserService* parserService = nsContentUtils::GetParserService();
+  if (parserService) {
+    nsIAtom* localName = aElement->NodeInfo()->NameAtom();
+    parserService->IsContainer(
+      parserService->HTMLCaseSensitiveAtomTagToId(localName),
+      isHTMLContainer);
+  }
+  return isHTMLContainer;
+}
+
 bool
-nsXMLContentSerializer::AppendEndOfElementStart(nsIContent *aOriginalElement,
-                                                nsIAtom * aName,
-                                                int32_t aNamespaceID,
+nsXMLContentSerializer::AppendEndOfElementStart(Element* aElement,
+                                                Element* aOriginalElement,
                                                 nsAString& aStr)
 {
-  
-  if (!aOriginalElement->GetChildCount()) {
-    return AppendToString(NS_LITERAL_STRING("/>"), aStr);
-  }
-  else {
+  if (ElementNeedsSeparateEndTag(aElement, aOriginalElement)) {
     return AppendToString(kGreaterThan, aStr);
   }
+
+  
+  
+  
+  if (aOriginalElement->IsHTMLElement()) {
+    if (!AppendToString(kSpace, aStr)) {
+      return false;
+    }
+  }
+
+  return AppendToString(NS_LITERAL_STRING("/>"), aStr);
 }
 
 NS_IMETHODIMP 
@@ -998,7 +1034,7 @@ nsXMLContentSerializer::AppendElementEnd(Element* aElement,
   nsIContent* content = aElement;
 
   bool forceFormat = false, outputElementEnd;
-  outputElementEnd = CheckElementEnd(content, forceFormat, aStr);
+  outputElementEnd = CheckElementEnd(aElement, forceFormat, aStr);
 
   nsIAtom *name = content->NodeInfo()->NameAtom();
 
@@ -1119,13 +1155,17 @@ nsXMLContentSerializer::CheckElementStart(nsIContent * aContent,
 }
 
 bool
-nsXMLContentSerializer::CheckElementEnd(nsIContent * aContent,
-                                        bool & aForceFormat,
+nsXMLContentSerializer::CheckElementEnd(Element* aElement,
+                                        bool& aForceFormat,
                                         nsAString& aStr)
 {
   
   aForceFormat = false;
-  return aContent->GetChildCount() > 0;
+
+  
+  
+  
+  return ElementNeedsSeparateEndTag(aElement, aElement);
 }
 
 bool
