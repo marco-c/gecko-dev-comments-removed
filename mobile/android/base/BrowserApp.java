@@ -2753,6 +2753,7 @@ public class BrowserApp extends GeckoApp
         
         if (f != null) {
             fm.beginTransaction().show(f).commitAllowingStateLoss();
+            mBrowserSearch.resetScrollState();
         } else {
             
             fm.beginTransaction().add(R.id.search_container, mBrowserSearch, BROWSER_SEARCH_TAG).commitAllowingStateLoss();
