@@ -1094,9 +1094,9 @@ CodeGeneratorMIPSShared::visitCeilF(LCeilF* lir)
     Label performCeil, done;
 
     
-    masm.loadConstantFloat32(0, scratch);
+    masm.loadConstantFloat32(0.0f, scratch);
     masm.branchFloat(Assembler::DoubleGreaterThan, input, scratch, &performCeil);
-    masm.loadConstantFloat32(-1, scratch);
+    masm.loadConstantFloat32(-1.0f, scratch);
     masm.branchFloat(Assembler::DoubleLessThanOrEqual, input, scratch, &performCeil);
 
     
