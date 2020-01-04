@@ -482,9 +482,6 @@ pref("breakpad.reportURL", "https://crash-stats.mozilla.com/report/index/");
 pref("app.support.baseURL", "http://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/");
 
 
-pref("app.feedback.postURL", "https://input.mozilla.org/api/v1/feedback/");
-
-
 
 pref("app.feedbackURL", "https://input.mozilla.org/feedback/android/%VERSION%/%CHANNEL%/?utm_source=feedback-prompt");
 
@@ -960,6 +957,15 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 pref("dom.serviceWorkers.enabled", true);
 pref("dom.serviceWorkers.interception.enabled", true);
 pref("dom.serviceWorkers.openWindow.enabled", true);
+
+pref("dom.push.debug", false);
+
+
+pref("dom.push.serverURL", "https://updates-autopush.stage.mozaws.net/v1/gcm/@MOZ_ANDROID_GCM_SENDERID@");
+
+#ifdef MOZ_ANDROID_GCM
+pref("dom.push.enabled", true);
+#endif
 
 
 pref("identity.fxaccounts.remote.webchannel.uri", "https://accounts.firefox.com");
