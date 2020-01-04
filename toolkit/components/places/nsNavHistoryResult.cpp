@@ -2416,6 +2416,7 @@ nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
 
       
       
+      MOZ_FALLTHROUGH;
     }
 
     case QUERYUPDATE_TIME: {
@@ -2442,6 +2443,7 @@ nsNavHistoryQueryResultNode::OnVisit(nsIURI* aURI, int64_t aVisitId,
       }
       
       
+      MOZ_FALLTHROUGH;
     }
 
     case QUERYUPDATE_SIMPLE: {
@@ -2876,6 +2878,7 @@ nsNavHistoryQueryResultNode::OnItemChanged(int64_t aItemId,
         
         if (mOptions->ResultType() != nsINavHistoryQueryOptions::RESULTS_AS_TAG_QUERY)
           return NS_OK;
+        MOZ_FALLTHROUGH;
       default:
         (void)Refresh();
     }
