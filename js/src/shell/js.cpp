@@ -2642,6 +2642,13 @@ DisassWithSrc(JSContext* cx, unsigned argc, Value* vp)
 
 #endif 
 
+
+static bool
+DummyPreserveWrapperCallback(JSContext* cx, JSObject* obj)
+{
+    return true;
+}
+
 static bool
 Intern(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -2953,6 +2960,7 @@ WorkerMain(void* arg)
     JS_SetRuntimePrivate(rt, sr.get());
     JS_SetFutexCanWait(cx);
     JS::SetWarningReporter(cx, WarningReporter);
+    js::SetPreserveWrapperCallback(cx, DummyPreserveWrapperCallback);
     JS_InitDestroyPrincipalsCallback(cx, ShellPrincipals::destroy);
     SetWorkerContextOptions(cx);
 
@@ -7174,13 +7182,6 @@ SetOutputFile(const char* const envVar,
 
     outFile->acquire();
     *outFileP = outFile;
-}
-
-
-static bool
-DummyPreserveWrapperCallback(JSContext* cx, JSObject* obj)
-{
-    return true;
 }
 
 static void
