@@ -1398,14 +1398,16 @@ ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
 
 
 
-static LayerRect
+static Maybe<LayerRect>
 GetCompositorSideCompositionBounds(const LayerMetricsWrapper& aScrollAncestor,
                                    const Matrix4x4& aTransformToCompBounds,
-                                   const ViewTransform& aAPZTransform)
+                                   const ViewTransform& aAPZTransform,
+                                   const LayerRect& aClip)
 {
   Matrix4x4 transform = aTransformToCompBounds * Matrix4x4(aAPZTransform);
-  return TransformTo<LayerPixel>(transform.Inverse(),
-            aScrollAncestor.Metrics().GetCompositionBounds());
+
+  return UntransformTo<LayerPixel>(transform.Inverse(),
+    aScrollAncestor.Metrics().GetCompositionBounds(), aClip);
 }
 
 bool
@@ -1484,12 +1486,18 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
     }
   }
 
-  LayerRect transformedCompositionBounds =
+  Maybe<LayerRect> transformedCompositionBounds =
     GetCompositorSideCompositionBounds(scrollAncestor,
                                        aPaintData->mTransformToCompBounds,
-                                       viewTransform);
+                                       viewTransform,
+                                       ViewAs<LayerPixel>(Rect(mPaintedLayer->GetLayerBounds())));
 
-  TILING_LOG("TILING %p: Progressive update transformed compositor bounds %s\n", mPaintedLayer, Stringify(transformedCompositionBounds).c_str());
+  if (!transformedCompositionBounds) {
+    aPaintData->mPaintFinished = true;
+    return false;
+  }
+
+  TILING_LOG("TILING %p: Progressive update transformed compositor bounds %s\n", mPaintedLayer, Stringify(*transformedCompositionBounds).c_str());
 
   
   
@@ -1502,9 +1510,9 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   
   IntRect coherentUpdateRect(LayerIntRect::ToUntyped(RoundedOut(
 #ifdef MOZ_WIDGET_ANDROID
-    transformedCompositionBounds.Intersect(aPaintData->mCompositionBounds)
+    transformedCompositionBounds->Intersect(aPaintData->mCompositionBounds)
 #else
-    transformedCompositionBounds
+    *transformedCompositionBounds
 #endif
   )));
 
@@ -1677,6 +1685,15 @@ TiledContentClient::Dump(std::stringstream& aStream,
                          bool aDumpHtml)
 {
   GetTiledBuffer()->Dump(aStream, aPrefix, aDumpHtml);
+}
+
+void
+BasicTiledLayerPaintData::ResetPaintData()
+{
+  mLowPrecisionPaintCount = 0;
+  mPaintFinished = false;
+  mCompositionBounds.SetEmpty();
+  mCriticalDisplayPort.SetEmpty();
 }
 
 } 

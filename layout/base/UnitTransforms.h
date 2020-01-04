@@ -180,6 +180,34 @@ static Maybe<gfx::IntPointTyped<TargetUnits>> UntransformTo(const gfx::Matrix4x4
   }
   return Some(RoundedToInt(ViewAs<TargetUnits>(point.As2DPoint())));
 }
+
+
+
+
+
+template <typename TargetUnits, typename SourceUnits>
+static Maybe<gfx::RectTyped<TargetUnits>> UntransformTo(const gfx::Matrix4x4& aTransform,
+                                                const gfx::RectTyped<SourceUnits>& aRect,
+                                                const gfx::RectTyped<TargetUnits>& aClip)
+{
+  gfx::Rect rect = aTransform.ProjectRectBounds(aRect.ToUnknownRect(), aClip.ToUnknownRect());
+  if (rect.IsEmpty()) {
+    return Nothing();
+  }
+  return Some(ViewAs<TargetUnits>(rect));
+}
+template <typename TargetUnits, typename SourceUnits>
+static Maybe<gfx::IntRectTyped<TargetUnits>> UntransformTo(const gfx::Matrix4x4& aTransform,
+                                                const gfx::IntRectTyped<SourceUnits>& aRect,
+                                                const gfx::IntRectTyped<TargetUnits>& aClip)
+{
+  gfx::Rect rect = aTransform.ProjectRectBounds(aRect.ToUnknownRect(), aClip.ToUnknownRect());
+  if (rect.IsEmpty()) {
+    return Nothing();
+  }
+  return Some(RoundedToInt(ViewAs<TargetUnits>(rect)));
+}
+
 template <typename TargetUnits, typename SourceUnits>
 static Maybe<gfx::PointTyped<TargetUnits>> UntransformVector(const gfx::Matrix4x4& aTransform,
                                                     const gfx::PointTyped<SourceUnits>& aVector,

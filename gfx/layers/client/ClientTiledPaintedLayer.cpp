@@ -55,10 +55,10 @@ ClientTiledPaintedLayer::FillSpecificAttributes(SpecificLayerAttributes& aAttrs)
   aAttrs = PaintedLayerAttributes(GetValidRegion());
 }
 
-static LayerRect
-ApplyParentLayerToLayerTransform(const gfx::Matrix4x4& aTransform, const ParentLayerRect& aParentLayerRect)
+static Maybe<LayerRect>
+ApplyParentLayerToLayerTransform(const gfx::Matrix4x4& aTransform, const ParentLayerRect& aParentLayerRect, const LayerRect& aClip)
 {
-  return TransformTo<LayerPixel>(aTransform, aParentLayerRect);
+  return UntransformTo<LayerPixel>(aTransform, aParentLayerRect, aClip);
 }
 
 static gfx::Matrix4x4
@@ -124,10 +124,7 @@ ClientTiledPaintedLayer::GetAncestorLayers(LayerMetricsWrapper* aOutScrollAncest
 void
 ClientTiledPaintedLayer::BeginPaint()
 {
-  mPaintData.mLowPrecisionPaintCount = 0;
-  mPaintData.mPaintFinished = false;
-  mPaintData.mCompositionBounds.SetEmpty();
-  mPaintData.mCriticalDisplayPort.SetEmpty();
+  mPaintData.ResetPaintData();
 
   if (!GetBaseTransform().Is2D()) {
     
@@ -165,6 +162,8 @@ ClientTiledPaintedLayer::BeginPaint()
     GetTransformToAncestorsParentLayer(this, displayPortAncestor);
   transformDisplayPortToLayer.Invert();
 
+  LayerRect layerBounds = ViewAs<LayerPixel>(Rect(GetLayerBounds()));
+
   
   
   
@@ -175,8 +174,13 @@ ClientTiledPaintedLayer::BeginPaint()
     ParentLayerRect criticalDisplayPort =
       (displayportMetrics.GetCriticalDisplayPort() * displayportMetrics.GetZoom())
       + displayportMetrics.GetCompositionBounds().TopLeft();
-    mPaintData.mCriticalDisplayPort = RoundedToInt(
-      ApplyParentLayerToLayerTransform(transformDisplayPortToLayer, criticalDisplayPort));
+    Maybe<LayerRect> criticalDisplayPortTransformed =
+      ApplyParentLayerToLayerTransform(transformDisplayPortToLayer, criticalDisplayPort, layerBounds);
+    if (!criticalDisplayPortTransformed) {
+      mPaintData.ResetPaintData();
+      return;
+    }
+    mPaintData.mCriticalDisplayPort = RoundedToInt(*criticalDisplayPortTransformed);
   }
   TILING_LOG("TILING %p: Critical displayport %s\n", this, Stringify(mPaintData.mCriticalDisplayPort).c_str());
 
@@ -190,8 +194,13 @@ ClientTiledPaintedLayer::BeginPaint()
     GetTransformToAncestorsParentLayer(this, scrollAncestor);
   gfx::Matrix4x4 transformToBounds = mPaintData.mTransformToCompBounds;
   transformToBounds.Invert();
-  mPaintData.mCompositionBounds = ApplyParentLayerToLayerTransform(
-    transformToBounds, scrollMetrics.GetCompositionBounds());
+  Maybe<LayerRect> compositionBoundsTransformed = ApplyParentLayerToLayerTransform(
+    transformToBounds, scrollMetrics.GetCompositionBounds(), layerBounds);
+  if (!compositionBoundsTransformed) {
+    mPaintData.ResetPaintData();
+    return;
+  }
+  mPaintData.mCompositionBounds = *compositionBoundsTransformed;
   TILING_LOG("TILING %p: Composition bounds %s\n", this, Stringify(mPaintData.mCompositionBounds).c_str());
 
   

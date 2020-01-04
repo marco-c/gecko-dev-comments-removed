@@ -352,6 +352,11 @@ struct BasicTiledLayerPaintData {
 
 
   bool mPaintFinished : 1;
+
+  
+
+
+  void ResetPaintData();
 };
 
 class SharedFrameMetricsHelper
