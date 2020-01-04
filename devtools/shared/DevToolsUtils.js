@@ -325,8 +325,13 @@ exports.getProperty = function getProperty(aObj, aKey) {
 exports.hasSafeGetter = function hasSafeGetter(aDesc) {
   
   
-  let fn = aDesc.get.unwrap();
-  return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
+  try {
+    let fn = aDesc.get.unwrap();
+    return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
+  } catch(e) {
+    
+    return false;
+  }
 };
 
 
