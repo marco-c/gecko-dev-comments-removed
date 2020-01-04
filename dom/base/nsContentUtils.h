@@ -2366,18 +2366,6 @@ public:
   
 
 
-
-
-
-
-
-  static bool InternalIsSupported(nsISupports* aObject,
-                                  const nsAString& aFeature,
-                                  const nsAString& aVersion);
-
-  
-
-
   static bool DOMWindowDumpEnabled();
 
   
