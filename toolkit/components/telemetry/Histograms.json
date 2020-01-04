@@ -4657,14 +4657,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Where undo of the automatic migration was attempted, indicates to what degree we succeeded to undo. 0 means we started to undo, 5 means we bailed out from the undo because it was not possible to complete it (there was nothing to undo or the user was signed in to sync). All higher values indicate progression through the undo sequence, with 30 indicating we finished the undo without exceptions in the middle."
   },
-  "FX_STARTUP_MIGRATION_CANT_UNDO_BECAUSE_SYNC": {
-    "bug_numbers": [1283565],
-    "alert_emails": ["gijs@mozilla.com"],
-    "expires_in_version": "53",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Where undo of the automatic migration was requested and denied because the user was logged into sync."
-  },
   "FX_STARTUP_MIGRATION_DATA_RECENCY": {
     "bug_numbers": [1276694],
     "alert_emails": ["gijs@mozilla.com"],
@@ -5615,6 +5607,15 @@
     "n_buckets": 20,
     "description": "Time for a URL bar DB search to return (ms)",
     "cpp_guard": "ANDROID"
+  },
+  "FENNEC_RESTRICTED_PROFILE_RESTRICTIONS": {
+    "expires_in_version": "50",
+    "kind": "enumerated",
+    "n_values": 30,
+    "description": "Whether various restrictions are set, keyed by restiction name",
+    "keyed": true,
+    "bug_numbers": [1218942],
+    "alert_emails": ["mobile-frontend@mozilla.com"]
   },
   "FENNEC_STARTUP_TIME_GECKOREADY": {
     "expires_in_version": "never",
@@ -8129,7 +8130,7 @@
     "bug_numbers": [1208167]
   },
   "ZOOMED_VIEW_ENABLED": {
-    "expires_in_version": "60",
+    "expires_in_version": "50",
     "kind": "boolean",
     "description": "Whether or not a user has the zoomed view (a.k.a. \"Magnify small areas\") enabled.",
     "alert_emails": ["mobile-frontend@mozilla.com"],
@@ -8877,7 +8878,7 @@
     "description": "The result of trying to download a document to show in reader view (0=Success, 1=Error XHR, 2=Error no document)"
   },
   "FENNEC_LOAD_SAVED_PAGE": {
-    "expires_in_version": "60",
+    "expires_in_version": "50",
     "alert_emails": ["mobile-frontend@mozilla.com"],
     "kind": "enumerated",
     "n_values": 10,
@@ -8902,7 +8903,7 @@
     "description": "The number of tabs queued when opened."
   },
   "FENNEC_CUSTOM_HOMEPAGE": {
-    "expires_in_version": "60",
+    "expires_in_version": "50",
     "alert_emails": ["mobile-frontend@mozilla.com"],
     "bug_numbers": [1239102],
     "kind": "boolean",

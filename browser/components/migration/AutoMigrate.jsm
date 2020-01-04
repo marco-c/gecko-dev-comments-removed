@@ -23,6 +23,8 @@ const kPasswordManagerTopicTypes = new Set([
   "modifyLogin",
 ]);
 
+const kSyncTopic = "fxaccounts:onlogin";
+
 const kNotificationId = "abouthome-automigration-undo";
 
 Cu.import("resource:///modules/MigrationUtils.jsm");
@@ -46,23 +48,27 @@ const AutoMigrate = {
   },
 
   maybeInitUndoObserver() {
-    
-    
-    if (!this.getUndoRange()) {
+    if (!this.canUndo()) {
       return;
     }
     
     this.onItemAdded = this.onItemMoved = this.onItemChanged =
       this.removeUndoOption;
     PlacesUtils.addLazyBookmarkObserver(this, true);
-    Services.obs.addObserver(this, kPasswordManagerTopic, true);
+    for (let topic of [kSyncTopic, kPasswordManagerTopic]) {
+      Services.obs.addObserver(this, topic, true);
+    }
   },
 
   observe(subject, topic, data) {
-    
-    
-    
-    if (kPasswordManagerTopicTypes.has(data)) {
+    if (topic == kPasswordManagerTopic) {
+      
+      
+      
+      if (kPasswordManagerTopicTypes.has(data)) {
+        this.removeUndoOption();
+      }
+    } else if (topic == kSyncTopic) {
       this.removeUndoOption();
     }
   },
@@ -190,24 +196,13 @@ const AutoMigrate = {
   },
 
   canUndo() {
-    if (!this.getUndoRange()) {
-      return Promise.resolve(false);
-    }
-    
-    
-    let {fxAccounts} = Cu.import("resource://gre/modules/FxAccounts.jsm", {});
-    return fxAccounts.getSignedInUser().then(user => {
-      if (user) {
-        Services.telemetry.getHistogramById("FX_STARTUP_MIGRATION_CANT_UNDO_BECAUSE_SYNC").add(true);
-      }
-      return !user;
-    }, () => Promise.resolve(true));
+    return !!this.getUndoRange();
   },
 
   undo: Task.async(function* () {
     let histogram = Services.telemetry.getHistogramById("FX_STARTUP_MIGRATION_AUTOMATED_IMPORT_UNDO");
     histogram.add(0);
-    if (!(yield this.canUndo())) {
+    if (!this.canUndo()) {
       histogram.add(5);
       throw new Error("Can't undo!");
     }
@@ -245,12 +240,18 @@ const AutoMigrate = {
   removeUndoOption() {
     
     
-    try {
-      Services.obs.removeObserver(this, kPasswordManagerTopic);
-    } catch (ex) {}
+    for (let topic of [kSyncTopic, kPasswordManagerTopic]) {
+      try {
+        Services.obs.removeObserver(this, topic);
+      } catch (ex) {
+        Cu.reportError("Error removing observer for " + topic + ": " + ex);
+      }
+    }
     try {
       PlacesUtils.removeLazyBookmarkObserver(this);
-    } catch (ex) {}
+    } catch (ex) {
+      Cu.reportError("Error removing lazy bookmark observer: " + ex);
+    }
     Services.prefs.clearUserPref(kAutoMigrateStartedPref);
     Services.prefs.clearUserPref(kAutoMigrateFinishedPref);
     Services.prefs.clearUserPref(kAutoMigrateBrowserPref);
@@ -279,54 +280,53 @@ const AutoMigrate = {
   },
 
   maybeShowUndoNotification(target) {
-    this.canUndo().then(canUndo => {
-      
-      if (!canUndo || target.currentURI.spec != "about:home") {
-        return;
-      }
-      let win = target.ownerGlobal;
-      let notificationBox = win.gBrowser.getNotificationBox(target);
-      if (!notificationBox || notificationBox.getNotificationWithValue("abouthome-automigration-undo")) {
-        return;
-      }
+    
+    if (!this.canUndo() || target.currentURI.spec != "about:home") {
+      return;
+    }
 
-      
-      
-      
-      if (!this.shouldStillShowUndoPrompt()) {
-        this.removeUndoOption();
-        return;
-      }
+    let win = target.ownerGlobal;
+    let notificationBox = win.gBrowser.getNotificationBox(target);
+    if (!notificationBox || notificationBox.getNotificationWithValue("abouthome-automigration-undo")) {
+      return;
+    }
 
-      let browserName = this.getBrowserUsedForMigration();
-      let message;
-      if (browserName) {
-        message = MigrationUtils.getLocalizedString("automigration.undo.message",
-                                                    [browserName]);
-      } else {
-        message = MigrationUtils.getLocalizedString("automigration.undo.unknownBrowserMessage");
-      }
+    
+    
+    
+    if (!this.shouldStillShowUndoPrompt()) {
+      this.removeUndoOption();
+      return;
+    }
 
-      let buttons = [
-        {
-          label: MigrationUtils.getLocalizedString("automigration.undo.keep.label"),
-          accessKey: MigrationUtils.getLocalizedString("automigration.undo.keep.accesskey"),
-          callback: () => {
-            this.removeUndoOption();
-          },
+    let browserName = this.getBrowserUsedForMigration();
+    let message;
+    if (browserName) {
+      message = MigrationUtils.getLocalizedString("automigration.undo.message",
+                                                  [browserName]);
+    } else {
+      message = MigrationUtils.getLocalizedString("automigration.undo.unknownBrowserMessage");
+    }
+
+    let buttons = [
+      {
+        label: MigrationUtils.getLocalizedString("automigration.undo.keep.label"),
+        accessKey: MigrationUtils.getLocalizedString("automigration.undo.keep.accesskey"),
+        callback: () => {
+          this.removeUndoOption();
         },
-        {
-          label: MigrationUtils.getLocalizedString("automigration.undo.dontkeep.label"),
-          accessKey: MigrationUtils.getLocalizedString("automigration.undo.dontkeep.accesskey"),
-          callback: () => {
-            this.undo();
-          },
+      },
+      {
+        label: MigrationUtils.getLocalizedString("automigration.undo.dontkeep.label"),
+        accessKey: MigrationUtils.getLocalizedString("automigration.undo.dontkeep.accesskey"),
+        callback: () => {
+          this.undo();
         },
-      ];
-      notificationBox.appendNotification(
-        message, kNotificationId, null, notificationBox.PRIORITY_INFO_HIGH, buttons
-      );
-    });
+      },
+    ];
+    notificationBox.appendNotification(
+      message, kNotificationId, null, notificationBox.PRIORITY_INFO_HIGH, buttons
+    );
   },
 
   shouldStillShowUndoPrompt() {
