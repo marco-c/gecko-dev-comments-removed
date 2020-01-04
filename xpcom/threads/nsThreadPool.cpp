@@ -122,7 +122,7 @@ nsThreadPool::PutEvent(already_AddRefed<nsIRunnable>&& aEvent)
   if (killThread) {
     
     
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(thread->AsyncShutdown()));
+    ShutdownThread(thread);
   } else {
     thread->Dispatch(this, NS_DISPATCH_NORMAL);
   }
@@ -137,10 +137,16 @@ nsThreadPool::ShutdownThread(nsIThread* aThread)
 
   
   
-
-  MOZ_ASSERT(!NS_IsMainThread(), "wrong thread");
-
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(aThread, &nsIThread::Shutdown);
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(aThread,
+                                                 &nsIThread::AsyncShutdown);
   NS_DispatchToMainThread(r);
 }
 
