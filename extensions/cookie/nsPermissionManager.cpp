@@ -123,7 +123,12 @@ GetOriginFromPrincipal(nsIPrincipal* aPrincipal, nsACString& aOrigin)
   attrs.mPrivateBrowsingId = 0;
 
   
+
+  
   attrs.mUserContextId = nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
+
+  
+  attrs.mFirstPartyDomain.Truncate();
 
   attrs.CreateSuffix(suffix);
   aOrigin.Append(suffix);
@@ -140,7 +145,12 @@ GetPrincipalFromOrigin(const nsACString& aOrigin, nsIPrincipal** aPrincipal)
   }
 
   
+
+  
   attrs.mUserContextId = nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
+
+  
+  attrs.mFirstPartyDomain.Truncate();
 
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), originNoSuffix);
@@ -151,11 +161,9 @@ GetPrincipalFromOrigin(const nsACString& aOrigin, nsIPrincipal** aPrincipal)
   return NS_OK;
 }
 
-
 nsresult
 GetPrincipal(nsIURI* aURI, uint32_t aAppId, bool aIsInIsolatedMozBrowserElement, nsIPrincipal** aPrincipal)
 {
-  
   mozilla::PrincipalOriginAttributes attrs(aAppId, aIsInIsolatedMozBrowserElement);
   nsCOMPtr<nsIPrincipal> principal = mozilla::BasePrincipal::CreateCodebasePrincipal(aURI, attrs);
   NS_ENSURE_TRUE(principal, NS_ERROR_FAILURE);
@@ -2201,7 +2209,12 @@ nsPermissionManager::GetPermissionHashKey(nsIPrincipal* aPrincipal,
       mozilla::BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
 
     
+
+    
     attrs.mUserContextId = nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID;
+
+    
+    attrs.mFirstPartyDomain.Truncate();
 
     nsCOMPtr<nsIPrincipal> principal =
       mozilla::BasePrincipal::CreateCodebasePrincipal(newURI, attrs);
