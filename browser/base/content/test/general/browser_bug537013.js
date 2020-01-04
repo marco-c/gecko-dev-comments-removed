@@ -38,7 +38,7 @@ function test() {
       gBrowser.removeTab(tabs.pop());
     }
   });
-  texts.forEach(function(aText) addTabWithText(aText));
+  texts.forEach(aText => addTabWithText(aText));
 
   
   gBrowser.selectedTab = tabs[0];
