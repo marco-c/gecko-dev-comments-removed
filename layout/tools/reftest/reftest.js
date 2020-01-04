@@ -632,7 +632,6 @@ function BuildConditionSandbox(aURL) {
 
     
     sandbox.B2G = xr.widgetToolkit == "gonk";
-    sandbox.B2GDT = appInfo.name.toLowerCase() == "b2g" && !sandbox.B2G;
     sandbox.Android = xr.OS == "Android" && !sandbox.B2G;
     sandbox.cocoaWidget = xr.widgetToolkit == "cocoa";
     sandbox.gtkWidget = xr.widgetToolkit == "gtk2"
