@@ -11,6 +11,7 @@
 
 #include "base/message_loop.h"
 #include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace ipc {
@@ -229,6 +230,15 @@ public:
 
 
   UnixSocketRawData(const void* aData, size_t aSize);
+
+  
+
+
+
+
+
+
+  UnixSocketRawData(UniquePtr<uint8_t[]> aData, size_t aSize);
 
   
 
