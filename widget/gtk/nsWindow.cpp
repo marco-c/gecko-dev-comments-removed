@@ -401,13 +401,13 @@ NS_IMPL_ISUPPORTS_INHERITED0(nsWindow, nsBaseWidget)
 
 nsWindow::nsWindow()
 {
-    mIsTopLevel       = false;
-    mIsDestroyed      = false;
-    mListenForResizes = false;
-    mIsShown          = false;
-    mNeedsShow        = false;
-    mEnabled          = true;
-    mCreated          = false;
+    mIsTopLevel          = false;
+    mIsDestroyed         = false;
+    mListenForResizes    = false;
+    mIsShown             = false;
+    mNeedsShow           = false;
+    mEnabled             = true;
+    mCreated             = false;
 
     mContainer           = nullptr;
     mGdkWindow           = nullptr;
@@ -1814,16 +1814,16 @@ nsWindow::CaptureMouse(bool aCapture)
     if (!mGdkWindow)
         return NS_OK;
 
-    if (!mShell)
+    if (!mContainer)
         return NS_ERROR_FAILURE;
 
     if (aCapture) {
-        gtk_grab_add(mShell);
+        gtk_grab_add(GTK_WIDGET(mContainer));
         GrabPointer(GetLastUserInputTime());
     }
     else {
         ReleaseGrabs();
-        gtk_grab_remove(mShell);
+        gtk_grab_remove(GTK_WIDGET(mContainer));
     }
 
     return NS_OK;
@@ -1836,7 +1836,7 @@ nsWindow::CaptureRollupEvents(nsIRollupListener *aListener,
     if (!mGdkWindow)
         return NS_OK;
 
-    if (!mShell)
+    if (!mContainer)
         return NS_ERROR_FAILURE;
 
     LOG(("CaptureRollupEvents %p %i\n", this, int(aDoCapture)));
@@ -1850,12 +1850,7 @@ nsWindow::CaptureRollupEvents(nsIRollupListener *aListener,
             
             GdkWindowTypeHint gdkTypeHint = gtk_window_get_type_hint(GTK_WINDOW(mShell));
             if (gdkTypeHint != GDK_WINDOW_TYPE_HINT_DND) {
-              
-              
-              
-              
-              
-              gtk_grab_add(mShell);
+              gtk_grab_add(GTK_WIDGET(mContainer));
               GrabPointer(GetLastUserInputTime());
             }
         }
@@ -1867,7 +1862,7 @@ nsWindow::CaptureRollupEvents(nsIRollupListener *aListener,
         
         
         
-        gtk_grab_remove(mShell);
+        gtk_grab_remove(GTK_WIDGET(mContainer));
         gRollupListener = nullptr;
     }
 
@@ -3091,12 +3086,7 @@ nsWindow::OnKeyPressEvent(GdkEventKey *aEvent)
         }
     }
 
-    
-    if (status == nsEventStatus_eConsumeNoDefault) {
-        return TRUE;
-    }
-
-    return FALSE;
+    return TRUE;
 }
 
 gboolean
@@ -3112,14 +3102,9 @@ nsWindow::OnKeyReleaseEvent(GdkEventKey *aEvent)
     WidgetKeyboardEvent event(true, eKeyUp, this);
     KeymapWrapper::InitKeyEvent(event, aEvent);
 
-    nsEventStatus status = DispatchInputEvent(&event);
+    (void)DispatchInputEvent(&event);
 
-    
-    if (status == nsEventStatus_eConsumeNoDefault) {
-        return TRUE;
-    }
-
-    return FALSE;
+    return TRUE;
 }
 
 void
@@ -3603,15 +3588,31 @@ nsWindow::Create(nsIWidget        *aParent,
         }
 
         
-        gtk_widget_set_app_paintable(mShell, TRUE);
-
-        
         GtkWidget *container = moz_container_new();
         mContainer = MOZ_CONTAINER(container);
+
+#if (MOZ_WIDGET_GTK == 2)
+        bool containerHasWindow = false;
+#else
         
-        gtk_widget_set_has_window(container, FALSE);
-        eventWidget = mShell;
+        
+        gtk_widget_realize(mShell);
+
+        
+        
+        GtkStyleContext* style = gtk_widget_get_style_context(mShell);
+        bool containerHasWindow = gtk_style_context_has_class(style, "csd");
+        if (!containerHasWindow) {
+            
+            gtk_widget_set_has_window(container, FALSE);
+            
+            gtk_widget_set_app_paintable(mShell, TRUE);
+        }
+#endif
+        
+        eventWidget = containerHasWindow ? container : mShell;
         gtk_widget_add_events(eventWidget, kEvents);
+
         gtk_container_add(GTK_CONTAINER(mShell), container);
         gtk_widget_realize(container);
 
@@ -3620,7 +3621,7 @@ nsWindow::Create(nsIWidget        *aParent,
         gtk_widget_grab_focus(container);
 
         
-        mGdkWindow = gtk_widget_get_window(mShell);
+        mGdkWindow = gtk_widget_get_window(eventWidget);
 
         if (mWindowType == eWindowType_popup) {
             
