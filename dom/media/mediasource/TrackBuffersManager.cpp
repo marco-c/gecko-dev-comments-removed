@@ -1986,11 +1986,14 @@ TrackBuffersManager::Seek(TrackInfo::TrackType aTrack,
   if (aTime != TimeUnit()) {
     
     TimeIntervals buffered = trackBuffer.mBufferedRanges;
-    buffered.SetFuzz(aFuzz);
+    
+    
+    buffered.SetFuzz(aFuzz / 2);
     TimeIntervals::IndexType index = buffered.Find(aTime);
     MOZ_ASSERT(index != TimeIntervals::NoIndex,
                "We shouldn't be called if aTime isn't buffered");
     TimeInterval target = buffered[index];
+    target.mFuzz = aFuzz;
     i = FindSampleIndex(track, target);
   }
 
