@@ -212,7 +212,8 @@ AppendToString(std::stringstream& aStream, const mozilla::gfx::Matrix5x4& m,
                const char* pfx="", const char* sfx="");
 
 void
-AppendToString(std::stringstream& aStream, const mozilla::gfx::Filter filter,
+AppendToString(std::stringstream& aStream,
+               const mozilla::gfx::SamplingFilter samplingFilter,
                const char* pfx="", const char* sfx="");
 
 void

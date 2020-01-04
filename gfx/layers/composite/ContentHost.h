@@ -121,7 +121,7 @@ public:
                          EffectChain& aEffectChain,
                          float aOpacity,
                          const gfx::Matrix4x4& aTransform,
-                         const gfx::Filter& aFilter,
+                         const gfx::SamplingFilter aSamplingFilter,
                          const gfx::IntRect& aClipRect,
                          const nsIntRegion* aVisibleRegion = nullptr) override;
 
@@ -166,7 +166,7 @@ public:
 
   LayerRenderState GetRenderState() override;
 
-  virtual already_AddRefed<TexturedEffect> GenEffect(const gfx::Filter& aFilter) override;
+  virtual already_AddRefed<TexturedEffect> GenEffect(const gfx::SamplingFilter aSamplingFilter) override;
 
 protected:
   CompositableTextureHostRef mTextureHost;

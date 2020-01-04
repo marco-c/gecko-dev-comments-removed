@@ -453,7 +453,8 @@ CreateSamplingRestrictedDrawable(gfxDrawable* aDrawable,
     MOZ_ASSERT(tmpCtx); 
 
     tmpCtx->SetOp(OptimalFillOp());
-    aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), ExtendMode::REPEAT, Filter::LINEAR,
+    aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), ExtendMode::REPEAT,
+                    SamplingFilter::LINEAR,
                     1.0, gfxMatrix::Translation(needed.TopLeft()));
     RefPtr<SourceSurface> surface = target->Snapshot();
 
@@ -464,9 +465,9 @@ CreateSamplingRestrictedDrawable(gfxDrawable* aDrawable,
 
 
 #ifdef MOZ_GFX_OPTIMIZE_MOBILE
-static Filter ReduceResamplingFilter(Filter aFilter,
-                                     int aImgWidth, int aImgHeight,
-                                     float aSourceWidth, float aSourceHeight)
+static SamplingFilter ReduceResamplingFilter(SamplingFilter aSamplingFilter,
+                                             int aImgWidth, int aImgHeight,
+                                             float aSourceWidth, float aSourceHeight)
 {
     
     
@@ -481,7 +482,7 @@ static Filter ReduceResamplingFilter(Filter aFilter,
         || aImgHeight <= kSmallImageSizeThreshold) {
         
         
-        return Filter::POINT;
+        return SamplingFilter::POINT;
     }
 
     if (aImgHeight * kLargeStretch <= aSourceHeight || aImgWidth * kLargeStretch <= aSourceWidth) {
@@ -492,11 +493,11 @@ static Filter ReduceResamplingFilter(Filter aFilter,
         
         
         if (fabs(aSourceWidth - aImgWidth)/aImgWidth < 0.5 || fabs(aSourceHeight - aImgHeight)/aImgHeight < 0.5)
-            return Filter::POINT;
+            return SamplingFilter::POINT;
 
         
         
-        return aFilter;
+        return aSamplingFilter;
     }
 
     
@@ -517,15 +518,15 @@ static Filter ReduceResamplingFilter(Filter aFilter,
 
 
 
-    return aFilter;
+    return aSamplingFilter;
 }
 #else
-static Filter ReduceResamplingFilter(Filter aFilter,
-                                     int aImgWidth, int aImgHeight,
-                                     int aSourceWidth, int aSourceHeight)
+static SamplingFilter ReduceResamplingFilter(SamplingFilter aSamplingFilter,
+                                             int aImgWidth, int aImgHeight,
+                                             int aSourceWidth, int aSourceHeight)
 {
     
-    return aFilter;
+    return aSamplingFilter;
 }
 #endif
 
@@ -549,7 +550,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
                         gfxContext* aContext,
                         const ImageRegion& aRegion,
                         Rect aImageRect,
-                        const Filter& aFilter,
+                        const SamplingFilter aSamplingFilter,
                         const SurfaceFormat aFormat,
                         gfxFloat aOpacity,
                         ExtendMode aExtendMode)
@@ -603,7 +604,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
 
   scaledDT->SetTransform(ToMatrix(scaleMatrix));
   gfxRect gfxImageRect(aImageRect.x, aImageRect.y, aImageRect.width, aImageRect.height);
-  aDrawable->Draw(tmpCtx, gfxImageRect, aExtendMode, aFilter, 1.0, gfxMatrix());
+  aDrawable->Draw(tmpCtx, gfxImageRect, aExtendMode, aSamplingFilter, 1.0, gfxMatrix());
 
   RefPtr<SourceSurface> scaledImage = scaledDT->Snapshot();
 
@@ -620,7 +621,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
                             aContext->CurrentAntialiasMode());
 
     SurfacePattern scaledImagePattern(scaledImage, aExtendMode,
-                                      Matrix(), aFilter);
+                                      Matrix(), aSamplingFilter);
     destDrawTarget->FillRect(scaledNeededRect, scaledImagePattern, drawOptions);
   }
   return true;
@@ -633,7 +634,7 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
                            const gfxSize&      aImageSize,
                            const ImageRegion&  aRegion,
                            const SurfaceFormat aFormat,
-                           Filter              aFilter,
+                           SamplingFilter      aSamplingFilter,
                            uint32_t            aImageFlags,
                            gfxFloat            aOpacity)
 {
@@ -646,9 +647,10 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
 
     RefPtr<gfxDrawable> drawable = aDrawable;
 
-    aFilter = ReduceResamplingFilter(aFilter,
-                                     imageRect.Width(), imageRect.Height(),
-                                     region.Width(), region.Height());
+    aSamplingFilter =
+      ReduceResamplingFilter(aSamplingFilter,
+                             imageRect.Width(), imageRect.Height(),
+                             region.Width(), region.Height());
 
     
     
@@ -663,13 +665,14 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
                                                aContext->CurrentAntialiasMode(),
                                                aRegion.Rect(),
                                                aRegion.Restriction(),
-                                               extendMode, aFilter, aOpacity)) {
+                                               extendMode, aSamplingFilter,
+                                               aOpacity)) {
               return;
             }
 
 #ifdef MOZ_WIDGET_COCOA
             if (PrescaleAndTileDrawable(aDrawable, aContext, aRegion,
-                                        ToRect(imageRect), aFilter,
+                                        ToRect(imageRect), aSamplingFilter,
                                         aFormat, aOpacity, extendMode)) {
               return;
             }
@@ -694,7 +697,8 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
         }
     }
 
-    drawable->Draw(aContext, aRegion.Rect(), extendMode, aFilter, aOpacity, gfxMatrix());
+    drawable->Draw(aContext, aRegion.Rect(), extendMode, aSamplingFilter,
+                   aOpacity, gfxMatrix());
 }
 
  int

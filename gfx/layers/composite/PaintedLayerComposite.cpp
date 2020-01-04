@@ -131,7 +131,7 @@ PaintedLayerComposite::RenderLayer(const gfx::IntRect& aClipRect)
     mBuffer->Composite(this, effectChain,
                        GetEffectiveOpacity(),
                        GetEffectiveTransform(),
-                       GetEffectFilter(),
+                       GetSamplingFilter(),
                        clipRect,
                        &visibleRegion);
   });
@@ -164,7 +164,7 @@ void
 PaintedLayerComposite::GenEffectChain(EffectChain& aEffect)
 {
   aEffect.mLayerRef = this;
-  aEffect.mPrimaryEffect = mBuffer->GenEffect(GetEffectFilter());
+  aEffect.mPrimaryEffect = mBuffer->GenEffect(GetSamplingFilter());
 }
 
 void

@@ -330,7 +330,7 @@ _filter_to_string (cairo_filter_t filter)
 {
     static const char *names[] = {
 	"FILTER_FAST",		
-	"Filter::GOOD",		
+	"SamplingFilter::GOOD",	
 	"FILTER_BEST",		
 	"FILTER_NEAREST",	
 	"FILTER_BILINEAR",	

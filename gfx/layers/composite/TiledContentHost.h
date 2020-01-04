@@ -202,7 +202,7 @@ public:
   }
 
   
-  virtual already_AddRefed<TexturedEffect> GenEffect(const gfx::Filter& aFilter) override;
+  virtual already_AddRefed<TexturedEffect> GenEffect(const gfx::SamplingFilter aSamplingFilter) override;
 
   virtual bool UpdateThebes(const ThebesBufferData& aData,
                             const nsIntRegion& aUpdated,
@@ -238,7 +238,7 @@ public:
                          EffectChain& aEffectChain,
                          float aOpacity,
                          const gfx::Matrix4x4& aTransform,
-                         const gfx::Filter& aFilter,
+                         const gfx::SamplingFilter aSamplingFilter,
                          const gfx::IntRect& aClipRect,
                          const nsIntRegion* aVisibleRegion = nullptr) override;
 
@@ -267,7 +267,7 @@ private:
                          const gfx::Color* aBackgroundColor,
                          EffectChain& aEffectChain,
                          float aOpacity,
-                         const gfx::Filter& aFilter,
+                         const gfx::SamplingFilter aSamplingFilter,
                          const gfx::IntRect& aClipRect,
                          nsIntRegion aMaskRegion,
                          gfx::Matrix4x4 aTransform);
@@ -277,7 +277,7 @@ private:
                   EffectChain& aEffectChain,
                   float aOpacity,
                   const gfx::Matrix4x4& aTransform,
-                  const gfx::Filter& aFilter,
+                  const gfx::SamplingFilter aSamplingFilter,
                   const gfx::IntRect& aClipRect,
                   const nsIntRegion& aScreenRegion,
                   const gfx::IntPoint& aTextureOffset,
