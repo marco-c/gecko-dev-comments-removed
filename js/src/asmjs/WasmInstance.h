@@ -59,6 +59,7 @@ class Instance
     TlsData                              tlsData_;
 
     
+    JSContext** addressOfContextPtr() const;
     uint8_t** addressOfMemoryBase() const;
     void** addressOfTableBase(size_t tableIndex) const;
     const void** addressOfSigId(const SigIdDesc& sigId) const;
@@ -66,11 +67,6 @@ class Instance
 
     
     TlsData* tlsData() { return &tlsData_; }
-
-    
-    
-    friend class js::WasmActivation;
-    WasmActivation*& activation();
 
     
     friend void* AddressOf(SymbolicAddress, ExclusiveContext*);

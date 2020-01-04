@@ -1633,9 +1633,6 @@ WasmActivation::WasmActivation(JSContext* cx, wasm::Instance& instance)
 {
     (void) entrySP_;  
 
-    prevWasmForInstance_ = instance.activation();
-    instance.activation() = this;
-
     prevWasm_ = cx->runtime()->wasmActivationStack_;
     cx->runtime()->wasmActivationStack_ = this;
 
@@ -1653,11 +1650,7 @@ WasmActivation::~WasmActivation()
 
     MOZ_ASSERT(fp_ == nullptr);
 
-    MOZ_ASSERT(instance_.activation() == this);
-    instance_.activation() = prevWasmForInstance_;
-
     MOZ_ASSERT(cx_->runtime()->wasmActivationStack_ == this);
-
     cx_->runtime()->wasmActivationStack_ = prevWasm_;
 
     MOZ_ASSERT(cx_->compartment()->wasm.activationCount_ > 0);
