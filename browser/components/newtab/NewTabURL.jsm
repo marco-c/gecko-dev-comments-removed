@@ -2,13 +2,14 @@
 
 
 
+
+
+
 "use strict";
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
+const {utils: Cu} = Components;
 
-this.EXPORTED_SYMBOLS = [ "NewTabURL" ];
+this.EXPORTED_SYMBOLS = ["NewTabURL"];
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
