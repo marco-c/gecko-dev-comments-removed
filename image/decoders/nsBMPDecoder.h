@@ -23,121 +23,121 @@ class RasterImage;
 class nsBMPDecoder : public Decoder
 {
 public:
-    ~nsBMPDecoder();
+  ~nsBMPDecoder();
 
-    
-    
-    
-    void SetUseAlphaData(bool useAlphaData);
+  
+  
+  
+  void SetUseAlphaData(bool useAlphaData);
 
-    
-    int32_t GetBitsPerPixel() const;
+  
+  int32_t GetBitsPerPixel() const;
 
-    
-    int32_t GetWidth() const;
+  
+  int32_t GetWidth() const;
 
-    
-    int32_t GetHeight() const;
+  
+  int32_t GetHeight() const;
 
-    
-    uint32_t* GetImageData();
-    size_t GetImageDataLength() const { return mImageDataLength; }
+  
+  uint32_t* GetImageData();
+  size_t GetImageDataLength() const { return mImageDataLength; }
 
-    
-    int32_t GetCompressedImageSize() const;
+  
+  int32_t GetCompressedImageSize() const;
 
-    
-    
-    bool HasAlphaData() const { return mHaveAlphaData; }
+  
+  
+  bool HasAlphaData() const { return mHaveAlphaData; }
 
-    
-    void SetHasAlphaData() { mHaveAlphaData = true; }
+  
+  void SetHasAlphaData() { mHaveAlphaData = true; }
 
-    virtual void WriteInternal(const char* aBuffer,
-                               uint32_t aCount) override;
-    virtual void FinishInternal() override;
+  virtual void WriteInternal(const char* aBuffer,
+                             uint32_t aCount) override;
+  virtual void FinishInternal() override;
 
 private:
-    friend class DecoderFactory;
-    friend class nsICODecoder;
+  friend class DecoderFactory;
+  friend class nsICODecoder;
 
-    
-    
-    explicit nsBMPDecoder(RasterImage* aImage);
+  
+  
+  explicit nsBMPDecoder(RasterImage* aImage);
 
-    
-    
-    void CalcBitShift();
+  
+  
+  void CalcBitShift();
 
-    void DoReadBitfields(const char* aData);
+  void DoReadBitfields(const char* aData);
 
-    uint32_t* RowBuffer();
+  uint32_t* RowBuffer();
 
-    void FinishRow();
+  void FinishRow();
 
-    enum class State {
-        FILE_HEADER,
-        INFO_HEADER_SIZE,
-        INFO_HEADER_REST,
-        BITFIELDS,
-        COLOR_TABLE,
-        GAP,
-        PIXEL_ROW,
-        RLE_SEGMENT,
-        RLE_DELTA,
-        RLE_ABSOLUTE,
-        SUCCESS,
-        FAILURE
-    };
+  enum class State {
+    FILE_HEADER,
+    INFO_HEADER_SIZE,
+    INFO_HEADER_REST,
+    BITFIELDS,
+    COLOR_TABLE,
+    GAP,
+    PIXEL_ROW,
+    RLE_SEGMENT,
+    RLE_DELTA,
+    RLE_ABSOLUTE,
+    SUCCESS,
+    FAILURE
+  };
 
-    LexerTransition<State> ReadFileHeader(const char* aData, size_t aLength);
-    LexerTransition<State> ReadInfoHeaderSize(const char* aData, size_t aLength);
-    LexerTransition<State> ReadInfoHeaderRest(const char* aData, size_t aLength);
-    LexerTransition<State> ReadBitfields(const char* aData, size_t aLength);
-    LexerTransition<State> ReadColorTable(const char* aData, size_t aLength);
-    LexerTransition<State> SkipGap();
-    LexerTransition<State> ReadPixelRow(const char* aData);
-    LexerTransition<State> ReadRLESegment(const char* aData);
-    LexerTransition<State> ReadRLEDelta(const char* aData);
-    LexerTransition<State> ReadRLEAbsolute(const char* aData, size_t aLength);
+  LexerTransition<State> ReadFileHeader(const char* aData, size_t aLength);
+  LexerTransition<State> ReadInfoHeaderSize(const char* aData, size_t aLength);
+  LexerTransition<State> ReadInfoHeaderRest(const char* aData, size_t aLength);
+  LexerTransition<State> ReadBitfields(const char* aData, size_t aLength);
+  LexerTransition<State> ReadColorTable(const char* aData, size_t aLength);
+  LexerTransition<State> SkipGap();
+  LexerTransition<State> ReadPixelRow(const char* aData);
+  LexerTransition<State> ReadRLESegment(const char* aData);
+  LexerTransition<State> ReadRLEDelta(const char* aData);
+  LexerTransition<State> ReadRLEAbsolute(const char* aData, size_t aLength);
 
-    StreamingLexer<State> mLexer;
+  StreamingLexer<State> mLexer;
 
-    bmp::FileHeader mBFH;
-    bmp::V5InfoHeader mBIH;
+  bmp::FileHeader mBFH;
+  bmp::V5InfoHeader mBIH;
 
-    bmp::BitFields mBitFields;
+  bmp::BitFields mBitFields;
 
-    uint32_t mNumColors;      
-                              
-    bmp::ColorTable* mColors; 
-    uint32_t mBytesPerColor;  
+  uint32_t mNumColors;      
+                            
+  bmp::ColorTable* mColors; 
+  uint32_t mBytesPerColor;  
 
-    
-    
-    uint32_t mPreGapLength;
+  
+  
+  uint32_t mPreGapLength;
 
-    uint32_t mPixelRowSize;   
+  uint32_t mPixelRowSize;   
 
-    int32_t mCurrentRow;      
-                              
-    int32_t mCurrentPos;      
-                              
+  int32_t mCurrentRow;      
+                            
+  int32_t mCurrentPos;      
+                            
 
-    
-    uint32_t mAbsoluteModeNumPixels;
+  
+  uint32_t mAbsoluteModeNumPixels;
 
-    
-    
-    
-    
-    
-    
-    
-    bool mUseAlphaData;
+  
+  
+  
+  
+  
+  
+  
+  bool mUseAlphaData;
 
-    
-    bool mHaveAlphaData;
+  
+  bool mHaveAlphaData;
 };
 
 
@@ -147,13 +147,13 @@ static inline void
 SetPixel(uint32_t*& aDecoded, uint8_t aRed, uint8_t aGreen,
          uint8_t aBlue, uint8_t aAlpha = 0xFF)
 {
-    *aDecoded++ = gfxPackedPixel(aAlpha, aRed, aGreen, aBlue);
+  *aDecoded++ = gfxPackedPixel(aAlpha, aRed, aGreen, aBlue);
 }
 
 static inline void
 SetPixel(uint32_t*& aDecoded, uint8_t idx, bmp::ColorTable* aColors)
 {
-    SetPixel(aDecoded, aColors[idx].red, aColors[idx].green, aColors[idx].blue);
+  SetPixel(aDecoded, aColors[idx].red, aColors[idx].green, aColors[idx].blue);
 }
 
 
@@ -165,13 +165,13 @@ inline void
 Set4BitPixel(uint32_t*& aDecoded, uint8_t aData, uint32_t& aCount,
              bmp::ColorTable* aColors)
 {
-    uint8_t idx = aData >> 4;
+  uint8_t idx = aData >> 4;
+  SetPixel(aDecoded, idx, aColors);
+  if (--aCount > 0) {
+    idx = aData & 0xF;
     SetPixel(aDecoded, idx, aColors);
-    if (--aCount > 0) {
-        idx = aData & 0xF;
-        SetPixel(aDecoded, idx, aColors);
-        --aCount;
-    }
+    --aCount;
+  }
 }
 
 } 
