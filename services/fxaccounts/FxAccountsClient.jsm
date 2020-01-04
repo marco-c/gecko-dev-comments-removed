@@ -206,8 +206,13 @@ this.FxAccountsClient.prototype = {
 
 
 
-  recoveryEmailStatus: function (sessionTokenHex) {
-    return this._request("/recovery_email/status", "GET",
+  recoveryEmailStatus: function (sessionTokenHex, options = {}) {
+    let path = "/recovery_email/status";
+    if (options.reason) {
+      path += "?reason=" + encodeURIComponent(options.reason);
+    }
+
+    return this._request(path, "GET",
       deriveHawkCredentials(sessionTokenHex, "sessionToken"));
   },
 
