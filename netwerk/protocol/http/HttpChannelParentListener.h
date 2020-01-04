@@ -62,9 +62,6 @@ private:
   
   nsresult ResumeForDiversion();
 
-  void SynthesizeResponse(nsIInterceptedChannel* aChannel);
-  friend class ResponseSynthesizer;
-
   
   
   
