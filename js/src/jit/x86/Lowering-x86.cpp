@@ -228,6 +228,8 @@ LIRGeneratorX86::visitWasmStore(MWasmStore* ins)
         
         valueAlloc = useRegisterAtStart(ins->value());
         break;
+      case Scalar::Int64:
+        MOZ_CRASH("NYI");
       case Scalar::Uint8Clamped:
       case Scalar::MaxTypedArrayViewType:
         MOZ_CRASH("unexpected array type");
@@ -281,6 +283,8 @@ LIRGeneratorX86::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins)
         
         lir = new (alloc()) LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()));
         break;
+      case Scalar::Int64:
+        MOZ_CRASH("NYI");
       case Scalar::Uint8Clamped:
       case Scalar::MaxTypedArrayViewType:
         MOZ_CRASH("unexpected array type");
