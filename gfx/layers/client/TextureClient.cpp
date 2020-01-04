@@ -244,7 +244,8 @@ void DestroyTextureActorAndSharedData(TextureChild* aActor)
   }
 }
 
-void TextureClient::ForceIPDLActorShutdown(PTextureChild* aActor)
+void TextureClient::ForceIPDLActorShutdown(PTextureChild* aActor,
+                                           const char* const aProtocolName)
 {
   if (!aActor) {
     return;
@@ -258,7 +259,8 @@ void TextureClient::ForceIPDLActorShutdown(PTextureChild* aActor)
   
   
   if (actor->CanSend()) {
-    printf("!! A TextureClient is destroyed late during shutdown !!\n");
+    printf_stderr("!![%s] A TextureClient is destroyed late during shutdown!!\n",
+                  aProtocolName);
   }
 #endif
 
@@ -285,6 +287,7 @@ DeallocateTextureClient(TextureDeallocParams params)
     if (!ipdlMsgLoop) {
       
       
+      printf_stderr("!!A TextureClient destroyed after its IPDL thread !!\n");
       return;
     }
   }
@@ -471,6 +474,12 @@ TextureClient::GetFormat() const
 
 TextureClient::~TextureClient()
 {
+#ifdef GFX_STRICT_SHUTDOWN
+  if (gfxPlatform::IPCAlreadyShutDown()) {
+    MOZ_CRASH("This TextureClient is deleted too late.");
+  }
+#endif
+
   Destroy(false);
 }
 

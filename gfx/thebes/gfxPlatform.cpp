@@ -864,6 +864,7 @@ gfxPlatform::InitLayersIPC()
         mozilla::layers::ImageBridgeChild::StartUp();
         gfx::VRManagerChild::StartUpSameProcess();
     }
+
 }
 
  void
@@ -872,7 +873,6 @@ gfxPlatform::ShutdownLayersIPC()
     if (!sLayersIPCIsUp) {
       return;
     }
-    sLayersIPCIsUp = false;
 
     if (XRE_IsContentProcess()) {
 
@@ -899,6 +899,14 @@ gfxPlatform::ShutdownLayersIPC()
       
       
     }
+
+    sLayersIPCIsUp = false;
+}
+
+
+bool gfxPlatform::IPCAlreadyShutDown()
+{
+  return !sLayersIPCIsUp;
 }
 
 gfxPlatform::~gfxPlatform()

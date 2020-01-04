@@ -429,7 +429,8 @@ public:
 
   static PTextureChild* CreateIPDLActor();
   static bool DeallocIPDLActor(PTextureChild* actor);
-  static void ForceIPDLActorShutdown(PTextureChild* actor);
+  static void ForceIPDLActorShutdown(PTextureChild* actor,
+                                     const char* const aProtocolName);
   
   static bool DestroyFallback(PTextureChild* actor);
 

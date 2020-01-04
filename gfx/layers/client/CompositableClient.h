@@ -230,7 +230,8 @@ public:
   
   
   
-  static void ForceIPDLActorShutdown(PCompositableChild* aActor);
+  static void ForceIPDLActorShutdown(PCompositableChild* aActor,
+                                     const char* const aProtocolName);
 
   void InitIPDLActor(PCompositableChild* aActor, uint64_t aAsyncID = 0);
 
