@@ -24,8 +24,7 @@ sys.path.insert(0, os.path.abspath(os.pardir))
 
 
 
-extensions = ['sphinx.ext.autodoc']
-
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.extlinks']
 
 
 
@@ -73,6 +72,11 @@ unused_docs = []
 
 
 pygments_style = 'sphinx'
+
+extlinks = {
+    'issue': ('https://github.com/pypa/virtualenv/issues/%s', '#'),
+    'pull': ('https://github.com/pypa/virtualenv/pull/%s', 'PR #'),
+}
 
 
 
