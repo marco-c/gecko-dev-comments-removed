@@ -67,9 +67,9 @@ private:
   
   AudioStream* const mAudioStream;
   
-  int mOutRate;
+  uint32_t mOutRate;
   
-  int mInRate;
+  uint32_t mInRate;
   
   bool mPreservesPitch;
   
@@ -252,7 +252,7 @@ public:
   
   
   
-  nsresult Init(int32_t aNumChannels, int32_t aRate,
+  nsresult Init(uint32_t aNumChannels, uint32_t aRate,
                 const dom::AudioChannel aAudioStreamChannel);
 
   
@@ -284,9 +284,9 @@ public:
   
   bool IsPaused();
 
-  int GetRate() { return mOutRate; }
-  int GetChannels() { return mChannels; }
-  int GetOutChannels() { return mOutChannels; }
+  uint32_t GetRate() { return mOutRate; }
+  uint32_t GetChannels() { return mChannels; }
+  uint32_t GetOutChannels() { return mOutChannels; }
 
   
   
@@ -338,11 +338,11 @@ private:
   Monitor mMonitor;
 
   
-  int mInRate;
+  uint32_t mInRate;
   
-  int mOutRate;
-  int mChannels;
-  int mOutChannels;
+  uint32_t mOutRate;
+  uint32_t mChannels;
+  uint32_t mOutChannels;
 #if defined(__ANDROID__)
   dom::AudioChannel mAudioChannel;
 #endif
