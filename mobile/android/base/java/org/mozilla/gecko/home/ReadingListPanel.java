@@ -7,6 +7,7 @@ package org.mozilla.gecko.home;
 
 import java.util.EnumSet;
 
+import android.util.Log;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.ReaderModeUtils;
@@ -34,6 +35,7 @@ import android.view.ViewStub;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import org.mozilla.gecko.util.NetworkUtils;
 
 
 
@@ -92,6 +94,7 @@ public class ReadingListPanel extends HomeFragment {
                 url = ReaderModeUtils.getAboutReaderForUrl(url);
 
                 Telemetry.sendUIEvent(TelemetryContract.Event.LOAD_URL, TelemetryContract.Method.LIST_ITEM, "reading_list");
+                Telemetry.addToHistogram("FENNEC_LOAD_SAVED_PAGE", NetworkUtils.isConnected(context) ? 0 : 1);
 
                 
                 mUrlOpenListener.onUrlOpen(url, EnumSet.of(OnUrlOpenListener.Flags.ALLOW_SWITCH_TO_TAB));
