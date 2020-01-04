@@ -14,6 +14,7 @@
 #include "MediaDecoderStateMachine.h"
 #include "ImageContainer.h"
 #include "MediaResource.h"
+#include "VideoFrameContainer.h"
 #include "nsError.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPtr.h"
@@ -1064,8 +1065,7 @@ bool
 MediaDecoder::OwnerHasError() const
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!IsShutdown());
-  return mOwner->HasError();
+  return IsShutdown() || mOwner->HasError();
 }
 
 class MediaElementGMPCrashHelper : public GMPCrashHelper
@@ -1114,9 +1114,10 @@ void
 MediaDecoder::PlaybackEnded()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!IsShutdown());
 
-  if (mLogicallySeeking || mPlayState == PLAY_STATE_LOADING) {
+  if (IsShutdown() ||
+      mLogicallySeeking ||
+      mPlayState == PLAY_STATE_LOADING) {
     return;
   }
 
@@ -1266,8 +1267,10 @@ void
 MediaDecoder::OnSeekResolved(SeekResolveValue aVal)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!IsShutdown());
   mSeekRequest.Complete();
+
+  if (IsShutdown())
+    return;
 
   bool fireEnded = false;
   {
@@ -1306,7 +1309,9 @@ void
 MediaDecoder::SeekingStarted(MediaDecoderEventVisibility aEventVisibility)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!IsShutdown());
+  if (IsShutdown())
+    return;
+
   if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
     mOwner->SeekStarted();
   }
@@ -1340,7 +1345,9 @@ void
 MediaDecoder::UpdateLogicalPositionInternal(MediaDecoderEventVisibility aEventVisibility)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!IsShutdown());
+  if (IsShutdown()) {
+    return;
+  }
 
   double currentPosition = static_cast<double>(CurrentPosition()) / static_cast<double>(USECS_PER_S);
   bool logicalPositionChanged = mLogicalPosition != currentPosition;
@@ -1362,7 +1369,10 @@ void
 MediaDecoder::DurationChanged()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!IsShutdown());
+
+  if (IsShutdown()) {
+    return;
+  }
 
   double oldDuration = mDuration;
   if (IsInfinite()) {
@@ -1832,7 +1842,7 @@ MediaMemoryTracker::CollectReports(nsIHandleReportCallback* aHandleReport,
 }
 
 MediaDecoderOwner*
-MediaDecoder::GetOwner() const
+MediaDecoder::GetOwner()
 {
   MOZ_ASSERT(NS_IsMainThread());
   
