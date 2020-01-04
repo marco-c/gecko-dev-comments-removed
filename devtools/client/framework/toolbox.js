@@ -1414,9 +1414,14 @@ Toolbox.prototype = {
 
 
 
-  focusTool: function (id) {
+  focusTool: function (id, state = true) {
     let iframe = this.doc.getElementById("toolbox-panel-iframe-" + id);
-    iframe.focus();
+
+    if (state) {
+      iframe.focus();
+    } else {
+      iframe.blur();
+    }
   },
 
   
@@ -1805,16 +1810,17 @@ Toolbox.prototype = {
 
     this.emit("host-will-change", hostType);
 
+    
+    
+    
+    
+    this.focusTool(this.currentToolId, false);
+
     let newHost = this._createHost(hostType);
     return newHost.create().then(iframe => {
       
       iframe.QueryInterface(Ci.nsIFrameLoaderOwner);
       iframe.swapFrameLoaders(this.frame);
-
-      
-      
-      
-      this.win.focus();
 
       this._host.off("window-closed", this.destroy);
       this.destroyHost();
@@ -1831,8 +1837,7 @@ Toolbox.prototype = {
       this._addKeysToWindow();
 
       
-      
-      this.win.focus();
+      this.focusTool(this.currentToolId, true);
 
       this.emit("host-changed");
     });
