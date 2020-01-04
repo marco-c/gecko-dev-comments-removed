@@ -167,6 +167,7 @@ class OsiIndex
     uint32_t snapshotOffset() const {
         return snapshotOffset_;
     }
+    void fixUpOffset(MacroAssembler& masm);
 };
 
 
