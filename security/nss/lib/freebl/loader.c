@@ -904,7 +904,7 @@ BL_Unload(void)
 
 
   if (blLib) {
-      disableUnload = PR_GetEnv("NSS_DISABLE_UNLOAD");
+      disableUnload = PR_GetEnvSecure("NSS_DISABLE_UNLOAD");
       if (!disableUnload) {
 #ifdef DEBUG
           PRStatus status = PR_UnloadLibrary(blLib);

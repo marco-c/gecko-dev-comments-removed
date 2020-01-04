@@ -102,6 +102,20 @@ NSPR_API(char*) PR_GetEnv(const char *var);
 
 
 
+NSPR_API(char*) PR_GetEnvSecure(const char *var);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

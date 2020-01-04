@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
   
 
-  if((out = getenv("SEED")) == NULL) {
+  if((out = PR_GetEnvSecure("SEED")) == NULL) {
     srand((unsigned int)time(NULL));
   } else {
     srand((unsigned int)atoi(out));

@@ -4,10 +4,12 @@
 
 
 #include <string.h>
+#include <stdlib.h>
 #include "primpl.h"
 #include "prmem.h"
 
 #if defined(XP_UNIX)
+#include <unistd.h>
 #if defined(DARWIN)
 #if defined(HAVE_CRT_EXTERNS_H)
 #include <crt_externs.h>
@@ -16,6 +18,11 @@
 PR_IMPORT_DATA(char **) environ;
 #endif 
 #endif 
+
+#if !defined(HAVE_SECURE_GETENV) && defined(HAVE___SECURE_GETENV)
+#define secure_getenv __secure_getenv
+#define HAVE_SECURE_GETENV 1
+#endif
 
 
 #if defined(_PR_NO_PREEMPT)
@@ -61,6 +68,34 @@ PR_IMPLEMENT(char*) PR_GetEnv(const char *var)
     ev = _PR_MD_GET_ENV(var);
     _PR_UNLOCK_ENV();
     return ev;
+}
+
+PR_IMPLEMENT(char*) PR_GetEnvSecure(const char *var)
+{
+#ifdef HAVE_SECURE_GETENV
+  char *ev;
+
+  if (!_pr_initialized) _PR_ImplicitInitialization();
+
+  _PR_LOCK_ENV();
+  ev = secure_getenv(var);
+  _PR_UNLOCK_ENV();
+
+  return ev;
+#else
+#ifdef XP_UNIX
+  
+
+
+
+
+
+  if (getuid() != geteuid() || getgid() != getegid()) {
+    return NULL;
+  }
+#endif 
+  return PR_GetEnv(var);
+#endif 
 }
 
 PR_IMPLEMENT(PRStatus) PR_SetEnv(const char *string)

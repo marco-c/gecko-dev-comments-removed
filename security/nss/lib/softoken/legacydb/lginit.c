@@ -168,7 +168,7 @@ DB * rdbopen(const char *appName, const char *prefix,
     }
 
     
-    disableUnload = PR_GetEnv("NSS_DISABLE_UNLOAD");
+    disableUnload = PR_GetEnvSecure("NSS_DISABLE_UNLOAD");
     if (!disableUnload) {
         PR_UnloadLibrary(lib);
     }

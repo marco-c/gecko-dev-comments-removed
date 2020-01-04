@@ -18,6 +18,7 @@
 
 PRIntn  debug = 0;
 PRIntn  verbose = 0;
+PRIntn  secure = 0;
 PRBool  failedAlready = PR_FALSE;
 
 #define  ENVNAME    "NSPR_ENVIRONMENT_TEST_VARIABLE"
@@ -43,7 +44,7 @@ int main(int argc, char **argv)
 
     {   
         PLOptStatus os;
-        PLOptState *opt = PL_CreateOptState(argc, argv, "vd");
+        PLOptState *opt = PL_CreateOptState(argc, argv, "vds");
 
 	    while (PL_OPT_EOL != (os = PL_GetNextOpt(opt)))
         {
@@ -55,6 +56,15 @@ int main(int argc, char **argv)
                 break;
             case 'v':  
                 verbose = 1;
+                break;
+            case 's':  
+                
+
+
+
+
+
+                secure = 1;
                 break;
              default:
                 break;
@@ -111,6 +121,32 @@ int main(int argc, char **argv)
         failedAlready = PR_TRUE;
     } else {
         if (verbose) printf("env: PR_GetEnv() worked after setting it. Found: %s\n", value );
+    }
+
+    if ( secure ) {
+        
+
+
+
+        value = PR_GetEnvSecure( ENVNAME );
+        if ( NULL != value ) {
+            if (debug) printf( "env: PR_GetEnvSecure() failed; expected NULL, found \"%s\"\n", value );
+            failedAlready = PR_TRUE;
+        } else {
+            if (verbose) printf("env: PR_GetEnvSecure() worked\n" );
+        }
+    } else {
+        
+
+
+
+        value = PR_GetEnvSecure( ENVNAME );
+        if ( (NULL == value ) || (strcmp( value, ENVVALUE)))  {
+            if (debug) printf( "env: PR_GetEnvSecure() Failed after setting\n" );
+            failedAlready = PR_TRUE;
+        } else {
+            if (verbose) printf("env: PR_GetEnvSecure() worked after setting it. Found: %s\n", value );
+        }
     }
 
 

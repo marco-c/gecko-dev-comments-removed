@@ -2685,7 +2685,7 @@ static void print_final_statistics(void)
     FILE *outfile = NULL;
     int i;
 
-    fname = PR_GetEnv("NSS_OUTPUT_FILE");
+    fname = PR_GetEnvSecure("NSS_OUTPUT_FILE");
     if (fname) {
 	
 	outfile = fopen(fname,"w+");

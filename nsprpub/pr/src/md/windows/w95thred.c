@@ -65,7 +65,7 @@ _PR_MD_INIT_THREAD(PRThread *thread)
 
 
 
-        DuplicateHandle(
+        BOOL ok = DuplicateHandle(
                 GetCurrentProcess(),     
                 GetCurrentThread(),      
                 GetCurrentProcess(),     
@@ -73,6 +73,11 @@ _PR_MD_INIT_THREAD(PRThread *thread)
                 0L,                      
                 FALSE,                   
                 DUPLICATE_SAME_ACCESS);  
+        if (!ok) {
+            return PR_FAILURE;
+        }
+        thread->id = GetCurrentThreadId();
+        thread->md.id = thread->id;
     }
 
     

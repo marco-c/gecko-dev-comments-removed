@@ -422,8 +422,8 @@ class FormatEpochTimeInMillisAsIso8601Test : public Test {
     saved_tz_ = NULL;
 
     GTEST_DISABLE_MSC_WARNINGS_PUSH_(4996 )
-    if (getenv("TZ"))
-      saved_tz_ = strdup(getenv("TZ"));
+    if (PR_GetEnvSecure("TZ"))
+      saved_tz_ = strdup(PR_GetEnvSecure("TZ"));
     GTEST_DISABLE_MSC_WARNINGS_POP_()
 
     
