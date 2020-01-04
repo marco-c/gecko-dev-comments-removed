@@ -70,6 +70,7 @@ var AnimationPlayerActor = ActorClass({
 
     this.onAnimationMutation = this.onAnimationMutation.bind(this);
 
+    this.walker = animationsActor.walker;
     this.tabActor = animationsActor.tabActor;
     this.player = player;
     this.node = player.effect.target;
@@ -89,7 +90,9 @@ var AnimationPlayerActor = ActorClass({
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
       this.observer.disconnect();
     }
-    this.tabActor = this.player = this.node = this.styles = this.observer = null;
+    this.tabActor = this.player = this.node = this.styles = null;
+    this.observer = this.walker = null;
+
     Actor.prototype.destroy.call(this);
   },
 
@@ -106,6 +109,12 @@ var AnimationPlayerActor = ActorClass({
 
     let data = this.getCurrentState();
     data.actor = this.actorID;
+
+    
+    
+    if (this.walker && this.walker.hasNode(this.node)) {
+      data.animationTargetNodeActorID = this.walker.getNode(this.node).actorID;
+    }
 
     return data;
   },
@@ -385,6 +394,18 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
 
 
 
+  get animationTargetNodeFront() {
+    if (!this._form.animationTargetNodeActorID) {
+      return null;
+    }
+
+    return this.conn.getActor(this._form.animationTargetNodeActorID);
+  },
+
+  
+
+
+
   get initialState() {
     return {
       type: this._form.type,
@@ -495,7 +516,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
     events.off(this.tabActor, "navigate", this.onNavigate);
 
     this.stopAnimationPlayerUpdates();
-    this.tabActor = this.observer = this.actors = null;
+    this.tabActor = this.observer = this.actors = this.walker = null;
   },
 
   
@@ -505,6 +526,23 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
   disconnect: function() {
     this.destroy();
   },
+
+  
+
+
+
+
+
+
+
+  setWalkerActor: method(function(walker) {
+    this.walker = walker;
+  }, {
+    request: {
+      walker: Arg(0, "domwalker")
+    },
+    response: {}
+  }),
 
   
 

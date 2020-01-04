@@ -25,7 +25,7 @@ add_task(function*() {
 
   
   let nodeFronts = new Set(panel.animationsTimelineComponent
-                                .targetNodes.map(n => n.nodeFront));
+                                .targetNodes.map(n => n.previewer.nodeFront));
   is(nodeFronts.size, 3,
      "The animations are applied to 3 different node fronts");
 });

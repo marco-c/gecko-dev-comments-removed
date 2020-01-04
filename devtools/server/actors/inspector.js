@@ -1367,7 +1367,7 @@ var WalkerActor = protocol.ActorClass({
       let target = current.target;
 
       if (this._refMap.has(target)) {
-        let actor = this._refMap.get(target);
+        let actor = this.getNode(target);
         let mutation = {
           type: "events",
           target: actor.actorID,
@@ -1469,13 +1469,30 @@ var WalkerActor = protocol.ActorClass({
     protocol.Actor.prototype.unmanage.call(this, actor);
   },
 
-  hasNode: function(node) {
-    return this._refMap.has(node);
+  
+
+
+
+
+  hasNode: function(rawNode) {
+    return this._refMap.has(rawNode);
+  },
+
+  
+
+
+
+
+
+  getNode: function(rawNode) {
+    return this._refMap.get(rawNode);
   },
 
   _ref: function(node) {
-    let actor = this._refMap.get(node);
-    if (actor) return actor;
+    let actor = this.getNode(node);
+    if (actor) {
+      return actor;
+    }
 
     actor = new NodeActor(this, node);
 
@@ -1763,7 +1780,7 @@ var WalkerActor = protocol.ActorClass({
 
     let child = walker.firstChild();
     while (child) {
-      let childActor = this._refMap.get(child);
+      let childActor = this.getNode(child);
       if (childActor) {
         this.releaseNode(childActor, options);
       }
@@ -1789,7 +1806,7 @@ var WalkerActor = protocol.ActorClass({
     let walker = this.getDocumentWalker(node.rawNode);
     let cur;
     while ((cur = walker.parentNode())) {
-      let parent = this._refMap.get(cur);
+      let parent = this.getNode(cur);
       if (!parent) {
         
         newParents.add(this._ref(cur));
@@ -2942,7 +2959,7 @@ var WalkerActor = protocol.ActorClass({
     events.emit(this, "any-mutation");
 
     for (let change of mutations) {
-      let targetActor = this._refMap.get(change.target);
+      let targetActor = this.getNode(change.target);
       if (!targetActor) {
         continue;
       }
@@ -2972,7 +2989,7 @@ var WalkerActor = protocol.ActorClass({
         let removedActors = [];
         let addedActors = [];
         for (let removed of change.removedNodes) {
-          let removedActor = this._refMap.get(removed);
+          let removedActor = this.getNode(removed);
           if (!removedActor) {
             
             
@@ -2983,7 +3000,7 @@ var WalkerActor = protocol.ActorClass({
           removedActors.push(removedActor.actorID);
         }
         for (let added of change.addedNodes) {
-          let addedActor = this._refMap.get(added);
+          let addedActor = this.getNode(added);
           if (!addedActor) {
             
             
@@ -3021,7 +3038,7 @@ var WalkerActor = protocol.ActorClass({
       return;
     }
     let frame = getFrameElement(window);
-    let frameActor = this._refMap.get(frame);
+    let frameActor = this.getNode(frame);
     if (!frameActor) {
       return;
     }
@@ -3076,7 +3093,7 @@ var WalkerActor = protocol.ActorClass({
     }
 
     let doc = window.document;
-    let documentActor = this._refMap.get(doc);
+    let documentActor = this.getNode(doc);
     if (!documentActor) {
       return;
     }
@@ -3098,7 +3115,7 @@ var WalkerActor = protocol.ActorClass({
       
       this.queueMutation({
         type: "childList",
-        target: this._refMap.get(parentNode).actorID,
+        target: this.getNode(parentNode).actorID,
         added: [],
         removed: []
       });
