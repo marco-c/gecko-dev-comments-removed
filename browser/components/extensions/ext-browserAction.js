@@ -37,7 +37,7 @@ function BrowserAction(options, extension) {
 
   this.defaults = {
     enabled: true,
-    title: title,
+    title: title || extension.name,
     badgeText: "",
     badgeBackgroundColor: null,
     icon: IconDetails.normalize({ path: options.default_icon }, extension,
@@ -96,15 +96,9 @@ BrowserAction.prototype = {
   
   
   updateButton(node, tabData) {
-    if (tabData.title) {
-      node.setAttribute("tooltiptext", tabData.title);
-      node.setAttribute("label", tabData.title);
-      node.setAttribute("aria-label", tabData.title);
-    } else {
-      node.removeAttribute("tooltiptext");
-      node.removeAttribute("label");
-      node.removeAttribute("aria-label");
-    }
+    let title = tabData.title || this.extension.name;
+    node.setAttribute("tooltiptext", title);
+    node.setAttribute("label", title);
 
     if (tabData.badgeText) {
       node.setAttribute("badge", tabData.badgeText);
@@ -162,8 +156,10 @@ BrowserAction.prototype = {
   setProperty(tab, prop, value) {
     if (tab == null) {
       this.defaults[prop] = value;
-    } else {
+    } else if (value != null) {
       this.tabContext.get(tab)[prop] = value;
+    } else {
+      delete this.tabContext.get(tab)[prop];
     }
 
     this.updateOnChange(tab);
@@ -226,7 +222,13 @@ extensions.registerSchemaAPI("browserAction", null, (extension, context) => {
 
       setTitle: function(details) {
         let tab = details.tabId !== null ? TabManager.getTab(details.tabId) : null;
-        browserActionOf(extension).setProperty(tab, "title", details.title);
+
+        let title = details.title;
+        
+        if (tab && title == "") {
+          title = null;
+        }
+        browserActionOf(extension).setProperty(tab, "title", title);
       },
 
       getTitle: function(details, callback) {
