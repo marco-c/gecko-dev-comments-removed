@@ -664,6 +664,12 @@ public:
   MediaDecoderOwner* GetOwner() override;
 
 #ifdef MOZ_EME
+  typedef MozPromise<nsRefPtr<CDMProxy>, bool ,  true> CDMProxyPromise;
+
+  
+  
+  nsRefPtr<CDMProxyPromise> RequestCDMProxy() const;
+
   
   virtual nsresult SetCDMProxy(CDMProxy* aProxy) override;
 
@@ -819,6 +825,8 @@ private:
 
 #ifdef MOZ_EME
   nsRefPtr<CDMProxy> mProxy;
+  MozPromiseHolder<CDMProxyPromise> mCDMProxyPromiseHolder;
+  nsRefPtr<CDMProxyPromise> mCDMProxyPromise;
 #endif
 
 protected:
