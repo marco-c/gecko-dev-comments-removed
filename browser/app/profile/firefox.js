@@ -1240,6 +1240,16 @@ pref("geo.provider.use_corelocation", true);
 pref("geo.provider.ms-windows-location", false);
 #endif
 
+#ifdef MOZ_WIDGET_GTK
+#ifdef MOZ_GPSD
+#ifdef RELEASE_BUILD
+pref("geo.provider.use_gpsd", false);
+#else
+pref("geo.provider.use_gpsd", true);
+#endif
+#endif
+#endif
+
 
 
 pref("network.disable.ipc.security", true);
