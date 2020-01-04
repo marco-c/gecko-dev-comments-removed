@@ -15,9 +15,9 @@
 #include "nsIUrlClassifierPrefixSet.h"
 #include "nsTArray.h"
 #include "nsToolkitCompsCID.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/FileUtils.h"
-#include "mozilla/Atomics.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/Mutex.h"
 
 class nsUrlClassifierPrefixSet final
   : public nsIUrlClassifierPrefixSet
@@ -35,12 +35,13 @@ public:
   NS_IMETHOD StoreToFile(nsIFile* aFile) override;
 
   nsresult GetPrefixesNative(FallibleTArray<uint32_t>& outArray);
-  size_t SizeInMemory() { return mMemoryInUse; };
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
 
-protected:
+private:
   virtual ~nsUrlClassifierPrefixSet();
 
   static const uint32_t BUFFER_SIZE = 64 * 1024;
@@ -52,8 +53,10 @@ protected:
   uint32_t BinSearch(uint32_t start, uint32_t end, uint32_t target);
 
   
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
-
+  
+  
+  
+  mozilla::Mutex mLock;
   
   
   nsTArray<uint32_t> mIndexPrefixes;
@@ -65,9 +68,6 @@ protected:
   
   uint32_t mTotalPrefixes;
 
-  
-  
-  mozilla::Atomic<size_t> mMemoryInUse;
   nsCString mMemoryReportPath;
 };
 
