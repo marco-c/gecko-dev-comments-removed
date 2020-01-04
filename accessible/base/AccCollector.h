@@ -28,11 +28,6 @@ protected:
   
 
 
-  Accessible* EnsureNGetObject(uint32_t aIndex);
-
-  
-
-
   int32_t EnsureNGetIndex(Accessible* aAccessible);
 
   
@@ -78,6 +73,11 @@ public:
   Accessible* GetAccessibleAt(uint32_t aIndex);
 
 protected:
+  
+
+
+  Accessible* EnsureNGetObject(uint32_t aIndex);
+
   
   explicit EmbeddedObjCollector(Accessible* aRoot) :
     AccCollector(aRoot, filters::GetEmbeddedObject) { }
