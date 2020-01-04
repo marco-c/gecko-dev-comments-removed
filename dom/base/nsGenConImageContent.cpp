@@ -49,7 +49,7 @@ public:
   virtual nsresult PreHandleEvent(EventChainPreVisitor& aVisitor) override
   {
     MOZ_ASSERT(IsInNativeAnonymousSubtree());
-    if (aVisitor.mEvent->mMessage == NS_LOAD ||
+    if (aVisitor.mEvent->mMessage == eLoad ||
         aVisitor.mEvent->mMessage == eLoadError) {
       
       return NS_OK;

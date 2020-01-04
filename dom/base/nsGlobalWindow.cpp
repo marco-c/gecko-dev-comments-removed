@@ -3266,7 +3266,7 @@ nsGlobalWindow::PostHandleEvent(EventChainPostVisitor& aVisitor)
   switch (aVisitor.mEvent->mMessage) {
     case eResize:
     case eUnload:
-    case NS_LOAD:
+    case eLoad:
       break;
     default:
       return NS_OK;
@@ -3288,7 +3288,7 @@ nsGlobalWindow::PostHandleEvent(EventChainPostVisitor& aVisitor)
       mDoc->BindingManager()->ExecuteDetachedHandlers();
     }
     mIsDocumentLoaded = false;
-  } else if (aVisitor.mEvent->mMessage == NS_LOAD &&
+  } else if (aVisitor.mEvent->mMessage == eLoad &&
              aVisitor.mEvent->mFlags.mIsTrusted) {
     
     
@@ -3302,7 +3302,7 @@ nsGlobalWindow::PostHandleEvent(EventChainPostVisitor& aVisitor)
       
 
       nsEventStatus status = nsEventStatus_eIgnore;
-      WidgetEvent event(aVisitor.mEvent->mFlags.mIsTrusted, NS_LOAD);
+      WidgetEvent event(aVisitor.mEvent->mFlags.mIsTrusted, eLoad);
       event.mFlags.mBubbles = false;
 
       
