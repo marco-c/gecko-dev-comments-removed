@@ -2,11 +2,11 @@
 
 
 
-var outOfProcess = __marionetteParams[0]
-var mochitestUrl = __marionetteParams[1]
-var onDevice = __marionetteParams[2]
-var wifiSettings = __marionetteParams[3]
-var chrome = __marionetteParams[4]
+var outOfProcess = __webDriverArguments[0]
+var mochitestUrl = __webDriverArguments[1]
+var onDevice = __webDriverArguments[2]
+var wifiSettings = __webDriverArguments[3]
+var chrome = __webDriverArguments[4]
 var prefs = Components.classes["@mozilla.org/preferences-service;1"].
                             getService(Components.interfaces.nsIPrefBranch)
 var settings = window.navigator.mozSettings;

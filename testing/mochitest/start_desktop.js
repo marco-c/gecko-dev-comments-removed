@@ -2,8 +2,8 @@
 
 
 
-const flavor  = __marionetteParams[0]
-const url = __marionetteParams[1]
+const flavor  = __webDriverArguments[0]
+const url = __webDriverArguments[1]
 
 let wm = Cc["@mozilla.org/appshell/window-mediator;1"]
           .getService(Ci.nsIWindowMediator);
