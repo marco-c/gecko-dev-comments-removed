@@ -1400,7 +1400,7 @@ public:
 
 
 
-  virtual void NodeInfoChanged(mozilla::dom::NodeInfo* aOldNodeInfo) override;
+  virtual void NodeInfoChanged() override;
 
 protected:
   
