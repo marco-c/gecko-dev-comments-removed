@@ -644,8 +644,8 @@ struct nsCSSRendering {
 
   
   
-  static void DrawTableBorderSegment(nsRenderingContext& aContext,
-                                     uint8_t              aBorderStyle,  
+  static void DrawTableBorderSegment(DrawTarget&          aDrawTarget,
+                                     uint8_t              aBorderStyle,
                                      nscolor              aBorderColor,
                                      const nsStyleBackground* aBGColor,
                                      const nsRect&        aBorderRect,

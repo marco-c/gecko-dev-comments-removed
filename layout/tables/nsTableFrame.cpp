@@ -1417,7 +1417,7 @@ nsTableFrame::PaintTableBorderBackground(nsDisplayListBuilder* aBuilder,
       gfxContextMatrixAutoSaveRestore autoSR(ctx);
       ctx->SetMatrix(ctx->CurrentMatrix().Translate(devPixelOffset));
 
-      PaintBCBorders(aRenderingContext, aDirtyRect - aPt);
+      PaintBCBorders(*aRenderingContext.GetDrawTarget(), aDirtyRect - aPt);
     }
   }
 
@@ -6230,7 +6230,7 @@ struct BCBlockDirSeg
 
 
   void Paint(BCPaintBorderIterator& aIter,
-             nsRenderingContext&    aRenderingContext,
+             DrawTarget&            aDrawTarget,
              BCPixelSize            aInlineSegBSize);
   void AdvanceOffsetB();
   void IncludeCurrentBorder(BCPaintBorderIterator& aIter);
@@ -6280,8 +6280,7 @@ struct BCInlineDirSeg
                      BCPixelSize            aIStartSegISize);
   void AdvanceOffsetI();
   void IncludeCurrentBorder(BCPaintBorderIterator& aIter);
-  void Paint(BCPaintBorderIterator& aIter,
-             nsRenderingContext&    aRenderingContext);
+  void Paint(BCPaintBorderIterator& aIter, DrawTarget& aDrawTarget);
 
   nscoord            mOffsetI;       
   nscoord            mOffsetB;       
@@ -6325,8 +6324,8 @@ public:
   bool SetDamageArea(const nsRect& aDamageRect);
   void First();
   void Next();
-  void AccumulateOrPaintInlineDirSegment(nsRenderingContext& aRenderingContext);
-  void AccumulateOrPaintBlockDirSegment(nsRenderingContext& aRenderingContext);
+  void AccumulateOrPaintInlineDirSegment(DrawTarget& aDrawTarget);
+  void AccumulateOrPaintBlockDirSegment(DrawTarget& aDrawTarget);
   void ResetVerInfo();
   void StoreColumnWidth(int32_t aIndex);
   bool BlockDirSegmentOwnsCorner();
@@ -6959,7 +6958,7 @@ BCBlockDirSeg::GetBEndCorner(BCPaintBorderIterator& aIter,
 
 void
 BCBlockDirSeg::Paint(BCPaintBorderIterator& aIter,
-                     nsRenderingContext&    aRenderingContext,
+                     DrawTarget&            aDrawTarget,
                      BCPixelSize            aInlineSegBSize)
 {
   
@@ -7065,7 +7064,7 @@ BCBlockDirSeg::Paint(BCPaintBorderIterator& aIter,
     Swap(startBevelSide, endBevelSide);
     Swap(startBevelOffset, endBevelOffset);
   }
-  nsCSSRendering::DrawTableBorderSegment(aRenderingContext, style, color,
+  nsCSSRendering::DrawTableBorderSegment(aDrawTarget, style, color,
                                          aIter.mTableBgColor, physicalRect,
                                          appUnitsPerDevPixel,
                                          nsPresContext::AppUnitsPerCSSPixel(),
@@ -7171,8 +7170,7 @@ BCInlineDirSeg::GetIEndCorner(BCPaintBorderIterator& aIter,
 
 
 void
-BCInlineDirSeg::Paint(BCPaintBorderIterator& aIter,
-                      nsRenderingContext&    aRenderingContext)
+BCInlineDirSeg::Paint(BCPaintBorderIterator& aIter, DrawTarget& aDrawTarget)
 {
   
   LogicalSide side =
@@ -7270,7 +7268,7 @@ BCInlineDirSeg::Paint(BCPaintBorderIterator& aIter,
     Swap(startBevelSide, endBevelSide);
     Swap(startBevelOffset, endBevelOffset);
   }
-  nsCSSRendering::DrawTableBorderSegment(aRenderingContext, style, color,
+  nsCSSRendering::DrawTableBorderSegment(aDrawTarget, style, color,
                                          aIter.mTableBgColor, physicalRect,
                                          appUnitsPerDevPixel,
                                          nsPresContext::AppUnitsPerCSSPixel(),
@@ -7332,7 +7330,7 @@ BCPaintBorderIterator::BlockDirSegmentOwnsCorner()
 
 
 void
-BCPaintBorderIterator::AccumulateOrPaintInlineDirSegment(nsRenderingContext& aRenderingContext)
+BCPaintBorderIterator::AccumulateOrPaintInlineDirSegment(DrawTarget& aDrawTarget)
 {
 
   int32_t relColIndex = GetRelativeColIndex();
@@ -7365,7 +7363,7 @@ BCPaintBorderIterator::AccumulateOrPaintInlineDirSegment(nsRenderingContext& aRe
     if (mInlineSeg.mLength > 0) {
       mInlineSeg.GetIEndCorner(*this, iStartSegISize);
       if (mInlineSeg.mWidth > 0) {
-        mInlineSeg.Paint(*this, aRenderingContext);
+        mInlineSeg.Paint(*this, aDrawTarget);
       }
       mInlineSeg.AdvanceOffsetI();
     }
@@ -7380,7 +7378,7 @@ BCPaintBorderIterator::AccumulateOrPaintInlineDirSegment(nsRenderingContext& aRe
 
 
 void
-BCPaintBorderIterator::AccumulateOrPaintBlockDirSegment(nsRenderingContext& aRenderingContext)
+BCPaintBorderIterator::AccumulateOrPaintBlockDirSegment(DrawTarget& aDrawTarget)
 {
   BCBorderOwner borderOwner = eCellOwner;
   BCBorderOwner ignoreBorderOwner;
@@ -7407,7 +7405,7 @@ BCPaintBorderIterator::AccumulateOrPaintBlockDirSegment(nsRenderingContext& aRen
     if (blockDirSeg.mLength > 0) {
       blockDirSeg.GetBEndCorner(*this, inlineSegBSize);
       if (blockDirSeg.mWidth > 0) {
-        blockDirSeg.Paint(*this, aRenderingContext, inlineSegBSize);
+        blockDirSeg.Paint(*this, aDrawTarget, inlineSegBSize);
       }
       blockDirSeg.AdvanceOffsetB();
     }
@@ -7439,8 +7437,7 @@ BCPaintBorderIterator::ResetVerInfo()
 
 
 void
-nsTableFrame::PaintBCBorders(nsRenderingContext& aRenderingContext,
-                             const nsRect&       aDirtyRect)
+nsTableFrame::PaintBCBorders(DrawTarget& aDrawTarget, const nsRect& aDirtyRect)
 {
   
   
@@ -7459,7 +7456,7 @@ nsTableFrame::PaintBCBorders(nsRenderingContext& aRenderingContext,
   
   
   for (iter.First(); !iter.mAtEnd; iter.Next()) {
-    iter.AccumulateOrPaintBlockDirSegment(aRenderingContext);
+    iter.AccumulateOrPaintBlockDirSegment(aDrawTarget);
   }
 
   
@@ -7467,7 +7464,7 @@ nsTableFrame::PaintBCBorders(nsRenderingContext& aRenderingContext,
   
   iter.Reset();
   for (iter.First(); !iter.mAtEnd; iter.Next()) {
-    iter.AccumulateOrPaintInlineDirSegment(aRenderingContext);
+    iter.AccumulateOrPaintInlineDirSegment(aDrawTarget);
   }
 }
 
