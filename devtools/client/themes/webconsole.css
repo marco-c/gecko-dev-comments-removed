@@ -112,10 +112,18 @@ a {
 
 .stack-trace .frame-link-source,
 .message-location .frame-link-source {
+  
   direction: rtl;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.stack-trace .frame-link-source-inner,
+.message-location .frame-link-source-inner {
+  
+  direction: ltr;
+  unicode-bidi: embed;
 }
 
 .stack-trace .frame-link-function-display-name {

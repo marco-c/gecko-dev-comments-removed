@@ -216,6 +216,11 @@ module.exports = createClass({
 
     
     
+    let sourceInnerEl = dom.span({ className: "frame-link-source-inner" },
+      sourceElements);
+
+    
+    
     if (isLinkable) {
       sourceEl = dom.a({
         onClick: e => {
@@ -226,12 +231,12 @@ module.exports = createClass({
         className: "frame-link-source",
         draggable: false,
         title: l10n.getFormatStr("frame.viewsourceindebugger", tooltip)
-      }, sourceElements);
+      }, sourceInnerEl);
     } else {
       sourceEl = dom.span({
         className: "frame-link-source",
         title: tooltip,
-      }, sourceElements);
+      }, sourceInnerEl);
     }
     elements.push(sourceEl);
 
