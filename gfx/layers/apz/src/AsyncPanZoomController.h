@@ -1103,6 +1103,8 @@ private:
 
 private:
   
+  Mutex mCheckerboardEventLock;
+  
   
   
   UniquePtr<CheckerboardEvent> mCheckerboardEvent;
