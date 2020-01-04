@@ -77,18 +77,10 @@ function setWindowName()
   var certDetails = bundle.getString('certDetails');
   if (myName != "") {
     document.title = certDetails + '"' + myName + '"'; 
-    
-    
-    
-    
-    
-    
-
-    
     cert = certdb.findCertByNickname(myName);
   } else {
     var params = window.arguments[0].QueryInterface(nsIDialogParamBlock);
-    var cert = params.objects.queryElementAt(0, nsIX509Cert);
+    cert = params.objects.queryElementAt(0, nsIX509Cert);
     document.title = certDetails + '"' + cert.windowTitle + '"'; 
   }
 

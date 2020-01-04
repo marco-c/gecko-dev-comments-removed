@@ -28,7 +28,7 @@ function onLoad()
   try {
      params = window.arguments[0].QueryInterface(nsIDialogParamBlock);
      tokenName = params.GetString(1);
-  } catch(exception) {
+  } catch (e) {
       
       
       

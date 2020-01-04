@@ -72,7 +72,7 @@ function tamper(inFilePath, outFilePath, modifications, newEntries) {
 
     
     
-    for(var name in modifications) {
+    for (let name in modifications) {
       if (modifications.hasOwnProperty(name)) {
         throw "input file was missing expected entries: " + name;
       }
