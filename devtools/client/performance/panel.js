@@ -29,7 +29,7 @@ PerformancePanel.prototype = {
 
 
 
-  open: Task.async(function*() {
+  open: Task.async(function* () {
     if (this._opening) {
       return this._opening;
     }
@@ -77,7 +77,7 @@ PerformancePanel.prototype = {
     return this.toolbox.target;
   },
 
-  destroy: Task.async(function*() {
+  destroy: Task.async(function* () {
     
     if (this._destroyed) {
       return;

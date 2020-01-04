@@ -39,7 +39,7 @@ function performTest() {
 function focusMainWindow() {
   
   window.addEventListener("focus", onFocus, true);
-  info("Focusing main window.")
+  info("Focusing main window.");
 
   
   
@@ -50,7 +50,7 @@ function focusMainWindow() {
 
 function onFocus() {
   window.removeEventListener("focus", onFocus, true);
-  info("Main window focused.")
+  info("Main window focused.");
 
   gFocusedWindow = window;
   testPause();
@@ -126,7 +126,7 @@ function maybeEndTest() {
   }
 }
 
-registerCleanupFunction(function() {
+registerCleanupFunction(function () {
   
   
   Services.prefs.setCharPref("devtools.toolbox.host", Toolbox.HostType.BOTTOM);

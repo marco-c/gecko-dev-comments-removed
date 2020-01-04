@@ -67,7 +67,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  initialize: function(animationsActor, player) {
+  initialize: function (animationsActor, player) {
     Actor.prototype.initialize.call(this, animationsActor.conn);
 
     this.onAnimationMutation = this.onAnimationMutation.bind(this);
@@ -90,7 +90,7 @@ var AnimationPlayerActor = ActorClass({
     }
   },
 
-  destroy: function() {
+  destroy: function () {
     
     
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
@@ -141,9 +141,9 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  release: method(function() {}, {release: true}),
+  release: method(function () {}, {release: true}),
 
-  form: function(detail) {
+  form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -160,22 +160,22 @@ var AnimationPlayerActor = ActorClass({
     return data;
   },
 
-  isCssAnimation: function(player = this.player) {
+  isCssAnimation: function (player = this.player) {
     return player instanceof this.window.CSSAnimation;
   },
 
-  isCssTransition: function(player = this.player) {
+  isCssTransition: function (player = this.player) {
     return player instanceof this.window.CSSTransition;
   },
 
-  isScriptAnimation: function(player = this.player) {
+  isScriptAnimation: function (player = this.player) {
     return player instanceof this.window.Animation && !(
       player instanceof this.window.CSSAnimation ||
       player instanceof this.window.CSSTransition
     );
   },
 
-  getType: function() {
+  getType: function () {
     if (this.isCssAnimation()) {
       return ANIMATION_TYPES.CSS_ANIMATION;
     } else if (this.isCssTransition()) {
@@ -193,7 +193,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getName: function() {
+  getName: function () {
     if (this.player.id) {
       return this.player.id;
     } else if (this.isCssAnimation()) {
@@ -209,7 +209,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getDuration: function() {
+  getDuration: function () {
     return this.player.effect.getComputedTiming().duration;
   },
 
@@ -217,7 +217,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getDelay: function() {
+  getDelay: function () {
     return this.player.effect.getComputedTiming().delay;
   },
 
@@ -225,7 +225,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getEndDelay: function() {
+  getEndDelay: function () {
     return this.player.effect.getComputedTiming().endDelay;
   },
 
@@ -235,7 +235,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getIterationCount: function() {
+  getIterationCount: function () {
     let iterations = this.player.effect.getComputedTiming().iterations;
     return iterations === "Infinity" ? null : iterations;
   },
@@ -245,11 +245,11 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getIterationStart: function() {
+  getIterationStart: function () {
     return this.player.effect.getComputedTiming().iterationStart;
   },
 
-  getPropertiesCompositorStatus: function() {
+  getPropertiesCompositorStatus: function () {
     let properties = this.player.effect.getProperties();
     return properties.map(prop => {
       return {
@@ -264,7 +264,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getState: function() {
+  getState: function () {
     
     
     
@@ -313,7 +313,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getCurrentState: method(function() {
+  getCurrentState: method(function () {
     let newState = this.getState();
 
     
@@ -345,7 +345,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  onAnimationMutation: function(mutations) {
+  onAnimationMutation: function (mutations) {
     let isCurrentAnimation = animation => animation === this.player;
     let hasCurrentAnimation = animations => animations.some(isCurrentAnimation);
     let hasChanged = false;
@@ -380,7 +380,7 @@ var AnimationPlayerActor = ActorClass({
   
 
 
-  pause: method(function() {
+  pause: method(function () {
     this.player.pause();
     return this.player.ready;
   }, {
@@ -392,7 +392,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  play: method(function() {
+  play: method(function () {
     this.player.play();
     return this.player.ready;
   }, {
@@ -411,7 +411,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  ready: method(function() {
+  ready: method(function () {
     return this.player.ready;
   }, {
     request: {},
@@ -421,7 +421,7 @@ var AnimationPlayerActor = ActorClass({
   
 
 
-  setCurrentTime: method(function(currentTime) {
+  setCurrentTime: method(function (currentTime) {
     this.player.currentTime = currentTime * this.player.playbackRate;
   }, {
     request: {
@@ -433,7 +433,7 @@ var AnimationPlayerActor = ActorClass({
   
 
 
-  setPlaybackRate: method(function(playbackRate) {
+  setPlaybackRate: method(function (playbackRate) {
     this.player.playbackRate = playbackRate;
   }, {
     request: {
@@ -447,7 +447,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getFrames: method(function() {
+  getFrames: method(function () {
     return this.player.effect.getKeyframes();
   }, {
     request: {},
@@ -461,7 +461,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-  getProperties: method(function() {
+  getProperties: method(function () {
     return this.player.effect.getProperties().map(property => {
       return {name: property.property, values: property.values};
     });
@@ -476,13 +476,13 @@ var AnimationPlayerActor = ActorClass({
 exports.AnimationPlayerActor = AnimationPlayerActor;
 
 var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
-  initialize: function(conn, form, detail, ctx) {
+  initialize: function (conn, form, detail, ctx) {
     Front.prototype.initialize.call(this, conn, form, detail, ctx);
 
     this.state = {};
   },
 
-  form: function(form, detail) {
+  form: function (form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -491,7 +491,7 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
     this.state = this.initialState;
   },
 
-  destroy: function() {
+  destroy: function () {
     Front.prototype.destroy.call(this);
   },
 
@@ -535,7 +535,7 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
 
 
 
-  onChanged: protocol.preEvent("changed", function(partialState) {
+  onChanged: protocol.preEvent("changed", function (partialState) {
     let {state} = this.reconstructState(partialState);
     this.state = state;
   }),
@@ -544,7 +544,7 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
 
 
 
-  refreshState: Task.async(function*() {
+  refreshState: Task.async(function* () {
     let data = yield this.getCurrentState();
     if (this.currentStateHasChanged) {
       this.state = data;
@@ -555,7 +555,7 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
 
 
 
-  getCurrentState: protocol.custom(function() {
+  getCurrentState: protocol.custom(function () {
     this.currentStateHasChanged = false;
     return this._getCurrentState().then(partialData => {
       let {state, hasChanged} = this.reconstructState(partialData);
@@ -566,7 +566,7 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
     impl: "_getCurrentState"
   }),
 
-  reconstructState: function(data) {
+  reconstructState: function (data) {
     let hasChanged = false;
 
     for (let key in this.state) {
@@ -605,7 +605,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
     }
   },
 
-  initialize: function(conn, tabActor) {
+  initialize: function (conn, tabActor) {
     Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
 
@@ -618,7 +618,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
     events.on(this.tabActor, "navigate", this.onNavigate);
   },
 
-  destroy: function() {
+  destroy: function () {
     Actor.prototype.destroy.call(this);
     events.off(this.tabActor, "will-navigate", this.onWillNavigate);
     events.off(this.tabActor, "navigate", this.onNavigate);
@@ -631,7 +631,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  disconnect: function() {
+  disconnect: function () {
     this.destroy();
   },
 
@@ -643,7 +643,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  setWalkerActor: method(function(walker) {
+  setWalkerActor: method(function (walker) {
     this.walker = walker;
   }, {
     request: {
@@ -662,7 +662,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  getAnimationPlayersForNode: method(function(nodeActor) {
+  getAnimationPlayersForNode: method(function (nodeActor) {
     let animations = nodeActor.rawNode.getAnimations({subtree: true});
 
     
@@ -698,7 +698,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
     }
   }),
 
-  onAnimationMutation: function(mutations) {
+  onAnimationMutation: function (mutations) {
     let eventData = [];
     let readyPromises = [];
 
@@ -776,7 +776,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  stopAnimationPlayerUpdates: method(function() {
+  stopAnimationPlayerUpdates: method(function () {
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
       this.observer.disconnect();
     }
@@ -794,7 +794,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  getAllAnimations: function(rootNode, traverseFrames) {
+  getAllAnimations: function (rootNode, traverseFrames) {
     if (!traverseFrames) {
       return rootNode.getAnimations({subtree: true});
     }
@@ -806,13 +806,13 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
     return animations;
   },
 
-  onWillNavigate: function({isTopLevel}) {
+  onWillNavigate: function ({isTopLevel}) {
     if (isTopLevel) {
       this.stopAnimationPlayerUpdates();
     }
   },
 
-  onNavigate: function({isTopLevel}) {
+  onNavigate: function ({isTopLevel}) {
     if (isTopLevel) {
       this.allAnimationsPaused = false;
     }
@@ -821,7 +821,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
   
 
 
-  pauseAll: method(function() {
+  pauseAll: method(function () {
     let readyPromises = [];
     
     
@@ -841,7 +841,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  playAll: method(function() {
+  playAll: method(function () {
     let readyPromises = [];
     
     
@@ -857,7 +857,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
     response: {}
   }),
 
-  toggleAll: method(function() {
+  toggleAll: method(function () {
     if (this.allAnimationsPaused) {
       return this.playAll();
     }
@@ -873,7 +873,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  toggleSeveral: method(function(players, shouldPause) {
+  toggleSeveral: method(function (players, shouldPause) {
     return promise.all(players.map(player => {
       return shouldPause ? player.pause() : player.play();
     }));
@@ -891,7 +891,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  setCurrentTimes: method(function(players, time, shouldPause) {
+  setCurrentTimes: method(function (players, time, shouldPause) {
     return promise.all(players.map(player => {
       let pause = shouldPause ? player.pause() : promise.resolve();
       return pause.then(() => player.setCurrentTime(time));
@@ -910,7 +910,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 
 
 
-  setPlaybackRates: method(function(players, rate) {
+  setPlaybackRates: method(function (players, rate) {
     for (let player of players) {
       player.setPlaybackRate(rate);
     }
@@ -924,12 +924,12 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
 });
 
 var AnimationsFront = exports.AnimationsFront = FrontClass(AnimationsActor, {
-  initialize: function(client, {animationsActor}) {
+  initialize: function (client, {animationsActor}) {
     Front.prototype.initialize.call(this, client, {actor: animationsActor});
     this.manage(this);
   },
 
-  destroy: function() {
+  destroy: function () {
     Front.prototype.destroy.call(this);
   }
 });

@@ -41,7 +41,7 @@ function consoleOpened(HUD) {
     
     waitForClipboard(
       stringToCopy,
-      function() {
+      function () {
         clipboardHelper.copyString(stringToCopy);
       },
       onClipboardCopy,

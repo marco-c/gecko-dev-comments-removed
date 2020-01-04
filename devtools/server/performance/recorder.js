@@ -171,7 +171,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
-  _onConsoleProfileStart: Task.async(function *({ profileLabel, currentTime: startTime }) {
+  _onConsoleProfileStart: Task.async(function* ({ profileLabel, currentTime: startTime }) {
     let recordings = this._recordings;
 
     
@@ -198,7 +198,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
-  _onConsoleProfileEnd: Task.async(function *(data) {
+  _onConsoleProfileEnd: Task.async(function* (data) {
     
     
     if (!data) {
@@ -286,7 +286,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
-  canCurrentlyRecord: function() {
+  canCurrentlyRecord: function () {
     let success = true;
     let reasons = [];
 
@@ -318,10 +318,10 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
-  startRecording: Task.async(function*(options) {
+  startRecording: Task.async(function* (options) {
     let profilerStart, timelineStart, memoryStart;
 
-    profilerStart = Task.spawn(function *() {
+    profilerStart = Task.spawn(function* () {
       let data = yield this._profiler.isActive();
       if (data.isActive) {
         return data;
@@ -383,7 +383,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
-  stopRecording: Task.async(function *(model) {
+  stopRecording: Task.async(function* (model) {
     
     
     
@@ -482,7 +482,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
-function getPerformanceRecordingPrefs () {
+function getPerformanceRecordingPrefs() {
   return {
     withMarkers: true,
     withMemory: Services.prefs.getBoolPref("devtools.performance.ui.enable-memory"),

@@ -62,7 +62,7 @@ var Timeline = exports.Timeline = Class({
   
 
 
-  destroy: function() {
+  destroy: function () {
     this.stop();
 
     events.off(this.tabActor, "window-ready", this._onWindowReady);
@@ -109,7 +109,7 @@ var Timeline = exports.Timeline = Class({
 
 
 
-  _pullTimelineData: function() {
+  _pullTimelineData: function () {
     let docShells = this.docShells;
     if (!this._isRecording || !docShells.length) {
       return;
@@ -207,7 +207,7 @@ var Timeline = exports.Timeline = Class({
 
 
 
-  start: Task.async(function *({
+  start: Task.async(function* ({
     withMarkers,
     withTicks,
     withMemory,
@@ -264,7 +264,7 @@ var Timeline = exports.Timeline = Class({
   
 
 
-  stop: Task.async(function *() {
+  stop: Task.async(function* () {
     let docShells = this.docShells;
     if (!docShells.length) {
       return -1;
@@ -316,7 +316,7 @@ var Timeline = exports.Timeline = Class({
 
 
 
-  _onWindowReady: function({ window }) {
+  _onWindowReady: function ({ window }) {
     if (this._isRecording) {
       let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                            .getInterface(Ci.nsIWebNavigation)

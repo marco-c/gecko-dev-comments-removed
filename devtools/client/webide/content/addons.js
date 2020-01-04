@@ -10,10 +10,10 @@ const Strings = Services.strings.createBundle("chrome://devtools/locale/webide.p
 
 window.addEventListener("load", function onLoad() {
   window.removeEventListener("load", onLoad);
-  document.querySelector("#aboutaddons").onclick = function() {
+  document.querySelector("#aboutaddons").onclick = function () {
     let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
     browserWin.BrowserOpenAddonsMgr("addons://list/extension");
-  }
+  };
   document.querySelector("#close").onclick = CloseUI;
   GetAvailableAddons().then(BuildUI, (e) => {
     console.error(e);
@@ -86,7 +86,7 @@ function BuildItem(addon, type) {
       li.setAttribute("addon", type);
       try {
         name.textContent = Strings.GetStringFromName("addons_adapters_label");
-      } catch(e) {
+      } catch (e) {
         
         
         name.textContent = "Tools Adapters Add-on";

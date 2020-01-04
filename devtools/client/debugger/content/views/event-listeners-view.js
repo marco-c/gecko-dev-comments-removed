@@ -3,8 +3,8 @@
 
 "use strict";
 
-const actions = require('../actions/event-listeners');
-const { bindActionCreators } = require('devtools/client/shared/vendor/redux');
+const actions = require("../actions/event-listeners");
+const { bindActionCreators } = require("devtools/client/shared/vendor/redux");
 const { Heritage, WidgetMethods } = require("devtools/client/shared/widgets/view-helpers");
 
 
@@ -26,7 +26,7 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the EventListenersView");
 
     this.widget = new SideMenuWidget(document.getElementById("event-listeners"), {
@@ -47,14 +47,14 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  destroy: function() {
+  destroy: function () {
     dumpn("Destroying the EventListenersView");
 
     this.widget.removeEventListener("check", this._onCheck, false);
     this.widget.removeEventListener("click", this._onClick, false);
   },
 
-  renderListeners: function(listeners) {
+  renderListeners: function (listeners) {
     listeners.forEach(listener => {
       this.addListener(listener, { staged: true });
     });
@@ -72,7 +72,7 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  addListener: function(aListener, aOptions = {}) {
+  addListener: function (aListener, aOptions = {}) {
     let { node: { selector }, function: { url }, type } = aListener;
     if (!type) return;
 
@@ -186,7 +186,7 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  getAllEvents: function() {
+  getAllEvents: function () {
     return this.attachments.map(e => e.type);
   },
 
@@ -196,7 +196,7 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  getCheckedEvents: function() {
+  getCheckedEvents: function () {
     return this.attachments.filter(e => e.checkboxState).map(e => e.type);
   },
 
@@ -212,7 +212,7 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _createItemView: function(aType, aSelector, aUrl) {
+  _createItemView: function (aType, aSelector, aUrl) {
     let container = document.createElement("hbox");
     container.className = "dbg-event-listener";
 
@@ -254,7 +254,7 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onCheck: function({ detail: { description, checked }, target }) {
+  _onCheck: function ({ detail: { description, checked }, target }) {
     if (description == "item") {
       this.getItemForElement(target).attachment.checkboxState = checked;
 
@@ -271,7 +271,7 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onClick: function({ target }) {
+  _onClick: function ({ target }) {
     
     
     

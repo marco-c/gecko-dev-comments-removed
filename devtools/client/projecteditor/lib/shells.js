@@ -28,7 +28,7 @@ var Shell = Class({
 
 
 
-  initialize: function(host, resource) {
+  initialize: function (host, resource) {
     this.host = host;
     this.doc = host.document;
     this.resource = resource;
@@ -53,7 +53,7 @@ var Shell = Class({
 
 
 
-  load: function() {
+  load: function () {
     this.editorDeferred = promise.defer();
     this.editorLoaded = this.editorDeferred.promise;
     this.editor.load(this.resource);
@@ -62,7 +62,7 @@ var Shell = Class({
   
 
 
-  destroy: function() {
+  destroy: function () {
     this.editor.destroy();
     this.resource.destroy();
   },
@@ -71,7 +71,7 @@ var Shell = Class({
 
 
 
-  _editorTypeForResource: function() {
+  _editorTypeForResource: function () {
     let resource = this.resource;
     let constructor = EditorTypeForResource(resource);
 
@@ -106,7 +106,7 @@ var ShellDeck = Class({
 
 
 
-  initialize: function(host, document) {
+  initialize: function (host, document) {
     this.doc = document;
     this.host = host;
     this.deck = this.doc.createElement("deck");
@@ -126,7 +126,7 @@ var ShellDeck = Class({
 
 
 
-  open: function(defaultResource) {
+  open: function (defaultResource) {
     let shell = this.shellFor(defaultResource);
     if (!shell) {
       shell = this._createShell(defaultResource);
@@ -141,7 +141,7 @@ var ShellDeck = Class({
 
 
 
-  _createShell: function(defaultResource) {
+  _createShell: function (defaultResource) {
     let shell = Shell(this.host, defaultResource);
 
     shell.editorAppended.then(() => {
@@ -163,7 +163,7 @@ var ShellDeck = Class({
 
 
 
-  removeResource: function(resource) {
+  removeResource: function (resource) {
     let shell = this.shellFor(resource);
     if (shell) {
       this.shells.delete(resource);
@@ -171,7 +171,7 @@ var ShellDeck = Class({
     }
   },
 
-  destroy: function() {
+  destroy: function () {
     for (let [resource, shell] of this.shells.entries()) {
       this.shells.delete(resource);
       shell.destroy();
@@ -185,7 +185,7 @@ var ShellDeck = Class({
 
 
 
-  selectShell: function(shell) {
+  selectShell: function (shell) {
     
     if (this._activeShell != shell) {
       if (this._activeShell) {
@@ -214,7 +214,7 @@ var ShellDeck = Class({
 
 
 
-  shellFor: function(resource) {
+  shellFor: function (resource) {
     return this.shells.get(resource);
   },
 

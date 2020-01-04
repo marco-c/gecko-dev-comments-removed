@@ -42,7 +42,7 @@ var ContextView = {
   
 
 
-  initialize: function() {
+  initialize: function () {
     this._onGraphClick = this._onGraphClick.bind(this);
     this._onThemeChange = this._onThemeChange.bind(this);
     this._onStartContext = this._onStartContext.bind(this);
@@ -59,7 +59,7 @@ var ContextView = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     
     
     if (this._zoomBinding) {
@@ -158,7 +158,7 @@ var ContextView = {
 
     
     let oldDrawNodes = renderer.drawNodes();
-    renderer.drawNodes(function(graph, root) {
+    renderer.drawNodes(function (graph, root) {
       let svgNodes = oldDrawNodes(graph, root);
       svgNodes.each(function (n) {
         let node = graph.node(n);
@@ -174,7 +174,7 @@ var ContextView = {
     let oldDrawEdgePaths = renderer.drawEdgePaths();
     let defaultClasses = "edgePath enter";
 
-    renderer.drawEdgePaths(function(graph, root) {
+    renderer.drawEdgePaths(function (graph, root) {
       let svgEdges = oldDrawEdgePaths(graph, root);
       svgEdges.each(function (e) {
         let edge = graph.edge(e);

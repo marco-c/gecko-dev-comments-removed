@@ -29,7 +29,7 @@ function test() {
     info("hud.outputNode.textContent:\n" + hud.outputNode.textContent);
     let timestampNodes = hud.outputNode.querySelectorAll("span.timestamp");
     let aTimestampMilliseconds = Array.prototype.map.call(timestampNodes,
-      function(value) {
+      function (value) {
         
         
         

@@ -63,7 +63,7 @@ const GRAPH_REGION_STRIPES_COLOR = "rgba(237,38,85,0.2)";
 
 
 
-this.LineGraphWidget = function(parent, options = {}, ...args) {
+this.LineGraphWidget = function (parent, options = {}, ...args) {
   let { metric, min, max, avg } = options;
 
   this._showMin = min !== false;
@@ -142,7 +142,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  setDataFromTimestamps: Task.async(function*(timestamps, interval, duration) {
+  setDataFromTimestamps: Task.async(function* (timestamps, interval, duration) {
     let {
       plottedData,
       plottedMinMaxSum
@@ -158,7 +158,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildGraphImage: function() {
+  buildGraphImage: function () {
     let { canvas, ctx } = this._getNamedCanvas("line-graph-data");
     let width = this._width;
     let height = this._height;
@@ -238,7 +238,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _drawOverlays: function(ctx, minValue, maxValue, avgValue, dataScaleY) {
+  _drawOverlays: function (ctx, minValue, maxValue, avgValue, dataScaleY) {
     let width = this._width;
     let height = this._height;
     let totalTicks = this._data.length;
@@ -330,7 +330,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _createGutter: function() {
+  _createGutter: function () {
     let gutter = this._document.createElementNS(HTML_NS, "div");
     gutter.className = "line-graph-widget-gutter";
     gutter.setAttribute("hidden", true);
@@ -343,7 +343,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _createGutterLine: function(type) {
+  _createGutterLine: function (type) {
     let line = this._document.createElementNS(HTML_NS, "div");
     line.className = "line-graph-widget-gutter-line";
     line.setAttribute("type", type);
@@ -356,7 +356,7 @@ LineGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  _createTooltip: function(type, arrow, info, metric) {
+  _createTooltip: function (type, arrow, info, metric) {
     let tooltip = this._document.createElementNS(HTML_NS, "div");
     tooltip.className = "line-graph-widget-tooltip";
     tooltip.setAttribute("type", type);

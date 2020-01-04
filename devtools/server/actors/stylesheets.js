@@ -64,7 +64,7 @@ let modifiedStyleSheets = new WeakMap();
 
 
 var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
-  initialize: function(aUrl, aSourceMap, aParentActor) {
+  initialize: function (aUrl, aSourceMap, aParentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.url = aUrl;
@@ -75,7 +75,7 @@ var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
     this.text = null;
   },
 
-  form: function() {
+  form: function () {
     return {
       actor: this.actorID, 
       url: this.url,
@@ -83,7 +83,7 @@ var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
     };
   },
 
-  _getText: function() {
+  _getText: function () {
     if (this.text) {
       return promise.resolve(this.text);
     }
@@ -105,12 +105,12 @@ var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
   
 
 
-  getText: function() {
+  getText: function () {
     return this._getText().then((text) => {
       return new LongStringActor(this.conn, text || "");
     });
   }
-})
+});
 
 
 
@@ -129,7 +129,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     return this.mql ? this.mql.matches : null;
   },
 
-  initialize: function(aMediaRule, aParentActor) {
+  initialize: function (aMediaRule, aParentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.rawRule = aMediaRule;
@@ -143,7 +143,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
 
     try {
       this.mql = this.window.matchMedia(aMediaRule.media.mediaText);
-    } catch(e) {
+    } catch (e) {
     }
 
     if (this.mql) {
@@ -151,7 +151,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     }
   },
 
-  destroy: function()
+  destroy: function ()
   {
     if (this.mql) {
       this.mql.removeListener(this._matchesChange);
@@ -160,7 +160,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     protocol.Actor.prototype.destroy.call(this);
   },
 
-  form: function(detail) {
+  form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -178,7 +178,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     return form;
   },
 
-  _matchesChange: function() {
+  _matchesChange: function () {
     events.emit(this, "matches-change", this.matches);
   }
 });
@@ -190,7 +190,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   
   _originalSources: null,
 
-  toString: function() {
+  toString: function () {
     return "[StyleSheetActor " + this.actorID + "]";
   },
 
@@ -253,7 +253,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     return this._styleSheetIndex;
   },
 
-  initialize: function(aStyleSheet, aParentActor, aWindow) {
+  initialize: function (aStyleSheet, aParentActor, aWindow) {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.rawSheet = aStyleSheet;
@@ -274,7 +274,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  allRulesHaveSource: function() {
+  allRulesHaveSource: function () {
     let rules;
     try {
       rules = this.rawSheet.cssRules;
@@ -299,7 +299,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  getCSSRules: function() {
+  getCSSRules: function () {
     let rules;
     try {
       rules = this.rawSheet.cssRules;
@@ -343,7 +343,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  form: function(detail) {
+  form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -366,12 +366,12 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       title: this.rawSheet.title,
       system: !CssLogic.isContentStylesheet(this.rawSheet),
       styleSheetIndex: this.styleSheetIndex
-    }
+    };
 
     try {
       form.ruleCount = this.rawSheet.cssRules.length;
     }
-    catch(e) {
+    catch (e) {
       
       this.getCSSRules().then(() => {
         this._notifyPropertyChanged("ruleCount");
@@ -386,7 +386,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  toggleDisabled: function() {
+  toggleDisabled: function () {
     this.rawSheet.disabled = !this.rawSheet.disabled;
     this._notifyPropertyChanged("disabled");
 
@@ -400,14 +400,14 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _notifyPropertyChanged: function(property) {
+  _notifyPropertyChanged: function (property) {
     events.emit(this, "property-change", property, this.form()[property]);
   },
 
   
 
 
-  getText: function() {
+  getText: function () {
     return this._getText().then((text) => {
       return new LongStringActor(this.conn, text || "");
     });
@@ -420,7 +420,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getText: function() {
+  _getText: function () {
     if (typeof this.text === "string") {
       return promise.resolve(this.text);
     }
@@ -455,7 +455,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  getOriginalSources: function() {
+  getOriginalSources: function () {
     if (this._originalSources) {
       return promise.resolve(this._originalSources);
     }
@@ -469,7 +469,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _fetchOriginalSources: function() {
+  _fetchOriginalSources: function () {
     this._clearOriginalSources();
     this._originalSources = [];
 
@@ -484,7 +484,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
         this._originalSources.push(actor);
       }
       return this._originalSources;
-    })
+    });
   },
 
   
@@ -494,7 +494,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  getSourceMap: function() {
+  getSourceMap: function () {
     if (this._sourceMap) {
       return this._sourceMap;
     }
@@ -507,7 +507,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _fetchSourceMap: function() {
+  _fetchSourceMap: function () {
     let deferred = promise.defer();
 
     this._getText().then(sheetContent => {
@@ -552,7 +552,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   
 
 
-  _clearOriginalSources: function() {
+  _clearOriginalSources: function () {
     for (actor in this._originalSources) {
       this.unmanage(actor);
     }
@@ -562,7 +562,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   
 
 
-  _setSourceMapRoot: function(aSourceMap, aAbsSourceMapURL, aScriptURL) {
+  _setSourceMapRoot: function (aSourceMap, aAbsSourceMapURL, aScriptURL) {
     if (aScriptURL.startsWith("blob:")) {
       aScriptURL = aScriptURL.replace("blob:", "");
     }
@@ -583,7 +583,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _extractSourceMapUrl: function(content) {
+  _extractSourceMapUrl: function (content) {
     var matches = /sourceMappingURL\=([^\s\*]*)/.exec(content);
     if (matches) {
       return matches[1];
@@ -596,7 +596,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  getOriginalLocation: function(line, column) {
+  getOriginalLocation: function (line, column) {
     return this.getSourceMap().then((sourceMap) => {
       if (sourceMap) {
         return sourceMap.originalPositionFor({ line: line, column: column });
@@ -613,7 +613,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   
 
 
-  getMediaRules: function() {
+  getMediaRules: function () {
     return this._getMediaRules();
   },
 
@@ -623,7 +623,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getMediaRules: function() {
+  _getMediaRules: function () {
     return this.getCSSRules().then((rules) => {
       let mediaRules = [];
       for (let i = 0; i < rules.length; i++) {
@@ -647,7 +647,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getCSSCharset: function(channelCharset)
+  _getCSSCharset: function (channelCharset)
   {
     
     if (channelCharset && channelCharset.length > 0) {
@@ -700,7 +700,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  update: function(text, transition, kind = UPDATE_GENERAL) {
+  update: function (text, transition, kind = UPDATE_GENERAL) {
     DOMUtils.parseStyleSheet(this.rawSheet, text);
 
     modifiedStyleSheets.set(this.rawSheet, text);
@@ -725,7 +725,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _insertTransistionRule: function(kind) {
+  _insertTransistionRule: function (kind) {
     this.document.documentElement.classList.add(TRANSITION_CLASS);
 
     
@@ -742,7 +742,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _onTransitionEnd: function(kind)
+  _onTransitionEnd: function (kind)
   {
     this.document.documentElement.classList.remove(TRANSITION_CLASS);
 
@@ -754,7 +754,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
     events.emit(this, "style-applied", kind, this);
   }
-})
+});
 
 exports.StyleSheetActor = StyleSheetActor;
 
@@ -777,7 +777,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     return this.window.document;
   },
 
-  form: function()
+  form: function ()
   {
     return { actor: this.actorID };
   },
@@ -825,7 +825,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _shouldListSheet: function(doc, sheet) {
+  _shouldListSheet: function (doc, sheet) {
     
     
     
@@ -846,9 +846,9 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _addStyleSheets: function(win)
+  _addStyleSheets: function (win)
   {
-    return Task.spawn(function*() {
+    return Task.spawn(function* () {
       let doc = win.document;
       
       
@@ -892,8 +892,8 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _getImported: function(doc, styleSheet) {
-    return Task.spawn(function*() {
+  _getImported: function (doc, styleSheet) {
+    return Task.spawn(function* () {
       let rules = yield styleSheet.getCSSRules();
       let imported = [];
 
@@ -932,7 +932,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  addStyleSheet: function(text) {
+  addStyleSheet: function (text) {
     let parent = this.document.documentElement;
     let style = this.document.createElementNS("http://www.w3.org/1999/xhtml", "style");
     style.setAttribute("type", "text/css");

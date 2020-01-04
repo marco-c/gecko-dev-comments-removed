@@ -30,7 +30,7 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
-exports.getHighlighterUtils = function(toolbox) {
+exports.getHighlighterUtils = function (toolbox) {
   if (!toolbox || !toolbox.target) {
     throw new Error("Missing or invalid toolbox passed to getHighlighterUtils");
     return;
@@ -52,9 +52,9 @@ exports.getHighlighterUtils = function(toolbox) {
   
 
 
-  exported.release = function() {
+  exported.release = function () {
     toolbox = target = null;
-  }
+  };
 
   
 
@@ -62,9 +62,9 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  let isRemoteHighlightable = exported.isRemoteHighlightable = function() {
+  let isRemoteHighlightable = exported.isRemoteHighlightable = function () {
     return target.client.traits.highlightable;
-  }
+  };
 
   
 
@@ -82,7 +82,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
   let isInspectorInitialized = false;
   let requireInspector = generator => {
-    return Task.async(function*(...args) {
+    return Task.async(function* (...args) {
       if (!isInspectorInitialized) {
         yield toolbox.initInspector();
         isInspectorInitialized = true;
@@ -95,13 +95,13 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  let togglePicker = exported.togglePicker = function() {
+  let togglePicker = exported.togglePicker = function () {
     if (isPicking) {
       return stopPicker();
     } else {
       return startPicker();
     }
-  }
+  };
 
   
 
@@ -112,7 +112,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  let startPicker = exported.startPicker = requireInspector(function*() {
+  let startPicker = exported.startPicker = requireInspector(function* () {
     if (isPicking) {
       return;
     }
@@ -145,7 +145,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  let stopPicker = exported.stopPicker = requireInspector(function*() {
+  let stopPicker = exported.stopPicker = requireInspector(function* () {
     if (!isPicking) {
       return;
     }
@@ -203,7 +203,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   let highlightNodeFront = exported.highlightNodeFront = requireInspector(
-  function*(nodeFront, options={}) {
+  function* (nodeFront, options = {}) {
     if (!nodeFront) {
       return;
     }
@@ -228,7 +228,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   let highlightDomValueGrip = exported.highlightDomValueGrip = requireInspector(
-  function*(valueGrip, options={}) {
+  function* (valueGrip, options = {}) {
     let nodeFront = yield gripToNodeFront(valueGrip);
     if (nodeFront) {
       yield highlightNodeFront(nodeFront, options);
@@ -243,7 +243,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   let gripToNodeFront = exported.gripToNodeFront = requireInspector(
-  function*(grip) {
+  function* (grip) {
     return yield toolbox.walker.getNodeActorFromObjectActor(grip.actor);
   });
 
@@ -257,7 +257,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   let unhighlight = exported.unhighlight = Task.async(
-  function*(forceHide=false) {
+  function* (forceHide = false) {
     forceHide = forceHide || !DevToolsUtils.testing;
 
     
@@ -284,7 +284,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
   let getHighlighterByType = exported.getHighlighterByType = requireInspector(
-  function*(typeName) {
+  function* (typeName) {
     let highlighter = null;
 
     if (supportsCustomHighlighters()) {

@@ -12,7 +12,7 @@ const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
-function MockFront (blueprint) {
+function MockFront(blueprint) {
   EventEmitter.decorate(this);
 
   for (let [funcName, retVal] of blueprint) {
@@ -20,7 +20,7 @@ function MockFront (blueprint) {
   }
 }
 
-function MockTimelineFront () {
+function MockTimelineFront() {
   MockFront.call(this, [
     ["destroy"],
     ["start", 0],
@@ -49,7 +49,7 @@ function timelineActorSupported(target) {
 
 
 
-function callFrontMethod (method) {
+function callFrontMethod(method) {
   return function () {
     
     

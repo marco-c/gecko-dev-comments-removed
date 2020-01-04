@@ -66,7 +66,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  connect: Task.async(function*() {
+  connect: Task.async(function* () {
     if (this._connecting) {
       return this._connecting.promise;
     }
@@ -88,7 +88,7 @@ const LegacyPerformanceFront = Class({
   
 
 
-  destroy: Task.async(function*() {
+  destroy: Task.async(function* () {
     if (this._connecting) {
       yield this._connecting.promise;
     } else {
@@ -110,7 +110,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  _connectActors: Task.async(function*() {
+  _connectActors: Task.async(function* () {
     this._profiler = new Actors.LegacyProfilerFront(this._target);
     this._timeline = new Actors.LegacyTimelineFront(this._target);
 
@@ -166,7 +166,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  _onConsoleProfileStart: Task.async(function *(_, { profileLabel, currentTime: startTime }) {
+  _onConsoleProfileStart: Task.async(function* (_, { profileLabel, currentTime: startTime }) {
     let recordings = this._recordings;
 
     
@@ -191,7 +191,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  _onConsoleProfileStop: Task.async(function *(_, data) {
+  _onConsoleProfileStop: Task.async(function* (_, data) {
     
     
     if (!data) {
@@ -268,7 +268,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  startRecording: Task.async(function*(options = {}) {
+  startRecording: Task.async(function* (options = {}) {
     let model = new LegacyPerformanceRecording(normalizePerformanceFeatures(options, this.traits.features));
 
     
@@ -303,7 +303,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  stopRecording: Task.async(function*(model) {
+  stopRecording: Task.async(function* (model) {
     
     
     if (this._recordings.indexOf(model) === -1) {
@@ -411,7 +411,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-  getConfiguration: Task.async(function *() {
+  getConfiguration: Task.async(function* () {
     let profilerConfig = yield this._request("profiler", "getStartOptions");
     return profilerConfig;
   }),
@@ -453,7 +453,7 @@ const LegacyPerformanceFront = Class({
 
 
 
-function getLegacyPerformanceRecordingPrefs () {
+function getLegacyPerformanceRecordingPrefs() {
   return {
     withMarkers: true,
     withMemory: Services.prefs.getBoolPref("devtools.performance.ui.enable-memory"),

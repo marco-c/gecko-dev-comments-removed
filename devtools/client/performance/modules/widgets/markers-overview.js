@@ -43,7 +43,7 @@ const OVERVIEW_GROUP_VERTICAL_PADDING = 5;
 
 
 
-function MarkersOverview(parent, filter=[], ...args) {
+function MarkersOverview(parent, filter = [], ...args) {
   AbstractCanvasGraph.apply(this, [parent, "markers-overview", ...args]);
   this.setTheme();
   this.setFilter(filter);
@@ -95,7 +95,7 @@ MarkersOverview.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
   
 
 
-  clearView: function() {
+  clearView: function () {
     this.selectionEnabled = false;
     this.dropSelection();
     this.setData({ duration: 0, markers: [] });
@@ -105,7 +105,7 @@ MarkersOverview.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildGraphImage: function() {
+  buildGraphImage: function () {
     let { markers, duration } = this._data;
 
     let { canvas, ctx } = this._getNamedCanvas("markers-overview-data");

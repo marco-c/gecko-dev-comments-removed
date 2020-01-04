@@ -208,14 +208,14 @@ const ProfilerManager = (function () {
 
 
 
-    getBufferInfo: function() {
+    getBufferInfo: function () {
       let position = {}, totalSize = {}, generation = {};
       nsIProfilerModule.GetBufferInfo(position, totalSize, generation);
       return {
         position: position.value,
         totalSize: totalSize.value,
         generation: generation.value
-      }
+      };
     },
 
     
@@ -224,7 +224,7 @@ const ProfilerManager = (function () {
 
 
 
-    getStartOptions: function() {
+    getStartOptions: function () {
       return this._profilerStartOptions || {};
     },
 
@@ -234,7 +234,7 @@ const ProfilerManager = (function () {
 
 
 
-    isActive: function() {
+    isActive: function () {
       let isActive = nsIProfilerModule.IsActive();
       let elapsedTime = isActive ? nsIProfilerModule.getElapsedTime() : undefined;
       let { position, totalSize, generation } = this.getBufferInfo();
@@ -246,7 +246,7 @@ const ProfilerManager = (function () {
 
 
 
-    getSharedLibraryInformation: function() {
+    getSharedLibraryInformation: function () {
       return { sharedLibraryInformation: nsIProfilerModule.getSharedLibraryInformation() };
     },
 
@@ -405,7 +405,7 @@ var Profiler = exports.Profiler = Class({
     ProfilerManager.addInstance(this);
   },
 
-  destroy: function() {
+  destroy: function () {
     this.unregisterEventNotifications({ events: Array.from(this.subscribedEvents) });
     this.subscribedEvents = null;
     ProfilerManager.removeInstance(this);
@@ -424,37 +424,37 @@ var Profiler = exports.Profiler = Class({
   
 
 
-  getProfile: function (request={}) { return ProfilerManager.getProfile(request); },
+  getProfile: function (request = {}) { return ProfilerManager.getProfile(request); },
 
   
 
 
-  getFeatures: function() { return ProfilerManager.getFeatures(); },
+  getFeatures: function () { return ProfilerManager.getFeatures(); },
 
   
 
 
-  getBufferInfo: function() { return ProfilerManager.getBufferInfo(); },
+  getBufferInfo: function () { return ProfilerManager.getBufferInfo(); },
 
   
 
 
-  getStartOptions: function() { return ProfilerManager.getStartOptions(); },
+  getStartOptions: function () { return ProfilerManager.getStartOptions(); },
 
   
 
 
-  isActive: function() { return ProfilerManager.isActive(); },
+  isActive: function () { return ProfilerManager.isActive(); },
 
   
 
 
-  getSharedLibraryInformation: function() { return ProfilerManager.getSharedLibraryInformation(); },
+  getSharedLibraryInformation: function () { return ProfilerManager.getSharedLibraryInformation(); },
 
   
 
 
-  setProfilerStatusInterval: function(interval) { return ProfilerManager.setProfilerStatusInterval(interval); },
+  setProfilerStatusInterval: function (interval) { return ProfilerManager.setProfilerStatusInterval(interval); },
 
   
 
@@ -467,7 +467,7 @@ var Profiler = exports.Profiler = Class({
 
 
 
-  registerEventNotifications: function(data={}) {
+  registerEventNotifications: function (data = {}) {
     let response = [];
     (data.events || []).forEach(e => {
       if (!this.subscribedEvents.has(e)) {
@@ -488,7 +488,7 @@ var Profiler = exports.Profiler = Class({
 
 
 
-  unregisterEventNotifications: function(data={}) {
+  unregisterEventNotifications: function (data = {}) {
     let response = [];
     (data.events || []).forEach(e => {
       if (this.subscribedEvents.has(e)) {
@@ -507,7 +507,7 @@ var Profiler = exports.Profiler = Class({
 
 
 
-Profiler.canProfile = function() {
+Profiler.canProfile = function () {
   return nsIProfilerModule.CanProfile();
 };
 
@@ -533,7 +533,7 @@ function cycleBreaker(key, value) {
 
 
 
-function sanitizeHandler (handler, identifier) {
+function sanitizeHandler(handler, identifier) {
   return DevToolsUtils.makeInfallible(function (subject, topic, data) {
     subject = (subject && !Cu.isXrayWrapper(subject) && subject.wrappedJSObject) || subject;
     subject = JSON.parse(JSON.stringify(subject, cycleBreaker));

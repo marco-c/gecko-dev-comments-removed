@@ -20,7 +20,7 @@ function* runTests([win, sp]) {
   
   const source = "window.foobar = 7;";
   sp.setText(source);
-  let [,,result] = yield sp.display();
+  let [,, result] = yield sp.display();
   is(result, 7, "Display produced the expected output.");
 
   
@@ -32,7 +32,7 @@ function* runTests([win, sp]) {
 
   
   sp.setText(source);
-  let [,,result2] = yield sp.display();
+  let [,, result2] = yield sp.display();
   is(result2, 7,
      "Display produced the expected output after the toolbox was gone.");
 }

@@ -32,7 +32,7 @@ const APP_MAP = {
 
 var CACHED_INFO = null;
 
-function *getSystemInfo() {
+function* getSystemInfo() {
   if (CACHED_INFO) {
     return CACHED_INFO;
   }
@@ -181,7 +181,7 @@ function *getSystemInfo() {
   return info;
 }
 
-function getProfileLocation () {
+function getProfileLocation() {
   
   try {
     let profd = Services.dirsvc.get("ProfD", Ci.nsILocalFile);

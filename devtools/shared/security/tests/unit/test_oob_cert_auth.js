@@ -21,12 +21,12 @@ function connectClient(client) {
   });
 }
 
-add_task(function*() {
+add_task(function* () {
   initTestDebuggerServer();
 });
 
 
-add_task(function*() {
+add_task(function* () {
   equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
 
   
@@ -42,8 +42,8 @@ add_task(function*() {
 
   let listener = DebuggerServer.createListener();
   ok(listener, "Socket listener created");
-  listener.portOrPath = -1 ;
-  listener.encryption = true ;
+  listener.portOrPath = -1;
+  listener.encryption = true;
   listener.authenticator = serverAuth;
   yield listener.open();
   equal(DebuggerServer.listeningSockets, 1, "1 listening socket");
@@ -89,7 +89,7 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
+add_task(function* () {
   equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
 
   let oobData = promise.defer();
@@ -102,8 +102,8 @@ add_task(function*() {
 
   let listener = DebuggerServer.createListener();
   ok(listener, "Socket listener created");
-  listener.portOrPath = -1 ;
-  listener.encryption = true ;
+  listener.portOrPath = -1;
+  listener.encryption = true;
   listener.authenticator = serverAuth;
   yield listener.open();
   equal(DebuggerServer.listeningSockets, 1, "1 listening socket");
@@ -137,7 +137,7 @@ add_task(function*() {
       type: "echo",
       message
     });
-  } catch(e) {
+  } catch (e) {
     ok(true, "Sending a message failed");
     transport.close();
     listener.close();
@@ -149,7 +149,7 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
+add_task(function* () {
   equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
 
   
@@ -176,8 +176,8 @@ add_task(function*() {
 
   let listener = DebuggerServer.createListener();
   ok(listener, "Socket listener created");
-  listener.portOrPath = -1 ;
-  listener.encryption = true ;
+  listener.portOrPath = -1;
+  listener.encryption = true;
   listener.authenticator = serverAuth;
   yield listener.open();
   equal(DebuggerServer.listeningSockets, 1, "1 listening socket");
@@ -192,7 +192,7 @@ add_task(function*() {
         sha256: serverCert.sha256Fingerprint
       }
     });
-  } catch(e) {
+  } catch (e) {
     ok(true, "Client failed to connect as expected");
     listener.close();
     equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
@@ -203,7 +203,7 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
+add_task(function* () {
   equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
 
   
@@ -230,8 +230,8 @@ add_task(function*() {
 
   let listener = DebuggerServer.createListener();
   ok(listener, "Socket listener created");
-  listener.portOrPath = -1 ;
-  listener.encryption = true ;
+  listener.portOrPath = -1;
+  listener.encryption = true;
   listener.authenticator = serverAuth;
   yield listener.open();
   equal(DebuggerServer.listeningSockets, 1, "1 listening socket");
@@ -246,7 +246,7 @@ add_task(function*() {
         sha256: serverCert.sha256Fingerprint
       }
     });
-  } catch(e) {
+  } catch (e) {
     ok(true, "Client failed to connect as expected");
     listener.close();
     equal(DebuggerServer.listeningSockets, 0, "0 listening sockets");
@@ -256,6 +256,6 @@ add_task(function*() {
   do_throw("Connection unexpectedly succeeded");
 });
 
-add_task(function*() {
+add_task(function* () {
   DebuggerServer.destroy();
 });

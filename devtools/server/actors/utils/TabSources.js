@@ -22,7 +22,7 @@ loader.lazyRequireGetter(this, "SourceMapGenerator", "source-map", true);
 
 
 
-function TabSources(threadActor, allowSourceFn=() => true) {
+function TabSources(threadActor, allowSourceFn = () => true) {
   EventEmitter.decorate(this);
 
   this._thread = threadActor;
@@ -31,7 +31,7 @@ function TabSources(threadActor, allowSourceFn=() => true) {
   this._anonSourceMapId = 1;
   this.allowSource = source => {
     return !isHiddenSource(source) && allowSourceFn(source);
-  }
+  };
 
   this.blackBoxedSources = new Set();
   this.prettyPrintedSources = new Map();
@@ -58,15 +58,15 @@ TabSources.prototype = {
   
 
 
-  setOptions: function(options) {
+  setOptions: function (options) {
     let shouldReset = false;
 
-    if ('useSourceMaps' in options) {
+    if ("useSourceMaps" in options) {
       shouldReset = true;
       this._useSourceMaps = options.useSourceMaps;
     }
 
-    if ('autoBlackBox' in options) {
+    if ("autoBlackBox" in options) {
       shouldReset = true;
       this._autoBlackBox = options.autoBlackBox;
     }
@@ -83,7 +83,7 @@ TabSources.prototype = {
 
 
 
-  reset: function(opts={}) {
+  reset: function (opts = {}) {
     this._sourceActors = new Map();
     this._sourceMaps = new Map();
     this._sourceMappedSourceActors = Object.create(null);
@@ -109,7 +109,7 @@ TabSources.prototype = {
 
 
 
-  source: function  ({ source, originalUrl, generatedSource,
+  source: function ({ source, originalUrl, generatedSource,
                        isInlineSource, contentType }) {
     assert(source || (originalUrl && generatedSource),
            "TabSources.prototype.source needs an originalUrl or a source");
@@ -196,12 +196,12 @@ TabSources.prototype = {
     return actor;
   },
 
-  _emitNewSource: function(actor) {
+  _emitNewSource: function (actor) {
     if (!actor.source) {
       
       
       
-      this.emit('newSource', actor);
+      this.emit("newSource", actor);
     }
     else {
       
@@ -214,13 +214,13 @@ TabSources.prototype = {
       
       this.fetchSourceMap(actor.source).then(map => {
         if (!map) {
-          this.emit('newSource', actor);
+          this.emit("newSource", actor);
         }
       });
     }
   },
 
-  getSourceActor: function(source) {
+  getSourceActor: function (source) {
     if (source.url in this._sourceMappedSourceActors) {
       return this._sourceMappedSourceActors[source.url];
     }
@@ -229,11 +229,11 @@ TabSources.prototype = {
       return this._sourceActors.get(source);
     }
 
-    throw new Error('getSource: could not find source actor for ' +
-                    (source.url || 'source'));
+    throw new Error("getSource: could not find source actor for " +
+                    (source.url || "source"));
   },
 
-  getSourceActorByURL: function(url) {
+  getSourceActorByURL: function (url) {
     if (url) {
       for (let [source, actor] of this._sourceActors) {
         if (source.url === url) {
@@ -246,7 +246,7 @@ TabSources.prototype = {
       }
     }
 
-    throw new Error('getSourceByURL: could not find source for ' + url);
+    throw new Error("getSourceByURL: could not find source for " + url);
     return null;
   },
 
@@ -389,7 +389,7 @@ TabSources.prototype = {
 
 
 
-  createSourceActors: function(aSource) {
+  createSourceActors: function (aSource) {
     return this._createSourceMappedActors(aSource).then(actors => {
       let actor = this.createNonSourceMappedActor(aSource);
       return (actors || [actor]).filter(isNotNull);
@@ -432,7 +432,7 @@ TabSources.prototype = {
 
 
 
-  getSourceMap: function(aSource) {
+  getSourceMap: function (aSource) {
     return resolve(this._sourceMaps.get(aSource));
   },
 
@@ -440,7 +440,7 @@ TabSources.prototype = {
 
 
 
-  setSourceMap: function(aSource, aMap) {
+  setSourceMap: function (aSource, aMap) {
     this._sourceMaps.set(aSource, resolve(aMap));
   },
 
@@ -521,7 +521,7 @@ TabSources.prototype = {
 
 
 
-  clearSourceMapCache: function(aSourceMapURL, opts = { hard: false }) {
+  clearSourceMapCache: function (aSourceMapURL, opts = { hard: false }) {
     let oldSm = this._sourceMapCache[aSourceMapURL];
 
     if (opts.hard) {
@@ -552,7 +552,7 @@ TabSources.prototype = {
 
 
 
-  setSourceMapHard: function(aSource, aUrl, aMap) {
+  setSourceMapHard: function (aSource, aUrl, aMap) {
     let url = aUrl;
     if (!url) {
       
@@ -562,7 +562,7 @@ TabSources.prototype = {
       
       
       
-      url = "internal://sourcemap" + (this._anonSourceMapId++) + '/';
+      url = "internal://sourcemap" + (this._anonSourceMapId++) + "/";
     }
     aSource.sourceMapURL = url;
 
@@ -817,7 +817,7 @@ TabSources.prototype = {
 
 function isHiddenSource(aSource) {
   
-  return aSource.text === '() {\n}';
+  return aSource.text === "() {\n}";
 }
 
 

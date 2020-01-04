@@ -10,7 +10,7 @@ const URL = "data:text/html;charset=utf8,test for host sizes";
 
 var {Toolbox} = require("devtools/client/framework/toolbox");
 
-add_task(function*() {
+add_task(function* () {
   
   
   Services.prefs.setIntPref("devtools.toolbox.footer.height", 10000);
@@ -21,21 +21,21 @@ add_task(function*() {
   let {clientHeight: nboxHeight, clientWidth: nboxWidth} = nbox;
   let toolbox = yield gDevTools.showToolbox(TargetFactory.forTab(tab));
 
-  is (nbox.clientHeight, nboxHeight, "Opening the toolbox hasn't changed the height of the nbox");
-  is (nbox.clientWidth, nboxWidth, "Opening the toolbox hasn't changed the width of the nbox");
+  is(nbox.clientHeight, nboxHeight, "Opening the toolbox hasn't changed the height of the nbox");
+  is(nbox.clientWidth, nboxWidth, "Opening the toolbox hasn't changed the width of the nbox");
 
   let iframe = document.getAnonymousElementByAttribute(nbox, "class", "devtools-toolbox-bottom-iframe");
-  is (iframe.clientHeight, nboxHeight - 25, "The iframe fits within the available space");
+  is(iframe.clientHeight, nboxHeight - 25, "The iframe fits within the available space");
 
   yield toolbox.switchHost(Toolbox.HostType.SIDE);
   iframe = document.getAnonymousElementByAttribute(nbox, "class", "devtools-toolbox-side-iframe");
   iframe.style.minWidth = "1px"; 
-  is (iframe.clientWidth, nboxWidth - 25, "The iframe fits within the available space");
+  is(iframe.clientWidth, nboxWidth - 25, "The iframe fits within the available space");
 
   yield cleanup(toolbox);
 });
 
-add_task(function*() {
+add_task(function* () {
   
   
   Services.prefs.setIntPref("devtools.toolbox.footer.height", 100);
@@ -46,16 +46,16 @@ add_task(function*() {
   let {clientHeight: nboxHeight, clientWidth: nboxWidth} = nbox;
   let toolbox = yield gDevTools.showToolbox(TargetFactory.forTab(tab));
 
-  is (nbox.clientHeight, nboxHeight, "Opening the toolbox hasn't changed the height of the nbox");
-  is (nbox.clientWidth, nboxWidth, "Opening the toolbox hasn't changed the width of the nbox");
+  is(nbox.clientHeight, nboxHeight, "Opening the toolbox hasn't changed the height of the nbox");
+  is(nbox.clientWidth, nboxWidth, "Opening the toolbox hasn't changed the width of the nbox");
 
   let iframe = document.getAnonymousElementByAttribute(nbox, "class", "devtools-toolbox-bottom-iframe");
-  is (iframe.clientHeight, 100, "The iframe is resized properly");
+  is(iframe.clientHeight, 100, "The iframe is resized properly");
 
   yield toolbox.switchHost(Toolbox.HostType.SIDE);
   iframe = document.getAnonymousElementByAttribute(nbox, "class", "devtools-toolbox-side-iframe");
   iframe.style.minWidth = "1px"; 
-  is (iframe.clientWidth, 100, "The iframe is resized properly");
+  is(iframe.clientWidth, 100, "The iframe is resized properly");
 
   yield cleanup(toolbox);
 });

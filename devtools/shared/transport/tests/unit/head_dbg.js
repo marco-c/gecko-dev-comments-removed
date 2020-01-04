@@ -31,8 +31,8 @@ const { DebuggerClient } = require("devtools/shared/client/main");
 function testExceptionHook(ex) {
   try {
     do_report_unexpected_exception(ex);
-  } catch(ex) {
-    return {throw: ex}
+  } catch (ex) {
+    return {throw: ex};
   }
   return undefined;
 }
@@ -160,7 +160,7 @@ function attachTestThread(aClient, aTitle, aCallback) {
 
 
 function attachTestTabAndResume(aClient, aTitle, aCallback) {
-  attachTestThread(aClient, aTitle, function(aResponse, aTabClient, aThreadClient) {
+  attachTestThread(aClient, aTitle, function (aResponse, aTabClient, aThreadClient) {
     aThreadClient.resume(function (aResponse) {
       aCallback(aResponse, aTabClient, aThreadClient);
     });
@@ -182,7 +182,7 @@ function initTestDebuggerServer() {
 }
 
 function finishClient(aClient) {
-  aClient.close(function() {
+  aClient.close(function () {
     do_test_finished();
   });
 }
@@ -190,7 +190,7 @@ function finishClient(aClient) {
 
 
 
-function getFileUrl(aName, aAllowMissing=false) {
+function getFileUrl(aName, aAllowMissing = false) {
   let file = do_get_file(aName, aAllowMissing);
   return Services.io.newFileURI(file).spec;
 }
@@ -199,7 +199,7 @@ function getFileUrl(aName, aAllowMissing=false) {
 
 
 
-function getFilePath(aName, aAllowMissing=false) {
+function getFilePath(aName, aAllowMissing = false) {
   let file = do_get_file(aName, aAllowMissing);
   let path = Services.io.newFileURI(file).spec;
   let filePrePath = "file://";
@@ -240,7 +240,7 @@ function writeTestTempFile(aFileName, aContent) {
 
 
 
-var socket_transport = Task.async(function*() {
+var socket_transport = Task.async(function* () {
   if (!DebuggerServer.listeningSockets) {
     let AuthenticatorType = DebuggerServer.Authenticators.get("PROMPT");
     let authenticator = new AuthenticatorType.Server();
@@ -248,7 +248,7 @@ var socket_transport = Task.async(function*() {
       return DebuggerServer.AuthenticationResult.ALLOW;
     };
     let listener = DebuggerServer.createListener();
-    listener.portOrPath = -1 ;
+    listener.portOrPath = -1;
     listener.authenticator = authenticator;
     yield listener.open();
   }

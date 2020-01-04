@@ -11,7 +11,7 @@ const { flatten } = require("resource://devtools/shared/ThreadSafeDevToolsUtils.
 
 
 
-function Visitor() { };
+function Visitor() { }
 exports.Visitor = Visitor;
 
 
@@ -58,7 +58,7 @@ Visitor.prototype.exit = function (breakdown, report, edge) { };
 
 
 
-Visitor.prototype.count = function (breakdown, report, edge) { }
+Visitor.prototype.count = function (breakdown, report, edge) { };
 
 
 
@@ -93,7 +93,7 @@ EDGES.coarseType = function (breakdown, report) {
     { edge: "objects", referent: report.objects, breakdown: breakdown.objects },
     { edge: "scripts", referent: report.scripts, breakdown: breakdown.scripts },
     { edge: "strings", referent: report.strings, breakdown: breakdown.strings },
-    { edge: "other",   referent: report.other,   breakdown: breakdown.other   },
+    { edge: "other", referent: report.other, breakdown: breakdown.other },
   ];
 };
 
@@ -146,7 +146,7 @@ function recursiveWalk(breakdown, edge, report, visitor) {
     }
     visitor.exit(breakdown, report, edge);
   }
-};
+}
 
 
 
@@ -365,7 +365,7 @@ function diff(breakdown, startCensus, endCensus) {
   const visitor = new DiffVisitor(endCensus);
   walk(breakdown, startCensus, visitor);
   return visitor.results();
-};
+}
 exports.diff = diff;
 
 
@@ -399,7 +399,7 @@ const BUCKET = Object.freeze({ by: "bucket" });
 
 
 
-exports.countToBucketBreakdown = function(breakdown) {
+exports.countToBucketBreakdown = function (breakdown) {
   if (typeof breakdown !== "object" || !breakdown) {
     return breakdown;
   }
@@ -436,7 +436,7 @@ GetLeavesVisitor.prototype = Object.create(Visitor.prototype);
 
 
 
-GetLeavesVisitor.prototype.enter = function(breakdown, report, edge) {
+GetLeavesVisitor.prototype.enter = function (breakdown, report, edge) {
   this._index++;
   if (this._targetIndices.has(this._index)) {
     this._leaves.push(report);
@@ -446,7 +446,7 @@ GetLeavesVisitor.prototype.enter = function(breakdown, report, edge) {
 
 
 
-GetLeavesVisitor.prototype.leaves = function() {
+GetLeavesVisitor.prototype.leaves = function () {
   if (this._index === -1) {
     throw new Error("Attempt to call `leaves` before traversing report!");
   }
@@ -463,7 +463,7 @@ GetLeavesVisitor.prototype.leaves = function() {
 
 
 
-exports.getReportLeaves = function(indices, breakdown, report) {
+exports.getReportLeaves = function (indices, breakdown, report) {
   const visitor = new GetLeavesVisitor(indices);
   walk(breakdown, report, visitor);
   return visitor.leaves();
@@ -479,7 +479,7 @@ exports.getReportLeaves = function(indices, breakdown, report) {
 
 
 
-exports.getCensusIndividuals = function(indices, countBreakdown, snapshot) {
+exports.getCensusIndividuals = function (indices, countBreakdown, snapshot) {
   const bucketBreakdown = exports.countToBucketBreakdown(countBreakdown);
   const bucketReport = snapshot.takeCensus({ breakdown: bucketBreakdown });
   const buckets = exports.getReportLeaves(indices,

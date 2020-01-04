@@ -47,7 +47,7 @@ const FastListWidget = module.exports = function FastListWidget(aNode) {
   
   ViewHelpers.delegateWidgetAttributeMethods(this, aNode);
   ViewHelpers.delegateWidgetEventMethods(this, aNode);
-}
+};
 
 FastListWidget.prototype = {
   
@@ -63,7 +63,7 @@ FastListWidget.prototype = {
 
 
 
-  insertItemAt: function(aIndex, aContents, aAttachment={}) {
+  insertItemAt: function (aIndex, aContents, aAttachment = {}) {
     let element = this._templateElement.cloneNode();
     element.appendChild(aContents);
 
@@ -83,14 +83,14 @@ FastListWidget.prototype = {
 
 
 
-  flush: function() {
+  flush: function () {
     this._list.appendChild(this._fragment);
   },
 
   
 
 
-  removeAllItems: function() {
+  removeAllItems: function () {
     let parent = this._parent;
     let list = this._list;
 
@@ -107,7 +107,7 @@ FastListWidget.prototype = {
   
 
 
-  removeChild: function(child) {
+  removeChild: function (child) {
     throw new Error("Not yet implemented");
   },
 
@@ -149,7 +149,7 @@ FastListWidget.prototype = {
 
 
 
-  getItemAtIndex: function(index) {
+  getItemAtIndex: function (index) {
     return this._orderedMenuElementsArray[index];
   },
 
@@ -161,7 +161,7 @@ FastListWidget.prototype = {
 
 
 
-  setAttribute: function(name, value) {
+  setAttribute: function (name, value) {
     this._parent.setAttribute(name, value);
 
     if (name == "emptyText") {
@@ -175,7 +175,7 @@ FastListWidget.prototype = {
 
 
 
-  removeAttribute: function(name) {
+  removeAttribute: function (name) {
     this._parent.removeAttribute(name);
 
     if (name == "emptyText") {
@@ -189,7 +189,7 @@ FastListWidget.prototype = {
 
 
 
-  ensureElementIsVisible: function(element) {
+  ensureElementIsVisible: function (element) {
     if (!element) {
       return;
     }
@@ -215,7 +215,7 @@ FastListWidget.prototype = {
   
 
 
-  _showEmptyText: function() {
+  _showEmptyText: function () {
     if (this._emptyTextNode || !this._emptyTextValue) {
       return;
     }
@@ -230,7 +230,7 @@ FastListWidget.prototype = {
   
 
 
-  _removeEmptyText: function() {
+  _removeEmptyText: function () {
     if (!this._emptyTextNode) {
       return;
     }

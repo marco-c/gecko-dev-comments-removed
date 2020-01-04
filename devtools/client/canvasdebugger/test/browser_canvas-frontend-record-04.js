@@ -21,7 +21,7 @@ function* ifTestingSupported() {
   
   
   
-  yield waitUntil(function*() { return !(yield gFront.isRecording()); });
+  yield waitUntil(function* () { return !(yield gFront.isRecording()); });
 
   
   evalInDebuggee("start();");

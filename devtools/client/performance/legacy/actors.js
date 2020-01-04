@@ -29,7 +29,7 @@ const PROFILER_ACTOR_METHODS = [
 
 
 
-function LegacyProfilerFront (target) {
+function LegacyProfilerFront(target) {
   this._target = target;
   this._onProfilerEvent = this._onProfilerEvent.bind(this);
   this._checkProfilerStatus = this._checkProfilerStatus.bind(this);
@@ -42,7 +42,7 @@ LegacyProfilerFront.prototype = {
   EVENTS: ["console-api-profiler", "profiler-stopped"],
 
   
-  connect: Task.async(function*() {
+  connect: Task.async(function* () {
     let target = this._target;
     this._front = new ProfilerFront(target.client, target.form);
 
@@ -60,7 +60,7 @@ LegacyProfilerFront.prototype = {
   
 
 
-  destroy: Task.async(function *() {
+  destroy: Task.async(function* () {
     if (this._poller) {
       yield this._poller.destroy();
     }
@@ -75,7 +75,7 @@ LegacyProfilerFront.prototype = {
 
 
 
-  start: Task.async(function *(options={}) {
+  start: Task.async(function* (options = {}) {
     
     
     
@@ -105,7 +105,7 @@ LegacyProfilerFront.prototype = {
 
     let startInfo = yield this.startProfiler(profilerOptions);
     let startTime = 0;
-    if ('currentTime' in startInfo) {
+    if ("currentTime" in startInfo) {
       startTime = startInfo.currentTime;
     }
 
@@ -117,14 +117,14 @@ LegacyProfilerFront.prototype = {
 
 
 
-  stop: Task.async(function *() {
+  stop: Task.async(function* () {
     yield this._poller.off();
   }),
 
   
 
 
-  getStatus: Task.async(function *() {
+  getStatus: Task.async(function* () {
     let data = yield (CompatUtils.callFrontMethod("isActive").call(this));
     
     
@@ -151,7 +151,7 @@ LegacyProfilerFront.prototype = {
   
 
 
-  getProfile: Task.async(function *(options) {
+  getProfile: Task.async(function* (options) {
     let profilerData = yield (CompatUtils.callFrontMethod("getProfile").call(this, options));
     
     
@@ -186,7 +186,7 @@ LegacyProfilerFront.prototype = {
     }
   },
 
-  _checkProfilerStatus: Task.async(function *() {
+  _checkProfilerStatus: Task.async(function* () {
     
     yield this.getStatus();
   }),
@@ -197,7 +197,7 @@ LegacyProfilerFront.prototype = {
 
 
 
-function LegacyTimelineFront (target) {
+function LegacyTimelineFront(target) {
   this._target = target;
   EventEmitter.decorate(this);
 }
@@ -205,7 +205,7 @@ function LegacyTimelineFront (target) {
 LegacyTimelineFront.prototype = {
   EVENTS: ["markers", "frames", "ticks"],
 
-  connect: Task.async(function*() {
+  connect: Task.async(function* () {
     let supported = yield CompatUtils.timelineActorSupported(this._target);
     this._front = supported ?
                   new TimelineFront(this._target.client, this._target.form) :
@@ -225,7 +225,7 @@ LegacyTimelineFront.prototype = {
 
 
 
-  destroy: Task.async(function *() {
+  destroy: Task.async(function* () {
     this.EVENTS.forEach(type => this._front.off(type, this[`_on${type}`]));
     yield this._front.destroy();
   }),

@@ -14,7 +14,7 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
@@ -27,36 +27,36 @@ function test() {
 
 
 
-exports.testIntroStatus = function(options) {
+exports.testIntroStatus = function (options) {
   return helpers.audit(options, [
     {
       skipRemainingIf: function commandIntroMissing() {
-        return options.requisition.system.commands.get('intro') == null;
+        return options.requisition.system.commands.get("intro") == null;
       },
-      setup:    'intro',
+      setup:    "intro",
       check: {
-        typed:  'intro',
-        markup: 'VVVVV',
-        status: 'VALID',
-        hints: ''
+        typed:  "intro",
+        markup: "VVVVV",
+        status: "VALID",
+        hints: ""
       }
     },
     {
-      setup:    'intro foo',
+      setup:    "intro foo",
       check: {
-        typed:  'intro foo',
-        markup: 'VVVVVVEEE',
-        status: 'ERROR',
-        hints: ''
+        typed:  "intro foo",
+        markup: "VVVVVVEEE",
+        status: "ERROR",
+        hints: ""
       }
     },
     {
-      setup:    'intro',
+      setup:    "intro",
       check: {
-        typed:  'intro',
-        markup: 'VVVVV',
-        status: 'VALID',
-        hints: ''
+        typed:  "intro",
+        markup: "VVVVV",
+        status: "VALID",
+        hints: ""
       },
       exec: {
         output: [

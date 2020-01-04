@@ -50,11 +50,11 @@ function openScratchpad(aReadyCallback, aOptions = {})
     return;
   }
 
-  let onLoad = function() {
+  let onLoad = function () {
     win.removeEventListener("load", onLoad, false);
 
     win.Scratchpad.addObserver({
-      onReady: function(aScratchpad) {
+      onReady: function (aScratchpad) {
         aScratchpad.removeObserver(this);
 
         if (aOptions.noFocus) {
@@ -111,7 +111,7 @@ function openTabAndScratchpad(aOptions = {})
 
 
 
-function createTempFile(aName, aContent, aCallback=function(){})
+function createTempFile(aName, aContent, aCallback = function () {})
 {
   
   let file = FileUtils.getFile("TmpD", [aName]);
@@ -191,7 +191,7 @@ function runAsyncTests(aScratchpad, aTests)
 
 
 
-var runAsyncCallbackTests = Task.async(function*(aScratchpad, aTests) {
+var runAsyncCallbackTests = Task.async(function* (aScratchpad, aTests) {
   for (let {prepare, method, then} of aTests) {
     yield prepare();
     let res = yield aScratchpad[method]();

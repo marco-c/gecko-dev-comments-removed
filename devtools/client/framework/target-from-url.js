@@ -34,7 +34,7 @@ const { Task } = require("resource://gre/modules/Task.jsm");
 
 
 
-exports.targetFromURL = Task.async(function*(url) {
+exports.targetFromURL = Task.async(function* (url) {
   let params = url.searchParams;
   let type = params.get("type");
   if (!type) {
@@ -59,11 +59,11 @@ exports.targetFromURL = Task.async(function*(url) {
       throw new Error("targetFromURL, wrong tab id:'" + id + "', should be a number");
     }
     try {
-      let response = yield client.getTab({ outerWindowID: id })
+      let response = yield client.getTab({ outerWindowID: id });
       form = response.tab;
-    } catch(ex) {
+    } catch (ex) {
       if (ex.error == "noTab") {
-        throw new Error("targetFromURL, tab with outerWindowID:'" + id+ "' doesn't exist");
+        throw new Error("targetFromURL, tab with outerWindowID:'" + id + "' doesn't exist");
       }
       throw ex;
     }
@@ -82,9 +82,9 @@ exports.targetFromURL = Task.async(function*(url) {
         
         isTabActor = false;
       }
-    } catch(ex) {
+    } catch (ex) {
       if (ex.error == "noProcess") {
-        throw new Error("targetFromURL, process with id:'" + id+ "' doesn't exist");
+        throw new Error("targetFromURL, process with id:'" + id + "' doesn't exist");
       }
       throw ex;
     }

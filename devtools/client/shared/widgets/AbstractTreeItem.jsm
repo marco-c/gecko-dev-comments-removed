@@ -154,7 +154,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _displaySelf: function(document, arrowNode) {
+  _displaySelf: function (document, arrowNode) {
     throw new Error(
       "The `_displaySelf` method needs to be implemented by inheriting classes.");
   },
@@ -167,7 +167,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _populateSelf: function(children) {
+  _populateSelf: function (children) {
     throw new Error(
       "The `_populateSelf` method needs to be implemented by inheriting classes.");
   },
@@ -257,7 +257,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  attachTo: function(containerNode, fragmentNode = containerNode, beforeNode = null) {
+  attachTo: function (containerNode, fragmentNode = containerNode, beforeNode = null) {
     this._containerNode = containerNode;
     this._constructTargetNode();
 
@@ -276,7 +276,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  remove: function() {
+  remove: function () {
     this._targetNode.remove();
     this._hideChildren();
     this._childTreeItems.length = 0;
@@ -285,14 +285,14 @@ AbstractTreeItem.prototype = {
   
 
 
-  focus: function() {
+  focus: function () {
     this._targetNode.focus();
   },
 
   
 
 
-  expand: function() {
+  expand: function () {
     if (this._expanded) {
       return;
     }
@@ -306,7 +306,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  collapse: function() {
+  collapse: function () {
     if (!this._expanded) {
       return;
     }
@@ -323,7 +323,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  getChild: function(index = 0) {
+  getChild: function (index = 0) {
     return this._childTreeItems[index];
   },
 
@@ -332,7 +332,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  traverse: function(cb) {
+  traverse: function (cb) {
     for (let child of this._childTreeItems) {
       cb(child);
       child.bfs();
@@ -345,7 +345,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  find: function(predicate) {
+  find: function (predicate) {
     for (let child of this._childTreeItems) {
       if (predicate(child) || child.find(predicate)) {
         return child;
@@ -361,7 +361,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _toggleChildren: function(visible) {
+  _toggleChildren: function (visible) {
     if (visible) {
       if (!this._populated) {
         this._populateSelf(this._childTreeItems);
@@ -376,7 +376,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _showChildren: function() {
+  _showChildren: function () {
     
     
     if (this == this._rootItem && this.autoExpandDepth == 0) {
@@ -393,7 +393,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _hideChildren: function() {
+  _hideChildren: function () {
     for (let item of this._childTreeItems) {
       item._targetNode.remove();
       item._hideChildren();
@@ -404,7 +404,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _appendChildrenBatch: function() {
+  _appendChildrenBatch: function () {
     if (this._fragment === undefined) {
       this._fragment = this.document.createDocumentFragment();
     }
@@ -421,7 +421,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _appendChildrenSuccessive: function() {
+  _appendChildrenSuccessive: function () {
     let childTreeItems = this._childTreeItems;
     let expandedChildTreeItems = childTreeItems.filter(e => e._expanded);
     let nextNode = this._getSiblingAtDelta(1);
@@ -437,7 +437,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _constructTargetNode: function() {
+  _constructTargetNode: function () {
     if (this._constructed) {
       return;
     }
@@ -475,7 +475,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _getSiblingAtDelta: function(delta) {
+  _getSiblingAtDelta: function (delta) {
     let childNodes = this._containerNode.childNodes;
     let indexOfSelf = Array.indexOf(childNodes, this._targetNode);
     return childNodes[indexOfSelf + delta];
@@ -484,7 +484,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _focusNextNode: function() {
+  _focusNextNode: function () {
     let nextElement = this._getSiblingAtDelta(1);
     if (nextElement) nextElement.focus(); 
   },
@@ -492,7 +492,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _focusPrevNode: function() {
+  _focusPrevNode: function () {
     let prevElement = this._getSiblingAtDelta(-1);
     if (prevElement) prevElement.focus(); 
   },
@@ -503,7 +503,7 @@ AbstractTreeItem.prototype = {
 
 
 
-  _focusParentNode: function() {
+  _focusParentNode: function () {
     let parentItem = this._parentItem;
     if (parentItem) parentItem.focus(); 
   },
@@ -511,7 +511,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onArrowClick: function(e) {
+  _onArrowClick: function (e) {
     if (!this._expanded) {
       this.expand();
     } else {
@@ -522,7 +522,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onClick: function(e) {
+  _onClick: function (e) {
     e.stopPropagation();
     this.focus();
   },
@@ -530,7 +530,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onDoubleClick: function(e) {
+  _onDoubleClick: function (e) {
     
     
     if (!e.target.classList.contains("arrow")) {
@@ -542,7 +542,7 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onKeyPress: function(e) {
+  _onKeyPress: function (e) {
     
     ViewHelpers.preventScrolling(e);
 
@@ -576,14 +576,14 @@ AbstractTreeItem.prototype = {
   
 
 
-  _onFocus: function(e) {
+  _onFocus: function (e) {
     this._rootItem.emit("focus", this);
   },
 
   
 
 
-  _onBlur: function(e) {
+  _onBlur: function (e) {
     this._rootItem.emit("blur", this);
   }
 };

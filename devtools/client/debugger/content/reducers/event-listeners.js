@@ -3,7 +3,7 @@
 
 "use strict";
 
-const constants = require('../constants');
+const constants = require("../constants");
 
 const FETCH_EVENT_LISTENERS_DELAY = 200; 
 
@@ -14,21 +14,21 @@ const initialState = {
 };
 
 function update(state = initialState, action, emit) {
-  switch(action.type) {
-  case constants.UPDATE_EVENT_BREAKPOINTS:
-    state.activeEventNames = action.eventNames;
-    emit("activeEventNames", state.activeEventNames);
-    break;
-  case constants.FETCH_EVENT_LISTENERS:
-    if (action.status === "begin") {
-      state.fetchingListeners = true;
-    }
-    else if (action.status === "done") {
-      state.fetchingListeners = false;
-      state.listeners = action.listeners;
-      emit("event-listeners", state.listeners);
-    }
-    break;
+  switch (action.type) {
+    case constants.UPDATE_EVENT_BREAKPOINTS:
+      state.activeEventNames = action.eventNames;
+      emit("activeEventNames", state.activeEventNames);
+      break;
+    case constants.FETCH_EVENT_LISTENERS:
+      if (action.status === "begin") {
+        state.fetchingListeners = true;
+      }
+      else if (action.status === "done") {
+        state.fetchingListeners = false;
+        state.listeners = action.listeners;
+        emit("event-listeners", state.listeners);
+      }
+      break;
   }
 
   return state;

@@ -116,7 +116,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this._computedStyle = null;
   },
 
-  _buildMarkup: function() {
+  _buildMarkup: function () {
     let doc = this.win.document;
 
     let highlighterContainer = doc.createElement("div");
@@ -260,7 +260,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  destroy: function() {
+  destroy: function () {
     AutoRefreshHighlighter.prototype.destroy.call(this);
 
     this.markup.destroy();
@@ -268,14 +268,14 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this._currentNode = null;
   },
 
-  getElement: function(id) {
+  getElement: function (id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
   },
 
   
 
 
-  _show: function() {
+  _show: function () {
     if (BOX_MODEL_REGIONS.indexOf(this.options.region) == -1) {
       this.options.region = "content";
     }
@@ -290,7 +290,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _trackMutations: function() {
+  _trackMutations: function () {
     if (isNodeValid(this.currentNode)) {
       let win = this.currentNode.ownerDocument.defaultView;
       this.currentNodeObserver = new win.MutationObserver(this.update);
@@ -298,7 +298,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
   },
 
-  _untrackMutations: function() {
+  _untrackMutations: function () {
     if (isNodeValid(this.currentNode) && this.currentNodeObserver) {
       this.currentNodeObserver.disconnect();
       this.currentNodeObserver = null;
@@ -310,7 +310,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _update: function() {
+  _update: function () {
     let shown = false;
     setIgnoreLayoutChanges(true);
 
@@ -335,7 +335,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  _hide: function() {
+  _hide: function () {
     setIgnoreLayoutChanges(true);
 
     this._untrackMutations();
@@ -348,14 +348,14 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  _hideInfobar: function() {
+  _hideInfobar: function () {
     this.getElement("nodeinfobar-container").setAttribute("hidden", "true");
   },
 
   
 
 
-  _showInfobar: function() {
+  _showInfobar: function () {
     this.getElement("nodeinfobar-container").removeAttribute("hidden");
     this._updateInfobar();
   },
@@ -363,14 +363,14 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  _hideBoxModel: function() {
+  _hideBoxModel: function () {
     this.getElement("elements").setAttribute("hidden", "true");
   },
 
   
 
 
-  _showBoxModel: function() {
+  _showBoxModel: function () {
     this.getElement("elements").removeAttribute("hidden");
   },
 
@@ -384,7 +384,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _getOuterQuad: function(region) {
+  _getOuterQuad: function (region) {
     let quads = this.currentQuads[region];
     if (!quads.length) {
       return null;
@@ -436,7 +436,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _updateBoxModel: function() {
+  _updateBoxModel: function () {
     let options = this.options;
     options.region = options.region || "content";
 
@@ -494,7 +494,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     return true;
   },
 
-  _getBoxPathCoordinates: function(boxQuad, nextBoxQuad) {
+  _getBoxPathCoordinates: function (boxQuad, nextBoxQuad) {
     let {p1, p2, p3, p4} = boxQuad;
 
     let path;
@@ -523,7 +523,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     return path;
   },
 
-  _nodeNeedsHighlighting: function() {
+  _nodeNeedsHighlighting: function () {
     let hasNoQuads = !this.currentQuads.margin.length &&
                      !this.currentQuads.border.length &&
                      !this.currentQuads.padding.length &&
@@ -539,7 +539,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     return this._computedStyle.getPropertyValue("display") !== "none";
   },
 
-  _getOuterBounds: function() {
+  _getOuterBounds: function () {
     for (let region of ["margin", "border", "padding", "content"]) {
       let quad = this._getOuterQuad(region);
 
@@ -572,7 +572,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _showGuides: function(region) {
+  _showGuides: function (region) {
     let {p1, p2, p3, p4} = this._getOuterQuad(region);
 
     let allX = [p1.x, p2.x, p3.x, p4.x].sort((a, b) => a - b);
@@ -602,7 +602,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this._updateGuide("left", toShowX[0]);
   },
 
-  _hideGuides: function() {
+  _hideGuides: function () {
     for (let side of BOX_MODEL_SIDES) {
       this.getElement("guide-" + side).setAttribute("hidden", "true");
     }
@@ -617,7 +617,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  _updateGuide: function(side, point = -1) {
+  _updateGuide: function (side, point = -1) {
     let guide = this.getElement("guide-" + side);
 
     if (point <= 0) {
@@ -645,7 +645,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  _updateInfobar: function() {
+  _updateInfobar: function () {
     if (!this.currentNode) {
       return;
     }
@@ -687,7 +687,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   
 
 
-  _moveInfobar: function() {
+  _moveInfobar: function () {
     let bounds = this._getOuterBounds();
     let winHeight = this.win.innerHeight * getCurrentZoom(this.win);
     let winWidth = this.win.innerWidth * getCurrentZoom(this.win);

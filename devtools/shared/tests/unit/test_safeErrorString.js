@@ -17,7 +17,7 @@ function test_with_error() {
   
   do_check_true(s.includes("foo bar"));
   
-  do_check_true(s.includes("test_with_error"))
+  do_check_true(s.includes("test_with_error"));
   do_check_true(s.includes("test_safeErrorString.js"));
   
   do_check_true(s.includes("Line"));

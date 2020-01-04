@@ -69,15 +69,15 @@ const PerformanceRecordingCommon = exports.PerformanceRecordingCommon = {
 
 
 
-  getMarkers: function() { return this._markers; },
-  getFrames: function() { return this._frames; },
-  getMemory: function() { return this._memory; },
-  getTicks: function() { return this._ticks; },
-  getAllocations: function() { return this._allocations; },
-  getProfile: function() { return this._profile; },
-  getHostSystemInfo: function() { return this._systemHost; },
-  getClientSystemInfo: function() { return this._systemClient; },
-  getStartingBufferStatus: function() { return this._startingBufferStatus; },
+  getMarkers: function () { return this._markers; },
+  getFrames: function () { return this._frames; },
+  getMemory: function () { return this._memory; },
+  getTicks: function () { return this._ticks; },
+  getAllocations: function () { return this._allocations; },
+  getProfile: function () { return this._profile; },
+  getHostSystemInfo: function () { return this._systemHost; },
+  getClientSystemInfo: function () { return this._systemClient; },
+  getStartingBufferStatus: function () { return this._startingBufferStatus; },
 
   getAllData: function () {
     let label = this.getLabel();

@@ -1,4 +1,4 @@
 
-window.addEventListener("unload", function() {
+window.addEventListener("unload", function () {
   window.foo = "bar";
 });

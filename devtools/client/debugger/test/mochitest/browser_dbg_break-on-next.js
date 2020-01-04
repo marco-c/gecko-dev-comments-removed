@@ -34,7 +34,7 @@ function test() {
   
   
   
-  let testInterval = Task.async(function*() {
+  let testInterval = Task.async(function* () {
     info("Starting testInterval");
 
     yield evalInTab(gTab, `
@@ -66,7 +66,7 @@ function test() {
     yield onceResumed;
   });
 
-  let testEvent = Task.async(function*() {
+  let testEvent = Task.async(function* () {
     info("Starting testEvent");
 
     let oncePaused = gTarget.once("thread-paused");

@@ -7,7 +7,7 @@
 
 const TEST_URL = URL_ROOT + "doc_inspector_outerhtml.html";
 
-add_task(function*() {
+add_task(function* () {
   let { inspector } = yield openInspectorForURL(TEST_URL);
   let root = inspector.markup._elt;
 

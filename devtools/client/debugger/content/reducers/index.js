@@ -3,10 +3,10 @@
 
 "use strict";
 
-const eventListeners = require('./event-listeners');
-const sources = require('./sources');
-const breakpoints = require('./breakpoints');
-const asyncRequests = require('./async-requests');
+const eventListeners = require("./event-listeners");
+const sources = require("./sources");
+const breakpoints = require("./breakpoints");
+const asyncRequests = require("./async-requests");
 
 module.exports = {
   eventListeners,

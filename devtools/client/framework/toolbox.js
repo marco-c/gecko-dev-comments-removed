@@ -204,14 +204,14 @@ Toolbox.prototype = {
 
 
 
-  getToolPanels: function() {
+  getToolPanels: function () {
     return new Map(this._toolPanels);
   },
 
   
 
 
-  getPanel: function(id) {
+  getPanel: function (id) {
     return this._toolPanels.get(id);
   },
 
@@ -228,7 +228,7 @@ Toolbox.prototype = {
 
 
 
-  getPanelWhenReady: function(id) {
+  getPanelWhenReady: function (id) {
     let deferred = promise.defer();
     let panel = this.getPanel(id);
     if (panel) {
@@ -247,7 +247,7 @@ Toolbox.prototype = {
 
 
 
-  getCurrentPanel: function() {
+  getCurrentPanel: function () {
     return this._toolPanels.get(this.currentToolId);
   },
 
@@ -351,7 +351,7 @@ Toolbox.prototype = {
   
 
 
-  isSplitConsoleFocused: function() {
+  isSplitConsoleFocused: function () {
     if (!this._splitConsole) {
       return false;
     }
@@ -363,8 +363,8 @@ Toolbox.prototype = {
   
 
 
-  open: function() {
-    return Task.spawn(function*() {
+  open: function () {
+    return Task.spawn(function* () {
       let iframe = yield this._host.create();
       let domReady = promise.defer();
 
@@ -487,7 +487,7 @@ Toolbox.prototype = {
     }.bind(this)).then(null, console.error.bind(console));
   },
 
-  _pingTelemetry: function() {
+  _pingTelemetry: function () {
     this._telemetry.toolOpened("toolbox");
 
     this._telemetry.logOncePerBrowserVersion(OS_HISTOGRAM, system.getOSCPU());
@@ -507,7 +507,7 @@ Toolbox.prototype = {
 
 
 
-  _prefChanged: function(event, data) {
+  _prefChanged: function (event, data) {
     switch (data.pref) {
       case "devtools.cache.disabled":
         this._applyCacheSettings();
@@ -518,7 +518,7 @@ Toolbox.prototype = {
     }
   },
 
-  _buildOptions: function() {
+  _buildOptions: function () {
     let selectOptions = () => {
       
       
@@ -535,7 +535,7 @@ Toolbox.prototype = {
     key2.addEventListener("command", selectOptions, true);
   },
 
-  _splitConsoleOnKeypress: function(e) {
+  _splitConsoleOnKeypress: function (e) {
     if (e.keyCode === e.DOM_VK_ESCAPE) {
       this.toggleSplitConsole();
       
@@ -556,7 +556,7 @@ Toolbox.prototype = {
 
 
 
-  useKeyWithSplitConsole: function(keyElement, whichTool) {
+  useKeyWithSplitConsole: function (keyElement, whichTool) {
     let cloned = keyElement.cloneNode();
     cloned.setAttribute("oncommand", "void(0)");
     cloned.removeAttribute("command");
@@ -569,7 +569,7 @@ Toolbox.prototype = {
     this.doc.getElementById("toolbox-keyset").appendChild(cloned);
   },
 
-  _addReloadKeys: function() {
+  _addReloadKeys: function () {
     [
       ["toolbox-reload-key", false],
       ["toolbox-reload-key2", false],
@@ -582,7 +582,7 @@ Toolbox.prototype = {
     });
   },
 
-  _addHostListeners: function() {
+  _addHostListeners: function () {
     let nextKey = this.doc.getElementById("toolbox-next-tool-key");
     nextKey.addEventListener("command", this.selectNextTool.bind(this), true);
 
@@ -602,11 +602,11 @@ Toolbox.prototype = {
     this.doc.addEventListener("focus", this._onFocus, true);
   },
 
-  _registerOverlays: function() {
+  _registerOverlays: function () {
     registerHarOverlay(this);
   },
 
-  _saveSplitConsoleHeight: function() {
+  _saveSplitConsoleHeight: function () {
     Services.prefs.setIntPref(SPLITCONSOLE_HEIGHT_PREF,
       this.webconsolePanel.height);
   },
@@ -623,7 +623,7 @@ Toolbox.prototype = {
 
 
 
-  _refreshConsoleDisplay: function() {
+  _refreshConsoleDisplay: function () {
     let deck = this.doc.getElementById("toolbox-deck");
     let webconsolePanel = this.webconsolePanel;
     let splitter = this.doc.getElementById("toolbox-console-splitter");
@@ -648,7 +648,7 @@ Toolbox.prototype = {
   
 
 
-  _addZoomKeys: function() {
+  _addZoomKeys: function () {
     let inKey = this.doc.getElementById("toolbox-zoom-in-key");
     inKey.addEventListener("command", this.zoomIn.bind(this), true);
 
@@ -671,7 +671,7 @@ Toolbox.prototype = {
     resetKey2.addEventListener("command", this.zoomReset.bind(this), true);
   },
 
-  _disableZoomKeys: function() {
+  _disableZoomKeys: function () {
     let inKey = this.doc.getElementById("toolbox-zoom-in-key");
     inKey.setAttribute("disabled", "true");
 
@@ -697,28 +697,28 @@ Toolbox.prototype = {
   
 
 
-  _loadInitialZoom: function() {
+  _loadInitialZoom: function () {
     this.setZoom(this.zoomValue);
   },
 
   
 
 
-  zoomIn: function() {
+  zoomIn: function () {
     this.setZoom(this.zoomValue + 0.1);
   },
 
   
 
 
-  zoomOut: function() {
+  zoomOut: function () {
     this.setZoom(this.zoomValue - 0.1);
   },
 
   
 
 
-  zoomReset: function() {
+  zoomReset: function () {
     this.setZoom(1);
   },
 
@@ -728,7 +728,7 @@ Toolbox.prototype = {
 
 
 
-  setZoom: function(zoomValue) {
+  setZoom: function (zoomValue) {
     
     zoomValue = Math.max(zoomValue, MIN_ZOOM);
     zoomValue = Math.min(zoomValue, MAX_ZOOM);
@@ -746,7 +746,7 @@ Toolbox.prototype = {
   
 
 
-  _addKeysToWindow: function() {
+  _addKeysToWindow: function () {
     if (this.hostType != Toolbox.HostType.WINDOW) {
       return;
     }
@@ -801,7 +801,7 @@ Toolbox.prototype = {
 
 
 
-  fireCustomKey: function(toolId) {
+  fireCustomKey: function (toolId) {
     let toolDefinition = gDevTools.getToolDefinition(toolId);
 
     if (toolDefinition.onkey &&
@@ -814,7 +814,7 @@ Toolbox.prototype = {
   
 
 
-  _buildNotificationBox: function() {
+  _buildNotificationBox: function () {
     let { NotificationBox, PriorityLevels } =
       this.browserRequire("devtools/client/shared/components/notification-box");
 
@@ -831,7 +831,7 @@ Toolbox.prototype = {
 
 
 
-  _buildDockButtons: function() {
+  _buildDockButtons: function () {
     let dockBox = this.doc.getElementById("toolbox-dock-buttons");
 
     while (dockBox.firstChild) {
@@ -890,14 +890,14 @@ Toolbox.prototype = {
     }
   },
 
-  _getMinimizeButtonShortcutTooltip: function() {
+  _getMinimizeButtonShortcutTooltip: function () {
     let key = this.doc.getElementById("toolbox-minimize-key")
                       .getAttribute("key");
     return "(" + (osString == "Darwin" ? "Cmd+Shift+" : "Ctrl+Shift+") +
            key.toUpperCase() + ")";
   },
 
-  _onBottomHostMinimized: function() {
+  _onBottomHostMinimized: function () {
     let btn = this.doc.querySelector("#toolbox-dock-bottom-minimize");
     btn.className = "minimized";
 
@@ -906,7 +906,7 @@ Toolbox.prototype = {
       this._getMinimizeButtonShortcutTooltip());
   },
 
-  _onBottomHostMaximized: function() {
+  _onBottomHostMaximized: function () {
     let btn = this.doc.querySelector("#toolbox-dock-bottom-minimize");
     btn.className = "maximized";
 
@@ -915,11 +915,11 @@ Toolbox.prototype = {
       this._getMinimizeButtonShortcutTooltip());
   },
 
-  _onToolSelectWhileMinimized: function() {
+  _onToolSelectWhileMinimized: function () {
     this._host.maximize();
   },
 
-  _onBottomHostWillChange: function() {
+  _onBottomHostWillChange: function () {
     this._host.maximize();
 
     this._host.off("minimized", this._onBottomHostMinimized);
@@ -927,7 +927,7 @@ Toolbox.prototype = {
     this.off("before-select", this._onToolSelectWhileMinimized);
   },
 
-  _toggleMinimizeMode: function() {
+  _toggleMinimizeMode: function () {
     if (this.hostType !== Toolbox.HostType.BOTTOM) {
       return;
     }
@@ -943,7 +943,7 @@ Toolbox.prototype = {
   
 
 
-  _buildTabs: function() {
+  _buildTabs: function () {
     for (let definition of gDevTools.getToolDefinitionArray()) {
       this._buildTabForTool(definition);
     }
@@ -974,7 +974,7 @@ Toolbox.prototype = {
         event.preventDefault();
         control.focus();
       }
-    }, true)
+    }, true);
 
     toolbar.addEventListener("keypress", event => {
       let { key, target } = event;
@@ -1018,7 +1018,7 @@ Toolbox.prototype = {
   
 
 
-  _buildButtons: function() {
+  _buildButtons: function () {
     if (!this.target.isAddon) {
       this._buildPickerButton();
     }
@@ -1035,7 +1035,7 @@ Toolbox.prototype = {
     }
 
     const options = {
-      environment: CommandUtils.createEnvironment(this, '_target')
+      environment: CommandUtils.createEnvironment(this, "_target")
     };
     return CommandUtils.createRequisition(this.target, options).then(requisition => {
       this._requisition = requisition;
@@ -1043,14 +1043,14 @@ Toolbox.prototype = {
       const spec = CommandUtils.getCommandbarSpec("devtools.toolbox.toolbarSpec");
       return CommandUtils.createButtons(spec, this.target, this.doc,
                                         requisition).then(buttons => {
-        let container = this.doc.getElementById("toolbox-buttons");
-        buttons.forEach(button=> {
-          if (button) {
-            container.appendChild(button);
-          }
-        });
-        this.setToolboxButtonsVisibility();
-      });
+                                          let container = this.doc.getElementById("toolbox-buttons");
+                                          buttons.forEach(button=> {
+                                            if (button) {
+                                              container.appendChild(button);
+                                            }
+                                          });
+                                          this.setToolboxButtonsVisibility();
+                                        });
     });
   },
 
@@ -1058,7 +1058,7 @@ Toolbox.prototype = {
 
 
 
-  _buildPickerButton: function() {
+  _buildPickerButton: function () {
     this._pickerButton = this.doc.createElement("toolbarbutton");
     this._pickerButton.id = "command-button-pick";
     this._pickerButton.className = "command-button command-button-invertable";
@@ -1076,7 +1076,7 @@ Toolbox.prototype = {
 
 
 
-  _applyCacheSettings: function() {
+  _applyCacheSettings: function () {
     let pref = "devtools.cache.disabled";
     let cacheDisabled = Services.prefs.getBoolPref(pref);
 
@@ -1089,7 +1089,7 @@ Toolbox.prototype = {
 
 
 
-  _applyServiceWorkersTestingSettings: function() {
+  _applyServiceWorkersTestingSettings: function () {
     let pref = "devtools.serviceWorkers.testing.enabled";
     let serviceWorkersTestingEnabled =
       Services.prefs.getBoolPref(pref) || false;
@@ -1141,7 +1141,7 @@ Toolbox.prototype = {
 
 
 
-  setToolboxButtonsVisibility: function() {
+  setToolboxButtonsVisibility: function () {
     this.toolboxButtons.forEach(buttonSpec => {
       let { visibilityswitch, button, isTargetSupported } = buttonSpec;
       let on = true;
@@ -1169,7 +1169,7 @@ Toolbox.prototype = {
 
 
 
-  _buildTabForTool: function(toolDefinition) {
+  _buildTabForTool: function (toolDefinition) {
     if (!toolDefinition.isTargetSupported(this._target)) {
       return;
     }
@@ -1275,7 +1275,7 @@ Toolbox.prototype = {
 
 
 
-  loadTool: function(id) {
+  loadTool: function (id) {
     if (id === "inspector" && !this._inspector) {
       return this.initInspector().then(() => {
         return this.loadTool(id);
@@ -1408,7 +1408,7 @@ Toolbox.prototype = {
 
 
 
-  selectSingleNode: function(collection, id) {
+  selectSingleNode: function (collection, id) {
     [...collection].forEach(node => {
       if (node.id === id) {
         node.setAttribute("selected", "true");
@@ -1426,7 +1426,7 @@ Toolbox.prototype = {
 
 
 
-  selectTool: function(id) {
+  selectTool: function (id) {
     this.emit("before-select", id);
 
     let tabs = this.doc.querySelectorAll(".devtools-tab");
@@ -1496,7 +1496,7 @@ Toolbox.prototype = {
 
 
 
-  focusTool: function(id) {
+  focusTool: function (id) {
     let iframe = this.doc.getElementById("toolbox-panel-iframe-" + id);
     iframe.focus();
   },
@@ -1504,7 +1504,7 @@ Toolbox.prototype = {
   
 
 
-  focusConsoleInput: function() {
+  focusConsoleInput: function () {
     let consolePanel = this.getPanel("webconsole");
     if (consolePanel) {
       consolePanel.focusInput();
@@ -1516,7 +1516,7 @@ Toolbox.prototype = {
 
 
 
-  _onFocus: function({originalTarget}) {
+  _onFocus: function ({originalTarget}) {
     
     
     let webconsoleURL = gDevTools.getToolDefinition("webconsole").url;
@@ -1534,7 +1534,7 @@ Toolbox.prototype = {
 
 
 
-  openSplitConsole: function() {
+  openSplitConsole: function () {
     this._splitConsole = true;
     Services.prefs.setBoolPref(SPLITCONSOLE_ENABLED_PREF, true);
     this._refreshConsoleDisplay();
@@ -1551,7 +1551,7 @@ Toolbox.prototype = {
 
 
 
-  closeSplitConsole: function() {
+  closeSplitConsole: function () {
     this._splitConsole = false;
     Services.prefs.setBoolPref(SPLITCONSOLE_ENABLED_PREF, false);
     this._refreshConsoleDisplay();
@@ -1570,7 +1570,7 @@ Toolbox.prototype = {
 
 
 
-  toggleSplitConsole: function() {
+  toggleSplitConsole: function () {
     if (this.currentToolId !== "webconsole") {
       return this.splitConsole ?
              this.closeSplitConsole() :
@@ -1583,14 +1583,14 @@ Toolbox.prototype = {
   
 
 
-  reloadTarget: function(force) {
+  reloadTarget: function (force) {
     this.target.activeTab.reload({ force: force });
   },
 
   
 
 
-  selectNextTool: function() {
+  selectNextTool: function () {
     let tools = this.doc.querySelectorAll(".devtools-tab");
     let selected = this.doc.querySelector(".devtools-tab[selected]");
     let nextIndex = [...tools].indexOf(selected) + 1;
@@ -1602,7 +1602,7 @@ Toolbox.prototype = {
   
 
 
-  selectPreviousTool: function() {
+  selectPreviousTool: function () {
     let tools = this.doc.querySelectorAll(".devtools-tab");
     let selected = this.doc.querySelector(".devtools-tab[selected]");
     let prevIndex = [...tools].indexOf(selected) - 1;
@@ -1617,7 +1617,7 @@ Toolbox.prototype = {
 
 
 
-  highlightTool: function(id) {
+  highlightTool: function (id) {
     let tab = this.doc.getElementById("toolbox-tab-" + id);
     tab && tab.setAttribute("highlighted", "true");
   },
@@ -1628,7 +1628,7 @@ Toolbox.prototype = {
 
 
 
-  unhighlightTool: function(id) {
+  unhighlightTool: function (id) {
     let tab = this.doc.getElementById("toolbox-tab-" + id);
     tab && tab.removeAttribute("highlighted");
   },
@@ -1636,14 +1636,14 @@ Toolbox.prototype = {
   
 
 
-  raise: function() {
+  raise: function () {
     this._host.raise();
   },
 
   
 
 
-  _refreshHostTitle: function() {
+  _refreshHostTitle: function () {
     let title;
     if (this.target.name && this.target.name != this.target.url) {
       title = toolboxStrings("toolbox.titleTemplate2",
@@ -1661,7 +1661,7 @@ Toolbox.prototype = {
     });
   },
 
-  _toggleAutohide: Task.async(function*() {
+  _toggleAutohide: Task.async(function* () {
     let prefName = "ui.popup.disable_autohide";
     let front = yield this._preferenceFront;
     let current = yield front.getBoolPref(prefName);
@@ -1670,7 +1670,7 @@ Toolbox.prototype = {
     this._updateNoautohideButton();
   }),
 
-  _updateNoautohideButton: Task.async(function*() {
+  _updateNoautohideButton: Task.async(function* () {
     let menu = this.doc.getElementById("command-button-noautohide");
     if (menu.getAttribute("hidden") === "true") {
       return;
@@ -1688,7 +1688,7 @@ Toolbox.prototype = {
     }
   }),
 
-  _listFrames: function(event) {
+  _listFrames: function (event) {
     if (!this._target.activeTab || !this._target.activeTab.traits.frames) {
       
       
@@ -1703,7 +1703,7 @@ Toolbox.prototype = {
     });
   },
 
-  selectFrame: function(event) {
+  selectFrame: function (event) {
     let windowId = event.target.getAttribute("data-window-id");
     let packet = {
       to: this._target.form.actor,
@@ -1714,7 +1714,7 @@ Toolbox.prototype = {
     
   },
 
-  _updateFrames: function(event, data) {
+  _updateFrames: function (event, data) {
     if (!Services.prefs.getBoolPref("devtools.command-button-frames.enabled")) {
       return;
     }
@@ -1792,7 +1792,7 @@ Toolbox.prototype = {
 
 
 
-  _createHost: function(hostType, options) {
+  _createHost: function (hostType, options) {
     if (!Hosts[hostType]) {
       throw new Error("Unknown hostType: " + hostType);
     }
@@ -1807,7 +1807,7 @@ Toolbox.prototype = {
 
 
 
-  switchToPreviousHost: function() {
+  switchToPreviousHost: function () {
     let hostType = Services.prefs.getCharPref(this._prefs.PREVIOUS_HOST);
 
     
@@ -1830,7 +1830,7 @@ Toolbox.prototype = {
 
 
 
-  switchHost: function(hostType) {
+  switchHost: function (hostType) {
     if (hostType == this._host.type || !this._target.isLocalTab) {
       return null;
     }
@@ -1876,7 +1876,7 @@ Toolbox.prototype = {
 
 
 
-  isToolRegistered: function(toolId) {
+  isToolRegistered: function (toolId) {
     return gDevTools.getToolDefinitionMap().has(toolId);
   },
 
@@ -1887,7 +1887,7 @@ Toolbox.prototype = {
 
 
 
-  _toolRegistered: function(event, toolId) {
+  _toolRegistered: function (event, toolId) {
     let tool = gDevTools.getToolDefinition(toolId);
     this._buildTabForTool(tool);
     
@@ -1903,7 +1903,7 @@ Toolbox.prototype = {
 
 
 
-  _toolUnregistered: function(event, toolId) {
+  _toolUnregistered: function (event, toolId) {
     if (typeof toolId != "string") {
       toolId = toolId.id;
     }
@@ -1953,9 +1953,9 @@ Toolbox.prototype = {
 
 
 
-  initInspector: function() {
+  initInspector: function () {
     if (!this._initInspector) {
-      this._initInspector = Task.spawn(function*() {
+      this._initInspector = Task.spawn(function* () {
         this._inspector = InspectorFront(this._target.client, this._target.form);
         this._walker = yield this._inspector.getWalker(
           {showAllAnonymousContent: Services.prefs.getBoolPref("devtools.inspector.showAllAnonymousContent")}
@@ -1978,12 +1978,12 @@ Toolbox.prototype = {
 
 
 
-  destroyInspector: function() {
+  destroyInspector: function () {
     if (this._destroyingInspector) {
       return this._destroyingInspector;
     }
 
-    return this._destroyingInspector = Task.spawn(function*() {
+    return this._destroyingInspector = Task.spawn(function* () {
       if (!this._inspector) {
         return;
       }
@@ -1995,7 +1995,7 @@ Toolbox.prototype = {
       if (this._walker && !this.walker.traits.autoReleased) {
         try {
           yield this._walker.release();
-        } catch(e) {}
+        } catch (e) {}
       }
 
       yield this.highlighterUtils.stopPicker();
@@ -2032,7 +2032,7 @@ Toolbox.prototype = {
 
 
 
-  getNotificationBox: function() {
+  getNotificationBox: function () {
     return this.notificationBox;
   },
 
@@ -2041,7 +2041,7 @@ Toolbox.prototype = {
 
 
 
-  destroyHost: function() {
+  destroyHost: function () {
     
     if (this.doc) {
       this.doc.removeEventListener("keypress",
@@ -2054,7 +2054,7 @@ Toolbox.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     
     
     if (this._destroyer) {
@@ -2147,30 +2147,30 @@ Toolbox.prototype = {
       
       
       
-      if (!this._target) {
-        return null;
-      }
-      let target = this._target;
-      this._target = null;
-      this.highlighterUtils.release();
-      target.off("close", this.destroy);
-      return target.destroy();
-    }, console.error).then(() => {
-      this.emit("destroyed");
+                                     if (!this._target) {
+                                       return null;
+                                     }
+                                     let target = this._target;
+                                     this._target = null;
+                                     this.highlighterUtils.release();
+                                     target.off("close", this.destroy);
+                                     return target.destroy();
+                                   }, console.error).then(() => {
+                                     this.emit("destroyed");
 
       
       
-      this._host = null;
-      this._toolPanels.clear();
+                                     this._host = null;
+                                     this._toolPanels.clear();
 
       
       
-      if (DevToolsUtils.testing) {
-        win.QueryInterface(Ci.nsIInterfaceRequestor)
+                                     if (DevToolsUtils.testing) {
+                                       win.QueryInterface(Ci.nsIInterfaceRequestor)
            .getInterface(Ci.nsIDOMWindowUtils)
            .garbageCollect();
-      }
-    }).then(null, console.error);
+                                     }
+                                   }).then(null, console.error);
 
     let leakCheckObserver = ({wrappedJSObject: barrier}) => {
       
@@ -2187,11 +2187,11 @@ Toolbox.prototype = {
     return this._destroyer;
   },
 
-  _highlighterReady: function() {
+  _highlighterReady: function () {
     this.emit("highlighter-ready");
   },
 
-  _highlighterHidden: function() {
+  _highlighterHidden: function () {
     this.emit("highlighter-hide");
   },
 
@@ -2199,7 +2199,7 @@ Toolbox.prototype = {
 
 
 
-  _showDevEditionPromo: function() {
+  _showDevEditionPromo: function () {
     
     if (this.target.chrome) {
       return;
@@ -2210,7 +2210,7 @@ Toolbox.prototype = {
   
 
 
-  _updateTextboxMenuItems: function() {
+  _updateTextboxMenuItems: function () {
     let window = this.win;
     ["cmd_undo", "cmd_delete", "cmd_cut",
      "cmd_copy", "cmd_paste", "cmd_selectAll"].forEach(window.goUpdateCommand);
@@ -2220,7 +2220,7 @@ Toolbox.prototype = {
 
 
 
-  initPerformance: Task.async(function*() {
+  initPerformance: Task.async(function* () {
     
     
     if (!this.target.hasActor("profiler")) {
@@ -2248,7 +2248,7 @@ Toolbox.prototype = {
 
 
 
-  destroyPerformance: Task.async(function*() {
+  destroyPerformance: Task.async(function* () {
     if (!this.performance) {
       return;
     }
@@ -2268,7 +2268,7 @@ Toolbox.prototype = {
 
 
 
-  _onPerformanceFrontEvent: Task.async(function*(eventName, recording) {
+  _onPerformanceFrontEvent: Task.async(function* (eventName, recording) {
     if (this.getPanel("performance")) {
       this.performance.off("*", this._onPerformanceFrontEvent);
       return;
@@ -2308,7 +2308,7 @@ Toolbox.prototype = {
 
 
 
-  viewSourceInStyleEditor: function(sourceURL, sourceLine) {
+  viewSourceInStyleEditor: function (sourceURL, sourceLine) {
     return viewSource.viewSourceInStyleEditor(this, sourceURL, sourceLine);
   },
 
@@ -2316,7 +2316,7 @@ Toolbox.prototype = {
 
 
 
-  viewSourceInDebugger: function(sourceURL, sourceLine) {
+  viewSourceInDebugger: function (sourceURL, sourceLine) {
     return viewSource.viewSourceInDebugger(this, sourceURL, sourceLine);
   },
 
@@ -2329,7 +2329,7 @@ Toolbox.prototype = {
 
 
 
-  viewSourceInScratchpad: function(sourceURL, sourceLine) {
+  viewSourceInScratchpad: function (sourceURL, sourceLine) {
     return viewSource.viewSourceInScratchpad(sourceURL, sourceLine);
   },
 
@@ -2337,7 +2337,7 @@ Toolbox.prototype = {
 
 
 
-  viewSource: function(sourceURL, sourceLine) {
+  viewSource: function (sourceURL, sourceLine) {
     return viewSource.viewSource(this, sourceURL, sourceLine);
   },
 };

@@ -91,7 +91,7 @@ var PerformanceActor = exports.PerformanceActor = protocol.ActorClass({
 
 
 
-  disconnect: function() {
+  disconnect: function () {
     this.destroy();
   },
 
@@ -109,13 +109,13 @@ var PerformanceActor = exports.PerformanceActor = protocol.ActorClass({
     response: RetVal("json")
   }),
 
-  canCurrentlyRecord: method(function() {
+  canCurrentlyRecord: method(function () {
     return this.bridge.canCurrentlyRecord();
   }, {
     response: { value: RetVal("json") }
   }),
 
-  startRecording: method(Task.async(function *(options={}) {
+  startRecording: method(Task.async(function* (options = {}) {
     if (!this.bridge.canCurrentlyRecord().success) {
       return null;
     }
@@ -179,7 +179,7 @@ var PerformanceActor = exports.PerformanceActor = protocol.ActorClass({
   },
 });
 
-exports.createPerformanceFront = function createPerformanceFront (target) {
+exports.createPerformanceFront = function createPerformanceFront(target) {
   
   
   
@@ -206,7 +206,7 @@ const PerformanceFront = exports.PerformanceFront = protocol.FrontClass(Performa
 
 
 
-  connect: custom(Task.async(function *() {
+  connect: custom(Task.async(function* () {
     let systemClient = yield getSystemInfo();
     let { traits } = yield this._connect({ systemClient });
     this._traits = traits;

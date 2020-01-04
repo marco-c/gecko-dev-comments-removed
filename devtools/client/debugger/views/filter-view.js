@@ -34,7 +34,7 @@ FilterView.prototype = {
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the FilterView");
 
     this._searchbox = document.getElementById("searchbox");
@@ -95,7 +95,7 @@ FilterView.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     dumpn("Destroying the FilterView");
 
     this._searchbox.removeEventListener("click", this._onClick, false);
@@ -111,8 +111,8 @@ FilterView.prototype = {
   
 
 
-  _addCommands: function() {
-    XULUtils.addCommands(document.getElementById('debuggerCommands'), {
+  _addCommands: function () {
+    XULUtils.addCommands(document.getElementById("debuggerCommands"), {
       fileSearchCommand: () => this._doFileSearch(),
       globalSearchCommand: () => this._doGlobalSearch(),
       functionSearchCommand: () => this._doFunctionSearch(),
@@ -191,7 +191,7 @@ FilterView.prototype = {
   
 
 
-  clearSearch: function() {
+  clearSearch: function () {
     this._searchbox.value = "";
     this.clearViews();
 
@@ -202,7 +202,7 @@ FilterView.prototype = {
   
 
 
-  clearViews: function() {
+  clearViews: function () {
     this.DebuggerView.GlobalSearch.clearView();
     this.FilteredSources.clearView();
     this.FilteredFunctions.clearView();
@@ -216,7 +216,7 @@ FilterView.prototype = {
 
 
 
-  _performLineSearch: function(aLine) {
+  _performLineSearch: function (aLine) {
     
     if (aLine) {
       this.DebuggerView.editor.setCursor({ line: aLine - 1, ch: 0 }, "center");
@@ -230,7 +230,7 @@ FilterView.prototype = {
 
 
 
-  _performTokenSearch: function(aToken) {
+  _performTokenSearch: function (aToken) {
     
     if (!aToken) {
       return;
@@ -241,7 +241,7 @@ FilterView.prototype = {
   
 
 
-  _onClick: function() {
+  _onClick: function () {
     
     
     if (!this._searchbox.value) {
@@ -252,7 +252,7 @@ FilterView.prototype = {
   
 
 
-  _onInput: function() {
+  _onInput: function () {
     this.clearViews();
 
     
@@ -294,7 +294,7 @@ FilterView.prototype = {
   
 
 
-  _onKeyPress: function(e) {
+  _onKeyPress: function (e) {
     
     e.char = String.fromCharCode(e.charCode);
 
@@ -423,7 +423,7 @@ FilterView.prototype = {
   
 
 
-  _onBlur: function() {
+  _onBlur: function () {
     this.clearViews();
   },
 
@@ -433,7 +433,7 @@ FilterView.prototype = {
 
 
 
-  _doSearch: function(aOperator = "", aText = "") {
+  _doSearch: function (aOperator = "", aText = "") {
     this._searchbox.focus();
     this._searchbox.value = ""; 
 
@@ -452,7 +452,7 @@ FilterView.prototype = {
       let cursor = this.DebuggerView.editor.getCursor();
       let location = this.DebuggerView.Sources.selectedItem.attachment.source.url;
       let source = this.Parser.get(content, location);
-      let identifier = source.getIdentifierAt({ line: cursor.line+1, column: cursor.ch });
+      let identifier = source.getIdentifierAt({ line: cursor.line + 1, column: cursor.ch });
 
       if (identifier && identifier.name) {
         this._searchbox.value = aOperator + identifier.name;
@@ -467,7 +467,7 @@ FilterView.prototype = {
   
 
 
-  _doFileSearch: function() {
+  _doFileSearch: function () {
     this._doSearch();
     this._searchboxHelpPanel.openPopup(this._searchbox);
   },
@@ -475,7 +475,7 @@ FilterView.prototype = {
   
 
 
-  _doGlobalSearch: function() {
+  _doGlobalSearch: function () {
     this._doSearch(SEARCH_GLOBAL_FLAG);
     this._searchboxHelpPanel.hidePopup();
   },
@@ -483,7 +483,7 @@ FilterView.prototype = {
   
 
 
-  _doFunctionSearch: function() {
+  _doFunctionSearch: function () {
     this._doSearch(SEARCH_FUNCTION_FLAG);
     this._searchboxHelpPanel.hidePopup();
   },
@@ -491,7 +491,7 @@ FilterView.prototype = {
   
 
 
-  _doTokenSearch: function() {
+  _doTokenSearch: function () {
     this._doSearch(SEARCH_TOKEN_FLAG);
     this._searchboxHelpPanel.hidePopup();
   },
@@ -499,7 +499,7 @@ FilterView.prototype = {
   
 
 
-  _doLineSearch: function() {
+  _doLineSearch: function () {
     this._doSearch(SEARCH_LINE_FLAG);
     this._searchboxHelpPanel.hidePopup();
   },
@@ -507,7 +507,7 @@ FilterView.prototype = {
   
 
 
-  _doVariableSearch: function() {
+  _doVariableSearch: function () {
     this._doSearch(SEARCH_VARIABLE_FLAG);
     this._searchboxHelpPanel.hidePopup();
   },
@@ -515,7 +515,7 @@ FilterView.prototype = {
   
 
 
-  _doVariablesFocus: function() {
+  _doVariablesFocus: function () {
     this.DebuggerView.showInstrumentsPane();
     this.DebuggerView.Variables.focusFirstVisibleItem();
   },
@@ -556,7 +556,7 @@ FilteredSourcesView.prototype = Heritage.extend(ResultsPanelContainer.prototype,
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the FilteredSourcesView");
 
     this.anchor = document.getElementById("searchbox");
@@ -567,7 +567,7 @@ FilteredSourcesView.prototype = Heritage.extend(ResultsPanelContainer.prototype,
   
 
 
-  destroy: function() {
+  destroy: function () {
     dumpn("Destroying the FilteredSourcesView");
 
     this.widget.removeEventListener("select", this._onSelect, false);
@@ -583,7 +583,7 @@ FilteredSourcesView.prototype = Heritage.extend(ResultsPanelContainer.prototype,
 
 
 
-  scheduleSearch: function(aToken, aWait) {
+  scheduleSearch: function (aToken, aWait) {
     
     let maxDelay = FILE_SEARCH_ACTION_MAX_DELAY;
     let delay = aWait === undefined ? maxDelay / aToken.length : aWait;
@@ -598,7 +598,7 @@ FilteredSourcesView.prototype = Heritage.extend(ResultsPanelContainer.prototype,
 
 
 
-  _doSearch: function(aToken, aStore = []) {
+  _doSearch: function (aToken, aStore = []) {
     
     
     
@@ -632,7 +632,7 @@ FilteredSourcesView.prototype = Heritage.extend(ResultsPanelContainer.prototype,
 
 
 
-  _syncView: function(aSearchResults) {
+  _syncView: function (aSearchResults) {
     
     
     if (!aSearchResults.length) {
@@ -675,7 +675,7 @@ FilteredSourcesView.prototype = Heritage.extend(ResultsPanelContainer.prototype,
   
 
 
-  _onClick: function(e) {
+  _onClick: function (e) {
     let locationItem = this.getItemForElement(e.target);
     if (locationItem) {
       this.selectedItem = locationItem;
@@ -689,7 +689,7 @@ FilteredSourcesView.prototype = Heritage.extend(ResultsPanelContainer.prototype,
 
 
 
-  _onSelect: function({ detail: locationItem }) {
+  _onSelect: function ({ detail: locationItem }) {
     if (locationItem) {
       let source = queries.getSourceByURL(DebuggerController.getState(),
                                           locationItem.attachment.url);
@@ -719,7 +719,7 @@ FilteredFunctionsView.prototype = Heritage.extend(ResultsPanelContainer.prototyp
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the FilteredFunctionsView");
 
     this.anchor = document.getElementById("searchbox");
@@ -730,7 +730,7 @@ FilteredFunctionsView.prototype = Heritage.extend(ResultsPanelContainer.prototyp
   
 
 
-  destroy: function() {
+  destroy: function () {
     dumpn("Destroying the FilteredFunctionsView");
 
     this.widget.removeEventListener("select", this._onSelect, false);
@@ -746,7 +746,7 @@ FilteredFunctionsView.prototype = Heritage.extend(ResultsPanelContainer.prototyp
 
 
 
-  scheduleSearch: function(aToken, aWait) {
+  scheduleSearch: function (aToken, aWait) {
     
     let maxDelay = FUNCTION_SEARCH_ACTION_MAX_DELAY;
     let delay = aWait === undefined ? maxDelay / aToken.length : aWait;
@@ -769,7 +769,7 @@ FilteredFunctionsView.prototype = Heritage.extend(ResultsPanelContainer.prototyp
 
 
 
-  _doSearch: function(aToken, aSources, aStore = []) {
+  _doSearch: function (aToken, aSources, aStore = []) {
     
     
 
@@ -829,7 +829,7 @@ FilteredFunctionsView.prototype = Heritage.extend(ResultsPanelContainer.prototyp
 
 
 
-  _syncView: function(aSearchResults) {
+  _syncView: function (aSearchResults) {
     
     
     if (!aSearchResults.length) {
@@ -891,7 +891,7 @@ FilteredFunctionsView.prototype = Heritage.extend(ResultsPanelContainer.prototyp
   
 
 
-  _onClick: function(e) {
+  _onClick: function (e) {
     let functionItem = this.getItemForElement(e.target);
     if (functionItem) {
       this.selectedItem = functionItem;
@@ -902,7 +902,7 @@ FilteredFunctionsView.prototype = Heritage.extend(ResultsPanelContainer.prototyp
   
 
 
-  _onSelect: function({ detail: functionItem }) {
+  _onSelect: function ({ detail: functionItem }) {
     if (functionItem) {
       let sourceUrl = functionItem.attachment.sourceUrl;
       let actor = queries.getSourceByURL(DebuggerController.getState(), sourceUrl).actor;

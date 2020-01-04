@@ -17,7 +17,7 @@ function run_test() {
 
 
 
-add_task(function*() {
+add_task(function* () {
   const { getState, dispatch } = storeFactory();
 
   dispatch(actions.messageAdd(packet));
@@ -31,7 +31,7 @@ add_task(function*() {
 
 
 
-add_task(function*() {
+add_task(function* () {
   const { getState, dispatch } = storeFactory();
 
   dispatch(actions.messageAdd(packet));
@@ -48,7 +48,7 @@ add_task(function*() {
 
 
 
-add_task(function*() {
+add_task(function* () {
   const message1 = prepareMessage(packet);
   const message2 = prepareMessage(packet);
   equal(getRepeatId(message1), getRepeatId(message2),

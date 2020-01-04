@@ -6,7 +6,7 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   
   
   let [ , debuggee, monitor ] = yield initNetMonitor(SIMPLE_URL);

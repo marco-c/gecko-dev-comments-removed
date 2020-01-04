@@ -38,7 +38,7 @@ function NetRequest(log) {
 }
 
 NetRequest.prototype = {
-  initialize: function(log) {
+  initialize: function (log) {
     this.client = log.client;
 
     
@@ -65,7 +65,7 @@ NetRequest.prototype = {
     this.addClickListener();
   },
 
-  addClickListener: function() {
+  addClickListener: function () {
     
     
     
@@ -91,7 +91,7 @@ NetRequest.prototype = {
     }, true);
   },
 
-  onToggleBody: function(event) {
+  onToggleBody: function (event) {
     let target = event.currentTarget;
     let logRow = target.closest(".netRequest");
     logRow.classList.toggle("opened");
@@ -114,7 +114,7 @@ NetRequest.prototype = {
   
 
 
-  updateBody: function(response) {
+  updateBody: function (response) {
     
     
     
@@ -130,14 +130,14 @@ NetRequest.prototype = {
   
 
 
-  closeBody: function() {
+  closeBody: function () {
     this.netInfoBodyBox.parentNode.removeChild(this.netInfoBodyBox);
   },
 
   
 
 
-  renderBody: function() {
+  renderBody: function () {
     let messageBody = this.parentNode.querySelector(".message-body-wrapper");
 
     
@@ -163,7 +163,7 @@ NetRequest.prototype = {
   
 
 
-  refresh: function() {
+  refresh: function () {
     if (!this.netInfoBodyBox) {
       return;
     }
@@ -179,7 +179,7 @@ NetRequest.prototype = {
 
   
 
-  requestData: function(method) {
+  requestData: function (method) {
     
     let response = this.cachedResponses.get(method);
     if (response) {
@@ -211,7 +211,7 @@ NetRequest.prototype = {
     });
   },
 
-  onRequestData: function(method, response) {
+  onRequestData: function (method, response) {
     
     let result;
     switch (method) {
@@ -240,19 +240,19 @@ NetRequest.prototype = {
     });
   },
 
-  onRequestHeaders: function(response) {
+  onRequestHeaders: function (response) {
     this.file.request.headers = response.headers;
 
     return this.resolveHeaders(this.file.request.headers);
   },
 
-  onResponseHeaders: function(response) {
+  onResponseHeaders: function (response) {
     this.file.response.headers = response.headers;
 
     return this.resolveHeaders(this.file.response.headers);
   },
 
-  onResponseContent: function(response) {
+  onResponseContent: function (response) {
     let content = response.content;
 
     for (let p in content) {
@@ -262,22 +262,22 @@ NetRequest.prototype = {
     return Promise.resolve();
   },
 
-  onRequestPostData: function(response) {
+  onRequestPostData: function (response) {
     this.file.request.postData = response.postData;
     return Promise.resolve();
   },
 
-  onRequestCookies: function(response) {
+  onRequestCookies: function (response) {
     this.file.request.cookies = response.cookies;
     return this.resolveHeaders(this.file.request.cookies);
   },
 
-  onResponseCookies: function(response) {
+  onResponseCookies: function (response) {
     this.file.response.cookies = response.cookies;
     return this.resolveHeaders(this.file.response.cookies);
   },
 
-  resolveHeaders: function(headers) {
+  resolveHeaders: function (headers) {
     let promises = [];
 
     for (let header of headers) {
@@ -291,7 +291,7 @@ NetRequest.prototype = {
     return Promise.all(promises);
   },
 
-  resolveString: function(object, propName) {
+  resolveString: function (object, propName) {
     let stringGrip = object[propName];
     if (typeof stringGrip == "object") {
       DataProvider.resolveString(this.client, stringGrip).then(args => {

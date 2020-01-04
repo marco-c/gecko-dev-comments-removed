@@ -14,7 +14,7 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
@@ -27,23 +27,23 @@ function test() {
 
 
 
-exports.testOptions = function(options) {
+exports.testOptions = function (options) {
   return helpers.audit(options, [
     {
-      setup:    'tslong',
+      setup:    "tslong",
       check: {
-        input:  'tslong',
-        markup: 'VVVVVV',
-        status: 'ERROR',
-        hints: ' <msg> [options]',
+        input:  "tslong",
+        markup: "VVVVVV",
+        status: "ERROR",
+        hints: " <msg> [options]",
         args: {
-          msg: { value: undefined, status: 'INCOMPLETE' },
-          num: { value: undefined, status: 'VALID' },
-          sel: { value: undefined, status: 'VALID' },
-          bool: { value: false, status: 'VALID' },
-          bool2: { value: false, status: 'VALID' },
-          sel2: { value: undefined, status: 'VALID' },
-          num2: { value: undefined, status: 'VALID' }
+          msg: { value: undefined, status: "INCOMPLETE" },
+          num: { value: undefined, status: "VALID" },
+          sel: { value: undefined, status: "VALID" },
+          bool: { value: false, status: "VALID" },
+          bool2: { value: false, status: "VALID" },
+          sel2: { value: undefined, status: "VALID" },
+          num2: { value: undefined, status: "VALID" }
         }
       }
     }

@@ -11,7 +11,7 @@ thisTestLeaksUncaughtRejectionsAndShouldBeFixed("TypeError: aValue.content is un
 
 
 
-add_task(function*() {
+add_task(function* () {
   requestLongerTimeout(2);
   let monitor, debuggee, requestsContainer, scrollTop;
 

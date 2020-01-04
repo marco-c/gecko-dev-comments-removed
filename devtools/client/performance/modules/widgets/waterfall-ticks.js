@@ -44,7 +44,7 @@ WaterfallHeader.prototype = {
 
 
 
-  attachTo: function(parentNode) {
+  attachTo: function (parentNode) {
     let document = parentNode.ownerDocument;
     let startTime = this.root.interval.startTime;
     let dataScale = this.root.getDataScale();
@@ -59,7 +59,7 @@ WaterfallHeader.prototype = {
   
 
 
-  _buildNode: function(doc, startTime, dataScale, waterfallWidth) {
+  _buildNode: function (doc, startTime, dataScale, waterfallWidth) {
     let container = doc.createElement("hbox");
     container.className = "waterfall-header-container";
     container.setAttribute("flex", "1");
@@ -105,7 +105,7 @@ WaterfallHeader.prototype = {
   
 
 
-  _drawWaterfallBackground: function(doc, dataScale, waterfallWidth) {
+  _drawWaterfallBackground: function (doc, dataScale, waterfallWidth) {
     if (!this._canvas || !this._ctx) {
       this._canvas = doc.createElementNS(HTML_NS, "canvas");
       this._ctx = this._canvas.getContext("2d");

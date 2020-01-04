@@ -49,7 +49,7 @@ testCommands.set("pageError", {
 function* getPacket(command, type = "evaluationResult") {
   try {
     
-    let state = yield new Promise(function(resolve) {
+    let state = yield new Promise(function (resolve) {
       attachConsoleToTab(["ConsoleAPI"], resolve);
     });
 
@@ -234,7 +234,7 @@ function _attachConsole(aListeners, aCallback, aAttachToTab, aAttachToWorker)
               worker.removeEventListener("message", listener);
               tabClient.listWorkers(function (response) {
                 tabClient.attachWorker(response.workers[0].actor, function (response, workerClient) {
-                  workerClient.attachThread({}, function(aResponse) {
+                  workerClient.attachThread({}, function (aResponse) {
                     aState.actor = workerClient.consoleActor;
                     aState.dbgClient.attachConsole(workerClient.consoleActor, aListeners,
                                                    _onAttachConsole.bind(null, aState));

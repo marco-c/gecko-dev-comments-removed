@@ -6,7 +6,7 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   let { target, panel } = yield initWebAudioEditor(SIMPLE_CONTEXT_URL);
   let { panelWin } = panel;
   let { gFront, $, $$, EVENTS, InspectorView } = panelWin;
@@ -46,7 +46,7 @@ add_task(function*() {
   yield once(panelWin, EVENTS.UI_INSPECTOR_TOGGLED);
 
   yield clickGraphNode(panelWin, findGraphNode(panelWin, nodeIds[1]));
- 
+
   
   let width = $("#web-audio-inspector").getAttribute("width");
 

@@ -56,7 +56,7 @@ var JsFlameGraphView = Heritage.extend(DetailsSubview, {
 
 
 
-  render: function (interval={}) {
+  render: function (interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     let duration = recording.getDuration();
     let profile = recording.getProfile();
@@ -102,7 +102,7 @@ var JsFlameGraphView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onRerenderPrefChanged: function() {
+  _onRerenderPrefChanged: function () {
     let recording = PerformanceController.getCurrentRecording();
     let profile = recording.getProfile();
     let thread = profile.threads[0];

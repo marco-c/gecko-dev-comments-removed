@@ -9,7 +9,7 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   
   
   requestLongerTimeout(2);

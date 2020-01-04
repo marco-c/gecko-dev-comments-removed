@@ -14,7 +14,7 @@ const TEST_URI = "data:text/html;charset=utf-8,<p>browser_telemetry_toolboxtabs_
 
 const TOOL_DELAY = 200;
 
-add_task(function*() {
+add_task(function* () {
   info("Active the sharer editor");
   let originalPref = Services.prefs.getBoolPref("devtools.shadereditor.enabled");
   Services.prefs.setBoolPref("devtools.shadereditor.enabled", true);

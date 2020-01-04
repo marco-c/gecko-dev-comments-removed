@@ -5,7 +5,7 @@
 
 
 
-var test = Task.async(function*() {
+var test = Task.async(function* () {
   let [, debuggee, monitor] = yield initNetMonitor(SIMPLE_URL);
   let { RequestsMenu } = monitor.panelWin.NetMonitorView;
   RequestsMenu.lazyUpdate = false;

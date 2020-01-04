@@ -16,7 +16,7 @@ function test() {
   requestLongerTimeout(2);
 
   let gDebugger, gToolbox, gThreadClient, gTab, gPanel;
-  initDebugger(TAB_URL).then(([aTab,debuggeeWin,aPanel]) => {
+  initDebugger(TAB_URL).then(([aTab, debuggeeWin, aPanel]) => {
     gPanel = aPanel;
     gDebugger = aPanel.panelWin;
     gToolbox = gDevTools.getToolbox(aPanel.target);
@@ -24,7 +24,7 @@ function test() {
     gThreadClient = gDebugger.DebuggerController.activeThread;
     waitForSourceShown(aPanel, TAB_URL).then(testConsole);
   });
-  let testConsole = Task.async(function *() {
+  let testConsole = Task.async(function* () {
     
     
     
@@ -41,15 +41,15 @@ function test() {
     
     
     let stepTests = [
-      {key: 'VK_F11', keyRepeat: 1, caretLine: 16},
-      {key: 'VK_F11', keyRepeat: 2, caretLine: 18},
-      {key: 'VK_F11', keyRepeat: 2, caretLine: 27},
-      {key: 'VK_F10', keyRepeat: 1, caretLine: 27},
-      {key: 'VK_F11', keyRepeat: 1, caretLine: 18},
-      {key: 'VK_F11', keyRepeat: 5, caretLine: 32},
-      {key: 'VK_F11', modifier:'Shift', keyRepeat: 1, caretLine: 29},
-      {key: 'VK_F11', modifier:'Shift', keyRepeat: 2, caretLine: 34},
-      {key: 'VK_F11', modifier:'Shift', keyRepeat: 2, caretLine: 34}
+      {key: "VK_F11", keyRepeat: 1, caretLine: 16},
+      {key: "VK_F11", keyRepeat: 2, caretLine: 18},
+      {key: "VK_F11", keyRepeat: 2, caretLine: 27},
+      {key: "VK_F10", keyRepeat: 1, caretLine: 27},
+      {key: "VK_F11", keyRepeat: 1, caretLine: 18},
+      {key: "VK_F11", keyRepeat: 5, caretLine: 32},
+      {key: "VK_F11", modifier:"Shift", keyRepeat: 1, caretLine: 29},
+      {key: "VK_F11", modifier:"Shift", keyRepeat: 2, caretLine: 34},
+      {key: "VK_F11", modifier:"Shift", keyRepeat: 2, caretLine: 34}
     ];
     
     executeSoon(() => generateMouseClickInTab(gTab,
@@ -60,7 +60,7 @@ function test() {
     
     let consoleLostFocus = false;
     jsterm.focus();
-    jsterm.inputNode.addEventListener('blur', () => {consoleLostFocus = true;});
+    jsterm.inputNode.addEventListener("blur", () => {consoleLostFocus = true;});
 
     is(gThreadClient.paused, true,
       "Should be paused at debugger statement.");
@@ -69,8 +69,8 @@ function test() {
       
       while (thisTest.keyRepeat > 0) {
         thisTest.keyRepeat --;
-        let keyMods = thisTest.modifier === 'Shift' ? {shiftKey:true} : {};
-        executeSoon(() => {EventUtils.synthesizeKey(thisTest.key, keyMods)});
+        let keyMods = thisTest.modifier === "Shift" ? {shiftKey:true} : {};
+        executeSoon(() => {EventUtils.synthesizeKey(thisTest.key, keyMods);});
         yield waitForPause(gThreadClient);
       }
 
@@ -88,7 +88,7 @@ function test() {
     is(consoleLostFocus, false, "Console input should not lose focus");
     
     
-    executeSoon(() => EventUtils.synthesizeKey('VK_F8', {}));
+    executeSoon(() => EventUtils.synthesizeKey("VK_F8", {}));
 
     
     consoleLostFocus = false;

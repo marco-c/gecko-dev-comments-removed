@@ -14,7 +14,7 @@ const refresh = require("./refresh");
 
 
 const changeView = exports.changeView = function (view) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({
       type: actions.CHANGE_VIEW,
       newViewState: view,
@@ -29,7 +29,7 @@ const changeView = exports.changeView = function (view) {
 
 
 const popView = exports.popView = function () {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const { previous } = getState().view;
     assert(previous);
     dispatch({
@@ -59,7 +59,7 @@ exports.changeViewAndRefresh = function (view, heapWorker) {
 
 
 
-exports.popViewAndRefresh = function(heapWorker) {
+exports.popViewAndRefresh = function (heapWorker) {
   return function* (dispatch, getState) {
     dispatch(popView());
     yield dispatch(refresh.refresh(heapWorker));

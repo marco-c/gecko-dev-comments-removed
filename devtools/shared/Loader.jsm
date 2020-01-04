@@ -29,7 +29,7 @@ var sharedGlobalBlocklist = ["sdk/indexed-db"];
 
 function BuiltinProvider() {}
 BuiltinProvider.prototype = {
-  load: function() {
+  load: function () {
     const paths = {
       
       "": "resource://gre/modules/commonjs/",
@@ -64,7 +64,7 @@ BuiltinProvider.prototype = {
     });
   },
 
-  unload: function(reason) {
+  unload: function (reason) {
     Loader.unload(this.loader, reason);
     delete this.loader;
   },
@@ -106,7 +106,7 @@ DevToolsLoader.prototype = {
 
 
 
-  require: function() {
+  require: function () {
     if (!this._provider) {
       this._loadProvider();
     }
@@ -116,7 +116,7 @@ DevToolsLoader.prototype = {
   
 
 
-  setProvider: function(provider) {
+  setProvider: function (provider) {
     if (provider === this._provider) {
       return;
     }
@@ -165,7 +165,7 @@ DevToolsLoader.prototype = {
   
 
 
-  _loadProvider: function() {
+  _loadProvider: function () {
     this.setProvider(new BuiltinProvider());
   },
 
@@ -175,7 +175,7 @@ DevToolsLoader.prototype = {
 
 
 
-  observe: function(subject, topic, data) {
+  observe: function (subject, topic, data) {
     if (topic != "devtools-unload") {
       return;
     }

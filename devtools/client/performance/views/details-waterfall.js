@@ -80,7 +80,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
 
 
 
-  render: function(interval={}) {
+  render: function (interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     if (recording.isRecording()) {
       return;
@@ -126,7 +126,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
   
 
 
-  _onObservedPrefChange: function(_, prefName) {
+  _onObservedPrefChange: function (_, prefName) {
     this._hiddenMarkers = PerformanceController.getPref("hidden-markers");
 
     
@@ -184,7 +184,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
 
 
 
-  _prepareWaterfallTree: function(markers) {
+  _prepareWaterfallTree: function (markers) {
     let cached = this._cache.get(markers);
     if (cached) {
       return cached;
@@ -205,7 +205,7 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
   
 
 
-  _populateWaterfallTree: function(rootMarkerNode, interval) {
+  _populateWaterfallTree: function (rootMarkerNode, interval) {
     let root = new MarkerView({
       marker: rootMarkerNode,
       

@@ -14,28 +14,28 @@ thisTestLeaksUncaughtRejectionsAndShouldBeFixed("destroy");
 
 
 
-add_task(function*() {
+add_task(function* () {
   let projecteditor = yield addProjectEditorTabForTempDirectory();
   let TEMP_PATH = projecteditor.project.allPaths()[0];
 
-  is (getTempFile("").path, TEMP_PATH, "Temp path is set correctly.");
+  is(getTempFile("").path, TEMP_PATH, "Temp path is set correctly.");
 
-  ok (projecteditor.currentEditor, "There is an editor for projecteditor");
+  ok(projecteditor.currentEditor, "There is an editor for projecteditor");
   let resources = projecteditor.project.allResources();
 
-  is (
+  is(
     resources.map(r=>r.basename).join("|"),
     TEMP_FOLDER_NAME + "|css|styles.css|data|img|icons|128x128.png|16x16.png|32x32.png|vector.svg|fake.png|js|script.js|index.html|LICENSE|README.md",
     "Resources came through in proper order"
   );
 
-  for (let i = 0; i < resources.length; i++){
+  for (let i = 0; i < resources.length; i++) {
     yield selectAndRefocusFile(projecteditor, resources[i]);
   }
 });
 
 function* selectAndRefocusFile(projecteditor, resource) {
-  ok (resource && resource.path, "A valid resource has been passed in for selection " + (resource && resource.path));
+  ok(resource && resource.path, "A valid resource has been passed in for selection " + (resource && resource.path));
   projecteditor.projectTree.selectResource(resource);
 
   if (resource.isDir) {
@@ -58,7 +58,7 @@ function* selectAndRefocusFile(projecteditor, resource) {
     projecteditor.currentEditor.focus();
     yield waitForTreeSelect;
 
-    is (projecteditor.projectTree.getSelectedResource(), resource, "The resource gets reselected in the tree");
+    is(projecteditor.projectTree.getSelectedResource(), resource, "The resource gets reselected in the tree");
   }
 }
 

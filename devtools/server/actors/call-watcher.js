@@ -65,7 +65,7 @@ var FunctionCallActor = protocol.ActorClass({
 
 
 
-  initialize: function(conn, [window, global, caller, type, name, stack, timestamp, args, result], holdWeak) {
+  initialize: function (conn, [window, global, caller, type, name, stack, timestamp, args, result], holdWeak) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
     this.details = {
@@ -117,7 +117,7 @@ var FunctionCallActor = protocol.ActorClass({
 
 
 
-  form: function() {
+  form: function () {
     return {
       actor: this.actorID,
       type: this.details.type,
@@ -135,13 +135,13 @@ var FunctionCallActor = protocol.ActorClass({
 
 
 
-  getDetails: method(function() {
+  getDetails: method(function () {
     let { type, name, stack, timestamp } = this.details;
 
     
     
     
-    for (let i = stack.length - 1;;) {
+    for (let i = stack.length - 1; ;) {
       if (stack[i].file) {
         break;
       }
@@ -170,7 +170,7 @@ var FunctionCallActor = protocol.ActorClass({
 
 
 
-  _generateArgsPreview: function(args) {
+  _generateArgsPreview: function (args) {
     let { global, name, caller } = this.details;
 
     
@@ -224,7 +224,7 @@ var FunctionCallActor = protocol.ActorClass({
 
 
 
-  _generateStringPreview: function(data) {
+  _generateStringPreview: function (data) {
     
     if (data === undefined) {
       return "undefined";
@@ -246,7 +246,7 @@ var FunctionCallActor = protocol.ActorClass({
 
 
 var FunctionCallFront = protocol.FrontClass(FunctionCallActor, {
-  initialize: function(client, form) {
+  initialize: function (client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   },
 
@@ -254,7 +254,7 @@ var FunctionCallFront = protocol.FrontClass(FunctionCallActor, {
 
 
 
-  form: function(form) {
+  form: function (form) {
     this.actorID = form.actor;
     this.type = form.type;
     this.name = form.name;
@@ -272,14 +272,14 @@ var FunctionCallFront = protocol.FrontClass(FunctionCallActor, {
 
 var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
   typeName: "call-watcher",
-  initialize: function(conn, tabActor) {
+  initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
     this._onGlobalCreated = this._onGlobalCreated.bind(this);
     this._onGlobalDestroyed = this._onGlobalDestroyed.bind(this);
     this._onContentFunctionCall = this._onContentFunctionCall.bind(this);
   },
-  destroy: function(conn) {
+  destroy: function (conn) {
     protocol.Actor.prototype.destroy.call(this, conn);
     this.finalize();
   },
@@ -306,7 +306,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
 
 
 
-  setup: method(function({ tracedGlobals, tracedFunctions, startRecording, performReload, holdWeak, storeCalls }) {
+  setup: method(function ({ tracedGlobals, tracedFunctions, startRecording, performReload, holdWeak, storeCalls }) {
     if (this._initialized) {
       return;
     }
@@ -345,7 +345,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
 
 
 
-  finalize: method(function() {
+  finalize: method(function () {
     if (!this._initialized) {
       return;
     }
@@ -364,7 +364,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
   
 
 
-  isRecording: method(function() {
+  isRecording: method(function () {
     return this._recording;
   }, {
     response: RetVal("boolean")
@@ -373,21 +373,21 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
   
 
 
-  initTimestampEpoch: method(function() {
+  initTimestampEpoch: method(function () {
     this._timestampEpoch = this.tabActor.window.performance.now();
   }),
 
   
 
 
-  resumeRecording: method(function() {
+  resumeRecording: method(function () {
     this._recording = true;
   }),
 
   
 
 
-  pauseRecording: method(function() {
+  pauseRecording: method(function () {
     this._recording = false;
     return this._functionCalls;
   }, {
@@ -398,14 +398,14 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
 
 
 
-  eraseRecording: method(function() {
+  eraseRecording: method(function () {
     this._functionCalls = [];
   }),
 
   
 
 
-  _onGlobalCreated: function({window, id, isTopLevel}) {
+  _onGlobalCreated: function ({window, id, isTopLevel}) {
     
     if (!isTopLevel) {
       return;
@@ -452,7 +452,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
       
       let originalFunc = Cu.unwaiveXrays(target[name]);
 
-      Cu.exportFunction(function(...args) {
+      Cu.exportFunction(function (...args) {
         let result;
         try {
           result = Cu.waiveXrays(originalFunc.apply(this, args));
@@ -486,7 +486,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
       let originalSetter = Cu.unwaiveXrays(target.__lookupSetter__(name));
 
       Object.defineProperty(target, name, {
-        get: function(...args) {
+        get: function (...args) {
           if (!originalGetter) return undefined;
           let result = Cu.waiveXrays(originalGetter.apply(this, args));
 
@@ -498,7 +498,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
           }
           return result;
         },
-        set: function(...args) {
+        set: function (...args) {
           if (!originalSetter) return;
           originalSetter.apply(this, args);
 
@@ -572,7 +572,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
   
 
 
-  _onGlobalDestroyed: function({window, id, isTopLevel}) {
+  _onGlobalDestroyed: function ({window, id, isTopLevel}) {
     if (this._tracedWindowId == id) {
       this.pauseRecording();
       this.eraseRecording();
@@ -583,7 +583,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
   
 
 
-  _onContentFunctionCall: function(...details) {
+  _onContentFunctionCall: function (...details) {
     
     
     if (this._finalized) {
@@ -608,7 +608,7 @@ var CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
 
 
 var CallWatcherFront = exports.CallWatcherFront = protocol.FrontClass(CallWatcherActor, {
-  initialize: function(client, { callWatcherActor }) {
+  initialize: function (client, { callWatcherActor }) {
     protocol.Front.prototype.initialize.call(this, client, { actor: callWatcherActor });
     this.manage(this);
   }
@@ -778,7 +778,7 @@ CallWatcherFront.KNOWN_METHODS["WebGLRenderingContext"] = {
     enums: new Set([0, 1, 2, 3]),
   },
   texImage2D: {
-    enums: args => args.length > 6 ? new Set([0, 2, 6, 7]) :  new Set([0, 2, 3, 4]),
+    enums: args => args.length > 6 ? new Set([0, 2, 6, 7]) : new Set([0, 2, 3, 4]),
   },
   texParameterf: {
     enums: new Set([0, 1]),
@@ -860,7 +860,7 @@ function getBitToEnumValue(type, object, arg) {
 
 
 
-function createContentError (e, win) {
+function createContentError(e, win) {
   let { message, name, stack } = e;
   let parsedStack = parseStack(stack);
   let { fileName, lineNumber, columnNumber } = parsedStack[parsedStack.length - 1];

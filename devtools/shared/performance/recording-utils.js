@@ -12,7 +12,7 @@ loader.lazyRequireGetter(this, "extend",
 
 
 
-function mapRecordingOptions (type, options) {
+function mapRecordingOptions(type, options) {
   if (type === "profiler") {
     return {
       entries: options.bufferSize,
@@ -52,7 +52,7 @@ function mapRecordingOptions (type, options) {
 
 
 
-function normalizePerformanceFeatures (options, supportedFeatures) {
+function normalizePerformanceFeatures(options, supportedFeatures) {
   return Object.keys(options).reduce((modifiedOptions, feature) => {
     if (supportedFeatures[feature] !== false) {
       modifiedOptions[feature] = options[feature];
@@ -142,7 +142,7 @@ function offsetAndScaleTimestamps(timestamps, timeOffset, timeScale) {
 
 
 
-function pushAll (dest, src) {
+function pushAll(dest, src) {
   let length = src.length;
   for (let i = 0; i < length; i++) {
     dest.push(src[i]);
@@ -267,7 +267,7 @@ function getProfileThreadFromAllocations(allocations) {
   return thread;
 }
 
-function allocationsWithSchema (data) {
+function allocationsWithSchema(data) {
   let slot = 0;
   return {
     schema: {
@@ -299,7 +299,7 @@ function deflateProfile(profile) {
 
   profile.meta.version = 3;
   return profile;
-};
+}
 
 
 
@@ -475,7 +475,7 @@ function UniqueStrings() {
   this._stringHash = Object.create(null);
 }
 
-UniqueStrings.prototype.getOrAddStringIndex = function(s) {
+UniqueStrings.prototype.getOrAddStringIndex = function (s) {
   if (!s) {
     return null;
   }
@@ -545,19 +545,19 @@ function UniqueStacks() {
   this._uniqueStrings = new UniqueStrings();
 }
 
-UniqueStacks.prototype.getStackTableWithSchema = function() {
+UniqueStacks.prototype.getStackTableWithSchema = function () {
   return stackTableWithSchema(this._stackTable);
 };
 
-UniqueStacks.prototype.getFrameTableWithSchema = function() {
+UniqueStacks.prototype.getFrameTableWithSchema = function () {
   return frameTableWithSchema(this._frameTable);
 };
 
-UniqueStacks.prototype.getStringTable = function() {
+UniqueStacks.prototype.getStringTable = function () {
   return this._uniqueStrings.stringTable;
 };
 
-UniqueStacks.prototype.getOrAddFrameIndex = function(frame) {
+UniqueStacks.prototype.getOrAddFrameIndex = function (frame) {
   
   
 
@@ -589,7 +589,7 @@ UniqueStacks.prototype.getOrAddFrameIndex = function(frame) {
   return index;
 };
 
-UniqueStacks.prototype.getOrAddStackIndex = function(prefixIndex, frameIndex) {
+UniqueStacks.prototype.getOrAddStackIndex = function (prefixIndex, frameIndex) {
   
   
 
@@ -610,7 +610,7 @@ UniqueStacks.prototype.getOrAddStackIndex = function(prefixIndex, frameIndex) {
   return index;
 };
 
-UniqueStacks.prototype.getOrAddStringIndex = function(s) {
+UniqueStacks.prototype.getOrAddStringIndex = function (s) {
   return this._uniqueStrings.getOrAddStringIndex(s);
 };
 

@@ -50,7 +50,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
 
 
 
-  render: function (interval={}) {
+  render: function (interval = {}) {
     let recording = PerformanceController.getCurrentRecording();
     let profile = recording.getProfile();
     let showOptimizations = PerformanceController.getOption("show-jit-optimizations");
@@ -152,7 +152,7 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
   
 
 
-  _populateCallTree: function (frameNode, options={}) {
+  _populateCallTree: function (frameNode, options = {}) {
     
     
     

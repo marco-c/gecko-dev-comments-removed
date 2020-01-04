@@ -142,14 +142,14 @@ function accessorNameForPref(somePrefName, prefsBlueprint) {
 
 function makeObserver(self, cache, prefsRoot, prefsBlueprint) {
   return {
-    register: function() {
+    register: function () {
       this._branch = Services.prefs.getBranch(prefsRoot + ".");
       this._branch.addObserver("", this, false);
     },
-    unregister: function() {
+    unregister: function () {
       this._branch.removeObserver("", this);
     },
-    observe: function(subject, topic, prefName) {
+    observe: function (subject, topic, prefName) {
       
       
       let accessorName = accessorNameForPref(prefName, prefsBlueprint);

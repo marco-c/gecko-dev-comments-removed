@@ -112,7 +112,7 @@ exports.MarkerDOMUtils = {
 
 
 
-  buildStackTrace: function(doc, { type, frameIndex, frames }) {
+  buildStackTrace: function (doc, { type, frameIndex, frames }) {
     let container = doc.createElement("vbox");
     container.className = "marker-details-stack";
     container.setAttribute("type", type);
@@ -246,7 +246,7 @@ exports.MarkerDOMUtils = {
 
 
 
-function shouldShowAllocationsTrigger (marker) {
+function shouldShowAllocationsTrigger(marker) {
   if (marker.name == "GarbageCollection") {
     let showTriggers = PREFS["show-triggers-for-gc-types"];
     return showTriggers.split(" ").indexOf(marker.causeName) !== -1;

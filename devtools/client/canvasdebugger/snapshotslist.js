@@ -12,7 +12,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 
-  initialize: function() {
+  initialize: function () {
     this.widget = new SideMenuWidget($("#snapshots-list"), {
       showArrows: true
     });
@@ -34,7 +34,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 
-  destroy: function() {
+  destroy: function () {
     clearNamedTimeout("canvas-actor-recording");
     window.off(EVENTS.SNAPSHOT_RECORDING_FINISHED, this._enableRecordButton);
     this.widget.removeEventListener("select", this._onSelect, false);
@@ -46,7 +46,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
 
 
 
-  addSnapshot: function() {
+  addSnapshot: function () {
     let contents = document.createElement("hbox");
     contents.className = "snapshot-item";
 
@@ -121,7 +121,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
 
 
 
-  customizeSnapshot: function(snapshotItem, snapshotActor, snapshotOverview) {
+  customizeSnapshot: function (snapshotItem, snapshotActor, snapshotOverview) {
     
     
     snapshotItem.attachment.actor = snapshotActor;
@@ -163,7 +163,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onSelect: function({ detail: snapshotItem }) {
+  _onSelect: function ({ detail: snapshotItem }) {
     
     
     if (!snapshotItem || !snapshotItem.attachment.actor) {
@@ -179,7 +179,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
     $("#screenshot-container").hidden = true;
     $("#snapshot-filmstrip").hidden = true;
 
-    Task.spawn(function*() {
+    Task.spawn(function* () {
       
       
       
@@ -204,8 +204,8 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onClearButtonClick: function() {
-    Task.spawn(function*() {
+  _onClearButtonClick: function () {
+    Task.spawn(function* () {
       SnapshotsListView.empty();
       CallsListView.empty();
 
@@ -270,7 +270,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _recordAnimation: Task.async(function *() {
+  _recordAnimation: Task.async(function* () {
     if (this._recording) {
       return;
     }
@@ -300,7 +300,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
 
 
 
-  _stopRecordingAnimation: Task.async(function *() {
+  _stopRecordingAnimation: Task.async(function* () {
     clearNamedTimeout("canvas-actor-recording");
     let actorCanStop = yield gTarget.actorHasMethod("canvas", "stopRecordingAnimationFrame");
 
@@ -323,7 +323,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onRecordSuccess: Task.async(function *(snapshotActor) {
+  _onRecordSuccess: Task.async(function* (snapshotActor) {
     
     clearNamedTimeout("canvas-actor-recording");
     let snapshotItem = this.getItemAtIndex(this.itemCount - 1);
@@ -351,7 +351,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onImportButtonClick: function() {
+  _onImportButtonClick: function () {
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
     fp.init(window, L10N.getStr("snapshotsList.saveDialogTitle"), Ci.nsIFilePicker.modeOpen);
     fp.appendFilter(L10N.getStr("snapshotsList.saveDialogJSONFilter"), "*.json");
@@ -397,7 +397,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onSaveButtonClick: function(e) {
+  _onSaveButtonClick: function (e) {
     let snapshotItem = this.getItemForElement(e.target);
 
     let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
@@ -408,7 +408,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
 
     
     
-    let serialized = Task.spawn(function*() {
+    let serialized = Task.spawn(function* () {
       let data = {
         fileType: CALLS_LIST_SERIALIZER_IDENTIFIER,
         version: CALLS_LIST_SERIALIZER_VERSION,
@@ -488,7 +488,7 @@ var SnapshotsListView = Heritage.extend(WidgetMethods, {
   }
 });
 
-function showNotification (toolbox, name, message) {
+function showNotification(toolbox, name, message) {
   let notificationBox = toolbox.getNotificationBox();
   let notification = notificationBox.getNotificationWithValue(name);
   if (!notification) {

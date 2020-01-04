@@ -39,7 +39,7 @@ VariableBubbleView.prototype = {
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the VariableBubbleView");
 
     this._toolbox = DebuggerController._toolbox;
@@ -67,7 +67,7 @@ VariableBubbleView.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     dumpn("Destroying the VariableBubbleView");
 
     this._tooltip.panel.removeEventListener("popuphiding", this._onPopupHiding);
@@ -88,7 +88,7 @@ VariableBubbleView.prototype = {
 
 
 
-  _findIdentifier: function(x, y) {
+  _findIdentifier: function (x, y) {
     let editor = this.DebuggerView.editor;
 
     
@@ -171,7 +171,7 @@ VariableBubbleView.prototype = {
 
 
 
-  showContents: function({ coords, evalPrefix, objectActor }) {
+  showContents: function ({ coords, evalPrefix, objectActor }) {
     let editor = this.DebuggerView.editor;
     let { line, column, length } = coords;
 
@@ -190,7 +190,7 @@ VariableBubbleView.prototype = {
         messagesClass: className,
         containerClass: "plain"
       }, [{
-        label: L10N.getStr('addWatchExpressionButton'),
+        label: L10N.getStr("addWatchExpressionButton"),
         className: "dbg-expression-button",
         command: () => {
           this.DebuggerView.VariableBubble.hideContents();
@@ -234,7 +234,7 @@ VariableBubbleView.prototype = {
   
 
 
-  hideContents: function() {
+  hideContents: function () {
     clearNamedTimeout("editor-mouse-move");
     this._tooltip.hide();
   },
@@ -245,7 +245,7 @@ VariableBubbleView.prototype = {
 
 
 
-  contentsShown: function() {
+  contentsShown: function () {
     return this._tooltip.isShown();
   },
 
@@ -255,15 +255,15 @@ VariableBubbleView.prototype = {
 
 
 
-  _getSimpleValueEvalMacro: function(aPrefix) {
+  _getSimpleValueEvalMacro: function (aPrefix) {
     return (item, string) =>
       VariablesView.simpleValueEvalMacro(item, string, aPrefix);
   },
-  _getGetterOrSetterEvalMacro: function(aPrefix) {
+  _getGetterOrSetterEvalMacro: function (aPrefix) {
     return (item, string) =>
       VariablesView.getterOrSetterEvalMacro(item, string, aPrefix);
   },
-  _getOverrideValueEvalMacro: function(aPrefix) {
+  _getOverrideValueEvalMacro: function (aPrefix) {
     return (item, string) =>
       VariablesView.overrideValueEvalMacro(item, string, aPrefix);
   },
@@ -271,7 +271,7 @@ VariableBubbleView.prototype = {
   
 
 
-  _onMouseMove: function(e) {
+  _onMouseMove: function (e) {
     
     
     
@@ -291,14 +291,14 @@ VariableBubbleView.prototype = {
   
 
 
-  _onMouseOut: function() {
+  _onMouseOut: function () {
     clearNamedTimeout("editor-mouse-move");
   },
 
   
 
 
-  _onPopupHiding: function({ target }) {
+  _onPopupHiding: function ({ target }) {
     if (this._tooltip.panel != target) {
       return;
     }

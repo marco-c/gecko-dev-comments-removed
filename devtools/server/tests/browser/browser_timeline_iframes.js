@@ -9,7 +9,7 @@
 
 const {TimelineFront} = require("devtools/server/actors/timeline");
 
-add_task(function*() {
+add_task(function* () {
   let browser = yield addTab(MAIN_DOMAIN + "timeline-iframe-parent.html");
   let doc = browser.contentDocument;
 
@@ -23,7 +23,7 @@ add_task(function*() {
 
   
   
-  for (let i = 0; i < 3; i ++) {
+  for (let i = 0; i < 3; i++) {
     yield wait(300); 
     let markers = yield once(front, "markers");
     ok(markers.length, "Markers were received for operations in the child frame");

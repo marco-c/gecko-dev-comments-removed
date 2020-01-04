@@ -14,7 +14,7 @@ var {
 
 
 LayoutChangesObserver.prototype._setTimeout = cb => cb;
-LayoutChangesObserver.prototype._clearTimeout = function() {};
+LayoutChangesObserver.prototype._clearTimeout = function () {};
 
 
 
@@ -26,12 +26,12 @@ function MockTabActor() {
 
 function MockWindow() {}
 MockWindow.prototype = {
-  QueryInterface: function() {
+  QueryInterface: function () {
     let self = this;
     return {
-      getInterface: function() {
+      getInterface: function () {
         return {
-          QueryInterface: function() {
+          QueryInterface: function () {
             if (!self.docShell) {
               self.docShell = new MockDocShell();
             }
@@ -41,22 +41,22 @@ MockWindow.prototype = {
       }
     };
   },
-  setTimeout: function(cb) {
+  setTimeout: function (cb) {
     
     
     return cb;
   },
-  clearTimeout: function() {}
+  clearTimeout: function () {}
 };
 
 function MockDocShell() {
   this.observer = null;
 }
 MockDocShell.prototype = {
-  addWeakReflowObserver: function(observer) {
+  addWeakReflowObserver: function (observer) {
     this.observer = observer;
   },
-  removeWeakReflowObserver: function() {},
+  removeWeakReflowObserver: function () {},
   get chromeEventHandler() {
     return {
       addEventListener: (type, cb) => {
@@ -71,7 +71,7 @@ MockDocShell.prototype = {
       }
     };
   },
-  mockResize: function() {
+  mockResize: function () {
     if (this.resizeCb) {
       this.resizeCb();
     }
@@ -162,7 +162,7 @@ function eventsAreBatched() {
 }
 
 function noEventsAreSentWhenThereAreNoReflowsAndLoopTimeouts() {
- do_print("Checking that if no reflows were detected and the event batching " +
+  do_print("Checking that if no reflows were detected and the event batching " +
   "loop expires, then no reflows event is sent");
 
   let tabActor = new MockTabActor();

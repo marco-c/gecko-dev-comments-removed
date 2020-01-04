@@ -1,8 +1,8 @@
 
-(function() {
+(function () {
   var first, foo, second, third, _ref;
 
-  foo = function(n) {
+  foo = function (n) {
     var i, _i;
     for (i = _i = 0; 0 <= n ? _i < n : _i > n; i = 0 <= n ? ++_i : --_i) {
       return "foo" + i;

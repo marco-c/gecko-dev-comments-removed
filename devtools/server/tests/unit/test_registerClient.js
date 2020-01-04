@@ -89,7 +89,7 @@ function close_client() {
   gClient.close(() => {
     
     do_check_true(gTestClient.detached);
-    run_next_test()
+    run_next_test();
   });
 }
 

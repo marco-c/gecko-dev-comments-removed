@@ -44,7 +44,7 @@ let BreakpointActor = ActorClass({
 
 
 
-  initialize: function(threadActor, originalLocation) {
+  initialize: function (threadActor, originalLocation) {
     
     
     this.scripts = new Set();
@@ -55,11 +55,11 @@ let BreakpointActor = ActorClass({
     this.isPending = true;
   },
 
-  disconnect: function() {
+  disconnect: function () {
     this.removeScripts();
   },
 
-  hasScript: function(script) {
+  hasScript: function (script) {
     return this.scripts.has(script);
   },
 
@@ -70,7 +70,7 @@ let BreakpointActor = ActorClass({
 
 
 
-  addScript: function(script) {
+  addScript: function (script) {
     this.scripts.add(script);
     this.isPending = false;
   },
@@ -78,7 +78,7 @@ let BreakpointActor = ActorClass({
   
 
 
-  removeScripts: function() {
+  removeScripts: function () {
     for (let script of this.scripts) {
       script.clearBreakpoint(this);
     }
@@ -99,7 +99,7 @@ let BreakpointActor = ActorClass({
 
 
 
-  checkCondition: function(frame) {
+  checkCondition: function (frame) {
     let completion = frame.eval(this.condition);
     if (completion) {
       if (completion.throw) {
@@ -156,7 +156,7 @@ let BreakpointActor = ActorClass({
       
       reason.actors = [ this.actorID ];
     } else {
-      let { result, message } = this.checkCondition(frame)
+      let { result, message } = this.checkCondition(frame);
 
       if (result) {
         if (!message) {
@@ -176,7 +176,7 @@ let BreakpointActor = ActorClass({
   
 
 
-  delete: method(function() {
+  delete: method(function () {
     
     if (this.originalLocation) {
       this.threadActor.breakpointActorMap.deleteActor(this.originalLocation);

@@ -40,7 +40,7 @@ ToolbarView.prototype = {
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the ToolbarView");
 
     this._instrumentsPaneToggleButton = document.getElementById("instruments-pane-toggle");
@@ -79,7 +79,7 @@ ToolbarView.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     dumpn("Destroying the ToolbarView");
 
     this._instrumentsPaneToggleButton.removeEventListener("mousedown", this._onTogglePanesPressed, false);
@@ -92,8 +92,8 @@ ToolbarView.prototype = {
   
 
 
-  _addCommands: function() {
-    XULUtils.addCommands(document.getElementById('debuggerCommands'), {
+  _addCommands: function () {
+    XULUtils.addCommands(document.getElementById("debuggerCommands"), {
       resumeCommand: () => this._onResumePressed(),
       stepOverCommand: () => this._onStepOverPressed(),
       stepInCommand: () => this._onStepInPressed(),
@@ -108,7 +108,7 @@ ToolbarView.prototype = {
 
 
 
-  showResumeWarning: function(aPausedUrl) {
+  showResumeWarning: function (aPausedUrl) {
     let label = L10N.getFormatStr("resumptionOrderPanelTitle", aPausedUrl);
     let defaultStyle = "default-tooltip-simple-text-colors";
     this._resumeOrderTooltip.setTextContent({ messages: [label], isAlertTooltip: true });
@@ -123,7 +123,7 @@ ToolbarView.prototype = {
 
 
 
-  toggleResumeButtonState: function(aState, hasLocation) {
+  toggleResumeButtonState: function (aState, hasLocation) {
     
     
     if (aState == "breakOnNext") {
@@ -157,7 +157,7 @@ ToolbarView.prototype = {
     }
   },
 
-  _toggleButtonsState: function({ enabled }) {
+  _toggleButtonsState: function ({ enabled }) {
     const buttons = [
       this._stepOutButton,
       this._stepInButton,
@@ -171,7 +171,7 @@ ToolbarView.prototype = {
   
 
 
-  _onTogglePanesPressed: function() {
+  _onTogglePanesPressed: function () {
     DebuggerView.toggleInstrumentsPane({
       visible: DebuggerView.instrumentsPaneHidden,
       animated: true,
@@ -182,7 +182,7 @@ ToolbarView.prototype = {
   
 
 
-  _onResumePressed: function() {
+  _onResumePressed: function () {
     if (this.StackFrames._currentFrameDescription != FRAME_TYPE.NORMAL ||
         this._resumeButton.disabled) {
       return;
@@ -201,7 +201,7 @@ ToolbarView.prototype = {
   
 
 
-  _onStepOverPressed: function() {
+  _onStepOverPressed: function () {
     if (this.activeThread.paused && !this._stepOverButton.disabled) {
       this.StackFrames.currentFrameDepth = -1;
       this.activeThread.stepOver(this.resumptionWarnFunc);
@@ -211,7 +211,7 @@ ToolbarView.prototype = {
   
 
 
-  _onStepInPressed: function() {
+  _onStepInPressed: function () {
     if (this.StackFrames._currentFrameDescription != FRAME_TYPE.NORMAL ||
        this._stepInButton.disabled) {
       return;
@@ -226,7 +226,7 @@ ToolbarView.prototype = {
   
 
 
-  _onStepOutPressed: function() {
+  _onStepOutPressed: function () {
     if (this.activeThread.paused && !this._stepOutButton.disabled) {
       this.StackFrames.currentFrameDepth = -1;
       this.activeThread.stepOut(this.resumptionWarnFunc);

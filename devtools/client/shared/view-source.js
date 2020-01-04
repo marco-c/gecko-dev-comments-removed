@@ -23,7 +23,7 @@ var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
 
-exports.viewSourceInStyleEditor = Task.async(function *(toolbox, sourceURL, sourceLine) {
+exports.viewSourceInStyleEditor = Task.async(function* (toolbox, sourceURL, sourceLine) {
   let panel = yield toolbox.loadTool("styleeditor");
 
   try {
@@ -49,7 +49,7 @@ exports.viewSourceInStyleEditor = Task.async(function *(toolbox, sourceURL, sour
 
 
 
-exports.viewSourceInDebugger = Task.async(function *(toolbox, sourceURL, sourceLine) {
+exports.viewSourceInDebugger = Task.async(function* (toolbox, sourceURL, sourceLine) {
   
   
   
@@ -87,7 +87,7 @@ exports.viewSourceInDebugger = Task.async(function *(toolbox, sourceURL, sourceL
 
 
 
-exports.viewSourceInScratchpad = Task.async(function *(sourceURL, sourceLine) {
+exports.viewSourceInScratchpad = Task.async(function* (sourceURL, sourceLine) {
   
   let wins = Services.wm.getEnumerator("devtools:scratchpad");
 
@@ -126,7 +126,7 @@ exports.viewSourceInScratchpad = Task.async(function *(sourceURL, sourceLine) {
 
 
 
-exports.viewSource = Task.async(function *(toolbox, sourceURL, sourceLine) {
+exports.viewSource = Task.async(function* (toolbox, sourceURL, sourceLine) {
   
   
   let browserWin = Services.wm.getMostRecentWindow("navigator:browser");

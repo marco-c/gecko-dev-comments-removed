@@ -27,7 +27,7 @@ for (let name of ["WebConsoleUtils", "ConsoleServiceListener",
     "ConsoleAPIListener", "addWebConsoleCommands",
     "ConsoleReflowListener", "CONSOLE_WORKER_IDS"]) {
   Object.defineProperty(this, name, {
-    get: function(prop) {
+    get: function (prop) {
       if (prop == "WebConsoleUtils") {
         prop = "Utils";
       }
@@ -564,7 +564,7 @@ WebConsoleActor.prototype =
   {
     
     if (isWorker) {
-       aRequest.listeners = [];
+      aRequest.listeners = [];
     }
 
     let startedListeners = [];
@@ -893,9 +893,9 @@ WebConsoleActor.prototype =
 
           
           
-          try {
-            errorDocURL = ErrorDocs.GetURL(error && error.errorMessageName);
-          } catch (ex) {}
+        try {
+          errorDocURL = ErrorDocs.GetURL(error && error.errorMessageName);
+        } catch (ex) {}
       }
     }
 
@@ -945,7 +945,7 @@ WebConsoleActor.prototype =
         
         let frame = frameActor.frame;
         environment = frame.environment;
-      } catch(e) {
+      } catch (e) {
         DevToolsUtils.reportException("onAutocomplete",
           Error("The frame actor was not found: " + frameActorId));
       }
@@ -1069,7 +1069,7 @@ WebConsoleActor.prototype =
 
 
 
-  _getWebConsoleCommands: function(aDebuggerGlobal)
+  _getWebConsoleCommands: function (aDebuggerGlobal)
   {
     let helpers = {
       window: this.evalWindow,
@@ -1102,9 +1102,9 @@ WebConsoleActor.prototype =
 
       
       if (!isWorker) {
-        maybeExport(desc, 'get');
-        maybeExport(desc, 'set');
-        maybeExport(desc, 'value');
+        maybeExport(desc, "get");
+        maybeExport(desc, "set");
+        maybeExport(desc, "value");
       }
       if (desc.value) {
         
@@ -1305,7 +1305,7 @@ WebConsoleActor.prototype =
           
           
           if (!(line.kind == "let" || line.kind == "const"))
-                continue;
+            continue;
 
           let identifiers = [];
           for (let decl of line.declarations) {
@@ -1318,11 +1318,11 @@ WebConsoleActor.prototype =
                 
                 
                 for (let e of decl.id.elements) {
-                    if (e.type == "Identifier") {
-                      identifiers.push(e.name);
-                    } else if (e.type == "AssignmentExpression") {
-                      identifiers.push(e.left.name);
-                    }
+                  if (e.type == "Identifier") {
+                    identifiers.push(e.name);
+                  } else if (e.type == "AssignmentExpression") {
+                    identifiers.push(e.left.name);
+                  }
                 }
                 break;
               case "ObjectPattern":
@@ -1750,7 +1750,7 @@ WebConsoleActor.prototype =
     this.onStartListeners({listeners: listeners});
 
     
-    this._lastChromeWindow  = null;
+    this._lastChromeWindow = null;
   },
 };
 
@@ -1876,7 +1876,7 @@ NetworkEventActor.prototype =
     this._fromCache = aNetworkEvent.fromCache;
     this._fromServiceWorker = aNetworkEvent.fromServiceWorker;
 
-    for (let prop of ['method', 'url', 'httpVersion', 'headersSize']) {
+    for (let prop of ["method", "url", "httpVersion", "headersSize"]) {
       this._request[prop] = aNetworkEvent[prop];
     }
 

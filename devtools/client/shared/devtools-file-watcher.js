@@ -35,7 +35,7 @@ function findSourceDir(path) {
 }
 
 let worker = null;
-const onPrefChange = function() {
+const onPrefChange = function () {
   
   
   
@@ -68,7 +68,7 @@ const onPrefChange = function() {
     worker.terminate();
     worker = null;
   }
-}
+};
 Services.prefs.addObserver(HOTRELOAD_PREF, {
   observe: onPrefChange
 }, false);

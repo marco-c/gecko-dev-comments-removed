@@ -4,6 +4,6 @@
 
 
 
-dump("hello from the debugee!\n")
+dump("hello from the debugee!\n");
 
 debugger; 

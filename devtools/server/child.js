@@ -6,113 +6,113 @@
 
 try {
 
-var chromeGlobal = this;
+  var chromeGlobal = this;
 
 
 
-(function () {
-  let Cu = Components.utils;
-  let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-  const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-  const { dumpn } = DevToolsUtils;
-  const { DebuggerServer, ActorPool } = require("devtools/server/main");
-
-  
-  
-  if (!DebuggerServer.initialized) {
-    DebuggerServer.init();
-    DebuggerServer.isInChildProcess = true;
-  }
+  (function () {
+    let Cu = Components.utils;
+    let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+    const { dumpn } = DevToolsUtils;
+    const { DebuggerServer, ActorPool } = require("devtools/server/main");
 
   
   
-  
-  
-  DebuggerServer.addChildActors();
-
-  let connections = new Map();
-
-  let onConnect = DevToolsUtils.makeInfallible(function (msg) {
-    removeMessageListener("debug:connect", onConnect);
-
-    let mm = msg.target;
-    let prefix = msg.data.prefix;
-
-    let conn = DebuggerServer.connectToParent(prefix, mm);
-    conn.parentMessageManager = mm;
-    connections.set(prefix, conn);
-
-    let actor = new DebuggerServer.ContentActor(conn, chromeGlobal, prefix);
-    let actorPool = new ActorPool(conn);
-    actorPool.addActor(actor);
-    conn.addActorPool(actorPool);
-
-    sendAsyncMessage("debug:actor", {actor: actor.form(), prefix: prefix});
-  });
-
-  addMessageListener("debug:connect", onConnect);
+    if (!DebuggerServer.initialized) {
+      DebuggerServer.init();
+      DebuggerServer.isInChildProcess = true;
+    }
 
   
   
-  let onSetupInChild = DevToolsUtils.makeInfallible(msg => {
-    let { module, setupChild, args } = msg.data;
-    let m, fn;
+  
+  
+    DebuggerServer.addChildActors();
 
-    try {
-      m = require(module);
+    let connections = new Map();
 
-      if (!setupChild in m) {
-        dumpn("ERROR: module '" + module + "' does not export '" +
+    let onConnect = DevToolsUtils.makeInfallible(function (msg) {
+      removeMessageListener("debug:connect", onConnect);
+
+      let mm = msg.target;
+      let prefix = msg.data.prefix;
+
+      let conn = DebuggerServer.connectToParent(prefix, mm);
+      conn.parentMessageManager = mm;
+      connections.set(prefix, conn);
+
+      let actor = new DebuggerServer.ContentActor(conn, chromeGlobal, prefix);
+      let actorPool = new ActorPool(conn);
+      actorPool.addActor(actor);
+      conn.addActorPool(actorPool);
+
+      sendAsyncMessage("debug:actor", {actor: actor.form(), prefix: prefix});
+    });
+
+    addMessageListener("debug:connect", onConnect);
+
+  
+  
+    let onSetupInChild = DevToolsUtils.makeInfallible(msg => {
+      let { module, setupChild, args } = msg.data;
+      let m, fn;
+
+      try {
+        m = require(module);
+
+        if (!setupChild in m) {
+          dumpn("ERROR: module '" + module + "' does not export '" +
               setupChild + "'");
-        return false;
-      }
+          return false;
+        }
 
-      m[setupChild].apply(m, args);
+        m[setupChild].apply(m, args);
 
-    } catch(e) {
-      let error_msg = "exception during actor module setup running in the child process: ";
-      DevToolsUtils.reportException(error_msg + e);
-      dumpn("ERROR: " + error_msg + " \n\t module: '" + module +
+      } catch (e) {
+        let error_msg = "exception during actor module setup running in the child process: ";
+        DevToolsUtils.reportException(error_msg + e);
+        dumpn("ERROR: " + error_msg + " \n\t module: '" + module +
             "' \n\t setupChild: '" + setupChild + "'\n" +
             DevToolsUtils.safeErrorString(e));
-      return false;
-    }
-    if (msg.data.id) {
+        return false;
+      }
+      if (msg.data.id) {
       
-      sendAsyncMessage("debug:setup-in-child-response",
+        sendAsyncMessage("debug:setup-in-child-response",
                        {id: msg.data.id});
-    }
-    return true;
-  });
+      }
+      return true;
+    });
 
-  addMessageListener("debug:setup-in-child", onSetupInChild);
+    addMessageListener("debug:setup-in-child", onSetupInChild);
 
-  let onDisconnect = DevToolsUtils.makeInfallible(function (msg) {
-    removeMessageListener("debug:disconnect", onDisconnect);
+    let onDisconnect = DevToolsUtils.makeInfallible(function (msg) {
+      removeMessageListener("debug:disconnect", onDisconnect);
 
     
     
     
-    let prefix = msg.data.prefix;
-    let conn = connections.get(prefix);
-    if (conn) {
-      conn.close();
-      connections.delete(prefix);
-    }
-  });
-  addMessageListener("debug:disconnect", onDisconnect);
+      let prefix = msg.data.prefix;
+      let conn = connections.get(prefix);
+      if (conn) {
+        conn.close();
+        connections.delete(prefix);
+      }
+    });
+    addMessageListener("debug:disconnect", onDisconnect);
 
-  let onInspect = DevToolsUtils.makeInfallible(function(msg) {
+    let onInspect = DevToolsUtils.makeInfallible(function (msg) {
     
     
     
     
-    let inspector = require("devtools/server/actors/inspector");
-    inspector.setInspectingNode(msg.objects.node);
-  });
-  addMessageListener("debug:inspect", onInspect);
-})();
+      let inspector = require("devtools/server/actors/inspector");
+      inspector.setInspectingNode(msg.objects.node);
+    });
+    addMessageListener("debug:inspect", onInspect);
+  })();
 
-} catch(e) {
+} catch (e) {
   dump("Exception in app child process: " + e + "\n");
 }

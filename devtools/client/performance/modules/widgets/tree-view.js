@@ -55,12 +55,12 @@ const DEFAULT_SORTING_PREDICATE = (frameA, frameB) => {
 
   if (isAllocations) {
     return this.inverted && dataA.selfSize !== dataB.selfSize ?
-           (dataA.selfSize < dataB.selfSize ? 1 : - 1) :
+           (dataA.selfSize < dataB.selfSize ? 1 : -1) :
            (dataA.totalSize < dataB.totalSize ? 1 : -1);
   }
 
   return this.inverted && dataA.selfPercentage !== dataB.selfPercentage ?
-         (dataA.selfPercentage < dataB.selfPercentage ? 1 : - 1) :
+         (dataA.selfPercentage < dataB.selfPercentage ? 1 : -1) :
          (dataA.totalPercentage < dataB.totalPercentage ? 1 : -1);
 };
 
@@ -137,13 +137,13 @@ function CallView({
 }) {
   AbstractTreeItem.call(this, {
     parent: caller,
-    level: level|0 - (hidden ? 1 : 0)
+    level: level | 0 - (hidden ? 1 : 0)
   });
 
   this.sortingPredicate = sortingPredicate != null
     ? sortingPredicate
     : caller ? caller.sortingPredicate
-             : DEFAULT_SORTING_PREDICATE
+             : DEFAULT_SORTING_PREDICATE;
 
   this.autoExpandDepth = autoExpandDepth != null
     ? autoExpandDepth
@@ -162,7 +162,7 @@ function CallView({
   this.showOptimizationHint = showOptimizationHint;
 
   this._onUrlClick = this._onUrlClick.bind(this);
-};
+}
 
 CallView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
   
@@ -171,7 +171,7 @@ CallView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
 
 
 
-  _displaySelf: function(document, arrowNode) {
+  _displaySelf: function (document, arrowNode) {
     let frameInfo = this.getDisplayedData();
     let cells = [];
 
@@ -209,7 +209,7 @@ CallView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
 
 
 
-  _populateSelf: function(children) {
+  _populateSelf: function (children) {
     let newLevel = this.level + 1;
 
     for (let newFrame of this.frame.calls) {
@@ -240,7 +240,7 @@ CallView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
     return cell;
   },
 
-  _createFunctionCell: function(doc, arrowNode, frameName, frameInfo, frameLevel) {
+  _createFunctionCell: function (doc, arrowNode, frameName, frameInfo, frameLevel) {
     let cell = doc.createElement("hbox");
     cell.className = "call-tree-cell";
     cell.style.marginInlineStart = (frameLevel * CALL_TREE_INDENTATION) + "px";
@@ -277,19 +277,19 @@ CallView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
 
     
     
-    let lastDescription = cell.querySelector('description:last-of-type');
+    let lastDescription = cell.querySelector("description:last-of-type");
     lastDescription.textContent = lastDescription.textContent + "\n";
 
     
     
-    let firstDescription = cell.querySelector('description:first-of-type');
+    let firstDescription = cell.querySelector("description:first-of-type");
     let levelIndicator = frameLevel > 0 ? " ".repeat(frameLevel) : "";
     firstDescription.textContent = levelIndicator + firstDescription.textContent;
 
     return cell;
   },
 
-  _appendFunctionDetailsCells: function(doc, cell, frameInfo) {
+  _appendFunctionDetailsCells: function (doc, cell, frameInfo) {
     if (frameInfo.fileName) {
       let urlNode = doc.createElement("description");
       urlNode.className = "plain call-tree-url";
@@ -335,7 +335,7 @@ CallView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
 
 
 
-  getDisplayedData: function() {
+  getDisplayedData: function () {
     if (this._cachedDisplayedData) {
       return this._cachedDisplayedData;
     }
@@ -366,7 +366,7 @@ CallView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
 
 
 
-  toggleCategories: function(visible) {
+  toggleCategories: function (visible) {
     if (!visible) {
       this.container.setAttribute("categories-hidden", "");
     } else {
@@ -377,7 +377,7 @@ CallView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
   
 
 
-  _onUrlClick: function(e) {
+  _onUrlClick: function (e) {
     e.preventDefault();
     e.stopPropagation();
     

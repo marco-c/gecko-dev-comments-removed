@@ -53,7 +53,7 @@ BottomHost.prototype = {
   
 
 
-  create: function() {
+  create: function () {
     let deferred = promise.defer();
 
     let gBrowser = this.hostTab.ownerDocument.defaultView.gBrowser;
@@ -94,7 +94,7 @@ BottomHost.prototype = {
   
 
 
-  raise: function() {
+  raise: function () {
     focusTab(this.hostTab);
   },
 
@@ -103,7 +103,7 @@ BottomHost.prototype = {
 
 
 
-  minimize: function(height=0) {
+  minimize: function (height = 0) {
     if (this.isMinimized) {
       return;
     }
@@ -127,7 +127,7 @@ BottomHost.prototype = {
 
 
 
-  maximize: function() {
+  maximize: function () {
     if (!this.isMinimized) {
       return;
     }
@@ -151,7 +151,7 @@ BottomHost.prototype = {
 
 
 
-  toggleMinimizeMode: function(minHeight) {
+  toggleMinimizeMode: function (minHeight) {
     this.isMinimized ? this.maximize() : this.minimize(minHeight);
   },
 
@@ -159,12 +159,12 @@ BottomHost.prototype = {
 
 
 
-  setTitle: function() {},
+  setTitle: function () {},
 
   
 
 
-  destroy: function() {
+  destroy: function () {
     if (!this._destroyed) {
       this._destroyed = true;
 
@@ -194,7 +194,7 @@ SidebarHost.prototype = {
   
 
 
-  create: function() {
+  create: function () {
     let deferred = promise.defer();
 
     let gBrowser = this.hostTab.ownerDocument.defaultView.gBrowser;
@@ -234,7 +234,7 @@ SidebarHost.prototype = {
   
 
 
-  raise: function() {
+  raise: function () {
     focusTab(this.hostTab);
   },
 
@@ -242,12 +242,12 @@ SidebarHost.prototype = {
 
 
 
-  setTitle: function() {},
+  setTitle: function () {},
 
   
 
 
-  destroy: function() {
+  destroy: function () {
     if (!this._destroyed) {
       this._destroyed = true;
 
@@ -277,7 +277,7 @@ WindowHost.prototype = {
   
 
 
-  create: function() {
+  create: function () {
     let deferred = promise.defer();
 
     let flags = "chrome,centerscreen,resizable,dialog=no";
@@ -313,7 +313,7 @@ WindowHost.prototype = {
   
 
 
-  _boundUnload: function(event) {
+  _boundUnload: function (event) {
     if (event.target.location != this.WINDOW_URL) {
       return;
     }
@@ -325,21 +325,21 @@ WindowHost.prototype = {
   
 
 
-  raise: function() {
+  raise: function () {
     this._window.focus();
   },
 
   
 
 
-  setTitle: function(title) {
+  setTitle: function (title) {
     this._window.document.title = title;
   },
 
   
 
 
-  destroy: function() {
+  destroy: function () {
     if (!this._destroyed) {
       this._destroyed = true;
 
@@ -363,7 +363,7 @@ function CustomHost(hostTab, options) {
 CustomHost.prototype = {
   type: "custom",
 
-  _sendMessageToTopWindow: function(msg, data) {
+  _sendMessageToTopWindow: function (msg, data) {
     
     
     let topWindow = this.frame.ownerDocument.defaultView;
@@ -380,28 +380,28 @@ CustomHost.prototype = {
   
 
 
-  create: function() {
+  create: function () {
     return promise.resolve(this.frame);
   },
 
   
 
 
-  raise: function() {
+  raise: function () {
     this._sendMessageToTopWindow("raise");
   },
 
   
 
 
-  setTitle: function(title) {
+  setTitle: function (title) {
     this._sendMessageToTopWindow("title", { value: title });
   },
 
   
 
 
-  destroy: function() {
+  destroy: function () {
     if (!this._destroyed) {
       this._destroyed = true;
       this._sendMessageToTopWindow("close");

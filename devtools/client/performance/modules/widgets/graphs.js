@@ -73,7 +73,7 @@ PerformanceGraph.prototype = Heritage.extend(LineGraphWidget.prototype, {
   
 
 
-  clearView: function() {
+  clearView: function () {
     this.selectionEnabled = false;
     this.dropSelection();
     this.setData([]);
@@ -176,7 +176,7 @@ const GRAPH_DEFINITIONS = {
 
 
 
-function GraphsController ({ definition, root, getFilter, getTheme }) {
+function GraphsController({ definition, root, getFilter, getTheme }) {
   this._graphs = {};
   this._enabled = new Set();
   this._definition = definition || GRAPH_DEFINITIONS;
@@ -206,7 +206,7 @@ GraphsController.prototype = {
 
 
 
-  render: Task.async(function *(recordingData, resolution) {
+  render: Task.async(function* (recordingData, resolution) {
     
     
     
@@ -230,7 +230,7 @@ GraphsController.prototype = {
   
 
 
-  destroy: Task.async(function *() {
+  destroy: Task.async(function* () {
     let primary = this._getPrimaryLink();
 
     this._destroyed = true;
@@ -254,7 +254,7 @@ GraphsController.prototype = {
 
 
 
-  setTheme: function (options={}) {
+  setTheme: function (options = {}) {
     let theme = options.theme || this._getTheme();
     for (let graph of this.getWidgets()) {
       graph.setTheme(theme);
@@ -267,7 +267,7 @@ GraphsController.prototype = {
 
 
 
-  isAvailable: Task.async(function *(graphName) {
+  isAvailable: Task.async(function* (graphName) {
     if (!this._enabled.has(graphName)) {
       return null;
     }
@@ -356,7 +356,7 @@ GraphsController.prototype = {
   
 
 
-  selectionEnabled: Task.async(function *(enabled) {
+  selectionEnabled: Task.async(function* (enabled) {
     for (let graph of (yield this._getEnabled())) {
       graph.selectionEnabled = enabled;
     }
@@ -365,7 +365,7 @@ GraphsController.prototype = {
   
 
 
-  _construct: Task.async(function *(graphName) {
+  _construct: Task.async(function* (graphName) {
     let def = this._definition[graphName];
     let el = this.$(def.selector);
     let filter = this._getFilter();
@@ -410,7 +410,7 @@ GraphsController.prototype = {
 
 
 
-  _getEnabled: Task.async(function *() {
+  _getEnabled: Task.async(function* () {
     if (this._enabledGraphs) {
       return this._enabledGraphs;
     }
@@ -440,7 +440,7 @@ function OptimizationsGraph(parent) {
 
 OptimizationsGraph.prototype = Heritage.extend(MountainGraphWidget.prototype, {
 
-  render: Task.async(function *(threadNode, frameNode) {
+  render: Task.async(function* (threadNode, frameNode) {
     
     
     yield this.ready();

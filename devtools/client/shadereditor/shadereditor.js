@@ -39,7 +39,7 @@ const EVENTS = {
 };
 XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
 
-const STRINGS_URI = "chrome://devtools/locale/shadereditor.properties"
+const STRINGS_URI = "chrome://devtools/locale/shadereditor.properties";
 const HIGHLIGHT_TINT = [1, 0, 0.25, 1]; 
 const TYPING_MAX_DELAY = 500; 
 const SHADERS_AUTOGROW_ITEMS = 4;
@@ -85,7 +85,7 @@ var EventsHandler = {
   
 
 
-  initialize: function() {
+  initialize: function () {
     this._onHostChanged = this._onHostChanged.bind(this);
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onProgramLinked = this._onProgramLinked.bind(this);
@@ -101,7 +101,7 @@ var EventsHandler = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     gToolbox.off("host-changed", this._onHostChanged);
     gTarget.off("will-navigate", this._onTabNavigated);
     gTarget.off("navigate", this._onTabNavigated);
@@ -119,7 +119,7 @@ var EventsHandler = {
   
 
 
-  _onHostChanged: function() {
+  _onHostChanged: function () {
     if (gToolbox.hostType == "side") {
       $("#shaders-pane").removeAttribute("height");
     }
@@ -128,7 +128,7 @@ var EventsHandler = {
   
 
 
-  _onTabNavigated: function(event, {isFrameSwitching}) {
+  _onTabNavigated: function (event, {isFrameSwitching}) {
     switch (event) {
       case "will-navigate": {
         
@@ -167,7 +167,7 @@ var EventsHandler = {
   
 
 
-  _onProgramLinked: function(programActor) {
+  _onProgramLinked: function (programActor) {
     this._addProgram(programActor);
     window.emit(EVENTS.NEW_PROGRAM);
   },
@@ -175,7 +175,7 @@ var EventsHandler = {
   
 
 
-  _onProgramsAdded: function(programActors) {
+  _onProgramsAdded: function (programActors) {
     programActors.forEach(this._addProgram);
     window.emit(EVENTS.PROGRAMS_ADDED);
   },
@@ -183,7 +183,7 @@ var EventsHandler = {
   
 
 
-  _addProgram: function(programActor) {
+  _addProgram: function (programActor) {
     $("#waiting-notice").hidden = true;
     $("#reload-notice").hidden = true;
     $("#content").hidden = false;
@@ -198,7 +198,7 @@ var ShadersListView = Heritage.extend(WidgetMethods, {
   
 
 
-  initialize: function() {
+  initialize: function () {
     this.widget = new SideMenuWidget(this._pane = $("#shaders-pane"), {
       showArrows: true,
       showItemCheckboxes: true
@@ -218,7 +218,7 @@ var ShadersListView = Heritage.extend(WidgetMethods, {
   
 
 
-  destroy: function() {
+  destroy: function () {
     this.widget.removeEventListener("select", this._onProgramSelect, false);
     this.widget.removeEventListener("check", this._onProgramCheck, false);
     this.widget.removeEventListener("mouseover", this._onProgramMouseOver, true);
@@ -231,7 +231,7 @@ var ShadersListView = Heritage.extend(WidgetMethods, {
 
 
 
-  addProgram: function(programActor) {
+  addProgram: function (programActor) {
     if (this.hasProgram(programActor)) {
       return;
     }
@@ -278,14 +278,14 @@ var ShadersListView = Heritage.extend(WidgetMethods, {
 
 
 
-  hasProgram: function(programActor) {
+  hasProgram: function (programActor) {
     return !!this.attachments.filter(e => e.programActor == programActor).length;
   },
 
   
 
 
-  _onProgramSelect: function({ detail: sourceItem }) {
+  _onProgramSelect: function ({ detail: sourceItem }) {
     if (!sourceItem) {
       return;
     }
@@ -320,7 +320,7 @@ var ShadersListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onProgramCheck: function({ detail: { checked }, target }) {
+  _onProgramCheck: function ({ detail: { checked }, target }) {
     let sourceItem = this.getItemForElement(target);
     let attachment = sourceItem.attachment;
     attachment.isBlackBoxed = !checked;
@@ -330,7 +330,7 @@ var ShadersListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onProgramMouseOver: function(e) {
+  _onProgramMouseOver: function (e) {
     let sourceItem = this.getItemForElement(e.target, { noSiblings: true });
     if (sourceItem && !sourceItem.attachment.isBlackBoxed) {
       sourceItem.attachment.programActor.highlight(HIGHLIGHT_TINT);
@@ -345,7 +345,7 @@ var ShadersListView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onProgramMouseOut: function(e) {
+  _onProgramMouseOut: function (e) {
     let sourceItem = this.getItemForElement(e.target, { noSiblings: true });
     if (sourceItem && !sourceItem.attachment.isBlackBoxed) {
       sourceItem.attachment.programActor.unhighlight();
@@ -365,7 +365,7 @@ var ShadersEditorsView = {
   
 
 
-  initialize: function() {
+  initialize: function () {
     XPCOMUtils.defineLazyGetter(this, "_editorPromises", () => new Map());
     this._vsFocused = this._onFocused.bind(this, "vs", "fs");
     this._fsFocused = this._onFocused.bind(this, "fs", "vs");
@@ -376,7 +376,7 @@ var ShadersEditorsView = {
   
 
 
-  destroy: Task.async(function*() {
+  destroy: Task.async(function* () {
     this._destroyed = true;
     yield this._toggleListeners("off");
     for (let p of this._editorPromises.values()) {
@@ -395,14 +395,14 @@ var ShadersEditorsView = {
 
 
 
-  setText: function(sources) {
+  setText: function (sources) {
     let view = this;
     function setTextAndClearHistory(editor, text) {
       editor.setText(text);
       editor.clearHistory();
     }
 
-    return Task.spawn(function*() {
+    return Task.spawn(function* () {
       yield view._toggleListeners("off");
       yield promise.all([
         view._getEditor("vs").then(e => setTextAndClearHistory(e, sources.vs)),
@@ -421,7 +421,7 @@ var ShadersEditorsView = {
 
 
 
-  _getEditor: function(type) {
+  _getEditor: function (type) {
     if (this._editorPromises.has(type)) {
       return this._editorPromises.get(type);
     }
@@ -431,7 +431,7 @@ var ShadersEditorsView = {
 
     
     
-    let parent = $("#" + type +"-editor");
+    let parent = $("#" + type + "-editor");
     let editor = new Editor(DEFAULT_EDITOR_CONFIG);
     editor.config.mode = Editor.modes[type];
 
@@ -452,7 +452,7 @@ var ShadersEditorsView = {
 
 
 
-  _toggleListeners: function(flag) {
+  _toggleListeners: function (flag) {
     return promise.all(["vs", "fs"].map(type => {
       return this._getEditor(type).then(editor => {
         editor[flag]("focus", this["_" + type + "Focused"]);
@@ -469,7 +469,7 @@ var ShadersEditorsView = {
 
 
 
-  _onFocused: function(focused, unfocused) {
+  _onFocused: function (focused, unfocused) {
     $("#" + focused + "-editor-label").setAttribute("selected", "");
     $("#" + unfocused + "-editor-label").removeAttribute("selected");
   },
@@ -480,7 +480,7 @@ var ShadersEditorsView = {
 
 
 
-  _onChanged: function(type) {
+  _onChanged: function (type) {
     setNamedTimeout("gl-typed", TYPING_MAX_DELAY, () => this._doCompile(type));
 
     
@@ -494,8 +494,8 @@ var ShadersEditorsView = {
 
 
 
-  _doCompile: function(type) {
-    Task.spawn(function*() {
+  _doCompile: function (type) {
+    Task.spawn(function* () {
       let editor = yield this._getEditor(type);
       let shaderActor = yield ShadersListView.selectedAttachment[type];
 
@@ -511,7 +511,7 @@ var ShadersEditorsView = {
   
 
 
-  _onSuccessfulCompilation: function() {
+  _onSuccessfulCompilation: function () {
     
     window.emit(EVENTS.SHADER_COMPILED, null);
   },
@@ -519,7 +519,7 @@ var ShadersEditorsView = {
   
 
 
-  _onFailedCompilation: function(type, editor, errors) {
+  _onFailedCompilation: function (type, editor, errors) {
     let lineCount = editor.lineCount();
     let currentLine = editor.getCursor().line;
     let listeners = { mouseover: this._onMarkerMouseOver };
@@ -587,7 +587,7 @@ var ShadersEditorsView = {
   
 
 
-  _onMarkerMouseOver: function(line, node, messages) {
+  _onMarkerMouseOver: function (line, node, messages) {
     if (node._markerErrorsTooltip) {
       return;
     }
@@ -601,7 +601,7 @@ var ShadersEditorsView = {
   
 
 
-  _cleanEditor: function(type) {
+  _cleanEditor: function (type) {
     this._getEditor(type).then(editor => {
       editor.removeAllMarkers("errors");
       this._errors[type].forEach(e => editor.removeLineClass(e.line));

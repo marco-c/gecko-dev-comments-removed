@@ -248,8 +248,8 @@ function setScrollHandlers(container, dragZoom, emitChanged, update) {
     let deltaWidth = dragZoom.zoomedWidth - prevZoomedWidth;
     let deltaHeight = dragZoom.zoomedHeight - prevZoomedHeight;
 
-    let mouseOffsetX = dragZoom.mouseX - container.offsetWidth / 2
-    let mouseOffsetY = dragZoom.mouseY - container.offsetHeight / 2
+    let mouseOffsetX = dragZoom.mouseX - container.offsetWidth / 2;
+    let mouseOffsetY = dragZoom.mouseY - container.offsetHeight / 2;
 
     
     

@@ -59,7 +59,7 @@ this.Curl = {
 
 
 
-  generateCommand: function(aData) {
+  generateCommand: function (aData) {
     let utils = CurlUtils;
 
     let command = ["curl"];
@@ -120,7 +120,7 @@ this.Curl = {
     }
     for (let i = 0; i < headers.length; i++) {
       let header = headers[i];
-      if (header.name === "Accept-Encoding"){
+      if (header.name === "Accept-Encoding") {
         command.push("--compressed");
         continue;
       }
@@ -150,7 +150,7 @@ this.CurlUtils = {
 
 
 
-  isUrlEncodedRequest: function(aData) {
+  isUrlEncodedRequest: function (aData) {
     let postDataText = aData.postDataText;
     if (!postDataText) {
       return false;
@@ -175,7 +175,7 @@ this.CurlUtils = {
 
 
 
-  isMultipartRequest: function(aData) {
+  isMultipartRequest: function (aData) {
     let postDataText = aData.postDataText;
     if (!postDataText) {
       return false;
@@ -200,7 +200,7 @@ this.CurlUtils = {
 
 
 
-  writePostDataTextParams: function(aPostDataText) {
+  writePostDataTextParams: function (aPostDataText) {
     let lines = aPostDataText.split("\r\n");
     return lines[lines.length - 1];
   },
@@ -215,7 +215,7 @@ this.CurlUtils = {
 
 
 
-  findHeader: function(aHeaders, aName) {
+  findHeader: function (aHeaders, aName) {
     if (!aHeaders) {
       return null;
     }
@@ -238,7 +238,7 @@ this.CurlUtils = {
 
 
 
-  getMultipartBoundary: function(aData) {
+  getMultipartBoundary: function (aData) {
     let boundaryRe = /\bboundary=(-{3,}\w+)/i;
 
     
@@ -267,7 +267,7 @@ this.CurlUtils = {
 
 
 
-  removeBinaryDataFromMultipartText: function(aMultipartText, aBoundary) {
+  removeBinaryDataFromMultipartText: function (aMultipartText, aBoundary) {
     let result = "";
     let boundary = "--" + aBoundary;
     let parts = aMultipartText.split(boundary);
@@ -303,7 +303,7 @@ this.CurlUtils = {
 
 
 
-  getHeadersFromMultipartText: function(aMultipartText) {
+  getHeadersFromMultipartText: function (aMultipartText) {
     let headers = [];
     if (!aMultipartText || aMultipartText.startsWith("---")) {
       return headers;
@@ -349,7 +349,7 @@ this.CurlUtils = {
 
 
 
-  escapeStringPosix: function(str) {
+  escapeStringPosix: function (str) {
     function escapeCharacter(x) {
       let code = x.charCodeAt(0);
       if (code < 256) {
@@ -377,7 +377,7 @@ this.CurlUtils = {
 
 
 
-  escapeStringWin: function(str) {
+  escapeStringWin: function (str) {
     
 
 

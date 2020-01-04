@@ -5,7 +5,7 @@
 const { Cu, Cc, Ci } = require("chrome");
 
 const { LocalizationHelper } = require("devtools/client/shared/l10n");
-const STRINGS_URI = "chrome://devtools/locale/memory.properties"
+const STRINGS_URI = "chrome://devtools/locale/memory.properties";
 const L10N = exports.L10N = new LocalizationHelper(STRINGS_URI);
 
 const { OS } = require("resource://gre/modules/osfile.jsm");
@@ -266,7 +266,7 @@ exports.snapshotIsDiffable = function snapshotIsDiffable(snapshot) {
 
 
 
-exports.getSnapshot = function getSnapshot (state, id) {
+exports.getSnapshot = function getSnapshot(state, id) {
   const found = state.snapshots.find(s => s.id === id);
   assert(found, `No matching snapshot found with id = ${id}`);
   return found;
@@ -412,7 +412,7 @@ exports.getSnapshotTotals = function (census) {
 
 
 
-exports.openFilePicker = function({ title, filters, defaultName, mode }) {
+exports.openFilePicker = function ({ title, filters, defaultName, mode }) {
   mode = mode === "save" ? Ci.nsIFilePicker.modeSave :
          mode === "open" ? Ci.nsIFilePicker.modeOpen : null;
 
@@ -448,7 +448,7 @@ exports.openFilePicker = function({ title, filters, defaultName, mode }) {
 
 
 
-exports.formatNumber = function(number, showSign = false) {
+exports.formatNumber = function (number, showSign = false) {
   const rounded = Math.round(number);
   if (rounded === 0 || rounded === -0) {
     return "0";
@@ -472,7 +472,7 @@ exports.formatNumber = function(number, showSign = false) {
 
 
 
-exports.formatPercent = function(percent, showSign = false) {
+exports.formatPercent = function (percent, showSign = false) {
   return exports.L10N.getFormatStr("tree-item.percent",
                            exports.formatNumber(percent, showSign));
 };
@@ -489,7 +489,7 @@ exports.formatPercent = function(percent, showSign = false) {
 
 
 
-exports.hslToStyle = function(h, s, l) {
+exports.hslToStyle = function (h, s, l) {
   h = parseInt(h * 360, 10);
   s = parseInt(s * 100, 10);
   l = parseInt(l * 100, 10);
@@ -506,7 +506,7 @@ exports.hslToStyle = function(h, s, l) {
 
 
 
-exports.lerp = function(a, b, t) {
+exports.lerp = function (a, b, t) {
   return a * (1 - t) + b * t;
 };
 
@@ -517,7 +517,7 @@ exports.lerp = function(a, b, t) {
 
 
 
-exports.formatAbbreviatedBytes = function(n) {
+exports.formatAbbreviatedBytes = function (n) {
   if (n < BYTES) {
     return n + "B";
   } else if (n < KILOBYTES) {

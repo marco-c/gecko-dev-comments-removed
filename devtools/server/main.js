@@ -30,7 +30,7 @@ DevToolsUtils.defineLazyGetter(this, "Authentication", () => {
   return require("devtools/shared/security/auth");
 });
 DevToolsUtils.defineLazyGetter(this, "generateUUID", () => {
-  let { generateUUID } = Cc['@mozilla.org/uuid-generator;1'].getService(Ci.nsIUUIDGenerator);
+  let { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
   return generateUUID;
 });
 
@@ -51,7 +51,7 @@ this.dumpv = dumpv;
 
 
 Object.defineProperty(this, "Components", {
-  get: function() {
+  get: function () {
     return require("chrome").components;
   }
 });
@@ -75,7 +75,7 @@ function loadSubScript(aURL)
     let loader = Cc["@mozilla.org/moz/jssubscript-loader;1"]
       .getService(Ci.mozIJSSubScriptLoader);
     loader.loadSubScript(aURL, this);
-  } catch(e) {
+  } catch (e) {
     let errorStr = "Error loading: " + aURL + ":\n" +
                    (e.fileName ? "at " + e.fileName + " : " + e.lineNumber + "\n" : "") +
                    e + " - " + e.stack + "\n";
@@ -109,35 +109,35 @@ function ModuleAPI() {
 
   return {
     
-    setRootActor: function(factory) {
+    setRootActor: function (factory) {
       DebuggerServer.setRootActor(factory);
     },
 
     
-    addGlobalActor: function(factory, name) {
+    addGlobalActor: function (factory, name) {
       DebuggerServer.addGlobalActor(factory, name);
       activeGlobalActors.add(factory);
     },
     
-    removeGlobalActor: function(factory) {
+    removeGlobalActor: function (factory) {
       DebuggerServer.removeGlobalActor(factory);
       activeGlobalActors.delete(factory);
     },
 
     
-    addTabActor: function(factory, name) {
+    addTabActor: function (factory, name) {
       DebuggerServer.addTabActor(factory, name);
       activeTabActors.add(factory);
     },
     
-    removeTabActor: function(factory) {
+    removeTabActor: function (factory) {
       DebuggerServer.removeTabActor(factory);
       activeTabActors.delete(factory);
     },
 
     
     
-    destroy: function() {
+    destroy: function () {
       for (let factory of activeTabActors) {
         DebuggerServer.removeTabActor(factory);
       }
@@ -148,7 +148,7 @@ function ModuleAPI() {
       activeGlobalActors = null;
     }
   };
-};
+}
 
 
 
@@ -288,7 +288,7 @@ var DebuggerServer = {
 
 
 
-  registerModule: function(id, options) {
+  registerModule: function (id, options) {
     if (id in gRegisteredModules) {
       throw new Error("Tried to register a module twice: " + id + "\n");
     }
@@ -296,10 +296,10 @@ var DebuggerServer = {
     if (options) {
       
       let {prefix, constructor, type} = options;
-      if (typeof(prefix) !== "string") {
+      if (typeof (prefix) !== "string") {
         throw new Error("Lazy actor definition for '" + id + "' requires a string 'prefix' option.");
       }
-      if (typeof(constructor) !== "string") {
+      if (typeof (constructor) !== "string") {
         throw new Error("Lazy actor definition for '" + id + "' requires a string 'constructor' option.");
       }
       if (!("global" in type) && !("tab" in type)) {
@@ -336,14 +336,14 @@ var DebuggerServer = {
   
 
 
-  isModuleRegistered: function(id) {
+  isModuleRegistered: function (id) {
     return (id in gRegisteredModules);
   },
 
   
 
 
-  unregisterModule: function(id) {
+  unregisterModule: function (id) {
     let mod = gRegisteredModules[id];
     if (!mod) {
       throw new Error("Tried to unregister a module that was not previously registered.");
@@ -376,7 +376,7 @@ var DebuggerServer = {
 
 
 
-  addBrowserActors: function(aWindowType = "navigator:browser", restrictPrivileges = false) {
+  addBrowserActors: function (aWindowType = "navigator:browser", restrictPrivileges = false) {
     this.chromeWindowType = aWindowType;
     this.registerModule("devtools/server/actors/webbrowser");
 
@@ -444,7 +444,7 @@ var DebuggerServer = {
   
 
 
-  addTabActors: function() {
+  addTabActors: function () {
     this.registerModule("devtools/server/actors/webconsole", {
       prefix: "console",
       constructor: "WebConsoleActor",
@@ -612,7 +612,7 @@ var DebuggerServer = {
 
 
 
-  createListener: function() {
+  createListener: function () {
     if (!Services.prefs.getBoolPref("devtools.debugger.remote-enabled")) {
       throw new Error("Can't create listener, remote debugging disabled");
     }
@@ -624,7 +624,7 @@ var DebuggerServer = {
 
 
 
-  _addListener: function(listener) {
+  _addListener: function (listener) {
     this._listeners.push(listener);
   },
 
@@ -632,7 +632,7 @@ var DebuggerServer = {
 
 
 
-  _removeListener: function(listener) {
+  _removeListener: function (listener) {
     this._listeners = this._listeners.filter(l => l !== listener);
   },
 
@@ -642,7 +642,7 @@ var DebuggerServer = {
 
 
 
-  closeAllListeners: function() {
+  closeAllListeners: function () {
     if (!this.listeningSockets) {
       return false;
     }
@@ -703,7 +703,7 @@ var DebuggerServer = {
 
 
 
-  connectToParent: function(aPrefix, aScopeOrManager) {
+  connectToParent: function (aPrefix, aScopeOrManager) {
     this._checkInit();
 
     let transport = isWorker ?
@@ -758,7 +758,7 @@ var DebuggerServer = {
         
         try {
           aMm.sendAsyncMessage("debug:content-process-destroy");
-        } catch(e) {}
+        } catch (e) {}
       }
     }
 
@@ -914,7 +914,7 @@ var DebuggerServer = {
 
 
 
-  setupInChild: function({ module, setupChild, args, waitForEval }) {
+  setupInChild: function ({ module, setupChild, args, waitForEval }) {
     if (this.isInChildProcess || this._childMessageManagers.size == 0) {
       return Promise.resolve();
     }
@@ -922,7 +922,7 @@ var DebuggerServer = {
 
     
     
-    if (typeof(waitForEval) != "boolean") {
+    if (typeof (waitForEval) != "boolean") {
       waitForEval = false;
     }
     let count = this._childMessageManagers.size;
@@ -977,7 +977,7 @@ var DebuggerServer = {
 
 
 
-  connectToChild: function(aConnection, aFrame, aOnDestroy) {
+  connectToChild: function (aConnection, aFrame, aOnDestroy) {
     let deferred = defer();
 
     let mm = aFrame.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader
@@ -1013,7 +1013,7 @@ var DebuggerServer = {
         m[setupParent]({ mm: mm, prefix: prefix });
 
         return true;
-      } catch(e) {
+      } catch (e) {
         let error_msg = "exception during actor module setup running in the parent process: ";
         DevToolsUtils.reportException(error_msg + e);
         dumpn("ERROR: " + error_msg + " \n\t module: '" + module + "' \n\t setupParent: '" + setupParent + "'\n" +
@@ -1069,7 +1069,7 @@ var DebuggerServer = {
           
           
           mm.sendAsyncMessage("debug:disconnect", { prefix: prefix });
-        } catch(e) {}
+        } catch (e) {}
       } else {
         
         
@@ -1141,7 +1141,7 @@ var DebuggerServer = {
       
       
       
-      connID = "server" + loader.id + ".conn" + this._nextConnID++ + '.';
+      connID = "server" + loader.id + ".conn" + this._nextConnID++ + ".";
     }
 
     let conn = new DebuggerServerConnection(connID, aTransport);
@@ -1371,10 +1371,10 @@ function DebuggerServerConnection(aPrefix, aTransport)
 
 DebuggerServerConnection.prototype = {
   _prefix: null,
-  get prefix() { return this._prefix },
+  get prefix() { return this._prefix; },
 
   _transport: null,
-  get transport() { return this._transport },
+  get transport() { return this._transport; },
 
   
 
@@ -1383,7 +1383,7 @@ DebuggerServerConnection.prototype = {
 
   parentMessageManager: null,
 
-  close: function() {
+  close: function () {
     this._transport.close();
   },
 
@@ -1395,12 +1395,12 @@ DebuggerServerConnection.prototype = {
 
 
 
-  startBulkSend: function(header) {
+  startBulkSend: function (header) {
     return this.transport.startBulkSend(header);
   },
 
   allocID: function DSC_allocID(aPrefix) {
-    return this.prefix + (aPrefix || '') + this._nextID++;
+    return this.prefix + (aPrefix || "") + this._nextID++;
   },
 
   
@@ -1424,7 +1424,7 @@ DebuggerServerConnection.prototype = {
     if (index > -1) {
       let pool = this._extraPools.splice(index, 1);
       if (!aNoCleanup) {
-        pool.map(function(p) { p.destroy(); });
+        pool.map(function (p) { p.destroy(); });
       }
     }
   },
@@ -1446,7 +1446,7 @@ DebuggerServerConnection.prototype = {
   
 
 
-  unmanage: function(aActor) {
+  unmanage: function (aActor) {
     return this.removeActor(aActor);
   },
 
@@ -1470,7 +1470,7 @@ DebuggerServerConnection.prototype = {
     return null;
   },
 
-  _getOrCreateActor: function(actorID) {
+  _getOrCreateActor: function (actorID) {
     let actor = this.getActor(actorID);
     if (!actor) {
       this.transport.send({ from: actorID ? actorID : "root",
@@ -1482,13 +1482,13 @@ DebuggerServerConnection.prototype = {
     
     if (actor instanceof ObservedActorFactory) {
       try {
-        actor= actor.createActor();
+        actor = actor.createActor();
       } catch (e) {
         this.transport.send(this._unknownError(
           "Error occurred while creating actor '" + actor.name,
           e));
       }
-    } else if (typeof(actor) !== "object") {
+    } else if (typeof (actor) !== "object") {
       
       
       throw new Error("Unexpected actor constructor/function in ActorPool " +
@@ -1517,7 +1517,7 @@ DebuggerServerConnection.prototype = {
     };
   },
 
-  _queueResponse: function(from, type, response) {
+  _queueResponse: function (from, type, response) {
     let pendingResponse = this._actorResponses.get(from) || resolve(null);
     let responsePromise = pendingResponse.then(() => {
       return response;
@@ -1579,7 +1579,7 @@ DebuggerServerConnection.prototype = {
 
 
 
-  setForwarding: function(aPrefix, aTransport) {
+  setForwarding: function (aPrefix, aTransport) {
     this._forwardingPrefixes.set(aPrefix, aTransport);
   },
 
@@ -1587,7 +1587,7 @@ DebuggerServerConnection.prototype = {
 
 
 
-  cancelForwarding: function(aPrefix) {
+  cancelForwarding: function (aPrefix) {
     this._forwardingPrefixes.delete(aPrefix);
   },
 
@@ -1614,7 +1614,7 @@ DebuggerServerConnection.prototype = {
     
     if (this._forwardingPrefixes.size > 0) {
       let to = aPacket.to;
-      let separator = to.lastIndexOf('/');
+      let separator = to.lastIndexOf("/");
       while (separator >= 0) {
         to = to.substring(0, separator);
         let forwardTo = this._forwardingPrefixes.get(aPacket.to.substring(0, separator));
@@ -1622,7 +1622,7 @@ DebuggerServerConnection.prototype = {
           forwardTo.send(aPacket);
           return;
         }
-        separator = to.lastIndexOf('/');
+        separator = to.lastIndexOf("/");
       }
     }
 
@@ -1641,7 +1641,7 @@ DebuggerServerConnection.prototype = {
       try {
         this.currentPacket = aPacket;
         ret = actor.requestTypes[aPacket.type].bind(actor)(aPacket, this);
-      } catch(e) {
+      } catch (e) {
         this.transport.send(this._unknownError(
           "error occurred while processing '" + aPacket.type,
           e));
@@ -1691,7 +1691,7 @@ DebuggerServerConnection.prototype = {
 
 
 
-  onBulkPacket: function(packet) {
+  onBulkPacket: function (packet) {
     let { actor: actorKey, type, length } = packet;
 
     let actor = this._getOrCreateActor(actorKey);
@@ -1704,7 +1704,7 @@ DebuggerServerConnection.prototype = {
     if (actor.requestTypes && actor.requestTypes[type]) {
       try {
         ret = actor.requestTypes[type].call(actor, packet);
-      } catch(e) {
+      } catch (e) {
         this.transport.send(this._unknownError(
           "error occurred while processing bulk packet '" + type, e));
         packet.done.reject(e);
@@ -1740,7 +1740,7 @@ DebuggerServerConnection.prototype = {
 
     events.emit(this, "closed", aStatus);
 
-    this._extraPools.map(function(p) { p.destroy(); });
+    this._extraPools.map(function (p) { p.destroy(); });
     this._extraPools = null;
 
     this.rootActor = null;
@@ -1786,7 +1786,7 @@ DebuggerServerConnection.prototype = {
 
 
 
-  setupInParent: function({ module, setupParent }) {
+  setupInParent: function ({ module, setupParent }) {
     if (!this.parentMessageManager) {
       return false;
     }

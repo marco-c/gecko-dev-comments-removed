@@ -33,7 +33,7 @@ selectNode = function* (node, inspector, reason) {
 
 
 
-var openFontInspectorForURL = Task.async(function*(url) {
+var openFontInspectorForURL = Task.async(function* (url) {
   yield addTab(url);
   let {toolbox, inspector} = yield openInspector();
 

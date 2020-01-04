@@ -9,7 +9,7 @@ const { Class } = require("sdk/core/heritage");
 const { EventTarget } = require("sdk/event/target");
 const { emit } = require("sdk/event/core");
 const promise = require("promise");
-const Editor  = require("devtools/client/sourceeditor/editor");
+const Editor = require("devtools/client/sourceeditor/editor");
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -32,16 +32,16 @@ var ItchEditor = Class({
 
   isEditable: false,
 
-  toString: function() {
+  toString: function () {
     return this.label || "";
   },
 
-  emit: function(name, ...args) {
+  emit: function (name, ...args) {
     emit(this, name, ...args);
   },
 
   
-  isClean: function() {
+  isClean: function () {
     return true;
   },
 
@@ -50,7 +50,7 @@ var ItchEditor = Class({
 
 
 
-  initialize: function(host) {
+  initialize: function (host) {
     this.host = host;
     this.doc = host.document;
     this.label = "";
@@ -66,7 +66,7 @@ var ItchEditor = Class({
 
 
 
-  setToolbarVisibility: function() {
+  setToolbarVisibility: function () {
     if (this.hidesToolbar) {
       this.toolbar.setAttribute("hidden", "true");
     } else {
@@ -84,7 +84,7 @@ var ItchEditor = Class({
 
 
 
-  load: function(resource) {
+  load: function (resource) {
     return promise.resolve();
   },
 
@@ -92,7 +92,7 @@ var ItchEditor = Class({
 
 
 
-  destroy: function() {
+  destroy: function () {
 
   },
 
@@ -103,7 +103,7 @@ var ItchEditor = Class({
 
 
 
-  focus: function() {
+  focus: function () {
     return promise.resolve();
   }
 });
@@ -141,8 +141,8 @@ var TextEditor = Class({
       
       extraKeys[Editor.accel(keyUpper, modifiers)] = () => {
         let doc = this.projectEditorCommandset.ownerDocument;
-        let event = doc.createEvent('Event');
-        event.initEvent('command', true, true);
+        let event = doc.createEvent("Event");
+        event.initEvent("command", true, true);
         let command = this.projectEditorCommandset.querySelector("#" + key.getAttribute("command"));
         command.dispatchEvent(event);
       };
@@ -151,14 +151,14 @@ var TextEditor = Class({
     return extraKeys;
   },
 
-  isClean: function() {
+  isClean: function () {
     if (!this.editor.isAppended()) {
       return true;
     }
     return this.editor.getText() === this._savedResourceContents;
   },
 
-  initialize: function(document, mode=Editor.modes.text) {
+  initialize: function (document, mode = Editor.modes.text) {
     ItchEditor.prototype.initialize.apply(this, arguments);
     this.label = mode.name;
     this.editor = new Editor({
@@ -182,7 +182,7 @@ var TextEditor = Class({
     });
     this.editor.on("saveRequested", (...args) => {
       this.emit("saveRequested", ...args);
-    })
+    });
 
     this.appended = this.editor.appendTo(this.elt);
   },
@@ -191,7 +191,7 @@ var TextEditor = Class({
 
 
 
-  destroy: function() {
+  destroy: function () {
     this.editor.destroy();
     this.editor = null;
   },
@@ -205,7 +205,7 @@ var TextEditor = Class({
 
 
 
-  load: function(resource) {
+  load: function (resource) {
     
     
     return promise.all([
@@ -232,7 +232,7 @@ var TextEditor = Class({
 
 
 
-  save: function(resource) {
+  save: function (resource) {
     let newText = this.editor.getText();
     return resource.save(newText).then(() => {
       this._savedResourceContents = newText;
@@ -246,7 +246,7 @@ var TextEditor = Class({
 
 
 
-  focus: function() {
+  focus: function () {
     return this.appended.then(() => {
       if (this.editor) {
         this.editor.focus();

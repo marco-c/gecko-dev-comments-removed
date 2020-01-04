@@ -5,14 +5,14 @@
 
 "use strict";
 
-const constants = require('./constants');
+const constants = require("./constants");
 
 
 
 function unload() {
   return {
     type: constants.UNLOAD
-  }
+  };
 }
 
 module.exports = { unload };

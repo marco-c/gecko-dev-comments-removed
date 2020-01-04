@@ -12,7 +12,7 @@ const URL = "data:text/html;charset=utf-8,Toggling devtools using shortcuts";
 
 var {Toolbox} = require("devtools/client/framework/toolbox");
 
-add_task(function*() {
+add_task(function* () {
   
   
   Services.prefs.clearUserPref("devtools.toolbox.selectedTool");

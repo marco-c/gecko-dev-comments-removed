@@ -8,7 +8,7 @@ const Services = require("Services");
 Services.prefs.setBoolPref("devtools.debugger.log", true);
 Services.prefs.setBoolPref("dom.mozBrowserFramesEnabled", true);
 
-SimpleTest.registerCleanupFunction(function() {
+SimpleTest.registerCleanupFunction(function () {
   Services.prefs.clearUserPref("devtools.debugger.log");
   Services.prefs.clearUserPref("dom.mozBrowserFramesEnabled");
 });

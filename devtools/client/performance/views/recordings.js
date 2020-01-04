@@ -13,7 +13,7 @@ var RecordingsView = Heritage.extend(WidgetMethods, {
   
 
 
-  initialize: function() {
+  initialize: function () {
     this.widget = new SideMenuWidget($("#recordings-list"));
 
     this._onSelect = this._onSelect.bind(this);
@@ -35,7 +35,7 @@ var RecordingsView = Heritage.extend(WidgetMethods, {
   
 
 
-  destroy: function() {
+  destroy: function () {
     PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStateChange);
     PerformanceController.off(EVENTS.RECORDING_ADDED, this._onNewRecording);
     PerformanceController.off(EVENTS.RECORDING_DELETED, this._onRecordingDeleted);
@@ -177,7 +177,7 @@ var RecordingsView = Heritage.extend(WidgetMethods, {
   
 
 
-  _onSelect: Task.async(function*({ detail: recordingItem }) {
+  _onSelect: Task.async(function* ({ detail: recordingItem }) {
     if (!recordingItem) {
       return;
     }

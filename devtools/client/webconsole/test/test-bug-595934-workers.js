@@ -3,7 +3,7 @@
 
 
 
-onmessage = function() {
+onmessage = function () {
   fooBarWorker();
-}
+};
 

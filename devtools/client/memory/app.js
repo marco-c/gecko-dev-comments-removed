@@ -315,7 +315,7 @@ const MemoryApp = createClass({
 
 
 
-function mapStateToProps (state) {
+function mapStateToProps(state) {
   return state;
 }
 

@@ -115,7 +115,7 @@ function* spawnTest() {
   finish();
 }
 
-function injectGCMarkers (controller, waterfall) {
+function injectGCMarkers(controller, waterfall) {
   
   let realMarkers = controller.getCurrentRecording().getMarkers();
   

@@ -11,9 +11,9 @@ function props(view, prefix = "") {
   
   
   return visible.reduce((list, [id, prop]) => {
-                   list.push(prefix + id);
-                   return list.concat(props(prop, prefix + id + "."));
-                 }, []);
+    list.push(prefix + id);
+    return list.concat(props(prop, prefix + id + "."));
+  }, []);
 }
 
 function assertAttrs(view, expected, message) {

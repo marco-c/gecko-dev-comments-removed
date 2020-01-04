@@ -26,7 +26,7 @@ addMessageListener("devtools:test:reload", function ({ data }) {
 });
 
 addMessageListener("devtools:test:console", function ({ data: { method, args, id } }) {
-  content.console[method].apply(content.console, args)
+  content.console[method].apply(content.console, args);
   sendAsyncMessage("devtools:test:console:response", { id });
 });
 
@@ -132,7 +132,7 @@ addMessageListener("devtools:test:eval", function ({ data }) {
   });
 });
 
-addEventListener("load", function() {
+addEventListener("load", function () {
   sendAsyncMessage("devtools:test:load");
 }, true);
 
@@ -144,7 +144,7 @@ addEventListener("load", function() {
 
 
 
-addMessageListener("devtools:test:setStyle", function(msg) {
+addMessageListener("devtools:test:setStyle", function (msg) {
   let {selector, propertyName, propertyValue} = msg.data;
   let node = superQuerySelector(selector);
   if (!node) {
@@ -164,7 +164,7 @@ addMessageListener("devtools:test:setStyle", function(msg) {
 
 
 
-addMessageListener("devtools:test:setAttribute", function(msg) {
+addMessageListener("devtools:test:setAttribute", function (msg) {
   let {selector, attributeName, attributeValue} = msg.data;
   let node = superQuerySelector(selector);
   if (!node) {
@@ -186,13 +186,13 @@ addMessageListener("devtools:test:setAttribute", function(msg) {
 
 
 
-function superQuerySelector(superSelector, root=content.document) {
+function superQuerySelector(superSelector, root = content.document) {
   let frameIndex = superSelector.indexOf("||");
   if (frameIndex === -1) {
     return root.querySelector(superSelector);
   } else {
     let rootSelector = superSelector.substring(0, frameIndex).trim();
-    let childSelector = superSelector.substring(frameIndex+2).trim();
+    let childSelector = superSelector.substring(frameIndex + 2).trim();
     root = root.querySelector(rootSelector);
     if (!root || !root.contentWindow) {
       return null;

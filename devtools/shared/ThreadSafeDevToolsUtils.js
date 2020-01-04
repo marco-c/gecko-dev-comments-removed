@@ -30,7 +30,7 @@
 
 
 
-exports.immutableUpdate = function(...objs) {
+exports.immutableUpdate = function (...objs) {
   return Object.freeze(Object.assign({}, ...objs));
 };
 
@@ -95,8 +95,8 @@ exports.reportException = function reportException(who, exception) {
 
 
 
-exports.makeInfallible = function(handler, name = handler.name) {
-  return function() {
+exports.makeInfallible = function (handler, name = handler.name) {
+  return function () {
     try {
       return handler.apply(this, arguments);
     } catch (ex) {
@@ -115,7 +115,7 @@ exports.makeInfallible = function(handler, name = handler.name) {
 
 
 
-exports.safeErrorString = function(error) {
+exports.safeErrorString = function (error) {
   try {
     let errorString = error.toString();
     if (typeof errorString == "string") {
@@ -154,7 +154,7 @@ exports.safeErrorString = function(error) {
 
 
 
-exports.zip = function(a, b) {
+exports.zip = function (a, b) {
   if (!b) {
     return a;
   }
@@ -186,7 +186,7 @@ exports.entries = function entries(obj) {
 
 
 
-exports.toObject = function(arr) {
+exports.toObject = function (arr) {
   const obj = {};
   for (let [k, v] of arr) {
     obj[k] = v;
@@ -247,7 +247,7 @@ exports.isSavedFrame = function (thing) {
 
 
 
-exports.isSet = function(thing) {
+exports.isSet = function (thing) {
   return Object.prototype.toString.call(thing) === "[object Set]";
 };
 
@@ -258,6 +258,6 @@ exports.isSet = function(thing) {
 
 
 
-exports.flatten = function(lists) {
+exports.flatten = function (lists) {
   return Array.prototype.concat.apply([], lists);
 };

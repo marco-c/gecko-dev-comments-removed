@@ -129,7 +129,7 @@ const {
   enhanceStoreWithBroadcaster,
   combineBroadcastingReducers
 } = require("devtools/client/shared/redux/non-react-subscriber");
-const { bindActionCreators } = require('devtools/client/shared/vendor/redux');
+const { bindActionCreators } = require("devtools/client/shared/vendor/redux");
 const reducers = require("./content/reducers/index");
 const { onReducerEvents } = require("./content/utils");
 
@@ -165,7 +165,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "clipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1", "nsIClipboardHelper");
 
 Object.defineProperty(this, "NetworkHelper", {
-  get: function() {
+  get: function () {
     return require("devtools/shared/webconsole/network-helper");
   },
   configurable: true,
@@ -184,7 +184,7 @@ var DebuggerController = {
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the DebuggerController");
 
     this.startupDebugger = this.startupDebugger.bind(this);
@@ -208,7 +208,7 @@ var DebuggerController = {
     
     let store = createStore((state, action) => {
       if (action.seqId &&
-         (action.status === 'done' || action.status === 'error') &&
+         (action.status === "done" || action.status === "error") &&
          state && state.asyncRequests.indexOf(action.seqId) === -1) {
         return state;
       }
@@ -229,7 +229,7 @@ var DebuggerController = {
 
 
 
-  startupDebugger: Task.async(function*() {
+  startupDebugger: Task.async(function* () {
     if (this._startup) {
       return;
     }
@@ -244,7 +244,7 @@ var DebuggerController = {
 
 
 
-  shutdownDebugger: Task.async(function*() {
+  shutdownDebugger: Task.async(function* () {
     if (this._shutdown) {
       return;
     }
@@ -268,7 +268,7 @@ var DebuggerController = {
 
 
 
-  connect: Task.async(function*() {
+  connect: Task.async(function* () {
     let target = this._target;
 
     let { client } = target;
@@ -290,7 +290,7 @@ var DebuggerController = {
     this._hideUnsupportedFeatures();
   }),
 
-  connectThread: function() {
+  connectThread: function () {
     const { newSource, fetchEventListeners } = bindActionCreators(actions, this.dispatch);
 
     
@@ -335,7 +335,7 @@ var DebuggerController = {
   
 
 
-  disconnect: function() {
+  disconnect: function () {
     
     if (!this.client) {
       return;
@@ -350,7 +350,7 @@ var DebuggerController = {
     this.activeThread = null;
   },
 
-  _hideUnsupportedFeatures: function() {
+  _hideUnsupportedFeatures: function () {
     if (this.client.mainRoot.traits.noPrettyPrinting) {
       DebuggerView.Sources.hidePrettyPrinting();
     }
@@ -360,7 +360,7 @@ var DebuggerController = {
     }
   },
 
-  _onWillNavigate: function(opts={}) {
+  _onWillNavigate: function (opts = {}) {
     
     DebuggerView.handleTabNavigation();
     if (!opts.noUnload) {
@@ -380,7 +380,7 @@ var DebuggerController = {
     clearNamedTimeout("event-listeners-fetch");
   },
 
-  _onNavigate: function() {
+  _onNavigate: function () {
     this.ThreadState.handleTabNavigation();
     this.StackFrames.handleTabNavigation();
   },
@@ -388,14 +388,14 @@ var DebuggerController = {
   
 
 
-  _onTabDetached: function() {
+  _onTabDetached: function () {
     this.shutdownDebugger();
   },
 
   
 
 
-  _ensureResumptionOrder: function(aResponse) {
+  _ensureResumptionOrder: function (aResponse) {
     if (aResponse.error == "wrongOrder") {
       DebuggerView.Toolbar.showResumeWarning(aResponse.lastPausedUrl);
     }
@@ -405,7 +405,7 @@ var DebuggerController = {
 
 
 
-  reconfigureThread: function(opts) {
+  reconfigureThread: function (opts) {
     const deferred = promise.defer();
     this.activeThread.reconfigure(
       opts,
@@ -415,7 +415,7 @@ var DebuggerController = {
           return;
         }
 
-        if (('useSourceMaps' in opts) || ('autoBlackBox' in opts)) {
+        if (("useSourceMaps" in opts) || ("autoBlackBox" in opts)) {
           
           DebuggerView.handleTabNavigation();
           this.dispatch(actions.unload());
@@ -434,7 +434,7 @@ var DebuggerController = {
     return deferred.promise;
   },
 
-  waitForSourcesLoaded: function() {
+  waitForSourcesLoaded: function () {
     const deferred = promise.defer();
     this.dispatch({
       type: services.WAIT_UNTIL,
@@ -445,7 +445,7 @@ var DebuggerController = {
     return deferred.promise;
   },
 
-  waitForSourceShown: function(name) {
+  waitForSourceShown: function (name) {
     const deferred = promise.defer();
     window.on(EVENTS.SOURCE_SHOWN, function onShown(_, source) {
       if (source.url.includes(name)) {
@@ -545,7 +545,7 @@ ThreadState.prototype = {
   
 
 
-  connect: function() {
+  connect: function () {
     dumpn("ThreadState is connecting...");
     this.activeThread.addListener("paused", this._update);
     this.activeThread.addListener("resumed", this._update);
@@ -554,7 +554,7 @@ ThreadState.prototype = {
   
 
 
-  disconnect: function() {
+  disconnect: function () {
     if (!this.activeThread) {
       return;
     }
@@ -566,7 +566,7 @@ ThreadState.prototype = {
   
 
 
-  handleTabNavigation: function() {
+  handleTabNavigation: function () {
     if (!this.activeThread) {
       return;
     }
@@ -577,7 +577,7 @@ ThreadState.prototype = {
   
 
 
-  _update: function(aEvent, aPacket) {
+  _update: function (aEvent, aPacket) {
     if (aEvent == "paused") {
       if (aPacket.why.type == "interrupted" &&
           this.interruptedByResumeButton) {
@@ -638,7 +638,7 @@ StackFrames.prototype = {
   
 
 
-  connect: function() {
+  connect: function () {
     dumpn("StackFrames is connecting...");
     this.activeThread.addListener("paused", this._onPaused);
     this.activeThread.addListener("resumed", this._onResumed);
@@ -652,7 +652,7 @@ StackFrames.prototype = {
   
 
 
-  disconnect: function() {
+  disconnect: function () {
     if (!this.activeThread) {
       return;
     }
@@ -669,7 +669,7 @@ StackFrames.prototype = {
   
 
 
-  handleTabNavigation: function() {
+  handleTabNavigation: function () {
     dumpn("Handling tab navigation in the StackFrames");
     
   },
@@ -682,7 +682,7 @@ StackFrames.prototype = {
 
 
 
-  _onPaused: function(aEvent, aPacket) {
+  _onPaused: function (aEvent, aPacket) {
     switch (aPacket.why.type) {
       
       case "breakpoint":
@@ -731,7 +731,7 @@ StackFrames.prototype = {
   
 
 
-  _onResumed: function() {
+  _onResumed: function () {
     
     if (this._currentFrameDescription != FRAME_TYPE.WATCH_EXPRESSIONS_EVAL) {
       this._currentWatchExpressions = this._syncedWatchExpressions;
@@ -741,7 +741,7 @@ StackFrames.prototype = {
   
 
 
-  _onFrames: Task.async(function*() {
+  _onFrames: Task.async(function* () {
     
     if (!this.activeThread || !this.activeThread.cachedFrames.length) {
       return;
@@ -771,7 +771,7 @@ StackFrames.prototype = {
 
 
 
-  _refillFrames: function() {
+  _refillFrames: function () {
     
     DebuggerView.StackFrames.empty();
 
@@ -793,7 +793,7 @@ StackFrames.prototype = {
   
 
 
-  _onFramesCleared: function() {
+  _onFramesCleared: function () {
     switch (this._currentFrameDescription) {
       case FRAME_TYPE.NORMAL:
         this._currentEvaluation = null;
@@ -818,7 +818,7 @@ StackFrames.prototype = {
   
 
 
-  _onBlackBoxChange: function() {
+  _onBlackBoxChange: function () {
     if (this.activeThread.state == "paused") {
       
       this.currentFrameDepth = NaN;
@@ -829,7 +829,7 @@ StackFrames.prototype = {
   
 
 
-  _onPrettyPrintChange: function() {
+  _onPrettyPrintChange: function () {
     if (this.activeThread.state != "paused") {
       return;
     }
@@ -845,7 +845,7 @@ StackFrames.prototype = {
   
 
 
-  _afterFramesCleared: function() {
+  _afterFramesCleared: function () {
     
     if (this.activeThread.cachedFrames.length) {
       return;
@@ -866,7 +866,7 @@ StackFrames.prototype = {
 
 
 
-  selectFrame: function(aDepth) {
+  selectFrame: function (aDepth) {
     
     let frame = this.activeThread.cachedFrames[this.currentFrameDepth = aDepth];
     if (!frame) {
@@ -953,7 +953,7 @@ StackFrames.prototype = {
   
 
 
-  addMoreFrames: function() {
+  addMoreFrames: function () {
     this.activeThread.fillFrames(
       this.activeThread.cachedFrames.length + CALL_STACK_PAGE_SIZE);
   },
@@ -972,7 +972,7 @@ StackFrames.prototype = {
 
 
 
-  evaluate: function(aExpression, aOptions = {}) {
+  evaluate: function (aExpression, aOptions = {}) {
     let depth = "depth" in aOptions ? aOptions.depth : this.currentFrameDepth;
     let frame = this.activeThread.cachedFrames[depth];
     if (frame == null) {
@@ -1005,7 +1005,7 @@ StackFrames.prototype = {
 
 
 
-  _insertScopeFrameReferences: function(aScope, aFrame) {
+  _insertScopeFrameReferences: function (aScope, aFrame) {
     
     if (this._currentException) {
       let excRef = aScope.addItem("<exception>", { value: this._currentException },
@@ -1040,7 +1040,7 @@ StackFrames.prototype = {
 
 
 
-  _handleConditionalBreakpoint: Task.async(function*() {
+  _handleConditionalBreakpoint: Task.async(function* () {
     if (gClient.mainRoot.traits.conditionalBreakpoints) {
       return;
     }
@@ -1082,7 +1082,7 @@ StackFrames.prototype = {
 
 
 
-  _handleWatchExpressions: Task.async(function*() {
+  _handleWatchExpressions: Task.async(function* () {
     
     if (!this.activeThread || !this.activeThread.cachedFrames.length) {
       return;
@@ -1117,7 +1117,7 @@ StackFrames.prototype = {
 
 
 
-  _fetchWatchExpressions: function(aScope, aExp) {
+  _fetchWatchExpressions: function (aScope, aExp) {
     
     if (aScope._fetched) {
       return;
@@ -1152,7 +1152,7 @@ StackFrames.prototype = {
 
 
 
-  syncWatchExpressions: function() {
+  syncWatchExpressions: function () {
     let list = DebuggerView.WatchExpressions.getAllStrings();
 
     
@@ -1235,31 +1235,31 @@ DebuggerController.StackFrames = new StackFrames();
 
 Object.defineProperties(window, {
   "gTarget": {
-    get: function() {
+    get: function () {
       return DebuggerController._target;
     },
     configurable: true
   },
   "gHostType": {
-    get: function() {
+    get: function () {
       return DebuggerView._hostType;
     },
     configurable: true
   },
   "gClient": {
-    get: function() {
+    get: function () {
       return DebuggerController.client;
     },
     configurable: true
   },
   "gThreadClient": {
-    get: function() {
+    get: function () {
       return DebuggerController.activeThread;
     },
     configurable: true
   },
   "gCallStackPageSize": {
-    get: function() {
+    get: function () {
       return CALL_STACK_PAGE_SIZE;
     },
     configurable: true

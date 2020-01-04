@@ -44,22 +44,22 @@ const GRAPH_STRIPE_PATTERN_LINE_SPACING = 4;
 
 
 
-this.GraphCursor = function() {
+this.GraphCursor = function () {
   this.x = null;
   this.y = null;
 };
 
-this.GraphArea = function() {
+this.GraphArea = function () {
   this.start = null;
   this.end = null;
 };
 
-this.GraphAreaDragger = function(anchor = new GraphArea()) {
+this.GraphAreaDragger = function (anchor = new GraphArea()) {
   this.origin = null;
   this.anchor = anchor;
 };
 
-this.GraphAreaResizer = function() {
+this.GraphAreaResizer = function () {
   this.margin = null;
 };
 
@@ -93,7 +93,7 @@ this.GraphAreaResizer = function() {
 
 
 
-this.AbstractCanvasGraph = function(parent, name, sharpness) {
+this.AbstractCanvasGraph = function (parent, name, sharpness) {
   EventEmitter.decorate(this);
 
   this._parent = parent;
@@ -179,14 +179,14 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  ready: function() {
+  ready: function () {
     return this._ready.promise;
   },
 
   
 
 
-  destroy: Task.async(function *() {
+  destroy: Task.async(function* () {
     yield this.ready();
 
     this._topWindow.removeEventListener("mousemove", this._onMouseMove);
@@ -246,7 +246,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  buildBackgroundImage: function() {
+  buildBackgroundImage: function () {
     return null;
   },
 
@@ -255,7 +255,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  buildGraphImage: function() {
+  buildGraphImage: function () {
     throw "This method needs to be implemented by inheriting classes.";
   },
 
@@ -264,7 +264,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  buildMaskImage: function() {
+  buildMaskImage: function () {
     return null;
   },
 
@@ -281,7 +281,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setData: function(data) {
+  setData: function (data) {
     this._data = data;
     this._cachedBackgroundImage = this.buildBackgroundImage();
     this._cachedGraphImage = this.buildGraphImage();
@@ -296,7 +296,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setDataWhenReady: Task.async(function*(data) {
+  setDataWhenReady: Task.async(function* (data) {
     yield this.ready();
     this.setData(data);
   }),
@@ -307,7 +307,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setMask: function(mask, ...options) {
+  setMask: function (mask, ...options) {
     this._mask = mask;
     this._maskArgs = [mask, ...options];
     this._cachedMaskImage = this.buildMaskImage.apply(this, this._maskArgs);
@@ -323,7 +323,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setRegions: function(regions) {
+  setRegions: function (regions) {
     if (!this._cachedGraphImage) {
       throw "Can't highlight regions on a graph with no data displayed.";
     }
@@ -342,7 +342,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasData: function() {
+  hasData: function () {
     return !!this._data;
   },
 
@@ -350,7 +350,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasMask: function() {
+  hasMask: function () {
     return !!this._mask;
   },
 
@@ -358,7 +358,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasRegions: function() {
+  hasRegions: function () {
     return !!this._regions;
   },
 
@@ -374,7 +374,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setSelection: function(selection) {
+  setSelection: function (selection) {
     if (!selection || selection.start == null || selection.end == null) {
       throw "Invalid selection coordinates";
     }
@@ -394,7 +394,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getSelection: function() {
+  getSelection: function () {
     if (this.hasSelection()) {
       return { start: this._selection.start, end: this._selection.end };
     }
@@ -414,7 +414,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setMappedSelection: function(selection, mapping = {}) {
+  setMappedSelection: function (selection, mapping = {}) {
     if (!this.hasData()) {
       throw "A data source is necessary for retrieving a mapped selection.";
     }
@@ -446,7 +446,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getMappedSelection: function(mapping = {}) {
+  getMappedSelection: function (mapping = {}) {
     if (!this.hasData()) {
       throw "A data source is necessary for retrieving a mapped selection.";
     }
@@ -473,7 +473,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  dropSelection: function() {
+  dropSelection: function () {
     if (!this.hasSelection() && !this.hasSelectionInProgress()) {
       return;
     }
@@ -487,7 +487,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasSelection: function() {
+  hasSelection: function () {
     return this._selection &&
       this._selection.start != null && this._selection.end != null;
   },
@@ -497,7 +497,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasSelectionInProgress: function() {
+  hasSelectionInProgress: function () {
     return this._selection &&
       this._selection.start != null && this._selection.end == null;
   },
@@ -515,7 +515,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  setCursor: function(cursor) {
+  setCursor: function (cursor) {
     if (!cursor || cursor.x == null || cursor.y == null) {
       throw "Invalid cursor coordinates";
     }
@@ -534,14 +534,14 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getCursor: function() {
+  getCursor: function () {
     return { x: this._cursor.x, y: this._cursor.y };
   },
 
   
 
 
-  dropCursor: function() {
+  dropCursor: function () {
     if (!this.hasCursor()) {
       return;
     }
@@ -554,7 +554,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  hasCursor: function() {
+  hasCursor: function () {
     return this._cursor && this._cursor.x != null;
   },
 
@@ -564,7 +564,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  isSelectionDifferent: function(other) {
+  isSelectionDifferent: function (other) {
     if (!other) return true;
     let current = this.getSelection();
     return current.start != other.start || current.end != other.end;
@@ -576,7 +576,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  isCursorDifferent: function(other) {
+  isCursorDifferent: function (other) {
     if (!other) return true;
     let current = this.getCursor();
     return current.x != other.x || current.y != other.y;
@@ -589,7 +589,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getSelectionWidth: function() {
+  getSelectionWidth: function () {
     let selection = this.getSelection();
     return Math.abs(selection.start - selection.end);
   },
@@ -601,7 +601,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  getHoveredRegion: function() {
+  getHoveredRegion: function () {
     if (!this.hasRegions() || !this.hasCursor()) {
       return null;
     }
@@ -617,7 +617,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  refresh: function(options={}) {
+  refresh: function (options = {}) {
     let bounds = this._parent.getBoundingClientRect();
     let newWidth = this.fixedWidth || bounds.width;
     let newHeight = this.fixedHeight || bounds.height;
@@ -672,7 +672,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _getNamedCanvas: function(name, width = this._width, height = this._height) {
+  _getNamedCanvas: function (name, width = this._width, height = this._height) {
     let cachedRenderTarget = this._renderTargets.get(name);
     if (cachedRenderTarget) {
       let { canvas, ctx } = cachedRenderTarget;
@@ -702,7 +702,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onAnimationFrame: function() {
+  _onAnimationFrame: function () {
     this._animationId = this._window.requestAnimationFrame(this._onAnimationFrame);
     this._drawWidget();
   },
@@ -711,7 +711,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _drawWidget: function() {
+  _drawWidget: function () {
     if (!this._shouldRedraw) {
       return;
     }
@@ -748,7 +748,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _drawCliphead: function() {
+  _drawCliphead: function () {
     if (this._isHoveringSelectionContentsOrBoundaries() || this._isHoveringRegion()) {
       return;
     }
@@ -765,7 +765,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _drawSelection: function() {
+  _drawSelection: function () {
     let { start, end } = this.getSelection();
     let input = this._canvas.getAttribute("input");
 
@@ -813,7 +813,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _bakeRegions: function(regions, destination) {
+  _bakeRegions: function (regions, destination) {
     let ctx = destination.getContext("2d");
 
     let pattern = AbstractCanvasGraph.getStripePattern({
@@ -840,7 +840,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringStartBoundary: function() {
+  _isHoveringStartBoundary: function () {
     if (!this.hasSelection() || !this.hasCursor()) {
       return;
     }
@@ -854,7 +854,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringEndBoundary: function() {
+  _isHoveringEndBoundary: function () {
     if (!this.hasSelection() || !this.hasCursor()) {
       return;
     }
@@ -868,7 +868,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringSelectionContents: function() {
+  _isHoveringSelectionContents: function () {
     if (!this.hasSelection() || !this.hasCursor()) {
       return;
     }
@@ -882,7 +882,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringSelectionContentsOrBoundaries: function() {
+  _isHoveringSelectionContentsOrBoundaries: function () {
     return this._isHoveringSelectionContents() ||
            this._isHoveringStartBoundary() ||
            this._isHoveringEndBoundary();
@@ -892,7 +892,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _isHoveringRegion: function() {
+  _isHoveringRegion: function () {
     return !!this.getHoveredRegion();
   },
 
@@ -900,7 +900,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _getRelativeEventCoordinates: function(e) {
+  _getRelativeEventCoordinates: function (e) {
     
     
     if ("testX" in e && "testY" in e) {
@@ -946,13 +946,13 @@ AbstractCanvasGraph.prototype = {
     mouseX /= zoom;
     mouseY /= zoom;
 
-    return {mouseX,mouseY};
+    return {mouseX, mouseY};
   },
 
   
 
 
-  _onMouseMove: function(e) {
+  _onMouseMove: function (e) {
     let resizer = this._selectionResizer;
     let dragger = this._selectionDragger;
 
@@ -972,7 +972,7 @@ AbstractCanvasGraph.prototype = {
       return this._onMouseUp();
     }
 
-    let {mouseX,mouseY} = this._getRelativeEventCoordinates(e);
+    let {mouseX, mouseY} = this._getRelativeEventCoordinates(e);
     this._cursor.x = mouseX;
     this._cursor.y = mouseY;
 
@@ -1028,7 +1028,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onMouseDown: function(e) {
+  _onMouseDown: function (e) {
     this._isMouseActive = true;
     let {mouseX} = this._getRelativeEventCoordinates(e);
 
@@ -1071,7 +1071,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onMouseUp: function() {
+  _onMouseUp: function () {
     this._isMouseActive = false;
     switch (this._canvas.getAttribute("input")) {
       case "hovering-background":
@@ -1118,7 +1118,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onMouseWheel: function(e) {
+  _onMouseWheel: function (e) {
     if (!this.hasSelection()) {
       return;
     }
@@ -1187,7 +1187,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-  _onMouseOut: function(e) {
+  _onMouseOut: function (e) {
     if (!this._isMouseActive) {
       this._cursor.x = null;
       this._cursor.y = null;
@@ -1199,7 +1199,7 @@ AbstractCanvasGraph.prototype = {
   
 
 
-  _onResize: function() {
+  _onResize: function () {
     if (this.hasData()) {
       
       
@@ -1224,7 +1224,7 @@ AbstractCanvasGraph.prototype = {
 
 
 
-AbstractCanvasGraph.createIframe = function(url, parent, callback) {
+AbstractCanvasGraph.createIframe = function (url, parent, callback) {
   let iframe = parent.ownerDocument.createElementNS(HTML_NS, "iframe");
 
   iframe.addEventListener("DOMContentLoaded", function onLoad() {
@@ -1254,7 +1254,7 @@ AbstractCanvasGraph.createIframe = function(url, parent, callback) {
 
 
 
-AbstractCanvasGraph.getStripePattern = function(data) {
+AbstractCanvasGraph.getStripePattern = function (data) {
   let { ownerDocument, backgroundColor, stripesColor } = data;
   let id = [backgroundColor, stripesColor].join(",");
 
@@ -1306,7 +1306,7 @@ this.CanvasGraphUtils = {
   
 
 
-  linkAnimation: Task.async(function*(graph1, graph2) {
+  linkAnimation: Task.async(function* (graph1, graph2) {
     if (!graph1 || !graph2) {
       return;
     }
@@ -1329,7 +1329,7 @@ this.CanvasGraphUtils = {
   
 
 
-  linkSelection: function(graph1, graph2) {
+  linkSelection: function (graph1, graph2) {
     if (!graph1 || !graph2) {
       return;
     }
@@ -1364,7 +1364,7 @@ this.CanvasGraphUtils = {
 
 
 
-  _performTaskInWorker: function(task, data) {
+  _performTaskInWorker: function (task, data) {
     let worker = this._graphUtilsWorker || new DevToolsWorker(WORKER_URL);
     return worker.performTask(task, data);
   }

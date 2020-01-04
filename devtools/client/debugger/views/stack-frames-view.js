@@ -29,7 +29,7 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the StackFramesView");
 
     this._popupset = document.getElementById("debuggerPopupset");
@@ -50,7 +50,7 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  destroy: function() {
+  destroy: function () {
     dumpn("Destroying the StackFramesView");
 
     this.widget.removeEventListener("select", this._onSelect, false);
@@ -72,12 +72,12 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  addFrame: function(aFrame, aLine, aColumn, aDepth, aIsBlackBoxed) {
+  addFrame: function (aFrame, aLine, aColumn, aDepth, aIsBlackBoxed) {
     let { source } = aFrame;
 
     
     
-    if(!DebuggerView.Sources.getItemByValue(source.actor)) {
+    if (!DebuggerView.Sources.getItemByValue(source.actor)) {
       DebuggerView.Sources.addSource(source, { force: true });
     }
 
@@ -119,14 +119,14 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
     this._mirror.addFrame(title, location, aLine, aDepth);
   },
 
-  _getStackAsString: function() {
+  _getStackAsString: function () {
     return [...this].map(frameItem => {
       const { attachment: { title, url, line, column }} = frameItem;
       return title + "@" + url + ":" + line + ":" + column;
-    }).join("\n")
+    }).join("\n");
   },
 
-  addCopyContextMenu: function() {
+  addCopyContextMenu: function () {
     let menupopup = document.createElement("menupopup");
     let menuitem = document.createElement("menuitem");
 
@@ -182,7 +182,7 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _createFrameView: function(aTitle, aUrl, aLine, aDepth, aIsBlackBoxed) {
+  _createFrameView: function (aTitle, aUrl, aLine, aDepth, aIsBlackBoxed) {
     let container = document.createElement("hbox");
     container.id = "stackframe-" + aDepth;
     container.className = "dbg-stackframe";
@@ -217,7 +217,7 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _onStackframeRemoved: function(aItem) {
+  _onStackframeRemoved: function (aItem) {
     dumpn("Finalizing stackframe item: " + aItem.stringify());
 
     
@@ -231,7 +231,7 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onSelect: function(e) {
+  _onSelect: function (e) {
     let stackframeItem = this.selectedItem;
     if (stackframeItem) {
       
@@ -249,7 +249,7 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onScroll: function() {
+  _onScroll: function () {
     
     if (!this.dirty) {
       return;
@@ -261,7 +261,7 @@ StackFramesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _afterScroll: function() {
+  _afterScroll: function () {
     let scrollPosition = this.widget.getAttribute("scrollPosition");
     let scrollWidth = this.widget.getAttribute("scrollWidth");
 

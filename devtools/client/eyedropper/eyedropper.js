@@ -10,17 +10,17 @@ const {EventEmitter} = Cu.import("resource://devtools/shared/event-emitter.js");
 const promise = require("promise");
 const Services = require("Services");
 
-loader.lazyGetter(this, "clipboardHelper", function() {
+loader.lazyGetter(this, "clipboardHelper", function () {
   return Cc["@mozilla.org/widget/clipboardhelper;1"]
     .getService(Ci.nsIClipboardHelper);
 });
 
-loader.lazyGetter(this, "ssService", function() {
+loader.lazyGetter(this, "ssService", function () {
   return Cc["@mozilla.org/content/style-sheet-service;1"]
     .getService(Ci.nsIStyleSheetService);
 });
 
-loader.lazyGetter(this, "ioService", function() {
+loader.lazyGetter(this, "ioService", function () {
   return Cc["@mozilla.org/network/io-service;1"]
     .getService(Ci.nsIIOService);
 });
@@ -29,7 +29,7 @@ loader.lazyGetter(this, "DOMUtils", function () {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 });
 
-loader.lazyGetter(this, "XULRuntime", function() {
+loader.lazyGetter(this, "XULRuntime", function () {
   return Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
 });
 
@@ -57,11 +57,11 @@ const HSL_BOX_WIDTH = 158;
 var EyedropperManager = {
   _instances: new WeakMap(),
 
-  getInstance: function(chromeWindow) {
+  getInstance: function (chromeWindow) {
     return this._instances.get(chromeWindow);
   },
 
-  createInstance: function(chromeWindow, options) {
+  createInstance: function (chromeWindow, options) {
     let dropper = this.getInstance(chromeWindow);
     if (dropper) {
       return dropper;
@@ -77,10 +77,10 @@ var EyedropperManager = {
     return dropper;
   },
 
-  deleteInstance: function(chromeWindow) {
+  deleteInstance: function (chromeWindow) {
     this._instances.delete(chromeWindow);
   }
-}
+};
 
 exports.EyedropperManager = EyedropperManager;
 
@@ -197,7 +197,7 @@ Eyedropper.prototype = {
 
 
 
-  getContentScreenshot: function() {
+  getContentScreenshot: function () {
     let deferred = promise.defer();
 
     let mm = this._contentTab.linkedBrowser.messageManager;
@@ -215,7 +215,7 @@ Eyedropper.prototype = {
 
 
 
-  open: function() {
+  open: function () {
     if (this.isOpen) {
       
       return promise.resolve();
@@ -239,7 +239,7 @@ Eyedropper.prototype = {
 
         this.isStarted = true;
         this.emit("started");
-      }
+      };
     });
 
     return deferred.promise;
@@ -249,7 +249,7 @@ Eyedropper.prototype = {
 
 
 
-  _onFirstMouseMove: function(event) {
+  _onFirstMouseMove: function (event) {
     this._chromeDocument.removeEventListener("mousemove", this._onFirstMouseMove);
 
     this._panel = this._buildPanel();
@@ -277,7 +277,7 @@ Eyedropper.prototype = {
 
 
 
-  _isInContent: function(clientX, clientY) {
+  _isInContent: function (clientX, clientY) {
     let box = this._contentTab.linkedBrowser.getBoundingClientRect();
     if (clientX > box.left &&
         clientX < box.right &&
@@ -294,7 +294,7 @@ Eyedropper.prototype = {
 
 
 
-  _setCoordinates: function(event) {
+  _setCoordinates: function (event) {
     let inContent = this._isInContent(event.clientX, event.clientY);
     let win = this._chromeWindow;
 
@@ -327,7 +327,7 @@ Eyedropper.prototype = {
 
 
 
-  _buildPanel: function() {
+  _buildPanel: function () {
     let panel = this._chromeDocument.createElement("panel");
     panel.setAttribute("noautofocus", true);
     panel.setAttribute("noautohide", true);
@@ -353,7 +353,7 @@ Eyedropper.prototype = {
 
 
 
-  _onFrameLoaded: function() {
+  _onFrameLoaded: function () {
     this._iframe.removeEventListener("load", this._onFrameLoaded, true);
 
     this._iframeDocument = this._iframe.contentDocument;
@@ -387,7 +387,7 @@ Eyedropper.prototype = {
   
 
 
-  _addPanelListeners: function() {
+  _addPanelListeners: function () {
     this._iframeDocument.addEventListener("keydown", this._onKeyDown);
 
     let closeCmd = this._iframeDocument.getElementById("eyedropper-cmd-close");
@@ -400,14 +400,14 @@ Eyedropper.prototype = {
   
 
 
-  _removePanelListeners: function() {
+  _removePanelListeners: function () {
     this._iframeDocument.removeEventListener("keydown", this._onKeyDown);
   },
 
   
 
 
-  _addListeners: function() {
+  _addListeners: function () {
     this._chromeDocument.addEventListener("mousemove", this._onMouseMove);
     this._chromeDocument.addEventListener("mousedown", this._onMouseDown);
   },
@@ -415,7 +415,7 @@ Eyedropper.prototype = {
   
 
 
-  _removeListeners: function() {
+  _removeListeners: function () {
     this._chromeDocument.removeEventListener("mousemove", this._onFirstMouseMove);
     this._chromeDocument.removeEventListener("mousemove", this._onMouseMove);
     this._chromeDocument.removeEventListener("mousedown", this._onMouseDown);
@@ -424,28 +424,28 @@ Eyedropper.prototype = {
   
 
 
-  _hideCursor: function() {
+  _hideCursor: function () {
     registerStyleSheet(NOCURSOR_URL);
   },
 
   
 
 
-  _resetCursor: function() {
+  _resetCursor: function () {
     unregisterStyleSheet(NOCURSOR_URL);
   },
 
   
 
 
-  _showCrosshairs: function() {
+  _showCrosshairs: function () {
     registerStyleSheet(CROSSHAIRS_URL);
   },
 
   
 
 
-  _hideCrosshairs: function() {
+  _hideCrosshairs: function () {
     unregisterStyleSheet(CROSSHAIRS_URL);
   },
 
@@ -456,7 +456,7 @@ Eyedropper.prototype = {
 
 
 
-  _onMouseMove: function(event) {
+  _onMouseMove: function (event) {
     if (!this._dragging || !this._panel || !this._canvas) {
       return;
     }
@@ -483,7 +483,7 @@ Eyedropper.prototype = {
 
 
 
-  _getPanelCoordinates: function({screenX, screenY}) {
+  _getPanelCoordinates: function ({screenX, screenY}) {
     let win = this._chromeWindow;
     let offset = CANVAS_WIDTH / 2 + CANVAS_OFFSET;
 
@@ -510,7 +510,7 @@ Eyedropper.prototype = {
 
 
 
-  _movePanel: function(screenX, screenY) {
+  _movePanel: function (screenX, screenY) {
     this._panelX = screenX;
     this._panelY = screenY;
 
@@ -524,7 +524,7 @@ Eyedropper.prototype = {
 
 
 
-  _onMouseDown: function(event) {
+  _onMouseDown: function (event) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -535,7 +535,7 @@ Eyedropper.prototype = {
 
 
 
-  selectColor: function() {
+  selectColor: function () {
     if (this._isSelecting) {
       return;
     }
@@ -558,7 +558,7 @@ Eyedropper.prototype = {
 
 
 
-  copyColor: function(callback) {
+  copyColor: function (callback) {
     clearTimeout(this._copyTimeout);
 
     let color = this._colorValue.value;
@@ -584,7 +584,7 @@ Eyedropper.prototype = {
 
 
 
-  _onKeyDown: function(event) {
+  _onKeyDown: function (event) {
     if (event.metaKey && event.keyCode === event.DOM_VK_C) {
       this.copyColor();
       return;
@@ -628,7 +628,7 @@ Eyedropper.prototype = {
   
 
 
-  _drawWindow: function() {
+  _drawWindow: function () {
     let { width, height, x, y, inContent,
           contentWidth, contentHeight } = this._zoomArea;
 
@@ -704,7 +704,7 @@ Eyedropper.prototype = {
   
 
 
-  _drawGrid: function() {
+  _drawGrid: function () {
     let { width, height } = this._zoomArea;
 
     this._ctx.lineWidth = 1;
@@ -726,11 +726,11 @@ Eyedropper.prototype = {
   
 
 
-  _drawCrosshair: function() {
+  _drawCrosshair: function () {
     let x = y = this.centerCell * this.cellSize;
 
     this._ctx.lineWidth = 1;
-    this._ctx.lineJoin = 'miter';
+    this._ctx.lineJoin = "miter";
     this._ctx.strokeStyle = "rgba(0, 0, 0, 1)";
     this._ctx.strokeRect(x - 1.5, y - 1.5, this.cellSize + 2, this.cellSize + 2);
 
@@ -741,7 +741,7 @@ Eyedropper.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     this._resetCursor();
     this._hideCrosshairs();
 
@@ -759,7 +759,7 @@ Eyedropper.prototype = {
 
     this.emit("destroy");
   }
-}
+};
 
 
 
@@ -793,21 +793,21 @@ function unregisterStyleSheet(url) {
 
 
 function toColorString(rgb, format) {
-  let [r,g,b] = rgb;
+  let [r, g, b] = rgb;
 
-  switch(format) {
+  switch (format) {
     case "hex":
       return hexString(rgb);
     case "rgb":
       return "rgb(" + r + ", " + g + ", " + b + ")";
     case "hsl":
-      let [h,s,l] = rgbToHsl(rgb);
+      let [h, s, l] = rgbToHsl(rgb);
       return "hsl(" + h + ", " + s + "%, " + l + "%)";
     case "name":
       let str;
       try {
         str = rgbToColorName(r, g, b);
-      } catch(e) {
+      } catch (e) {
         str = hexString(rgb);
       }
       return str;
@@ -825,7 +825,7 @@ function toColorString(rgb, format) {
 
 
 
-function hexString([r,g,b]) {
+function hexString([r, g, b]) {
   let val = (1 << 24) + (r << 16) + (g << 8) + (b << 0);
   return "#" + val.toString(16).substr(-6).toUpperCase();
 }

@@ -161,8 +161,8 @@ let EnvironmentActor = ActorClass({
 
     for (let name of this.obj.names()) {
       if (bindings.arguments.some(function exists(element) {
-                                    return !!element[name];
-                                  })) {
+        return !!element[name];
+      })) {
         continue;
       }
 

@@ -7,7 +7,7 @@ const TEST_URI = "data:text/html;charset=utf-8,<p>browser_telemetry_toolboxtabs_
 
 const TOOL_DELAY = 200;
 
-add_task(function*() {
+add_task(function* () {
   info("Activating the storage inspector");
   Services.prefs.setBoolPref("devtools.storage.enabled", true);
 

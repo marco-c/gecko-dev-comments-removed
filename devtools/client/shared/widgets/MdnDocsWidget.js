@@ -37,12 +37,12 @@ var XHR_CSS_URL = "https://developer.mozilla.org/en-US/docs/Web/CSS/";
 
 
 
-const PAGE_LINK_PARAMS = "?utm_source=mozilla&utm_medium=firefox-inspector&utm_campaign=default"
+const PAGE_LINK_PARAMS = "?utm_source=mozilla&utm_medium=firefox-inspector&utm_campaign=default";
 
 var PAGE_LINK_URL = "https://developer.mozilla.org/docs/Web/CSS/";
 exports.PAGE_LINK_URL = PAGE_LINK_URL;
 
-const BROWSER_WINDOW = 'navigator:browser';
+const BROWSER_WINDOW = "navigator:browser";
 
 const PROPERTY_NAME_COLOR = "theme-fg-color5";
 const PROPERTY_VALUE_COLOR = "theme-fg-color1";
@@ -264,7 +264,7 @@ function MdnDocsWidget(tooltipDocument) {
 
   
   let browserWindow = Services.wm.getMostRecentWindow(BROWSER_WINDOW);
-  this.elements.linkToMdn.addEventListener("click", function(e) {
+  this.elements.linkToMdn.addEventListener("click", function (e) {
     e.stopPropagation();
     e.preventDefault();
     let link = e.target.href;
@@ -295,7 +295,7 @@ MdnDocsWidget.prototype = {
 
 
 
-  loadCssDocs: function(propertyName) {
+  loadCssDocs: function (propertyName) {
 
     
 
@@ -366,11 +366,11 @@ MdnDocsWidget.prototype = {
     return deferred.promise;
   },
 
-  destroy: function() {
+  destroy: function () {
     this.elements = null;
     this.doc = null;
   }
-}
+};
 
 
 

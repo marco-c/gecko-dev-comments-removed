@@ -24,7 +24,7 @@ function test() {
     let Sources = win.DebuggerView.Sources;
     yield waitForDebuggerEvents(panel, win.EVENTS.SOURCE_SHOWN);
     if (Sources.selectedItem.attachment.source.url.indexOf(SCRIPT_URL) === -1) {
-      Sources.selectedValue = getSourceActor(win.DebuggerView.Sources, EXAMPLE_URL + SCRIPT_URL)
+      Sources.selectedValue = getSourceActor(win.DebuggerView.Sources, EXAMPLE_URL + SCRIPT_URL);
     }
 
     yield panel.addBreakpoint({
@@ -35,7 +35,7 @@ function test() {
     
     
     
-    if(panel.panelWin.gThreadClient.state !== "attached") {
+    if (panel.panelWin.gThreadClient.state !== "attached") {
       yield waitForThreadEvents(panel, "resumed");
     }
 

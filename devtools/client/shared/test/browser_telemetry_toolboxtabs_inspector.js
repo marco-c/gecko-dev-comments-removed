@@ -8,7 +8,7 @@ const TEST_URI = "data:text/html;charset=utf-8," +
 
 const TOOL_DELAY = 200;
 
-add_task(function*() {
+add_task(function* () {
   yield addTab(TEST_URI);
   let Telemetry = loadTelemetryAndRecordLogs();
 

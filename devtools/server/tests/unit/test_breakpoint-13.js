@@ -17,7 +17,7 @@ function run_test()
     run_test_with_server(WorkerDebuggerServer, do_test_finished);
   });
   do_test_pending();
-};
+}
 
 function run_test_with_server(aServer, aCallback)
 {
@@ -39,26 +39,26 @@ function test_simple_breakpoint()
     let source = gThreadClient.source(aPacket.frame.where.source);
     let location = { line: gDebuggee.line0 + 2 };
 
-    source.setBreakpoint(location, Task.async(function*(aResponse, bpClient) {
+    source.setBreakpoint(location, Task.async(function* (aResponse, bpClient) {
       const testCallbacks = [
-        function(aPacket) {
+        function (aPacket) {
           
           do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 5);
           do_check_eq(aPacket.why.type, "resumeLimit");
         },
-        function(aPacket) {
+        function (aPacket) {
           
           do_check_eq(aPacket.frame.where.line, location.line);
           do_check_neq(aPacket.why.type, "breakpoint");
           do_check_eq(aPacket.why.type, "resumeLimit");
         },
-        function(aPacket) {
+        function (aPacket) {
           
           do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 3);
           do_check_neq(aPacket.why.type, "breakpoint");
           do_check_eq(aPacket.why.type, "resumeLimit");
         },
-        function(aPacket) {
+        function (aPacket) {
           
           
           do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 3);
@@ -66,7 +66,7 @@ function test_simple_breakpoint()
           do_check_eq(aPacket.why.type, "resumeLimit");
           do_check_eq(aPacket.why.frameFinished.return.type, "undefined");
         },
-        function(aPacket) {
+        function (aPacket) {
           
           do_check_eq(gDebuggee.a, 1);
           do_check_eq(gDebuggee.b, undefined);
@@ -74,13 +74,13 @@ function test_simple_breakpoint()
           do_check_eq(aPacket.why.type, "resumeLimit");
           do_check_eq(aPacket.poppedFrames.length, 1);
         },
-        function(aPacket) {
+        function (aPacket) {
           
           do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 6);
           do_check_neq(aPacket.why.type, "debuggerStatement");
           do_check_eq(aPacket.why.type, "resumeLimit");
         },
-        function(aPacket) {
+        function (aPacket) {
           
           do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 7);
           do_check_neq(aPacket.why.type, "debuggerStatement");

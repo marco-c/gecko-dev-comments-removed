@@ -3,7 +3,7 @@
 
 
 
-'use strict';
+"use strict";
 
 const { Cc, Ci, Cu } = require("chrome");
 
@@ -176,8 +176,8 @@ var CSPp = CustomSimulatorProcess.prototype = Object.create(SimulatorProcess.pro
 
 
 Object.defineProperty(CSPp, "b2gBinary", {
-  get: function() {
-    let file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+  get: function () {
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
     file.initWithPath(this.options.b2gBinary);
     return file;
   }
@@ -185,8 +185,8 @@ Object.defineProperty(CSPp, "b2gBinary", {
 
 
 Object.defineProperty(CSPp, "gaiaProfile", {
-  get: function() {
-    let file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+  get: function () {
+    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
     file.initWithPath(this.options.gaiaProfile);
     return file;
   }
@@ -204,12 +204,12 @@ var ASPp = AddonSimulatorProcess.prototype = Object.create(SimulatorProcess.prot
 
 
 Object.defineProperty(ASPp, "b2gBinary", {
-  get: function() {
+  get: function () {
     let file;
     try {
       let pref = "extensions." + this.addon.id + ".customRuntime";
       file = Services.prefs.getComplexValue(pref, Ci.nsIFile);
-    } catch(e) {}
+    } catch (e) {}
 
     if (!file) {
       file = this.addon.getResourceURI().QueryInterface(Ci.nsIFileURL).file;
@@ -241,12 +241,12 @@ Object.defineProperty(ASPp, "b2gBinary", {
 
 
 Object.defineProperty(ASPp, "gaiaProfile", {
-  get: function() {
+  get: function () {
     let file;
 
     
     if (this.options.gaiaProfile) {
-      file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+      file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
       file.initWithPath(this.options.gaiaProfile);
       return file;
     }
@@ -256,7 +256,7 @@ Object.defineProperty(ASPp, "gaiaProfile", {
       let pref = "extensions." + this.addon.id + ".gaiaProfile";
       file = Services.prefs.getComplexValue(pref, Ci.nsIFile);
       return file;
-    } catch(e) {}
+    } catch (e) {}
 
     
     file = this.addon.getResourceURI().QueryInterface(Ci.nsIFileURL).file;
@@ -277,12 +277,12 @@ var OASPp = OldAddonSimulatorProcess.prototype = Object.create(AddonSimulatorPro
 
 
 Object.defineProperty(OASPp, "b2gBinary", {
-  get: function() {
+  get: function () {
     let file;
     try {
       let pref = "extensions." + this.addon.id + ".customRuntime";
       file = Services.prefs.getComplexValue(pref, Ci.nsIFile);
-    } catch(e) {}
+    } catch (e) {}
 
     if (!file) {
       file = this.addon.getResourceURI().QueryInterface(Ci.nsIFileURL).file;
@@ -305,7 +305,7 @@ Object.defineProperty(OASPp, "b2gBinary", {
 
 
 Object.defineProperty(OASPp, "args", {
-  get: function() {
+  get: function () {
     let args = [];
 
     

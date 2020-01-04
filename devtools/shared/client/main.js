@@ -90,7 +90,7 @@ function eventSource(aProto) {
     }
     else {
       this._listeners[aName] =
-        this._listeners[aName].filter(function (l) { return l != aListener });
+        this._listeners[aName].filter(function (l) { return l != aListener; });
     }
   };
 
@@ -134,7 +134,7 @@ function eventSource(aProto) {
         DevToolsUtils.reportException("notify event '" + name + "'", e);
       }
     }
-  }
+  };
 }
 
 
@@ -226,7 +226,7 @@ const DebuggerClient = exports.DebuggerClient = function (aTransport)
     this.mainRoot = new RootClient(this, aPacket);
     this.emit("connected", aPacket.applicationType, aPacket.traits);
   });
-}
+};
 
 
 
@@ -249,7 +249,7 @@ const DebuggerClient = exports.DebuggerClient = function (aTransport)
 
 
 
-DebuggerClient.requester = function (aPacketSkeleton, config={}) {
+DebuggerClient.requester = function (aPacketSkeleton, config = {}) {
   let { telemetry, before, after } = config;
   return DevToolsUtils.makeInfallible(function (...args) {
     let histogram, startTime;
@@ -319,7 +319,7 @@ DebuggerClient.Argument.prototype.getArgument = function (aParams) {
 };
 
 
-DebuggerClient.socketConnect = function(options) {
+DebuggerClient.socketConnect = function (options) {
   
   return DebuggerSocket.connect(options);
 };
@@ -393,7 +393,7 @@ DebuggerClient.prototype = {
     }
 
     if (aOnClosed) {
-      this.addOneTimeListener('closed', function (aEvent) {
+      this.addOneTimeListener("closed", function (aEvent) {
         aOnClosed();
       });
     }
@@ -566,7 +566,7 @@ DebuggerClient.prototype = {
 
 
 
-  attachThread: function (aThreadActor, aOnResponse = noop, aOptions={}) {
+  attachThread: function (aThreadActor, aOnResponse = noop, aOptions = {}) {
     if (this._clients.has(aThreadActor)) {
       let client = this._clients.get(aThreadActor);
       DevToolsUtils.executeSoon(() => aOnResponse({}, client));
@@ -630,8 +630,8 @@ DebuggerClient.prototype = {
     let packet = {
       to: "root",
       type: "getProcess"
-    }
-    if (typeof(aId) == "number") {
+    };
+    if (typeof (aId) == "number") {
       packet.id = aId;
     }
     return this.request(packet);
@@ -825,7 +825,7 @@ DebuggerClient.prototype = {
 
 
 
-  startBulkRequest: function(request) {
+  startBulkRequest: function (request) {
     if (!this.traits.bulk) {
       throw Error("Server doesn't support bulk transfers");
     }
@@ -1055,7 +1055,7 @@ DebuggerClient.prototype = {
 
 
 
-  onBulkPacket: function(packet) {
+  onBulkPacket: function (packet) {
     let { actor, type, length } = packet;
 
     if (!actor) {
@@ -1095,7 +1095,7 @@ DebuggerClient.prototype = {
     this.emit("closed");
 
     
-    let reject = function(type, request, actor) {
+    let reject = function (type, request, actor) {
       
       
       let msg;
@@ -1153,7 +1153,7 @@ DebuggerClient.prototype = {
                       "a client instance with an `events` attribute " +
                       "that is an array.");
     }
-    if (client.events.length > 0 && typeof(client.emit) != "function") {
+    if (client.events.length > 0 && typeof (client.emit) != "function") {
       throw new Error("DebuggerServer.registerClient expects " +
                       "a client instance with non-empty `events` array to" +
                       "have an `emit` function.");
@@ -1208,7 +1208,7 @@ DebuggerClient.prototype = {
 
 
   activeAddon: null
-}
+};
 
 eventSource(DebuggerClient.prototype);
 
@@ -1218,19 +1218,19 @@ function Request(request) {
 
 Request.prototype = {
 
-  on: function(type, listener) {
+  on: function (type, listener) {
     events.on(this, type, listener);
   },
 
-  off: function(type, listener) {
+  off: function (type, listener) {
     events.off(this, type, listener);
   },
 
-  once: function(type, listener) {
+  once: function (type, listener) {
     events.once(this, type, listener);
   },
 
-  emit: function(type, ...args) {
+  emit: function (type, ...args) {
     events.emit(this, type, ...args);
   },
 
@@ -1261,7 +1261,7 @@ function TabClient(aClient, aForm) {
 }
 
 TabClient.prototype = {
-  get actor() { return this._actor },
+  get actor() { return this._actor; },
   get _transport() { return this.client._transport; },
 
   
@@ -1274,7 +1274,7 @@ TabClient.prototype = {
 
 
 
-  attachThread: function(aOptions={}, aOnResponse = noop) {
+  attachThread: function (aOptions = {}, aOnResponse = noop) {
     if (this.thread) {
       DevToolsUtils.executeSoon(() => aOnResponse({}, this.thread));
       return promise.resolve([{}, this.thread]);
@@ -1331,7 +1331,7 @@ TabClient.prototype = {
 
 
 
-  reload: function(options = { force: false }) {
+  reload: function (options = { force: false }) {
     return this._reload(options);
   },
   _reload: DebuggerClient.requester({
@@ -1441,7 +1441,7 @@ WorkerClient.prototype = {
     telemetry: "WORKERDETACH"
   }),
 
-  attachThread: function(aOptions = {}, aOnResponse = noop) {
+  attachThread: function (aOptions = {}, aOnResponse = noop) {
     if (this.thread) {
       let response = [{
         type: "connected",
@@ -1521,9 +1521,9 @@ AddonClient.prototype = {
   detach: DebuggerClient.requester({
     type: "detach"
   }, {
-    after: function(aResponse) {
+    after: function (aResponse) {
       if (this._client.activeAddon === this) {
-        this._client.activeAddon = null
+        this._client.activeAddon = null;
       }
       this._client.unregisterClient(this);
       return aResponse;
@@ -1627,9 +1627,9 @@ RootClient.prototype = {
     };
 
     if (aFilter) {
-      if (typeof(aFilter.outerWindowID) == "number") {
+      if (typeof (aFilter.outerWindowID) == "number") {
         packet.outerWindowID = aFilter.outerWindowID;
-      } else if (typeof(aFilter.tabId) == "number") {
+      } else if (typeof (aFilter.tabId) == "number") {
         packet.tabId = aFilter.tabId;
       } else if ("tab" in aFilter) {
         let browser = aFilter.tab.linkedBrowser;
@@ -1659,7 +1659,7 @@ RootClient.prototype = {
 
 
 
-   protocolDescription: DebuggerClient.requester({ type: "protocolDescription" },
+  protocolDescription: DebuggerClient.requester({ type: "protocolDescription" },
                                                  { telemetry: "PROTOCOLDESCRIPTION" }),
 
   
@@ -1667,7 +1667,7 @@ RootClient.prototype = {
 
 
   get _transport() { return this._client._transport; },
-  get request()    { return this._client.request;    }
+  get request() { return this._client.request; }
 };
 
 
@@ -1823,7 +1823,7 @@ ThreadClient.prototype = {
 
 
 
-  interrupt: function(aOnResponse) {
+  interrupt: function (aOnResponse) {
     return this._doInterrupt(null, aOnResponse);
   },
 
@@ -1833,7 +1833,7 @@ ThreadClient.prototype = {
 
 
 
-  breakOnNext: function(aOnResponse) {
+  breakOnNext: function (aOnResponse) {
     return this._doInterrupt("onNext", aOnResponse);
   },
 
@@ -1865,7 +1865,7 @@ ThreadClient.prototype = {
     this._ignoreCaughtExceptions = aIgnoreCaughtExceptions;
 
     
-    if(!this.paused) {
+    if (!this.paused) {
       return this.interrupt(aResponse => {
         if (aResponse.error) {
           
@@ -2020,7 +2020,7 @@ ThreadClient.prototype = {
 
   _clearScripts: function () {
     if (Object.keys(this._scriptCache).length > 0) {
-      this._scriptCache = {}
+      this._scriptCache = {};
       this.emit("scriptscleared");
     }
   },
@@ -2071,7 +2071,7 @@ ThreadClient.prototype = {
 
 
 
-  fillFrames: function (aTotal, aCallback=noop) {
+  fillFrames: function (aTotal, aCallback = noop) {
     this._assertPaused("fillFrames");
     if (this._frameCache.length >= aTotal) {
       return false;
@@ -2219,14 +2219,14 @@ ThreadClient.prototype = {
     
     
     
-    this._lastPausePacket = aPacket.type === 'resumed' ? null : aPacket;
+    this._lastPausePacket = aPacket.type === "resumed" ? null : aPacket;
     this._clearFrames();
     this._clearPauseGrips();
     aPacket.type === ThreadStateTypes.detached && this._clearThreadGrips();
     this.client._eventsEnabled && this.emit(aPacket.type, aPacket);
   },
 
-  getLastPausePacket: function() {
+  getLastPausePacket: function () {
     return this._lastPausePacket;
   },
 
@@ -2290,7 +2290,7 @@ function TraceClient(aClient, aActor) {
 }
 
 TraceClient.prototype = {
-  get actor()   { return this._actor; },
+  get actor() { return this._actor; },
   get tracing() { return this._activeTraces.size > 0; },
 
   get _transport() { return this._client._transport; },
@@ -2385,7 +2385,7 @@ function ObjectClient(aClient, aGrip)
 exports.ObjectClient = ObjectClient;
 
 ObjectClient.prototype = {
-  get actor() { return this._grip.actor },
+  get actor() { return this._grip.actor; },
   get _transport() { return this._client._transport; },
 
   valid: true,
@@ -2478,7 +2478,7 @@ ObjectClient.prototype = {
     type: "enumProperties",
     options: args(0)
   }, {
-    after: function(aResponse) {
+    after: function (aResponse) {
       if (aResponse.iterator) {
         return { iterator: new PropertyIteratorClient(this._client, aResponse.iterator) };
       }
@@ -2496,13 +2496,13 @@ ObjectClient.prototype = {
   enumEntries: DebuggerClient.requester({
     type: "enumEntries"
   }, {
-    before: function(packet) {
+    before: function (packet) {
       if (!["Map", "WeakMap", "Set", "WeakSet"].includes(this._grip.class)) {
         throw new Error("enumEntries is only valid for Map/Set-like grips.");
       }
       return packet;
     },
-    after: function(response) {
+    after: function (response) {
       if (response.iterator) {
         return {
           iterator: new PropertyIteratorClient(this._client, response.iterator)
@@ -2570,7 +2570,7 @@ ObjectClient.prototype = {
   getDependentPromises: DebuggerClient.requester({
     type: "dependentPromises"
   }, {
-    before: function(aPacket) {
+    before: function (aPacket) {
       if (this._grip.class !== "Promise") {
         throw new Error("getDependentPromises is only valid for promise " +
           "grips.");
@@ -2585,7 +2585,7 @@ ObjectClient.prototype = {
   getPromiseAllocationStack: DebuggerClient.requester({
     type: "allocationStack"
   }, {
-    before: function(aPacket) {
+    before: function (aPacket) {
       if (this._grip.class !== "Promise") {
         throw new Error("getAllocationStack is only valid for promise grips.");
       }
@@ -2599,7 +2599,7 @@ ObjectClient.prototype = {
   getPromiseFulfillmentStack: DebuggerClient.requester({
     type: "fulfillmentStack"
   }, {
-    before: function(packet) {
+    before: function (packet) {
       if (this._grip.class !== "Promise") {
         throw new Error("getPromiseFulfillmentStack is only valid for " +
           "promise grips.");
@@ -2614,7 +2614,7 @@ ObjectClient.prototype = {
   getPromiseRejectionStack: DebuggerClient.requester({
     type: "rejectionStack"
   }, {
-    before: function(packet) {
+    before: function (packet) {
       if (this._grip.class !== "Promise") {
         throw new Error("getPromiseRejectionStack is only valid for " +
           "promise grips.");
@@ -2819,7 +2819,7 @@ SourceClient.prototype = {
 
 
 
-  getExecutableLines: function(cb = noop){
+  getExecutableLines: function (cb = noop) {
     let packet = {
       to: this._form.actor,
       type: "getExecutableLines"
@@ -2840,7 +2840,7 @@ SourceClient.prototype = {
       type: "source"
     };
     return this._client.request(packet).then(aResponse => {
-      return this._onSourceResponse(aResponse, aCallback)
+      return this._onSourceResponse(aResponse, aCallback);
     });
   },
 
@@ -3032,7 +3032,7 @@ BreakpointClient.prototype = {
   
 
 
-  hasCondition: function() {
+  hasCondition: function () {
     let root = this._client.mainRoot;
     
     
@@ -3050,7 +3050,7 @@ BreakpointClient.prototype = {
 
 
 
-  getCondition: function() {
+  getCondition: function () {
     let root = this._client.mainRoot;
     if (root.traits.conditionalBreakpoints) {
       return this.condition;
@@ -3062,7 +3062,7 @@ BreakpointClient.prototype = {
   
 
 
-  setCondition: function(gThreadClient, aCondition) {
+  setCondition: function (gThreadClient, aCondition) {
     let root = this._client.mainRoot;
     let deferred = promise.defer();
 

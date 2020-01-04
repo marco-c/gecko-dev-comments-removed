@@ -15,7 +15,7 @@ function* openTabAndSetupStorage(url) {
   let content = yield addTab(url);
 
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
     
 
 
@@ -28,7 +28,7 @@ function* openTabAndSetupStorage(url) {
     function getAllWindows(baseWindow) {
       let windows = new Set();
 
-      let _getAllWindows = function(win) {
+      let _getAllWindows = function (win) {
         windows.add(win.wrappedJSObject);
 
         for (let i = 0; i < win.length; i++) {
@@ -50,7 +50,7 @@ function* openTabAndSetupStorage(url) {
 }
 
 function* clearStorage() {
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
     
 
 
@@ -63,7 +63,7 @@ function* clearStorage() {
     function getAllWindows(baseWindow) {
       let windows = new Set();
 
-      let _getAllWindows = function(win) {
+      let _getAllWindows = function (win) {
         windows.add(win.wrappedJSObject);
 
         for (let i = 0; i < win.length; i++) {

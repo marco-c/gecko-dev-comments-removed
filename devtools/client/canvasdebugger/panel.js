@@ -17,7 +17,7 @@ function CanvasDebuggerPanel(iframeWindow, toolbox) {
   this._destroyer = null;
 
   EventEmitter.decorate(this);
-};
+}
 
 exports.CanvasDebuggerPanel = CanvasDebuggerPanel;
 
@@ -28,7 +28,7 @@ CanvasDebuggerPanel.prototype = {
 
 
 
-  open: function() {
+  open: function () {
     let targetPromise;
 
     
@@ -61,7 +61,7 @@ CanvasDebuggerPanel.prototype = {
     return this._toolbox.target;
   },
 
-  destroy: function() {
+  destroy: function () {
     
     if (this._destroyer) {
       return this._destroyer;

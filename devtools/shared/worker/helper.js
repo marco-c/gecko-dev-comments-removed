@@ -102,7 +102,7 @@
         }
       }
 
-      function handleError(error="Error") {
+      function handleError(error = "Error") {
         try {
           
           self.postMessage({ id, error });

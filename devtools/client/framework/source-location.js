@@ -28,11 +28,11 @@ function SourceLocationController(target) {
   target.on("close", this.destroy);
 }
 
-SourceLocationController.prototype.reset = function() {
+SourceLocationController.prototype.reset = function () {
   this.locations.clear();
 };
 
-SourceLocationController.prototype.destroy = function() {
+SourceLocationController.prototype.destroy = function () {
   this.locations.clear();
   this.target.off("source-updated", this._onSourceUpdated);
   this.target.off("navigate", this.reset);
@@ -50,7 +50,7 @@ SourceLocationController.prototype.destroy = function() {
 
 
 
-SourceLocationController.prototype.bindLocation = function(location, callback) {
+SourceLocationController.prototype.bindLocation = function (location, callback) {
   assert(location.url, "Location must have a url.");
   assert(location.line, "Location must have a line.");
   this.locations.add({ location, callback });
@@ -63,7 +63,7 @@ SourceLocationController.prototype.bindLocation = function(location, callback) {
 
 
 
-SourceLocationController.prototype._onSourceUpdated = function(_, sourceEvent) {
+SourceLocationController.prototype._onSourceUpdated = function (_, sourceEvent) {
   let { type, source } = sourceEvent;
   
   
@@ -80,7 +80,7 @@ SourceLocationController.prototype._onSourceUpdated = function(_, sourceEvent) {
   }
 };
 
-SourceLocationController.prototype._updateSource = Task.async(function*(locationItem) {
+SourceLocationController.prototype._updateSource = Task.async(function* (locationItem) {
   let newLocation = yield resolveLocation(this.target, locationItem.location);
   if (newLocation) {
     let previousLocation = Object.assign({}, locationItem.location);
@@ -99,7 +99,7 @@ SourceLocationController.prototype._updateSource = Task.async(function*(location
 
 
 function resolveLocation(target, location) {
-  return Task.spawn(function*() {
+  return Task.spawn(function* () {
     let newLocation = yield target.resolveLocation({
       url: location.url,
       line: location.line,
@@ -129,7 +129,7 @@ function isSourceRelated(location, source) {
          
   return source.generatedUrl === location.url ||
          
-         source.url === location.url
+         source.url === location.url;
 }
 
 exports.SourceLocationController = SourceLocationController;

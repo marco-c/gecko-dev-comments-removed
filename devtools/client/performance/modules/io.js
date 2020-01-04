@@ -25,7 +25,7 @@ const PERF_TOOL_SERIALIZER_CURRENT_VERSION = 2;
 
 
 
-function getUnicodeConverter () {
+function getUnicodeConverter() {
   let cname = "@mozilla.org/intl/scriptableunicodeconverter";
   let converter = Cc[cname].createInstance(Ci.nsIScriptableUnicodeConverter);
   converter.charset = "UTF-8";
@@ -44,7 +44,7 @@ function getUnicodeConverter () {
 
 
 
-function saveRecordingToFile (recordingData, file) {
+function saveRecordingToFile(recordingData, file) {
   recordingData.fileType = PERF_TOOL_SERIALIZER_IDENTIFIER;
   recordingData.version = PERF_TOOL_SERIALIZER_CURRENT_VERSION;
 
@@ -66,7 +66,7 @@ function saveRecordingToFile (recordingData, file) {
 
 
 
-function loadRecordingFromFile (file) {
+function loadRecordingFromFile(file) {
   let channel = NetUtil.newChannel({
     uri: NetUtil.newURI(file),
     loadUsingSystemPrincipal: true
@@ -122,7 +122,7 @@ function loadRecordingFromFile (file) {
 
 
 
-function isValidSerializerVersion (version) {
+function isValidSerializerVersion(version) {
   return !!~[
     PERF_TOOL_SERIALIZER_LEGACY_VERSION,
     PERF_TOOL_SERIALIZER_CURRENT_VERSION
@@ -137,7 +137,7 @@ function isValidSerializerVersion (version) {
 
 
 
-function convertLegacyData (legacyData) {
+function convertLegacyData(legacyData) {
   let { profilerData, ticksData, recordingDuration } = legacyData;
 
   

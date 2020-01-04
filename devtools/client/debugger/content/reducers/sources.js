@@ -3,9 +3,9 @@
 
 "use strict";
 
-const constants = require('../constants');
-const Immutable = require('devtools/client/shared/vendor/seamless-immutable');
-const { mergeIn, setIn } = require('../utils');
+const constants = require("../constants");
+const Immutable = require("devtools/client/shared/vendor/seamless-immutable");
+const { mergeIn, setIn } = require("../utils");
 
 const initialState = Immutable({
   sources: {},
@@ -15,87 +15,87 @@ const initialState = Immutable({
 });
 
 function update(state = initialState, action, emitChange) {
-  switch(action.type) {
-  case constants.ADD_SOURCE:
-    emitChange('source', action.source);
-    return mergeIn(state, ['sources', action.source.actor], action.source);
+  switch (action.type) {
+    case constants.ADD_SOURCE:
+      emitChange("source", action.source);
+      return mergeIn(state, ["sources", action.source.actor], action.source);
 
-  case constants.LOAD_SOURCES:
-    if (action.status === "done") {
-      const sources = action.value;
-      if (!sources) {
-        return state;
-      }
-      const sourcesByActor = {};
-      sources.forEach(source => {
-        if (!state.sources[source.actor]) {
-          emitChange('source', source);
+    case constants.LOAD_SOURCES:
+      if (action.status === "done") {
+        const sources = action.value;
+        if (!sources) {
+          return state;
         }
-        sourcesByActor[source.actor] = source;
+        const sourcesByActor = {};
+        sources.forEach(source => {
+          if (!state.sources[source.actor]) {
+            emitChange("source", source);
+          }
+          sourcesByActor[source.actor] = source;
+        });
+        return mergeIn(state, ["sources"], state.sources.merge(sourcesByActor));
+      }
+      break;
+
+    case constants.SELECT_SOURCE:
+      emitChange("source-selected", action.source);
+      return state.merge({
+        selectedSource: action.source.actor,
+        selectedSourceOpts: action.opts
       });
-      return mergeIn(state, ['sources'], state.sources.merge(sourcesByActor))
-    }
-    break;
 
-  case constants.SELECT_SOURCE:
-    emitChange('source-selected', action.source);
-    return state.merge({
-      selectedSource: action.source.actor,
-      selectedSourceOpts: action.opts
-    });
-
-  case constants.LOAD_SOURCE_TEXT: {
-    const s = _updateText(state, action);
-    emitChange('source-text-loaded', s.sources[action.source.actor]);
-    return s;
-  }
-
-  case constants.BLACKBOX:
-    if (action.status === 'done') {
-      const s = mergeIn(state,
-                        ['sources', action.source.actor, 'isBlackBoxed'],
-                        action.value.isBlackBoxed);
-      emitChange('blackboxed', s.sources[action.source.actor]);
+    case constants.LOAD_SOURCE_TEXT: {
+      const s = _updateText(state, action);
+      emitChange("source-text-loaded", s.sources[action.source.actor]);
       return s;
     }
-    break;
 
-  case constants.TOGGLE_PRETTY_PRINT:
-    let s = state;
-    if (action.status === "error") {
-      s = mergeIn(state, ['sourcesText', action.source.actor], {
-        loading: false
-      });
-
-      
-      
-      
-      
-      
-      
-      if(s.sourcesText[action.source.actor].text != null) {
-        emitChange('prettyprinted', s.sources[action.source.actor]);
+    case constants.BLACKBOX:
+      if (action.status === "done") {
+        const s = mergeIn(state,
+                        ["sources", action.source.actor, "isBlackBoxed"],
+                        action.value.isBlackBoxed);
+        emitChange("blackboxed", s.sources[action.source.actor]);
+        return s;
       }
-    }
-    else {
-      s = _updateText(state, action);
+      break;
+
+    case constants.TOGGLE_PRETTY_PRINT:
+      let s = state;
+      if (action.status === "error") {
+        s = mergeIn(state, ["sourcesText", action.source.actor], {
+          loading: false
+        });
+
+      
+      
+      
+      
+      
+      
+        if (s.sourcesText[action.source.actor].text != null) {
+          emitChange("prettyprinted", s.sources[action.source.actor]);
+        }
+      }
+      else {
+        s = _updateText(state, action);
       
       
       
 
-      if (action.status === 'done') {
-        s = mergeIn(s,
-                    ['sources', action.source.actor, 'isPrettyPrinted'],
+        if (action.status === "done") {
+          s = mergeIn(s,
+                    ["sources", action.source.actor, "isPrettyPrinted"],
                     action.value.isPrettyPrinted);
-        emitChange('prettyprinted', s.sources[action.source.actor]);
+          emitChange("prettyprinted", s.sources[action.source.actor]);
+        }
       }
-    }
-    return s;
+      return s;
 
-  case constants.UNLOAD:
+    case constants.UNLOAD:
     
     
-    return initialState;
+      return initialState;
   }
 
   return state;
@@ -104,21 +104,21 @@ function update(state = initialState, action, emitChange) {
 function _updateText(state, action) {
   const { source } = action;
 
-  if (action.status === 'start') {
+  if (action.status === "start") {
     
     
     
-    return mergeIn(state, ['sourcesText', source.actor], {
+    return mergeIn(state, ["sourcesText", source.actor], {
       loading: true
     });
   }
-  else if (action.status === 'error') {
-    return setIn(state, ['sourcesText', source.actor], {
+  else if (action.status === "error") {
+    return setIn(state, ["sourcesText", source.actor], {
       error: action.error
     });
   }
   else {
-    return setIn(state, ['sourcesText', source.actor], {
+    return setIn(state, ["sourcesText", source.actor], {
       text: action.value.text,
       contentType: action.value.contentType
     });

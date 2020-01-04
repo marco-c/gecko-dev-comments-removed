@@ -23,7 +23,7 @@ var Json = {};
 
 
 
-Json.parseJSONString = function(jsonString) {
+Json.parseJSONString = function (jsonString) {
   if (!jsonString.length) {
     return null;
   }
@@ -197,7 +197,7 @@ function pseudoJsonToJson(json) {
   return ret;
 }
 
-Json.isJSON = function(contentType, data) {
+Json.isJSON = function (contentType, data) {
   
   
   

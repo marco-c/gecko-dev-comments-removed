@@ -21,7 +21,7 @@ function test() {
     const gSearchView = gDebugger.DebuggerView.Filtering.FilteredSources;
     const gSearchBox = gDebugger.DebuggerView.Filtering._searchbox;
 
-    Task.spawn(function*() {
+    Task.spawn(function* () {
       
       
 

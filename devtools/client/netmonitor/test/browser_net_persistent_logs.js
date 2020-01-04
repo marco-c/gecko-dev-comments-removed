@@ -27,9 +27,9 @@ function test() {
       "The request menu should have two items at this point.");
   })
   .then(() => {
-     content.location.reload(true);
-     return waitForNetworkEvents(monitor, 2);
-   })
+    content.location.reload(true);
+    return waitForNetworkEvents(monitor, 2);
+  })
   .then(() => {
     
     is(reqMenu.itemCount, 2,
@@ -37,10 +37,10 @@ function test() {
   })
   .then(() => {
     
-     Services.prefs.setBoolPref("devtools.webconsole.persistlog", true);
-     content.location.reload(true);
-     return waitForNetworkEvents(monitor, 2);
-   })
+    Services.prefs.setBoolPref("devtools.webconsole.persistlog", true);
+    content.location.reload(true);
+    return waitForNetworkEvents(monitor, 2);
+  })
   .then(() => {
     
     is(reqMenu.itemCount, 4,

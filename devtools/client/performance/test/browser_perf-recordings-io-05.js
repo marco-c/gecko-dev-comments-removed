@@ -6,7 +6,7 @@
 
 
 
-var test = Task.async(function*() {
+var test = Task.async(function* () {
   var { target, panel, toolbox } = yield initPerformance(SIMPLE_URL);
   var { EVENTS, PerformanceController, WaterfallView } = panel.panelWin;
 

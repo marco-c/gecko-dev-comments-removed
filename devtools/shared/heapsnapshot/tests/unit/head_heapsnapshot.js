@@ -95,7 +95,7 @@ function assertThrowsValue(f, val, msg) {
 
 
 
-function getFilePath(aName, aAllowMissing=false, aUsePlatformPathSeparator=false)
+function getFilePath(aName, aAllowMissing = false, aUsePlatformPathSeparator = false)
 {
   let file = do_get_file(aName, aAllowMissing);
   let path = Services.io.newFileURI(file).spec;
@@ -147,7 +147,7 @@ function readHeapSnapshot(filePath) {
 
 
 
-function saveHeapSnapshotAndTakeCensus(dbg=null, censusOptions=undefined) {
+function saveHeapSnapshotAndTakeCensus(dbg = null, censusOptions = undefined) {
   const snapshotOptions = dbg ? { debugger: dbg } : { runtime: true };
   const filePath = saveNewHeapSnapshot(snapshotOptions);
   const snapshot = readHeapSnapshot(filePath);
@@ -211,7 +211,7 @@ function savedFrameReplacer(key, val) {
 
 
 
-function compareCensusViewData (breakdown, report, expected, options) {
+function compareCensusViewData(breakdown, report, expected, options) {
   dumpn("Generating CensusTreeNode from report:");
   dumpn("breakdown: " + JSON.stringify(breakdown, null, 4));
   dumpn("report: " + JSON.stringify(report, null, 4));
@@ -225,7 +225,7 @@ function compareCensusViewData (breakdown, report, expected, options) {
 
 
 
-function assertStructurallyEquivalent(actual, expected, path="root") {
+function assertStructurallyEquivalent(actual, expected, path = "root") {
   if (actual === expected) {
     equal(actual, expected, "actual and expected are the same");
     return;

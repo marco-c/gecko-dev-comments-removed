@@ -327,10 +327,10 @@ function addTopLevelItems(doc) {
 
   
   let nodes = [];
-  for(let node of keys.children) {
+  for (let node of keys.children) {
     nodes.push(node);
   }
-  for(let node of menuItems.children) {
+  for (let node of menuItems.children) {
     nodes.push(node);
   }
   FragmentsCache.set(doc, nodes);

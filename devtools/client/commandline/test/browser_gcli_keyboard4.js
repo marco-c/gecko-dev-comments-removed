@@ -14,7 +14,7 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
@@ -27,7 +27,7 @@ function test() {
 
 
 
-exports.testIncrFloat = function(options) {
+exports.testIncrFloat = function (options) {
   return helpers.audit(options, [
     
 
@@ -37,48 +37,48 @@ exports.testIncrFloat = function(options) {
 
 
     {
-      setup: 'tsf -6.5<UP>',
-      check: { input: 'tsf -6' }
+      setup: "tsf -6.5<UP>",
+      check: { input: "tsf -6" }
     },
     {
-      setup: 'tsf -6<UP>',
-      check: { input: 'tsf -4.5' }
+      setup: "tsf -6<UP>",
+      check: { input: "tsf -4.5" }
     },
     {
-      setup: 'tsf -4.5<UP>',
-      check: { input: 'tsf -3' }
+      setup: "tsf -4.5<UP>",
+      check: { input: "tsf -3" }
     },
     {
-      setup: 'tsf -4<UP>',
-      check: { input: 'tsf -3' }
+      setup: "tsf -4<UP>",
+      check: { input: "tsf -3" }
     },
     {
-      setup: 'tsf -3<UP>',
-      check: { input: 'tsf -1.5' }
+      setup: "tsf -3<UP>",
+      check: { input: "tsf -1.5" }
     },
     {
-      setup: 'tsf -1.5<UP>',
-      check: { input: 'tsf 0' }
+      setup: "tsf -1.5<UP>",
+      check: { input: "tsf 0" }
     },
     {
-      setup: 'tsf 0<UP>',
-      check: { input: 'tsf 1.5' }
+      setup: "tsf 0<UP>",
+      check: { input: "tsf 1.5" }
     },
     {
-      setup: 'tsf 1.5<UP>',
-      check: { input: 'tsf 3' }
+      setup: "tsf 1.5<UP>",
+      check: { input: "tsf 3" }
     },
     {
-      setup: 'tsf 2<UP>',
-      check: { input: 'tsf 3' }
+      setup: "tsf 2<UP>",
+      check: { input: "tsf 3" }
     },
     {
-      setup: 'tsf 3<UP>',
-      check: { input: 'tsf 4.5' }
+      setup: "tsf 3<UP>",
+      check: { input: "tsf 4.5" }
     },
     {
-      setup: 'tsf 5<UP>',
-      check: { input: 'tsf 6' }
+      setup: "tsf 5<UP>",
+      check: { input: "tsf 6" }
     }
     
 
@@ -90,7 +90,7 @@ exports.testIncrFloat = function(options) {
   ]);
 };
 
-exports.testDecrFloat = function(options) {
+exports.testDecrFloat = function (options) {
   return helpers.audit(options, [
     
 
@@ -100,48 +100,48 @@ exports.testDecrFloat = function(options) {
 
 
     {
-      setup: 'tsf -6.5<DOWN>',
-      check: { input: 'tsf -6.5' }
+      setup: "tsf -6.5<DOWN>",
+      check: { input: "tsf -6.5" }
     },
     {
-      setup: 'tsf -6<DOWN>',
-      check: { input: 'tsf -6.5' }
+      setup: "tsf -6<DOWN>",
+      check: { input: "tsf -6.5" }
     },
     {
-      setup: 'tsf -4.5<DOWN>',
-      check: { input: 'tsf -6' }
+      setup: "tsf -4.5<DOWN>",
+      check: { input: "tsf -6" }
     },
     {
-      setup: 'tsf -4<DOWN>',
-      check: { input: 'tsf -4.5' }
+      setup: "tsf -4<DOWN>",
+      check: { input: "tsf -4.5" }
     },
     {
-      setup: 'tsf -3<DOWN>',
-      check: { input: 'tsf -4.5' }
+      setup: "tsf -3<DOWN>",
+      check: { input: "tsf -4.5" }
     },
     {
-      setup: 'tsf -1.5<DOWN>',
-      check: { input: 'tsf -3' }
+      setup: "tsf -1.5<DOWN>",
+      check: { input: "tsf -3" }
     },
     {
-      setup: 'tsf 0<DOWN>',
-      check: { input: 'tsf -1.5' }
+      setup: "tsf 0<DOWN>",
+      check: { input: "tsf -1.5" }
     },
     {
-      setup: 'tsf 1.5<DOWN>',
-      check: { input: 'tsf 0' }
+      setup: "tsf 1.5<DOWN>",
+      check: { input: "tsf 0" }
     },
     {
-      setup: 'tsf 2<DOWN>',
-      check: { input: 'tsf 1.5' }
+      setup: "tsf 2<DOWN>",
+      check: { input: "tsf 1.5" }
     },
     {
-      setup: 'tsf 3<DOWN>',
-      check: { input: 'tsf 1.5' }
+      setup: "tsf 3<DOWN>",
+      check: { input: "tsf 1.5" }
     },
     {
-      setup: 'tsf 5<DOWN>',
-      check: { input: 'tsf 4.5' }
+      setup: "tsf 5<DOWN>",
+      check: { input: "tsf 4.5" }
     }
     
 
@@ -153,7 +153,7 @@ exports.testDecrFloat = function(options) {
   ]);
 };
 
-exports.testIncrSelection = function(options) {
+exports.testIncrSelection = function (options) {
   
 
 
@@ -176,7 +176,7 @@ exports.testIncrSelection = function(options) {
 
 };
 
-exports.testDecrSelection = function(options) {
+exports.testDecrSelection = function (options) {
   
 
 

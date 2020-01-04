@@ -16,7 +16,7 @@ SpecialPowers.pushPrefEnv({"set": [["dom.require_user_interaction_for_beforeunlo
 var i = 0;
 function assertEvent(event, data) {
   let x = 0;
-  switch(i++) {
+  switch (i++) {
     case x++:
       is(event, "request", "Get first page load");
       is(data, URL1);
@@ -102,7 +102,7 @@ function getServerTabActor(callback) {
   client = new DebuggerClient(transport);
   connectDebuggerClient(client).then(form => {
     let actorID = form.actor;
-    client.attachTab(actorID, function(aResponse, aTabClient) {
+    client.attachTab(actorID, function (aResponse, aTabClient) {
       
       let conn = transport._serverConnection;
       let tabActor = conn.getActor(actorID);
@@ -117,7 +117,7 @@ function getServerTabActor(callback) {
 
 function test() {
   
-  addTab(URL1).then(function(browser) {
+  addTab(URL1).then(function (browser) {
     let doc = browser.contentDocument;
     getServerTabActor(function (tabActor) {
       

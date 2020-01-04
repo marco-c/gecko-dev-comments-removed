@@ -74,7 +74,7 @@ var WebAudioEditorController = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     gTarget.off("will-navigate", this._onTabNavigated);
     gTarget.off("navigate", this._onTabNavigated);
     gFront.off("start-context", this._onStartContext);
@@ -107,7 +107,7 @@ var WebAudioEditorController = {
 
     if (!node) {
       let { resolve, promise } = defer();
-      gAudioNodes.on("add", function createNodeListener (createdNode) {
+      gAudioNodes.on("add", function createNodeListener(createdNode) {
         if (createdNode.id === id) {
           gAudioNodes.off("add", createNodeListener);
           resolve(createdNode);
@@ -172,7 +172,7 @@ var WebAudioEditorController = {
 
 
 
-  _onStartContext: function() {
+  _onStartContext: function () {
     $("#reload-notice").hidden = true;
     $("#waiting-notice").hidden = true;
     $("#content").hidden = false;

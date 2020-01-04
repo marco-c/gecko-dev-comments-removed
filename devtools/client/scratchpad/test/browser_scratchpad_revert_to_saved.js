@@ -10,7 +10,7 @@ var gScratchpad;
 var gFile;
 
 
-var gFileName = "testFileForBug751744.tmp"
+var gFileName = "testFileForBug751744.tmp";
 
 
 
@@ -115,7 +115,7 @@ function tempFileSaved(aStatus)
 
   
   gScratchpad.setFilename(gFile.path);
-  gScratchpad.importFromFile(gFile.QueryInterface(Ci.nsILocalFile),  true,
+  gScratchpad.importFromFile(gFile.QueryInterface(Ci.nsILocalFile), true,
                              testAfterSaved);
 }
 

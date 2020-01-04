@@ -5,12 +5,12 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   let client = yield startTestDebuggerServer("promises-actor-test");
 
   let response = yield listTabs(client);
   let targetTab = findTab(response.tabs, "promises-actor-test");
-  ok(targetTab, "Found our target tab.")
+  ok(targetTab, "Found our target tab.");
 
   
   client.request({ to: targetTab.actor, type: "attach" }, response => {

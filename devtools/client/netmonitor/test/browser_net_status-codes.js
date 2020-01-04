@@ -7,7 +7,7 @@
 
 
 
-var test = Task.async(function*() {
+var test = Task.async(function* () {
   let [tab, debuggee, monitor] = yield initNetMonitor(STATUS_CODES_URL);
 
   info("Starting test... ");

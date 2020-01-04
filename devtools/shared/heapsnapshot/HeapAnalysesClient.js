@@ -116,7 +116,7 @@ HeapAnalysesClient.prototype.getCreationTime = function (snapshotFilePath) {
 
 HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
                                                     censusOptions,
-                                                    requestOptions={}) {
+                                                    requestOptions = {}) {
   return this._worker.performTask("takeCensus", {
     snapshotFilePath,
     censusOptions,
@@ -149,7 +149,7 @@ HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
 
 
 
-HeapAnalysesClient.prototype.getCensusIndividuals = function(opts) {
+HeapAnalysesClient.prototype.getCensusIndividuals = function (opts) {
   return this._worker.performTask("getCensusIndividuals", opts);
 };
 

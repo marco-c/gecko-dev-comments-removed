@@ -163,7 +163,7 @@ BrowserAddonActor.prototype = {
       });
   },
 
-  preNest: function() {
+  preNest: function () {
     let e = Services.wm.getEnumerator(null);
     while (e.hasMoreElements()) {
       let win = e.getNext();
@@ -174,7 +174,7 @@ BrowserAddonActor.prototype = {
     }
   },
 
-  postNest: function() {
+  postNest: function () {
     let e = Services.wm.getEnumerator(null);
     while (e.hasMoreElements()) {
       let win = e.getNext();
@@ -232,7 +232,7 @@ BrowserAddonActor.prototype = {
 
 
 
-  _allowSource: function(aSource) {
+  _allowSource: function (aSource) {
     
     if (aSource.url === "resource://gre/modules/addons/XPIProvider.jsm") {
       return false;

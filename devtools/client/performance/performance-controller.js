@@ -66,7 +66,7 @@ var gToolbox, gTarget, gFront;
 
 
 
-var startupPerformance = Task.async(function*() {
+var startupPerformance = Task.async(function* () {
   yield PerformanceController.initialize();
   yield PerformanceView.initialize();
   PerformanceController.enableFrontEventListeners();
@@ -75,7 +75,7 @@ var startupPerformance = Task.async(function*() {
 
 
 
-var shutdownPerformance = Task.async(function*() {
+var shutdownPerformance = Task.async(function* () {
   yield PerformanceController.destroy();
   yield PerformanceView.destroy();
   PerformanceController.disableFrontEventListeners();
@@ -129,7 +129,7 @@ var PerformanceController = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     this._telemetry.destroy();
     this._prefs.off("pref-changed", this._onPrefChanged);
     this._prefs.unregisterObserver();
@@ -156,14 +156,14 @@ var PerformanceController = {
 
 
 
-  enableFrontEventListeners: function() {
+  enableFrontEventListeners: function () {
     gFront.on("*", this._onFrontEvent);
   },
 
   
 
 
-  disableFrontEventListeners: function() {
+  disableFrontEventListeners: function () {
     gFront.off("*", this._onFrontEvent);
   },
 
@@ -212,7 +212,7 @@ var PerformanceController = {
 
 
 
-  canCurrentlyRecord: Task.async(function*() {
+  canCurrentlyRecord: Task.async(function* () {
     
     
     if (gFront.LEGACY_FRONT) {
@@ -232,7 +232,7 @@ var PerformanceController = {
   
 
 
-  startRecording: Task.async(function *() {
+  startRecording: Task.async(function* () {
     let options = {
       withMarkers: true,
       withTicks: this.getOption("enable-framerate"),
@@ -262,7 +262,7 @@ var PerformanceController = {
   
 
 
-  stopRecording: Task.async(function *() {
+  stopRecording: Task.async(function* () {
     let recording = this.getLatestManualRecording();
     yield gFront.stopRecording(recording);
     this.emit(EVENTS.BACKEND_READY_AFTER_RECORDING_STOP);
@@ -277,7 +277,7 @@ var PerformanceController = {
 
 
 
-  exportRecording: Task.async(function*(_, recording, file) {
+  exportRecording: Task.async(function* (_, recording, file) {
     yield recording.exportRecording(file);
     this.emit(EVENTS.RECORDING_EXPORTED, recording, file);
   }),
@@ -321,7 +321,7 @@ var PerformanceController = {
 
 
 
-  importRecording: Task.async(function*(_, file) {
+  importRecording: Task.async(function* (_, file) {
     let recording = yield gFront.importRecording(file);
     this._addRecordingIfUnknown(recording);
 
@@ -485,7 +485,7 @@ var PerformanceController = {
 
 
 
-  populateWithRecordings: function (recordings=[]) {
+  populateWithRecordings: function (recordings = []) {
     for (let recording of recordings) {
       PerformanceController._addRecordingIfUnknown(recording);
     }
@@ -522,9 +522,9 @@ var PerformanceController = {
 
 
 
-  waitForStateChangeOnRecording: Task.async(function *(recording, expectedState) {
+  waitForStateChangeOnRecording: Task.async(function* (recording, expectedState) {
     let deferred = promise.defer();
-    this.on(EVENTS.RECORDING_STATE_CHANGE, function handler (state, model) {
+    this.on(EVENTS.RECORDING_STATE_CHANGE, function handler(state, model) {
       if (state === expectedState && model === recording) {
         this.off(EVENTS.RECORDING_STATE_CHANGE, handler);
         deferred.resolve();

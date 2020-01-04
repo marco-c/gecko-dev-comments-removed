@@ -63,7 +63,7 @@ var AutomationView = {
 
 
 
-  render: Task.async(function *() {
+  render: Task.async(function* () {
     let node = this._currentNode;
     let paramName = this._selectedParamName;
     

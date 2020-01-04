@@ -57,7 +57,7 @@ const GRAPH_REGION_STRIPES_COLOR = "rgba(237,38,85,0.2)";
 
 
 
-this.MountainGraphWidget = function(parent, ...args) {
+this.MountainGraphWidget = function (parent, ...args) {
   AbstractCanvasGraph.apply(this, [parent, "mountain-graph", ...args]);
 };
 
@@ -100,7 +100,7 @@ MountainGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildBackgroundImage: function() {
+  buildBackgroundImage: function () {
     let { canvas, ctx } = this._getNamedCanvas("mountain-graph-background");
     let width = this._width;
     let height = this._height;
@@ -115,7 +115,7 @@ MountainGraphWidget.prototype = Heritage.extend(AbstractCanvasGraph.prototype, {
 
 
 
-  buildGraphImage: function() {
+  buildGraphImage: function () {
     if (!this.format || !this.format.length) {
       throw "The graph format traits are mandatory to style the data source.";
     }

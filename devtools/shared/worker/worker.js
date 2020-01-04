@@ -22,7 +22,7 @@
   }
 }).call(this, function (require, exports, module, { Ci, Cc }, ChromeWorker, dumpn) {
 
-var MESSAGE_COUNTER = 0;
+  var MESSAGE_COUNTER = 0;
 
 
 
@@ -38,131 +38,131 @@ var MESSAGE_COUNTER = 0;
 
 
 
-function DevToolsWorker(url, opts) {
-  opts = opts || {};
-  this._worker = new ChromeWorker(url);
-  this._verbose = opts.verbose;
-  this._name = opts.name;
+  function DevToolsWorker(url, opts) {
+    opts = opts || {};
+    this._worker = new ChromeWorker(url);
+    this._verbose = opts.verbose;
+    this._name = opts.name;
 
-  this._worker.addEventListener("error", this.onError, false);
-}
-exports.DevToolsWorker = DevToolsWorker;
-
-
-
-
-
-
-
-
-
-
-
-
-DevToolsWorker.prototype.performTask = function (task, data) {
-  if (this._destroyed) {
-    return Promise.reject("Cannot call performTask on a destroyed DevToolsWorker");
+    this._worker.addEventListener("error", this.onError, false);
   }
-  let worker = this._worker;
-  let id = ++MESSAGE_COUNTER;
-  let payload = { task, id, data };
+  exports.DevToolsWorker = DevToolsWorker;
 
-  if (this._verbose && dumpn) {
-    dumpn("Sending message to worker" +
-          (this._name ? (" (" + this._name + ")") : "" ) +
+
+
+
+
+
+
+
+
+
+
+
+  DevToolsWorker.prototype.performTask = function (task, data) {
+    if (this._destroyed) {
+      return Promise.reject("Cannot call performTask on a destroyed DevToolsWorker");
+    }
+    let worker = this._worker;
+    let id = ++MESSAGE_COUNTER;
+    let payload = { task, id, data };
+
+    if (this._verbose && dumpn) {
+      dumpn("Sending message to worker" +
+          (this._name ? (" (" + this._name + ")") : "") +
           ": " +
           JSON.stringify(payload, null, 2));
-  }
-  worker.postMessage(payload);
+    }
+    worker.postMessage(payload);
 
-  return new Promise((resolve, reject) => {
-    let listener = ({ data }) => {
-      if (this._verbose && dumpn) {
-        dumpn("Received message from worker" +
-              (this._name ? (" (" + this._name + ")") : "" ) +
+    return new Promise((resolve, reject) => {
+      let listener = ({ data }) => {
+        if (this._verbose && dumpn) {
+          dumpn("Received message from worker" +
+              (this._name ? (" (" + this._name + ")") : "") +
               ": " +
               JSON.stringify(data, null, 2));
-      }
+        }
 
-      if (data.id !== id) {
-        return;
-      }
-      worker.removeEventListener("message", listener);
-      if (data.error) {
-        reject(data.error);
-      } else {
-        resolve(data.response);
-      }
-    };
+        if (data.id !== id) {
+          return;
+        }
+        worker.removeEventListener("message", listener);
+        if (data.error) {
+          reject(data.error);
+        } else {
+          resolve(data.response);
+        }
+      };
 
-    worker.addEventListener("message", listener);
-  });
-};
-
-
-
-
-DevToolsWorker.prototype.destroy = function () {
-  this._worker.terminate();
-  this._worker = null;
-  this._destroyed = true;
-};
-
-DevToolsWorker.prototype.onError = function({ message, filename, lineno }) {
-  dump(new Error(message + " @ " + filename + ":" + lineno) + "\n");
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function workerify (fn) {
-  console.warn(`\`workerify\` should only be used in tests or measuring performance.
-  This creates an object URL on the browser window, and should not be used in production.`)
-  
-  
-  let { getMostRecentBrowserWindow } = require("sdk/window/utils");
-  let { URL, Blob } = getMostRecentBrowserWindow();
-  let stringifiedFn = createWorkerString(fn);
-  let blob = new Blob([stringifiedFn]);
-  let url = URL.createObjectURL(blob);
-  let worker = new DevToolsWorker(url);
-
-  let wrapperFn = data => worker.performTask("workerifiedTask", data);
-
-  wrapperFn.destroy = function () {
-    URL.revokeObjectURL(url);
-    worker.destroy();
+      worker.addEventListener("message", listener);
+    });
   };
 
-  return wrapperFn;
-}
-exports.workerify = workerify;
+
+
+
+  DevToolsWorker.prototype.destroy = function () {
+    this._worker.terminate();
+    this._worker = null;
+    this._destroyed = true;
+  };
+
+  DevToolsWorker.prototype.onError = function ({ message, filename, lineno }) {
+    dump(new Error(message + " @ " + filename + ":" + lineno) + "\n");
+  };
 
 
 
 
 
-function createWorkerString (fn) {
-  return `importScripts("resource://gre/modules/workers/require.js");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  function workerify(fn) {
+    console.warn(`\`workerify\` should only be used in tests or measuring performance.
+  This creates an object URL on the browser window, and should not be used in production.`);
+  
+  
+    let { getMostRecentBrowserWindow } = require("sdk/window/utils");
+    let { URL, Blob } = getMostRecentBrowserWindow();
+    let stringifiedFn = createWorkerString(fn);
+    let blob = new Blob([stringifiedFn]);
+    let url = URL.createObjectURL(blob);
+    let worker = new DevToolsWorker(url);
+
+    let wrapperFn = data => worker.performTask("workerifiedTask", data);
+
+    wrapperFn.destroy = function () {
+      URL.revokeObjectURL(url);
+      worker.destroy();
+    };
+
+    return wrapperFn;
+  }
+  exports.workerify = workerify;
+
+
+
+
+
+  function createWorkerString(fn) {
+    return `importScripts("resource://gre/modules/workers/require.js");
     const { createTask } = require("resource://devtools/shared/worker/helper.js");
     createTask(self, "workerifiedTask", ${fn.toString()});
   `;
-}
+  }
 
 });

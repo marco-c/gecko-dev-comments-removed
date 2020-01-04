@@ -14,7 +14,7 @@
 
 
 
-'use strict';
+"use strict";
 
 
 
@@ -27,7 +27,7 @@ function test() {
 
 
 
-exports.testDecr = function(options) {
+exports.testDecr = function (options) {
   return helpers.audit(options, [
     
 
@@ -45,68 +45,68 @@ exports.testDecr = function(options) {
 
 
     {
-      setup: 'tsu -5<DOWN>',
-      check: { input: 'tsu -5' }
+      setup: "tsu -5<DOWN>",
+      check: { input: "tsu -5" }
     },
     {
-      setup: 'tsu -4<DOWN>',
-      check: { input: 'tsu -5' }
+      setup: "tsu -4<DOWN>",
+      check: { input: "tsu -5" }
     },
     {
-      setup: 'tsu -3<DOWN>',
-      check: { input: 'tsu -5' }
+      setup: "tsu -3<DOWN>",
+      check: { input: "tsu -5" }
     },
     {
-      setup: 'tsu -2<DOWN>',
-      check: { input: 'tsu -3' }
+      setup: "tsu -2<DOWN>",
+      check: { input: "tsu -3" }
     },
     {
-      setup: 'tsu -1<DOWN>',
-      check: { input: 'tsu -3' }
+      setup: "tsu -1<DOWN>",
+      check: { input: "tsu -3" }
     },
     {
-      setup: 'tsu 0<DOWN>',
-      check: { input: 'tsu -3' }
+      setup: "tsu 0<DOWN>",
+      check: { input: "tsu -3" }
     },
     {
-      setup: 'tsu 1<DOWN>',
-      check: { input: 'tsu 0' }
+      setup: "tsu 1<DOWN>",
+      check: { input: "tsu 0" }
     },
     {
-      setup: 'tsu 2<DOWN>',
-      check: { input: 'tsu 0' }
+      setup: "tsu 2<DOWN>",
+      check: { input: "tsu 0" }
     },
     {
-      setup: 'tsu 3<DOWN>',
-      check: { input: 'tsu 0' }
+      setup: "tsu 3<DOWN>",
+      check: { input: "tsu 0" }
     },
     {
-      setup: 'tsu 4<DOWN>',
-      check: { input: 'tsu 3' }
+      setup: "tsu 4<DOWN>",
+      check: { input: "tsu 3" }
     },
     {
-      setup: 'tsu 5<DOWN>',
-      check: { input: 'tsu 3' }
+      setup: "tsu 5<DOWN>",
+      check: { input: "tsu 3" }
     },
     {
-      setup: 'tsu 6<DOWN>',
-      check: { input: 'tsu 3' }
+      setup: "tsu 6<DOWN>",
+      check: { input: "tsu 3" }
     },
     {
-      setup: 'tsu 7<DOWN>',
-      check: { input: 'tsu 6' }
+      setup: "tsu 7<DOWN>",
+      check: { input: "tsu 6" }
     },
     {
-      setup: 'tsu 8<DOWN>',
-      check: { input: 'tsu 6' }
+      setup: "tsu 8<DOWN>",
+      check: { input: "tsu 6" }
     },
     {
-      setup: 'tsu 9<DOWN>',
-      check: { input: 'tsu 6' }
+      setup: "tsu 9<DOWN>",
+      check: { input: "tsu 6" }
     },
     {
-      setup: 'tsu 10<DOWN>',
-      check: { input: 'tsu 9' }
+      setup: "tsu 10<DOWN>",
+      check: { input: "tsu 9" }
     }
     
 

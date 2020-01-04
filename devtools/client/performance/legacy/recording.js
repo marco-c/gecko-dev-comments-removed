@@ -16,7 +16,7 @@ const { merge } = require("sdk/util/object");
 
 
 
-const LegacyPerformanceRecording = function (options={}) {
+const LegacyPerformanceRecording = function (options = {}) {
   this._label = options.label || "";
   this._console = options.console || false;
 
@@ -43,7 +43,7 @@ LegacyPerformanceRecording.prototype = merge({
 
 
 
-  exportRecording: Task.async(function *(file) {
+  exportRecording: Task.async(function* (file) {
     let recordingData = this.getAllData();
     yield PerformanceIO.saveRecordingToFile(recordingData, file);
   }),
@@ -94,7 +94,7 @@ LegacyPerformanceRecording.prototype = merge({
 
 
 
-  _onStopRecording: Task.async(function *({ profilerEndTime, profile, systemClient, systemHost }) {
+  _onStopRecording: Task.async(function* ({ profilerEndTime, profile, systemClient, systemHost }) {
     
     
     this._duration = profilerEndTime - this._profilerStartTime;

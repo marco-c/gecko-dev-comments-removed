@@ -40,7 +40,7 @@ var MemoryCallTreeView = Heritage.extend(DetailsSubview, {
 
 
 
-  render: function (interval={}) {
+  render: function (interval = {}) {
     let options = {
       invertTree: PerformanceController.getOption("invert-call-tree")
     };
@@ -79,7 +79,7 @@ var MemoryCallTreeView = Heritage.extend(DetailsSubview, {
   
 
 
-  _populateCallTree: function (frameNode, options={}) {
+  _populateCallTree: function (frameNode, options = {}) {
     
     
     

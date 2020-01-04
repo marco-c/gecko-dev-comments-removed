@@ -62,7 +62,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
     }
   },
 
-  form: function()
+  form: function ()
   {
     return { actor: this.actorID };
   },
@@ -79,7 +79,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
   
 
 
-  destroy: function()
+  destroy: function ()
   {
     this._sheets.clear();
   },
@@ -88,7 +88,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
 
 
 
-  newDocument: method(function() {
+  newDocument: method(function () {
     
     this._clearStyleSheetActors();
 
@@ -107,7 +107,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
 
 
 
-  _onDocumentLoaded: function(event) {
+  _onDocumentLoaded: function (event) {
     if (event) {
       this.window.removeEventListener("load", this._onDocumentLoaded, false);
     }
@@ -135,7 +135,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
 
 
 
-  _addStyleSheets: function(styleSheets)
+  _addStyleSheets: function (styleSheets)
   {
     let sheets = [];
     for (let i = 0; i < styleSheets.length; i++) {
@@ -159,7 +159,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
 
 
 
-  _createStyleSheetActor: function(styleSheet)
+  _createStyleSheetActor: function (styleSheet)
   {
     if (this._sheets.has(styleSheet)) {
       return this._sheets.get(styleSheet);
@@ -180,10 +180,10 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
 
 
 
-  _getImported: function(styleSheet) {
-   let imported = [];
+  _getImported: function (styleSheet) {
+    let imported = [];
 
-   for (let i = 0; i < styleSheet.cssRules.length; i++) {
+    for (let i = 0; i < styleSheet.cssRules.length; i++) {
       let rule = styleSheet.cssRules[i];
       if (rule.type == Ci.nsIDOMCSSRule.IMPORT_RULE) {
         
@@ -207,7 +207,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
   
 
 
-  _clearStyleSheetActors: function() {
+  _clearStyleSheetActors: function () {
     for (let actor in this._sheets) {
       this.unmanage(this._sheets[actor]);
     }
@@ -223,7 +223,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
 
 
 
-  newStyleSheet: method(function(text) {
+  newStyleSheet: method(function (text) {
     let parent = this.document.documentElement;
     let style = this.document.createElementNS("http://www.w3.org/1999/xhtml", "style");
     style.setAttribute("type", "text/css");
@@ -245,13 +245,13 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClass({
 
 
 var StyleEditorFront = protocol.FrontClass(StyleEditorActor, {
-  initialize: function(client, tabForm) {
+  initialize: function (client, tabForm) {
     protocol.Front.prototype.initialize.call(this, client);
     this.actorID = tabForm.styleEditorActor;
     this.manage(this);
   },
 
-  getStyleSheets: function() {
+  getStyleSheets: function () {
     let deferred = promise.defer();
 
     events.once(this, "document-load", (styleSheets) => {
@@ -262,7 +262,7 @@ var StyleEditorFront = protocol.FrontClass(StyleEditorActor, {
     return deferred.promise;
   },
 
-  addStyleSheet: function(text) {
+  addStyleSheet: function (text) {
     return this.newStyleSheet(text);
   }
 });
@@ -288,7 +288,7 @@ var OldStyleSheetActor = protocol.ActorClass({
     }
   },
 
-  toString: function() {
+  toString: function () {
     return "[OldStyleSheetActor " + this.actorID + "]";
   },
 
@@ -331,7 +331,7 @@ var OldStyleSheetActor = protocol.ActorClass({
     return this._styleSheetIndex;
   },
 
-  initialize: function(aStyleSheet, aParentActor, aWindow) {
+  initialize: function (aStyleSheet, aParentActor, aWindow) {
     protocol.Actor.prototype.initialize.call(this, null);
 
     this.rawSheet = aStyleSheet;
@@ -365,7 +365,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  form: function(detail) {
+  form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -388,12 +388,12 @@ var OldStyleSheetActor = protocol.ActorClass({
       title: this.rawSheet.title,
       system: !CssLogic.isContentStylesheet(this.rawSheet),
       styleSheetIndex: this.styleSheetIndex
-    }
+    };
 
     try {
       form.ruleCount = this.rawSheet.cssRules.length;
     }
-    catch(e) {
+    catch (e) {
       
     }
     return form;
@@ -405,7 +405,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  toggleDisabled: method(function() {
+  toggleDisabled: method(function () {
     this.rawSheet.disabled = !this.rawSheet.disabled;
     this._notifyPropertyChanged("disabled");
 
@@ -421,7 +421,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  _notifyPropertyChanged: function(property) {
+  _notifyPropertyChanged: function (property) {
     events.emit(this, "property-change", property, this.form()[property]);
   },
 
@@ -429,7 +429,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  fetchSource: method(function() {
+  fetchSource: method(function () {
     this._getText().then((content) => {
       events.emit(this, "source-load", this.text);
     });
@@ -442,7 +442,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  _getText: function() {
+  _getText: function () {
     if (this.text) {
       return promise.resolve(this.text);
     }
@@ -473,7 +473,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  _getCSSCharset: function(channelCharset)
+  _getCSSCharset: function (channelCharset)
   {
     
     if (channelCharset && channelCharset.length > 0) {
@@ -525,7 +525,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  update: method(function(text, transition) {
+  update: method(function (text, transition) {
     DOMUtils.parseStyleSheet(this.rawSheet, text);
 
     this.text = text;
@@ -549,7 +549,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  _insertTransistionRule: function() {
+  _insertTransistionRule: function () {
     
     
     
@@ -570,7 +570,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  _onTransitionEnd: function()
+  _onTransitionEnd: function ()
   {
     if (--this._transitionRefCount == 0) {
       this.document.documentElement.classList.remove(TRANSITION_CLASS);
@@ -579,30 +579,30 @@ var OldStyleSheetActor = protocol.ActorClass({
 
     events.emit(this, "style-applied");
   }
-})
+});
 
 
 
 
 var OldStyleSheetFront = protocol.FrontClass(OldStyleSheetActor, {
-  initialize: function(conn, form, ctx, detail) {
+  initialize: function (conn, form, ctx, detail) {
     protocol.Front.prototype.initialize.call(this, conn, form, ctx, detail);
 
     this._onPropertyChange = this._onPropertyChange.bind(this);
     events.on(this, "property-change", this._onPropertyChange);
   },
 
-  destroy: function() {
+  destroy: function () {
     events.off(this, "property-change", this._onPropertyChange);
 
     protocol.Front.prototype.destroy.call(this);
   },
 
-  _onPropertyChange: function(property, value) {
+  _onPropertyChange: function (property, value) {
     this._form[property] = value;
   },
 
-  form: function(form, detail) {
+  form: function (form, detail) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -611,7 +611,7 @@ var OldStyleSheetFront = protocol.FrontClass(OldStyleSheetActor, {
     this._form = form;
   },
 
-  getText: function() {
+  getText: function () {
     let deferred = promise.defer();
 
     events.once(this, "source-load", (source) => {
@@ -623,7 +623,7 @@ var OldStyleSheetFront = protocol.FrontClass(OldStyleSheetActor, {
     return deferred.promise;
   },
 
-  getOriginalSources: function() {
+  getOriginalSources: function () {
     return promise.resolve([]);
   },
 

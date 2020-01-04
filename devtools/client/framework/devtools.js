@@ -392,7 +392,7 @@ DevTools.prototype = {
 
 
 
-  showToolbox: function(target, toolId, hostType, hostOptions) {
+  showToolbox: function (target, toolId, hostType, hostOptions) {
     let deferred = promise.defer();
 
     let toolbox = this._toolboxes.get(target);
@@ -403,12 +403,12 @@ DevTools.prototype = {
           promise.resolve(null);
 
       if (toolId != null && toolbox.currentToolId != toolId) {
-        hostPromise = hostPromise.then(function() {
+        hostPromise = hostPromise.then(function () {
           return toolbox.selectTool(toolId);
         });
       }
 
-      return hostPromise.then(function() {
+      return hostPromise.then(function () {
         toolbox.raise();
         return toolbox;
       });
@@ -483,7 +483,7 @@ DevTools.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     Services.obs.removeObserver(this.destroy, "quit-application");
 
     for (let [key, tool] of this.getToolDefinitionMap()) {
@@ -502,7 +502,7 @@ DevTools.prototype = {
   
 
 
-  *[Symbol.iterator]() {
+  *[Symbol.iterator ]() {
     for (let toolbox of this._toolboxes) {
       yield toolbox;
     }

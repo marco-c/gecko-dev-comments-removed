@@ -12,7 +12,7 @@ var { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 function run_test() {
   initTestDebuggerServer();
 
-  add_task(function*() {
+  add_task(function* () {
     yield test_transport(socket_transport);
     yield test_transport(local_transport);
     DebuggerServer.destroy();
@@ -23,7 +23,7 @@ function run_test() {
 
 
 
-var test_transport = Task.async(function*(transportFactory) {
+var test_transport = Task.async(function* (transportFactory) {
   let clientDeferred = promise.defer();
   let serverDeferred = promise.defer();
 
@@ -41,11 +41,11 @@ var test_transport = Task.async(function*(transportFactory) {
     NetUtil.asyncFetch({
       uri: NetUtil.newURI(getTestTempFile("bulk-input")),
       loadUsingSystemPrincipal: true
-    }, function(input, status) {
-        copyFrom(input).then(() => {
-          input.close();
-        });
+    }, function (input, status) {
+      copyFrom(input).then(() => {
+        input.close();
       });
+    });
   }
 
   
@@ -82,14 +82,14 @@ var test_transport = Task.async(function*(transportFactory) {
     });
 
     transport.startBulkSend({
-       actor: "root",
-       type: "file-stream",
-       length: reallyLong.length
+      actor: "root",
+      type: "file-stream",
+      length: reallyLong.length
     }).then(write_data);
   }
 
   transport.hooks = {
-    onPacket: function(packet) {
+    onPacket: function (packet) {
       if (packet.error) {
         transport.hooks.onError(packet);
       } else if (packet.applicationType) {
@@ -99,7 +99,7 @@ var test_transport = Task.async(function*(transportFactory) {
       }
     },
 
-    onServerHello: function(packet) {
+    onServerHello: function (packet) {
       
       do_check_eq(packet.from, "root");
       do_check_eq(packet.applicationType, "xpcshell-tests");
@@ -120,13 +120,13 @@ var test_transport = Task.async(function*(transportFactory) {
       send_packets();
     },
 
-    onError: function(packet) {
+    onError: function (packet) {
       
       do_check_eq(packet.from, "root");
       do_check_eq(packet.error, "noSuchActor");
     },
 
-    onClosed: function() {
+    onClosed: function () {
       do_throw("Transport closed before we expected");
     }
   };
@@ -153,12 +153,12 @@ function verify() {
     uri: NetUtil.newURI(getTestTempFile("bulk-output")),
     loadUsingSystemPrincipal: true
   }, input => {
-      let outputData = NetUtil.readInputStreamToString(input, reallyLong.length);
+    let outputData = NetUtil.readInputStreamToString(input, reallyLong.length);
       
-      do_check_true(outputData === reallyLong);
-      input.close();
-      compareDeferred.resolve();
-    });
+    do_check_true(outputData === reallyLong);
+    input.close();
+    compareDeferred.resolve();
+  });
 
   return compareDeferred.promise.then(cleanup_files);
 }

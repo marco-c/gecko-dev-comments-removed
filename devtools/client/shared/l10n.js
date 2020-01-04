@@ -26,7 +26,7 @@ LocalizationHelper.prototype = {
 
 
 
-  getStr: function(name) {
+  getStr: function (name) {
     return this.stringBundle.GetStringFromName(name);
   },
 
@@ -37,7 +37,7 @@ LocalizationHelper.prototype = {
 
 
 
-  getFormatStr: function(name, ...args) {
+  getFormatStr: function (name, ...args) {
     return this.stringBundle.formatStringFromName(name, args, args.length);
   },
 
@@ -50,7 +50,7 @@ LocalizationHelper.prototype = {
 
 
 
-  getFormatStrWithNumbers: function(name, ...args) {
+  getFormatStrWithNumbers: function (name, ...args) {
     let newArgs = args.map(x => typeof x == "number" ? this.numberWithDecimals(x, 2) : x);
     return this.stringBundle.formatStringFromName(name, newArgs, newArgs.length);
   },
@@ -66,7 +66,7 @@ LocalizationHelper.prototype = {
 
 
 
-  numberWithDecimals: function(number, decimals = 0) {
+  numberWithDecimals: function (number, decimals = 0) {
     
     if (number === (number|0)) {
       return number;

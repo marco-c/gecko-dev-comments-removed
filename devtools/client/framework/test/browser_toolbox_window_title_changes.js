@@ -58,7 +58,7 @@ function test() {
       .then(function () {
         
         
-        executeSoon(function() {
+        executeSoon(function () {
           toolbox.destroy()
             .then(function () {
               

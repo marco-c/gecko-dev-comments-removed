@@ -55,7 +55,7 @@ const expectedMessagesAny = [
   },
 ];
 
-add_task(function*() {
+add_task(function* () {
   
   
   if (!Services.appinfo.browserTabsRemoteAutostart) {
@@ -84,9 +84,9 @@ function* testWebConsole(hud) {
   info("first messages matched");
 
   yield waitForMessages({
-      webconsole: hud,
-      messages: expectedMessagesAny,
-      matchCondition: "any",
+    webconsole: hud,
+    messages: expectedMessagesAny,
+    matchCondition: "any",
   });
 }
 

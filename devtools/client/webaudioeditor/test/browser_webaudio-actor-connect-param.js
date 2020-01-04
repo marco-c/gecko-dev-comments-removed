@@ -5,7 +5,7 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   let { target, front } = yield initBackend(CONNECT_PARAM_URL);
   let [, , [destNode, carrierNode, modNode, gainNode], , connectParam] = yield Promise.all([
     front.setup({ reload: true }),

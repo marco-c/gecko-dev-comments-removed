@@ -11,7 +11,7 @@ requestLongerTimeout(2);
 
 loadHelperScript("helper_disable_cache.js");
 
-add_task(function*() {
+add_task(function* () {
   
   registerCleanupFunction(() => {
     info("Resetting devtools.cache.disabled to false.");

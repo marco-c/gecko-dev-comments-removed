@@ -14,13 +14,13 @@ const PREF_CHANGE_EVENT = "pref-changed";
 
 
 
-const OptionsView = function (options={}) {
+const OptionsView = function (options = {}) {
   this.branchName = options.branchName;
   this.menupopup = options.menupopup;
   this.window = this.menupopup.ownerDocument.defaultView;
   let { document } = this.window;
   this.$ = document.querySelector.bind(document);
-  this.$$ = (selector, parent=document) => parent.querySelectorAll(selector);
+  this.$$ = (selector, parent = document) => parent.querySelectorAll(selector);
   
   
   this.button = this.$(`[popup=${this.menupopup.getAttribute("id")}]`);

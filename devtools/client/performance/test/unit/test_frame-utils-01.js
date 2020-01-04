@@ -110,7 +110,7 @@ add_task(function () {
 
 
 
-function argify (val) {
+function argify(val) {
   if (typeof val === "string") {
     return [val];
   } else {

@@ -31,7 +31,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  initialize: function() {
+  initialize: function () {
     dumpn("Initializing the WatchExpressionsView");
 
     this.widget = new SimpleListWidget(document.getElementById("expressions"));
@@ -45,7 +45,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  destroy: function() {
+  destroy: function () {
     dumpn("Destroying the WatchExpressionsView");
 
     this.widget.removeEventListener("click", this._onClick, false);
@@ -54,8 +54,8 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _addCommands: function() {
-    XULUtils.addCommands(document.getElementById('debuggerCommands'), {
+  _addCommands: function () {
+    XULUtils.addCommands(document.getElementById("debuggerCommands"), {
       addWatchExpressionCommand: () => this._onCmdAddExpression(),
       removeAllWatchExpressionsCommand: () => this._onCmdRemoveAllExpressions()
     });
@@ -70,7 +70,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  addExpression: function(aExpression = "", aSkipUserInput = false) {
+  addExpression: function (aExpression = "", aSkipUserInput = false) {
     
     this.DebuggerView.showInstrumentsPane();
 
@@ -111,7 +111,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  switchExpression: function(aVar, aExpression) {
+  switchExpression: function (aVar, aExpression) {
     let expressionItem =
       [...this].filter(i => i.attachment.currentExpression == aVar.name)[0];
 
@@ -137,7 +137,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  deleteExpression: function(aVar) {
+  deleteExpression: function (aVar) {
     let expressionItem =
       [...this].filter(i => i.attachment.currentExpression == aVar.name)[0];
 
@@ -156,7 +156,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  getString: function(aIndex) {
+  getString: function (aIndex) {
     return this.getItemAtIndex(aIndex).attachment.currentExpression;
   },
 
@@ -166,7 +166,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  getAllStrings: function() {
+  getAllStrings: function () {
     return this.items.map(e => e.attachment.currentExpression);
   },
 
@@ -176,7 +176,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _createItemView: function(aExpression) {
+  _createItemView: function (aExpression) {
     let container = document.createElement("hbox");
     container.className = "list-widget-item dbg-expression";
     container.setAttribute("align", "center");
@@ -211,7 +211,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onCmdAddExpression: function(aText) {
+  _onCmdAddExpression: function (aText) {
     
     if (this.getAllStrings().indexOf("") == -1) {
       this.addExpression(aText || this.DebuggerView.editor.getSelection());
@@ -221,7 +221,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onCmdRemoveAllExpressions: function() {
+  _onCmdRemoveAllExpressions: function () {
     
     this.empty();
 
@@ -232,7 +232,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onClick: function(e) {
+  _onClick: function (e) {
     if (e.button != 0) {
       
       return;
@@ -247,7 +247,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onClose: function(e) {
+  _onClose: function (e) {
     
     this.remove(this.getItemForElement(e.target));
 
@@ -262,7 +262,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onBlur: function({ target: textbox }) {
+  _onBlur: function ({ target: textbox }) {
     let expressionItem = this.getItemForElement(textbox);
     let oldExpression = expressionItem.attachment.currentExpression;
     let newExpression = textbox.value.trim();
@@ -287,7 +287,7 @@ WatchExpressionsView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onKeyPress: function(e) {
+  _onKeyPress: function (e) {
     switch (e.keyCode) {
       case e.DOM_VK_RETURN:
       case e.DOM_VK_ESCAPE:

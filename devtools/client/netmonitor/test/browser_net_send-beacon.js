@@ -5,7 +5,7 @@
 
 
 
-var test = Task.async(function*() {
+var test = Task.async(function* () {
   let [, debuggee, monitor] = yield initNetMonitor(SEND_BEACON_URL);
   let { RequestsMenu } = monitor.panelWin.NetMonitorView;
 

@@ -135,7 +135,7 @@ exports.defineLazyPrototypeGetter =
 function defineLazyPrototypeGetter(aObject, aKey, aCallback) {
   Object.defineProperty(aObject, aKey, {
     configurable: true,
-    get: function() {
+    get: function () {
       const value = aCallback.call(this);
 
       Object.defineProperty(this, aKey, {
@@ -147,7 +147,7 @@ function defineLazyPrototypeGetter(aObject, aKey, aCallback) {
       return value;
     }
   });
-}
+};
 
 
 
@@ -194,7 +194,7 @@ exports.hasSafeGetter = function hasSafeGetter(aDesc) {
   try {
     let fn = aDesc.get.unwrap();
     return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
-  } catch(e) {
+  } catch (e) {
     
     return false;
   }
@@ -245,7 +245,7 @@ exports.dumpn.wantLogging = false;
 
 
 
-exports.dumpv = function(msg) {
+exports.dumpv = function (msg) {
   if (exports.dumpv.wantVerbose) {
     exports.dumpn(msg);
   }
@@ -400,7 +400,7 @@ exports.defineLazyGetter(this, "NetworkHelper", () => {
 
 
 
-function mainThreadFetch(aURL, aOptions={ loadFromCache: true,
+function mainThreadFetch(aURL, aOptions = { loadFromCache: true,
                                           policy: Ci.nsIContentPolicy.TYPE_OTHER,
                                           window: null,
                                           charset: null,
@@ -529,7 +529,7 @@ function newChannelForURL(url, { policy, window, principal }) {
               securityFlags |= Ci.nsILoadInfo.SEC_FORCE_PRIVATE_BROWSING;
             }
           }
-        } catch(ex) {}
+        } catch (ex) {}
       }
     }
   }
@@ -590,7 +590,7 @@ if (!this.isWorker) {
 
 
 exports.settleAll = values => {
-  if (values === null || typeof(values[Symbol.iterator]) != "function") {
+  if (values === null || typeof (values[Symbol.iterator]) != "function") {
     throw new Error("settleAll() expects an iterable.");
   }
 
@@ -633,7 +633,7 @@ exports.settleAll = values => {
       checkForCompletion();
     };
 
-    if (value && typeof(value.then) == "function") {
+    if (value && typeof (value.then) == "function") {
       value.then(resolver, rejecter);
     } else {
       
@@ -650,10 +650,10 @@ exports.settleAll = values => {
 
 var testing = false;
 Object.defineProperty(exports, "testing", {
-  get: function() {
+  get: function () {
     return testing;
   },
-  set: function(state) {
+  set: function (state) {
     testing = state;
   }
 });

@@ -85,7 +85,7 @@ var ProjectEditor = Class({
 
 
 
-  initialize: function(iframe, options = {}) {
+  initialize: function (iframe, options = {}) {
     this._onTreeSelected = this._onTreeSelected.bind(this);
     this._onTreeResourceRemoved = this._onTreeResourceRemoved.bind(this);
     this._onEditorCreated = this._onEditorCreated.bind(this);
@@ -116,7 +116,7 @@ var ProjectEditor = Class({
 
 
 
-  load: function(iframe) {
+  load: function (iframe) {
     if (this.loaded) {
       return this.loaded;
     }
@@ -146,7 +146,7 @@ var ProjectEditor = Class({
   
 
 
-  _onLoad: function() {
+  _onLoad: function () {
     this.document = this.iframe.contentDocument;
     this.window = this.iframe.contentWindow;
 
@@ -177,7 +177,7 @@ var ProjectEditor = Class({
     this._initPlugins();
   },
 
-  _buildMenubar: function() {
+  _buildMenubar: function () {
 
     this.contextMenuPopup = this.document.getElementById("context-menu-popup");
     this.contextMenuPopup.addEventListener("popupshowing", this._updateContextMenuItems);
@@ -219,7 +219,7 @@ var ProjectEditor = Class({
   
 
 
-  _buildSidebar: function() {
+  _buildSidebar: function () {
     this.projectTree = new ProjectTreeView(this.document, {
       resourceVisible: this.resourceVisible.bind(this),
       resourceFormatter: this.resourceFormatter.bind(this),
@@ -235,7 +235,7 @@ var ProjectEditor = Class({
   
 
 
-  _initCommands: function() {
+  _initCommands: function () {
 
     this.projectEditorCommandset = this.document.getElementById("projecteditor-commandset");
     this.projectEditorKeyset = this.document.getElementById("projecteditor-keyset");
@@ -253,13 +253,13 @@ var ProjectEditor = Class({
   
 
 
-  _initPlugins: function() {
+  _initPlugins: function () {
     this._plugins = [];
 
     for (let plugin of registeredPlugins) {
       try {
         this._plugins.push(plugin(this));
-      } catch(ex) {
+      } catch (ex) {
         console.exception(ex);
       }
     }
@@ -270,9 +270,9 @@ var ProjectEditor = Class({
   
 
 
-  _updateMenuItems: function() {
+  _updateMenuItems: function () {
     let window = this.editMenu.ownerDocument.defaultView;
-    let commands = ['cmd_undo', 'cmd_redo', 'cmd_delete', 'cmd_cut', 'cmd_copy', 'cmd_paste'];
+    let commands = ["cmd_undo", "cmd_redo", "cmd_delete", "cmd_cut", "cmd_copy", "cmd_paste"];
     commands.forEach(window.goUpdateCommand);
 
     for (let c of this._pluginCommands.keys()) {
@@ -284,7 +284,7 @@ var ProjectEditor = Class({
 
 
 
-  _updateContextMenuItems: function() {
+  _updateContextMenuItems: function () {
     let resource = this.projectTree.getSelectedResource();
     this.pluginDispatch("onContextMenuOpen", resource);
   },
@@ -292,7 +292,7 @@ var ProjectEditor = Class({
   
 
 
-  destroy: function() {
+  destroy: function () {
     this._destroyed = true;
 
 
@@ -339,7 +339,7 @@ var ProjectEditor = Class({
 
 
 
-  setProject: function(project) {
+  setProject: function (project) {
     if (this.project) {
       forget(this, this.project);
     }
@@ -371,7 +371,7 @@ var ProjectEditor = Class({
 
 
 
-  setProjectToAppPath: function(path, opts = {}) {
+  setProjectToAppPath: function (path, opts = {}) {
     this.project.appManagerOpts = opts;
 
     let existingPaths = this.project.allPaths();
@@ -394,7 +394,7 @@ var ProjectEditor = Class({
 
 
 
-  openResource: function(resource) {
+  openResource: function (resource) {
     let shell = this.shells.open(resource);
     this.projectTree.selectResource(resource);
     shell.editor.focus();
@@ -406,7 +406,7 @@ var ProjectEditor = Class({
 
 
 
-  _onTreeSelected: function(resource) {
+  _onTreeSelected: function (resource) {
     
     if (resource.isDir && resource.parent) {
       return;
@@ -421,7 +421,7 @@ var ProjectEditor = Class({
 
 
 
-  _onTreeResourceRemoved: function(resource) {
+  _onTreeResourceRemoved: function (resource) {
     this.shells.removeResource(resource);
   },
 
@@ -437,14 +437,14 @@ var ProjectEditor = Class({
 
 
 
-  createElement: function(type, options) {
+  createElement: function (type, options) {
     let elt = this.document.createElement(type);
 
     let parent;
 
     for (let opt in options) {
       if (opt === "command") {
-        let command = typeof(options.command) === "string" ? options.command : options.command.id;
+        let command = typeof (options.command) === "string" ? options.command : options.command.id;
         elt.setAttribute("command", command);
       } else if (opt === "parent") {
         continue;
@@ -455,7 +455,7 @@ var ProjectEditor = Class({
 
     if (options.parent) {
       let parent = options.parent;
-      if (typeof(parent) === "string") {
+      if (typeof (parent) === "string") {
         parent = this.document.querySelector(parent);
       }
       parent.appendChild(elt);
@@ -472,7 +472,7 @@ var ProjectEditor = Class({
 
 
 
-  createMenuItem: function(options) {
+  createMenuItem: function (options) {
     return this.createElement("menuitem", options);
   },
 
@@ -487,7 +487,7 @@ var ProjectEditor = Class({
 
 
 
-  addCommand: function(plugin, definition) {
+  addCommand: function (plugin, definition) {
     this._pluginCommands.set(definition.id, plugin);
     let document = this.projectEditorKeyset.ownerDocument;
     let command = document.createElement("command");
@@ -519,7 +519,7 @@ var ProjectEditor = Class({
 
 
 
-  getPlugin: function(pluginType) {
+  getPlugin: function (pluginType) {
     for (let plugin of this.plugins) {
       if (plugin.constructor === pluginType) {
         return plugin;
@@ -550,7 +550,7 @@ var ProjectEditor = Class({
 
 
 
-  _onEditorCreated: function(editor) {
+  _onEditorCreated: function (editor) {
     this.pluginDispatch("onEditorCreated", editor);
     this._editorListenAndDispatch(editor, "change", "onEditorChange");
     this._editorListenAndDispatch(editor, "cursorActivity", "onEditorCursorActivity");
@@ -572,7 +572,7 @@ var ProjectEditor = Class({
 
 
 
-  _onEditorActivated: function(editor, resource) {
+  _onEditorActivated: function (editor, resource) {
     editor.setToolbarVisibility();
     this.pluginDispatch("onEditorActivated", editor, resource);
   },
@@ -585,7 +585,7 @@ var ProjectEditor = Class({
 
 
 
-  _onEditorDeactivated: function(editor, resource) {
+  _onEditorDeactivated: function (editor, resource) {
     this.pluginDispatch("onEditorDeactivated", editor, resource);
   },
 
@@ -598,15 +598,15 @@ var ProjectEditor = Class({
 
 
 
-  pluginDispatch: function(handler, ...args) {
+  pluginDispatch: function (handler, ...args) {
     emit(this, handler, ...args);
     this.plugins.forEach(plugin => {
       try {
         if (handler in plugin) plugin[handler](...args);
-      } catch(ex) {
+      } catch (ex) {
         console.error(ex);
       }
-    })
+    });
   },
 
   
@@ -620,7 +620,7 @@ var ProjectEditor = Class({
 
 
 
-  _editorListenAndDispatch: function(editor, event, handler) {
+  _editorListenAndDispatch: function (editor, event, handler) {
     editor.on(event, (...args) => {
       this.pluginDispatch(handler, editor, this.resourceFor(editor), ...args);
     });
@@ -633,7 +633,7 @@ var ProjectEditor = Class({
 
 
 
-  shellFor: function(resource) {
+  shellFor: function (resource) {
     return this.shells.shellFor(resource);
   },
 
@@ -645,7 +645,7 @@ var ProjectEditor = Class({
 
 
 
-  editorFor: function(resource) {
+  editorFor: function (resource) {
     let shell = this.shellFor(resource);
     return shell ? shell.editor : shell;
   },
@@ -658,7 +658,7 @@ var ProjectEditor = Class({
 
 
 
-  resourceFor: function(editor) {
+  resourceFor: function (editor) {
     if (editor && editor.shell && editor.shell.resource) {
       return editor.shell.resource;
     }
@@ -673,7 +673,7 @@ var ProjectEditor = Class({
 
 
 
-  resourceVisible: function(resource) {
+  resourceVisible: function (resource) {
     return true;
   },
 
@@ -685,7 +685,7 @@ var ProjectEditor = Class({
 
 
 
-  resourceFormatter: function(resource, elt) {
+  resourceFormatter: function (resource, elt) {
     let editor = this.editorFor(resource);
     let renderedByPlugin = false;
 
@@ -752,7 +752,7 @@ var ProjectEditor = Class({
 
 
 
-  confirmUnsaved: function() {
+  confirmUnsaved: function () {
     if (this.hasUnsavedResources) {
       return confirm(
         getLocalizedString("projecteditor.confirmUnsavedTitle"),
@@ -769,7 +769,7 @@ var ProjectEditor = Class({
 
 
 
-  saveAllFiles: Task.async(function*() {
+  saveAllFiles: Task.async(function* () {
     if (this.hasUnsavedResources) {
       for (let resource of this.project.allResources()) {
         let editor = this.editorFor(resource);
@@ -808,7 +808,7 @@ function getCommandController(host) {
       }
       return true;
     },
-    doCommand: function(cmd) {
+    doCommand: function (cmd) {
     }
   };
 }

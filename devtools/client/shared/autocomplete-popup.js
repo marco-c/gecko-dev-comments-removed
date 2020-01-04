@@ -148,7 +148,7 @@ AutocompletePopup.prototype = {
 
 
 
-  openPopup: function(anchor, xOffset = 0, yOffset = 0, index) {
+  openPopup: function (anchor, xOffset = 0, yOffset = 0, index) {
     this.__maxLabelLength = -1;
     this._updateSize();
     this._panel.openPopup(anchor, this.position, xOffset, yOffset);
@@ -166,7 +166,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectItemAtIndex: function(index) {
+  selectItemAtIndex: function (index) {
     if (typeof index != "number") {
       
       let isAboveInput = this.position.includes("before");
@@ -179,7 +179,7 @@ AutocompletePopup.prototype = {
   
 
 
-  hidePopup: function() {
+  hidePopup: function () {
     
     this._document.activeElement.removeAttribute("aria-activedescendant");
     this._panel.hidePopup();
@@ -199,7 +199,7 @@ AutocompletePopup.prototype = {
 
 
 
-  destroy: function() {
+  destroy: function () {
     if (this.isOpen) {
       this.hidePopup();
     }
@@ -227,7 +227,7 @@ AutocompletePopup.prototype = {
 
 
 
-  getItemAtIndex: function(index) {
+  getItemAtIndex: function (index) {
     return this._list.getItemAtIndex(index)._autocompleteItem;
   },
 
@@ -236,10 +236,10 @@ AutocompletePopup.prototype = {
 
 
 
-  getItems: function() {
+  getItems: function () {
     let items = [];
 
-    Array.forEach(this._list.childNodes, function(item) {
+    Array.forEach(this._list.childNodes, function (item) {
       items.push(item._autocompleteItem);
     });
 
@@ -254,7 +254,7 @@ AutocompletePopup.prototype = {
 
 
 
-  setItems: function(items, index) {
+  setItems: function (items, index) {
     this.clearItems();
     items.forEach(this.appendItem, this);
 
@@ -291,7 +291,7 @@ AutocompletePopup.prototype = {
   
 
 
-  _updateSize: function() {
+  _updateSize: function () {
     if (!this._panel) {
       return;
     }
@@ -303,7 +303,7 @@ AutocompletePopup.prototype = {
   
 
 
-  _updateAriaActiveDescendant: function() {
+  _updateAriaActiveDescendant: function () {
     if (!this._list.selectedItem) {
       
       this._document.activeElement.removeAttribute("aria-activedescendant");
@@ -317,7 +317,7 @@ AutocompletePopup.prototype = {
   
 
 
-  clearItems: function() {
+  clearItems: function () {
     
     this.selectedIndex = -1;
 
@@ -400,7 +400,7 @@ AutocompletePopup.prototype = {
 
 
 
-  appendItem: function(item) {
+  appendItem: function (item) {
     let listItem = this._document.createElementNS(XUL_NS, "richlistitem");
     
     listItem.id = this._panel.id + "_item_" + this._itemIdCounter++;
@@ -441,7 +441,7 @@ AutocompletePopup.prototype = {
 
 
 
-  _findListItem: function(item) {
+  _findListItem: function (item) {
     for (let i = 0; i < this._list.childNodes.length; i++) {
       let child = this._list.childNodes[i];
       if (child._autocompleteItem == item) {
@@ -457,7 +457,7 @@ AutocompletePopup.prototype = {
 
 
 
-  removeItem: function(item) {
+  removeItem: function (item) {
     let listItem = this._findListItem(item);
     if (!listItem) {
       throw new Error("Item not found!");
@@ -488,7 +488,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectNextItem: function() {
+  selectNextItem: function () {
     if (this.selectedIndex < (this.itemCount - 1)) {
       this.selectedIndex++;
     } else {
@@ -504,7 +504,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectPreviousItem: function() {
+  selectPreviousItem: function () {
     if (this.selectedIndex > 0) {
       this.selectedIndex--;
     } else {
@@ -521,7 +521,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectNextPageItem: function() {
+  selectNextPageItem: function () {
     let itemsPerPane = Math.floor(this._list.scrollHeight / this._itemHeight);
     let nextPageIndex = this.selectedIndex + itemsPerPane + 1;
     this.selectedIndex = nextPageIndex > this.itemCount - 1 ?
@@ -537,7 +537,7 @@ AutocompletePopup.prototype = {
 
 
 
-  selectPreviousPageItem: function() {
+  selectPreviousPageItem: function () {
     let itemsPerPane = Math.floor(this._list.scrollHeight / this._itemHeight);
     let prevPageIndex = this.selectedIndex - itemsPerPane - 1;
     this.selectedIndex = prevPageIndex < 0 ? 0 : prevPageIndex;
@@ -548,7 +548,7 @@ AutocompletePopup.prototype = {
   
 
 
-  focus: function() {
+  focus: function () {
     this._list.focus();
   },
 
@@ -566,7 +566,7 @@ AutocompletePopup.prototype = {
 
 
 
-  _handleThemeChange: function(event, data) {
+  _handleThemeChange: function (event, data) {
     if (data.pref == "devtools.theme") {
       this._panel.classList.toggle(data.oldValue + "-theme", false);
       this._panel.classList.toggle(data.newValue + "-theme", true);

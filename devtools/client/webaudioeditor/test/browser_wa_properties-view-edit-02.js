@@ -5,7 +5,7 @@
 
 
 
-add_task(function*() {
+add_task(function* () {
   let { target, panel } = yield initWebAudioEditor(COMPLEX_CONTEXT_URL);
   let { panelWin } = panel;
   let { gFront, $, $$, EVENTS, PropertiesView } = panelWin;
@@ -32,7 +32,7 @@ add_task(function*() {
 
   try {
     yield modifyVariableView(panelWin, gVars, 0, "bufferSize", 2048);
-  } catch(e) {
+  } catch (e) {
     
   }
 

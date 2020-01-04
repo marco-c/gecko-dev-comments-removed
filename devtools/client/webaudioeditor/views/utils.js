@@ -9,7 +9,7 @@
 
 
 
-function findGraphNodeParent (el) {
+function findGraphNodeParent(el) {
   
   if (!el.classList)
     return null;
@@ -100,4 +100,4 @@ var ToggleMixin = {
   _onToggle: function () {
     this._viewController({ visible: !this.isVisible() });
   }
-}
+};

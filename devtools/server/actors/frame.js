@@ -24,7 +24,7 @@ let FrameActor = ActorClass({
 
 
 
-  initialize: function(frame, threadActor) {
+  initialize: function (frame, threadActor) {
     this.frame = frame;
     this.threadActor = threadActor;
   },
@@ -45,7 +45,7 @@ let FrameActor = ActorClass({
 
 
 
-  disconnect: function() {
+  disconnect: function () {
     this.conn.removeActorPool(this._frameLifetimePool);
     this._frameLifetimePool = null;
   },
@@ -53,7 +53,7 @@ let FrameActor = ActorClass({
   
 
 
-  form: function() {
+  form: function () {
     let threadActor = this.threadActor;
     let form = { actor: this.actorID,
                  type: this.frame.type };
@@ -88,7 +88,7 @@ let FrameActor = ActorClass({
     return form;
   },
 
-  _args: function() {
+  _args: function () {
     if (!this.frame.arguments) {
       return [];
     }

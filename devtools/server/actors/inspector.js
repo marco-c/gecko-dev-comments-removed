@@ -394,7 +394,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
         if (hasListeners && hasListeners(this.rawNode)) {
           return true;
         }
-      } catch(e) {
+      } catch (e) {
         
         
       }
@@ -452,7 +452,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
           this.processHandlerForEvent(node, events, dbg, eventInfo);
         }
-      } catch(e) {
+      } catch (e) {
         
         
       }
@@ -905,7 +905,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       this.tabActor = null;
 
       events.emit(this, "destroyed");
-    } catch(e) {
+    } catch (e) {
       console.error(e);
     }
   },
@@ -1105,7 +1105,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     let walker = this.getDocumentWalker(node.rawNode);
     let parents = [];
     let cur;
-    while((cur = walker.parentNode())) {
+    while ((cur = walker.parentNode())) {
       if (options.sameDocument &&
           nodeDocument(cur) != nodeDocument(node.rawNode)) {
         break;
@@ -1454,7 +1454,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     do {
       ret.push(this._ref(node));
       node = walker.previousSibling();
-    } while(node && --count);
+    } while (node && --count);
     ret.reverse();
     return ret;
   },
@@ -1507,7 +1507,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     try {
       nodeList = baseNode.rawNode.querySelectorAll(selector);
-    } catch(e) {
+    } catch (e) {
       
     }
 
@@ -1526,7 +1526,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     for (let {document} of this.tabActor.windows) {
       try {
         nodes = [...nodes, ...document.querySelectorAll(selector)];
-      } catch(e) {
+      } catch (e) {
         
       }
     }
@@ -2144,7 +2144,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     let newNode;
     try {
       newNode = nodeDocument(oldNode).createElement(tagName);
-    } catch(x) {
+    } catch (x) {
       
       
       return Promise.reject(new Error("Could not change node's tagName to " +
@@ -2672,7 +2672,7 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClassWithSpec(inspec
 
 
 
-  getImageDataFromURL: function(url, maxDim) {
+  getImageDataFromURL: function (url, maxDim) {
     let img = new this.window.Image();
     img.src = url;
 
@@ -2785,7 +2785,7 @@ DocumentWalker.prototype = {
     return this.walker.parentNode();
   },
 
-  nextNode: function() {
+  nextNode: function () {
     let node = this.walker.currentNode;
     if (!node) {
       return null;

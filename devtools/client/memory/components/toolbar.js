@@ -123,9 +123,9 @@ module.exports = createClass({
       
       viewToolbarOptions = treeMapDisplays.length > 1
         ? dom.div(
-            {
-              className: "toolbar-group"
-            },
+          {
+            className: "toolbar-group"
+          },
 
             dom.label(
               {

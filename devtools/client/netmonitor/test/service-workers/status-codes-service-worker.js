@@ -2,7 +2,7 @@
 
 
 
-addEventListener("fetch", function(event) {
+addEventListener("fetch", function (event) {
   let response = new Response("Service worker response");
   event.respondWith(response);
 });

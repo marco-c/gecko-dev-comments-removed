@@ -17,9 +17,9 @@ function test() {
     let target = TargetFactory.forTab(gBrowser.selectedTab);
     gDevTools.showToolbox(target, TOOL_ID_1, Toolbox.HostType.BOTTOM)
              .then(aToolbox => {
-                toolbox = aToolbox;
+               toolbox = aToolbox;
                 
-                toolbox.selectTool(TOOL_ID_2)
+               toolbox.selectTool(TOOL_ID_2)
                        
                        .then(highlightTab.bind(null, TOOL_ID_1))
                        
@@ -39,14 +39,14 @@ function test() {
                        .then(checkNoHighlight.bind(null, TOOL_ID_1))
                        
                        .then(() => executeSoon(() => {
-                          toolbox.destroy()
+                         toolbox.destroy()
                                  .then(() => {
                                    toolbox = null;
                                    gBrowser.removeCurrentTab();
                                    finish();
                                  });
-                        }));
-              });
+                       }));
+             });
   });
 }
 
