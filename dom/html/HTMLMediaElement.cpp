@@ -3422,15 +3422,7 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
 #endif 
   }
 
-  
-  
-  
-  
-  if (!aInfo->HasVideo()) {
-    ResetState();
-  } else {
-    mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
-  }
+  mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
 
   if (IsVideo() && aInfo->HasVideo()) {
     
