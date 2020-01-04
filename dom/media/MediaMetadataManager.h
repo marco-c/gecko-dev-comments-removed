@@ -81,11 +81,7 @@ public:
     return mTimedMetadataEvent;
   }
 
-  void QueueMetadata(TimedMetadata* aMetadata) {
-    mMetadataQueue.insertBack(aMetadata);
-  }
-
-  void DispatchMetadataIfNeeded(AbstractMediaDecoder* aDecoder, const media::TimeUnit& aCurrentTime) {
+  void DispatchMetadataIfNeeded(const media::TimeUnit& aCurrentTime) {
     TimedMetadata* metadata = mMetadataQueue.getFirst();
     while (metadata && aCurrentTime >= metadata->mPublishTime) {
       
