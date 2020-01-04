@@ -36,6 +36,15 @@ UuidToString(const BluetoothUuid& aUuid, nsAString& aString);
 
 
 void
+StringToUuid(const char* aString, BluetoothUuid& aUuid);
+
+
+
+
+
+
+
+void
 StringToUuid(const nsAString& aString, BluetoothUuid& aUuid);
 
 
