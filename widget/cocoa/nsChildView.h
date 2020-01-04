@@ -207,6 +207,10 @@ typedef NSInteger NSEventGestureAxis;
 
   
   
+  BOOL mNeedsGLUpdate;
+
+  
+  
   
   
   
@@ -276,7 +280,6 @@ typedef NSInteger NSEventGestureAxis;
 - (void)updateGLContext;
 - (void)_surfaceNeedsUpdate:(NSNotification*)notification;
 
-- (void)setGLContext:(NSOpenGLContext *)aGLContext;
 - (bool)preRender:(NSOpenGLContext *)aGLContext;
 - (void)postRender:(NSOpenGLContext *)aGLContext;
 
