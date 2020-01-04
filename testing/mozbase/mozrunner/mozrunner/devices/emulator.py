@@ -117,7 +117,9 @@ class Emulator(Device):
         now = datetime.datetime.now()
         while (devices - original_devices) == set([]):
             time.sleep(1)
-            if datetime.datetime.now() - now > datetime.timedelta(seconds=60):
+            
+            
+            if datetime.datetime.now() - now > datetime.timedelta(seconds=180):
                 raise TimeoutException('timed out waiting for emulator to start')
             devices = set(self._get_online_devices())
         devices = devices - original_devices
