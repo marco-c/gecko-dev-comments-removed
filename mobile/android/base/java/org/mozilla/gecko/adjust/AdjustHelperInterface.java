@@ -14,5 +14,6 @@ public interface AdjustHelperInterface {
 
 
     void onCreate(final Context context, final String appToken);
+    void setEnabled(final boolean isEnabled);
     void onReceive(final Context context, final Intent intent);
 }

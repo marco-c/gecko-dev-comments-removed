@@ -7,6 +7,7 @@ package org.mozilla.gecko.preferences;
 
 import android.annotation.TargetApi;
 import org.mozilla.gecko.AboutPages;
+import org.mozilla.gecko.AdjustConstants;
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.BrowserApp;
@@ -1183,7 +1184,9 @@ OnSharedPreferenceChangeListener
             
             
             
-            broadcastHealthReportUploadPref(this, (Boolean) newValue);
+            final Boolean newBooleanValue = (Boolean) newValue;
+            broadcastHealthReportUploadPref(this, newBooleanValue);
+            AdjustConstants.getAdjustHelper().setEnabled(newBooleanValue);
         } else if (PREFS_GEO_REPORTING.equals(prefName)) {
             broadcastStumblerPref(this, (Boolean) newValue);
             

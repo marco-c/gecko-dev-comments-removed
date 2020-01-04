@@ -13,6 +13,10 @@ public class StubAdjustHelper implements AdjustHelperInterface {
         
     }
 
+    public void setEnabled(final boolean isEnabled) {
+        
+    }
+
     public void onReceive(final Context context, final Intent intent) {
         
     }
