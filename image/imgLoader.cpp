@@ -862,6 +862,7 @@ imgCacheEntry::imgCacheEntry(imgLoader* loader, imgRequest* request,
    mRequest(request),
    mDataSize(0),
    mTouchedTime(SecondsFromPRTime(PR_Now())),
+   mLoadTime(SecondsFromPRTime(PR_Now())),
    mExpiryTime(0),
    mMustValidate(false),
    
@@ -896,6 +897,11 @@ imgCacheEntry::UpdateCache(int32_t diff )
   if (!Evicted() && HasNoProxies()) {
     mLoader->CacheEntriesChanged(mRequest->IsChrome(), diff);
   }
+}
+
+void imgCacheEntry::UpdateLoadTime()
+{
+  mLoadTime = SecondsFromPRTime(PR_Now());
 }
 
 void
@@ -1710,7 +1716,7 @@ imgLoader::ValidateEntry(imgCacheEntry* aEntry,
   
   nsCOMPtr<nsIFileURL> fileUrl(do_QueryInterface(aURI));
   if (fileUrl) {
-    uint32_t lastModTime = aEntry->GetTouchedTime();
+    uint32_t lastModTime = aEntry->GetLoadTime();
 
     nsCOMPtr<nsIFile> theFile;
     rv = fileUrl->GetFile(getter_AddRefs(theFile));
