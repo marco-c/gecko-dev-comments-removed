@@ -44,7 +44,7 @@ static const char *kTypeString[] = {
                                     "xslt",
                                     "beacon",
                                     "fetch",
-                                    "imageset",
+                                    "image",
                                     "manifest",
                                     "", 
                                     "", 
