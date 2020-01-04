@@ -172,13 +172,14 @@ png_set_filler(png_structrp png_ptr, png_uint_32 filler, int filler_loc)
 
 
                   png_app_error(png_ptr,
-                     "png_set_filler is invalid for low bit depth gray output");
+                      "png_set_filler is invalid for"
+                      " low bit depth gray output");
                   return;
                }
 
             default:
                png_app_error(png_ptr,
-                  "png_set_filler: inappropriate color type");
+                   "png_set_filler: inappropriate color type");
                return;
          }
 #     else
@@ -797,7 +798,7 @@ png_set_user_transform_info(png_structrp png_ptr, png_voidp
       (png_ptr->flags & PNG_FLAG_ROW_INIT) != 0)
    {
       png_app_error(png_ptr,
-            "info change after png_start_read_image or png_read_update_info");
+          "info change after png_start_read_image or png_read_update_info");
       return;
    }
 #endif

@@ -35,7 +35,7 @@ png_write_data(png_structrp png_ptr, png_const_bytep data, png_size_t length)
    
    if (png_ptr->write_data_fn != NULL )
       (*(png_ptr->write_data_fn))(png_ptr, png_constcast(png_bytep,data),
-         length);
+          length);
 
    else
       png_error(png_ptr, "Call to NULL write function");

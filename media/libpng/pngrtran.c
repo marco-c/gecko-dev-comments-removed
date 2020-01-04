@@ -48,7 +48,7 @@ png_set_crc_action(png_structrp png_ptr, int crit_action, int ancil_action)
 
       case PNG_CRC_WARN_DISCARD:    
          png_warning(png_ptr,
-            "Can't discard critical data on CRC error");
+             "Can't discard critical data on CRC error");
       case PNG_CRC_ERROR_QUIT:                                
 
       case PNG_CRC_DEFAULT:
@@ -101,7 +101,7 @@ png_rtran_ok(png_structrp png_ptr, int need_IHDR)
    {
       if ((png_ptr->flags & PNG_FLAG_ROW_INIT) != 0)
          png_app_error(png_ptr,
-            "invalid after png_start_read_image or png_read_update_info");
+             "invalid after png_start_read_image or png_read_update_info");
 
       else if (need_IHDR && (png_ptr->mode & PNG_HAVE_IHDR) == 0)
          png_app_error(png_ptr, "invalid before the PNG header has been read");
@@ -209,7 +209,7 @@ png_set_strip_alpha(png_structrp png_ptr)
 #if defined(PNG_READ_ALPHA_MODE_SUPPORTED) || defined(PNG_READ_GAMMA_SUPPORTED)
 static png_fixed_point
 translate_gamma_flags(png_structrp png_ptr, png_fixed_point output_gamma,
-   int is_screen)
+    int is_screen)
 {
    
 
@@ -273,7 +273,7 @@ convert_gamma_value(png_structrp png_ptr, double output_gamma)
 #ifdef PNG_READ_ALPHA_MODE_SUPPORTED
 void PNGFAPI
 png_set_alpha_mode_fixed(png_structrp png_ptr, int mode,
-   png_fixed_point output_gamma)
+    png_fixed_point output_gamma)
 {
    int compose = 0;
    png_fixed_point file_gamma;
@@ -377,7 +377,7 @@ png_set_alpha_mode_fixed(png_structrp png_ptr, int mode,
 
       if ((png_ptr->transformations & PNG_COMPOSE) != 0)
          png_error(png_ptr,
-            "conflicting calls to set alpha mode and background");
+             "conflicting calls to set alpha mode and background");
 
       png_ptr->transformations |= PNG_COMPOSE;
    }
@@ -388,7 +388,7 @@ void PNGAPI
 png_set_alpha_mode(png_structrp png_ptr, int mode, double output_gamma)
 {
    png_set_alpha_mode_fixed(png_ptr, mode, convert_gamma_value(png_ptr,
-      output_gamma));
+       output_gamma));
 }
 #  endif
 #endif
@@ -802,7 +802,7 @@ png_set_quantize(png_structrp png_ptr, png_colorp palette,
 #ifdef PNG_READ_GAMMA_SUPPORTED
 void PNGFAPI
 png_set_gamma_fixed(png_structrp png_ptr, png_fixed_point scrn_gamma,
-   png_fixed_point file_gamma)
+    png_fixed_point file_gamma)
 {
    png_debug(1, "in png_set_gamma_fixed");
 
@@ -844,7 +844,7 @@ void PNGAPI
 png_set_gamma(png_structrp png_ptr, double scrn_gamma, double file_gamma)
 {
    png_set_gamma_fixed(png_ptr, convert_gamma_value(png_ptr, scrn_gamma),
-      convert_gamma_value(png_ptr, file_gamma));
+       convert_gamma_value(png_ptr, file_gamma));
 }
 #  endif 
 #endif 
@@ -990,7 +990,7 @@ png_set_rgb_to_gray_fixed(png_structrp png_ptr, int error_action,
 
 
       png_error(png_ptr,
-        "Cannot do RGB_TO_GRAY without EXPAND_SUPPORTED");
+          "Cannot do RGB_TO_GRAY without EXPAND_SUPPORTED");
 
       
    }
@@ -1017,7 +1017,7 @@ png_set_rgb_to_gray_fixed(png_structrp png_ptr, int error_action,
       {
          if (red >= 0 && green >= 0)
             png_app_warning(png_ptr,
-               "ignoring out of range rgb_to_gray coefficients");
+                "ignoring out of range rgb_to_gray coefficients");
 
          
 
@@ -1026,7 +1026,7 @@ png_set_rgb_to_gray_fixed(png_structrp png_ptr, int error_action,
 
 
          if (png_ptr->rgb_to_gray_red_coeff == 0 &&
-            png_ptr->rgb_to_gray_green_coeff == 0)
+             png_ptr->rgb_to_gray_green_coeff == 0)
          {
             png_ptr->rgb_to_gray_red_coeff   = 6968;
             png_ptr->rgb_to_gray_green_coeff = 23434;
@@ -1043,10 +1043,10 @@ png_set_rgb_to_gray_fixed(png_structrp png_ptr, int error_action,
 
 void PNGAPI
 png_set_rgb_to_gray(png_structrp png_ptr, int error_action, double red,
-   double green)
+    double green)
 {
    png_set_rgb_to_gray_fixed(png_ptr, error_action,
-      png_fixed(png_ptr, red, "rgb to gray red coefficient"),
+       png_fixed(png_ptr, red, "rgb to gray red coefficient"),
       png_fixed(png_ptr, green, "rgb to gray green coefficient"));
 }
 #endif 
@@ -1303,7 +1303,7 @@ png_init_read_transformations(png_structrp png_ptr)
       {
          if (png_ptr->screen_gamma != 0) 
             gamma_correction = png_gamma_threshold(png_ptr->colorspace.gamma,
-               png_ptr->screen_gamma);
+                png_ptr->screen_gamma);
 
          else
             
@@ -1584,7 +1584,7 @@ png_init_read_transformations(png_structrp png_ptr)
 
          if ((png_ptr->transformations & PNG_RGB_TO_GRAY) != 0)
             png_warning(png_ptr,
-               "libpng does not support gamma+background+rgb_to_gray");
+                "libpng does not support gamma+background+rgb_to_gray");
 
          if ((png_ptr->color_type == PNG_COLOR_TYPE_PALETTE) != 0)
          {
@@ -1620,13 +1620,13 @@ png_init_read_transformations(png_structrp png_ptr)
                   case PNG_BACKGROUND_GAMMA_FILE:
                      g = png_reciprocal(png_ptr->colorspace.gamma);
                      gs = png_reciprocal2(png_ptr->colorspace.gamma,
-                        png_ptr->screen_gamma);
+                         png_ptr->screen_gamma);
                      break;
 
                   case PNG_BACKGROUND_GAMMA_UNIQUE:
                      g = png_reciprocal(png_ptr->background_gamma);
                      gs = png_reciprocal2(png_ptr->background_gamma,
-                        png_ptr->screen_gamma);
+                         png_ptr->screen_gamma);
                      break;
                   default:
                      g = PNG_FP_1;    
@@ -1654,11 +1654,11 @@ png_init_read_transformations(png_structrp png_ptr)
                if (png_gamma_significant(g) != 0)
                {
                   back_1.red = png_gamma_8bit_correct(png_ptr->background.red,
-                     g);
+                      g);
                   back_1.green = png_gamma_8bit_correct(
-                     png_ptr->background.green, g);
+                      png_ptr->background.green, g);
                   back_1.blue = png_gamma_8bit_correct(png_ptr->background.blue,
-                     g);
+                      g);
                }
 
                else
@@ -1729,7 +1729,7 @@ png_init_read_transformations(png_structrp png_ptr)
                case PNG_BACKGROUND_GAMMA_FILE:
                   g = png_reciprocal(png_ptr->colorspace.gamma);
                   gs = png_reciprocal2(png_ptr->colorspace.gamma,
-                     png_ptr->screen_gamma);
+                      png_ptr->screen_gamma);
                   break;
 
                case PNG_BACKGROUND_GAMMA_UNIQUE:
@@ -4195,7 +4195,7 @@ png_do_encode_alpha(png_row_infop row_info, png_bytep row, png_structrp png_ptr)
 
 static void
 png_do_expand_palette(png_row_infop row_info, png_bytep row,
-   png_const_colorp palette, png_const_bytep trans_alpha, int num_trans)
+    png_const_colorp palette, png_const_bytep trans_alpha, int num_trans)
 {
    int shift, value;
    png_bytep sp, dp;
@@ -4502,7 +4502,7 @@ png_do_expand(png_row_infop row_info, png_bytep row,
             row_info->channels = 2;
             row_info->pixel_depth = (png_byte)(row_info->bit_depth << 1);
             row_info->rowbytes = PNG_ROWBYTES(row_info->pixel_depth,
-               row_width);
+                row_width);
          }
       }
       else if (row_info->color_type == PNG_COLOR_TYPE_RGB &&
@@ -4762,7 +4762,7 @@ png_do_read_transformations(png_structrp png_ptr, png_row_infop row_info)
        (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA ||
        row_info->color_type == PNG_COLOR_TYPE_GRAY_ALPHA))
       png_do_strip_channel(row_info, png_ptr->row_buf + 1,
-         0 );
+          0 );
 #endif
 
 #ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED

@@ -420,7 +420,7 @@
 
 #  if (defined(__MWERKS__) && defined(macintosh)) || defined(applec) || \
     defined(THINK_C) || defined(__SC__) || defined(TARGET_OS_MAC)
-     
+   
 
 
 
@@ -431,7 +431,7 @@
 #    include <math.h>
 #  endif
 #  if defined(_AMIGA) && defined(__SASC) && defined(_M68881)
-     
+   
 
 
 #    include <m68881.h>
@@ -1039,7 +1039,7 @@ PNG_INTERNAL_FUNCTION(void,png_write_sBIT,(png_structrp png_ptr,
 #ifdef PNG_WRITE_cHRM_SUPPORTED
 PNG_INTERNAL_FUNCTION(void,png_write_cHRM_fixed,(png_structrp png_ptr,
     const png_xy *xy), PNG_EMPTY);
-    
+   
 #endif
 
 #ifdef PNG_WRITE_sRGB_SUPPORTED
@@ -1188,6 +1188,7 @@ PNG_INTERNAL_FUNCTION(void,png_do_write_interlace,(png_row_infop row_info,
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row,(png_structrp pp, png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row, int filter),PNG_EMPTY);
 
+#if PNG_ARM_NEON_OPT > 0
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_neon,(png_row_infop row_info,
     png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_neon,(png_row_infop
@@ -1202,6 +1203,7 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_neon,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_neon,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+#endif
 
 
 PNG_INTERNAL_FUNCTION(void,png_write_find_filter,(png_structrp png_ptr,
@@ -1427,7 +1429,7 @@ PNG_INTERNAL_FUNCTION(void,png_push_have_info,(png_structrp png_ptr,
 PNG_INTERNAL_FUNCTION(void,png_push_have_end,(png_structrp png_ptr,
    png_inforp info_ptr),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_push_have_row,(png_structrp png_ptr,
-     png_bytep row),PNG_EMPTY);
+    png_bytep row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_push_read_end,(png_structrp png_ptr,
     png_inforp info_ptr),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_process_some_data,(png_structrp png_ptr,
@@ -1509,11 +1511,11 @@ PNG_INTERNAL_FUNCTION(void,png_colorspace_set_gamma,(png_const_structrp png_ptr,
 
 PNG_INTERNAL_FUNCTION(void,png_colorspace_sync_info,(png_const_structrp png_ptr,
     png_inforp info_ptr), PNG_EMPTY);
-    
+   
 
 PNG_INTERNAL_FUNCTION(void,png_colorspace_sync,(png_const_structrp png_ptr,
     png_inforp info_ptr), PNG_EMPTY);
-    
+   
 
 
 #endif
@@ -1970,8 +1972,10 @@ PNG_INTERNAL_FUNCTION(void, PNG_FILTER_OPTIMIZATIONS, (png_structp png_ptr,
 
 
 
+#  if PNG_ARM_NEON_OPT > 0
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_neon,
    (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
+#  endif
 #endif
 
 PNG_INTERNAL_FUNCTION(png_uint_32, png_check_keyword, (png_structrp png_ptr,

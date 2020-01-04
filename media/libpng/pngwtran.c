@@ -525,7 +525,7 @@ png_do_write_transformations(png_structrp png_ptr, png_row_infop row_info)
 #ifdef PNG_WRITE_FILLER_SUPPORTED
    if ((png_ptr->transformations & PNG_FILLER) != 0)
       png_do_strip_channel(row_info, png_ptr->row_buf + 1,
-         !(png_ptr->flags & PNG_FLAG_FILLER_AFTER));
+          !(png_ptr->flags & PNG_FLAG_FILLER_AFTER));
 #endif
 
 #ifdef PNG_WRITE_PACKSWAP_SUPPORTED
@@ -549,7 +549,7 @@ png_do_write_transformations(png_structrp png_ptr, png_row_infop row_info)
 #ifdef PNG_WRITE_SHIFT_SUPPORTED
    if ((png_ptr->transformations & PNG_SHIFT) != 0)
       png_do_shift(row_info, png_ptr->row_buf + 1,
-          &(png_ptr->shift));
+           &(png_ptr->shift));
 #endif
 
 #ifdef PNG_WRITE_SWAP_ALPHA_SUPPORTED

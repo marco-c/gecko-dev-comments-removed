@@ -188,7 +188,7 @@
 
 
 #  if PNG_API_RULE == 2
-    
+   
 
 
 
@@ -199,13 +199,13 @@
 #  if defined(__GNUC__) || (defined(_MSC_VER) && (_MSC_VER >= 800))
 #    define PNGCAPI __cdecl
 #    if PNG_API_RULE == 1
-       
+   
 
 
 #      define PNGAPI __stdcall
 #    endif
 #  else
-    
+   
 
 
 
@@ -225,7 +225,7 @@
 
 #  if (defined(_MSC_VER) && _MSC_VER < 800) ||\
       (defined(__BORLANDC__) && __BORLANDC__ < 0x500)
-    
+   
 
 
 
@@ -244,7 +244,7 @@
 #  if (defined(__IBMC__) || defined(__IBMCPP__)) && defined(__OS2__)
 #    define PNGAPI _System
 #  else 
-    
+   
 
 
 #  endif 
@@ -267,7 +267,7 @@
 
 #ifndef PNG_IMPEXP
 #  if defined(PNG_USE_DLL) && defined(PNG_DLL_IMPORT)
-     
+   
 #    define PNG_IMPEXP PNG_DLL_IMPORT
 #  endif
 
@@ -340,7 +340,7 @@
 
 
 #  if defined(__clang__) && defined(__has_attribute)
-     
+   
 #    if !defined(PNG_USE_RESULT) && __has_attribute(__warn_unused_result__)
 #      define PNG_USE_RESULT __attribute__((__warn_unused_result__))
 #    endif
