@@ -3880,8 +3880,11 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       item->SetClip(mBuilder, clip);
     }
 
-    bool shouldFixToViewport = !(*animatedGeometryRoot)->GetParent() &&
-      item->ShouldFixToViewport(mBuilder);
+    bool clipMovesWithLayer = (animatedGeometryRoot == animatedGeometryRootForClip);
+
+    bool shouldFixToViewport = !clipMovesWithLayer &&
+        !(*animatedGeometryRoot)->GetParent() &&
+        item->ShouldFixToViewport(mBuilder);
 
     
     
@@ -4120,7 +4123,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         
         
         
-        if (shouldFixToViewport && mManager->IsWidgetLayerManager()) {
+        if (shouldFixToViewport) {
           LayerClip scrolledClip;
           scrolledClip.SetClipRect(layerClipRect);
           if (layerClip.IsRectClippedByRoundedCorner(itemContent)) {
