@@ -552,8 +552,6 @@ protected:
 #endif
 
 private:
-    class DelayedFireContextMenuEvent;
-
     
     
     
@@ -572,16 +570,6 @@ private:
     void SetProcessNameToAppName();
 
     void ApplyShowInfo(const ShowInfo& aInfo);
-
-    
-    
-    
-    
-    
-    
-    void FireContextMenuEvent();
-    void CancelTapTracking();
-    void UpdateTapState(const WidgetTouchEvent& aEvent, nsEventStatus aStatus);
 
     bool HasValidInnerSize();
 
@@ -607,15 +595,6 @@ private:
     int32_t mActiveSuppressDisplayport;
     uint64_t mLayersId;
     CSSRect mUnscaledOuterRect;
-    
-    
-    LayoutDevicePoint mGestureDownPoint;
-    
-    int32_t mActivePointerId;
-    
-    
-    
-    nsCOMPtr<nsITimer> mTapHoldTimer;
     
     bool mAppPackageFileDescriptorRecved;
     
