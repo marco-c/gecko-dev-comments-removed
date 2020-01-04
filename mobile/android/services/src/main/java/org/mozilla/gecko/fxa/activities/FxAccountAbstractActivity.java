@@ -24,23 +24,18 @@ public abstract class FxAccountAbstractActivity extends LocaleAwareActivity {
 
   protected final boolean cannotResumeWhenAccountsExist;
   protected final boolean cannotResumeWhenNoAccountsExist;
-  protected final boolean cannotResumeWhenLockedOut;
 
   public static final int CAN_ALWAYS_RESUME = 0;
   public static final int CANNOT_RESUME_WHEN_ACCOUNTS_EXIST = 1 << 0;
   public static final int CANNOT_RESUME_WHEN_NO_ACCOUNTS_EXIST = 1 << 1;
-  public static final int CANNOT_RESUME_WHEN_LOCKED_OUT = 1 << 2;
 
   public FxAccountAbstractActivity(int resume) {
     super();
     this.cannotResumeWhenAccountsExist = 0 != (resume & CANNOT_RESUME_WHEN_ACCOUNTS_EXIST);
     this.cannotResumeWhenNoAccountsExist = 0 != (resume & CANNOT_RESUME_WHEN_NO_ACCOUNTS_EXIST);
-    this.cannotResumeWhenLockedOut = 0 != (resume & CANNOT_RESUME_WHEN_LOCKED_OUT);
   }
 
   
-
-
 
 
 
@@ -55,14 +50,6 @@ public abstract class FxAccountAbstractActivity extends LocaleAwareActivity {
       }
       if (cannotResumeWhenNoAccountsExist && account == null) {
         redirectToAction(FxAccountConstants.ACTION_FXA_GET_STARTED);
-        return true;
-      }
-    }
-    if (cannotResumeWhenLockedOut) {
-      if (FxAccountAgeLockoutHelper.isLockedOut(SystemClock.elapsedRealtime())) {
-        this.setResult(RESULT_CANCELED);
-        launchActivity(FxAccountCreateAccountNotAllowedActivity.class);
-        finish();
         return true;
       }
     }
