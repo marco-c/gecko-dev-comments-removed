@@ -634,6 +634,7 @@ struct BytecodeEmitter
     
     
     
+    
     bool emitForOf(StmtType type, ParseNode* pn);
 
     bool emitClass(ParseNode* pn);

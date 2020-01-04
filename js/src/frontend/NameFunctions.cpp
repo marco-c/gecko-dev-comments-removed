@@ -448,6 +448,7 @@ class NameResolver
           case PNK_SWITCH:
           case PNK_LETBLOCK:
           case PNK_FOR:
+          case PNK_COMPREHENSIONFOR:
           case PNK_CLASSMETHOD:
           case PNK_SETTHIS:
             MOZ_ASSERT(cur->isArity(PN_BINARY));
@@ -690,10 +691,12 @@ class NameResolver
           
           
           
+          
           case PNK_ARRAYCOMP:
             MOZ_ASSERT(cur->isArity(PN_LIST));
             MOZ_ASSERT(cur->pn_count == 1);
-            MOZ_ASSERT(cur->pn_head->isKind(PNK_LEXICALSCOPE) || cur->pn_head->isKind(PNK_FOR));
+            MOZ_ASSERT(cur->pn_head->isKind(PNK_LEXICALSCOPE) ||
+                       cur->pn_head->isKind(PNK_COMPREHENSIONFOR));
             if (!resolve(cur->pn_head, prefix))
                 return false;
             break;

@@ -7904,11 +7904,9 @@ Parser<FullParseHandler>::legacyComprehensionTail(ParseNode* bodyExpr, unsigned 
 
     while (true) {
         
-
-
-
-
-        ParseNode* pn2 = handler.new_<BinaryNode>(PNK_FOR, JSOP_ITER, pos(),
+        
+        
+        ParseNode* pn2 = handler.new_<BinaryNode>(PNK_COMPREHENSIONFOR, JSOP_ITER, pos(),
                                                   nullptr, nullptr);
         if (!pn2)
             return null();
@@ -8357,7 +8355,7 @@ Parser<ParseHandler>::comprehensionFor(GeneratorKind comprehensionKind)
     if (!tail)
         return null();
 
-    return handler.newForStatement(begin, head, tail, JSOP_ITER);
+    return handler.newComprehensionFor(begin, head, tail);
 }
 
 template <typename ParseHandler>

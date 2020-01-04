@@ -126,6 +126,7 @@ class PackedScopeCoordinate
     F(WHILE) \
     F(DOWHILE) \
     F(FOR) \
+    F(COMPREHENSIONFOR) \
     F(BREAK) \
     F(CONTINUE) \
     F(VAR) \
@@ -256,6 +257,8 @@ IsDeleteKind(ParseNodeKind kind)
 {
     return PNK_DELETENAME <= kind && kind <= PNK_DELETEEXPR;
 }
+
+
 
 
 
@@ -836,7 +839,8 @@ class ParseNode
         ParseNode* callee = this->pn_head;
         ParseNode* body = callee->pn_body;
         MOZ_ASSERT(body->isKind(PNK_STATEMENTLIST));
-        MOZ_ASSERT(body->last()->isKind(PNK_LEXICALSCOPE) || body->last()->isKind(PNK_FOR));
+        MOZ_ASSERT(body->last()->isKind(PNK_LEXICALSCOPE) ||
+                   body->last()->isKind(PNK_COMPREHENSIONFOR));
         return body->last();
     }
 #endif
