@@ -899,7 +899,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     
     
-    if (asyncClip && !metrics.UsesContainerScrolling()) {
+    if (asyncClip && !scrollMetadata.UsesContainerScrolling()) {
       MOZ_ASSERT(asyncTransform.Is2D());
       asyncClip = Some(TransformBy(asyncTransform, *asyncClip));
     }

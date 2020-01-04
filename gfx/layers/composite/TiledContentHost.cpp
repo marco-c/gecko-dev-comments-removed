@@ -485,7 +485,7 @@ TiledContentHost::Composite(LayerComposite* aLayer,
     
     for (LayerMetricsWrapper ancestor(GetLayer(), LayerMetricsWrapper::StartAt::BOTTOM); ancestor; ancestor = ancestor.GetParent()) {
       if (ancestor.Metrics().IsScrollable()) {
-        backgroundColor = ancestor.Metrics().GetBackgroundColor();
+        backgroundColor = ancestor.Metadata().GetBackgroundColor();
         break;
       }
     }

@@ -314,7 +314,7 @@ public:
 
 
 
-  bool HasScrollgrab() const { return mFrameMetrics.GetHasScrollgrab(); }
+  bool HasScrollgrab() const { return mScrollMetadata.GetHasScrollgrab(); }
 
   
 
@@ -666,7 +666,8 @@ private:
   
   
   
-  FrameMetrics mLastContentPaintMetrics;
+  ScrollMetadata mLastContentPaintMetadata;
+  FrameMetrics& mLastContentPaintMetrics;  
   
   FrameMetrics mLastPaintRequestMetrics;
   
@@ -919,7 +920,7 @@ public:
 
   bool IsRootForLayersId() const {
     ReentrantMonitorAutoEnter lock(mMonitor);
-    return mFrameMetrics.IsLayersIdRoot();
+    return mScrollMetadata.IsLayersIdRoot();
   }
 
   bool IsRootContent() const {
@@ -940,7 +941,7 @@ private:
 
 public:
   FrameMetrics::ViewID GetScrollHandoffParentId() const {
-    return mFrameMetrics.GetScrollParentId();
+    return mScrollMetadata.GetScrollParentId();
   }
 
   

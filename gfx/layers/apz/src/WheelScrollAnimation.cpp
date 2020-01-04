@@ -67,7 +67,7 @@ WheelScrollAnimation::DoSample(FrameMetrics& aFrameMetrics, const TimeDuration& 
   ParentLayerPoint adjustedOffset, overscroll;
   mApzc.mX.AdjustDisplacement(displacement.x, adjustedOffset.x, overscroll.x);
   mApzc.mY.AdjustDisplacement(displacement.y, adjustedOffset.y, overscroll.y,
-                              !aFrameMetrics.AllowVerticalScrollWithWheel());
+                              !mApzc.mScrollMetadata.AllowVerticalScrollWithWheel());
 
   
   

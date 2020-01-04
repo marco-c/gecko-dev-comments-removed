@@ -62,7 +62,6 @@ public:
 
   FrameMetrics()
     : mScrollId(NULL_SCROLL_ID)
-    , mScrollParentId(NULL_SCROLL_ID)
     , mPresShellResolution(1)
     , mCompositionBounds(0, 0, 0, 0)
     , mDisplayPort(0, 0, 0, 0)
@@ -79,21 +78,12 @@ public:
     , mPresShellId(-1)
     , mViewport(0, 0, 0, 0)
     , mExtraResolution()
-    , mBackgroundColor()
-    , mContentDescription()
-    , mLineScrollAmount(0, 0)
-    , mPageScrollAmount(0, 0)
     , mPaintRequestTime()
     , mScrollUpdateType(eNone)
     , mIsRootContent(false)
-    , mHasScrollgrab(false)
     , mDoSmoothScroll(false)
     , mUseDisplayPortMargins(false)
-    , mAllowVerticalScrollWithWheel(false)
-    , mIsLayersIdRoot(false)
-    , mUsesContainerScrolling(false)
     , mIsScrollInfoLayer(false)
-    , mForceDisableApz(false)
   {
   }
 
@@ -103,7 +93,6 @@ public:
   {
     
     return mScrollId == aOther.mScrollId &&
-           mScrollParentId == aOther.mScrollParentId &&
            mPresShellResolution == aOther.mPresShellResolution &&
            mCompositionBounds.IsEqualEdges(aOther.mCompositionBounds) &&
            mDisplayPort.IsEqualEdges(aOther.mDisplayPort) &&
@@ -120,21 +109,12 @@ public:
            mPresShellId == aOther.mPresShellId &&
            mViewport.IsEqualEdges(aOther.mViewport) &&
            mExtraResolution == aOther.mExtraResolution &&
-           mBackgroundColor == aOther.mBackgroundColor &&
-           
-           mLineScrollAmount == aOther.mLineScrollAmount &&
-           mPageScrollAmount == aOther.mPageScrollAmount &&
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mScrollUpdateType == aOther.mScrollUpdateType &&
            mIsRootContent == aOther.mIsRootContent &&
-           mHasScrollgrab == aOther.mHasScrollgrab &&
            mDoSmoothScroll == aOther.mDoSmoothScroll &&
            mUseDisplayPortMargins == aOther.mUseDisplayPortMargins &&
-           mAllowVerticalScrollWithWheel == aOther.mAllowVerticalScrollWithWheel &&
-           mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
-           mUsesContainerScrolling == aOther.mUsesContainerScrolling &&
-           mIsScrollInfoLayer == aOther.mIsScrollInfoLayer &&
-           mForceDisableApz == aOther.mForceDisableApz;
+           mIsScrollInfoLayer == aOther.mIsScrollInfoLayer;
   }
 
   bool operator!=(const FrameMetrics& aOther) const
@@ -260,16 +240,6 @@ public:
     mScrollUpdateType = ePending;
   }
 
-  
-  
-  
-  FrameMetrics MakePODObject() const
-  {
-    FrameMetrics copy = *this;
-    copy.mContentDescription.Truncate();
-    return copy;
-  }
-
 public:
   void SetPresShellResolution(float aPresShellResolution)
   {
@@ -339,16 +309,6 @@ public:
   bool IsRootContent() const
   {
     return mIsRootContent;
-  }
-
-  void SetHasScrollgrab(bool aHasScrollgrab)
-  {
-    mHasScrollgrab = aHasScrollgrab;
-  }
-
-  bool GetHasScrollgrab() const
-  {
-    return mHasScrollgrab;
   }
 
   void SetScrollOffset(const CSSPoint& aScrollOffset)
@@ -423,16 +383,6 @@ public:
     mScrollId = scrollId;
   }
 
-  ViewID GetScrollParentId() const
-  {
-    return mScrollParentId;
-  }
-
-  void SetScrollParentId(ViewID aParentId)
-  {
-    mScrollParentId = aParentId;
-  }
-
   void SetRootCompositionSize(const CSSSize& aRootCompositionSize)
   {
     mRootCompositionSize = aRootCompositionSize;
@@ -493,46 +443,6 @@ public:
     return mExtraResolution;
   }
 
-  const gfx::Color& GetBackgroundColor() const
-  {
-    return mBackgroundColor;
-  }
-
-  void SetBackgroundColor(const gfx::Color& aBackgroundColor)
-  {
-    mBackgroundColor = aBackgroundColor;
-  }
-
-  const nsCString& GetContentDescription() const
-  {
-    return mContentDescription;
-  }
-
-  void SetContentDescription(const nsCString& aContentDescription)
-  {
-    mContentDescription = aContentDescription;
-  }
-
-  const LayoutDeviceIntSize& GetLineScrollAmount() const
-  {
-    return mLineScrollAmount;
-  }
-
-  void SetLineScrollAmount(const LayoutDeviceIntSize& size)
-  {
-    mLineScrollAmount = size;
-  }
-
-  const LayoutDeviceIntSize& GetPageScrollAmount() const
-  {
-    return mPageScrollAmount;
-  }
-
-  void SetPageScrollAmount(const LayoutDeviceIntSize& size)
-  {
-    mPageScrollAmount = size;
-  }
-
   const CSSRect& GetScrollableRect() const
   {
     return mScrollableRect;
@@ -543,35 +453,11 @@ public:
     mScrollableRect = aScrollableRect;
   }
 
-  bool AllowVerticalScrollWithWheel() const
-  {
-    return mAllowVerticalScrollWithWheel;
-  }
-
-  void SetAllowVerticalScrollWithWheel(bool aValue)
-  {
-    mAllowVerticalScrollWithWheel = aValue;
-  }
-
   void SetPaintRequestTime(const TimeStamp& aTime) {
     mPaintRequestTime = aTime;
   }
   const TimeStamp& GetPaintRequestTime() const {
     return mPaintRequestTime;
-  }
-
-  void SetIsLayersIdRoot(bool aValue) {
-    mIsLayersIdRoot = aValue;
-  }
-  bool IsLayersIdRoot() const {
-    return mIsLayersIdRoot;
-  }
-
-  
-  
-  void SetUsesContainerScrolling(bool aValue);
-  bool UsesContainerScrolling() const {
-    return mUsesContainerScrolling;
   }
 
   void SetIsScrollInfoLayer(bool aIsScrollInfoLayer) {
@@ -581,19 +467,9 @@ public:
     return mIsScrollInfoLayer;
   }
 
-  void SetForceDisableApz(bool aForceDisable) {
-    mForceDisableApz = aForceDisable;
-  }
-  bool IsApzForceDisabled() const {
-    return mForceDisableApz;
-  }
-
 private:
   
   ViewID mScrollId;
-
-  
-  ViewID mScrollParentId;
 
   
   
@@ -728,20 +604,6 @@ private:
   ScreenToLayerScale2D mExtraResolution;
 
   
-  gfx::Color mBackgroundColor;
-
-  
-  
-  
-  nsCString mContentDescription;
-
-  
-  LayoutDeviceIntSize mLineScrollAmount;
-
-  
-  LayoutDeviceIntSize mPageScrollAmount;
-
-  
   TimeStamp mPaintRequestTime;
 
   
@@ -752,9 +614,6 @@ private:
   bool mIsRootContent:1;
 
   
-  bool mHasScrollgrab:1;
-
-  
   
   bool mDoSmoothScroll:1;
 
@@ -763,23 +622,10 @@ private:
   bool mUseDisplayPortMargins:1;
 
   
-  bool mAllowVerticalScrollWithWheel:1;
-
-  
-  
-  bool mIsLayersIdRoot:1;
-
-  
-  
-  bool mUsesContainerScrolling:1;
-
-  
   bool mIsScrollInfoLayer:1;
 
   
   
-  bool mForceDisableApz:1;
-
   
   
   
@@ -789,7 +635,9 @@ private:
   
   
   
-
+  
+  
+  
 
   
   void SetDoSmoothScroll(bool aValue) {
@@ -840,22 +688,44 @@ struct ScrollSnapInfo {
 
 struct ScrollMetadata {
   friend struct IPC::ParamTraits<mozilla::layers::ScrollMetadata>;
+
+  typedef FrameMetrics::ViewID ViewID;
 public:
   static StaticAutoPtr<const ScrollMetadata> sNullMetadata;   
 
   ScrollMetadata()
     : mMetrics()
     , mSnapInfo()
+    , mScrollParentId(FrameMetrics::NULL_SCROLL_ID)
+    , mBackgroundColor()
+    , mContentDescription()
+    , mLineScrollAmount(0, 0)
+    , mPageScrollAmount(0, 0)
     , mMaskLayerIndex()
     , mClipRect()
+    , mHasScrollgrab(false)
+    , mAllowVerticalScrollWithWheel(false)
+    , mIsLayersIdRoot(false)
+    , mUsesContainerScrolling(false)
+    , mForceDisableApz(false)
   {}
 
   bool operator==(const ScrollMetadata& aOther) const
   {
     return mMetrics == aOther.mMetrics &&
            mSnapInfo == aOther.mSnapInfo &&
+           mScrollParentId == aOther.mScrollParentId &&
+           mBackgroundColor == aOther.mBackgroundColor &&
+           
+           mLineScrollAmount == aOther.mLineScrollAmount &&
+           mPageScrollAmount == aOther.mPageScrollAmount &&
            mMaskLayerIndex == aOther.mMaskLayerIndex &&
-           mClipRect == aOther.mClipRect;
+           mClipRect == aOther.mClipRect &&
+           mHasScrollgrab == aOther.mHasScrollgrab &&
+           mAllowVerticalScrollWithWheel == aOther.mAllowVerticalScrollWithWheel &&
+           mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
+           mUsesContainerScrolling == aOther.mUsesContainerScrolling &&
+           mForceDisableApz == aOther.mForceDisableApz;
   }
 
   bool operator!=(const ScrollMetadata& aOther) const
@@ -879,6 +749,37 @@ public:
   }
   const ScrollSnapInfo& GetSnapInfo() const { return mSnapInfo; }
 
+  ViewID GetScrollParentId() const {
+    return mScrollParentId;
+  }
+
+  void SetScrollParentId(ViewID aParentId) {
+    mScrollParentId = aParentId;
+  }
+  const gfx::Color& GetBackgroundColor() const {
+    return mBackgroundColor;
+  }
+  void SetBackgroundColor(const gfx::Color& aBackgroundColor) {
+    mBackgroundColor = aBackgroundColor;
+  }
+  const nsCString& GetContentDescription() const {
+    return mContentDescription;
+  }
+  void SetContentDescription(const nsCString& aContentDescription) {
+    mContentDescription = aContentDescription;
+  }
+  const LayoutDeviceIntSize& GetLineScrollAmount() const {
+    return mLineScrollAmount;
+  }
+  void SetLineScrollAmount(const LayoutDeviceIntSize& size) {
+    mLineScrollAmount = size;
+  }
+  const LayoutDeviceIntSize& GetPageScrollAmount() const {
+    return mPageScrollAmount;
+  }
+  void SetPageScrollAmount(const LayoutDeviceIntSize& size) {
+    mPageScrollAmount = size;
+  }
   void SetMaskLayerIndex(const Maybe<size_t>& aIndex) {
     mMaskLayerIndex = aIndex;
   }
@@ -900,11 +801,60 @@ public:
   const ParentLayerIntRect& ClipRect() const {
     return mClipRect.ref();
   }
+
+  void SetHasScrollgrab(bool aHasScrollgrab) {
+    mHasScrollgrab = aHasScrollgrab;
+  }
+  bool GetHasScrollgrab() const {
+    return mHasScrollgrab;
+  }
+  bool AllowVerticalScrollWithWheel() const {
+    return mAllowVerticalScrollWithWheel;
+  }
+  void SetAllowVerticalScrollWithWheel(bool aValue) {
+    mAllowVerticalScrollWithWheel = aValue;
+  }
+  void SetIsLayersIdRoot(bool aValue) {
+    mIsLayersIdRoot = aValue;
+  }
+  bool IsLayersIdRoot() const {
+    return mIsLayersIdRoot;
+  }
+  
+  
+  void SetUsesContainerScrolling(bool aValue);
+  bool UsesContainerScrolling() const {
+    return mUsesContainerScrolling;
+  }
+  void SetForceDisableApz(bool aForceDisable) {
+    mForceDisableApz = aForceDisable;
+  }
+  bool IsApzForceDisabled() const {
+    return mForceDisableApz;
+  }
+
 private:
   FrameMetrics mMetrics;
 
   
   ScrollSnapInfo mSnapInfo;
+
+  
+  ViewID mScrollParentId;
+
+  
+  gfx::Color mBackgroundColor;
+
+  
+  
+  
+  nsCString mContentDescription;
+
+  
+  LayoutDeviceIntSize mLineScrollAmount;
+
+  
+  LayoutDeviceIntSize mPageScrollAmount;
 
   
   
@@ -913,6 +863,34 @@ private:
 
   
   Maybe<ParentLayerIntRect> mClipRect;
+
+  
+  bool mHasScrollgrab:1;
+
+  
+  bool mAllowVerticalScrollWithWheel:1;
+
+  
+  
+  bool mIsLayersIdRoot:1;
+
+  
+  
+  bool mUsesContainerScrolling:1;
+
+  
+  
+  bool mForceDisableApz:1;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
 };
 
 
