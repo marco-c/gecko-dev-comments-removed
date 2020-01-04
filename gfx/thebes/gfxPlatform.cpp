@@ -2270,20 +2270,19 @@ gfxPlatform::IsInLayoutAsapMode()
   
   
   
-  return Preferences::GetInt("layout.frame_rate", -1) == 0;
+  return gfxPrefs::LayoutFrameRate() == 0;
 }
 
  bool
 gfxPlatform::ForceSoftwareVsync()
 {
-  return Preferences::GetInt("layout.frame_rate", -1) > 0;
+  return gfxPrefs::LayoutFrameRate() > 0;
 }
 
  int
 gfxPlatform::GetSoftwareVsyncRate()
 {
-  int preferenceRate = Preferences::GetInt("layout.frame_rate",
-                                           gfxPlatform::GetDefaultFrameRate());
+  int preferenceRate = gfxPrefs::LayoutFrameRate();
   if (preferenceRate <= 0) {
     return gfxPlatform::GetDefaultFrameRate();
   }
