@@ -251,7 +251,7 @@ protected:
   static void MarkContextAsKeyboardDisabled(ITfContext* aContext);
   static void MarkContextAsEmpty(ITfContext* aContext);
 
-  bool     Init(nsWindowBase* aWidget, const InputContext& aContext);
+  bool     Init(nsWindowBase* aWidget);
   void     Destroy();
   void     ReleaseTSFObjects();
 
@@ -866,7 +866,7 @@ protected:
     DWORD Cookie() const { return mCookie; }
     bool OnMouseButtonEvent(ULONG aEdge, ULONG aQuadrant, DWORD aButtonStatus);
     LONG RangeStart() const { return mStart; }
-  
+
   private:
     RefPtr<ITfMouseSink> mSink;
     LONG mStart;

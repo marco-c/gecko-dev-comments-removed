@@ -22,7 +22,7 @@ EXTERN_C const IID IID_IDataObjCollection;
 
 class nsIDataObjCollection : public IUnknown {
 public:
-  
+
 };
 
 
@@ -30,7 +30,7 @@ public:
 
 
 
- 
+
 class nsDataObjCollection final : public nsIDataObjCollection, public nsDataObj
 {
   public:

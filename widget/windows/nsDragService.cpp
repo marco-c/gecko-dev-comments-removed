@@ -73,7 +73,7 @@ nsDragService::CreateDragImage(nsIDOMNode *aDOMNode,
     return false;
 
   memset(psdi, 0, sizeof(SHDRAGIMAGE));
-  if (!aDOMNode) 
+  if (!aDOMNode)
     return false;
 
   
@@ -137,7 +137,7 @@ nsDragService::CreateDragImage(nsIDOMNode *aDOMNode,
   HDC hdcSrc = CreateCompatibleDC(nullptr);
   void *lpBits = nullptr;
   if (hdcSrc) {
-    psdi->hbmpDragImage = 
+    psdi->hbmpDragImage =
     ::CreateDIBSection(hdcSrc, (BITMAPINFO*)&bmih, DIB_RGB_COLORS,
                        (void**)&lpBits, nullptr, 0);
     if (psdi->hbmpDragImage && lpBits) {
@@ -309,7 +309,7 @@ nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
         dropResult = DRAGDROP_ACTION_MOVE;
     else
         dropResult = DRAGDROP_ACTION_NONE;
-    
+
     if (mDataTransfer) {
       if (res == DRAGDROP_S_DROP) 
         mDataTransfer->SetDropEffectInt(dropResult);

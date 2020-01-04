@@ -201,7 +201,7 @@ AudioSession::Start()
     MOZ_ASSERT(XRE_IsParentProcess(),
                "Should only get here in a chrome process!");
 
-    nsCOMPtr<nsIStringBundleService> bundleService = 
+    nsCOMPtr<nsIStringBundleService> bundleService =
       do_GetService(NS_STRINGBUNDLE_CONTRACTID);
     NS_ENSURE_TRUE(bundleService, NS_ERROR_FAILURE);
     nsCOMPtr<nsIStringBundle> bundle;

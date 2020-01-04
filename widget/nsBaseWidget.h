@@ -326,7 +326,7 @@ public:
   
   bool IsPopupWithTitleBar() const
   {
-    return (mWindowType == eWindowType_popup && 
+    return (mWindowType == eWindowType_popup &&
             mBorderStyle != eBorderStyle_default &&
             mBorderStyle & eBorderStyle_title);
   }
