@@ -93,3 +93,57 @@ function checkEchoedAuthInfo(expectedState, doc) {
     is(username, expectedState.user, "Checking for echoed username");
     is(password, expectedState.pass, "Checking for echoed password");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+function PrompterProxy(chromeScript) {
+  return new Proxy({}, {
+    get(target, prop, receiver) {
+      return (...args) => {
+        
+        let outParams = [];
+
+        switch (prop) {
+          case "prompt": {
+            outParams = [ 5];
+            break;
+          }
+          case "promptPassword": {
+            outParams = [ 4];
+            break;
+          }
+          case "promptUsernameAndPassword": {
+            outParams = [ 4,  5];
+            break;
+          }
+          default: {
+            throw new Error("Unknown nsIAuthPrompt method");
+            break;
+          }
+        }
+
+        let result = chromeScript.sendSyncMessage("proxyPrompter", {
+          args,
+          methodName: prop,
+        })[0][0];
+
+        for (let outParam of outParams) {
+          
+          args[outParam].value = result.args[outParam].value;
+        }
+
+        return result.rv;
+      };
+    },
+  });
+}
