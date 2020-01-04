@@ -31,6 +31,9 @@ Object.defineProperty(this, "EVENTS", {
 var React = require("devtools/client/shared/vendor/react");
 var ReactDOM = require("devtools/client/shared/vendor/react-dom");
 var JITOptimizationsView = React.createFactory(require("devtools/client/performance/components/jit-optimizations"));
+var RecordingControls = React.createFactory(require("devtools/client/performance/components/recording-controls"));
+var RecordingButton = React.createFactory(require("devtools/client/performance/components/recording-button"));
+
 var Services = require("Services");
 var promise = require("promise");
 var EventEmitter = require("devtools/shared/event-emitter");
@@ -42,10 +45,12 @@ var system = require("devtools/shared/system");
 
 
 
+
 var { L10N } = require("devtools/client/performance/modules/global");
 var { PerformanceTelemetry } = require("devtools/client/performance/modules/logic/telemetry");
 var { TIMELINE_BLUEPRINT } = require("devtools/client/performance/modules/markers");
 var RecordingUtils = require("devtools/shared/performance/recording-utils");
+var PerformanceUtils = require("devtools/client/performance/modules/utils");
 var { OptimizationsGraph, GraphsController } = require("devtools/client/performance/modules/widgets/graphs");
 var { WaterfallHeader } = require("devtools/client/performance/modules/widgets/waterfall-ticks");
 var { MarkerView } = require("devtools/client/performance/modules/widgets/marker-view");

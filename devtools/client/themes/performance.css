@@ -32,6 +32,14 @@
 
 
 
+.performance-tool {
+  --sidebar-width: 185px;
+}
+
+
+
+
+
 .hidden {
   display: none;
   width: 0px;
@@ -84,12 +92,16 @@
 
 
 
-#main-record-button {
-  list-style-image: url(images/profiler-stopwatch.svg);
+#clear-button::before {
+  background-image: var(--clear-icon-url);
 }
 
-#import-button {
-  list-style-image: url(images/import.svg);
+#main-record-button::before {
+  background-image: url(images/profiler-stopwatch.svg);
+}
+
+#import-button::before {
+  background-image: url(images/import.svg);
 }
 
 #main-record-button .button-icon, #import-button .button-icon {
@@ -119,6 +131,22 @@
 
 #recordings-pane {
   border-inline-end: 1px solid var(--theme-splitter-color);
+  width: var(--sidebar-width);
+}
+
+#recording-controls-mount {
+  width: var(--sidebar-width);
+}
+
+#recording-controls-mount > div {
+  width: var(--sidebar-width);
+}
+
+
+
+
+#recordings-pane .devtools-toolbar {
+  line-height: 0;
 }
 
 #recordings-list {
