@@ -1,7 +1,5 @@
 load(libdir + "wasm.js");
 
-quit(); 
-
 if (!wasmIsSupported())
     quit();
 
@@ -11,18 +9,6 @@ function mismatchError(actual, expect) {
 }
 
 function testLoad(type, ext, base, offset, align, expect) {
-    print('(module' +
-    '  (memory 0x10000' +
-    '    (segment 0 "\\00\\01\\02\\03\\04\\05\\06\\07\\08\\09\\0a\\0b\\0c\\0d\\0e\\0f")' +
-    '    (segment 16 "\\f0\\f1\\f2\\f3\\f4\\f5\\f6\\f7\\f8\\f9\\fa\\fb\\fc\\fd\\fe\\ff")' +
-    '  )' +
-    '  (func (param i32) (result ' + type + ')' +
-    '    (' + type + '.load' + ext +
-    '     offset=' + offset +
-    '     ' + (align != 0 ? 'align=' + align : '') +
-    '     (get_local 0)' +
-    '    )' +
-    '  ) (export "" 0))');
   assertEq(wasmEvalText(
     '(module' +
     '  (memory 0x10000' +
@@ -42,7 +28,7 @@ function testLoad(type, ext, base, offset, align, expect) {
 function testStore(type, ext, base, offset, align, value) {
   assertEq(wasmEvalText(
     '(module' +
-    '  (memory 0x10000)' +
+    '  (memory 0x10000' +
     '    (segment 0 "\\00\\01\\02\\03\\04\\05\\06\\07\\08\\09\\0a\\0b\\0c\\0d\\0e\\0f")' +
     '    (segment 16 "\\f0\\f1\\f2\\f3\\f4\\f5\\f6\\f7\\f8\\f9\\fa\\fb\\fc\\fd\\fe\\ff")' +
     '  )' +
@@ -57,53 +43,83 @@ function testStore(type, ext, base, offset, align, value) {
   )(base, value), value);
 }
 
-function testConstError(type, str) {
-  
-  assertErrorMessage(() => wasmEvalText('(module (func (result ' + type + ') (' + type + '.const ' + str + ')) (export "" 0))')(), Error, /out of memory/);
+function testLoadError(type, ext, base, offset, align, errorMsg) {
+  assertErrorMessage(() => wasmEvalText(
+    '(module' +
+    '  (memory 0x10000' +
+    '    (segment 0 "\\00\\01\\02\\03\\04\\05\\06\\07\\08\\09\\0a\\0b\\0c\\0d\\0e\\0f")' +
+    '    (segment 16 "\\f0\\f1\\f2\\f3\\f4\\f5\\f6\\f7\\f8\\f9\\fa\\fb\\fc\\fd\\fe\\ff")' +
+    '  )' +
+    '  (func (param i32) (result ' + type + ')' +
+    '    (' + type + '.load' + ext +
+    '     offset=' + offset +
+    '     ' + (align != 0 ? 'align=' + align : '') +
+    '     (get_local 0)' +
+    '    )' +
+    '  ) (export "" 0))'
+  ), Error, errorMsg);
 }
 
-testLoad('i32', '', 0, 0, 0, 0x00010203);
-testLoad('i32', '', 1, 0, 0, 0x01020304);
+function testStoreError(type, ext, base, offset, align, errorMsg) {
+  assertErrorMessage(() => wasmEvalText(
+    '(module' +
+    '  (memory 0x10000' +
+    '    (segment 0 "\\00\\01\\02\\03\\04\\05\\06\\07\\08\\09\\0a\\0b\\0c\\0d\\0e\\0f")' +
+    '    (segment 16 "\\f0\\f1\\f2\\f3\\f4\\f5\\f6\\f7\\f8\\f9\\fa\\fb\\fc\\fd\\fe\\ff")' +
+    '  )' +
+    '  (func (param i32) (param ' + type + ') (result ' + type + ')' +
+    '    (' + type + '.store' + ext +
+    '     offset=' + offset +
+    '     ' + (align != 0 ? 'align=' + align : '') +
+    '     (get_local 0)' +
+    '     (get_local 1)' +
+    '    )' +
+    '  ) (export "" 0))'
+  ), Error, errorMsg);
+}
+
+testLoad('i32', '', 0, 0, 0, 0x03020100);
 
 
 
 
 
 
-testLoad('f32', '', 0, 0, 0, 0x00010203);
-testLoad('f32', '', 1, 0, 0, 0x01020304);
 
-
-testLoad('f64', '', 0, 0, 0, 0x00010203);
-testLoad('f64', '', 1, 0, 0, 0x01020304);
+testLoad('f32', '', 0, 0, 0, 3.820471434542632e-37);
 
 
 
-testLoad('i32', '8_s', 16, 0, 0, -0x8);
-testLoad('i32', '8_u', 16, 0, 0, 0x8);
-testLoad('i32', '16_s', 16, 0, 0, -0x707);
-testLoad('i32', '16_u', 16, 0, 0, 0x8f9);
-testLoad('i64', '8_s', 16, 0, 0, -0x8);
-testLoad('i64', '8_u', 16, 0, 0, 0x8);
+testLoad('f64', '', 0, 0, 0, 7.949928895127363e-275);
 
 
 
 
-
-testStore('i32', '', 0, 0, 0, 0xc0c1d3d4);
-testStore('i32', '', 1, 0, 0, 0xc0c1d3d4);
+testLoad('i32', '8_s', 16, 0, 0, -0x10);
+testLoad('i32', '8_u', 16, 0, 0, 0xf0);
+testLoad('i32', '16_s', 16, 0, 0, -0xe10);
+testLoad('i32', '16_u', 16, 0, 0, 0xf1f0);
 
 
 
 
 
 
-testStore('f32', '', 0, 0, 0, 0.01234567);
-testStore('f32', '', 1, 0, 0, 0.01234567);
+
+testStore('i32', '', 0, 0, 0, -0x3f3e2c2c);
+
+
+
+
+
+
+
+testStore('f32', '', 0, 0, 0, 0.01234566979110241);
+
 
 
 testStore('f64', '', 0, 0, 0, 0.89012345);
-testStore('f64', '', 1, 0, 0, 0.89012345);
+
 
 
 
@@ -112,3 +128,6 @@ testStore('i32', '16', 0, 0, 0, 0x2345);
 
 
 
+
+testLoadError('i32', '', 0, 0, 3, /memory access alignment must be a power of two/);
+testStoreError('i32', '', 0, 0, 3, /memory access alignment must be a power of two/);
