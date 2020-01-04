@@ -69,6 +69,13 @@ this.ExtensionStorage = {
 
 
 
+
+
+
+
+
+
+
   sanitize(value, global) {
     
     

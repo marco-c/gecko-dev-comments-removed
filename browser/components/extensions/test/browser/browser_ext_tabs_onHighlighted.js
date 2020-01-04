@@ -37,6 +37,10 @@ add_task(function* testTabEvents() {
 
 
 
+
+
+
+
     function expectEvents(tabId, expectedEvents) {
       browser.test.log(`Expecting events: ${expectedEvents.join(", ")}`);
 
@@ -56,6 +60,9 @@ add_task(function* testTabEvents() {
     
 
 
+
+
+
     function openTab(windowId) {
       return browser.tabs.create({windowId}).then(tab => {
         tabIds.push(tab.id);
@@ -68,6 +75,9 @@ add_task(function* testTabEvents() {
     }
 
     
+
+
+
 
 
     function highlightTab(tabId) {

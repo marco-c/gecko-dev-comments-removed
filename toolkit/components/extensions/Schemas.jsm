@@ -146,6 +146,9 @@ class Context {
 
 
 
+
+
+
   error(message) {
     if (this.currentTarget) {
       return {error: `Error processing ${this.currentTarget}: ${message}`};
@@ -154,6 +157,9 @@ class Context {
   }
 
   
+
+
+
 
 
 
@@ -170,6 +176,8 @@ class Context {
   }
 
   
+
+
 
 
 
@@ -192,6 +200,10 @@ class Context {
   }
 
   
+
+
+
+
 
 
 
@@ -313,10 +325,15 @@ class Entry {
 
 
 
+
     this.preprocessor = schema.preprocess || null;
   }
 
   
+
+
+
+
 
 
 
@@ -328,6 +345,9 @@ class Entry {
   }
 
   
+
+
+
 
 
 
@@ -349,6 +369,9 @@ class Entry {
   }
 
   
+
+
+
 
 
 

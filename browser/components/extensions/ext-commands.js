@@ -67,6 +67,8 @@ CommandList.prototype = {
 
 
 
+
+
   loadCommandsFromManifest(manifest) {
     let commands = new Map();
     
@@ -134,7 +136,6 @@ CommandList.prototype = {
   },
 
   
-
 
 
 

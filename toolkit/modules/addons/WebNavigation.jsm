@@ -94,9 +94,13 @@ var Manager = {
 
 
 
+
+
+
+
   observe: function(subject, topic, data) {
     if (topic == "autocomplete-did-enter-text") {
-      this.onURLBarAutoCompletion(subject, topic, data);
+      this.onURLBarAutoCompletion(subject);
     }
   },
 
@@ -105,15 +109,17 @@ var Manager = {
 
 
 
-  onURLBarAutoCompletion(subject, topic, data) {
-    if (subject && subject instanceof Ci.nsIAutoCompleteInput) {
+
+
+  onURLBarAutoCompletion(input) {
+    if (input && input instanceof Ci.nsIAutoCompleteInput) {
       
-      if (subject.id !== "urlbar") {
+      if (input.id !== "urlbar") {
         return;
       }
 
-      let controller = subject.popup.view.QueryInterface(Ci.nsIAutoCompleteController);
-      let idx = subject.popup.selectedIndex;
+      let controller = input.popup.view.QueryInterface(Ci.nsIAutoCompleteController);
+      let idx = input.popup.selectedIndex;
 
       let tabTransistionData = {
         from_address_bar: true,
@@ -124,7 +130,7 @@ var Manager = {
         tabTransistionData.typed = true;
       } else {
         let value = controller.getValueAt(idx);
-        let action = subject._parseActionUrl(value);
+        let action = input._parseActionUrl(value);
 
         if (action) {
           
@@ -177,6 +183,14 @@ var Manager = {
 
 
 
+
+
+
+
+
+
+
+
   setRecentTabTransitionData(tabTransitionData) {
     let window = RecentWindow.getMostRecentBrowserWindow();
     if (window && window.gBrowser && window.gBrowser.selectedTab &&
@@ -196,6 +210,9 @@ var Manager = {
   },
 
   
+
+
+
 
 
 

@@ -139,6 +139,7 @@ class FilteringMessageManager {
 
 
 
+
   constructor(messageName, callback, messageManager) {
     this.messageName = messageName;
     this.callback = callback;
@@ -436,7 +437,6 @@ this.MessageChannel = {
 
 
 
-
   removeListener(targets, messageName, handler) {
     for (let target of [].concat(targets)) {
       if (this.messageManagers.has(target)) {
@@ -561,6 +561,10 @@ this.MessageChannel = {
 
 
 
+
+
+
+
   _handleMessage(handlers, data) {
     
     
@@ -623,6 +627,10 @@ this.MessageChannel = {
 
 
 
+
+
+
+
   _handleResponse(handlers, data) {
     
     
@@ -638,6 +646,8 @@ this.MessageChannel = {
   },
 
   
+
+
 
 
 

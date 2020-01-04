@@ -1079,6 +1079,10 @@ this.Extension = function(addonData) {
 
 
 
+
+
+
+
 this.Extension.generateXPI = function(id, data) {
   let manifest = data.manifest;
   if (!manifest) {
@@ -1172,6 +1176,10 @@ this.Extension.generateXPI = function(id, data) {
 
 
 
+
+
+
+
 function MockExtension(id, file, rootURI) {
   this.id = id;
   this.file = file;
@@ -1225,6 +1233,10 @@ MockExtension.prototype = {
     return OS.File.remove(this.file.path);
   },
 };
+
+
+
+
 
 
 

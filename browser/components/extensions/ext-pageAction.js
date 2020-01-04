@@ -135,6 +135,8 @@ PageAction.prototype = {
 
 
 
+
+
   triggerAction(window) {
     let pageAction = pageActionMap.get(this.extension);
     if (pageAction.getProperty(window.gBrowser.selectedTab, "show")) {
