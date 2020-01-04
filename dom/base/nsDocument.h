@@ -1771,6 +1771,9 @@ private:
   void MaybeRescheduleAnimationFrameNotifications();
 
   
+  bool IsAboutPage();
+
+  
   nsDocument(const nsDocument& aOther);
   nsDocument& operator=(const nsDocument& aOther);
 
