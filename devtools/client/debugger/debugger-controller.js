@@ -706,7 +706,10 @@ StackFrames.prototype = {
     }
 
     this.activeThread.fillFrames(CALL_STACK_PAGE_SIZE);
-    DebuggerView.editor.focus();
+    
+    if (!DebuggerController._toolbox.isSplitConsoleFocused()) {
+      DebuggerView.editor.focus();
+    }
   },
 
   

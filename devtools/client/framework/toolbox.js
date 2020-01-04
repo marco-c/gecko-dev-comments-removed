@@ -328,6 +328,17 @@ Toolbox.prototype = {
   get splitConsole() {
     return this._splitConsole;
   },
+  
+
+
+  isSplitConsoleFocused: function() {
+    if (!this._splitConsole) {
+      return false;
+    }
+    let focusedWin = Services.focus.focusedWindow;
+    return focusedWin && focusedWin ===
+      this.doc.querySelector("#toolbox-panel-iframe-webconsole").contentWindow;
+  },
 
   
 
@@ -482,6 +493,28 @@ Toolbox.prototype = {
         e.preventDefault();
       }
     }
+  },
+  
+
+
+
+
+
+
+
+
+
+  useKeyWithSplitConsole: function(keyElement, whichTool) {
+    let cloned = keyElement.cloneNode();
+    cloned.setAttribute("oncommand", "void(0)");
+    cloned.removeAttribute("command");
+    cloned.addEventListener("command", (e) => {
+      
+      if (this.currentToolId === whichTool && this.isSplitConsoleFocused()) {
+        keyElement.doCommand();
+      }
+    }, true);
+    this.doc.getElementById("toolbox-keyset").appendChild(cloned);
   },
 
   _addReloadKeys: function() {
