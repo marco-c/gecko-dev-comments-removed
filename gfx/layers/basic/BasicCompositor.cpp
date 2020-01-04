@@ -706,6 +706,7 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
     
     
     mDrawTarget = mTarget;
+    bufferMode = BufferMode::BUFFER_NONE;
   } else {
     
     mDrawTarget = mWidget->StartRemoteDrawingInRegion(mInvalidRegion, &bufferMode);
@@ -795,7 +796,7 @@ BasicCompositor::EndFrame()
   
   mRenderTarget->mDrawTarget->PopClip();
 
-  if (mTarget || mRenderTarget->mDrawTarget != mDrawTarget) {
+  if (mRenderTarget->mDrawTarget != mDrawTarget) {
     
     
     RefPtr<SourceSurface> source;

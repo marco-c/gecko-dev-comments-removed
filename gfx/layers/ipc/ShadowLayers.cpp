@@ -1031,13 +1031,7 @@ ShadowLayerForwarder::AllocSurfaceDescriptorWithCaps(const gfx::IntSize& aSize,
       return false;
     }
     GfxMemoryImageReporter::DidAlloc(data);
-#ifdef XP_MACOSX
-    
-    
-    if (format == gfx::SurfaceFormat::A8) {
-      memset(data, 0, size);
-    }
-#endif
+    memset(data, 0, size);
     bufferDesc = reinterpret_cast<uintptr_t>(data);
   } else {
 
