@@ -6933,8 +6933,8 @@ var gIdentityHandler = {
 
     
     
-    let whitelist = /^about:(accounts|addons|app-manager|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|sessionrestore|support|welcomeback)/i;
-    let isChromeUI = uri.schemeIs("about") && whitelist.test(uri.spec);
+    let whitelist = /^(?:accounts|addons|app-manager|cache|config|crashes|customizing|downloads|healthreport|home|license|newaddon|permissions|preferences|privatebrowsing|rights|sessionrestore|support|welcomeback)(?:[?#]|$)/i;
+    let isChromeUI = uri.schemeIs("about") && whitelist.test(uri.path);
     let mode = this.IDENTITY_MODE_UNKNOWN;
 
     if (isChromeUI) {
@@ -7215,11 +7215,17 @@ var gIdentityHandler = {
     
     
     let chanOptions = {uri, loadUsingSystemPrincipal: true};
-    let resolvedURI = NetUtil.newChannel(chanOptions).URI;
-    if (resolvedURI.schemeIs("jar")) {
+    let resolvedURI;
+    try {
+      resolvedURI = NetUtil.newChannel(chanOptions).URI;
+      if (resolvedURI.schemeIs("jar")) {
+        
+        
+        resolvedURI = NetUtil.newURI(resolvedURI.path);
+      }
+    } catch (ex) {
       
-      
-      resolvedURI = NetUtil.newURI(resolvedURI.path);
+      return false;
     }
 
     
