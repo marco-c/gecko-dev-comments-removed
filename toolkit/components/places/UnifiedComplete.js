@@ -1247,6 +1247,9 @@ Search.prototype = {
             icon = favicon.spec;
           }
         } catch (ex) {} 
+      } else {
+        icon = PlacesUtils.favicons
+                          .getFaviconLinkForIcon(NetUtil.newURI(icon)).spec;
       }
 
       let match = {
@@ -1468,7 +1471,10 @@ Search.prototype = {
     
     match.comment = stripHttpAndTrim(trimmedHost);
     match.finalCompleteValue = untrimmedHost;
-    match.icon = faviconUrl;
+    if (faviconUrl) {
+      match.icon = PlacesUtils.favicons
+                              .getFaviconLinkForIcon(NetUtil.newURI(faviconUrl)).spec;
+    }
     
     
     match.frecency = frecency;
@@ -1507,7 +1513,10 @@ Search.prototype = {
     match.value = this._strippedPrefix + url;
     match.comment = url;
     match.finalCompleteValue = untrimmedURL;
-    match.icon = faviconUrl;
+    if (faviconUrl) {
+      match.icon = PlacesUtils.favicons
+                              .getFaviconLinkForIcon(NetUtil.newURI(faviconUrl)).spec;
+    }
     
     
     match.frecency = frecency;
