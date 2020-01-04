@@ -451,6 +451,13 @@ intrinsic_MakeDefaultConstructor(JSContext* cx, unsigned argc, Value* vp)
 
     ctor->nonLazyScript()->setIsDefaultClassConstructor();
 
+    
+    
+    
+    
+    
+    ctor->clearGuessedAtom();
+
     args.rval().setUndefined();
     return true;
 }
@@ -3055,7 +3062,9 @@ JSRuntime::createLazySelfHostedFunctionClone(JSContext* cx, HandlePropertyName s
     if (!selfHostedFun)
         return false;
 
-    if (!selfHostedFun->hasGuessedAtom() && selfHostedFun->name() != selfHostedName) {
+    if (!selfHostedFun->isClassConstructor() && !selfHostedFun->hasGuessedAtom() &&
+        selfHostedFun->name() != selfHostedName)
+    {
         MOZ_ASSERT(selfHostedFun->getExtendedSlot(HAS_SELFHOSTED_CANONICAL_NAME_SLOT).toBoolean());
         funName = selfHostedFun->name();
     }
