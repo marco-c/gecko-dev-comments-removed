@@ -314,6 +314,9 @@ user_pref("browser.tabs.remote.autostart.2", false);
 user_pref("dom.ipc.tabs.shutdownTimeoutSecs", 0);
 
 
+user_pref("extensions.e10sBlocksEnabling", false);
+
+
 user_pref("browser.reader.detectedFirstArticle", true);
 
 
