@@ -27,6 +27,8 @@ class DrawTarget;
 } 
 namespace widget {
 
+class WinCompositorWidgetProxy;
+
 
 
 
@@ -175,6 +177,10 @@ public:
 
 
   virtual already_AddRefed<CompositorVsyncDispatcher> GetCompositorVsyncDispatcher() = 0;
+
+  virtual WinCompositorWidgetProxy* AsWindowsProxy() {
+    return nullptr;
+  }
 
 protected:
   virtual ~CompositorWidgetProxy();

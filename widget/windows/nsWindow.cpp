@@ -3638,10 +3638,6 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
   RECT windowRect;
   ::GetClientRect(mWnd, &windowRect);
 
-  if (!mCompositorWidgetProxy) {
-    mCompositorWidgetProxy = new WinCompositorWidgetProxy(this);
-  }
-
   
   if (!mLayerManager && ShouldUseOffMainThreadCompositing()) {
     gfxWindowsPlatform::GetPlatform()->UpdateRenderMode();
@@ -3654,6 +3650,13 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
 
   if (!mLayerManager) {
     MOZ_ASSERT(!mCompositorBridgeParent && !mCompositorBridgeChild);
+
+    
+    
+    if (!mCompositorWidgetProxy) {
+      mCompositorWidgetProxy = new WinCompositorWidgetProxy(this);
+    }
+
     mLayerManager = CreateBasicLayerManager();
   }
 
@@ -3718,6 +3721,12 @@ mozilla::widget::CompositorWidgetProxy*
 nsWindow::NewCompositorWidgetProxy()
 {
   return new WinCompositorWidgetProxy(this);
+}
+
+mozilla::widget::WinCompositorWidgetProxy*
+nsWindow::GetCompositorWidgetProxy()
+{
+  return mCompositorWidgetProxy ? mCompositorWidgetProxy->AsWindowsProxy() : nullptr;
 }
 
 already_AddRefed<mozilla::gfx::DrawTarget>
@@ -4973,13 +4982,18 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         
         
         
-        mPresentLock.Enter();
+        RefPtr<WinCompositorWidgetProxy> proxy = GetCompositorWidgetProxy();
+        if (proxy) {
+          proxy->EnterPresentLock();
+        }
         DWORD style = GetWindowLong(mWnd, GWL_STYLE);
         SetWindowLong(mWnd, GWL_STYLE, style & ~WS_VISIBLE);
         *aRetValue = CallWindowProcW(GetPrevWindowProc(), mWnd,
                                      msg, wParam, lParam);
         SetWindowLong(mWnd, GWL_STYLE, style);
-        mPresentLock.Leave();
+        if (proxy) {
+          proxy->LeavePresentLock();
+        }
 
         return true;
       }
@@ -7812,21 +7826,6 @@ void nsWindow::PickerClosed()
   if (!mPickerDisplayCount && mDestroyCalled) {
     Destroy();
   }
-}
-
-bool nsWindow::PreRender(LayerManagerComposite*)
-{
-  
-  
-  
-  
-  mPresentLock.Enter();
-  return true;
-}
-
-void nsWindow::PostRender(LayerManagerComposite*)
-{
-  mPresentLock.Leave();
 }
 
 bool
