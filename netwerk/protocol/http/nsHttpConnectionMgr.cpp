@@ -1748,11 +1748,19 @@ nsHttpConnectionMgr::TryDispatchTransaction(nsConnectionEntry *ent,
     
     
     
-    if (gHttpHandler->UseRequestTokenBucket() &&
-        (mNumActiveConns >= mNumSpdyActiveConns) && 
-        ((mNumActiveConns - mNumSpdyActiveConns) >= gHttpHandler->RequestTokenBucketMinParallelism()) &&
-        !(caps & (NS_HTTP_LOAD_AS_BLOCKING | NS_HTTP_LOAD_UNBLOCKED))) {
-        if (!trans->TryToRunPacedRequest()) {
+    if (gHttpHandler->UseRequestTokenBucket()) {
+        
+        
+        bool runNow = trans->TryToRunPacedRequest();
+        if (!runNow) {
+            if ((mNumActiveConns - mNumSpdyActiveConns) <=
+                gHttpHandler->RequestTokenBucketMinParallelism()) {
+                runNow = true; 
+            } else if (caps & (NS_HTTP_LOAD_AS_BLOCKING | NS_HTTP_LOAD_UNBLOCKED)) {
+                runNow = true; 
+            }
+        }
+        if (!runNow) {
             LOG(("   blocked due to rate pacing trans=%p\n", trans));
             return NS_ERROR_NOT_AVAILABLE;
         }
