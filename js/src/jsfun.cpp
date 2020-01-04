@@ -1863,14 +1863,7 @@ FunctionConstructor(JSContext* cx, unsigned argc, Value* vp, GeneratorKind gener
         if (!proto)
             return false;
     } else {
-        RootedObject toTest(cx);
-        
-        if (args.isConstructing())
-            toTest = &args.newTarget().toObject();
-        else
-            toTest = &args.callee();
-
-        if (!GetPrototypeFromConstructor(cx, toTest, &proto))
+        if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
             return false;
     }
 
