@@ -1,59 +1,18 @@
 const { DOM: dom, createClass, createFactory, PropTypes } = require("devtools/client/shared/vendor/react");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
-const { selectSnapshot, takeSnapshotAndCensus } = require("./actions/snapshot");
-const { snapshotState } = require("./constants");
+const { selectSnapshotAndRefresh, takeSnapshotAndCensus } = require("./actions/snapshot");
+const { setBreakdownAndRefresh } = require("./actions/breakdown");
+const { breakdownNameToSpec, getBreakdownDisplayData } = require("./utils");
 const Toolbar = createFactory(require("./components/toolbar"));
 const List = createFactory(require("./components/list"));
 const SnapshotListItem = createFactory(require("./components/snapshot-list-item"));
 const HeapView = createFactory(require("./components/heap"));
-
-const stateModel = {
-  
-
-
-
-  front: PropTypes.any,
-
-  
-
-
-
-  heapWorker: PropTypes.any,
-
-  
-
-
-
-
-  breakdown: PropTypes.object.isRequired,
-
-  
-
-
-
-  snapshots: PropTypes.arrayOf(PropTypes.shape({
-    
-    id: PropTypes.number.isRequired,
-    
-    
-    path: PropTypes.string,
-    
-    selected: PropTypes.bool.isRequired,
-    
-    
-    snapshotRead: PropTypes.bool.isRequired,
-    
-    
-    state: PropTypes.oneOf(Object.keys(snapshotState)).isRequired,
-    
-    census: PropTypes.any,
-  }))
-};
+const { app: appModel } = require("./models");
 
 const App = createClass({
   displayName: "memory-tool",
 
-  propTypes: stateModel,
+  propTypes: appModel,
 
   childContextTypes: {
     front: PropTypes.any,
@@ -75,17 +34,17 @@ const App = createClass({
       dom.div({ id: "memory-tool" }, [
 
         Toolbar({
-          buttons: [{
-            className: "take-snapshot",
-            onClick: () => dispatch(takeSnapshotAndCensus(front, heapWorker))
-          }]
+          breakdowns: getBreakdownDisplayData(),
+          onTakeSnapshotClick: () => dispatch(takeSnapshotAndCensus(front, heapWorker)),
+          onBreakdownChange: breakdown =>
+            dispatch(setBreakdownAndRefresh(heapWorker, breakdownNameToSpec(breakdown))),
         }),
 
         dom.div({ id: "memory-tool-container" }, [
           List({
             itemComponent: SnapshotListItem,
             items: snapshots,
-            onClick: snapshot => dispatch(selectSnapshot(snapshot))
+            onClick: snapshot => dispatch(selectSnapshotAndRefresh(heapWorker, snapshot))
           }),
 
           HeapView({
