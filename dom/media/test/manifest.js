@@ -512,8 +512,6 @@ var gInfoLeakTests = [
 
 
 
-
-
 var gErrorTests = [
   { name:"bogus.wav", type:"audio/x-wav" },
   { name:"bogus.ogv", type:"video/ogg" },
