@@ -248,7 +248,12 @@ nsAppShell::Run(void)
 {
   
   
-  mozilla::widget::StartAudioSession();
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    mozilla::widget::StartAudioSession();
+  }
 
   
   
@@ -257,8 +262,6 @@ nsAppShell::Run(void)
   nsresult rv = nsBaseAppShell::Run();
 
   RemoveScreenWakeLockListener();
-
-  mozilla::widget::StopAudioSession();
 
   return rv;
 }

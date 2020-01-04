@@ -610,6 +610,12 @@ public:
 
   virtual bool RecvGamepadUpdate(const GamepadChangeEvent& aGamepadEvent) override;
 
+  
+  virtual bool
+  RecvSetAudioSessionData(const nsID& aId,
+                          const nsString& aDisplayName,
+                          const nsString& aIconPath) override;
+
 private:
   virtual void ActorDestroy(ActorDestroyReason why) override;
 

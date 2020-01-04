@@ -187,14 +187,16 @@ AudioSession::Start()
 
   
   
-  CoInitialize(nullptr);
+  hr = CoInitialize(nullptr);
+  MOZ_ASSERT(SUCCEEDED(hr), "CoInitialize failure in audio session control, unexpected");
 
   if (mState == UNINITIALIZED) {
     mState = FAILED;
 
     
-    if (XRE_IsContentProcess())
+    if (XRE_IsContentProcess()) {
       return NS_ERROR_FAILURE;
+    }
 
     MOZ_ASSERT(XRE_IsParentProcess(),
                "Should only get here in a chrome process!");
@@ -212,9 +214,6 @@ AudioSession::Start()
 
     wchar_t *buffer;
     mIconPath.GetMutableData(&buffer, MAX_PATH);
-
-    
-    
     ::GetModuleFileNameW(nullptr, buffer, MAX_PATH);
 
     nsCOMPtr<nsIUUIDGenerator> uuidgen =
@@ -252,16 +251,19 @@ AudioSession::Start()
                         CLSCTX_ALL,
                         nullptr,
                         getter_AddRefs(manager));
-  if (FAILED(hr))
+  if (FAILED(hr)) {
     return NS_ERROR_FAILURE;
+  }
 
-  hr = manager->GetAudioSessionControl(nullptr,
-                                       FALSE,
+  hr = manager->GetAudioSessionControl(&GUID_NULL,
+                                       0,
                                        getter_AddRefs(mAudioSessionControl));
-  if (FAILED(hr))
-    return NS_ERROR_FAILURE;
 
-  hr = mAudioSessionControl->SetGroupingParam((LPCGUID)&mSessionGroupingParameter,
+  if (FAILED(hr)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  hr = mAudioSessionControl->SetGroupingParam((LPGUID)&mSessionGroupingParameter,
                                               nullptr);
   if (FAILED(hr)) {
     StopInternal();
@@ -294,10 +296,7 @@ AudioSession::Start()
 void
 AudioSession::StopInternal()
 {
-  static const nsID blankId = {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0} };
-
   if (mAudioSessionControl) {
-    mAudioSessionControl->SetGroupingParam((LPCGUID)&blankId, nullptr);
     mAudioSessionControl->UnregisterAudioSessionNotification(this);
     mAudioSessionControl = nullptr;
   }
@@ -310,18 +309,19 @@ AudioSession::Stop()
              mState == UNINITIALIZED || 
              mState == FAILED,
              "State invariants violated");
+  SessionState state = mState;
   mState = STOPPED;
 
-  RefPtr<AudioSession> kungFuDeathGrip;
-  kungFuDeathGrip.swap(sService);
+  {
+    RefPtr<AudioSession> kungFuDeathGrip;
+    kungFuDeathGrip.swap(sService);
 
-  if (!XRE_IsContentProcess())
     StopInternal();
+  }
 
-  
-
-  ::CoUninitialize();
-
+  if (state != UNINITIALIZED) {
+    ::CoUninitialize();
+  }
   return NS_OK;
 }
 
