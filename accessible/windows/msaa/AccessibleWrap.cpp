@@ -1308,35 +1308,54 @@ AccessibleWrap::GetChildIDFor(Accessible* aAccessible)
 HWND
 AccessibleWrap::GetHWNDFor(Accessible* aAccessible)
 {
-  if (aAccessible) {
-    DocAccessible* document = aAccessible->Document();
-    if(!document)
-      return nullptr;
+  if (!aAccessible) {
+    return nullptr;
+  }
 
-    
-    
-    
-    nsIFrame* frame = aAccessible->GetFrame();
-    if (frame) {
-      nsIWidget* widget = frame->GetNearestWidget();
-      if (widget && widget->IsVisible()) {
-        nsIPresShell* shell = document->PresShell();
-        nsViewManager* vm = shell->GetViewManager();
-        if (vm) {
-          nsCOMPtr<nsIWidget> rootWidget;
-          vm->GetRootWidget(getter_AddRefs(rootWidget));
-          
-          
-          
-          if (rootWidget != widget)
-            return static_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
-        }
-      }
+  
+  
+  
+  if (aAccessible->IsProxy()) {
+    ProxyAccessible* proxy = aAccessible->Proxy();
+    if (!proxy) {
+      return nullptr;
     }
 
-    return static_cast<HWND>(document->GetNativeWindow());
+    Accessible* outerDoc = proxy->OuterDocOfRemoteBrowser();
+    NS_ASSERTION(outerDoc, "no outer doc for accessible remote tab!");
+    if (!outerDoc) {
+      return nullptr;
+    }
+
+    return GetHWNDFor(outerDoc);
   }
-  return nullptr;
+
+  DocAccessible* document = aAccessible->Document();
+  if(!document)
+    return nullptr;
+
+  
+  
+  
+  nsIFrame* frame = aAccessible->GetFrame();
+  if (frame) {
+    nsIWidget* widget = frame->GetNearestWidget();
+    if (widget && widget->IsVisible()) {
+      nsIPresShell* shell = document->PresShell();
+      nsViewManager* vm = shell->GetViewManager();
+      if (vm) {
+        nsCOMPtr<nsIWidget> rootWidget;
+        vm->GetRootWidget(getter_AddRefs(rootWidget));
+        
+        
+        
+        if (rootWidget != widget)
+          return static_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
+      }
+    }
+  }
+
+  return static_cast<HWND>(document->GetNativeWindow());
 }
 
 IDispatch*
