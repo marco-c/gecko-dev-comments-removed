@@ -1101,6 +1101,10 @@ GetInitialHeap(NewObjectKind newKind, const Class* clasp)
 }
 
 
+extern bool
+GetPrototypeFromConstructor(JSContext* cx, js::HandleObject newTarget, js::MutableHandleObject proto);
+
+
 
 extern JSObject*
 CreateThisForFunctionWithProto(JSContext* cx, js::HandleObject callee, HandleObject newTarget,
