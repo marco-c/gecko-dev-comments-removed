@@ -1399,7 +1399,23 @@ IsFromAuthenticatedOrigin(nsIDocument* aDoc)
 
   while (doc && !nsContentUtils::IsChromeDoc(doc)) {
     bool trustworthyURI = false;
-    csm->IsURIPotentiallyTrustworthy(doc->GetDocumentURI(), &trustworthyURI);
+
+    
+    
+    nsCOMPtr<nsIPrincipal> documentPrincipal = doc->NodePrincipal();
+
+    
+    
+    MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(documentPrincipal));
+
+    
+    nsCOMPtr<nsIURI> uri;
+    documentPrincipal->GetURI(getter_AddRefs(uri));
+    if (NS_WARN_IF(!uri)) {
+      return false;
+    }
+
+    csm->IsURIPotentiallyTrustworthy(uri, &trustworthyURI);
     if (!trustworthyURI) {
       return false;
     }
@@ -1430,8 +1446,9 @@ ServiceWorkerManager::Register(nsIDOMWindow* aWindow,
   }
 
   
-  
-  MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()));
+  if (NS_WARN_IF(nsContentUtils::IsSystemPrincipal(doc->NodePrincipal()))) {
+    return NS_ERROR_DOM_SECURITY_ERR;
+  }
 
   nsCOMPtr<nsPIDOMWindow> outerWindow = window->GetOuterWindow();
   bool serviceWorkersTestingEnabled =
@@ -1478,6 +1495,28 @@ ServiceWorkerManager::Register(nsIDOMWindow* aWindow,
                                        false );
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_DOM_SECURITY_ERR;
+  }
+
+  
+  
+  
+  
+  
+  
+  bool isHttp = false;
+  bool isHttps = false;
+  aScriptURI->SchemeIs("http", &isHttp);
+  aScriptURI->SchemeIs("https", &isHttps);
+  if (NS_WARN_IF(!isHttp && !isHttps)) {
+#ifdef RELEASE_BUILD
+    return NS_ERROR_DOM_SECURITY_ERR;
+#else
+    bool isApp = false;
+    aScriptURI->SchemeIs("app", &isApp);
+    if (NS_WARN_IF(!isApp)) {
+    return NS_ERROR_DOM_SECURITY_ERR;
+    }
+#endif
   }
 
   nsCString cleanedScope;
