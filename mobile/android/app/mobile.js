@@ -658,11 +658,6 @@ pref("urlclassifier.max-complete-age", 2700);
 #endif
 
 
-#ifdef RELEASE_BUILD
-pref("browser.tiles.reportURL", "https://tiles.services.mozilla.com/v2/links/click");
-#endif
-
-
 pref("browser.firstrun.show.uidiscovery", true);
 pref("browser.firstrun.show.localepicker", false);
 

@@ -24,7 +24,6 @@ import org.mozilla.gecko.BrowserLocaleManager;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.db.BrowserContract;
-import org.mozilla.gecko.db.SuggestedSites;
 import org.mozilla.gecko.distribution.Distribution;
 import org.mozilla.gecko.distribution.ReferrerDescriptor;
 import org.mozilla.gecko.distribution.ReferrerReceiver;
@@ -134,20 +133,6 @@ public class testDistribution extends ContentProviderTest {
         
         
         waitForBackgroundHappiness();
-
-        
-        clearDistributionPref();
-        Distribution dist = initDistribution(mockPackagePath);
-        SuggestedSites suggestedSites = new SuggestedSites(mActivity, dist);
-        GeckoProfile.get(mActivity).getDB().setSuggestedSites(suggestedSites);
-
-        
-        setOSLocale(Locale.US);
-        checkTilesReporting("en-US");
-
-        
-        setOSLocale(new Locale("es", "MX"));
-        checkTilesReporting("es-MX");
 
         
         clearDistributionPref();
@@ -509,45 +494,6 @@ public class testDistribution extends ContentProviderTest {
         String keyName = mActivity.getPackageName() + ".distribution_state";
         settings.edit().remove(keyName).commit();
         TestableDistribution.clearReferrerDescriptorForTesting();
-    }
-
-    public void checkTilesReporting(String localeCode) throws JSONException {
-        
-        inputAndLoadUrl(mStringHelper.ABOUT_BLANK_URL);
-        inputAndLoadUrl(mStringHelper.ABOUT_HOME_URL);
-
-        
-        JSONObject response = clickTrackingTile(mStringHelper.DISTRIBUTION1_LABEL);
-        mAsserter.is(response.getInt("click"), 0, "JSON click index matched");
-        mAsserter.is(response.getString("locale"), localeCode, "JSON locale code matched");
-        mAsserter.is(response.getString("tiles"), "[{\"id\":123},{\"id\":456},{\"id\":632},{\"id\":630},{\"id\":631}]", "JSON tiles data matched");
-
-        inputAndLoadUrl(mStringHelper.ABOUT_HOME_URL);
-
-        
-        pinTopSite(mStringHelper.DISTRIBUTION2_LABEL);
-
-        
-        response = clickTrackingTile(mStringHelper.DISTRIBUTION2_LABEL);
-        mAsserter.is(response.getInt("click"), 1, "JSON click index matched");
-        mAsserter.is(response.getString("tiles"), "[{\"id\":123},{\"id\":456,\"pin\":true},{\"id\":632},{\"id\":630},{\"id\":631}]", "JSON tiles data matched");
-
-        inputAndLoadUrl(mStringHelper.ABOUT_HOME_URL);
-
-        
-        unpinTopSite(mStringHelper.DISTRIBUTION2_LABEL);
-    }
-
-    private JSONObject clickTrackingTile(String text) throws JSONException {
-        boolean tileFound = waitForText(text);
-        mAsserter.ok(tileFound, "Found tile: " + text, null);
-
-        Actions.EventExpecter loadExpecter = mActions.expectGeckoEvent("Robocop:TilesResponse");
-        mSolo.clickOnText(text);
-        String data = loadExpecter.blockForEventData();
-        JSONObject dataJSON = new JSONObject(data);
-        String response = dataJSON.getString("response");
-        return new JSONObject(response);
     }
 
     @Override

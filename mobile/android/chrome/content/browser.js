@@ -550,15 +550,6 @@ var BrowserApp = {
       defaults.setBoolPref("media.autoplay.enabled", false);
     }
 
-    try {
-      
-      
-      gTilesReportURL = Services.prefs.getCharPref("browser.tiles.reportURL");
-      Services.obs.addObserver(this, "Tiles:Click", false);
-    } catch (e) {
-      
-    }
-
     InitLater(() => {
       
       
@@ -2105,13 +2096,6 @@ var BrowserApp = {
         this.computeAcceptLanguages(osLocale, aData);
         break;
 
-      case "Tiles:Click":
-        
-        let data = JSON.parse(aData);
-        let tab = this.getTabForId(data.tabId);
-        tab.tilesData = data.payload;
-        break;
-
       case "Fonts:Reload":
         FontEnumerator.updateFontList();
         break;
@@ -3450,9 +3434,6 @@ nsBrowserAccess.prototype = {
 var gScreenWidth = 1;
 var gScreenHeight = 1;
 
-
-var gTilesReportURL = null;
-
 function Tab(aURL, aParams) {
   this.filter = null;
   this.browser = null;
@@ -3469,7 +3450,6 @@ function Tab(aURL, aParams) {
   this.desktopMode = false;
   this.originalURI = null;
   this.hasTouchListener = false;
-  this.tilesData = null;
 
   this.create(aURL, aParams);
 }
@@ -4359,27 +4339,6 @@ Tab.prototype = {
             ExternalApps.clearPageAction();
           }
         }
-
-        
-        
-        
-        
-        if (this.tilesData) {
-          let xhr = new XMLHttpRequest();
-          xhr.open("POST", gTilesReportURL, true);
-          xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.onload = function (e) {
-            
-            if (this.status == 200 && this.getResponseHeader("X-Robocop")) {
-              Messaging.sendRequest({
-                type: "Robocop:TilesResponse",
-                response: this.response
-              });
-            }
-          };
-          xhr.send(this.tilesData);
-          this.tilesData = null;
-        }
       }
     }
   },
@@ -4425,14 +4384,6 @@ Tab.prototype = {
         
         
         success = aRequest.status == 0;
-      }
-
-      
-      
-      
-      
-      if (this.tilesData && (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP)) {
-        this.tilesData = null;
       }
 
       
