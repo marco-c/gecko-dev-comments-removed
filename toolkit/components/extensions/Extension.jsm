@@ -363,8 +363,17 @@ function findPathInObject(obj, path) {
   }, []);
 
   for (let elt of path) {
-    obj = obj[elt] || undefined;
+    
+    
+    
+    
+    if (!obj || !(elt in obj)) {
+      return undefined;
+    }
+
+    obj = obj[elt];
   }
+
   return obj;
 }
 
