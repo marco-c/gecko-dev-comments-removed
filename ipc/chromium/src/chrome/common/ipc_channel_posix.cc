@@ -579,7 +579,12 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
         int[FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE]));
     char buf[tmp];
 
-    if (partial_write_iter_.isNothing() &&
+    if (partial_write_iter_.isNothing()) {
+      Pickle::BufferList::IterImpl iter(msg->Buffers());
+      partial_write_iter_.emplace(iter);
+    }
+
+    if (partial_write_iter_.value().Data() == msg->Buffers().Start() &&
         !msg->file_descriptor_set()->empty()) {
       
       struct cmsghdr *cmsg;
@@ -610,11 +615,6 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
     struct iovec iov[kMaxIOVecSize];
     size_t iov_count = 0;
     size_t amt_to_write = 0;
-
-    if (partial_write_iter_.isNothing()) {
-      Pickle::BufferList::IterImpl iter(msg->Buffers());
-      partial_write_iter_.emplace(iter);
-    }
 
     
     Pickle::BufferList::IterImpl iter = partial_write_iter_.value();
