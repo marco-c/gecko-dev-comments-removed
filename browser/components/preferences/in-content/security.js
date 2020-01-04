@@ -115,11 +115,10 @@ var gSecurityPane = {
       document.getElementById("savePasswords").disabled = true;
       excepts.disabled = true;
       return false;
-    } else {
-      excepts.disabled = !pref.value;
-      
-      return undefined;
     }
+    excepts.disabled = !pref.value;
+    
+    return undefined;
   },
 
   

@@ -144,9 +144,13 @@ var gPrivacyPane = {
     let radiogroup = document.getElementById("trackingProtectionRadioGroup");
 
     
-    radiogroup.value = enabledPref.value ? "always" :
-                       pbmPref.value ? "private" :
-                       "never";
+    if (enabledPref.value) {
+      radiogroup.value = "always";
+    } else if (pbmPref.value) {
+      radiogroup.value = "private";
+    } else {
+      radiogroup.value = "never";
+    }
   },
 
   

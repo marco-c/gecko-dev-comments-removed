@@ -80,20 +80,20 @@ const APP_ICON_ATTR_NAME = "appHandlerIcon";
 
 
 function getFileDisplayName(file) {
-#ifdef XP_WIN
-  if (file instanceof Ci.nsILocalFileWin) {
-    try {
-      return file.getVersionInfoField("FileDescription");
-    } catch (e) {}
+  if (AppConstants.platform == "win") {
+    if (file instanceof Ci.nsILocalFileWin) {
+      try {
+        return file.getVersionInfoField("FileDescription");
+      } catch (e) {}
+    }
   }
-#endif
-#ifdef XP_MACOSX
-  if (file instanceof Ci.nsILocalFileMac) {
-    try {
-      return file.bundleDisplayName;
-    } catch (e) {}
+  if (AppConstants.platform == "macosx") {
+    if (file instanceof Ci.nsILocalFileMac) {
+      try {
+        return file.bundleDisplayName;
+      } catch (e) {}
+    }
   }
-#endif
   return file.leafName;
 }
 
@@ -271,8 +271,7 @@ HandlerInfoWrapper.prototype = {
         !gApplicationsPane.isValidHandlerApp(this.preferredApplicationHandler)) {
       if (this.wrappedHandlerInfo.hasDefaultHandler)
         return Ci.nsIHandlerInfo.useSystemDefault;
-      else
-        return Ci.nsIHandlerInfo.saveToDisk;
+      return Ci.nsIHandlerInfo.saveToDisk;
     }
 
     return this.wrappedHandlerInfo.preferredAction;
@@ -336,7 +335,7 @@ HandlerInfoWrapper.prototype = {
       if (this.wrappedHandlerInfo instanceof Ci.nsIMIMEInfo &&
           this.wrappedHandlerInfo.primaryExtension)
         return this.wrappedHandlerInfo.primaryExtension
-    } catch(ex) {}
+    } catch (ex) {}
 
     return null;
   },
@@ -479,13 +478,7 @@ FeedHandlerInfo.prototype = {
     Cc["@mozilla.org/embeddor.implemented/web-content-handler-registrar;1"].
     getService(Ci.nsIWebContentConverterService),
 
-  _shellSvc:
-#ifdef HAVE_SHELL_SERVICE
-    getShellService(),
-#else
-    null,
-#endif
-
+  _shellSvc: AppConstants.HAVE_SHELL_SERVICE ? getShellService() : null,
 
   
   
@@ -607,14 +600,14 @@ FeedHandlerInfo.prototype = {
       return this.__defaultApplicationHandler;
 
     var defaultFeedReader = null;
-#ifdef HAVE_SHELL_SERVICE
-    try {
-      defaultFeedReader = this._shellSvc.defaultFeedReader;
+    if (AppConstants.HAVE_SHELL_SERVICE) {
+      try {
+        defaultFeedReader = this._shellSvc.defaultFeedReader;
+      }
+      catch (ex) {
+        
+      }
     }
-    catch(ex) {
-      
-    }
-#endif
 
     if (defaultFeedReader) {
       let handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"].
@@ -633,15 +626,15 @@ FeedHandlerInfo.prototype = {
   },
 
   get hasDefaultHandler() {
-#ifdef HAVE_SHELL_SERVICE
-    try {
-      if (this._shellSvc.defaultFeedReader)
-        return true;
+    if (AppConstants.HAVE_SHELL_SERVICE) {
+      try {
+        if (this._shellSvc.defaultFeedReader)
+          return true;
+      }
+      catch (ex) {
+        
+      }
     }
-    catch(ex) {
-      
-    }
-#endif
 
     return false;
   },
@@ -777,9 +770,9 @@ FeedHandlerInfo.prototype = {
 
 var feedHandlerInfo = {
   __proto__: new FeedHandlerInfo(TYPE_MAYBE_FEED),
-  _prefSelectedApp: PREF_FEED_SELECTED_APP, 
-  _prefSelectedWeb: PREF_FEED_SELECTED_WEB, 
-  _prefSelectedAction: PREF_FEED_SELECTED_ACTION, 
+  _prefSelectedApp: PREF_FEED_SELECTED_APP,
+  _prefSelectedWeb: PREF_FEED_SELECTED_WEB,
+  _prefSelectedAction: PREF_FEED_SELECTED_ACTION,
   _prefSelectedReader: PREF_FEED_SELECTED_READER,
   _smallIcon: "chrome://browser/skin/feeds/feedIcon16.png",
   _appPrefLabel: "webFeed"
@@ -787,9 +780,9 @@ var feedHandlerInfo = {
 
 var videoFeedHandlerInfo = {
   __proto__: new FeedHandlerInfo(TYPE_MAYBE_VIDEO_FEED),
-  _prefSelectedApp: PREF_VIDEO_FEED_SELECTED_APP, 
-  _prefSelectedWeb: PREF_VIDEO_FEED_SELECTED_WEB, 
-  _prefSelectedAction: PREF_VIDEO_FEED_SELECTED_ACTION, 
+  _prefSelectedApp: PREF_VIDEO_FEED_SELECTED_APP,
+  _prefSelectedWeb: PREF_VIDEO_FEED_SELECTED_WEB,
+  _prefSelectedAction: PREF_VIDEO_FEED_SELECTED_ACTION,
   _prefSelectedReader: PREF_VIDEO_FEED_SELECTED_READER,
   _smallIcon: "chrome://browser/skin/feeds/videoFeedIcon16.png",
   _appPrefLabel: "videoPodcastFeed"
@@ -797,9 +790,9 @@ var videoFeedHandlerInfo = {
 
 var audioFeedHandlerInfo = {
   __proto__: new FeedHandlerInfo(TYPE_MAYBE_AUDIO_FEED),
-  _prefSelectedApp: PREF_AUDIO_FEED_SELECTED_APP, 
-  _prefSelectedWeb: PREF_AUDIO_FEED_SELECTED_WEB, 
-  _prefSelectedAction: PREF_AUDIO_FEED_SELECTED_ACTION, 
+  _prefSelectedApp: PREF_AUDIO_FEED_SELECTED_APP,
+  _prefSelectedWeb: PREF_AUDIO_FEED_SELECTED_WEB,
+  _prefSelectedAction: PREF_AUDIO_FEED_SELECTED_ACTION,
   _prefSelectedReader: PREF_AUDIO_FEED_SELECTED_READER,
   _smallIcon: "chrome://browser/skin/feeds/audioFeedIcon16.png",
   _appPrefLabel: "audioPodcastFeed"
@@ -853,7 +846,7 @@ var gApplicationsPane = {
   
   
   _handledTypes: {},
-  
+
   
   
   
@@ -954,7 +947,7 @@ var gApplicationsPane = {
       
       document.getElementById("typeColumn").removeAttribute("sortDirection");
     }
-    else 
+    else
       this._sortColumn = document.getElementById("typeColumn");
 
     
@@ -1256,8 +1249,7 @@ var gApplicationsPane = {
       if (isFeedType(aHandlerInfo.type))
         return this._prefsBundle.getFormattedString("previewInApp",
                                                     [this._brandShortName]);
-      else
-        return this._prefsBundle.getString("alwaysAsk");
+      return this._prefsBundle.getString("alwaysAsk");
     }
 
     switch (aHandlerInfo.preferredAction) {
@@ -1306,6 +1298,8 @@ var gApplicationsPane = {
         return this._prefsBundle.getFormattedString("usePluginIn",
                                                     [aHandlerInfo.pluginName,
                                                      this._brandShortName]);
+      default:
+        throw new Error(`Unexpected preferredAction: ${aHandlerInfo.preferredAction}`);
     }
   },
 
@@ -1352,21 +1346,21 @@ var gApplicationsPane = {
   },
 
   _isValidHandlerExecutable: function(aExecutable) {
+    let leafName;
+    if (AppConstants.platform == "win") {
+      leafName = `${AppConstants.MOZ_APP_NAME}.exe`;
+    } else if (AppConstants.platform == "macosx") {
+      leafName = AppConstants.MOZ_MACBUNDLE_NAME;
+    } else {
+      leafName = `${AppConstants.MOZ_APP_NAME}-bin`;
+    }
     return aExecutable &&
            aExecutable.exists() &&
            aExecutable.isExecutable() &&
 
 
 
-#ifdef XP_WIN
-#expand    aExecutable.leafName != "__MOZ_APP_NAME__.exe";
-#else
-#ifdef XP_MACOSX
-#expand    aExecutable.leafName != "__MOZ_MACBUNDLE_NAME__";
-#else
-#expand    aExecutable.leafName != "__MOZ_APP_NAME__-bin";
-#endif
-#endif
+           aExecutable.leafName != leafName;
   },
 
   
@@ -1386,7 +1380,7 @@ var gApplicationsPane = {
 
     
     if (handlerInfo instanceof InternalHandlerInfoWrapper) {
-      var internalMenuItem = document.createElement("menuitem");
+      let internalMenuItem = document.createElement("menuitem");
       internalMenuItem.setAttribute("action", Ci.nsIHandlerInfo.handleInternally);
       let label = this._prefsBundle.getFormattedString("previewInApp",
                                                        [this._brandShortName]);
@@ -1428,7 +1422,7 @@ var gApplicationsPane = {
 
     
     if (isFeedType(handlerInfo.type)) {
-      var internalMenuItem = document.createElement("menuitem");
+      let internalMenuItem = document.createElement("menuitem");
       internalMenuItem.setAttribute("action", Ci.nsIHandlerInfo.handleInternally);
       let label = this._prefsBundle.getFormattedString("addLiveBookmarksInApp",
                                                        [this._brandShortName]);
@@ -1500,13 +1494,13 @@ var gApplicationsPane = {
 
     
     let canOpenWithOtherApp = true;
-#ifdef XP_WIN
-    
-    
-    let executableType = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService)
-                                                  .getTypeFromExtension("exe");
-    canOpenWithOtherApp = handlerInfo.type != executableType;
-#endif
+    if (AppConstants.platform == "win") {
+      
+      
+      let executableType = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService)
+                                                    .getTypeFromExtension("exe");
+      canOpenWithOtherApp = handlerInfo.type != executableType;
+    }
     if (canOpenWithOtherApp)
     {
       let menuItem = document.createElement("menuitem");
@@ -1548,7 +1542,7 @@ var gApplicationsPane = {
         break;
       case Ci.nsIHandlerInfo.useHelperApp:
         if (preferredApp)
-          menu.selectedItem = 
+          menu.selectedItem =
             possibleAppMenuItems.filter(v => v.handlerApp.equals(preferredApp))[0];
         break;
       case kActionUsePlugin:
@@ -1749,62 +1743,61 @@ var gApplicationsPane = {
       }
     }.bind(this);
 
-#ifdef XP_WIN
-    var params = {};
-    var handlerInfo = this._handledTypes[this._list.selectedItem.type];
+    if (AppConstants.platform == "win") {
+      var params = {};
+      var handlerInfo = this._handledTypes[this._list.selectedItem.type];
 
-    if (isFeedType(handlerInfo.type)) {
-      
-      params.mimeInfo = this._mimeSvc.getFromTypeAndExtension(handlerInfo.type, 
-                                                 handlerInfo.primaryExtension);
-    } else {
-      params.mimeInfo = handlerInfo.wrappedHandlerInfo;
-    }
-
-    params.title         = this._prefsBundle.getString("fpTitleChooseApp");
-    params.description   = handlerInfo.description;
-    params.filename      = null;
-    params.handlerApp    = null;
-
-    let onAppSelected = () => {
-      if (this.isValidHandlerApp(params.handlerApp)) {
-        handlerApp = params.handlerApp;
-
+      if (isFeedType(handlerInfo.type)) {
         
-        handlerInfo.addPossibleApplicationHandler(handlerApp);
+        params.mimeInfo = this._mimeSvc.getFromTypeAndExtension(handlerInfo.type,
+                                                   handlerInfo.primaryExtension);
+      } else {
+        params.mimeInfo = handlerInfo.wrappedHandlerInfo;
       }
 
-      chooseAppCallback(handlerApp);
-    };
+      params.title         = this._prefsBundle.getString("fpTitleChooseApp");
+      params.description   = handlerInfo.description;
+      params.filename      = null;
+      params.handlerApp    = null;
 
-    gSubDialog.open("chrome://global/content/appPicker.xul",
-                    null, params, onAppSelected);
+      let onAppSelected = () => {
+        if (this.isValidHandlerApp(params.handlerApp)) {
+          handlerApp = params.handlerApp;
 
-#else
-    let winTitle = this._prefsBundle.getString("fpTitleChooseApp");
-    let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-    let fpCallback = function fpCallback_done(aResult) {
-      if (aResult == Ci.nsIFilePicker.returnOK && fp.file &&
-          this._isValidHandlerExecutable(fp.file)) {
-        handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"].
-                     createInstance(Ci.nsILocalHandlerApp);
-        handlerApp.name = getFileDisplayName(fp.file);
-        handlerApp.executable = fp.file;
-
-        
-        let handlerInfo = this._handledTypes[this._list.selectedItem.type];
-        handlerInfo.addPossibleApplicationHandler(handlerApp);
+          
+          handlerInfo.addPossibleApplicationHandler(handlerApp);
+        }
 
         chooseAppCallback(handlerApp);
-      }
-    }.bind(this);
+      };
 
-    
-    
-    fp.init(window, winTitle, Ci.nsIFilePicker.modeOpen);
-    fp.appendFilters(Ci.nsIFilePicker.filterApps);
-    fp.open(fpCallback);
-#endif
+      gSubDialog.open("chrome://global/content/appPicker.xul",
+                      null, params, onAppSelected);
+    } else {
+      let winTitle = this._prefsBundle.getString("fpTitleChooseApp");
+      let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+      let fpCallback = function fpCallback_done(aResult) {
+        if (aResult == Ci.nsIFilePicker.returnOK && fp.file &&
+            this._isValidHandlerExecutable(fp.file)) {
+          handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"].
+                       createInstance(Ci.nsILocalHandlerApp);
+          handlerApp.name = getFileDisplayName(fp.file);
+          handlerApp.executable = fp.file;
+
+          
+          let handlerInfo = this._handledTypes[this._list.selectedItem.type];
+          handlerInfo.addPossibleApplicationHandler(handlerApp);
+
+          chooseAppCallback(handlerApp);
+        }
+      }.bind(this);
+
+      
+      
+      fp.init(window, winTitle, Ci.nsIFilePicker.modeOpen);
+      fp.appendFilters(Ci.nsIFilePicker.filterApps);
+      fp.open(fpCallback);
+    }
   },
 
   
@@ -1858,7 +1851,7 @@ var gApplicationsPane = {
         let preferredApp = aHandlerInfo.preferredApplicationHandler;
         if (this.isValidHandlerApp(preferredApp))
           return this._getIconURLForHandlerApp(preferredApp);
-        break;
+        
 
       
       
@@ -1919,7 +1912,7 @@ var gApplicationsPane = {
           if (url)
             return url + "?size=16";
         }
-        catch(ex) {}
+        catch (ex) {}
       }
     }
 
