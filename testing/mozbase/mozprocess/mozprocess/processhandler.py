@@ -395,12 +395,14 @@ falling back to not using job objects for managing child processes"""
                         
                         
                         if diff.seconds > self.MAX_IOCOMPLETION_PORT_NOTIFICATION_DELAY:
+                            print >> sys.stderr, "WARNING | IO Completion Port failed to signal process shutdown"
                             print >> sys.stderr, "Parent process %s exited with children alive:" % self.pid
                             print >> sys.stderr, "PIDS: %s" %  ', '.join([str(i) for i in self._spawned_procs])
-                            print >> sys.stderr, "Attempting to kill them..."
+                            print >> sys.stderr, "Attempting to kill them, but no guarantee of success"
 
                             self.kill()
                             self._process_events.put({self.pid: 'FINISHED'})
+                            break
 
                     if not portstatus:
                         
@@ -472,7 +474,7 @@ falling back to not using job objects for managing child processes"""
                 threadalive = False
                 if hasattr(self, "_procmgrthread"):
                     threadalive = self._procmgrthread.is_alive()
-                if self._job and threadalive:
+                if self._job and threadalive and threading.current_thread() != self._procmgrthread:
                     self.debug("waiting with IO completion port")
                     
                     
