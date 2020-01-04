@@ -281,191 +281,6 @@ private:
     CxxStackFrame& operator=(const CxxStackFrame&) = delete;
 };
 
-class AutoEnterTransaction
-{
-public:
-    explicit AutoEnterTransaction(MessageChannel *aChan,
-                                  int32_t aMsgSeqno,
-                                  int32_t aTransactionID,
-                                  int aPriority)
-      : mChan(aChan),
-        mActive(true),
-        mOutgoing(true),
-        mPriority(aPriority),
-        mSeqno(aMsgSeqno),
-        mTransaction(aTransactionID),
-        mNext(mChan->mTransactionStack)
-    {
-        mChan->mMonitor->AssertCurrentThreadOwns();
-        mChan->mTransactionStack = this;
-    }
-
-    explicit AutoEnterTransaction(MessageChannel *aChan, const IPC::Message &aMessage)
-      : mChan(aChan),
-        mActive(true),
-        mOutgoing(false),
-        mPriority(aMessage.priority()),
-        mSeqno(aMessage.seqno()),
-        mTransaction(aMessage.transaction_id()),
-        mNext(mChan->mTransactionStack)
-    {
-        mChan->mMonitor->AssertCurrentThreadOwns();
-
-        if (!aMessage.is_sync()) {
-            mActive = false;
-            return;
-        }
-
-        mChan->mTransactionStack = this;
-    }
-
-    ~AutoEnterTransaction() {
-        mChan->mMonitor->AssertCurrentThreadOwns();
-        if (mActive) {
-            mChan->mTransactionStack = mNext;
-        }
-    }
-
-    void Cancel() {
-        AutoEnterTransaction *cur = mChan->mTransactionStack;
-        MOZ_RELEASE_ASSERT(cur == this);
-        while (cur && cur->mPriority != IPC::Message::PRIORITY_NORMAL) {
-            
-            
-            
-            
-            
-            
-            
-            
-            MOZ_RELEASE_ASSERT(cur->mActive);
-            cur->mActive = false;
-            cur = cur->mNext;
-        }
-
-        mChan->mTransactionStack = cur;
-
-        MOZ_RELEASE_ASSERT(IsComplete());
-    }
-
-    bool AwaitingSyncReply() const {
-        MOZ_RELEASE_ASSERT(mActive);
-        if (mOutgoing) {
-            return true;
-        }
-        return mNext ? mNext->AwaitingSyncReply() : false;
-    }
-
-    int AwaitingSyncReplyPriority() const {
-        MOZ_RELEASE_ASSERT(mActive);
-        if (mOutgoing) {
-            return mPriority;
-        }
-        return mNext ? mNext->AwaitingSyncReplyPriority() : 0;
-    }
-
-    bool DispatchingSyncMessage() const {
-        MOZ_RELEASE_ASSERT(mActive);
-        if (!mOutgoing) {
-            return true;
-        }
-        return mNext ? mNext->DispatchingSyncMessage() : false;
-    }
-
-    int DispatchingSyncMessagePriority() const {
-        MOZ_RELEASE_ASSERT(mActive);
-        if (!mOutgoing) {
-            return mPriority;
-        }
-        return mNext ? mNext->DispatchingSyncMessagePriority() : 0;
-    }
-
-    int Priority() const {
-        MOZ_RELEASE_ASSERT(mActive);
-        return mPriority;
-    }
-
-    int32_t SequenceNumber() const {
-        MOZ_RELEASE_ASSERT(mActive);
-        return mSeqno;
-    }
-
-    int32_t TransactionID() const {
-        MOZ_RELEASE_ASSERT(mActive);
-        return mTransaction;
-    }
-
-    void ReceivedReply(const IPC::Message& aMessage) {
-        MOZ_RELEASE_ASSERT(aMessage.seqno() == mSeqno);
-        MOZ_RELEASE_ASSERT(aMessage.transaction_id() == mTransaction);
-        MOZ_RELEASE_ASSERT(!mReply);
-        IPC_LOG("Reply received on worker thread: seqno=%d", mSeqno);
-        mReply = new IPC::Message(aMessage);
-        MOZ_RELEASE_ASSERT(IsComplete());
-    }
-
-    void HandleReply(const IPC::Message& aMessage) {
-        AutoEnterTransaction *cur = mChan->mTransactionStack;
-        MOZ_RELEASE_ASSERT(cur == this);
-        while (cur) {
-            MOZ_RELEASE_ASSERT(cur->mActive);
-            if (aMessage.seqno() == cur->mSeqno) {
-                cur->ReceivedReply(aMessage);
-            }
-            cur = cur->mNext;
-            MOZ_RELEASE_ASSERT(cur);
-        }
-    }
-
-    bool IsComplete() {
-        return !mActive || mReply;
-    }
-
-    bool IsOutgoing() {
-        return mOutgoing;
-    }
-
-    bool IsCanceled() {
-        return !mActive;
-    }
-
-    bool IsBottom() const {
-        return !mNext;
-    }
-
-    bool IsError() {
-        MOZ_RELEASE_ASSERT(mReply);
-        return mReply->is_reply_error();
-    }
-
-    nsAutoPtr<IPC::Message> GetReply() {
-        return Move(mReply);
-    }
-
-private:
-    MessageChannel *mChan;
-
-    
-    
-    
-    
-    bool mActive;
-
-    
-    bool mOutgoing;
-
-    
-    int mPriority;
-    int32_t mSeqno;
-    int32_t mTransaction;
-
-    
-    AutoEnterTransaction *mNext;
-
-    
-    nsAutoPtr<IPC::Message> mReply;
-};
-
 MessageChannel::MessageChannel(MessageListener *aListener)
   : mListener(aListener),
     mChannelState(ChannelClosed),
@@ -478,11 +293,17 @@ MessageChannel::MessageChannel(MessageListener *aListener)
     mInTimeoutSecondHalf(false),
     mNextSeqno(0),
     mLastSendError(SyncSendError::SendSuccess),
+    mAwaitingSyncReply(false),
+    mAwaitingSyncReplyPriority(0),
+    mDispatchingSyncMessage(false),
+    mDispatchingSyncMessagePriority(0),
     mDispatchingAsyncMessage(false),
     mDispatchingAsyncMessagePriority(0),
-    mTransactionStack(nullptr),
+    mCurrentTransaction(0),
+    mPendingSendPriorities(0),
     mTimedOutMessageSeqno(0),
     mTimedOutMessagePriority(0),
+    mRecvdErrors(0),
     mRemoteStackDepthGuess(false),
     mSawInterruptOutMsg(false),
     mIsWaitingForIncoming(false),
@@ -521,51 +342,6 @@ MessageChannel::~MessageChannel()
     MOZ_RELEASE_ASSERT(ok);
 #endif
     Clear();
-}
-
-
-
-
-
-
-
-int32_t
-MessageChannel::CurrentHighPriorityTransaction() const
-{
-    mMonitor->AssertCurrentThreadOwns();
-    if (!mTransactionStack) {
-        return 0;
-    }
-    MOZ_RELEASE_ASSERT(mTransactionStack->Priority() == IPC::Message::PRIORITY_HIGH);
-    return mTransactionStack->TransactionID();
-}
-
-bool
-MessageChannel::AwaitingSyncReply() const
-{
-    mMonitor->AssertCurrentThreadOwns();
-    return mTransactionStack ? mTransactionStack->AwaitingSyncReply() : false;
-}
-
-int
-MessageChannel::AwaitingSyncReplyPriority() const
-{
-    mMonitor->AssertCurrentThreadOwns();
-    return mTransactionStack ? mTransactionStack->AwaitingSyncReplyPriority() : 0;
-}
-
-bool
-MessageChannel::DispatchingSyncMessage() const
-{
-    mMonitor->AssertCurrentThreadOwns();
-    return mTransactionStack ? mTransactionStack->DispatchingSyncMessage() : false;
-}
-
-int
-MessageChannel::DispatchingSyncMessagePriority() const
-{
-    mMonitor->AssertCurrentThreadOwns();
-    return mTransactionStack ? mTransactionStack->DispatchingSyncMessagePriority() : 0;
 }
 
 static void
@@ -629,6 +405,7 @@ MessageChannel::Clear()
 
     
     mPending.clear();
+    mRecvd = nullptr;
     mOutOfTurnReplies.clear();
     while (!mDeferred.empty()) {
         mDeferred.pop();
@@ -845,7 +622,7 @@ MessageChannel::ShouldDeferMessage(const Message& aMsg)
     
     
     
-    return mSide == ParentSide && aMsg.transaction_id() != CurrentHighPriorityTransaction();
+    return mSide == ParentSide && aMsg.transaction_id() != mCurrentTransaction;
 }
 
 
@@ -882,17 +659,33 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
             return;
         }
 
+        MOZ_RELEASE_ASSERT(aMsg.transaction_id() == mCurrentTransaction);
         MOZ_RELEASE_ASSERT(AwaitingSyncReply());
+        MOZ_RELEASE_ASSERT(!mRecvd);
         MOZ_RELEASE_ASSERT(!mTimedOutMessageSeqno);
 
-        mTransactionStack->HandleReply(aMsg);
+        
+        
+        
+        
+        
+        
+        
+        
+        if (aMsg.is_reply_error()) {
+            mRecvdErrors++;
+            NotifyWorkerThread();
+            return;
+        }
+
+        mRecvd = new Message(aMsg);
         NotifyWorkerThread();
         return;
     }
 
     
     MOZ_RELEASE_ASSERT(aMsg.compress_type() == IPC::Message::COMPRESSION_NONE ||
-                       aMsg.priority() == IPC::Message::PRIORITY_NORMAL);
+                          aMsg.priority() == IPC::Message::PRIORITY_NORMAL);
 
     bool compress = false;
     if (aMsg.compress_type() == IPC::Message::COMPRESSION_ENABLED) {
@@ -975,11 +768,8 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
 }
 
 void
-MessageChannel::ProcessPendingRequests(AutoEnterTransaction& aTransaction)
+MessageChannel::ProcessPendingRequests(int seqno, int transaction)
 {
-    int32_t seqno = aTransaction.SequenceNumber();
-    int32_t transaction = aTransaction.TransactionID();
-
     IPC_LOG("ProcessPendingRequests for seqno=%d, xid=%d", seqno, transaction);
 
     
@@ -989,7 +779,7 @@ MessageChannel::ProcessPendingRequests(AutoEnterTransaction& aTransaction)
         
         
         
-        if (aTransaction.IsCanceled()) {
+        if (WasTransactionCanceled(transaction)) {
             return;
         }
 
@@ -998,8 +788,8 @@ MessageChannel::ProcessPendingRequests(AutoEnterTransaction& aTransaction)
         for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); ) {
             Message &msg = *it;
 
-            MOZ_RELEASE_ASSERT(!aTransaction.IsCanceled(),
-                               "Calling ShouldDeferMessage when cancelled");
+            MOZ_RELEASE_ASSERT(mCurrentTransaction == transaction,
+                                  "Calling ShouldDeferMessage when cancelled");
             bool defer = ShouldDeferMessage(msg);
 
             
@@ -1016,17 +806,36 @@ MessageChannel::ProcessPendingRequests(AutoEnterTransaction& aTransaction)
             it++;
         }
 
-        if (toProcess.empty()) {
+        if (toProcess.empty())
             break;
-        }
 
         
         
 
-        for (auto it = toProcess.begin(); it != toProcess.end(); it++) {
+        for (auto it = toProcess.begin(); it != toProcess.end(); it++)
             ProcessPendingRequest(*it);
-        }
     }
+}
+
+bool
+MessageChannel::WasTransactionCanceled(int transaction)
+{
+    if (transaction != mCurrentTransaction) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mRecvd = nullptr;
+        return true;
+    }
+    return false;
 }
 
 bool
@@ -1057,7 +866,8 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         return false;
     }
 
-    if (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_NORMAL &&
+    if (mCurrentTransaction &&
+        DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_NORMAL &&
         msg->priority() > IPC::Message::PRIORITY_NORMAL)
     {
         
@@ -1067,8 +877,9 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         return false;
     }
 
-    if (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_URGENT ||
-        DispatchingAsyncMessagePriority() == IPC::Message::PRIORITY_URGENT)
+    if (mCurrentTransaction &&
+        (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_URGENT ||
+         DispatchingAsyncMessagePriority() == IPC::Message::PRIORITY_URGENT))
     {
         
         
@@ -1079,24 +890,27 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         return false;
     }
 
-    if (msg->priority() < DispatchingSyncMessagePriority() ||
-        msg->priority() < AwaitingSyncReplyPriority())
+    if (mCurrentTransaction &&
+        (msg->priority() < DispatchingSyncMessagePriority() ||
+         msg->priority() < AwaitingSyncReplyPriority()))
     {
         MOZ_RELEASE_ASSERT(DispatchingSyncMessage() || DispatchingAsyncMessage());
         IPC_LOG("Cancel from Send");
-        CancelMessage *cancel = new CancelMessage(CurrentHighPriorityTransaction());
-        CancelTransaction(CurrentHighPriorityTransaction());
+        CancelMessage *cancel = new CancelMessage(mCurrentTransaction);
+        CancelTransaction(mCurrentTransaction);
         mLink->SendMessage(cancel);
     }
 
     IPC_ASSERT(msg->is_sync(), "can only Send() sync messages here");
 
-    IPC_ASSERT(msg->priority() >= DispatchingSyncMessagePriority(),
-               "can't send sync message of a lesser priority than what's being dispatched");
-    IPC_ASSERT(AwaitingSyncReplyPriority() <= msg->priority(),
-               "nested sync message sends must be of increasing priority");
-    IPC_ASSERT(DispatchingSyncMessagePriority() != IPC::Message::PRIORITY_URGENT,
-               "not allowed to send messages while dispatching urgent messages");
+    if (mCurrentTransaction) {
+        IPC_ASSERT(msg->priority() >= DispatchingSyncMessagePriority(),
+                   "can't send sync message of a lesser priority than what's being dispatched");
+        IPC_ASSERT(AwaitingSyncReplyPriority() <= msg->priority(),
+                   "nested sync message sends must be of increasing priority");
+        IPC_ASSERT(DispatchingSyncMessagePriority() != IPC::Message::PRIORITY_URGENT,
+                   "not allowed to send messages while dispatching urgent messages");
+    }
 
     IPC_ASSERT(DispatchingAsyncMessagePriority() != IPC::Message::PRIORITY_URGENT,
                "not allowed to send messages while dispatching urgent messages");
@@ -1113,28 +927,27 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     int prio = msg->priority();
     msgid_t replyType = msg->type() + 1;
 
-    AutoEnterTransaction *stackTop = mTransactionStack;
+    AutoSetValue<bool> replies(mAwaitingSyncReply, true);
+    AutoSetValue<int> prioSet(mAwaitingSyncReplyPriority, prio);
+    AutoEnterTransaction transact(this, seqno);
 
-    
-    
-    
-    
-    bool nest = stackTop && stackTop->Priority() == IPC::Message::PRIORITY_HIGH;
-    int32_t transaction = nest ? stackTop->TransactionID() : seqno;
+    int prios = mPendingSendPriorities | (1 << prio);
+    AutoSetValue<int> priosSet(mPendingSendPriorities, prios);
+
+    int32_t transaction = mCurrentTransaction;
     msg->set_transaction_id(transaction);
 
+    IPC_LOG("Send seqno=%d, xid=%d, pending=%d", seqno, transaction, prios);
+
     bool handleWindowsMessages = mListener->HandleWindowsMessages(*aMsg);
-    AutoEnterTransaction transact(this, seqno, transaction, prio);
-
-    IPC_LOG("Send seqno=%d, xid=%d", seqno, transaction);
-
     mLink->SendMessage(msg.forget());
 
     while (true) {
-        MOZ_RELEASE_ASSERT(!transact.IsCanceled());
-        ProcessPendingRequests(transact);
-        if (transact.IsComplete()) {
-            break;
+        ProcessPendingRequests(seqno, transaction);
+        if (WasTransactionCanceled(transaction)) {
+            IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
+            mLastSendError = SyncSendError::CancelledAfterSend;
+            return false;
         }
         if (!Connected()) {
             ReportConnectionError("MessageChannel::Send");
@@ -1142,12 +955,23 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
             return false;
         }
 
+        
+        if (mRecvdErrors) {
+            IPC_LOG("Error: seqno=%d, xid=%d", seqno, transaction);
+            mRecvdErrors--;
+            mLastSendError = SyncSendError::ReplyError;
+            return false;
+        }
+
+        if (mRecvd) {
+            IPC_LOG("Got reply: seqno=%d, xid=%d", seqno, transaction);
+            break;
+        }
+
         MOZ_RELEASE_ASSERT(!mTimedOutMessageSeqno);
-        MOZ_RELEASE_ASSERT(!transact.IsComplete());
-        MOZ_RELEASE_ASSERT(mTransactionStack == &transact);
 
+        MOZ_RELEASE_ASSERT(mCurrentTransaction == transaction);
         bool maybeTimedOut = !WaitForSyncNotify(handleWindowsMessages);
-
         if (mListener->NeedArtificialSleep()) {
             MonitorAutoUnlock unlock(*mMonitor);
             mListener->ArtificialSleep();
@@ -1159,21 +983,31 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
             return false;
         }
 
-        if (transact.IsCanceled()) {
-            break;
+        if (WasTransactionCanceled(transaction)) {
+            IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
+            mLastSendError = SyncSendError::CancelledAfterSend;
+            return false;
         }
 
-        MOZ_RELEASE_ASSERT(mTransactionStack == &transact);
-
         
         
-        bool canTimeOut = transact.IsBottom();
+        bool canTimeOut = transaction == seqno;
         if (maybeTimedOut && canTimeOut && !ShouldContinueFromTimeout()) {
             
             
             
             
-            if (transact.IsComplete()) {
+            if (WasTransactionCanceled(transaction)) {
+                IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
+                mLastSendError = SyncSendError::CancelledAfterSend;
+                return false;
+            }
+            if (mRecvdErrors) {
+                mRecvdErrors--;
+                mLastSendError = SyncSendError::ReplyError;
+                return false;
+            }
+            if (mRecvd) {
                 break;
             }
 
@@ -1184,36 +1018,18 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
             mLastSendError = SyncSendError::TimedOut;
             return false;
         }
-
-        if (transact.IsCanceled()) {
-            break;
-        }
     }
 
-    if (transact.IsCanceled()) {
-        IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
-        mLastSendError = SyncSendError::CancelledAfterSend;
-        return false;
-    }
+    MOZ_RELEASE_ASSERT(mRecvd);
+    MOZ_RELEASE_ASSERT(mRecvd->is_reply(), "expected reply");
+    MOZ_RELEASE_ASSERT(!mRecvd->is_reply_error());
+    MOZ_RELEASE_ASSERT(mRecvd->seqno() == seqno);
+    MOZ_RELEASE_ASSERT(mRecvd->type() == replyType, "wrong reply type");
+    MOZ_RELEASE_ASSERT(mRecvd->is_sync());
 
-    if (transact.IsError()) {
-        IPC_LOG("Error: seqno=%d, xid=%d", seqno, transaction);
-        mLastSendError = SyncSendError::ReplyError;
-        return false;
-    }
-
-    IPC_LOG("Got reply: seqno=%d, xid=%d", seqno, transaction);
-
-    nsAutoPtr<Message> reply = transact.GetReply();
-
-    MOZ_RELEASE_ASSERT(reply);
-    MOZ_RELEASE_ASSERT(reply->is_reply(), "expected reply");
-    MOZ_RELEASE_ASSERT(!reply->is_reply_error());
-    MOZ_RELEASE_ASSERT(reply->seqno() == seqno);
-    MOZ_RELEASE_ASSERT(reply->type() == replyType, "wrong reply type");
-    MOZ_RELEASE_ASSERT(reply->is_sync());
-
-    *aReply = Move(*reply);
+    *aReply = Move(*mRecvd);
+    mRecvd = nullptr;
+    mLastSendError = SyncSendError::SendSuccess;
     return true;
 }
 
@@ -1436,6 +1252,16 @@ MessageChannel::ProcessPendingRequest(const Message &aUrgent)
     AssertWorkerThread();
     mMonitor->AssertCurrentThreadOwns();
 
+    
+    
+    
+    
+    
+    
+    
+    
+    nsAutoPtr<Message> savedReply(mRecvd.forget());
+
     IPC_LOG("Process pending: seqno=%d, xid=%d", aUrgent.seqno(), aUrgent.transaction_id());
 
     DispatchMessage(aUrgent);
@@ -1444,6 +1270,13 @@ MessageChannel::ProcessPendingRequest(const Message &aUrgent)
         return false;
     }
 
+    
+    
+    
+    
+    IPC_ASSERT(!mRecvd || !savedReply, "unknown reply");
+    if (!mRecvd)
+        mRecvd = savedReply.forget();
     return true;
 }
 
@@ -1519,6 +1352,8 @@ MessageChannel::OnMaybeDequeueOne()
         return false;
     }
 
+    
+    MOZ_RELEASE_ASSERT(mCurrentTransaction == 0);
     DispatchMessage(recvd);
 
     return true;
@@ -1539,7 +1374,7 @@ MessageChannel::DispatchMessage(const Message &aMsg)
         AutoEnterTransaction transaction(this, aMsg);
 
         int id = aMsg.transaction_id();
-        MOZ_RELEASE_ASSERT(!aMsg.is_sync() || id == transaction.TransactionID());
+        MOZ_RELEASE_ASSERT(!aMsg.is_sync() || id == mCurrentTransaction);
 
         {
             MonitorAutoUnlock unlock(*mMonitor);
@@ -1557,7 +1392,7 @@ MessageChannel::DispatchMessage(const Message &aMsg)
             mListener->ArtificialSleep();
         }
 
-        if (reply && transaction.IsCanceled()) {
+        if (mCurrentTransaction != id) {
             
             IPC_LOG("Nulling out reply due to cancellation, seqno=%d, xid=%d", aMsg.seqno(), id);
             reply = nullptr;
@@ -1585,6 +1420,8 @@ MessageChannel::DispatchSyncMessage(const Message& aMsg, Message*& aReply)
     Result rv;
     {
         AutoSetValue<MessageChannel*> blocked(blockingVar, this);
+        AutoSetValue<bool> sync(mDispatchingSyncMessage, true);
+        AutoSetValue<int> prioSet(mDispatchingSyncMessagePriority, prio);
         rv = mListener->OnMessageReceived(aMsg, aReply);
     }
 
@@ -2286,7 +2123,38 @@ MessageChannel::CancelTransaction(int transaction)
     
     
 
-    IPC_LOG("CancelTransaction: xid=%d", transaction);
+    IPC_LOG("CancelTransaction: xid=%d prios=%d", transaction, mPendingSendPriorities);
+
+    if (mPendingSendPriorities & (1 << IPC::Message::PRIORITY_NORMAL)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        mListener->IntentionalCrash();
+    }
 
     
     
@@ -2300,19 +2168,26 @@ MessageChannel::CancelTransaction(int transaction)
         
         
         
-        MOZ_RELEASE_ASSERT(!mTransactionStack || mTransactionStack->TransactionID() == transaction);
-        if (mTransactionStack) {
-            mTransactionStack->Cancel();
-        }
+        MOZ_RELEASE_ASSERT(!mCurrentTransaction || mCurrentTransaction == transaction);
+        mCurrentTransaction = 0;
+
+        
+        MOZ_RELEASE_ASSERT(!mAwaitingSyncReply);
     } else {
-        MOZ_RELEASE_ASSERT(mTransactionStack->TransactionID() == transaction);
-        mTransactionStack->Cancel();
+        MOZ_RELEASE_ASSERT(mCurrentTransaction == transaction);
+        mCurrentTransaction = 0;
+
+        mAwaitingSyncReply = false;
+        mAwaitingSyncReplyPriority = 0;
     }
 
     bool foundSync = false;
     for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); ) {
         Message &msg = *it;
 
+        
+        
+        
         
         
         
@@ -2326,32 +2201,36 @@ MessageChannel::CancelTransaction(int transaction)
             continue;
         }
 
+        
+        
+        
+        
+        mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
+
         it++;
     }
-}
 
-bool
-MessageChannel::IsInTransaction() const
-{
-    MonitorAutoLock lock(*mMonitor);
-    return !!mTransactionStack;
+    
+    
+    
+    
 }
 
 void
 MessageChannel::CancelCurrentTransaction()
 {
     MonitorAutoLock lock(*mMonitor);
-    if (DispatchingSyncMessagePriority() >= IPC::Message::PRIORITY_HIGH) {
+    if (mCurrentTransaction) {
         if (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_URGENT ||
             DispatchingAsyncMessagePriority() == IPC::Message::PRIORITY_URGENT)
         {
             mListener->IntentionalCrash();
         }
 
-        IPC_LOG("Cancel requested: current xid=%d", CurrentHighPriorityTransaction());
+        IPC_LOG("Cancel requested: current xid=%d", mCurrentTransaction);
         MOZ_RELEASE_ASSERT(DispatchingSyncMessage());
-        CancelMessage *cancel = new CancelMessage(CurrentHighPriorityTransaction());
-        CancelTransaction(CurrentHighPriorityTransaction());
+        CancelMessage *cancel = new CancelMessage(mCurrentTransaction);
+        CancelTransaction(mCurrentTransaction);
         mLink->SendMessage(cancel);
     }
 }
