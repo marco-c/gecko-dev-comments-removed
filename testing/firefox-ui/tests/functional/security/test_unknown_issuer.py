@@ -26,14 +26,10 @@ class TestUnknownIssuer(FirefoxTestCase):
             time.sleep(1)
 
             
-            link = self.marionette.find_element(By.ID, 'cert_domain_link')
-            self.assertEquals(link.get_attribute('textContent'),
-                              'ssl-selfsigned-unknownissuer.mozqa.com')
+            error = self.marionette.find_element(By.ID, 'errorCode')
+            self.assertEquals(error.get_attribute('textContent'),
+                              'SEC_ERROR_UNKNOWN_ISSUER')
 
             
             self.assertIsNotNone(self.marionette.find_element(By.ID, 'returnButton'))
             self.assertIsNotNone(self.marionette.find_element(By.ID, 'advancedButton'))
-
-            
-            text = self.marionette.find_element(By.ID, 'technicalContentText')
-            self.assertIn('SEC_ERROR_UNKNOWN_ISSUER', text.get_attribute('textContent'))
