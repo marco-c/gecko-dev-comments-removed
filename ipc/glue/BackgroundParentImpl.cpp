@@ -473,7 +473,22 @@ BackgroundParentImpl::AllocPBroadcastChannelParent(
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
 
-  return new BroadcastChannelParent(aOrigin, aChannel, aPrivateBrowsing);
+  nsString originChannelKey;
+
+  
+  
+
+  originChannelKey.Assign(aChannel);
+
+  if (aPrivateBrowsing) {
+    originChannelKey.AppendLiteral("|pb=true|");
+  } else {
+    originChannelKey.AppendLiteral("|pb=false|");
+  }
+
+  originChannelKey.Append(NS_ConvertUTF8toUTF16(aOrigin));
+
+  return new BroadcastChannelParent(originChannelKey);
 }
 
 namespace {
