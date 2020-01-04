@@ -31,7 +31,13 @@ PostSpecifiedTimingUpdated(KeyframeEffect* aEffect)
 void
 AnimationEffectTiming::SetDelay(double aDelay)
 {
-  
+  TimeDuration delay = TimeDuration::FromMilliseconds(aDelay);
+  if (mTiming.mDelay == delay) {
+    return;
+  }
+  mTiming.mDelay = delay;
+
+  PostSpecifiedTimingUpdated(mEffect);
 }
 
 void
