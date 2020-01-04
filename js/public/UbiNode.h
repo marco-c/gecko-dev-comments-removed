@@ -496,7 +496,7 @@ class Base {
     
     
     
-    virtual size_t size(mozilla::MallocSizeOf mallocSizeof) const { return 0; }
+    virtual size_t size(mozilla::MallocSizeOf mallocSizeof) const { return 1; }
 
     
     
