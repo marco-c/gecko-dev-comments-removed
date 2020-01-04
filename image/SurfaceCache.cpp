@@ -126,6 +126,7 @@ public:
 
   explicit CachedSurface(NotNull<ISurfaceProvider*> aProvider)
     : mProvider(aProvider)
+    , mIsLocked(false)
   { }
 
   DrawableSurface GetDrawableSurface() const
@@ -144,10 +145,19 @@ public:
       return;  
     }
 
+    
+    
+    
+    
+    mIsLocked = aLocked;
     mProvider->SetLocked(aLocked);
   }
 
-  bool IsLocked() const { return !IsPlaceholder() && mProvider->IsLocked(); }
+  bool IsLocked() const
+  {
+    return !IsPlaceholder() && mIsLocked && mProvider->IsLocked();
+  }
+
   bool IsPlaceholder() const { return mProvider->Availability().IsPlaceholder(); }
   bool IsDecoded() const { return !IsPlaceholder() && mProvider->IsFinished(); }
 
@@ -200,6 +210,7 @@ public:
 private:
   nsExpirationState                 mExpirationState;
   NotNull<RefPtr<ISurfaceProvider>> mProvider;
+  bool                              mIsLocked;
 };
 
 static int64_t
