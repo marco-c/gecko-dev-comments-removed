@@ -16,8 +16,10 @@
 #include "nsAccessibilityService.h"
 #endif
 #include "mozilla/BrowserElementParent.h"
+#include "mozilla/dom/ContentBridgeParent.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DataTransfer.h"
+#include "mozilla/dom/Event.h"
 #include "mozilla/dom/indexedDB/ActorsParent.h"
 #include "mozilla/plugins/PluginWidgetParent.h"
 #include "mozilla/EventStateManager.h"
@@ -518,8 +520,7 @@ TabParent::ShouldSwitchProcess(nsIChannel* aChannel)
 }
 
 void
-TabParent::OnStartSignedPackageRequest(nsIChannel* aChannel,
-                                       const nsACString& aPackageId)
+TabParent::OnStartSignedPackageRequest(nsIChannel* aChannel)
 {
   if (!ShouldSwitchProcess(aChannel)) {
     return;
@@ -538,7 +539,7 @@ TabParent::OnStartSignedPackageRequest(nsIChannel* aChannel,
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader();
   NS_ENSURE_TRUE_VOID(frameLoader);
 
-  nsresult rv = frameLoader->SwitchProcessAndLoadURI(uri, aPackageId);
+  nsresult rv = frameLoader->SwitchProcessAndLoadURI(uri);
   if (NS_FAILED(rv)) {
     NS_WARNING("Failed to switch process.");
   }
