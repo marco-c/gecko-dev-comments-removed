@@ -141,7 +141,6 @@ static const uint32_t kMaxICCDuration = 2000;
 
 
 static nsITimer *sGCTimer;
-static nsITimer *sShrinkGCBuffersTimer;
 static nsITimer *sShrinkingGCTimer;
 static nsITimer *sCCTimer;
 static nsITimer *sICCTimer;
@@ -295,7 +294,6 @@ KillTimers()
 {
   nsJSContext::KillGCTimer();
   nsJSContext::KillShrinkingGCTimer();
-  nsJSContext::KillShrinkGCBuffersTimer();
   nsJSContext::KillCCTimer();
   nsJSContext::KillICCTimer();
   nsJSContext::KillFullGCTimer();
@@ -1188,7 +1186,6 @@ nsJSContext::GarbageCollectNow(JS::gcreason::Reason aReason,
   MOZ_ASSERT_IF(aSliceMillis, aIncremental == IncrementalGC);
 
   KillGCTimer();
-  KillShrinkGCBuffersTimer();
 
   
   
@@ -1224,18 +1221,6 @@ nsJSContext::GarbageCollectNow(JS::gcreason::Reason aReason,
   } else {
     JS::GCForReason(sContext, gckind, aReason);
   }
-}
-
-
-void
-nsJSContext::ShrinkGCBuffersNow()
-{
-  PROFILER_LABEL("nsJSContext", "ShrinkGCBuffersNow",
-    js::ProfileEntry::Category::GC);
-
-  KillShrinkGCBuffersTimer();
-
-  JS::ShrinkGCBuffers(sContext);
 }
 
 static void
@@ -1731,13 +1716,6 @@ GCTimerFired(nsITimer *aTimer, void *aClosure)
                                  nsJSContext::IncrementalGC);
 }
 
-void
-ShrinkGCBuffersTimerFired(nsITimer *aTimer, void *aClosure)
-{
-  nsJSContext::KillShrinkGCBuffersTimer();
-  nsJSContext::ShrinkGCBuffersNow();
-}
-
 
 void
 ShrinkingGCTimerFired(nsITimer* aTimer, void* aClosure)
@@ -1966,28 +1944,6 @@ nsJSContext::PokeGC(JS::gcreason::Reason aReason, int aDelay)
 
 
 void
-nsJSContext::PokeShrinkGCBuffers()
-{
-  if (sShrinkGCBuffersTimer || sShuttingDown) {
-    return;
-  }
-
-  CallCreateInstance("@mozilla.org/timer;1", &sShrinkGCBuffersTimer);
-
-  if (!sShrinkGCBuffersTimer) {
-    
-    return;
-  }
-
-  sShrinkGCBuffersTimer->InitWithNamedFuncCallback(ShrinkGCBuffersTimerFired,
-                                                   nullptr,
-                                                   NS_SHRINK_GC_BUFFERS_DELAY,
-                                                   nsITimer::TYPE_ONE_SHOT,
-                                                   "ShrinkGCBuffersTimerFired");
-}
-
-
-void
 nsJSContext::PokeShrinkingGC()
 {
   if (sShrinkingGCTimer || sShuttingDown) {
@@ -2061,16 +2017,6 @@ nsJSContext::KillInterSliceGCTimer()
 
 
 void
-nsJSContext::KillShrinkGCBuffersTimer()
-{
-  if (sShrinkGCBuffersTimer) {
-    sShrinkGCBuffersTimer->Cancel();
-    NS_RELEASE(sShrinkGCBuffersTimer);
-  }
-}
-
-
-void
 nsJSContext::KillShrinkingGCTimer()
 {
   if (sShrinkingGCTimer) {
@@ -2138,9 +2084,6 @@ DOMGCSliceCallback(JSRuntime *aRt, JS::GCProgress aProgress, const JS::GCDescrip
     case JS::GC_CYCLE_BEGIN: {
       
       sCCLockedOut = true;
-
-      nsJSContext::KillShrinkGCBuffersTimer();
-
       break;
     }
 
@@ -2193,10 +2136,6 @@ DOMGCSliceCallback(JSRuntime *aRt, JS::GCProgress aProgress, const JS::GCDescrip
         }
       } else {
         nsJSContext::KillFullGCTimer();
-      }
-
-      if (aDesc.invocationKind_ == GC_NORMAL) {
-        nsJSContext::PokeShrinkGCBuffers();
       }
 
       if (ShouldTriggerCC(nsCycleCollector_suspectedCount())) {

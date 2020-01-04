@@ -784,7 +784,6 @@ struct ChunkInfo
 {
     void init() {
         next = prev = nullptr;
-        age = 0;
     }
 
   private:
@@ -801,7 +800,7 @@ struct ChunkInfo
 
 
 
-    char            padding[20];
+    char            padding[24];
 #endif
 
     
@@ -816,9 +815,6 @@ struct ChunkInfo
 
     
     uint32_t        numArenasFreeCommitted;
-
-    
-    uint32_t        age;
 
     
     ChunkTrailer    trailer;

@@ -477,14 +477,6 @@ GetGCNumber();
 
 
 
-
-extern JS_PUBLIC_API(void)
-ShrinkGCBuffers(JSContext* cx);
-
-
-
-
-
 class JS_PUBLIC_API(AutoAssertOnGC)
 {
 #ifdef DEBUG
