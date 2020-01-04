@@ -361,29 +361,12 @@ CheckScope(nsIPrincipal* aPrincipal, const nsACString& aScope)
 
 
 
-class NotificationWorkerRunnable : public WorkerRunnable
+class NotificationWorkerRunnable : public MainThreadWorkerRunnable
 {
 protected:
   explicit NotificationWorkerRunnable(WorkerPrivate* aWorkerPrivate)
-    : WorkerRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
+    : MainThreadWorkerRunnable(aWorkerPrivate)
   {
-  }
-
-  bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
-  {
-    
-    
-    AssertIsOnMainThread();
-    return true;
-  }
-
-  void
-  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
-  {
-    
-    
-    AssertIsOnMainThread();
   }
 
   bool

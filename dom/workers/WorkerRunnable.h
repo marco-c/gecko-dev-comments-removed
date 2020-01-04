@@ -302,6 +302,35 @@ private:
 
 
 
+class MainThreadWorkerRunnable : public WorkerRunnable
+{
+protected:
+  explicit MainThreadWorkerRunnable(WorkerPrivate* aWorkerPrivate)
+  : WorkerRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount)
+  {
+    AssertIsOnMainThread();
+  }
+
+  virtual ~MainThreadWorkerRunnable()
+  {}
+
+  virtual bool
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  {
+    AssertIsOnMainThread();
+    return true;
+  }
+
+  virtual void
+  PostDispatch(WorkerPrivate* aWorkerPrivate,
+               bool aDispatchResult) override
+  {
+    AssertIsOnMainThread();
+  }
+};
+
+
+
 class MainThreadWorkerControlRunnable : public WorkerControlRunnable
 {
 protected:
@@ -320,7 +349,10 @@ protected:
   }
 
   virtual void
-  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
+  {
+    AssertIsOnMainThread();
+  }
 };
 
 
