@@ -55,8 +55,6 @@ public:
   void BeginUpdate();
   nsresult EndUpdate();
 
-  void StartStyling(nsPresContext* aPresContext);
-
   already_AddRefed<nsStyleContext>
   ResolveStyleFor(dom::Element* aElement,
                   nsStyleContext* aParentContext);
@@ -155,8 +153,6 @@ public:
 
   void StyleNewChildren(nsIContent* aParent);
 
-  bool StylingStarted() const { return mStylingStarted; }
-
 private:
   already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
                                               nsStyleContext* aParentContext,
@@ -173,7 +169,6 @@ private:
   EnumeratedArray<SheetType, SheetType::Count,
                   nsTArray<RefPtr<ServoStyleSheet>>> mSheets;
   int32_t mBatching;
-  bool mStylingStarted;
 };
 
 } 

@@ -280,17 +280,21 @@ ServoRestyleManager::ProcessPendingRestyles()
 {
   MOZ_ASSERT(PresContext()->Document(), "No document?  Pshaw!");
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(), "Missing a script blocker!");
+
+  if (MOZ_UNLIKELY(!PresContext()->PresShell()->DidInitialize())) {
+    
+    
+    
+    
+    
+    return;
+  }
+
   if (!HasPendingRestyles()) {
     return;
   }
 
   ServoStyleSet* styleSet = StyleSet();
-  if (!styleSet->StylingStarted()) {
-    
-    
-    return;
-  }
-
   nsIDocument* doc = PresContext()->Document();
   Element* root = doc->GetRootElement();
   if (root) {
@@ -331,7 +335,7 @@ ServoRestyleManager::ProcessPendingRestyles()
   }
 
   MOZ_ASSERT(!doc->IsDirtyForServo());
-  MOZ_ASSERT(!doc->HasDirtyDescendantsForServo());
+  doc->UnsetHasDirtyDescendantsForServo();
 
   mModifiedElements.Clear();
 
@@ -354,6 +358,20 @@ ServoRestyleManager::RestyleForInsertOrChange(nsINode* aContainer,
 void
 ServoRestyleManager::ContentInserted(nsINode* aContainer, nsIContent* aChild)
 {
+  if (aContainer == aContainer->OwnerDoc()) {
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(aChild == aChild->OwnerDoc()->GetRootElement());
+    MOZ_ASSERT(aChild->IsDirtyForServo());
+    StyleSet()->StyleDocument( false);
+    return;
+  }
+
   if (!aContainer->ServoData().get()) {
     
     
