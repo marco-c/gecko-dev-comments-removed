@@ -15,13 +15,15 @@ const { connect } = require("devtools/client/shared/vendor/react-redux");
 const MessageContainer = createFactory(require("devtools/client/webconsole/new-console-output/components/message-container").MessageContainer);
 
 const ConsoleOutput = createClass({
-  displayName: "ConsoleOutput",
 
   propTypes: {
     jsterm: PropTypes.object.isRequired,
     
-    openVariablesView: PropTypes.func.isRequired
+    openVariablesView: PropTypes.func.isRequired,
+    messages: PropTypes.array.isRequired
   },
+
+  displayName: "ConsoleOutput",
 
   componentWillUpdate() {
     
