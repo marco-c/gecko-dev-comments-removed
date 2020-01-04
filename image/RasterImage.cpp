@@ -1619,11 +1619,8 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder,
       Telemetry::Accumulate(Telemetry::IMAGE_DECODE_TIME,
                             int32_t(aTelemetry.mDecodeTime.ToMicroseconds()));
 
-      
-      
-      Telemetry::ID id = aTelemetry.mSpeedHistogram;
-      if (id < Telemetry::HistogramCount) {
-        Telemetry::Accumulate(id, aTelemetry.Speed());
+      if (aTelemetry.mSpeedHistogram) {
+        Telemetry::Accumulate(*aTelemetry.mSpeedHistogram, aTelemetry.Speed());
       }
     }
 

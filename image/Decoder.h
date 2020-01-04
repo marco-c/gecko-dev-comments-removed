@@ -30,7 +30,7 @@ namespace image {
 
 struct DecoderTelemetry final
 {
-  DecoderTelemetry(Telemetry::ID aSpeedHistogram,
+  DecoderTelemetry(Maybe<Telemetry::ID> aSpeedHistogram,
                    size_t aBytesDecoded,
                    uint32_t aChunkCount,
                    TimeDuration aDecodeTime)
@@ -50,7 +50,8 @@ struct DecoderTelemetry final
   int32_t DecodeTimeMicros() { return mDecodeTime.ToMicroseconds(); }
 
   
-  const Telemetry::ID mSpeedHistogram;
+  
+  const Maybe<Telemetry::ID> mSpeedHistogram;
 
   
   const size_t mBytesDecoded;
@@ -336,13 +337,11 @@ public:
     return gfx::IntRect(gfx::IntPoint(), OutputSize());
   }
 
-  virtual Telemetry::ID SpeedHistogram();
-
   
   const ImageMetadata& GetImageMetadata() { return mImageMetadata; }
 
   
-  DecoderTelemetry Telemetry();
+  DecoderTelemetry Telemetry() const;
 
   
 
@@ -386,6 +385,14 @@ protected:
   virtual nsresult BeforeFinishInternal();
   virtual nsresult FinishInternal();
   virtual nsresult FinishWithErrorInternal();
+
+  
+
+
+
+
+  virtual Maybe<Telemetry::ID> SpeedHistogram() const { return Nothing(); }
+
 
   
 

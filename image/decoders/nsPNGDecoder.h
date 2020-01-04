@@ -22,13 +22,15 @@ class nsPNGDecoder : public Decoder
 public:
   virtual ~nsPNGDecoder();
 
+  
+  bool IsValidICO() const;
+
+protected:
   nsresult InitInternal() override;
   LexerResult DoDecode(SourceBufferIterator& aIterator,
                        IResumable* aOnResume) override;
-  virtual Telemetry::ID SpeedHistogram() override;
 
-  
-  bool IsValidICO() const;
+  Maybe<Telemetry::ID> SpeedHistogram() const override;
 
 private:
   friend class DecoderFactory;
