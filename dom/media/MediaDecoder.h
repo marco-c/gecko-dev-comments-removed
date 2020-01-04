@@ -242,9 +242,7 @@ public:
   bool IsSeeking() const;
 
   
-  
-  
-  bool IsEndedOrShutdown() const;
+  bool IsEnded() const;
 
   
   
@@ -530,9 +528,6 @@ protected:
 
   
   void CancelDormantTimer();
-
-  
-  bool IsEnded() const;
 
   bool IsShutdown() const;
 
