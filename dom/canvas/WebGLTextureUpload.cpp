@@ -1924,7 +1924,7 @@ WebGLTexture::ValidateCopyTexImageForFeedback(const char* funcName, uint32_t lev
         const auto& attach = fb->ColorAttachment(colorAttachment);
 
         if (attach.Texture() == this &&
-            attach.MipLevel() == uint32_t(level))
+            uint32_t(attach.MipLevel()) == level)
         {
             
             
