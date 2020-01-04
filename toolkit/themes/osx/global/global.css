@@ -15,6 +15,15 @@ menulist > menupopup {
 }
 
 
+:root {
+  --panel-arrowcontent-padding: 16px;
+  --panel-arrowcontent-background: linear-gradient(hsla(0,0%,99%,1), hsla(0,0%,99%,.975) 10%, hsla(0,0%,98%,.975));
+  --panel-arrowcontent-color: hsl(0,0%,10%);
+  --panel-arrowcontent-border: none;
+  --panel-arrowcontent-border-radius: 3.5px;
+}
+
+
 
 window,
 page,
