@@ -349,10 +349,9 @@ AutoJSAPI::InitInternal(JSObject* aGlobal, JSContext* aCx, bool aIsMainThread)
     mAutoNullableCompartment.emplace(mCx, aGlobal);
   }
 
-  JSRuntime* rt = JS_GetRuntime(aCx);
-  mOldErrorReporter.emplace(JS_GetErrorReporter(rt));
-
   if (aIsMainThread) {
+    JSRuntime* rt = JS_GetRuntime(aCx);
+    mOldErrorReporter.emplace(JS_GetErrorReporter(rt));
     JS_SetErrorReporter(rt, xpc::SystemErrorReporter);
   }
 }
@@ -466,25 +465,8 @@ AutoJSAPI::InitWithLegacyErrorReporting(nsGlobalWindow* aWindow)
 void
 WarningOnlyErrorReporter(JSContext* aCx, const char* aMessage, JSErrorReport* aRep)
 {
-  if (!JSREPORT_IS_WARNING(aRep->flags)) {
-    fprintf(stderr, "\n\nFAILURE: %d\n\n", getpid());
-    sleep(20);
-  }
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(JSREPORT_IS_WARNING(aRep->flags));
-  if (!NS_IsMainThread()) {
-    
-    
-    
-    
-    
-    
-    
-    workers::WorkerPrivate* worker = workers::GetWorkerPrivateFromContext(aCx);
-    MOZ_ASSERT(worker);
-
-    worker->ReportError(aCx, aMessage, aRep);
-    return;
-  }
 
   RefPtr<xpc::ErrorReport> xpcReport = new xpc::ErrorReport();
   nsGlobalWindow* win = xpc::CurrentWindowOrNull(aCx);
@@ -502,7 +484,13 @@ AutoJSAPI::TakeOwnershipOfErrorReporting()
   JSRuntime *rt = JS_GetRuntime(cx());
   mOldAutoJSAPIOwnsErrorReporting = JS::ContextOptionsRef(cx()).autoJSAPIOwnsErrorReporting();
   JS::ContextOptionsRef(cx()).setAutoJSAPIOwnsErrorReporting(true);
-  JS_SetErrorReporter(rt, WarningOnlyErrorReporter);
+  
+  
+  
+  
+  if (mIsMainThread) {
+    JS_SetErrorReporter(rt, WarningOnlyErrorReporter);
+  }
 }
 
 void
