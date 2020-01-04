@@ -13,7 +13,7 @@ NS_EVENT_MESSAGE(eVoidEvent,            0)
 
 
 
-NS_EVENT_MESSAGE(NS_EVENT_ALL,          1)
+NS_EVENT_MESSAGE(eAllEvents,            1)
 
 NS_EVENT_MESSAGE(NS_WINDOW_START,       100)
 
