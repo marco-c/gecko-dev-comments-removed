@@ -408,12 +408,39 @@ class PushHeadCache(CacheManager):
 
     @cachedmethod(operator.attrgetter('_cache'))
     def pushheads(self, tree, parent):
-        pushheads = subprocess.check_output([self._hg, 'log',
+        try:
+            pushheads = subprocess.check_output([self._hg, 'log',
+                '--template', '{node}\n',
+                '-r', 'last(pushhead("{tree}") and ::"{parent}", {num})'.format(
+                    tree=tree, parent=parent, num=NUM_PUSHHEADS_TO_QUERY_PER_PARENT)])
+            
+            pushheads = [ pushhead for pushhead in pushheads.strip().split('\n') if pushhead ]
+            if pushheads:
+                return pushheads
+        except subprocess.CalledProcessError as e:
+            
+            ret = subprocess.call([self._hg, 'showconfig', 'extensions.mozext'])
+            if ret:
+                raise Exception('Could not find candidate pushheads.\n\n'
+                                'You need to enable the "mozext" hg extension: '
+                                'see https://developer.mozilla.org/en-US/docs/Artifact_builds')
+            raise e
+
+        
+        tree_pushheads = subprocess.check_output([self._hg, 'log',
             '--template', '{node}\n',
-            '-r', 'last(pushhead("{tree}") and ::"{parent}", {num})'.format(
-                tree=tree, parent=parent, num=NUM_PUSHHEADS_TO_QUERY_PER_PARENT)])
-        pushheads = pushheads.strip().split('\n')
-        return pushheads
+            '-r', 'last(pushhead("{tree}"))'.format(tree=tree)])
+        
+        tree_pushheads = [ pushhead for pushhead in tree_pushheads.strip().split('\n') if pushhead ]
+        if tree_pushheads:
+            
+            
+            
+            return []
+
+        raise Exception('Could not find any pushheads for tree "{tree}".\n\n'
+                        'Try running |hg pushlogsync|; '
+                        'see https://developer.mozilla.org/en-US/docs/Artifact_builds'.format(tree=tree))
 
 
 class TaskCache(CacheManager):
