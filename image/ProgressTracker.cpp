@@ -55,10 +55,6 @@ CheckProgressConsistency(Progress aOldProgress, Progress aNewProgress)
   if (aNewProgress & FLAG_HAS_TRANSPARENCY) {
     
     
-    
-    MOZ_ASSERT((aNewProgress & FLAG_IS_ANIMATED) ||
-               (aOldProgress & FLAG_HAS_TRANSPARENCY) ||
-               !(aOldProgress & FLAG_SIZE_AVAILABLE));
   }
   if (aNewProgress & FLAG_LAST_PART_COMPLETE) {
     MOZ_ASSERT(aNewProgress & FLAG_LOAD_COMPLETE);
