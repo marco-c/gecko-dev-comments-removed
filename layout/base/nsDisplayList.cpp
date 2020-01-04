@@ -4838,7 +4838,16 @@ nsDisplayTransform::SetReferenceFrameToAncestor(nsDisplayListBuilder* aBuilder)
   mReferenceFrame =
     aBuilder->FindReferenceFrameFor(outerFrame);
   mToReferenceFrame = mFrame->GetOffsetToCrossDoc(mReferenceFrame);
-  mAnimatedGeometryRoot = nsLayoutUtils::GetAnimatedGeometryRootForFrame(aBuilder, outerFrame);
+  if (nsLayoutUtils::IsFixedPosFrameInDisplayPort(mFrame)) {
+    
+    
+    
+    
+    
+    mAnimatedGeometryRoot = mFrame;
+  } else {
+    mAnimatedGeometryRoot = nsLayoutUtils::GetAnimatedGeometryRootForFrame(aBuilder, outerFrame);
+  }
   mVisibleRect = aBuilder->GetDirtyRect() + mToReferenceFrame;
 }
 
