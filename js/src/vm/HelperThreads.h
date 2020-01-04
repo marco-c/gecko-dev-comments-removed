@@ -479,10 +479,10 @@ struct ParseTask
     
     
     
-    JSScript* script;
+    PersistentRootedScript script;
 
     
-    ScriptSourceObject* sourceObject;
+    PersistentRooted<ScriptSourceObject*> sourceObject;
 
     
     
