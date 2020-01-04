@@ -60,6 +60,9 @@ public:
   
   void WillRefresh(TimeStamp aTime) override;
 
+  void NotifyRefreshDriverCreated(nsRefreshDriver* aDriver);
+  void NotifyRefreshDriverDestroying(nsRefreshDriver* aDriver);
+
 protected:
   TimeStamp GetCurrentTimeStamp() const;
   nsRefreshDriver* GetRefreshDriver() const;

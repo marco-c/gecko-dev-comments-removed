@@ -17,6 +17,12 @@
 #include "nsIGlobalObject.h"
 #include "nsTHashtable.h"
 
+
+
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 namespace mozilla {
 namespace dom {
 
