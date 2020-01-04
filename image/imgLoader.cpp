@@ -1313,7 +1313,9 @@ imgLoader::FindEntryProperties(nsIURI* uri,
     }
   }
 
-  ImageCacheKey key(uri, attrs, doc);
+  nsresult rv;
+  ImageCacheKey key(uri, attrs, doc, rv);
+  NS_ENSURE_SUCCESS(rv, rv);
   imgCacheTable& cache = GetCache(key);
 
   RefPtr<imgCacheEntry> entry;
@@ -2071,7 +2073,8 @@ imgLoader::LoadImage(nsIURI* aURI,
   if (aLoadingPrincipal) {
     attrs = BasePrincipal::Cast(aLoadingPrincipal)->OriginAttributesRef();
   }
-  ImageCacheKey key(aURI, attrs, aLoadingDocument);
+  ImageCacheKey key(aURI, attrs, aLoadingDocument, rv);
+  NS_ENSURE_SUCCESS(rv, rv);
   imgCacheTable& cache = GetCache(key);
 
   if (cache.Get(key, getter_AddRefs(entry)) && entry) {
@@ -2142,9 +2145,12 @@ imgLoader::LoadImage(nsIURI* aURI,
 
     nsCOMPtr<nsILoadGroup> channelLoadGroup;
     newChannel->GetLoadGroup(getter_AddRefs(channelLoadGroup));
-    request->Init(aURI, aURI,  false,
-                  channelLoadGroup, newChannel, entry, aLoadingDocument,
-                  aLoadingPrincipal, corsmode, aReferrerPolicy);
+    rv = request->Init(aURI, aURI,  false,
+                       channelLoadGroup, newChannel, entry, aLoadingDocument,
+                       aLoadingPrincipal, corsmode, aReferrerPolicy);
+    if (NS_FAILED(rv)) {
+      return NS_ERROR_FAILURE;
+    }
 
     
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(newChannel);
@@ -2280,7 +2286,9 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
     attrs.InheritFromNecko(loadInfo->GetOriginAttributes());
   }
 
-  ImageCacheKey key(uri, attrs, doc);
+  nsresult rv;
+  ImageCacheKey key(uri, attrs, doc, rv);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsLoadFlags requestFlags = nsIRequest::LOAD_NORMAL;
   channel->GetLoadFlags(&requestFlags);
@@ -2361,7 +2369,7 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
   
   requestFlags &= nsIRequest::LOAD_REQUESTMASK;
 
-  nsresult rv = NS_OK;
+  rv = NS_OK;
   if (request) {
     
 
@@ -2382,7 +2390,8 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
     
     
     
-    ImageCacheKey originalURIKey(originalURI, attrs, doc);
+    ImageCacheKey originalURIKey(originalURI, attrs, doc, rv);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
     
@@ -2400,9 +2409,10 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
     
     
     
-    request->Init(originalURI, uri,  false,
-                  channel, channel, entry, aCX, nullptr,
-                  imgIRequest::CORS_NONE, RP_Default);
+    rv = request->Init(originalURI, uri,  false,
+                       channel, channel, entry, aCX, nullptr,
+                       imgIRequest::CORS_NONE, RP_Default);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     RefPtr<ProxyListener> pl =
       new ProxyListener(static_cast<nsIStreamListener*>(request.get()));
@@ -2773,8 +2783,12 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   
   nsCOMPtr<nsIURI> originalURI;
   channel->GetOriginalURI(getter_AddRefs(originalURI));
-  mNewRequest->Init(originalURI, uri, mHadInsecureRedirect, aRequest, channel,
-                    mNewEntry, context, loadingPrincipal, corsmode, refpol);
+  nsresult rv =
+    mNewRequest->Init(originalURI, uri, mHadInsecureRedirect, aRequest, channel,
+                      mNewEntry, context, loadingPrincipal, corsmode, refpol);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   mDestListener = new ProxyListener(mNewRequest);
 
