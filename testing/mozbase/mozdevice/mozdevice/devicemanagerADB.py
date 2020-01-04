@@ -246,9 +246,9 @@ class DeviceManagerADB(DeviceManager):
         
         
         retryLimit = retryLimit or self.retryLimit
-        if not self.dirExists(remoteDir):
-            self.mkDirs(remoteDir+"/x")
         if self._useZip:
+            self.removeDir(remoteDir)
+            self.mkDirs(remoteDir+"/x")
             try:
                 localZip = tempfile.mktemp() + ".zip"
                 remoteZip = remoteDir + "/adbdmtmp.zip"
@@ -270,6 +270,11 @@ class DeviceManagerADB(DeviceManager):
                 self._useZip = False
                 self.pushDir(localDir, remoteDir, retryLimit=retryLimit, timeout=timeout)
         else:
+            
+            
+            
+            self.mkDirs(remoteDir+"/x")
+            self.removeDir(remoteDir)
             tmpDir = tempfile.mkdtemp()
             
             tmpDirTarget = os.path.join(tmpDir, "tmp")
