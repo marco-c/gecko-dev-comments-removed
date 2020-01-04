@@ -20,6 +20,7 @@
 #include "js/SliceBudget.h"
 #include "js/Vector.h"
 
+#include "threading/ConditionVariable.h"
 #include "vm/NativeObject.h"
 
 namespace js {
@@ -849,7 +850,7 @@ class GCHelperState
     
     
     
-    PRCondVar* done;
+    js::ConditionVariable done;
 
     
     State state_;
@@ -858,7 +859,7 @@ class GCHelperState
     PRThread* thread;
 
     void startBackgroundThread(State newState);
-    void waitForBackgroundThread();
+    void waitForBackgroundThread(js::AutoLockGC& lock);
 
     State state();
     void setState(State state);
@@ -879,13 +880,12 @@ class GCHelperState
   public:
     explicit GCHelperState(JSRuntime* rt)
       : rt(rt),
-        done(nullptr),
+        done(),
         state_(IDLE),
         thread(nullptr),
         shrinkFlag(false)
     { }
 
-    bool init();
     void finish();
 
     void work();
