@@ -1300,11 +1300,15 @@ InplaceEditor.prototype = {
       
       
       if (input.selectionStart == input.selectionEnd &&
-          input.selectionStart < input.value.length &&
-          input.value.slice(input.selectionStart)[0] != " ") {
+          input.selectionStart < input.value.length) {
+        let nextChar = input.value.slice(input.selectionStart)[0];
         
-        this.emit("after-suggest", "nothing to autocomplete");
-        return;
+        
+        if (/[\w-]/.test(nextChar)) {
+          
+          this.emit("after-suggest", "nothing to autocomplete");
+          return;
+        }
       }
       let list = [];
       if (this.contentType == CONTENT_TYPES.CSS_PROPERTY) {
