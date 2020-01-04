@@ -1807,9 +1807,7 @@ WebSocket::CreateAndDispatchSimpleEvent(const nsAString& aName)
   RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
 
   
-  rv = event->InitEvent(aName, false, false);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  event->InitEvent(aName, false, false);
   event->SetTrusted(true);
 
   return DispatchDOMEvent(nullptr, event, nullptr, nullptr);

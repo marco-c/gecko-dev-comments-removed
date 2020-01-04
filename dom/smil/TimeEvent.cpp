@@ -64,9 +64,8 @@ TimeEvent::InitTimeEvent(const nsAString& aTypeArg,
                          nsIDOMWindow* aViewArg,
                          int32_t aDetailArg)
 {
-  nsresult rv = Event::InitEvent(aTypeArg, false ,
-                                           false );
-  NS_ENSURE_SUCCESS(rv, rv);
+  Event::InitEvent(aTypeArg, false ,
+                   false );
 
   mDetail = aDetailArg;
   mView = aViewArg;
