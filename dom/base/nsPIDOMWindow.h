@@ -151,32 +151,6 @@ public:
     return mParentTarget;
   }
 
-  bool HasMutationListeners(uint32_t aMutationEventType) const
-  {
-    MOZ_ASSERT(IsInnerWindow());
-
-    if (!mOuterWindow) {
-      NS_ERROR("HasMutationListeners() called on orphan inner window!");
-
-      return false;
-    }
-
-    return (mMutationBits & aMutationEventType) != 0;
-  }
-
-  void SetMutationListeners(uint32_t aType)
-  {
-    MOZ_ASSERT(IsInnerWindow());
-
-    if (!mOuterWindow) {
-      NS_ERROR("HasMutationListeners() called on orphan inner window!");
-
-      return;
-    }
-
-    mMutationBits |= aType;
-  }
-
   virtual void MaybeUpdateTouchState() {}
 
   nsIDocument* GetExtantDoc() const
@@ -382,43 +356,6 @@ public:
 
 
   virtual void FinishFullscreenChange(bool aIsFullscreen) = 0;
-
-  
-
-
-
-  bool HasMouseEnterLeaveEventListeners()
-  {
-    return mMayHaveMouseEnterLeaveEventListener;
-  }
-
-  
-
-
-
-  void SetHasMouseEnterLeaveEventListeners()
-  {
-    mMayHaveMouseEnterLeaveEventListener = true;
-  }
-
-  
-
-
-
-  bool HasPointerEnterLeaveEventListeners()
-  {
-    return mMayHavePointerEnterLeaveEventListener;
-  }
-
-  
-
-
-
-  void SetHasPointerEnterLeaveEventListeners()
-  {
-    mMayHavePointerEnterLeaveEventListener = true;
-  }
-
 
   virtual JSObject* GetCachedXBLPrototypeHandler(nsXBLPrototypeHandler* aKey) = 0;
   virtual void CacheXBLPrototypeHandler(nsXBLPrototypeHandler* aKey,
@@ -797,6 +734,65 @@ public:
   void InvalidateServiceWorkerRegistration(const nsAString& aScope);
 
   nsPerformance* GetPerformance();
+
+  bool HasMutationListeners(uint32_t aMutationEventType) const
+  {
+    if (!mOuterWindow) {
+      NS_ERROR("HasMutationListeners() called on orphan inner window!");
+
+      return false;
+    }
+
+    return (mMutationBits & aMutationEventType) != 0;
+  }
+
+  void SetMutationListeners(uint32_t aType)
+  {
+    if (!mOuterWindow) {
+      NS_ERROR("HasMutationListeners() called on orphan inner window!");
+
+      return;
+    }
+
+    mMutationBits |= aType;
+  }
+
+  
+
+
+
+  bool HasMouseEnterLeaveEventListeners()
+  {
+    return mMayHaveMouseEnterLeaveEventListener;
+  }
+
+  
+
+
+
+  void SetHasMouseEnterLeaveEventListeners()
+  {
+    mMayHaveMouseEnterLeaveEventListener = true;
+  }
+
+  
+
+
+
+  bool HasPointerEnterLeaveEventListeners()
+  {
+    return mMayHavePointerEnterLeaveEventListener;
+  }
+
+  
+
+
+
+  void SetHasPointerEnterLeaveEventListeners()
+  {
+    mMayHavePointerEnterLeaveEventListener = true;
+  }
+
 
 protected:
   void CreatePerformanceObjectIfNeeded();
