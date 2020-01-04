@@ -176,7 +176,8 @@ protected:
 
   
   
-  nsRect GetContentBoundaryForFrame(nsIFrame* aFrame) const;
+  
+  nsRect GetAllChildFrameRectsUnion(nsIFrame* aFrame) const;
 
   
   

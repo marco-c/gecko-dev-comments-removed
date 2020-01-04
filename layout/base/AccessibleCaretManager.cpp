@@ -23,9 +23,6 @@
 #include "nsFrameSelection.h"
 #include "nsGenericHTMLElement.h"
 #include "nsIHapticFeedback.h"
-#ifdef MOZ_WIDGET_ANDROID
-#include "nsWindow.h"
-#endif
 
 namespace mozilla {
 
@@ -265,7 +262,6 @@ AccessibleCaretManager::HasNonEmptyTextContent(nsINode* aNode) const
   return nsContentUtils::HasNonEmptyTextContent(
            aNode, nsContentUtils::eRecurseIntoChildren);
 }
-
 
 void
 AccessibleCaretManager::UpdateCaretsForCursorMode(UpdateCaretsHint aHint)
@@ -825,15 +821,6 @@ AccessibleCaretManager::SetSelectionDragState(bool aState) const
   if (fs) {
     fs->SetDragState(aState);
   }
-
-  
-  
-  #ifdef MOZ_WIDGET_ANDROID
-    nsIDocument* doc = mPresShell->GetDocument();
-    MOZ_ASSERT(doc);
-    nsIWidget* widget = nsContentUtils::WidgetForDocument(doc);
-    static_cast<nsWindow*>(widget)->SetSelectionDragState(aState);
-  #endif
 }
 
 void
@@ -1096,30 +1083,44 @@ AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint)
 }
 
 nsRect
-AccessibleCaretManager::GetContentBoundaryForFrame(nsIFrame* aFrame) const
+AccessibleCaretManager::GetAllChildFrameRectsUnion(nsIFrame* aFrame) const
 {
-  nsRect resultRect;
-  nsIFrame* rootFrame = mPresShell->GetRootFrame();
-
-  for (; aFrame; aFrame = aFrame->GetNextContinuation()) {
-    nsRect rect = aFrame->GetContentRectRelativeToSelf();
-    nsLayoutUtils::TransformRect(aFrame, rootFrame, rect);
-    resultRect = resultRect.Union(rect);
-
-    nsIFrame::ChildListIterator lists(aFrame);
-    for (; !lists.IsDone(); lists.Next()) {
-      
-      for (nsIFrame* child : lists.CurrentList()) {
-        nsRect overflowRect = child->GetScrollableOverflowRect();
-        nsLayoutUtils::TransformRect(child, rootFrame, overflowRect);
-        resultRect = resultRect.Union(overflowRect);
-      }
-    }
-  }
+  nsRect unionRect;
 
   
-  resultRect.Deflate(kBoundaryAppUnits);
-  return resultRect;
+  
+  for (nsIFrame* frame = aFrame->GetContentInsertionFrame();
+       frame;
+       frame = frame->GetNextContinuation()) {
+    nsRect frameRect;
+
+    for (nsIFrame::ChildListIterator lists(frame); !lists.IsDone(); lists.Next()) {
+      
+      for (nsIFrame* child : lists.CurrentList()) {
+        nsRect childRect = child->GetScrollableOverflowRectRelativeToSelf();
+        nsLayoutUtils::TransformRect(child, frame, childRect);
+
+        
+        
+        
+        if (childRect.IsEmpty()) {
+          frameRect = frameRect.UnionEdges(childRect);
+        } else {
+          frameRect = frameRect.Union(childRect);
+        }
+      }
+    }
+
+    MOZ_ASSERT(!frameRect.IsEmpty(),
+               "Editable frames should have at least one BRFrame child to make "
+               "frameRect non-empty!");
+    if (frame != aFrame) {
+      nsLayoutUtils::TransformRect(frame, aFrame, frameRect);
+    }
+    unionRect = unionRect.Union(frameRect);
+  }
+
+  return unionRect;
 }
 
 nsPoint
@@ -1133,9 +1134,17 @@ AccessibleCaretManager::AdjustDragBoundary(const nsPoint& aPoint) const
   Element* editingHost = GetEditingHostForFrame(focusFrame);
 
   if (editingHost) {
-    nsRect boundary =
-      GetContentBoundaryForFrame(editingHost->GetPrimaryFrame());
-    adjustedPoint = boundary.ClampPoint(adjustedPoint);
+    nsIFrame* editingHostFrame = editingHost->GetPrimaryFrame();
+    if (editingHostFrame) {
+      nsRect boundary = GetAllChildFrameRectsUnion(editingHostFrame);
+      nsLayoutUtils::TransformRect(editingHostFrame, mPresShell->GetRootFrame(),
+                                   boundary);
+
+      
+      boundary.Deflate(kBoundaryAppUnits);
+
+      adjustedPoint = boundary.ClampPoint(adjustedPoint);
+    }
   }
 
   if (GetCaretMode() == CaretMode::Selection) {
