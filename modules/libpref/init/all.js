@@ -793,6 +793,13 @@ pref("canvas.path.enabled", true);
 pref("canvas.capturestream.enabled", true);
 
 
+#ifdef RELEASE_BUILD
+pref("canvas.imagebitmap_extensions.enabled", false);
+#else
+pref("canvas.imagebitmap_extensions.enabled", true);
+#endif
+
+
 
 
 

@@ -136,6 +136,9 @@ public:
                        nsTArray<RefPtr<gfx::DataSourceSurface>>& aClonedSurfaces,
                        ImageBitmap* aImageBitmap);
 
+  
+  static bool ExtensionsEnabled(JSContext* aCx, JSObject* aObj);
+
   friend CreateImageBitmapFromBlob;
   friend CreateImageBitmapFromBlobTask;
   friend CreateImageBitmapFromBlobWorkerTask;
