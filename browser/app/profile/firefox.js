@@ -580,6 +580,9 @@ pref("browser.xul.error_pages.enabled", true);
 pref("browser.xul.error_pages.expert_bad_cert", false);
 
 
+pref("network.captive-portal-service.enabled", true);
+
+
 pref("network.manage-offline-status", true);
 
 
@@ -1287,21 +1290,11 @@ pref("media.gmp.decoder.h264", 2);
 
 pref("media.gmp.trial-create.enabled", true);
 
-
-
-
-
-
-
-
-
 #ifdef MOZ_ADOBE_EME
-pref("media.gmp-eme-adobe.visible", true);
 pref("media.gmp-eme-adobe.enabled", true);
 #endif
 
 #ifdef MOZ_WIDEVINE_EME
-pref("media.gmp-widevinecdm.visible", true);
 pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
