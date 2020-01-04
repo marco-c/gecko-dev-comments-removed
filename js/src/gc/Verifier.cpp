@@ -79,7 +79,7 @@ typedef HashMap<void*, VerifyNode*, DefaultHasher<void*>, SystemAllocPolicy> Nod
 
 
 
-class js::VerifyPreTracer : public JS::CallbackTracer
+class js::VerifyPreTracer final : public JS::CallbackTracer
 {
     JS::AutoDisableGenerationalGC noggc;
 
