@@ -1,0 +1,25 @@
+
+
+
+
+
+
+#ifndef builtin_Promise_h
+#define builtin_Promise_h
+
+#include "vm/NativeObject.h"
+
+namespace js {
+
+class AutoSetNewObjectMetadata;
+
+class ShellPromiseObject : public NativeObject
+{
+  public:
+    static const Class class_;
+    static const Class protoClass_;
+};
+
+} 
+
+#endif 
