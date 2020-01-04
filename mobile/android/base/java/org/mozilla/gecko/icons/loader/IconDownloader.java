@@ -56,7 +56,7 @@ public class IconDownloader implements IconLoader {
         }
 
         try {
-            LoadFaviconResult result = downloadAndDecodeImage(request.getContext(), iconUrl);
+            final LoadFaviconResult result = downloadAndDecodeImage(request.getContext(), iconUrl);
             if (result == null) {
                 return null;
             }
@@ -90,7 +90,7 @@ public class IconDownloader implements IconLoader {
     @VisibleForTesting
     LoadFaviconResult downloadAndDecodeImage(Context context, String targetFaviconURL) throws IOException, URISyntaxException {
         
-        HttpURLConnection connection = tryDownload(targetFaviconURL);
+        final HttpURLConnection connection = tryDownload(targetFaviconURL);
         if (connection == null) {
             return null;
         }
@@ -115,7 +115,7 @@ public class IconDownloader implements IconLoader {
 
 
     private HttpURLConnection tryDownload(String faviconURI) throws URISyntaxException, IOException {
-        HashSet<String> visitedLinkSet = new HashSet<>();
+        final HashSet<String> visitedLinkSet = new HashSet<>();
         visitedLinkSet.add(faviconURI);
         return tryDownloadRecurse(faviconURI, visitedLinkSet);
     }
@@ -128,10 +128,10 @@ public class IconDownloader implements IconLoader {
             return null;
         }
 
-        HttpURLConnection connection = connectTo(faviconURI);
+        final HttpURLConnection connection = connectTo(faviconURI);
 
         
-        int status = connection.getResponseCode();
+        final int status = connection.getResponseCode();
 
         
         if (status >= 300 && status < 400) {
@@ -169,7 +169,7 @@ public class IconDownloader implements IconLoader {
 
     @VisibleForTesting
     HttpURLConnection connectTo(String faviconURI) throws URISyntaxException, IOException {
-        HttpURLConnection connection = (HttpURLConnection) ProxySelector.openConnectionWithProxy(
+        final HttpURLConnection connection = (HttpURLConnection) ProxySelector.openConnectionWithProxy(
                 new URI(faviconURI));
 
         connection.setRequestProperty("User-Agent", GeckoAppShell.getGeckoInterface().getDefaultUAString());
@@ -197,7 +197,7 @@ public class IconDownloader implements IconLoader {
 
     private LoadFaviconResult decodeImageFromResponse(Context context, InputStream stream, int contentLength) throws IOException {
         
-        int bufferSize;
+        final int bufferSize;
         if (contentLength > 0) {
             
             
@@ -208,7 +208,7 @@ public class IconDownloader implements IconLoader {
         }
 
         
-        IOUtils.ConsumedInputStream result = IOUtils.readFully(stream, bufferSize);
+        final IOUtils.ConsumedInputStream result = IOUtils.readFully(stream, bufferSize);
         if (result == null) {
             return null;
         }
