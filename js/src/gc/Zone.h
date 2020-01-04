@@ -431,15 +431,8 @@ struct Zone : public JS::shadow::Zone,
     }
 
     
-    
-    void adoptUniqueIds(JS::Zone* source) {
-        js::AutoEnterOOMUnsafeRegion oomUnsafe;
-        for (js::gc::UniqueIdMap::Enum e(source->uniqueIds_); !e.empty(); e.popFront()) {
-            MOZ_ASSERT(!uniqueIds_.has(e.front().key()));
-            if (!uniqueIds_.put(e.front().key(), e.front().value()))
-                oomUnsafe.crash("failed to transfer unique ids from off-main-thread");
-        }
-        source->uniqueIds_.clear();
+    void assertNoUniqueIdsInZone() const {
+        MOZ_ASSERT(uniqueIds_.count() == 0);
     }
 
 #ifdef JSGC_HASH_TABLE_CHECKS

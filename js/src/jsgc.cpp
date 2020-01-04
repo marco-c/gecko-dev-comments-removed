@@ -6934,10 +6934,12 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
     
     target->zone()->arenas.adoptArenas(rt, &source->zone()->arenas);
     target->zone()->usage.adopt(source->zone()->usage);
-    target->zone()->adoptUniqueIds(source->zone());
 
     
     target->zone()->types.typeLifoAlloc.transferFrom(&source->zone()->types.typeLifoAlloc);
+
+    
+    source->zone()->assertNoUniqueIdsInZone();
 }
 
 void
