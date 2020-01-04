@@ -29,16 +29,15 @@ public:
   
   already_AddRefed<nsIPrincipal> Principal() const;
 
-  const nsACString& ExtendedOrigin() const { return mExtendedOrigin; }
+  const nsACString& QuotaOrigin() const { return mQuotaOrigin; }
 
   bool operator==(const ManagerId& aOther) const
   {
-    return mExtendedOrigin == aOther.mExtendedOrigin;
+    return mQuotaOrigin == aOther.mQuotaOrigin;
   }
 
 private:
-  ManagerId(nsIPrincipal* aPrincipal, const nsACString& aOrigin,
-            const nsACString& aJarPrefix);
+  ManagerId(nsIPrincipal* aPrincipal, const nsACString& aOrigin);
   ~ManagerId();
 
   ManagerId(const ManagerId&) = delete;
@@ -48,7 +47,7 @@ private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
-  const nsCString mExtendedOrigin;
+  const nsCString mQuotaOrigin;
 
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(mozilla::dom::cache::ManagerId)
