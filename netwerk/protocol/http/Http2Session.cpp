@@ -159,25 +159,6 @@ Http2Session::Shutdown()
   }
 }
 
-PLDHashOperator
-Http2Session::GoAwayEnumerator(nsAHttpTransaction *key,
-                               nsAutoPtr<Http2Stream> &stream,
-                               void *closure)
-{
-  Http2Session *self = static_cast<Http2Session *>(closure);
-
-  
-  
-  
-  
-  if ((stream->StreamID() > self->mGoAwayID && (stream->StreamID() & 1)) ||
-      !stream->HasRegisteredID()) {
-    self->mGoAwayStreamsToRestart.Push(stream);
-  }
-
-  return PL_DHASH_NEXT;
-}
-
 Http2Session::~Http2Session()
 {
   LOG3(("Http2Session::~Http2Session %p mDownstreamState=%X",
@@ -1424,16 +1405,6 @@ Http2Session::RecvRstStream(Http2Session *self)
   return NS_OK;
 }
 
-PLDHashOperator
-Http2Session::UpdateServerRwinEnumerator(nsAHttpTransaction *key,
-                                         nsAutoPtr<Http2Stream> &stream,
-                                         void *closure)
-{
-  int32_t delta = *(static_cast<int32_t *>(closure));
-  stream->UpdateServerReceiveWindow(delta);
-  return PL_DHASH_NEXT;
-}
-
 nsresult
 Http2Session::RecvSettings(Http2Session *self)
 {
@@ -1497,8 +1468,11 @@ Http2Session::RecvSettings(Http2Session *self)
 
         
         
-        self->mStreamTransactionHash.Enumerate(UpdateServerRwinEnumerator,
-                                               &delta);
+        for (auto iter = self->mStreamTransactionHash.Iter();
+             !iter.Done();
+             iter.Next()) {
+          iter.Data()->UpdateServerReceiveWindow(delta);
+        }
       }
       break;
 
@@ -1836,7 +1810,19 @@ Http2Session::RecvGoAway(Http2Session *self)
   
   
   
-  self->mStreamTransactionHash.Enumerate(GoAwayEnumerator, self);
+  for (auto iter = self->mStreamTransactionHash.Iter();
+       !iter.Done();
+       iter.Next()) {
+    
+    
+    
+    
+    nsAutoPtr<Http2Stream>& stream = iter.Data();
+    if ((stream->StreamID() > self->mGoAwayID && (stream->StreamID() & 1)) ||
+        !stream->HasRegisteredID()) {
+      self->mGoAwayStreamsToRestart.Push(stream);
+    }
+  }
 
   
   size_t size = self->mGoAwayStreamsToRestart.GetSize();
