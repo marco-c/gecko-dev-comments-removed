@@ -54,6 +54,7 @@
 #include "gfxWindowsSurface.h"
 #endif
 
+#include "DisplayItemScrollClip.h"
 #include "Layers.h"
 #include "ReadbackLayer.h"
 #include "ImageContainer.h"
@@ -1002,6 +1003,19 @@ nsDisplayPlugin::Paint(nsDisplayListBuilder* aBuilder,
   f->PaintPlugin(aBuilder, *aCtx, mVisibleRect, GetBounds(aBuilder, &snap));
 }
 
+static nsRect
+GetClippedBoundsIncludingAllScrollClips(nsDisplayItem* aItem,
+                                        nsDisplayListBuilder* aBuilder)
+{
+  nsRect r = aItem->GetClippedBounds(aBuilder);
+  for (auto* sc = aItem->ScrollClip(); sc; sc = sc->mParent) {
+    if (sc->mClip) {
+      r = sc->mClip->ApplyNonRoundedIntersection(r);
+    }
+  }
+  return r;
+}
+
 bool
 nsDisplayPlugin::ComputeVisibility(nsDisplayListBuilder* aBuilder,
                                    nsRegion* aVisibleRegion)
@@ -1022,7 +1036,7 @@ nsDisplayPlugin::ComputeVisibility(nsDisplayListBuilder* aBuilder,
       
       
       
-      visibleRegion.And(*aVisibleRegion, GetScrollClippedBoundsUpTo(aBuilder, nullptr));
+      visibleRegion.And(*aVisibleRegion, GetClippedBoundsIncludingAllScrollClips(this, aBuilder));
       
       visibleRegion.MoveBy(-ToReferenceFrame());
 

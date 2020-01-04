@@ -1428,17 +1428,6 @@ public:
 
 
   nsRect GetClippedBounds(nsDisplayListBuilder* aBuilder);
-  
-
-
-
-
-
-
-
-  nsRect GetScrollClippedBoundsUpTo(nsDisplayListBuilder* aBuilder,
-                                    const DisplayItemScrollClip* aIncludeScrollClipsUpTo);
-
   nsRect GetBorderRect() {
     return nsRect(ToReferenceFrame(), Frame()->GetSize());
   }
@@ -2149,6 +2138,13 @@ public:
 
   nsRect GetBounds(nsDisplayListBuilder* aBuilder) const;
   
+
+
+
+
+
+
+
 
 
   nsRect GetScrollClippedBoundsUpTo(nsDisplayListBuilder* aBuilder,
