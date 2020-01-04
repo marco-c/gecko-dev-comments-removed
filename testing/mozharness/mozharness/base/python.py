@@ -614,13 +614,17 @@ class ResourceMonitoringMixin(object):
                     {
                         'name': 'time',
                         'value': phase_duration,
-                    },
-                    {
+                    }
+                ]
+                cpu_percent = rm.aggregate_cpu_percent(phase=phase,
+                                                       per_cpu=False)
+                if cpu_percent is not None:
+                    subtests.append({
                         'name': 'cpu_percent',
                         'value': rm.aggregate_cpu_percent(phase=phase,
                                                           per_cpu=False),
-                    }
-                ]
+                    })
+
                 
                 
                 
