@@ -14,12 +14,25 @@
 
 
 
-require("script!shared/libs/sdk.js");
+
+
+
+require("imports?require=>false!shared/libs/sdk.js");
 
 require("script!./libs/l10n-gaia-02ca67948fe8.js");
-require("script!shared/libs/react-0.12.2.js");
-require("script!shared/libs/lodash-3.9.3.js");
+
+
+
+
+
+
+require("exports?_!shared/libs/lodash-3.9.3.js");
+
+
+
+
 require("script!shared/libs/backbone-1.2.1.js");
+require("script!shared/libs/react-0.12.2.js");
 
 require("script!shared/js/utils.js");
 require("script!shared/js/crypto.js");

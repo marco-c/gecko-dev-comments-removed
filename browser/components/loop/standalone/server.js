@@ -12,6 +12,11 @@
 var express = require("express");
 var app = express();
 
+
+
+var compression = require("compression");
+app.use(compression());
+
 var path = require("path");
 
 var port = process.env.PORT || 3000;

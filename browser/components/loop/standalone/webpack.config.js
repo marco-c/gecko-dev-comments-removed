@@ -4,6 +4,7 @@
 
 
 var path = require("path");
+var webpack = require("webpack");
 
 function getSharedDir() {
   "use strict";
@@ -51,5 +52,23 @@ module.exports = {
     
     
     sourcePrefix: "  "
-  }
+  },
+
+  plugins: [
+    new webpack.optimize.UglifyJsPlugin({
+      compress: {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        warnings: false
+      }
+    })
+  ]
 };
