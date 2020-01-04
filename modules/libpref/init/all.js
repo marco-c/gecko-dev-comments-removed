@@ -4628,9 +4628,7 @@ pref("notification.feature.enabled", false);
 
 
 pref("dom.webnotifications.enabled", true);
-#if !defined(RELEASE_BUILD)
 pref("dom.webnotifications.serviceworker.enabled", true);
-#endif
 
 
 pref("alerts.disableSlidingEffect", false);
