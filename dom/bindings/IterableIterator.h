@@ -24,8 +24,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_IterableIterator_h
 #define mozilla_dom_IterableIterator_h
 
@@ -60,17 +58,25 @@ protected:
 };
 
 template <typename T>
-class IterableIterator : public IterableIteratorBase
+class IterableIterator final : public IterableIteratorBase
 {
 public:
-  IterableIterator(T* aIterableObj)
-    : mIterableObj(aIterableObj)
+
+  typedef bool (*WrapFunc)(JSContext* aCx,
+                           mozilla::dom::IterableIterator<T>* aObject,
+                           JS::Handle<JSObject*> aGivenProto,
+                           JS::MutableHandle<JSObject*> aReflector);
+  IterableIterator(T* aIterableObj, IterableIteratorType aIteratorType, WrapFunc aWrapFunc)
+    : mIteratorType(aIteratorType)
+    , mIterableObj(aIterableObj)
+    , mIndex(0)
+    , mWrapFunc(aWrapFunc)
   {
     MOZ_ASSERT(mIterableObj);
+    MOZ_ASSERT(mWrapFunc);
   }
 
-protected:
-  static void
+  void
   DictReturn(JSContext* aCx, JS::MutableHandle<JSObject*> aResult,
              bool aDone, JS::Handle<JS::Value> aValue, ErrorResult& aRv)
   {
@@ -85,33 +91,86 @@ protected:
     aResult.set(&dictValue.toObject());
   }
 
-  static void
-  KeyAndValueReturn(JSContext* aCx, JS::Handle<JS::Value> aKey,
-                    JS::Handle<JS::Value> aValue,
-                    JS::MutableHandle<JSObject*> aResult, ErrorResult& aRv)
+  void
+  Next(JSContext* aCx, JS::MutableHandle<JSObject*> aResult, ErrorResult& aRv)
   {
-    RootedDictionary<IterableKeyAndValueResult> dict(aCx);
-    dict.mDone = false;
-    
-    
-    if (!dict.mValue.AppendElement(aKey, mozilla::fallible)) {
-      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    JS::Rooted<JS::Value> value(aCx, JS::UndefinedValue());
+    if (mIndex >= mIterableObj->GetIterableLength()) {
+      DictReturn(aCx, aResult, true, value, aRv);
       return;
     }
-    if (!dict.mValue.AppendElement(aValue, mozilla::fallible)) {
-      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return;
+    switch (mIteratorType) {
+    case IterableIteratorType::Keys:
+    {
+      if (!ToJSValue(aCx, mIterableObj->GetKeyAtIndex(mIndex), &value)) {
+        aRv.Throw(NS_ERROR_FAILURE);
+        return;
+      }
+      DictReturn(aCx, aResult, false, value, aRv);
+      break;
     }
-    JS::Rooted<JS::Value> dictValue(aCx);
-    if (!ToJSValue(aCx, dict, &dictValue)) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return;
+    case IterableIteratorType::Values:
+    {
+      if (!ToJSValue(aCx, mIterableObj->GetValueAtIndex(mIndex), &value)) {
+        aRv.Throw(NS_ERROR_FAILURE);
+        return;
+      }
+      DictReturn(aCx, aResult, false, value, aRv);
+      break;
     }
-    aResult.set(&dictValue.toObject());
+    case IterableIteratorType::Entries:
+    {
+      JS::Rooted<JS::Value> key(aCx);
+      if (!ToJSValue(aCx, mIterableObj->GetKeyAtIndex(mIndex), &key)) {
+        aRv.Throw(NS_ERROR_FAILURE);
+        return;
+      }
+      if (!ToJSValue(aCx, mIterableObj->GetValueAtIndex(mIndex), &value)) {
+        aRv.Throw(NS_ERROR_FAILURE);
+        return;
+      }
+      RootedDictionary<IterableKeyAndValueResult> dict(aCx);
+      dict.mDone = false;
+      
+      
+      if (!dict.mValue.AppendElement(key, mozilla::fallible)) {
+        aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+        return;
+      }
+      if (!dict.mValue.AppendElement(value, mozilla::fallible)) {
+        aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+        return;
+      }
+      JS::Rooted<JS::Value> dictValue(aCx);
+      if (!ToJSValue(aCx, dict, &dictValue)) {
+        aRv.Throw(NS_ERROR_FAILURE);
+        return;
+      }
+      aResult.set(&dictValue.toObject());
+      break;
+    }
+    default:
+      MOZ_CRASH("Invalid iterator type!");
+    }
+    ++mIndex;
+  }
+  virtual ~IterableIterator() {}
+
+  bool
+  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aObj)
+  {
+    return (*mWrapFunc)(aCx, this, aGivenProto, aObj);
   }
 
 protected:
-  virtual ~IterableIterator() {}
+  
+  IterableIteratorType mIteratorType;
+  
+  nsRefPtr<T> mIterableObj;
+  
+  uint32_t mIndex;
+  
+  WrapFunc mWrapFunc;
 
   
   
@@ -125,170 +184,6 @@ protected:
     IterableIterator<T>* tmp = this;
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIterableObj);
   }
-
-  
-  nsRefPtr<T> mIterableObj;
-};
-
-template<typename T>
-class OneTypeIterableIterator final : public IterableIterator<T>
-{
-public:
-  using typename IterableIterator<T>::IterableIteratorType;
-  using IterableIterator<T>::DictReturn;
-  using IterableIterator<T>::KeyAndValueReturn;
-  typedef bool (*WrapFunc)(JSContext* aCx,
-                           OneTypeIterableIterator<T>* aObject,
-                           JS::Handle<JSObject*> aGivenProto,
-                           JS::MutableHandle<JSObject*> aReflector);
-
-  OneTypeIterableIterator(T* aIterableObj,
-                          IterableIteratorType aIteratorType,
-                          WrapFunc aWrapFunc)
-    : IterableIterator<T>(aIterableObj)
-    , mIteratorType(aIteratorType)
-    , mWrapFunc(aWrapFunc)
-    , mIndex(0)
-  {
-    MOZ_ASSERT(mWrapFunc);
-  }
-
-  void
-  Next(JSContext* aCx, JS::MutableHandle<JSObject*> aResult, ErrorResult& aRv)
-  {
-    JS::Rooted<JS::Value> value(aCx, JS::UndefinedValue());
-    if (mIndex >= this->mIterableObj->GetIterableLength()) {
-      DictReturn(aCx, aResult, true, value, aRv);
-      return;
-    }
-
-    switch (mIteratorType) {
-    case IterableIteratorType::Keys:
-    case IterableIteratorType::Values:
-    {
-      if (!ToJSValue(aCx, this->mIterableObj->GetValueAtIndex(mIndex), &value)) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return;
-      }
-      DictReturn(aCx, aResult, false, value, aRv);
-      break;
-    }
-    case IterableIteratorType::Entries:
-    {
-      if (!ToJSValue(aCx, this->mIterableObj->GetValueAtIndex(mIndex), &value)) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return;
-      }
-      KeyAndValueReturn(aCx, value, value, aResult, aRv);
-      break;
-    }
-    default:
-      MOZ_CRASH("Invalid iterator type!");
-    }
-    ++mIndex;
-  }
-
-  bool
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aObj)
-  {
-    return (*mWrapFunc)(aCx, this, aGivenProto, aObj);
-  }
-
-protected:
-  virtual ~OneTypeIterableIterator() {}
-
-  
-  IterableIteratorType mIteratorType;
-  
-  WrapFunc mWrapFunc;
-  
-  uint32_t mIndex;
-};
-
-template<typename T>
-class TwoTypeIterableIterator final : public IterableIterator<T>
-{
-public:
-  using typename IterableIterator<T>::IterableIteratorType;
-  using IterableIterator<T>::DictReturn;
-  using IterableIterator<T>::KeyAndValueReturn;
-  typedef bool (*WrapFunc)(JSContext* aCx,
-                           TwoTypeIterableIterator<T>* aObject,
-                           JS::Handle<JSObject*> aGivenProto,
-                           JS::MutableHandle<JSObject*> aReflector);
-
-  TwoTypeIterableIterator(T* aIterableObj, IterableIteratorType aIteratorType,
-                          WrapFunc aWrapFunc)
-    : IterableIterator<T>(aIterableObj)
-    , mIteratorType(aIteratorType)
-    , mWrapFunc(aWrapFunc)
-    , mIndex(0)
-  {
-    MOZ_ASSERT(mWrapFunc);
-  }
-
-  void
-  Next(JSContext* aCx, JS::MutableHandle<JSObject*> aResult, ErrorResult& aRv)
-  {
-    JS::Rooted<JS::Value> value(aCx, JS::UndefinedValue());
-    if (mIndex >= this->mIterableObj->GetIterableLength()) {
-      DictReturn(aCx, aResult, true, value, aRv);
-      return;
-    }
-    switch (mIteratorType) {
-    case IterableIteratorType::Keys:
-    {
-      if (!ToJSValue(aCx, this->mIterableObj->GetKeyAtIndex(mIndex), &value)) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return;
-      }
-      DictReturn(aCx, aResult, false, value, aRv);
-      break;
-    }
-    case IterableIteratorType::Values:
-    {
-      if (!ToJSValue(aCx, this->mIterableObj->GetValueAtIndex(mIndex), &value)) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return;
-      }
-      DictReturn(aCx, aResult, false, value, aRv);
-      break;
-    }
-    case IterableIteratorType::Entries:
-    {
-      JS::Rooted<JS::Value> key(aCx);
-      if (!ToJSValue(aCx, this->mIterableObj->GetKeyAtIndex(mIndex), &key)) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return;
-      }
-      if (!ToJSValue(aCx, this->mIterableObj->GetValueAtIndex(mIndex), &value)) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return;
-      }
-      KeyAndValueReturn(aCx, key, value, aResult, aRv);
-      break;
-    }
-    default:
-      MOZ_CRASH("Invalid iterator type!");
-    }
-    ++mIndex;
-  }
-
-  bool
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aObj)
-  {
-    return (*mWrapFunc)(aCx, this, aGivenProto, aObj);
-  }
-
-protected:
-  virtual ~TwoTypeIterableIterator() {}
-
-  
-  IterableIteratorType mIteratorType;
-  
-  WrapFunc mWrapFunc;
-  
-  uint32_t mIndex;
 };
 
 } 
