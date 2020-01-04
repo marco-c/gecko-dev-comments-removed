@@ -16,13 +16,8 @@ extern "C" {
 #endif
 
 
-#if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips__)
-
-#include <sgidefs.h>
-
-#if (_MIPS_ISA == _MIPS_ISA_MIPS4) || (_MIPS_ISA == _MIPS_ISA_MIPS5)
-#define HAS_MIPS_PREFETCH 1
-#endif
+#if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips__) && \
+    (_MIPS_SIM == _MIPS_SIM_ABI32)
 
 #ifdef HAS_COPYROW_MIPS
 void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
@@ -66,31 +61,23 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     
     
     "subu      $t9, $t0, 160                     \n"
-#ifdef HAS_MIPS_PREFETCH
     
     "pref      0, 0(%[src])                      \n"  
     "pref      0, 32(%[src])                     \n"  
     "pref      0, 64(%[src])                     \n"
     "pref      30, 32(%[dst])                    \n"
-#endif
     
     "sgtu      $v1, %[dst], $t9                  \n"
     "bgtz      $v1, $loop16w                     \n"
     "nop                                         \n"
     
-#ifdef HAS_MIPS_PREFETCH
     "pref      30, 64(%[dst])                    \n"
-#endif
     "$loop16w:                                    \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 96(%[src])                     \n"
-#endif
     "lw        $t0, 0(%[src])                    \n"
     "bgtz      $v1, $skip_pref30_96              \n"  
     "lw        $t1, 4(%[src])                    \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      30, 96(%[dst])                    \n"  
-#endif
     "$skip_pref30_96:                            \n"
     "lw        $t2, 8(%[src])                    \n"
     "lw        $t3, 12(%[src])                   \n"
@@ -98,9 +85,7 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     "lw        $t5, 20(%[src])                   \n"
     "lw        $t6, 24(%[src])                   \n"
     "lw        $t7, 28(%[src])                   \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 128(%[src])                    \n"
-#endif
     
     "sw        $t0, 0(%[dst])                    \n"
     "sw        $t1, 4(%[dst])                    \n"
@@ -113,9 +98,7 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     "lw        $t0, 32(%[src])                   \n"
     "bgtz      $v1, $skip_pref30_128             \n"  
     "lw        $t1, 36(%[src])                   \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      30, 128(%[dst])                   \n"  
-#endif
     "$skip_pref30_128:                           \n"
     "lw        $t2, 40(%[src])                   \n"
     "lw        $t3, 44(%[src])                   \n"
@@ -123,9 +106,7 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     "lw        $t5, 52(%[src])                   \n"
     "lw        $t6, 56(%[src])                   \n"
     "lw        $t7, 60(%[src])                   \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 160(%[src])                    \n"
-#endif
     
     "sw        $t0, 32(%[dst])                   \n"
     "sw        $t1, 36(%[dst])                   \n"
@@ -145,9 +126,7 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     
 
     "chk8w:                                      \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 0x0(%[src])                    \n"
-#endif
     "andi      $t8, %[count], 0x1f               \n"  
     
     "beq       %[count], $t8, chk1w              \n"
@@ -235,12 +214,10 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     "addu      $t0, %[dst], %[count]             \n"  
     "subu      $t9, $t0, 160                     \n"
     
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 0(%[src])                      \n"  
     "pref      0, 32(%[src])                     \n"  
     "pref      0, 64(%[src])                     \n"
     "pref      30, 32(%[dst])                    \n"
-#endif
     
     
     "sgtu      $v1, %[dst], $t9                  \n"
@@ -248,21 +225,15 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     
     " nop                                        \n"
     
-#ifdef HAS_MIPS_PREFETCH
     "pref      30, 64(%[dst])                    \n"
-#endif
     "$ua_loop16w:                                \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 96(%[src])                     \n"
-#endif
     "lwr       $t0, 0(%[src])                    \n"
     "lwl       $t0, 3(%[src])                    \n"
     "lwr       $t1, 4(%[src])                    \n"
     "bgtz      $v1, $ua_skip_pref30_96           \n"
     " lwl      $t1, 7(%[src])                    \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      30, 96(%[dst])                    \n"
-#endif
     
     "$ua_skip_pref30_96:                         \n"
     "lwr       $t2, 8(%[src])                    \n"
@@ -277,9 +248,7 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     "lwl       $t6, 27(%[src])                   \n"
     "lwr       $t7, 28(%[src])                   \n"
     "lwl       $t7, 31(%[src])                   \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 128(%[src])                    \n"
-#endif
     
     "sw        $t0, 0(%[dst])                    \n"
     "sw        $t1, 4(%[dst])                    \n"
@@ -294,9 +263,7 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     "lwr       $t1, 36(%[src])                   \n"
     "bgtz      $v1, ua_skip_pref30_128           \n"
     " lwl      $t1, 39(%[src])                   \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      30, 128(%[dst])                   \n"
-#endif
     
     "ua_skip_pref30_128:                         \n"
 
@@ -312,9 +279,7 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     "lwl       $t6, 59(%[src])                   \n"
     "lwr       $t7, 60(%[src])                   \n"
     "lwl       $t7, 63(%[src])                   \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 160(%[src])                    \n"
-#endif
     
     "sw        $t0, 32(%[dst])                   \n"
     "sw        $t1, 36(%[dst])                   \n"
@@ -334,9 +299,7 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
     
 
     "ua_chk8w:                                   \n"
-#ifdef HAS_MIPS_PREFETCH
     "pref      0, 0x0(%[src])                    \n"
-#endif
     "andi      $t8, %[count], 0x1f               \n"  
     
     "beq       %[count], $t8, $ua_chk1w          \n"
@@ -414,9 +377,11 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
 
 
 #if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips_dsp) && \
-    (__mips_dsp_rev >= 2)
-void SplitUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                           int width) {
+    (__mips_dsp_rev >= 2) && \
+    (_MIPS_SIM == _MIPS_SIM_ABI32) && (__mips_isa_rev < 6)
+
+void SplitUVRow_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                      int width) {
   __asm__ __volatile__ (
     ".set push                                     \n"
     ".set noreorder                                \n"
@@ -424,7 +389,6 @@ void SplitUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "blez            $t4, 2f                       \n"
     " andi           %[width], %[width], 0xf       \n"  
 
-    ".p2align        2                             \n"
   "1:                                              \n"
     "addiu           $t4, $t4, -1                  \n"
     "lw              $t0, 0(%[src_uv])             \n"  
@@ -482,90 +446,7 @@ void SplitUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
   );
 }
 
-void SplitUVRow_Unaligned_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u,
-                                     uint8* dst_v, int width) {
-  __asm__ __volatile__ (
-    ".set push                                     \n"
-    ".set noreorder                                \n"
-    "srl             $t4, %[width], 4              \n"  
-    "blez            $t4, 2f                       \n"
-    " andi           %[width], %[width], 0xf       \n"  
-
-    ".p2align        2                             \n"
-  "1:                                              \n"
-    "addiu           $t4, $t4, -1                  \n"
-    "lwr             $t0, 0(%[src_uv])             \n"
-    "lwl             $t0, 3(%[src_uv])             \n"  
-    "lwr             $t1, 4(%[src_uv])             \n"
-    "lwl             $t1, 7(%[src_uv])             \n"  
-    "lwr             $t2, 8(%[src_uv])             \n"
-    "lwl             $t2, 11(%[src_uv])            \n"  
-    "lwr             $t3, 12(%[src_uv])            \n"
-    "lwl             $t3, 15(%[src_uv])            \n"  
-    "lwr             $t5, 16(%[src_uv])            \n"
-    "lwl             $t5, 19(%[src_uv])            \n"  
-    "lwr             $t6, 20(%[src_uv])            \n"
-    "lwl             $t6, 23(%[src_uv])            \n"  
-    "lwr             $t7, 24(%[src_uv])            \n"
-    "lwl             $t7, 27(%[src_uv])            \n"  
-    "lwr             $t8, 28(%[src_uv])            \n"
-    "lwl             $t8, 31(%[src_uv])            \n"  
-    "precrq.qb.ph    $t9, $t1, $t0                 \n"  
-    "precr.qb.ph     $t0, $t1, $t0                 \n"  
-    "precrq.qb.ph    $t1, $t3, $t2                 \n"  
-    "precr.qb.ph     $t2, $t3, $t2                 \n"  
-    "precrq.qb.ph    $t3, $t6, $t5                 \n"  
-    "precr.qb.ph     $t5, $t6, $t5                 \n"  
-    "precrq.qb.ph    $t6, $t8, $t7                 \n"  
-    "precr.qb.ph     $t7, $t8, $t7                 \n"  
-    "addiu           %[src_uv], %[src_uv], 32      \n"
-    "swr             $t9, 0(%[dst_v])              \n"
-    "swl             $t9, 3(%[dst_v])              \n"
-    "swr             $t0, 0(%[dst_u])              \n"
-    "swl             $t0, 3(%[dst_u])              \n"
-    "swr             $t1, 4(%[dst_v])              \n"
-    "swl             $t1, 7(%[dst_v])              \n"
-    "swr             $t2, 4(%[dst_u])              \n"
-    "swl             $t2, 7(%[dst_u])              \n"
-    "swr             $t3, 8(%[dst_v])              \n"
-    "swl             $t3, 11(%[dst_v])             \n"
-    "swr             $t5, 8(%[dst_u])              \n"
-    "swl             $t5, 11(%[dst_u])             \n"
-    "swr             $t6, 12(%[dst_v])             \n"
-    "swl             $t6, 15(%[dst_v])             \n"
-    "swr             $t7, 12(%[dst_u])             \n"
-    "swl             $t7, 15(%[dst_u])             \n"
-    "addiu           %[dst_u], %[dst_u], 16        \n"
-    "bgtz            $t4, 1b                       \n"
-    " addiu          %[dst_v], %[dst_v], 16        \n"
-
-    "beqz            %[width], 3f                  \n"
-    " nop                                          \n"
-
-  "2:                                              \n"
-    "lbu             $t0, 0(%[src_uv])             \n"
-    "lbu             $t1, 1(%[src_uv])             \n"
-    "addiu           %[src_uv], %[src_uv], 2       \n"
-    "addiu           %[width], %[width], -1        \n"
-    "sb              $t0, 0(%[dst_u])              \n"
-    "sb              $t1, 0(%[dst_v])              \n"
-    "addiu           %[dst_u], %[dst_u], 1         \n"
-    "bgtz            %[width], 2b                  \n"
-    " addiu          %[dst_v], %[dst_v], 1         \n"
-
-  "3:                                              \n"
-    ".set pop                                      \n"
-     : [src_uv] "+r" (src_uv),
-       [width] "+r" (width),
-       [dst_u] "+r" (dst_u),
-       [dst_v] "+r" (dst_v)
-     :
-     : "t0", "t1", "t2", "t3",
-     "t4", "t5", "t6", "t7", "t8", "t9"
-  );
-}
-
-void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width) {
+void MirrorRow_DSPR2(const uint8* src, uint8* dst, int width) {
   __asm__ __volatile__ (
     ".set push                             \n"
     ".set noreorder                        \n"
@@ -575,7 +456,6 @@ void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width) {
     "blez      $t4, 2f                     \n"
     " addu     %[src], %[src], %[width]    \n"  
 
-    ".p2align  2                           \n"
    "1:                                     \n"
     "lw        $t0, -16(%[src])            \n"  
     "lw        $t1, -12(%[src])            \n"  
@@ -616,10 +496,10 @@ void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width) {
   );
 }
 
-void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                            int width) {
-  int x = 0;
-  int y = 0;
+void MirrorUVRow_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                       int width) {
+  int x;
+  int y;
   __asm__ __volatile__ (
     ".set push                                    \n"
     ".set noreorder                               \n"
@@ -630,7 +510,6 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "blez            %[x], 2f                     \n"
     " addu           %[src_uv], %[src_uv], $t4    \n"
 
-    ".p2align        2                            \n"
    "1:                                            \n"
     "lw              $t0, -32(%[src_uv])          \n"  
     "lw              $t1, -28(%[src_uv])          \n"  
@@ -700,7 +579,7 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
         [dst_u] "+r" (dst_u),
         [dst_v] "+r" (dst_v),
         [x] "=&r" (x),
-        [y] "+r" (y)
+        [y] "=&r" (y)
       : [width] "r" (width)
       : "t0", "t1", "t2", "t3", "t4",
       "t5", "t7", "t8", "t9"
@@ -714,7 +593,7 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 
 
 
-#define I422ToTransientMipsRGB                                                 \
+#define YUVTORGB                                                               \
       "lw                $t0, 0(%[y_buf])       \n"                            \
       "lhu               $t1, 0(%[u_buf])       \n"                            \
       "lhu               $t2, 0(%[v_buf])       \n"                            \
@@ -773,11 +652,13 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
       "addu.ph           $t2, $t2, $s5          \n"                            \
       "addu.ph           $t1, $t1, $s5          \n"
 
-void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
-                              const uint8* u_buf,
-                              const uint8* v_buf,
-                              uint8* rgb_buf,
-                              int width) {
+
+void I422ToARGBRow_DSPR2(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         const struct YuvConstants* yuvconstants,
+                         int width) {
   __asm__ __volatile__ (
     ".set push                                \n"
     ".set noreorder                           \n"
@@ -791,9 +672,8 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
     "lui               $s6, 0xff00            \n"
     "ori               $s6, 0xff00            \n"  
 
-    ".p2align          2                      \n"
    "1:                                        \n"
-      I422ToTransientMipsRGB
+      YUVTORGB
 
     "precr.qb.ph       $t4, $t8, $t4          \n"  
     "precr.qb.ph       $t5, $t9, $t5          \n"  
@@ -835,136 +715,10 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
   );
 }
 
-void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
-                              const uint8* u_buf,
-                              const uint8* v_buf,
-                              uint8* rgb_buf,
-                              int width) {
-  __asm__ __volatile__ (
-    ".set push                                \n"
-    ".set noreorder                           \n"
-    "beqz              %[width], 2f           \n"
-    " repl.ph          $s0, 74                \n"  
-    "repl.ph           $s1, -25               \n"  
-    "repl.ph           $s2, -52               \n"  
-    "repl.ph           $s3, 102               \n"  
-    "repl.ph           $s4, 16                \n"  
-    "repl.ph           $s5, 128               \n"  
-    "lui               $s6, 0xff00            \n"
-    "ori               $s6, 0xff00            \n"  
 
-    ".p2align          2                       \n"
-   "1:                                         \n"
-      I422ToTransientMipsRGB
-
-    "precr.qb.ph      $t0, $t8, $t1           \n"  
-    "precr.qb.ph      $t3, $t9, $t2           \n"  
-    "precrq.qb.ph     $t8, $t0, $t3           \n"  
-    "precr.qb.ph      $t9, $t0, $t3           \n"  
-
-    "precr.qb.ph       $t2, $t4, $t5          \n"  
-    "addiu             %[width], -4           \n"
-    "addiu             %[y_buf], 4            \n"
-    "preceu.ph.qbla    $t1, $t2               \n"  
-    "preceu.ph.qbra    $t2, $t2               \n"  
-    "or                $t1, $t1, $s6          \n"  
-    "or                $t2, $t2, $s6          \n"  
-    "precrq.ph.w       $t0, $t2, $t9          \n"  
-    "precrq.ph.w       $t3, $t1, $t8          \n"  
-    "sll               $t9, $t9, 16           \n"
-    "sll               $t8, $t8, 16           \n"
-    "packrl.ph         $t2, $t2, $t9          \n"  
-    "packrl.ph         $t1, $t1, $t8          \n"  
-
-    "sw                $t2, 0(%[rgb_buf])     \n"
-    "sw                $t0, 4(%[rgb_buf])     \n"
-    "sw                $t1, 8(%[rgb_buf])     \n"
-    "sw                $t3, 12(%[rgb_buf])    \n"
-    "bnez              %[width], 1b           \n"
-    " addiu            %[rgb_buf], 16         \n"
-   "2:                                        \n"
-    ".set pop                                 \n"
-      :[y_buf] "+r" (y_buf),
-       [u_buf] "+r" (u_buf),
-       [v_buf] "+r" (v_buf),
-       [width] "+r" (width),
-       [rgb_buf] "+r" (rgb_buf)
-      :
-      : "t0", "t1",  "t2", "t3",  "t4", "t5",
-      "t6", "t7", "t8", "t9",
-      "s0", "s1", "s2", "s3",
-      "s4", "s5", "s6"
-  );
-}
-
-void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
-                              const uint8* u_buf,
-                              const uint8* v_buf,
-                              uint8* rgb_buf,
-                              int width) {
-  __asm__ __volatile__ (
-    ".set push                                \n"
-    ".set noreorder                           \n"
-    "beqz              %[width], 2f           \n"
-    " repl.ph          $s0, 74                \n"  
-    "repl.ph           $s1, -25               \n"  
-    "repl.ph           $s2, -52               \n"  
-    "repl.ph           $s3, 102               \n"  
-    "repl.ph           $s4, 16                \n"  
-    "repl.ph           $s5, 128               \n"  
-    "lui               $s6, 0xff              \n"
-    "ori               $s6, 0xff              \n"  
-
-    ".p2align          2                      \n"
-   "1:                                        \n"
-      I422ToTransientMipsRGB
-      
-    "precr.qb.ph       $t4, $t4, $t8          \n"  
-    "precr.qb.ph       $t5, $t5, $t9          \n"  
-    "precrq.qb.ph      $t8, $t4, $t5          \n"  
-    "precr.qb.ph       $t9, $t4, $t5          \n"  
-
-    "precr.qb.ph       $t2, $t1, $t2          \n"  
-    "addiu             %[width], -4           \n"
-    "addiu             %[y_buf], 4            \n"
-    "preceu.ph.qbla    $t1, $t2               \n"  
-    "preceu.ph.qbra    $t2, $t2               \n"  
-    "sll               $t1, $t1, 8            \n"  
-    "sll               $t2, $t2, 8            \n"  
-    "or                $t1, $t1, $s6          \n"  
-    "or                $t2, $t2, $s6          \n"  
-    "precrq.ph.w       $t0, $t9, $t2          \n"  
-    "precrq.ph.w       $t3, $t8, $t1          \n"  
-    "sll               $t1, $t1, 16           \n"
-    "sll               $t2, $t2, 16           \n"
-    "packrl.ph         $t2, $t9, $t2          \n"  
-    "packrl.ph         $t1, $t8, $t1          \n"  
-
-    "sw                $t2, 0(%[rgb_buf])     \n"
-    "sw                $t0, 4(%[rgb_buf])     \n"
-    "sw                $t1, 8(%[rgb_buf])     \n"
-    "sw                $t3, 12(%[rgb_buf])    \n"
-    "bnez              %[width], 1b           \n"
-    " addiu            %[rgb_buf], 16         \n"
-   "2:                                        \n"
-    ".set pop                                 \n"
-      :[y_buf] "+r" (y_buf),
-       [u_buf] "+r" (u_buf),
-       [v_buf] "+r" (v_buf),
-       [width] "+r" (width),
-       [rgb_buf] "+r" (rgb_buf)
-      :
-      : "t0", "t1",  "t2", "t3",  "t4", "t5",
-      "t6", "t7", "t8", "t9",
-      "s0", "s1", "s2", "s3",
-      "s4", "s5", "s6"
-  );
-}
-
-
-void InterpolateRows_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
-                                ptrdiff_t src_stride, int dst_width,
-                                int source_y_fraction) {
+void InterpolateRow_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
+                          ptrdiff_t src_stride, int dst_width,
+                          int source_y_fraction) {
     int y0_fraction = 256 - source_y_fraction;
     const uint8* src_ptr1 = src_ptr + src_stride;
 
@@ -975,7 +729,6 @@ void InterpolateRows_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
      "replv.ph          $t0, %[y0_fraction]               \n"
      "replv.ph          $t1, %[source_y_fraction]         \n"
 
-    ".p2align           2                                 \n"
    "1:                                                    \n"
      "lw                $t2, 0(%[src_ptr])                \n"
      "lw                $t3, 0(%[src_ptr1])               \n"
