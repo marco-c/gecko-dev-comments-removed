@@ -1152,7 +1152,7 @@ nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags)
     return;
 
   
-  if (mActiveTimer && !(aFlags & eForceAdjustTimer))
+  if (mActiveTimer && !(aFlags & eAdjustingTimer))
     return;
 
   if (IsFrozen() || !mPresContext) {
@@ -1182,15 +1182,6 @@ nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags)
       mActiveTimer->RemoveRefreshDriver(this);
     mActiveTimer = newTimer;
     mActiveTimer->AddRefreshDriver(this);
-  }
-
-  
-  
-  
-  
-  
-  if (aFlags & eNeverAdjustTimer) {
-    return;
   }
 
   
@@ -2070,7 +2061,7 @@ nsRefreshDriver::SetThrottled(bool aThrottled)
     if (mActiveTimer) {
       
       
-      EnsureTimerStarted(eForceAdjustTimer);
+      EnsureTimerStarted(eAdjustingTimer);
     }
   }
 }
@@ -2117,7 +2108,7 @@ nsRefreshDriver::ScheduleViewManagerFlush()
   NS_ASSERTION(mPresContext->IsRoot(),
                "Should only schedule view manager flush on root prescontexts");
   mViewManagerFlushIsPending = true;
-  EnsureTimerStarted(eNeverAdjustTimer);
+  EnsureTimerStarted();
 }
 
 void
