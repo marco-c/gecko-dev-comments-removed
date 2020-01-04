@@ -2583,6 +2583,9 @@ GeckoDriver.prototype.takeScreenshot = function(cmd, resp) {
 
 
 GeckoDriver.prototype.getScreenOrientation = function(cmd, resp) {
+  if (this.appName == "Firefox") {
+    throw new UnsupportedOperationError();
+  }
   resp.body.value = this.getCurrentWindow().screen.mozOrientation;
 };
 
@@ -2598,6 +2601,10 @@ GeckoDriver.prototype.getScreenOrientation = function(cmd, resp) {
 
 
 GeckoDriver.prototype.setScreenOrientation = function(cmd, resp) {
+  if (this.appName == "Firefox") {
+    throw new UnsupportedOperationError();
+  }
+
   const ors = [
     "portrait", "landscape",
     "portrait-primary", "landscape-primary",
