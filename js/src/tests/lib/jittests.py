@@ -114,6 +114,8 @@ class JitTest:
         self.tz_pacific = False 
         self.test_also_noasmjs = False 
                                        
+        self.test_also_wasm_baseline = False 
+                                       
         self.test_also = [] 
         self.test_join = [] 
         self.expect_error = '' 
@@ -134,6 +136,7 @@ class JitTest:
         t.valgrind = self.valgrind
         t.tz_pacific = self.tz_pacific
         t.test_also_noasmjs = self.test_also_noasmjs
+        t.test_also_wasm_baseline = self.test_also_noasmjs
         t.test_also = self.test_also
         t.test_join = self.test_join
         t.expect_error = self.expect_error
@@ -215,6 +218,12 @@ class JitTest:
                     elif name == 'test-also-noasmjs':
                         if options.can_test_also_noasmjs:
                             test.test_also.append(['--no-asmjs'])
+                            
+                            
+                            
+                            test.test_also.append(['--wasm-always-baseline'])
+                    elif name == 'test-also-wasm-baseline':
+                        test.test_also.append(['--wasm-always-baseline'])
                     elif name.startswith('test-also='):
                         test.test_also.append([name[len('test-also='):]])
                     elif name.startswith('test-join='):
