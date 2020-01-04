@@ -222,7 +222,7 @@ AboutReader.prototype = {
         }
         break;
       case "scroll":
-        this._closeDropdowns();
+        this._closeDropdowns(true);
         let isScrollingUp = this._scrollOffset > aEvent.pageY;
         this._setSystemUIVisibility(isScrollingUp);
         this._scrollOffset = aEvent.pageY;
@@ -773,8 +773,15 @@ AboutReader.prototype = {
   
 
 
-  _closeDropdowns: function() {
-    let openDropdowns = this._doc.querySelectorAll(".dropdown.open:not(.keep-open)");
+
+
+  _closeDropdowns: function(scrolling) {
+    let selector = ".dropdown.open";
+    if (scrolling) {
+      selector += ":not(.keep-open)";
+    }
+
+    let openDropdowns = this._doc.querySelectorAll(selector);
     for (let dropdown of openDropdowns) {
       dropdown.classList.remove("open");
     }
