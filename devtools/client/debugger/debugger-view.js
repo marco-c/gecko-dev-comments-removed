@@ -5,7 +5,6 @@
 
 "use strict";
 
-const SOURCE_SYNTAX_HIGHLIGHT_MAX_FILE_SIZE = 1048576; 
 const SOURCE_URL_DEFAULT_MAX_LENGTH = 64; 
 const STACK_FRAMES_SOURCE_URL_MAX_LENGTH = 15; 
 const STACK_FRAMES_SOURCE_URL_TRIM_SECTION = "center";
@@ -408,12 +407,6 @@ var DebuggerView = {
 
 
   _setEditorMode: function(aUrl, aContentType = "", aTextContent = "") {
-    
-    
-    if (aTextContent.length >= SOURCE_SYNTAX_HIGHLIGHT_MAX_FILE_SIZE) {
-      return void this.editor.setMode(Editor.modes.text);
-    }
-
     
     if (SourceUtils.isJavaScript(aUrl, aContentType)) {
       return void this.editor.setMode(Editor.modes.js);
