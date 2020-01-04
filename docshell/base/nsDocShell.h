@@ -18,6 +18,7 @@
 #include "nsIContentViewerContainer.h"
 #include "nsIDOMStorageManager.h"
 #include "nsDocLoader.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -230,6 +231,7 @@ public:
   NS_IMETHOD SetPrivateBrowsing(bool) override;
   NS_IMETHOD GetUseRemoteTabs(bool*) override;
   NS_IMETHOD SetRemoteTabs(bool) override;
+  NS_IMETHOD GetOriginAttributes(JS::MutableHandle<JS::Value>) override;
 
   
   
@@ -268,6 +270,8 @@ public:
   }
   bool InFrameSwap();
 
+  mozilla::OriginAttributes GetOriginAttributes();
+
 private:
   
   mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
@@ -294,6 +298,11 @@ public:
   static void CopyFavicon(nsIURI* aOldURI,
                           nsIURI* aNewURI,
                           bool aInPrivateBrowsing);
+
+  static nsDocShell* Cast(nsIDocShell* aDocShell)
+  {
+    return static_cast<nsDocShell*>(aDocShell);
+  }
 
 protected:
   virtual ~nsDocShell();

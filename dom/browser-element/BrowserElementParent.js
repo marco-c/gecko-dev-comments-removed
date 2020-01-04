@@ -840,14 +840,11 @@ BrowserElementParent.prototype = {
       }
 
       
-      let attrs = {appId: this._frameLoader.loadContext.appId,
-                   inBrowser: this._frameLoader.loadContext.isInBrowserElement};
-      
       
       
       principal =
         Services.scriptSecurityManager.createCodebasePrincipal(
-          referrer, attrs);
+          referrer, this._frameLoader.loadContext.originAttributes);
     }
 
     debug('Using principal? ' + !!principal);

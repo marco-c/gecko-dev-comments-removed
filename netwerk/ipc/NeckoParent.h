@@ -5,6 +5,7 @@
 
 
 
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/net/PNeckoParent.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/OfflineObserver.h"
@@ -38,8 +39,7 @@ public:
   static const char *
   GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
                       PContentParent* aBrowser,
-                      uint32_t* aAppId,
-                      bool* aInBrowserElement);
+                      mozilla::OriginAttributes& aAttrs);
 
   
 

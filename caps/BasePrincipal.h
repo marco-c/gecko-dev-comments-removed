@@ -14,6 +14,7 @@
 #include "mozilla/dom/ChromeUtilsBinding.h"
 
 class nsIContentSecurityPolicy;
+class nsILoadContext;
 class nsIObjectOutputStream;
 class nsIObjectInputStream;
 
@@ -43,6 +44,28 @@ public:
   {
     return !(*this == aOther);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void InheritFromDocShellParent(const OriginAttributes& aParent);
+
+  
+  bool CopyFromLoadContext(nsILoadContext* aLoadContext);
 
   
   
