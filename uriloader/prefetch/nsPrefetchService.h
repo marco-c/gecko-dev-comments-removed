@@ -45,7 +45,6 @@ public:
 
     void NotifyLoadRequested(nsPrefetchNode *node);
     void NotifyLoadCompleted(nsPrefetchNode *node);
-    void DispatchEvent(nsPrefetchNode *node, bool aSuccess);
 
 private:
     ~nsPrefetchService();
@@ -71,12 +70,6 @@ private:
     
     int32_t                            mHaveProcessed;
     bool                               mDisabled;
-
-    
-    
-    
-    
-    bool                               mAggressive;
 };
 
 
@@ -115,7 +108,6 @@ private:
     nsCOMPtr<nsIChannel>        mChannel;
     nsCOMPtr<nsIChannel>        mRedirectChannel;
     int64_t                     mBytesRead;
-    bool                        mShouldFireLoadEvent;
 };
 
 #endif 
