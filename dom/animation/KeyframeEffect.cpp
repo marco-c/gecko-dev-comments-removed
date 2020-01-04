@@ -525,6 +525,29 @@ KeyframeEffectReadOnly::HasAnimationOfProperties(
   return false;
 }
 
+#ifdef DEBUG
+bool
+SpecifiedKeyframeArraysAreEqual(const nsTArray<Keyframe>& aA,
+                                const nsTArray<Keyframe>& aB)
+{
+  if (aA.Length() != aB.Length()) {
+    return false;
+  }
+
+  for (size_t i = 0; i < aA.Length(); i++) {
+    const Keyframe& a = aA[i];
+    const Keyframe& b = aB[i];
+    if (a.mOffset         != b.mOffset ||
+        a.mTimingFunction != b.mTimingFunction ||
+        a.mPropertyValues != b.mPropertyValues) {
+      return false;
+    }
+  }
+
+  return true;
+}
+#endif
+
 void
 KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 {
@@ -532,20 +555,37 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 
   nsTArray<AnimationProperty> properties;
   if (mTarget) {
+    
+    
+    
+    
+    
+    
+    auto keyframesCopy(mKeyframes);
+
     nsTArray<ComputedKeyframeValues> computedValues =
-      KeyframeUtils::GetComputedKeyframeValues(mKeyframes, mTarget->mElement,
+      KeyframeUtils::GetComputedKeyframeValues(keyframesCopy,
+                                               mTarget->mElement,
                                                aStyleContext);
 
     if (mEffectOptions.mSpacingMode == SpacingMode::paced) {
-      KeyframeUtils::ApplySpacing(mKeyframes, SpacingMode::paced,
+      KeyframeUtils::ApplySpacing(keyframesCopy, SpacingMode::paced,
                                   mEffectOptions.mPacedProperty,
                                   computedValues);
     }
 
     properties =
-      KeyframeUtils::GetAnimationPropertiesFromKeyframes(mKeyframes,
+      KeyframeUtils::GetAnimationPropertiesFromKeyframes(keyframesCopy,
                                                          computedValues,
                                                          aStyleContext);
+
+#ifdef DEBUG
+    MOZ_ASSERT(SpecifiedKeyframeArraysAreEqual(mKeyframes, keyframesCopy),
+               "Apart from the computed offset members, the keyframes array"
+               " should not be modified");
+#endif
+
+    mKeyframes.SwapElements(keyframesCopy);
   }
 
   if (mProperties == properties) {
