@@ -4640,18 +4640,24 @@ JS_CheckForInterrupt(JSContext* cx)
     return js::CheckForInterrupt(cx);
 }
 
-JS_PUBLIC_API(JSInterruptCallback)
-JS_SetInterruptCallback(JSContext* cx, JSInterruptCallback callback)
+JS_PUBLIC_API(bool)
+JS_AddInterruptCallback(JSContext* cx, JSInterruptCallback callback)
 {
-    JSInterruptCallback old = cx->interruptCallback;
-    cx->interruptCallback = callback;
-    return old;
+    return cx->interruptCallbacks.append(callback);
 }
 
-JS_PUBLIC_API(JSInterruptCallback)
-JS_GetInterruptCallback(JSContext* cx)
+JS_PUBLIC_API(bool)
+JS_DisableInterruptCallback(JSContext* cx)
 {
-    return cx->interruptCallback;
+    bool result = cx->interruptCallbackDisabled;
+    cx->interruptCallbackDisabled = true;
+    return result;
+}
+
+JS_PUBLIC_API(void)
+JS_ResetInterruptCallback(JSContext* cx, bool enable)
+{
+    cx->interruptCallbackDisabled = enable;
 }
 
 
@@ -6104,12 +6110,6 @@ JS_PUBLIC_API(bool)
 JS_IsStopIteration(Value v)
 {
     return v.isObject() && v.toObject().is<StopIterationObject>();
-}
-
-JS_PUBLIC_API(intptr_t)
-JS_GetCurrentThread()
-{
-    return reinterpret_cast<intptr_t>(PR_GetCurrentThread());
 }
 
 extern MOZ_NEVER_INLINE JS_PUBLIC_API(void)
