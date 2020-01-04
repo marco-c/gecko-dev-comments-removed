@@ -75,7 +75,7 @@ AppleDecoderModule::CreateVideoDecoder(const VideoInfo& aConfig,
                                        FlushableTaskQueue* aVideoTaskQueue,
                                        MediaDataDecoderCallback* aCallback)
 {
-  RefPtr<MediaDataDecoder> decoder;
+  nsRefPtr<MediaDataDecoder> decoder;
 
   if (sIsVDAAvailable && (!sIsVTHWAvailable || sForceVDA)) {
     decoder =
@@ -101,7 +101,7 @@ AppleDecoderModule::CreateAudioDecoder(const AudioInfo& aConfig,
                                        FlushableTaskQueue* aAudioTaskQueue,
                                        MediaDataDecoderCallback* aCallback)
 {
-  RefPtr<MediaDataDecoder> decoder =
+  nsRefPtr<MediaDataDecoder> decoder =
     new AppleATDecoder(aConfig, aAudioTaskQueue, aCallback);
   return decoder.forget();
 }
@@ -110,7 +110,9 @@ bool
 AppleDecoderModule::SupportsMimeType(const nsACString& aMimeType)
 {
   return aMimeType.EqualsLiteral("audio/mpeg") ||
-    PlatformDecoderModule::SupportsMimeType(aMimeType);
+    aMimeType.EqualsLiteral("audio/mp4a-latm") ||
+    aMimeType.EqualsLiteral("video/mp4") ||
+    aMimeType.EqualsLiteral("video/avc");
 }
 
 PlatformDecoderModule::ConversionRequired

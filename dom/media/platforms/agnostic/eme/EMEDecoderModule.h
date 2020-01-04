@@ -42,12 +42,21 @@ public:
   ConversionRequired
   DecoderNeedsConversion(const TrackInfo& aConfig) const override;
 
+  bool
+  SupportsMimeType(const nsACString& aMimeType) override
+  {
+    
+    return aMimeType.EqualsLiteral("audio/mp4a-latm") ||
+      aMimeType.EqualsLiteral("video/mp4") ||
+      aMimeType.EqualsLiteral("video/avc");
+  }
+
 private:
-  RefPtr<CDMProxy> mProxy;
+  nsRefPtr<CDMProxy> mProxy;
   
-  RefPtr<PlatformDecoderModule> mPDM;
+  nsRefPtr<PlatformDecoderModule> mPDM;
   
-  RefPtr<TaskQueue> mTaskQueue;
+  nsRefPtr<TaskQueue> mTaskQueue;
   bool mCDMDecodesAudio;
   bool mCDMDecodesVideo;
 
