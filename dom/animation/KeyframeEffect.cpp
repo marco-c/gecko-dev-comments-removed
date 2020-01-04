@@ -165,7 +165,6 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
 
   
   ComputedTiming computedTiming = GetComputedTiming();
-  AnimationCollection* collection = GetCollection();
   
   
   
@@ -174,13 +173,33 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   
   
   
-  if (collection &&
-      
-      
-      computedTiming.mProgress != mProgressOnLastCompose) {
-    collection->RequestRestyle(CanThrottle() ?
-                               EffectCompositor::RestyleType::Throttled :
-                               EffectCompositor::RestyleType::Standard);
+  
+  
+  
+  if (computedTiming.mProgress != mProgressOnLastCompose) {
+    EffectCompositor::RestyleType restyleType =
+      CanThrottle() ?
+      EffectCompositor::RestyleType::Throttled :
+      EffectCompositor::RestyleType::Standard;
+    
+    
+    
+    
+    
+    
+    
+    
+    AnimationCollection* collection = GetCollection();
+    if (collection) {
+      collection->RequestRestyle(restyleType);
+    } else if (mAnimation) {
+      nsPresContext* presContext = GetPresContext();
+      if (presContext) {
+        presContext->EffectCompositor()->
+          RequestRestyle(mTarget, mPseudoType, restyleType,
+                         mAnimation->CascadeLevel());
+      }
+    }
   }
 }
 

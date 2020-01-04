@@ -79,6 +79,24 @@ public:
     Layer
   };
 
+  
+  
+  
+  
+  void RequestRestyle(dom::Element* aElement,
+                      nsCSSPseudoElements::Type aPseudoType,
+                      RestyleType aRestyleType,
+                      CascadeLevel aCascadeLevel);
+
+  
+  
+  
+  
+  void MaybeUpdateAnimationRule(dom::Element* aElement,
+                                nsCSSPseudoElements::Type aPseudoType,
+                                CascadeLevel aCascadeLevel,
+                                bool& aStyleChanging);
+
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSProperty aProperty);
 
@@ -122,15 +140,15 @@ public:
   static Maybe<Pair<dom::Element*, nsCSSPseudoElements::Type>>
   GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame);
 
+private:
+  ~EffectCompositor() = default;
+
   
   
   static void ComposeAnimationRule(dom::Element* aElement,
                                    nsCSSPseudoElements::Type aPseudoType,
                                    CascadeLevel aCascadeLevel,
                                    bool& aStyleChanging);
-
-private:
-  ~EffectCompositor() = default;
 
   
   
