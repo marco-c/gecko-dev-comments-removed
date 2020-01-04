@@ -1,0 +1,28 @@
+
+
+
+
+"use strict";
+
+const { PropTypes } = require("devtools/client/shared/vendor/react");
+
+
+
+
+
+
+
+exports.viewport = {
+
+  
+  width: PropTypes.number,
+
+  
+  height: PropTypes.number,
+
+};
+
+
+
+
+exports.location = PropTypes.string;

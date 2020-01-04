@@ -1,0 +1,20 @@
+
+
+
+
+"use strict";
+
+const { ADD_VIEWPORT } = require("./index");
+
+module.exports = {
+
+  
+
+
+  addViewport() {
+    return {
+      type: ADD_VIEWPORT,
+    };
+  },
+
+};

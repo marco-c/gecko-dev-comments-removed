@@ -1,0 +1,8 @@
+
+
+
+
+"use strict";
+
+exports.location = require("./reducers/location");
+exports.viewports = require("./reducers/viewports");

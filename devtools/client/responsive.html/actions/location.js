@@ -1,0 +1,22 @@
+
+
+
+
+"use strict";
+
+const { CHANGE_LOCATION } = require("./index");
+
+module.exports = {
+
+  
+
+
+
+  changeLocation(location) {
+    return {
+      type: CHANGE_LOCATION,
+      location,
+    };
+  },
+
+};
