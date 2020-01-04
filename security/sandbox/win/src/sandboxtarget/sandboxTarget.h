@@ -9,6 +9,7 @@
 
 #include <windows.h>
 
+#include "mozilla/Assertions.h"
 #include "base/MissingBasicTypes.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/target_services.h"
@@ -27,11 +28,7 @@ public:
   
 
 
-  static SandboxTarget* Instance()
-  {
-    static SandboxTarget sb;
-    return &sb;
-  }
+  static SandboxTarget* Instance();
 
   
 

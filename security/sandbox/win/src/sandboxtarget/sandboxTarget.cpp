@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#define TARGET_SANDBOX_EXPORTS
+#include "sandboxTarget.h"
+
+namespace mozilla {
+
+
+
+ SandboxTarget*
+SandboxTarget::Instance()
+{
+  static SandboxTarget sb;
+  return &sb;
+}
+
+}
