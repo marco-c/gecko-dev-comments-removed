@@ -39,7 +39,7 @@ const SHARED_L10N = new ViewHelpers.L10N("chrome://devtools/locale/shared.proper
 
 var ActiveTabs = new Map();
 
-this.ResponsiveUIManager = {
+var Manager = {
   
 
 
@@ -113,7 +113,18 @@ this.ResponsiveUIManager = {
   }
 }
 
-EventEmitter.decorate(ResponsiveUIManager);
+EventEmitter.decorate(Manager);
+
+
+
+
+if (Services.prefs.getBoolPref("devtools.responsive.html.enabled")) {
+  let { ResponsiveUIManager } =
+    require("devtools/client/responsive.html/manager");
+  this.ResponsiveUIManager = ResponsiveUIManager;
+} else {
+  this.ResponsiveUIManager = Manager;
+}
 
 var presets = [
   

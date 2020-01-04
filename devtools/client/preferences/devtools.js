@@ -327,3 +327,7 @@ pref("devtools.telemetry.tools.opened.version", "{}");
 #else
   pref("devtools.jsonview.enabled", false);
 #endif
+
+
+
+pref("devtools.responsive.html.enabled", false);
