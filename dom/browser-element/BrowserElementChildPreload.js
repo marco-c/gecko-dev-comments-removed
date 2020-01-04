@@ -64,6 +64,7 @@ const COMMAND_MAP = {
   'cut': 'cmd_cut',
   'copy': 'cmd_copyAndCollapseToEnd',
   'copyImage': 'cmd_copyImage',
+  'copyLink': 'cmd_copyLink',
   'paste': 'cmd_paste',
   'selectall': 'cmd_selectAll'
 };
@@ -865,7 +866,13 @@ BrowserElementChild.prototype = {
     var elem = e.target;
     var menuData = {systemTargets: [], contextmenu: null};
     var ctxMenuId = null;
-    var hasImgElement = false;
+    var copyableElements = {
+      image: false,
+      link: false,
+      hasElements: function() {
+        return this.image || this.link;
+      }
+    };
 
     
     
@@ -886,18 +893,20 @@ BrowserElementChild.prototype = {
 
       
       if (elem.nodeName == 'IMG') {
-        hasImgElement = true;
+        copyableElements.image = true;
+      } else if (elem.nodeName == 'A') {
+        copyableElements.link = true;
       }
 
       elem = elem.parentNode;
     }
 
-    if (ctxMenuId || hasImgElement) {
+    if (ctxMenuId || copyableElements.hasElements()) {
       var menu = null;
       if (ctxMenuId) {
         menu = e.target.ownerDocument.getElementById(ctxMenuId);
       }
-      menuData.contextmenu = this._buildMenuObj(menu, '', hasImgElement);
+      menuData.contextmenu = this._buildMenuObj(menu, '', copyableElements);
     }
 
     
@@ -1235,6 +1244,10 @@ BrowserElementChild.prototype = {
       
       data.json.command = 'copyImage';
       this._recvDoCommand(data);
+    } else if (data.json.menuitem == 'copy-link') {
+      
+      data.json.command = 'copyLink';
+      this._recvDoCommand(data);
     } else if (data.json.menuitem in this._ctxHandlers) {
       this._ctxHandlers[data.json.menuitem].click();
       this._ctxHandlers = {};
@@ -1244,7 +1257,7 @@ BrowserElementChild.prototype = {
     }
   },
 
-  _buildMenuObj: function(menu, idPrefix, hasImgElement) {
+  _buildMenuObj: function(menu, idPrefix, copyableElements) {
     var menuObj = {type: 'menu', items: []};
     
     if (menu) {
@@ -1264,7 +1277,13 @@ BrowserElementChild.prototype = {
       }
     }
     
-    if (hasImgElement) {
+    
+    
+    if (copyableElements.link) {
+      menuObj.items.push({id: 'copy-link'});
+    }
+    
+    if (copyableElements.image) {
       menuObj.items.push({id: 'copy-image'});
     }
 
