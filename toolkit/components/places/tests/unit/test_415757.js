@@ -88,13 +88,13 @@ add_task(function* test_execute()
   try {
     PlacesUtils.annotations.getPageAnnotation(testAnnoDeletedURI, testAnnoName);
     do_throw("fetching page-annotation that doesn't exist, should've thrown");
-  } catch(ex) {}
+  } catch (ex) {}
 
   
   try {
     var annoVal = PlacesUtils.annotations.getPageAnnotation(testAnnoRetainedURI,
                                                             testAnnoRetainedName);
-  } catch(ex) {
+  } catch (ex) {
     do_throw("The annotation has been removed erroneously");
   }
   do_check_eq(annoVal, testAnnoRetainedValue);

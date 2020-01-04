@@ -56,7 +56,7 @@ add_task(function* test_execute()
     try {
       var cantAddUri = uri(currentURL);
     }
-    catch(e) {
+    catch (e) {
       
       
       
@@ -66,7 +66,7 @@ add_task(function* test_execute()
       try {
         yield PlacesTestUtils.addVisits({uri: cantAddUri, referrer: referrer});
         do_throw("Should have generated an exception.");
-      } catch(ex) {
+      } catch (ex) {
         if (ex.result != Cr.NS_ERROR_ILLEGAL_VALUE) {
           throw ex;
         }

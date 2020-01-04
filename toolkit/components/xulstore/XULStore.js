@@ -113,7 +113,7 @@ XULStore.prototype = {
 
       try {
         uri = NetUtil.newURI(resource.ValueUTF8);
-      } catch(ex) {
+      } catch (ex) {
         continue; 
       }
 
@@ -152,7 +152,7 @@ XULStore.prototype = {
     try {
       stream.init(this._storeFile, MODE_RDONLY, FILE_PERMS, 0);
       this._data = json.decodeFromStream(stream, stream.available());
-    } catch(e) {
+    } catch (e) {
       this.log("Error reading JSON: " + e);
       
     } finally {

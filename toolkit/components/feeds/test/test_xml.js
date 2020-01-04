@@ -43,7 +43,7 @@ FeedListener.prototype = {
       } else {
         Assert.ok(true, "expect passed for " + this.testcase.desc);
       }
-    } catch(e) {
+    } catch (e) {
       Assert.ok(false, "expect failed for " + this.testcase.desc + " ---- " + e.message);
     }
 
@@ -70,7 +70,7 @@ function createTest(data) {
 
     try {
       parser.parseFromStream(stream, uri);
-    } catch(e) {
+    } catch (e) {
       Assert.ok(false, "parse failed for " + data.file.leafName + " ---- " + e.message);
       
       run_next_test();

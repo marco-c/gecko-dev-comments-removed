@@ -2027,7 +2027,7 @@ function saveReportsToFile()
 
   try {
     fp.init(window, "Save Memory Reports", Ci.nsIFilePicker.modeSave);
-  } catch(ex) {
+  } catch (ex) {
     
     
     Downloads.getSystemDownloadsDirectory().then(function(dirPath) {

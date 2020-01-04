@@ -63,7 +63,7 @@ var SimpleServiceDiscovery = {
     
     try {
       aURL = Services.io.newURI(aURL, null, null).spec;
-    } catch(e) {}
+    } catch (e) {}
     return aURL;
   },
 

@@ -361,7 +361,7 @@ var PrintUtils = {
       let ppMsgName = msgName + "_PP";
       try {
         msg = this.bundle.GetStringFromName(ppMsgName);
-      } catch(e) {
+      } catch (e) {
         
         
       }

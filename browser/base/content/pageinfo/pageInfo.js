@@ -262,7 +262,7 @@ const CERTIFICATEDIALOGS_CONTRACTID = "@mozilla.org/nsCertificateDialogs;1"
 function getClipboardHelper() {
     try {
         return Components.classes["@mozilla.org/widget/clipboardhelper;1"].getService(Components.interfaces.nsIClipboardHelper);
-    } catch(e) {
+    } catch (e) {
         
         return null;
     }
@@ -759,7 +759,7 @@ function saveMedia()
           try {
             uri.QueryInterface(Components.interfaces.nsIURL);
             dir.append(decodeURIComponent(uri.fileName));
-          } catch(ex) {
+          } catch (ex) {
             
             
             

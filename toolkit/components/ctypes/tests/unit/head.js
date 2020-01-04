@@ -2,7 +2,7 @@ try {
   
   
   Components.utils.import("resource://gre/modules/ctypes.jsm");
-} catch(e) {
+} catch (e) {
 }
 
 function open_ctypes_test_lib()

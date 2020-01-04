@@ -78,7 +78,7 @@ IDService.prototype = {
     
     try {
       Services.obs.removeObserver(this, "quit-application-granted");
-    } catch(e) {}
+    } catch (e) {}
   },
 
   

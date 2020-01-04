@@ -53,7 +53,7 @@ function make_fake_appdir() {
   
   try {
     dirSvc.undefine("UAppData");
-  } catch(ex) {} 
+  } catch (ex) {} 
   return appD.clone();
 }
 
@@ -65,7 +65,7 @@ function cleanup_fake_appdir() {
   
   try {
     dirSvc.undefine("UAppData");
-  } catch(ex) {
+  } catch (ex) {
     dump("cleanup_fake_appdir: dirSvc.undefine failed: " + ex.message +"\n");
   }
 }

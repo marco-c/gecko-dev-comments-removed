@@ -156,11 +156,11 @@ ContentPrefService.prototype = {
       this.__stmtDeleteSettingIfUnused.finalize();
       this.__stmtDeleteSettingIfUnused = null;
     }
-    if(this.__stmtSelectPrefs) {
+    if (this.__stmtSelectPrefs) {
       this.__stmtSelectPrefs.finalize();
       this.__stmtSelectPrefs = null;
     }
-    if(this.__stmtDeleteGroupIfUnused) {
+    if (this.__stmtDeleteGroupIfUnused) {
       this.__stmtDeleteGroupIfUnused.finalize();
       this.__stmtDeleteGroupIfUnused = null;
     }
@@ -359,7 +359,7 @@ ContentPrefService.prototype = {
       `);
       this._dbConnection.commitTransaction();
     }
-    catch(ex) {
+    catch (ex) {
       this._dbConnection.rollbackTransaction();
       throw ex;
     }
@@ -531,7 +531,7 @@ ContentPrefService.prototype = {
       try {
         observer.onContentPrefRemoved(aGroup, aName, aIsPrivate);
       }
-      catch(ex) {
+      catch (ex) {
         Cu.reportError(ex);
       }
     }
@@ -545,7 +545,7 @@ ContentPrefService.prototype = {
       try {
         observer.onContentPrefSet(aGroup, aName, aValue, aIsPrivate);
       }
-      catch(ex) {
+      catch (ex) {
         Cu.reportError(ex);
       }
     }
@@ -1038,7 +1038,7 @@ ContentPrefService.prototype = {
     try {
       var statement = this._dbConnection.createStatement(aSQLString);
     }
-    catch(ex) {
+    catch (ex) {
       Cu.reportError("error creating statement " + aSQLString + ": " +
                      this._dbConnection.lastError + " - " +
                      this._dbConnection.lastErrorString);
@@ -1088,7 +1088,7 @@ ContentPrefService.prototype = {
         try {
           this._dbMigrate(dbConnection, version, this._dbVersion);
         }
-        catch(ex) {
+        catch (ex) {
           Cu.reportError("error migrating DB: " + ex + "; backing up and recreating");
           dbConnection = this._dbBackUpAndRecreate(dbService, dbFile, dbConnection);
         }
@@ -1120,7 +1120,7 @@ ContentPrefService.prototype = {
       this._dbCreateSchema(dbConnection);
       dbConnection.schemaVersion = this._dbVersion;
     }
-    catch(ex) {
+    catch (ex) {
       
       
       
@@ -1161,7 +1161,7 @@ ContentPrefService.prototype = {
     
     
     
-    try { aDBConnection.close() } catch(ex) {}
+    try { aDBConnection.close() } catch (ex) {}
 
     aDBFile.remove(false);
 
@@ -1194,7 +1194,7 @@ ContentPrefService.prototype = {
         for (let i = aOldVersion; i < aNewVersion; i++) {
           let migrationName = "_dbMigrate" + i + "To" + (i + 1);
           if (typeof this[migrationName] != 'function') {
-            throw("no migrator function from version " + aOldVersion + " to version " + aNewVersion);
+            throw ("no migrator function from version " + aOldVersion + " to version " + aNewVersion);
           }
           this[migrationName](aDBConnection);
         }
@@ -1281,9 +1281,9 @@ HostnameGrouper.prototype = {
 
       group = aURI.host;
       if (!group)
-        throw("can't derive group from host; no host in URI");
+        throw ("can't derive group from host; no host in URI");
     }
-    catch(ex) {
+    catch (ex) {
       
       
       
@@ -1300,7 +1300,7 @@ HostnameGrouper.prototype = {
         var url = aURI.QueryInterface(Ci.nsIURL);
         group = aURI.prePath + url.filePath;
       }
-      catch(ex) {
+      catch (ex) {
         group = aURI.spec;
       }
     }

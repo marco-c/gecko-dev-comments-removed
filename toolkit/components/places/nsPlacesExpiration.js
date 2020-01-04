@@ -824,7 +824,7 @@ nsPlacesExpiration.prototype = {
       
       
       this._urisLimit = this._prefBranch.getIntPref(PREF_MAX_URIS);
-    } catch(ex) {  }
+    } catch (ex) {  }
 
     if (this._urisLimit < 0) {
       

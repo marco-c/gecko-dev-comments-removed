@@ -86,7 +86,7 @@ TooltipTextProvider.prototype = {
             titleText += "\n" + andXMoreStr;
           }
         }
-      } catch(e) {}
+      } catch (e) {}
     }
 
     

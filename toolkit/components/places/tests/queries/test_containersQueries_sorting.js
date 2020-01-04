@@ -330,7 +330,7 @@ function check_children_sorting(aRootNode, aExpectedSortingMode) {
 
   
   var comparator;
-  switch(aExpectedSortingMode) {
+  switch (aExpectedSortingMode) {
     case Ci.nsINavHistoryQueryOptions.SORT_BY_NONE:
       comparator = function (a, b) {
         return 0;

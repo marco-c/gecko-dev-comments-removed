@@ -120,7 +120,7 @@ ViewSourceChrome.prototype = {
   receiveMessage(message) {
     let data = message.data;
 
-    switch(message.name) {
+    switch (message.name) {
       
       case "ViewSource:PromptAndGoToLine":
         this.promptAndGoToLine();
@@ -167,7 +167,7 @@ ViewSourceChrome.prototype = {
 
 
   handleEvent(event) {
-    switch(event.type) {
+    switch (event.type) {
       case "unload":
         this.uninit();
         break;

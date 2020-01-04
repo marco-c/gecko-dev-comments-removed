@@ -2,7 +2,7 @@ try {
   
   
   Components.utils.import("resource://gre/modules/ctypes.jsm");
-} catch(e) {
+} catch (e) {
 }
 
 var acquire, dispose, null_dispose, compare, dispose_64;

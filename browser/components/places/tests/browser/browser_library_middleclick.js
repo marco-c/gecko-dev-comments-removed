@@ -259,7 +259,7 @@ function runNextTest() {
     
     try {
       gPrefService.clearUserPref(ENABLE_HISTORY_PREF);
-    } catch(ex) {}
+    } catch (ex) {}
 
     finish();
   }

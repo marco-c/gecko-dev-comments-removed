@@ -16,7 +16,7 @@ this.TelemetryLog = Object.freeze({
     var ts;
     try {
       ts = Math.floor(Telemetry.msSinceProcessStart());
-    } catch(e) {
+    } catch (e) {
       
       
       return;

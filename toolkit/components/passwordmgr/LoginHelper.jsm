@@ -580,7 +580,7 @@ this.LoginHelper = {
         
         
         foundMatchingLogin = true;
-        if(login.password != existingLogin.password &
+        if (login.password != existingLogin.password &
            login.timePasswordChanged > existingLogin.timePasswordChanged) {
           
           

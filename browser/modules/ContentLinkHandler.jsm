@@ -139,7 +139,7 @@ this.ContentLinkHandler = {
     var uri = BrowserUtils.makeURI(aLink.href, targetDoc.characterSet);
     try {
       uri.userPass = "";
-    } catch(e) {
+    } catch (e) {
       
     }
     return uri;

@@ -754,7 +754,7 @@ this.PlacesUtils = {
   unwrapNodes: function PU_unwrapNodes(blob, type) {
     
     var nodes = [];
-    switch(type) {
+    switch (type) {
       case this.TYPE_X_MOZ_PLACE:
       case this.TYPE_X_MOZ_PLACE_SEPARATOR:
       case this.TYPE_X_MOZ_PLACE_CONTAINER:
@@ -1750,7 +1750,7 @@ this.PlacesUtils = {
                                                         , writable: true
                                                         , enumerable: false
                                                         , configurable: false });
-        } catch(ex) {
+        } catch (ex) {
           throw new Error("Failed to fetch the data for the root item " + ex);
         }
       } else {
@@ -1769,7 +1769,7 @@ this.PlacesUtils = {
             parentItem.children = [item];
 
           rootItem.itemsCount++;
-        } catch(ex) {
+        } catch (ex) {
           
           Cu.reportError("Failed to fetch the data for an item " + ex);
           continue;
@@ -1933,7 +1933,7 @@ function setupDbForShutdown(conn, name) {
       () => promiseClosed.catch(Cu.reportError),
       () => state
     );
-  } catch(ex) {
+  } catch (ex) {
     
     conn.close();
     throw ex;

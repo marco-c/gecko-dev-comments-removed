@@ -522,7 +522,7 @@ var PlacesOrganizer = {
     Task.spawn(function* () {
       try {
         yield BookmarkJSONUtils.importFromFile(aFilePath, true);
-      } catch(ex) {
+      } catch (ex) {
         PlacesOrganizer._showErrorAlert(PlacesUIUtils.getString("bookmarksRestoreParseError"));
       }
     });
@@ -1236,7 +1236,7 @@ var ViewMenu = {
 
     
     if (!colLookupTable.hasOwnProperty(columnId))
-      throw("Invalid column");
+      throw new Error("Invalid column");
 
     
     
@@ -1280,7 +1280,7 @@ var ContentArea = {
         return view;
       }
     }
-    catch(ex) {
+    catch (ex) {
       Components.utils.reportError(ex);
     }
     return ContentTree.view;

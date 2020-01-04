@@ -358,7 +358,7 @@ function getMessageManagerForWindow(aContentWindow) {
   try {
     
     return ir.getInterface(Ci.nsIContentFrameMessageManager);
-  } catch(e) {
+  } catch (e) {
     if (e.result == Cr.NS_NOINTERFACE) {
       return null;
     }

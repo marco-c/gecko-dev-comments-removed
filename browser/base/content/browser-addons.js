@@ -633,7 +633,7 @@ var LightWeightThemeWebInstaller = {
     try {
       uri = makeURI(srcURIString);
     }
-    catch(e) {
+    catch (e) {
       
       return false;
     }

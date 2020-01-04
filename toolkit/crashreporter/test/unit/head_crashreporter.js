@@ -72,7 +72,7 @@ function do_crash(setup, callback, canReturnZero)
   try {
       process.run(true, args, args.length);
   }
-  catch(ex) {} 
+  catch (ex) {} 
   finally {
     env.set("CRASHES_EVENTS_DIR", "");
   }
