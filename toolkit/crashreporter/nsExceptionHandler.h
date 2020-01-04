@@ -237,7 +237,6 @@ void UnregisterInjectorCallback(DWORD processID);
 
 
 bool SetRemoteExceptionHandler(const nsACString& crashPipe);
-void InitChildProcessTmpDir();
 
 #  elif defined(XP_LINUX)
 
