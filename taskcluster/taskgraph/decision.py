@@ -26,11 +26,15 @@ logger = logging.getLogger(__name__)
 PER_PROJECT_PARAMETERS = {
     'try': {
         'target_tasks_method': 'try_option_syntax',
+        
+        
+        'optimize_target_tasks': False,
     },
 
     
     'default': {
-        'target_tasks_method': 'all_tasks',
+        'target_tasks_method': 'all_builds_and_tests',
+        'optimize_target_tasks': True,
     }
 }
 
@@ -69,11 +73,13 @@ def taskgraph_decision(options):
                    tgg.target_task_set.tasks.keys())
 
     
+    
     write_artifact('task-graph.json',
                    taskgraph_to_json(tgg.optimized_task_graph))
+    write_artifact('label-to-taskid.json', tgg.label_to_taskid)
 
     
-    create_tasks(tgg.optimized_task_graph)
+    create_tasks(tgg.optimized_task_graph, tgg.label_to_taskid)
 
 
 def get_decision_parameters(options):
@@ -113,6 +119,7 @@ def taskgraph_to_json(taskgraph):
 
     def tojson(task):
         return {
+            'label': task.label,
             'task': task.task,
             'attributes': task.attributes,
             'dependencies': []
