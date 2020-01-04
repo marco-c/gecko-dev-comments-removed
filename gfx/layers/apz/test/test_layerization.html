@@ -14,6 +14,8 @@
   <style>
   #container {
     display: flex;
+    overflow: scroll;
+    height: 500px;
   }
   .outer-frame {
     height: 500px;
@@ -21,7 +23,7 @@
     flex-basis: 100%;
     background: repeating-linear-gradient(#CCC, #CCC 100px, #BBB 100px, #BBB 200px);
   }
-  #page-content {
+  #container-content {
     height: 200%;
   }
   </style>
@@ -42,11 +44,11 @@
   </div>
   <iframe id="outer3" class="outer-frame" src="helper_iframe1.html"></iframe>
   <iframe id="outer4" class="outer-frame" src="helper_iframe2.html"></iframe>
+
+
+
+  <div id="container-content"></div>
 </div>
-
-
-
-<div id="page-content"></div>
 <pre id="test">
 <script type="application/javascript;version=1.7">
 
