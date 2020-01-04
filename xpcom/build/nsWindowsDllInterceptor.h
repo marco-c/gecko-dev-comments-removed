@@ -738,6 +738,31 @@ protected:
           
           return;
         }
+      } else if (origBytes[nBytes] == 0x66) {
+        
+        nBytes += 1;
+        
+        if (origBytes[nBytes] >= 0x88 && origBytes[nBytes] <= 0x8B) {
+          
+          unsigned char b = origBytes[nBytes + 1];
+          if (((b & 0xc0) == 0xc0) ||
+              (((b & 0xc0) == 0x00) &&
+               ((b & 0x07) != 0x04) && ((b & 0x07) != 0x05))) {
+            
+            nBytes += 2;
+          } else if ((b & 0xc0) == 0x40) {
+            if ((b & 0x07) == 0x04) {
+              
+              nBytes += 4;
+            } else {
+              
+              nBytes += 3;
+            }
+          } else {
+            
+            return;
+          }
+        }
       } else if ((origBytes[nBytes] & 0xf0) == 0x50) {
         
         nBytes++;
@@ -747,6 +772,9 @@ protected:
       } else if (origBytes[nBytes] == 0xb8) {
         
         nBytes += 5;
+      } else if (origBytes[nBytes] == 0x33) {
+        
+        nBytes += 2;
       } else if (origBytes[nBytes] == 0xc3) {
         
         nBytes++;
