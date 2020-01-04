@@ -19,14 +19,6 @@ const STATE_CLOSED = 4;
 
 var state = STATE_STOPPED;
 
-function observer(subj, topic) {
-  Services.obs.removeObserver(observer, topic);
-  state = STATE_QUITTING;
-}
-
-
-Services.obs.addObserver(observer, "quit-application-granted", false);
-
 
 
 
@@ -95,5 +87,14 @@ this.RunState = Object.freeze({
     if (this.isClosing) {
       state = STATE_CLOSED;
     }
-  }
+  },
+
+  
+  
+  
+  setQuitting() {
+    if (this.isRunning) {
+      state = STATE_QUITTING;
+    }
+  },
 });

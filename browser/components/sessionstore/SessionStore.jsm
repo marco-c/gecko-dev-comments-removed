@@ -31,7 +31,7 @@ const MAX_CONCURRENT_TAB_RESTORES = 3;
 
 const OBSERVING = [
   "browser-window-before-show", "domwindowclosed",
-  "quit-application-requested", "browser-lastwindow-close-granted",
+  "quit-application-granted", "browser-lastwindow-close-granted",
   "quit-application", "browser:purge-session-history",
   "browser:purge-domain-data",
   "idle-daily",
@@ -180,6 +180,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "Utils",
   "resource:///modules/sessionstore/Utils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ViewSourceBrowser",
   "resource://gre/modules/ViewSourceBrowser.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
+  "resource://gre/modules/AsyncShutdown.jsm");
 
 
 
@@ -627,8 +629,8 @@ var SessionStoreInternal = {
       case "domwindowclosed": 
         this.onClose(aSubject);
         break;
-      case "quit-application-requested":
-        this.onQuitApplicationRequested();
+      case "quit-application-granted":
+        this.onQuitApplicationGranted();
         break;
       case "browser-lastwindow-close-granted":
         this.onLastWindowCloseGranted();
@@ -1404,21 +1406,74 @@ var SessionStoreInternal = {
   
 
 
-  onQuitApplicationRequested: function ssi_onQuitApplicationRequested() {
+  onQuitApplicationGranted: function ssi_onQuitApplicationGranted() {
     
-    this._forEachBrowserWindow(function(aWindow) {
-      
-      
-      TabState.flushWindow(aWindow);
-      this._collectWindowData(aWindow);
+    this._forEachBrowserWindow((win) => {
+      this._collectWindowData(win);
     });
+
+    
+    
+
+    
+    
+    
+    let progress = { total: -1, current: -1 };
+
+    
+    
+    RunState.setQuitting();
+
+    AsyncShutdown.quitApplicationGranted.addBlocker(
+      "SessionStore: flushing all windows",
+      this.flushAllWindowsAsync(progress),
+      () => progress);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  flushAllWindowsAsync: Task.async(function*(progress={}) {
+    let windowPromises = [];
+    
+    
+    
+    this._forEachBrowserWindow((win) => {
+      windowPromises.push(TabStateFlusher.flushWindow(win));
+      win.close();
+    });
+
+    progress.total = windowPromises.length;
+
+    
+    
+    for (let i = 0; i < windowPromises.length; ++i) {
+      progress.current = i;
+      yield windowPromises[i];
+    };
+
     
     
     var activeWindow = this._getMostRecentBrowserWindow();
     if (activeWindow)
       this.activeWindowSSiCache = activeWindow.__SSi || "";
     DirtyWindows.clear();
-  },
+  }),
 
   
 
