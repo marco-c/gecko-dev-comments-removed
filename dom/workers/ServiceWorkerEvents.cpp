@@ -361,19 +361,19 @@ void RespondWithCopyComplete(void* aClosure, nsresult aStatus)
 {
   nsAutoPtr<RespondWithClosure> data(static_cast<RespondWithClosure*>(aClosure));
   nsCOMPtr<nsIRunnable> event;
-  if (NS_SUCCEEDED(aStatus)) {
-    event = new FinishResponse(data->mInterceptedChannel,
-                               data->mInternalResponse,
-                               data->mWorkerChannelInfo,
-                               data->mScriptSpec,
-                               data->mResponseURLSpec);
-  } else {
+  if (NS_WARN_IF(NS_FAILED(aStatus))) {
     AsyncLog(data->mInterceptedChannel, data->mRespondWithScriptSpec,
              data->mRespondWithLineNumber, data->mRespondWithColumnNumber,
              NS_LITERAL_CSTRING("InterceptionFailedWithURL"),
              data->mRequestURL);
     event = new CancelChannelRunnable(data->mInterceptedChannel,
                                       NS_ERROR_INTERCEPTION_FAILED);
+  } else {
+    event = new FinishResponse(data->mInterceptedChannel,
+                               data->mInternalResponse,
+                               data->mWorkerChannelInfo,
+                               data->mScriptSpec,
+                               data->mResponseURLSpec);
   }
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToMainThread(event)));
 }
@@ -633,6 +633,25 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
       return;
     }
 
+    const uint32_t kCopySegmentSize = 4096;
+
+    
+    
+    
+    
+    
+    
+    
+    if (!NS_OutputStreamIsBuffered(responseBody)) {
+      nsCOMPtr<nsIOutputStream> buffered;
+      rv = NS_NewBufferedOutputStream(getter_AddRefs(buffered), responseBody,
+           kCopySegmentSize);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return;
+      }
+      responseBody = buffered;
+    }
+
     nsCOMPtr<nsIEventTarget> stsThread = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
     if (NS_WARN_IF(!stsThread)) {
       return;
@@ -640,8 +659,8 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
 
     
     
-    rv = NS_AsyncCopy(body, responseBody, stsThread, NS_ASYNCCOPY_VIA_READSEGMENTS, 4096,
-                      RespondWithCopyComplete, closure.forget());
+    rv = NS_AsyncCopy(body, responseBody, stsThread, NS_ASYNCCOPY_VIA_WRITESEGMENTS,
+                      kCopySegmentSize, RespondWithCopyComplete, closure.forget());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
