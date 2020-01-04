@@ -18,6 +18,7 @@ import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.animation.TransitionsTracker;
+import org.mozilla.gecko.util.Experiments;
 
 
 
@@ -64,8 +65,9 @@ public class FirstrunAnimationContainer extends LinearLayout {
         animateHide();
 
         
-        Telemetry.stopUISession(TelemetryContract.Session.EXPERIMENT, FirstrunPagerConfig.ONBOARDING_A);
-        Telemetry.stopUISession(TelemetryContract.Session.EXPERIMENT, FirstrunPagerConfig.ONBOARDING_B);
+        Telemetry.stopUISession(TelemetryContract.Session.EXPERIMENT, Experiments.ONBOARDING2_A);
+        Telemetry.stopUISession(TelemetryContract.Session.EXPERIMENT, Experiments.ONBOARDING2_B);
+        Telemetry.stopUISession(TelemetryContract.Session.EXPERIMENT, Experiments.ONBOARDING2_C);
     }
 
     private void animateHide() {
