@@ -354,13 +354,15 @@ var LoginManagerContent = {
       return;
     }
 
-    this.setupProgressListener(window);
-
     let pwField = event.target;
     if (pwField.form) {
       
       return;
     }
+
+    
+    
+    this.setupProgressListener(window);
 
     let formLike = FormLikeFactory.createFromField(pwField);
     log("onDOMInputPasswordAdded:", pwField, formLike);
