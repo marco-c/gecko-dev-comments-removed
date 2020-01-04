@@ -17,84 +17,7 @@
 
 #include "jsobjinlines.h"
 
-using namespace js;
 using namespace gc;
-
-bool
-GCRuntime::gcIfNeededPerAllocation(JSContext* cx)
-{
-#ifdef JS_GC_ZEAL
-    if (needZealousGC())
-        runDebugGC();
-#endif
-
-    
-    
-    if (rt->hasPendingInterrupt())
-        gcIfRequested(cx);
-
-    
-    
-    
-    if (isIncrementalGCInProgress() &&
-        cx->zone()->usage.gcBytes() > cx->zone()->threshold.gcTriggerBytes())
-    {
-        PrepareZoneForGC(cx->zone());
-        AutoKeepAtoms keepAtoms(cx->perThreadData);
-        gc(GC_NORMAL, JS::gcreason::INCREMENTAL_TOO_SLOW);
-    }
-
-    return true;
-}
-
-template <AllowGC allowGC>
-bool
-GCRuntime::checkAllocatorState(JSContext* cx, AllocKind kind)
-{
-    if (allowGC) {
-        if (!gcIfNeededPerAllocation(cx))
-            return false;
-    }
-
-#if defined(JS_GC_ZEAL) || defined(DEBUG)
-    MOZ_ASSERT_IF(rt->isAtomsCompartment(cx->compartment()),
-                  kind == AllocKind::STRING ||
-                  kind == AllocKind::FAT_INLINE_STRING ||
-                  kind == AllocKind::SYMBOL ||
-                  kind == AllocKind::JITCODE);
-    MOZ_ASSERT(!rt->isHeapBusy());
-    MOZ_ASSERT(isAllocAllowed());
-#endif
-
-    
-    if (allowGC && !rt->mainThread.suppressGC)
-        JS::AutoAssertOnGC::VerifyIsSafeToGC(rt);
-
-    
-    if (js::oom::ShouldFailWithOOM()) {
-        
-        
-        if (allowGC)
-            ReportOutOfMemory(cx);
-        return false;
-    }
-
-    return true;
-}
-
-template <typename T>
- void
-GCRuntime::checkIncrementalZoneState(ExclusiveContext* cx, T* t)
-{
-#ifdef DEBUG
-    if (!cx->isJSContext())
-        return;
-
-    Zone* zone = cx->asJSContext()->zone();
-    MOZ_ASSERT_IF(t && zone->wasGCStarted() && (zone->isGCMarking() || zone->isGCSweeping()),
-                  t->asTenured().arena()->allocatedDuringIncremental);
-#endif
-}
 
 template <typename T, AllowGC allowGC >
 JSObject*
@@ -256,7 +179,123 @@ GCRuntime::tryNewTenuredThing(ExclusiveContext* cx, AllocKind kind, size_t thing
     return t;
 }
 
- void*
+template <AllowGC allowGC>
+bool
+GCRuntime::checkAllocatorState(JSContext* cx, AllocKind kind)
+{
+    if (allowGC) {
+        if (!gcIfNeededPerAllocation(cx))
+            return false;
+    }
+
+#if defined(JS_GC_ZEAL) || defined(DEBUG)
+    MOZ_ASSERT_IF(rt->isAtomsCompartment(cx->compartment()),
+                  kind == AllocKind::STRING ||
+                  kind == AllocKind::FAT_INLINE_STRING ||
+                  kind == AllocKind::SYMBOL ||
+                  kind == AllocKind::JITCODE);
+    MOZ_ASSERT(!rt->isHeapBusy());
+    MOZ_ASSERT(isAllocAllowed());
+#endif
+
+    
+    if (allowGC && !rt->mainThread.suppressGC)
+        JS::AutoAssertOnGC::VerifyIsSafeToGC(rt);
+
+    
+    if (js::oom::ShouldFailWithOOM()) {
+        
+        
+        if (allowGC)
+            ReportOutOfMemory(cx);
+        return false;
+    }
+
+    return true;
+}
+
+bool
+GCRuntime::gcIfNeededPerAllocation(JSContext* cx)
+{
+#ifdef JS_GC_ZEAL
+    if (needZealousGC())
+        runDebugGC();
+#endif
+
+    
+    
+    if (rt->hasPendingInterrupt())
+        gcIfRequested(cx);
+
+    
+    
+    
+    if (isIncrementalGCInProgress() &&
+        cx->zone()->usage.gcBytes() > cx->zone()->threshold.gcTriggerBytes())
+    {
+        PrepareZoneForGC(cx->zone());
+        AutoKeepAtoms keepAtoms(cx->perThreadData);
+        gc(GC_NORMAL, JS::gcreason::INCREMENTAL_TOO_SLOW);
+    }
+
+    return true;
+}
+
+template <typename T>
+ void
+GCRuntime::checkIncrementalZoneState(ExclusiveContext* cx, T* t)
+{
+#ifdef DEBUG
+    if (!cx->isJSContext())
+        return;
+
+    Zone* zone = cx->asJSContext()->zone();
+    MOZ_ASSERT_IF(t && zone->wasGCStarted() && (zone->isGCMarking() || zone->isGCSweeping()),
+                  t->asTenured().arena()->allocatedDuringIncremental);
+#endif
+}
+
+
+
+
+
+
+
+
+
+class MOZ_RAII js::gc::AutoMaybeStartBackgroundAllocation
+{
+    JSRuntime* runtime;
+
+  public:
+    AutoMaybeStartBackgroundAllocation()
+      : runtime(nullptr)
+    {}
+
+    void tryToStartBackgroundAllocation(JSRuntime* rt) {
+        runtime = rt;
+    }
+
+    ~AutoMaybeStartBackgroundAllocation() {
+        if (runtime)
+            runtime->gc.startBackgroundAllocTaskIfIdle();
+    }
+};
+
+void
+GCRuntime::startBackgroundAllocTaskIfIdle()
+{
+    AutoLockHelperThreadState helperLock;
+    if (allocTask.isRunning())
+        return;
+
+    
+    
+    allocTask.joinWithLockHeld();
+    allocTask.startWithLockHeld();
+}
+
+ TenuredCell*
 GCRuntime::refillFreeListFromAnyThread(ExclusiveContext* cx, AllocKind thingKind, size_t thingSize)
 {
     cx->arenas()->checkEmptyFreeList(thingKind);
@@ -267,7 +306,7 @@ GCRuntime::refillFreeListFromAnyThread(ExclusiveContext* cx, AllocKind thingKind
     return refillFreeListOffMainThread(cx, thingKind);
 }
 
- void*
+ TenuredCell*
 GCRuntime::refillFreeListFromMainThread(JSContext* cx, AllocKind thingKind, size_t thingSize)
 {
     ArenaLists *arenas = cx->arenas();
@@ -279,7 +318,7 @@ GCRuntime::refillFreeListFromMainThread(JSContext* cx, AllocKind thingKind, size
     return arenas->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
 }
 
- void*
+ TenuredCell*
 GCRuntime::refillFreeListOffMainThread(ExclusiveContext* cx, AllocKind thingKind)
 {
     ArenaLists* arenas = cx->arenas();
@@ -296,6 +335,22 @@ GCRuntime::refillFreeListOffMainThread(ExclusiveContext* cx, AllocKind thingKind
         HelperThreadState().wait(GlobalHelperThreadState::PRODUCER);
 
     return arenas->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
+}
+
+ TenuredCell*
+GCRuntime::refillFreeListInGC(Zone* zone, AllocKind thingKind)
+{
+    
+
+
+
+    zone->arenas.checkEmptyFreeList(thingKind);
+    mozilla::DebugOnly<JSRuntime*> rt = zone->runtimeFromMainThread();
+    MOZ_ASSERT(rt->isHeapCollecting());
+    MOZ_ASSERT_IF(!rt->isHeapMinorCollecting(), !rt->gc.isBackgroundSweeping());
+
+    AutoMaybeStartBackgroundAllocation maybeStartBackgroundAllocation;
+    return zone->arenas.allocateFromArena(zone, thingKind, maybeStartBackgroundAllocation);
 }
 
 TenuredCell*
@@ -364,4 +419,216 @@ GCRuntime::arenaAllocatedDuringGC(JS::Zone* zone, Arena* arena)
         arena->setNextAllocDuringSweep(arenasAllocatedDuringSweep);
         arenasAllocatedDuringSweep = arena;
     }
+}
+
+
+
+
+bool
+GCRuntime::wantBackgroundAllocation(const AutoLockGC& lock) const
+{
+    
+    
+    
+    return allocTask.enabled() &&
+           emptyChunks(lock).count() < tunables.minEmptyChunkCount(lock) &&
+           (fullChunks(lock).count() + availableChunks(lock).count()) >= 4;
+}
+
+Arena*
+GCRuntime::allocateArena(Chunk* chunk, Zone* zone, AllocKind thingKind, const AutoLockGC& lock)
+{
+    MOZ_ASSERT(chunk->hasAvailableArenas());
+
+    
+    if (!rt->isHeapMinorCollecting() &&
+        !isHeapCompacting() &&
+        usage.gcBytes() >= tunables.gcMaxBytes())
+    {
+        return nullptr;
+    }
+
+    Arena* arena = chunk->allocateArena(rt, zone, thingKind, lock);
+    zone->usage.addGCArena();
+
+    
+    if (!rt->isHeapMinorCollecting() && !isHeapCompacting())
+        maybeAllocTriggerZoneGC(zone, lock);
+
+    return arena;
+}
+
+Arena*
+Chunk::allocateArena(JSRuntime* rt, Zone* zone, AllocKind thingKind, const AutoLockGC& lock)
+{
+    Arena* arena = info.numArenasFreeCommitted > 0
+                   ? fetchNextFreeArena(rt)
+                   : fetchNextDecommittedArena();
+    arena->init(zone, thingKind);
+    updateChunkListAfterAlloc(rt, lock);
+    return arena;
+}
+
+inline void
+GCRuntime::updateOnFreeArenaAlloc(const ChunkInfo& info)
+{
+    MOZ_ASSERT(info.numArenasFreeCommitted <= numArenasFreeCommitted);
+    --numArenasFreeCommitted;
+}
+
+Arena*
+Chunk::fetchNextFreeArena(JSRuntime* rt)
+{
+    MOZ_ASSERT(info.numArenasFreeCommitted > 0);
+    MOZ_ASSERT(info.numArenasFreeCommitted <= info.numArenasFree);
+
+    Arena* arena = info.freeArenasHead;
+    info.freeArenasHead = arena->next;
+    --info.numArenasFreeCommitted;
+    --info.numArenasFree;
+    rt->gc.updateOnFreeArenaAlloc(info);
+
+    return arena;
+}
+
+Arena*
+Chunk::fetchNextDecommittedArena()
+{
+    MOZ_ASSERT(info.numArenasFreeCommitted == 0);
+    MOZ_ASSERT(info.numArenasFree > 0);
+
+    unsigned offset = findDecommittedArenaOffset();
+    info.lastDecommittedArenaOffset = offset + 1;
+    --info.numArenasFree;
+    decommittedArenas.unset(offset);
+
+    Arena* arena = &arenas[offset];
+    MarkPagesInUse(arena, ArenaSize);
+    arena->setAsNotAllocated();
+
+    return arena;
+}
+
+
+
+
+
+
+
+uint32_t
+Chunk::findDecommittedArenaOffset()
+{
+    
+    for (unsigned i = info.lastDecommittedArenaOffset; i < ArenasPerChunk; i++) {
+        if (decommittedArenas.get(i))
+            return i;
+    }
+    for (unsigned i = 0; i < info.lastDecommittedArenaOffset; i++) {
+        if (decommittedArenas.get(i))
+            return i;
+    }
+    MOZ_CRASH("No decommitted arenas found.");
+}
+
+
+
+
+Chunk*
+GCRuntime::pickChunk(const AutoLockGC& lock,
+                     AutoMaybeStartBackgroundAllocation& maybeStartBackgroundAllocation)
+{
+    if (availableChunks(lock).count())
+        return availableChunks(lock).head();
+
+    Chunk* chunk = emptyChunks(lock).pop();
+    if (!chunk) {
+        chunk = Chunk::allocate(rt);
+        if (!chunk)
+            return nullptr;
+        MOZ_ASSERT(chunk->info.numArenasFreeCommitted == 0);
+    }
+
+    MOZ_ASSERT(chunk->unused());
+    MOZ_ASSERT(!fullChunks(lock).contains(chunk));
+
+    if (wantBackgroundAllocation(lock))
+        maybeStartBackgroundAllocation.tryToStartBackgroundAllocation(rt);
+
+    chunkAllocationSinceLastGC = true;
+
+    availableChunks(lock).push(chunk);
+
+    return chunk;
+}
+
+BackgroundAllocTask::BackgroundAllocTask(JSRuntime* rt, ChunkPool& pool)
+  : runtime(rt),
+    chunkPool_(pool),
+    enabled_(CanUseExtraThreads() && GetCPUCount() >= 2)
+{
+}
+
+ void
+BackgroundAllocTask::run()
+{
+    TraceLoggerThread* logger = TraceLoggerForCurrentThread();
+    AutoTraceLog logAllocation(logger, TraceLogger_GCAllocation);
+
+    AutoLockGC lock(runtime);
+    while (!cancel_ && runtime->gc.wantBackgroundAllocation(lock)) {
+        Chunk* chunk;
+        {
+            AutoUnlockGC unlock(lock);
+            chunk = Chunk::allocate(runtime);
+            if (!chunk)
+                break;
+        }
+        chunkPool_.push(chunk);
+    }
+}
+
+ Chunk*
+Chunk::allocate(JSRuntime* rt)
+{
+    Chunk* chunk = static_cast<Chunk*>(MapAlignedPages(ChunkSize, ChunkSize));
+    if (!chunk)
+        return nullptr;
+    chunk->init(rt);
+    rt->gc.stats.count(gcstats::STAT_NEW_CHUNK);
+    return chunk;
+}
+
+void
+Chunk::init(JSRuntime* rt)
+{
+    JS_POISON(this, JS_FRESH_TENURED_PATTERN, ChunkSize);
+
+    
+
+
+
+    bitmap.clear();
+
+    
+
+
+
+    decommitAllArenas(rt);
+
+    
+    info.init();
+    new (&info.trailer) ChunkTrailer(rt);
+
+    
+}
+
+void Chunk::decommitAllArenas(JSRuntime* rt)
+{
+    decommittedArenas.clear(true);
+    MarkPagesUnused(&arenas[0], ArenasPerChunk * ArenaSize);
+
+    info.freeArenasHead = nullptr;
+    info.lastDecommittedArenaOffset = 0;
+    info.numArenasFree = ArenasPerChunk;
+    info.numArenasFreeCommitted = 0;
 }

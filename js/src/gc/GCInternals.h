@@ -146,26 +146,6 @@ struct MovingTracer : JS::CallbackTracer
 #endif
 };
 
-class MOZ_RAII AutoMaybeStartBackgroundAllocation
-{
-  private:
-    JSRuntime* runtime;
-
-  public:
-    AutoMaybeStartBackgroundAllocation()
-      : runtime(nullptr)
-    {}
-
-    void tryToStartBackgroundAllocation(JSRuntime* rt) {
-        runtime = rt;
-    }
-
-    ~AutoMaybeStartBackgroundAllocation() {
-        if (runtime)
-            runtime->gc.startBackgroundAllocTaskIfIdle();
-    }
-};
-
 
 struct MOZ_RAII AutoSetThreadIsSweeping
 {
