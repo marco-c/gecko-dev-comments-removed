@@ -46,6 +46,12 @@ var gSyncUI = {
       return;
     }
 
+    
+    
+    
+    
+    this.updateUI();
+
     Services.obs.addObserver(this, "weave:service:ready", true);
 
     
@@ -143,6 +149,13 @@ var gSyncUI = {
   
   
   _loginFailed: function () {
+    
+    
+    
+    if (!this.weaveService.ready) {
+      this.log.debug("_loginFailed has sync not ready, so returning false");
+      return false;
+    }
     this.log.debug("_loginFailed has sync state=${sync}",
                    { sync: Weave.Status.login});
     return Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED;
