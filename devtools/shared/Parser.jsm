@@ -36,7 +36,7 @@ Parser.prototype = {
 
 
 
-  get: function(source, url = "") {
+  get(source, url = "") {
     
     if (this._cache.has(url)) {
       return this._cache.get(url);
@@ -107,7 +107,7 @@ Parser.prototype = {
   
 
 
-  clearCache: function() {
+  clearCache() {
     this._cache.clear();
   },
 
@@ -117,7 +117,7 @@ Parser.prototype = {
 
 
 
-  clearSource: function(url) {
+  clearSource(url) {
     this._cache.delete(url);
   },
 
@@ -143,7 +143,7 @@ SyntaxTreesPool.prototype = {
   
 
 
-  getIdentifierAt: function({ line, column, scriptIndex, ignoreLiterals }) {
+  getIdentifierAt({ line, column, scriptIndex, ignoreLiterals }) {
     return this._call("getIdentifierAt",
       scriptIndex, line, column, ignoreLiterals)[0];
   },
@@ -151,7 +151,7 @@ SyntaxTreesPool.prototype = {
   
 
 
-  getNamedFunctionDefinitions: function(substring) {
+  getNamedFunctionDefinitions(substring) {
     return this._call("getNamedFunctionDefinitions", -1, substring);
   },
 
@@ -159,7 +159,7 @@ SyntaxTreesPool.prototype = {
 
 
 
-  getLastSyntaxTree: function() {
+  getLastSyntaxTree() {
     return this._trees[this._trees.length - 1];
   },
 
@@ -180,7 +180,7 @@ SyntaxTreesPool.prototype = {
 
 
 
-  getScriptInfo: function(atOffset) {
+  getScriptInfo(atOffset) {
     let info = { start: -1, length: -1, index: -1 };
 
     for (let { offset, length } of this._trees) {
@@ -210,7 +210,7 @@ SyntaxTreesPool.prototype = {
 
 
 
-  _call: function(functionName, syntaxTreeIndex, ...params) {
+  _call(functionName, syntaxTreeIndex, ...params) {
     let results = [];
     let requestId = [functionName, syntaxTreeIndex, params].toSource();
 
@@ -279,7 +279,7 @@ SyntaxTree.prototype = {
 
 
 
-  getIdentifierAt: function(line, column, ignoreLiterals) {
+  getIdentifierAt(line, column, ignoreLiterals) {
     let info = null;
 
     SyntaxTreeVisitor.walk(this.AST, {
@@ -287,7 +287,7 @@ SyntaxTree.prototype = {
 
 
 
-      onIdentifier: function(node) {
+      onIdentifier(node) {
         if (ParserHelpers.nodeContainsPoint(node, line, column)) {
           info = {
             name: node.name,
@@ -304,7 +304,7 @@ SyntaxTree.prototype = {
 
 
 
-      onLiteral: function(node) {
+      onLiteral(node) {
         if (!ignoreLiterals) {
           this.onIdentifier(node);
         }
@@ -314,7 +314,7 @@ SyntaxTree.prototype = {
 
 
 
-      onThisExpression: function(node) {
+      onThisExpression(node) {
         this.onIdentifier(node);
       }
     });
@@ -333,7 +333,7 @@ SyntaxTree.prototype = {
 
 
 
-  getNamedFunctionDefinitions: function(substring) {
+  getNamedFunctionDefinitions(substring) {
     let lowerCaseToken = substring.toLowerCase();
     let store = [];
 
@@ -346,7 +346,7 @@ SyntaxTree.prototype = {
 
 
 
-      onFunctionDeclaration: function(node) {
+      onFunctionDeclaration(node) {
         let functionName = node.id.name;
         if (includesToken(functionName)) {
           store.push({
@@ -360,7 +360,7 @@ SyntaxTree.prototype = {
 
 
 
-      onFunctionExpression: function(node) {
+      onFunctionExpression(node) {
         
         let functionName = node.id ? node.id.name : "";
         let functionLocation = ParserHelpers.getNodeLocation(node);
@@ -391,7 +391,7 @@ SyntaxTree.prototype = {
 
 
 
-      onArrowFunctionExpression: function(node) {
+      onArrowFunctionExpression(node) {
         
         let inferredInfo = ParserHelpers.inferFunctionExpressionInfo(node);
         let inferredName = inferredInfo.name;
@@ -436,7 +436,7 @@ var ParserHelpers = {
 
 
 
-  getNodeLocation: function(node) {
+  getNodeLocation(node) {
     if (node.type != "Identifier") {
       return node.loc;
     }
@@ -500,7 +500,7 @@ var ParserHelpers = {
 
 
 
-  nodeContainsLine: function(node, line) {
+  nodeContainsLine(node, line) {
     let { start: s, end: e } = this.getNodeLocation(node);
     return s.line <= line && e.line >= line;
   },
@@ -517,7 +517,7 @@ var ParserHelpers = {
 
 
 
-  nodeContainsPoint: function(node, line, column) {
+  nodeContainsPoint(node, line, column) {
     let { start: s, end: e } = this.getNodeLocation(node);
     return s.line == line && e.line == line &&
            s.column <= column && e.column >= column;
@@ -534,7 +534,7 @@ var ParserHelpers = {
 
 
 
-  inferFunctionExpressionInfo: function(node) {
+  inferFunctionExpressionInfo(node) {
     let parent = node._parent;
 
     
@@ -599,7 +599,7 @@ var ParserHelpers = {
 
 
 
-  _getObjectExpressionPropertyKeyForValue: function(node) {
+  _getObjectExpressionPropertyKeyForValue(node) {
     let parent = node._parent;
     if (parent.type != "ObjectExpression") {
       return null;
@@ -609,6 +609,7 @@ var ParserHelpers = {
         return property.key;
       }
     }
+    return null;
   },
 
   
@@ -629,7 +630,7 @@ var ParserHelpers = {
 
 
 
-  _getObjectExpressionPropertyChain: function(node, aStore = []) {
+  _getObjectExpressionPropertyChain(node, aStore = []) {
     switch (node.type) {
       case "ObjectExpression":
         this._getObjectExpressionPropertyChain(node._parent, aStore);
@@ -677,7 +678,7 @@ var ParserHelpers = {
 
 
 
-  _getMemberExpressionPropertyChain: function(node, store = []) {
+  _getMemberExpressionPropertyChain(node, store = []) {
     switch (node.type) {
       case "MemberExpression":
         this._getMemberExpressionPropertyChain(node.object, store);
@@ -703,7 +704,7 @@ var ParserHelpers = {
 
 
 
-  getIdentifierEvalString: function(node) {
+  getIdentifierEvalString(node) {
     switch (node._parent.type) {
       case "ObjectExpression":
         
@@ -756,7 +757,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  walk: function(tree, callbacks) {
+  walk(tree, callbacks) {
     this.break = false;
     this[tree.type](tree, callbacks);
   },
@@ -771,7 +772,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  filter: function(tree, predicate) {
+  filter(tree, predicate) {
     let store = [];
     this.walk(tree, {
       onNode: e => {
@@ -797,7 +798,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  Program: function(node, callbacks) {
+  Program(node, callbacks) {
     if (callbacks.onProgram) {
       callbacks.onProgram(node);
     }
@@ -811,7 +812,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  Statement: function(node, parent, callbacks) {
+  Statement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -834,7 +835,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  EmptyStatement: function(node, parent, callbacks) {
+  EmptyStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -858,7 +859,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  BlockStatement: function(node, parent, callbacks) {
+  BlockStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -886,7 +887,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ExpressionStatement: function(node, parent, callbacks) {
+  ExpressionStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -913,7 +914,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  IfStatement: function(node, parent, callbacks) {
+  IfStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -943,7 +944,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  LabeledStatement: function(node, parent, callbacks) {
+  LabeledStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -969,7 +970,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  BreakStatement: function(node, parent, callbacks) {
+  BreakStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -996,7 +997,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ContinueStatement: function(node, parent, callbacks) {
+  ContinueStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1024,7 +1025,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  WithStatement: function(node, parent, callbacks) {
+  WithStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1054,7 +1055,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  SwitchStatement: function(node, parent, callbacks) {
+  SwitchStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1082,7 +1083,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ReturnStatement: function(node, parent, callbacks) {
+  ReturnStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1109,7 +1110,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ThrowStatement: function(node, parent, callbacks) {
+  ThrowStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1137,7 +1138,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  TryStatement: function(node, parent, callbacks) {
+  TryStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1172,7 +1173,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  WhileStatement: function(node, parent, callbacks) {
+  WhileStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1199,7 +1200,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  DoWhileStatement: function(node, parent, callbacks) {
+  DoWhileStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1228,7 +1229,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ForStatement: function(node, parent, callbacks) {
+  ForStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1265,7 +1266,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ForInStatement: function(node, parent, callbacks) {
+  ForInStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1294,7 +1295,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ForOfStatement: function(node, parent, callbacks) {
+  ForOfStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1322,7 +1323,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  LetStatement: function(node, parent, callbacks) {
+  LetStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1352,7 +1353,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  DebuggerStatement: function(node, parent, callbacks) {
+  DebuggerStatement(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1375,7 +1376,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  Declaration: function(node, parent, callbacks) {
+  Declaration(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1405,7 +1406,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  FunctionDeclaration: function(node, parent, callbacks) {
+  FunctionDeclaration(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1443,7 +1444,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  VariableDeclaration: function(node, parent, callbacks) {
+  VariableDeclaration(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1471,7 +1472,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  VariableDeclarator: function(node, parent, callbacks) {
+  VariableDeclarator(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1497,7 +1498,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  Expression: function(node, parent, callbacks) {
+  Expression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1520,7 +1521,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ThisExpression: function(node, parent, callbacks) {
+  ThisExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1544,7 +1545,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ArrayExpression: function(node, parent, callbacks) {
+  ArrayExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1573,7 +1574,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  SpreadExpression: function(node, parent, callbacks) {
+  SpreadExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1603,7 +1604,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ObjectExpression: function(node, parent, callbacks) {
+  ObjectExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1631,13 +1632,38 @@ var SyntaxTreeVisitor = {
 
 
 
+  ComputedName(node, parent, callbacks) {
+    node._parent = parent;
+
+    if (this.break) {
+      return;
+    }
+    if (callbacks.onNode) {
+      if (callbacks.onNode(node, parent) === false) {
+        return;
+      }
+    }
+    if (callbacks.onComputedName) {
+      callbacks.onComputedName(node);
+    }
+    this[node.name.type](node.name, node, callbacks);
+  },
+
+  
 
 
 
 
 
 
-  FunctionExpression: function(node, parent, callbacks) {
+
+
+
+
+
+
+
+  FunctionExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1681,7 +1707,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ArrowFunctionExpression: function(node, parent, callbacks) {
+  ArrowFunctionExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1717,7 +1743,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  SequenceExpression: function(node, parent, callbacks) {
+  SequenceExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1746,7 +1772,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  UnaryExpression: function(node, parent, callbacks) {
+  UnaryExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1773,7 +1799,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  BinaryExpression: function(node, parent, callbacks) {
+  BinaryExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1801,7 +1827,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  AssignmentExpression: function(node, parent, callbacks) {
+  AssignmentExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1829,7 +1855,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  UpdateExpression: function(node, parent, callbacks) {
+  UpdateExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1856,7 +1882,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  LogicalExpression: function(node, parent, callbacks) {
+  LogicalExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1884,7 +1910,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ConditionalExpression: function(node, parent, callbacks) {
+  ConditionalExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1912,7 +1938,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  NewExpression: function(node, parent, callbacks) {
+  NewExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1943,7 +1969,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  CallExpression: function(node, parent, callbacks) {
+  CallExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -1981,7 +2007,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  MemberExpression: function(node, parent, callbacks) {
+  MemberExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2006,7 +2032,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  YieldExpression: function(node, parent, callbacks) {
+  YieldExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2036,7 +2062,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ComprehensionExpression: function(node, parent, callbacks) {
+  ComprehensionExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2070,7 +2096,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  GeneratorExpression: function(node, parent, callbacks) {
+  GeneratorExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2101,7 +2127,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  GraphExpression: function(node, parent, callbacks) {
+  GraphExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2125,7 +2151,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  GraphIndexExpression: function(node, parent, callbacks) {
+  GraphIndexExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2150,7 +2176,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  LetExpression: function(node, parent, callbacks) {
+  LetExpression(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2178,7 +2204,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  Pattern: function(node, parent, callbacks) {
+  Pattern(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2203,7 +2229,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ObjectPattern: function(node, parent, callbacks) {
+  ObjectPattern(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2231,7 +2257,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ArrayPattern: function(node, parent, callbacks) {
+  ArrayPattern(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2262,7 +2288,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  SwitchCase: function(node, parent, callbacks) {
+  SwitchCase(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2295,7 +2321,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  CatchClause: function(node, parent, callbacks) {
+  CatchClause(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2325,7 +2351,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  ComprehensionBlock: function(node, parent, callbacks) {
+  ComprehensionBlock(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2352,7 +2378,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  Identifier: function(node, parent, callbacks) {
+  Identifier(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2376,7 +2402,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  Literal: function(node, parent, callbacks) {
+  Literal(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
@@ -2400,7 +2426,7 @@ var SyntaxTreeVisitor = {
 
 
 
-  TemplateLiteral: function(node, parent, callbacks) {
+  TemplateLiteral(node, parent, callbacks) {
     node._parent = parent;
 
     if (this.break) {
