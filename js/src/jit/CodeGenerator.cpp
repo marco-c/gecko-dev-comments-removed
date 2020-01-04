@@ -3270,8 +3270,9 @@ CodeGenerator::visitCallKnown(LCallKnown* call)
     }
 }
 
+template<typename T>
 void
-CodeGenerator::emitCallInvokeFunction(LApplyArgsGeneric* apply, Register extraStackSize)
+CodeGenerator::emitCallInvokeFunction(T* apply, Register extraStackSize)
 {
     Register objreg = ToRegister(apply->getTempObject());
     MOZ_ASSERT(objreg != extraStackSize);
@@ -3294,12 +3295,8 @@ CodeGenerator::emitCallInvokeFunction(LApplyArgsGeneric* apply, Register extraSt
 
 
 void
-CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply, Register extraStackSpace)
+CodeGenerator::emitAllocateSpaceForApply(Register argcreg, Register extraStackSpace, Label* end)
 {
-    
-    Register argcreg = ToRegister(apply->getArgc());
-    Register copyreg = ToRegister(apply->getTempObject());
-
     
     masm.movePtr(argcreg, extraStackSpace);
 
@@ -3336,8 +3333,52 @@ CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply, Register extraStackSp
 #endif
 
     
+    masm.branchTestPtr(Assembler::Zero, argcreg, argcreg, end);
+}
+
+
+void
+CodeGenerator::emitCopyValuesForApply(Register argvSrcBase, Register argvIndex, Register copyreg,
+                                      size_t argvSrcOffset, size_t argvDstOffset)
+{
+    Label loop;
+    masm.bind(&loop);
+
+    
+    
+    
+    BaseValueIndex srcPtr(argvSrcBase, argvIndex, argvSrcOffset - sizeof(void*));
+    BaseValueIndex dstPtr(masm.getStackPointer(), argvIndex, argvDstOffset - sizeof(void*));
+    masm.loadPtr(srcPtr, copyreg);
+    masm.storePtr(copyreg, dstPtr);
+
+    
+    if (sizeof(Value) == 2 * sizeof(void*)) {
+        BaseValueIndex srcPtrLow(argvSrcBase, argvIndex, argvSrcOffset - 2 * sizeof(void*));
+        BaseValueIndex dstPtrLow(masm.getStackPointer(), argvIndex, argvDstOffset - 2 * sizeof(void*));
+        masm.loadPtr(srcPtrLow, copyreg);
+        masm.storePtr(copyreg, dstPtrLow);
+    }
+
+    masm.decBranchPtr(Assembler::NonZero, argvIndex, Imm32(1), &loop);
+}
+
+void
+CodeGenerator::emitPopArguments(Register extraStackSpace)
+{
+    
+    masm.freeStack(extraStackSpace);
+}
+
+void
+CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply, Register extraStackSpace)
+{
+    
+    Register argcreg = ToRegister(apply->getArgc());
+    Register copyreg = ToRegister(apply->getTempObject());
+
     Label end;
-    masm.branchTestPtr(Assembler::Zero, argcreg, argcreg, &end);
+    emitAllocateSpaceForApply(argcreg, extraStackSpace, &end);
 
     
     
@@ -3365,28 +3406,7 @@ CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply, Register extraStackSp
     masm.addStackPtrTo(argvSrcBase);
 
     
-    {
-        Label loop;
-        masm.bind(&loop);
-
-        
-        
-        
-        BaseValueIndex srcPtr(argvSrcBase, argvIndex, argvSrcOffset - sizeof(void*));
-        BaseValueIndex dstPtr(masm.getStackPointer(), argvIndex, argvDstOffset - sizeof(void*));
-        masm.loadPtr(srcPtr, copyreg);
-        masm.storePtr(copyreg, dstPtr);
-
-        
-        if (sizeof(Value) == 2 * sizeof(void*)) {
-            BaseValueIndex srcPtrLow(argvSrcBase, argvIndex, argvSrcOffset - 2 * sizeof(void*));
-            BaseValueIndex dstPtrLow(masm.getStackPointer(), argvIndex, argvDstOffset - 2 * sizeof(void*));
-            masm.loadPtr(srcPtrLow, copyreg);
-            masm.storePtr(copyreg, dstPtrLow);
-        }
-
-        masm.decBranchPtr(Assembler::NonZero, argvIndex, Imm32(1), &loop);
-    }
+    emitCopyValuesForApply(argvSrcBase, argvIndex, copyreg, argvSrcOffset, argvDstOffset);
 
     
     masm.pop(argcreg);
@@ -3401,14 +3421,61 @@ CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply, Register extraStackSp
 }
 
 void
-CodeGenerator::emitPopArguments(LApplyArgsGeneric* apply, Register extraStackSpace)
+CodeGenerator::emitPushArguments(LApplyArrayGeneric* apply, Register extraStackSpace)
 {
+    Label noCopy, epilogue;
+    Register tmpArgc = ToRegister(apply->getTempObject());
+    Register elementsAndArgc = ToRegister(apply->getElements());
+
     
-    masm.freeStack(extraStackSpace);
+    
+    
+
+    
+    Address length(ToRegister(apply->getElements()), ObjectElements::offsetOfLength());
+    masm.load32(length, tmpArgc);
+
+    
+    emitAllocateSpaceForApply(tmpArgc, extraStackSpace, &noCopy);
+
+    
+    
+    size_t argvDstOffset = 0;
+
+    Register argvSrcBase = elementsAndArgc; 
+
+    masm.push(extraStackSpace);
+    Register copyreg = extraStackSpace;
+    argvDstOffset += sizeof(void*);
+
+    masm.push(tmpArgc);
+    Register argvIndex = tmpArgc;
+    argvDstOffset += sizeof(void*);
+
+    
+    emitCopyValuesForApply(argvSrcBase, argvIndex, copyreg, 0, argvDstOffset);
+
+    
+    masm.pop(elementsAndArgc);
+    masm.pop(extraStackSpace);
+    masm.jump(&epilogue);
+
+    
+    masm.bind(&noCopy);
+    masm.movePtr(ImmPtr(0), elementsAndArgc);
+
+    
+    
+    masm.bind(&epilogue);
+
+    
+    masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
+    masm.pushValue(ToValue(apply, LApplyArgsGeneric::ThisIndex));
 }
 
+template<typename T>
 void
-CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply)
+CodeGenerator::emitApplyGeneric(T* apply)
 {
     
     Register calleereg = ToRegister(apply->getFunction());
@@ -3417,6 +3484,7 @@ CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply)
     Register objreg = ToRegister(apply->getTempObject());
     Register extraStackSpace = ToRegister(apply->getTempStackCounter());
 
+    
     
     Register argcreg = ToRegister(apply->getArgc());
 
@@ -3429,6 +3497,15 @@ CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply)
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     emitPushArguments(apply, extraStackSpace);
 
     masm.checkStackAlignment();
@@ -3436,7 +3513,7 @@ CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply)
     
     if (apply->hasSingleTarget() && apply->getSingleTarget()->isNative()) {
         emitCallInvokeFunction(apply, extraStackSpace);
-        emitPopArguments(apply, extraStackSpace);
+        emitPopArguments(extraStackSpace);
         return;
     }
 
@@ -3518,7 +3595,31 @@ CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply)
 
     
     masm.bind(&end);
-    emitPopArguments(apply, extraStackSpace);
+    emitPopArguments(extraStackSpace);
+}
+
+void
+CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply)
+{
+    emitApplyGeneric(apply);
+}
+
+void
+CodeGenerator::visitApplyArrayGeneric(LApplyArrayGeneric* apply)
+{
+    LSnapshot* snapshot = apply->snapshot();
+    Register tmp = ToRegister(apply->getTempObject());
+
+    Address length(ToRegister(apply->getElements()), ObjectElements::offsetOfLength());
+    masm.load32(length, tmp);
+    bailoutCmp32(Assembler::Above, tmp, Imm32(js_JitOptions.maxStackArgs), snapshot);
+
+    Address initializedLength(ToRegister(apply->getElements()),
+                              ObjectElements::offsetOfInitializedLength());
+    masm.sub32(initializedLength, tmp);
+    bailoutCmp32(Assembler::NotEqual, tmp, Imm32(0), snapshot);
+
+    emitApplyGeneric(apply);
 }
 
 typedef bool (*ArraySpliceDenseFn)(JSContext*, HandleObject, uint32_t, uint32_t);
