@@ -2,18 +2,18 @@
 
 
 
+"use strict";
 
-
-
-
-(function (factory) { 
-  if (this.module && module.id.indexOf("event-emitter") >= 0) { 
+(function (factory) {
+  if (this.module && module.id.indexOf("event-emitter") >= 0) {
+    
     factory.call(this, require, exports, module);
-  } else { 
+  } else {
+    
     this.isWorker = false;
-      
-      
-      
+    
+    
+    
     let require = function (module) {
       const Cu = Components.utils;
       switch (module) {
@@ -33,15 +33,14 @@
     this.EXPORTED_SYMBOLS = ["EventEmitter"];
   }
 }).call(this, function (require, exports, module) {
-
-  this.EventEmitter = function EventEmitter() {};
+  let EventEmitter = this.EventEmitter = function () {};
   module.exports = EventEmitter;
 
-
-  const { Cu, components } = require("chrome");
+  
+  const { components } = require("chrome");
   const Services = require("Services");
   const promise = require("promise");
-  var loggingEnabled = true;
+  let loggingEnabled = true;
 
   if (!isWorker) {
     loggingEnabled = Services.prefs.getBoolPref("devtools.dump.emit");
@@ -52,23 +51,23 @@
     }, false);
   }
 
+  
 
 
 
 
 
 
-
-  EventEmitter.decorate = function EventEmitter_decorate(aObjectToDecorate) {
+  EventEmitter.decorate = function (objectToDecorate) {
     let emitter = new EventEmitter();
-    aObjectToDecorate.on = emitter.on.bind(emitter);
-    aObjectToDecorate.off = emitter.off.bind(emitter);
-    aObjectToDecorate.once = emitter.once.bind(emitter);
-    aObjectToDecorate.emit = emitter.emit.bind(emitter);
+    objectToDecorate.on = emitter.on.bind(emitter);
+    objectToDecorate.off = emitter.off.bind(emitter);
+    objectToDecorate.once = emitter.once.bind(emitter);
+    objectToDecorate.emit = emitter.emit.bind(emitter);
   };
 
   EventEmitter.prototype = {
-  
+    
 
 
 
@@ -76,16 +75,17 @@
 
 
 
-    on: function EventEmitter_on(aEvent, aListener) {
-      if (!this._eventEmitterListeners)
+    on(event, listener) {
+      if (!this._eventEmitterListeners) {
         this._eventEmitterListeners = new Map();
-      if (!this._eventEmitterListeners.has(aEvent)) {
-        this._eventEmitterListeners.set(aEvent, []);
       }
-      this._eventEmitterListeners.get(aEvent).push(aListener);
+      if (!this._eventEmitterListeners.has(event)) {
+        this._eventEmitterListeners.set(event, []);
+      }
+      this._eventEmitterListeners.get(event).push(listener);
     },
 
-  
+    
 
 
 
@@ -99,24 +99,24 @@
 
 
 
-    once: function EventEmitter_once(aEvent, aListener) {
+    once(event, listener) {
       let deferred = promise.defer();
 
-      let handler = (aEvent, aFirstArg, ...aRest) => {
-        this.off(aEvent, handler);
-        if (aListener) {
-          aListener.apply(null, [aEvent, aFirstArg, ...aRest]);
+      let handler = (_, first, ...rest) => {
+        this.off(event, handler);
+        if (listener) {
+          listener.apply(null, [event, first, ...rest]);
         }
-        deferred.resolve(aFirstArg);
+        deferred.resolve(first);
       };
 
-      handler._originalListener = aListener;
-      this.on(aEvent, handler);
+      handler._originalListener = listener;
+      this.on(event, handler);
 
       return deferred.promise;
     },
 
-  
+    
 
 
 
@@ -125,54 +125,54 @@
 
 
 
-    off: function EventEmitter_off(aEvent, aListener) {
-      if (!this._eventEmitterListeners)
+    off(event, listener) {
+      if (!this._eventEmitterListeners) {
         return;
-      let listeners = this._eventEmitterListeners.get(aEvent);
+      }
+      let listeners = this._eventEmitterListeners.get(event);
       if (listeners) {
-        this._eventEmitterListeners.set(aEvent, listeners.filter(l => {
-          return l !== aListener && l._originalListener !== aListener;
+        this._eventEmitterListeners.set(event, listeners.filter(l => {
+          return l !== listener && l._originalListener !== listener;
         }));
       }
     },
 
-  
+    
 
 
 
-    emit: function EventEmitter_emit(aEvent) {
-      this.logEvent(aEvent, arguments);
+    emit(event) {
+      this.logEvent(event, arguments);
 
-      if (!this._eventEmitterListeners || !this._eventEmitterListeners.has(aEvent)) {
+      if (!this._eventEmitterListeners || !this._eventEmitterListeners.has(event)) {
         return;
       }
 
-      let originalListeners = this._eventEmitterListeners.get(aEvent);
-      for (let listener of this._eventEmitterListeners.get(aEvent)) {
-      
-      
+      let originalListeners = this._eventEmitterListeners.get(event);
+      for (let listener of this._eventEmitterListeners.get(event)) {
+        
+        
         if (!this._eventEmitterListeners) {
           break;
         }
 
-      
-      
-        if (originalListeners === this._eventEmitterListeners.get(aEvent) ||
-          this._eventEmitterListeners.get(aEvent).some(l => l === listener)) {
+        
+        
+        if (originalListeners === this._eventEmitterListeners.get(event) ||
+          this._eventEmitterListeners.get(event).some(l => l === listener)) {
           try {
             listener.apply(null, arguments);
+          } catch (ex) {
+            
+            let msg = ex + ": " + ex.stack;
+            console.error(msg);
+            dump(msg + "\n");
           }
-        catch (ex) {
-          
-          let msg = ex + ": " + ex.stack;
-          console.error(msg);
-          dump(msg + "\n");
-        }
         }
       }
     },
 
-    logEvent: function (aEvent, args) {
+    logEvent(event, args) {
       if (!loggingEnabled) {
         return;
       }
@@ -190,16 +190,16 @@
 
       let argOut = "(";
       if (args.length === 1) {
-        argOut += aEvent;
+        argOut += event;
       }
 
       let out = "EMITTING: ";
 
-    
+      
       try {
         for (let i = 1; i < args.length; i++) {
           if (i === 1) {
-            argOut = "(" + aEvent + ", ";
+            argOut = "(" + event + ", ";
           } else {
             argOut += ", ";
           }
@@ -219,8 +219,8 @@
           }
         }
       } catch (e) {
-      
-      
+        
+        
       }
 
       argOut += ")";
@@ -229,5 +229,4 @@
       dump(out);
     },
   };
-
 });

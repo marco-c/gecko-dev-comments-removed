@@ -1,14 +1,19 @@
 
 
 
+
 "use strict";
 
-(function (factory) { 
-  if (this.module && module.id.indexOf("worker") >= 0) { 
+
+
+(function (factory) {
+  if (this.module && module.id.indexOf("worker") >= 0) {
+    
     const { Cc, Ci, Cu, ChromeWorker } = require("chrome");
     const dumpn = require("devtools/shared/DevToolsUtils").dumpn;
     factory.call(this, require, exports, module, { Cc, Ci, Cu }, ChromeWorker, dumpn);
-  } else { 
+  } else {
+    
     const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
     const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
     this.isWorker = false;
@@ -21,10 +26,9 @@
     this.EXPORTED_SYMBOLS = ["DevToolsWorker"];
   }
 }).call(this, function (require, exports, module, { Ci, Cc }, ChromeWorker, dumpn) {
+  let MESSAGE_COUNTER = 0;
 
-  var MESSAGE_COUNTER = 0;
-
-
+  
 
 
 
@@ -48,7 +52,7 @@
   }
   exports.DevToolsWorker = DevToolsWorker;
 
-
+  
 
 
 
@@ -69,29 +73,29 @@
 
     if (this._verbose && dumpn) {
       dumpn("Sending message to worker" +
-          (this._name ? (" (" + this._name + ")") : "") +
-          ": " +
-          JSON.stringify(payload, null, 2));
+            (this._name ? (" (" + this._name + ")") : "") +
+            ": " +
+            JSON.stringify(payload, null, 2));
     }
     worker.postMessage(payload);
 
     return new Promise((resolve, reject) => {
-      let listener = ({ data }) => {
+      let listener = ({ data: result }) => {
         if (this._verbose && dumpn) {
           dumpn("Received message from worker" +
-              (this._name ? (" (" + this._name + ")") : "") +
-              ": " +
-              JSON.stringify(data, null, 2));
+                (this._name ? (" (" + this._name + ")") : "") +
+                ": " +
+                JSON.stringify(result, null, 2));
         }
 
-        if (data.id !== id) {
+        if (result.id !== id) {
           return;
         }
         worker.removeEventListener("message", listener);
-        if (data.error) {
-          reject(data.error);
+        if (result.error) {
+          reject(result.error);
         } else {
-          resolve(data.response);
+          resolve(result.response);
         }
       };
 
@@ -99,7 +103,7 @@
     });
   };
 
-
+  
 
 
   DevToolsWorker.prototype.destroy = function () {
@@ -112,7 +116,7 @@
     dump(new Error(message + " @ " + filename + ":" + lineno) + "\n");
   };
 
-
+  
 
 
 
@@ -132,10 +136,11 @@
 
 
   function workerify(fn) {
-    console.warn(`\`workerify\` should only be used in tests or measuring performance.
-  This creates an object URL on the browser window, and should not be used in production.`);
-  
-  
+    console.warn("`workerify` should only be used in tests or measuring performance. " +
+                 "This creates an object URL on the browser window, and should not be " +
+                 "used in production.");
+    
+    
     let { getMostRecentBrowserWindow } = require("sdk/window/utils");
     let { URL, Blob } = getMostRecentBrowserWindow();
     let stringifiedFn = createWorkerString(fn);
@@ -154,15 +159,13 @@
   }
   exports.workerify = workerify;
 
-
+  
 
 
 
   function createWorkerString(fn) {
     return `importScripts("resource://gre/modules/workers/require.js");
-    const { createTask } = require("resource://devtools/shared/worker/helper.js");
-    createTask(self, "workerifiedTask", ${fn.toString()});
-  `;
+            const { createTask } = require("resource://devtools/shared/worker/helper.js");
+            createTask(self, "workerifiedTask", ${fn.toString()});`;
   }
-
 });
