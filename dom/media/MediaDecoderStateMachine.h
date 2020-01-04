@@ -105,6 +105,7 @@ class MediaSink;
 
 class AudioSegment;
 class DecodedStream;
+class OutputStreamManager;
 class TaskQueue;
 
 extern LazyLogModule gMediaDecoderLog;
@@ -1185,6 +1186,9 @@ private:
   Watchable<bool> mSentFirstFrameLoadedEvent;
 
   bool mSentPlaybackEndedEvent;
+
+  
+  const RefPtr<OutputStreamManager> mOutputStreamManager;
 
   
   
