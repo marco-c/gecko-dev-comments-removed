@@ -317,12 +317,6 @@ this.WorkerDebuggerLoader = WorkerDebuggerLoader;
 
 
 
-var PromiseDebugging = {
-  getState: function () {
-    throw new Error("PromiseDebugging is not available in workers!");
-  }
-};
-
 var chrome = {
   CC: undefined,
   Cc: undefined,
@@ -496,7 +490,6 @@ this.worker = new WorkerDebuggerLoader({
   loadSubScript: loadSubScript,
   modules: {
     "Debugger": Debugger,
-    "PromiseDebugging": PromiseDebugging,
     "Services": Object.create(null),
     "chrome": chrome,
     "xpcInspector": xpcInspector

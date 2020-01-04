@@ -334,10 +334,8 @@ class BaseContext {
 
 
   wrapPromise(promise, callback = null) {
-    
-    
     let runSafe = this.runSafe.bind(this);
-    if (promise.constructor === this.cloneScope.Promise) {
+    if (promise instanceof this.cloneScope.Promise) {
       runSafe = this.runSafeWithoutClone.bind(this);
     }
 
@@ -954,7 +952,7 @@ function promiseDocumentReady(doc) {
 
 
 
-let gNextPortId = 1;
+var nextPortId = 1;
 
 
 function Port(context, messageManager, name, id, sender) {
@@ -1164,8 +1162,7 @@ Messenger.prototype = {
   },
 
   connect(messageManager, name, recipient) {
-    
-    let portId = `${gNextPortId++}-${Services.appinfo.processType}`;
+    let portId = nextPortId++;
     let port = new Port(this.context, messageManager, name, portId, null);
     let msg = {name, portId};
     
