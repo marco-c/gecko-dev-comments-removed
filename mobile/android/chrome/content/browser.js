@@ -678,9 +678,9 @@ var BrowserApp = {
         let newtabStrings = Strings.browser.GetStringFromName("newtabpopup.opened");
         let label = PluralForm.get(1, newtabStrings).replace("#1", 1);
         let buttonLabel = Strings.browser.GetStringFromName("newtabpopup.switch");
-        NativeWindow.toast.show(label, "long", {
-          button: {
-            icon: "drawable://switch_button_icon",
+
+        Snackbars.show(label, Snackbars.LENGTH_LONG, {
+          action: {
             label: buttonLabel,
             callback: () => { BrowserApp.selectTab(tab); },
           }
@@ -707,9 +707,8 @@ var BrowserApp = {
           let newtabStrings = Strings.browser.GetStringFromName("newprivatetabpopup.opened");
           let label = PluralForm.get(1, newtabStrings).replace("#1", 1);
           let buttonLabel = Strings.browser.GetStringFromName("newtabpopup.switch");
-          NativeWindow.toast.show(label, "long", {
-            button: {
-              icon: "drawable://switch_button_icon",
+          Snackbars.show(label, Snackbars.LENGTH_LONG, {
+            action: {
               label: buttonLabel,
               callback: () => { BrowserApp.selectTab(tab); },
             }
@@ -1007,8 +1006,8 @@ var BrowserApp = {
           return;
         }
         let message = Strings.browser.GetStringFromName("imageblocking.downloadedImage");
-        NativeWindow.toast.show(message, "short", {
-          button: {
+        Snackbars.show(message, Snackbars.LENGTH_SHORT, {
+          action: {
             label: Strings.browser.GetStringFromName("imageblocking.showAllImages"),
             callback: () => {
               UITelemetry.addEvent("action.1", "toast", null, "web_show_all_image");
@@ -6071,9 +6070,8 @@ var XPInstallObserver = {
       
       if (!aInstall.existingAddon || !AddonManager.shouldAutoUpdate(aInstall.existingAddon)) {
         let message = Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.message");
-        NativeWindow.toast.show(message, "short", {
-          button: {
-            icon: "drawable://alert_addon",
+        Snackbars.show(message, Snackbars.LENGTH_LONG, {
+          action: {
             label: Strings.browser.GetStringFromName("alertAddonsInstalledNoRestart.action2"),
             callback: () => {
               UITelemetry.addEvent("show.1", "toast", null, "addons");
