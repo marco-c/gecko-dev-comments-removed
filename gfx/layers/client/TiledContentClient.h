@@ -321,7 +321,7 @@ struct BasicTiledLayerPaintData {
 
 
 
-  LayerIntRect mCriticalDisplayPort;
+  Maybe<LayerIntRect> mCriticalDisplayPort;
 
   
 
