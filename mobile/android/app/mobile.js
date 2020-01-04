@@ -117,6 +117,9 @@ pref("network.predictor.max-db-size", 2097152);
 pref("network.predictor.preserve", 50); 
 
 
+pref("network.mdns.use_js_fallback", true);
+
+
 pref("browser.display.history.maxresults", 100);
 
 
@@ -976,3 +979,7 @@ pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com
 
 
 pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sync/1.5");
+
+
+pref("dom.presentation.enabled", true);
+pref("dom.presentation.discovery.enabled", true);
