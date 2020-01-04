@@ -51,9 +51,6 @@ public:
   virtual ~AccessibleCaretManager();
 
   
-  void Terminate();
-
-  
   
 
   
@@ -128,8 +125,6 @@ protected:
                                   const UpdateCaretsHint& aResult);
 
   
-  
-  
   void UpdateCarets(UpdateCaretsHint aHint = UpdateCaretsHint::Default);
 
   
@@ -165,11 +160,7 @@ protected:
   nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
   void ClearMaintainedSelection() const;
-
-  
-  
   void FlushLayout() const;
-
   dom::Element* GetEditingHostForFrame(nsIFrame* aFrame) const;
   dom::Selection* GetSelection() const;
   already_AddRefed<nsFrameSelection> GetFrameSelection() const;
@@ -193,9 +184,6 @@ protected:
   
   
   
-  
-  virtual bool IsTerminated() const { return !mPresShell; }
-
   
   virtual CaretMode GetCaretMode() const;
 
@@ -226,9 +214,7 @@ protected:
   
   
   
-  
-  
-  nsIPresShell* MOZ_NON_OWNING_REF mPresShell = nullptr;
+  nsIPresShell* MOZ_NON_OWNING_REF const mPresShell = nullptr;
 
   
   
