@@ -945,7 +945,7 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
     mCompositor->EndFrame();
 
     
-    mCompositor->SetDispAcquireFence(mRoot, mCompositor->GetWidget()->RealWidget());
+    mCompositor->SetDispAcquireFence(mRoot);
   }
 
   if (composer2D) {
