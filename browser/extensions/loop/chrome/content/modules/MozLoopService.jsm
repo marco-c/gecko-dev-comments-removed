@@ -1594,6 +1594,18 @@ this.MozLoopService = {
   
 
 
+
+
+  get addonVersion() {
+    
+    let numericAddonVersion = gAddonVersion.replace(/[^0-9\.]/g, "");
+    return numericAddonVersion;
+  },
+
+  
+
+
+
   generateUUID: function() {
     return uuidgen.generateUUID().toString();
   },

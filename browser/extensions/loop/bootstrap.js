@@ -393,7 +393,8 @@ var WindowListener = {
         
         
         if (PrivateBrowsingUtils.isWindowPrivate(window) ||
-            Services.prefs.getBoolPref("loop.copy.shown")) {
+            Services.prefs.getBoolPref("loop.copy.shown") ||
+            Services.prefs.getIntPref("loop.copy.showLimit") <= 0) {
           return Promise.resolve();
         }
 
@@ -470,7 +471,22 @@ var WindowListener = {
           controller._doCommand.apply(controller, arguments);
 
           
+          let showLimit = Services.prefs.getIntPref("loop.copy.showLimit");
+          if (showLimit <= 0) {
+            LoopUI.removeCopyPanel();
+            return;
+          }
+
+          
+          if (this.MozLoopService.screenShareActive) {
+            return;
+          }
+
+          
+          Services.prefs.setIntPref("loop.copy.showLimit", showLimit - 1);
           addTelemetry("SHOWN");
+
+          
           LoopUI.PanelFrame.showPopup(window, LoopUI.toolbarButton.anchor, "loop-copy",
             null, "chrome://loop/content/panels/copy.html", null, onIframe);
         };
@@ -1238,6 +1254,19 @@ let Throttler = {
       
       let onDNS = (request, record) => {
         
+        if (record === null) {
+          reject();
+          return;
+        }
+
+        
+        let ipBlocks = record.getNextAddrAsString().split(".");
+        if (ipBlocks[0] !== "127") {
+          reject();
+          return;
+        }
+
+        
         
         let index = 1;
         switch (Services.prefs.getCharPref("app.update.channel")) {
@@ -1252,8 +1281,7 @@ let Throttler = {
 
         
         
-        let threshold = record && record.getNextAddrAsString().split(".")[index];
-        if (threshold && ticket < threshold) {
+        if (ticket < ipBlocks[index]) {
           
           Services.prefs.setIntPref(prefTicket, this.TICKET_LIMIT);
           resolve();

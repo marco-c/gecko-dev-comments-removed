@@ -600,6 +600,22 @@ const kMessageHandlers = {
   GetLocale: function(message, reply) {
     reply(MozLoopService.locale);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+  GetAddonVersion: function(message, reply) {
+    reply(MozLoopService.addonVersion);
+  },
+
   
 
 
