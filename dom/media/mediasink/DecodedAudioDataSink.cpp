@@ -49,20 +49,8 @@ DecodedAudioDataSink::DecodedAudioDataSink(AbstractThread* aThread,
   , mLastEndTime(0)
 {
   bool resampling = gfxPrefs::AudioSinkResampling();
-
-  if (resampling) {
-    mOutputRate = gfxPrefs::AudioSinkResampleRate();
-  } else if (mInfo.mRate == 44100 || mInfo.mRate == 48000) {
-    
-    
-    
-    
-    mOutputRate = mInfo.mRate;
-  } else {
-    
-    mOutputRate = AudioStream::GetPreferredRate();
-  }
-
+  uint32_t resamplingRate = gfxPrefs::AudioSinkResampleRate();
+  mOutputRate = resampling ? resamplingRate : mInfo.mRate;
   mOutputChannels = mInfo.mChannels > 2 && gfxPrefs::AudioSinkForceStereo()
                       ? 2 : mInfo.mChannels;
 
