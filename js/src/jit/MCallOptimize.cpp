@@ -3415,17 +3415,14 @@ IonBuilder::inlineSimdComp(CallInfo& callInfo, JSNative native, MSimdBinaryComp:
         return InliningStatus_NotInlined;
 
     
-    if (sign == SimdSign::Unsigned)
-        return InliningStatus_NotInlined;
-
-    
     
     
     
     
     MDefinition* lhs = callInfo.getArg(0);
     MDefinition* rhs = callInfo.getArg(1);
-    MSimdBinaryComp* ins = MSimdBinaryComp::New(alloc(), lhs, rhs, op, mirType);
+    MInstruction* ins =
+      MSimdBinaryComp::AddLegalized(alloc(), current, lhs, rhs, op, mirType, sign);
     return boxSimd(callInfo, ins, templateObj);
 }
 

@@ -21,7 +21,10 @@ namespace js {
 namespace jit {
 
 
-static const bool SupportsUint32x4FloatConversions = false;
+static MOZ_CONSTEXPR_VAR bool SupportsUint32x4FloatConversions = false;
+
+
+static MOZ_CONSTEXPR_VAR bool SupportsUint32x4Compares = false;
 
 #if defined(JS_CODEGEN_X86)
 

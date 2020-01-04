@@ -112,6 +112,9 @@ static MOZ_CONSTEXPR_VAR uint32_t AsmJSStackAlignment = SimdMemoryAlignment;
 
 static MOZ_CONSTEXPR_VAR bool SupportsUint32x4FloatConversions = false;
 
+
+static MOZ_CONSTEXPR_VAR bool SupportsUint32x4Compares = false;
+
 static MOZ_CONSTEXPR_VAR Scale ScalePointer = TimesEight;
 
 class Assembler : public AssemblerMIPSShared

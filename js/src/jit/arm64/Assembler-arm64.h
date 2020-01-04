@@ -179,6 +179,9 @@ static const int32_t AsmJSGlobalRegBias = 1024;
 
 static MOZ_CONSTEXPR_VAR bool SupportsUint32x4FloatConversions = false;
 
+
+static MOZ_CONSTEXPR_VAR bool SupportsUint32x4Compares = false;
+
 class Assembler : public vixl::Assembler
 {
   public:
