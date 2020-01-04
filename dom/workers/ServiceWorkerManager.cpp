@@ -3233,6 +3233,18 @@ ServiceWorkerManager::RemoveScopeAndRegistration(ServiceWorkerRegistrationInfo* 
     data->mUpdateTimers.Remove(aRegistration->mScope);
   }
 
+  
+  
+  
+  
+  for (auto iter = swm->mControlledDocuments.Iter(); !iter.Done(); iter.Next()) {
+    ServiceWorkerRegistrationInfo* reg = iter.UserData();
+    MOZ_ASSERT(reg);
+    if (reg->mScope.Equals(aRegistration->mScope)) {
+      iter.Remove();
+    }
+  }
+
   RefPtr<ServiceWorkerRegistrationInfo> info;
   data->mInfos.Get(aRegistration->mScope, getter_AddRefs(info));
 
