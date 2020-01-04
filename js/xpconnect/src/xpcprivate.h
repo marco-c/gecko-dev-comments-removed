@@ -1270,13 +1270,32 @@ private:
 
 
 
+
+
 class XPCNativeSetKey final
 {
 public:
-    explicit XPCNativeSetKey(XPCNativeSet* baseSet = nullptr,
-                             XPCNativeInterface* addition = nullptr,
-                             uint16_t position = 0)
-        : mBaseSet(baseSet), mAddition(addition), mPosition(position) {}
+    
+    explicit XPCNativeSetKey(XPCNativeSet* baseSet)
+        : mBaseSet(baseSet), mAddition(nullptr), mPosition(0)
+    {
+        MOZ_ASSERT(baseSet);
+    }
+
+    
+    
+    explicit XPCNativeSetKey(XPCNativeInterface* addition)
+        : mBaseSet(nullptr), mAddition(addition), mPosition(0)
+    {
+        MOZ_ASSERT(addition);
+    }
+
+    
+    
+    
+    explicit XPCNativeSetKey(XPCNativeSet* baseSet,
+                             XPCNativeInterface* addition,
+                             uint16_t position);
     ~XPCNativeSetKey() {}
 
     XPCNativeSet* GetBaseSet() const {return mBaseSet;}
