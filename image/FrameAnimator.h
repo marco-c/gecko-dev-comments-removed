@@ -183,9 +183,6 @@ public:
   LookupResult GetCompositedFrame(uint32_t aFrameNum);
 
   
-  FrameTimeout GetTimeoutForFrame(AnimationState& aState, uint32_t aFrameNum) const;
-
-  
 
 
 
@@ -221,6 +218,9 @@ private:
 
 
   int32_t GetSingleLoopTime(AnimationState& aState) const;
+
+  
+  FrameTimeout GetTimeoutForFrame(uint32_t aFrameNum) const;
 
   
 
