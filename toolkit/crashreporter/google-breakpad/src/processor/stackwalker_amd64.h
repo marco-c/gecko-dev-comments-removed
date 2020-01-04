@@ -80,14 +80,6 @@ class StackwalkerAMD64 : public Stackwalker {
 
   
   
-  
-  
-  
-  StackFrameAMD64* GetCallerByFramePointerRecovery(
-      const vector<StackFrame*>& frames);
-
-  
-  
   StackFrameAMD64* GetCallerByStackScan(const vector<StackFrame*> &frames);
 
   

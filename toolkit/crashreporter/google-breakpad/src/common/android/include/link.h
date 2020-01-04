@@ -31,17 +31,15 @@
 #define GOOGLE_BREAKPAD_ANDROID_INCLUDE_LINK_H
 
 
-
-#include_next <link.h>
-
-
-
-#if !defined(__aarch64__) && !defined(__x86_64__) && \
-    !(defined(__mips__) && _MIPS_SIM == _ABI64)
+#include <elf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ElfW(type)      _ElfW (Elf, ELFSIZE, type)
+#define _ElfW(e,w,t)    _ElfW_1 (e, w, _##t)
+#define _ElfW_1(e,w,t)  e##w##t
 
 struct r_debug {
   int              r_version;
@@ -64,8 +62,6 @@ struct link_map {
 
 #ifdef __cplusplus
 }  
-#endif  
-
 #endif  
 
 #endif 

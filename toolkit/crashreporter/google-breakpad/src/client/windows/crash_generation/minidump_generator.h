@@ -46,54 +46,36 @@ namespace google_breakpad {
 class MinidumpGenerator {
  public:
   
-  
-  
-  
-  
-  
-  
-  
-  MinidumpGenerator(const std::wstring& dump_path,
-                    const HANDLE process_handle,
-                    const DWORD process_id,
-                    const DWORD thread_id,
-                    const DWORD requesting_thread_id,
-                    EXCEPTION_POINTERS* exception_pointers,
-                    MDRawAssertionInfo* assert_info,
-                    const MINIDUMP_TYPE dump_type,
-                    const bool is_client_pointers);
+  explicit MinidumpGenerator(const std::wstring& dump_path);
 
   ~MinidumpGenerator();
 
-  void SetDumpFile(const HANDLE dump_file) { dump_file_ = dump_file; }
-  void SetFullDumpFile(const HANDLE full_dump_file) {
-    full_dump_file_ = full_dump_file;
-  }
+  
+  
+  
+  bool WriteMinidump(HANDLE process_handle,
+                     DWORD process_id,
+                     DWORD thread_id,
+                     DWORD requesting_thread_id,
+                     EXCEPTION_POINTERS* exception_pointers,
+                     MDRawAssertionInfo* assert_info,
+                     MINIDUMP_TYPE dump_type,
+                     bool is_client_pointers,
+                     std::wstring* dump_path);
 
   
   
   
-  bool GenerateDumpFile(std::wstring* dump_path);
-
-  
-  
-  
-  
-  bool GenerateFullDumpFile(std::wstring* full_dump_path);
-
-  void SetAdditionalStreams(
-      MINIDUMP_USER_STREAM_INFORMATION* additional_streams) {
-    additional_streams_ = additional_streams;
-  }
-
-  void SetCallback(MINIDUMP_CALLBACK_INFORMATION* callback_info) {
-    callback_info_ = callback_info;
-  }
-
-  
-  
-  
-  bool WriteMinidump();
+  bool WriteMinidump(HANDLE process_handle,
+                     DWORD process_id,
+                     DWORD thread_id,
+                     DWORD requesting_thread_id,
+                     EXCEPTION_POINTERS* exception_pointers,
+                     MDRawAssertionInfo* assert_info,
+                     MINIDUMP_TYPE dump_type,
+                     bool is_client_pointers,
+                     std::wstring* dump_path,
+                     std::wstring* full_dump_path);
 
  private:
   
@@ -140,51 +122,7 @@ class MinidumpGenerator {
   UuidCreateType create_uuid_;
 
   
-  HANDLE process_handle_;
-
-  
-  DWORD process_id_;
-
-  
-  DWORD thread_id_;
-
-  
-  DWORD requesting_thread_id_;
-
-  
-  
-  EXCEPTION_POINTERS* exception_pointers_;
-
-  
-  MDRawAssertionInfo* assert_info_;
-
-  
-  MINIDUMP_TYPE dump_type_;
-
-  
-  
-  bool is_client_pointers_;
-
-  
   std::wstring dump_path_;
-
-  
-  HANDLE dump_file_;
-
-  
-  HANDLE full_dump_file_;
-
-  
-  bool dump_file_is_internal_;
-
-  
-  bool full_dump_file_is_internal_;
-
-  
-  MINIDUMP_USER_STREAM_INFORMATION* additional_streams_;
-
-  
-  MINIDUMP_CALLBACK_INFORMATION* callback_info_;
 
   
   CRITICAL_SECTION module_load_sync_;

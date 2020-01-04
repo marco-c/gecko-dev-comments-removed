@@ -51,20 +51,10 @@ class IosExceptionMinidumpGenerator : public MinidumpGenerator {
  private:
 
   
-  uintptr_t GetPCFromException();
-
-  
-  uintptr_t GetLRFromException();
+  uint32_t GetPCFromException();
 
   
   bool WriteCrashingContext(MDLocationDescriptor *register_location);
-  
-#ifdef HAS_ARM_SUPPORT
-  bool WriteCrashingContextARM(MDLocationDescriptor *register_location);
-#endif
-#ifdef HAS_ARM64_SUPPORT
-  bool WriteCrashingContextARM64(MDLocationDescriptor *register_location);
-#endif
 
   NSArray *return_addresses_;
 };

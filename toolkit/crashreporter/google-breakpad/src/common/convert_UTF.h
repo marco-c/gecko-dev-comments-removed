@@ -36,9 +36,6 @@
 
 
 
-#ifndef COMMON_CONVERT_UTF_H_
-#define COMMON_CONVERT_UTF_H_
-
 
 
 
@@ -160,5 +157,3 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
 #endif
 
 
-
-#endif  

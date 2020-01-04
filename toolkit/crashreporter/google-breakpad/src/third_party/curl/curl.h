@@ -74,7 +74,7 @@
 
 #if defined(_AIX) || defined(__NOVELL_LIBC__) || defined(__NetBSD__) || \
     defined(__minix) || defined(__SYMBIAN32__) || defined(__INTEGRITY) || \
-    defined(__ANDROID__)
+    defined(ANDROID)
 #include <sys/select.h>
 #endif
 

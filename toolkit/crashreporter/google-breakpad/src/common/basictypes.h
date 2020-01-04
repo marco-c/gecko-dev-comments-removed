@@ -38,21 +38,4 @@
   void operator=(const TypeName&)
 #endif  
 
-namespace google_breakpad {
-
-
-
-
-
-
-
-
-
-
-template<typename T>
-inline void ignore_result(const T&) {
-}
-
-}  
-
 #endif  

@@ -67,10 +67,6 @@ extern NSString *const kDefaultServerType;
 
 - (id)initWithConfig:(NSDictionary *)config;
 
-
-
-+ (NSDictionary *)readConfigurationDataFromFile:(NSString *)configFile;
-
 - (NSMutableDictionary *)parameters;
 
 - (void)report;
@@ -81,9 +77,5 @@ extern NSString *const kDefaultServerType;
 
 
 - (void)addServerParameter:(id)value forKey:(NSString *)key;
-
-
-
-- (void)handleNetworkResponse:(NSData *)data withError:(NSError *)error;
 
 @end

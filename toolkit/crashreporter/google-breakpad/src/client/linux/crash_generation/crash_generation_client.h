@@ -30,25 +30,21 @@
 #ifndef CLIENT_LINUX_CRASH_GENERATION_CRASH_GENERATION_CLIENT_H_
 #define CLIENT_LINUX_CRASH_GENERATION_CRASH_GENERATION_CLIENT_H_
 
-#include "common/basictypes.h"
-
 #include <stddef.h>
 
 namespace google_breakpad {
 
-
-
-
-
 class CrashGenerationClient {
- public:
-  CrashGenerationClient() {}
-  virtual ~CrashGenerationClient() {}
+public:
+  ~CrashGenerationClient()
+  {
+  }
 
   
   
   
-  virtual bool RequestDump(const void* blob, size_t blob_size) = 0;
+  
+  bool RequestDump(const void* blob, size_t blob_size);
 
   
   
@@ -56,10 +52,18 @@ class CrashGenerationClient {
   
   static CrashGenerationClient* TryCreate(int server_fd);
 
- private:
-  DISALLOW_COPY_AND_ASSIGN(CrashGenerationClient);
+private:
+  CrashGenerationClient(int server_fd) : server_fd_(server_fd)
+  {
+  }
+
+  int server_fd_;
+
+  
+  CrashGenerationClient(const CrashGenerationClient&);
+  CrashGenerationClient& operator=(const CrashGenerationClient&);
 };
 
-}  
+} 
 
-#endif  
+#endif 

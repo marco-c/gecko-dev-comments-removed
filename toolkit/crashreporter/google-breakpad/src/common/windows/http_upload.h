@@ -31,12 +31,12 @@
 
 
 
-#ifndef COMMON_WINDOWS_HTTP_UPLOAD_H_
-#define COMMON_WINDOWS_HTTP_UPLOAD_H_
+#ifndef COMMON_WINDOWS_HTTP_UPLOAD_H__
+#define COMMON_WINDOWS_HTTP_UPLOAD_H__
 
-#pragma warning(push)
+#pragma warning( push )
 
-#pragma warning(disable : 4530)
+#pragma warning( disable : 4530 ) 
 
 #include <windows.h>
 #include <wininet.h>
@@ -124,6 +124,6 @@ class HTTPUpload {
 
 }  
 
-#pragma warning(pop)
+#pragma warning( pop )
 
 #endif  

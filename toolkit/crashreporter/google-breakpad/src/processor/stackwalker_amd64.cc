@@ -40,9 +40,8 @@
 #include "google_breakpad/processor/memory_region.h"
 #include "google_breakpad/processor/source_line_resolver_interface.h"
 #include "google_breakpad/processor/stack_frame_cpu.h"
-#include "google_breakpad/processor/system_info.h"
 #include "processor/cfi_frame_info.h"
-#include "processor/logging.h"
+#include "common/logging.h"
 #include "processor/stackwalker_amd64.h"
 
 namespace google_breakpad {
@@ -55,39 +54,39 @@ StackwalkerAMD64::cfi_register_map_[] = {
   
   
   
-  { "$rax", NULL, false,
+  { ToUniqueString("$rax"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_RAX, &MDRawContextAMD64::rax },
-  { "$rdx", NULL, false,
+  { ToUniqueString("$rdx"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_RDX, &MDRawContextAMD64::rdx },
-  { "$rcx", NULL, false,
+  { ToUniqueString("$rcx"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_RCX, &MDRawContextAMD64::rcx },
-  { "$rbx", NULL, true,
+  { ToUniqueString("$rbx"), NULL, true,
     StackFrameAMD64::CONTEXT_VALID_RBX, &MDRawContextAMD64::rbx },
-  { "$rsi", NULL, false,
+  { ToUniqueString("$rsi"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_RSI, &MDRawContextAMD64::rsi },
-  { "$rdi", NULL, false,
+  { ToUniqueString("$rdi"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_RDI, &MDRawContextAMD64::rdi },
-  { "$rbp", NULL, true,
+  { ToUniqueString("$rbp"), NULL, true,
     StackFrameAMD64::CONTEXT_VALID_RBP, &MDRawContextAMD64::rbp },
-  { "$rsp", ".cfa", false,
+  { ToUniqueString("$rsp"), ToUniqueString(".cfa"), false,
     StackFrameAMD64::CONTEXT_VALID_RSP, &MDRawContextAMD64::rsp },
-  { "$r8", NULL, false,
+  { ToUniqueString("$r8"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_R8,  &MDRawContextAMD64::r8 },
-  { "$r9", NULL, false,
+  { ToUniqueString("$r9"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_R9,  &MDRawContextAMD64::r9 },
-  { "$r10", NULL, false,
+  { ToUniqueString("$r10"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_R10, &MDRawContextAMD64::r10 },
-  { "$r11", NULL, false,
+  { ToUniqueString("$r11"), NULL, false,
     StackFrameAMD64::CONTEXT_VALID_R11, &MDRawContextAMD64::r11 },
-  { "$r12", NULL, true,
+  { ToUniqueString("$r12"), NULL, true,
     StackFrameAMD64::CONTEXT_VALID_R12, &MDRawContextAMD64::r12 },
-  { "$r13", NULL, true,
+  { ToUniqueString("$r13"), NULL, true,
     StackFrameAMD64::CONTEXT_VALID_R13, &MDRawContextAMD64::r13 },
-  { "$r14", NULL, true,
+  { ToUniqueString("$r14"), NULL, true,
     StackFrameAMD64::CONTEXT_VALID_R14, &MDRawContextAMD64::r14 },
-  { "$r15", NULL, true,
+  { ToUniqueString("$r15"), NULL, true,
     StackFrameAMD64::CONTEXT_VALID_R15, &MDRawContextAMD64::r15 },
-  { "$rip", ".ra", false,
+  { ToUniqueString("$rip"), ToUniqueString(".ra"), false,
     StackFrameAMD64::CONTEXT_VALID_RIP, &MDRawContextAMD64::rip },
 };
 
@@ -102,9 +101,10 @@ StackwalkerAMD64::StackwalkerAMD64(const SystemInfo* system_info,
                   (sizeof(cfi_register_map_) / sizeof(cfi_register_map_[0]))) {
 }
 
-uint64_t StackFrameAMD64::ReturnAddress() const {
+uint64_t StackFrameAMD64::ReturnAddress() const
+{
   assert(context_validity & StackFrameAMD64::CONTEXT_VALID_RIP);
-  return context.rip;
+  return context.rip;   
 }
 
 StackFrame* StackwalkerAMD64::GetContextFrame() {
@@ -147,60 +147,13 @@ StackFrameAMD64* StackwalkerAMD64::GetCallerByCFIFrameInfo(
   return frame.release();
 }
 
-StackFrameAMD64* StackwalkerAMD64::GetCallerByFramePointerRecovery(
-    const vector<StackFrame*>& frames) {
-  StackFrameAMD64* last_frame = static_cast<StackFrameAMD64*>(frames.back());
-  uint64_t last_rsp = last_frame->context.rsp;
-  uint64_t last_rbp = last_frame->context.rbp;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  uint64_t caller_rip, caller_rbp;
-  if (memory_->GetMemoryAtAddress(last_rbp + 8, &caller_rip) &&
-      memory_->GetMemoryAtAddress(last_rbp, &caller_rbp)) {
-    uint64_t caller_rsp = last_rbp + 16;
-
-    
-    if (caller_rbp < last_rbp || caller_rsp < last_rsp)
-      return NULL;
-
-    StackFrameAMD64* frame = new StackFrameAMD64();
-    frame->trust = StackFrame::FRAME_TRUST_FP;
-    frame->context = last_frame->context;
-    frame->context.rip = caller_rip;
-    frame->context.rsp = caller_rsp;
-    frame->context.rbp = caller_rbp;
-    frame->context_validity = StackFrameAMD64::CONTEXT_VALID_RIP |
-                              StackFrameAMD64::CONTEXT_VALID_RSP |
-                              StackFrameAMD64::CONTEXT_VALID_RBP;
-    return frame;
-  }
-
-  return NULL;
-}
-
 StackFrameAMD64* StackwalkerAMD64::GetCallerByStackScan(
     const vector<StackFrame*> &frames) {
   StackFrameAMD64* last_frame = static_cast<StackFrameAMD64*>(frames.back());
   uint64_t last_rsp = last_frame->context.rsp;
   uint64_t caller_rip_address, caller_rip;
 
-  if (!ScanForReturnAddress(last_rsp, &caller_rip_address, &caller_rip,
-                            frames.size() == 1 )) {
+  if (!ScanForReturnAddress(last_rsp, &caller_rip_address, &caller_rip)) {
     
     return NULL;
   }
@@ -261,10 +214,6 @@ StackFrame* StackwalkerAMD64::GetCallerFrame(const CallStack* stack,
     new_frame.reset(GetCallerByCFIFrameInfo(frames, cfi_frame_info.get()));
 
   
-  if (!new_frame.get()) {
-    new_frame.reset(GetCallerByFramePointerRecovery(frames));
-  }
-
   
   if (stack_scan_allowed && !new_frame.get()) {
     new_frame.reset(GetCallerByStackScan(frames));
@@ -273,16 +222,6 @@ StackFrame* StackwalkerAMD64::GetCallerFrame(const CallStack* stack,
   
   if (!new_frame.get())
     return NULL;
-
-  if (system_info_->os_short == "nacl") {
-    
-    
-    
-    
-    new_frame->context.rip = static_cast<uint32_t>(new_frame->context.rip);
-    new_frame->context.rsp = static_cast<uint32_t>(new_frame->context.rsp);
-    new_frame->context.rbp = static_cast<uint32_t>(new_frame->context.rbp);
-  }
 
   
   if (new_frame->context.rip == 0)

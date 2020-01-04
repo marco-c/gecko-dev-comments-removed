@@ -62,8 +62,9 @@
 
 
 
-#ifndef TOOLS_WINDOWS_MS_SYMBOL_SERVER_CONVERTER_H_
-#define TOOLS_WINDOWS_MS_SYMBOL_SERVER_CONVERTER_H_
+
+#ifndef MS_SYMBOL_SERVER_CONVERTER_H__
+#define MS_SYMBOL_SERVER_CONVERTER_H__
 
 #include <windows.h>
 
@@ -149,13 +150,6 @@ class MSSymbolServerConverter {
   
   
   
-  LocateResult LocatePEFile(const MissingSymbolInfo &missing, string *pe_file);
-
-  
-  
-  
-  
-  
   LocateResult LocateSymbolFile(const MissingSymbolInfo &missing,
                                 string *symbol_file);
 
@@ -169,24 +163,12 @@ class MSSymbolServerConverter {
   
   
   
-  
   LocateResult LocateAndConvertSymbolFile(const MissingSymbolInfo &missing,
                                           bool keep_symbol_file,
-                                          bool keep_pe_file,
                                           string *converted_symbol_file,
-                                          string *symbol_file,
-                                          string *pe_file);
+                                          string *symbol_file);
 
  private:
-  
-  
-  
-  
-  
-  LocateResult LocateFile(const string &debug_or_code_file,
-                          const string &debug_or_code_id,
-                          const string &version, string *file_name);
-
   
   
   
@@ -199,7 +181,7 @@ class MSSymbolServerConverter {
   
   
   
-  static BOOL CALLBACK SymFindFileInPathCallback(const char *filename,
+  static BOOL CALLBACK SymFindFileInPathCallback(char *filename,
                                                  void *context);
 
   

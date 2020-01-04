@@ -56,7 +56,7 @@ class LinuxPtraceDumper : public LinuxDumper {
   
   
   
-  virtual bool CopyFromProcess(void* dest, pid_t child, const void* src,
+  virtual void CopyFromProcess(void* dest, pid_t child, const void* src,
                                size_t length);
 
   

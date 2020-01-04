@@ -30,15 +30,13 @@
 
 
 
-#ifndef COMMON_WINDOWS_PDB_SOURCE_LINE_WRITER_H_
-#define COMMON_WINDOWS_PDB_SOURCE_LINE_WRITER_H_
+#ifndef _PDB_SOURCE_LINE_WRITER_H__
+#define _PDB_SOURCE_LINE_WRITER_H__
 
 #include <atlcomcli.h>
 
 #include <unordered_map>
 #include <string>
-
-#include "common/windows/omap.h"
 
 struct IDiaEnumLineNumbers;
 struct IDiaSession;
@@ -104,11 +102,7 @@ class PDBSourceLineWriter {
   
   
   
-  
-  
-  
-  
-  bool SetCodeFile(const wstring &exe_file);
+  bool OpenExecutable(const wstring &exe_file);
 
   
   
@@ -153,16 +147,6 @@ class PDBSourceLineWriter {
 
   
   
-  
-  bool PrintFrameDataUsingPDB();
-
-  
-  
-  
-  bool PrintFrameDataUsingEXE();
-
-  
-  
   bool PrintFrameData();
 
   
@@ -183,12 +167,12 @@ class PDBSourceLineWriter {
   
   bool FileIDIsCached(const wstring &file) {
     return unique_files_.find(file) != unique_files_.end();
-  }
+  };
 
   
   void CacheFileID(const wstring &file, DWORD id) {
     unique_files_[file] = id;
-  }
+  };
 
   
   void StoreDuplicateFileID(const wstring &file, DWORD id) {
@@ -197,7 +181,7 @@ class PDBSourceLineWriter {
       
       file_ids_[id] = iter->second;
     }
-  }
+  };
 
   
   
@@ -208,7 +192,7 @@ class PDBSourceLineWriter {
     if (iter == file_ids_.end())
       return id;
     return iter->second;
-  }
+  };
 
   
   
@@ -243,9 +227,6 @@ class PDBSourceLineWriter {
   unordered_map<DWORD, DWORD> file_ids_;
   
   unordered_map<wstring, DWORD> unique_files_;
-
-  
-  ImageMap image_map_;
 
   
   PDBSourceLineWriter(const PDBSourceLineWriter&);

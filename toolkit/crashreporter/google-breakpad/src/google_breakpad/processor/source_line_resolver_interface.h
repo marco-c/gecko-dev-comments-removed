@@ -68,11 +68,8 @@ class SourceLineResolverInterface {
   
   
   
-  
-  
   virtual bool LoadModuleUsingMemoryBuffer(const CodeModule *module,
-                                           char *memory_buffer,
-                                           size_t memory_buffer_size) = 0;
+                                           char *memory_buffer) = 0;
 
   
   
@@ -85,9 +82,6 @@ class SourceLineResolverInterface {
 
   
   virtual bool HasModule(const CodeModule *module) = 0;
-
-  
-  virtual bool IsModuleCorrupt(const CodeModule *module) = 0;
 
   
   

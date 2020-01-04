@@ -61,9 +61,9 @@
 #include <dbghelp.h>
 #include <rpc.h>
 
-#pragma warning(push)
+#pragma warning( push )
 
-#pragma warning(disable:4530)
+#pragma warning( disable : 4530 )
 
 #include <list>
 #include <string>
@@ -195,25 +195,6 @@ class ExceptionHandler {
                    HANDLE pipe_handle,
                    const CustomClientInfo* custom_info);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ExceptionHandler(const wstring& dump_path,
-                   FilterCallback filter,
-                   MinidumpCallback callback,
-                   void* callback_context,
-                   int handler_types,
-                   CrashGenerationClient* crash_generation_client);
-
   ~ExceptionHandler();
 
   
@@ -264,15 +245,6 @@ class ExceptionHandler {
   }
 
   
-  bool get_consume_invalid_handle_exceptions() const {
-    return consume_invalid_handle_exceptions_;
-  }
-  void set_consume_invalid_handle_exceptions(
-      bool consume_invalid_handle_exceptions) {
-    consume_invalid_handle_exceptions_ = consume_invalid_handle_exceptions;
-  }
-
-  
   bool IsOutOfProcess() const { return crash_generation_client_.get() != NULL; }
 
   
@@ -292,7 +264,6 @@ class ExceptionHandler {
                   MINIDUMP_TYPE dump_type,
                   const wchar_t* pipe_name,
                   HANDLE pipe_handle,
-                  CrashGenerationClient* crash_generation_client,
                   const CustomClientInfo* custom_info);
 
   
@@ -483,10 +454,6 @@ class ExceptionHandler {
 
   
   
-  bool consume_invalid_handle_exceptions_;
-
-  
-  
   AppMemoryList app_memory_info_;
 
   
@@ -508,7 +475,7 @@ class ExceptionHandler {
   static CRITICAL_SECTION handler_stack_critical_section_;
 
   
-  static volatile LONG instance_count_;
+  volatile static LONG instance_count_;
 
   
   explicit ExceptionHandler(const ExceptionHandler &);
@@ -517,6 +484,6 @@ class ExceptionHandler {
 
 }  
 
-#pragma warning(pop)
+#pragma warning( pop )
 
 #endif  

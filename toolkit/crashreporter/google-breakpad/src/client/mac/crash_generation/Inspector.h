@@ -30,7 +30,7 @@
 
 
 
-#include "common/simple_string_dictionary.h"
+#import "common/mac/SimpleStringDictionary.h"
 
 #import <Foundation/Foundation.h>
 #include <mach/mach.h>
@@ -38,6 +38,9 @@
 #import "client/mac/crash_generation/ConfigFile.h"
 #import "client/mac/handler/minidump_generator.h"
 
+extern bool gDebugLog;
+
+#define DEBUGLOG if (gDebugLog) fprintf
 
 
 enum {
@@ -62,14 +65,13 @@ struct InspectorInfo {
 struct KeyValueMessageData {
  public:
   KeyValueMessageData() {}
-  explicit KeyValueMessageData(
-      const google_breakpad::SimpleStringDictionary::Entry &inEntry) {
-    strlcpy(key, inEntry.key, sizeof(key) );
-    strlcpy(value, inEntry.value, sizeof(value) );
+  KeyValueMessageData(const google_breakpad::KeyValueEntry &inEntry) {
+    strlcpy(key, inEntry.GetKey(), sizeof(key) );
+    strlcpy(value, inEntry.GetValue(), sizeof(value) );
   }
 
-  char key[google_breakpad::SimpleStringDictionary::key_size];
-  char value[google_breakpad::SimpleStringDictionary::value_size];
+  char key[google_breakpad::KeyValueEntry::MAX_STRING_STORAGE_SIZE];
+  char value[google_breakpad::KeyValueEntry::MAX_STRING_STORAGE_SIZE];
 };
 
 using std::string;
@@ -84,6 +86,7 @@ class MinidumpLocation {
     
     assert(minidumpDir);
     if (!EnsureDirectoryPathExists(minidumpDir)) {
+      DEBUGLOG(stderr, "Unable to create: %s\n", [minidumpDir UTF8String]);
       minidumpDir = @"/tmp";
     }
 
@@ -138,6 +141,7 @@ class Inspector {
 
   bool            InspectTask();
   kern_return_t   SendAcknowledgement();
+  void            LaunchReporter(const char *inConfigFilePath);
 
   
   
