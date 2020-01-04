@@ -134,7 +134,12 @@ enum class LogReason : int {
   
   
   D3D11InvalidCallDeviceRemoved = 0,
-  D3D11InvalidCall = 1,
+  D3D11InvalidCall,
+  D3DLockTimeout,
+  D3D10FinalizeFrame,
+  D3D11FinalizeFrame,
+  D3D10SyncLock,
+  D3D11SyncLock,
   
   MustBeLessThanThis = 101,
 };
@@ -565,7 +570,7 @@ typedef Log<LOG_CRITICAL, CriticalLogger> CriticalLog;
 
 
 
-#define gfxDevCrash(reason) gfxCriticalError(int(LogOptions::AutoPrefix) | int(LogOptions::AssertOnCall) | int(LogOptions::CrashAction), (reason))
+#define gfxDevCrash(reason) gfxCriticalError(int(gfx::LogOptions::AutoPrefix) | int(gfx::LogOptions::AssertOnCall) | int(gfx::LogOptions::CrashAction), (reason))
 
 
 
