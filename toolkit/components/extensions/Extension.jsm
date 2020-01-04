@@ -61,6 +61,7 @@ ExtensionManagement.registerScript("chrome://extensions/content/ext-test.js");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
+  LocaleData,
   MessageBroker,
   Messenger,
   injectAPI,
@@ -347,12 +348,7 @@ this.ExtensionData = function(rootURI)
 
   this.manifest = null;
   this.id = null;
-  
-  
-  
-  
-  this.localeMessages = new Map();
-  this.selectedLocale = null;
+  this.localeData = null;
   this._promiseLocales = null;
 
   this.errors = [];
@@ -373,91 +369,6 @@ ExtensionData.prototype = {
   packagingError(message) {
     this.errors.push(message);
     this.logger.error(`Loading extension '${this.id}': ${message}`);
-  },
-
-  
-  localizeMessage(message, substitutions = [], locale = this.selectedLocale, defaultValue = "??") {
-    let locales = new Set([locale, this.defaultLocale]
-                          .filter(locale => this.localeMessages.has(locale)));
-
-    
-    message = message.toLowerCase();
-    for (let locale of locales) {
-      let messages = this.localeMessages.get(locale);
-      if (messages.has(message)) {
-        let str = messages.get(message)
-
-        if (!Array.isArray(substitutions)) {
-          substitutions = [substitutions];
-        }
-
-        let replacer = (matched, index, dollarSigns) => {
-          if (index) {
-            
-            
-            
-            index = parseInt(index) - 1;
-            return index in substitutions ? substitutions[index] : "";
-          } else {
-            
-            
-            return dollarSigns;
-          }
-        };
-        return str.replace(/\$(?:([1-9]\d*)|(\$+))/g, replacer);
-      }
-    }
-
-    
-    if (message == "@@extension_id") {
-      if ("uuid" in this) {
-        
-        
-        
-        
-        return this.uuid;
-      }
-    } else if (message == "@@ui_locale") {
-      return Locale.getLocale();
-    } else if (message == "@@bidi_dir") {
-      return "ltr"; 
-    }
-
-    Cu.reportError(`Unknown localization message ${message}`);
-    return defaultValue;
-  },
-
-  
-  
-  
-  
-  
-  
-  localize(str, locale = this.selectedLocale) {
-    if (!str) {
-      return str;
-    }
-
-    return str.replace(/__MSG_([A-Za-z0-9@_]+?)__/g, (matched, message) => {
-      return this.localizeMessage(message, [], locale, matched);
-    });
-  },
-
-  
-  
-  get defaultLocale() {
-    if ("default_locale" in this.manifest) {
-      return this.normalizeLocaleCode(this.manifest.default_locale);
-    }
-
-    return null;
-  },
-
-  
-  
-  
-  normalizeLocaleCode(locale) {
-    return String.replace(locale, /_/g, "-");
   },
 
   readDirectory: Task.async(function* (path) {
@@ -564,59 +475,29 @@ ExtensionData.prototype = {
     });
   },
 
+  localizeMessage(...args) {
+    return this.localeData.localizeMessage(...args);
+  },
+
+  localize(...args) {
+    return this.localeData.localize(...args);
+  },
+
   
   
-  processLocale(locale, messages) {
-    let result = new Map();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!instanceOf(messages, "Object")) {
-      this.packagingError(`Invalid locale data for ${locale}`);
-      return result;
+  get defaultLocale() {
+    if ("default_locale" in this.manifest) {
+      return this.normalizeLocaleCode(this.manifest.default_locale);
     }
 
-    for (let key of Object.keys(messages)) {
-      let msg = messages[key];
+    return null;
+  },
 
-      if (!instanceOf(msg, "Object") || typeof(msg.message) != "string") {
-        this.packagingError(`Invalid locale message data for ${locale}, message ${JSON.stringify(key)}`);
-        continue;
-      }
-
-      
-      
-      let placeholders = new Map();
-      if (instanceOf(msg.placeholders, "Object")) {
-        for (let key of Object.keys(msg.placeholders)) {
-          placeholders.set(key.toLowerCase(), msg.placeholders[key]);
-        }
-      }
-
-      let replacer = (match, name) => {
-        let replacement = placeholders.get(name.toLowerCase());
-        if (instanceOf(replacement, "Object") && "content" in replacement) {
-          return replacement.content;
-        }
-        return "";
-      };
-
-      let value = msg.message.replace(/\$([A-Za-z0-9@_]+)\$/g, replacer);
-
-      
-      result.set(key.toLowerCase(), value);
-    }
-
-    return result;
+  
+  
+  
+  normalizeLocaleCode(locale) {
+    return String.replace(locale, /_/g, "-");
   },
 
   
@@ -626,16 +507,13 @@ ExtensionData.prototype = {
     let dir = locales.get(locale);
     let file = `_locales/${dir}/messages.json`;
 
-    let messages = new Map();
     try {
-      messages = yield this.readJSON(file);
-      messages = this.processLocale(locale, messages);
+      let messages = yield this.readJSON(file);
+      return this.localeData.addLocale(locale, messages, this);
     } catch (e) {
       this.packagingError(`Loading locale file ${file}: ${e}`);
+      return new Map();
     }
-
-    this.localeMessages.set(locale, messages);
-    return messages;
   }),
 
   
@@ -670,6 +548,7 @@ ExtensionData.prototype = {
   
   initAllLocales: Task.async(function* () {
     let locales = yield this.promiseLocales();
+    this.localeData = new LocaleData({ defaultLocale: this.defaultLocale, locales });
 
     yield Promise.all(Array.from(locales.keys(),
                                  locale => this.readLocaleFile(locale)));
@@ -681,12 +560,12 @@ ExtensionData.prototype = {
                            'a directory in "_locales/". Not found: ' +
                            JSON.stringify(`_locales/${default_locale}/`));
       }
-    } else if (this.localeMessages.size) {
+    } else if (locales.size) {
       this.manifestError('The "default_locale" property is required when a ' +
                          '"_locales/" directory is present.');
     }
 
-    return this.localeMessages;
+    return this.localeData.messages;
   }),
 
   
@@ -698,6 +577,8 @@ ExtensionData.prototype = {
   
   
   initLocale: Task.async(function* (locale = this.defaultLocale) {
+    this.localeData = new LocaleData({ defaultLocale: this.defaultLocale });
+
     if (locale == null) {
       return null;
     }
@@ -705,12 +586,13 @@ ExtensionData.prototype = {
     let promises = [this.readLocaleFile(locale)];
 
     let { defaultLocale } = this;
-    if (locale != defaultLocale && !this.localeMessages.has(defaultLocale)) {
+    if (locale != defaultLocale && !this.localeData.has(defaultLocale)) {
       promises.push(this.readLocaleFile(defaultLocale));
     }
 
     let results = yield Promise.all(promises);
-    this.selectedLocale = locale;
+
+    this.localeData.selectedLocale = locale;
     return results[0];
   }),
 };
@@ -940,6 +822,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
       content_scripts: this.manifest.content_scripts || [],
       webAccessibleResources: this.webAccessibleResources,
       whiteListedHosts: this.whiteListedHosts.serialize(),
+      localeData: this.localeData.serialize(),
     };
   },
 
