@@ -12,6 +12,7 @@ const {isWindowIncluded} = require("devtools/shared/layout/utils");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 loader.lazyImporter(this, "Services", "resource://gre/modules/Services.jsm");
+loader.lazyImporter(this, "Parser", "resource://gre/modules/devtools/shared/Parser.jsm");
 
 
 
@@ -861,19 +862,34 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
   }
 
   let completionPart = inputValue.substring(beginning.startPos);
+  let lastDot = completionPart.lastIndexOf(".");
 
   
   if (completionPart.trim() == "") {
     return null;
   }
 
-  let lastDot = completionPart.lastIndexOf(".");
-  if (lastDot > 0 &&
-      (completionPart[0] == "'" || completionPart[0] == '"') &&
-      completionPart[lastDot - 1] == completionPart[0]) {
+  
+  
+  if (lastDot > 0) {
+    let parser = new Parser();
+    parser.logExceptions = false;
+    let syntaxTree = parser.get(completionPart.slice(0, lastDot));
+    let lastTree = syntaxTree.getLastSyntaxTree();
+    let lastBody = lastTree && lastTree.AST.body[lastTree.AST.body.length - 1];
+
     
-    let matchProp = completionPart.slice(lastDot + 1);
-    return getMatchedProps(String.prototype, matchProp);
+    
+    if (lastBody) {
+      let expression = lastBody.expression;
+      let matchProp = completionPart.slice(lastDot + 1);
+      if (expression.type === "ArrayExpression") {
+        return getMatchedProps(Array.prototype, matchProp);
+      } else if (expression.type === "Literal" &&
+                 (typeof expression.value === "string")) {
+        return getMatchedProps(String.prototype, matchProp);
+      }
+    }
   }
 
   

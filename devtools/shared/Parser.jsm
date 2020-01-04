@@ -157,6 +157,14 @@ SyntaxTreesPool.prototype = {
 
 
 
+  getLastSyntaxTree: function() {
+    return this._trees[this._trees.length - 1];
+  },
+
+  
+
+
+
   get scriptCount() {
     return this._trees.length;
   },
