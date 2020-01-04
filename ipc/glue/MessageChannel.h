@@ -784,6 +784,10 @@ class MessageChannel : HasResultCodes
     bool mAbortOnError;
 
     
+    
+    bool mNotifiedChannelDone;
+
+    
     ChannelFlags mFlags;
 
     

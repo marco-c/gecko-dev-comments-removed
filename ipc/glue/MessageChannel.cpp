@@ -488,6 +488,7 @@ MessageChannel::MessageChannel(MessageListener *aListener)
     mSawInterruptOutMsg(false),
     mIsWaitingForIncoming(false),
     mAbortOnError(false),
+    mNotifiedChannelDone(false),
     mFlags(REQUIRE_DEFAULT),
     mPeerPidSet(false),
     mPeerPid(-1)
@@ -2083,6 +2084,13 @@ MessageChannel::NotifyMaybeChannelError()
 
     
     
+    if (mNotifiedChannelDone) {
+      return;
+    }
+    mNotifiedChannelDone = true;
+
+    
+    
     
     mListener->OnChannelError();
 }
@@ -2237,6 +2245,13 @@ MessageChannel::NotifyChannelClosed()
         NS_RUNTIMEABORT("channel should have been closed!");
 
     Clear();
+
+    
+    
+    if (mNotifiedChannelDone) {
+      return;
+    }
+    mNotifiedChannelDone = true;
 
     
     
