@@ -56,9 +56,6 @@
 
 
 
-
-
-
 #ifndef NS_UNICODE_SCRIPT_CODES
 #define NS_UNICODE_SCRIPT_CODES
 
@@ -75,7 +72,7 @@ struct nsCharProps1 {
 
 struct nsCharProps2 {
   unsigned char mScriptCode:8;
-  unsigned char mEAW:3;
+  unsigned char mUnused:3;
   unsigned char mCategory:5;
   unsigned char mBidiCategory:5;
   unsigned char mXidmod:4;
