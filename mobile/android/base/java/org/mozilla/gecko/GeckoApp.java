@@ -178,7 +178,6 @@ public abstract class GeckoApp
     
     protected boolean mIsAbortingAppLaunch;
 
-    private ContactService mContactService;
     private PromptService mPromptService;
     protected TextSelection mTextSelection;
 
@@ -1642,8 +1641,6 @@ public abstract class GeckoApp
             SmsManager.getInstance().start();
         }
 
-        mContactService = new ContactService(EventDispatcher.getInstance(), this);
-
         mPromptService = new PromptService(this);
 
         
@@ -2248,8 +2245,6 @@ public abstract class GeckoApp
             mDoorHangerPopup.destroy();
         if (mFormAssistPopup != null)
             mFormAssistPopup.destroy();
-        if (mContactService != null)
-            mContactService.destroy();
         if (mPromptService != null)
             mPromptService.destroy();
         if (mTextSelection != null)
