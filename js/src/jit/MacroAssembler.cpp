@@ -1128,47 +1128,16 @@ MacroAssembler::initGCThing(Register obj, Register temp, JSObject* templateObj,
         } else {
             
             
-            MOZ_ASSERT(!ntemplate->isSharedMemory());
-
+            
+            
             storePtr(ImmPtr(emptyObjectElements), Address(obj, NativeObject::offsetOfElements()));
 
             initGCSlots(obj, temp, ntemplate, initContents);
 
-            if (ntemplate->is<TypedArrayObject>()) {
-                TypedArrayObject* ttemplate = &ntemplate->as<TypedArrayObject>();
-                MOZ_ASSERT(ntemplate->hasPrivate());
-                MOZ_ASSERT(!ttemplate->hasBuffer());
-
-                size_t dataSlotOffset = TypedArrayObject::dataOffset();
-                size_t dataOffset = TypedArrayObject::dataOffset() + sizeof(HeapSlot);
-
-                static_assert(TypedArrayObject::FIXED_DATA_START == TypedArrayObject::DATA_SLOT + 1,
-                              "fixed inline element data assumed to begin after the data slot");
-
-                computeEffectiveAddress(Address(obj, dataOffset), temp);
-                storePtr(temp, Address(obj, dataSlotOffset));
-
-                
-                size_t n = ttemplate->length() * ttemplate->bytesPerElement();
-                MOZ_ASSERT(dataOffset + n <= JSObject::MAX_BYTE_SIZE);
-
-                
-                
-                
-                
-                
-                
-                static_assert(sizeof(HeapSlot) == 8, "Assumed 8 bytes alignment");
-
-                size_t numZeroPointers = ((n + 7) & ~0x7) / sizeof(char *);
-                for (size_t i = 0; i < numZeroPointers; i++)
-                    storePtr(ImmWord(0), Address(obj, dataOffset + i * sizeof(char *)));
-            } else {
-                if (ntemplate->hasPrivate()) {
-                    uint32_t nfixed = ntemplate->numFixedSlots();
-                    storePtr(ImmPtr(ntemplate->getPrivate()),
-                             Address(obj, NativeObject::getPrivateDataOffset(nfixed)));
-                }
+            if (ntemplate->hasPrivate()) {
+                uint32_t nfixed = ntemplate->numFixedSlots();
+                storePtr(ImmPtr(ntemplate->getPrivate()),
+                         Address(obj, NativeObject::getPrivateDataOffset(nfixed)));
             }
         }
     } else if (templateObj->is<InlineTypedObject>()) {
