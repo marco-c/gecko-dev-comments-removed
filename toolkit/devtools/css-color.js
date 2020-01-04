@@ -57,7 +57,8 @@ function CssColor(colorValue) {
 module.exports.colorUtils = {
   CssColor: CssColor,
   rgbToHsl: rgbToHsl,
-  setAlpha: setAlpha
+  setAlpha: setAlpha,
+  classifyColor: classifyColor
 };
 
 
@@ -74,7 +75,10 @@ CssColor.COLORUNIT = {
 CssColor.prototype = {
   _colorUnit: null,
 
+  
   authored: null,
+  
+  lowerCased: null,
 
   get colorUnit() {
     if (this._colorUnit === null) {
@@ -112,7 +116,7 @@ CssColor.prototype = {
   },
 
   get specialValue() {
-    return SPECIALVALUES.has(this.authored) ? this.authored : null;
+    return SPECIALVALUES.has(this.lowerCased) ? this.authored : null;
   },
 
   get name() {
@@ -171,7 +175,7 @@ CssColor.prototype = {
       return invalidOrSpecialValue;
     }
     if (!this.hasAlpha) {
-      if (this.authored.startsWith("rgb(")) {
+      if (this.lowerCased.startsWith("rgb(")) {
         
         return this.authored;
       }
@@ -186,7 +190,7 @@ CssColor.prototype = {
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
-    if (this.authored.startsWith("rgba(")) {
+    if (this.lowerCased.startsWith("rgba(")) {
       
         return this.authored;
     }
@@ -202,7 +206,7 @@ CssColor.prototype = {
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
-    if (this.authored.startsWith("hsl(")) {
+    if (this.lowerCased.startsWith("hsl(")) {
       
       return this.authored;
     }
@@ -217,7 +221,7 @@ CssColor.prototype = {
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
-    if (this.authored.startsWith("hsla(")) {
+    if (this.lowerCased.startsWith("hsla(")) {
       
       return this.authored;
     }
@@ -256,7 +260,11 @@ CssColor.prototype = {
 
 
   newColor: function(color) {
-    this.authored = color.toLowerCase();
+    
+    
+    
+    this.lowerCased = color.toLowerCase();
+    this.authored = color;
     return this;
   },
 
@@ -319,7 +327,7 @@ CssColor.prototype = {
   },
 
   _hsl: function(maybeAlpha) {
-    if (this.authored.startsWith("hsl(") && maybeAlpha === undefined) {
+    if (this.lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
       
       return this.authored;
     }
@@ -413,6 +421,27 @@ function setAlpha(colorValue, alpha) {
 
   let { r, g, b } = color._getRGBATuple();
   return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
+}
+
+
+
+
+
+
+
+
+
+
+function classifyColor(value) {
+  value = value.toLowerCase();
+  if (value.startsWith("rgb(") || value.startsWith("rgba(")) {
+    return CssColor.COLORUNIT.rgb;
+  } else if (value.startsWith("hsl(") || value.startsWith("hsla(")) {
+    return CssColor.COLORUNIT.hsl;
+  } else if (/^#[0-9a-f]+$/.exec(value)) {
+    return CssColor.COLORUNIT.hex;
+  }
+  return CssColor.COLORUNIT.name;
 }
 
 loader.lazyGetter(this, "DOMUtils", function () {
