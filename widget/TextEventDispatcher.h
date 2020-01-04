@@ -115,7 +115,12 @@ public:
   
 
 
-  nsresult StartComposition(nsEventStatus& aStatus);
+
+
+
+
+  nsresult StartComposition(nsEventStatus& aStatus,
+                            const WidgetEventTime* aEventTime = nullptr);
 
   
 
@@ -124,8 +129,12 @@ public:
 
 
 
+
+
+
    nsresult CommitComposition(nsEventStatus& aStatus,
-                              const nsAString* aCommitString = nullptr);
+                              const nsAString* aCommitString = nullptr,
+                              const WidgetEventTime* aEventTime = nullptr);
 
   
 
@@ -197,9 +206,14 @@ public:
 
 
 
-  nsresult FlushPendingComposition(nsEventStatus& aStatus)
+
+
+
+
+  nsresult FlushPendingComposition(nsEventStatus& aStatus,
+                                   const WidgetEventTime* aEventTime = nullptr)
   {
-    return mPendingComposition.Flush(this, aStatus);
+    return mPendingComposition.Flush(this, aStatus, aEventTime);
   }
 
   
@@ -284,7 +298,9 @@ private:
     nsresult AppendClause(uint32_t aLength, uint32_t aAttribute);
     nsresult SetCaret(uint32_t aOffset, uint32_t aLength);
     nsresult Set(const nsAString& aString, const TextRangeArray* aRanges);
-    nsresult Flush(TextEventDispatcher* aDispatcher, nsEventStatus& aStatus);
+    nsresult Flush(TextEventDispatcher* aDispatcher,
+                   nsEventStatus& aStatus,
+                   const WidgetEventTime* aEventTime);
     void Clear();
 
   private:
@@ -399,7 +415,12 @@ private:
 
 
 
-  nsresult StartCompositionAutomaticallyIfNecessary(nsEventStatus& aStatus);
+
+
+
+  nsresult StartCompositionAutomaticallyIfNecessary(
+             nsEventStatus& aStatus,
+             const WidgetEventTime* aEventTime);
 
   
 

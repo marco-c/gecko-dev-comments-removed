@@ -135,6 +135,8 @@ namespace mozilla {
 struct BaseEventFlags;
 struct EventFlags;
 
+class WidgetEventTime;
+
 
 struct AlternativeCharCode;
 

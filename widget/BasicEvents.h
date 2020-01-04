@@ -176,18 +176,51 @@ struct EventFlags : public BaseEventFlags
 
 
 
-class WidgetEvent
+class WidgetEventTime
+{
+public:
+  
+  
+  uint64_t time;
+  
+  
+  TimeStamp timeStamp;
+
+  WidgetEventTime()
+    : time(0)
+    , timeStamp(TimeStamp::Now())
+  {
+  }
+
+  WidgetEventTime(uint64_t aTime,
+                  TimeStamp aTimeStamp)
+    : time(aTime)
+    , timeStamp(aTimeStamp)
+  {
+  }
+
+  void AssignEventTime(const WidgetEventTime& aOther)
+  {
+    time = aOther.time;
+    timeStamp = aOther.timeStamp;
+  }
+};
+
+
+
+
+
+class WidgetEvent : public WidgetEventTime
 {
 protected:
   WidgetEvent(bool aIsTrusted,
               EventMessage aMessage,
               EventClassID aEventClassID)
-    : mClass(aEventClassID)
+    : WidgetEventTime()
+    , mClass(aEventClassID)
     , mMessage(aMessage)
     , refPoint(0, 0)
     , lastRefPoint(0, 0)
-    , time(0)
-    , timeStamp(TimeStamp::Now())
     , userType(nullptr)
   {
     MOZ_COUNT_CTOR(WidgetEvent);
@@ -198,19 +231,18 @@ protected:
   }
 
   WidgetEvent()
-    : time(0)
+    : WidgetEventTime()
   {
     MOZ_COUNT_CTOR(WidgetEvent);
   }
 
 public:
   WidgetEvent(bool aIsTrusted, EventMessage aMessage)
-    : mClass(eBasicEventClass)
+    : WidgetEventTime()
+    , mClass(eBasicEventClass)
     , mMessage(aMessage)
     , refPoint(0, 0)
     , lastRefPoint(0, 0)
-    , time(0)
-    , timeStamp(TimeStamp::Now())
     , userType(nullptr)
   {
     MOZ_COUNT_CTOR(WidgetEvent);
@@ -249,12 +281,6 @@ public:
   
   LayoutDeviceIntPoint lastRefPoint;
   
-  
-  uint64_t time;
-  
-  
-  mozilla::TimeStamp timeStamp;
-  
   BaseEventFlags mFlags;
 
   
@@ -273,8 +299,7 @@ public:
     
     refPoint = aEvent.refPoint;
     
-    time = aEvent.time;
-    timeStamp = aEvent.timeStamp;
+    AssignEventTime(aEvent);
     
     userType = aEvent.userType;
     
