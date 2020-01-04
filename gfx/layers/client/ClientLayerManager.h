@@ -44,13 +44,7 @@ class ClientLayerManager final : public LayerManager
 public:
   explicit ClientLayerManager(nsIWidget* aWidget);
 
-  virtual void Destroy() override
-  {
-    
-    
-    ClearCachedResources();
-    LayerManager::Destroy();
-  }
+  virtual void Destroy() override;
 
 protected:
   virtual ~ClientLayerManager();

@@ -105,6 +105,11 @@ public:
   gfx::SurfaceFormat GetFormat() { return mFormat; }
   TextureFlags GetFlags() const { return mFlags; }
 
+  
+
+
+  void Destroy();
+
 private:
   
   

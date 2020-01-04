@@ -6,6 +6,7 @@
 
 
 #include "LayerTransactionChild.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/PCompositableChild.h"  
 #include "mozilla/layers/PLayerChild.h"  
@@ -39,7 +40,11 @@ LayerTransactionChild::Destroy()
   const ManagedContainer<PTextureChild>& textures = ManagedPTextureChild();
   for (auto iter = textures.ConstIter(); !iter.Done(); iter.Next()) {
     TextureClient* texture = TextureClient::AsTextureClient(iter.Get()->GetKey());
+
     if (texture) {
+      
+      
+      
       texture->Destroy();
     }
   }

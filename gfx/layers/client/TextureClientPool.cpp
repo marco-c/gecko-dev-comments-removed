@@ -269,5 +269,11 @@ TextureClientPool::Clear()
   }
 }
 
+void TextureClientPool::Destroy()
+{
+  Clear();
+  mMaxTextureClients = 0;
+}
+
 } 
 } 
