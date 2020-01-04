@@ -67,6 +67,10 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 pref("devtools.inspector.mdnDocsTooltip.enabled", true);
 
 
+
+pref("devtools.markup.collapseAttributeLength", 120);
+
+
 pref("devtools.defaultColorUnit", "authored");
 
 
