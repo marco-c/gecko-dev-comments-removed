@@ -229,8 +229,16 @@ const BackgroundPageThumbs = {
       
       
       if (curCapture && curCapture.pending) {
-        curCapture._done(null, TEL_CAPTURE_DONE_CRASHED);
         
+        
+        
+        
+        
+        
+        
+        Services.tm.currentThread.dispatch(() => {
+          curCapture._done(null, TEL_CAPTURE_DONE_CRASHED);
+        }, Ci.nsIEventTarget.DISPATCH_NORMAL);
       }
       
       
