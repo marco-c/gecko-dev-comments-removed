@@ -1,0 +1,28 @@
+#ifndef mozilla_dom_FetchUtil_h
+#define mozilla_dom_FetchUtil_h
+
+#include "nsString.h"
+#include "nsError.h"
+
+namespace mozilla {
+namespace dom {
+
+class FetchUtil final
+{
+private:
+  FetchUtil() = delete;
+
+public:
+  
+
+
+
+
+
+  static nsresult
+  GetValidRequestMethod(const nsACString& aMethod, nsCString& outMethod);
+};
+
+} 
+} 
+#endif
