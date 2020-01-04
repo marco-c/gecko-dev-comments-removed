@@ -7,7 +7,7 @@
 #define GFX_COLOR_H
 
 #include "mozilla/Attributes.h" 
-#include "mozilla/Endian.h" 
+#include "mozilla/EndianUtils.h" 
 
 
 

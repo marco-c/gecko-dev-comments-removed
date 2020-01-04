@@ -5,7 +5,7 @@
 
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Endian.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/SHA1.h"
 
 #include <string.h>

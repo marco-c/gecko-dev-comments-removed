@@ -4,7 +4,7 @@
 
 
 #include "MDNSResponderReply.h"
-#include "mozilla/Endian.h"
+#include "mozilla/EndianUtils.h"
 #include "private/pprio.h"
 
 namespace mozilla {

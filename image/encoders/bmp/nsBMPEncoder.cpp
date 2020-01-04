@@ -4,7 +4,7 @@
 
 
 #include "nsCRT.h"
-#include "mozilla/Endian.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsBMPEncoder.h"
 #include "prprf.h"
