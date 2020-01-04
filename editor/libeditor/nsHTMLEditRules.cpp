@@ -3019,7 +3019,7 @@ nsHTMLEditRules::WillMakeList(Selection* aSelection,
   for (auto& curNode : arrayOfNodes) {
     
     if (!nsTextEditUtils::IsBreak(curNode) &&
-        !IsEmptyInline(GetAsDOMNode(curNode))) {
+        !IsEmptyInline(curNode)) {
       bOnlyBreaks = false;
       break;
     }
@@ -3087,7 +3087,7 @@ nsHTMLEditRules::WillMakeList(Selection* aSelection,
     
     nsCOMPtr<nsIDOMNode> newBlock;
     NS_ENSURE_STATE(arrayOfNodes[i]->IsContent());
-    nsCOMPtr<nsIContent> curNode = arrayOfNodes[i]->AsContent();
+    OwningNonNull<nsIContent> curNode = *arrayOfNodes[i]->AsContent();
     int32_t offset;
     curParent = nsEditor::GetNodeLocation(curNode, &offset);
 
@@ -3104,7 +3104,7 @@ nsHTMLEditRules::WillMakeList(Selection* aSelection,
       NS_ENSURE_SUCCESS(res, res);
       prevListItem = 0;
       continue;
-    } else if (IsEmptyInline(GetAsDOMNode(curNode))) {
+    } else if (IsEmptyInline(curNode)) {
       
       NS_ENSURE_STATE(mHTMLEditor);
       res = mHTMLEditor->DeleteNode(curNode);
@@ -7779,17 +7779,16 @@ nsHTMLEditRules::SelectionEndpointInNode(nsINode* aNode, bool* aResult)
 
 
 
-
 bool
-nsHTMLEditRules::IsEmptyInline(nsIDOMNode *aNode)
+nsHTMLEditRules::IsEmptyInline(nsINode& aNode)
 {
-  if (aNode && IsInlineNode(aNode) && mHTMLEditor &&
-      mHTMLEditor->IsContainer(aNode))
-  {
-    bool bEmpty;
-    NS_ENSURE_TRUE(mHTMLEditor, false);
-    mHTMLEditor->IsEmptyNode(aNode, &bEmpty);
-    return bEmpty;
+  NS_ENSURE_TRUE(mHTMLEditor, false);
+  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
+
+  if (IsInlineNode(aNode.AsDOMNode()) && mHTMLEditor->IsContainer(&aNode)) {
+    bool isEmpty = true;
+    mHTMLEditor->IsEmptyNode(&aNode, &isEmpty);
+    return isEmpty;
   }
   return false;
 }
@@ -7818,7 +7817,7 @@ nsHTMLEditRules::ListIsEmptyLine(nsTArray<OwningNonNull<nsINode>>& aArrayOfNodes
         return false;
       }
       brCount++;
-    } else if (IsEmptyInline(GetAsDOMNode(node))) {
+    } else if (IsEmptyInline(node)) {
       
     } else {
       return false;
