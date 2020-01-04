@@ -1299,9 +1299,9 @@ public abstract class GeckoApp
                     }
                 }
 
-                synchronized (this) {
+                synchronized (GeckoApp.this) {
                     mSessionRestoreParsingFinished = true;
-                    notifyAll();
+                    GeckoApp.this.notifyAll();
                 }
 
                 
