@@ -16,10 +16,8 @@
 
 
 
-var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
+var {utils: Cu} = Components;
 var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-var {isContentStylesheet} = require("devtools/shared/inspector/css-logic");
 var defer = require("devtools/shared/defer");
 
 
@@ -47,32 +45,6 @@ addMessageListener("Test:GetRulePropertyValue", function (msg) {
   }
 
   sendAsyncMessage("Test:GetRulePropertyValue", value);
-});
-
-
-
-
-
-
-
-
-addMessageListener("Test:GetStyleSheetsInfoForNode", function (msg) {
-  let target = msg.objects.target;
-  let sheets = [];
-
-  let domUtils = Cc["@mozilla.org/inspector/dom-utils;1"]
-    .getService(Ci.inIDOMUtils);
-  let domRules = domUtils.getCSSStyleRules(target);
-
-  for (let i = 0, n = domRules.Count(); i < n; i++) {
-    let sheet = domRules.GetElementAt(i).parentStyleSheet;
-    sheets.push({
-      href: sheet.href,
-      isContentSheet: isContentStylesheet(sheet)
-    });
-  }
-
-  sendAsyncMessage("Test:GetStyleSheetsInfoForNode", sheets);
 });
 
 

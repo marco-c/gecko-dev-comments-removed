@@ -70,41 +70,6 @@ var navigateTo = function (toolbox, url) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-function getNode(nodeOrSelector, options = {}) {
-  let document = options.document || content.document;
-  let noMatches = !!options.expectNoMatch;
-
-  if (typeof nodeOrSelector === "string") {
-    info("Looking for a node that matches selector " + nodeOrSelector);
-    let node = document.querySelector(nodeOrSelector);
-    if (noMatches) {
-      ok(!node, "Selector " + nodeOrSelector + " didn't match any nodes.");
-    } else {
-      ok(node, "Selector " + nodeOrSelector + " matched a node.");
-    }
-
-    return node;
-  }
-
-  info("Looking for a node but selector was not a string.");
-  return nodeOrSelector;
-}
-
-
-
-
-
 var startPicker = Task.async(function* (toolbox) {
   info("Start the element picker");
   yield toolbox.highlighterUtils.startPicker();

@@ -24,28 +24,15 @@ registerCleanupFunction(() => {
 
 
 
-function getNode(nodeOrSelector) {
-  return typeof nodeOrSelector === "string" ?
-    content.document.querySelector(nodeOrSelector) :
-    nodeOrSelector;
-}
 
 
+function* selectAndHighlightNode(selectorOrNodeFront, inspector) {
+  info("Highlighting and selecting the node " + selectorOrNodeFront);
 
-
-
-
-
-
-
-
-function selectAndHighlightNode(nodeOrSelector, inspector) {
-  info("Highlighting and selecting the node " + nodeOrSelector);
-
-  let node = getNode(nodeOrSelector);
+  let nodeFront = yield getNodeFront(selectorOrNodeFront, inspector);
   let updated = inspector.toolbox.once("highlighter-ready");
-  inspector.selection.setNode(node, "test-highlight");
-  return updated;
+  inspector.selection.setNodeFront(nodeFront, "test-highlight");
+  yield updated;
 }
 
 
