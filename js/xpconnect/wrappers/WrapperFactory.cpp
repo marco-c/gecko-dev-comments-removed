@@ -19,6 +19,7 @@
 #include "jsfriendapi.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "mozilla/Likely.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "nsContentUtils.h"
 #include "nsXULAppAPI.h"
 
@@ -405,9 +406,7 @@ WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
                "wrapped object passed to rewrap");
     MOZ_ASSERT(!XrayUtils::IsXPCWNHolderClass(JS_GetClass(obj)), "trying to wrap a holder");
     MOZ_ASSERT(!js::IsWindow(obj));
-    
-    
-    MOZ_ASSERT(XPCJSRuntime::Get()->GetJSContextStack()->Peek() == cx);
+    MOZ_ASSERT(dom::IsJSAPIActive());
 
     
     JSCompartment* origin = js::GetObjectCompartment(obj);
