@@ -10,17 +10,6 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-Cu.import("resource://testing-common/PromiseTestUtils.jsm");
-
-
-
-
-
-
-
-
-PromiseTestUtils.thisTestLeaksUncaughtRejectionsAndShouldBeFixed();
-
 var gPrefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
 
 function setWatchdogEnabled(enabled) {

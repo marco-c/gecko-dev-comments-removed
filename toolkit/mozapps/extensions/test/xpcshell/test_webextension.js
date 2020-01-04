@@ -2,21 +2,6 @@
 
 
 
-Components.utils.import("resource://testing-common/PromiseTestUtils.jsm", this);
-
-
-
-
-
-
-
-if (TEST_UNPACKED) {
-  let codeAsString = ("" + Components.results.NS_ERROR_FILE_NOT_FOUND);
-  PromiseTestUtils.expectUncaughtRejection(r => r.message == codeAsString);
-} else {
-  PromiseTestUtils.expectUncaughtRejection(/Failed to open input source/);
-}
-
 const ID = "webextension1@tests.mozilla.org";
 
 const PREF_SELECTED_LOCALE = "general.useragent.locale";

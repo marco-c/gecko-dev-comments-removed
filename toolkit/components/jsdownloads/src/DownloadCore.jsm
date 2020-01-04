@@ -2101,9 +2101,6 @@ this.DownloadCopySaver.prototype = {
           
           
           backgroundFileSaver.finish(Cr.NS_ERROR_FAILURE);
-          
-          
-          deferSaveComplete.promise.catch(() => {});
           throw ex;
         }
 

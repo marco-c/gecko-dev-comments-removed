@@ -47,6 +47,10 @@ add_task(function* async_init() {
 add_task(function* sync_init() {
   let reInitPromise = asyncReInit();
   
+  
+  
+  
+  
   do_check_false(Services.search.isInitialized);
   do_check_eq(Services.search.currentEngine.name, "hidden");
   do_check_true(Services.search.isInitialized);
