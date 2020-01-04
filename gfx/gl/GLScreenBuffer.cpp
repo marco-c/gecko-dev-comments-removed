@@ -21,7 +21,7 @@
 #ifdef XP_WIN
 #include "SharedSurfaceANGLE.h"         
 #include "SharedSurfaceD3D11Interop.h"  
-#include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/DeviceManagerD3D11.h"
 #endif
 
 #ifdef MOZ_WIDGET_GONK
@@ -108,7 +108,7 @@ GLScreenBuffer::CreateFactory(GLContext* gl,
 #ifdef XP_WIN
                 
                 
-                gfx::DeviceManagerDx* dm = gfx::DeviceManagerDx::Get();
+                gfx::DeviceManagerD3D11* dm = gfx::DeviceManagerD3D11::Get();
                 if (gl->IsANGLE() &&
                     (gl->IsWARP() == dm->IsWARP()) &&
                     dm->TextureSharingWorks())

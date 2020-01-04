@@ -182,7 +182,6 @@ public:
 BasicCompositor::BasicCompositor(CompositorBridgeParent* aParent, widget::CompositorWidget* aWidget)
   : Compositor(aWidget, aParent)
   , mDidExternalComposition(false)
-  , mIsPendingEndRemoteDrawing(false)
 {
   MOZ_COUNT_CTOR(BasicCompositor);
 
@@ -679,12 +678,6 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
                             gfx::IntRect *aClipRectOut ,
                             gfx::IntRect *aRenderBoundsOut )
 {
-  if (mIsPendingEndRemoteDrawing) {
-    
-    TryToEndRemoteDrawing( true);
-    MOZ_ASSERT(!mIsPendingEndRemoteDrawing);
-  }
-
   LayoutDeviceIntRect intRect(LayoutDeviceIntPoint(), mWidget->GetClientSize());
   IntRect rect = IntRect(0, 0, intRect.width, intRect.height);
 
@@ -803,29 +796,6 @@ BasicCompositor::EndFrame()
   
   mRenderTarget->mDrawTarget->PopClip();
 
-  TryToEndRemoteDrawing();
-}
-
-void
-BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd)
-{
-  if (mIsDestroyed || !mRenderTarget) {
-    return;
-  }
-
-  
-  if (!aForceToEnd && NeedsToDeferEndRemoteDrawing()) {
-    mIsPendingEndRemoteDrawing = true;
-
-    const uint32_t retryMs = 2;
-    RefPtr<BasicCompositor> self = this;
-    RefPtr<Runnable> runnable = NS_NewRunnableFunction([self]() {
-      self->TryToEndRemoteDrawing();
-    });
-    MessageLoop::current()->PostDelayedTask(runnable.forget(), retryMs);
-    return;
-  }
-
   if (mRenderTarget->mDrawTarget != mDrawTarget) {
     
     
@@ -856,26 +826,6 @@ BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd)
 
   mDrawTarget = nullptr;
   mRenderTarget = nullptr;
-  mIsPendingEndRemoteDrawing = false;
-}
-
-bool
-BasicCompositor::NeedsToDeferEndRemoteDrawing()
-{
-  MOZ_ASSERT(mDrawTarget);
-  MOZ_ASSERT(mRenderTarget);
-
-  if (mTarget || mRenderTarget->mDrawTarget == mDrawTarget) {
-    return false;
-  }
-
-  return mWidget->NeedsToDeferEndRemoteDrawing();
-}
-
-void
-BasicCompositor::FinishPendingComposite()
-{
-  TryToEndRemoteDrawing( true);
 }
 
 void

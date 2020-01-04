@@ -481,14 +481,6 @@ CompositorVsyncScheduler::Composite(TimeStamp aVsyncTimestamp)
     return;
   }
 
-  MOZ_ASSERT(mCompositorBridgeParent);
-  if (!mAsapScheduling && mCompositorBridgeParent->IsPendingComposite()) {
-    
-    
-    mCompositorBridgeParent->FinishPendingComposite();
-    return;
-  }
-
   DispatchTouchEvents(aVsyncTimestamp);
   DispatchVREvents(aVsyncTimestamp);
 
@@ -1949,26 +1941,6 @@ CompositorBridgeParent::DeallocPCompositorWidgetParent(PCompositorWidgetParent* 
 #else
   return false;
 #endif
-}
-
-bool
-CompositorBridgeParent::IsPendingComposite()
-{
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  if (!mCompositor) {
-    return false;
-  }
-  return mCompositor->IsPendingComposite();
-}
-
-void
-CompositorBridgeParent::FinishPendingComposite()
-{
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  if (!mCompositor) {
-    return;
-  }
-  return mCompositor->FinishPendingComposite();
 }
 
 
