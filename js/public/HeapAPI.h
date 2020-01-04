@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef js_HeapAPI_h
 #define js_HeapAPI_h
@@ -14,11 +14,11 @@
 #include "js/TraceKind.h"
 #include "js/Utility.h"
 
-
+/* These values are private to the JS engine. */
 namespace js {
 
-
-
+// Whether the current thread is permitted access to any part of the specified
+// runtime or zone.
 JS_FRIEND_API(bool)
 CurrentThreadCanAccessRuntime(JSRuntime* rt);
 
@@ -45,7 +45,7 @@ const size_t CellShift = 3;
 const size_t CellSize = size_t(1) << CellShift;
 const size_t CellMask = CellSize - 1;
 
-
+/* These are magic constants derived from actual offsets in gc/Heap.h. */
 #ifdef JS_GC_SMALL_CHUNK_SIZE
 const size_t ChunkMarkBitmapOffset = 258104;
 const size_t ChunkMarkBitmapBits = 31744;
@@ -60,31 +60,31 @@ const size_t ArenaZoneOffset = sizeof(size_t);
 const size_t ArenaHeaderSize = sizeof(size_t) + 2 * sizeof(uintptr_t) +
                                sizeof(size_t) + sizeof(uintptr_t);
 
-
-
-
-
-
+/*
+ * Live objects are marked black. How many other additional colors are available
+ * depends on the size of the GCThing. Objects marked gray are eligible for
+ * cycle collection.
+ */
 static const uint32_t BLACK = 0;
 static const uint32_t GRAY = 1;
 
-
-
-
-
-
-
-
-
-
-
-const uintptr_t ChunkLocationBitNursery = 1;       
-const uintptr_t ChunkLocationBitTenuredHeap = 2;   
+/*
+ * The "location" field in the Chunk trailer is a bit vector indicting various
+ * roles of the chunk.
+ *
+ * The value 0 for the "location" field is invalid, at least one bit must be
+ * set.
+ *
+ * Some bits preclude others, for example, any "nursery" bit precludes any
+ * "tenured" or "middle generation" bit.
+ */
+const uintptr_t ChunkLocationBitNursery = 1;       // Standard GGC nursery
+const uintptr_t ChunkLocationBitTenuredHeap = 2;   // Standard GGC tenured generation
 
 const uintptr_t ChunkLocationAnyNursery = ChunkLocationBitNursery;
 
 #ifdef JS_DEBUG
-
+/* When downcasting, ensure we are actually the right type. */
 extern JS_FRIEND_API(void)
 AssertGCThingHasType(js::gc::Cell* cell, JS::TraceKind kind);
 #else
@@ -94,16 +94,16 @@ AssertGCThingHasType(js::gc::Cell* cell, JS::TraceKind kind) {}
 
 MOZ_ALWAYS_INLINE bool IsInsideNursery(const js::gc::Cell* cell);
 
-} 
-} 
+} /* namespace gc */
+} /* namespace js */
 
 namespace JS {
 struct Zone;
 
-
+/* Default size for the generational nursery in bytes. */
 const uint32_t DefaultNurseryBytes = 16 * js::gc::ChunkSize;
 
-
+/* Default maximum heap size in bytes to pass to JS_NewRuntime(). */
 const uint32_t DefaultHeapMaxBytes = 32 * 1024 * 1024;
 
 namespace shadow {
@@ -112,10 +112,10 @@ struct Zone
 {
   protected:
     JSRuntime* const runtime_;
-    JSTracer* const barrierTracer_;     
+    JSTracer* const barrierTracer_;     // A pointer to the JSRuntime's |gcMarker|.
 
   public:
-    
+    // Stack GC roots for Rooted GC pointers.
     js::RootedListHeads stackRoots_;
     template <typename T> friend class JS::Rooted;
 
@@ -126,9 +126,8 @@ struct Zone
         barrierTracer_(barrierTracerArg),
         needsIncrementalBarrier_(false)
     {
-        for (auto& stackRootPtr : stackRoots_) {
+        for (auto& stackRootPtr : stackRoots_)
             stackRootPtr = nullptr;
-        }
     }
 
     bool needsIncrementalBarrier() const {
@@ -146,8 +145,8 @@ struct Zone
         return runtime_;
     }
 
-    
-    
+    // Note: Unrestricted access to the zone's runtime from an arbitrary
+    // thread can easily lead to races. Use this method very carefully.
     JSRuntime* runtimeFromAnyThread() const {
         return runtime_;
     }
@@ -157,25 +156,25 @@ struct Zone
     }
 };
 
-} 
+} /* namespace shadow */
 
-
-
-
-
-
-
-
+/**
+ * A GC pointer, tagged with the trace kind.
+ *
+ * In general, a GC pointer should be stored with an exact type. This class
+ * is for use when that is not possible because a single pointer must point
+ * to several kinds of GC thing.
+ */
 class JS_FRIEND_API(GCCellPtr)
 {
   public:
-    
+    // Construction from a void* and trace kind.
     GCCellPtr(void* gcthing, JS::TraceKind traceKind) : ptr(checkedCast(gcthing, traceKind)) {}
 
-    
+    // Automatically construct a null GCCellPtr from nullptr.
     MOZ_IMPLICIT GCCellPtr(decltype(nullptr)) : ptr(checkedCast(nullptr, JS::TraceKind::Null)) {}
 
-    
+    // Construction from an explicit type.
     template <typename T>
     explicit GCCellPtr(T* p) : ptr(checkedCast(p, JS::MapTypeToTraceKind<T>::kind)) { }
     explicit GCCellPtr(JSFunction* p) : ptr(checkedCast(p, JS::TraceKind::Object)) { }
@@ -189,38 +188,38 @@ class JS_FRIEND_API(GCCellPtr)
         return outOfLineKind();
     }
 
-    
+    // Allow GCCellPtr to be used in a boolean context.
     explicit operator bool() const {
         MOZ_ASSERT(bool(asCell()) == (kind() != JS::TraceKind::Null));
         return asCell();
     }
 
-    
+    // Simplify checks to the kind.
     template <typename T>
     bool is() const { return kind() == JS::MapTypeToTraceKind<T>::kind; }
 
-    
-    
+    // Conversions to more specific types must match the kind. Access to
+    // further refined types is not allowed directly from a GCCellPtr.
     template <typename T>
     T& as() const {
         MOZ_ASSERT(kind() == JS::MapTypeToTraceKind<T>::kind);
-        
-        
+        // We can't use static_cast here, because the fact that JSObject
+        // inherits from js::gc::Cell is not part of the public API.
         return *reinterpret_cast<T*>(asCell());
     }
 
-    
-    
-    
+    // Return a pointer to the cell this |GCCellPtr| refers to, or |nullptr|.
+    // (It would be more symmetrical with |to| for this to return a |Cell&|, but
+    // the result can be |nullptr|, and null references are undefined behavior.)
     js::gc::Cell* asCell() const {
         return reinterpret_cast<js::gc::Cell*>(ptr & ~OutOfLineTraceKindMask);
     }
 
-    
+    // The CC's trace logger needs an identity that is XPIDL serializable.
     uint64_t unsafeAsInteger() const {
         return static_cast<uint64_t>(unsafeAsUIntPtr());
     }
-    
+    // Inline mark bitmap access requires direct pointer arithmetic.
     uintptr_t unsafeAsUIntPtr() const {
         MOZ_ASSERT(asCell());
         MOZ_ASSERT(!js::gc::IsInsideNursery(asCell()));
@@ -234,8 +233,8 @@ class JS_FRIEND_API(GCCellPtr)
         js::gc::Cell* cell = static_cast<js::gc::Cell*>(p);
         MOZ_ASSERT((uintptr_t(p) & OutOfLineTraceKindMask) == 0);
         AssertGCThingHasType(cell, traceKind);
-        
-        
+        // Note: the OutOfLineTraceKindMask bits are set on all out-of-line kinds
+        // so that we can mask instead of branching.
         MOZ_ASSERT_IF(uintptr_t(traceKind) >= OutOfLineTraceKindMask,
                       (uintptr_t(traceKind) & OutOfLineTraceKindMask) == OutOfLineTraceKindMask);
         return uintptr_t(p) | (uintptr_t(traceKind) & OutOfLineTraceKindMask);
@@ -258,8 +257,8 @@ operator!=(const GCCellPtr& ptr1, const GCCellPtr& ptr2)
     return !(ptr1 == ptr2);
 }
 
-
-
+// Unwraps the given GCCellPtr and calls the given functor with a template
+// argument of the actual type of the pointer.
 template <typename F, typename... Args>
 auto
 DispatchTyped(F f, GCCellPtr thing, Args&&... args)
@@ -276,7 +275,7 @@ DispatchTyped(F f, GCCellPtr thing, Args&&... args)
     }
 }
 
-} 
+} /* namespace JS */
 
 namespace js {
 namespace gc {
@@ -330,7 +329,7 @@ CellIsMarkedGray(const Cell* cell)
     return *word & mask;
 }
 
-} 
+} /* namespace detail */
 
 MOZ_ALWAYS_INLINE bool
 IsInsideNursery(const js::gc::Cell* cell)
@@ -345,8 +344,8 @@ IsInsideNursery(const js::gc::Cell* cell)
     return location & ChunkLocationAnyNursery;
 }
 
-} 
-} 
+} /* namespace gc */
+} /* namespace js */
 
 namespace JS {
 
@@ -375,11 +374,11 @@ ObjectIsTenured(JSObject* obj)
 static MOZ_ALWAYS_INLINE bool
 ObjectIsMarkedGray(JSObject* obj)
 {
-    
-
-
-
-
+    /*
+     * GC things residing in the nursery cannot be gray: they have no mark bits.
+     * All live objects in the nursery are moved to tenured at the beginning of
+     * each GC slice, so the gray marker never sees nursery things.
+     */
     if (js::gc::IsInsideNursery(reinterpret_cast<js::gc::Cell*>(obj)))
         return false;
     return js::gc::detail::CellIsMarkedGray(reinterpret_cast<js::gc::Cell*>(obj));
@@ -404,7 +403,7 @@ GCThingIsMarkedGray(GCCellPtr thing)
 extern JS_PUBLIC_API(JS::TraceKind)
 GCThingTraceKind(void* thing);
 
-} 
+} /* namespace JS */
 
 namespace js {
 namespace gc {
@@ -420,15 +419,15 @@ IsIncrementalBarrierNeededOnTenuredGCThing(JS::shadow::Runtime* rt, const JS::GC
     return JS::shadow::Zone::asShadowZone(zone)->needsIncrementalBarrier();
 }
 
-
-
-
-
-
+/**
+ * Create an object providing access to the garbage collector's internal notion
+ * of the current state of memory (both GC heap memory and GCthing-controlled
+ * malloc memory.
+ */
 extern JS_PUBLIC_API(JSObject*)
 NewMemoryInfoObject(JSContext* cx);
 
-} 
-} 
+} /* namespace gc */
+} /* namespace js */
 
-#endif 
+#endif /* js_HeapAPI_h */
