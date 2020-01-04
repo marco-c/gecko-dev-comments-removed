@@ -6774,9 +6774,7 @@ DebuggerGenericEval(JSContext* cx, const char* fullMethodName, const Value& code
 
 
 
-
-        if (!GetThisValue(cx, scope, &thisv))
-            return false;
+        thisv = GetThisValue(scope);
         env = scope;
     }
 

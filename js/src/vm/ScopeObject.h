@@ -415,7 +415,6 @@ class ModuleEnvironmentObject : public LexicalScopeBase
                                ObjectOpResult& result);
     static bool enumerate(JSContext* cx, HandleObject obj, AutoIdVector& properties,
                           bool enumerableOnly);
-    static bool thisValue(JSContext* cx, HandleObject obj, MutableHandleValue vp);
 };
 
 typedef Rooted<ModuleEnvironmentObject*> RootedModuleEnvironmentObject;
@@ -689,10 +688,8 @@ class DynamicWithObject : public NestedScopeObject
     }
 
     
-    Value withThis() const {
-        Value thisValue = getReservedSlot(THIS_SLOT);
-        MOZ_ASSERT(thisValue.isObject());
-        return thisValue;
+    JSObject* withThis() const {
+        return &getReservedSlot(THIS_SLOT).toObject();
     }
 
     
@@ -927,6 +924,8 @@ class ClonedBlockObject : public BlockObject
 
 
     static ClonedBlockObject* clone(JSContext* cx, Handle<ClonedBlockObject*> block);
+
+    Value thisValue();
 };
 
 
