@@ -1154,6 +1154,11 @@ var StyleRuleActor = protocol.ActorClass({
     
     
     return !!(this._parentSheet &&
+              
+              
+              
+              
+              this.sheetActor.allRulesHaveSource() &&
               this._parentSheet.href !== "about:PreferenceStyleSheet");
   },
 

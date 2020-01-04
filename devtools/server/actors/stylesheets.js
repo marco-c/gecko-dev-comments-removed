@@ -487,6 +487,30 @@ var StyleSheetActor = protocol.ActorClass({
 
 
 
+  allRulesHaveSource: function() {
+    let rules;
+    try {
+      rules = this.rawSheet.cssRules;
+    } catch (e) {
+      
+      return true;
+    }
+
+    for (let i = 0; i < rules.length; i++) {
+      let rule = rules[i];
+      if (DOMUtils.getRelativeRuleLine(rule) === 0) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+
+  
+
+
+
+
 
   getCSSRules: function() {
     let rules;
