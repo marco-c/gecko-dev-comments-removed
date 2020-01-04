@@ -73,7 +73,8 @@ const TreeNode = createFactory(createClass({
       this.props.renderItem(this.props.item,
                             this.props.depth,
                             this.props.focused,
-                            arrow),
+                            arrow,
+                            this.props.expanded),
 
       
       
@@ -97,6 +98,29 @@ const TreeNode = createFactory(createClass({
     }
   }
 }));
+
+
+
+
+
+
+
+
+function oncePerAnimationFrame(fn) {
+  let animationId = null;
+  return function (...args) {
+    if (animationId !== null) {
+      return;
+    }
+
+    animationId = requestAnimationFrame(() => {
+      animationId = null;
+      fn.call(this, ...args);
+    });
+  };
+}
+
+const NUMBER_OF_OFFSCREEN_ITEMS = 1;
 
 
 
@@ -188,8 +212,8 @@ const Tree = module.exports = createClass({
     
     
     
-    const begin = Math.max(((this.state.scroll / this.props.itemHeight) | 0) - 1, 0);
-    const end = begin + 2 + ((this.state.height / this.props.itemHeight) | 0);
+    const begin = Math.max(((this.state.scroll / this.props.itemHeight) | 0) - NUMBER_OF_OFFSCREEN_ITEMS, 0);
+    const end = begin + (2 * NUMBER_OF_OFFSCREEN_ITEMS) + ((this.state.height / this.props.itemHeight) | 0);
     const toRender = traversal.slice(begin, end);
 
     const nodes = [
@@ -309,7 +333,7 @@ const Tree = module.exports = createClass({
 
 
 
-  _onExpand(item, expandAllChildren) {
+  _onExpand: oncePerAnimationFrame(function (item, expandAllChildren) {
     this.state.expanded.add(item);
 
     if (expandAllChildren) {
@@ -322,40 +346,40 @@ const Tree = module.exports = createClass({
       expanded: this.state.expanded,
       cachedTraversal: null,
     });
-  },
+  }),
 
   
 
 
 
 
-  _onCollapse(item) {
+  _onCollapse: oncePerAnimationFrame(function (item) {
     this.state.expanded.delete(item);
     this.setState({
       expanded: this.state.expanded,
       cachedTraversal: null,
     });
-  },
+  }),
 
   
 
 
 
 
-  _onFocus(item) {
+  _onFocus: oncePerAnimationFrame(function (item) {
     this.setState({
       focused: item
     });
-  },
+  }),
 
   
 
 
-  _onBlur() {
+  _onBlur: oncePerAnimationFrame(function () {
     this.setState({
       focused: undefined
     });
-  },
+  }),
 
   
 
@@ -363,12 +387,12 @@ const Tree = module.exports = createClass({
 
 
 
-  _onScroll(e) {
+  _onScroll: oncePerAnimationFrame(function (e) {
     this.setState({
       scroll: Math.max(this.refs.tree.scrollTop, 0),
       height: this.refs.tree.clientHeight
     });
-  },
+  }),
 
   
 
@@ -411,13 +435,13 @@ const Tree = module.exports = createClass({
           this._focusNextNode();
         }
         return false;
-    }
+      }
   },
 
   
 
 
-  _focusPrevNode() {
+  _focusPrevNode: oncePerAnimationFrame(function () {
     
     
     
@@ -437,13 +461,13 @@ const Tree = module.exports = createClass({
     this.setState({
       focused: prev
     });
-  },
+  }),
 
   
 
 
 
-  _focusNextNode() {
+  _focusNextNode: oncePerAnimationFrame(function () {
     
     
     
@@ -463,18 +487,18 @@ const Tree = module.exports = createClass({
         focused: traversal[i + 1].item
       });
     }
-  },
+  }),
 
   
 
 
 
-  _focusParentNode() {
+  _focusParentNode: oncePerAnimationFrame(function () {
     const parent = this.props.getParent(this.state.focused);
     if (parent) {
       this.setState({
         focused: parent
       });
     }
-  }
+  }),
 });
