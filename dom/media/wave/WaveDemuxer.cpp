@@ -113,6 +113,8 @@ WAVTrackDemuxer::Init()
     uint32_t aChunkName = mHeaderParser.GiveHeader().ChunkName();
     uint32_t aChunkSize = mHeaderParser.GiveHeader().ChunkSize();
 
+    aChunkSize += aChunkSize % 2;
+
     if (aChunkName == FRMT_CODE) {
       if (!FmtChunkParserInit()) {
         return false;
@@ -133,8 +135,7 @@ WAVTrackDemuxer::Init()
       }
       break;
     } else {
-      
-      mOffset += (aChunkSize + 1) & ~1; 
+      mOffset += aChunkSize; 
     }
     mHeaderParser.Reset();
   }
