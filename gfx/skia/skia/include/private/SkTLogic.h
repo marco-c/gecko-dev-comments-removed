@@ -21,31 +21,18 @@
 #include <algorithm>
 #include <functional>
 
-#ifdef MOZ_SKIA
+#ifdef MOZ_SKIA_AVOID_CXX11
 #include "mozilla/Function.h"
 #include "mozilla/Move.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
 
-
-
-
-#ifdef _LIBCPP_BEGIN_NAMESPACE_STD
-#define MOZ_BEGIN_STD_NAMESPACE _LIBCPP_BEGIN_NAMESPACE_STD
-#define MOZ_END_STD_NAMESPACE _LIBCPP_END_NAMESPACE_STD
-#else
-#define MOZ_BEGIN_STD_NAMESPACE namespace std {
-#define MOZ_END_STD_NAMESPACE }
-#endif
-
-MOZ_BEGIN_STD_NAMESPACE
+namespace std {
   using mozilla::Forward;
   using mozilla::Move;
   #define forward Forward
   #define move Move
-MOZ_END_STD_NAMESPACE
 
-namespace std {
   
   
   
