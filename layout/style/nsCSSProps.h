@@ -506,6 +506,28 @@ public:
 private:
   static bool gPropertyEnabled[eCSSProperty_COUNT_with_aliases];
 
+private:
+  
+  static const char* const kIDLNameTable[eCSSProperty_COUNT];
+
+public:
+  
+
+
+
+
+
+
+
+
+
+  static const char* PropertyIDLName(nsCSSProperty aProperty)
+  {
+    MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
+               "out of range");
+    return kIDLNameTable[aProperty];
+  }
+
 public:
 
   static bool IsEnabled(nsCSSProperty aProperty) {
