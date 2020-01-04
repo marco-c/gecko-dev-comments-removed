@@ -148,8 +148,7 @@ MainThreadHandoff::OnCall(ICallFrame* aFrame)
   
   RefPtr<HandoffRunnable> handoffInfo(new HandoffRunnable(aFrame,
                                                           targetInterface.get()));
-  MainThreadInvoker invoker;
-  if (!invoker.Invoke(do_AddRef(handoffInfo))) {
+  if (!mInvoker.Invoke(do_AddRef(handoffInfo))) {
     MOZ_ASSERT(false);
     return E_UNEXPECTED;
   }
@@ -177,20 +176,20 @@ MainThreadHandoff::OnCall(ICallFrame* aFrame)
   
   
   
+  hr = aFrame->WalkFrame(CALLFRAME_WALK_OUT, this);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  
+  
+  
   
   
   
   const ArrayData* arrayData = FindArrayData(iid, method);
   if (arrayData) {
     hr = FixArrayElements(aFrame, *arrayData);
-    if (FAILED(hr)) {
-      return hr;
-    }
-  } else {
-    
-    
-    
-    hr = aFrame->WalkFrame(CALLFRAME_WALK_OUT, this);
     if (FAILED(hr)) {
       return hr;
     }
@@ -226,46 +225,26 @@ MainThreadHandoff::FixArrayElements(ICallFrame* aFrame,
 {
   
   VARIANT paramVal;
-  VariantInit(&paramVal);
   HRESULT hr = aFrame->GetParam(aArrayData.mLengthParamIndex, &paramVal);
-  MOZ_ASSERT(SUCCEEDED(hr) &&
-             (paramVal.vt == (VT_I4 | VT_BYREF) ||
-             paramVal.vt == (VT_UI4 | VT_BYREF)));
+  MOZ_ASSERT(paramVal.vt == (VT_I4 | VT_BYREF) ||
+             paramVal.vt == (VT_UI4 | VT_BYREF));
   if (FAILED(hr) || (paramVal.vt != (VT_I4 | VT_BYREF) &&
                      paramVal.vt != (VT_UI4 | VT_BYREF))) {
     return hr;
   }
 
   const LONG arrayLength = *(paramVal.plVal);
-  if (!arrayLength) {
+  if (arrayLength <= 1) {
     
     return S_OK;
   }
 
   
-  VariantInit(&paramVal);
-  PVOID arrayPtr = nullptr;
   hr = aFrame->GetParam(aArrayData.mArrayParamIndex, &paramVal);
-  if (hr == DISP_E_BADVARTYPE) {
-    
-    
-    CALLFRAMEPARAMINFO paramInfo;
-    hr = aFrame->GetParamInfo(aArrayData.mArrayParamIndex, &paramInfo);
-    if (FAILED(hr)) {
-      return hr;
-    }
-    PVOID stackBase = aFrame->GetStackLocation();
-    
-    
-    
-    arrayPtr = **reinterpret_cast<PVOID**>(reinterpret_cast<PBYTE>(stackBase) +
-                                           paramInfo.stackOffset);
-  } else if (FAILED(hr)) {
+  if (FAILED(hr)) {
     return hr;
-  } else {
-    arrayPtr = ResolveArrayPtr(paramVal);
   }
-
+  PVOID arrayPtr = ResolveArrayPtr(paramVal);
   MOZ_ASSERT(arrayPtr);
   if (!arrayPtr) {
     return DISP_E_BADVARTYPE;
@@ -273,7 +252,8 @@ MainThreadHandoff::FixArrayElements(ICallFrame* aFrame,
 
   
   
-  for (LONG index = 0; index < arrayLength; ++index) {
+  
+  for (LONG index = 1; index < arrayLength; ++index) {
     hr = OnWalkInterface(aArrayData.mArrayParamIid,
                          ResolveInterfacePtr(arrayPtr, paramVal.vt, index),
                          FALSE, TRUE);
