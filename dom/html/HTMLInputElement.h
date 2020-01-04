@@ -135,6 +135,11 @@ public:
   virtual void Focus(ErrorResult& aError) override;
 
   
+#if defined(XP_WIN) || defined(XP_LINUX)
+  virtual bool IsNodeApzAwareInternal() const override;
+#endif
+
+  
   virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const override;
 
   
@@ -1291,6 +1296,17 @@ protected:
                                             ErrorResult& aRv);
 
   void ClearGetFilesHelpers();
+
+  
+
+
+
+
+
+
+
+
+  void UpdateApzAwareFlag();
 
   nsCOMPtr<nsIControllers> mControllers;
 

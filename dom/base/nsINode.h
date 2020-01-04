@@ -949,7 +949,7 @@ public:
                                 mozilla::ErrorResult& aRv) override;
   using nsIDOMEventTarget::AddSystemEventListener;
 
-  virtual bool HasApzAwareListeners() const override;
+  virtual bool IsApzAware() const override;
 
   virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindings() override;
   virtual nsIGlobalObject* GetOwnerGlobal() const override;
@@ -1230,6 +1230,30 @@ public:
   
 
 
+
+  
+
+
+
+
+
+
+
+  bool IsNodeApzAware() const
+  {
+    return NodeMayBeApzAware() ? IsNodeApzAwareInternal() : false;
+  }
+
+  
+
+
+
+
+
+
+
+  virtual bool IsNodeApzAwareInternal() const;
+
 protected:
   nsIURI* GetExplicitBaseURI() const {
     if (HasExplicitBaseURI()) {
@@ -1498,7 +1522,7 @@ private:
     
     ParserHasNotified,
     
-    MayHaveApzAwareListeners,
+    MayBeApzAware,
     
     BooleanFlagCount
   };
@@ -1645,10 +1669,10 @@ public:
   void SetParserHasNotified() { SetBoolFlag(ParserHasNotified); };
   bool HasParserNotified() { return GetBoolFlag(ParserHasNotified); }
 
-  void SetMayHaveApzAwareListeners() { SetBoolFlag(MayHaveApzAwareListeners); }
-  bool NodeMayHaveApzAwareListeners() const
+  void SetMayBeApzAware() { SetBoolFlag(MayBeApzAware); }
+  bool NodeMayBeApzAware() const
   {
-    return GetBoolFlag(MayHaveApzAwareListeners);
+    return GetBoolFlag(MayBeApzAware);
   }
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }

@@ -441,7 +441,7 @@ EventListenerManager::ProcessApzAwareEventListenerAdd()
   
   nsCOMPtr<nsINode> node = do_QueryInterface(mTarget);
   if (node) {
-    node->SetMayHaveApzAwareListeners();
+    node->SetMayBeApzAware();
   }
 
   
