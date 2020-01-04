@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {Cc, Ci, Cu} = require("chrome");
+const {Ci, Cu} = require("chrome");
 const EventEmitter = require("devtools/shared/event-emitter");
 loader.lazyImporter(this, "setNamedTimeout",
   "resource://devtools/client/shared/widgets/ViewHelpers.jsm");
@@ -15,14 +15,15 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 const AFTER_SCROLL_DELAY = 100;
 
 
+
 const EVENTS = {
-  TABLE_CLEARED: "table-cleared",
+  CELL_EDIT: "cell-edit",
   COLUMN_SORTED: "column-sorted",
   COLUMN_TOGGLED: "column-toggled",
-  ROW_SELECTED: "row-selected",
-  ROW_UPDATED: "row-updated",
   HEADER_CONTEXT_MENU: "header-context-menu",
   ROW_CONTEXT_MENU: "row-context-menu",
+  ROW_SELECTED: "row-selected",
+  ROW_UPDATED: "row-updated",
   SCROLL_END: "scroll-end"
 };
 Object.defineProperty(this, "EVENTS", {
@@ -52,7 +53,7 @@ const MAX_VISIBLE_STRING_SIZE = 100;
 
 
 
-function TableWidget(node, options={}) {
+function TableWidget(node, options = {}) {
   EventEmitter.decorate(this);
 
   this.document = node.ownerDocument;
@@ -84,8 +85,9 @@ function TableWidget(node, options={}) {
   this.columns = new Map();
 
   
+  
   if (this.removableColumns) {
-    this.onPopupCommand = this.onPopupCommand.bind(this)
+    this.onPopupCommand = this.onPopupCommand.bind(this);
     this.setupHeadersContextMenu();
   }
 
@@ -99,7 +101,7 @@ function TableWidget(node, options={}) {
     this.selectedRow = id;
   };
   this.on(EVENTS.ROW_SELECTED, this.bindSelectedRow);
-};
+}
 
 TableWidget.prototype = {
 
@@ -310,6 +312,7 @@ TableWidget.prototype = {
   
 
 
+
   selectPreviousRow: function() {
     for (let column of this.columns.values()) {
       column.selectPreviousRow();
@@ -430,9 +433,9 @@ TableWidget.prototype = {
     }
 
     let sortedItems = this.columns.get(column).sort([...this.items.values()]);
-    for (let [id, column] of this.columns) {
-      if (id != column) {
-        column.sort(sortedItems);
+    for (let [id, col] of this.columns) {
+      if (id != col) {
+        col.sort(sortedItems);
       }
     }
   },
@@ -856,7 +859,7 @@ Column.prototype = {
     }
 
     if (event.button == 0 && event.originalTarget == this.header) {
-      return this.table.sortBy(this.id);
+      this.table.sortBy(this.id);
     }
   },
 
@@ -970,7 +973,7 @@ Cell.prototype = {
 
     if (!(value instanceof Ci.nsIDOMNode) &&
         value.length > MAX_VISIBLE_STRING_SIZE) {
-      value = value .substr(0, MAX_VISIBLE_STRING_SIZE) + "\u2026"; 
+      value = value .substr(0, MAX_VISIBLE_STRING_SIZE) + "\u2026";
     }
 
     if (value instanceof Ci.nsIDOMNode) {
@@ -1001,7 +1004,7 @@ Cell.prototype = {
   flash: function() {
     this.label.classList.remove("flash-out");
     
-    let a = this.label.parentNode.offsetWidth;
+    let a = this.label.parentNode.offsetWidth; 
     this.label.classList.add("flash-out");
   },
 
@@ -1013,4 +1016,4 @@ Cell.prototype = {
     this.label.remove();
     this.label = null;
   }
-}
+};

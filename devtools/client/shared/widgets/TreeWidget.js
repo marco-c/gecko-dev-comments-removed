@@ -5,7 +5,6 @@
 
 "use strict";
 
-const Services = require("Services")
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -21,7 +20,8 @@ const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
-function TreeWidget(node, options={}) {
+
+function TreeWidget(node, options = {}) {
   EventEmitter.decorate(this);
 
   this.document = node.ownerDocument;
@@ -43,7 +43,7 @@ function TreeWidget(node, options={}) {
   }
   
   this.attachments = new Map();
-};
+}
 
 TreeWidget.prototype = {
 
@@ -246,6 +246,7 @@ TreeWidget.prototype = {
 
 
 
+
   add: function(items) {
     this.root.add(items, this.defaultType, this.sorted);
     for (let i = 0; i < items.length; i++) {
@@ -266,7 +267,7 @@ TreeWidget.prototype = {
 
 
   remove: function(item) {
-    this.root.remove(item)
+    this.root.remove(item);
     this.attachments.delete(JSON.stringify(item));
     
     if (this.root.items.size == 0 && this.emptyText) {
@@ -337,7 +338,7 @@ TreeWidget.prototype = {
 
   onKeypress: function(event) {
     let currentSelected = this._selectedLabel;
-    switch(event.keyCode) {
+    switch (event.keyCode) {
       case event.DOM_VK_UP:
         this.selectPreviousItem();
         break;
@@ -404,7 +405,7 @@ module.exports.TreeWidget = TreeWidget;
 
 
 function TreeItem(document, parent, label, type) {
-  this.document = document
+  this.document = document;
   this.node = this.document.createElementNS(HTML_NS, "li");
   this.node.setAttribute("tabindex", "0");
   this.isRoot = !parent;
@@ -412,7 +413,7 @@ function TreeItem(document, parent, label, type) {
   if (this.parent) {
     this.level = this.parent.level + 1;
   }
-  if (!!label) {
+  if (label) {
     this.label = this.document.createElementNS(HTML_NS, "div");
     this.label.setAttribute("empty", "true");
     this.label.setAttribute("level", this.level);
@@ -421,7 +422,7 @@ function TreeItem(document, parent, label, type) {
       this.label.setAttribute("type", type);
     }
     if (typeof label == "string") {
-      this.label.textContent = label
+      this.label.textContent = label;
     } else {
       this.label.appendChild(label);
     }
@@ -482,7 +483,9 @@ TreeItem.prototype = {
     
     
     
-    let label = items[this.level].label || items[this.level].id || items[this.level];
+    let label = items[this.level].label ||
+                items[this.level].id ||
+                items[this.level];
     let node = items[this.level].node;
     if (node) {
       

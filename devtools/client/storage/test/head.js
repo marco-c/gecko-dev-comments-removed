@@ -4,7 +4,8 @@
 
 "use strict";
 
-var { console } = Cu.import("resource://gre/modules/Console.jsm", {});
+
+
 var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var { TargetFactory } = require("devtools/client/framework/target");
 var promise = require("promise");
@@ -92,13 +93,13 @@ function* openTabAndSetupStorage(url) {
 
   
   let callSetup = function*(win) {
-    if (typeof(win.setup) == "function") {
+    if (typeof (win.setup) == "function") {
       yield win.setup();
     }
-    for(var i = 0; i < win.frames.length; i++) {
+    for (let i = 0; i < win.frames.length; i++) {
       yield callSetup(win.frames[i]);
     }
-  }
+  };
   yield callSetup(gWindow);
 
   
@@ -266,14 +267,14 @@ function* click(node) {
 
 
 
-function variablesViewExpandTo(aOptions) {
-  let root = aOptions.rootVariable;
-  let expandTo = aOptions.expandTo.split(".");
+function variablesViewExpandTo(options) {
+  let root = options.rootVariable;
+  let expandTo = options.expandTo.split(".");
   let lastDeferred = promise.defer();
 
-  function getNext(aProp) {
+  function getNext(prop) {
     let name = expandTo.shift();
-    let newProp = aProp.get(name);
+    let newProp = prop.get(name);
 
     if (expandTo.length > 0) {
       ok(newProp, "found property " + name);
@@ -281,17 +282,13 @@ function variablesViewExpandTo(aOptions) {
         newProp.expand();
         getNext(newProp);
       } else {
-        lastDeferred.reject(aProp);
+        lastDeferred.reject(prop);
       }
     } else if (newProp) {
       lastDeferred.resolve(newProp);
     } else {
-      lastDeferred.reject(aProp);
+      lastDeferred.reject(prop);
     }
-  }
-
-  function fetchError(aProp) {
-    lastDeferred.reject(aProp);
   }
 
   if (root && root.expand) {
@@ -323,23 +320,23 @@ function variablesViewExpandTo(aOptions) {
 
 
 
-function findVariableViewProperties(aRules, aParsed) {
+function findVariableViewProperties(ruleArray, parsed) {
   
   function init() {
     
     
     
-    if (aParsed) {
-      aRules = aRules.map(({name, value, dontMatch}) => {
+    if (parsed) {
+      ruleArray = ruleArray.map(({name, value, dontMatch}) => {
         return {name: "." + name, value, dontMatch};
       });
     }
     
     
     let expandRules = [];
-    let rules = aRules.filter((aRule) => {
-      if (typeof aRule.name == "string" && aRule.name.indexOf(".") > -1) {
-        expandRules.push(aRule);
+    let rules = ruleArray.filter(rule => {
+      if (typeof rule.name == "string" && rule.name.indexOf(".") > -1) {
+        expandRules.push(rule);
         return false;
       }
       return true;
@@ -356,23 +353,23 @@ function findVariableViewProperties(aRules, aParsed) {
     let lastStep = processExpandRules.bind(null, expandRules);
 
     
-    let returnResults = onAllRulesMatched.bind(null, aRules);
+    let returnResults = onAllRulesMatched.bind(null, ruleArray);
 
     return promise.all(outstanding).then(lastStep).then(returnResults);
   }
 
-  function onMatch(aProp, aRule, aMatched) {
-    if (aMatched && !aRule.matchedProp) {
-      aRule.matchedProp = aProp;
+  function onMatch(prop, rule, matched) {
+    if (matched && !rule.matchedProp) {
+      rule.matchedProp = prop;
     }
   }
 
-  function finder(rules, aView, aPromises) {
-    for (let scope of aView) {
+  function finder(rules, view, promises) {
+    for (let scope of view) {
       for (let [, prop] of scope) {
         for (let rule of rules) {
           let matcher = matchVariablesViewProperty(prop, rule);
-          aPromises.push(matcher.then(onMatch.bind(null, prop, rule)));
+          promises.push(matcher.then(onMatch.bind(null, prop, rule)));
         }
       }
     }
@@ -386,17 +383,17 @@ function findVariableViewProperties(aRules, aParsed) {
 
     let deferred = promise.defer();
     let expandOptions = {
-      rootVariable: gUI.view.getScopeAtIndex(aParsed ? 1 : 0),
+      rootVariable: gUI.view.getScopeAtIndex(parsed ? 1 : 0),
       expandTo: rule.name
     };
 
-    variablesViewExpandTo(expandOptions).then(function onSuccess(aProp) {
+    variablesViewExpandTo(expandOptions).then(function onSuccess(prop) {
       let name = rule.name;
       let lastName = name.split(".").pop();
       rule.name = lastName;
 
-      let matched = matchVariablesViewProperty(aProp, rule);
-      return matched.then(onMatch.bind(null, aProp, rule)).then(function() {
+      let matched = matchVariablesViewProperty(prop, rule);
+      return matched.then(onMatch.bind(null, prop, rule)).then(function() {
         rule.name = name;
       });
     }, function onFailure() {
@@ -440,36 +437,36 @@ function findVariableViewProperties(aRules, aParsed) {
 
 
 
-function matchVariablesViewProperty(aProp, aRule) {
-  function resolve(aResult) {
-    return promise.resolve(aResult);
+function matchVariablesViewProperty(prop, rule) {
+  function resolve(result) {
+    return promise.resolve(result);
   }
 
-  if (!aProp) {
+  if (!prop) {
     return resolve(false);
   }
 
-  if (aRule.name) {
-    let match = aRule.name instanceof RegExp ?
-                aRule.name.test(aProp.name) :
-                aProp.name == aRule.name;
+  if (rule.name) {
+    let match = rule.name instanceof RegExp ?
+                rule.name.test(prop.name) :
+                prop.name == rule.name;
     if (!match) {
       return resolve(false);
     }
   }
 
-  if ("value" in aRule) {
-    let displayValue = aProp.displayValue;
-    if (aProp.displayValueClassName == "token-string") {
+  if ("value" in rule) {
+    let displayValue = prop.displayValue;
+    if (prop.displayValueClassName == "token-string") {
       displayValue = displayValue.substring(1, displayValue.length - 1);
     }
 
-    let match = aRule.value instanceof RegExp ?
-                aRule.value.test(displayValue) :
-                displayValue == aRule.value;
+    let match = rule.value instanceof RegExp ?
+                rule.value.test(displayValue) :
+                displayValue == rule.value;
     if (!match) {
-      info("rule " + aRule.name + " did not match value, expected '" +
-           aRule.value + "', found '" + displayValue + "'");
+      info("rule " + rule.name + " did not match value, expected '" +
+           rule.value + "', found '" + displayValue + "'");
       return resolve(false);
     }
   }
@@ -521,7 +518,7 @@ function* selectTableItem(id) {
 
 
 
-function once(target, eventName, useCapture=false) {
+function once(target, eventName, useCapture = false) {
   info("Waiting for event: '" + eventName + "' on " + target + ".");
 
   let deferred = promise.defer();
