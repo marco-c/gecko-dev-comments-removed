@@ -2486,7 +2486,6 @@ struct nsStyleDisplay
   uint8_t mOverflowClipBox;     
   uint8_t mResize;              
   uint8_t mOrient;              
-  uint8_t mMixBlendMode;        
   uint8_t mIsolation;           
   uint8_t mTopLayer;            
   uint8_t mWillChangeBitField;  
@@ -3598,6 +3597,7 @@ struct nsStyleEffects
   RefPtr<nsCSSShadowArray> mBoxShadow; 
   nsRect mClip;                        
   uint8_t mClipFlags;                  
+  uint8_t mMixBlendMode;               
 };
 
 #endif 

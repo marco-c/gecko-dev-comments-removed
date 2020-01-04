@@ -536,7 +536,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
   
 
   if (opacity != 1.0f ||  (clipPathFrame && !isTrivialClip)
-      || aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL
+      || aFrame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL
       || hasMaskToDraw) {
     complexEffects = true;
 
@@ -603,7 +603,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
       return;
     }
 
-    if (aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
+    if (aFrame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
       
       
       gfxRect clipRect;
@@ -685,7 +685,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
     target->PopGroupAndBlend();
   }
 
-  if (aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
+  if (aFrame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
     RefPtr<DrawTarget> targetDT = target->GetDrawTarget();
     target = nullptr;
     RefPtr<SourceSurface> targetSurf = targetDT->Snapshot();
