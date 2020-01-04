@@ -526,6 +526,22 @@ class LSimdUnaryArith : public LInstructionHelper<1, 1, 0>
 };
 
 
+class LSimdUnaryArithIx16 : public LSimdUnaryArith
+{
+  public:
+    LIR_HEADER(SimdUnaryArithIx16);
+    explicit LSimdUnaryArithIx16(const LAllocation& in) : LSimdUnaryArith(in) {}
+};
+
+
+class LSimdUnaryArithIx8 : public LSimdUnaryArith
+{
+  public:
+    LIR_HEADER(SimdUnaryArithIx8);
+    explicit LSimdUnaryArithIx8(const LAllocation& in) : LSimdUnaryArith(in) {}
+};
+
+
 class LSimdUnaryArithIx4 : public LSimdUnaryArith
 {
   public:
