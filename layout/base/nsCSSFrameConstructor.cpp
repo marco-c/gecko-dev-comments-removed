@@ -6760,7 +6760,11 @@ nsCSSFrameConstructor::GetInsertionPrevSibling(InsertionPoint* aInsertion,
         InsertionPoint fakeInsertion(aInsertion->mParentFrame, parent);
         nsIFrame* result = GetInsertionPrevSibling(&fakeInsertion, child, aIsAppend,
                                                    aIsRangeInsertSafe, nullptr, nullptr);
-        MOZ_ASSERT(aInsertion->mParentFrame == fakeInsertion.mParentFrame);
+        MOZ_ASSERT(aInsertion->mParentFrame->GetContent() ==
+                   fakeInsertion.mParentFrame->GetContent());
+        
+        
+        aInsertion->mParentFrame = fakeInsertion.mParentFrame;
         return result;
       }
 
