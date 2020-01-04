@@ -83,20 +83,12 @@ FetchDriver::Fetch(FetchDriverObserver* aObserver)
   MOZ_RELEASE_ASSERT(!mRequest->IsSynchronous(),
                      "Synchronous fetch not supported");
 
-  return NS_DispatchToCurrentThread(NewRunnableMethod(this, &FetchDriver::ContinueFetch));
-}
-
-nsresult
-FetchDriver::ContinueFetch()
-{
-  workers::AssertIsOnMainThread();
-
-  nsresult rv = HttpFetch();
-  if (NS_FAILED(rv)) {
+  if (NS_FAILED(HttpFetch())) {
     FailWithNetworkError();
   }
 
-  return rv;
+  
+  return NS_OK;
 }
 
 

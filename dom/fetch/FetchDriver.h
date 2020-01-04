@@ -27,6 +27,11 @@ namespace dom {
 class InternalRequest;
 class InternalResponse;
 
+
+
+
+
+
 class FetchDriverObserver
 {
 public:
@@ -92,7 +97,6 @@ private:
   FetchDriver& operator=(const FetchDriver&) = delete;
   ~FetchDriver();
 
-  nsresult ContinueFetch();
   nsresult HttpFetch();
   
   already_AddRefed<InternalResponse>
