@@ -65,6 +65,76 @@ function once(target, name) {
   });
 }
 
+function fetchFile(uri) {
+  return new Promise((resolve, reject) => {
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", uri, true);
+    xhr.onreadystatechange = function() {
+      if (this.readyState != this.DONE) {
+        return;
+      }
+      try {
+        resolve(this.responseText);
+      } catch (ex) {
+        ok(false, `Script error reading ${uri}: ${ex}`);
+        resolve("");
+      }
+    };
+    xhr.onerror = error => {
+      ok(false, `XHR error reading ${uri}: ${error}`);
+      resolve("");
+    };
+    xhr.send(null);
+  });
+}
+
+var gChromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"]
+                 .getService(Ci.nsIChromeRegistry);
+var gChromeMap = new Map();
+
+function getBaseUriForChromeUri(chromeUri) {
+  let chromeFile = chromeUri + "gobbledygooknonexistentfile.reallynothere";
+  let uri = Services.io.newURI(chromeFile, null, null);
+  let fileUri = gChromeReg.convertChromeURL(uri);
+  return fileUri.resolve(".");
+}
+
+function parseManifest(manifestUri) {
+  return fetchFile(manifestUri.spec).then(data => {
+    for (let line of data.split('\n')) {
+      let [type, ...argv] = line.split(/\s+/);
+      let component;
+      if (type == "content" || type == "skin") {
+        [component] = argv;
+      } else {
+        
+        continue;
+      }
+      let chromeUri = `chrome://${component}/${type}/`;
+      gChromeMap.set(getBaseUriForChromeUri(chromeUri), chromeUri);
+    }
+  });
+}
+
+function convertToChromeUri(fileUri) {
+  let baseUri = fileUri.spec;
+  let path = "";
+  while (true) {
+    let slashPos = baseUri.lastIndexOf("/", baseUri.length - 2);
+    if (slashPos < 0) {
+      info(`File not accessible from chrome protocol: ${fileUri.path}`);
+      return fileUri;
+    }
+    path = baseUri.slice(slashPos + 1) + path;
+    baseUri = baseUri.slice(0, slashPos + 1);
+    if (gChromeMap.has(baseUri)) {
+      let chromeBaseUri = gChromeMap.get(baseUri);
+      let chromeUri = `${chromeBaseUri}${path}`;
+      return Services.io.newURI(chromeUri, null, null);
+    }
+  }
+}
+
 function messageIsCSSError(msg, innerWindowID, outerWindowID) {
   
   if ((msg instanceof Ci.nsIScriptError) &&
@@ -85,15 +155,11 @@ add_task(function checkAllTheCSS() {
   
   
   
-  let uris = yield generateURIsFromDirTree(appDir, ".css");
+  let uris = yield generateURIsFromDirTree(appDir, [".css", ".manifest"]);
 
   
   
-  
-  let resHandler = Services.io.getProtocolHandler("resource")
-                           .QueryInterface(Ci.nsISubstitutingProtocolHandler);
-  let resURI = Services.io.newURI('resource://testing-common/resource_test_file.html', null, null);
-  let testFile = resHandler.resolveURI(resURI);
+  let testFile = getRootDirectory(gTestPath) + "dummy_page.html";
   let windowless = Services.appShell.createWindowlessBrowser();
   let iframe = windowless.document.createElementNS("http://www.w3.org/1999/xhtml", "html:iframe");
   windowless.document.documentElement.appendChild(iframe);
@@ -105,6 +171,20 @@ add_task(function checkAllTheCSS() {
                                         .getInterface(Ci.nsIDOMWindowUtils);
   let innerWindowID = windowUtils.currentInnerWindowID;
   let outerWindowID = windowUtils.outerWindowID;
+
+  
+  
+  
+  let manifestPromises = [];
+  uris = uris.filter(uri => {
+    if (uri.path.endsWith(".manifest")) {
+      manifestPromises.push(parseManifest(uri));
+      return false;
+    }
+    return true;
+  });
+  
+  yield Promise.all(manifestPromises);
 
   
   
@@ -133,7 +213,8 @@ add_task(function checkAllTheCSS() {
     linkEl.addEventListener("load", onLoad);
     linkEl.addEventListener("error", onError);
     linkEl.setAttribute("type", "text/css");
-    linkEl.setAttribute("href", uri.spec);
+    let chromeUri = convertToChromeUri(uri);
+    linkEl.setAttribute("href", chromeUri.spec);
     allPromises.push(promiseForThisSpec.promise);
     doc.head.appendChild(linkEl);
   }
