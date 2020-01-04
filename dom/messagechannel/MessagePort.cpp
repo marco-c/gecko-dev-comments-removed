@@ -295,7 +295,7 @@ MessagePort::MessagePort(nsPIDOMWindow* aWindow)
 
 MessagePort::~MessagePort()
 {
-  Close();
+  CloseForced();
   MOZ_ASSERT(!mWorkerFeature);
 }
 
@@ -601,6 +601,13 @@ MessagePort::CloseInternal(bool aSoftly)
   
   if (mState == eStateEntanglingForDisentangle ||
       mState == eStateEntanglingForClose) {
+    return;
+  }
+
+  
+  
+  if (mState == eStateDisentangledForClose && !aSoftly) {
+    UpdateMustKeepAlive();
     return;
   }
 
