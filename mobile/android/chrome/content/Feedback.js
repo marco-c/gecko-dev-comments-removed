@@ -23,8 +23,18 @@ var Feedback = {
 
     let url = this._feedbackURL;
     let browser = BrowserApp.selectOrAddTab(url, { parentId: BrowserApp.selectedTab.id }).browser;
+
     browser.addEventListener("FeedbackClose", this, false, true);
     browser.addEventListener("FeedbackMaybeLater", this, false, true);
+
+    
+    
+    
+    function loadListener(event) {
+      browser.removeEventListener("DOMContentLoaded", loadListener, false);
+      browser.contentDocument.dispatchEvent(new CustomEvent("FeedbackPrompted"));
+    }
+    browser.addEventListener("DOMContentLoaded", loadListener, false);
   },
 
   handleEvent: function(event) {
