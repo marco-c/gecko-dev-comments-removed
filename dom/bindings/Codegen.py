@@ -7057,13 +7057,44 @@ class CGPerSignatureCall(CGThing):
         needsUnwrap = False
         argsPost = []
         if isConstructor:
-            needsUnwrap = True
-            needsUnwrappedVar = False
-            unwrappedVar = "obj"
             if descriptor.name == "Promise" or descriptor.name == "MozAbortablePromise":
                 
                 
                 argsPost.append("desiredProto")
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+            else:
+                needsUnwrap = True
+                needsUnwrappedVar = False
+                unwrappedVar = "obj"
         elif descriptor.interface.isJSImplemented():
             if not idlNode.isStatic():
                 needsUnwrap = True
