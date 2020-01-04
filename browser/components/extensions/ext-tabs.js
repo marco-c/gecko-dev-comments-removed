@@ -493,6 +493,10 @@ extensions.registerAPI((extension, context) => {
 
       sendMessage: function(tabId, message, options, responseCallback) {
         let tab = TabManager.getTab(tabId);
+        if (!tab) {
+          
+          return;
+        }
         let mm = tab.linkedBrowser.messageManager;
 
         let recipient = {extensionId: extension.id};
