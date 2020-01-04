@@ -3979,6 +3979,9 @@ nsPIDOMWindowOuter::GetServiceWorkersTestingEnabled()
   
   
   nsCOMPtr<nsPIDOMWindowOuter> topWindow = GetScriptableTop();
+  if (!topWindow) {
+    return false;
+  }
   return topWindow->mServiceWorkersTestingEnabled;
 }
 
