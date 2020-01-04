@@ -27,6 +27,30 @@ class BluetoothValue;
 
 
 
+enum BluetoothProfileEndian {
+  ENDIAN_BIG,
+  ENDIAN_LITTLE,
+  ENDIAN_SDP      = ENDIAN_BIG,     
+  ENDIAN_GAP      = ENDIAN_LITTLE,  
+  ENDIAN_GATT     = ENDIAN_LITTLE,  
+};
+
+
+
+
+
+
+
+
+enum BluetoothUuidType {
+  UUID_16_BIT,
+  UUID_32_BIT,
+  UUID_128_BIT,
+};
+
+
+
+
 
 void
 AddressToString(const BluetoothAddress& aAddress, nsAString& aString);
@@ -103,6 +127,36 @@ UuidToString(const BluetoothUuid& aUuid, nsAString& aString);
 
 nsresult
 StringToUuid(const nsAString& aString, BluetoothUuid& aUuid);
+
+
+
+
+
+
+
+
+
+nsresult
+BytesToUuid(const nsTArray<uint8_t>& aArray,
+            nsTArray<uint8_t>::index_type aOffset,
+            BluetoothUuidType aType,
+            BluetoothProfileEndian aEndian,
+            BluetoothUuid& aUuid);
+
+
+
+
+
+
+
+
+
+nsresult
+UuidToBytes(const BluetoothUuid& aUuid,
+            BluetoothUuidType aType,
+            BluetoothProfileEndian aEndian,
+            nsTArray<uint8_t>& aArray,
+            nsTArray<uint8_t>::index_type aOffset);
 
 
 

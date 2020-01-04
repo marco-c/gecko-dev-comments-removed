@@ -28,8 +28,8 @@ public:
 
   static already_AddRefed<BluetoothDiscoveryHandle>
     Create(nsPIDOMWindowInner* aWindow,
-           const nsTArray<nsString>& aServiceUuids,
-           const nsAString& aLeScanUuid);
+           const nsTArray<BluetoothUuid>& aServiceUuids,
+           const BluetoothUuid& aLeScanUuid);
 
   void DispatchDeviceEvent(BluetoothDevice* aDevice);
 
@@ -39,7 +39,7 @@ public:
 
   IMPL_EVENT_HANDLER(devicefound);
 
-  void GetLeScanUuid(nsString& aLeScanUuid) const
+  void GetLeScanUuid(BluetoothUuid& aLeScanUuid) const
   {
     aLeScanUuid = mLeScanUuid;
   }
@@ -51,8 +51,8 @@ private:
   BluetoothDiscoveryHandle(nsPIDOMWindowInner* aWindow);
 
   BluetoothDiscoveryHandle(nsPIDOMWindowInner* aWindow,
-                           const nsTArray<nsString>& aServiceUuids,
-                           const nsAString& aLeScanUuid);
+                           const nsTArray<BluetoothUuid>& aServiceUuids,
+                           const BluetoothUuid& aLeScanUuid);
 
   ~BluetoothDiscoveryHandle();
 
@@ -63,7 +63,7 @@ private:
 
 
 
-  nsString mLeScanUuid;
+  BluetoothUuid mLeScanUuid;
 
   
 
@@ -71,7 +71,7 @@ private:
 
 
 
-  nsTArray<nsString> mServiceUuids;
+  nsTArray<BluetoothUuid> mServiceUuids;
 };
 
 END_BLUETOOTH_NAMESPACE
