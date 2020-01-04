@@ -5,14 +5,10 @@
 "use strict";
 
 const { Cu } = require("chrome");
-const protocol = require("devtools/shared/protocol");
-const { custom, method, RetVal, Arg, Option, types, preEvent } = protocol;
-const { actorBridge } = require("devtools/server/actors/common");
+const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
+const { performanceRecordingSpec } = require("devtools/shared/specs/performance-recording");
 
-loader.lazyRequireGetter(this, "events", "sdk/event/core");
 loader.lazyRequireGetter(this, "merge", "sdk/util/object", true);
-loader.lazyRequireGetter(this, "PerformanceIO",
-  "devtools/client/performance/modules/io");
 loader.lazyRequireGetter(this, "RecordingUtils",
   "devtools/shared/performance/recording-utils");
 loader.lazyRequireGetter(this, "PerformanceRecordingCommon",
@@ -24,9 +20,7 @@ loader.lazyRequireGetter(this, "PerformanceRecordingCommon",
 
 
 
-var PerformanceRecordingActor = exports.PerformanceRecordingActor = protocol.ActorClass(merge({
-  typeName: "performance-recording",
-
+const PerformanceRecordingActor = ActorClassWithSpec(performanceRecordingSpec, merge({
   form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
@@ -67,7 +61,7 @@ var PerformanceRecordingActor = exports.PerformanceRecordingActor = protocol.Act
 
 
   initialize: function (conn, options, meta) {
-    protocol.Actor.prototype.initialize.call(this, conn);
+    Actor.prototype.initialize.call(this, conn);
     this._configuration = {
       withMarkers: options.withMarkers || false,
       withTicks: options.withTicks || false,
@@ -109,7 +103,7 @@ var PerformanceRecordingActor = exports.PerformanceRecordingActor = protocol.Act
   },
 
   destroy: function () {
-    protocol.Actor.prototype.destroy.call(this);
+    Actor.prototype.destroy.call(this);
   },
 
   
@@ -151,128 +145,4 @@ var PerformanceRecordingActor = exports.PerformanceRecordingActor = protocol.Act
 
 }, PerformanceRecordingCommon));
 
-
-
-
-
-var PerformanceRecordingFront = exports.PerformanceRecordingFront = protocol.FrontClass(PerformanceRecordingActor, merge({
-
-  form: function (form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-    this.actorID = form.actor;
-    this._form = form;
-    this._configuration = form.configuration;
-    this._startingBufferStatus = form.startingBufferStatus;
-    this._console = form.console;
-    this._label = form.label;
-    this._startTime = form.startTime;
-    this._localStartTime = form.localStartTime;
-    this._recording = form.recording;
-    this._completed = form.completed;
-    this._duration = form.duration;
-
-    if (form.finalizedData) {
-      this._profile = form.profile;
-      this._systemHost = form.systemHost;
-      this._systemClient = form.systemClient;
-    }
-
-    
-    
-    
-    if (this._completed && !this._markersSorted) {
-      this._markers = this._markers.sort((a, b) => (a.start > b.start));
-      this._markersSorted = true;
-    }
-  },
-
-  initialize: function (client, form, config) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-    this._markers = [];
-    this._frames = [];
-    this._memory = [];
-    this._ticks = [];
-    this._allocations = { sites: [], timestamps: [], frames: [], sizes: [] };
-  },
-
-  destroy: function () {
-    protocol.Front.prototype.destroy.call(this);
-  },
-
-  
-
-
-
-
-
-  exportRecording: function (file) {
-    let recordingData = this.getAllData();
-    return PerformanceIO.saveRecordingToFile(recordingData, file);
-  },
-
-  
-
-
-  _addTimelineData: function (eventName, data) {
-    let config = this.getConfiguration();
-
-    switch (eventName) {
-      
-      
-      case "markers": {
-        if (!config.withMarkers) { break; }
-        let { markers } = data;
-        RecordingUtils.offsetMarkerTimes(markers, this._startTime);
-        RecordingUtils.pushAll(this._markers, markers);
-        break;
-      }
-      
-      case "frames": {
-        if (!config.withMarkers) { break; }
-        let { frames } = data;
-        RecordingUtils.pushAll(this._frames, frames);
-        break;
-      }
-      
-      
-      case "memory": {
-        if (!config.withMemory) { break; }
-        let { delta, measurement } = data;
-        this._memory.push({
-          delta: delta - this._startTime,
-          value: measurement.total / 1024 / 1024
-        });
-        break;
-      }
-      
-      case "ticks": {
-        if (!config.withTicks) { break; }
-        let { timestamps } = data;
-        this._ticks = timestamps;
-        break;
-      }
-      
-      case "allocations": {
-        if (!config.withAllocations) { break; }
-        let {
-          allocations: sites,
-          allocationsTimestamps: timestamps,
-          allocationSizes: sizes,
-          frames,
-        } = data;
-
-        RecordingUtils.offsetAndScaleTimestamps(timestamps, this._startTime);
-        RecordingUtils.pushAll(this._allocations.sites, sites);
-        RecordingUtils.pushAll(this._allocations.timestamps, timestamps);
-        RecordingUtils.pushAll(this._allocations.frames, frames);
-        RecordingUtils.pushAll(this._allocations.sizes, sizes);
-        break;
-      }
-    }
-  },
-
-  toString: () => "[object PerformanceRecordingFront]"
-}, PerformanceRecordingCommon));
+exports.PerformanceRecordingActor = PerformanceRecordingActor;
