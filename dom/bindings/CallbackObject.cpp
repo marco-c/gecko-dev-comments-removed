@@ -100,30 +100,26 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
     
     
     JS::AutoSuppressGCAnalysis nogc;
-    if (mIsMainThread) {
+
+    
+    
+    nsGlobalWindow* win = mIsMainThread && !aIsJSImplementedWebIDL
+                        ? xpc::WindowGlobalOrNull(realCallback)
+                        : nullptr;
+    if (win) {
+      MOZ_ASSERT(win->IsInnerWindow());
       
       
-      nsGlobalWindow* win =
-        aIsJSImplementedWebIDL ? nullptr : xpc::WindowGlobalOrNull(realCallback);
-      if (win) {
-        MOZ_ASSERT(win->IsInnerWindow());
-        
-        
-        if (!win->AsInner()->HasActiveDocument()) {
-          aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-            NS_LITERAL_CSTRING("Refusing to execute function from window "
-                               "whose document is no longer active."));
-          return;
-        }
-        globalObject = win;
-      } else {
-        
-        JSObject* glob = js::GetGlobalForObjectCrossCompartment(realCallback);
-        globalObject = xpc::NativeGlobal(glob);
-        MOZ_ASSERT(globalObject);
+      if (!win->AsInner()->HasActiveDocument()) {
+        aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+          NS_LITERAL_CSTRING("Refusing to execute function from window "
+                             "whose document is no longer active."));
+        return;
       }
+      globalObject = win;
     } else {
-      JSObject *global = js::GetGlobalForObjectCrossCompartment(realCallback);
+      
+      JSObject* global = js::GetGlobalForObjectCrossCompartment(realCallback);
       globalObject = xpc::NativeGlobal(global);
       MOZ_ASSERT(globalObject);
     }
