@@ -30,7 +30,7 @@ namespace js {
 
 
 extern JSObject*
-NewDateObjectMsec(JSContext* cx, JS::ClippedTime t, JS::HandleObject proto = nullptr);
+NewDateObjectMsec(JSContext* cx, JS::ClippedTime t);
 
 
 
