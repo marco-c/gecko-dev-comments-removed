@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko.telemetry.pings;
+package org.mozilla.gecko.telemetry;
 
 import org.mozilla.gecko.sync.ExtendedJSONObject;
 
