@@ -15,8 +15,7 @@ namespace mozilla {
 class WaveDataDecoder : public MediaDataDecoder
 {
 public:
-  WaveDataDecoder(const AudioInfo& aConfig,
-                  MediaDataDecoderCallback* aCallback);
+  explicit WaveDataDecoder(const CreateDecoderParams& aParams);
 
   
   static bool IsWave(const nsACString& aMimeType);
