@@ -25,6 +25,8 @@ const {
   SELECTOR_ELEMENT,
   SELECTOR_PSEUDO_CLASS
 } = require("devtools/client/shared/css-parsing-utils");
+const promise = require("promise");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 XPCOMUtils.defineLazyGetter(this, "_strings", function() {
   return Services.strings.createBundle(
@@ -45,7 +47,15 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
+
+
+
+
+
+
 function RuleEditor(ruleView, rule) {
+  EventEmitter.decorate(this);
+
   this.ruleView = ruleView;
   this.doc = this.ruleView.styleDocument;
   this.rule = rule;
@@ -235,10 +245,21 @@ RuleEditor.prototype = {
     let showOrig = Services.prefs.getBoolPref(PREF_ORIG_SOURCES);
     if (showOrig && !this.rule.isSystem &&
         this.rule.domRule.type !== ELEMENT_STYLE) {
+      
+      
       this.rule.getOriginalSourceStrings().then((strings) => {
         sourceLabel.setAttribute("value", strings.short);
         sourceLabel.setAttribute("tooltiptext", strings.full);
-      }, console.error);
+      }, e => console.error(e)).then(() => {
+        this.emit("source-link-updated");
+      });
+    } else {
+      
+      
+      
+      promise.resolve().then(() => {
+        this.emit("source-link-updated");
+      });
     }
   },
 
