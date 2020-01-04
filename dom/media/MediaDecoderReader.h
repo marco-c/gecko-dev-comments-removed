@@ -464,9 +464,6 @@ private:
   MozPromiseHolder<MediaDataPromise> mBaseAudioPromise;
   MozPromiseHolder<MediaDataPromise> mBaseVideoPromise;
 
-  
-  
-  bool mVideoDiscontinuity;
   Canonical<bool> mIsSuspended;
 
   MediaEventListener mDataArrivedListener;
