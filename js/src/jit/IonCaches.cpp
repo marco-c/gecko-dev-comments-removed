@@ -4454,19 +4454,19 @@ GenerateSetDenseElement(JSContext* cx, MacroAssembler& masm, IonCache::StubAttac
             masm.branch32(Assembler::NotEqual, initLength, indexReg, &inBounds);
             {
                 
-                Int32Key newLength(indexReg);
-                masm.bumpKey(&newLength, 1);
-                masm.storeKey(newLength, initLength);
+                Register newLength = indexReg;
+                masm.add32(Imm32(1), newLength);
+                masm.store32(newLength, initLength);
 
                 
                 Label bumpedLength;
                 Address length(elements, ObjectElements::offsetOfLength());
                 masm.branch32(Assembler::AboveOrEqual, length, indexReg, &bumpedLength);
-                masm.storeKey(newLength, length);
+                masm.store32(newLength, length);
                 masm.bind(&bumpedLength);
 
                 
-                masm.bumpKey(&newLength, -1);
+                masm.add32(Imm32(-1), newLength);
                 masm.jump(&storeElement);
             }
             
