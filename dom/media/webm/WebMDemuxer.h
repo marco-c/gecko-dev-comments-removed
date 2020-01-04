@@ -156,11 +156,10 @@ private:
   
   uint64_t mSeekPreroll;
 
-  int64_t mLastAudioFrameTime;
-
   
   
-  int64_t mLastVideoFrameTime;
+  Maybe<int64_t> mLastAudioFrameTime;
+  Maybe<int64_t> mLastVideoFrameTime;
 
   
   int mAudioCodec;
