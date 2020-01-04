@@ -9,20 +9,9 @@
 #ifndef SkRTree_DEFINED
 #define SkRTree_DEFINED
 
+#include "SkBBoxHierarchy.h"
 #include "SkRect.h"
 #include "SkTDArray.h"
-#include "SkChunkAlloc.h"
-#include "SkBBoxHierarchy.h"
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -42,158 +31,66 @@
 
 class SkRTree : public SkBBoxHierarchy {
 public:
-    SK_DECLARE_INST_COUNT(SkRTree)
+
 
     
 
 
 
 
+    explicit SkRTree(SkScalar aspectRatio = 1);
+    virtual ~SkRTree() {}
 
-
-
-
-
-
-    static SkRTree* Create(int minChildren, int maxChildren, SkScalar aspectRatio = 1,
-            bool orderWhenBulkLoading = true);
-    virtual ~SkRTree();
+    void insert(const SkRect[], int N) override;
+    void search(const SkRect& query, SkTDArray<int>* results) const override;
+    size_t bytesUsed() const override;
 
     
 
-
-
-
-
-
-
-    virtual void insert(void* data, const SkIRect& bounds, bool defer = false) SK_OVERRIDE;
+    
+    int getDepth() const { return fCount ? fRoot.fSubtree->fLevel + 1 : 0; }
+    
+    int getCount() const { return fCount; }
 
     
-
-
-    virtual void flushDeferredInserts() SK_OVERRIDE;
+    SkRect getRootBound() const override;
 
     
-
-
-    virtual void search(const SkIRect& query, SkTDArray<void*>* results) SK_OVERRIDE;
-
-    virtual void clear() SK_OVERRIDE;
-    bool isEmpty() const { return 0 == fCount; }
-
-    
-
-
-    virtual int getDepth() const SK_OVERRIDE {
-        return this->isEmpty() ? 0 : fRoot.fChild.subtree->fLevel + 1;
-    }
-
-    
-
-
-    virtual int getCount() const SK_OVERRIDE { return fCount; }
-
-    virtual void rewindInserts() SK_OVERRIDE;
+    static const int kMinChildren = 6,
+                     kMaxChildren = 11;
 
 private:
-
     struct Node;
-
-    
-
 
     struct Branch {
         union {
-            Node* subtree;
-            void* data;
-        } fChild;
-        SkIRect fBounds;
+            Node* fSubtree;
+            int fOpIndex;
+        };
+        SkRect fBounds;
     };
-
-    
-
 
     struct Node {
         uint16_t fNumChildren;
         uint16_t fLevel;
-        bool isLeaf() { return 0 == fLevel; }
-        
-        
-        Branch* child(size_t index) {
-            return reinterpret_cast<Branch*>(this + 1) + index;
-        }
+        Branch fChildren[kMaxChildren];
     };
 
-    typedef int32_t SkIRect::*SortSide;
+    void search(Node* root, const SkRect& query, SkTDArray<int>* results) const;
 
     
-    struct RectLessThan {
-        RectLessThan(SkRTree::SortSide side) : fSide(side) { }
-        bool operator()(const SkRTree::Branch lhs, const SkRTree::Branch rhs) const {
-            return lhs.fBounds.*fSide < rhs.fBounds.*fSide;
-        }
-    private:
-        const SkRTree::SortSide fSide;
-    };
-
-    struct RectLessX {
-        bool operator()(const SkRTree::Branch lhs, const SkRTree::Branch rhs) {
-            return ((lhs.fBounds.fRight - lhs.fBounds.fLeft) >> 1) <
-                   ((rhs.fBounds.fRight - lhs.fBounds.fLeft) >> 1);
-        }
-    };
-
-    struct RectLessY {
-        bool operator()(const SkRTree::Branch lhs, const SkRTree::Branch rhs) {
-            return ((lhs.fBounds.fBottom - lhs.fBounds.fTop) >> 1) <
-                   ((rhs.fBounds.fBottom - lhs.fBounds.fTop) >> 1);
-        }
-    };
-
-    SkRTree(int minChildren, int maxChildren, SkScalar aspectRatio, bool orderWhenBulkLoading);
-
-    
-
-
-
-    Branch* insert(Node* root, Branch* branch, uint16_t level = 0);
-
-    int chooseSubtree(Node* root, Branch* branch);
-    SkIRect computeBounds(Node* n);
-    int distributeChildren(Branch* children);
-    void search(Node* root, const SkIRect query, SkTDArray<void*>* results) const;
-
-    
-
-
-
-
-
-
-
-
-
-
     Branch bulkLoad(SkTDArray<Branch>* branches, int level = 0);
 
-    void validate();
-    int validateSubtree(Node* root, SkIRect bounds, bool isRoot = false);
+    
+    static int CountNodes(int branches, SkScalar aspectRatio);
 
-    const int fMinChildren;
-    const int fMaxChildren;
-    const size_t fNodeSize;
+    Node* allocateNodeAtLevel(uint16_t level);
 
     
     int fCount;
-
-    Branch fRoot;
-    SkChunkAlloc fNodes;
-    SkTDArray<Branch> fDeferredInserts;
     SkScalar fAspectRatio;
-    bool fSortWhenBulkLoading;
-
-    Node* allocateNode(uint16_t level);
+    Branch fRoot;
+    SkTDArray<Node> fNodes;
 
     typedef SkBBoxHierarchy INHERITED;
 };

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+#include "GrGLSLGeometryShaderBuilder.h"
+#include "GrGLSLProgramBuilder.h"
+#include "GrGLSLVarying.h"
+
+GrGLSLGeometryBuilder::GrGLSLGeometryBuilder(GrGLSLProgramBuilder* program)
+    : INHERITED(program) {
+
+}
+
+void GrGLSLGeometryBuilder::onFinalize() {
+    fProgramBuilder->varyingHandler()->getGeomDecls(&this->inputs(), &this->outputs());
+}
+

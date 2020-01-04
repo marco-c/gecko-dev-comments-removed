@@ -11,6 +11,13 @@
 #include "SkPath.h"
 #include "SkPoint.h"
 #include "SkPaint.h"
+#include "SkStrokerPriv.h"
+
+#ifdef SK_DEBUG
+extern bool gDebugStrokerErrorSet;
+extern SkScalar gDebugStrokerError;
+extern int gMaxRecursion[];
+#endif
 
 
 
@@ -39,6 +46,20 @@ public:
     
 
 
+
+
+
+
+
+    SkScalar getResScale() const { return fResScale; }
+    void setResScale(SkScalar rs) {
+        SkASSERT(rs > 0 && SkScalarIsFinite(rs));
+        fResScale = rs;
+    }
+
+    
+
+
     void    strokeRect(const SkRect& rect, SkPath* result,
                        SkPath::Direction = SkPath::kCW_Direction) const;
     void    strokePath(const SkPath& path, SkPath*) const;
@@ -47,6 +68,7 @@ public:
 
 private:
     SkScalar    fWidth, fMiterLimit;
+    SkScalar    fResScale;
     uint8_t     fCap, fJoin;
     SkBool8     fDoFill;
 

@@ -11,26 +11,21 @@
 
 #include "GrTypes.h"
 #include "GrGpuResource.h"
+#include "SkImageInfo.h"
 #include "SkRect.h"
 
-class GrTexture;
 class GrRenderTarget;
-struct SkImageInfo;
+class GrSurfacePriv;
+class GrTexture;
 
-class GrSurface : public GrGpuResource {
+class SK_API GrSurface : public GrGpuResource {
 public:
-    SK_DECLARE_INST_COUNT(GrSurface);
-
     
-
-
 
 
     int width() const { return fDesc.fWidth; }
 
     
-
-
 
 
     int height() const { return fDesc.fHeight; }
@@ -57,94 +52,129 @@ public:
     
 
 
-    const GrTextureDesc& desc() const { return fDesc; }
-
-    SkImageInfo info() const;
+    const GrSurfaceDesc& desc() const { return fDesc; }
 
     
 
 
-    virtual GrTexture* asTexture() = 0;
-    virtual const GrTexture* asTexture() const = 0;
+    virtual GrTexture* asTexture() { return NULL; }
+    virtual const GrTexture* asTexture() const { return NULL; }
 
     
 
 
-    virtual GrRenderTarget* asRenderTarget() = 0;
-    virtual const GrRenderTarget* asRenderTarget() const = 0;
+    virtual GrRenderTarget* asRenderTarget() { return NULL; }
+    virtual const GrRenderTarget* asRenderTarget() const { return NULL; }
 
     
 
 
 
 
-    bool isSameAs(const GrSurface* other) const {
-        const GrRenderTarget* thisRT = this->asRenderTarget();
-        if (NULL != thisRT) {
-            return thisRT == other->asRenderTarget();
-        } else {
-            const GrTexture* thisTex = this->asTexture();
-            SkASSERT(NULL != thisTex); 
-            return thisTex == other->asTexture();
+
+
+
+
+
+
+
+
+
+
+    bool readPixels(int left, int top, int width, int height,
+                    GrPixelConfig config,
+                    void* buffer,
+                    size_t rowBytes = 0,
+                    uint32_t pixelOpsFlags = 0);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool writePixels(int left, int top, int width, int height,
+                     GrPixelConfig config,
+                     const void* buffer,
+                     size_t rowBytes = 0,
+                     uint32_t pixelOpsFlags = 0);
+
+    
+
+
+    void flushWrites();
+
+
+    
+
+
+
+    void prepareForExternalIO();
+
+    
+    inline GrSurfacePriv surfacePriv();
+    inline const GrSurfacePriv surfacePriv() const;
+
+    typedef void* ReleaseCtx;
+    typedef void (*ReleaseProc)(ReleaseCtx);
+
+    void setRelease(ReleaseProc proc, ReleaseCtx ctx) {
+        fReleaseProc = proc;
+        fReleaseCtx = ctx;
+    }
+
+    static size_t WorseCaseSize(const GrSurfaceDesc& desc);
+
+protected:
+    
+    SkImageInfo info(SkAlphaType) const;
+    bool savePixels(const char* filename);
+    bool hasPendingRead() const;
+    bool hasPendingWrite() const;
+    bool hasPendingIO() const;
+
+    
+    friend class GrSurfacePriv;
+
+    GrSurface(GrGpu* gpu, LifeCycle lifeCycle, const GrSurfaceDesc& desc)
+        : INHERITED(gpu, lifeCycle)
+        , fDesc(desc)
+        , fReleaseProc(NULL)
+        , fReleaseCtx(NULL)
+    {}
+
+    ~GrSurface() override {
+        
+        SkASSERT(NULL == fReleaseProc);
+    }
+
+    GrSurfaceDesc fDesc;
+
+    void onRelease() override;
+    void onAbandon() override;
+
+private:
+    void invokeReleaseProc() {
+        if (fReleaseProc) {
+            fReleaseProc(fReleaseCtx);
+            fReleaseProc = NULL;
         }
     }
 
-    
+    ReleaseProc fReleaseProc;
+    ReleaseCtx  fReleaseCtx;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual bool readPixels(int left, int top, int width, int height,
-                            GrPixelConfig config,
-                            void* buffer,
-                            size_t rowBytes = 0,
-                            uint32_t pixelOpsFlags = 0) = 0;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual void writePixels(int left, int top, int width, int height,
-                             GrPixelConfig config,
-                             const void* buffer,
-                             size_t rowBytes = 0,
-                             uint32_t pixelOpsFlags = 0) = 0;
-
-    
-
-
-
-    bool savePixels(const char* filename);
-
-protected:
-    GrSurface(GrGpu* gpu, bool isWrapped, const GrTextureDesc& desc)
-    : INHERITED(gpu, isWrapped)
-    , fDesc(desc) {
-    }
-
-    GrTextureDesc fDesc;
-
-private:
     typedef GrGpuResource INHERITED;
 };
 
-#endif 
+#endif

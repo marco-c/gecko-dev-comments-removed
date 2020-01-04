@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#ifndef GrGLSLPrettyPrint_DEFINED
+#define GrGLSLPrettyPrint_DEFINED
+
+#include "SkString.h"
+
+namespace GrGLSLPrettyPrint {
+    SkString PrettyPrintGLSL(const char** strings,
+                             int* lengths,
+                             int count,
+                             bool countlines);
+};
+
+#endif 

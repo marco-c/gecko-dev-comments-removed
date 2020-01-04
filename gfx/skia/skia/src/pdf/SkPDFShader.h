@@ -12,12 +12,11 @@
 
 #include "SkPDFStream.h"
 #include "SkPDFTypes.h"
-#include "SkMatrix.h"
-#include "SkRefCnt.h"
-#include "SkShader.h"
 
-class SkObjRef;
-class SkPDFCatalog;
+class SkPDFCanon;
+class SkMatrix;
+class SkShader;
+struct SkIRect;
 
 
 
@@ -27,47 +26,76 @@ class SkPDFCatalog;
 
 class SkPDFShader {
 public:
-    
-
-
-
-
-
-
-
-
-
-
-
-    static SkPDFObject* GetPDFShader(const SkShader& shader,
-                                     const SkMatrix& matrix,
-                                     const SkIRect& surfaceBBox);
-
-protected:
     class State;
 
-    class ShaderCanonicalEntry {
-    public:
-        ShaderCanonicalEntry(SkPDFObject* pdfShader, const State* state);
-        bool operator==(const ShaderCanonicalEntry& b) const;
-
-        SkPDFObject* fPDFShader;
-        const State* fState;
-    };
     
-    static SkTDArray<ShaderCanonicalEntry>& CanonicalShaders();
-    static SkBaseMutex& CanonicalShadersMutex();
 
-    
-    
-    
-    static SkPDFObject* GetPDFShaderByState(State* shaderState);
-    static void RemoveShader(SkPDFObject* shader);
 
-    SkPDFShader();
-    virtual ~SkPDFShader() {};
 
-    virtual bool isValid() = 0;
+
+
+
+
+
+
+
+
+
+
+    static SkPDFObject* GetPDFShader(SkPDFCanon* canon,
+                                     SkScalar dpi,
+                                     const SkShader& shader,
+                                     const SkMatrix& matrix,
+                                     const SkIRect& surfaceBBox,
+                                     SkScalar rasterScale);
+};
+
+class SkPDFFunctionShader final : public SkPDFDict {
+    
+
+public:
+    static SkPDFFunctionShader* Create(SkPDFCanon*,
+                                       SkAutoTDelete<SkPDFShader::State>*);
+    virtual ~SkPDFFunctionShader();
+    bool equals(const SkPDFShader::State&) const;
+
+private:
+    SkAutoTDelete<const SkPDFShader::State> fShaderState;
+    SkPDFFunctionShader(SkPDFShader::State*);
+    typedef SkPDFDict INHERITED;
+};
+
+
+
+
+
+
+class SkPDFAlphaFunctionShader final : public SkPDFStream {
+public:
+    static SkPDFAlphaFunctionShader* Create(SkPDFCanon*,
+                                            SkScalar dpi,
+                                            SkAutoTDelete<SkPDFShader::State>*);
+    virtual ~SkPDFAlphaFunctionShader();
+    bool equals(const SkPDFShader::State&) const;
+
+private:
+    SkAutoTDelete<const SkPDFShader::State> fShaderState;
+    SkPDFAlphaFunctionShader(SkPDFShader::State*);
+    typedef SkPDFStream INHERITED;
+};
+
+class SkPDFImageShader final : public SkPDFStream {
+public:
+    static SkPDFImageShader* Create(SkPDFCanon*,
+                                    SkScalar dpi,
+                                    SkAutoTDelete<SkPDFShader::State>*);
+    virtual ~SkPDFImageShader();
+    bool equals(const SkPDFShader::State&) const;
+
+private:
+    SkAutoTDelete<const SkPDFShader::State> fShaderState;
+    SkPDFImageShader(SkPDFShader::State*);
+    typedef SkPDFStream INHERITED;
 };
 
 #endif

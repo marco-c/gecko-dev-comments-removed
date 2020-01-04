@@ -5,6 +5,7 @@
 
 
 
+#include "SkDiscardableMemory.h"
 #include "SkDiscardableMemoryPool.h"
 #include "SkTypes.h"
 

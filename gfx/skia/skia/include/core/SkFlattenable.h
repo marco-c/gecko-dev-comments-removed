@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef SkFlattenable_DEFINED
 #define SkFlattenable_DEFINED
 
@@ -15,9 +13,26 @@
 class SkReadBuffer;
 class SkWriteBuffer;
 
-#define SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(flattenable) \
-        SkFlattenable::Registrar(#flattenable, flattenable::CreateProc, \
-                                 flattenable::GetFlattenableType());
+class SkPrivateEffectInitializer;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP() static void InitializeFlattenables();
 
@@ -27,14 +42,16 @@ class SkWriteBuffer;
 #define SK_DEFINE_FLATTENABLE_REGISTRAR_GROUP_END \
     }
 
-#define SK_DECLARE_UNFLATTENABLE_OBJECT() \
-    virtual Factory getFactory() const SK_OVERRIDE { return NULL; }
+#define SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(flattenable) \
+    SkFlattenable::Register(#flattenable, flattenable::CreateProc, \
+                            flattenable::GetFlattenableType());
 
-#define SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(flattenable) \
-    virtual Factory getFactory() const SK_OVERRIDE { return CreateProc; } \
-    static SkFlattenable* CreateProc(SkReadBuffer& buffer) { \
-        return SkNEW_ARGS(flattenable, (buffer)); \
-    }
+#define SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(flattenable)    \
+    private:                                                                \
+    static SkFlattenable* CreateProc(SkReadBuffer&);                        \
+    friend class ::SkPrivateEffectInitializer;                              \
+    public:                                                                 \
+    Factory getFactory() const override { return CreateProc; }
 
 
 
@@ -65,8 +82,6 @@ public:
         kSkXfermode_Type,
     };
 
-    SK_DECLARE_INST_COUNT(SkFlattenable)
-
     typedef SkFlattenable* (*Factory)(SkReadBuffer&);
 
     SkFlattenable() {}
@@ -87,21 +102,11 @@ public:
 
     static void Register(const char name[], Factory, Type);
 
-    class Registrar {
-    public:
-        Registrar(const char name[], Factory factory, Type type) {
-            SkFlattenable::Register(name, factory, type);
-        }
-    };
-
     
 
 
 
-    virtual void flatten(SkWriteBuffer&) const;
-
-protected:
-    SkFlattenable(SkReadBuffer&) {}
+    virtual void flatten(SkWriteBuffer&) const {}
 
 private:
     static void InitializeFlattenablesIfNeeded();

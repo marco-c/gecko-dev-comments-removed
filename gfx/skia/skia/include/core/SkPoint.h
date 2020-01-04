@@ -212,7 +212,16 @@ struct SK_API SkPoint {
         v[2].set(r, b);
         v[3].set(r, t);
     }
-    void setRectFan(SkScalar l, SkScalar t, SkScalar r, SkScalar b, size_t stride);
+
+    void setRectFan(SkScalar l, SkScalar t, SkScalar r, SkScalar b, size_t stride) {
+        SkASSERT(stride >= sizeof(SkPoint));
+        
+        ((SkPoint*)((intptr_t)this + 0 * stride))->set(l, t);
+        ((SkPoint*)((intptr_t)this + 1 * stride))->set(l, b);
+        ((SkPoint*)((intptr_t)this + 2 * stride))->set(r, b);
+        ((SkPoint*)((intptr_t)this + 3 * stride))->set(r, t);
+    }
+    
 
     static void Offset(SkPoint points[], int count, const SkPoint& offset) {
         Offset(points, count, offset.fX, offset.fY);
@@ -339,6 +348,16 @@ struct SK_API SkPoint {
         fY -= v.fY;
     }
 
+    SkPoint operator*(SkScalar scale) const {
+        return Make(fX * scale, fY * scale);
+    }
+    
+    SkPoint& operator*=(SkScalar scale) {
+        fX *= scale;
+        fY *= scale;
+        return *this;
+    }
+    
     
 
 

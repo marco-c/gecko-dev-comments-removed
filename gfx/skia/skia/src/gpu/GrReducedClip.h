@@ -5,44 +5,45 @@
 
 
 
-
 #ifndef GrReducedClip_DEFINED
 #define GrReducedClip_DEFINED
 
 #include "SkClipStack.h"
 #include "SkTLList.h"
 
-namespace GrReducedClip {
+class SK_API GrReducedClip {
+public:
+    typedef SkTLList<SkClipStack::Element, 16> ElementList;
 
-typedef SkTLList<SkClipStack::Element> ElementList;
+    enum InitialState {
+        kAllIn_InitialState,
+        kAllOut_InitialState,
+    };
 
-enum InitialState {
-    kAllIn_InitialState,
-    kAllOut_InitialState,
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static void ReduceClipStack(const SkClipStack& stack,
+                                const SkIRect& queryBounds,
+                                ElementList* result,
+                                int32_t* resultGenID,
+                                InitialState* initialState,
+                                SkIRect* tighterBounds = nullptr,
+                                bool* requiresAA = nullptr);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SK_API void ReduceClipStack(const SkClipStack& stack,
-                            const SkIRect& queryBounds,
-                            ElementList* result,
-                            int32_t* resultGenID,
-                            InitialState* initialState,
-                            SkIRect* tighterBounds = NULL,
-                            bool* requiresAA = NULL);
-
-} 
 
 #endif

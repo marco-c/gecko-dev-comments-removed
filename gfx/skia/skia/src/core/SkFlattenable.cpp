@@ -7,18 +7,7 @@
 
 #include "SkFlattenable.h"
 #include "SkPtrRecorder.h"
-
-
-
-void SkFlattenable::flatten(SkWriteBuffer&) const
-{
-    
-
-
-
-}
-
-
+#include "SkReadBuffer.h"
 
 SkNamedFactorySet::SkNamedFactorySet() : fNextAddedFactory(0) {}
 
@@ -28,7 +17,7 @@ uint32_t SkNamedFactorySet::find(SkFlattenable::Factory factory) {
         return index;
     }
     const char* name = SkFlattenable::FactoryToName(factory);
-    if (NULL == name) {
+    if (nullptr == name) {
         return 0;
     }
     *fNames.append() = name;
@@ -39,7 +28,7 @@ const char* SkNamedFactorySet::getNextAddedFactoryName() {
     if (fNextAddedFactory < fNames.count()) {
         return fNames[fNextAddedFactory++];
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -59,8 +48,6 @@ void SkRefCntSet::decPtr(void* ptr) {
 
 
 
-
-
 #define MAX_ENTRY_COUNT  1024
 
 struct Entry {
@@ -69,19 +56,12 @@ struct Entry {
     SkFlattenable::Type     fType;
 };
 
-static int gCount;
+static int gCount = 0;
 static Entry gEntries[MAX_ENTRY_COUNT];
 
 void SkFlattenable::Register(const char name[], Factory factory, SkFlattenable::Type type) {
     SkASSERT(name);
     SkASSERT(factory);
-
-    static bool gOnce = false;
-    if (!gOnce) {
-        gCount = 0;
-        gOnce = true;
-    }
-
     SkASSERT(gCount < MAX_ENTRY_COUNT);
 
     gEntries[gCount].fName = name;
@@ -111,11 +91,11 @@ SkFlattenable::Factory SkFlattenable::NameToFactory(const char name[]) {
             return entries[i].fFactory;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 bool SkFlattenable::NameToType(const char name[], SkFlattenable::Type* type) {
-    SkASSERT(NULL != type);
+    SkASSERT(type);
     InitializeFlattenablesIfNeeded();
 #ifdef SK_DEBUG
     report_no_entries(__FUNCTION__);
@@ -141,5 +121,5 @@ const char* SkFlattenable::FactoryToName(Factory fact) {
             return entries[i].fName;
         }
     }
-    return NULL;
+    return nullptr;
 }

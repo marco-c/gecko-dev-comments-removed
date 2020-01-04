@@ -5,12 +5,17 @@
 
 
 
-
-
 #ifndef SkClampRange_DEFINED
 #define SkClampRange_DEFINED
 
 #include "SkFixed.h"
+#include "SkScalar.h"
+
+#define SkGradFixed             SkFixed3232
+#define SkScalarToGradFixed     SkScalarToFixed3232
+#define SkFixedToGradFixed      SkFixedToFixed3232
+#define SkGradFixedToFixed(x)   (SkFixed)((x) >> 16)
+#define kFracMax_SkGradFixed    0xFFFFFFFFLL
 
 
 
@@ -24,14 +29,23 @@ struct SkClampRange {
     int fCount0;    
     int fCount1;    
     int fCount2;    
-    SkFixed fFx1;   
+    SkGradFixed fFx1;   
                     
     int fV0, fV1;
 
-    void init(SkFixed fx, SkFixed dx, int count, int v0, int v1);
+    void init(SkGradFixed fx, SkGradFixed dx, int count, int v0, int v1);
+
+    void validate(int count) const {
+#ifdef SK_DEBUG
+        SkASSERT(fCount0 >= 0);
+        SkASSERT(fCount1 >= 0);
+        SkASSERT(fCount2 >= 0);
+        SkASSERT(fCount0 + fCount1 + fCount2 == count);
+#endif
+    }
 
 private:
-    void initFor1(SkFixed fx);
+    void initFor1(SkGradFixed fx);
 };
 
 #endif

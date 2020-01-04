@@ -9,9 +9,9 @@
 #ifndef SkPathRef_DEFINED
 #define SkPathRef_DEFINED
 
-#include "SkDynamicAnnotations.h"
 #include "SkMatrix.h"
 #include "SkPoint.h"
+#include "SkRRect.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
 #include "SkTDArray.h"
@@ -37,8 +37,6 @@ class SkWBuffer;
 
 class SK_API SkPathRef : public ::SkRefCnt {
 public:
-    SK_DECLARE_INST_COUNT(SkPathRef);
-
     class Editor {
     public:
         Editor(SkAutoTUnref<SkPathRef>* pathRef,
@@ -103,10 +101,37 @@ public:
 
         void setIsOval(bool isOval) { fPathRef->setIsOval(isOval); }
 
+        void setIsRRect(bool isRRect) { fPathRef->setIsRRect(isRRect); }
+
         void setBounds(const SkRect& rect) { fPathRef->setBounds(rect); }
 
     private:
         SkPathRef* fPathRef;
+    };
+
+    class SK_API Iter {
+    public:
+        Iter();
+        Iter(const SkPathRef&);
+
+        void setPathRef(const SkPathRef&);
+
+        
+
+
+
+
+
+
+        uint8_t next(SkPoint pts[4]);
+
+        SkScalar conicWeight() const { return *fConicWeights; }
+
+    private:
+        const SkPoint*  fPts;
+        const uint8_t*  fVerbs;
+        const uint8_t*  fVerbStop;
+        const SkScalar* fConicWeights;
     };
 
 public:
@@ -144,12 +169,20 @@ public:
 
 
     bool isOval(SkRect* rect) const {
-        if (fIsOval && NULL != rect) {
-            *rect = getBounds();
+        if (fIsOval && rect) {
+            *rect = this->getBounds();
         }
 
         return SkToBool(fIsOval);
     }
+
+    bool isRRect(SkRRect* rrect) const {
+        if (fIsRRect && rrect) {
+            *rrect = this->getRRect();
+        }
+        return SkToBool(fIsRRect);
+    }
+
 
     bool hasComputedBounds() const {
         return !fBoundsIsDirty;
@@ -167,6 +200,8 @@ public:
         return fBounds;
     }
 
+    SkRRect getRRect() const;
+
     
 
 
@@ -183,19 +218,7 @@ public:
 
     static void Rewind(SkAutoTUnref<SkPathRef>* pathRef);
 
-    virtual ~SkPathRef() {
-        SkDEBUGCODE(this->validate();)
-        sk_free(fPoints);
-
-        SkDEBUGCODE(fPoints = NULL;)
-        SkDEBUGCODE(fVerbs = NULL;)
-        SkDEBUGCODE(fVerbCnt = 0x9999999;)
-        SkDEBUGCODE(fPointCnt = 0xAAAAAAA;)
-        SkDEBUGCODE(fPointCnt = 0xBBBBBBB;)
-        SkDEBUGCODE(fGenerationID = 0xEEEEEEEE;)
-        SkDEBUGCODE(fEditorsAttached = 0x7777777;)
-    }
-
+    virtual ~SkPathRef();
     int countPoints() const { SkDEBUGCODE(this->validate();) return fPointCnt; }
     int countVerbs() const { SkDEBUGCODE(this->validate();) return fVerbCnt; }
     int countWeights() const { SkDEBUGCODE(this->validate();) return fConicWeights.count(); }
@@ -254,8 +277,18 @@ public:
 
     uint32_t genID() const;
 
+    struct GenIDChangeListener {
+        virtual ~GenIDChangeListener() {}
+        virtual void onChange() = 0;
+    };
+
+    void addGenIDChangeListener(GenIDChangeListener* listener);
+
+    SkDEBUGCODE(void validate() const;)
+
 private:
     enum SerializationOffsets {
+        kIsRRect_SerializationShift = 26,   
         kIsFinite_SerializationShift = 25,  
         kIsOval_SerializationShift = 24,    
         kSegmentMask_SerializationShift = 0 
@@ -271,6 +304,7 @@ private:
         fGenerationID = kEmptyGenID;
         fSegmentMask = 0;
         fIsOval = false;
+        fIsRRect = false;
         SkDEBUGCODE(fEditorsAttached = 0;)
         SkDEBUGCODE(this->validate();)
     }
@@ -279,13 +313,7 @@ private:
 
     
     static bool ComputePtBounds(SkRect* bounds, const SkPathRef& ref) {
-        int count = ref.countPoints();
-        if (count <= 1) {  
-            bounds->setEmpty();
-            return count ? ref.points()->isFinite() : true;
-        } else {
-            return bounds->setBoundsCheck(ref.points(), count);
-        }
+        return bounds->setBoundsCheck(ref.points(), ref.countPoints());
     }
 
     
@@ -293,9 +321,9 @@ private:
         SkDEBUGCODE(this->validate();)
         
         
-        
+        SkASSERT(fBoundsIsDirty);
 
-        fIsFinite = ComputePtBounds(fBounds.get(), *this);
+        fIsFinite = ComputePtBounds(&fBounds, *this);
         fBoundsIsDirty = false;
     }
 
@@ -303,7 +331,7 @@ private:
         SkASSERT(rect.fLeft <= rect.fRight && rect.fTop <= rect.fBottom);
         fBounds = rect;
         fBoundsIsDirty = false;
-        fIsFinite = fBounds->isFinite();
+        fIsFinite = fBounds.isFinite();
     }
 
     
@@ -324,6 +352,7 @@ private:
 
         fSegmentMask = 0;
         fIsOval = false;
+        fIsRRect = false;
 
         size_t newSize = sizeof(uint8_t) * verbCount + sizeof(SkPoint) * pointCount;
         size_t newReserve = sizeof(uint8_t) * reserveVerbs + sizeof(SkPoint) * reservePoints;
@@ -416,31 +445,35 @@ private:
         return reinterpret_cast<intptr_t>(fVerbs) - reinterpret_cast<intptr_t>(fPoints);
     }
 
-    SkDEBUGCODE(void validate() const;)
-
     
 
 
-    static SkPathRef* CreateEmptyImpl();
+    friend SkPathRef* sk_create_empty_pathref();
 
     void setIsOval(bool isOval) { fIsOval = isOval; }
 
+    void setIsRRect(bool isRRect) { fIsRRect = isRRect; }
+
+    
     SkPoint* getPoints() {
         SkDEBUGCODE(this->validate();)
         fIsOval = false;
+        fIsRRect = false;
         return fPoints;
     }
+
+    const SkPoint* getPoints() const {
+        SkDEBUGCODE(this->validate();)
+        return fPoints;
+    }
+
+    void callGenIDChangeListeners();
 
     enum {
         kMinSize = 256,
     };
 
-    mutable SkTRacyReffable<SkRect> fBounds;
-    mutable SkTRacy<uint8_t>        fBoundsIsDirty;
-    mutable SkTRacy<SkBool8>        fIsFinite;    
-
-    SkBool8  fIsOval;
-    uint8_t  fSegmentMask;
+    mutable SkRect   fBounds;
 
     SkPoint*            fPoints; 
     uint8_t*            fVerbs; 
@@ -455,7 +488,17 @@ private:
     mutable uint32_t    fGenerationID;
     SkDEBUGCODE(int32_t fEditorsAttached;) 
 
+    SkTDArray<GenIDChangeListener*> fGenIDChangeListeners;  
+
+    mutable uint8_t  fBoundsIsDirty;
+    mutable SkBool8  fIsFinite;    
+
+    SkBool8  fIsOval;
+    SkBool8  fIsRRect;
+    uint8_t  fSegmentMask;
+
     friend class PathRefTest_Private;
+    friend class ForceIsRRect_Private; 
     typedef SkRefCnt INHERITED;
 };
 

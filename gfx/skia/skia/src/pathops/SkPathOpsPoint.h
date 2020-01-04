@@ -23,23 +23,25 @@ struct SkDVector {
         fY = pt.fY;
     }
 
-    friend SkDPoint operator+(const SkDPoint& a, const SkDVector& b);
-
+    
     void operator+=(const SkDVector& v) {
         fX += v.fX;
         fY += v.fY;
     }
 
+    
     void operator-=(const SkDVector& v) {
         fX -= v.fX;
         fY -= v.fY;
     }
 
+    
     void operator/=(const double s) {
         fX /= s;
         fY /= s;
     }
 
+    
     void operator*=(const double s) {
         fX *= s;
         fY *= s;
@@ -50,6 +52,7 @@ struct SkDVector {
         return v;
     }
 
+    
     double cross(const SkDVector& a) const {
         return fX * a.fY - fY * a.fX;
     }
@@ -98,14 +101,30 @@ struct SkDPoint {
         fY = pt.fY;
     }
 
+    
     void operator+=(const SkDVector& v) {
         fX += v.fX;
         fY += v.fY;
     }
 
+    
     void operator-=(const SkDVector& v) {
         fX -= v.fX;
         fY -= v.fY;
+    }
+
+    
+    SkDPoint operator+(const SkDVector& v) {
+        SkDPoint result = *this;
+        result += v;
+        return result;
+    }
+
+    
+    SkDPoint operator-(const SkDVector& v) {
+        SkDPoint result = *this;
+        result -= v;
+        return result;
     }
 
     
@@ -122,7 +141,7 @@ struct SkDPoint {
         double tiniest = SkTMin(SkTMin(SkTMin(fX, a.fX), fY), a.fY);
         double largest = SkTMax(SkTMax(SkTMax(fX, a.fX), fY), a.fY);
         largest = SkTMax(largest, -tiniest);
-        return AlmostBequalUlps(largest, largest + dist); 
+        return AlmostPequalUlps(largest, largest + dist); 
     }
 
     bool approximatelyEqual(const SkPoint& a) const {
@@ -145,44 +164,10 @@ struct SkDPoint {
         float tiniest = SkTMin(SkTMin(SkTMin(a.fX, b.fX), a.fY), b.fY);
         float largest = SkTMax(SkTMax(SkTMax(a.fX, b.fX), a.fY), b.fY);
         largest = SkTMax(largest, -tiniest);
-        return AlmostBequalUlps((double) largest, largest + dist); 
+        return AlmostPequalUlps((double) largest, largest + dist); 
     }
 
-    static bool RoughlyEqual(const SkPoint& a, const SkPoint& b) {
-        if (approximately_equal(a.fX, b.fX) && approximately_equal(a.fY, b.fY)) {
-            return true;
-        }
-        return RoughlyEqualUlps(a.fX, b.fX) && RoughlyEqualUlps(a.fY, b.fY);
-    }
-
-    bool approximatelyPEqual(const SkDPoint& a) const {
-        if (approximately_equal(fX, a.fX) && approximately_equal(fY, a.fY)) {
-            return true;
-        }
-        if (!RoughlyEqualUlps(fX, a.fX) || !RoughlyEqualUlps(fY, a.fY)) {
-            return false;
-        }
-        double dist = distance(a);  
-        double tiniest = SkTMin(SkTMin(SkTMin(fX, a.fX), fY), a.fY);
-        double largest = SkTMax(SkTMax(SkTMax(fX, a.fX), fY), a.fY);
-        largest = SkTMax(largest, -tiniest);
-        return AlmostPequalUlps(largest, largest + dist); 
-    }
-
-    bool approximatelyDEqual(const SkDPoint& a) const {
-        if (approximately_equal(fX, a.fX) && approximately_equal(fY, a.fY)) {
-            return true;
-        }
-        if (!RoughlyEqualUlps(fX, a.fX) || !RoughlyEqualUlps(fY, a.fY)) {
-            return false;
-        }
-        double dist = distance(a);  
-        double tiniest = SkTMin(SkTMin(SkTMin(fX, a.fX), fY), a.fY);
-        double largest = SkTMax(SkTMax(SkTMax(fX, a.fX), fY), a.fY);
-        largest = SkTMax(largest, -tiniest);
-        return AlmostDequalUlps(largest, largest + dist); 
-    }
-
+    
     bool approximatelyZero() const {
         return approximately_zero(fX) && approximately_zero(fY);
     }
@@ -209,7 +194,7 @@ struct SkDPoint {
         return result;
     }
 
-    bool moreRoughlyEqual(const SkDPoint& a) const {
+    bool roughlyEqual(const SkDPoint& a) const {
         if (roughly_equal(fX, a.fX) && roughly_equal(fY, a.fY)) {
             return true;
         }
@@ -220,13 +205,24 @@ struct SkDPoint {
         return RoughlyEqualUlps(largest, largest + dist); 
     }
 
-    bool roughlyEqual(const SkDPoint& a) const {
-        return roughly_equal(a.fY, fY) && roughly_equal(a.fX, fX);
+    static bool RoughlyEqual(const SkPoint& a, const SkPoint& b) {
+        if (!RoughlyEqualUlps(a.fX, b.fX) && !RoughlyEqualUlps(a.fY, b.fY)) {
+            return false;
+        }
+        SkDPoint dA, dB;
+        dA.set(a);
+        dB.set(b);
+        double dist = dA.distance(dB);  
+        float tiniest = SkTMin(SkTMin(SkTMin(a.fX, b.fX), a.fY), b.fY);
+        float largest = SkTMax(SkTMax(SkTMax(a.fX, b.fX), a.fY), b.fY);
+        largest = SkTMax(largest, -tiniest);
+        return RoughlyEqualUlps((double) largest, largest + dist); 
     }
 
     
     void dump() const;
     static void Dump(const SkPoint& pt);
+    static void DumpHex(const SkPoint& pt);
 };
 
 #endif

@@ -8,10 +8,10 @@
 #ifndef SkRecord_DEFINED
 #define SkRecord_DEFINED
 
-#include "SkChunkAlloc.h"
 #include "SkRecords.h"
 #include "SkTLogic.h"
 #include "SkTemplates.h"
+#include "SkVarAlloc.h"
 
 
 
@@ -25,29 +25,31 @@
 
 
 
-class SkRecord : SkNoncopyable {
+class SkRecord : public SkNVRefCnt<SkRecord> {
+    enum {
+        
+        kInlineRecords      = 4, 
+        kInlineAllocLgBytes = 8, 
+    };
 public:
-    SkRecord(size_t chunkBytes = 4096, unsigned firstReserveCount = 64 / sizeof(void*))
-        : fAlloc(chunkBytes), fCount(0), fReserved(0), kFirstReserveCount(firstReserveCount) {}
-
-    ~SkRecord() {
-        Destroyer destroyer;
-        for (unsigned i = 0; i < this->count(); i++) {
-            this->mutate<void>(i, destroyer);
-        }
-    }
+    SkRecord()
+        : fCount(0)
+        , fReserved(kInlineRecords)
+        , fAlloc(kInlineAllocLgBytes+1,  
+                 fInlineAlloc, sizeof(fInlineAlloc)) {}
+    ~SkRecord();
 
     
-    unsigned count() const { return fCount; }
+    int count() const { return fCount; }
 
     
     
     
     
     template <typename R, typename F>
-    R visit(unsigned i, F& f) const {
+    R visit(int i, F& f) const {
         SkASSERT(i < this->count());
-        return fRecords[i].visit<R>(fTypes[i], f);
+        return fRecords[i].visit<R>(f);
     }
 
     
@@ -55,17 +57,18 @@ public:
     
     
     template <typename R, typename F>
-    R mutate(unsigned i, F& f) {
+    R mutate(int i, F& f) {
         SkASSERT(i < this->count());
-        return fRecords[i].mutate<R>(fTypes[i], f);
+        return fRecords[i].mutate<R>(f);
     }
+
     
 
     
     
     template <typename T>
-    T* alloc(unsigned count = 1) {
-        return (T*)fAlloc.allocThrow(sizeof(T) * count);
+    T* alloc(size_t count = 1) {
+        return (T*)fAlloc.alloc(sizeof(T) * count);
     }
 
     
@@ -73,12 +76,8 @@ public:
     template <typename T>
     T* append() {
         if (fCount == fReserved) {
-            fReserved = SkTMax(kFirstReserveCount, fReserved*2);
-            fRecords.realloc(fReserved);
-            fTypes.realloc(fReserved);
+            this->grow();
         }
-
-        fTypes[fCount] = T::kType;
         return fRecords[fCount++].set(this->allocCommand<T>());
     }
 
@@ -86,13 +85,12 @@ public:
     
     
     template <typename T>
-    T* replace(unsigned i) {
+    T* replace(int i) {
         SkASSERT(i < this->count());
 
         Destroyer destroyer;
         this->mutate<void>(i, destroyer);
 
-        fTypes[i] = T::kType;
         return fRecords[i].set(this->allocCommand<T>());
     }
 
@@ -100,38 +98,24 @@ public:
     
     
     template <typename T, typename Existing>
-    T* replace(unsigned i, const SkRecords::Adopted<Existing>& proofOfAdoption) {
+    T* replace(int i, const SkRecords::Adopted<Existing>& proofOfAdoption) {
         SkASSERT(i < this->count());
 
-        SkASSERT(Existing::kType == fTypes[i]);
-        SkASSERT(proofOfAdoption == fRecords[i].ptr<Existing>());
+        SkASSERT(Existing::kType == fRecords[i].type());
+        SkASSERT(proofOfAdoption == fRecords[i].ptr());
 
-        fTypes[i] = T::kType;
         return fRecords[i].set(this->allocCommand<T>());
     }
 
+    
+    
+    size_t bytesUsed() const;
+
+    
+    
+    void defrag();
+
 private:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -153,82 +137,66 @@ private:
         void operator()(T* record) { record->~T(); }
     };
 
-    
-    struct Type8 {
-    public:
-        
-        Type8(SkRecords::Type type) : fType(type) { SkASSERT(*this == type); }
-        operator SkRecords::Type () { return (SkRecords::Type)fType; }
-
-    private:
-        uint8_t fType;
-    };
-
-    
-    
     template <typename T>
-    SK_WHEN(SkTIsEmpty<T>, T*) allocCommand() {
+    SK_WHEN(skstd::is_empty<T>::value, T*) allocCommand() {
         static T singleton = {};
         return &singleton;
     }
 
     template <typename T>
-    SK_WHEN(!SkTIsEmpty<T>, T*) allocCommand() { return this->alloc<T>(); }
+    SK_WHEN(!skstd::is_empty<T>::value, T*) allocCommand() { return this->alloc<T>(); }
+
+    void grow();
 
     
-    
     struct Record {
-    public:
+        
+        
+        
+        uint64_t fTypeAndPtr;
+        static const int kTypeShift = sizeof(void*) == 4 ? 32 : 48;
+
         
         template <typename T>
         T* set(T* ptr) {
-            fPtr = ptr;
+            fTypeAndPtr = ((uint64_t)T::kType) << kTypeShift | (uintptr_t)ptr;
+            SkASSERT(this->ptr() == ptr && this->type() == T::kType);
             return ptr;
         }
 
-        
-        template <typename T>
-        T* ptr() const { return (T*)fPtr; }
+        SkRecords::Type type() const { return (SkRecords::Type)(fTypeAndPtr >> kTypeShift); }
+        void* ptr() const { return (void*)(fTypeAndPtr & ((1ull<<kTypeShift)-1)); }
 
         
-        
         template <typename R, typename F>
-        R visit(Type8 type, F& f) const {
-        #define CASE(T) case SkRecords::T##_Type: return f(*this->ptr<SkRecords::T>());
-            switch(type) { SK_RECORD_TYPES(CASE) }
+        R visit(F& f) const {
+        #define CASE(T) case SkRecords::T##_Type: return f(*(const SkRecords::T*)this->ptr());
+            switch(this->type()) { SK_RECORD_TYPES(CASE) }
         #undef CASE
             SkDEBUGFAIL("Unreachable");
             return R();
         }
 
         
-        
         template <typename R, typename F>
-        R mutate(Type8 type, F& f) {
-        #define CASE(T) case SkRecords::T##_Type: return f(this->ptr<SkRecords::T>());
-            switch(type) { SK_RECORD_TYPES(CASE) }
+        R mutate(F& f) {
+        #define CASE(T) case SkRecords::T##_Type: return f((SkRecords::T*)this->ptr());
+            switch(this->type()) { SK_RECORD_TYPES(CASE) }
         #undef CASE
             SkDEBUGFAIL("Unreachable");
             return R();
         }
-
-    private:
-        void* fPtr;
     };
 
     
     
-    
-    
-    
+    int fCount, fReserved;
+    SkAutoSTMalloc<kInlineRecords, Record> fRecords;
 
-    SkChunkAlloc fAlloc;
-    SkAutoTMalloc<Record> fRecords;
-    SkAutoTMalloc<Type8> fTypes;
     
-    unsigned fCount;
-    unsigned fReserved;
-    const unsigned kFirstReserveCount;
+    
+    SkVarAlloc fAlloc;
+    char fInlineAlloc[1 << kInlineAllocLgBytes];
 };
 
 #endif

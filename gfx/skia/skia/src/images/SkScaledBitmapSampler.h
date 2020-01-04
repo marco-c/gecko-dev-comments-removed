@@ -49,9 +49,9 @@ public:
     
     
     bool begin(SkBitmap* dst, SrcConfig sc, const SkImageDecoder& decoder,
-               const SkPMColor* = NULL);
+               const SkPMColor* = nullptr);
     bool begin(SkBitmap* dst, SrcConfig sc, const Options& opts,
-               const SkPMColor* = NULL);
+               const SkPMColor* = nullptr);
     
     
     bool next(const uint8_t* SK_RESTRICT src);

@@ -8,6 +8,8 @@
 
 #include "SkTypes.h"
 
+#if defined(SK_BUILD_FOR_WIN32)
+
 
 
 
@@ -67,7 +69,7 @@ public:
     bool decodeStream(SkStream* stream, SkBitmap* bm, WICModes wicMode, Format* format) const;
 
 protected:
-    virtual bool onDecode(SkStream* stream, SkBitmap* bm, Mode mode) SK_OVERRIDE;
+    Result onDecode(SkStream* stream, SkBitmap* bm, Mode mode) override;
 };
 
 struct FormatConversion {
@@ -92,7 +94,7 @@ static SkImageDecoder::Format GuidContainerFormat_to_Format(REFGUID guid) {
     return SkImageDecoder::kUnknown_Format;
 }
 
-bool SkImageDecoder_WIC::onDecode(SkStream* stream, SkBitmap* bm, Mode mode) {
+SkImageDecoder::Result SkImageDecoder_WIC::onDecode(SkStream* stream, SkBitmap* bm, Mode mode) {
     WICModes wicMode;
     switch (mode) {
         case SkImageDecoder::kDecodeBounds_Mode:
@@ -102,7 +104,7 @@ bool SkImageDecoder_WIC::onDecode(SkStream* stream, SkBitmap* bm, Mode mode) {
             wicMode = kDecodePixels_WICMode;
             break;
     }
-    return this->decodeStream(stream, bm, wicMode, NULL);
+    return this->decodeStream(stream, bm, wicMode, nullptr) ? kSuccess : kFailure;
 }
 
 bool SkImageDecoder_WIC::decodeStream(SkStream* stream, SkBitmap* bm, WICModes wicMode,
@@ -120,7 +122,7 @@ bool SkImageDecoder_WIC::decodeStream(SkStream* stream, SkBitmap* bm, WICModes w
     if (SUCCEEDED(hr)) {
         hr = CoCreateInstance(
             CLSID_WICImagingFactory
-            , NULL
+            , nullptr
             , CLSCTX_INPROC_SERVER
             , IID_PPV_ARGS(&piImagingFactory)
         );
@@ -135,7 +137,7 @@ bool SkImageDecoder_WIC::decodeStream(SkStream* stream, SkBitmap* bm, WICModes w
     
     if (SUCCEEDED(hr)) {
         LARGE_INTEGER liBeginning = { 0 };
-        hr = piStream->Seek(liBeginning, STREAM_SEEK_SET, NULL);
+        hr = piStream->Seek(liBeginning, STREAM_SEEK_SET, nullptr);
     }
 
     
@@ -143,14 +145,14 @@ bool SkImageDecoder_WIC::decodeStream(SkStream* stream, SkBitmap* bm, WICModes w
     if (SUCCEEDED(hr)) {
         hr = piImagingFactory->CreateDecoderFromStream(
             piStream.get()                    
-            , NULL                            
+            , nullptr                            
             , WICDecodeMetadataCacheOnDemand  
             , &piBitmapDecoder                
         );
     }
 
     if (kDecodeFormat_WICMode == wicMode) {
-        SkASSERT(format != NULL);
+        SkASSERT(format != nullptr);
         
         if (SUCCEEDED(hr)) {
             GUID guidFormat;
@@ -190,7 +192,7 @@ bool SkImageDecoder_WIC::decodeStream(SkStream* stream, SkBitmap* bm, WICModes w
         if (kDecodeBounds_WICMode == wicMode) {
             return true;
         }
-        if (!this->allocPixelRef(bm, NULL)) {
+        if (!this->allocPixelRef(bm, nullptr)) {
             return false;
         }
     }
@@ -213,7 +215,7 @@ bool SkImageDecoder_WIC::decodeStream(SkStream* stream, SkBitmap* bm, WICModes w
             piBitmapSourceOriginal.get()      
             , destinationPixelFormat          
             , WICBitmapDitherTypeNone         
-            , NULL                            
+            , nullptr                            
             , 0.f                             
             , WICBitmapPaletteTypeCustom      
         );
@@ -233,7 +235,7 @@ bool SkImageDecoder_WIC::decodeStream(SkStream* stream, SkBitmap* bm, WICModes w
         bm->eraseColor(SK_ColorTRANSPARENT);
         const UINT stride = (UINT) bm->rowBytes();
         hr = piBitmapSourceConverted->CopyPixels(
-            NULL,                             
+            nullptr,                             
             stride,
             stride * height,
             reinterpret_cast<BYTE *>(bm->getPixels())
@@ -254,9 +256,9 @@ extern SkImageDecoder* image_decoder_from_stream(SkStreamRewindable*);
 
 SkImageDecoder* SkImageDecoder::Factory(SkStreamRewindable* stream) {
     SkImageDecoder* decoder = image_decoder_from_stream(stream);
-    if (NULL == decoder) {
+    if (nullptr == decoder) {
         
-        return SkNEW(SkImageDecoder_WIC);
+        return new SkImageDecoder_WIC;
     } else {
         return decoder;
     }
@@ -265,7 +267,7 @@ SkImageDecoder* SkImageDecoder::Factory(SkStreamRewindable* stream) {
 
 
 SkMovie* SkMovie::DecodeStream(SkStreamRewindable* stream) {
-    return NULL;
+    return nullptr;
 }
 
 
@@ -345,7 +347,7 @@ bool SkImageEncoder_WIC::onEncode(SkWStream* stream
     if (SUCCEEDED(hr)) {
         hr = CoCreateInstance(
             CLSID_WICImagingFactory
-            , NULL
+            , nullptr
             , CLSCTX_INPROC_SERVER
             , IID_PPV_ARGS(&piImagingFactory)
         );
@@ -360,7 +362,7 @@ bool SkImageEncoder_WIC::onEncode(SkWStream* stream
     
     SkTScopedComPtr<IWICBitmapEncoder> piEncoder;
     if (SUCCEEDED(hr)) {
-        hr = piImagingFactory->CreateEncoder(type, NULL, &piEncoder);
+        hr = piImagingFactory->CreateEncoder(type, nullptr, &piEncoder);
     }
 
     if (SUCCEEDED(hr)) {
@@ -445,9 +447,9 @@ static SkImageEncoder* sk_imageencoder_wic_factory(SkImageEncoder::Type t) {
         case SkImageEncoder::kPNG_Type:
             break;
         default:
-            return NULL;
+            return nullptr;
     }
-    return SkNEW_ARGS(SkImageEncoder_WIC, (t));
+    return new SkImageEncoder_WIC(t);
 }
 
 static SkImageEncoder_EncodeReg gEReg(sk_imageencoder_wic_factory);
@@ -455,10 +457,12 @@ static SkImageEncoder_EncodeReg gEReg(sk_imageencoder_wic_factory);
 static SkImageDecoder::Format get_format_wic(SkStreamRewindable* stream) {
     SkImageDecoder::Format format;
     SkImageDecoder_WIC codec;
-    if (!codec.decodeStream(stream, NULL, SkImageDecoder_WIC::kDecodeFormat_WICMode, &format)) {
+    if (!codec.decodeStream(stream, nullptr, SkImageDecoder_WIC::kDecodeFormat_WICMode, &format)) {
         format = SkImageDecoder::kUnknown_Format;
     }
     return format;
 }
 
 static SkImageDecoder_FormatReg gFormatReg(get_format_wic);
+
+#endif 

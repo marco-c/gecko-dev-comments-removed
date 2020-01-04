@@ -11,13 +11,13 @@
 #include "GrTypes.h"
 #include "GrTypesPriv.h"
 
-class GrEffect;
+class GrFragmentProcessor;
 
 namespace GrDitherEffect {
     
 
 
-    GrEffect* Create();
+    GrFragmentProcessor* Create();
 };
 
 #endif

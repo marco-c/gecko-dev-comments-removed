@@ -8,7 +8,7 @@
 #ifndef SkImageEncoder_DEFINED
 #define SkImageEncoder_DEFINED
 
-#include "SkTypes.h"
+#include "SkImageInfo.h"
 #include "SkTRegistry.h"
 
 class SkBitmap;
@@ -17,6 +17,7 @@ class SkWStream;
 
 class SkImageEncoder {
 public:
+    
     enum Type {
         kUnknown_Type,
         kBMP_Type,
@@ -59,7 +60,10 @@ public:
 
     bool encodeStream(SkWStream* stream, const SkBitmap& bm, int quality);
 
+    static SkData* EncodeData(const SkImageInfo&, const void* pixels, size_t rowBytes,
+                              Type, int quality);
     static SkData* EncodeData(const SkBitmap&, Type, int quality);
+
     static bool EncodeFile(const char file[], const SkBitmap&, Type,
                            int quality);
     static bool EncodeStream(SkWStream*, const SkBitmap&, Type,
@@ -83,10 +87,8 @@ protected:
 
 
 
-#define DEFINE_ENCODER_CREATOR(codec)           \
-    SkImageEncoder *Create ## codec () {        \
-        return SkNEW( Sk ## codec );            \
-    }
+#define DEFINE_ENCODER_CREATOR(codec) \
+    SkImageEncoder* Create##codec() { return new Sk##codec; }
 
 
 

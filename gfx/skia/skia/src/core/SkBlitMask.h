@@ -8,9 +8,9 @@
 #ifndef SkBlitMask_DEFINED
 #define SkBlitMask_DEFINED
 
-#include "SkBitmap.h"
 #include "SkColor.h"
 #include "SkMask.h"
+#include "SkPixmap.h"
 
 class SkBlitMask {
 public:
@@ -18,7 +18,7 @@ public:
 
 
 
-    static bool BlitColor(const SkBitmap& device, const SkMask& mask,
+    static bool BlitColor(const SkPixmap& device, const SkMask& mask,
                           const SkIRect& clip, SkColor color);
 
     
@@ -46,18 +46,6 @@ public:
 
     typedef void (*RowProc)(void* dst, const void* mask,
                             const SkPMColor* src, int width);
-
-    
-
-
-
-    static ColorProc ColorFactory(SkColorType, SkMask::Format, SkColor);
-
-    
-
-
-
-    static ColorProc PlatformColorProcs(SkColorType, SkMask::Format, SkColor);
 
     
 

@@ -14,5 +14,5 @@
 SkCanvas* SkCreateNullCanvas() {
     
     
-    return SkNEW_ARGS(SkNWayCanvas, (0,0));
+    return new SkNWayCanvas(0, 0);
 }

@@ -8,6 +8,7 @@
 #ifndef SkImage_DEFINED
 #define SkImage_DEFINED
 
+#include "SkFilterQuality.h"
 #include "SkImageInfo.h"
 #include "SkImageEncoder.h"
 #include "SkRefCnt.h"
@@ -16,7 +17,13 @@
 
 class SkData;
 class SkCanvas;
+class SkColorTable;
+class SkImageGenerator;
 class SkPaint;
+class SkPicture;
+class SkPixelSerializer;
+class SkString;
+class SkSurface;
 class GrContext;
 class GrTexture;
 
@@ -30,48 +37,126 @@ class GrTexture;
 
 
 
+
+
+
+
 class SK_API SkImage : public SkRefCnt {
 public:
-    SK_DECLARE_INST_COUNT(SkImage)
-
     typedef SkImageInfo Info;
+    typedef void* ReleaseContext;
 
-    static SkImage* NewRasterCopy(const Info&, const void* pixels, size_t rowBytes);
+    static SkImage* NewRasterCopy(const Info&, const void* pixels, size_t rowBytes,
+                                  SkColorTable* ctable = NULL);
     static SkImage* NewRasterData(const Info&, SkData* pixels, size_t rowBytes);
-    static SkImage* NewEncodedData(SkData*);
+
+    typedef void (*RasterReleaseProc)(const void* pixels, ReleaseContext);
 
     
 
 
 
 
-    static SkImage* NewTexture(const SkBitmap&);
+
+
+    static SkImage* NewFromRaster(const Info&, const void* pixels, size_t rowBytes,
+                                  RasterReleaseProc, ReleaseContext);
+
+    
+
+
+
+    static SkImage* NewFromBitmap(const SkBitmap&);
+    
+    
+
+
+
+
+
+
+    static SkImage* NewFromGenerator(SkImageGenerator*, const SkIRect* subset = NULL);
+
+    
+
+
+
+
+
+
+
+
+    static SkImage* NewFromEncoded(SkData* encoded, const SkIRect* subset = NULL);
+
+    
+
+
+
+
+
+    static SkImage* NewFromTexture(GrContext* ctx, const GrBackendTextureDesc& desc) {
+        return NewFromTexture(ctx, desc, kPremul_SkAlphaType, NULL, NULL);
+    }
+
+    static SkImage* NewFromTexture(GrContext* ctx, const GrBackendTextureDesc& de, SkAlphaType at) {
+        return NewFromTexture(ctx, de, at, NULL, NULL);
+    }
+
+    typedef void (*TextureReleaseProc)(ReleaseContext);
+
+    
+
+
+
+
+
+
+    static SkImage* NewFromTexture(GrContext*, const GrBackendTextureDesc&, SkAlphaType,
+                                   TextureReleaseProc, ReleaseContext);
+
+    
+
+
+
+
+
+    static SkImage* NewFromAdoptedTexture(GrContext*, const GrBackendTextureDesc&,
+                                          SkAlphaType = kPremul_SkAlphaType);
+
+    
+
+
+
+
+
+    static SkImage* NewFromTextureCopy(GrContext*, const GrBackendTextureDesc&,
+                                       SkAlphaType = kPremul_SkAlphaType);
+
+    
+
+
+
+
+    static SkImage* NewFromYUVTexturesCopy(GrContext*, SkYUVColorSpace,
+                                           const GrBackendObject yuvTextureHandles[3],
+                                           const SkISize yuvSizes[3],
+                                           GrSurfaceOrigin);
+
+    static SkImage* NewFromPicture(const SkPicture*, const SkISize& dimensions,
+                                   const SkMatrix*, const SkPaint*);
+
+    
 
     int width() const { return fWidth; }
     int height() const { return fHeight; }
+    SkISize dimensions() const { return SkISize::Make(fWidth, fHeight); }
+    SkIRect bounds() const { return SkIRect::MakeWH(fWidth, fHeight); }
     uint32_t uniqueID() const { return fUniqueID; }
-
-    
-
-
-
-
-    GrTexture* getTexture();
+    virtual bool isOpaque() const { return false; }
 
     virtual SkShader* newShader(SkShader::TileMode,
                                 SkShader::TileMode,
                                 const SkMatrix* localMatrix = NULL) const;
-
-    void draw(SkCanvas*, SkScalar x, SkScalar y, const SkPaint*);
-
-    
-
-
-
-
-
-
-    void draw(SkCanvas*, const SkRect* src, const SkRect& dst, const SkPaint*);
 
     
 
@@ -91,50 +176,185 @@ public:
 
 
 
-    SkData* encode(SkImageEncoder::Type t = SkImageEncoder::kPNG_Type,
-                   int quality = 80) const;
+    bool peekPixels(SkPixmap* pixmap) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    void preroll(GrContext* = nullptr) const;
+
+    
+    GrTexture* getTexture() const;
+
+    
+
+
+    bool isTextureBacked() const;
+
+    
+
+
+
+
+    GrBackendObject getTextureHandle(bool flushPendingGrContextIO) const;
+
+    
+
+
+
+
+     enum CachingHint {
+        kAllow_CachingHint,
+        kDisallow_CachingHint,
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+                    int srcX, int srcY, CachingHint = kAllow_CachingHint) const;
+
+    bool readPixels(const SkPixmap& dst, int srcX, int srcY,
+                    CachingHint = kAllow_CachingHint) const;
+
+    
+
+
+
+
+
+
+    bool scalePixels(const SkPixmap& dst, SkFilterQuality, CachingHint = kAllow_CachingHint) const;
+
+    
+
+
+
+
+
+
+
+
+
+    SkData* encode(SkImageEncoder::Type, int quality) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkData* encode(SkPixelSerializer* = nullptr) const;
+
+    
+
+
+
+
+
+
+
+
+    SkData* refEncoded() const;
+
+    const char* toString(SkString*) const;
+
+    
+
+
+
+
+
+
+    SkImage* newSubset(const SkIRect& subset) const;
+
+    
+
+    enum LegacyBitmapMode {
+        kRO_LegacyBitmapMode,
+        kRW_LegacyBitmapMode,
+    };
+
+    
+
+
+
+
+
+
+
+
+    bool asLegacyBitmap(SkBitmap*, LegacyBitmapMode) const;
+    
+    
+
+
+
+    bool isLazyGenerated() const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SkImage* applyFilter(SkImageFilter* filter, SkIPoint* offset,
+                         bool forceResultToOriginalSize) const;
 
 protected:
-    SkImage(int width, int height) :
-        fWidth(width),
-        fHeight(height),
-        fUniqueID(NextUniqueID()) {
-
-        SkASSERT(width >= 0);
-        SkASSERT(height >= 0);
-    }
+    SkImage(int width, int height, uint32_t uniqueID);
 
 private:
     const int       fWidth;
     const int       fHeight;
     const uint32_t  fUniqueID;
 
-    static uint32_t NextUniqueID();
-
     typedef SkRefCnt INHERITED;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-    
-    
-    bool readPixels(SkBitmap* bitmap, const SkIRect* subset = NULL) const;
 };
 
 #endif

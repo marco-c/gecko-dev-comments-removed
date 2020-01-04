@@ -24,18 +24,24 @@ public:
     
 
 
-    virtual bool write(const void* buffer, size_t size) SK_OVERRIDE {
+    bool write(const void* buffer, size_t size) override {
         this->update(reinterpret_cast<const uint8_t*>(buffer), size);
         return true;
     }
 
-    virtual size_t bytesWritten() const SK_OVERRIDE { return SkToSizeT(this->byteCount); }
+    size_t bytesWritten() const override { return SkToSizeT(this->byteCount); }
 
     
     void update(const uint8_t* input, size_t length);
 
     struct Digest {
         uint8_t data[16];
+        bool operator ==(Digest const& other) const {
+            return 0 == memcmp(data, other.data, sizeof(data));
+        }
+        bool operator !=(Digest const& other) const {
+            return 0 != memcmp(data, other.data, sizeof(data));
+        }
     };
 
     

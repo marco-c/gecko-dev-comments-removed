@@ -92,14 +92,20 @@ public:
 
 
 
+        kEmbeddedBitmaps_Flag       = 1 << 2,
+
+        
 
 
 
 
-        kUseNonlinearMetrics_Flag   = 1 << 2,
 
-        kVertical_Flag              = 1 << 3,
-        kEmbeddedBitmaps_Flag       = 1 << 4,
+
+
+
+        kUseNonlinearMetrics_Flag   = 1 << 3,
+
+        kVertical_Flag              = 1 << 4,
         kGenA8FromLCD_Flag          = 1 << 5,
         kEmbolden_Flag              = 1 << 6,
         kDevKern_Flag               = 1 << 7,   

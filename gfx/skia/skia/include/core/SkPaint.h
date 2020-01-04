@@ -5,28 +5,24 @@
 
 
 
-
-
-
 #ifndef SkPaint_DEFINED
 #define SkPaint_DEFINED
 
 #include "SkColor.h"
-#include "SkDrawLooper.h"
+#include "SkFilterQuality.h"
 #include "SkMatrix.h"
 #include "SkXfermode.h"
-#ifdef SK_BUILD_FOR_ANDROID
-#include "SkPaintOptionsAndroid.h"
-#endif
 
 class SkAnnotation;
+class SkAutoDescriptor;
 class SkAutoGlyphCache;
 class SkColorFilter;
+class SkData;
 class SkDescriptor;
-struct SkDeviceProperties;
+class SkDrawLooper;
 class SkReadBuffer;
 class SkWriteBuffer;
-struct SkGlyph;
+class SkGlyph;
 struct SkRect;
 class SkGlyphCache;
 class SkImageFilter;
@@ -36,6 +32,7 @@ class SkPathEffect;
 struct SkPoint;
 class SkRasterizer;
 class SkShader;
+class SkSurfaceProps;
 class SkTypeface;
 
 typedef const SkGlyph& (*SkDrawCacheProc)(SkGlyphCache*, const char**,
@@ -59,10 +56,19 @@ public:
 
     SkPaint& operator=(const SkPaint&);
 
+    
+
+
+
     SK_API friend bool operator==(const SkPaint& a, const SkPaint& b);
     friend bool operator!=(const SkPaint& a, const SkPaint& b) {
         return !(a == b);
     }
+
+    
+
+
+    uint32_t getHash() const;
 
     void flatten(SkWriteBuffer&) const;
     void unflatten(SkReadBuffer&);
@@ -110,8 +116,6 @@ public:
         kAutoHinting_Flag     = 0x800,  
         kVerticalText_Flag    = 0x1000,
         kGenA8FromLCD_Flag    = 0x2000, 
-        kDistanceFieldTextTEMP_Flag = 0x4000, 
-                                              
         
         
 
@@ -281,53 +285,16 @@ public:
     
 
 
-    bool isDistanceFieldTextTEMP() const {
-        return SkToBool(this->getFlags() & kDistanceFieldTextTEMP_Flag);
+
+    SkFilterQuality getFilterQuality() const {
+        return (SkFilterQuality)fBitfields.fFilterQuality;
     }
 
     
 
 
 
-    void setDistanceFieldTextTEMP(bool distanceFieldText);
-
-    enum FilterLevel {
-        kNone_FilterLevel,
-        kLow_FilterLevel,
-        kMedium_FilterLevel,
-        kHigh_FilterLevel
-    };
-
-    
-
-
-
-    FilterLevel getFilterLevel() const {
-      return (FilterLevel)fBitfields.fFilterLevel;
-    }
-
-    
-
-
-
-    void setFilterLevel(FilterLevel);
-
-    
-
-
-
-    SK_ATTR_DEPRECATED("use setFilterLevel")
-    void setFilterBitmap(bool doFilter) {
-        this->setFilterLevel(doFilter ? kLow_FilterLevel : kNone_FilterLevel);
-    }
-
-    
-
-
-    SK_ATTR_DEPRECATED("use getFilterLevel")
-    bool isFilterBitmap() const {
-        return kNone_FilterLevel != this->getFilterLevel();
-    }
+    void setFilterQuality(SkFilterQuality quality);
 
     
 
@@ -432,6 +399,15 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
     enum Cap {
         kButt_Cap,      
         kRound_Cap,     
@@ -490,8 +466,14 @@ public:
 
 
 
-    bool getFillPath(const SkPath& src, SkPath* dst,
-                     const SkRect* cullRect = NULL) const;
+
+
+    bool getFillPath(const SkPath& src, SkPath* dst, const SkRect* cullRect,
+                     SkScalar resScale = 1) const;
+
+    bool getFillPath(const SkPath& src, SkPath* dst) const {
+        return this->getFillPath(src, dst, NULL, 1);
+    }
 
     
 
@@ -841,8 +823,7 @@ public:
 
 
 
-    void glyphsToUnichars(const uint16_t glyphs[], int count,
-                          SkUnichar text[]) const;
+    void glyphsToUnichars(const uint16_t glyphs[], int count, SkUnichar text[]) const;
 
     
 
@@ -863,10 +844,7 @@ public:
 
 
 
-
-
-    SkScalar measureText(const void* text, size_t length,
-                         SkRect* bounds, SkScalar scale = 0) const;
+    SkScalar measureText(const void* text, size_t length, SkRect* bounds) const;
 
     
 
@@ -877,25 +855,10 @@ public:
 
 
     SkScalar measureText(const void* text, size_t length) const {
-        return this->measureText(text, length, NULL, 0);
+        return this->measureText(text, length, NULL);
     }
 
     
-
-    enum TextBufferDirection {
-        
-
-
-        kForward_TextBufferDirection,
-        
-
-
-        kBackward_TextBufferDirection
-    };
-
-    
-
-
 
 
 
@@ -909,9 +872,7 @@ public:
 
 
     size_t  breakText(const void* text, size_t length, SkScalar maxWidth,
-                      SkScalar* measuredWidth = NULL,
-                      TextBufferDirection tbd = kForward_TextBufferDirection)
-                      const;
+                      SkScalar* measuredWidth = NULL) const;
 
     
 
@@ -938,19 +899,13 @@ public:
     void getPosTextPath(const void* text, size_t length,
                         const SkPoint pos[], SkPath* path) const;
 
-#ifdef SK_BUILD_FOR_ANDROID
-    uint32_t getGenerationID() const;
-    void setGenerationID(uint32_t generationID);
-
     
 
-    unsigned getBaseGlyphCount(SkUnichar text) const;
 
-    const SkPaintOptionsAndroid& getPaintOptionsAndroid() const {
-        return fPaintOptionsAndroid;
-    }
-    void setPaintOptionsAndroid(const SkPaintOptionsAndroid& options);
-#endif
+
+
+
+    SkRect getFontBounds() const;
 
     
     
@@ -963,12 +918,7 @@ public:
 
 
 
-    bool canComputeFastBounds() const {
-        if (this->getLooper()) {
-            return this->getLooper()->canComputeFastBounds(*this);
-        }
-        return !this->getRasterizer();
-    }
+    bool canComputeFastBounds() const;
 
     
 
@@ -1035,11 +985,6 @@ public:
 
     SK_TO_STRING_NONVIRT()
 
-    struct FlatteningTraits {
-        static void Flatten(SkWriteBuffer& buffer, const SkPaint& paint);
-        static void Unflatten(SkReadBuffer& buffer, SkPaint* paint);
-    };
-
 private:
     SkTypeface*     fTypeface;
     SkPathEffect*   fPathEffect;
@@ -1068,28 +1013,38 @@ private:
             unsigned        fStyle : 2;
             unsigned        fTextEncoding : 2;  
             unsigned        fHinting : 2;
-            unsigned        fFilterLevel : 2;
+            unsigned        fFilterQuality : 2;
             
         } fBitfields;
         uint32_t fBitfieldsUInt;
     };
-    uint32_t fDirtyBits;
 
     SkDrawCacheProc    getDrawCacheProc() const;
-    SkMeasureCacheProc getMeasureCacheProc(TextBufferDirection dir,
-                                           bool needFullMetrics) const;
+    SkMeasureCacheProc getMeasureCacheProc(bool needFullMetrics) const;
 
     SkScalar measure_text(SkGlyphCache*, const char* text, size_t length,
                           int* count, SkRect* bounds) const;
 
-    SkGlyphCache* detachCache(const SkDeviceProperties* deviceProperties, const SkMatrix*,
+    
+
+
+
+    void getScalerContextDescriptor(SkAutoDescriptor*, const SkSurfaceProps& surfaceProps,
+                                    const SkMatrix*, bool ignoreGamma) const;
+
+    SkGlyphCache* detachCache(const SkSurfaceProps* surfaceProps, const SkMatrix*,
                               bool ignoreGamma) const;
 
-    void descriptorProc(const SkDeviceProperties* deviceProperties, const SkMatrix* deviceMatrix,
+    void descriptorProc(const SkSurfaceProps* surfaceProps, const SkMatrix* deviceMatrix,
                         void (*proc)(SkTypeface*, const SkDescriptor*, void*),
-                        void* context, bool ignoreGamma = false) const;
+                        void* context, bool ignoreGamma) const;
 
-    static void Term();
+    
+
+
+
+
+    SkColor computeLuminanceColor() const;
 
     enum {
         
@@ -1133,21 +1088,17 @@ private:
     friend class SkAutoGlyphCacheNoGamma;
     friend class SkCanvas;
     friend class SkDraw;
-    friend class SkGraphics; 
     friend class SkPDFDevice;
     friend class GrBitmapTextContext;
+    friend class GrAtlasTextContext;
     friend class GrDistanceFieldTextContext;
     friend class GrStencilAndCoverTextContext;
+    friend class GrPathRendering;
+    friend class GrTextContext;
+    friend class GrGLPathRendering;
+    friend class SkScalerContext;
     friend class SkTextToPathIter;
     friend class SkCanonicalizePaint;
-
-#ifdef SK_BUILD_FOR_ANDROID
-    SkPaintOptionsAndroid fPaintOptionsAndroid;
-
-    
-    
-    uint32_t        fGenerationID;
-#endif
 };
 
 #endif

@@ -19,7 +19,7 @@ class GrGpu;
 
 class GrGeometryBuffer : public GrGpuResource {
 public:
-    SK_DECLARE_INST_COUNT(GrGeometryBuffer);
+    
 
     
 
@@ -58,9 +58,9 @@ public:
 
 
      void unmap() {
-         SkASSERT(NULL != fMapPtr);
+         SkASSERT(fMapPtr);
          this->onUnmap();
-         fMapPtr = NULL;
+         fMapPtr = nullptr;
      }
 
     
@@ -76,7 +76,7 @@ public:
 
 
 
-     bool isMapped() const { return NULL != fMapPtr; }
+     bool isMapped() const { return SkToBool(fMapPtr); }
 
     
 
@@ -98,18 +98,17 @@ public:
         return this->onUpdateData(src, srcSizeInBytes);
     }
 
-    
-    virtual size_t gpuMemorySize() const { return fGpuMemorySize; }
-
 protected:
-    GrGeometryBuffer(GrGpu* gpu, bool isWrapped, size_t gpuMemorySize, bool dynamic, bool cpuBacked)
-        : INHERITED(gpu, isWrapped)
-        , fMapPtr(NULL)
+    GrGeometryBuffer(GrGpu* gpu, size_t gpuMemorySize, bool dynamic, bool cpuBacked)
+        : INHERITED(gpu, kCached_LifeCycle)
+        , fMapPtr(nullptr)
         , fGpuMemorySize(gpuMemorySize)
         , fDynamic(dynamic)
         , fCPUBacked(cpuBacked) {}
 
 private:
+    virtual size_t onGpuMemorySize() const { return fGpuMemorySize; }
+
     virtual void* onMap() = 0;
     virtual void onUnmap() = 0;
     virtual bool onUpdateData(const void* src, size_t srcSizeInBytes) = 0;

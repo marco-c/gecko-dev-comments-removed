@@ -32,11 +32,20 @@ public:
 
 
 
-    typedef void (*Proc)(uint16_t* dst,
-                         const SkPMColor* src,
-                         int count, U8CPU alpha, int x, int y);
+    typedef void (*Proc16)(uint16_t dst[], const SkPMColor src[], int count,
+                           U8CPU alpha, int x, int y);
 
-    static Proc Factory(unsigned flags, SkColorType);
+    static Proc16 Factory16(unsigned flags);
+
+    
+
+
+
+
+    typedef void (*ColorProc16)(uint16_t dst[], SkPMColor src, int count, int x, int y);
+
+    
+    static ColorProc16 ColorFactory16(unsigned flags);
 
     
 
@@ -51,38 +60,15 @@ public:
 
 
 
-    typedef void (*Proc32)(uint32_t* dst,
-                         const SkPMColor* src,
-                         int count, U8CPU alpha);
+    typedef void (*Proc32)(uint32_t dst[], const SkPMColor src[], int count, U8CPU alpha);
 
     static Proc32 Factory32(unsigned flags32);
 
-   
-
-
-   typedef void (*ColorProc)(SkPMColor* dst, const SkPMColor* src, int count,
-                             SkPMColor color);
-
     
 
 
 
-    static void Color32(SkPMColor dst[], const SkPMColor src[],
-                        int count, SkPMColor color);
-
-    
-    static ColorProc ColorProcFactory();
-
-    
-    typedef void (*ColorRectProc)(SkPMColor* dst, int width, int height,
-                                  size_t rowBytes, SkPMColor color);
-
-    
-    static void ColorRect32(SkPMColor* dst, int width, int height,
-                            size_t rowBytes, SkPMColor color);
-
-    
-    static ColorRectProc ColorRectProcFactory();
+    static void Color32(SkPMColor dst[], const SkPMColor src[], int count, SkPMColor color);
 
     
 
@@ -91,8 +77,9 @@ public:
 
 
     static Proc32 PlatformProcs32(unsigned flags);
-    static Proc PlatformProcs565(unsigned flags);
-    static ColorProc PlatformColorProc();
+
+    static Proc16 PlatformFactory565(unsigned flags);
+    static ColorProc16 PlatformColorFactory565(unsigned flags);
 
 private:
     enum {

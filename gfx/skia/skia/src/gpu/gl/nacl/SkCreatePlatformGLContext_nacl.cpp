@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+#include "gl/SkGLContext.h"
+
+SkGLContext* SkCreatePlatformGLContext(GrGLStandard forcedGpuAPI) {
+    return nullptr;
+}
+
+

@@ -12,6 +12,7 @@
 
 class SkPath;
 
+SK_BEGIN_REQUIRE_DENSE
 class SkStrokeRec {
 public:
     enum InitStyle {
@@ -19,10 +20,8 @@ public:
         kFill_InitStyle
     };
     SkStrokeRec(InitStyle style);
-
-    SkStrokeRec(const SkStrokeRec&);
-    SkStrokeRec(const SkPaint&, SkPaint::Style);
-    explicit SkStrokeRec(const SkPaint&);
+    SkStrokeRec(const SkPaint&, SkPaint::Style, SkScalar resScale = 1);
+    explicit SkStrokeRec(const SkPaint&, SkScalar resScale = 1);
 
     enum Style {
         kHairline_Style,
@@ -37,8 +36,8 @@ public:
     Style getStyle() const;
     SkScalar getWidth() const { return fWidth; }
     SkScalar getMiter() const { return fMiterLimit; }
-    SkPaint::Cap getCap() const { return fCap; }
-    SkPaint::Join getJoin() const { return fJoin; }
+    SkPaint::Cap getCap() const { return (SkPaint::Cap)fCap; }
+    SkPaint::Join getJoin() const { return (SkPaint::Join)fJoin; }
 
     bool isHairlineStyle() const {
         return kHairline_Style == this->getStyle();
@@ -64,6 +63,11 @@ public:
         fMiterLimit = miterLimit;
     }
 
+    void setResScale(SkScalar rs) {
+        SkASSERT(rs > 0 && SkScalarIsFinite(rs));
+        fResScale = rs;
+    }
+
     
 
 
@@ -85,23 +89,43 @@ public:
 
     bool applyToPath(SkPath* dst, const SkPath& src) const;
 
-    bool operator==(const SkStrokeRec& other) const {
-            return fWidth == other.fWidth &&
-                   fMiterLimit == other.fMiterLimit &&
-                   fCap == other.fCap &&
-                   fJoin == other.fJoin &&
-                   fStrokeAndFill == other.fStrokeAndFill;
+    
+
+
+    void applyToPaint(SkPaint* paint) const;
+
+    
+
+
+
+
+    bool hasEqualEffect(const SkStrokeRec& other) const {
+        if (!this->needToApply()) {
+            return this->getStyle() == other.getStyle();
+        }
+        return fWidth == other.fWidth &&
+               fMiterLimit == other.fMiterLimit &&
+               fCap == other.fCap &&
+               fJoin == other.fJoin &&
+               fStrokeAndFill == other.fStrokeAndFill;
     }
 
 private:
-    void init(const SkPaint& paint, SkPaint::Style style);
+    void init(const SkPaint&, SkPaint::Style, SkScalar resScale);
 
-
+    SkScalar        fResScale;
     SkScalar        fWidth;
     SkScalar        fMiterLimit;
-    SkPaint::Cap    fCap;
-    SkPaint::Join   fJoin;
-    bool            fStrokeAndFill;
+    
+    
+    
+    
+    
+    
+    uint32_t        fCap : 16;             
+    uint32_t        fJoin : 15;            
+    uint32_t        fStrokeAndFill : 1;    
 };
+SK_END_REQUIRE_DENSE
 
 #endif

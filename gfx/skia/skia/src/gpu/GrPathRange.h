@@ -9,10 +9,11 @@
 #define GrPathRange_DEFINED
 
 #include "GrGpuResource.h"
-#include "GrResourceCache.h"
-#include "SkStrokeRec.h"
+#include "SkPath.h"
+#include "SkRefCnt.h"
+#include "SkTArray.h"
 
-class SkPath;
+class SkDescriptor;
 
 
 
@@ -22,38 +23,130 @@ class SkPath;
 
 class GrPathRange : public GrGpuResource {
 public:
-    SK_DECLARE_INST_COUNT(GrPathRange);
+    
 
-    static const bool kIsWrapped = false;
+    enum PathIndexType {
+        kU8_PathIndexType,   
+        kU16_PathIndexType,  
+        kU32_PathIndexType,  
 
-    static GrResourceKey::ResourceType resourceType() {
-        static const GrResourceKey::ResourceType type = GrResourceKey::GenerateResourceType();
-        return type;
+        kLast_PathIndexType = kU32_PathIndexType
+    };
+
+    static inline int PathIndexSizeInBytes(PathIndexType type) {
+        GR_STATIC_ASSERT(0 == kU8_PathIndexType);
+        GR_STATIC_ASSERT(1 == kU16_PathIndexType);
+        GR_STATIC_ASSERT(2 == kU32_PathIndexType);
+        GR_STATIC_ASSERT(kU32_PathIndexType == kLast_PathIndexType);
+
+        return 1 << type;
     }
 
     
 
 
-    GrPathRange(GrGpu* gpu, size_t size, const SkStrokeRec& stroke)
-        : INHERITED(gpu, kIsWrapped),
-          fSize(size),
-          fStroke(stroke) {
-    }
-
-    size_t getSize() const { return fSize; }
-    const SkStrokeRec& getStroke() const { return fStroke; }
+    class PathGenerator : public SkRefCnt {
+    public:
+        virtual int getNumPaths() = 0;
+        virtual void generatePath(int index, SkPath* out) = 0;
+#ifdef SK_DEBUG
+        virtual bool isEqualTo(const SkDescriptor&) const { return false; }
+#endif
+        virtual ~PathGenerator() {}
+    };
 
     
 
 
 
-    virtual void initAt(size_t index, const SkPath&) = 0;
+    GrPathRange(GrGpu*, PathGenerator*);
 
+    
+
+
+
+    GrPathRange(GrGpu*, int numPaths);
+
+    int getNumPaths() const { return fNumPaths; }
+    const PathGenerator* getPathGenerator() const { return fPathGenerator.get(); }
+
+    void loadPathsIfNeeded(const void* indices, PathIndexType, int count) const;
+
+    template<typename IndexType> void loadPathsIfNeeded(const IndexType* indices, int count) const {
+        if (!fPathGenerator) {
+            return;
+        }
+
+        bool didLoadPaths = false;
+
+        for (int i = 0; i < count; ++i) {
+            SkASSERT(indices[i] < static_cast<uint32_t>(fNumPaths));
+
+            const int groupIndex = indices[i] / kPathsPerGroup;
+            const int groupByte = groupIndex / 8;
+            const uint8_t groupBit = 1 << (groupIndex % 8);
+
+            const bool hasPath = SkToBool(fGeneratedPaths[groupByte] & groupBit);
+            if (!hasPath) {
+                
+                
+                const int groupFirstPath = groupIndex * kPathsPerGroup;
+                const int groupLastPath = SkTMin(groupFirstPath + kPathsPerGroup, fNumPaths) - 1;
+
+                SkPath path;
+                for (int pathIdx = groupFirstPath; pathIdx <= groupLastPath; ++pathIdx) {
+                    fPathGenerator->generatePath(pathIdx, &path);
+                    this->onInitPath(pathIdx, path);
+                }
+
+                fGeneratedPaths[groupByte] |= groupBit;
+                didLoadPaths = true;
+            }
+        }
+
+        if (didLoadPaths) {
+            this->didChangeGpuMemorySize();
+        }
+    }
+
+#ifdef SK_DEBUG
+    void assertPathsLoaded(const void* indices, PathIndexType, int count) const;
+
+    template<typename IndexType> void assertPathsLoaded(const IndexType* indices, int count) const {
+        if (!fPathGenerator) {
+            return;
+        }
+
+        for (int i = 0; i < count; ++i) {
+            SkASSERT(indices[i] < static_cast<uint32_t>(fNumPaths));
+
+            const int groupIndex = indices[i] / kPathsPerGroup;
+            const int groupByte = groupIndex / 8;
+            const uint8_t groupBit = 1 << (groupIndex % 8);
+
+            SkASSERT(fGeneratedPaths[groupByte] & groupBit);
+        }
+    }
+
+    virtual bool isEqualTo(const SkDescriptor& desc) const {
+        return nullptr != fPathGenerator.get() && fPathGenerator->isEqualTo(desc);
+    }
+#endif
 protected:
-    size_t fSize;
-    SkStrokeRec fStroke;
+    
+    
+    
+    virtual void onInitPath(int index, const SkPath&) const = 0;
 
 private:
+    enum {
+        kPathsPerGroup = 16 
+    };
+
+    mutable SkAutoTUnref<PathGenerator> fPathGenerator;
+    mutable SkTArray<uint8_t, true > fGeneratedPaths;
+    const int fNumPaths;
+
     typedef GrGpuResource INHERITED;
 };
 

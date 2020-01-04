@@ -14,11 +14,11 @@
 #include "SkBitSet.h"
 #include "SkPDFTypes.h"
 #include "SkTDArray.h"
-#include "SkThread.h"
 #include "SkTypeface.h"
 
 class SkPaint;
-class SkPDFCatalog;
+class SkPDFCanon;
+class SkPDFObjNumMap;
 class SkPDFFont;
 
 class SkPDFGlyphSet : SkNoncopyable {
@@ -78,12 +78,9 @@ private:
 
 
 class SkPDFFont : public SkPDFDict {
-    SK_DECLARE_INST_COUNT(SkPDFFont)
+    
 public:
     virtual ~SkPDFFont();
-
-    virtual void getResources(const SkTSet<SkPDFObject*>& knownResourceObjects,
-                              SkTSet<SkPDFObject*>* newResourceObjects);
 
     
 
@@ -129,7 +126,9 @@ public:
 
 
 
-    static SkPDFFont* GetFontResource(SkTypeface* typeface, uint16_t glyphID);
+    static SkPDFFont* GetFontResource(SkPDFCanon* canon,
+                                      SkTypeface* typeface,
+                                      uint16_t glyphID);
 
     
 
@@ -139,9 +138,27 @@ public:
 
     virtual SkPDFFont* getFontSubset(const SkPDFGlyphSet* usage);
 
+    enum Match {
+        kExact_Match,
+        kRelated_Match,
+        kNot_Match,
+    };
+    static Match IsMatch(SkPDFFont* existingFont,
+                         uint32_t existingFontID,
+                         uint16_t existingGlyphID,
+                         uint32_t searchFontID,
+                         uint16_t searchGlyphID);
+
+    
+
+
+
+    static bool CanEmbedTypeface(SkTypeface*, SkPDFCanon*);
+
 protected:
     
-    SkPDFFont(const SkAdvancedTypefaceMetrics* fontInfo, SkTypeface* typeface,
+    SkPDFFont(const SkAdvancedTypefaceMetrics* fontInfo,
+              SkTypeface* typeface,
               SkPDFDict* relatedFontDescriptor);
 
     
@@ -150,9 +167,6 @@ protected:
     uint16_t firstGlyphID() const;
     uint16_t lastGlyphID() const;
     void setLastGlyphID(uint16_t glyphID);
-
-    
-    void addResource(SkPDFObject* object);
 
     
     SkPDFDict* getFontDescriptor();
@@ -164,31 +178,22 @@ protected:
     
 
 
-    void adjustGlyphRangeForSingleByteEncoding(int16_t glyphID);
+    void adjustGlyphRangeForSingleByteEncoding(uint16_t glyphID);
 
     
     
     void populateToUnicodeTable(const SkPDFGlyphSet* subset);
 
     
-    static SkPDFFont* Create(const SkAdvancedTypefaceMetrics* fontInfo,
-                             SkTypeface* typeface, uint16_t glyphID,
+    static SkPDFFont* Create(SkPDFCanon* canon,
+                             const SkAdvancedTypefaceMetrics* fontInfo,
+                             SkTypeface* typeface,
+                             uint16_t glyphID,
                              SkPDFDict* relatedFontDescriptor);
 
     static bool Find(uint32_t fontID, uint16_t glyphID, int* index);
 
 private:
-    class FontRec {
-    public:
-        SkPDFFont* fFont;
-        uint32_t fFontID;
-        uint16_t fGlyphID;
-
-        
-        bool operator==(const FontRec& b) const;
-        FontRec(SkPDFFont* font, uint32_t fontID, uint16_t fGlyphID);
-    };
-
     SkAutoTUnref<SkTypeface> fTypeface;
 
     
@@ -196,14 +201,10 @@ private:
     uint16_t fFirstGlyphID;
     uint16_t fLastGlyphID;
     SkAutoTUnref<const SkAdvancedTypefaceMetrics> fFontInfo;
-    SkTDArray<SkPDFObject*> fResources;
     SkAutoTUnref<SkPDFDict> fDescriptor;
 
     SkAdvancedTypefaceMetrics::FontType fFontType;
 
-    
-    static SkTDArray<FontRec>& CanonicalFonts();
-    static SkBaseMutex& CanonicalFontsMutex();
     typedef SkPDFDict INHERITED;
 };
 

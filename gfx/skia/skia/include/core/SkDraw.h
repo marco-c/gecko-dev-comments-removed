@@ -17,6 +17,7 @@
 class SkBitmap;
 class SkClipStack;
 class SkBaseDevice;
+class SkBlitter;
 class SkMatrix;
 class SkPath;
 class SkRegion;
@@ -33,7 +34,11 @@ public:
     void    drawPaint(const SkPaint&) const;
     void    drawPoints(SkCanvas::PointMode, size_t count, const SkPoint[],
                        const SkPaint&, bool forceUseDevice = false) const;
-    void    drawRect(const SkRect&, const SkPaint&) const;
+    void    drawRect(const SkRect& prePaintRect, const SkPaint&, const SkMatrix* paintMatrix,
+                     const SkRect* postPaintRect) const;
+    void    drawRect(const SkRect& rect, const SkPaint& paint) const {
+        this->drawRect(rect, paint, NULL, NULL);
+    }
     void    drawRRect(const SkRRect&, const SkPaint&) const;
     
 
@@ -49,19 +54,20 @@ public:
         this->drawPath(path, paint, prePathMatrix, pathIsMutable, false);
     }
 
-    void drawPath(const SkPath& path, const SkPaint& paint) const {
-        this->drawPath(path, paint, NULL, false, false);
+    void drawPath(const SkPath& path, const SkPaint& paint,
+                  SkBlitter* customBlitter = NULL) const {
+        this->drawPath(path, paint, NULL, false, false, customBlitter);
     }
 
-    void    drawBitmap(const SkBitmap&, const SkMatrix&, const SkPaint&) const;
+    
+    void    drawBitmap(const SkBitmap&, const SkMatrix&, const SkRect* dstOrNull,
+                       const SkPaint&) const;
     void    drawSprite(const SkBitmap&, int x, int y, const SkPaint&) const;
     void    drawText(const char text[], size_t byteLength, SkScalar x,
                      SkScalar y, const SkPaint& paint) const;
     void    drawPosText(const char text[], size_t byteLength,
-                        const SkScalar pos[], SkScalar constY,
-                        int scalarsPerPosition, const SkPaint& paint) const;
-    void    drawTextOnPath(const char text[], size_t byteLength,
-                        const SkPath&, const SkMatrix*, const SkPaint&) const;
+                        const SkScalar pos[], int scalarsPerPosition,
+                        const SkPoint& offset, const SkPaint& paint) const;
     void    drawVertices(SkCanvas::VertexMode mode, int count,
                          const SkPoint vertices[], const SkPoint textures[],
                          const SkColor colors[], SkXfermode* xmode,
@@ -74,8 +80,9 @@ public:
 
 
 
-    void drawPathCoverage(const SkPath& src, const SkPaint& paint) const {
-        this->drawPath(src, paint, NULL, false, true);
+    void drawPathCoverage(const SkPath& src, const SkPaint& paint,
+                          SkBlitter* customBlitter = NULL) const {
+        this->drawPath(src, paint, NULL, false, true, customBlitter);
     }
 
     
@@ -110,15 +117,16 @@ public:
     void        drawText_asPaths(const char text[], size_t byteLength,
                                  SkScalar x, SkScalar y, const SkPaint&) const;
     void        drawPosText_asPaths(const char text[], size_t byteLength,
-                                    const SkScalar pos[], SkScalar constY,
-                                    int scalarsPerPosition, const SkPaint&) const;
+                                    const SkScalar pos[], int scalarsPerPosition,
+                                    const SkPoint& offset, const SkPaint&) const;
 
 private:
     void    drawDevMask(const SkMask& mask, const SkPaint&) const;
     void    drawBitmapAsMask(const SkBitmap&, const SkPaint&) const;
 
     void    drawPath(const SkPath&, const SkPaint&, const SkMatrix* preMatrix,
-                     bool pathIsMutable, bool drawCoverage) const;
+                     bool pathIsMutable, bool drawCoverage,
+                     SkBlitter* customBlitter = NULL) const;
 
     
 
@@ -132,14 +140,13 @@ private:
     computeConservativeLocalClipBounds(SkRect* bounds) const;
 
 public:
-    const SkBitmap* fBitmap;        
+    SkPixmap        fDst;
     const SkMatrix* fMatrix;        
     const SkRegion* fClip;          
     const SkRasterClip* fRC;        
 
     const SkClipStack* fClipStack;  
     SkBaseDevice*   fDevice;        
-    SkDrawProcs*    fProcs;         
 
 #ifdef SK_DEBUG
     void validate() const;

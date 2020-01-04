@@ -11,6 +11,7 @@
 #include "SkColor.h"
 #include "SkColorTable.h"
 #include "SkImageInfo.h"
+#include "SkPixmap.h"
 #include "SkPoint.h"
 #include "SkRefCnt.h"
 
@@ -37,29 +38,6 @@ class GrTexture;
 class SK_API SkBitmap {
 public:
     class SK_API Allocator;
-
-#ifdef SK_SUPPORT_LEGACY_BITMAP_CONFIG
-    enum Config {
-        kNo_Config,         
-        kA8_Config,         
-        kIndex8_Config,     
-        kRGB_565_Config,    
-        kARGB_4444_Config,  
-        kARGB_8888_Config,  
-    };
-
-    
-    
-    enum {
-        kConfigCount = kARGB_8888_Config + 1
-    };
-
-    
-    Config  config() const;
-    
-    SK_ATTR_DEPRECATED("use config()")
-    Config  getConfig() const { return this->config(); }
-#endif
 
     
 
@@ -91,10 +69,11 @@ public:
 
     const SkImageInfo& info() const { return fInfo; }
 
-    int width() const { return fInfo.fWidth; }
-    int height() const { return fInfo.fHeight; }
-    SkColorType colorType() const { return fInfo.fColorType; }
-    SkAlphaType alphaType() const { return fInfo.fAlphaType; }
+    int width() const { return fInfo.width(); }
+    int height() const { return fInfo.height(); }
+    SkColorType colorType() const { return fInfo.colorType(); }
+    SkAlphaType alphaType() const { return fInfo.alphaType(); }
+    SkColorProfileType profileType() const { return fInfo.profileType(); }
 
     
 
@@ -155,7 +134,7 @@ public:
 
 
 
-    size_t getSize() const { return fInfo.fHeight * fRowBytes; }
+    size_t getSize() const { return fInfo.height() * fRowBytes; }
 
     
 
@@ -167,7 +146,7 @@ public:
 
 
     int64_t computeSize64() const {
-        return sk_64_mul(fInfo.fHeight, fRowBytes);
+        return sk_64_mul(fInfo.height(), fRowBytes);
     }
 
     
@@ -233,6 +212,14 @@ public:
     void getBounds(SkRect* bounds) const;
     void getBounds(SkIRect* bounds) const;
 
+    SkIRect bounds() const { return fInfo.bounds(); }
+    SkISize dimensions() const { return fInfo.dimensions(); }
+    
+    SkIRect getSubset() const {
+        return SkIRect::MakeXYWH(fPixelRefOrigin.x(), fPixelRefOrigin.y(),
+                                 fInfo.width(), fInfo.height());
+    }
+
     bool setInfo(const SkImageInfo&, size_t rowBytes = 0);
 
     
@@ -241,37 +228,54 @@ public:
 
 
 
-    bool allocPixels(const SkImageInfo&, SkPixelRefFactory*, SkColorTable*);
+    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo&, SkPixelRefFactory*, SkColorTable*);
 
-    
-
-
-
-
-
-
-
-    bool allocPixels(const SkImageInfo& info, size_t rowBytes);
-
-    
-
-
-
-
-
-    bool allocPixels(const SkImageInfo& info) {
-        return this->allocPixels(info, info.minRowBytes());
-    }
-
-    bool allocN32Pixels(int width, int height, bool isOpaque = false) {
-        SkImageInfo info = SkImageInfo::MakeN32Premul(width, height);
-        if (isOpaque) {
-            info.fAlphaType = kOpaque_SkAlphaType;
+    void allocPixels(const SkImageInfo& info, SkPixelRefFactory* factory, SkColorTable* ctable) {
+        if (!this->tryAllocPixels(info, factory, ctable)) {
+            sk_throw();
         }
-        return this->allocPixels(info);
     }
 
     
+
+
+
+
+
+
+
+    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info, size_t rowBytes);
+
+    void allocPixels(const SkImageInfo& info, size_t rowBytes) {
+        if (!this->tryAllocPixels(info, rowBytes)) {
+            sk_throw();
+        }
+    }
+
+    bool SK_WARN_UNUSED_RESULT tryAllocPixels(const SkImageInfo& info) {
+        return this->tryAllocPixels(info, info.minRowBytes());
+    }
+
+    void allocPixels(const SkImageInfo& info) {
+        this->allocPixels(info, info.minRowBytes());
+    }
+
+    bool SK_WARN_UNUSED_RESULT tryAllocN32Pixels(int width, int height, bool isOpaque = false) {
+        SkImageInfo info = SkImageInfo::MakeN32(width, height,
+                                            isOpaque ? kOpaque_SkAlphaType : kPremul_SkAlphaType);
+        return this->tryAllocPixels(info);
+    }
+
+    void allocN32Pixels(int width, int height, bool isOpaque = false) {
+        SkImageInfo info = SkImageInfo::MakeN32(width, height,
+                                            isOpaque ? kOpaque_SkAlphaType : kPremul_SkAlphaType);
+        this->allocPixels(info);
+    }
+
+    
+
+
+
 
 
 
@@ -343,8 +347,12 @@ public:
 
 
 
-    bool allocPixels(SkColorTable* ctable = NULL) {
-        return this->allocPixels(NULL, ctable);
+    bool SK_WARN_UNUSED_RESULT tryAllocPixels(SkColorTable* ctable = NULL) {
+        return this->tryAllocPixels(NULL, ctable);
+    }
+
+    void allocPixels(SkColorTable* ctable = NULL) {
+        this->allocPixels(NULL, ctable);
     }
 
     
@@ -365,7 +373,13 @@ public:
 
 
 
-    bool allocPixels(Allocator* allocator, SkColorTable* ctable);
+    bool SK_WARN_UNUSED_RESULT tryAllocPixels(Allocator* allocator, SkColorTable* ctable);
+
+    void allocPixels(Allocator* allocator, SkColorTable* ctable) {
+        if (!this->tryAllocPixels(allocator, ctable)) {
+            sk_throw();
+        }
+    }
 
     
 
@@ -423,13 +437,15 @@ public:
 
     bool lockPixelsAreWritable() const;
 
+    bool requestLock(SkAutoPixmapUnlock* result) const;
+
     
 
 
 
     bool readyToDraw() const {
         return this->getPixels() != NULL &&
-               (this->colorType() != kIndex_8_SkColorType || NULL != fColorTable);
+               (this->colorType() != kIndex_8_SkColorType || fColorTable);
     }
 
     
@@ -462,10 +478,7 @@ public:
 
 
 
-    void eraseColor(SkColor c) const {
-        this->eraseARGB(SkColorGetA(c), SkColorGetR(c), SkColorGetG(c),
-                        SkColorGetB(c));
-    }
+    void eraseColor(SkColor c) const;
 
     
 
@@ -473,7 +486,9 @@ public:
 
 
 
-    void eraseARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b) const;
+    void eraseARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b) const {
+        this->eraseColor(SkColorSetARGB(a, r, g, b));
+    }
 
     SK_ATTR_DEPRECATED("use eraseARGB or eraseColor")
     void eraseRGB(U8CPU r, U8CPU g, U8CPU b) const {
@@ -486,29 +501,12 @@ public:
 
 
 
-    void eraseArea(const SkIRect& area, SkColor c) const;
+    void erase(SkColor c, const SkIRect& area) const;
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool scrollRect(const SkIRect* subset, int dx, int dy,
-                    SkRegion* inval = NULL) const;
+    void eraseArea(const SkIRect& area, SkColor c) const {
+        this->erase(c, area);
+    }
 
     
 
@@ -665,12 +663,21 @@ public:
     bool extractAlpha(SkBitmap* dst, const SkPaint* paint, Allocator* allocator,
                       SkIPoint* offset) const;
 
+    
+
+
+
+
+
+
+
+
+    bool peekPixels(SkPixmap*) const;
+
     SkDEBUGCODE(void validate() const;)
 
     class Allocator : public SkRefCnt {
     public:
-        SK_DECLARE_INST_COUNT(Allocator)
-
         
 
 
@@ -689,7 +696,7 @@ public:
 
     class HeapAllocator : public Allocator {
     public:
-        virtual bool allocPixelRef(SkBitmap*, SkColorTable*) SK_OVERRIDE;
+        bool allocPixelRef(SkBitmap*, SkColorTable*) override;
     };
 
     class RLEPixels {
@@ -736,24 +743,17 @@ private:
     };
 
     SkImageInfo fInfo;
-
     uint32_t    fRowBytes;
-
     uint8_t     fFlags;
-
-    void internalErase(const SkIRect&, U8CPU a, U8CPU r, U8CPU g, U8CPU b)const;
 
     
 
     void freePixels();
     void updatePixelsFromRef() const;
 
-    void legacyUnflatten(SkReadBuffer&);
-
     static void WriteRawPixels(SkWriteBuffer*, const SkBitmap&);
     static bool ReadRawPixels(SkReadBuffer*, SkBitmap*);
 
-    friend class SkBitmapSource;    
     friend class SkReadBuffer;      
     friend class SkWriteBuffer;     
     friend struct SkBitmapProcState;
@@ -779,60 +779,6 @@ private:
 };
 
 
-
-
-
-
-class SkAutoLockColors : SkNoncopyable {
-public:
-    
-
-
-    SkAutoLockColors() : fCTable(NULL), fColors(NULL) {}
-    
-
-    explicit SkAutoLockColors(const SkBitmap& bm) {
-        fCTable = bm.getColorTable();
-        fColors = fCTable ? fCTable->lockColors() : NULL;
-    }
-    
-
-    explicit SkAutoLockColors(SkColorTable* ctable) {
-        fCTable = ctable;
-        fColors = ctable ? ctable->lockColors() : NULL;
-    }
-    ~SkAutoLockColors() {
-        if (fCTable) {
-            fCTable->unlockColors();
-        }
-    }
-
-    
-
-
-    const SkPMColor* colors() const { return fColors; }
-
-    
-
-
-    const SkPMColor* lockColors(SkColorTable* ctable) {
-        if (fCTable) {
-            fCTable->unlockColors();
-        }
-        fCTable = ctable;
-        fColors = ctable ? ctable->lockColors() : NULL;
-        return fColors;
-    }
-
-    const SkPMColor* lockColors(const SkBitmap& bm) {
-        return this->lockColors(bm.getColorTable());
-    }
-
-private:
-    SkColorTable*    fCTable;
-    const SkPMColor* fColors;
-};
-#define SkAutoLockColors(...) SK_REQUIRE_LOCAL_VAR(SkAutoLockColors)
 
 
 
@@ -864,14 +810,5 @@ inline SkPMColor SkBitmap::getIndex8Color(int x, int y) const {
     SkASSERT(fColorTable);
     return (*fColorTable)[*((const uint8_t*)fPixels + y * fRowBytes + x)];
 }
-
-#ifdef SK_SUPPORT_LEGACY_BITMAP_CONFIG
-
-
-
-
-SK_API SkBitmap::Config SkColorTypeToBitmapConfig(SkColorType);
-SK_API SkColorType SkBitmapConfigToColorType(SkBitmap::Config);
-#endif
 
 #endif

@@ -5,15 +5,14 @@
 
 
 
-
-
-
 #ifndef SkData_DEFINED
 #define SkData_DEFINED
 
+#include <stdio.h>
+
 #include "SkRefCnt.h"
 
-struct SkFILE;
+class SkStream;
 
 
 
@@ -22,8 +21,6 @@ struct SkFILE;
 
 class SK_API SkData : public SkRefCnt {
 public:
-    SK_DECLARE_INST_COUNT(SkData)
-
     
 
 
@@ -49,6 +46,19 @@ public:
 
 
 
+    void* writable_data() {
+        if (fSize) {
+            
+            SkASSERT(this->unique());
+        }
+        return fPtr;
+    }
+
+    
+
+
+
+
 
     size_t copyRange(size_t offset, size_t length, void* buffer) const;
 
@@ -62,12 +72,18 @@ public:
 
 
 
-    typedef void (*ReleaseProc)(const void* ptr, size_t length, void* context);
+    typedef void (*ReleaseProc)(const void* ptr, void* context);
 
     
 
 
     static SkData* NewWithCopy(const void* data, size_t length);
+
+    
+
+
+
+    static SkData* NewUninitialized(size_t length);
 
     
 
@@ -81,8 +97,15 @@ public:
 
 
 
-    static SkData* NewWithProc(const void* data, size_t length,
-                               ReleaseProc proc, void* context);
+    static SkData* NewWithProc(const void* ptr, size_t length, ReleaseProc proc, void* context);
+
+    
+
+
+
+    static SkData* NewWithoutCopy(const void* data, size_t length) {
+        return NewWithProc(data, length, DummyReleaseProc, NULL);
+    }
 
     
 
@@ -103,7 +126,7 @@ public:
 
 
 
-    static SkData* NewFromFILE(SkFILE* f);
+    static SkData* NewFromFILE(FILE* f);
 
     
 
@@ -113,6 +136,13 @@ public:
 
 
     static SkData* NewFromFD(int fd);
+
+    
+
+
+
+
+    static SkData* NewFromStream(SkStream*, size_t size);
 
     
 
@@ -129,16 +159,29 @@ public:
 private:
     ReleaseProc fReleaseProc;
     void*       fReleaseProcContext;
-
-    const void* fPtr;
+    void*       fPtr;
     size_t      fSize;
 
     SkData(const void* ptr, size_t size, ReleaseProc, void* context);
+    explicit SkData(size_t size);   
     virtual ~SkData();
 
+
     
-    static SkData* NewEmptyImpl();
-    static void DeleteEmpty(SkData*);
+    
+    
+    
+    void* operator new(size_t size) { return sk_malloc_throw(size); }
+    void* operator new(size_t, void* p) { return p; }
+    void operator delete(void* p) { sk_free(p); }
+
+    
+    friend SkData* sk_new_empty_data();
+
+    
+    static SkData* PrivateNewWithCopy(const void* srcOrNull, size_t length);
+
+    static void DummyReleaseProc(const void*, void*) {}
 
     typedef SkRefCnt INHERITED;
 };

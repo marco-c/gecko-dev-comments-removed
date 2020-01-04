@@ -8,18 +8,10 @@
 #include "SkSmallAllocator.h"
 #include "SkSpriteBlitter.h"
 
-SkSpriteBlitter::SkSpriteBlitter(const SkBitmap& source)
-        : fSource(&source) {
-    fSource->lockPixels();
-}
+SkSpriteBlitter::SkSpriteBlitter(const SkPixmap& source) : fSource(source) {}
 
-SkSpriteBlitter::~SkSpriteBlitter() {
-    fSource->unlockPixels();
-}
-
-void SkSpriteBlitter::setup(const SkBitmap& device, int left, int top,
-                            const SkPaint& paint) {
-    fDevice = &device;
+void SkSpriteBlitter::setup(const SkPixmap& dst, int left, int top, const SkPaint& paint) {
+    fDst = dst;
     fLeft = left;
     fTop = top;
     fPaint = &paint;
@@ -48,8 +40,8 @@ void SkSpriteBlitter::blitMask(const SkMask&, const SkIRect& clip) {
 
 
 
-SkBlitter* SkBlitter::ChooseSprite(const SkBitmap& device, const SkPaint& paint,
-        const SkBitmap& source, int left, int top, SkTBlitterAllocator* allocator) {
+SkBlitter* SkBlitter::ChooseSprite(const SkPixmap& dst, const SkPaint& paint,
+        const SkPixmap& source, int left, int top, SkTBlitterAllocator* allocator) {
     
 
 
@@ -59,11 +51,11 @@ SkBlitter* SkBlitter::ChooseSprite(const SkBitmap& device, const SkPaint& paint,
 
 
 
-    SkASSERT(allocator != NULL);
+    SkASSERT(allocator != nullptr);
 
     SkSpriteBlitter* blitter;
 
-    switch (device.colorType()) {
+    switch (dst.colorType()) {
         case kRGB_565_SkColorType:
             blitter = SkSpriteBlitter::ChooseD16(source, paint, allocator);
             break;
@@ -71,12 +63,12 @@ SkBlitter* SkBlitter::ChooseSprite(const SkBitmap& device, const SkPaint& paint,
             blitter = SkSpriteBlitter::ChooseD32(source, paint, allocator);
             break;
         default:
-            blitter = NULL;
+            blitter = nullptr;
             break;
     }
 
     if (blitter) {
-        blitter->setup(device, left, top, paint);
+        blitter->setup(dst, left, top, paint);
     }
     return blitter;
 }

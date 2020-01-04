@@ -11,6 +11,15 @@
 
 #include "GrContext.h"
 #include "GrDrawTarget.h"
+#include "gl/GrGLContext.h"
+
+namespace GrTest {
+    
+
+
+
+    void SetupAlwaysEvictAtlas(GrContext*);
+};
 
 
 
@@ -19,17 +28,15 @@ class GrTestTarget {
 public:
     GrTestTarget() {};
 
-    void init(GrContext*, GrDrawTarget*);
+    void init(GrContext*, GrDrawTarget*, GrRenderTarget*);
 
     GrDrawTarget* target() { return fDrawTarget.get(); }
+    GrResourceProvider* resourceProvider() { return fContext->resourceProvider(); }
 
 private:
-    SkTLazy<GrDrawTarget::AutoStateRestore> fASR;
-    SkTLazy<GrDrawTarget::AutoClipRestore>  fACR;
-    SkTLazy<GrDrawTarget::AutoGeometryPush> fAGP;
-
-    SkAutoTUnref<GrDrawTarget>              fDrawTarget;
     SkAutoTUnref<GrContext>                 fContext;
+    SkAutoTUnref<GrDrawTarget>              fDrawTarget;
+    SkAutoTUnref<GrRenderTarget>            fRenderTarget;
 };
 
 #endif

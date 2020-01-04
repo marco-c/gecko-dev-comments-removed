@@ -5,8 +5,6 @@
 
 
 
-
-
 #include "SkXMLAnimatorWriter.h"
 #include "SkAnimator.h"
 #include "SkAnimateMaker.h"
@@ -24,6 +22,10 @@ SkXMLAnimatorWriter::~SkXMLAnimatorWriter() {
 void SkXMLAnimatorWriter::onAddAttributeLen(const char name[], const char value[], size_t length)
 {
     fParser->onAddAttributeLen(name, value, length);
+}
+
+void SkXMLAnimatorWriter::onAddText(const char text[], size_t length) {
+    SkDebugf("not implemented: SkXMLAnimatorWriter::onAddText()\n");
 }
 
 void SkXMLAnimatorWriter::onEndElement()

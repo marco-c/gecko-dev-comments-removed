@@ -8,6 +8,8 @@
 #define SkPathOps_DEFINED
 
 #include "SkPreConfig.h"
+#include "SkTArray.h"
+#include "SkTDArray.h"
 
 class SkPath;
 struct SkRect;
@@ -16,13 +18,15 @@ struct SkRect;
 
 
 
+
 enum SkPathOp {
-    kDifference_PathOp,         
-    kIntersect_PathOp,          
-    kUnion_PathOp,              
-    kXOR_PathOp,                
-    kReverseDifference_PathOp,  
+    kDifference_SkPathOp,         
+    kIntersect_SkPathOp,          
+    kUnion_SkPathOp,              
+    kXOR_SkPathOp,                
+    kReverseDifference_SkPathOp,  
 };
+
 
 
 
@@ -62,5 +66,32 @@ bool SK_API Simplify(const SkPath& path, SkPath* result);
 
 
 bool SK_API TightBounds(const SkPath& path, SkRect* result);
+
+
+
+class SK_API SkOpBuilder {
+public:
+    
+
+
+
+
+ 
+    void add(const SkPath& path, SkPathOp _operator);
+
+    
+
+
+
+
+
+    bool resolve(SkPath* result);
+
+private:
+    SkTArray<SkPath> fPathRefs;
+    SkTDArray<SkPathOp> fOps;
+
+    void reset();
+};
 
 #endif

@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+#include "SkFontConfigInterface_direct.h"
+#include "SkStream.h"
+#include "SkTypes.h"
+
+
+class SkFontConfigInterfaceDirectGoogle3 : public SkFontConfigInterfaceDirect {
+public:
+    SkFontConfigInterfaceDirectGoogle3() {}
+    ~SkFontConfigInterfaceDirectGoogle3() override {}
+
+    SkStreamAsset* openStream(const FontIdentity&) override;
+protected:
+    
+    bool isAccessible(const char* filename) override;
+private:
+    typedef SkFontConfigInterfaceDirect INHERITED;
+};

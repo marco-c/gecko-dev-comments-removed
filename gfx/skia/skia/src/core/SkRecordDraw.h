@@ -8,47 +8,73 @@
 #ifndef SkRecordDraw_DEFINED
 #define SkRecordDraw_DEFINED
 
-#include "SkRecord.h"
+#include "SkBBoxHierarchy.h"
+#include "SkBigPicture.h"
 #include "SkCanvas.h"
-#include "SkDrawPictureCallback.h"
+#include "SkMatrix.h"
+#include "SkRecord.h"
+
+class SkDrawable;
+class SkLayerInfo;
 
 
-void SkRecordDraw(const SkRecord&, SkCanvas*, SkDrawPictureCallback* = NULL);
+void SkRecordFillBounds(const SkRect& cullRect, const SkRecord&, SkRect bounds[]);
+
+
+
+
+void SkRecordComputeLayers(const SkRect& cullRect, const SkRecord&, SkRect bounds[],
+                           const SkBigPicture::SnapshotArray*, SkLayerInfo* data);
+
+
+void SkRecordDraw(const SkRecord&, SkCanvas*, SkPicture const* const drawablePicts[],
+                  SkDrawable* const drawables[], int drawableCount,
+                  const SkBBoxHierarchy*, SkPicture::AbortCallback*);
+
+
+
+
+
+
+void SkRecordPartialDraw(const SkRecord&, SkCanvas*,
+                         SkPicture const* const drawablePicts[], int drawableCount,
+                         int start, int stop, const SkMatrix& initialCTM);
 
 namespace SkRecords {
 
 
 class Draw : SkNoncopyable {
 public:
-    explicit Draw(SkCanvas* canvas)
-        : fInitialCTM(canvas->getTotalMatrix()), fCanvas(canvas), fIndex(0) {}
+    explicit Draw(SkCanvas* canvas, SkPicture const* const drawablePicts[],
+                  SkDrawable* const drawables[], int drawableCount,
+                  const SkMatrix* initialCTM = nullptr)
+        : fInitialCTM(initialCTM ? *initialCTM : canvas->getTotalMatrix())
+        , fCanvas(canvas)
+        , fDrawablePicts(drawablePicts)
+        , fDrawables(drawables)
+        , fDrawableCount(drawableCount)
+    {}
 
-    unsigned index() const { return fIndex; }
-    void next() { ++fIndex; }
-
+    
+    
+    
     template <typename T> void operator()(const T& r) {
-        if (!this->skip(r)) {
-            this->draw(r);
-        }
+        this->draw(r);
     }
+
+protected:
+    SkPicture const* const* drawablePicts() const { return fDrawablePicts; }
+    int drawableCount() const { return fDrawableCount; }
 
 private:
     
     template <typename T> void draw(const T&);
 
-    
-    
-
-    
-    template <typename T> bool skip(const T&) { return false; }
-
-    
-    bool skip(const PairedPushCull&);
-    bool skip(const BoundedDrawPosTextH&);
-
     const SkMatrix fInitialCTM;
     SkCanvas* fCanvas;
-    unsigned fIndex;
+    SkPicture const* const* fDrawablePicts;
+    SkDrawable* const* fDrawables;
+    int fDrawableCount;
 };
 
 }  

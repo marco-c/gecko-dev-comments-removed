@@ -11,17 +11,12 @@
 #define GrPaint_DEFINED
 
 #include "GrColor.h"
-#include "GrEffectStage.h"
+#include "GrXferProcessor.h"
+#include "effects/GrPorterDuffXferProcessor.h"
+#include "GrFragmentProcessor.h"
 
+#include "SkRegion.h"
 #include "SkXfermode.h"
-
-
-
-
-
-
-
-
 
 
 
@@ -43,22 +38,11 @@
 
 class GrPaint {
 public:
-    GrPaint() { this->reset(); }
+    GrPaint();
 
     GrPaint(const GrPaint& paint) { *this = paint; }
 
-    ~GrPaint() {}
-
-    
-
-
-
-    void setBlendFunc(GrBlendCoeff srcCoeff, GrBlendCoeff dstCoeff) {
-        fSrcBlendCoeff = srcCoeff;
-        fDstBlendCoeff = dstCoeff;
-    }
-    GrBlendCoeff getSrcBlendCoeff() const { return fSrcBlendCoeff; }
-    GrBlendCoeff getDstBlendCoeff() const { return fDstBlendCoeff; }
+    ~GrPaint() { this->resetFragmentProcessors();  }
 
     
 
@@ -69,77 +53,78 @@ public:
     
 
 
-    void setCoverage(uint8_t coverage) { fCoverage = coverage; }
-    uint8_t getCoverage() const { return fCoverage; }
-
-    
-
-
     void setAntiAlias(bool aa) { fAntiAlias = aa; }
     bool isAntiAlias() const { return fAntiAlias; }
 
+    const GrXPFactory* setXPFactory(const GrXPFactory* xpFactory) {
+        fXPFactory.reset(SkSafeRef(xpFactory));
+        return xpFactory;
+    }
+
+    void setPorterDuffXPFactory(SkXfermode::Mode mode) {
+        fXPFactory.reset(GrPorterDuffXPFactory::Create(mode));
+    }
+
+    void setCoverageSetOpXPFactory(SkRegion::Op regionOp, bool invertCoverage = false); 
+
     
 
 
-    void setDither(bool dither) { fDither = dither; }
-    bool isDither() const { return fDither; }
-
-    
-
-
-    const GrEffect* addColorEffect(const GrEffect* effect, int attr0 = -1, int attr1 = -1) {
-        SkASSERT(NULL != effect);
-        if (!effect->willUseInputColor()) {
-            fColorStages.reset();
-        }
-        SkNEW_APPEND_TO_TARRAY(&fColorStages, GrEffectStage, (effect, attr0, attr1));
-        return effect;
+    const GrFragmentProcessor* addColorFragmentProcessor(const GrFragmentProcessor* fp) {
+        SkASSERT(fp);
+        fColorFragmentProcessors.push_back(SkRef(fp));
+        return fp;
     }
 
     
 
 
-    const GrEffect* addCoverageEffect(const GrEffect* effect, int attr0 = -1, int attr1 = -1) {
-        SkASSERT(NULL != effect);
-        if (!effect->willUseInputColor()) {
-            fCoverageStages.reset();
-        }
-        SkNEW_APPEND_TO_TARRAY(&fCoverageStages, GrEffectStage, (effect, attr0, attr1));
-        return effect;
+    const GrFragmentProcessor* addCoverageFragmentProcessor(const GrFragmentProcessor* fp) {
+        SkASSERT(fp);
+        fCoverageFragmentProcessors.push_back(SkRef(fp));
+        return fp;
     }
 
     
 
 
 
-    void addColorTextureEffect(GrTexture* texture, const SkMatrix& matrix);
-    void addCoverageTextureEffect(GrTexture* texture, const SkMatrix& matrix);
+    void addColorTextureProcessor(GrTexture*, const SkMatrix&);
+    void addCoverageTextureProcessor(GrTexture*, const SkMatrix&);
+    void addColorTextureProcessor(GrTexture*, const SkMatrix&, const GrTextureParams&);
+    void addCoverageTextureProcessor(GrTexture*, const SkMatrix&, const GrTextureParams&);
 
-    void addColorTextureEffect(GrTexture* texture,
-                               const SkMatrix& matrix,
-                               const GrTextureParams& params);
-    void addCoverageTextureEffect(GrTexture* texture,
-                                  const SkMatrix& matrix,
-                                  const GrTextureParams& params);
+    int numColorFragmentProcessors() const { return fColorFragmentProcessors.count(); }
+    int numCoverageFragmentProcessors() const { return fCoverageFragmentProcessors.count(); }
+    int numTotalFragmentProcessors() const { return this->numColorFragmentProcessors() +
+                                              this->numCoverageFragmentProcessors(); }
 
-    int numColorStages() const { return fColorStages.count(); }
-    int numCoverageStages() const { return fCoverageStages.count(); }
-    int numTotalStages() const { return this->numColorStages() + this->numCoverageStages(); }
+    const GrXPFactory* getXPFactory() const {
+        return fXPFactory;
+    }
 
-    const GrEffectStage& getColorStage(int s) const { return fColorStages[s]; }
-    const GrEffectStage& getCoverageStage(int s) const { return fCoverageStages[s]; }
+    const GrFragmentProcessor* getColorFragmentProcessor(int i) const {
+        return fColorFragmentProcessors[i];
+    }
+    const GrFragmentProcessor* getCoverageFragmentProcessor(int i) const {
+        return fCoverageFragmentProcessors[i];
+    }
 
     GrPaint& operator=(const GrPaint& paint) {
-        fSrcBlendCoeff = paint.fSrcBlendCoeff;
-        fDstBlendCoeff = paint.fDstBlendCoeff;
         fAntiAlias = paint.fAntiAlias;
-        fDither = paint.fDither;
 
         fColor = paint.fColor;
-        fCoverage = paint.fCoverage;
+        this->resetFragmentProcessors();
+        fColorFragmentProcessors = paint.fColorFragmentProcessors;
+        fCoverageFragmentProcessors = paint.fCoverageFragmentProcessors;
+        for (int i = 0; i < fColorFragmentProcessors.count(); ++i) {
+            fColorFragmentProcessors[i]->ref();
+        }
+        for (int i = 0; i < fCoverageFragmentProcessors.count(); ++i) {
+            fCoverageFragmentProcessors[i]->ref();
+        }
 
-        fColorStages = paint.fColorStages;
-        fCoverageStages = paint.fCoverageStages;
+        fXPFactory.reset(SkSafeRef(paint.getXPFactory()));
 
         return *this;
     }
@@ -147,108 +132,30 @@ public:
     
 
 
-    void reset() {
-        this->resetBlend();
-        this->resetOptions();
-        this->resetColor();
-        this->resetCoverage();
-        this->resetStages();
-    }
-
-    
 
 
 
-
-
-
-    bool isOpaque() const;
-
-    
-
-
-
-    bool isOpaqueAndConstantColor(GrColor* constantColor) const;
+    bool isConstantBlendedColor(GrColor* constantColor) const;
 
 private:
-
-    
-
-
-    bool getOpaqueAndKnownColor(GrColor* solidColor, uint32_t* solidColorKnownComponents) const;
-
-    
-
-
-
-
-    void localCoordChange(const SkMatrix& oldToNew) {
-        for (int i = 0; i < fColorStages.count(); ++i) {
-            fColorStages[i].localCoordChange(oldToNew);
+    void resetFragmentProcessors() {
+        for (int i = 0; i < fColorFragmentProcessors.count(); ++i) {
+            fColorFragmentProcessors[i]->unref();
         }
-        for (int i = 0; i < fCoverageStages.count(); ++i) {
-            fCoverageStages[i].localCoordChange(oldToNew);
+        for (int i = 0; i < fCoverageFragmentProcessors.count(); ++i) {
+            fCoverageFragmentProcessors[i]->unref();
         }
+        fColorFragmentProcessors.reset();
+        fCoverageFragmentProcessors.reset();
     }
 
-    bool localCoordChangeInverse(const SkMatrix& newToOld) {
-        SkMatrix oldToNew;
-        bool computed = false;
-        for (int i = 0; i < fColorStages.count(); ++i) {
-            if (!computed && !newToOld.invert(&oldToNew)) {
-                return false;
-            } else {
-                computed = true;
-            }
-            fColorStages[i].localCoordChange(oldToNew);
-        }
-        for (int i = 0; i < fCoverageStages.count(); ++i) {
-            if (!computed && !newToOld.invert(&oldToNew)) {
-                return false;
-            } else {
-                computed = true;
-            }
-            fCoverageStages[i].localCoordChange(oldToNew);
-        }
-        return true;
-    }
+    mutable SkAutoTUnref<const GrXPFactory>         fXPFactory;
+    SkSTArray<4, const GrFragmentProcessor*, true>  fColorFragmentProcessors;
+    SkSTArray<2, const GrFragmentProcessor*, true>  fCoverageFragmentProcessors;
 
-    friend class GrContext; 
-    friend class GrStencilAndCoverTextContext;  
+    bool                                            fAntiAlias;
 
-    SkSTArray<4, GrEffectStage> fColorStages;
-    SkSTArray<2, GrEffectStage> fCoverageStages;
-
-    GrBlendCoeff                fSrcBlendCoeff;
-    GrBlendCoeff                fDstBlendCoeff;
-    bool                        fAntiAlias;
-    bool                        fDither;
-
-    GrColor                     fColor;
-    uint8_t                     fCoverage;
-
-    void resetBlend() {
-        fSrcBlendCoeff = kOne_GrBlendCoeff;
-        fDstBlendCoeff = kZero_GrBlendCoeff;
-    }
-
-    void resetOptions() {
-        fAntiAlias = false;
-        fDither = false;
-    }
-
-    void resetColor() {
-        fColor = GrColorPackRGBA(0xff, 0xff, 0xff, 0xff);
-    }
-
-    void resetCoverage() {
-        fCoverage = 0xff;
-    }
-
-    void resetStages() {
-        fColorStages.reset();
-        fCoverageStages.reset();
-    }
+    GrColor                                         fColor;
 };
 
 #endif

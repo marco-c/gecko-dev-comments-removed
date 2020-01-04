@@ -11,6 +11,7 @@
 #define SkBuffer_DEFINED
 
 #include "SkScalar.h"
+#include "SkTypes.h"
 
 
 
@@ -105,7 +106,7 @@ public:
 
 
 
-    virtual bool read(void* buffer, size_t size) SK_OVERRIDE;
+    bool read(void* buffer, size_t size) override;
 
     
 

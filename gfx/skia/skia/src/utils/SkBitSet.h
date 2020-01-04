@@ -30,11 +30,22 @@ public:
 
     
 
-    void setBit(int index, bool value);
+    void setBit(int index, bool value) {
+        uint32_t mask = 1 << (index & 31);
+        uint32_t* chunk = this->internalGet(index);
+        if (value) {
+            *chunk |= mask;
+        } else {
+            *chunk &= ~mask;
+        }
+    }
 
     
 
-    bool isBitSet(int index) const;
+    bool isBitSet(int index) const {
+        uint32_t mask = 1 << (index & 31);
+        return SkToBool(*this->internalGet(index) & mask);
+    }
 
     
 

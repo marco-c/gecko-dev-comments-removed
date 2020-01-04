@@ -24,7 +24,7 @@ public:
 
     void AttachShader(GrShaderObj *shader);
 
-    virtual void deleteAction() SK_OVERRIDE;
+    void deleteAction() override;
 
     
     void setInUse()         { fInUse = true; }

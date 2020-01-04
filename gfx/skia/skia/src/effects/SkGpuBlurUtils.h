@@ -9,6 +9,8 @@
 #define SkGpuBlurUtils_DEFINED
 
 #if SK_SUPPORT_GPU
+#include "GrTextureProvider.h"
+
 class GrTexture;
 class GrContext;
 #endif
@@ -35,10 +37,11 @@ namespace SkGpuBlurUtils {
     GrTexture* GaussianBlur(GrContext* context,
                             GrTexture* srcTexture,
                             bool canClobberSrc,
-                            const SkRect& rect,
-                            bool cropToRect,
+                            const SkRect& dstBounds,
+                            const SkRect* srcBounds,
                             float sigmaX,
-                            float sigmaY);
+                            float sigmaY,
+                            GrTextureProvider::SizeConstraint);
 #endif
 
 };

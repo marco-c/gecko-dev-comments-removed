@@ -1,9 +1,18 @@
+
+
+
+
+
+
+
 #include "SkBitmapScaler.h"
 #include "SkBitmapFilter.h"
-#include "SkRect.h"
-#include "SkTArray.h"
-#include "SkErrorInternals.h"
 #include "SkConvolver.h"
+#include "SkImageInfo.h"
+#include "SkPixmap.h"
+#include "SkRect.h"
+#include "SkScalar.h"
+#include "SkTArray.h"
 
 
 
@@ -16,9 +25,7 @@ public:
                    float destWidth, float destHeight,
                    const SkRect& destSubset,
                    const SkConvolutionProcs& convolveProcs);
-    ~SkResizeFilter() {
-        SkDELETE( fBitmapFilter );
-    }
+    ~SkResizeFilter() { delete fBitmapFilter; }
 
     
     const SkConvolutionFilter1D& xFilter() { return fXFilter; }
@@ -55,29 +62,25 @@ SkResizeFilter::SkResizeFilter(SkBitmapScaler::ResizeMethod method,
                                const SkRect& destSubset,
                                const SkConvolutionProcs& convolveProcs) {
 
-    
-    SkASSERT((SkBitmapScaler::RESIZE_FIRST_ALGORITHM_METHOD <= method) &&
-             (method <= SkBitmapScaler::RESIZE_LAST_ALGORITHM_METHOD));
+    SkASSERT(method >= SkBitmapScaler::RESIZE_FirstMethod &&
+             method <= SkBitmapScaler::RESIZE_LastMethod);
 
+    fBitmapFilter = nullptr;
     switch(method) {
         case SkBitmapScaler::RESIZE_BOX:
-            fBitmapFilter = SkNEW(SkBoxFilter);
+            fBitmapFilter = new SkBoxFilter;
             break;
         case SkBitmapScaler::RESIZE_TRIANGLE:
-            fBitmapFilter = SkNEW(SkTriangleFilter);
+            fBitmapFilter = new SkTriangleFilter;
             break;
         case SkBitmapScaler::RESIZE_MITCHELL:
-            fBitmapFilter = SkNEW_ARGS(SkMitchellFilter, (1.f/3.f, 1.f/3.f));
+            fBitmapFilter = new SkMitchellFilter(1.f / 3.f, 1.f / 3.f);
             break;
         case SkBitmapScaler::RESIZE_HAMMING:
-            fBitmapFilter = SkNEW(SkHammingFilter);
+            fBitmapFilter = new SkHammingFilter;
             break;
         case SkBitmapScaler::RESIZE_LANCZOS3:
-            fBitmapFilter = SkNEW(SkLanczosFilter);
-            break;
-        default:
-            
-            fBitmapFilter = SkNEW_ARGS(SkMitchellFilter, (1.f/3.f, 1.f/3.f));
+            fBitmapFilter = new SkLanczosFilter;
             break;
     }
 
@@ -207,126 +210,52 @@ void SkResizeFilter::computeFilters(int srcSize,
   }
 }
 
-static SkBitmapScaler::ResizeMethod ResizeMethodToAlgorithmMethod(
-                                    SkBitmapScaler::ResizeMethod method) {
-    
-    if (method >= SkBitmapScaler::RESIZE_FIRST_ALGORITHM_METHOD &&
-    method <= SkBitmapScaler::RESIZE_LAST_ALGORITHM_METHOD) {
-        return method;
-    }
-    
-    
-    
-    switch (method) {
-        
-        
-        
-        
-        case SkBitmapScaler::RESIZE_GOOD:
-            return SkBitmapScaler::RESIZE_TRIANGLE;
-        
-        
-        
-        
-        
-        
-        case SkBitmapScaler::RESIZE_BETTER:
-            return SkBitmapScaler::RESIZE_HAMMING;
-        default:
-#ifdef SK_HIGH_QUALITY_IS_LANCZOS
-            return SkBitmapScaler::RESIZE_LANCZOS3;
-#else
-            return SkBitmapScaler::RESIZE_MITCHELL;
-#endif
-    }
-}
-
-
-bool SkBitmapScaler::Resize(SkBitmap* resultPtr,
-                            const SkBitmap& source,
-                            ResizeMethod method,
-                            float destWidth, float destHeight,
-                            SkBitmap::Allocator* allocator) {
-
-  SkConvolutionProcs convolveProcs= { 0, NULL, NULL, NULL, NULL };
-  PlatformConvolutionProcs(&convolveProcs);
-
-  SkRect destSubset = { 0, 0, destWidth, destHeight };
-
-  
-    SkASSERT(((RESIZE_FIRST_QUALITY_METHOD <= method) &&
-        (method <= RESIZE_LAST_QUALITY_METHOD)) ||
-        ((RESIZE_FIRST_ALGORITHM_METHOD <= method) &&
-        (method <= RESIZE_LAST_ALGORITHM_METHOD)));
-
-    SkRect dest = { 0, 0, destWidth, destHeight };
-    if (!dest.contains(destSubset)) {
-        SkErrorInternals::SetError( kInvalidArgument_SkError,
-                                    "Sorry, the destination bitmap scale subset "
-                                    "falls outside the full destination bitmap." );
-    }
-
-    
-    
-    if (source.width() < 1 || source.height() < 1 ||
-        destWidth < 1 || destHeight < 1) {
-        
-        
+bool SkBitmapScaler::Resize(SkBitmap* resultPtr, const SkPixmap& source, ResizeMethod method,
+                            int destWidth, int destHeight, SkBitmap::Allocator* allocator) {
+    if (nullptr == source.addr() || source.colorType() != kN32_SkColorType ||
+        source.width() < 1 || source.height() < 1)
+    {
         return false;
     }
 
-    method = ResizeMethodToAlgorithmMethod(method);
-
-    
-    SkASSERT((SkBitmapScaler::RESIZE_FIRST_ALGORITHM_METHOD <= method) &&
-        (method <= SkBitmapScaler::RESIZE_LAST_ALGORITHM_METHOD));
-
-    SkAutoLockPixels locker(source);
-    if (!source.readyToDraw() ||
-        source.colorType() != kN32_SkColorType) {
+    if (destWidth < 1 || destHeight < 1) {
         return false;
     }
+
+    SkConvolutionProcs convolveProcs= { 0, nullptr, nullptr, nullptr, nullptr };
+    PlatformConvolutionProcs(&convolveProcs);
+
+    SkRect destSubset = SkRect::MakeIWH(destWidth, destHeight);
 
     SkResizeFilter filter(method, source.width(), source.height(),
-                          destWidth, destHeight, destSubset, convolveProcs);
+                        destWidth, destHeight, destSubset, convolveProcs);
 
     
     
     
-    const unsigned char* sourceSubset =
-        reinterpret_cast<const unsigned char*>(source.getPixels());
+    const uint8_t* sourceSubset = reinterpret_cast<const uint8_t*>(source.addr());
 
     
     SkBitmap result;
     result.setInfo(SkImageInfo::MakeN32(SkScalarCeilToInt(destSubset.width()),
-                                        SkScalarCeilToInt(destSubset.height()),
-                                        source.alphaType()));
-    result.allocPixels(allocator, NULL);
+                                      SkScalarCeilToInt(destSubset.height()),
+                                      source.alphaType()));
+    result.allocPixels(allocator, nullptr);
     if (!result.readyToDraw()) {
+      return false;
+    }
+
+    if (!BGRAConvolve2D(sourceSubset, static_cast<int>(source.rowBytes()),
+                        !source.isOpaque(), filter.xFilter(), filter.yFilter(),
+                        static_cast<int>(result.rowBytes()),
+                        static_cast<unsigned char*>(result.getPixels()),
+                        convolveProcs, true)) {
         return false;
     }
 
-    BGRAConvolve2D(sourceSubset, static_cast<int>(source.rowBytes()),
-        !source.isOpaque(), filter.xFilter(), filter.yFilter(),
-        static_cast<int>(result.rowBytes()),
-        static_cast<unsigned char*>(result.getPixels()),
-        convolveProcs, true);
-
     *resultPtr = result;
     resultPtr->lockPixels();
-    SkASSERT(NULL != resultPtr->getPixels());
+    SkASSERT(resultPtr->getPixels());
     return true;
 }
 
-
-
-SkBitmap SkBitmapScaler::Resize(const SkBitmap& source,
-                                ResizeMethod method,
-                                float destWidth, float destHeight,
-                                SkBitmap::Allocator* allocator) {
-  SkBitmap result;
-  if (!Resize(&result, source, method, destWidth, destHeight, allocator)) {
-    return SkBitmap();
-  }
-  return result;
-}

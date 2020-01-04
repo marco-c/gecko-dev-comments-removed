@@ -10,6 +10,8 @@
 
 #include "SkTypeface.h"
 
+#ifdef SK_BUILD_FOR_WIN
+
 
 
 
@@ -58,4 +60,5 @@ SK_API SkFontMgr* SkFontMgr_New_DirectWriteRenderer(SkRemotableFontMgr*);
 
 SK_API SkRemotableFontMgr* SkRemotableFontMgr_New_DirectWrite();
 
-#endif
+#endif  
+#endif  

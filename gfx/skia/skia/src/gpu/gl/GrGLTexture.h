@@ -10,42 +10,12 @@
 #define GrGLTexture_DEFINED
 
 #include "GrGpu.h"
-#include "GrGLRenderTarget.h"
+#include "GrTexture.h"
+#include "GrGLUtil.h"
 
+class GrGLGpu;
 
-
-
-class GrGLTexID : public SkRefCnt {
-public:
-    SK_DECLARE_INST_COUNT(GrGLTexID)
-
-    GrGLTexID(const GrGLInterface* gl, GrGLuint texID, bool isWrapped)
-        : fGL(gl)
-        , fTexID(texID)
-        , fIsWrapped(isWrapped) {
-    }
-
-    virtual ~GrGLTexID() {
-        if (0 != fTexID && !fIsWrapped) {
-            GR_GL_CALL(fGL, DeleteTextures(1, &fTexID));
-        }
-    }
-
-    void abandon() { fTexID = 0; }
-    GrGLuint id() const { return fTexID; }
-
-private:
-    const GrGLInterface* fGL;
-    GrGLuint             fTexID;
-    bool                 fIsWrapped;
-
-    typedef SkRefCnt INHERITED;
-};
-
-
-
-
-class GrGLTexture : public GrTextureImpl {
+class GrGLTexture : public GrTexture {
 
 public:
     struct TexParams {
@@ -57,25 +27,16 @@ public:
         void invalidate() { memset(this, 0xff, sizeof(TexParams)); }
     };
 
-    struct Desc : public GrTextureDesc {
-        GrGLuint        fTextureID;
-        bool            fIsWrapped;
+    struct IDDesc {
+        GrGLTextureInfo             fInfo;
+        GrGpuResource::LifeCycle    fLifeCycle;
     };
 
-    
-    GrGLTexture(GrGpuGL* gpu,
-                const Desc& textureDesc,
-                const GrGLRenderTarget::Desc& rtDesc);
+    GrGLTexture(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&);
 
-    
-    GrGLTexture(GrGpuGL* gpu,
-                const Desc& textureDesc);
+    GrBackendObject getTextureHandle() const override;
 
-    virtual ~GrGLTexture() { this->release(); }
-
-    virtual GrBackendObject getTextureHandle() const SK_OVERRIDE;
-
-    virtual void textureParamsModified() SK_OVERRIDE { fTexParams.invalidate(); }
+    void textureParamsModified() override { fTexParams.invalidate(); }
 
     
     const TexParams& getCachedTexParams(GrGpu::ResetTimestamp* timestamp) const {
@@ -89,23 +50,36 @@ public:
         fTexParamsTimestamp = timestamp;
     }
 
-    GrGLuint textureID() const { return (NULL != fTexIDObj.get()) ? fTexIDObj->id() : 0; }
+    GrGLuint textureID() const { return fInfo.fID; }
+
+    GrGLenum target() const { return fInfo.fTarget; }
 
 protected:
     
-    virtual void onAbandon() SK_OVERRIDE;
-    virtual void onRelease() SK_OVERRIDE;
+    
+    
+    enum Derived { kDerived };
+    GrGLTexture(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, Derived);
+
+    void init(const GrSurfaceDesc&, const IDDesc&);
+
+    void onAbandon() override;
+    void onRelease() override;
+    void setMemoryBacking(SkTraceMemoryDump* traceMemoryDump,
+                          const SkString& dumpName) const override;
 
 private:
     TexParams                       fTexParams;
     GrGpu::ResetTimestamp           fTexParamsTimestamp;
-    SkAutoTUnref<GrGLTexID>         fTexIDObj;
+    
+    
+    GrGLTextureInfo                 fInfo;
 
-    void init(GrGpuGL* gpu,
-              const Desc& textureDesc,
-              const GrGLRenderTarget::Desc* rtDesc);
+    
+    
+    LifeCycle                       fTextureIDLifecycle;
 
-    typedef GrTextureImpl INHERITED;
+    typedef GrTexture INHERITED;
 };
 
 #endif

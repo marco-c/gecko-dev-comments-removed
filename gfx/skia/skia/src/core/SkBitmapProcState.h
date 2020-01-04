@@ -5,38 +5,30 @@
 
 
 
-
-
 #ifndef SkBitmapProcState_DEFINED
 #define SkBitmapProcState_DEFINED
 
 #include "SkBitmap.h"
+#include "SkBitmapController.h"
 #include "SkBitmapFilter.h"
+#include "SkBitmapProvider.h"
 #include "SkMatrix.h"
+#include "SkMipMap.h"
 #include "SkPaint.h"
-#include "SkScaledImageCache.h"
+#include "SkShader.h"
+#include "SkTemplates.h"
 
-#define FractionalInt_IS_64BIT
-
-#ifdef FractionalInt_IS_64BIT
-    typedef SkFixed48    SkFractionalInt;
-    #define SkScalarToFractionalInt(x)  SkScalarToFixed48(x)
-    #define SkFractionalIntToFixed(x)   SkFixed48ToFixed(x)
-    #define SkFixedToFractionalInt(x)   SkFixedToFixed48(x)
-    #define SkFractionalIntToInt(x)     SkFixed48ToInt(x)
-#else
-    typedef SkFixed    SkFractionalInt;
-    #define SkScalarToFractionalInt(x)  SkScalarToFixed(x)
-    #define SkFractionalIntToFixed(x)   (x)
-    #define SkFixedToFractionalInt(x)   (x)
-    #define SkFractionalIntToInt(x)     ((x) >> 16)
-#endif
+typedef SkFixed3232    SkFractionalInt;
+#define SkScalarToFractionalInt(x)  SkScalarToFixed3232(x)
+#define SkFractionalIntToFixed(x)   SkFixed3232ToFixed(x)
+#define SkFixedToFractionalInt(x)   SkFixedToFixed3232(x)
+#define SkFractionalIntToInt(x)     SkFixed3232ToInt(x)
 
 class SkPaint;
 
 struct SkBitmapProcState {
-
-    SkBitmapProcState(): fScaledCacheID(NULL), fBitmapFilter(NULL) {}
+    SkBitmapProcState(const SkBitmapProvider&, SkShader::TileMode tmx, SkShader::TileMode tmy);
+    SkBitmapProcState(const SkBitmap&, SkShader::TileMode tmx, SkShader::TileMode tmy);
     ~SkBitmapProcState();
 
     typedef void (*ShaderProc32)(const SkBitmapProcState&, int x, int y,
@@ -64,8 +56,9 @@ struct SkBitmapProcState {
     typedef U16CPU (*FixedTileLowBitsProc)(SkFixed, int);   
     typedef U16CPU (*IntTileProc)(int value, int count);   
 
-    const SkBitmap*     fBitmap;            
+    SkPixmap            fPixmap;
     SkMatrix            fInvMatrix;         
+
     SkMatrix::MapXYProc fInvProc;           
 
     SkFractionalInt     fInvSxFractionalInt;
@@ -119,8 +112,6 @@ struct SkBitmapProcState {
     ShaderProc32 getShaderProc32() const { return fShaderProc32; }
     ShaderProc16 getShaderProc16() const { return fShaderProc16; }
 
-    SkBitmapFilter* getBitmapFilter() const { return fBitmapFilter; }
-
 #ifdef SK_DEBUG
     MatrixProc getMatrixProc() const;
 #else
@@ -131,6 +122,7 @@ struct SkBitmapProcState {
 
 private:
     friend class SkBitmapProcShader;
+    friend class SkLightingShaderImpl;
 
     ShaderProc32        fShaderProc32;      
     ShaderProc16        fShaderProc16;      
@@ -139,28 +131,18 @@ private:
     SampleProc32        fSampleProc32;      
     SampleProc16        fSampleProc16;      
 
-    SkBitmap            fOrigBitmap;        
-    SkBitmap            fScaledBitmap;      
+    const SkBitmapProvider fProvider;
 
-    SkScaledImageCache::ID* fScaledCacheID;
+    enum {
+        kBMStateSize = 136  
+    };
+    SkAlignedSStorage<kBMStateSize> fBMStateStorage;
+    SkBitmapController::State* fBMState;
 
     MatrixProc chooseMatrixProc(bool trivial_matrix);
     bool chooseProcs(const SkMatrix& inv, const SkPaint&);
+    bool chooseScanlineProcs(bool trivialMatrix, bool clampClamp, const SkPaint& paint);
     ShaderProc32 chooseShaderProc32();
-
-    
-    
-    bool possiblyScaleImage();
-
-    
-    
-    bool lockBaseBitmap();
-
-    SkBitmapFilter* fBitmapFilter;
-
-    
-    
-    bool setBitmapFilterProcs();
 
     
     bool setupForTranslate();
@@ -215,11 +197,7 @@ void ClampX_ClampY_nofilter_affine(const SkBitmapProcState& s,
                                    uint32_t xy[], int count, int x, int y);
 void S32_D16_filter_DX(const SkBitmapProcState& s,
                        const uint32_t* xy, int count, uint16_t* colors);
-
-void highQualityFilter32(const SkBitmapProcState &s, int x, int y,
-                         SkPMColor *SK_RESTRICT colors, int count);
-void highQualityFilter16(const SkBitmapProcState &s, int x, int y,
-                         uint16_t *SK_RESTRICT colors, int count);
-
+void S32_D16_filter_DXDY(const SkBitmapProcState& s,
+                         const uint32_t* xy, int count, uint16_t* colors);
 
 #endif

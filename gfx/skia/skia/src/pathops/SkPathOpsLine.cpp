@@ -6,41 +6,6 @@
 
 #include "SkPathOpsLine.h"
 
-SkDLine SkDLine::subDivide(double t1, double t2) const {
-    SkDVector delta = tangent();
-    SkDLine dst = {{{
-            fPts[0].fX - t1 * delta.fX, fPts[0].fY - t1 * delta.fY}, {
-            fPts[0].fX - t2 * delta.fX, fPts[0].fY - t2 * delta.fY}}};
-    return dst;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-double SkDLine::isLeft(const SkDPoint& pt) const {
-    SkDVector p0 = fPts[1] - fPts[0];
-    SkDVector p2 = pt - fPts[0];
-    return p0.cross(p2);
-}
-
 SkDPoint SkDLine::ptAtT(double t) const {
     if (0 == t) {
         return fPts[0];
@@ -89,7 +54,7 @@ double SkDLine::nearPoint(const SkDPoint& xy, bool* unequal) const {
     if (unequal) {
         *unequal = (float) largest != (float) (largest + dist);
     }
-    t = SkPinT(t);
+    t = SkPinT(t);  
     SkASSERT(between(0, t, 1));
     return t;
 }
@@ -108,19 +73,6 @@ bool SkDLine::nearRay(const SkDPoint& xy) const {
     double largest = SkTMax(SkTMax(SkTMax(fPts[0].fX, fPts[0].fY), fPts[1].fX), fPts[1].fY);
     largest = SkTMax(largest, -tiniest);
     return RoughlyEqualUlps(largest, largest + dist); 
-}
-
-
-
-bool SkDLine::NearRay(double x1, double y1, double x2, double y2) {
-    double denom1 = x1 * x1 + y1 * y1;
-    double denom2 = x2 * x2 + y2 * y2;
-    SkDLine line = {{{0, 0}, {x1, y1}}};
-    SkDPoint pt = {x2, y2};
-    if (denom2 > denom1) {
-        SkTSwap(line[1], pt);
-    }
-    return line.nearRay(pt);
 }
 
 double SkDLine::ExactPointH(const SkDPoint& xy, double left, double right, double y) {

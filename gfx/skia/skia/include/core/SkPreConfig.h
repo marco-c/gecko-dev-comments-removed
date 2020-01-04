@@ -10,11 +10,6 @@
 #ifndef SkPreConfig_DEFINED
 #define SkPreConfig_DEFINED
 
-#ifdef WEBKIT_VERSION_MIN_REQUIRED
-    #include "config.h"
-#endif
-
-
 
 
 #define SK_NOTHING_ARG1(arg1)
@@ -23,25 +18,19 @@
 
 
 
-#if !defined(SK_BUILD_FOR_ANDROID) && !defined(SK_BUILD_FOR_IOS) && !defined(SK_BUILD_FOR_PALM) && !defined(SK_BUILD_FOR_WINCE) && !defined(SK_BUILD_FOR_WIN32) && !defined(SK_BUILD_FOR_UNIX) && !defined(SK_BUILD_FOR_MAC) && !defined(SK_BUILD_FOR_SDL) && !defined(SK_BUILD_FOR_BREW) && !defined(SK_BUILD_FOR_NACL)
+#if !defined(SK_BUILD_FOR_ANDROID) && !defined(SK_BUILD_FOR_IOS) && !defined(SK_BUILD_FOR_WIN32) && !defined(SK_BUILD_FOR_UNIX) && !defined(SK_BUILD_FOR_MAC)
 
     #ifdef __APPLE__
         #include "TargetConditionals.h"
     #endif
 
-    #if defined(PALMOS_SDK_VERSION)
-        #define SK_BUILD_FOR_PALM
-    #elif defined(UNDER_CE)
-        #define SK_BUILD_FOR_WINCE
-    #elif defined(WIN32)
-        #define SK_BUILD_FOR_WIN32
-    #elif defined(__SYMBIAN32__)
+    #if defined(WIN32) || defined(__SYMBIAN32__)
         #define SK_BUILD_FOR_WIN32
     #elif defined(ANDROID)
         #define SK_BUILD_FOR_ANDROID
-    #elif defined(linux) || defined(__FreeBSD__) || defined(__OpenBSD__) || \
-          defined(__sun) || defined(__NetBSD__) || defined(__DragonFly__) || \
-          defined(__GLIBC__) || defined(__GNU__)
+    #elif defined(linux) || defined(__linux) || defined(__FreeBSD__) || \
+          defined(__OpenBSD__) || defined(__sun) || defined(__NetBSD__) || \
+          defined(__DragonFly__) || defined(__GLIBC__) || defined(__GNU__)
         #define SK_BUILD_FOR_UNIX
     #elif TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
         #define SK_BUILD_FOR_IOS
@@ -125,12 +114,18 @@
 #define SK_CPU_SSE_LEVEL_SSSE3    31
 #define SK_CPU_SSE_LEVEL_SSE41    41
 #define SK_CPU_SSE_LEVEL_SSE42    42
+#define SK_CPU_SSE_LEVEL_AVX      51
+#define SK_CPU_SSE_LEVEL_AVX2     52
 
 
 #ifndef SK_CPU_SSE_LEVEL
     
     
-    #if defined(__SSE4_2__)
+    #if defined(__AVX2__)
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_AVX2
+    #elif defined(__AVX__)
+        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_AVX
+    #elif defined(__SSE4_2__)
         #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE42
     #elif defined(__SSE4_1__)
         #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE41
@@ -147,9 +142,13 @@
 #ifndef SK_CPU_SSE_LEVEL
     
     
-    #if defined(_M_X64) || defined(_M_AMD64)
-        #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE2
-    #elif defined (_M_IX86_FP)
+    #if defined(__AVX2__)
+        #define SK_CPU_SSE_LEVEL        SK_CPU_SSE_LEVEL_AVX2
+    #elif defined(__AVX__)
+        #define SK_CPU_SSE_LEVEL        SK_CPU_SSE_LEVEL_AVX
+    #elif defined(_M_X64) || defined(_M_AMD64)
+        #define SK_CPU_SSE_LEVEL        SK_CPU_SSE_LEVEL_SSE2
+    #elif defined(_M_IX86_FP)
         #if _M_IX86_FP >= 2
             #define SK_CPU_SSE_LEVEL    SK_CPU_SSE_LEVEL_SSE2
         #elif _M_IX86_FP == 1
@@ -183,18 +182,18 @@
         #else
             #define SK_ARM_ARCH 3
         #endif
-
-        #if defined(__thumb2__) && (SK_ARM_ARCH >= 6) \
-                || !defined(__thumb__) && ((SK_ARM_ARCH > 5) || defined(__ARM_ARCH_5E__) \
-                || defined(__ARM_ARCH_5TE__) || defined(__ARM_ARCH_5TEJ__))
-            #define SK_ARM_HAS_EDSP
-        #endif
     #endif
 #endif
 
 
 #if defined(__aarch64__) && !defined(SK_BUILD_FOR_IOS)
     #define SK_CPU_ARM64
+#endif
+
+
+
+#if !defined(SK_ARM_HAS_NEON) && !defined(SK_BUILD_FOR_IOS) && defined(__ARM_NEON)
+    #define SK_ARM_HAS_NEON
 #endif
 
 

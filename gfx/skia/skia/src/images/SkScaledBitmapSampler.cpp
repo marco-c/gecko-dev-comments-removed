@@ -343,7 +343,7 @@ static SkScaledBitmapSampler::RowProc
 get_RGBA_to_4444_proc(const SkScaledBitmapSampler::Options& opts) {
     if (!opts.fPremultiplyAlpha) {
         
-        return NULL;
+        return nullptr;
     }
     if (opts.fSkipZeros) {
         if (opts.fDither) {
@@ -396,10 +396,9 @@ static bool Sample_Index_D8888_SkipZ(void* SK_RESTRICT dstRow,
 
 static SkScaledBitmapSampler::RowProc
 get_index_to_8888_proc(const SkScaledBitmapSampler::Options& opts) {
-    if (!opts.fPremultiplyAlpha) {
-        
-        return NULL;
-    }
+    
+    
+    
     
     if (opts.fSkipZeros) {
         return Sample_Index_D8888_SkipZ;
@@ -516,7 +515,7 @@ static SkScaledBitmapSampler::RowProc
 get_index_to_4444_proc(const SkScaledBitmapSampler::Options& opts) {
     
     if (!opts.fPremultiplyAlpha) {
-        return NULL;
+        return nullptr;
     }
     if (opts.fSkipZeros) {
         if (opts.fDither) {
@@ -549,7 +548,7 @@ static SkScaledBitmapSampler::RowProc
 get_index_to_index_proc(const SkScaledBitmapSampler::Options& opts) {
     
     if (!opts.fPremultiplyAlpha) {
-        return NULL;
+        return nullptr;
     }
     
     return Sample_Index_DI;
@@ -564,14 +563,14 @@ static bool Sample_Gray_DA8(void* SK_RESTRICT dstRow,
     
     
     (void) Sample_Index_DI(dstRow, src, width, deltaSrc,  0,
-                            NULL);
+                            nullptr);
     return true;
 }
 
 static SkScaledBitmapSampler::RowProc
 get_gray_to_A8_proc(const SkScaledBitmapSampler::Options& opts) {
     if (!opts.fPremultiplyAlpha) {
-        return NULL;
+        return nullptr;
     }
     
     return Sample_Gray_DA8;
@@ -584,9 +583,9 @@ typedef SkScaledBitmapSampler::RowProc (*RowProcChooser)(const SkScaledBitmapSam
 
 SkScaledBitmapSampler::SkScaledBitmapSampler(int width, int height,
                                              int sampleSize) {
-    fCTable = NULL;
-    fDstRow = NULL;
-    fRowProc = NULL;
+    fCTable = nullptr;
+    fDstRow = nullptr;
+    fRowProc = nullptr;
 
     if (width <= 0 || height <= 0) {
         sk_throw();
@@ -632,7 +631,7 @@ bool SkScaledBitmapSampler::begin(SkBitmap* dst, SrcConfig sc,
         get_RGBx_to_8888_proc,
         get_RGBA_to_8888_proc,
         get_index_to_8888_proc,
-        NULL, 
+        nullptr, 
 
         get_gray_to_565_proc,
         get_RGBx_to_565_proc,
@@ -644,25 +643,25 @@ bool SkScaledBitmapSampler::begin(SkBitmap* dst, SrcConfig sc,
         get_RGBx_to_4444_proc,
         get_RGBA_to_4444_proc,
         get_index_to_4444_proc,
-        NULL, 
+        nullptr, 
 
-        NULL, 
-        NULL, 
-        NULL, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
         get_index_to_index_proc,
-        NULL, 
+        nullptr, 
 
         get_gray_to_A8_proc,
-        NULL, 
-        NULL, 
-        NULL, 
-        NULL, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
+        nullptr, 
     };
 
     
     static const int gProcDstConfigSpan = 5;
-    SK_COMPILE_ASSERT(SK_ARRAY_COUNT(gProcChoosers) == 5 * gProcDstConfigSpan,
-                      gProcs_has_the_wrong_number_of_entries);
+    static_assert(SK_ARRAY_COUNT(gProcChoosers) == 5 * gProcDstConfigSpan,
+                  "gProcs_has_the_wrong_number_of_entries");
 
     fCTable = ctable;
 
@@ -717,15 +716,15 @@ bool SkScaledBitmapSampler::begin(SkBitmap* dst, SrcConfig sc,
     }
 
     RowProcChooser chooser = gProcChoosers[index];
-    if (NULL == chooser) {
-        fRowProc = NULL;
+    if (nullptr == chooser) {
+        fRowProc = nullptr;
     } else {
         fRowProc = chooser(opts);
     }
     fDstRow = (char*)dst->getPixels();
     fDstRowBytes = dst->rowBytes();
     fCurrY = 0;
-    return fRowProc != NULL;
+    return fRowProc != nullptr;
 }
 
 bool SkScaledBitmapSampler::begin(SkBitmap* dst, SrcConfig sc,
@@ -763,7 +762,9 @@ bool SkScaledBitmapSampler::sampleInterlaced(const uint8_t* SK_RESTRICT src, int
     
     
     const int dstY = srcYMinusY0 / fDY;
-    SkASSERT(dstY < fScaledHeight);
+    if (dstY >= fScaledHeight) {
+        return false;
+    }
     char* dstRow = fDstRow + dstY * fDstRowBytes;
     return fRowProc(dstRow, src + fX0 * fSrcPixelSize, fScaledWidth,
                     fDX * fSrcPixelSize, dstY, fCTable);
@@ -793,41 +794,41 @@ public:
 
 SkScaledBitmapSampler::RowProc gTestProcs[] = {
     
-    Sample_Gray_DA8,    Sample_Gray_DA8,        NULL,                       NULL,                       
-    NULL,               NULL,                   NULL,                       NULL,                       
+    Sample_Gray_DA8,    Sample_Gray_DA8,        nullptr,                       nullptr,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
     Sample_Gray_D565,   Sample_Gray_D565_D,     Sample_Gray_D565,           Sample_Gray_D565_D,         
     Sample_Gray_D4444,  Sample_Gray_D4444_D,    Sample_Gray_D4444,          Sample_Gray_D4444_D,        
     Sample_Gray_D8888,  Sample_Gray_D8888,      Sample_Gray_D8888,          Sample_Gray_D8888,          
     
-    NULL,               NULL,                   NULL,                       NULL,                       
-    Sample_Index_DI,    Sample_Index_DI,        NULL,                       NULL,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
+    Sample_Index_DI,    Sample_Index_DI,        nullptr,                       nullptr,                       
     Sample_Index_D565,  Sample_Index_D565_D,    Sample_Index_D565,          Sample_Index_D565_D,        
-    Sample_Index_D4444, Sample_Index_D4444_D,   NULL,                       NULL,                       
-    Sample_Index_D8888, Sample_Index_D8888,     NULL,                       NULL,                       
+    Sample_Index_D4444, Sample_Index_D4444_D,   nullptr,                       nullptr,                       
+    Sample_Index_D8888, Sample_Index_D8888,     Sample_Index_D8888,         Sample_Index_D8888,         
     
-    NULL,               NULL,                   NULL,                       NULL,                       
-    NULL,               NULL,                   NULL,                       NULL,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
     Sample_RGBx_D565,   Sample_RGBx_D565_D,     Sample_RGBx_D565,           Sample_RGBx_D565_D,         
     Sample_RGBx_D4444,  Sample_RGBx_D4444_D,    Sample_RGBx_D4444,          Sample_RGBx_D4444_D,        
     Sample_RGBx_D8888,  Sample_RGBx_D8888,      Sample_RGBx_D8888,          Sample_RGBx_D8888,          
     
-    NULL,               NULL,                   NULL,                       NULL,                       
-    NULL,               NULL,                   NULL,                       NULL,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
     Sample_RGBx_D565,   Sample_RGBx_D565_D,     Sample_RGBx_D565,           Sample_RGBx_D565_D,         
     Sample_RGBx_D4444,  Sample_RGBx_D4444_D,    Sample_RGBx_D4444,          Sample_RGBx_D4444_D,        
     Sample_RGBx_D8888,  Sample_RGBx_D8888,      Sample_RGBx_D8888,          Sample_RGBx_D8888,          
     
-    NULL,               NULL,                   NULL,                       NULL,                       
-    NULL,               NULL,                   NULL,                       NULL,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
     Sample_RGBx_D565,   Sample_RGBx_D565_D,     Sample_RGBx_D565,           Sample_RGBx_D565_D,         
-    Sample_RGBA_D4444,  Sample_RGBA_D4444_D,    NULL,                       NULL,                       
+    Sample_RGBA_D4444,  Sample_RGBA_D4444_D,    nullptr,                       nullptr,                       
     Sample_RGBA_D8888,  Sample_RGBA_D8888,      Sample_RGBA_D8888_Unpremul, Sample_RGBA_D8888_Unpremul, 
     
-    NULL,               NULL,                   NULL,                       NULL,                       
-    NULL,               NULL,                   NULL,                       NULL,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
     Sample_D565_D565,   Sample_D565_D565,       Sample_D565_D565,           Sample_D565_D565,           
-    NULL,               NULL,                   NULL,                       NULL,                       
-    NULL,               NULL,                   NULL,                       NULL,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
+    nullptr,               nullptr,                   nullptr,                       nullptr,                       
 };
 
 
@@ -835,8 +836,8 @@ class DummyDecoder : public SkImageDecoder {
 public:
     DummyDecoder() {}
 protected:
-    virtual bool onDecode(SkStream*, SkBitmap*, SkImageDecoder::Mode) SK_OVERRIDE {
-        return false;
+    Result onDecode(SkStream*, SkBitmap*, SkImageDecoder::Mode) override {
+        return kFailure;
     }
 };
 

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef SkPDFBitmap_DEFINED
+#define SkPDFBitmap_DEFINED
+
+#include "SkPDFTypes.h"
+
+class SkImage;
+
+
+
+
+
+
+SkPDFObject* SkPDFCreateBitmapObject(const SkImage*);
+
+#endif  

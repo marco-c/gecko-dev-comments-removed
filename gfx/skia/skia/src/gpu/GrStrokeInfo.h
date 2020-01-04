@@ -8,47 +8,80 @@
 #ifndef GrStrokeInfo_DEFINED
 #define GrStrokeInfo_DEFINED
 
-#include "SkStrokeRec.h"
 #include "SkPathEffect.h"
+#include "SkStrokeRec.h"
+#include "SkTemplates.h"
+
+class GrUniqueKey;
 
 
 
 
 
 
+class GrStrokeInfo : public SkStrokeRec {
+public:
+    static const GrStrokeInfo& FillInfo() {
+        static const GrStrokeInfo gFill(kFill_InitStyle);
+        return gFill;
+    }
 
-class GrStrokeInfo {
-public: 
-    GrStrokeInfo(SkStrokeRec::InitStyle style) :
-        fStroke(style), fDashType(SkPathEffect::kNone_DashType) {}
+    GrStrokeInfo(SkStrokeRec::InitStyle style)
+        : INHERITED(style)
+        , fDashType(SkPathEffect::kNone_DashType) {
+    }
 
-    GrStrokeInfo(const GrStrokeInfo& src, bool includeDash = true) : fStroke(src.fStroke) {
-        if (includeDash) {
-            fDashInfo = src.fDashInfo;
+    GrStrokeInfo(const GrStrokeInfo& src, bool includeDash = true)
+        : INHERITED(src) {
+        if (includeDash && src.isDashed()) {
             fDashType = src.fDashType;
-            fIntervals.reset(src.dashCount());
-            memcpy(fIntervals.get(), src.fIntervals.get(), src.dashCount() * sizeof(SkScalar));
+            fDashPhase = src.fDashPhase;
+            fIntervals.reset(src.getDashCount());
+            memcpy(fIntervals.get(), src.fIntervals.get(), fIntervals.count() * sizeof(SkScalar));
         } else {
             fDashType = SkPathEffect::kNone_DashType;
         }
     }
 
-    GrStrokeInfo(const SkPaint& paint, SkPaint::Style styleOverride) :
-        fStroke(paint, styleOverride), fDashType(SkPathEffect::kNone_DashType) {
+    GrStrokeInfo(const SkPaint& paint, SkPaint::Style styleOverride)
+        : INHERITED(paint, styleOverride)
+        , fDashType(SkPathEffect::kNone_DashType) {
         this->init(paint);
     }
 
-
-    explicit GrStrokeInfo(const SkPaint& paint) :
-        fStroke(paint), fDashType(SkPathEffect::kNone_DashType) {
+    explicit GrStrokeInfo(const SkPaint& paint)
+        : INHERITED(paint)
+        , fDashType(SkPathEffect::kNone_DashType) {
         this->init(paint);
     }
 
-    const SkStrokeRec& getStrokeRec() const { return fStroke; }
+    GrStrokeInfo& operator=(const GrStrokeInfo& other) {
+        if (other.isDashed()) {
+            fDashType = other.fDashType;
+            fDashPhase = other.fDashPhase;
+            fIntervals.reset(other.getDashCount());
+            memcpy(fIntervals.get(), other.fIntervals.get(), fIntervals.count() * sizeof(SkScalar));
+        } else {
+            this->removeDash();
+        }
+        this->INHERITED::operator=(other);
+        return *this;
+    }
 
-    SkStrokeRec* getStrokeRecPtr() { return &fStroke; }
-
-    void setFillStyle() { fStroke.setFillStyle(); }
+    bool hasEqualEffect(const GrStrokeInfo& other) const {
+        if (this->isDashed() != other.isDashed()) {
+            return false;
+        }
+        if (this->isDashed()) {
+            if (fDashPhase != other.fDashPhase ||
+                fIntervals.count() != other.fIntervals.count() ||
+                memcmp(fIntervals.get(), other.fIntervals.get(),
+                       fIntervals.count() * sizeof(SkScalar)) != 0) {
+                return false;
+            }
+        }
+        return this->INHERITED::hasEqualEffect(other);
+    }
 
     
 
@@ -56,44 +89,103 @@ public:
 
 
     bool setDashInfo(const SkPathEffect* pe) {
-        if (NULL != pe && !fStroke.isFillStyle()) {
-            fDashInfo.fIntervals = NULL;
-            fDashType = pe->asADash(&fDashInfo);
+        if (pe && !this->isFillStyle()) {
+            SkPathEffect::DashInfo dashInfo;
+            fDashType = pe->asADash(&dashInfo);
             if (SkPathEffect::kDash_DashType == fDashType) {
-                fIntervals.reset(fDashInfo.fCount);
-                fDashInfo.fIntervals = fIntervals.get();
-                pe->asADash(&fDashInfo);
+                fIntervals.reset(dashInfo.fCount);
+                dashInfo.fIntervals = fIntervals.get();
+                pe->asADash(&dashInfo);
+                fDashPhase = dashInfo.fPhase;
                 return true;
             }
         }
         return false;
     }
 
-    bool isDashed() const {
-        return (!fStroke.isFillStyle() && SkPathEffect::kDash_DashType == fDashType);
+    
+
+
+    bool setDashInfo(const SkPathEffect::DashInfo& info) {
+        if (!this->isFillStyle()) {
+            fDashType = SkPathEffect::kDash_DashType;
+            fDashPhase = info.fPhase;
+            fIntervals.reset(info.fCount);
+            for (int i = 0; i < fIntervals.count(); i++) {
+                fIntervals[i] = info.fIntervals[i];
+            }
+            return true;
+        }
+        return false;
     }
 
-    int32_t dashCount() const {
-        return fDashInfo.fCount;
+    bool isDashed() const {
+        return (!this->isFillStyle() && SkPathEffect::kDash_DashType == fDashType);
+    }
+
+    int32_t getDashCount() const {
+        SkASSERT(this->isDashed());
+        return fIntervals.count();
+    }
+
+    SkScalar getDashPhase() const {
+        SkASSERT(this->isDashed());
+        return fDashPhase;
+    }
+
+    const SkScalar* getDashIntervals() const {
+        SkASSERT(this->isDashed());
+        return fIntervals.get();
     }
 
     void removeDash() {
         fDashType = SkPathEffect::kNone_DashType;
     }
+
     
-    const SkPathEffect::DashInfo& getDashInfo() const { return fDashInfo; }
+
+
+
+
+
+    bool applyDashToPath(SkPath* dst, GrStrokeInfo* dstStrokeInfo, const SkPath& src) const;
+
+    
+
+
+    int computeUniqueKeyFragmentData32Cnt() const {
+        const int kSkScalarData32Cnt = sizeof(SkScalar) / sizeof(uint32_t);
+        
+        int strokeKeyData32Cnt = 1 + 2 * kSkScalarData32Cnt;
+
+        if (this->isDashed()) {
+            
+            strokeKeyData32Cnt += (1 + this->getDashCount()) * kSkScalarData32Cnt;
+        }
+        return strokeKeyData32Cnt;
+    }
+
+    
+
+
+
+
+
+    void asUniqueKeyFragment(uint32_t*) const;
 
 private:
+    
+    bool hasEqualEffect(const SkStrokeRec& other) const;
 
     void init(const SkPaint& paint) {
         const SkPathEffect* pe = paint.getPathEffect();
         this->setDashInfo(pe);
     }
 
-    SkStrokeRec            fStroke;
     SkPathEffect::DashType fDashType;
-    SkPathEffect::DashInfo fDashInfo;
+    SkScalar               fDashPhase;
     SkAutoSTArray<2, SkScalar> fIntervals;
+    typedef SkStrokeRec INHERITED;
 };
 
 #endif

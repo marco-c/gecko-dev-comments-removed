@@ -5,13 +5,15 @@
 
 
 
-
-
-
 #ifndef SkTypeface_mac_DEFINED
 #define SkTypeface_mac_DEFINED
 
 #include "SkTypeface.h"
+
+#if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
+
+#include <CoreFoundation/CoreFoundation.h>
+
 #ifdef SK_BUILD_FOR_MAC
 #import <ApplicationServices/ApplicationServices.h>
 #endif
@@ -24,6 +26,24 @@
 
 
 
-SK_API extern SkTypeface* SkCreateTypefaceFromCTFont(CTFontRef);
 
-#endif
+
+
+
+
+SK_API extern SkTypeface* SkCreateTypefaceFromCTFont(CTFontRef, CFTypeRef = NULL);
+
+
+
+
+
+
+
+
+
+
+
+SK_API extern CTFontRef SkTypeface_GetCTFontRef(const SkTypeface* face);
+
+#endif  
+#endif  

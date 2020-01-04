@@ -8,8 +8,8 @@
 #ifndef GrTextureStripAtlas_DEFINED
 #define GrTextureStripAtlas_DEFINED
 
-#include "GrBinHashKey.h"
 #include "SkBitmap.h"
+#include "SkChecksum.h"
 #include "SkGr.h"
 #include "SkTDArray.h"
 #include "SkTDynamicHash.h"
@@ -25,11 +25,14 @@ public:
 
 
     struct Desc {
-        Desc() { memset(this, 0, sizeof(*this)); }
-        uint16_t fWidth, fHeight, fRowHeight;
-        GrPixelConfig fConfig;
+        Desc() { sk_bzero(this, sizeof(*this)); }
         GrContext* fContext;
-        const uint32_t* asKey() const { return reinterpret_cast<const uint32_t*>(this); }
+        GrPixelConfig fConfig;
+        uint16_t fWidth, fHeight, fRowHeight;
+        uint16_t fUnusedPadding;
+        bool operator==(const Desc& other) const {
+            return 0 == memcmp(this, &other, sizeof(Desc));
+        }
     };
 
     
@@ -65,7 +68,7 @@ public:
 
 
     SkScalar getYOffset(int row) const { return SkIntToScalar(row) / fNumRows; }
-    SkScalar getVerticalScaleFactor() const { return SkIntToScalar(fDesc.fRowHeight) / fDesc.fHeight; }
+    SkScalar getNormalizedTexelHeight() const { return fNormalizedYHeight; }
 
     GrContext* getContext() const { return fDesc.fContext; }
     GrTexture* getTexture() const { return fTexture; }
@@ -80,7 +83,7 @@ private:
 
 
     struct AtlasRow : SkNoncopyable {
-        AtlasRow() : fKey(kEmptyAtlasRowKey), fLocks(0), fNext(NULL), fPrev(NULL) { }
+        AtlasRow() : fKey(kEmptyAtlasRowKey), fLocks(0), fNext(nullptr), fPrev(nullptr) { }
         
         uint32_t fKey;
         
@@ -138,14 +141,13 @@ private:
     class AtlasEntry : public ::SkNoncopyable {
     public:
         
-        class Key : public GrMurmur3HashKey<sizeof(GrTextureStripAtlas::Desc)> {};
-        static const Key& GetKey(const AtlasEntry& entry) { return entry.fKey; }
-        static uint32_t Hash(const Key& key) { return key.getHash(); }
+        static const Desc& GetKey(const AtlasEntry& entry) { return entry.fDesc; }
+        static uint32_t Hash(const Desc& desc) { return SkChecksum::Murmur3(&desc, sizeof(Desc)); }
 
         
-        AtlasEntry() : fAtlas(NULL) {}
-        ~AtlasEntry() { SkDELETE(fAtlas); }
-        Key fKey;
+        AtlasEntry() : fAtlas(nullptr) {}
+        ~AtlasEntry() { delete fAtlas; }
+        Desc fDesc;
         GrTextureStripAtlas* fAtlas;
     };
 
@@ -167,6 +169,8 @@ private:
     const Desc fDesc;
     const uint16_t fNumRows;
     GrTexture* fTexture;
+
+    SkScalar fNormalizedYHeight;
 
     
     

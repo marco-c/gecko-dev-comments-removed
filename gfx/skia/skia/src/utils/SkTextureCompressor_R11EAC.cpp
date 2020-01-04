@@ -6,7 +6,10 @@
 
 
 #include "SkTextureCompressor.h"
+#include "SkTextureCompressor_Blitter.h"
+#include "SkTextureCompressor_Utils.h"
 
+#include "SkBlitter.h"
 #include "SkEndian.h"
 
 
@@ -28,8 +31,6 @@
 
 
 
-#if COMPRESS_R11_EAC_SLOW
-
 static const int kNumR11EACPalettes = 16;
 static const int kR11EACPaletteSize = 8;
 static const int kR11EACModifierPalettes[kNumR11EACPalettes][kR11EACPaletteSize] = {
@@ -50,6 +51,8 @@ static const int kR11EACModifierPalettes[kNumR11EACPalettes][kR11EACPaletteSize]
     {-4, -6, -8, -9, 3, 5, 7, 8},
     {-3, -5, -7, -9, 2, 4, 6, 8}
 };
+
+#if COMPRESS_R11_EAC_SLOW
 
 
 
@@ -272,7 +275,7 @@ static uint64_t compress_r11eac_block(const uint8_t block[16]) {
 typedef uint64_t (*A84x4To64BitProc)(const uint8_t block[]);
 
 static bool compress_4x4_a8_to_64bit(uint8_t* dst, const uint8_t* src,
-                                     int width, int height, int rowBytes,
+                                     int width, int height, size_t rowBytes,
                                      A84x4To64BitProc proc) {
     
     if (0 == width || 0 == height || (width % 4) != 0 || (height % 4) != 0) {
@@ -301,6 +304,45 @@ static bool compress_4x4_a8_to_64bit(uint8_t* dst, const uint8_t* src,
     return true;
 }
 #endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static inline uint32_t convert_indices(uint32_t x) {
+    
+    x = SkTextureCompressor::ConvertToThreeBitIndex(x);
+
+    
+    x = ~((0x80808080 - x) ^ 0x7F7F7F7F);
+
+    
+    const uint32_t s = (x & 0x7F7F7F7F) + 0x03030303;
+    x = ((x ^ 0x03030303) & 0x80808080) ^ s;
+
+    
+    const uint32_t a = x & 0x80808080;
+    const uint32_t b = a >> 7;
+
+    
+    const uint32_t m = (a >> 6) | b;
+
+    
+    x = (x ^ ((a - b) | a)) + b;
+
+    
+    return x + m;
+}
 
 #if COMPRESS_R11_EAC_FASTEST
 template<unsigned shift>
@@ -379,46 +421,7 @@ static inline uint64_t interleave6(uint64_t topRows, uint64_t bottomRows) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-static inline uint32_t convert_indices(uint32_t x) {
-    
-    x = (x & 0xE0E0E0E0) >> 5;
-
-    
-    x = ~((0x80808080 - x) ^ 0x7F7F7F7F);
-
-    
-    const uint32_t s = (x & 0x7F7F7F7F) + 0x03030303;
-    x = ((x ^ 0x03030303) & 0x80808080) ^ s;
-
-    
-    const uint32_t a = x & 0x80808080;
-    const uint32_t b = a >> 7;
-
-    
-    const uint32_t m = (a >> 6) | b;
-
-    
-    x = (x ^ ((a - b) | a)) + b;
-
-    
-    return x + m;
-}
-
-
-
-
-static uint64_t compress_r11eac_block_fast(const uint8_t* src, int rowBytes) {
+static uint64_t compress_r11eac_block_fast(const uint8_t* src, size_t rowBytes) {
     
     const uint32_t alphaRow1 = *(reinterpret_cast<const uint32_t*>(src));
     const uint32_t alphaRow2 = *(reinterpret_cast<const uint32_t*>(src + rowBytes));
@@ -459,7 +462,7 @@ static uint64_t compress_r11eac_block_fast(const uint8_t* src, int rowBytes) {
 }
 
 static bool compress_a8_to_r11eac_fast(uint8_t* dst, const uint8_t* src,
-                                       int width, int height, int rowBytes) {
+                                       int width, int height, size_t rowBytes) {
     
     if (0 == width || 0 == height || (width % 4) != 0 || (height % 4) != 0) {
         return false;
@@ -513,10 +516,15 @@ static inline uint32_t pack_indices_vertical(uint32_t x) {
 
 
 
-static inline uint64_t compress_block_vertical(const uint32_t alphaColumn0,
-                                               const uint32_t alphaColumn1,
-                                               const uint32_t alphaColumn2,
-                                               const uint32_t alphaColumn3) {
+inline void compress_block_vertical(uint8_t* dstPtr, const uint8_t *block) {
+
+    const uint32_t* src = reinterpret_cast<const uint32_t*>(block);
+    uint64_t* dst = reinterpret_cast<uint64_t*>(dstPtr);
+
+    const uint32_t alphaColumn0 = src[0];
+    const uint32_t alphaColumn1 = src[1];
+    const uint32_t alphaColumn2 = src[2];
+    const uint32_t alphaColumn3 = src[3];
 
     if (alphaColumn0 == alphaColumn1 &&
         alphaColumn2 == alphaColumn3 &&
@@ -524,11 +532,13 @@ static inline uint64_t compress_block_vertical(const uint32_t alphaColumn0,
 
         if (0 == alphaColumn0) {
             
-            return 0x0020000000002000ULL;
+            *dst = 0x0020000000002000ULL;
+            return;
         }
         else if (0xFFFFFFFF == alphaColumn0) {
             
-            return 0xFFFFFFFFFFFFFFFFULL;
+            *dst = 0xFFFFFFFFFFFFFFFFULL;
+            return;
         }
     }
 
@@ -542,32 +552,74 @@ static inline uint64_t compress_block_vertical(const uint32_t alphaColumn0,
     const uint32_t packedIndexColumn2 = pack_indices_vertical(indexColumn2);
     const uint32_t packedIndexColumn3 = pack_indices_vertical(indexColumn3);
 
-    return SkEndian_SwapBE64(0x8490000000000000ULL |
+    *dst = SkEndian_SwapBE64(0x8490000000000000ULL |
                              (static_cast<uint64_t>(packedIndexColumn0) << 36) |
                              (static_cast<uint64_t>(packedIndexColumn1) << 24) |
                              static_cast<uint64_t>(packedIndexColumn2 << 12) |
                              static_cast<uint64_t>(packedIndexColumn3));
-        
 }
 
+static inline int get_r11_eac_index(uint64_t block, int x, int y) {
+    SkASSERT(x >= 0 && x < 4);
+    SkASSERT(y >= 0 && y < 4);
+    const int idx = x*4 + y;
+    return (block >> ((15-idx)*3)) & 0x7;
+}
 
+static void decompress_r11_eac_block(uint8_t* dst, int dstRowBytes, const uint8_t* src) {
+    const uint64_t block = SkEndian_SwapBE64(*(reinterpret_cast<const uint64_t *>(src)));
 
+    const int base_cw = (block >> 56) & 0xFF;
+    const int mod = (block >> 52) & 0xF;
+    const int palette_idx = (block >> 48) & 0xF;
 
-static inline void update_block_columns(uint32_t* block, const int col,
-                                        const int colsLeft, const uint32_t curAlphai) {
-    SkASSERT(NULL != block);
-    SkASSERT(col + colsLeft <= 4);
+    const int* palette = kR11EACModifierPalettes[palette_idx];
 
-    for (int i = col; i < (col + colsLeft); ++i) {
-        block[i] = curAlphai;
+    for (int j = 0; j < 4; ++j) {
+        for (int i = 0; i < 4; ++i) {
+            const int idx = get_r11_eac_index(block, i, j);
+            const int val = base_cw*8 + 4 + palette[idx]*mod*8;
+            if (val < 0) {
+                dst[i] = 0;
+            } else if (val > 2047) {
+                dst[i] = 0xFF;
+            } else {
+                dst[i] = (val >> 3) & 0xFF;
+            }
+        }
+        dst += dstRowBytes;
     }
 }
 
 
 
+
+struct CompressorR11EAC {
+    static inline void CompressA8Vertical(uint8_t* dst, const uint8_t* src) {
+        compress_block_vertical(dst, src);
+    }
+
+    static inline void CompressA8Horizontal(uint8_t* dst, const uint8_t* src,
+                                            int srcRowBytes) {
+        *(reinterpret_cast<uint64_t*>(dst)) = compress_r11eac_block_fast(src, srcRowBytes);
+    }
+
+#if PEDANTIC_BLIT_RECT
+    static inline void UpdateBlock(uint8_t* dst, const uint8_t* src, int srcRowBytes,
+                                   const uint8_t* mask) {
+        
+        
+        
+        SkFAIL("Implement me!");
+    }
+#endif
+};
+
+
+
 namespace SkTextureCompressor {
 
-bool CompressA8ToR11EAC(uint8_t* dst, const uint8_t* src, int width, int height, int rowBytes) {
+bool CompressA8ToR11EAC(uint8_t* dst, const uint8_t* src, int width, int height, size_t rowBytes) {
 
 #if (COMPRESS_R11_EAC_SLOW) || (COMPRESS_R11_EAC_FAST)
 
@@ -582,383 +634,37 @@ bool CompressA8ToR11EAC(uint8_t* dst, const uint8_t* src, int width, int height,
 #endif
 }
 
+SkBlitter* CreateR11EACBlitter(int width, int height, void* outputBuffer,
+                               SkTBlitterAllocator* allocator) {
 
-
-
-
-class R11_EACBlitter : public SkBlitter {
-public:
-    R11_EACBlitter(int width, int height, void *compressedBuffer);
-    virtual ~R11_EACBlitter() { this->flushRuns(); }
-
-    
-    virtual void blitH(int x, int y, int width) SK_OVERRIDE {
-        
-        
-        
-        SkFAIL("Not implemented!");
-    }
-    
-    
-    
-    virtual void blitAntiH(int x, int y,
-                           const SkAlpha antialias[],
-                           const int16_t runs[]) SK_OVERRIDE;
-    
-    
-    virtual void blitV(int x, int y, int height, SkAlpha alpha) SK_OVERRIDE {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        SkFAIL("Not implemented!");
-    }
-
-    
-    virtual void blitRect(int x, int y, int width, int height) SK_OVERRIDE {
-        
-        
-        
-        SkFAIL("Not implemented!");
+    if ((width % 4) != 0 || (height % 4) != 0) {
+        return nullptr;
     }
 
     
     
     
-    virtual void blitAntiRect(int x, int y, int width, int height,
-                              SkAlpha leftAlpha, SkAlpha rightAlpha) SK_OVERRIDE {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        SkFAIL("Not implemented!");
+    
+    const int nBlocks = (width * height / 16);  
+    uint64_t *dst = reinterpret_cast<uint64_t *>(outputBuffer);
+    for (int i = 0; i < nBlocks; ++i) {
+        *dst = 0x0020000000002000ULL;
+        ++dst;
     }
 
-    
-    
-    virtual void blitMask(const SkMask&, const SkIRect& clip) SK_OVERRIDE {
-        
-        
-        
-        
-        
-        
-        
-        SkFAIL("Not implemented!");
-    }
-
-    
-    
-    
-    virtual const SkBitmap* justAnOpaqueColor(uint32_t* value) SK_OVERRIDE {
-        return NULL;
-    }
-
-    
-
-
-
-
-
-    virtual int requestRowsPreserved() const { return kR11_EACBlockSz; }
-
-protected:
-    virtual void onNotifyFinished() { this->flushRuns(); }
-
-private:
-    static const int kR11_EACBlockSz = 4;
-    static const int kPixelsPerBlock = kR11_EACBlockSz * kR11_EACBlockSz;
-
-    
-    
-    
-    
-    
-    const int16_t kLongestRun;
-
-    
-    
-    const SkAlpha kZeroAlpha;
-
-    
-    
-    struct BufferedRun {
-        const SkAlpha* fAlphas;
-        const int16_t* fRuns;
-        int fX, fY;
-    } fBufferedRuns[kR11_EACBlockSz];
-
-    
-    
-    int fNextRun;
-
-    
-    const int fWidth;
-    const int fHeight;
-
-    
-    
-    uint64_t* const fBuffer;
-
-    
-    int blocksWide() const { return fWidth / kR11_EACBlockSz; }
-    int blocksTall() const { return fHeight / kR11_EACBlockSz; }
-    int totalBlocks() const { return (fWidth * fHeight) / kPixelsPerBlock; }
-
-    
-    
-    int getBlockOffset(int x, int y) const {
-        SkASSERT(x < fWidth);
-        SkASSERT(y < fHeight);
-        const int blockCol = x / kR11_EACBlockSz;
-        const int blockRow = y / kR11_EACBlockSz;
-        return blockRow * this->blocksWide() + blockCol;
-    }
-
-    
-    uint64_t *getBlock(int x, int y) const {
-        return fBuffer + this->getBlockOffset(x, y);
-    }
-
-    
-    
-    
-    void flushRuns();
-};
-
-
-R11_EACBlitter::R11_EACBlitter(int width, int height, void *latcBuffer)
-    
-    
-    
-    : kLongestRun(0x7FFE), kZeroAlpha(0)
-    , fNextRun(0)
-    , fWidth(width)
-    , fHeight(height)
-    , fBuffer(reinterpret_cast<uint64_t*const>(latcBuffer))
-{
-    SkASSERT((width % kR11_EACBlockSz) == 0);
-    SkASSERT((height % kR11_EACBlockSz) == 0);
+    return allocator->createT<
+        SkTCompressedAlphaBlitter<4, 8, CompressorR11EAC>, int, int, void*>
+        (width, height, outputBuffer);
 }
 
-void R11_EACBlitter::blitAntiH(int x, int y,
-                               const SkAlpha* antialias,
-                               const int16_t* runs) {
-    
-    
-    
-    
-    
-    if (fNextRun > 0 &&
-        ((x != fBufferedRuns[fNextRun-1].fX) ||
-         (y-1 != fBufferedRuns[fNextRun-1].fY))) {
-        this->flushRuns();
-    }
-
-    
-    
-    
-    
-    const int row = y & ~3;
-    while ((row + fNextRun) < y) {
-        fBufferedRuns[fNextRun].fAlphas = &kZeroAlpha;
-        fBufferedRuns[fNextRun].fRuns = &kLongestRun;
-        fBufferedRuns[fNextRun].fX = 0;
-        fBufferedRuns[fNextRun].fY = row + fNextRun;
-        ++fNextRun;
-    }
-
-    
-    SkASSERT(fNextRun == (y & 3));
-    SkASSERT(fNextRun == 0 || fBufferedRuns[fNextRun - 1].fY < y);
-
-    
-    fBufferedRuns[fNextRun].fAlphas = antialias;
-    fBufferedRuns[fNextRun].fRuns = runs;
-    fBufferedRuns[fNextRun].fX = x;
-    fBufferedRuns[fNextRun].fY = y;
-
-    
-    
-    if (4 == ++fNextRun) {
-        this->flushRuns();
-    }
-}
-
-void R11_EACBlitter::flushRuns() {
-
-    
-    if (0 == fNextRun) {
-        return;
-    }
-
-#ifndef NDEBUG
-    
-    for (int i = 1; i < fNextRun; ++i) {
-        SkASSERT(fBufferedRuns[i].fY == fBufferedRuns[i-1].fY + 1);
-        SkASSERT(fBufferedRuns[i].fX == fBufferedRuns[i-1].fX);
-    }
-#endif
-
-    
-    
-    for (int i = fNextRun; i < kR11_EACBlockSz; ++i) {
-        fBufferedRuns[i].fY = fBufferedRuns[0].fY + i;
-        fBufferedRuns[i].fX = fBufferedRuns[0].fX;
-        fBufferedRuns[i].fAlphas = &kZeroAlpha;
-        fBufferedRuns[i].fRuns = &kLongestRun;
-    }
-
-    
-    SkASSERT(fNextRun > 0 && fNextRun <= 4);
-    SkASSERT((fBufferedRuns[0].fY & 3) == 0);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    uint32_t c[4] = { 0, 0, 0, 0 };
-    uint32_t curAlphaColumn = 0;
-    SkAlpha *curAlpha = reinterpret_cast<SkAlpha*>(&curAlphaColumn);
-
-    int nextX[kR11_EACBlockSz];
-    for (int i = 0; i < kR11_EACBlockSz; ++i) {
-        nextX[i] = 0x7FFFFF;
-    }
-
-    uint64_t* outPtr = this->getBlock(fBufferedRuns[0].fX, fBufferedRuns[0].fY);
-
-    
-    
-    int curX = 0;
-    int finalX = 0xFFFFF;
-    for (int i = 0; i < kR11_EACBlockSz; ++i) {
-        nextX[i] = *(fBufferedRuns[i].fRuns);
-        curAlpha[i] = *(fBufferedRuns[i].fAlphas);
-
-        finalX = SkMin32(nextX[i], finalX);
-    }
-
-    
-    SkASSERT(finalX < 0xFFFFF);
-
-    
-    while (curX != finalX) {
-        SkASSERT(finalX >= curX);
-
-        
-        if ((finalX - (curX & ~3)) >= kR11_EACBlockSz) {
-            const int col = curX & 3;
-            const int colsLeft = 4 - col;
-            SkASSERT(curX + colsLeft <= finalX);
-
-            update_block_columns(c, col, colsLeft, curAlphaColumn);
-
-            
-            *outPtr = compress_block_vertical(c[0], c[1], c[2], c[3]);
-            ++outPtr;
-            curX += colsLeft;
+void DecompressR11EAC(uint8_t* dst, int dstRowBytes, const uint8_t* src, int width, int height) {
+    for (int j = 0; j < height; j += 4) {
+        for (int i = 0; i < width; i += 4) {
+            decompress_r11_eac_block(dst + i, dstRowBytes, src);
+            src += 8;
         }
-
-        
-        if ((finalX - curX) >= kR11_EACBlockSz) {
-            SkASSERT((curX & 3) == 0);
-
-            const int col = 0;
-            const int colsLeft = kR11_EACBlockSz;
-
-            update_block_columns(c, col, colsLeft, curAlphaColumn);
-
-            
-            uint64_t lastBlock = compress_block_vertical(c[0], c[1], c[2], c[3]);
-            while((finalX - curX) >= kR11_EACBlockSz) {
-                *outPtr = lastBlock;
-                ++outPtr;
-                curX += kR11_EACBlockSz;
-            }
-        }
-
-        
-        if (curX < finalX) {
-            const int col = curX & 3;
-            const int colsLeft = finalX - curX;
-
-            update_block_columns(c, col, colsLeft, curAlphaColumn);
-
-            curX += colsLeft;
-        }
-
-        SkASSERT(curX == finalX);
-
-        
-        for (int i = 0; i < kR11_EACBlockSz; ++i) {
-            if (nextX[i] == finalX) {
-                const int16_t run = *(fBufferedRuns[i].fRuns);
-                fBufferedRuns[i].fRuns += run;
-                fBufferedRuns[i].fAlphas += run;
-                curAlpha[i] = *(fBufferedRuns[i].fAlphas);
-                nextX[i] += *(fBufferedRuns[i].fRuns);
-            }
-        }
-
-        finalX = 0xFFFFF;
-        for (int i = 0; i < kR11_EACBlockSz; ++i) {
-            finalX = SkMin32(nextX[i], finalX);
-        }
-    }
-
-    
-    if ((curX & 3) > 1) {
-        *outPtr = compress_block_vertical(c[0], c[1], c[2], c[3]);
-    }
-
-    fNextRun = 0;
-}
-
-SkBlitter* CreateR11EACBlitter(int width, int height, void* outputBuffer) {
-    return new R11_EACBlitter(width, height, outputBuffer);
+        dst += 4 * dstRowBytes;
+    }    
 }
 
 }  
