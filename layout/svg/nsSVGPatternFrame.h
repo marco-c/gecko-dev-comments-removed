@@ -22,13 +22,11 @@ class SVGAnimatedPreserveAspectRatio;
 class nsSVGAnimatedTransformList;
 } 
 
-typedef nsSVGPaintServerFrame  nsSVGPatternFrameBase;
 
 
 
 
-
-class nsSVGPatternFrame : public nsSVGPatternFrameBase
+class nsSVGPatternFrame : public nsSVGPaintServerFrame
 {
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
