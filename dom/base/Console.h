@@ -25,6 +25,7 @@ class nsIPrincipal;
 namespace mozilla {
 namespace dom {
 
+class AnyCallback;
 class ConsoleCallData;
 class ConsoleRunnable;
 class ConsoleCallDataRunnable;
@@ -117,6 +118,13 @@ public:
   void
   NoopMethod();
 
+  void
+  RetrieveConsoleEvents(JSContext* aCx, nsTArray<JS::Value>& aEvents,
+                        ErrorResult& aRv);
+
+  void
+  SetConsoleEventHandler(AnyCallback& aHandler);
+
 private:
   explicit Console(nsPIDOMWindowInner* aWindow);
 
@@ -166,6 +174,12 @@ private:
   
   void
   ReleaseCallData(ConsoleCallData* aCallData);
+
+  void
+  NotifyHandler(JSContext* aCx,
+                JS::Handle<JSObject*> aGlobal,
+                const Sequence<JS::Value>& aArguments,
+                ConsoleCallData* aData) const;
 
   bool
   PopulateEvent(JSContext* aCx,
@@ -331,6 +345,8 @@ private:
   
   
   nsTArray<RefPtr<ConsoleCallData>> mCallDataStoragePending;
+
+  RefPtr<AnyCallback> mConsoleEventNotifier;
 
 #ifdef DEBUG
   PRThread* mOwningThread;
