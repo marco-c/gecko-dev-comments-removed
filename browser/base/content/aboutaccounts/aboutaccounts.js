@@ -260,22 +260,6 @@ let wrapper = {
   
 
 
-
-  onSessionStatus: function () {
-    log("Received: 'session_status'.");
-
-    fxAccounts.getSignedInUser().then(
-      (accountData) => {
-        updateDisplayedEmail(accountData);
-        this.injectData("message", { status: "session_status", data: accountData });
-      },
-      (err) => this.injectData("message", { status: "error", error: err })
-    );
-  },
-
-  
-
-
   onSignOut: function () {
     log("Received: 'sign_out'.");
 
@@ -295,9 +279,6 @@ let wrapper = {
         break;
       case "can_link_account":
         this.onCanLinkAccount(data);
-        break;
-      case "session_status":
-        this.onSessionStatus(data);
         break;
       case "sign_out":
         this.onSignOut(data);
