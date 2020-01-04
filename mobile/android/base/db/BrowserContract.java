@@ -484,4 +484,7 @@ public class BrowserContract {
 
         public static final Uri CONTENT_URI = Uri.withAppendedPath(AUTHORITY_URI, "suggestedsites");
     }
+
+    
+    public static final String TAB_RECEIVED_SERVICE_CLASS_NAME = "org.mozilla.gecko.tabqueue.TabReceivedService";
 }
