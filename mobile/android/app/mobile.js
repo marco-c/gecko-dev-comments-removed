@@ -930,6 +930,10 @@ pref("layout.accessiblecaret.use_long_tap_injector", false);
 pref("layout.accessiblecaret.extendedvisibility", true);
 
 
+
+pref("layout.accessiblecaret.allow_script_change_updates", true);
+
+
 pref("layout.accessiblecaret.hapticfeedback", true);
 
 

@@ -254,8 +254,12 @@ protected:
   
   
   
-  
   static bool sCaretsExtendedVisibility;
+
+  
+  
+  
+  static bool sCaretsScriptUpdates;
 
   
   static bool sHapticFeedback;

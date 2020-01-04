@@ -69,6 +69,8 @@ AccessibleCaretManager::sSelectionBarEnabled = false;
  bool
 AccessibleCaretManager::sCaretsExtendedVisibility = false;
  bool
+AccessibleCaretManager::sCaretsScriptUpdates = false;
+ bool
 AccessibleCaretManager::sHapticFeedback = false;
 
 AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
@@ -89,6 +91,8 @@ AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
                                  "layout.accessiblecaret.bar.enabled");
     Preferences::AddBoolVarCache(&sCaretsExtendedVisibility,
                                  "layout.accessiblecaret.extendedvisibility");
+    Preferences::AddBoolVarCache(&sCaretsScriptUpdates,
+      "layout.accessiblecaret.allow_script_change_updates");
     Preferences::AddBoolVarCache(&sHapticFeedback,
                                  "layout.accessiblecaret.hapticfeedback");
     addedPrefs = true;
@@ -129,8 +133,7 @@ AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
   
   if (aReason == nsISelectionListener::NO_REASON) {
     
-    
-    if (sCaretsExtendedVisibility &&
+    if (sCaretsScriptUpdates &&
         (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible())) {
         FlushLayout();
         UpdateCarets();
