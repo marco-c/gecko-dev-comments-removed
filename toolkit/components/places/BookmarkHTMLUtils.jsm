@@ -517,6 +517,7 @@ BookmarkImporter.prototype = {
     let generatedTitle = this._safeTrim(aElt.getAttribute("generated_title"));
     let dateAdded = this._safeTrim(aElt.getAttribute("add_date"));
     let lastModified = this._safeTrim(aElt.getAttribute("last_modified"));
+    let tags = this._safeTrim(aElt.getAttribute("tags"));
 
     
     
@@ -573,6 +574,15 @@ BookmarkImporter.prototype = {
       try {
         PlacesUtils.bookmarks.setItemDateAdded(frame.previousId,
           this._convertImportedDateToInternalDate(dateAdded));
+      } catch(e) {
+      }
+    }
+
+    
+    if (tags) {
+      try {
+        let tagsArray = tags.split(",");
+        PlacesUtils.tagging.tagURI(frame.previousLink, tagsArray);
       } catch(e) {
       }
     }
