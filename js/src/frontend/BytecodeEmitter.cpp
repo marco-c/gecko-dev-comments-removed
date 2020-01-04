@@ -1404,7 +1404,7 @@ BytecodeEmitter::isAliasedName(BytecodeEmitter* bceOfDef, ParseNode* pn)
     Definition* dn = pn->resolve();
     switch (dn->kind()) {
       case Definition::LET:
-      case Definition::CONST:
+      case Definition::CONSTANT:
         
 
 
@@ -1791,7 +1791,7 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
         break;
 
       case Definition::VAR:
-      case Definition::CONST:
+      case Definition::CONSTANT:
       case Definition::LET:
         switch (op) {
           case JSOP_GETNAME:
