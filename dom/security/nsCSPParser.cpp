@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Preferences.h"
 #include "nsCOMPtr.h"
 #include "nsCSPParser.h"
 #include "nsCSPUtils.h"
@@ -120,6 +121,7 @@ nsCSPTokenizer::tokenizeCSPPolicy(const nsAString &aPolicyString,
 }
 
 
+bool nsCSPParser::sCSPExperimentalEnabled = false;
 
 nsCSPParser::nsCSPParser(cspTokens& aTokens,
                          nsIURI* aSelfURI,
@@ -137,6 +139,11 @@ nsCSPParser::nsCSPParser(cspTokens& aTokens,
  , mCSPContext(aCSPContext)
  , mDeliveredViaMetaTag(aDeliveredViaMetaTag)
 {
+  static bool initialized = false;
+  if (!initialized) {
+    initialized = true;
+    Preferences::AddBoolVarCache(&sCSPExperimentalEnabled, "security.csp.experimentalEnabled");
+  }
   CSPPARSERLOG(("nsCSPParser::nsCSPParser"));
 }
 
@@ -1008,13 +1015,6 @@ nsCSPParser::directiveValue(nsTArray<nsCSPBaseSrc*>& outSrcs)
   }
 
   
-  
-  if (CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::REQUIRE_SRI_FOR)) {
-    
-    return;
-  }
-
-  
   sourceList(outSrcs);
 }
 
@@ -1027,7 +1027,9 @@ nsCSPParser::directiveName()
                NS_ConvertUTF16toUTF8(mCurValue).get()));
 
   
-  if (!CSP_IsValidDirective(mCurToken)) {
+  if (!CSP_IsValidDirective(mCurToken) ||
+       (!sCSPExperimentalEnabled &&
+         CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::REQUIRE_SRI_FOR))) {
     const char16_t* params[] = { mCurToken.get() };
     logWarningErrorToConsole(nsIScriptError::warningFlag, "couldNotProcessUnknownDirective",
                              params, ArrayLength(params));
