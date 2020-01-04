@@ -13,7 +13,7 @@
 
 #include "MediaDataDemuxer.h"
 #include "MediaDecoderReader.h"
-#include "PlatformDecoderModule.h"
+#include "PDMFactory.h"
 
 namespace mozilla {
 
@@ -36,10 +36,10 @@ public:
   size_t SizeOfVideoQueueInFrames() override;
   size_t SizeOfAudioQueueInFrames() override;
 
-  RefPtr<VideoDataPromise>
+  nsRefPtr<VideoDataPromise>
   RequestVideoData(bool aSkipToNextKeyframe, int64_t aTimeThreshold) override;
 
-  RefPtr<AudioDataPromise> RequestAudioData() override;
+  nsRefPtr<AudioDataPromise> RequestAudioData() override;
 
   bool HasVideo() override
   {
@@ -51,11 +51,11 @@ public:
     return mAudio.mTrackDemuxer;
   }
 
-  RefPtr<MetadataPromise> AsyncReadMetadata() override;
+  nsRefPtr<MetadataPromise> AsyncReadMetadata() override;
 
   void ReadUpdatedMetadata(MediaInfo* aInfo) override;
 
-  RefPtr<SeekPromise>
+  nsRefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aUnused) override;
 
   bool IsMediaSeekable() override
@@ -77,7 +77,7 @@ public:
 
   nsresult ResetDecode() override;
 
-  RefPtr<ShutdownPromise> Shutdown() override;
+  nsRefPtr<ShutdownPromise> Shutdown() override;
 
   bool IsAsync() const override { return true; }
 
@@ -86,7 +86,7 @@ public:
   void DisableHardwareAcceleration() override;
 
   bool IsWaitForDataSupported() override { return true; }
-  RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) override;
+  nsRefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) override;
 
   bool UseBufferingHeuristics() override
   {
@@ -154,8 +154,8 @@ private:
 
   size_t SizeOfQueue(TrackType aTrack);
 
-  RefPtr<MediaDataDemuxer> mDemuxer;
-  RefPtr<PlatformDecoderModule> mPlatform;
+  nsRefPtr<MediaDataDemuxer> mDemuxer;
+  nsRefPtr<PDMFactory> mPlatform;
 
   class DecoderCallback : public MediaDataDecoderCallback {
   public:
@@ -219,12 +219,12 @@ private:
     MediaFormatReader* mOwner;
     
     MediaData::Type mType;
-    RefPtr<MediaTrackDemuxer> mTrackDemuxer;
+    nsRefPtr<MediaTrackDemuxer> mTrackDemuxer;
     
-    RefPtr<MediaDataDecoder> mDecoder;
+    nsRefPtr<MediaDataDecoder> mDecoder;
     
     
-    RefPtr<FlushableTaskQueue> mTaskQueue;
+    nsRefPtr<FlushableTaskQueue> mTaskQueue;
     
     nsAutoPtr<DecoderCallback> mCallback;
 
@@ -240,7 +240,7 @@ private:
     MozPromiseRequestHolder<MediaTrackDemuxer::SeekPromise> mSeekRequest;
 
     
-    nsTArray<RefPtr<MediaRawData>> mQueuedSamples;
+    nsTArray<nsRefPtr<MediaRawData>> mQueuedSamples;
     MozPromiseRequestHolder<MediaTrackDemuxer::SamplesPromise> mDemuxRequest;
     MozPromiseHolder<WaitForDataPromise> mWaitingPromise;
     bool HasWaitingPromise()
@@ -267,7 +267,7 @@ private:
 
     
     
-    nsTArray<RefPtr<MediaData>> mOutput;
+    nsTArray<nsRefPtr<MediaData>> mOutput;
     uint64_t mNumSamplesInput;
     uint64_t mNumSamplesOutput;
     uint64_t mNumSamplesOutputTotal;
@@ -317,7 +317,7 @@ private:
     uint32_t mLastStreamSourceID;
     Maybe<uint32_t> mNextStreamSourceID;
     media::TimeIntervals mTimeRanges;
-    RefPtr<SharedTrackInfo> mInfo;
+    nsRefPtr<SharedTrackInfo> mInfo;
   };
 
   template<typename PromiseType>
@@ -363,14 +363,14 @@ private:
   void OnDemuxFailed(TrackType aTrack, DemuxerFailureReason aFailure);
 
   void DoDemuxVideo();
-  void OnVideoDemuxCompleted(RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
+  void OnVideoDemuxCompleted(nsRefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
   void OnVideoDemuxFailed(DemuxerFailureReason aFailure)
   {
     OnDemuxFailed(TrackType::kVideoTrack, aFailure);
   }
 
   void DoDemuxAudio();
-  void OnAudioDemuxCompleted(RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
+  void OnAudioDemuxCompleted(nsRefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
   void OnAudioDemuxFailed(DemuxerFailureReason aFailure)
   {
     OnDemuxFailed(TrackType::kAudioTrack, aFailure);
@@ -433,7 +433,7 @@ private:
   MozPromiseRequestHolder<MediaDataDecoder::InitPromise::AllPromiseType> mDecodersInitRequest;
 
 #ifdef MOZ_EME
-  RefPtr<CDMProxy> mCDMProxy;
+  nsRefPtr<CDMProxy> mCDMProxy;
 #endif
 
 #if defined(READER_DORMANT_HEURISTIC)

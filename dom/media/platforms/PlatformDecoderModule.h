@@ -63,16 +63,6 @@ public:
   
   virtual nsresult Startup() { return NS_OK; };
 
-#ifdef MOZ_EME
-  
-  
-  
-  
-  
-  static already_AddRefed<PlatformDecoderModule>
-  CreateCDMWrapper(CDMProxy* aProxy);
-#endif
-
   
   
   virtual already_AddRefed<MediaDataDecoder>
