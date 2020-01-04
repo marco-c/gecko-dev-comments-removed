@@ -597,9 +597,13 @@ SSL_IMPORT const SECItem *SSL_PeerSignedCertTimestamps(PRFileDesc *fd);
 
 
 
+
+
 SSL_IMPORT SECStatus
 SSL_SetStapledOCSPResponses(PRFileDesc *fd, const SECItemArray *responses,
                             SSLKEAType kea);
+
+
 
 
 
@@ -759,6 +763,64 @@ SSL_IMPORT SECStatus SSL_SetPKCS11PinArg(PRFileDesc *fd, void *a);
 typedef SECStatus(PR_CALLBACK *SSLBadCertHandler)(void *arg, PRFileDesc *fd);
 SSL_IMPORT SECStatus SSL_BadCertHook(PRFileDesc *fd, SSLBadCertHandler f,
                                      void *arg);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SSL_IMPORT SECStatus SSL_ConfigServerCert(
+    PRFileDesc *fd, CERTCertificate *cert, SECKEYPrivateKey *key,
+    const SSLExtraServerCertData *data, unsigned int data_len);
+
+
+
+
+
 
 
 
@@ -1002,6 +1064,7 @@ SSL_IMPORT SECStatus SSL_GetSRTPCipher(PRFileDesc *fd,
 
 SSL_IMPORT SECStatus NSS_CmpCertChainWCANames(CERTCertificate *cert,
                                               CERTDistNames *caNames);
+
 
 
 
