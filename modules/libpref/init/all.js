@@ -2567,9 +2567,6 @@ pref("layout.css.control-characters.visible", true);
 #endif
 
 
-pref("layout.css.text-emphasis.enabled", true);
-
-
 
 
 
@@ -4248,7 +4245,6 @@ pref("signon.storeWhenAutocompleteOff",     true);
 pref("signon.ui.experimental",              false);
 pref("signon.debug",                        false);
 pref("signon.recipes.path",                 "chrome://passwordmgr/content/recipes.json");
-pref("signon.schemeUpgrades",               false);
 
 
 pref("browser.formfill.debug",            false);
