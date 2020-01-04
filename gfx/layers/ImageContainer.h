@@ -636,7 +636,7 @@ private:
   
   
   
-  ImageClient* mImageClient;
+  RefPtr<ImageClient> mImageClient;
 
   uint64_t mAsyncContainerID;
 

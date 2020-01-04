@@ -23,6 +23,7 @@
 #include "mozilla/layers/AsyncCanvasRenderer.h"
 #include "mozilla/media/MediaSystemResourceManager.h" 
 #include "mozilla/media/MediaSystemResourceManagerChild.h" 
+#include "mozilla/layers/CompositableChild.h"
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
@@ -142,7 +143,7 @@ struct CompositableTransaction
         break;
       }
       case OpDestroy::TPCompositableChild: {
-        DebugOnly<bool> ok = CompositableClient::DestroyFallback(actor.get_PCompositableChild());
+        DebugOnly<bool> ok = actor.get_PCompositableChild()->SendDestroySync();
         MOZ_ASSERT(ok);
         break;
       }
@@ -521,6 +522,8 @@ ImageBridgeChild::Connect(CompositableClient* aCompositable,
 {
   MOZ_ASSERT(aCompositable);
   MOZ_ASSERT(!mShuttingDown);
+  MOZ_ASSERT(InImageBridgeChildThread());
+
   uint64_t id = 0;
 
   PImageContainerChild* imageContainerChild = nullptr;
@@ -539,13 +542,14 @@ ImageBridgeChild::AllocPCompositableChild(const TextureInfo& aInfo,
                                           PImageContainerChild* aChild, uint64_t* aID)
 {
   MOZ_ASSERT(!mShuttingDown);
-  return CompositableClient::CreateIPDLActor();
+  return AsyncCompositableChild::CreateActor();
 }
 
 bool
 ImageBridgeChild::DeallocPCompositableChild(PCompositableChild* aActor)
 {
-  return CompositableClient::DestroyIPDLActor(aActor);
+  AsyncCompositableChild::DestroyActor(aActor);
+  return true;
 }
 
 
@@ -564,13 +568,9 @@ bool ImageBridgeChild::IsCreated()
   return GetSingleton() != nullptr;
 }
 
-static void ReleaseImageClientNow(ImageClient* aClient,
-                                  PImageContainerChild* aChild)
+static void ReleaseImageContainerNow(PImageContainerChild* aChild)
 {
   MOZ_ASSERT(InImageBridgeChildThread());
-  if (aClient) {
-    aClient->Release();
-  }
 
   if (aChild) {
     ImageContainer::AsyncDestroyActor(aChild);
@@ -578,57 +578,19 @@ static void ReleaseImageClientNow(ImageClient* aClient,
 }
 
 
-void ImageBridgeChild::DispatchReleaseImageClient(ImageClient* aClient,
-                                                  PImageContainerChild* aChild)
+void ImageBridgeChild::DispatchReleaseImageContainer(PImageContainerChild* aChild)
 {
-  if (!aClient && !aChild) {
+  if (!aChild) {
     return;
   }
 
   if (!IsCreated()) {
-    if (aClient) {
-      
-      
-      
-      
-      
-      MOZ_ASSERT(aClient->GetIPDLActor() == nullptr);
-      aClient->Release();
-    }
     delete aChild;
     return;
   }
 
   sImageBridgeChildSingleton->GetMessageLoop()->PostTask(
-    NewRunnableFunction(&ReleaseImageClientNow, aClient, aChild));
-}
-
-static void ReleaseCanvasClientNow(CanvasClient* aClient)
-{
-  MOZ_ASSERT(InImageBridgeChildThread());
-  aClient->Release();
-}
-
-
-void ImageBridgeChild::DispatchReleaseCanvasClient(CanvasClient* aClient)
-{
-  if (!aClient) {
-    return;
-  }
-
-  if (!IsCreated()) {
-    
-    
-    
-    
-    
-    MOZ_ASSERT(aClient->GetIPDLActor() == nullptr);
-    aClient->Release();
-    return;
-  }
-
-  sImageBridgeChildSingleton->GetMessageLoop()->PostTask(
-    NewRunnableFunction(&ReleaseCanvasClientNow, aClient));
+    NewRunnableFunction(&ReleaseImageContainerNow, aChild));
 }
 
 static void ReleaseTextureClientNow(TextureClient* aClient)
@@ -659,7 +621,8 @@ void ImageBridgeChild::DispatchReleaseTextureClient(TextureClient* aClient)
     NewRunnableFunction(&ReleaseTextureClientNow, aClient));
 }
 
-static void UpdateImageClientNow(ImageClient* aClient, RefPtr<ImageContainer>&& aContainer)
+static void
+UpdateImageClientNow(RefPtr<ImageClient> aClient, RefPtr<ImageContainer>&& aContainer)
 {
   if (!ImageBridgeChild::IsCreated() || ImageBridgeChild::IsShutDown()) {
     NS_WARNING("Something is holding on to graphics resources after the shutdown"
@@ -668,6 +631,13 @@ static void UpdateImageClientNow(ImageClient* aClient, RefPtr<ImageContainer>&& 
   }
   MOZ_ASSERT(aClient);
   MOZ_ASSERT(aContainer);
+
+  
+  
+  if (!aClient->IsConnected()) {
+    return;
+  }
+
   sImageBridgeChildSingleton->BeginTransaction();
   aClient->UpdateImage(aContainer, Layer::CONTENT_OPAQUE);
   sImageBridgeChildSingleton->EndTransaction();
@@ -690,8 +660,10 @@ void ImageBridgeChild::DispatchImageClientUpdate(ImageClient* aClient,
     UpdateImageClientNow(aClient, aContainer);
     return;
   }
+
   sImageBridgeChildSingleton->GetMessageLoop()->PostTask(
-    NewRunnableFunction(&UpdateImageClientNow, aClient, RefPtr<ImageContainer>(aContainer)));
+    NewRunnableFunction(&UpdateImageClientNow,
+      RefPtr<ImageClient>(aClient), RefPtr<ImageContainer>(aContainer)));
 }
 
 static void UpdateAsyncCanvasRendererSync(AsyncCanvasRenderer* aWrapper,
@@ -1422,6 +1394,26 @@ ImageBridgeChild::RemoveTextureFromCompositableAsync(AsyncTransactionTracker* aA
 bool ImageBridgeChild::IsSameProcess() const
 {
   return OtherPid() == base::GetCurrentProcId();
+}
+
+static void
+DestroyCompositableNow(RefPtr<ImageBridgeChild> aImageBridge,
+                       RefPtr<CompositableChild> aCompositable)
+{
+  aImageBridge->Destroy(aCompositable);
+}
+
+void
+ImageBridgeChild::Destroy(CompositableChild* aCompositable)
+{
+  if (!InImageBridgeChildThread()) {
+    RefPtr<ImageBridgeChild> self = this;
+    RefPtr<CompositableChild> compositable = aCompositable;
+    GetMessageLoop()->PostTask(
+      NewRunnableFunction(&DestroyCompositableNow, self, compositable));
+    return;
+  }
+  CompositableForwarder::Destroy(aCompositable);
 }
 
 } 

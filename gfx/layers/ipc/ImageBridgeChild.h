@@ -227,9 +227,7 @@ public:
   already_AddRefed<CanvasClient> CreateCanvasClientNow(CanvasClient::CanvasClientType aType,
                                                        TextureFlags aFlag);
 
-  static void DispatchReleaseImageClient(ImageClient* aClient,
-                                         PImageContainerChild* aChild = nullptr);
-  static void DispatchReleaseCanvasClient(CanvasClient* aClient);
+  static void DispatchReleaseImageContainer(PImageContainerChild* aChild = nullptr);
   static void DispatchReleaseTextureClient(TextureClient* aClient);
   static void DispatchImageClientUpdate(ImageClient* aClient, ImageContainer* aContainer);
 
@@ -261,6 +259,8 @@ public:
                                 const OverlaySource& aOverlay,
                                 const nsIntRect& aPictureRect) override;
 #endif
+
+  void Destroy(CompositableChild* aCompositable) override;
 
   
 
@@ -340,6 +340,11 @@ public:
 
   virtual void UpdateFwdTransactionId() override { ++mFwdTransactionId; }
   virtual uint64_t GetFwdTransactionId() override { return mFwdTransactionId; }
+
+  bool InForwarderThread() override {
+    return InImageBridgeChildThread();
+  }
+
 
   void MarkShutDown();
 

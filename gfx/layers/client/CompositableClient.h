@@ -161,14 +161,9 @@ public:
 
   void Destroy();
 
-  static bool DestroyFallback(PCompositableChild* aActor);
-
   bool IsConnected() const;
 
   PCompositableChild* GetIPDLActor() const;
-
-  
-  virtual void SetIPDLActor(CompositableChild* aChild);
 
   CompositableForwarder* GetForwarder() const
   {
@@ -216,19 +211,7 @@ public:
 
   virtual void RemoveTexture(TextureClient* aTexture);
 
-  static CompositableClient* FromIPDLActor(PCompositableChild* aActor);
-
-  
-
-
-
-
-
-
-
-  static PCompositableChild* CreateIPDLActor();
-
-  static bool DestroyIPDLActor(PCompositableChild* actor);
+  static RefPtr<CompositableClient> FromIPDLActor(PCompositableChild* aActor);
 
   void InitIPDLActor(PCompositableChild* aActor, uint64_t aAsyncID = 0);
 
@@ -242,7 +225,7 @@ public:
                                 TextureClient* aTexture,
                                 TextureDumpMode aCompress);
 protected:
-  CompositableChild* mCompositableChild;
+  RefPtr<CompositableChild> mCompositableChild;
   RefPtr<CompositableForwarder> mForwarder;
   
   
