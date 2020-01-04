@@ -334,7 +334,7 @@ function makeMoveToDeletedStatement(aGuid, aNow, aData, aBindingArrays) {
       
       
       if (!queryTerms)
-        return;
+        return undefined;
 
       query += " SELECT guid, :timeDeleted FROM moz_formhistory WHERE " + queryTerms;
     }

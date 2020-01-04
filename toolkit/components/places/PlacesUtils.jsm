@@ -698,16 +698,16 @@ this.PlacesUtils = {
       case this.TYPE_X_MOZ_PLACE_CONTAINER:
         nodes = JSON.parse("[" + blob + "]");
         break;
-      case this.TYPE_X_MOZ_URL:
-        var parts = blob.split("\n");
+      case this.TYPE_X_MOZ_URL: {
+        let parts = blob.split("\n");
         
         
         
         if (parts.length != 1 && parts.length % 2)
           break;
-        for (var i = 0; i < parts.length; i=i+2) {
-          var uriString = parts[i];
-          var titleString = "";
+        for (let i = 0; i < parts.length; i=i+2) {
+          let uriString = parts[i];
+          let titleString = "";
           if (parts.length > i+1)
             titleString = parts[i+1];
           else {
@@ -726,10 +726,11 @@ this.PlacesUtils = {
           }
         }
         break;
-      case this.TYPE_UNICODE:
-        var parts = blob.split("\n");
-        for (var i = 0; i < parts.length; i++) {
-          var uriString = parts[i];
+      }
+      case this.TYPE_UNICODE: {
+        let parts = blob.split("\n");
+        for (let i = 0; i < parts.length; i++) {
+          let uriString = parts[i];
           
           
           if (uriString.substr(0, 1) == '\x23')
@@ -741,6 +742,7 @@ this.PlacesUtils = {
                          type: this.TYPE_X_MOZ_URL });
         }
         break;
+      }
       default:
         throw Cr.NS_ERROR_INVALID_ARG;
     }

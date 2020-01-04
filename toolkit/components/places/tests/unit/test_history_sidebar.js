@@ -83,15 +83,15 @@ function* task_fill_history() {
   print("\n\n*** TEST Fill History\n");
   
   
-  for (var i = 0; i < containers.length; i++) {
-    var container = containers[i];
+  for (let i = 0; i < containers.length; i++) {
+    let container = containers[i];
     var testURI = uri("http://mirror"+i+".mozilla.com/b");
     yield task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
-    var testURI = uri("http://mirror"+i+".mozilla.com/a");
+    testURI = uri("http://mirror"+i+".mozilla.com/a");
     yield task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
-    var testURI = uri("http://mirror"+i+".google.com/b");
+    testURI = uri("http://mirror"+i+".google.com/b");
     yield task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
-    var testURI = uri("http://mirror"+i+".google.com/a");
+    testURI = uri("http://mirror"+i+".google.com/a");
     yield task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
     
     
@@ -110,8 +110,8 @@ function* task_fill_history() {
   var cc = root.childCount;
   print("Found containers:");
   var previousLabels = [];
-  for (var i = 0; i < cc; i++) {
-    var container = visibleContainers[i];
+  for (let i = 0; i < cc; i++) {
+    let container = visibleContainers[i];
     var node = root.getChild(i);
     print(node.title);
     if (container.label)
@@ -201,17 +201,17 @@ function test_RESULTS_AS_DATE_SITE_QUERY() {
   result.sortingMode = options.SORT_BY_TITLE_DESCENDING;
 
   
-  var dayNode = root.getChild(0)
+  dayNode = root.getChild(0)
                     .QueryInterface(Ci.nsINavHistoryContainerResultNode);
   dayNode.containerOpen = true;
   do_check_eq(dayNode.childCount, 2);
 
   
-  var site1 = dayNode.getChild(0)
+  site1 = dayNode.getChild(0)
                      .QueryInterface(Ci.nsINavHistoryContainerResultNode);
   do_check_eq(site1.title, "mirror0.google.com");
 
-  var site2 = dayNode.getChild(1)
+  site2 = dayNode.getChild(1)
                      .QueryInterface(Ci.nsINavHistoryContainerResultNode);
   do_check_eq(site2.title, "mirror0.mozilla.com");
 
@@ -219,7 +219,7 @@ function test_RESULTS_AS_DATE_SITE_QUERY() {
   do_check_eq(site1.childCount, 2);
 
   
-  var site1visit = site1.getChild(0);
+  site1visit = site1.getChild(0);
   do_check_eq(site1visit.uri, "http://mirror0.google.com/b");
 
   site1.containerOpen = false;
@@ -267,16 +267,16 @@ function test_RESULTS_AS_DATE_QUERY() {
   result.sortingMode = options.SORT_BY_TITLE_DESCENDING;
 
   
-  var dayNode = root.getChild(0)
+  dayNode = root.getChild(0)
                     .QueryInterface(Ci.nsINavHistoryContainerResultNode);
   dayNode.containerOpen = true;
   do_check_eq(dayNode.childCount, 4);
 
   
-  var visit1 = dayNode.getChild(0);
+  visit1 = dayNode.getChild(0);
   do_check_eq(visit1.uri, "http://mirror0.mozilla.com/b");
 
-  var visit2 = dayNode.getChild(3);
+  visit2 = dayNode.getChild(3);
   do_check_eq(visit2.uri, "http://mirror0.google.com/a");
 
   dayNode.containerOpen = false;
@@ -331,7 +331,7 @@ function test_RESULTS_AS_SITE_QUERY() {
 
   
   result.sortingMode = options.SORT_BY_TITLE_DESCENDING;
-  var siteNode = root.getChild(6)
+  siteNode = root.getChild(6)
                      .QueryInterface(Ci.nsINavHistoryContainerResultNode);
   do_check_eq(siteNode.title, "mirror3.google.com");
 

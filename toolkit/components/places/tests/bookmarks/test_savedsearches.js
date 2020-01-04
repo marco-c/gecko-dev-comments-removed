@@ -37,17 +37,17 @@ add_test(function test_savedsearches_bookmarks() {
   
   
   try {
-    var options = PlacesUtils.history.getNewQueryOptions();
+    let options = PlacesUtils.history.getNewQueryOptions();
     options.expandQueries = 0;
-    var query = PlacesUtils.history.getNewQuery();
+    let query = PlacesUtils.history.getNewQuery();
     query.setFolders([testRoot], 1);
-    var result = PlacesUtils.history.executeQuery(query, options);
-    var rootNode = result.root;
+    let result = PlacesUtils.history.executeQuery(query, options);
+    let rootNode = result.root;
     rootNode.containerOpen = true;
-    var cc = rootNode.childCount;
+    let cc = rootNode.childCount;
     do_check_eq(cc, 1);
-    for (var i = 0; i < cc; i++) {
-      var node = rootNode.getChild(i);
+    for (let i = 0; i < cc; i++) {
+      let node = rootNode.getChild(i);
       
       do_check_true(node.itemId > 0);
       
@@ -64,17 +64,17 @@ add_test(function test_savedsearches_bookmarks() {
   
   
   try {
-    var options = PlacesUtils.history.getNewQueryOptions();
+    let options = PlacesUtils.history.getNewQueryOptions();
     options.expandQueries = 1;
-    var query = PlacesUtils.history.getNewQuery();
+    let query = PlacesUtils.history.getNewQuery();
     query.setFolders([testRoot], 1);
-    var result = PlacesUtils.history.executeQuery(query, options);
-    var rootNode = result.root;
+    let result = PlacesUtils.history.executeQuery(query, options);
+    let rootNode = result.root;
     rootNode.containerOpen = true;
-    var cc = rootNode.childCount;
+    let cc = rootNode.childCount;
     do_check_eq(cc, 1);
-    for (var i = 0; i < cc; i++) {
-      var node = rootNode.getChild(i);
+    for (let i = 0; i < cc; i++) {
+      let node = rootNode.getChild(i);
       
       do_check_eq(node.type, node.RESULT_TYPE_QUERY);
       
@@ -196,7 +196,7 @@ add_task(function* test_savedsearches_history() {
     
     PlacesUtils.bookmarks.removeItem(searchId);
     try {
-      var tmpFolderNode = root.getChild(1);
+      tmpFolderNode = root.getChild(1);
       do_throw("query was not removed");
     } catch(ex) {}
 

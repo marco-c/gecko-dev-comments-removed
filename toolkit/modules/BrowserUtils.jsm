@@ -39,7 +39,7 @@ this.BrowserUtils = {
     
     if (Services.appinfo.inSafeMode) {
       appStartup.restartInSafeMode(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
-      return;
+      return undefined;
     }
     appStartup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
   },

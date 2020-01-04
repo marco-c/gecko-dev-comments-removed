@@ -197,7 +197,7 @@ this.PlacesBackups = {
         
         if (aEntry.name.endsWith(".tmp")) {
           OS.File.remove(aEntry.path);
-          return;
+          return undefined;
         }
 
         if (filenamesRegex.test(aEntry.name)) {

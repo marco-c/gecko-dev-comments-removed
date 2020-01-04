@@ -129,7 +129,7 @@ function run_test() {
 
       
       inspector.prefs.get(testdata.dummy).reset();
-      var itemValue = inspector.prefs.getValue(testdata.dummy, "default");
+      itemValue = inspector.prefs.getValue(testdata.dummy, "default");
       do_check_eq(itemValue, "default");
 
       

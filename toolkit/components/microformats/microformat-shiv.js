@@ -2415,7 +2415,7 @@ var Microformats;
                     return Components.classes["@mozilla.org/xmlextras/domparser;1"]
                         .createInstance(Components.interfaces.nsIDOMParser);
                 } catch (e) {
-                    return;
+                    return undefined;
                 }
             } else {
                 return new DOMParser();

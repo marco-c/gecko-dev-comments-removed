@@ -96,7 +96,7 @@ var test = {
   validate: function validate() {
     
     
-    for (var i = 0; i < 10; i++) {
+    for (let i = 0; i < 10; i++) {
       PlacesUtils.bookmarks.
                   insertBookmark(PlacesUtils.bookmarksMenuFolderId, uri("http://aaaa"+i), DEFAULT_INDEX, "");
     }
@@ -115,7 +115,7 @@ var test = {
     
     do_check_eq(folderNode.childCount, this._count+3);
 
-    for (var i = 0; i < this._count; i++) {
+    for (let i = 0; i < this._count; i++) {
       var subFolder = folderNode.getChild(i);
       do_check_eq(subFolder.title, "folder"+i);
       subFolder.QueryInterface(Ci.nsINavHistoryContainerResultNode);

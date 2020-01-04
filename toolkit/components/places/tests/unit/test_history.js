@@ -172,12 +172,12 @@ add_task(function* test_execute()
 
   
   yield PlacesTestUtils.addVisits(uri("http://mozilla.com"));
-  var options = histsvc.getNewQueryOptions();
+  options = histsvc.getNewQueryOptions();
   
-  var query = histsvc.getNewQuery();
+  query = histsvc.getNewQuery();
   query.searchTerms = "moz";
-  var result = histsvc.executeQuery(query, options);
-  var root = result.root;
+  result = histsvc.executeQuery(query, options);
+  root = result.root;
   root.containerOpen = true;
   do_check_true(root.childCount > 0);
   root.containerOpen = false;

@@ -729,7 +729,7 @@ function onToolbarDrop(aEvent)
     
     
     
-    var wrapper = gToolboxDocument.getElementById("wrapper-"+draggedItemId);
+    let wrapper = gToolboxDocument.getElementById("wrapper-"+draggedItemId);
     if (wrapper == gCurrentDragOverItem)
        return;
 
@@ -756,7 +756,7 @@ function onToolbarDrop(aEvent)
     
 
     
-    var wrapper = createWrapper("", gToolboxDocument);
+    let wrapper = createWrapper("", gToolboxDocument);
 
     
     var newItem = toolbar.insertItem(draggedItemId, gCurrentDragOverItem == toolbar ? null : gCurrentDragOverItem, wrapper);

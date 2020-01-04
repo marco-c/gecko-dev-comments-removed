@@ -2885,11 +2885,11 @@ this.XPIProvider = {
   updateSystemAddons: Task.async(function*() {
     let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
     if (!systemAddonLocation)
-      return;
+      return undefined;
 
     
     if (Services.appinfo.inSafeMode)
-      return;
+      return undefined;
 
     
     let url = Preferences.get(PREF_SYSTEM_ADDON_UPDATE_URL, null);
@@ -5385,7 +5385,7 @@ AddonInstall.prototype = {
         this.ownsTempFile = true;
 
         yield this._createLinkedInstalls(files.filter(f => f.file != file));
-        return;
+        return undefined;
       }
       catch (e) {
         
@@ -6886,7 +6886,7 @@ AddonWrapper.prototype = {
     let addon = addonFor(this);
     if (this.type == "experiment") {
       logger.warn("Setting applyBackgroundUpdates on an experiment is not supported.");
-      return;
+      return addon.applyBackgroundUpdates;
     }
 
     if (val != AddonManager.AUTOUPDATE_DEFAULT &&

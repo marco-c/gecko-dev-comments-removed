@@ -301,7 +301,7 @@ ViewSourceChrome.prototype = {
     
     
     if (!window.arguments[0]) {
-      return;
+      return undefined;
     }
 
     if (typeof window.arguments[0] == "string") {

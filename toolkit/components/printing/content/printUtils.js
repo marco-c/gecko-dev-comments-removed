@@ -377,7 +377,7 @@ var PrintUtils = {
     if (aMessage.name == "Printing:Error") {
       this.displayPrintingError(aMessage.data.nsresult,
                                 aMessage.data.isPrinting);
-      return;
+      return undefined;
     }
 
     
@@ -385,7 +385,7 @@ var PrintUtils = {
     if (!this._webProgressPP.value) {
       
       
-      return;
+      return undefined;
     }
 
     let listener = this._webProgressPP.value;

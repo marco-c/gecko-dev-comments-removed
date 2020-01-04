@@ -969,7 +969,7 @@ function reorderChildren(parent, orderedChildrenGuids) {
       
       let children = yield fetchBookmarksByParent({ parentGuid: parent.guid });
       if (!children.length)
-        return;
+        return undefined;
 
       
       

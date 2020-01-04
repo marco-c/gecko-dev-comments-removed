@@ -629,7 +629,7 @@ var FindBar = {
   _onKeypress(event) {
     
     if (event.ctrlKey || event.altKey || event.metaKey || event.defaultPrevented) {
-      return;
+      return undefined;
     }
 
     
@@ -637,7 +637,7 @@ var FindBar = {
 
     
     if (!fastFind.can) {
-      return;
+      return undefined;
     }
 
     let fakeEvent = {};
@@ -966,7 +966,7 @@ var ViewSelectionSource = {
       topNode = topNode.parentNode;
     }
     if (!topNode)
-      return;
+      return undefined;
 
     
     const VIEW_SOURCE_CSS = "resource://gre-resources/viewsource.css";
