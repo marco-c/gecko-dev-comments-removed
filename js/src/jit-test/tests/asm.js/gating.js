@@ -9,27 +9,69 @@
 
 
 
+
+
+
+
+load(libdir + "asm.js");
+
 if (!isAsmJSCompilationAvailable())
     quit(0);
 
+if (!this.Atomics) {
+    this.Atomics = { load: function (x, y) { return 0 },
+		     store: function (x, y, z) { return 0 },
+		     exchange: function (x, y, z) { return 0 },
+		     add: function (x, y, z) { return 0 },
+		     sub: function (x, y, z) { return 0 },
+		     and: function (x, y, z) { return 0 },
+		     or: function (x, y, z) { return 0 },
+		     xor: function (x, y, z) { return 0 },
+		     compareExchange: function (x, y, z, w) { return 0 }
+		   };
+}
 
 
 function module_a(stdlib, foreign, heap) {
     "use asm";
 
-    var i32a = new stdlib.Int32Array(heap);
     var ld = stdlib.Atomics.load;
 
-    
-    
-
-    function do_load() {
-	var v = 0;
-	v = ld(i32a, 0)|0;	
-	return v|0;
-    }
-
-    return { load: do_load };
+    function f() { return 0; }
+    return { f:f };
 }
 
-assertEq(isAsmJSModule(module_a), !!this.SharedArrayBuffer);
+function module_b(stdlib, foreign, heap) {
+    "use asm";
+
+    var ld = stdlib.Atomics.load;
+    var i32a = new stdlib.Int32Array(heap);
+
+    function f() { return 0; }
+    return { f:f };
+}
+
+function module_c(stdlib, foreign, heap) {
+    "use asm";
+
+    var i32a = new stdlib.Int32Array(heap);
+
+    function f() { return 0; }
+    return { f:f };
+}
+
+assertEq(isAsmJSModule(module_a), true);
+assertEq(isAsmJSModule(module_b), true);
+assertEq(isAsmJSModule(module_c), true);
+
+if (!this.SharedArrayBuffer) {
+    assertAsmLinkFail(module_a, this, {}, new ArrayBuffer(65536));  
+} else {
+    asmLink(module_a, this, {}, new ArrayBuffer(65536));            
+    assertAsmLinkFail(module_b, this, {}, new ArrayBuffer(65536));  
+}
+
+asmLink(module_c, this, {}, new ArrayBuffer(65536));                
+
+if (this.SharedArrayBuffer)
+    assertAsmLinkFail(module_c, this, {}, new SharedArrayBuffer(65536));  
