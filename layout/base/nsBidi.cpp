@@ -41,8 +41,12 @@ enum {
     RLI = eCharType_RightToLeftIsolate,
     FSI = eCharType_FirstStrongIsolate,
     PDI = eCharType_PopDirectionalIsolate,
+    ENL,               
+    ENR,      
     dirPropCount
 };
+
+#define IS_STRONG_TYPE(dirProp) ((dirProp) <= R || (dirProp) == AL)
 
 
 static Flags flagLR[2]={ DIRPROP_FLAG(L), DIRPROP_FLAG(R) };
@@ -52,6 +56,15 @@ static Flags flagO[2]={ DIRPROP_FLAG(LRO), DIRPROP_FLAG(RLO) };
 #define DIRPROP_FLAG_LR(level) flagLR[(level)&1]
 #define DIRPROP_FLAG_E(level) flagE[(level)&1]
 #define DIRPROP_FLAG_O(level) flagO[(level)&1]
+
+#define NO_OVERRIDE(level)  ((level)&~NSBIDI_LEVEL_OVERRIDE)
+
+static inline uint8_t
+DirFromStrong(uint8_t aDirProp)
+{
+  MOZ_ASSERT(IS_STRONG_TYPE(aDirProp));
+  return aDirProp == L ? L : R;
+}
 
 
 
@@ -186,7 +199,9 @@ void nsBidi::Init()
 
 
 
-bool nsBidi::GetMemory(void **aMemory, size_t *aSize, size_t aSizeNeeded)
+
+bool
+nsBidi::GetMemory(void **aMemory, size_t *aSize, size_t aSizeNeeded)
 {
   
   if(*aMemory==nullptr) {
@@ -292,7 +307,7 @@ nsresult nsBidi::SetPara(const char16_t *aText, int32_t aLength,
   
   if(GETLEVELSMEMORY(aLength)) {
     mLevels=mLevelsMemory;
-    ResolveExplicitLevels(&direction);
+    ResolveExplicitLevels(&direction, aText);
   } else {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -579,6 +594,316 @@ void nsBidi::GetDirProps(const char16_t *aText)
 
 
 
+nsBidi::BracketData::BracketData(const nsBidi *aBidi)
+{
+  mIsoRunLast = 0;
+  mIsoRuns[0].start = 0;
+  mIsoRuns[0].limit = 0;
+  mIsoRuns[0].level = aBidi->mParaLevel;
+  mIsoRuns[0].lastStrong = mIsoRuns[0].lastBase = mIsoRuns[0].contextDir =
+    GET_LR_FROM_LEVEL(aBidi->mParaLevel);
+  mIsoRuns[0].contextPos = 0;
+  mOpenings = mSimpleOpenings;
+  mOpeningsCount = SIMPLE_OPENINGS_COUNT;
+  mOpeningsMemory = nullptr;
+}
+
+nsBidi::BracketData::~BracketData()
+{
+  free(mOpeningsMemory);
+}
+
+
+void
+nsBidi::BracketData::ProcessBoundary(int32_t aLastDirControlCharPos,
+                                     nsBidiLevel aContextLevel,
+                                     nsBidiLevel aEmbeddingLevel,
+                                     const DirProp* aDirProps)
+{
+  IsoRun& lastIsoRun = mIsoRuns[mIsoRunLast];
+  if (DIRPROP_FLAG(aDirProps[aLastDirControlCharPos]) & MASK_ISO) { 
+    return;
+  }
+  if (NO_OVERRIDE(aEmbeddingLevel) > NO_OVERRIDE(aContextLevel)) {  
+    aContextLevel = aEmbeddingLevel;
+  }
+  lastIsoRun.limit = lastIsoRun.start;
+  lastIsoRun.level = aEmbeddingLevel;
+  lastIsoRun.lastStrong = lastIsoRun.lastBase = lastIsoRun.contextDir =
+    GET_LR_FROM_LEVEL(aContextLevel);
+  lastIsoRun.contextPos = aLastDirControlCharPos;
+}
+
+
+void
+nsBidi::BracketData::ProcessLRI_RLI(nsBidiLevel aLevel)
+{
+  MOZ_ASSERT(mIsoRunLast <= NSBIDI_MAX_EXPLICIT_LEVEL);
+  IsoRun& lastIsoRun = mIsoRuns[mIsoRunLast];
+  lastIsoRun.lastBase = O_N;
+  IsoRun& currIsoRun = mIsoRuns[++mIsoRunLast];
+  currIsoRun.start = currIsoRun.limit = lastIsoRun.limit;
+  currIsoRun.level = aLevel;
+  currIsoRun.lastStrong = currIsoRun.lastBase = currIsoRun.contextDir =
+    GET_LR_FROM_LEVEL(aLevel);
+  currIsoRun.contextPos = 0;
+}
+
+
+void
+nsBidi::BracketData::ProcessPDI()
+{
+  mIsoRuns[mIsoRunLast].lastBase = O_N;
+}
+
+
+bool                            
+nsBidi::BracketData::AddOpening(char16_t aMatch, int32_t aPosition)
+{
+  IsoRun& lastIsoRun = mIsoRuns[mIsoRunLast];
+  if (lastIsoRun.limit >= mOpeningsCount) {  
+    if (!GETOPENINGSMEMORY(lastIsoRun.limit * 2)) {
+      return false;
+    }
+    if (mOpenings == mSimpleOpenings) {
+      memcpy(mOpeningsMemory, mSimpleOpenings,
+             SIMPLE_OPENINGS_COUNT * sizeof(Opening));
+    }
+    mOpenings = mOpeningsMemory;     
+    mOpeningsCount = mOpeningsSize / sizeof(Opening);
+  }
+  Opening& o = mOpenings[lastIsoRun.limit];
+  o.position = aPosition;
+  o.match = aMatch;
+  o.contextDir = lastIsoRun.contextDir;
+  o.contextPos = lastIsoRun.contextPos;
+  o.flags = 0;
+  lastIsoRun.limit++;
+  return true;
+}
+
+
+void
+nsBidi::BracketData::FixN0c(int32_t aOpeningIndex, int32_t aNewPropPosition,
+                            DirProp aNewProp, DirProp* aDirProps)
+{
+  
+  IsoRun& lastIsoRun = mIsoRuns[mIsoRunLast];
+  for (int32_t k = aOpeningIndex + 1; k < lastIsoRun.limit; k++) {
+    Opening& o = mOpenings[k];
+    if (o.match >= 0) {     
+      continue;
+    }
+    if (aNewPropPosition < o.contextPos) {
+      break;
+    }
+    int32_t openingPosition = o.position;
+    if (aNewPropPosition >= openingPosition) {
+      continue;
+    }
+    if (aNewProp == o.contextDir) {
+      break;
+    }
+    aDirProps[openingPosition] = aNewProp;
+    int32_t closingPosition = -(o.match);
+    aDirProps[closingPosition] = aNewProp;
+    o.match = 0;                    
+    FixN0c(k, openingPosition, aNewProp, aDirProps);
+    FixN0c(k, closingPosition, aNewProp, aDirProps);
+  }
+}
+
+
+DirProp              
+nsBidi::BracketData::ProcessClosing(int32_t aOpenIdx, int32_t aPosition,
+                                    DirProp* aDirProps)
+{
+  IsoRun& lastIsoRun = mIsoRuns[mIsoRunLast];
+  Opening& o = mOpenings[aOpenIdx];
+  DirProp newProp;
+  DirProp direction = GET_LR_FROM_LEVEL(lastIsoRun.level);
+  bool stable = true; 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  if ((direction == 0 && o.flags & FOUND_L) ||
+      (direction == 1 && o.flags & FOUND_R)) { 
+    newProp = direction;
+  } else if (o.flags & (FOUND_L|FOUND_R)) {    
+    
+
+    stable = (aOpenIdx == lastIsoRun.start);
+    if (direction != o.contextDir) {
+      newProp = o.contextDir;           
+    } else {
+      newProp = direction;                     
+    }
+  } else {
+    
+    lastIsoRun.limit = aOpenIdx;
+    return O_N;                                 
+  }
+  aDirProps[o.position] = newProp;
+  aDirProps[aPosition] = newProp;
+  
+  FixN0c(aOpenIdx, o.position, newProp, aDirProps);
+  if (stable) {
+    
+    lastIsoRun.limit = aOpenIdx;
+  } else {
+    int32_t k;
+    o.match = -aPosition;
+    
+    for (k = aOpenIdx + 1; k < lastIsoRun.limit; k++) {
+      Opening& oo = mOpenings[k];
+      if (oo.position > aPosition) {
+        break;
+      }
+      if (oo.match > 0) {
+        oo.match = 0;
+      }
+    }
+  }
+  return newProp;
+}
+
+static inline bool
+IsMatchingCloseBracket(char16_t aCh1, char16_t aCh2)
+{
+  
+  
+  return (aCh1 == aCh2) ||
+         (aCh1 == 0x232A && aCh2 == 0x3009) ||
+         (aCh2 == 0x232A && aCh1 == 0x3009);
+}
+
+
+
+
+bool
+nsBidi::BracketData::ProcessChar(int32_t aPosition, char16_t aCh,
+                                 DirProp* aDirProps, nsBidiLevel* aLevels)
+{
+  IsoRun& lastIsoRun = mIsoRuns[mIsoRunLast];
+  DirProp newProp;
+  DirProp dirProp = aDirProps[aPosition];
+  nsBidiLevel level = aLevels[aPosition];
+  if (dirProp == O_N) {
+    
+
+    for (int32_t idx = lastIsoRun.limit - 1; idx >= lastIsoRun.start; idx--) {
+      if (!IsMatchingCloseBracket(aCh, mOpenings[idx].match)) {
+        continue;
+      }
+      
+      newProp = ProcessClosing(idx, aPosition, aDirProps);
+      if (newProp == O_N) {           
+        aCh = 0;        
+        break;
+      }
+      lastIsoRun.lastBase = O_N;
+      lastIsoRun.contextDir = newProp;
+      lastIsoRun.contextPos = aPosition;
+      if (level & NSBIDI_LEVEL_OVERRIDE) {    
+        newProp = GET_LR_FROM_LEVEL(level);
+        lastIsoRun.lastStrong = newProp;
+        uint16_t flag = DIRPROP_FLAG(newProp);
+        for (int32_t i = lastIsoRun.start; i < idx; i++) {
+          mOpenings[i].flags |= flag;
+        }
+        
+        aLevels[aPosition] &= ~NSBIDI_LEVEL_OVERRIDE;
+      }
+      
+      aLevels[mOpenings[idx].position] &= ~NSBIDI_LEVEL_OVERRIDE;
+      return true;
+    }
+    
+
+    
+    char16_t match = GetPairedBracket(aCh);
+    if (match != aCh &&                 
+        GetPairedBracketType(aCh) == PAIRED_BRACKET_TYPE_OPEN) { 
+      if (!AddOpening(match, aPosition)) {
+        return false;
+      }
+    }
+  }
+  if (level & NSBIDI_LEVEL_OVERRIDE) {    
+    newProp = GET_LR_FROM_LEVEL(level);
+    if (dirProp != S && dirProp != WS && dirProp != O_N) {
+      aDirProps[aPosition] = newProp;
+    }
+    lastIsoRun.lastBase = newProp;
+    lastIsoRun.lastStrong = newProp;
+    lastIsoRun.contextDir = newProp;
+    lastIsoRun.contextPos = aPosition;
+  } else if (IS_STRONG_TYPE(dirProp)) {
+    newProp = DirFromStrong(dirProp);
+    lastIsoRun.lastBase = dirProp;
+    lastIsoRun.lastStrong = dirProp;
+    lastIsoRun.contextDir = newProp;
+    lastIsoRun.contextPos = aPosition;
+  } else if (dirProp == EN) {
+    lastIsoRun.lastBase = EN;
+    if (lastIsoRun.lastStrong == L) {
+      newProp = L;                  
+      aDirProps[aPosition] = ENL;
+      lastIsoRun.contextDir = L;
+      lastIsoRun.contextPos = aPosition;
+    } else {
+      newProp = R;                  
+      if (lastIsoRun.lastStrong == AL) {
+        aDirProps[aPosition] = AN;  
+      } else {
+        aDirProps[aPosition] = ENR;
+      }
+      lastIsoRun.contextDir = R;
+      lastIsoRun.contextPos = aPosition;
+    }
+  } else if (dirProp == AN) {
+    newProp = R;                      
+    lastIsoRun.lastBase = AN;
+    lastIsoRun.contextDir = R;
+    lastIsoRun.contextPos = aPosition;
+  } else if (dirProp == NSM) {
+    
+
+
+    newProp = lastIsoRun.lastBase;
+    if (newProp == O_N) {
+      aDirProps[aPosition] = newProp;
+    }
+  } else {
+    newProp = dirProp;
+    lastIsoRun.lastBase = dirProp;
+  }
+  if (IS_STRONG_TYPE(newProp)) {
+    uint16_t flag = DIRPROP_FLAG(DirFromStrong(newProp));
+    for (int32_t i = lastIsoRun.start; i < lastIsoRun.limit; i++) {
+      if (aPosition > mOpenings[i].position) {
+        mOpenings[i].flags |= flag;
+      }
+    }
+  }
+  return true;
+}
 
 
 
@@ -612,7 +937,25 @@ void nsBidi::GetDirProps(const char16_t *aText)
 
 
 
-void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection, const char16_t *aText)
 {
   DirProp *dirProps=mDirProps;
   nsBidiLevel *levels=mLevels;
@@ -632,9 +975,23 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
   if(direction!=NSBIDI_MIXED) {
     
   } else if(!(flags&(MASK_EXPLICIT|MASK_ISO))) {
+    BracketData bracketData(this);
     
     for(i=0; i<length; ++i) {
       levels[i]=level;
+      if (dirProps[i] == BN) {
+        continue;
+      }
+      if (!bracketData.ProcessChar(i, aText[i], mDirProps, mLevels)) {
+        NS_WARNING("BracketData::ProcessChar failed, out of memory?");
+        
+        
+        
+        
+        
+        *aDirection = NSBIDI_LTR;
+        return;
+      }
     }
   } else {
     
@@ -643,6 +1000,7 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
     
     nsBidiLevel embeddingLevel = level, newLevel;
     nsBidiLevel previousLevel = level;     
+    int32_t lastDirControlCharPos = 0;     
 
     uint16_t stack[NSBIDI_MAX_EXPLICIT_LEVEL + 2];   
 
@@ -650,6 +1008,8 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
     int32_t overflowIsolateCount = 0;
     int32_t overflowEmbeddingCount = 0;
     int32_t validIsolateCount = 0;
+
+    BracketData bracketData(this);
 
     stack[0] = level;
 
@@ -666,12 +1026,14 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
         case RLO:
           
           flags |= DIRPROP_FLAG(BN);
+          levels[i] = previousLevel;
           if (dirProp == LRE || dirProp == LRO) {
             newLevel = (embeddingLevel + 2) & ~(NSBIDI_LEVEL_OVERRIDE | 1);    
           } else {
             newLevel = ((embeddingLevel & ~NSBIDI_LEVEL_OVERRIDE) + 1) | 1;    
           }
           if(newLevel <= NSBIDI_MAX_EXPLICIT_LEVEL && overflowIsolateCount == 0 && overflowEmbeddingCount == 0) {
+            lastDirControlCharPos = i;
             embeddingLevel = newLevel;
             if (dirProp == LRO || dirProp == RLO) {
               embeddingLevel |= NSBIDI_LEVEL_OVERRIDE;
@@ -683,7 +1045,6 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
 
 
           } else {
-            dirProps[i] |= IGNORE_CC;
             if (overflowIsolateCount == 0) {
               overflowEmbeddingCount++;
             }
@@ -693,38 +1054,41 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
         case PDF:
           
           flags |= DIRPROP_FLAG(BN);
+          levels[i] = previousLevel;
           
           if (overflowIsolateCount) {
-            dirProps[i] |= IGNORE_CC;
             break;
           }
           if (overflowEmbeddingCount) {
-            dirProps[i] |= IGNORE_CC;
             overflowEmbeddingCount--;
             break;
           }
           if (stackLast > 0 && stack[stackLast] < ISOLATE) {   
+            lastDirControlCharPos = i;
             stackLast--;
             embeddingLevel = stack[stackLast];
-          } else {
-            dirProps[i] |= IGNORE_CC;
           }
           break;
 
         case LRI:
         case RLI:
-          if (embeddingLevel != previousLevel) {
-            previousLevel = embeddingLevel;
+          flags |= DIRPROP_FLAG(O_N) | DIRPROP_FLAG_LR(embeddingLevel);
+          levels[i] = NO_OVERRIDE(embeddingLevel);
+          if (NO_OVERRIDE(embeddingLevel) != NO_OVERRIDE(previousLevel)) {
+            bracketData.ProcessBoundary(lastDirControlCharPos, previousLevel,
+                                        embeddingLevel, mDirProps);
+            flags |= DIRPROP_FLAG_MULTI_RUNS;
           }
+          previousLevel = embeddingLevel;
           
-          flags |= DIRPROP_FLAG(O_N) | DIRPROP_FLAG(BN) | DIRPROP_FLAG_LR(embeddingLevel);
-          level = embeddingLevel;
           if (dirProp == LRI) {
             newLevel = (embeddingLevel + 2) & ~(NSBIDI_LEVEL_OVERRIDE | 1); 
           } else {
             newLevel = ((embeddingLevel & ~NSBIDI_LEVEL_OVERRIDE) + 1) | 1;  
           }
           if (newLevel <= NSBIDI_MAX_EXPLICIT_LEVEL && overflowIsolateCount == 0 && overflowEmbeddingCount == 0) {
+            flags |= DIRPROP_FLAG(dirProp);
+            lastDirControlCharPos = i;
             previousLevel = embeddingLevel;
             validIsolateCount++;
             if (validIsolateCount > mIsolateCount) {
@@ -733,18 +1097,28 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
             embeddingLevel = newLevel;
             stackLast++;
             stack[stackLast] = embeddingLevel + ISOLATE;
+            bracketData.ProcessLRI_RLI(embeddingLevel);
           } else {
-            dirProps[i] |= IGNORE_CC;
+            
+            dirProps[i] = WS;
             overflowIsolateCount++;
           }
           break;
 
         case PDI:
+          if (NO_OVERRIDE(embeddingLevel) != NO_OVERRIDE(previousLevel)) {
+            bracketData.ProcessBoundary(lastDirControlCharPos, previousLevel,
+                                        embeddingLevel, mDirProps);
+            flags |= DIRPROP_FLAG_MULTI_RUNS;
+          }
           
           if (overflowIsolateCount) {
-            dirProps[i] |= IGNORE_CC;
             overflowIsolateCount--;
+            
+            dirProps[i] = WS;
           } else if (validIsolateCount) {
+            flags |= DIRPROP_FLAG(PDI);
+            lastDirControlCharPos = i;
             overflowEmbeddingCount = 0;
             while (stack[stackLast] < ISOLATE) {
               
@@ -759,12 +1133,15 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
             stackLast--;  
             MOZ_ASSERT(stackLast >= 0);  
             validIsolateCount--;
+            bracketData.ProcessPDI();
           } else {
-            dirProps[i] |= IGNORE_CC;
+            
+            dirProps[i] = WS;
           }
           embeddingLevel = stack[stackLast] & ~ISOLATE;
-          previousLevel = level = embeddingLevel;
-          flags |= DIRPROP_FLAG(O_N) | DIRPROP_FLAG(BN) | DIRPROP_FLAG_LR(embeddingLevel);
+          flags |= DIRPROP_FLAG(O_N) | DIRPROP_FLAG_LR(embeddingLevel);
+          previousLevel = embeddingLevel;
+          levels[i] = NO_OVERRIDE(embeddingLevel);
           break;
 
         case B:
@@ -777,39 +1154,31 @@ void nsBidi::ResolveExplicitLevels(nsBidiDirection *aDirection)
         case BN:
           
           
-          flags|=DIRPROP_FLAG(BN);
+          levels[i] = previousLevel;
+          flags |= DIRPROP_FLAG(BN);
           break;
 
         default:
           
-          level = embeddingLevel;
-          if(embeddingLevel != previousLevel) {
-            previousLevel = embeddingLevel;
+          if (NO_OVERRIDE(embeddingLevel) != NO_OVERRIDE(previousLevel)) {
+            bracketData.ProcessBoundary(lastDirControlCharPos, previousLevel,
+                                        embeddingLevel, mDirProps);
+            flags |= DIRPROP_FLAG_MULTI_RUNS;
+            if (embeddingLevel & NSBIDI_LEVEL_OVERRIDE) {
+              flags |= DIRPROP_FLAG_O(embeddingLevel);
+            } else {
+              flags |= DIRPROP_FLAG_E(embeddingLevel);
+            }
           }
-
-          if (level & NSBIDI_LEVEL_OVERRIDE) {
-            flags |= DIRPROP_FLAG_LR(level);
-          } else {
-            flags |= DIRPROP_FLAG(dirProp);
+          previousLevel = embeddingLevel;
+          levels[i] = embeddingLevel;
+          if (!bracketData.ProcessChar(i, aText[i], mDirProps, mLevels)) {
+            NS_WARNING("BracketData::ProcessChar failed, out of memory?");
+            *aDirection = NSBIDI_LTR;
+            return;
           }
+          flags |= DIRPROP_FLAG(dirProps[i]);
           break;
-      }
-
-      
-
-
-
-      levels[i]=level;
-      if (i > 0 && levels[i - 1] != level) {
-        flags |= DIRPROP_FLAG_MULTI_RUNS;
-        if (level & NSBIDI_LEVEL_OVERRIDE) {
-          flags |= DIRPROP_FLAG_O(level);
-        } else {
-          flags |= DIRPROP_FLAG_E(level);
-        }
-      }
-      if (DIRPROP_FLAG(dirProp) & MASK_ISO) {
-        level = embeddingLevel;
       }
     }
 
@@ -1116,7 +1485,6 @@ void nsBidi::ResolveImplicitLevels(int32_t aStart, int32_t aLimit,
   uint8_t gprop, resProp, cell;
 
   
-  levState.startON = -1;
   levState.runStart = aStart;
   levState.runLevel = mLevels[aStart];
   levState.pImpTab = impTab[levState.runLevel & 1];
@@ -1125,12 +1493,13 @@ void nsBidi::ResolveImplicitLevels(int32_t aStart, int32_t aLimit,
   
 
 
-  if (dirProps[aStart] == PDI) {
+  if (dirProps[aStart] == PDI && mIsolateCount >= 0) {
     start1 = mIsolates[mIsolateCount].start1;
     stateImp = mIsolates[mIsolateCount].stateImp;
     levState.state = mIsolates[mIsolateCount].state;
     mIsolateCount--;
   } else {
+    levState.startON = -1;
     start1 = aStart;
     if (dirProps[aStart] == NSM) {
       stateImp = 1 + aSOR;
@@ -1153,7 +1522,7 @@ void nsBidi::ResolveImplicitLevels(int32_t aStart, int32_t aLimit,
       gprop = aEOR;
     } else {
       DirProp prop;
-      prop = PURE_DIRPROP(dirProps[i]);
+      prop = dirProps[i];
       gprop = groupProp[prop];
     }
     oldStateImp = stateImp;
@@ -1224,14 +1593,14 @@ void nsBidi::AdjustWSLevels()
     i=mTrailingWSStart;
     while(i>0) {
       
-      while (i > 0 && DIRPROP_FLAG(PURE_DIRPROP(dirProps[--i])) & MASK_WS) {
+      while (i > 0 && DIRPROP_FLAG(dirProps[--i]) & MASK_WS) {
         levels[i]=paraLevel;
       }
 
       
       
       while(i>0) {
-        flag = DIRPROP_FLAG(PURE_DIRPROP(dirProps[--i]));
+        flag = DIRPROP_FLAG(dirProps[--i]);
         if(flag&MASK_BN_EXPLICIT) {
           levels[i]=levels[i+1];
         } else if(flag&MASK_B_S) {
