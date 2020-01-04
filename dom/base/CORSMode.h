@@ -9,7 +9,7 @@
 
 namespace mozilla {
 
-enum CORSMode {
+enum CORSMode : uint8_t {
   
 
 

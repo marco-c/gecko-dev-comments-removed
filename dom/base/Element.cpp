@@ -3269,7 +3269,7 @@ static const nsAttrValue::EnumTable kCORSAttributeTable[] = {
   
   { "anonymous",       CORS_ANONYMOUS       },
   { "use-credentials", CORS_USE_CREDENTIALS },
-  { 0 }
+  { nullptr,           0 }
 };
 
  void

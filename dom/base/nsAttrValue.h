@@ -12,6 +12,8 @@
 #ifndef nsAttrValue_h___
 #define nsAttrValue_h___
 
+#include <type_traits>
+
 #include "nscore.h"
 #include "nsStringGlue.h"
 #include "nsStringBuffer.h"
@@ -24,6 +26,7 @@
 #include "nsIAtom.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/EnumTypeTraits.h"
 
 
 #undef LoadImage
@@ -265,6 +268,25 @@ public:
 
 
   struct EnumTable {
+    
+    
+
+    constexpr EnumTable(const char* aTag, int16_t aValue)
+      : tag(aTag)
+      , value(aValue)
+    {
+    }
+
+    template<typename T,
+             typename = typename std::enable_if<std::is_enum<T>::value>::type>
+    constexpr EnumTable(const char* aTag, T aValue)
+      : tag(aTag)
+      , value(static_cast<int16_t>(aValue))
+    {
+      static_assert(mozilla::EnumTypeFitsWithin<T, int16_t>::value,
+                    "aValue must be an enum that fits within int16_t");
+    }
+
     
     const char* tag;
     

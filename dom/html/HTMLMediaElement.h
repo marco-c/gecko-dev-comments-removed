@@ -1039,7 +1039,7 @@ protected:
   
 
 
-  enum PreloadAttrValue {
+  enum PreloadAttrValue : uint8_t {
     PRELOAD_ATTR_EMPTY,    
     PRELOAD_ATTR_NONE,     
     PRELOAD_ATTR_METADATA, 

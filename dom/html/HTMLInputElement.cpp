@@ -178,7 +178,7 @@ static const nsAttrValue::EnumTable kInputTypeTable[] = {
   { "time", NS_FORM_INPUT_TIME },
   { "url", NS_FORM_INPUT_URL },
   { "week", NS_FORM_INPUT_WEEK },
-  { 0 }
+  { nullptr, 0 }
 };
 
 
@@ -200,7 +200,7 @@ static const nsAttrValue::EnumTable kInputInputmodeTable[] = {
   { "lowercase", NS_INPUT_INPUTMODE_LOWERCASE },
   { "titlecase", NS_INPUT_INPUTMODE_TITLECASE },
   { "autocapitalized", NS_INPUT_INPUTMODE_AUTOCAPITALIZED },
-  { 0 }
+  { nullptr, 0 }
 };
 
 
@@ -253,7 +253,7 @@ public:
     }
 
     mInputElement->SetFilesOrDirectories(array, true);
-    Unused << NS_WARN_IF(NS_FAILED(DispatchEvents()));
+    NS_WARN_IF(NS_FAILED(DispatchEvents()));
   }
 
   nsresult
@@ -264,7 +264,7 @@ public:
                                               static_cast<nsIDOMHTMLInputElement*>(mInputElement.get()),
                                               NS_LITERAL_STRING("input"), true,
                                               false);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "DispatchTrustedEvent failed");
+    NS_WARN_IF(NS_FAILED(rv));
 
     rv = nsContentUtils::DispatchTrustedEvent(mInputElement->OwnerDoc(),
                                               static_cast<nsIDOMHTMLInputElement*>(mInputElement.get()),
