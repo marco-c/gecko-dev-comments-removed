@@ -54,9 +54,6 @@ ReverbConvolverStage::ReverbConvolverStage(const float* impulseResponse, size_t,
     m_fftKernel->PadAndMakeScaledDFT(impulseResponse + stageOffset, stageLength);
     m_fftConvolver = new FFTConvolver(fftSize, renderPhase);
 
-    m_temporaryBuffer.SetLength(WEBAUDIO_BLOCK_SIZE);
-    PodZero(m_temporaryBuffer.Elements(), m_temporaryBuffer.Length());
-
     
     size_t totalDelay = stageOffset + reverbTotalLatency;
 
@@ -80,8 +77,6 @@ size_t ReverbConvolverStage::sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSi
         amount += m_fftConvolver->sizeOfIncludingThis(aMallocSizeOf);
     }
 
-    amount += m_temporaryBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
-
     return amount;
 }
 
@@ -99,15 +94,12 @@ void ReverbConvolverStage::process(const float* source)
     if (!source)
         return;
     
-    float* temporaryBuffer = m_temporaryBuffer.Elements();
     
     
-    
-    
-    m_fftConvolver->process(m_fftKernel, source, temporaryBuffer);
+    const float* output = m_fftConvolver->process(m_fftKernel, source);
 
     
-    m_accumulationBuffer->accumulate(temporaryBuffer, WEBAUDIO_BLOCK_SIZE,
+    m_accumulationBuffer->accumulate(output, WEBAUDIO_BLOCK_SIZE,
                                      &m_accumulationReadIndex,
                                      m_postDelayLength);
 }

@@ -77,18 +77,18 @@ size_t HRTFElevation::fftSizeForSampleRate(float sampleRate)
     unsigned resampledLength =
         floorf(ResponseFrameSize * sampleRate / rawSampleRate);
     
-    
-    
     unsigned size = min(resampledLength, 1023U);
-    size |= 3;
+    
+    
+    
+    size |= 2 * WEBAUDIO_BLOCK_SIZE - 1;
+    
     
     
     
     
     
     size |= (size >> 1);
-    size |= (size >> 2);
-    size |= (size >> 4);
     size++;
     MOZ_ASSERT((size & (size - 1)) == 0);
 

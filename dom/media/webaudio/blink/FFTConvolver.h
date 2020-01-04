@@ -53,8 +53,7 @@ public:
     
     
     
-    
-    void process(FFTBlock* fftKernel, const float* sourceP, float* destP);
+    const float* process(FFTBlock* fftKernel, const float* sourceP);
 
     void reset();
 
