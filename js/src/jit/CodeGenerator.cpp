@@ -11228,6 +11228,14 @@ CodeGenerator::visitAsmJSReturn(LAsmJSReturn* lir)
 }
 
 void
+CodeGenerator::visitAsmJSReturnI64(LAsmJSReturnI64* lir)
+{
+    
+    if (current->mir() != *gen->graph().poBegin())
+        masm.jump(&returnLabel_);
+}
+
+void
 CodeGenerator::visitAsmJSVoidReturn(LAsmJSVoidReturn* lir)
 {
     
