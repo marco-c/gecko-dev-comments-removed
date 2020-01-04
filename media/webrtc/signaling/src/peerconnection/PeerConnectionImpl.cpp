@@ -138,15 +138,7 @@ static const char* logTag = "PeerConnectionImpl";
 
 
 namespace {
-
-
-
-
-
-
-
-class JSErrorResult :
-    public binding_danger::TErrorResult<binding_danger::JustAssertCleanupPolicy>
+class JSErrorResult : public ErrorResult
 {
 public:
   ~JSErrorResult()
@@ -177,7 +169,6 @@ public:
     }
   }
   operator JSErrorResult &() { return mRv; }
-  operator ErrorResult &() { return mRv; }
 private:
   JSErrorResult mRv;
   bool isCopy;
