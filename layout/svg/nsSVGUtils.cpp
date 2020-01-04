@@ -586,10 +586,26 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
   }
 
   
+  RefPtr<gfxContext> target = &aContext;
+  IntPoint targetOffset;
+
+  
 
   if (opacity != 1.0f || maskFrame || (clipPathFrame && !isTrivialClip)
       || aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
     complexEffects = true;
+
+    Matrix maskTransform;
+    RefPtr<SourceSurface> maskSurface =
+      maskFrame ? maskFrame->GetMaskForMaskedFrame(&aContext,
+                                                    aFrame, aTransform, opacity, &maskTransform)
+                : nullptr;
+
+    if (maskFrame && !maskSurface) {
+      
+      return;
+    }
+
     aContext.Save();
     if (!(aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
       
@@ -607,7 +623,40 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
                                         aFrame->PresContext()->AppUnitsPerDevPixel(),
                                         *drawTarget));
     }
-    aContext.PushGroup(gfxContentType::COLOR_ALPHA);
+
+    if (aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
+      
+      
+      gfxRect clipRect;
+      {
+        gfxContextMatrixAutoSaveRestore matRestore(&aContext);
+
+        aContext.SetMatrix(gfxMatrix());
+        clipRect = aContext.GetClipExtents();
+      }
+
+      IntRect drawRect = RoundedOut(ToRect(clipRect));
+
+      RefPtr<DrawTarget> targetDT = aContext.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(), SurfaceFormat::B8G8R8A8);
+      target = new gfxContext(targetDT);
+      target->SetMatrix(aContext.CurrentMatrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
+      targetOffset = drawRect.TopLeft();
+    }
+
+    if (clipPathFrame && !isTrivialClip) {
+      Matrix clippedMaskTransform;
+      RefPtr<SourceSurface> clipMaskSurface = clipPathFrame->GetClipMask(aContext, aFrame, aTransform,
+                                                                         &clippedMaskTransform, maskSurface, maskTransform);
+
+      if (clipMaskSurface) {
+        maskSurface = clipMaskSurface;
+        maskTransform = clippedMaskTransform;
+      }
+    }
+
+    if (opacity != 1.0f || maskFrame || (clipPathFrame && !isTrivialClip)) {
+      target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity, maskSurface, maskTransform);
+    }
   }
 
   
@@ -641,10 +690,10 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
       dirtyRegion = &tmpDirtyRegion;
     }
     SVGPaintCallback paintCallback;
-    nsFilterInstance::PaintFilteredFrame(aFrame, aContext, aTransform,
+    nsFilterInstance::PaintFilteredFrame(aFrame, *target, aTransform,
                                          &paintCallback, dirtyRegion);
   } else {
-    svgChildFrame->PaintSVG(aContext, aTransform, aDirtyRect);
+    svgChildFrame->PaintSVG(*target, aTransform, aDirtyRect);
   }
 
   if (clipPathFrame && isTrivialClip) {
@@ -654,39 +703,20 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
   
   if (!complexEffects)
     return;
-
-  aContext.PopGroupToSource();
-
-  Matrix maskTransform;
-  RefPtr<SourceSurface> maskSurface =
-    maskFrame ? maskFrame->GetMaskForMaskedFrame(&aContext,
-                                                 aFrame, aTransform, opacity, &maskTransform)
-              : nullptr;
-
-  if (clipPathFrame && !isTrivialClip) {
-    aContext.PushGroup(gfxContentType::COLOR_ALPHA);
-
-    nsresult rv = clipPathFrame->ApplyClipOrPaintClipMask(aContext, aFrame, aTransform);
-    Matrix clippedMaskTransform;
-    RefPtr<SourceSurface> clipMaskSurface = aContext.PopGroupToSurface(&clippedMaskTransform);
-
-    if (NS_SUCCEEDED(rv) && clipMaskSurface) {
-      
-      if (maskSurface || opacity != 1.0f) {
-        aContext.PushGroup(gfxContentType::COLOR_ALPHA);
-        aContext.Mask(clipMaskSurface, clippedMaskTransform);
-        aContext.PopGroupToSource();
-      } else {
-        aContext.Mask(clipMaskSurface, clippedMaskTransform);
-      }
-    }
+  
+  if (opacity != 1.0f || maskFrame || (clipPathFrame && !isTrivialClip)) {
+    target->PopGroupAndBlend();
   }
 
-  if (maskSurface) {
-    aContext.Mask(maskSurface, maskTransform);
-  } else if (opacity != 1.0f ||
-             aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
-    aContext.Paint(opacity);
+  if (aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
+    RefPtr<DrawTarget> targetDT = target->GetDrawTarget();
+    target = nullptr;
+    RefPtr<SourceSurface> targetSurf = targetDT->Snapshot();
+
+    aContext.SetMatrix(gfxMatrix()); 
+    RefPtr<gfxPattern> pattern = new gfxPattern(targetSurf, Matrix::Translation(targetOffset.x, targetOffset.y));
+    aContext.SetPattern(pattern);
+    aContext.Paint();
   }
 
   aContext.Restore();

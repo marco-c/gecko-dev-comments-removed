@@ -445,8 +445,6 @@ public:
 
 
 
-
-
     void PushGroupAndCopyBackground(gfxContentType content = gfxContentType::COLOR);
     already_AddRefed<gfxPattern> PopGroup();
     void PopGroupToSource();

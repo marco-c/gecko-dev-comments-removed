@@ -47,11 +47,23 @@ public:
 
 
 
-
-
   nsresult ApplyClipOrPaintClipMask(gfxContext& aContext,
                                     nsIFrame* aClippedFrame,
                                     const gfxMatrix &aMatrix);
+
+  
+
+
+
+
+
+
+
+  already_AddRefed<mozilla::gfx::SourceSurface>
+    GetClipMask(gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
+                const gfxMatrix& aMatrix, Matrix* aMaskTransform,
+                mozilla::gfx::SourceSurface* aInputMask = nullptr,
+                const mozilla::gfx::Matrix& aInputMaskTransform = mozilla::gfx::Matrix());
 
   
 
