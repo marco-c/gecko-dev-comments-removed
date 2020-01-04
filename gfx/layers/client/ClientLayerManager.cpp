@@ -203,10 +203,9 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
     hal::GetCurrentScreenConfiguration(&currentConfig);
     orientation = currentConfig.orientation();
   }
-  LayoutDeviceIntRect targetBounds = mWidget->GetNaturalBounds();
+  IntRect targetBounds = mWidget->GetNaturalBoundsUntyped();
   targetBounds.x = targetBounds.y = 0;
-  mForwarder->BeginTransaction(targetBounds.ToUnknownRect(), mTargetRotation,
-                               orientation);
+  mForwarder->BeginTransaction(targetBounds, mTargetRotation, orientation);
 
   
   
@@ -761,6 +760,7 @@ void
 ClientLayerManager::GetBackendName(nsAString& aName)
 {
   switch (mForwarder->GetCompositorBackendType()) {
+    case LayersBackend::LAYERS_NONE: aName.AssignLiteral("None"); return;
     case LayersBackend::LAYERS_BASIC: aName.AssignLiteral("Basic"); return;
     case LayersBackend::LAYERS_OPENGL: aName.AssignLiteral("OpenGL"); return;
     case LayersBackend::LAYERS_D3D9: aName.AssignLiteral("Direct3D 9"); return;
