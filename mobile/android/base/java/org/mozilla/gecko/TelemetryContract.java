@@ -183,6 +183,9 @@ public interface TelemetryContract {
         PANEL("panel"),
 
         
+        SERVICE("service"),
+
+        
         SETTINGS("settings"),
 
         
