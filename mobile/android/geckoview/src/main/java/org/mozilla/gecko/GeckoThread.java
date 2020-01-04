@@ -160,7 +160,7 @@ public class GeckoThread extends Thread {
 
         if (profile == null) {
             
-            return GuestSession.shouldUse(context) ==
+            return GeckoProfile.shouldUseGuestMode(context) ==
                     GeckoProfile.isGuestProfile(context, profileName, profileDir);
         }
 

@@ -64,7 +64,9 @@ public final class GeckoProfile {
     public static final String DEFAULT_PROFILE = "default";
     
     public static final String CUSTOM_PROFILE = "";
+
     public static final String GUEST_PROFILE_DIR = "guest";
+    public static final String GUEST_MODE_PREF = "guestMode";
 
     
     private static final String SESSION_FILE = "sessionstore.js";
@@ -95,14 +97,26 @@ public final class GeckoProfile {
 
     private Boolean mInGuestMode;
 
+    public static boolean shouldUseGuestMode(final Context context) {
+        return GeckoSharedPrefs.forApp(context).getBoolean(GUEST_MODE_PREF, false);
+    }
+
+    public static void enterGuestMode(final Context context) {
+        GeckoSharedPrefs.forApp(context).edit().putBoolean(GUEST_MODE_PREF, true).commit();
+    }
+
+    public static void leaveGuestMode(final Context context) {
+        GeckoSharedPrefs.forApp(context).edit().putBoolean(GUEST_MODE_PREF, false).commit();
+    }
+
     public static GeckoProfile initFromArgs(final Context context, final String args) {
-        if (GuestSession.shouldUse(context)) {
+        if (shouldUseGuestMode(context)) {
             final GeckoProfile guestProfile = getGuestProfile(context);
             if (guestProfile != null) {
                 return guestProfile;
             }
             
-            GuestSession.leave(context);
+            leaveGuestMode(context);
         }
 
         

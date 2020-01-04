@@ -3790,9 +3790,9 @@ public class BrowserApp extends GeckoApp
                     if (itemId == 0) {
                         final Context context = GeckoAppShell.getApplicationContext();
                         if (type == GuestModeDialog.ENTERING) {
-                            GuestSession.enter(context);
+                            GeckoProfile.enterGuestMode(context);
                         } else {
-                            GuestSession.leave(context);
+                            GeckoProfile.leaveGuestMode(context);
                             
                             
                             GuestSession.hideNotification(context);
