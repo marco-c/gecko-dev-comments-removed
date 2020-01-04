@@ -517,10 +517,10 @@ HasSyntheticBold(gfxTextRun *aRun, uint32_t aStart, uint32_t aLength)
 
 
 static bool
-HasNonOpaqueColor(gfxContext *aContext, Color& aCurrentColorOut)
+HasNonOpaqueNonTransparentColor(gfxContext *aContext, Color& aCurrentColorOut)
 {
     if (aContext->GetDeviceColor(aCurrentColorOut)) {
-        if (0.0 < aCurrentColorOut.a && aCurrentColorOut.a < 1.0) {
+        if (0.f < aCurrentColorOut.a && aCurrentColorOut.a < 1.f) {
             return true;
         }
     }
@@ -610,7 +610,7 @@ gfxTextRun::Draw(gfxContext *aContext, gfxPoint aPt, DrawMode aDrawMode,
     bool needToRestore = false;
 
     if (aDrawMode == DrawMode::GLYPH_FILL &&
-        HasNonOpaqueColor(aContext, currentColor) &&
+        HasNonOpaqueNonTransparentColor(aContext, currentColor) &&
         HasSyntheticBold(this, aStart, aLength)) {
         needToRestore = true;
         
