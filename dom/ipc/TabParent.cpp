@@ -779,7 +779,7 @@ TabParent::LoadURL(nsIURI* aURI)
       return;
     }
 
-    unused << SendLoadURL(spec, configuration);
+    unused << SendLoadURL(spec, configuration, GetShowInfo());
 
     
     
@@ -867,20 +867,7 @@ TabParent::Show(const ScreenIntSize& size, bool aParentIsActive)
         }
     }
 
-    TryCacheDPIAndScale();
-    ShowInfo info(EmptyString(), false, false, mDPI, mDefaultScale.scale);
-
-    if (mFrameElement) {
-      nsAutoString name;
-      mFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
-      bool allowFullscreen =
-        mFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::allowfullscreen) ||
-        mFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::mozallowfullscreen);
-      bool isPrivate = mFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::mozprivatebrowsing);
-      info = ShowInfo(name, allowFullscreen, isPrivate, mDPI, mDefaultScale.scale);
-    }
-
-    unused << SendShow(size, info, textureFactoryIdentifier,
+    unused << SendShow(size, GetShowInfo(), textureFactoryIdentifier,
                        layersId, renderFrame, aParentIsActive);
 }
 
@@ -3379,6 +3366,25 @@ TabParent::StartPersistence(uint64_t aOuterWindowID,
     ->SendPWebBrowserPersistDocumentConstructor(actor, this, aOuterWindowID)
     ? NS_OK : NS_ERROR_FAILURE;
   
+}
+
+ShowInfo
+TabParent::GetShowInfo()
+{
+  TryCacheDPIAndScale();
+  if (mFrameElement) {
+    nsAutoString name;
+    mFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+    bool allowFullscreen =
+      mFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::allowfullscreen) ||
+      mFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::mozallowfullscreen);
+    bool isPrivate = mFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::mozprivatebrowsing);
+    return ShowInfo(name, allowFullscreen, isPrivate, false,
+                    mDPI, mDefaultScale.scale);
+  }
+
+  return ShowInfo(EmptyString(), false, false, false,
+                  mDPI, mDefaultScale.scale);
 }
 
 NS_IMETHODIMP

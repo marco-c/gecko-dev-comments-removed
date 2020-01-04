@@ -617,6 +617,7 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mDefaultScale(0)
   , mIPCOpen(true)
   , mParentIsActive(false)
+  , mDidSetRealShowInfo(false)
 {
   
   
@@ -1257,11 +1258,14 @@ TabChild::IsRootContentDocument()
 
 bool
 TabChild::RecvLoadURL(const nsCString& aURI,
-                      const BrowserConfiguration& aConfiguration)
+                      const BrowserConfiguration& aConfiguration,
+                      const ShowInfo& aInfo)
 {
     if (!InitTabChildGlobal()) {
       return false;
     }
+
+    ApplyShowInfo(aInfo);
 
     SetProcessNameToAppName();
 
@@ -1434,10 +1438,9 @@ TabChild::CancelCachedFileDescriptorCallback(
 void
 TabChild::DoFakeShow(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
                      const uint64_t& aLayersId,
-                     PRenderFrameChild* aRenderFrame)
+                     PRenderFrameChild* aRenderFrame, const ShowInfo& aShowInfo)
 {
-  ShowInfo info(EmptyString(), false, false, 0, 0);
-  RecvShow(ScreenIntSize(0, 0), info, aTextureFactoryIdentifier,
+  RecvShow(ScreenIntSize(0, 0), aShowInfo, aTextureFactoryIdentifier,
            aLayersId, aRenderFrame, mParentIsActive);
   mDidFakeShow = true;
 }
@@ -1445,6 +1448,16 @@ TabChild::DoFakeShow(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
 void
 TabChild::ApplyShowInfo(const ShowInfo& aInfo)
 {
+  if (mDidSetRealShowInfo) {
+    return;
+  }
+
+  if (!aInfo.fakeShowInfo()) {
+    
+    
+    mDidSetRealShowInfo = true;
+  }
+
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   if (docShell) {
     nsCOMPtr<nsIDocShellTreeItem> item = do_GetInterface(docShell);
@@ -1458,17 +1471,20 @@ TabChild::ApplyShowInfo(const ShowInfo& aInfo)
     }
     docShell->SetFullscreenAllowed(aInfo.fullscreenAllowed());
     if (aInfo.isPrivate()) {
-      bool nonBlank;
-      docShell->GetHasLoadedNonBlankURI(&nonBlank);
-      if (nonBlank) {
-        nsContentUtils::ReportToConsoleNonLocalized(
-          NS_LITERAL_STRING("We should not switch to Private Browsing after loading a document."),
-          nsIScriptError::warningFlag,
-          NS_LITERAL_CSTRING("mozprivatebrowsing"),
-          nullptr);
-      } else {
-        nsCOMPtr<nsILoadContext> context = do_GetInterface(docShell);
-        context->SetUsePrivateBrowsing(true);
+      nsCOMPtr<nsILoadContext> context = do_GetInterface(docShell);
+      
+      if (!context->UsePrivateBrowsing()) {
+        bool nonBlank;
+        docShell->GetHasLoadedNonBlankURI(&nonBlank);
+        if (nonBlank) {
+          nsContentUtils::ReportToConsoleNonLocalized(
+            NS_LITERAL_STRING("We should not switch to Private Browsing after loading a document."),
+            nsIScriptError::warningFlag,
+            NS_LITERAL_CSTRING("mozprivatebrowsing"),
+            nullptr);
+        } else {
+          context->SetUsePrivateBrowsing(true);
+        }
       }
     }
   }

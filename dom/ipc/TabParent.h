@@ -634,6 +634,8 @@ private:
     bool mHasContentOpener;
 
     DebugOnly<int32_t> mActiveSupressDisplayportCount;
+
+    ShowInfo GetShowInfo();
 private:
     
     
