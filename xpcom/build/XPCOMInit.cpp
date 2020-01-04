@@ -968,18 +968,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   NS_ShutdownNativeCharsetUtils();
 #endif
 
-#if defined(XP_WIN)
-  
-  
-  
-  
-  
-  if (XRE_IsContentProcess() && !IsVistaOrLater()) {
-      NS_WARNING("Exiting child process early!");
-      exit(0);
-  }
-#endif
-
   
   
   if (nsComponentManagerImpl::gComponentManager) {
