@@ -18,6 +18,7 @@
 #include "InputData.h"                  
 #include "InputBlockState.h"            
 #include "InputQueue.h"                 
+#include "Overscroll.h"                 
 #include "OverscrollHandoffState.h"     
 #include "Units.h"                      
 #include "UnitTransforms.h"             
@@ -680,51 +681,6 @@ private:
   CSSToParentLayerScale2D mEndZoom;
 };
 
-class OverscrollAnimation: public AsyncPanZoomAnimation {
-public:
-  explicit OverscrollAnimation(AsyncPanZoomController& aApzc, const ParentLayerPoint& aVelocity)
-    : mApzc(aApzc)
-  {
-    mApzc.mX.StartOverscrollAnimation(aVelocity.x);
-    mApzc.mY.StartOverscrollAnimation(aVelocity.y);
-  }
-  ~OverscrollAnimation()
-  {
-    mApzc.mX.EndOverscrollAnimation();
-    mApzc.mY.EndOverscrollAnimation();
-  }
-
-  virtual bool DoSample(FrameMetrics& aFrameMetrics,
-                        const TimeDuration& aDelta) override
-  {
-    
-    bool continueX = mApzc.mX.SampleOverscrollAnimation(aDelta);
-    bool continueY = mApzc.mY.SampleOverscrollAnimation(aDelta);
-    if (!continueX && !continueY) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      mDeferredTasks.AppendElement(NewRunnableMethod(&mApzc, &AsyncPanZoomController::ScrollSnap));
-      return false;
-    }
-    return true;
-  }
-
-  virtual bool WantsRepaints() override
-  {
-    return false;
-  }
-
-private:
-  AsyncPanZoomController& mApzc;
-};
 
 class SmoothScrollAnimation : public AsyncPanZoomAnimation {
 public:
