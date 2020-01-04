@@ -85,9 +85,11 @@ this.GMPUtils = {
     } else if (aPlugin.id == WIDEVINE_ID) {
       
       
-      return AppConstants.isPlatformAndVersionAtLeast("win", "6") ||
-             AppConstants.platform == "macosx" ||
-             AppConstants.platform == "linux";
+      if (AppConstants.isPlatformAndVersionAtLeast("win", "6") ||
+          AppConstants.isPlatformAndVersionAtLeast("macosx", "10.7")) {
+        return true;
+      }
+      return false;
     }
 
     return true;
