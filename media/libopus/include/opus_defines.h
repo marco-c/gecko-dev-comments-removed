@@ -531,6 +531,15 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
 #define OPUS_SET_LSB_DEPTH(x) OPUS_SET_LSB_DEPTH_REQUEST, __opus_check_int(x)
 
 

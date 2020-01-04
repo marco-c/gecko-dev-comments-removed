@@ -45,7 +45,8 @@
 
 #elif (defined(OPUS_X86_MAY_HAVE_SSE) && !defined(OPUS_X86_PRESUME_SSE)) || \
   (defined(OPUS_X86_MAY_HAVE_SSE2) && !defined(OPUS_X86_PRESUME_SSE2)) || \
-  (defined(OPUS_X86_MAY_HAVE_SSE4_1) && !defined(OPUS_X86_PRESUME_SSE4_1))
+  (defined(OPUS_X86_MAY_HAVE_SSE4_1) && !defined(OPUS_X86_PRESUME_SSE4_1)) || \
+  (defined(OPUS_X86_MAY_HAVE_AVX) && !defined(OPUS_X86_PRESUME_AVX))
 
 #include "x86/x86cpu.h"
 
@@ -54,7 +55,8 @@
 
 
 
-#define OPUS_ARCHMASK 3
+
+#define OPUS_ARCHMASK 7
 int opus_select_arch(void);
 
 #else

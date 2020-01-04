@@ -69,7 +69,7 @@ void silk_decode_pulses(
         sum_pulses[ i ] = ec_dec_icdf( psRangeDec, cdf_ptr, 8 );
 
         
-        while( sum_pulses[ i ] == MAX_PULSES + 1 ) {
+        while( sum_pulses[ i ] == SILK_MAX_PULSES + 1 ) {
             nLshifts[ i ]++;
             
             sum_pulses[ i ] = ec_dec_icdf( psRangeDec,
