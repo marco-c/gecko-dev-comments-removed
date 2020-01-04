@@ -490,6 +490,61 @@ HttpChannelChild::OnStartRequest(const nsresult& channelStatus,
   DoOnStartRequest(this, mListenerContext);
 }
 
+namespace {
+
+class SyntheticDiversionListener final : public nsIStreamListener
+{
+  RefPtr<HttpChannelChild> mChannel;
+
+  ~SyntheticDiversionListener()
+  {
+  }
+
+public:
+  explicit SyntheticDiversionListener(HttpChannelChild* aChannel)
+    : mChannel(aChannel)
+  {
+    MOZ_ASSERT(mChannel);
+  }
+
+  NS_IMETHOD
+  OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) override
+  {
+    MOZ_ASSERT_UNREACHABLE("SyntheticDiversionListener should never see OnStartRequest");
+    return NS_OK;
+  }
+
+  NS_IMETHOD
+  OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
+                nsresult aStatus) override
+  {
+    mChannel->SendDivertOnStopRequest(aStatus);
+    return NS_OK;
+  }
+
+  NS_IMETHOD
+  OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
+                  nsIInputStream* aInputStream, uint64_t aOffset,
+                  uint32_t aCount) override
+  {
+    nsAutoCString data;
+    nsresult rv = NS_ConsumeStream(aInputStream, aCount, data);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRequest->Cancel(rv);
+      return rv;
+    }
+
+    mChannel->SendDivertOnDataAvailable(data, aOffset, aCount);
+    return NS_OK;
+  }
+
+  NS_DECL_ISUPPORTS
+};
+
+NS_IMPL_ISUPPORTS(SyntheticDiversionListener, nsIStreamListener);
+
+} 
+
 void
 HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
 {
@@ -507,6 +562,15 @@ HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
     if (mLoadGroup) {
       mLoadGroup->RemoveRequest(this, nullptr, mStatus);
     }
+
+    
+    
+    
+    
+    if (mSynthesizedResponse) {
+      mListener = new SyntheticDiversionListener(this);
+    }
+
     return;
   }
 
@@ -2355,10 +2419,14 @@ HttpChannelChild::DivertToParent(ChannelDiverterChild **aChild)
   MOZ_RELEASE_ASSERT(gNeckoChild);
   MOZ_RELEASE_ASSERT(!mDivertingToParent);
 
+  nsresult rv = NS_OK;
+
   
   
-  if (mSynthesizedResponse) {
-    return NS_ERROR_NOT_AVAILABLE;
+  
+  if (mSynthesizedResponse && !RemoteChannelExists()) {
+    rv = ContinueAsyncOpen();
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
@@ -2367,7 +2435,7 @@ HttpChannelChild::DivertToParent(ChannelDiverterChild **aChild)
     return mStatus;
   }
 
-  nsresult rv = Suspend();
+  rv = Suspend();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
