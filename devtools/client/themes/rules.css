@@ -82,6 +82,16 @@
   height: 100%;
 }
 
+
+
+
+
+
+#ruleview-container-focusable {
+  height: 100%;
+  outline: none;
+}
+
 #ruleview-container.non-interactive {
   pointer-events: none;
   visibility: collapse;

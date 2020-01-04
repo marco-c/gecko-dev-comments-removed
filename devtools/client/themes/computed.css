@@ -34,6 +34,7 @@
 
 #computedview-container {
   overflow: auto;
+  height: 100%;
 }
 
 #propertyContainer {
@@ -43,6 +44,16 @@
   flex: auto;
   border-top-width: 1px;
   border-top-style: dotted;
+}
+
+
+
+
+
+
+#computedview-container-focusable {
+  height: 100%;
+  outline: none;
 }
 
 .row-striped {
