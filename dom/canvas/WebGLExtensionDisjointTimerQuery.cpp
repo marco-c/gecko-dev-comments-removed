@@ -242,9 +242,12 @@ WebGLExtensionDisjointTimerQuery::IsSupported(const WebGLContext* webgl)
   gl::GLContext* gl = webgl->GL();
   return gl->IsSupported(gl::GLFeature::query_objects) &&
          gl->IsSupported(gl::GLFeature::get_query_object_i64v) &&
-         gl->IsSupported(gl::GLFeature::query_counter); 
+         gl->IsSupported(gl::GLFeature::query_counter) && 
+         gl->IsSupported(gl::GLFeature::sync); 
+  
+  
+  
 }
-
 
 IMPL_WEBGL_EXTENSION_GOOP(WebGLExtensionDisjointTimerQuery, EXT_disjoint_timer_query)
 
