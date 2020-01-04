@@ -9414,6 +9414,31 @@ CSSParserImpl::ParseColorStop(nsCSSValueGradient* aGradient)
 
 
 
+static bool
+IsBoxPositionStrictlyEdgeKeywords(nsCSSValuePair& aPosition)
+{
+  const nsCSSValue& xValue = aPosition.mXValue;
+  const nsCSSValue& yValue = aPosition.mYValue;
+  return (xValue.GetUnit() == eCSSUnit_Enumerated &&
+          (xValue.GetIntValue() & (NS_STYLE_BG_POSITION_LEFT |
+                                   NS_STYLE_BG_POSITION_CENTER |
+                                   NS_STYLE_BG_POSITION_RIGHT)) &&
+          yValue.GetUnit() == eCSSUnit_Enumerated &&
+          (yValue.GetIntValue() & (NS_STYLE_BG_POSITION_TOP |
+                                   NS_STYLE_BG_POSITION_CENTER |
+                                   NS_STYLE_BG_POSITION_BOTTOM)));
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -9445,16 +9470,7 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
     }
 
     
-    const nsCSSValue& xValue = cssGradient->mBgPos.mXValue;
-    const nsCSSValue& yValue = cssGradient->mBgPos.mYValue;
-    if (xValue.GetUnit() != eCSSUnit_Enumerated ||
-        !(xValue.GetIntValue() & (NS_STYLE_BG_POSITION_LEFT |
-                                  NS_STYLE_BG_POSITION_CENTER |
-                                  NS_STYLE_BG_POSITION_RIGHT)) ||
-        yValue.GetUnit() != eCSSUnit_Enumerated ||
-        !(yValue.GetIntValue() & (NS_STYLE_BG_POSITION_TOP |
-                                  NS_STYLE_BG_POSITION_CENTER |
-                                  NS_STYLE_BG_POSITION_BOTTOM))) {
+    if (!IsBoxPositionStrictlyEdgeKeywords(cssGradient->mBgPos)) {
       SkipUntil(')');
       return false;
     }
@@ -9468,6 +9484,9 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
   }
 
   if (!(aFlags & eGradient_MozLegacy)) {
+    
+    
+    
     UngetToken();
 
     
@@ -9480,19 +9499,23 @@ CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue,
     return ParseGradientColorStops(cssGradient, aValue);
   }
 
-  nsCSSTokenType ty = mToken.mType;
-  nsString id = mToken.mIdent;
+  
+  
+  
+  bool haveGradientLine = IsLegacyGradientLine(mToken.mType, mToken.mIdent);
   UngetToken();
 
-  
-  bool haveGradientLine = IsLegacyGradientLine(ty, id);
   if (haveGradientLine) {
+    
     cssGradient->mIsLegacySyntax = true;
     bool haveAngle =
       ParseSingleTokenVariant(cssGradient->mAngle, VARIANT_ANGLE, nullptr);
 
     
-    if (!haveAngle || !ExpectSymbol(',', true)) {
+    bool haveAngleComma = haveAngle && ExpectSymbol(',', true);
+    
+    
+    if (!haveAngleComma) {
       if (!ParseBoxPositionValues(cssGradient->mBgPos, false)) {
         SkipUntil(')');
         return false;
