@@ -5,10 +5,10 @@
 
 
 
-function isBreakpointVisible(dbg) {
-  const bpLine = findElement(dbg, "breakpoint");
+function isElementVisible(dbg, elementName) {
+  const bpLine = findElement(dbg, elementName);
   const cm = findElement(dbg, "codeMirror");
-  ok(isVisibleWithin(cm, bpLine), "CodeMirror is scrolled to line");
+  return bpLine && isVisibleWithin(cm, bpLine);
 }
 
 add_task(function* () {
@@ -21,7 +21,7 @@ add_task(function* () {
   const simple2 = findSource(dbg, "simple2.js");
 
   
-  yield addBreakpoint(dbg, simple1.id, 4);
+  yield addBreakpoint(dbg, simple1, 4);
   ok(!getSelectedSource(getState()), "No selected source");
 
   
@@ -42,11 +42,11 @@ add_task(function* () {
 
   
   
-  const longSrc = findSource(dbg, "long.js");
-  yield addBreakpoint(dbg, longSrc.id, 66);
+  let longSrc = findSource(dbg, "long.js");
+  yield addBreakpoint(dbg, longSrc, 66);
 
   invokeInTab("testModel");
   yield waitForPaused(dbg);
   assertPausedLocation(dbg, longSrc, 66);
-  isBreakpointVisible(dbg);
+  ok(isElementVisible(dbg, "breakpoint"), "Breakpoint is visible");
 });
