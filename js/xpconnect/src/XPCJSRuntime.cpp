@@ -3250,7 +3250,7 @@ ReadSourceFromFilename(JSContext* cx, const char* filename, char16_t** src, size
         return NS_ERROR_FILE_TOO_BIG;
 
     
-    auto buf = MakeUniqueFallible<unsigned char>(rawLen);
+    auto buf = MakeUniqueFallible<unsigned char[]>(rawLen);
     if (!buf)
         return NS_ERROR_OUT_OF_MEMORY;
 
