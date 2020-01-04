@@ -471,6 +471,7 @@ GLContext::GLContext(CreateContextFlags flags, const SurfaceCaps& caps,
     mNeedsTextureSizeChecks(false),
     mNeedsFlushBeforeDeleteFB(false),
     mTextureAllocCrashesOnMapFailure(false),
+    mNeedsCheckAfterAttachTextureToFb(false),
     mWorkAroundDriverBugs(true),
     mHeavyGLCallsSinceLastFlush(false)
 {
@@ -1061,6 +1062,17 @@ GLContext::InitWithPrefixImpl(const char* prefix, bool trygl)
         
         
         mTextureAllocCrashesOnMapFailure = true;
+    }
+#endif
+#if MOZ_WIDGET_ANDROID
+    if (mWorkAroundDriverBugs &&
+        Renderer() == GLRenderer::SGX540 &&
+        AndroidBridge::Bridge()->GetAPIVersion() <= 15) {
+        
+        
+        
+        
+        mNeedsCheckAfterAttachTextureToFb = true;
     }
 #endif
 
