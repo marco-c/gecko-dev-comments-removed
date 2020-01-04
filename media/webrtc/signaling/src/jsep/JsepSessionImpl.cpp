@@ -2142,16 +2142,6 @@ JsepSessionImpl::SetupDefaultCodecs()
 
   
   
-  JsepVideoCodecDescription* vp8 = new JsepVideoCodecDescription(
-      "120",
-      "VP8",
-      90000
-      );
-  
-  vp8->mConstraints.maxFs = 12288; 
-  vp8->mConstraints.maxFps = 60;
-  mSupportedCodecs.values.push_back(vp8);
-
   JsepVideoCodecDescription* vp9 = new JsepVideoCodecDescription(
       "121",
       "VP9",
@@ -2161,6 +2151,16 @@ JsepSessionImpl::SetupDefaultCodecs()
   vp9->mConstraints.maxFs = 12288; 
   vp9->mConstraints.maxFps = 60;
   mSupportedCodecs.values.push_back(vp9);
+
+  JsepVideoCodecDescription* vp8 = new JsepVideoCodecDescription(
+      "120",
+      "VP8",
+      90000
+      );
+  
+  vp8->mConstraints.maxFs = 12288; 
+  vp8->mConstraints.maxFps = 60;
+  mSupportedCodecs.values.push_back(vp8);
 
   JsepVideoCodecDescription* h264_1 = new JsepVideoCodecDescription(
       "126",
