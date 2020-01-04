@@ -892,8 +892,9 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
     
     
     
+    
     NS_WARNING("Attempting to get a displayport from a content with no primary frame!");
-    return ApplyRectMultiplier(base, aMultiplier);
+    return base;
   }
 
   bool isRoot = false;
@@ -903,7 +904,7 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
     frame = frame->PresContext()->PresShell()->GetRootScrollFrame();
     if (!frame) {
       
-      return ApplyRectMultiplier(base, aMultiplier);
+      return base;
     }
 
     isRoot = true;
