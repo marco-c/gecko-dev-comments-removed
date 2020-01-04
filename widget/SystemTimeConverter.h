@@ -59,17 +59,14 @@ public:
     
     
     
-    if (aTime < mReferenceTime &&
-        mReferenceTime - aTime < kTimeHalfRange &&
+    Time timeSinceReference = aTime - mReferenceTime;
+    if (timeSinceReference > kTimeHalfRange &&
         roughlyNow - mReferenceTimeStamp <
           TimeDuration::FromMilliseconds(kTimeHalfRange)) {
       UpdateReferenceTime(aTime, aGetCurrentTimeFunc);
+      timeSinceReference = aTime - mReferenceTime;
     }
 
-    double timeSinceReference =
-      mReferenceTime <= aTime
-        ? aTime - mReferenceTime
-        : static_cast<double>(kTimeRange) + aTime - mReferenceTime;
     TimeStamp timestamp =
       mReferenceTimeStamp + TimeDuration::FromMilliseconds(timeSinceReference);
 
@@ -77,7 +74,8 @@ public:
     
     double timesWrapped =
       (roughlyNow - mReferenceTimeStamp).ToMilliseconds() / kTimeRange;
-    int32_t cyclesToAdd = static_cast<int32_t>(timesWrapped); 
+    int32_t cyclesToAdd =
+      static_cast<int32_t>(timesWrapped); 
 
     
     
@@ -115,10 +113,7 @@ private:
     mReferenceTime = aTime;
     Time currentTime = aGetCurrentTimeFunc();
     TimeStamp currentTimeStamp = TimeStamp::Now();
-    double timeSinceReference =
-      aTime <= currentTime
-        ? currentTime - aTime
-        : static_cast<double>(kTimeRange) + currentTime - aTime;
+    Time timeSinceReference = currentTime - aTime;
     mReferenceTimeStamp =
       currentTimeStamp - TimeDuration::FromMilliseconds(timeSinceReference);
   }
