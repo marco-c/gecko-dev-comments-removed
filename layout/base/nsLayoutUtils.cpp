@@ -1961,6 +1961,25 @@ nsLayoutUtils::GetAnimatedGeometryRootFor(nsDisplayItem* aItem,
   return GetAnimatedGeometryRootForFrame(aBuilder, f);
 }
 
+nsIFrame*
+nsLayoutUtils::GetAnimatedGeometryRootForInit(nsDisplayItem* aItem,
+                                              nsDisplayListBuilder* aBuilder)
+{
+  nsIFrame* f = aItem->Frame();
+  if (aItem->ShouldFixToViewport(aBuilder)) {
+    
+    
+    
+    
+    nsIFrame* viewportFrame =
+      nsLayoutUtils::GetClosestFrameOfType(f, nsGkAtoms::viewportFrame, aBuilder->RootReferenceFrame());
+    if (viewportFrame) {
+      return GetAnimatedGeometryRootForFrame(aBuilder, viewportFrame);
+    }
+  }
+  return GetAnimatedGeometryRootForFrame(aBuilder, f);
+}
+
 
 nsIScrollableFrame*
 nsLayoutUtils::GetNearestScrollableFrameForDirection(nsIFrame* aFrame,

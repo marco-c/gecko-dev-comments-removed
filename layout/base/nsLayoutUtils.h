@@ -563,6 +563,13 @@ public:
   static nsIFrame* GetAnimatedGeometryRootFor(nsDisplayItem* aItem,
                                               nsDisplayListBuilder* aBuilder,
                                               uint32_t aFlags = 0);
+  
+
+
+
+
+  static nsIFrame* GetAnimatedGeometryRootForInit(nsDisplayItem* aItem,
+                                                  nsDisplayListBuilder* aBuilder);
 
   
 
