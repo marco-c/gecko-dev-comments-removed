@@ -5427,6 +5427,9 @@ pref("dom.node.rootNode.enabled", true);
 #endif
 
 
+pref("media.default_volume", "1.0");
+
+
 
 #ifdef RELEASE_BUILD
 pref("media.seekToNextFrame.enabled", false);
