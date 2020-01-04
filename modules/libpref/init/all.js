@@ -1428,8 +1428,8 @@ pref("network.http.diagnostics", false);
 
 pref("network.http.pacing.requests.enabled", true);
 pref("network.http.pacing.requests.min-parallelism", 6);
-pref("network.http.pacing.requests.hz", 80);
-pref("network.http.pacing.requests.burst", 10);
+pref("network.http.pacing.requests.hz", 100);
+pref("network.http.pacing.requests.burst", 32);
 
 
 pref("network.http.tcp_keepalive.short_lived_connections", true);
@@ -1452,7 +1452,12 @@ pref("network.http.enable-packaged-apps", false);
 
 
 
-pref("network.http.signed-packages.enabled", false);
+pref("network.http.packaged-signed-apps-enabled", false);
+
+
+
+
+pref("network.http.packaged-apps-developer-mode", false);
 
 
 
@@ -3254,11 +3259,7 @@ pref("ui.window_class_override", "");
 pref("ui.elantech_gesture_hacks.enabled", -1);
 
 
-#ifdef RELEASE_BUILD
-pref("ui.osk.enabled", false);
-#else
 pref("ui.osk.enabled", true);
-#endif
 
 
 pref("ui.osk.detect_physical_keyboard", true);
