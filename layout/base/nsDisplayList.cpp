@@ -491,6 +491,46 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSProperty aProperty,
   }
 }
 
+static void
+ClipBackgroundByText(nsIFrame* aFrame, nsRenderingContext* aContext,
+                     const gfxRect& aFillRect)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+
+  nsDisplayListBuilder builder(aFrame, nsDisplayListBuilder::GENERATE_GLYPH, false);
+
+  builder.EnterPresShell(aFrame);
+  nsDisplayList list;
+  aFrame->BuildDisplayListForStackingContext(&builder,
+                                      nsRect(nsPoint(0, 0), aFrame->GetSize()),
+                                      &list);
+  builder.LeavePresShell(aFrame);
+
+#ifdef DEBUG
+  for (nsDisplayItem* i = list.GetBottom(); i; i = i->GetAbove()) {
+    MOZ_ASSERT(nsDisplayItem::TYPE_TEXT == i->GetType());
+  }
+#endif
+
+  gfxContext* ctx = aContext->ThebesContext();
+  gfxContextMatrixAutoSaveRestore save(ctx);
+  ctx->SetMatrix(ctx->CurrentMatrix().Translate(aFillRect.TopLeft()));
+  ctx->NewPath();
+
+  RefPtr<LayerManager> layerManager =
+    list.PaintRoot(&builder, aContext, nsDisplayList::PAINT_DEFAULT);
+
+  ctx->Clip();
+  list.DeleteAll();
+}
+
  void
 nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
                                                          nsDisplayListBuilder* aBuilder,
@@ -2784,6 +2824,7 @@ nsDisplayBackgroundImage::GetInsideClipRegion(nsDisplayItem* aItem,
   } else {
     switch (aClip) {
     case NS_STYLE_IMAGELAYER_CLIP_BORDER:
+    case NS_STYLE_IMAGELAYER_CLIP_TEXT:
       clipRect = nsRect(aItem->ToReferenceFrame(), frame->GetSize());
       break;
     case NS_STYLE_IMAGELAYER_CLIP_PADDING:
@@ -2821,7 +2862,8 @@ nsDisplayBackgroundImage::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
         NS_STYLE_BOX_DECORATION_BREAK_CLONE ||
       (!mFrame->GetPrevContinuation() && !mFrame->GetNextContinuation())) {
     const nsStyleImageLayers::Layer& layer = mBackgroundStyle->mImage.mLayers[mLayer];
-    if (layer.mImage.IsOpaque() && layer.mBlendMode == NS_STYLE_BLEND_NORMAL) {
+    if (layer.mImage.IsOpaque() && layer.mBlendMode == NS_STYLE_BLEND_NORMAL &&
+        layer.mClip != NS_STYLE_IMAGELAYER_CLIP_TEXT) {
       result = GetInsideClipRegion(this, layer.mClip, mBounds);
     }
   }
@@ -2895,16 +2937,29 @@ void
 nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
                                         nsRenderingContext* aCtx, const nsRect& aBounds,
                                         nsRect* aClipRect) {
-  nsPoint offset = ToReferenceFrame();
   uint32_t flags = aBuilder->GetBackgroundPaintFlags();
   CheckForBorderItem(this, flags);
+
+  nsRect borderBox = nsRect(ToReferenceFrame(), mFrame->GetSize());
+  gfxContext* ctx = aCtx->ThebesContext();
+  uint8_t clip = mBackgroundStyle->mImage.mLayers[mLayer].mClip;
+
+  if (clip == NS_STYLE_IMAGELAYER_CLIP_TEXT) {
+    gfxRect bounds = nsLayoutUtils::RectToGfxRect(borderBox, mFrame->PresContext()->AppUnitsPerDevPixel());
+    ctx->Save();
+    ClipBackgroundByText(mFrame, aCtx, bounds);
+  }
 
   image::DrawResult result =
     nsCSSRendering::PaintBackground(mFrame->PresContext(), *aCtx, mFrame,
                                     aBounds,
-                                    nsRect(offset, mFrame->GetSize()),
+                                    borderBox,
                                     flags, aClipRect, mLayer,
                                     CompositionOp::OP_OVER);
+
+  if (clip == NS_STYLE_IMAGELAYER_CLIP_TEXT) {
+    ctx->Restore();
+  }
 
   nsDisplayBackgroundGeometry::UpdateDrawResult(this, result);
 }
@@ -3306,6 +3361,11 @@ nsDisplayBackgroundColor::Paint(nsDisplayListBuilder* aBuilder,
   
   
   
+  
+  
+  
+  
+
   DrawTarget& aDrawTarget = *aCtx->GetDrawTarget();
 
   Rect rect = NSRectToSnappedRect(borderBox,
@@ -3318,6 +3378,17 @@ nsDisplayBackgroundColor::Paint(nsDisplayListBuilder* aBuilder,
 
   gfxRect bounds =
     nsLayoutUtils::RectToGfxRect(borderBox, mFrame->PresContext()->AppUnitsPerDevPixel());
+
+  uint8_t clip = mBackgroundStyle->mImage.mLayers[0].mClip;
+  if (clip == NS_STYLE_IMAGELAYER_CLIP_TEXT) {
+    gfxContextAutoSaveRestore save(ctx);
+
+    ClipBackgroundByText(mFrame, aCtx, bounds);
+    ctx->SetColor(mColor);
+    ctx->Fill();
+
+    return;
+  }
 
   ctx->SetColor(mColor);
   ctx->NewPath();
