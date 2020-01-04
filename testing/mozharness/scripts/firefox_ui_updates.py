@@ -310,6 +310,8 @@ class FirefoxUIUpdates(FirefoxUITests):
             
             '--gecko-log=-',
             '--address=localhost:%s' % marionette_port,
+            
+            '--workspace=%s' % dirs['abs_work_dir'],
         ]
 
         if symbols_url:
