@@ -42,9 +42,16 @@ EditingSession.prototype = {
 
 
 
-  getPropertyFromRule: function (rule, property) {
-    let dummyStyle = this._element.style;
 
+  getPropertyFromRule: function (rule, property) {
+    
+    let index = this.getPropertyIndex(property, rule);
+    if (index !== -1) {
+      return rule.declarations[index].value;
+    }
+
+    
+    let dummyStyle = this._element.style;
     dummyStyle.cssText = rule.cssText;
     return dummyStyle.getPropertyValue(property);
   },
@@ -83,43 +90,85 @@ EditingSession.prototype = {
 
 
 
-
-  setProperties: function (properties) {
-    let modifications = this._rules[0].startModifyingProperties();
-
-    for (let property of properties) {
-      if (!this._modifications.has(property.name)) {
-        this._modifications.set(property.name,
-          this.getPropertyFromRule(this._rules[0], property.name));
-      }
-
-      if (property.value == "") {
-        modifications.removeProperty(-1, property.name);
-      } else {
-        modifications.setProperty(-1, property.name, property.value, "");
-      }
+  getPropertyIndex: function (name, rule = this._rules[0]) {
+    let elementStyleRule = this._rules[0];
+    if (!elementStyleRule.declarations.length) {
+      return -1;
     }
 
-    return modifications.apply().then(null, console.error);
+    return elementStyleRule.declarations.findIndex(p => p.name === name);
   },
 
   
 
 
 
-  revert: function () {
-    let modifications = this._rules[0].startModifyingProperties();
 
-    for (let [property, value] of this._modifications) {
-      if (value != "") {
-        modifications.setProperty(-1, property, value, "");
-      } else {
-        modifications.removeProperty(-1, property);
+
+
+  setProperties: Task.async(function* (properties) {
+    for (let property of properties) {
+      
+      
+      
+      
+      let modifications = this._rules[0].startModifyingProperties();
+
+      
+      if (!this._modifications.has(property.name)) {
+        this._modifications.set(property.name,
+          this.getPropertyFromRule(this._rules[0], property.name));
       }
-    }
 
-    return modifications.apply().then(null, console.error);
-  },
+      
+      
+      let index = this.getPropertyIndex(property.name);
+      if (index === -1) {
+        index = this._rules[0].declarations.length;
+      }
+
+      if (property.value == "") {
+        modifications.removeProperty(index, property.name);
+      } else {
+        modifications.setProperty(index, property.name, property.value, "");
+      }
+
+      yield modifications.apply();
+    }
+  }),
+
+  
+
+
+
+  revert: Task.async(function* () {
+    
+    
+    for (let [property, value] of this._modifications) {
+      let modifications = this._rules[0].startModifyingProperties();
+
+      
+      let index = this.getPropertyIndex(property);
+
+      if (value != "") {
+        
+        
+        if (index === -1) {
+          index = 0;
+        }
+        modifications.setProperty(index, property, value, "");
+      } else {
+        
+        
+        if (index === -1) {
+          continue;
+        }
+        modifications.removeProperty(index, property);
+      }
+
+      yield modifications.apply();
+    }
+  }),
 
   destroy: function () {
     this._doc = null;
@@ -342,14 +391,15 @@ LayoutView.prototype = {
           }
         }
 
-        session.setProperties(properties);
+        session.setProperties(properties).catch(e => console.error(e));
       },
 
       done: (value, commit) => {
         editor.elt.parentNode.classList.remove("layout-editing");
         if (!commit) {
-          session.revert();
-          session.destroy();
+          session.revert().then(() => {
+            session.destroy();
+          }, e => console.error(e));
         }
       }
     }, event);

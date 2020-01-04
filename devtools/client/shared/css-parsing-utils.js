@@ -908,6 +908,12 @@ RuleRewriter.prototype = {
 
   removeProperty: function (index, name) {
     this.completeInitialization(index);
+
+    
+    if (!this.decl) {
+      return;
+    }
+
     let copyOffset = this.decl.offsets[1];
     
     

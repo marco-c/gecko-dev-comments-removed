@@ -204,7 +204,25 @@ TextProperty.prototype = {
 
 
   isValid: function () {
-    return domUtils.cssPropertyIsValid(this.name, this.value);
+    
+    
+    
+    
+    if (!this.rule.domRule.declarations) {
+      return domUtils.cssPropertyIsValid(this.name, this.value);
+    }
+
+    let selfIndex = this.rule.textProps.indexOf(this);
+
+    
+    
+    
+    
+    if (!this.rule.domRule.declarations[selfIndex]) {
+      return true;
+    }
+
+    return this.rule.domRule.declarations[selfIndex].isValid;
   }
 };
 

@@ -196,7 +196,11 @@ Rule.prototype = {
 
     this.applyProperties((modifications) => {
       modifications.createProperty(ind, name, value, priority);
+      
+      
+      prop.updateEditor();
     });
+
     return prop;
   },
 
@@ -241,6 +245,9 @@ Rule.prototype = {
 
     return modifications.apply().then(() => {
       let cssProps = {};
+      
+      
+      
       for (let cssProp of parseDeclarations(this.style.authoredText)) {
         cssProps[cssProp.name] = cssProp;
       }
@@ -433,7 +440,13 @@ Rule.prototype = {
   _getTextProperties: function () {
     let textProps = [];
     let store = this.elementStyle.store;
-    let props = parseDeclarations(this.style.authoredText, true);
+
+    
+    let props = this.style.declarations;
+    if (!props) {
+      props = parseDeclarations(this.style.authoredText, true);
+    }
+
     for (let prop of props) {
       let name = prop.name;
       

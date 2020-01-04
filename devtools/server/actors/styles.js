@@ -12,23 +12,16 @@ const events = require("sdk/event/core");
 const {Class} = require("sdk/core/heritage");
 const {PageStyleFront, StyleRuleFront} = require("devtools/client/fronts/styles");
 const {LongStringActor} = require("devtools/server/actors/string");
-const {
-  getDefinedGeometryProperties
-} = require("devtools/server/actors/highlighters/geometry-editor");
+const {getDefinedGeometryProperties} = require("devtools/server/actors/highlighters/geometry-editor");
+const {parseDeclarations} = require("devtools/client/shared/css-parsing-utils");
 
 
-const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} =
-      require("devtools/server/actors/stylesheets");
+const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} = require("devtools/server/actors/stylesheets");
 const {pageStyleSpec, styleRuleSpec} = require("devtools/shared/specs/styles");
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
-
-loader.lazyGetter(this, "CssLogic", () => {
-  return require("devtools/shared/inspector/css-logic").CssLogic;
-});
-loader.lazyGetter(this, "DOMUtils", () => {
-  return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
-});
+loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css-logic").CssLogic);
+loader.lazyGetter(this, "DOMUtils", () => Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils));
 
 
 
@@ -992,17 +985,16 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
   
   
   get canSetRuleText() {
-    
-    
-    
-    
-    return !!(this._parentSheet &&
-              
-              
-              
-              
-              this.sheetActor.allRulesHaveSource() &&
-              this._parentSheet.href !== "about:PreferenceStyleSheet");
+    return this.type === ELEMENT_STYLE ||
+           (this._parentSheet &&
+            
+            
+            
+            this.sheetActor.allRulesHaveSource() &&
+            
+            
+            
+            this._parentSheet.href !== "about:PreferenceStyleSheet");
   },
 
   getDocument: function(sheet) {
@@ -1080,6 +1072,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         let doc = this.rawNode.ownerDocument;
         form.href = doc.location ? doc.location.href : "";
         form.cssText = this.rawStyle.cssText || "";
+        form.authoredText = this.rawNode.getAttribute("style");
         break;
       case Ci.nsIDOMCSSRule.CHARSET_RULE:
         form.encoding = this.rawRule.encoding;
@@ -1095,6 +1088,18 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         form.cssText = this.rawStyle.cssText || "";
         form.keyText = this.rawRule.keyText || "";
         break;
+    }
+
+    
+    
+    
+    if (form.authoredText || form.cssText) {
+      let declarations = parseDeclarations(form.authoredText ||
+                                           form.cssText, true);
+      form.declarations = declarations.map(decl => {
+        decl.isValid = DOMUtils.cssPropertyIsValid(decl.name, decl.value);
+        return decl;
+      });
     }
 
     return form;
@@ -1239,21 +1244,26 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
   setRuleText: Task.async(function* (newText) {
-    if (!this.canSetRuleText ||
-        (this.type !== Ci.nsIDOMCSSRule.STYLE_RULE &&
-         this.type !== Ci.nsIDOMCSSRule.KEYFRAME_RULE)) {
+    if (!this.canSetRuleText) {
       throw new Error("invalid call to setRuleText");
     }
 
-    let parentStyleSheet = this.pageStyle._sheetRef(this._parentSheet);
-    let {str: cssText} = yield parentStyleSheet.getText();
+    if (this.type === ELEMENT_STYLE) {
+      
+      this.rawNode.setAttribute("style", newText);
+    } else {
+      
+      let parentStyleSheet = this.pageStyle._sheetRef(this._parentSheet);
+      let {str: cssText} = yield parentStyleSheet.getText();
 
-    let {offset, text} = getRuleText(cssText, this.line, this.column);
-    cssText = cssText.substring(0, offset) + newText +
-      cssText.substring(offset + text.length);
+      let {offset, text} = getRuleText(cssText, this.line, this.column);
+      cssText = cssText.substring(0, offset) + newText +
+        cssText.substring(offset + text.length);
+
+      yield parentStyleSheet.update(cssText, false, UPDATE_PRESERVING_RULES);
+    }
 
     this.authoredText = newText;
-    yield parentStyleSheet.update(cssText, false, UPDATE_PRESERVING_RULES);
 
     return this;
   }),
