@@ -36,6 +36,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StyleSetHandle.h"
+#include "mozilla/UniquePtr.h"
 #include "MobileViewportManager.h"
 #include "ZoomConstraintsClient.h"
 
@@ -517,9 +518,10 @@ protected:
 
   
   
-  RangePaintInfo* CreateRangePaintInfo(nsIDOMRange* aRange,
-                                       nsRect& aSurfaceRect,
-                                       bool aForPrimarySelection);
+  mozilla::UniquePtr<RangePaintInfo>
+  CreateRangePaintInfo(nsIDOMRange* aRange,
+                       nsRect& aSurfaceRect,
+                       bool aForPrimarySelection);
 
   
 
@@ -534,7 +536,7 @@ protected:
 
 
   already_AddRefed<SourceSurface>
-  PaintRangePaintInfo(nsTArray<nsAutoPtr<RangePaintInfo> >* aItems,
+  PaintRangePaintInfo(nsTArray<mozilla::UniquePtr<RangePaintInfo>>* aItems,
                       nsISelection* aSelection,
                       nsIntRegion* aRegion,
                       nsRect aArea,
