@@ -12,7 +12,6 @@ Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
-Cu.import("resource:///modules/RecentWindow.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/TelemetryController.jsm");
 
@@ -400,6 +399,7 @@ this.UITour = {
       window = Services.wm.getMostRecentWindow("navigator:browser");
     }
 
+    let tab = window.gBrowser.getTabForBrowser(browser);
     let messageManager = browser.messageManager;
 
     log.debug("onPageEvent:", aEvent.detail, aMessage);
@@ -479,17 +479,8 @@ this.UITour = {
           return false;
         }
 
-        let heartbeatWindow = window;
-        if (data.privateWindowsOnly && !PrivateBrowsingUtils.isWindowPrivate(heartbeatWindow)) {
-          heartbeatWindow = RecentWindow.getMostRecentBrowserWindow({ private: true });
-          if (!heartbeatWindow) {
-            log.debug("showHeartbeat: No private window found");
-            return false;
-          }
-        }
-
         
-        this.showHeartbeat(heartbeatWindow, data);
+        this.showHeartbeat(window, data);
         break;
       }
 
@@ -1146,17 +1137,7 @@ this.UITour = {
 
 
 
-
-
-
   showHeartbeat(aChromeWindow, aOptions) {
-    let maybeNotifyHeartbeat = (...aParams) => {
-      if (aOptions.privateWindowsOnly) {
-        return;
-      }
-      this.notify(...aParams);
-    };
-
     let nb = aChromeWindow.document.getElementById("high-priority-global-notificationbox");
     let buttons = null;
 
@@ -1165,7 +1146,7 @@ this.UITour = {
         label: aOptions.engagementButtonLabel,
         callback: () => {
           
-          maybeNotifyHeartbeat("Heartbeat:Engaged", { flowId: aOptions.flowId, timestamp: Date.now() });
+          this.notify("Heartbeat:Engaged", { flowId: aOptions.flowId, timestamp: Date.now() });
 
           userEngaged(new Map([
             ["type", "button"],
@@ -1179,7 +1160,7 @@ this.UITour = {
       "chrome://browser/skin/heartbeat-icon.svg", nb.PRIORITY_INFO_HIGH, buttons, function() {
         
         
-        maybeNotifyHeartbeat("Heartbeat:NotificationClosed", { flowId: aOptions.flowId, timestamp: Date.now() });
+        this.notify("Heartbeat:NotificationClosed", { flowId: aOptions.flowId, timestamp: Date.now() });
     }.bind(this));
 
     
@@ -1251,11 +1232,7 @@ this.UITour = {
         let rating = Number(evt.target.getAttribute("data-score"), 10);
 
         
-        maybeNotifyHeartbeat("Heartbeat:Voted", {
-          flowId: aOptions.flowId,
-          score: rating,
-          timestamp: Date.now(),
-        });
+        this.notify("Heartbeat:Voted", { flowId: aOptions.flowId, score: rating, timestamp: Date.now() });
 
         
         userEngaged(new Map([
@@ -1294,7 +1271,7 @@ this.UITour = {
       learnMore.className = "text-link";
       learnMore.href = learnMoreURL.toString();
       learnMore.setAttribute("value", aOptions.learnMoreLabel);
-      learnMore.addEventListener("click", () => maybeNotifyHeartbeat("Heartbeat:LearnMore",
+      learnMore.addEventListener("click", () => this.notify("Heartbeat:LearnMore",
         { flowId: aOptions.flowId, timestamp: Date.now() }));
       frag.appendChild(learnMore);
     }
@@ -1306,10 +1283,7 @@ this.UITour = {
     messageText.classList.add("heartbeat");
 
     
-    maybeNotifyHeartbeat("Heartbeat:NotificationOffered", {
-      flowId: aOptions.flowId,
-      timestamp: Date.now(),
-    });
+    this.notify("Heartbeat:NotificationOffered", { flowId: aOptions.flowId, timestamp: Date.now() });
   },
 
   
