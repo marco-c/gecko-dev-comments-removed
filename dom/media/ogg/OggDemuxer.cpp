@@ -19,12 +19,13 @@
 
 #include <algorithm>
 
-#define OGG_DEBUG(arg, ...) MOZ_LOG(gMediaDecoderLog, mozilla::LogLevel::Debug, ("OggDemuxer(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
+extern mozilla::LazyLogModule gMediaDemuxerLog;
+#define OGG_DEBUG(arg, ...) MOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, ("OggDemuxer(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 
 
 
 #ifdef SEEK_LOGGING
-#define SEEK_LOG(type, msg) MOZ_LOG(gMediaDecoderLog, type, msg)
+#define SEEK_LOG(type, msg) MOZ_LOG(gMediaDemuxerLog, type, msg)
 #else
 #define SEEK_LOG(type, msg)
 #endif
@@ -46,8 +47,6 @@ static const uint32_t OGG_SEEK_FUZZ_USECS = 500000;
 
 
 static const int64_t OGG_SEEK_OPUS_PREROLL = 80 * USECS_PER_MS;
-
-extern LazyLogModule gMediaDecoderLog;
 
 class OggHeaders {
 public:
