@@ -128,6 +128,13 @@ var StarUI = {
             }
             this.panel.hidePopup();
             break;
+          
+          case 0:
+            let accessKey = document.getElementById("key_close");
+            if (eventMatchesKey(aEvent, accessKey)) {
+                this.panel.hidePopup();
+            }
+            break;
         }
         break;
       case "mouseout":
