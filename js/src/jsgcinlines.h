@@ -10,6 +10,7 @@
 #include "jsgc.h"
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 
 #include "gc/GCTrace.h"
 #include "gc/Zone.h"
@@ -185,37 +186,15 @@ class ArenaCellIterUnderFinalize : public ArenaCellIterImpl
     explicit ArenaCellIterUnderFinalize(Arena* arena) : ArenaCellIterImpl(arena) {}
 };
 
-class ZoneCellIter
+class ZoneCellIterImpl
 {
     ArenaIter arenaIter;
     ArenaCellIterImpl cellIter;
-    JS::AutoAssertNoAlloc noAlloc;
 
   public:
-    ZoneCellIter(JS::Zone* zone, AllocKind kind) {
+    ZoneCellIterImpl(JS::Zone* zone, AllocKind kind) {
         MOZ_ASSERT(zone);
-
-        
-        
-        JSRuntime* rt = zone->runtimeFromMainThread();
-        MOZ_ASSERT_IF(rt->isHeapBusy(), rt->gc.nursery.isEmpty());
-        if (!rt->isHeapBusy()) {
-            
-            
-            
-            
-            if (IsBackgroundFinalized(kind) &&
-                zone->arenas.needBackgroundFinalizeWait(kind))
-            {
-                rt->gc.waitBackgroundSweepEnd();
-            }
-
-            
-            rt->gc.evictNursery();
-
-            
-            noAlloc.disallowAlloc(rt);
-        }
+        MOZ_ASSERT(zone->runtimeFromAnyThread()->gc.nursery.isEmpty());
 
         arenaIter.init(zone, kind);
         if (!arenaIter.done())
@@ -246,6 +225,51 @@ class ZoneCellIter
                 cellIter.reset(arenaIter.get());
         }
     }
+};
+
+class ZoneCellIterUnderGC : public ZoneCellIterImpl
+{
+  public:
+    ZoneCellIterUnderGC(JS::Zone* zone, AllocKind kind)
+      : ZoneCellIterImpl(zone, kind)
+    {
+        MOZ_ASSERT(zone->runtimeFromAnyThread()->isHeapBusy());
+    }
+};
+
+class ZoneCellIter
+{
+    mozilla::Maybe<ZoneCellIterImpl> impl;
+    JS::AutoAssertNoAlloc noAlloc;
+
+  public:
+    ZoneCellIter(JS::Zone* zone, AllocKind kind) {
+        
+        
+        JSRuntime* rt = zone->runtimeFromMainThread();
+        if (!rt->isHeapBusy()) {
+            
+            
+            
+            
+            if (IsBackgroundFinalized(kind) && zone->arenas.needBackgroundFinalizeWait(kind))
+                rt->gc.waitBackgroundSweepEnd();
+
+            
+            rt->gc.evictNursery();
+
+            
+            noAlloc.disallowAlloc(rt);
+        }
+
+        impl.emplace(zone, kind);
+    }
+
+    bool done() const { return impl->done(); }
+    template<typename T>
+    T* get() const { return impl->get<T>(); }
+    Cell* getCell() const { return impl->getCell(); }
+    void next() { impl->next(); }
 };
 
 class GCZonesIter
