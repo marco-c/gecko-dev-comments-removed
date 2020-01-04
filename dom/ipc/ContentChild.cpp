@@ -675,10 +675,6 @@ ContentChild::Init(MessageLoop* aIOLoop,
 
   
   
-  GetIPCChannel()->BlockScripts();
-
-  
-  
   bool abortOnError = true;
 #ifdef MOZ_NUWA_PROCESS
   abortOnError &= !IsNuwaProcess();

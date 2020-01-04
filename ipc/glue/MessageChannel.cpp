@@ -280,31 +280,6 @@ private:
     CxxStackFrame& operator=(const CxxStackFrame&) = delete;
 };
 
-namespace {
-
-class MOZ_RAII MaybeScriptBlocker {
-public:
-    explicit MaybeScriptBlocker(MessageChannel *aChannel, bool aBlock
-                                MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-        : mBlocked(aChannel->ShouldBlockScripts() && aBlock)
-    {
-        MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-        if (mBlocked) {
-            nsContentUtils::AddScriptBlocker();
-        }
-    }
-    ~MaybeScriptBlocker() {
-        if (mBlocked) {
-            nsContentUtils::RemoveScriptBlocker();
-        }
-    }
-private:
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-    bool mBlocked;
-};
-
-} 
-
 MessageChannel::MessageChannel(MessageListener *aListener)
   : mListener(aListener),
     mChannelState(ChannelClosed),
@@ -332,7 +307,6 @@ MessageChannel::MessageChannel(MessageListener *aListener)
     mSawInterruptOutMsg(false),
     mIsWaitingForIncoming(false),
     mAbortOnError(false),
-    mBlockScripts(false),
     mFlags(REQUIRE_DEFAULT),
     mPeerPidSet(false),
     mPeerPid(-1)
@@ -867,9 +841,6 @@ bool
 MessageChannel::Send(Message* aMsg, Message* aReply)
 {
     nsAutoPtr<Message> msg(aMsg);
-
-    
-    MaybeScriptBlocker scriptBlocker(this, true);
 
     
     AssertWorkerThread();
@@ -1430,15 +1401,10 @@ MessageChannel::DispatchSyncMessage(const Message& aMsg, Message*& aReply)
 
     int prio = aMsg.priority();
 
-    
-    
-    
-    
     MOZ_ASSERT_IF(prio > IPC::Message::PRIORITY_NORMAL, NS_IsMainThread());
-    MaybeScriptBlocker scriptBlocker(this, prio > IPC::Message::PRIORITY_NORMAL);
 
     MessageChannel* dummy;
-    MessageChannel*& blockingVar = ShouldBlockScripts() ? gParentProcessBlocker : dummy;
+    MessageChannel*& blockingVar = mSide == ChildSide && NS_IsMainThread() ? gParentProcessBlocker : dummy;
 
     Result rv;
     {
@@ -1976,13 +1942,6 @@ MessageChannel::CloseWithTimeout()
     }
     SynchronouslyClose();
     mChannelState = ChannelTimeout;
-}
-
-void
-MessageChannel::BlockScripts()
-{
-    MOZ_ASSERT(NS_IsMainThread());
-    mBlockScripts = true;
 }
 
 void
