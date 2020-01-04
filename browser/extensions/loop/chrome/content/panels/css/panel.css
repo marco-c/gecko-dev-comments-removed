@@ -218,6 +218,7 @@ body {
   
   min-height: 53px;
   padding-top: 4px;
+  transition: opacity .2s ease-in-out .2s;
 }
 
 .room-list-empty {
@@ -257,6 +258,12 @@ body {
 
 .room-list-add-space > .room-entry:last-child {
   margin-bottom: 8px;
+}
+
+
+.room-list-pending-creation {
+  opacity: .5;
+  pointer-events: none;
 }
 
 .room-list > .room-entry > h2 {
