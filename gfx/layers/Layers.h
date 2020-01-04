@@ -358,6 +358,12 @@ public:
 
 
 
+  LayerMetricsWrapper GetRootContentLayer();
+
+  
+
+
+
 
 
 #ifdef DEBUG

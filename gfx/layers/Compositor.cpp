@@ -35,6 +35,13 @@ Compositor::Compositor(widget::CompositorWidget* aWidget,
   , mScreenRotation(ROTATION_0)
   , mWidget(aWidget)
   , mIsDestroyed(false)
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  , mBeginFrameClearColor(1.0, 1.0, 1.0, 1.0)
+#else
+  , mBeginFrameClearColor(0.0, 0.0, 0.0, 0.0)
+#endif
 {
 }
 

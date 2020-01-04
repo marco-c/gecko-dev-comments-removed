@@ -929,6 +929,12 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
   CompositorBench(mCompositor, bounds);
 
   MOZ_ASSERT(mRoot->GetOpacity() == 1);
+#if defined(MOZ_WIDGET_ANDROID)
+  LayerMetricsWrapper wrapper = GetRootContentLayer();
+  if (wrapper) {
+    mCompositor->SetBeginFrameClearColor(wrapper.Metadata().GetBackgroundColor());
+  }
+#endif
   if (mRoot->GetClipRect()) {
     clipRect = *mRoot->GetClipRect();
     IntRect rect(clipRect.x, clipRect.y, clipRect.width, clipRect.height);
@@ -996,6 +1002,13 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
   mCompositor->GetWidget()->PostRender(this);
 
   RecordFrame();
+
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  mCompositor->SetBeginFrameClearColor(gfx::Color(1.0, 1.0, 1.0, 1.0));
+#endif
 }
 
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
