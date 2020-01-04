@@ -640,7 +640,10 @@ class TransportTestPeer : public sigslot::has_slots<> {
 
     
     test_utils_->sts_target()->Dispatch(
-        WrapRunnableRet(&res, ice_ctx_->ctx(), &NrIceCtx::StartGathering),
+        WrapRunnableRet(&res,
+                        ice_ctx_->ctx(),
+                        &NrIceCtx::StartGathering,
+                        false),
         NS_DISPATCH_SYNC);
     ASSERT_TRUE(NS_SUCCEEDED(res));
   }
