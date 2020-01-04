@@ -114,7 +114,7 @@ var gTests = [
 
     
     let searchStr = "a search";
-    getNumberOfSearches(engineName).then(num => {
+    getNumberOfSearchesInFHR(engineName, "abouthome").then(num => {
       numSearchesBefore = num;
 
       info("Perform a search.");
@@ -126,7 +126,7 @@ var gTests = [
                       getSubmission(searchStr, null, "homepage").
                       uri.spec;
     let loadPromise = waitForDocLoadAndStopIt(expectedURL).then(() => {
-      getNumberOfSearches(engineName).then(num => {
+      getNumberOfSearchesInFHR(engineName, "abouthome").then(num => {
         is(num, numSearchesBefore + 1, "One more search recorded.");
         searchEventDeferred.resolve();
       });
@@ -599,58 +599,6 @@ function promiseSetupSnippetsMap(aTab, aSetupFn)
     });
   }, true, true);
   return deferred.promise;
-}
-
-
-
-
-
-
-
-
-
-function getNumberOfSearches(aEngineName) {
-  let reporter = Components.classes["@mozilla.org/datareporting/service;1"]
-                                   .getService()
-                                   .wrappedJSObject
-                                   .healthReporter;
-  ok(reporter, "Health Reporter instance available.");
-
-  return reporter.onInit().then(function onInit() {
-    let provider = reporter.getProvider("org.mozilla.searches");
-    ok(provider, "Searches provider is available.");
-
-    let m = provider.getMeasurement("counts", 3);
-    return m.getValues().then(data => {
-      let now = new Date();
-      let yday = new Date(now);
-      yday.setDate(yday.getDate() - 1);
-
-      
-      
-      
-      
-      
-      
-      return getNumberOfSearchesByDate(aEngineName, data, now) +
-             getNumberOfSearchesByDate(aEngineName, data, yday);
-    });
-  });
-}
-
-function getNumberOfSearchesByDate(aEngineName, aData, aDate) {
-  if (aData.days.hasDay(aDate)) {
-    let id = Services.search.getEngineByName(aEngineName).identifier;
-
-    let day = aData.days.getDay(aDate);
-    let field = id + ".abouthome";
-
-    if (day.has(field)) {
-      return day.get(field) || 0;
-    }
-  }
-
-  return 0; 
 }
 
 function waitForLoad(cb) {
