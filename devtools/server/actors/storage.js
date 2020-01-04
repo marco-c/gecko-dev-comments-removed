@@ -219,7 +219,7 @@ StorageActors.defaults = function(typeName, observationTopic, storeObjectType) {
       events.off(this.storageActor, "window-ready", this.onWindowReady);
       events.off(this.storageActor, "window-destroyed", this.onWindowDestroyed);
 
-      this.hostVsStores = null;
+      this.hostVsStores.clear();
       this.storageActor = null;
     },
 
@@ -474,7 +474,7 @@ StorageActors.createActor({
   },
 
   destroy: function() {
-    this.hostVsStores = null;
+    this.hostVsStores.clear();
 
     
     
@@ -1180,7 +1180,7 @@ StorageActors.createActor({
   },
 
   destroy: function() {
-    this.hostVsStores = null;
+    this.hostVsStores.clear();
     this.objectsSize = null;
 
     events.off(this.storageActor, "window-ready", this.onWindowReady);
