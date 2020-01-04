@@ -2538,7 +2538,10 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     if (sameTypeParent) {
       mUpgradeInsecureRequests =
         sameTypeParent->GetDocument()->GetUpgradeInsecureRequests();
+      
+      
       mUpgradeInsecurePreloads =
+        mUpgradeInsecureRequests ||
         sameTypeParent->GetDocument()->GetUpgradeInsecurePreloads();
     }
   }
