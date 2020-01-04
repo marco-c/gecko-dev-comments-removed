@@ -56,8 +56,6 @@ public:
 
     void processInBackground(ReverbConvolver* convolver, size_t framesToProcess);
 
-    void reset();
-
     
     int inputReadIndex() const { return m_inputReadIndex; }
 
