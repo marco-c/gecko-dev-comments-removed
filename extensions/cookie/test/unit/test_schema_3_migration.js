@@ -88,7 +88,7 @@ function do_run_test() {
   
   
   do_check_eq(Services.cookiemgr.countCookiesFromHost("baz.com"), 1);
-  let enumerator = Services.cookiemgr.getCookiesFromHost("baz.com", {});
+  let enumerator = Services.cookiemgr.getCookiesFromHost("baz.com");
   let cookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
   do_check_eq(cookie.expiry, futureExpiry + 44);
 
@@ -116,7 +116,7 @@ function do_run_test() {
 
   
   do_check_eq(Services.cookiemgr.countCookiesFromHost("cat.com"), 20);
-  enumerator = Services.cookiemgr.getCookiesFromHost("cat.com", {});
+  enumerator = Services.cookiemgr.getCookiesFromHost("cat.com");
   cookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
   do_check_eq(cookie.creationTime, 0);
 

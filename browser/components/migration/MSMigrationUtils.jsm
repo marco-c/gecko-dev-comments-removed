@@ -646,8 +646,7 @@ Cookies.prototype = {
                            Number(flags) & 0x1, 
                            false, 
                            false, 
-                           expireTime,
-                           {});
+                           expireTime);
     }
   }
 };

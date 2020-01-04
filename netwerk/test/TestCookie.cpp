@@ -597,38 +597,33 @@ main(int32_t argc, char *argv[])
       nsCOMPtr<nsICookieManager2> cookieMgr2 = do_QueryInterface(cookieMgr);
       if (!cookieMgr2) return -1;
 
-      mozilla::NeckoOriginAttributes attrs;
-
       
       rv[0] = NS_SUCCEEDED(cookieMgr->RemoveAll());
       
-      rv[1] = NS_SUCCEEDED(cookieMgr2->AddNative(NS_LITERAL_CSTRING("cookiemgr.test"), 
+      rv[1] = NS_SUCCEEDED(cookieMgr2->Add(NS_LITERAL_CSTRING("cookiemgr.test"), 
                                            NS_LITERAL_CSTRING("/foo"),           
                                            NS_LITERAL_CSTRING("test1"),          
                                            NS_LITERAL_CSTRING("yes"),            
                                            false,                             
                                            false,                             
                                            true,                              
-                                           INT64_MAX,                            
-                                           &attrs));                         
-      rv[2] = NS_SUCCEEDED(cookieMgr2->AddNative(NS_LITERAL_CSTRING("cookiemgr.test"), 
+                                           INT64_MAX));                          
+      rv[2] = NS_SUCCEEDED(cookieMgr2->Add(NS_LITERAL_CSTRING("cookiemgr.test"), 
                                            NS_LITERAL_CSTRING("/foo"),           
                                            NS_LITERAL_CSTRING("test2"),          
                                            NS_LITERAL_CSTRING("yes"),            
                                            false,                             
                                            true,                              
                                            true,                              
-                                           PR_Now() / PR_USEC_PER_SEC + 2,       
-                                           &attrs));                         
-      rv[3] = NS_SUCCEEDED(cookieMgr2->AddNative(NS_LITERAL_CSTRING("new.domain"),     
+                                           PR_Now() / PR_USEC_PER_SEC + 2));     
+      rv[3] = NS_SUCCEEDED(cookieMgr2->Add(NS_LITERAL_CSTRING("new.domain"),     
                                            NS_LITERAL_CSTRING("/rabbit"),        
                                            NS_LITERAL_CSTRING("test3"),          
                                            NS_LITERAL_CSTRING("yes"),            
                                            false,                             
                                            false,                             
                                            true,                              
-                                           INT64_MAX,                            
-                                           &attrs));                         
+                                           INT64_MAX));                          
       
       nsCOMPtr<nsISimpleEnumerator> enumerator;
       rv[4] = NS_SUCCEEDED(cookieMgr->GetEnumerator(getter_AddRefs(enumerator)));
@@ -664,6 +659,7 @@ main(int32_t argc, char *argv[])
       bool found;
       rv[9] = NS_SUCCEEDED(cookieMgr2->CookieExists(newDomainCookie, &found)) && found;
 
+      mozilla::NeckoOriginAttributes attrs;
 
       
       rv[10] = NS_SUCCEEDED(cookieMgr->RemoveNative(NS_LITERAL_CSTRING("new.domain"), 
@@ -672,15 +668,14 @@ main(int32_t argc, char *argv[])
                                                     true,                             
                                                     &attrs));                         
       rv[11] = NS_SUCCEEDED(cookieMgr2->CookieExists(newDomainCookie, &found)) && !found;
-      rv[12] = NS_SUCCEEDED(cookieMgr2->AddNative(NS_LITERAL_CSTRING("new.domain"),     
+      rv[12] = NS_SUCCEEDED(cookieMgr2->Add(NS_LITERAL_CSTRING("new.domain"),     
                                             NS_LITERAL_CSTRING("/rabbit"),        
                                             NS_LITERAL_CSTRING("test3"),          
                                             NS_LITERAL_CSTRING("yes"),            
                                             false,                             
                                             false,                             
                                             true,                              
-                                            INT64_MIN,                            
-                                            &attrs));                         
+                                            INT64_MIN));                          
       rv[13] = NS_SUCCEEDED(cookieMgr2->CookieExists(newDomainCookie, &found)) && !found;
       
       PR_Sleep(4 * PR_TicksPerSecond());
