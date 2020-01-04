@@ -119,7 +119,7 @@ public:
 
 
 
-  static void StartUp();
+  static void InitSameProcess();
 
   static PImageBridgeChild*
   StartUpInChildProcess(Transport* aTransport, ProcessId aOtherProcess);
@@ -132,11 +132,6 @@ public:
 
 
   static void ShutDown();
-
-  
-
-
-  static bool StartUpOnThread(base::Thread* aThread);
 
   
 
