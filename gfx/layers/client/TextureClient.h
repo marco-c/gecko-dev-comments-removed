@@ -415,6 +415,8 @@ public:
 
   static PTextureChild* CreateIPDLActor();
   static bool DestroyIPDLActor(PTextureChild* actor);
+  
+  static bool DestroyFallback(PTextureChild* actor);
 
   
 

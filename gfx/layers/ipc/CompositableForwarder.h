@@ -84,6 +84,9 @@ public:
                                 const gfx::IntRect& aPictureRect) = 0;
 #endif
 
+  virtual bool DestroyInTransaction(PTextureChild* aTexture, bool synchronously) = 0;
+  virtual bool DestroyInTransaction(PCompositableChild* aCompositable, bool synchronously) = 0;
+
   
 
 
@@ -107,40 +110,6 @@ public:
   virtual void RemoveTextureFromCompositableAsync(AsyncTransactionTracker* aAsyncTransactionTracker,
                                                   CompositableClient* aCompositable,
                                                   TextureClient* aTexture) {}
-
-  
-
-
-
-  virtual void HoldUntilTransaction(TextureClient* aClient)
-  {
-    if (aClient) {
-      mTexturesToRemove.AppendElement(aClient);
-    }
-  }
-
-  
-
-
-
-  virtual void RemoveTexturesIfNecessary()
-  {
-    mTexturesToRemove.Clear();
-  }
-
-  
-
-
-  void HoldUntilTransaction(CompositableClient* aClient)
-  {
-    if (aClient) {
-      mCompositableClientsToRemove.AppendElement(aClient);
-    }
-  }
-  void RemoveCompositablesIfNecessary()
-  {
-    mCompositableClientsToRemove.Clear();
-  }
 
   struct TimedTextureClient {
     TimedTextureClient()
