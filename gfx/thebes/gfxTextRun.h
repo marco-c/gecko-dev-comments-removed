@@ -29,10 +29,13 @@ class gfxContext;
 class gfxFontGroup;
 class gfxUserFontEntry;
 class gfxUserFontSet;
-class gfxTextContextPaint;
 class nsIAtom;
 class nsILanguageAtomService;
 class gfxMissingFontRecorder;
+
+namespace mozilla {
+class SVGContextPaint;
+};
 
 
 
@@ -244,7 +247,7 @@ public:
         PropertyProvider* provider = nullptr;
         
         gfxFloat* advanceWidth = nullptr;
-        gfxTextContextPaint* contextPaint = nullptr;
+        mozilla::SVGContextPaint* contextPaint = nullptr;
         gfxTextRunDrawCallbacks* callbacks = nullptr;
         explicit DrawParams(gfxContext* aContext) : context(aContext) {}
     };

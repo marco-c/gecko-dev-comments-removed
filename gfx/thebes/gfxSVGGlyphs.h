@@ -20,9 +20,9 @@ class nsIDocument;
 class nsIContentViewer;
 class nsIPresShell;
 class gfxSVGGlyphs;
-class gfxTextContextPaint;
 
 namespace mozilla {
+class SVGContextPaint;
 namespace dom {
 class Element;
 } 
@@ -121,7 +121,7 @@ public:
 
 
     bool RenderGlyph(gfxContext *aContext, uint32_t aGlyphId,
-                     gfxTextContextPaint *aContextPaint);
+                     mozilla::SVGContextPaint* aContextPaint);
 
     
 
@@ -174,7 +174,7 @@ private:
 
 
 
-class SimpleTextContextPaint : public gfxTextContextPaint
+class SimpleTextContextPaint : public mozilla::SVGContextPaint
 {
 private:
     static const mozilla::gfx::Color sZero;

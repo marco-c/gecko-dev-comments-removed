@@ -16,6 +16,7 @@
 class gfxContext;
 class nsIDocument;
 
+namespace mozilla {
 
 
 
@@ -28,15 +29,16 @@ class nsIDocument;
 
 
 
-class gfxTextContextPaint
+
+class SVGContextPaint
 {
 protected:
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
-  gfxTextContextPaint() {}
+  SVGContextPaint() {}
 
 public:
-  virtual ~gfxTextContextPaint() {}
+  virtual ~SVGContextPaint() {}
 
   virtual already_AddRefed<gfxPattern> GetFillPattern(const DrawTarget* aDrawTarget,
                                                       float aOpacity,
@@ -90,7 +92,7 @@ private:
 class MOZ_RAII AutoSetRestoreSVGContextPaint
 {
 public:
-  AutoSetRestoreSVGContextPaint(gfxTextContextPaint* aContextPaint,
+  AutoSetRestoreSVGContextPaint(SVGContextPaint* aContextPaint,
                                 nsIDocument* aSVGDocument);
   ~AutoSetRestoreSVGContextPaint();
 private:
@@ -99,6 +101,8 @@ private:
   
   void* mOuterContextPaint;
 };
+
+} 
 
 #endif 
 
