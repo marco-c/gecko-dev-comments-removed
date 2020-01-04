@@ -82,13 +82,13 @@ function testSharedTypedArray() {
     assertThrowsInstanceOf(() => new Int8Array(b, -7), RangeError);
 
     
-    assertThrowsInstanceOf(() => new Int32Array(b, 3), TypeError); 
+    assertThrowsInstanceOf(() => new Int32Array(b, 3), RangeError);
 
     
-    assertThrowsInstanceOf(() => new Int32Array(b, 4104), TypeError); 
+    assertThrowsInstanceOf(() => new Int32Array(b, 4104), RangeError);
 
     
-    assertThrowsInstanceOf(() => new Int32Array(b, 4092, 2), TypeError); 
+    assertThrowsInstanceOf(() => new Int32Array(b, 4092, 2), RangeError);
 
     
     x2[0] = -1;

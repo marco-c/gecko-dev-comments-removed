@@ -605,7 +605,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         }
 
         if (byteOffset > buffer->byteLength() || byteOffset % sizeof(NativeType) != 0) {
-            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
+            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
             return nullptr; 
         }
 
@@ -614,7 +614,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
             len = (buffer->byteLength() - byteOffset) / sizeof(NativeType);
             if (len * sizeof(NativeType) != buffer->byteLength() - byteOffset) {
                 JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
-                                     JSMSG_TYPED_ARRAY_BAD_ARGS);
+                                     JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
                 return nullptr; 
             }
         } else {
@@ -624,12 +624,12 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         
         uint32_t arrayByteLength = len * sizeof(NativeType);
         if (len >= INT32_MAX / sizeof(NativeType) || byteOffset >= INT32_MAX - arrayByteLength) {
-            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
+            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
             return nullptr; 
         }
 
         if (arrayByteLength + byteOffset > buffer->byteLength()) {
-            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
+            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
             return nullptr; 
         }
 
