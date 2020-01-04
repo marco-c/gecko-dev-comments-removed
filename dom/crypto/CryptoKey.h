@@ -128,8 +128,8 @@ public:
   static bool AllUsagesRecognized(const Sequence<nsString>& aUsages);
 
   nsresult SetSymKey(const CryptoBuffer& aSymKey);
-  void SetPrivateKey(SECKEYPrivateKey* aPrivateKey);
-  void SetPublicKey(SECKEYPublicKey* aPublicKey);
+  nsresult SetPrivateKey(SECKEYPrivateKey* aPrivateKey);
+  nsresult SetPublicKey(SECKEYPublicKey* aPublicKey);
 
   
   
