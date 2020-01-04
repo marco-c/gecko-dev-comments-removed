@@ -6,7 +6,11 @@
 
 const { extend } = require("sdk/core/heritage");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
-const { CanvasFrameAnonymousContentHelper, createNode } = require("./utils/markup");
+const {
+  CanvasFrameAnonymousContentHelper,
+  createNode,
+  createSVGNode
+} = require("./utils/markup");
 const {
   getCurrentZoom,
   setIgnoreLayoutChanges
@@ -30,6 +34,23 @@ const GRID_LINES_PROPERTIES = {
     strokeStyle: "#9370DB"
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -80,6 +101,38 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       prefix: this.ID_CLASS_PREFIX
     });
 
+    
+    let svg = createSVGNode(this.win, {
+      nodeType: "svg",
+      parent: container,
+      attributes: {
+        "id": "elements",
+        "width": "100%",
+        "height": "100%",
+        "hidden": "true"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
+    let regions = createSVGNode(this.win, {
+      nodeType: "g",
+      parent: svg,
+      attributes: {
+        "class": "regions"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
+    createSVGNode(this.win, {
+      nodeType: "path",
+      parent: regions,
+      attributes: {
+        "class": "areas",
+        "id": "areas"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
     return container;
   },
 
@@ -107,6 +160,33 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
 
     return this._update();
+  },
+
+  
+
+
+
+
+
+  showGridArea(areaName) {
+    this.renderGridArea(areaName);
+    this._showGridArea();
+  },
+
+  
+
+
+  showAllGridAreas() {
+    this.renderGridArea();
+    this._showGridArea();
+  },
+
+  
+
+
+  clearGridAreas() {
+    let box = this.getElement("areas");
+    box.setAttribute("d", "");
   },
 
   
@@ -144,12 +224,20 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     
     this.clearCanvas();
+    this.clearGridAreas();
 
     
     for (let i = 0; i < this.gridData.length; i++) {
       let fragment = this.gridData[i];
       let quad = this.currentQuads.content[i];
       this.renderFragment(fragment, quad);
+    }
+
+    
+    if (this.options.showAllGridAreas) {
+      this.showAllGridAreas();
+    } else if (this.options.showGridArea) {
+      this.showGridArea(this.options.showGridArea);
     }
 
     this._showGrid();
@@ -332,9 +420,57 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
   },
 
+  
+
+
+
+
+
+
+  renderGridArea(areaName) {
+    let paths = [];
+    let currentZoom = getCurrentZoom(this.win);
+
+    for (let i = 0; i < this.gridData.length; i++) {
+      let fragment = this.gridData[i];
+      let {bounds} = this.currentQuads.content[i];
+
+      for (let area of fragment.areas) {
+        if (areaName && areaName != area.name) {
+          continue;
+        }
+
+        let rowStart = fragment.rows.lines[area.rowStart - 1];
+        let rowEnd = fragment.rows.lines[area.rowEnd - 1];
+        let columnStart = fragment.cols.lines[area.columnStart - 1];
+        let columnEnd = fragment.cols.lines[area.columnEnd - 1];
+
+        let x1 = columnStart.start + columnStart.breadth +
+          (bounds.left / currentZoom);
+        let x2 = columnEnd.start + (bounds.left / currentZoom);
+        let y1 = rowStart.start + rowStart.breadth +
+          (bounds.top / currentZoom);
+        let y2 = rowEnd.start + (bounds.top / currentZoom);
+
+        let path = "M" + x1 + "," + y1 + " " +
+                   "L" + x2 + "," + y1 + " " +
+                   "L" + x2 + "," + y2 + " " +
+                   "L" + x1 + "," + y2;
+        paths.push(path);
+      }
+    }
+
+    let box = this.getElement("areas");
+    box.setAttribute("d", paths.join(" "));
+  },
+
+  
+
+
   _hide() {
     setIgnoreLayoutChanges(true);
     this._hideGrid();
+    this._hideGridArea();
     setIgnoreLayoutChanges(false, this.currentNode.ownerDocument.documentElement);
   },
 
@@ -344,7 +480,16 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   _showGrid() {
     this.getElement("canvas").removeAttribute("hidden");
-  }
+  },
+
+  _hideGridArea() {
+    this.getElement("elements").setAttribute("hidden", "true");
+  },
+
+  _showGridArea() {
+    this.getElement("elements").removeAttribute("hidden");
+  },
+
 });
 exports.CssGridHighlighter = CssGridHighlighter;
 
