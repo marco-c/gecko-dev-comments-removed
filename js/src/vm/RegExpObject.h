@@ -330,6 +330,7 @@ class RegExpCompartment
 
 
 
+
     ReadBarriered<Shape*> optimizableRegExpPrototypeShape_;
 
     
