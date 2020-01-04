@@ -4168,12 +4168,27 @@ nsLayoutUtils::ComputeObjectDestRect(const nsRect& aConstraintRect,
 already_AddRefed<nsFontMetrics>
 nsLayoutUtils::GetFontMetricsForFrame(const nsIFrame* aFrame, float aInflation)
 {
-  return GetFontMetricsForStyleContext(aFrame->StyleContext(), aInflation);
+  nsStyleContext* styleContext = aFrame->StyleContext();
+  uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
+  if (styleContext->IsTextCombined()) {
+    MOZ_ASSERT(aFrame->GetType() == nsGkAtoms::textFrame);
+    auto textFrame = static_cast<const nsTextFrame*>(aFrame);
+    auto clusters = textFrame->CountGraphemeClusters();
+    if (clusters == 2) {
+      variantWidth = NS_FONT_VARIANT_WIDTH_HALF;
+    } else if (clusters == 3) {
+      variantWidth = NS_FONT_VARIANT_WIDTH_THIRD;
+    } else if (clusters == 4) {
+      variantWidth = NS_FONT_VARIANT_WIDTH_QUARTER;
+    }
+  }
+  return GetFontMetricsForStyleContext(styleContext, aInflation, variantWidth);
 }
 
 already_AddRefed<nsFontMetrics>
 nsLayoutUtils::GetFontMetricsForStyleContext(nsStyleContext* aStyleContext,
-                                             float aInflation)
+                                             float aInflation,
+                                             uint8_t aVariantWidth)
 {
   nsPresContext* pc = aStyleContext->PresContext();
 
@@ -4194,12 +4209,14 @@ nsLayoutUtils::GetFontMetricsForStyleContext(nsStyleContext* aStyleContext,
   
   
   
-  if (aInflation == 1.0f) {
+  
+  if (aInflation == 1.0f && aVariantWidth == NS_FONT_VARIANT_WIDTH_NORMAL) {
     return pc->DeviceContext()->GetMetricsFor(styleFont->mFont, params);
   }
 
   nsFont font = styleFont->mFont;
   font.size = NSToCoordRound(font.size * aInflation);
+  font.variantWidth = aVariantWidth;
   return pc->DeviceContext()->GetMetricsFor(font, params);
 }
 

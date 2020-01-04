@@ -1255,7 +1255,8 @@ public:
 
 
   static already_AddRefed<nsFontMetrics> GetFontMetricsForStyleContext(
-      nsStyleContext* aStyleContext, float aSizeInflation = 1.0f);
+      nsStyleContext* aStyleContext, float aSizeInflation = 1.0f,
+      uint8_t aVariantWidth = NS_FONT_VARIANT_WIDTH_NORMAL);
 
   
 
