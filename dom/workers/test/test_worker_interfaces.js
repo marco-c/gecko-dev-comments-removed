@@ -197,6 +197,8 @@ var interfaceNamesInGlobalScope =
 
     { name: "WebGLBuffer", disabled: true },
 
+    { name: "WebGLContextEvent", disabled: true },
+
     { name: "WebGLFramebuffer", disabled: true },
 
     { name: "WebGLProgram", disabled: true },
