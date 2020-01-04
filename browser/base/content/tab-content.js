@@ -646,7 +646,11 @@ var DOMFullscreenHandler = {
         break;
       }
       case "DOMFullscreen:CleanUp": {
-        if (windowUtils) {
+        
+        
+        
+        
+        if (content.document.fullscreenElement && windowUtils) {
           this._lastTransactionId = windowUtils.lastTransactionId;
           windowUtils.exitFullscreen();
         }
@@ -687,7 +691,10 @@ var DOMFullscreenHandler = {
       case "MozAfterPaint": {
         
         
-        if (aEvent.transactionId > this._lastTransactionId) {
+        
+        
+        if (!this._lastTransactionId ||
+            aEvent.transactionId > this._lastTransactionId) {
           removeEventListener("MozAfterPaint", this);
           sendAsyncMessage("DOMFullscreen:Painted");
         }
