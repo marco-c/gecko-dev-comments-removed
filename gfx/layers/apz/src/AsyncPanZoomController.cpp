@@ -516,11 +516,10 @@ public:
       
       
       
-      if (!mDeferredTasks.append(NewRunnableMethod(mOverscrollHandoffChain.get(),
-                                                   &OverscrollHandoffChain::SnapBackOverscrolledApzc,
-                                                   &mApzc))) {
-        MOZ_CRASH();
-      }
+      mDeferredTasks.AppendElement(
+            NewRunnableMethod(mOverscrollHandoffChain.get(),
+                              &OverscrollHandoffChain::SnapBackOverscrolledApzc,
+                              &mApzc));
       return false;
     }
 
@@ -569,13 +568,12 @@ public:
       
       
       APZC_LOG("%p fling went into overscroll, handing off with velocity %s\n", &mApzc, Stringify(velocity).c_str());
-      if (!mDeferredTasks.append(NewRunnableMethod(&mApzc,
-                                                   &AsyncPanZoomController::HandleFlingOverscroll,
-                                                   velocity,
-                                                   mOverscrollHandoffChain,
-                                                   mScrolledApzc))) {
-        MOZ_CRASH();
-      }
+      mDeferredTasks.AppendElement(
+            NewRunnableMethod(&mApzc,
+                              &AsyncPanZoomController::HandleFlingOverscroll,
+                              velocity,
+                              mOverscrollHandoffChain,
+                              mScrolledApzc));
 
       
       
@@ -703,10 +701,9 @@ public:
       
       
       
-      if (!mDeferredTasks.append(NewRunnableMethod(&mApzc,
-                                                   &AsyncPanZoomController::ScrollSnap))) {
-        MOZ_CRASH();
-      }
+      mDeferredTasks.AppendElement(
+            NewRunnableMethod(&mApzc,
+            &AsyncPanZoomController::ScrollSnap));
       return false;
     }
     return true;
@@ -822,12 +819,10 @@ public:
       
       
       
-      if (!mDeferredTasks.append(NewRunnableMethod(&mApzc,
-                                                   &AsyncPanZoomController::HandleSmoothScrollOverscroll,
-                                                   velocity))) {
-        MOZ_CRASH();
-      }
-
+      mDeferredTasks.AppendElement(
+            NewRunnableMethod(&mApzc,
+                              &AsyncPanZoomController::HandleSmoothScrollOverscroll,
+                              velocity));
       return false;
     }
 
@@ -3065,7 +3060,7 @@ AsyncPanZoomController::RequestContentRepaint(const FrameMetrics& aFrameMetrics,
 }
 
 bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
-                                             Vector<Task*>* aOutDeferredTasks)
+                                             nsTArray<Task*>* aOutDeferredTasks)
 {
   APZThreadUtils::AssertOnCompositorThread();
 
@@ -3166,7 +3161,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
   
   mAsyncTransformAppliedToContent = false;
   bool requestAnimationFrame = false;
-  Vector<Task*> deferredTasks;
+  nsTArray<Task*> deferredTasks;
 
   {
     ReentrantMonitorAutoEnter lock(mMonitor);
@@ -3188,7 +3183,7 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
   
   
   
-  for (uint32_t i = 0; i < deferredTasks.length(); ++i) {
+  for (uint32_t i = 0; i < deferredTasks.Length(); ++i) {
     deferredTasks[i]->Run();
     delete deferredTasks[i];
   }

@@ -10,9 +10,9 @@
 #include "base/message_loop.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Vector.h"
 #include "FrameMetrics.h"
 #include "nsISupportsImpl.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace layers {
@@ -46,7 +46,7 @@ public:
 
 
 
-  Vector<Task*> TakeDeferredTasks() {
+  nsTArray<Task*> TakeDeferredTasks() {
     return Move(mDeferredTasks);
   }
 
@@ -71,7 +71,7 @@ protected:
 
 
 
-  Vector<Task*> mDeferredTasks;
+  nsTArray<Task*> mDeferredTasks;
 };
 
 } 

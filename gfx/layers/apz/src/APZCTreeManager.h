@@ -19,7 +19,6 @@
 #include "mozilla/layers/TouchCounter.h"
 #include "mozilla/Mutex.h"              
 #include "mozilla/TimeStamp.h"          
-#include "mozilla/Vector.h"             
 #include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
