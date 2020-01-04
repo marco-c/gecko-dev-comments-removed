@@ -455,10 +455,11 @@ SpdyStream31::GenerateSynFrame()
     ToLowerCase(name);
 
     
+    
+    
     if (name.EqualsLiteral("connection") ||
         name.EqualsLiteral("keep-alive") ||
         name.EqualsLiteral("host") ||
-        name.EqualsLiteral("accept-encoding") ||
         name.EqualsLiteral("te") ||
         name.EqualsLiteral("transfer-encoding"))
       continue;
