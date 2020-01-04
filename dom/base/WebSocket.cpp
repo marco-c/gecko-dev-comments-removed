@@ -149,12 +149,8 @@ public:
                                 bool isBinary);
 
   
-  
-  
-  
   nsresult ScheduleConnectionCloseEvents(nsISupports* aContext,
-                                         nsresult aStatusCode,
-                                         bool sync);
+                                         nsresult aStatusCode);
   
   void DispatchConnectionCloseEvents();
 
@@ -516,14 +512,11 @@ WebSocketImpl::CloseConnection(uint16_t aReasonCode,
 
   mWebSocket->SetReadyState(WebSocket::CLOSING);
 
-  
-  
   ScheduleConnectionCloseEvents(
                     nullptr,
                     (aReasonCode == nsIWebSocketChannel::CLOSE_NORMAL ||
                      aReasonCode == nsIWebSocketChannel::CLOSE_GOING_AWAY) ?
-                     NS_OK : NS_ERROR_FAILURE,
-                    false);
+                     NS_OK : NS_ERROR_FAILURE);
 
   return NS_OK;
 }
@@ -797,14 +790,12 @@ WebSocketImpl::OnStop(nsISupports* aContext, nsresult aStatusCode)
   MOZ_ASSERT(mWebSocket->ReadyState() != WebSocket::CLOSED,
              "Shouldn't already be CLOSED when OnStop called");
 
-  
-  return ScheduleConnectionCloseEvents(aContext, aStatusCode, true);
+  return ScheduleConnectionCloseEvents(aContext, aStatusCode);
 }
 
 nsresult
 WebSocketImpl::ScheduleConnectionCloseEvents(nsISupports* aContext,
-                                             nsresult aStatusCode,
-                                             bool sync)
+                                             nsresult aStatusCode)
 {
   AssertIsOnTargetThread();
 
@@ -824,11 +815,7 @@ WebSocketImpl::ScheduleConnectionCloseEvents(nsISupports* aContext,
 
     mOnCloseScheduled = true;
 
-    if (sync) {
-      DispatchConnectionCloseEvents();
-    } else {
-      NS_DispatchToCurrentThread(new CallDispatchConnectionCloseEvents(this));
-    }
+    NS_DispatchToCurrentThread(new CallDispatchConnectionCloseEvents(this));
   }
 
   return NS_OK;
