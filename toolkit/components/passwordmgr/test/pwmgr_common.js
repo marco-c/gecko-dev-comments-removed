@@ -160,6 +160,10 @@ function commonInit(selfFilling) {
   if (selfFilling)
     return;
 
+  registerRunTests();
+}
+
+function registerRunTests() {
   
   
   
@@ -253,6 +257,9 @@ function dumpLogin(label, login) {
 
 function getRecipeParent() {
   var { LoginManagerParent } = SpecialPowers.Cu.import("resource://gre/modules/LoginManagerParent.jsm", {});
+  if (!LoginManagerParent.recipeParentPromise) {
+    return null;
+  }
   return LoginManagerParent.recipeParentPromise.then((recipeParent) => {
     return SpecialPowers.wrap(recipeParent);
   });
@@ -273,6 +280,29 @@ function promiseFormsProcessed(expectedCount = 1) {
     }
     SpecialPowers.addObserver(onProcessedForm, "passwordmgr-processed-form", false);
   });
+}
+
+function loadParentTestFile(aRelativeFilePath) {
+  let fileURL = SimpleTest.getTestFileURL(aRelativeFilePath);
+  let testScript = SpecialPowers.loadChromeScript(fileURL);
+  SimpleTest.registerCleanupFunction(function destroyChromeScript() {
+    testScript.destroy();
+  });
+  return testScript;
+}
+
+
+
+
+
+
+
+function runFunctionInParent(aFunction) {
+  let chromeScript = SpecialPowers.loadChromeScript(aFunction);
+  SimpleTest.registerCleanupFunction(() => {
+    chromeScript.destroy();
+  });
+  return chromeScript;
 }
 
 
@@ -304,6 +334,11 @@ if (this.addMessageListener) {
 } else {
   
   SimpleTest.registerCleanupFunction(() => {
-    getRecipeParent().then(recipeParent => recipeParent.reset());
+    let recipeParent = getRecipeParent();
+    if (!recipeParent) {
+      
+      return;
+    }
+    recipeParent.then(recipeParent => recipeParent.reset());
   });
 }
