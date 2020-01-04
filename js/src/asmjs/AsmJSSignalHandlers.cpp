@@ -1215,8 +1215,10 @@ static const int sInterruptSignal = SIGVTALRM;
 static void
 JitInterruptHandler(int signum, siginfo_t* info, void* context)
 {
-    if (JSRuntime* rt = RuntimeForCurrentThread())
+    if (JSRuntime* rt = RuntimeForCurrentThread()) {
         RedirectJitCodeToInterruptCheck(rt, (CONTEXT*)context);
+        rt->finishHandlingJitInterrupt();
+    }
 }
 #endif
 
@@ -1325,9 +1327,15 @@ js::InterruptRunningJitCode(JSRuntime* rt)
 
     
     
+    if (!rt->startHandlingJitInterrupt())
+        return;
+
+    
+    
     
     if (rt == RuntimeForCurrentThread()) {
         RedirectIonBackedgesToInterruptCheck(rt);
+        rt->finishHandlingJitInterrupt();
         return;
     }
 
@@ -1348,6 +1356,7 @@ js::InterruptRunningJitCode(JSRuntime* rt)
         }
         ResumeThread(thread);
     }
+    rt->finishHandlingJitInterrupt();
 #else
     
     

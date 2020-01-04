@@ -358,8 +358,18 @@ JitRuntime::freeOsrTempData()
 void
 JitRuntime::patchIonBackedges(JSRuntime* rt, BackedgeTarget target)
 {
-    MOZ_ASSERT_IF(target == BackedgeLoopHeader, preventBackedgePatching_);
-    MOZ_ASSERT_IF(target == BackedgeInterruptCheck, !preventBackedgePatching_);
+    if (target == BackedgeLoopHeader) {
+        
+        
+        MOZ_ASSERT(preventBackedgePatching_);
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
+    } else {
+        
+        
+        
+        MOZ_ASSERT(!preventBackedgePatching_);
+        MOZ_ASSERT(rt->handlingJitInterrupt());
+    }
 
     backedgeExecAlloc_.makeAllWritable();
 

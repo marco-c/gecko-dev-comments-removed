@@ -845,6 +845,25 @@ struct JSRuntime : public JS::shadow::Runtime,
     
     bool handlingSegFault;
 
+  private:
+    
+    
+    mozilla::Atomic<bool> handlingJitInterrupt_;
+
+  public:
+    bool startHandlingJitInterrupt() {
+        
+        
+        return handlingJitInterrupt_.compareExchange(false, true);
+    }
+    void finishHandlingJitInterrupt() {
+        MOZ_ASSERT(handlingJitInterrupt_);
+        handlingJitInterrupt_ = false;
+    }
+    bool handlingJitInterrupt() const {
+        return handlingJitInterrupt_;
+    }
+
     JSInterruptCallback interruptCallback;
 
 #ifdef DEBUG
