@@ -52,8 +52,10 @@ public:
   FileDescriptor();
 
   FileDescriptor(const FileDescriptor& aOther)
-    : mHandleCreatedByOtherProcess(false),
-      mHandleCreatedByOtherProcessWasUsed(false)
+    : mHandleCreatedByOtherProcess(false)
+#ifdef DEBUG
+    , mHandleCreatedByOtherProcessWasUsed(false)
+#endif
   {
     
     
@@ -69,7 +71,9 @@ public:
   : mHandle(aPickle.fd)
 #endif
   , mHandleCreatedByOtherProcess(true)
+#ifdef DEBUG
   , mHandleCreatedByOtherProcessWasUsed(false)
+#endif
   { }
 
   ~FileDescriptor()
@@ -102,9 +106,11 @@ public:
   PlatformHandleType
   PlatformHandle() const
   {
+#ifdef DEBUG
     if (mHandleCreatedByOtherProcess) {
       mHandleCreatedByOtherProcessWasUsed = true;
     }
+#endif
     return mHandle;
   }
 
@@ -120,13 +126,17 @@ private:
   {
     if (aOther.mHandleCreatedByOtherProcess) {
       mHandleCreatedByOtherProcess = true;
+#ifdef DEBUG
       mHandleCreatedByOtherProcessWasUsed =
         aOther.mHandleCreatedByOtherProcessWasUsed;
+#endif
       mHandle = aOther.PlatformHandle();
     } else {
       DuplicateInCurrentProcess(aOther.PlatformHandle());
       mHandleCreatedByOtherProcess = false;
+#ifdef DEBUG
       mHandleCreatedByOtherProcessWasUsed = false;
+#endif
     }
   }
 
@@ -147,9 +157,11 @@ private:
   
   bool mHandleCreatedByOtherProcess;
 
+#ifdef DEBUG
   
   
-  mutable DebugOnly<bool> mHandleCreatedByOtherProcessWasUsed;
+  mutable bool mHandleCreatedByOtherProcessWasUsed;
+#endif
 };
 
 } 
