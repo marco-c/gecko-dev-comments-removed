@@ -2737,19 +2737,10 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
 
   
   
+  
   if (aBuilder->IsPaintingToWindow() && child->TrackingVisibility()) {
-    
-    
-    nsRect displayPortIntersection =
-      nsLayoutUtils::TransformAndIntersectRect(child,
-                                               child->GetVisualOverflowRect(),
-                                               aBuilder->GetCurrentScrollParent(),
-                                               aBuilder->GetDisplayPortConsideringAncestors());
-
-    if (!displayPortIntersection.IsEmpty()) {
-      nsIPresShell* shell = child->PresContext()->PresShell();
-      shell->MarkFrameVisible(child, VisibilityCounter::IN_DISPLAYPORT);
-    }
+    nsIPresShell* shell = child->PresContext()->PresShell();
+    shell->MarkFrameVisible(child, VisibilityCounter::IN_DISPLAYPORT);
   }
 
   
