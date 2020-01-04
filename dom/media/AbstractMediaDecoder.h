@@ -59,10 +59,6 @@ public:
 
   
   
-  virtual void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) = 0;
-
-  
-  
   
   virtual void NotifyDecodedFrames(uint32_t aParsed, uint32_t aDecoded,
                                    uint32_t aDropped) = 0;
@@ -102,12 +98,6 @@ public:
   virtual VideoFrameContainer* GetVideoFrameContainer() = 0;
   virtual mozilla::layers::ImageContainer* GetImageContainer() = 0;
 
-  
-  virtual bool IsTransportSeekable() = 0;
-
-  
-  virtual bool IsMediaSeekable() = 0;
-
   virtual void MetadataLoaded(nsAutoPtr<MediaInfo> aInfo, nsAutoPtr<MetadataTags> aTags, MediaDecoderEventVisibility aEventVisibility) = 0;
   virtual void FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo, MediaDecoderEventVisibility aEventVisibility) = 0;
 
@@ -116,14 +106,7 @@ public:
   virtual MediaDecoderOwner* GetOwner() = 0;
 
   
-  
-  virtual void NotifyDataArrived() = 0;
-
-  
   virtual void SetPlatformCanOffloadAudio(bool aCanOffloadAudio) {}
-
-  
-  virtual void SetElementVisibility(bool aIsVisible) {}
 
   
   

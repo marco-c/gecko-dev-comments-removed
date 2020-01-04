@@ -442,7 +442,7 @@ public:
 
   
   
-  virtual void NotifyDataArrived() override;
+  void NotifyDataArrived();
 
   
   
@@ -463,17 +463,20 @@ protected:
   
   
   void UpdateEstimatedMediaDuration(int64_t aDuration) override;
+
 public:
+  
+  virtual void SetElementVisibility(bool aIsVisible) {}
 
   
   virtual void SetMediaSeekable(bool aMediaSeekable) override;
 
   
   
-  virtual bool IsMediaSeekable() final override;
+  bool IsMediaSeekable();
   
   
-  virtual bool IsTransportSeekable() override;
+  bool IsTransportSeekable();
 
   
   virtual media::TimeIntervals GetSeekable();
@@ -1081,7 +1084,7 @@ private:
   
   
   
-  void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) final override;
+  void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset);
 
   
   
