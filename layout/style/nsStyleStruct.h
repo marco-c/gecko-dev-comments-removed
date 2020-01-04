@@ -1448,6 +1448,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
   }
   void SetCounterStyle(mozilla::CounterStyle* aStyle)
   {
+    
+    
+    MOZ_ASSERT(NS_IsMainThread() || aStyle->IsDependentStyle());
     mCounterStyle = aStyle;
   }
   void SetListStyleType(const nsSubstring& aType,

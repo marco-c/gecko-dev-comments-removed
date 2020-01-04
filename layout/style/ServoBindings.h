@@ -63,6 +63,11 @@ void Gecko_SetNodeData(RawGeckoNode* node, ServoNodeData* data);
 void Servo_DropNodeData(ServoNodeData* data);
 
 
+struct nsStyleList;
+void Gecko_SetListStyleType(nsStyleList* style_struct, uint32_t type);
+void Gecko_CopyListStyleTypeFrom(nsStyleList* dst, const nsStyleList* src);
+
+
 
 
 

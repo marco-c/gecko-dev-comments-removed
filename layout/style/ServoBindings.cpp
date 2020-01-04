@@ -151,6 +151,20 @@ Gecko_SetNodeData(RawGeckoNode* aNode, ServoNodeData* aData)
   aNode->SetServoNodeData(aData);
 }
 
+void
+Gecko_SetListStyleType(nsStyleList* style_struct, uint32_t type)
+{
+  
+  
+  style_struct->SetCounterStyle(CounterStyleManager::GetBuiltinStyle(type));
+}
+
+void
+Gecko_CopyListStyleTypeFrom(nsStyleList* dst, const nsStyleList* src)
+{
+  dst->SetCounterStyle(src->GetCounterStyle());
+}
+
 #define STYLE_STRUCT(name, checkdata_cb)                                      \
                                                                               \
 void                                                                          \
