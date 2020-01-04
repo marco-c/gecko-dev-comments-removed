@@ -133,37 +133,9 @@ public class ExtendedJSONObject {
 
 
 
-  public static ExtendedJSONObject parseJSONObject(Reader in)
-      throws IOException, ParseException, NonObjectJSONException {
-    return new ExtendedJSONObject(in);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  public static ExtendedJSONObject parseJSONObject(String jsonString)
-      throws IOException, ParseException, NonObjectJSONException {
-    return new ExtendedJSONObject(jsonString);
-  }
-
-  
-
-
-
-
-
-
-
   public static ExtendedJSONObject parseUTF8AsJSONObject(byte[] in)
       throws ParseException, NonObjectJSONException, IOException {
-    return parseJSONObject(new String(in, "UTF-8"));
+    return new ExtendedJSONObject(new String(in, "UTF-8"));
   }
 
   public ExtendedJSONObject() {
