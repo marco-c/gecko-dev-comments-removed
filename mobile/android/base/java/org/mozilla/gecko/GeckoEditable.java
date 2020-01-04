@@ -968,10 +968,14 @@ final class GeckoEditable extends JNIObject
     }
 
     private void geckoReplaceText(int start, int oldEnd, CharSequence newText) {
-        
-        
-        mText.delete(start, oldEnd);
-        mText.insert(start, newText);
+        if (AppConstants.Versions.preHC) {
+            
+            
+            mText.delete(start, oldEnd);
+            mText.insert(start, newText);
+        } else {
+            mText.replace(start, oldEnd, newText);
+        }
     }
 
     private boolean isSameText(int start, int oldEnd, CharSequence newText) {
@@ -1013,62 +1017,42 @@ final class GeckoEditable extends JNIObject
             
             mText.replace(0, mText.length(), text);
 
-        } else {
-            mChangedText.clearSpans();
-            mChangedText.replace(0, mChangedText.length(), text);
+        } else if (action != null &&
+                action.mType == Action.TYPE_REPLACE_TEXT &&
+                start <= action.mStart &&
+                oldEnd >= action.mEnd &&
+                newEnd >= action.mStart + action.mSequence.length()) {
+
             
-            TextUtils.copySpansFrom(mText, start, Math.min(oldEnd, newEnd),
-                                    Object.class, mChangedText, 0);
+            final int actionNewEnd = action.mStart + action.mSequence.length();
 
-            if (action != null &&
-                    action.mType == Action.TYPE_REPLACE_TEXT &&
-                    start <= action.mStart &&
-                    action.mStart + action.mSequence.length() <= newEnd) {
-
+            
+            if (start == action.mStart && oldEnd == action.mEnd && newEnd == actionNewEnd) {
                 
-                final int actionNewEnd = action.mStart + action.mSequence.length();
-                int selStart = Selection.getSelectionStart(mText);
-                int selEnd = Selection.getSelectionEnd(mText);
-
-                
-                mChangedText.replace(action.mStart - start, actionNewEnd - start,
-                                     action.mSequence);
+                geckoReplaceText(start, oldEnd, action.mSequence);
+            } else {
+                mChangedText.clearSpans();
+                mChangedText.replace(0, mChangedText.length(), mText, start, oldEnd);
+                mChangedText.replace(action.mStart - start, action.mEnd - start, action.mSequence);
                 geckoReplaceText(start, oldEnd, mChangedText);
+            }
 
-                
-                
-                
-                if (selStart >= start && selStart <= oldEnd) {
-                    selStart = selStart < action.mStart ? selStart :
-                               selStart < action.mEnd   ? actionNewEnd :
-                                                          selStart + actionNewEnd - action.mEnd;
-                    mText.setSpan(Selection.SELECTION_START, selStart, selStart,
-                                  Spanned.SPAN_POINT_POINT);
-                }
-                if (selEnd >= start && selEnd <= oldEnd) {
-                    selEnd = selEnd < action.mStart ? selEnd :
-                             selEnd < action.mEnd   ? actionNewEnd :
-                                                      selEnd + actionNewEnd - action.mEnd;
-                    mText.setSpan(Selection.SELECTION_END, selEnd, selEnd,
-                                  Spanned.SPAN_POINT_POINT);
-                }
+            
+            
+            mIgnoreSelectionChange = true;
 
+        } else {
+            
+            if (isSameText(start, oldEnd, text)) {
+                
+                
                 
                 
                 mIgnoreSelectionChange = true;
-
-            } else {
-                
-                if (isSameText(start, oldEnd, mChangedText)) {
-                    
-                    
-                    
-                    
-                    mIgnoreSelectionChange = true;
-                    return;
-                }
-                geckoReplaceText(start, oldEnd, mChangedText);
+                return;
             }
+
+            geckoReplaceText(start, oldEnd, text);
         }
 
         geckoPostToIc(new Runnable() {
