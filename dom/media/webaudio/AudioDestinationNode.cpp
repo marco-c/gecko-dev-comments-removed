@@ -151,17 +151,11 @@ public:
     
     
 
-    AutoJSAPI jsapi;
-    if (NS_WARN_IF(!jsapi.Init(aNode->GetOwner()))) {
-      return;
-    }
-    JSContext* cx = jsapi.cx();
-
     
     ErrorResult rv;
     RefPtr<AudioBuffer> renderedBuffer =
       AudioBuffer::Create(context, mNumberOfChannels, mLength, mSampleRate,
-                          mBuffer.forget(), cx, rv);
+                          mBuffer.forget(), rv);
     if (rv.Failed()) {
       return;
     }
