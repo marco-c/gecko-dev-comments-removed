@@ -138,6 +138,7 @@ public:
   enum { ePluginPaintEnable, ePluginPaintDisable };
 
   void WindowFocusMayHaveChanged();
+  void ResolutionMayHaveChanged();
 
   bool WindowIsActive();
   void SendWindowFocusChanged(bool aIsActive);
@@ -159,7 +160,6 @@ public:
   void UpdateWindowVisibility(bool aVisible);
 #endif 
 
-  void ResolutionMayHaveChanged();
   void UpdateDocumentActiveState(bool aIsActive);
 
   void SetFrame(nsPluginFrame *aFrame);
@@ -278,7 +278,6 @@ public:
            const mozilla::widget::CandidateWindowPosition& aPosition);
   bool RequestCommitOrCancel(bool aCommitted);
 
-  void GetCSSZoomFactor(float *result);
 private:
   virtual ~nsPluginInstanceOwner();
 
@@ -329,7 +328,7 @@ private:
   
   bool                                      mShouldBlurOnActivate;
 #endif
-  double                                    mLastCSSZoomFactor;
+
   
   
   

@@ -1218,9 +1218,8 @@ nsPluginFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 #endif
 
   if (aBuilder->IsForPainting() && mInstanceOwner) {
-    
-    mInstanceOwner->ResolutionMayHaveChanged();
 #ifdef XP_MACOSX
+    mInstanceOwner->ResolutionMayHaveChanged();
     mInstanceOwner->WindowFocusMayHaveChanged();
 #endif
     if (mInstanceOwner->UseAsyncRendering()) {
