@@ -43,8 +43,6 @@ import org.mozilla.gecko.util.NativeEventListener;
 import org.mozilla.gecko.util.NativeJSObject;
 import org.mozilla.gecko.util.PrefUtils;
 import org.mozilla.gecko.util.ThreadUtils;
-import org.mozilla.gecko.webapp.EventListener;
-import org.mozilla.gecko.webapp.UninstallListener;
 import org.mozilla.gecko.widget.ButtonToast;
 
 import android.annotation.SuppressLint;
@@ -144,7 +142,6 @@ public abstract class GeckoApp
         NORMAL,     
         URL,        
         PREFETCH,   
-        WEBAPP,     
         GUEST,      
         RESTRICTED, 
         SHORTCUT    
@@ -213,8 +210,6 @@ public abstract class GeckoApp
 
     private volatile HealthRecorder mHealthRecorder;
     private volatile Locale mLastLocale;
-
-    private EventListener mWebappEventListener;
 
     private Intent mRestartIntent;
 
@@ -691,9 +686,7 @@ public abstract class GeckoApp
     @Override
     public void handleMessage(String event, JSONObject message) {
         try {
-            if (event.equals("Gecko:DelayedStartup")) {
-                ThreadUtils.postToBackgroundThread(new UninstallListener.DelayedStartupTask(this));
-            } else if (event.equals("Gecko:Ready")) {
+            if (event.equals("Gecko:Ready")) {
                 mGeckoReadyStartupTimer.stop();
                 geckoConnected();
 
@@ -711,10 +704,6 @@ public abstract class GeckoApp
                 doShutdown();
                 return;
 
-            } else if ("NativeApp:IsDebuggable".equals(event)) {
-                JSONObject ret = new JSONObject();
-                ret.put("isDebuggable", getIsDebuggable());
-                EventDispatcher.sendResponse(message, ret);
             } else if (event.equals("Accessibility:Event")) {
                 GeckoAccessibility.sendAccessibilityEvent(message);
             }
@@ -1268,10 +1257,8 @@ public abstract class GeckoApp
 
         EventDispatcher.getInstance().registerGeckoThreadListener((GeckoEventListener)this,
             "Gecko:Ready",
-            "Gecko:DelayedStartup",
             "Gecko:Exited",
-            "Accessibility:Event",
-            "NativeApp:IsDebuggable");
+            "Accessibility:Event");
 
         EventDispatcher.getInstance().registerGeckoThreadListener((NativeEventListener)this,
             "Accessibility:Ready",
@@ -1298,11 +1285,6 @@ public abstract class GeckoApp
 
         EventDispatcher.getInstance().registerBackgroundThreadListener((BundleEventListener) this,
                 "History:GetPrePathLastVisitedTimeMilliseconds");
-
-        if (mWebappEventListener == null) {
-            mWebappEventListener = new EventListener();
-            mWebappEventListener.registerEvents();
-        }
 
         GeckoThread.launch();
 
@@ -2103,10 +2085,8 @@ public abstract class GeckoApp
 
         EventDispatcher.getInstance().unregisterGeckoThreadListener((GeckoEventListener)this,
             "Gecko:Ready",
-            "Gecko:DelayedStartup",
             "Gecko:Exited",
-            "Accessibility:Event",
-            "NativeApp:IsDebuggable");
+            "Accessibility:Event");
 
         EventDispatcher.getInstance().unregisterGeckoThreadListener((NativeEventListener)this,
             "Accessibility:Ready",
@@ -2132,11 +2112,6 @@ public abstract class GeckoApp
 
         EventDispatcher.getInstance().unregisterBackgroundThreadListener((BundleEventListener) this,
                 "History:GetPrePathLastVisitedTimeMilliseconds");
-
-        if (mWebappEventListener != null) {
-            mWebappEventListener.unregisterEvents();
-            mWebappEventListener = null;
-        }
 
         deleteTempFiles();
 
@@ -2671,23 +2646,6 @@ public abstract class GeckoApp
             Log.wtf(LOGTAG, getPackageName() + " not found", e);
         }
         return versionCode;
-    }
-
-    protected boolean getIsDebuggable() {
-        
-        
-        
-        
-        return false;
-
-        
-        
-        
-        
-        
-        
-        
-        
     }
 
     

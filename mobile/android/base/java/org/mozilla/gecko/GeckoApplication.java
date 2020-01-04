@@ -151,7 +151,6 @@ public class GeckoApplication extends Application
         
         
         
-        
         GeckoProfile.setBrowserDBFactory(new BrowserDB.Factory() {
             @Override
             public BrowserDB get(String profileName, File profileDir) {

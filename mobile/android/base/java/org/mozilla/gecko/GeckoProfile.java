@@ -83,7 +83,6 @@ public final class GeckoProfile {
 
     private final String mName;
     private final File mMozillaDir;
-    private final boolean mIsWebAppProfile;
     private final Context mApplicationContext;
 
     private final BrowserDB mDB;
@@ -306,6 +305,8 @@ public final class GeckoProfile {
         }
     }
 
+    
+    @RobocopTarget
     public static boolean removeProfile(Context context, String profileName) {
         if (profileName == null) {
             Log.w(LOGTAG, "Unable to remove profile: null profile name.");
@@ -457,7 +458,6 @@ public final class GeckoProfile {
 
         mApplicationContext = context.getApplicationContext();
         mName = profileName;
-        mIsWebAppProfile = profileName.startsWith("webapp");
         mMozillaDir = GeckoProfileDirectories.getMozillaDirectory(context);
 
         
@@ -473,9 +473,6 @@ public final class GeckoProfile {
         return mDB;
     }
 
-    public boolean isWebAppProfile() {
-        return mIsWebAppProfile;
-    }
 
     
     public boolean locked() {
@@ -1004,8 +1001,7 @@ public final class GeckoProfile {
             parser.addSection(generalSection);
         }
 
-        if (!isDefaultSet && !mIsWebAppProfile) {
-            
+        if (!isDefaultSet) {
             
             profileSection.setProperty("Default", 1);
 
@@ -1018,10 +1014,7 @@ public final class GeckoProfile {
         parser.addSection(profileSection);
         parser.write();
 
-        
-        if (!mIsWebAppProfile) {
-            enqueueInitialization(profileDir);
-        }
+        enqueueInitialization(profileDir);
 
         
         try {
@@ -1038,10 +1031,8 @@ public final class GeckoProfile {
         }
 
         
-        if (!mIsWebAppProfile) {
-            final SharedPreferences prefs = GeckoSharedPrefs.forProfile(mApplicationContext);
-            prefs.edit().putBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, true).apply();
-        }
+        final SharedPreferences prefs = GeckoSharedPrefs.forProfile(mApplicationContext);
+        prefs.edit().putBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, true).apply();
 
         return profileDir;
     }
