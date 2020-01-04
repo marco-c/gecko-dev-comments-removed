@@ -38,12 +38,18 @@ add_task(function* test_bing_translation() {
   
   gBrowser.selectedTab = tab;
   let browser = tab.linkedBrowser;
-  let client = new BingTranslator(
-    new TranslationDocument(browser.contentDocument), "fr", "en");
-  let result = yield client.translate();
 
-  
-  Assert.ok(result, "There should be a result.");
+  yield ContentTask.spawn(browser, null, function*() {
+    Cu.import("resource:///modules/translation/BingTranslator.jsm");
+    Cu.import("resource:///modules/translation/TranslationDocument.jsm");
+
+    let client = new BingTranslator(
+      new TranslationDocument(content.document), "fr", "en");
+    let result = yield client.translate();
+
+    
+    ok(result, "There should be a result");
+  });
 
   gBrowser.removeTab(tab);
 });
@@ -67,18 +73,24 @@ add_task(function* test_handling_out_of_valid_key_error() {
   
   gBrowser.selectedTab = tab;
   let browser = tab.linkedBrowser;
-  let client = new BingTranslator(
-    new TranslationDocument(browser.contentDocument), "fr", "en");
-  client._resetToken();
-  try {
-    yield client.translate();
-  } catch (ex) {
-    
-  }
-  client._resetToken();
 
-  
-  Assert.ok(client._serviceUnavailable, "Service should be detected unavailable.");
+  yield ContentTask.spawn(browser, null, function*() {
+    Cu.import("resource:///modules/translation/BingTranslator.jsm");
+    Cu.import("resource:///modules/translation/TranslationDocument.jsm");
+
+    let client = new BingTranslator(
+      new TranslationDocument(content.document), "fr", "en");
+    client._resetToken();
+    try {
+      yield client.translate();
+    } catch (ex) {
+      
+    }
+    client._resetToken();
+
+    
+    ok(client._serviceUnavailable, "Service should be detected unavailable.");
+  });
 
   
   Services.prefs.setCharPref(kClientIdPref, "testClient");
