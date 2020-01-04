@@ -157,6 +157,25 @@ DispatchStatusChangedEvent(const nsAString& aType,
                            const nsAString& aDeviceAddress,
                            bool aStatus);
 
+
+
+
+
+
+
+
+
+void AppendNamedValue(InfallibleTArray<BluetoothNamedValue>& aArray,
+                      const char* aName, const BluetoothValue& aValue);
+
+
+
+
+
+void InsertNamedValue(InfallibleTArray<BluetoothNamedValue>& aArray,
+                      uint8_t aIndex, const char* aName,
+                      const BluetoothValue& aValue);
+
 END_BLUETOOTH_NAMESPACE
 
 #endif 
