@@ -110,10 +110,6 @@ public:
   
   virtual ConversionRequired DecoderNeedsConversion(const TrackInfo& aConfig) const = 0;
 
-  virtual bool SupportsSharedDecoders(const VideoInfo& aConfig) const {
-    return !AgnosticMimeType(aConfig.mMimeType);
-  }
-
 protected:
   PlatformDecoderModule() {}
   virtual ~PlatformDecoderModule() {}
@@ -227,7 +223,7 @@ public:
   
   
   
-  virtual RefPtr<InitPromise> Init() = 0;
+  virtual nsRefPtr<InitPromise> Init() = 0;
 
   
   virtual nsresult Input(MediaRawData* aSample) = 0;

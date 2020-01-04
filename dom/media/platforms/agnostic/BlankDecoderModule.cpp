@@ -34,7 +34,7 @@ public:
   {
   }
 
-  RefPtr<InitPromise> Init() override {
+  nsRefPtr<InitPromise> Init() override {
     return InitPromise::CreateAndResolve(mType, __func__);
   }
 
@@ -54,7 +54,7 @@ public:
     }
     NS_IMETHOD Run() override
     {
-      RefPtr<MediaData> data =
+      nsRefPtr<MediaData> data =
         mCreator->Create(media::TimeUnit::FromMicroseconds(mSample->mTime),
                          media::TimeUnit::FromMicroseconds(mSample->mDuration),
                          mSample->mOffset);
@@ -62,7 +62,7 @@ public:
       return NS_OK;
     }
   private:
-    RefPtr<MediaRawData> mSample;
+    nsRefPtr<MediaRawData> mSample;
     BlankMediaDataCreator* mCreator;
     MediaDataDecoderCallback* mCallback;
   };
@@ -221,7 +221,7 @@ public:
                      MediaDataDecoderCallback* aCallback) override {
     BlankVideoDataCreator* creator = new BlankVideoDataCreator(
       aConfig.mDisplay.width, aConfig.mDisplay.height, aImageContainer);
-    RefPtr<MediaDataDecoder> decoder =
+    nsRefPtr<MediaDataDecoder> decoder =
       new BlankMediaDataDecoder<BlankVideoDataCreator>(creator,
                                                        aVideoTaskQueue,
                                                        aCallback,
@@ -237,7 +237,7 @@ public:
     BlankAudioDataCreator* creator = new BlankAudioDataCreator(
       aConfig.mChannels, aConfig.mRate);
 
-    RefPtr<MediaDataDecoder> decoder =
+    nsRefPtr<MediaDataDecoder> decoder =
       new BlankMediaDataDecoder<BlankAudioDataCreator>(creator,
                                                        aAudioTaskQueue,
                                                        aCallback,
@@ -249,11 +249,6 @@ public:
   SupportsMimeType(const nsACString& aMimeType) override
   {
     return true;
-  }
-
-  bool
-  SupportsSharedDecoders(const VideoInfo& aConfig) const override {
-    return false;
   }
 
   ConversionRequired
@@ -277,13 +272,13 @@ public:
 
 already_AddRefed<PlatformDecoderModule> CreateBlankDecoderModule()
 {
-  RefPtr<PlatformDecoderModule> pdm = new BlankDecoderModule();
+  nsRefPtr<PlatformDecoderModule> pdm = new BlankDecoderModule();
   return pdm.forget();
 }
 
 already_AddRefed<PlatformDecoderModule> CreateAgnosticDecoderModule()
 {
-  RefPtr<PlatformDecoderModule> adm = new AgnosticDecoderModule();
+  nsRefPtr<PlatformDecoderModule> adm = new AgnosticDecoderModule();
   return adm.forget();
 }
 
