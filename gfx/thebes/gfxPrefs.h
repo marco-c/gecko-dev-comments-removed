@@ -9,6 +9,7 @@
 #include <cmath>                 
 #include <stdint.h>
 #include "mozilla/Assertions.h"
+#include "mozilla/gfx/LoggingConstants.h"
 
 
 
@@ -69,14 +70,9 @@ static Type Get##Name##PrefDefault() { return Default; }                      \
 private:                                                                      \
 PrefTemplate<UpdatePolicy::Update, Type, Get##Name##PrefDefault, Get##Name##PrefName> mPref##Name
 
-class PreferenceAccessImpl;
 class gfxPrefs;
 class gfxPrefs final
 {
-private:
-  
-  PreferenceAccessImpl* mMoz2DPrefAccess;
-
 private:
   
   enum class UpdatePolicy {
@@ -162,6 +158,15 @@ private:
     }
     const char *Name() const override {
       return Prefname();
+    }
+    
+    
+    
+    T GetLiveValue() const {
+      if (IsPrefsServiceAvailable()) {
+        return PrefGet(Prefname(), mValue);
+      }
+      return mValue;
     }
     T mValue;
   };
@@ -301,6 +306,7 @@ private:
   DECL_GFX_PREF(Live, "gfx.layerscope.enabled",                LayerScopeEnabled, bool, false);
   DECL_GFX_PREF(Live, "gfx.layerscope.port",                   LayerScopePort, int32_t, 23456);
   
+  DECL_GFX_PREF(Live, "gfx.logging.level",                     GfxLoggingLevel, int32_t, mozilla::gfx::LOG_DEFAULT);
   DECL_GFX_PREF(Once, "gfx.logging.crash.length",              GfxLoggingCrashLength, uint32_t, 16);
   DECL_GFX_PREF(Live, "gfx.logging.painted-pixel-count.enabled",GfxLoggingPaintedPixelCountEnabled, bool, false);
   
@@ -520,6 +526,7 @@ public:
     MOZ_ASSERT(!sInstanceHasBeenDestroyed, "Should never recreate a gfxPrefs instance!");
     if (!sInstance) {
       sInstance = new gfxPrefs;
+      sInstance->Init();
     }
     MOZ_ASSERT(SingletonExists());
     return *sInstance;
@@ -532,6 +539,11 @@ private:
   static bool sInstanceHasBeenDestroyed;
 
 private:
+  
+  
+  
+  void Init();
+
   static bool IsPrefsServiceAvailable();
   static bool IsParentProcess();
   
