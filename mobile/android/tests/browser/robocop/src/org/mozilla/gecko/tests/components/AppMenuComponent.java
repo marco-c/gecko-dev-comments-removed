@@ -22,6 +22,7 @@ import org.mozilla.gecko.tests.helpers.WaitHelper;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.RelativeLayout;
 
 import com.jayway.android.robotium.solo.Condition;
 import com.jayway.android.robotium.solo.RobotiumUtils;
@@ -184,8 +185,10 @@ public class AppMenuComponent extends BaseComponent {
         for (TextView textView : textViewList) {
             if (TextUtils.equals(textView.getText(), text)) {
                 View relativeLayout = (View) textView.getParent();
-                View listMenuItemView = (View)relativeLayout.getParent();
-                return listMenuItemView;
+                if (relativeLayout instanceof RelativeLayout) {
+                    View listMenuItemView = (View)relativeLayout.getParent();
+                    return listMenuItemView;
+                }
             }
         }
         return null;
@@ -203,10 +206,9 @@ public class AppMenuComponent extends BaseComponent {
     }
 
     private void pressMenuItem(final String menuItemTitle) {
-        fAssertTrue("Menu is open", isMenuOpen(menuItemTitle));
-
         if (!hasLegacyMenu()) {
             final View menuItemView = findAppMenuItemView(menuItemTitle);
+            fAssertTrue("Menu is open", isMenuOpen(menuItemView));
 
             fAssertTrue(String.format("The menu item %s is enabled", menuItemTitle), menuItemView.isEnabled());
             fAssertEquals(String.format("The menu item %s is visible", menuItemTitle), View.VISIBLE,
@@ -214,6 +216,7 @@ public class AppMenuComponent extends BaseComponent {
 
             mSolo.clickOnView(menuItemView);
         } else {
+            fAssertTrue("Menu is open", isMenuOpen(menuItemTitle));
             pressLegacyMenuItem(menuItemTitle);
         }
     }
@@ -306,7 +309,20 @@ public class AppMenuComponent extends BaseComponent {
 
 
     private boolean isMenuOpen(String menuItemTitle) {
-        return mSolo.searchText(menuItemTitle, true);
+        final View menuItemView = findAppMenuItemView(menuItemTitle);
+        return isMenuOpen(menuItemView) ? true : mSolo.searchText(menuItemTitle, true);
+    }
+
+    
+
+
+
+
+
+
+
+    private boolean isMenuOpen(View menuItemView) {
+        return (menuItemView != null) && (menuItemView.getVisibility() == View.VISIBLE);
     }
 
     private void waitForMenuOpen() {
