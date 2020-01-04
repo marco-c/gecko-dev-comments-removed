@@ -27,7 +27,7 @@ function test() {
 }
 
 var tests = {
-  testMarkMicrodata: function(next) {
+  testMarkMicroformats: function(next) {
     
     let provider = Social._getProviderFromOrigin(manifest.origin);
     let port = provider.getWorkerPort();
@@ -36,23 +36,17 @@ var tests = {
     
     
     let expecting = JSON.stringify({
-      "url": "https://example.com/browser/browser/base/content/test/social/microdata.html",
-      "microdata": {
+      "url": "https://example.com/browser/browser/base/content/test/social/microformats.html",
+      "microformats": {
         "items": [{
-            "types": ["http://schema.org/UserComments"],
+            "type": ["h-review"],
             "properties": {
-              "url": ["https://example.com/browser/browser/base/content/test/social/microdata.html#c2"],
-              "creator": [{
-                  "types": ["http://schema.org/Person"],
-                  "properties": {
-                    "name": ["Charlotte"]
-                  }
-                }
-              ],
-              "commentTime": ["2013-08-29"]
+              "rating": ["4.5"]
             }
           }
-        ]
+        ],
+        "rels": {},
+        "rel-urls": {}
       }
     });
 
@@ -60,7 +54,7 @@ var tests = {
       let topic = e.data.topic;
       switch (topic) {
         case "got-share-data-message":
-          is(JSON.stringify(e.data.result), expecting, "microdata data ok");
+          is(JSON.stringify(e.data.result), expecting, "microformats data ok");
           gBrowser.removeTab(testTab);
           port.close();
           next();
@@ -69,11 +63,11 @@ var tests = {
     }
     port.postMessage({topic: "test-init"});
 
-    let url = "https://example.com/browser/browser/base/content/test/social/microdata.html"
+    let url = "https://example.com/browser/browser/base/content/test/social/microformats.html"
     addTab(url, function(tab) {
       testTab = tab;
       let doc = tab.linkedBrowser.contentDocument;
-      target = doc.getElementById("test-comment");
+      target = doc.getElementById("test-review");
       SocialMarks.markLink(manifest.origin, url, target);
     });
   }
