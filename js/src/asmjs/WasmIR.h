@@ -433,6 +433,19 @@ class FuncIR
     typedef Vector<ValType, 4, LifoAllocPolicy<Fallible>> ValTypeVector;
     typedef Vector<uint8_t, 4096, LifoAllocPolicy<Fallible>> Bytecode;
 
+  public:
+    
+    
+    
+    struct SourceCoords {
+        DebugOnly<uint32_t> offset; 
+        uint32_t line;
+        uint32_t column;
+    };
+
+  private:
+    typedef Vector<SourceCoords, 4, LifoAllocPolicy<Fallible>> SourceCoordsVector;
+
     
     
     PropertyName* name_;
@@ -442,6 +455,7 @@ class FuncIR
     uint32_t index_;
     const LifoSig* sig_;
     ValTypeVector localVars_;
+    SourceCoordsVector callSourceCoords_;
     Bytecode bytecode_;
     unsigned generateTime_;
 
@@ -453,12 +467,17 @@ class FuncIR
         index_(UINT_MAX),
         sig_(nullptr),
         localVars_(alloc),
+        callSourceCoords_(alloc),
         bytecode_(alloc),
         generateTime_(UINT_MAX)
     {}
 
     bool addVariable(ValType v) {
         return localVars_.append(v);
+    }
+    bool addSourceCoords(uint32_t line, uint32_t column) {
+        SourceCoords sc = { bytecode_.length(), line, column };
+        return callSourceCoords_.append(sc);
     }
 
     void finish(uint32_t funcIndex, const LifoSig& sig, unsigned generateTime) {
@@ -566,6 +585,7 @@ class FuncIR
     ValType localVarType(size_t i) const { return localVars_[i]; }
     size_t numLocals() const { return sig_->args().length() + numLocalVars(); }
     unsigned generateTime() const { MOZ_ASSERT(generateTime_ != UINT_MAX); return generateTime_; }
+    const SourceCoords& sourceCoords(size_t i) const { return callSourceCoords_[i]; }
 };
 
 } 
