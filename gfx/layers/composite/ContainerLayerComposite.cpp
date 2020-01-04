@@ -478,7 +478,7 @@ RenderMinimap(ContainerT* aContainer, LayerManagerComposite* aManager,
 {
   Compositor* compositor = aManager->GetCompositor();
 
-  if (aLayer->GetFrameMetricsCount() < 1) {
+  if (aLayer->GetScrollMetadataCount() < 1) {
     return;
   }
 
@@ -654,7 +654,7 @@ RenderLayers(ContainerT* aContainer,
     
     
     Matrix4x4 asyncTransform;
-    for (uint32_t i = layer->GetFrameMetricsCount(); i > 0; --i) {
+    for (uint32_t i = layer->GetScrollMetadataCount(); i > 0; --i) {
       if (layer->GetFrameMetrics(i - 1).IsScrollable()) {
         
         

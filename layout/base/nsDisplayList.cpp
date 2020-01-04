@@ -1695,7 +1695,7 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
   
   
   if (Layer* root = layerManager->GetRoot()) {
-      root->SetFrameMetrics(nsTArray<FrameMetrics>());
+      root->SetScrollMetadata(nsTArray<ScrollMetadata>());
   }
 
   ContainerLayerParameters containerParameters
@@ -1767,8 +1767,8 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
 
     nsRect viewport(aBuilder->ToReferenceFrame(frame), frame->GetSize());
 
-    root->SetFrameMetrics(
-      nsLayoutUtils::ComputeFrameMetrics(frame,
+    root->SetScrollMetadata(
+      nsLayoutUtils::ComputeScrollMetadata(frame,
                          rootScrollFrame, content,
                          aBuilder->FindReferenceFrameFor(frame),
                          root, FrameMetrics::NULL_SCROLL_ID, viewport, Nothing(),
@@ -4580,12 +4580,12 @@ nsDisplaySubDocument::BuildLayer(nsDisplayListBuilder* aBuilder,
   return layer.forget();
 }
 
-UniquePtr<FrameMetrics>
-nsDisplaySubDocument::ComputeFrameMetrics(Layer* aLayer,
-                                          const ContainerLayerParameters& aContainerParameters)
+UniquePtr<ScrollMetadata>
+nsDisplaySubDocument::ComputeScrollMetadata(Layer* aLayer,
+                                            const ContainerLayerParameters& aContainerParameters)
 {
   if (!(mFlags & GENERATE_SCROLLABLE_LAYER)) {
-    return UniquePtr<FrameMetrics>(nullptr);
+    return UniquePtr<ScrollMetadata>(nullptr);
   }
 
   nsPresContext* presContext = mFrame->PresContext();
@@ -4606,8 +4606,8 @@ nsDisplaySubDocument::ComputeFrameMetrics(Layer* aLayer,
                     mFrame->GetPosition() +
                     mFrame->GetOffsetToCrossDoc(ReferenceFrame());
 
-  return MakeUnique<FrameMetrics>(
-    nsLayoutUtils::ComputeFrameMetrics(
+  return MakeUnique<ScrollMetadata>(
+    nsLayoutUtils::ComputeScrollMetadata(
       mFrame, rootScrollFrame, rootScrollFrame->GetContent(), ReferenceFrame(),
       aLayer, mScrollParentId, viewport, Nothing(),
       isRootContentDocument, params));
@@ -4989,9 +4989,9 @@ nsDisplayScrollInfoLayer::GetLayerState(nsDisplayListBuilder* aBuilder,
   return LAYER_ACTIVE_EMPTY;
 }
 
-UniquePtr<FrameMetrics>
-nsDisplayScrollInfoLayer::ComputeFrameMetrics(Layer* aLayer,
-                                              const ContainerLayerParameters& aContainerParameters)
+UniquePtr<ScrollMetadata>
+nsDisplayScrollInfoLayer::ComputeScrollMetadata(Layer* aLayer,
+                                                const ContainerLayerParameters& aContainerParameters)
 {
   ContainerLayerParameters params = aContainerParameters;
   if (mScrolledFrame->GetContent() &&
@@ -5003,13 +5003,13 @@ nsDisplayScrollInfoLayer::ComputeFrameMetrics(Layer* aLayer,
                     mScrollFrame->GetPosition() +
                     mScrollFrame->GetOffsetToCrossDoc(ReferenceFrame());
 
-  FrameMetrics metrics = nsLayoutUtils::ComputeFrameMetrics(
+  ScrollMetadata metadata = nsLayoutUtils::ComputeScrollMetadata(
       mScrolledFrame, mScrollFrame, mScrollFrame->GetContent(),
       ReferenceFrame(), aLayer,
       mScrollParentId, viewport, Nothing(), false, params);
-  metrics.SetIsScrollInfoLayer(true);
+  metadata.GetMetrics().SetIsScrollInfoLayer(true);
 
-  return UniquePtr<FrameMetrics>(new FrameMetrics(metrics));
+  return UniquePtr<ScrollMetadata>(new ScrollMetadata(metadata));
 }
 
 

@@ -184,7 +184,7 @@ public:
 
 
 
-  void NotifyLayersUpdated(const FrameMetrics& aLayerMetrics, bool aIsFirstPaint,
+  void NotifyLayersUpdated(const ScrollMetadata& aScrollMetadata, bool aIsFirstPaint,
                            bool aThisLayerTreeUpdated);
 
   
@@ -681,7 +681,8 @@ protected:
 protected:
   
   
-  FrameMetrics mFrameMetrics;
+  ScrollMetadata mScrollMetadata;
+  FrameMetrics& mFrameMetrics;  
 
   
   

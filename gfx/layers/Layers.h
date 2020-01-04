@@ -855,12 +855,12 @@ public:
 
 
 
-  void SetFrameMetrics(const FrameMetrics& aFrameMetrics)
+  void SetScrollMetadata(const ScrollMetadata& aScrollMetadata)
   {
-    if (mFrameMetrics.Length() != 1 || mFrameMetrics[0] != aFrameMetrics) {
+    if (mScrollMetadata.Length() != 1 || mScrollMetadata[0] != aScrollMetadata) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) FrameMetrics", this));
-      mFrameMetrics.ReplaceElementsAt(0, mFrameMetrics.Length(), aFrameMetrics);
-      FrameMetricsChanged();
+      mScrollMetadata.ReplaceElementsAt(0, mScrollMetadata.Length(), aScrollMetadata);
+      ScrollMetadataChanged();
       Mutated();
     }
   }
@@ -882,12 +882,12 @@ public:
 
 
 
-  void SetFrameMetrics(const nsTArray<FrameMetrics>& aMetricsArray)
+  void SetScrollMetadata(const nsTArray<ScrollMetadata>& aMetadataArray)
   {
-    if (mFrameMetrics != aMetricsArray) {
+    if (mScrollMetadata != aMetadataArray) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) FrameMetrics", this));
-      mFrameMetrics = aMetricsArray;
-      FrameMetricsChanged();
+      mScrollMetadata = aMetadataArray;
+      ScrollMetadataChanged();
       Mutated();
     }
   }
@@ -1254,9 +1254,10 @@ public:
   uint32_t GetContentFlags() { return mContentFlags; }
   const gfx::IntRect& GetLayerBounds() const { return mLayerBounds; }
   const LayerIntRegion& GetVisibleRegion() const { return mVisibleRegion; }
+  const ScrollMetadata& GetScrollMetadata(uint32_t aIndex) const;
   const FrameMetrics& GetFrameMetrics(uint32_t aIndex) const;
-  uint32_t GetFrameMetricsCount() const { return mFrameMetrics.Length(); }
-  const nsTArray<FrameMetrics>& GetAllFrameMetrics() { return mFrameMetrics; }
+  uint32_t GetScrollMetadataCount() const { return mScrollMetadata.Length(); }
+  const nsTArray<ScrollMetadata>& GetAllScrollMetadata() { return mScrollMetadata; }
   bool HasScrollableFrameMetrics() const;
   bool IsScrollInfoLayer() const;
   const EventRegions& GetEventRegions() const { return mEventRegions; }
@@ -1670,7 +1671,7 @@ public:
   
   
 private:
-  void FrameMetricsChanged();
+  void ScrollMetadataChanged();
 public:
 
   void ApplyPendingUpdatesForThisTransaction();
@@ -1791,7 +1792,7 @@ protected:
   gfx::UserData mUserData;
   gfx::IntRect mLayerBounds;
   LayerIntRegion mVisibleRegion;
-  nsTArray<FrameMetrics> mFrameMetrics;
+  nsTArray<ScrollMetadata> mScrollMetadata;
   EventRegions mEventRegions;
   gfx::Matrix4x4 mTransform;
   
@@ -2497,8 +2498,6 @@ private:
 
   virtual bool RepositionChild(Layer* aChild, Layer* aAfter) override
   { MOZ_CRASH(); return false; }
-
-  using Layer::SetFrameMetrics;
 
 public:
   

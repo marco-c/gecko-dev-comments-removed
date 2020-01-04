@@ -38,7 +38,6 @@ public:
   static const ViewID NULL_SCROLL_ID;   
   static const ViewID START_SCROLL_ID = 2;  
                                         
-  static const FrameMetrics sNullMetrics;   
 
   FrameMetrics()
     : mScrollId(NULL_SCROLL_ID)
@@ -63,8 +62,6 @@ public:
     , mContentDescription()
     , mLineScrollAmount(0, 0)
     , mPageScrollAmount(0, 0)
-    , mClipRect()
-    , mMaskLayerIndex()
     , mPaintRequestTime()
     , mIsRootContent(false)
     , mHasScrollgrab(false)
@@ -105,8 +102,6 @@ public:
            
            mLineScrollAmount == aOther.mLineScrollAmount &&
            mPageScrollAmount == aOther.mPageScrollAmount &&
-           mClipRect == aOther.mClipRect &&
-           mMaskLayerIndex == aOther.mMaskLayerIndex &&
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mIsRootContent == aOther.mIsRootContent &&
            mHasScrollgrab == aOther.mHasScrollgrab &&
@@ -122,14 +117,6 @@ public:
   bool operator!=(const FrameMetrics& aOther) const
   {
     return !operator==(aOther);
-  }
-
-  bool IsDefault() const
-  {
-    FrameMetrics def;
-
-    def.mPresShellId = mPresShellId;
-    return (def == *this);
   }
 
   bool IsScrollable() const
@@ -528,28 +515,6 @@ public:
     mAllowVerticalScrollWithWheel = aValue;
   }
 
-  void SetClipRect(const Maybe<ParentLayerIntRect>& aClipRect)
-  {
-    mClipRect = aClipRect;
-  }
-  const Maybe<ParentLayerIntRect>& GetClipRect() const
-  {
-    return mClipRect;
-  }
-  bool HasClipRect() const {
-    return mClipRect.isSome();
-  }
-  const ParentLayerIntRect& ClipRect() const {
-    return mClipRect.ref();
-  }
-
-  void SetMaskLayerIndex(const Maybe<size_t>& aIndex) {
-    mMaskLayerIndex = aIndex;
-  }
-  const Maybe<size_t>& GetMaskLayerIndex() const {
-    return mMaskLayerIndex;
-  }
-
   void SetPaintRequestTime(const TimeStamp& aTime) {
     mPaintRequestTime = aTime;
   }
@@ -732,14 +697,6 @@ private:
   LayoutDeviceIntSize mPageScrollAmount;
 
   
-  Maybe<ParentLayerIntRect> mClipRect;
-
-  
-  
-  
-  Maybe<size_t> mMaskLayerIndex;
-
-  
   TimeStamp mPaintRequestTime;
 
   
@@ -792,6 +749,81 @@ private:
   void SetDoSmoothScroll(bool aValue) {
     mDoSmoothScroll = aValue;
   }
+};
+
+
+
+
+
+
+
+
+
+struct ScrollMetadata {
+  friend struct IPC::ParamTraits<mozilla::layers::ScrollMetadata>;
+public:
+  static const ScrollMetadata sNullMetadata;   
+
+  ScrollMetadata()
+    : mMetrics()
+    , mMaskLayerIndex()
+    , mClipRect()
+  {}
+
+  bool operator==(const ScrollMetadata& aOther) const
+  {
+    return mMetrics == aOther.mMetrics &&
+           mMaskLayerIndex == aOther.mMaskLayerIndex &&
+           mClipRect == aOther.mClipRect;
+  }
+
+  bool operator!=(const ScrollMetadata& aOther) const
+  {
+    return !operator==(aOther);
+  }
+
+  bool IsDefault() const
+  {
+    ScrollMetadata def;
+
+    def.mMetrics.SetPresShellId(mMetrics.GetPresShellId());
+    return (def == *this);
+  }
+
+  FrameMetrics& GetMetrics() { return mMetrics; }
+  const FrameMetrics& GetMetrics() const { return mMetrics; }
+
+  void SetMaskLayerIndex(const Maybe<size_t>& aIndex) {
+    mMaskLayerIndex = aIndex;
+  }
+  const Maybe<size_t>& GetMaskLayerIndex() const {
+    return mMaskLayerIndex;
+  }
+
+  void SetClipRect(const Maybe<ParentLayerIntRect>& aClipRect)
+  {
+    mClipRect = aClipRect;
+  }
+  const Maybe<ParentLayerIntRect>& GetClipRect() const
+  {
+    return mClipRect;
+  }
+  bool HasClipRect() const {
+    return mClipRect.isSome();
+  }
+  const ParentLayerIntRect& ClipRect() const {
+    return mClipRect.ref();
+  }
+private:
+  FrameMetrics mMetrics;
+
+  
+  
+  
+  Maybe<size_t> mMaskLayerIndex;
+
+  
+  Maybe<ParentLayerIntRect> mClipRect;
 };
 
 

@@ -402,7 +402,7 @@ public:
 
 
 
-  virtual mozilla::Maybe<mozilla::layers::FrameMetrics> ComputeFrameMetrics(
+  virtual mozilla::Maybe<mozilla::layers::ScrollMetadata> ComputeScrollMetadata(
     mozilla::layers::Layer* aLayer,
     nsIFrame* aContainerReferenceFrame,
     const ContainerLayerParameters& aParameters,
