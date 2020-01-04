@@ -568,6 +568,16 @@ JSCompartment::traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime t
 
     if (objectMetadataTable)
         objectMetadataTable->trace(trc);
+
+    if (scriptCountsMap && !trc->runtime()->isHeapMinorCollecting()) {
+        MOZ_ASSERT_IF(!trc->runtime()->isBeingDestroyed(), collectCoverage());
+        for (ScriptCountsMap::Range r = scriptCountsMap->all(); !r.empty(); r.popFront()) {
+            JSScript* script = const_cast<JSScript*>(r.front().key());
+            MOZ_ASSERT(script->hasScriptCounts());
+            TraceRoot(trc, &script, "profilingScripts");
+            MOZ_ASSERT(script == r.front().key(), "const_cast is only a work-around");
+        }
+    }
 }
 
 void
@@ -925,14 +935,15 @@ JSCompartment::updateDebuggerObservesFlag(unsigned flag)
 {
     MOZ_ASSERT(isDebuggee());
     MOZ_ASSERT(flag == DebuggerObservesAllExecution ||
+               flag == DebuggerObservesCoverage ||
                flag == DebuggerObservesAsmJS);
 
     const GlobalObject::DebuggerVector* v = maybeGlobal()->getDebuggers();
     for (Debugger * const* p = v->begin(); p != v->end(); p++) {
         Debugger* dbg = *p;
-        if (flag == DebuggerObservesAllExecution
-            ? dbg->observesAllExecution()
-            : dbg->observesAsmJS())
+        if (flag == DebuggerObservesAllExecution ? dbg->observesAllExecution() :
+            flag == DebuggerObservesCoverage ? dbg->observesCoverage() :
+            dbg->observesAsmJS())
         {
             debugModeBits |= flag;
             return;
@@ -949,6 +960,49 @@ JSCompartment::unsetIsDebuggee()
         debugModeBits &= ~DebuggerObservesMask;
         DebugScopes::onCompartmentUnsetIsDebuggee(this);
     }
+}
+
+void
+JSCompartment::updateDebuggerObservesCoverage()
+{
+    bool previousState = debuggerObservesCoverage();
+    updateDebuggerObservesFlag(DebuggerObservesCoverage);
+    if (previousState == debuggerObservesCoverage())
+        return;
+
+    if (debuggerObservesCoverage()) {
+        
+        
+        for (ActivationIterator iter(runtimeFromMainThread()); !iter.done(); ++iter) {
+            if (iter->isInterpreter())
+                iter->asInterpreter()->enableInterruptsUnconditionally();
+        }
+        return;
+    }
+
+    
+    
+    if (runtimeFromMainThread()->profilingScripts)
+        return;
+
+    clearScriptCounts();
+}
+
+void
+JSCompartment::clearScriptCounts()
+{
+    if (!scriptCountsMap)
+        return;
+
+    
+    
+    for (ScriptCountsMap::Range r = scriptCountsMap->all(); !r.empty(); r.popFront()) {
+        ScriptCounts* value = &r.front().value();
+        r.front().key()->takeOverScriptCountsMapEntry(value);
+    }
+
+    js_delete(scriptCountsMap);
+    scriptCountsMap = nullptr;
 }
 
 void

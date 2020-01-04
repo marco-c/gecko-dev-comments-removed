@@ -1639,6 +1639,8 @@ class JSScript : public js::gc::TenuredCell
     js::jit::IonScriptCounts* getIonCounts();
     void releaseScriptCounts(js::ScriptCounts* counts);
     void destroyScriptCounts(js::FreeOp* fop);
+    
+    void takeOverScriptCountsMapEntry(js::ScriptCounts* entryValue);
 
     jsbytecode* main() {
         return code() + mainOffset();

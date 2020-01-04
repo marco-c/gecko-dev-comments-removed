@@ -340,6 +340,10 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     js::HeapPtrObject uncaughtExceptionHook; 
     bool enabled;
     bool allowUnobservedAsmJS;
+
+    
+    bool collectCoverageInfo;
+
     JSCList breakpoints;                
 
     
@@ -545,6 +549,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static bool setUncaughtExceptionHook(JSContext* cx, unsigned argc, Value* vp);
     static bool getAllowUnobservedAsmJS(JSContext* cx, unsigned argc, Value* vp);
     static bool setAllowUnobservedAsmJS(JSContext* cx, unsigned argc, Value* vp);
+    static bool getCollectCoverageInfo(JSContext* cx, unsigned argc, Value* vp);
+    static bool setCollectCoverageInfo(JSContext* cx, unsigned argc, Value* vp);
     static bool getMemory(JSContext* cx, unsigned argc, Value* vp);
     static bool getOnIonCompilation(JSContext* cx, unsigned argc, Value* vp);
     static bool setOnIonCompilation(JSContext* cx, unsigned argc, Value* vp);
@@ -594,6 +600,10 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     
     IsObserving observesAsmJS() const;
 
+    
+    
+    IsObserving observesCoverage() const;
+
   private:
     static bool ensureExecutionObservabilityOfFrame(JSContext* cx, AbstractFramePtr frame);
     static bool ensureExecutionObservabilityOfCompartment(JSContext* cx, JSCompartment* comp);
@@ -601,6 +611,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static bool hookObservesAllExecution(Hook which);
 
     bool updateObservesAllExecutionOnDebuggees(JSContext* cx, IsObserving observing);
+    bool updateObservesCoverageOnDebuggees(JSContext* cx, IsObserving observing);
     void updateObservesAsmJSOnDebuggees(IsObserving observing);
 
     JSObject* getHook(Hook hook) const;

@@ -380,6 +380,13 @@ JSRuntime::~JSRuntime()
         }
 
         
+
+
+
+        for (CompartmentsIter comp(this, SkipAtoms); !comp.done(); comp.next())
+            comp->clearScriptCounts();
+
+        
         finishAtoms();
 
         

@@ -92,6 +92,12 @@ BaselineCompiler::compile()
         return Method_Error;
 
     
+    
+    
+    if (!script->hasScriptCounts() && cx->compartment()->collectCoverage())
+        script->initScriptCounts(cx);
+
+    
     AutoEnterAnalysis autoEnterAnalysis(cx);
 
     MOZ_ASSERT(!script->hasBaselineScript());
