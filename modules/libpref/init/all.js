@@ -2385,9 +2385,6 @@ pref("layout.css.grid-template-subgrid-value.enabled", false);
 pref("layout.css.contain.enabled", false);
 
 
-pref("layout.css.ruby.enabled", true);
-
-
 pref("layout.css.display-contents.enabled", true);
 
 

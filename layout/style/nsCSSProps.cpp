@@ -1224,15 +1224,14 @@ KTableEntry nsCSSProps::kDisplayKTable[] = {
 #endif
   { eCSSKeyword_flex,                NS_STYLE_DISPLAY_FLEX },
   { eCSSKeyword_inline_flex,         NS_STYLE_DISPLAY_INLINE_FLEX },
-  
-  { eCSSKeyword_grid,                NS_STYLE_DISPLAY_GRID },
-  { eCSSKeyword_inline_grid,         NS_STYLE_DISPLAY_INLINE_GRID },
-  
   { eCSSKeyword_ruby,                NS_STYLE_DISPLAY_RUBY },
   { eCSSKeyword_ruby_base,           NS_STYLE_DISPLAY_RUBY_BASE },
   { eCSSKeyword_ruby_base_container, NS_STYLE_DISPLAY_RUBY_BASE_CONTAINER },
   { eCSSKeyword_ruby_text,           NS_STYLE_DISPLAY_RUBY_TEXT },
   { eCSSKeyword_ruby_text_container, NS_STYLE_DISPLAY_RUBY_TEXT_CONTAINER },
+  
+  { eCSSKeyword_grid,                NS_STYLE_DISPLAY_GRID },
+  { eCSSKeyword_inline_grid,         NS_STYLE_DISPLAY_INLINE_GRID },
   
   
   { eCSSKeyword_contents,            NS_STYLE_DISPLAY_CONTENTS },
