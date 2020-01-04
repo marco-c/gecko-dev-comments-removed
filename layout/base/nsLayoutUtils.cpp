@@ -4550,7 +4550,7 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
   } else if (aType == nsLayoutUtils::MIN_ISIZE &&
              (aStyleSize.HasPercent() ||
               aStyleMaxSize.HasPercent()) &&
-             aFrame->IsFrameOfType(nsIFrame::eReplaced)) {
+             aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) {
     
     
     result = 0; 
