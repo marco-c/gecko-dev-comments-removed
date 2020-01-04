@@ -53,20 +53,15 @@ def docker_worker_make_via_build_mulet_linux_sh(config, job, taskdesc):
     })
 
     env['MOZCONFIG'] = run['mozconfig']
-    env['TOOLTOOL_MANIFEST'] = run['tooltool-manifest']
 
     
-    worker['relengapi-proxy'] = True
     worker['caches'].append({
         'type': 'persistent',
         'name': 'tooltool-cache',
-        
-        
-        'mount-point': '/home/worker/tools/tooltool-cache',
+        'mount-point': '/home/worker/tooltool-cache',
     })
-    taskdesc['scopes'].extend([
-        'docker-worker:relengapi-proxy:tooltool.download.public',
-    ])
+    env['TOOLTOOL_CACHE'] = '/home/worker/tooltool-cache'
+    env['TOOLTOOL_MANIFEST'] = run['tooltool-manifest']
     env['TOOLTOOL_REPO'] = 'https://github.com/mozilla/build-tooltool'
     env['TOOLTOOL_REV'] = 'master'
 
@@ -103,11 +98,6 @@ def docker_worker_mulet_simulator(config, job, taskdesc):
 
     taskdesc.setdefault('routes', []).extend([
         'index.gecko.v1.{project}.latest.simulator.opt'.format(**config.params),
-    ])
-
-    
-    taskdesc.setdefault('scopes', []).extend([
-        'docker-worker:cache:level-{level}-{project}-tc-vcs'.format(**config.params),
     ])
 
     shell_command = run['shell-command'].format(**config.params)
