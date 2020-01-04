@@ -16,6 +16,7 @@
 #include "PrincipalChangeObserver.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/dom/MediaTrackSettingsBinding.h"
+#include "mozilla/media/MediaUtils.h"
 
 namespace mozilla {
 
@@ -38,6 +39,7 @@ namespace dom {
 
 class AudioStreamTrack;
 class VideoStreamTrack;
+class MediaStreamError;
 
 
 
@@ -122,14 +124,15 @@ public:
 
   virtual nsresult TakePhoto(MediaEnginePhotoCallback*) const { return NS_ERROR_NOT_IMPLEMENTED; }
 
+  typedef media::Pledge<bool, dom::MediaStreamError*> PledgeVoid;
+
   
 
 
 
-  virtual already_AddRefed<Promise>
+  virtual already_AddRefed<PledgeVoid>
   ApplyConstraints(nsPIDOMWindowInner* aWindow,
-                   const dom::MediaTrackConstraints& aConstraints,
-                   ErrorResult &aRv);
+                   const dom::MediaTrackConstraints& aConstraints) = 0;
 
   
 
@@ -209,6 +212,13 @@ public:
   {}
 
   MediaSourceEnum GetMediaSource() const override { return mMediaSource; }
+
+  already_AddRefed<PledgeVoid>
+  ApplyConstraints(nsPIDOMWindowInner* aWindow,
+                   const dom::MediaTrackConstraints& aConstraints) override
+  {
+    return nullptr;
+  }
 
   void Stop() override {}
 
