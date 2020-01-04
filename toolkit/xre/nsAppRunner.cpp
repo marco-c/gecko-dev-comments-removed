@@ -3366,6 +3366,24 @@ XREMain::XRE_mainInit(bool* aExitFlag)
   }
 #endif
 
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
+  bool brokerInitialized = SandboxBroker::Initialize();
+  Telemetry::Accumulate(Telemetry::SANDBOX_BROKER_INITIALIZED,
+                        brokerInitialized);
+  if (!brokerInitialized) {
+#if defined(MOZ_CONTENT_SANDBOX)
+    
+    
+    if (BrowserTabsRemoteAutostart()) {
+      MOZ_CRASH("Failed to initialize broker services, can't continue.");
+    }
+#endif
+    
+    NS_WARNING("Failed to initialize broker services, sandboxed processes will "
+               "fail to start.");
+  }
+#endif
+
 #ifdef XP_MACOSX
   if (EnvHasValue("MOZ_LAUNCHED_CHILD")) {
     
@@ -3729,12 +3747,6 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
     int result;
 #ifdef XP_WIN
     UseParentConsole();
-#if defined(MOZ_SANDBOX)
-    if (!SandboxBroker::Initialize()) {
-      NS_WARNING("Failed to initialize broker services, sandboxed processes "
-                 "will fail to start.");
-    }
-#endif
 #endif
     
     if (mozilla::RunGTest) {
@@ -4320,20 +4332,6 @@ XREMain::XRE_mainRun()
   }
 #endif 
 
-#if defined(MOZ_SANDBOX) && defined(XP_WIN)
-  if (!SandboxBroker::Initialize()) {
-#if defined(MOZ_CONTENT_SANDBOX)
-    
-    
-    if (BrowserTabsRemoteAutostart()) {
-      MOZ_CRASH("Failed to initialize broker services, can't continue.");
-    }
-#endif
-    
-    NS_WARNING("Failed to initialize broker services, sandboxed processes will "
-               "fail to start.");
-  }
-#endif
 #if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   SetUpSandboxEnvironment();
 #endif
