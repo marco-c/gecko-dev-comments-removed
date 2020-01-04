@@ -227,7 +227,7 @@ nsPropertiesParser::ParseValueCharacter(char16_t aChar, const char16_t* aCur,
             aTokenStart = aCur + 1;
             break;
           }
-        
+          MOZ_FALLTHROUGH;
 
         case '\r':
           
