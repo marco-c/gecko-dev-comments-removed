@@ -3096,6 +3096,10 @@ nsDOMWindowUtils::ExitFullscreen()
 {
   nsCOMPtr<nsIDocument> doc = GetDocument();
   NS_ENSURE_STATE(doc);
+
+  
+  
+  nsSize oldSize = OldWindowSize::GetAndRemove(doc->GetWindow());
   if (!doc->IsFullScreenDoc()) {
     return NS_OK;
   }
@@ -3104,9 +3108,7 @@ nsDOMWindowUtils::ExitFullscreen()
   
   
   
-  FullscreenChangePrepare prepare(
-    GetPresShell(), OldWindowSize::GetAndRemove(doc->GetWindow()));
-
+  FullscreenChangePrepare prepare(GetPresShell(), oldSize);
   nsIDocument::ExitFullscreenInDocTree(doc);
   return NS_OK;
 }
