@@ -9,6 +9,7 @@
 #include "VP8TrackEncoder.h"
 #include "ImageContainer.h"
 #include "MediaStreamGraph.h"
+#include "MediaStreamListener.h"
 #include "WebMWriter.h" 
 
 using ::testing::TestWithParam;
@@ -296,7 +297,7 @@ TEST(VP8VideoTrackEncoder, EncodeComplete)
 
   
   VideoSegment segment;
-  encoder.NotifyQueuedTrackChanges(nullptr, 0, 0, MediaStreamListener::TRACK_EVENT_ENDED, segment);
+  encoder.NotifyQueuedTrackChanges(nullptr, 0, 0, TrackEventCommand::TRACK_EVENT_ENDED, segment);
 
   
   

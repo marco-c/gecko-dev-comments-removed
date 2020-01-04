@@ -9,6 +9,7 @@
 #include "MediaStreamGraph.h"
 #include "mozilla/dom/MediaStreamTrack.h"
 #include "GetUserMediaRequest.h"
+#include "MediaStreamListener.h"
 #include "nsContentUtils.h"
 #include "nsHashPropertyBag.h"
 #ifdef MOZ_WIDGET_GONK
@@ -242,6 +243,253 @@ HostHasPermission(nsIURI &docURI)
 
   return false;
 }
+
+
+
+
+
+
+class GetUserMediaCallbackMediaStreamListener : public MediaStreamListener
+{
+public:
+  
+  GetUserMediaCallbackMediaStreamListener(base::Thread *aThread,
+    uint64_t aWindowID,
+    const PrincipalHandle& aPrincipalHandle)
+    : mMediaThread(aThread)
+    , mMainThreadCheck(nullptr)
+    , mWindowID(aWindowID)
+    , mPrincipalHandle(aPrincipalHandle)
+    , mStopped(false)
+    , mFinished(false)
+    , mRemoved(false)
+    , mAudioStopped(false)
+    , mVideoStopped(false) {}
+
+  ~GetUserMediaCallbackMediaStreamListener()
+  {
+    Unused << mMediaThread;
+    
+    
+  }
+
+  void Activate(already_AddRefed<SourceMediaStream> aStream,
+                AudioDevice* aAudioDevice,
+                VideoDevice* aVideoDevice)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    mMainThreadCheck = PR_GetCurrentThread();
+    mStream = aStream;
+    mAudioDevice = aAudioDevice;
+    mVideoDevice = aVideoDevice;
+
+    mStream->AddListener(this);
+  }
+
+  MediaStream *Stream() 
+  {
+    return mStream;
+  }
+  SourceMediaStream *GetSourceStream()
+  {
+    NS_ASSERTION(mStream,"Getting stream from never-activated GUMCMSListener");
+    if (!mStream) {
+      return nullptr;
+    }
+    return mStream->AsSourceStream();
+  }
+
+  void StopSharing();
+
+  void StopTrack(TrackID aID);
+
+  typedef media::Pledge<bool, dom::MediaStreamError*> PledgeVoid;
+
+  already_AddRefed<PledgeVoid>
+  ApplyConstraintsToTrack(nsPIDOMWindowInner* aWindow,
+                          TrackID aID,
+                          const dom::MediaTrackConstraints& aConstraints);
+
+  
+  
+  bool CapturingVideo()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mVideoDevice && !mStopped &&
+           !mVideoDevice->GetSource()->IsAvailable() &&
+           mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Camera &&
+           (!mVideoDevice->GetSource()->IsFake() ||
+            Preferences::GetBool("media.navigator.permission.fake"));
+  }
+  bool CapturingAudio()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mAudioDevice && !mStopped &&
+           !mAudioDevice->GetSource()->IsAvailable() &&
+           (!mAudioDevice->GetSource()->IsFake() ||
+            Preferences::GetBool("media.navigator.permission.fake"));
+  }
+  bool CapturingScreen()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mVideoDevice && !mStopped &&
+           !mVideoDevice->GetSource()->IsAvailable() &&
+           mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Screen;
+  }
+  bool CapturingWindow()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mVideoDevice && !mStopped &&
+           !mVideoDevice->GetSource()->IsAvailable() &&
+           mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Window;
+  }
+  bool CapturingApplication()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mVideoDevice && !mStopped &&
+           !mVideoDevice->GetSource()->IsAvailable() &&
+           mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Application;
+  }
+  bool CapturingBrowser()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mVideoDevice && !mStopped &&
+           mVideoDevice->GetSource()->IsAvailable() &&
+           mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Browser;
+  }
+
+  
+  
+  void Stop();
+
+  void
+  AudioConfig(bool aEchoOn, uint32_t aEcho,
+              bool aAgcOn, uint32_t aAGC,
+              bool aNoiseOn, uint32_t aNoise,
+              int32_t aPlayoutDelay);
+
+  void
+  Remove()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    
+    
+    if (mStream && !mRemoved) {
+      MM_LOG(("Listener removed on purpose, mFinished = %d", (int) mFinished));
+      mRemoved = true; 
+      
+      if (!mStream->IsDestroyed()) {
+        mStream->RemoveListener(this);
+      }
+    }
+  }
+
+  
+  void
+  NotifyPull(MediaStreamGraph* aGraph, StreamTime aDesiredTime) override
+  {
+    
+    
+    if (mAudioDevice) {
+      mAudioDevice->GetSource()->NotifyPull(aGraph, mStream, kAudioTrack,
+                                            aDesiredTime, mPrincipalHandle);
+    }
+    if (mVideoDevice) {
+      mVideoDevice->GetSource()->NotifyPull(aGraph, mStream, kVideoTrack,
+                                            aDesiredTime, mPrincipalHandle);
+    }
+  }
+
+  void
+  NotifyEvent(MediaStreamGraph* aGraph,
+              MediaStreamGraphEvent aEvent) override
+  {
+    nsresult rv;
+    nsCOMPtr<nsIThread> thread;
+
+    switch (aEvent) {
+      case MediaStreamGraphEvent::EVENT_FINISHED:
+        rv = NS_GetMainThread(getter_AddRefs(thread));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          NS_ASSERTION(false, "Mainthread not available; running on current thread");
+          
+          MOZ_RELEASE_ASSERT(mMainThreadCheck == PR_GetCurrentThread());
+          NotifyFinished();
+          return;
+        }
+        thread->Dispatch(NewRunnableMethod(this, &GetUserMediaCallbackMediaStreamListener::NotifyFinished),
+                         NS_DISPATCH_NORMAL);
+        break;
+      case MediaStreamGraphEvent::EVENT_REMOVED:
+        rv = NS_GetMainThread(getter_AddRefs(thread));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          NS_ASSERTION(false, "Mainthread not available; running on current thread");
+          
+          MOZ_RELEASE_ASSERT(mMainThreadCheck == PR_GetCurrentThread());
+          NotifyRemoved();
+          return;
+        }
+        thread->Dispatch(NewRunnableMethod(this, &GetUserMediaCallbackMediaStreamListener::NotifyRemoved),
+                         NS_DISPATCH_NORMAL);
+        break;
+      case MediaStreamGraphEvent::EVENT_HAS_DIRECT_LISTENERS:
+        NotifyDirectListeners(aGraph, true);
+        break;
+      case MediaStreamGraphEvent::EVENT_HAS_NO_DIRECT_LISTENERS:
+        NotifyDirectListeners(aGraph, false);
+        break;
+      default:
+        break;
+    }
+  }
+
+  void
+  NotifyFinished();
+
+  void
+  NotifyRemoved();
+
+  void
+  NotifyDirectListeners(MediaStreamGraph* aGraph, bool aHasListeners);
+
+  PrincipalHandle GetPrincipalHandle() const { return mPrincipalHandle; }
+
+private:
+  
+  base::Thread* mMediaThread;
+  
+  PRThread* mMainThreadCheck;
+
+  uint64_t mWindowID;
+  const PrincipalHandle mPrincipalHandle;
+
+  
+  bool mStopped;
+
+  
+  
+  bool mFinished;
+
+  
+  
+  bool mRemoved;
+
+  
+  
+  bool mAudioStopped;
+
+  
+  
+  bool mVideoStopped;
+
+  
+
+  
+  
+  RefPtr<AudioDevice> mAudioDevice; 
+  RefPtr<VideoDevice> mVideoDevice; 
+  RefPtr<SourceMediaStream> mStream; 
+};
 
 
 
@@ -3144,14 +3392,14 @@ GetUserMediaCallbackMediaStreamListener::StopSharing()
 
 
 
-already_AddRefed<GetUserMediaCallbackMediaStreamListener::PledgeVoid>
+already_AddRefed<media::Pledge<bool, dom::MediaStreamError*>>
 GetUserMediaCallbackMediaStreamListener::ApplyConstraintsToTrack(
     nsPIDOMWindowInner* aWindow,
     TrackID aTrackID,
     const MediaTrackConstraints& aConstraints)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<PledgeVoid> p = new PledgeVoid();
+  RefPtr<media::Pledge<bool, dom::MediaStreamError*>> p = new media::Pledge<bool, dom::MediaStreamError*>();
 
   
   
@@ -3204,7 +3452,7 @@ GetUserMediaCallbackMediaStreamListener::ApplyConstraintsToTrack(
       if (!mgr) {
         return NS_OK;
       }
-      RefPtr<PledgeVoid> p = mgr->mOutstandingVoidPledges.Remove(id);
+      RefPtr<media::Pledge<bool, dom::MediaStreamError*>> p = mgr->mOutstandingVoidPledges.Remove(id);
       if (p) {
         if (NS_SUCCEEDED(rv)) {
           p->Resolve(false);
@@ -3318,6 +3566,26 @@ GetUserMediaCallbackMediaStreamListener::NotifyRemoved()
   if (!mFinished) {
     NotifyFinished();
   }
+}
+
+GetUserMediaNotificationEvent::GetUserMediaNotificationEvent(
+    GetUserMediaCallbackMediaStreamListener* aListener,
+    GetUserMediaStatus aStatus,
+    bool aIsAudio, bool aIsVideo, uint64_t aWindowID)
+: mListener(aListener) , mStatus(aStatus) , mIsAudio(aIsAudio)
+, mIsVideo(aIsVideo), mWindowID(aWindowID) {}
+
+GetUserMediaNotificationEvent::GetUserMediaNotificationEvent(
+    GetUserMediaStatus aStatus,
+    already_AddRefed<DOMMediaStream> aStream,
+    OnTracksAvailableCallback* aOnTracksAvailableCallback,
+    bool aIsAudio, bool aIsVideo, uint64_t aWindowID,
+    already_AddRefed<nsIDOMGetUserMediaErrorCallback> aError)
+: mStream(aStream), mOnTracksAvailableCallback(aOnTracksAvailableCallback),
+  mStatus(aStatus), mIsAudio(aIsAudio), mIsVideo(aIsVideo), mWindowID(aWindowID),
+  mOnFailure(aError) {}
+GetUserMediaNotificationEvent::~GetUserMediaNotificationEvent()
+{
 }
 
 NS_IMETHODIMP

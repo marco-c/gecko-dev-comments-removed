@@ -12,14 +12,13 @@
 
 #include "mozilla/dom/AudioChannelBinding.h"
 
-#include "AudioSegment.h"
 #include "AudioStream.h"
 #include "nsTArray.h"
 #include "nsIRunnable.h"
-#include "StreamTracks.h"
 #include "VideoFrameContainer.h"
 #include "VideoSegment.h"
 #include "MainThreadUtils.h"
+#include "StreamTracks.h"
 #include "nsAutoPtr.h"
 #include "nsAutoRef.h"
 #include <speex/speex_resampler.h>
@@ -89,125 +88,6 @@ class MediaStreamGraphImpl;
 class ProcessedMediaStream;
 class SourceMediaStream;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MediaStreamListener {
-protected:
-  
-  virtual ~MediaStreamListener() {}
-
-public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStreamListener)
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  virtual void NotifyPull(MediaStreamGraph* aGraph, StreamTime aDesiredTime) {}
-
-  enum Blocking {
-    BLOCKED,
-    UNBLOCKED
-  };
-  
-
-
-
-  virtual void NotifyBlockingChanged(MediaStreamGraph* aGraph, Blocking aBlocked) {}
-
-  
-
-
-
-
-
-  virtual void NotifyHasCurrentData(MediaStreamGraph* aGraph) {}
-
-  
-
-
-
-
-  virtual void NotifyOutput(MediaStreamGraph* aGraph, GraphTime aCurrentTime) {}
-
-  enum MediaStreamGraphEvent {
-    EVENT_FINISHED,
-    EVENT_REMOVED,
-    EVENT_HAS_DIRECT_LISTENERS, 
-    EVENT_HAS_NO_DIRECT_LISTENERS,  
-  };
-
-  
-
-
-  virtual void NotifyEvent(MediaStreamGraph* aGraph, MediaStreamGraphEvent aEvent) {}
-
-  
-  enum {
-    TRACK_EVENT_CREATED = 0x01,
-    TRACK_EVENT_ENDED = 0x02,
-    TRACK_EVENT_UNUSED = ~(TRACK_EVENT_ENDED | TRACK_EVENT_CREATED),
-  };
-  
-
-
-
-
-
-
-
-
-  virtual void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                        StreamTime aTrackOffset,
-                                        uint32_t aTrackEvents,
-                                        const MediaSegment& aQueuedMedia,
-                                        MediaStream* aInputStream = nullptr,
-                                        TrackID aInputTrackID = TRACK_INVALID) {}
-
-  
-
-
-
-  virtual void NotifyQueuedAudioData(MediaStreamGraph* aGraph, TrackID aID,
-                                     StreamTime aTrackOffset,
-                                     const AudioSegment& aQueuedMedia,
-                                     MediaStream* aInputStream = nullptr,
-                                     TrackID aInputTrackID = TRACK_INVALID) {}
-
-  
-
-
-
-
-  virtual void NotifyFinishedTrackCreation(MediaStreamGraph* aGraph) {}
-};
-
 class AudioDataListenerInterface {
 protected:
   
@@ -259,177 +139,6 @@ public:
 
 
 
-
-
-
-
-class MediaStreamTrackListener
-{
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStreamTrackListener)
-
-public:
-  virtual void NotifyQueuedChanges(MediaStreamGraph* aGraph,
-                                   StreamTime aTrackOffset,
-                                   const MediaSegment& aQueuedMedia) {}
-
-  virtual void NotifyPrincipalHandleChanged(MediaStreamGraph* aGraph,
-                                            const PrincipalHandle& aNewPrincipalHandle) {}
-
-  virtual void NotifyEnded() {}
-
-  virtual void NotifyRemoved() {}
-
-protected:
-  virtual ~MediaStreamTrackListener() {}
-};
-
-
-
-
-
-
-
-
-class DirectMediaStreamListener : public MediaStreamListener
-{
-public:
-  virtual ~DirectMediaStreamListener() {}
-
-  
-
-
-
-
-
-  virtual void NotifyRealtimeData(MediaStreamGraph* aGraph, TrackID aID,
-                                  StreamTime aTrackOffset,
-                                  uint32_t aTrackEvents,
-                                  const MediaSegment& aMedia) {}
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class DirectMediaStreamTrackListener : public MediaStreamTrackListener
-{
-  friend class SourceMediaStream;
-  friend class TrackUnionStream;
-
-public:
-  
-
-
-
-
-
-
-
-
-
-  virtual void NotifyRealtimeTrackData(MediaStreamGraph* aGraph,
-                                       StreamTime aTrackOffset,
-                                       const MediaSegment& aMedia) {}
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  enum class InstallationResult {
-    TRACK_NOT_FOUND_AT_SOURCE,
-    TRACK_TYPE_NOT_SUPPORTED,
-    STREAM_NOT_SUPPORTED,
-    SUCCESS
-  };
-  virtual void NotifyDirectListenerInstalled(InstallationResult aResult) {}
-  virtual void NotifyDirectListenerUninstalled() {}
-
-protected:
-  virtual ~DirectMediaStreamTrackListener() {}
-
-  void MirrorAndDisableSegment(AudioSegment& aFrom, AudioSegment& aTo)
-  {
-    aTo.Clear();
-    aTo.AppendNullData(aFrom.GetDuration());
-  }
-
-  void NotifyRealtimeTrackDataAndApplyTrackDisabling(MediaStreamGraph* aGraph,
-                                                     StreamTime aTrackOffset,
-                                                     MediaSegment& aMedia)
-  {
-    if (mDisabledCount == 0) {
-      NotifyRealtimeTrackData(aGraph, aTrackOffset, aMedia);
-      return;
-    }
-
-    if (!mMedia) {
-      mMedia = aMedia.CreateEmptyClone();
-    }
-    if (aMedia.GetType() == MediaSegment::AUDIO) {
-      MirrorAndDisableSegment(static_cast<AudioSegment&>(aMedia),
-                              static_cast<AudioSegment&>(*mMedia));
-    } else {
-      MOZ_CRASH("Unsupported media type");
-    }
-    NotifyRealtimeTrackData(aGraph, aTrackOffset, *mMedia);
-  }
-
-  void IncreaseDisabled()
-  {
-    ++mDisabledCount;
-  }
-  void DecreaseDisabled()
-  {
-    --mDisabledCount;
-    MOZ_ASSERT(mDisabledCount >= 0, "Double decrease");
-  }
-
-  
-  
-  
-  Atomic<int32_t> mDisabledCount;
-
-  nsAutoPtr<MediaSegment> mMedia;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class MainThreadMediaStreamListener {
 public:
   virtual void NotifyMainThreadStreamFinished() = 0;
@@ -446,6 +155,23 @@ struct AudioNodeSizes
   size_t mEngine;
   nsCString mNodeType;
 };
+
+class AudioNodeEngine;
+class AudioNodeExternalInputStream;
+class AudioNodeStream;
+class AudioSegment;
+class CameraPreviewMediaStream;
+class DirectMediaStreamListener;
+class DirectMediaStreamTrackListener;
+class MediaInputPort;
+class MediaStreamGraphImpl;
+class MediaStreamListener;
+class MediaStreamTrackListener;
+class ProcessedMediaStream;
+class SourceMediaStream;
+
+enum MediaStreamGraphEvent : uint32_t;
+enum TrackEventCommand : uint32_t;
 
 
 
@@ -536,13 +262,7 @@ public:
 
 protected:
   
-  virtual ~MediaStream()
-  {
-    MOZ_COUNT_DTOR(MediaStream);
-    NS_ASSERTION(mMainThreadDestroyed, "Should have been destroyed already");
-    NS_ASSERTION(mMainThreadListeners.IsEmpty(),
-                 "All main thread listeners should have been removed");
-  }
+  virtual ~MediaStream();
 
 public:
   
@@ -864,7 +584,7 @@ protected:
     float mVolume;
   };
   nsTArray<AudioOutput> mAudioOutputs;
-  nsTArray<RefPtr<VideoFrameContainer> > mVideoOutputs;
+  nsTArray<RefPtr<VideoFrameContainer>> mVideoOutputs;
   
   
   VideoFrame mLastPlayedVideoFrame;
@@ -953,14 +673,7 @@ protected:
 class SourceMediaStream : public MediaStream
 {
 public:
-  explicit SourceMediaStream() :
-    MediaStream(),
-    mMutex("mozilla::media::SourceMediaStream"),
-    mUpdateKnownTracksTime(0),
-    mPullEnabled(false),
-    mUpdateFinished(false),
-    mNeedsMixing(false)
-  {}
+  explicit SourceMediaStream();
 
   SourceMediaStream* AsSourceStream() override { return this; }
 
@@ -992,8 +705,8 @@ public:
 
 
 
-  void NotifyListenersEventImpl(MediaStreamListener::MediaStreamGraphEvent aEvent);
-  void NotifyListenersEvent(MediaStreamListener::MediaStreamGraphEvent aEvent);
+  void NotifyListenersEventImpl(MediaStreamGraphEvent aEvent);
+  void NotifyListenersEvent(MediaStreamGraphEvent aEvent);
   void AddDirectListener(DirectMediaStreamListener* aListener);
   void RemoveDirectListener(DirectMediaStreamListener* aListener);
 
@@ -1016,10 +729,7 @@ public:
 
 
   void AddAudioTrack(TrackID aID, TrackRate aRate, StreamTime aStart,
-                     AudioSegment* aSegment, uint32_t aFlags = 0)
-  {
-    AddTrackInternal(aID, aRate, aStart, aSegment, aFlags);
-  }
+                     AudioSegment* aSegment, uint32_t aFlags = 0);
 
   
 
@@ -1095,11 +805,10 @@ public:
   friend class MediaStreamGraphImpl;
 
 protected:
-  enum TrackCommands {
-    TRACK_CREATE = MediaStreamListener::TRACK_EVENT_CREATED,
-    TRACK_END = MediaStreamListener::TRACK_EVENT_ENDED,
-    TRACK_UNUSED = MediaStreamListener::TRACK_EVENT_UNUSED,
-  };
+  enum TrackCommands : uint32_t;
+
+  virtual ~SourceMediaStream();
+
   
 
 

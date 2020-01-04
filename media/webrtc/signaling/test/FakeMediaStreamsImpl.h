@@ -128,7 +128,7 @@ void Fake_AudioStreamSource::Periodic() {
     (*it)->NotifyQueuedTrackChanges(nullptr, 
                                     0, 
                                     0, 
-                                    0, 
+                                    static_cast<mozilla::TrackEventCommand>(0), 
                                     segment,
                                     nullptr, 
                                     -1);     

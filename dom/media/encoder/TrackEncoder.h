@@ -48,12 +48,7 @@ public:
 
 
   void NotifyEvent(MediaStreamGraph* aGraph,
-                   MediaStreamListener::MediaStreamGraphEvent event)
-  {
-    if (event == MediaStreamListener::MediaStreamGraphEvent::EVENT_REMOVED) {
-      NotifyEndOfStream();
-    }
-  }
+                   MediaStreamGraphEvent event);
 
   
 
