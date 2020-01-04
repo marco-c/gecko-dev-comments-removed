@@ -3746,7 +3746,7 @@ ContainerState::ComputeOpaqueRect(nsDisplayItem* aItem,
     if (sf) {
       nsRect displayport;
       bool usingDisplayport =
-        nsLayoutUtils::GetDisplayPort((*aAnimatedGeometryRoot)->GetContent(), &displayport);
+        nsLayoutUtils::GetDisplayPortRelativeToScrollFrame((*aAnimatedGeometryRoot)->GetContent(), &displayport);
       if (!usingDisplayport) {
         
         
