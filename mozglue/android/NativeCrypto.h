@@ -23,6 +23,30 @@ JNIEXPORT jbyteArray JNICALL Java_org_mozilla_gecko_background_nativecode_Native
 JNIEXPORT jbyteArray JNICALL Java_org_mozilla_gecko_background_nativecode_NativeCrypto_sha1
   (JNIEnv *, jclass, jbyteArray);
 
+
+
+
+
+
+JNIEXPORT jbyteArray JNICALL Java_org_mozilla_gecko_background_nativecode_NativeCrypto_sha256init
+  (JNIEnv *, jclass);
+
+
+
+
+
+
+JNIEXPORT void JNICALL Java_org_mozilla_gecko_background_nativecode_NativeCrypto_sha256update
+  (JNIEnv *, jclass, jbyteArray, jbyteArray);
+
+
+
+
+
+
+JNIEXPORT jbyteArray JNICALL Java_org_mozilla_gecko_background_nativecode_NativeCrypto_sha256finalize
+  (JNIEnv *, jclass, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif

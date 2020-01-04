@@ -42,4 +42,19 @@ public class NativeCrypto {
 
 
   public native static byte[] sha1(byte[] str);
+
+  
+
+
+  public native static byte[] sha256init();
+
+  
+
+
+  public native static void sha256update(byte[] ctx, byte[] str);
+
+  
+
+
+  public native static byte[] sha256finalize(byte[] ctx);
 }
