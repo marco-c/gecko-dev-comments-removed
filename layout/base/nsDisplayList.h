@@ -116,6 +116,42 @@ typedef mozilla::EnumSet<mozilla::gfx::CompositionOp> BlendModeSet;
 
 
 class nsDisplayListBuilder {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class Preserves3DContext {
+  public:
+    typedef mozilla::gfx::Matrix4x4 Matrix4x4;
+
+    Preserves3DContext() {}
+    Preserves3DContext(const Preserves3DContext &aOther)
+      : mAccumulatedTransform()
+      , mAccumulatedRect()
+      , mAccumulatedRectLevels(0)
+      , mDirtyRect(aOther.mDirtyRect) {}
+
+    
+    Matrix4x4 mAccumulatedTransform;
+    
+    nsRect mAccumulatedRect;
+    
+    int mAccumulatedRectLevels;
+    nsRect mDirtyRect;
+  };
+
 public:
   typedef mozilla::FramePropertyDescriptor FramePropertyDescriptor;
   typedef mozilla::FrameLayerBuilder FrameLayerBuilder;
@@ -125,6 +161,7 @@ public:
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::FrameMetrics FrameMetrics;
   typedef mozilla::layers::FrameMetrics::ViewID ViewID;
+  typedef mozilla::gfx::Matrix4x4 Matrix4x4;
 
   
 
@@ -727,6 +764,86 @@ public:
   };
 
   
+
+
+
+
+
+
+
+
+  class AutoAccumulateTransform;
+  friend class AutoAccumulateTransform;
+  class AutoAccumulateTransform {
+  public:
+    typedef mozilla::gfx::Matrix4x4 Matrix4x4;
+
+    explicit AutoAccumulateTransform(nsDisplayListBuilder* aBuilder)
+      : mBuilder(aBuilder)
+      , mSavedTransform(aBuilder->mPreserves3DCtx.mAccumulatedTransform) {}
+
+    ~AutoAccumulateTransform() {
+      mBuilder->mPreserves3DCtx.mAccumulatedTransform = mSavedTransform;
+    }
+
+    void Accumulate(const Matrix4x4& aTransform) {
+      mBuilder->mPreserves3DCtx.mAccumulatedTransform =
+        aTransform * mBuilder->mPreserves3DCtx.mAccumulatedTransform;
+    }
+
+    const Matrix4x4& GetCurrentTransform() {
+      return mBuilder->mPreserves3DCtx.mAccumulatedTransform;
+    }
+
+    void StartRoot() {
+      mBuilder->mPreserves3DCtx.mAccumulatedTransform = Matrix4x4();
+    }
+
+  private:
+    nsDisplayListBuilder* mBuilder;
+    Matrix4x4 mSavedTransform;
+  };
+
+  
+
+
+
+
+
+
+
+
+  class AutoAccumulateRect;
+  friend class AutoAccumulateRect;
+  class AutoAccumulateRect {
+  public:
+    explicit AutoAccumulateRect(nsDisplayListBuilder* aBuilder)
+      : mBuilder(aBuilder)
+      , mSavedRect(aBuilder->mPreserves3DCtx.mAccumulatedRect) {
+      aBuilder->mPreserves3DCtx.mAccumulatedRect = nsRect();
+      aBuilder->mPreserves3DCtx.mAccumulatedRectLevels++;
+    }
+    ~AutoAccumulateRect() {
+      mBuilder->mPreserves3DCtx.mAccumulatedRect = mSavedRect;
+      mBuilder->mPreserves3DCtx.mAccumulatedRectLevels--;
+    }
+
+  private:
+    nsDisplayListBuilder* mBuilder;
+    nsRect mSavedRect;
+  };
+
+  void AccumulateRect(const nsRect& aRect) {
+    mPreserves3DCtx.mAccumulatedRect.UnionRect(mPreserves3DCtx.mAccumulatedRect, aRect);
+  }
+  const nsRect& GetAccumulatedRect() {
+    return mPreserves3DCtx.mAccumulatedRect;
+  }
+  int GetAccumulatedRectLevels() {
+    return mPreserves3DCtx.mAccumulatedRectLevels;
+  }
+
+  
   nsDisplayTableItem* GetCurrentTableItem() { return mCurrentTableItem; }
   void SetCurrentTableItem(nsDisplayTableItem* aTableItem) { mCurrentTableItem = aTableItem; }
 
@@ -880,6 +997,46 @@ public:
 
   nsRect GetDirtyRectForScrolledContents(const nsIFrame* aScrollableFrame) const;
 
+  
+
+
+
+
+
+
+
+
+  class AutoPreserves3DContext;
+  friend class AutoPreserves3DContext;
+  class AutoPreserves3DContext {
+  public:
+    explicit AutoPreserves3DContext(nsDisplayListBuilder* aBuilder)
+      : mBuilder(aBuilder)
+      , mSavedCtx(aBuilder->mPreserves3DCtx) {}
+    ~AutoPreserves3DContext() {
+      mBuilder->mPreserves3DCtx = mSavedCtx;
+    }
+
+  private:
+    nsDisplayListBuilder* mBuilder;
+    Preserves3DContext mSavedCtx;
+  };
+
+  const nsRect GetPreserves3DDirtyRect(const nsIFrame *aFrame) const {
+    nsRect dirty = mPreserves3DCtx.mDirtyRect;
+    
+    
+    const nsIFrame *rootPreserves3D = aFrame;
+    while (rootPreserves3D && rootPreserves3D->Combines3DTransformWithAncestors()) {
+      dirty.MoveBy(-rootPreserves3D->GetPosition());
+      rootPreserves3D = rootPreserves3D->GetParent();
+    }
+    return dirty;
+  }
+  void SetPreserves3DDirtyRect(const nsRect &aDirtyRect) {
+    mPreserves3DCtx.mDirtyRect = aDirtyRect;
+  }
+
 private:
   void MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame, nsIFrame* aFrame,
                                     const nsRect& aDirtyRect);
@@ -983,6 +1140,7 @@ private:
   ViewID                         mCurrentScrollbarTarget;
   uint32_t                       mCurrentScrollbarFlags;
   BlendModeSet                   mContainedBlendModes;
+  Preserves3DContext             mPreserves3DCtx;
   bool                           mBuildCaret;
   bool                           mIgnoreSuppression;
   bool                           mHadToIgnoreSuppression;
@@ -1555,6 +1713,10 @@ public:
     } else {
       SetClip(aBuilder, aClip);
     }
+  }
+
+  bool BackfaceIsHidden() {
+    return mFrame->StyleDisplay()->BackfaceIsHidden();
   }
 
 protected:
@@ -3424,6 +3586,30 @@ class nsDisplayTransform: public nsDisplayItem
 {
   typedef mozilla::gfx::Matrix4x4 Matrix4x4;
   typedef mozilla::gfx::Point3D Point3D;
+
+  
+
+
+  class StoreList : public nsDisplayWrapList {
+  public:
+    StoreList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+              nsDisplayList* aList) :
+      nsDisplayWrapList(aBuilder, aFrame, aList) {}
+    StoreList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+              nsDisplayItem* aItem) :
+      nsDisplayWrapList(aBuilder, aFrame, aItem) {}
+    virtual ~StoreList() {}
+
+    virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) override {}
+    virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
+                             bool* aSnap) override {
+      
+      
+      nsDisplayWrapList::UpdateBounds(aBuilder);
+      return nsDisplayWrapList::GetBounds(aBuilder, aSnap);
+    }
+  };
+
 public:
   
 
@@ -3446,6 +3632,9 @@ public:
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
                      nsDisplayList *aList, const nsRect& aChildrenVisibleRect,
                      ComputeTransformFunction aTransformGetter, uint32_t aIndex = 0);
+  nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame *aFrame,
+                     nsDisplayList *aList, const nsRect& aChildrenVisibleRect,
+                     const Matrix4x4& aTransform, uint32_t aIndex = 0);
 
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayTransform()
@@ -3512,6 +3701,11 @@ public:
   };
 
   const Matrix4x4& GetTransform();
+  
+
+
+
+  const Matrix4x4& GetAccumulatedPreserved3DTransform();
 
   float GetHitDepthAtPoint(nsDisplayListBuilder* aBuilder, const nsPoint& aPoint);
 
@@ -3536,7 +3730,8 @@ public:
   static nsRect TransformRect(const nsRect &aUntransformedBounds, 
                               const nsIFrame* aFrame,
                               const nsPoint &aOrigin,
-                              const nsRect* aBoundsOverride = nullptr);
+                              const nsRect* aBoundsOverride = nullptr,
+                              bool aPreserves3D = true);
 
   static nsRect TransformRectOut(const nsRect &aUntransformedBounds, 
                                  const nsIFrame* aFrame,
@@ -3550,7 +3745,8 @@ public:
                               const nsRect &aChildBounds,
                               const nsIFrame* aFrame,
                               const nsPoint &aOrigin,
-                              nsRect *aOutRect);
+                              nsRect *aOutRect,
+                              bool aPreserves3D = true);
 
   bool UntransformVisibleRect(nsDisplayListBuilder* aBuilder,
                               nsRect* aOutRect);
@@ -3620,6 +3816,12 @@ public:
                                                float aAppUnitsPerPixel,
                                                const nsRect* aBoundsOverride = nullptr,
                                                nsIFrame** aOutAncestor = nullptr);
+  static Matrix4x4 GetResultingTransformMatrixP3D(const nsIFrame* aFrame,
+                                                  const nsPoint& aOrigin,
+                                                  float aAppUnitsPerPixel,
+                                                  const nsRect* aBoundsOverride = nullptr,
+                                                  nsIFrame** aOutAncestor = nullptr,
+                                                  bool aOffsetByOrigin = false);
   
 
 
@@ -3642,6 +3844,10 @@ public:
 
   virtual void WriteDebugInfo(std::stringstream& aStream) override;
 
+  
+  
+  void SetNoExtendContext() { mNoExtendContext = true; }
+
 private:
   void SetReferenceFrameToAncestor(nsDisplayListBuilder* aBuilder);
   void Init(nsDisplayListBuilder* aBuilder);
@@ -3651,16 +3857,30 @@ private:
                                                        float aAppUnitsPerPixel,
                                                        const nsRect* aBoundsOverride,
                                                        nsIFrame** aOutAncestor,
-                                                       bool aOffsetByOrigin);
+                                                       bool aOffsetByOrigin,
+                                                       bool aDoPreserves3D);
 
-  nsDisplayWrapList mStoredList;
+  StoreList mStoredList;
   Matrix4x4 mTransform;
+  
+  Matrix4x4 mTransformPreserves3D;
   ComputeTransformFunction mTransformGetter;
   nsRect mChildrenVisibleRect;
   uint32_t mIndex;
   
   
   bool mMaybePrerender;
+  
+  
+  
+  
+  
+  
+  bool mNoExtendContext;
+  
+  bool mHasPresetTransform;
+  
+  bool mTransformPreserves3DInited;
 };
 
 
