@@ -753,11 +753,13 @@ developerHUD.registerWatcher(eventLoopLagWatcher);
 
 
 
+
+
+
 var performanceEntriesWatcher = {
   _client: null,
   _fronts: new Map(),
-  _appLaunchName: null,
-  _appLaunchStartTime: null,
+  _appLaunch: new Map(),
   _supported: [
     'contentInteractive',
     'navigationInteractive',
@@ -802,15 +804,12 @@ var performanceEntriesWatcher = {
 
       
       
-      
-      
-      
       if (name.indexOf('appLaunch') !== -1) {
         let CHARS_UNTIL_APP_NAME = 7; 
         let startPos = name.indexOf('@app') + CHARS_UNTIL_APP_NAME;
         let endPos = name.indexOf('.');
-        this._appLaunchName = name.slice(startPos, endPos);
-        this._appLaunchStartTime = epoch;
+        let appName = name.slice(startPos, endPos);
+        this._appLaunch.set(appName, epoch);
         return;
       }
 
@@ -822,13 +821,15 @@ var performanceEntriesWatcher = {
       let origin = detail.origin;
       origin = origin.slice(0, origin.indexOf('.'));
 
+      let appLaunchTime = this._appLaunch.get(origin);
+
       
       
-      if (this._appLaunchName !== origin) {
+      if (!appLaunchTime) {
         return;
       }
 
-      let time = epoch - this._appLaunchStartTime;
+      let time = epoch - appLaunchTime;
       let eventName = 'app_startup_time_' + name;
 
       
