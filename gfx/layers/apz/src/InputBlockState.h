@@ -8,11 +8,11 @@
 #define mozilla_layers_InputBlockState_h
 
 #include "InputData.h"                      
+#include "mozilla/RefPtr.h"                 
 #include "mozilla/gfx/Matrix.h"             
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/AsyncDragMetrics.h"
 #include "mozilla/TimeStamp.h"              
-#include "nsAutoPtr.h"                      
 #include "nsTArray.h"                       
 #include "TouchCounter.h"
 

@@ -10,7 +10,7 @@
 #include "InputData.h"                  
 #include "Units.h"
 #include "mozilla/EventForwards.h"      
-#include "nsAutoPtr.h"                  
+#include "mozilla/RefPtr.h"             
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"                   
 

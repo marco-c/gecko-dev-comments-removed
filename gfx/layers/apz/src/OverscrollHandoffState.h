@@ -8,7 +8,7 @@
 #define mozilla_layers_OverscrollHandoffChain_h
 
 #include <vector>
-#include "nsAutoPtr.h"
+#include "mozilla/RefPtr.h"   
 #include "nsISupportsImpl.h"  
 #include "APZUtils.h"         
 #include "Layers.h"           
