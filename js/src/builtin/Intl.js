@@ -378,7 +378,7 @@ function CanonicalizeLanguageTag(locale) {
     if (callFunction(std_Object_hasOwnProperty, langTagMappings, locale))
         return langTagMappings[locale];
 
-    var subtags = callFunction(String_split, locale, "-");
+    var subtags = StringSplitString(ToString(locale), "-");
     var i = 0;
 
     
@@ -837,7 +837,7 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
         extensionIndex = r.extensionIndex;
 
         
-        extensionSubtags = callFunction(String_split, extension, "-");
+        extensionSubtags = StringSplitString(ToString(extension), "-");
         extensionSubtagsLength = extensionSubtags.length;
     }
 
