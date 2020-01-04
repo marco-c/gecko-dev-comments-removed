@@ -61,7 +61,12 @@ GonkMediaDataDecoder::Init()
 nsresult
 GonkMediaDataDecoder::Shutdown()
 {
-  return mManager->Shutdown();
+  nsresult rv = mManager->Shutdown();
+
+  
+  
+  mManager = nullptr;
+  return rv;
 }
 
 
