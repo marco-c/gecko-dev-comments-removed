@@ -34,6 +34,8 @@ public:
   StructuredCloneHolderBase();
   virtual ~StructuredCloneHolderBase();
 
+  StructuredCloneHolderBase(StructuredCloneHolderBase&& aOther) = default;
+
   
   
 
@@ -152,6 +154,8 @@ public:
                                  TransferringSupport aSupportsTransferring,
                                  ContextSupport aContextSupport);
   virtual ~StructuredCloneHolder();
+
+  StructuredCloneHolder(StructuredCloneHolder&& aOther) = default;
 
   
 

@@ -44,6 +44,33 @@ struct TileClient;
 } 
 } 
 
+namespace mozilla {
+struct SerializedStructuredCloneBuffer;
+} 
+
+namespace mozilla {
+namespace dom {
+namespace ipc {
+class StructuredCloneData;
+} 
+} 
+} 
+
+namespace mozilla {
+namespace dom {
+class ClonedMessageData;
+class MessagePortMessage;
+namespace indexedDB {
+struct StructuredCloneReadInfo;
+class SerializedStructuredCloneReadInfo;
+class ObjectStoreCursorResponse;
+} 
+} 
+} 
+
+class JSStructuredCloneData;
+
+
 
 
 
@@ -329,9 +356,6 @@ struct nsTArray_SafeElementAtHelper<mozilla::OwningNonNull<E>, Derived>
 };
 
 extern "C" void Gecko_EnsureTArrayCapacity(void* aArray, size_t aCapacity, size_t aElemSize);
-
-MOZ_NORETURN MOZ_COLD void
-InvalidArrayIndex_CRASH(size_t aIndex, size_t aLength);
 
 
 
@@ -676,29 +700,30 @@ struct MOZ_NEEDS_MEMMOVABLE_TYPE nsTArray_CopyChooser
 
 
 
+#define DECLARE_USE_COPY_CONSTRUCTORS(T)                \
+  template<>                                            \
+  struct nsTArray_CopyChooser<T>                        \
+  {                                                     \
+    typedef nsTArray_CopyWithConstructors<T> Type;      \
+  };
+
 template<class E>
 struct nsTArray_CopyChooser<JS::Heap<E>>
 {
   typedef nsTArray_CopyWithConstructors<JS::Heap<E>> Type;
 };
 
-template<>
-struct nsTArray_CopyChooser<nsRegion>
-{
-  typedef nsTArray_CopyWithConstructors<nsRegion> Type;
-};
-
-template<>
-struct nsTArray_CopyChooser<nsIntRegion>
-{
-  typedef nsTArray_CopyWithConstructors<nsIntRegion> Type;
-};
-
-template<>
-struct nsTArray_CopyChooser<mozilla::layers::TileClient>
-{
-  typedef nsTArray_CopyWithConstructors<mozilla::layers::TileClient> Type;
-};
+DECLARE_USE_COPY_CONSTRUCTORS(nsRegion)
+DECLARE_USE_COPY_CONSTRUCTORS(nsIntRegion)
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::layers::TileClient)
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::SerializedStructuredCloneBuffer)
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::ipc::StructuredCloneData)
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::ClonedMessageData)
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::indexedDB::StructuredCloneReadInfo);
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::indexedDB::ObjectStoreCursorResponse)
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::indexedDB::SerializedStructuredCloneReadInfo);
+DECLARE_USE_COPY_CONSTRUCTORS(JSStructuredCloneData)
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::MessagePortMessage)
 
 
 
@@ -992,9 +1017,7 @@ public:
   
   elem_type& ElementAt(index_type aIndex)
   {
-    if (MOZ_UNLIKELY(aIndex >= Length())) {
-      InvalidArrayIndex_CRASH(aIndex, Length());
-    }
+    MOZ_ASSERT(aIndex < Length(), "invalid array index");
     return Elements()[aIndex];
   }
 
@@ -1004,9 +1027,7 @@ public:
   
   const elem_type& ElementAt(index_type aIndex) const
   {
-    if (MOZ_UNLIKELY(aIndex >= Length())) {
-      InvalidArrayIndex_CRASH(aIndex, Length());
-    }
+    MOZ_ASSERT(aIndex < Length(), "invalid array index");
     return Elements()[aIndex];
   }
 
