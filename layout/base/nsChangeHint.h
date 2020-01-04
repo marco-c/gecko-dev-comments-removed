@@ -390,42 +390,42 @@ enum nsRestyleHint {
   
   
   
-  eRestyle_Self = (1<<0),
+  eRestyle_Self = 1 << 0,
 
   
   
-  eRestyle_SomeDescendants = (1<<1),
-
-  
-  
-  
-  
-  eRestyle_Subtree = (1<<2),
-
-  
-  
-  eRestyle_LaterSiblings = (1<<3),
+  eRestyle_SomeDescendants = 1 << 1,
 
   
   
   
   
+  eRestyle_Subtree = 1 << 2,
+
   
-  eRestyle_CSSTransitions = (1<<4),
+  
+  eRestyle_LaterSiblings = 1 << 3,
 
   
   
   
   
   
-  eRestyle_CSSAnimations = (1<<5),
+  eRestyle_CSSTransitions = 1 << 4,
 
   
   
   
   
   
-  eRestyle_SVGAttrAnimations = (1<<6),
+  eRestyle_CSSAnimations = 1 << 5,
+
+  
+  
+  
+  
+  
+  eRestyle_SVGAttrAnimations = 1 << 6,
 
   
   
@@ -436,22 +436,22 @@ enum nsRestyleHint {
   
   
   
-  eRestyle_StyleAttribute = (1<<7),
+  eRestyle_StyleAttribute = 1 << 7,
 
   
   
-  eRestyle_StyleAttribute_Animations = (1<<8),
+  eRestyle_StyleAttribute_Animations = 1 << 8,
 
   
   
-  eRestyle_Force = (1<<9),
+  eRestyle_Force = 1 << 9,
 
   
   
   
   
   
-  eRestyle_ForceDescendants = (1<<10),
+  eRestyle_ForceDescendants = 1 << 10,
 
   
   eRestyle_AllHintsWithAnimations = eRestyle_CSSTransitions |
