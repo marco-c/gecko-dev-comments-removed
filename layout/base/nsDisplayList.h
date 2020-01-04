@@ -287,7 +287,7 @@ public:
   
 
 
-  nsIFrame* GetIgnoreScrollFrame() { return mIgnoreScrollFrame; }
+  nsIFrame* GetIgnoreScrollFrame() const { return mIgnoreScrollFrame; }
   
 
 

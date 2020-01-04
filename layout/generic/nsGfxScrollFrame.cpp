@@ -2785,6 +2785,46 @@ ScrollFrameHelper::IsUsingDisplayPort(const nsDisplayListBuilder* aBuilder) cons
     nsLayoutUtils::GetDisplayPort(mOuter->GetContent());
 }
 
+bool
+ScrollFrameHelper::WillUseDisplayPort(const nsDisplayListBuilder* aBuilder) const
+{
+  bool wantsDisplayPort = nsLayoutUtils::WantDisplayPort(aBuilder, mOuter);
+
+  if (mIsRoot && gfxPrefs::LayoutUseContainersForRootFrames()) {
+    
+    
+    if (wantsDisplayPort) {
+      return true;
+    }
+  }
+
+  
+
+  if (IsUsingDisplayPort(aBuilder)) {
+    return true;
+  }
+
+  if (aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping()) {
+    return false;
+  }
+
+  return wantsDisplayPort;
+}
+
+bool
+ScrollFrameHelper::WillBuildScrollableLayer(const nsDisplayListBuilder* aBuilder) const
+{
+  if (WillUseDisplayPort(aBuilder)) {
+    return true;
+  }
+
+  if (aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping()) {
+    return false;
+  }
+
+  return nsContentUtils::HasScrollgrab(mOuter->GetContent());
+}
+
 void
 ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                     const nsRect&           aDirtyRect,
@@ -2826,6 +2866,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     mOuter->PresContext()->IsRootContentDocument();
 
   bool usingDisplayPort = IsUsingDisplayPort(aBuilder);
+  mShouldBuildScrollableLayer = WillBuildScrollableLayer(aBuilder);
 
   if (aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping()) {
     
@@ -2835,7 +2876,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     if (usingDisplayPort) {
       
       
-      mShouldBuildScrollableLayer = true;
+      MOZ_ASSERT(mShouldBuildScrollableLayer);
       mIsScrollableLayerInRootContainer = true;
     }
 
@@ -2921,7 +2962,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
-  mShouldBuildScrollableLayer = usingDisplayPort || nsContentUtils::HasScrollgrab(mOuter->GetContent());
+  MOZ_ASSERT(mShouldBuildScrollableLayer == (usingDisplayPort || nsContentUtils::HasScrollgrab(mOuter->GetContent())));
   bool shouldBuildLayer = false;
   if (mShouldBuildScrollableLayer) {
     shouldBuildLayer = true;
