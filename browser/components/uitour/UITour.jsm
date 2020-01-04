@@ -12,6 +12,7 @@ Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
+Cu.import("resource:///modules/RecentWindow.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/TelemetryController.jsm");
 
@@ -399,7 +400,6 @@ this.UITour = {
       window = Services.wm.getMostRecentWindow("navigator:browser");
     }
 
-    let tab = window.gBrowser.getTabForBrowser(browser);
     let messageManager = browser.messageManager;
 
     log.debug("onPageEvent:", aEvent.detail, aMessage);
@@ -479,8 +479,17 @@ this.UITour = {
           return false;
         }
 
+        let heartbeatWindow = window;
+        if (data.privateWindowsOnly && !PrivateBrowsingUtils.isWindowPrivate(heartbeatWindow)) {
+          heartbeatWindow = RecentWindow.getMostRecentBrowserWindow({ private: true });
+          if (!heartbeatWindow) {
+            log.debug("showHeartbeat: No private window found");
+            return false;
+          }
+        }
+
         
-        this.showHeartbeat(window, data);
+        this.showHeartbeat(heartbeatWindow, data);
         break;
       }
 
@@ -1107,6 +1116,8 @@ this.UITour = {
   },
 
   
+
+
 
 
 
