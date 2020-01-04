@@ -23,7 +23,7 @@
 #include "Matrix.h"
 
 #if defined(MOZ_LOGGING)
-extern GFX2D_API PRLogModuleInfo *GetGFX2DLog();
+extern GFX2D_API mozilla::LogModule* GetGFX2DLog();
 #endif
 
 namespace mozilla {
