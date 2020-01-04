@@ -102,6 +102,14 @@ SVGDocument::EnsureNonSVGUserAgentStyleSheetsLoaded()
     return;
   }
 
+  if (IsStaticDocument()) {
+    
+    
+    
+    
+    return;
+  }
+
   mHasLoadedNonSVGUserAgentStyleSheets = true;
 
   BeginUpdate(UPDATE_STYLE);
