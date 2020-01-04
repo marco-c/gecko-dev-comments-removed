@@ -11,6 +11,8 @@
 
 
 #include "nsSliderFrame.h"
+
+#include "gfxPrefs.h"
 #include "nsStyleContext.h"
 #include "nsPresContext.h"
 #include "nsIContent.h"
@@ -765,8 +767,11 @@ nsSliderFrame::CurrentPositionChanged()
   thumbFrame->SetRect(newThumbRect);
 
   
+  
   nsIScrollableFrame* scrollableFrame = do_QueryFrame(GetScrollbar()->GetParent());
-  if (!scrollableFrame || scrollableFrame->LastScrollOrigin() != nsGkAtoms::apz) {
+  if (!gfxPrefs::APZPaintSkipping() ||
+      !scrollableFrame ||
+      scrollableFrame->LastScrollOrigin() != nsGkAtoms::apz) {
     SchedulePaint();
   }
 

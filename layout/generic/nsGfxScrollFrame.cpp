@@ -2666,7 +2666,7 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
 
   ScrollVisual();
 
-  if (LastScrollOrigin() == nsGkAtoms::apz) {
+  if (LastScrollOrigin() == nsGkAtoms::apz && gfxPrefs::APZPaintSkipping()) {
     
     
     
