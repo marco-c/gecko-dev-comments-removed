@@ -1560,6 +1560,18 @@ private:
   
 
 
+
+  nsIFrame* ConstructScrollableBlockWithConstructor(
+    nsFrameConstructorState& aState,
+    FrameConstructionItem& aItem,
+    nsContainerFrame* aParentFrame,
+    const nsStyleDisplay* aDisplay,
+    nsFrameItems& aFrameItems,
+    BlockFrameCreationFunc aConstructor);
+
+  
+
+
   nsIFrame* ConstructNonScrollableBlock(nsFrameConstructorState& aState,
                                         FrameConstructionItem&   aItem,
                                         nsContainerFrame*        aParentFrame,
