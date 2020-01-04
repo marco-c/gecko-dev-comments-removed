@@ -176,9 +176,6 @@ enum class Expr : uint8_t
     I32B32X4AnyTrue,
 
     
-    I32Id,
-
-    
     
     F32CallInternal,
     F32CallIndirect,
@@ -216,9 +213,6 @@ enum class Expr : uint8_t
 
     
     F32F32X4ExtractLane,
-
-    
-    F32Id,
 
     
     
@@ -268,9 +262,6 @@ enum class Expr : uint8_t
     F64StoreF64,
 
     
-    F64Id,
-
-    
     
     I32X4CallInternal,
     I32X4CallIndirect,
@@ -304,9 +295,6 @@ enum class Expr : uint8_t
     I32X4Store,
 
     
-    I32X4Id,
-
-    
     
     F32X4CallInternal,
     F32X4CallIndirect,
@@ -337,9 +325,6 @@ enum class Expr : uint8_t
     F32X4Store,
 
     
-    F32X4Id,
-
-    
     
     B32X4CallInternal,
     B32X4CallIndirect,
@@ -362,10 +347,7 @@ enum class Expr : uint8_t
 
     B32X4ReplaceLane,
 
-    B32X4Splat,
-
-    
-    B32X4Id
+    B32X4Splat
 };
 
 enum NeedsBoundsCheck : uint8_t
