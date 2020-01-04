@@ -235,6 +235,14 @@ public:
   
   
   virtual const char* GetDescriptionName() const = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual void SetSeekThreshold(const media::TimeUnit& aTime) {}
 };
 
 } 
