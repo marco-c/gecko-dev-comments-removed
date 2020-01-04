@@ -2,6 +2,9 @@
 
 
 
+
+
+
 "use strict";
 
 const Cu = Components.utils;
@@ -10,7 +13,7 @@ const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 
 function actionOccurred(id) {
   let {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-  let Telemetry = require("devtools/client/shared/telemetry");;
+  let Telemetry = require("devtools/client/shared/telemetry");
   let telemetry = new Telemetry();
   telemetry.actionOccurred(id);
 }
@@ -59,7 +62,7 @@ function MultiWindowKeyListener({ keyCode, ctrlKey, altKey, callback }) {
       }
     }
   };
-};
+}
 
 let getTopLevelWindow = function (window) {
   return window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -73,7 +76,7 @@ let getTopLevelWindow = function (window) {
 function reload(event) {
   
   
-  let top = getTopLevelWindow(event.view)
+  let top = getTopLevelWindow(event.view);
   let isBrowser = top.location.href.includes("/browser.xul");
   let reloadToolbox = false;
   if (isBrowser && top.gBrowser) {
@@ -95,11 +98,12 @@ function reload(event) {
     reopenBrowserConsole = true;
   }
 
-  dump("Reload DevTools.  (reload-toolbox:"+reloadToolbox+")\n");
+  dump("Reload DevTools.  (reload-toolbox:" + reloadToolbox + ")\n");
 
   
   Services.obs.notifyObservers(null, "startupcache-invalidate", null);
 
+  
   
   Services.ppmm.loadProcessScript("data:,new " + function () {
     
@@ -141,7 +145,8 @@ function reload(event) {
         }
         
         mm.loadFrameScript("data:text/javascript,new " + function () {
-          let isJSONView = content.document.baseURI.startsWith("resource://devtools/");
+          let isJSONView =
+            content.document.baseURI.startsWith("resource://devtools/");
           if (isJSONView) {
             content.location.reload();
           }
