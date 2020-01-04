@@ -1,4 +1,5 @@
 
+# -*- coding: utf-8 -*-
 
 import os
 import unittest
@@ -23,6 +24,17 @@ class ProcTestMisc(proctest.ProcTest):
         p.wait()
 
         self.determine_status(p, False, ())
+
+    def test_unicode_in_environment(self):
+        env = {
+            'FOOBAR': 'ʘ',
+        }
+        p = processhandler.ProcessHandler([self.python, self.proclaunch,
+                                          "process_normal_finish_python.ini"],
+                                          cwd=here, env=env)
+        
+        p.run()
+        p.wait()
 
 if __name__ == '__main__':
     unittest.main()
