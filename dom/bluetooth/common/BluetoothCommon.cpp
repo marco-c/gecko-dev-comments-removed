@@ -16,36 +16,53 @@ BEGIN_BLUETOOTH_NAMESPACE
 
 
 
-const BluetoothAddress BluetoothAddress::ANY(0x00, 0x00, 0x00,
-                                             0x00, 0x00, 0x00);
+const BluetoothAddress& BluetoothAddress::ANY()
+{
+  static const BluetoothAddress sAddress(0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+  return sAddress;
+}
 
-const BluetoothAddress BluetoothAddress::ALL(0xff, 0xff, 0xff,
-                                             0xff, 0xff, 0xff);
+const BluetoothAddress& BluetoothAddress::ALL()
+{
+  static const BluetoothAddress sAddress(0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
+  return sAddress;
+}
 
-const BluetoothAddress BluetoothAddress::LOCAL(0x00, 0x00, 0x00,
-                                               0xff, 0xff, 0xff);
-
-
-
-
-
-const BluetoothUuid BluetoothUuid::ZERO(0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00);
-
-
+const BluetoothAddress& BluetoothAddress::LOCAL()
+{
+  static const BluetoothAddress sAddress(0x00, 0x00, 0x00, 0xff, 0xff, 0xff);
+  return sAddress;
+}
 
 
 
 
 
+const BluetoothUuid& BluetoothUuid::ZERO()
+{
+  static const BluetoothUuid sUuid(0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00);
+  return sUuid;
+}
 
 
 
-const BluetoothUuid BluetoothUuid::BASE(0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x10, 0x00,
-                                        0x80, 0x00, 0x00, 0x80,
-                                        0x5f, 0x9b, 0x34, 0xfb);
+
+
+
+
+
+
+
+const BluetoothUuid& BluetoothUuid::BASE()
+{
+  static const BluetoothUuid sUuid(0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x10, 0x00,
+                                   0x80, 0x00, 0x00, 0x80,
+                                   0x5f, 0x9b, 0x34, 0xfb);
+  return sUuid;
+}
 
 END_BLUETOOTH_NAMESPACE
