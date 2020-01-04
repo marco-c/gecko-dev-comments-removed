@@ -3,28 +3,42 @@
 
 
 #include "base/rand_util.h"
+#include <windows.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include <stdlib.h>
 
-#include "base/basictypes.h"
+
+
+#define SystemFunction036 NTAPI SystemFunction036
+#include <NTSecAPI.h>
+#undef SystemFunction036
+
+#include <algorithm>
+#include <limits>
+
 #include "base/logging.h"
-
-namespace {
-
-uint32_t RandUint32() {
-  uint32_t number;
-  CHECK(rand_s(&number) == 0);
-  return number;
-}
-
-}  
 
 namespace base {
 
+
 uint64_t RandUint64() {
-  uint32_t first_half = RandUint32();
-  uint32_t second_half = RandUint32();
-  return (static_cast<uint64_t>(first_half) << 32) + second_half;
+  uint64_t number;
+  RandBytes(&number, sizeof(number));
+  return number;
+}
+
+void RandBytes(void* output, size_t output_length) {
+  char* output_ptr = static_cast<char*>(output);
+  while (output_length > 0) {
+    const ULONG output_bytes_this_pass = static_cast<ULONG>(std::min(
+        output_length, static_cast<size_t>(std::numeric_limits<ULONG>::max())));
+    const bool success =
+        RtlGenRandom(output_ptr, output_bytes_this_pass) != FALSE;
+    CHECK(success);
+    output_length -= output_bytes_this_pass;
+    output_ptr += output_bytes_this_pass;
+  }
 }
 
 }  
