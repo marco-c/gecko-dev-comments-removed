@@ -196,11 +196,9 @@ private:
 
 
 
-
 enum class EventPassMode : int8_t {
   Copy,
-  Move,
-  Both
+  Move
 };
 
 class ListenerBase {
@@ -229,14 +227,6 @@ public:
 };
 
 template <typename ArgType>
-class Listener<ArgType, EventPassMode::Both> : public ListenerBase {
-public:
-  virtual ~Listener() {}
-  virtual void Dispatch(const ArgType& aEvent) = 0;
-  virtual void Dispatch(ArgType&& aEvent) = 0;
-};
-
-template <typename ArgType>
 class Listener<ArgType, EventPassMode::Move> : public ListenerBase {
 public:
   virtual ~Listener() {}
@@ -254,22 +244,6 @@ public:
     : mHelper(ListenerBase::Token(), aTarget, aFunction) {}
   void Dispatch(const ArgType& aEvent) override {
     mHelper.Dispatch(aEvent);
-  }
-private:
-  ListenerHelper<Target, Function> mHelper;
-};
-
-template <typename Target, typename Function, typename ArgType>
-class ListenerImpl<Target, Function, ArgType, EventPassMode::Both>
-  : public Listener<ArgType, EventPassMode::Both> {
-public:
-  ListenerImpl(Target* aTarget, const Function& aFunction)
-    : mHelper(ListenerBase::Token(), aTarget, aFunction) {}
-  void Dispatch(const ArgType& aEvent) override {
-    mHelper.Dispatch(aEvent);
-  }
-  void Dispatch(ArgType&& aEvent) override {
-    mHelper.Dispatch(Move(aEvent));
   }
 private:
   ListenerHelper<Target, Function> mHelper;
@@ -297,12 +271,8 @@ private:
 
 
 
-
-
-template <typename ArgType, ListenerMode Mode>
+template <ListenerMode Mode>
 struct PassModePicker {
-  
-  
   static const EventPassMode Value =
     Mode == ListenerMode::NonExclusive ?
     EventPassMode::Copy : EventPassMode::Move;
@@ -364,7 +334,7 @@ class MediaEventSource {
   static_assert(!IsReference<EventType>::value, "Ref-type not supported!");
   typedef typename detail::EventTypeTraits<EventType>::ArgType ArgType;
   static const detail::EventPassMode PassMode
-    = detail::PassModePicker<ArgType, Mode>::Value;
+    = detail::PassModePicker<Mode>::Value;
   typedef detail::Listener<ArgType, PassMode> Listener;
 
   template<typename Target, typename Func>
