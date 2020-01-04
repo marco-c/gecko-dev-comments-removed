@@ -154,7 +154,10 @@ let LoopUI;
           }
 
           this.PanelFrame.showPopup(window, event ? event.target : this.toolbarButton.node,
-                               "loop", null, "about:looppanel", null, callback);
+            "loop", null, "about:looppanel",
+            
+            { width: 330, height: 410 },
+            callback);
         });
       });
     },
