@@ -635,6 +635,11 @@ public:
 
 #endif 
 
+#ifdef __NR_getrandom
+    case __NR_getrandom:
+      return Allow();
+#endif
+
       
       
     case __NR_uname:
