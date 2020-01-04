@@ -43,6 +43,66 @@ ParseInteger(const nsAString& aString, int32_t& aInt)
              nsContentUtils::eParseHTMLInteger_NonStandard ));
 }
 
+static bool
+ParseFloat(const nsAString& aString, double& aDouble)
+{
+  
+  
+  
+  nsAString::const_iterator iter, end;
+  aString.BeginReading(iter);
+  aString.EndReading(end);
+
+  if (iter == end) {
+    return false;
+  }
+
+  if (*iter == char16_t('-') && ++iter == end) {
+    return false;
+  }
+
+  if (nsCRT::IsAsciiDigit(*iter)) {
+    for (; iter != end && nsCRT::IsAsciiDigit(*iter) ; ++iter);
+  } else if (*iter == char16_t('.')) {
+    
+  } else {
+    return false;
+  }
+
+  
+  if (*iter == char16_t('.')) {
+    ++iter;
+    if (iter == end || !nsCRT::IsAsciiDigit(*iter)) {
+      
+      return false;
+    }
+
+    for (; iter != end && nsCRT::IsAsciiDigit(*iter) ; ++iter);
+  }
+
+  if (iter != end && (*iter == char16_t('e') || *iter == char16_t('E'))) {
+    ++iter;
+    if (*iter == char16_t('-') || *iter == char16_t('+')) {
+      ++iter;
+    }
+
+    if (iter == end || !nsCRT::IsAsciiDigit(*iter)) {
+      
+      return false;
+    }
+
+    for (; iter != end && nsCRT::IsAsciiDigit(*iter) ; ++iter);
+  }
+
+  if (iter != end) {
+    return false;
+  }
+
+  nsresult rv;
+  aDouble = PromiseFlatString(aString).ToDouble(&rv);
+  return NS_SUCCEEDED(rv);
+}
+
 ResponsiveImageSelector::ResponsiveImageSelector(nsIContent *aContent)
   : mOwnerNode(aContent),
     mSelectedCandidateIndex(-1)
@@ -533,9 +593,8 @@ ResponsiveImageDescriptors::AddDescriptor(const nsAString& aDescriptor)
   } else if (*descType == char16_t('x')) {
     
     
-    nsresult rv;
-    double possibleDensity = PromiseFlatString(valueStr).ToDouble(&rv);
-    if (NS_SUCCEEDED(rv)) {
+    double possibleDensity = 0.0;
+    if (ParseFloat(valueStr, possibleDensity)) {
       if (possibleDensity >= 0.0 &&
           mWidth.isNothing() &&
           mDensity.isNothing() &&
