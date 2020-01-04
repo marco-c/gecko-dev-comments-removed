@@ -1403,7 +1403,7 @@ nsSocketTransportService::ProbeMaxCount()
     }
 
     
-    PR_STATIC_ASSERT(SOCKET_LIMIT_MIN >= 32U);
+    static_assert(SOCKET_LIMIT_MIN >= 32U, "Minimum Socket Limit is >= 32");
     while (gMaxCount <= numAllocated) {
         int32_t rv = PR_Poll(pfd, gMaxCount, PR_MillisecondsToInterval(0));
         
@@ -1472,7 +1472,7 @@ nsSocketTransportService::DiscoverMaxCount()
 
 #elif defined(XP_WIN) && !defined(WIN_CE)
     
-    PR_STATIC_ASSERT(SOCKET_LIMIT_TARGET <= 1000);
+    static_assert(SOCKET_LIMIT_TARGET <= 1000, "SOCKET_LIMIT_TARGET max value is 1000");
     gMaxCount = SOCKET_LIMIT_TARGET;
 #else
     
