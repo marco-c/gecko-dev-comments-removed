@@ -41,6 +41,10 @@ using namespace sandbox::bpf_dsl;
 #define MADV_DONTDUMP 16
 #endif
 
+#ifndef PR_SET_PTRACER
+#define PR_SET_PTRACER 0x59616d61
+#endif
+
 
 #ifndef ANDROID
 #define DESKTOP
@@ -124,7 +128,8 @@ public:
     return Switch(op)
       .CASES((PR_GET_SECCOMP, 
               PR_SET_NAME,    
-              PR_SET_DUMPABLE), 
+              PR_SET_DUMPABLE, 
+              PR_SET_PTRACER), 
              Allow())
       .Default(InvalidSyscall());
   }
