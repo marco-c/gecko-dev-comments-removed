@@ -13,6 +13,7 @@
 #include "mozilla/unused.h"
 #include "mozilla/Snprintf.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/TimeStamp.h"
 
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
@@ -87,6 +88,7 @@ using mozilla::InjectCrashRunnable;
 #include <map>
 #include <vector>
 
+#include "mozilla/double-conversion.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/mozalloc_oom.h"
 #include "mozilla/WindowsDllBlocklist.h"
@@ -411,6 +413,57 @@ typedef struct {
 static std::vector<mapping_info> library_mappings;
 typedef std::map<uint32_t,google_breakpad::MappingList> MappingMap;
 #endif
+}
+
+
+
+
+
+bool SimpleNoCLibDtoA(double aValue, char* aBuffer, int aBufferLength)
+{
+  
+  aBuffer[aBufferLength-1] = '\0';
+
+  if (aValue < 0) {
+    return false;
+  }
+
+  int length, point, i;
+  bool sign;
+  bool ok = true;
+  double_conversion::DoubleToStringConverter::DoubleToAscii(
+                                     aValue,
+                                     double_conversion::DoubleToStringConverter::SHORTEST,
+                                     8,
+                                     aBuffer,
+                                     aBufferLength,
+                                     &sign,
+                                     &length,
+                                     &point);
+
+  
+  if (length > point && (length+1) < (aBufferLength-1)) {
+    
+    
+    aBuffer[length+1] = '\0';
+    for (i=length; i>point; i-=1) {
+      aBuffer[i] = aBuffer[i-1];
+    }
+    aBuffer[i] = '.'; 
+  } else if (length < point) {
+    
+    for (i=length; i<point; i+=1) {
+      if (i >= aBufferLength-2) {
+        ok = false;
+      }
+      aBuffer[i] = '0';
+    }
+    aBuffer[i] = '\0';
+  }
+  return ok;
+}
+
+namespace CrashReporter {
 
 #ifdef XP_LINUX
 inline void
@@ -754,6 +807,12 @@ bool MinidumpCallback(
     WriteString(lastCrashFile, crashTimeString);
   }
 
+  bool ignored = false;
+  double uptimeTS = (TimeStamp::NowLoRes()-
+                     TimeStamp::ProcessCreation(ignored)).ToSecondsSigDigits();
+  char uptimeTSString[64];
+  SimpleNoCLibDtoA(uptimeTS, uptimeTSString, sizeof(uptimeTSString));
+
   
 
   
@@ -805,6 +864,8 @@ bool MinidumpCallback(
       apiData.WriteBuffer(crashReporterAPIData->get(), crashReporterAPIData->Length());
     }
     WriteAnnotation(apiData, "CrashTime", crashTimeString);
+    WriteAnnotation(apiData, "UptimeTS", uptimeTSString);
+
     if (timeSinceLastCrash != 0) {
       WriteAnnotation(apiData, "SecondsSinceLastCrash",
                       timeSinceLastCrashString);
@@ -2594,6 +2655,16 @@ WriteExtraData(nsIFile* extraFile,
     WriteAnnotation(fd,
                     nsDependentCString("CrashTime"),
                     nsDependentCString(crashTimeString));
+
+    bool ignored = false;
+    double uptimeTS = (TimeStamp::NowLoRes()-
+                       TimeStamp::ProcessCreation(ignored)).ToSecondsSigDigits();
+    char uptimeTSString[64];
+    SimpleNoCLibDtoA(uptimeTS, uptimeTSString, sizeof(uptimeTSString));
+
+    WriteAnnotation(fd,
+                    nsDependentCString("UptimeTS"),
+                    nsDependentCString(uptimeTSString));
   }
 
   PR_Close(fd);
