@@ -259,13 +259,6 @@ public:
 
 
 
-  void StreamSetForAudioContext(dom::AudioContext::AudioContextId aAudioContextId,
-                                mozilla::LinkedList<MediaStream>& aStreamSet);
-
-  
-
-
-
   void AudioContextOperationCompleted(MediaStream* aStream,
                                       void* aPromise,
                                       dom::AudioContextOperation aOperation);
@@ -274,7 +267,8 @@ public:
 
 
 
-  void ApplyAudioContextOperationImpl(AudioNodeStream* aStream,
+  void ApplyAudioContextOperationImpl(MediaStream* aDestinationStream,
+                                      const nsTArray<MediaStream*>& aStreams,
                                       dom::AudioContextOperation aOperation,
                                       void* aPromise);
 
@@ -282,20 +276,14 @@ public:
 
 
 
-  void MoveStreams(dom::AudioContextOperation aAudioContextOperation,
-                   mozilla::LinkedList<MediaStream>& aStreamSet);
+  void SuspendOrResumeStreams(dom::AudioContextOperation aAudioContextOperation,
+                              const nsTArray<MediaStream*>& aStreamSet);
 
   
 
 
 
   void ResetVisitedStreamState();
-
-  
-
-
-
-  bool StreamSuspended(MediaStream* aStream);
 
   
 
@@ -605,6 +593,10 @@ public:
 
 
   nsTArray<MediaStream*> mSuspendedStreams;
+  
+
+
+  nsTHashtable<nsUint64HashKey> mSuspendedContexts;
   
 
 

@@ -86,18 +86,7 @@ void
 MediaStreamGraphImpl::AddStreamGraphThread(MediaStream* aStream)
 {
   aStream->mBufferStartTime = mProcessedTime;
-  
-  
-  bool contextSuspended = false;
-  if (aStream->AsAudioNodeStream()) {
-    for (uint32_t i = 0; i < mSuspendedStreams.Length(); i++) {
-      if (aStream->AudioContextId() == mSuspendedStreams[i]->AudioContextId()) {
-        contextSuspended = true;
-      }
-    }
-  }
-
-  if (contextSuspended) {
+  if (aStream->IsSuspended()) {
     mSuspendedStreams.AppendElement(aStream);
     STREAM_LOG(LogLevel::Debug, ("Adding media stream %p to the graph, in the suspended stream array", aStream));
   } else {
@@ -126,8 +115,11 @@ MediaStreamGraphImpl::RemoveStreamGraphThread(MediaStream* aStream)
   
   SetStreamOrderDirty();
 
-  mStreams.RemoveElement(aStream);
-  mSuspendedStreams.RemoveElement(aStream);
+  if (aStream->IsSuspended()) {
+    mSuspendedStreams.RemoveElement(aStream);
+  } else {
+    mStreams.RemoveElement(aStream);
+  }
 
   NS_RELEASE(aStream); 
 
@@ -470,14 +462,6 @@ MediaStreamGraphImpl::MarkConsumed(MediaStream* aStream)
   }
 }
 
-bool
-MediaStreamGraphImpl::StreamSuspended(MediaStream* aStream)
-{
-  
-  return aStream->AsAudioNodeStream() &&
-         mSuspendedStreams.IndexOf(aStream) != mSuspendedStreams.NoIndex;
-}
-
 namespace {
   
   const uint32_t NOT_VISITED = UINT32_MAX;
@@ -608,7 +592,7 @@ MediaStreamGraphImpl::UpdateStreamOrder()
       
       
       for (uint32_t i = inputs.Length(); i--; ) {
-        if (StreamSuspended(inputs[i]->mSource)) {
+        if (inputs[i]->mSource->IsSuspended()) {
           continue;
         }
         auto input = inputs[i]->mSource->AsProcessedStream();
@@ -634,7 +618,7 @@ MediaStreamGraphImpl::UpdateStreamOrder()
     
     uint32_t cycleStackMarker = 0;
     for (uint32_t i = inputs.Length(); i--; ) {
-      if (StreamSuspended(inputs[i]->mSource)) {
+      if (inputs[i]->mSource->IsSuspended()) {
         continue;
       }
       auto input = inputs[i]->mSource->AsProcessedStream();
@@ -846,7 +830,7 @@ MediaStreamGraphImpl::RecomputeBlockingAt(const nsTArray<MediaStream*>& aStreams
       continue;
     }
 
-    if (StreamSuspended(stream)) {
+    if (stream->IsSuspended()) {
       STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is blocked due to being suspended", stream));
       MarkStreamBlocking(stream);
       continue;
@@ -1880,6 +1864,7 @@ MediaStream::MediaStream(DOMMediaStream* aWrapper)
   : mBufferStartTime(0)
   , mExplicitBlockerCount(0)
   , mBlocked(false)
+  , mSuspendedCount(0)
   , mFinished(false)
   , mNotifiedFinished(false)
   , mNotifiedBlocked(false)
@@ -3108,11 +3093,14 @@ MediaStreamGraph::CreateAudioCaptureStream(DOMMediaStream* aWrapper)
 }
 
 void
-MediaStreamGraph::AddStream(MediaStream* aStream)
+MediaStreamGraph::AddStream(MediaStream* aStream, uint32_t aFlags)
 {
   NS_ADDREF(aStream);
   MediaStreamGraphImpl* graph = static_cast<MediaStreamGraphImpl*>(this);
   aStream->SetGraphImpl(graph);
+  if (aFlags & ADD_STREAM_SUSPENDED) {
+    aStream->IncrementSuspendCount();
+  }
   graph->AppendMessage(new CreateMessage(aStream));
 }
 
@@ -3189,26 +3177,8 @@ MediaStreamGraphImpl::ResetVisitedStreamState()
 }
 
 void
-MediaStreamGraphImpl::StreamSetForAudioContext(dom::AudioContext::AudioContextId aAudioContextId,
-                                  mozilla::LinkedList<MediaStream>& aStreamSet)
-{
-   nsTArray<MediaStream*>* runningAndSuspendedPair[2];
-   runningAndSuspendedPair[0] = &mStreams;
-   runningAndSuspendedPair[1] = &mSuspendedStreams;
-
-  for (uint32_t array = 0; array < 2; array++) {
-    for (uint32_t i = 0; i < runningAndSuspendedPair[array]->Length(); ++i) {
-      MediaStream* stream = (*runningAndSuspendedPair[array])[i];
-      if (aAudioContextId == stream->AudioContextId()) {
-        aStreamSet.insertFront(stream);
-      }
-    }
-  }
-}
-
-void
-MediaStreamGraphImpl::MoveStreams(AudioContextOperation aAudioContextOperation,
-                                  mozilla::LinkedList<MediaStream>& aStreamSet)
+MediaStreamGraphImpl::SuspendOrResumeStreams(AudioContextOperation aAudioContextOperation,
+                                             const nsTArray<MediaStream*>& aStreamSet)
 {
   
   
@@ -3219,17 +3189,16 @@ MediaStreamGraphImpl::MoveStreams(AudioContextOperation aAudioContextOperation,
     aAudioContextOperation == AudioContextOperation::Resume ? mStreams
                                                             : mSuspendedStreams;
 
-  MediaStream* stream;
-  while ((stream = aStreamSet.getFirst())) {
-    
-    
+  for (MediaStream* stream : aStreamSet) {
     auto i = from.IndexOf(stream);
-    if (i != from.NoIndex) {
-      from.RemoveElementAt(i);
-      to.AppendElement(stream);
+    MOZ_ASSERT(i != from.NoIndex);
+    from.RemoveElementAt(i);
+    to.AppendElement(stream);
+    if (aAudioContextOperation == AudioContextOperation::Resume) {
+      stream->DecrementSuspendCount();
+    } else {
+      stream->IncrementSuspendCount();
     }
-
-    stream->remove();
   }
   STREAM_LOG(LogLevel::Debug, ("Moving streams between suspended and running"
       "state: mStreams: %d, mSuspendedStreams: %d\n", mStreams.Length(),
@@ -3270,22 +3239,17 @@ MediaStreamGraphImpl::AudioContextOperationCompleted(MediaStream* aStream,
 }
 
 void
-MediaStreamGraphImpl::ApplyAudioContextOperationImpl(AudioNodeStream* aStream,
-                                               AudioContextOperation aOperation,
-                                               void* aPromise)
+MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
+    MediaStream* aDestinationStream, const nsTArray<MediaStream*>& aStreams,
+    AudioContextOperation aOperation, void* aPromise)
 {
   MOZ_ASSERT(CurrentDriver()->OnThread());
-  mozilla::LinkedList<MediaStream> streamSet;
 
   SetStreamOrderDirty();
 
   ResetVisitedStreamState();
 
-  StreamSetForAudioContext(aStream->AudioContextId(), streamSet);
-
-  MoveStreams(aOperation, streamSet);
-  MOZ_ASSERT(!streamSet.getFirst(),
-      "Streams should be removed from the list after having been moved.");
+  SuspendOrResumeStreams(aOperation, aStreams);
 
   
   
@@ -3304,11 +3268,12 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(AudioNodeStream* aStream,
         mMixer.AddCallback(driver);
         CurrentDriver()->SwitchAtNextIteration(driver);
       }
-      driver->EnqueueStreamAndPromiseForOperation(aStream, aPromise, aOperation);
+      driver->EnqueueStreamAndPromiseForOperation(aDestinationStream,
+          aPromise, aOperation);
     } else {
       
       
-      AudioContextOperationCompleted(aStream, aPromise, aOperation);
+      AudioContextOperationCompleted(aDestinationStream, aPromise, aOperation);
     }
   }
   
@@ -3330,7 +3295,8 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(AudioNodeStream* aStream,
     }
     if (!audioTrackPresent && CurrentDriver()->AsAudioCallbackDriver()) {
       CurrentDriver()->AsAudioCallbackDriver()->
-        EnqueueStreamAndPromiseForOperation(aStream, aPromise, aOperation);
+        EnqueueStreamAndPromiseForOperation(aDestinationStream, aPromise,
+                                            aOperation);
 
       SystemClockDriver* driver;
       if (CurrentDriver()->NextDriver()) {
@@ -3346,35 +3312,39 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(AudioNodeStream* aStream,
     } else if (!audioTrackPresent && CurrentDriver()->Switching()) {
       MOZ_ASSERT(CurrentDriver()->NextDriver()->AsAudioCallbackDriver());
       CurrentDriver()->NextDriver()->AsAudioCallbackDriver()->
-        EnqueueStreamAndPromiseForOperation(aStream, aPromise, aOperation);
+        EnqueueStreamAndPromiseForOperation(aDestinationStream, aPromise,
+                                            aOperation);
     } else {
       
       
-      AudioContextOperationCompleted(aStream, aPromise, aOperation);
+      AudioContextOperationCompleted(aDestinationStream, aPromise, aOperation);
     }
   }
 }
 
 void
-MediaStreamGraph::ApplyAudioContextOperation(AudioNodeStream* aNodeStream,
+MediaStreamGraph::ApplyAudioContextOperation(MediaStream* aDestinationStream,
+                                             const nsTArray<MediaStream*>& aStreams,
                                              AudioContextOperation aOperation,
                                              void* aPromise)
 {
   class AudioContextOperationControlMessage : public ControlMessage
   {
   public:
-    AudioContextOperationControlMessage(AudioNodeStream* aStream,
+    AudioContextOperationControlMessage(MediaStream* aDestinationStream,
+                                        const nsTArray<MediaStream*>& aStreams,
                                         AudioContextOperation aOperation,
                                         void* aPromise)
-      : ControlMessage(aStream)
+      : ControlMessage(aDestinationStream)
+      , mStreams(aStreams)
       , mAudioContextOperation(aOperation)
       , mPromise(aPromise)
     {
     }
     virtual void Run()
     {
-      mStream->GraphImpl()->ApplyAudioContextOperationImpl(
-        mStream->AsAudioNodeStream(), mAudioContextOperation, mPromise);
+      mStream->GraphImpl()->ApplyAudioContextOperationImpl(mStream,
+        mStreams, mAudioContextOperation, mPromise);
     }
     virtual void RunDuringShutdown()
     {
@@ -3382,13 +3352,17 @@ MediaStreamGraph::ApplyAudioContextOperation(AudioNodeStream* aNodeStream,
     }
 
   private:
+    
+    
+    nsTArray<MediaStream*> mStreams;
     AudioContextOperation mAudioContextOperation;
     void* mPromise;
   };
 
   MediaStreamGraphImpl* graphImpl = static_cast<MediaStreamGraphImpl*>(this);
   graphImpl->AppendMessage(
-    new AudioContextOperationControlMessage(aNodeStream, aOperation, aPromise));
+    new AudioContextOperationControlMessage(aDestinationStream, aStreams,
+                                            aOperation, aPromise));
 }
 
 bool

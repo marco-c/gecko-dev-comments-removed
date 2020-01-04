@@ -175,10 +175,7 @@ public:
     return mSampleRate;
   }
 
-  AudioContextId Id() const
-  {
-    return mId;
-  }
+  bool ShouldSuspendNewStream() const { return mSuspendCalled; }
 
   double CurrentTime() const;
 
@@ -345,6 +342,8 @@ private:
 
   bool CheckClosed(ErrorResult& aRv);
 
+  nsTArray<MediaStream*> GetAllStreams() const;
+
 private:
   
   
@@ -377,6 +376,8 @@ private:
   bool mIsShutDown;
   
   bool mCloseCalled;
+  
+  bool mSuspendCalled;
 };
 
 static const dom::AudioContext::AudioContextId NO_AUDIO_CONTEXT = 0;

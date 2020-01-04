@@ -319,7 +319,6 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStream)
 
   explicit MediaStream(DOMMediaStream* aWrapper);
-  virtual dom::AudioContext::AudioContextId AudioContextId() const { return 0; }
 
 protected:
   
@@ -583,6 +582,14 @@ public:
   void SetAudioChannelType(dom::AudioChannel aType) { mAudioChannelType = aType; }
   dom::AudioChannel AudioChannelType() const { return mAudioChannelType; }
 
+  bool IsSuspended() { return mSuspendedCount > 0; }
+  void IncrementSuspendCount() { ++mSuspendedCount; }
+  void DecrementSuspendCount()
+  {
+    NS_ASSERTION(mSuspendedCount > 0, "Suspend count underrun");
+    --mSuspendedCount;
+  }
+
 protected:
   void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime, GraphTime aBlockedTime)
   {
@@ -669,6 +676,12 @@ protected:
     TrackID mTrackID;
   };
   nsTArray<AudioOutputStream> mAudioOutputStreams;
+
+  
+
+
+
+  int32_t mSuspendedCount;
 
   
 
@@ -1253,10 +1266,13 @@ public:
 
   ProcessedMediaStream* CreateAudioCaptureStream(DOMMediaStream* aWrapper);
 
+  enum {
+    ADD_STREAM_SUSPENDED = 0x01
+  };
   
 
 
-  void AddStream(MediaStream* aStream);
+  void AddStream(MediaStream* aStream, uint32_t aFlags = 0);
 
   
 
@@ -1269,9 +1285,12 @@ public:
 
 
 
-  void ApplyAudioContextOperation(AudioNodeStream* aNodeStream,
+
+
+  void ApplyAudioContextOperation(MediaStream* aDestinationStream,
+                                  const nsTArray<MediaStream*>& aStreams,
                                   dom::AudioContextOperation aState,
-                                  void * aPromise);
+                                  void* aPromise);
 
   bool IsNonRealtime() const;
   

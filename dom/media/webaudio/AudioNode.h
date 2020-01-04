@@ -177,7 +177,7 @@ public:
   };
 
   
-  AudioNodeStream* GetStream() { return mStream; }
+  AudioNodeStream* GetStream() const { return mStream; }
 
   const nsTArray<InputNode>& InputNodes() const
   {

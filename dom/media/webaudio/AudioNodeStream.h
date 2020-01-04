@@ -71,8 +71,7 @@ protected:
 
   AudioNodeStream(AudioNodeEngine* aEngine,
                   Flags aFlags,
-                  TrackRate aSampleRate,
-                  AudioContext::AudioContextId aContextId);
+                  TrackRate aSampleRate);
 
   ~AudioNodeStream();
 
@@ -144,7 +143,6 @@ public:
   
   AudioNodeEngine* Engine() { return mEngine; }
   TrackRate SampleRate() const { return mSampleRate; }
-  AudioContext::AudioContextId AudioContextId() const override { return mAudioContextId; }
 
   
 
@@ -196,9 +194,6 @@ protected:
   OutputChunks mLastChunks;
   
   const TrackRate mSampleRate;
-  
-  
-  const AudioContext::AudioContextId mAudioContextId;
   
   const Flags mFlags;
   
