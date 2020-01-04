@@ -592,6 +592,8 @@ gfxUserFontEntry::SetLoadState(UserFontLoadState aLoadState)
     mUserFontLoadState = aLoadState;
 }
 
+MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(UserFontMallocSizeOfOnAlloc)
+
 bool
 gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData, uint32_t& aLength)
 {
@@ -655,6 +657,14 @@ gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData, uint32_t& aLength)
     }
 
     if (fe) {
+        
+        
+        
+        
+        
+        
+        fe->mComputedSizeOfUserFont = UserFontMallocSizeOfOnAlloc(saneData);
+
         
         
         
@@ -1141,6 +1151,13 @@ gfxUserFontSet::UserFontCache::CacheFont(gfxFontEntry* aFontEntry,
             obs->AddObserver(flusher, "last-pb-context-exited", false);
             obs->AddObserver(flusher, "xpcom-shutdown", false);
         }
+
+        
+        
+        
+        
+        
+        RegisterStrongMemoryReporter(new MemoryReporter());
     }
 
     if (data->mLength) {
@@ -1265,6 +1282,89 @@ gfxUserFontSet::UserFontCache::Shutdown()
         delete sUserFonts;
         sUserFonts = nullptr;
     }
+}
+
+MOZ_DEFINE_MALLOC_SIZE_OF(UserFontsMallocSizeOf)
+
+nsresult
+gfxUserFontSet::UserFontCache::Entry::ReportMemory(nsIMemoryReporterCallback* aCb,
+                                                   nsISupports* aClosure,
+                                                   bool aAnonymize)
+{
+    nsAutoCString path("explicit/gfx/user-fonts/font(");
+
+    if (aAnonymize) {
+        path.AppendPrintf("<anonymized-%p>", this);
+    } else {
+        if (mFontEntry) { 
+            NS_ConvertUTF16toUTF8 familyName(mFontEntry->mFamilyName);
+            path.AppendPrintf("family=%s", familyName.get());
+        }
+        if (mURI) {
+            nsCString spec;
+            mURI->GetSpec(spec);
+            spec.ReplaceChar('/', '\\');
+            
+            
+            bool isData;
+            if (NS_SUCCEEDED(mURI->SchemeIs("data", &isData)) && isData &&
+                spec.Length() > 255) {
+                spec.Truncate(252);
+                spec.Append("...");
+            }
+            path.AppendPrintf(", url=%s", spec.get());
+        }
+        if (mPrincipal) {
+            nsCOMPtr<nsIURI> uri;
+            mPrincipal->GetURI(getter_AddRefs(uri));
+            nsCString spec;
+            uri->GetSpec(spec);
+            if (!spec.IsEmpty()) {
+                
+                
+                
+                
+                spec.ReplaceChar('/', '\\');
+                path.AppendPrintf(", principal=%s", spec.get());
+            }
+        }
+    }
+    path.Append(')');
+
+    return aCb->
+        Callback(EmptyCString(), path,
+                 nsIMemoryReporter::KIND_HEAP, nsIMemoryReporter::UNITS_BYTES,
+                 mFontEntry->ComputedSizeOfExcludingThis(UserFontsMallocSizeOf),
+                 NS_LITERAL_CSTRING("Memory used by @font-face resource."),
+                 aClosure);
+}
+
+NS_IMPL_ISUPPORTS(gfxUserFontSet::UserFontCache::MemoryReporter,
+                  nsIMemoryReporter)
+
+NS_IMETHODIMP
+gfxUserFontSet::UserFontCache::MemoryReporter::CollectReports(
+    nsIMemoryReporterCallback* aCb, nsISupports* aClosure, bool aAnonymize)
+{
+    if (!sUserFonts) {
+        return NS_OK;
+    }
+
+    for (auto it = sUserFonts->Iter(); !it.Done(); it.Next()) {
+        nsresult rv = it.Get()->ReportMemory(aCb, aClosure, aAnonymize);
+        if (NS_FAILED(rv)) {
+            return rv;
+        }
+    }
+
+    return aCb->
+        Callback(EmptyCString(),
+                 NS_LITERAL_CSTRING("explicit/gfx/user-fonts/cache-overhead"),
+                 nsIMemoryReporter::KIND_HEAP, nsIMemoryReporter::UNITS_BYTES,
+                 sUserFonts->ShallowSizeOfIncludingThis(UserFontsMallocSizeOf),
+                 NS_LITERAL_CSTRING("Memory used by the @font-face cache, "
+                                    "not counting the actual font resources."),
+                 aClosure);
 }
 
 #ifdef DEBUG_USERFONT_CACHE
