@@ -147,6 +147,7 @@
 @RESPATH@/components/alerts.xpt
 #ifdef ACCESSIBILITY
 #ifdef XP_WIN32
+@BINPATH@/Accessible.tlb
 @BINPATH@/AccessibleMarshal.dll
 @BINPATH@/IA2Marshal.dll
 #endif
@@ -353,7 +354,7 @@
 @RESPATH@/components/FeedProcessor.js
 @RESPATH@/components/PackagedAppUtils.js
 @RESPATH@/components/PackagedAppUtils.manifest
-#ifndef XP_MACOSX
+#if defined(XP_LINUX) || defined(XP_WIN)
 ; OSX uses native platform impl.  Windows, Linux, and Android uses fallback JS impl.
 @BINPATH@/components/nsDNSServiceDiscovery.manifest
 @BINPATH@/components/nsDNSServiceDiscovery.js
