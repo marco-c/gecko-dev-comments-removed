@@ -6898,23 +6898,6 @@ nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width, int32_t height)
   if (mResizeState != RESIZING && mSizeMode == nsSizeMode_Normal) {
     
     
-    
-    if (oldScale > 0.0) {
-      double ratio = newScale / oldScale;
-      LayoutDeviceIntRect cr, sr;
-      GetClientBounds(cr);
-      GetScreenBounds(sr);
-      int32_t w = sr.width - cr.width + NSToIntRound(cr.width * ratio);
-      int32_t h = sr.height - cr.height + NSToIntRound(cr.height * ratio);
-      
-      x -= (w - width) / 2;
-      y -= (h - height) / 2;
-      width = w;
-      height = h;
-    }
-
-    
-    
     nsCOMPtr<nsIScreenManager> sm = do_GetService(sScreenManagerContractID);
     if (sm) {
       nsCOMPtr<nsIScreen> screen;
