@@ -107,9 +107,12 @@ const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
     let census;
     let inverted = getState().inverted;
     let breakdown = getState().breakdown;
+    let filter = getState().filter;
 
     
-    if (inverted === snapshot.inverted && breakdownEquals(breakdown, snapshot.breakdown)) {
+    if (inverted === snapshot.inverted
+        && filter === snapshot.filter
+        && breakdownEquals(breakdown, snapshot.breakdown)) {
       return;
     }
 
@@ -119,8 +122,18 @@ const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
     do {
       inverted = getState().inverted;
       breakdown = getState().breakdown;
-      dispatch({ type: actions.TAKE_CENSUS_START, snapshot, inverted, breakdown });
+      filter = getState().filter;
+
+      dispatch({
+        type: actions.TAKE_CENSUS_START,
+        snapshot,
+        inverted,
+        filter,
+        breakdown
+      });
+
       let opts = inverted ? { asInvertedTreeNode: true } : { asTreeNode: true };
+      opts.filter = filter || null;
 
       try {
         census = yield heapWorker.takeCensus(snapshot.path, { breakdown }, opts);
@@ -131,9 +144,17 @@ const takeCensus = exports.takeCensus = function (heapWorker, snapshot) {
       }
     }
     while (inverted !== getState().inverted ||
+           filter !== getState().filter ||
            !breakdownEquals(breakdown, getState().breakdown));
 
-    dispatch({ type: actions.TAKE_CENSUS_END, snapshot, breakdown, inverted, census });
+    dispatch({
+      type: actions.TAKE_CENSUS_END,
+      snapshot,
+      breakdown,
+      inverted,
+      filter,
+      census
+    });
   };
 };
 

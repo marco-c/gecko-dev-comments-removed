@@ -35,6 +35,9 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   
   inverted: PropTypes.bool,
   
+  
+  filter: PropTypes.string,
+  
   error: PropTypes.object,
   
   creationTime: PropTypes.number,
@@ -84,4 +87,6 @@ let appModel = exports.app = {
   snapshots: PropTypes.arrayOf(snapshotModel).isRequired,
   
   inverted: PropTypes.bool.isRequired,
+  
+  filter: PropTypes.string,
 };
