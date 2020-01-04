@@ -2515,16 +2515,17 @@ gfxPlatform::InitOpenGLConfig()
     openGLFeature.EnableByDefault();
   #endif
 
-  nsCString message;
-  nsCString failureId;
-  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_OPENGL_LAYERS, &message, failureId)) {
-    openGLFeature.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
-  }
-
   
   
   if (gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly()) {
     openGLFeature.UserForceEnable("Force-enabled by pref");
+    return;
+  }
+
+  nsCString message;
+  nsCString failureId;
+  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_OPENGL_LAYERS, &message, failureId)) {
+    openGLFeature.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
   }
 }
 
