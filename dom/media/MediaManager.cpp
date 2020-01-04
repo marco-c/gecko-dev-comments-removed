@@ -667,17 +667,19 @@ public:
   static already_AddRefed<nsDOMUserMediaStream>
   CreateSourceStream(nsPIDOMWindowInner* aWindow,
                      GetUserMediaCallbackMediaStreamListener* aListener,
-                     MediaStreamGraph* aMSG)
+                     MediaStreamGraph* aMSG,
+                     MediaStreamTrackSourceGetter* aTrackSourceGetter)
   {
-    RefPtr<nsDOMUserMediaStream> stream = new nsDOMUserMediaStream(aWindow,
-                                                                   aListener);
+    RefPtr<nsDOMUserMediaStream> stream =
+      new nsDOMUserMediaStream(aWindow, aListener, aTrackSourceGetter);
     stream->InitSourceStream(aMSG);
     return stream.forget();
   }
 
   nsDOMUserMediaStream(nsPIDOMWindowInner* aWindow,
-                       GetUserMediaCallbackMediaStreamListener* aListener) :
-    DOMLocalMediaStream(aWindow),
+                       GetUserMediaCallbackMediaStreamListener* aListener,
+                       MediaStreamTrackSourceGetter* aTrackSourceGetter) :
+    DOMLocalMediaStream(aWindow, aTrackSourceGetter),
     mListener(aListener)
   {}
 
@@ -938,8 +940,9 @@ public:
 
       
       
-      domStream = nsDOMUserMediaStream::CreateSourceStream(window, mListener,
-                                                           msg);
+      
+      domStream =
+        nsDOMUserMediaStream::CreateSourceStream(window, mListener, msg, nullptr);
 
       if (mAudioDevice) {
         nsString audioDeviceName;
