@@ -14,9 +14,6 @@ const CURSOR_MIN_DELTA = 3;
 const CURSOR_MIN_INTERVAL = 100;
 const CURSOR_CLICK_DELAY = 1000;
 
-
-const FRAME_SCRIPT = "chrome://loop/content/modules/tabFrame.js?" + Math.random();
-
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
@@ -60,7 +57,6 @@ var WindowListener = {
     let FileReader = window.FileReader;
     let menuItem = null;
     let isSlideshowOpen = false;
-    let titleChangedListener = null;
 
     
     var LoopUI = {
@@ -117,10 +113,6 @@ var WindowListener = {
         }
 
         return this._constants;
-      },
-
-      get mm() {
-        return window.getGroupMessageManager("browsers");
       },
 
       
@@ -320,10 +312,6 @@ var WindowListener = {
         if (window == Services.appShell.hiddenDOMWindow) {
           return;
         }
-
-        
-        
-        this.mm.loadFrameScript(FRAME_SCRIPT, true);
 
         
         window.addEventListener("unload", () => {
@@ -534,13 +522,9 @@ var WindowListener = {
           gBrowser.tabContainer.addEventListener("TabSelect", this);
           this._listeningToTabSelect = true;
 
-          titleChangedListener = this.handleDOMTitleChanged.bind(this);
-
           
           
-          this.mm.addMessageListener("loop@mozilla.org:DOMTitleChanged",
-            titleChangedListener);
-
+          gBrowser.addEventListener("DOMTitleChanged", this);
           this._browserSharePaused = false;
 
           
@@ -566,12 +550,7 @@ var WindowListener = {
 
         this._hideBrowserSharingInfoBar();
         gBrowser.tabContainer.removeEventListener("TabSelect", this);
-
-        if (titleChangedListener) {
-          this.mm.removeMessageListener("loop@mozilla.org:DOMTitleChanged",
-            titleChangedListener);
-          titleChangedListener = null;
-        }
+        gBrowser.removeEventListener("DOMTitleChanged", this);
 
         
         gBrowser.removeEventListener("mousemove", this);
@@ -812,24 +791,12 @@ var WindowListener = {
       
 
 
-
-
-      handleDOMTitleChanged: function(message) {
-        if (!this._listeningToTabSelect || this._browserSharePaused) {
-          return;
-        }
-
-        if (gBrowser.selectedBrowser == message.target) {
-          
-          this._notifyBrowserSwitch();
-        }
-      },
-
-      
-
-
       handleEvent: function(event) {
         switch (event.type) {
+          case "DOMTitleChanged":
+            
+            this._notifyBrowserSwitch();
+            break;
           case "TabSelect":
             let wasVisible = false;
             
@@ -971,10 +938,6 @@ var WindowListener = {
   tearDownBrowserUI: function(window) {
     if (window.LoopUI) {
       window.LoopUI.removeMenuItem();
-
-      
-      
-      window.LoopUI.mm.removeDelayedFrameScript(FRAME_SCRIPT);
 
       
     }

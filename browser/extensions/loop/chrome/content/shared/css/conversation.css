@@ -510,27 +510,10 @@ html, .fx-embedded, #main,
   width: 272px;
 }
 
-.media-wrapper > .text-chat-view > .text-chat-entries > .text-chat-scroller > .welcome-message {
-  font-size: 1.2rem;
-  margin: 0 0 15px;
-  color: #5e5f64;
-  line-height: 20px;
-}
-
-.media-wrapper.showing-local-streams > .text-chat-view,
-.media-wrapper.showing-media-wait > .text-chat-view {
+.media-wrapper.showing-local-streams > .text-chat-view {
   
 
   height: calc(100% - 204px);
-}
-
-.media-wrapper.showing-media-wait > .text-chat-view {
-  order: 2;
-}
-
-.media-wrapper.showing-media-wait > .local {
-  
-  display: none;
 }
 
 .media-wrapper.showing-local-streams.receiving-screen-share {
@@ -540,44 +523,27 @@ html, .fx-embedded, #main,
 .media-wrapper.showing-local-streams.receiving-screen-share > .text-chat-view {
   
 
-  height: calc(100% - 204px);
+  height: calc(100% - 408px);
 }
 
 .media-wrapper.receiving-screen-share > .screen {
   order: 1;
 }
 
-.media-wrapper.receiving-screen-share > .text-chat-view,
-.media-wrapper.showing-local-streams > .text-chat-view  {
-  order: 4;
+.media-wrapper.receiving-screen-share > .text-chat-view {
+  order: 2;
 }
 
 .media-wrapper.receiving-screen-share > .remote {
   flex: 0 1 auto;
-  order: 2;
+  order: 3;
   
   height: 204px;
   width: 272px;
 }
 
 .media-wrapper.receiving-screen-share > .local {
-  order: 3;
-}
-
-.media-wrapper.receiving-screen-share.showing-remote-streams > .local {
-  position: absolute;
-  z-index: 2;
-  padding: 8px;
-  right: 0;
-  left: auto;
-  top: 124px;
-  
-  width: calc(80px + 16px + 4px);
-  height: calc(60px + 16px + 4px);
-}
-
-.media-wrapper.receiving-screen-share.showing-remote-streams > .local > .remote-video-box {
-  border: solid 2px #fff;
+  order: 4;
 }
 
 @media screen and (max-width:640px) {
@@ -664,7 +630,7 @@ html, .fx-embedded, #main,
     object-fit: contain;
   }
 
-  .media-wrapper.receiving-screen-share.showing-remote-streams > .local {
+  .media-wrapper.receiving-screen-share > .local {
     
     order: 3;
     flex: 1 1 auto;
@@ -675,15 +641,13 @@ html, .fx-embedded, #main,
     max-width: 50%;
     
     position: relative;
-    top: auto;
     bottom: auto;
     right: auto;
     margin: 0;
-    padding: 0;
   }
 
-  .media-wrapper.receiving-screen-share.showing-remote-streams > .local > .remote-video-box {
-    border: 0;
+  .media-wrapper.receiving-screen-share > .text-chat-view {
+    order: 4;
   }
 }
 
