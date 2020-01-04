@@ -31,7 +31,9 @@ namespace dom {
 class StructuredCloneHolderBase
 {
 public:
-  StructuredCloneHolderBase();
+  typedef JS::StructuredCloneScope StructuredCloneScope;
+
+  StructuredCloneHolderBase(StructuredCloneScope aScope = StructuredCloneScope::SameProcessSameThread);
   virtual ~StructuredCloneHolderBase();
 
   
@@ -115,6 +117,8 @@ public:
 protected:
   nsAutoPtr<JSAutoStructuredCloneBuffer> mBuffer;
 
+  StructuredCloneScope mStructuredCloneScope;
+
 #ifdef DEBUG
   bool mClearCalled;
 #endif
@@ -139,13 +143,6 @@ public:
     TransferringNotSupported
   };
 
-  enum ContextSupport
-  {
-    SameProcessSameThread,
-    SameProcessDifferentThread,
-    DifferentProcess
-  };
-
   
   
   
@@ -156,7 +153,7 @@ public:
   
   explicit StructuredCloneHolder(CloningSupport aSupportsCloning,
                                  TransferringSupport aSupportsTransferring,
-                                 ContextSupport aContextSupport);
+                                 StructuredCloneScope aStructuredCloneScope);
   virtual ~StructuredCloneHolder();
 
   
@@ -194,9 +191,9 @@ public:
     return mBlobImplArray;
   }
 
-  ContextSupport SupportedContext() const
+  StructuredCloneScope CloneScope() const
   {
-    return mSupportedContext;
+    return mStructuredCloneScope;
   }
 
   
@@ -294,7 +291,6 @@ protected:
 
   bool mSupportsCloning;
   bool mSupportsTransferring;
-  ContextSupport mSupportedContext;
 
   
   nsTArray<RefPtr<BlobImpl>> mBlobImplArray;
