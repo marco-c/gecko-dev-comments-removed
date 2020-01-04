@@ -842,8 +842,7 @@ BluetoothOppManager::ComposePacket(uint8_t aOpCode, UnixSocketBuffer* aMessage)
     
     frameHeaderLength = 3;
 
-    mPacketLength = ((static_cast<int>(data[1]) << 8) | data[2]) -
-                    frameHeaderLength;
+    mPacketLength = BigEndian::readUint16(&data[1]) - frameHeaderLength;
     
 
 
@@ -1094,7 +1093,7 @@ BluetoothOppManager::ClientDataHandler(UnixSocketBuffer* aMessage)
     
     mRemoteObexVersion = data[3];
     mRemoteConnectionFlags = data[4];
-    mRemoteMaxPacketLength = (static_cast<int>(data[5]) << 8) | data[6];
+    mRemoteMaxPacketLength = BigEndian::readUint16(&data[5]);
 
     
     int fileNameByteLen = (mFileName.Length() + 1) * 2;

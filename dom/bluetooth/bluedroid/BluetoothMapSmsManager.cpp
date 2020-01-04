@@ -502,8 +502,7 @@ BluetoothMapSmsManager::ReplyToConnect()
 
   req[3] = 0x10; 
   req[4] = 0x00; 
-  req[5] = BluetoothMapSmsManager::MAX_PACKET_LENGTH >> 8;
-  req[6] = (uint8_t)BluetoothMapSmsManager::MAX_PACKET_LENGTH;
+  BigEndian::writeUint16(&req[5], BluetoothMapSmsManager::MAX_PACKET_LENGTH);
 
   
   
