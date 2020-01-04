@@ -35,7 +35,7 @@ template <typename Source> void
 MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, BarrierKind kind,
                              Register scratch, Label* miss)
 {
-    MOZ_ASSERT(kind != BarrierKind::NoBarrier);
+    MOZ_ASSERT(kind == BarrierKind::TypeTagOnly || kind == BarrierKind::TypeSet);
     MOZ_ASSERT(!types->unknown());
 
     Label matched;
@@ -50,49 +50,24 @@ MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, Barrie
         TypeSet::AnyObjectType()
     };
 
+    
+    
+    if (types->hasType(TypeSet::DoubleType())) {
+        MOZ_ASSERT(types->hasType(TypeSet::Int32Type()));
+        tests[0] = TypeSet::DoubleType();
+    }
+
     Register tag = extractTag(address, scratch);
+
+    
     BranchType lastBranch;
+    for (size_t i = 0; i < mozilla::ArrayLength(tests); i++) {
+        if (!types->hasType(tests[i]))
+            continue;
 
-    if (kind != BarrierKind::ObjectTypesOnly) {
-        
-        
-        if (types->hasType(TypeSet::DoubleType())) {
-            MOZ_ASSERT(types->hasType(TypeSet::Int32Type()));
-            tests[0] = TypeSet::DoubleType();
-        }
-
-        
-        for (size_t i = 0; i < mozilla::ArrayLength(tests); i++) {
-            if (!types->hasType(tests[i]))
-                continue;
-
-            if (lastBranch.isInitialized())
-                lastBranch.emit(*this);
-            lastBranch = BranchType(Equal, tag, tests[i], &matched);
-        }
-    } else {
-#ifdef DEBUG
-        
-        
-
-        if (types->hasType(TypeSet::DoubleType())) {
-            MOZ_ASSERT(types->hasType(TypeSet::Int32Type()));
-            tests[0] = TypeSet::DoubleType();
-        }
-
-        Label matchedPrimitive;
-        for (size_t i = 0; i < mozilla::ArrayLength(tests); i++) {
-            if (!types->hasType(tests[i]))
-                continue;
-            BranchType branch(Equal, tag, tests[i], &matchedPrimitive);
-            branch.emit(*this);
-        }
-        branchTestObject(Equal, tag, &matchedPrimitive);
-
-        assumeUnreachable("Unexpected primitive type");
-
-        bind(&matchedPrimitive);
-#endif
+        if (lastBranch.isInitialized())
+            lastBranch.emit(*this);
+        lastBranch = BranchType(Equal, tag, tests[i], &matched);
     }
 
     
@@ -115,7 +90,7 @@ MacroAssembler::guardTypeSet(const Source& address, const TypeSet* types, Barrie
 
     
     MOZ_ASSERT(scratch != InvalidReg);
-    branchTestObject(NotEqual, tag, kind == BarrierKind::ObjectTypesOnly ? &matched : miss);
+    branchTestObject(NotEqual, tag, miss);
     if (kind != BarrierKind::TypeTagOnly) {
         Register obj = extractObject(address, scratch);
         guardObjectType(obj, types, scratch, miss);
