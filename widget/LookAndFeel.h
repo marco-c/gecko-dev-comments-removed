@@ -291,16 +291,6 @@ public:
 
     eIntID_MacGraphiteTheme,
 
-    
-
-
-
-
-
-
-
-    eIntID_MacLionTheme,
-
    
 
 
