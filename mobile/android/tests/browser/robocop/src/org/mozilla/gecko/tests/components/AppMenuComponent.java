@@ -245,7 +245,7 @@ public class AppMenuComponent extends BaseComponent {
 
         
         
-        if (HardwareUtils.hasMenuButton() || DeviceHelper.isTablet()) {
+        if (DeviceHelper.isTablet()) {
             mSolo.sendKey(Solo.MENU);
         } else {
             pressOverflowMenuButton();

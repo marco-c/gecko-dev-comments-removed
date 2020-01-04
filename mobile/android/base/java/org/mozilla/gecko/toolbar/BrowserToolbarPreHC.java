@@ -54,17 +54,12 @@ class BrowserToolbarPreHC extends BrowserToolbarPhoneBase {
 
         
         tabsButton.setEnabled(!isEditing);
+        menuButton.setEnabled(!isEditing);
 
         ViewHelper.setTranslationX(urlBarTranslatingEdge, entryTranslation);
         ViewHelper.setTranslationX(tabsButton, curveTranslation);
         ViewHelper.setTranslationX(tabsCounter, curveTranslation);
-
-        if (!HardwareUtils.hasMenuButton()) {
-            
-            menuButton.setEnabled(!isEditing);
-
-            ViewHelper.setTranslationX(menuButton, curveTranslation);
-            ViewHelper.setTranslationX(menuIcon, curveTranslation);
-        }
+        ViewHelper.setTranslationX(menuButton, curveTranslation);
+        ViewHelper.setTranslationX(menuIcon, curveTranslation);
     }
 }
