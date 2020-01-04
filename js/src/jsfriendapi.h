@@ -2584,15 +2584,20 @@ IdToValue(jsid id)
 
 
 
+
+
+
+
+
 struct ScriptEnvironmentPreparer {
     struct Closure {
         virtual bool operator()(JSContext* cx) = 0;
     };
 
-    virtual bool invoke(JS::HandleObject scope, Closure& closure) = 0;
+    virtual void invoke(JS::HandleObject scope, Closure& closure) = 0;
 };
 
-extern JS_FRIEND_API(bool)
+extern JS_FRIEND_API(void)
 PrepareScriptEnvironmentAndInvoke(JSRuntime* rt, JS::HandleObject scope,
                                   ScriptEnvironmentPreparer::Closure& closure);
 
