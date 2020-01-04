@@ -497,7 +497,7 @@ protected:
 
   
   BluetoothAddress mBdAddress;
-  nsString mBdName;
+  BluetoothRemoteName mBdName;
   bool mEnabled;
   bool mDiscoverable;
   bool mDiscovering;
@@ -522,7 +522,7 @@ protected:
   nsTArray<GetDeviceRequest> mGetDeviceRequests;
 
   
-  nsDataHashtable<BluetoothAddressHashKey, nsString> mDeviceNameMap;
+  nsDataHashtable<BluetoothAddressHashKey, BluetoothRemoteName> mDeviceNameMap;
 
   
   nsTArray<GetRemoteServiceRecordRequest> mGetRemoteServiceRecordArray;
