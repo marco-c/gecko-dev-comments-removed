@@ -10,6 +10,8 @@ const SPECIALVALUES = new Set([
   "unset"
 ]);
 
+const {getCSSLexer} = require("devtools/shared/css-lexer");
+
 
 
 
@@ -66,7 +68,11 @@ CssAngle.prototype = {
   },
 
   get valid() {
-    return /^-?\d+\.?\d*(deg|rad|grad|turn)$/gi.test(this.authored);
+    let token = getCSSLexer(this.authored).nextToken();
+    if (!token) {
+      return false;
+    }
+    return (token.tokenType === "dimension" && token.text in CssAngle.ANGLEUNIT);
   },
 
   get specialValue() {
