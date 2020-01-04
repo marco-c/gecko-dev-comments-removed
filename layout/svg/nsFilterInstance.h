@@ -77,7 +77,7 @@ public:
 
 
   static nsresult PaintFilteredFrame(nsIFrame *aFilteredFrame,
-                                     gfxContext& aContext,
+                                     DrawTarget* aDrawTarget,
                                      const gfxMatrix& aTransform,
                                      nsSVGFilterPaintCallback *aPaintCallback,
                                      const nsRegion* aDirtyArea);
@@ -155,7 +155,7 @@ public:
 
 
 
-  nsresult Render(gfxContext* aContext);
+  nsresult Render(DrawTarget* aDrawTarget);
 
   const FilterDescription& ExtractDescriptionAndAdditionalImages(nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages)
   {
