@@ -1193,11 +1193,9 @@ MBasicBlock::addPredecessorPopN(TempAllocator& alloc, MBasicBlock* pred, uint32_
                 
                 MPhi* phi;
                 if (mine->type() == other->type())
-                    phi = MPhi::New(alloc.fallible(), mine->type());
+                    phi = MPhi::New(alloc, mine->type());
                 else
-                    phi = MPhi::New(alloc.fallible());
-                if (!phi)
-                    return false;
+                    phi = MPhi::New(alloc);
                 addPhi(phi);
 
                 
