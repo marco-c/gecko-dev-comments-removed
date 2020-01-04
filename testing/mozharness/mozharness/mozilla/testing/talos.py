@@ -297,7 +297,7 @@ class Talos(TestingMixin, MercurialScript, BlobUploadMixin):
     
     
 
-    def download_and_extract(self, target_unzip_dirs=None, suite_categories=None):
+    def download_and_extract(self, extract_dirs=None, suite_categories=None):
         return super(Talos, self).download_and_extract(
             suite_categories=['common', 'talos']
         )
