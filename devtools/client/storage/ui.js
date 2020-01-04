@@ -257,11 +257,43 @@ StorageUI.prototype = {
 
 
   onCleared: function (response) {
-    let [type, host] = this.tree.selectedItem;
-    if (response.hasOwnProperty(type) && response[type].indexOf(host) > -1) {
-      this.table.clear();
-      this.hideSidebar();
-      this.emit("store-objects-cleared");
+    function* enumPaths() {
+      for (let type in response) {
+        if (Array.isArray(response[type])) {
+          
+          for (let host of response[type]) {
+            yield [type, host];
+          }
+        } else {
+          
+          for (let host in response[type]) {
+            let paths = response[type][host];
+
+            if (!paths.length) {
+              yield [type, host];
+            } else {
+              for (let path of paths) {
+                try {
+                  path = JSON.parse(path);
+                  yield [type, host, ...path];
+                } catch (ex) {
+                  
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (let path of enumPaths()) {
+      
+      if (this.tree.isSelected(path)) {
+        this.table.clear();
+        this.hideSidebar();
+        this.emit("store-objects-cleared");
+        break;
+      }
     }
   },
 
