@@ -4093,17 +4093,23 @@ public class BrowserApp extends GeckoApp
     }
 
     @Override
-    protected StartupAction getStartupAction(final String passedURL, final String action) {
-        final boolean inGuestMode = GeckoProfile.get(this).inGuestMode();
-        if (inGuestMode) {
-            return StartupAction.GUEST;
-        }
-        if (Restrictions.isRestrictedProfile(this)) {
-            return StartupAction.RESTRICTED;
-        }
+    protected void recordStartupActionTelemetry(final String passedURL, final String action) {
+        final TelemetryContract.Method method;
         if (ACTION_HOMESCREEN_SHORTCUT.equals(action)) {
-            return StartupAction.SHORTCUT;
+            
+            method = TelemetryContract.Method.HOMESCREEN;
+        } else if (passedURL == null) {
+            Telemetry.sendUIEvent(TelemetryContract.Event.LAUNCH, TelemetryContract.Method.HOMESCREEN, "launcher");
+            method = TelemetryContract.Method.HOMESCREEN;
+        } else {
+            
+            method = TelemetryContract.Method.INTENT;
         }
-        return (passedURL == null ? StartupAction.NORMAL : StartupAction.URL);
+
+        if (GeckoProfile.get(this).inGuestMode()) {
+            Telemetry.sendUIEvent(TelemetryContract.Event.LAUNCH, method, "guest");
+        } else if (Restrictions.isRestrictedProfile(this)) {
+            Telemetry.sendUIEvent(TelemetryContract.Event.LAUNCH, method, "restricted");
+        }
     }
 }
