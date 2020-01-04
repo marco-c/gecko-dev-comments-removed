@@ -36,7 +36,6 @@ public:
     : Tokenizer(aInput)
     
     , originAttribs(0, false)
-    , isPrivate(false)
     , isAnonymous(false)
     
     , lastTag(0)
@@ -46,7 +45,6 @@ public:
 private:
   
   NeckoOriginAttributes originAttribs;
-  bool isPrivate;
   bool isAnonymous;
   nsCString idEnhance;
   nsDependentCSubstring cacheKey;
@@ -92,7 +90,7 @@ private:
       break;
     }
     case 'p':
-      isPrivate = true;
+      originAttribs.SyncAttributesWithPrivateBrowsing(true);
       break;
     case 'b':
       
@@ -166,7 +164,7 @@ public:
   {
     RefPtr<LoadContextInfo> info;
     if (ParseTags()) {
-      info = GetLoadContextInfo(isPrivate, isAnonymous, originAttribs);
+      info = GetLoadContextInfo(isAnonymous, originAttribs);
     }
 
     return info.forget();
