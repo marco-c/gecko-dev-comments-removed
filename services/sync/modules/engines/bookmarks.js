@@ -1352,7 +1352,15 @@ BookmarksStore.prototype = {
 
   getAllIDs: function BStore_getAllIDs() {
     let items = {"menu": true,
-                 "toolbar": true};
+                 "toolbar": true,
+                 "unfiled": true,
+                };
+    
+    
+    
+    if (kSpecialIds.findMobileRoot(false)) {
+      items["mobile"] = true;
+    }
     for each (let guid in kSpecialIds.guids) {
       if (guid != "places" && guid != "tags")
         this._getChildren(guid, items);
