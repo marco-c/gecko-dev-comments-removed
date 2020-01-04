@@ -388,7 +388,7 @@ public:
   NS_IMETHODIMP
   Run()
   {
-    NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+    MOZ_ASSERT(NS_IsMainThread());
 
     nsCOMPtr<SuccessCallbackType> onSuccess = mOnSuccess.forget();
     nsCOMPtr<nsIDOMGetUserMediaErrorCallback> onFailure = mOnFailure.forget();
@@ -431,7 +431,7 @@ public:
   NS_IMETHOD
   Run()
   {
-    NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+    MOZ_ASSERT(NS_IsMainThread());
     nsRefPtr<MediaManager> manager(MediaManager::GetInstance());
     manager->RemoveFromWindowList(mWindowID, mListener);
     return NS_OK;
@@ -944,7 +944,7 @@ public:
     bool aec_on = false, agc_on = false, noise_on = false;
     int32_t playout_delay = 0;
 
-    NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+    MOZ_ASSERT(NS_IsMainThread());
     nsPIDOMWindow *window = static_cast<nsPIDOMWindow*>
       (nsGlobalWindow::GetInnerWindowWithId(mWindowID));
 
@@ -1504,7 +1504,7 @@ MediaManager::IsInMediaThread()
   MediaManager*
 MediaManager::Get() {
   if (!sSingleton) {
-    NS_ASSERTION(NS_IsMainThread(), "Only create MediaManager on main thread");
+    MOZ_ASSERT(NS_IsMainThread());
 #ifdef DEBUG
     static int timesCreated = 0;
     timesCreated++;
@@ -2349,6 +2349,7 @@ StopSharingCallback(MediaManager *aThis,
                     StreamListeners *aListeners,
                     void *aData)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   if (aListeners) {
     auto length = aListeners->Length();
     for (size_t i = 0; i < length; ++i) {
@@ -2369,7 +2370,7 @@ StopSharingCallback(MediaManager *aThis,
 void
 MediaManager::OnNavigation(uint64_t aWindowID)
 {
-  NS_ASSERTION(NS_IsMainThread(), "OnNavigation called off main thread");
+  MOZ_ASSERT(NS_IsMainThread());
   LOG(("OnNavigation for %llu", aWindowID));
 
   
@@ -2397,7 +2398,7 @@ MediaManager::OnNavigation(uint64_t aWindowID)
 StreamListeners*
 MediaManager::AddWindowID(uint64_t aWindowId)
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(NS_IsMainThread());
   
   
   
@@ -2446,7 +2447,7 @@ void
 MediaManager::RemoveFromWindowList(uint64_t aWindowID,
   GetUserMediaCallbackMediaStreamListener *aListener)
 {
-  NS_ASSERTION(NS_IsMainThread(), "RemoveFromWindowList called off main thread");
+  MOZ_ASSERT(NS_IsMainThread());
 
   
   aListener->Remove(); 
@@ -2500,7 +2501,7 @@ nsresult
 MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
   const char16_t* aData)
 {
-  NS_ASSERTION(NS_IsMainThread(), "Observer invoked off the main thread");
+  MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
 
   if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
@@ -2816,7 +2817,7 @@ MediaManager::MediaCaptureWindowState(nsIDOMWindow* aWindow, bool* aVideo,
                                       bool* aWindowShare, bool *aAppShare,
                                       bool *aBrowserShare)
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(NS_IsMainThread());
   struct CaptureWindowStateData data;
   data.mVideo = aVideo;
   data.mAudio = aAudio;
@@ -2848,7 +2849,7 @@ MediaManager::MediaCaptureWindowState(nsIDOMWindow* aWindow, bool* aVideo,
 NS_IMETHODIMP
 MediaManager::SanitizeDeviceIds(int64_t aSinceWhen)
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(NS_IsMainThread());
   LOG(("%s: sinceWhen = %llu", __FUNCTION__, aSinceWhen));
 
   media::SanitizeOriginKeys(aSinceWhen, false); 
@@ -3028,7 +3029,7 @@ GetUserMediaCallbackMediaStreamListener::Invalidate()
 void
 GetUserMediaCallbackMediaStreamListener::StopSharing()
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(NS_IsMainThread());
   if (mVideoDevice && !mStopped &&
       (mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Screen ||
        mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Application ||
@@ -3151,6 +3152,7 @@ GetUserMediaCallbackMediaStreamListener::ApplyConstraintsToTrack(
 void
 GetUserMediaCallbackMediaStreamListener::StopTrack(TrackID aTrackID, bool aIsAudio)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   if (((aIsAudio && mAudioDevice) ||
        (!aIsAudio && mVideoDevice)) && !mStopped)
   {
@@ -3168,13 +3170,15 @@ GetUserMediaCallbackMediaStreamListener::StopTrack(TrackID aTrackID, bool aIsAud
   }
 }
 
-
 void
-GetUserMediaCallbackMediaStreamListener::NotifyFinished(MediaStreamGraph* aGraph)
+GetUserMediaCallbackMediaStreamListener::NotifyFinished()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   mFinished = true;
   Invalidate(); 
-  NS_DispatchToMainThread(do_AddRef(new GetUserMediaListenerRemove(mWindowID, this)));
+
+  nsRefPtr<MediaManager> manager(MediaManager::GetInstance());
+  manager->RemoveFromWindowList(mWindowID, this);
 }
 
 
@@ -3191,24 +3195,22 @@ GetUserMediaCallbackMediaStreamListener::NotifyDirectListeners(MediaStreamGraph*
 
 
 
-
 void
-GetUserMediaCallbackMediaStreamListener::NotifyRemoved(MediaStreamGraph* aGraph)
+GetUserMediaCallbackMediaStreamListener::NotifyRemoved()
 {
-  {
-    MutexAutoLock lock(mLock); 
-    MM_LOG(("Listener removed by DOM Destroy(), mFinished = %d", (int) mFinished));
-    mRemoved = true;
-  }
+  MOZ_ASSERT(NS_IsMainThread());
+  MM_LOG(("Listener removed by DOM Destroy(), mFinished = %d", (int) mFinished));
+  mRemoved = true;
+
   if (!mFinished) {
-    NotifyFinished(aGraph);
+    NotifyFinished();
   }
 }
 
 NS_IMETHODIMP
 GetUserMediaNotificationEvent::Run()
 {
-  NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
+  MOZ_ASSERT(NS_IsMainThread());
   
   
   
