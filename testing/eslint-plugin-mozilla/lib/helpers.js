@@ -8,6 +8,7 @@
 
 var escope = require("escope");
 var espree = require("espree");
+var path = require("path");
 
 var regexes = [
   /^(?:Cu|Components\.utils)\.import\(".*\/(.*?)\.jsm?"\);?$/,
@@ -232,5 +233,33 @@ module.exports = {
     var pathAndFilename = scope.getFilename();
 
     return /.*[\\/]browser_.+\.js$/.test(pathAndFilename);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getAbsoluteFilePath: function(context) {
+    var fileName = context.getFilename();
+    var cwd = process.cwd();
+
+    if (path.isAbsolute(fileName)) {
+      
+      
+      
+      return fileName;
+    } else {
+      
+      
+      
+      var dirName = path.dirname(fileName);
+      return cwd.slice(0, cwd.length - dirName.length) + fileName;
+    }
   }
 };
