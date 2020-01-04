@@ -26,6 +26,7 @@
   { 0xbf, 0xe0, 0x27, 0xce, 0xb9, 0x23, 0xd9, 0xac } }
 
 class nsINetworkInterceptController;
+struct ConsoleMsgQueueElem;
 
 class nsCSPContext : public nsIContentSecurityPolicy
 {
@@ -39,6 +40,22 @@ class nsCSPContext : public nsIContentSecurityPolicy
 
   public:
     nsCSPContext();
+
+    
+
+
+
+
+    void flushConsoleMessages();
+
+    void logToConsole(const char16_t* aName,
+                      const char16_t** aParams,
+                      uint32_t aParamsLength,
+                      const nsAString& aSourceName,
+                      const nsAString& aSourceLine,
+                      uint32_t aLineNumber,
+                      uint32_t aColumnNumber,
+                      uint32_t aSeverityFlag);
 
     nsresult SendReports(nsISupports* aBlockedContentSource,
                          nsIURI* aOriginalURI,
@@ -94,6 +111,11 @@ class nsCSPContext : public nsIContentSecurityPolicy
     
     
     nsIPrincipal*                              mLoadingPrincipal;
+
+    
+    
+    nsTArray<ConsoleMsgQueueElem>              mConsoleMsgQueue;
+    bool                                       mQueueUpMessages;
 };
 
 

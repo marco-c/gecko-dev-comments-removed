@@ -174,6 +174,7 @@
 
 
 #include "nsIContentSecurityPolicy.h"
+#include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPService.h"
 #include "nsHTMLStyleSheet.h"
 #include "nsHTMLCSSStyleSheet.h"
@@ -2584,24 +2585,6 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 }
 
 void
-CSPErrorQueue::Add(const char* aMessageName)
-{
-  mErrors.AppendElement(aMessageName);
-}
-
-void
-CSPErrorQueue::Flush(nsIDocument* aDocument)
-{
-  for (uint32_t i = 0; i < mErrors.Length(); i++) {
-    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-        NS_LITERAL_CSTRING("CSP"), aDocument,
-        nsContentUtils::eSECURITY_PROPERTIES,
-        mErrors[i]);
-  }
-  mErrors.Clear();
-}
-
-void
 nsDocument::SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages)
 {
   for (uint32_t i = 0; i < aMessages.Length(); ++i) {
@@ -4598,7 +4581,12 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
   
   
   
-  FlushCSPWebConsoleErrorQueue();
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  NodePrincipal()->GetCsp(getter_AddRefs(csp));
+  if (csp) {
+    static_cast<nsCSPContext*>(csp.get())->flushConsoleMessages();
+  }
+
   nsCOMPtr<nsIHttpChannelInternal> internalChannel =
     do_QueryInterface(GetChannel());
   if (internalChannel) {

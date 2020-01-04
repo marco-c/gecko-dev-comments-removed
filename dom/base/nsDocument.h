@@ -661,29 +661,6 @@ protected:
   bool mHaveShutDown;
 };
 
-class CSPErrorQueue
-{
-  public:
-    
-
-
-
-
-    void Add(const char* aMessageName);
-    void Flush(nsIDocument* aDocument);
-
-    CSPErrorQueue()
-    {
-    }
-
-    ~CSPErrorQueue()
-    {
-    }
-
-  private:
-    nsAutoTArray<const char*,5> mErrors;
-};
-
 
 
 
@@ -1740,11 +1717,6 @@ private:
   bool IsLoopDocument(nsIChannel* aChannel);
   nsresult InitCSP(nsIChannel* aChannel);
 
-  void FlushCSPWebConsoleErrorQueue()
-  {
-    mCSPWebConsoleErrorQueue.Flush(this);
-  }
-
   
 
 
@@ -1867,8 +1839,6 @@ private:
 
   nsrefcnt mStackRefCnt;
   bool mNeedsReleaseAfterStackRefCntRelease;
-
-  CSPErrorQueue mCSPWebConsoleErrorQueue;
 
   nsCOMPtr<nsIDocument> mMasterDocument;
   RefPtr<mozilla::dom::ImportManager> mImportManager;
