@@ -672,7 +672,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       
       mouseEvent->mMessage = eMouseMove;
-      mouseEvent->reason = WidgetMouseEvent::eSynthesized;
+      mouseEvent->mReason = WidgetMouseEvent::eSynthesized;
       
     } else {
       if (sPointerEventEnabled) {

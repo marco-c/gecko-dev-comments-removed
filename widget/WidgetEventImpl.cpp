@@ -274,7 +274,7 @@ WidgetEvent::IsAllowedToDispatchDOMEvent() const
       
       
       
-      return AsMouseEvent()->reason == WidgetMouseEvent::eReal;
+      return AsMouseEvent()->mReason == WidgetMouseEvent::eReal;
 
     case eWheelEventClass: {
       
