@@ -2,7 +2,13 @@
 
 
 
-const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
+
+
+
+
+"use strict";
+
+const { interfaces: Ci, utils: Cu } = Components;
 const kDebuggerPrefs = [
   "devtools.debugger.remote-enabled",
   "devtools.chrome.enabled"
@@ -10,8 +16,8 @@ const kDebuggerPrefs = [
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
 
-function devtoolsCommandlineHandler() {
-}
+function devtoolsCommandlineHandler() {}
+
 devtoolsCommandlineHandler.prototype = {
   handle: function(cmdLine) {
     let consoleFlag = cmdLine.handleFlag("jsconsole", false);
@@ -31,7 +37,7 @@ devtoolsCommandlineHandler.prototype = {
     try {
       debuggerServerFlag =
         cmdLine.handleFlagWithParam("start-debugger-server", false);
-    } catch(e) {
+    } catch (e) {
       
       
       debuggerServerFlag = cmdLine.handleFlag("start-debugger-server", false);
@@ -51,7 +57,8 @@ devtoolsCommandlineHandler.prototype = {
       let { console } = Cu.import("resource://gre/modules/Console.jsm", {});
       hudservice.toggleBrowserConsole().then(null, console.error);
     } else {
-      window.focus(); 
+      
+      window.focus();
     }
 
     if (cmdLine.state == Ci.nsICommandLine.STATE_REMOTE_AUTO) {
@@ -62,7 +69,8 @@ devtoolsCommandlineHandler.prototype = {
   
   handleDevToolsFlag: function() {
     Services.obs.addObserver(function onStartup(window) {
-      Services.obs.removeObserver(onStartup, "browser-delayed-startup-finished");
+      Services.obs.removeObserver(onStartup,
+                                  "browser-delayed-startup-finished");
       const {gDevTools} = Cu.import("resource://devtools/client/framework/gDevTools.jsm", {});
       const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
       let target = devtools.TargetFactory.forTab(window.gBrowser.selectedTab);
@@ -73,14 +81,16 @@ devtoolsCommandlineHandler.prototype = {
   _isRemoteDebuggingEnabled() {
     let remoteDebuggingEnabled = false;
     try {
-      remoteDebuggingEnabled = kDebuggerPrefs.every((pref) => Services.prefs.getBoolPref(pref));
+      remoteDebuggingEnabled = kDebuggerPrefs.every(pref => {
+        return Services.prefs.getBoolPref(pref);
+      });
     } catch (ex) {
       Cu.reportError(ex);
       return false;
     }
     if (!remoteDebuggingEnabled) {
-      let errorMsg = "Could not run chrome debugger! You need the following prefs " +
-                     "to be set to true: " + kDebuggerPrefs.join(", ");
+      let errorMsg = "Could not run chrome debugger! You need the following " +
+                     "prefs to be set to true: " + kDebuggerPrefs.join(", ");
       Cu.reportError(errorMsg);
       
       
@@ -131,7 +141,7 @@ devtoolsCommandlineHandler.prototype = {
       listener.portOrPath = portOrPath;
       listener.open();
       dump("Started debugger server on " + portOrPath + "\n");
-    } catch(e) {
+    } catch (e) {
       dump("Unable to start debugger server on " + portOrPath + ": " + e);
     }
 
@@ -140,15 +150,16 @@ devtoolsCommandlineHandler.prototype = {
     }
   },
 
-  helpInfo : "  --jsconsole        Open the Browser Console.\n" +
-             "  --jsdebugger       Open the Browser Toolbox.\n" +
-             "  --devtools         Open DevTools on initial load.\n" +
-             "  --start-debugger-server [port|path] " +
-             "Start the debugger server on a TCP port or " +
-             "Unix domain socket path.  Defaults to TCP port 6000.\n",
+  helpInfo: "  --jsconsole        Open the Browser Console.\n" +
+            "  --jsdebugger       Open the Browser Toolbox.\n" +
+            "  --devtools         Open DevTools on initial load.\n" +
+            "  --start-debugger-server [port|path] " +
+            "Start the debugger server on a TCP port or " +
+            "Unix domain socket path.  Defaults to TCP port 6000.\n",
 
   classID: Components.ID("{9e9a9283-0ce9-4e4a-8f1c-ba129a032c32}"),
   QueryInterface: XPCOMUtils.generateQI([Ci.nsICommandLineHandler]),
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([devtoolsCommandlineHandler]);
+this.NSGetFactory = XPCOMUtils.generateNSGetFactory(
+  [devtoolsCommandlineHandler]);
