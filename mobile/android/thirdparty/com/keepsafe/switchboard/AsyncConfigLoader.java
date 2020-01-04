@@ -32,26 +32,26 @@ import android.util.Log;
 
 public class AsyncConfigLoader extends AsyncTask<Void, Void, Void> {
 
-	private String TAG = "AsyncConfigLoader";
-	
-	public static final int UPDATE_SERVER = 1;
-	public static final int CONFIG_SERVER = 2;
-	
-	private Context context;
-	private int configToLoad;
-	private String uuid;
-	
-	
+    private String TAG = "AsyncConfigLoader";
+
+    public static final int UPDATE_SERVER = 1;
+    public static final int CONFIG_SERVER = 2;
+
+    private Context context;
+    private int configToLoad;
+    private String uuid;
+
+    
 
 
 
 
 
-	public AsyncConfigLoader(Context c, int configType) {
-		this(c, configType, null);
-	}
-	
-	
+    public AsyncConfigLoader(Context c, int configType) {
+        this(c, configType, null);
+    }
+
+    
 
 
 
@@ -59,26 +59,26 @@ public class AsyncConfigLoader extends AsyncTask<Void, Void, Void> {
 
 
 
-	public AsyncConfigLoader(Context c, int configType, String uuid) {
-		this.context = c;
-		this.configToLoad = configType;
-		this.uuid = uuid;
-	}
-	
-	@Override
-	protected Void doInBackground(Void... params) {
-		
-		if(configToLoad == UPDATE_SERVER) {
-			SwitchBoard.updateConfigServerUrl(context);
-		}
-		else {
-			if(uuid == null)
-				SwitchBoard.loadConfig(context);
-			else
-				SwitchBoard.loadConfig(context, uuid);
-		}
-			
-		return null;
-	}
-	
+    public AsyncConfigLoader(Context c, int configType, String uuid) {
+        this.context = c;
+        this.configToLoad = configType;
+        this.uuid = uuid;
+    }
+
+    @Override
+    protected Void doInBackground(Void... params) {
+
+        if(configToLoad == UPDATE_SERVER) {
+            SwitchBoard.updateConfigServerUrl(context);
+        }
+        else {
+            if(uuid == null)
+                SwitchBoard.loadConfig(context);
+            else
+                SwitchBoard.loadConfig(context, uuid);
+        }
+
+        return null;
+    }
+
 }

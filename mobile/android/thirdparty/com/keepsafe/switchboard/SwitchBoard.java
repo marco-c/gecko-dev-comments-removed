@@ -57,397 +57,397 @@ import android.util.Log;
 
 
 public class SwitchBoard {
-	
-	private static final String TAG = "SwitchBoard";
-	
-	
-	public static boolean DEBUG = true;
-	
-	
-	private static String DYNAMIC_CONFIG_SERVER_URL_UPDATE;
-	
-	
-	private static String DYNAMIC_CONFIG_SERVER_DEFAULT_URL;
-	
-	public static final String ACTION_CONFIG_FETCHED = ".SwitchBoard.CONFIG_FETCHED";
-
-	private static final String kUpdateServerUrl = "updateServerUrl";
-	private static final String kConfigServerUrl = "configServerUrl";
-	
-	private static final String IS_EXPERIMENT_ACTIVE = "isActive";
-	private static final String EXPERIMENT_VALUES = "values";
 
-	private static String uuidExtra = null;
-	
-	
-	
+    private static final String TAG = "SwitchBoard";
 
+    
+    public static boolean DEBUG = true;
 
+    
+    private static String DYNAMIC_CONFIG_SERVER_URL_UPDATE;
 
+    
+    private static String DYNAMIC_CONFIG_SERVER_DEFAULT_URL;
 
+    public static final String ACTION_CONFIG_FETCHED = ".SwitchBoard.CONFIG_FETCHED";
 
-	public static void initDefaultServerUrls(String configServerUpdateUrl, String configServerUrl,
-			boolean isDebug) {
-		
-		DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrl;
-		DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrl;
-		DEBUG = isDebug;
-	}
-	
-	public static void setUUIDFromExtra(String uuid) {
-		uuidExtra = uuid;
-	}
-	
+    private static final String kUpdateServerUrl = "updateServerUrl";
+    private static final String kConfigServerUrl = "configServerUrl";
 
+    private static final String IS_EXPERIMENT_ACTIVE = "isActive";
+    private static final String EXPERIMENT_VALUES = "values";
 
+    private static String uuidExtra = null;
 
 
+    
 
 
 
 
-
-	public static void initDefaultServerUrls(String configServerUpdateUrlStaging, String configServerUrlStaging, 
-			String configServerUpdateUrl, String configServerUrl,
-			boolean isDebug) {
-		
-		if(isDebug) {
-			DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrlStaging;
-			DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrlStaging;
-		} else {
-			DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrl;
-			DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrl;	
-		}
-		
-		DEBUG = isDebug;
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-	public static void updateConfigServerUrl(Context c) {
-		if(DEBUG) Log.d(TAG, "start initConfigServerUrl");
-		
-		if(DEBUG) {
-			
-			Preferences.setDynamicConfigServerUrl(c, DYNAMIC_CONFIG_SERVER_URL_UPDATE, DYNAMIC_CONFIG_SERVER_DEFAULT_URL);
-			return;
-		}
-		
-		
-		String updateServerUrl = Preferences.getDynamicUpdateServerUrl(c);
-		
-		
-		if(updateServerUrl == null) 
-			updateServerUrl = DYNAMIC_CONFIG_SERVER_URL_UPDATE;
-		
-		try {
-			String result = readFromUrlGET(updateServerUrl, "");
-			if(DEBUG) Log.d(TAG, "Result String: " + result);
-			
-			if(result != null){
-				JSONObject a = new JSONObject(result);
-				
-				Preferences.setDynamicConfigServerUrl(c, (String)a.get(kUpdateServerUrl), (String)a.get(kConfigServerUrl));
-				
-				if(DEBUG) Log.d(TAG, "Update Server Url: " + (String)a.get(kUpdateServerUrl));
-				if(DEBUG) Log.d(TAG, "Config Server Url: " + (String)a.get(kConfigServerUrl));
-			} else {
-				storeDefaultUrlsInPreferences(c);
-			}
-			
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		
-		if(DEBUG) Log.d(TAG, "end initConfigServerUrl");
-	}
-	
-	
-
-
-
-
-
-	public static void loadConfig(Context c) {
-		loadConfig(c, null);
-	}
-
-	
-
-
-
-
-
-
-	public static void loadConfig(Context c, String uuid) {
-		
-		try {
-			
-			
-			if(uuid == null) {
-				DeviceUuidFactory df = new DeviceUuidFactory(c);
-				uuid = df.getDeviceUuid().toString();
-			}
-			
-			String device = Build.DEVICE;
-			String manufacturer = Build.MANUFACTURER;
-			String lang = "unknown";
-			try {
-				lang = Locale.getDefault().getISO3Language();
-			} catch (MissingResourceException e) {
-				e.printStackTrace();
-			}
-			String country = "unknown";
-			try {
-				country = Locale.getDefault().getISO3Country();
-			} catch (MissingResourceException e) {
-				e.printStackTrace();
-			}
-			String packageName = c.getPackageName();
-			String versionName = "none";
-			try {
-				versionName = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
-			} catch (NameNotFoundException e) {
-				e.printStackTrace();
-			}
-			
-			
-			String serverUrl = Preferences.getDynamicConfigServerUrl(c);
-			
-			if(serverUrl != null) {
-				String params = "uuid="+uuid+"&device="+device+"&lang="+lang+"&country="+country
-						+"&manufacturer="+manufacturer+"&appId="+packageName+"&version="+versionName;
-				if(DEBUG) Log.d(TAG, "Read from server URL: " + serverUrl + "?" + params);
-				String serverConfig = readFromUrlGET(serverUrl, params);
-				
-				if(DEBUG) Log.d(TAG, serverConfig);
-				
-				
-				if(serverConfig != null)
-					Preferences.setDynamicConfigJson(c, serverConfig);
-			}
-			
-		} catch (NullPointerException e) {
-			e.printStackTrace();
-		}
-
-		
-		Intent i = new Intent(ACTION_CONFIG_FETCHED);
-		LocalBroadcastManager.getInstance(c).sendBroadcast(i);
-	}
-
-	public static boolean isInBucket(Context c, int low, int high) {
-		int userBucket = getUserBucket(c);
-		if (userBucket >= low && userBucket < high)
-			return true;
-		else
-			return false;
-	}
-
-	
-
-
-
-
-
-
-	public static boolean isInExperiment(Context c, String experimentName) {
-		return isInExperiment(c, experimentName, false);
-	}
-	
-	
-
-
-
-
-
-
-	public static boolean isInExperiment(Context c, String experimentName, boolean defaultReturnVal) {
-		
-		String config = Preferences.getDynamicConfigJson(c);
-		
-		
-		if(config == null)
-			return false;
-		else {
-			
-			try {
-				JSONObject experiment = (JSONObject) new JSONObject(config).get(experimentName);
-				if(DEBUG) Log.d(TAG, "experiment " + experimentName + " JSON object: " + experiment.toString());
-				if(experiment == null)
-					return defaultReturnVal;
-				
-				boolean returnValue = defaultReturnVal;
-				returnValue = experiment.getBoolean(IS_EXPERIMENT_ACTIVE);
-				
-				return returnValue;
-			} catch (JSONException e) {
-				Log.e(TAG, "Config: " + config);
-				e.printStackTrace();
-				
-			}
-		
-			
-			return defaultReturnVal;
-		}
-		
-	}
-	
-	
-
-
-	public static List<String> getActiveExperiments(Context c) {
-		ArrayList<String> returnList = new ArrayList<String>();
-
-		
-		String config = Preferences.getDynamicConfigJson(c);
-
-		
-		if (config == null) {
-			return returnList;
-		}
-
-		try {
-			JSONObject experiments = new JSONObject(config);
-			Iterator<?> iter = experiments.keys();
-			while (iter.hasNext()) {
-				String key = (String)iter.next();
-				JSONObject experiment = experiments.getJSONObject(key);
-				if (experiment.getBoolean(IS_EXPERIMENT_ACTIVE)) {
-					returnList.add(key);
-				}
-			}
-		} catch (JSONException e) {
-			
-		}
-
-		return returnList;
-	}
-
-	
-
-
-
-
-
-	public static boolean hasExperimentValues(Context c, String experimentName) {
-		if(getExperimentValueFromJson(c, experimentName) == null)
-			return false;
-		else
-			return true;
-	}
-	
-	
-
-
-
-
-
-
-	public static JSONObject getExperimentValueFromJson(Context c, String experimentName) {
-		String config = Preferences.getDynamicConfigJson(c);
-		
-		if(config == null)
-			return null;
-		
-		try {
-			JSONObject experiment = (JSONObject) new JSONObject(config).get(experimentName);
-			JSONObject values = experiment.getJSONObject(EXPERIMENT_VALUES);
-			
-			return values;
-			
-		} catch (JSONException e) {
-			Log.e(TAG, "Config: " + config);
-			e.printStackTrace();
-			Log.e(TAG, "Could not create JSON object from config string", e);
-		}
-		
-		return null;
-	}
-	
-	
-
-
-
-
-	private static void storeDefaultUrlsInPreferences(Context c) {
-		String configUrl = Preferences.getDynamicConfigServerUrl(c);
-		String updateUrl = Preferences.getDynamicUpdateServerUrl(c);
-			
-		if(configUrl == null)
-			configUrl = DYNAMIC_CONFIG_SERVER_DEFAULT_URL;
-		
-		if(updateUrl == null)
-			updateUrl = DYNAMIC_CONFIG_SERVER_URL_UPDATE;
-		
-		Preferences.setDynamicConfigServerUrl(c, updateUrl, configUrl);
-	}
-	
-	
-
-
-
-
-
-	private static String readFromUrlGET(String address, String params) {
-		if(address == null || params == null)
-			return null;
-		
-		String completeUrl = address + "?" + params;
-		if(DEBUG) Log.d(TAG, "readFromUrl(): " + completeUrl);
-		
-		try {
-			URL url = new URL(completeUrl);
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			connection.setRequestMethod("GET");
-			connection.setUseCaches(false);
-
-			
-			InputStream is = connection.getInputStream();
-			InputStreamReader inputStreamReader = new InputStreamReader(is);
-			BufferedReader bufferReader = new BufferedReader(inputStreamReader, 8192);
-			String line = "";
-			StringBuffer resultContent = new StringBuffer();
-			while ((line = bufferReader.readLine()) != null) {
-				if(DEBUG) Log.d(TAG, line);
-				resultContent.append(line);
-			}
-			bufferReader.close();
-			
-			if(DEBUG) Log.d(TAG, "readFromUrl() result: " + resultContent.toString());
-			
-			return resultContent.toString();
-		} catch (ProtocolException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		return null;
-	}
-
-	
-
-
-	private static int getUserBucket(Context c) {
-		
-		String uuid = uuidExtra;
-		if (uuid == null) {
-			DeviceUuidFactory df = new DeviceUuidFactory(c);
-			uuid = df.getDeviceUuid().toString();
-		}
-
-		CRC32 crc = new CRC32();
-		crc.update(uuid.getBytes());
-		long checksum = crc.getValue();
-		return (int)(checksum % 100L);
-	}
+
+    public static void initDefaultServerUrls(String configServerUpdateUrl, String configServerUrl,
+            boolean isDebug) {
+
+        DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrl;
+        DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrl;
+        DEBUG = isDebug;
+    }
+
+    public static void setUUIDFromExtra(String uuid) {
+        uuidExtra = uuid;
+    }
+    
+
+
+
+
+
+
+
+
+
+    public static void initDefaultServerUrls(String configServerUpdateUrlStaging, String configServerUrlStaging,
+            String configServerUpdateUrl, String configServerUrl,
+            boolean isDebug) {
+
+        if(isDebug) {
+            DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrlStaging;
+            DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrlStaging;
+        } else {
+            DYNAMIC_CONFIG_SERVER_URL_UPDATE = configServerUpdateUrl;
+            DYNAMIC_CONFIG_SERVER_DEFAULT_URL = configServerUrl;
+        }
+
+        DEBUG = isDebug;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public static void updateConfigServerUrl(Context c) {
+        if(DEBUG) Log.d(TAG, "start initConfigServerUrl");
+
+        if(DEBUG) {
+            
+            Preferences.setDynamicConfigServerUrl(c, DYNAMIC_CONFIG_SERVER_URL_UPDATE, DYNAMIC_CONFIG_SERVER_DEFAULT_URL);
+            return;
+        }
+
+        
+        String updateServerUrl = Preferences.getDynamicUpdateServerUrl(c);
+
+        
+        if(updateServerUrl == null)
+            updateServerUrl = DYNAMIC_CONFIG_SERVER_URL_UPDATE;
+
+        try {
+            String result = readFromUrlGET(updateServerUrl, "");
+            if(DEBUG) Log.d(TAG, "Result String: " + result);
+
+            if(result != null){
+                JSONObject a = new JSONObject(result);
+
+                Preferences.setDynamicConfigServerUrl(c, (String)a.get(kUpdateServerUrl), (String)a.get(kConfigServerUrl));
+
+                if(DEBUG) Log.d(TAG, "Update Server Url: " + (String)a.get(kUpdateServerUrl));
+                if(DEBUG) Log.d(TAG, "Config Server Url: " + (String)a.get(kConfigServerUrl));
+            } else {
+                storeDefaultUrlsInPreferences(c);
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        if(DEBUG) Log.d(TAG, "end initConfigServerUrl");
+    }
+
+    
+
+
+
+
+
+    public static void loadConfig(Context c) {
+        loadConfig(c, null);
+    }
+
+    
+
+
+
+
+
+
+    public static void loadConfig(Context c, String uuid) {
+
+        try {
+
+            
+            if(uuid == null) {
+                DeviceUuidFactory df = new DeviceUuidFactory(c);
+                uuid = df.getDeviceUuid().toString();
+            }
+
+            String device = Build.DEVICE;
+            String manufacturer = Build.MANUFACTURER;
+            String lang = "unknown";
+            try {
+                lang = Locale.getDefault().getISO3Language();
+            } catch (MissingResourceException e) {
+                e.printStackTrace();
+            }
+            String country = "unknown";
+            try {
+                country = Locale.getDefault().getISO3Country();
+            } catch (MissingResourceException e) {
+                e.printStackTrace();
+            }
+            String packageName = c.getPackageName();
+            String versionName = "none";
+            try {
+                versionName = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
+            } catch (NameNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            
+            String serverUrl = Preferences.getDynamicConfigServerUrl(c);
+
+            if(serverUrl != null) {
+                String params = "uuid="+uuid+"&device="+device+"&lang="+lang+"&country="+country
+                        +"&manufacturer="+manufacturer+"&appId="+packageName+"&version="+versionName;
+                if(DEBUG) Log.d(TAG, "Read from server URL: " + serverUrl + "?" + params);
+                String serverConfig = readFromUrlGET(serverUrl, params);
+
+                if(DEBUG) Log.d(TAG, serverConfig);
+
+                
+                if(serverConfig != null)
+                    Preferences.setDynamicConfigJson(c, serverConfig);
+            }
+
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+
+        
+        Intent i = new Intent(ACTION_CONFIG_FETCHED);
+        LocalBroadcastManager.getInstance(c).sendBroadcast(i);
+    }
+
+    public static boolean isInBucket(Context c, int low, int high) {
+        int userBucket = getUserBucket(c);
+        if (userBucket >= low && userBucket < high)
+            return true;
+        else
+            return false;
+    }
+
+    
+
+
+
+
+
+
+    public static boolean isInExperiment(Context c, String experimentName) {
+        return isInExperiment(c, experimentName, false);
+    }
+
+    
+
+
+
+
+
+
+    public static boolean isInExperiment(Context c, String experimentName, boolean defaultReturnVal) {
+        
+        String config = Preferences.getDynamicConfigJson(c);
+
+        
+        if(config == null)
+            return false;
+        else {
+
+            try {
+                JSONObject experiment = (JSONObject) new JSONObject(config).get(experimentName);
+                if(DEBUG) Log.d(TAG, "experiment " + experimentName + " JSON object: " + experiment.toString());
+                if(experiment == null)
+                    return defaultReturnVal;
+
+                boolean returnValue = defaultReturnVal;
+                returnValue = experiment.getBoolean(IS_EXPERIMENT_ACTIVE);
+
+                return returnValue;
+            } catch (JSONException e) {
+                Log.e(TAG, "Config: " + config);
+                e.printStackTrace();
+
+            }
+
+            
+            return defaultReturnVal;
+        }
+
+    }
+
+    
+
+
+    public static List<String> getActiveExperiments(Context c) {
+        ArrayList<String> returnList = new ArrayList<String>();
+
+        
+        String config = Preferences.getDynamicConfigJson(c);
+
+        
+        if (config == null) {
+            return returnList;
+        }
+
+        try {
+            JSONObject experiments = new JSONObject(config);
+            Iterator<?> iter = experiments.keys();
+            while (iter.hasNext()) {
+                String key = (String)iter.next();
+                JSONObject experiment = experiments.getJSONObject(key);
+                if (experiment.getBoolean(IS_EXPERIMENT_ACTIVE)) {
+                    returnList.add(key);
+                }
+            }
+        } catch (JSONException e) {
+            
+        }
+
+        return returnList;
+    }
+
+    
+
+
+
+
+
+    public static boolean hasExperimentValues(Context c, String experimentName) {
+        if(getExperimentValueFromJson(c, experimentName) == null)
+            return false;
+        else
+            return true;
+    }
+
+    
+
+
+
+
+
+
+    public static JSONObject getExperimentValueFromJson(Context c, String experimentName) {
+        String config = Preferences.getDynamicConfigJson(c);
+
+        if(config == null)
+            return null;
+
+        try {
+            JSONObject experiment = (JSONObject) new JSONObject(config).get(experimentName);
+            JSONObject values = experiment.getJSONObject(EXPERIMENT_VALUES);
+
+            return values;
+
+        } catch (JSONException e) {
+            Log.e(TAG, "Config: " + config);
+            e.printStackTrace();
+            Log.e(TAG, "Could not create JSON object from config string", e);
+        }
+
+        return null;
+    }
+
+    
+
+
+
+
+    private static void storeDefaultUrlsInPreferences(Context c) {
+        String configUrl = Preferences.getDynamicConfigServerUrl(c);
+        String updateUrl = Preferences.getDynamicUpdateServerUrl(c);
+
+        if(configUrl == null)
+            configUrl = DYNAMIC_CONFIG_SERVER_DEFAULT_URL;
+
+        if(updateUrl == null)
+            updateUrl = DYNAMIC_CONFIG_SERVER_URL_UPDATE;
+
+        Preferences.setDynamicConfigServerUrl(c, updateUrl, configUrl);
+    }
+
+    
+
+
+
+
+
+    private static String readFromUrlGET(String address, String params) {
+        if(address == null || params == null)
+            return null;
+
+        String completeUrl = address + "?" + params;
+        if(DEBUG) Log.d(TAG, "readFromUrl(): " + completeUrl);
+
+        try {
+            URL url = new URL(completeUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setUseCaches(false);
+
+            
+            InputStream is = connection.getInputStream();
+            InputStreamReader inputStreamReader = new InputStreamReader(is);
+            BufferedReader bufferReader = new BufferedReader(inputStreamReader, 8192);
+            String line = "";
+            StringBuffer resultContent = new StringBuffer();
+            while ((line = bufferReader.readLine()) != null) {
+                if(DEBUG) Log.d(TAG, line);
+                resultContent.append(line);
+            }
+            bufferReader.close();
+
+            if(DEBUG) Log.d(TAG, "readFromUrl() result: " + resultContent.toString());
+
+            return resultContent.toString();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    
+
+
+    private static int getUserBucket(Context c) {
+        
+        String uuid = uuidExtra;
+        if (uuid == null) {
+            DeviceUuidFactory df = new DeviceUuidFactory(c);
+            uuid = df.getDeviceUuid().toString();
+        }
+
+        CRC32 crc = new CRC32();
+        crc.update(uuid.getBytes());
+        long checksum = crc.getValue();
+        return (int)(checksum % 100L);
+    }
 }

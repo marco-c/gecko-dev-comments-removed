@@ -28,44 +28,42 @@ import android.preference.Preference;
 
 
 public class DeviceUuidFactory {
-	protected static final String PREFS_FILE = "com.keepsafe.switchboard.uuid";
-	protected static final String PREFS_DEVICE_ID = "device_id";
+    protected static final String PREFS_FILE = "com.keepsafe.switchboard.uuid";
+    protected static final String PREFS_DEVICE_ID = "device_id";
 
-	private static UUID uuid = null;
+    private static UUID uuid = null;
 
-	public DeviceUuidFactory(Context context) {
+    public DeviceUuidFactory(Context context) {
 
-		if (uuid == null) {
-			synchronized (DeviceUuidFactory.class) {
-				if (uuid == null) {
-					final SharedPreferences prefs = context
-							.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE);
-					final String id = prefs.getString(PREFS_DEVICE_ID, null);
+        if (uuid == null) {
+            synchronized (DeviceUuidFactory.class) {
+                if (uuid == null) {
+                    final SharedPreferences prefs = context
+                            .getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE);
+                    final String id = prefs.getString(PREFS_DEVICE_ID, null);
 
-					if (id != null) {
-						
-						
-						uuid = UUID.fromString(id);
+                    if (id != null) {
+                        
+                        
+                        uuid = UUID.fromString(id);
 
-					} else {
+                    } else {
 
-						UUID newId = UUID.randomUUID();
-						uuid = newId;
-						
-						
-						prefs.edit()
-								.putString(PREFS_DEVICE_ID, newId.toString())
-								.commit();
+                        UUID newId = UUID.randomUUID();
+                        uuid = newId;
 
-					}
-				}
-			}
-		}
-	}
+                        
+                        prefs.edit()
+                                .putString(PREFS_DEVICE_ID, newId.toString())
+                                .commit();
 
-	
+                    }
+                }
+            }
+        }
+    }
 
-
+    
 
 
 
@@ -73,8 +71,10 @@ public class DeviceUuidFactory {
 
 
 
-	public UUID getDeviceUuid() {
-		return uuid;
-	}
-	
+
+
+    public UUID getDeviceUuid() {
+        return uuid;
+    }
+
 }
