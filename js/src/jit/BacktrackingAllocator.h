@@ -126,11 +126,38 @@ class Requirement
 struct UsePosition : public TempObject,
                      public InlineForwardListNode<UsePosition>
 {
-    LUse* use;
+  private:
+    
+    
+    uintptr_t use_;
+
+    void setUse(LUse* use) {
+        
+        
+        static_assert((LUse::ANY | LUse::REGISTER | LUse::FIXED | LUse::KEEPALIVE) <= 0x3,
+                      "Cannot pack the LUse::Policy value on 32 bits architectures.");
+
+        
+        
+        
+        MOZ_ASSERT(use->policy() != LUse::RECOVERED_INPUT);
+        use_ = uintptr_t(use) | (use->policy() & 0x3);
+    }
+
+  public:
     CodePosition pos;
 
+    LUse* use() const {
+        return reinterpret_cast<LUse*>(use_ & ~0x3);
+    }
+
+    LUse::Policy usePolicy() const {
+        LUse::Policy policy = LUse::Policy(use_ & 0x3);
+        MOZ_ASSERT(use()->policy() == policy);
+        return policy;
+    }
+
     UsePosition(LUse* use, CodePosition pos) :
-        use(use),
         pos(pos)
     {
         
@@ -140,6 +167,7 @@ struct UsePosition : public TempObject,
                       pos.subpos() == (use->usedAtStart()
                                        ? CodePosition::INPUT
                                        : CodePosition::OUTPUT));
+        setUse(use);
     }
 };
 
@@ -672,7 +700,7 @@ class BacktrackingAllocator : protected RegisterAllocator
     bool spill(LiveBundle* bundle);
 
     bool isReusedInput(LUse* use, LNode* ins, bool considerCopy);
-    bool isRegisterUse(LUse* use, LNode* ins, bool considerCopy = false);
+    bool isRegisterUse(UsePosition* use, LNode* ins, bool considerCopy = false);
     bool isRegisterDefinition(LiveRange* range);
     bool pickStackSlot(SpillSet* spill);
     bool insertAllRanges(LiveRangeSet& set, LiveBundle* bundle);
