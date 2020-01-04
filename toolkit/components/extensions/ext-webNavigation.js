@@ -6,7 +6,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionManagement",
                                   "resource://gre/modules/ExtensionManagement.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "MatchPattern",
+XPCOMUtils.defineLazyModuleGetter(this, "MatchURLFilters",
                                   "resource://gre/modules/MatchPattern.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "WebNavigation",
                                   "resource://gre/modules/WebNavigation.jsm");
@@ -99,7 +99,11 @@ function fillTransitionProperties(eventName, src, dst) {
 
 function WebNavigationEventManager(context, eventName) {
   let name = `webNavigation.${eventName}`;
-  let register = callback => {
+  let register = (callback, urlFilters) => {
+    
+    let filters = urlFilters ?
+          new MatchURLFilters(urlFilters.url) : null;
+
     let listener = data => {
       if (!data.browser) {
         return;
@@ -129,7 +133,7 @@ function WebNavigationEventManager(context, eventName) {
       runSafe(context, callback, data2);
     };
 
-    WebNavigation[eventName].addListener(listener);
+    WebNavigation[eventName].addListener(listener, filters);
     return () => {
       WebNavigation[eventName].removeListener(listener);
     };
