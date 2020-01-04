@@ -1480,6 +1480,8 @@ public:
   nsStyleGridLine mGridColumnEnd;
   nsStyleGridLine mGridRowStart;
   nsStyleGridLine mGridRowEnd;
+  nsStyleCoord    mGridColumnGap;       
+  nsStyleCoord    mGridRowGap;          
 
   
   
