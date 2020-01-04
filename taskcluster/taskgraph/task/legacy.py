@@ -169,6 +169,30 @@ def remove_caches_from_task(task):
         pass
 
 
+def remove_coalescing_from_task(task):
+    r"""Remove coalescing route and supersederUrl from job task
+
+    :param task: task definition.
+    """
+    patterns = [
+        re.compile("^coalesce.v1.builds.*pgo$"),
+    ]
+
+    try:
+        payload = task["task"]["payload"]
+        routes = task["task"]["routes"]
+        removable_routes = [route for route in list(routes)
+                            if any([p.match(route) for p in patterns])]
+        if removable_routes:
+            
+            payload.pop("supersederUrl")
+
+        for route in removable_routes:
+            routes.remove(route)
+    except KeyError:
+        pass
+
+
 def query_vcs_info(repository, revision):
     """Query the pushdate and pushid of a repository/revision.
 
@@ -477,6 +501,7 @@ class LegacyTask(base.Task):
             
             if project == "try":
                 remove_caches_from_task(build_task)
+                remove_coalescing_from_task(build_task)
                 set_expiration(build_task, TRY_EXPIRATION)
 
             decorate_task_treeherder_routes(build_task['task'],
