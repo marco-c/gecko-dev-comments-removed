@@ -1615,12 +1615,9 @@ ServiceWorkerJobQueue::CancelJobs(QueueData& aQueue)
 
   
   
-  RefPtr<ServiceWorkerJob> runningJob = aQueue.mJobs[0];
   
-  if (runningJob->IsRegisterOrInstallJob()) {
-    ServiceWorkerJobBase* job = static_cast<ServiceWorkerJobBase*>(runningJob.get());
-    job->Cancel();
-  }
+  
+  aQueue.mJobs[0]->Cancel();
 
   
   
