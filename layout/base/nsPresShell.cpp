@@ -2923,8 +2923,9 @@ PresShell::CreateReferenceRenderingContext()
   RefPtr<gfxContext> rc;
   if (mPresContext->IsScreen()) {
     rc = gfxContext::ForDrawTarget(gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget());
-    MOZ_RELEASE_ASSERT(rc, "ScreenReferenceDrawTarget never returns null and "
-                           "ForDrawTarget always succeeds with it");
+    if (!rc) {
+      return nullptr;
+    }
   } else {
     
     
