@@ -108,7 +108,8 @@ self.addEventListener('fetch', function(event) {
                 reject(new Response(JSON.stringify({
                   result: 'failure',
                   detail: 'got '+ response.redirected +
-                          ' Response.redirected instead of ' + expectedRedirected
+                          ' Response.redirected instead of ' +
+                          expectedRedirected
                 })));
               } else {
                 
@@ -116,7 +117,8 @@ self.addEventListener('fetch', function(event) {
                 resolve(new Response(JSON.stringify({
                   result: 'failure',
                   detail: 'got '+ response.redirected +
-                          ' Response.redirected instead of ' + expectedRedirected
+                          ' Response.redirected instead of ' +
+                          expectedRedirected
                 })));
               }
             }
