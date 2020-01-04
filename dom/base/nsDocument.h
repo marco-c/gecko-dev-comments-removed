@@ -1419,15 +1419,6 @@ protected:
   }
 
   
-  
-  
-  
-  
-  
-  
-  bool IsFullScreenEnabled(bool aIsCallerChrome, bool aLogFailure);
-
-  
 
 
 
