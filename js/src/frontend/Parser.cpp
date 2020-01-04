@@ -362,7 +362,13 @@ ParseContext<ParseHandler>::updateDecl(TokenStream& ts, JSAtom* atom, Node pn)
                 
                 
                 
-                if (oldDecl->isDeoptimized() && !newDecl->isDeoptimized()) {
+                
+                
+                
+                
+                if (oldDecl->isDeoptimized() && !newDecl->isDeoptimized() &&
+                    !sc->isGlobalContext())
+                {
                     newDecl->pn_dflags |= PND_BOUND;
                     newDecl->pn_scopecoord.setSlot(ts, i);
                     newDecl->setOp(JSOP_GETLOCAL);
