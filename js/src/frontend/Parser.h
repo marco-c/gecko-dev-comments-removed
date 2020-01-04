@@ -212,18 +212,8 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
 
 
 
-  private:
     bool generateBindings(ExclusiveContext* cx, TokenStream& ts, LifoAlloc& alloc,
                           MutableHandle<Bindings> bindings) const;
-
-  public:
-    bool generateFunctionBindings(ExclusiveContext* cx, TokenStream& ts,
-                                  LifoAlloc& alloc,
-                                  MutableHandle<Bindings> bindings) const;
-
-    bool generateModuleBindings(ExclusiveContext* cx, TokenStream& ts,
-                                LifoAlloc& alloc,
-                                MutableHandle<Bindings> bindings) const;
 
   private:
     ParseContext**  parserPC;     

@@ -311,6 +311,59 @@ const Class CallObject::class_ = {
     JSCLASS_IS_ANONYMOUS | JSCLASS_HAS_RESERVED_SLOTS(CallObject::RESERVED_SLOTS)
 };
 
+
+
+const Class ModuleEnvironmentObject::class_ = {
+    "ModuleEnvironmentObject",
+    JSCLASS_IMPLEMENTS_BARRIERS |
+    JSCLASS_HAS_RESERVED_SLOTS(ModuleEnvironmentObject::RESERVED_SLOTS) |
+    JSCLASS_IS_ANONYMOUS
+};
+
+ ModuleEnvironmentObject*
+ModuleEnvironmentObject::create(ExclusiveContext* cx, HandleModuleObject module)
+{
+    RootedScript script(cx, module->script());
+    RootedShape shape(cx, script->bindings.callObjShape());
+    MOZ_ASSERT(shape->getObjectClass() == &class_);
+
+    RootedObjectGroup group(cx, ObjectGroup::defaultNewGroup(cx, &class_, TaggedProto(nullptr)));
+    if (!group)
+        return nullptr;
+
+    gc::AllocKind kind = gc::GetGCObjectKind(shape->numFixedSlots());
+    MOZ_ASSERT(CanBeFinalizedInBackground(kind, &class_));
+    kind = gc::GetBackgroundAllocKind(kind);
+
+    JSObject* obj = JSObject::create(cx, kind, TenuredHeap, shape, group);
+    if (!obj)
+        return nullptr;
+
+    Rooted<ModuleEnvironmentObject*> scope(cx, &obj->as<ModuleEnvironmentObject>());
+
+    
+    
+    scope->initAliasedLexicalsToThrowOnTouch(script);
+
+    scope->initFixedSlot(MODULE_SLOT, ObjectValue(*module));
+    if (!JSObject::setSingleton(cx, scope))
+        return nullptr;
+
+    
+    
+    scope->setEnclosingScope(cx->global());
+
+    return scope;
+}
+
+ModuleObject&
+ModuleEnvironmentObject::module() const
+{
+    return getReservedSlot(MODULE_SLOT).toObject().as<ModuleObject>();
+}
+
+
+
 const Class DeclEnvObject::class_ = {
     js_Object_str,
     JSCLASS_HAS_RESERVED_SLOTS(DeclEnvObject::RESERVED_SLOTS) |
@@ -1075,6 +1128,9 @@ ScopeIter::settle()
 #ifdef DEBUG
     if (!ssi_.done() && hasAnyScopeObject()) {
         switch (ssi_.type()) {
+          case StaticScopeIter<CanGC>::Module:
+            MOZ_ASSERT(scope_->as<ModuleEnvironmentObject>().module() == ssi_.module());
+            break;
           case StaticScopeIter<CanGC>::Function:
             MOZ_ASSERT(scope_->as<CallObject>().callee().nonLazyScript() == ssi_.funScript());
             break;
@@ -1118,6 +1174,8 @@ ScopeIter::type() const
     MOZ_ASSERT(!done());
 
     switch (ssi_.type()) {
+      case StaticScopeIter<CanGC>::Module:
+        return Module;
       case StaticScopeIter<CanGC>::Function:
         return Call;
       case StaticScopeIter<CanGC>::Block:
@@ -1151,6 +1209,8 @@ ScopeIter::maybeStaticScope() const
     switch (ssi_.type()) {
       case StaticScopeIter<CanGC>::Function:
         return &fun();
+      case StaticScopeIter<CanGC>::Module:
+        return &module();
       case StaticScopeIter<CanGC>::Block:
         return &staticBlock();
       case StaticScopeIter<CanGC>::With:
@@ -2387,6 +2447,10 @@ GetDebugScopeForMissing(JSContext* cx, const ScopeIter& si)
 
     DebugScopeObject* debugScope = nullptr;
     switch (si.type()) {
+      case ScopeIter::Module:
+          MOZ_CRASH(); 
+          break;
+
       case ScopeIter::Call: {
         RootedFunction callee(cx, &si.fun());
         
@@ -2592,6 +2656,9 @@ js::DumpStaticScopeChain(JSObject* staticScope)
 {
     for (StaticScopeIter<NoGC> ssi(staticScope); !ssi.done(); ssi++) {
         switch (ssi.type()) {
+          case StaticScopeIter<NoGC>::Module:
+            fprintf(stdout, "module [%p]", &ssi.module());
+            break;
           case StaticScopeIter<NoGC>::Function:
             if (ssi.fun().isBeingParsed())
                 fprintf(stdout, "funbox [%p fun=%p]", ssi.maybeFunctionBox(), &ssi.fun());
