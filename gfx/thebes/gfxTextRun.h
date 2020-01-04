@@ -135,12 +135,25 @@ public:
     }
 
     
-    
-    
-    
-    
 
     
+    
+    struct Range
+    {
+        uint32_t start;
+        uint32_t end;
+        uint32_t Length() const { return end - start; }
+
+        Range() : start(0), end(0) {}
+        Range(uint32_t aStart, uint32_t aEnd)
+            : start(aStart), end(aEnd) {}
+        explicit Range(gfxTextRun* aTextRun)
+            : start(0), end(aTextRun->GetLength()) {}
+    };
+
+    
+
+    
 
 
 
@@ -152,8 +165,7 @@ public:
 
 
 
-    virtual bool SetPotentialLineBreaks(uint32_t aStart, uint32_t aLength,
-                                        uint8_t *aBreakBefore);
+    virtual bool SetPotentialLineBreaks(Range aRange, uint8_t *aBreakBefore);
 
     
 
@@ -169,8 +181,7 @@ public:
     public:
         
         
-        virtual void GetHyphenationBreaks(uint32_t aStart, uint32_t aLength,
-                                          bool *aBreakBefore) = 0;
+        virtual void GetHyphenationBreaks(Range aRange, bool *aBreakBefore) = 0;
 
         
         
@@ -189,8 +200,7 @@ public:
 
 
 
-        virtual void GetSpacing(uint32_t aStart, uint32_t aLength,
-                                Spacing *aSpacing) = 0;
+        virtual void GetSpacing(Range aRange, Spacing *aSpacing) = 0;
 
         
         
@@ -213,7 +223,7 @@ public:
             return mCurrentChar;
         }
 
-        uint32_t ClusterLength() const;
+        Range ClusterRange() const;
 
         gfxFloat ClusterAdvance(PropertyProvider *aProvider) const;
 
@@ -244,8 +254,7 @@ public:
 
 
     void Draw(gfxContext *aContext, gfxPoint aPt,
-              DrawMode aDrawMode,
-              uint32_t aStart, uint32_t aLength,
+              DrawMode aDrawMode, Range aRange,
               PropertyProvider *aProvider,
               gfxFloat *aAdvanceWidth, gfxTextContextPaint *aContextPaint,
               gfxTextRunDrawCallbacks *aCallbacks = nullptr);
@@ -257,15 +266,14 @@ public:
 
     void DrawEmphasisMarks(gfxContext* aContext, gfxTextRun* aMark,
                            gfxFloat aMarkAdvance, gfxPoint aPt,
-                           uint32_t aStart, uint32_t aLength,
-                           PropertyProvider* aProvider);
+                           Range aRange, PropertyProvider* aProvider);
 
     
 
 
 
 
-    Metrics MeasureText(uint32_t aStart, uint32_t aLength,
+    Metrics MeasureText(Range aRange,
                         gfxFont::BoundingBoxType aBoundingBoxType,
                         DrawTarget* aDrawTargetForTightBoundingBox,
                         PropertyProvider* aProvider);
@@ -273,7 +281,7 @@ public:
     Metrics MeasureText(gfxFont::BoundingBoxType aBoundingBoxType,
                         DrawTarget* aDrawTargetForTightBoundingBox,
                         PropertyProvider* aProvider = nullptr) {
-        return MeasureText(0, GetLength(), aBoundingBoxType,
+        return MeasureText(Range(this), aBoundingBoxType,
                            aDrawTargetForTightBoundingBox, aProvider);
     }
 
@@ -284,12 +292,11 @@ public:
 
 
 
-    gfxFloat GetAdvanceWidth(uint32_t aStart, uint32_t aLength,
-                             PropertyProvider *aProvider,
+    gfxFloat GetAdvanceWidth(Range aRange, PropertyProvider *aProvider,
                              PropertyProvider::Spacing* aSpacing = nullptr);
 
     gfxFloat GetAdvanceWidth() {
-        return GetAdvanceWidth(0, GetLength(), nullptr);
+        return GetAdvanceWidth(Range(this), nullptr);
     }
 
     
@@ -319,9 +326,9 @@ public:
 
 
 
-    virtual bool SetLineBreaks(uint32_t aStart, uint32_t aLength,
-                                 bool aLineBreakBefore, bool aLineBreakAfter,
-                                 gfxFloat* aAdvanceWidthDelta);
+    virtual bool SetLineBreaks(Range aRange,
+                               bool aLineBreakBefore, bool aLineBreakAfter,
+                               gfxFloat* aAdvanceWidthDelta);
 
     enum SuppressBreak {
       eNoSuppressBreak,
@@ -434,9 +441,11 @@ public:
 
     class GlyphRunIterator {
     public:
-        GlyphRunIterator(gfxTextRun *aTextRun, uint32_t aStart, uint32_t aLength)
-          : mTextRun(aTextRun), mStartOffset(aStart), mEndOffset(aStart + aLength) {
-            mNextIndex = mTextRun->FindFirstGlyphRunContaining(aStart);
+        GlyphRunIterator(gfxTextRun *aTextRun, Range aRange)
+          : mTextRun(aTextRun)
+          , mStartOffset(aRange.start)
+          , mEndOffset(aRange.end) {
+            mNextIndex = mTextRun->FindFirstGlyphRunContaining(aRange.start);
         }
         bool NextRun();
         GlyphRun *GetGlyphRun() { return mGlyphRun; }
@@ -557,8 +566,7 @@ public:
 
     
     
-    void CopyGlyphDataFrom(gfxTextRun *aSource, uint32_t aStart,
-                           uint32_t aLength, uint32_t aDest);
+    void CopyGlyphDataFrom(gfxTextRun *aSource, Range aRange, uint32_t aDest);
 
     nsExpirationState *GetExpirationState() { return &mExpirationState; }
 
@@ -572,8 +580,7 @@ public:
 
     struct LigatureData {
         
-        uint32_t mLigatureStart;
-        uint32_t mLigatureEnd;
+        Range mRange;
         
         
         gfxFloat mPartAdvance;
@@ -669,16 +676,15 @@ private:
     
 
     
-    int32_t GetAdvanceForGlyphs(uint32_t aStart, uint32_t aEnd);
+    int32_t GetAdvanceForGlyphs(Range aRange);
 
     
     
     
     
-    bool GetAdjustedSpacingArray(uint32_t aStart, uint32_t aEnd,
-                                   PropertyProvider *aProvider,
-                                   uint32_t aSpacingStart, uint32_t aSpacingEnd,
-                                   nsTArray<PropertyProvider::Spacing> *aSpacing);
+    bool GetAdjustedSpacingArray(Range aRange, PropertyProvider *aProvider,
+                                 Range aSpacingRange,
+                                 nsTArray<PropertyProvider::Spacing> *aSpacing);
 
     CompressedGlyph& EnsureComplexGlyph(uint32_t aIndex)
     {
@@ -691,20 +697,20 @@ private:
     
 
     
-    LigatureData ComputeLigatureData(uint32_t aPartStart, uint32_t aPartEnd,
+    LigatureData ComputeLigatureData(Range aPartRange,
                                      PropertyProvider *aProvider);
-    gfxFloat ComputePartialLigatureWidth(uint32_t aPartStart, uint32_t aPartEnd,
+    gfxFloat ComputePartialLigatureWidth(Range aPartRange,
                                          PropertyProvider *aProvider);
-    void DrawPartialLigature(gfxFont *aFont, uint32_t aStart, uint32_t aEnd,
+    void DrawPartialLigature(gfxFont *aFont, Range aRange,
                              gfxPoint *aPt, PropertyProvider *aProvider,
                              TextRunDrawParams& aParams, uint16_t aOrientation);
     
     
-    void ShrinkToLigatureBoundaries(uint32_t *aStart, uint32_t *aEnd);
     
-    gfxFloat GetPartialLigatureWidth(uint32_t aStart, uint32_t aEnd, PropertyProvider *aProvider);
-    void AccumulatePartialLigatureMetrics(gfxFont *aFont,
-                                          uint32_t aStart, uint32_t aEnd,
+    void ShrinkToLigatureBoundaries(Range* aRange);
+    
+    gfxFloat GetPartialLigatureWidth(Range aRange, PropertyProvider *aProvider);
+    void AccumulatePartialLigatureMetrics(gfxFont *aFont, Range aRange,
                                           gfxFont::BoundingBoxType aBoundingBoxType,
                                           DrawTarget* aRefDrawTarget,
                                           PropertyProvider *aProvider,
@@ -712,18 +718,17 @@ private:
                                           Metrics *aMetrics);
 
     
-    void AccumulateMetricsForRun(gfxFont *aFont, uint32_t aStart, uint32_t aEnd,
+    void AccumulateMetricsForRun(gfxFont *aFont, Range aRange,
                                  gfxFont::BoundingBoxType aBoundingBoxType,
                                  DrawTarget* aRefDrawTarget,
                                  PropertyProvider *aProvider,
-                                 uint32_t aSpacingStart, uint32_t aSpacingEnd,
+                                 Range aSpacingRange,
                                  uint16_t aOrientation,
                                  Metrics *aMetrics);
 
     
-    void DrawGlyphs(gfxFont *aFont, uint32_t aStart, uint32_t aEnd,
-                    gfxPoint *aPt, PropertyProvider *aProvider,
-                    uint32_t aSpacingStart, uint32_t aSpacingEnd,
+    void DrawGlyphs(gfxFont *aFont, Range aRange, gfxPoint *aPt,
+                    PropertyProvider *aProvider, Range aSpacingRange,
                     TextRunDrawParams& aParams, uint16_t aOrientation);
 
     

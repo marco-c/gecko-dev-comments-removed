@@ -63,31 +63,13 @@ using namespace mozilla::gfx;
 
 
 
-
-
-static void
+static gfxTextRun::Range
 ConvertOriginalToSkipped(gfxSkipCharsIterator& aIterator,
-                         uint32_t aOriginalOffset, uint32_t aOriginalLength,
-                         uint32_t& aSkippedOffset, uint32_t& aSkippedLength)
+                         uint32_t aOriginalOffset, uint32_t aOriginalLength)
 {
-  aSkippedOffset = aIterator.ConvertOriginalToSkipped(aOriginalOffset);
+  uint32_t start = aIterator.ConvertOriginalToSkipped(aOriginalOffset);
   aIterator.AdvanceOriginal(aOriginalLength);
-  aSkippedLength = aIterator.GetSkippedOffset() - aSkippedOffset;
-}
-
-
-
-
-
-
-
-
-
-static void
-ConvertOriginalToSkipped(gfxSkipCharsIterator& aIterator,
-                         uint32_t& aOffset, uint32_t& aLength)
-{
-  ConvertOriginalToSkipped(aIterator, aOffset, aLength, aOffset, aLength);
+  return gfxTextRun::Range(start, aIterator.GetSkippedOffset());
 }
 
 
@@ -157,15 +139,11 @@ GetAscentAndDescentInAppUnits(nsTextFrame* aFrame,
   gfxSkipCharsIterator it = aFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxTextRun* textRun = aFrame->GetTextRun(nsTextFrame::eInflated);
 
-  uint32_t offset, length;
-  ConvertOriginalToSkipped(it,
-                           aFrame->GetContentOffset(),
-                           aFrame->GetContentLength(),
-                           offset, length);
+  gfxTextRun::Range range = ConvertOriginalToSkipped(
+    it, aFrame->GetContentOffset(), aFrame->GetContentLength());
 
   gfxTextRun::Metrics metrics =
-    textRun->MeasureText(offset, length, gfxFont::LOOSE_INK_EXTENTS, nullptr,
-                         nullptr);
+    textRun->MeasureText(range, gfxFont::LOOSE_INK_EXTENTS, nullptr, nullptr);
 
   aAscent = metrics.mAscent;
   aDescent = metrics.mDescent;
@@ -394,8 +372,8 @@ GetBaselinePosition(nsTextFrame* aFrame,
 
 
 
-static uint32_t
-ClusterLength(gfxTextRun* aTextRun, const gfxSkipCharsIterator& aIterator)
+static gfxTextRun::Range
+ClusterRange(gfxTextRun* aTextRun, const gfxSkipCharsIterator& aIterator)
 {
   uint32_t start = aIterator.GetSkippedOffset();
   uint32_t end = start + 1;
@@ -404,7 +382,7 @@ ClusterLength(gfxTextRun* aTextRun, const gfxSkipCharsIterator& aIterator)
           !aTextRun->IsClusterStart(end))) {
     end++;
   }
-  return end - start;
+  return gfxTextRun::Range(start, end);
 }
 
 
@@ -481,6 +459,8 @@ namespace mozilla {
 
 struct TextRenderedRun
 {
+  typedef gfxTextRun::Range Range;
+
   
 
 
@@ -938,17 +918,15 @@ TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   gfxTextRun* textRun = mFrame->GetTextRun(nsTextFrame::eInflated);
 
   
-  uint32_t offset, length;
-  ConvertOriginalToSkipped(it, mTextFrameContentOffset, mTextFrameContentLength,
-                           offset, length);
-  if (length == 0) {
+  Range range = ConvertOriginalToSkipped(it, mTextFrameContentOffset,
+                                         mTextFrameContentLength);
+  if (range.Length() == 0) {
     return r;
   }
 
   
   gfxTextRun::Metrics metrics =
-    textRun->MeasureText(offset, length, gfxFont::LOOSE_INK_EXTENTS,
-                         nullptr, nullptr);
+    textRun->MeasureText(range, gfxFont::LOOSE_INK_EXTENTS, nullptr, nullptr);
   
   gfxRect fontBox(0, -metrics.mAscent,
       metrics.mAdvanceWidth, metrics.mAscent + metrics.mDescent);
@@ -961,7 +939,7 @@ TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   gfxFloat x, width;
   if (aFlags & eNoHorizontalOverflow) {
     x = 0.0;
-    width = textRun->GetAdvanceWidth(offset, length, nullptr);
+    width = textRun->GetAdvanceWidth(range, nullptr);
   } else {
     x = metrics.mBoundingBox.x;
     width = metrics.mBoundingBox.width;
@@ -1058,13 +1036,12 @@ TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
 
   
   
-  uint32_t runOffset, runLength, frameOffset, frameLength;
-  ConvertOriginalToSkipped(it, mTextFrameContentOffset, mTextFrameContentLength,
-                               runOffset, runLength);
+  Range runRange = ConvertOriginalToSkipped(it, mTextFrameContentOffset,
+                                            mTextFrameContentLength);
 
   
-  frameOffset = mFrame->GetContentOffset();
-  frameLength = mFrame->GetContentLength();
+  uint32_t frameOffset = mFrame->GetContentOffset();
+  uint32_t frameLength = mFrame->GetContentLength();
 
   
   
@@ -1075,19 +1052,17 @@ TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
 
   
   
-  ConvertOriginalToSkipped(it, frameOffset, frameLength);
+  Range frameRange = ConvertOriginalToSkipped(it, frameOffset, frameLength);
 
   
   
-  nscoord startEdge =
-    textRun->GetAdvanceWidth(frameOffset, runOffset - frameOffset, nullptr);
+  nscoord startEdge = textRun->
+    GetAdvanceWidth(Range(frameRange.start, runRange.start), nullptr);
 
   
   
-  nscoord endEdge =
-    textRun->GetAdvanceWidth(runOffset + runLength,
-                             frameOffset + frameLength - (runOffset + runLength),
-                             nullptr);
+  nscoord endEdge = textRun->
+    GetAdvanceWidth(Range(runRange.end, frameRange.end), nullptr);
 
   if (textRun->IsRightToLeft()) {
     aVisIStartEdge = endEdge;
@@ -1104,11 +1079,10 @@ TextRenderedRun::GetAdvanceWidth() const
   gfxSkipCharsIterator it = mFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxTextRun* textRun = mFrame->GetTextRun(nsTextFrame::eInflated);
 
-  uint32_t offset, length;
-  ConvertOriginalToSkipped(it, mTextFrameContentOffset, mTextFrameContentLength,
-                           offset, length);
+  Range range = ConvertOriginalToSkipped(it, mTextFrameContentOffset,
+                                         mTextFrameContentLength);
 
-  return textRun->GetAdvanceWidth(offset, length, nullptr);
+  return textRun->GetAdvanceWidth(range, nullptr);
 }
 
 int32_t
@@ -1159,12 +1133,10 @@ TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
 
   
   
-  uint32_t offset, length;
-  ConvertOriginalToSkipped(it, mTextFrameContentOffset, mTextFrameContentLength,
-                           offset, length);
+  Range range = ConvertOriginalToSkipped(it, mTextFrameContentOffset,
+                                         mTextFrameContentLength);
   gfxFloat runAdvance =
-    aContext->AppUnitsToGfxUnits(textRun->GetAdvanceWidth(offset, length,
-                                                          nullptr));
+    aContext->AppUnitsToGfxUnits(textRun->GetAdvanceWidth(range, nullptr));
 
   gfxFloat pos = writingMode.IsVertical() ? p.y : p.x;
   if (pos < 0 || pos >= runAdvance) {
@@ -1176,10 +1148,9 @@ TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
   
   bool rtl = textRun->IsRightToLeft();
   for (int32_t i = mTextFrameContentLength - 1; i >= 0; i--) {
-    ConvertOriginalToSkipped(it, mTextFrameContentOffset, i, offset, length);
+    range = ConvertOriginalToSkipped(it, mTextFrameContentOffset, i);
     gfxFloat advance =
-      aContext->AppUnitsToGfxUnits(textRun->GetAdvanceWidth(offset, length,
-                                                            nullptr));
+      aContext->AppUnitsToGfxUnits(textRun->GetAdvanceWidth(range, nullptr));
     if ((rtl && pos < runAdvance - advance) ||
         (!rtl && pos >= advance)) {
       return i;
@@ -2137,6 +2108,8 @@ TextRenderedRunIterator::First()
 
 class CharIterator
 {
+  typedef gfxTextRun::Range Range;
+
 public:
   
 
@@ -2628,12 +2601,12 @@ CharIterator::GetGlyphAdvance(nsPresContext* aContext) const
   GetOriginalGlyphOffsets(offset, length);
 
   gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
-  ConvertOriginalToSkipped(it, offset, length);
+  Range range = ConvertOriginalToSkipped(it, offset, length);
 
   float cssPxPerDevPx = aContext->
     AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
-  gfxFloat advance = mTextRun->GetAdvanceWidth(offset, length, nullptr);
+  gfxFloat advance = mTextRun->GetAdvanceWidth(range, nullptr);
   return aContext->AppUnitsToGfxUnits(advance) *
          mLengthAdjustScaleFactor * cssPxPerDevPx;
 }
@@ -2644,8 +2617,9 @@ CharIterator::GetAdvance(nsPresContext* aContext) const
   float cssPxPerDevPx = aContext->
     AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
-  gfxFloat advance =
-    mTextRun->GetAdvanceWidth(mSkipCharsIterator.GetSkippedOffset(), 1, nullptr);
+  uint32_t offset = mSkipCharsIterator.GetSkippedOffset();
+  gfxFloat advance = mTextRun->
+    GetAdvanceWidth(Range(offset, offset + 1), nullptr);
   return aContext->AppUnitsToGfxUnits(advance) *
          mLengthAdjustScaleFactor * cssPxPerDevPx;
 }
@@ -2661,12 +2635,12 @@ CharIterator::GetGlyphPartialAdvance(uint32_t aPartLength,
   length = aPartLength;
 
   gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
-  ConvertOriginalToSkipped(it, offset, length);
+  Range range = ConvertOriginalToSkipped(it, offset, length);
 
   float cssPxPerDevPx = aContext->
     AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
-  gfxFloat advance = mTextRun->GetAdvanceWidth(offset, length, nullptr);
+  gfxFloat advance = mTextRun->GetAdvanceWidth(range, nullptr);
   return aContext->AppUnitsToGfxUnits(advance) *
          mLengthAdjustScaleFactor * cssPxPerDevPx;
 }
@@ -4218,10 +4192,10 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
       gfxSkipCharsIterator it =
         run.mFrame->EnsureTextRun(nsTextFrame::eInflated);
       gfxTextRun* textRun = run.mFrame->GetTextRun(nsTextFrame::eInflated);
-      ConvertOriginalToSkipped(it, offset, length);
+      Range range = ConvertOriginalToSkipped(it, offset, length);
 
       
-      textLength += textRun->GetAdvanceWidth(offset, length, nullptr);
+      textLength += textRun->GetAdvanceWidth(range, nullptr);
     }
 
     run = it.Next();
@@ -4720,8 +4694,9 @@ SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions)
            !it.IsOriginalCharSkipped() &&
            (!textRun->IsLigatureGroupStart(it.GetSkippedOffset()) ||
             !textRun->IsClusterStart(it.GetSkippedOffset()))) {
-      nscoord advance = textRun->GetAdvanceWidth(it.GetSkippedOffset(), 1,
-                                                 nullptr);
+      uint32_t offset = it.GetSkippedOffset();
+      nscoord advance = textRun->
+        GetAdvanceWidth(Range(offset, offset + 1), nullptr);
       (textRun->IsVertical() ? position.y : position.x) +=
         textRun->IsRightToLeft() ? -advance : advance;
       aPositions.AppendElement(lastPosition);
@@ -4735,9 +4710,8 @@ SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions)
           textRun->IsLigatureGroupStart(it.GetSkippedOffset()) &&
           textRun->IsClusterStart(it.GetSkippedOffset())) {
         
-        uint32_t length = ClusterLength(textRun, it);
-        nscoord advance = textRun->GetAdvanceWidth(it.GetSkippedOffset(),
-                                                   length, nullptr);
+        nscoord advance = textRun->
+          GetAdvanceWidth(ClusterRange(textRun, it), nullptr);
         (textRun->IsVertical() ? position.y : position.x) +=
           textRun->IsRightToLeft() ? -advance : advance;
         lastPosition = position;
