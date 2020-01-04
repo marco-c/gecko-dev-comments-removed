@@ -18,8 +18,10 @@ import org.mozilla.gecko.GeckoAccessibility;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoEvent;
 import org.mozilla.gecko.GeckoThread;
+import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.Tab;
 import org.mozilla.gecko.Tabs;
+import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.ZoomConstraints;
 
 import android.content.Context;
@@ -51,7 +53,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     private GeckoLayerClient mLayerClient;
     private PanZoomController mPanZoomController;
     private DynamicToolbarAnimator mToolbarAnimator;
-    private GLController mGLController;
     private LayerRenderer mRenderer;
     
     private int mPaintState;
@@ -70,6 +71,65 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
 
     
     private final Overscroll mOverscroll;
+
+
+    private boolean mServerSurfaceValid;
+    private int mWidth, mHeight;
+
+    
+
+    private volatile boolean mCompositorCreated;
+
+
+    @WrapForJNI(allowMultithread = true)
+    protected class Compositor extends JNIObject {
+        public Compositor() {
+        }
+
+        @Override protected native void disposeNative();
+
+        
+         native void attachToJava(GeckoLayerClient layerClient,
+                                               NativePanZoomController npzc);
+
+         native void onSizeChanged(int windowWidth, int windowHeight,
+                                                int screenWidth, int screenHeight);
+
+        
+         native void createCompositor(int width, int height);
+
+        
+         native void syncPauseCompositor();
+
+        
+         native void syncResumeResizeCompositor(int width, int height);
+
+         native void syncInvalidateAndScheduleComposite();
+
+        private synchronized Object getSurface() {
+            if (LayerView.this.mServerSurfaceValid) {
+                return LayerView.this.getSurface();
+            }
+            return null;
+        }
+
+        private void destroy() {
+            
+            LayerView.this.mCompositorCreated = false;
+
+            
+            ThreadUtils.postToUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    disposeNative();
+                }
+            });
+        }
+    }
+
+
+    Compositor mCompositor;
+
 
     
     public static final int PAINT_START = 0;
@@ -112,6 +172,8 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
             mOverscroll = null;
         }
         Tabs.registerOnTabsChangedListener(this);
+
+        mCompositor = new Compositor();
     }
 
     public LayerView(Context context) {
@@ -194,11 +256,8 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         if (mRenderer != null) {
             mRenderer.destroy();
         }
-        if (mGLController != null) {
-            if (mGLController.mView == this) {
-                mGLController.mView = null;
-            }
-            mGLController = null;
+        if (mCompositor != null) {
+            mCompositor = null;
         }
         Tabs.unregisterOnTabsChangedListener(this);
     }
@@ -331,6 +390,8 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
             SurfaceHolder holder = mSurfaceView.getHolder();
             holder.addCallback(new SurfaceListener());
         }
+
+        attachCompositor();
     }
 
     
@@ -447,25 +508,80 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         return mListener;
     }
 
-    public void setGLController(final GLController glController) {
-        mGLController = glController;
-        glController.mView = this;
-
+    private void attachCompositor() {
         final NativePanZoomController npzc = AppConstants.MOZ_ANDROID_APZ ?
                 (NativePanZoomController) mPanZoomController : null;
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            glController.attachToJava(mLayerClient, npzc);
+            mCompositor.attachToJava(mLayerClient, npzc);
         } else {
             GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                    glController, "attachToJava",
+                    mCompositor, "attachToJava",
                     GeckoLayerClient.class, mLayerClient,
                     NativePanZoomController.class, npzc);
         }
     }
 
-    public GLController getGLController() {
-        return mGLController;
+    protected Compositor getCompositor() {
+        return mCompositor;
+    }
+
+    void serverSurfaceChanged(int newWidth, int newHeight) {
+        ThreadUtils.assertOnUiThread();
+
+        synchronized (this) {
+            mWidth = newWidth;
+            mHeight = newHeight;
+            mServerSurfaceValid = true;
+        }
+
+        updateCompositor();
+    }
+
+    void updateCompositor() {
+        ThreadUtils.assertOnUiThread();
+
+        if (mCompositorCreated) {
+            
+            
+            
+            resumeCompositor(mWidth, mHeight);
+            return;
+        }
+
+        
+        
+        
+        
+        if (mServerSurfaceValid && getLayerClient().isGeckoReady()) {
+            mCompositor.createCompositor(mWidth, mHeight);
+            compositorCreated();
+        }
+    }
+
+    void compositorCreated() {
+        
+        
+        mCompositorCreated = true;
+    }
+
+    void resumeCompositor(int width, int height) {
+        
+        
+        
+        
+        
+        
+        if (mServerSurfaceValid && mCompositorCreated) {
+            mCompositor.syncResumeResizeCompositor(width, height);
+            requestRender();
+        }
+    }
+
+     void invalidateAndScheduleComposite() {
+        if (mCompositorCreated) {
+            mCompositor.syncInvalidateAndScheduleComposite();
+        }
     }
 
     
@@ -487,7 +603,7 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
 
 
     private void onSizeChanged(int width, int height) {
-        if (!mGLController.isServerSurfaceValid() || mSurfaceView == null) {
+        if (!mServerSurfaceValid || mSurfaceView == null) {
             surfaceChanged(width, height);
             return;
         }
@@ -502,7 +618,7 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     }
 
     private void surfaceChanged(int width, int height) {
-        mGLController.serverSurfaceChanged(width, height);
+        serverSurfaceChanged(width, height);
 
         if (mListener != null) {
             mListener.surfaceChanged(width, height);
@@ -513,8 +629,32 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         }
     }
 
+    void notifySizeChanged(int windowWidth, int windowHeight, int screenWidth, int screenHeight) {
+        mCompositor.onSizeChanged(windowWidth, windowHeight, screenWidth, screenHeight);
+    }
+
+    void serverSurfaceDestroyed() {
+        ThreadUtils.assertOnUiThread();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if (mCompositorCreated) {
+            mCompositor.syncPauseCompositor();
+        }
+
+        synchronized (this) {
+            mServerSurfaceValid = false;
+        }
+    }
+
     private void onDestroyed() {
-        mGLController.serverSurfaceDestroyed();
+        serverSurfaceDestroyed();
     }
 
     public Object getNativeWindow() {
@@ -608,7 +748,7 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         @Override
         protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
             super.onLayout(changed, left, top, right, bottom);
-            if (changed && mParent.mGLController.isServerSurfaceValid()) {
+            if (changed && mParent.mServerSurfaceValid) {
                 mParent.surfaceChanged(right - left, bottom - top);
             }
         }

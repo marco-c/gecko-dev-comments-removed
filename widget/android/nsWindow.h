@@ -59,9 +59,8 @@ private:
     
     mozilla::UniquePtr<GeckoViewSupport> mGeckoViewSupport;
 
-    class GLControllerSupport;
-    
-    mozilla::UniquePtr<GLControllerSupport> mGLControllerSupport;
+    class LayerViewSupport;
+    mozilla::UniquePtr<LayerViewSupport> mLayerViewSupport;
 
     class NPZCSupport;
     
