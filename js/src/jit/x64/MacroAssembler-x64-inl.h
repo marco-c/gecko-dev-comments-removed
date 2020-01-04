@@ -802,6 +802,22 @@ MacroAssembler::truncateDoubleToUInt64(Address src, Address dest, Register temp,
 
 
 
+template <class L>
+void
+MacroAssembler::wasmBoundsCheck(Condition cond, Register index, L label)
+{
+    MOZ_CRASH("x64 should never emit a bounds check");
+}
+
+void
+MacroAssembler::wasmPatchBoundsCheck(uint8_t* patchAt, uint32_t limit)
+{
+    MOZ_CRASH("x64 should never emit a bounds check");
+}
+
+
+
+
 void
 MacroAssemblerX64::incrementInt32Value(const Address& addr)
 {

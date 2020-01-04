@@ -4,6 +4,9 @@ load(libdir + "asserts.js");
 var heap = new ArrayBuffer(0x10000);
 
 
+setJitCompilerOption('ion.warmup.trigger', 1000000);
+
+
 const DEBUG = false;
 
 if (!isSimdAvailable() || typeof SIMD === 'undefined') {

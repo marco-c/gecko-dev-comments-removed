@@ -601,11 +601,24 @@ ComputeAccessAddress(EMULATOR_CONTEXT* context, const Disassembler::ComplexAddre
     return reinterpret_cast<uint8_t*>(result);
 }
 
-MOZ_COLD static uint8_t*
-EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
-                  const MemoryAccess* memoryAccess, const Instance& instance)
+MOZ_COLD static bool
+HugeMemoryAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
+                 const Instance& instance, uint8_t** ppc)
 {
     MOZ_RELEASE_ASSERT(instance.codeSegment().containsFunctionPC(pc));
+
+    
+    
+    
+    
+
+    const MemoryAccess* memoryAccess = instance.code().lookupMemoryAccess(pc);
+    if (!memoryAccess) {
+        *ppc = instance.codeSegment().outOfBoundsCode();
+        return true;
+    }
+
+    MOZ_RELEASE_ASSERT(instance.isAsmJS());
     MOZ_RELEASE_ASSERT(memoryAccess->insnOffset() == (pc - instance.codeBase()));
 
     
@@ -653,13 +666,6 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
 
     
     
-    if (!memoryAccess->wrapOffset()) {
-        MOZ_ASSERT(memoryAccess->throwOnOOB());
-        return instance.codeSegment().outOfBoundsCode();
-    }
-
-    
-    
     
     
     
@@ -677,13 +683,6 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
     size_t size = access.size();
     MOZ_RELEASE_ASSERT(wrappedOffset + size > wrappedOffset);
     bool inBounds = wrappedOffset + size < instance.memoryLength();
-
-    
-    
-    MOZ_RELEASE_ASSERT(unwrappedOffset > memoryAccess->offsetWithinWholeSimdVector());
-    uint32_t wrappedBaseOffset = uint32_t(unwrappedOffset - memoryAccess->offsetWithinWholeSimdVector());
-    if (wrappedBaseOffset >= instance.memoryLength())
-        inBounds = false;
 
     if (inBounds) {
         
@@ -711,10 +710,6 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
     } else {
         
         
-
-        if (memoryAccess->throwOnOOB())
-            return instance.codeSegment().outOfBoundsCode();
-
         switch (access.kind()) {
           case Disassembler::HeapAccess::Load:
           case Disassembler::HeapAccess::LoadSext32:
@@ -736,7 +731,8 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
         }
     }
 
-    return end;
+    *ppc = end;
+    return true;
 }
 #endif 
 
@@ -803,15 +799,11 @@ HandleFault(PEXCEPTION_POINTERS exception)
     }
 
 #ifdef WASM_HUGE_MEMORY
-    const MemoryAccess* memoryAccess = instance->code().lookupMemoryAccess(pc);
-    if (!memoryAccess)
-        *ppc = instance->codeSegment().outOfBoundsCode();
-    else
-        *ppc = EmulateHeapAccess(context, pc, faultingAddress, memoryAccess, *instance);
+    return HugeMemoryAccess(context, pc, faultingAddress, *instance, ppc);
 #else
     *ppc = instance->codeSegment().outOfBoundsCode();
-#endif
     return true;
+#endif
 }
 
 static LONG WINAPI
@@ -934,11 +926,8 @@ HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
         return false;
 
 #ifdef WASM_HUGE_MEMORY
-    const MemoryAccess* memoryAccess = instance->code().lookupMemoryAccess(pc);
-    if (!memoryAccess)
-        *ppc = instance->codeSegment().outOfBoundsCode();
-    else
-        *ppc = EmulateHeapAccess(&context, pc, faultingAddress, memoryAccess, *instance);
+    if (!HugeMemoryAccess(&context, pc, faultingAddress, *instance, ppc))
+        return false;
 #else
     *ppc = instance->codeSegment().outOfBoundsCode();
 #endif
@@ -1153,24 +1142,18 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         return false;
 
 #ifdef WASM_HUGE_MEMORY
-    MOZ_RELEASE_ASSERT(signal == Signal::SegFault);
-    const MemoryAccess* memoryAccess = instance->code().lookupMemoryAccess(pc);
-    if (!memoryAccess)
-        *ppc = instance->codeSegment().outOfBoundsCode();
-    else
-        *ppc = EmulateHeapAccess(context, pc, faultingAddress, memoryAccess, *instance);
+    return HugeMemoryAccess(context, pc, faultingAddress, *instance, ppc);
 #elif defined(JS_CODEGEN_ARM)
     MOZ_RELEASE_ASSERT(signal == Signal::BusError || signal == Signal::SegFault);
     if (signal == Signal::BusError)
         *ppc = instance->codeSegment().unalignedAccessCode();
     else
         *ppc = instance->codeSegment().outOfBoundsCode();
-#else
-    MOZ_RELEASE_ASSERT(signal == Signal::SegFault);
-    *ppc = instance->codeSegment().outOfBoundsCode();
-#endif
-
     return true;
+#else
+    *ppc = instance->codeSegment().outOfBoundsCode();
+    return true;
+#endif
 }
 
 static struct sigaction sPrevSEGVHandler;

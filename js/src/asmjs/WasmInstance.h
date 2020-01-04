@@ -113,6 +113,10 @@ class Instance
     
 
     void deoptimizeImportExit(uint32_t funcImportIndex);
+
+    
+    
+
     bool memoryAccessWouldFault(uint8_t* addr, unsigned numBytes);
 
     

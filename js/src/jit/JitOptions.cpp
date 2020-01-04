@@ -226,6 +226,10 @@ DefaultJitOptions::DefaultJitOptions()
 
     
     
+    SET_DEFAULT(wasmFoldOffsets, true);
+
+    
+    
     SET_DEFAULT(ionInterruptWithoutSignals, false);
 }
 

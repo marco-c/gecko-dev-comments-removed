@@ -304,6 +304,8 @@ class AssemblerX86Shared : public AssemblerShared
         LessThan = X86Encoding::ConditionL,
         LessThanOrEqual = X86Encoding::ConditionLE,
         Overflow = X86Encoding::ConditionO,
+        CarrySet = X86Encoding::ConditionC,
+        CarryClear = X86Encoding::ConditionNC,
         Signed = X86Encoding::ConditionS,
         NotSigned = X86Encoding::ConditionNS,
         Zero = X86Encoding::ConditionE,
@@ -1079,34 +1081,6 @@ class AssemblerX86Shared : public AssemblerShared
     }
     static void patchJumpToTwoByteNop(uint8_t* jump) {
         X86Encoding::BaseAssembler::patchJumpToTwoByteNop(jump);
-    }
-
-    static void UpdateBoundsCheck(uint8_t* patchAt, uint32_t heapLength) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        uint32_t before = reinterpret_cast<uint32_t*>(patchAt)[-1];
-        uint32_t after = before + heapLength;
-
-        
-        
-        
-        
-        
-        
-        if (after > heapLength)
-            after = 0;
-
-        MOZ_ASSERT_IF(after, int32_t(after) >= int32_t(before));
-        reinterpret_cast<uint32_t*>(patchAt)[-1] = after;
     }
 
     void breakpoint() {

@@ -455,6 +455,27 @@ MacroAssembler::storeUncanonicalizedFloat32(FloatRegister src, const BaseIndex& 
 
 
 
+template <class L>
+void
+MacroAssembler::wasmBoundsCheck(Condition cond, Register index, L label)
+{
+    MOZ_CRASH("NYI");
+}
+
+void
+MacroAssembler::wasmPatchBoundsCheck(uint8_t* patchAt, uint32_t limit)
+{
+    Instruction* inst = (Instruction*) patchAt;
+    InstImm* i0 = (InstImm*) inst;
+    InstImm* i1 = (InstImm*) i0->next();
+
+    
+    Assembler::UpdateLuiOriValue(i0, i1, limit);
+}
+
+
+
+
 void
 MacroAssemblerMIPSCompat::incrementInt32Value(const Address& addr)
 {

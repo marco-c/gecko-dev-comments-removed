@@ -793,95 +793,6 @@ typedef Vector<CallSiteAndTarget, 0, SystemAllocPolicy> CallSiteAndTargetVector;
 
 
 
-class BoundsCheck
-{
-  public:
-    BoundsCheck() = default;
-
-    explicit BoundsCheck(uint32_t cmpOffset)
-      : cmpOffset_(cmpOffset)
-    { }
-
-    uint8_t* patchAt(uint8_t* code) const { return code + cmpOffset_; }
-    void offsetBy(uint32_t offset) { cmpOffset_ += offset; }
-
-  private:
-    uint32_t cmpOffset_; 
-};
-
-
-
-
-
-
-#if defined(JS_CODEGEN_X86)
-class MemoryAccess
-{
-    uint32_t nextInsOffset_;
-
-  public:
-    MemoryAccess() = default;
-
-    explicit MemoryAccess(uint32_t nextInsOffset)
-      : nextInsOffset_(nextInsOffset)
-    { }
-
-    void* patchMemoryPtrImmAt(uint8_t* code) const { return code + nextInsOffset_; }
-    void offsetBy(uint32_t offset) { nextInsOffset_ += offset; }
-};
-#elif defined(JS_CODEGEN_X64)
-class MemoryAccess
-{
-    uint32_t insnOffset_;
-    uint8_t offsetWithinWholeSimdVector_; 
-    bool throwOnOOB_;                     
-    bool wrapOffset_;                     
-
-  public:
-    enum OutOfBoundsBehavior {
-        Throw,
-        CarryOn,
-    };
-    enum WrappingBehavior {
-        WrapOffset,
-        DontWrapOffset,
-    };
-
-    MemoryAccess() = default;
-
-    MemoryAccess(uint32_t insnOffset, OutOfBoundsBehavior onOOB, WrappingBehavior onWrap,
-                 uint32_t offsetWithinWholeSimdVector = 0)
-      : insnOffset_(insnOffset),
-        offsetWithinWholeSimdVector_(offsetWithinWholeSimdVector),
-        throwOnOOB_(onOOB == OutOfBoundsBehavior::Throw),
-        wrapOffset_(onWrap == WrappingBehavior::WrapOffset)
-    {
-        MOZ_ASSERT(offsetWithinWholeSimdVector_ == offsetWithinWholeSimdVector, "fits in uint8");
-    }
-
-    uint32_t insnOffset() const { return insnOffset_; }
-    uint32_t offsetWithinWholeSimdVector() const { return offsetWithinWholeSimdVector_; }
-    bool throwOnOOB() const { return throwOnOOB_; }
-    bool wrapOffset() const { return wrapOffset_; }
-
-    void offsetBy(uint32_t offset) { insnOffset_ += offset; }
-};
-#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
-      defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64) || \
-      defined(JS_CODEGEN_NONE)
-
-class MemoryAccess {
-  public:
-    void offsetBy(uint32_t) { MOZ_CRASH(); }
-    uint32_t insnOffset() const { MOZ_CRASH(); }
-};
-#endif
-
-WASM_DECLARE_POD_VECTOR(MemoryAccess, MemoryAccessVector)
-WASM_DECLARE_POD_VECTOR(BoundsCheck, BoundsCheckVector)
-
-
-
 
 
 
@@ -1273,6 +1184,15 @@ RoundUpToNextValidARMImmediate(uint32_t i);
 
 static const unsigned PageSize = 64 * 1024;
 
+
+
+
+
+
+
+
+static const unsigned MaxMemoryAccessSize = sizeof(Val);
+
 #ifdef JS_CODEGEN_X64
 
 
@@ -1286,8 +1206,12 @@ static const unsigned PageSize = 64 * 1024;
 
 
 
-static const uint64_t Uint32Range = uint64_t(UINT32_MAX) + 1;
-static const uint64_t HugeMappedSize = 2 * Uint32Range + PageSize;
+static const uint64_t IndexRange = uint64_t(UINT32_MAX) + 1;
+static const uint64_t OffsetGuardLimit = uint64_t(INT32_MAX) + 1;
+static const uint64_t UnalignedGuardPage = PageSize;
+static const uint64_t HugeMappedSize = IndexRange + OffsetGuardLimit + UnalignedGuardPage;
+
+static_assert(MaxMemoryAccessSize <= UnalignedGuardPage, "rounded up to static page size");
 
 #else 
 
@@ -1298,6 +1222,8 @@ static const uint64_t HugeMappedSize = 2 * Uint32Range + PageSize;
 
 
 
+
+static const size_t OffsetGuardLimit = PageSize - MaxMemoryAccessSize;
 static const size_t GuardSize = PageSize;
 
 
@@ -1316,6 +1242,79 @@ extern size_t
 ComputeMappedSize(uint32_t maxSize);
 
 #endif 
+
+
+
+
+
+
+
+
+
+class BoundsCheck
+{
+  public:
+    BoundsCheck() = default;
+
+    explicit BoundsCheck(uint32_t cmpOffset)
+      : cmpOffset_(cmpOffset)
+    { }
+
+    uint8_t* patchAt(uint8_t* code) const { return code + cmpOffset_; }
+    void offsetBy(uint32_t offset) { cmpOffset_ += offset; }
+
+  private:
+    uint32_t cmpOffset_;
+};
+
+
+
+
+
+
+
+
+
+#ifdef WASM_HUGE_MEMORY
+class MemoryAccess
+{
+    uint32_t insnOffset_;
+
+  public:
+    MemoryAccess() = default;
+    explicit MemoryAccess(uint32_t insnOffset)
+      : insnOffset_(insnOffset)
+    {}
+
+    uint32_t insnOffset() const { return insnOffset_; }
+
+    void offsetBy(uint32_t offset) { insnOffset_ += offset; }
+};
+#elif defined(JS_CODEGEN_X86)
+class MemoryAccess
+{
+    uint32_t nextInsOffset_;
+
+  public:
+    MemoryAccess() = default;
+    explicit MemoryAccess(uint32_t nextInsOffset)
+      : nextInsOffset_(nextInsOffset)
+    { }
+
+    void* patchMemoryPtrImmAt(uint8_t* code) const { return code + nextInsOffset_; }
+    void offsetBy(uint32_t offset) { nextInsOffset_ += offset; }
+};
+#else
+class MemoryAccess {
+  public:
+    MemoryAccess() { MOZ_CRASH(); }
+    void offsetBy(uint32_t) { MOZ_CRASH(); }
+    uint32_t insnOffset() const { MOZ_CRASH(); }
+};
+#endif
+
+WASM_DECLARE_POD_VECTOR(MemoryAccess, MemoryAccessVector)
+WASM_DECLARE_POD_VECTOR(BoundsCheck, BoundsCheckVector)
 
 
 

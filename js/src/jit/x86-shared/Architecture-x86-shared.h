@@ -457,10 +457,6 @@ hasMultiAlias()
     return false;
 }
 
-
-static const size_t WasmCheckedImmediateRange = 4096;
-static const size_t WasmImmediateRange = UINT32_C(0x80000000);
-
 } 
 } 
 

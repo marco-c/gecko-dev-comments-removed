@@ -100,10 +100,11 @@ AnalyzeLsh(TempAllocator& alloc, MLsh* lsh)
     last->block()->insertAfter(last, eaddr);
 }
 
-template<typename MWasmMemoryAccessType>
+template<typename AsmJSMemoryAccess>
 bool
-EffectiveAddressAnalysis::tryAddDisplacement(MWasmMemoryAccessType* ins, int32_t o)
+EffectiveAddressAnalysis::tryAddDisplacement(AsmJSMemoryAccess* ins, int32_t o)
 {
+#ifdef WASM_HUGE_MEMORY
     
     uint32_t oldOffset = ins->offset();
     uint32_t newOffset = oldOffset + o;
@@ -112,24 +113,20 @@ EffectiveAddressAnalysis::tryAddDisplacement(MWasmMemoryAccessType* ins, int32_t
 
     
     
-    uint32_t newEnd = newOffset + ins->byteSize();
-    if (newEnd < newOffset)
-        return false;
-
-    
-    
-    size_t range = mir_->foldableOffsetRange(ins);
-    if (size_t(newEnd) > range)
+    if (newOffset >= wasm::OffsetGuardLimit)
         return false;
 
     
     ins->setOffset(newOffset);
     return true;
+#else
+    return false;
+#endif
 }
 
-template<typename MWasmMemoryAccessType>
+template<typename AsmJSMemoryAccess>
 void
-EffectiveAddressAnalysis::analyzeAsmHeapAccess(MWasmMemoryAccessType* ins)
+EffectiveAddressAnalysis::analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins)
 {
     MDefinition* base = ins->base();
 
@@ -198,9 +195,9 @@ EffectiveAddressAnalysis::analyze()
             if (i->isLsh())
                 AnalyzeLsh(graph_.alloc(), i->toLsh());
             else if (i->isAsmJSLoadHeap())
-                analyzeAsmHeapAccess(i->toAsmJSLoadHeap());
+                analyzeAsmJSHeapAccess(i->toAsmJSLoadHeap());
             else if (i->isAsmJSStoreHeap())
-                analyzeAsmHeapAccess(i->toAsmJSStoreHeap());
+                analyzeAsmJSHeapAccess(i->toAsmJSStoreHeap());
         }
     }
     return true;
