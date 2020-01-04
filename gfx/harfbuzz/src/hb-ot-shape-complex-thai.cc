@@ -353,7 +353,7 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
     {
       
 
-      if (start)
+      if (start && buffer->cluster_level == HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES)
 	buffer->merge_out_clusters (start - 1, end);
     }
   }

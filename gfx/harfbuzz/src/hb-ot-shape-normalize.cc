@@ -345,14 +345,12 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
         break;
 
     
-
-
     if (end - i > 10) {
       i = end;
       continue;
     }
 
-    hb_bubble_sort (buffer->info + i, end - i, compare_combining_class);
+    buffer->sort (i, end, compare_combining_class);
 
     i = end;
   }
