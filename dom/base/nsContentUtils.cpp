@@ -1535,16 +1535,25 @@ nsContentUtils::CopyNewlineNormalizedUnicodeTo(nsReadingIterator<char16_t>& aSrc
 
 
 
+
+
+
+
 bool
 nsContentUtils::IsFirstLetterPunctuation(uint32_t aChar)
 {
-  uint8_t cat = mozilla::unicode::GetGeneralCategory(aChar);
-
-  return (cat == HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION ||     
-          cat == HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION ||    
-          cat == HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION ||  
-          cat == HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION ||    
-          cat == HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION);     
+  switch (mozilla::unicode::GetGeneralCategory(aChar)) {
+    case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
+    case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
+    case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
+    case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    
+      return true;
+    default:
+      return false;
+  }
 }
 
 
