@@ -133,8 +133,12 @@ struct AnimationProperty
   
   
   
-  bool mWinsInCascade = true;
+  
+  bool mWinsInCascade = false;
 
+  
+  
+  
   
   
   
