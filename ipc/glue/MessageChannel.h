@@ -11,6 +11,7 @@
 #include "base/basictypes.h"
 #include "base/message_loop.h"
 
+#include "mozilla/Function.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Vector.h"
@@ -108,6 +109,11 @@ class MessageChannel : HasResultCodes
     {
         mAbortOnError = abort;
     }
+
+    
+    
+    
+    void PeekMessages(Message::msgid_t aId, mozilla::function<void(const Message& aMsg)> aInvoke);
 
     
     enum ChannelFlags {
