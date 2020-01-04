@@ -3,7 +3,7 @@
 
 
 
-#include "EditAggregateTxn.h"
+#include "EditAggregateTransaction.h"
 #include "nsAString.h"
 #include "nsCOMPtr.h"                   
 #include "nsError.h"                    
@@ -11,24 +11,26 @@
 #include "nsITransaction.h"             
 #include "nsString.h"                   
 
-EditAggregateTxn::EditAggregateTxn()
-  : EditTxn()
+namespace mozilla {
+
+EditAggregateTransaction::EditAggregateTransaction()
 {
 }
 
-EditAggregateTxn::~EditAggregateTxn()
+EditAggregateTransaction::~EditAggregateTransaction()
 {
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(EditAggregateTxn, EditTxn,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(EditAggregateTransaction, EditTxn,
                                    mChildren)
 
-NS_IMPL_ADDREF_INHERITED(EditAggregateTxn, EditTxn)
-NS_IMPL_RELEASE_INHERITED(EditAggregateTxn, EditTxn)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(EditAggregateTxn)
+NS_IMPL_ADDREF_INHERITED(EditAggregateTransaction, EditTxn)
+NS_IMPL_RELEASE_INHERITED(EditAggregateTransaction, EditTxn)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(EditAggregateTransaction)
 NS_INTERFACE_MAP_END_INHERITING(EditTxn)
 
-NS_IMETHODIMP EditAggregateTxn::DoTransaction(void)
+NS_IMETHODIMP
+EditAggregateTransaction::DoTransaction()
 {
   nsresult result=NS_OK;  
   for (uint32_t i = 0, length = mChildren.Length(); i < length; ++i)
@@ -42,7 +44,8 @@ NS_IMETHODIMP EditAggregateTxn::DoTransaction(void)
   return result;
 }
 
-NS_IMETHODIMP EditAggregateTxn::UndoTransaction(void)
+NS_IMETHODIMP
+EditAggregateTransaction::UndoTransaction()
 {
   nsresult result=NS_OK;  
   
@@ -57,7 +60,8 @@ NS_IMETHODIMP EditAggregateTxn::UndoTransaction(void)
   return result;
 }
 
-NS_IMETHODIMP EditAggregateTxn::RedoTransaction(void)
+NS_IMETHODIMP
+EditAggregateTransaction::RedoTransaction()
 {
   nsresult result=NS_OK;  
   for (uint32_t i = 0, length = mChildren.Length(); i < length; ++i)
@@ -71,7 +75,9 @@ NS_IMETHODIMP EditAggregateTxn::RedoTransaction(void)
   return result;
 }
 
-NS_IMETHODIMP EditAggregateTxn::Merge(nsITransaction *aTransaction, bool *aDidMerge)
+NS_IMETHODIMP
+EditAggregateTransaction::Merge(nsITransaction* aTransaction,
+                                bool* aDidMerge)
 {
   nsresult result=NS_OK;  
   if (aDidMerge)
@@ -87,9 +93,10 @@ NS_IMETHODIMP EditAggregateTxn::Merge(nsITransaction *aTransaction, bool *aDidMe
   return result;
 }
 
-NS_IMETHODIMP EditAggregateTxn::GetTxnDescription(nsAString& aString)
+NS_IMETHODIMP
+EditAggregateTransaction::GetTxnDescription(nsAString& aString)
 {
-  aString.AssignLiteral("EditAggregateTxn: ");
+  aString.AssignLiteral("EditAggregateTransaction: ");
 
   if (mName)
   {
@@ -101,9 +108,10 @@ NS_IMETHODIMP EditAggregateTxn::GetTxnDescription(nsAString& aString)
   return NS_OK;
 }
 
-NS_IMETHODIMP EditAggregateTxn::AppendChild(EditTxn *aTxn)
+NS_IMETHODIMP
+EditAggregateTransaction::AppendChild(EditTxn* aTransaction)
 {
-  if (!aTxn) {
+  if (!aTransaction) {
     return NS_ERROR_NULL_POINTER;
   }
 
@@ -112,11 +120,12 @@ NS_IMETHODIMP EditAggregateTxn::AppendChild(EditTxn *aTxn)
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  *slot = aTxn;
+  *slot = aTransaction;
   return NS_OK;
 }
 
-NS_IMETHODIMP EditAggregateTxn::GetName(nsIAtom **aName)
+NS_IMETHODIMP
+EditAggregateTransaction::GetName(nsIAtom** aName)
 {
   if (aName && mName)
   {
@@ -126,3 +135,5 @@ NS_IMETHODIMP EditAggregateTxn::GetName(nsIAtom **aName)
   }
   return NS_ERROR_NULL_POINTER;
 }
+
+} 

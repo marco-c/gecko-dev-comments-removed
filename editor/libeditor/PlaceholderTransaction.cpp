@@ -31,7 +31,7 @@ PlaceholderTransaction::~PlaceholderTransaction()
 NS_IMPL_CYCLE_COLLECTION_CLASS(PlaceholderTransaction)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(PlaceholderTransaction,
-                                                EditAggregateTxn)
+                                                EditAggregateTransaction)
   if (tmp->mStartSel) {
     ImplCycleCollectionUnlink(*tmp->mStartSel);
   }
@@ -39,7 +39,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(PlaceholderTransaction,
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(PlaceholderTransaction,
-                                                  EditAggregateTxn)
+                                                  EditAggregateTransaction)
   if (tmp->mStartSel) {
     ImplCycleCollectionTraverse(cb, *tmp->mStartSel, "mStartSel", 0);
   }
@@ -49,10 +49,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PlaceholderTransaction)
   NS_INTERFACE_MAP_ENTRY(nsIAbsorbingTransaction)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
-NS_INTERFACE_MAP_END_INHERITING(EditAggregateTxn)
+NS_INTERFACE_MAP_END_INHERITING(EditAggregateTransaction)
 
-NS_IMPL_ADDREF_INHERITED(PlaceholderTransaction, EditAggregateTxn)
-NS_IMPL_RELEASE_INHERITED(PlaceholderTransaction, EditAggregateTxn)
+NS_IMPL_ADDREF_INHERITED(PlaceholderTransaction, EditAggregateTransaction)
+NS_IMPL_RELEASE_INHERITED(PlaceholderTransaction, EditAggregateTransaction)
 
 NS_IMETHODIMP
 PlaceholderTransaction::Init(nsIAtom* aName,
@@ -77,8 +77,8 @@ NS_IMETHODIMP
 PlaceholderTransaction::UndoTransaction()
 {
   
-  nsresult res = EditAggregateTxn::UndoTransaction();
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv = EditAggregateTransaction::UndoTransaction();
+  NS_ENSURE_SUCCESS(rv, rv);
 
   NS_ENSURE_TRUE(mStartSel, NS_ERROR_NULL_POINTER);
 
@@ -92,8 +92,8 @@ NS_IMETHODIMP
 PlaceholderTransaction::RedoTransaction()
 {
   
-  nsresult res = EditAggregateTxn::RedoTransaction();
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv = EditAggregateTransaction::RedoTransaction();
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   RefPtr<Selection> selection = mEditor->GetSelection();

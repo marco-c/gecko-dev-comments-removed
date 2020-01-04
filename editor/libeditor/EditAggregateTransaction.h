@@ -1,0 +1,57 @@
+
+
+
+
+
+#ifndef EditAggregateTransaction_h
+#define EditAggregateTransaction_h
+
+#include "EditTxn.h"
+#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsIAtom.h"
+#include "nsISupportsImpl.h"
+#include "nsTArray.h"
+#include "nscore.h"
+
+class nsITransaction;
+
+namespace mozilla {
+
+
+
+
+
+class EditAggregateTransaction : public EditTxn
+{
+public:
+  EditAggregateTransaction();
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(EditAggregateTransaction, EditTxn)
+
+  NS_DECL_EDITTXN
+
+  NS_IMETHOD RedoTransaction() override;
+  NS_IMETHOD Merge(nsITransaction* aTransaction, bool* aDidMerge) override;
+
+  
+
+
+  NS_IMETHOD AppendChild(EditTxn* aTxn);
+
+  
+
+
+  NS_IMETHOD GetName(nsIAtom** aName);
+
+protected:
+  virtual ~EditAggregateTransaction();
+
+  nsTArray<RefPtr<EditTxn>> mChildren;
+  nsCOMPtr<nsIAtom> mName;
+};
+
+} 
+
+#endif 

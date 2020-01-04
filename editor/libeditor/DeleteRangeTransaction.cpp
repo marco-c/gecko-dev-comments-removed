@@ -31,11 +31,12 @@ DeleteRangeTransaction::DeleteRangeTransaction()
 {
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(DeleteRangeTransaction, EditAggregateTxn,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(DeleteRangeTransaction,
+                                   EditAggregateTransaction,
                                    mRange)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DeleteRangeTransaction)
-NS_INTERFACE_MAP_END_INHERITING(EditAggregateTxn)
+NS_INTERFACE_MAP_END_INHERITING(EditAggregateTransaction)
 
 nsresult
 DeleteRangeTransaction::Init(nsEditor* aEditor,
@@ -89,7 +90,7 @@ DeleteRangeTransaction::DoTransaction()
   }
 
   
-  res = EditAggregateTxn::DoTransaction();
+  res = EditAggregateTransaction::DoTransaction();
   NS_ENSURE_SUCCESS(res, res);
 
   
@@ -111,7 +112,7 @@ DeleteRangeTransaction::UndoTransaction()
 {
   MOZ_ASSERT(mRange && mEditor);
 
-  return EditAggregateTxn::UndoTransaction();
+  return EditAggregateTransaction::UndoTransaction();
 }
 
 NS_IMETHODIMP
@@ -119,7 +120,7 @@ DeleteRangeTransaction::RedoTransaction()
 {
   MOZ_ASSERT(mRange && mEditor);
 
-  return EditAggregateTxn::RedoTransaction();
+  return EditAggregateTransaction::RedoTransaction();
 }
 
 NS_IMETHODIMP
