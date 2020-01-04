@@ -329,44 +329,8 @@ const kDefaultCSSViewportWidth = 980;
 
 const kViewportRemeasureThrottle = 500;
 
-function doChangeMaxLineBoxWidth(aWidth) {
-  gReflowPending = null;
-  let webNav = BrowserApp.selectedTab.window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
-  let docShell = webNav.QueryInterface(Ci.nsIDocShell);
-  let docViewer = docShell.contentViewer;
-
-  let range = null;
-  if (BrowserApp.selectedTab._mReflozPoint) {
-    range = BrowserApp.selectedTab._mReflozPoint.range;
-  }
-
-  try {
-    docViewer.pausePainting();
-    docViewer.changeMaxLineBoxWidth(aWidth);
-
-    if (range) {
-      ZoomHelper.zoomInAndSnapToRange(range);
-    } else {
-      
-      
-      
-      BrowserApp.selectedTab.clearReflowOnZoomPendingActions();
-    }
-  } finally {
-    docViewer.resumePainting();
-  }
-}
-
 function fuzzyEquals(a, b) {
   return (Math.abs(a - b) < 1e-6);
-}
-
-
-
-
-
-function convertFromTwipsToPx(aSize) {
-  return aSize/240 * 16.0;
 }
 
 XPCOMUtils.defineLazyGetter(this, "ContentAreaUtils", function() {
@@ -3400,7 +3364,6 @@ nsBrowserAccess.prototype = {
 
 let gScreenWidth = 1;
 let gScreenHeight = 1;
-let gReflowPending = null;
 
 
 let gTilesReportURL = null;
@@ -3578,7 +3541,6 @@ Tab.prototype = {
     this.browser.addEventListener("VideoBindingCast", this, true, true);
 
     Services.obs.addObserver(this, "before-first-paint", false);
-    Services.obs.addObserver(this, "after-viewport-change", false);
 
     if (aParams.delayLoad) {
       
@@ -3612,84 +3574,6 @@ Tab.prototype = {
         dump("Handled load error: " + e);
       }
     }
-  },
-
-  
-
-
-  getInflatedFontSizeFor: function(aElement) {
-    
-    let fontSizeStr = this.window.getComputedStyle(aElement)['fontSize'];
-    let fontSize = fontSizeStr.slice(0, -2);
-    return aElement.fontSizeInflation * fontSize;
-  },
-
-  
-
-
-
-
-  getZoomToMinFontSize: function(aElement) {
-    
-    
-    
-    
-    let minFontSize = convertFromTwipsToPx(Services.prefs.getIntPref("font.size.inflation.minTwips"));
-    return minFontSize / this.getInflatedFontSizeFor(aElement);
-  },
-
-  clearReflowOnZoomPendingActions: function() {
-    
-    let webNav = BrowserApp.selectedTab.window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
-    let docShell = webNav.QueryInterface(Ci.nsIDocShell);
-    let docViewer = docShell.contentViewer;
-    docViewer.resumePainting();
-
-    BrowserApp.selectedTab._mReflozPositioned = false;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  performReflowOnZoom: function(aViewport) {
-    let zoom = this._drawZoom ? this._drawZoom : aViewport.zoom;
-
-    let viewportWidth = gScreenWidth / zoom;
-    let reflozTimeout = Services.prefs.getIntPref("browser.zoom.reflowZoom.reflowTimeout");
-
-    if (gReflowPending) {
-      clearTimeout(gReflowPending);
-    }
-
-    
-    
-    gReflowPending = setTimeout(doChangeMaxLineBoxWidth,
-                                reflozTimeout,
-                                viewportWidth - 15);
   },
 
   
@@ -3760,7 +3644,6 @@ Tab.prototype = {
     this.browser.removeEventListener("VideoBindingCast", this, true, true);
 
     Services.obs.removeObserver(this, "before-first-paint");
-    Services.obs.removeObserver(this, "after-viewport-change");
 
     
     
@@ -3878,25 +3761,6 @@ Tab.prototype = {
 
     this.setScrollClampingSize(aViewport.zoom);
 
-    
-    
-    let isZooming = !fuzzyEquals(aViewport.zoom, this._zoom);
-
-    let docViewer = null;
-
-    if (isZooming &&
-        BrowserEventHandler.mReflozPref &&
-        BrowserApp.selectedTab._mReflozPoint &&
-        BrowserApp.selectedTab.probablyNeedRefloz) {
-      let webNav = BrowserApp.selectedTab.window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
-      let docShell = webNav.QueryInterface(Ci.nsIDocShell);
-      docViewer = docShell.contentViewer;
-      docViewer.pausePainting();
-
-      BrowserApp.selectedTab.performReflowOnZoom(aViewport);
-      BrowserApp.selectedTab.probablyNeedRefloz = false;
-    }
-
     let win = this.browser.contentWindow;
     win.scrollTo(x, y);
     this.saveSessionZoom(aViewport.zoom);
@@ -3907,11 +3771,6 @@ Tab.prototype = {
 
     if (aViewport.displayPort)
       this.setDisplayPort(aViewport.displayPort);
-
-    Services.obs.notifyObservers(null, "after-viewport-change", "");
-    if (docViewer) {
-        docViewer.resumePainting();
-    }
   },
 
   setResolution: function(aZoom, aForce) {
@@ -4744,25 +4603,6 @@ Tab.prototype = {
             this.sendViewportUpdate();  
           }
         }
-
-        
-        
-        
-        
-        let rzEnabled = BrowserEventHandler.mReflozPref;
-        let rzPl = Services.prefs.getBoolPref("browser.zoom.reflowZoom.reflowTextOnPageLoad");
-
-        if (rzEnabled && rzPl) {
-          
-          
-          let vp = BrowserApp.selectedTab.getViewport();
-          BrowserApp.selectedTab.performReflowOnZoom(vp);
-        }
-        break;
-      case "after-viewport-change":
-        if (BrowserApp.selectedTab._mReflozPositioned) {
-          BrowserApp.selectedTab.clearReflowOnZoomPendingActions();
-        }
         break;
     }
   },
@@ -4803,27 +4643,6 @@ var BrowserEventHandler = {
 
     InitLater(() => BrowserApp.deck.addEventListener("click", InputWidgetHelper, true));
     InitLater(() => BrowserApp.deck.addEventListener("click", SelectHelper, true));
-
-    document.addEventListener("MozMagnifyGesture", this, true);
-
-    Services.prefs.addObserver("browser.zoom.reflowOnZoom", this, false);
-    this.updateReflozPref();
-  },
-
-  resetMaxLineBoxWidth: function() {
-    BrowserApp.selectedTab.probablyNeedRefloz = false;
-
-    if (gReflowPending) {
-      clearTimeout(gReflowPending);
-    }
-
-    let reflozTimeout = Services.prefs.getIntPref("browser.zoom.reflowZoom.reflowTimeout");
-    gReflowPending = setTimeout(doChangeMaxLineBoxWidth,
-                                reflozTimeout, 0);
-  },
-
-  updateReflozPref: function() {
-     this.mReflozPref = Services.prefs.getBoolPref("browser.zoom.reflowOnZoom");
   },
 
   handleEvent: function(aEvent) {
@@ -4833,11 +4652,6 @@ var BrowserEventHandler = {
         break;
       case 'MozMouseHittest':
         this._handleRetargetedTouchStart(aEvent);
-        break;
-      case 'MozMagnifyGesture':
-        this.observe(this, aEvent.type,
-                     JSON.stringify({x: aEvent.screenX, y: aEvent.screenY,
-                                     zoomDelta: aEvent.delta}));
         break;
     }
   },
@@ -4916,11 +4730,6 @@ var BrowserEventHandler = {
         type: "Tab:HasTouchListener",
         tabID: tab.id
       });
-      return;
-    } else if (aTopic == "nsPref:changed") {
-      if (aData == "browser.zoom.reflowOnZoom") {
-        this.updateReflozPref();
-      }
       return;
     }
 
@@ -5032,10 +4841,6 @@ var BrowserEventHandler = {
         this.onDoubleTap(aData);
         break;
 
-      case "MozMagnifyGesture":
-        this.onPinchFinish(aData);
-        break;
-
       default:
         dump('BrowserEventHandler.handleUserEvent: unexpected topic "' + aTopic + '"');
         break;
@@ -5067,31 +4872,6 @@ var BrowserEventHandler = {
     let data = JSON.parse(aData);
     let element = ElementTouchHelper.anyElementFromPoint(data.x, data.y);
 
-    
-    
-    
-    if (BrowserEventHandler.mReflozPref &&
-       !BrowserApp.selectedTab._mReflozPoint &&
-       !this._shouldSuppressReflowOnZoom(element)) {
-
-      
-      
-      let data = JSON.parse(aData);
-      let zoomPointX = data.x;
-      let zoomPointY = data.y;
-
-      BrowserApp.selectedTab._mReflozPoint = { x: zoomPointX, y: zoomPointY,
-        range: BrowserApp.selectedBrowser.contentDocument.caretPositionFromPoint(zoomPointX, zoomPointY) };
-
-      
-      let webNav = BrowserApp.selectedTab.window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIWebNavigation);
-      let docShell = webNav.QueryInterface(Ci.nsIDocShell);
-      let docViewer = docShell.contentViewer;
-      docViewer.pausePainting();
-
-      BrowserApp.selectedTab.probablyNeedRefloz = true;
-    }
-
     if (!element) {
       ZoomHelper.zoomOut();
       return;
@@ -5104,43 +4884,6 @@ var BrowserEventHandler = {
       ZoomHelper.zoomOut();
     } else {
       ZoomHelper.zoomToElement(element, data.y);
-    }
-  },
-
-  
-
-
-
-
-
-
-  _shouldSuppressReflowOnZoom: function(aElement) {
-    if (aElement instanceof HTMLVideoElement ||
-        aElement instanceof HTMLObjectElement ||
-        aElement instanceof HTMLEmbedElement ||
-        aElement instanceof HTMLAppletElement ||
-        aElement instanceof HTMLCanvasElement ||
-        aElement instanceof HTMLImageElement ||
-        aElement instanceof HTMLMediaElement ||
-        aElement instanceof HTMLPreElement) {
-      return true;
-    }
-
-    return false;
-  },
-
-  onPinchFinish: function(aData) {
-    let data = {};
-    try {
-      data = JSON.parse(aData);
-    } catch(ex) {
-      console.log(ex);
-      return;
-    }
-
-    if (BrowserEventHandler.mReflozPref &&
-        data.zoomDelta < 0.0) {
-      BrowserEventHandler.resetMaxLineBoxWidth();
     }
   },
 

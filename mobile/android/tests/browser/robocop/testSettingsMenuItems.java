@@ -181,10 +181,6 @@ public class testSettingsMenuItems extends PixelTest {
     public void updateConditionalSettings(Map<String[], List<String[]>> settingsMap) {
         
         if (!AppConstants.RELEASE_BUILD) {
-            
-            String[] textReflowUi = { mStringHelper.TEXT_REFLOW_LABEL };
-            settingsMap.get(PATH_DISPLAY).add(textReflowUi);
-
             if (AppConstants.MOZ_STUMBLER_BUILD_TIME_ENABLED) {
                 
                 String[] networkReportingUi = { mStringHelper.MOZ_LOCATION, mStringHelper.MOZ_LOCATION_MSG };
