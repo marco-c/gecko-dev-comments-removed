@@ -16,6 +16,7 @@
 #include "TabChild.h"
 #include "HandlerServiceChild.h"
 
+#include "js/Initialization.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
@@ -3013,6 +3014,10 @@ ContentChild::RecvShutdown()
     Unused << RecvGatherProfile();
   }
 #endif
+
+  
+  
+  JS_DestroyTraceLogger();
 
   
   
