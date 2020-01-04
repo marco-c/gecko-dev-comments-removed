@@ -725,7 +725,7 @@ TileClient::GetBackBuffer(const nsIntRegion& aDirtyRegion,
   
   bool createdTextureClient = false;
   if (mFrontBuffer &&
-      mFrontBuffer->HasInternalBuffer() &&
+      mFrontBuffer->HasIntermediateBuffer() &&
       mFrontLock->GetReadCount() == 1 &&
       !(aMode == SurfaceMode::SURFACE_COMPONENT_ALPHA && !mFrontBufferOnWhite)) {
     
@@ -1362,7 +1362,7 @@ ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
   
   
 
-  if (backBuffer->HasInternalBuffer()) {
+  if (backBuffer->HasIntermediateBuffer()) {
     
     
     aTile.DiscardBackBuffer();

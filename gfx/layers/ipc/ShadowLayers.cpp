@@ -415,7 +415,7 @@ ShadowLayerForwarder::UseTextures(CompositableClient* aCompositable,
                                         t.mTimeStamp, t.mPictureRect,
                                         t.mFrameID, t.mProducerID, t.mInputFrameID));
     if ((t.mTextureClient->GetFlags() & TextureFlags::IMMEDIATE_UPLOAD)
-        && t.mTextureClient->HasInternalBuffer()) {
+        && t.mTextureClient->HasIntermediateBuffer()) {
 
       
       

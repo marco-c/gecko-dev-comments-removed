@@ -193,7 +193,7 @@ public:
 
   virtual bool CanExposeMappedData() const { return false; }
 
-  virtual bool HasInternalBuffer() const = 0;
+  virtual bool HasIntermediateBuffer() const = 0;
 
   virtual bool HasSynchronization() const { return false; }
 
@@ -413,7 +413,7 @@ public:
 
 
 
-  bool HasInternalBuffer() const;
+  bool HasIntermediateBuffer() const;
 
   
 

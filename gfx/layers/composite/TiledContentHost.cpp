@@ -367,7 +367,7 @@ TiledLayerBufferComposite::UseTiles(const SurfaceDescriptorTiles& aTiles,
                      aCompositor);
     }
 
-    if (tile.mTextureHost->HasInternalBuffer()) {
+    if (tile.mTextureHost->HasIntermediateBuffer()) {
       
       
       tile.ReadUnlock();
