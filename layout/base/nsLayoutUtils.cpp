@@ -302,11 +302,11 @@ TextAlignTrueEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
   if (!sIsInitialized) {
     
     sIndexOfTrueInTextAlignTable =
-      nsCSSProps::FindIndexOfKeyword(eCSSKeyword_true,
+      nsCSSProps::FindIndexOfKeyword(eCSSKeyword_unsafe,
                                      nsCSSProps::kTextAlignKTable);
     
     sIndexOfTrueInTextAlignLastTable =
-      nsCSSProps::FindIndexOfKeyword(eCSSKeyword_true,
+      nsCSSProps::FindIndexOfKeyword(eCSSKeyword_unsafe,
                                      nsCSSProps::kTextAlignLastKTable);
     sIsInitialized = true;
   }
@@ -315,10 +315,10 @@ TextAlignTrueEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
   
   MOZ_ASSERT(sIndexOfTrueInTextAlignTable >= 0);
   nsCSSProps::kTextAlignKTable[sIndexOfTrueInTextAlignTable].mKeyword =
-    isTextAlignTrueEnabled ? eCSSKeyword_true : eCSSKeyword_UNKNOWN;
+    isTextAlignTrueEnabled ? eCSSKeyword_unsafe : eCSSKeyword_UNKNOWN;
   MOZ_ASSERT(sIndexOfTrueInTextAlignLastTable >= 0);
   nsCSSProps::kTextAlignLastKTable[sIndexOfTrueInTextAlignLastTable].mKeyword =
-    isTextAlignTrueEnabled ? eCSSKeyword_true : eCSSKeyword_UNKNOWN;
+    isTextAlignTrueEnabled ? eCSSKeyword_unsafe : eCSSKeyword_UNKNOWN;
 }
 
 
