@@ -1293,14 +1293,6 @@ thisTypeSpecialization()
 
 } 
 
-TypePolicy*
-MGetElementCache::thisTypePolicy()
-{
-    if (type() == MIRType_Value)
-        return PolicyV.thisTypePolicy();
-    return PolicyT.thisTypePolicy();
-}
-
 
 
 
