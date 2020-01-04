@@ -1,0 +1,79 @@
+"use strict";
+
+const SERVER_URL = "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
+const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
+const EMAIL = "foo@privacy.com";
+
+
+
+
+
+add_task(function* setup() {
+  
+  
+  
+  
+  
+  let env = Cc["@mozilla.org/process/environment;1"]
+              .getService(Components.interfaces.nsIEnvironment);
+  let noReport = env.get("MOZ_CRASHREPORTER_NO_REPORT");
+  let serverUrl = env.get("MOZ_CRASHREPORTER_URL");
+  env.set("MOZ_CRASHREPORTER_NO_REPORT", "");
+  env.set("MOZ_CRASHREPORTER_URL", SERVER_URL);
+
+  registerCleanupFunction(function() {
+    env.set("MOZ_CRASHREPORTER_NO_REPORT", noReport);
+    env.set("MOZ_CRASHREPORTER_URL", serverUrl);
+  });
+});
+
+
+
+
+
+
+add_task(function* test_clear_email() {
+  return BrowserTestUtils.withNewTab({
+    gBrowser,
+    url: PAGE,
+  }, function*(browser) {
+    let prefs = TabCrashReporter.prefs;
+    let originalSendReport = prefs.getBoolPref("sendReport");
+    let originalEmailMe = prefs.getBoolPref("emailMe");
+    let originalIncludeURL = prefs.getBoolPref("includeURL");
+    let originalEmail = prefs.getCharPref("email");
+
+    
+    
+    prefs.setCharPref("email", EMAIL);
+    prefs.setBoolPref("emailMe", true);
+
+    let tab = gBrowser.getTabForBrowser(browser);
+    yield BrowserTestUtils.crashBrowser(browser);
+    let doc = browser.contentDocument;
+
+    
+    
+    let emailMe = doc.getElementById("emailMe");
+    emailMe.checked = false;
+
+    let crashReport = promiseCrashReport({
+      Email: "",
+    });
+
+    let restoreTab = browser.contentDocument.getElementById("restoreTab");
+    restoreTab.click();
+    yield BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
+    yield crashReport;
+
+    is(prefs.getCharPref("email"), "", "No email address should be stored");
+
+    
+    
+    prefs.setBoolPref("sendReport", originalSendReport);
+    prefs.setBoolPref("emailMe", originalEmailMe);
+    prefs.setBoolPref("includeURL", originalIncludeURL);
+    prefs.setCharPref("email", originalEmail);
+  });
+});
+
