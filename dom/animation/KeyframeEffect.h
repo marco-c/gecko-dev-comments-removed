@@ -315,15 +315,7 @@ public:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ShouldBlockCompositorAnimations(
+  bool ShouldBlockAsyncTransformAnimations(
     const nsIFrame* aFrame,
     AnimationPerformanceWarning::Type& aPerformanceWarning) const;
 
