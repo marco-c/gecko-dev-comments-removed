@@ -36,7 +36,7 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     }
 
     
-    var result = RegExpMatcher(rx, S, lastIndex, sticky);
+    var result = RegExpMatcher(rx, S, lastIndex);
 
     
     if (result === null) {

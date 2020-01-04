@@ -45,23 +45,21 @@ RegExpMatcher(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool
 RegExpMatcherRaw(JSContext* cx, HandleObject regexp, HandleString input,
-                 int32_t lastIndex, bool sticky,
-                 MatchPairs* maybeMatches, MutableHandleValue output);
+                 int32_t lastIndex, MatchPairs* maybeMatches, MutableHandleValue output);
 
 extern bool
 RegExpSearcher(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool
 RegExpSearcherRaw(JSContext* cx, HandleObject regexp, HandleString input,
-                  int32_t lastIndex, bool sticky,
-                  MatchPairs* maybeMatches, int32_t* result);
+                  int32_t lastIndex, MatchPairs* maybeMatches, int32_t* result);
 
 extern bool
 RegExpTester(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool
 RegExpTesterRaw(JSContext* cx, HandleObject regexp, HandleString input,
-                int32_t lastIndex, bool sticky, int32_t* endIndex);
+                int32_t lastIndex, int32_t* endIndex);
 
 
 
@@ -92,6 +90,16 @@ regexp_test_no_statics(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool
 regexp_construct_self_hosting(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+
+extern bool
+regexp_construct_no_sticky(JSContext* cx, unsigned argc, Value* vp);
 
 extern bool
 IsRegExp(JSContext* cx, HandleValue value, bool* result);

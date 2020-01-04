@@ -417,13 +417,10 @@ function RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue)
     
     var nextSourcePosition = 0;
 
-    var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
-    var sticky = !!(flags & REGEXP_STICKY_FLAG);
-
     
     while (true) {
         
-        var result = RegExpSearcher(rx, S, lastIndex, sticky);
+        var result = RegExpSearcher(rx, S, lastIndex);
 
         
         if (result === -1)
@@ -523,11 +520,8 @@ function RegExpSearch(string) {
 
     var result;
     if (IsRegExpMethodOptimizable(rx) && S.length < 0x7fff) {
-        var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
-        var sticky = !!(flags & REGEXP_STICKY_FLAG);
-
         
-        result = RegExpSearcher(rx, S, 0, sticky);
+        result = RegExpSearcher(rx, S, 0);
 
         
         if (result === -1)
@@ -591,14 +585,27 @@ function RegExpSplit(string, limit) {
     var unicodeMatching = callFunction(std_String_includes, flags, "u");
 
     
-    var newFlags;
-    if (callFunction(std_String_includes, flags, "y"))
-        newFlags = flags;
-    else
-        newFlags = flags + "y";
+    var size = S.length;
 
-    
-    var splitter = new C(rx, newFlags);
+    var optimizable = IsRegExpSplitOptimizable(C);
+    var splitter;
+    if (optimizable && size !== 0) {
+        
+
+        
+        
+        splitter = regexp_construct_no_sticky(rx, flags);
+    } else {
+        
+        var newFlags;
+        if (callFunction(std_String_includes, flags, "y"))
+            newFlags = flags;
+        else
+            newFlags = flags + "y";
+
+        
+        splitter = new C(rx, newFlags);
+    }
 
     
     var A = [];
@@ -612,9 +619,6 @@ function RegExpSplit(string, limit) {
         lim = MAX_NUMERIC_INDEX;
     else
         lim = limit >>> 0;
-
-    
-    var size = S.length;
 
     
     var p = 0;
@@ -639,8 +643,6 @@ function RegExpSplit(string, limit) {
         return A;
     }
 
-    var optimizable = IsRegExpSplitOptimizable(C);
-
     
     var q = p;
 
@@ -652,8 +654,7 @@ function RegExpSplit(string, limit) {
             
 
             
-            
-            z = RegExpMatcher(splitter, S, q, false);
+            z = RegExpMatcher(splitter, S, q);
 
             
             if (z === null)
@@ -798,13 +799,10 @@ function RegExpBuiltinExec(R, S, forTest) {
     var flags = UnsafeGetInt32FromReservedSlot(R, REGEXP_FLAGS_SLOT);
 
     
-    var global = !!(flags & REGEXP_GLOBAL_FLAG);
+    var globalOrSticky = !!(flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG));
 
     
-    var sticky = !!(flags & REGEXP_STICKY_FLAG);
-
-    
-    if (!global && !sticky) {
+    if (!globalOrSticky) {
         lastIndex = 0;
     } else {
         if (lastIndex > S.length) {
@@ -816,7 +814,7 @@ function RegExpBuiltinExec(R, S, forTest) {
 
     if (forTest) {
         
-        var endIndex = RegExpTester(R, S, lastIndex, sticky);
+        var endIndex = RegExpTester(R, S, lastIndex);
         if (endIndex == -1) {
             
             R.lastIndex = 0;
@@ -824,20 +822,20 @@ function RegExpBuiltinExec(R, S, forTest) {
         }
 
         
-        if (global || sticky)
+        if (globalOrSticky)
             R.lastIndex = endIndex;
 
         return true;
     }
 
     
-    var result = RegExpMatcher(R, S, lastIndex, sticky);
+    var result = RegExpMatcher(R, S, lastIndex);
     if (result === null) {
         
         R.lastIndex = 0;
     } else {
         
-        if (global || sticky)
+        if (globalOrSticky)
             R.lastIndex = result.index + result[0].length;
     }
 
