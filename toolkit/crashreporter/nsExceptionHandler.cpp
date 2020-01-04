@@ -3,6 +3,7 @@
 
 
 
+
 #include "nsExceptionHandler.h"
 #include "nsDataHashtable.h"
 #include "mozilla/ArrayUtils.h"
@@ -1708,23 +1709,6 @@ IsInWhitelist(const nsACString& key)
   return false;
 }
 
-static PLDHashOperator EnumerateEntries(const nsACString& key,
-                                        nsCString entry,
-                                        void* userData)
-{
-  if (!entry.IsEmpty()) {
-    NS_NAMED_LITERAL_CSTRING(kEquals, "=");
-    NS_NAMED_LITERAL_CSTRING(kNewline, "\n");
-    nsAutoCString line = key + kEquals + entry + kNewline;
-
-    crashReporterAPIData->Append(line);
-    if (IsInWhitelist(key)) {
-      crashEventAPIData->Append(line);
-    }
-  }
-  return PL_DHASH_NEXT;
-}
-
 
 #ifdef _MSC_VER
 #pragma optimize("", off)
@@ -1818,7 +1802,20 @@ nsresult AnnotateCrashReport(const nsACString& key, const nsACString& data)
   
   crashReporterAPIData->Truncate(0);
   crashEventAPIData->Truncate(0);
-  crashReporterAPIData_Hash->EnumerateRead(EnumerateEntries, nullptr);
+  for (auto it = crashReporterAPIData_Hash->Iter(); !it.Done(); it.Next()) {
+    const nsACString& key = it.Key();
+    nsCString entry = it.Data();
+    if (!entry.IsEmpty()) {
+      NS_NAMED_LITERAL_CSTRING(kEquals, "=");
+      NS_NAMED_LITERAL_CSTRING(kNewline, "\n");
+      nsAutoCString line = key + kEquals + entry + kNewline;
+
+      crashReporterAPIData->Append(line);
+      if (IsInWhitelist(key)) {
+        crashEventAPIData->Append(line);
+      }
+    }
+  }
 
   return NS_OK;
 }
@@ -2531,11 +2528,6 @@ struct Blacklist {
   const int mLen;
 };
 
-struct EnumerateAnnotationsContext {
-  const Blacklist& blacklist;
-  PRFileDesc* fd;
-};
-
 static void
 WriteAnnotation(PRFileDesc* fd, const nsACString& key, const nsACString& value)
 {
@@ -2543,24 +2535,6 @@ WriteAnnotation(PRFileDesc* fd, const nsACString& key, const nsACString& value)
   PR_Write(fd, "=", 1);
   PR_Write(fd, value.BeginReading(), value.Length());
   PR_Write(fd, "\n", 1);
-}
-
-static PLDHashOperator
-EnumerateAnnotations(const nsACString& key,
-                     nsCString entry,
-                     void* userData)
-{
-  EnumerateAnnotationsContext* ctx =
-    static_cast<EnumerateAnnotationsContext*>(userData);
-  const Blacklist& blacklist = ctx->blacklist;
-
-  
-  if (blacklist.Contains(key))
-      return PL_DHASH_NEXT;
-
-  WriteAnnotation(ctx->fd, key, entry);
-
-  return PL_DHASH_NEXT;
 }
 
 static bool
@@ -2572,14 +2546,20 @@ WriteExtraData(nsIFile* extraFile,
 {
   PRFileDesc* fd;
   int truncOrAppend = truncate ? PR_TRUNCATE : PR_APPEND;
-  nsresult rv = 
+  nsresult rv =
     extraFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | truncOrAppend,
                                 0600, &fd);
   if (NS_FAILED(rv))
     return false;
 
-  EnumerateAnnotationsContext ctx = { blacklist, fd };
-  data.EnumerateRead(EnumerateAnnotations, &ctx);
+  for (auto iter = data.ConstIter(); !iter.Done(); iter.Next()) {
+    
+    const nsACString& key = iter.Key();
+    if (blacklist.Contains(key)) {
+        continue;
+    }
+    WriteAnnotation(fd, key, iter.Data());
+  }
 
   if (writeCrashTime) {
     time_t crashTime = time(nullptr);

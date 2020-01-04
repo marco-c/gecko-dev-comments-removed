@@ -3,6 +3,7 @@
 
 
 
+
 #include <stdio.h>
 
 #include "mozilla/DebugOnly.h"
@@ -2152,19 +2153,6 @@ nsNavHistory::ConstructQueryString(
   return NS_OK;
 }
 
-PLDHashOperator BindAdditionalParameter(nsNavHistory::StringHash::KeyType aParamName,
-                                        nsCString aParamValue,
-                                        void* aStatement)
-{
-  mozIStorageStatement* stmt = static_cast<mozIStorageStatement*>(aStatement);
-
-  nsresult rv = stmt->BindUTF8StringByName(aParamName, aParamValue);
-  if (NS_FAILED(rv))
-    return PL_DHASH_STOP;
-
-  return PL_DHASH_NEXT;
-}
-
 
 
 
@@ -2221,7 +2209,12 @@ nsNavHistory::GetQueryResults(nsNavHistoryQueryResultNode *aResultNode,
     }
   }
 
-  addParams.EnumerateRead(BindAdditionalParameter, statement.get());
+  for (auto iter = addParams.Iter(); !iter.Done(); iter.Next()) {
+    nsresult rv = statement->BindUTF8StringByName(iter.Key(), iter.Data());
+    if (NS_FAILED(rv)) {
+      break;
+    }
+  }
 
   
   if (NeedToFilterResultSet(aQueries, aOptions)) {
@@ -3047,7 +3040,13 @@ nsNavHistory::AsyncExecuteLegacyQueries(nsINavHistoryQuery** aQueries,
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
-  addParams.EnumerateRead(BindAdditionalParameter, statement.get());
+
+  for (auto iter = addParams.Iter(); !iter.Done(); iter.Next()) {
+    nsresult rv = statement->BindUTF8StringByName(iter.Key(), iter.Data());
+    if (NS_FAILED(rv)) {
+      break;
+    }
+  }
 
   rv = statement->ExecuteAsync(aCallback, _stmt);
   NS_ENSURE_SUCCESS(rv, rv);

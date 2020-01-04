@@ -5,6 +5,8 @@
 
 
 
+
+
 #include "NativeFileWatcherWin.h"
 
 #include "mozilla/Services.h"
@@ -249,21 +251,6 @@ public:
 private:
   nsCOMPtr<nsIThread> mWorkerThread;
 };
-
-
-
-
-
-static PLDHashOperator
-WatchedPathsInfoHashtableTraverser(nsVoidPtrHashKey::KeyType key,
-                                   WatchedResourceDescriptor* watchedResource,
-                                   void* userArg)
-{
-  FILEWATCHERLOG("NativeFileWatcherIOTask::DeactivateRunnableMethod - "
-                 "%S is still being watched.", watchedResource->mPath.get());
-
-  return PL_DHASH_NEXT;
-}
 
 
 
@@ -855,8 +842,11 @@ NativeFileWatcherIOTask::DeactivateRunnableMethod()
              "watches manually before quitting.");
 
   
-  (void)mWatchedResourcesByHandle.EnumerateRead(
-    &WatchedPathsInfoHashtableTraverser, nullptr);
+  for (auto it = mWatchedResourcesByHandle.Iter(); !it.Done(); it.Next()) {
+    FILEWATCHERLOG("NativeFileWatcherIOTask::DeactivateRunnableMethod - "
+                   "%S is still being watched.", it.UserData()->mPath.get());
+
+  }
 
   
   
