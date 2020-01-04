@@ -800,6 +800,11 @@ protected:
   
   
   
+  
+  
+  
+  
+  
   Content mContentForTSF;
 
   Content& ContentForTSFRef();
