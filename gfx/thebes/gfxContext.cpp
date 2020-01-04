@@ -1370,6 +1370,15 @@ gfxContext::GetRoundOffsetsToPixels(bool *aRoundX, bool *aRoundY)
 
     cairo_t *cr = GetCairo();
     cairo_scaled_font_t *scaled_font = cairo_get_scaled_font(cr);
+
+    
+    NS_ASSERTION(scaled_font, "null cairo scaled font should never be returned "
+                 "by cairo_get_scaled_font");
+    if (!scaled_font) {
+        *aRoundX = true; 
+        return;
+    }
+
     
     cairo_font_options_t *font_options = cairo_font_options_create();
     cairo_scaled_font_get_font_options(scaled_font, font_options);
