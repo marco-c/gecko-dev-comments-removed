@@ -3354,9 +3354,14 @@ TabParent::AddInitialDnDDataTo(DataTransfer* aDataTransfer)
 
       
       
+
+      
+      
+      
       aDataTransfer->SetDataWithPrincipalFromOtherProcess(NS_ConvertUTF8toUTF16(item.flavor()),
                                                           variant, i,
-                                                          nsContentUtils::GetSystemPrincipal());
+                                                          nsContentUtils::GetSystemPrincipal(),
+                                                           false);
     }
   }
   mInitialDataTransferItems.Clear();

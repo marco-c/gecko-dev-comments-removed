@@ -118,10 +118,7 @@ public:
 
 private:
   ~DataTransferItem() {}
-  already_AddRefed<File> FileFromISupports(nsISupports* aParent);
-  already_AddRefed<File> CreateFileFromInputStream(nsISupports* aParent,
-                                                   nsIInputStream* aStream,
-                                                   ErrorResult& aRv);
+  already_AddRefed<File> CreateFileFromInputStream(nsIInputStream* aStream);
 
   
   uint32_t mIndex;
@@ -132,6 +129,9 @@ private:
   nsCOMPtr<nsIVariant> mData;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   RefPtr<DataTransferItemList> mParent;
+
+  
+  RefPtr<File> mCachedFile;
 };
 
 } 
