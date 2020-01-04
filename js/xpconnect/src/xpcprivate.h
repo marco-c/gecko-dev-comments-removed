@@ -2768,7 +2768,7 @@ private:
 
 
 namespace xpc {
-bool PushNullJSContext();
+void PushNullJSContext();
 void PopNullJSContext();
 
 } 
@@ -2806,13 +2806,13 @@ public:
 
 private:
     friend class mozilla::dom::danger::AutoCxPusher;
-    friend bool xpc::PushNullJSContext();
+    friend void xpc::PushNullJSContext();
     friend void xpc::PopNullJSContext();
 
     
     
     JSContext* Pop();
-    bool Push(JSContext* cx);
+    void Push(JSContext* cx);
 
     AutoTArray<JSContext*, 16> mStack;
     XPCJSRuntime* mRuntime;
