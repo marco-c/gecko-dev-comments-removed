@@ -467,7 +467,11 @@ nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
         if (IsMenu() && !onmenubar && IsOpen()) {
           
         }
-        else if (this == menuParent->GetCurrentMenuItem()) {
+        else if (this == menuParent->GetCurrentMenuItem()
+#ifdef XP_WIN
+                 && GetParentMenuListType() == eNotMenuList
+#endif
+        ) {
           menuParent->ChangeMenuItem(nullptr, false, false);
         }
       }
