@@ -146,6 +146,13 @@ private:
     mIsPositionChangeEventPending = false;
     mTextChangeData.Clear();
   }
+  bool NeedsToNotifyIMEOfSomething() const
+  {
+    return mIsFocusEventPending ||
+           mIsTextChangeEventPending ||
+           mIsSelectionChangeEventPending ||
+           mIsPositionChangeEventPending;
+  }
 
   
 
@@ -241,6 +248,9 @@ private:
   bool mIsTextChangeEventPending;
   bool mIsSelectionChangeEventPending;
   bool mIsPositionChangeEventPending;
+  
+  
+  
   bool mIsFlushingPendingNotifications;
 
 
