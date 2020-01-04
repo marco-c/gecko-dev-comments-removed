@@ -624,8 +624,9 @@ class MessageChannel : HasResultCodes
            if (!aMessage.is_sync())
                return;
 
-           MOZ_ASSERT_IF(mChan->mSide == ParentSide && mOldTransaction != aMessage.transaction_id(),
-                         !mOldTransaction || aMessage.priority() > mChan->AwaitingSyncReplyPriority());
+           MOZ_DIAGNOSTIC_ASSERT(
+               !(mChan->mSide == ParentSide && mOldTransaction != aMessage.transaction_id()) ||
+               !mOldTransaction || aMessage.priority() > mChan->AwaitingSyncReplyPriority());
            mChan->mCurrentTransaction = aMessage.transaction_id();
        }
        ~AutoEnterTransaction() {
@@ -776,7 +777,7 @@ class MessageChannel : HasResultCodes
     
     
     RefPtr<RefCountedTask> mOnChannelConnectedTask;
-    DebugOnly<bool> mPeerPidSet;
+    bool mPeerPidSet;
     int32_t mPeerPid;
 };
 
