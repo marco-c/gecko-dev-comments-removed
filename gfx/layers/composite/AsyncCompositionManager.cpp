@@ -268,6 +268,66 @@ IntervalOverlap(gfxFloat aTranslation, gfxFloat aMin, gfxFloat aMax)
   }
 }
 
+
+
+
+
+
+static LayerMetricsWrapper
+FindMetricsWithScrollId(Layer* aLayer, FrameMetrics::ViewID aScrollId)
+{
+  for (uint64_t i = 0; i < aLayer->GetFrameMetricsCount(); ++i) {
+    if (aLayer->GetFrameMetrics(i).GetScrollId() == aScrollId) {
+      return LayerMetricsWrapper(aLayer, i);
+    }
+  }
+  return LayerMetricsWrapper();
+}
+
+
+
+
+
+
+static bool
+AsyncTransformShouldBeUnapplied(Layer* aFixedLayer,
+                                FrameMetrics::ViewID aFixedWithRespectTo,
+                                Layer* aTransformedLayer,
+                                FrameMetrics::ViewID aTransformedMetrics)
+{
+  LayerMetricsWrapper transformed = FindMetricsWithScrollId(aTransformedLayer, aTransformedMetrics);
+  if (!transformed.IsValid()) {
+    return false;
+  }
+  
+  
+  LayerMetricsWrapper current(aFixedLayer, LayerMetricsWrapper::StartAt::BOTTOM);
+  bool encounteredTransformedLayer = false;
+  
+  
+  
+  
+  while (current) {
+    if (!encounteredTransformedLayer && current == transformed) {
+      encounteredTransformedLayer = true;
+    }
+    if (current.Metrics().GetScrollId() == aFixedWithRespectTo) {
+      return encounteredTransformedLayer;
+    }
+    current = current.GetParent();
+    
+    
+    
+    
+    
+    
+    if (current && current.AsRefLayer() != nullptr) {
+      break;
+    }
+  }
+  return false;
+}
+
 void
 AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    Layer* aTransformedSubtreeRoot,
@@ -276,18 +336,27 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    const Matrix4x4& aCurrentTransformForRoot,
                                                    const ScreenMargin& aFixedLayerMargins)
 {
-  bool isRootFixedForSubtree = aLayer->GetIsFixedPosition() &&
-    aLayer->GetFixedPositionScrollContainerId() == aTransformScrollId &&
+  FrameMetrics::ViewID fixedTo;  
+  bool isRootOfFixedSubtree = aLayer->GetIsFixedPosition() &&
     !aLayer->GetParent()->GetIsFixedPosition();
-  bool isStickyForSubtree = aLayer->GetIsStickyPosition() &&
-    aLayer->GetStickyScrollContainerId() == aTransformScrollId;
-  bool isFixedOrSticky = (isRootFixedForSubtree || isStickyForSubtree);
+  if (isRootOfFixedSubtree) {
+    fixedTo = aLayer->GetFixedPositionScrollContainerId();
+  }
+  bool isSticky = aLayer->GetIsStickyPosition();
+  if (isSticky) {
+    fixedTo = aLayer->GetStickyScrollContainerId();
+  }
+  bool needsAsyncTransformUnapplied = false;
+  if (isRootOfFixedSubtree || isSticky) {
+    needsAsyncTransformUnapplied = AsyncTransformShouldBeUnapplied(aLayer,
+        fixedTo, aTransformedSubtreeRoot, aTransformScrollId);
+  }
 
   
   
   
   
-  if (!isFixedOrSticky) {
+  if (!needsAsyncTransformUnapplied) {
     for (Layer* child = aLayer->GetFirstChild(); child; child = child->GetNextSibling()) {
       AlignFixedAndStickyLayers(child, aTransformedSubtreeRoot, aTransformScrollId,
                                 aPreviousTransformForRoot,
