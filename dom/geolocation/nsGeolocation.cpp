@@ -822,7 +822,7 @@ nsGeolocationService::HandleMozsettingChanged(nsISupports* aSubject)
     
     
 
-    RootedDictionary<SettingChangeNotification> setting(nsContentUtils::RootingCx());
+    RootedDictionary<SettingChangeNotification> setting(RootingCx());
     if (!WrappedJSToDictionary(aSubject, setting)) {
       return;
     }

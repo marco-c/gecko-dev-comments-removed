@@ -95,7 +95,7 @@ SimpleGlobalObject::Create(GlobalType globalType, JS::Handle<JS::Value> proto)
   
   
   
-  JS::Rooted<JSObject*> global(nsContentUtils::RootingCx());
+  JS::Rooted<JSObject*> global(RootingCx());
 
   { 
     AutoJSAPI jsapi;
