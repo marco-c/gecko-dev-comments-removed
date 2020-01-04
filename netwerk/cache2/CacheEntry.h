@@ -60,6 +60,9 @@ public:
   void AsyncOpen(nsICacheEntryOpenCallback* aCallback, uint32_t aFlags);
 
   CacheEntryHandle* NewHandle();
+  
+  
+  CacheEntryHandle* NewWriteHandle();
 
 public:
   uint32_t GetMetadataMemoryConsumption();
@@ -240,9 +243,6 @@ private:
 
   nsresult OpenOutputStreamInternal(int64_t offset, nsIOutputStream * *_retval);
 
-  
-  
-  CacheEntryHandle* NewWriteHandle();
   void OnHandleClosed(CacheEntryHandle const* aHandle);
 
 private:

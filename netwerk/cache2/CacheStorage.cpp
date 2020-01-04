@@ -126,17 +126,20 @@ NS_IMETHODIMP CacheStorage::OpenTruncate(nsIURI *aURI, const nsACString & aIdExt
   rv = aURI->CloneIgnoringRef(getter_AddRefs(noRefURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  RefPtr<CacheEntryHandle> entry;
+  RefPtr<CacheEntryHandle> handle;
   rv = CacheStorageService::Self()->AddStorageEntry(
     this, noRefURI, aIdExtension,
     true, 
     true, 
-    getter_AddRefs(entry));
+    getter_AddRefs(handle));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  entry->Entry()->AsyncOpen(nullptr, OPEN_TRUNCATE);
-  entry.forget(aCacheEntry);
+  handle->Entry()->AsyncOpen(nullptr, OPEN_TRUNCATE);
+
+  
+  RefPtr<CacheEntryHandle> writeHandle = handle->Entry()->NewWriteHandle();
+  writeHandle.forget(aCacheEntry);
 
   return NS_OK;
 }
