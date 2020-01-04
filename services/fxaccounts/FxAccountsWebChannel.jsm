@@ -448,12 +448,20 @@ var singleton;
 
 this.EnsureFxAccountsWebChannel = function() {
   if (!singleton) {
-    let contentUri = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.webchannel.uri");
-    
-    
-    singleton = new this.FxAccountsWebChannel({
-      content_uri: contentUri,
-      channel_id: WEBCHANNEL_ID,
-    });
+    try {
+      let contentUri = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.webchannel.uri");
+      if (contentUri) {
+        
+        
+        singleton = new this.FxAccountsWebChannel({
+          content_uri: contentUri,
+          channel_id: WEBCHANNEL_ID,
+        });
+      } else {
+        log.warn("FxA WebChannel functionaly is disabled due to no URI pref.");
+      }
+    } catch (ex) {
+      log.error("Failed to create FxA WebChannel", ex);
+    }
   }
 }
