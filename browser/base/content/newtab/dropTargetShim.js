@@ -115,6 +115,10 @@ var gDropTargetShim = {
 
     
     
+    this._dropSeen = true;
+
+    
+    
     this._updateDropTarget(aEvent);
 
     
@@ -127,7 +131,7 @@ var gDropTargetShim = {
 
   _dragend: function (aEvent) {
     if (this._lastDropTarget) {
-      if (aEvent.dataTransfer.mozUserCancelled) {
+      if (aEvent.dataTransfer.mozUserCancelled || !this._dropSeen) {
         
         this._dispatchEvent(aEvent, "dragexit", this._lastDropTarget);
         this._dispatchEvent(aEvent, "dragleave", this._lastDropTarget);
@@ -138,6 +142,7 @@ var gDropTargetShim = {
       this._cellPositions = null;
     }
 
+    this._dropSeen = false;
     gGrid.unlock();
     this._removeEventListeners();
   },
