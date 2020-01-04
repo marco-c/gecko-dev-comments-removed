@@ -1590,6 +1590,9 @@ pref("browser.defaultbrowser.notificationbar", false);
 pref("dom.ipc.cpow.timeout", 500);
 
 
+pref("dom.ipc.cpows.forbid-unsafe-from-browser", true);
+
+
 
 pref("dom.ipc.processHangMonitor", true);
 
