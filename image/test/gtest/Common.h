@@ -267,19 +267,6 @@ void CheckWritePixels(Decoder* aDecoder,
 
 
 
-void CheckWriteRows(Decoder* aDecoder,
-                    SurfaceFilter* aFilter,
-                    Maybe<gfx::IntRect> aOutputRect = Nothing(),
-                    Maybe<gfx::IntRect> aInputRect = Nothing(),
-                    Maybe<gfx::IntRect> aInputWriteRect = Nothing(),
-                    Maybe<gfx::IntRect> aOutputWriteRect = Nothing(),
-                    uint8_t aFuzz = 0);
-
-
-
-
-
-
 void CheckPalettedWritePixels(Decoder* aDecoder,
                               SurfaceFilter* aFilter,
                               Maybe<gfx::IntRect> aOutputRect = Nothing(),
@@ -287,19 +274,6 @@ void CheckPalettedWritePixels(Decoder* aDecoder,
                               Maybe<gfx::IntRect> aInputWriteRect = Nothing(),
                               Maybe<gfx::IntRect> aOutputWriteRect = Nothing(),
                               uint8_t aFuzz = 0);
-
-
-
-
-
-
-void CheckPalettedWriteRows(Decoder* aDecoder,
-                            SurfaceFilter* aFilter,
-                            Maybe<gfx::IntRect> aOutputRect = Nothing(),
-                            Maybe<gfx::IntRect> aInputRect = Nothing(),
-                            Maybe<gfx::IntRect> aInputWriteRect = Nothing(),
-                            Maybe<gfx::IntRect> aOutputWriteRect = Nothing(),
-                            uint8_t aFuzz = 0);
 
 
 

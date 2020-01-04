@@ -19,7 +19,6 @@
 
 
 
-
 #ifndef mozilla_image_SurfacePipe_h
 #define mozilla_image_SurfacePipe_h
 
@@ -65,8 +64,6 @@ enum class WriteState : uint8_t
                    
                    
 };
-
-
 
 
 
@@ -126,7 +123,6 @@ public:
 
 
 
-
   uint8_t* AdvanceRow()
   {
     mCol = 0;
@@ -144,8 +140,6 @@ public:
   gfx::IntSize InputSize() const { return mInputSize; }
 
   
-
-
 
 
 
@@ -207,73 +201,6 @@ public:
       }
 
       AdvanceRow();  
-    }
-
-    
-    return WriteState::FINISHED;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template <typename PixelType, typename Func>
-  WriteState WriteRows(Func aFunc)
-  {
-    MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
-    MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
-    MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
-
-    if (IsSurfaceFinished()) {
-      return WriteState::FINISHED;  
-    }
-
-    while (true) {
-      PixelType* rowPtr = reinterpret_cast<PixelType*>(mRowPointer);
-
-      Maybe<WriteState> result = aFunc(rowPtr, mInputSize.width);
-      if (result != Some(WriteState::FAILURE)) {
-        AdvanceRow();  
-      }
-
-      if (IsSurfaceFinished()) {
-        break;
-      }
-
-      if (result == Some(WriteState::FINISHED)) {
-        
-        
-        mRowPointer = nullptr;
-        mCol = 0;
-      }
-
-      if (result) {
-        return *result;
-      }
     }
 
     
@@ -608,26 +535,10 @@ public:
 
 
 
-
-
   template <typename PixelType, typename Func>
   WriteState WritePixels(Func aFunc)
   {
     return mHead->WritePixels<PixelType>(Forward<Func>(aFunc));
-  }
-
-  
-
-
-
-
-
-
-
-  template <typename PixelType, typename Func>
-  WriteState WriteRows(Func aFunc)
-  {
-    return mHead->WriteRows<PixelType>(Forward<Func>(aFunc));
   }
 
   
