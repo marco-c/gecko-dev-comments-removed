@@ -1876,6 +1876,50 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
   return false;
 }
 
+void
+nsINode::EnsurePreInsertionValidity(nsINode& aNewChild, nsINode* aRefChild,
+                                    ErrorResult& aError)
+{
+  EnsurePreInsertionValidity1(aNewChild, aRefChild, aError);
+  if (aError.Failed()) {
+    return;
+  }
+  EnsurePreInsertionValidity2(false, aNewChild, aRefChild, aError);
+}
+
+void
+nsINode::EnsurePreInsertionValidity1(nsINode& aNewChild, nsINode* aRefChild,
+                                     ErrorResult& aError)
+{
+  if ((!IsNodeOfType(eDOCUMENT) &&
+       !IsNodeOfType(eDOCUMENT_FRAGMENT) &&
+       !IsElement()) ||
+      !aNewChild.IsNodeOfType(eCONTENT)) {
+    aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    return;
+  }
+}
+
+void
+nsINode::EnsurePreInsertionValidity2(bool aReplace, nsINode& aNewChild,
+                                     nsINode* aRefChild, ErrorResult& aError)
+{
+  nsIContent* newContent = aNewChild.AsContent();
+  if (newContent->IsRootOfAnonymousSubtree()) {
+    
+    
+    
+    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return;
+  }
+
+  
+  if (!IsAllowedAsChild(newContent, this, aReplace, aRefChild)) {
+    aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    return;
+  }
+}
+
 nsINode*
 nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
                                nsINode* aRefChild, ErrorResult& aError)
@@ -1887,11 +1931,8 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   
   MOZ_ASSERT_IF(aReplace, aRefChild);
 
-  if ((!IsNodeOfType(eDOCUMENT) &&
-       !IsNodeOfType(eDOCUMENT_FRAGMENT) &&
-       !IsElement()) ||
-      !aNewChild->IsNodeOfType(eCONTENT)) {
-    aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+  EnsurePreInsertionValidity1(*aNewChild, aRefChild, aError);
+  if (aError.Failed()) {
     return nullptr;
   }
 
@@ -1939,19 +1980,8 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
     }
   }
 
-  nsIDocument* doc = OwnerDoc();
-  nsIContent* newContent = static_cast<nsIContent*>(aNewChild);
-  if (newContent->IsRootOfAnonymousSubtree()) {
-    
-    
-    
-    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return nullptr;
-  }
-
-  
-  if (!IsAllowedAsChild(newContent, this, aReplace, aRefChild)) {
-    aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+  EnsurePreInsertionValidity2(aReplace, *aNewChild, aRefChild, aError);
+  if (aError.Failed()) {
     return nullptr;
   }
 
@@ -1971,6 +2001,7 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   Maybe<nsAutoTArray<nsCOMPtr<nsIContent>, 50> > fragChildren;
 
   
+  nsIContent* newContent = aNewChild->AsContent();
   nsCOMPtr<nsINode> oldParent = newContent->GetParentNode();
   if (oldParent) {
     int32_t removeIndex = oldParent->IndexOf(newContent);
@@ -2180,6 +2211,7 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   
   
   
+  nsIDocument* doc = OwnerDoc();
   if (doc != newContent->OwnerDoc()) {
     aError = AdoptNodeIntoOwnerDoc(this, aNewChild);
     if (aError.Failed()) {
