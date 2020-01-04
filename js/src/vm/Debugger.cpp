@@ -975,26 +975,6 @@ Debugger::unwrapPropertyDescriptor(JSContext* cx, HandleObject obj,
     return true;
 }
 
-namespace {
-class MOZ_STACK_CLASS ReportExceptionClosure : public ScriptEnvironmentPreparer::Closure
-{
-public:
-    explicit ReportExceptionClosure(RootedValue& exn)
-        : exn_(exn)
-    {
-    }
-
-    bool operator()(JSContext* cx) override
-    {
-        cx->setPendingException(exn_);
-        return false;
-    }
-
-private:
-    RootedValue& exn_;
-};
-} 
-
 JSTrapStatus
 Debugger::handleUncaughtExceptionHelper(Maybe<AutoCompartment>& ac,
                                         MutableHandleValue* vp, bool callHook)
@@ -1013,23 +993,7 @@ Debugger::handleUncaughtExceptionHelper(Maybe<AutoCompartment>& ac,
         }
 
         if (cx->isExceptionPending()) {
-            
-
-
-
-
-
-
-
-
-            RootedValue exn(cx);
-            if (cx->getPendingException(&exn)) {
-                ReportExceptionClosure reportExn(exn);
-                PrepareScriptEnvironmentAndInvoke(cx->runtime(), cx->global(), reportExn);
-            }
-            
-            
-            
+            JS_ReportPendingException(cx);
             cx->clearPendingException();
         }
     }

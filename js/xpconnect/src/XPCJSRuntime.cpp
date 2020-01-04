@@ -1328,25 +1328,16 @@ xpc::SimulateActivityCallback(bool aActive)
     XPCJSRuntime::ActivityCallback(XPCJSRuntime::Get(), aActive);
 }
 
-void
+
+bool
 XPCJSRuntime::EnvironmentPreparer::invoke(HandleObject scope, js::ScriptEnvironmentPreparer::Closure& closure)
 {
     MOZ_ASSERT(NS_IsMainThread());
     nsIGlobalObject* global = NativeGlobal(scope);
-
-    
-    NS_ENSURE_TRUE_VOID(global && global->GetGlobalJSObject());
+    NS_ENSURE_TRUE(global && global->GetGlobalJSObject(), false);
     AutoEntryScript aes(global, "JS-engine-initiated execution");
     aes.TakeOwnershipOfErrorReporting();
-
-    MOZ_ASSERT(!JS_IsExceptionPending(aes.cx()));
-
-    DebugOnly<bool> ok = closure(aes.cx());
-
-    MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(aes.cx()));
-
-    
-    
+    return closure(aes.cx());
 }
 
 

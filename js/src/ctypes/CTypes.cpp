@@ -6932,7 +6932,7 @@ CClosure::ClosureStub(ffi_cif* cif, void* result, void** args, void* userData)
   ArgClosure argClosure(cif, result, args, static_cast<ClosureInfo*>(userData));
   JSRuntime* rt = argClosure.cinfo->rt;
   RootedObject fun(rt, argClosure.cinfo->jsfnObj);
-  js::PrepareScriptEnvironmentAndInvoke(rt, fun, argClosure);
+  (void) js::PrepareScriptEnvironmentAndInvoke(rt, fun, argClosure);
 }
 
 bool CClosure::ArgClosure::operator()(JSContext* cx)
@@ -7025,14 +7025,11 @@ bool CClosure::ArgClosure::operator()(JSContext* cx)
       size_t copySize = CType::GetSize(fninfo->mReturnType);
       MOZ_ASSERT(copySize <= rvSize);
       memcpy(result, cinfo->errResult, copySize);
-
-      
-      
     } else {
       
       
+      return false;
     }
-    return false;
   }
 
   
