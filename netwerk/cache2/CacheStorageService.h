@@ -200,7 +200,7 @@ private:
 
 
   nsresult AddStorageEntry(CacheStorage const* aStorage,
-                           nsIURI* aURI,
+                           const nsACString & aURI,
                            const nsACString & aIdExtension,
                            bool aReplace,
                            CacheEntryHandle** aResult);
@@ -210,7 +210,7 @@ private:
 
 
   nsresult CheckStorageEntry(CacheStorage const* aStorage,
-                             nsIURI* aURI,
+                             const nsACString & aURI,
                              const nsACString & aIdExtension,
                              bool* aResult);
 
@@ -219,7 +219,7 @@ private:
 
 
   nsresult DoomStorageEntry(CacheStorage const* aStorage,
-                            nsIURI* aURI,
+                            const nsACString & aURI,
                             const nsACString & aIdExtension,
                             nsICacheEntryDoomCallback* aCallback);
 
@@ -292,7 +292,7 @@ private:
                               bool aPin,
                               nsICacheEntryDoomCallback* aCallback);
   nsresult AddStorageEntry(nsCSubstring const& aContextKey,
-                           nsIURI* aURI,
+                           const nsACString & aURI,
                            const nsACString & aIdExtension,
                            bool aWriteToDisk,
                            bool aSkipSizeCheck,
