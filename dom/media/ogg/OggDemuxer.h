@@ -49,10 +49,11 @@ private:
     }
     ogg_sync_state mState;
   };
-  media::TimeIntervals GetBuffered();
+  media::TimeIntervals GetBuffered(TrackInfo::TrackType aType);
   void FindStartTime(int64_t& aOutStartTime);
+  void FindStartTime(TrackInfo::TrackType, int64_t& aOutStartTime);
 
-  nsresult SeekInternal(const media::TimeUnit& aTarget);
+  nsresult SeekInternal(TrackInfo::TrackType aType, const media::TimeUnit& aTarget);
 
   
   
@@ -61,10 +62,10 @@ private:
     SEEK_INDEX_FAIL,  
     SEEK_FATAL_ERROR  
   };
-  IndexedSeekResult SeekToKeyframeUsingIndex(int64_t aTarget);
+  IndexedSeekResult SeekToKeyframeUsingIndex(TrackInfo::TrackType aType, int64_t aTarget);
 
   
-  IndexedSeekResult RollbackIndexedSeek(int64_t aOffset);
+  IndexedSeekResult RollbackIndexedSeek(TrackInfo::TrackType aType, int64_t aOffset);
 
   
   
@@ -100,8 +101,9 @@ private:
     int64_t mTimeStart, mTimeEnd; 
   };
 
-  nsresult GetSeekRanges(nsTArray<SeekRange>& aRanges);
-  SeekRange SelectSeekRange(const nsTArray<SeekRange>& ranges,
+  nsresult GetSeekRanges(TrackInfo::TrackType aType, nsTArray<SeekRange>& aRanges);
+  SeekRange SelectSeekRange(TrackInfo::TrackType aType,
+                            const nsTArray<SeekRange>& ranges,
                             int64_t aTarget,
                             int64_t aStartTime,
                             int64_t aEndTime,
@@ -113,7 +115,8 @@ private:
   
   
   
-  nsresult SeekInBufferedRange(int64_t aTarget,
+  nsresult SeekInBufferedRange(TrackInfo::TrackType aType,
+                               int64_t aTarget,
                                int64_t aAdjustedTarget,
                                int64_t aStartTime,
                                int64_t aEndTime,
@@ -126,7 +129,8 @@ private:
   
   
   
-  nsresult SeekInUnbuffered(int64_t aTarget,
+  nsresult SeekInUnbuffered(TrackInfo::TrackType aType,
+                            int64_t aTarget,
                             int64_t aStartTime,
                             int64_t aEndTime,
                             const nsTArray<SeekRange>& aRanges);
@@ -137,7 +141,8 @@ private:
   
   
   
-  nsresult SeekBisection(int64_t aTarget,
+  nsresult SeekBisection(TrackInfo::TrackType aType,
+                         int64_t aTarget,
                          const SeekRange& aRange,
                          uint32_t aFuzz);
 
@@ -161,9 +166,7 @@ private:
   
   ogg_packet* GetNextPacket(TrackInfo::TrackType aType);
 
-  nsresult ResetTrackState(TrackInfo::TrackType aType);
-
-  nsresult Reset();
+  nsresult Reset(TrackInfo::TrackType aType);
 
   static const nsString GetKind(const nsCString& aRole);
   static void InitTrack(MessageField* aMsgInfo,
@@ -172,7 +175,6 @@ private:
 
   
   ~OggDemuxer();
-  void Cleanup();
 
   
   
@@ -180,21 +182,21 @@ private:
 
   
   
-  bool ReadOggPage(ogg_page* aPage);
+  bool ReadOggPage(TrackInfo::TrackType aType, ogg_page* aPage);
 
   
   
   
-  nsresult DemuxOggPage(ogg_page* aPage);
+  nsresult DemuxOggPage(TrackInfo::TrackType aType, ogg_page* aPage);
 
   
-  void DemuxUntilPacketAvailable(OggCodecState* aState);
+  void DemuxUntilPacketAvailable(TrackInfo::TrackType aType, OggCodecState* aState);
 
   
   
   
   
-  bool ReadHeaders(OggCodecState* aState, OggHeaders& aHeaders);
+  bool ReadHeaders(TrackInfo::TrackType aType, OggCodecState* aState, OggHeaders& aHeaders);
 
   
   bool ReadOggChain();
@@ -220,7 +222,7 @@ private:
 
   
   
-  int64_t RangeEndTime(int64_t aEndOffset);
+  int64_t RangeEndTime(TrackInfo::TrackType aType, int64_t aEndOffset);
 
   
   
@@ -229,14 +231,15 @@ private:
   
   
   
-  int64_t RangeEndTime(int64_t aStartOffset,
+  int64_t RangeEndTime(TrackInfo::TrackType aType,
+                       int64_t aStartOffset,
                        int64_t aEndOffset,
                        bool aCachedDataOnly);
 
   
   
   
-  int64_t RangeStartTime(int64_t aOffset);
+  int64_t RangeStartTime(TrackInfo::TrackType aType, int64_t aOffset);
 
 
   MediaInfo mInfo;
@@ -256,6 +259,7 @@ private:
 
   
   OggCodecState* GetTrackCodecState(TrackInfo::TrackType aType) const;
+  TrackInfo::TrackType GetCodecStateType(OggCodecState* aState) const;
 
   
   
@@ -266,7 +270,18 @@ private:
   SkeletonState* mSkeletonState;
 
   
-  ogg_sync_state mOggState;
+  struct OggStateContext {
+    explicit OggStateContext(MediaResource* aResource) : mResource(aResource) {}
+    nsAutoOggSyncState mOggState;
+    MediaResourceIndex mResource;
+    Maybe<media::TimeUnit> mStartTime;
+  };
+
+  ogg_sync_state* OggState(TrackInfo::TrackType aType);
+  MediaResourceIndex* Resource(TrackInfo::TrackType aType);
+  MediaResourceIndex* CommonResource();
+  OggStateContext mAudioOggState;
+  OggStateContext mVideoOggState;
 
   
   
@@ -290,7 +305,9 @@ private:
     return mSkeletonState != 0 && mSkeletonState->mActive;
   }
   bool HaveStartTime () const;
+  bool HaveStartTime (TrackInfo::TrackType aType);
   int64_t StartTime() const;
+  int64_t StartTime(TrackInfo::TrackType aType);
 
   
   
@@ -301,8 +318,6 @@ private:
 
   
   int64_t mDecodedAudioFrames;
-
-  MediaResourceIndex mResource;
 
   friend class OggTrackDemuxer;
 };
