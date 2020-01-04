@@ -6229,6 +6229,11 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
   subimage.SizeTo(NSToIntCeil(subimageBottomRight.x) - subimage.x,
                   NSToIntCeil(subimageBottomRight.y) - subimage.y);
 
+  if (subimage.IsEmpty()) {
+    
+    return SnappedImageDrawingParameters();
+  }
+
   gfxMatrix transform;
   gfxMatrix invTransform;
 
