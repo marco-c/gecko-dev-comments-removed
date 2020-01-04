@@ -41,6 +41,8 @@ public:
   void SetTopLevel() { mTopLevel = true; }
   bool IsTopLevel() const { return mTopLevel; }
 
+  bool IsShutdown() const { return mShutdown; }
+
   
 
 
