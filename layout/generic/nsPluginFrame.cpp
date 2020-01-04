@@ -1151,6 +1151,10 @@ nsPluginFrame::IsOpaque() const
   
   return false;
 #else
+
+  if (mInstanceOwner && mInstanceOwner->UseAsyncRendering()) {
+    return false;
+  }
   return !IsTransparentMode();
 #endif
 }
