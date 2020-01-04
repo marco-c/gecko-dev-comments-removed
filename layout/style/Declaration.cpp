@@ -1370,6 +1370,11 @@ Declaration::GetValue(nsCSSPropertyID aProperty, nsAString& aValue,
           aValue.Append(char16_t(' '));
 
           
+          if (unit == eCSSUnit_Pair) {
+            
+            aValue.Truncate();
+            return;
+          }
           rowsItem->mValue.AppendToString(eCSSProperty_grid_template_rows,
                                           aValue, aSerialization);
           if (rowsItem->mNext &&
@@ -1390,6 +1395,16 @@ Declaration::GetValue(nsCSSPropertyID aProperty, nsAString& aValue,
         }
       }
       if (columnsValue.GetUnit() != eCSSUnit_None) {
+        const nsCSSValueList* colsItem = columnsValue.GetListValue();
+        colsItem = colsItem->mNext; 
+        for (; colsItem; colsItem = colsItem->mNext) {
+          if (colsItem->mValue.GetUnit() == eCSSUnit_Pair) {
+            
+            aValue.Truncate();
+            return;
+          }
+          colsItem = colsItem->mNext; 
+        }
         aValue.AppendLiteral(" / ");
         AppendValueToString(eCSSProperty_grid_template_columns,
                             aValue, aSerialization);

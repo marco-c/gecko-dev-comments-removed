@@ -109,6 +109,12 @@ enum class GridTrackSizeFlags {
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(GridTrackSizeFlags)
 
+enum class GridTrackListFlags {
+  eDefaultTrackList  = 0x0, 
+  eExplicitTrackList = 0x1, 
+};
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(GridTrackListFlags)
+
 namespace {
 
 
@@ -981,9 +987,11 @@ protected:
   
   
   bool ParseGridTrackListWithFirstLineNames(nsCSSValue& aValue,
-                                            const nsCSSValue& aFirstLineNames);
+    const nsCSSValue& aFirstLineNames,
+    GridTrackListFlags aFlags = GridTrackListFlags::eDefaultTrackList);
 
-  bool ParseGridTrackList(nsCSSPropertyID aPropID);
+  bool ParseGridTrackList(nsCSSPropertyID aPropID,
+    GridTrackListFlags aFlags = GridTrackListFlags::eDefaultTrackList);
   bool ParseGridTemplateColumnsRows(nsCSSPropertyID aPropID);
 
   
@@ -8806,11 +8814,13 @@ CSSParserImpl::ParseGridAutoColumnsRows(nsCSSPropertyID aPropID)
 
 bool
 CSSParserImpl::ParseGridTrackListWithFirstLineNames(nsCSSValue& aValue,
-                                                    const nsCSSValue& aFirstLineNames)
+                                                    const nsCSSValue& aFirstLineNames,
+                                                    GridTrackListFlags aFlags)
 {
   nsCSSValueList* firstLineNamesItem = aValue.SetListValue();
   firstLineNamesItem->mValue = aFirstLineNames;
 
+  
   
   
   
@@ -8829,7 +8839,8 @@ CSSParserImpl::ParseGridTrackListWithFirstLineNames(nsCSSValue& aValue,
     if (!GetToken(true)) {
       break;
     }
-    if (mToken.mType == eCSSToken_Function &&
+    if (!(aFlags & GridTrackListFlags::eExplicitTrackList) &&
+        mToken.mType == eCSSToken_Function &&
         mToken.mIdent.LowerCaseEqualsLiteral("repeat")) {
       nsCSSValueList* startOfRepeat = item;
       if (!ParseGridTrackListRepeat(&item)) {
@@ -9174,12 +9185,13 @@ CSSParserImpl::ParseGridTrackListRepeat(nsCSSValueList** aTailPtr)
 }
 
 bool
-CSSParserImpl::ParseGridTrackList(nsCSSPropertyID aPropID)
+CSSParserImpl::ParseGridTrackList(nsCSSPropertyID aPropID,
+                                  GridTrackListFlags aFlags)
 {
   nsCSSValue value;
   nsCSSValue firstLineNames;
   if (ParseGridLineNames(firstLineNames) == CSSParseResult::Error ||
-      !ParseGridTrackListWithFirstLineNames(value, firstLineNames)) {
+      !ParseGridTrackListWithFirstLineNames(value, firstLineNames, aFlags)) {
     return false;
   }
   AppendValue(aPropID, value);
@@ -9426,7 +9438,8 @@ CSSParserImpl::ParseGridTemplate(bool aForGridShorthand)
     }
     
     if (ExpectSymbol('/', true)) {
-      return ParseGridTrackList(eCSSProperty_grid_template_columns);
+      return ParseGridTrackList(eCSSProperty_grid_template_columns,
+                                GridTrackListFlags::eExplicitTrackList);
     }
     value.SetNoneValue(); 
     AppendValue(eCSSProperty_grid_template_columns, value);
