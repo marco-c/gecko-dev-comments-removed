@@ -986,6 +986,20 @@ HasOwnProperty(JSContext* cx, HandleObject obj, HandleId id, bool* result);
 
 
 
+enum DefineAsIntrinsic {
+    NotIntrinsic,
+    AsIntrinsic
+};
+
+extern bool
+DefineFunctions(JSContext* cx, HandleObject obj, const JSFunctionSpec* fs,
+                DefineAsIntrinsic intrinsic,
+                PropertyDefinitionBehavior behavior = DefineAllProperties);
+
+
+
+
+
 
 
 
