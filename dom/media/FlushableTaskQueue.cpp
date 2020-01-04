@@ -20,13 +20,19 @@ FlushableTaskQueue::Flush()
 nsresult
 FlushableTaskQueue::FlushAndDispatch(already_AddRefed<nsIRunnable> aRunnable)
 {
-  MonitorAutoLock mon(mQueueMonitor);
-  AutoSetFlushing autoFlush(this);
-  FlushLocked();
-  nsCOMPtr<nsIRunnable> r = dont_AddRef(aRunnable.take());
-  nsresult rv = DispatchLocked(r.forget(), IgnoreFlushing, AssertDispatchSuccess);
-  NS_ENSURE_SUCCESS(rv, rv);
-  AwaitIdleLocked();
+  nsCOMPtr<nsIRunnable> r = aRunnable;
+  {
+    MonitorAutoLock mon(mQueueMonitor);
+    AutoSetFlushing autoFlush(this);
+    FlushLocked();
+    nsresult rv = DispatchLocked(r, IgnoreFlushing, AssertDispatchSuccess);
+    NS_ENSURE_SUCCESS(rv, rv);
+    AwaitIdleLocked();
+  }
+  
+  
+  
+  
   return NS_OK;
 }
 
