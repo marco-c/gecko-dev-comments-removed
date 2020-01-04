@@ -235,6 +235,7 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
         
         if (AboutPages.isTitlelessAboutPage(url)) {
             setTitle(null);
+            setContentDescription(null);
             return;
         }
 
@@ -246,6 +247,7 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
             builder.setSpan(mBlockedColor, 0, title.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
 
             setTitle(builder);
+            setContentDescription(null);
             return;
         }
 
@@ -257,9 +259,13 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
             strippedURL = StringUtils.stripCommonSubdomains(StringUtils.stripScheme(strippedURL));
         }
 
+        
+        
+        
+        setContentDescription(strippedURL);
+
         if (!TextUtils.isEmpty(baseDomain)) {
             setTitle(baseDomain);
-            setContentDescription(strippedURL);
         } else {
             setTitle(strippedURL);
         }

@@ -19,14 +19,14 @@ public class testAboutPage extends PixelTest {
         String url = mStringHelper.ABOUT_SCHEME;
         loadAndPaint(url);
 
-        verifyUrlBarTitle(url);
+        verifyUrlInContentDescription(url);
 
         
         url = getAbsoluteUrl(mStringHelper.ROBOCOP_BLANK_PAGE_01_URL);
         loadUrlAndWait(url);
 
         
-        verifyUrlBarTitle(url);
+        verifyUrlInContentDescription(url);
 
         
         Actions.EventExpecter tabEventExpecter = mActions.expectGeckoEvent("Tab:Added");
@@ -42,6 +42,6 @@ public class testAboutPage extends PixelTest {
         contentEventExpecter.unregisterListener();
 
         
-        verifyUrlBarTitle(mStringHelper.ABOUT_SCHEME);
+        verifyUrlInContentDescription(mStringHelper.ABOUT_SCHEME);
     }
 }
