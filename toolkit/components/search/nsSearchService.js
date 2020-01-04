@@ -929,21 +929,6 @@ function getLocalizedPref(aPrefName, aDefault) {
 
 
 
-function setLocalizedPref(aPrefName, aValue) {
-  const nsIPLS = Ci.nsIPrefLocalizedString;
-  try {
-    var pls = Components.classes["@mozilla.org/pref-localizedstring;1"]
-                        .createInstance(Ci.nsIPrefLocalizedString);
-    pls.data = aValue;
-    Services.prefs.setComplexValue(aPrefName, nsIPLS, pls);
-  } catch (ex) {}
-}
-
-
-
-
-
-
 
 function getBoolPref(aName, aDefault) {
   if (Services.prefs.getPrefType(aName) != Ci.nsIPrefBranch.PREF_BOOL)
@@ -3122,7 +3107,6 @@ SearchService.prototype = {
         this._engines = {};
         this.__sortedEngines = null;
         this._currentEngine = null;
-        this._defaultEngine = null;
         this._visibleDefaultEngines = [];
         this._metaData = {};
         this._cacheFileJSON = null;
@@ -3987,10 +3971,6 @@ SearchService.prototype = {
       this._currentEngine = null;
     }
 
-    if (engineToRemove == this.defaultEngine) {
-      this._defaultEngine = null;
-    }
-
     if (engineToRemove._readOnly) {
       
       
@@ -4082,52 +4062,10 @@ SearchService.prototype = {
     }
   },
 
-  get defaultEngine() {
-    this._ensureInitialized();
-    if (!this._defaultEngine) {
-      let defPref = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "defaultenginename");
-      let defaultEngine = this.getEngineByName(getLocalizedPref(defPref, ""))
-      if (!defaultEngine)
-        defaultEngine = this._getSortedEngines(false)[0] || null;
-      this._defaultEngine = defaultEngine;
-    }
-    if (this._defaultEngine.hidden)
-      return this._getSortedEngines(false)[0];
-    return this._defaultEngine;
-  },
+  get defaultEngine() { return this.currentEngine; },
 
   set defaultEngine(val) {
-    this._ensureInitialized();
-    
-    
-    
-    if (!(val instanceof Ci.nsISearchEngine) && !(val instanceof Engine))
-      FAIL("Invalid argument passed to defaultEngine setter");
-
-    let newDefaultEngine = this.getEngineByName(val.name);
-    if (!newDefaultEngine)
-      FAIL("Can't find engine in store!", Cr.NS_ERROR_UNEXPECTED);
-
-    if (newDefaultEngine == this._defaultEngine)
-      return;
-
-    this._defaultEngine = newDefaultEngine;
-
-    let defPref = getGeoSpecificPrefName(BROWSER_SEARCH_PREF + "defaultenginename");
-
-    
-    
-    
-    
-    
-    if (this._defaultEngine == this._originalDefaultEngine) {
-      Services.prefs.clearUserPref(defPref);
-    }
-    else {
-      setLocalizedPref(defPref, this._defaultEngine.name);
-    }
-
-    notifyAction(this._defaultEngine, SEARCH_ENGINE_DEFAULT);
+    this.currentEngine = val;
   },
 
   get currentEngine() {
@@ -4204,6 +4142,7 @@ SearchService.prototype = {
     this.setGlobalAttr("current", newName);
     this.setGlobalAttr("hash", getVerificationHash(newName));
 
+    notifyAction(this._currentEngine, SEARCH_ENGINE_DEFAULT);
     notifyAction(this._currentEngine, SEARCH_ENGINE_CURRENT);
   },
 

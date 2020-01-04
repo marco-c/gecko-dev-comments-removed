@@ -48,11 +48,8 @@ add_task(function* test_persistAcrossRestarts() {
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
 
   
-  Services.search.currentEngine = Services.search.defaultEngine;
-  
-  
-  
-  
+  Services.search.resetToOriginalDefaultEngine();
+  do_check_eq(Services.search.currentEngine.name, getDefaultEngineName());
 });
 
 
