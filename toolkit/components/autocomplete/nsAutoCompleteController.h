@@ -123,10 +123,8 @@ protected:
   nsCOMPtr<nsIAutoCompleteInput> mInput;
 
   nsCOMArray<nsIAutoCompleteSearch> mSearches;
+  
   nsCOMArray<nsIAutoCompleteResult> mResults;
-  
-  
-  nsTArray<uint32_t> mMatchCounts;
   
   
   

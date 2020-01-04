@@ -132,7 +132,6 @@ nsAutoCompleteController::SetInput(nsIAutoCompleteInput *aInput)
   aInput->GetSearchCount(&searchCount);
   mResults.SetCapacity(searchCount);
   mSearches.SetCapacity(searchCount);
-  mMatchCounts.SetLength(searchCount);
   mImmediateSearchesCount = 0;
 
   const char *searchCID = kAutoCompleteSearchCID;
@@ -629,7 +628,7 @@ nsAutoCompleteController::HandleDelete(bool *_retval)
   RowIndexToSearch(index, &searchIndex, &rowIndex);
   NS_ENSURE_TRUE(searchIndex >= 0 && rowIndex >= 0, NS_ERROR_FAILURE);
 
-  nsIAutoCompleteResult *result = mResults[searchIndex];
+  nsIAutoCompleteResult *result = mResults.SafeObjectAt(searchIndex);
   NS_ENSURE_TRUE(result, NS_ERROR_FAILURE);
 
   nsAutoString search;
@@ -691,7 +690,7 @@ nsAutoCompleteController::GetResultAt(int32_t aIndex, nsIAutoCompleteResult** aR
   RowIndexToSearch(aIndex, &searchIndex, aRowIndex);
   NS_ENSURE_TRUE(searchIndex >= 0 && *aRowIndex >= 0, NS_ERROR_FAILURE);
 
-  *aResult = mResults[searchIndex];
+  *aResult = mResults.SafeObjectAt(searchIndex);
   NS_ENSURE_TRUE(*aResult, NS_ERROR_FAILURE);
   return NS_OK;
 }
@@ -1522,39 +1521,50 @@ nsresult
 nsAutoCompleteController::ProcessResult(int32_t aSearchIndex, nsIAutoCompleteResult *aResult)
 {
   NS_ENSURE_STATE(mInput);
+  MOZ_ASSERT(aResult, "ProcessResult should always receive a result");
+  NS_ENSURE_ARG(aResult);
   nsCOMPtr<nsIAutoCompleteInput> input(mInput);
 
-  uint16_t result = 0;
-  if (aResult)
-    aResult->GetSearchResult(&result);
+  uint16_t searchResult = 0;
+  aResult->GetSearchResult(&searchResult);
 
-  uint32_t oldMatchCount = 0;
-  uint32_t matchCount = 0;
-  if (aResult)
-    aResult->GetMatchCount(&matchCount);
-
-  int32_t resultIndex = mResults.IndexOf(aResult);
-  if (resultIndex == -1) {
-    
-    mResults.AppendObject(aResult);
-    mMatchCounts.AppendElement(matchCount);
-    resultIndex = mResults.Count() - 1;
+  
+  
+  
+  
+  
+  
+  if (mResults.IndexOf(aResult) == -1) {
+    nsIAutoCompleteResult* oldResult = mResults.SafeObjectAt(aSearchIndex);
+    if (oldResult) {
+      MOZ_ASSERT(false, "Passing new matches to OnSearchResult with a new "
+                        "nsIAutoCompleteResult every time is deprecated, please "
+                        "update the same result until the search is done");
+      
+      RefPtr<nsAutoCompleteSimpleResult> mergedResult =
+        new nsAutoCompleteSimpleResult();
+      mergedResult->AppendResult(oldResult);
+      mergedResult->AppendResult(aResult);
+      mResults.ReplaceObjectAt(mergedResult, aSearchIndex);
+    } else {
+      
+      mResults.ReplaceObjectAt(aResult, aSearchIndex);
+    }
   }
-  else {
-    oldMatchCount = mMatchCounts[aSearchIndex];
-    mMatchCounts[resultIndex] = matchCount;
-  }
+  
+  MOZ_ASSERT_IF(mResults.IndexOf(aResult) != -1,
+                mResults.IndexOf(aResult) == aSearchIndex);
+  MOZ_ASSERT(mResults.Count() >= aSearchIndex + 1,
+             "aSearchIndex should always be valid for mResults");
 
   bool isTypeAheadResult = false;
-  if (aResult) {
-    aResult->GetTypeAheadResult(&isTypeAheadResult);
-  }
+  aResult->GetTypeAheadResult(&isTypeAheadResult);
 
   if (!isTypeAheadResult) {
     uint32_t oldRowCount = mRowCount;
     
     
-    if (result == nsIAutoCompleteResult::RESULT_FAILURE) {
+    if (searchResult == nsIAutoCompleteResult::RESULT_FAILURE) {
       nsAutoString error;
       aResult->GetErrorDescription(error);
       if (!error.IsEmpty()) {
@@ -1563,13 +1573,28 @@ nsAutoCompleteController::ProcessResult(int32_t aSearchIndex, nsIAutoCompleteRes
           mTree->RowCountChanged(oldRowCount, 1);
         }
       }
-    } else if (result == nsIAutoCompleteResult::RESULT_SUCCESS ||
-               result == nsIAutoCompleteResult::RESULT_SUCCESS_ONGOING) {
+    } else if (searchResult == nsIAutoCompleteResult::RESULT_SUCCESS ||
+               searchResult == nsIAutoCompleteResult::RESULT_SUCCESS_ONGOING) {
       
-      mRowCount += matchCount - oldMatchCount;
+      uint32_t totalMatchCount = 0;
+      for (uint32_t i = 0; i < mResults.Length(); i++) {
+        nsIAutoCompleteResult* result = mResults.SafeObjectAt(i);
+        if (result) {
+          
+          bool typeAhead = false;
+          result->GetTypeAheadResult(&typeAhead);
+          if (!typeAhead) {
+            uint32_t matchCount = 0;
+            result->GetMatchCount(&matchCount);
+            totalMatchCount += matchCount;
+          }
+        }
+      }
+      uint32_t delta = totalMatchCount - oldRowCount;
 
+      mRowCount += delta;
       if (mTree) {
-        mTree->RowCountChanged(oldRowCount, matchCount - oldMatchCount);
+        mTree->RowCountChanged(oldRowCount, delta);
       }
     }
 
@@ -1592,10 +1617,10 @@ nsAutoCompleteController::ProcessResult(int32_t aSearchIndex, nsIAutoCompleteRes
     }
   }
 
-  if (result == nsIAutoCompleteResult::RESULT_SUCCESS ||
-      result == nsIAutoCompleteResult::RESULT_SUCCESS_ONGOING) {
+  if (searchResult == nsIAutoCompleteResult::RESULT_SUCCESS ||
+      searchResult == nsIAutoCompleteResult::RESULT_SUCCESS_ONGOING) {
     
-    CompleteDefaultIndex(resultIndex);
+    CompleteDefaultIndex(aSearchIndex);
   }
 
   return NS_OK;
@@ -1633,7 +1658,6 @@ nsAutoCompleteController::ClearResults()
   int32_t oldRowCount = mRowCount;
   mRowCount = 0;
   mResults.Clear();
-  mMatchCounts.Clear();
   if (oldRowCount != 0) {
     if (mTree)
       mTree->RowCountChanged(0, -oldRowCount);
@@ -1701,14 +1725,16 @@ nsAutoCompleteController::GetDefaultCompleteResult(int32_t aResultIndex,
 
   
   for (int32_t i = 0; resultIndex < 0 && i < mResults.Count(); ++i) {
-    nsIAutoCompleteResult *result = mResults[i];
+    nsIAutoCompleteResult *result = mResults.SafeObjectAt(i);
     if (result &&
         NS_SUCCEEDED(result->GetDefaultIndex(_defaultIndex)) &&
         *_defaultIndex >= 0) {
       resultIndex = i;
     }
   }
-  NS_ENSURE_TRUE(resultIndex >= 0, NS_ERROR_FAILURE);
+  if (resultIndex < 0) {
+    return NS_ERROR_FAILURE;
+  }
 
   *_result = mResults.SafeObjectAt(resultIndex);
   NS_ENSURE_TRUE(*_result, NS_ERROR_FAILURE);
