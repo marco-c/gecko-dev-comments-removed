@@ -68,7 +68,7 @@ nsTitleBarFrame::HandleEvent(nsPresContext* aPresContext,
 
   switch (aEvent->mMessage) {
 
-   case NS_MOUSE_BUTTON_DOWN:  {
+   case eMouseDown: {
        if (aEvent->AsMouseEvent()->button == WidgetMouseEvent::eLeftButton) {
          
          nsCOMPtr<nsIDocShellTreeItem> dsti = aPresContext->GetDocShell();

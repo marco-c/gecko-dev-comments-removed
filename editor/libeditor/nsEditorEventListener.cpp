@@ -408,7 +408,7 @@ nsEditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       return KeyPress(keyEvent);
     }
     
-    case NS_MOUSE_BUTTON_DOWN: {
+    case eMouseDown: {
       nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
       NS_ENSURE_TRUE(mouseEvent, NS_OK);
       

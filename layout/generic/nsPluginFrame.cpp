@@ -1801,7 +1801,7 @@ nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
   
   
   
-  if (anEvent->mMessage == NS_MOUSE_BUTTON_DOWN) {
+  if (anEvent->mMessage == eMouseDown) {
     nsIPresShell::SetCapturingContent(GetContent(), CAPTURE_IGNOREALLOWED);
   }
 #endif

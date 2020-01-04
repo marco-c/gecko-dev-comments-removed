@@ -458,7 +458,7 @@ IMEContentObserver::OnMouseButtonEvent(nsPresContext* aPresContext,
   
   switch (aMouseEvent->mMessage) {
     case eMouseUp:
-    case NS_MOUSE_BUTTON_DOWN:
+    case eMouseDown:
       break;
     default:
       return false;

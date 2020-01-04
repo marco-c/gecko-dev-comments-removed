@@ -53,7 +53,7 @@ nsScrollbarButtonFrame::HandleEvent(nsPresContext* aPresContext,
   }
 
   switch (aEvent->mMessage) {
-    case NS_MOUSE_BUTTON_DOWN:
+    case eMouseDown:
       mCursorOnThis = true;
       
       if (HandleButtonPress(aPresContext, aEvent, aEventStatus)) {

@@ -2601,8 +2601,7 @@ IMMHandler::OnMouseButtonEvent(nsWindow* aWindow,
   }
 
   
-  if (aIMENotification.mMouseButtonEventData.mEventMessage !=
-        NS_MOUSE_BUTTON_DOWN) {
+  if (aIMENotification.mMouseButtonEventData.mEventMessage != eMouseDown) {
     return NS_OK;
   }
 
