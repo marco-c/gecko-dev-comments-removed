@@ -69,8 +69,11 @@ class SearchEngineRow extends AnimatedHeightLayout {
     private int mSelectedView;
 
     
-    private static final int TABLET_MAX = 4;
-    private static final int PHONE_MAX = 2;
+    private int mMaxSavedSuggestions;
+    private int mMaxSearchSuggestions;
+
+    
+    private static final int SUGGESTIONS_MAX = 4;
 
     public SearchEngineRow(Context context) {
         this(context, null);
@@ -132,6 +135,10 @@ class SearchEngineRow extends AnimatedHeightLayout {
         mUserEnteredView.setOnClickListener(mClickListener);
 
         mUserEnteredTextView = (TextView) findViewById(R.id.suggestion_text);
+
+        
+        mMaxSavedSuggestions = getResources().getInteger(R.integer.max_saved_suggestions);
+        mMaxSearchSuggestions = getResources().getInteger(R.integer.max_search_suggestions);
     }
 
     private void setDescriptionOnSuggestion(View v, String suggestion) {
@@ -262,14 +269,14 @@ class SearchEngineRow extends AnimatedHeightLayout {
         if (!AppConstants.NIGHTLY_BUILD) {
             return null;
         }
+
         final ContentResolver cr = getContext().getContentResolver();
 
         String[] columns = new String[] { SearchHistory.QUERY };
         String actualQuery = SearchHistory.QUERY + " LIKE ?";
         String[] queryArgs = new String[] { '%' + searchTerm + '%' };
-        final int limit = HardwareUtils.isTablet() ? TABLET_MAX : PHONE_MAX;
 
-        String sortOrderAndLimit = SearchHistory.DATE +" DESC LIMIT "+limit;
+        String sortOrderAndLimit = SearchHistory.DATE +" DESC LIMIT " + mMaxSavedSuggestions;
         return cr.query(SearchHistory.CONTENT_URI, columns, actualQuery, queryArgs, sortOrderAndLimit);
     }
 
@@ -281,22 +288,23 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
 
 
-    private int updateFromSearchEngine(boolean animate, int recycledSuggestionCount, int savedCount) {
-
+    private int updateFromSearchEngine(boolean animate, int recycledSuggestionCount, int savedSuggestionCount) {
         
-        int limit = TABLET_MAX;
+        int maxSuggestions = SUGGESTIONS_MAX;
         if (AppConstants.NIGHTLY_BUILD) {
-            limit = HardwareUtils.isTablet() ? TABLET_MAX : PHONE_MAX;
+            maxSuggestions = mMaxSearchSuggestions;
             
-            if (!HardwareUtils.isTablet() && savedCount < PHONE_MAX) {
-                    limit += PHONE_MAX - savedCount;
+            if (!HardwareUtils.isTablet() && savedSuggestionCount < mMaxSavedSuggestions) {
+                maxSuggestions += mMaxSavedSuggestions - savedSuggestionCount;
             }
         }
+
         int suggestionCounter = 0;
         for (String suggestion : mSearchEngine.getSuggestions()) {
-            if (suggestionCounter == limit) {
+            if (suggestionCounter == maxSuggestions) {
                 break;
             }
+
             
             String telemetryTag = "engine." + suggestionCounter;
             bindSuggestionView(suggestion, animate, recycledSuggestionCount, suggestionCounter, false, telemetryTag);
