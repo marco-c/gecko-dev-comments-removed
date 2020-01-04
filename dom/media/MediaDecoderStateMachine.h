@@ -450,12 +450,6 @@ protected:
 
   
   
-  
-  
-  int64_t AudioDecodedUsecs();
-
-  
-  
   bool HasFutureAudio();
 
   

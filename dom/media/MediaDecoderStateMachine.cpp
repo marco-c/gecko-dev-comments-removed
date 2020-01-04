@@ -412,7 +412,7 @@ bool MediaDecoderStateMachine::HasFutureAudio()
   
   
   return !mAudioCompleted &&
-         (AudioDecodedUsecs() >
+         (GetDecodedAudioDuration() >
             mLowAudioThresholdUsecs * mPlaybackRate ||
           AudioQueue().IsFinished());
 }
@@ -1817,18 +1817,6 @@ MediaDecoderStateMachine::StartMediaSink()
   }
 }
 
-int64_t MediaDecoderStateMachine::AudioDecodedUsecs()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  NS_ASSERTION(HasAudio(),
-               "Should only call AudioDecodedUsecs() when we have audio");
-  
-  
-  
-  int64_t pushed = mMediaSink->IsStarted() ? (AudioEndTime() - GetMediaTime()) : 0;
-  return pushed + AudioQueue().Duration();
-}
-
 bool MediaDecoderStateMachine::HasLowDecodedData(int64_t aAudioUsecs)
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -1837,7 +1825,7 @@ bool MediaDecoderStateMachine::HasLowDecodedData(int64_t aAudioUsecs)
   
   
   
-  return ((IsAudioDecoding() && AudioDecodedUsecs() < aAudioUsecs) ||
+  return ((IsAudioDecoding() && GetDecodedAudioDuration() < aAudioUsecs) ||
          (IsVideoDecoding() &&
           static_cast<uint32_t>(VideoQueue().GetSize()) < LOW_VIDEO_FRAMES));
 }
