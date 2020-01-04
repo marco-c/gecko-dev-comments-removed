@@ -24,7 +24,7 @@ IndirectEval(JSContext* cx, unsigned argc, Value* vp);
 
 
 extern bool
-DirectEval(JSContext* cx, const CallArgs& args);
+DirectEval(JSContext* cx, HandleValue v, MutableHandleValue vp);
 
 
 extern bool
