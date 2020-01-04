@@ -48,6 +48,7 @@ import os
 import pickle
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 import urlparse
@@ -524,7 +525,9 @@ class Artifacts(object):
                 if not file_existed or file_updated:
                     
                     
-                    os.chmod(n, info.external_attr >> 16) 
+                    perms = info.external_attr >> 16 
+                    perms |= stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH 
+                    os.chmod(n, perms)
                 if install_callback:
                     install_callback(info.filename, file_existed, file_updated)
         return 0
