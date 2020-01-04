@@ -6,7 +6,7 @@ function test() {
   
 
   waitForExplicitFinish();
-  requestLongerTimeout(2);
+  requestLongerTimeout(3);
 
   
   
@@ -159,12 +159,10 @@ function test() {
 
       ok(hasUTV, "At least one tab has a userTypedValue with userTypedClear with no loaded URL");
 
-      gBrowser.addEventListener("load", firstLoad, true);
+      BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(firstLoad);
     }
 
     function firstLoad() {
-      gBrowser.removeEventListener("load", firstLoad, true);
-
       let state = JSON.parse(ss.getBrowserState());
       let hasSH = state.windows[0].tabs.some(function(aTab) {
         return !("userTypedValue" in aTab) && aTab.entries[0].url;

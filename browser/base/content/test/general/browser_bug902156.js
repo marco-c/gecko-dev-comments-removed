@@ -45,10 +45,7 @@ function cleanUpAfterTests() {
 
 
 function test1A() {
-  
-  
-  gTestBrowser.removeEventListener("load", test1A, true);
-  gTestBrowser.addEventListener("load", test1B, true);
+  BrowserTestUtils.browserLoaded(gTestBrowser).then(test1B);
 
   assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
 
@@ -65,21 +62,18 @@ function test1B() {
 }
 
 function test1C() {
-  gTestBrowser.removeEventListener("load", test1B, true);
   var actual = content.document.getElementById('mctestdiv').innerHTML;
   is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1C");
 
   
   
-  gTestBrowser.addEventListener("load", test1D, true);
+  BrowserTestUtils.browserLoaded(gTestBrowser).then(test1D);
 
   var url = gHttpTestRoot1 + "file_bug902156_2.html";
-  gTestBrowser.contentWindow.location = url;
+  gTestBrowser.loadURI(url);
 }
 
 function test1D() {
-  gTestBrowser.removeEventListener("load", test1D, true);
-
   
   
   assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
@@ -94,16 +88,13 @@ function test1D() {
 
 
 function test2() {
-  gTestBrowser.addEventListener("load", test2A, true);
+  BrowserTestUtils.browserLoaded(gTestBrowser).then(test2A);
   var url = gHttpTestRoot2 + "file_bug902156_2.html";
-  gTestBrowser.contentWindow.location = url;
+  gTestBrowser.loadURI(url);
 }
 
 function test2A() {
-  
-  
-  gTestBrowser.removeEventListener("load", test2A, true);
-  gTestBrowser.addEventListener("load", test2B, true);
+  BrowserTestUtils.browserLoaded(gTestBrowser).then(test2B);
 
   assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
 
@@ -120,13 +111,12 @@ function test2B() {
 }
 
 function test2C() {
-  gTestBrowser.removeEventListener("load", test2B, true);
   var actual = content.document.getElementById('mctestdiv').innerHTML;
   is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 2C");
 
   
   
-  gTestBrowser.addEventListener("load", test2D, true);
+  BrowserTestUtils.browserLoaded(gTestBrowser).then(test2D);
 
   
   var mctestlink = content.document.getElementById("mctestlink");
@@ -134,8 +124,6 @@ function test2C() {
 }
 
 function test2D() {
-  gTestBrowser.removeEventListener("load", test2D, true);
-
   
   
   assertMixedContentBlockingState(gTestBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
@@ -150,16 +138,12 @@ function test2D() {
 
 
 function test3() {
-  gTestBrowser.addEventListener("load", test3A, true);
+  BrowserTestUtils.browserLoaded(gTestBrowser).then(test3A);
   var url = gHttpTestRoot1 + "file_bug902156_3.html";
-  gTestBrowser.contentWindow.location = url;
+  gTestBrowser.loadURI(url);
 }
 
 function test3A() {
-  
-  
-  gTestBrowser.removeEventListener("load", test3A, true);
-
   assertMixedContentBlockingState(gTestBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
 
   
@@ -184,7 +168,7 @@ function test() {
   newTab.linkedBrowser.stop()
 
   
-  gTestBrowser.addEventListener("load", test1A, true);
+  BrowserTestUtils.browserLoaded(gTestBrowser).then(test1A);
   var url = gHttpTestRoot1 + "file_bug902156_1.html";
-  gTestBrowser.contentWindow.location = url;
+  gTestBrowser.loadURI(url);
 }

@@ -4,17 +4,12 @@
 
 function test() {
   waitForExplicitFinish();
-  gBrowser.selectedTab = gBrowser.addTab();
+  gBrowser.selectedTab = gBrowser.addTab("data:text/html,<iframe width='700' height='700' src='about:certerror'></iframe>");
   
-  gBrowser.selectedBrowser.addEventListener("load", testIframeCert, true);
-  content.location = "data:text/html,<iframe width='700' height='700' src='about:certerror'></iframe>";
+  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(testIframeCert);
 }
 
 function testIframeCert(e) {
-  if (e.target.location.href == "about:blank") {
-    return;
-  }
-  gBrowser.selectedBrowser.removeEventListener("load", testIframeCert, true);
   
   var doc = gBrowser.contentDocument.getElementsByTagName('iframe')[0].contentDocument;
   var aP = doc.getElementById("advancedPanel");
