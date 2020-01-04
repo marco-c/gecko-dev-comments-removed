@@ -268,48 +268,6 @@ private:
 
 
 
-class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable
-{
-  bool mResult;
-
-public:
-  
-  MainThreadStopSyncLoopRunnable(
-                               WorkerPrivate* aWorkerPrivate,
-                               already_AddRefed<nsIEventTarget>&& aSyncLoopTarget,
-                               bool aResult);
-
-  
-  
-  nsresult
-  Cancel() override;
-
-protected:
-  virtual ~MainThreadStopSyncLoopRunnable()
-  { }
-
-private:
-  virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override final
-  {
-    AssertIsOnMainThread();
-    return true;
-  }
-
-  virtual void
-  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
-
-  virtual bool
-  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
-
-  virtual bool
-  DispatchInternal() override final;
-};
-
-
-
-
-
 
 class WorkerControlRunnable : public WorkerRunnable
 {

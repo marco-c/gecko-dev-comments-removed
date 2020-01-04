@@ -31,6 +31,48 @@ const nsIID kWorkerRunnableIID = {
   0x320cc0b5, 0xef12, 0x4084, { 0x88, 0x6e, 0xca, 0x6a, 0x81, 0xe4, 0x1d, 0x68 }
 };
 
+
+
+
+
+class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable
+{
+  bool mResult;
+
+public:
+  
+  MainThreadStopSyncLoopRunnable(
+                               WorkerPrivate* aWorkerPrivate,
+                               already_AddRefed<nsIEventTarget>&& aSyncLoopTarget,
+                               bool aResult);
+
+  
+  
+  nsresult
+  Cancel() override;
+
+protected:
+  virtual ~MainThreadStopSyncLoopRunnable()
+  { }
+
+private:
+  virtual bool
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override final
+  {
+    AssertIsOnMainThread();
+    return true;
+  }
+
+  virtual void
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
+
+  virtual bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
+
+  virtual bool
+  DispatchInternal() override final;
+};
+
 } 
 
 #ifdef DEBUG
