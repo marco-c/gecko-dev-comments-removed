@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_navigator_h__
-#define mozilla_dom_navigator_h__
+#ifndef mozilla_dom_workers_navigator_h__
+#define mozilla_dom_workers_navigator_h__
 
 #include "Workers.h"
 #include "RuntimeService.h"
@@ -19,10 +19,14 @@
 namespace mozilla {
 namespace dom {
 class Promise;
+} 
+} 
+
+BEGIN_WORKERS_NAMESPACE
 
 class WorkerNavigator final : public nsWrapperCache
 {
-  typedef struct workers::RuntimeService::NavigatorProperties NavigatorProperties;
+  typedef struct RuntimeService::NavigatorProperties NavigatorProperties;
 
   NavigatorProperties mProperties;
   bool mOnline;
@@ -110,7 +114,6 @@ public:
                                           ErrorResult& aRv);
 };
 
-} 
-} 
+END_WORKERS_NAMESPACE
 
 #endif 
