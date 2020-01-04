@@ -4948,9 +4948,6 @@ pref("dom.presentation.discovery.timeout_ms", 10000);
 pref("dom.presentation.discoverable", false);
 
 #ifdef XP_MACOSX
-
-pref("intl.collation.mac.use_icu", true);
-
 #if !defined(RELEASE_BUILD) || defined(DEBUG)
 
 
