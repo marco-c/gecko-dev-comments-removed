@@ -21,6 +21,15 @@ const PREF_XPI_SIGNATURES_REQUIRED    = "xpinstall.signatures.required";
 
 const TIMEOUT_MS = 900000;
 
+
+
+
+const MAX_TIME_DIFFERENCE = 3000;
+
+
+
+const MAKE_FILE_OLD_DIFFERENCE = 10 * 3600 * 1000;
+
 Components.utils.import("resource://gre/modules/addons/AddonRepository.jsm");
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
@@ -1233,6 +1242,7 @@ function writeInstallRDFToXPIFile(aData, aFile, aExtraFile) {
   var zipW = AM_Cc["@mozilla.org/zipwriter;1"].
              createInstance(AM_Ci.nsIZipWriter);
   zipW.open(aFile, FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE | FileUtils.MODE_TRUNCATE);
+  
   zipW.addEntryStream("install.rdf", 0, AM_Ci.nsIZipWriter.COMPRESSION_NONE,
                       stream, false);
   if (aExtraFile)

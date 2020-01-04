@@ -242,12 +242,17 @@ for (let test of testParams) {
         do_check_neq(a1.syncGUID, null);
         do_check_eq(originalSyncGUID, a1.syncGUID);
 
+        
+        let testURI = a1.getResourceURI(TEST_UNPACKED ? "install.rdf" : "");
+        let testFile = testURI.QueryInterface(Components.interfaces.nsIFileURL).file;
+        let difference = testFile.lastModifiedTime - Date.now();
+        do_check_true(Math.abs(difference) < MAX_TIME_DIFFERENCE);
+
         a1.uninstall();
         run_next_test();
       });
     }));
   };
-
 
   
   let check_test_3;

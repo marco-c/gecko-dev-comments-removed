@@ -8,11 +8,6 @@ var Ci = Components.interfaces;
 var Cu = Components.utils;
 
 
-
-
-const MAX_TIME_DIFFERENCE = 3000;
-
-
 const ADDON1_SIZE = 705 + 16 + 16;
 
 Cu.import("resource://gre/modules/Services.jsm");
@@ -145,6 +140,8 @@ function check_test_1(installSyncGUID) {
       else {
         let iconFile = uri.QueryInterface(AM_Ci.nsIFileURL).file;
         do_check_true(iconFile.exists());
+        
+        iconFile.lastModifiedTime = Date.now() - MAKE_FILE_OLD_DIFFERENCE;
       }
 
       
@@ -193,6 +190,14 @@ function check_test_1(installSyncGUID) {
           do_check_eq(a1.getResourceURI("install.rdf").spec, uri + "install.rdf");
           do_check_eq(a1.iconURL, uri + "icon.png");
           do_check_eq(a1.icon64URL, uri + "icon64.png");
+
+          
+          
+          let testURI = a1.getResourceURI(TEST_UNPACKED ? "icon.png" : "");
+          let testFile = testURI.QueryInterface(Components.interfaces.nsIFileURL).file;
+          do_check_true(testFile.exists());
+          difference = testFile.lastModifiedTime - Date.now();
+          do_check_true(Math.abs(difference) < MAX_TIME_DIFFERENCE);
 
           a1.uninstall();
           let { id, version } = a1;

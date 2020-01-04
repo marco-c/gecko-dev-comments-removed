@@ -404,10 +404,18 @@ SafeInstallOperation.prototype = {
     let oldFile = aCopy ? null : aFile.clone();
     let newFile = aFile.clone();
     try {
-      if (aCopy)
+      if (aCopy) {
         newFile.copyTo(aTargetDirectory, null);
-      else
+        
+        newFile = aTargetDirectory.clone();
+        newFile.append(aFile.leafName);
+        
+        
+        newFile.lastModifiedTime = Date.now();
+      }
+      else {
         newFile.moveTo(aTargetDirectory, null);
+      }
     }
     catch (e) {
       logger.error("Failed to " + (aCopy ? "copy" : "move") + " file " + aFile.path +
@@ -5443,8 +5451,13 @@ AddonInstall.prototype = {
     }
 
     
-    for (let { file } of files)
-      file.remove(true);
+    for (let { file } of files) {
+      try {
+        file.remove(true);
+      } catch (e) {
+        this.logger.warn("Could not remove temp file " + file.path);
+      }
+    }
 
     return Promise.reject([AddonManager.ERROR_CORRUPT_FILE,
                            "Multi-package XPI does not contain any valid packages to install"]);

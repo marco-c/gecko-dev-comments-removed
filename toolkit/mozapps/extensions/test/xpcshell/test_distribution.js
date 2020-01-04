@@ -68,7 +68,7 @@ function setOldModificationTime() {
     extension.append("addon1@tests.mozilla.org");
   else
     extension.append("addon1@tests.mozilla.org.xpi");
-  setExtensionModifiedTime(extension, Date.now - 10000);
+  setExtensionModifiedTime(extension, Date.now() - MAKE_FILE_OLD_DIFFERENCE);
   startupManager(false);
 }
 
@@ -79,8 +79,10 @@ function run_test() {
 }
 
 
+
 function run_test_1() {
-  writeInstallRDFForExtension(addon1_1, distroDir);
+  let extension = writeInstallRDFForExtension(addon1_1, distroDir);
+  setExtensionModifiedTime(extension, Date.now() - MAKE_FILE_OLD_DIFFERENCE);
 
   startupManager();
 
@@ -90,6 +92,15 @@ function run_test_1() {
     do_check_true(a1.isActive);
     do_check_eq(a1.scope, AddonManager.SCOPE_PROFILE);
     do_check_false(a1.foreignInstall);
+
+    
+    
+    let testURI = a1.getResourceURI(TEST_UNPACKED ? "install.rdf" : "");
+    let testFile = testURI.QueryInterface(Components.interfaces.nsIFileURL).file;
+
+    do_check_true(testFile.exists());
+    let difference = testFile.lastModifiedTime - Date.now();
+    do_check_true(Math.abs(difference) < MAX_TIME_DIFFERENCE);
 
     do_execute_soon(run_test_2);
   });
