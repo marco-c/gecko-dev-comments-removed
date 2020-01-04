@@ -124,43 +124,24 @@ CSSAnimation::Tick()
 }
 
 bool
-CSSAnimation::HasLowerCompositeOrderThan(const Animation& aOther) const
+CSSAnimation::HasLowerCompositeOrderThan(const CSSAnimation& aOther) const
 {
+  MOZ_ASSERT(IsTiedToMarkup() && aOther.IsTiedToMarkup(),
+             "Should only be called for CSS animations that are sorted "
+             "as CSS animations (i.e. tied to CSS markup)");
+
   
   if (&aOther == this) {
     return false;
   }
 
   
-  
-  
-  
-  
-  const CSSAnimation* otherAnimation = aOther.AsCSSAnimation();
-  if (!otherAnimation) {
-    MOZ_ASSERT(aOther.AsCSSTransition(),
-               "Animation being compared is a CSS transition");
-    return false;
+  if (!mOwningElement.Equals(aOther.mOwningElement)) {
+    return mOwningElement.LessThan(aOther.mOwningElement);
   }
 
   
-  
-  if (!IsTiedToMarkup()) {
-    return !otherAnimation->IsTiedToMarkup() ?
-           Animation::HasLowerCompositeOrderThan(aOther) :
-           false;
-  }
-  if (!otherAnimation->IsTiedToMarkup()) {
-    return true;
-  }
-
-  
-  if (!mOwningElement.Equals(otherAnimation->mOwningElement)) {
-    return mOwningElement.LessThan(otherAnimation->mOwningElement);
-  }
-
-  
-  return mAnimationIndex < otherAnimation->mAnimationIndex;
+  return mAnimationIndex < aOther.mAnimationIndex;
 }
 
 void

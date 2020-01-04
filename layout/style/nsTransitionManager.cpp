@@ -175,43 +175,30 @@ CSSTransition::TransitionProperty() const
 }
 
 bool
-CSSTransition::HasLowerCompositeOrderThan(const Animation& aOther) const
+CSSTransition::HasLowerCompositeOrderThan(const CSSTransition& aOther) const
 {
+  MOZ_ASSERT(IsTiedToMarkup() && aOther.IsTiedToMarkup(),
+             "Should only be called for CSS transitions that are sorted "
+             "as CSS transitions (i.e. tied to CSS markup)");
+
   
   if (&aOther == this) {
     return false;
   }
 
   
-  const CSSTransition* otherTransition = aOther.AsCSSTransition();
-  if (!otherTransition) {
-    return true;
+  if (!mOwningElement.Equals(aOther.mOwningElement)) {
+    return mOwningElement.LessThan(aOther.mOwningElement);
   }
 
   
-  
-  if (!IsTiedToMarkup()) {
-    return !otherTransition->IsTiedToMarkup() ?
-           Animation::HasLowerCompositeOrderThan(aOther) :
-           false;
-  }
-  if (!otherTransition->IsTiedToMarkup()) {
-    return true;
-  }
-
-  
-  if (!mOwningElement.Equals(otherTransition->mOwningElement)) {
-    return mOwningElement.LessThan(otherTransition->mOwningElement);
-  }
-
-  
-  if (mAnimationIndex != otherTransition->mAnimationIndex) {
-    return mAnimationIndex < otherTransition->mAnimationIndex;
+  if (mAnimationIndex != aOther.mAnimationIndex) {
+    return mAnimationIndex < aOther.mAnimationIndex;
   }
 
   
   return nsCSSProps::GetStringValue(TransitionProperty()) <
-         nsCSSProps::GetStringValue(otherTransition->TransitionProperty());
+         nsCSSProps::GetStringValue(aOther.TransitionProperty());
 }
 
 

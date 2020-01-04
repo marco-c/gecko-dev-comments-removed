@@ -11,11 +11,13 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/AsyncEventDispatcher.h" 
 #include "mozilla/Maybe.h" 
+#include "nsAnimationManager.h" 
 #include "nsDOMMutationObserver.h" 
 #include "nsIDocument.h" 
 #include "nsIPresShell.h" 
 #include "nsLayoutUtils.h" 
 #include "nsThreadUtils.h" 
+#include "nsTransitionManager.h" 
 #include "PendingAnimationTracker.h" 
 
 namespace mozilla {
@@ -668,13 +670,57 @@ bool
 Animation::HasLowerCompositeOrderThan(const Animation& aOther) const
 {
   
+  if (&aOther == this) {
+    return false;
+  }
+
+  
+  {
+    auto asCSSTransitionForSorting =
+      [] (const Animation& anim) -> const CSSTransition*
+      {
+        const CSSTransition* transition = anim.AsCSSTransition();
+        return transition && transition->IsTiedToMarkup() ?
+               transition :
+               nullptr;
+      };
+    auto thisTransition  = asCSSTransitionForSorting(*this);
+    auto otherTransition = asCSSTransitionForSorting(aOther);
+    if (thisTransition && otherTransition) {
+      return thisTransition->HasLowerCompositeOrderThan(*otherTransition);
+    }
+    if (thisTransition || otherTransition) {
+      return thisTransition;
+    }
+  }
+
+  
+  {
+    auto asCSSAnimationForSorting =
+      [] (const Animation& anim) -> const CSSAnimation*
+      {
+        const CSSAnimation* animation = anim.AsCSSAnimation();
+        return animation && animation->IsTiedToMarkup() ? animation : nullptr;
+      };
+    auto thisAnimation  = asCSSAnimationForSorting(*this);
+    auto otherAnimation = asCSSAnimationForSorting(aOther);
+    if (thisAnimation && otherAnimation) {
+      return thisAnimation->HasLowerCompositeOrderThan(*otherAnimation);
+    }
+    if (thisAnimation || otherAnimation) {
+      return thisAnimation;
+    }
+  }
+
   
   
   
   
-  MOZ_ASSERT(mAnimationIndex != aOther.mAnimationIndex || &aOther == this,
+  MOZ_ASSERT(mAnimationIndex != aOther.mAnimationIndex,
              "Animation indices should be unique");
 
+  
+  
   return mAnimationIndex < aOther.mAnimationIndex;
 }
 
