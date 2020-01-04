@@ -60,7 +60,6 @@ class GlobalHelperThreadState
     typedef Vector<SourceCompressionTask*, 0, SystemAllocPolicy> SourceCompressionTaskVector;
     typedef Vector<GCHelperState*, 0, SystemAllocPolicy> GCHelperStateVector;
     typedef Vector<GCParallelTask*, 0, SystemAllocPolicy> GCParallelTaskVector;
-    typedef mozilla::LinkedList<jit::IonBuilder> IonBuilderList;
 
     
     HelperThread* threads;
@@ -70,10 +69,6 @@ class GlobalHelperThreadState
 
     
     IonBuilderVector ionWorklist_, ionFinishedList_;
-
-    
-    IonBuilderList ionLazyLinkList_;
-    size_t ionLazyLinkListSize_;
 
     
     wasm::IonCompileTaskVector wasmWorklist_, wasmFinishedList_;
@@ -153,16 +148,6 @@ class GlobalHelperThreadState
         MOZ_ASSERT(isLocked());
         return ionFinishedList_;
     }
-    IonBuilderList& ionLazyLinkList() {
-        MOZ_ASSERT(TlsPerThreadData.get()->runtimeFromMainThread(),
-                   "Should only be mutated by the main thread.");
-        return ionLazyLinkList_;
-    }
-    size_t ionLazyLinkListSize() {
-        return ionLazyLinkListSize_;
-    }
-    void ionLazyLinkListRemove(jit::IonBuilder* builder);
-    void ionLazyLinkListAdd(jit::IonBuilder* builder);
 
     wasm::IonCompileTaskVector& wasmWorklist() {
         MOZ_ASSERT(isLocked());
@@ -413,7 +398,8 @@ StartOffThreadIonCompile(JSContext* cx, jit::IonBuilder* builder);
 
 
 void
-CancelOffThreadIonCompile(JSCompartment* compartment, JSScript* script);
+CancelOffThreadIonCompile(JSCompartment* compartment, JSScript* script,
+                          bool discardLazyLinkList = true);
 
 
 void

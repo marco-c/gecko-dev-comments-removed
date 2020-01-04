@@ -9318,7 +9318,7 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     if (isProfilerInstrumentationEnabled())
         ionScript->setHasProfilingInstrumentation();
 
-    script->setIonScript(cx, ionScript);
+    script->setIonScript(cx->runtime(), ionScript);
 
     
     ionScript->adoptFallbackStubs(&stubSpace_);
