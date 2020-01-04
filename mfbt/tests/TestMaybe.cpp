@@ -527,47 +527,21 @@ IncrementTag(BasicValue& aValue)
 }
 
 static void
-IncrementTagBy(BasicValue& aValue, int aAmount)
-{
-  gFunctionWasApplied = true;
-  aValue.SetTag(aValue.GetTag() + aAmount);
-}
-
-static void
 AccessValue(const BasicValue&)
-{
-  gFunctionWasApplied = true;
-}
-
-static void
-AccessValueWithArg(const BasicValue&, int)
 {
   gFunctionWasApplied = true;
 }
 
 struct IncrementTagFunctor
 {
-  IncrementTagFunctor() : mBy(1), mArgMoved(false) { }
+  IncrementTagFunctor() : mBy(1) { }
 
   void operator()(BasicValue& aValue)
   {
     aValue.SetTag(aValue.GetTag() + mBy.GetTag());
   }
 
-  void operator()(BasicValue& aValue, const BasicValue& aArg)
-  {
-    mArgMoved = false;
-    aValue.SetTag(aValue.GetTag() + aArg.GetTag());
-  }
-
-  void operator()(BasicValue& aValue, BasicValue&& aArg)
-  {
-    mArgMoved = true;
-    aValue.SetTag(aValue.GetTag() + aArg.GetTag());
-  }
-
   BasicValue mBy;
-  bool mArgMoved;
 };
 
 static bool
@@ -578,8 +552,6 @@ TestApply()
   Maybe<BasicValue> mayValue;
   mayValue.apply(&IncrementTag);
   mayValue.apply(&AccessValue);
-  mayValue.apply(&IncrementTagBy, 1);
-  mayValue.apply(&AccessValueWithArg, 1);
   MOZ_RELEASE_ASSERT(!gFunctionWasApplied);
 
   
@@ -590,21 +562,11 @@ TestApply()
   gFunctionWasApplied = false;
   mayValue.apply(&AccessValue);
   MOZ_RELEASE_ASSERT(gFunctionWasApplied);
-  gFunctionWasApplied = false;
-  mayValue.apply(&IncrementTagBy, 2);
-  MOZ_RELEASE_ASSERT(gFunctionWasApplied);
-  MOZ_RELEASE_ASSERT(mayValue->GetTag() == 4);
-  gFunctionWasApplied = false;
-  mayValue.apply(&AccessValueWithArg, 1);
-  MOZ_RELEASE_ASSERT(gFunctionWasApplied);
 
   
   const Maybe<BasicValue>& mayValueCRef = mayValue;
   gFunctionWasApplied = false;
   mayValueCRef.apply(&AccessValue);
-  MOZ_RELEASE_ASSERT(gFunctionWasApplied);
-  gFunctionWasApplied = false;
-  mayValueCRef.apply(&AccessValueWithArg, 1);
   MOZ_RELEASE_ASSERT(gFunctionWasApplied);
 
   
@@ -614,15 +576,17 @@ TestApply()
   mayValue.apply(tagIncrementer);
   MOZ_RELEASE_ASSERT(mayValue->GetTag() == 2);
   MOZ_RELEASE_ASSERT(tagIncrementer.mBy.GetStatus() == eWasConstructed);
-  mayValue.apply(tagIncrementer, BasicValue(2));
+
+  
+  int32_t two = 2;
+  gFunctionWasApplied = false;
+  mayValue = Some(BasicValue(2));
+  mayValue.apply([&](BasicValue& aVal) { aVal.SetTag(aVal.GetTag() * two); });
   MOZ_RELEASE_ASSERT(mayValue->GetTag() == 4);
-  MOZ_RELEASE_ASSERT(tagIncrementer.mBy.GetStatus() == eWasConstructed);
-  MOZ_RELEASE_ASSERT(tagIncrementer.mArgMoved == true);
-  BasicValue incrementBy(3);
-  mayValue.apply(tagIncrementer, incrementBy);
-  MOZ_RELEASE_ASSERT(mayValue->GetTag() == 7);
-  MOZ_RELEASE_ASSERT(tagIncrementer.mBy.GetStatus() == eWasConstructed);
-  MOZ_RELEASE_ASSERT(tagIncrementer.mArgMoved == false);
+  mayValue.apply([=](BasicValue& aVal) { aVal.SetTag(aVal.GetTag() * two); });
+  MOZ_RELEASE_ASSERT(mayValue->GetTag() == 8);
+  mayValueCRef.apply([&](const BasicValue& aVal) { gFunctionWasApplied = true; });
+  MOZ_RELEASE_ASSERT(gFunctionWasApplied == true);
 
   return true;
 }
@@ -641,43 +605,16 @@ TimesTwoAndResetOriginal(BasicValue& aValue)
   return tag * 2;
 }
 
-static int
-TimesNum(const BasicValue& aValue, int aNum)
-{
-  return aValue.GetTag() * aNum;
-}
-
-static int
-TimesNumAndResetOriginal(BasicValue& aValue, int aNum)
-{
-  int tag = aValue.GetTag();
-  aValue.SetTag(1);
-  return tag * aNum;
-}
-
 struct MultiplyTagFunctor
 {
-  MultiplyTagFunctor() : mBy(2), mArgMoved(false) { }
+  MultiplyTagFunctor() : mBy(2) { }
 
   int operator()(BasicValue& aValue)
   {
     return aValue.GetTag() * mBy.GetTag();
   }
 
-  int operator()(BasicValue& aValue, const BasicValue& aArg)
-  {
-    mArgMoved = false;
-    return aValue.GetTag() * aArg.GetTag();
-  }
-
-  int operator()(BasicValue& aValue, BasicValue&& aArg)
-  {
-    mArgMoved = true;
-    return aValue.GetTag() * aArg.GetTag();
-  }
-
   BasicValue mBy;
-  bool mArgMoved;
 };
 
 static bool
@@ -690,11 +627,6 @@ TestMap()
                        DECLTYPE(mayValue.map(&TimesTwo))>::value,
                 "map(TimesTwo) should return a Maybe<int>");
   MOZ_RELEASE_ASSERT(mayValue.map(&TimesTwoAndResetOriginal) == Nothing());
-  MOZ_RELEASE_ASSERT(mayValue.map(&TimesNum, 3) == Nothing());
-  static_assert(IsSame<Maybe<int>,
-                       DECLTYPE(mayValue.map(&TimesNum, 3))>::value,
-                "map(TimesNum, 3) should return a Maybe<int>");
-  MOZ_RELEASE_ASSERT(mayValue.map(&TimesNumAndResetOriginal, 3) == Nothing());
 
   
   mayValue = Some(BasicValue(2));
@@ -702,9 +634,6 @@ TestMap()
   MOZ_RELEASE_ASSERT(mayValue.map(&TimesTwoAndResetOriginal) == Some(4));
   MOZ_RELEASE_ASSERT(mayValue->GetTag() == 1);
   mayValue = Some(BasicValue(2));
-  MOZ_RELEASE_ASSERT(mayValue.map(&TimesNum, 3) == Some(6));
-  MOZ_RELEASE_ASSERT(mayValue.map(&TimesNumAndResetOriginal, 3) == Some(6));
-  MOZ_RELEASE_ASSERT(mayValue->GetTag() == 1);
 
   
   mayValue->SetTag(2);
@@ -713,27 +642,31 @@ TestMap()
   static_assert(IsSame<Maybe<int>,
                        DECLTYPE(mayValueCRef.map(&TimesTwo))>::value,
                 "map(TimesTwo) should return a Maybe<int>");
-  MOZ_RELEASE_ASSERT(mayValueCRef.map(&TimesNum, 3) == Some(6));
-  static_assert(IsSame<Maybe<int>,
-                       DECLTYPE(mayValueCRef.map(&TimesNum, 3))>::value,
-                "map(TimesNum, 3) should return a Maybe<int>");
 
   
+  MultiplyTagFunctor tagMultiplier;
+  MOZ_RELEASE_ASSERT(tagMultiplier.mBy.GetStatus() == eWasConstructed);
+  MOZ_RELEASE_ASSERT(mayValue.map(tagMultiplier) == Some(4));
+  MOZ_RELEASE_ASSERT(tagMultiplier.mBy.GetStatus() == eWasConstructed);
+
   
-  
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  int two = 2;
+  mayValue = Some(BasicValue(2));
+  Maybe<int> mappedValue =
+    mayValue.map([&](const BasicValue& aVal) {
+      return aVal.GetTag() * two;
+    });
+  MOZ_RELEASE_ASSERT(mappedValue == Some(4));
+  mappedValue =
+    mayValue.map([=](const BasicValue& aVal) {
+      return aVal.GetTag() * two;
+    });
+  MOZ_RELEASE_ASSERT(mappedValue == Some(4));
+  mappedValue =
+    mayValueCRef.map([&](const BasicValue& aVal) {
+      return aVal.GetTag() * two;
+    });
+  MOZ_RELEASE_ASSERT(mappedValue == Some(4));
 
   return true;
 }
