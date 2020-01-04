@@ -444,7 +444,9 @@ public:
 protected:
   
   
+  
   nsChildView* mWidget; 
+  RefPtr<TextEventDispatcher> mDispatcher;
 
   
   
@@ -937,14 +939,6 @@ private:
   already_AddRefed<mozilla::TextRangeArray>
     CreateTextRangeArray(NSAttributedString *aAttrString,
                          NSRange& aSelectedRange);
-
-  
-
-
-
-
-
-  void InitCompositionEvent(WidgetCompositionEvent& aCompositionEvent);
 
   
 
