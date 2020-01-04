@@ -197,6 +197,10 @@ var SessionFileInternal = {
 
   
   
+  _initializationStarted: false,
+
+  
+  
   get latestUpgradeBackupID() {
     try {
       return Services.prefs.getCharPref(PREF_UPGRADE_BACKUP);
@@ -205,7 +209,10 @@ var SessionFileInternal = {
     }
   },
 
+  
   read: Task.async(function* () {
+    this._initializationStarted = true;
+
     let result;
     let noFilesFound = true;
     
@@ -215,6 +222,7 @@ var SessionFileInternal = {
       try {
         let path = this.Paths[key];
         let startMs = Date.now();
+
         let source = yield OS.File.read(path, { encoding: "utf-8" });
         let parsed = JSON.parse(source);
 
@@ -271,15 +279,35 @@ var SessionFileInternal = {
 
     
     
-    let initialized = SessionWorker.post("init", [result.origin, this.Paths, {
+    let promiseInitialized = SessionWorker.post("init", [result.origin, this.Paths, {
       maxUpgradeBackups: Preferences.get(PREF_MAX_UPGRADE_BACKUPS, 3),
       maxSerializeBack: Preferences.get(PREF_MAX_SERIALIZE_BACK, 10),
       maxSerializeForward: Preferences.get(PREF_MAX_SERIALIZE_FWD, -1)
     }]);
 
-    initialized.catch(Promise.reject).then(() => this._deferredInitialized.resolve());
+    promiseInitialized.catch(err => {
+      
+      Promise.reject(err);
+    }).then(() => this._deferredInitialized.resolve());
 
     return result;
+  }),
+
+  
+  
+  _postToWorker: Task.async(function*(...args) {
+    if (!this._initializationStarted) {
+      
+      
+      
+
+      
+      
+      
+      this.read();
+    }
+    yield this._deferredInitialized.promise;
+    return SessionWorker.post(...args)
   }),
 
   write: function (aData) {
@@ -300,7 +328,7 @@ var SessionFileInternal = {
 
     this._attempts++;
     let options = {isFinalWrite, performShutdownCleanup};
-    let promise = this._deferredInitialized.promise.then(() => SessionWorker.post("write", [aData, options]));
+    let promise = this._postToWorker("write", [aData, options]);
 
     
     promise = promise.then(msg => {
@@ -350,7 +378,7 @@ var SessionFileInternal = {
   },
 
   wipe: function () {
-    return this._deferredInitialized.promise.then(() => SessionWorker.post("wipe"));
+    return this._postToWorker("wipe");
   },
 
   _recordTelemetry: function(telemetry) {
