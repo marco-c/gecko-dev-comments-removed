@@ -86,15 +86,6 @@ menuitem[src] > .menu-iconic-left > .menu-iconic-icon {
   -moz-box-pack: end;
 }
 
-
-
-
-@media not all and (-moz-mac-lion-theme) {
-  .menu-right {
-    margin-inline-end: -10px;
-  }
-}
-
 .menu-right {
   list-style-image: none;
   -moz-appearance: menuarrow;
