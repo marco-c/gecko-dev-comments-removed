@@ -1301,15 +1301,11 @@ MSimdConvert::AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinition
           MSimdConstant::New(alloc, SimdConstant::SplatX4(BiasValue), MIRType::Float32x4);
         addTo->add(bias);
         MInstruction* fhi_debiased =
-          MSimdBinaryArith::New(alloc, fhi, bias, MSimdBinaryArith::Op_sub);
-        addTo->add(fhi_debiased);
+          MSimdBinaryArith::AddLegalized(alloc, addTo, fhi, bias, MSimdBinaryArith::Op_sub);
 
         
-        MInstruction* result =
-          MSimdBinaryArith::New(alloc, fhi_debiased, flo, MSimdBinaryArith::Op_add);
-        addTo->add(result);
-
-        return result;
+        return MSimdBinaryArith::AddLegalized(alloc, addTo, fhi_debiased, flo,
+                                              MSimdBinaryArith::Op_add);
     }
 
     if (fromType == MIRType::Float32x4 && toType == MIRType::Int32x4) {
@@ -1341,10 +1337,10 @@ MSimdBinaryComp::AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinit
         addTo->add(bias);
 
         
-        MInstruction* bleft = MSimdBinaryArith::New(alloc, left, bias, MSimdBinaryArith::Op_add);
-        addTo->add(bleft);
-        MInstruction* bright = MSimdBinaryArith::New(alloc, right, bias, MSimdBinaryArith::Op_add);
-        addTo->add(bright);
+        MInstruction* bleft =
+          MSimdBinaryArith::AddLegalized(alloc, addTo, left, bias, MSimdBinaryArith::Op_add);
+        MInstruction* bright =
+          MSimdBinaryArith::AddLegalized(alloc, addTo, right, bias, MSimdBinaryArith::Op_add);
 
         
         MInstruction* result = MSimdBinaryComp::New(alloc, bleft, bright, op, SimdSign::Signed);
@@ -1362,6 +1358,73 @@ MSimdBinaryComp::AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinit
 
     
     MInstruction* result = MSimdBinaryComp::New(alloc, left, right, op, sign);
+    addTo->add(result);
+    return result;
+}
+
+MInstruction*
+MSimdBinaryArith::AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinition* left,
+                               MDefinition* right, Operation op)
+{
+    MOZ_ASSERT(left->type() == right->type());
+    MIRType opType = left->type();
+    MOZ_ASSERT(IsSimdType(opType));
+
+    
+    if (opType == MIRType::Int8x16 && op == Op_mul) {
+        
+        
+
+        MInstruction* wideL = MSimdReinterpretCast::New(alloc, left, MIRType::Int16x8);
+        addTo->add(wideL);
+        MInstruction* wideR = MSimdReinterpretCast::New(alloc, right, MIRType::Int16x8);
+        addTo->add(wideR);
+
+        
+        
+
+        
+        MInstruction* eight = MConstant::New(alloc, Int32Value(8));
+        addTo->add(eight);
+        MInstruction* evenL = wideL;
+        MInstruction* evenR = wideR;
+        MInstruction* oddL =
+          MSimdShift::AddLegalized(alloc, addTo, wideL, eight, MSimdShift::ursh);
+        MInstruction* oddR =
+          MSimdShift::AddLegalized(alloc, addTo, wideR, eight, MSimdShift::ursh);
+
+        
+        
+        
+        
+
+        
+        MInstruction* even = MSimdBinaryArith::AddLegalized(alloc, addTo, evenL, evenR, Op_mul);
+        MInstruction* odd = MSimdBinaryArith::AddLegalized(alloc, addTo, oddL, oddR, Op_mul);
+
+        
+        
+
+        MInstruction* mask =
+          MSimdConstant::New(alloc, SimdConstant::SplatX8(int16_t(0x00ff)), MIRType::Int16x8);
+        addTo->add(mask);
+        even = MSimdBinaryBitwise::New(alloc, even, mask, MSimdBinaryBitwise::and_);
+        addTo->add(even);
+        odd = MSimdShift::AddLegalized(alloc, addTo, odd, eight, MSimdShift::lsh);
+
+        
+        
+
+        
+        MInstruction* result = MSimdBinaryBitwise::New(alloc, even, odd, MSimdBinaryBitwise::or_);
+        addTo->add(result);
+        result = MSimdReinterpretCast::New(alloc, result, opType);
+        addTo->add(result);
+        return result;
+    }
+
+    
+    MInstruction* result = MSimdBinaryArith::New(alloc, left, right, op);
     addTo->add(result);
     return result;
 }

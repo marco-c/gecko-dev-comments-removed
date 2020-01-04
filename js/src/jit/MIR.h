@@ -2383,6 +2383,12 @@ class MSimdBinaryArith
         return new(alloc) MSimdBinaryArith(left, right, op);
     }
 
+    
+    
+    
+    static MInstruction* AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinition* left,
+                                      MDefinition* right, Operation op);
+
     AliasSet getAliasSet() const override {
         return AliasSet::None();
     }
