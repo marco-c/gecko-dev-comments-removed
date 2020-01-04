@@ -216,11 +216,6 @@ public:
   
 
 
-  void SetScrollVisibility(bool aState);
-
-  
-
-
 
 
   void HandleWheelEventAsDefaultAction(mozilla::WidgetWheelEvent* aEvent);
@@ -337,10 +332,6 @@ private:
   RefPtr<nsRootPresContext> mRootPresContextRegisteredWith;
 
   mozilla::UniquePtr<PluginFrameDidCompositeObserver> mDidCompositeObserver;
-
-  
-  
-  bool mIsHiddenDueToScroll;
 };
 
 class nsDisplayPlugin : public nsDisplayItem {

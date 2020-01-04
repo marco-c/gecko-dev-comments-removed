@@ -229,8 +229,6 @@ public:
   
   
   bool NeedsScrollImageLayer();
-  
-  bool UpdateScrollState(bool aIsScrolling);
 
   void DidComposite();
 
@@ -411,9 +409,6 @@ private:
 #endif
 
   bool mWaitingForPaint;
-#if defined(XP_WIN)
-  bool mScrollState;
-#endif
 };
 
 #endif 

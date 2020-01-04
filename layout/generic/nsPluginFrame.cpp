@@ -153,7 +153,6 @@ nsPluginFrame::nsPluginFrame(nsStyleContext* aContext)
   : nsFrame(aContext)
   , mInstanceOwner(nullptr)
   , mReflowCallbackPosted(false)
-  , mIsHiddenDueToScroll(false)
 {
   MOZ_LOG(sPluginFrameLog, LogLevel::Debug,
          ("Created new nsPluginFrame %p\n", this));
@@ -418,7 +417,7 @@ nsPluginFrame::GetWidgetConfiguration(nsTArray<nsIWidget::Configuration>* aConfi
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   if (XRE_IsContentProcess()) {
     configuration->mWindowID = (uintptr_t)mWidget->GetNativeData(NS_NATIVE_PLUGIN_PORT);
-    configuration->mVisible = !mIsHiddenDueToScroll && mWidget->IsVisible();
+    configuration->mVisible = mWidget->IsVisible();
 
   }
 #endif 
@@ -772,24 +771,6 @@ nsPluginFrame::IsHidden(bool aCheckVisibilityStyle) const
   return false;
 }
 
-
-
-void
-nsPluginFrame::SetScrollVisibility(bool aState)
-{
-  
-  if (mWidget) {
-    bool changed = mIsHiddenDueToScroll != aState;
-    mIsHiddenDueToScroll = aState;
-    
-    
-    if (changed && mInstanceOwner) {
-      mInstanceOwner->UpdateScrollState(mIsHiddenDueToScroll);
-      SchedulePaint();
-    }
-  }
-}
-
 mozilla::LayoutDeviceIntPoint
 nsPluginFrame::GetRemoteTabChromeOffset()
 {
@@ -1138,13 +1119,6 @@ nsPluginFrame::DidSetWidgetGeometry()
 bool
 nsPluginFrame::IsOpaque() const
 {
-#if defined(MOZ_WIDGET_GTK)
-  
-  
-  if (mIsHiddenDueToScroll) {
-    return false;
-  }
-#endif
 #if defined(XP_MACOSX)
   return false;
 #elif defined(MOZ_WIDGET_ANDROID)
@@ -1194,14 +1168,6 @@ nsPluginFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists)
 {
-#if defined(MOZ_WIDGET_GTK)
-  
-  
-  if (mIsHiddenDueToScroll) {
-    return;
-  }
-#endif
-
   
   if (!IsVisibleOrCollapsedForPainting(aBuilder))
     return;
