@@ -601,7 +601,10 @@ typedef void
 (* JSFinalizeCallback)(JSFreeOp* fop, JSFinalizeStatus status, bool isCompartment, void* data);
 
 typedef void
-(* JSWeakPointerCallback)(JSRuntime* rt, void* data);
+(* JSWeakPointerZoneGroupCallback)(JSRuntime* rt, void* data);
+
+typedef void
+(* JSWeakPointerCompartmentCallback)(JSRuntime* rt, JSCompartment* comp, void* data);
 
 typedef bool
 (* JSInterruptCallback)(JSContext* cx);
@@ -1735,11 +1738,27 @@ JS_RemoveFinalizeCallback(JSRuntime* rt, JSFinalizeCallback cb);
 
 
 
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
-JS_AddWeakPointerCallback(JSRuntime* rt, JSWeakPointerCallback cb, void* data);
+JS_AddWeakPointerZoneGroupCallback(JSRuntime* rt, JSWeakPointerZoneGroupCallback cb, void* data);
 
 extern JS_PUBLIC_API(void)
-JS_RemoveWeakPointerCallback(JSRuntime* rt, JSWeakPointerCallback cb);
+JS_RemoveWeakPointerZoneGroupCallback(JSRuntime* rt, JSWeakPointerZoneGroupCallback cb);
+
+extern JS_PUBLIC_API(bool)
+JS_AddWeakPointerCompartmentCallback(JSRuntime* rt, JSWeakPointerCompartmentCallback cb,
+                                     void* data);
+
+extern JS_PUBLIC_API(void)
+JS_RemoveWeakPointerCompartmentCallback(JSRuntime* rt, JSWeakPointerCompartmentCallback cb);
 
 extern JS_PUBLIC_API(void)
 JS_UpdateWeakPointerAfterGC(JS::Heap<JSObject*>* objp);

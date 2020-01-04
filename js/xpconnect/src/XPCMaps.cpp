@@ -95,7 +95,6 @@ JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(XPCJSRuntime* runtime)
     
 
     nsTArray<nsXPCWrappedJS*>& dying = runtime->WrappedJSToReleaseArray();
-    MOZ_ASSERT(dying.IsEmpty());
 
     for (Map::Enum e(mTable); !e.empty(); e.popFront()) {
         nsXPCWrappedJS* wrapper = e.front().value();
