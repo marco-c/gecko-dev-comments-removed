@@ -111,6 +111,19 @@ def paramlistAsNative(m, empty='void'):
                                            location=None,
                                            realtype=m.realtype)))
 
+    
+    
+    if len(l) == len(m.params):
+        paramIter = len(m.params) - 1
+        while (paramIter >= 0 and m.params[paramIter].optional and
+                m.params[paramIter].paramtype == "out"):
+            t = m.params[paramIter].type
+            
+            if t == "AString" or t == "ACString" or t == "DOMString" or t == "AUTF8String":
+                break
+            l[paramIter] += " = nullptr"
+            paramIter -= 1
+
     if len(l) == 0:
         return empty
 
