@@ -14,6 +14,7 @@ add_task(function* () {
     "example.com": "security-state-secure",
     "nocert.example.com": "security-state-broken",
     "rc4.example.com": "security-state-weak",
+    "localhost": "security-state-local",
   };
 
   yield new promise(resolve => {
@@ -52,6 +53,8 @@ add_task(function* () {
 
 
 
+
+
   function* performRequests() {
     
     
@@ -82,14 +85,19 @@ add_task(function* () {
     debuggee.performRequests(1, "https://rc4.example.com" + CORS_SJS_PATH);
     yield done;
 
-    is(RequestsMenu.itemCount, 4, "Four events logged.");
+    done = waitForSecurityBrokenNetworkEvent(true);
+    info("Requesting a resource over HTTP to localhost.");
+    debuggee.performRequests(1, "http://localhost" + CORS_SJS_PATH);
+    yield done;
+
+    is(RequestsMenu.itemCount, 5, "Five events logged.");
   }
 
   
 
 
 
-  function waitForSecurityBrokenNetworkEvent() {
+  function waitForSecurityBrokenNetworkEvent(networkError) {
     let awaitedEvents = [
       "UPDATING_REQUEST_HEADERS",
       "RECEIVED_REQUEST_HEADERS",
@@ -101,6 +109,12 @@ add_task(function* () {
       "UPDATING_EVENT_TIMINGS",
       "RECEIVED_EVENT_TIMINGS",
     ];
+
+    
+    
+    if (networkError) {
+      awaitedEvents.splice(4, 1);
+    }
 
     let promises = awaitedEvents.map((event) => {
       return monitor.panelWin.once(EVENTS[event]);
