@@ -228,7 +228,18 @@ this.ReaderMode = {
             }
           }
         }
-        if (xhr.responseURL != url) {
+        let responseURL = xhr.responseURL;
+        let givenURL = url;
+        
+        
+        try {
+          responseURL = Services.io.newURI(responseURL, null, null).spec;
+        } catch (ex) {  }
+        try {
+          givenURL = Services.io.newURI(givenURL, null, null).spec;
+        } catch (ex) {  }
+
+        if (responseURL != givenURL) {
           
           
           reject({newURL: xhr.responseURL});
