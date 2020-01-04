@@ -13,8 +13,7 @@ function messages(state = Immutable.List(), action) {
     case constants.MESSAGE_ADD:
       let newMessage = action.message;
 
-      
-      if (newMessage.data && newMessage.data.level === "clear") {
+      if (newMessage.type === "clear") {
         return Immutable.List([newMessage]);
       }
 
