@@ -653,8 +653,6 @@ public:
 
   void EnableReadLock();
 
-  void SetReadLock(TextureReadLock* aLock);
-
   TextureReadLock* GetReadLock() { return mReadLock; }
 
   bool IsReadLocked() const;
@@ -713,7 +711,7 @@ protected:
   
   
   
-  bool mPendingReadUnlock;
+  bool mUpdated;
   bool mInUse;
 
   bool mAddedToCompositableClient;

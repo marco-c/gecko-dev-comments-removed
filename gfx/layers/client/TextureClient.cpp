@@ -452,13 +452,7 @@ TextureClient::UnlockActor() const
 bool
 TextureClient::IsReadLocked() const
 {
-  
-  
-  
-  
-  
-  
-  return mReadLock && mReadLock->GetReadCount() > 1 && !mPendingReadUnlock;
+  return mReadLock && mReadLock->GetReadCount() > 1;
 }
 
 bool
@@ -535,12 +529,7 @@ TextureClient::Unlock()
   }
 
   if (mOpenMode & OpenMode::OPEN_WRITE) {
-    if (mReadLock && !mPendingReadUnlock) {
-      
-      
-      mReadLock->ReadLock();
-    }
-    mPendingReadUnlock = true;
+    mUpdated = true;
   }
 
   mData->Unlock();
@@ -555,27 +544,18 @@ TextureClient::EnableReadLock()
 {
   if (!mReadLock) {
     mReadLock = TextureReadLock::Create(mAllocator);
-    if (mPendingReadUnlock) {
-      
-      
-      mReadLock->ReadLock();
-    }
   }
-}
-
-void
-TextureClient::SetReadLock(TextureReadLock* aLock)
-{
-  MOZ_ASSERT(!mReadLock);
-  mReadLock = aLock;
 }
 
 void
 TextureClient::SerializeReadLock(ReadLockDescriptor& aDescriptor)
 {
-  if (mReadLock && mPendingReadUnlock) {
+  if (mReadLock && mUpdated) {
+    
+    
+    mReadLock->ReadLock();
     mReadLock->Serialize(aDescriptor);
-    mPendingReadUnlock = false;
+    mUpdated = false;
   } else {
     aDescriptor = null_t();
   }
@@ -583,10 +563,7 @@ TextureClient::SerializeReadLock(ReadLockDescriptor& aDescriptor)
 
 TextureClient::~TextureClient()
 {
-  if (mPendingReadUnlock && mReadLock) {
-    mReadLock->ReadUnlock();
-    mReadLock = nullptr;
-  }
+  mReadLock = nullptr;
   Destroy(false);
 }
 
@@ -1094,7 +1071,7 @@ TextureClient::TextureClient(TextureData* aData, TextureFlags aFlags, ClientIPCA
 , mExpectedDtRefs(0)
 #endif
 , mIsLocked(false)
-, mPendingReadUnlock(false)
+, mUpdated(false)
 , mInUse(false)
 , mAddedToCompositableClient(false)
 , mWorkaroundAnnoyingSharedSurfaceLifetimeIssues(false)
