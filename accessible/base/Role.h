@@ -972,7 +972,17 @@ enum Role {
 
   TEXT = 166,
 
-  LAST_ROLE = TEXT
+  
+
+
+  DETAILS = 167,
+
+  
+
+
+  SUMMARY = 168,
+
+  LAST_ROLE = SUMMARY
 };
 
 } 

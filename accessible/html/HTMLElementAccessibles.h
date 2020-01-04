@@ -92,6 +92,29 @@ protected:
   virtual ~HTMLOutputAccessible() {}
 };
 
+
+
+
+class HTMLSummaryAccessible : public HyperTextAccessibleWrap
+{
+
+public:
+  enum { eAction_Click = 0 };
+
+  HTMLSummaryAccessible(nsIContent* aContent, DocAccessible* aDoc);
+
+  
+  virtual uint64_t NativeState() override;
+
+  
+  virtual uint8_t ActionCount() override;
+  virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
+  virtual bool DoAction(uint8_t aIndex) override;
+
+  
+  virtual bool IsWidget() const override;
+};
+
 } 
 } 
 
