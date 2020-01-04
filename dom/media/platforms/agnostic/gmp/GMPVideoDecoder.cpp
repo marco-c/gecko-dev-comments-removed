@@ -167,11 +167,20 @@ GMPVideoDecoder::CreateFrame(MediaRawData* aSample)
 void
 GMPVideoDecoder::GMPInitDone(GMPVideoDecoderProxy* aGMP, GMPVideoHost* aHost)
 {
+  MOZ_ASSERT(IsOnGMPThread());
+
   if (!aGMP) {
-    mInitPromise.Reject(MediaDataDecoder::DecoderFailureReason::INIT_ERROR, __func__);
+    mInitPromise.RejectIfExists(MediaDataDecoder::DecoderFailureReason::INIT_ERROR, __func__);
     return;
   }
   MOZ_ASSERT(aHost);
+
+  if (mInitPromise.IsEmpty()) {
+    
+    
+    aGMP->Close();
+    return;
+  }
 
   GMPVideoCodec codec;
   memset(&codec, 0, sizeof(codec));
@@ -294,6 +303,7 @@ GMPVideoDecoder::Shutdown()
   if (!mGMP) {
     return NS_ERROR_FAILURE;
   }
+  
   mGMP->Close();
   mGMP = nullptr;
 

@@ -142,8 +142,16 @@ GMPAudioDecoder::GetNodeId()
 void
 GMPAudioDecoder::GMPInitDone(GMPAudioDecoderProxy* aGMP)
 {
+  MOZ_ASSERT(IsOnGMPThread());
+
   if (!aGMP) {
-    mInitPromise.Reject(MediaDataDecoder::DecoderFailureReason::INIT_ERROR, __func__);
+    mInitPromise.RejectIfExists(MediaDataDecoder::DecoderFailureReason::INIT_ERROR, __func__);
+    return;
+  }
+  if (mInitPromise.IsEmpty()) {
+    
+    
+    aGMP->Close();
     return;
   }
   nsTArray<uint8_t> codecSpecific;
@@ -241,6 +249,7 @@ GMPAudioDecoder::Shutdown()
   if (!mGMP) {
     return NS_ERROR_FAILURE;
   }
+  
   mGMP->Close();
   mGMP = nullptr;
 
