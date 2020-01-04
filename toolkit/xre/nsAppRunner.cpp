@@ -758,7 +758,9 @@ bool gSafeMode = false;
 
 
 class nsXULAppInfo : public nsIXULAppInfo,
+#ifdef E10S_TESTING_ONLY
                      public nsIObserver,
+#endif
 #ifdef XP_WIN
                      public nsIWinAppHelper,
 #endif
@@ -774,7 +776,9 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIXULAPPINFO
   NS_DECL_NSIXULRUNTIME
+#ifdef E10S_TESTING_ONLY
   NS_DECL_NSIOBSERVER
+#endif
 #ifdef MOZ_CRASHREPORTER
   NS_DECL_NSICRASHREPORTER
   NS_DECL_NSIFINISHDUMPINGCALLBACK
@@ -787,7 +791,9 @@ public:
 NS_INTERFACE_MAP_BEGIN(nsXULAppInfo)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIXULRuntime)
   NS_INTERFACE_MAP_ENTRY(nsIXULRuntime)
+#ifdef E10S_TESTING_ONLY
   NS_INTERFACE_MAP_ENTRY(nsIObserver)
+#endif
 #ifdef XP_WIN
   NS_INTERFACE_MAP_ENTRY(nsIWinAppHelper)
 #endif
@@ -991,6 +997,7 @@ static bool gBrowserTabsRemoteAutostart = false;
 static nsString gBrowserTabsRemoteDisabledReason;
 static bool gBrowserTabsRemoteAutostartInitialized = false;
 
+#ifdef E10S_TESTING_ONLY
 NS_IMETHODIMP
 nsXULAppInfo::Observe(nsISupports *aSubject, const char *aTopic, const char16_t *aData) {
   if (!nsCRT::strcmp(aTopic, "getE10SBlocked")) {
@@ -1004,6 +1011,7 @@ nsXULAppInfo::Observe(nsISupports *aSubject, const char *aTopic, const char16_t 
   }
   return NS_ERROR_FAILURE;
 }
+#endif
 
 NS_IMETHODIMP
 nsXULAppInfo::GetBrowserTabsRemoteAutostart(bool* aResult)
@@ -4590,6 +4598,7 @@ XRE_IsContentProcess()
   return XRE_GetProcessType() == GeckoProcessType_Content;
 }
 
+#ifdef E10S_TESTING_ONLY
 static void
 LogE10sBlockedReason(const char *reason) {
   gBrowserTabsRemoteDisabledReason.Assign(NS_ConvertASCIItoUTF16(reason));
@@ -4602,6 +4611,7 @@ LogE10sBlockedReason(const char *reason) {
     console->LogStringMessage(msg.get());
   }
 }
+#endif
 
 enum {
   kE10sEnabledByUser = 0,
@@ -4630,23 +4640,22 @@ mozilla::BrowserTabsRemoteAutostart()
   } else {
     status = kE10sDisabledByUser;
   }
-
-#ifdef E10S_TESTING_ONLY
-  bool e10sAllowed = true;
+#if !defined(E10S_TESTING_ONLY)
+  
+  
+  
+  bool testPref = gfxPrefs::GetSingleton().LayersOffMainThreadCompositionTestingEnabled();
+  if (testPref && optInPref) {
+    gBrowserTabsRemoteAutostart = true;
+  }
 #else
   
-  
-  
-  bool e10sAllowed = Preferences::GetDefaultCString("app.update.channel").EqualsLiteral("beta") ||
-                     Preferences::GetBool("layers.offmainthreadcomposition.testing.enabled", false);
-#endif
-
   
   bool disabledForA11y = Preferences::GetBool("browser.tabs.remote.disabled-for-a11y", false);
   
   bool disabledForVR = Preferences::GetBool("dom.vr.enabled", false);
 
-  if (e10sAllowed && prefEnabled) {
+  if (prefEnabled) {
     if (disabledForA11y) {
       status = kE10sDisabledForAccessibility;
       LogE10sBlockedReason("An accessibility tool is or was active. See bug 1115956.");
@@ -4656,14 +4665,15 @@ mozilla::BrowserTabsRemoteAutostart()
       gBrowserTabsRemoteAutostart = true;
     }
   }
+#endif
 
 #if defined(XP_MACOSX)
   
   
   if (gBrowserTabsRemoteAutostart) {
     
-    bool accelDisabled = Preferences::GetBool("layers.acceleration.disabled", false) &&
-                         !Preferences::GetBool("layers.acceleration.force-enabled", false);
+    bool accelDisabled = gfxPrefs::GetSingleton().LayersAccelerationDisabled() &&
+                         !gfxPrefs::LayersAccelerationForceEnabled();
 
     accelDisabled = accelDisabled || !nsCocoaFeatures::AccelerateByDefault();
 
@@ -4691,7 +4701,9 @@ mozilla::BrowserTabsRemoteAutostart()
       gBrowserTabsRemoteAutostart = false;
 
       status = kE10sDisabledForMacGfx;
+#ifdef E10S_TESTING_ONLY
       LogE10sBlockedReason("Hardware acceleration is disabled");
+#endif
     }
   }
 #endif 
