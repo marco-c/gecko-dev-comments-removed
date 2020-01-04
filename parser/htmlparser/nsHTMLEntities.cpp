@@ -92,9 +92,8 @@ nsHTMLEntities::AddRefTable(void)
          node < node_end; ++node) {
 
       
-      EntityNodeEntry* entry =
-        static_cast<EntityNodeEntry*>
-                   (PL_DHashTableAdd(gEntityToUnicode, node->mStr, fallible));
+      auto entry = static_cast<EntityNodeEntry*>
+                              (gEntityToUnicode->Add(node->mStr, fallible));
       NS_ASSERTION(entry, "Error adding an entry");
       
       if (!entry->node)
@@ -102,9 +101,8 @@ nsHTMLEntities::AddRefTable(void)
 
       
       entry = static_cast<EntityNodeEntry*>
-                         (PL_DHashTableAdd(gUnicodeToEntity,
-                                           NS_INT32_TO_PTR(node->mUnicode),
-                                           fallible));
+                         (gUnicodeToEntity->Add(NS_INT32_TO_PTR(node->mUnicode),
+                                                fallible));
       NS_ASSERTION(entry, "Error adding an entry");
       
       if (!entry->node)

@@ -759,8 +759,7 @@ nsHostResolver::ResolveHost(const char            *host,
             
 
             nsHostKey key = { host, flags, af, netInterface };
-            nsHostDBEnt *he = static_cast<nsHostDBEnt *>
-                (PL_DHashTableAdd(&mDB, &key, fallible));
+            auto he = static_cast<nsHostDBEnt*>(mDB.Add(&key, fallible));
 
             
             if (!he) {

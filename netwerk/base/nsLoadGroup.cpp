@@ -491,9 +491,8 @@ nsLoadGroup::AddRequest(nsIRequest *request, nsISupports* ctxt)
     
     
 
-    RequestMapEntry *entry = static_cast<RequestMapEntry *>
-        (PL_DHashTableAdd(&mRequests, request, fallible));
-
+    auto entry =
+        static_cast<RequestMapEntry*>(mRequests.Add(request, fallible));
     if (!entry) {
         return NS_ERROR_OUT_OF_MEMORY;
     }
