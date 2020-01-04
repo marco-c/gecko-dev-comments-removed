@@ -995,7 +995,7 @@ Promise::PerformMicroTaskCheckpoint()
   AutoSafeJSContext cx;
 
   do {
-    nsCOMPtr<nsIRunnable> runnable = microtaskQueue.front();
+    nsCOMPtr<nsIRunnable> runnable = microtaskQueue.front().forget();
     MOZ_ASSERT(runnable);
 
     
@@ -1032,7 +1032,7 @@ Promise::PerformWorkerMicroTaskCheckpoint()
       }
     }
 
-    nsCOMPtr<nsIRunnable> runnable = microtaskQueue->front();
+    nsCOMPtr<nsIRunnable> runnable = microtaskQueue->front().forget();
     MOZ_ASSERT(runnable);
 
     
@@ -1062,7 +1062,7 @@ Promise::PerformWorkerDebuggerMicroTaskCheckpoint()
       break;
     }
 
-    nsCOMPtr<nsIRunnable> runnable = microtaskQueue->front();
+    nsCOMPtr<nsIRunnable> runnable = microtaskQueue->front().forget();
     MOZ_ASSERT(runnable);
 
     
