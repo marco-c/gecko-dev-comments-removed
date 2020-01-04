@@ -314,11 +314,6 @@ public:
   bool IsValueValidForProperty(const nsCSSProperty aPropID,
                                const nsAString&    aPropValue);
 
-  
-  
-  
-  static uint8_t ControlCharVisibilityDefault();
-
 protected:
   
   
