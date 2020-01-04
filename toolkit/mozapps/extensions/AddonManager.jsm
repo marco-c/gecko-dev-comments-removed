@@ -679,6 +679,7 @@ var AddonManagerInternal = {
   startupChanges: {},
   
   telemetryDetails: {},
+  upgradeListeners: new Map(),
 
   recordTimestamp: function(name, value) {
     this.TelemetryTimestamps.add(name, value);
@@ -1462,7 +1463,7 @@ var AddonManagerInternal = {
                     AddonManager.shouldAutoUpdate(aAddon)) {
                   
                   
-                  logger.debug("Starting install of ${id}", aAddon);
+                  logger.debug(`Starting upgrade install of ${aAddon.id}`);
                   aInstall.install();
                 }
               },
@@ -2247,6 +2248,56 @@ var AddonManagerInternal = {
       else
         pos++;
     }
+  },
+  
+
+
+
+
+
+
+
+
+  addUpgradeListener: function(aInstanceID, aCallback) {
+   if (!aInstanceID || typeof aInstanceID != "symbol")
+     throw Components.Exception("aInstanceID must be a symbol",
+                                Cr.NS_ERROR_INVALID_ARG);
+
+  if (!aCallback || typeof aCallback != "function")
+    throw Components.Exception("aCallback must be a function",
+                               Cr.NS_ERROR_INVALID_ARG);
+
+   this.getAddonByInstanceID(aInstanceID).then(wrapper => {
+     if (!wrapper) {
+       throw Error("No addon matching instanceID:", aInstanceID.toString());
+     }
+     let addonId = wrapper.addonId();
+     logger.debug(`Registering upgrade listener for ${addonId}`)
+     this.upgradeListeners.set(addonId, aCallback);
+   });
+  },
+
+  
+
+
+
+
+
+  removeUpgradeListener: function(aInstanceID) {
+    if (!aInstanceID || typeof aInstanceID != "symbol")
+      throw Components.Exception("aInstanceID must be a symbol",
+                                 Cr.NS_ERROR_INVALID_ARG);
+
+    this.getAddonByInstanceID(aInstanceID).then(addon => {
+      if (!addon) {
+        throw Error("No addon for instanceID:", aInstanceID.toString());
+      }
+      if (this.upgradeListeners.has(addon.id)) {
+        this.upgradeListeners.delete(addon.id);
+      } else {
+        throw Error("No upgrade listener registered for addon ID:", addon.id);
+      }
+    });
   },
 
   
@@ -3060,6 +3111,14 @@ this.AddonManagerPrivate = {
   get webExtensionsMinPlatformVersion() {
     return gWebExtensionsMinPlatformVersion;
   },
+
+  hasUpgradeListener: function(aId) {
+    return AddonManagerInternal.upgradeListeners.has(aId);
+  },
+
+  getUpgradeListener: function(aId) {
+    return AddonManagerInternal.upgradeListeners.get(aId);
+  },
 };
 
 
@@ -3081,13 +3140,15 @@ this.AddonManager = {
     
     ["STATE_DOWNLOAD_FAILED", 4],
     
-    ["STATE_INSTALLING", 5],
+    ["STATE_POSTPONED", 5],
     
-    ["STATE_INSTALLED", 6],
+    ["STATE_INSTALLING", 6],
     
-    ["STATE_INSTALL_FAILED", 7],
+    ["STATE_INSTALLED", 7],
     
-    ["STATE_CANCELLED", 8],
+    ["STATE_INSTALL_FAILED", 8],
+    
+    ["STATE_CANCELLED", 9],
   ]),
 
   
@@ -3418,6 +3479,18 @@ this.AddonManager = {
 
   removeInstallListener: function(aListener) {
     AddonManagerInternal.removeInstallListener(aListener);
+  },
+
+  getUpgradeListener: function(aId) {
+    return AddonManagerInternal.upgradeListeners.get(aId);
+  },
+
+  addUpgradeListener: function(aInstanceID, aCallback) {
+    AddonManagerInternal.addUpgradeListener(aInstanceID, aCallback);
+  },
+
+  removeUpgradeListener: function(aInstanceID) {
+    AddonManagerInternal.removeUpgradeListener(aInstanceID);
   },
 
   addAddonListener: function(aListener) {

@@ -5368,6 +5368,9 @@ AddonInstall.prototype = {
       XPIProvider.installs.push(this);
       this.startDownload();
       break;
+    case AddonManager.STATE_POSTPONED:
+      logger.debug(`Postponing install of ${this.addon.id}`);
+      break;
     case AddonManager.STATE_DOWNLOADING:
     case AddonManager.STATE_CHECKING:
     case AddonManager.STATE_INSTALLING:
@@ -5420,6 +5423,18 @@ AddonInstall.prototype = {
       AddonManagerPrivate.callInstallListeners("onInstallCancelled",
                                                this.listeners, this.wrapper);
       break;
+    case AddonManager.STATE_POSTPONED:
+      logger.debug(`Cancelling postponed install of ${this.addon.id}`);
+      this.state = AddonManager.STATE_CANCELLED;
+      XPIProvider.removeActiveInstall(this);
+      AddonManagerPrivate.callInstallListeners("onInstallCancelled",
+                                               this.listeners, this.wrapper);
+      this.removeTemporaryFile();
+
+      let stagingDir = this.installLocation.getStagingDir();
+      let stagedAddon = stagingDir.clone();
+
+      this.unstageInstall(stagedAddon);
     default:
       throw new Error("Cannot cancel install of " + this.sourceURI.spec +
                       " from this state (" + this.state + ")");
@@ -6010,12 +6025,58 @@ AddonInstall.prototype = {
         if (this.state != AddonManager.STATE_DOWNLOADED)
           return;
 
-        this.install();
+        
+        
+        if (AddonManagerPrivate.hasUpgradeListener(this.addon.id)) {
+          logger.info(`${this.addon.id} has an upgrade listener, postponing until restart`);
+          this.state = AddonManager.STATE_POSTPONED;
 
-        if (this.linkedInstalls) {
-          for (let install of this.linkedInstalls) {
-            if (install.state == AddonManager.STATE_DOWNLOADED)
-              install.install();
+          let stagingDir = this.installLocation.getStagingDir();
+          let stagedAddon = stagingDir.clone();
+
+          Task.spawn((function*() {
+            yield this.installLocation.requestStagingDir();
+
+            yield this.unstageInstall(stagedAddon);
+
+            stagedAddon.append(this.addon.id);
+            stagedAddon.leafName = this.addon.id + ".xpi";
+
+            yield this.stageInstall(true, stagedAddon, true);
+
+            AddonManagerPrivate.callInstallListeners("onInstallPostponed",
+                                                     this.listeners, this.wrapper)
+
+            
+            
+            let callback = AddonManagerPrivate.getUpgradeListener(this.addon.id);
+            callback({
+              install: () => {
+                switch (this.state) {
+                  case AddonManager.STATE_INSTALLED:
+                    
+                    logger.warn(`${this.addon.id} tried to resume postponed upgrade, but it's already installed`);
+                    break;
+                  case AddonManager.STATE_POSTPONED:
+                    logger.info(`${this.addon.id} has resumed a previously postponed upgrade`);
+                    this.state = AddonManager.STATE_DOWNLOADED;
+                    this.install();
+                    break;
+                  default:
+                    logger.warn(`${this.addon.id} cannot resume postponed upgrade from state (${this.state})`);
+                    break;
+                }
+              },
+            });
+          }).bind(this));
+        } else {
+          
+          this.install();
+          if (this.linkedInstalls) {
+            for (let install of this.linkedInstalls) {
+              if (install.state == AddonManager.STATE_DOWNLOADED)
+                install.install();
+            }
           }
         }
       }
@@ -6064,62 +6125,19 @@ AddonInstall.prototype = {
 
     Task.spawn((function*() {
       let installedUnpacked = 0;
+
       yield this.installLocation.requestStagingDir();
 
       
-      stagedAddon.append(this.addon.id);
-      yield removeAsync(stagedAddon);
-      stagedAddon.leafName = this.addon.id + ".xpi";
-      yield removeAsync(stagedAddon);
+      yield this.unstageInstall(stagedAddon);
 
-      
-      if (this.addon.unpack || Preferences.get(PREF_XPI_UNPACK, false)) {
-        logger.debug("Addon " + this.addon.id + " will be installed as " +
-            "an unpacked directory");
-        stagedAddon.leafName = this.addon.id;
-        yield OS.File.makeDir(stagedAddon.path);
-        yield ZipUtils.extractFilesAsync(this.file, stagedAddon);
-        installedUnpacked = 1;
-      }
-      else {
-        logger.debug("Addon " + this.addon.id + " will be installed as " +
-            "a packed xpi");
-        stagedAddon.leafName = this.addon.id + ".xpi";
-        yield OS.File.copy(this.file.path, stagedAddon.path);
-      }
+      stagedAddon.append(this.addon.id);
+      stagedAddon.leafName = this.addon.id + ".xpi";
+
+      installedUnpacked = yield this.stageInstall(requiresRestart, stagedAddon, isUpgrade);
 
       if (requiresRestart) {
-        
-        this.addon._sourceBundle = stagedAddon;
-
-        
-        let stagedJSON = stagedAddon.clone();
-        stagedJSON.leafName = this.addon.id + ".json";
-        if (stagedJSON.exists())
-          stagedJSON.remove(true);
-        let stream = Cc["@mozilla.org/network/file-output-stream;1"].
-                     createInstance(Ci.nsIFileOutputStream);
-        let converter = Cc["@mozilla.org/intl/converter-output-stream;1"].
-                        createInstance(Ci.nsIConverterOutputStream);
-
-        try {
-          stream.init(stagedJSON, FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE |
-                                  FileUtils.MODE_TRUNCATE, FileUtils.PERMS_FILE,
-                                 0);
-          converter.init(stream, "UTF-8", 0, 0x0000);
-          converter.writeString(JSON.stringify(this.addon));
-        }
-        finally {
-          converter.close();
-          stream.close();
-        }
-
-        logger.debug("Staged install of " + this.addon.id + " from " + this.sourceURI.spec + " ready; waiting for restart.");
         this.state = AddonManager.STATE_INSTALLED;
-        if (isUpgrade) {
-          delete this.existingAddon.pendingUpgrade;
-          this.existingAddon.pendingUpgrade = this.addon;
-        }
         AddonManagerPrivate.callInstallListeners("onInstallEnded",
                                                  this.listeners, this.wrapper,
                                                  this.addon.wrapper);
@@ -6222,7 +6240,7 @@ AddonInstall.prototype = {
         recordAddonTelemetry(this.addon);
       }
     }).bind(this)).then(null, (e) => {
-      logger.warn("Failed to install " + this.file.path + " from " + this.sourceURI.spec, e);
+      logger.warn("Failed to install " + this.file.path + " from " + this.sourceURI.spec + " to " + stagedAddon.path, e);
       if (stagedAddon.exists())
         recursiveRemove(stagedAddon);
       this.state = AddonManager.STATE_INSTALL_FAILED;
@@ -6237,6 +6255,82 @@ AddonInstall.prototype = {
       this.removeTemporaryFile();
       return this.installLocation.releaseStagingDir();
     });
+  },
+
+  
+
+
+  stageInstall: function*(restartRequired, stagedAddon, isUpgrade) {
+    let stagedJSON = stagedAddon.clone();
+    stagedJSON.leafName = this.addon.id + ".json";
+
+    let installedUnpacked = 0;
+
+    
+    if (this.addon.unpack || Preferences.get(PREF_XPI_UNPACK, false)) {
+      logger.debug("Addon " + this.addon.id + " will be installed as " +
+          "an unpacked directory");
+      stagedAddon.leafName = this.addon.id;
+      yield OS.File.makeDir(stagedAddon.path);
+      yield ZipUtils.extractFilesAsync(this.file, stagedAddon);
+      installedUnpacked = 1;
+    }
+    else {
+      logger.debug("Addon " + this.addon.id + " will be installed as " +
+          "a packed xpi");
+      stagedAddon.leafName = this.addon.id + ".xpi";
+      yield OS.File.copy(this.file.path, stagedAddon.path);
+    }
+
+    if (restartRequired) {
+      
+      this.addon._sourceBundle = stagedAddon;
+
+      
+      let stream = Cc["@mozilla.org/network/file-output-stream;1"].
+                   createInstance(Ci.nsIFileOutputStream);
+      let converter = Cc["@mozilla.org/intl/converter-output-stream;1"].
+                      createInstance(Ci.nsIConverterOutputStream);
+
+      try {
+        stream.init(stagedJSON, FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE |
+                                FileUtils.MODE_TRUNCATE, FileUtils.PERMS_FILE,
+                               0);
+        converter.init(stream, "UTF-8", 0, 0x0000);
+        converter.writeString(JSON.stringify(this.addon));
+      }
+      finally {
+        converter.close();
+        stream.close();
+      }
+
+      logger.debug("Staged install of " + this.addon.id + " from " + this.sourceURI.spec + " ready; waiting for restart.");
+      if (isUpgrade) {
+        delete this.existingAddon.pendingUpgrade;
+        this.existingAddon.pendingUpgrade = this.addon;
+      }
+    }
+
+    return installedUnpacked;
+  },
+
+  
+
+
+  unstageInstall: function*(stagedAddon) {
+    let stagedJSON = stagedAddon.clone();
+    let removedAddon = stagedAddon.clone();
+
+    stagedJSON.append(this.addon.id + ".json");
+
+    if (stagedJSON.exists()) {
+      stagedJSON.remove(true);
+    }
+
+    removedAddon.append(this.addon.id);
+    yield removeAsync(removedAddon);
+    removedAddon.leafName = this.addon.id + ".xpi";
+    yield removeAsync(removedAddon);
   },
 
   getInterface: function(iid) {
@@ -7402,6 +7496,10 @@ function PrivateWrapper(aAddon) {
 
 PrivateWrapper.prototype = Object.create(AddonWrapper.prototype);
 Object.assign(PrivateWrapper.prototype, {
+
+  addonId() {
+    return this.id;
+  },
 
   
 
