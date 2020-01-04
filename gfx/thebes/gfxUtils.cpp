@@ -789,11 +789,11 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
 gfxUtils::ImageFormatToDepth(gfxImageFormat aFormat)
 {
     switch (aFormat) {
-        case gfxImageFormat::ARGB32:
+        case SurfaceFormat::A8R8G8B8_UINT32:
             return 32;
-        case gfxImageFormat::RGB24:
+        case SurfaceFormat::X8R8G8B8_UINT32:
             return 24;
-        case gfxImageFormat::RGB16_565:
+        case SurfaceFormat::R5G6B5_UINT16:
             return 16;
         default:
             break;
@@ -985,7 +985,7 @@ gfxUtils::GetYCbCrToRGBDestFormatAndSize(const PlanarYCbCrData& aData,
   bool prescale = aSuggestedSize.width > 0 && aSuggestedSize.height > 0 &&
                     aSuggestedSize != aData.mPicSize;
 
-  if (aSuggestedFormat == gfxImageFormat::RGB16_565) {
+  if (aSuggestedFormat == SurfaceFormat::R5G6B5_UINT16) {
 #if defined(HAVE_YCBCR_TO_RGB565)
     if (prescale &&
         !IsScaleYCbCrToRGB565Fast(aData.mPicX,
@@ -1005,14 +1005,14 @@ gfxUtils::GetYCbCrToRGBDestFormatAndSize(const PlanarYCbCrData& aData,
     }
 #else
     
-    aSuggestedFormat = gfxImageFormat::RGB24;
+    aSuggestedFormat = SurfaceFormat::X8R8G8B8_UINT32;
 #endif
   }
-  else if (aSuggestedFormat != gfxImageFormat::RGB24) {
+  else if (aSuggestedFormat != SurfaceFormat::X8R8G8B8_UINT32) {
     
-    aSuggestedFormat = gfxImageFormat::RGB24;
+    aSuggestedFormat = SurfaceFormat::X8R8G8B8_UINT32;
   }
-  if (aSuggestedFormat == gfxImageFormat::RGB24) {
+  if (aSuggestedFormat == SurfaceFormat::X8R8G8B8_UINT32) {
     
 
     if (aData.mPicX != 0 || aData.mPicY != 0 || yuvtype == YV24)
@@ -1045,7 +1045,7 @@ gfxUtils::ConvertYCbCrToRGB(const PlanarYCbCrData& aData,
   
   if (aDestSize != aData.mPicSize) {
 #if defined(HAVE_YCBCR_TO_RGB565)
-    if (aDestFormat == gfxImageFormat::RGB16_565) {
+    if (aDestFormat == SurfaceFormat::R5G6B5_UINT16) {
       ScaleYCbCrToRGB565(aData.mYChannel,
                               aData.mCbChannel,
                               aData.mCrChannel,
@@ -1079,7 +1079,7 @@ gfxUtils::ConvertYCbCrToRGB(const PlanarYCbCrData& aData,
                              FILTER_BILINEAR);
   } else { 
 #if defined(HAVE_YCBCR_TO_RGB565)
-    if (aDestFormat == gfxImageFormat::RGB16_565) {
+    if (aDestFormat == SurfaceFormat::R5G6B5_UINT16) {
       ConvertYCbCrToRGB565(aData.mYChannel,
                                 aData.mCbChannel,
                                 aData.mCrChannel,

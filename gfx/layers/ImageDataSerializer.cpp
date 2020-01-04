@@ -4,7 +4,6 @@
 
 
 #include "ImageDataSerializer.h"
-#include <string.h>                     
 #include "gfx2DGlue.h"                  
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/Assertions.h"         

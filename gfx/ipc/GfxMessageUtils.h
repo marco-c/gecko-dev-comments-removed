@@ -230,14 +230,6 @@ struct ParamTraits<mozilla::layers::ScaleMode>
 {};
 
 template <>
-struct ParamTraits<gfxImageFormat>
-  : public ContiguousEnumSerializer<
-             gfxImageFormat,
-             gfxImageFormat::ARGB32,
-             gfxImageFormat::Unknown>
-{};
-
-template <>
 struct ParamTraits<mozilla::gfx::AttributeName>
   : public ContiguousEnumSerializer<
              mozilla::gfx::AttributeName,
