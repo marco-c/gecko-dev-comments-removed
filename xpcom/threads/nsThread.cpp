@@ -36,6 +36,7 @@
 #include "nsXPCOMPrivate.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/unused.h"
 #include "nsThreadSyncDispatch.h"
 #include "LeakRefPtr.h"
 
@@ -238,6 +239,15 @@ private:
 
 struct nsThreadShutdownContext
 {
+  nsThreadShutdownContext()
+  {
+    MOZ_COUNT_CTOR(nsThreadShutdownContext);
+  }
+  ~nsThreadShutdownContext()
+  {
+    MOZ_COUNT_DTOR(nsThreadShutdownContext);
+  }
+
   
   RefPtr<nsThread> terminatingThread;
   nsThread* joiningThread;
@@ -505,6 +515,19 @@ nsThread::nsThread(MainThreadFlag aMainThread, uint32_t aStackSize)
 
 nsThread::~nsThread()
 {
+  NS_ASSERTION(mRequestedShutdownContexts.IsEmpty(),
+               "shouldn't be waiting on other threads to shutdown");
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  for (size_t i = 0; i < mRequestedShutdownContexts.Length(); ++i) {
+    Unused << mRequestedShutdownContexts[i].forget();
+  }
+#endif
 }
 
 nsresult
