@@ -291,8 +291,8 @@ class AutoMaybeStartBackgroundAllocation;
 
 struct SortedArenaListSegment
 {
-    ArenaHeader* head;
-    ArenaHeader** tailp;
+    Arena* head;
+    Arena** tailp;
 
     void clear() {
         head = nullptr;
@@ -304,11 +304,11 @@ struct SortedArenaListSegment
     }
 
     
-    void append(ArenaHeader* aheader) {
-        MOZ_ASSERT(aheader);
-        MOZ_ASSERT_IF(head, head->getAllocKind() == aheader->getAllocKind());
-        *tailp = aheader;
-        tailp = &aheader->next;
+    void append(Arena* arena) {
+        MOZ_ASSERT(arena);
+        MOZ_ASSERT_IF(head, head->getAllocKind() == arena->getAllocKind());
+        *tailp = arena;
+        tailp = &arena->next;
     }
 
     
@@ -316,8 +316,8 @@ struct SortedArenaListSegment
     
     
     
-    void linkTo(ArenaHeader* aheader) {
-        *tailp = aheader;
+    void linkTo(Arena* arena) {
+        *tailp = arena;
     }
 };
 
@@ -357,8 +357,8 @@ class ArenaList {
     
     
     
-    ArenaHeader*    head_;
-    ArenaHeader**   cursorp_;
+    Arena* head_;
+    Arena** cursorp_;
 
     void copy(const ArenaList& other) {
         other.check();
@@ -394,7 +394,7 @@ class ArenaList {
         MOZ_ASSERT_IF(!head_, cursorp_ == &head_);
 
         
-        ArenaHeader* cursor = *cursorp_;
+        Arena* cursor = *cursorp_;
         MOZ_ASSERT_IF(cursor, cursor->hasFreeThings());
 #endif
     }
@@ -417,7 +417,7 @@ class ArenaList {
     }
 
     
-    ArenaHeader* head() const {
+    Arena* head() const {
         check();
         return head_;
     }
@@ -433,27 +433,27 @@ class ArenaList {
     }
 
     
-    ArenaHeader* arenaAfterCursor() const {
+    Arena* arenaAfterCursor() const {
         check();
         return *cursorp_;
     }
 
     
-    ArenaHeader* takeNextArena() {
+    Arena* takeNextArena() {
         check();
-        ArenaHeader* aheader = *cursorp_;
-        if (!aheader)
+        Arena* arena = *cursorp_;
+        if (!arena)
             return nullptr;
-        cursorp_ = &aheader->next;
+        cursorp_ = &arena->next;
         check();
-        return aheader;
+        return arena;
     }
 
     
     
     
     
-    void insertAtCursor(ArenaHeader* a) {
+    void insertAtCursor(Arena* a) {
         check();
         a->next = *cursorp_;
         *cursorp_ = a;
@@ -465,7 +465,7 @@ class ArenaList {
     }
 
     
-    void insertBeforeCursor(ArenaHeader* a) {
+    void insertBeforeCursor(Arena* a) {
         check();
         a->next = *cursorp_;
         *cursorp_ = a;
@@ -488,10 +488,10 @@ class ArenaList {
         return *this;
     }
 
-    ArenaHeader* removeRemainingArenas(ArenaHeader** arenap);
-    ArenaHeader** pickArenasToRelocate(size_t& arenaTotalOut, size_t& relocTotalOut);
-    ArenaHeader* relocateArenas(ArenaHeader* toRelocate, ArenaHeader* relocated,
-                                SliceBudget& sliceBudget, gcstats::Statistics& stats);
+    Arena* removeRemainingArenas(Arena** arenap);
+    Arena** pickArenasToRelocate(size_t& arenaTotalOut, size_t& relocTotalOut);
+    Arena* relocateArenas(Arena* toRelocate, Arena* relocated,
+                          SliceBudget& sliceBudget, gcstats::Statistics& stats);
 };
 
 
@@ -513,14 +513,14 @@ class SortedArenaList
 
   private:
     
-    static const size_t MaxThingsPerArena = (ArenaSize - sizeof(ArenaHeader)) / MinThingSize;
+    static const size_t MaxThingsPerArena = (ArenaSize - ArenaHeaderSize) / MinThingSize;
 
     size_t thingsPerArena_;
     SortedArenaListSegment segments[MaxThingsPerArena + 1];
 
     
-    ArenaHeader* headAt(size_t n) { return segments[n].head; }
-    ArenaHeader** tailAt(size_t n) { return segments[n].tailp; }
+    Arena* headAt(size_t n) { return segments[n].head; }
+    Arena** tailAt(size_t n) { return segments[n].tailp; }
 
   public:
     explicit SortedArenaList(size_t thingsPerArena = MaxThingsPerArena) {
@@ -541,13 +541,13 @@ class SortedArenaList
     }
 
     
-    void insertAt(ArenaHeader* aheader, size_t nfree) {
+    void insertAt(Arena* arena, size_t nfree) {
         MOZ_ASSERT(nfree <= thingsPerArena_);
-        segments[nfree].append(aheader);
+        segments[nfree].append(arena);
     }
 
     
-    void extractEmpty(ArenaHeader** empty) {
+    void extractEmpty(Arena** empty) {
         SortedArenaListSegment& segment = segments[thingsPerArena_];
         if (segment.head) {
             *segment.tailp = *empty;
@@ -612,7 +612,7 @@ class ArenaLists
     AllAllocKindArray<BackgroundFinalizeState> backgroundFinalizeState;
 
     
-    AllAllocKindArray<ArenaHeader*> arenaListsToSweep;
+    AllAllocKindArray<Arena*> arenaListsToSweep;
 
     
     AllocKind incrementalSweptArenaKind;
@@ -620,17 +620,17 @@ class ArenaLists
 
     
     
-    ArenaHeader* gcShapeArenasToUpdate;
-    ArenaHeader* gcAccessorShapeArenasToUpdate;
-    ArenaHeader* gcScriptArenasToUpdate;
-    ArenaHeader* gcObjectGroupArenasToUpdate;
+    Arena* gcShapeArenasToUpdate;
+    Arena* gcAccessorShapeArenasToUpdate;
+    Arena* gcScriptArenasToUpdate;
+    Arena* gcObjectGroupArenasToUpdate;
 
     
     
     
     
     ObjectAllocKindArray<ArenaList> savedObjectArenas;
-    ArenaHeader* savedEmptyObjectArenas;
+    Arena* savedEmptyObjectArenas;
 
   public:
     explicit ArenaLists(JSRuntime* rt) : runtime_(rt) {
@@ -654,21 +654,21 @@ class ArenaLists
         return reinterpret_cast<const void*>(&freeLists[thingKind]);
     }
 
-    ArenaHeader* getFirstArena(AllocKind thingKind) const {
+    Arena* getFirstArena(AllocKind thingKind) const {
         return arenaLists[thingKind].head();
     }
 
-    ArenaHeader* getFirstArenaToSweep(AllocKind thingKind) const {
+    Arena* getFirstArenaToSweep(AllocKind thingKind) const {
         return arenaListsToSweep[thingKind];
     }
 
-    ArenaHeader* getFirstSweptArena(AllocKind thingKind) const {
+    Arena* getFirstSweptArena(AllocKind thingKind) const {
         if (thingKind != incrementalSweptArenaKind)
             return nullptr;
         return incrementalSweptArenas.head();
     }
 
-    ArenaHeader* getArenaAfterCursor(AllocKind thingKind) const {
+    Arena* getArenaAfterCursor(AllocKind thingKind) const {
         return arenaLists[thingKind].arenaAfterCursor();
     }
 
@@ -690,8 +690,8 @@ class ArenaLists
         for (auto i : AllAllocKinds()) {
             
             MOZ_ASSERT(backgroundFinalizeState[i] == BFS_DONE);
-            for (ArenaHeader* aheader = arenaLists[i].head(); aheader; aheader = aheader->next)
-                aheader->unmarkAll();
+            for (Arena* arena = arenaLists[i].head(); arena; arena = arena->next)
+                arena->unmarkAll();
         }
     }
 
@@ -714,9 +714,9 @@ class ArenaLists
     inline void prepareForIncrementalGC(JSRuntime* rt);
 
     
-    bool arenaIsInUse(ArenaHeader* aheader, AllocKind kind) const {
-        MOZ_ASSERT(aheader);
-        return aheader == freeLists[kind]->getArenaUnchecked();
+    bool arenaIsInUse(Arena* arena, AllocKind kind) const {
+        MOZ_ASSERT(arena);
+        return arena == freeLists[kind]->getArenaUnchecked();
     }
 
     MOZ_ALWAYS_INLINE TenuredCell* allocateFromFreeList(AllocKind thingKind, size_t thingSize) {
@@ -729,7 +729,7 @@ class ArenaLists
     void adoptArenas(JSRuntime* runtime, ArenaLists* fromArenaLists);
 
     
-    bool containsArena(JSRuntime* runtime, ArenaHeader* arenaHeader);
+    bool containsArena(JSRuntime* runtime, Arena* arena);
 
     void checkEmptyFreeLists() {
 #ifdef DEBUG
@@ -742,7 +742,7 @@ class ArenaLists
         MOZ_ASSERT(freeLists[kind]->isEmpty());
     }
 
-    bool relocateArenas(Zone* zone, ArenaHeader*& relocatedListOut, JS::gcreason::Reason reason,
+    bool relocateArenas(Zone* zone, Arena*& relocatedListOut, JS::gcreason::Reason reason,
                         SliceBudget& sliceBudget, gcstats::Statistics& stats);
 
     void queueForegroundObjectsForSweep(FreeOp* fop);
@@ -752,7 +752,7 @@ class ArenaLists
 
     bool foregroundFinalize(FreeOp* fop, AllocKind thingKind, SliceBudget& sliceBudget,
                             SortedArenaList& sweepList);
-    static void backgroundFinalize(FreeOp* fop, ArenaHeader* listHead, ArenaHeader** empty);
+    static void backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty);
 
     
     
@@ -767,17 +767,16 @@ class ArenaLists
     inline void queueForBackgroundSweep(FreeOp* fop, const FinalizePhase& phase);
 
     inline void finalizeNow(FreeOp* fop, AllocKind thingKind,
-                            KeepArenasEnum keepArenas, ArenaHeader** empty = nullptr);
+                            KeepArenasEnum keepArenas, Arena** empty = nullptr);
     inline void forceFinalizeNow(FreeOp* fop, AllocKind thingKind,
-                                 KeepArenasEnum keepArenas, ArenaHeader** empty = nullptr);
+                                 KeepArenasEnum keepArenas, Arena** empty = nullptr);
     inline void queueForForegroundSweep(FreeOp* fop, AllocKind thingKind);
     inline void queueForBackgroundSweep(FreeOp* fop, AllocKind thingKind);
     inline void mergeSweptArenas(AllocKind thingKind);
 
     TenuredCell* allocateFromArena(JS::Zone* zone, AllocKind thingKind,
                                    AutoMaybeStartBackgroundAllocation& maybeStartBGAlloc);
-    inline TenuredCell* allocateFromArenaInner(JS::Zone* zone, ArenaHeader* aheader,
-                                               AllocKind kind);
+    inline TenuredCell* allocateFromArenaInner(JS::Zone* zone, Arena* arena, AllocKind kind);
 
     inline void normalizeBackgroundFinalizeState(AllocKind thingKind);
 

@@ -32,7 +32,7 @@ class NativeObject;
 class ObjectGroup;
 class WeakMapBase;
 namespace gc {
-struct ArenaHeader;
+class Arena;
 } 
 namespace jit {
 class JitCode;
@@ -214,9 +214,9 @@ class GCMarker : public JSTracer
         linearWeakMarkingDisabled_ = true;
     }
 
-    void delayMarkingArena(gc::ArenaHeader* aheader);
+    void delayMarkingArena(gc::Arena* arena);
     void delayMarkingChildren(const void* thing);
-    void markDelayedChildren(gc::ArenaHeader* aheader);
+    void markDelayedChildren(gc::Arena* arena);
     bool markDelayedChildren(SliceBudget& budget);
     bool hasDelayedChildren() const {
         return !!unmarkedArenaStackTop;
@@ -331,7 +331,7 @@ class GCMarker : public JSTracer
     uint32_t color;
 
     
-    js::gc::ArenaHeader* unmarkedArenaStackTop;
+    js::gc::Arena* unmarkedArenaStackTop;
 
     
 
@@ -364,7 +364,7 @@ namespace gc {
 
 
 void
-PushArena(GCMarker* gcmarker, ArenaHeader* aheader);
+PushArena(GCMarker* gcmarker, Arena* arena);
 
 
 

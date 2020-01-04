@@ -164,7 +164,7 @@ PropertyTree::getChild(ExclusiveContext* cx, Shape* parentArg, Handle<StackShape
             TraceManuallyBarrieredEdge(zone->barrierTracer(), &tmp, "read barrier");
             MOZ_ASSERT(tmp == existingShape);
         } else if (zone->isGCSweeping() && !existingShape->isMarked() &&
-                   !existingShape->arenaHeader()->allocatedDuringIncremental)
+                   !existingShape->arena()->allocatedDuringIncremental)
         {
             
 
