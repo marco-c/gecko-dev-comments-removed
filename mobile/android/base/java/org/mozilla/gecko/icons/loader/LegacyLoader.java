@@ -25,6 +25,12 @@ import org.mozilla.gecko.icons.IconResponse;
 public class LegacyLoader implements IconLoader {
     @Override
     public IconResponse load(IconRequest request) {
+        if (!request.shouldSkipNetwork()) {
+            
+            
+            return null;
+        }
+
         if (request.shouldSkipDisk()) {
             return null;
         }
@@ -41,7 +47,7 @@ public class LegacyLoader implements IconLoader {
      Bitmap loadBitmapFromDatabase(IconRequest request) {
         final Context context = request.getContext();
         final ContentResolver contentResolver = context.getContentResolver();
-        final BrowserDB db = GeckoProfile.get(request.getContext()).getDB();
+        final BrowserDB db = GeckoProfile.get(context).getDB();
 
         
         
