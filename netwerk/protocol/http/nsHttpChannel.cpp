@@ -84,7 +84,6 @@
 #include "mozilla/Telemetry.h"
 #include "AlternateServices.h"
 #include "InterceptedChannel.h"
-#include "imgLoader.h"
 #include "nsIHttpPushListener.h"
 #include "nsIX509Cert.h"
 #include "ScopedNSSTypes.h"
@@ -92,7 +91,6 @@
 #include "nsIPackagedAppService.h"
 #include "nsIDeprecationWarner.h"
 #include "nsIDocument.h"
-#include "nsIDOMDocument.h"
 #include "nsICompressConvStats.h"
 #include "nsCORSListenerProxy.h"
 #include "nsISocketProvider.h"
@@ -936,85 +934,6 @@ CallTypeSniffers(void *aClosure, const uint8_t *aData, uint32_t aCount)
   }
 }
 
-
-nsresult
-ProcessXCTO(nsHttpResponseHead* aResponseHead, nsILoadInfo* aLoadInfo)
-{
-    if (!aResponseHead || !aLoadInfo) {
-        
-        return NS_OK;
-    }
-
-    
-    nsAutoCString contentTypeOptionsHeader;
-    aResponseHead->GetHeader(nsHttp::X_Content_Type_Options, contentTypeOptionsHeader);
-    if (contentTypeOptionsHeader.IsEmpty()) {
-        
-        return NS_OK;
-    }
-    
-    
-    
-    int32_t idx = contentTypeOptionsHeader.Find(",");
-    if (idx > 0) {
-      contentTypeOptionsHeader = Substring(contentTypeOptionsHeader, 0, idx);
-    }
-    
-    
-    contentTypeOptionsHeader.StripWhitespace();
-    
-    
-    
-    if (!contentTypeOptionsHeader.EqualsIgnoreCase("nosniff")) {
-        
-        
-        
-        NS_ConvertUTF8toUTF16 char16_header(contentTypeOptionsHeader);
-        const char16_t* params[] = { char16_header.get() };
-        nsCOMPtr<nsIDocument> doc;
-        nsCOMPtr<nsIDOMDocument> domDoc;
-        aLoadInfo->GetLoadingDocument(getter_AddRefs(domDoc));
-        if (domDoc) {
-          doc = do_QueryInterface(domDoc);
-        }
-        nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                        NS_LITERAL_CSTRING("XCTO"),
-                                        doc,
-                                        nsContentUtils::eSECURITY_PROPERTIES,
-                                        "XCTOHeaderValueMissing",
-                                        params, ArrayLength(params));
-        return NS_OK;
-    }
-
-    
-    nsAutoCString contentType;
-    aResponseHead->ContentType(contentType);
-
-    
-    if (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_STYLESHEET) {
-        if (contentType.EqualsLiteral(TEXT_CSS)) {
-            return NS_OK;
-        }
-        return NS_ERROR_CORRUPTED_CONTENT;
-    }
-
-    if (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_IMAGE) {
-        if (imgLoader::SupportImageWithMimeType(contentType.get(),
-                                                AcceptedMimeTypes::IMAGES_AND_DOCUMENTS)) {
-            return NS_OK;
-        }
-        return NS_ERROR_CORRUPTED_CONTENT;
-    }
-
-    if (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_SCRIPT) {
-        if (nsContentUtils::IsScriptType(contentType)) {
-            return NS_OK;
-        }
-        return NS_ERROR_CORRUPTED_CONTENT;
-    }
-    return NS_OK;
-}
-
 nsresult
 nsHttpChannel::CallOnStartRequest()
 {
@@ -1024,31 +943,7 @@ nsHttpChannel::CallOnStartRequest()
                        "CORS preflight must have been finished by the time we "
                        "call OnStartRequest");
 
-    nsresult rv = ProcessXCTO(mResponseHead, mLoadInfo);
-    if (NS_FAILED(rv)) {
-        LOG(("XCTO: nosniff verification failed.\n"));
-        
-        
-        nsAutoCString spec;
-        mURI->GetSpec(spec);
-        NS_ConvertUTF8toUTF16 specUTF16(spec);
-        const char16_t* params[] = { specUTF16.get() };
-        nsCOMPtr<nsIDocument> doc;
-        if (mLoadInfo) {
-            nsCOMPtr<nsIDOMDocument> domDoc;
-            mLoadInfo->GetLoadingDocument(getter_AddRefs(domDoc));
-            if (domDoc) {
-                doc = do_QueryInterface(domDoc);
-            }
-        }
-        nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                        NS_LITERAL_CSTRING("XCTO"),
-                                        doc,
-                                        nsContentUtils::eSECURITY_PROPERTIES,
-                                        "MimeTypeMismatch",
-                                        params, ArrayLength(params));
-        return rv;
-    }
+    nsresult rv;
 
     mTracingEnabled = false;
 
