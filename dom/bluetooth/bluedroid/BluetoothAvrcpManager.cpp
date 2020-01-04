@@ -349,6 +349,8 @@ BluetoothAvrcpManager::Connect(const nsAString& aDeviceAddress,
 
   
   mDeviceAddress = aDeviceAddress;
+  mController = aController;
+
   SetConnected(true);
   OnConnect(EmptyString());
 }
@@ -360,6 +362,9 @@ BluetoothAvrcpManager::Disconnect(BluetoothProfileController* aController)
   MOZ_ASSERT(!mController);
 
   mDeviceAddress.Truncate();
+
+  mController = aController;
+
   SetConnected(false);
   OnDisconnect(EmptyString());
 }
