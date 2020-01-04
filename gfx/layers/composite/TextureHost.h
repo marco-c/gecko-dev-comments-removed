@@ -172,6 +172,29 @@ protected:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<typename T>
 class CompositableTextureRef {
 public:
@@ -581,11 +604,11 @@ public:
 
   TextureReadLock* GetReadLock() { return mReadLock; }
 
-  void ReadUnlock();
-
   virtual Compositor* GetCompositor() = 0;
 
 protected:
+  void ReadUnlock();
+
   FenceHandle mReleaseFenceHandle;
 
   FenceHandle mAcquireFenceHandle;

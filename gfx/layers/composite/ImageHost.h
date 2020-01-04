@@ -127,6 +127,9 @@ protected:
     int32_t mInputFrameID;
   };
 
+  
+  
+  
   RefPtr<TextureHost> mCurrentTextureHost;
   CompositableTextureSourceRef mCurrentTextureSource;
   

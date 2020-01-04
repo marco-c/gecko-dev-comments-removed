@@ -452,6 +452,12 @@ TextureClient::UnlockActor() const
 bool
 TextureClient::IsReadLocked() const
 {
+  
+  
+  
+  
+  
+  
   return mReadLock && mReadLock->GetReadCount() > 1 && !mPendingReadUnlock;
 }
 

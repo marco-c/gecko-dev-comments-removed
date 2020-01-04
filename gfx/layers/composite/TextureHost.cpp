@@ -312,6 +312,10 @@ TextureHost::TextureHost(TextureFlags aFlags)
 
 TextureHost::~TextureHost()
 {
+  
+  
+  
+  
   ReadUnlock();
   MOZ_COUNT_DTOR(TextureHost);
 }
@@ -693,6 +697,8 @@ BufferTextureHost::MaybeUpload(nsIntRegion *aRegion)
   }
 
   if (mHasIntermediateBuffer) {
+    
+    
     ReadUnlock();
   }
 

@@ -533,6 +533,12 @@ public:
     return mParent;
   }
 
+  
+  
+  
+  
+  
+  
   void UnlockAfterComposition(already_AddRefed<TextureReadLock> aLock)
   {
     mUnlockAfterComposition.AppendElement(aLock);
