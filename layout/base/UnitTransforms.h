@@ -127,6 +127,17 @@ gfx::IntRegionTyped<TargetUnits> ViewAs(const nsIntRegion& aRegion) {
 
 
 
+
+
+
+
+template <class TypedMatrix>
+TypedMatrix ViewAs(const gfx::Matrix4x4& aMatrix) {
+  return TypedMatrix::FromUnknownMatrix(aMatrix);
+}
+
+
+
 template <typename TargetUnits, typename SourceUnits>
 static gfx::PointTyped<TargetUnits> TransformTo(const gfx::Matrix4x4& aTransform,
                                                 const gfx::PointTyped<SourceUnits>& aPoint)
