@@ -70,9 +70,6 @@ this.CommonUtils = {
   },
 
   
-  stackTrace: Log.stackTrace,
-
-  
 
 
 
