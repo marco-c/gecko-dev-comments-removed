@@ -8866,14 +8866,6 @@ DebuggerEnv_getVariable(JSContext* cx, unsigned argc, Value* vp)
         
         ErrorCopier ec(ac);
 
-        bool found;
-        if (!HasProperty(cx, env, id, &found))
-            return false;
-        if (!found) {
-            args.rval().setUndefined();
-            return true;
-        }
-
         
         
         

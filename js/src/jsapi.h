@@ -4715,25 +4715,17 @@ JS_PUBLIC_API(JSString*)
 GetSymbolDescription(HandleSymbol symbol);
 
 
-#define JS_FOR_EACH_WELL_KNOWN_SYMBOL(macro) \
-    macro(iterator) \
-    macro(match) \
-    macro(species) \
-    macro(toPrimitive) \
-    macro(unscopables)
-
 enum class SymbolCode : uint32_t {
-    
-#define JS_DEFINE_SYMBOL_ENUM(name) name,
-    JS_FOR_EACH_WELL_KNOWN_SYMBOL(JS_DEFINE_SYMBOL_ENUM)  
-#undef JS_DEFINE_SYMBOL_ENUM
-    Limit,
+    iterator,                       
+    match,
+    species,
+    toPrimitive,
     InSymbolRegistry = 0xfffffffe,  
     UniqueSymbol = 0xffffffff       
 };
 
 
-const size_t WellKnownSymbolLimit = size_t(SymbolCode::Limit);
+const size_t WellKnownSymbolLimit = 4;
 
 
 
