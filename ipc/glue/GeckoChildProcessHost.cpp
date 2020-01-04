@@ -583,15 +583,19 @@ GeckoChildProcessHost::RunPerformAsyncLaunch(std::vector<std::string> aExtraOpts
 {
   InitializeChannel();
 
-  if (PerformAsyncLaunch(aExtraOpts, aArch)) {
-    return true;
-  } else {
+  bool ok = PerformAsyncLaunch(aExtraOpts, aArch);
+  if (!ok) {
+    
+    
+    MonitorAutoLock lock(mMonitor);
+    mProcessState = PROCESS_ERROR;
+    lock.Notify();
     CHROMIUM_LOG(ERROR) << "Failed to launch " <<
       XRE_ChildProcessTypeToString(mProcessType) << " subprocess";
     Telemetry::Accumulate(Telemetry::SUBPROCESS_LAUNCH_FAILURE,
       nsDependentCString(XRE_ChildProcessTypeToString(mProcessType)));
-    return false;
   }
+  return ok;
 }
 
 void
@@ -1030,6 +1034,9 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 #if defined(MOZ_CONTENT_SANDBOX)
       if (mSandboxLevel > 0 &&
           !PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX")) {
+        
+        
+        
         mSandboxBroker.SetSecurityLevelForContentProcess(mSandboxLevel);
         cmdLine.AppendLooseValue(UTF8ToWide("-sandbox"));
         shouldSandboxCurrentProcess = true;
@@ -1040,15 +1047,15 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     case GeckoProcessType_Plugin:
       if (mSandboxLevel > 0 &&
           !PR_GetEnv("MOZ_DISABLE_NPAPI_SANDBOX")) {
-        mSandboxBroker.SetSecurityLevelForPluginProcess(mSandboxLevel);
+        bool ok = mSandboxBroker.SetSecurityLevelForPluginProcess(mSandboxLevel);
+        if (!ok) {
+          return false;
+        }
         cmdLine.AppendLooseValue(UTF8ToWide("-sandbox"));
         shouldSandboxCurrentProcess = true;
       }
       break;
     case GeckoProcessType_IPDLUnitTest:
-      
-      
-      
       
       break;
     case GeckoProcessType_GMPlugin:
@@ -1060,7 +1067,10 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
         bool isWidevine = std::any_of(aExtraOpts.begin(), aExtraOpts.end(),
           [](const std::string arg) { return arg.find("gmp-widevinecdm") != std::string::npos; });
         auto level = isWidevine ? SandboxBroker::Restricted : SandboxBroker::LockDown;
-        mSandboxBroker.SetSecurityLevelForGMPlugin(level);
+        bool ok = mSandboxBroker.SetSecurityLevelForGMPlugin(level);
+        if (!ok) {
+          return false;
+        }
         cmdLine.AppendLooseValue(UTF8ToWide("-sandbox"));
         shouldSandboxCurrentProcess = true;
       }
@@ -1146,9 +1156,6 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 #endif
 
   if (!process) {
-    MonitorAutoLock lock(mMonitor);
-    mProcessState = PROCESS_ERROR;
-    lock.Notify();
     return false;
   }
   
