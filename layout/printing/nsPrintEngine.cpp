@@ -478,11 +478,26 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
   
   
   
+  
   nsCOMPtr<nsIPrintSession> printSession;
+  bool remotePrintJobListening = false;
   if (!aIsPrintPreview) {
-    printSession = do_CreateInstance("@mozilla.org/gfx/printsession;1", &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-    mPrt->mPrintSettings->SetPrintSession(printSession);
+    rv = mPrt->mPrintSettings->GetPrintSession(getter_AddRefs(printSession));
+    if (NS_FAILED(rv) || !printSession) {
+      printSession = do_CreateInstance("@mozilla.org/gfx/printsession;1", &rv);
+      NS_ENSURE_SUCCESS(rv, rv);
+      mPrt->mPrintSettings->SetPrintSession(printSession);
+    } else {
+      RefPtr<mozilla::layout::RemotePrintJobChild> remotePrintJob;
+      printSession->GetRemotePrintJob(getter_AddRefs(remotePrintJob));
+      if (NS_SUCCEEDED(rv) && remotePrintJob) {
+        
+        
+        mPrt->mPrintProgressListeners.AppendElement(remotePrintJob);
+        remotePrintJobListening = true;
+      }
+    }
+
   }
 
   if (aWebProgressListener != nullptr) {
@@ -614,10 +629,14 @@ nsPrintEngine::DoCommonPrint(bool                    aIsPrintPreview,
             mPrt->mPrintSettings->GetShrinkToFit(&mPrt->mShrinkToFit);
 
             
-            RefPtr<mozilla::layout::RemotePrintJobChild> remotePrintJob;
-            printSession->GetRemotePrintJob(getter_AddRefs(remotePrintJob));
-            if (NS_SUCCEEDED(rv) && remotePrintJob) {
-              mPrt->mPrintProgressListeners.AppendElement(remotePrintJob);
+            
+            if (!remotePrintJobListening) {
+              RefPtr<mozilla::layout::RemotePrintJobChild> remotePrintJob;
+              printSession->GetRemotePrintJob(getter_AddRefs(remotePrintJob));
+              if (NS_SUCCEEDED(rv) && remotePrintJob) {
+                mPrt->mPrintProgressListeners.AppendElement(remotePrintJob);
+                remotePrintJobListening = true;
+              }
             }
           }
         } else if (rv == NS_ERROR_NOT_IMPLEMENTED) {

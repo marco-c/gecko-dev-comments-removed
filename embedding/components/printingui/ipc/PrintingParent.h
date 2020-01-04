@@ -10,6 +10,8 @@
 #include "mozilla/dom/PBrowserParent.h"
 #include "mozilla/embedding/PPrintingParent.h"
 
+class nsIPrintSettingsService;
+class nsIWebProgressListener;
 class nsPIDOMWindowOuter;
 class PPrintProgressDialogParent;
 class PPrintSettingsDialogParent;
@@ -17,6 +19,7 @@ class PPrintSettingsDialogParent;
 namespace mozilla {
 namespace layout {
 class PRemotePrintJobParent;
+class RemotePrintJobParent;
 }
 
 namespace embedding {
@@ -67,6 +70,25 @@ public:
 
     MOZ_IMPLICIT PrintingParent();
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    nsresult
+    SerializeAndEnsureRemotePrintJob(nsIPrintSettings* aPrintSettings,
+                                     nsIWebProgressListener* aListener,
+                                     layout::RemotePrintJobParent* aRemotePrintJob,
+                                     PrintData* aPrintData);
+
 private:
     virtual ~PrintingParent();
 
@@ -77,6 +99,8 @@ private:
     ShowPrintDialog(PBrowserParent* parent,
                     const PrintData& data,
                     PrintData* result);
+
+    nsCOMPtr<nsIPrintSettingsService> mPrintSettingsSvc;
 };
 
 } 
