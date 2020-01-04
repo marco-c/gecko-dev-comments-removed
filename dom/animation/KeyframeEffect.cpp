@@ -1292,10 +1292,13 @@ GenerateValueEntries(Element* aTarget,
   nsCSSPropertySet propertiesWithToValue;   
 
   for (OffsetIndexedKeyframe& keyframe : aKeyframes) {
-    float offset = float(keyframe.mKeyframeDict.mOffset.Value());
     Maybe<ComputedTimingFunction> easing =
-      AnimationUtils::ParseEasing(keyframe.mKeyframeDict.mEasing,
-                                  aTarget->OwnerDoc());
+      TimingParams::ParseEasing(keyframe.mKeyframeDict.mEasing,
+                                aTarget->OwnerDoc(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+    float offset = float(keyframe.mKeyframeDict.mOffset.Value());
     
     
 
@@ -1560,7 +1563,7 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
   }
 
   Maybe<ComputedTimingFunction> easing =
-    AnimationUtils::ParseEasing(keyframes.mEasing, aTarget->OwnerDoc());
+    TimingParams::ParseEasing(keyframes.mEasing, aTarget->OwnerDoc(), aRv);
 
   
   
