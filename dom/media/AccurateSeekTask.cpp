@@ -45,8 +45,6 @@ AccurateSeekTask::AccurateSeekTask(const void* aDecoderID,
   : SeekTask(aDecoderID, aThread, aReader, Move(aSeekJob))
   , mCurrentTimeBeforeSeek(media::TimeUnit::FromMicroseconds(aCurrentMediaTime))
   , mAudioRate(aInfo.mAudio.mRate)
-  , mDropAudioUntilNextDiscontinuity(aInfo.HasAudio())
-  , mDropVideoUntilNextDiscontinuity(aInfo.HasVideo())
   , mDoneAudioSeeking(!aInfo.HasAudio() || aSeekJob.mTarget.IsVideoOnly())
   , mDoneVideoSeeking(!aInfo.HasVideo())
 {
@@ -365,28 +363,22 @@ AccurateSeekTask::OnAudioDecoded(MediaData* aAudioSample)
   SAMPLE_LOG("OnAudioDecoded [%lld,%lld] disc=%d",
     audio->mTime, audio->GetEndTime(), audio->mDiscontinuity);
 
-  if (audio->mDiscontinuity) {
-    mDropAudioUntilNextDiscontinuity = false;
+  if (mFirstAudioSample) {
+    mFirstAudioSample = false;
+    MOZ_ASSERT(audio->mDiscontinuity);
   }
 
-  if (!mDropAudioUntilNextDiscontinuity) {
-    
-    
-    AdjustFastSeekIfNeeded(audio);
+  AdjustFastSeekIfNeeded(audio);
 
-    if (mSeekJob.mTarget.IsFast()) {
-      
-      mSeekedAudioData = audio;
-      mDoneAudioSeeking = true;
-    } else {
-      
-      
-      if (NS_FAILED(DropAudioUpToSeekTarget(audio.get()))) {
-        RejectIfExist(__func__);
-        return;
-      }
-    }
+  if (mSeekJob.mTarget.IsFast()) {
+    
+    mSeekedAudioData = audio;
+    mDoneAudioSeeking = true;
+  } else if (NS_FAILED(DropAudioUpToSeekTarget(audio))) {
+    RejectIfExist(__func__);
+    return;
   }
+
   CheckIfSeekComplete();
 }
 
@@ -453,30 +445,22 @@ AccurateSeekTask::OnVideoDecoded(MediaData* aVideoSample)
   SAMPLE_LOG("OnVideoDecoded [%lld,%lld] disc=%d",
     video->mTime, video->GetEndTime(), video->mDiscontinuity);
 
-  if (mDropVideoUntilNextDiscontinuity) {
-    if (video->mDiscontinuity) {
-      mDropVideoUntilNextDiscontinuity = false;
-    }
+  if (mFirstVideoSample) {
+    mFirstVideoSample = false;
+    MOZ_ASSERT(video->mDiscontinuity);
   }
 
-  if (!mDropVideoUntilNextDiscontinuity) {
-    
-    
-    AdjustFastSeekIfNeeded(video);
+  AdjustFastSeekIfNeeded(video);
 
-    if (mSeekJob.mTarget.IsFast()) {
-      
-      mSeekedVideoData = video;
-      mDoneVideoSeeking = true;
-    } else {
-      
-      
-      if (NS_FAILED(DropVideoUpToSeekTarget(video.get()))) {
-        RejectIfExist(__func__);
-        return;
-      }
-    }
+  if (mSeekJob.mTarget.IsFast()) {
+    
+    mSeekedVideoData = video;
+    mDoneVideoSeeking = true;
+  } else if (NS_FAILED(DropVideoUpToSeekTarget(video.get()))) {
+    RejectIfExist(__func__);
+    return;
   }
+
   CheckIfSeekComplete();
 }
 

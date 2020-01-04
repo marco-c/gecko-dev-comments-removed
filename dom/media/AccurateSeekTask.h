@@ -68,10 +68,10 @@ private:
 
   const media::TimeUnit mCurrentTimeBeforeSeek;
   const uint32_t mAudioRate;  
-  bool mDropAudioUntilNextDiscontinuity;
-  bool mDropVideoUntilNextDiscontinuity;
   bool mDoneAudioSeeking;
   bool mDoneVideoSeeking;
+  bool mFirstAudioSample = true;
+  bool mFirstVideoSample = true;
 
   
   
