@@ -1072,6 +1072,14 @@ DrawTargetSkia::FillGlyphs(ScaledFont *aFont,
     }
   }
 
+  if (!shouldLCDRenderText && aFont->GetType() == FontType::GDI) {
+    
+    
+    
+    
+    paint.mPaint.setFlags(paint.mPaint.getFlags() | SkPaint::kGenA8FromLCD_Flag);
+  }
+
   std::vector<uint16_t> indices;
   std::vector<SkPoint> offsets;
   indices.resize(aBuffer.mNumGlyphs);
