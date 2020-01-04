@@ -262,7 +262,7 @@ var cosh_data = [
     [1875817529344, 28.953212876533797]
 ];
 
-var sloppy_tolerance = 8;  
+var sloppy_tolerance = 1000;  
 
 for (var [x, y] of cosh_data)
     assertNear(Math.acosh(x), y, sloppy_tolerance);
