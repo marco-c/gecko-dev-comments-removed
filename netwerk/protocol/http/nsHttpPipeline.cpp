@@ -706,7 +706,7 @@ nsHttpPipeline::WriteSegments(nsAHttpSegmentWriter *writer,
     }
 
     if (mPushBackLen) {
-        nsHttpPushBackWriter writer(mPushBackBuf, mPushBackLen);
+        nsHttpPushBackWriter pushBackWriter(mPushBackBuf, mPushBackLen);
         uint32_t len = mPushBackLen, n;
         mPushBackLen = 0;
 
@@ -721,7 +721,7 @@ nsHttpPipeline::WriteSegments(nsAHttpSegmentWriter *writer,
         
         
         
-        rv = WriteSegments(&writer, len, &n);
+        rv = WriteSegments(&pushBackWriter, len, &n);
     }
 
     return rv;

@@ -1240,13 +1240,13 @@ nsHttpConnectionMgr::MakeNewConnection(nsConnectionEntry *ent,
         auto iter = mCT.Iter();
         while (mNumIdleConns + mNumActiveConns + 1 >= mMaxConns &&
                !iter.Done()) {
-            nsAutoPtr<nsConnectionEntry> &ent = iter.Data();
-            if (!ent->mIdleConns.Length()) {
+            nsAutoPtr<nsConnectionEntry> &entry = iter.Data();
+            if (!entry->mIdleConns.Length()) {
               iter.Next();
               continue;
             }
-            RefPtr<nsHttpConnection> conn(ent->mIdleConns[0]);
-            ent->mIdleConns.RemoveElementAt(0);
+            RefPtr<nsHttpConnection> conn(entry->mIdleConns[0]);
+            entry->mIdleConns.RemoveElementAt(0);
             conn->Close(NS_ERROR_ABORT);
             mNumIdleConns--;
             ConditionallyStopPruneDeadConnectionsTimer();
@@ -1260,15 +1260,15 @@ nsHttpConnectionMgr::MakeNewConnection(nsConnectionEntry *ent,
         
         
         for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-            nsAutoPtr<nsConnectionEntry> &ent = iter.Data();
-            if (!ent->mUsingSpdy) {
+            nsAutoPtr<nsConnectionEntry> &entry = iter.Data();
+            if (!entry->mUsingSpdy) {
                 continue;
             }
 
             for (uint32_t index = 0;
-                 index < ent->mActiveConns.Length();
+                 index < entry->mActiveConns.Length();
                  ++index) {
-                nsHttpConnection *conn = ent->mActiveConns[index];
+                nsHttpConnection *conn = entry->mActiveConns[index];
                 if (conn->UsingSpdy() && conn->CanReuse()) {
                     conn->DontReuse();
                     
@@ -2259,11 +2259,11 @@ nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason, ARefBase *param)
             LookupConnectionEntry(trans->ConnectionInfo(), nullptr, trans);
 
         if (ent) {
-            int32_t index = ent->mPendingQ.IndexOf(trans);
-            if (index >= 0) {
+            int32_t transIndex = ent->mPendingQ.IndexOf(trans);
+            if (transIndex >= 0) {
                 LOG(("nsHttpConnectionMgr::OnMsgCancelTransaction [trans=%p]"
                      " found in pending queue\n", trans));
-                ent->mPendingQ.RemoveElementAt(index);
+                ent->mPendingQ.RemoveElementAt(transIndex);
             }
 
             
@@ -2767,23 +2767,23 @@ nsHttpConnectionMgr::TimeoutTick()
              ent->mPendingQ.Length()));
 
         
-        PRIntervalTime now = PR_IntervalNow();
+        PRIntervalTime tickTime = PR_IntervalNow();
         for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
             uint32_t connNextTimeout =
-                ent->mActiveConns[index]->ReadTimeoutTick(now);
+                ent->mActiveConns[index]->ReadTimeoutTick(tickTime);
             mTimeoutTickNext = std::min(mTimeoutTickNext, connNextTimeout);
         }
 
         
         if (ent->mHalfOpens.Length()) {
-            TimeStamp now = TimeStamp::Now();
+            TimeStamp currentTime = TimeStamp::Now();
             double maxConnectTime_ms = gHttpHandler->ConnectTimeout();
 
             for (uint32_t index = ent->mHalfOpens.Length(); index > 0; ) {
                 index--;
 
                 nsHalfOpenSocket *half = ent->mHalfOpens[index];
-                double delta = half->Duration(now);
+                double delta = half->Duration(currentTime);
                 
                 
                 if (delta > maxConnectTime_ms) {
