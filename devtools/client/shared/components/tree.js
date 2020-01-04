@@ -152,8 +152,6 @@ const Tree = module.exports = createClass({
     
 
     
-    filter: PropTypes.func,
-    
     autoExpandDepth: PropTypes.number,
     
     
@@ -166,7 +164,6 @@ const Tree = module.exports = createClass({
 
   getDefaultProps() {
     return {
-      filter: item => true,
       expanded: new Set(),
       seen: new Set(),
       focused: undefined,
@@ -301,10 +298,6 @@ const Tree = module.exports = createClass({
 
 
   _dfs(item, maxDepth = Infinity, traversal = [], _depth = 0) {
-    if (!this.props.filter(item)) {
-      return traversal;
-    }
-
     traversal.push({ item, depth: _depth });
 
     if (!this.state.expanded.has(item)) {
