@@ -84,6 +84,10 @@ function pktUIGetter(prop) {
 Object.defineProperty(window, "pktUI", pktUIGetter("pktUI"));
 Object.defineProperty(window, "pktUIMessaging", pktUIGetter("pktUIMessaging"));
 
+XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
+  return Services.strings.createBundle('chrome://browser/locale/browser.properties');
+});
+
 const nsIWebNavigation = Ci.nsIWebNavigation;
 
 var gLastBrowserCharset = null;
@@ -3270,7 +3274,7 @@ function FillInHTMLTooltip(tipElement)
 }
 
 var browserDragAndDrop = {
-  canDropLink: aEvent => Services.droppedLinkHandler.canDropLink(aEvent, true),
+  canDropLink: function (aEvent) Services.droppedLinkHandler.canDropLink(aEvent, true),
 
   dragOver: function (aEvent)
   {
@@ -3418,7 +3422,7 @@ const BrowserSearch = {
 
     
     if (browser.engines) {
-      if (browser.engines.some(e => e.title == engine.title))
+      if (browser.engines.some(function (e) e.title == engine.title))
         return;
     }
 
@@ -3785,6 +3789,7 @@ function FillHistoryMenu(aParent) {
         PlacesUtils.favicons.getFaviconURLForPage(entryURI, function (aURI) {
           if (aURI) {
             let iconURL = PlacesUtils.favicons.getFaviconLinkForIcon(aURI).spec;
+            iconURL = PlacesUtils.getImageURLForResolution(window, iconURL);
             item.style.listStyleImage = "url(" + iconURL + ")";
           }
         });
@@ -4030,6 +4035,41 @@ function updateUserContextUIVisibility()
 {
   let userContextEnabled = Services.prefs.getBoolPref("privacy.userContext.enabled");
   document.getElementById("menu_newUserContext").hidden = !userContextEnabled;
+}
+
+
+
+
+function updateUserContextUIIndicator(browser)
+{
+  let hbox = document.getElementById("userContext-icons");
+
+  if (!browser.hasAttribute("usercontextid")) {
+    hbox.removeAttribute("usercontextid");
+    return;
+  }
+
+  let label = document.getElementById("userContext-label");
+  let userContextId = browser.getAttribute("usercontextid");
+  hbox.setAttribute("usercontextid", userContextId);
+  switch (userContextId) {
+    case "1":
+      label.value = gBrowserBundle.GetStringFromName("usercontext.personal.label");
+      break;
+    case "2":
+      label.value = gBrowserBundle.GetStringFromName("usercontext.work.label");
+      break;
+    case "3":
+      label.value = gBrowserBundle.GetStringFromName("usercontext.banking.label");
+      break;
+    case "4":
+      label.value = gBrowserBundle.GetStringFromName("usercontext.shopping.label");
+      break;
+    
+    
+    default:
+      label.value = "Context " + userContextId;
+  }
 }
 
 
@@ -4520,9 +4560,7 @@ var LinkTargetDisplay = {
   DELAY_HIDE: 250,
   _timer: 0,
 
-  get _isVisible () {
-    return XULBrowserWindow.statusTextField.label != "";
-  },
+  get _isVisible () XULBrowserWindow.statusTextField.label != "",
 
   update: function () {
     clearTimeout(this._timer);
@@ -4919,7 +4957,7 @@ nsBrowserAccess.prototype = {
   },
 
   isTabContentWindow: function (aWindow) {
-    return gBrowser.browsers.some(browser => browser.contentWindow == aWindow);
+    return gBrowser.browsers.some(function (browser) browser.contentWindow == aWindow);
   },
 }
 
@@ -5150,9 +5188,9 @@ var TabsInTitlebar = {
   },
 
   _update: function (aForce=false) {
-    let $ = id => document.getElementById(id);
-    let rect = ele => ele.getBoundingClientRect();
-    let verticalMargins = cstyle => parseFloat(cstyle.marginBottom) + parseFloat(cstyle.marginTop);
+    function $(id) document.getElementById(id);
+    function rect(ele) ele.getBoundingClientRect();
+    function verticalMargins(cstyle) parseFloat(cstyle.marginBottom) + parseFloat(cstyle.marginTop);
 
     if (!this._initialized || window.fullScreen)
       return;
@@ -7360,12 +7398,8 @@ function getTabModalPromptBox(aWindow) {
 };
 
 
-function getBrowser() {
-  return gBrowser;
-}
-function getNavToolbox() {
-  return gNavToolbox;
-}
+function getBrowser() gBrowser;
+function getNavToolbox() gNavToolbox;
 
 var gPrivateBrowsingUI = {
   init: function PBUI_init() {
