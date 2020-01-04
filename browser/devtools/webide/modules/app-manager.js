@@ -659,7 +659,7 @@ let AppManager = exports.AppManager = {
 
       
       
-      if (project.manifest.role && project.manifest.role === "addon") {
+      if (project.manifest.manifest_version || project.manifest.role === "addon") {
         return;
       }
 
