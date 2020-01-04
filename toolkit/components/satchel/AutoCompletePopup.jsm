@@ -162,6 +162,9 @@ this.AutoCompletePopup = {
       this.closePopup();
     } else {
       AutoCompleteTreeView.setResults(results);
+      
+      
+      this.openedPopup.view = AutoCompleteTreeView;
       this.openedPopup.invalidate();
     }
   },
