@@ -81,6 +81,7 @@ user_pref("toolkit.telemetry.unified", false);
 
 user_pref("browser.safebrowsing.enabled", false);
 user_pref("browser.safebrowsing.malware.enabled", false);
+user_pref("browser.safebrowsing.forbiddenURIs.enabled", false);
 
 user_pref("privacy.trackingprotection.enabled", false);
 user_pref("privacy.trackingprotection.pbmode.enabled", false);
