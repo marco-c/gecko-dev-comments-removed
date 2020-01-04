@@ -678,7 +678,7 @@ public:
 
 
 
-  virtual mozilla::dom::ShadowRoot *GetShadowRoot() const = 0;
+  inline mozilla::dom::ShadowRoot *GetShadowRoot() const;
 
   
 
