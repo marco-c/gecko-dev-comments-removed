@@ -34,6 +34,7 @@ const ElectronKeysMapping = {
   "F22": "DOM_VK_F22",
   "F23": "DOM_VK_F23",
   "F24": "DOM_VK_F24",
+  "Plus": "DOM_VK_PLUS",
   "Space": "DOM_VK_SPACE",
   "Backspace": "DOM_VK_BACK_SPACE",
   "Delete": "DOM_VK_DELETE",
@@ -121,51 +122,19 @@ KeyShortcuts.parseElectronKey = function (window, str) {
     }
   }
 
-  
-  
-  if (key === "Plus") {
-    key = "+";
-  }
-
-  if (typeof key === "string" && key.length === 1) {
+  if (typeof (key) === "string" && key.length === 1) {
     
     shortcut.key = key.toLowerCase();
   } else if (key in ElectronKeysMapping) {
     
     key = ElectronKeysMapping[key];
     shortcut.keyCode = window.KeyboardEvent[key];
-    
-    shortcut.keyCodeString = key;
   } else {
     throw new Error("Unsupported key: " + key);
   }
 
   return shortcut;
 };
-
-KeyShortcuts.stringify = function (shortcut) {
-  let list = [];
-  if (shortcut.alt) {
-    list.push("Alt");
-  }
-  if (shortcut.ctrl) {
-    list.push("Ctrl");
-  }
-  if (shortcut.meta) {
-    list.push("Cmd");
-  }
-  if (shortcut.shift) {
-    list.push("Shift");
-  }
-  let key;
-  if (shortcut.key) {
-    key = shortcut.key.toUpperCase();
-  } else {
-    key = shortcut.keyCodeString;
-  }
-  list.push(key);
-  return list.join("+");
-}
 
 KeyShortcuts.prototype = {
   destroy() {
@@ -192,12 +161,7 @@ KeyShortcuts.prototype = {
     if (shortcut.keyCode) {
       return event.keyCode == shortcut.keyCode;
     }
-    
-    
-    
-    return event.key.toLowerCase() == shortcut.key ||
-      ( shortcut.key.match(/[0-9]/) &&
-        event.keyCode == shortcut.key.charCodeAt(0) );
+    return event.key.toLowerCase() == shortcut.key;
   },
 
   handleEvent(event) {

@@ -172,9 +172,7 @@ function synthesizeKeyFromKeyTag(key) {
 
 
 
-
-
-function synthesizeKeyShortcut(key, target) {
+function synthesizeKeyShortcut(key) {
   
   let window = Services.appShell.hiddenDOMWindow;
   let shortcut = KeyShortcuts.parseElectronKey(window, key);
@@ -186,7 +184,7 @@ function synthesizeKeyShortcut(key, target) {
     ctrlKey: shortcut.ctrl,
     metaKey: shortcut.meta,
     shiftKey: shortcut.shift
-  }, target);
+  });
 }
 
 
