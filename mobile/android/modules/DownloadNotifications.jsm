@@ -19,7 +19,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services", "resource://gre/modules/Serv
 XPCOMUtils.defineLazyServiceGetter(this, "ParentalControls",
   "@mozilla.org/parental-controls-service;1", "nsIParentalControlsService");
 
-var Log = Cu.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.i.bind(null, "DownloadNotifications"); 
+var Log = Cu.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.i.bind(null, "DownloadNotifications");
 
 XPCOMUtils.defineLazyGetter(this, "strings",
                             () => Services.strings.createBundle("chrome://browser/locale/browser.properties"));
@@ -122,7 +122,7 @@ var DownloadNotifications = {
     let hash = "#" + window.encodeURIComponent(download.target.path);
 
     
-    window.BrowserApp.selectOrOpenTab("about:downloads" + hash, { startsWith: true });
+    window.BrowserApp.selectOrAddTab("about:downloads" + hash, null, { startsWith: true });
   },
 
   onClick: function(cookie) {
