@@ -4197,14 +4197,8 @@ UpdatePrompt.prototype = {
         this._getUpdateWindow() || this._getAltUpdateWindow())
       return;
 
-    var stringsPrefix = "updateAvailable_" + update.type + ".";
-    var title = gUpdateBundle.formatStringFromName(stringsPrefix + "title",
-                                                   [update.name], 1);
-    var text = gUpdateBundle.GetStringFromName(stringsPrefix + "text");
-    var imageUrl = "";
     this._showUnobtrusiveUI(null, URI_UPDATE_PROMPT_DIALOG, null,
-                           UPDATE_WINDOW_NAME, "updatesavailable", update,
-                           title, text, imageUrl);
+                           UPDATE_WINDOW_NAME, "updatesavailable", update);
   },
 
   
@@ -4221,14 +4215,8 @@ UpdatePrompt.prototype = {
       return;
 
     if (background) {
-      var stringsPrefix = "updateDownloaded_" + update.type + ".";
-      var title = gUpdateBundle.formatStringFromName(stringsPrefix + "title",
-                                                     [update.name], 1);
-      var text = gUpdateBundle.GetStringFromName(stringsPrefix + "text");
-      var imageUrl = "";
       this._showUnobtrusiveUI(null, URI_UPDATE_PROMPT_DIALOG, null,
-                              UPDATE_WINDOW_NAME, "finishedBackground", update,
-                              title, text, imageUrl);
+                              UPDATE_WINDOW_NAME, "finishedBackground", update);
     } else {
       this._showUI(null, URI_UPDATE_PROMPT_DIALOG, null,
                    UPDATE_WINDOW_NAME, "finishedBackground", update);
@@ -4339,14 +4327,8 @@ UpdatePrompt.prototype = {
 
 
 
-
-
-
-
-
-
   _showUnobtrusiveUI: function UP__showUnobUI(parent, uri, features, name, page,
-                                              update, title, text, imageUrl) {
+                                              update) {
     var observer = {
       updatePrompt: this,
       service: null,
@@ -4361,9 +4343,6 @@ UpdatePrompt.prototype = {
       },
       observe: function (aSubject, aTopic, aData) {
         switch (aTopic) {
-          case "alertclickcallback":
-            this.updatePrompt._showUI(parent, uri, features, name, page, update);
-            
           case "quit-application":
             if (this.timer)
               this.timer.cancel();
@@ -4375,7 +4354,6 @@ UpdatePrompt.prototype = {
 
     
     
-    
     if (page == "updatesavailable") {
       var idleService = Cc["@mozilla.org/widget/idleservice;1"].
                         getService(Ci.nsIIdleService);
@@ -4385,17 +4363,6 @@ UpdatePrompt.prototype = {
         this._showUI(parent, uri, features, name, page, update);
         return;
       }
-    }
-
-    try {
-      var notifier = Cc["@mozilla.org/alerts-service;1"].
-                     getService(Ci.nsIAlertsService);
-      notifier.showAlertNotification(imageUrl, title, text, true, "", observer);
-    }
-    catch (e) {
-      
-      this._showUIWhenIdle(parent, uri, features, name, page, update);
-      return;
     }
 
     observer.service = Services.obs;
