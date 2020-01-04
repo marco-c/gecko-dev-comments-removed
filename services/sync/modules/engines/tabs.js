@@ -165,6 +165,11 @@ TabStore.prototype = {
           continue;
         }
 
+        if (current.url.length >= (MAX_UPLOAD_BYTES - 1000)) {
+          this._log.trace("Skipping over-long URL.");
+          continue;
+        }
+
         
         
         
