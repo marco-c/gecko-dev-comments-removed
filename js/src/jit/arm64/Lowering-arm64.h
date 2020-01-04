@@ -21,9 +21,8 @@ class LIRGeneratorARM64 : public LIRGeneratorShared
 
   protected:
     
-    
-    void useBoxFixed(LInstruction* lir, size_t n, MDefinition* mir, Register reg1, Register reg2,
-                     bool useAtStart = false);
+    LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register reg2,
+                               bool useAtStart = false);
 
     LAllocation useByteOpRegister(MDefinition* mir);
     LAllocation useByteOpRegisterOrNonDoubleConstant(MDefinition* mir);

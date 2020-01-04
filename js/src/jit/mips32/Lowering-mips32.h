@@ -21,9 +21,8 @@ class LIRGeneratorMIPS : public LIRGeneratorMIPSShared
 
   protected:
     
-    
-    void useBoxFixed(LInstruction* lir, size_t n, MDefinition* mir, Register reg1, Register reg2,
-                     bool useAtStart = false);
+    LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register reg2,
+                               bool useAtStart = false);
 
     inline LDefinition tempToUnbox() {
         return LDefinition::BogusTemp();

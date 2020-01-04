@@ -24,7 +24,7 @@ class LIRGeneratorX64 : public LIRGeneratorX86Shared
     void defineUntypedPhi(MPhi* phi, size_t lirIndex);
 
     
-    void useBoxFixed(LInstruction* lir, size_t n, MDefinition* mir, Register reg1, Register, bool useAtStart = false);
+    LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register, bool useAtStart = false);
 
     
     
