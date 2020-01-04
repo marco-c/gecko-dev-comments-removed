@@ -14,6 +14,11 @@
 #include "nsTArray.h"
 #include "nscore.h"
 
+
+#ifdef SetProp
+#undef SetProp
+#endif
+
 class nsIAtom;
 class nsIDOMNode;
 namespace mozilla {

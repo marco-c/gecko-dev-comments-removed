@@ -54,6 +54,11 @@
 #include "nsWSRunObject.h"
 #include <algorithm>
 
+
+#ifdef SetProp
+#undef SetProp
+#endif
+
 class nsISupports;
 class nsRulesInfo;
 
