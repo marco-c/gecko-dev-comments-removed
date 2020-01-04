@@ -1097,6 +1097,14 @@ MediaDecoderStateMachine::EnterState(State aState)
       mDecodingFirstFrame = true;
       ReadMetadata();
       break;
+    case DECODER_STATE_DORMANT:
+      DiscardSeekTaskIfExist();
+      if (IsPlaying()) {
+        StopPlayback();
+      }
+      Reset();
+      mReader->ReleaseResources();
+      break;
     case DECODER_STATE_ERROR:
     case DECODER_STATE_SHUTDOWN:
       mIsShutdown = true;
@@ -1201,24 +1209,6 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     }
 
     SetState(DECODER_STATE_DORMANT);
-
-    
-    DiscardSeekTaskIfExist();
-
-    if (IsPlaying()) {
-      StopPlayback();
-    }
-
-    Reset();
-
-    
-    
-    
-    
-    
-    
-    mReader->ReleaseResources();
-
     return;
   }
 
