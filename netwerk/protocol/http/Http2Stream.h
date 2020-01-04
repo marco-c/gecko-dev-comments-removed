@@ -200,6 +200,8 @@ protected:
 
   void     ChangeState(enum upstreamStateType);
 
+  virtual void AdjustInitialWindow();
+
 private:
   friend class nsAutoPtr<Http2Stream>;
 
@@ -207,7 +209,6 @@ private:
   nsresult GenerateOpen();
 
   void     AdjustPushedPriority();
-  void     AdjustInitialWindow();
   nsresult TransmitFrame(const char *, uint32_t *, bool forceCommitment);
   void     GenerateDataFrameHeader(uint32_t, bool);
 
@@ -311,6 +312,9 @@ private:
   
   
   bool                         mBlockedOnRwin;
+
+  
+  bool                         mSentPushWindowBump;
 
   
   uint64_t                     mTotalSent;
