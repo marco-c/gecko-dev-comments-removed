@@ -65,7 +65,14 @@ def _do_watch(qWatch, timeout):
             assert fin is TaskFinishedMarker, "invalid finish marker"
         except Empty:
             
-            proc.terminate()
+            try:
+                proc.terminate()
+            except WindowsError as ex:
+                
+                
+                
+                if ex.winerror != 5:
+                    raise
             fin = qWatch.get(block=True, timeout=sys.maxint)
             assert fin is TaskFinishedMarker, "invalid finish marker"
 
