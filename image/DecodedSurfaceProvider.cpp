@@ -187,9 +187,7 @@ DecodedSurfaceProvider::CheckForNewSurface()
 
   
   MOZ_ASSERT(mImage);
-  SurfaceCache::SurfaceAvailable(WrapNotNull(this),
-                                 GetImageKey(),
-                                 GetSurfaceKey());
+  SurfaceCache::SurfaceAvailable(WrapNotNull(this));
 }
 
 void

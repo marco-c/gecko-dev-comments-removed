@@ -253,9 +253,7 @@ AnimationSurfaceProvider::AnnounceSurfaceAvailable()
   
   
   
-  SurfaceCache::SurfaceAvailable(WrapNotNull(this),
-                                 GetImageKey(),
-                                 GetSurfaceKey());
+  SurfaceCache::SurfaceAvailable(WrapNotNull(this));
 }
 
 void

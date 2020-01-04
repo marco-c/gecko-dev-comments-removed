@@ -277,13 +277,7 @@ struct SurfaceCache
 
 
 
-
-
-
-
-  static InsertOutcome Insert(NotNull<ISurfaceProvider*> aProvider,
-                              const ImageKey    aImageKey,
-                              const SurfaceKey& aSurfaceKey);
+  static InsertOutcome Insert(NotNull<ISurfaceProvider*> aProvider);
 
   
 
@@ -300,13 +294,7 @@ struct SurfaceCache
 
 
 
-
-
-
-
-  static void SurfaceAvailable(NotNull<ISurfaceProvider*> aProvider,
-                               const ImageKey    aImageKey,
-                               const SurfaceKey& aSurfaceKey);
+  static void SurfaceAvailable(NotNull<ISurfaceProvider*> aProvider);
 
   
 

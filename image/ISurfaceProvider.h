@@ -57,6 +57,7 @@ public:
   
   
   
+  
   virtual size_t LogicalSizeInBytes() const = 0;
 
   
