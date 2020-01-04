@@ -27,10 +27,6 @@
   overflow: auto;
 }
 
-#timings-summary-blocked {
-  display: none; 
-}
-
 #network-statistics-charts {
   overflow: auto;
 }

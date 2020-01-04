@@ -1327,8 +1327,15 @@ NetworkMonitor.prototype = {
     let timings = httpActivity.timings;
     let harTimings = {};
 
-    
-    harTimings.blocked = -1;
+    if (timings.STATUS_RESOLVING && timings.STATUS_CONNECTING_TO) {
+      harTimings.blocked = timings.STATUS_RESOLVING.first -
+                           timings.REQUEST_HEADER.first;
+    } else if (timings.STATUS_SENDING_TO) {
+      harTimings.blocked = timings.STATUS_SENDING_TO.first -
+                           timings.REQUEST_HEADER.first;
+    } else {
+      harTimings.blocked = -1;
+    }
 
     
     
@@ -1339,9 +1346,6 @@ NetworkMonitor.prototype = {
     if (timings.STATUS_CONNECTING_TO && timings.STATUS_CONNECTED_TO) {
       harTimings.connect = timings.STATUS_CONNECTED_TO.last -
                            timings.STATUS_CONNECTING_TO.first;
-    } else if (timings.STATUS_SENDING_TO) {
-      harTimings.connect = timings.STATUS_SENDING_TO.first -
-                           timings.REQUEST_HEADER.first;
     } else {
       harTimings.connect = -1;
     }
