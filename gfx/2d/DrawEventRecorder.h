@@ -29,6 +29,8 @@ public:
   explicit DrawEventRecorderPrivate(std::ostream *aStream);
   virtual ~DrawEventRecorderPrivate() { }
 
+  void WriteHeader();
+
   void RecordEvent(const RecordedEvent &aEvent);
   void WritePath(const PathRecording *aPath);
 
@@ -69,6 +71,45 @@ private:
   virtual void Flush();
 
   std::ofstream mOutputFile;
+};
+
+class DrawEventRecorderMemory final : public DrawEventRecorderPrivate
+{
+public:
+  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawEventRecorderMemory)
+
+  
+
+
+  DrawEventRecorderMemory();
+
+  
+
+
+  size_t RecordingSize();
+
+  
+
+
+
+
+
+
+  bool CopyRecording(char* aBuffer, size_t aBufferLen);
+
+  
+
+
+
+
+  void WipeRecording();
+
+private:
+  ~DrawEventRecorderMemory() {};
+
+  void Flush() final;
+
+  std::stringstream mMemoryStream;
 };
 
 } 
