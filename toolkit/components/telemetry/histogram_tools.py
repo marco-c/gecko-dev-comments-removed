@@ -216,27 +216,16 @@ associated with the histogram.  Returns None if no guarding is necessary."""
         table_dispatch(definition['kind'], table,
                        lambda allowed_keys: Histogram.check_keys(name, definition, allowed_keys))
 
-        
-        
-        if not self._is_use_counter:
-            if 'alert_emails' not in definition:
-                if whitelists is not None and name not in whitelists['alert_emails']:
-                    raise KeyError, 'New histogram "%s" must have an alert_emails field.' % name
-            elif not isinstance(definition['alert_emails'], list):
-                raise KeyError, 'alert_emails must be an array (in histogram "%s")' % name
-
-        Histogram.check_name(name)
+        self.check_name(name)
         self.check_field_types(name, definition)
-        Histogram.check_expiration(name, definition)
-        self.check_bug_numbers(name, definition)
+        self.check_expiration(name, definition)
+        self.check_whitelistable_fields(name, definition)
 
-    @staticmethod
-    def check_name(name):
+    def check_name(self, name):
         if '#' in name:
             raise ValueError, '"#" not permitted for %s' % (name)
 
-    @staticmethod
-    def check_expiration(name, definition):
+    def check_expiration(self, name, definition):
         expiration = definition.get('expires_in_version')
 
         if not expiration:
@@ -249,10 +238,26 @@ associated with the histogram.  Returns None if no guarding is necessary."""
 
         definition['expires_in_version'] = expiration
 
+    
+    def check_whitelistable_fields(self, name, definition):
+        
+        
+        if self._is_use_counter:
+            return
+
+        
+        if whitelists is None:
+            return
+
+        for field in ['alert_emails', 'bug_numbers']:
+            if field not in definition and name not in whitelists[field]:
+                raise KeyError, 'New histogram "%s" must have a %s field.' % (name, field)
+
     def check_bug_numbers(self, name, definition):
         
         if self._is_use_counter:
             return
+
         bug_numbers = definition.get('bug_numbers')
         if not bug_numbers:
             if whitelists is None or name in whitelists['bug_numbers']:
@@ -260,26 +265,26 @@ associated with the histogram.  Returns None if no guarding is necessary."""
             else:
                 raise KeyError, 'New histogram "%s" must have a bug_numbers field.' % name
 
-        if not isinstance(bug_numbers, list):
-            raise ValueError, 'bug_numbers field for "%s" should be an array' % (name)
-
-        if not all(type(num) is int for num in bug_numbers):
-            raise ValueError, 'bug_numbers array for "%s" should only contain integers' % (name)
-
     def check_field_types(self, name, definition):
         
         type_checked_fields = {
-                "n_buckets": int,
-                "n_values": int,
-                "low": int,
-                "high": int,
-                "keyed": bool,
-                "expires_in_version": basestring,
-                "kind": basestring,
-                "description": basestring,
-                "cpp_guard": basestring,
-                "releaseChannelCollection": basestring
-            }
+            "n_buckets": int,
+            "n_values": int,
+            "low": int,
+            "high": int,
+            "keyed": bool,
+            "expires_in_version": basestring,
+            "kind": basestring,
+            "description": basestring,
+            "cpp_guard": basestring,
+            "releaseChannelCollection": basestring,
+        }
+
+        
+        type_checked_list_fields = {
+            "bug_numbers": int,
+            "alert_emails": basestring,
+        }
 
         
         
@@ -297,16 +302,24 @@ associated with the histogram.  Returns None if no guarding is necessary."""
             if definition.get("keyed", None) == "true":
                 definition["keyed"] = True
 
+        def nice_type_name(t):
+            if t is basestring:
+                return "string"
+            return t.__name__
+
         for key, key_type in type_checked_fields.iteritems():
             if not key in definition:
                 continue
             if not isinstance(definition[key], key_type):
-                if key_type is basestring:
-                    type_name = "string"
-                else:
-                    type_name = key_type.__name__
                 raise ValueError, ('value for key "{0}" in Histogram "{1}" '
-                        'should be {2}').format(key, name, type_name)
+                        'should be {2}').format(key, name, nice_type_name(key_type))
+
+        for key, key_type in type_checked_list_fields.iteritems():
+            if not key in definition:
+                continue
+            if not all(isinstance(x, key_type) for x in definition[key]):
+                raise ValueError, ('all values for list "{0}" in Histogram "{1}" '
+                        'should be {2}').format(key, name, nice_type_name(key_type))
 
     @staticmethod
     def check_keys(name, definition, allowed_keys):
