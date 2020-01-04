@@ -109,7 +109,7 @@ MIRGenerator::addAbortedPreliminaryGroup(ObjectGroup* group)
 }
 
 bool
-MIRGenerator::needsAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* access) const
+MIRGenerator::needsAsmJSBoundsCheckBranch(const MWasmMemoryAccess* access) const
 {
     
     
@@ -124,7 +124,7 @@ MIRGenerator::needsAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* access) const
 }
 
 size_t
-MIRGenerator::foldableOffsetRange(const MAsmJSHeapAccess* access) const
+MIRGenerator::foldableOffsetRange(const MWasmMemoryAccess* access) const
 {
     return foldableOffsetRange(access->needsBoundsCheck(), access->isAtomicAccess());
 }

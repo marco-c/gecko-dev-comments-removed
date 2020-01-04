@@ -2691,7 +2691,7 @@ class BaseCompiler
 
     
 
-    bool needsBoundsCheckBranch(const MAsmJSHeapAccess& access) const {
+    bool needsBoundsCheckBranch(const MWasmMemoryAccess& access) const {
         
         
         
@@ -2719,7 +2719,7 @@ class BaseCompiler
     }
 #endif
 
-    void loadHeap(const MAsmJSHeapAccess& access, RegI32 ptr, AnyReg dest) {
+    void loadHeap(const MWasmMemoryAccess& access, RegI32 ptr, AnyReg dest) {
 #if defined(JS_CODEGEN_X64)
         
 
@@ -2750,7 +2750,7 @@ class BaseCompiler
 #endif
     }
 
-    void storeHeap(const MAsmJSHeapAccess& access, RegI32 ptr, AnyReg src) {
+    void storeHeap(const MWasmMemoryAccess& access, RegI32 ptr, AnyReg src) {
 #if defined(JS_CODEGEN_X64)
         
 
@@ -5026,7 +5026,7 @@ BaseCompiler::emitLoad(ValType type, Scalar::Type viewType)
     
     
 
-    MAsmJSHeapAccess access(viewType);
+    MWasmMemoryAccess access(viewType);
     access.setOffset(addr.offset);
     access.setAlign(addr.align);
 
@@ -5074,7 +5074,7 @@ BaseCompiler::emitStore(ValType resultType, Scalar::Type viewType)
     
     
 
-    MAsmJSHeapAccess access(viewType);
+    MWasmMemoryAccess access(viewType);
     access.setOffset(addr.offset);
     access.setAlign(addr.align);
 
@@ -5349,7 +5349,7 @@ BaseCompiler::emitStoreWithCoercion(ValType resultType, Scalar::Type viewType)
     
     
 
-    MAsmJSHeapAccess access(viewType);
+    MWasmMemoryAccess access(viewType);
     access.setOffset(addr.offset);
     access.setAlign(addr.align);
 
