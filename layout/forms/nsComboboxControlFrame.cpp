@@ -418,7 +418,7 @@ public:
 
 void
 nsComboboxControlFrame::ReflowDropdown(nsPresContext*  aPresContext,
-                                       const nsHTMLReflowState& aReflowState)
+                                       const ReflowInput& aReflowState)
 {
   
   
@@ -434,7 +434,7 @@ nsComboboxControlFrame::ReflowDropdown(nsPresContext*  aPresContext,
   WritingMode wm = mDropdownFrame->GetWritingMode();
   LogicalSize availSize = aReflowState.AvailableSize(wm);
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-  nsHTMLReflowState kidReflowState(aPresContext, aReflowState, mDropdownFrame,
+  ReflowInput kidReflowState(aPresContext, aReflowState, mDropdownFrame,
                                    availSize);
 
   
@@ -809,7 +809,7 @@ nsComboboxControlFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 void
 nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
                                nsHTMLReflowMetrics&     aDesiredSize,
-                               const nsHTMLReflowState& aReflowState,
+                               const ReflowInput& aReflowState,
                                nsReflowStatus&          aStatus)
 {
   MarkInReflow();
@@ -1287,7 +1287,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                           nsHTMLReflowMetrics&     aDesiredSize,
-                          const nsHTMLReflowState& aReflowState,
+                          const ReflowInput& aReflowState,
                           nsReflowStatus&          aStatus) override;
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
@@ -1309,10 +1309,10 @@ nsComboboxDisplayFrame::GetType() const
 void
 nsComboboxDisplayFrame::Reflow(nsPresContext*           aPresContext,
                                nsHTMLReflowMetrics&     aDesiredSize,
-                               const nsHTMLReflowState& aReflowState,
+                               const ReflowInput& aReflowState,
                                nsReflowStatus&          aStatus)
 {
-  nsHTMLReflowState state(aReflowState);
+  ReflowInput state(aReflowState);
   if (state.ComputedBSize() == NS_INTRINSICSIZE) {
     
     

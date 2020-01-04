@@ -458,7 +458,7 @@ RestyleManager::RecomputePosition(nsIFrame* aFrame)
         WritingMode wm = cb->GetWritingMode();
         const LogicalSize size(wm, cb->GetContentRectRelativeToSelf().Size());
 
-        nsHTMLReflowState::ComputeRelativeOffsets(wm, cont, size, newOffsets);
+        ReflowInput::ComputeRelativeOffsets(wm, cont, size, newOffsets);
         NS_ASSERTION(newOffsets.left == -newOffsets.right &&
                      newOffsets.top == -newOffsets.bottom,
                      "ComputeRelativeOffsets should return valid results");
@@ -489,7 +489,7 @@ RestyleManager::RecomputePosition(nsIFrame* aFrame)
   LogicalSize parentSize = parentFrame->GetLogicalSize();
 
   nsFrameState savedState = parentFrame->GetStateBits();
-  nsHTMLReflowState parentReflowState(aFrame->PresContext(), parentFrame,
+  ReflowInput parentReflowState(aFrame->PresContext(), parentFrame,
                                       &rc, parentSize);
   parentFrame->RemoveStateBits(~nsFrameState(0));
   parentFrame->AddStateBits(savedState);
@@ -498,7 +498,7 @@ RestyleManager::RecomputePosition(nsIFrame* aFrame)
   
   
   
-  Maybe<nsHTMLReflowState> cbReflowState;
+  Maybe<ReflowInput> cbReflowState;
   nsIFrame* cbFrame = parentFrame->GetContainingBlock();
   if (cbFrame && (aFrame->GetContainingBlock() != parentFrame ||
                   parentFrame->GetType() == nsGkAtoms::tableFrame)) {
@@ -532,7 +532,7 @@ RestyleManager::RecomputePosition(nsIFrame* aFrame)
     parentReflowState.mStyleBorder->GetComputedBorder();
   cbSize -= nsSize(parentBorder.LeftRight(), parentBorder.TopBottom());
   LogicalSize lcbSize(frameWM, cbSize);
-  nsHTMLReflowState reflowState(aFrame->PresContext(), parentReflowState,
+  ReflowInput reflowState(aFrame->PresContext(), parentReflowState,
                                 aFrame, availSize, &lcbSize);
   nsSize computedSize(reflowState.ComputedWidth(), reflowState.ComputedHeight());
   computedSize.width += reflowState.ComputedPhysicalBorderPadding().LeftRight();

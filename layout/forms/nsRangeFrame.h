@@ -48,7 +48,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       nsHTMLReflowMetrics&     aDesiredSize,
-                      const nsHTMLReflowState& aReflowState,
+                      const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
 #ifdef DEBUG_FRAME_DUMP
@@ -159,7 +159,7 @@ private:
   
   void ReflowAnonymousContent(nsPresContext*           aPresContext,
                               nsHTMLReflowMetrics&     aDesiredSize,
-                              const nsHTMLReflowState& aReflowState);
+                              const ReflowInput& aReflowState);
 
   void DoUpdateThumbPosition(nsIFrame* aThumbFrame,
                              const nsSize& aRangeSize);

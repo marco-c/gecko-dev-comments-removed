@@ -76,7 +76,7 @@ nsRubyTextFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
  void
 nsRubyTextFrame::Reflow(nsPresContext* aPresContext,
                         nsHTMLReflowMetrics& aDesiredSize,
-                        const nsHTMLReflowState& aReflowState,
+                        const ReflowInput& aReflowState,
                         nsReflowStatus& aStatus)
 {
   

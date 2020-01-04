@@ -86,7 +86,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       nsHTMLReflowMetrics&     aDesiredSize,
-                      const nsHTMLReflowState& aReflowState,
+                      const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
   
@@ -186,7 +186,7 @@ protected:
   virtual ~nsTableWrapperFrame();
 
   void InitChildReflowState(nsPresContext&     aPresContext,
-                            nsHTMLReflowState& aReflowState);
+                            ReflowInput& aReflowState);
 
   
   
@@ -231,13 +231,13 @@ protected:
   
   void OuterBeginReflowChild(nsPresContext*                     aPresContext,
                              nsIFrame*                          aChildFrame,
-                             const nsHTMLReflowState&           aOuterRS,
-                             mozilla::Maybe<nsHTMLReflowState>& aChildRS,
+                             const ReflowInput&           aOuterRS,
+                             mozilla::Maybe<ReflowInput>& aChildRS,
                              nscoord                            aAvailISize);
 
   void OuterDoReflowChild(nsPresContext*           aPresContext,
                           nsIFrame*                aChildFrame,
-                          const nsHTMLReflowState& aChildRS,
+                          const ReflowInput& aChildRS,
                           nsHTMLReflowMetrics&     aMetrics,
                           nsReflowStatus&          aStatus);
 
@@ -246,7 +246,7 @@ protected:
 
   
   void GetChildMargin(nsPresContext*           aPresContext,
-                      const nsHTMLReflowState& aOuterRS,
+                      const ReflowInput& aOuterRS,
                       nsIFrame*                aChildFrame,
                       nscoord                  aAvailableWidth,
                       mozilla::LogicalMargin&  aMargin);

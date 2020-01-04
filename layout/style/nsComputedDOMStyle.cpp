@@ -5125,7 +5125,7 @@ nsComputedDOMStyle::GetLineHeightCoord(nscoord& aCoord)
 
   
   
-  aCoord = nsHTMLReflowState::CalcLineHeight(mContent, mStyleContext,
+  aCoord = ReflowInput::CalcLineHeight(mContent, mStyleContext,
                                              blockHeight, 1.0f);
 
   

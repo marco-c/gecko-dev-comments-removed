@@ -330,7 +330,7 @@ nsTableColGroupFrame::RemoveFrame(ChildListID     aListID,
 }
 
 nsIFrame::LogicalSides
-nsTableColGroupFrame::GetLogicalSkipSides(const nsHTMLReflowState* aReflowState) const
+nsTableColGroupFrame::GetLogicalSkipSides(const ReflowInput* aReflowState) const
 {
   if (MOZ_UNLIKELY(StyleBorder()->mBoxDecorationBreak ==
                      NS_STYLE_BOX_DECORATION_BREAK_CLONE)) {
@@ -350,7 +350,7 @@ nsTableColGroupFrame::GetLogicalSkipSides(const nsHTMLReflowState* aReflowState)
 void
 nsTableColGroupFrame::Reflow(nsPresContext*          aPresContext,
                              nsHTMLReflowMetrics&     aDesiredSize,
-                             const nsHTMLReflowState& aReflowState,
+                             const ReflowInput& aReflowState,
                              nsReflowStatus&          aStatus)
 {
   MarkInReflow();
@@ -370,7 +370,7 @@ nsTableColGroupFrame::Reflow(nsPresContext*          aPresContext,
        kidFrame = kidFrame->GetNextSibling()) {
     
     nsHTMLReflowMetrics kidSize(aReflowState);
-    nsHTMLReflowState kidReflowState(aPresContext, aReflowState, kidFrame,
+    ReflowInput kidReflowState(aPresContext, aReflowState, kidFrame,
                                      LogicalSize(kidFrame->GetWritingMode()));
 
     nsReflowStatus status;

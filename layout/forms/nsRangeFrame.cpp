@@ -315,7 +315,7 @@ nsRangeFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 void
 nsRangeFrame::Reflow(nsPresContext*           aPresContext,
                      nsHTMLReflowMetrics&     aDesiredSize,
-                     const nsHTMLReflowState& aReflowState,
+                     const ReflowInput& aReflowState,
                      nsReflowStatus&          aStatus)
 {
   MarkInReflow();
@@ -375,7 +375,7 @@ nsRangeFrame::Reflow(nsPresContext*           aPresContext,
 void
 nsRangeFrame::ReflowAnonymousContent(nsPresContext*           aPresContext,
                                      nsHTMLReflowMetrics&     aDesiredSize,
-                                     const nsHTMLReflowState& aReflowState)
+                                     const ReflowInput& aReflowState)
 {
   
   
@@ -399,7 +399,7 @@ nsRangeFrame::ReflowAnonymousContent(nsPresContext*           aPresContext,
     WritingMode wm = trackFrame->GetWritingMode();
     LogicalSize availSize = aReflowState.ComputedSize(wm);
     availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-    nsHTMLReflowState trackReflowState(aPresContext, aReflowState,
+    ReflowInput trackReflowState(aPresContext, aReflowState,
                                        trackFrame, availSize);
 
     
@@ -434,7 +434,7 @@ nsRangeFrame::ReflowAnonymousContent(nsPresContext*           aPresContext,
     WritingMode wm = thumbFrame->GetWritingMode();
     LogicalSize availSize = aReflowState.ComputedSize(wm);
     availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-    nsHTMLReflowState thumbReflowState(aPresContext, aReflowState,
+    ReflowInput thumbReflowState(aPresContext, aReflowState,
                                        thumbFrame, availSize);
 
     
@@ -458,7 +458,7 @@ nsRangeFrame::ReflowAnonymousContent(nsPresContext*           aPresContext,
     WritingMode wm = rangeProgressFrame->GetWritingMode();
     LogicalSize availSize = aReflowState.ComputedSize(wm);
     availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-    nsHTMLReflowState progressReflowState(aPresContext, aReflowState,
+    ReflowInput progressReflowState(aPresContext, aReflowState,
                                           rangeProgressFrame, availSize);
 
     

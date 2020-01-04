@@ -67,7 +67,7 @@ public:
   
   virtual void Reflow(nsPresContext*      aPresContext,
                       nsHTMLReflowMetrics& aDesiredSize,
-                      const nsHTMLReflowState& aMaxSize,
+                      const ReflowInput& aMaxSize,
                       nsReflowStatus&      aStatus) override;
 
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
@@ -126,7 +126,7 @@ protected:
   
   
   void SetDesiredSize(nsHTMLReflowMetrics& aDesiredSize,
-                      const nsHTMLReflowState& aReflowState,
+                      const ReflowInput& aReflowState,
                       nscoord aWidth, nscoord aHeight);
 
   

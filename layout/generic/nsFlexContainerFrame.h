@@ -64,7 +64,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       nsHTMLReflowMetrics&     aDesiredSize,
-                      const nsHTMLReflowState& aReflowState,
+                      const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
   virtual nscoord
@@ -102,7 +102,7 @@ protected:
 
   void DoFlexLayout(nsPresContext*           aPresContext,
                     nsHTMLReflowMetrics&     aDesiredSize,
-                    const nsHTMLReflowState& aReflowState,
+                    const ReflowInput& aReflowState,
                     nsReflowStatus&          aStatus,
                     nscoord aContentBoxMainSize,
                     nscoord aAvailableBSizeForContent,
@@ -139,7 +139,7 @@ protected:
 
   mozilla::UniquePtr<FlexItem> GenerateFlexItemForChild(nsPresContext* aPresContext,
                                      nsIFrame* aChildFrame,
-                                     const nsHTMLReflowState& aParentReflowState,
+                                     const ReflowInput& aParentReflowState,
                                      const FlexboxAxisTracker& aAxisTracker);
 
   
@@ -151,7 +151,7 @@ protected:
   nscoord MeasureFlexItemContentHeight(nsPresContext* aPresContext,
                                        FlexItem& aFlexItem,
                                        bool aForceVerticalResizeForMeasuringReflow,
-                                       const nsHTMLReflowState& aParentReflowState);
+                                       const ReflowInput& aParentReflowState);
 
   
 
@@ -160,7 +160,7 @@ protected:
 
   void ResolveAutoFlexBasisAndMinSize(nsPresContext* aPresContext,
                                       FlexItem& aFlexItem,
-                                      const nsHTMLReflowState& aItemReflowState,
+                                      const ReflowInput& aItemReflowState,
                                       const FlexboxAxisTracker& aAxisTracker);
 
   
@@ -168,17 +168,17 @@ protected:
   
   
   void GenerateFlexLines(nsPresContext* aPresContext,
-                         const nsHTMLReflowState& aReflowState,
+                         const ReflowInput& aReflowState,
                          nscoord aContentBoxMainSize,
                          nscoord aAvailableBSizeForContent,
                          const nsTArray<StrutInfo>& aStruts,
                          const FlexboxAxisTracker& aAxisTracker,
                          mozilla::LinkedList<FlexLine>& aLines);
 
-  nscoord GetMainSizeFromReflowState(const nsHTMLReflowState& aReflowState,
+  nscoord GetMainSizeFromReflowState(const ReflowInput& aReflowState,
                                      const FlexboxAxisTracker& aAxisTracker);
 
-  nscoord ComputeCrossSize(const nsHTMLReflowState& aReflowState,
+  nscoord ComputeCrossSize(const ReflowInput& aReflowState,
                            const FlexboxAxisTracker& aAxisTracker,
                            nscoord aSumLineCrossSizes,
                            nscoord aAvailableBSizeForContent,
@@ -187,7 +187,7 @@ protected:
 
   void SizeItemInCrossAxis(nsPresContext* aPresContext,
                            const FlexboxAxisTracker& aAxisTracker,
-                           nsHTMLReflowState& aChildReflowState,
+                           ReflowInput& aChildReflowState,
                            FlexItem& aItem);
 
   
@@ -205,7 +205,7 @@ protected:
 
 
 
-  void MoveFlexItemToFinalPosition(const nsHTMLReflowState& aReflowState,
+  void MoveFlexItemToFinalPosition(const ReflowInput& aReflowState,
                                    const FlexItem& aItem,
                                    mozilla::LogicalPoint& aFramePos,
                                    const nsSize& aContainerSize);
@@ -224,7 +224,7 @@ protected:
 
   void ReflowFlexItem(nsPresContext* aPresContext,
                       const FlexboxAxisTracker& aAxisTracker,
-                      const nsHTMLReflowState& aReflowState,
+                      const ReflowInput& aReflowState,
                       const FlexItem& aItem,
                       mozilla::LogicalPoint& aFramePos,
                       const nsSize& aContainerSize);

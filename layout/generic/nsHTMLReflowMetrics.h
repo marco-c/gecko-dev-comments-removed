@@ -15,7 +15,7 @@
 
 
 namespace mozilla {
-struct nsHTMLReflowState;
+struct ReflowInput;
 } 
 
 
@@ -199,7 +199,7 @@ struct nsCollapsingMargin {
 
 
 class nsHTMLReflowMetrics {
-  using nsHTMLReflowState = mozilla::nsHTMLReflowState;
+  using ReflowInput = mozilla::ReflowInput;
 
 public:
   
@@ -216,7 +216,7 @@ public:
     , mWritingMode(aWritingMode)
   {}
 
-  explicit nsHTMLReflowMetrics(const nsHTMLReflowState& aState, uint32_t aFlags = 0);
+  explicit nsHTMLReflowMetrics(const ReflowInput& aState, uint32_t aFlags = 0);
 
   
   

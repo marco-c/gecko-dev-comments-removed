@@ -236,7 +236,7 @@ nsTableRowGroupFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 }
 
 nsIFrame::LogicalSides
-nsTableRowGroupFrame::GetLogicalSkipSides(const nsHTMLReflowState* aReflowState) const
+nsTableRowGroupFrame::GetLogicalSkipSides(const ReflowInput* aReflowState) const
 {
   if (MOZ_UNLIKELY(StyleBorder()->mBoxDecorationBreak ==
                      NS_STYLE_BOX_DECORATION_BREAK_CLONE)) {
@@ -286,7 +286,7 @@ nsTableRowGroupFrame::PlaceChild(nsPresContext*         aPresContext,
 void
 nsTableRowGroupFrame::InitChildReflowState(nsPresContext&     aPresContext,
                                            bool               aBorderCollapse,
-                                           nsHTMLReflowState& aReflowState)
+                                           ReflowInput& aReflowState)
 {
   nsMargin collapseBorder;
   nsMargin padding(0,0,0,0);
@@ -380,10 +380,10 @@ nsTableRowGroupFrame::ReflowChildren(nsPresContext*         aPresContext,
       
       LogicalSize kidAvailSize = aReflowState.availSize;
       kidAvailSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-      nsHTMLReflowState kidReflowState(aPresContext, aReflowState.reflowState,
+      ReflowInput kidReflowState(aPresContext, aReflowState.reflowState,
                                        kidFrame, kidAvailSize,
                                        nullptr,
-                                       nsHTMLReflowState::CALLER_WILL_INIT);
+                                       ReflowInput::CALLER_WILL_INIT);
       InitChildReflowState(*aPresContext, borderCollapse, kidReflowState);
 
       
@@ -533,7 +533,7 @@ nsTableRowGroupFrame::DidResizeRows(nsHTMLReflowMetrics& aDesiredSize)
 void
 nsTableRowGroupFrame::CalculateRowBSizes(nsPresContext*           aPresContext,
                                           nsHTMLReflowMetrics&     aDesiredSize,
-                                          const nsHTMLReflowState& aReflowState)
+                                          const ReflowInput& aReflowState)
 {
   nsTableFrame* tableFrame = GetTableFrame();
   const bool isPaginated = aPresContext->IsPaginated();
@@ -931,7 +931,7 @@ nsTableRowGroupFrame::CreateContinuingRowFrame(nsPresContext& aPresContext,
 
 void
 nsTableRowGroupFrame::SplitSpanningCells(nsPresContext&           aPresContext,
-                                         const nsHTMLReflowState& aReflowState,
+                                         const ReflowInput& aReflowState,
                                          nsTableFrame&            aTable,
                                          nsTableRowFrame&         aFirstRow,
                                          nsTableRowFrame&         aLastRow,
@@ -975,11 +975,11 @@ nsTableRowGroupFrame::SplitSpanningCells(nsPresContext&           aPresContext,
         
         
         rowAvailSize.height = std::min(rowAvailSize.height, rowRect.height);
-        nsHTMLReflowState rowReflowState(&aPresContext, aReflowState, row,
+        ReflowInput rowReflowState(&aPresContext, aReflowState, row,
                                          LogicalSize(row->GetWritingMode(),
                                                      rowAvailSize),
                                          nullptr,
-                                         nsHTMLReflowState::CALLER_WILL_INIT);
+                                         ReflowInput::CALLER_WILL_INIT);
         InitChildReflowState(aPresContext, borderCollapse, rowReflowState);
         rowReflowState.mFlags.mIsTopOfPage = isTopOfPage; 
 
@@ -1067,7 +1067,7 @@ GetRowBefore(nsTableRowFrame& aStartRow,
 nsresult
 nsTableRowGroupFrame::SplitRowGroup(nsPresContext*           aPresContext,
                                     nsHTMLReflowMetrics&     aDesiredSize,
-                                    const nsHTMLReflowState& aReflowState,
+                                    const ReflowInput& aReflowState,
                                     nsTableFrame*            aTableFrame,
                                     nsReflowStatus&          aStatus,
                                     bool                     aRowForcedPageBreak)
@@ -1111,11 +1111,11 @@ nsTableRowGroupFrame::SplitRowGroup(nsPresContext*           aPresContext,
         
         availSize.height = std::min(availSize.height, rowRect.height);
 
-        nsHTMLReflowState rowReflowState(aPresContext, aReflowState, rowFrame,
+        ReflowInput rowReflowState(aPresContext, aReflowState, rowFrame,
                                          LogicalSize(rowFrame->GetWritingMode(),
                                                      availSize),
                                          nullptr,
-                                         nsHTMLReflowState::CALLER_WILL_INIT);
+                                         ReflowInput::CALLER_WILL_INIT);
 
         InitChildReflowState(*aPresContext, borderCollapse, rowReflowState);
         rowReflowState.mFlags.mIsTopOfPage = isTopOfPage; 
@@ -1315,7 +1315,7 @@ nsTableRowGroupFrame::SplitRowGroup(nsPresContext*           aPresContext,
 void
 nsTableRowGroupFrame::Reflow(nsPresContext*           aPresContext,
                              nsHTMLReflowMetrics&     aDesiredSize,
-                             const nsHTMLReflowState& aReflowState,
+                             const ReflowInput& aReflowState,
                              nsReflowStatus&          aStatus)
 {
   MarkInReflow();
@@ -1354,12 +1354,12 @@ nsTableRowGroupFrame::Reflow(nsPresContext*           aPresContext,
        aDesiredSize.Height() > aReflowState.AvailableHeight())) {
     
     bool specialReflow = (bool)aReflowState.mFlags.mSpecialBSizeReflow;
-    ((nsHTMLReflowState::ReflowStateFlags&)aReflowState.mFlags).mSpecialBSizeReflow = false;
+    ((ReflowInput::ReflowStateFlags&)aReflowState.mFlags).mSpecialBSizeReflow = false;
 
     SplitRowGroup(aPresContext, aDesiredSize, aReflowState, tableFrame, aStatus,
                   splitDueToPageBreak);
 
-    ((nsHTMLReflowState::ReflowStateFlags&)aReflowState.mFlags).mSpecialBSizeReflow = specialReflow;
+    ((ReflowInput::ReflowStateFlags&)aReflowState.mFlags).mSpecialBSizeReflow = specialReflow;
   }
 
   
@@ -1551,7 +1551,7 @@ nsTableRowGroupFrame::GetUsedPadding() const
 }
 
 nscoord
-nsTableRowGroupFrame::GetBSizeBasis(const nsHTMLReflowState& aReflowState)
+nsTableRowGroupFrame::GetBSizeBasis(const ReflowInput& aReflowState)
 {
   nscoord result = 0;
   nsTableFrame* tableFrame = GetTableFrame();
@@ -1563,7 +1563,7 @@ nsTableRowGroupFrame::GetBSizeBasis(const nsHTMLReflowState& aReflowState)
     result = aReflowState.ComputedBSize() - cellSpacing;
   }
   else {
-    const nsHTMLReflowState* parentRS = aReflowState.mParentReflowState;
+    const ReflowInput* parentRS = aReflowState.mParentReflowState;
     if (parentRS && (tableFrame != parentRS->frame)) {
       parentRS = parentRS->mParentReflowState;
     }

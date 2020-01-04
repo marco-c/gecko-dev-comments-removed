@@ -5,8 +5,8 @@
 
 
 
-#ifndef mozilla_nsHTMLReflowState_h
-#define mozilla_nsHTMLReflowState_h
+#ifndef mozilla_ReflowInput_h
+#define mozilla_ReflowInput_h
 
 #include "nsMargin.h"
 #include "nsStyleCoord.h"
@@ -314,10 +314,10 @@ protected:
 
 
 
-struct nsHTMLReflowState : public nsCSSOffsetState {
+struct ReflowInput : public nsCSSOffsetState {
   
   
-  const nsHTMLReflowState* mParentReflowState;
+  const ReflowInput* mParentReflowState;
 
   
   nsFloatManager* mFloatManager;
@@ -327,7 +327,7 @@ struct nsHTMLReflowState : public nsCSSOffsetState {
 
   
   
-  const nsHTMLReflowState *mCBReflowState;
+  const ReflowInput *mCBReflowState;
 
   
   
@@ -648,7 +648,7 @@ public:
 
 
 
-  nsHTMLReflowState(nsPresContext*              aPresContext,
+  ReflowInput(nsPresContext*              aPresContext,
                     nsIFrame*                   aFrame,
                     nsRenderingContext*         aRenderingContext,
                     const mozilla::LogicalSize& aAvailableSpace,
@@ -670,8 +670,8 @@ public:
 
 
 
-  nsHTMLReflowState(nsPresContext*              aPresContext,
-                    const nsHTMLReflowState&    aParentReflowState,
+  ReflowInput(nsPresContext*              aPresContext,
+                    const ReflowInput&    aParentReflowState,
                     nsIFrame*                   aFrame,
                     const mozilla::LogicalSize& aAvailableSpace,
                     const mozilla::LogicalSize* aContainingBlockSize = nullptr,
@@ -739,7 +739,7 @@ public:
 
   mozilla::LogicalSize ComputeContainingBlockRectangle(
          nsPresContext*           aPresContext,
-         const nsHTMLReflowState* aContainingBlockRS) const;
+         const ReflowInput* aContainingBlockRS) const;
 
   
 
@@ -905,18 +905,18 @@ public:
   
   
   static void* DisplayInitConstraintsEnter(nsIFrame* aFrame,
-                                           nsHTMLReflowState* aState,
+                                           ReflowInput* aState,
                                            nscoord aCBISize,
                                            nscoord aCBBSize,
                                            const nsMargin* aBorder,
                                            const nsMargin* aPadding);
   static void DisplayInitConstraintsExit(nsIFrame* aFrame,
-                                         nsHTMLReflowState* aState,
+                                         ReflowInput* aState,
                                          void* aValue);
   static void* DisplayInitFrameTypeEnter(nsIFrame* aFrame,
-                                         nsHTMLReflowState* aState);
+                                         ReflowInput* aState);
   static void DisplayInitFrameTypeExit(nsIFrame* aFrame,
-                                       nsHTMLReflowState* aState,
+                                       ReflowInput* aState,
                                        void* aValue);
 #endif
 
@@ -947,12 +947,12 @@ protected:
   
   void CalculateHypotheticalPosition(nsPresContext* aPresContext,
                                      nsIFrame* aPlaceholderFrame,
-                                     const nsHTMLReflowState* cbrs,
+                                     const ReflowInput* cbrs,
                                      nsHypotheticalPosition& aHypotheticalPos,
                                      nsIAtom* aFrameType) const;
 
   void InitAbsoluteConstraints(nsPresContext* aPresContext,
-                               const nsHTMLReflowState* cbrs,
+                               const ReflowInput* cbrs,
                                const mozilla::LogicalSize& aContainingBlockSize,
                                nsIAtom* aFrameType);
 

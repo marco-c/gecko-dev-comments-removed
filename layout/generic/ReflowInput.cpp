@@ -53,7 +53,7 @@ static eNormalLineHeightControl sNormalLineHeightControl = eUninitialized;
 
 
 
-nsHTMLReflowState::nsHTMLReflowState(nsPresContext*       aPresContext,
+ReflowInput::ReflowInput(nsPresContext*       aPresContext,
                                      nsIFrame*            aFrame,
                                      nsRenderingContext*  aRenderingContext,
                                      const LogicalSize&   aAvailableSpace,
@@ -173,9 +173,9 @@ nsCSSOffsetState::nsCSSOffsetState(nsIFrame *aFrame,
 
 
 
-nsHTMLReflowState::nsHTMLReflowState(
+ReflowInput::ReflowInput(
                      nsPresContext*           aPresContext,
-                     const nsHTMLReflowState& aParentReflowState,
+                     const ReflowInput& aParentReflowState,
                      nsIFrame*                aFrame,
                      const LogicalSize&       aAvailableSpace,
                      const LogicalSize*       aContainingBlockSize,
@@ -295,7 +295,7 @@ nsCSSOffsetState::ComputeBSizeValue(nscoord aContainingBlockBSize,
 }
 
 void
-nsHTMLReflowState::SetComputedWidth(nscoord aComputedWidth)
+ReflowInput::SetComputedWidth(nscoord aComputedWidth)
 {
   NS_ASSERTION(frame, "Must have a frame!");
   
@@ -323,7 +323,7 @@ nsHTMLReflowState::SetComputedWidth(nscoord aComputedWidth)
 }
 
 void
-nsHTMLReflowState::SetComputedHeight(nscoord aComputedHeight)
+ReflowInput::SetComputedHeight(nscoord aComputedHeight)
 {
   NS_ASSERTION(frame, "Must have a frame!");
   
@@ -346,7 +346,7 @@ nsHTMLReflowState::SetComputedHeight(nscoord aComputedHeight)
 }
 
 void
-nsHTMLReflowState::Init(nsPresContext*     aPresContext,
+ReflowInput::Init(nsPresContext*     aPresContext,
                         const LogicalSize* aContainingBlockSize,
                         const nsMargin*    aBorder,
                         const nsMargin*    aPadding)
@@ -354,7 +354,7 @@ nsHTMLReflowState::Init(nsPresContext*     aPresContext,
   if (AvailableISize() == NS_UNCONSTRAINEDSIZE) {
     
     
-    for (const nsHTMLReflowState *parent = mParentReflowState;
+    for (const ReflowInput *parent = mParentReflowState;
          parent != nullptr; parent = parent->mParentReflowState) {
       if (parent->GetWritingMode().IsOrthogonalTo(mWritingMode) &&
           parent->mOrthogonalLimit != NS_UNCONSTRAINEDSIZE) {
@@ -470,7 +470,7 @@ nsHTMLReflowState::Init(nsPresContext*     aPresContext,
                        "intrinsic inline-size calculation");
 }
 
-void nsHTMLReflowState::InitCBReflowState()
+void ReflowInput::InitCBReflowState()
 {
   if (!mParentReflowState) {
     mCBReflowState = nullptr;
@@ -499,7 +499,7 @@ void nsHTMLReflowState::InitCBReflowState()
 
 
 static bool
-IsQuirkContainingBlockHeight(const nsHTMLReflowState* rs, nsIAtom* aFrameType)
+IsQuirkContainingBlockHeight(const ReflowInput* rs, nsIAtom* aFrameType)
 {
   if (nsGkAtoms::blockFrame == aFrameType ||
 #ifdef MOZ_XUL
@@ -519,7 +519,7 @@ IsQuirkContainingBlockHeight(const nsHTMLReflowState* rs, nsIAtom* aFrameType)
 
 
 void
-nsHTMLReflowState::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameType)
+ReflowInput::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameType)
 {
   const WritingMode wm = mWritingMode; 
   bool isIResize =
@@ -715,7 +715,7 @@ nsHTMLReflowState::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameT
   
   
   if (dependsOnCBBSize && mCBReflowState) {
-    const nsHTMLReflowState *rs = this;
+    const ReflowInput *rs = this;
     bool hitCBReflowState = false;
     do {
       rs = rs->mParentReflowState;
@@ -754,7 +754,7 @@ nsHTMLReflowState::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameT
 }
 
 nscoord
-nsHTMLReflowState::GetContainingBlockContentISize(WritingMode aWritingMode) const
+ReflowInput::GetContainingBlockContentISize(WritingMode aWritingMode) const
 {
   if (!mCBReflowState) {
     return 0;
@@ -765,7 +765,7 @@ nsHTMLReflowState::GetContainingBlockContentISize(WritingMode aWritingMode) cons
 }
 
 void
-nsHTMLReflowState::InitFrameType(nsIAtom* aFrameType)
+ReflowInput::InitFrameType(nsIAtom* aFrameType)
 {
   const nsStyleDisplay *disp = mStyleDisplay;
   nsCSSFrameType frameType;
@@ -862,7 +862,7 @@ nsHTMLReflowState::InitFrameType(nsIAtom* aFrameType)
 }
 
  void
-nsHTMLReflowState::ComputeRelativeOffsets(WritingMode aWM,
+ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
                                           nsIFrame* aFrame,
                                           const LogicalSize& aCBSize,
                                           nsMargin& aComputedOffsets)
@@ -980,7 +980,7 @@ nsHTMLReflowState::ComputeRelativeOffsets(WritingMode aWM,
 }
 
  void
-nsHTMLReflowState::ApplyRelativePositioning(nsIFrame* aFrame,
+ReflowInput::ApplyRelativePositioning(nsIFrame* aFrame,
                                             const nsMargin& aComputedOffsets,
                                             nsPoint* aPosition)
 {
@@ -1024,7 +1024,7 @@ nsHTMLReflowState::ApplyRelativePositioning(nsIFrame* aFrame,
 }
 
 nsIFrame*
-nsHTMLReflowState::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
+ReflowInput::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
                                                nscoord&     aCBIStartEdge,
                                                LogicalSize& aCBSize) const
 {
@@ -1035,7 +1035,7 @@ nsHTMLReflowState::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
 
   
 
-  const nsHTMLReflowState* state;
+  const ReflowInput* state;
   if (aFrame->GetStateBits() & NS_FRAME_IN_REFLOW) {
     for (state = mParentReflowState; state && state->frame != aFrame;
          state = state->mParentReflowState) {
@@ -1099,7 +1099,7 @@ GetIntrinsicSizeFor(nsIFrame* aFrame, nsSize& aIntrinsicSize, nsIAtom* aFrameTyp
 
 
 void
-nsHTMLReflowState::CalculateBorderPaddingMargin(
+ReflowInput::CalculateBorderPaddingMargin(
                        LogicalAxis aAxis,
                        nscoord aContainingBlockSize,
                        nscoord* aInsideBoxSizing,
@@ -1206,10 +1206,10 @@ static bool AreAllEarlierInFlowFramesEmpty(nsIFrame* aFrame,
 
 
 void
-nsHTMLReflowState::CalculateHypotheticalPosition
+ReflowInput::CalculateHypotheticalPosition
                      (nsPresContext*           aPresContext,
                       nsIFrame*                aPlaceholderFrame,
-                      const nsHTMLReflowState* cbrs,
+                      const ReflowInput* cbrs,
                       nsHypotheticalPosition&  aHypotheticalPos,
                       nsIAtom*                 aFrameType) const
 {
@@ -1504,8 +1504,8 @@ nsHTMLReflowState::CalculateHypotheticalPosition
 }
 
 void
-nsHTMLReflowState::InitAbsoluteConstraints(nsPresContext* aPresContext,
-                                           const nsHTMLReflowState* cbrs,
+ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
+                                           const ReflowInput* cbrs,
                                            const LogicalSize& aCBSize,
                                            nsIAtom* aFrameType)
 {
@@ -1842,7 +1842,7 @@ nsHTMLReflowState::InitAbsoluteConstraints(nsPresContext* aPresContext,
 
 
 nscoord
-GetBlockMarginBorderPadding(const nsHTMLReflowState* aReflowState)
+GetBlockMarginBorderPadding(const ReflowInput* aReflowState)
 {
   nscoord result = 0;
   if (!aReflowState) return result;
@@ -1873,17 +1873,17 @@ GetBlockMarginBorderPadding(const nsHTMLReflowState* aReflowState)
 
 
 static nscoord
-CalcQuirkContainingBlockHeight(const nsHTMLReflowState* aCBReflowState)
+CalcQuirkContainingBlockHeight(const ReflowInput* aCBReflowState)
 {
-  const nsHTMLReflowState* firstAncestorRS = nullptr; 
-  const nsHTMLReflowState* secondAncestorRS = nullptr; 
+  const ReflowInput* firstAncestorRS = nullptr; 
+  const ReflowInput* secondAncestorRS = nullptr; 
   
   
   
   
   nscoord result = NS_AUTOHEIGHT; 
                              
-  const nsHTMLReflowState* rs = aCBReflowState;
+  const ReflowInput* rs = aCBReflowState;
   for (; rs; rs = rs->mParentReflowState) {
     nsIAtom* frameType = rs->frame->GetType();
     
@@ -1974,9 +1974,9 @@ CalcQuirkContainingBlockHeight(const nsHTMLReflowState* aCBReflowState)
 
 
 LogicalSize
-nsHTMLReflowState::ComputeContainingBlockRectangle(
+ReflowInput::ComputeContainingBlockRectangle(
                      nsPresContext*           aPresContext,
-                     const nsHTMLReflowState* aContainingBlockRS) const
+                     const ReflowInput* aContainingBlockRS) const
 {
   
   
@@ -2085,7 +2085,7 @@ OffsetPercentBasis(const nsIFrame*    aFrame,
 
 
 void
-nsHTMLReflowState::InitConstraints(nsPresContext*     aPresContext,
+ReflowInput::InitConstraints(nsPresContext*     aPresContext,
                                    const LogicalSize& aContainingBlockSize,
                                    const nsMargin*    aBorder,
                                    const nsMargin*    aPadding,
@@ -2127,7 +2127,7 @@ nsHTMLReflowState::InitConstraints(nsPresContext*     aPresContext,
     ComputedMaxWidth() = ComputedMaxHeight() = NS_UNCONSTRAINEDSIZE;
   } else {
     
-    const nsHTMLReflowState* cbrs = mCBReflowState;
+    const ReflowInput* cbrs = mCBReflowState;
     NS_ASSERTION(nullptr != cbrs, "no containing block");
 
     
@@ -2556,7 +2556,7 @@ nsCSSOffsetState::InitOffsets(WritingMode aWM,
 
 
 void
-nsHTMLReflowState::CalculateBlockSideMargins(nsIAtom* aFrameType)
+ReflowInput::CalculateBlockSideMargins(nsIAtom* aFrameType)
 {
   
   
@@ -2618,7 +2618,7 @@ nsHTMLReflowState::CalculateBlockSideMargins(nsIAtom* aFrameType)
     
     
     
-    const nsHTMLReflowState* prs = mParentReflowState;
+    const ReflowInput* prs = mParentReflowState;
     if (aFrameType == nsGkAtoms::tableFrame) {
       NS_ASSERTION(prs->frame->GetType() == nsGkAtoms::tableWrapperFrame,
                    "table not inside table wrapper");
@@ -2744,7 +2744,7 @@ ComputeLineHeight(nsStyleContext* aStyleContext,
 }
 
 nscoord
-nsHTMLReflowState::CalcLineHeight() const
+ReflowInput::CalcLineHeight() const
 {
   nscoord blockBSize =
     nsLayoutUtils::IsNonWrapperBlock(frame) ? ComputedBSize() :
@@ -2755,7 +2755,7 @@ nsHTMLReflowState::CalcLineHeight() const
 }
 
  nscoord
-nsHTMLReflowState::CalcLineHeight(nsIContent* aContent,
+ReflowInput::CalcLineHeight(nsIContent* aContent,
                                   nsStyleContext* aStyleContext,
                                   nscoord aBlockBSize,
                                   float aFontSizeInflation)
@@ -2871,7 +2871,7 @@ nsCSSOffsetState::ComputePadding(WritingMode aWM,
 }
 
 void
-nsHTMLReflowState::ComputeMinMaxValues(const LogicalSize&aCBSize)
+ReflowInput::ComputeMinMaxValues(const LogicalSize&aCBSize)
 {
   WritingMode wm = GetWritingMode();
 
@@ -2960,7 +2960,7 @@ nsHTMLReflowState::ComputeMinMaxValues(const LogicalSize&aCBSize)
 }
 
 void
-nsHTMLReflowState::SetTruncated(const nsHTMLReflowMetrics& aMetrics,
+ReflowInput::SetTruncated(const nsHTMLReflowMetrics& aMetrics,
                                 nsReflowStatus* aStatus) const
 {
   const WritingMode containerWM = aMetrics.GetWritingMode();
@@ -2978,13 +2978,13 @@ nsHTMLReflowState::SetTruncated(const nsHTMLReflowMetrics& aMetrics,
 }
 
 bool
-nsHTMLReflowState::IsFloating() const
+ReflowInput::IsFloating() const
 {
   return mStyleDisplay->IsFloating(frame);
 }
 
 uint8_t
-nsHTMLReflowState::GetDisplay() const
+ReflowInput::GetDisplay() const
 {
   return mStyleDisplay->GetDisplay(frame);
 }

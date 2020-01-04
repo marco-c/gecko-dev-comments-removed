@@ -116,7 +116,7 @@ static bool HaveSpecifiedSize(const nsStylePosition* aStylePosition)
 
 
 
-inline bool HaveFixedSize(const nsHTMLReflowState& aReflowState)
+inline bool HaveFixedSize(const ReflowInput& aReflowState)
 {
   NS_ASSERTION(aReflowState.mStylePosition, "crappy reflowState - null stylePosition");
   
@@ -949,7 +949,7 @@ nsImageFrame::GetIntrinsicRatio()
 void
 nsImageFrame::Reflow(nsPresContext*          aPresContext,
                      nsHTMLReflowMetrics&     aMetrics,
-                     const nsHTMLReflowState& aReflowState,
+                     const ReflowInput& aReflowState,
                      nsReflowStatus&          aStatus)
 {
   MarkInReflow();
@@ -2152,7 +2152,7 @@ nsImageFrame::List(FILE* out, const char* aPrefix, uint32_t aFlags) const
 #endif
 
 nsIFrame::LogicalSides
-nsImageFrame::GetLogicalSkipSides(const nsHTMLReflowState* aReflowState) const
+nsImageFrame::GetLogicalSkipSides(const ReflowInput* aReflowState) const
 {
   if (MOZ_UNLIKELY(StyleBorder()->mBoxDecorationBreak ==
                      NS_STYLE_BOX_DECORATION_BREAK_CLONE)) {

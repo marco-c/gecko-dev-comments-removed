@@ -89,13 +89,13 @@ protected:
 
 
 
-  nscoord GetEffectiveComputedBSize(const nsHTMLReflowState& aReflowState,
+  nscoord GetEffectiveComputedBSize(const ReflowInput& aReflowState,
                                     nscoord aConsumed = NS_INTRINSICSIZE) const;
 
   
 
 
-  virtual LogicalSides GetLogicalSkipSides(const nsHTMLReflowState* aReflowState = nullptr) const override;
+  virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowState = nullptr) const override;
 
   
 

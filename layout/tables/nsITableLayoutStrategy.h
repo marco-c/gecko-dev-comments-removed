@@ -17,13 +17,13 @@
 
 class nsRenderingContext;
 namespace mozilla {
-struct nsHTMLReflowState;
+struct ReflowInput;
 } 
 
 class nsITableLayoutStrategy
 {
 public:
-    using nsHTMLReflowState = mozilla::nsHTMLReflowState;
+    using ReflowInput = mozilla::ReflowInput;
 
     virtual ~nsITableLayoutStrategy() {}
 
@@ -41,7 +41,7 @@ public:
 
 
 
-    virtual void ComputeColumnISizes(const nsHTMLReflowState& aReflowState) = 0;
+    virtual void ComputeColumnISizes(const ReflowInput& aReflowState) = 0;
 
     
 

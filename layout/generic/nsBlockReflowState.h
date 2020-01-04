@@ -75,10 +75,10 @@ class nsOverflowContinuationTracker;
 
 
 class nsBlockReflowState {
-  using nsHTMLReflowState = mozilla::nsHTMLReflowState;
+  using ReflowInput = mozilla::ReflowInput;
 
 public:
-  nsBlockReflowState(const nsHTMLReflowState& aReflowState,
+  nsBlockReflowState(const ReflowInput& aReflowState,
                      nsPresContext* aPresContext,
                      nsBlockFrame* aFrame,
                      bool aBStartMarginRoot, bool aBEndMarginRoot,
@@ -207,7 +207,7 @@ public:
 
   nsPresContext* mPresContext;
 
-  const nsHTMLReflowState& mReflowState;
+  const ReflowInput& mReflowState;
 
   nsFloatManager* mFloatManager;
 

@@ -223,7 +223,7 @@ ViewportFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 }
 
 nsPoint
-ViewportFrame::AdjustReflowStateForScrollbars(nsHTMLReflowState* aReflowState) const
+ViewportFrame::AdjustReflowStateForScrollbars(ReflowInput* aReflowState) const
 {
   
   nsIFrame* kidFrame = mFrames.FirstChild();
@@ -243,7 +243,7 @@ ViewportFrame::AdjustReflowStateForScrollbars(nsHTMLReflowState* aReflowState) c
 }
 
 nsRect
-ViewportFrame::AdjustReflowStateAsContainingBlock(nsHTMLReflowState* aReflowState) const
+ViewportFrame::AdjustReflowStateAsContainingBlock(ReflowInput* aReflowState) const
 {
 #ifdef DEBUG
   nsPoint offset =
@@ -269,7 +269,7 @@ ViewportFrame::AdjustReflowStateAsContainingBlock(nsHTMLReflowState* aReflowStat
 void
 ViewportFrame::Reflow(nsPresContext*           aPresContext,
                       nsHTMLReflowMetrics&     aDesiredSize,
-                      const nsHTMLReflowState& aReflowState,
+                      const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus)
 {
   MarkInReflow();
@@ -306,7 +306,7 @@ ViewportFrame::Reflow(nsPresContext*           aPresContext,
       nsHTMLReflowMetrics kidDesiredSize(aReflowState);
       WritingMode         wm = kidFrame->GetWritingMode();
       LogicalSize         availableSpace = aReflowState.AvailableSize(wm);
-      nsHTMLReflowState   kidReflowState(aPresContext, aReflowState,
+      ReflowInput   kidReflowState(aPresContext, aReflowState,
                                          kidFrame, availableSpace);
 
       
@@ -337,7 +337,7 @@ ViewportFrame::Reflow(nsPresContext*           aPresContext,
   if (HasAbsolutelyPositionedChildren()) {
     
     
-    nsHTMLReflowState reflowState(aReflowState);
+    ReflowInput reflowState(aReflowState);
 
     if (reflowState.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
       

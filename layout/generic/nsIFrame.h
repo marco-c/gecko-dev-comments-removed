@@ -93,7 +93,7 @@ namespace mozilla {
 
 enum class CSSPseudoElementType : uint8_t;
 class EventStates;
-struct nsHTMLReflowState;
+struct ReflowInput;
 
 namespace layers {
 class Layer;
@@ -423,7 +423,7 @@ public:
   using OnNonvisible = mozilla::OnNonvisible;
   template<typename T=void>
   using PropertyDescriptor = const mozilla::FramePropertyDescriptor<T>*;
-  using nsHTMLReflowState = mozilla::nsHTMLReflowState;
+  using ReflowInput = mozilla::ReflowInput;
   using Visibility = mozilla::Visibility;
   using VisibilityCounter = mozilla::VisibilityCounter;
 
@@ -2047,7 +2047,7 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       nsHTMLReflowMetrics&     aReflowMetrics,
-                      const nsHTMLReflowState& aReflowState,
+                      const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) = 0;
 
   
@@ -2066,7 +2066,7 @@ public:
 
 
   virtual void DidReflow(nsPresContext*           aPresContext,
-                         const nsHTMLReflowState* aReflowState,
+                         const ReflowInput* aReflowState,
                          nsDidReflowStatus        aStatus) = 0;
 
   
@@ -2667,9 +2667,9 @@ public:
 
 
 
-  Sides GetSkipSides(const nsHTMLReflowState* aReflowState = nullptr) const;
+  Sides GetSkipSides(const ReflowInput* aReflowState = nullptr) const;
   virtual LogicalSides
-  GetLogicalSkipSides(const nsHTMLReflowState* aReflowState = nullptr) const {
+  GetLogicalSkipSides(const ReflowInput* aReflowState = nullptr) const {
     return LogicalSides();
   }
 

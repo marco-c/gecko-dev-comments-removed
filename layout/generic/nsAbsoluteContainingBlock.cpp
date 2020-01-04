@@ -110,7 +110,7 @@ nsAbsoluteContainingBlock::RemoveFrame(nsIFrame*       aDelegatingFrame,
 void
 nsAbsoluteContainingBlock::Reflow(nsContainerFrame*        aDelegatingFrame,
                                   nsPresContext*           aPresContext,
-                                  const nsHTMLReflowState& aReflowState,
+                                  const ReflowInput& aReflowState,
                                   nsReflowStatus&          aReflowStatus,
                                   const nsRect&            aContainingBlock,
                                   AbsPosReflowFlags        aFlags,
@@ -343,7 +343,7 @@ nsAbsoluteContainingBlock::DoMarkFramesDirty(bool aMarkAllDirty)
 void
 nsAbsoluteContainingBlock::ReflowAbsoluteFrame(nsIFrame*                aDelegatingFrame,
                                                nsPresContext*           aPresContext,
-                                               const nsHTMLReflowState& aReflowState,
+                                               const ReflowInput& aReflowState,
                                                const nsRect&            aContainingBlock,
                                                AbsPosReflowFlags        aFlags,
                                                nsIFrame*                aKidFrame,
@@ -389,10 +389,10 @@ nsAbsoluteContainingBlock::ReflowAbsoluteFrame(nsIFrame*                aDelegat
     nsIFrame* placeholder =
       aPresContext->PresShell()->GetPlaceholderFrameFor(aKidFrame);
     if (placeholder && placeholder->GetParent() == aDelegatingFrame) {
-      rsFlags |= nsHTMLReflowState::STATIC_POS_IS_CB_ORIGIN;
+      rsFlags |= ReflowInput::STATIC_POS_IS_CB_ORIGIN;
     }
   }
-  nsHTMLReflowState kidReflowState(aPresContext, aReflowState, aKidFrame,
+  ReflowInput kidReflowState(aPresContext, aReflowState, aKidFrame,
                                    LogicalSize(wm, availISize,
                                                NS_UNCONSTRAINEDSIZE),
                                    &logicalCBSize, rsFlags);
@@ -479,12 +479,12 @@ nsAbsoluteContainingBlock::ReflowAbsoluteFrame(nsIFrame*                aDelegat
     const nsStyleSides& offsets = kidReflowState.mStylePosition->mOffset;
     if (!(offsets.GetLeftUnit() == eStyleUnit_Auto &&
           offsets.GetRightUnit() == eStyleUnit_Auto) ||
-        (rsFlags & nsHTMLReflowState::STATIC_POS_IS_CB_ORIGIN)) {
+        (rsFlags & ReflowInput::STATIC_POS_IS_CB_ORIGIN)) {
       r.x += aContainingBlock.x;
     }
     if (!(offsets.GetTopUnit() == eStyleUnit_Auto &&
           offsets.GetBottomUnit() == eStyleUnit_Auto) ||
-        (rsFlags & nsHTMLReflowState::STATIC_POS_IS_CB_ORIGIN)) {
+        (rsFlags & ReflowInput::STATIC_POS_IS_CB_ORIGIN)) {
       r.y += aContainingBlock.y;
     }
   }

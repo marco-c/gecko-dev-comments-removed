@@ -162,15 +162,15 @@ public:
 
   
   
-  static bool AncestorsHaveStyleBSize(const nsHTMLReflowState& aParentReflowState);
+  static bool AncestorsHaveStyleBSize(const ReflowInput& aParentReflowState);
 
   
   
-  static void CheckRequestSpecialBSizeReflow(const nsHTMLReflowState& aReflowState);
+  static void CheckRequestSpecialBSizeReflow(const ReflowInput& aReflowState);
 
   
   
-  static void RequestSpecialBSizeReflow(const nsHTMLReflowState& aReflowState);
+  static void RequestSpecialBSizeReflow(const ReflowInput& aReflowState);
 
   static void RePositionViews(nsIFrame* aFrame);
 
@@ -186,7 +186,7 @@ public:
   static void UnregisterPositionedTablePart(nsIFrame* aFrame,
                                             nsIFrame* aDestructRoot);
 
-  nsPoint GetFirstSectionOrigin(const nsHTMLReflowState& aReflowState) const;
+  nsPoint GetFirstSectionOrigin(const ReflowInput& aReflowState) const;
   
 
 
@@ -216,7 +216,7 @@ public:
 
   
   LogicalMargin GetChildAreaOffset(const WritingMode aWM,
-                                   const nsHTMLReflowState* aReflowState) const;
+                                   const ReflowInput* aReflowState) const;
 
   
   static nsTableFrame* GetTableFrame(nsIFrame* aSourceFrame);
@@ -369,11 +369,11 @@ public:
 
   virtual void Reflow(nsPresContext*           aPresContext,
                       nsHTMLReflowMetrics&     aDesiredSize,
-                      const nsHTMLReflowState& aReflowState,
+                      const ReflowInput& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
   void ReflowTable(nsHTMLReflowMetrics&     aDesiredSize,
-                   const nsHTMLReflowState& aReflowState,
+                   const ReflowInput& aReflowState,
                    nscoord                  aAvailBSize,
                    nsIFrame*&               aLastChildReflowed,
                    nsReflowStatus&          aStatus);
@@ -613,9 +613,9 @@ protected:
   
   virtual ~nsTableFrame();
 
-  void InitChildReflowState(nsHTMLReflowState& aReflowState);
+  void InitChildReflowState(ReflowInput& aReflowState);
 
-  virtual LogicalSides GetLogicalSkipSides(const nsHTMLReflowState* aReflowState = nullptr) const override;
+  virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowState = nullptr) const override;
 
 public:
   bool IsRowInserted() const;
@@ -664,7 +664,7 @@ protected:
 
   void FixupPositionedTableParts(nsPresContext*           aPresContext,
                                  nsHTMLReflowMetrics&     aDesiredSize,
-                                 const nsHTMLReflowState& aReflowState);
+                                 const ReflowInput& aReflowState);
 
   
   void ClearAllPositionedTableParts();
@@ -689,19 +689,19 @@ public:
 
   
   
-  nscoord CalcBorderBoxBSize(const nsHTMLReflowState& aReflowState);
+  nscoord CalcBorderBoxBSize(const ReflowInput& aReflowState);
 
 protected:
 
   
   
   
-  void CalcDesiredBSize(const nsHTMLReflowState& aReflowState,
+  void CalcDesiredBSize(const ReflowInput& aReflowState,
                         nsHTMLReflowMetrics& aDesiredSize);
 
   
 
-  void DistributeBSizeToRows(const nsHTMLReflowState& aReflowState,
+  void DistributeBSizeToRows(const ReflowInput& aReflowState,
                              nscoord                  aAmount);
 
   void PlaceChild(nsTableReflowState&  aReflowState,
