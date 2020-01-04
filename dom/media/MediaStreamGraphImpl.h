@@ -350,8 +350,10 @@ public:
 
 
 
-  void OpenAudioInputImpl(char *aName, AudioDataListener *aListener);
-  virtual nsresult OpenAudioInput(char *aName, AudioDataListener *aListener) override;
+  void OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
+                          AudioDataListener *aListener);
+  virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
+                                  AudioDataListener *aListener) override;
   void CloseAudioInputImpl(AudioDataListener *aListener);
   virtual void CloseAudioInput(AudioDataListener *aListener) override;
 
@@ -581,6 +583,15 @@ public:
 
 
   int32_t mPortCount;
+
+  
+
+
+
+  bool mInputWanted;
+  CubebUtils::AudioDeviceID mInputDeviceID;
+  bool mOutputWanted;
+  CubebUtils::AudioDeviceID mOutputDeviceID;
 
   
   Atomic<bool> mNeedAnotherIteration;

@@ -13,6 +13,8 @@
 namespace mozilla {
 namespace CubebUtils {
 
+typedef cubeb_devid AudioDeviceID;
+
 
 
 void InitLibrary();
