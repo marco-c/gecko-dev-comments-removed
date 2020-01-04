@@ -203,7 +203,7 @@ private:
 
   
   
-  RefPtr<KeepAliveToken> mKeepAliveToken;
+  RefPtr<KeepAliveToken> mIdleKeepAliveToken;
 
   uint64_t mDebuggerCount;
 
