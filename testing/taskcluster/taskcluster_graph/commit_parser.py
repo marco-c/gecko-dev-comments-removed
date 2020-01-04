@@ -250,6 +250,8 @@ def parse_commit(message, jobs):
     parser.add_argument('-j', '--job', dest='jobs', action='append')
     
     parser.add_argument('--trigger-tests', dest='trigger_tests', type=int, default=1)
+    
+    parser.add_argument('--rebuild', dest='trigger_tests', type=int, default=1)
     args, unknown = parser.parse_known_args(parts[try_idx:])
 
     
