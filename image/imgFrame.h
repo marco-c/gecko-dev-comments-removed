@@ -212,6 +212,11 @@ public:
   
 
 
+  bool IsAborted() const;
+
+  
+
+
   bool IsFinished() const;
 
   

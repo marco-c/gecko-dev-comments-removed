@@ -368,6 +368,15 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
     result.DrawableRef()->WaitUntilFinished();
   }
 
+  
+  
+  
+  
+  if (aFlags & (FLAG_SYNC_DECODE | FLAG_SYNC_DECODE_IF_FAST) &&
+    result.DrawableRef()->IsAborted()) {
+    return DrawableFrameRef();
+  }
+
   return Move(result.DrawableRef());
 }
 
