@@ -663,12 +663,14 @@ function writeInstallRDFToDir(aData, aDir, aId = aData.id, aExtraFile = null) {
 
 
 
-function writeInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFile = null) {
+function writeInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFiles = null) {
   let files = {
     "install.rdf": AddonTestUtils.createInstallRDF(aData),
   };
-  if (aExtraFile)
-    files[aExtraFile] = "";
+
+  if (aExtraFiles) {
+    Object.assign(files, aExtraFiles);
+  }
 
   if (!aDir.exists())
     aDir.create(AM_Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
