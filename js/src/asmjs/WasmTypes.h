@@ -51,6 +51,29 @@ typedef Vector<uint32_t, 0, SystemAllocPolicy> Uint32Vector;
 
 
 
+#define WASM_DECLARE_POD_VECTOR(Type, VectorName)                               \
+} } namespace mozilla {                                                         \
+template <> struct IsPod<js::wasm::Type> : TrueType {};                         \
+} namespace js { namespace wasm {                                               \
+typedef Vector<Type, 0, SystemAllocPolicy> VectorName;
+
+
+
+
+
+
+
+#define WASM_DECLARE_SERIALIZABLE(Type)                                         \
+    size_t serializedSize() const;                                              \
+    uint8_t* serialize(uint8_t* cursor) const;                                  \
+    const uint8_t* deserialize(ExclusiveContext* cx, const uint8_t* cursor);    \
+    MOZ_MUST_USE bool clone(JSContext* cx, Type* out) const;                    \
+    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+
+
+
+
+
 
 
 const ExprType AnyType = ExprType::Limit;
@@ -513,6 +536,8 @@ class CallSite : public CallSiteDesc
     uint32_t stackDepth() const { return stackDepth_; }
 };
 
+WASM_DECLARE_POD_VECTOR(CallSite, CallSiteVector)
+
 class CallSiteAndTarget : public CallSite
 {
     uint32_t targetIndex_;
@@ -528,16 +553,6 @@ class CallSiteAndTarget : public CallSite
     uint32_t targetIndex() const { MOZ_ASSERT(isInternal()); return targetIndex_; }
 };
 
-} 
-} 
-namespace mozilla {
-template <> struct IsPod<js::wasm::CallSite>          : TrueType {};
-template <> struct IsPod<js::wasm::CallSiteAndTarget> : TrueType {};
-}
-namespace js {
-namespace wasm {
-
-typedef Vector<CallSite, 0, SystemAllocPolicy> CallSiteVector;
 typedef Vector<CallSiteAndTarget, 0, SystemAllocPolicy> CallSiteAndTargetVector;
 
 
@@ -639,15 +654,7 @@ class HeapAccess {
 };
 #endif
 
-} 
-} 
-namespace mozilla {
-template <> struct IsPod<js::wasm::HeapAccess> : TrueType {};
-}
-namespace js {
-namespace wasm {
-
-typedef Vector<HeapAccess, 0, SystemAllocPolicy> HeapAccessVector;
+WASM_DECLARE_POD_VECTOR(HeapAccess, HeapAccessVector)
 
 
 

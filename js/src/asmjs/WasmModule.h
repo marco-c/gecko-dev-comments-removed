@@ -38,19 +38,6 @@ namespace wasm {
 
 
 
-
-
-
-#define WASM_DECLARE_SERIALIZABLE(Type)                                         \
-    size_t serializedSize() const;                                              \
-    uint8_t* serialize(uint8_t* cursor) const;                                  \
-    const uint8_t* deserialize(ExclusiveContext* cx, const uint8_t* cursor);    \
-    MOZ_MUST_USE bool clone(JSContext* cx, Type* out) const;                    \
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-
-
-
-
 struct StaticLinkData
 {
     struct InternalLink {
@@ -301,15 +288,7 @@ class CodeRange
     };
 };
 
-} 
-} 
-namespace mozilla {
-template <> struct IsPod<js::wasm::CodeRange> : TrueType {};
-}
-namespace js {
-namespace wasm {
-
-typedef Vector<CodeRange, 0, SystemAllocPolicy> CodeRangeVector;
+WASM_DECLARE_POD_VECTOR(CodeRange, CodeRangeVector)
 
 
 
@@ -328,15 +307,7 @@ struct CallThunk
     CallThunk() = default;
 };
 
-typedef Vector<CallThunk, 0, SystemAllocPolicy> CallThunkVector;
-
-} 
-} 
-namespace mozilla {
-template <> struct IsPod<js::wasm::CallThunk> : TrueType {};
-}
-namespace js {
-namespace wasm {
+WASM_DECLARE_POD_VECTOR(CallThunk, CallThunkVector)
 
 
 
@@ -706,4 +677,4 @@ using WasmModuleObjectVector = GCVector<WasmModuleObject*>;
 
 } 
 
-#endif
+#endif 
