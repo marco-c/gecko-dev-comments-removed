@@ -21,7 +21,7 @@ StyleContextContainsFont(nsStyleContext* aStyleContext,
   
   
   if (!aFont) {
-    const FontFamilyList& fontlist =
+    const mozilla::FontFamilyList& fontlist =
       aStyleContext->StyleFont()->mFont.fontlist;
     return aUserFontSet->ContainsUserFontSetFonts(fontlist);
   }
