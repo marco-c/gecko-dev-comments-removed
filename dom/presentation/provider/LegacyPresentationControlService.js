@@ -231,6 +231,12 @@ LegacyTCPControlChannel.prototype = {
     this._sendInit();
   },
 
+  terminate: function() {
+    
+    
+    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+  },
+
   sendOffer: function(aOffer) {
     let msg = {
       type: "requestSession:Offer",
