@@ -238,7 +238,8 @@ public:
   
 
 
-  void Process(GraphTime aTo);
+
+  void Process();
   
 
 
@@ -345,7 +346,7 @@ public:
 
 
 
-  StreamTime PlayAudio(MediaStream* aStream, GraphTime aTo);
+  StreamTime PlayAudio(MediaStream* aStream);
   
 
 
