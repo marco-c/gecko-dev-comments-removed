@@ -12,6 +12,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.net.Uri;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,7 +22,7 @@ public class NotificationHandler {
     private final ConcurrentHashMap<Integer, Notification>
             mNotifications = new ConcurrentHashMap<Integer, Notification>();
     private final Context mContext;
-    private final NotificationManager mNotificationManager;
+    private final NotificationManagerCompat mNotificationManager;
 
     
 
@@ -37,11 +39,10 @@ public class NotificationHandler {
 
     public NotificationHandler(Context context) {
         mContext = context;
-        mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager = NotificationManagerCompat.from(context);
     }
 
     
-
 
 
 
@@ -57,10 +58,14 @@ public class NotificationHandler {
 
         Uri imageUri = Uri.parse(aImageUrl);
         int icon = BitmapUtils.getResource(imageUri, R.drawable.ic_status_logo);
-        final AlertNotification notification = new AlertNotification(mContext, notificationID,
-                icon, aAlertTitle, aAlertText, System.currentTimeMillis(), imageUri);
 
-        notification.setLatestEventInfo(mContext, aAlertTitle, aAlertText, contentIntent);
+        Notification notification = new NotificationCompat.Builder(mContext)
+                .setContentTitle(aAlertTitle)
+                .setContentText(aAlertText)
+                .setSmallIcon(icon)
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(contentIntent)
+                .build();
 
         mNotificationManager.notify(notificationID, notification);
         mNotifications.put(notificationID, notification);
@@ -90,19 +95,20 @@ public class NotificationHandler {
 
 
     public void update(int notificationID, long aProgress, long aProgressMax, String aAlertText) {
-        final Notification notification = mNotifications.get(notificationID);
+        Notification notification = mNotifications.get(notificationID);
         if (notification == null) {
             return;
         }
 
-        if (notification instanceof AlertNotification) {
-            AlertNotification alert = (AlertNotification)notification;
-            alert.updateProgress(aAlertText, aProgress, aProgressMax);
-        }
+        notification = new NotificationCompat.Builder(mContext)
+                .setContentText(aAlertText)
+                .setSmallIcon(notification.icon)
+                .setWhen(notification.when)
+                .setContentIntent(notification.contentIntent)
+                .setProgress((int) aProgressMax, (int) aProgress, false)
+                .build();
 
-        if (mForegroundNotification == null && isOngoing(notification)) {
-            setForegroundNotification(notificationID, notification);
-        }
+        add(notificationID, notification);
     }
 
     
@@ -148,22 +154,8 @@ public class NotificationHandler {
 
 
     public boolean isOngoing(Notification notification) {
-        if (notification != null && (isProgressStyle(notification) || ((notification.flags & Notification.FLAG_ONGOING_EVENT) > 0))) {
+        if (notification != null && (notification.flags & Notification.FLAG_ONGOING_EVENT) > 0) {
             return true;
-        }
-        return false;
-    }
-
-    
-
-
-
-
-
-
-    private boolean isProgressStyle(Notification notification) {
-        if (notification instanceof AlertNotification) {
-            return ((AlertNotification)notification).isProgressStyle();
         }
         return false;
     }
