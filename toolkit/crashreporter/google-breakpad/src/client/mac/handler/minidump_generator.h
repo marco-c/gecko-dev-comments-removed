@@ -37,6 +37,7 @@
 
 #include <string>
 
+#include "client/mac/handler/ucontext_compat.h"
 #include "client/minidump_file_writer.h"
 #include "common/memory.h"
 #include "common/mac/macho_utilities.h"
@@ -49,7 +50,9 @@
   #define HAS_PPC_SUPPORT
 #endif
 #if defined(__arm__)
-  #define HAS_ARM_SUPPORT
+#define HAS_ARM_SUPPORT
+#elif defined(__aarch64__)
+#define HAS_ARM64_SUPPORT
 #elif defined(__i386__) || defined(__x86_64__)
   #define HAS_X86_SUPPORT
 #endif
@@ -105,7 +108,7 @@ class MinidumpGenerator {
   
   
   
-  void SetTaskContext(ucontext_t *task_context);
+  void SetTaskContext(breakpad_ucontext_t *task_context);
 
   
   
@@ -153,6 +156,13 @@ class MinidumpGenerator {
                        MDLocationDescriptor *register_location);
   uint64_t CurrentPCForStackARM(breakpad_thread_state_data_t state);
 #endif
+#ifdef HAS_ARM64_SUPPORT
+  bool WriteStackARM64(breakpad_thread_state_data_t state,
+                       MDMemoryDescriptor *stack_location);
+  bool WriteContextARM64(breakpad_thread_state_data_t state,
+                         MDLocationDescriptor *register_location);
+  uint64_t CurrentPCForStackARM64(breakpad_thread_state_data_t state);
+#endif
 #ifdef HAS_PPC_SUPPORT
   bool WriteStackPPC(breakpad_thread_state_data_t state,
                      MDMemoryDescriptor *stack_location);
@@ -197,7 +207,7 @@ class MinidumpGenerator {
 
   
   cpu_type_t cpu_type_;
-  
+
   
   static char build_string_[16];
   static int os_major_version_;
@@ -205,7 +215,7 @@ class MinidumpGenerator {
   static int os_build_number_;
 
   
-  ucontext_t *task_context_;
+  breakpad_ucontext_t *task_context_;
 
   
   DynamicImages *dynamic_images_;

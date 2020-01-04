@@ -449,13 +449,15 @@ tail =
 
 """ + "\n".join(testlines))
 
-    def assertTestResult(self, expected, shuffle=False, verbose=False):
+    def assertTestResult(self, expected, shuffle=False, verbose=False,
+                         symbolsPath=None):
         """
         Assert that self.x.runTests with manifest=self.manifest
         returns |expected|.
         """
         self.assertEquals(expected,
                           self.x.runTests(xpcshellBin,
+                                          symbolsPath=symbolsPath,
                                           manifest=self.manifest,
                                           mozInfo=mozinfo.info,
                                           shuffle=shuffle,
@@ -525,6 +527,14 @@ tail =
         """
         When an assertion is hit, we should produce a useful stack.
         """
+        
+        
+        
+        symbolsPath = None
+        candidate_path = os.path.join(build_obj.distdir, 'crashreporter-symbols')
+        if os.path.isdir(candidate_path):
+          symbolsPath = candidate_path
+
         self.writeFile("test_assert.js", '''
           add_test(function test_asserts_immediately() {
             Components.classes["@mozilla.org/xpcom/debug;1"]
@@ -535,8 +545,7 @@ tail =
         ''')
 
         self.writeManifest(["test_assert.js"])
-
-        self.assertTestResult(False)
+        self.assertTestResult(False, symbolsPath=symbolsPath)
 
         self.assertInLog("###!!! ASSERTION")
         log_lines = self.log.getvalue().splitlines()

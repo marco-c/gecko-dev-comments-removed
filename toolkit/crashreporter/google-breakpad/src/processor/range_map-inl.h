@@ -40,7 +40,7 @@
 #include <assert.h>
 
 #include "processor/range_map.h"
-#include "common/logging.h"
+#include "processor/logging.h"
 
 
 namespace google_breakpad {
@@ -72,12 +72,18 @@ bool RangeMap<AddressType, EntryType>::StoreRange(const AddressType &base,
     
     
     
-    AddressType other_base = iterator_base->second.base();
-    AddressType other_size = iterator_base->first - other_base + 1;
-    BPLOG(INFO) << "StoreRange failed, an existing range is contained by or "
-                   "extends lower than the new range: new " <<
-                   HexString(base) << "+" << HexString(size) << ", existing " <<
-                   HexString(other_base) << "+" << HexString(other_size);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     return false;
   }
 
@@ -86,13 +92,17 @@ bool RangeMap<AddressType, EntryType>::StoreRange(const AddressType &base,
       
       
       
-      AddressType other_base = iterator_high->second.base();
-      AddressType other_size = iterator_high->first - other_base + 1;
-      BPLOG(INFO) << "StoreRange failed, an existing range contains or "
-                     "extends higher than the new range: new " <<
-                     HexString(base) << "+" << HexString(size) <<
-                     ", existing " <<
-                     HexString(other_base) << "+" << HexString(other_size);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       return false;
     }
   }

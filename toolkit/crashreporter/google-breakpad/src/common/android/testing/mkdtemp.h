@@ -34,6 +34,8 @@
 
 
 
+
+
 #ifndef GOOGLE_BREAKPAD_COMMON_ANDROID_TESTING_MKDTEMP_H
 #define GOOGLE_BREAKPAD_COMMON_ANDROID_TESTING_MKDTEMP_H
 
@@ -44,9 +46,14 @@
 #include <string.h>
 #include <sys/stat.h>
 
+
+
+
+#define mkdtemp breakpad_mkdtemp
+
 namespace {
 
-char* mkdtemp(char* path) {
+char* breakpad_mkdtemp(char* path) {
   if (path == NULL) {
     errno = EINVAL;
     return NULL;

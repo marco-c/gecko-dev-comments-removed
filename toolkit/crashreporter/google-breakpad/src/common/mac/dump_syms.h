@@ -45,6 +45,7 @@
 
 #include "common/byte_cursor.h"
 #include "common/mac/macho_reader.h"
+#include "common/mac/super_fat_arch.h"
 #include "common/module.h"
 #include "common/scoped_ptr.h"
 #include "common/symbol_data.h"
@@ -53,11 +54,13 @@ namespace google_breakpad {
 
 class DumpSymbols {
  public:
-  explicit DumpSymbols(SymbolData symbol_data)
+  DumpSymbols(SymbolData symbol_data, bool handle_inter_cu_refs)
       : symbol_data_(symbol_data),
+        handle_inter_cu_refs_(handle_inter_cu_refs),
         input_pathname_(),
         object_filename_(),
         contents_(),
+        object_files_(),
         selected_object_file_(),
         selected_object_name_() { }
   ~DumpSymbols() {
@@ -97,7 +100,7 @@ class DumpSymbols {
   
   
   
-  const struct fat_arch *AvailableArchitectures(size_t *count) {
+  const SuperFatArch* AvailableArchitectures(size_t *count) {
     *count = object_files_.size();
     if (object_files_.size() > 0)
       return &object_files_[0];
@@ -120,6 +123,11 @@ class DumpSymbols {
   class LoadCommandDumper;
 
   
+  
+  SuperFatArch* FindBestMatchForArchitecture(
+      cpu_type_t cpu_type, cpu_subtype_t cpu_subtype);
+
+  
   std::string Identifier();
 
   
@@ -127,7 +135,8 @@ class DumpSymbols {
   
   bool ReadDwarf(google_breakpad::Module *module,
                  const mach_o::Reader &macho_reader,
-                 const mach_o::SectionMap &dwarf_sections) const;
+                 const mach_o::SectionMap &dwarf_sections,
+                 bool handle_inter_cu_refs) const;
 
   
   
@@ -141,6 +150,9 @@ class DumpSymbols {
 
   
   const SymbolData symbol_data_;
+
+  
+  const bool handle_inter_cu_refs_;
 
   
   
@@ -159,11 +171,11 @@ class DumpSymbols {
   
   
   
-  vector<struct fat_arch> object_files_;
+  vector<SuperFatArch> object_files_;
 
   
   
-  const struct fat_arch *selected_object_file_;
+  const SuperFatArch *selected_object_file_;
 
   
   
