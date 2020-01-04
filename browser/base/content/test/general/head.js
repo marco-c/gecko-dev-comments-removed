@@ -608,34 +608,31 @@ var FullZoomHelper = {
 
 
 
-function promiseTabLoadEvent(tab, url, eventType="load")
+function promiseTabLoadEvent(tab, url)
 {
   let deferred = Promise.defer();
-  info("Wait tab event: " + eventType);
+  info("Wait tab event: " + load);
 
-  function handle(event) {
-    if (event.originalTarget != tab.linkedBrowser.contentDocument ||
-        event.target.location.href == "about:blank" ||
-        (url && event.target.location.href != url)) {
-      info("Skipping spurious '" + eventType + "'' event" +
-           " for " + event.target.location.href);
-      return;
-    }
-    clearTimeout(timeout);
-    tab.linkedBrowser.removeEventListener(eventType, handle, true);
-    info("Tab event received: " + eventType);
-    deferred.resolve(event);
-  }
+  
+  
+  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url);
 
   let timeout = setTimeout(() => {
-    tab.linkedBrowser.removeEventListener(eventType, handle, true);
-    deferred.reject(new Error("Timed out while waiting for a '" + eventType + "'' event"));
+    deferred.reject(new Error("Timed out while waiting for a 'load' event"));
   }, 30000);
 
-  tab.linkedBrowser.addEventListener(eventType, handle, true, true);
+  loaded.then(() => {
+    clearTimeout(timeout);
+    deferred.resolve()
+  });
+
   if (url)
-    tab.linkedBrowser.loadURI(url);
-  return deferred.promise;
+    BrowserTestUtils.loadURI(tab.linkedBrowser, url);
+
+  
+  
+  
+  return Promise.all([deferred.promise, loaded]);
 }
 
 
