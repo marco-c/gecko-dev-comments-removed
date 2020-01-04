@@ -288,16 +288,6 @@ protected:
   virtual ~MainThreadStopSyncLoopRunnable()
   { }
 
-  
-  
-  
-  
-  
-  
-  virtual void
-  MaybeSetException()
-  { }
-
 private:
   virtual bool
   PreDispatch(WorkerPrivate* aWorkerPrivate) override final
