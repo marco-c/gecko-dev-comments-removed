@@ -68,10 +68,35 @@ class PromiseObject : public NativeObject
 };
 
 
-bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
 
 
-bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool EnqueuePromiseReactionJob(JSContext* cx, HandleValue handler, HandleValue handlerArg,
+                               HandleObject resolve, HandleObject reject,
+                               HandleObject promise, HandleObject objectFromIncumbentGlobal);
+
+
+
+
+
+
+
+
+bool EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve,
+                                      HandleValue thenable, HandleValue then);
 
 } 
 

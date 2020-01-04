@@ -443,20 +443,86 @@ PromiseObject::onSettled(JSContext* cx)
     JS::dbg::onPromiseSettled(cx, promise);
 }
 
+enum ReactionJobSlots {
+    ReactionJobSlot_Handler = 0,
+    ReactionJobSlot_JobData,
+};
 
-bool
+enum ReactionJobDataSlots {
+    ReactionJobDataSlot_HandlerArg = 0,
+    ReactionJobDataSlot_ResolveHook,
+    ReactionJobDataSlot_RejectHook,
+    ReactionJobDataSlotsCount,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
 PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
+
     RootedFunction job(cx, &args.callee().as<JSFunction>());
-    RootedNativeObject jobArgs(cx, &job->getExtendedSlot(0).toObject().as<NativeObject>());
 
-    RootedValue argument(cx, jobArgs->getDenseElement(1));
+    RootedValue handlerVal(cx, job->getExtendedSlot(ReactionJobSlot_Handler));
+    RootedObject jobDataObj(cx, &job->getExtendedSlot(ReactionJobSlot_JobData).toObject());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mozilla::Maybe<AutoCompartment> ac;
+    if (IsWrapper(jobDataObj)) {
+        jobDataObj = UncheckedUnwrap(jobDataObj);
+        ac.emplace(cx, jobDataObj);
+        if (!cx->compartment()->wrap(cx, &handlerVal))
+            return false;
+    }
+    RootedNativeObject jobData(cx, &jobDataObj->as<NativeObject>());
+    RootedValue argument(cx, jobData->getDenseElement(ReactionJobDataSlot_HandlerArg));
 
     
 
     
-    RootedValue handlerVal(cx, jobArgs->getDenseElement(0));
     RootedValue handlerResult(cx);
     bool shouldReject = false;
 
@@ -486,31 +552,163 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
+    size_t hookSlot = shouldReject
+                      ? ReactionJobDataSlot_RejectHook
+                      : ReactionJobDataSlot_ResolveHook;
+    RootedObject callee(cx, &jobData->getDenseElement(hookSlot).toObject());
+
     FixedInvokeArgs<1> args2(cx);
     args2[0].set(handlerResult);
-    RootedValue calleeOrRval(cx);
-    if (shouldReject) {
-        calleeOrRval = jobArgs->getDenseElement(3);
-    } else {
-        calleeOrRval = jobArgs->getDenseElement(2);
-    }
+    RootedValue calleeOrRval(cx, ObjectValue(*callee));
     bool result = Call(cx, calleeOrRval, UndefinedHandleValue, args2, &calleeOrRval);
 
     args.rval().set(calleeOrRval);
     return result;
 }
 
-
 bool
+EnqueuePromiseReactionJob(JSContext* cx, HandleValue handler_, HandleValue handlerArg,
+                          HandleObject resolve, HandleObject reject,
+                          HandleObject promise_, HandleObject objectFromIncumbentGlobal_)
+{
+    
+    
+    
+    RootedArrayObject data(cx, NewDenseFullyAllocatedArray(cx, ReactionJobDataSlotsCount));
+    if (!data ||
+        data->ensureDenseElements(cx, 0, ReactionJobDataSlotsCount) != DenseElementResult::Success)
+    {
+        return false;
+    }
+
+    
+    data->setDenseElement(ReactionJobDataSlot_HandlerArg, handlerArg);
+
+    
+    data->setDenseElement(ReactionJobDataSlot_ResolveHook, ObjectValue(*resolve));
+
+    
+    data->setDenseElement(ReactionJobDataSlot_RejectHook, ObjectValue(*reject));
+
+    RootedValue dataVal(cx, ObjectValue(*data));
+
+    
+    RootedValue handler(cx, handler_);
+
+    
+    
+    
+    
+    
+    mozilla::Maybe<AutoCompartment> ac;
+    if (handler.isObject()) {
+        RootedObject handlerObj(cx, &handler.toObject());
+
+        
+        
+        
+        
+        handlerObj = UncheckedUnwrap(handlerObj);
+        MOZ_ASSERT(handlerObj);
+        ac.emplace(cx, handlerObj);
+        handler = ObjectValue(*handlerObj);
+
+        
+        if (!cx->compartment()->wrap(cx, &dataVal))
+            return false;
+    }
+
+    
+    RootedAtom funName(cx, cx->names().empty);
+    RootedFunction job(cx, NewNativeFunction(cx, PromiseReactionJob, 0, funName,
+                                             gc::AllocKind::FUNCTION_EXTENDED));
+    if (!job)
+        return false;
+
+    
+    job->setExtendedSlot(ReactionJobSlot_Handler, handler);
+    job->setExtendedSlot(ReactionJobSlot_JobData, dataVal);
+
+    
+    
+    
+    
+    
+    RootedObject promise(cx, promise_);
+    if (!cx->compartment()->wrap(cx, &promise))
+        return false;
+
+    
+    
+    
+    
+    RootedObject global(cx);
+    RootedObject objectFromIncumbentGlobal(cx, objectFromIncumbentGlobal_);
+    if (objectFromIncumbentGlobal) {
+        objectFromIncumbentGlobal = CheckedUnwrap(objectFromIncumbentGlobal);
+        MOZ_ASSERT(objectFromIncumbentGlobal);
+        global = &objectFromIncumbentGlobal->global();
+    }
+
+    
+    
+    
+    
+    
+    return cx->runtime()->enqueuePromiseJob(cx, job, promise, global);
+}
+
+enum ThenableJobSlots {
+    ThenableJobSlot_Handler = 0,
+    ThenableJobSlot_JobData,
+};
+
+enum ThenableJobDataSlots {
+    ThenableJobDataSlot_Promise = 0,
+    ThenableJobDataSlot_Thenable,
+    ThenableJobDataSlotsCount,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
 PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    RootedFunction job(cx, &args.callee().as<JSFunction>());
-    RootedNativeObject jobArgs(cx, &job->getExtendedSlot(0).toObject().as<NativeObject>());
 
-    RootedValue promise(cx, jobArgs->getDenseElement(2));
-    RootedValue then(cx, jobArgs->getDenseElement(0));
-    RootedValue thenable(cx, jobArgs->getDenseElement(1));
+    RootedFunction job(cx, &args.callee().as<JSFunction>());
+    RootedValue then(cx, job->getExtendedSlot(ThenableJobSlot_Handler));
+    MOZ_ASSERT(!IsWrapper(&then.toObject()));
+    RootedNativeObject jobArgs(cx, &job->getExtendedSlot(ThenableJobSlot_JobData)
+                                    .toObject().as<NativeObject>());
+
+    RootedValue promise(cx, jobArgs->getDenseElement(ThenableJobDataSlot_Promise));
+    RootedValue thenable(cx, jobArgs->getDenseElement(ThenableJobDataSlot_Thenable));
 
     
     RootedValue resolveVal(cx);
@@ -536,6 +734,64 @@ PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
     rejectArgs[0].set(rval);
 
     return Call(cx, rejectVal, UndefinedHandleValue, rejectArgs, &rval);
+}
+
+bool
+EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve_,
+                                 HandleValue thenable_, HandleValue thenVal)
+{
+    
+    RootedValue promiseToResolve(cx, promiseToResolve_);
+    RootedValue thenable(cx, thenable_);
+
+    
+    
+    
+    
+    
+    RootedObject then(cx, CheckedUnwrap(&thenVal.toObject()));
+    AutoCompartment ac(cx, then);
+
+    RootedAtom funName(cx, cx->names().empty);
+    if (!funName)
+        return false;
+    RootedFunction job(cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
+                                             gc::AllocKind::FUNCTION_EXTENDED));
+    if (!job)
+        return false;
+
+    
+    job->setExtendedSlot(ThenableJobSlot_Handler, ObjectValue(*then));
+
+    
+    
+    
+    RootedArrayObject data(cx, NewDenseFullyAllocatedArray(cx, ThenableJobDataSlotsCount));
+    if (!data ||
+        data->ensureDenseElements(cx, 0, ThenableJobDataSlotsCount) != DenseElementResult::Success)
+    {
+        return false;
+    }
+
+    
+    if (!cx->compartment()->wrap(cx, &promiseToResolve))
+        return false;
+    data->setDenseElement(ThenableJobDataSlot_Promise, promiseToResolve);
+    
+    
+    RootedObject promise(cx, &promiseToResolve.toObject());
+
+    
+    MOZ_ASSERT(thenable.isObject());
+    if (!cx->compartment()->wrap(cx, &thenable))
+        return false;
+    data->setDenseElement(ThenableJobDataSlot_Thenable, thenable);
+
+    
+    job->setExtendedSlot(ThenableJobSlot_JobData, ObjectValue(*data));
+
+    RootedObject incumbentGlobal(cx, cx->runtime()->getIncumbentGlobal(cx));
+    return cx->runtime()->enqueuePromiseJob(cx, job, promise, incumbentGlobal);
 }
 
 } 

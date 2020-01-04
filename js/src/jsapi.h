@@ -582,9 +582,13 @@ typedef void
 typedef bool
 (* JSInterruptCallback)(JSContext* cx);
 
+typedef JSObject*
+(* JSGetIncumbentGlobalCallback)(JSContext* cx);
+
 typedef bool
 (* JSEnqueuePromiseJobCallback)(JSContext* cx, JS::HandleObject job,
-                                JS::HandleObject allocationSite, void* data);
+                                JS::HandleObject allocationSite, JS::HandleObject incumbentGlobal,
+                                void* data);
 
 enum class PromiseRejectionHandlingState {
     Unhandled,
@@ -4313,6 +4317,16 @@ extern JS_PUBLIC_API(void)
 JS_RequestInterruptCallback(JSRuntime* rt);
 
 namespace JS {
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetGetIncumbentGlobalCallback(JSRuntime* rt, JSGetIncumbentGlobalCallback callback);
 
 
 

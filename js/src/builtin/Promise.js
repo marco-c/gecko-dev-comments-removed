@@ -85,7 +85,7 @@ function CreateResolvingFunctions(promise) {
         }
 
         
-        EnqueuePromiseResolveThenableJob(promise, resolution, then);
+        _EnqueuePromiseResolveThenableJob(promise, resolution, then);
 
         
         return undefined;
@@ -227,22 +227,15 @@ function TriggerPromiseReactions(reactions, argument) {
 
 function EnqueuePromiseReactionJob(reaction, argument) {
     let capabilities = reaction.capabilities;
-    _EnqueuePromiseReactionJob([reaction.handler,
-                                argument,
-                                capabilities.resolve,
-                                capabilities.reject
-                               ],
-                               capabilities.promise);
+    _EnqueuePromiseReactionJob(reaction.handler,
+                               argument,
+                               capabilities.resolve,
+                               capabilities.reject,
+                               capabilities.promise,
+                               reaction.incumbentGlobal || null);
 }
 
 
-function EnqueuePromiseResolveThenableJob(promiseToResolve, thenable, then) {
-    _EnqueuePromiseResolveThenableJob([then,
-                                       thenable,
-                                       promiseToResolve
-                                      ],
-                                      promiseToResolve);
-}
 
 
 
@@ -877,18 +870,21 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
     if (!IsCallable(onRejected))
         onRejected = PROMISE_HANDLER_THROWER;
 
+    let incumbentGlobal = _GetObjectFromIncumbentGlobal();
     
     let fulfillReaction = {
         __proto__: PromiseReactionRecordProto,
         capabilities: resultCapability,
-        handler: onFulfilled
+        handler: onFulfilled,
+        incumbentGlobal
     };
 
     
     let rejectReaction = {
         __proto__: PromiseReactionRecordProto,
         capabilities: resultCapability,
-        handler: onRejected
+        handler: onRejected,
+        incumbentGlobal
     };
 
     

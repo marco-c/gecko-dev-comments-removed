@@ -1793,70 +1793,53 @@ js::ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args)
     return false;
 }
 
-
 static bool
 intrinsic_EnqueuePromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 2);
-    MOZ_ASSERT(args[0].toObject().as<NativeObject>().getDenseInitializedLength() == 4);
+    MOZ_ASSERT(args.length() == 6);
 
-    
-    
-    RootedObject promise(cx);
-    if (args[1].isObject())
-        promise = UncheckedUnwrap(&args[1].toObject());
+    RootedValue handler(cx, args[0]);
+    MOZ_ASSERT((handler.isNumber() &&
+                (handler.toNumber() == PROMISE_HANDLER_IDENTITY ||
+                 handler.toNumber() == PROMISE_HANDLER_THROWER)) ||
+               handler.toObject().isCallable());
 
-#ifdef DEBUG
-    MOZ_ASSERT_IF(promise, promise->is<PromiseObject>());
-    RootedNativeObject jobArgs(cx, &args[0].toObject().as<NativeObject>());
-    MOZ_ASSERT((jobArgs->getDenseElement(0).isNumber() &&
-                (jobArgs->getDenseElement(0).toNumber() == PROMISE_HANDLER_IDENTITY ||
-                 jobArgs->getDenseElement(0).toNumber() == PROMISE_HANDLER_THROWER)) ||
-               jobArgs->getDenseElement(0).toObject().isCallable());
-    MOZ_ASSERT(jobArgs->getDenseElement(2).toObject().isCallable());
-    MOZ_ASSERT(jobArgs->getDenseElement(3).toObject().isCallable());
-#endif
+    RootedValue handlerArg(cx, args[1]);
 
-    RootedAtom funName(cx, cx->names().empty);
-    RootedFunction job(cx, NewNativeFunction(cx, PromiseReactionJob, 0, funName,
-                                             gc::AllocKind::FUNCTION_EXTENDED));
-    if (!job)
+    RootedObject resolve(cx, &args[2].toObject());
+    MOZ_ASSERT(IsCallable(resolve));
+
+    RootedObject reject(cx, &args[3].toObject());
+    MOZ_ASSERT(IsCallable(reject));
+
+    RootedObject promise(cx, args[4].toObjectOrNull());
+    RootedObject objectFromIncumbentGlobal(cx, args[5].toObjectOrNull());
+
+    if (!EnqueuePromiseReactionJob(cx, handler, handlerArg, resolve, reject, promise,
+                                   objectFromIncumbentGlobal))
+    {
         return false;
-
-    job->setExtendedSlot(0, args[0]);
-    if (!cx->runtime()->enqueuePromiseJob(cx, job, promise))
-        return false;
+    }
     args.rval().setUndefined();
     return true;
 }
-
 
 static bool
 intrinsic_EnqueuePromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-#ifdef DEBUG
-    MOZ_ASSERT(args.length() == 2);
-    MOZ_ASSERT(UncheckedUnwrap(&args[1].toObject())->is<PromiseObject>());
-    RootedNativeObject jobArgs(cx, &args[0].toObject().as<NativeObject>());
-    MOZ_ASSERT(jobArgs->getDenseInitializedLength() == 3);
-    MOZ_ASSERT(jobArgs->getDenseElement(0).toObject().isCallable());
-    MOZ_ASSERT(jobArgs->getDenseElement(1).isObject());
-    MOZ_ASSERT(UncheckedUnwrap(&jobArgs->getDenseElement(2).toObject())->is<PromiseObject>());
-#endif
+    MOZ_ASSERT(args.length() == 3);
+    MOZ_ASSERT(IsCallable(args[2]));
 
-    RootedAtom funName(cx, cx->names().empty);
-    RootedFunction job(cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
-                                             gc::AllocKind::FUNCTION_EXTENDED));
-    if (!job)
+    RootedValue promiseToResolve(cx, args[0]);
+    RootedValue thenable(cx, args[1]);
+    RootedValue then(cx, args[2]);
+
+    if (!EnqueuePromiseResolveThenableJob(cx, promiseToResolve, thenable, then))
         return false;
 
-    job->setExtendedSlot(0, args[0]);
-    RootedObject promise(cx, CheckedUnwrap(&args[1].toObject()));
-    if (!cx->runtime()->enqueuePromiseJob(cx, job, promise))
-        return false;
     args.rval().setUndefined();
     return true;
 }
@@ -2006,6 +1989,48 @@ intrinsic_OriginalPromiseConstructor(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     args.rval().setObject(*obj);
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
+intrinsic_GetObjectFromIncumbentGlobal(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 0);
+
+    RootedObject obj(cx);
+    RootedObject global(cx, cx->runtime()->getIncumbentGlobal(cx));
+    if (global) {
+        MOZ_ASSERT(global->is<GlobalObject>());
+        AutoCompartment ac(cx, global);
+        obj = NewBuiltinClassInstance<PlainObject>(cx);
+        if (!obj)
+            return false;
+    }
+
+    RootedValue objVal(cx, ObjectOrNullValue(obj));
+
+    
+    if (obj && !cx->compartment()->wrap(cx, &objVal))
+        return false;
+
+    args.rval().set(objVal);
     return true;
 }
 
@@ -2499,6 +2524,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("CallWeakSetMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<WeakSetObject>>, 2, 0),
 
+    JS_FN("_GetObjectFromIncumbentGlobal",  intrinsic_GetObjectFromIncumbentGlobal, 0, 0),
     JS_FN("IsPromise",                      intrinsic_IsInstanceOfBuiltin<PromiseObject>, 1,0),
     JS_FN("IsWrappedPromise",               intrinsic_IsWrappedPromiseObject,     1, 0),
     JS_FN("_EnqueuePromiseReactionJob",     intrinsic_EnqueuePromiseReactionJob,  2, 0),
