@@ -91,13 +91,10 @@ private:
   const bool mHasVideo;
   media::TimeUnit mDuration;
 
-  
-
-
-  CallbackID mAudioCallbackID;
-  CallbackID mVideoCallbackID;
-  CallbackID mWaitAudioCallbackID;
-  CallbackID mWaitVideoCallbackID;
+  MediaEventListener mAudioCallback;
+  MediaEventListener mVideoCallback;
+  MediaEventListener mAudioWaitCallback;
+  MediaEventListener mVideoWaitCallback;
 };
 
 } 

@@ -99,10 +99,11 @@ private:
 
 
   MozPromiseRequestHolder<MediaDecoderReader::SeekPromise> mSeekRequest;
-  CallbackID mAudioCallbackID;
-  CallbackID mVideoCallbackID;
-  CallbackID mWaitAudioCallbackID;
-  CallbackID mWaitVideoCallbackID;
+
+  MediaEventListener mAudioCallback;
+  MediaEventListener mVideoCallback;
+  MediaEventListener mAudioWaitCallback;
+  MediaEventListener mVideoWaitCallback;
 };
 
 } 
