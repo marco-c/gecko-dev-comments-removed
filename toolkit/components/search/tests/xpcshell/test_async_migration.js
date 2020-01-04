@@ -13,11 +13,8 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_metadata_migration() {
-
-  yield new Promise(function(resolve) {
-    Services.search.init(resolve);
-  });
+add_task(function* test_async_metadata_migration() {
+  yield asyncInit();
   yield promiseAfterCache();
 
   
