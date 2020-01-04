@@ -11,6 +11,7 @@ const {CubicBezierWidget} =
       require("devtools/client/shared/widgets/CubicBezierWidget");
 const {MdnDocsWidget} = require("devtools/client/shared/widgets/MdnDocsWidget");
 const {CSSFilterEditorWidget} = require("devtools/client/shared/widgets/FilterWidget");
+const {TooltipToggle} = require("devtools/client/shared/widgets/tooltip/TooltipToggle");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {colorUtils} = require("devtools/client/shared/css-color");
 const Heritage = require("sdk/core/heritage");
@@ -189,7 +190,10 @@ function Tooltip(doc, options) {
   this.panel = PanelFactory.get(doc, this.options);
 
   
-  this.uid = "tooltip-" + Date.now();
+  
+  this._toggle = new TooltipToggle(this);
+  this.startTogglingOnHover = this._toggle.start.bind(this._toggle);
+  this.stopTogglingOnHover = this._toggle.stop.bind(this._toggle);
 
   
   for (let eventName of POPUP_EVENTS) {
@@ -242,7 +246,6 @@ Tooltip.prototype = {
   
   defaultOffsetY: 0,
   
-  defaultShowDelay: 50,
 
   
 
@@ -333,142 +336,12 @@ Tooltip.prototype = {
 
     this.content = null;
 
-    if (this._basedNode) {
-      this.stopTogglingOnHover();
-    }
+    this._toggle.destroy();
 
     this.doc = null;
 
     this.panel.remove();
     this.panel = null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  startTogglingOnHover: function(baseNode, targetNodeCb,
-                                 showDelay=this.defaultShowDelay) {
-    if (this._basedNode) {
-      this.stopTogglingOnHover();
-    }
-    if (!baseNode) {
-      
-      return;
-    }
-
-    this._basedNode = baseNode;
-    this._showDelay = showDelay;
-    this._targetNodeCb = targetNodeCb || (() => true);
-
-    this._onBaseNodeMouseMove = this._onBaseNodeMouseMove.bind(this);
-    this._onBaseNodeMouseLeave = this._onBaseNodeMouseLeave.bind(this);
-
-    baseNode.addEventListener("mousemove", this._onBaseNodeMouseMove, false);
-    baseNode.addEventListener("mouseleave", this._onBaseNodeMouseLeave, false);
-  },
-
-  
-
-
-
-
-  stopTogglingOnHover: function() {
-    clearNamedTimeout(this.uid);
-
-    if (!this._basedNode) {
-      return;
-    }
-
-    this._basedNode.removeEventListener("mousemove",
-      this._onBaseNodeMouseMove, false);
-    this._basedNode.removeEventListener("mouseleave",
-      this._onBaseNodeMouseLeave, false);
-
-    this._basedNode = null;
-    this._targetNodeCb = null;
-    this._lastHovered = null;
-  },
-
-  _onBaseNodeMouseMove: function(event) {
-    if (event.target !== this._lastHovered) {
-      this.hide();
-      this._lastHovered = event.target;
-      setNamedTimeout(this.uid, this._showDelay, () => {
-        this.isValidHoverTarget(event.target).then(target => {
-          this.show(target);
-        }, reason => {
-          if (reason === false) {
-            
-            
-            return;
-          }
-          
-          
-          console.error("isValidHoverTarget rejected with an unexpected reason:");
-          console.error(reason);
-        });
-      });
-    }
-  },
-
-  
-
-
-
-
-
-  isValidHoverTarget: function(target) {
-    
-    
-    let res = this._targetNodeCb(target, this);
-
-    
-    
-    if (res && res.then) {
-      return res.then(arg => {
-        return arg instanceof Ci.nsIDOMNode ? arg : target;
-      });
-    }
-    let newTarget = res instanceof Ci.nsIDOMNode ? res : target;
-    return res ? promise.resolve(newTarget) : promise.reject(false);
-  },
-
-  _onBaseNodeMouseLeave: function() {
-    clearNamedTimeout(this.uid);
-    this._lastHovered = null;
-    this.hide();
   },
 
   

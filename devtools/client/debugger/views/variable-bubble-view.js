@@ -28,6 +28,17 @@ VariableBubbleView.prototype = {
   
 
 
+
+  TOOLTIP_SHOW_DELAY: 750,
+
+  
+
+
+  TOOLTIP_POSITION: "topcenter bottomleft",
+
+  
+
+
   initialize: function() {
     dumpn("Initializing the VariableBubbleView");
 
@@ -49,8 +60,7 @@ VariableBubbleView.prototype = {
         event: "keydown"
       }]
     });
-    this._tooltip.defaultPosition = EDITOR_VARIABLE_POPUP_POSITION;
-    this._tooltip.defaultShowDelay = EDITOR_VARIABLE_HOVER_DELAY;
+    this._tooltip.defaultPosition = this.TOOLTIP_POSITION;
     this._tooltip.panel.addEventListener("popuphiding", this._onPopupHiding);
   },
 
@@ -275,7 +285,7 @@ VariableBubbleView.prototype = {
     
     
     setNamedTimeout("editor-mouse-move",
-      EDITOR_VARIABLE_HOVER_DELAY, () => this._findIdentifier(e.clientX, e.clientY));
+      this.TOOLTIP_SHOW_DELAY, () => this._findIdentifier(e.clientX, e.clientY));
   },
 
   
