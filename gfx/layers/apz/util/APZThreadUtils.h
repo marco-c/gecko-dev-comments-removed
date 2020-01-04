@@ -7,7 +7,6 @@
 #define mozilla_layers_APZThreadUtils_h
 
 #include "base/message_loop.h"
-#include "mozilla/TimeStamp.h"  
 #include "nsITimer.h"
 
 namespace mozilla {
@@ -52,12 +51,6 @@ public:
 
 
   static void RunOnControllerThread(already_AddRefed<Runnable> aTask);
-
-  
-
-
-  static void RunDelayedTaskOnCurrentThread(already_AddRefed<Runnable> aTask,
-                                            const TimeDuration& aDelay);
 
   
 
