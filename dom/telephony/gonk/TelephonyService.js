@@ -2214,7 +2214,6 @@ TelephonyService.prototype = {
     
     
     let disconnectedCalls = aCalls.slice();
-
     for (let call in aCalls) {
       while (call.childId) {
         call = this._currentCalls[aClientId][call.childId];
@@ -2231,8 +2230,8 @@ TelephonyService.prototype = {
       call.state = nsITelephonyService.CALL_STATE_DISCONNECTED;
       call.disconnectedReason = aFailCause;
 
-      if (call.parentId) {
-        let parentCall = this._currentCalls[aClientId][call.parentId];
+      let parentCall = this._currentCalls[aClientId][call.parentId];
+      if (parentCall) {
         delete parentCall.childId;
       }
 
