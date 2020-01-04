@@ -624,6 +624,10 @@ private:
 };
 
 
+
+
+
+
 class DispatchChangeEventCallback final : public GetFilesCallback
 {
 public:
@@ -666,32 +670,6 @@ public:
 
 private:
   RefPtr<HTMLInputElement> mInputElement;
-};
-
-
-
-class AfterSetFilesOrDirectoriesCallback : public GetFilesCallback
-{
-public:
-  AfterSetFilesOrDirectoriesCallback(HTMLInputElement* aInputElement,
-                                     bool aSetValueChanged)
-    : mInputElement(aInputElement)
-    , mSetValueChanged(aSetValueChanged)
-  {
-    MOZ_ASSERT(aInputElement);
-  }
-
-  void
-  Callback(nsresult aStatus, const Sequence<RefPtr<File>>& aFiles) override
-  {
-    if (NS_SUCCEEDED(aStatus)) {
-      mInputElement->AfterSetFilesOrDirectoriesInternal(mSetValueChanged);
-    }
-  }
-
-private:
-  RefPtr<HTMLInputElement> mInputElement;
-  bool mSetValueChanged;
 };
 
 class HTMLInputElementState final : public nsISupports
@@ -3314,6 +3292,7 @@ HTMLInputElement::SetFiles(nsIDOMFileList* aFiles,
   AfterSetFilesOrDirectories(aSetValueChanged);
 }
 
+
 void
 HTMLInputElement::MozSetDndFilesAndDirectories(const nsTArray<OwningFileOrDirectory>& aFilesOrDirectories)
 {
@@ -3322,23 +3301,28 @@ HTMLInputElement::MozSetDndFilesAndDirectories(const nsTArray<OwningFileOrDirect
   }
 
   SetFilesOrDirectories(aFilesOrDirectories, true);
+
+  RefPtr<DispatchChangeEventCallback> dispatchChangeEventCallback =
+    new DispatchChangeEventCallback(this);
+
+  if (Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false) &&
+      HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory)) {
+    ErrorResult rv;
+    GetFilesHelper* helper = GetOrCreateGetFilesHelper(true ,
+                                                       rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      rv.SuppressException();
+      return;
+    }
+
+    helper->AddCallback(dispatchChangeEventCallback);
+  } else {
+    dispatchChangeEventCallback->DispatchEvents();
+  }
 }
 
 void
 HTMLInputElement::AfterSetFilesOrDirectories(bool aSetValueChanged)
-{
-  if (Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false) &&
-      HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory)) {
-    
-    ExploreDirectoryRecursively(aSetValueChanged);
-    return;
-  }
-
-  AfterSetFilesOrDirectoriesInternal(aSetValueChanged);
-}
-
-void
-HTMLInputElement::AfterSetFilesOrDirectoriesInternal(bool aSetValueChanged)
 {
   
   
@@ -8531,22 +8515,6 @@ HTMLInputElement::GetOrCreateGetFilesHelper(bool aRecursiveFlag,
   }
 
   return mGetFilesNonRecursiveHelper;
-}
-
-void
-HTMLInputElement::ExploreDirectoryRecursively(bool aSetValueChanged)
-{
-  ErrorResult rv;
-  GetFilesHelper* helper = GetOrCreateGetFilesHelper(true ,
-                                                     rv);
-  if (NS_WARN_IF(rv.Failed())) {
-    AfterSetFilesOrDirectoriesInternal(aSetValueChanged);
-    return;
-  }
-
-  RefPtr<AfterSetFilesOrDirectoriesCallback> callback =
-    new AfterSetFilesOrDirectoriesCallback(this, aSetValueChanged);
-  helper->AddCallback(callback);
 }
 
 void
