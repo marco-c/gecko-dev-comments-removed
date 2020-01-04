@@ -8,6 +8,7 @@
 
 
 
+
 const HAWK_TOKEN_LENGTH = 64;
 const {
   LOOP_SESSION_TYPE,
@@ -21,6 +22,17 @@ const { LoopRooms } = Cu.import("chrome://loop/content/modules/LoopRooms.jsm", {
 
 
 const WAS_OFFLINE = Services.io.offline;
+
+function cleanupPanel() {
+  let loopPanel = document.getElementById("loop-notification-panel");
+  loopPanel.hidePopup();
+  let btn = document.getElementById("loop-button");
+  let frameId = btn.getAttribute("notificationFrameId");
+  let frame = document.getElementById(frameId);
+  if (frame) {
+    frame.remove();
+  }
+}
 
 function promisePanelLoaded() {
   return new Promise((resolve) => {
@@ -48,12 +60,11 @@ function promisePanelLoaded() {
           iframe.contentDocument.readyState == "complete") {
         resolve();
       } else {
-        iframe.addEventListener("load", function panelOnLoad() {
-          iframe.removeEventListener("load", panelOnLoad, true);
-          
-          
+        
+        iframe.contentWindow.addEventListener("loopPanelInitialized", function onInit() {
+          iframe.contentWindow.removeEventListener("loopPanelInitialized", onInit);
           resolve();
-        }, true);
+        });
       }
     }
 
@@ -61,12 +72,7 @@ function promisePanelLoaded() {
     
     
     registerCleanupFunction(function() {
-      loopPanel.hidePopup();
-      let frameId = btn.getAttribute("notificationFrameId");
-      let frame = document.getElementById(frameId);
-      if (frame) {
-        frame.remove();
-      }
+      cleanupPanel();
     });
   });
 }
