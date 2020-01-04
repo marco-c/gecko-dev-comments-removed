@@ -40,7 +40,7 @@ RtspOmxReader::Seek(SeekTarget aTarget, int64_t aEndTime)
   
   
   if (mRtspResource) {
-    mRtspResource->SeekTime(aTarget.mTime);
+    mRtspResource->SeekTime(aTarget.GetTime().ToMicroseconds());
     mRtspResource->EnablePlayoutDelay();
   }
 
