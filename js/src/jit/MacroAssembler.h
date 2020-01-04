@@ -595,6 +595,16 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
+    inline void PushCalleeToken(Register callee, bool constructing);
+
+    
+    
+    inline void loadFunctionFromCalleeToken(Address token, Register dest);
+
+    
+    
+    
+    
     
     
     
@@ -759,21 +769,6 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     void loadStringLength(Register str, Register dest) {
         load32(Address(str, JSString::offsetOfLength()), dest);
-    }
-
-    void loadFunctionFromCalleeToken(Address token, Register dest) {
-        loadPtr(token, dest);
-        andPtr(Imm32(uint32_t(CalleeTokenMask)), dest);
-    }
-    void PushCalleeToken(Register callee, bool constructing) {
-        if (constructing) {
-            orPtr(Imm32(CalleeToken_FunctionConstructing), callee);
-            Push(callee);
-            andPtr(Imm32(uint32_t(CalleeTokenMask)), callee);
-        } else {
-            static_assert(CalleeToken_Function == 0, "Non-constructing call requires no tagging");
-            Push(callee);
-        }
     }
 
     void loadStringChars(Register str, Register dest);
