@@ -11631,7 +11631,84 @@ FullscreenRequest::~FullscreenRequest()
 
 
 
-static LinkedList<FullscreenRequest> sPendingFullscreenRequests;
+class PendingFullscreenRequestList
+{
+public:
+  static void Add(UniquePtr<FullscreenRequest>&& aRequest)
+  {
+    sList.insertBack(aRequest.release());
+  }
+
+  static const FullscreenRequest* GetLast()
+  {
+    return sList.getLast();
+  }
+
+  class Iterator
+  {
+  public:
+    explicit Iterator(nsIDocument* aDoc)
+      : mCurrent(PendingFullscreenRequestList::sList.getFirst())
+    {
+      if (mCurrent) {
+        mRootShell = GetRootShell(aDoc);
+        SkipToNextMatch();
+      }
+    }
+
+    void DeleteAndNext()
+    {
+      DeleteAndNextInternal();
+      SkipToNextMatch();
+    }
+    bool AtEnd() const { return mCurrent == nullptr; }
+    const FullscreenRequest& Get() const { return *mCurrent; }
+
+  private:
+    already_AddRefed<nsIDocShellTreeItem> GetRootShell(nsIDocument* aDoc)
+    {
+      if (nsIDocShellTreeItem* shell = aDoc->GetDocShell()) {
+        nsCOMPtr<nsIDocShellTreeItem> rootShell;
+        shell->GetRootTreeItem(getter_AddRefs(rootShell));
+        return rootShell.forget();
+      }
+      return nullptr;
+    }
+
+    void DeleteAndNextInternal()
+    {
+      FullscreenRequest* thisRequest = mCurrent;
+      mCurrent = mCurrent->getNext();
+      delete thisRequest;
+    }
+    void SkipToNextMatch()
+    {
+      while (mCurrent) {
+        nsCOMPtr<nsIDocShellTreeItem>
+          rootShell = GetRootShell(mCurrent->GetDocument());
+        if (!rootShell) {
+          
+          
+          DeleteAndNextInternal();
+        } else if (rootShell != mRootShell) {
+          mCurrent = mCurrent->getNext();
+        } else {
+          break;
+        }
+      }
+    }
+
+    FullscreenRequest* mCurrent;
+    nsCOMPtr<nsIDocShellTreeItem> mRootShell;
+  };
+
+private:
+  PendingFullscreenRequestList() = delete;
+
+  static LinkedList<FullscreenRequest> sList;
+};
+
+ LinkedList<FullscreenRequest> PendingFullscreenRequestList::sList;
 
 static nsCOMPtr<nsPIDOMWindow>
 GetRootWindow(nsIDocument* aDoc)
@@ -11669,7 +11746,7 @@ nsDocument::RequestFullScreen(UniquePtr<FullscreenRequest>&& aRequest)
     return;
   }
 
-  sPendingFullscreenRequests.insertBack(aRequest.release());
+  PendingFullscreenRequestList::Add(Move(aRequest));
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     
     
@@ -11678,58 +11755,24 @@ nsDocument::RequestFullScreen(UniquePtr<FullscreenRequest>&& aRequest)
        true,  false,  nullptr);
   } else {
     
-    FullscreenRequest* lastRequest = sPendingFullscreenRequests.getLast();
+    const FullscreenRequest*
+      lastRequest = PendingFullscreenRequestList::GetLast();
     rootWin->SetFullscreenInternal(nsPIDOMWindow::eForFullscreenAPI, true,
                                    lastRequest->mVRHMDDevice);
   }
 }
 
  bool
-nsIDocument::HandlePendingFullscreenRequest(const FullscreenRequest& aRequest,
-                                            nsIDocShellTreeItem* aRootShell,
-                                            bool* aHandled)
-{
-  nsDocument* doc = aRequest.GetDocument();
-  nsIDocShellTreeItem* shell = doc->GetDocShell();
-  if (!shell) {
-    return true;
-  }
-  nsCOMPtr<nsIDocShellTreeItem> rootShell;
-  shell->GetRootTreeItem(getter_AddRefs(rootShell));
-  if (rootShell != aRootShell) {
-    return false;
-  }
-
-  if (doc->ApplyFullscreen(aRequest)) {
-    *aHandled = true;
-  }
-  return true;
-}
-
- bool
 nsIDocument::HandlePendingFullscreenRequests(nsIDocument* aDoc)
 {
-  if (sPendingFullscreenRequests.isEmpty()) {
-    return false;
-  }
-
   bool handled = false;
-  nsIDocShellTreeItem* shell = aDoc->GetDocShell();
-  nsCOMPtr<nsIDocShellTreeItem> rootShell;
-  if (shell) {
-    shell->GetRootTreeItem(getter_AddRefs(rootShell));
-  }
-  FullscreenRequest* request = sPendingFullscreenRequests.getFirst();
-  while (request) {
-    if (HandlePendingFullscreenRequest(*request, rootShell, &handled)) {
-      
-      
-      FullscreenRequest* thisRequest = request;
-      request = request->getNext();
-      delete thisRequest;
-    } else {
-      request = request->getNext();
+  PendingFullscreenRequestList::Iterator iter(aDoc);
+  while (!iter.AtEnd()) {
+    const FullscreenRequest& request = iter.Get();
+    if (request.GetDocument()->ApplyFullscreen(request)) {
+      handled = true;
     }
+    iter.DeleteAndNext();
   }
   return handled;
 }
@@ -11737,29 +11780,9 @@ nsIDocument::HandlePendingFullscreenRequests(nsIDocument* aDoc)
 static void
 ClearPendingFullscreenRequests(nsIDocument* aDoc)
 {
-  nsIDocShellTreeItem* shell = aDoc->GetDocShell();
-  if (!shell) {
-    return;
-  }
-
-  FullscreenRequest* request = sPendingFullscreenRequests.getFirst();
-  while (request) {
-    nsIDocument* doc = request->GetDocument();
-    bool shouldRemove = false;
-    for (nsCOMPtr<nsIDocShellTreeItem> docShell = doc->GetDocShell();
-         docShell; docShell->GetParent(getter_AddRefs(docShell))) {
-      if (docShell == shell) {
-        shouldRemove = true;
-        break;
-      }
-    }
-    if (shouldRemove) {
-      FullscreenRequest* thisRequest = request;
-      request = request->getNext();
-      delete thisRequest;
-    } else {
-      request = request->getNext();
-    }
+  PendingFullscreenRequestList::Iterator iter(aDoc);
+  while (!iter.AtEnd()) {
+    iter.DeleteAndNext();
   }
 }
 

@@ -1189,15 +1189,6 @@ public:
 
 
 
-  static bool HandlePendingFullscreenRequest(const FullscreenRequest& aRequest,
-                                             nsIDocShellTreeItem* aRootShell,
-                                             bool* aHandled);
-
-  
-
-
-
-
   static bool HandlePendingFullscreenRequests(nsIDocument* aDocument);
 
   virtual void RequestPointerLock(Element* aElement) = 0;
