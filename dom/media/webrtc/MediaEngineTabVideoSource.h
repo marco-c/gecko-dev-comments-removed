@@ -89,6 +89,8 @@ private:
     UniquePtr<unsigned char[]> mData;
     size_t mDataSize;
     nsCOMPtr<nsPIDOMWindowOuter> mWindow;
+    
+    bool mBlackedoutWindow;
     RefPtr<layers::SourceSurfaceImage> mImage;
     nsCOMPtr<nsITimer> mTimer;
     Monitor mMonitor;
