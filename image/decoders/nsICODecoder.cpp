@@ -14,13 +14,14 @@
 
 #include "RasterImage.h"
 
+using namespace mozilla::gfx;
+
 namespace mozilla {
 namespace image {
 
 
 static const uint32_t ICOHEADERSIZE = 6;
 static const uint32_t BITMAPINFOSIZE = 40;
-static const uint32_t PREFICONSIZE = 16;
 
 
 
@@ -60,6 +61,7 @@ nsICODecoder::GetNumColors()
 nsICODecoder::nsICODecoder(RasterImage* aImage)
   : Decoder(aImage)
   , mLexer(Transition::To(ICOState::HEADER, ICOHEADERSIZE))
+  , mBiggestResourceColorDepth(0)
   , mBestResourceDelta(INT_MIN)
   , mBestResourceColorDepth(0)
   , mNumIcons(0)
@@ -68,6 +70,20 @@ nsICODecoder::nsICODecoder(RasterImage* aImage)
   , mMaskRowSize(0)
   , mCurrMaskLine(0)
 { }
+
+nsresult
+nsICODecoder::SetTargetSize(const nsIntSize& aSize)
+{
+  
+  if (MOZ_UNLIKELY(aSize.width <= 0 || aSize.height <= 0)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  mDownscaler.emplace(aSize);
+
+  return NS_OK;
+}
 
 void
 nsICODecoder::FinishInternal()
@@ -222,16 +238,6 @@ nsICODecoder::ReadBIHSize(const char* aBIH)
   return headerSize;
 }
 
-void
-nsICODecoder::SetHotSpotIfCursor()
-{
-  if (!mIsCursor) {
-    return;
-  }
-
-  mImageMetadata.SetHotspot(mDirEntry.mXHotspot, mDirEntry.mYHotspot);
-}
-
 LexerTransition<ICOState>
 nsICODecoder::ReadHeader(const char* aData)
 {
@@ -249,9 +255,12 @@ nsICODecoder::ReadHeader(const char* aData)
   }
 
   
-  if (mResolution.width == 0 && mResolution.height == 0) {
-    mResolution.SizeTo(PREFICONSIZE, PREFICONSIZE);
-  }
+  
+  
+  
+  
+  
+  PostHasTransparency();
 
   return Transition::To(ICOState::DIR_ENTRY, ICODIRENTRYSIZE);
 }
@@ -291,30 +300,64 @@ nsICODecoder::ReadDirEntry(const char* aData)
   
   
   
-  
-  
-  
-  
-  int32_t delta = GetRealWidth(e) - mResolution.width +
-                  GetRealHeight(e) - mResolution.height;
-  if (e.mBitCount >= mBestResourceColorDepth &&
-      ((mBestResourceDelta < 0 && delta >= mBestResourceDelta) ||
-       (delta >= 0 && delta <= mBestResourceDelta))) {
-    mBestResourceDelta = delta;
+  IntSize entrySize(GetRealWidth(e), GetRealHeight(e));
+  if (e.mBitCount >= mBiggestResourceColorDepth &&
+      entrySize.width * entrySize.height >=
+        mBiggestResourceSize.width * mBiggestResourceSize.height) {
+    mBiggestResourceSize = entrySize;
+    mBiggestResourceColorDepth = e.mBitCount;
+    mBiggestResourceHotSpot = IntSize(e.mXHotspot, e.mYHotspot);
 
-    
-    if (e.mImageOffset < FirstResourceOffset()) {
-      return Transition::Terminate(ICOState::FAILURE);
+    if (!mDownscaler) {
+      mDirEntry = e;
     }
+  }
 
-    mBestResourceColorDepth = e.mBitCount;
-    mDirEntry = e;
+  if (mDownscaler) {
+    
+    
+    
+    
+    
+    
+    
+    IntSize desiredSize = mDownscaler->TargetSize();
+    int32_t delta = entrySize.width - desiredSize.width +
+                    entrySize.height - desiredSize.height;
+    if (e.mBitCount >= mBestResourceColorDepth &&
+        ((mBestResourceDelta < 0 && delta >= mBestResourceDelta) ||
+         (delta >= 0 && delta <= mBestResourceDelta))) {
+      mBestResourceDelta = delta;
+      mBestResourceColorDepth = e.mBitCount;
+      mDirEntry = e;
+    }
   }
 
   if (mCurrIcon == mNumIcons) {
-    PostSize(GetRealWidth(mDirEntry), GetRealHeight(mDirEntry));
+    
+    if (mDirEntry.mImageOffset < FirstResourceOffset()) {
+      return Transition::Terminate(ICOState::FAILURE);
+    }
+
+    
+    
+    if (mIsCursor) {
+      mImageMetadata.SetHotspot(mBiggestResourceHotSpot.width,
+                                mBiggestResourceHotSpot.height);
+    }
+
+    
+    
+    
+    PostSize(mBiggestResourceSize.width, mBiggestResourceSize.height);
     if (IsMetadataDecode()) {
       return Transition::Terminate(ICOState::SUCCESS);
+    }
+
+    
+    
+    if (mDownscaler && GetRealSize() == mDownscaler->TargetSize()) {
+      mDownscaler.reset();
     }
 
     size_t offsetToResource = mDirEntry.mImageOffset - FirstResourceOffset();
@@ -339,6 +382,9 @@ nsICODecoder::SniffResource(const char* aData)
     mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
     mContainedDecoder->SetDecoderFlags(GetDecoderFlags());
     mContainedDecoder->SetSurfaceFlags(GetSurfaceFlags());
+    if (mDownscaler) {
+      mContainedDecoder->SetTargetSize(mDownscaler->TargetSize());
+    }
     mContainedDecoder->Init();
 
     if (!WriteToContainedDecoder(aData, PNGSIGNATURESIZE)) {
@@ -363,6 +409,9 @@ nsICODecoder::SniffResource(const char* aData)
     mContainedDecoder->SetMetadataDecode(IsMetadataDecode());
     mContainedDecoder->SetDecoderFlags(GetDecoderFlags());
     mContainedDecoder->SetSurfaceFlags(GetSurfaceFlags());
+    if (mDownscaler) {
+      mContainedDecoder->SetTargetSize(mDownscaler->TargetSize());
+    }
     mContainedDecoder->Init();
 
     
@@ -389,8 +438,7 @@ nsICODecoder::ReadPNG(const char* aData, uint32_t aLen)
 
   
   
-  if (!IsMetadataDecode() &&
-      !static_cast<nsPNGDecoder*>(mContainedDecoder.get())->IsValidICO()) {
+  if (!static_cast<nsPNGDecoder*>(mContainedDecoder.get())->IsValidICO()) {
     return Transition::Terminate(ICOState::FAILURE);
   }
 
@@ -419,9 +467,6 @@ nsICODecoder::ReadBIH(const char* aData)
                                sizeof(bfhBuffer))) {
     return Transition::Terminate(ICOState::FAILURE);
   }
-
-  
-  SetHotSpotIfCursor();
 
   
   
@@ -567,9 +612,8 @@ nsICODecoder::FinishResource()
 {
   
   
-  IntSize expectedSize(GetRealWidth(mDirEntry), GetRealHeight(mDirEntry));
   if (mContainedDecoder->HasSize() &&
-      mContainedDecoder->GetSize() != expectedSize) {
+      mContainedDecoder->GetSize() != GetRealSize()) {
     return Transition::Terminate(ICOState::FAILURE);
   }
 
