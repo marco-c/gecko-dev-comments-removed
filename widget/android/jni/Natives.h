@@ -354,6 +354,7 @@ class ProxyNativeCall
 public:
     
     typedef Impl TargetClass;
+    typedef typename ThisArgClass::Param ThisArgType;
 
     static const bool isStatic = IsStatic;
 

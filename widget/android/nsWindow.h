@@ -47,6 +47,13 @@ public:
     static void InitNatives();
 
 private:
+    
+    template<typename Lambda,
+             bool IsStatic = Lambda::isStatic,
+             typename InstanceType = typename Lambda::ThisArgType,
+             class Impl = typename Lambda::TargetClass>
+    class WindowEvent;
+
     class GeckoViewSupport;
     
     
