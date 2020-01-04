@@ -516,9 +516,11 @@ public:
       
       
       
-      mDeferredTasks.append(NewRunnableMethod(mOverscrollHandoffChain.get(),
-                                              &OverscrollHandoffChain::SnapBackOverscrolledApzc,
-                                              &mApzc));
+      if (!mDeferredTasks.append(NewRunnableMethod(mOverscrollHandoffChain.get(),
+                                                   &OverscrollHandoffChain::SnapBackOverscrolledApzc,
+                                                   &mApzc))) {
+        MOZ_CRASH();
+      }
       return false;
     }
 
@@ -567,11 +569,13 @@ public:
       
       
       APZC_LOG("%p fling went into overscroll, handing off with velocity %s\n", &mApzc, Stringify(velocity).c_str());
-      mDeferredTasks.append(NewRunnableMethod(&mApzc,
-                                              &AsyncPanZoomController::HandleFlingOverscroll,
-                                              velocity,
-                                              mOverscrollHandoffChain,
-                                              mScrolledApzc));
+      if (!mDeferredTasks.append(NewRunnableMethod(&mApzc,
+                                                   &AsyncPanZoomController::HandleFlingOverscroll,
+                                                   velocity,
+                                                   mOverscrollHandoffChain,
+                                                   mScrolledApzc))) {
+        MOZ_CRASH();
+      }
 
       
       
@@ -796,9 +800,11 @@ public:
       
       
       
-      mDeferredTasks.append(NewRunnableMethod(&mApzc,
-                                              &AsyncPanZoomController::HandleSmoothScrollOverscroll,
-                                              velocity));
+      if (!mDeferredTasks.append(NewRunnableMethod(&mApzc,
+                                                   &AsyncPanZoomController::HandleSmoothScrollOverscroll,
+                                                   velocity))) {
+        MOZ_CRASH();
+      }
 
       return false;
     }
