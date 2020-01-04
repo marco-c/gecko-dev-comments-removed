@@ -17,7 +17,7 @@
 #include "mozilla/Logging.h"
 
 
-extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
+extern PRLogModuleInfo *gUrlClassifierDbServiceLog;
 #define LOG(args) MOZ_LOG(gUrlClassifierDbServiceLog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(gUrlClassifierDbServiceLog, mozilla::LogLevel::Debug)
 

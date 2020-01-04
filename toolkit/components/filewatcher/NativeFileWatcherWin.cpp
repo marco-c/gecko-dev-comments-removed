@@ -132,8 +132,16 @@ private:
   nsString mChangedResource;
 };
 
-static mozilla::LazyLogModule gNativeWatcherPRLog("NativeFileWatcherService");
-#define FILEWATCHERLOG(...) MOZ_LOG(gNativeWatcherPRLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+static PRLogModuleInfo* GetFileWatcherContextLog()
+{
+  static PRLogModuleInfo *gNativeWatcherPRLog;
+  if (!gNativeWatcherPRLog) {
+    gNativeWatcherPRLog = PR_NewLogModule("NativeFileWatcherService");
+  }
+  return gNativeWatcherPRLog;
+}
+
+#define FILEWATCHERLOG(...) MOZ_LOG(GetFileWatcherContextLog(), mozilla::LogLevel::Debug, (__VA_ARGS__))
 
 
 

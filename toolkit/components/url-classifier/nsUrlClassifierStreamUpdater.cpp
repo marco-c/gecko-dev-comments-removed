@@ -27,7 +27,7 @@ static const char* gQuitApplicationMessage = "quit-application";
 #undef LOG
 
 
-static mozilla::LazyLogModule gUrlClassifierStreamUpdaterLog("UrlClassifierStreamUpdater");
+static const PRLogModuleInfo *gUrlClassifierStreamUpdaterLog = nullptr;
 #define LOG(args) MOZ_LOG(gUrlClassifierStreamUpdaterLog, mozilla::LogLevel::Debug, args)
 
 
@@ -40,6 +40,8 @@ nsUrlClassifierStreamUpdater::nsUrlClassifierStreamUpdater()
   : mIsUpdating(false), mInitialized(false), mDownloadError(false),
     mBeganStream(false), mChannel(nullptr)
 {
+  if (!gUrlClassifierStreamUpdaterLog)
+    gUrlClassifierStreamUpdaterLog = PR_NewLogModule("UrlClassifierStreamUpdater");
   LOG(("nsUrlClassifierStreamUpdater init [this=%p]", this));
 }
 
