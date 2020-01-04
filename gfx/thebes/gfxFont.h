@@ -1145,7 +1145,7 @@ protected:
         nsTArray<DGRec>::index_type mLastUsed;
     };
 
-    nsAutoPtr<DetailedGlyphStore>   mDetailedGlyphs;
+    mozilla::UniquePtr<DetailedGlyphStore>   mDetailedGlyphs;
 
     
     uint32_t                        mLength;
@@ -1534,7 +1534,7 @@ public:
             return GetHorizontalMetrics();
         }
         if (!mVerticalMetrics) {
-            mVerticalMetrics = CreateVerticalMetrics();
+            mVerticalMetrics.reset(CreateVerticalMetrics());
         }
         return *mVerticalMetrics;
     }
@@ -1751,7 +1751,7 @@ public:
     
     void InitWordCache() {
         if (!mWordCache) {
-            mWordCache = new nsTHashtable<CacheHashEntry>;
+            mWordCache = mozilla::MakeUnique<nsTHashtable<CacheHashEntry>>();
         }
     }
 
@@ -2065,10 +2065,10 @@ protected:
 
         enum { ALLOW_MEMMOVE = true };
 
-        nsAutoPtr<gfxShapedWord> mShapedWord;
+        mozilla::UniquePtr<gfxShapedWord> mShapedWord;
     };
 
-    nsAutoPtr<nsTHashtable<CacheHashEntry> > mWordCache;
+    mozilla::UniquePtr<nsTHashtable<CacheHashEntry> > mWordCache;
 
     static const uint32_t  kShapedWordCacheMaxAge = 3;
 
@@ -2084,7 +2084,8 @@ protected:
     nsExpirationState          mExpirationState;
     gfxFontStyle               mStyle;
     AutoTArray<gfxGlyphExtents*,1> mGlyphExtentsArray;
-    nsAutoPtr<nsTHashtable<nsPtrHashKey<GlyphChangeObserver> > > mGlyphChangeObservers;
+    mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<GlyphChangeObserver>>>
+                               mGlyphChangeObservers;
 
     gfxFloat                   mAdjustedSize;
 
@@ -2098,13 +2099,13 @@ protected:
 
     
     
-    nsAutoPtr<gfxFont>         mNonAAFont;
+    mozilla::UniquePtr<gfxFont>         mNonAAFont;
 
     
     
     
-    nsAutoPtr<gfxFontShaper>   mHarfBuzzShaper;
-    nsAutoPtr<gfxFontShaper>   mGraphiteShaper;
+    mozilla::UniquePtr<gfxFontShaper>   mHarfBuzzShaper;
+    mozilla::UniquePtr<gfxFontShaper>   mGraphiteShaper;
 
     
     
@@ -2113,7 +2114,7 @@ protected:
     RefPtr<mozilla::gfx::ScaledFont> mAzureScaledFont;
 
     
-    nsAutoPtr<const Metrics> mVerticalMetrics;
+    mozilla::UniquePtr<const Metrics> mVerticalMetrics;
 
     
     

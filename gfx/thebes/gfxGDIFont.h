@@ -106,11 +106,11 @@ protected:
     bool                  mNeedsBold;
 
     
-    nsAutoPtr<nsDataHashtable<nsUint32HashKey,uint32_t> > mGlyphIDs;
+    mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,uint32_t> > mGlyphIDs;
     SCRIPT_CACHE          mScriptCache;
 
     
-    nsAutoPtr<nsDataHashtable<nsUint32HashKey,int32_t> > mGlyphWidths;
+    mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,int32_t> > mGlyphWidths;
 };
 
 #endif 

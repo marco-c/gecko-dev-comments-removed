@@ -1076,7 +1076,7 @@ protected:
 
     
     
-    nsAutoPtr<gfxTextRun>   mCachedEllipsisTextRun;
+    mozilla::UniquePtr<gfxTextRun>   mCachedEllipsisTextRun;
 
     
     RefPtr<gfxFontFamily> mLastPrefFamily;
