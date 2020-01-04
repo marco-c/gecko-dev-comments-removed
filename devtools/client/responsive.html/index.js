@@ -118,10 +118,25 @@ window.addInitialViewport = contentURI => {
 
 
 
+window.getViewportSize = () => {
+  let { width, height } = bootstrap.store.getState().viewports[0];
+  return { width, height };
+};
+
+
+
+
 window.setViewportSize = (width, height) => {
   try {
     bootstrap.dispatch(resizeViewport(0, width, height));
   } catch (e) {
     console.error(e);
   }
+};
+
+
+
+
+window.getViewportMessageManager = () => {
+  return document.querySelector("iframe.browser").frameLoader;
 };
