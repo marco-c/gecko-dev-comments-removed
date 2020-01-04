@@ -37,7 +37,6 @@ namespace net {
 
 class InterceptedChannelContent;
 class InterceptStreamListener;
-class OverrideRunnable;
 
 class HttpChannelChild final : public PHttpChannelChild
                              , public HttpBaseChannel
@@ -89,7 +88,6 @@ public:
   NS_IMETHOD GetLocalPort(int32_t* port) override;
   NS_IMETHOD GetRemoteAddress(nsACString& addr) override;
   NS_IMETHOD GetRemotePort(int32_t* port) override;
-  NS_IMETHOD ForceIntercepted(uint64_t aInterceptionID) override;
   
   NS_IMETHOD SetPriority(int32_t value) override;
   
@@ -176,16 +174,12 @@ private:
   
   void OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>& aResponseHead,
                                        nsIInputStream* aSynthesizedInput,
-                                       InterceptStreamListener* aStreamListener);
-
-  void ForceIntercepted(nsIInputStream* aSynthesizedInput);
+                                       nsIStreamListener* aStreamListener);
 
   RequestHeaderTuples mClientSetRequestHeaders;
   nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
   RefPtr<InterceptStreamListener> mInterceptListener;
   RefPtr<nsInputStreamPump> mSynthesizedResponsePump;
-  nsAutoPtr<nsHttpResponseHead> mSynthesizedResponseHead;
-  nsCOMPtr<nsIInputStream> mSynthesizedInput;
   int64_t mSynthesizedStreamLength;
 
   bool mIsFromCache;
@@ -219,13 +213,6 @@ private:
   
   
   bool mSynthesizedResponse;
-
-  
-  
-  bool mShouldInterceptSubsequentRedirect;
-  
-  
-  bool mRedirectingForSubsequentSynthesizedResponse;
 
   
   
@@ -272,16 +259,6 @@ private:
   void Redirect3Complete();
   void DeleteSelf();
 
-  
-  
-  nsresult SetupRedirect(nsIURI* uri,
-                         const nsHttpResponseHead* responseHead,
-                         nsIChannel** outChannel);
-
-  
-  void BeginNonIPCRedirect(nsIURI* responseURI,
-                           const nsHttpResponseHead* responseHead);
-
   friend class AssociateApplicationCacheEvent;
   friend class StartRequestEvent;
   friend class StopRequestEvent;
@@ -297,7 +274,6 @@ private:
   friend class HttpAsyncAborter<HttpChannelChild>;
   friend class InterceptStreamListener;
   friend class InterceptedChannelContent;
-  friend class OverrideRunnable;
 };
 
 

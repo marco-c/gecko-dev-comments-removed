@@ -109,19 +109,16 @@ class FinishResponse final : public nsRunnable
   RefPtr<InternalResponse> mInternalResponse;
   ChannelInfo mWorkerChannelInfo;
   const nsCString mScriptSpec;
-  const nsCString mResponseURLSpec;
 
 public:
   FinishResponse(nsMainThreadPtrHandle<nsIInterceptedChannel>& aChannel,
                  InternalResponse* aInternalResponse,
                  const ChannelInfo& aWorkerChannelInfo,
-                 const nsACString& aScriptSpec,
-                 const nsACString& aResponseURLSpec)
+                 const nsACString& aScriptSpec)
     : mChannel(aChannel)
     , mInternalResponse(aInternalResponse)
     , mWorkerChannelInfo(aWorkerChannelInfo)
     , mScriptSpec(aScriptSpec)
-    , mResponseURLSpec(aResponseURLSpec)
   {
   }
 
@@ -157,7 +154,7 @@ public:
        mChannel->SynthesizeHeader(entries[i].mName, entries[i].mValue);
     }
 
-    rv = mChannel->FinishSynthesizedResponse(mResponseURLSpec);
+    rv = mChannel->FinishSynthesizedResponse();
     NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to finish synthesized response");
     return rv;
   }
@@ -235,18 +232,15 @@ struct RespondWithClosure
   RefPtr<InternalResponse> mInternalResponse;
   ChannelInfo mWorkerChannelInfo;
   const nsCString mScriptSpec;
-  const nsCString mResponseURLSpec;
 
   RespondWithClosure(nsMainThreadPtrHandle<nsIInterceptedChannel>& aChannel,
                      InternalResponse* aInternalResponse,
                      const ChannelInfo& aWorkerChannelInfo,
-                     const nsCString& aScriptSpec,
-                     const nsACString& aResponseURLSpec)
+                     const nsCString& aScriptSpec)
     : mInterceptedChannel(aChannel)
     , mInternalResponse(aInternalResponse)
     , mWorkerChannelInfo(aWorkerChannelInfo)
     , mScriptSpec(aScriptSpec)
-    , mResponseURLSpec(aResponseURLSpec)
   {
   }
 };
@@ -259,8 +253,7 @@ void RespondWithCopyComplete(void* aClosure, nsresult aStatus)
     event = new FinishResponse(data->mInterceptedChannel,
                                data->mInternalResponse,
                                data->mWorkerChannelInfo,
-                               data->mScriptSpec,
-                               data->mResponseURLSpec);
+                               data->mScriptSpec);
   } else {
     event = new CancelChannelRunnable(data->mInterceptedChannel,
                                       NS_ERROR_INTERCEPTION_FAILED);
@@ -363,22 +356,9 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
     return;
   }
 
-  
-  
-  
-  nsCString responseURL;
-  if (response->Type() == ResponseType::Opaque) {
-    ir->GetUnfilteredUrl(responseURL);
-    if (NS_WARN_IF(responseURL.IsEmpty())) {
-      autoCancel.SetCancelStatus(NS_ERROR_INTERCEPTION_FAILED);
-      return;
-    }
-  }
-
   nsAutoPtr<RespondWithClosure> closure(new RespondWithClosure(mInterceptedChannel, ir,
                                                                worker->GetChannelInfo(),
-                                                               mScriptSpec,
-                                                               responseURL));
+                                                               mScriptSpec));
   nsCOMPtr<nsIInputStream> body;
   ir->GetUnfilteredBody(getter_AddRefs(body));
   

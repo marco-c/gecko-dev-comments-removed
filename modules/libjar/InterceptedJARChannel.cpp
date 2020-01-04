@@ -78,16 +78,10 @@ InterceptedJARChannel::SynthesizeHeader(const nsACString& aName,
 }
 
 NS_IMETHODIMP
-InterceptedJARChannel::FinishSynthesizedResponse(const nsACString& aFinalURLSpec)
+InterceptedJARChannel::FinishSynthesizedResponse()
 {
   if (NS_WARN_IF(!mChannel)) {
     return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  if (!aFinalURLSpec.IsEmpty()) {
-    
-    
-    return NS_ERROR_NOT_IMPLEMENTED;
   }
 
   mChannel->OverrideWithSynthesizedResponse(mSynthesizedInput, mContentType);
