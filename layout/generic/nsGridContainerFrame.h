@@ -338,7 +338,7 @@ protected:
   int32_t ResolveLine(const nsStyleGridLine& aLine,
                       int32_t aNth,
                       uint32_t aFromIndex,
-                      const nsTArray<nsTArray<nsString>>& aLineNameList,
+                      const LineNameMap& aNameMap,
                       uint32_t GridNamedArea::* aAreaStart,
                       uint32_t GridNamedArea::* aAreaEnd,
                       uint32_t aExplicitGridEnd,
@@ -361,7 +361,7 @@ protected:
 
   LineRange ResolveLineRange(const nsStyleGridLine& aStart,
                              const nsStyleGridLine& aEnd,
-                             const nsTArray<nsTArray<nsString>>& aLineNameList,
+                             const LineNameMap& aNameMap,
                              uint32_t GridNamedArea::* aAreaStart,
                              uint32_t GridNamedArea::* aAreaEnd,
                              uint32_t aExplicitGridEnd,
@@ -376,7 +376,7 @@ protected:
   LineRange
   ResolveAbsPosLineRange(const nsStyleGridLine& aStart,
                          const nsStyleGridLine& aEnd,
-                         const nsTArray<nsTArray<nsString>>& aLineNameList,
+                         const LineNameMap& aNameMap,
                          uint32_t GridNamedArea::* aAreaStart,
                          uint32_t GridNamedArea::* aAreaEnd,
                          uint32_t aExplicitGridEnd,
@@ -391,7 +391,12 @@ protected:
 
 
 
-  GridArea PlaceDefinite(nsIFrame* aChild, const nsStylePosition* aStyle);
+
+
+  GridArea PlaceDefinite(nsIFrame* aChild,
+                         const LineNameMap& aColLineNameMap,
+                         const LineNameMap& aRowLineNameMap,
+                         const nsStylePosition* aStyle);
 
   
 
@@ -454,7 +459,12 @@ protected:
 
 
 
-  GridArea PlaceAbsPos(nsIFrame* aChild, const nsStylePosition* aStyle);
+
+
+  GridArea PlaceAbsPos(nsIFrame* aChild,
+                       const LineNameMap& aColLineNameMap,
+                       const LineNameMap& aRowLineNameMap,
+                       const nsStylePosition* aStyle);
 
   
 
@@ -499,7 +509,7 @@ protected:
   typedef std::pair<int32_t, int32_t> LinePair;
   LinePair ResolveLineRangeHelper(const nsStyleGridLine& aStart,
                                   const nsStyleGridLine& aEnd,
-                                  const nsTArray<nsTArray<nsString>>& aLineNameList,
+                                  const LineNameMap& aNameMap,
                                   uint32_t GridNamedArea::* aAreaStart,
                                   uint32_t GridNamedArea::* aAreaEnd,
                                   uint32_t aExplicitGridEnd,
