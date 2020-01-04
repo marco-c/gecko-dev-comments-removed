@@ -4,11 +4,8 @@
 
 "use strict";
 
+
 let videoElement = document.getElementsByTagName("video")[0];
-
-
-if (videoElement.videoWidth == 0 || videoElement.videoHeight == 0)
-  return;
 
 
 
