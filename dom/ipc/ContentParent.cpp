@@ -5749,8 +5749,8 @@ ContentParent::RecvStoreAndBroadcastBlobURLRegistration(const nsCString& aURI,
     return false;
   }
 
-  if (NS_SUCCEEDED(nsHostObjectProtocolHandler::AddDataEntry(aURI, blobImpl,
-                                                             aPrincipal))) {
+  if (NS_SUCCEEDED(nsHostObjectProtocolHandler::AddDataEntry(aURI, aPrincipal,
+                                                             blobImpl))) {
     BroadcastBlobURLRegistration(aURI, blobImpl, aPrincipal, this);
 
     
