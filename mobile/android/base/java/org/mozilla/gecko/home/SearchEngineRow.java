@@ -301,6 +301,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
     private void updateFromSavedSearches(List<String> savedSuggestions, boolean animate, int suggestionStartIndex, int recycledSuggestionCount) {
         if (savedSuggestions == null || savedSuggestions.isEmpty()) {
+            hideRecycledSuggestions(suggestionStartIndex, recycledSuggestionCount);
             return;
         }
 
@@ -402,6 +403,11 @@ class SearchEngineRow extends AnimatedHeightLayout {
             updateFromSavedSearches(searchHistorySuggestions, animate, 0, recycledSuggestionCount);
         } else if (searchSuggestionsEnabled) {
             updateFromSearchEngine(animate, searchEngineSuggestions, recycledSuggestionCount, 0);
+        } else {
+            
+            
+            
+            hideRecycledSuggestions(0, recycledSuggestionCount);
         }
     }
 
