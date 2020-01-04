@@ -226,6 +226,12 @@ public:
   }
 
   
+  static already_AddRefed<KeyframeEffectReadOnly>
+  Constructor(const GlobalObject& aGlobal,
+              Element* aTarget,
+              const Optional<JS::Handle<JSObject*>>& aFrames,
+              const Optional<double>& aOptions,
+              ErrorResult& aRv);
   Element* GetTarget() const {
     
     
@@ -314,6 +320,15 @@ public:
 protected:
   virtual ~KeyframeEffectReadOnly();
   void ResetIsRunningOnCompositor();
+
+  static AnimationTiming ConvertKeyframeEffectOptions(
+      const Optional<double>& aOptions);
+  static void BuildAnimationPropertyList(
+      JSContext* aCx,
+      Element* aTarget,
+      const Optional<JS::Handle<JSObject*>>& aFrames,
+      InfallibleTArray<AnimationProperty>& aResult,
+      ErrorResult& aRv);
 
   nsCOMPtr<Element> mTarget;
   RefPtr<Animation> mAnimation;
