@@ -26,13 +26,8 @@ module.exports = (opts={}) => {
   const middleware = [
     task,
     thunk,
+    waitUntilService,
     promise,
-
-    
-    
-    
-    
-    waitUntilService
   ];
 
   if (opts.history) {

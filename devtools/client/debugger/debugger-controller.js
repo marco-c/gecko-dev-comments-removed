@@ -103,47 +103,18 @@ Cu.import("resource://devtools/client/shared/widgets/VariablesView.jsm");
 Cu.import("resource://devtools/client/shared/widgets/VariablesViewController.jsm");
 Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
 
-
-
-
-var L10N = new ViewHelpers.L10N(DBG_STRINGS_URI);
-
 Cu.import("resource://devtools/client/shared/browser-loader.js");
 const require = BrowserLoader("resource://devtools/client/debugger/", this).require;
 XPCOMUtils.defineConstant(this, "require", require);
 
-
-const React = require("devtools/client/shared/vendor/react");
-const ReactDOM = require("devtools/client/shared/vendor/react-dom");
-const { Provider } = require("devtools/client/shared/vendor/react-redux");
-
-
-const createStore = require("devtools/client/shared/redux/create-store")({
-  getTargetClient: () => DebuggerController.client,
-  log: false
-});
-const {
-  makeStateBroadcaster,
-  enhanceStoreWithBroadcaster,
-  combineBroadcastingReducers
-} = require("devtools/client/shared/redux/non-react-subscriber");
-const { bindActionCreators } = require('devtools/client/shared/vendor/redux');
-const reducers = require("./content/reducers/index");
-const { onReducerEvents } = require("./content/utils");
-
-const waitUntilService = require("devtools/client/shared/redux/middleware/wait-service");
-var services = {
-  WAIT_UNTIL: waitUntilService.NAME
-};
-
-var {TargetFactory} = require("devtools/client/framework/target");
-var {Toolbox} = require("devtools/client/framework/toolbox");
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var promise = require("devtools/shared/deprecated-sync-thenables");
-var Editor = require("devtools/client/sourceeditor/editor");
-var DebuggerEditor = require("devtools/client/sourceeditor/debugger");
-var {Tooltip} = require("devtools/client/shared/widgets/Tooltip");
-var FastListWidget = require("devtools/client/shared/widgets/FastListWidget");
+const {TargetFactory} = require("devtools/client/framework/target");
+const {Toolbox} = require("devtools/client/framework/toolbox");
+const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const promise = require("devtools/shared/deprecated-sync-thenables");
+const Editor = require("devtools/client/sourceeditor/editor");
+const DebuggerEditor = require("devtools/client/sourceeditor/debugger");
+const {Tooltip} = require("devtools/client/shared/widgets/Tooltip");
+const FastListWidget = require("devtools/client/shared/widgets/FastListWidget");
 
 XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
 
@@ -179,38 +150,8 @@ var DebuggerController = {
 
     this.startupDebugger = this.startupDebugger.bind(this);
     this.shutdownDebugger = this.shutdownDebugger.bind(this);
-    this._onNavigate = this._onNavigate.bind(this);
-    this._onWillNavigate = this._onWillNavigate.bind(this);
+    this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onTabDetached = this._onTabDetached.bind(this);
-
-    const broadcaster = makeStateBroadcaster(() => !!this.activeThread);
-    const reducer = combineBroadcastingReducers(
-      reducers,
-      broadcaster.emitChange
-    );
-    
-    
-    
-    
-    
-    
-    
-    
-    let store = createStore((state, action) => {
-      if (action.seqId &&
-         (action.status === 'done' || action.status === 'error') &&
-         state && state.asyncRequests.indexOf(action.seqId) === -1) {
-        return state;
-      }
-      return reducer(state, action);
-    });
-    store = enhanceStoreWithBroadcaster(store, broadcaster);
-
-    
-    
-    Object.keys(store).forEach(name => {
-      this[name] = store[name];
-    });
   },
 
   
@@ -224,7 +165,7 @@ var DebuggerController = {
       return;
     }
 
-    DebuggerView.initialize();
+    yield DebuggerView.initialize();
     this._startup = true;
   }),
 
@@ -239,37 +180,17 @@ var DebuggerController = {
       return;
     }
 
-    yield this._settleAllRequests();
-
-    DebuggerView.destroy();
+    yield DebuggerView.destroy();
+    this.SourceScripts.disconnect();
     this.StackFrames.disconnect();
     this.ThreadState.disconnect();
     if (this._target.isTabActor) {
       this.Workers.disconnect();
     }
-
     this.disconnect();
 
     this._shutdown = true;
   }),
-
-  _settleAllRequests: function() {
-    const requests = this.getState().asyncRequests;
-
-    if (requests.length > 0) {
-      const deferred = promise.defer();
-      this.onChange('open-requests', function checkSettled(reqs) {
-        if (reqs.length === 0) {
-          deferred.resolve();
-        }
-
-        this.offChange('open-requests', checkSettled);
-      }.bind(this));
-      return deferred.promise;
-    }
-
-    return promise.resolve();
-  },
 
   
 
@@ -286,8 +207,8 @@ var DebuggerController = {
     let target = this._target;
     let { client, form: { chromeDebugger, actor } } = target;
     target.on("close", this._onTabDetached);
-    target.on("navigate", this._onNavigate);
-    target.on("will-navigate", this._onWillNavigate);
+    target.on("navigate", this._onTabNavigated);
+    target.on("will-navigate", this._onTabNavigated);
     this.client = client;
 
     if (target.isAddon) {
@@ -303,29 +224,6 @@ var DebuggerController = {
     this._hideUnsupportedFeatures();
   }),
 
-  connectThread: function() {
-    const { newSource, fetchEventListeners } = bindActionCreators(actions, this.dispatch);
-
-    
-    
-    
-
-    this.activeThread.addListener("newSource", (event, packet) => {
-      newSource(packet.source);
-
-      
-      if (DebuggerView.instrumentsPaneTab == "events-tab") {
-        fetchEventListeners();
-      }
-    });
-
-    this.Workers.connect();
-    this.ThreadState.connect();
-    this.StackFrames.connect();
-
-    this._onNavigate();
-  },
-
   
 
 
@@ -334,10 +232,6 @@ var DebuggerController = {
     if (!this.client) {
       return;
     }
-
-    this.client.removeListener("newGlobal");
-    this.activeThread.removeListener("newSource");
-    this.activeThread.removeListener("blackboxchange");
 
     this._connected = false;
     this.client = null;
@@ -354,36 +248,40 @@ var DebuggerController = {
     }
   },
 
-  _onWillNavigate: function(opts={}) {
-    
-    DebuggerView.handleTabNavigation();
-    if (!opts.noUnload) {
-      this.dispatch(actions.unload());
+  
+
+
+
+
+
+
+
+  _onTabNavigated: function(aType, aPacket) {
+    switch (aType) {
+      case "will-navigate": {
+        
+        DebuggerView.handleTabNavigation();
+
+        
+        
+        
+        DebuggerController.SourceScripts.clearCache();
+        DebuggerController.Parser.clearCache();
+        SourceUtils.clearCache();
+
+        
+        clearNamedTimeout("new-source");
+        clearNamedTimeout("event-breakpoints-update");
+        clearNamedTimeout("event-listeners-fetch");
+        break;
+      }
+      case "navigate": {
+        this.ThreadState.handleTabNavigation();
+        this.StackFrames.handleTabNavigation();
+        this.SourceScripts.handleTabNavigation();
+        break;
+      }
     }
-
-    
-    
-    
-    DebuggerController.Parser.clearCache();
-    SourceUtils.clearCache();
-
-    
-    
-    clearNamedTimeout("new-source");
-    clearNamedTimeout("event-breakpoints-update");
-    clearNamedTimeout("event-listeners-fetch");
-  },
-
-  _onNavigate: function() {
-    this.ThreadState.handleTabNavigation();
-    this.StackFrames.handleTabNavigation();
-
-    
-    
-    
-    
-
-    this.dispatch(actions.loadSources());
   },
 
   
@@ -421,7 +319,10 @@ var DebuggerController = {
         return;
       }
       this.activeThread = aThreadClient;
-      this.connectThread();
+      this.Workers.connect();
+      this.ThreadState.connect();
+      this.StackFrames.connect();
+      this.SourceScripts.connect();
 
       if (aThreadClient.paused) {
         aThreadClient.resume(res => {
@@ -474,7 +375,9 @@ var DebuggerController = {
         return;
       }
       this.activeThread = aThreadClient;
-      this.connectThread();
+      this.ThreadState.connect();
+      this.StackFrames.connect();
+      this.SourceScripts.connect();
 
       if (aThreadClient.paused) {
         aThreadClient.resume(this._ensureResumptionOrder);
@@ -504,8 +407,7 @@ var DebuggerController = {
 
       
       DebuggerView.handleTabNavigation();
-      this.dispatch(actions.unload());
-      this.dispatch(actions.loadSources());
+      this.SourceScripts.handleTabNavigation();
 
       
       if (this.activeThread.paused) {
@@ -513,28 +415,6 @@ var DebuggerController = {
         this.activeThread.fillFrames(CALL_STACK_PAGE_SIZE);
       }
     });
-  },
-
-  waitForSourcesLoaded: function() {
-    const deferred = promise.defer();
-    this.dispatch({
-      type: services.WAIT_UNTIL,
-      predicate: action => (action.type === constants.LOAD_SOURCES &&
-                            action.status === "done"),
-      run: deferred.resolve
-    });
-    return deferred.promise;
-  },
-
-  waitForSourceShown: function(name) {
-    const deferred = promise.defer();
-    window.on(EVENTS.SOURCE_SHOWN, function onShown(_, source) {
-      if (source.url.includes(name)) {
-        window.off(EVENTS.SOURCE_SHOWN, onShown);
-        deferred.resolve();
-      }
-    });
-    return deferred.promise;
   },
 
   _startup: false,
@@ -1134,11 +1014,12 @@ StackFrames.prototype = {
       return;
     }
 
-    let bp = queries.getBreakpoint(DebuggerController.getState(), {
-      actor: breakLocation.source.actor,
-      line: breakLocation.line
-    });
-    let conditionalExpression = bp.condition;
+    let breakpointPromise = DebuggerController.Breakpoints._getAdded(breakLocation);
+    if (!breakpointPromise) {
+      return;
+    }
+    let breakpointClient = yield breakpointPromise;
+    let conditionalExpression = breakpointClient.conditionalExpression;
     if (!conditionalExpression) {
       return;
     }
@@ -1152,8 +1033,7 @@ StackFrames.prototype = {
 
     
     
-    if (!this._currentEvaluation.throw &&
-        VariablesView.isFalsy({ value: this._currentEvaluation.return })) {
+    if (VariablesView.isFalsy({ value: this._currentEvaluation.return })) {
       this.activeThread.resume(DebuggerController._ensureResumptionOrder);
     }
   }),
@@ -1283,6 +1163,869 @@ StackFrames.prototype = {
 
 
 
+
+function SourceScripts() {
+  this._onNewGlobal = this._onNewGlobal.bind(this);
+  this._onNewSource = this._onNewSource.bind(this);
+  this._onSourcesAdded = this._onSourcesAdded.bind(this);
+  this._onBlackBoxChange = this._onBlackBoxChange.bind(this);
+  this._onPrettyPrintChange = this._onPrettyPrintChange.bind(this);
+}
+
+SourceScripts.prototype = {
+  get activeThread() {
+    return DebuggerController.activeThread;
+  },
+
+  get debuggerClient() {
+    return DebuggerController.client;
+  },
+
+  _cache: new Map(),
+
+  
+
+
+  connect: function() {
+    dumpn("SourceScripts is connecting...");
+    this.debuggerClient.addListener("newGlobal", this._onNewGlobal);
+    this.activeThread.addListener("newSource", this._onNewSource);
+    this.activeThread.addListener("blackboxchange", this._onBlackBoxChange);
+    this.activeThread.addListener("prettyprintchange", this._onPrettyPrintChange);
+    this.handleTabNavigation();
+  },
+
+  
+
+
+  disconnect: function() {
+    if (!this.activeThread) {
+      return;
+    }
+    dumpn("SourceScripts is disconnecting...");
+    this.debuggerClient.removeListener("newGlobal", this._onNewGlobal);
+    this.activeThread.removeListener("newSource", this._onNewSource);
+    this.activeThread.removeListener("blackboxchange", this._onBlackBoxChange);
+    this.activeThread.addListener("prettyprintchange", this._onPrettyPrintChange);
+  },
+
+  
+
+
+  clearCache: function() {
+    this._cache.clear();
+  },
+
+  
+
+
+  handleTabNavigation: function() {
+    if (!this.activeThread) {
+      return;
+    }
+    dumpn("Handling tab navigation in the SourceScripts");
+
+    
+    
+    this.activeThread.getSources(this._onSourcesAdded);
+  },
+
+  
+
+
+  _onNewGlobal: function(aNotification, aPacket) {
+    
+    
+  },
+
+  
+
+
+  _onNewSource: function(aNotification, aPacket) {
+    
+    if (NEW_SOURCE_IGNORED_URLS.indexOf(aPacket.source.url) != -1) {
+      return;
+    }
+
+    
+    DebuggerView.Sources.addSource(aPacket.source, { staged: false });
+
+    
+    let preferredValue = DebuggerView.Sources.preferredValue;
+    if (aPacket.source.url == preferredValue) {
+      DebuggerView.Sources.selectedValue = preferredValue;
+    }
+    
+    else {
+      setNamedTimeout("new-source", NEW_SOURCE_DISPLAY_DELAY, () => {
+        
+        
+        if (!DebuggerView.Sources.selectedValue) {
+          DebuggerView.Sources.selectedIndex = 0;
+        }
+      });
+    }
+
+    
+    
+    DebuggerController.Breakpoints.updatePaneBreakpoints();
+    DebuggerController.Breakpoints.updateEditorBreakpoints();
+
+    
+    if (DebuggerView.instrumentsPaneTab == "events-tab") {
+      store.dispatch(actions.fetchEventListeners());
+    }
+
+    
+    window.emit(EVENTS.NEW_SOURCE);
+  },
+
+  
+
+
+  _onSourcesAdded: function(aResponse) {
+    if (aResponse.error || !aResponse.sources) {
+      let msg = "Error getting sources: " + aResponse.message;
+      Cu.reportError(msg);
+      dumpn(msg);
+      return;
+    }
+
+    if (aResponse.sources.length === 0) {
+      DebuggerView.Sources.emptyText = L10N.getStr("noSourcesText");
+      window.emit(EVENTS.SOURCES_ADDED);
+      return;
+    }
+
+    
+    for (let source of aResponse.sources) {
+      
+      if (NEW_SOURCE_IGNORED_URLS.indexOf(source.url) == -1) {
+        DebuggerView.Sources.addSource(source, { staged: true });
+      }
+    }
+
+    
+    DebuggerView.Sources.commit({ sorted: true });
+
+    
+    let preferredValue = DebuggerView.Sources.preferredValue;
+    if (DebuggerView.Sources.containsValue(preferredValue)) {
+      DebuggerView.Sources.selectedValue = preferredValue;
+    }
+    
+    else if (!DebuggerView.Sources.selectedValue) {
+      DebuggerView.Sources.selectedIndex = 0;
+    }
+
+    
+    
+    DebuggerController.Breakpoints.updatePaneBreakpoints();
+    DebuggerController.Breakpoints.updateEditorBreakpoints();
+
+    
+    window.emit(EVENTS.SOURCES_ADDED);
+  },
+
+  
+
+
+  _onBlackBoxChange: function (aEvent, { actor, isBlackBoxed }) {
+    const item = DebuggerView.Sources.getItemByValue(actor);
+    if (item) {
+      item.prebuiltNode.classList.toggle("black-boxed", isBlackBoxed);
+    }
+    DebuggerView.Sources.updateToolbarButtonsState();
+    DebuggerView.maybeShowBlackBoxMessage();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  setBlackBoxing: function(aSource, aBlackBoxFlag) {
+    const sourceClient = this.activeThread.source(aSource);
+    const deferred = promise.defer();
+
+    sourceClient[aBlackBoxFlag ? "blackBox" : "unblackBox"](aPacket => {
+      const { error, message } = aPacket;
+      if (error) {
+        let msg = "Couldn't toggle black boxing for " + aSource.url + ": " + message;
+        dumpn(msg);
+        Cu.reportError(msg);
+        deferred.reject([aSource, msg]);
+      } else {
+        deferred.resolve([aSource, sourceClient.isBlackBoxed]);
+      }
+    });
+
+    return deferred.promise;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  togglePrettyPrint: function(aSource) {
+    
+    if (!SourceUtils.isJavaScript(aSource.url, aSource.contentType)) {
+      return promise.reject([aSource, "Can't prettify non-javascript files."]);
+    }
+
+    const sourceClient = this.activeThread.source(aSource);
+    const wantPretty = !sourceClient.isPrettyPrinted;
+
+    
+    let textPromise = this._cache.get(aSource.url);
+    if (textPromise && textPromise.pretty === wantPretty) {
+      return textPromise;
+    }
+
+    const deferred = promise.defer();
+    deferred.promise.pretty = wantPretty;
+    this._cache.set(aSource.actor, deferred.promise);
+
+    const afterToggle = ({ error, message, source: text, contentType }) => {
+      if (error) {
+        
+        
+        this._cache.set(aSource.actor, textPromise);
+        deferred.reject([aSource, message || error]);
+        return;
+      }
+      deferred.resolve([aSource, text, contentType]);
+    };
+
+    if (wantPretty) {
+      sourceClient.prettyPrint(Prefs.editorTabSize, afterToggle);
+    } else {
+      sourceClient.disablePrettyPrint(afterToggle);
+    }
+
+    return deferred.promise;
+  },
+
+  
+
+
+  _onPrettyPrintChange: function(aEvent, { url }) {
+    
+    
+    DebuggerController.Parser.clearSource(url);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getText: function(aSource, aOnTimeout, aDelay = FETCH_SOURCE_RESPONSE_DELAY) {
+    
+    let textPromise = this._cache.get(aSource.actor);
+    if (textPromise) {
+      return textPromise;
+    }
+
+    let deferred = promise.defer();
+    this._cache.set(aSource.actor, deferred.promise);
+
+    
+    if (aOnTimeout) {
+      var fetchTimeout = window.setTimeout(() => aOnTimeout(aSource), aDelay);
+    }
+
+    
+    this.activeThread.source(aSource).source(({ error, source: text, contentType }) => {
+      if (aOnTimeout) {
+        window.clearTimeout(fetchTimeout);
+      }
+      if (error) {
+        deferred.reject([aSource, error]);
+      } else {
+        deferred.resolve([aSource, text, contentType]);
+      }
+    });
+
+    return deferred.promise;
+  },
+
+  
+
+
+
+
+
+
+
+
+  getTextForSources: function(aActors) {
+    let deferred = promise.defer();
+    let pending = new Set(aActors);
+    let fetched = [];
+
+    
+    
+    
+    
+
+    
+    for (let actor of aActors) {
+      let sourceItem = DebuggerView.Sources.getItemByValue(actor);
+      let sourceForm = sourceItem.attachment.source;
+      this.getText(sourceForm, onTimeout).then(onFetch, onError);
+    }
+
+    
+    function onTimeout(aSource) {
+      onError([aSource]);
+    }
+
+    
+    function onFetch([aSource, aText, aContentType]) {
+      
+      if (!pending.has(aSource.actor)) {
+        return;
+      }
+      pending.delete(aSource.actor);
+      fetched.push([aSource.actor, aText, aContentType]);
+      maybeFinish();
+    }
+
+    
+    function onError([aSource, aError]) {
+      pending.delete(aSource.actor);
+      maybeFinish();
+    }
+
+    
+    function maybeFinish() {
+      if (pending.size == 0) {
+        
+        deferred.resolve(fetched.sort(([aFirst], [aSecond]) => aFirst > aSecond));
+      }
+    }
+
+    return deferred.promise;
+  }
+};
+
+
+
+
+function Breakpoints() {
+  this._onEditorBreakpointAdd = this._onEditorBreakpointAdd.bind(this);
+  this._onEditorBreakpointRemove = this._onEditorBreakpointRemove.bind(this);
+  this.addBreakpoint = this.addBreakpoint.bind(this);
+  this.removeBreakpoint = this.removeBreakpoint.bind(this);
+}
+
+Breakpoints.prototype = {
+  
+
+
+
+  _added: new Map(),
+  _removing: new Map(),
+  _disabled: new Map(),
+
+  
+
+
+
+
+
+  initialize: function() {
+    DebuggerView.editor.on("breakpointAdded", this._onEditorBreakpointAdd);
+    DebuggerView.editor.on("breakpointRemoved", this._onEditorBreakpointRemove);
+
+    
+    return promise.resolve(null);
+  },
+
+  
+
+
+
+
+
+  destroy: function() {
+    DebuggerView.editor.off("breakpointAdded", this._onEditorBreakpointAdd);
+    DebuggerView.editor.off("breakpointRemoved", this._onEditorBreakpointRemove);
+
+    return this.removeAllBreakpoints();
+  },
+
+  
+
+
+
+
+
+  _onEditorBreakpointAdd: Task.async(function*(_, aLine) {
+    let actor = DebuggerView.Sources.selectedValue;
+    let location = { actor: actor, line: aLine + 1 };
+
+    
+    
+    
+    let breakpointClient = yield this.addBreakpoint(location, { noEditorUpdate: true });
+
+    
+    window.emit(EVENTS.BREAKPOINT_SHOWN_IN_EDITOR);
+  }),
+
+  
+
+
+
+
+
+  _onEditorBreakpointRemove: Task.async(function*(_, aLine) {
+    let actor = DebuggerView.Sources.selectedValue;
+    let location = { actor: actor, line: aLine + 1 };
+    yield this.removeBreakpoint(location, { noEditorUpdate: true });
+
+    
+    window.emit(EVENTS.BREAKPOINT_HIDDEN_IN_EDITOR);
+  }),
+
+  
+
+
+
+
+
+  updateEditorBreakpoints: Task.async(function*() {
+    for (let breakpointPromise of this._addedOrDisabled) {
+      let breakpointClient = yield breakpointPromise;
+      let location = breakpointClient.location;
+      let currentSourceActor = DebuggerView.Sources.selectedValue;
+      let sourceActor = DebuggerView.Sources.getActorForLocation(location);
+
+      
+      
+      if (currentSourceActor === sourceActor) {
+        yield this._showBreakpoint(breakpointClient, { noPaneUpdate: true });
+      }
+    }
+  }),
+
+  
+
+
+
+
+
+  updatePaneBreakpoints: Task.async(function*() {
+    for (let breakpointPromise of this._addedOrDisabled) {
+      let breakpointClient = yield breakpointPromise;
+      let container = DebuggerView.Sources;
+      let sourceActor = breakpointClient.location.actor;
+
+      
+      if (container.containsValue(sourceActor)) {
+        yield this._showBreakpoint(breakpointClient, { noEditorUpdate: true });
+      }
+    }
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addBreakpoint: Task.async(function*(aLocation, aOptions = {}) {
+    
+    if (!aLocation) {
+      throw new Error("Invalid breakpoint location.");
+    }
+    let addedPromise, removingPromise;
+
+    
+    
+    if ((addedPromise = this._getAdded(aLocation))) {
+      return addedPromise;
+    }
+
+    
+    
+    if ((removingPromise = this._getRemoving(aLocation))) {
+      yield removingPromise;
+    }
+
+    let deferred = promise.defer();
+
+    
+    let identifier = this.getIdentifier(aLocation);
+    this._added.set(identifier, deferred.promise);
+
+    let source = gThreadClient.source(
+      DebuggerView.Sources.getItemByValue(aLocation.actor).attachment.source
+    );
+
+    source.setBreakpoint(aLocation, Task.async(function*(aResponse, aBreakpointClient) {
+      
+      
+      let actualLocation = aResponse.actualLocation;
+      if (actualLocation) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        DebuggerView.editor.moveBreakpoint(
+          aBreakpointClient.location.line - 1,
+          actualLocation.line - 1
+        );
+
+        aBreakpointClient.location = actualLocation;
+        aBreakpointClient.location.actor = actualLocation.source
+                                         ? actualLocation.source.actor
+                                         : null;
+
+        let oldIdentifier = identifier;
+        this._added.delete(oldIdentifier);
+
+        if ((addedPromise = this._getAdded(actualLocation))) {
+          deferred.resolve(addedPromise);
+          return;
+        }
+
+        
+        let newIdentifier = identifier = this.getIdentifier(actualLocation);
+        this._added.set(newIdentifier, deferred.promise);
+      }
+
+      
+      
+      
+      let disabledPromise = this._disabled.get(identifier);
+      if (disabledPromise) {
+        let aPrevBreakpointClient = yield disabledPromise;
+        let condition = aPrevBreakpointClient.getCondition();
+        this._disabled.delete(identifier);
+
+        if (condition) {
+          aBreakpointClient = yield aBreakpointClient.setCondition(
+            gThreadClient,
+            condition
+          );
+        }
+      }
+
+      
+      
+      
+      
+      let line = aBreakpointClient.location.line - 1;
+      aBreakpointClient.text = DebuggerView.editor.getText(line).trim();
+
+      
+      yield this._showBreakpoint(aBreakpointClient, aOptions);
+
+      
+      window.emit(EVENTS.BREAKPOINT_ADDED, aBreakpointClient);
+      deferred.resolve(aBreakpointClient);
+    }.bind(this)));
+
+    return deferred.promise;
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+  removeBreakpoint: function(aLocation, aOptions = {}) {
+    
+    if (!aLocation) {
+      return promise.reject(new Error("Invalid breakpoint location."));
+    }
+
+    
+    
+    let addedPromise = this._getAdded(aLocation);
+    if (!addedPromise) {
+      return promise.resolve(aLocation);
+    }
+
+    
+    
+    let removingPromise = this._getRemoving(aLocation);
+    if (removingPromise) {
+      return removingPromise;
+    }
+
+    let deferred = promise.defer();
+
+    
+    let identifier = this.getIdentifier(aLocation);
+    this._removing.set(identifier, deferred.promise);
+
+    
+    addedPromise.then(aBreakpointClient => {
+      
+      aBreakpointClient.remove(aResponse => {
+        
+        
+        if (aResponse.error) {
+          deferred.reject(aResponse);
+          return void this._removing.delete(identifier);
+        }
+
+        
+        
+        
+        
+        if (aOptions.rememberDisabled) {
+          aBreakpointClient.disabled = true;
+          this._disabled.set(identifier, promise.resolve(aBreakpointClient));
+        }
+
+        
+        this._added.delete(identifier);
+        this._removing.delete(identifier);
+
+        
+        this._hideBreakpoint(aLocation, aOptions);
+
+        
+        window.emit(EVENTS.BREAKPOINT_REMOVED, aLocation);
+        deferred.resolve(aLocation);
+      });
+    });
+
+    return deferred.promise;
+  },
+
+  
+
+
+
+
+
+
+  removeAllBreakpoints: function() {
+    
+    let getActiveBreakpoints = (aPromises, aStore = []) => {
+      for (let [, breakpointPromise] of aPromises) {
+        aStore.push(breakpointPromise);
+      }
+      return aStore;
+    }
+
+    
+    let getRemovedBreakpoints = (aClients, aStore = []) => {
+      for (let breakpointClient of aClients) {
+        aStore.push(this.removeBreakpoint(breakpointClient.location));
+      }
+      return aStore;
+    }
+
+    
+    
+    
+    return promise.all(getActiveBreakpoints(this._added)).then(aBreakpointClients => {
+      return promise.all(getRemovedBreakpoints(aBreakpointClients));
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  updateCondition: Task.async(function*(aLocation, aCondition) {
+    let addedPromise = this._getAdded(aLocation);
+    if (!addedPromise) {
+      throw new Error("Breakpoint does not exist at the specified location");
+    }
+    let breakpointClient = yield addedPromise;
+    let promise = breakpointClient.setCondition(gThreadClient, aCondition);
+
+    
+    
+    this._added.set(this.getIdentifier(aLocation), promise);
+    return promise;
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _showBreakpoint: function(aBreakpointClient, aOptions = {}) {
+    let tasks = [];
+    let currentSourceActor = DebuggerView.Sources.selectedValue;
+    let location = aBreakpointClient.location;
+    let actor = DebuggerView.Sources.getActorForLocation(location);
+
+    
+    if (!aOptions.noEditorUpdate && !aBreakpointClient.disabled) {
+      if (currentSourceActor === actor) {
+        tasks.push(DebuggerView.editor.addBreakpoint(location.line - 1));
+      }
+    }
+
+    
+    if (!aOptions.noPaneUpdate) {
+      DebuggerView.Sources.addBreakpoint(aBreakpointClient, aOptions);
+    }
+
+    return promise.all(tasks);
+  },
+
+  
+
+
+
+
+
+
+
+  _hideBreakpoint: function(aLocation, aOptions = {}) {
+    let currentSourceActor = DebuggerView.Sources.selectedValue;
+    let actor = DebuggerView.Sources.getActorForLocation(aLocation);
+
+    
+    if (!aOptions.noEditorUpdate) {
+      if (currentSourceActor === actor) {
+        DebuggerView.editor.removeBreakpoint(aLocation.line - 1);
+      }
+    }
+
+    
+    if (!aOptions.noPaneUpdate) {
+      DebuggerView.Sources.removeBreakpoint(aLocation);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _getAdded: function(aLocation) {
+    return this._added.get(this.getIdentifier(aLocation));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _getRemoving: function(aLocation) {
+    return this._removing.get(this.getIdentifier(aLocation));
+  },
+
+  
+
+
+
+
+
+
+
+
+  getIdentifier: function(aLocation) {
+    return (aLocation.source ? aLocation.source.actor : aLocation.actor) +
+      ":" + aLocation.line;
+  }
+};
+
+
+
+
+
+
+Object.defineProperty(Breakpoints.prototype, "_addedOrDisabled", {
+  get: function* () {
+    yield* this._added.values();
+    yield* this._disabled.values();
+  }
+});
+
+
+
+
+var L10N = new ViewHelpers.L10N(DBG_STRINGS_URI);
+
+
+
+
 var Prefs = new ViewHelpers.Prefs("devtools", {
   workersAndSourcesWidth: ["Int", "debugger.ui.panes-workers-and-sources-width"],
   instrumentsWidth: ["Int", "debugger.ui.panes-instruments-width"],
@@ -1305,6 +2048,7 @@ var Prefs = new ViewHelpers.Prefs("devtools", {
 
 
 EventEmitter.decorate(this);
+EventEmitter.decorate(DebuggerController);
 
 
 
@@ -1314,6 +2058,8 @@ DebuggerController.Parser = new Parser();
 DebuggerController.Workers = new Workers();
 DebuggerController.ThreadState = new ThreadState();
 DebuggerController.StackFrames = new StackFrames();
+DebuggerController.SourceScripts = new SourceScripts();
+DebuggerController.Breakpoints = new Breakpoints();
 
 
 

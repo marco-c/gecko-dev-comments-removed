@@ -114,7 +114,7 @@ GlobalSearchView.prototype = Heritage.extend(WidgetMethods, {
     setNamedTimeout("global-search", delay, () => {
       
       let actors = this.DebuggerView.Sources.values;
-      let sourcesFetched = DebuggerController.dispatch(actions.getTextForSources(actors));
+      let sourcesFetched = this.SourceScripts.getTextForSources(actors);
       sourcesFetched.then(aSources => this._doSearch(aToken, aSources));
     });
   },

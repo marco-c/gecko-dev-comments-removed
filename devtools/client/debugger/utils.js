@@ -3,14 +3,6 @@
 
 "use strict";
 
-
-
-var KNOWN_SOURCE_GROUPS = {
-  "Add-on SDK": "resource://gre/modules/commonjs/",
-};
-
-KNOWN_SOURCE_GROUPS[L10N.getStr("anonymousSourcesLabel")] = "anonymous";
-
 var XULUtils = {
   
 
@@ -46,7 +38,7 @@ const CHARACTER_LIMIT = 250;
 var SourceUtils = {
   _labelsCache: new Map(), 
   _groupsCache: new Map(),
-  _minifiedCache: new Map(),
+  _minifiedCache: new WeakMap(),
 
   
 
@@ -67,11 +59,12 @@ var SourceUtils = {
 
 
 
-  isMinified: function(key, text) {
-    if (this._minifiedCache.has(key)) {
-      return this._minifiedCache.get(key);
+  isMinified: Task.async(function*(sourceClient) {
+    if (this._minifiedCache.has(sourceClient)) {
+      return this._minifiedCache.get(sourceClient);
     }
 
+    let [, text] = yield DebuggerController.SourceScripts.getText(sourceClient);
     let isMinified;
     let lineEndIndex = 0;
     let lineStartIndex = 0;
@@ -101,9 +94,9 @@ var SourceUtils = {
     isMinified =
       ((indentCount / lines) * 100) < INDENT_COUNT_THRESHOLD || overCharLimit;
 
-    this._minifiedCache.set(key, isMinified);
+    this._minifiedCache.set(sourceClient, isMinified);
     return isMinified;
-  },
+  }),
 
   
 

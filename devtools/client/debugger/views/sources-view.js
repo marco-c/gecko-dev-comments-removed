@@ -3,48 +3,22 @@
 
 "use strict";
 
-const utils = require('../utils');
-const {
-  getSelectedSource,
-  getSourceByURL,
-  getBreakpoint,
-  getBreakpoints,
-  makeLocationId
-} = require('../queries');
-const actions = Object.assign(
-  {},
-  require('../actions/sources'),
-  require('../actions/breakpoints')
-);
-const { bindActionCreators } = require('devtools/client/shared/vendor/redux');
 
-const NEW_SOURCE_DISPLAY_DELAY = 200; 
-const FUNCTION_SEARCH_POPUP_POSITION = "topcenter bottomleft";
-const BREAKPOINT_LINE_TOOLTIP_MAX_LENGTH = 1000; 
-const BREAKPOINT_CONDITIONAL_POPUP_POSITION = "before_start";
-const BREAKPOINT_CONDITIONAL_POPUP_OFFSET_X = 7; 
-const BREAKPOINT_CONDITIONAL_POPUP_OFFSET_Y = -3; 
+
+const KNOWN_SOURCE_GROUPS = {
+  "Add-on SDK": "resource://gre/modules/commonjs/",
+};
+
+KNOWN_SOURCE_GROUPS[L10N.getStr("anonymousSourcesLabel")] = "anonymous";
 
 
 
 
-function SourcesView(controller, DebuggerView) {
+function SourcesView(DebuggerController, DebuggerView) {
   dumpn("SourcesView was instantiated");
 
-  utils.onReducerEvents(controller, {
-    "sources": this.renderSources,
-    "source": this.renderSource,
-    "blackboxed": this.renderBlackBoxed,
-    "prettyprinted": this.updateToolbarButtonsState,
-    "source-selected": this.renderSourceSelected,
-    "breakpoint-updated": bp => this.renderBreakpoint(bp),
-    "breakpoint-enabled": bp => this.renderBreakpoint(bp),
-    "breakpoint-disabled": bp => this.renderBreakpoint(bp),
-    "breakpoint-removed": bp => this.renderBreakpoint(bp, true),
-  }, this);
-
-  this.getState = controller.getState;
-  this.actions = bindActionCreators(actions, controller.dispatch);
+  this.Breakpoints = DebuggerController.Breakpoints;
+  this.SourceScripts = DebuggerController.SourceScripts;
   this.DebuggerView = DebuggerView;
   this.Parser = DebuggerController.Parser;
 
@@ -52,6 +26,8 @@ function SourcesView(controller, DebuggerView) {
   this.toggleBlackBoxing = this.toggleBlackBoxing.bind(this);
   this.toggleBreakpoints = this.toggleBreakpoints.bind(this);
 
+  this._onEditorLoad = this._onEditorLoad.bind(this);
+  this._onEditorUnload = this._onEditorUnload.bind(this);
   this._onEditorCursorActivity = this._onEditorCursorActivity.bind(this);
   this._onMouseDown = this._onMouseDown.bind(this);
   this._onSourceSelect = this._onSourceSelect.bind(this);
@@ -79,7 +55,6 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
       showArrows: true
     });
 
-    this._preferredSourceURL = null;
     this._unnamedSourceIndex = 0;
     this.emptyText = L10N.getStr("noSourcesText");
     this._blackBoxCheckboxTooltip = L10N.getStr("blackBoxCheckboxTooltip");
@@ -106,8 +81,9 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     this._editorContainer = document.getElementById("editor");
     this._editorContainer.addEventListener("mousedown", this._onMouseDown, false);
 
+    window.on(EVENTS.EDITOR_LOADED, this._onEditorLoad, false);
+    window.on(EVENTS.EDITOR_UNLOADED, this._onEditorUnload, false);
     this.widget.addEventListener("select", this._onSourceSelect, false);
-
     this._stopBlackBoxButton.addEventListener("click", this._onStopBlackBoxing, false);
     this._cbPanel.addEventListener("popupshowing", this._onConditionalPopupShowing, false);
     this._cbPanel.addEventListener("popupshown", this._onConditionalPopupShown, false);
@@ -118,7 +94,6 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
     this.allowFocusOnRightClick = true;
     this.autoFocusOnSelection = false;
-    this.autoFocusOnFirstItem = false;
 
     
     this.sortContents((aFirst, aSecond) => {
@@ -143,6 +118,8 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   destroy: function() {
     dumpn("Destroying the SourcesView");
 
+    window.off(EVENTS.EDITOR_LOADED, this._onEditorLoad, false);
+    window.off(EVENTS.EDITOR_UNLOADED, this._onEditorUnload, false);
     this.widget.removeEventListener("select", this._onSourceSelect, false);
     this._stopBlackBoxButton.removeEventListener("click", this._onStopBlackBoxing, false);
     this._cbPanel.removeEventListener("popupshowing", this._onConditionalPopupShowing, false);
@@ -156,7 +133,6 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   empty: function() {
     WidgetMethods.empty.call(this);
     this._unnamedSourceIndex = 0;
-    this._selectedBreakpoint = null;
   },
 
   
@@ -187,39 +163,6 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     
     if (this.containsValue(aUrl)) {
       this.selectedValue = aUrl;
-    }
-  },
-
-  sourcesDidUpdate: function() {
-    if (!getSelectedSource(this.getState())) {
-      let url = this._preferredSourceURL;
-      let source = url && getSourceByURL(this.getState(), url);
-      if (source) {
-        this.actions.selectSource(source);
-      }
-      else {
-        setNamedTimeout("new-source", NEW_SOURCE_DISPLAY_DELAY, () => {
-          if (!getSelectedSource(this.getState()) && this.itemCount > 0) {
-            this.actions.selectSource(this.getItemAtIndex(0).attachment.source);
-          }
-        });
-      }
-    }
-  },
-
-  renderSource: function(source) {
-    this.addSource(source, { staged: false });
-    for(let bp of getBreakpoints(this.getState())) {
-      if (bp.location.actor === source.actor) {
-        this.renderBreakpoint(bp);
-      }
-    }
-    this.sourcesDidUpdate();
-  },
-
-  renderSources: function(sources) {
-    if (Object.keys(sources).length === 0) {
-      this.emptyText = L10N.getStr("noSourcesText");
     }
   },
 
@@ -269,7 +212,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     let fullUrl = aSource.url;
     let url, unicodeUrl, label, group;
 
-    if (!fullUrl) {
+    if(!fullUrl) {
       unicodeUrl = 'SCRIPT' + this._unnamedSourceIndex++;
       label = unicodeUrl;
       group = L10N.getStr("anonymousSourcesLabel");
@@ -288,23 +231,6 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     };
   },
 
-  renderBreakpoint: function(breakpoint, removed) {
-    if (removed) {
-      
-      if (this._getBreakpoint(breakpoint)) {
-        this._removeBreakpoint(breakpoint)
-      }
-    }
-    else {
-      if (this._getBreakpoint(breakpoint)) {
-        this._updateBreakpointStatus(breakpoint);
-      }
-      else {
-        this._addBreakpoint(breakpoint);
-      }
-    }
-  },
-
   
 
 
@@ -313,18 +239,21 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _addBreakpoint: function(breakpoint, options = {}) {
-    let disabled = breakpoint.disabled;
-    let location = breakpoint.location;
+  addBreakpoint: function(aBreakpointClient, aOptions = {}) {
+    let { location, disabled } = aBreakpointClient;
 
     
-    let sourceItem = this.getItemByValue(location.actor);
-    if (!sourceItem) {
+    
+    if (this.getBreakpoint(location)) {
+      this[disabled ? "disableBreakpoint" : "enableBreakpoint"](location);
       return;
     }
 
     
-    let breakpointArgs = Heritage.extend(breakpoint.asMutable(), options);
+    let sourceItem = this.getItemByValue(this.getActorForLocation(location));
+
+    
+    let breakpointArgs = Heritage.extend(aBreakpointClient, aOptions);
     let breakpointView = this._createBreakpointView.call(this, breakpointArgs);
     let contextMenu = this._createContextMenu.call(this, breakpointArgs);
 
@@ -344,11 +273,10 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
       finalize: this._onBreakpointRemoved
     });
 
-    if (typeof breakpoint.condition === "string") {
-      this.highlightBreakpoint(breakpoint.location, {
-        openPopup: true,
-        noEditorUpdate: true
-      });
+    
+    
+    if (aOptions.openPopup || !aOptions.noEditorUpdate) {
+      this.highlightBreakpoint(location, aOptions);
     }
 
     window.emit(EVENTS.BREAKPOINT_SHOWN_IN_PANE);
@@ -361,30 +289,114 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _removeBreakpoint: function(breakpoint) {
+  removeBreakpoint: function(aLocation) {
     
     
-    let sourceItem = this.getItemByValue(breakpoint.location.actor);
+    let sourceItem = this.getItemByValue(aLocation.actor);
     if (!sourceItem) {
+      return;
+    }
+    let breakpointItem = this.getBreakpoint(aLocation);
+    if (!breakpointItem) {
       return;
     }
 
     
-    sourceItem.remove(this._getBreakpoint(breakpoint));
-
-    if (this._selectedBreakpoint &&
-       (queries.makeLocationId(this._selectedBreakpoint.location) ===
-        queries.makeLocationId(breakpoint.location))) {
-      this._selectedBreakpoint = null;
-    }
+    sourceItem.remove(breakpointItem);
 
     window.emit(EVENTS.BREAKPOINT_HIDDEN_IN_PANE);
   },
 
-  _getBreakpoint: function(bp) {
-    return this.getItemForPredicate(item => {
-      return item.attachment.actor === bp.location.actor &&
-        item.attachment.line === bp.location.line;
+  
+
+
+
+
+
+
+
+  getBreakpoint: function(aLocation) {
+    return this.getItemForPredicate(aItem =>
+      aItem.attachment.actor == aLocation.actor &&
+      aItem.attachment.line == aLocation.line);
+  },
+
+  
+
+
+
+
+
+  getAllBreakpoints: function(aStore = []) {
+    return this.getOtherBreakpoints(undefined, aStore);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getOtherBreakpoints: function(aLocation = {}, aStore = []) {
+    for (let source of this) {
+      for (let breakpointItem of source) {
+        let { actor, line } = breakpointItem.attachment;
+        if (actor != aLocation.actor || line != aLocation.line) {
+          aStore.push(breakpointItem);
+        }
+      }
+    }
+    return aStore;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  enableBreakpoint: function(aLocation, aOptions = {}) {
+    let breakpointItem = this.getBreakpoint(aLocation);
+    if (!breakpointItem) {
+      return promise.reject(new Error("No breakpoint found."));
+    }
+
+    
+    let attachment = breakpointItem.attachment;
+    attachment.disabled = false;
+
+    
+    let prefix = "bp-cMenu-"; 
+    let identifier = this.Breakpoints.getIdentifier(attachment);
+    let enableSelfId = prefix + "enableSelf-" + identifier + "-menuitem";
+    let disableSelfId = prefix + "disableSelf-" + identifier + "-menuitem";
+    document.getElementById(enableSelfId).setAttribute("hidden", "true");
+    document.getElementById(disableSelfId).removeAttribute("hidden");
+
+    
+    this._toggleBreakpointsButton.removeAttribute("checked");
+
+    
+    if (!aOptions.silent) {
+      attachment.view.checkbox.setAttribute("checked", "true");
+    }
+
+    return this.Breakpoints.addBreakpoint(aLocation, {
+      
+      
+      noPaneUpdate: true
     });
   },
 
@@ -393,38 +405,46 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _updateBreakpointStatus: function(breakpoint) {
-    let location = breakpoint.location;
-    let breakpointItem = this._getBreakpoint(getBreakpoint(this.getState(), location));
+
+
+
+
+
+
+
+
+
+  disableBreakpoint: function(aLocation, aOptions = {}) {
+    let breakpointItem = this.getBreakpoint(aLocation);
     if (!breakpointItem) {
       return promise.reject(new Error("No breakpoint found."));
     }
 
     
     let attachment = breakpointItem.attachment;
+    attachment.disabled = true;
 
     
     let prefix = "bp-cMenu-"; 
-    let identifier = makeLocationId(location);
+    let identifier = this.Breakpoints.getIdentifier(attachment);
     let enableSelfId = prefix + "enableSelf-" + identifier + "-menuitem";
     let disableSelfId = prefix + "disableSelf-" + identifier + "-menuitem";
-    let enableSelf = document.getElementById(enableSelfId);
-    let disableSelf = document.getElementById(disableSelfId);
+    document.getElementById(enableSelfId).removeAttribute("hidden");
+    document.getElementById(disableSelfId).setAttribute("hidden", "true");
 
-    if (breakpoint.disabled) {
-      enableSelf.removeAttribute("hidden");
-      disableSelf.setAttribute("hidden", true);
+    
+    if (!aOptions.silent) {
       attachment.view.checkbox.removeAttribute("checked");
     }
-    else {
-      enableSelf.setAttribute("hidden", true);
-      disableSelf.removeAttribute("hidden");
-      attachment.view.checkbox.setAttribute("checked", "true");
 
+    return this.Breakpoints.removeBreakpoint(aLocation, {
       
-      this._toggleBreakpointsButton.removeAttribute("checked");
-    }
-
+      
+      noPaneUpdate: true,
+      
+      
+      rememberDisabled: true
+    });
   },
 
   
@@ -438,13 +458,13 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
   highlightBreakpoint: function(aLocation, aOptions = {}) {
-    let breakpoint = getBreakpoint(this.getState(), aLocation);
-    if (!breakpoint) {
+    let breakpointItem = this.getBreakpoint(aLocation);
+    if (!breakpointItem) {
       return;
     }
 
     
-    this._selectBreakpoint(breakpoint);
+    this._selectBreakpoint(breakpointItem);
 
     
     if (!aOptions.noEditorUpdate) {
@@ -484,7 +504,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
   showBreakpointConditionThrownMessage: function(aLocation, aMessage = "") {
-    let breakpointItem = this._getBreakpoint(getBreakpoint(this.getState(), aLocation));
+    let breakpointItem = this.getBreakpoint(aLocation);
     if (!breakpointItem) {
       return;
     }
@@ -497,16 +517,19 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  updateToolbarButtonsState: function(source) {
-    if (source.isBlackBoxed) {
+  updateToolbarButtonsState: function() {
+    const { source } = this.selectedItem.attachment;
+    const sourceClient = gThreadClient.source(source);
+
+    if (sourceClient.isBlackBoxed) {
+      this._prettyPrintButton.setAttribute("disabled", true);
       this._blackBoxButton.setAttribute("checked", true);
-      this._prettyPrintButton.setAttribute("checked", true);
     } else {
+      this._prettyPrintButton.removeAttribute("disabled");
       this._blackBoxButton.removeAttribute("checked");
-      this._prettyPrintButton.removeAttribute("checked");
     }
 
-    if (source.isPrettyPrinted) {
+    if (sourceClient.isPrettyPrinted) {
       this._prettyPrintButton.setAttribute("checked", true);
     } else {
       this._prettyPrintButton.removeAttribute("checked");
@@ -516,37 +539,57 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  togglePrettyPrint: function() {
+  togglePrettyPrint: Task.async(function*() {
     if (this._prettyPrintButton.hasAttribute("disabled")) {
       return;
     }
 
-    this.DebuggerView.showProgressBar();
-    const source = getSelectedSource(this.getState());
-    const sourceClient = gThreadClient.source(source);
-    const shouldPrettyPrint = !source.isPrettyPrinted;
+    const resetEditor = ([{ actor }]) => {
+      
+      if (actor == this.selectedValue) {
+        this.DebuggerView.setEditorLocation(actor, 0, { force: true });
+      }
+    };
 
-    
-    
+    const printError = ([{ url }, error]) => {
+      DevToolsUtils.reportException("togglePrettyPrint", error);
+    };
+
+    this.DebuggerView.showProgressBar();
+    const { source } = this.selectedItem.attachment;
+    const sourceClient = gThreadClient.source(source);
+    const shouldPrettyPrint = !sourceClient.isPrettyPrinted;
+
     if (shouldPrettyPrint) {
       this._prettyPrintButton.setAttribute("checked", true);
     } else {
       this._prettyPrintButton.removeAttribute("checked");
     }
 
-    this.actions.togglePrettyPrint(source);
-  },
+    try {
+      let resolution = yield this.SourceScripts.togglePrettyPrint(source);
+      resetEditor(resolution);
+    } catch (rejection) {
+      printError(rejection);
+    }
+
+    this.DebuggerView.showEditor();
+    this.updateToolbarButtonsState();
+  }),
 
   
 
 
   toggleBlackBoxing: Task.async(function*() {
-    const source = getSelectedSource(this.getState());
-    const shouldBlackBox = !source.isBlackBoxed;
+    const { source } = this.selectedItem.attachment;
+    const sourceClient = gThreadClient.source(source);
+    const shouldBlackBox = !sourceClient.isBlackBoxed;
 
     
     
     
+    
+
     if (shouldBlackBox) {
       this._prettyPrintButton.setAttribute("disabled", true);
       this._blackBoxButton.setAttribute("checked", true);
@@ -555,28 +598,22 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
       this._blackBoxButton.removeAttribute("checked");
     }
 
-    this.actions.blackbox(source, shouldBlackBox);
-  }),
-
-  renderBlackBoxed: function(source) {
-    const sourceItem = this.getItemByValue(source.actor);
-    sourceItem.prebuiltNode.classList.toggle(
-      "black-boxed",
-      source.isBlackBoxed
-    );
-
-    if (getSelectedSource(this.getState()).actor === source.actor) {
-      this.updateToolbarButtonsState(source);
+    try {
+      yield this.SourceScripts.setBlackBoxing(source, shouldBlackBox);
+    } catch (e) {
+      
     }
-  },
+
+    this.updateToolbarButtonsState();
+  }),
 
   
 
 
   toggleBreakpoints: function() {
-    let breakpoints = getBreakpoints(this.getState());
+    let breakpoints = this.getAllBreakpoints();
     let hasBreakpoints = breakpoints.length > 0;
-    let hasEnabledBreakpoints = breakpoints.some(bp => !bp.disabled);
+    let hasEnabledBreakpoints = breakpoints.some(e => !e.attachment.disabled);
 
     if (hasBreakpoints && hasEnabledBreakpoints) {
       this._toggleBreakpointsButton.setAttribute("checked", true);
@@ -616,8 +653,33 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  getActorForLocation: function(aLocation) {
+    if (aLocation.url) {
+      for (var item of this) {
+        let source = item.attachment.source;
+
+        if (aLocation.url === source.url) {
+          return source.actor;
+        }
+      }
+    }
+    return aLocation.actor;
+  },
+
   getDisplayURL: function(source) {
-    if (!source.url) {
+    if(!source.url) {
       return this.getItemByValue(source.actor).attachment.label;
     }
     return NetworkHelper.convertToUnicode(unescape(source.url))
@@ -629,56 +691,62 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _selectBreakpoint: function(bp) {
-    if (this._selectedBreakpoint === bp) {
+  _selectBreakpoint: function(aItem) {
+    if (this._selectedBreakpointItem == aItem) {
       return;
     }
     this._unselectBreakpoint();
-    this._selectedBreakpoint = bp;
 
-    const item = this._getBreakpoint(bp);
-    item.target.classList.add("selected");
+    this._selectedBreakpointItem = aItem;
+    this._selectedBreakpointItem.target.classList.add("selected");
 
     
-    this.widget.ensureElementIsVisible(item.target);
+    this.widget.ensureElementIsVisible(aItem.target);
   },
 
   
 
 
   _unselectBreakpoint: function() {
-    if (!this._selectedBreakpoint) {
+    if (!this._selectedBreakpointItem) {
       return;
     }
-
-    const item = this._getBreakpoint(this._selectedBreakpoint);
-    item.target.classList.remove("selected");
-
-    this._selectedBreakpoint = null;
+    this._selectedBreakpointItem.target.classList.remove("selected");
+    this._selectedBreakpointItem = null;
   },
 
   
 
 
   _openConditionalPopup: function() {
-    let breakpointItem = this._getBreakpoint(this._selectedBreakpoint);
+    let breakpointItem = this._selectedBreakpointItem;
     let attachment = breakpointItem.attachment;
     
     
-    let bp = getBreakpoint(this.getState(), attachment);
-    let expr = (bp ? (bp.condition || "") : "");
+    let breakpointPromise = this.Breakpoints._getAdded(attachment);
+    if (breakpointPromise) {
+      return breakpointPromise.then(aBreakpointClient => {
+        let isConditionalBreakpoint = aBreakpointClient.hasCondition();
+        let condition = aBreakpointClient.getCondition();
+        return doOpen.call(this, isConditionalBreakpoint ? condition : "")
+      });
+    } else {
+      return doOpen.call(this, "")
+    }
 
-    
-    
-    this._cbTextbox.value = expr;
+    function doOpen(aConditionalExpression) {
+      
+      
+      this._cbTextbox.value = aConditionalExpression;
 
-    
-    
-    this._cbPanel.hidden = false;
-    this._cbPanel.openPopup(breakpointItem.attachment.view.lineNumber,
-                            BREAKPOINT_CONDITIONAL_POPUP_POSITION,
-                            BREAKPOINT_CONDITIONAL_POPUP_OFFSET_X,
-                            BREAKPOINT_CONDITIONAL_POPUP_OFFSET_Y);
+      
+      
+      this._cbPanel.hidden = false;
+      this._cbPanel.openPopup(breakpointItem.attachment.view.lineNumber,
+        BREAKPOINT_CONDITIONAL_POPUP_POSITION,
+        BREAKPOINT_CONDITIONAL_POPUP_OFFSET_X,
+        BREAKPOINT_CONDITIONAL_POPUP_OFFSET_Y);
+    }
   },
 
   
@@ -709,12 +777,10 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
   _createBreakpointView: function(aOptions) {
     let { location, disabled, text, message } = aOptions;
-    let identifier = makeLocationId(location);
+    let identifier = this.Breakpoints.getIdentifier(location);
 
     let checkbox = document.createElement("checkbox");
-    if (!disabled) {
-      checkbox.setAttribute("checked", true);
-    }
+    checkbox.setAttribute("checked", !disabled);
     checkbox.className = "dbg-breakpoint-checkbox";
 
     let lineNumberNode = document.createElement("label");
@@ -784,7 +850,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
   _createContextMenu: function(aOptions) {
     let { location, disabled } = aOptions;
-    let identifier = makeLocationId(location);
+    let identifier = this.Breakpoints.getIdentifier(location);
 
     let commandset = document.createElement("commandset");
     let menupopup = document.createElement("menupopup");
@@ -889,6 +955,25 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     let contextMenu = aItem.attachment.popup;
     document.getElementById(contextMenu.commandsetId).remove();
     document.getElementById(contextMenu.menupopupId).remove();
+
+    
+    if (this._selectedBreakpointItem == aItem) {
+      this._selectedBreakpointItem = null;
+    }
+  },
+
+  
+
+
+  _onEditorLoad: function(aName, aEditor) {
+    aEditor.on("cursorActivity", this._onEditorCursorActivity);
+  },
+
+  
+
+
+  _onEditorUnload: function(aName, aEditor) {
+    aEditor.off("cursorActivity", this._onEditorCursorActivity);
   },
 
   _onMouseDown: function(e) {
@@ -931,8 +1016,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
     
     
-    
-    for (let i = 0; i < functionDefinitions.length; i++) {
+    for (let i=0; i<functionDefinitions.length; i++) {
       let functionDefinition = {
         source: functionDefinitions[i].sourceUrl,
         startLine: functionDefinitions[i][0].functionLocation.start.line,
@@ -972,17 +1056,16 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
   _onEditorCursorActivity: function(e) {
     let editor = this.DebuggerView.editor;
-    let start = editor.getCursor("start").line + 1;
-    let end = editor.getCursor().line + 1;
-    let source = getSelectedSource(this.getState());
+    let start  = editor.getCursor("start").line + 1;
+    let end    = editor.getCursor().line + 1;
+    let actor    = this.selectedValue;
 
-    if (source) {
-      let location = { actor: source.actor, line: start };
-      if (getBreakpoint(this.getState(), location) && start == end) {
-        this.highlightBreakpoint(location, { noEditorUpdate: true });
-      } else {
-        this.unhighlightBreakpoint();
-      }
+    let location = { actor: actor, line: start };
+
+    if (this.getBreakpoint(location) && start == end) {
+      this.highlightBreakpoint(location, { noEditorUpdate: true });
+    } else {
+      this.unhighlightBreakpoint();
     }
   },
 
@@ -1006,7 +1089,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
       this._noResultsFoundToolTip.show(this._markedIdentifier.anchor);
 
-    } else if (definitions.length == 1) {
+    } else if(definitions.length == 1) {
       this.DebuggerView.setEditorLocation(definitions[0].source, definitions[0].startLine);
     } else {
       
@@ -1043,32 +1126,46 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onSourceSelect: function({ detail: sourceItem }) {
+  _onSourceSelect: Task.async(function*({ detail: sourceItem }) {
     if (!sourceItem) {
       return;
     }
-
     const { source } = sourceItem.attachment;
-    this.actions.selectSource(source);
-  },
+    const sourceClient = gThreadClient.source(source);
 
-  renderSourceSelected: function(source) {
     
-    
-    document.title = L10N.getFormatStr("DebuggerWindowScriptTitle", source.url);
+    this.DebuggerView.setEditorLocation(sourceItem.value);
 
-    if (source.url) {
-      this._preferredSourceURL = source.url;
+    
+    if (Prefs.autoPrettyPrint && !sourceClient.isPrettyPrinted) {
+      let isMinified = yield SourceUtils.isMinified(sourceClient);
+      if (isMinified) {
+        this.togglePrettyPrint();
+      }
     }
-    this.updateToolbarButtonsState(source);
-    this._selectItem(this.getItemByValue(source.actor));
-  },
+
+    
+    
+    document.title = L10N.getFormatStr("DebuggerWindowScriptTitle",
+                                       sourceItem.attachment.source.url);
+
+    this.DebuggerView.maybeShowBlackBoxMessage();
+    this.updateToolbarButtonsState();
+  }),
 
   
 
 
   _onStopBlackBoxing: Task.async(function*() {
-    this.actions.blackbox(getSelectedSource(this.getState()), false);
+    const { source } = this.selectedItem.attachment;
+
+    try {
+      yield this.SourceScripts.setBlackBoxing(source, false);
+    } catch (e) {
+      
+    }
+
+    this.updateToolbarButtonsState();
   }),
 
   
@@ -1078,13 +1175,31 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     let sourceItem = this.getItemForElement(e.target);
     let breakpointItem = this.getItemForElement.call(sourceItem, e.target);
     let attachment = breakpointItem.attachment;
-    let bp = getBreakpoint(this.getState(), attachment);
-    if (bp) {
-      this.highlightBreakpoint(bp.location, {
-        openPopup: bp.condition && e.button == 0
+
+    
+    let promise = this.Breakpoints._getAdded(attachment);
+    if (promise) {
+      promise = promise.then(aBreakpointClient => {
+        return doHighlight.call(this, aBreakpointClient.hasCondition());
       });
     } else {
-      this.highlightBreakpoint(bp.location);
+      promise = Promise.resolve().then(() => {
+        return doHighlight.call(this, false)
+      });
+    }
+
+    promise.then(() => {
+      window.emit(EVENTS.BREAKPOINT_CLICKED);
+    });
+
+    function doHighlight(aConditionalBreakpointFlag) {
+      
+      return this.highlightBreakpoint(attachment, {
+        
+        
+        
+        openPopup: aConditionalBreakpointFlag && e.button == 0
+      });
     }
   },
 
@@ -1094,14 +1209,14 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   _onBreakpointCheckboxClick: function(e) {
     let sourceItem = this.getItemForElement(e.target);
     let breakpointItem = this.getItemForElement.call(sourceItem, e.target);
-    let bp = getBreakpoint(this.getState(), breakpointItem.attachment);
+    let attachment = breakpointItem.attachment;
 
-    if (bp.disabled) {
-      this.actions.enableBreakpoint(bp.location);
-    }
-    else {
-      this.actions.disableBreakpoint(bp.location);
-    }
+    
+    this[attachment.disabled ? "enableBreakpoint" : "disableBreakpoint"](attachment, {
+      
+      
+      silent: true
+    });
 
     
     e.preventDefault();
@@ -1127,17 +1242,23 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  _onConditionalPopupHiding: function() {
+  _onConditionalPopupHiding: Task.async(function*() {
     this._conditionalPopupVisible = false; 
+
+    let breakpointItem = this._selectedBreakpointItem;
+    let attachment = breakpointItem.attachment;
 
     
     
-    let bp = this._selectedBreakpoint;
-    if (bp) {
+    let breakpointPromise = this.Breakpoints._getAdded(attachment);
+    if (breakpointPromise) {
+      let { location } = yield breakpointPromise;
       let condition = this._cbTextbox.value;
-      this.actions.setBreakpointCondition(bp.location, condition);
+      yield this.Breakpoints.updateCondition(location, condition);
     }
-  },
+
+    window.emit(EVENTS.CONDITIONAL_BREAKPOINT_POPUP_HIDING);
+  }),
 
   
 
@@ -1157,15 +1278,15 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
                 this.DebuggerView.clickedLine + 1 :
                 this.DebuggerView.editor.getCursor().line + 1);
     let location = { actor, line };
-    let bp = getBreakpoint(this.getState(), location);
+    let breakpointItem = this.getBreakpoint(location);
 
     
-    if (bp) {
-      this.actions.removeBreakpoint(bp.location);
+    if (breakpointItem) {
+      this.Breakpoints.removeBreakpoint(location);
     }
     
     else {
-      this.actions.addBreakpoint(location);
+      this.Breakpoints.addBreakpoint(location);
     }
   },
 
@@ -1178,27 +1299,16 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
                 this.DebuggerView.clickedLine + 1 :
                 this.DebuggerView.editor.getCursor().line + 1);
     let location = { actor, line };
-    let bp = getBreakpoint(this.getState(), location);
+    let breakpointItem = this.getBreakpoint(location);
 
     
-    if (bp) {
-      this.highlightBreakpoint(bp.location, { openPopup: true });
+    if (breakpointItem) {
+      this.highlightBreakpoint(location, { openPopup: true });
     }
     
     else {
-      this.actions.addBreakpoint(location, "");
+      this.Breakpoints.addBreakpoint(location, { openPopup: true });
     }
-  },
-
-  getOtherBreakpoints: function(location) {
-    const bps = getBreakpoints(this.getState());
-    if (location) {
-      return bps.filter(bp => {
-        return (bp.location.actor !== location.actor ||
-                bp.location.line !== location.line);
-      });
-    }
-    return bps;
   },
 
   
@@ -1220,7 +1330,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
   _onEnableSelf: function(aLocation) {
     
-    this.actions.enableBreakpoint(aLocation);
+    this.enableBreakpoint(aLocation);
   },
 
   
@@ -1230,10 +1340,8 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
   _onDisableSelf: function(aLocation) {
-    const bp = getBreakpoint(this.getState(), aLocation);
-    if (!bp.disabled) {
-      this.actions.disableBreakpoint(aLocation);
-    }
+    
+    this.disableBreakpoint(aLocation);
   },
 
   
@@ -1243,7 +1351,9 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
   _onDeleteSelf: function(aLocation) {
-    this.actions.removeBreakpoint(aLocation);
+    
+    this.removeBreakpoint(aLocation);
+    this.Breakpoints.removeBreakpoint(aLocation);
   },
 
   
@@ -1253,9 +1363,20 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
 
   _onEnableOthers: function(aLocation) {
-    let other = this.getOtherBreakpoints(aLocation);
+    let enableOthers = aCallback => {
+      let other = this.getOtherBreakpoints(aLocation);
+      let outstanding = other.map(e => this.enableBreakpoint(e.attachment));
+      promise.all(outstanding).then(aCallback);
+    }
+
     
-    other.forEach(bp => this._onEnableSelf(bp.location));
+    
+    
+    if (gThreadClient.state != "paused") {
+      gThreadClient.interrupt(() => enableOthers(() => gThreadClient.resume()));
+    } else {
+      enableOthers();
+    }
   },
 
   
@@ -1266,7 +1387,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
   _onDisableOthers: function(aLocation) {
     let other = this.getOtherBreakpoints(aLocation);
-    other.forEach(bp => this._onDisableSelf(bp.location));
+    other.forEach(e => this._onDisableSelf(e.attachment));
   },
 
   
@@ -1277,7 +1398,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
 
   _onDeleteOthers: function(aLocation) {
     let other = this.getOtherBreakpoints(aLocation);
-    other.forEach(bp => this._onDeleteSelf(bp.location));
+    other.forEach(e => this._onDeleteSelf(e.attachment));
   },
 
   
@@ -1309,9 +1430,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   _selectedBreakpointItem: null,
   _conditionalPopupVisible: false,
   _noResultsFoundToolTip: null,
-  _markedIdentifier: null,
-  _selectedBreakpoint: null,
-  _conditionalPopupVisible: false
+  _markedIdentifier: null
 });
 
-module.exports = SourcesView;
+DebuggerView.Sources = new SourcesView(DebuggerController, DebuggerView);
