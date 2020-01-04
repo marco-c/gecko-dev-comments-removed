@@ -175,13 +175,15 @@ Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
     }
 
     
+    
+    
+    
     mEffect = newEffect;
     mEffect->SetAnimation(this);
 
     
     
     
-    UpdateRelevance();
     if (wasRelevant && mIsRelevant) {
       nsNodeUtils::AnimationChanged(this);
     }

@@ -1217,9 +1217,17 @@ KeyframeEffectReadOnly::SetAnimation(Animation* aAnimation)
   
   RequestRestyle(EffectCompositor::RestyleType::Layer);
 
-  MarkCascadeNeedsUpdate();
-
+  
+  
+  
+  
+  if (mAnimation) {
+    mAnimation->UpdateRelevance();
+  }
   NotifyAnimationTimingUpdated();
+  if (mAnimation) {
+    MarkCascadeNeedsUpdate();
+  }
 }
 
 bool
