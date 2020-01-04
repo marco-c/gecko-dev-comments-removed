@@ -127,7 +127,7 @@ public:
 
     
     
-    virtual nsHttpConnection *TakeHttpConnection() = 0;
+    virtual already_AddRefed<nsHttpConnection> TakeHttpConnection() = 0;
 
     
     
@@ -165,7 +165,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
     bool IsReused() override;                             \
     void DontReuse() override;                            \
     nsresult PushBack(const char *, uint32_t) override;   \
-    nsHttpConnection *TakeHttpConnection() override;      \
+    already_AddRefed<nsHttpConnection> TakeHttpConnection() override; \
     uint32_t CancelPipeline(nsresult originalReason) override; \
     nsAHttpTransaction::Classifier Classification() override; \
     /*                                                    \
