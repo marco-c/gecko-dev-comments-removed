@@ -9,7 +9,7 @@
 #include "nsHttp.h"
 #include "nsHttpHeaderArray.h"
 #include "nsString.h"
-#include "mozilla/Mutex.h"
+#include "mozilla/ReentrantMonitor.h"
 
 class nsIHttpHeaderVisitor;
 
@@ -30,8 +30,8 @@ public:
     
     
     const nsHttpHeaderArray &Headers() const;
-    void Lock() { mLock.Lock(); }
-    void Unlock() { mLock.Unlock(); }
+    void Enter() { mReentrantMonitor.Enter(); }
+    void Exit() { mReentrantMonitor.Exit(); }
 
     void SetHeaders(const nsHttpHeaderArray& aHeaders);
 
@@ -114,7 +114,12 @@ private:
     ParsedMethodType  mParsedMethod;
     bool              mHTTPS;
 
-    Mutex             mLock;
+    
+    
+    ReentrantMonitor  mReentrantMonitor;
+
+    
+    bool mInVisitHeaders;
 };
 
 } 
