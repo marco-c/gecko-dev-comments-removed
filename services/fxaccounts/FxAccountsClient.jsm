@@ -29,6 +29,9 @@ const STATUS_CODE_TO_OTHER_ERRORS_LABEL = {
   500: 7,
 };
 
+const SIGNIN = "/account/login";
+const SIGNUP = "/account/create";
+
 this.FxAccountsClient = function(host = HOST) {
   this.host = host;
 
@@ -82,14 +85,86 @@ this.FxAccountsClient.prototype = {
 
 
 
-  signUp: function(email, password) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _createSession: function(path, email, password, getKeys=false,
+                           retryOK=true) {
     return Credentials.setup(email, password).then((creds) => {
       let data = {
-        email: creds.emailUTF8,
         authPW: CommonUtils.bytesAsHex(creds.authPW),
+        email: creds.emailUTF8,
       };
-      return this._request("/account/create", "POST", null, data);
+      let keys = getKeys ? "?keys=true" : "";
+
+      return this._request(path + keys, "POST", null, data).then(
+        
+        
+        result => {
+          result.email = data.email;
+          result.unwrapBKey = CommonUtils.bytesAsHex(creds.unwrapBKey);
+
+          return result;
+        },
+        error => {
+          log.debug("Session creation failed", error);
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (ERRNO_INCORRECT_EMAIL_CASE === error.errno && retryOK) {
+            if (!error.email) {
+              log.error("Server returned errno 120 but did not provide email");
+              throw error;
+            }
+            return this._createSession(path, error.email, password, getKeys,
+                                       false);
+          }
+          throw error;
+        }
+      );
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  signUp: function(email, password, getKeys=false) {
+    return this._createSession(SIGNUP, email, password, getKeys,
+                               false );
   },
 
   
@@ -114,50 +189,9 @@ this.FxAccountsClient.prototype = {
 
 
 
-
-
-
-  signIn: function signIn(email, password, getKeys=false, retryOK=true) {
-    return Credentials.setup(email, password).then((creds) => {
-      let data = {
-        authPW: CommonUtils.bytesAsHex(creds.authPW),
-        email: creds.emailUTF8,
-      };
-      let keys = getKeys ? "?keys=true" : "";
-
-      return this._request("/account/login" + keys, "POST", null, data).then(
-        
-        
-        result => {
-          result.email = data.email;
-          result.unwrapBKey = CommonUtils.bytesAsHex(creds.unwrapBKey);
-
-          return result;
-        },
-        error => {
-          log.debug("signIn error: " + JSON.stringify(error));
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          if (ERRNO_INCORRECT_EMAIL_CASE === error.errno && retryOK) {
-            if (!error.email) {
-              log.error("Server returned errno 120 but did not provide email");
-              throw error;
-            }
-            return this.signIn(error.email, password, getKeys, false);
-          }
-          throw error;
-        }
-      );
-    });
+  signIn: function signIn(email, password, getKeys=false) {
+    return this._createSession(SIGNIN, email, password, getKeys,
+                               true );
   },
 
   
