@@ -4,24 +4,25 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Test default request for B2G Presentation API at sender side</title>
+  <title>Test for B2G Presentation API at sender side</title>
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
   <script type="application/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
 </head>
 <body>
-<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1069230">Test default request for B2G Presentation API at sender side</a>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1148307">Test for B2G Presentation API at sender side</a>
 <script type="application/javascript;version=1.8">
 
 'use strict';
 
 var gScript = SpecialPowers.loadChromeScript(SimpleTest.getTestFileURL('PresentationSessionChromeScript.js'));
+var request;
 var connection;
 
 function testSetup() {
   return new Promise(function(aResolve, aReject) {
-    navigator.presentation.defaultRequest = new PresentationRequest("http://example.com");
+    request = new PresentationRequest("http://example.com");
 
-    navigator.presentation.defaultRequest.getAvailability().then(
+    request.getAvailability().then(
       function(aAvailability) {
         aAvailability.onchange = function() {
           aAvailability.onchange = null;
@@ -64,9 +65,14 @@ function testStartConnection() {
       info("The control channel is closed. " + aReason);
     });
 
-    gScript.addMessageListener('offer-sent', function offerSentHandler() {
+    gScript.addMessageListener('check-navigator', function checknavigatorHandler(aSuccess) {
+      gScript.removeMessageListener('check-navigator', checknavigatorHandler);
+      ok(aSuccess, "buildDataChannel get correct window object");
+    });
+
+    gScript.addMessageListener('offer-sent', function offerSentHandler(aIsValid) {
       gScript.removeMessageListener('offer-sent', offerSentHandler);
-      info("An offer is sent out.");
+      ok(aIsValid, "A valid offer is sent out.");
       gScript.sendAsyncMessage('trigger-incoming-transport');
     });
 
@@ -81,19 +87,69 @@ function testStartConnection() {
       gScript.sendAsyncMessage('trigger-incoming-answer');
     });
 
-    ok(!navigator.presentation.receiver, "Sender shouldn't get a presentation receiver instance.");
+    gScript.addMessageListener('data-transport-notification-enabled', function dataTransportNotificationEnabledHandler() {
+      gScript.removeMessageListener('data-transport-notification-enabled', dataTransportNotificationEnabledHandler);
+      info("Data notification is enabled for data transport channel.");
+    });
 
-    navigator.presentation.defaultRequest.onconnectionavailable = function(aEvent) {
-      navigator.presentation.defaultRequest.onconnectionavailable = null;
-      connection = aEvent.connection;
-      ok(connection, "|connectionavailable| event is fired with a connection.");
-      ok(connection.id, "Connection ID should be set.");
-      is(connection.state, "connected", "Connection state at sender side should be connected by default.");
-      aResolve();
+    var connectionFromEvent;
+    request.onconnectionavailable = function(aEvent) {
+      request.onconnectionavailable = null;
+      connectionFromEvent = aEvent.connection;
+      ok(connectionFromEvent, "|connectionavailable| event is fired with a connection.");
+
+      if (connection) {
+        is(connection, connectionFromEvent, "The connection from promise and the one from |connectionavailable| event should be the same.");
+        aResolve();
+      }
     };
 
-    // Simulate the UA triggers |start()| of the default request.
-    navigator.presentation.defaultRequest.start();
+    request.start().then(
+      function(aConnection) {
+        connection = aConnection;
+        ok(connection, "Connection should be available.");
+        ok(connection.id, "Connection ID should be set.");
+        is(connection.state, "connected", "Connection state at sender side should be connected by default.");
+
+        if (connectionFromEvent) {
+          is(connection, connectionFromEvent, "The connection from promise and the one from |connectionavailable| event should be the same.");
+          aResolve();
+        }
+      },
+      function(aError) {
+        ok(false, "Error occurred when establishing a connection: " + aError);
+        teardown();
+        aReject();
+      }
+    );
+  });
+}
+
+function testSend() {
+  return new Promise(function(aResolve, aReject) {
+    const outgoingMessage = "test outgoing message";
+
+    gScript.addMessageListener('message-sent', function messageSentHandler(aMessage) {
+      gScript.removeMessageListener('message-sent', messageSentHandler);
+      is(aMessage, outgoingMessage, "The message is sent out.");
+      aResolve();
+    });
+
+    connection.send(outgoingMessage);
+  });
+}
+
+function testIncomingMessage() {
+  return new Promise(function(aResolve, aReject) {
+    const incomingMessage = "test incoming message";
+
+    connection.addEventListener('message', function messageHandler(aEvent) {
+      connection.removeEventListener('message', messageHandler);
+      is(aEvent.data, incomingMessage, "An incoming message should be received.");
+      aResolve();
+    });
+
+    gScript.sendAsyncMessage('trigger-incoming-message', incomingMessage);
   });
 }
 
@@ -118,6 +174,7 @@ function teardown() {
   gScript.addMessageListener('teardown-complete', function teardownCompleteHandler() {
     gScript.removeMessageListener('teardown-complete', teardownCompleteHandler);
     gScript.destroy();
+    info('teardown-complete');
     SimpleTest.finish();
   });
 
@@ -126,10 +183,11 @@ function teardown() {
 
 function runTests() {
   ok(window.PresentationRequest, "PresentationRequest should be available.");
-  ok(navigator.presentation, "navigator.presentation should be available.");
 
   testSetup().
   then(testStartConnection).
+  then(testSend).
+  then(testIncomingMessage).
   then(testTerminateConnection).
   then(teardown);
 }
@@ -141,8 +199,7 @@ SpecialPowers.pushPermissions([
   {type: 'presentation', allow: true, context: document},
 ], function() {
   SpecialPowers.pushPrefEnv({ 'set': [["dom.presentation.enabled", true],
-                                      ["dom.presentation.test.enabled", true],
-                                      ["dom.presentation.test.stage", 0]]},
+                                      ["dom.presentation.session_transport.data_channel.enable", true]]},
                             runTests);
 });
 
