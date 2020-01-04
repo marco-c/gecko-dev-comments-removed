@@ -6677,7 +6677,7 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
     
     
     switch (touchEvent->mMessage) {
-    case NS_TOUCH_MOVE:
+    case eTouchMove:
       pointerMessage = ePointerMove;
       break;
     case NS_TOUCH_END:
@@ -7478,7 +7478,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     PresShell* shell =
         static_cast<PresShell*>(frame->PresContext()->PresShell());
     switch (aEvent->mMessage) {
-      case NS_TOUCH_MOVE:
+      case eTouchMove:
       case NS_TOUCH_CANCEL:
       case NS_TOUCH_END: {
         
@@ -8063,7 +8063,7 @@ PresShell::DispatchTouchEventToDOM(WidgetEvent* aEvent,
   
   
   bool canPrevent = (aEvent->mMessage == eTouchStart) ||
-                    (aEvent->mMessage == NS_TOUCH_MOVE && aTouchIsNew) ||
+                    (aEvent->mMessage == eTouchMove && aTouchIsNew) ||
                     (aEvent->mMessage == NS_TOUCH_END);
   bool preventDefault = false;
   nsEventStatus tmpStatus = nsEventStatus_eIgnore;

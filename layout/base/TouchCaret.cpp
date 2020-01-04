@@ -772,7 +772,7 @@ TouchCaret::HandleEvent(WidgetEvent* aEvent)
     case eMouseUp:
       status = HandleMouseUpEvent(aEvent->AsMouseEvent());
       break;
-    case NS_TOUCH_MOVE:
+    case eTouchMove:
       status = HandleTouchMoveEvent(aEvent->AsTouchEvent());
       break;
     case eMouseMove:

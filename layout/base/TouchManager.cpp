@@ -128,7 +128,7 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
       }
       break;
     }
-    case NS_TOUCH_MOVE: {
+    case eTouchMove: {
       
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       WidgetTouchEvent::TouchArray& touches = touchEvent->touches;
