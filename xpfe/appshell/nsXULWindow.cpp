@@ -383,6 +383,8 @@ NS_IMETHODIMP nsXULWindow::RemoveChildWindow(nsIXULWindow *aChild)
 
 NS_IMETHODIMP nsXULWindow::ShowModal()
 {
+  PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
+
   
   nsCOMPtr<nsIWidget> window = mWindow;
   nsCOMPtr<nsIXULWindow> tempRef = this;  
