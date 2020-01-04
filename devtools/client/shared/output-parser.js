@@ -454,12 +454,12 @@ OutputParser.prototype = {
   },
 
   _onColorSwatchMouseDown: function (event) {
-    
-    event.preventDefault();
-
     if (!event.shiftKey) {
       return;
     }
+
+    
+    event.stopPropagation();
 
     let swatch = event.target;
     let color = this.colorSwatches.get(swatch);
@@ -470,12 +470,11 @@ OutputParser.prototype = {
   },
 
   _onAngleSwatchMouseDown: function (event) {
-    
-    event.preventDefault();
-
     if (!event.shiftKey) {
       return;
     }
+
+    event.stopPropagation();
 
     let swatch = event.target;
     let angle = this.angleSwatches.get(swatch);
