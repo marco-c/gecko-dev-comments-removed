@@ -212,8 +212,6 @@ class AbstractFramePtr
     inline void setHasCachedSavedFrame();
 
     inline JSScript* script() const;
-    inline JSFunction* fun() const;
-    inline JSFunction* maybeFun() const;
     inline JSFunction* callee() const;
     inline Value calleev() const;
     inline Value& thisArgument() const;
@@ -363,7 +361,6 @@ class InterpreterFrame
     mutable uint32_t    flags_;         
     union {                             
         JSScript*       script;        
-        JSFunction*     fun;           
         ModuleObject*   module;        
     } exec;
     union {                             
@@ -575,7 +572,7 @@ class InterpreterFrame
 
     bool copyRawFrameSlots(AutoValueVector* v);
 
-    unsigned numFormalArgs() const { MOZ_ASSERT(hasArgs()); return fun()->nargs(); }
+    unsigned numFormalArgs() const { MOZ_ASSERT(hasArgs()); return callee().nargs(); }
     unsigned numActualArgs() const { MOZ_ASSERT(hasArgs()); return u.nactual; }
 
     
@@ -655,17 +652,9 @@ class InterpreterFrame
 
 
 
-
-
-
-
-
-
-
-
     JSScript* script() const {
         if (isFunctionFrame())
-            return isEvalFrame() ? u.evalScript : fun()->nonLazyScript();
+            return isEvalFrame() ? u.evalScript : callee().nonLazyScript();
         MOZ_ASSERT(isGlobalOrModuleFrame());
         return exec.script;
     }
@@ -680,24 +669,6 @@ class InterpreterFrame
     Value* prevsp() {
         MOZ_ASSERT(prev_);
         return prevsp_;
-    }
-
-    
-
-
-
-
-
-
-
-
-    JSFunction* fun() const {
-        MOZ_ASSERT(isFunctionFrame());
-        return exec.fun;
-    }
-
-    JSFunction* maybeFun() const {
-        return isFunctionFrame() ? fun() : nullptr;
     }
 
     
@@ -729,8 +700,6 @@ class InterpreterFrame
 
 
 
-
-
     JSFunction& callee() const {
         MOZ_ASSERT(isFunctionFrame());
         return calleev().toObject().as<JSFunction>();
@@ -738,21 +707,8 @@ class InterpreterFrame
 
     const Value& calleev() const {
         MOZ_ASSERT(isFunctionFrame());
-        return mutableCalleev();
-    }
-
-    const Value& maybeCalleev() const {
-        Value& calleev = flags_ & (EVAL | GLOBAL_OR_MODULE)
-                         ? ((Value*)this)[-1]
-                         : argv()[-2];
-        MOZ_ASSERT(calleev.isObjectOrNull());
-        return calleev;
-    }
-
-    Value& mutableCalleev() const {
-        MOZ_ASSERT(isFunctionFrame());
         if (isEvalFrame())
-            return ((Value*)this)[-1];
+            return ((const Value*)this)[-1];
         return argv()[-2];
     }
 
@@ -777,15 +733,6 @@ class InterpreterFrame
         }
         return UndefinedValue();
     }
-
-    
-
-
-
-
-
-
-    inline JSCompartment* compartment() const;
 
     
 

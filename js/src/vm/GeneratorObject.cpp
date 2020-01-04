@@ -24,7 +24,7 @@ GeneratorObject::create(JSContext* cx, AbstractFramePtr frame)
     RootedNativeObject obj(cx);
     if (frame.script()->isStarGenerator()) {
         RootedValue pval(cx);
-        RootedObject fun(cx, frame.fun());
+        RootedObject fun(cx, frame.callee());
         
         
         if (!GetProperty(cx, fun, fun, cx->names().prototype, &pval))

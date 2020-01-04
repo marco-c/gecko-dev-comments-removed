@@ -1411,7 +1411,7 @@ ScopeIter::settle()
 {
     
     
-    if (frame_ && frame_.isNonEvalFunctionFrame() && frame_.fun()->needsCallObject() &&
+    if (frame_ && frame_.isNonEvalFunctionFrame() && frame_.callee()->needsCallObject() &&
         !frame_.hasCallObj())
     {
         MOZ_ASSERT(ssi_.type() == StaticScopeIter<CanGC>::Function);
@@ -2557,7 +2557,7 @@ DebugScopes::onPopCall(AbstractFramePtr frame, JSContext* cx)
 
     Rooted<DebugScopeObject*> debugScope(cx, nullptr);
 
-    if (frame.fun()->needsCallObject()) {
+    if (frame.callee()->needsCallObject()) {
         
 
 
@@ -2565,7 +2565,7 @@ DebugScopes::onPopCall(AbstractFramePtr frame, JSContext* cx)
         if (!frame.hasCallObj())
             return;
 
-        if (frame.fun()->isGenerator())
+        if (frame.callee()->isGenerator())
             return;
 
         CallObject& callobj = frame.scopeChain()->as<CallObject>();
