@@ -1744,8 +1744,6 @@ nsNSSComponent::InitializeNSS()
   }
 
   DisableMD5();
-  
-  InitCertVerifierLog();
   LoadLoadableRoots();
 
   MaybeEnableFamilySafetyCompatibility();
