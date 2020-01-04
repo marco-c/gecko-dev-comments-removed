@@ -232,14 +232,19 @@ function* updateCertBlocklist(records) {
   let certList = Cc["@mozilla.org/security/certblocklist;1"]
                    .getService(Ci.nsICertBlocklist);
   for (let item of records) {
-    if (item.issuerName && item.serialNumber) {
-      certList.revokeCertByIssuerAndSerial(item.issuerName,
-                                           item.serialNumber);
-    } else if (item.subject && item.pubKeyHash) {
-      certList.revokeCertBySubjectAndPubKey(item.subject,
-                                            item.pubKeyHash);
-    } else {
-      throw new Error("Cert blocklist record has incomplete data");
+    try {
+      if (item.issuerName && item.serialNumber) {
+        certList.revokeCertByIssuerAndSerial(item.issuerName,
+                                            item.serialNumber);
+      } else if (item.subject && item.pubKeyHash) {
+        certList.revokeCertBySubjectAndPubKey(item.subject,
+                                              item.pubKeyHash);
+      }
+    } catch (e) {
+      
+      
+      
+      Cu.reportError(e);
     }
   }
   certList.saveEntries();
