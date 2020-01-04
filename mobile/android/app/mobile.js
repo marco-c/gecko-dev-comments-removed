@@ -352,7 +352,7 @@ pref("browser.link.open_newwindow.restriction", 0);
 
 
 
-pref("browser.image_blocking", 0);
+pref("browser.image_blocking", 1);
 
 
 pref("privacy.item.cache", true);
