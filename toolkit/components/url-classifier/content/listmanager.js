@@ -388,7 +388,12 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
   }
 
   if (useProtobuf) {
-    let tableArray = streamerMap.tableList.split(',');
+    let tableArray = [];
+    Object.keys(streamerMap.tableNames).forEach(aTableName => {
+      if (streamerMap.tableNames[aTableName]) {
+        tableArray.push(aTableName);
+      }
+    });
 
     
     

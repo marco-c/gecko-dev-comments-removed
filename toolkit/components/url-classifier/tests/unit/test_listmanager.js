@@ -38,6 +38,12 @@ const TEST_TABLE_DATA_V4 = {
   updateUrl: "http://localhost:5555/safebrowsing/update?",
   gethashUrl: "http://localhost:5555/safebrowsing/gethash-v4",
 };
+const TEST_TABLE_DATA_V4_DISABLED = {
+  tableName: "test-unwanted-proto",
+  providerName: "google4",
+  updateUrl: "http://localhost:5555/safebrowsing/update?",
+  gethashUrl: "http://localhost:5555/safebrowsing/gethash-v4",
+};
 
 const PREF_NEXTUPDATETIME = "browser.safebrowsing.provider.google.nextupdatetime";
 const PREF_NEXTUPDATETIME_V4 = "browser.safebrowsing.provider.google4.nextupdatetime";
@@ -78,6 +84,12 @@ gListManager.registerTable(TEST_TABLE_DATA_V4.tableName,
                            TEST_TABLE_DATA_V4.providerName,
                            TEST_TABLE_DATA_V4.updateUrl,
                            TEST_TABLE_DATA_V4.gethashUrl);
+
+
+gListManager.registerTable(TEST_TABLE_DATA_V4_DISABLED.tableName,
+                           TEST_TABLE_DATA_V4_DISABLED.providerName,
+                           TEST_TABLE_DATA_V4_DISABLED.updateUrl,
+                           TEST_TABLE_DATA_V4_DISABLED.gethashUrl);
 
 const SERVER_INVOLVED_TEST_CASE_LIST = [
   
@@ -122,7 +134,12 @@ const SERVER_INVOLVED_TEST_CASE_LIST = [
     TEST_TABLE_DATA_LIST.forEach(function(t) {
       gListManager.enableUpdate(t.tableName);
     });
+
+    
+    
+    
     gListManager.enableUpdate(TEST_TABLE_DATA_V4.tableName);
+    gListManager.disableUpdate(TEST_TABLE_DATA_V4_DISABLED.tableName);
 
     
     gExpectedUpdateRequest = TEST_TABLE_DATA_LIST[0].tableName + ";a:5:s:2-12\n" +
