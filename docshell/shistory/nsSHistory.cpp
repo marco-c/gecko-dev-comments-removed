@@ -59,16 +59,9 @@ int32_t nsSHistory::sHistoryMaxTotalViewers = -1;
 
 static uint32_t gTouchCounter = 0;
 
-static PRLogModuleInfo*
-GetSHistoryLog()
-{
-  static PRLogModuleInfo* sLog;
-  if (!sLog) {
-    sLog = PR_NewLogModule("nsSHistory");
-  }
-  return sLog;
-}
-#define LOG(format) MOZ_LOG(GetSHistoryLog(), mozilla::LogLevel::Debug, format)
+static LazyLogModule gSHistoryLog("nsSHistory");
+
+#define LOG(format) MOZ_LOG(gSHistoryLog, mozilla::LogLevel::Debug, format)
 
 
 
@@ -78,7 +71,7 @@ GetSHistoryLog()
 
 #define LOG_SPEC(format, uri)                              \
   PR_BEGIN_MACRO                                           \
-    if (MOZ_LOG_TEST(GetSHistoryLog(), LogLevel::Debug)) {     \
+    if (MOZ_LOG_TEST(gSHistoryLog, LogLevel::Debug)) {     \
       nsAutoCString _specStr(NS_LITERAL_CSTRING("(null)"));\
       if (uri) {                                           \
         uri->GetSpec(_specStr);                            \
@@ -96,7 +89,7 @@ GetSHistoryLog()
 
 #define LOG_SHENTRY_SPEC(format, shentry)                  \
   PR_BEGIN_MACRO                                           \
-    if (MOZ_LOG_TEST(GetSHistoryLog(), LogLevel::Debug)) {     \
+    if (MOZ_LOG_TEST(gSHistoryLog, LogLevel::Debug)) {     \
       nsCOMPtr<nsIURI> uri;                                \
       shentry->GetURI(getter_AddRefs(uri));                \
       LOG_SPEC(format, uri);                               \
