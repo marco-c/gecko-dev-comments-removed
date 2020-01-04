@@ -20,12 +20,6 @@ typedef struct XPTState         XPTState;
 typedef struct XPTDatapool      XPTDatapool;
 typedef struct XPTCursor        XPTCursor;
 
-
-typedef struct XPTHashTable     XPTHashTable;
-
-extern XPT_PUBLIC_API(PRBool)
-XPT_DoString(XPTArena *arena, XPTCursor *cursor, XPTString **strp);
-
 extern XPT_PUBLIC_API(PRBool)
 XPT_DoStringInline(XPTArena *arena, XPTCursor *cursor, XPTString **strp);
 
@@ -53,17 +47,11 @@ extern XPT_PUBLIC_API(PRBool)
 XPT_DoHeader(XPTArena *arena, XPTCursor *cursor, XPTHeader **headerp);
 
 typedef enum {
-    XPT_ENCODE,
-    XPT_DECODE
-} XPTMode;
-
-typedef enum {
     XPT_HEADER = 0,
     XPT_DATA = 1
 } XPTPool;
 
 struct XPTState {
-    XPTMode          mode;
     uint32_t         data_offset;
     uint32_t         next_cursor[2];
     XPTDatapool      *pool;
@@ -71,9 +59,7 @@ struct XPTState {
 };
 
 struct XPTDatapool {
-    XPTHashTable     *offset_map;
     char             *data;
-    uint32_t         count;
     uint32_t         allocated;
 };
 
@@ -85,7 +71,7 @@ struct XPTCursor {
 };
 
 extern XPT_PUBLIC_API(XPTState *)
-XPT_NewXDRState(XPTMode mode, char *data, uint32_t len);
+XPT_NewXDRState(char *data, uint32_t len);
 
 extern XPT_PUBLIC_API(PRBool)
 XPT_MakeCursor(XPTState *state, XPTPool pool, uint32_t len, XPTCursor *cursor);
@@ -96,35 +82,8 @@ XPT_SeekTo(XPTCursor *cursor, uint32_t offset);
 extern XPT_PUBLIC_API(void)
 XPT_DestroyXDRState(XPTState *state);
 
-
-extern XPT_PUBLIC_API(PRBool)
-XPT_UpdateFileLength(XPTState *state);
-
-
-extern XPT_PUBLIC_API(void)
-XPT_GetXDRDataLength(XPTState *state, XPTPool pool, uint32_t *len);
-
-extern XPT_PUBLIC_API(void)
-XPT_GetXDRData(XPTState *state, XPTPool pool, char **data, uint32_t *len);
-
-
-extern XPT_PUBLIC_API(void)
-XPT_DataOffset(XPTState *state, uint32_t *data_offsetp);
-
 extern XPT_PUBLIC_API(void)
 XPT_SetDataOffset(XPTState *state, uint32_t data_offset);
-
-extern XPT_PUBLIC_API(uint32_t)
-XPT_GetOffsetForAddr(XPTCursor *cursor, void *addr);
-
-extern XPT_PUBLIC_API(PRBool)
-XPT_SetOffsetForAddr(XPTCursor *cursor, void *addr, uint32_t offset);
-
-extern XPT_PUBLIC_API(PRBool)
-XPT_SetAddrForOffset(XPTCursor *cursor, uint32_t offset, void *addr);
-
-extern XPT_PUBLIC_API(void *)
-XPT_GetAddrForOffset(XPTCursor *cursor, uint32_t offset);
 
 
 
@@ -141,37 +100,8 @@ XPT_GetAddrForOffset(XPTCursor *cursor, uint32_t offset);
 #  error "unknown byte order"
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-#define XPT_PREAMBLE_(cursor, addrp, pool, size, new_curs, already)           \
-    XPTMode mode = cursor->state->mode;                                       \
-    if (!(mode == XPT_ENCODE || XPT_Do32(cursor, &new_curs.offset)) ||        \
-        !CheckForRepeat(cursor, (void **)addrp, pool,                         \
-                        mode == XPT_ENCODE ? size : 0u, &new_curs,            \
-                        &already) ||                                          \
-        !(mode == XPT_DECODE || XPT_Do32(cursor, &new_curs.offset)))          \
-        return PR_FALSE;                                                      \
-    if (already)                                                              \
-        return PR_TRUE;                                                       \
-
-#define XPT_PREAMBLE_NO_ALLOC(cursor, addrp, pool, size, new_curs, already)   \
-  {                                                                           \
-    XPT_PREAMBLE_(cursor, addrp, pool, size, new_curs, already)               \
-  }
-
 #define XPT_ERROR_HANDLE(arena, free_it)                                      \
  error:                                                                       \
-    if (cursor->state->mode == XPT_DECODE)                                    \
     XPT_FREEIF(arena, free_it);                                               \
     return PR_FALSE;
 
