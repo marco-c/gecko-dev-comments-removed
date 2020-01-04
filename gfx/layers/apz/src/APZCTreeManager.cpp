@@ -364,9 +364,8 @@ APZCTreeManager::StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
     return;
   }
 
-  
-  
-  
+  uint64_t inputBlockId = aDragMetrics.mDragStartSequenceNumber;
+  mInputQueue->ConfirmDragBlock(inputBlockId, apzc, aDragMetrics);
 }
 
 HitTestingTreeNode*
@@ -699,6 +698,13 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
       RefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(mouseInput.mOrigin,
                                                             &hitResult);
+
+      
+      
+      if (!apzc) {
+        apzc = mRootNode->GetApzc();
+      }
+
       if (apzc) {
         result = mInputQueue->ReceiveInputEvent(
           apzc,
@@ -1052,6 +1058,7 @@ APZCTreeManager::ProcessMouseEvent(WidgetMouseEventBase& aEvent,
 
   aEvent.refPoint.x = input.mOrigin.x;
   aEvent.refPoint.y = input.mOrigin.y;
+  aEvent.mFlags.mHandledByAPZ = true;
   return status;
 }
 

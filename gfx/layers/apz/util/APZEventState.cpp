@@ -340,6 +340,17 @@ APZEventState::ProcessWheelEvent(const WidgetWheelEvent& aEvent,
 }
 
 void
+APZEventState::ProcessMouseEvent(const WidgetMouseEvent& aEvent,
+                                 const ScrollableLayerGuid& aGuid,
+                                 uint64_t aInputBlockId)
+{
+  
+  
+  bool defaultPrevented = false;
+  mContentReceivedInputBlockCallback(aGuid, aInputBlockId, defaultPrevented);
+}
+
+void
 APZEventState::ProcessAPZStateChange(const nsCOMPtr<nsIDocument>& aDocument,
                                      ViewID aViewId,
                                      APZStateChange aChange,

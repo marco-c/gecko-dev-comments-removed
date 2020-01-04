@@ -6,6 +6,8 @@
 #ifndef mozilla_layers_InputQueue_h
 #define mozilla_layers_InputQueue_h
 
+#include "APZUtils.h"
+#include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
@@ -23,7 +25,9 @@ class AsyncPanZoomController;
 class CancelableBlockState;
 class TouchBlockState;
 class WheelBlockState;
+class DragBlockState;
 class PanGestureBlockState;
+class AsyncDragMetrics;
 
 
 
@@ -64,6 +68,13 @@ public:
 
 
 
+  void ConfirmDragBlock(uint64_t aInputBlockId,
+                        const RefPtr<AsyncPanZoomController>& aTargetApzc,
+                        const AsyncDragMetrics& aDragMetrics);
+  
+
+
+
 
 
 
@@ -87,6 +98,7 @@ public:
 
   TouchBlockState* CurrentTouchBlock() const;
   WheelBlockState* CurrentWheelBlock() const;
+  DragBlockState* CurrentDragBlock() const;
   PanGestureBlockState* CurrentPanGestureBlock() const;
   
 
@@ -129,6 +141,10 @@ private:
   nsEventStatus ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
                                   bool aTargetConfirmed,
                                   const MultiTouchInput& aEvent,
+                                  uint64_t* aOutInputBlockId);
+  nsEventStatus ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
+                                  bool aTargetConfirmed,
+                                  const MouseInput& aEvent,
                                   uint64_t* aOutInputBlockId);
   nsEventStatus ReceiveScrollWheelInput(const RefPtr<AsyncPanZoomController>& aTarget,
                                         bool aTargetConfirmed,

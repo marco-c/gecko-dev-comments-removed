@@ -9,6 +9,7 @@
 
 #include "InputData.h"                      
 #include "mozilla/gfx/Matrix.h"             
+#include "mozilla/layers/AsyncDragMetrics.h"
 #include "nsAutoPtr.h"                      
 #include "nsTArray.h"                       
 
@@ -20,6 +21,7 @@ class OverscrollHandoffChain;
 class CancelableBlockState;
 class TouchBlockState;
 class WheelBlockState;
+class DragBlockState;
 class PanGestureBlockState;
 
 
@@ -84,6 +86,9 @@ public:
     return nullptr;
   }
   virtual WheelBlockState *AsWheelBlock() {
+    return nullptr;
+  }
+  virtual DragBlockState *AsDragBlock() {
     return nullptr;
   }
   virtual PanGestureBlockState *AsPanGestureBlock() {
@@ -249,6 +254,40 @@ private:
   TimeStamp mLastEventTime;
   TimeStamp mLastMouseMove;
   bool mTransactionEnded;
+};
+
+
+
+
+class DragBlockState : public CancelableBlockState
+{
+public:
+  DragBlockState(const RefPtr<AsyncPanZoomController>& aTargetApzc,
+                 bool aTargetConfirmed,
+                 const MouseInput& aEvent);
+
+  bool HasEvents() const override;
+  void DropEvents() override;
+  void HandleEvents() override;
+  bool MustStayActive() override;
+  const char* Type() override;
+
+  bool HasReceivedMouseUp();
+  void MarkMouseUpReceived();
+
+  void AddEvent(const MouseInput& aEvent);
+
+  DragBlockState *AsDragBlock() override {
+    return this;
+  }
+
+  void SetDragMetrics(const AsyncDragMetrics& aDragMetrics);
+
+  void DispatchEvent(const InputData& aEvent) const override;
+private:
+  nsTArray<MouseInput> mEvents;
+  AsyncDragMetrics mDragMetrics;
+  bool mReceivedMouseUp;
 };
 
 

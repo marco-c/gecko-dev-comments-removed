@@ -189,6 +189,12 @@ private:
   
   bool mUserChanged;
 
+  
+  
+  
+  
+  bool mScrollingWithAPZ;
+
   static bool gMiddlePref;
   static int32_t gSnapMultiplier;
 }; 
