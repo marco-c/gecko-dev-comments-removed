@@ -1600,6 +1600,13 @@ nsNSSComponent::InitializeNSS()
   
   setValidationOptions(true, lock);
 
+  
+  
+  
+  
+  
+  SSL_ConfigServerSessionIDCache(1000, 0, 0, nullptr);
+
 #ifndef MOZ_NO_SMART_CARDS
   LaunchSmartCardThreads();
 #endif
@@ -1650,6 +1657,9 @@ nsNSSComponent::ShutdownNSS()
     ShutdownSmartCardThreads();
 #endif
     SSL_ClearSessionCache();
+    
+    
+    SSL_ShutdownServerSessionIDCache();
     UnloadLoadableRoots();
 #ifndef MOZ_NO_EV_CERTS
     CleanupIdentityInfo();
