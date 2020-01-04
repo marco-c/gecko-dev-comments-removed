@@ -1018,6 +1018,10 @@ class IonBuilder
 
     
     
+    bool scriptHasIonScript_;
+
+    
+    
     
     
     CodeGenerator* backgroundCodegen_;
@@ -1035,6 +1039,7 @@ class IonBuilder
     JSObject* checkNurseryObject(JSObject* obj);
 
     JSScript* script() const { return script_; }
+    bool scriptHasIonScript() const { return scriptHasIonScript_; }
 
     CodeGenerator* backgroundCodegen() const { return backgroundCodegen_; }
     void setBackgroundCodegen(CodeGenerator* codegen) { backgroundCodegen_ = codegen; }
