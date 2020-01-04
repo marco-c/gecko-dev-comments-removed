@@ -11367,8 +11367,6 @@ CSSParserImpl::ParsePropertyByFunction(nsCSSProperty aPropID)
   case eCSSProperty_grid_template_columns:
   case eCSSProperty_grid_template_rows:
     return ParseGridTemplateColumnsRows(aPropID);
-  case eCSSProperty_grid_template:
-    return ParseGridTemplate();
   case eCSSProperty_grid:
     return ParseGrid();
   case eCSSProperty_grid_column_start:
