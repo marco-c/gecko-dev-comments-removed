@@ -234,26 +234,21 @@ class GeckoInputConnection
     }
 
     private void showSoftInput() {
+        final View v = getView();
         final InputMethodManager imm = getInputMethodManager();
-        if (imm != null) {
-            final View v = getView();
-
-            if (v.hasFocus() && !imm.isActive(v)) {
-                
-                refocusAndShowSoftInput(imm, v);
-            } else {
-                imm.showSoftInput(v, 0);
-            }
+        if (v == null || imm == null) {
+            return;
         }
-    }
 
-    private static void refocusAndShowSoftInput(final InputMethodManager imm, final View v) {
-        ThreadUtils.postToUiThread(new Runnable() {
+        v.post(new Runnable() {
             @Override
             public void run() {
-                v.clearFocus();
-                v.requestFocus();
-
+                if (v.hasFocus() && !imm.isActive(v)) {
+                    
+                    
+                    v.clearFocus();
+                    v.requestFocus();
+                }
                 imm.showSoftInput(v, 0);
             }
         });
