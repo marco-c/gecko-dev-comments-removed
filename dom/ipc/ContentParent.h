@@ -1180,6 +1180,8 @@ private:
   virtual bool RecvNotifyPushSubscriptionModifiedObservers(const nsCString& aScope,
                                                            const IPC::Principal& aPrincipal) override;
 
+  virtual bool RecvNotifyLowMemory() override;
+
   
   
   
