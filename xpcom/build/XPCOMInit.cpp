@@ -810,6 +810,16 @@ NS_InitMinimalXPCOM()
   }
 
   
+  nsComponentManagerImpl::gComponentManager = new nsComponentManagerImpl();
+  NS_ADDREF(nsComponentManagerImpl::gComponentManager);
+
+  rv = nsComponentManagerImpl::gComponentManager->Init();
+  if (NS_FAILED(rv)) {
+    NS_RELEASE(nsComponentManagerImpl::gComponentManager);
+    return rv;
+  }
+
+  
   if (!nsCycleCollector_init()) {
     return NS_ERROR_UNEXPECTED;
   }

@@ -42,9 +42,16 @@ struct Module
 
   enum ProcessSelector
   {
-    ANY_PROCESS = 0,
-    MAIN_PROCESS_ONLY,
-    CONTENT_PROCESS_ONLY
+    ANY_PROCESS          = 0x0,
+    MAIN_PROCESS_ONLY    = 0x1,
+    CONTENT_PROCESS_ONLY = 0x2,
+
+    
+
+
+
+
+    ALLOW_IN_GPU_PROCESS = 0x4
   };
 
   
@@ -113,6 +120,12 @@ struct Module
 
   LoadFuncPtr loadProc;
   UnloadFuncPtr unloadProc;
+
+  
+
+
+
+  ProcessSelector selector;
 };
 
 } 
