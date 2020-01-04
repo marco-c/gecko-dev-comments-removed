@@ -37,13 +37,11 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["Curl", "CurlUtils"];
-
-Components.utils.import("resource://gre/modules/Services.jsm");
+const Services = require("Services");
 
 const DEFAULT_HTTP_VERSION = "HTTP/1.1";
 
-this.Curl = {
+const Curl = {
   
 
 
@@ -138,10 +136,12 @@ this.Curl = {
   }
 };
 
+exports.Curl = Curl;
 
 
 
-this.CurlUtils = {
+
+const CurlUtils = {
   
 
 
@@ -398,3 +398,5 @@ this.CurlUtils = {
                      .replace(/[\r\n]+/g, "\"^$&\"") + "\"";
   }
 };
+
+exports.CurlUtils = CurlUtils;

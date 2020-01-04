@@ -1,9 +1,13 @@
 
 
 
+"use strict";
 
 
 
+
+
+const { CurlUtils } = require("devtools/client/shared/curl");
 
 function test() {
   initNetMonitor(CURL_UTILS_URL).then(([aTab, aDebuggee, aMonitor]) => {
