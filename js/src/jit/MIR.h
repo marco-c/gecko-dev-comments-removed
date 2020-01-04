@@ -4366,6 +4366,12 @@ class MCompare
         Compare_UInt32,
 
         
+        Compare_Int64,
+
+        
+        Compare_UInt64,
+
+        
         Compare_Double,
 
         Compare_DoubleMaybeCoerceLHS,
