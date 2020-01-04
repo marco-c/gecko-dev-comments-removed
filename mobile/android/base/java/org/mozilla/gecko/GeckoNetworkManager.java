@@ -9,6 +9,10 @@ import org.mozilla.gecko.annotation.JNITarget;
 import org.mozilla.gecko.util.NativeEventListener;
 import org.mozilla.gecko.util.NativeJSObject;
 import org.mozilla.gecko.util.EventCallback;
+import org.mozilla.gecko.util.NetworkUtils;
+import org.mozilla.gecko.util.NetworkUtils.ConnectionSubType;
+import org.mozilla.gecko.util.NetworkUtils.ConnectionType;
+import org.mozilla.gecko.util.NetworkUtils.NetworkStatus;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -16,9 +20,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
-import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.telephony.TelephonyManager;
 import android.text.format.Formatter;
 import android.util.Log;
@@ -35,50 +40,39 @@ import android.util.Log;
 
 
 
-
 public class GeckoNetworkManager extends BroadcastReceiver implements NativeEventListener {
-    
-
-
-
-    private static final String LINK_DATA_UP = "up";
-    private static final String LINK_DATA_DOWN = "down";
-    private static final String LINK_DATA_CHANGED = "changed";
-    private static final String LINK_DATA_UNKNOWN = "unknown";
-
-    private static final String LINK_TYPE_UNKONWN = "unknown";
-    private static final String LINK_TYPE_ETHERNET = "ethernet";
-    private static final String LINK_TYPE_WIFI = "wifi";
-    private static final String LINK_TYPE_WIMAX = "wimax";
-    private static final String LINK_TYPE_2G = "2g";
-    private static final String LINK_TYPE_3G = "3g";
-    private static final String LINK_TYPE_4G = "4g";
     private static final String LOGTAG = "GeckoNetworkManager";
 
-    private static GeckoNetworkManager sInstance;
+    private static final String LINK_DATA_CHANGED = "changed";
+
+    private static GeckoNetworkManager instance;
 
     public static void destroy() {
-        if (sInstance != null) {
-            sInstance.onDestroy();
-            sInstance = null;
+        if (instance != null) {
+            instance.onDestroy();
+            instance = null;
         }
     }
 
-    
-    private enum ConnectionType {
-        CELLULAR(0),
-        BLUETOOTH(1),
-        ETHERNET(2),
-        WIFI(3),
-        OTHER(4),
-        NONE(5);
-
-        public final int value;
-
-        private ConnectionType(int value) {
-            this.value = value;
-        }
+    public enum ManagerState {
+        OffNoListeners,
+        OffWithListeners,
+        OnNoListeners,
+        OnWithListeners
     }
+
+    public enum ManagerEvent {
+        start,
+        stop,
+        enableNotifications,
+        disableNotifications,
+        receivedUpdate
+    }
+
+    private ManagerState currentState = ManagerState.OffNoListeners;
+    private ConnectionType currentConnectionType = ConnectionType.NONE;
+    private NetworkStatus currentNetworkStatus = NetworkStatus.UNKNOWN;
+    private ConnectionSubType currentConnectionSubtype = ConnectionSubType.UNKNOWN;
 
     private enum InfoType {
         MCC,
@@ -92,89 +86,262 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
     }
 
     private void onDestroy() {
+        handleManagerEvent(ManagerEvent.stop);
         EventDispatcher.getInstance().unregisterGeckoThreadListener(this,
                 "Wifi:Enable",
                 "Wifi:GetIPAddress");
     }
 
-    private volatile ConnectionType mConnectionType = ConnectionType.NONE;
-    private final IntentFilter mNetworkFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-
     
-    private boolean mShouldBeListening;
-
-    
-    
-    private boolean mShouldNotify;
-
-    
-    
-    private volatile Context mApplicationContext;
-    private boolean mIsListening;
+    private volatile Context applicationContext;
 
     public static GeckoNetworkManager getInstance() {
-        if (sInstance == null) {
-            sInstance = new GeckoNetworkManager();
+        if (instance == null) {
+            instance = new GeckoNetworkManager();
         }
 
-        return sInstance;
+        return instance;
+    }
+
+    public double[] getCurrentInformation() {
+        final ConnectionType connectionType = currentConnectionType;
+        return new double[] {
+                connectionType.value,
+                connectionType == ConnectionType.WIFI ? 1.0 : 0.0,
+                connectionType == ConnectionType.WIFI ? wifiDhcpGatewayAddress(applicationContext) : 0.0
+        };
     }
 
     @Override
     public void onReceive(Context aContext, Intent aIntent) {
-        updateConnectionType();
-        updateLinkStatus(aContext);
+        handleManagerEvent(ManagerEvent.receivedUpdate);
     }
 
     public void start(final Context context) {
-        
-        mApplicationContext = context.getApplicationContext();
-        if (mConnectionType == ConnectionType.NONE) {
-            mConnectionType = getConnectionType();
-        }
-
-        mShouldBeListening = true;
-        updateConnectionType();
-
-        if (mShouldNotify) {
-            startListening();
-        }
-    }
-
-    private void startListening() {
-        if (mIsListening) {
-            Log.w(LOGTAG, "Already started!");
-            return;
-        }
-
-        final Context appContext = mApplicationContext;
-        if (appContext == null) {
-            Log.w(LOGTAG, "Not registering receiver: no context!");
-            return;
-        }
-
-        
-        if (appContext.registerReceiver(this, mNetworkFilter) == null) {
-            Log.e(LOGTAG, "Registering receiver failed");
-        } else {
-            mIsListening = true;
-        }
+        applicationContext = context.getApplicationContext();
+        handleManagerEvent(ManagerEvent.start);
     }
 
     public void stop() {
-        mShouldBeListening = false;
+        handleManagerEvent(ManagerEvent.stop);
+    }
 
-        if (mShouldNotify) {
-            stopListening();
+    public void enableNotifications() {
+        handleManagerEvent(ManagerEvent.enableNotifications);
+    }
+
+    public void disableNotifications() {
+        handleManagerEvent(ManagerEvent.disableNotifications);
+    }
+
+    
+
+
+
+
+
+
+    private synchronized boolean handleManagerEvent(ManagerEvent event) {
+        final ManagerState nextState = getNextState(currentState, event);
+
+        Log.d(LOGTAG, "Incoming event " + event + " for state " + currentState + " -> " + nextState);
+        if (nextState == null) {
+            Log.w(LOGTAG, "Invalid event " + event + " for state " + currentState);
+            return false;
+        }
+
+        performActionsForStateEvent(currentState, event);
+        currentState = nextState;
+
+        return true;
+    }
+
+    
+
+
+
+
+
+
+    @Nullable
+    public static ManagerState getNextState(@NonNull ManagerState currentState, @NonNull ManagerEvent event) {
+        switch (currentState) {
+            case OffNoListeners:
+                switch (event) {
+                    case start:
+                        return ManagerState.OnNoListeners;
+                    case enableNotifications:
+                        return ManagerState.OffWithListeners;
+                    default:
+                        return null;
+                }
+            case OnNoListeners:
+                switch (event) {
+                    case stop:
+                        return ManagerState.OffNoListeners;
+                    case enableNotifications:
+                        return ManagerState.OnWithListeners;
+                    default:
+                        return null;
+                }
+            case OnWithListeners:
+                switch (event) {
+                    case stop:
+                        return ManagerState.OffWithListeners;
+                    case disableNotifications:
+                        return ManagerState.OnNoListeners;
+                    case receivedUpdate:
+                        return ManagerState.OnWithListeners;
+                    default:
+                        return null;
+                }
+            case OffWithListeners:
+                switch (event) {
+                    case start:
+                        return ManagerState.OnWithListeners;
+                    case disableNotifications:
+                        return ManagerState.OffNoListeners;
+                    default:
+                        return null;
+                }
+            default:
+                throw new IllegalStateException("Unknown current state: " + currentState.name());
+        }
+    }
+
+    
+
+
+
+
+
+
+
+    private void performActionsForStateEvent(ManagerState currentState, ManagerEvent event) {
+        
+        
+        
+        
+        switch (currentState) {
+            case OffNoListeners:
+                if (event == ManagerEvent.start) {
+                    updateNetworkStateAndConnectionType();
+                }
+                if (event == ManagerEvent.enableNotifications) {
+                    updateNetworkStateAndConnectionType();
+                }
+                break;
+            case OnNoListeners:
+                if (event == ManagerEvent.enableNotifications) {
+                    updateNetworkStateAndConnectionType();
+                    registerBroadcastReceiver();
+                }
+                break;
+            case OnWithListeners:
+                if (event == ManagerEvent.receivedUpdate) {
+                    updateNetworkStateAndConnectionType();
+                    sendNetworkStateToListeners();
+                }
+                if (event == ManagerEvent.stop) {
+                    unregisterBroadcastReceiver();
+                }
+                if (event == ManagerEvent.disableNotifications) {
+                    unregisterBroadcastReceiver();
+                }
+                break;
+            case OffWithListeners:
+                if (event == ManagerEvent.start) {
+                    registerBroadcastReceiver();
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unknown current state: " + currentState.name());
+        }
+    }
+
+    
+
+
+    private void updateNetworkStateAndConnectionType() {
+        final ConnectivityManager connectivityManager = (ConnectivityManager) applicationContext.getSystemService(
+                Context.CONNECTIVITY_SERVICE);
+        
+        if (connectivityManager == null) {
+            Log.e(LOGTAG, "ConnectivityManager does not exist.");
+        }
+        currentConnectionType = NetworkUtils.getConnectionType(connectivityManager);
+        currentNetworkStatus = NetworkUtils.getNetworkStatus(connectivityManager);
+        currentConnectionSubtype = NetworkUtils.getConnectionSubType(connectivityManager);
+        Log.d(LOGTAG, "New network state: " + currentNetworkStatus + ", " + currentConnectionType + ", " + currentConnectionSubtype);
+    }
+
+    
+
+
+    private void sendNetworkStateToListeners() {
+        if (GeckoThread.isRunning()) {
+            GeckoAppShell.sendEventToGecko(
+                    GeckoEvent.createNetworkEvent(
+                            currentConnectionType.value,
+                            currentConnectionType == ConnectionType.WIFI,
+                            wifiDhcpGatewayAddress(applicationContext),
+                            currentConnectionSubtype.value
+                    )
+            );
+
+            GeckoAppShell.sendEventToGecko(GeckoEvent.createNetworkLinkChangeEvent(currentNetworkStatus.value));
+            GeckoAppShell.sendEventToGecko(GeckoEvent.createNetworkLinkChangeEvent(LINK_DATA_CHANGED));
+        }
+    }
+
+    
+
+
+    private void unregisterBroadcastReceiver() {
+        applicationContext.unregisterReceiver(this);
+    }
+
+    
+
+
+    private void registerBroadcastReceiver() {
+        final IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        if (applicationContext.registerReceiver(this, filter) == null) {
+            Log.e(LOGTAG, "Registering receiver failed");
+        }
+    }
+
+    private static int wifiDhcpGatewayAddress(Context context) {
+        if (context == null) {
+            return 0;
+        }
+
+        try {
+            WifiManager mgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+            DhcpInfo d = mgr.getDhcpInfo();
+            if (d == null) {
+                return 0;
+            }
+
+            return d.gateway;
+
+        } catch (Exception ex) {
+            
+            
+            
+            return 0;
         }
     }
 
     @Override
+    
+
+
     public void handleMessage(final String event, final NativeJSObject message,
                               final EventCallback callback) {
         switch (event) {
-            case "Wifi:Enable": {
-                final WifiManager mgr = (WifiManager) mApplicationContext.getSystemService(Context.WIFI_SERVICE);
+            case "Wifi:Enable":
+                final WifiManager mgr = (WifiManager) applicationContext.getSystemService(Context.WIFI_SERVICE);
 
                 if (!mgr.isWifiEnabled()) {
                     mgr.setWifiEnabled(true);
@@ -182,20 +349,18 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
                     
                     Intent intent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    mApplicationContext.startActivity(intent);
+                    applicationContext.startActivity(intent);
                 }
                 break;
-            }
-            case "Wifi:GetIPAddress": {
+            case "Wifi:GetIPAddress":
                 getWifiIPAddress(callback);
                 break;
-            }
         }
     }
 
     
     private void getWifiIPAddress(final EventCallback callback) {
-        final WifiManager mgr = (WifiManager) mApplicationContext.getSystemService(Context.WIFI_SERVICE);
+        final WifiManager mgr = (WifiManager) applicationContext.getSystemService(Context.WIFI_SERVICE);
 
         if (mgr == null) {
             callback.sendError("Cannot get WifiManager");
@@ -214,201 +379,6 @@ public class GeckoNetworkManager extends BroadcastReceiver implements NativeEven
             return;
         }
         callback.sendSuccess(Formatter.formatIpAddress(ip));
-    }
-
-    private void stopListening() {
-        if (null == mApplicationContext) {
-            return;
-        }
-
-        if (!mIsListening) {
-            Log.w(LOGTAG, "Already stopped!");
-            return;
-        }
-
-        mApplicationContext.unregisterReceiver(this);
-        mIsListening = false;
-    }
-
-    private int wifiDhcpGatewayAddress() {
-        if (mConnectionType != ConnectionType.WIFI) {
-            return 0;
-        }
-
-        if (null == mApplicationContext) {
-            return 0;
-        }
-
-        try {
-            WifiManager mgr = (WifiManager) mApplicationContext.getSystemService(Context.WIFI_SERVICE);
-            DhcpInfo d = mgr.getDhcpInfo();
-            if (d == null) {
-                return 0;
-            }
-
-            return d.gateway;
-
-        } catch (Exception ex) {
-            
-            
-            
-            return 0;
-        }
-    }
-
-    private void updateConnectionType() {
-        final ConnectionType previousConnectionType = mConnectionType;
-        final ConnectionType newConnectionType = getConnectionType();
-        if (newConnectionType == previousConnectionType) {
-            return;
-        }
-
-        mConnectionType = newConnectionType;
-
-        if (!mShouldNotify) {
-            return;
-        }
-
-        GeckoAppShell.sendEventToGecko(GeckoEvent.createNetworkEvent(
-                                       newConnectionType.value,
-                                       newConnectionType == ConnectionType.WIFI,
-                                       wifiDhcpGatewayAddress(),
-                                       getConnectionSubType()));
-    }
-
-    public void updateLinkStatus(Context context) {
-        ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo info = cm.getActiveNetworkInfo();
-
-        final String status;
-        if (info == null) {
-            status = LINK_DATA_UNKNOWN;
-        } else if (!info.isConnected()) {
-            status = LINK_DATA_DOWN;
-        } else {
-            status = LINK_DATA_UP;
-        }
-
-        if (GeckoThread.isRunning()) {
-            GeckoAppShell.sendEventToGecko(GeckoEvent.createNetworkLinkChangeEvent(status));
-            GeckoAppShell.sendEventToGecko(GeckoEvent.createNetworkLinkChangeEvent(LINK_DATA_CHANGED));
-        }
-    }
-
-    public double[] getCurrentInformation() {
-        final ConnectionType connectionType = mConnectionType;
-        return new double[] { connectionType.value,
-                              connectionType == ConnectionType.WIFI ? 1.0 : 0.0,
-                              wifiDhcpGatewayAddress() };
-    }
-
-    public void enableNotifications() {
-        
-        
-        mConnectionType = ConnectionType.NONE; 
-        updateConnectionType();
-        mShouldNotify = true;
-
-        if (mShouldBeListening) {
-            startListening();
-        }
-    }
-
-    public void disableNotifications() {
-        mShouldNotify = false;
-
-        if (mShouldBeListening) {
-            stopListening();
-        }
-    }
-
-    private NetworkInfo getConnectivityManager() {
-        final Context appContext = mApplicationContext;
-
-        if (null == appContext) {
-          return null;
-        }
-
-        ConnectivityManager cm = (ConnectivityManager) appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (cm == null) {
-          Log.e(LOGTAG, "Connectivity service does not exist");
-          return null;
-        }
-
-        try {
-            return cm.getActiveNetworkInfo();
-        } catch (SecurityException se) {
-            return null;
-        }
-    }
-
-    private ConnectionType getConnectionType() {
-        NetworkInfo ni = getConnectivityManager();
-
-        if (ni == null) {
-            return ConnectionType.NONE;
-        }
-
-        switch (ni.getType()) {
-            case ConnectivityManager.TYPE_BLUETOOTH:
-                return ConnectionType.BLUETOOTH;
-            case ConnectivityManager.TYPE_ETHERNET:
-                return ConnectionType.ETHERNET;
-            case ConnectivityManager.TYPE_MOBILE:
-            case ConnectivityManager.TYPE_WIMAX:
-                return ConnectionType.CELLULAR;
-            case ConnectivityManager.TYPE_WIFI:
-                return ConnectionType.WIFI;
-            default:
-                Log.w(LOGTAG, "Ignoring the current network type.");
-                return ConnectionType.OTHER;
-        }
-    }
-
-    private String getConnectionSubType() {
-        NetworkInfo ni = getConnectivityManager();
-
-        if (ni == null) {
-            return LINK_TYPE_UNKONWN;
-        }
-
-        switch (ni.getType()) {
-            case ConnectivityManager.TYPE_ETHERNET:
-                return LINK_TYPE_ETHERNET;
-            case ConnectivityManager.TYPE_MOBILE:
-                switch (ni.getSubtype()) {
-                    case TelephonyManager.NETWORK_TYPE_GPRS:
-                    case TelephonyManager.NETWORK_TYPE_EDGE:
-                    case TelephonyManager.NETWORK_TYPE_CDMA:
-                    case TelephonyManager.NETWORK_TYPE_1xRTT:
-                    case TelephonyManager.NETWORK_TYPE_IDEN:
-                        return LINK_TYPE_2G;
-                    case TelephonyManager.NETWORK_TYPE_UMTS:
-                    case TelephonyManager.NETWORK_TYPE_EVDO_0:
-                    case TelephonyManager.NETWORK_TYPE_EVDO_A:
-                    case TelephonyManager.NETWORK_TYPE_HSDPA:
-                    case TelephonyManager.NETWORK_TYPE_HSUPA:
-                    case TelephonyManager.NETWORK_TYPE_HSPA:
-                    case TelephonyManager.NETWORK_TYPE_EVDO_B:
-                    case TelephonyManager.NETWORK_TYPE_EHRPD:
-                    case TelephonyManager.NETWORK_TYPE_HSPAP:
-                        return LINK_TYPE_3G;
-                    case TelephonyManager.NETWORK_TYPE_LTE:
-                        return LINK_TYPE_4G;
-                    default:
-                        return LINK_TYPE_2G;
-                    
-
-
-
-                }
-            case ConnectivityManager.TYPE_WIMAX:
-                return LINK_TYPE_WIMAX;
-            case ConnectivityManager.TYPE_WIFI:
-                return LINK_TYPE_WIFI;
-            default:
-                return LINK_TYPE_UNKONWN;
-        }
     }
 
     private static int getNetworkOperator(InfoType type, Context context) {
