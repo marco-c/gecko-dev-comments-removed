@@ -2383,6 +2383,9 @@ pref("layout.css.grid.enabled", true);
 #endif
 
 
+pref("layout.css.grid-template-subgrid-value.enabled", false);
+
+
 pref("layout.css.contain.enabled", false);
 
 

@@ -2312,6 +2312,12 @@ public:
 
 
 
+  static bool IsGridTemplateSubgridValueEnabled();
+
+  
+
+
+
   static bool IsTextAlignTrueValueEnabled();
 
   
