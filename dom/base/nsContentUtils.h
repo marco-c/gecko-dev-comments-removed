@@ -393,7 +393,7 @@ public:
 
   static bool IsFirstLetterPunctuation(uint32_t aChar);
   static bool IsFirstLetterPunctuationAt(const nsTextFragment* aFrag, uint32_t aOffset);
- 
+
   
 
 
@@ -933,7 +933,7 @@ private:
                                         const char16_t** aParams,
                                         uint32_t aParamsLength,
                                         nsXPIDLString& aResult);
-  
+
 public:
   template<uint32_t N>
   static nsresult FormatLocalizedString(PropertiesFile aFile,
@@ -1949,7 +1949,7 @@ public:
   {
     return sIsPerformanceTimingEnabled;
   }
-  
+
   
 
 
