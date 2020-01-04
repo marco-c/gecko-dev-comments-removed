@@ -93,6 +93,10 @@ public:
 
   
   
+  uint32_t GetRestyleGeneration() const { return mRestyleGeneration; }
+
+  
+  
   uint32_t GetHoverGeneration() const { return mHoverGeneration; }
 
   
@@ -519,6 +523,12 @@ private:
     
     
     if (aRestyleTracker.Count() || ShouldStartRebuildAllFor(aRestyleTracker)) {
+      if (++mRestyleGeneration == 0) {
+        
+        
+        
+        ++mRestyleGeneration;
+      }
       aRestyleTracker.DoProcessRestyles();
     }
   }
@@ -539,6 +549,7 @@ private:
   bool mSkipAnimationRules : 1;
   bool mHavePendingNonAnimationRestyles : 1;
 
+  uint32_t mRestyleGeneration;
   uint32_t mHoverGeneration;
   nsChangeHint mRebuildAllExtraHint;
   nsRestyleHint mRebuildAllRestyleHint;

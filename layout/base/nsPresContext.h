@@ -918,6 +918,11 @@ public:
   
 
 
+  uint64_t GetRestyleGeneration() const;
+
+  
+
+
   bool HasPendingRestyleOrReflow();
 
   
