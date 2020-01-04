@@ -19,6 +19,7 @@ loader.lazyRequireGetter(this, "ConsoleProgressListener", "devtools/shared/webco
 loader.lazyRequireGetter(this, "events", "sdk/event/core");
 loader.lazyRequireGetter(this, "ServerLoggingListener", "devtools/shared/webconsole/server-logger", true);
 loader.lazyRequireGetter(this, "JSPropertyProvider", "devtools/shared/webconsole/js-property-provider", true);
+loader.lazyRequireGetter(this, "Parser", "resource://devtools/shared/Parser.jsm", true);
 
 for (let name of ["WebConsoleUtils", "ConsoleServiceListener",
     "ConsoleAPIListener", "addWebConsoleCommands",
@@ -1277,6 +1278,27 @@ WebConsoleActor.prototype =
     }
     else {
       result = dbgWindow.executeInGlobalWithBindings(aString, bindings, evalOptions);
+      
+      
+      
+      if ("throw" in result) {
+        let ast;
+        
+        
+        
+        try {
+          ast = Parser.reflectionAPI.parse(aString);
+        } catch (ex) {
+          ast = {"body": []};
+        }
+        for (let line of ast.body) {
+          if (line.type == "VariableDeclaration" &&
+            (line.kind == "let" || line.kind == "const")) {
+            for (let decl of line.declarations)
+              dbgWindow.forceLexicalInitializationByName(decl.id.name);
+          }
+        }
+      }
     }
 
     let helperResult = helpers.helperResult;
