@@ -66,6 +66,7 @@ class TenuringTracer : public JSTracer
     const Nursery& nursery() const { return nursery_; }
 
     
+    template <typename T> void traverse(T** thingp);
     template <typename T> void traverse(T* thingp);
 
     void insertIntoFixupList(gc::RelocationOverlay* entry);

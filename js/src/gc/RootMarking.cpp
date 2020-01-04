@@ -413,7 +413,7 @@ BufferGrayRootsTracer::onChild(const JS::GCCellPtr& thing)
         
         
         
-        DispatchTraceKindTyped(SetMaybeAliveFunctor(), tenured, thing.kind());
+        DispatchTyped(SetMaybeAliveFunctor(), thing);
 
         if (!zone->gcGrayRoots.append(tenured))
             bufferingGrayRootsFailed = true;

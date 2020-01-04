@@ -178,7 +178,7 @@ template <> struct GCMethods<jsid>
 
 template <typename F, typename... Args>
 auto
-DispatchIdTyped(F f, jsid& id, Args&&... args)
+DispatchTyped(F f, jsid& id, Args&&... args)
   -> decltype(f(static_cast<JSString*>(nullptr), mozilla::Forward<Args>(args)...))
 {
     if (JSID_IS_STRING(id))
