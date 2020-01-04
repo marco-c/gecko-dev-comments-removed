@@ -160,6 +160,8 @@ public:
     return DOMNode.forget();
   }
   nsIContent* GetContent() const { return mContent; }
+  mozilla::dom::Element* Elm() const
+    { return mContent && mContent->IsElement() ? mContent->AsElement() : nullptr; }
 
   
 
@@ -903,6 +905,19 @@ public:
 
 
 
+  bool IsRepositioned() const { return mStateFlags & eRepositioned; }
+  void SetRepositioned(bool aRepositioned)
+  {
+    if (aRepositioned)
+      mStateFlags |= eRepositioned;
+    else
+      mStateFlags &= ~eRepositioned;
+  }
+
+  
+
+
+
   bool HasNameDependentParent() const
     { return mContextFlags & eHasNameDependentParent; }
 
@@ -914,7 +929,6 @@ public:
   void SetARIAHidden(bool aIsDefined);
 
 protected:
-
   virtual ~Accessible();
 
   
@@ -990,8 +1004,9 @@ protected:
     eSubtreeMutating = 1 << 6, 
     eIgnoreDOMUIEvent = 1 << 7, 
     eSurvivingInUpdate = 1 << 8, 
+    eRepositioned = 1 << 9, 
 
-    eLastStateFlag = eSurvivingInUpdate
+    eLastStateFlag = eRepositioned
   };
 
   
@@ -1106,7 +1121,7 @@ protected:
   int32_t mIndexInParent;
 
   static const uint8_t kChildrenFlagsBits = 2;
-  static const uint8_t kStateFlagsBits = 9;
+  static const uint8_t kStateFlagsBits = 10;
   static const uint8_t kContextFlagsBits = 2;
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 14;

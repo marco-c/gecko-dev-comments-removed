@@ -8,6 +8,8 @@
 
 #include "EventQueue.h"
 
+#include "mozilla/IndexSequence.h"
+#include "mozilla/Tuple.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsRefreshDriver.h"
 
@@ -54,32 +56,32 @@ private:
 
 
 
-template<class Class, class Arg>
+template<class Class, class ... Args>
 class TNotification : public Notification
 {
 public:
-  typedef void (Class::*Callback)(Arg*);
+  typedef void (Class::*Callback)(Args* ...);
 
-  TNotification(Class* aInstance, Callback aCallback, Arg* aArg) :
-    mInstance(aInstance), mCallback(aCallback), mArg(aArg) { }
+  TNotification(Class* aInstance, Callback aCallback, Args* ... aArgs) :
+    mInstance(aInstance), mCallback(aCallback), mArgs(aArgs...) { }
   virtual ~TNotification() { mInstance = nullptr; }
 
   virtual void Process() override
-  {
-    (mInstance->*mCallback)(mArg);
-
-    mInstance = nullptr;
-    mCallback = nullptr;
-    mArg = nullptr;
-  }
+    { ProcessHelper(typename IndexSequenceFor<Args...>::Type()); }
 
 private:
   TNotification(const TNotification&);
   TNotification& operator = (const TNotification&);
 
+  template <size_t... Indices>
+    void ProcessHelper(IndexSequence<Indices...>)
+  {
+     (mInstance->*mCallback)(Get<Indices>(mArgs)...);
+  }
+
   Class* mInstance;
   Callback mCallback;
-  nsRefPtr<Arg> mArg;
+  Tuple<nsRefPtr<Args> ...> mArgs;
 };
 
 
@@ -135,6 +137,12 @@ public:
 
 
 
+  void ScheduleProcessing();
+
+  
+
+
+
 
 
 
@@ -165,13 +173,12 @@ public:
 
 
 
-  template<class Class, class Arg>
+  template<class Class>
   inline void ScheduleNotification(Class* aInstance,
-                                   typename TNotification<Class, Arg>::Callback aMethod,
-                                   Arg* aArg)
+                                   typename TNotification<Class>::Callback aMethod)
   {
     nsRefPtr<Notification> notification =
-      new TNotification<Class, Arg>(aInstance, aMethod, aArg);
+      new TNotification<Class>(aInstance, aMethod);
     if (notification && mNotifications.AppendElement(notification))
       ScheduleProcessing();
   }
@@ -186,12 +193,6 @@ protected:
 
   nsCycleCollectingAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
-
-  
-
-
-
-  void ScheduleProcessing();
 
   
 
