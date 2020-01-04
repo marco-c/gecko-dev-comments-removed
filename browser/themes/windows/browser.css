@@ -1877,11 +1877,6 @@ html|span.ac-emphasize-text-url {
 }
 
 
-%include ../shared/social/social.inc.css
-
-.social-panel-frame {
-  border-radius: inherit;
-}
 
 .social-share-frame {
   min-width: 756px;
@@ -1928,6 +1923,12 @@ html|span.ac-emphasize-text-url {
   max-height: 16px;
 }
 
+
+
+.social-panel > .social-panel-frame {
+  border-radius: inherit;
+}
+
 #social-share-panel {
   min-height: 100px;
   min-width: 766px;
@@ -1949,6 +1950,12 @@ html|span.ac-emphasize-text-url {
 #social-share-provider-buttons {
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
+}
+
+
+
+#social-mark-button {
+  -moz-image-region: rect(0, 16px, 16px, 0);
 }
 
 
@@ -2063,8 +2070,8 @@ html|span.ac-emphasize-text-url {
     @media not all and (-moz-os-version: windows-win7) {
       @media not all and (-moz-os-version: windows-win8) {
         @media (-moz-windows-default-theme) {
-          .tab-background-end[visuallyselected=true]::after,
-          .tab-background-start[visuallyselected=true]::after {
+          .tab-background-end[selected=true]::after,
+          .tab-background-start[selected=true]::after {
             content: none;
           }
 
@@ -2089,14 +2096,14 @@ html|span.ac-emphasize-text-url {
 
 @media not all and (min-resolution: 1.1dppx) {
   .tab-close-button:-moz-lwtheme-brighttext,
-  #TabsToolbar[brighttext] .tab-close-button:not([visuallyselected="true"]) {
+  #TabsToolbar[brighttext] .tab-close-button:not([selected="true"]) {
     list-style-image: url("chrome://global/skin/icons/close-inverted.png");
   }
 }
 
 @media (min-resolution: 1.1dppx) {
   .tab-close-button:-moz-lwtheme-brighttext,
-  #TabsToolbar[brighttext] .tab-close-button:not([visuallyselected="true"]) {
+  #TabsToolbar[brighttext] .tab-close-button:not([selected="true"]) {
     list-style-image: url("chrome://global/skin/icons/close-inverted@2x.png");
   }
 }
@@ -2516,6 +2523,53 @@ notification.pluginVulnerable > .notification-inner > .messageCloseButton {
   border-radius: 1px;
   margin-inline-end: 5px;
 }
+
+
+.social-statusarea-popup {
+  margin-top: 0;
+  margin-left: -12px;
+  margin-right: -12px;
+}
+
+.social-statusarea-user {
+  -moz-appearance: none;
+  border-bottom: 1px solid rgb(221,221,221);
+  background-color: -moz-Dialog;
+  position: relative;
+  cursor: pointer;
+  list-style-image:url("chrome://global/skin/icons/information-32.png");
+}
+
+.social-statusarea-user-portrait {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  margin: 10px;
+}
+
+.social-statusarea-loggedInStatus {
+  -moz-appearance: none;
+  background: transparent;
+  border: none;
+  color: -moz-nativehyperlinktext;
+  min-width: 0;
+  margin: 0 6px;
+  list-style-image: none;
+}
+
+.social-statusarea-user[_moz-menuactive] > vbox > .social-statusarea-loggedInStatus {
+  text-decoration: underline;
+}
+
+.social-panel > .panel-arrowcontainer > .panel-arrowcontent {
+  padding: 0;
+}
+
+.social-panel-frame {
+  border-radius: inherit;
+}
+
+%include ../shared/social/chat.inc.css
 
 
 

@@ -1408,7 +1408,6 @@ html|span.ac-emphasize-text-url {
 }
 
 
-%include ../shared/social/social.inc.css
 
 .social-share-frame {
   border-top: 1px solid #f8f8f8;
@@ -1455,6 +1454,12 @@ html|span.ac-emphasize-text-url {
   width: 16px;
   min-height: 16px;
   max-height: 16px;
+}
+
+
+
+#social-mark-button {
+  -moz-image-region: rect(0, 16px, 16px, 0);
 }
 
 
@@ -1592,12 +1597,12 @@ html|span.ac-emphasize-text-url {
 }
 
 
-.tab-close-button:not([visuallyselected]):not(:hover) {
+.tab-close-button:not([selected]):not(:hover) {
   background-image: -moz-image-rect(url("chrome://global/skin/icons/close.svg"), 0, 64, 16, 48);
 }
 
 .tab-close-button:not(:hover):-moz-lwtheme-brighttext,
-#TabsToolbar[brighttext] .tab-close-button:not([visuallyselected]):not(:hover) {
+#TabsToolbar[brighttext] .tab-close-button:not([selected]):not(:hover) {
   background-image: -moz-image-rect(url("chrome://global/skin/icons/close.svg"), 0, 80, 16, 64);
 }
 
@@ -1829,6 +1834,30 @@ notification.pluginVulnerable > .notification-inner > .messageCloseButton:not(:h
   border-radius: 1px;
   margin-inline-end: 2px;
 }
+
+
+#social-statusarea-popup {
+  margin-top: 0;
+  margin-left: -12px;
+  margin-right: -12px;
+}
+
+.social-statusarea-user {
+  list-style-image:url("chrome://global/skin/icons/information-32.png");
+}
+
+.social-statusarea-user-portrait {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  margin: 10px;
+}
+
+.social-panel > .panel-arrowcontainer > .panel-arrowcontent {
+  padding: 0;
+}
+
+%include ../shared/social/chat.inc.css
 
 
 

@@ -2032,6 +2032,7 @@ html|span.ac-emphasize-text-url {
 
 #share-container {
   min-width: 756px;
+  background-color: white;
   background-repeat: no-repeat;
   background-position: center center;
 }
@@ -2046,7 +2047,9 @@ html|span.ac-emphasize-text-url {
   opacity: 0;
 }
 
-#manage-share-providers {
+#manage-share-providers,
+#social-sidebar-button:hover,
+#social-sidebar-button:hover:active {
   -moz-image-region: rect(18px, 468px, 36px, 450px);
 }
 
@@ -2073,6 +2076,12 @@ html|span.ac-emphasize-text-url {
   width: 16px;
   min-height: 16px;
   max-height: 16px;
+}
+
+
+
+#social-mark-button {
+  -moz-image-region: rect(0, 16px, 16px, 0);
 }
 
 
@@ -2480,30 +2489,30 @@ toolbarbutton.chevron > .toolbarbutton-menu-dropmarker {
       url(chrome://browser/skin/tabbrowser/tab-background-start.png);
   }
 
-  .tab-background-middle[visuallyselected=true]:-moz-window-inactive {
+  .tab-background-middle[selected=true]:-moz-window-inactive {
     background-image: url(chrome://browser/skin/yosemite/tab-active-middle-inactive.png),
                       @fgTabTextureYosemiteInactive@,
                       none;
   }
 
-  .tab-background-start[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(ltr)::after,
-  .tab-background-end[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(rtl)::after {
+  .tab-background-start[selected=true]:-moz-window-inactive:-moz-locale-dir(ltr)::after,
+  .tab-background-end[selected=true]:-moz-window-inactive:-moz-locale-dir(rtl)::after {
     background-image: url(chrome://browser/skin/yosemite/tab-stroke-start-inactive.png);
   }
 
-  .tab-background-end[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(ltr)::after,
-  .tab-background-start[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(rtl)::after {
+  .tab-background-end[selected=true]:-moz-window-inactive:-moz-locale-dir(ltr)::after,
+  .tab-background-start[selected=true]:-moz-window-inactive:-moz-locale-dir(rtl)::after {
     background-image: url(chrome://browser/skin/yosemite/tab-stroke-end-inactive.png);
   }
 
-  .tab-background-start[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(ltr):not(:-moz-lwtheme)::before,
-  .tab-background-end[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(rtl):not(:-moz-lwtheme)::before {
+  .tab-background-start[selected=true]:-moz-window-inactive:-moz-locale-dir(ltr):not(:-moz-lwtheme)::before,
+  .tab-background-end[selected=true]:-moz-window-inactive:-moz-locale-dir(rtl):not(:-moz-lwtheme)::before {
     background-image: url(chrome://browser/skin/yosemite/tab-selected-start-inactive.svg);
     background-size: 100% 100%;
   }
 
-  .tab-background-end[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(ltr):not(:-moz-lwtheme)::before,
-  .tab-background-start[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(rtl):not(:-moz-lwtheme)::before {
+  .tab-background-end[selected=true]:-moz-window-inactive:-moz-locale-dir(ltr):not(:-moz-lwtheme)::before,
+  .tab-background-start[selected=true]:-moz-window-inactive:-moz-locale-dir(rtl):not(:-moz-lwtheme)::before {
     background-image: url(chrome://browser/skin/yosemite/tab-selected-end-inactive.svg);
     background-size: 100% 100%;
   }
@@ -2527,25 +2536,25 @@ toolbarbutton.chevron > .toolbarbutton-menu-dropmarker {
         url(chrome://browser/skin/tabbrowser/tab-background-start@2x.png);
     }
 
-    .tab-background-middle[visuallyselected=true]:-moz-window-inactive {
+    .tab-background-middle[selected=true]:-moz-window-inactive {
       background-image: url(chrome://browser/skin/yosemite/tab-active-middle-inactive@2x.png),
                         @fgTabTextureYosemiteInactive@,
                         none;
     }
 
-    .tab-background-start[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(ltr)::after,
-    .tab-background-end[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(rtl)::after {
+    .tab-background-start[selected=true]:-moz-window-inactive:-moz-locale-dir(ltr)::after,
+    .tab-background-end[selected=true]:-moz-window-inactive:-moz-locale-dir(rtl)::after {
       background-image: url(chrome://browser/skin/yosemite/tab-stroke-start-inactive@2x.png);
     }
 
-    .tab-background-end[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(ltr)::after,
-    .tab-background-start[visuallyselected=true]:-moz-window-inactive:-moz-locale-dir(rtl)::after {
+    .tab-background-end[selected=true]:-moz-window-inactive:-moz-locale-dir(ltr)::after,
+    .tab-background-start[selected=true]:-moz-window-inactive:-moz-locale-dir(rtl)::after {
       background-image: url(chrome://browser/skin/yosemite/tab-stroke-end-inactive@2x.png);
     }
   }
 }
 
-.tabbrowser-tab:not(:hover) > .tab-stack > .tab-content > .tab-icon-image:not([visuallyselected="true"]) {
+.tabbrowser-tab:not(:hover) > .tab-stack > .tab-content > .tab-icon-image:not([selected="true"]) {
   opacity: .9;
 }
 
@@ -2557,7 +2566,7 @@ toolbarbutton.chevron > .toolbarbutton-menu-dropmarker {
   opacity: 0.9999;
 }
 
-.tab-label:not([visuallyselected="true"]) {
+.tab-label:not([selected="true"]) {
   opacity: .7;
 }
 
@@ -2649,12 +2658,12 @@ toolbarbutton.chevron > .toolbarbutton-menu-dropmarker {
   cursor: default;
 }
 
-#TabsToolbar[brighttext] .tab-close-button.close-icon:not([visuallyselected=true]):not(:hover) {
+#TabsToolbar[brighttext] .tab-close-button.close-icon:not([selected=true]):not(:hover) {
   -moz-image-region: rect(0, 64px, 16px, 48px);
 }
 
 @media (min-resolution: 2dppx) {
-  #TabsToolbar[brighttext] .tab-close-button.close-icon:not([visuallyselected=true]):not(:hover) {
+  #TabsToolbar[brighttext] .tab-close-button.close-icon:not([selected=true]):not(:hover) {
     -moz-image-region: rect(0, 128px, 32px, 96px);
   }
 }
@@ -2974,6 +2983,10 @@ toolbarbutton.chevron > .toolbarbutton-menu-dropmarker {
               0 0 3px 2px -moz-mac-focusring;
 }
 
+#social-notification-icon > .toolbarbutton-icon {
+  height: 16px;
+}
+
 
 
 %include ../shared/translation/infobar.inc.css
@@ -3230,7 +3243,28 @@ menulist.translate-infobar-element > .menulist-dropmarker {
 }
 
 
-%include ../shared/social/social.inc.css
+
+
+
+.social-statusarea-user {
+  list-style-image:url("chrome://global/skin/icons/information-32.png");
+}
+
+.social-statusarea-user-portrait {
+  width: 32px;
+  height: 32px;
+  margin: 4px;
+  margin-inline-start: 0;
+}
+
+.social-panel > .panel-arrowcontainer > .panel-arrowcontent {
+  padding: 0;
+}
+
+
+.social-panel > .social-panel-frame {
+  border-radius: inherit;
+}
 
 #social-share-panel {
   min-height: 100px;
@@ -3255,6 +3289,10 @@ menulist.translate-infobar-element > .menulist-dropmarker {
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
 }
+
+
+
+%include ../shared/social/chat.inc.css
 
 
 
