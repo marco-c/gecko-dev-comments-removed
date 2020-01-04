@@ -772,7 +772,8 @@ private:
   
   nsresult GetFile(const nsACString &aName, nsIFile **_retval);
   nsresult RemoveFile(const nsACString &aName);
-  void     RemoveIndexFromDisk();
+  void     RemoveAllIndexFiles();
+  void     RemoveJournalAndTempFile();
   
   nsresult WriteLogToDisk();
 
