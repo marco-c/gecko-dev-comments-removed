@@ -742,17 +742,31 @@ element.generateUUID = function() {
 
 
 
-element.coordinates = function(node, x = undefined, y = undefined) {
+
+
+
+
+
+
+element.coordinates = function(
+    node, xOffset = undefined, yOffset = undefined) {
+
   let box = node.getBoundingClientRect();
-  if (!x) {
-    x = box.width / 2.0;
+
+  if (typeof xOffset == "undefined" || xOffset === null) {
+    xOffset = box.width / 2.0;
   }
-  if (!y) {
-    y = box.height / 2.0;
+  if (typeof yOffset == "undefined" || yOffset === null) {
+    yOffset = box.height / 2.0;
   }
+
+  if (typeof yOffset != "number" || typeof xOffset != "number") {
+    throw new TypeError("Offset must be a number");
+  }
+
   return {
-    x: box.left + x,
-    y: box.top + y,
+    x: box.left + xOffset,
+    y: box.top + yOffset,
   };
 };
 
