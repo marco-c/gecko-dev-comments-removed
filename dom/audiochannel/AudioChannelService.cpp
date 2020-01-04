@@ -1056,7 +1056,11 @@ AudioChannelService::AudioChannelWindow::RequestAudioFocus(AudioChannelAgent* aA
   
   
   
-  mOwningAudioFocus = !(aAgent->Window()->IsBackground());
+  
+  
+  
+  mOwningAudioFocus = (!(aAgent->Window()->IsBackground()) ||
+                       aAgent->Window()->GetMediaSuspend() == nsISuspendedTypes::SUSPENDED_BLOCK) ;
 
   MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
          ("AudioChannelWindow, RequestAudioFocus, this = %p, "
