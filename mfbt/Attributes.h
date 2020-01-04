@@ -566,7 +566,7 @@
 #  define MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS \
     __attribute__((annotate("moz_inherit_type_annotations_from_template_args")))
 #  define MOZ_NON_AUTOABLE __attribute__((annotate("moz_non_autoable")))
-#  define MOZ_INITIALIZED_OUTSIDE_CONSTRUCTOR \
+#  define MOZ_INIT_OUTSIDE_CTOR \
     __attribute__((annotate("moz_ignore_ctor_initialization")))
 
 
@@ -599,7 +599,7 @@
 #  define MOZ_NEEDS_MEMMOVABLE_TYPE
 #  define MOZ_NEEDS_MEMMOVABLE_MEMBERS
 #  define MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS
-#  define MOZ_INITIALIZED_OUTSIDE_CONSTRUCTOR
+#  define MOZ_INIT_OUTSIDE_CTOR
 #  define MOZ_NON_AUTOABLE
 #endif 
 
