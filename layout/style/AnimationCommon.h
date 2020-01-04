@@ -7,21 +7,17 @@
 #define mozilla_css_AnimationCommon_h
 
 #include <algorithm> 
-#include "nsChangeHint.h"
-#include "nsCSSProperty.h"
-#include "nsDisplayList.h" 
+#include "mozilla/AnimationCollection.h"
 #include "mozilla/AnimationComparator.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/dom/Animation.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/Nullable.h"
-#include "mozilla/Attributes.h"
+#include "mozilla/Attributes.h" 
 #include "mozilla/Assertions.h"
-#include "mozilla/FloatingPoint.h"
 #include "nsContentUtils.h"
+#include "nsCSSProperty.h"
 #include "nsCSSPseudoElements.h"
 #include "nsCycleCollectionParticipant.h"
 
@@ -30,7 +26,9 @@ class nsPresContext;
 
 namespace mozilla {
 
-struct AnimationCollection;
+namespace dom {
+class Element;
+}
 
 class CommonAnimationManager {
 public:
@@ -76,95 +74,6 @@ public:
 protected:
   LinkedList<AnimationCollection> mElementCollections;
   nsPresContext *mPresContext; 
-};
-
-typedef InfallibleTArray<RefPtr<dom::Animation>> AnimationPtrArray;
-
-struct AnimationCollection : public LinkedListElement<AnimationCollection>
-{
-  AnimationCollection(dom::Element *aElement, nsIAtom *aElementProperty,
-                      CommonAnimationManager *aManager)
-    : mElement(aElement)
-    , mElementProperty(aElementProperty)
-    , mManager(aManager)
-    , mCheckGeneration(0)
-#ifdef DEBUG
-    , mCalledPropertyDtor(false)
-#endif
-  {
-    MOZ_COUNT_CTOR(AnimationCollection);
-  }
-  ~AnimationCollection()
-  {
-    MOZ_ASSERT(mCalledPropertyDtor,
-               "must call destructor through element property dtor");
-    MOZ_COUNT_DTOR(AnimationCollection);
-    remove();
-  }
-
-  void Destroy()
-  {
-    
-    mElement->DeleteProperty(mElementProperty);
-  }
-
-  static void PropertyDtor(void *aObject, nsIAtom *aPropertyName,
-                           void *aPropertyValue, void *aData);
-
-public:
-  bool IsForElement() const { 
-    return mElementProperty == nsGkAtoms::animationsProperty ||
-           mElementProperty == nsGkAtoms::transitionsProperty;
-  }
-
-  bool IsForBeforePseudo() const {
-    return mElementProperty == nsGkAtoms::animationsOfBeforeProperty ||
-           mElementProperty == nsGkAtoms::transitionsOfBeforeProperty;
-  }
-
-  bool IsForAfterPseudo() const {
-    return mElementProperty == nsGkAtoms::animationsOfAfterProperty ||
-           mElementProperty == nsGkAtoms::transitionsOfAfterProperty;
-  }
-
-  CSSPseudoElementType PseudoElementType() const
-  {
-    if (IsForElement()) {
-      return CSSPseudoElementType::NotPseudo;
-    }
-    if (IsForBeforePseudo()) {
-      return CSSPseudoElementType::before;
-    }
-    MOZ_ASSERT(IsForAfterPseudo(),
-               "::before & ::after should be the only pseudo-elements here");
-    return CSSPseudoElementType::after;
-  }
-
-  static nsString PseudoTypeAsString(CSSPseudoElementType aPseudoType);
-
-  dom::Element *mElement;
-
-  
-  
-  nsIAtom *mElementProperty;
-
-  CommonAnimationManager *mManager;
-
-  AnimationPtrArray mAnimations;
-
-  
-  
-  
-  
-  
-  uint64_t mCheckGeneration;
-  
-  void UpdateCheckGeneration(nsPresContext* aPresContext);
-
-private:
-#ifdef DEBUG
-  bool mCalledPropertyDtor;
-#endif
 };
 
 
