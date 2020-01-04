@@ -1469,7 +1469,7 @@ pref("identity.fxaccounts.remote.webchannel.uri", "https://accounts.firefox.com/
 
 
 
-pref("identity.fxaccounts.settings.uri", "https://accounts.firefox.com/settings");
+pref("identity.fxaccounts.settings.uri", "https://accounts.firefox.com/settings?service=sync&context=fx_desktop_v3");
 
 
 pref("identity.fxaccounts.remote.profile.uri", "https://profile.accounts.firefox.com/v1");
