@@ -50,7 +50,7 @@ class ProfileEntry
 
   public:
     
-    enum Flags {
+    enum Flags : uint32_t {
         
         
         
