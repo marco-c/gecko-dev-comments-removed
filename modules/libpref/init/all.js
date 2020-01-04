@@ -921,7 +921,8 @@ pref("devtools.commands.dir", "");
 pref("devtools.telemetry.supported_performance_marks", "contentInteractive,navigationInteractive,navigationLoaded,visuallyLoaded,fullyLoaded,mediaEnumerated,scanEnd");
 
 
-pref("devtools.migration.warnings", true);
+
+pref("devtools.migration.warnings", false);
 
 
 pref("view_source.syntax_highlight", true);
@@ -1879,6 +1880,9 @@ pref("network.proxy.autoconfig_retry_interval_max", 300);
 
 
 pref("network.stricttransportsecurity.preloadlist", true);
+
+
+pref("network.mdns.use_js_fallback", false);
 
 pref("converter.html2txt.structs",          true); 
 pref("converter.html2txt.header_strategy",  1); 
@@ -5195,3 +5199,4 @@ pref("dom.input.fallbackUploadDir", "");
 
 
 pref("plugins.rewrite_youtube_embeds", true);
+
