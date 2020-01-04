@@ -209,10 +209,6 @@ public:
 
   nsresult RemoveTrailingRegions(nsIFrame* aFrameList);
 
-private:
-  struct FloatInfo;
-public:
-
   bool HasAnyFloats() const { return !mFloats.IsEmpty(); }
 
   
@@ -330,7 +326,6 @@ private:
     ~FloatInfo();
 #endif
 
-  private:
     
     
     
