@@ -138,6 +138,8 @@ nsStyleDisplay::HasTransform(const nsIFrame* aContextFrame) const
 bool
 nsStyleDisplay::IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const
 {
+  
+  
   NS_ASSERTION(aContextFrame->StyleDisplay() == this,
                "unexpected aContextFrame");
   return (IsContainPaint() || HasTransform(aContextFrame) ||
