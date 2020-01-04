@@ -69,6 +69,7 @@ if (typeof __PROD__ !== "undefined") {
 
 
 
+require("imports?loop=>window.loop!exports?loop!shared/js/loopapi-client.js");
 require("imports?loop=>window.loop!exports?loop!shared/js/utils.js");
 require("imports?this=>window,loop=>window.loop!exports?loop!shared/js/crypto.js");
 require("imports?loop=>window.loop!exports?loop!shared/js/mixins.js");

@@ -14,6 +14,17 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
 
   var ROOM_MAX_CLIENTS = 2;
+  var PUSH_SUBSCRIPTION = "pushSubscription";
+  var BATCH_MESSAGE = "Batch";
+  var MAX_LOOP_COUNT = 10;
+
+  function cloneableError(err) {
+    if (typeof err == "string") {
+      err = new Error(err);
+    }
+    err.isError = true;
+    return err;
+  }
 
   
 
@@ -51,17 +62,8 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
 
 
-
-  var StandaloneMozLoopRooms = function(options) {
-    options = options || {};
-    if (!options.baseServerUrl) {
-      throw new Error("missing required baseServerUrl");
-    }
-
-    this._baseServerUrl = options.baseServerUrl;
-  };
-
-  StandaloneMozLoopRooms.prototype = {
+  var StandaloneLoopRooms = {
+    baseServerUrl: "",
     
 
 
@@ -72,7 +74,7 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
 
     get: function(roomToken, callback) {
-      var url = this._baseServerUrl + "/rooms/" + roomToken;
+      var url = this.baseServerUrl + "/rooms/" + roomToken;
 
       this._xhrReq = new XMLHttpRequest();
       this._xhrReq.open("GET", url, true);
@@ -117,7 +119,7 @@ loop.StandaloneMozLoop = (function(mozL10n) {
 
     _postToRoom: function(roomToken, sessionToken, roomData, expectedProps,
                           async, callback) {
-      var url = this._baseServerUrl + "/rooms/" + roomToken;
+      var url = this.baseServerUrl + "/rooms/" + roomToken;
       var xhrReq = new XMLHttpRequest();
 
       xhrReq.open("POST", url, async);
@@ -244,53 +246,173 @@ loop.StandaloneMozLoop = (function(mozL10n) {
           console.error(error);
         }
       });
+    }
+  };
+
+  var kMessageHandlers = {
+    "Rooms:*": function(action, data, reply) {
+      var funcName = action.split(":").pop();
+      funcName = funcName.charAt(0).toLowerCase() + funcName.substr(1);
+
+      if (funcName === PUSH_SUBSCRIPTION) {
+        return;
+      }
+
+      if (typeof StandaloneLoopRooms[funcName] !== "function") {
+        reply(cloneableError("Sorry, function '" + funcName + "' does not exist!"));
+        return;
+      }
+      data.push(function(err, result) {
+        reply(err ? cloneableError(err) : result);
+      });
+      StandaloneLoopRooms[funcName].apply(StandaloneLoopRooms, data);
     },
 
     
+
+
+
+
+
+
+    SetLoopPref: function(data, reply) {
+      var prefName = data[0];
+      var value = data[1];
+      localStorage.setItem(prefName, value);
+      reply();
+    },
+
     
-    on: function() {},
-    once: function() {},
-    off: function() {}
+
+
+
+
+
+
+    GetLoopPref: function(data, reply) {
+      var prefName = data[0];
+      reply(localStorage.getItem(prefName));
+    }
   };
 
-  var StandaloneMozLoop = function(options) {
+  function handleBatchMessage(name, seq, data, reply) {
+    var actions = data[0];
+    if (!actions.length) {
+      throw new Error("Ough, a batch call with no actions is not much " +
+        "of a batch, now is it?");
+    }
+
+    
+    
+    
+    
+    
+    if (!("loopCount" in reply)) {
+      reply.loopCount = 0;
+    } else if (++reply.loopCount > MAX_LOOP_COUNT) {
+      reply(cloneableError("Too many nested calls"));
+      return;
+    }
+
+    var resultSet = {};
+    var done = 0;
+    actions.forEach(function(actionSet) {
+      var actionSeq = actionSet[0];
+      window.sendAsyncMessage(name, actionSet, function(result) {
+        resultSet[actionSeq] = result;
+        if (++done === actions.length) {
+          reply(resultSet);
+        }
+      });
+    });
+  }
+
+  window.sendAsyncMessage = window.sendAsyncMessage || function(name, data, reply) {
+    if (name !== "Loop:Message") {
+      return;
+    }
+
+    var seq = data.shift();
+    var action = data.shift();
+
+    var actionParts = action.split(":");
+
+    
+    
+    var handlerName = actionParts.shift();
+
+    if (!reply) {
+      reply = function(result) {
+        var listeners = messageListeners[name];
+        if (!listeners || !listeners.length) {
+          return;
+        }
+        var message = { data: [seq, result] };
+        listeners.forEach(function(listener) {
+          listener(message);
+        });
+      };
+    }
+
+    
+    if (handlerName === BATCH_MESSAGE) {
+      handleBatchMessage(name, seq, data, reply);
+      return;
+    }
+
+    
+    
+    
+    var wildcardName = handlerName + ":*";
+    if (kMessageHandlers[wildcardName]) {
+      
+      kMessageHandlers[wildcardName](action, data, reply);
+      
+      return;
+    }
+
+    if (!kMessageHandlers[handlerName]) {
+      var msg = "Ouch, no message handler available for '" + handlerName + "'";
+      console.error(msg);
+      reply(cloneableError(msg));
+      return;
+    }
+
+    kMessageHandlers[handlerName](data, reply);
+  };
+
+  var messageListeners = {};
+
+  window.addMessageListener = window.addMessageListener || function(name, func) {
+    if (!messageListeners[name]) {
+      messageListeners[name] = [];
+    }
+
+    if (messageListeners[name].indexOf(func) === -1) {
+      messageListeners[name].push(func);
+    }
+  };
+
+  window.removeMessageListener = window.removeMessageListener || function(name, func) {
+    if (!messageListeners[name]) {
+      return;
+    }
+
+    var idx = messageListeners[name].indexOf(func);
+    if (idx !== -1) {
+      messageListeners[name].splice(idx, 1);
+    }
+    if (!messageListeners[name].length) {
+      delete messageListeners[name];
+    }
+  };
+
+  return function(options) {
     options = options || {};
     if (!options.baseServerUrl) {
       throw new Error("missing required baseServerUrl");
     }
 
-    this._baseServerUrl = options.baseServerUrl;
-
-    this.rooms = new StandaloneMozLoopRooms(options);
+    StandaloneLoopRooms.baseServerUrl = options.baseServerUrl;
   };
-
-  StandaloneMozLoop.prototype = {
-    
-
-
-
-
-
-
-
-    setLoopPref: function(prefName, value) {
-      localStorage.setItem(prefName, value);
-    },
-
-    
-
-
-
-
-    getLoopPref: function(prefName) {
-      return localStorage.getItem(prefName);
-    },
-
-    
-    
-    addConversationContext: function() {},
-    setScreenShareState: function() {}
-  };
-
-  return StandaloneMozLoop;
 })(navigator.mozL10n);

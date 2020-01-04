@@ -389,7 +389,7 @@ function ChildMessagePort(contentFrame, window) {
   
   this.messageManager.sendAsyncMessage("RemotePage:InitPort", {
     portID: portID,
-    url: window.location.toString(),
+    url: window.location.toString().replace(/\#.*$/, "")
   });
 }
 
@@ -490,7 +490,8 @@ this.RemotePageManager = {
 var registeredURLs = new Set();
 
 var observer = (window) => {
-  let url = window.location.toString();
+  
+  let url = window.location.toString().replace(/\#.*$/, "");
   if (!registeredURLs.has(url))
     return;
 

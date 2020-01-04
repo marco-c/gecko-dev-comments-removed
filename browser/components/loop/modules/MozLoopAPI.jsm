@@ -13,8 +13,6 @@ Cu.import("resource:///modules/loop/MozLoopService.jsm");
 Cu.import("resource:///modules/loop/LoopRooms.jsm");
 Cu.importGlobalProperties(["Blob"]);
 
-XPCOMUtils.defineLazyModuleGetter(this, "hookWindowCloseForPanelClose",
-                                        "resource://gre/modules/MozSocialAPI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PageMetadata",
                                         "resource://gre/modules/PageMetadata.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
@@ -25,6 +23,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "UITour",
                                         "resource:///modules/UITour.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Social",
                                         "resource:///modules/Social.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Promise",
+                                        "resource://gre/modules/Promise.jsm");
 XPCOMUtils.defineLazyGetter(this, "appInfo", function() {
   return Cc["@mozilla.org/xre/app-info;1"]
            .getService(Ci.nsIXULAppInfo)
@@ -36,1062 +36,1200 @@ XPCOMUtils.defineLazyServiceGetter(this, "clipboardHelper",
 XPCOMUtils.defineLazyServiceGetter(this, "extProtocolSvc",
                                          "@mozilla.org/uriloader/external-protocol-service;1",
                                          "nsIExternalProtocolService");
-this.EXPORTED_SYMBOLS = ["injectLoopAPI"];
+this.EXPORTED_SYMBOLS = ["LoopAPI"];
 
+const cloneableError = function(source) {
+  
+  let error = {};
+  if (typeof source == "string") {
+    source = new Error(source);
+  }
 
-
-
-
-
-
-
-
-const cloneErrorObject = function(error, targetWindow) {
-  let obj = new targetWindow.Error();
-  let props = Object.getOwnPropertyNames(error);
+  let props = Object.getOwnPropertyNames(source);
   
   
   if (!props.length) {
     props.push("message", "filename", "lineNumber", "columnNumber", "stack");
   }
   for (let prop of props) {
-    let value = error[prop];
+    let value = source[prop];
+    let type = typeof value;
+
     
-    if (typeof value == "undefined") {
+    
+    if (type == "function" || type == "undefined") {
       continue;
     }
-    if (typeof value != "string" && typeof value != "number") {
-      value = String(value);
-    }
-
-    Object.defineProperty(Cu.waiveXrays(obj), prop, {
-      configurable: false,
-      enumerable: true,
-      value: value,
-      writable: false
-    });
-  }
-  return obj;
-};
-
-
-
-
-
-
-
-
-
-
-const cloneValueInto = function(value, targetWindow) {
-  if (!value || typeof value != "object") {
-    return value;
-  }
-
-  
-  if (("error" in value) && (value.error instanceof Ci.nsIException)) {
-    value = value.error;
-  }
-
-  
-  
-  for (let prop of Object.getOwnPropertyNames(value)) {
-    if (typeof value[prop] == "function") {
-      delete value[prop];
-    }
-  }
-
-  
-  if (value.constructor.name == "Error" || value instanceof Ci.nsIException) {
-    return cloneErrorObject(value, targetWindow);
-  }
-
-  let clone;
-  try {
-    clone = Cu.cloneInto(value, targetWindow);
-  } catch (ex) {
-    MozLoopService.log.debug("Failed to clone value:", value);
-    throw ex;
-  }
-
-  return clone;
-};
-
-
-
-
-
-
-
-
-const invokeCallback = function(callback, ...args) {
-  if (typeof callback != "function") {
     
-    
-    MozLoopService.log.error.apply(MozLoopService.log,
-      [new Error("Callback function was lost!"), ...args]);
-    return;
-  }
-
-  return callback.apply(null, args);
-};
-
-
-
-
-
-
-const toHexString = function(charCode) {
-  return ("0" + charCode.toString(16)).slice(-2);
-};
-
-
-
-
-
-
-
-
-const injectObjectAPI = function(api, targetWindow) {
-  let injectedAPI = {};
-  
-  
-  Object.keys(api).forEach(func => {
-    injectedAPI[func] = function(...params) {
-      let lastParam = params.pop();
-      let callbackIsFunction = (typeof lastParam == "function");
-      
-      params = [cloneValueInto(p, api) for (p of params)];
-
-      
-      
-      if (callbackIsFunction) {
-        api[func](...params, function callback(...results) {
-          
-          
-          if (callbackIsFunction && typeof lastParam != "function") {
-            MozLoopService.log.debug(func + ": callback function was lost.");
-            
-            if (func == "on" && api.off) {
-              api.off(results[0], callback);
-              return;
-            }
-            
-            if (results[0]) {
-              MozLoopService.log.error(func + " error:", results[0]);
-            }
-            return;
-          }
-          lastParam(...[cloneValueInto(r, targetWindow) for (r of results)]);
-        });
-      } else {
-        try {
-          lastParam = cloneValueInto(lastParam, api);
-          return cloneValueInto(api[func](...params, lastParam), targetWindow);
-        } catch (ex) {
-          MozLoopService.log.error(func + " error: ", ex, params, lastParam);
-          return cloneValueInto(ex, targetWindow);
-        }
-      }
-    };
-  });
-
-  let contentObj = Cu.cloneInto(injectedAPI, targetWindow, {cloneFunctions: true});
-  
-  
-  
-  try {
-    Object.seal(Cu.waiveXrays(contentObj));
-  } catch (ex) {}
-  return contentObj;
-};
-
-
-
-
-
-
-
-
-
-function injectLoopAPI(targetWindow) {
-  let ringer;
-  let ringerStopper;
-  let appVersionInfo;
-  let roomsAPI;
-  let callsAPI;
-  let savedWindowListeners = new Map();
-  let socialProviders;
-  const kShareWidgetId = "social-share-button";
-  let socialShareButtonListenersAdded = false;
-
-
-  let api = {
-    
-
-
-
-
-
-    userProfile: {
-      enumerable: true,
-      get: function() {
-        if (!MozLoopService.userProfile)
-          return null;
-        let userProfile = Cu.cloneInto({
-          email: MozLoopService.userProfile.email,
-          uid: MozLoopService.userProfile.uid
-        }, targetWindow);
-        return userProfile;
-      }
-    },
-
-    
-
-
-    doNotDisturb: {
-      enumerable: true,
-      get: function() {
-        return MozLoopService.doNotDisturb;
-      },
-      set: function(aFlag) {
-        MozLoopService.doNotDisturb = aFlag;
-      }
-    },
-
-    errors: {
-      enumerable: true,
-      get: function() {
-        let errors = {};
-        for (let [type, error] of MozLoopService.errors) {
-          
-          
-          if (error.error instanceof Ci.nsIException) {
-            MozLoopService.log.debug("Warning: Some errors were omitted from MozLoopAPI.errors " +
-                                     "due to issues copying nsIException across boundaries.",
-                                     error.error);
-            delete error.error;
-          }
-
-          
-          if (error.hasOwnProperty("toString")) {
-            delete error.toString;
-          }
-          errors[type] = Cu.waiveXrays(Cu.cloneInto(error, targetWindow, { cloneFunctions: true }));
-        }
-        return Cu.cloneInto(errors, targetWindow, { cloneFunctions: true });
-      },
-    },
-
-    
-
-
-
-
-    locale: {
-      enumerable: true,
-      get: function() {
-        return MozLoopService.locale;
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-    addBrowserSharingListener: {
-      enumerable: true,
-      writable: true,
-      value: function(listener) {
-        let win = Services.wm.getMostRecentWindow("navigator:browser");
-        let browser = win && win.gBrowser.selectedBrowser;
-        if (!win || !browser) {
-          
-          
-          let err = new Error("No tabs available to share.");
-          MozLoopService.log.error(err);
-          listener(cloneValueInto(err, targetWindow));
-          return;
-        }
-        if (browser.getAttribute("remote") == "true") {
-          
-          
-          let err = new Error("Tab sharing is not supported for e10s-enabled browsers");
-          MozLoopService.log.error(err);
-          listener(cloneValueInto(err, targetWindow));
-          return;
-        }
-
-        win.LoopUI.addBrowserSharingListener(listener);
-
-        savedWindowListeners.set(listener, Cu.getWeakReference(win));
-      }
-    },
-
-    
-
-
-
-
-    removeBrowserSharingListener: {
-      enumerable: true,
-      writable: true,
-      value: function(listener) {
-        if (!savedWindowListeners.has(listener)) {
-          return;
-        }
-
-        let win = savedWindowListeners.get(listener).get();
-
-        
-        
-        savedWindowListeners.delete(listener);
-
-        if (!win) {
-          return;
-        }
-
-        win.LoopUI.removeBrowserSharingListener(listener);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-    getConversationWindowData: {
-      enumerable: true,
-      writable: true,
-      value: function(conversationWindowId) {
-        return cloneValueInto(MozLoopService.getConversationWindowData(conversationWindowId),
-          targetWindow);
-      }
-    },
-
-    
-
-
-
-
-    rooms: {
-      enumerable: true,
-      get: function() {
-        if (roomsAPI) {
-          return roomsAPI;
-        }
-        return roomsAPI = injectObjectAPI(LoopRooms, targetWindow);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-    getStrings: {
-      enumerable: true,
-      writable: true,
-      value: function(key) {
-        return MozLoopService.getStrings(key);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-    getPluralForm: {
-      enumerable: true,
-      writable: true,
-      value: function(num, str) {
-        return PluralForm.get(num, str);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-    confirm: {
-      enumerable: true,
-      writable: true,
-      value: function(options, callback) {
-        let buttonFlags;
-        if (options.okButton && options.cancelButton) {
-          buttonFlags =
-            (Ci.nsIPrompt.BUTTON_POS_0 * Ci.nsIPrompt.BUTTON_TITLE_IS_STRING) +
-            (Ci.nsIPrompt.BUTTON_POS_1 * Ci.nsIPrompt.BUTTON_TITLE_IS_STRING);
-        } else if (!options.okButton && !options.cancelButton) {
-          buttonFlags = Services.prompt.STD_YES_NO_BUTTONS;
-        } else {
-          invokeCallback(callback, cloneValueInto(new Error("confirm: missing button options"), targetWindow));
-        }
-
-        try {
-          let chosenButton = Services.prompt.confirmEx(null, "",
-            options.message, buttonFlags, options.okButton, options.cancelButton,
-            null, null, {});
-
-          invokeCallback(callback, null, chosenButton == 0);
-        } catch (ex) {
-          invokeCallback(callback, cloneValueInto(ex, targetWindow));
-        }
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-    setLoopPref: {
-      enumerable: true,
-      writable: true,
-      value: function(prefName, value, prefType) {
-        MozLoopService.setLoopPref(prefName, value, prefType);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    getLoopPref: {
-      enumerable: true,
-      writable: true,
-      value: function(prefName, prefType) {
-        return MozLoopService.getLoopPref(prefName);
-      }
-    },
-
-    
-
-
-    hangupAllChatWindows: {
-      enumerable: true,
-      writable: true,
-      value() {
-        MozLoopService.hangupAllChatWindows();
-      }
-    },
-
-    
-
-
-    startAlerting: {
-      enumerable: true,
-      writable: true,
-      value: function() {
-        let chromeWindow = getChromeWindow(targetWindow);
-        chromeWindow.getAttention();
-        ringer = new chromeWindow.Audio();
-        ringer.src = Services.prefs.getCharPref("loop.ringtone");
-        ringer.loop = true;
-        ringer.load();
-        ringer.play();
-        targetWindow.document.addEventListener("visibilitychange",
-          ringerStopper = function(event) {
-            if (event.currentTarget.hidden) {
-              api.stopAlerting.value();
-            }
-          });
-      }
-    },
-
-    
-
-
-    stopAlerting: {
-      enumerable: true,
-      writable: true,
-      value: function() {
-        if (ringerStopper) {
-          targetWindow.document.removeEventListener("visibilitychange",
-                                                    ringerStopper);
-          ringerStopper = null;
-        }
-        if (ringer) {
-          ringer.pause();
-          ringer = null;
-        }
-      }
-    },
-
-    LOOP_SESSION_TYPE: {
-      enumerable: true,
-      get: function() {
-        return Cu.cloneInto(LOOP_SESSION_TYPE, targetWindow);
-      }
-    },
-
-    TWO_WAY_MEDIA_CONN_LENGTH: {
-      enumerable: true,
-      get: function() {
-        return Cu.cloneInto(TWO_WAY_MEDIA_CONN_LENGTH, targetWindow);
-      }
-    },
-
-    SHARING_STATE_CHANGE: {
-      enumerable: true,
-      get: function() {
-        return Cu.cloneInto(SHARING_STATE_CHANGE, targetWindow);
-      }
-    },
-
-    SHARING_ROOM_URL: {
-      enumerable: true,
-      get: function() {
-        return Cu.cloneInto(SHARING_ROOM_URL, targetWindow);
-      }
-    },
-
-    ROOM_CREATE: {
-      enumerable: true,
-      get: function() {
-        return Cu.cloneInto(ROOM_CREATE, targetWindow);
-      }
-    },
-
-    ROOM_DELETE: {
-      enumerable: true,
-      get: function() {
-        return Cu.cloneInto(ROOM_DELETE, targetWindow);
-      }
-    },
-
-    ROOM_CONTEXT_ADD: {
-      enumerable: true,
-      get: function() {
-        return Cu.cloneInto(ROOM_CONTEXT_ADD, targetWindow);
-      }
-    },
-
-    fxAEnabled: {
-      enumerable: true,
-      get: function() {
-        return MozLoopService.fxAEnabled;
-      },
-    },
-
-    
-
-
-
-
-
-
-
-
-    logInToFxA: {
-      enumerable: true,
-      writable: true,
-      value: function(forceReAuth) {
-        return MozLoopService.logInToFxA(forceReAuth);
-      }
-    },
-
-    logOutFromFxA: {
-      enumerable: true,
-      writable: true,
-      value: function() {
-        return MozLoopService.logOutFromFxA();
-      }
-    },
-
-    openFxASettings: {
-      enumerable: true,
-      writable: true,
-      value: function() {
-        return MozLoopService.openFxASettings();
-      },
-    },
-
-    
-
-
-
-
-    hasEncryptionKey: {
-      enumerable: true,
-      get: function() {
-        return MozLoopService.hasEncryptionKey;
-      }
-    },
-
-    
-
-
-
-
-
-    openGettingStartedTour: {
-      enumerable: true,
-      writable: true,
-      value: function(aSrc) {
-        return MozLoopService.openGettingStartedTour(aSrc);
-      },
-    },
-
-    
-
-
-
-
-    openURL: {
-      enumerable: true,
-      writable: true,
-      value: function(url) {
-        return MozLoopService.openURL(url);
-      }
-    },
-
-    
-
-
-
-
-    copyString: {
-      enumerable: true,
-      writable: true,
-      value: function(str) {
-        clipboardHelper.copyString(str);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-    appVersionInfo: {
-      enumerable: true,
-      get: function() {
-        if (!appVersionInfo) {
-          
-          
-          try {
-            appVersionInfo = Cu.cloneInto({
-              channel: UpdateUtils.UpdateChannel,
-              version: appInfo.version,
-              OS: appInfo.OS
-            }, targetWindow);
-          } catch (ex) {
-            
-            if (typeof targetWindow !== 'undefined' && "console" in targetWindow) {
-              MozLoopService.log.error("Failed to construct appVersionInfo; if this isn't " +
-                                       "an xpcshell unit test, something is wrong", ex);
-            }
-          }
-        }
-        return appVersionInfo;
-      }
-    },
-
-    
-
-
-
-
-
-
-    composeEmail: {
-      enumerable: true,
-      writable: true,
-      value: function(subject, body, recipient) {
-        recipient = recipient || "";
-        let mailtoURL = "mailto:" + encodeURIComponent(recipient) +
-                        "?subject=" + encodeURIComponent(subject) +
-                        "&body=" + encodeURIComponent(body);
-        extProtocolSvc.loadURI(CommonUtils.makeURI(mailtoURL));
-      }
-    },
-
-    
-
-
-
-
-
-    telemetryAddValue: {
-      enumerable: true,
-      writable: true,
-      value: function(histogramId, value) {
-        Services.telemetry.getHistogramById(histogramId).add(value);
-      }
-    },
-
-    
-
-
-    generateUUID: {
-      enumerable: true,
-      writable: true,
-      value: function() {
-        return MozLoopService.generateUUID();
-      }
-    },
-
-    getAudioBlob: {
-      enumerable: true,
-      writable: true,
-      value: function(name, callback) {
-        let request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
-                        .createInstance(Ci.nsIXMLHttpRequest);
-        let url = `chrome://browser/content/loop/shared/sounds/${name}.ogg`;
-
-        request.open("GET", url, true);
-        request.responseType = "arraybuffer";
-        request.onload = () => {
-          if (request.status < 200 || request.status >= 300) {
-            let error = new Error(request.status + " " + request.statusText);
-            invokeCallback(callback, cloneValueInto(error, targetWindow));
-            return;
-          }
-
-          let blob = new Blob([request.response], {type: "audio/ogg"});
-          invokeCallback(callback, null, cloneValueInto(blob, targetWindow));
-        };
-
-        request.send();
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-    getUserAvatar: {
-      enumerable: true,
-      writable: true,
-      value: function(emailAddress, size = 40) {
-        if (!emailAddress || !MozLoopService.getLoopPref("contacts.gravatars.show")) {
-          return null;
-        }
-
-        
-        let hasher = Cc["@mozilla.org/security/hash;1"]
-                       .createInstance(Ci.nsICryptoHash);
-        hasher.init(Ci.nsICryptoHash.MD5);
-        let stringStream = Cc["@mozilla.org/io/string-input-stream;1"]
-                             .createInstance(Ci.nsIStringInputStream);
-        stringStream.data = emailAddress.trim().toLowerCase();
-        hasher.updateFromStream(stringStream, -1);
-        let hash = hasher.finish(false);
-        
-        let md5Email = [toHexString(hash.charCodeAt(i)) for (i in hash)].join("");
-
-        
-        return "https://www.gravatar.com/avatar/" + md5Email + ".jpg?default=blank&s=" + size;
-      }
-    },
-
-    
-
-
-
-
-
-    getSelectedTabMetadata: {
-      value: function(callback) {
-        let win = Services.wm.getMostRecentWindow("navigator:browser");
-        win.messageManager.addMessageListener("PageMetadata:PageDataResult", function onPageDataResult(msg) {
-          win.messageManager.removeMessageListener("PageMetadata:PageDataResult", onPageDataResult);
-          let pageData = msg.json;
-          win.LoopUI.getFavicon(function(err, favicon) {
-            if (err) {
-              MozLoopService.log.error("Error occurred whilst fetching favicon", err);
-              
-              
-            }
-            pageData.favicon = favicon || null;
-
-            invokeCallback(callback, cloneValueInto(pageData, targetWindow));
-          });
-        });
-        win.gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetPageData");
-      }
-    },
-
-    
-
-
-
-
-
-
-    addConversationContext: {
-      enumerable: true,
-      writable: true,
-      value: function(windowId, sessionId, callid) {
-        MozLoopService.addConversationContext(windowId, {
-          sessionId: sessionId,
-          callId: callid
-        });
-      }
-    },
-
-    
-
-
-
-
-
-
-
-    notifyUITour: {
-      enumerable: true,
-      writable: true,
-      value: function(subject, params) {
-        UITour.notify(subject, params);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-    setScreenShareState: {
-      enumerable: true,
-      writable: true,
-      value: function(windowId, active) {
-        MozLoopService.setScreenShareState(windowId, active);
-      }
-    },
-
-    
-
-
-
-    addSocialShareProvider: {
-      enumerable: true,
-      writable: true,
-      value: function() {
-        let win = Services.wm.getMostRecentWindow("navigator:browser");
-        if (!win || !win.SocialShare) {
-          return;
-        }
-        win.SocialShare.showDirectory(win.LoopUI.toolbarButton.anchor);
-      }
-    },
-
-    
-
-
-
-
-
-    getSocialShareProviders: {
-      enumerable: true,
-      writable: true,
-      value: function() {
-        if (socialProviders) {
-          return socialProviders;
-        }
-        return updateSocialProvidersCache();
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    socialShareRoom: {
-      enumerable: true,
-      writable: true,
-      value: function(providerOrigin, roomURL, title, body = null) {
-        let win = Services.wm.getMostRecentWindow("navigator:browser");
-        if (!win || !win.SocialShare) {
-          return;
-        }
-
-        let graphData = {
-          url: roomURL,
-          title: title
-        };
-        if (body) {
-          graphData.body = body;
-        }
-        win.SocialShare.sharePage(providerOrigin, graphData, null,
-          win.LoopUI.toolbarButton.anchor);
-      }
-    }
-  };
-
-  
-
-
-
-
-
-  function sendEvent(name = "LoopStatusChanged") {
-    if (typeof targetWindow.CustomEvent != "function") {
-      MozLoopService.log.debug("Could not send event to content document, " +
-        "because it's being destroyed or we're in a unit test where " +
-        "`targetWindow` is mocked.");
-      return;
-    }
-
-    let event = new targetWindow.CustomEvent(name);
-    targetWindow.dispatchEvent(event);
-  }
-
-  function onStatusChanged(aSubject, aTopic, aData) {
-    sendEvent();
-  }
-
-  function onDOMWindowDestroyed(aSubject, aTopic, aData) {
-    if (targetWindow && aSubject != targetWindow)
-      return;
-    Services.obs.removeObserver(onDOMWindowDestroyed, "dom-window-destroyed");
-    Services.obs.removeObserver(onStatusChanged, "loop-status-changed");
-    
-    if (socialProviders)
-      Services.obs.removeObserver(updateSocialProvidersCache, "social:providers-changed");
-    if (socialShareButtonListenersAdded) {
-      let eventName = "social:" + kShareWidgetId;
-      Services.obs.removeObserver(onShareWidgetChanged, eventName + "-added");
-      Services.obs.removeObserver(onShareWidgetChanged, eventName + "-removed");
-    }
-  }
-
-  function onShareWidgetChanged(aSubject, aTopic, aData) {
-    sendEvent("LoopShareWidgetChanged");
-  }
-
-  
-
-
-
-
-
-
-
-  function updateSocialProvidersCache() {
-    let providers = [];
-
-    for (let provider of Social.providers) {
-      if (!provider.shareURL) {
-        continue;
-      }
-
-      
-      providers.push({
-        iconURL: provider.iconURL,
-        name: provider.name,
-        origin: provider.origin
-      });
-    }
-
-    let providersWasSet = !!socialProviders;
-    
-    socialProviders = cloneValueInto(providers.sort((a, b) =>
-      a.name.toLowerCase().localeCompare(b.name.toLowerCase())), targetWindow);
-
-    
-    
-    if (!providersWasSet) {
-      Services.obs.addObserver(updateSocialProvidersCache, "social:providers-changed", false);
+    if (/boolean|number|string/.test(type)) {
+      error[prop] = value;
     } else {
       
-      sendEvent("LoopSocialProvidersChanged");
+      error[prop] = "" + value;
+    }
+  }
+
+  
+  
+  error.isError = true;
+
+  return error;
+};
+
+const getObjectAPIFunctionName = function(action) {
+  let funcName = action.split(":").pop();
+  return funcName.charAt(0).toLowerCase() + funcName.substr(1);
+};
+
+
+
+
+
+
+
+
+
+const updateSocialProvidersCache = function() {
+  let providers = [];
+
+  for (let provider of Social.providers) {
+    if (!provider.shareURL) {
+      continue;
     }
 
-    return socialProviders;
+    
+    providers.push({
+      iconURL: provider.iconURL,
+      name: provider.name,
+      origin: provider.origin
+    });
   }
 
-  let contentObj = Cu.createObjectIn(targetWindow);
-  Object.defineProperties(contentObj, api);
-  Object.seal(contentObj);
-  Cu.makeObjectPropsNormal(contentObj);
-  Services.obs.addObserver(onStatusChanged, "loop-status-changed", false);
-  Services.obs.addObserver(onDOMWindowDestroyed, "dom-window-destroyed", false);
+  let providersWasSet = !!gSocialProviders;
+  
+  gSocialProviders = providers.sort((a, b) =>
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
-  if ("navigator" in targetWindow) {
-    targetWindow.navigator.wrappedJSObject.__defineGetter__("mozLoop", function () {
-      
-      
-      
-      
-      delete targetWindow.navigator.wrappedJSObject.mozLoop;
-      return targetWindow.navigator.wrappedJSObject.mozLoop = contentObj;
-    });
-
-    
-    hookWindowCloseForPanelClose(targetWindow);
+  
+  
+  if (!providersWasSet) {
+    Services.obs.addObserver(updateSocialProvidersCache, "social:providers-changed", false);
   } else {
     
-    return targetWindow.mozLoop = contentObj;
+    LoopAPIInternal.broadcastPushMessage("SocialProvidersChanged");
   }
 
-}
+  return gSocialProviders;
+};
 
-function getChromeWindow(contentWin) {
-  return contentWin.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIWebNavigation)
-                   .QueryInterface(Ci.nsIDocShellTreeItem)
-                   .rootTreeItem
-                   .QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindow);
-}
+var gAppVersionInfo = null;
+var gBrowserSharingListenerCount = 0;
+var gBrowserSharingWindows = new Set();
+var gPageListeners = null;
+var gSocialProviders = null;
+var gStringBundle = null;
+const kBatchMessage = "Batch";
+const kMaxLoopCount = 10;
+const kMessageName = "Loop:Message";
+const kPushMessageName = "Loop:Message:Push";
+const kPushSubscription = "pushSubscription";
+const kRoomsPushPrefix = "Rooms:";
+const kMessageHandlers = {
+  
+
+
+
+
+
+
+
+
+
+
+  AddBrowserSharingListener: function(message, reply) {
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    let browser = win && win.gBrowser.selectedBrowser;
+    if (!win || !browser) {
+      
+      
+      let err = new Error("No tabs available to share.");
+      MozLoopService.log.error(err);
+      reply(cloneableError(err));
+      return;
+    }
+    if (browser.getAttribute("remote") == "true") {
+      
+      
+      let err = new Error("Tab sharing is not supported for e10s-enabled browsers");
+      MozLoopService.log.error(err);
+      reply(cloneableError(err));
+      return;
+    }
+
+    win.LoopUI.startBrowserSharing();
+
+    gBrowserSharingWindows.add(Cu.getWeakReference(win));
+    ++gBrowserSharingListenerCount;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  AddConversationContext: function(message, reply) {
+    let [windowId, sessionId, callid] = message.data;
+    MozLoopService.addConversationContext(windowId, {
+      sessionId: sessionId,
+      callId: callid
+    });
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  AddSocialShareProvider: function(message, reply) {
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    if (!win || !win.SocialShare) {
+      reply();
+      return;
+    }
+    win.SocialShare.showDirectory(win.LoopUI.toolbarButton.anchor);
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ComposeEmail: function(message) {
+    let [subject, body, recipient] = message.data;
+    recipient = recipient || "";
+    let mailtoURL = "mailto:" + encodeURIComponent(recipient) +
+                    "?subject=" + encodeURIComponent(subject) +
+                    "&body=" + encodeURIComponent(body);
+    extProtocolSvc.loadURI(CommonUtils.makeURI(mailtoURL));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Confirm: function(message, reply) {
+    let options = message.data[0];
+    let buttonFlags;
+    if (options.okButton && options.cancelButton) {
+      buttonFlags =
+        (Ci.nsIPrompt.BUTTON_POS_0 * Ci.nsIPrompt.BUTTON_TITLE_IS_STRING) +
+        (Ci.nsIPrompt.BUTTON_POS_1 * Ci.nsIPrompt.BUTTON_TITLE_IS_STRING);
+    } else if (!options.okButton && !options.cancelButton) {
+      buttonFlags = Services.prompt.STD_YES_NO_BUTTONS;
+    } else {
+      reply(cloneableError("confirm: missing button options"));
+      return;
+    }
+
+    try {
+      let chosenButton = Services.prompt.confirmEx(null, "",
+        options.message, buttonFlags, options.okButton, options.cancelButton,
+        null, null, {});
+
+      reply(chosenButton == 0);
+    } catch (ex) {
+      reply(ex);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  CopyString: function(message, reply) {
+    let str = message.data[0];
+    clipboardHelper.copyString(str);
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  GenerateUUID: function(message, reply) {
+    reply(MozLoopService.generateUUID());
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  GetAllStrings: function(message, reply) {
+    if (gStringBundle) {
+      reply(gStringBundle);
+      return;
+    }
+
+    
+    let strings = MozLoopService.getStrings();
+    
+    gStringBundle = {};
+    for (let [key, value] of strings.entries()) {
+      gStringBundle[key] = value;
+    }
+    reply(gStringBundle);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  GetAllConstants: function(message, reply) {
+    reply({
+      LOOP_SESSION_TYPE: LOOP_SESSION_TYPE,
+      ROOM_CONTEXT_ADD: ROOM_CONTEXT_ADD,
+      ROOM_CREATE: ROOM_CREATE,
+      ROOM_DELETE: ROOM_DELETE,
+      SHARING_ROOM_URL: SHARING_ROOM_URL,
+      SHARING_STATE_CHANGE: SHARING_STATE_CHANGE,
+      TWO_WAY_MEDIA_CONN_LENGTH: TWO_WAY_MEDIA_CONN_LENGTH
+    });
+  },
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  GetAppVersionInfo: function(message, reply) {
+    if (!gAppVersionInfo) {
+      
+      
+      try {
+        gAppVersionInfo = {
+          channel: UpdateUtils.UpdateChannel,
+          version: appInfo.version,
+          OS: appInfo.OS
+        };
+      } catch (ex) {}
+    }
+    reply(gAppVersionInfo);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  GetAudioBlob: function(message, reply) {
+    let name = message.data[0];
+    let request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
+                        .createInstance(Ci.nsIXMLHttpRequest);
+    let url = `chrome://browser/content/loop/shared/sounds/${name}.ogg`;
+
+    request.open("GET", url, true);
+    request.responseType = "arraybuffer";
+    request.onload = () => {
+      if (request.status < 200 || request.status >= 300) {
+        reply(cloneableError(request.status + " " + request.statusText));
+        return;
+      }
+
+      let blob = new Blob([request.response], {type: "audio/ogg"});
+      reply(blob);
+    };
+
+    request.send();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  GetConversationWindowData: function(message, reply) {
+    reply(MozLoopService.getConversationWindowData(message.data[0]));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  GetDoNotDisturb: function(message, reply) {
+    reply(MozLoopService.doNotDisturb);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  GetErrors: function(message, reply) {
+    let errors = {};
+    for (let [type, error] of MozLoopService.errors) {
+      
+      
+      if (error.error instanceof Ci.nsIException) {
+        MozLoopService.log.debug("Warning: Some errors were omitted from MozLoopAPI.errors " +
+                                 "due to issues copying nsIException across boundaries.",
+                                 error.error);
+        delete error.error;
+      }
+
+      errors[type] = cloneableError(error);
+    }
+    return reply(errors);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  GetFxAEnabled: function(message, reply) {
+    reply(MozLoopService.fxAEnabled);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  GetHasEncryptionKey: function(message, reply) {
+    reply(MozLoopService.hasEncryptionKey);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  GetLocale: function(message, reply) {
+    reply(MozLoopService.locale);
+  },
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  GetLoopPref: function(message, reply) {
+    let [prefName, prefType] = message.data;
+    reply(MozLoopService.getLoopPref(prefName, prefType));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  GetPluralRule: function(message, reply) {
+    reply(PluralForm.ruleNum);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  GetSelectedTabMetadata: function(message, reply) {
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    win.messageManager.addMessageListener("PageMetadata:PageDataResult", function onPageDataResult(msg) {
+      win.messageManager.removeMessageListener("PageMetadata:PageDataResult", onPageDataResult);
+      let pageData = msg.json;
+      win.LoopUI.getFavicon(function(err, favicon) {
+        if (err) {
+          MozLoopService.log.error("Error occurred whilst fetching favicon", err);
+          
+          
+        }
+        pageData.favicon = favicon || null;
+
+        reply(pageData);
+      });
+    });
+    win.gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetPageData");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  GetSocialShareProviders: function(message, reply) {
+    if (!gSocialProviders) {
+      updateSocialProvidersCache();
+    }
+    reply(gSocialProviders);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  GetUserAvatar: function(message, reply) {
+    let [emailAddress, size] = message.data;
+    if (!emailAddress || !MozLoopService.getLoopPref("contacts.gravatars.show")) {
+      reply(null);
+      return;
+    }
+
+    
+    let hasher = Cc["@mozilla.org/security/hash;1"]
+                   .createInstance(Ci.nsICryptoHash);
+    hasher.init(Ci.nsICryptoHash.MD5);
+    let stringStream = Cc["@mozilla.org/io/string-input-stream;1"]
+                         .createInstance(Ci.nsIStringInputStream);
+    stringStream.data = emailAddress.trim().toLowerCase();
+    hasher.updateFromStream(stringStream, -1);
+    let hash = hasher.finish(false);
+    
+    let md5Email = [toHexString(hash.charCodeAt(i)) for (i in hash)].join("");
+
+    
+    reply("https://www.gravatar.com/avatar/" + md5Email +
+      ".jpg?default=blank&s=" + (size || 40));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  GetUserProfile: function(message, reply) {
+    if (!MozLoopService.userProfile) {
+      reply(null);
+      return;
+    }
+
+    reply({
+      email: MozLoopService.userProfile.email,
+      uid: MozLoopService.userProfile.uid
+    });
+  },
+
+  
+
+
+  HangupAllChatWindows: function() {
+    MozLoopService.hangupAllChatWindows();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  LoginToFxA: function(message, reply) {
+    let forceReAuth = message.data[0];
+    MozLoopService.logInToFxA(forceReAuth);
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  LogoutFromFxA: function(message, reply) {
+    MozLoopService.logOutFromFxA();
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  NotifyUITour: function(message, reply) {
+    let [subject, params] = message.data;
+    UITour.notify(subject, params);
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  OpenGettingStartedTour: function(message, reply) {
+    var src = message.data[0];
+    MozLoopService.openGettingStartedTour(src);
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  OpenFxASettings: function(message, reply) {
+    MozLoopService.openFxASettings();
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  OpenURL: function(message, reply) {
+    let url = message.data[0];
+    MozLoopService.openURL(url);
+    reply();
+  },
+
+  
+
+
+  RemoveBrowserSharingListener: function() {
+    if (!gBrowserSharingListenerCount) {
+      return;
+    }
+
+    if (--gBrowserSharingListenerCount > 0) {
+      
+      return;
+    }
+
+    for (let win of gBrowserSharingWindows) {
+      win = win.get();
+      if (!win) {
+        continue;
+      }
+      win.LoopUI.stopBrowserSharing();
+    }
+
+    gBrowserSharingWindows.clear();
+  },
+
+  "Rooms:*": function(action, message, reply) {
+    LoopAPIInternal.handleObjectAPIMessage(LoopRooms, kRoomsPushPrefix,
+      action, message, reply);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  SetDoNotDisturb: function(message, reply) {
+    MozLoopService.doNotDisturb = message.data[0];
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  SetLoopPref: function(message) {
+    let [prefName, value, prefType] = message.data;
+    MozLoopService.setLoopPref(prefName, value, prefType);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  SetScreenShareState: function(message) {
+    let [windowId, active] = message.data;
+    MozLoopService.setScreenShareState(windowId, active);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  SocialShareRoom: function(message, reply) {
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    if (!win || !win.SocialShare) {
+      reply();
+      return;
+    }
+
+    let [providerOrigin, roomURL, title, body] = message.data;
+    let graphData = {
+      url: roomURL,
+      title: title
+    };
+    if (body) {
+      graphData.body = body;
+    }
+    win.SocialShare.sharePage(providerOrigin, graphData, null,
+      win.LoopUI.toolbarButton.anchor);
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  StartAlerting: function(message, reply) {
+    let chromeWindow = Services.wm.getMostRecentWindow("navigator:browser");
+    chromeWindow.getAttention();
+    ringer = new chromeWindow.Audio();
+    ringer.src = Services.prefs.getCharPref("loop.ringtone");
+    ringer.loop = true;
+    ringer.load();
+    ringer.play();
+    targetWindow.document.addEventListener("visibilitychange",
+      ringerStopper = function(event) {
+        if (event.currentTarget.hidden) {
+          kMessageHandlers.StopAlerting();
+        }
+      });
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  StopAlerting: function(message, reply) {
+    if (!ringer) {
+      reply();
+      return;
+    }
+    if (ringerStopper) {
+      ringer.ownerDocument.removeEventListener("visibilitychange",
+                                                ringerStopper);
+      ringerStopper = null;
+    }
+    ringer.pause();
+    ringer = null;
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  TelemetryAddValue: function(message, reply) {
+    let [histogramId, value] = message.data;
+    Services.telemetry.getHistogramById(histogramId).add(value);
+    reply();
+  }
+};
+
+const LoopAPIInternal = {
+  
+
+
+
+
+
+  initialize: function() {
+    if (gPageListeners) {
+      return;
+    }
+
+    Cu.import("resource://gre/modules/RemotePageManager.jsm");
+
+    gPageListeners = [new RemotePages("about:looppanel"), new RemotePages("about:loopconversation")];
+    for (let page of gPageListeners) {
+      page.addMessageListener(kMessageName, this.handleMessage.bind(this));
+    }
+
+    
+    Services.obs.addObserver(this.handleStatusChanged, "loop-status-changed", false);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  handleMessage: function(message, reply) {
+    let seq = message.data.shift();
+    let action = message.data.shift();
+
+    let actionParts = action.split(":");
+
+    
+    
+    let handlerName = actionParts.shift();
+
+    if (!reply) {
+      reply = result => {
+        message.target.sendAsyncMessage(message.name, [seq, result]);
+      }
+    }
+
+    
+    if (handlerName == kBatchMessage) {
+      this.handleBatchMessage(seq, message, reply);
+      return;
+    }
+
+    
+    
+    
+    let wildcardName = handlerName + ":*";
+    if (kMessageHandlers[wildcardName]) {
+      
+      kMessageHandlers[wildcardName](action, message, reply);
+      
+      return;
+    }
+
+    if (!kMessageHandlers[handlerName]) {
+      let msg = "Ouch, no message handler available for '" + handlerName + "'";
+      MozLoopService.log.error(msg);
+      reply(cloneableError(msg));
+      return;
+    }
+
+    kMessageHandlers[handlerName](message, reply);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  handleBatchMessage: function(seq, message, reply) {
+    let requests = message.data[0];
+    if (!requests.length) {
+      MozLoopService.log.error("Ough, a batch call with no requests is not much " +
+        "of a batch, now is it?");
+      return;
+    }
+
+    
+    
+    
+    
+    
+    if (!("loopCount" in reply)) {
+      reply.loopCount = 0;
+    } else if (++reply.loopCount > kMaxLoopCount) {
+      reply(cloneableError("Too many nested calls"));
+      return;
+    }
+
+    let resultSet = {};
+    Promise.all(requests.map(requestSet => {
+      let requestSeq = requestSet[0];
+      return new Promise(resolve => this.handleMessage({ data: requestSet }, result => {
+        resultSet[requestSeq] = result;
+        resolve();
+      }));
+    })).then(() => reply(resultSet));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  handleObjectAPIMessage: function(api, pushMessagePrefix, action, message, reply) {
+    let funcName = getObjectAPIFunctionName(action);
+
+    if (funcName == kPushSubscription) {
+      
+      let events = message.data[0];
+      if (!events || !events.length) {
+        let msg = "Oops, don't forget to pass in event names when you try to " +
+          "subscribe to them!";
+        MozLoopService.log.error(msg);
+        reply(cloneableError(msg));
+        return;
+      }
+
+      let handlerFunc = (e, ...data) => {
+        let prettyEventName = e.charAt(0).toUpperCase() + e.substr(1);
+        try {
+          message.target.sendAsyncMessage(kPushMessageName, [pushMessagePrefix +
+            prettyEventName, data]);
+        } catch(ex) {
+          MozLoopService.log.debug("Unable to send event through to target: " +
+            ex.message);
+          
+          for (let eventName of events) {
+            api.off(eventName, handlerFunc);
+          }
+        }
+      };
+
+      for (let eventName of events) {
+        api.on(eventName, handlerFunc);
+      }
+      reply();
+      return;
+    }
+
+    if (typeof api[funcName] != "function") {
+      reply(cloneableError("Sorry, function '" + funcName + "' does not exist!"));
+      return;
+    }
+    api[funcName](...message.data, (err, result) => {
+      reply(err ? cloneableError(err) : result);
+    });
+  },
+
+  
+
+
+  handleStatusChanged: function() {
+    LoopAPIInternal.broadcastPushMessage("LoopStatusChanged");
+  },
+
+  
+
+
+
+
+
+  broadcastPushMessage: function(name, data) {
+    for (let page of gPageListeners) {
+      page.sendAsyncMessage(kPushMessageName, [name, data]);
+    }
+  },
+
+  
+
+
+  destroy: function() {
+    if (!gPageListeners) {
+      return;
+    }
+    [for (listener of gPageListeners) listener.destroy()];
+    gPageListeners = null;
+
+    
+    Services.obs.removeObserver(this.handleStatusChanged, "loop-status-changed");
+    
+    if (gSocialProviders) {
+      Services.obs.removeObserver(updateSocialProvidersCache, "social:providers-changed");
+    }
+  }
+};
+
+this.LoopAPI = Object.freeze({
+  
+  initialize: function() {
+    LoopAPIInternal.initialize();
+  },
+  
+  broadcastPushMessage: function(name, data) {
+    LoopAPIInternal.broadcastPushMessage(name, data);
+  },
+  
+  destroy: function() {
+    LoopAPIInternal.destroy();
+  }
+});

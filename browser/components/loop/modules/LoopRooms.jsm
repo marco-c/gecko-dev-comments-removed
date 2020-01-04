@@ -755,12 +755,17 @@ var LoopRoomsInternal = {
     let url = "/rooms/" + encodeURIComponent(roomToken);
     MozLoopService.hawkRequest(this.sessionType, url, "POST", postData).then(response => {
       
-      var joinData = response.body ? JSON.parse(response.body) : {};
+      let joinData = response.body ? JSON.parse(response.body) : {};
+      if ("sessionToken" in joinData) {
+        let room = this.rooms.get(roomToken);
+        room.sessionToken = joinData.sessionToken;
+      }
       callback(null, joinData);
     }, error => callback(error)).catch(error => callback(error));
   },
 
   
+
 
 
 
@@ -818,6 +823,14 @@ var LoopRoomsInternal = {
           MozLoopService.log.error(error);
         }
       };
+    }
+    let room = this.rooms.get(roomToken);
+    if (!sessionToken && room && room.sessionToken) {
+      if (!room || !room.sessionToken) {
+        return;
+      }
+      sessionToken = room.sessionToken;
+      delete room.sessionToken;
     }
     this._postToRoom(roomToken, {
       action: "leave",

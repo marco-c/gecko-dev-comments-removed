@@ -144,7 +144,8 @@ var LoopUI;
 
           let documentDOMLoaded = () => {
             iframe.removeEventListener("DOMContentLoaded", documentDOMLoaded, true);
-            this.injectLoopAPI(iframe.contentWindow);
+            
+            this.hookWindowCloseForPanelClose(iframe.contentWindow);
             iframe.contentWindow.addEventListener("loopPanelInitialized", function loopPanelInitialized() {
               iframe.contentWindow.removeEventListener("loopPanelInitialized",
                 loopPanelInitialized);
@@ -166,6 +167,8 @@ var LoopUI;
             resolve();
             return;
           }
+
+          this.LoopAPI.initialize();
 
           let anchor = event ? event.target : this.toolbarButton.anchor;
 
@@ -407,42 +410,30 @@ var LoopUI;
 
 
 
-
-
-
-
-    addBrowserSharingListener: function(listener) {
-      if (!this._tabChangeListeners) {
-        this._tabChangeListeners = new Set();
+    startBrowserSharing: function() {
+      if (!this._listeningToTabSelect) {
         gBrowser.tabContainer.addEventListener("TabSelect", this);
+        this._listeningToTabSelect = true;
       }
 
-      this._tabChangeListeners.add(listener);
       this._maybeShowBrowserSharingInfoBar();
 
       
-      listener(null, gBrowser.selectedBrowser.outerWindowID);
+      this.LoopAPI.broadcastPushMessage("BrowserSwitch",
+        gBrowser.selectedBrowser.outerWindowID);
     },
 
     
 
 
-
-
-    removeBrowserSharingListener: function(listener) {
-      if (!this._tabChangeListeners) {
+    stopBrowserSharing: function() {
+      if (!this._listeningToTabSelect) {
         return;
       }
 
-      if (this._tabChangeListeners.has(listener)) {
-        this._tabChangeListeners.delete(listener);
-      }
-
-      if (!this._tabChangeListeners.size) {
-        this._hideBrowserSharingInfoBar();
-        gBrowser.tabContainer.removeEventListener("TabSelect", this);
-        delete this._tabChangeListeners;
-      }
+      this._hideBrowserSharingInfoBar();
+      gBrowser.tabContainer.removeEventListener("TabSelect", this);
+      this._listeningToTabSelect = false;
     },
 
     
@@ -543,17 +534,13 @@ var LoopUI;
       let wasVisible = false;
       
       if (event.detail.previousTab) {
-        wasVisible = this._hideBrowserSharingInfoBar(false, event.detail.previousTab.linkedBrowser);
+        wasVisible = this._hideBrowserSharingInfoBar(false,
+          event.detail.previousTab.linkedBrowser);
       }
 
       
-      for (let listener of this._tabChangeListeners) {
-        try {
-          listener(null, gBrowser.selectedBrowser.outerWindowID);
-        } catch (ex) {
-          Cu.reportError("Tab switch caused an error: " + ex.message);
-        }
-      };
+      this.LoopAPI.broadcastPushMessage("BrowserSwitch",
+        gBrowser.selectedBrowser.outerWindowID);
 
       if (wasVisible) {
         
@@ -605,7 +592,8 @@ var LoopUI;
   };
 })();
 
-XPCOMUtils.defineLazyModuleGetter(LoopUI, "injectLoopAPI", "resource:///modules/loop/MozLoopAPI.jsm");
+XPCOMUtils.defineLazyModuleGetter(LoopUI, "hookWindowCloseForPanelClose", "resource://gre/modules/MozSocialAPI.jsm");
+XPCOMUtils.defineLazyModuleGetter(LoopUI, "LoopAPI", "resource:///modules/loop/MozLoopAPI.jsm");
 XPCOMUtils.defineLazyModuleGetter(LoopUI, "LoopRooms", "resource:///modules/loop/LoopRooms.jsm");
 XPCOMUtils.defineLazyModuleGetter(LoopUI, "MozLoopService", "resource:///modules/loop/MozLoopService.jsm");
 XPCOMUtils.defineLazyModuleGetter(LoopUI, "PanelFrame", "resource:///modules/PanelFrame.jsm");

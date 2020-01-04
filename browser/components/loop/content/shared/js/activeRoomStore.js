@@ -67,7 +67,6 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
-
   var ActiveRoomStore = loop.store.createStore({
     
 
@@ -85,11 +84,6 @@ loop.store.ActiveRoomStore = (function() {
     ],
 
     initialize: function(options) {
-      if (!options.mozLoop) {
-        throw new Error("Missing option mozLoop");
-      }
-      this._mozLoop = options.mozLoop;
-
       if (!options.sdkDriver) {
         throw new Error("Missing option sdkDriver");
       }
@@ -281,10 +275,11 @@ loop.store.ActiveRoomStore = (function() {
       this._onDeleteListener = this._handleRoomDelete.bind(this);
       this._onSocialShareUpdate = this._handleSocialShareUpdate.bind(this);
 
-      this._mozLoop.rooms.on("update:" + this._storeState.roomToken, this._onUpdateListener);
-      this._mozLoop.rooms.on("delete:" + this._storeState.roomToken, this._onDeleteListener);
-      window.addEventListener("LoopShareWidgetChanged", this._onSocialShareUpdate);
-      window.addEventListener("LoopSocialProvidersChanged", this._onSocialShareUpdate);
+      var roomToken = this._storeState.roomToken;
+      loop.request("Rooms:PushSubscription", ["delete:" + roomToken, "update:" + roomToken]);
+      loop.subscribe("Rooms:Delete:" + roomToken, this._handleRoomDelete.bind(this));
+      loop.subscribe("Rooms:Update:" + roomToken, this._handleRoomUpdate.bind(this));
+      loop.subscribe("SocialProvidersChanged", this._onSocialShareUpdate);
     },
 
     
@@ -310,27 +305,31 @@ loop.store.ActiveRoomStore = (function() {
       this._registerPostSetupActions();
 
       
-      this._mozLoop.rooms.get(actionData.roomToken,
-        function(error, roomData) {
-          if (error) {
+      loop.requestMulti(
+        ["Rooms:Get", actionData.roomToken],
+        ["GetSocialShareProviders"])
+        .then(function(results) {
+          var room = results[0];
+          var socialShareProviders = results[1];
+
+          if (room.isError) {
             this.dispatchAction(new sharedActions.RoomFailure({
-              error: error,
+              error: room,
               failedJoinRequest: false
             }));
             return;
           }
 
           this.dispatchAction(new sharedActions.UpdateRoomInfo({
-            participants: roomData.participants,
-            roomContextUrls: roomData.decryptedContext.urls,
-            roomDescription: roomData.decryptedContext.description,
-            roomName: roomData.decryptedContext.roomName,
+            participants: room.participants,
+            roomContextUrls: room.decryptedContext.urls,
+            roomDescription: room.decryptedContext.description,
+            roomName: room.decryptedContext.roomName,
             roomState: ROOM_STATES.READY,
-            roomUrl: roomData.roomUrl,
-            socialShareProviders: this._mozLoop.getSocialShareProviders()
+            roomUrl: room.roomUrl,
+            socialShareProviders: socialShareProviders
           }));
 
-          
           
           this.dispatchAction(new sharedActions.JoinRoom());
         }.bind(this));
@@ -381,10 +380,10 @@ loop.store.ActiveRoomStore = (function() {
 
     _getRoomDataForStandalone: function(roomCryptoKey) {
       return new Promise(function(resolve, reject) {
-        this._mozLoop.rooms.get(this._storeState.roomToken, function(err, result) {
-          if (err) {
+        loop.request("Rooms:Get", this._storeState.roomToken).then(function(result) {
+          if (result.isError) {
             resolve(new sharedActions.RoomFailure({
-              error: err,
+              error: result,
               failedJoinRequest: false
             }));
             return;
@@ -550,8 +549,7 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
-
-    _handleRoomUpdate: function(eventName, roomData) {
+    _handleRoomUpdate: function(roomData) {
       this.dispatchAction(new sharedActions.UpdateRoomInfo({
         roomContextUrls: roomData.decryptedContext.urls,
         roomDescription: roomData.decryptedContext.description,
@@ -566,8 +564,7 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
-
-    _handleRoomDelete: function(eventName, roomData) {
+    _handleRoomDelete: function(roomData) {
       this._sdkDriver.forceDisconnectAll(function() {
         window.close();
       });
@@ -578,9 +575,11 @@ loop.store.ActiveRoomStore = (function() {
 
 
     _handleSocialShareUpdate: function() {
-      this.dispatchAction(new sharedActions.UpdateSocialShareInfo({
-        socialShareProviders: this._mozLoop.getSocialShareProviders()
-      }));
+      loop.request("GetSocialShareProviders").then(function(result) {
+        this.dispatchAction(new sharedActions.UpdateSocialShareInfo({
+          socialShareProviders: result
+        }));
+      }.bind(this));
     },
 
     
@@ -689,28 +688,27 @@ loop.store.ActiveRoomStore = (function() {
     gotMediaPermission: function() {
       this.setStoreState({ roomState: ROOM_STATES.JOINING });
 
-      this._mozLoop.rooms.join(this._storeState.roomToken,
-        function(error, responseData) {
-          if (error) {
-            this.dispatchAction(new sharedActions.RoomFailure({
-              error: error,
-              
-              
-              
-              
-              
-              failedJoinRequest: true
-            }));
-            return;
-          }
-
-          this.dispatchAction(new sharedActions.JoinedRoom({
-            apiKey: responseData.apiKey,
-            sessionToken: responseData.sessionToken,
-            sessionId: responseData.sessionId,
-            expires: responseData.expires
+      loop.request("Rooms:Join", this._storeState.roomToken).then(function(result) {
+        if (result.isError) {
+          this.dispatchAction(new sharedActions.RoomFailure({
+            error: result,
+            
+            
+            
+            
+            
+            failedJoinRequest: true
           }));
-        }.bind(this));
+          return;
+        }
+
+        this.dispatchAction(new sharedActions.JoinedRoom({
+          apiKey: result.apiKey,
+          sessionToken: result.sessionToken,
+          sessionId: result.sessionId,
+          expires: result.expires
+        }));
+      }.bind(this));
     },
 
     
@@ -744,8 +742,8 @@ loop.store.ActiveRoomStore = (function() {
 
       this._sdkDriver.connectSession(actionData);
 
-      this._mozLoop.addConversationContext(this._storeState.windowId,
-                                           actionData.sessionId, "");
+      loop.request("AddConversationContext", this._storeState.windowId,
+        actionData.sessionId, "");
     },
 
     
@@ -850,8 +848,7 @@ loop.store.ActiveRoomStore = (function() {
     screenSharingState: function(actionData) {
       this.setStoreState({ screenSharingState: actionData.state });
 
-      this._mozLoop.setScreenShareState(
-        this.getStoreState().windowId,
+      loop.request("SetScreenShareState", this.getStoreState().windowId,
         actionData.state === SCREEN_SHARE_STATES.ACTIVE);
     },
 
@@ -887,9 +884,15 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
-    _handleSwitchBrowserShare: function(err, windowId) {
-      if (err) {
-        console.error("Error getting the windowId: " + err);
+    _handleSwitchBrowserShare: function(windowId) {
+      if (Array.isArray(windowId)) {
+        windowId = windowId[0];
+      }
+      if (!windowId) {
+        return;
+      }
+      if (windowId.isError) {
+        console.error("Error getting the windowId: " + windowId.message);
         this.dispatchAction(new sharedActions.ScreenSharingState({
           state: SCREEN_SHARE_STATES.INACTIVE
         }));
@@ -898,7 +901,7 @@ loop.store.ActiveRoomStore = (function() {
 
       var screenSharingState = this.getStoreState().screenSharingState;
 
-      if (screenSharingState === SCREEN_SHARE_STATES.INACTIVE) {
+      if (screenSharingState === SCREEN_SHARE_STATES.PENDING) {
         
         var options = {
           videoSource: "browser",
@@ -935,7 +938,8 @@ loop.store.ActiveRoomStore = (function() {
         
         
         
-        this._mozLoop.addBrowserSharingListener(this._browserSharingListener);
+        loop.request("AddBrowserSharingListener").then(this._browserSharingListener);
+        loop.subscribe("BrowserSwitch", this._browserSharingListener);
       } else {
         this._sdkDriver.startScreenShare(options);
       }
@@ -947,7 +951,8 @@ loop.store.ActiveRoomStore = (function() {
     endScreenShare: function() {
       if (this._browserSharingListener) {
         
-        this._mozLoop.removeBrowserSharingListener(this._browserSharingListener);
+        loop.request("RemoveBrowserSharingListener");
+        loop.unsubscribe("BrowserSwitch", this._browserSharingListener);
         this._browserSharingListener = null;
       }
 
@@ -996,9 +1001,8 @@ loop.store.ActiveRoomStore = (function() {
 
 
     connectionStatus: function(actionData) {
-      this._mozLoop.rooms.sendConnectionStatus(this.getStoreState("roomToken"),
-        this.getStoreState("sessionToken"),
-        actionData);
+      loop.request("Rooms:SendConnectionStatus", this.getStoreState("roomToken"),
+        this.getStoreState("sessionToken"), actionData);
     },
 
     
@@ -1013,10 +1017,9 @@ loop.store.ActiveRoomStore = (function() {
 
       
       var roomToken = this.getStoreState().roomToken;
-      this._mozLoop.rooms.off("update:" + roomToken, this._onUpdateListener);
-      this._mozLoop.rooms.off("delete:" + roomToken, this._onDeleteListener);
-      window.removeEventListener("LoopShareWidgetChanged", this._onShareWidgetUpdate);
-      window.removeEventListener("LoopSocialProvidersChanged", this._onSocialProvidersUpdate);
+      loop.unsubscribe("Rooms:Update:" + roomToken, this._onUpdateListener);
+      loop.unsubscribe("Rooms:Delete:" + roomToken, this._onDeleteListener);
+      loop.unsubscribe("SocialProvidersChanged", this._onSocialProvidersUpdate);
       delete this._onUpdateListener;
       delete this._onDeleteListener;
       delete this._onShareWidgetUpdate;
@@ -1045,22 +1048,25 @@ loop.store.ActiveRoomStore = (function() {
 
 
     _refreshMembership: function() {
-      this._mozLoop.rooms.refreshMembership(this._storeState.roomToken,
-        this._storeState.sessionToken,
-        function(error, responseData) {
-          if (error) {
+      loop.request("Rooms:RefreshMembership", this._storeState.roomToken,
+        this._storeState.sessionToken)
+        .then(function(result) {
+          if (result.isError) {
             this.dispatchAction(new sharedActions.RoomFailure({
-              error: error,
+              error: result,
               failedJoinRequest: false
             }));
             return;
           }
 
-          this._setRefreshTimeout(responseData.expires);
+          this._setRefreshTimeout(result.expires);
         }.bind(this));
     },
 
     
+
+
+
 
 
 
@@ -1083,13 +1089,14 @@ loop.store.ActiveRoomStore = (function() {
         loop.standaloneMedia.multiplexGum.reset();
       }
 
-      this._mozLoop.setScreenShareState(
-        this.getStoreState().windowId,
-        false);
+      var requests = [
+        ["SetScreenShareState", this.getStoreState().windowId, false]
+      ];
 
       if (this._browserSharingListener) {
         
-        this._mozLoop.removeBrowserSharingListener(this._browserSharingListener);
+        requests.push(["RemoveBrowserSharingListener"]);
+        loop.unsubscribe("BrowserSwitch", this._browserSharingListener);
         this._browserSharingListener = null;
       }
 
@@ -1115,9 +1122,11 @@ loop.store.ActiveRoomStore = (function() {
            this._storeState.roomState === ROOM_STATES.JOINED ||
            this._storeState.roomState === ROOM_STATES.SESSION_CONNECTED ||
            this._storeState.roomState === ROOM_STATES.HAS_PARTICIPANTS)) {
-        this._mozLoop.rooms.leave(this._storeState.roomToken,
-          this._storeState.sessionToken);
+        requests.push(["Rooms:Leave", this._storeState.roomToken,
+          this._storeState.sessionToken]);
       }
+
+      loop.requestMulti.apply(null, requests);
 
       this.setStoreState({ roomState: nextState });
     },
@@ -1175,7 +1184,7 @@ loop.store.ActiveRoomStore = (function() {
         "sendTextChatMessage"
       ]);
       
-      this._mozLoop.telemetryAddValue("LOOP_ROOM_SESSION_WITHCHAT", 1);
+      loop.request("TelemetryAddValue", "LOOP_ROOM_SESSION_WITHCHAT", 1);
     },
 
     

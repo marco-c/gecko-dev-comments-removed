@@ -185,14 +185,14 @@ loop.webapp = (function(_, OT, mozL10n) {
       
       
       
+      constants: {},
       useDataChannels: true,
       dispatcher: dispatcher,
       sdk: OT
     });
 
     var activeRoomStore = new loop.store.ActiveRoomStore(dispatcher, {
-        mozLoop: standaloneMozLoop,
-        sdkDriver: sdkDriver
+      sdkDriver: sdkDriver
     });
 
     
