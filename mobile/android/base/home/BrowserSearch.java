@@ -102,7 +102,8 @@ public class BrowserSearch extends HomeFragment
     private static final int SUGGESTION_TIMEOUT = 3000;
 
     
-    private static final int SUGGESTION_MAX = 3;
+    
+    private static final int NETWORK_SUGGESTION_MAX = 3;
 
     
     
@@ -670,7 +671,7 @@ public class BrowserSearch extends HomeFragment
             return;
         }
 
-        mSuggestClient = sSuggestClientFactory.getSuggestClient(getActivity(), suggestTemplate, SUGGESTION_TIMEOUT, SUGGESTION_MAX);
+        mSuggestClient = sSuggestClientFactory.getSuggestClient(getActivity(), suggestTemplate, SUGGESTION_TIMEOUT, NETWORK_SUGGESTION_MAX);
     }
 
     private void showSuggestionsOptIn() {
@@ -903,7 +904,11 @@ public class BrowserSearch extends HomeFragment
             String actualQuery = BrowserContract.SearchHistory.QUERY + " LIKE ?";
             String[] queryArgs = new String[] { '%' + mSearchTerm + '%' };
 
-            final int maxSavedSuggestions = getContext().getResources().getInteger(R.integer.max_saved_suggestions);
+            
+            
+            
+            final int maxSavedSuggestions = NETWORK_SUGGESTION_MAX + 1 + getContext().getResources().getInteger(R.integer.max_saved_suggestions);
+
             final String sortOrderAndLimit = BrowserContract.SearchHistory.DATE +" DESC LIMIT " + maxSavedSuggestions;
             final Cursor result =  cr.query(BrowserContract.SearchHistory.CONTENT_URI, columns, actualQuery, queryArgs, sortOrderAndLimit);
 
