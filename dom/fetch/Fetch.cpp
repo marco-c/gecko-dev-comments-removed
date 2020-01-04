@@ -976,8 +976,14 @@ FetchBody<Derived>::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength
         
         RefPtr<CancelPumpRunnable<Derived>> r =
           new CancelPumpRunnable<Derived>(this);
-        if (!r->Dispatch(mWorkerPrivate->GetJSContext())) {
+        ErrorResult rv;
+        r->Dispatch(rv);
+        if (rv.Failed()) {
           NS_WARNING("Could not dispatch CancelPumpRunnable. Nothing we can do here");
+          
+          
+          
+          rv.SuppressException();
         }
       }
     }
