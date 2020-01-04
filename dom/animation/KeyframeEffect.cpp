@@ -1067,6 +1067,12 @@ KeyframeEffectReadOnly::CanThrottle() const
 
   
   
+  if (CanIgnoreIfNotVisible() && frame->IsScrolledOutOfView()) {
+    return true;
+  }
+
+  
+  
   
   
   for (const LayerAnimationInfo::Record& record :
