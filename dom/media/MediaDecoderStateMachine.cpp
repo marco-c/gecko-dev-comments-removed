@@ -37,6 +37,7 @@
 #include "nsDeque.h"
 #include "prenv.h"
 
+#include "AccurateSeekTask.h"
 #include "AudioSegment.h"
 #include "DOMMediaStream.h"
 #include "ImageContainer.h"
@@ -1394,9 +1395,9 @@ void MediaDecoderStateMachine::InitiateVideoDecodeRecoverySeek()
   CancelMediaDecoderReaderWrapperCallback();
 
   
-  mSeekTask = SeekTask::CreateSeekTask(mDecoderID, OwnerThread(),
-                                       mReader.get(), Move(seekJob),
-                                       mInfo, Duration(), GetMediaTime());
+  mSeekTask = new AccurateSeekTask(mDecoderID, OwnerThread(),
+                                   mReader.get(), Move(seekJob),
+                                   mInfo, Duration(), GetMediaTime());
 
   mOnSeekingStart.Notify(MediaDecoderEventVisibility::Suppressed);
 
@@ -1579,9 +1580,9 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   CancelMediaDecoderReaderWrapperCallback();
 
   
-  mSeekTask = SeekTask::CreateSeekTask(mDecoderID, OwnerThread(),
-                                       mReader.get(), Move(aSeekJob),
-                                       mInfo, Duration(), GetMediaTime());
+  mSeekTask = new AccurateSeekTask(mDecoderID, OwnerThread(),
+                                   mReader.get(), Move(aSeekJob),
+                                   mInfo, Duration(), GetMediaTime());
 
   
   
