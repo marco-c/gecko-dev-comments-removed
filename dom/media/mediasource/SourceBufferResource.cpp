@@ -154,10 +154,9 @@ SourceBufferResource::EvictBefore(uint64_t aOffset, ErrorResult& aRv)
 {
   SBR_DEBUG("EvictBefore(aOffset=%llu)", aOffset);
   ReentrantMonitorAutoEnter mon(mMonitor);
-  
-  if (aOffset < mOffset) {
-    mInputBuffer.EvictBefore(aOffset, aRv);
-  }
+
+  mInputBuffer.EvictBefore(aOffset, aRv);
+
   
   
   mon.NotifyAll();
