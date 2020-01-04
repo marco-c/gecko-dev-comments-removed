@@ -364,8 +364,9 @@ NativeObject::setLastPropertyMakeNative(ExclusiveContext* cx, Shape* shape)
 
     
     
+    AutoEnterOOMUnsafeRegion oomUnsafe;
     if (oldSpan != newSpan && !updateSlotsForSpan(cx, oldSpan, newSpan))
-        CrashAtUnhandlableOOM("NativeObject::setLastPropertyMakeNative");
+        oomUnsafe.crash("NativeObject::setLastPropertyMakeNative");
 }
 
 bool

@@ -372,7 +372,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     
 
 
-    bool recomputeDebuggeeZoneSet();
+    void recomputeDebuggeeZoneSet();
 
     
 

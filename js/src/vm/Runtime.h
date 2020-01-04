@@ -1854,8 +1854,9 @@ FreeOp::freeLater(void* p)
     
     MOZ_ASSERT(this != runtime()->defaultFreeOp());
 
+    AutoEnterOOMUnsafeRegion oomUnsafe;
     if (!freeLaterList.append(p))
-        CrashAtUnhandlableOOM("FreeOp::freeLater");
+        oomUnsafe.crash("FreeOp::freeLater");
 }
 
 

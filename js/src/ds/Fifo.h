@@ -135,8 +135,9 @@ class Fifo
             
             
             
+            AutoEnterOOMUnsafeRegion oomUnsafe;
             if (!front_.append(mozilla::Move(t)))
-                CrashAtUnhandlableOOM("js::Fifo::popFront");
+                oomUnsafe.crash("js::Fifo::popFront");
             return false;
         }
         return true;

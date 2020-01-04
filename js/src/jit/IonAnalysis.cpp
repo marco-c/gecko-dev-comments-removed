@@ -322,8 +322,11 @@ MaybeFoldConditionBlock(MIRGraph& graph, MBasicBlock* initialBlock)
     }
 
     
-    if (!SplitCriticalEdgesForBlock(graph, testBlock))
-        CrashAtUnhandlableOOM("MaybeFoldConditionBlock");
+    {
+        AutoEnterOOMUnsafeRegion oomUnsafe;
+        if (!SplitCriticalEdgesForBlock(graph, testBlock))
+            oomUnsafe.crash("MaybeFoldConditionBlock");
+    }
 
     MPhi* phi;
     MTest* finalTest;
@@ -2932,8 +2935,9 @@ LinearSum::add(MDefinition* term, int32_t scale)
         }
     }
 
+    AutoEnterOOMUnsafeRegion oomUnsafe;
     if (!terms_.append(LinearTerm(term, scale)))
-        CrashAtUnhandlableOOM("LinearSum::add");
+        oomUnsafe.crash("LinearSum::add");
 
     return true;
 }
