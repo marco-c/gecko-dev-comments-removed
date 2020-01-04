@@ -110,4 +110,14 @@ protected:
     nsCOMPtr<nsISupports>               mSecurityInfo;
 };
 
+
+
+
+
+inline nsISupports*
+ToSupports(nsWyciwygChannel* p)
+{
+  return NS_ISUPPORTS_CAST(nsIStreamListener*, p);
+}
+
 #endif 

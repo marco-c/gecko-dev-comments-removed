@@ -111,4 +111,14 @@ private:
 } 
 } 
 
+
+
+
+
+inline nsISupports*
+ToSupports(mozilla::net::WebSocketEventService* p)
+{
+  return NS_ISUPPORTS_CAST(nsIWebSocketEventService*, p);
+}
+
 #endif 

@@ -413,4 +413,14 @@ private:
 } 
 } 
 
+
+
+
+
+inline nsISupports*
+ToSupports(mozilla::storage::Connection* p)
+{
+  return NS_ISUPPORTS_CAST(mozIStorageAsyncConnection*, p);
+}
+
 #endif 

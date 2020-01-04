@@ -458,4 +458,13 @@ RasterImage::GetAnimationMode(uint16_t* aAnimationMode) {
 } 
 } 
 
+
+
+
+inline nsISupports*
+ToSupports(mozilla::image::RasterImage* p)
+{
+  return NS_ISUPPORTS_CAST(mozilla::image::ImageResource*, p);
+}
+
 #endif 
