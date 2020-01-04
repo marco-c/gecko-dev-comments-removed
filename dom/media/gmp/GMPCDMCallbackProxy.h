@@ -4,8 +4,8 @@
 
 
 
-#ifndef CDMCallbackProxy_h_
-#define CDMCallbackProxy_h_
+#ifndef GMPCDMCallbackProxy_h_
+#define GMPCDMCallbackProxy_h_
 
 #include "mozilla/CDMProxy.h"
 #include "gmp-decryption.h"
@@ -15,7 +15,7 @@ namespace mozilla {
 
 
 
-class CDMCallbackProxy : public GMPDecryptorProxyCallback {
+class GMPCDMCallbackProxy : public GMPDecryptorProxyCallback {
 public:
   void SetSessionId(uint32_t aCreateSessionToken,
                     const nsCString& aSessionId) override;
@@ -53,11 +53,11 @@ public:
 
   void Terminated() override;
 
-  ~CDMCallbackProxy() {}
+  ~GMPCDMCallbackProxy() {}
 
 private:
   friend class CDMProxy;
-  explicit CDMCallbackProxy(CDMProxy* aProxy);
+  explicit GMPCDMCallbackProxy(CDMProxy* aProxy);
 
   
   CDMProxy* mProxy;
