@@ -47,6 +47,26 @@ AndroidContentController::NotifyDefaultPrevented(uint64_t aInputBlockId,
 }
 
 void
+AndroidContentController::HandleSingleTap(const CSSPoint& aPoint,
+                                          Modifiers aModifiers,
+                                          const ScrollableLayerGuid& aGuid)
+{
+    
+    
+    
+    
+    
+    if (AndroidBridge::IsJavaUiThread()) {
+        CSSIntPoint point = RoundedToInt(aPoint);
+        nsCString data = nsPrintfCString("{ \"x\": %d, \"y\": %d }", point.x, point.y);
+        nsAppShell::gAppShell->PostEvent(AndroidGeckoEvent::MakeBroadcastEvent(
+                NS_LITERAL_CSTRING("Gesture:SingleTap"), data));
+    }
+
+    ChromeProcessController::HandleSingleTap(aPoint, aModifiers, aGuid);
+}
+
+void
 AndroidContentController::PostDelayedTask(Task* aTask, int aDelayMs)
 {
     AndroidBridge::Bridge()->PostTaskToUiThread(aTask, aDelayMs);
