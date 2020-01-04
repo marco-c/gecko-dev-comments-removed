@@ -4299,7 +4299,11 @@ ICGetName_Scope<NumHops>::Compiler::generateStubCode(MacroAssembler& masm)
     }
 
     masm.load32(Address(ICStubReg, ICGetName_Scope::offsetOfOffset()), scratch);
-    masm.loadValue(BaseIndex(scope, scratch, TimesOne), R0);
+
+    
+    BaseIndex slot(scope, scratch, TimesOne);
+    masm.branchTestMagic(Assembler::Equal, slot, &failure);
+    masm.loadValue(slot, R0);
 
     
     EmitEnterTypeMonitorIC(masm);
