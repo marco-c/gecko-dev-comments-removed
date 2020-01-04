@@ -130,6 +130,12 @@ public:
 
   const nsACString& SignedPkgOriginNoSuffix() const;
 
+  
+
+
+
+  const nsAString& PresentationURL() const;
+
 protected:
   friend class MaybeInvalidTabContext;
 
@@ -158,7 +164,8 @@ protected:
                      mozIApplication* aOwnApp,
                      mozIApplication* aAppFrameOwnerApp,
                      const DocShellOriginAttributes& aOriginAttributes,
-                     const nsACString& aSignedPkgOriginNoSuffix);
+                     const nsACString& aSignedPkgOriginNoSuffix,
+                     const nsAString& aPresentationURL);
 
   
 
@@ -215,6 +222,11 @@ private:
 
 
   nsCString mSignedPkgOriginNoSuffix;
+
+  
+
+
+  nsString mPresentationURL;
 };
 
 
@@ -235,13 +247,15 @@ public:
                 mozIApplication* aOwnApp,
                 mozIApplication* aAppFrameOwnerApp,
                 const DocShellOriginAttributes& aOriginAttributes,
-                const nsACString& aSignedPkgOriginNoSuffix = EmptyCString())
+                const nsACString& aSignedPkgOriginNoSuffix = EmptyCString(),
+                const nsAString& aPresentationURL = EmptyString())
   {
     return TabContext::SetTabContext(aIsMozBrowserElement,
                                      aOwnApp,
                                      aAppFrameOwnerApp,
                                      aOriginAttributes,
-                                     aSignedPkgOriginNoSuffix);
+                                     aSignedPkgOriginNoSuffix,
+                                     aPresentationURL);
   }
 };
 
