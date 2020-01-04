@@ -3262,7 +3262,7 @@ nsDisplayImageContainer::CanOptimizeToImageLayer(LayerManager* aManager,
   const gfxSize scale = gfxSize(destRect.width / imageWidth,
                                 destRect.height / imageHeight);
 
-  if (scale.width < 0.2 || scale.height < 0.2) {
+  if (scale.width < 0.34 || scale.height < 0.34) {
     
     
     return false;
