@@ -4026,7 +4026,7 @@ EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
     
     wrapper->mLastOverFrame = 
       DispatchMouseOrPointerEvent(aMouseEvent,
-                                  isPointer ? NS_POINTER_OVER : eMouseOver,
+                                  isPointer ? ePointerOver : eMouseOver,
                                   aContent, lastOverElement);
     wrapper->mLastOverElement = aContent;
   } else {
