@@ -253,11 +253,7 @@ public:
                           const CSSRect& aRect,
                           const uint32_t& aFlags) override;
   
-  
   nsEventStatus DispatchInputEvent(mozilla::WidgetInputEvent* aEvent) override;
-
-  
-  nsEventStatus DispatchAPZAwareEvent(mozilla::WidgetInputEvent* aEvent) override;
 
   void SetConfirmedTargetAPZC(uint64_t aInputBlockId,
                               const nsTArray<ScrollableLayerGuid>& aTargets) const override;
