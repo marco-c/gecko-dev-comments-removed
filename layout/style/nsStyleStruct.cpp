@@ -1120,6 +1120,8 @@ nsStyleClipPath::ReleaseRef()
     NS_ASSERTION(mURL, "expected pointer");
     mURL->Release();
   }
+  
+  
   mURL = nullptr;
 }
 
