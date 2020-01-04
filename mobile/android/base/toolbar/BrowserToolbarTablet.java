@@ -47,7 +47,7 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
         
         
         
-        setButtonEnabled(forwardButton, true);
+        forwardButton.setEnabled(true);
 
         updateForwardButtonState(ForwardButtonState.HIDDEN);
     }
@@ -171,8 +171,8 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
         
         backButtonWasEnabledOnStartEditing = backButton.isEnabled();
 
-        setButtonEnabled(backButton, false);
-        setButtonEnabled(forwardButton, false);
+        backButton.setEnabled(false);
+        forwardButton.setEnabled(false);
 
         super.startEditing(url, animator);
     }
@@ -190,7 +190,7 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
         if (isEditing()) {
             stopEditingNewTablet();
 
-            setButtonEnabled(backButton, backButtonWasEnabledOnStartEditing);
+            backButton.setEnabled(backButtonWasEnabledOnStartEditing);
             updateForwardButtonState(forwardButtonState);
         }
 
@@ -201,7 +201,7 @@ class BrowserToolbarTablet extends BrowserToolbarTabletBase {
         
         
         
-        setButtonEnabled(forwardButton, true);
+        forwardButton.setEnabled(true);
     }
 
     @Override
