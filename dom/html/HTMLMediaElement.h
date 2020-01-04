@@ -1617,6 +1617,9 @@ private:
   TimeDurationAccumulator mPlayTime;
 
   
+  TimeDurationAccumulator mHiddenPlayTime;
+
+  
   
   bool mHasUserInteraction;
 
