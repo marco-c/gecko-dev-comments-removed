@@ -5160,7 +5160,7 @@ nsEditor::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
       
       return false;
     case eCompositionStart:
-    case NS_COMPOSITION_END:
+    case eCompositionEnd:
     case NS_COMPOSITION_UPDATE:
     case NS_COMPOSITION_CHANGE:
     case eCompositionCommitAsIs:

@@ -150,7 +150,7 @@ NS_EVENT_MESSAGE(eCompositionStart,      eCompositionEventFirst)
 
 
 
-NS_EVENT_MESSAGE(NS_COMPOSITION_END,     eCompositionEventFirst + 1)
+NS_EVENT_MESSAGE(eCompositionEnd,        eCompositionEventFirst + 1)
 
 
 
