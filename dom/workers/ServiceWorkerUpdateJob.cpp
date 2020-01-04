@@ -6,12 +6,78 @@
 
 #include "ServiceWorkerUpdateJob.h"
 
+#include "nsIScriptError.h"
+#include "nsIURL.h"
 #include "ServiceWorkerScriptCache.h"
 #include "Workers.h"
 
 namespace mozilla {
 namespace dom {
 namespace workers {
+
+namespace {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum ScopeStringPrefixMode {
+  eUseDirectory,
+  eUsePath
+};
+
+nsresult
+GetRequiredScopeStringPrefix(nsIURI* aScriptURI, nsACString& aPrefix,
+                             ScopeStringPrefixMode aPrefixMode)
+{
+  nsresult rv = aScriptURI->GetPrePath(aPrefix);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (aPrefixMode == eUseDirectory) {
+    nsCOMPtr<nsIURL> scriptURL(do_QueryInterface(aScriptURI));
+    if (NS_WARN_IF(!scriptURL)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    nsAutoCString dir;
+    rv = scriptURL->GetDirectory(dir);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    aPrefix.Append(dir);
+  } else if (aPrefixMode == eUsePath) {
+    nsAutoCString path;
+    rv = aScriptURI->GetPath(path);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    aPrefix.Append(path);
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Invalid value for aPrefixMode");
+  }
+  return NS_OK;
+}
+
+} 
 
 class ServiceWorkerUpdateJob::CompareCallback final : public serviceWorkerScriptCache::CompareCallback
 {
