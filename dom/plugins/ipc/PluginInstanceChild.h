@@ -660,6 +660,25 @@ private:
 
     
     bool mDestroyed;
+
+    
+    
+public:
+    class AutoStackHelper {
+    public:
+        explicit AutoStackHelper(PluginInstanceChild* instance)
+            : mInstance(instance)
+        {
+            ++mInstance->mStackDepth;
+        }
+        ~AutoStackHelper() {
+            --mInstance->mStackDepth;
+        }
+    private:
+        PluginInstanceChild *const mInstance;
+    };
+private:
+    int32_t mStackDepth;
 };
 
 } 
