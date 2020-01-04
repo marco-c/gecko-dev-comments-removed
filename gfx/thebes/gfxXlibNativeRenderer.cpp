@@ -136,13 +136,13 @@ FINISH:
 
 
 bool
-gfxXlibNativeRenderer::DrawDirect(gfxContext *ctx, IntSize size,
+gfxXlibNativeRenderer::DrawDirect(DrawTarget* aDT, IntSize size,
                                   uint32_t flags,
                                   Screen *screen, Visual *visual)
 {
     
     
-    BorrowedCairoContext borrowed(ctx->GetDrawTarget());
+    BorrowedCairoContext borrowed(aDT);
     if (!borrowed.mCairo) {
       return false;
     }
@@ -490,6 +490,8 @@ gfxXlibNativeRenderer::Draw(gfxContext* ctx, IntSize size,
         NATIVE_DRAWING_NOTE("FALLBACK: unsupported operator");
     }
 
+    DrawTarget* drawTarget = ctx->GetDrawTarget();
+
     
     
     gfxRect clipExtents;
@@ -498,12 +500,13 @@ gfxXlibNativeRenderer::Draw(gfxContext* ctx, IntSize size,
         ctx->Clip(affectedRect);
 
         clipExtents = ctx->GetClipExtents();
-        if (clipExtents.IsEmpty())
+        if (clipExtents.IsEmpty()) {
             return; 
-
+        }
         if (canDrawOverBackground &&
-            DrawDirect(ctx, size, flags, screen, visual))
+            DrawDirect(drawTarget, size, flags, screen, visual)) {
           return;
+        }
     }
 
     IntRect drawingRect(IntPoint(0, 0), size);
@@ -525,7 +528,6 @@ gfxXlibNativeRenderer::Draw(gfxContext* ctx, IntSize size,
     gfxPoint offset(drawingRect.x, drawingRect.y);
 
     DrawingMethod method;
-    DrawTarget* drawTarget = ctx->GetDrawTarget();
     Matrix dtTransform = drawTarget->GetTransform();
     gfxPoint deviceTranslation = gfxPoint(dtTransform._31, dtTransform._32);
     cairo_surface_t* cairoTarget = static_cast<cairo_surface_t*>
