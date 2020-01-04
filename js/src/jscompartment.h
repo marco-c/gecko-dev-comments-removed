@@ -374,6 +374,12 @@ struct JSCompartment
     js::NewObjectMetadataState objectMetadataState;
 
   public:
+    
+    
+    
+    
+    void chooseAllocationSamplingProbability() { savedStacks_.chooseSamplingProbability(this); }
+
     bool hasObjectPendingMetadata() const { return objectMetadataState.is<js::PendingMetadata>(); }
 
     void setObjectPendingMetadata(JSContext* cx, JSObject* obj) {
