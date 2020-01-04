@@ -179,6 +179,8 @@ nsNSSDialogs::ChooseCertificate(nsIInterfaceRequestor* ctx,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
   nsCOMPtr<nsIMutableArray> paramBlockArray = nsArrayBase::Create();
   if (!paramBlockArray) {
     return NS_ERROR_FAILURE;
