@@ -931,6 +931,9 @@ pref("layout.accessiblecaret.enabled", false);
 #endif
 
 
+pref("layout.accessiblecaret.bar.enabled", false);
+
+
 pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", true);
 
 
