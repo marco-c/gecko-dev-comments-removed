@@ -356,6 +356,15 @@ CodeGeneratorShared::verifyHeapAccessDisassembly(uint32_t begin, uint32_t end, b
 #endif
 }
 
+inline bool
+CodeGeneratorShared::isGlobalObject(JSObject* object)
+{
+    
+    
+    
+    return object == gen->compartment->maybeGlobal();
+}
+
 } 
 } 
 

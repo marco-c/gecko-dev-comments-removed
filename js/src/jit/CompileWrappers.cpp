@@ -270,6 +270,15 @@ CompileCompartment::jitCompartment()
     return compartment()->jitCompartment();
 }
 
+const GlobalObject*
+CompileCompartment::maybeGlobal()
+{
+    
+    
+    
+    return compartment()->unsafeUnbarrieredMaybeGlobal();
+}
+
 bool
 CompileCompartment::hasAllocationMetadataBuilder()
 {
