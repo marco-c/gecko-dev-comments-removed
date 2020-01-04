@@ -392,6 +392,24 @@ ParseContext<ParseHandler>::updateDecl(TokenStream& ts, JSAtom* atom, Node pn)
     Definition* newDecl = &pn->template as<Definition>();
     decls_.updateFirst(atom, newDecl);
 
+    if (oldDecl->isOp(JSOP_INITLEXICAL)) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(oldDecl->getKind() == PNK_FUNCTION);
+        MOZ_ASSERT(newDecl->getKind() == PNK_FUNCTION);
+        MOZ_ASSERT(!sc->strict());
+        MOZ_ASSERT(oldDecl->isBound());
+        MOZ_ASSERT(!oldDecl->pn_scopecoord.isFree());
+        newDecl->pn_scopecoord = oldDecl->pn_scopecoord;
+        newDecl->pn_dflags |= PND_BOUND;
+        newDecl->setOp(JSOP_INITLEXICAL);
+        return;
+    }
+
     if (sc->isGlobalContext() || oldDecl->isDeoptimized()) {
         MOZ_ASSERT(newDecl->isFreeVar());
         
@@ -2409,9 +2427,31 @@ Parser<FullParseHandler>::checkFunctionDefinition(HandlePropertyName funName,
                     if (annexDef->kind() == Definition::CONSTANT ||
                         annexDef->kind() == Definition::LET)
                     {
-                        
-                        
-                        annexDef = nullptr;
+                        if (annexDef->isKind(PNK_FUNCTION)) {
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            annexDef = pc->decls().lookupLast(funName);
+                            if (annexDef->kind() == Definition::CONSTANT ||
+                                annexDef->kind() == Definition::LET)
+                            {
+                                annexDef = nullptr;
+                            }
+                        } else {
+                            
+                            
+                            annexDef = nullptr;
+                        }
                     }
                 } else {
                     
@@ -3653,8 +3693,41 @@ Parser<FullParseHandler>::bindLexical(BindData<FullParseHandler>* data,
         
         
         
-        if (dn && dn->pn_blockid >= pc->blockid())
+        if (dn && dn->pn_blockid >= pc->blockid()) {
+            
+            
+            
+            
+            
+            
+            if (pn->isKind(PNK_FUNCTION) && dn->isKind(PNK_FUNCTION) && !pc->sc->strict()) {
+                if (!parser->makeDefIntoUse(dn, pn, name))
+                    return false;
+
+                MOZ_ASSERT(blockScope);
+                Shape* shape = blockScope->lastProperty()->search(cx, NameToId(name));
+                MOZ_ASSERT(shape);
+                uint32_t oldDefIndex = blockScope->shapeToIndex(*shape);
+                blockScope->updateDefinitionParseNode(oldDefIndex, dn,
+                                                      reinterpret_cast<Definition*>(pn));
+
+                parser->addTelemetry(JSCompartment::DeprecatedBlockScopeFunRedecl);
+                JSAutoByteString bytes;
+                if (!AtomToPrintableString(cx, name, &bytes))
+                    return false;
+                if (!parser->report(ParseWarning, false, null(),
+                                    JSMSG_DEPRECATED_BLOCK_SCOPE_FUN_REDECL,
+                                    bytes.ptr()))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
             return parser->reportRedeclaration(pn, dn->kind(), name);
+        }
+
         if (!pc->define(parser->tokenStream, name, pn, bindingKind))
             return false;
     }

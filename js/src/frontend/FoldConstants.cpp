@@ -1789,6 +1789,14 @@ Fold(ExclusiveContext* cx, ParseNode** pnp, Parser<FullParseHandler>& parser, bo
         return FoldFunction(cx, pn, parser, inGenexpLambda);
 
       case PNK_ANNEXB_FUNCTION:
+        
+        
+        
+        
+        
+        
+        if (pn->pn_left->isKind(PNK_NOP))
+            return true;
         return FoldFunction(cx, pn->pn_left, parser, inGenexpLambda);
 
       case PNK_MODULE:

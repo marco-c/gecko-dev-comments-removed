@@ -753,6 +753,7 @@ struct JSCompartment
         DeprecatedFlagsArgument = 7,        
         
         
+        DeprecatedBlockScopeFunRedecl = 10,
         DeprecatedLanguageExtensionCount
     };
 

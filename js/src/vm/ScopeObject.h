@@ -265,6 +265,20 @@ class StaticBlockScope : public NestedStaticScope
         setSlotValue(i, PrivateValue(def));
     }
 
+    
+    
+    
+    
+    
+    
+    void updateDefinitionParseNode(unsigned i,
+                                   frontend::Definition* oldDef,
+                                   frontend::Definition* newDef)
+    {
+        MOZ_ASSERT(definitionParseNode(i) == oldDef);
+        setSlotValue(i, PrivateValue(newDef));
+    }
+
     frontend::Definition* definitionParseNode(unsigned i) {
         Value v = slotValue(i);
         return reinterpret_cast<frontend::Definition*>(v.toPrivate());
