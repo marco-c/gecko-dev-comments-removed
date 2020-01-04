@@ -222,9 +222,7 @@ public:
     return mMetadataManager.TimedMetadataEvent();
   }
 
-  MediaEventSource<void>& OnMediaNotSeekable() {
-    return mReader->OnMediaNotSeekable();
-  }
+  MediaEventSource<void>& OnMediaNotSeekable();
 
   MediaEventSourceExc<nsAutoPtr<MediaInfo>,
                       nsAutoPtr<MetadataTags>,
@@ -244,13 +242,9 @@ public:
   
   bool IsRealTime() const { return mRealTime; }
 
-  size_t SizeOfVideoQueue() {
-    return mReader->SizeOfVideoQueueInBytes();
-  }
+  size_t SizeOfVideoQueue() const;
 
-  size_t SizeOfAudioQueue() {
-    return mReader->SizeOfAudioQueueInBytes();
-  }
+  size_t SizeOfAudioQueue() const;
 
 private:
   
@@ -651,11 +645,6 @@ private:
   
   
   
-  TaskQueue* DecodeTaskQueue() const { return mReader->OwnerThread(); }
-
-  
-  
-  
   TimeStamp mBufferingStart;
 
   media::TimeUnit Duration() const { MOZ_ASSERT(OnTaskQueue()); return mDuration.Ref().ref(); }
@@ -698,10 +687,6 @@ private:
 
   
   RefPtr<media::MediaSink> mMediaSink;
-
-  
-  
-  const RefPtr<MediaDecoderReader> mReader;
 
   const RefPtr<MediaDecoderReaderWrapper> mReaderWrapper;
 
@@ -1054,9 +1039,8 @@ private:
   Canonical<bool> mIsAudioDataAudible;
 
 public:
-  AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() {
-    return mReader->CanonicalBuffered();
-  }
+  AbstractCanonical<media::TimeIntervals>* CanonicalBuffered();
+
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDuration() {
     return &mDuration;
   }
