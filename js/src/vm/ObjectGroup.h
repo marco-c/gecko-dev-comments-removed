@@ -539,7 +539,6 @@ class ObjectGroupCompartment
 
     struct NewEntry;
     typedef HashSet<NewEntry, NewEntry, SystemAllocPolicy> NewTable;
-    class NewTableRef;
 
     
     NewTable* defaultNewTable;
@@ -623,9 +622,6 @@ class ObjectGroupCompartment
 
     void sweepNewTable(NewTable* table);
     void fixupNewTableAfterMovingGC(NewTable* table);
-
-    static void newTablePostBarrier(ExclusiveContext* cx, NewTable* table,
-                                    const Class* clasp, TaggedProto proto, JSObject* associated);
 };
 
 PlainObject*
