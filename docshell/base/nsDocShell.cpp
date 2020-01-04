@@ -14163,6 +14163,11 @@ nsDocShell::ChannelIntercepted(nsIInterceptedChannel* aChannel,
     if (!doc) {
       return NS_ERROR_NOT_AVAILABLE;
     }
+  } else {
+    
+    
+    rv = nsIDocument::GenerateDocumentId(mInterceptedDocumentId);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   bool isReload = mLoadType & LOAD_CMD_RELOAD;

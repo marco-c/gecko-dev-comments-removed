@@ -273,6 +273,11 @@ public:
 
   mozilla::DocShellOriginAttributes GetOriginAttributes();
 
+  void GetInterceptedDocumentId(nsAString& aId)
+  {
+    aId = mInterceptedDocumentId;
+  }
+
 private:
   
   mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
@@ -1013,6 +1018,8 @@ protected:
   
   
   nsString mSignedPkg;
+
+  nsString mInterceptedDocumentId;
 
 private:
   nsCString mForcedCharset;
