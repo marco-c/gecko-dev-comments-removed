@@ -559,18 +559,12 @@ nsContextMenu.prototype = {
     LoginHelper.openPasswordManager(window, gContextMenuContentData.documentURIObject.host);
   },
 
-  inspectNode: function() {
+  inspectNode: function CM_inspectNode() {
     let {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
     let gBrowser = this.browser.ownerDocument.defaultView.gBrowser;
-    let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);
-
-    return gDevTools.showToolbox(target, "inspector").then(toolbox => {
+    let tt = devtools.TargetFactory.forTab(gBrowser.selectedTab);
+    return gDevTools.showToolbox(tt, "inspector").then(function(toolbox) {
       let inspector = toolbox.getCurrentPanel();
-
-      
-      
-      let onNewNode = inspector.selection.once("new-node-front");
-
       if (this.isRemote) {
         this.browser.messageManager.sendAsyncMessage("debug:inspect", {}, {node: this.target});
         inspector.walker.findInspectingNode().then(nodeFront => {
@@ -579,13 +573,7 @@ nsContextMenu.prototype = {
       } else {
         inspector.selection.setNode(this.target, "browser-context-menu");
       }
-
-      return onNewNode.then(() => {
-        
-        
-        return inspector.once("inspector-updated");
-      });
-    });
+    }.bind(this));
   },
 
   
