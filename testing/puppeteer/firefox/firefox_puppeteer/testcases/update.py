@@ -330,7 +330,7 @@ class UpdateTestCase(FirefoxTestCase):
                                 'Available update has been found')
 
                 
-                self.download(about_window)
+                self.download_update(about_window)
                 self.wait_for_update_applied(about_window)
 
             finally:
