@@ -101,6 +101,24 @@ ObjectElements::MakeElementsCopyOnWrite(ExclusiveContext* cx, NativeObject* obj)
     return true;
 }
 
+ bool
+ObjectElements::FreezeElements(ExclusiveContext* cx, HandleNativeObject obj)
+{
+    if (!obj->maybeCopyElementsForWrite(cx))
+        return false;
+
+    if (obj->hasEmptyElements())
+        return true;
+
+    ObjectElements* header = obj->getElementsHeader();
+
+    
+    
+    header->freeze();
+
+    return true;
+}
+
 #ifdef DEBUG
 void
 js::NativeObject::checkShapeConsistency()
@@ -2306,6 +2324,8 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
     
     if (IsImplicitDenseOrTypedArrayElement(shape)) {
         
+        if (obj->getElementsHeader()->isFrozen())
+            return result.fail(JSMSG_READ_ONLY);
 
         
         if (receiver.isObject() && pobj == &receiver.toObject())

@@ -182,6 +182,9 @@ class ObjectElements
         
         
         SHARED_MEMORY               = 0x8,
+
+        
+        FROZEN                      = 0x10,
     };
 
   private:
@@ -286,6 +289,15 @@ class ObjectElements
 
     static bool ConvertElementsToDoubles(JSContext* cx, uintptr_t elements);
     static bool MakeElementsCopyOnWrite(ExclusiveContext* cx, NativeObject* obj);
+    static bool FreezeElements(ExclusiveContext* cx, HandleNativeObject obj);
+
+    bool isFrozen() const {
+        return flags & FROZEN;
+    }
+    void freeze() {
+        MOZ_ASSERT(!isFrozen());
+        flags |= FROZEN;
+    }
 
     
     
