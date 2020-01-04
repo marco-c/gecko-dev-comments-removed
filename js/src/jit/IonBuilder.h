@@ -842,6 +842,9 @@ class IonBuilder
                                                MIRType knownValueType);
 
     
+    InliningStatus inlineGetNextMapEntryForIterator(CallInfo& callInfo);
+
+    
     enum WrappingBehavior { AllowWrappedTypedArrays, RejectWrappedTypedArrays };
     InliningStatus inlineIsTypedArrayHelper(CallInfo& callInfo, WrappingBehavior wrappingBehavior);
     InliningStatus inlineIsTypedArray(CallInfo& callInfo);
