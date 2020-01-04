@@ -164,13 +164,21 @@ public:
     return bool(mDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY);
   }
 
-  size_t BytesDecoded() const { return mBytesDecoded; }
+  size_t BytesDecoded() const
+  {
+    MOZ_ASSERT(mIterator);
+    return mIterator->ByteCount();
+  }
 
   
   TimeDuration DecodeTime() const { return mDecodeTime; }
 
   
-  uint32_t ChunkCount() const { return mChunkCount; }
+  uint32_t ChunkCount() const
+  {
+    MOZ_ASSERT(mIterator);
+    return mIterator->ChunkCount();
+  }
 
   
   
@@ -416,11 +424,9 @@ private:
 
   
   TimeDuration mDecodeTime;
-  uint32_t mChunkCount;
 
   DecoderFlags mDecoderFlags;
   SurfaceFlags mSurfaceFlags;
-  size_t mBytesDecoded;
 
   bool mInitialized : 1;
   bool mMetadataDecode : 1;
