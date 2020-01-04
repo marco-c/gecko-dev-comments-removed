@@ -5856,38 +5856,79 @@ function UpdateCurrentCharset(target) {
 }
 
 var gPageStyleMenu = {
-
   
   
   
   
-  _pageStyleSyncHandlers: new WeakMap(),
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  _pageStyleSheets: new WeakMap(),
 
   init: function() {
     let mm = window.messageManager;
-    mm.addMessageListener("PageStyle:SetSyncHandler", (msg) => {
-      this._pageStyleSyncHandlers.set(msg.target.permanentKey, msg.objects.syncHandler);
+    mm.addMessageListener("PageStyle:StyleSheets", (msg) => {
+      this._pageStyleSheets.set(msg.target.permanentKey, msg.data);
     });
   },
 
-  getAllStyleSheets: function () {
-    let handler = this._pageStyleSyncHandlers.get(gBrowser.selectedBrowser.permanentKey);
-    try {
-      return handler.getAllStyleSheets();
-    } catch (ex) {
-      
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getBrowserStyleSheets: function (browser) {
+    if (!browser) {
+      browser = gBrowser.selectedBrowser;
+    }
+
+    let data = this._pageStyleSheets.get(browser.permanentKey);
+    if (!data) {
       return [];
     }
+    return data.filteredStyleSheets;
   },
 
   _getStyleSheetInfo: function (browser) {
-    let handler = this._pageStyleSyncHandlers.get(gBrowser.selectedBrowser.permanentKey);
-    try {
-      return handler.getStyleSheetInfo();
-    } catch (ex) {
-      
-      return {styleSheets: [], authorStyleDisabled: false, preferredStyleSheetSet: true};
+    let data = this._pageStyleSheets.get(browser.permanentKey);
+    if (!data) {
+      return {
+        filteredStyleSheets: [],
+        authorStyleDisabled: false,
+        preferredStyleSheetSet: true
+      };
     }
+
+    return data;
   },
 
   fillPopup: function (menuPopup) {
@@ -5898,7 +5939,7 @@ var gPageStyleMenu = {
     while (sep.nextSibling)
       menuPopup.removeChild(sep.nextSibling);
 
-    let styleSheets = styleSheetInfo.styleSheets;
+    let styleSheets = styleSheetInfo.filteredStyleSheets;
     var currentStyleSheets = {};
     var styleDisabled = styleSheetInfo.authorStyleDisabled;
     var haveAltSheets = false;
@@ -5946,7 +5987,6 @@ var gPageStyleMenu = {
 };
 
 
-var getAllStyleSheets   = gPageStyleMenu.getAllStyleSheets.bind(gPageStyleMenu);
 var stylesheetFillPopup = gPageStyleMenu.fillPopup.bind(gPageStyleMenu);
 function stylesheetSwitchAll(contentWindow, title) {
   
