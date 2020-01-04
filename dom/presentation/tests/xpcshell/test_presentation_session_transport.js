@@ -161,19 +161,13 @@ function selfAddress() {
 
 
 function clientSendMessage() {
-  var stream = Cc["@mozilla.org/io/string-input-stream;1"]
-                 .createInstance(Ci.nsIStringInputStream);
-  stream.setData(clientMessage, clientMessage.length);
-  clientTransport.send(stream);
+  clientTransport.send(clientMessage);
 }
 
 
 
 function serverSendMessage() {
-  var stream = Cc["@mozilla.org/io/string-input-stream;1"]
-                 .createInstance(Ci.nsIStringInputStream);
-  stream.setData(serverMessage, serverMessage.length);
-  serverTransport.send(stream);
+  serverTransport.send(serverMessage);
   
   
   clientTransport.enableDataNotification();
