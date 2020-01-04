@@ -146,8 +146,6 @@ static nsTArray<nsWindow*> gTopLevelWindows;
 
 
 
-
-
 static nsWindow* gGeckoViewWindow;
 
 static bool sFailedToCreateGLContext = false;
@@ -273,6 +271,9 @@ public:
 
     
     void Close();
+
+    
+    void Reattach(GeckoView::Param aView);
 
     
 
@@ -649,21 +650,6 @@ nsWindow::GeckoViewSupport::Open(const jni::ClassObject::LocalRef& aCls,
     PROFILER_LABEL("nsWindow", "GeckoViewSupport::Open",
                    js::ProfileEntry::Category::OTHER);
 
-    if (gGeckoViewWindow) {
-        
-        MOZ_ASSERT(gGeckoViewWindow->mGeckoViewSupport);
-        gGeckoViewWindow->mGeckoViewSupport->Reattach(
-                GeckoView::Window::LocalRef(aCls.Env(), aWindow));
-
-        MOZ_ASSERT(gGeckoViewWindow->mGLControllerSupport);
-        gGeckoViewWindow->mGLControllerSupport->Reattach(GLController::LocalRef(
-                aCls.Env(), GLController::Ref::From(aGLController)));
-
-        
-        gGeckoViewWindow->mGeckoViewSupport->mEditable->OnViewChange(aView);
-        return;
-    }
-
     nsCOMPtr<nsIWindowWatcher> ww = do_GetService(NS_WINDOWWATCHER_CONTRACTID);
     MOZ_ASSERT(ww);
 
@@ -727,6 +713,13 @@ nsWindow::GeckoViewSupport::Close()
     MOZ_ASSERT(baseWindow);
 
     baseWindow->Destroy();
+}
+
+void
+nsWindow::GeckoViewSupport::Reattach(GeckoView::Param aView)
+{
+    
+    mEditable->OnViewChange(aView);
 }
 
 void
