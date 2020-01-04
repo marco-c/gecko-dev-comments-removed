@@ -1192,9 +1192,18 @@ GetPremultipliedColorComponents(const nsCSSValue& aValue)
                    alpha);
 }
 
+enum class ColorAdditionType {
+  Clamped, 
+  Unclamped 
+};
+
+
+
+
 static void
 AddWeightedColors(double aCoeff1, const nsCSSValue& aValue1,
                   double aCoeff2, const nsCSSValue& aValue2,
+                  ColorAdditionType aAdditionType,
                   nsCSSValue& aResult)
 {
   MOZ_ASSERT(aValue1.IsNumericColorUnit() && aValue2.IsNumericColorUnit(),
@@ -1222,11 +1231,23 @@ AddWeightedColors(double aCoeff1, const nsCSSValue& aValue1,
   }
 
   double factor = 1.0 / Aresf;
-  uint8_t Ares = NSToIntRound(Aresf * 255.0);
-  uint8_t Rres = ClampColor((R1 * aCoeff1 + R2 * aCoeff2) * factor);
-  uint8_t Gres = ClampColor((G1 * aCoeff1 + G2 * aCoeff2) * factor);
-  uint8_t Bres = ClampColor((B1 * aCoeff1 + B2 * aCoeff2) * factor);
-  aResult.SetColorValue(NS_RGBA(Rres, Gres, Bres, Ares));
+  double Rres = (R1 * aCoeff1 + R2 * aCoeff2) * factor;
+  double Gres = (G1 * aCoeff1 + G2 * aCoeff2) * factor;
+  double Bres = (B1 * aCoeff1 + B2 * aCoeff2) * factor;
+
+  if (aAdditionType == ColorAdditionType::Clamped) {
+    aResult.SetColorValue(
+      NS_RGBA(ClampColor(Rres), ClampColor(Gres), ClampColor(Bres),
+              NSToIntRound(Aresf * 255.0)));
+    return;
+  }
+
+  Rres = Rres * (1.0 / 255.0);
+  Gres = Gres * (1.0 / 255.0);
+  Bres = Bres * (1.0 / 255.0);
+
+  aResult.SetFloatColorValue(Rres, Gres, Bres, Aresf,
+                             eCSSUnit_PercentageRGBAColor);
 }
 
 
@@ -1282,8 +1303,11 @@ AddShadowItems(double aCoeff1, const nsCSSValue &aValue1,
   const nsCSSValue& color2 = array2->Item(4);
   const nsCSSValue& inset1 = array1->Item(5);
   const nsCSSValue& inset2 = array2->Item(5);
-  if (color1.GetUnit() != color2.GetUnit() ||
+  if ((color1.GetUnit() != color2.GetUnit() &&
+       (!color1.IsNumericColorUnit() || !color2.IsNumericColorUnit())) ||
       inset1.GetUnit() != inset2.GetUnit()) {
+    
+    
     
     
     return false;
@@ -1293,7 +1317,9 @@ AddShadowItems(double aCoeff1, const nsCSSValue &aValue1,
     if (aCoeff2 == 0.0 && aCoeff1 != 1.0) {
       DiluteColor(color1, aCoeff1, resultArray->Item(4));
     } else {
-      AddWeightedColors(aCoeff1, color1, aCoeff2, color2, resultArray->Item(4));
+      AddWeightedColors(aCoeff1, color1, aCoeff2, color2,
+                        ColorAdditionType::Clamped,
+                        resultArray->Item(4));
     }
   }
 
@@ -2447,7 +2473,9 @@ StyleAnimationValue::AddWeighted(nsCSSPropertyID aProperty,
       if (aCoeff2 == 0.0) {
         DiluteColor(*value1, aCoeff1, *resultColor);
       } else {
-        AddWeightedColors(aCoeff1, *value1, aCoeff2, *value2, *resultColor);
+        AddWeightedColors(aCoeff1, *value1, aCoeff2, *value2,
+                          ColorAdditionType::Clamped,
+                          *resultColor);
       }
       aResultValue.SetAndAdoptCSSValueValue(resultColor.release(), eUnit_Color);
       return true;
@@ -2840,7 +2868,18 @@ StyleAnimationValue::Accumulate(nsCSSPropertyID aProperty,
     
     
     
-    
+    case eUnit_Color: {
+      auto resultColor = MakeUnique<nsCSSValue>();
+      AddWeightedColors(1.0,
+                        *aDest.GetCSSValueValue(),
+                        aCount,
+                        *aValueToAccumulate.GetCSSValueValue(),
+                        ColorAdditionType::Unclamped,
+                        *resultColor);
+
+      aDest.SetAndAdoptCSSValueValue(resultColor.release(), eUnit_Color);
+      return true;
+    }
     default:
       return Add(aProperty, aDest, aValueToAccumulate, aCount);
   }
