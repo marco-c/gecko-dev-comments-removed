@@ -255,6 +255,9 @@ public:
   size_t SizeOfAudioQueue() const;
 
 private:
+  static const char* ToStateStr(State aState);
+  const char* ToStateStr();
+
   
   
   bool OnTaskQueue() const;
