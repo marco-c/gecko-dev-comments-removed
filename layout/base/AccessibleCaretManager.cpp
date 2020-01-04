@@ -861,10 +861,14 @@ AccessibleCaretManager::SelectMoreIfPhoneNumber() const
 void
 AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) const
 {
-  nsIDocument* doc = mPresShell->GetDocument();
+  if (!mPresShell) {
+    return;
+  }
+
+  RefPtr<nsIDocument> doc = mPresShell->GetDocument();
 
   
-  Selection* selection = GetSelection();
+  RefPtr<Selection> selection = GetSelection();
 
   while (selection) {
     const nsRange* anchorFocusRange = selection->GetAnchorFocusRange();
@@ -882,6 +886,9 @@ AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) 
     selection->Modify(NS_LITERAL_STRING("extend"),
                       aDirection,
                       NS_LITERAL_STRING("character"));
+    if (IsTerminated()) {
+      return;
+    }
 
     
     if (selection->GetFocusNode() == focusNode &&
