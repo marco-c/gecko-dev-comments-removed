@@ -504,8 +504,8 @@ const CustomizableWidgets = [
     shortcutId: "key_privatebrowsing",
     defaultArea: CustomizableUI.AREA_PANEL,
     onCommand: function(e) {
-      let win = e.target.ownerGlobal;
-      if (typeof win.OpenBrowserWindow == "function") {
+      let win = e.target && e.target.ownerGlobal;
+      if (win && typeof win.OpenBrowserWindow == "function") {
         win.OpenBrowserWindow({private: true});
       }
     }
@@ -515,8 +515,9 @@ const CustomizableWidgets = [
     tooltiptext: "save-page-button.tooltiptext3",
     defaultArea: CustomizableUI.AREA_PANEL,
     onCommand: function(aEvent) {
-      let win = aEvent.target.ownerGlobal;
-      if (typeof win.saveBrowser == "function") {
+      let win = aEvent.target &&
+                aEvent.target.ownerGlobal;
+      if (win && typeof win.saveBrowser == "function") {
         win.saveBrowser(win.gBrowser.selectedBrowser);
       }
     }
@@ -526,8 +527,9 @@ const CustomizableWidgets = [
     tooltiptext: "find-button.tooltiptext3",
     defaultArea: CustomizableUI.AREA_PANEL,
     onCommand: function(aEvent) {
-      let win = aEvent.target.ownerGlobal;
-      if (win.gFindBar) {
+      let win = aEvent.target &&
+                aEvent.target.ownerGlobal;
+      if (win && win.gFindBar) {
         win.gFindBar.onFindCommand();
       }
     }
@@ -537,8 +539,9 @@ const CustomizableWidgets = [
     tooltiptext: "open-file-button.tooltiptext3",
     defaultArea: CustomizableUI.AREA_PANEL,
     onCommand: function(aEvent) {
-      let win = aEvent.target.ownerGlobal;
-      if (typeof win.BrowserOpenFileWindow == "function") {
+      let win = aEvent.target
+                && aEvent.target.ownerGlobal;
+      if (win && typeof win.BrowserOpenFileWindow == "function") {
         win.BrowserOpenFileWindow();
       }
     }
@@ -614,8 +617,9 @@ const CustomizableWidgets = [
     tooltiptext: "add-ons-button.tooltiptext3",
     defaultArea: CustomizableUI.AREA_PANEL,
     onCommand: function(aEvent) {
-      let win = aEvent.target.ownerGlobal;
-      if (typeof win.BrowserOpenAddonsMgr == "function") {
+      let win = aEvent.target &&
+                aEvent.target.ownerGlobal;
+      if (win && typeof win.BrowserOpenAddonsMgr == "function") {
         win.BrowserOpenAddonsMgr();
       }
     }
@@ -1094,13 +1098,11 @@ const CustomizableWidgets = [
       let win = aEvent.view;
       win.MailIntegration.sendLinkForBrowser(win.gBrowser.selectedBrowser)
     }
-  }];
-
-if (Services.prefs.getBoolPref("privacy.userContext.enabled")) {
-  CustomizableWidgets.push({
+  }, {
     id: "containers-panelmenu",
     type: "view",
     viewId: "PanelUI-containers",
+    hasObserver: false,
     onCreated: function(aNode) {
       let doc = aNode.ownerDocument;
       let win = doc.defaultView;
@@ -1115,6 +1117,13 @@ if (Services.prefs.getBoolPref("privacy.userContext.enabled")) {
 
       if (PrivateBrowsingUtils.isWindowPrivate(win)) {
         aNode.setAttribute("disabled", "true");
+      }
+
+      this.updateVisibility(aNode);
+
+      if (!this.hasObserver) {
+        Services.prefs.addObserver("privacy.userContext.enabled", this, true);
+        this.hasObserver = true;
       }
     },
     onViewShowing: function(aEvent) {
@@ -1142,16 +1151,34 @@ if (Services.prefs.getBoolPref("privacy.userContext.enabled")) {
       });
 
       items.appendChild(fragment);
-    }
-  });
-}
+    },
+
+    updateVisibility(aNode) {
+      aNode.hidden = !Services.prefs.getBoolPref("privacy.userContext.enabled");
+    },
+
+    observe(aSubject, aTopic, aData) {
+      let {instances} = CustomizableUI.getWidget("containers-panelmenu");
+      for (let {node} of instances) {
+	if (node) {
+	  this.updateVisibility(node);
+	}
+      }
+    },
+
+    QueryInterface: XPCOMUtils.generateQI([
+      Ci.nsISupportsWeakReference,
+      Ci.nsIObserver
+    ]),
+  }];
 
 let preferencesButton = {
   id: "preferences-button",
   defaultArea: CustomizableUI.AREA_PANEL,
   onCommand: function(aEvent) {
-    let win = aEvent.target.ownerGlobal;
-    if (typeof win.openPreferences == "function") {
+    let win = aEvent.target &&
+              aEvent.target.ownerGlobal;
+    if (win && typeof win.openPreferences == "function") {
       win.openPreferences();
     }
   }
