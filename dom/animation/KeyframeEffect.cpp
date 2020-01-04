@@ -132,6 +132,23 @@ KeyframeEffectReadOnly::SetTiming(const AnimationTiming& aTiming)
   
 }
 
+void
+KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
+{
+  UpdateTargetRegistration();
+
+  
+  
+  
+  
+  
+  
+  bool isRelevant = mAnimation && mAnimation->IsRelevant();
+  if (!isRelevant) {
+    ResetIsRunningOnCompositor();
+  }
+}
+
 Nullable<TimeDuration>
 KeyframeEffectReadOnly::GetLocalTime() const
 {
@@ -533,10 +550,6 @@ KeyframeEffectReadOnly::UpdateTargetRegistration()
     if (effectSet) {
       effectSet->RemoveEffect(*this);
     }
-    
-    
-    
-    ResetIsRunningOnCompositor();
   }
 }
 
