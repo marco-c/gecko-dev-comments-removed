@@ -88,6 +88,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mForcePending(false)
   , mCorsIncludeCredentials(false)
   , mCorsMode(nsIHttpChannelInternal::CORS_MODE_NO_CORS)
+  , mRedirectMode(nsIHttpChannelInternal::REDIRECT_MODE_FOLLOW)
   , mOnStartRequestCalled(false)
 {
   LOG(("Creating HttpBaseChannel @%x\n", this));
@@ -2002,6 +2003,20 @@ HttpBaseChannel::SetCorsMode(uint32_t aMode)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+HttpBaseChannel::GetRedirectMode(uint32_t* aMode)
+{
+  *aMode = mRedirectMode;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::SetRedirectMode(uint32_t aMode)
+{
+  mRedirectMode = aMode;
+  return NS_OK;
+}
+
 
 
 
@@ -2278,14 +2293,6 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   }
 
   
-  if (mForceNoIntercept) {
-    nsCOMPtr<nsIHttpChannelInternal> httpChan = do_QueryInterface(newChannel);
-    if (httpChan) {
-      httpChan->ForceNoIntercept();
-    }
-  }
-
-  
   newChannel->SetLoadInfo(mLoadInfo);
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(newChannel);
@@ -2384,6 +2391,17 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
              "[this=%p] transferring chain of redirect cache-keys", this));
         httpInternal->SetCacheKeysRedirectChain(mRedirectedCachekeys.forget());
     }
+
+    
+    if (mForceNoIntercept) {
+      httpInternal->ForceNoIntercept();
+    }
+
+    
+    httpInternal->SetCorsMode(mCorsMode);
+
+    
+    httpInternal->SetRedirectMode(mRedirectMode);
   }
 
   
