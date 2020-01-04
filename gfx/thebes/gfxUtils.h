@@ -295,34 +295,11 @@ Color ToDeviceColor(nscolor aColor);
 
 
 
-
-
-
-
-static inline bool
-IsPowerOfTwo(int aNumber)
-{
-    return (aNumber & (aNumber - 1)) == 0;
-}
-
-
-
-
-
-static inline int
+static int
 NextPowerOfTwo(int aNumber)
 {
-#if defined(__arm__)
-    return 1 << (32 - __builtin_clz(aNumber - 1));
-#else
-    --aNumber;
-    aNumber |= aNumber >> 1;
-    aNumber |= aNumber >> 2;
-    aNumber |= aNumber >> 4;
-    aNumber |= aNumber >> 8;
-    aNumber |= aNumber >> 16;
-    return ++aNumber;
-#endif
+    MOZ_ASSERT(aNumber >= 0);
+    return RoundUpPow2((size_t)aNumber + 1);
 }
 
 
