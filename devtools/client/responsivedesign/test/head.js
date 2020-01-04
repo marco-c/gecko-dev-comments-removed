@@ -3,12 +3,14 @@
 
 "use strict";
 
+let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
 
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js", this);
+let sharedHeadURI = testDir + "../../../framework/test/shared-head.js";
+Services.scriptloader.loadSubScript(sharedHeadURI, this);
 
 
-var testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
-Services.scriptloader.loadSubScript(testDir + "../../../commandline/test/helpers.js", this);
+let gcliHelpersURI = testDir + "../../../commandline/test/helpers.js";
+Services.scriptloader.loadSubScript(gcliHelpersURI, this);
 
 DevToolsUtils.testing = true;
 registerCleanupFunction(() => {
@@ -23,20 +25,39 @@ registerCleanupFunction(() => {
 
 
 
-function openRDM(tab = gBrowser.selectedTab) {
-  return new Promise(resolve => {
-    let manager = ResponsiveUI.ResponsiveUIManager;
+
+var openRDM = Task.async(function*(tab = gBrowser.selectedTab,
+                                   method = "menu") {
+  let manager = ResponsiveUI.ResponsiveUIManager;
+  let mgrOn = once(manager, "on");
+  if (method == "menu") {
     document.getElementById("Tools:ResponsiveUI").doCommand();
-    executeSoon(() => {
-      let rdm = manager.getResponsiveUIForTab(tab);
-      rdm.stack.setAttribute("notransition", "true");
-      registerCleanupFunction(function() {
-        rdm.stack.removeAttribute("notransition");
-      });
-      resolve({rdm, manager});
-    });
+  } else {
+    synthesizeKeyFromKeyTag(document.getElementById("key_responsiveUI"));
+  }
+  yield mgrOn;
+
+  let rdm = manager.getResponsiveUIForTab(tab);
+  rdm.transitionsEnabled = false;
+  registerCleanupFunction(() => {
+    rdm.transitionsEnabled = true;
   });
-}
+  return {rdm, manager};
+});
+
+
+
+
+
+var closeRDM = Task.async(function*(rdm) {
+  let mgr = ResponsiveUI.ResponsiveUIManager;
+  if (!rdm) {
+    rdm = mgr.getResponsiveUIForTab(gBrowser.selectedTab);
+  }
+  let mgrOff = mgr.once("off");
+  rdm.close();
+  yield mgrOff;
+});
 
 
 
@@ -75,6 +96,11 @@ var openInspector = Task.async(function*() {
     toolbox: toolbox,
     inspector: inspector
   };
+});
+
+var closeToolbox = Task.async(function*() {
+  let target = TargetFactory.forTab(gBrowser.selectedTab);
+  yield gDevTools.closeToolbox(target);
 });
 
 
@@ -164,67 +190,30 @@ var addTab = Task.async(function* (url) {
   return tab;
 });
 
-
-
-
-
-
-
-
-
-function once(target, eventName, useCapture=false) {
-  info("Waiting for event: '" + eventName + "' on " + target + ".");
-
-  let deferred = promise.defer();
-
-  for (let [add, remove] of [
-    ["addEventListener", "removeEventListener"],
-    ["addListener", "removeListener"],
-    ["on", "off"]
-  ]) {
-    if ((add in target) && (remove in target)) {
-      target[add](eventName, function onEvent(...aArgs) {
-        info("Got event: '" + eventName + "' on " + target + ".");
-        target[remove](eventName, onEvent, useCapture);
-        deferred.resolve.apply(deferred, aArgs);
-      }, useCapture);
-      break;
-    }
-  }
-
-  return deferred.promise;
-}
-
 function wait(ms) {
   let def = promise.defer();
   setTimeout(def.resolve, ms);
   return def.promise;
 }
 
-function nextTick() {
-  let def = promise.defer();
-  executeSoon(() => def.resolve())
-  return def.promise;
-}
 
 
 
 
 
-
-function waitForDocLoadComplete(aBrowser=gBrowser) {
+function waitForDocLoadComplete(aBrowser = gBrowser) {
   let deferred = promise.defer();
   let progressListener = {
-    onStateChange: function (webProgress, req, flags, status) {
+    onStateChange: function(webProgress, req, flags, status) {
       let docStop = Ci.nsIWebProgressListener.STATE_IS_NETWORK |
                     Ci.nsIWebProgressListener.STATE_STOP;
-      info("Saw state " + flags.toString(16) + " and status " + status.toString(16));
+      info(`Saw state ${flags.toString(16)} and status ${status.toString(16)}`);
 
       
       
       if ((flags & docStop) == docStop && status != Cr.NS_BINDING_ABORTED) {
         aBrowser.removeProgressListener(progressListener);
-        info("Browser loaded " + aBrowser.contentWindow.location);
+        info("Browser loaded");
         deferred.resolve();
       }
     },
