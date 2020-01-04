@@ -5,8 +5,8 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Basic/Version.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
@@ -986,7 +986,8 @@ DiagnosticsMatcher::DiagnosticsMatcher() {
   
   
   
-  astMatcher.addMatcher(lambdaExpr().bind("lambda"), &refCountedInsideLambdaChecker);
+  astMatcher.addMatcher(lambdaExpr().bind("lambda"),
+                        &refCountedInsideLambdaChecker);
 
   
   
@@ -1015,24 +1016,26 @@ DiagnosticsMatcher::DiagnosticsMatcher() {
           .bind("specialization"),
       &nonMemMovableChecker);
 
-  astMatcher.addMatcher(
-      cxxConstructorDecl(isInterestingImplicitCtor(),
-                         ofClass(allOf(isConcreteClass(), decl().bind("class"))),
-                         unless(isMarkedImplicit()))
-          .bind("ctor"),
-      &explicitImplicitChecker);
+  astMatcher.addMatcher(cxxConstructorDecl(isInterestingImplicitCtor(),
+                                           ofClass(allOf(isConcreteClass(),
+                                                         decl().bind("class"))),
+                                           unless(isMarkedImplicit()))
+                            .bind("ctor"),
+                        &explicitImplicitChecker);
 
   astMatcher.addMatcher(varDecl(hasType(autoNonAutoableType())).bind("node"),
                         &noAutoTypeChecker);
 
-  astMatcher.addMatcher(cxxConstructorDecl(isExplicitMoveConstructor()).bind("node"),
-                        &noExplicitMoveConstructorChecker);
+  astMatcher.addMatcher(
+      cxxConstructorDecl(isExplicitMoveConstructor()).bind("node"),
+      &noExplicitMoveConstructorChecker);
 
-  astMatcher.addMatcher(cxxConstructExpr(hasDeclaration(
-                                          cxxConstructorDecl(
-                                              isCompilerProvidedCopyConstructor(),
-                                              ofClass(hasRefCntMember())))).bind("node"),
-                        &refCountedCopyConstructorChecker);
+  astMatcher.addMatcher(
+      cxxConstructExpr(
+          hasDeclaration(cxxConstructorDecl(isCompilerProvidedCopyConstructor(),
+                                            ofClass(hasRefCntMember()))))
+          .bind("node"),
+      &refCountedCopyConstructorChecker);
 }
 
 
@@ -1047,7 +1050,8 @@ enum AllocationVariety {
 
 
 
-typedef DenseMap<const MaterializeTemporaryExpr *, const Decl *> AutomaticTemporaryMap;
+typedef DenseMap<const MaterializeTemporaryExpr *, const Decl *>
+    AutomaticTemporaryMap;
 AutomaticTemporaryMap AutomaticTemporaries;
 
 void DiagnosticsMatcher::ScopeChecker::run(
@@ -1059,9 +1063,11 @@ void DiagnosticsMatcher::ScopeChecker::run(
   SourceLocation Loc;
   QualType T;
 
-  if (const ParmVarDecl *D = Result.Nodes.getNodeAs<ParmVarDecl>("parm_vardecl")) {
+  if (const ParmVarDecl *D =
+          Result.Nodes.getNodeAs<ParmVarDecl>("parm_vardecl")) {
     if (const Expr *Default = D->getDefaultArg()) {
-      if (const MaterializeTemporaryExpr *E = dyn_cast<MaterializeTemporaryExpr>(Default)) {
+      if (const MaterializeTemporaryExpr *E =
+              dyn_cast<MaterializeTemporaryExpr>(Default)) {
         
         
         
@@ -1100,18 +1106,17 @@ void DiagnosticsMatcher::ScopeChecker::run(
     
     
     switch (E->getStorageDuration()) {
-    case SD_FullExpression:
-      {
-        
-        
-        AutomaticTemporaryMap::iterator AutomaticTemporary = AutomaticTemporaries.find(E);
-        if (AutomaticTemporary != AutomaticTemporaries.end()) {
-          Variety = AV_Automatic;
-        } else {
-          Variety = AV_Temporary;
-        }
+    case SD_FullExpression: {
+      
+      
+      AutomaticTemporaryMap::iterator AutomaticTemporary =
+          AutomaticTemporaries.find(E);
+      if (AutomaticTemporary != AutomaticTemporaries.end()) {
+        Variety = AV_Automatic;
+      } else {
+        Variety = AV_Temporary;
       }
-      break;
+    } break;
     case SD_Automatic:
       Variety = AV_Automatic;
       break;
@@ -1176,8 +1181,8 @@ void DiagnosticsMatcher::ScopeChecker::run(
   case AV_Temporary:
     GlobalClass.reportErrorIfPresent(Diag, T, Loc, GlobalID, TemporaryNoteID);
     HeapClass.reportErrorIfPresent(Diag, T, Loc, HeapID, TemporaryNoteID);
-    NonTemporaryClass.reportErrorIfPresent(Diag, T, Loc,
-                                           NonTemporaryID, TemporaryNoteID);
+    NonTemporaryClass.reportErrorIfPresent(Diag, T, Loc, NonTemporaryID,
+                                           TemporaryNoteID);
     break;
 
   case AV_Heap:
@@ -1287,8 +1292,8 @@ void DiagnosticsMatcher::RefCountedInsideLambdaChecker::run(
       QualType Pointee = Capture.getCapturedVar()->getType()->getPointeeType();
 
       if (!Pointee.isNull() && isClassRefCounted(Pointee)) {
-        Diag.Report(Capture.getLocation(), errorID)
-          << Capture.getCapturedVar() << Pointee;
+        Diag.Report(Capture.getLocation(), errorID) << Capture.getCapturedVar()
+                                                    << Pointee;
         Diag.Report(Capture.getLocation(), noteID);
       }
     }
@@ -1456,7 +1461,7 @@ void DiagnosticsMatcher::NoExplicitMoveConstructorChecker::run(
   
   
   const CXXConstructorDecl *D =
-    Result.Nodes.getNodeAs<CXXConstructorDecl>("node");
+      Result.Nodes.getNodeAs<CXXConstructorDecl>("node");
 
   Diag.Report(D->getLocation(), ErrorID);
 }
@@ -1468,16 +1473,16 @@ void DiagnosticsMatcher::RefCountedCopyConstructorChecker::run(
       DiagnosticIDs::Error, "Invalid use of compiler-provided copy constructor "
                             "on refcounted type");
   unsigned NoteID = Diag.getDiagnosticIDs()->getCustomDiagID(
-      DiagnosticIDs::Note, "The default copy constructor also copies the "
-                           "default mRefCnt property, leading to reference "
-                           "count imbalance issues. Please provide your own "
-                           "copy constructor which only copies the fields which "
-                           "need to be copied");
+      DiagnosticIDs::Note,
+      "The default copy constructor also copies the "
+      "default mRefCnt property, leading to reference "
+      "count imbalance issues. Please provide your own "
+      "copy constructor which only copies the fields which "
+      "need to be copied");
 
   
   
-  const CXXConstructExpr *E =
-    Result.Nodes.getNodeAs<CXXConstructExpr>("node");
+  const CXXConstructExpr *E = Result.Nodes.getNodeAs<CXXConstructExpr>("node");
 
   Diag.Report(E->getLocation(), ErrorID);
   Diag.Report(E->getLocation(), NoteID);
