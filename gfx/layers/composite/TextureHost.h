@@ -41,6 +41,7 @@ namespace layers {
 class BufferDescriptor;
 class Compositor;
 class CompositableParentManager;
+class CompositorBridgeParent;
 class SurfaceDescriptor;
 class ISurfaceAllocator;
 class TextureHostOGL;
@@ -478,7 +479,7 @@ public:
 
 
 
-  static PTextureParent* CreateIPDLActor(CompositableParentManager* aManager,
+  static PTextureParent* CreateIPDLActor(ISurfaceAllocator* aAllocator,
                                          const SurfaceDescriptor& aSharedData,
                                          LayersBackend aLayersBackend,
                                          TextureFlags aFlags);

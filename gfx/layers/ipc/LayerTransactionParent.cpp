@@ -178,14 +178,6 @@ LayerTransactionParent::Destroy()
       static_cast<ShadowLayerParent*>(iter.Get()->GetKey());
     slp->Destroy();
   }
-  InfallibleTArray<PTextureParent*> textures;
-  ManagedPTextureParent(textures);
-  
-  MOZ_DIAGNOSTIC_ASSERT(textures.Length() == 0);
-  for (unsigned int i = 0; i < textures.Length(); ++i) {
-    RefPtr<TextureHost> tex = TextureHost::AsTextureHost(textures[i]);
-    tex->DeallocateDeviceData();
-  }
   mDestroyed = true;
 }
 
@@ -958,33 +950,6 @@ bool
 LayerTransactionParent::DeallocPCompositableParent(PCompositableParent* aActor)
 {
   return CompositableHost::DestroyIPDLActor(aActor);
-}
-
-PTextureParent*
-LayerTransactionParent::AllocPTextureParent(const SurfaceDescriptor& aSharedData,
-                                            const LayersBackend& aLayersBackend,
-                                            const TextureFlags& aFlags)
-{
-  TextureFlags flags = aFlags;
-
-  if (mPendingCompositorUpdates) {
-    
-    
-    
-    
-    
-    flags |= TextureFlags::INVALID_COMPOSITOR;
-  } else if (aLayersBackend != mLayerManager->GetCompositor()->GetBackendType()) {
-    gfxDevCrash(gfx::LogReason::PAllocTextureBackendMismatch) << "Texture backend is wrong";
-  }
-
-  return TextureHost::CreateIPDLActor(this, aSharedData, aLayersBackend, flags);
-}
-
-bool
-LayerTransactionParent::DeallocPTextureParent(PTextureParent* actor)
-{
-  return TextureHost::DestroyIPDLActor(actor);
 }
 
 bool

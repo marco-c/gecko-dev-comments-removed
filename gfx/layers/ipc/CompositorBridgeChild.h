@@ -96,6 +96,13 @@ public:
   virtual bool
   RecvHideAllPlugins(const uintptr_t& aParentWidget) override;
 
+  virtual PTextureChild* AllocPTextureChild(const SurfaceDescriptor& aSharedData,
+                                            const LayersBackend& aLayersBackend,
+                                            const TextureFlags& aFlags,
+                                            const uint64_t& aId) override;
+
+  virtual bool DeallocPTextureChild(PTextureChild* actor) override;
+
   
 
 
