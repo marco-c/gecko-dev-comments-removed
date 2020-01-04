@@ -1098,8 +1098,7 @@ nsPrintEngine::IsThereARangeSelection(nsPIDOMWindowOuter* aDOMWin)
 
   
   
-  Selection* selection =
-    presShell->GetCurrentSelection(SelectionType::SELECTION_NORMAL);
+  Selection* selection = presShell->GetCurrentSelection(SelectionType::eNormal);
   if (!selection) {
     return false;
   }
@@ -1960,9 +1959,9 @@ nsPrintEngine::UpdateSelectionAndShrinkPrintObject(nsPrintObject* aPO,
   RefPtr<Selection> selection, selectionPS;
   
   if (displayShell) {
-    selection = displayShell->GetCurrentSelection(SelectionType::SELECTION_NORMAL);
+    selection = displayShell->GetCurrentSelection(SelectionType::eNormal);
   }
-  selectionPS = aPO->mPresShell->GetCurrentSelection(SelectionType::SELECTION_NORMAL);
+  selectionPS = aPO->mPresShell->GetCurrentSelection(SelectionType::eNormal);
 
   
   
@@ -2373,9 +2372,9 @@ static nsresult CloneSelection(nsIDocument* aOrigDoc, nsIDocument* aDoc)
   NS_ENSURE_STATE(origShell && shell);
 
   RefPtr<Selection> origSelection =
-    origShell->GetCurrentSelection(SelectionType::SELECTION_NORMAL);
+    origShell->GetCurrentSelection(SelectionType::eNormal);
   RefPtr<Selection> selection =
-    shell->GetCurrentSelection(SelectionType::SELECTION_NORMAL);
+    shell->GetCurrentSelection(SelectionType::eNormal);
   NS_ENSURE_STATE(origSelection && selection);
 
   int32_t rangeCount = origSelection->RangeCount();
