@@ -1023,9 +1023,9 @@ public:
 
 
   virtual already_AddRefed<SourceSurface> CreateSourceSurfaceFromData(unsigned char *aData,
-                                                                  const IntSize &aSize,
-                                                                  int32_t aStride,
-                                                                  SurfaceFormat aFormat) const = 0;
+                                                                      const IntSize &aSize,
+                                                                      int32_t aStride,
+                                                                      SurfaceFormat aFormat) const = 0;
 
   
 
