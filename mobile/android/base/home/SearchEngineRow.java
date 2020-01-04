@@ -243,10 +243,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
         hideRecycledSuggestions(suggestionCounter, recycledSuggestionCount);
     }
 
-    private int updateFromSearchEngine(SearchEngine searchEngine, boolean animate, int recycledSuggestionCount) {
-        
-        mSearchEngine = searchEngine;
-
+    private int updateFromSearchEngine(boolean animate, int recycledSuggestionCount) {
         
         mIconView.updateAndScaleImage(mSearchEngine.getIcon(), mSearchEngine.getEngineIdentifier());
 
@@ -272,9 +269,11 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
     public void updateSuggestions(boolean suggestionsEnabled, SearchEngine searchEngine, String searchTerm, boolean animate) {
         
+        mSearchEngine = searchEngine;
+        
         if (suggestionsEnabled) {
             final int recycledSuggestionCount = mSuggestionView.getChildCount();
-            final int suggestionViewCount = updateFromSearchEngine(searchEngine, animate, recycledSuggestionCount);
+            final int suggestionViewCount = updateFromSearchEngine(animate, recycledSuggestionCount);
             if (AppConstants.NIGHTLY_BUILD) {
                 updateFromSavedSearches(searchTerm, animate, suggestionViewCount, recycledSuggestionCount);
             }
