@@ -2872,9 +2872,9 @@ CloneForDeadBranches(TempAllocator& alloc, MInstruction* candidate)
 static MDefinition::TruncateKind
 ComputeRequestedTruncateKind(MDefinition* candidate, bool* shouldClone)
 {
-    bool isCapturedResult = false;
-    bool isObservableResult = false;
-    bool isRecoverableResult = true;
+    bool isCapturedResult = false;   
+    bool isObservableResult = false; 
+    bool isRecoverableResult = true; 
     bool hasUseRemoved = candidate->isUseRemoved();
 
     MDefinition::TruncateKind kind = MDefinition::Truncate;
@@ -2918,26 +2918,28 @@ ComputeRequestedTruncateKind(MDefinition* candidate, bool* shouldClone)
     
     
     
-    if (isCapturedResult && needsConversion) {
+    
+    
+    
+    
+    bool safeToConvert = kind == MDefinition::Truncate && !hasUseRemoved && !isObservableResult;
+
+    
+    
+    
+    
+    if (isCapturedResult && needsConversion && !safeToConvert) {
 
         
         
         
-        if ((hasUseRemoved || (isObservableResult && isRecoverableResult)) &&
-            candidate->canRecoverOnBailout())
-        {
-            
-            
+        
+        
+        
+        if (isRecoverableResult && candidate->canRecoverOnBailout())
             *shouldClone = true;
-
-        } else if (hasUseRemoved || isObservableResult) {
-            
-            
-            
-            
-            
+        else
             kind = Min(kind, MDefinition::TruncateAfterBailouts);
-        }
     }
 
     return kind;
