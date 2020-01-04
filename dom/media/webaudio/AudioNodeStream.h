@@ -58,8 +58,12 @@ public:
 
 
 
+
+
+
   static already_AddRefed<AudioNodeStream>
-  Create(MediaStreamGraph* aGraph, AudioNodeEngine* aEngine, Flags aKind);
+  Create(AudioContext* aCtx, AudioNodeEngine* aEngine, Flags aKind,
+         MediaStreamGraph* aGraph = nullptr);
 
 protected:
   
