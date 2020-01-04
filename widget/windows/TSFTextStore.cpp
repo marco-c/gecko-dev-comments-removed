@@ -4719,12 +4719,6 @@ TSFTextStore::OnSelectionChangeInternal(const IMENotification& aIMENotification)
     return NS_OK;
   }
 
-
-  if (IsReadLocked()) {
-    
-    return NS_OK;
-  }
-
   mSelection.SetSelection(
     selectionChangeData.mOffset,
     selectionChangeData.Length(),
