@@ -42,9 +42,7 @@ function printAttrs(name, attrs) {
            "\tuserContextId: " + attrs.userContextId + ",\n" +
            "\tinIsolatedMozBrowser: " + attrs.inIsolatedMozBrowser + ",\n" +
            "\taddonId: '" + attrs.addonId + "',\n" +
-           "\tsignedPkg: '" + attrs.signedPkg + "',\n" +
-           "\tprivateBrowsingId: '" + attrs.privateBrowsingId + "',\n" +
-           "\tfirstPartyDomain: '" + attrs.firstPartyDomain + "'\n}");
+           "\tsignedPkg: '" + attrs.signedPkg + "'\n}");
 }
 
 
@@ -57,8 +55,6 @@ function checkValues(attrs, values) {
   do_check_eq(attrs.inIsolatedMozBrowser, values.inIsolatedMozBrowser || false);
   do_check_eq(attrs.addonId, values.addonId || '');
   do_check_eq(attrs.signedPkg, values.signedPkg || '');
-  do_check_eq(attrs.privateBrowsingId, values.privateBrowsingId || '');
-  do_check_eq(attrs.firstPartyDomain, values.firstPartyDomain || '');
 }
 
 function run_test() {
@@ -127,11 +123,6 @@ function run_test() {
   do_check_eq(exampleOrg_addon.origin, 'http://example.org^addonId=dummy');
 
   
-  var exampleOrg_firstPartyDomain = ssm.createCodebasePrincipal(makeURI('http://example.org'), {firstPartyDomain: 'example.org'});
-  checkOriginAttributes(exampleOrg_firstPartyDomain, { firstPartyDomain: "example.org" }, '^firstPartyDomain=example.org');
-  do_check_eq(exampleOrg_firstPartyDomain.origin, 'http://example.org^firstPartyDomain=example.org');
-
-  
   try {
     let binaryStream = Cc["@mozilla.org/binaryoutputstream;1"].
                        createInstance(Ci.nsIObjectOutputStream);
@@ -186,7 +177,6 @@ function run_test() {
   checkCrossOrigin(exampleOrg_appBrowser, nullPrin_appBrowser);
   checkCrossOrigin(exampleOrg_appBrowser, exampleCom_appBrowser);
   checkCrossOrigin(exampleOrg_addon, exampleOrg);
-  checkCrossOrigin(exampleOrg_firstPartyDomain, exampleOrg);
   checkCrossOrigin(exampleOrg_userContext, exampleOrg);
   checkCrossOrigin(exampleOrg_userContextAddon, exampleOrg);
   checkCrossOrigin(exampleOrg_userContext, exampleOrg_userContextAddon);
@@ -213,7 +203,7 @@ function run_test() {
 
   
   
-  var emptyAttrs = ChromeUtils.fillNonDefaultOriginAttributes({});
+  emptyAttrs = ChromeUtils.fillNonDefaultOriginAttributes({});
   checkValues(emptyAttrs);
 
   var uri = "http://example.org";
@@ -223,20 +213,19 @@ function run_test() {
     [ "^userContextId=3", {userContextId: 3} ],
     [ "^addonId=fooBar", {addonId: "fooBar"} ],
     [ "^inBrowser=1", {inIsolatedMozBrowser: true} ],
-    [ "^firstPartyDomain=example.org", {firstPartyDomain: "example.org"} ],
     [ "^signedPkg=bazQux", {signedPkg: "bazQux"} ],
     [ "^appId=3&inBrowser=1&userContextId=6",
       {appId: 3, userContextId: 6, inIsolatedMozBrowser: true} ] ];
 
   
-  tests.forEach(t => {
+  tests.forEach(function(t) {
     let attrs = ChromeUtils.createOriginAttributesFromOrigin(uri + t[0]);
     checkValues(attrs, t[1]);
     do_check_eq(ChromeUtils.originAttributesToSuffix(attrs), t[0]);
   });
 
   
-  tests.forEach(t => {
+  tests.forEach(function(t) {
     let attrs = ChromeUtils.fillNonDefaultOriginAttributes(t[1]);
     checkValues(attrs, t[1]);
     do_check_eq(ChromeUtils.originAttributesToSuffix(attrs), t[0]);
@@ -255,7 +244,7 @@ function run_test() {
     [ "^appId=5", {appId: 5}, {appId: 3, userContextId: 7}, {appId: 3, userContextId: 7}, "^appId=3&userContextId=7" ] ];
 
   
-  set_tests.forEach(t => {
+  set_tests.forEach(function(t) {
     let orig = ChromeUtils.createOriginAttributesFromOrigin(uri + t[0]);
     checkValues(orig, t[1]);
     let mod = orig;
@@ -278,7 +267,7 @@ function run_test() {
     [ "^appId=5&userContextId=3", {appId: 5, userContextId: 3}, {appId: 5}, "^appId=5" ] ];
 
   
-  dflt_tests.forEach(t => {
+  dflt_tests.forEach(function(t) {
     let orig = ChromeUtils.createOriginAttributesFromOrigin(uri + t[0]);
     checkValues(orig, t[1]);
     let mod = orig;
@@ -286,26 +275,4 @@ function run_test() {
     checkValues(mod, t[2]);
     do_check_eq(ChromeUtils.originAttributesToSuffix(mod), t[3]);
   });
-
-  
-  
-  
-  
-  
-  var dflt2_tests = [
-    [ "", {}, {}, "" ],
-    [ "^firstPartyDomain=foo.com", {firstPartyDomain: "foo.com"}, {}, "" ],
-    [ "^appId=5", {appId: 5}, {appId: 5}, "^appId=5" ],
-    [ "^appId=5&firstPartyDomain=foo.com", {appId: 5, firstPartyDomain: "foo.com"}, {appId: 5}, "^appId=5" ] ];
-
-  
-  dflt2_tests.forEach(t => {
-    let orig = ChromeUtils.createOriginAttributesFromOrigin(uri + t[0]);
-    checkValues(orig, t[1]);
-    let mod = orig;
-    mod['firstPartyDomain'] = "";
-    checkValues(mod, t[2]);
-    do_check_eq(ChromeUtils.originAttributesToSuffix(mod), t[3]);
-  });
-
 }
