@@ -286,8 +286,8 @@ private:
 class nsSVGFilterProperty : public nsSVGFilterChainObserver
 {
 public:
-  nsSVGFilterProperty(const nsTArray<nsStyleFilter> &aFilters,
-                      nsIFrame *aFilteredFrame)
+  nsSVGFilterProperty(const nsTArray<nsStyleFilter>& aFilters,
+                      nsIFrame* aFilteredFrame)
     : nsSVGFilterChainObserver(aFilters, aFilteredFrame->GetContent(),
                                aFilteredFrame)
     , mFrameReference(aFilteredFrame)
@@ -304,7 +304,7 @@ protected:
 class nsSVGMarkerProperty final: public nsSVGRenderingObserverProperty
 {
 public:
-  nsSVGMarkerProperty(nsIURI *aURI, nsIFrame *aFrame, bool aReferenceImage)
+  nsSVGMarkerProperty(nsIURI* aURI, nsIFrame* aFrame, bool aReferenceImage)
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage) {}
 
 protected:
@@ -314,7 +314,7 @@ protected:
 class nsSVGTextPathProperty final : public nsSVGRenderingObserverProperty
 {
 public:
-  nsSVGTextPathProperty(nsIURI *aURI, nsIFrame *aFrame, bool aReferenceImage)
+  nsSVGTextPathProperty(nsIURI* aURI, nsIFrame* aFrame, bool aReferenceImage)
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage)
     , mValid(true) {}
 
@@ -335,7 +335,7 @@ private:
 class nsSVGPaintingProperty final : public nsSVGRenderingObserverProperty
 {
 public:
-  nsSVGPaintingProperty(nsIURI *aURI, nsIFrame *aFrame, bool aReferenceImage)
+  nsSVGPaintingProperty(nsIURI* aURI, nsIFrame* aFrame, bool aReferenceImage)
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage) {}
 
 protected:
@@ -464,7 +464,7 @@ public:
   
 
 
-  static nsSVGPaintServerFrame *GetPaintServer(nsIFrame *aTargetFrame,
+  static nsSVGPaintServerFrame *GetPaintServer(nsIFrame* aTargetFrame,
                                                nsStyleSVGPaint nsStyleSVG::* aPaint,
                                                PaintingPropertyDescriptor aProperty);
 
@@ -479,14 +479,14 @@ public:
 
 
 
-    nsSVGClipPathFrame *GetClipPathFrame(bool *aOK);
+    nsSVGClipPathFrame *GetClipPathFrame(bool* aOK);
     
 
 
 
 
 
-    nsSVGMaskFrame *GetFirstMaskFrame(bool *aOK = nullptr);
+    nsSVGMaskFrame *GetFirstMaskFrame(bool* aOK = nullptr);
 
     
 
@@ -505,7 +505,7 @@ public:
   
 
 
-  static EffectProperties GetEffectProperties(nsIFrame *aFrame);
+  static EffectProperties GetEffectProperties(nsIFrame* aFrame);
 
   
 
@@ -520,30 +520,28 @@ public:
 
 
 
-  static void UpdateEffects(nsIFrame *aFrame);
+  static void UpdateEffects(nsIFrame* aFrame);
 
   
 
 
-  static nsSVGFilterProperty *GetFilterProperty(nsIFrame *aFrame);
+  static nsSVGFilterProperty *GetFilterProperty(nsIFrame* aFrame);
 
   
 
 
-  static void AddRenderingObserver(Element *aElement, nsSVGRenderingObserver *aObserver);
+  static void AddRenderingObserver(Element* aElement, nsSVGRenderingObserver *aObserver);
   
 
 
-  static void RemoveRenderingObserver(Element *aElement, nsSVGRenderingObserver *aObserver);
-
-  
-
-
-  static void RemoveAllRenderingObservers(Element *aElement);
+  static void RemoveRenderingObserver(Element* aElement, nsSVGRenderingObserver *aObserver);
 
   
 
 
+  static void RemoveAllRenderingObservers(Element* aElement);
+
+  
 
 
 
@@ -556,7 +554,9 @@ public:
 
 
 
-  static void InvalidateRenderingObservers(nsIFrame *aFrame);
+
+
+  static void InvalidateRenderingObservers(nsIFrame* aFrame);
 
   enum {
     INVALIDATE_REFLOW = 1
@@ -566,33 +566,33 @@ public:
 
 
 
-  static void InvalidateDirectRenderingObservers(Element *aElement, uint32_t aFlags = 0);
-  static void InvalidateDirectRenderingObservers(nsIFrame *aFrame, uint32_t aFlags = 0);
+  static void InvalidateDirectRenderingObservers(Element* aElement, uint32_t aFlags = 0);
+  static void InvalidateDirectRenderingObservers(nsIFrame* aFrame, uint32_t aFlags = 0);
 
   
 
 
   static nsSVGMarkerProperty *
-  GetMarkerProperty(nsIURI *aURI, nsIFrame *aFrame,
+  GetMarkerProperty(nsIURI* aURI, nsIFrame* aFrame,
     const mozilla::FramePropertyDescriptor<nsSVGMarkerProperty>* aProperty);
   
 
 
   static nsSVGTextPathProperty *
-  GetTextPathProperty(nsIURI *aURI, nsIFrame *aFrame,
+  GetTextPathProperty(nsIURI* aURI, nsIFrame* aFrame,
     const mozilla::FramePropertyDescriptor<nsSVGTextPathProperty>* aProperty);
   
 
 
-  static nsSVGPaintingProperty *
-  GetPaintingProperty(nsIURI *aURI, nsIFrame *aFrame,
+  static nsSVGPaintingProperty*
+  GetPaintingProperty(nsIURI* aURI, nsIFrame* aFrame,
       const mozilla::FramePropertyDescriptor<nsSVGPaintingProperty>* aProperty);
   
 
 
 
-  static nsSVGPaintingProperty *
-  GetPaintingPropertyForURI(nsIURI *aURI, nsIFrame *aFrame,
+  static nsSVGPaintingProperty*
+  GetPaintingPropertyForURI(nsIURI* aURI, nsIFrame* aFrame,
                             URIObserverHashtablePropertyDescriptor aProp);
 
   
