@@ -127,7 +127,6 @@ function run_test()
       make_uri("http://localhost:4444/manifest"),
       make_uri("http://localhost:4444/masterEntry"),
       systemPrincipal,
-      0 , false ,
       customDir);
 
   var expectedStates = [

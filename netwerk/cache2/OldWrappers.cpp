@@ -995,71 +995,48 @@ NS_IMETHODIMP _OldStorage::AsyncEvictStorage(nsICacheEntryDoomCallback* aCallbac
   nsresult rv;
 
   if (!mAppCache && mOfflineStorage) {
+    nsCOMPtr<nsIApplicationCacheService> appCacheService =
+      do_GetService(NS_APPLICATIONCACHESERVICE_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = appCacheService->Evict(mLoadInfo);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else if (mAppCache) {
+    nsCOMPtr<nsICacheSession> session;
+    rv = GetCacheSession(EmptyCString(),
+                          mWriteToDisk, mLoadInfo, mAppCache,
+                          getter_AddRefs(session));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = session->EvictEntries();
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else {
     
-    
+    nsCOMPtr<nsICacheSession> session;
+    rv = GetCacheSession(NS_LITERAL_CSTRING("http"),
+                          mWriteToDisk, mLoadInfo, mAppCache,
+                          getter_AddRefs(session));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = session->EvictEntries();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = GetCacheSession(NS_LITERAL_CSTRING("wyciwyg"),
+                          mWriteToDisk, mLoadInfo, mAppCache,
+                          getter_AddRefs(session));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = session->EvictEntries();
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
-    if (mLoadInfo->OriginAttributesPtr()->mAppId == nsILoadContextInfo::NO_APP_ID &&
-        !mLoadInfo->OriginAttributesPtr()->mInBrowser) {
+    rv = GetCacheSession(EmptyCString(),
+                          mWriteToDisk, mLoadInfo, mAppCache,
+                          getter_AddRefs(session));
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      
-      nsCOMPtr<nsICacheService> serv =
-          do_GetService(NS_CACHESERVICE_CONTRACTID, &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = nsCacheService::GlobalInstance()->EvictEntriesInternal(nsICache::STORE_OFFLINE);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-    else {
-      
-      nsCOMPtr<nsIApplicationCacheService> appCacheService =
-        do_GetService(NS_APPLICATIONCACHESERVICE_CONTRACTID, &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = appCacheService->DiscardByAppId(mLoadInfo->OriginAttributesPtr()->mAppId,
-                                           mLoadInfo->OriginAttributesPtr()->mInBrowser);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-  }
-  else {
-    if (mAppCache) {
-      nsCOMPtr<nsICacheSession> session;
-      rv = GetCacheSession(EmptyCString(),
-                           mWriteToDisk, mLoadInfo, mAppCache,
-                           getter_AddRefs(session));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = session->EvictEntries();
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-    else {
-      
-      nsCOMPtr<nsICacheSession> session;
-      rv = GetCacheSession(NS_LITERAL_CSTRING("http"),
-                           mWriteToDisk, mLoadInfo, mAppCache,
-                           getter_AddRefs(session));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = session->EvictEntries();
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = GetCacheSession(NS_LITERAL_CSTRING("wyciwyg"),
-                           mWriteToDisk, mLoadInfo, mAppCache,
-                           getter_AddRefs(session));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = session->EvictEntries();
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      rv = GetCacheSession(EmptyCString(),
-                           mWriteToDisk, mLoadInfo, mAppCache,
-                           getter_AddRefs(session));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = session->EvictEntries();
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
+    rv = session->EvictEntries();
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   if (aCallback) {
