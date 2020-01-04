@@ -5106,8 +5106,10 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
                 aContainerFrame, aVisibleRect.Size(),
                 displaySize);
       
-      scale.width *= aIncomingScale.mXScale;
-      scale.height *= aIncomingScale.mYScale;
+      
+      float incomingScale = std::max(aIncomingScale.mXScale, aIncomingScale.mYScale);
+      scale.width *= incomingScale;
+      scale.height *= incomingScale;
     } else {
       
       scale = RoundToFloatPrecision(ThebesMatrix(transform2d).ScaleFactors(true));
