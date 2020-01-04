@@ -337,6 +337,7 @@ public class GeckoAccessibility {
                                 info.addAction(AccessibilityNodeInfo.ACTION_PREVIOUS_HTML_ELEMENT);
                                 info.setMovementGranularities(AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER |
                                                               AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD |
+                                                              AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE |
                                                               AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH);
                                 break;
                             }
@@ -391,6 +392,11 @@ public class GeckoAccessibility {
                                        virtualViewId == VIRTUAL_CURSOR_POSITION) {
                                 
                                 
+                                
+                                
+                                
+                                
+                                
                                 int granularity = arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT);
                                 if (granularity <= BRAILLE_CLICK_BASE_INDEX) {
                                     int keyIndex = BRAILLE_CLICK_BASE_INDEX - granularity;
@@ -402,7 +408,7 @@ public class GeckoAccessibility {
                                     }
                                     GeckoAppShell.
                                         sendEventToGecko(GeckoEvent.createBroadcastEvent("Accessibility:ActivateObject", activationData.toString()));
-                                } else {
+                                } else if (granularity > 0) {
                                     JSONObject movementData = new JSONObject();
                                     try {
                                         movementData.put("direction", "Next");
@@ -417,14 +423,17 @@ public class GeckoAccessibility {
                             } else if (action == AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY &&
                                        virtualViewId == VIRTUAL_CURSOR_POSITION) {
                                 JSONObject movementData = new JSONObject();
+                                int granularity = arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT);
                                 try {
                                     movementData.put("direction", "Previous");
-                                    movementData.put("granularity", arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT));
+                                    movementData.put("granularity", granularity);
                                 } catch (JSONException e) {
                                     return true;
                                 }
-                                GeckoAppShell.
-                                    sendEventToGecko(GeckoEvent.createBroadcastEvent("Accessibility:MoveByGranularity", movementData.toString()));
+                                if (granularity > 0) {
+                                    GeckoAppShell.
+                                      sendEventToGecko(GeckoEvent.createBroadcastEvent("Accessibility:MoveByGranularity", movementData.toString()));
+                                }
                                 return true;
                             }
                             return host.performAccessibilityAction(action, arguments);
