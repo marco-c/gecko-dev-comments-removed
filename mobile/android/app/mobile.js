@@ -924,5 +924,4 @@ pref("dom.presentation.enabled", true);
 pref("dom.presentation.discovery.enabled", true);
 
 pref("dom.audiochannel.audioCompeting", true);
-
-pref("dom.audiochannel.mediaControl", false);
+pref("dom.audiochannel.mediaControl", true);
