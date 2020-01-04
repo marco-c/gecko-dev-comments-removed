@@ -163,8 +163,9 @@ const kMessageHandlers = {
       reply(cloneableError(err));
       return;
     }
-    if (browser.getAttribute("remote") == "true") {
-      
+
+    let autoStart = MozLoopService.getLoopPref("remote.autostart");
+    if (!autoStart && browser.getAttribute("remote") == "true") {
       
       let err = new Error("Tab sharing is not supported for e10s-enabled browsers");
       MozLoopService.log.error(err);
@@ -706,7 +707,7 @@ const kMessageHandlers = {
 
 
 
-  IsMultiProcessEnabled: function(message, reply) {
+  IsMultiProcessActive: function(message, reply) {
     let win = Services.wm.getMostRecentWindow("navigator:browser");
     let browser = win && win.gBrowser.selectedBrowser;
     reply(!!(browser && browser.getAttribute("remote") == "true"));

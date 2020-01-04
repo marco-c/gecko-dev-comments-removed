@@ -97,14 +97,12 @@ var WindowListener = {
 
 
 
-
-
-      togglePanel: function(event, tabId = null) {
+      togglePanel: function(event) {
         if (!this.panel) {
           
           let obs = win => {
             Services.obs.removeObserver(obs, "browser-delayed-startup-finished");
-            win.LoopUI.togglePanel(event, tabId);
+            win.LoopUI.togglePanel(event);
           };
           Services.obs.addObserver(obs, "browser-delayed-startup-finished", false);
           return window.OpenBrowserWindow();
@@ -116,9 +114,10 @@ var WindowListener = {
           });
         }
 
-        return this.openCallPanel(event, tabId).then(doc => {
-          let fm = Services.focus;
-          fm.moveFocus(doc.defaultView, null, fm.MOVEFOCUS_FIRST, fm.FLAG_NOSCROLL);
+        return this.openPanel(event).then(mm => {
+          if (mm) {
+            mm.sendAsyncMessage("Social:EnsureFocusElement");
+          }
         }).catch(err => {
           Cu.reportError(err);
         });
@@ -131,47 +130,13 @@ var WindowListener = {
 
 
 
-
-
-      openCallPanel: function(event, tabId = null) {
+      openPanel: function(event) {
         return new Promise((resolve) => {
           let callback = iframe => {
-            
-            function showTab() {
-              if (!tabId) {
-                resolve(LoopUI.promiseDocumentVisible(iframe.contentDocument));
-                return;
-              }
+            let mm = iframe.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader.messageManager;
 
-              let win = iframe.contentWindow;
-              let ev = new win.CustomEvent("UIAction", Cu.cloneInto({
-                detail: {
-                  action: "selectTab",
-                  tab: tabId
-                }
-              }, win));
-              win.dispatchEvent(ev);
-              resolve(LoopUI.promiseDocumentVisible(iframe.contentDocument));
-            }
-
-            
-            
-            if (("contentWindow" in iframe) && iframe.contentWindow.document.readyState == "complete") {
-              showTab();
-              return;
-            }
-
-            let documentDOMLoaded = () => {
-              iframe.removeEventListener("DOMContentLoaded", documentDOMLoaded, true);
-              
-              this.hookWindowCloseForPanelClose(iframe.contentWindow);
-              iframe.contentWindow.addEventListener("loopPanelInitialized", function loopPanelInitialized() {
-                iframe.contentWindow.removeEventListener("loopPanelInitialized",
-                  loopPanelInitialized);
-                showTab();
-              });
-            };
-            iframe.addEventListener("DOMContentLoaded", documentDOMLoaded, true);
+            mm.sendAsyncMessage("Social:WaitForDocumentVisible");
+            mm.addMessageListener("Social:DocumentVisible", () => resolve(mm));
           };
 
           
@@ -183,7 +148,7 @@ var WindowListener = {
               
               
               this.MozLoopService.resumeTour("waiting");
-              resolve();
+              resolve(null);
               return;
             }
 
@@ -447,7 +412,7 @@ var WindowListener = {
               options.onclick();
             } else {
               
-              this.openCallPanel(null, options.selectTab || null);
+              this.openPanel(null, options.selectTab || null);
             }
           }, 0);
         });

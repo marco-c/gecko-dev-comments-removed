@@ -47,7 +47,7 @@ add_task(function* setup() {
   
 
   LoopAPI.stubMessageHandlers({
-    IsMultiProcessEnabled: function(message, reply) {
+    IsMultiProcessActive: function(message, reply) {
       reply(false);
     }
   });
