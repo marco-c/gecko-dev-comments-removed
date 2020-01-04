@@ -440,6 +440,7 @@ ValueNumberer::fixupOSROnlyLoop(MBasicBlock* block, MBasicBlock* backedge)
     fake->setImmediateDominator(fake);
     fake->addNumDominated(1);
     fake->setDomIndex(fake->id());
+    fake->setUnreachable();
 
     
     

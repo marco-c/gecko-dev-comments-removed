@@ -2275,13 +2275,16 @@ RangeAnalysis::analyze()
 
     for (ReversePostorderIterator iter(graph_.rpoBegin()); iter != graph_.rpoEnd(); iter++) {
         MBasicBlock* block = *iter;
-        MOZ_ASSERT(!block->unreachable());
+        
+        
+        
+        MOZ_ASSERT(!block->unreachable() || graph_.osrBlock());
 
         
         
         
         if (block->immediateDominator()->unreachable()) {
-            block->setUnreachable();
+            block->setUnreachableUnchecked();
             continue;
         }
 
@@ -3429,6 +3432,15 @@ RangeAnalysis::prepareForUCE(bool* shouldRemoveDeadCode)
 
         if (!block->unreachable())
             continue;
+
+        
+        if (block->numPredecessors() == 0) {
+            
+            
+            
+            MOZ_ASSERT(graph_.osrBlock());
+            continue;
+        }
 
         MControlInstruction* cond = block->getPredecessor(0)->lastIns();
         if (!cond->isTest())
