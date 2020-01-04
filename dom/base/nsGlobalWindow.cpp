@@ -1565,6 +1565,7 @@ nsGlobalWindow::CleanUp()
   mScrollbars = nullptr;
   mLocation = nullptr;
   mHistory = nullptr;
+  mCustomElements = nullptr;
   mFrames = nullptr;
   mWindowUtils = nullptr;
   mApplicationCache = nullptr;
@@ -1695,6 +1696,7 @@ nsGlobalWindow::FreeInnerObjects()
 
   mLocation = nullptr;
   mHistory = nullptr;
+  mCustomElements = nullptr;
 
   if (mNavigator) {
     mNavigator->OnNavigation();
@@ -1877,6 +1879,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindow)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHistory)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCustomElements)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocalStorage)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSessionStorage)
@@ -1950,6 +1953,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindow)
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLocation)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mHistory)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCustomElements)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLocalStorage)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSessionStorage)
   if (tmp->mApplicationCache) {
@@ -3830,6 +3834,17 @@ nsGlobalWindow::GetHistory(ErrorResult& aError)
   }
 
   return mHistory;
+}
+
+CustomElementsRegistry*
+nsGlobalWindow::CustomElements()
+{
+  MOZ_RELEASE_ASSERT(IsInnerWindow());
+  if (!mCustomElements) {
+      mCustomElements = CustomElementsRegistry::Create(AsInner());
+  }
+
+  return mCustomElements;
 }
 
 Performance*
@@ -11841,7 +11856,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
       
       rv = pwwatch->OpenWindow2(AsOuter(), url.get(), name_ptr,
                                 options_ptr,  true,
-                                aDialog, aNavigate, argv,
+                                aDialog, aNavigate, nullptr, argv,
                                 1.0f, 0, getter_AddRefs(domReturn));
     } else {
       
@@ -11861,7 +11876,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
       rv = pwwatch->OpenWindow2(AsOuter(), url.get(), name_ptr,
                                 options_ptr,  false,
-                                aDialog, aNavigate, aExtraArgument,
+                                aDialog, aNavigate, nullptr, aExtraArgument,
                                 1.0f, 0, getter_AddRefs(domReturn));
 
     }

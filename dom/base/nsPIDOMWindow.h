@@ -44,6 +44,7 @@ class AudioContext;
 class Element;
 class Performance;
 class ServiceWorkerRegistration;
+class CustomElementsRegistry;
 } 
 namespace gfx {
 class VRDeviceProxy;
@@ -96,7 +97,7 @@ public:
   const nsPIDOMWindowOuter* AsOuter() const;
 
   virtual nsPIDOMWindowOuter* GetPrivateRoot() = 0;
-
+  virtual mozilla::dom::CustomElementsRegistry* CustomElements() = 0;
   
   virtual void ActivateOrDeactivate(bool aActivate) = 0;
 
