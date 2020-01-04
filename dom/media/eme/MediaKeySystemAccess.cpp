@@ -33,6 +33,9 @@
 #include "nsXULAppAPI.h"
 #include "gmp-audio-decode.h"
 #include "gmp-video-decode.h"
+#ifdef XP_WIN
+#include "WMFDecoderModule.h"
+#endif
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
 #define PRIMETIME_EME_SUPPORTED 1
@@ -316,7 +319,16 @@ GMPDecryptsAndDecodesAAC(mozIGeckoMediaPluginService* aGMPS,
   return HaveGMPFor(aGMPS,
                     NS_ConvertUTF16toUTF8(aKeySystem),
                     NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER),
-                    NS_LITERAL_CSTRING("aac"));
+                    NS_LITERAL_CSTRING("aac"))
+#ifdef XP_WIN
+    
+    
+    
+    
+    
+    && (!aKeySystem.EqualsLiteral("org.w3.clearkey") || WMFDecoderModule::HasAAC())
+#endif
+  ;
 }
 
 static bool
@@ -329,7 +341,16 @@ GMPDecryptsAndDecodesH264(mozIGeckoMediaPluginService* aGMPS,
   return HaveGMPFor(aGMPS,
                     NS_ConvertUTF16toUTF8(aKeySystem),
                     NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER),
-                    NS_LITERAL_CSTRING("h264"));
+                    NS_LITERAL_CSTRING("h264"))
+#ifdef XP_WIN
+    
+    
+    
+    
+    
+    && (!aKeySystem.EqualsLiteral("org.w3.clearkey") || WMFDecoderModule::HasH264())
+#endif
+  ;
 }
 
 
@@ -354,7 +375,10 @@ GMPDecryptsAndGeckoDecodesH264(mozIGeckoMediaPluginService* aGMPService,
 #ifdef XP_WIN
     
     
-    || (aKeySystem.EqualsLiteral("org.w3.clearkey") && !IsVistaOrLater())
+    
+    
+    
+    || (aKeySystem.EqualsLiteral("org.w3.clearkey") && !WMFDecoderModule::HasH264())
 #endif
     ) && MP4Decoder::CanHandleMediaType(aContentType);
 }
@@ -376,7 +400,10 @@ GMPDecryptsAndGeckoDecodesAAC(mozIGeckoMediaPluginService* aGMPService,
 #ifdef XP_WIN
     
     
-    || (aKeySystem.EqualsLiteral("org.w3.clearkey") && !IsVistaOrLater())
+    
+    
+    
+    || (aKeySystem.EqualsLiteral("org.w3.clearkey") && !WMFDecoderModule::HasAAC())
 #endif
     ) && MP4Decoder::CanHandleMediaType(aContentType);
 }

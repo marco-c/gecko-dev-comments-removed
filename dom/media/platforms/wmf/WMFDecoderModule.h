@@ -42,6 +42,15 @@ public:
   
   static int GetNumDecoderThreads();
   static bool LowLatencyMFTEnabled();
+
+  
+  
+  
+  
+  
+  static bool HasAAC();
+  static bool HasH264();
+
 private:
   bool mWMFInitialized;
 };
