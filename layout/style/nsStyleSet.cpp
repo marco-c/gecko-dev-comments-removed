@@ -908,6 +908,13 @@ nsStyleSet::GetContext(nsStyleContext* aParentContext,
                                                 relevantLinkVisited);
 
   if (!result) {
+    
+    
+    
+    
+    
+    RefPtr<nsRuleNode> kungFuDeathGrip{aVisitedRuleNode};
+
     result = NS_NewStyleContext(aParentContext, aPseudoTag, aPseudoType,
                                 aRuleNode,
                                 aFlags & eSkipParentDisplayBasedStyleFixup);
