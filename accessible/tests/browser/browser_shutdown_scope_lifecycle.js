@@ -4,7 +4,7 @@
 
 'use strict';
 
-add_task(function* testScopeLifecycle() {
+add_task(function* () {
   
   
   let a11yInitThenShutdown = initPromise().then(shutdownPromise);
