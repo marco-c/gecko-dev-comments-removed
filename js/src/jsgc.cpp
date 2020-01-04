@@ -4934,6 +4934,34 @@ GCRuntime::joinTask(GCParallelTask& task, gcstats::Phase phase)
     task.joinWithLockHeld();
 }
 
+using WeakCacheTaskVector = mozilla::Vector<SweepWeakCacheTask, 0, SystemAllocPolicy>;
+
+static void
+SweepWeakCachesFromMainThread(JSRuntime* rt)
+{
+    for (GCZoneGroupIter zone(rt); !zone.done(); zone.next()) {
+        for (JS::WeakCache<void*>* cache : zone->weakCaches_) {
+            SweepWeakCacheTask task(rt, *cache);
+            task.runFromMainThread(rt);
+        }
+    }
+}
+
+static WeakCacheTaskVector
+PrepareWeakCacheTasks(JSRuntime* rt)
+{
+    WeakCacheTaskVector out;
+    for (GCZoneGroupIter zone(rt); !zone.done(); zone.next()) {
+        for (JS::WeakCache<void*>* cache : zone->weakCaches_) {
+            if (!out.append(SweepWeakCacheTask(rt, *cache))) {
+                SweepWeakCachesFromMainThread(rt);
+                return WeakCacheTaskVector();
+            }
+        }
+    }
+    return out;
+}
+
 void
 GCRuntime::beginSweepingZoneGroup(AutoLockForExclusiveAccess& lock)
 {
@@ -4971,7 +4999,7 @@ GCRuntime::beginSweepingZoneGroup(AutoLockForExclusiveAccess& lock)
     SweepObjectGroupsTask sweepObjectGroupsTask(rt);
     SweepRegExpsTask sweepRegExpsTask(rt);
     SweepMiscTask sweepMiscTask(rt);
-    mozilla::Vector<SweepWeakCacheTask> sweepCacheTasks;
+    WeakCacheTaskVector sweepCacheTasks = PrepareWeakCacheTasks(rt);
 
     for (GCZoneGroupIter zone(rt); !zone.done(); zone.next()) {
         
@@ -4982,13 +5010,8 @@ GCRuntime::beginSweepingZoneGroup(AutoLockForExclusiveAccess& lock)
         }
         zone->gcWeakRefs.clear();
 
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        for (JS::WeakCache<void*>* cache : zone->weakCaches_) {
-            if (!sweepCacheTasks.append(SweepWeakCacheTask(rt, *cache)))
-                oomUnsafe.crash("preparing weak cache sweeping task list");
-        }
-
         
+        AutoEnterOOMUnsafeRegion oomUnsafe;
         if (!zone->gcWeakKeys.clear())
             oomUnsafe.crash("clearing weak keys in beginSweepingZoneGroup()");
     }
