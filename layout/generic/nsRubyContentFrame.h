@@ -16,8 +16,6 @@ typedef nsInlineFrame nsRubyContentFrameSuper;
 class nsRubyContentFrame : public nsRubyContentFrameSuper
 {
 public:
-  NS_DECL_FRAMEARENA_HELPERS
-
   
   virtual bool IsFrameOfType(uint32_t aFlags) const override;
 
