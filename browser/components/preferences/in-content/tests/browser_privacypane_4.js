@@ -1,6 +1,8 @@
 
 
 
+requestLongerTimeout(2);
+
 function test() {
   let loader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
                getService(Ci.mozIJSSubScriptLoader);
