@@ -152,7 +152,6 @@ public class testSettingsMenuItems extends PixelTest {
         
         mAsserter.ok(mSolo.waitForText(mStringHelper.TITLE_PLACE_HOLDER), "about:home did not load",
                 mStringHelper.TITLE_PLACE_HOLDER);
-        verifyUrl(mStringHelper.ABOUT_HOME_URL);
 
         selectMenuItem(mStringHelper.SETTINGS_LABEL);
         mAsserter.ok(mSolo.waitForText(mStringHelper.SETTINGS_LABEL),
