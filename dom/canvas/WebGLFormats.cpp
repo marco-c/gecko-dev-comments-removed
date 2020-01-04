@@ -785,7 +785,7 @@ FormatUsageAuthority::CreateForWebGL2(gl::GLContext* gl)
 
     
     
-
+#if ALLOW_ES3_FORMATS
     
     
     
@@ -805,7 +805,7 @@ FormatUsageAuthority::CreateForWebGL2(gl::GLContext* gl)
     fnAllowES3TexFormat(FOO(COMPRESSED_SIGNED_RG11_EAC               ), false, true);
     fnAllowES3TexFormat(FOO(COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 ), false, true);
     fnAllowES3TexFormat(FOO(COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2), false, true);
-
+#endif
 #undef FOO
 
     
