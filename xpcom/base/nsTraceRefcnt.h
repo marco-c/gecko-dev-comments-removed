@@ -31,16 +31,6 @@ public:
 
 
 
-
-
-
-  static void WalkTheStackCached(FILE* aStream);
-
-  
-
-
-
-
   static void SetActivityIsLegal(bool aLegal);
 };
 
