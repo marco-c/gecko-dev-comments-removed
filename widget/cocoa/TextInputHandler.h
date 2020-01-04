@@ -887,9 +887,6 @@ protected:
 private:
   
   NSString* mIMECompositionString;
-  
-  
-  nsString mLastDispatchedCompositionString;
 
   NSRange mMarkedRange;
   NSRange mSelectedRange;
