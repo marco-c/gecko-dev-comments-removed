@@ -18,6 +18,7 @@ import org.json.JSONObject;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.URLMetadata;
+import org.mozilla.gecko.favicons.FaviconGenerator;
 import org.mozilla.gecko.favicons.Favicons;
 import org.mozilla.gecko.favicons.LoadFaviconTask;
 import org.mozilla.gecko.favicons.OnFaviconLoadedListener;
@@ -466,7 +467,8 @@ public class Tab {
                             }
 
                             
-                            favicon = Favicons.defaultFavicon;
+                            FaviconGenerator.generate(mAppContext, mUrl, this);
+                            return;
                         }
 
                         mFavicon = favicon;
