@@ -614,6 +614,7 @@ pref("accessibility.typeaheadfind", false);
 pref("accessibility.typeaheadfind.timeout", 5000);
 pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
+pref("findbar.highlightAll", true);
 
 
 pref("accessibility.loadedInLastSession", false);
