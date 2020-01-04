@@ -595,11 +595,6 @@ protected:
 
   
   
-  
-  bool IsPausedAndDecoderWaiting();
-
-  
-  
   bool IsAudioDecoding();
   bool IsVideoDecoding();
 
