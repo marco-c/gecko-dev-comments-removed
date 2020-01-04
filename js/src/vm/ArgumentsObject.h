@@ -75,12 +75,6 @@ struct ArgumentsData
     RareArgumentsData* rareData;
 
     
-
-
-
-    GCPtrValue callee;
-
-    
     JSScript*   script;
 
     
@@ -147,12 +141,19 @@ static const unsigned ARGS_LENGTH_MAX = 500 * 1000;
 
 
 
+
+
+
+
+
+
 class ArgumentsObject : public NativeObject
 {
   protected:
     static const uint32_t INITIAL_LENGTH_SLOT = 0;
     static const uint32_t DATA_SLOT = 1;
     static const uint32_t MAYBE_CALL_SLOT = 2;
+    static const uint32_t CALLEE_SLOT = 3;
 
   public:
     static const uint32_t LENGTH_OVERRIDDEN_BIT = 0x1;
@@ -188,7 +189,7 @@ class ArgumentsObject : public NativeObject
                                 ObjectOpResult& result);
 
   public:
-    static const uint32_t RESERVED_SLOTS = 3;
+    static const uint32_t RESERVED_SLOTS = 4;
     static const gc::AllocKind FINALIZE_KIND = gc::AllocKind::OBJECT4_BACKGROUND;
 
     
@@ -395,12 +396,12 @@ class MappedArgumentsObject : public ArgumentsObject
 
 
     const js::Value& callee() const {
-        return data()->callee;
+        return getFixedSlot(CALLEE_SLOT);
     }
 
     
     void clearCallee() {
-        data()->callee = MagicValue(JS_OVERWRITTEN_CALLEE);
+        setFixedSlot(CALLEE_SLOT, MagicValue(JS_OVERWRITTEN_CALLEE));
     }
 
   private:
