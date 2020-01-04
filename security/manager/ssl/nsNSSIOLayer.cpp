@@ -1078,10 +1078,7 @@ retryDueToTLSIntolerance(PRErrorCode err, nsNSSSocketInfo* socketInfo)
                                  nsIWebProgressListener::STATE_USES_SSL_3);
   }
 
-  
-  
-  if (err == SSL_ERROR_INAPPROPRIATE_FALLBACK_ALERT ||
-      err == SSL_ERROR_RX_MALFORMED_SERVER_HELLO) {
+  if (err == SSL_ERROR_INAPPROPRIATE_FALLBACK_ALERT) {
     
     
     
@@ -2556,10 +2553,6 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("[%p] nsSSLIOLayerSetOptions: enabling TLS_FALLBACK_SCSV\n", fd));
     if (SECSuccess != SSL_OptionSet(fd, SSL_ENABLE_FALLBACK_SCSV, true)) {
-      return NS_ERROR_FAILURE;
-    }
-    
-    if (SECSuccess != SSL_SetDowngradeCheckVersion(fd, maxEnabledVersion)) {
       return NS_ERROR_FAILURE;
     }
   }
