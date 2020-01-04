@@ -254,6 +254,7 @@ public:
 
     void               ThemeChanged(void);
     void               OnDPIChanged(void);
+    void               OnCheckResize(void);
 
 #ifdef MOZ_X11
     Window             mOldFocusWindow;
@@ -472,6 +473,10 @@ private:
 
     
     cairo_surface_t* mFallbackSurface;
+
+    
+    
+    int mPendingConfigures;
 
 #ifdef ACCESSIBILITY
     RefPtr<mozilla::a11y::Accessible> mRootAccessible;
