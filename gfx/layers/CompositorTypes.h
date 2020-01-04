@@ -230,8 +230,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OpenMode)
 
 enum class MaskType : uint8_t {
   MaskNone = 0,   
-  Mask2d,         
-  Mask3d,         
+  Mask,           
   NumMaskTypes
 };
 
