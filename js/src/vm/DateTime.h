@@ -7,12 +7,17 @@
 #ifndef vm_DateTime_h
 #define vm_DateTime_h
 
+#include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include <stdint.h>
 
 #include "js/Conversions.h"
+#include "js/Date.h"
+#include "js/Initialization.h"
 #include "js/Value.h"
 
 namespace js {
@@ -88,23 +93,71 @@ const double EndOfTime = 8.64e15;
 
 class DateTimeInfo
 {
+    static DateTimeInfo instance;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    class MOZ_RAII AcquireLock
+    {
+        static mozilla::Atomic<bool, mozilla::ReleaseAcquire> spinLock;
+
+      public:
+        AcquireLock() {
+            while (!spinLock.compareExchange(false, true))
+                continue;
+        }
+        ~AcquireLock() {
+            MOZ_ASSERT(spinLock, "spinlock should have been acquired");
+            spinLock = false;
+        }
+    };
+
+    friend bool ::JS_Init();
+
+    
+    
+    static void init();
+
   public:
-    DateTimeInfo();
-
     
 
 
 
 
 
-    int64_t getDSTOffsetMilliseconds(int64_t utcMilliseconds);
+    static int64_t getDSTOffsetMilliseconds(int64_t utcMilliseconds) {
+        AcquireLock lock;
 
-    void updateTimeZoneAdjustment();
+        return DateTimeInfo::instance.internalGetDSTOffsetMilliseconds(utcMilliseconds);
+    }
 
     
-    double localTZA() { return localTZA_; }
+    static double localTZA() {
+        AcquireLock lock;
+
+        return DateTimeInfo::instance.localTZA_;
+    }
 
   private:
+    
+    
+    
+    
+    friend void JS::ResetTimeZone();
+
+    static void updateTimeZoneAdjustment() {
+        AcquireLock lock;
+
+        DateTimeInfo::instance.internalUpdateTimeZoneAdjustment();
+    }
+
     
 
 
@@ -140,6 +193,9 @@ class DateTimeInfo
     static const int64_t MaxUnixTimeT = 2145859200; 
 
     static const int64_t RangeExpansionAmount = 30 * SecondsPerDay;
+
+    int64_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
+    void internalUpdateTimeZoneAdjustment();
 
     void sanityCheck();
 };

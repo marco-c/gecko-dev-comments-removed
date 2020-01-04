@@ -10,7 +10,18 @@
 
 #include "jsutil.h"
 
+#include "js/Date.h"
+#if ENABLE_INTL_API
+#include "unicode/timezone.h"
+#endif
+
 using mozilla::UnspecifiedNaN;
+
+ js::DateTimeInfo
+js::DateTimeInfo::instance;
+
+ mozilla::Atomic<bool, mozilla::ReleaseAcquire>
+js::DateTimeInfo::AcquireLock::spinLock;
 
 static bool
 ComputeLocalTime(time_t local, struct tm* ptm)
@@ -131,7 +142,7 @@ UTCToLocalStandardOffsetSeconds()
 }
 
 void
-js::DateTimeInfo::updateTimeZoneAdjustment()
+js::DateTimeInfo::internalUpdateTimeZoneAdjustment()
 {
     
 
@@ -164,12 +175,19 @@ js::DateTimeInfo::updateTimeZoneAdjustment()
 
 
 
-js::DateTimeInfo::DateTimeInfo()
+ void
+js::DateTimeInfo::init()
 {
+    DateTimeInfo* dtInfo = &DateTimeInfo::instance;
+
+    MOZ_ASSERT(dtInfo->localTZA_ == 0,
+               "we should be initializing only once, and the static instance "
+               "should have started out zeroed");
+
     
     
-    localTZA_ = UnspecifiedNaN<double>();
-    updateTimeZoneAdjustment();
+    dtInfo->localTZA_ = UnspecifiedNaN<double>();
+    dtInfo->internalUpdateTimeZoneAdjustment();
 }
 
 int64_t
@@ -201,7 +219,7 @@ js::DateTimeInfo::computeDSTOffsetMilliseconds(int64_t utcSeconds)
 }
 
 int64_t
-js::DateTimeInfo::getDSTOffsetMilliseconds(int64_t utcMilliseconds)
+js::DateTimeInfo::internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds)
 {
     sanityCheck();
 
@@ -287,4 +305,14 @@ js::DateTimeInfo::sanityCheck()
                   rangeStartSeconds >= 0 && rangeEndSeconds >= 0);
     MOZ_ASSERT_IF(rangeStartSeconds != INT64_MIN,
                   rangeStartSeconds <= MaxUnixTimeT && rangeEndSeconds <= MaxUnixTimeT);
+}
+
+JS_PUBLIC_API(void)
+JS::ResetTimeZone()
+{
+    DateTimeInfo::updateTimeZoneAdjustment();
+
+#if ENABLE_INTL_API && defined(ICU_TZ_HAS_RECREATE_DEFAULT)
+    icu::TimeZone::recreateDefault();
+#endif
 }
