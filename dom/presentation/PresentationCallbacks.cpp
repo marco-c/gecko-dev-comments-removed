@@ -12,7 +12,7 @@
 #include "nsServiceManagerUtils.h"
 #include "PresentationCallbacks.h"
 #include "PresentationRequest.h"
-#include "PresentationSession.h"
+#include "PresentationConnection.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -48,17 +48,17 @@ PresentationRequesterCallback::NotifySuccess()
 
   
   
-  nsRefPtr<PresentationSession> session =
-    PresentationSession::Create(mRequest->GetOwner(), mSessionId,
-                                PresentationSessionState::Connected);
-  if (NS_WARN_IF(!session)) {
+  nsRefPtr<PresentationConnection> connection =
+    PresentationConnection::Create(mRequest->GetOwner(), mSessionId,
+                                   PresentationConnectionState::Connected);
+  if (NS_WARN_IF(!connection)) {
     mPromise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
     return NS_OK;
   }
 
-  mPromise->MaybeResolve(session);
+  mPromise->MaybeResolve(connection);
 
-  return mRequest->DispatchSessionConnectEvent(session);
+  return mRequest->DispatchConnectionAvailableEvent(connection);
 }
 
 NS_IMETHODIMP
