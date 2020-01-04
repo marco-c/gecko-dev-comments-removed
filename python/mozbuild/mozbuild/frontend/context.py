@@ -1717,6 +1717,11 @@ VARIABLES = {
         """Forces to build a real static library, and no corresponding fake
            library.
         """, None),
+
+    'NO_COMPONENTS_MANIFEST': (bool, bool,
+        """Do not create a binary-component manifest entry for the
+        corresponding XPCOMBinaryComponent.
+        """, None),
 }
 
 
