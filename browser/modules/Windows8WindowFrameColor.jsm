@@ -31,7 +31,7 @@ const Windows8WindowFrameColor = {
     
     customizationColorHex = ("00000000" + customizationColorHex).substr(-8);
     let customizationColorArray = customizationColorHex.match(/../g);
-    let [unused, fgR, fgG, fgB] = customizationColorArray.map(function(val) parseInt(val, 16));
+    let [unused, fgR, fgG, fgB] = customizationColorArray.map(val => parseInt(val, 16));
     let colorizationColorBalance = Registry.readRegKey(HKCU, dwmKey,
                                                        "ColorizationColorBalance") || 78;
      
