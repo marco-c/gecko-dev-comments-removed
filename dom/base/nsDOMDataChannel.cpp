@@ -143,19 +143,6 @@ nsDOMDataChannel::GetId(uint16_t *aId)
   return NS_OK;
 }
 
-uint16_t
-nsDOMDataChannel::Stream() const
-{
-  return mDataChannel->GetStream();
-}
-
-NS_IMETHODIMP
-nsDOMDataChannel::GetStream(uint16_t *aStream)
-{
-  *aStream = Stream();
-  return NS_OK;
-}
-
 
 bool
 nsDOMDataChannel::Reliable() const

@@ -85,7 +85,6 @@ public:
   
   bool Ordered() const;
   uint16_t Id() const;
-  uint16_t Stream() const; 
 
   nsresult
   DoOnMessageAvailable(const nsACString& aMessage, bool aBinary);
