@@ -976,7 +976,13 @@ private:
       principal = parentWorker->GetPrincipal();
     }
 
-    aLoadInfo.mMutedErrorFlag.emplace(!principal->Subsumes(channelPrincipal));
+    
+    
+    
+    
+    aLoadInfo.mMutedErrorFlag.emplace(IsMainWorkerScript()
+                                        ? false 
+                                        : !principal->Subsumes(channelPrincipal));
 
     
     
