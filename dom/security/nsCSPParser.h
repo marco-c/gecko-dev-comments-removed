@@ -233,6 +233,15 @@ class nsCSPParser {
     bool               mHasHashOrNonce; 
     nsCSPKeywordSrc*   mUnsafeInlineKeywordSrc; 
 
+    
+    
+    
+    
+    
+    
+    nsCSPChildSrcDirective* mChildSrc;
+    nsCSPDirective*         mFrameSrc;
+
     cspTokens          mTokens;
     nsIURI*            mSelfURI;
     nsCSPPolicy*       mPolicy;

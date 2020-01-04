@@ -1025,6 +1025,29 @@ public:
 
 
 
+  static nsContentPolicyType InternalContentPolicyTypeToExternalOrCSPInternal(nsContentPolicyType aType);
+
+  
+
+
+
+
+
+
+
+  static nsContentPolicyType InternalContentPolicyTypeToExternalOrWorker(nsContentPolicyType aType);
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
   static bool HasMutationListeners(nsINode* aNode,
