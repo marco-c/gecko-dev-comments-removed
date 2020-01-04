@@ -23,6 +23,21 @@ import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.content.AsyncTaskLoader;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@Deprecated
 abstract class SimpleCursorLoader extends AsyncTaskLoader<Cursor> {
     final ForceLoadContentObserver mObserver;
     Cursor mCursor;
