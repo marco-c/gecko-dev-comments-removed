@@ -805,10 +805,15 @@ Promise::CallInitFunction(const GlobalObject& aGlobal,
     
     
     
-    JS::Rooted<JS::Value> value(cx);
-    DebugOnly<bool> conversionResult = ToJSValue(cx, aRv, &value);
-    MOZ_ASSERT(conversionResult);
-    MaybeRejectInternal(cx, value);
+    
+    
+    
+    
+    
+    
+    
+    
+    MaybeReject(aRv);
   }
 }
 

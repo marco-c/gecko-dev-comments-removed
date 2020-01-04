@@ -124,12 +124,11 @@ TestInterfaceJS.prototype = {
   },
 
   testPromiseWithThrowingChromeThenable: function() {
-    
-    
-    var thenable = new this._win.Object();
-    Cu.waiveXrays(thenable).then = function() {
-      noSuchMethodExistsYo3()
-    }
+    var thenable =  {
+      then: function() {
+        noSuchMethodExistsYo3()
+      }
+    };
     return new this._win.Promise(function(resolve) {
       resolve(thenable)
     });
@@ -144,13 +143,12 @@ TestInterfaceJS.prototype = {
   },
 
   testPromiseWithDOMExceptionThrowingThenable: function() {
-    
-    
-    var thenable = new this._win.Object();
-    Cu.waiveXrays(thenable).then = () => {
-      throw new this._win.DOMException("We are a fourth DOMException",
-                                       "TypeMismatchError");
-    }
+    var thenable =  {
+      then: () => {
+        throw new this._win.DOMException("We are a fourth DOMException",
+                                         "TypeMismatchError");
+      }
+    };
     return new this._win.Promise(function(resolve) {
       resolve(thenable)
     });
