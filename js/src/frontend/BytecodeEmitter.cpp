@@ -6842,6 +6842,44 @@ BytecodeEmitter::emitCallOrNew(ParseNode* pn)
 }
 
 bool
+BytecodeEmitter::emitRightAssociative(ParseNode* pn)
+{
+    
+    MOZ_ASSERT(pn->isKind(PNK_POW));
+    MOZ_ASSERT(pn->isArity(PN_LIST));
+
+    
+    for (ParseNode* subexpr = pn->pn_head; subexpr; subexpr = subexpr->pn_next) {
+        if (!emitTree(subexpr))
+            return false;
+    }
+    for (uint32_t i = 0; i < pn->pn_count - 1; i++) {
+        if (!emit1(JSOP_POW))
+            return false;
+    }
+    return true;
+}
+
+bool
+BytecodeEmitter::emitLeftAssociative(ParseNode* pn)
+{
+    MOZ_ASSERT(pn->isArity(PN_LIST));
+
+    
+    if (!emitTree(pn->pn_head))
+        return false;
+    JSOp op = pn->getOp();
+    ParseNode* nextExpr = pn->pn_head->pn_next;
+    do {
+        if (!emitTree(nextExpr))
+            return false;
+        if (!emit1(op))
+            return false;
+    } while ((nextExpr = nextExpr->pn_next));
+    return true;
+}
+
+bool
 BytecodeEmitter::emitLogical(ParseNode* pn)
 {
     MOZ_ASSERT(pn->isArity(PN_LIST));
@@ -6892,6 +6930,22 @@ BytecodeEmitter::emitLogical(ParseNode* pn)
         top += tmp;
     } while ((pn2 = pn2->pn_next)->pn_next);
 
+    return true;
+}
+
+bool
+BytecodeEmitter::emitSequenceExpr(ParseNode* pn)
+{
+    for (ParseNode* child = pn->pn_head; ; child = child->pn_next) {
+        if (!updateSourceCoordNotes(child->pn_pos.begin))
+            return false;
+        if (!emitTree(child))
+            return false;
+        if (!child->pn_next)
+            break;
+        if (!emit1(JSOP_POP))
+            return false;
+    }
     return true;
 }
 
@@ -7266,8 +7320,49 @@ BytecodeEmitter::emitSpread()
 }
 
 bool
+BytecodeEmitter::emitArrayLiteral(ParseNode* pn)
+{
+    if (!(pn->pn_xflags & PNX_NONCONST) && pn->pn_head) {
+        if (checkSingletonContext()) {
+            
+            return emitSingletonInitialiser(pn);
+        }
+
+        
+        
+        
+        if (emitterMode != BytecodeEmitter::SelfHosting && pn->pn_count != 0) {
+            RootedValue value(cx);
+            if (!pn->getConstantValue(cx, ParseNode::ForCopyOnWriteArray, &value))
+                return false;
+            if (!value.isMagic(JS_GENERIC_MAGIC)) {
+                
+                
+                
+                
+                
+                
+                
+                JSObject* obj = &value.toObject();
+                MOZ_ASSERT(obj->is<ArrayObject>() &&
+                           obj->as<ArrayObject>().denseElementsAreCopyOnWrite());
+
+                ObjectBox* objbox = parser->newObjectBox(obj);
+                if (!objbox)
+                    return false;
+
+                return emitObjectOp(objbox, JSOP_NEWARRAY_COPYONWRITE);
+            }
+        }
+    }
+
+    return emitArray(pn->pn_head, pn->pn_count, JSOP_NEWARRAY);
+}
+
+bool
 BytecodeEmitter::emitArray(ParseNode* pn, uint32_t count, JSOp op)
 {
+
     
 
 
@@ -7378,6 +7473,95 @@ BytecodeEmitter::emitTypeof(ParseNode* node, JSOp op)
 
     emittingForInit = oldEmittingForInit;
     return emit1(op);
+}
+
+bool
+BytecodeEmitter::emitArgsBody(ParseNode *pn)
+{
+    RootedFunction fun(cx, sc->asFunctionBox()->function());
+    ParseNode* pnlast = pn->last();
+
+    
+    
+    
+    ParseNode* pnchild = pnlast->pn_head;
+    bool hasDefaults = sc->asFunctionBox()->hasDefaults();
+    ParseNode* rest = nullptr;
+    bool restIsDefn = false;
+    if (fun->hasRest() && hasDefaults) {
+        
+        
+        
+        
+        
+        
+        rest = pn->pn_head;
+        while (rest->pn_next != pnlast)
+            rest = rest->pn_next;
+        restIsDefn = rest->isDefn();
+        if (!emit1(JSOP_REST))
+            return false;
+        checkTypeSet(JSOP_REST);
+
+        
+        
+        if (restIsDefn) {
+            if (!emit1(JSOP_UNDEFINED))
+                return false;
+            if (!bindNameToSlot(rest))
+                return false;
+            if (!emitVarOp(rest, JSOP_SETARG))
+                return false;
+            if (!emit1(JSOP_POP))
+                return false;
+        }
+    }
+    if (!emitDefaultsAndDestructuring(pn))
+        return false;
+    if (fun->hasRest() && hasDefaults) {
+        if (restIsDefn && !emitVarOp(rest, JSOP_SETARG))
+            return false;
+        if (!emit1(JSOP_POP))
+            return false;
+    }
+    for (ParseNode* pn2 = pn->pn_head; pn2 != pnlast; pn2 = pn2->pn_next) {
+        
+        
+        if (!pn2->isDefn())
+            continue;
+        if (!bindNameToSlot(pn2))
+            return false;
+        if (pn2->pn_next == pnlast && fun->hasRest() && !hasDefaults) {
+            
+            switchToPrologue();
+            if (!emit1(JSOP_REST))
+                return false;
+            checkTypeSet(JSOP_REST);
+            if (!emitVarOp(pn2, JSOP_SETARG))
+                return false;
+            if (!emit1(JSOP_POP))
+                return false;
+            switchToMain();
+        }
+    }
+    if (pnlast->pn_xflags & PNX_FUNCDEFS) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for (ParseNode* pn2 = pnchild; pn2; pn2 = pn2->pn_next) {
+            if (pn2->isKind(PNK_FUNCTION) && pn2->functionIsHoisted()) {
+                if (!emitTree(pn2))
+                    return false;
+            }
+        }
+    }
+    return emitTree(pnlast);
 }
 
 bool
@@ -7599,94 +7783,9 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
         break;
 
       case PNK_ARGSBODY:
-      {
-        RootedFunction fun(cx, sc->asFunctionBox()->function());
-        ParseNode* pnlast = pn->last();
-
-        
-        
-        
-        ParseNode* pnchild = pnlast->pn_head;
-        bool hasDefaults = sc->asFunctionBox()->hasDefaults();
-        ParseNode* rest = nullptr;
-        bool restIsDefn = false;
-        if (fun->hasRest() && hasDefaults) {
-            
-            
-            
-            
-            
-            
-            rest = pn->pn_head;
-            while (rest->pn_next != pnlast)
-                rest = rest->pn_next;
-            restIsDefn = rest->isDefn();
-            if (!emit1(JSOP_REST))
-                return false;
-            checkTypeSet(JSOP_REST);
-
-            
-            
-            if (restIsDefn) {
-                if (!emit1(JSOP_UNDEFINED))
-                    return false;
-                if (!bindNameToSlot(rest))
-                    return false;
-                if (!emitVarOp(rest, JSOP_SETARG))
-                    return false;
-                if (!emit1(JSOP_POP))
-                    return false;
-            }
-        }
-        if (!emitDefaultsAndDestructuring(pn))
-            return false;
-        if (fun->hasRest() && hasDefaults) {
-            if (restIsDefn && !emitVarOp(rest, JSOP_SETARG))
-                return false;
-            if (!emit1(JSOP_POP))
-                return false;
-        }
-        for (ParseNode* pn2 = pn->pn_head; pn2 != pnlast; pn2 = pn2->pn_next) {
-            
-            
-            if (!pn2->isDefn())
-                continue;
-            if (!bindNameToSlot(pn2))
-                return false;
-            if (pn2->pn_next == pnlast && fun->hasRest() && !hasDefaults) {
-                
-                switchToPrologue();
-                if (!emit1(JSOP_REST))
-                    return false;
-                checkTypeSet(JSOP_REST);
-                if (!emitVarOp(pn2, JSOP_SETARG))
-                    return false;
-                if (!emit1(JSOP_POP))
-                    return false;
-                switchToMain();
-            }
-        }
-        if (pnlast->pn_xflags & PNX_FUNCDEFS) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            for (ParseNode* pn2 = pnchild; pn2; pn2 = pn2->pn_next) {
-                if (pn2->isKind(PNK_FUNCTION) && pn2->functionIsHoisted()) {
-                    if (!emitTree(pn2))
-                        return false;
-                }
-            }
-        }
-        if (!emitTree(pnlast))
+        if (!emitArgsBody(pn))
             return false;
         break;
-      }
 
       case PNK_IF:
         if (!emitIf(pn))
@@ -7779,19 +7878,9 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
         break;
 
       case PNK_COMMA:
-      {
-        for (ParseNode* pn2 = pn->pn_head; ; pn2 = pn2->pn_next) {
-            if (!updateSourceCoordNotes(pn2->pn_pos.begin))
-                return false;
-            if (!emitTree(pn2))
-                return false;
-            if (!pn2->pn_next)
-                break;
-            if (!emit1(JSOP_POP))
-                return false;
-        }
+        if (!emitSequenceExpr(pn))
+            return false;
         break;
-      }
 
       case PNK_ASSIGN:
       case PNK_ADDASSIGN:
@@ -7841,37 +7930,15 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
       case PNK_URSH:
       case PNK_STAR:
       case PNK_DIV:
-      case PNK_MOD: {
-        MOZ_ASSERT(pn->isArity(PN_LIST));
-
-        
-        ParseNode* subexpr = pn->pn_head;
-        if (!emitTree(subexpr))
+      case PNK_MOD:
+        if (!emitLeftAssociative(pn))
             return false;
-        JSOp op = pn->getOp();
-        while ((subexpr = subexpr->pn_next) != nullptr) {
-            if (!emitTree(subexpr))
-                return false;
-            if (!emit1(op))
-                return false;
-        }
         break;
-      }
 
-      case PNK_POW: {
-        MOZ_ASSERT(pn->isArity(PN_LIST));
-
-        
-        for (ParseNode* subexpr = pn->pn_head; subexpr; subexpr = subexpr->pn_next) {
-            if (!emitTree(subexpr))
-                return false;
-        }
-        for (uint32_t i = 0; i < pn->pn_count - 1; i++) {
-            if (!emit1(JSOP_POW))
-                return false;
-        }
+      case PNK_POW:
+        if (!emitRightAssociative(pn))
+            return false;
         break;
-      }
 
       case PNK_TYPEOFNAME:
         if (!emitTypeof(pn, JSOP_TYPEOF))
@@ -7998,7 +8065,7 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
             return false;
         break;
 
-      case PNK_ARRAYPUSH: {
+      case PNK_ARRAYPUSH:
         
 
 
@@ -8012,7 +8079,6 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
         if (!emit1(JSOP_ARRAYPUSH))
             return false;
         break;
-      }
 
       case PNK_CALLSITEOBJ:
         if (!emitCallSiteObject(pn))
@@ -8020,45 +8086,7 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
         break;
 
       case PNK_ARRAY:
-        if (!(pn->pn_xflags & PNX_NONCONST) && pn->pn_head) {
-            if (checkSingletonContext()) {
-                
-                if (!emitSingletonInitialiser(pn))
-                    return false;
-                break;
-            }
-
-            
-            
-            
-            if (emitterMode != BytecodeEmitter::SelfHosting && pn->pn_count != 0) {
-                RootedValue value(cx);
-                if (!pn->getConstantValue(cx, ParseNode::ForCopyOnWriteArray, &value))
-                    return false;
-                if (!value.isMagic(JS_GENERIC_MAGIC)) {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    JSObject* obj = &value.toObject();
-                    MOZ_ASSERT(obj->is<ArrayObject>() &&
-                               obj->as<ArrayObject>().denseElementsAreCopyOnWrite());
-
-                    ObjectBox* objbox = parser->newObjectBox(obj);
-                    if (!objbox)
-                        return false;
-
-                    if (!emitObjectOp(objbox, JSOP_NEWARRAY_COPYONWRITE))
-                        return false;
-                    break;
-                }
-            }
-        }
-
-        if (!emitArray(pn->pn_head, pn->pn_count, JSOP_NEWARRAY))
+        if (!emitArrayLiteral(pn))
             return false;
         break;
 
