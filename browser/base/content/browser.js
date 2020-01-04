@@ -6443,6 +6443,9 @@ function checkEmptyPageOrigin(browser = gBrowser.selectedBrowser,
   }
   
   if (contentPrincipal.URI) {
+    if (uri.spec == "about:blank" && contentPrincipal.isNullPrincipal) {
+      return true;
+    }
     return contentPrincipal.URI.equals(uri);
   }
   
