@@ -30,8 +30,6 @@ let bootstrap = {
   store: null,
 
   init() {
-    
-    
     this.telemetry.toolOpened("responsive");
     let store = this.store = Store();
     let app = createElement(App);
