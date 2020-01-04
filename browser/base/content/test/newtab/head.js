@@ -700,10 +700,7 @@ function synthesizeNativeMouseEvent(aElement, aMsg, aOffsetX = 0, aOffsetY = 0) 
 
 
 function sendDragEvent(aEventType, aTarget, aData) {
-  let event = createDragEvent(aEventType, aData);
-  let ifaceReq = getContentWindow().QueryInterface(Ci.nsIInterfaceRequestor);
-  let windowUtils = ifaceReq.getInterface(Ci.nsIDOMWindowUtils);
-  windowUtils.dispatchDOMEventViaPresShell(aTarget, event, true);
+  aTarget.dispatchEvent(createDragEvent(aEventType, aData));
 }
 
 
