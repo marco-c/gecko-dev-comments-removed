@@ -52,6 +52,8 @@
 #include "nsIFrameInlines.h"
 #include "CounterStyleManager.h"
 #include "nsISelection.h"
+#include "mozilla/dom/HTMLDetailsElement.h"
+#include "mozilla/dom/HTMLSummaryElement.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 
@@ -6918,7 +6920,6 @@ nsBlockFrame::CreateBulletFrameForListItem(bool aCreateBulletList,
   
   
   if (aListStylePositionInside) {
-
     nsFrameList bulletList(bullet, bullet);
     AddFrames(bulletList, nullptr);
     Properties().Set(InsideBulletProperty(), bullet);
@@ -7089,6 +7090,15 @@ nsBlockFrame::RenumberListsFor(nsPresContext* aPresContext,
   
   if (!kid)
     return false;
+
+  
+  if (HTMLDetailsElement::IsDetailsEnabled()) {
+    HTMLSummaryElement* summary =
+      HTMLSummaryElement::FromContent(kid->GetContent());
+    if (summary && summary->IsMainSummary()) {
+      return false;
+    }
+  }
 
   bool kidRenumberedABullet = false;
 

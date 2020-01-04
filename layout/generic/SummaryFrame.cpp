@@ -35,16 +35,4 @@ void
 SummaryFrame::SetInitialChildList(ChildListID aListID, nsFrameList& aChildList)
 {
   nsBlockFrame::SetInitialChildList(aListID, aChildList);
-
-  
-  
-  
-  
-  if (aListID == kPrincipalList) {
-    auto* summary = HTMLSummaryElement::FromContent(GetContent());
-    if (summary->IsMainSummary() &&
-        StyleDisplay()->mDisplay != NS_STYLE_DISPLAY_LIST_ITEM) {
-      CreateBulletFrameForListItem(true, true);
-    }
-  }
 }
