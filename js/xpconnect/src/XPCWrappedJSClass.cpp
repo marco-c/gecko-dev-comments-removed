@@ -86,18 +86,18 @@ bool xpc_IsReportableErrorCode(nsresult code)
 
 class MOZ_STACK_CLASS AutoSavePendingResult {
 public:
-    explicit AutoSavePendingResult(XPCContext* xpcc) :
-        mXPCContext(xpcc)
+    explicit AutoSavePendingResult(XPCJSRuntime* xpcrt) :
+        mXPCRuntime(xpcrt)
     {
         
-        mSavedResult = xpcc->GetPendingResult();
-        xpcc->SetPendingResult(NS_OK);
+        mSavedResult = xpcrt->GetPendingResult();
+        xpcrt->SetPendingResult(NS_OK);
     }
     ~AutoSavePendingResult() {
-        mXPCContext->SetPendingResult(mSavedResult);
+        mXPCRuntime->SetPendingResult(mSavedResult);
     }
 private:
-    XPCContext* mXPCContext;
+    XPCJSRuntime* mXPCRuntime;
     nsresult mSavedResult;
 };
 
@@ -782,9 +782,11 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
     if (xpc_exception)
         xpcc->SetException(nullptr);
 
+    XPCJSRuntime* xpcrt = XPCJSRuntime::Get();
+
     
     
-    nsresult pending_result = xpcc->GetPendingResult();
+    nsresult pending_result = xpcrt->GetPendingResult();
 
     RootedValue js_exception(cx);
     bool is_js_exception = JS_GetPendingException(cx, &js_exception);
@@ -798,7 +800,7 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
 
         
         if (!xpc_exception) {
-            XPCJSRuntime::Get()->SetPendingException(nullptr); 
+            xpcrt->SetPendingException(nullptr); 
         }
     }
 
@@ -917,7 +919,7 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
             
             
             if (NS_FAILED(e_result)) {
-                XPCJSRuntime::Get()->SetPendingException(xpc_exception);
+                xpcrt->SetPendingException(xpc_exception);
                 return e_result;
             }
         }
@@ -988,7 +990,8 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     AutoValueVector args(cx);
     AutoScriptEvaluate scriptEval(cx);
 
-    AutoSavePendingResult apr(xpcc);
+    XPCJSRuntime* xpcrt = XPCJSRuntime::Get();
+    AutoSavePendingResult apr(xpcrt);
 
     
     uint8_t paramCount = info->num_args;
@@ -999,7 +1002,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
         goto pre_call_clean_up;
 
     xpcc->SetException(nullptr);
-    XPCJSRuntime::Get()->SetPendingException(nullptr);
+    xpcrt->SetPendingException(nullptr);
 
     
     
@@ -1376,7 +1379,7 @@ pre_call_clean_up:
         CleanupOutparams(cx, methodIndex, info, nativeParams,  false, i);
     } else {
         
-        retval = xpcc->GetPendingResult();
+        retval = xpcrt->GetPendingResult();
     }
 
     return retval;
