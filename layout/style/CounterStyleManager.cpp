@@ -1987,25 +1987,17 @@ CounterStyleManager::InitializeBuiltinCounterStyles()
   }
 }
 
-#ifdef DEBUG
-static PLDHashOperator
-CheckRefCount(const nsSubstring& aKey,
-              CounterStyle* aStyle,
-              void* aArg)
-{
-  aStyle->AddRef();
-  auto refcnt = aStyle->Release();
-  NS_ASSERTION(!aStyle->IsDependentStyle() || refcnt == 1,
-               "Counter style is still referenced by other objects.");
-  return PL_DHASH_NEXT;
-}
-#endif
-
 void
 CounterStyleManager::Disconnect()
 {
 #ifdef DEBUG
-  mCacheTable.EnumerateRead(CheckRefCount, nullptr);
+  for (auto iter = mCacheTable.Iter(); !iter.Done(); iter.Next()) {
+    CounterStyle* style = iter.UserData();
+    style->AddRef();
+    auto refcnt = style->Release();
+    NS_ASSERTION(!style->IsDependentStyle() || refcnt == 1,
+                 "Counter style is still referenced by other objects.");
+  }
 #endif
   mCacheTable.Clear();
   mPresContext = nullptr;
@@ -2115,27 +2107,21 @@ InvalidateOldStyle(const nsSubstring& aKey,
   return PL_DHASH_NEXT;
 }
 
-static PLDHashOperator
-InvalidateDependentData(const nsSubstring& aKey,
-                        CounterStyle* aStyle,
-                        void* aArg)
-{
-  if (aStyle->IsCustomStyle()) {
-    CustomCounterStyle* custom = static_cast<CustomCounterStyle*>(aStyle);
-    custom->ResetDependentData();
-  }
-  
-  
-  return PL_DHASH_NEXT;
-}
-
 bool
 CounterStyleManager::NotifyRuleChanged()
 {
   InvalidateOldStyleData data(mPresContext);
   mCacheTable.Enumerate(InvalidateOldStyle, &data);
   if (data.mChanged) {
-    mCacheTable.EnumerateRead(InvalidateDependentData, nullptr);
+    for (auto iter = mCacheTable.Iter(); !iter.Done(); iter.Next()) {
+      CounterStyle* style = iter.UserData();
+      if (style->IsCustomStyle()) {
+        CustomCounterStyle* custom = static_cast<CustomCounterStyle*>(style);
+        custom->ResetDependentData();
+      }
+      
+      
+    }
   }
   return data.mChanged;
 }
