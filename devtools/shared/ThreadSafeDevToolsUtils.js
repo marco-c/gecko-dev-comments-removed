@@ -1,0 +1,35 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.immutableUpdate = function (...objs) {
+  return Object.freeze(Object.assign({}, ...objs));
+};

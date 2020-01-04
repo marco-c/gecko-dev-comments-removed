@@ -3,8 +3,8 @@
 
 "use strict";
 
+const { immutableUpdate } = require("devtools/shared/DevToolsUtils");
 const { actions, snapshotState: states } = require("../constants");
-const { immutableUpdate } = require("../utils");
 
 const handlers = Object.create(null);
 

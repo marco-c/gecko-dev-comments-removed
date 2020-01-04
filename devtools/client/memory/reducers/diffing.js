@@ -3,9 +3,9 @@
 
 "use strict";
 
-const { assert } = require("devtools/shared/DevToolsUtils");
+const { immutableUpdate, assert } = require("devtools/shared/DevToolsUtils");
 const { actions, diffingState } = require("../constants");
-const { immutableUpdate, snapshotIsDiffable } = require("../utils");
+const { snapshotIsDiffable } = require("../utils");
 
 const handlers = Object.create(null);
 

@@ -15,6 +15,12 @@ loader.lazyRequireGetter(this, "FileUtils",
 loader.lazyRequireGetter(this, "setTimeout", "Timer", true);
 
 
+const ThreadSafeDevToolsUtils = require("./ThreadSafeDevToolsUtils.js");
+for (let key of Object.keys(ThreadSafeDevToolsUtils)) {
+  exports[key] = ThreadSafeDevToolsUtils[key];
+}
+
+
 
 
 exports.safeErrorString = function safeErrorString(aError) {
