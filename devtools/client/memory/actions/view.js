@@ -3,7 +3,9 @@
 
 "use strict";
 
+const { assert } = require("devtools/shared/DevToolsUtils");
 const { actions } = require("../constants");
+const { findSelectedSnapshot } = require("../utils");
 const refresh = require("./refresh");
 
 
@@ -12,11 +14,31 @@ const refresh = require("./refresh");
 
 
 const changeView = exports.changeView = function (view) {
-  return {
-    type: actions.CHANGE_VIEW,
-    view
+  return function(dispatch, getState) {
+    dispatch({
+      type: actions.CHANGE_VIEW,
+      newViewState: view,
+      oldDiffing: getState().diffing,
+      oldSelected: findSelectedSnapshot(getState()),
+    });
   };
 };
+
+
+
+
+
+const popView = exports.popView = function () {
+  return function(dispatch, getState) {
+    const { previous } = getState().view;
+    assert(previous);
+    dispatch({
+      type: actions.POP_VIEW,
+      previousView: previous,
+    });
+  };
+};
+
 
 
 
@@ -27,6 +49,19 @@ const changeView = exports.changeView = function (view) {
 exports.changeViewAndRefresh = function (view, heapWorker) {
   return function* (dispatch, getState) {
     dispatch(changeView(view));
+    yield dispatch(refresh.refresh(heapWorker));
+  };
+};
+
+
+
+
+
+
+
+exports.popViewAndRefresh = function(heapWorker) {
+  return function* (dispatch, getState) {
+    dispatch(popView());
     yield dispatch(refresh.refresh(heapWorker));
   };
 };

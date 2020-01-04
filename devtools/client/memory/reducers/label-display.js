@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+const { actions, labelDisplays } = require("../constants");
+const DEFAULT_LABEL_DISPLAY = labelDisplays.coarseType;
+
+const handlers = Object.create(null);
+
+handlers[actions.SET_LABEL_DISPLAY] = function (_, { display }) {
+  return display;
+};
+
+module.exports = function (state = DEFAULT_LABEL_DISPLAY, action) {
+  const handler = handlers[action.type];
+  return handler ? handler(state, action) : state;
+};

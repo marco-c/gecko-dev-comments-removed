@@ -22,7 +22,7 @@
 
              for (let view of [viewState.CENSUS, viewState.DOMINATOR_TREE]) {
                yield renderComponent(Toolbar(immutableUpdate(TEST_TOOLBAR_PROPS, {
-                 view,
+                 view: { state: view },
                })), container);
 
                ok(container.querySelector("#select-view"),
@@ -30,7 +30,7 @@
              }
 
              yield renderComponent(Toolbar(immutableUpdate(TEST_TOOLBAR_PROPS, {
-               view: viewState.DIFFING,
+               view: { state: viewState.DIFFING, },
              })), container);
 
              ok(!container.querySelector("#select-view"),

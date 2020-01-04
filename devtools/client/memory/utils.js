@@ -12,7 +12,7 @@ const { OS } = require("resource://gre/modules/osfile.jsm");
 const { assert } = require("devtools/shared/DevToolsUtils");
 const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 const CUSTOM_CENSUS_DISPLAY_PREF = "devtools.memory.custom-census-displays";
-const CUSTOM_DOMINATOR_TREE_DISPLAY_PREF = "devtools.memory.custom-dominator-tree-displays";
+const CUSTOM_LABEL_DISPLAY_PREF = "devtools.memory.custom-label-displays";
 const CUSTOM_TREE_MAP_DISPLAY_PREF = "devtools.memory.custom-tree-map-displays";
 const BYTES = 1024;
 const KILOBYTES = Math.pow(BYTES, 2);
@@ -23,9 +23,8 @@ const {
   diffingState,
   censusState,
   treeMapState,
-  censusDisplays,
-  dominatorTreeDisplays,
-  dominatorTreeState
+  dominatorTreeState,
+  individualsState,
 } = require("./constants");
 
 
@@ -81,8 +80,8 @@ exports.getCustomCensusDisplays = function () {
 
 
 
-exports.getCustomDominatorTreeDisplays = function () {
-  return getCustomDisplaysHelper(CUSTOM_DOMINATOR_TREE_DISPLAY_PREF);
+exports.getCustomLabelDisplays = function () {
+  return getCustomDisplaysHelper(CUSTOM_LABEL_DISPLAY_PREF);
 };
 
 
@@ -135,6 +134,7 @@ exports.getStatusText = function (state) {
       return L10N.getStr("diffing.state.selecting");
 
     case dominatorTreeState.COMPUTING:
+    case individualsState.COMPUTING_DOMINATOR_TREE:
       return L10N.getStr("dominatorTree.state.computing");
 
     case dominatorTreeState.COMPUTED:
@@ -147,6 +147,12 @@ exports.getStatusText = function (state) {
     case dominatorTreeState.ERROR:
       return L10N.getStr("dominatorTree.state.error");
 
+    case individualsState.ERROR:
+      return L10N.getStr("individuals.state.error");
+
+    case individualsState.FETCHING:
+      return L10N.getStr("individuals.state.fetching");
+
     
     
     case dominatorTreeState.LOADED:
@@ -154,6 +160,7 @@ exports.getStatusText = function (state) {
     case states.READ:
     case censusState.SAVED:
     case treeMapState.SAVED:
+    case individualsState.FETCHED:
       return "";
 
     default:
@@ -202,6 +209,7 @@ exports.getStatusTextFull = function (state) {
       return L10N.getStr("diffing.state.selecting.full");
 
     case dominatorTreeState.COMPUTING:
+    case individualsState.COMPUTING_DOMINATOR_TREE:
       return L10N.getStr("dominatorTree.state.computing.full");
 
     case dominatorTreeState.COMPUTED:
@@ -214,6 +222,12 @@ exports.getStatusTextFull = function (state) {
     case dominatorTreeState.ERROR:
       return L10N.getStr("dominatorTree.state.error.full");
 
+    case individualsState.ERROR:
+      return L10N.getStr("individuals.state.error.full");
+
+    case individualsState.FETCHING:
+      return L10N.getStr("individuals.state.fetching.full");
+
     
     
     case dominatorTreeState.LOADED:
@@ -221,6 +235,7 @@ exports.getStatusTextFull = function (state) {
     case states.READ:
     case censusState.SAVED:
     case treeMapState.SAVED:
+    case individualsState.FETCHED:
       return "";
 
     default:
@@ -262,11 +277,21 @@ exports.getSnapshot = function getSnapshot (state, id) {
 
 
 
+exports.findSelectedSnapshot = function (state) {
+  const found = state.snapshots.find(s => s.selected);
+  return found ? found.id : null;
+};
+
+
+
+
+
+
 
 let ID_COUNTER = 0;
 exports.createSnapshot = function createSnapshot(state) {
   let dominatorTree = null;
-  if (state.view === dominatorTreeState.DOMINATOR_TREE) {
+  if (state.view.state === dominatorTreeState.DOMINATOR_TREE) {
     dominatorTree = Object.freeze({
       dominatorTreeId: null,
       root: null,
