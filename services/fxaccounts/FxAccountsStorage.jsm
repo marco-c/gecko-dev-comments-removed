@@ -401,7 +401,7 @@ this.FxAccountsStorageManager.prototype = {
       accountData: this.cachedSecure,
     }
     try {
-      yield this.secureStorage.set(this.cachedPlain.email, toWriteSecure);
+      yield this.secureStorage.set(this.cachedPlain.uid, toWriteSecure);
     } catch (ex) {
       if (!ex instanceof this.secureStorage.STORAGE_LOCKED) {
         throw ex;
@@ -511,7 +511,7 @@ LoginManagerStorage.prototype = {
     }
   }),
 
-  set: Task.async(function* (email, contents) {
+  set: Task.async(function* (uid, contents) {
     if (!contents) {
       
       let cleared = yield this._clearLoginMgrData();
@@ -541,7 +541,7 @@ LoginManagerStorage.prototype = {
       let login = new loginInfo(FXA_PWDMGR_HOST,
                                 null, 
                                 FXA_PWDMGR_REALM, 
-                                email, 
+                                uid, 
                                 JSON.stringify(contents), 
                                 "", 
                                 "");
@@ -583,7 +583,6 @@ LoginManagerStorage.prototype = {
         return null;
       }
       let login = logins[0];
-      
       
       
       if (login.username == uid || login.username == email) {

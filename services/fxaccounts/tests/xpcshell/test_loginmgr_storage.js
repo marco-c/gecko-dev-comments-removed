@@ -87,7 +87,7 @@ add_task(function* test_simple() {
   Assert.ok(!("kB" in data.accountData), "kB not stored in clear text");
 
   let login = getLoginMgrData();
-  Assert.strictEqual(login.username, creds.email, "email used for username");
+  Assert.strictEqual(login.username, creds.uid, "uid used for username");
   let loginData = JSON.parse(login.password);
   Assert.strictEqual(loginData.version, data.version, "same version flag in both places");
   Assert.strictEqual(loginData.accountData.kA, creds.kA, "correct kA in the login mgr");
@@ -170,7 +170,7 @@ add_task(function* test_consistentWithMPEdgeCases() {
 
   
   let login = getLoginMgrData();
-  Assert.strictEqual(login.username, creds1.email);
+  Assert.strictEqual(login.username, creds1.uid);
   
   Assert.strictEqual(JSON.parse(login.password).accountData.kA, creds1.kA,
                      "stale data still in login mgr");
@@ -201,7 +201,7 @@ add_task(function* test_uidMigration() {
   let login = new loginInfo(FXA_PWDMGR_HOST,
                             null, 
                             FXA_PWDMGR_REALM, 
-                            "uid", 
+                            "foo@bar.com", 
                             JSON.stringify(contents), 
                             "", 
                             "");
