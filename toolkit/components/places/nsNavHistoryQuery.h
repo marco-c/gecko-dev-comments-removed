@@ -26,7 +26,7 @@ class nsNavHistoryQuery final : public nsINavHistoryQuery
 {
 public:
   nsNavHistoryQuery();
-  
+  nsNavHistoryQuery(const nsNavHistoryQuery& aOther);
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_NAVHISTORYQUERY_IID)
   NS_DECL_ISUPPORTS
