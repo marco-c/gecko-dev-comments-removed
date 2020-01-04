@@ -297,6 +297,15 @@ private:
 
 
 
+  void DispatchEvent(WidgetCompositionEvent* aDispatchEvent,
+                     nsEventStatus* aStatus,
+                     EventDispatchingCallback* aCallback,
+                     const WidgetCompositionEvent *aOriginalEvent = nullptr);
+
+  
+
+
+
   void HandleSelectionEvent(WidgetSelectionEvent* aSelectionEvent)
   {
     HandleSelectionEvent(mPresContext, mTabParent, aSelectionEvent);
