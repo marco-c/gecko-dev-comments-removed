@@ -309,7 +309,7 @@ public:
                                       int32_t aXPos, int32_t aYPos);
 
   
-  void ShowPopup(bool aIsContextMenu, bool aSelectFirstItem);
+  void ShowPopup(bool aIsContextMenu);
   
   
   void HidePopup(bool aDeselectMenu, nsPopupState aNewState);

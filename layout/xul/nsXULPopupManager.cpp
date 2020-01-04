@@ -885,7 +885,7 @@ nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
 
   
   nsWeakFrame weakFrame(aPopupFrame);
-  aPopupFrame->ShowPopup(aIsContextMenu, aSelectFirstItem);
+  aPopupFrame->ShowPopup(aIsContextMenu);
   ENSURE_TRUE(weakFrame.IsAlive());
 
   
