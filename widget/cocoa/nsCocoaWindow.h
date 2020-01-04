@@ -20,6 +20,36 @@ class nsChildView;
 class nsMenuBarX;
 @class ChildView;
 
+
+
+#if !defined(MAC_OS_X_VERSION_10_7) || \
+    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7
+
+enum {
+    NSWindowAnimationBehaviorDefault = 0,
+    NSWindowAnimationBehaviorNone = 2,
+    NSWindowAnimationBehaviorDocumentWindow = 3,
+    NSWindowAnimationBehaviorUtilityWindow = 4,
+    NSWindowAnimationBehaviorAlertPanel = 5,
+    NSWindowCollectionBehaviorFullScreenPrimary = 128, 
+};
+
+typedef NSInteger NSWindowAnimationBehavior;
+
+@interface NSWindow (LionWindowFeatures)
+- (void)setAnimationBehavior:(NSWindowAnimationBehavior)newAnimationBehavior;
+- (void)toggleFullScreen:(id)sender;
+@end
+
+typedef struct NSEdgeInsets {
+    CGFloat top;
+    CGFloat left;
+    CGFloat bottom;
+    CGFloat right;
+} NSEdgeInsets;
+
+#endif
+
 typedef struct _nsCocoaWindowList {
   _nsCocoaWindowList() : prev(nullptr), window(nullptr) {}
   struct _nsCocoaWindowList *prev;
@@ -152,7 +182,11 @@ typedef struct _nsCocoaWindowList {
 
 @end
 
+#if defined( MAC_OS_X_VERSION_10_6 ) && ( MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6 )
 @interface WindowDelegate : NSObject <NSWindowDelegate>
+#else
+@interface WindowDelegate : NSObject
+#endif
 {
   nsCocoaWindow* mGeckoWindow; 
   
@@ -412,6 +446,7 @@ protected:
 
   
   bool                 mSupportsNativeFullScreen;
+  
   
   
   bool                 mInNativeFullScreenMode;
