@@ -4169,43 +4169,19 @@ EventStateManager::NotifyMouseOver(WidgetMouseEvent* aMouseEvent,
 
 
 
-
-
-
-
-
-
 static LayoutDeviceIntPoint
-GetWindowInnerRectCenter(nsPIDOMWindowOuter* aWindow,
-                         nsIWidget* aWidget,
-                         nsPresContext* aContext)
+GetWindowClientRectCenter(nsIWidget* aWidget)
 {
-  NS_ENSURE_TRUE(aWindow && aWidget && aContext, LayoutDeviceIntPoint(0, 0));
+  NS_ENSURE_TRUE(aWidget, LayoutDeviceIntPoint(0, 0));
 
-  nsGlobalWindow* window = nsGlobalWindow::Cast(aWindow);
-
-  float cssInnerX = window->GetMozInnerScreenXOuter();
-  int32_t innerX = int32_t(NS_round(cssInnerX));
-
-  float cssInnerY = window->GetMozInnerScreenYOuter();
-  int32_t innerY = int32_t(NS_round(cssInnerY));
-
-  ErrorResult dummy;
-  int32_t innerWidth = window->GetInnerWidthOuter(dummy);
-  dummy.SuppressException();
-
-  int32_t innerHeight = window->GetInnerHeightOuter(dummy);
-  dummy.SuppressException();
-
-  LayoutDeviceIntRect screen;
-  aWidget->GetScreenBounds(screen);
-
-  int32_t cssScreenX = aContext->DevPixelsToIntCSSPixels(screen.x);
-  int32_t cssScreenY = aContext->DevPixelsToIntCSSPixels(screen.y);
-
-  return LayoutDeviceIntPoint(
-    aContext->CSSPixelsToDevPixels(innerX - cssScreenX + innerWidth / 2),
-    aContext->CSSPixelsToDevPixels(innerY - cssScreenY + innerHeight / 2));
+  LayoutDeviceIntRect rect;
+  aWidget->GetClientBounds(rect);
+  LayoutDeviceIntPoint point(rect.x + rect.width / 2,
+                             rect.y + rect.height / 2);
+  int32_t round = aWidget->RoundsWidgetCoordinatesTo();
+  point.x = point.x / round * round;
+  point.y = point.y / round * round;
+  return point - aWidget->WidgetToScreenOffset();
 }
 
 void
@@ -4241,8 +4217,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
         
         
         LayoutDeviceIntPoint center =
-          GetWindowInnerRectCenter(mDocument->GetWindow(), aMouseEvent->widget,
-                                   mPresContext);
+          GetWindowClientRectCenter(aMouseEvent->widget);
         aMouseEvent->lastRefPoint = center;
         if (aMouseEvent->refPoint != center) {
           
@@ -4386,9 +4361,7 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
     
     
     
-    sLastRefPoint = GetWindowInnerRectCenter(aElement->OwnerDoc()->GetWindow(),
-                                             aWidget,
-                                             mPresContext);
+    sLastRefPoint = GetWindowClientRectCenter(aWidget);
     aWidget->SynthesizeNativeMouseMove(sLastRefPoint + aWidget->WidgetToScreenOffset(),
                                        nullptr);
 
