@@ -7,6 +7,8 @@
 
 
 
+
+
 add_test(function test_registration_returns_hawk_session_token() {
   var fakeSessionToken = "1bad3e44b12f77a88fe09f016f6a37c42e40f974bc7a8b432bb0d2f0e37e1750";
   Services.prefs.clearUserPref("loop.hawk-session-token");

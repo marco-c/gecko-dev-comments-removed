@@ -394,7 +394,9 @@ const kMessageHandlers = {
           version: appInfo.version,
           OS: appInfo.OS
         };
-      } catch (ex) {}
+      } catch (ex) {
+        
+      }
     }
     reply(gAppVersionInfo);
   },
@@ -415,7 +417,7 @@ const kMessageHandlers = {
     let name = message.data[0];
     let request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
                         .createInstance(Ci.nsIXMLHttpRequest);
-    let url = `chrome://browser/content/loop/shared/sounds/${name}.ogg`;
+    let url = `chrome://loop/content/shared/sounds/${name}.ogg`;
 
     request.open("GET", url, true);
     request.responseType = "arraybuffer";
@@ -425,7 +427,7 @@ const kMessageHandlers = {
         return;
       }
 
-      let blob = new Blob([request.response], {type: "audio/ogg"});
+      let blob = new Blob([request.response], { type: "audio/ogg" });
       reply(blob);
     };
 
@@ -592,7 +594,7 @@ const kMessageHandlers = {
       win.messageManager.removeMessageListener("PageMetadata:PageDataResult", onPageDataResult);
       let pageData = msg.json;
       win.LoopUI.getFavicon(function(err, favicon) {
-        if (err) {
+        if (err && err !== "favicon not found for uri") {
           MozLoopService.log.error("Error occurred whilst fetching favicon", err);
           
           
@@ -622,49 +624,6 @@ const kMessageHandlers = {
       updateSocialProvidersCache();
     }
     reply(gSocialProviders);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  GetUserAvatar: function(message, reply) {
-    let [emailAddress, size] = message.data;
-    if (!emailAddress || !MozLoopService.getLoopPref("contacts.gravatars.show")) {
-      reply(null);
-      return;
-    }
-
-    
-    let hasher = Cc["@mozilla.org/security/hash;1"]
-                   .createInstance(Ci.nsICryptoHash);
-    hasher.init(Ci.nsICryptoHash.MD5);
-    let stringStream = Cc["@mozilla.org/io/string-input-stream;1"]
-                         .createInstance(Ci.nsIStringInputStream);
-    stringStream.data = emailAddress.trim().toLowerCase();
-    hasher.updateFromStream(stringStream, -1);
-    let hash = hasher.finish(false);
-    
-    let md5Email = Array.from(hash, (c, i) => toHexString(hash.charCodeAt(i))).join("");
-
-    
-    reply("https://www.gravatar.com/avatar/" + md5Email +
-      ".jpg?default=blank&s=" + (size || 40));
   },
 
   
@@ -1053,58 +1012,6 @@ const kMessageHandlers = {
 
 
 
-  StartAlerting: function(message, reply) {
-    let chromeWindow = Services.wm.getMostRecentWindow("navigator:browser");
-    chromeWindow.getAttention();
-    ringer = new chromeWindow.Audio();
-    ringer.src = Services.prefs.getCharPref("loop.ringtone");
-    ringer.loop = true;
-    ringer.load();
-    ringer.play();
-    targetWindow.document.addEventListener("visibilitychange",
-      ringerStopper = function(event) {
-        if (event.currentTarget.hidden) {
-          kMessageHandlers.StopAlerting();
-        }
-      });
-    reply();
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  StopAlerting: function(message, reply) {
-    if (!ringer) {
-      reply();
-      return;
-    }
-    if (ringerStopper) {
-      ringer.ownerDocument.removeEventListener("visibilitychange",
-                                                ringerStopper);
-      ringerStopper = null;
-    }
-    ringer.pause();
-    ringer = null;
-    reply();
-  },
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1167,7 +1074,7 @@ const LoopAPIInternal = {
         } catch (ex) {
           MozLoopService.log.error("Failed to send reply back to content:", ex);
         }
-      }
+      };
     }
 
     
@@ -1289,7 +1196,7 @@ const LoopAPIInternal = {
         try {
           message.target.sendAsyncMessage(kPushMessageName, [pushMessagePrefix +
             prettyEventName, data]);
-        } catch(ex) {
+        } catch (ex) {
           MozLoopService.log.debug("Unable to send event through to target: " +
             ex.message);
           
@@ -1335,9 +1242,12 @@ const LoopAPIInternal = {
     for (let page of gPageListeners) {
       try {
         page.sendAsyncMessage(kPushMessageName, [name, data]);
-      } catch (ex if ex.result == Components.results.NS_ERROR_NOT_INITIALIZED) {
+      } catch (ex) {
         
         
+        if (ex.result != Components.results.NS_ERROR_NOT_INITIALIZED) {
+          throw ex;
+        }
       }
     }
   },
@@ -1349,7 +1259,9 @@ const LoopAPIInternal = {
     if (!gPageListeners) {
       return;
     }
-    [for (listener of gPageListeners) listener.destroy()];
+    for (let listener of gPageListeners) {
+      listener.destroy();
+    }
     gPageListeners = null;
 
     

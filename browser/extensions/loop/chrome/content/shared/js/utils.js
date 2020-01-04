@@ -105,7 +105,8 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
   var CHAT_CONTENT_TYPES = {
     CONTEXT: "chat-context",
     TEXT: "chat-text",
-    ROOM_NAME: "room-name"
+    ROOM_NAME: "room-name",
+    CONTEXT_TILE: "context-tile"
   };
 
   
@@ -730,34 +731,6 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
 
 
-  function truncate(str, maxLen) {
-    maxLen = maxLen || 72;
-
-    if (str.length > maxLen) {
-      var substring = str.substr(0, maxLen);
-      
-      var direction = mozL10n.getDirection ? mozL10n.getDirection() :
-                      mozL10n.language.direction;
-      if (direction === "rtl") {
-        return "…" + substring;
-      }
-
-      return substring + "…";
-    }
-
-    return str;
-  }
-
-  
-
-
-
-
-
-
-
-
-
 
   function findParentNode(node, selector) {
     var parentNode = node.parentNode;
@@ -802,7 +775,6 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     strToUint8Array: strToUint8Array,
     Uint8ArrayToStr: Uint8ArrayToStr,
     objectDiff: objectDiff,
-    stripFalsyValues: stripFalsyValues,
-    truncate: truncate
+    stripFalsyValues: stripFalsyValues
   };
 }).call(inChrome ? this : loop.shared);

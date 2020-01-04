@@ -133,11 +133,12 @@ loop.OTSdkDriver = (function() {
       
       
       this.publisher = this.sdk.initPublisher(this._mockPublisherEl,
-        _.extend(this._getDataChannelSettings, this._getCopyPublisherConfig));
+        _.extend(this._getDataChannelSettings, this._getCopyPublisherConfig),
+        this._onPublishComplete.bind(this));
 
       this.publisher.on("streamCreated", this._onLocalStreamCreated.bind(this));
       this.publisher.on("streamDestroyed", this._onLocalStreamDestroyed.bind(this));
-      this.publisher.on("accessAllowed", this._onPublishComplete.bind(this));
+      this.publisher.on("accessAllowed", this._onPublishAllowed.bind(this));
       this.publisher.on("accessDenied", this._onPublishDenied.bind(this));
       this.publisher.on("accessDialogOpened",
         this._onAccessDialogOpened.bind(this));
@@ -185,9 +186,9 @@ loop.OTSdkDriver = (function() {
       this._mockScreenSharePreviewEl = document.createElement("div");
 
       this.screenshare = this.sdk.initPublisher(this._mockScreenSharePreviewEl,
-        config);
+        config, this._onScreenSharePublishComplete.bind(this));
       this.screenshare.on("accessAllowed", this._onScreenShareGranted.bind(this));
-      this.screenshare.on("accessDenied", this._onScreenShareDenied.bind(this));
+      this.screenshare.on("accessDenied", this._onScreenSharePublishError.bind(this));
       this.screenshare.on("streamCreated", this._onScreenShareStreamCreated.bind(this));
 
       this._noteSharingState(options.videoSource, true);
@@ -902,13 +903,40 @@ loop.OTSdkDriver = (function() {
 
 
 
-    _onPublishComplete: function(event) {
+    _onPublishAllowed: function(event) {
       event.preventDefault();
       this._publisherReady = true;
 
       this.dispatcher.dispatch(new sharedActions.GotMediaPermission());
 
       this._maybePublishLocalStream();
+    },
+
+    
+
+
+
+
+
+    _onPublishComplete: function(error) {
+      if (!error) {
+        
+        return;
+      }
+      if (!(error.message && error.message === "DENIED")) {
+        
+        
+        if (this.publisher) {
+          this.publisher.off("accessAllowed accessDenied accessDialogOpened streamCreated");
+          this.publisher.destroy();
+          delete this.publisher;
+          delete this._mockPublisherEl;
+        }
+        this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
+          reason: FAILURE_DETAILS.UNABLE_TO_PUBLISH_MEDIA
+        }));
+        this._notifyMetricsEvent("sdk.exception." + error.code + "." + error.message);
+      }
     },
 
     
@@ -935,26 +963,6 @@ loop.OTSdkDriver = (function() {
             reason: FAILURE_DETAILS.ICE_FAILED
           }));
           this._notifyMetricsEvent("sdk.exception." + event.code);
-          break;
-        case OT.ExceptionCodes.UNABLE_TO_PUBLISH:
-          if (event.message === "GetUserMedia") {
-            
-            
-            if (this.publisher) {
-              this.publisher.off("accessAllowed accessDenied accessDialogOpened streamCreated");
-              this.publisher.destroy();
-              delete this.publisher;
-              delete this._mockPublisherEl;
-            }
-            this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-              reason: FAILURE_DETAILS.UNABLE_TO_PUBLISH_MEDIA
-            }));
-            
-          } else {
-            
-            
-            this._notifyMetricsEvent("sdk.exception." + event.code + "." + event.message);
-          }
           break;
         case OT.ExceptionCodes.TERMS_OF_SERVICE_FAILURE:
           this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
@@ -1056,10 +1064,35 @@ loop.OTSdkDriver = (function() {
     
 
 
-    _onScreenShareDenied: function() {
+
+
+    _onScreenSharePublishComplete: function(error) {
+      if (!error) {
+        
+        return;
+      }
+
+      
+      this.screenshare.off("accessAllowed accessDenied streamCreated");
+      this.screenshare.destroy();
+      delete this.screenshare;
+      delete this._mockScreenSharePreviewEl;
       this.dispatcher.dispatch(new sharedActions.ScreenSharingState({
         state: SCREEN_SHARE_STATES.INACTIVE
       }));
+      this._notifyMetricsEvent("sdk.exception.screen." + error.code + "." + error.message);
+    },
+
+    
+
+
+    _onScreenSharePublishError: function() {
+      this.dispatcher.dispatch(new sharedActions.ScreenSharingState({
+        state: SCREEN_SHARE_STATES.INACTIVE
+      }));
+      this.screenshare.off("accessAllowed accessDenied streamCreated");
+      this.screenshare.destroy();
+      delete this.screenshare;
       delete this._mockScreenSharePreviewEl;
     },
 

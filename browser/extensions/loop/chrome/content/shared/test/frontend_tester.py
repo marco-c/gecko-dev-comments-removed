@@ -4,7 +4,6 @@ import threading
 import SimpleHTTPServer
 import SocketServer
 import BaseHTTPServer
-import socket
 import urllib
 import urlparse
 import os
@@ -17,14 +16,60 @@ DEBUG = False
 
 
 
+
+
+gCommonDir = None
+
+
+
+
+
+REDIRECTIONS = {
+    "/test/vendor": "/chrome/content/shared/test/vendor",
+    "/shared/js": "/chrome/content/shared/js",
+    "/shared/test": "/chrome/content/shared/test",
+    "/shared/vendor": "/chrome/content/shared/vendor",
+    "/add-on/panels/vendor": "/chrome/content/panels/vendor",
+    "/add-on/panels/js": "/chrome/content/panels/js",
+    "/add-on/shared/js": "/chrome/content/shared/js",
+    "/add-on/shared/vendor": "/chrome/content/shared/vendor",
+}
+
+
 class ThreadingSimpleServer(SocketServer.ThreadingMixIn,
                             BaseHTTPServer.HTTPServer):
     pass
 
 
-class QuietHttpRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class HttpRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    def do_HEAD(s):
+        lastSlash = s.path.rfind("/")
+        path = s.path[:lastSlash]
+
+        if (path in REDIRECTIONS):
+            filename = s.path[lastSlash:]
+
+            s.send_response(301)
+            
+            s.send_header("Location", "/" + gCommonDir + REDIRECTIONS.get(path, "/") + filename)
+            s.end_headers()
+        else:
+            SimpleHTTPServer.SimpleHTTPRequestHandler.do_HEAD(s)
+
+    def do_GET(s):
+        lastSlash = s.path.rfind("/")
+        path = s.path[:lastSlash]
+
+        if (path in REDIRECTIONS):
+            s.do_HEAD()
+        else:
+            SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(s)
+
     def log_message(self, format, *args, **kwargs):
-        pass
+        if DEBUG:
+            BaseHTTPServer.BaseHTTPRequestHandler.log_message(self, format, *args, **kwargs)
+        else:
+            pass
 
 
 class BaseTestFrontendUnits(MarionetteTestCase):
@@ -33,13 +78,8 @@ class BaseTestFrontendUnits(MarionetteTestCase):
     def setUpClass(cls):
         super(BaseTestFrontendUnits, cls).setUpClass()
 
-        if DEBUG:
-            handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-        else:
-            handler = QuietHttpRequestHandler
-
         
-        cls.server = ThreadingSimpleServer(('', 0), handler)
+        cls.server = ThreadingSimpleServer(('', 0), HttpRequestHandler)
         cls.ip, cls.port = cls.server.server_address
 
         cls.server_thread = threading.Thread(target=cls.server.serve_forever)
@@ -78,6 +118,8 @@ class BaseTestFrontendUnits(MarionetteTestCase):
 
     
     def set_server_prefix(self, srcdir_path):
+        global gCommonDir
+
         
         
         
@@ -89,6 +131,13 @@ class BaseTestFrontendUnits(MarionetteTestCase):
         self.relPath = os.path.relpath(os.path.dirname(__file__), commonPath)
 
         self.relPath = urllib.pathname2url(os.path.join(self.relPath, srcdir_path))
+
+        
+        
+        
+        
+        
+        gCommonDir = os.path.normpath(self.relPath).replace("\\", "//")
 
         
         self.server_prefix = urlparse.urljoin("http://localhost:" + str(self.port),
@@ -115,6 +164,7 @@ class BaseTestFrontendUnits(MarionetteTestCase):
         if fail_node.text == "0":
             return
 
+        
         
         
         

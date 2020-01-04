@@ -3,6 +3,11 @@
 
 "use strict";
 
+
+
+
+
+
 var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 
@@ -159,7 +164,7 @@ var mockPushHandler = {
     registerCallback(this.registrationResult, this.registrationPushURL, channelId);
   },
 
-  unregister: function(channelID) {
+  unregister: function() {
     return;
   },
 
@@ -183,7 +188,7 @@ MockWebSocketChannel.prototype = {
 
   initRegStatus: 0,
 
-  defaultMsgHandler: function(msg) {
+  defaultMsgHandler: function() {
     
     this.listener.onMessageAvailable(this.context,
                                      JSON.stringify({}));
@@ -231,7 +236,7 @@ MockWebSocketChannel.prototype = {
     }
   },
 
-  close: function(aCode, aReason) {
+  close: function(aCode) {
     this.stop(aCode);
   },
 

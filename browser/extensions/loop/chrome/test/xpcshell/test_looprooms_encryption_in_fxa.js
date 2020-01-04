@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 timerHandlers.startTimer = callback => callback();
 
 Cu.import("resource://services-common/utils.js");
@@ -184,7 +186,7 @@ add_task(function* setup_server() {
 
 
 add_task(function* test_get_rooms_saves_unknown_keys() {
-  let rooms = yield LoopRooms.promise("getAll");
+  yield LoopRooms.promise("getAll");
 
   
   let roomsCache = yield readRoomsCache();
