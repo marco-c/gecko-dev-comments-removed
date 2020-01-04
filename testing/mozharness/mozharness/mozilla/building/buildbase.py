@@ -1232,6 +1232,19 @@ or run without that action (ie: --no-{action})"
                                    testresults,
                                    write_to_file=True)
 
+    def _generate_properties_file(self, path):
+        
+        
+        
+        all_current_props = dict(
+            chain(self.buildbot_config['properties'].items(),
+                  self.buildbot_properties.items())
+        )
+        
+        graph_props = dict(properties=all_current_props)
+        self.dump_config(path, graph_props)
+
+
     def _graph_server_post(self):
         """graph server post results."""
         self._assert_cfg_valid_for_action(
@@ -1255,18 +1268,8 @@ or run without that action (ie: --no-{action})"
         
         
         
-        
-        
-        
-        graph_props_path = os.path.join(c['base_work_dir'],
-                                        "graph_props.json")
-        all_current_props = dict(
-            chain(self.buildbot_config['properties'].items(),
-                  self.buildbot_properties.items())
-        )
-        
-        graph_props = dict(properties=all_current_props)
-        self.dump_config(graph_props_path, graph_props)
+        graph_props_path = os.path.join(c['base_work_dir'], "graph_props.json")
+        self._generate_properties_file(graph_props_path)
 
         gs_env = self.query_build_env()
         gs_env.update({'PYTHONPATH': graph_server_path})
@@ -1441,6 +1444,7 @@ or run without that action (ie: --no-{action})"
             self.warning('Skipping S3 file upload: No taskcluster credentials.')
             return
 
+        dirs = self.query_abs_dirs()
         repo = self._query_repo()
         revision = self.query_revision()
         pushinfo = self.vcs_query_pushinfo(repo, revision)
@@ -1466,12 +1470,16 @@ or run without that action (ie: --no-{action})"
             routes.append(template.format(**fmt))
         self.info("Using routes: %s" % routes)
 
-        tc = Taskcluster(self.branch,
-                         pushinfo.pushdate, 
-                         self.client_id,
-                         self.access_token,
-                         self.log_obj,
-                         )
+        tc = Taskcluster(
+            branch=self.branch,
+            rank=pushinfo.pushdate, 
+            client_id=self.client_id,
+            access_token=self.access_token,
+            log_obj=self.log_obj,
+            
+            
+            task_id=self.buildbot_config['properties'].get('upload_to_task_id'),
+        )
 
         
         routes.extend([
@@ -1505,6 +1513,17 @@ or run without that action (ie: --no-{action})"
                     if condition(upload_file):
                         self.set_buildbot_property(prop, tc.get_taskcluster_url(upload_file))
                         break
+
+        
+        
+        
+        properties_path = os.path.join(
+            dirs['base_work_dir'],
+            'buildbot_properties.json'
+        )
+        self._generate_properties_file(properties_path)
+        tc.create_artifact(task, properties_path)
+
         tc.report_completed(task)
 
     def upload_files(self):

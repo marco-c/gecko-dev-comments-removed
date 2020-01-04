@@ -13,7 +13,8 @@ class Taskcluster(LogMixin):
     """
     Helper functions to report data to Taskcluster
     """
-    def __init__(self, branch, rank, client_id, access_token, log_obj):
+    def __init__(self, branch, rank, client_id, access_token, log_obj,
+                 task_id=None):
         self.rank = rank
         self.log_obj = log_obj
 
@@ -32,7 +33,7 @@ class Taskcluster(LogMixin):
         taskcluster.config['credentials']['clientId'] = client_id
         taskcluster.config['credentials']['accessToken'] = access_token
         self.taskcluster_queue = taskcluster.Queue()
-        self.task_id = taskcluster.slugId()
+        self.task_id = task_id or taskcluster.slugId()
         self.put_file = taskcluster.utils.putFile
 
     def create_task(self, routes):
@@ -156,18 +157,16 @@ class TaskClusterArtifactFinderMixin(object):
 
         return parent_task_id
 
-    def set_bbb_artifacts(self, task_id):
-        """ Find BBB artifacts through properties.json and set them. """
-        
-        
+    def set_bbb_artifacts(self, task_id, properties_file_path):
+        """ Find BBB artifacts through properties_file_path and set them. """
         p = self.load_json_url(
-            self.url_to_artifact(task_id, 'public/properties.json'))
+            self.url_to_artifact(task_id, properties_file_path))['properties']
 
         
         self.set_artifacts(
-            p['packageUrl'][0] if p.get('packageUrl') else None,
-            p['testPackagesUrl'][0] if p.get('testPackagesUrl') else None,
-            p['symbolsUrl'][0] if p.get('symbolsUrl') else None
+            p['packageUrl'] if p.get('packageUrl') else None,
+            p['testPackagesUrl'] if p.get('testPackagesUrl') else None,
+            p['symbolsUrl'] if p.get('symbolsUrl') else None
         )
 
     def set_artifacts(self, installer, tests, symbols):
@@ -197,6 +196,7 @@ class TaskClusterArtifactFinderMixin(object):
         
         child_task = self.get_task(child_task_id)
 
+        
         if child_task['payload']['properties'].get('parent_task_id'):
             
             
@@ -205,6 +205,7 @@ class TaskClusterArtifactFinderMixin(object):
             
             parent_task = self.get_task(parent_id)
 
+            
             if parent_task['extra'].get('locations'):
                 
                 installer_path = parent_task['extra']['locations']['build']
@@ -215,7 +216,18 @@ class TaskClusterArtifactFinderMixin(object):
                     self.url_to_artifact(parent_id, 'public/build/target.crashreporter-symbols.zip')
                 )
             else:
-                self.set_bbb_artifacts(parent_id)
+                
+                
+                self.set_bbb_artifacts(
+                    task_id=parent_id,
+                    properties_file_path='public/build/buildbot_properties.json'
+                )
+
         else:
+            
+            
             parent_id = self.find_parent_task_id(child_task_id)
-            self.set_bbb_artifacts(parent_id)
+            self.set_bbb_artifacts(
+                task_id=parent_id,
+                properties_file_path='public/build/buildbot_properties.json'
+            )
