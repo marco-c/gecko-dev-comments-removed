@@ -581,7 +581,9 @@ nsDeleteCommand::IsCommandEnabled(const char *aCommandName,
   nsCOMPtr<nsIEditor> editor = do_QueryInterface(aCommandRefCon);
   *outCmdEnabled = false;
 
-  NS_ENSURE_TRUE(editor, NS_OK);
+  if (!editor) {
+    return NS_OK;
+  }
 
   
   
