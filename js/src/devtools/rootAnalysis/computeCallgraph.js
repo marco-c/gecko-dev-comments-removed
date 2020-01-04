@@ -401,20 +401,26 @@ function process(functionName, functionBodies)
     
     
     
-    if (functionName.indexOf("C4E") != -1) {
+    
+    if (functionName.indexOf("C4E") != -1 || functionName.indexOf("D4Ev") != -1) {
         var [ mangled, unmangled ] = splitFunction(functionName);
         
-        if (mangled.indexOf("C4E") != -1) {
-            
-            
-            
-            
-            var C1 = mangled.replace("C4E", "C1E");
-            var C2 = mangled.replace("C4E", "C2E");
-            var C3 = mangled.replace("C4E", "C3E");
-            print("D " + memo(C1) + " " + memo(mangled));
-            print("D " + memo(C2) + " " + memo(mangled));
-            print("D " + memo(C3) + " " + memo(mangled));
+        
+        
+        
+        for (let [synthetic, variant] of [['C4E', 'C1E'],
+                                          ['C4E', 'C2E'],
+                                          ['C4E', 'C3E'],
+                                          ['D4Ev', 'D1Ev'],
+                                          ['D4Ev', 'D2Ev'],
+                                          ['D4Ev', 'D3Ev']])
+        {
+            if (mangled.indexOf(synthetic) == -1)
+                continue;
+
+            let variant_mangled = mangled.replace(synthetic, variant);
+            let variant_full = variant_mangled + "$" + unmangled;
+            print("D " + memo(variant_full) + " " + memo(functionName));
         }
     }
 }
