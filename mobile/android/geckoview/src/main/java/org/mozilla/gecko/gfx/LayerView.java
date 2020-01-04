@@ -79,15 +79,15 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         public Compositor() {
         }
 
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
         @Override protected native void disposeNative();
 
         
-        @WrapForJNI(calledFrom = "any", dispatchTo = "proxy")
+        @WrapForJNI(calledFrom = "any", dispatchTo = "gecko")
          native void attachToJava(GeckoLayerClient layerClient,
                                                NativePanZoomController npzc);
 
-        @WrapForJNI(calledFrom = "any", dispatchTo = "proxy")
+        @WrapForJNI(calledFrom = "any", dispatchTo = "gecko")
          native void onSizeChanged(int windowWidth, int windowHeight,
                                                 int screenWidth, int screenHeight);
 
@@ -100,7 +100,7 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
          native void syncPauseCompositor();
 
         
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "proxy")
+        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
          native void syncResumeResizeCompositor(int width, int height);
 
         @WrapForJNI(calledFrom = "any", dispatchTo = "current")
