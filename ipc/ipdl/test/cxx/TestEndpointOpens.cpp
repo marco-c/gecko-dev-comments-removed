@@ -7,20 +7,6 @@
 
 #include "IPDLUnitTests.h"      
 
-template<>
-struct RunnableMethodTraits<mozilla::_ipdltest::TestEndpointOpensChild>
-{
-  static void RetainCallee(mozilla::_ipdltest::TestEndpointOpensChild* obj) { }
-  static void ReleaseCallee(mozilla::_ipdltest::TestEndpointOpensChild* obj) { }
-};
-
-template<>
-struct RunnableMethodTraits<mozilla::_ipdltest2::TestEndpointOpensOpenedChild>
-{
-  static void RetainCallee(mozilla::_ipdltest2::TestEndpointOpensOpenedChild* obj) { }
-  static void ReleaseCallee(mozilla::_ipdltest2::TestEndpointOpensOpenedChild* obj) { }
-};
-
 using namespace mozilla::ipc;
 
 using base::ProcessHandle;
@@ -244,7 +230,7 @@ TestEndpointOpensOpenedChild::RecvHi()
   
   
   MessageLoop::current()->PostTask(
-    NewRunnableMethod(this, &TestEndpointOpensOpenedChild::Close));
+    NewNonOwningRunnableMethod(this, &TestEndpointOpensOpenedChild::Close));
   return true;
 }
 
@@ -270,7 +256,7 @@ ShutdownTestEndpointOpensOpenedChild(TestEndpointOpensOpenedChild* child,
 
   
   gMainThread->PostTask(
-    NewRunnableMethod(gOpensChild, &TestEndpointOpensChild::Close));
+    NewNonOwningRunnableMethod(gOpensChild, &TestEndpointOpensChild::Close));
 }
 
 void

@@ -3,14 +3,6 @@
 #include "IPDLUnitTests.h"      
 #include "IPDLUnitTestSubprocess.h"
 
-template<>
-struct RunnableMethodTraits<mozilla::_ipdltest::TestInterruptShutdownRaceParent>
-{
-    static void RetainCallee(mozilla::_ipdltest::TestInterruptShutdownRaceParent* obj) { }
-    static void ReleaseCallee(mozilla::_ipdltest::TestInterruptShutdownRaceParent* obj) { }
-};
-
-
 namespace mozilla {
 namespace _ipdltest {
 
@@ -59,8 +51,8 @@ TestInterruptShutdownRaceParent::RecvStartDeath()
     
     
     MessageLoop::current()->PostTask(
-        NewRunnableMethod(this,
-                          &TestInterruptShutdownRaceParent::StartShuttingDown));
+        NewNonOwningRunnableMethod(this,
+				   &TestInterruptShutdownRaceParent::StartShuttingDown));
     return true;
 }
 

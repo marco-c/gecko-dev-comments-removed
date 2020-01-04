@@ -6,13 +6,6 @@
 
 #include "IPDLUnitTests.h"      
 
-template<>
-struct RunnableMethodTraits<mozilla::_ipdltest::TestNestedLoopsParent>
-{
-    static void RetainCallee(mozilla::_ipdltest::TestNestedLoopsParent* obj) { }
-    static void ReleaseCallee(mozilla::_ipdltest::TestNestedLoopsParent* obj) { }
-};
-
 namespace mozilla {
 namespace _ipdltest {
 
@@ -53,7 +46,7 @@ TestNestedLoopsParent::RecvNonce()
     
     
     MessageLoop::current()->PostTask(
-        NewRunnableMethod(this, &TestNestedLoopsParent::BreakNestedLoop));
+        NewNonOwningRunnableMethod(this, &TestNestedLoopsParent::BreakNestedLoop));
 
     
     puts(" (sleeping to wait for reply to R ... sorry)");
