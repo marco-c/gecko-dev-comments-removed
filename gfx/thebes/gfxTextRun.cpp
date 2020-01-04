@@ -2969,9 +2969,10 @@ void gfxFontGroup::ComputeRanges(nsTArray<gfxTextRange>& aRanges,
             prevFont = font;
         } else {
             
+            
             gfxTextRange& prevRange = aRanges[lastRangeIndex];
             if (prevRange.font != font || prevRange.matchType != matchType ||
-                prevRange.orientation != orient) {
+                (prevRange.orientation != orient && !IsClusterExtender(ch))) {
                 
                 prevRange.end = origI;
                 aRanges.AppendElement(gfxTextRange(origI, i + 1,
