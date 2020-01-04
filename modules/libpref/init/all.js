@@ -5262,4 +5262,6 @@ pref("dom.input.fallbackUploadDir", "");
 pref("plugins.rewrite_youtube_embeds", true);
 
 
+pref("layout.css.color-adjust.enabled", true);
+
 pref("dom.mozBrowserFramesEnabled", false);
