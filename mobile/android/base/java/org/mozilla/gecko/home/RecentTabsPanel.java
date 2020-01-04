@@ -22,6 +22,7 @@ import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.db.BrowserContract.CommonColumns;
 import org.mozilla.gecko.db.BrowserContract.URLColumns;
+import org.mozilla.gecko.reader.SavedReaderViewHelper;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.NativeEventListener;
 import org.mozilla.gecko.util.NativeJSObject;
@@ -286,6 +287,15 @@ public class RecentTabsPanel extends HomeFragment
 
         @Override
         public Cursor loadCursor() {
+            
+            
+            
+            
+            
+            
+            
+            SavedReaderViewHelper.getSavedReaderViewHelper(getContext()).loadItems();
+
             final Context context = getContext();
 
             final MatrixCursor c = new MatrixCursor(new String[] { RecentTabs._ID,
