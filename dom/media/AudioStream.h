@@ -72,6 +72,9 @@ public:
   
   bool GetPreservesPitch() const;
 
+  uint32_t GetInputRate() const { return mInRate; }
+  uint32_t GetOutputRate() const { return mOutRate; }
+
 private:
   
   uint32_t mOutRate;
