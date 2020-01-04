@@ -37,29 +37,129 @@ protected:
   virtual ~nsIDNService();
 
 private:
+  enum stringPrepFlag {
+    eStringPrepForDNS,
+    eStringPrepForUI,
+    eStringPrepIgnoreErrors
+  };
+
+  
+
+
+
+
+
+
+
   void normalizeFullStops(nsAString& s);
+
+  
+
+
+
+
+
+
+
+
+
+
   nsresult stringPrepAndACE(const nsAString& in, nsACString& out,
-                            bool allowUnassigned, bool convertAllLabels);
-  nsresult stringPrep(const nsAString& in, nsAString& out,
-                      bool allowUnassigned);
+                            stringPrepFlag flag);
+
+  
+
+
+  nsresult stringPrep(const nsAString& in, nsAString& out, stringPrepFlag flag);
+
+  
+
+
+
+
+
+
+
   nsresult decodeACE(const nsACString& in, nsACString& out,
-                     bool allowUnassigned, bool convertAllLabels);
-  nsresult SelectiveUTF8toACE(const nsACString& input, nsACString& ace);
-  nsresult SelectiveACEtoUTF8(const nsACString& input, nsACString& _retval);
+                     stringPrepFlag flag);
+
+  
+
+
+
+
+
+
   nsresult UTF8toACE(const nsACString& input, nsACString& ace,
-                     bool allowUnassigned, bool convertAllLabels);
+                     stringPrepFlag flag);
   nsresult ACEtoUTF8(const nsACString& input, nsACString& _retval,
-                     bool allowUnassigned, bool convertAllLabels);
+                     stringPrepFlag flag);
+
   bool isInWhitelist(const nsACString &host);
   void prefsChanged(nsIPrefBranch *prefBranch, const char16_t *pref);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   bool isLabelSafe(const nsAString &label);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   bool illegalScriptCombo(int32_t script, int32_t& savedScript);
 
   idn_nameprep_t mNamePrepHandle;
   nsCOMPtr<nsIUnicodeNormalizer> mNormalizer;
   nsXPIDLString mIDNBlacklist;
+
+  
+
+
+
+
   bool mShowPunycode;
-  enum restrictionProfile {
+
+  
+
+
+
+
+   enum restrictionProfile {
     eASCIIOnlyProfile,
     eHighlyRestrictiveProfile,
     eModeratelyRestrictiveProfile
