@@ -13,6 +13,7 @@
 #include "mozilla/IncrementalClearCOMRuleArray.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/CSSStyleSheetBinding.h"
 
 #include "nscore.h"
 #include "nsCOMPtr.h"
@@ -49,7 +50,36 @@ namespace dom {
 class CSSRuleList;
 } 
 
+namespace css {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum SheetParsingMode {
+  eAuthorSheetFeatures = 0,
+  eUserSheetFeatures,
+  eAgentSheetFeatures
+};
+}
+
+  
 
 
 
@@ -337,6 +367,12 @@ public:
   void WillDirty();
   void DidDirty();
 
+  mozilla::dom::CSSStyleSheetParsingMode ParsingMode();
+
+  void SetParsingMode(css::SheetParsingMode aParsingMode) {
+    mParsingMode = aParsingMode;
+  }
+
 private:
   CSSStyleSheet(const CSSStyleSheet& aCopy,
                 CSSStyleSheet* aParentToUse,
@@ -385,6 +421,7 @@ protected:
   bool                  mDisabled;
   bool                  mDirty; 
   bool                  mInRuleProcessorCache;
+  css::SheetParsingMode mParsingMode;
   RefPtr<dom::Element> mScopeElement;
 
   CSSStyleSheetInner*   mInner;

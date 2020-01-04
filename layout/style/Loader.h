@@ -183,33 +183,6 @@ enum StyleSheetState {
   eSheetComplete
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum SheetParsingMode {
-  eAuthorSheetFeatures = 0,
-  eUserSheetFeatures,
-  eAgentSheetFeatures
-};
-
 class Loader final {
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
