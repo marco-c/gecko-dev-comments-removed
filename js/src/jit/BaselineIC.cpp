@@ -2770,6 +2770,11 @@ DoSetElemFallback(JSContext* cx, BaselineFrame* frame, ICSetElem_Fallback* stub_
     }
 
     
+    
+    if (op == JSOP_INITHIDDENELEM)
+        return true;
+
+    
     MOZ_ASSERT(stack[2] == objv);
     stack[2] = rhs;
 
