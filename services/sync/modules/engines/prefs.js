@@ -110,9 +110,18 @@ PrefStore.prototype = {
     return values;
   },
 
+  _updateLightWeightTheme (themeID) {
+    let themeObject = null;
+    if (themeID) {
+      themeObject = LightweightThemeManager.getUsedTheme(themeID);
+    }
+    LightweightThemeManager.currentTheme = themeObject;
+  },
+
   _setAllPrefs: function (values) {
     let selectedThemeIDPref = "lightweightThemes.selectedThemeID";
     let selectedThemeIDBefore = this._prefs.get(selectedThemeIDPref, null);
+    let selectedThemeIDAfter = selectedThemeIDBefore;
 
     
     
@@ -124,27 +133,30 @@ PrefStore.prototype = {
 
       let value = values[pref];
 
-      
-      if (value == null) {
-        this._prefs.reset(pref);
-        continue;
-      }
+      switch (pref) {
+        
+        case selectedThemeIDPref:
+          selectedThemeIDAfter = value;
+          break;
 
-      try {
-        this._prefs.set(pref, value);
-      } catch(ex) {
-        this._log.trace("Failed to set pref: " + pref + ": " + ex);
-      } 
+        
+        default:
+          if (value == null) {
+            
+            this._prefs.reset(pref);
+          } else {
+            try {
+              this._prefs.set(pref, value);
+            } catch(ex) {
+              this._log.trace("Failed to set pref: " + pref + ": " + ex);
+            }
+          }
+      }
     }
 
     
-    let selectedThemeIDAfter = this._prefs.get(selectedThemeIDPref, null);
     if (selectedThemeIDBefore != selectedThemeIDAfter) {
-      
-      
-      let currentTheme = LightweightThemeManager.currentTheme;
-      LightweightThemeManager.currentTheme = null;
-      LightweightThemeManager.currentTheme = currentTheme;
+      this._updateLightWeightTheme(selectedThemeIDAfter);
     }
   },
 
