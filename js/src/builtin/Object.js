@@ -88,11 +88,6 @@ function Object_toLocaleString() {
 
 
 function ObjectDefineSetter(name, setter) {
-    if (this === null || this === undefined)
-        AddContentTelemetry(TELEMETRY_DEFINE_GETTER_SETTER_THIS_NULL_UNDEFINED, 1);
-    else
-        AddContentTelemetry(TELEMETRY_DEFINE_GETTER_SETTER_THIS_NULL_UNDEFINED, 0);
-
     
     var object = ToObject(this);
 
@@ -119,11 +114,6 @@ function ObjectDefineSetter(name, setter) {
 
 
 function ObjectDefineGetter(name, getter) {
-    if (this === null || this === undefined)
-        AddContentTelemetry(TELEMETRY_DEFINE_GETTER_SETTER_THIS_NULL_UNDEFINED, 1);
-    else
-        AddContentTelemetry(TELEMETRY_DEFINE_GETTER_SETTER_THIS_NULL_UNDEFINED, 0);
-
     
     var object = ToObject(this);
 
