@@ -796,7 +796,6 @@ Animation::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
   
   
   
-  bool updatedHoldTime = false;
   AnimationPlayState playState = PlayState();
   {
     AutoRestore<Nullable<TimeDuration>> restoreHoldTime(mHoldTime);
@@ -813,18 +812,10 @@ Animation::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
       if (!timeToUse.IsNull()) {
         mHoldTime.SetValue((timeToUse.Value() - mStartTime.Value())
                             .MultDouble(mPlaybackRate));
-        
-        UpdateEffect();
-        updatedHoldTime = true;
       }
     }
 
     mEffect->ComposeStyle(aStyleRule, aSetProperties);
-  }
-
-  
-  if (updatedHoldTime) {
-    UpdateEffect();
   }
 
   MOZ_ASSERT(playState == PlayState(),
