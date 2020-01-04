@@ -623,7 +623,7 @@ RTCPeerConnection.prototype = {
   dispatchEvent: function(event) {
     
     
-    if (!this._closed) {
+    if (!this._closed || this._inClose) {
       this.__DOM_IMPL__.dispatchEvent(event);
     }
   },
@@ -1139,11 +1139,13 @@ RTCPeerConnection.prototype = {
     if (this._closed) {
       return;
     }
+    this._closed = true;
+    this._inClose = true;
     this.changeIceConnectionState("closed");
     this._localIdp.close();
     this._remoteIdp.close();
     this._impl.close();
-    this._closed = true;
+    this._inClose = false;
   },
 
   getLocalStreams: function() {
