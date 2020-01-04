@@ -30,12 +30,12 @@ function doTest(aApnSettings, aHaveV4Address, aHaveV6Address) {
     .then(() => setDataEnabledAndWait(true))
     .then(function() {
       let nm = getNetworkManager();
-      let active = nm.active;
-      ok(active, "Active network interface");
-      log("  Interface: " + active.name);
+      let networkInfo = nm.activeNetworkInfo;
+      ok(networkInfo, "Active network info");
+      log("  Interface: " + networkInfo.name);
 
       let ips = {}, prefixLengths = {};
-      let num = active.getAddresses(ips, prefixLengths);
+      let num = networkInfo.getAddresses(ips, prefixLengths);
       log("  Num addresses: " + num);
       log("  Addresses: " + JSON.stringify(ips.value));
       log("  PrefixLengths: " + JSON.stringify(prefixLengths.value));
@@ -106,14 +106,16 @@ startTestCommon(function() {
 
         .then(() => doTestHome(aApnSettings, "NoSuchProtocol"))
         .then(() => doTestHome(aApnSettings, "IP"))
-        .then(() => doTestHome(aApnSettings, "IPV4V6"))
+        
+        
         .then(() => doTestHome(aApnSettings, "IPV6"))
 
         .then(() => setEmulatorRoamingAndWait(true))
 
         .then(() => doTestRoaming(aApnSettings, "NoSuchProtocol"))
         .then(() => doTestRoaming(aApnSettings, "IP"))
-        .then(() => doTestRoaming(aApnSettings, "IPV4V6"))
+        
+        
         .then(() => doTestRoaming(aApnSettings, "IPV6"))
 
         .then(() => setEmulatorRoamingAndWait(false));
