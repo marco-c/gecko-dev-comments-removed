@@ -1148,6 +1148,9 @@ CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   NS_ASSERTION(mHwnd, "Couldn't find an HWND when initialising?");
   if (::IsIconic(mHwnd) || mDevice->GetDeviceRemovedReason() != S_OK) {
+    
+    
+    ReadUnlockTextures();
     *aRenderBoundsOut = IntRect();
     return;
   }
@@ -1157,6 +1160,7 @@ CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   if (!UpdateRenderTarget() || !mDefaultRT || !mDefaultRT->mRTView ||
       mSize.width <= 0 || mSize.height <= 0) {
+    ReadUnlockTextures();
     *aRenderBoundsOut = IntRect();
     return;
   }

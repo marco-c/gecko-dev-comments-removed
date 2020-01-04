@@ -272,6 +272,15 @@ PersistentBufferProviderShared::BorrowDrawTarget(const gfx::IntRect& aPersistedR
     if (mTextures.length() >= 4) {
       
       MOZ_ASSERT(false);
+      
+      
+      
+      
+      
+      
+      
+      NotifyInactive();
+      
       return nullptr;
     }
 
