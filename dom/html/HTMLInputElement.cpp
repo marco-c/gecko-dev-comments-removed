@@ -218,6 +218,18 @@ const Decimal HTMLInputElement::kStepAny = Decimal(0);
 #define PROGRESS_STR "progress"
 static const uint32_t kProgressEventInterval = 50; 
 
+class GetFilesCallback
+{
+public:
+  NS_INLINE_DECL_REFCOUNTING(GetFilesCallback);
+
+  virtual void
+  Callback(nsresult aStatus, const Sequence<RefPtr<File>>& aFiles) = 0;
+
+protected:
+  virtual ~GetFilesCallback() {}
+};
+
 
 
 class GetFilesHelper final : public Runnable
@@ -295,6 +307,21 @@ public:
     ResolveOrRejectPromise(aPromise);
   }
 
+  void
+  AddCallback(GetFilesCallback* aCallback)
+  {
+    MOZ_ASSERT(aCallback);
+
+    
+    if (!mListingCompleted) {
+      mCallbacks.AppendElement(aCallback);
+      return;
+    }
+
+    MOZ_ASSERT(mCallbacks.IsEmpty());
+    RunCallback(aCallback);
+  }
+
   
   void Unlink()
   {
@@ -351,6 +378,14 @@ private:
 
     for (uint32_t i = 0; i < promises.Length(); ++i) {
       ResolveOrRejectPromise(promises[i]);
+    }
+
+    
+    nsTArray<RefPtr<GetFilesCallback>> callbacks;
+    callbacks.SwapElements(mCallbacks);
+
+    for (uint32_t i = 0; i < callbacks.Length(); ++i) {
+      RunCallback(callbacks[i]);
     }
 
     return NS_OK;
@@ -507,6 +542,16 @@ private:
     aPromise->MaybeResolve(mFiles);
   }
 
+  void
+  RunCallback(GetFilesCallback* aCallback)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(mListingCompleted);
+    MOZ_ASSERT(aCallback);
+
+    aCallback->Callback(mErrorResult, mFiles);
+  }
+
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
   bool mRecursiveFlag;
@@ -528,6 +573,78 @@ private:
   nsresult mErrorResult;
 
   nsTArray<RefPtr<Promise>> mPromises;
+  nsTArray<RefPtr<GetFilesCallback>> mCallbacks;
+};
+
+
+class DispatchChangeEventCallback final : public GetFilesCallback
+{
+public:
+  explicit DispatchChangeEventCallback(HTMLInputElement* aInputElement)
+    : mInputElement(aInputElement)
+  {
+    MOZ_ASSERT(aInputElement);
+  }
+
+  virtual void
+  Callback(nsresult aStatus, const Sequence<RefPtr<File>>& aFiles) override
+  {
+    nsTArray<OwningFileOrDirectory> array;
+    for (uint32_t i = 0; i < aFiles.Length(); ++i) {
+      OwningFileOrDirectory* element = array.AppendElement();
+      element->SetAsFile() = aFiles[i];
+    }
+
+    mInputElement->SetFilesOrDirectories(array, true);
+    NS_WARN_IF(NS_FAILED(DispatchEvents()));
+  }
+
+  nsresult
+  DispatchEvents()
+  {
+    nsresult rv = NS_OK;
+    rv = nsContentUtils::DispatchTrustedEvent(mInputElement->OwnerDoc(),
+                                              static_cast<nsIDOMHTMLInputElement*>(mInputElement.get()),
+                                              NS_LITERAL_STRING("input"), true,
+                                              false);
+    NS_WARN_IF(NS_FAILED(rv));
+
+    rv = nsContentUtils::DispatchTrustedEvent(mInputElement->OwnerDoc(),
+                                              static_cast<nsIDOMHTMLInputElement*>(mInputElement.get()),
+                                              NS_LITERAL_STRING("change"), true,
+                                              false);
+
+    return rv;
+  }
+
+private:
+  RefPtr<HTMLInputElement> mInputElement;
+};
+
+
+
+class AfterSetFilesOrDirectoriesCallback : public GetFilesCallback
+{
+public:
+  AfterSetFilesOrDirectoriesCallback(HTMLInputElement* aInputElement,
+                                     bool aSetValueChanged)
+    : mInputElement(aInputElement)
+    , mSetValueChanged(aSetValueChanged)
+  {
+    MOZ_ASSERT(aInputElement);
+  }
+
+  void
+  Callback(nsresult aStatus, const Sequence<RefPtr<File>>& aFiles) override
+  {
+    if (NS_SUCCEEDED(aStatus)) {
+      mInputElement->AfterSetFilesOrDirectoriesInternal(mSetValueChanged);
+    }
+  }
+
+private:
+  RefPtr<HTMLInputElement> mInputElement;
+  bool mSetValueChanged;
 };
 
 class HTMLInputElementState final : public nsISupports
@@ -862,19 +979,22 @@ HTMLInputElement::nsFilePickerShownCallback::Done(int16_t aResult)
   
   mInput->SetFilesOrDirectories(newFilesOrDirectories, true);
 
-  nsresult rv = NS_OK;
-  rv = nsContentUtils::DispatchTrustedEvent(mInput->OwnerDoc(),
-                                            static_cast<nsIDOMHTMLInputElement*>(mInput.get()),
-                                            NS_LITERAL_STRING("input"), true,
-                                            false);
-  NS_WARN_IF(NS_FAILED(rv));
+  RefPtr<DispatchChangeEventCallback> dispatchChangeEventCallback =
+    new DispatchChangeEventCallback(mInput);
 
-  rv = nsContentUtils::DispatchTrustedEvent(mInput->OwnerDoc(),
-                                            static_cast<nsIDOMHTMLInputElement*>(mInput.get()),
-                                            NS_LITERAL_STRING("change"), true,
-                                            false);
+  if (Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false) &&
+      mInput->HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory)) {
+    ErrorResult error;
+    GetFilesHelper* helper = mInput->GetOrCreateGetFilesHelper(true, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
 
-  return rv;
+    helper->AddCallback(dispatchChangeEventCallback);
+    return NS_OK;
+  }
+
+  return dispatchChangeEventCallback->DispatchEvents();
 }
 
 NS_IMPL_ISUPPORTS(HTMLInputElement::nsFilePickerShownCallback,
@@ -2918,6 +3038,19 @@ HTMLInputElement::SetFiles(nsIDOMFileList* aFiles,
 void
 HTMLInputElement::AfterSetFilesOrDirectories(bool aSetValueChanged)
 {
+  if (Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false) &&
+      HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory)) {
+    
+    ExploreDirectoryRecursively(aSetValueChanged);
+    return;
+  }
+
+  AfterSetFilesOrDirectoriesInternal(aSetValueChanged);
+}
+
+void
+HTMLInputElement::AfterSetFilesOrDirectoriesInternal(bool aSetValueChanged)
+{
   
   
   
@@ -2980,7 +3113,9 @@ HTMLInputElement::GetFiles()
   }
 
   if (Preferences::GetBool("dom.input.dirpicker", false) &&
-      HasAttr(kNameSpaceID_None, nsGkAtoms::directory)) {
+      HasAttr(kNameSpaceID_None, nsGkAtoms::directory) &&
+      (!Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false) ||
+       !HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory))) {
     return nullptr;
   }
 
@@ -4070,8 +4205,10 @@ HTMLInputElement::MaybeInitPickers(EventChainPostVisitor& aVisitor)
     if (target &&
         target->GetParent() == this &&
         target->IsRootOfNativeAnonymousSubtree() &&
-        target->HasAttr(kNameSpaceID_None, nsGkAtoms::directory)) {
-      MOZ_ASSERT(Preferences::GetBool("dom.input.dirpicker", false),
+        (target->HasAttr(kNameSpaceID_None, nsGkAtoms::directory) ||
+         target->HasAttr(kNameSpaceID_None, nsGkAtoms::webkitdirectory))) {
+      MOZ_ASSERT(Preferences::GetBool("dom.input.dirpicker", false) ||
+                 Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false),
                  "No API or UI should have been exposed to allow this code to "
                  "be reached");
       type = FILE_PICKER_DIRECTORY;
@@ -5281,7 +5418,8 @@ HTMLInputElement::GetAttributeChangeHint(const nsIAtom* aAttribute,
   if (aAttribute == nsGkAtoms::type ||
       
       
-      aAttribute == nsGkAtoms::directory) {
+      aAttribute == nsGkAtoms::directory ||
+      aAttribute == nsGkAtoms::webkitdirectory) {
     retval |= NS_STYLE_HINT_FRAMECHANGE;
   } else if (mType == NS_FORM_INPUT_IMAGE &&
              (aAttribute == nsGkAtoms::alt ||
@@ -5417,40 +5555,17 @@ HTMLInputElement::GetFiles(bool aRecursiveFlag, ErrorResult& aRv)
     return nullptr;
   }
 
+  GetFilesHelper* helper = GetOrCreateGetFilesHelper(aRecursiveFlag, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+   }
+  MOZ_ASSERT(helper);
+
   nsCOMPtr<nsIGlobalObject> global = OwnerDoc()->GetScopeObject();
   MOZ_ASSERT(global);
   if (!global) {
     return nullptr;
   }
-
-  RefPtr<GetFilesHelper> helper;
-  if (aRecursiveFlag) {
-    if (!mGetFilesRecursiveHelper) {
-      mGetFilesRecursiveHelper =
-       GetFilesHelper::Create(global,
-                              GetFilesOrDirectoriesInternal(),
-                              aRecursiveFlag, aRv);
-      if (NS_WARN_IF(aRv.Failed())) {
-        return nullptr;
-      }
-    }
-
-    helper = mGetFilesRecursiveHelper;
-  } else {
-    if (!mGetFilesNonRecursiveHelper) {
-      mGetFilesNonRecursiveHelper =
-       GetFilesHelper::Create(global,
-                              GetFilesOrDirectoriesInternal(),
-                              aRecursiveFlag, aRv);
-      if (NS_WARN_IF(aRv.Failed())) {
-        return nullptr;
-      }
-    }
-
-    helper = mGetFilesNonRecursiveHelper;
-  }
-
-  MOZ_ASSERT(helper);
 
   RefPtr<Promise> p = Promise::Create(global, aRv);
   if (aRv.Failed()) {
@@ -7970,6 +8085,60 @@ HTMLInputElement::ClearGetFilesHelpers()
     mGetFilesNonRecursiveHelper->Unlink();
     mGetFilesNonRecursiveHelper = nullptr;
   }
+}
+
+GetFilesHelper*
+HTMLInputElement::GetOrCreateGetFilesHelper(bool aRecursiveFlag,
+                                            ErrorResult& aRv)
+{
+  nsCOMPtr<nsIGlobalObject> global = OwnerDoc()->GetScopeObject();
+  MOZ_ASSERT(global);
+  if (!global) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  if (aRecursiveFlag) {
+    if (!mGetFilesRecursiveHelper) {
+      mGetFilesRecursiveHelper =
+       GetFilesHelper::Create(global,
+                              GetFilesOrDirectoriesInternal(),
+                              aRecursiveFlag, aRv);
+      if (NS_WARN_IF(aRv.Failed())) {
+        return nullptr;
+      }
+    }
+
+    return mGetFilesRecursiveHelper;
+  }
+
+  if (!mGetFilesNonRecursiveHelper) {
+    mGetFilesNonRecursiveHelper =
+     GetFilesHelper::Create(global,
+                            GetFilesOrDirectoriesInternal(),
+                            aRecursiveFlag, aRv);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return nullptr;
+    }
+  }
+
+  return mGetFilesNonRecursiveHelper;
+}
+
+void
+HTMLInputElement::ExploreDirectoryRecursively(bool aSetValueChanged)
+{
+  ErrorResult rv;
+  GetFilesHelper* helper = GetOrCreateGetFilesHelper(true ,
+                                                     rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    AfterSetFilesOrDirectoriesInternal(aSetValueChanged);
+    return;
+  }
+
+  RefPtr<AfterSetFilesOrDirectoriesCallback> callback =
+    new AfterSetFilesOrDirectoriesCallback(this, aSetValueChanged);
+  helper->AddCallback(callback);
 }
 
 } 
