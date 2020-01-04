@@ -95,13 +95,6 @@ public:
 
   
   
-  void MapLayerTreeId(uint64_t aLayersId, base::ProcessId aOwningId);
-
-  
-  bool IsLayerTreeIdMapped(uint64_t aLayersId, base::ProcessId aRequestingId);
-
-  
-  
   
   
   uint64_t AllocateLayerTreeId();
