@@ -48,15 +48,10 @@ STDMETHODIMP
 DocAccessibleWrap::get_accParent(
        IDispatch __RPC_FAR *__RPC_FAR *ppdispParent)
 {
-  HRESULT hr = DocAccessible::get_accParent(ppdispParent);
-  if (*ppdispParent) {
-    return hr;
-  }
-
   
   DocAccessibleChild* ipcDoc = IPCDoc();
   if (!ipcDoc) {
-    return S_FALSE;
+    return DocAccessible::get_accParent(ppdispParent);
   }
   IAccessible* dispParent = ipcDoc->GetParentIAccessible();
   if (!dispParent) {
