@@ -492,22 +492,24 @@ GeckoChildProcessHost::DissociateActor()
 int32_t GeckoChildProcessHost::mChildCounter = 0;
 
 void
-GeckoChildProcessHost::SetChildLogName(const char* varName, const char* origLogName)
+GeckoChildProcessHost::SetChildLogName(const char* varName, const char* origLogName,
+                                       nsACString &buffer)
 {
   
   
   
   
-  nsAutoCString setChildLogName(varName);
-  setChildLogName.Append(origLogName);
+  buffer.Assign(varName);
+  buffer.Append(origLogName);
 
   
-  setChildLogName.AppendLiteral(".child-");
-  setChildLogName.AppendInt(mChildCounter);
+  buffer.AppendLiteral(".child-");
+  buffer.AppendInt(mChildCounter);
 
   
   
-  PR_SetEnv(setChildLogName.get());
+  
+  PR_SetEnv(buffer.BeginReading());
 }
 
 bool
@@ -528,19 +530,24 @@ GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts, b
   static nsAutoCString restoreOrigNSPRLogName;
   static nsAutoCString restoreOrigMozLogName;
 
+  
+  
+  nsAutoCString nsprLogName;
+  nsAutoCString mozLogName;
+
   if (origNSPRLogName) {
     if (restoreOrigNSPRLogName.IsEmpty()) {
       restoreOrigNSPRLogName.AssignLiteral("NSPR_LOG_FILE=");
       restoreOrigNSPRLogName.Append(origNSPRLogName);
     }
-    SetChildLogName("NSPR_LOG_FILE=", origNSPRLogName);
+    SetChildLogName("NSPR_LOG_FILE=", origNSPRLogName, nsprLogName);
   }
   if (origMozLogName) {
     if (restoreOrigMozLogName.IsEmpty()) {
       restoreOrigMozLogName.AssignLiteral("MOZ_LOG_FILE=");
       restoreOrigMozLogName.Append(origMozLogName);
     }
-    SetChildLogName("MOZ_LOG_FILE=", origMozLogName);
+    SetChildLogName("MOZ_LOG_FILE=", origMozLogName, mozLogName);
   }
 
   bool retval = PerformAsyncLaunchInternal(aExtraOpts, arch);
