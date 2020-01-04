@@ -325,6 +325,14 @@ protected:
   enum { eFakeTrackPointScrollableID = 0x46545053 };
 
   
+  enum ResizeState {
+    NOT_RESIZING,
+    IN_SIZEMOVE,
+    RESIZING,
+    MOVING
+  };
+
+  
 
 
   static LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -401,6 +409,7 @@ protected:
   int32_t                 ClientMarginHitTestPoint(int32_t mx, int32_t my);
   TimeStamp               GetMessageTimeStamp(LONG aEventTime);
   static void             UpdateFirstEventTime(DWORD aEventTime);
+  void                    FinishLiveResizing(ResizeState aNewState);
 
   
 
@@ -584,12 +593,6 @@ protected:
 
   LayoutDeviceIntRect   mLastPaintBounds;
 
-  
-  enum ResizeState {
-    NOT_RESIZING,
-    IN_SIZEMOVE,
-    RESIZING,
-  };
   ResizeState mResizeState;
 
   
