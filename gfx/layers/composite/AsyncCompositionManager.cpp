@@ -134,13 +134,19 @@ AsyncCompositionManager::ResolveRefLayers(CompositorParent* aCompositor,
     *aHasRemoteContent = false;
   }
 
+  
+  
+  bool willResolvePlugins = (aResolvePlugins && *aResolvePlugins);
   if (!mLayerManager->GetRoot()) {
+    
+    if (aResolvePlugins) {
+      *aResolvePlugins = false;
+    }
     return;
   }
 
   mReadyForCompose = true;
   bool hasRemoteContent = false;
-  bool willResolvePlugins = (aResolvePlugins && *aResolvePlugins);
   bool didResolvePlugins = false;
   WalkTheTree<Resolve>(mLayerManager->GetRoot(),
                        mReadyForCompose,
