@@ -1806,25 +1806,21 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
       if (!JS::Compile(cx, options, srcBuf, &script)) {
         return;
       }
-    } else {
-      
-      if (!JS::CompileForNonSyntacticScope(cx, options, srcBuf, &script)) {
-        return;
-      }
+    
+    } else if (!JS::CompileForNonSyntacticScope(cx, options, srcBuf, &script)) {
+      return;
     }
 
+    MOZ_ASSERT(script);
     aScriptp.set(script);
 
     nsAutoCString scheme;
     uri->GetScheme(scheme);
     
     if (aShouldCache && !scheme.EqualsLiteral("data")) {
-      nsMessageManagerScriptHolder* holder;
-
       
-      if (script) {
-        holder = new nsMessageManagerScriptHolder(cx, script, aRunInGlobalScope);
-      }
+      nsMessageManagerScriptHolder* holder =
+        new nsMessageManagerScriptHolder(cx, script, aRunInGlobalScope);
       sCachedScripts->Put(aURL, holder);
     }
   }
