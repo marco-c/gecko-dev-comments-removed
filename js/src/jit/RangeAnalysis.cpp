@@ -2311,6 +2311,8 @@ RangeAnalysis::addRangeAssertions()
             if (ins->isRecoveredOnBailout())
                 continue;
 
+            if (!alloc().ensureBallast())
+                return false;
             MAssertRange* guard = MAssertRange::New(alloc(), ins, new(alloc()) Range(r));
 
             
