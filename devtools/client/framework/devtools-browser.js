@@ -123,10 +123,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     toggleMenuItem("menu_browserContentToolbox", remoteEnabled && win.gMultiProcessBrowser);
 
     
-    let consoleEnabled = Services.prefs.getBoolPref("devtools.errorconsole.enabled");
-    toggleMenuItem("javascriptConsole", consoleEnabled);
-
-    
     toggleMenuItem("menu_devtools_connect", devtoolsRemoteEnabled);
   },
 

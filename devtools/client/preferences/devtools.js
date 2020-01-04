@@ -15,9 +15,6 @@ pref("devtools.devedition.promo.url", "https://www.mozilla.org/firefox/developer
 #endif
 
 
-pref("devtools.errorconsole.enabled", false);
-
-
 pref("devtools.loader.hotreload", false);
 
 
