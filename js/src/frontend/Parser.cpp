@@ -4859,6 +4859,30 @@ Parser<ParseHandler>::expressionStatement(YieldHandling yieldHandling, InvokedPr
     return handler.newExprStatement(pnexpr, pos().end);
 }
 
+template <class ParseHandler>
+typename ParseHandler::Node
+Parser<ParseHandler>::consequentOrAlternative(YieldHandling yieldHandling)
+{
+    TokenKind next;
+    if (!tokenStream.peekToken(&next, TokenStream::Operand))
+        return null();
+
+    if (next == TOK_FUNCTION) {
+        tokenStream.consumeKnownToken(next, TokenStream::Operand);
+
+        
+        
+        if (!pc->sc()->strict())
+            return functionStmt(yieldHandling, NameRequired);
+
+        
+        report(ParseError, false, null(), JSMSG_FUNCTION_AS_IFELSE_KID);
+        return null();
+    }
+
+    return statement(yieldHandling);
+}
+
 template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::ifStatement(YieldHandling yieldHandling)
@@ -4885,7 +4909,7 @@ Parser<ParseHandler>::ifStatement(YieldHandling yieldHandling)
                 return null();
         }
 
-        Node thenBranch = statement(yieldHandling);
+        Node thenBranch = consequentOrAlternative(yieldHandling);
         if (!thenBranch)
             return null();
 
@@ -4900,7 +4924,7 @@ Parser<ParseHandler>::ifStatement(YieldHandling yieldHandling)
                 return null();
             if (matched)
                 continue;
-            elseBranch = statement(yieldHandling);
+            elseBranch = consequentOrAlternative(yieldHandling);
             if (!elseBranch)
                 return null();
         } else {
