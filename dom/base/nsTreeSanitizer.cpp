@@ -1083,14 +1083,15 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
   
   bool didSanitize = false;
   
-  RefPtr<CSSStyleSheet> sheet = new CSSStyleSheet(CORS_NONE, aDocument->GetReferrerPolicy());
+  RefPtr<CSSStyleSheet> sheet =
+    new CSSStyleSheet(mozilla::css::eAuthorSheetFeatures,
+                      CORS_NONE, aDocument->GetReferrerPolicy());
   sheet->SetURIs(aDocument->GetDocumentURI(), nullptr, aBaseURI);
   sheet->SetPrincipal(aDocument->NodePrincipal());
   
   nsCSSParser parser(nullptr, sheet);
   rv = parser.ParseSheet(aOriginal, aDocument->GetDocumentURI(), aBaseURI,
-                         aDocument->NodePrincipal(), 0,
-                         mozilla::css::eAuthorSheetFeatures);
+                         aDocument->NodePrincipal(), 0);
   NS_ENSURE_SUCCESS(rv, true);
   
   MOZ_ASSERT(!sheet->IsModified(),

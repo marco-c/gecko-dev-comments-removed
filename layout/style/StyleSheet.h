@@ -27,7 +27,7 @@ class ServoStyleSheet;
 class StyleSheet
 {
 protected:
-  explicit StyleSheet(StyleBackendType aType);
+  StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMode);
   StyleSheet(const StyleSheet& aCopy,
              nsIDocument* aDocumentToUse,
              nsINode* aOwningNodeToUse);
@@ -36,11 +36,6 @@ public:
   void SetOwningNode(nsINode* aOwningNode)
   {
     mOwningNode = aOwningNode;
-  }
-
-  void SetParsingMode(css::SheetParsingMode aParsingMode)
-  {
-    mParsingMode = aParsingMode;
   }
 
   css::SheetParsingMode ParsingMode() { return mParsingMode; }
@@ -81,7 +76,12 @@ public:
 protected:
   nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 
+
+  
+  
+  
   css::SheetParsingMode mParsingMode;
+
   StyleBackendType      mType;
   bool                  mDisabled;
 };

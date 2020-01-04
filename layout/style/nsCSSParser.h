@@ -70,13 +70,11 @@ public:
 
 
 
-
   nsresult ParseSheet(const nsAString& aInput,
                       nsIURI*          aSheetURL,
                       nsIURI*          aBaseURI,
                       nsIPrincipal*    aSheetPrincipal,
                       uint32_t         aLineNumber,
-                      mozilla::css::SheetParsingMode aParsingMode,
                       mozilla::css::LoaderReusableStyleSheets* aReusableSheets =
                         nullptr);
 

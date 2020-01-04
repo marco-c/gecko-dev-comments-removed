@@ -1075,8 +1075,9 @@ CSSStyleSheetInner::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 
 
 
-CSSStyleSheet::CSSStyleSheet(CORSMode aCORSMode, ReferrerPolicy aReferrerPolicy)
-  : StyleSheet(StyleBackendType::Gecko),
+CSSStyleSheet::CSSStyleSheet(css::SheetParsingMode aParsingMode,
+                             CORSMode aCORSMode, ReferrerPolicy aReferrerPolicy)
+  : StyleSheet(StyleBackendType::Gecko, aParsingMode),
     mTitle(),
     mParent(nullptr),
     mOwnerRule(nullptr),
@@ -1089,10 +1090,11 @@ CSSStyleSheet::CSSStyleSheet(CORSMode aCORSMode, ReferrerPolicy aReferrerPolicy)
                                   SRIMetadata());
 }
 
-CSSStyleSheet::CSSStyleSheet(CORSMode aCORSMode,
+CSSStyleSheet::CSSStyleSheet(css::SheetParsingMode aParsingMode,
+                             CORSMode aCORSMode,
                              ReferrerPolicy aReferrerPolicy,
                              const SRIMetadata& aIntegrity)
-  : StyleSheet(StyleBackendType::Gecko),
+  : StyleSheet(StyleBackendType::Gecko, aParsingMode),
     mTitle(),
     mParent(nullptr),
     mOwnerRule(nullptr),
@@ -2212,8 +2214,7 @@ CSSStyleSheet::ReparseSheet(const nsAString& aInput)
 
   nsCSSParser parser(loader, this);
   nsresult rv = parser.ParseSheet(aInput, mInner->mSheetURI, mInner->mBaseURI,
-                                  mInner->mPrincipal, lineNumber,
-                                  mParsingMode, &reusableSheets);
+                                  mInner->mPrincipal, lineNumber, &reusableSheets);
   DidDirty(); 
   NS_ENSURE_SUCCESS(rv, rv);
 
