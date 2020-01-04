@@ -1073,7 +1073,7 @@ FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
     
     if (next <= bp ||
         next > aStackEnd ||
-        (long(next) & 3)) {
+        (uintptr_t(next) & 3)) {
       break;
     }
 #if (defined(__ppc__) && defined(XP_MACOSX)) || defined(__powerpc64__)
