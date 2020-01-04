@@ -6,7 +6,6 @@
 package org.mozilla.gecko;
 
 import android.Manifest;
-import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import org.json.JSONArray;
 import org.mozilla.gecko.adjust.AdjustHelperInterface;
@@ -180,6 +179,7 @@ public class BrowserApp extends GeckoApp
 
     private static final String ADD_SHORTCUT_TOAST = "add_shortcut_toast";
     public static final String GUEST_BROWSING_ARG = "--guest";
+    public static final String INTENT_KEY_SWITCHBOARD_UUID = "switchboard-uuid";
 
     private static final String STATE_ABOUT_HOME_TOP_PADDING = "abouthome_top_padding";
 
@@ -589,12 +589,15 @@ public class BrowserApp extends GeckoApp
             
             SwitchBoard.initDefaultServerUrls("https://switchboard.services.mozilla.com/urls", "https://switchboard.services.mozilla.com/v1", true);
 
+            final String switchboardUUID = ContextUtils.getStringExtra(intent, INTENT_KEY_SWITCHBOARD_UUID);
+            SwitchBoard.setUUIDFromExtra(switchboardUUID);
+
             
-            new AsyncConfigLoader(this, AsyncConfigLoader.UPDATE_SERVER).execute();
+            new AsyncConfigLoader(this, AsyncConfigLoader.UPDATE_SERVER, switchboardUUID).execute();
 
             
             
-            new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER).execute();
+            new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER, switchboardUUID).execute();
         }
 
         mBrowserChrome = (ViewGroup) findViewById(R.id.browser_chrome);
