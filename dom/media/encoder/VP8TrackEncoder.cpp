@@ -20,7 +20,7 @@ PRLogModuleInfo* gVP8TrackEncoderLog;
                                   (msg, ##__VA_ARGS__))
 
 
-#define DEFAULT_BITRATE 2500 // in kbit/s
+#define DEFAULT_BITRATE_BPS 2500000
 #define DEFAULT_ENCODE_FRAMERATE 30
 
 using namespace mozilla::layers;
@@ -87,7 +87,9 @@ VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
   config.g_h = mFrameHeight;
   
   
-  config.rc_target_bitrate = DEFAULT_BITRATE; 
+
+  
+  config.rc_target_bitrate = (mVideoBitrate != 0 ? mVideoBitrate : DEFAULT_BITRATE_BPS)/1000;
 
   
   config.g_timebase.num = 1;
