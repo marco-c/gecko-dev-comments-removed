@@ -55,14 +55,18 @@ function onCertSelected()
 
 function doOK()
 {
-  dialogParams.SetInt(0,1);
-  var index = parseInt(document.getElementById("nicknames").value);
+  
+  dialogParams.SetInt(0, 1);
+
+  
+  
+  let index = parseInt(document.getElementById("nicknames").value);
   dialogParams.SetInt(1, index);
   return true;
 }
 
 function doCancel()
 {
-  dialogParams.SetInt(0,0);
+  dialogParams.SetInt(0, 0); 
   return true;
 }

@@ -428,7 +428,7 @@ function nameToAlias(certName) {
   
   certName = certName.replace(/[^[:ascii:]]/g, "_");
   
-  certName = certName.replace(/[^A-Za-z0-9]/g ,"_");
+  certName = certName.replace(/[^A-Za-z0-9]/g, "_");
 
   return "k" + certName + "Fingerprint";
 }

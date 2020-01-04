@@ -23,7 +23,7 @@ FakeSSLStatus.prototype = {
     }
     throw Components.results.NS_ERROR_NO_INTERFACE;
   },
-}
+};
 
 
 

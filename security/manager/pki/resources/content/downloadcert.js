@@ -48,6 +48,6 @@ function doOK()
 
 function doCancel()
 {
-  params.SetInt(1,0);
+  params.SetInt(1, 0); 
   return true;
 }

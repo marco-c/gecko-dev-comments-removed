@@ -238,7 +238,7 @@ writeTrustAnchors(trustAnchorsFile);
 gTrustAnchors.roots.sort(function(a, b) {
   
   let aBin = atob(a.sha256Fingerprint);
-  let bBin = atob(b.sha256Fingerprint)
+  let bBin = atob(b.sha256Fingerprint);
 
   if (aBin < bBin) {
     return -1;

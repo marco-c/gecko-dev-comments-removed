@@ -28,15 +28,16 @@ function onLoad()
 
 function doOK()
 {
-  var tokenList = document.getElementById("tokens");
-  var token = tokenList.value;
-  dialogParams.SetInt(0,1);
-  dialogParams.SetString(0, token);
+  let tokenList = document.getElementById("tokens");
+  
+  dialogParams.SetInt(0, 1);
+  
+  dialogParams.SetString(0, tokenList.value);
   return true;
 }
 
 function doCancel()
 {
-  dialogParams.SetInt(0,0);
+  dialogParams.SetInt(0, 0); 
   return true;
 }

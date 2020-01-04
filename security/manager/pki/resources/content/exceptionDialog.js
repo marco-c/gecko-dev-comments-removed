@@ -41,7 +41,7 @@ badCertListener.prototype = {
     this.handle_test_result();
     return true; 
   }
-}
+};
 
 function initExceptionDialog() {
   gNeedReset = false;

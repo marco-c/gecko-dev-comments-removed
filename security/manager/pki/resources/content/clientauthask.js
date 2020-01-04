@@ -80,17 +80,24 @@ function onCertSelected()
 
 function doOK()
 {
-  dialogParams.SetInt(0,1);
-  var index = parseInt(document.getElementById("nicknames").value);
+  
+  dialogParams.SetInt(0, 1);
+  let index = parseInt(document.getElementById("nicknames").value);
+  
+  
   dialogParams.SetInt(1, index);
+  
   dialogParams.SetInt(2, rememberBox.checked);
   return true;
 }
 
 function doCancel()
 {
-  dialogParams.SetInt(0,0);
+  
+  dialogParams.SetInt(0, 0);
+  
   dialogParams.SetInt(1, -1); 
+  
   dialogParams.SetInt(2, rememberBox.checked);
   return true;
 }

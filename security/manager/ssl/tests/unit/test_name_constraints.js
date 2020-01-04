@@ -135,7 +135,7 @@ function run_test() {
   
   
   
-  check_ok_ca(load_cert('int-nc-perm-foo.com_c-us-ca-nc' , ',,'));
+  check_ok_ca(load_cert('int-nc-perm-foo.com_c-us-ca-nc', ',,'));
   check_fail(certFromFile('cn-www.foo.com-int-nc-perm-foo.com_c-us-ca-nc'));
   check_fail(certFromFile('cn-www.foo.org-int-nc-perm-foo.com_c-us-ca-nc'));
   check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc'));
