@@ -65,11 +65,7 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-
-
-
-
-  initialize: function(animationsActor, player, playerIndex) {
+  initialize: function(animationsActor, player) {
     Actor.prototype.initialize.call(this, animationsActor.conn);
 
     this.onAnimationMutation = this.onAnimationMutation.bind(this);
@@ -77,7 +73,6 @@ var AnimationPlayerActor = ActorClass({
     this.tabActor = animationsActor.tabActor;
     this.player = player;
     this.node = player.effect.target;
-    this.playerIndex = playerIndex;
 
     let win = this.node.ownerDocument.defaultView;
     this.styles = win.getComputedStyle(this.node);
@@ -139,42 +134,6 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-
-  getPlayerIndex: function() {
-    let names = this.styles.animationName;
-    if (names === "none") {
-      names = this.styles.transitionProperty;
-    }
-
-    
-    
-    
-    if (!names || names === "none") {
-      return this.playerIndex;
-    }
-
-    
-    if (names.includes(",") === -1) {
-      return 0;
-    }
-
-    
-    
-    let playerName = this.getName();
-    names = names.split(",").map(n => n.trim());
-    for (let i = 0; i < names.length; i++) {
-      if (names[i] === playerName) {
-        return i;
-      }
-    }
-  },
-
-  
-
-
-
-
-
   getName: function() {
     if (this.isAnimation()) {
       return this.player.animationName;
@@ -189,70 +148,27 @@ var AnimationPlayerActor = ActorClass({
 
 
 
-
-
-
   getDuration: function() {
-    let durationText;
-    if (this.styles.animationDuration !== "0s") {
-      durationText = this.styles.animationDuration;
-    } else if (this.styles.transitionDuration !== "0s") {
-      durationText = this.styles.transitionDuration;
-    } else {
-      return null;
-    }
-
-    
-    
-    if (durationText.indexOf(",") !== -1) {
-      durationText = durationText.split(",")[this.getPlayerIndex()];
-    }
-
-    return parseFloat(durationText) * 1000;
+    return this.player.effect.getComputedTiming().duration;
   },
 
   
-
-
-
 
 
 
   getDelay: function() {
-    let delayText;
-    if (this.styles.animationDelay !== "0s") {
-      delayText = this.styles.animationDelay;
-    } else if (this.styles.transitionDelay !== "0s") {
-      delayText = this.styles.transitionDelay;
-    } else {
-      return 0;
-    }
-
-    if (delayText.indexOf(",") !== -1) {
-      delayText = delayText.split(",")[this.getPlayerIndex()];
-    }
-
-    return parseFloat(delayText) * 1000;
+    return this.player.effect.getComputedTiming().delay;
   },
 
   
-
-
-
 
 
 
 
 
   getIterationCount: function() {
-    let iterationText = this.styles.animationIterationCount;
-    if (iterationText.indexOf(",") !== -1) {
-      iterationText = iterationText.split(",")[this.getPlayerIndex()];
-    }
-
-    return iterationText === "infinite"
-           ? null
-           : parseInt(iterationText, 10);
+    let iterations = this.player.effect.getComputedTiming().iterations;
+    return iterations === "Infinity" ? null : iterations;
   },
 
   
@@ -606,9 +522,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
     
     this.actors = [];
     for (let i = 0; i < animations.length; i++) {
-      
-      
-      let actor = AnimationPlayerActor(this, animations[i], i);
+      let actor = AnimationPlayerActor(this, animations[i]);
       this.actors.push(actor);
     }
 
@@ -686,8 +600,7 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
           this.actors.splice(index, 1);
         }
 
-        let actor = AnimationPlayerActor(
-          this, player, player.effect.target.getAnimations().indexOf(player));
+        let actor = AnimationPlayerActor(this, player);
         this.actors.push(actor);
         eventData.push({
           type: "added",
