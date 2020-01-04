@@ -121,10 +121,7 @@ public:
 #else
 #ifdef BUILD_ARM_NEON
     if (mozilla::supports_neon()) {
-      omxSP_FFTInv_CCSToR_F32_Sfs(mOutputBuffer.Elements()->f, aDataOut, mOmxIFFT);
-      
-      
-      AudioBufferInPlaceScale(aDataOut, mFFTSize, mFFTSize);
+      omxSP_FFTInv_CCSToR_F32_Sfs_unscaled(mOutputBuffer.Elements()->f, aDataOut, mOmxIFFT);
     } else
 #endif
     {
