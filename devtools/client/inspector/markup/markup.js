@@ -21,7 +21,7 @@ const AUTOCOMPLETE_POPUP_PANEL_ID = "markupview_autoCompletePopup";
 
 const {UndoStack} = require("devtools/client/shared/undo");
 const {editableField, InplaceEditor} = require("devtools/client/shared/inplace-editor");
-const {HTMLEditor} = require("devtools/client/markupview/html-editor");
+const {HTMLEditor} = require("devtools/client/inspector/markup/html-editor");
 const promise = require("promise");
 const {Tooltip} = require("devtools/client/shared/widgets/Tooltip");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -361,7 +361,7 @@ MarkupView.prototype = {
     return promise.all([onShown, this._briefBoxModelPromise.promise]);
   },
 
-  template: function(aName, aDest, aOptions={stack: "markup-view.xhtml"}) {
+  template: function(aName, aDest, aOptions={stack: "markup.xhtml"}) {
     let node = this.doc.getElementById("template-" + aName).cloneNode(true);
     node.removeAttribute("id");
     template(node, aDest, aOptions);
@@ -841,14 +841,13 @@ MarkupView.prototype = {
         
         continue;
       }
-      if (type === "attributes" || type === "characterData") {
+      if (type === "attributes" || type === "characterData"
+        || type === "events" || type === "pseudoClassLock") {
         container.update();
       } else if (type === "childList" || type === "nativeAnonymousChildList") {
         container.childrenDirty = true;
         
         this._updateChildren(container, {flash: true});
-      } else if (type === "pseudoClassLock") {
-        container.update();
       }
     }
 
@@ -2547,7 +2546,6 @@ function ElementEditor(aContainer, aNode) {
   let tagName = this.node.nodeName.toLowerCase();
   this.tag.textContent = tagName;
   this.closeTag.textContent = tagName;
-  this.eventNode.style.display = this.node.hasEventListeners ? "inline-block" : "none";
 
   this.update();
   this.initialized = true;
@@ -2642,6 +2640,10 @@ ElementEditor.prototype = {
         }
       }
     }
+
+    
+    this.eventNode.style.display = this.node.hasEventListeners ?
+      "inline-block" : "none";
 
     this.updateTextEditor();
   },
