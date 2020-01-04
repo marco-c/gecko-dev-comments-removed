@@ -3,6 +3,12 @@
 
 
 
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("[object Object]");
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed(
+  "TypeError: this.transport is null");
+
+
+
 
 
 
