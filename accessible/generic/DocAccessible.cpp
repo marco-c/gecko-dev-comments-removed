@@ -1391,21 +1391,8 @@ DocAccessible::ProcessInvalidationList()
     nsIContent* content = mInvalidationList[idx];
     if (!HasAccessible(content)) {
       Accessible* container = GetContainerAccessible(content);
-      if (container) {
-        TreeWalker walker(container);
-        if (container->IsAcceptableChild(content) && walker.Seek(content)) {
-          Accessible* child =
-            GetAccService()->GetOrCreateAccessible(content, container);
-          if (child) {
-            AutoTreeMutation mMut(container);
-            RefPtr<AccReorderEvent> reorderEvent =
-              new AccReorderEvent(container);
-            container->InsertAfter(child, walker.Prev());
-            uint32_t flags = UpdateTreeInternal(child, true, reorderEvent);
-            FireEventsOnInsertion(container, reorderEvent, flags);
-          }
-        }
-      }
+      if (container)
+        UpdateTreeOnInsertion(container);
     }
   }
 
@@ -1843,22 +1830,14 @@ DocAccessible::ProcessContentInserted(Accessible* aContainer,
                     aContainer);
 #endif
 
-  FireEventsOnInsertion(aContainer, reorderEvent, updateFlags);
-}
-
-void
-DocAccessible::FireEventsOnInsertion(Accessible* aContainer,
-                                     AccReorderEvent* aReorderEvent,
-                                     uint32_t aUpdateFlags)
-{
   
-  if (aUpdateFlags == eNoAccessible) {
+  if (updateFlags == eNoAccessible) {
     return;
   }
 
   
   
-  if (!(aUpdateFlags & eAlertAccessible) &&
+  if (!(updateFlags & eAlertAccessible) &&
       (aContainer->IsAlert() || aContainer->IsInsideAlert())) {
     Accessible* ancestor = aContainer;
     do {
@@ -1871,7 +1850,7 @@ DocAccessible::FireEventsOnInsertion(Accessible* aContainer,
   }
 
   MaybeNotifyOfValueChange(aContainer);
-  FireDelayedEvent(aReorderEvent);
+  FireDelayedEvent(reorderEvent);
 }
 
 void
