@@ -125,11 +125,16 @@ AndroidContentController::NotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
   
   
   ChromeProcessController::NotifyAPZStateChange(aGuid, aChange, aArg);
-  if (NS_IsMainThread() && aChange == layers::GeckoContentController::APZStateChange::TransformEnd) {
-    
-    
+  if (NS_IsMainThread()) {
     nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
-    observerService->NotifyObservers(nullptr, "APZ:TransformEnd", nullptr);
+    if (aChange == layers::GeckoContentController::APZStateChange::TransformEnd) {
+      
+      
+      observerService->NotifyObservers(nullptr, "APZ:TransformEnd", nullptr);
+      observerService->NotifyObservers(nullptr, "PanZoom:StateChange", MOZ_UTF16("NOTHING"));
+    } else if (aChange == layers::GeckoContentController::APZStateChange::TransformBegin) {
+      observerService->NotifyObservers(nullptr, "PanZoom:StateChange", MOZ_UTF16("PANNING"));
+    }
   }
 }
 
