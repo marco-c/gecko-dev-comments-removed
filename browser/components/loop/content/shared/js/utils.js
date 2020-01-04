@@ -84,7 +84,8 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     
     
     TOS_FAILURE: "reason-tos-failure",
-    UNKNOWN: "reason-unknown"
+    UNKNOWN: "reason-unknown",
+    ICE_FAILED: "reason-ice-failed"
   };
 
   var ROOM_INFO_FAILURES = {
