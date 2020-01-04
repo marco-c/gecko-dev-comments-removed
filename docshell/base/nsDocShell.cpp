@@ -106,6 +106,7 @@
 #include "nsEscape.h"
 
 
+#include "nsIFormPOSTActionChannel.h"
 #include "nsIUploadChannel.h"
 #include "nsIUploadChannel2.h"
 #include "nsIWebProgress.h"
@@ -10766,23 +10767,21 @@ nsDocShell::DoURILoad(nsIURI* aURI,
                                   aReferrerURI);
   }
 
+  nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(channel));
   
-  
-  
-  
-  if (httpChannel) {
-    nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(httpChannel));
-    
-    nsCOMPtr<nsISupports> cacheKey;
+  nsCOMPtr<nsISupports> cacheKey;
+  if (cacheChannel) {
     if (mLSHE) {
       mLSHE->GetCacheKey(getter_AddRefs(cacheKey));
     } else if (mOSHE) {  
       mOSHE->GetCacheKey(getter_AddRefs(cacheKey));
     }
+  }
 
-    
-    
-    if (aPostData) {
+  
+  if (aPostData) {
+    nsCOMPtr<nsIFormPOSTActionChannel> postChannel(do_QueryInterface(channel));
+    if (postChannel) {
       
       
       
@@ -10793,44 +10792,45 @@ nsDocShell::DoURILoad(nsIURI* aURI,
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
-      nsCOMPtr<nsIUploadChannel> uploadChannel(do_QueryInterface(httpChannel));
-      NS_ASSERTION(uploadChannel, "http must support nsIUploadChannel");
-
       
-      uploadChannel->SetUploadStream(aPostData, EmptyCString(), -1);
-      
+      postChannel->SetUploadStream(aPostData, EmptyCString(), -1);
+    }
+
+    
 
 
 
 
-      if (cacheChannel && cacheKey) {
-        if (mLoadType == LOAD_HISTORY ||
-            mLoadType == LOAD_RELOAD_CHARSET_CHANGE) {
-          cacheChannel->SetCacheKey(cacheKey);
-          uint32_t loadFlags;
-          if (NS_SUCCEEDED(channel->GetLoadFlags(&loadFlags))) {
-            channel->SetLoadFlags(
-              loadFlags | nsICachingChannel::LOAD_ONLY_FROM_CACHE);
-          }
-        } else if (mLoadType == LOAD_RELOAD_NORMAL) {
-          cacheChannel->SetCacheKey(cacheKey);
-        }
-      }
-    } else {
-      
-
-
-
-
-
+    if (cacheChannel && cacheKey) {
       if (mLoadType == LOAD_HISTORY ||
-          mLoadType == LOAD_RELOAD_NORMAL ||
           mLoadType == LOAD_RELOAD_CHARSET_CHANGE) {
-        if (cacheChannel && cacheKey) {
-          cacheChannel->SetCacheKey(cacheKey);
+        cacheChannel->SetCacheKey(cacheKey);
+        uint32_t loadFlags;
+        if (NS_SUCCEEDED(channel->GetLoadFlags(&loadFlags))) {
+          channel->SetLoadFlags(
+            loadFlags | nsICachingChannel::LOAD_ONLY_FROM_CACHE);
         }
+      } else if (mLoadType == LOAD_RELOAD_NORMAL) {
+        cacheChannel->SetCacheKey(cacheKey);
       }
     }
+  } else {
+    
+
+
+
+
+
+    if (mLoadType == LOAD_HISTORY ||
+        mLoadType == LOAD_RELOAD_NORMAL ||
+        mLoadType == LOAD_RELOAD_CHARSET_CHANGE) {
+      if (cacheChannel && cacheKey) {
+        cacheChannel->SetCacheKey(cacheKey);
+      }
+    }
+  }
+
+  if (httpChannel) {
     if (aHeadersData) {
       rv = AddHeadersToChannel(aHeadersData, httpChannel);
     }
