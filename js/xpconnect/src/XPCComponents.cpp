@@ -3517,11 +3517,14 @@ NS_IMETHODIMP nsXPCComponents::ReportError(HandleValue error, JSContext* cx)
 class ComponentsSH : public nsIXPCScriptable
 {
 public:
-    explicit ComponentsSH(unsigned dummy)
+    explicit MOZ_CONSTEXPR ComponentsSH(unsigned dummy)
     {
     }
 
-    NS_DECL_ISUPPORTS
+    
+    
+    
+    NS_DECL_ISUPPORTS_INHERITED
     NS_DECL_NSIXPCSCRIPTABLE
     
     
