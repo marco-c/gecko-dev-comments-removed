@@ -363,7 +363,6 @@ protected:
   
   float mTextZoom;      
   float mPageZoom;
-  float mOverrideDPPX;  
   int mMinFontSize;
 
   int16_t mNumURLStarts;
@@ -482,7 +481,7 @@ void nsDocumentViewer::PrepareToStartLoad()
 
 
 nsDocumentViewer::nsDocumentViewer()
-  : mTextZoom(1.0), mPageZoom(1.0), mOverrideDPPX(0.0), mMinFontSize(0),
+  : mTextZoom(1.0), mPageZoom(1.0), mMinFontSize(0),
     mIsSticky(true),
 #ifdef NS_PRINT_PREVIEW
     mPrintPreviewZoom(1.0),
@@ -665,7 +664,6 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
   mViewManager->SetWindowDimensions(width, height);
   mPresContext->SetTextZoom(mTextZoom);
   mPresContext->SetFullZoom(mPageZoom);
-  mPresContext->SetOverrideDPPX(mOverrideDPPX);
   mPresContext->SetBaseMinFontSize(mMinFontSize);
 
   p2a = mPresContext->AppUnitsPerDevPixel();  
@@ -2838,13 +2836,6 @@ SetChildFullZoom(nsIContentViewer* aChild, void* aClosure)
   aChild->SetFullZoom(ZoomInfo->mZoom);
 }
 
-static void
-SetChildOverrideDPPX(nsIContentViewer* aChild, void* aClosure)
-{
-  struct ZoomInfo* ZoomInfo = (struct ZoomInfo*) aClosure;
-  aChild->SetOverrideDPPX(ZoomInfo->mZoom);
-}
-
 static bool
 SetExtResourceTextZoom(nsIDocument* aDocument, void* aClosure)
 {
@@ -2885,21 +2876,6 @@ SetExtResourceFullZoom(nsIDocument* aDocument, void* aClosure)
     if (ctxt) {
       struct ZoomInfo* ZoomInfo = static_cast<struct ZoomInfo*>(aClosure);
       ctxt->SetFullZoom(ZoomInfo->mZoom);
-    }
-  }
-
-  return true;
-}
-
-static bool
-SetExtResourceOverrideDPPX(nsIDocument* aDocument, void* aClosure)
-{
-  nsIPresShell* shell = aDocument->GetShell();
-  if (shell) {
-    nsPresContext* ctxt = shell->GetPresContext();
-    if (ctxt) {
-      struct ZoomInfo* ZoomInfo = static_cast<struct ZoomInfo*>(aClosure);
-      ctxt->SetOverrideDPPX(ZoomInfo->mZoom);
     }
   }
 
@@ -3068,41 +3044,6 @@ nsDocumentViewer::GetFullZoom(float* aFullZoom)
   
   nsPresContext* pc = GetPresContext();
   *aFullZoom = pc ? pc->GetFullZoom() : mPageZoom;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocumentViewer::SetOverrideDPPX(float aDPPX)
-{
-  
-  if (!mDocument) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mOverrideDPPX = aDPPX;
-
-  struct ZoomInfo ZoomInfo = { aDPPX };
-  CallChildren(SetChildOverrideDPPX, &ZoomInfo);
-
-  nsPresContext* pc = GetPresContext();
-  if (pc) {
-    pc->SetOverrideDPPX(aDPPX);
-  }
-
-  
-  mDocument->EnumerateExternalResources(SetExtResourceOverrideDPPX, &ZoomInfo);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocumentViewer::GetOverrideDPPX(float* aDPPX)
-{
-  NS_ENSURE_ARG_POINTER(aDPPX);
-  
-  
-  nsPresContext* pc = GetPresContext();
-  *aDPPX = pc ? pc->GetOverrideDPPX() : mOverrideDPPX;
   return NS_OK;
 }
 
@@ -4341,7 +4282,6 @@ nsDocumentViewer::ReturnToGalleyPresentation()
 
   SetTextZoom(mTextZoom);
   SetFullZoom(mPageZoom);
-  SetOverrideDPPX(mOverrideDPPX);
   SetMinFontSize(mMinFontSize);
   Show();
 
