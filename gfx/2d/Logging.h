@@ -71,8 +71,6 @@ public:
   
   
   
-  
-  
   static int32_t sGfxLogLevel;
 };
 
