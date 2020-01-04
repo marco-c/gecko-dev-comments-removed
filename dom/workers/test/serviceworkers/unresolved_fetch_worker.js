@@ -1,3 +1,4 @@
+var keepPromiseAlive;
 onfetch = function(event) {
   event.waitUntil(
     clients.matchAll()
@@ -9,7 +10,8 @@ onfetch = function(event) {
   );
 
   
-  event.respondWith(new Promise(function(res, rej) {}));
+  
+  event.respondWith((keepPromiseAlive = new Promise(function(res, rej) {})));
 }
 
 onactivate = function(event) {

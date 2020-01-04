@@ -1897,6 +1897,14 @@ ServiceWorkerPrivate::TerminateWorkerCallback(nsITimer* aTimer, void *aPrivate)
   MOZ_ASSERT(aTimer == serviceWorkerPrivate->mIdleWorkerTimer,
       "Invalid timer!");
 
+  
+  
+  
+  ServiceWorkerManager::LocalizeAndReportToAllClients(
+    serviceWorkerPrivate->mInfo->Scope(),
+    "ServiceWorkerGraceTimeoutTermination",
+    nsTArray<nsString> { NS_ConvertUTF8toUTF16(serviceWorkerPrivate->mInfo->Scope()) });
+
   serviceWorkerPrivate->TerminateWorker();
 }
 
