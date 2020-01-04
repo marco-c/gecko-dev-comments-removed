@@ -102,6 +102,22 @@ static RedirEntry kRedirMap[] = {
 #endif
   { "accounts", "chrome://browser/content/aboutaccounts/aboutaccounts.xhtml",
     nsIAboutModule::ALLOW_SCRIPT },
+  
+  { "loopconversation", "chrome://loop/content/panels/conversation.html",
+    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+    nsIAboutModule::ALLOW_SCRIPT |
+    nsIAboutModule::HIDE_FROM_ABOUTABOUT |
+    nsIAboutModule::MAKE_LINKABLE |
+    nsIAboutModule::ENABLE_INDEXED_DB },
+  
+  { "looppanel", "chrome://loop/content/panels/panel.html",
+    nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+    nsIAboutModule::ALLOW_SCRIPT |
+    nsIAboutModule::HIDE_FROM_ABOUTABOUT |
+    nsIAboutModule::MAKE_LINKABLE |
+    nsIAboutModule::ENABLE_INDEXED_DB,
+    
+    "loopconversation" },
   { "reader", "chrome://global/content/reader/aboutReader.html",
     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
     nsIAboutModule::ALLOW_SCRIPT |
