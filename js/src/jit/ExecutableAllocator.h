@@ -75,13 +75,14 @@ namespace JS {
 
 namespace js {
 namespace jit {
-  enum CodeKind { ION_CODE = 0, BASELINE_CODE, REGEXP_CODE, OTHER_CODE };
 
-  class ExecutableAllocator;
+enum CodeKind { ION_CODE = 0, BASELINE_CODE, REGEXP_CODE, OTHER_CODE };
 
-  
-  class ExecutablePool {
+class ExecutableAllocator;
 
+
+class ExecutablePool
+{
     friend class ExecutableAllocator;
 
   private:
@@ -105,38 +106,8 @@ namespace jit {
     size_t m_otherCodeBytes;
 
   public:
-    void release(bool willDestroy = false)
-    {
-        MOZ_ASSERT(m_refCount != 0);
-        MOZ_ASSERT_IF(willDestroy, m_refCount == 1);
-        if (--m_refCount == 0)
-            js_delete(this);
-    }
-    void release(size_t n, CodeKind kind)
-    {
-        switch (kind) {
-          case ION_CODE:
-            m_ionCodeBytes -= n;
-            MOZ_ASSERT(m_ionCodeBytes < m_allocation.size); 
-            break;
-          case BASELINE_CODE:
-            m_baselineCodeBytes -= n;
-            MOZ_ASSERT(m_baselineCodeBytes < m_allocation.size);
-            break;
-          case REGEXP_CODE:
-            m_regexpCodeBytes -= n;
-            MOZ_ASSERT(m_regexpCodeBytes < m_allocation.size);
-            break;
-          case OTHER_CODE:
-            m_otherCodeBytes -= n;
-            MOZ_ASSERT(m_otherCodeBytes < m_allocation.size);
-            break;
-          default:
-            MOZ_CRASH("bad code kind");
-        }
-
-        release();
-    }
+    void release(bool willDestroy = false);
+    void release(size_t n, CodeKind kind);
 
     ExecutablePool(ExecutableAllocator* allocator, Allocation a)
       : m_allocator(allocator), m_freePtr(a.pages), m_end(m_freePtr + a.size), m_allocation(a),
@@ -150,35 +121,11 @@ namespace jit {
     ExecutablePool(const ExecutablePool&) = delete;
     void operator=(const ExecutablePool&) = delete;
 
-    
-    
-    
-    void addRef()
-    {
-        MOZ_ASSERT(m_refCount);
-        ++m_refCount;
-    }
+    void addRef();
 
-    void* alloc(size_t n, CodeKind kind)
-    {
-        MOZ_ASSERT(n <= available());
-        void* result = m_freePtr;
-        m_freePtr += n;
+    void* alloc(size_t n, CodeKind kind);
 
-        switch (kind) {
-          case ION_CODE:      m_ionCodeBytes      += n;        break;
-          case BASELINE_CODE: m_baselineCodeBytes += n;        break;
-          case REGEXP_CODE:   m_regexpCodeBytes   += n;        break;
-          case OTHER_CODE:    m_otherCodeBytes    += n;        break;
-          default:            MOZ_CRASH("bad code kind");
-        }
-        return result;
-    }
-
-    size_t available() const {
-        MOZ_ASSERT(m_end >= m_freePtr);
-        return m_end - m_freePtr;
-    }
+    size_t available() const;
 };
 
 class ExecutableAllocator
@@ -190,64 +137,17 @@ class ExecutableAllocator
   public:
     enum ProtectionSetting { Writable, Executable };
 
-    ExecutableAllocator()
-    {
-        MOZ_ASSERT(m_smallPools.empty());
-    }
+    ExecutableAllocator();
+    ~ExecutableAllocator();
 
-    ~ExecutableAllocator()
-    {
-        for (size_t i = 0; i < m_smallPools.length(); i++)
-            m_smallPools[i]->release(true);
-
-        
-        MOZ_ASSERT_IF(m_pools.initialized(), m_pools.empty());
-    }
-
-    void purge() {
-        for (size_t i = 0; i < m_smallPools.length(); i++)
-            m_smallPools[i]->release();
-
-        m_smallPools.clear();
-    }
+    void purge();
 
     
     
     
-    void* alloc(size_t n, ExecutablePool** poolp, CodeKind type)
-    {
-        
-        
-        
-        MOZ_ASSERT(roundUpAllocationSize(n, sizeof(void*)) == n);
+    void* alloc(size_t n, ExecutablePool** poolp, CodeKind type);
 
-        if (n == OVERSIZE_ALLOCATION) {
-            *poolp = nullptr;
-            return nullptr;
-        }
-
-        *poolp = poolForSize(n);
-        if (!*poolp)
-            return nullptr;
-
-        
-        
-        void* result = (*poolp)->alloc(n, type);
-        MOZ_ASSERT(result);
-        return result;
-    }
-
-    void releasePoolPages(ExecutablePool* pool) {
-        MOZ_ASSERT(pool->m_allocation.pages);
-
-        systemRelease(pool->m_allocation);
-        MOZ_ASSERT(m_pools.initialized());
-
-        
-        auto ptr = m_pools.lookup(pool);
-        if (ptr)
-            m_pools.remove(ptr);
-    }
+    void releasePoolPages(ExecutablePool* pool);
 
     void addSizeOfCode(JS::CodeSizes* sizes) const;
 
@@ -261,116 +161,17 @@ class ExecutableAllocator
 
     static const size_t OVERSIZE_ALLOCATION = size_t(-1);
 
-    static size_t roundUpAllocationSize(size_t request, size_t granularity)
-    {
-        
-        
-        #ifdef _MSC_VER
-        # undef max
-        #endif
-
-        if ((std::numeric_limits<size_t>::max() - granularity) <= request)
-            return OVERSIZE_ALLOCATION;
-
-        
-        size_t size = request + (granularity - 1);
-        size = size & ~(granularity - 1);
-        MOZ_ASSERT(size >= request);
-        return size;
-    }
+    static size_t roundUpAllocationSize(size_t request, size_t granularity);
 
     
     ExecutablePool::Allocation systemAlloc(size_t n);
     static void systemRelease(const ExecutablePool::Allocation& alloc);
     void* computeRandomAllocationAddress();
 
-    ExecutablePool* createPool(size_t n)
-    {
-        size_t allocSize = roundUpAllocationSize(n, pageSize);
-        if (allocSize == OVERSIZE_ALLOCATION)
-            return nullptr;
-
-        if (!m_pools.initialized() && !m_pools.init())
-            return nullptr;
-
-        ExecutablePool::Allocation a = systemAlloc(allocSize);
-        if (!a.pages)
-            return nullptr;
-
-        ExecutablePool* pool = js_new<ExecutablePool>(this, a);
-        if (!pool) {
-            systemRelease(a);
-            return nullptr;
-        }
-
-        if (!m_pools.put(pool)) {
-            js_delete(pool);
-            systemRelease(a);
-            return nullptr;
-        }
-
-        return pool;
-    }
+    ExecutablePool* createPool(size_t n);
+    ExecutablePool* poolForSize(size_t n);
 
   public:
-    ExecutablePool* poolForSize(size_t n)
-    {
-        
-        
-        
-        
-        
-        ExecutablePool* minPool = nullptr;
-        for (size_t i = 0; i < m_smallPools.length(); i++) {
-            ExecutablePool* pool = m_smallPools[i];
-            if (n <= pool->available() && (!minPool || pool->available() < minPool->available()))
-                minPool = pool;
-        }
-        if (minPool) {
-            minPool->addRef();
-            return minPool;
-        }
-
-        
-        if (n > largeAllocSize)
-            return createPool(n);
-
-        
-        ExecutablePool* pool = createPool(largeAllocSize);
-        if (!pool)
-            return nullptr;
-        
-
-        if (m_smallPools.length() < maxSmallPools) {
-            
-            
-            if (m_smallPools.append(pool))
-                pool->addRef();
-        } else {
-            
-            int iMin = 0;
-            for (size_t i = 1; i < m_smallPools.length(); i++) {
-                if (m_smallPools[i]->available() <
-                    m_smallPools[iMin]->available())
-                {
-                    iMin = i;
-                }
-	    }
-
-            
-            
-            ExecutablePool* minPool = m_smallPools[iMin];
-            if ((pool->available() - n) > minPool->available()) {
-                minPool->release();
-                m_smallPools[iMin] = pool;
-                pool->addRef();
-            }
-        }
-
-        
-        return pool;
-    }
-
     static void makeWritable(void* start, size_t size)
     {
         if (nonWritableJitCode)
