@@ -293,7 +293,7 @@ loop.store.ActiveRoomStore = (function() {
     setupWindowData: function(actionData) {
       if (actionData.type !== "room") {
         
-        return;
+        return Promise.resolve();
       }
 
       this.setStoreState({
@@ -305,7 +305,7 @@ loop.store.ActiveRoomStore = (function() {
       this._registerPostSetupActions();
 
       
-      loop.requestMulti(
+      return loop.requestMulti(
         ["Rooms:Get", actionData.roomToken],
         ["GetSocialShareProviders"])
         .then(function(results) {
@@ -925,6 +925,10 @@ loop.store.ActiveRoomStore = (function() {
 
 
     startScreenShare: function(actionData) {
+      
+      
+      
+      this.setStoreState({ screenSharingState: SCREEN_SHARE_STATES.PENDING });
       this.dispatchAction(new sharedActions.ScreenSharingState({
         state: SCREEN_SHARE_STATES.PENDING
       }));

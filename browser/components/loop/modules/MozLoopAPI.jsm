@@ -1231,5 +1231,13 @@ this.LoopAPI = Object.freeze({
   
   destroy: function() {
     LoopAPIInternal.destroy();
+  },
+  
+  inspect: function() {
+    return [Object.create(LoopAPIInternal), Object.create(kMessageHandlers),
+      gPageListeners ? [...gPageListeners] : null];
+  },
+  stub: function(pageListeners) {
+    gPageListeners = pageListeners;
   }
 });
