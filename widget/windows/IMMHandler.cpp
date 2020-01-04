@@ -223,6 +223,7 @@ DWORD IMMHandler::sIMEProperty = 0;
 DWORD IMMHandler::sIMEUIProperty = 0;
 bool IMMHandler::sAssumeVerticalWritingModeNotSupported = false;
 bool IMMHandler::sHasFocus = false;
+bool IMMHandler::sNativeCaretIsCreatedForPlugin = false;
 
 
 void
@@ -514,13 +515,21 @@ IMMHandler::OnFocusChange(bool aFocus, nsWindow* aWindow)
 {
   MOZ_LOG(gIMMLog, LogLevel::Info,
     ("IMM: OnFocusChange(aFocus=%s, aWindow=%p), sHasFocus=%s, "
-     "IsComposingWindow(aWindow)=%s, aWindow->Destroyed()=%s",
+     "IsComposingWindow(aWindow)=%s, aWindow->Destroyed()=%s, "
+     "sNativeCaretIsCreatedForPlugin=%s",
      GetBoolName(aFocus), aWindow, GetBoolName(sHasFocus),
      GetBoolName(IsComposingWindow(aWindow)),
-     GetBoolName(aWindow->Destroyed())));
+     GetBoolName(aWindow->Destroyed()),
+     GetBoolName(sNativeCaretIsCreatedForPlugin)));
 
-  if (!aFocus && IsComposingWindow(aWindow) && aWindow->Destroyed()) {
-    CancelComposition(aWindow);
+  if (!aFocus) {
+    if (sNativeCaretIsCreatedForPlugin) {
+      ::DestroyCaret();
+      sNativeCaretIsCreatedForPlugin = false;
+    }
+    if (IsComposingWindow(aWindow) && aWindow->Destroyed()) {
+      CancelComposition(aWindow);
+    }
   }
   if (gIMMHandler) {
     gIMMHandler->mSelection.Clear();
@@ -2745,8 +2754,33 @@ IMMHandler::OnKeyDownEvent(nsWindow* aWindow,
 void
 IMMHandler::SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm)
 {
+  
+  
+  if (aForm->dwStyle == CFS_CANDIDATEPOS && aWindow->PluginHasFocus()) {
+    
+    
+    
+    
+    
+    static const int32_t kCaretHeight = 20;
+    if (sNativeCaretIsCreatedForPlugin) {
+      ::DestroyCaret();
+    }
+    sNativeCaretIsCreatedForPlugin =
+      ::CreateCaret(aWindow->GetWindowHandle(), nullptr, 0, kCaretHeight);
+    if (sNativeCaretIsCreatedForPlugin) {
+      LayoutDeviceIntPoint caretPosition(aForm->ptCurrentPos.x,
+                                         aForm->ptCurrentPos.y - kCaretHeight);
+      nsWindow* toplevelWindow = aWindow->GetTopLevelWindow(false);
+      if (toplevelWindow && toplevelWindow != aWindow) {
+        caretPosition += toplevelWindow->WidgetToScreenOffset();
+        caretPosition -= aWindow->WidgetToScreenOffset();
+      }
+      ::SetCaretPos(caretPosition.x, caretPosition.y);
+    }
+  }
   IMEContext context(aWindow);
-  ImmSetCandidateWindow(context.get(), aForm);
+  ::ImmSetCandidateWindow(context.get(), aForm);
 }
 
 
