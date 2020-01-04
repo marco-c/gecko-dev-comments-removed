@@ -183,7 +183,8 @@ let AnimationsPanel = {
     
     if (this.animationsTimelineComponent) {
       this.animationsTimelineComponent.render(
-        AnimationsController.animationPlayers);
+        AnimationsController.animationPlayers,
+        AnimationsController.documentCurrentTime);
     }
 
     

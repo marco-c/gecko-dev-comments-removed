@@ -324,7 +324,14 @@ let AnimationPlayerActor = ActorClass({
 
   onAnimationMutation: function(mutations) {
     let hasChanged = false;
-    for (let {changedAnimations} of mutations) {
+    for (let {removedAnimations, changedAnimations} of mutations) {
+      if (removedAnimations.length) {
+        
+        
+        
+        this.currentState = null;
+      }
+
       if (!changedAnimations.length) {
         return;
       }

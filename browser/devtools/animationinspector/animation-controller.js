@@ -308,6 +308,25 @@ let AnimationsController = {
     this.emit(this.PLAYERS_UPDATED_EVENT, this.animationPlayers);
   }),
 
+  
+
+
+
+
+
+
+
+  get documentCurrentTime() {
+    let time = 0;
+    for (let {state} of this.animationPlayers) {
+      if (!state.documentCurrentTime) {
+        return false;
+      }
+      time = Math.max(time, state.documentCurrentTime);
+    }
+    return time;
+  },
+
   startAllAutoRefresh: function() {
     if (this.traits.isNewUI) {
       return;
