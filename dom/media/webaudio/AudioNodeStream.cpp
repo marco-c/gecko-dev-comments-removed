@@ -565,12 +565,17 @@ AudioNodeStream::ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags)
 
   if (!mFinished) {
     
-    AdvanceOutputSegment();
+    if (mFlags & EXTERNAL_OUTPUT) {
+      AdvanceOutputSegment();
+    }
     if (mMarkAsFinishedAfterThisBlock && (aFlags & ALLOW_FINISH)) {
       
       
       
-      FinishOutput();
+      if (mFlags & EXTERNAL_OUTPUT) {
+        FinishOutput();
+      }
+      FinishOnGraphThread();
     }
   }
 }
@@ -605,7 +610,7 @@ AudioNodeStream::AdvanceOutputSegment()
 
   AudioSegment* segment = track->Get<AudioSegment>();
 
-  if (mFlags & EXTERNAL_OUTPUT && !mLastChunks[0].IsNull()) {
+  if (!mLastChunks[0].IsNull()) {
     segment->AppendAndConsumeChunk(mLastChunks[0].AsMutableChunk());
   } else {
     segment->AppendNullData(mLastChunks[0].GetDuration());
@@ -624,13 +629,8 @@ AudioNodeStream::AdvanceOutputSegment()
 void
 AudioNodeStream::FinishOutput()
 {
-  if (IsFinishedOnGraphThread()) {
-    return;
-  }
-
   StreamBuffer::Track* track = EnsureTrack(AUDIO_TRACK);
   track->SetEnded();
-  FinishOnGraphThread();
 
   for (uint32_t j = 0; j < mListeners.Length(); ++j) {
     MediaStreamListener* l = mListeners[j];
