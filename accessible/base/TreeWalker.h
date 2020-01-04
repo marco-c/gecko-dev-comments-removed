@@ -53,21 +53,6 @@ public:
 
 
 
-  Accessible* Scope(nsIContent* aAnchorNode);
-
-  
-
-
-  void Reset()
-  {
-    mPhase = eAtStart;
-    mStateStack.Clear();
-    mARIAOwnsIdx = 0;
-  }
-
-  
-
-
   bool Seek(nsIContent* aChildNode);
 
   
@@ -77,7 +62,7 @@ public:
 
 
 
-  Accessible* Next();
+  Accessible* Next(nsIContent* aStopNode = nullptr);
   Accessible* Prev();
 
   Accessible* Context() const { return mContext; }
