@@ -24,13 +24,6 @@ struct BaselineDebugModeOSRInfo;
 
 
 
-
-
-
-
-
-
-
 class BaselineFrame
 {
   public:
@@ -54,7 +47,6 @@ class BaselineFrame
         DEBUGGEE         = 1 << 6,
 
         
-        EVAL             = 1 << 7,
 
         
         OVER_RECURSED    = 1 << 9,
@@ -100,9 +92,7 @@ class BaselineFrame
     uint32_t hiReturnValue_;
     uint32_t frameSize_;
     JSObject* scopeChain_;                
-    JSScript* evalScript_;                
     ArgumentsObject* argsObj_;            
-    void* unused;                         
     uint32_t overrideOffset_;             
     uint32_t flags_;
 
@@ -154,8 +144,6 @@ class BaselineFrame
         return CalleeTokenIsConstructing(calleeToken());
     }
     JSScript* script() const {
-        if (isEvalFrame())
-            return evalScript();
         return ScriptFromCalleeToken(calleeToken());
     }
     JSFunction* callee() const {
@@ -331,11 +319,6 @@ class BaselineFrame
         flags_ |= HAS_CACHED_SAVED_FRAME;
     }
 
-    JSScript* evalScript() const {
-        MOZ_ASSERT(isEvalFrame());
-        return evalScript_;
-    }
-
     bool overRecursed() const {
         return flags_ & OVER_RECURSED;
     }
@@ -394,7 +377,7 @@ class BaselineFrame
         return !CalleeTokenIsFunction(calleeToken());
     }
     bool isEvalFrame() const {
-        return flags_ & EVAL;
+        return script()->isForEval();
     }
     bool isStrictEvalFrame() const {
         return isEvalFrame() && script()->strict();
@@ -455,9 +438,6 @@ class BaselineFrame
     }
     static int reverseOffsetOfFlags() {
         return -int(Size()) + offsetof(BaselineFrame, flags_);
-    }
-    static int reverseOffsetOfEvalScript() {
-        return -int(Size()) + offsetof(BaselineFrame, evalScript_);
     }
     static int reverseOffsetOfReturnValue() {
         return -int(Size()) + offsetof(BaselineFrame, loReturnValue_);

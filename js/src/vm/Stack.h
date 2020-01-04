@@ -295,10 +295,6 @@ class InterpreterFrame
         
 
         
-        EVAL                   =        0x8,  
-
-
-        
 
 
 
@@ -462,6 +458,7 @@ class InterpreterFrame
 
 
 
+
     bool isGlobalOrModuleFrame() const {
         MOZ_ASSERT(!isEvalFrame());
         return !!(flags_ & GLOBAL_OR_MODULE);
@@ -475,20 +472,8 @@ class InterpreterFrame
         return isGlobalOrModuleFrame() && script()->module();
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
     bool isEvalFrame() const {
-        return flags_ & EVAL;
+        return script_->isForEval();
     }
 
     bool isFunctionFrame() const {
