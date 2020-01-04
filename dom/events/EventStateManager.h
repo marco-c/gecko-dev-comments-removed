@@ -256,7 +256,7 @@ public:
   
   
   
-  static LayoutDeviceIntPoint sLastScreenPoint;
+  static CSSIntPoint sLastScreenPoint;
 
   
   
