@@ -42,6 +42,7 @@ class WakeLock;
 class ArrayBufferViewOrBlobOrStringOrFormData;
 struct MobileIdOptions;
 class ServiceWorkerContainer;
+class DOMRequest;
 } 
 } 
 
@@ -314,6 +315,12 @@ public:
   void GetLanguages(nsTArray<nsString>& aLanguages);
 
   bool MozE10sEnabled();
+
+#ifdef MOZ_PAY
+  already_AddRefed<DOMRequest> MozPay(JSContext* aCx,
+                                      JS::Handle<JS::Value> aJwts,
+                                      ErrorResult& aRv);
+#endif 
 
   static void GetAcceptLanguages(nsTArray<nsString>& aLanguages);
 
