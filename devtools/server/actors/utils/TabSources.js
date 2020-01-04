@@ -330,6 +330,12 @@ TabSources.prototype = {
           } catch (e) {
             
             
+            const filename = url;
+            const index = filename.lastIndexOf(".");
+            const extension = index >= 0 ? filename.slice(index + 1) : "";
+            if (extension === "js") {
+              spec.contentType = "text/javascript";
+            }
           }
         }
       }
