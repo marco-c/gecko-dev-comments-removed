@@ -236,6 +236,17 @@ this.BootstrapMonitor = {
     let id = info.data.id;
     let installPath = new FileUtils.File(info.data.installPath);
 
+    if (subject && subject.wrappedJSObject) {
+      
+      
+      
+      const {installPath, resourceURI} = info.data;
+      info.data = Object.assign({}, subject.wrappedJSObject.data, {
+        installPath,
+        resourceURI,
+      });
+    }
+
     
     if (info.event == "install") {
       this.checkAddonNotInstalled(id);

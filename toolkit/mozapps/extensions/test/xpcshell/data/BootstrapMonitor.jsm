@@ -12,7 +12,9 @@ function notify(event, originalMethod, data, reason) {
     reason
   };
 
-  Services.obs.notifyObservers(null, "bootstrapmonitor-event", JSON.stringify(info));
+  let subject = {wrappedJSObject: {data}};
+
+  Services.obs.notifyObservers(subject, "bootstrapmonitor-event", JSON.stringify(info));
 
   
   if (originalMethod)

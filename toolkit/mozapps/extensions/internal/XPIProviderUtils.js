@@ -87,7 +87,7 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
                           "softDisabled", "foreignInstall", "hasBinaryComponents",
                           "strictCompatibility", "locales", "targetApplications",
                           "targetPlatforms", "multiprocessCompatible", "signedState",
-                          "seen", "dependencies"];
+                          "seen", "dependencies", "hasEmbeddedWebExtension"];
 
 
 
@@ -2156,6 +2156,7 @@ this.XPIDatabaseReconcile = {
           multiprocessCompatible: currentAddon.multiprocessCompatible,
           runInSafeMode: canRunInSafeMode(currentAddon),
           dependencies: currentAddon.dependencies,
+          hasEmbeddedWebExtension: currentAddon.hasEmbeddedWebExtension,
         };
       }
 
