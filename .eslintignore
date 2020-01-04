@@ -44,6 +44,7 @@ testing/**
 tools/**
 uriloader/**
 view/**
+webapprt/**
 widget/**
 xpcom/**
 xpfe/**
@@ -172,6 +173,10 @@ toolkit/modules/tests/xpcshell/test_task.js
 
 # Not yet updated
 toolkit/components/osfile/**
+
+# External code:
+toolkit/components/reader/Readability.js
+toolkit/components/reader/JSDOMParser.js
 
 # Uses preprocessing
 toolkit/content/widgets/videocontrols.xml
