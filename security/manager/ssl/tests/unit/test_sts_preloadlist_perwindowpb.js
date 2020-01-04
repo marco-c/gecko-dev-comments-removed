@@ -3,6 +3,7 @@
 
 
 
+"use strict";
 
 var gSSService = Cc["@mozilla.org/ssservice;1"]
                    .getService(Ci.nsISiteSecurityService);

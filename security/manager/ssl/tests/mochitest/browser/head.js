@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 function whenNewWindowLoaded(aOptions, aCallback) {
   let win = OpenBrowserWindow(aOptions);
   win.addEventListener("load", function onLoad() {

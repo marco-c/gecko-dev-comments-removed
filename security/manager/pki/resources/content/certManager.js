@@ -2,6 +2,7 @@
 
 
 
+"use strict";
 
 const nsIFilePicker = Components.interfaces.nsIFilePicker;
 const nsFilePicker = "@mozilla.org/filepicker;1";

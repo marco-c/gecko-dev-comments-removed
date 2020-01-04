@@ -3,6 +3,7 @@
 
 
 
+"use strict";
 
 const nsIDialogParamBlock = Components.interfaces.nsIDialogParamBlock;
 

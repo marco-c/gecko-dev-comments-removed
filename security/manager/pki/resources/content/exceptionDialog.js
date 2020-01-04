@@ -2,6 +2,7 @@
 
 
 
+"use strict";
 
 var gDialog;
 var gBundleBrand;

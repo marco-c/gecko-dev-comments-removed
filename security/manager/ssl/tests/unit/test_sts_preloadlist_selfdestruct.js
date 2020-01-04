@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 function run_test() {
   let SSService = Cc["@mozilla.org/ssservice;1"]

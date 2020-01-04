@@ -4,6 +4,7 @@
 
 
 
+"use strict";
 
 var keygenThread;
 

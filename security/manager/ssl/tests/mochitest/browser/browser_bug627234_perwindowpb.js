@@ -1,6 +1,7 @@
 
 
 
+"use strict";
 
 var FakeSSLStatus = function() {
 };
