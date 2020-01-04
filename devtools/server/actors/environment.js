@@ -5,8 +5,9 @@
 
 "use strict";
 
-const { ActorClass, Arg, RetVal, method } = require("devtools/shared/protocol");
+const { ActorClassWithSpec } = require("devtools/shared/protocol");
 const { createValueGrip } = require("devtools/server/actors/object");
+const { environmentSpec } = require("devtools/shared/specs/environment");
 
 
 
@@ -18,9 +19,7 @@ const { createValueGrip } = require("devtools/server/actors/object");
 
 
 
-let EnvironmentActor = ActorClass({
-  typeName: "environment",
-
+let EnvironmentActor = ActorClassWithSpec(environmentSpec, {
   initialize: function (environment, threadActor) {
     this.obj = environment;
     this.threadActor = threadActor;
@@ -76,7 +75,7 @@ let EnvironmentActor = ActorClass({
 
 
 
-  assign: method(function (name, value) {
+  assign: function (name, value) {
     
     
     
@@ -100,18 +99,13 @@ let EnvironmentActor = ActorClass({
       }
     }
     return { from: this.actorID };
-  }, {
-    request: {
-      name: Arg(1),
-      value: Arg(2)
-    }
-  }),
+  },
 
   
 
 
 
-  bindings: method(function () {
+  bindings: function () {
     let bindings = { arguments: [], variables: {} };
 
     
@@ -199,12 +193,7 @@ let EnvironmentActor = ActorClass({
     }
 
     return bindings;
-  }, {
-    request: {},
-    response: {
-      bindings: RetVal("json")
-    }
-  })
+  }
 });
 
 exports.EnvironmentActor = EnvironmentActor;
