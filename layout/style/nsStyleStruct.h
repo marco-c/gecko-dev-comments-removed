@@ -1459,7 +1459,7 @@ struct nsStylePosition {
   nsStyleCoord  mGridAutoRowsMin;       
   nsStyleCoord  mGridAutoRowsMax;       
   uint8_t       mGridAutoFlow;          
-  uint8_t       mBoxSizing;             
+  mozilla::StyleBoxSizing mBoxSizing;   
 private:
   friend class nsRuleNode;
   
