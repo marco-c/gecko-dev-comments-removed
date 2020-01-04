@@ -626,6 +626,12 @@ private:
     AssertIsOnMainThread();
     MOZ_ASSERT(aIndex < mLoadInfos.Length());
 
+    
+    
+    if (mCanceledMainThread || !mCacheCreator) {
+      return NS_ERROR_FAILURE;
+    }
+
     ScriptLoadInfo& loadInfo = mLoadInfos[aIndex];
 
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
