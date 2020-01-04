@@ -165,7 +165,7 @@ JSRuntime::createJitRuntime(JSContext* cx)
     
     
     
-    JitRuntime::AutoMutateBackedges amb(jrt);
+    JitRuntime::AutoPreventBackedgePatching apbp(jrt);
     jitRuntime_ = jrt;
 
     if (!jitRuntime_->initialize(cx)) {

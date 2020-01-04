@@ -1174,7 +1174,7 @@ RedirectIonBackedgesToInterruptCheck(JSRuntime* rt)
         
         
         
-        if (!jitRuntime->mutatingBackedgeList())
+        if (!jitRuntime->preventBackedgePatching())
             jitRuntime->patchIonBackedges(rt, jit::JitRuntime::BackedgeInterruptCheck);
     }
 }

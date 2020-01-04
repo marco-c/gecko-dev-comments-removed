@@ -84,7 +84,11 @@ class JitRuntime
     friend class JitCompartment;
 
     
+    
     ExecutableAllocator execAlloc_;
+
+    
+    ExecutableAllocator backedgeExecAlloc_;
 
     
     JitCode* exceptionTail_;
@@ -147,9 +151,12 @@ class JitRuntime
 
     
     
+    volatile bool preventBackedgePatching_;
+
     
     
-    volatile bool mutatingBackedgeList_;
+    
+    
     InlineList<PatchableBackedge> backedgeList_;
 
     
@@ -202,30 +209,34 @@ class JitRuntime
     ExecutableAllocator& execAlloc() {
         return execAlloc_;
     }
+    ExecutableAllocator& backedgeExecAlloc() {
+        return backedgeExecAlloc_;
+    }
 
-    class AutoMutateBackedges
+    class AutoPreventBackedgePatching
     {
         JitRuntime* jrt_;
+        bool prev_;
       public:
-        explicit AutoMutateBackedges(JitRuntime* jrt) : jrt_(jrt) {
-            MOZ_ASSERT(!jrt->mutatingBackedgeList_);
-            jrt->mutatingBackedgeList_ = true;
+        explicit AutoPreventBackedgePatching(JitRuntime* jrt) : jrt_(jrt) {
+            prev_ = jrt->preventBackedgePatching_;
+            jrt->preventBackedgePatching_ = true;
         }
-        ~AutoMutateBackedges() {
-            MOZ_ASSERT(jrt_->mutatingBackedgeList_);
-            jrt_->mutatingBackedgeList_ = false;
+        ~AutoPreventBackedgePatching() {
+            MOZ_ASSERT(jrt_->preventBackedgePatching_);
+            jrt_->preventBackedgePatching_ = prev_;
         }
     };
 
-    bool mutatingBackedgeList() const {
-        return mutatingBackedgeList_;
+    bool preventBackedgePatching() const {
+        return preventBackedgePatching_;
     }
     void addPatchableBackedge(PatchableBackedge* backedge) {
-        MOZ_ASSERT(mutatingBackedgeList_);
+        MOZ_ASSERT(preventBackedgePatching_);
         backedgeList_.pushFront(backedge);
     }
     void removePatchableBackedge(PatchableBackedge* backedge) {
-        MOZ_ASSERT(mutatingBackedgeList_);
+        MOZ_ASSERT(preventBackedgePatching_);
         backedgeList_.remove(backedge);
     }
 
@@ -495,13 +506,16 @@ const unsigned WINDOWS_BIG_FRAME_TOUCH_INCREMENT = 4096 - 1;
 
 class MOZ_STACK_CLASS AutoWritableJitCode
 {
+    
+    
+    JitRuntime::AutoPreventBackedgePatching preventPatching_;
     JSRuntime* rt_;
     void* addr_;
     size_t size_;
 
   public:
     AutoWritableJitCode(JSRuntime* rt, void* addr, size_t size)
-      : rt_(rt), addr_(addr), size_(size)
+      : preventPatching_(rt->jitRuntime()), rt_(rt), addr_(addr), size_(size)
     {
         rt_->toggleAutoWritableJitCodeActive(true);
         ExecutableAllocator::makeWritable(addr_, size_);

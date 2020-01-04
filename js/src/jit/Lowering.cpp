@@ -93,15 +93,8 @@ static void
 TryToUseImplicitInterruptCheck(MIRGraph& graph, MBasicBlock* backedge)
 {
     
-    
-    
-    
-    
-    if (!GetJitContext()->runtime->canUseSignalHandlers() ||
-        ExecutableAllocator::nonWritableJitCode)
-    {
+    if (!GetJitContext()->runtime->canUseSignalHandlers())
         return;
-    }
 
     
     

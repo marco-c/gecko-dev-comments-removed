@@ -8167,7 +8167,7 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     
     Linker linker(masm);
     AutoFlushICache afc("IonLink");
-    JitCode* code = linker.newCode<CanGC>(cx, ION_CODE);
+    JitCode* code = linker.newCode<CanGC>(cx, ION_CODE, !patchableBackedges_.empty());
     if (!code)
         return false;
 

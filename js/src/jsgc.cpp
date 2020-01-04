@@ -5556,8 +5556,10 @@ GCRuntime::endSweepPhase(bool destroyingRuntime)
             SweepScriptData(rt);
 
         
-        if (jit::JitRuntime* jitRuntime = rt->jitRuntime())
+        if (jit::JitRuntime* jitRuntime = rt->jitRuntime()) {
             jitRuntime->execAlloc().purge();
+            jitRuntime->backedgeExecAlloc().purge();
+        }
 
         
 
