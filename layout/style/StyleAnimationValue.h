@@ -231,6 +231,11 @@ public:
 
 
 
+
+
+
+
+
   static bool ExtractComputedValue(nsCSSProperty aProperty,
                                    nsStyleContext* aStyleContext,
                                    StyleAnimationValue& aComputedValue);
