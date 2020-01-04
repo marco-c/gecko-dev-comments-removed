@@ -3507,17 +3507,18 @@ CASE(JSOP_DEFVAR)
 }
 END_CASE(JSOP_DEFVAR)
 
-CASE(JSOP_DEFFUN)
-{
+CASE(JSOP_DEFFUN) {
     
 
 
 
 
 
-    ReservedRooted<JSFunction*> fun(&rootFunction0, script->getFunction(GET_UINT32_INDEX(REGS.pc)));
+    MOZ_ASSERT(REGS.sp[-1].isObject());
+    ReservedRooted<JSFunction*> fun(&rootFunction0, &REGS.sp[-1].toObject().as<JSFunction>());
     if (!DefFunOperation(cx, script, REGS.fp()->scopeChain(), fun))
         goto error;
+    REGS.sp--;
 }
 END_CASE(JSOP_DEFFUN)
 
@@ -4321,14 +4322,6 @@ js::DefFunOperation(JSContext* cx, HandleScript script, HandleObject scopeChain,
 
 
     RootedFunction fun(cx, funArg);
-    if (fun->isNative() || fun->environment() != scopeChain) {
-        fun = CloneFunctionObjectIfNotSingleton(cx, fun, scopeChain, nullptr, TenuredObject);
-        if (!fun)
-            return false;
-    } else {
-        MOZ_ASSERT(script->treatAsRunOnce());
-        MOZ_ASSERT(!script->functionNonDelazifying());
-    }
 
     
 
