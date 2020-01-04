@@ -7,6 +7,9 @@
 
 
 let test = Task.async(function*() {
+  
+  requestLongerTimeout(2);
+
   let { target, panel, toolbox } = yield initPerformance(SIMPLE_URL);
   let { RecordingsView, PerformanceController, PerformanceView,
         EVENTS, $, L10N } = panel.panelWin;
