@@ -360,6 +360,7 @@ private:
 
   
   nsresult OpenDatabaseConnection();
+  nsresult OpenAndUpdateDatabase();
   nsresult InitDatabase();
   nsresult ShutdownDatabase();
 

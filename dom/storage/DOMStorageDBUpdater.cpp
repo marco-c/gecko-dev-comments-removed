@@ -104,8 +104,38 @@ public:
     
     
 
-    PrincipalOriginAttributes attrs(appId, inBrowser);
-    attrs.CreateSuffix(suffix);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Record();
+    if (CheckChar('^')) {
+      Token t;
+      while (Next(t)) {
+        if (t.Equals(Token::Char(':'))) {
+          Claim(suffix);
+          break;
+        }
+      }
+    } else {
+      PrincipalOriginAttributes attrs(appId, inBrowser);
+      attrs.CreateSuffix(suffix);
+    }
 
     
     origin.Assign(Substring(mCursor, mEnd));
@@ -345,6 +375,11 @@ nsresult Update(mozIStorageConnection *aWorkerConnection)
     MOZ_FALLTHROUGH;
   }
   case CURRENT_SCHEMA_VERSION:
+    
+    
+    rv = CreateSchema1Tables(aWorkerConnection);
+    NS_ENSURE_SUCCESS(rv, rv);
+
     
     break;
 

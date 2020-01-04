@@ -65,6 +65,34 @@ Scheme0Scope(DOMStorageCacheBridge* aCache)
     result.Append(':');
   }
 
+  
+  
+  
+  
+  
+  nsAutoCString remaining;
+  oa.mAppId = 0;
+  oa.mInBrowser = false;
+  oa.CreateSuffix(remaining);
+  if (!remaining.IsEmpty()) {
+    MOZ_ASSERT(!suffix.IsEmpty());
+
+    if (result.IsEmpty()) {
+      
+      
+      result.Append(NS_LITERAL_CSTRING("0:f:"));
+    }
+    
+    
+    
+    
+    
+    
+    
+    result.Append(suffix);
+    result.Append(':');
+  }
+
   result.Append(aCache->OriginNoSuffix());
 
   return result;
@@ -442,10 +470,8 @@ DOMStorageDBThread::OpenDatabaseConnection()
 }
 
 nsresult
-DOMStorageDBThread::InitDatabase()
+DOMStorageDBThread::OpenAndUpdateDatabase()
 {
-  Telemetry::AutoTimer<Telemetry::LOCALDOMSTORAGE_INIT_DATABASE_MS> timer;
-
   nsresult rv;
 
   
@@ -457,12 +483,40 @@ DOMStorageDBThread::InitDatabase()
   rv = TryJournalMode();
   NS_ENSURE_SUCCESS(rv, rv);
 
+  return NS_OK;
+}
+
+nsresult
+DOMStorageDBThread::InitDatabase()
+{
+  Telemetry::AutoTimer<Telemetry::LOCALDOMSTORAGE_INIT_DATABASE_MS> timer;
+
+  nsresult rv;
+
+  
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  rv = OpenAndUpdateDatabase();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = DOMStorageDBUpdater::Update(mWorkerConnection);
+  if (NS_FAILED(rv)) {
+    
+    
+    rv = mWorkerConnection->Close();
+    mWorkerConnection = nullptr;
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = mDatabaseFile->Remove(false);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = OpenAndUpdateDatabase();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   
   (void)mWorkerConnection->Clone(true, getter_AddRefs(mReaderConnection));
   NS_ENSURE_TRUE(mReaderConnection, NS_ERROR_FAILURE);
-
-  rv = DOMStorageDBUpdater::Update(mWorkerConnection);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
