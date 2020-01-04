@@ -84,6 +84,8 @@ NS_IMPL_ISUPPORTS(IconCallback, nsIFaviconDataCallback)
 
 #endif 
 
+#ifndef MOZ_WIDGET_ANDROID
+
 nsresult
 ShowWithIconBackend(nsIAlertsService* aBackend, nsIAlertNotification* aAlert,
                     nsIObserver* aAlertListener)
@@ -131,6 +133,8 @@ ShowWithBackend(nsIAlertsService* aBackend, nsIAlertNotification* aAlert,
   
   return aBackend->ShowAlert(aAlert, aAlertListener);
 }
+
+#endif 
 
 } 
 
