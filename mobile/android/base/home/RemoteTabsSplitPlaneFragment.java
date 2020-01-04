@@ -140,6 +140,12 @@ public class RemoteTabsSplitPlaneFragment extends RemoteTabsBaseFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        
+        
+        mClientList.setOnItemClickListener(null);
+        mTabList.setOnItemClickListener(null);
+
         mClientList = null;
         mTabList = null;
         mEmptyView = null;

@@ -125,6 +125,12 @@ public class RemoteTabsExpandableListFragment extends RemoteTabsBaseFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        
+        
+        mList.setOnChildClickListener(null);
+        mList.setOnGroupClickListener(null);
+
         mList = null;
         mEmptyView = null;
     }

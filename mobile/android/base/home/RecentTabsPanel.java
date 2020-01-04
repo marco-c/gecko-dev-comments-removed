@@ -166,6 +166,11 @@ public class RecentTabsPanel extends HomeFragment
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        
+        
+        mList.setOnItemClickListener(null);
+
         mList = null;
         mEmptyView = null;
 

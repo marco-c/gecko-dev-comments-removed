@@ -125,6 +125,11 @@ public class ReadingListPanel extends HomeFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        
+        
+        mList.setOnItemClickListener(null);
+
         mList = null;
         mTopView = null;
         mEmptyView = null;

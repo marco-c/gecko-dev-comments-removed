@@ -237,6 +237,14 @@ public class HistoryPanel extends HomeFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        
+        
+        if (mRangeList != null) {
+            mRangeList.setOnItemClickListener(null);
+        }
+        mList.setOnItemClickListener(null);
+
         mRangeList = null;
         mList = null;
         mEmptyView = null;
