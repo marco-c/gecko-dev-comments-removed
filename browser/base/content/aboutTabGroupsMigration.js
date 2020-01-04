@@ -11,33 +11,16 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 const SUPPORT_URL = "https://support.mozilla.org/kb/tab-groups-removal";
 
-function fillInDescription() {
-  let descElement = document.getElementById("mainDescription");
-  let text = descElement.getAttribute("_description_label");
-  let learnMoreText = descElement.getAttribute("_learnmore_label");
-  let link = document.createElement("a");
+function createLink() {
+  let link = document.getElementById("sumolink");
   link.href = SUPPORT_URL;
   link.target = "_blank";
-  link.textContent = learnMoreText;
-  
-  
-  
-  
-  
-  
-  let nodes = text.split(/%S/).map(document.createTextNode.bind(document));
-  
-  nodes.splice(1, 0, link);
-  
-  for (let node of nodes) {
-    descElement.appendChild(node);
-  }
 }
 
 let loadPromise = new Promise(resolve => {
   let loadHandler = e => {
     window.removeEventListener("DOMContentLoaded", loadHandler);
-    fillInDescription();
+    createLink();
     resolve();
   };
   window.addEventListener("DOMContentLoaded", loadHandler, false);
