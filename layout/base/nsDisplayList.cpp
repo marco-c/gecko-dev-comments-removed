@@ -5173,55 +5173,37 @@ Matrix4x4
 nsDisplayTransform::GetResultingTransformMatrix(const FrameTransformProperties& aProperties,
                                                 const nsPoint& aOrigin,
                                                 float aAppUnitsPerPixel,
+                                                uint32_t aFlags,
                                                 const nsRect* aBoundsOverride,
                                                 nsIFrame** aOutAncestor)
 {
   return GetResultingTransformMatrixInternal(aProperties, aOrigin, aAppUnitsPerPixel,
-                                             aBoundsOverride, aOutAncestor, false, false);
+                                             aFlags, aBoundsOverride, aOutAncestor);
 }
  
 Matrix4x4
 nsDisplayTransform::GetResultingTransformMatrix(const nsIFrame* aFrame,
                                                 const nsPoint& aOrigin,
                                                 float aAppUnitsPerPixel,
+                                                uint32_t aFlags,
                                                 const nsRect* aBoundsOverride,
-                                                nsIFrame** aOutAncestor,
-                                                bool aOffsetByOrigin)
+                                                nsIFrame** aOutAncestor)
 {
   FrameTransformProperties props(aFrame,
                                  aAppUnitsPerPixel,
                                  aBoundsOverride);
 
   return GetResultingTransformMatrixInternal(props, aOrigin, aAppUnitsPerPixel,
-                                             aBoundsOverride, aOutAncestor,
-                                             aOffsetByOrigin, false);
-}
-
-Matrix4x4
-nsDisplayTransform::GetResultingTransformMatrixP3D(const nsIFrame* aFrame,
-                                                   const nsPoint& aOrigin,
-                                                   float aAppUnitsPerPixel,
-                                                   const nsRect* aBoundsOverride,
-                                                   nsIFrame** aOutAncestor,
-                                                   bool aOffsetByOrigin)
-{
-  FrameTransformProperties props(aFrame,
-                                 aAppUnitsPerPixel,
-                                 aBoundsOverride);
-
-  return GetResultingTransformMatrixInternal(props, aOrigin, aAppUnitsPerPixel,
-                                             aBoundsOverride, aOutAncestor,
-                                             aOffsetByOrigin, true);
+                                             aFlags, aBoundsOverride, aOutAncestor);
 }
 
 Matrix4x4
 nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProperties& aProperties,
                                                         const nsPoint& aOrigin,
                                                         float aAppUnitsPerPixel,
+                                                        uint32_t aFlags,
                                                         const nsRect* aBoundsOverride,
-                                                        nsIFrame** aOutAncestor,
-                                                        bool aOffsetByOrigin,
-                                                        bool aDoPreserves3D)
+                                                        nsIFrame** aOutAncestor)
 {
   const nsIFrame *frame = aProperties.mFrame;
 
@@ -5285,7 +5267,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     
     
     Point3D offsets = roundedOrigin + aProperties.mToTransformOrigin;
-    if (aOffsetByOrigin &&
+    if ((aFlags & OFFSET_BY_ORIGIN) &&
         !hasPerspective) {
       
       
@@ -5320,7 +5302,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     
     
     Point3D offsets = roundedOrigin + refBoxOffset;
-    if (aOffsetByOrigin &&
+    if ((aFlags & OFFSET_BY_ORIGIN) &&
         !hasPerspective) {
       result.PreTranslate(-refBoxOffset);
       result.PostTranslate(offsets);
@@ -5337,12 +5319,13 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     perspective.ChangeBasis(aProperties.GetToPerspectiveOrigin() + roundedOrigin);
     result = result * perspective;
 
-    if (aOffsetByOrigin) {
+    if (aFlags & OFFSET_BY_ORIGIN) {
       result.PreTranslate(roundedOrigin);
     }
   }
 
-  if (aDoPreserves3D && frame && frame->Combines3DTransformWithAncestors()) {
+  if ((aFlags & INCLUDE_PRESERVE3D_ANCESTORS) &&
+      frame && frame->Combines3DTransformWithAncestors()) {
     
     NS_ASSERTION(frame->GetParent() &&
                  frame->GetParent()->IsTransformed() &&
@@ -5356,12 +5339,15 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     
     
     
+    uint32_t flags = aFlags & (INCLUDE_PRESERVE3D_ANCESTORS);
+    if (!frame->IsTransformed()) {
+      flags |= OFFSET_BY_ORIGIN;
+    }
     Matrix4x4 parent =
       GetResultingTransformMatrixInternal(props,
                                           aOrigin - frame->GetPosition(),
-                                          aAppUnitsPerPixel, nullptr,
-                                          aOutAncestor, !frame->IsTransformed(),
-                                          aDoPreserves3D);
+                                          aAppUnitsPerPixel, flags,
+                                          nullptr, aOutAncestor);
     result = result * parent;
   }
 
@@ -5505,18 +5491,12 @@ nsDisplayTransform::GetTransform()
       bool isReference =
         mFrame->IsTransformed() ||
         mFrame->Combines3DTransformWithAncestors() || mFrame->Extend3DContext();
-      
-
-
-
-
-
-
-
-
+      uint32_t flags = 0;
+      if (isReference) {
+        flags |= OFFSET_BY_ORIGIN;
+      }
       mTransform = GetResultingTransformMatrix(mFrame, ToReferenceFrame(),
-                                               scale, nullptr, nullptr,
-                                               isReference);
+                                               scale, flags);
     }
   }
   return mTransform;
@@ -5545,9 +5525,9 @@ nsDisplayTransform::GetAccumulatedPreserved3DTransform(nsDisplayListBuilder* aBu
 
     nsPoint offset = mFrame->GetOffsetToCrossDoc(establisherReference);
     float scale = mFrame->PresContext()->AppUnitsPerDevPixel();
+    uint32_t flags = INCLUDE_PRESERVE3D_ANCESTORS|OFFSET_BY_ORIGIN;
     mTransformPreserves3D =
-      GetResultingTransformMatrixP3D(mFrame, offset, scale,
-                                     nullptr, nullptr, true);
+      GetResultingTransformMatrix(mFrame, offset, scale, flags);
   }
   return mTransformPreserves3D;
 }
@@ -5973,12 +5953,14 @@ nsRect nsDisplayTransform::TransformRect(const nsRect &aUntransformedBounds,
   NS_PRECONDITION(aFrame, "Can't take the transform based on a null frame!");
 
   float factor = aFrame->PresContext()->AppUnitsPerDevPixel();
+
+  uint32_t flags = 0;
+  if (aPreserves3D) {
+    flags |= INCLUDE_PRESERVE3D_ANCESTORS;
+  }
   return nsLayoutUtils::MatrixTransformRect
     (aUntransformedBounds,
-     (aPreserves3D ?
-      GetResultingTransformMatrixP3D(aFrame, aOrigin, factor,
-                                     aBoundsOverride) :
-      GetResultingTransformMatrix(aFrame, aOrigin, factor, aBoundsOverride)),
+     GetResultingTransformMatrix(aFrame, aOrigin, factor, flags, aBoundsOverride),
      factor);
 }
 
@@ -5993,9 +5975,12 @@ bool nsDisplayTransform::UntransformRect(const nsRect &aTransformedBounds,
 
   float factor = aFrame->PresContext()->AppUnitsPerDevPixel();
 
-  Matrix4x4 transform = aPreserves3D ?
-    GetResultingTransformMatrixP3D(aFrame, aOrigin, factor, nullptr) :
-    GetResultingTransformMatrix(aFrame, aOrigin, factor, nullptr);
+  uint32_t flags = 0;
+  if (aPreserves3D) {
+    flags |= INCLUDE_PRESERVE3D_ANCESTORS;
+  }
+
+  Matrix4x4 transform = GetResultingTransformMatrix(aFrame, aOrigin, factor, flags);
   if (transform.IsSingular()) {
     return false;
   }

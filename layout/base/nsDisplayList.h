@@ -3915,23 +3915,25 @@ public:
 
 
 
+
+
+
+  enum {
+    OFFSET_BY_ORIGIN = 1 << 0,
+    INCLUDE_PRESERVE3D_ANCESTORS = 1 << 1,
+  };
   static Matrix4x4 GetResultingTransformMatrix(const nsIFrame* aFrame,
                                                const nsPoint& aOrigin,
                                                float aAppUnitsPerPixel,
+                                               uint32_t aFlags,
                                                const nsRect* aBoundsOverride = nullptr,
-                                               nsIFrame** aOutAncestor = nullptr,
-                                               bool aOffsetByOrigin = false);
+                                               nsIFrame** aOutAncestor = nullptr);
   static Matrix4x4 GetResultingTransformMatrix(const FrameTransformProperties& aProperties,
                                                const nsPoint& aOrigin,
                                                float aAppUnitsPerPixel,
+                                               uint32_t aFlags,
                                                const nsRect* aBoundsOverride = nullptr,
                                                nsIFrame** aOutAncestor = nullptr);
-  static Matrix4x4 GetResultingTransformMatrixP3D(const nsIFrame* aFrame,
-                                                  const nsPoint& aOrigin,
-                                                  float aAppUnitsPerPixel,
-                                                  const nsRect* aBoundsOverride = nullptr,
-                                                  nsIFrame** aOutAncestor = nullptr,
-                                                  bool aOffsetByOrigin = false);
   
 
 
@@ -4012,10 +4014,9 @@ private:
   static Matrix4x4 GetResultingTransformMatrixInternal(const FrameTransformProperties& aProperties,
                                                        const nsPoint& aOrigin,
                                                        float aAppUnitsPerPixel,
+                                                       uint32_t aFlags,
                                                        const nsRect* aBoundsOverride,
-                                                       nsIFrame** aOutAncestor,
-                                                       bool aOffsetByOrigin,
-                                                       bool aDoPreserves3D);
+                                                       nsIFrame** aOutAncestor);
 
   StoreList mStoredList;
   Matrix4x4 mTransform;
