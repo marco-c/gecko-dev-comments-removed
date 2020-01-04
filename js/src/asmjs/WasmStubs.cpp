@@ -838,28 +838,6 @@ GenerateStackOverflow(MacroAssembler& masm)
 
 
 static Offsets
-GenerateErrorStub(MacroAssembler& masm, SymbolicAddress address)
-{
-    masm.haltingAlign(CodeAlignment);
-
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
-
-    
-    
-    
-    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
-
-    masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(address);
-    masm.jump(JumpTarget::Throw);
-
-    offsets.end = masm.currentOffset();
-    return offsets;
-}
-
-
-static Offsets
 GenerateTrapStub(MacroAssembler& masm, Trap reason)
 {
     masm.haltingAlign(CodeAlignment);
@@ -934,10 +912,9 @@ wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target)
     switch (target) {
       case JumpTarget::StackOverflow:
         return GenerateStackOverflow(masm);
-      case JumpTarget::BadIndirectCall:
-        return GenerateErrorStub(masm, SymbolicAddress::BadIndirectCall);
       case JumpTarget::Throw:
         return GenerateThrow(masm);
+      case JumpTarget::BadIndirectCall:
       case JumpTarget::OutOfBounds:
       case JumpTarget::Unreachable:
       case JumpTarget::IntegerOverflow:
@@ -949,25 +926,6 @@ wasm::GenerateJumpTarget(MacroAssembler& masm, JumpTarget target)
         break;
     }
     MOZ_CRASH("bad JumpTarget");
-}
-
-ProfilingOffsets
-wasm::GenerateBadIndirectCallExit(MacroAssembler& masm)
-{
-    MIRTypeVector args;
-    unsigned framePushed = StackDecrementForCall(masm, ABIStackAlignment, args);
-
-    ProfilingOffsets offsets;
-    GenerateExitPrologue(masm, framePushed, ExitReason::Error, &offsets);
-
-    AssertStackAlignment(masm, ABIStackAlignment);
-    masm.call(SymbolicAddress::BadIndirectCall);
-    masm.jump(JumpTarget::Throw);
-
-    GenerateExitEpilogue(masm, framePushed, ExitReason::Error, &offsets);
-
-    offsets.end = masm.currentOffset();
-    return offsets;
 }
 
 static const LiveRegisterSet AllRegsExceptSP(

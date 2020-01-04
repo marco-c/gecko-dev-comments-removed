@@ -627,7 +627,6 @@ enum class SymbolicAddress
     RuntimeInterruptUint32,
     StackLimit,
     ReportOverRecursed,
-    BadIndirectCall,
     HandleExecutionInterrupt,
     HandleTrap,
     InvokeImport_Void,
@@ -661,6 +660,8 @@ enum class Trap
     IntegerDivideByZero,
     
     OutOfBounds,
+    
+    BadIndirectCall,
 
     
     
@@ -682,10 +683,10 @@ enum class JumpTarget
     InvalidConversionToInteger = unsigned(Trap::InvalidConversionToInteger),
     IntegerDivideByZero = unsigned(Trap::IntegerDivideByZero),
     OutOfBounds = unsigned(Trap::OutOfBounds),
+    BadIndirectCall = unsigned(Trap::BadIndirectCall),
     ImpreciseSimdConversion = unsigned(Trap::ImpreciseSimdConversion),
     
     StackOverflow,
-    BadIndirectCall,
     Throw,
     Limit
 };
