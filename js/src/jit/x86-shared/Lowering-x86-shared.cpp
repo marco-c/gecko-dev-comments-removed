@@ -814,19 +814,27 @@ void
 LIRGeneratorX86Shared::visitSimdSplat(MSimdSplat* ins)
 {
     LAllocation x = useRegisterAtStart(ins->getOperand(0));
-    LSimdSplatX4* lir = new(alloc()) LSimdSplatX4(x);
 
     switch (ins->type()) {
-      case MIRType::Int32x4:
-      case MIRType::Bool32x4:
-        define(lir, ins);
+      case MIRType::Int8x16:
+        define(new (alloc()) LSimdSplatX16(x), ins);
         break;
+      case MIRType::Int16x8:
+        define(new (alloc()) LSimdSplatX8(x), ins);
+        break;
+      case MIRType::Int32x4:
       case MIRType::Float32x4:
+      case MIRType::Bool8x16:
+      case MIRType::Bool16x8:
+      case MIRType::Bool32x4:
         
         
         
         
-        define(lir, ins);
+        
+        
+        
+        define(new (alloc()) LSimdSplatX4(x), ins);
         break;
       default:
         MOZ_CRASH("Unknown SIMD kind");
