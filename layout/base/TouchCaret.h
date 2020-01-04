@@ -27,6 +27,10 @@ namespace mozilla {
 
 
 
+
+
+
+
 class TouchCaret final : public nsISelectionListener,
                          public nsIScrollObserver,
                          public nsSupportsWeakReference

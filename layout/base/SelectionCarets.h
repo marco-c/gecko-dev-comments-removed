@@ -51,6 +51,10 @@ class Selection;
 
 
 
+
+
+
+
 class SelectionCarets final : public nsIReflowObserver,
                               public nsISelectionListener,
                               public nsIScrollObserver,
