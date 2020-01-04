@@ -1227,49 +1227,6 @@ nsLayoutUtils::GetDisplayPortForVisibilityTesting(
   return usingDisplayPort;
 }
 
- nsRect
-nsLayoutUtils::GetDisplayPortOrFallbackToScrollPort(nsIScrollableFrame* aScrollableFrame)
-{
-  MOZ_ASSERT(aScrollableFrame);
-
-  nsIFrame* scrollableFrameAsFrame = do_QueryFrame(aScrollableFrame);
-  MOZ_ASSERT(scrollableFrameAsFrame);
-
-  nsIContent* contentForDisplayPort = scrollableFrameAsFrame->GetContent();
-  MOZ_ASSERT(contentForDisplayPort);
-
-  nsRect displayPort;
-  bool usingDisplayPort =
-    GetDisplayPortForVisibilityTesting(contentForDisplayPort,
-                                       &displayPort,
-                                       RelativeTo::ScrollFrame);
-
-  return usingDisplayPort ? displayPort
-                          : aScrollableFrame->GetScrollPortRect();
-}
-
- nsRect
-nsLayoutUtils::TransformAndIntersectRect(nsIFrame* aFrom,
-                                         const nsRect& aFromRect,
-                                         nsIFrame* aTo,
-                                         const nsRect& aToRect)
-{
-  if (MOZ_UNLIKELY(!aFrom)) {
-    return nsRect();  
-  }
-  if (MOZ_UNLIKELY(!aTo)) {
-    return nsRect();  
-  }
-
-  nsRect fromRectInToSpace = aFromRect;
-  TransformResult result = TransformRect(aFrom, aTo, fromRectInToSpace);
-  if (MOZ_UNLIKELY(result != TransformResult::TRANSFORM_SUCCEEDED)) {
-    return nsRect();  
-  }
-
-  return aToRect.Intersect(fromRectInToSpace);
-}
-
 bool
 nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
                                      nsIPresShell* aPresShell,
@@ -3313,49 +3270,7 @@ nsLayoutUtils::GetAsyncScrollableAncestorFrame(nsIFrame* aTarget)
   uint32_t flags = nsLayoutUtils::SCROLLABLE_ALWAYS_MATCH_ROOT
                  | nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE
                  | nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT;
-  return GetNearestScrollableFrame(aTarget, flags);
-}
-
-nsIScrollableFrame*
-nsLayoutUtils::GetAsyncScrollableProperAncestorFrame(nsIFrame* aTarget)
-{
-  nsIFrame* parent = GetCrossDocParentFrame(aTarget);
-  if (!parent) {
-    return nullptr;
-  }
-
-  return GetAsyncScrollableAncestorFrame(parent);
-}
-
- nsIFrame*
-nsLayoutUtils::GetAsyncScrollableProperAncestorFrameOrFallback(nsIFrame* aTarget)
-{
-  MOZ_ASSERT(aTarget);
-
-  nsIScrollableFrame* scrollableFrame =
-    GetAsyncScrollableProperAncestorFrame(aTarget);
-  if (scrollableFrame) {
-    return do_QueryFrame(scrollableFrame);  
-  }
-
-  if (aTarget->PresContext()->Document()->IsHTMLDocument()) {
-    
-    
-    return nullptr;
-  }
-
-  
-  nsIPresShell* presShell = aTarget->PresContext()->GetPresShell();
-  if (!presShell) {
-    return nullptr;
-  }
-
-  nsIFrame* rootFrame = presShell->GetRootFrame();
-  if (rootFrame == aTarget) {
-    return nullptr;  
-  }
-
-  return rootFrame;  
+  return nsLayoutUtils::GetNearestScrollableFrame(aTarget, flags);
 }
 
 void

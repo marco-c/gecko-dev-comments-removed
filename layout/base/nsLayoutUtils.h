@@ -210,12 +210,6 @@ public:
     nsRect* aResult,
     RelativeTo aRelativeTo = RelativeTo::ScrollPort);
 
-  
-
-
-
-  static nsRect GetDisplayPortOrFallbackToScrollPort(nsIScrollableFrame* aScrollableFrame);
-
   enum class RepaintMode : uint8_t {
     Repaint,
     DoNotRepaint
@@ -917,16 +911,6 @@ public:
 
   static TransformResult TransformRect(nsIFrame* aFromFrame, nsIFrame* aToFrame,
                                        nsRect& aRect);
-
-  
-
-
-
-
-
-
-  static nsRect TransformAndIntersectRect(nsIFrame* aFrom, const nsRect& aFromRect,
-                                          nsIFrame* aTo, const nsRect& aToRect);
 
   
 
@@ -2729,24 +2713,7 @@ public:
   static void MaybeCreateDisplayPort(nsDisplayListBuilder& aBuilder,
                                      nsIFrame* aScrollFrame);
 
-  
-
-
-
   static nsIScrollableFrame* GetAsyncScrollableAncestorFrame(nsIFrame* aTarget);
-
-  
-
-
-
-  static nsIScrollableFrame* GetAsyncScrollableProperAncestorFrame(nsIFrame* aTarget);
-
-  
-
-
-
-
-  static nsIFrame* GetAsyncScrollableProperAncestorFrameOrFallback(nsIFrame* aTarget);
 
   
 
