@@ -100,7 +100,7 @@ nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
     refChainLengthLimiter(&sRefChainLengthCounter,
                           MAX_SVG_CLIP_PATH_REFERENCE_CHAIN_LENGTH);
   if (!refChainLengthLimiter.Reference()) {
-    return false; 
+    return nullptr; 
   }
 
   
