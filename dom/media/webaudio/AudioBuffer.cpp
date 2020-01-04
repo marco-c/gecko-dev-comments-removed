@@ -88,20 +88,6 @@ AudioBuffer::Create(AudioContext* aContext, uint32_t aNumberOfChannels,
     new AudioBuffer(aContext, aNumberOfChannels, aLength, aSampleRate,
                     Move(aInitialContents));
 
-  if (buffer->mSharedChannels) {
-    return buffer.forget();
-  }
-
-  for (uint32_t i = 0; i < aNumberOfChannels; ++i) {
-    JS::Rooted<JSObject*> array(aJSContext,
-                                JS_NewFloat32Array(aJSContext, aLength));
-    if (!array) {
-      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return nullptr;
-    }
-    buffer->mJSChannels[i] = array;
-  }
-
   return buffer.forget();
 }
 
@@ -114,26 +100,31 @@ AudioBuffer::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 bool
 AudioBuffer::RestoreJSChannelData(JSContext* aJSContext)
 {
-  
-  
-  if (mSharedChannels) {
-    for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
-      const float* data = mSharedChannels->GetData(i);
+  for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
+    if (mJSChannels[i]) {
       
-      
-      
-      JS::Rooted<JSObject*> array(aJSContext,
-                                  JS_NewFloat32Array(aJSContext, mLength));
-      if (!array) {
-        return false;
-      }
-      JS::AutoCheckCannotGC nogc;
-      mozilla::PodCopy(JS_GetFloat32ArrayData(array, nogc), data, mLength);
-      mJSChannels[i] = array;
+      continue;
     }
 
-    mSharedChannels = nullptr;
+    
+    
+    
+    JS::Rooted<JSObject*> array(aJSContext,
+                                JS_NewFloat32Array(aJSContext, mLength));
+    if (!array) {
+      return false;
+    }
+    if (mSharedChannels) {
+      
+      
+      const float* data = mSharedChannels->GetData(i);
+      JS::AutoCheckCannotGC nogc;
+      mozilla::PodCopy(JS_GetFloat32ArrayData(array, nogc), data, mLength);
+    }
+    mJSChannels[i] = array;
   }
+
+  mSharedChannels = nullptr;
 
   return true;
 }
@@ -153,17 +144,26 @@ AudioBuffer::CopyFromChannel(const Float32Array& aDestination, uint32_t aChannel
     return;
   }
 
-  if (!mSharedChannels && JS_GetTypedArrayLength(mJSChannels[aChannelNumber]) != mLength) {
-    
-    aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
-    return;
+  JS::AutoCheckCannotGC nogc;
+  JSObject* channelArray = mJSChannels[aChannelNumber];
+  const float* sourceData = nullptr;
+  if (channelArray) {
+    if (JS_GetTypedArrayLength(channelArray) != mLength) {
+      
+      aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
+      return;
+    }
+
+    sourceData = JS_GetFloat32ArrayData(channelArray, nogc);
+  } else if (mSharedChannels) {
+    sourceData = mSharedChannels->GetData(aChannelNumber);
   }
 
-  JS::AutoCheckCannotGC nogc;
-  const float* sourceData = mSharedChannels ?
-    mSharedChannels->GetData(aChannelNumber) :
-    JS_GetFloat32ArrayData(mJSChannels[aChannelNumber], nogc);
-  PodMove(aDestination.Data(), sourceData + aStartInChannel, length);
+  if (sourceData) {
+    PodMove(aDestination.Data(), sourceData + aStartInChannel, length);
+  } else {
+    PodZero(aDestination.Data(), length);
+  }
 }
 
 void
@@ -182,19 +182,20 @@ AudioBuffer::CopyToChannel(JSContext* aJSContext, const Float32Array& aSource,
     return;
   }
 
-  if (!mSharedChannels && JS_GetTypedArrayLength(mJSChannels[aChannelNumber]) != mLength) {
-    
-    aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
-    return;
-  }
-
   if (!RestoreJSChannelData(aJSContext)) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
 
   JS::AutoCheckCannotGC nogc;
-  PodMove(JS_GetFloat32ArrayData(mJSChannels[aChannelNumber], nogc) + aStartInChannel,
+  JSObject* channelArray = mJSChannels[aChannelNumber];
+  if (JS_GetTypedArrayLength(channelArray) != mLength) {
+    
+    aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
+    return;
+  }
+
+  PodMove(JS_GetFloat32ArrayData(channelArray, nogc) + aStartInChannel,
           aSource.Data(), length);
 }
 
@@ -226,7 +227,8 @@ AudioBuffer::StealJSArrayDataIntoSharedChannels(JSContext* aJSContext)
   
   
   for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
-    if (mLength != JS_GetTypedArrayLength(mJSChannels[i])) {
+    JSObject* channelArray = mJSChannels[i];
+    if (!channelArray || mLength != JS_GetTypedArrayLength(channelArray)) {
       
       return nullptr;
     }
