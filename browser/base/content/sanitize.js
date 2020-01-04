@@ -15,8 +15,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
                                   "resource://gre/modules/Downloads.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
-                                  "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadsCommon",
@@ -61,29 +59,32 @@ Sanitizer.prototype = {
 
 
 
-  sanitize: Task.async(function*(aItemsToClear = null) {
-    let progress = {};
-    let promise = this._sanitize(aItemsToClear, progress);
+
+
+
+
+  sanitize: Task.async(function*(itemsToClear = null, options = {}) {
+    let progress = options.progress || {};
+    let promise = this._sanitize(itemsToClear, progress);
 
     
     
     
     
     
-    
-    let shutdownClient = Cc["@mozilla.org/browser/nav-history-service;1"]
-       .getService(Ci.nsPIPlacesDatabase)
-       .shutdownClient
-       .jsclient;
-
-    shutdownClient.addBlocker("sanitize.js: Sanitize",
-      promise,
-      {
-        fetchState: () => {
-          return { progress };
+    if (!progress.isShutdown) {
+      let shutdownClient = Cc["@mozilla.org/browser/nav-history-service;1"]
+                             .getService(Ci.nsPIPlacesDatabase)
+                             .shutdownClient
+                             .jsclient;
+      shutdownClient.addBlocker("sanitize.js: Sanitize",
+        promise,
+        {
+          fetchState: () => ({ progress })
         }
-      }
-    );
+      );
+    }
+
     try {
       yield promise;
     } finally {
@@ -834,24 +835,22 @@ Sanitizer.onStartup = Task.async(function*() {
   }
 
   
+  let shutdownClient = Cc["@mozilla.org/browser/nav-history-service;1"]
+                         .getService(Ci.nsPIPlacesDatabase)
+                         .shutdownClient
+                         .jsclient;
   
-  let placesClient = Cc["@mozilla.org/browser/nav-history-service;1"]
-                       .getService(Ci.nsPIPlacesDatabase)
-                       .shutdownClient
-                       .jsclient;
-
-  let deferredSanitization = PromiseUtils.defer();
-  let sanitizationInProgress = false;
-  let doSanitize = function() {
-    if (!sanitizationInProgress) {
-      sanitizationInProgress = true;
-      Sanitizer.onShutdown().catch(er => {Promise.reject(er) ;}).then(() =>
-        deferredSanitization.resolve()
-      );
+  
+  
+  
+  
+  let progress = { isShutdown: true };
+  shutdownClient.addBlocker("sanitize.js: Sanitize on shutdown",
+    () => sanitizeOnShutdown({ progress }),
+    {
+      fetchState: () => ({ progress })
     }
-    return deferredSanitization.promise;
-  }
-  placesClient.addBlocker("sanitize.js: Sanitize on shutdown", doSanitize);
+  );
 
   
   let lastInterruptedSanitization = Preferences.get(Sanitizer.PREF_SANITIZE_IN_PROGRESS, "");
@@ -864,18 +863,18 @@ Sanitizer.onStartup = Task.async(function*() {
     
     
     
-    yield Sanitizer.onShutdown();
+    yield sanitizeOnShutdown();
   }
 });
 
-Sanitizer.onShutdown = Task.async(function*() {
+var sanitizeOnShutdown = Task.async(function*(options = {}) {
   if (!Preferences.get(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN)) {
     return;
   }
   
   let s = new Sanitizer();
   s.prefDomain = "privacy.clearOnShutdown.";
-  yield s.sanitize();
+  yield s.sanitize(null, options);
   
   
   Preferences.set(Sanitizer.PREF_SANITIZE_DID_SHUTDOWN, true);
