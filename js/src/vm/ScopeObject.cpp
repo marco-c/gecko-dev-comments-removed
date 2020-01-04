@@ -1948,9 +1948,38 @@ class DebugScopeProxy : public BaseProxyHandler
     static bool isMagicMissingArgumentsValue(JSContext* cx, ScopeObject& scope, HandleValue v)
     {
         bool isMagic = v.isMagic() && v.whyMagic() == JS_OPTIMIZED_ARGUMENTS;
-        MOZ_ASSERT_IF(isMagic,
-                      isFunctionScope(scope) &&
-                      scope.as<CallObject>().callee().nonLazyScript()->argumentsHasVarBinding());
+
+#ifdef DEBUG
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (isMagic) {
+            JSFunction* callee = nullptr;
+            if (isFunctionScope(scope)) {
+                callee = &scope.as<CallObject>().callee();
+            } else {
+                
+                
+                for (StaticScopeIter<NoGC> ssi(&scope.as<ClonedBlockObject>().staticBlock());
+                     !ssi.done();
+                     ssi++)
+                {
+                    if (ssi.type() == StaticScopeIter<NoGC>::Function) {
+                        callee = &ssi.fun();
+                        break;
+                    }
+                }
+            }
+            MOZ_ASSERT(callee && callee->nonLazyScript()->argumentsHasVarBinding());
+        }
+#endif
+
         return isMagic;
     }
 

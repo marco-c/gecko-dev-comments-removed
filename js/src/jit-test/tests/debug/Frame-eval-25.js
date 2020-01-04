@@ -1,8 +1,7 @@
 
 
 
-
-
+load(libdir + "asserts.js");
 load(libdir + "evalInFrame.js");
 
 function h() {
@@ -14,4 +13,13 @@ function f() {
   h();
 }
 
-f();
+assertThrowsInstanceOf(f, TypeError);
+
+function g() {
+  {
+    let a = arguments;
+    h();
+  }
+}
+
+assertThrowsInstanceOf(g, TypeError);

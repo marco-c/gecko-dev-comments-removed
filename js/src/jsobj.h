@@ -453,7 +453,7 @@ class JSObject : public js::gc::Cell
 
 
 
-    inline JSObject* enclosingScope();
+    inline JSObject* enclosingScope() const;
 
     inline js::GlobalObject& global() const;
     inline bool isOwnGlobal() const;
