@@ -4619,6 +4619,40 @@ nsImageRenderer::~nsImageRenderer()
 {
 }
 
+static bool
+ShouldTreatAsCompleteDueToSyncDecode(const nsStyleImage* aImage,
+                                     uint32_t aFlags)
+{
+  if (!(aFlags & nsImageRenderer::FLAG_SYNC_DECODE_IMAGES)) {
+    return false;
+  }
+
+  if (aImage->GetType() != eStyleImageType_Image) {
+    return false;
+  }
+
+  uint32_t status = 0;
+  if (NS_FAILED(aImage->GetImageData()->GetImageStatus(&status))) {
+    return false;
+  }
+
+  if (status & imgIRequest::STATUS_ERROR) {
+    
+    
+    nsCOMPtr<imgIContainer> image;
+    aImage->GetImageData()->GetImage(getter_AddRefs(image));
+    return bool(image);
+  }
+
+  if (!(status & imgIRequest::STATUS_LOAD_COMPLETE)) {
+    
+    
+    return false;
+  }
+
+  return true;
+}
+
 bool
 nsImageRenderer::PrepareImage()
 {
@@ -4632,18 +4666,13 @@ nsImageRenderer::PrepareImage()
     mImage->StartDecoding();
 
     
-    if (!mImage->IsComplete()) {
-      
-      
-      
-      
-      nsCOMPtr<imgIContainer> img;
-      if (!((mFlags & FLAG_SYNC_DECODE_IMAGES) &&
-            (mType == eStyleImageType_Image) &&
-            (NS_SUCCEEDED(mImage->GetImageData()->GetImage(getter_AddRefs(img)))))) {
-        mPrepareResult = DrawResult::NOT_READY;
-        return false;
-      }
+    
+    
+    
+    if (!mImage->IsComplete() &&
+        !ShouldTreatAsCompleteDueToSyncDecode(mImage, mFlags)) {
+      mPrepareResult = DrawResult::NOT_READY;
+      return false;
     }
   }
 
