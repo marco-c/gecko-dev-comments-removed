@@ -93,14 +93,13 @@ private:
     
     mReorderQueue.Push(aData);
 
-    while (mReorderQueue.Length() > mMaxRefFrames) {
-      mCallback->Output(mReorderQueue.Pop().get());
-    }
-
     if (mReorderQueue.Length() <= mMaxRefFrames) {
       mCallback->InputExhausted();
+    } else {
+      while (mReorderQueue.Length() > mMaxRefFrames) {
+        mCallback->Output(mReorderQueue.Pop().get());
+      }
     }
-
   }
 
 private:
