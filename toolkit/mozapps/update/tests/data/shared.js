@@ -138,6 +138,11 @@ XPCOMUtils.defineLazyGetter(this, "gZipW", function test_gZipW() {
 });
 
 
+function testPostUpdateProcessing() {
+  gAUS.observe(null, "test-post-update-processing", "");
+}
+
+
 function initUpdateServiceStub() {
   Cc["@mozilla.org/updates/update-service-stub;1"].
   createInstance(Ci.nsISupports);

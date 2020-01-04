@@ -1896,6 +1896,8 @@ UpdateService.prototype = {
                                       APPID_TO_TOPIC[Services.appinfo.ID]);
         }
         
+      case "test-post-update-processing":
+        
         this._postUpdateProcessing();
         break;
       case "network:offline-status-changed":
