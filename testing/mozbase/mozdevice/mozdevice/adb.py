@@ -536,7 +536,6 @@ class ADBDevice(ADBCommand):
         self._have_android_su = False
 
         uid = 'uid=0'
-        cmd_id = 'LD_LIBRARY_PATH=/vendor/lib:/system/lib id'
         
         
         
@@ -548,7 +547,7 @@ class ADBDevice(ADBCommand):
 
         
         try:
-            if self.shell_output("su -c '%s'" % cmd_id).find(uid) != -1:
+            if self.shell_output("su -c id").find(uid) != -1:
                 self._have_su = True
         except ADBError:
             self._logger.debug("Check for su failed")
@@ -953,15 +952,15 @@ class ADBDevice(ADBCommand):
         It is the caller's responsibilty to clean up by closing
         the stdout and stderr temporary files.
         """
-        if root:
-            ld_library_path='LD_LIBRARY_PATH=/vendor/lib:/system/lib'
-            cmd = '%s %s' % (ld_library_path, cmd)
-            if self._have_root_shell:
-                pass
+        if root and not self._have_root_shell:
+            
+            
+            
+            
+            if self._have_android_su:
+                cmd = "su 0 %s" % cmd
             elif self._have_su:
                 cmd = "su -c \"%s\"" % cmd
-            elif self._have_android_su:
-                cmd = "su 0 \"%s\"" % cmd
             else:
                 raise ADBRootError('Can not run command %s as root!' % cmd)
 
