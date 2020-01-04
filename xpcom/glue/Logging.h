@@ -66,5 +66,15 @@ inline bool log_test(const PRLogModuleInfo* module, LogLevel level) {
 #undef PR_LOG
 #undef PR_LOG_TEST
 
-#endif 
 
+
+
+
+
+#ifdef _MSC_VER
+#  if _MSC_VER < 1900
+#    define __func__ __FUNCTION__
+#  endif
+#endif
+
+#endif 

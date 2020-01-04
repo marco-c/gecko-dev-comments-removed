@@ -8,22 +8,15 @@
 #define MozPromise_h_
 
 #include "mozilla/AbstractThread.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/IndexSequence.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Tuple.h"
-#include "mozilla/unused.h"
 
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
-
-
-#ifdef _MSC_VER
-#define __func__ __FUNCTION__
-#endif
 
 namespace mozilla {
 
