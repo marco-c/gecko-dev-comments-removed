@@ -144,6 +144,17 @@ public:
 
 
 
+  void SelectBandwidth(webrtc::VideoCodec& vie_codec,
+                       unsigned short width,
+                       unsigned short height,
+                       mozilla::Atomic<int32_t, mozilla::Relaxed>& aLastFramerateTenths);
+
+  
+
+
+
+
+
   bool SelectSendResolution(unsigned short width,
                             unsigned short height,
                             webrtc::I420VideoFrame *frame);
