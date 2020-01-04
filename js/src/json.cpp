@@ -565,91 +565,67 @@ js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_, Value s
         } else if (isArray) {
             
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             
             uint32_t len;
             if (!GetLengthProperty(cx, replacer, &len))
                 return false;
-            if (replacer->is<ArrayObject>() && !replacer->isIndexed())
-                len = Min(len, replacer->as<ArrayObject>().getDenseInitializedLength());
 
             
             
             
             
-            const uint32_t MaxInitialSize = 1024;
+            const uint32_t MaxInitialSize = 32;
             HashSet<jsid, JsidHasher> idSet(cx);
             if (!idSet.init(Min(len, MaxInitialSize)))
                 return false;
 
             
-            uint32_t i = 0;
+            uint32_t k = 0;
 
             
-            RootedValue v(cx);
-            for (; i < len; i++) {
+            RootedValue item(cx);
+            for (; k < len; k++) {
                 if (!CheckForInterrupt(cx))
                     return false;
 
                 
-                if (!GetElement(cx, replacer, replacer, i, &v))
+                if (!GetElement(cx, replacer, replacer, k, &item))
                     return false;
 
                 RootedId id(cx);
-                if (v.isNumber()) {
+
+                
+                if (item.isNumber()) {
                     
                     int32_t n;
-                    if (v.isNumber() && ValueFitsInInt32(v, &n) && INT_FITS_IN_JSID(n)) {
+                    if (ValueFitsInInt32(item, &n) && INT_FITS_IN_JSID(n)) {
                         id = INT_TO_JSID(n);
                     } else {
-                        if (!ValueToId<CanGC>(cx, v, &id))
+                        if (!ValueToId<CanGC>(cx, item, &id))
                             return false;
                     }
                 } else {
-                    bool shouldAdd = v.isString();
+                    bool shouldAdd = item.isString();
                     if (!shouldAdd) {
                         ESClassValue cls;
-                        if (!GetClassOfValue(cx, v, &cls))
+                        if (!GetClassOfValue(cx, item, &cls))
                             return false;
+
                         shouldAdd = cls == ESClass_String || cls == ESClass_Number;
                     }
 
                     if (shouldAdd) {
                         
-                        if (!ValueToId<CanGC>(cx, v, &id))
+                        if (!ValueToId<CanGC>(cx, item, &id))
                             return false;
                     } else {
+                        
                         continue;
                     }
                 }
 
                 
-                HashSet<jsid, JsidHasher>::AddPtr p = idSet.lookupForAdd(id);
+                auto p = idSet.lookupForAdd(id);
                 if (!p) {
                     
                     if (!idSet.add(p, id) || !propertyList.append(id))
@@ -687,7 +663,7 @@ js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_, Value s
     if (space.isNumber()) {
         
         double d;
-        JS_ALWAYS_TRUE(ToInteger(cx, space, &d));
+        MOZ_ALWAYS_TRUE(ToInteger(cx, space, &d));
         d = Min(10.0, d);
         if (d >= 1 && !gap.appendN(' ', uint32_t(d)))
             return false;
@@ -908,6 +884,7 @@ bool
 json_stringify(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
+
     RootedObject replacer(cx, args.get(1).isObject() ? &args[1].toObject() : nullptr);
     RootedValue value(cx, args.get(0));
     RootedValue space(cx, args.get(2));
