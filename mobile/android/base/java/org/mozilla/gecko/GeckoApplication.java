@@ -5,9 +5,11 @@
 package org.mozilla.gecko;
 
 import android.app.Application;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -17,13 +19,17 @@ import com.squareup.leakcanary.RefWatcher;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.LocalBrowserDB;
+import org.mozilla.gecko.distribution.Distribution;
 import org.mozilla.gecko.dlc.DownloadContentService;
 import org.mozilla.gecko.home.HomePanelsManager;
 import org.mozilla.gecko.lwt.LightweightTheme;
 import org.mozilla.gecko.mdns.MulticastDNSManager;
 import org.mozilla.gecko.media.AudioFocusAgent;
 import org.mozilla.gecko.notifications.NotificationHelper;
+import org.mozilla.gecko.preferences.DistroSharedPrefsImport;
+import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.Clipboard;
+import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
@@ -183,6 +189,9 @@ public class GeckoApplication extends Application
 
         GeckoService.register();
 
+        EventDispatcher.getInstance().registerBackgroundThreadListener(new EventListener(),
+                "Profile:Create");
+
         super.onCreate();
     }
 
@@ -214,6 +223,92 @@ public class GeckoApplication extends Application
         GeckoAccessibility.setAccessibilityManagerListeners(this);
 
         AudioFocusAgent.getInstance().attachToContext(this);
+    }
+
+    private class EventListener implements BundleEventListener
+    {
+        private void onProfileCreate(final String name, final String path) {
+            
+            final Context context = GeckoApplication.this;
+            final GeckoProfile profile = GeckoProfile.get(context, name);
+            final Distribution distribution = Distribution.getInstance(context);
+
+            distribution.addOnDistributionReadyCallback(new Distribution.ReadyCallback() {
+                @Override
+                public void distributionNotFound() {
+                    this.distributionFound(null);
+                }
+
+                @Override
+                public void distributionFound(final Distribution distribution) {
+                    Log.d(LOG_TAG, "Running post-distribution task: bookmarks.");
+                    
+                    
+                    
+                    synchronized (profile.getLock()) {
+                        distributionFoundLocked(distribution);
+                    }
+                }
+
+                @Override
+                public void distributionArrivedLate(final Distribution distribution) {
+                    Log.d(LOG_TAG, "Running late distribution task: bookmarks.");
+                    
+                    synchronized (profile.getLock()) {
+                        distributionArrivedLateLocked(distribution);
+                    }
+                }
+
+                private void distributionFoundLocked(final Distribution distribution) {
+                    
+                    if (!(new File(path)).exists()) {
+                        return;
+                    }
+
+                    final ContentResolver cr = context.getContentResolver();
+                    final LocalBrowserDB db = new LocalBrowserDB(profile.getName());
+
+                    
+                    
+                    
+                    
+                    
+                    final int offset = distribution == null ? 0 :
+                            db.addDistributionBookmarks(cr, distribution, 0);
+                    db.addDefaultBookmarks(context, cr, offset);
+
+                    Log.d(LOG_TAG, "Running post-distribution task: android preferences.");
+                    DistroSharedPrefsImport.importPreferences(context, distribution);
+                }
+
+                private void distributionArrivedLateLocked(final Distribution distribution) {
+                    
+                    if (!(new File(path)).exists()) {
+                        return;
+                    }
+
+                    final ContentResolver cr = context.getContentResolver();
+                    final LocalBrowserDB db = new LocalBrowserDB(profile.getName());
+
+                    
+                    
+                    final int offset = db.getCount(cr, "bookmarks");
+                    db.addDistributionBookmarks(cr, distribution, offset);
+
+                    Log.d(LOG_TAG, "Running late distribution task: android preferences.");
+                    DistroSharedPrefsImport.importPreferences(context, distribution);
+                }
+            });
+        }
+
+        @Override 
+        public void handleMessage(final String event, final Bundle message,
+                                  final EventCallback callback) {
+            if ("Profile:Create".equals(event)) {
+                onProfileCreate(message.getCharSequence("name").toString(),
+                                message.getCharSequence("path").toString());
+            }
+        }
     }
 
     public boolean isApplicationInBackground() {

@@ -6,7 +6,6 @@
 package org.mozilla.gecko;
 
 import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -21,11 +20,8 @@ import org.mozilla.gecko.GeckoProfileDirectories.NoMozillaDirectoryException;
 import org.mozilla.gecko.GeckoProfileDirectories.NoSuchProfileException;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.db.BrowserDB;
-import org.mozilla.gecko.db.LocalBrowserDB;
 import org.mozilla.gecko.db.StubBrowserDB;
-import org.mozilla.gecko.distribution.Distribution;
 import org.mozilla.gecko.firstrun.FirstrunAnimationContainer;
-import org.mozilla.gecko.preferences.DistroSharedPrefsImport;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.INIParser;
 import org.mozilla.gecko.util.INISection;
@@ -385,6 +381,14 @@ public final class GeckoProfile {
                                           mName, mProfileDir);
         }
         return mInGuestMode;
+    }
+
+    
+
+
+
+    public Object getLock() {
+        return this;
     }
 
     
@@ -993,67 +997,5 @@ public final class GeckoProfile {
         message.putCharSequence("name", getName());
         message.putCharSequence("path", profileDir.getAbsolutePath());
         EventDispatcher.getInstance().dispatch("Profile:Create", message);
-
-        final Context context = mApplicationContext;
-
-        
-        final Distribution distribution = Distribution.getInstance(context);
-        distribution.addOnDistributionReadyCallback(new Distribution.ReadyCallback() {
-            @Override
-            public void distributionNotFound() {
-                this.distributionFound(null);
-            }
-
-            @Override
-            public void distributionFound(Distribution distribution) {
-                Log.d(LOGTAG, "Running post-distribution task: bookmarks.");
-
-                final ContentResolver cr = context.getContentResolver();
-
-                
-                
-                
-                synchronized (GeckoProfile.this) {
-                    
-                    if (!profileDir.exists()) {
-                        return;
-                    }
-
-                    
-                    
-                    
-                    
-                    
-                    final LocalBrowserDB db = new LocalBrowserDB(getName());
-                    final int offset = distribution == null ? 0 : db.addDistributionBookmarks(cr, distribution, 0);
-                    db.addDefaultBookmarks(context, cr, offset);
-
-                    Log.d(LOGTAG, "Running post-distribution task: android preferences.");
-                    DistroSharedPrefsImport.importPreferences(context, distribution);
-                }
-            }
-
-            @Override
-            public void distributionArrivedLate(Distribution distribution) {
-                Log.d(LOGTAG, "Running late distribution task: bookmarks.");
-                
-                synchronized (GeckoProfile.this) {
-                    
-                    if (!profileDir.exists()) {
-                        return;
-                    }
-
-                    final LocalBrowserDB db = new LocalBrowserDB(getName());
-                    
-                    
-                    final ContentResolver cr = context.getContentResolver();
-                    final int offset = db.getCount(cr, "bookmarks");
-                    db.addDistributionBookmarks(cr, distribution, offset);
-
-                    Log.d(LOGTAG, "Running late distribution task: android preferences.");
-                    DistroSharedPrefsImport.importPreferences(context, distribution);
-                }
-            }
-        });
     }
 }
