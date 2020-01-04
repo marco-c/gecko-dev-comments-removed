@@ -2560,6 +2560,7 @@ exports.binarySearchFirstItem = binarySearchFirstItem;
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('find' + e.type, true, true, {
         query: e.query,
+        phraseSearch: e.phraseSearch,
         caseSensitive: e.caseSensitive,
         highlightAll: e.highlightAll,
         findPrevious: e.findPrevious
@@ -3010,6 +3011,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
       this.active = false; 
       this.pageContents = []; 
       this.pageMatches = [];
+      this.pageMatchesLength = null;
       this.matchCount = 0;
       this.selected = { 
         pageIdx: -1,
@@ -3036,10 +3038,114 @@ var PDFFindController = (function PDFFindControllerClosure() {
       });
     },
 
+    
+    
+    
+    
+    
+
+    _prepareMatches: function PDFFindController_prepareMatches(
+        matchesWithLength, matches, matchesLength) {
+
+      function isSubTerm(matchesWithLength, currentIndex) {
+        var currentElem, prevElem, nextElem;
+        currentElem = matchesWithLength[currentIndex];
+        nextElem = matchesWithLength[currentIndex + 1];
+        
+        if (currentIndex < matchesWithLength.length - 1 &&
+            currentElem.match === nextElem.match) {
+          currentElem.skipped = true;
+          return true;
+        }
+        
+        for (var i = currentIndex - 1; i >= 0; i--) {
+          prevElem = matchesWithLength[i];
+          if (prevElem.skipped) {
+            continue;
+          }
+          if (prevElem.match + prevElem.matchLength < currentElem.match) {
+            break;
+          }
+          if (prevElem.match + prevElem.matchLength >=
+              currentElem.match + currentElem.matchLength) {
+            currentElem.skipped = true;
+            return true;
+          }
+        }
+        return false;
+      }
+
+      var i, len;
+      
+      
+      matchesWithLength.sort(function(a, b) {
+        return a.match === b.match ?
+        a.matchLength - b.matchLength : a.match - b.match;
+      });
+      for (i = 0, len = matchesWithLength.length; i < len; i++) {
+        if (isSubTerm(matchesWithLength, i)) {
+          continue;
+        }
+        matches.push(matchesWithLength[i].match);
+        matchesLength.push(matchesWithLength[i].matchLength);
+      }
+    },
+
+    calcFindPhraseMatch: function PDFFindController_calcFindPhraseMatch(
+      query, pageIndex, pageContent) {
+      var matches = [];
+      var queryLen = query.length;
+      var matchIdx = -queryLen;
+      while (true) {
+        matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
+        if (matchIdx === -1) {
+          break;
+        }
+        matches.push(matchIdx);
+      }
+      this.pageMatches[pageIndex] = matches;
+    },
+
+    calcFindWordMatch: function PDFFindController_calcFindWordMatch(
+      query, pageIndex, pageContent) {
+      var matchesWithLength = [];
+      
+      var queryArray = query.match(/\S+/g);
+      var subquery, subqueryLen, matchIdx;
+      for (var i = 0, len = queryArray.length; i < len; i++) {
+        subquery = queryArray[i];
+        subqueryLen = subquery.length;
+        matchIdx = -subqueryLen;
+        while (true) {
+          matchIdx = pageContent.indexOf(subquery, matchIdx + subqueryLen);
+          if (matchIdx === -1) {
+            break;
+          }
+          
+          matchesWithLength.push({
+            match: matchIdx,
+            matchLength: subqueryLen,
+            skipped: false
+          });
+        }
+      }
+      
+      if (!this.pageMatchesLength) {
+        this.pageMatchesLength = [];
+      }
+      this.pageMatchesLength[pageIndex] = [];
+      this.pageMatches[pageIndex] = [];
+      
+      
+      this._prepareMatches(matchesWithLength, this.pageMatches[pageIndex],
+        this.pageMatchesLength[pageIndex]);
+    },
+
     calcFindMatch: function PDFFindController_calcFindMatch(pageIndex) {
       var pageContent = this.normalize(this.pageContents[pageIndex]);
       var query = this.normalize(this.state.query);
       var caseSensitive = this.state.caseSensitive;
+      var phraseSearch = this.state.phraseSearch;
       var queryLen = query.length;
 
       if (queryLen === 0) {
@@ -3052,16 +3158,12 @@ var PDFFindController = (function PDFFindControllerClosure() {
         query = query.toLowerCase();
       }
 
-      var matches = [];
-      var matchIdx = -queryLen;
-      while (true) {
-        matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
-        if (matchIdx === -1) {
-          break;
-        }
-        matches.push(matchIdx);
+      if (phraseSearch) {
+        this.calcFindPhraseMatch(query, pageIndex, pageContent);
+      } else {
+        this.calcFindWordMatch(query, pageIndex, pageContent);
       }
-      this.pageMatches[pageIndex] = matches;
+
       this.updatePage(pageIndex);
       if (this.resumePageIdx === pageIndex) {
         this.resumePageIdx = null;
@@ -3069,8 +3171,8 @@ var PDFFindController = (function PDFFindControllerClosure() {
       }
 
       
-      if (matches.length > 0) {
-        this.matchCount += matches.length;
+      if (this.pageMatches[pageIndex].length > 0) {
+        this.matchCount += this.pageMatches[pageIndex].length;
         this.updateUIResultsCount();
       }
     },
@@ -3165,6 +3267,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.resumePageIdx = null;
         this.pageMatches = [];
         this.matchCount = 0;
+        this.pageMatchesLength = null;
         var self = this;
 
         for (var i = 0; i < numPages; i++) {
@@ -3980,6 +4083,7 @@ var PDFFindBar = (function PDFFindBarClosure() {
         type: type,
         query: this.findField.value,
         caseSensitive: this.caseSensitive.checked,
+        phraseSearch: true,
         highlightAll: this.highlightAll.checked,
         findPrevious: findPrev
       });
@@ -4651,6 +4755,13 @@ var PDFLinkService = (function () {
     setHash: function PDFLinkService_setHash(hash) {
       if (hash.indexOf('=') >= 0) {
         var params = parseQueryString(hash);
+        if ('search' in params) {
+          this.eventBus.dispatch('findfromurlhash', {
+            source: this,
+            query: params['search'].replace(/"/g, ''),
+            phraseSearch: (params['phrase'] === 'true')
+          });
+        }
         
         if ('nameddest' in params) {
           if (this.pdfHistory) {
@@ -5690,7 +5801,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       this.divContentDone = true;
     },
 
-    convertMatches: function TextLayerBuilder_convertMatches(matches) {
+    convertMatches: function TextLayerBuilder_convertMatches(matches,
+                                                             matchesLength) {
       var i = 0;
       var iIndex = 0;
       var bidiTexts = this.textContent.items;
@@ -5698,7 +5810,9 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var queryLen = (this.findController === null ?
                       0 : this.findController.state.query.length);
       var ret = [];
-
+      if (!matches) {
+        return ret;
+      }
       for (var m = 0, len = matches.length; m < len; m++) {
         
         var matchIdx = matches[m];
@@ -5721,7 +5835,11 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         };
 
         
-        matchIdx += queryLen;
+        if (matchesLength) { 
+          matchIdx += matchesLength[m];
+        } else { 
+          matchIdx += queryLen;
+        }
 
         
         
@@ -5863,8 +5981,14 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       
       
-      this.matches = this.convertMatches(this.findController === null ?
-        [] : (this.findController.pageMatches[this.pageIdx] || []));
+      var pageMatches, pageMatchesLength;
+      if (this.findController !== null) {
+        pageMatches = this.findController.pageMatches[this.pageIdx] || null;
+        pageMatchesLength = (this.findController.pageMatchesLength) ?
+          this.findController.pageMatchesLength[this.pageIdx] || null : null;
+      }
+
+      this.matches = this.convertMatches(pageMatches, pageMatchesLength);
       this.renderMatches(this.matches);
     },
 
@@ -7947,6 +8071,7 @@ var PDFViewerApplication = {
     eventBus.on('rotateccw', webViewerRotateCcw);
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
+    eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
   }
 };
 
@@ -8436,9 +8561,20 @@ function webViewerDocumentProperties() {
 function webViewerFind(e) {
   PDFViewerApplication.findController.executeCommand('find' + e.type, {
     query: e.query,
+    phraseSearch: e.phraseSearch,
     caseSensitive: e.caseSensitive,
     highlightAll: e.highlightAll,
     findPrevious: e.findPrevious
+  });
+}
+
+function webViewerFindFromUrlHash(e) {
+  PDFViewerApplication.findController.executeCommand('find', {
+    query: e.query,
+    phraseSearch: e.phraseSearch,
+    caseSensitive: false,
+    highlightAll: true,
+    findPrevious: false
   });
 }
 
@@ -8585,6 +8721,7 @@ window.addEventListener('keydown', function keydown(evt) {
           if (findState) {
             PDFViewerApplication.findController.executeCommand('findagain', {
               query: findState.query,
+              phraseSearch: findState.phraseSearch,
               caseSensitive: findState.caseSensitive,
               highlightAll: findState.highlightAll,
               findPrevious: cmd === 5 || cmd === 12
@@ -8958,6 +9095,7 @@ Preferences._readFromStorage = function (prefObj) {
       source: window,
       type: evt.type.substring('find'.length),
       query: evt.detail.query,
+      phraseSearch: true,
       caseSensitive: !!evt.detail.caseSensitive,
       highlightAll: !!evt.detail.highlightAll,
       findPrevious: !!evt.detail.findPrevious
