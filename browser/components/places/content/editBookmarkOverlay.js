@@ -761,6 +761,11 @@ var gEditItemOverlay = {
         this._markFolderAsRecentlyUsed(containerId)
             .catch(Components.utils.reportError);
       }
+
+      
+      if (containerId == PlacesUtils.toolbarFolderId) {
+        Services.obs.notifyObservers(null, "autoshow-bookmarks-toolbar", null);
+      }
     }
 
     
