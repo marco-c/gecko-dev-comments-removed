@@ -49,6 +49,7 @@ addMessageListener("devtools:test:console", function ({ data }) {
 
 
 
+
 function promiseXHR(data) {
   let xhr = new content.XMLHttpRequest();
 
@@ -67,10 +68,21 @@ function promiseXHR(data) {
   });
 
   xhr.open(method, url);
+
+  
+  if (data.requestHeaders) {
+    data.requestHeaders.forEach(header => {
+      xhr.setRequestHeader(header.name, header.value);
+    });
+  }
+
   xhr.send(body);
   return deferred.promise;
-
 }
+
+
+
+
 
 
 
