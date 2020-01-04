@@ -41,6 +41,8 @@ class InterceptedJARChannel : public nsIInterceptedChannel
   
   nsCOMPtr<nsIOutputStream> mResponseBody;
 
+  nsCOMPtr<nsISupports> mReleaseHandle;
+
   
   nsCString mContentType;
 

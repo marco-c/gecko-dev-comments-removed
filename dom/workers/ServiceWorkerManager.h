@@ -328,6 +328,18 @@ public:
   typedef nsTArray<nsCOMPtr<nsIWeakReference>> WeakDocumentList;
   nsClassHashtable<nsCStringHashKey, WeakDocumentList> mRegisteringDocuments;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef nsTArray<nsIInterceptedChannel*> InterceptionList;
+  nsClassHashtable<nsCStringHashKey, InterceptionList> mNavigationInterceptions;
+
   bool
   IsAvailable(const OriginAttributes& aOriginAttributes, nsIURI* aURI);
 
@@ -622,6 +634,16 @@ private:
 
   void
   AddRegisteringDocument(const nsACString& aScope, nsIDocument* aDoc);
+
+  class InterceptionReleaseHandle;
+
+  void
+  AddNavigationInterception(const nsACString& aScope,
+                            nsIInterceptedChannel* aChannel);
+
+  void
+  RemoveNavigationInterception(const nsACString& aScope,
+                               nsIInterceptedChannel* aChannel);
 };
 
 } 
