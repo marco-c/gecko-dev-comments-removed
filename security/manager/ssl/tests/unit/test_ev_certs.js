@@ -190,9 +190,11 @@ function run_test() {
   add_test(function () {
     
     
+    
     Services.prefs.setBoolPref("security.onecrl.via.amo", false);
     
     Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 108000);
+    
     
     Services.prefs.setIntPref("app.update.lastUpdateTime.blocklist-background-update-timer",
                               Math.floor(Date.now() / 1000) - 1);
@@ -202,7 +204,29 @@ function run_test() {
                           gEVExpected ? ["int-ev-valid", "ev-valid"]
                                       : ["ev-valid"]);
     check_ee_for_ev("ev-valid", gEVExpected);
-    Services.prefs.clearUserPref("security.onecrl.maximum_staleness_in_seconds");
+    ocspResponder.stop(run_next_test);
+  });
+
+  add_test(function () {
+    
+    
+    Services.prefs.setBoolPref("security.onecrl.via.amo", false);
+
+    
+    Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 108000);
+
+    
+    Services.prefs.setIntPref("services.kinto.onecrl.checked",
+                              Math.floor(Date.now() / 1000) - 1);
+
+    clearOCSPCache();
+    
+    let ocspResponder = start_ocsp_responder(["ev-valid"]);
+    check_ee_for_ev("ev-valid", gEVExpected);
+    
+    Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds", 0);
+    Services.prefs.clearUserPref("security.onecrl.via.amo");
+    Services.prefs.clearUserPref("services.kinto.onecrl.checked");
     ocspResponder.stop(run_next_test);
   });
 
