@@ -3,6 +3,7 @@
 
 
 
+
 #include "Hal.h"
 #include "mozilla/HalWakeLock.h"
 #include "mozilla/Services.h"
@@ -54,21 +55,21 @@ WakeLockInfoFromLockCount(const nsAString& aTopic, const LockCount& aLockCount)
   return info;
 }
 
-PLDHashOperator
-CountWakeLocks(const uint64_t& aKey, LockCount aCount, void* aUserArg)
+static void
+CountWakeLocks(ProcessLockTable* aTable, LockCount* aTotalCount)
 {
-  MOZ_ASSERT(aUserArg);
+  for (auto iter = aTable->Iter(); !iter.Done(); iter.Next()) {
+    const uint64_t& key = iter.Key();
+    LockCount count = iter.UserData();
 
-  LockCount* totalCount = static_cast<LockCount*>(aUserArg);
-  totalCount->numLocks += aCount.numLocks;
-  totalCount->numHidden += aCount.numHidden;
+    aTotalCount->numLocks += count.numLocks;
+    aTotalCount->numHidden += count.numHidden;
 
-  
-  if (!totalCount->processes.Contains(aKey)) {
-    totalCount->processes.AppendElement(aKey);
+    
+    if (!aTotalCount->processes.Contains(key)) {
+      aTotalCount->processes.AppendElement(key);
+    }
   }
-
-  return PL_DHASH_NEXT;
 }
 
 static PLDHashOperator
@@ -83,7 +84,7 @@ RemoveChildFromList(const nsAString& aKey, nsAutoPtr<ProcessLockTable>& aTable,
     aTable->Remove(childID);
 
     LockCount totalCount;
-    aTable->EnumerateRead(CountWakeLocks, &totalCount);
+    CountWakeLocks(aTable, &totalCount);
     if (!totalCount.numLocks) {
       op = PL_DHASH_REMOVE;
     }
@@ -222,7 +223,7 @@ ModifyWakeLock(const nsAString& aTopic,
     sLockTable->Put(aTopic, table);
   } else {
     table->Get(aProcessID, &processCount);
-    table->EnumerateRead(CountWakeLocks, &totalCount);
+    CountWakeLocks(table, &totalCount);
   }
 
   MOZ_ASSERT(processCount.numLocks >= processCount.numHidden);
@@ -279,7 +280,7 @@ GetWakeLockInfo(const nsAString& aTopic, WakeLockInformation* aWakeLockInfo)
     return;
   }
   LockCount totalCount;
-  table->EnumerateRead(CountWakeLocks, &totalCount);
+  CountWakeLocks(table, &totalCount);
   *aWakeLockInfo = WakeLockInfoFromLockCount(aTopic, totalCount);
 }
 
