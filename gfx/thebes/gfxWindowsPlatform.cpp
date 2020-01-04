@@ -2526,6 +2526,13 @@ gfxWindowsPlatform::InitializeD2D()
     return;
   }
 
+  
+  
+  if (!mD3D11ContentDevice) {
+    mD2D1Status = FeatureStatus::Failed;
+    return;
+  }
+
   if (!mCompositorD3D11TextureSharingWorks) {
     mD2D1Status = FeatureStatus::Failed;
     return;
@@ -2533,11 +2540,6 @@ gfxWindowsPlatform::InitializeD2D()
 
   
   if (!mDWriteFactory && !InitDWriteSupport()) {
-    mD2D1Status = FeatureStatus::Failed;
-    return;
-  }
-
-  if (!mD3D11ContentDevice) {
     mD2D1Status = FeatureStatus::Failed;
     return;
   }
