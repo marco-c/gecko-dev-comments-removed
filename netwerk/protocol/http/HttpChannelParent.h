@@ -82,6 +82,8 @@ public:
   
   void DivertTo(nsIStreamListener *aListener) override;
   nsresult SuspendForDiversion() override;
+  nsresult SuspendMessageDiversion() override;
+  nsresult ResumeMessageDiversion() override;
 
   
   

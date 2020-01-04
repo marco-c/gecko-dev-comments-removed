@@ -52,6 +52,8 @@ public:
   
   void DivertTo(nsIStreamListener *aListener) override;
   nsresult SuspendForDiversion() override;
+  nsresult SuspendMessageDiversion() override;
+  nsresult ResumeMessageDiversion() override;
 
   
   
@@ -98,6 +100,9 @@ protected:
                                          const uint32_t& count) override;
   virtual bool RecvDivertOnStopRequest(const nsresult& statusCode) override;
   virtual bool RecvDivertComplete() override;
+
+  nsresult SuspendChannel();
+  nsresult ResumeChannel();
 
   virtual void ActorDestroy(ActorDestroyReason why) override;
 

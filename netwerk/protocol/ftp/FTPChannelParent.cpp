@@ -234,16 +234,18 @@ FTPChannelParent::RecvCancel(const nsresult& status)
 bool
 FTPChannelParent::RecvSuspend()
 {
-  if (mChannel)
-    mChannel->Suspend();
+  if (mChannel) {
+    SuspendChannel();
+  }
   return true;
 }
 
 bool
 FTPChannelParent::RecvResume()
 {
-  if (mChannel)
-    mChannel->Resume();
+  if (mChannel) {
+    ResumeChannel();
+  }
   return true;
 }
 
@@ -611,6 +613,30 @@ FTPChannelParent::GetInterface(const nsIID& uuid, void** result)
   return QueryInterface(uuid, result);
 }
 
+nsresult
+FTPChannelParent::SuspendChannel()
+{
+  nsCOMPtr<nsIChannelWithDivertableParentListener> chan =
+    do_QueryInterface(mChannel);
+  if (chan) {
+    return chan->SuspendInternal();
+  } else {
+    return mChannel->Suspend();
+  }
+}
+
+nsresult
+FTPChannelParent::ResumeChannel()
+{
+  nsCOMPtr<nsIChannelWithDivertableParentListener> chan =
+    do_QueryInterface(mChannel);
+  if (chan) {
+    return chan->ResumeInternal();
+  } else {
+    return mChannel->Resume();
+  }
+}
+
 
 
 
@@ -625,13 +651,19 @@ FTPChannelParent::SuspendForDiversion()
 
   
   
-  nsresult rv = mChannel->Suspend();
+  nsresult rv = SuspendChannel();
   MOZ_ASSERT(NS_SUCCEEDED(rv) || rv == NS_ERROR_NOT_AVAILABLE);
   mSuspendedForDiversion = NS_SUCCEEDED(rv);
 
   
   
   mDivertingFromChild = true;
+
+  nsCOMPtr<nsIChannelWithDivertableParentListener> chan =
+    do_QueryInterface(mChannel);
+  if (chan) {
+    chan->MessageDiversionStarted(this);
+  }
 
   return NS_OK;
 }
@@ -648,8 +680,14 @@ FTPChannelParent::ResumeForDiversion()
     return NS_ERROR_UNEXPECTED;
   }
 
+  nsCOMPtr<nsIChannelWithDivertableParentListener> chan =
+    do_QueryInterface(mChannel);
+  if (chan) {
+    chan->MessageDiversionStop();
+  }
+
   if (mSuspendedForDiversion) {
-    nsresult rv = mChannel->Resume();
+    nsresult rv = ResumeChannel();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       FailDiversion(NS_ERROR_UNEXPECTED, true);
       return rv;
@@ -663,6 +701,22 @@ FTPChannelParent::ResumeForDiversion()
     FailDiversion(NS_ERROR_UNEXPECTED);
     return NS_ERROR_UNEXPECTED;   
   }
+  return NS_OK;
+}
+
+nsresult
+FTPChannelParent::SuspendMessageDiversion()
+{
+  
+  mEventQ->Suspend();
+  return NS_OK;
+}
+
+nsresult
+FTPChannelParent::ResumeMessageDiversion()
+{
+  
+  mEventQ->Resume();
   return NS_OK;
 }
 
@@ -786,7 +840,7 @@ FTPChannelParent::NotifyDiversionFailed(nsresult aErrorCode,
 
   
   if (mSuspendedForDiversion) {
-    mChannel->Resume();
+    ResumeChannel();
   }
   
   
