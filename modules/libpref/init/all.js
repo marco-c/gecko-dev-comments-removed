@@ -132,6 +132,13 @@ pref("dom.permissions.enabled", false);
 #endif
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.select_events.enabled", true);
+#else
+pref("dom.select_events.enabled", false);
+#endif
+
+
 pref("dom.workers.enabled", true);
 
 pref("dom.workers.maxPerDomain", 20);

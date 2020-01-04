@@ -831,6 +831,14 @@ nsTextEditRules::WillDeleteSelection(Selection* aSelection,
   }
 
   nsresult res = NS_OK;
+  
+  
+  
+  
+  
+  
+  SelectionBatcher selectionBatcher(aSelection);
+  AutoHideSelectionChanges hideSelection(aSelection);
   nsAutoScriptBlocker scriptBlocker;
 
   if (IsPasswordEditor())
