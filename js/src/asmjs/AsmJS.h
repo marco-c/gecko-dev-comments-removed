@@ -19,11 +19,10 @@
 #ifndef asmjs_asmjs_h
 #define asmjs_asmjs_h
 
-#include "vm/NativeObject.h"
+#include "NamespaceImports.h"
 
 namespace js {
 
-class AsmJSModule;
 class ExclusiveContext;
 namespace frontend {
     template <typename ParseHandler> class Parser;
@@ -33,29 +32,6 @@ namespace frontend {
 }
 typedef frontend::Parser<frontend::FullParseHandler> AsmJSParser;
 typedef frontend::ParseContext<frontend::FullParseHandler> AsmJSParseContext;
-
-
-
-
-
-
-class AsmJSModuleObject : public NativeObject
-{
-    static const unsigned MODULE_SLOT = 0;
-
-  public:
-    static const unsigned RESERVED_SLOTS = 1;
-
-    bool hasModule() const;
-    void setModule(AsmJSModule* module);
-    AsmJSModule& module() const;
-
-    void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf, size_t* code, size_t* data);
-
-    static const Class class_;
-};
-
-typedef Handle<AsmJSModuleObject*> HandleAsmJSModule;
 
 
 

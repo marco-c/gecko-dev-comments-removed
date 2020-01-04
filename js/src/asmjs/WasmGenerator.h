@@ -65,17 +65,10 @@ class MOZ_STACK_CLASS ModuleGenerator
     typedef HashSet<const LifoSig*, SigHashPolicy> SigSet;
 
     ExclusiveContext*             cx_;
-    CompileArgs                   args_;
 
     
-    uint32_t                      globalBytes_;
-    ImportVector                  imports_;
-    ExportVector                  exports_;
-    CodeRangeVector               codeRanges_;
-    CacheableCharsVector          funcNames_;
-
-    
-    UniqueStaticLinkData          staticLinkData_;
+    UniqueModuleData              module_;
+    UniqueStaticLinkData          link_;
     SlowFunctionVector            slowFuncs_;
 
     
@@ -84,6 +77,8 @@ class MOZ_STACK_CLASS ModuleGenerator
     jit::TempAllocator            alloc_;
     jit::MacroAssembler           masm_;
     SigSet                        sigs_;
+    FuncOffsetVector              funcEntryOffsets_;
+    FuncIndexVector               exportFuncIndices_;
 
     
     bool                          parallel_;
@@ -92,9 +87,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     Vector<IonCompileTask*>       freeTasks_;
 
     
-    uint32_t                      funcBytes_;
-    FuncOffsetVector              funcEntryOffsets_;
-    FuncIndexVector               exportFuncIndices_;
     DebugOnly<FunctionGenerator*> activeFunc_;
     DebugOnly<bool>               finishedFuncs_;
 
@@ -108,7 +100,7 @@ class MOZ_STACK_CLASS ModuleGenerator
 
     bool init();
 
-    CompileArgs args() const { return args_; }
+    CompileArgs args() const { return module_->compileArgs; }
     jit::MacroAssembler& masm() { return masm_; }
     const FuncOffsetVector& funcEntryOffsets() const { return funcEntryOffsets_; }
 
@@ -151,12 +143,14 @@ class MOZ_STACK_CLASS ModuleGenerator
 
     
     
-    Module* finish(HeapUsage heapUsage,
-                   Module::MutedBool mutedErrors,
-                   CacheableChars filename,
-                   CacheableTwoByteChars displayURL,
-                   UniqueStaticLinkData* staticLinkData,
-                   SlowFunctionVector* slowFuncs);
+    
+    bool finish(HeapUsage heapUsage,
+                MutedErrorsBool mutedErrors,
+                CacheableChars filename,
+                CacheableTwoByteChars displayURL,
+                UniqueModuleData* module,
+                UniqueStaticLinkData* staticLinkData,
+                SlowFunctionVector* slowFuncs);
 };
 
 
