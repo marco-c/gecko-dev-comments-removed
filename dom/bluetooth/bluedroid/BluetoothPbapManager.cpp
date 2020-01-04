@@ -517,9 +517,7 @@ BluetoothPbapManager::NotifyPasswordRequest(const ObexHeaderSet& aHeader)
   MOZ_ASSERT(aHeader.Has(ObexHeaderId::AuthChallenge));
 
   
-  int dataLength;
-  nsAutoArrayPtr<uint8_t> dataPtr;
-  aHeader.GetAuthChallenge(dataPtr, &dataLength);
+  const ObexHeader* authHeader = aHeader.GetHeader(ObexHeaderId::AuthChallenge);
 
   
   
@@ -527,16 +525,16 @@ BluetoothPbapManager::NotifyPasswordRequest(const ObexHeaderSet& aHeader)
   
   uint8_t offset = 0;
   do {
-    uint8_t tagId = dataPtr[offset++];
-    uint8_t length = dataPtr[offset++];
+    uint8_t tagId = authHeader->mData[offset++];
+    uint8_t length = authHeader->mData[offset++];
 
     BT_LOGR("AuthChallenge header includes tagId %d", tagId);
     if (tagId == ObexDigestChallenge::Nonce) {
-      memcpy(mRemoteNonce, &dataPtr[offset], DIGEST_LENGTH);
+      memcpy(mRemoteNonce, &authHeader->mData[offset], DIGEST_LENGTH);
     }
 
     offset += length;
-  } while (offset < dataLength);
+  } while (offset < authHeader->mDataLength);
 
   
   BluetoothService* bs = BluetoothService::Get();
