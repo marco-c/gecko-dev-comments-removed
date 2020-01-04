@@ -1412,6 +1412,27 @@ GetAccessibleInSubtree(DocAccessible* aDoc, uint32_t aID)
   }
 #endif
 
+static AccessibleWrap*
+GetProxiedAccessibleInSubtree(const DocAccessibleParent* aDoc, uint32_t aID)
+{
+  auto wrapper = static_cast<DocProxyAccessibleWrap*>(WrapperFor(aDoc));
+  AccessibleWrap* child = wrapper->GetAccessibleByID(aID);
+  if (child) {
+    return child;
+  }
+
+  size_t childDocs = aDoc->ChildDocCount();
+  for (size_t i = 0; i < childDocs; i++) {
+    const DocAccessibleParent* childDoc = aDoc->ChildDocAt(i);
+    child = GetProxiedAccessibleInSubtree(childDoc, aID);
+    if (child) {
+      return child;
+    }
+  }
+
+  return nullptr;
+}
+
 Accessible*
 AccessibleWrap::GetXPAccessibleFor(const VARIANT& aVarChild)
 {
@@ -1435,38 +1456,92 @@ AccessibleWrap::GetXPAccessibleFor(const VARIANT& aVarChild)
     }
   }
 
+  
+  
+  
+  
+  
+  
+  if (!IsProxy()) {
+    void* uniqueID = reinterpret_cast<void*>(-aVarChild.lVal);
+
+    DocAccessible* document = Document();
+    Accessible* child =
+#ifdef _WIN64
+      GetAccessibleInSubtree(document, static_cast<uint32_t>(aVarChild.lVal));
+#else
+      document->GetAccessibleByUniqueIDInSubtree(uniqueID);
+#endif
+
+
+    if (IsDoc())
+      return child;
+
+    
+    
+    Accessible* parent = child;
+    while (parent && parent != document) {
+      if (parent == this)
+        return child;
+
+      parent = parent->Parent();
+    }
+  }
+
+  
+  
+  uint32_t id = aVarChild.lVal;
   if (IsProxy()) {
-    
-    
+    DocAccessibleParent* proxyDoc = Proxy()->Document();
+    AccessibleWrap* wrapper = GetProxiedAccessibleInSubtree(proxyDoc, id);
+    MOZ_ASSERT(wrapper->IsProxy());
+
+    ProxyAccessible* parent = wrapper->Proxy();
+    while (parent && parent != proxyDoc) {
+      if (parent == this->Proxy()) {
+        return wrapper;
+      }
+
+      parent = parent->Parent();
+    }
+
     return nullptr;
   }
 
   
   
   
-  
-  void* uniqueID = reinterpret_cast<void*>(-aVarChild.lVal);
+  DocAccessibleParent* proxyDoc = nullptr;
+  DocAccessible* doc = Document();
+  const nsTArray<DocAccessibleParent*>* remoteDocs =
+    DocManager::TopLevelRemoteDocs();
+  if (!remoteDocs) {
+    return nullptr;
+  }
 
-  DocAccessible* document = Document();
-  Accessible* child =
-#ifdef _WIN64
-    GetAccessibleInSubtree(document, static_cast<uint32_t>(aVarChild.lVal));
-#else
-    document->GetAccessibleByUniqueIDInSubtree(uniqueID);
-#endif
+  size_t docCount = remoteDocs->Length();
+  for (size_t i = 0; i < docCount; i++) {
+    Accessible* outerDoc = remoteDocs->ElementAt(i)->OuterDocOfRemoteBrowser();
+    if (!outerDoc) {
+      continue;
+    }
 
+    if (outerDoc->Document() != doc) {
+      continue;
+    }
 
-  if (IsDoc())
-    return child;
+    Accessible* parent = outerDoc;
+    while (parent && parent != doc) {
+      if (parent == this) {
+        AccessibleWrap* proxyWrapper =
+          GetProxiedAccessibleInSubtree(remoteDocs->ElementAt(i), id);
+        if (proxyWrapper) {
+          return proxyWrapper;
+        }
+      }
 
-  
-  
-  Accessible* parent = child;
-  while (parent && parent != document) {
-    if (parent == this)
-      return child;
-
-    parent = parent->Parent();
+      parent = parent->Parent();
+    }
   }
 
   return nullptr;
