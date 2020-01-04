@@ -63,6 +63,14 @@ if __name__ == '__main__':
       if os.path.exists(vc12dir):
         env["PATH"] = vc12dir + ";" + env["PATH"]
 
+    
+    runner = FirefoxRunner(profile=profile,
+                           binary=build.get_binary_path(where="staged-package"),
+                           cmdargs=['javascript:Quitter.quit()'],
+                           env=env)
+    runner.start()
+    runner.wait()
+
     jarlog = os.getenv("JARLOG_FILE")
     if jarlog:
       env["MOZ_JAR_LOG_FILE"] = os.path.abspath(jarlog)
