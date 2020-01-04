@@ -401,5 +401,54 @@ this.LoginHelper = {
       return;
     }
     Services.logins.addLogin(login);
+  },
+
+  
+
+
+
+
+
+  loginsToVanillaObjects(logins) {
+    return logins.map(this.loginToVanillaObject);
+  },
+
+  
+
+
+  loginToVanillaObject(login) {
+    let obj = {};
+    for (let i in login) {
+      if (typeof login[i] !== 'function') {
+        obj[i] = login[i];
+      }
+    }
+
+    login.QueryInterface(Ci.nsILoginMetaInfo);
+    obj.guid = login.guid;
+    return obj;
+  },
+
+  
+
+
+  vanillaObjectToLogin(login) {
+    var formLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].
+                  createInstance(Ci.nsILoginInfo);
+    formLogin.init(login.hostname, login.formSubmitURL,
+                   login.httpRealm, login.username,
+                   login.password, login.usernameField,
+                   login.passwordField);
+
+    formLogin.QueryInterface(Ci.nsILoginMetaInfo);
+    formLogin.guid = login.guid;
+    return formLogin;
+  },
+
+  
+
+
+  vanillaObjectsToLogins(logins) {
+    return logins.map(this.vanillaObjectToLogin);
   }
 };

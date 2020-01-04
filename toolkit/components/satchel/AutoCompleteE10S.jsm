@@ -147,8 +147,22 @@ this.AutoCompleteE10S = {
     this._showPopup(results);
   },
 
-  removeEntry(index) {
-    this._resultCache.removeValueAt(index, true);
+  removeLogin(login) {
+    Services.logins.removeLogin(login);
+
+    
+    
+    
+    let idx = this._resultCache.logins.findIndex(cur => {
+      return login.guid === cur.QueryInterface(Ci.nsILoginMetaInfo).guid
+    });
+    if (idx !== -1) {
+      this.removeEntry(idx, false);
+    }
+  },
+
+  removeEntry(index, updateDB = true) {
+    this._resultCache.removeValueAt(index, updateDB);
 
     let selectedIndex = this.popup.selectedIndex;
     this.showPopupWithResults(this._popupCache.browserWindow,
