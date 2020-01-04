@@ -73,6 +73,20 @@ public:
 
 
 
+
+
+
+
+
+  static nsIWidget* GetWidgetForActiveInputContext()
+  {
+    return sActiveInputContextWidget;
+  }
+
+  
+
+
+
   static void SetInputContextForChildProcess(TabParent* aTabParent,
                                              const InputContext& aInputContext,
                                              const InputContextAction& aAction);
@@ -237,6 +251,9 @@ protected:
   static StaticRefPtr<nsIContent> sContent;
   static nsPresContext* sPresContext;
   static nsIWidget* sFocusedIMEWidget;
+  
+  
+  static nsIWidget* sActiveInputContextWidget;
   static StaticRefPtr<TabParent> sActiveTabParent;
   
   

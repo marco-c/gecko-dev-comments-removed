@@ -89,6 +89,9 @@ PuppetWidget::PuppetWidget(TabChild* aTabChild)
   mSingleLineCommands.SetCapacity(4);
   mMultiLineCommands.SetCapacity(4);
   mRichTextCommands.SetCapacity(4);
+
+  
+  mInputContext.mIMEState.mEnabled = IMEState::UNKNOWN;
 }
 
 PuppetWidget::~PuppetWidget()
@@ -685,6 +688,10 @@ PuppetWidget::SetInputContext(const InputContext& aContext,
                               const InputContextAction& aAction)
 {
   mInputContext = aContext;
+  
+  
+  
+  mInputContext.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
 
 #ifndef MOZ_CROSS_PROCESS_IME
   return;
@@ -710,10 +717,25 @@ PuppetWidget::GetInputContext()
   return InputContext();
 #endif
 
+  
+  
+
+  
+  
+  
+  if (mInputContext.mIMEState.mEnabled != IMEState::UNKNOWN &&
+      IMEStateManager::GetWidgetForActiveInputContext() == this) {
+    return mInputContext;
+  }
+
+  NS_WARNING("PuppetWidget::GetInputContext() needs to retrieve it with IPC");
+
+  
+  
+  
   InputContext context;
   if (mTabChild) {
     int32_t enabled, open;
-    
     mTabChild->SendGetInputContext(&enabled, &open);
     context.mIMEState.mEnabled = static_cast<IMEState::Enabled>(enabled);
     context.mIMEState.mOpen = static_cast<IMEState::Open>(open);

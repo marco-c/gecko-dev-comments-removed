@@ -163,7 +163,12 @@ struct IMEState final
 
 
 
-    PLUGIN
+    PLUGIN,
+    
+
+
+
+    UNKNOWN
   };
   Enabled mEnabled;
 

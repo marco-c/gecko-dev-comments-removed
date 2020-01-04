@@ -164,7 +164,8 @@ GetNotifyIMEMessageName(IMEMessage aMessage)
 
 StaticRefPtr<nsIContent> IMEStateManager::sContent;
 nsPresContext* IMEStateManager::sPresContext = nullptr;
-nsIWidget* IMEStateManager::sFocusedIMEWidget;
+nsIWidget* IMEStateManager::sFocusedIMEWidget = nullptr;
+nsIWidget* IMEStateManager::sActiveInputContextWidget = nullptr;
 StaticRefPtr<TabParent> IMEStateManager::sActiveTabParent;
 StaticRefPtr<IMEContentObserver> IMEStateManager::sActiveIMEContentObserver;
 TextCompositionArray* IMEStateManager::sTextCompositions = nullptr;
@@ -222,6 +223,9 @@ IMEStateManager::WidgetDestroyed(nsIWidget* aWidget)
   if (sFocusedIMEWidget == aWidget) {
     sFocusedIMEWidget = nullptr;
   }
+  if (sActiveInputContextWidget == aWidget) {
+    sActiveInputContextWidget = nullptr;
+  }
 }
 
 
@@ -237,6 +241,7 @@ IMEStateManager::StopIMEStateManagement()
   if (sTextCompositions && sPresContext) {
     NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, sPresContext);
   }
+  sActiveInputContextWidget = nullptr;
   sPresContext = nullptr;
   sContent = nullptr;
   sActiveTabParent = nullptr;
@@ -1004,8 +1009,6 @@ IMEStateManager::SetIMEState(const IMEState& aState,
 
   NS_ENSURE_TRUE_VOID(aWidget);
 
-  InputContext oldContext = aWidget->GetInputContext();
-
   InputContext context;
   context.mIMEState = aState;
   context.mMayBeIMEUnaware = context.mIMEState.IsEditable() &&
@@ -1108,13 +1111,15 @@ IMEStateManager::SetInputContext(nsIWidget* aWidget,
 
   MOZ_RELEASE_ASSERT(aWidget);
 
-  InputContext oldContext = aWidget->GetInputContext();
-
   aWidget->SetInputContext(aInputContext, aAction);
-  if (oldContext.mIMEState.mEnabled == aInputContext.mIMEState.mEnabled) {
-    return;
-  }
+  sActiveInputContextWidget = aWidget;
 
+  
+  
+  
+  
+
+  
   nsContentUtils::AddScriptRunner(
     new IMEEnabledStateChangedEvent(aInputContext.mIMEState.mEnabled));
 }
