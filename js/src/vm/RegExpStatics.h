@@ -82,10 +82,9 @@ class RegExpStatics
     inline void clear();
 
     
-    void reset(JSContext* cx, JSString* newInput, bool newMultiline) {
+    void reset(JSContext* cx, JSString* newInput) {
         clear();
         pendingInput = newInput;
-        setMultiline(cx, newMultiline);
         checkInvariants();
     }
 
