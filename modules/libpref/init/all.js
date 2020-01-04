@@ -365,6 +365,9 @@ pref("media.decoder-doctor.notifications-allowed", "MediaWidevineNoWMFNoSilverli
 
 pref("media.decoder-doctor.verbose", false);
 
+
+pref("media.suspend-bkgnd-video.enabled", true);
+
 #ifdef MOZ_WEBRTC
 pref("media.navigator.enabled", true);
 pref("media.navigator.video.enabled", true);
