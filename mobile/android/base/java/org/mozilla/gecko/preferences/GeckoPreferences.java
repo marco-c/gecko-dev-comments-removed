@@ -356,8 +356,6 @@ OnSharedPreferenceChangeListener
             }
         }
 
-        initActionBar();
-
         
         Bundle intentExtras = getIntent().getExtras();
 
@@ -402,27 +400,6 @@ OnSharedPreferenceChangeListener
             Telemetry.startUISession(TelemetryContract.Session.EXPERIMENT, FeedService.getEnabledExperiment(this));
             Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, Method.BUTTON, "notification-settings");
             Telemetry.stopUISession(TelemetryContract.Session.EXPERIMENT, FeedService.getEnabledExperiment(this));
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-    private void initActionBar() {
-        if (Versions.feature14Plus) {
-            final ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) {
-                actionBar.setHomeButtonEnabled(true);
-                actionBar.setDisplayHomeAsUpEnabled(true);
-                actionBar.setLogo(R.drawable.logo);
-                actionBar.setDisplayUseLogoEnabled(true);
-            }
         }
     }
 
