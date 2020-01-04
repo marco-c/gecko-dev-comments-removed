@@ -378,6 +378,12 @@ class SpiderMonkeyUnwinder(Unwinder):
         super(SpiderMonkeyUnwinder, self).__init__("SpiderMonkey")
         self.typecache = typecache
         self.unwinder_state = None
+
+        
+        self.enabled = False
+        gdb.write("SpiderMonkey unwinder is disabled by default, to enable it type:\n" +
+                  "\tenable unwinder .* SpiderMonkey\n")
+
         
         
         

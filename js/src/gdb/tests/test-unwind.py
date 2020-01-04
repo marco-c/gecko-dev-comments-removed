@@ -3,6 +3,11 @@
 import platform
 
 def do_unwinder_test():
+    
+    
+    import gdb
+    gdb.execute("enable unwinder .* SpiderMonkey")
+
     run_fragment('unwind.simple', 'Something')
 
     first = True
