@@ -28,6 +28,22 @@
 #include "nsStyleConsts.h"
 #include "nsUnicharUtils.h"
 
+#define LINK_ELEMENT_FLAG_BIT(n_) \
+  NODE_FLAG_BIT(ELEMENT_TYPE_SPECIFIC_BITS_OFFSET + (n_))
+
+
+enum {
+  
+  HTML_LINK_DNS_PREFETCH_REQUESTED = LINK_ELEMENT_FLAG_BIT(0),
+
+  
+  HTML_LINK_DNS_PREFETCH_DEFERRED =  LINK_ELEMENT_FLAG_BIT(1)
+};
+
+#undef LINK_ELEMENT_FLAG_BIT
+
+ASSERT_NODE_FLAGS_SPACE(ELEMENT_TYPE_SPECIFIC_BITS_OFFSET + 2);
+
 NS_IMPL_NS_NEW_HTML_ELEMENT(Link)
 
 namespace mozilla {
@@ -126,6 +142,26 @@ HTMLLinkElement::SetItemValueText(const nsAString& aValue)
   SetHref(aValue);
 }
 
+void
+HTMLLinkElement::OnDNSPrefetchRequested()
+{
+  UnsetFlags(HTML_LINK_DNS_PREFETCH_DEFERRED);
+  SetFlags(HTML_LINK_DNS_PREFETCH_REQUESTED);
+}
+
+void
+HTMLLinkElement::OnDNSPrefetchDeferred()
+{
+  UnsetFlags(HTML_LINK_DNS_PREFETCH_REQUESTED);
+  SetFlags(HTML_LINK_DNS_PREFETCH_DEFERRED);
+}
+
+bool
+HTMLLinkElement::HasDeferredDNSPrefetchRequest()
+{
+  return HasFlag(HTML_LINK_DNS_PREFETCH_DEFERRED);
+}
+
 nsresult
 HTMLLinkElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                             nsIContent* aBindingParent,
@@ -145,6 +181,9 @@ HTMLLinkElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
   if (IsInComposedDoc()) {
     UpdatePreconnect();
+    if (HasDNSPrefetchRel()) {
+      TryDNSPrefetch();
+    }
   }
 
   void (HTMLLinkElement::*update)() = &HTMLLinkElement::UpdateStyleSheetInternal;
@@ -173,6 +212,12 @@ HTMLLinkElement::LinkRemoved()
 void
 HTMLLinkElement::UnbindFromTree(bool aDeep, bool aNullParent)
 {
+  
+  
+  
+  CancelDNSPrefetch(HTML_LINK_DNS_PREFETCH_DEFERRED,
+                    HTML_LINK_DNS_PREFETCH_REQUESTED);
+
   
   
   Link::ResetLinkState(false, Link::ElementHasHref());
@@ -322,6 +367,32 @@ HTMLLinkElement::UpdatePreconnect()
   }
 }
 
+bool
+HTMLLinkElement::HasDNSPrefetchRel()
+{
+  nsAutoString rel;
+  if (GetAttr(kNameSpaceID_None, nsGkAtoms::rel, rel)) {
+    return !!(ParseLinkTypes(rel, NodePrincipal()) &
+              nsStyleLinkElement::eDNS_PREFETCH);
+  }
+
+  return false;
+}
+
+nsresult
+HTMLLinkElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
+                               nsAttrValueOrString* aValue, bool aNotify)
+{
+  if (aNameSpaceID == kNameSpaceID_None &&
+      (aName == nsGkAtoms::href || aName == nsGkAtoms::rel)) {
+    CancelDNSPrefetch(HTML_LINK_DNS_PREFETCH_DEFERRED,
+                      HTML_LINK_DNS_PREFETCH_REQUESTED);
+  }
+
+  return nsGenericHTMLElement::BeforeSetAttr(aNameSpaceID, aName,
+                                             aValue, aNotify);
+}
+
 nsresult
 HTMLLinkElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                               const nsAttrValue* aValue, bool aNotify)
@@ -366,6 +437,11 @@ HTMLLinkElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
         if (IsInComposedDoc()) {
           UpdatePreconnect();
         }
+      }
+
+      if ((aName == nsGkAtoms::rel || aName == nsGkAtoms::href) &&
+          HasDNSPrefetchRel() && IsInComposedDoc()) {
+        TryDNSPrefetch();
       }
 
       UpdateStyleSheetInternal(nullptr, nullptr,

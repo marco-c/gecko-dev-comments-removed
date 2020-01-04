@@ -158,9 +158,7 @@ HTMLAnchorElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   nsIDocument* doc = GetComposedDoc();
   if (doc) {
     doc->RegisterPendingLinkUpdate(this);
-    if (nsHTMLDNSPrefetch::IsAllowed(OwnerDoc())) {
-      nsHTMLDNSPrefetch::PrefetchLow(this);
-    }
+    TryDNSPrefetch();
   }
 
   return rv;
@@ -172,18 +170,9 @@ HTMLAnchorElement::UnbindFromTree(bool aDeep, bool aNullParent)
   
   
   
+  CancelDNSPrefetch(HTML_ANCHOR_DNS_PREFETCH_DEFERRED,
+                    HTML_ANCHOR_DNS_PREFETCH_REQUESTED);
 
-  
-  if (HasFlag(HTML_ANCHOR_DNS_PREFETCH_DEFERRED))
-    UnsetFlags(HTML_ANCHOR_DNS_PREFETCH_DEFERRED);
-  
-  else if (HasFlag(HTML_ANCHOR_DNS_PREFETCH_REQUESTED)) {
-    UnsetFlags(HTML_ANCHOR_DNS_PREFETCH_REQUESTED);
-    
-    
-    nsHTMLDNSPrefetch::CancelPrefetchLow(this, NS_ERROR_ABORT);
-  }
-  
   
   
   Link::ResetLinkState(false, Link::ElementHasHref());
@@ -406,6 +395,10 @@ HTMLAnchorElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
         reset = true;
       }
     }
+    if (reset) {
+      CancelDNSPrefetch(HTML_ANCHOR_DNS_PREFETCH_DEFERRED,
+                        HTML_ANCHOR_DNS_PREFETCH_REQUESTED);
+    }
   }
 
   nsresult rv = nsGenericHTMLElement::SetAttr(aNameSpaceID, aName, aPrefix,
@@ -418,6 +411,9 @@ HTMLAnchorElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   
   if (reset) {
     Link::ResetLinkState(!!aNotify, true);
+    if (IsInComposedDoc()) {
+      TryDNSPrefetch();
+    }
   }
 
   return rv;
@@ -427,6 +423,14 @@ nsresult
 HTMLAnchorElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttribute,
                              bool aNotify)
 {
+  bool href =
+    (aAttribute == nsGkAtoms::href && kNameSpaceID_None == aNameSpaceID);
+
+  if (href) {
+    CancelDNSPrefetch(HTML_ANCHOR_DNS_PREFETCH_DEFERRED,
+                      HTML_ANCHOR_DNS_PREFETCH_REQUESTED);
+  }
+
   nsresult rv = nsGenericHTMLElement::UnsetAttr(aNameSpaceID, aAttribute,
                                                 aNotify);
 
@@ -435,7 +439,7 @@ HTMLAnchorElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttribute,
   
   
   
-  if (aAttribute == nsGkAtoms::href && kNameSpaceID_None == aNameSpaceID) {
+  if (href) {
     Link::ResetLinkState(!!aNotify, false);
   }
 
