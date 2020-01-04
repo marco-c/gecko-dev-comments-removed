@@ -762,10 +762,6 @@ protected:
   bool mIsCapturedFrameInvalid;
 
   
-  
-  RefPtr<gfxASurface> mThebesSurface;
-
-  
 
 
 

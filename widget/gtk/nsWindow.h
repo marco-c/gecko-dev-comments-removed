@@ -60,7 +60,6 @@ extern PRLogModuleInfo *gWidgetDrawLog;
 
 #endif 
 
-class gfxASurface;
 class gfxPattern;
 class nsPluginNativeWindowGtk;
 
