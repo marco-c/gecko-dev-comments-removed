@@ -74,6 +74,10 @@ public class GLController extends JNIObject {
      native void attachToJava(GeckoLayerClient layerClient,
                                            NativePanZoomController npzc);
 
+    @WrapForJNI
+     native void onSizeChanged(int windowWidth, int windowHeight,
+                                            int screenWidth, int screenHeight);
+
     
     @WrapForJNI
     private native void createCompositor(int width, int height);
