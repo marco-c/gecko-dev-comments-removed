@@ -3553,16 +3553,16 @@ NS_IMETHODIMP nsFrame::HandleDrag(nsPresContext* aPresContext,
   MOZ_ASSERT(aEvent->mClass == eMouseEventClass,
              "HandleDrag can only handle mouse event");
 
-  bool selectable;
-  IsSelectable(&selectable, nullptr);
-
-  
-  
-  
-  if (!selectable)
-    return NS_OK;
-  if (DisplaySelection(aPresContext) == nsISelectionController::SELECTION_OFF) {
-    return NS_OK;
+  nsIFrame* scrollbar =
+    nsLayoutUtils::GetClosestFrameOfType(this, nsGkAtoms::scrollbarFrame);
+  if (!scrollbar) {
+    
+    
+    
+    
+    if (DisplaySelection(aPresContext) == nsISelectionController::SELECTION_OFF) {
+      return NS_OK;
+    }
   }
   nsIPresShell *presShell = aPresContext->PresShell();
 
