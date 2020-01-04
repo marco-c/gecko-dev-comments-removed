@@ -382,6 +382,25 @@ BrowserTabList.prototype._getActorForBrowser = function (browser) {
 
 BrowserTabList.prototype.getTab = function ({ outerWindowID, tabId }) {
   if (typeof outerWindowID == "number") {
+    
+    let window = Services.wm.getOuterWindowWithId(outerWindowID);
+    
+    if (window instanceof Ci.nsIDOMChromeWindow) {
+      return promise.reject({
+        error: "forbidden",
+        message: "Window with outerWindowID '" + outerWindowID + "' is chrome"
+      });
+    }
+    if (window) {
+      let iframe = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIDOMWindowUtils)
+                         .containerElement;
+      if (iframe) {
+        return this._getActorForBrowser(iframe);
+      }
+    }
+    
+    
     for (let browser of this._getBrowsers()) {
       if (browser.outerWindowID == outerWindowID) {
         return this._getActorForBrowser(browser);
