@@ -1680,17 +1680,17 @@ public:
 
   struct InlineIntrinsicISizeData {
     InlineIntrinsicISizeData()
-      : line(nullptr)
-      , lineContainer(nullptr)
-      , prevLines(0)
-      , currentLine(0)
-      , trailingWhitespace(0)
-      , skipWhitespace(true)
+      : mLine(nullptr)
+      , mLineContainer(nullptr)
+      , mPrevLines(0)
+      , mCurrentLine(0)
+      , mTrailingWhitespace(0)
+      , mSkipWhitespace(true)
     {}
 
     
     
-    const nsLineList_iterator* line;
+    const nsLineList_iterator* mLine;
 
     
     
@@ -1699,39 +1699,39 @@ public:
     
     
   private:
-    nsIFrame* lineContainer;
+    nsIFrame* mLineContainer;
 
     
   public:
     void SetLineContainer(nsIFrame* aLineContainer)
     {
-      lineContainer = aLineContainer;
-      if (lineContainer) {
-        lineContainerWM = lineContainer->GetWritingMode();
+      mLineContainer = aLineContainer;
+      if (mLineContainer) {
+        mLineContainerWM = mLineContainer->GetWritingMode();
       }
     }
-    nsIFrame* LineContainer() const { return lineContainer; }
+    nsIFrame* LineContainer() const { return mLineContainer; }
 
     
-    nscoord prevLines;
-
-    
-    
-    
-    nscoord currentLine;
-
-    
-    
-    nscoord trailingWhitespace;
+    nscoord mPrevLines;
 
     
     
     
-    bool skipWhitespace;
+    nscoord mCurrentLine;
 
     
     
-    mozilla::WritingMode lineContainerWM;
+    nscoord mTrailingWhitespace;
+
+    
+    
+    
+    bool mSkipWhitespace;
+
+    
+    
+    mozilla::WritingMode mLineContainerWM;
 
     
     class FloatInfo {
@@ -1747,12 +1747,12 @@ public:
       nscoord         mWidth;
     };
 
-    nsTArray<FloatInfo> floats;
+    nsTArray<FloatInfo> mFloats;
   };
 
   struct InlineMinISizeData : public InlineIntrinsicISizeData {
     InlineMinISizeData()
-      : atStartOfLine(true)
+      : mAtStartOfLine(true)
     {}
 
     
@@ -1773,7 +1773,7 @@ public:
     
     
     
-    bool atStartOfLine;
+    bool mAtStartOfLine;
   };
 
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
