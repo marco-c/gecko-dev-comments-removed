@@ -119,7 +119,7 @@ var openFileOutputStream_defaultFlags = function (aKind, aFileName) {
   
   
   if ("@mozilla.org/windows-registry-key;1" in Components.classes) {
-    do_check_eq(file.permissions, 0666);
+    do_check_eq(file.permissions, 0o666);
   } else {
     do_check_eq(file.permissions, FileUtils.PERMS_FILE);
   }
