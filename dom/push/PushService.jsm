@@ -105,6 +105,33 @@ function errorWithResult(message, result = Cr.NS_ERROR_FAILURE) {
 
 
 
+
+
+
+function hasRootDomain(str, aDomain)
+{
+  let index = str.indexOf(aDomain);
+  
+  if (index == -1)
+    return false;
+
+  
+  if (str == aDomain)
+    return true;
+
+  
+  
+  
+  let prevChar = str[index - 1];
+  return (index == (str.length - aDomain.length)) &&
+         (prevChar == "." || prevChar == "/");
+}
+
+
+
+
+
+
 this.PushService = {
   _service: null,
   _state: PUSH_SERVICE_UNINIT,
@@ -330,14 +357,8 @@ this.PushService = {
     }
 
     let pattern = JSON.parse(data);
-    return this._db.clearIf(record => {
-      if (!record.matchesOriginAttributes(pattern)) {
-        return false;
-      }
-      this._backgroundUnregister(record,
-                                 Ci.nsIPushErrorReporter.UNSUBSCRIBE_MANUAL);
-      return true;
-    });
+    return this._dropRegistrationsIf(record =>
+      record.matchesOriginAttributes(pattern));
   },
 
   
@@ -1187,56 +1208,16 @@ this.PushService = {
   },
 
   clear: function(info) {
-    if (info.domain == "*") {
-      return this._clearAll();
-    }
-    return this._clearForDomain(info.domain);
-  },
-
-  _clearAll: function _clearAll() {
     return this._checkActivated()
-      .then(_ => this._db.drop())
-      .catch(_ => Promise.resolve());
-  },
-
-  _clearForDomain: function(domain) {
-    
-
-
-
-
-
-
-
-    function hasRootDomain(str, aDomain)
-    {
-      let index = str.indexOf(aDomain);
-      
-      if (index == -1)
-        return false;
-
-      
-      if (str == aDomain)
-        return true;
-
-      
-      
-      
-      let prevChar = str[index - 1];
-      return (index == (str.length - aDomain.length)) &&
-             (prevChar == "." || prevChar == "/");
-    }
-
-    let clear = (db, domain) => {
-      db.clearIf(record => {
-        return record.uri && hasRootDomain(record.uri.prePath, domain);
-      });
-    }
-
-    return this._checkActivated()
-      .then(_ => clear(this._db, domain))
+      .then(_ => {
+        return this._dropRegistrationsIf(record =>
+          info.domain == "*" ||
+          (record.uri && hasRootDomain(record.uri.prePath, info.domain))
+        );
+      })
       .catch(e => {
-        console.warn("clearForDomain: Error forgetting about domain", e);
+        console.warn("clear: Error dropping subscriptions for domain",
+          info.domain, e);
         return Promise.resolve();
       });
   },
@@ -1303,16 +1284,8 @@ this.PushService = {
         
         return false;
       }
-      if (record.isExpired()) {
-        
-        
-        gPushNotifier.notifySubscriptionModified(record.scope,
-                                                 record.principal);
-      } else {
-        
-        this._backgroundUnregister(record,
-          Ci.nsIPushErrorReporter.UNSUBSCRIBE_PERMISSION_REVOKED);
-      }
+      this._backgroundUnregister(record,
+        Ci.nsIPushErrorReporter.UNSUBSCRIBE_PERMISSION_REVOKED);
       return true;
     });
   },
@@ -1399,5 +1372,34 @@ this.PushService = {
     }
     record.resetQuota();
     cursor.update(record);
+  },
+
+  
+
+
+
+
+
+
+
+  _dropRegistrationsIf(predicate) {
+    return this._db.clearIf(record => {
+      if (!predicate(record)) {
+        return false;
+      }
+      if (record.hasPermission()) {
+        
+        
+        
+        this._notifySubscriptionChangeObservers(record);
+      }
+      if (!record.isExpired()) {
+        
+        
+        this._backgroundUnregister(record,
+                                   Ci.nsIPushErrorReporter.UNSUBSCRIBE_MANUAL);
+      }
+      return true;
+    });
   },
 };
