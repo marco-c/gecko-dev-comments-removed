@@ -638,14 +638,17 @@ public:
   double OverriddenDeltaX() const;
   double OverriddenDeltaY() const;
 
+  
+  
+  
+  static double ComputeOverriddenDelta(double aDelta, bool aIsForVertical);
+
 private:
   static bool sInitialized;
   static bool sIsSystemScrollSpeedOverrideEnabled;
   static int32_t sOverrideFactorX;
   static int32_t sOverrideFactorY;
   static void Initialize();
-
-  static double ComputeOverriddenDelta(double aDelta, bool aIsForVertical);
 };
 
 

@@ -863,9 +863,36 @@ MouseScrollHandler::LastEventInfo::InitWheelEvent(
   mAccumulatedDelta -=
     lineOrPageDelta * orienter * RoundDelta(nativeDeltaPerUnit);
 
-  aWheelEvent.mAllowToOverrideSystemScrollSpeed =
-    MouseScrollHandler::sInstance->
-      mSystemSettings.IsOverridingSystemScrollSpeedAllowed();
+  if (aWheelEvent.deltaMode != nsIDOMWheelEvent::DOM_DELTA_LINE) {
+    
+    
+    aWheelEvent.mAllowToOverrideSystemScrollSpeed = false;
+  } else if (!MouseScrollHandler::sInstance->
+                mSystemSettings.IsOverridingSystemScrollSpeedAllowed()) {
+    
+    
+    
+    aWheelEvent.mAllowToOverrideSystemScrollSpeed = false;
+  } else {
+    
+    
+    
+    double defaultScrollAmount =
+      mIsVertical ? SystemSettings::DefaultScrollLines() :
+                    SystemSettings::DefaultScrollChars();
+    double maxDelta =
+      WidgetWheelEvent::ComputeOverriddenDelta(defaultScrollAmount,
+                                               mIsVertical);
+    if (maxDelta != defaultScrollAmount) {
+      double overriddenDelta =
+        WidgetWheelEvent::ComputeOverriddenDelta(Abs(delta), mIsVertical);
+      if (overriddenDelta > maxDelta) {
+        
+        
+        aWheelEvent.mAllowToOverrideSystemScrollSpeed = false;
+      }
+    }
+  }
 
   MOZ_LOG(gMouseScrollLog, LogLevel::Info,
     ("MouseScroll::LastEventInfo::InitWheelEvent: aWidget=%p, "
@@ -930,7 +957,7 @@ MouseScrollHandler::SystemSettings::InitScrollLines()
     MOZ_LOG(gMouseScrollLog, LogLevel::Info,
       ("MouseScroll::SystemSettings::InitScrollLines(): ::SystemParametersInfo("
        "SPI_GETWHEELSCROLLLINES) failed"));
-    mScrollLines = 3;
+    mScrollLines = DefaultScrollLines();
   }
 
   if (mScrollLines > WHEEL_DELTA) {
@@ -972,6 +999,7 @@ MouseScrollHandler::SystemSettings::InitScrollChars()
        IsVistaOrLater() ?
          "this is unexpected on Vista or later" :
          "but on XP or earlier, this is not a problem"));
+    
     mScrollChars = 1;
   }
 
@@ -1055,11 +1083,8 @@ MouseScrollHandler::SystemSettings::TrustedScrollSettingsDriver()
 bool
 MouseScrollHandler::SystemSettings::IsOverridingSystemScrollSpeedAllowed()
 {
-  
-  
-  const uint32_t kSystemDefaultScrollingSpeed = 3;
-  return mScrollLines == kSystemDefaultScrollingSpeed &&
-         (!IsVistaOrLater() || mScrollChars == kSystemDefaultScrollingSpeed);
+  return mScrollLines == DefaultScrollLines() &&
+         (!IsVistaOrLater() || mScrollChars == DefaultScrollChars());
 }
 
 

@@ -300,6 +300,11 @@ private:
                             (uint32_t(mScrollChars) == WHEEL_PAGESCROLL);
     }
 
+    
+    
+    static int32_t DefaultScrollLines() { return 3; }
+    static int32_t DefaultScrollChars() { return 3; }
+
   private:
     bool mInitialized;
     
