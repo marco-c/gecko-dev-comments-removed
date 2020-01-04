@@ -2756,7 +2756,7 @@ IMMHandler::SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm)
 {
   
   
-  if (aForm->dwStyle == CFS_CANDIDATEPOS && aWindow->PluginHasFocus()) {
+  if (aWindow->PluginHasFocus()) {
     
     
     
