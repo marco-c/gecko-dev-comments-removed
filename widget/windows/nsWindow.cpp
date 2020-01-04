@@ -2326,18 +2326,6 @@ nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow)
     
     
     mNonClientOffset.top = mCaptionHeight;
-    
-    
-    
-    
-    
-    
-    double ourScale = WinUtils::LogToPhysFactor(mWnd);
-    double primaryScale =
-      WinUtils::LogToPhysFactor(WinUtils::GetPrimaryMonitor());
-    mNonClientOffset.top +=
-      NSToIntRound(mVertResizeMargin * (ourScale - primaryScale));
-
     mNonClientOffset.bottom = 0;
     mNonClientOffset.left = 0;
     mNonClientOffset.right = 0;
