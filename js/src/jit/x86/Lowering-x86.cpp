@@ -421,6 +421,18 @@ LIRGeneratorX86::visitAsmJSLoadFuncPtr(MAsmJSLoadFuncPtr* ins)
 }
 
 void
+LIRGeneratorX86::lowerDivI64(MDiv* div)
+{
+    MOZ_CRASH("NYI");
+}
+
+void
+LIRGeneratorX86::lowerModI64(MMod* mod)
+{
+    MOZ_CRASH("NYI");
+}
+
+void
 LIRGeneratorX86::visitSubstr(MSubstr* ins)
 {
     
