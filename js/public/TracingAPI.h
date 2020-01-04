@@ -370,22 +370,15 @@ JS_GetTraceThingInfo(char* buf, size_t bufsize, JSTracer* trc,
 namespace js {
 
 
-template <typename, typename=void> struct DefaultTracer;
+template <typename> struct DefaultTracer;
 
 
 template <typename T>
-struct DefaultTracer<T, typename mozilla::EnableIf<!mozilla::IsPointer<T>::value &&
-                                                   mozilla::IsPod<T>::value>::Type> {
+struct DefaultTracer {
     static void trace(JSTracer* trc, T* t, const char* name) {
-        MOZ_ASSERT(mozilla::IsPod<T>::value);
-        MOZ_ASSERT(!mozilla::IsPointer<T>::value);
-    }
-};
-
-
-template <typename T>
-struct DefaultTracer<T, typename mozilla::EnableIf<!mozilla::IsPod<T>::value>::Type> {
-    static void trace(JSTracer* trc, T* t, const char* name) {
+        
+        
+        
         t->trace(trc);
     }
 };
@@ -396,6 +389,10 @@ struct DefaultTracer<jsid>
     static void trace(JSTracer* trc, jsid* id, const char* name) {
         JS_CallUnbarrieredIdTracer(trc, id, name);
     }
+};
+
+template <> struct DefaultTracer<uint32_t> {
+    static void trace(JSTracer* trc, uint32_t* id, const char* name) {}
 };
 
 } 

@@ -12,7 +12,7 @@
 
 namespace js {
 
-template <typename, typename> struct DefaultTracer;
+template <typename> struct DefaultTracer;
 
 
 
