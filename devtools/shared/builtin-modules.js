@@ -244,6 +244,13 @@ const globals = exports.globals = {
     lazyRequireGetter: lazyRequireGetter,
     id: null 
   },
+
+  
+  XMLHttpRequest: function () {
+    return Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
+           .createInstance(Ci.nsIXMLHttpRequest);
+  },
+
   
   
   
