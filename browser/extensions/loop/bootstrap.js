@@ -55,7 +55,7 @@ var WindowListener = {
 
   setupBrowserUI: function(window) {
     let document = window.document;
-    let gBrowser = window.gBrowser;
+    let { gBrowser, gURLBar } = window;
     let xhrClass = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"];
     let FileReader = window.FileReader;
     let menuItem = null;
@@ -174,6 +174,15 @@ var WindowListener = {
         }).catch(err => {
           Cu.reportError(err);
         });
+      },
+
+      
+
+
+
+
+      renameRoom: function() {
+        this.openPanel();
       },
 
       
@@ -332,6 +341,7 @@ var WindowListener = {
 
         Services.obs.addObserver(this, "loop-status-changed", false);
 
+        this.maybeAddCopyPanel();
         this.updateToolbarState();
       },
 
@@ -361,6 +371,113 @@ var WindowListener = {
       removeMenuItem: function() {
         if (menuItem) {
           menuItem.parentNode.removeChild(menuItem);
+        }
+      },
+
+      
+
+
+
+      maybeAddCopyPanel() {
+        
+        
+        if (PrivateBrowsingUtils.isWindowPrivate(window) ||
+            Services.prefs.getBoolPref("loop.copy.shown")) {
+          return Promise.resolve();
+        }
+
+        return Throttler.check("loop.copy").then(() => this.addCopyPanel());
+      },
+
+      
+
+
+
+      addCopyPanel(onClickHandled) {
+        
+        let copy = this.panel.cloneNode(false);
+        copy.id = "loop-copy-notification-panel";
+        this.panel.parentNode.appendChild(copy);
+
+        
+        let addTelemetry = bucket => {
+          this.LoopAPI.sendMessageToHandler({
+            data: ["LOOP_COPY_PANEL_ACTIONS", this.constants.COPY_PANEL[bucket]],
+            name: "TelemetryAddValue"
+          });
+        };
+
+        
+        let onIframe = iframe => {
+          
+          iframe.addEventListener("DOMContentLoaded", function onLoad() {
+            iframe.removeEventListener("DOMContentLoaded", onLoad);
+
+            
+            iframe.contentWindow.requestAnimationFrame(() => {
+              let height = iframe.contentDocument.documentElement.offsetHeight;
+              height += copy.boxObject.height - iframe.boxObject.height;
+              copy.style.height = height + "px";
+            });
+
+            
+            iframe.contentWindow.addEventListener("CopyPanelClick", event => {
+              iframe.parentNode.hidePopup();
+
+              
+              let { accept, stop } = event.detail;
+              if (accept) {
+                LoopUI.openPanel();
+              }
+
+              
+              if (stop) {
+                LoopUI.removeCopyPanel();
+                Services.prefs.setBoolPref("loop.copy.shown", true);
+              }
+
+              
+              
+              let probe = (accept ? "YES" : "NO") + "_" + (stop ? "NEVER" : "AGAIN");
+              addTelemetry(probe);
+
+              
+              try {
+                onClickHandled(event.detail);
+              } catch (ex) {
+                
+              }
+            });
+          });
+        };
+
+        
+        let controller = gURLBar._copyCutController;
+        controller._doCommand = controller.doCommand;
+        controller.doCommand = () => {
+          
+          controller._doCommand.apply(controller, arguments);
+
+          
+          addTelemetry("SHOWN");
+          LoopUI.PanelFrame.showPopup(window, LoopUI.toolbarButton.anchor, "loop-copy",
+            null, "chrome://loop/content/panels/copy.html", null, onIframe);
+        };
+      },
+
+      
+
+
+      removeCopyPanel() {
+        let controller = gURLBar && gURLBar._copyCutController;
+        if (controller && controller._doCommand) {
+          controller.doCommand = controller._doCommand;
+          delete controller._doCommand;
+        }
+
+        let copy = document.getElementById("loop-copy-notification-panel");
+        if (copy) {
+          copy.parentNode.removeChild(copy);
         }
       },
 
@@ -519,7 +636,7 @@ var WindowListener = {
         this.activeSound.load();
         this.activeSound.play();
 
-        this.activeSound.addEventListener("ended", () => this.activeSound = undefined, false);
+        this.activeSound.addEventListener("ended", () => { this.activeSound = undefined; }, false);
       },
 
       
@@ -529,12 +646,18 @@ var WindowListener = {
 
 
 
-      startBrowserSharing: function() {
+
+      startBrowserSharing: function(roomToken) {
         if (!this._listeningToTabSelect) {
           gBrowser.tabContainer.addEventListener("TabSelect", this);
           this._listeningToTabSelect = true;
 
           titleChangedListener = this.handleDOMTitleChanged.bind(this);
+
+          this._roomsListener = this.handleRoomJoinedOrLeft.bind(this);
+
+          this.LoopRooms.on("joined", this._roomsListener);
+          this.LoopRooms.on("left", this._roomsListener);
 
           
           
@@ -549,7 +672,8 @@ var WindowListener = {
           gBrowser.addEventListener("click", this);
         }
 
-        this._maybeShowBrowserSharingInfoBar();
+        this._currentRoomToken = roomToken;
+        this._maybeShowBrowserSharingInfoBar(roomToken);
 
         
         let browser = gBrowser.selectedBrowser;
@@ -577,6 +701,8 @@ var WindowListener = {
 
         this._hideBrowserSharingInfoBar();
         gBrowser.tabContainer.removeEventListener("TabSelect", this);
+        this.LoopRooms.off("joined", this._roomsListener);
+        this.LoopRooms.off("left", this._roomsListener);
 
         if (titleChangedListener) {
           this.mm.removeMessageListener("loop@mozilla.org:DOMTitleChanged",
@@ -591,6 +717,8 @@ var WindowListener = {
 
         this._listeningToTabSelect = false;
         this._browserSharePaused = false;
+        this._currentRoomToken = null;
+
         this._sendTelemetryEventsIfNeeded();
       },
 
@@ -723,23 +851,49 @@ var WindowListener = {
 
 
 
+      _setInfoBarStrings: function(nonOwnerParticipants, sharePaused) {
+        let message;
+        if (nonOwnerParticipants) {
+          
+          message = this._getString(
+            sharePaused ? "infobar_screenshare_stop_sharing_message2" :
+                          "infobar_screenshare_browser_message3");
 
-      _maybeShowBrowserSharingInfoBar: function() {
-        
-        let pausedStrings = {
-          label: this._getString("infobar_button_restart_label2"),
-          accesskey: this._getString("infobar_button_restart_accesskey"),
-          message: this._getString("infobar_screenshare_stop_sharing_message")
-        };
-        let unpausedStrings = {
-          label: this._getString("infobar_button_stop_label2"),
-          accesskey: this._getString("infobar_button_stop_accesskey"),
-          message: this._getString("infobar_screenshare_browser_message2")
-        };
-        let initStrings =
-          this._browserSharePaused ? pausedStrings : unpausedStrings;
+        } else {
+          
+          message = this._getString(
+            sharePaused ? "infobar_screenshare_stop_no_guest_message" :
+                          "infobar_screenshare_no_guest_message");
+        }
+        let label = this._getString(
+          sharePaused ? "infobar_button_restart_label2" : "infobar_button_stop_label2");
+        let accessKey = this._getString(
+          sharePaused ? "infobar_button_restart_accesskey" : "infobar_button_stop_accesskey");
 
+        return { message: message, label: label, accesskey: accessKey };
+      },
+
+      
+
+
+
+
+      _browserSharePaused: false,
+
+      
+
+
+
+
+
+
+      _maybeShowBrowserSharingInfoBar: function(currentRoomToken) {
         this._hideBrowserSharingInfoBar();
+
+        let participantsCount = this.LoopRooms.getNumParticipants(currentRoomToken);
+
+        let initStrings = this._setInfoBarStrings(participantsCount > 1, this._browserSharePaused);
+
         let box = gBrowser.getNotificationBox();
         let bar = box.appendNotification(
           initStrings.message,            
@@ -749,11 +903,12 @@ var WindowListener = {
           box.PRIORITY_WARNING_LOW,       
           [{                              
             label: initStrings.label,
-            accessKey: initStrings.accessKey,
+            accessKey: initStrings.accesskey,
             isDefault: false,
             callback: (event, buttonInfo, buttonNode) => {
               this._browserSharePaused = !this._browserSharePaused;
-              let stringObj = this._browserSharePaused ? pausedStrings : unpausedStrings;
+              let guestPresent = this.LoopRooms.getNumParticipants(this._currentRoomToken) > 1;
+              let stringObj = this._setInfoBarStrings(guestPresent, this._browserSharePaused);
               bar.label = stringObj.message;
               bar.classList.toggle("paused", this._browserSharePaused);
               buttonNode.label = stringObj.label;
@@ -824,6 +979,18 @@ var WindowListener = {
 
 
 
+      handleRoomJoinedOrLeft: function() {
+        
+        if (!this._listeningToTabSelect) {
+          return;
+        }
+        this._maybeShowBrowserSharingInfoBar(this._currentRoomToken);
+      },
+
+      
+
+
+
 
       handleDOMTitleChanged: function(message) {
         if (!this._listeningToTabSelect || this._browserSharePaused) {
@@ -840,8 +1007,9 @@ var WindowListener = {
 
 
       handleEvent: function(event) {
+
         switch (event.type) {
-          case "TabSelect":
+          case "TabSelect": {
             let wasVisible = false;
             
             if (event.detail.previousTab) {
@@ -857,9 +1025,10 @@ var WindowListener = {
             if (wasVisible) {
               
               
-              this._maybeShowBrowserSharingInfoBar();
+              this._maybeShowBrowserSharingInfoBar(this._currentRoomToken);
             }
             break;
+          }
           case "mousemove":
             this.handleMousemove(event);
             break;
@@ -971,6 +1140,9 @@ var WindowListener = {
 
     LoopUI.init();
     window.LoopUI = LoopUI;
+
+    
+    window.LoopThrottler = Throttler;
   },
 
   
@@ -981,6 +1153,7 @@ var WindowListener = {
 
   tearDownBrowserUI: function(window) {
     if (window.LoopUI) {
+      window.LoopUI.removeCopyPanel();
       window.LoopUI.removeMenuItem();
 
       
@@ -1012,6 +1185,77 @@ var WindowListener = {
   },
 
   onWindowTitleChange: function() {
+  }
+};
+
+
+
+
+
+
+
+
+
+let Throttler = {
+  
+  
+  TICKET_LIMIT: 255,
+
+  
+  _dns: Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService),
+
+  
+
+
+
+
+  check(prefPrefix) {
+    return new Promise((resolve, reject) => {
+      
+      let prefTicket = prefPrefix + ".ticket";
+      let ticket = Services.prefs.getIntPref(prefTicket);
+      if (ticket < 0) {
+        ticket = Math.floor(Math.random() * this.TICKET_LIMIT);
+        Services.prefs.setIntPref(prefTicket, ticket);
+      }
+      
+      else if (ticket >= this.TICKET_LIMIT) {
+        resolve();
+        return;
+      }
+
+      
+      let onDNS = (request, record) => {
+        
+        
+        let index = 1;
+        switch (Services.prefs.getCharPref("app.update.channel")) {
+          case "beta":
+            index = 2;
+            break;
+          case "aurora":
+          case "nightly":
+            index = 3;
+            break;
+        }
+
+        
+        
+        let threshold = record && record.getNextAddrAsString().split(".")[index];
+        if (threshold && ticket < threshold) {
+          
+          Services.prefs.setIntPref(prefTicket, this.TICKET_LIMIT);
+          resolve();
+        }
+        else {
+          reject();
+        }
+      };
+
+      
+      this._dns.asyncResolve(Services.prefs.getCharPref(prefPrefix + ".throttler"),
+        this._dns.RESOLVE_DISABLE_IPV6, onDNS, Services.tm.mainThread);
+    });
   }
 };
 

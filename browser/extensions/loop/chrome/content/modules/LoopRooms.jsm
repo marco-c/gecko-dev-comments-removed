@@ -567,11 +567,11 @@ var LoopRoomsInternal = {
           eventEmitter.emit("delete", room);
           eventEmitter.emit("delete:" + room.roomToken, room);
         } else {
+          yield this.addOrUpdateRoom(room, !!orig);
+
           if (orig) {
             checkForParticipantsUpdate(orig, room);
           }
-
-          yield this.addOrUpdateRoom(room, !!orig);
         }
       }
 
@@ -592,6 +592,27 @@ var LoopRoomsInternal = {
     });
 
     return gGetAllPromise;
+  },
+
+  
+
+
+
+
+
+
+  getNumParticipants: function(roomToken) {
+    try {
+      if (this.rooms && this.rooms.has(roomToken)) {
+        return this.rooms.get(roomToken).participants.length;
+      }
+      return 0;
+    }
+    catch (ex) {
+      
+      MozLoopService.log.error("No room found in current session: ", ex);
+      return 0;
+    }
   },
 
   
@@ -630,10 +651,9 @@ var LoopRoomsInternal = {
         eventEmitter.emit("delete", room);
         eventEmitter.emit("delete:" + room.roomToken, room);
       } else {
-        checkForParticipantsUpdate(room, data);
-        extend(room, data);
+        yield this.addOrUpdateRoom(data, !needsUpdate);
 
-        yield this.addOrUpdateRoom(room, !needsUpdate);
+        checkForParticipantsUpdate(room, data);
       }
       callback(null, room);
     }.bind(this)).catch(callback);
@@ -1173,6 +1193,10 @@ this.LoopRooms = {
     return LoopRoomsInternal.maybeRefresh(user);
   },
 
+  getNumParticipants: function(roomToken) {
+    return LoopRoomsInternal.getNumParticipants(roomToken);
+  },
+
   
 
 
@@ -1223,14 +1247,18 @@ this.LoopRooms = {
 
 
 
-  _setRoomsCache: function(roomsCache) {
+  _setRoomsCache: function(roomsCache, orig) {
     LoopRoomsInternal.rooms.clear();
     gDirty = true;
 
     if (roomsCache) {
       
       for (let [key, value] of roomsCache) {
+
         LoopRoomsInternal.rooms.set(key, value);
+        if (orig) {
+          checkForParticipantsUpdate(orig, value);
+        }
       }
       gGetAllPromise = null;
       gDirty = false;

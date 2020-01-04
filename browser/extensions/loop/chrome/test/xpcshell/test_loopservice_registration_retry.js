@@ -18,7 +18,7 @@ add_test(function test_retry_after_failed_push_reg() {
   MozLoopService.initialize().then((result) => {
     do_print(result);
     do_throw("should not succeed when loop server registration fails");
-  }, Task.async(function*(err) {
+  }, Task.async(function* (err) {
     
     
     Assert.equal(err.message, "404", "");

@@ -63,19 +63,9 @@ function promiseNewTabLocation() {
   return BrowserTestUtils.browserLoaded(browser);
 }
 
-function promiseRemoveTab(tab) {
-  return new Promise(resolve => {
-    gBrowser.tabContainer.addEventListener("TabClose", function onTabClose() {
-      gBrowser.tabContainer.removeEventListener("TabClose", onTabClose);
-      resolve();
-    });
-    gBrowser.removeTab(tab);
-  });
-}
-
 function* removeTabs() {
   for (let createdTab of createdTabs) {
-    yield promiseRemoveTab(createdTab);
+    yield BrowserTestUtils.removeTab(createdTab);
   }
 
   createdTabs = [];
@@ -139,62 +129,10 @@ add_task(function* test_multipleListener() {
   Assert.notEqual(newWindowId1, nextWindowId1, "Second listener should have updated");
 
   
-  gHandlers.RemoveBrowserSharingListener({ data: [listenerIds.pop()] }, function() {});
-
-  yield removeTabs();
-});
-
-add_task(function* test_infoBar() {
-  const kBrowserSharingNotificationId = "loop-sharing-notification";
-
-  
-  yield promiseWindowIdReceivedNewTab();
-  yield promiseWindowIdReceivedNewTab();
-  Assert.strictEqual(gBrowser.selectedTab, createdTabs[1],
-    "The second tab created should be selected now");
-
-  
-  yield promiseWindowIdReceivedOnAdd(handlers[0]);
-
-  let getInfoBar = function() {
-    let box = gBrowser.getNotificationBox(gBrowser.selectedBrowser);
-    return box.getNotificationWithValue(kBrowserSharingNotificationId);
-  };
-
-  let testBarProps = function() {
-    let bar = getInfoBar();
-
-    
-    Assert.ok(bar, "The notification bar should be visible");
-    Assert.strictEqual(bar.hidden, false, "Again, the notification bar should be visible");
-
-    let button = bar.querySelector(".notification-button");
-    Assert.ok(button, "There should be a button present");
-  };
-
-  testBarProps();
-
-  
-  
-  
-  gBrowser.selectedIndex = Array.indexOf(gBrowser.tabs, createdTabs[0]);
-
-  
-  
-  testBarProps();
-
-  
-  getInfoBar().querySelector(".notification-button-default").click();
-  Assert.equal(getInfoBar(), null, "The notification should be hidden now");
-
-  gBrowser.selectedIndex = Array.indexOf(gBrowser.tabs, createdTabs[1]);
-
-  Assert.equal(getInfoBar(), null, "The notification should still be hidden");
-
-  
   for (let listenerId of listenerIds) {
     gHandlers.RemoveBrowserSharingListener({ data: [listenerId] }, function() {});
   }
+
   yield removeTabs();
 });
 

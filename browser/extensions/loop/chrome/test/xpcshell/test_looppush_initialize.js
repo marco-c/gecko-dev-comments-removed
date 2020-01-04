@@ -7,7 +7,6 @@
 
 var dummyCallback = () => {};
 var mockWebSocket = new MockWebSocketChannel();
-var pushServerRequestCount = 0;
 
 add_test(function test_initalize_missing_chanid() {
   Assert.throws(() => MozLoopPushHandler.register(null, dummyCallback, dummyCallback));
@@ -151,63 +150,17 @@ add_test(function test_ping_websocket() {
   );
 });
 
-add_test(function test_retry_pushurl() {
-  MozLoopPushHandler.shutdown();
-  loopServer.registerPathHandler("/push-server-config", (request, response) => {
-    
-    
-    switch (++pushServerRequestCount) {
-    case 1:
-      
-      response.setStatusLine(null, 500, "Retry");
-      response.processAsync();
-      response.finish();
-      break;
-    case 2:
-      
-      response.setStatusLine(null, 200, "OK");
-      response.write(JSON.stringify({ pushServerURI: null }));
-      response.processAsync();
-      response.finish();
-      break;
-    case 3:
-      
-      response.setStatusLine(null, 200, "OK");
-      response.processAsync();
-      response.finish();
-      break;
-    case 4:
-      response.setStatusLine(null, 200, "OK");
-      response.write(JSON.stringify({ pushServerURI: kServerPushUrl }));
-      response.processAsync();
-      response.finish();
-
-      run_next_test();
-      break;
-    }
-  });
-
-  MozLoopPushHandler.initialize({ mockWebSocket: mockWebSocket });
-});
-
 function run_test() {
   setupFakeLoopServer();
 
-  loopServer.registerPathHandler("/push-server-config", (request, response) => {
-    response.setStatusLine(null, 200, "OK");
-    response.write(JSON.stringify({ pushServerURI: kServerPushUrl }));
-    response.processAsync();
-    response.finish();
-  });
-
-  Services.prefs.setCharPref("services.push.serverURL", kServerPushUrl);
+  Services.prefs.setCharPref("dom.push.serverURL", kServerPushUrl);
   Services.prefs.setIntPref("loop.retry_delay.start", 10); 
   Services.prefs.setIntPref("loop.retry_delay.limit", 20); 
   Services.prefs.setIntPref("loop.ping.interval", 50); 
   Services.prefs.setIntPref("loop.ping.timeout", 20); 
 
   do_register_cleanup(function() {
-    Services.prefs.clearUserPref("services.push.serverULR");
+    Services.prefs.clearUserPref("dom.push.serverURL");
     Services.prefs.clearUserPref("loop.retry_delay.start");
     Services.prefs.clearUserPref("loop.retry_delay.limit");
     Services.prefs.clearUserPref("loop.ping.interval");

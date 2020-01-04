@@ -124,6 +124,16 @@ const updateSocialProvidersCache = function() {
   return gSocialProviders;
 };
 
+
+
+
+
+
+const isMultiProcessActive = function() {
+  let win = Services.wm.getMostRecentWindow("navigator:browser");
+  return !!win.gMultiProcessBrowser;
+};
+
 var gAppVersionInfo = null;
 var gBrowserSharingListeners = new Set();
 var gBrowserSharingWindows = new Set();
@@ -187,9 +197,11 @@ const kMessageHandlers = {
       return;
     }
 
+    
     let [windowId] = message.data;
-
-    win.LoopUI.startBrowserSharing();
+    
+    
+    win.LoopUI.startBrowserSharing(windowId);
 
     
     NewTabURL.override("about:home");
@@ -422,6 +434,7 @@ const kMessageHandlers = {
 
   GetAllConstants: function(message, reply) {
     reply({
+      COPY_PANEL: COPY_PANEL,
       LOOP_SESSION_TYPE: LOOP_SESSION_TYPE,
       LOOP_MAU_TYPE: LOOP_MAU_TYPE,
       ROOM_CREATE: ROOM_CREATE,
@@ -638,8 +651,23 @@ const kMessageHandlers = {
 
   GetSelectedTabMetadata: function(message, reply) {
     let win = Services.wm.getMostRecentWindow("navigator:browser");
-    win.messageManager.addMessageListener("PageMetadata:PageDataResult", function onPageDataResult(msg) {
-      win.messageManager.removeMessageListener("PageMetadata:PageDataResult", onPageDataResult);
+    let browser = win && win.gBrowser.selectedBrowser;
+    if (!win || !browser) {
+      MozLoopService.log.error("Error occurred whilst fetching page metadata");
+      reply();
+      return;
+    }
+
+    
+    if (!browser.getAttribute("remote") === "true") {
+      reply(null);
+    }
+
+    win.messageManager.addMessageListener("PageMetadata:PageDataResult",
+                                          function onPageDataResult(msg) {
+
+      win.messageManager.removeMessageListener("PageMetadata:PageDataResult",
+                                               onPageDataResult);
       let pageData = msg.json;
       win.LoopUI.getFavicon(function(err, favicon) {
         if (err && err !== "favicon not found for uri") {
@@ -754,9 +782,31 @@ const kMessageHandlers = {
 
 
   IsMultiProcessActive: function(message, reply) {
+    reply(isMultiProcessActive());
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  IsTabShareable: function(message, reply) {
     let win = Services.wm.getMostRecentWindow("navigator:browser");
     let browser = win && win.gBrowser.selectedBrowser;
-    reply(!!(browser && browser.getAttribute("remote") == "true"));
+    if (!win || !browser) {
+      reply(false);
+      return;
+    }
+
+    let e10sActive = isMultiProcessActive();
+    let tabRemote = browser.getAttribute("remote") === "true";
+
+    reply(!e10sActive || (e10sActive && tabRemote));
   },
 
   
@@ -982,6 +1032,23 @@ const kMessageHandlers = {
   SetLoopPref: function(message, reply) {
     let [prefName, value, prefType] = message.data;
     MozLoopService.setLoopPref(prefName, value, prefType);
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  SetNameNewRoom: function(message, reply) {
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    win && win.LoopUI.renameRoom();
+
     reply();
   },
 

@@ -1,5 +1,3 @@
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 
 
 
@@ -91,10 +89,14 @@ loop.shared.views.LinkifiedTextView = function () {
         
         sanitizeURL = loop.shared.utils.formatURL(result[0]);
         if (sanitizeURL && sanitizeURL.location) {
+          var linkAttributes = this._generateLinkAttributes(sanitizeURL.location);
           elements.push(React.createElement(
             "a",
-            _extends({}, this._generateLinkAttributes(sanitizeURL.location), {
-              key: reactElementsCounter++ }),
+            { href: linkAttributes.href,
+              key: reactElementsCounter++,
+              onClick: linkAttributes.onClick,
+              rel: linkAttributes.rel,
+              target: linkAttributes.target },
             sanitizeURL.location
           ));
         } else {

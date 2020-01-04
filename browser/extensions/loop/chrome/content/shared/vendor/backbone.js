@@ -44,7 +44,7 @@
   var slice = Array.prototype.slice;
 
   
-  Backbone.VERSION = '1.3.2';
+  Backbone.VERSION = '1.3.3';
 
   
   

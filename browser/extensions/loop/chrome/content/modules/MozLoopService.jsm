@@ -69,6 +69,24 @@ const SHARING_SCREEN = {
   RESUMED: 1
 };
 
+
+
+
+
+
+const COPY_PANEL = {
+  
+  SHOWN: 0,
+  
+  NO_AGAIN: 1,
+  
+  NO_NEVER: 2,
+  
+  YES_AGAIN: 3,
+  
+  YES_NEVER: 4
+};
+
  
 
 
@@ -106,13 +124,14 @@ Cu.import("resource://gre/modules/FxAccountsOAuthClient.jsm");
 Cu.importGlobalProperties(["URL"]);
 
 this.EXPORTED_SYMBOLS = ["MozLoopService", "LOOP_SESSION_TYPE", "LOOP_MAU_TYPE",
-  "TWO_WAY_MEDIA_CONN_LENGTH", "SHARING_ROOM_URL", "SHARING_SCREEN",
+  "TWO_WAY_MEDIA_CONN_LENGTH", "SHARING_ROOM_URL", "SHARING_SCREEN", "COPY_PANEL",
   "ROOM_CREATE", "ROOM_DELETE"];
 
 XPCOMUtils.defineConstant(this, "LOOP_SESSION_TYPE", LOOP_SESSION_TYPE);
 XPCOMUtils.defineConstant(this, "TWO_WAY_MEDIA_CONN_LENGTH", TWO_WAY_MEDIA_CONN_LENGTH);
 XPCOMUtils.defineConstant(this, "SHARING_ROOM_URL", SHARING_ROOM_URL);
 XPCOMUtils.defineConstant(this, "SHARING_SCREEN", SHARING_SCREEN);
+XPCOMUtils.defineConstant(this, "COPY_PANEL", COPY_PANEL);
 XPCOMUtils.defineConstant(this, "ROOM_CREATE", ROOM_CREATE);
 XPCOMUtils.defineConstant(this, "ROOM_DELETE", ROOM_DELETE);
 XPCOMUtils.defineConstant(this, "LOOP_MAU_TYPE", LOOP_MAU_TYPE);
@@ -1335,7 +1354,7 @@ this.MozLoopService = {
 
 
 
-  initialize: Task.async(function*(addonVersion) {
+  initialize: Task.async(function* (addonVersion) {
     
     if (gServiceInitialized) {
       return Promise.resolve();
@@ -1463,7 +1482,7 @@ this.MozLoopService = {
 
 
 
-  delayedInitialize: Task.async(function*(deferredInitialization) {
+  delayedInitialize: Task.async(function* (deferredInitialization) {
     log.debug("delayedInitialize");
     
     
@@ -1815,7 +1834,7 @@ this.MozLoopService = {
 
 
 
-  logOutFromFxA: Task.async(function*() {
+  logOutFromFxA: Task.async(function* () {
     log.debug("logOutFromFxA");
     try {
       yield MozLoopServiceInternal.unregisterFromLoopServer(LOOP_SESSION_TYPE.FXA);

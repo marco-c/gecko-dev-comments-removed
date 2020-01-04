@@ -120,7 +120,7 @@
     if ((ret == undefined) || (ret == "")) {
       
       console.error("Index #" + index + " of '" + str + "' for value " + num +
-          " is invalid -- plural rule #" + aRuleNum);
+          " is invalid -- plural rule #" + ret);
 
       
       ret = words[0];
@@ -210,7 +210,15 @@
       
       
       if (!gL10nDetails.getPluralForm && ("pluralRule" in gL10nDetails)) {
-        gPluralFunc = kPluralFunctions[gL10nDetails.pluralRule][1];
+        var ruleNum = gL10nDetails.pluralRule;
+
+        
+        if (ruleNum < 0 || ruleNum >= kPluralFunctions.length || isNaN(ruleNum)) {
+          console.error(["Invalid rule number: ", ruleNum, " -- defaulting to 0"]);
+          ruleNum = 0;
+        }
+
+        gPluralFunc = kPluralFunctions[ruleNum][1];
         gL10nDetails.getPluralForm = fallbackGetPluralForm;
       }
 

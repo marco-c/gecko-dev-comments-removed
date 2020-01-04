@@ -103,6 +103,7 @@ loop.store = loop.store || {};
 
       this._notifications = options.notifications;
       this._constants = options.constants;
+      this._gotAllRooms = false;
 
       if (options.activeRoomStore) {
         this.activeRoomStore = options.activeRoomStore;
@@ -114,7 +115,9 @@ loop.store = loop.store || {};
     getInitialStoreState: function() {
       return {
         activeRoom: this.activeRoomStore ? this.activeRoomStore.getStoreState() : {},
+        closingNewRoom: false,
         error: null,
+        lastCreatedRoom: null,
         openedRoom: null,
         pendingCreation: false,
         pendingInitialRetrieval: true,
@@ -153,6 +156,7 @@ loop.store = loop.store || {};
     _onRoomAdded: function(addedRoomData) {
       addedRoomData.participants = addedRoomData.participants || [];
       addedRoomData.ctime = addedRoomData.ctime || new Date().getTime();
+
       this.dispatchAction(new sharedActions.UpdateRoomList({
         
         roomList: this._storeState.rooms.filter(function(room) {
@@ -165,7 +169,20 @@ loop.store = loop.store || {};
 
 
     _onRoomClose: function() {
+      let state = this.getStoreState();
+
+      
+      if (state.lastCreatedRoom && state.openedRoom === state.lastCreatedRoom) {
+        this.setStoreState({
+          closingNewRoom: true
+        });
+        loop.request("SetNameNewRoom");
+      }
+
+      
       this.setStoreState({
+        closingNewRoom: false,
+        lastCreatedRoom: null,
         openedRoom: null
       });
     },
@@ -267,6 +284,11 @@ loop.store = loop.store || {};
           }));
           return;
         }
+
+        
+        this.setStoreState({
+          lastCreatedRoom: result.roomToken
+        });
 
         this.dispatchAction(new sharedActions.CreatedRoom({
           decryptedContext: result.decryptedContext,
@@ -467,6 +489,12 @@ loop.store = loop.store || {};
 
 
     getAllRooms: function() {
+      
+      
+      if (this._gotAllRooms) {
+        return;
+      }
+
       loop.request("Rooms:GetAll", null).then(function(result) {
         var action;
 
@@ -479,6 +507,8 @@ loop.store = loop.store || {};
         }
 
         this.dispatchAction(action);
+
+        this._gotAllRooms = true;
 
         
         

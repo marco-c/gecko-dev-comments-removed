@@ -196,6 +196,7 @@ loop.shared.actions = (function() {
 
 
     MediaStreamCreated: Action.define("mediaStreamCreated", {
+      hasAudio: Boolean,
       hasVideo: Boolean,
       isLocal: Boolean,
       srcMediaElement: Object

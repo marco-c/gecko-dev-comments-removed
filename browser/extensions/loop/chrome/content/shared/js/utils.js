@@ -427,6 +427,37 @@ if (inChrome) {
     }
   }
 
+
+  
+
+
+
+
+
+
+  function formatSanitizedContextURL(url) {
+    if (!url) {
+      return null;
+    }
+    
+    
+    try {
+      var sanitizedURL = loop.shared.utils.formatURL(url, true);
+    } catch (ex) {
+      return null;
+    }
+
+    
+    if (!sanitizedURL ||
+      (sanitizedURL.protocol !== "http:" &&
+      sanitizedURL.protocol !== "https:" &&
+      sanitizedURL.protocol !== "ftp:")) {
+      return null;
+    }
+
+    return sanitizedURL;
+  }
+
   
 
 
@@ -795,6 +826,7 @@ if (inChrome) {
     composeCallUrlEmail: composeCallUrlEmail,
     findParentNode: findParentNode,
     formatDate: formatDate,
+    formatSanitizedContextURL: formatSanitizedContextURL,
     formatURL: formatURL,
     getBoolPreference: getBoolPreference,
     getOS: getOS,
