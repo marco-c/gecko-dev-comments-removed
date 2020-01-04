@@ -90,7 +90,7 @@ public:
     GraphicsFilter Filter() const;
 
     
-    bool GetSolidColor(gfxRGBA& aColor);
+    bool GetSolidColor(mozilla::gfx::Color& aColorOut);
 
 private:
     

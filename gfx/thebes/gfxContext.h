@@ -262,7 +262,7 @@ public:
 
 
 
-    bool GetDeviceColor(gfxRGBA& c);
+    bool GetDeviceColor(mozilla::gfx::Color& aColorOut);
 
     
 
