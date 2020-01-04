@@ -30,7 +30,7 @@ namespace mozilla {
 
 
 DeltaValues::DeltaValues(WidgetWheelEvent* aEvent)
-  : deltaX(aEvent->deltaX)
+  : deltaX(aEvent->mDeltaX)
   , deltaY(aEvent->deltaY)
 {
 }
@@ -129,7 +129,7 @@ WheelTransaction::UpdateTransaction(WidgetWheelEvent* aEvent)
   }
 
   if (!WheelHandlingUtils::CanScrollOn(scrollToFrame,
-                                       aEvent->deltaX, aEvent->deltaY)) {
+                                       aEvent->mDeltaX, aEvent->deltaY)) {
     OnFailToScrollTarget();
     
     
@@ -409,7 +409,7 @@ WheelTransaction::OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent)
 
   
   
-  if (!aEvent->deltaX && !aEvent->deltaY) {
+  if (!aEvent->mDeltaX && !aEvent->deltaY) {
     return DeltaValues(aEvent);
   }
 

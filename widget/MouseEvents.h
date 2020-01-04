@@ -448,7 +448,7 @@ private:
   friend class mozilla::dom::PBrowserChild;
 
   WidgetWheelEvent()
-    : deltaX(0.0)
+    : mDeltaX(0.0)
     , deltaY(0.0)
     , deltaZ(0.0)
     , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
@@ -471,7 +471,7 @@ public:
 
   WidgetWheelEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget)
     : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, eWheelEventClass)
-    , deltaX(0.0)
+    , mDeltaX(0.0)
     , deltaY(0.0)
     , deltaZ(0.0)
     , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
@@ -515,7 +515,7 @@ public:
   
   
   
-  double deltaX;
+  double mDeltaX;
   double deltaY;
   double deltaZ;
 
@@ -610,7 +610,7 @@ public:
   {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
 
-    deltaX = aEvent.deltaX;
+    mDeltaX = aEvent.mDeltaX;
     deltaY = aEvent.deltaY;
     deltaZ = aEvent.deltaZ;
     deltaMode = aEvent.deltaMode;

@@ -3189,7 +3189,7 @@ nsWindow::OnScrollEvent(GdkEventScroll *aEvent)
         mLastScrollEventTime = aEvent->time;
         
         
-        wheelEvent.deltaX = aEvent->delta_x * 3;
+        wheelEvent.mDeltaX = aEvent->delta_x * 3;
         wheelEvent.deltaY = aEvent->delta_y * 3;
         wheelEvent.mIsNoLineOrPageDelta = true;
         
@@ -3211,10 +3211,10 @@ nsWindow::OnScrollEvent(GdkEventScroll *aEvent)
         wheelEvent.deltaY = wheelEvent.lineOrPageDeltaY = 3;
         break;
     case GDK_SCROLL_LEFT:
-        wheelEvent.deltaX = wheelEvent.lineOrPageDeltaX = -1;
+        wheelEvent.mDeltaX = wheelEvent.lineOrPageDeltaX = -1;
         break;
     case GDK_SCROLL_RIGHT:
-        wheelEvent.deltaX = wheelEvent.lineOrPageDeltaX = 1;
+        wheelEvent.mDeltaX = wheelEvent.lineOrPageDeltaX = 1;
         break;
     }
 
