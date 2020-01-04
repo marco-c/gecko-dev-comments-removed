@@ -5,6 +5,7 @@
 
 
 #include "BluetoothDaemonAvrcpInterface.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/unused.h"
 
 BEGIN_BLUETOOTH_NAMESPACE
@@ -54,21 +55,21 @@ BluetoothDaemonAvrcpModule::GetPlayStatusRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_GET_PLAY_STATUS_RSP,
-                           1 + 
-                           4 + 
-                           4)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_GET_PLAY_STATUS_RSP,
+                                1 + 
+                                4 + 
+                                4); 
 
   nsresult rv = PackPDU(aPlayStatus, aSongLen, aSongPos, *pdu);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -79,10 +80,10 @@ BluetoothDaemonAvrcpModule::ListPlayerAppAttrRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_LIST_PLAYER_APP_ATTR_RSP,
-                           1 + 
-                           aNumAttr)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_LIST_PLAYER_APP_ATTR_RSP,
+                                1 + 
+                                aNumAttr); 
 
   nsresult rv = PackPDU(
     PackConversion<int, uint8_t>(aNumAttr),
@@ -90,11 +91,11 @@ BluetoothDaemonAvrcpModule::ListPlayerAppAttrRspCmd(
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -104,21 +105,21 @@ BluetoothDaemonAvrcpModule::ListPlayerAppValueRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_LIST_PLAYER_APP_VALUE_RSP,
-                           1 + 
-                           aNumVal)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_LIST_PLAYER_APP_VALUE_RSP,
+                                1 + 
+                                aNumVal); 
 
   nsresult rv = PackPDU(PackConversion<int, uint8_t>(aNumVal),
                         PackArray<uint8_t>(aPVals, aNumVal), *pdu);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -129,21 +130,22 @@ BluetoothDaemonAvrcpModule::GetPlayerAppValueRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_GET_PLAYER_APP_VALUE_RSP,
-                           1 + 
-                           2 * aNumAttrs)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_GET_PLAYER_APP_VALUE_RSP,
+                                1 + 
+                                2 * aNumAttrs); 
+
   nsresult rv = PackPDU(
     aNumAttrs,
     BluetoothAvrcpAttributeValuePairs(aIds, aValues, aNumAttrs), *pdu);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -154,20 +156,21 @@ BluetoothDaemonAvrcpModule::GetPlayerAppAttrTextRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_GET_PLAYER_APP_ATTR_TEXT_RSP,
-                           0)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_GET_PLAYER_APP_ATTR_TEXT_RSP,
+                                0); 
+
   nsresult rv = PackPDU(
     PackConversion<int, uint8_t>(aNumAttr),
     BluetoothAvrcpAttributeTextPairs(aIds, aTexts, aNumAttr), *pdu);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -178,20 +181,21 @@ BluetoothDaemonAvrcpModule::GetPlayerAppValueTextRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_GET_PLAYER_APP_VALUE_TEXT_RSP,
-                           0)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_GET_PLAYER_APP_VALUE_TEXT_RSP,
+                                0); 
+
   nsresult rv = PackPDU(
     PackConversion<int, uint8_t>(aNumVal),
     BluetoothAvrcpAttributeTextPairs(aIds, aTexts, aNumVal), *pdu);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -202,20 +206,21 @@ BluetoothDaemonAvrcpModule::GetElementAttrRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_GET_ELEMENT_ATTR_RSP,
-                           0)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_GET_ELEMENT_ATTR_RSP,
+                                0); 
+
   nsresult rv = PackPDU(
     aNumAttr,
     PackArray<BluetoothAvrcpElementAttribute>(aAttr, aNumAttr), *pdu);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -225,19 +230,19 @@ BluetoothDaemonAvrcpModule::SetPlayerAppValueRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_SET_PLAYER_APP_VALUE_RSP,
-                           1)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_SET_PLAYER_APP_VALUE_RSP,
+                                1); 
 
   nsresult rv = PackPDU(aRspStatus, *pdu);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -249,12 +254,12 @@ BluetoothDaemonAvrcpModule::RegisterNotificationRspCmd(
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_REGISTER_NOTIFICATION_RSP,
-                           1 + 
-                           1 + 
-                           1 + 
-                           256)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_REGISTER_NOTIFICATION_RSP,
+                                1 + 
+                                1 + 
+                                1 + 
+                                256); 
 
   BluetoothAvrcpEventParamPair data(aEvent, aParam);
   nsresult rv = PackPDU(aEvent, aType, static_cast<uint8_t>(data.GetLength()),
@@ -262,11 +267,11 @@ BluetoothDaemonAvrcpModule::RegisterNotificationRspCmd(
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
@@ -276,19 +281,19 @@ BluetoothDaemonAvrcpModule::SetVolumeCmd(uint8_t aVolume,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsAutoPtr<DaemonSocketPDU> pdu(
-    new DaemonSocketPDU(SERVICE_ID, OPCODE_SET_VOLUME,
-                           1)); 
+  UniquePtr<DaemonSocketPDU> pdu =
+    MakeUnique<DaemonSocketPDU>(SERVICE_ID, OPCODE_SET_VOLUME,
+                                1); 
 
   nsresult rv = PackPDU(aVolume, *pdu);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = Send(pdu, aRes);
+  rv = Send(pdu.get(), aRes);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  Unused << pdu.forget();
+  Unused << pdu.release();
   return NS_OK;
 }
 
