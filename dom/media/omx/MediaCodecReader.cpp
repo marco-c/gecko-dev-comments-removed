@@ -284,8 +284,10 @@ MediaCodecReader::~MediaCodecReader()
 }
 
 void
-MediaCodecReader::ReleaseMediaResources()
+MediaCodecReader::ReleaseMediaResourcesInternal()
 {
+  MOZ_ASSERT(OnTaskQueue());
+
   
   
   if (mVideoTrack.mSource != nullptr && !mVideoTrack.mSourceIsStopped) {

@@ -96,7 +96,16 @@ public:
 
   
   
-  virtual void ReleaseMediaResources() {};
+  void ReleaseMediaResources()
+  {
+    if (OnTaskQueue()) {
+      ReleaseMediaResourcesInternal();
+      return;
+    }
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(
+      this, &MediaDecoderReader::ReleaseMediaResourcesInternal);
+    OwnerThread()->Dispatch(r.forget());
+  }
   
   
   
@@ -242,6 +251,9 @@ public:
 
   virtual size_t SizeOfVideoQueueInFrames();
   virtual size_t SizeOfAudioQueueInFrames();
+
+private:
+  virtual void ReleaseMediaResourcesInternal() {}
 
 protected:
   friend class TrackBuffer;
