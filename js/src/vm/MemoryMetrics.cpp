@@ -14,6 +14,7 @@
 #include "jsobj.h"
 #include "jsscript.h"
 
+#include "gc/Heap.h"
 #include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
 #include "vm/ArrayObject.h"
@@ -356,7 +357,7 @@ StatsArenaCallback(JSRuntime* rt, void* data, gc::Arena* arena,
 
     
     
-    size_t allocationSpace = Arena::thingsSpan(arena->aheader.getAllocKind());
+    size_t allocationSpace = gc::Arena::thingsSpan(arena->aheader.getAllocKind());
     rtStats->currZoneStats->gcHeapArenaAdmin += gc::ArenaSize - allocationSpace;
 
     
