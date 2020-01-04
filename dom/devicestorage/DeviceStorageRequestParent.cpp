@@ -393,10 +393,15 @@ DeviceStorageRequestParent::ActorDestroy(ActorDestroyReason)
 {
   MutexAutoLock lock(mMutex);
   mActorDestroyed = true;
-  int32_t count = mRunnables.Length();
-  for (int32_t index = 0; index < count; index++) {
-    mRunnables[index]->Cancel();
+  for (auto& runnable : mRunnables) {
+    runnable->Cancel();
   }
+  
+  
+  
+  
+  
+  mRunnables.Clear();
 }
 
 DeviceStorageRequestParent::PostFreeSpaceResultEvent::PostFreeSpaceResultEvent(
