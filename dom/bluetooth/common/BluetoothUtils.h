@@ -272,6 +272,20 @@ void InsertNamedValue(InfallibleTArray<BluetoothNamedValue>& aArray,
                       uint8_t aIndex, const char* aName,
                       const BluetoothValue& aValue);
 
+
+
+
+
+
+
+
+uint16_t ConvertEndiannessUInt16(uint16_t aValue);
+
+
+
+
+uint16_t ReadLittleEndianUInt16(const uint8_t* aBuf);
+
 END_BLUETOOTH_NAMESPACE
 
 #endif 

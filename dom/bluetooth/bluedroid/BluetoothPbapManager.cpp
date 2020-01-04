@@ -553,64 +553,42 @@ BluetoothPbapManager::AppendNamedValueByTagId(
       AppendNamedValue(aValues, "searchKey", searchKey);
       break;
     }
-    case AppParameterTag::SearchValue: {
+    case AppParameterTag::SearchValue:
       
       
 
       
       
-      nsCString text((char *) buf);
-
-      AppendNamedValue(aValues, "searchText", text);
+      AppendNamedValue(aValues, "searchText", nsCString((char *) buf));
       break;
-    }
     case AppParameterTag::MaxListCount: {
-      uint16_t maxListCount = *((uint16_t *)buf);
-
-      
-      maxListCount = (maxListCount >> 8) | (maxListCount << 8);
+      uint16_t maxListCount = ReadLittleEndianUInt16(buf);
+      AppendNamedValue(aValues, "maxListCount",
+                       static_cast<uint32_t>(maxListCount));
 
       
       
       
       mPhonebookSizeRequired = !maxListCount;
-
-      AppendNamedValue(aValues, "maxListCount",
-                       static_cast<uint32_t>(maxListCount));
       break;
     }
-    case AppParameterTag::ListStartOffset: {
-      uint16_t listStartOffset = *((uint16_t *)buf);
-
-      
-      listStartOffset = (listStartOffset >> 8) | (listStartOffset << 8);
-
+    case AppParameterTag::ListStartOffset:
       AppendNamedValue(aValues, "listStartOffset",
-                       static_cast<uint32_t>(listStartOffset));
+                       static_cast<uint32_t>(ReadLittleEndianUInt16(buf)));
       break;
-    }
-    case AppParameterTag::PropertySelector: {
-      InfallibleTArray<uint32_t> props = PackPropertiesMask(buf, 64);
-
-      AppendNamedValue(aValues, "propSelector", props);
+    case AppParameterTag::PropertySelector:
+      AppendNamedValue(aValues, "propSelector", PackPropertiesMask(buf, 64));
       break;
-    }
-    case AppParameterTag::Format: {
-      bool usevCard3 = buf[0];
-      AppendNamedValue(aValues, "format", usevCard3);
+    case AppParameterTag::Format:
+      AppendNamedValue(aValues, "format", static_cast<bool>(buf[0]));
       break;
-    }
     case AppParameterTag::vCardSelector: {
-      InfallibleTArray<uint32_t> props = PackPropertiesMask(buf, 64);
-
-      bool hasVCardSelectorOperator = aHeader.GetAppParameter(
+      bool hasSelectorOperator = aHeader.GetAppParameter(
         AppParameterTag::vCardSelectorOperator, buf, 64);
-
-      if (hasVCardSelectorOperator && buf[0]) {
-        AppendNamedValue(aValues, "vCardSelector_AND", BluetoothValue(props));
-      } else {
-        AppendNamedValue(aValues, "vCardSelector_OR", BluetoothValue(props));
-      }
+      AppendNamedValue(aValues,
+                       hasSelectorOperator && buf[0] ? "vCardSelector_AND"
+                                                     : "vCardSelector_OR",
+                       PackPropertiesMask(buf, 64));
       break;
     }
     default:
@@ -906,10 +884,7 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
 
   if (mPhonebookSizeRequired) {
     
-    
-    uint8_t phonebookSize[2];
-    phonebookSize[0] = (aPhonebookSize & 0xFF00) >> 8;
-    phonebookSize[1] = aPhonebookSize & 0x00FF;
+    uint16_t pbSizeBigEndian = ConvertEndiannessUInt16(aPhonebookSize);
 
     
     
@@ -917,9 +892,9 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
     uint8_t appParameters[4];
     AppendAppParameter(appParameters,
                        sizeof(appParameters),
-                       (uint8_t) AppParameterTag::PhonebookSize,
-                       phonebookSize,
-                       sizeof(phonebookSize));
+                       static_cast<uint8_t>(AppParameterTag::PhonebookSize),
+                       (uint8_t*) &pbSizeBigEndian,
+                       sizeof(pbSizeBigEndian));
 
     index += AppendHeaderAppParameters(&res[index],
                                        mRemoteMaxPacketLength,
