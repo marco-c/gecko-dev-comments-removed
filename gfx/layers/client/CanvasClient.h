@@ -13,6 +13,11 @@
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureClient.h"  
+
+
+#undef None
+#include "mozilla/MaybeOneOf.h"
+
 #include "mozilla/mozalloc.h"           
 
 #include "mozilla/gfx/Point.h"          
@@ -21,8 +26,10 @@
 namespace mozilla {
 namespace layers {
 
+class AsyncCanvasRenderer;
 class ClientCanvasLayer;
 class CompositableForwarder;
+class ShadowableLayer;
 class SharedSurfaceTextureClient;
 
 
@@ -31,6 +38,8 @@ class SharedSurfaceTextureClient;
 class CanvasClient : public CompositableClient
 {
 public:
+  typedef MaybeOneOf<ClientCanvasLayer*, AsyncCanvasRenderer*> Renderer;
+
   
 
 
@@ -40,6 +49,7 @@ public:
     CanvasClientSurface,
     CanvasClientGLContext,
     CanvasClientTypeShSurf,
+    CanvasClientAsync, 
   };
   static already_AddRefed<CanvasClient> CreateCanvasClient(CanvasClientType aType,
                                                        CompositableForwarder* aFwd,
@@ -56,6 +66,8 @@ public:
   virtual void Clear() {};
 
   virtual void Update(gfx::IntSize aSize, ClientCanvasLayer* aLayer) = 0;
+
+  virtual void UpdateAsync(AsyncCanvasRenderer* aRenderer) {}
 
   virtual void Updated() { }
 };
@@ -111,6 +123,7 @@ private:
   RefPtr<SharedSurfaceTextureClient> mShSurfClient;
   RefPtr<TextureClient> mReadbackClient;
   RefPtr<TextureClient> mFront;
+  RefPtr<TextureClient> mNewFront;
 
   void ClearSurfaces();
 
@@ -130,10 +143,52 @@ public:
 
   virtual void Update(gfx::IntSize aSize,
                       ClientCanvasLayer* aLayer) override;
+  void UpdateRenderer(gfx::IntSize aSize, Renderer& aRenderer);
+
+  virtual void UpdateAsync(AsyncCanvasRenderer* aRenderer) override;
+
+  virtual void Updated() override;
 
   virtual void OnDetach() override {
     ClearSurfaces();
   }
+};
+
+
+
+
+
+
+class CanvasClientBridge final : public CanvasClient
+{
+public:
+  CanvasClientBridge(CompositableForwarder* aLayerForwarder,
+                     TextureFlags aFlags)
+    : CanvasClient(aLayerForwarder, aFlags)
+    , mAsyncID(0)
+    , mLayer(nullptr)
+  {
+  }
+
+  TextureInfo GetTextureInfo() const override
+  {
+    return TextureInfo(CompositableType::IMAGE);
+  }
+
+  virtual void Update(gfx::IntSize aSize, ClientCanvasLayer* aLayer) override
+  {
+  }
+
+  virtual void UpdateAsync(AsyncCanvasRenderer* aRenderer) override;
+
+  void SetLayer(ShadowableLayer* aLayer)
+  {
+    mLayer = aLayer;
+  }
+
+protected:
+  uint64_t mAsyncID;
+  ShadowableLayer* mLayer;
 };
 
 } 
