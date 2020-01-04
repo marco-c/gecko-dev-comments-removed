@@ -2139,6 +2139,8 @@ jit::MakeMRegExpHoistable(MIRGraph& graph)
             
             RegExpObject* source = regexp->source();
             if (source->sticky() || source->global()) {
+                if (!graph.alloc().ensureBallast())
+                    return false;
                 MConstant* zero = MConstant::New(graph.alloc(), Int32Value(0));
                 regexp->block()->insertAfter(regexp, zero);
 
