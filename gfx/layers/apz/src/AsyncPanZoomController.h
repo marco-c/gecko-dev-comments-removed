@@ -52,6 +52,7 @@ class TouchBlockState;
 class PanGestureBlockState;
 class OverscrollHandoffChain;
 class StateChangeNotificationBlocker;
+class CheckerboardEvent;
 
 
 
@@ -1099,6 +1100,17 @@ private:
   
   
   bool mAsyncTransformAppliedToContent;
+
+
+  
+
+
+
+private:
+  
+  
+  
+  UniquePtr<CheckerboardEvent> mCheckerboardEvent;
 };
 
 } 
