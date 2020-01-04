@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "CacheLog.h"
 #include "CacheStorageService.h"
 #include "CacheFileIOManager.h"
@@ -237,8 +239,24 @@ private:
         return NS_ERROR_NOT_INITIALIZED;
 
       CacheEntryTable* entries;
-      if (sGlobalEntryTables->Get(mContextKey, &entries))
-        entries->EnumerateRead(&WalkMemoryCacheRunnable::WalkStorage, this);
+      if (sGlobalEntryTables->Get(mContextKey, &entries)) {
+        for (auto iter = entries->Iter(); !iter.Done(); iter.Next()) {
+          CacheEntry* entry = iter.UserData();
+
+          
+          if (entry->IsUsingDisk()) {
+            continue;
+          }
+
+          mSize += entry->GetMetadataMemoryConsumption();
+
+          int64_t size;
+          if (NS_SUCCEEDED(entry->GetDataSize(&size))) {
+            mSize += size;
+          }
+          mEntryArray.AppendElement(entry);
+        }
+      }
 
       
     } else if (NS_IsMainThread()) {
@@ -285,28 +303,6 @@ private:
   {
     if (mCallback)
       ProxyReleaseMainThread(mCallback);
-  }
-
-  static PLDHashOperator
-  WalkStorage(const nsACString& aKey,
-              CacheEntry* aEntry,
-              void* aClosure)
-  {
-    WalkMemoryCacheRunnable* walker =
-      static_cast<WalkMemoryCacheRunnable*>(aClosure);
-
-    
-    if (aEntry->IsUsingDisk())
-      return PL_DHASH_NEXT;
-
-    walker->mSize += aEntry->GetMetadataMemoryConsumption();
-
-    int64_t size;
-    if (NS_SUCCEEDED(aEntry->GetDataSize(&size)))
-      walker->mSize += size;
-
-    walker->mEntryArray.AppendElement(aEntry);
-    return PL_DHASH_NEXT;
   }
 
   virtual void OnEntryInfo(const nsACString & aURISpec, const nsACString & aIdEnhance,
