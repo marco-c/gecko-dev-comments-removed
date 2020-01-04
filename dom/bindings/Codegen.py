@@ -3347,9 +3347,16 @@ def InitUnforgeablePropertiesOnHolder(descriptor, properties, failureCode):
     if descriptor.interface.getExtendedAttribute("Unforgeable"):
         
         
+        
         unforgeables.append(CGGeneric(fill(
             """
-            if (!JS_DefineProperty(aCx, unforgeableHolder, "toJSON", JS::UndefinedHandleValue,
+            JS::RootedId toPrimitive(aCx,
+              SYMBOL_TO_JSID(JS::GetWellKnownSymbol(aCx, JS::SymbolCode::toPrimitive)));
+            if (!JS_DefinePropertyById(aCx, unforgeableHolder, toPrimitive,
+                                       JS::UndefinedHandleValue,
+                                       JSPROP_READONLY | JSPROP_PERMANENT) ||
+                !JS_DefineProperty(aCx, unforgeableHolder, "toJSON",
+                                   JS::UndefinedHandleValue,
                                    JSPROP_READONLY | JSPROP_ENUMERATE | JSPROP_PERMANENT)) {
               $*{failureCode}
             }
