@@ -91,7 +91,6 @@ RasterImage::RasterImage(ImageURL* aURI ) :
   mDiscardable(false),
   mHasSourceData(false),
   mHasBeenDecoded(false),
-  mDownscaleDuringDecode(false),
   mPendingAnimation(false),
   mAnimationFinished(false),
   mWantFullDecode(false)
@@ -127,22 +126,14 @@ RasterImage::Init(const char* aMimeType,
   }
 
   
-  MOZ_ASSERT(!(aFlags & INIT_FLAG_TRANSIENT) ||
-               (!(aFlags & INIT_FLAG_DISCARDABLE) &&
-                !(aFlags & INIT_FLAG_DOWNSCALE_DURING_DECODE)),
-             "Illegal init flags for transient image");
+  MOZ_ASSERT_IF(aFlags & INIT_FLAG_TRANSIENT,
+                !(aFlags & INIT_FLAG_DISCARDABLE));
 
   
   mDiscardable = !!(aFlags & INIT_FLAG_DISCARDABLE);
   mWantFullDecode = !!(aFlags & INIT_FLAG_DECODE_IMMEDIATELY);
   mTransient = !!(aFlags & INIT_FLAG_TRANSIENT);
-  mDownscaleDuringDecode = !!(aFlags & INIT_FLAG_DOWNSCALE_DURING_DECODE);
   mSyncLoad = !!(aFlags & INIT_FLAG_SYNC_LOAD);
-
-#ifndef MOZ_ENABLE_SKIA
-  
-  mDownscaleDuringDecode = false;
-#endif
 
   
   
@@ -1209,10 +1200,6 @@ RasterImage::RequestDecodeForSize(const IntSize& aSize, uint32_t aFlags)
 
   
   
-  IntSize targetSize = mDownscaleDuringDecode ? aSize : mSize;
-
-  
-  
   
   bool shouldSyncDecodeIfFast =
     !mHasBeenDecoded && (aFlags & FLAG_SYNC_DECODE_IF_FAST);
@@ -1223,7 +1210,7 @@ RasterImage::RequestDecodeForSize(const IntSize& aSize, uint32_t aFlags)
 
   
   
-  LookupFrame(0, targetSize, flags);
+  LookupFrame(0, aSize, flags);
 
   return NS_OK;
 }
@@ -1273,20 +1260,14 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
     return NS_OK;
   }
 
-  if (mDownscaleDuringDecode) {
-    
-    
-    
-    
-    
-    
-    
-    SurfaceCache::UnlockSurfaces(ImageKey(this));
-  }
-
-  MOZ_ASSERT(mDownscaleDuringDecode || aSize == mSize,
-             "Can only decode to our intrinsic size if we're not allowed to "
-             "downscale-during-decode");
+  
+  
+  
+  
+  
+  
+  
+  SurfaceCache::UnlockSurfaces(ImageKey(this));
 
   Maybe<IntSize> targetSize = mSize != aSize ? Some(aSize) : Nothing();
 
@@ -1411,13 +1392,23 @@ RasterImage::RecoverFromInvalidFrames(const IntSize& aSize, uint32_t aFlags)
   Decode(aSize, aFlags);
 }
 
+static bool
+HaveSkia()
+{
+#ifdef MOZ_ENABLE_SKIA
+  return true;
+#else
+  return false;
+#endif
+}
+
 bool
 RasterImage::CanDownscaleDuringDecode(const IntSize& aSize, uint32_t aFlags)
 {
   
   
   
-  if (!mDownscaleDuringDecode || !mHasSize ||
+  if (!mHasSize || mTransient || !HaveSkia() ||
       !gfxPrefs::ImageDownscaleDuringDecodeEnabled() ||
       !(aFlags & imgIContainer::FLAG_HIGH_QUALITY_SCALING)) {
     return false;
@@ -1468,8 +1459,7 @@ RasterImage::DrawInternal(DrawableFrameRef&& aFrameRef,
     aContext->Multiply(gfxMatrix::Scaling(scale.width, scale.height));
     region.Scale(1.0 / scale.width, 1.0 / scale.height);
 
-    couldRedecodeForBetterFrame = mDownscaleDuringDecode &&
-                                  CanDownscaleDuringDecode(aSize, aFlags);
+    couldRedecodeForBetterFrame = CanDownscaleDuringDecode(aSize, aFlags);
   }
 
   if (!aFrameRef->Draw(aContext, region, aFilter, aFlags)) {

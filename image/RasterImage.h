@@ -306,10 +306,6 @@ private:
 
 
 
-
-
-
-
   NS_IMETHOD Decode(const gfx::IntSize& aSize, uint32_t aFlags);
 
   
@@ -398,7 +394,6 @@ private:
   bool                       mDiscardable:1;   
   bool                       mHasSourceData:1; 
   bool                       mHasBeenDecoded:1; 
-  bool                       mDownscaleDuringDecode:1;
 
   
   
