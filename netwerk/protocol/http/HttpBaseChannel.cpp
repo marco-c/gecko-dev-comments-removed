@@ -53,6 +53,7 @@
 #include "nsIConsoleService.h"
 #include "mozilla/BinarySearch.h"
 #include "nsIHttpHeaderVisitor.h"
+#include "nsIXULRuntime.h"
 
 #include <algorithm>
 
@@ -3307,26 +3308,49 @@ IMPL_TIMING_ATTR(RedirectEnd)
 nsPerformance*
 HttpBaseChannel::GetPerformance()
 {
-    
-    
-    if (!mTimingEnabled) {
-        return nullptr;
-    }
+  
+  
+  if (!mTimingEnabled) {
+    return nullptr;
+  }
 
-    nsCOMPtr<nsPIDOMWindowInner> pDomWindow = GetInnerDOMWindow();
-    if (!pDomWindow) {
-        return nullptr;
-    }
+  
+  
+  if (XRE_IsParentProcess() && BrowserTabsRemoteAutostart()) {
+    return nullptr;
+  }
 
-    nsPerformance* docPerformance = pDomWindow->GetPerformance();
-    if (!docPerformance) {
-        return nullptr;
-    }
-    
-    if (mLoadFlags & LOAD_DOCUMENT_URI) {
-        return docPerformance->GetParentPerformance();
-    }
-    return docPerformance;
+  if (!mLoadInfo) {
+    return nullptr;
+  }
+
+  
+  if (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicyBase::TYPE_DOCUMENT) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIDOMDocument> domDocument;
+  mLoadInfo->GetLoadingDocument(getter_AddRefs(domDocument));
+  if (!domDocument) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIDocument> loadingDocument = do_QueryInterface(domDocument);
+  if (!loadingDocument) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsPIDOMWindowInner> innerWindow = loadingDocument->GetInnerWindow();
+  if (!innerWindow) {
+    return nullptr;
+  }
+
+  nsPerformance* docPerformance = innerWindow->GetPerformance();
+  if (!docPerformance) {
+    return nullptr;
+  }
+
+  return docPerformance;
 }
 
 nsIURI*
