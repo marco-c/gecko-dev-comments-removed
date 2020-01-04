@@ -60,13 +60,6 @@ enum FrameType
     
     
     JitFrame_Bailout,
-
-    
-    
-    
-    
-    
-    JitFrame_LazyLink
 };
 
 enum ReadFrameArgsBehavior {
@@ -141,7 +134,7 @@ class JitFrameIterator
     bool checkInvalidation() const;
 
     bool isExitFrame() const {
-        return type_ == JitFrame_Exit || type_ == JitFrame_LazyLink;
+        return type_ == JitFrame_Exit;
     }
     bool isScripted() const {
         return type_ == JitFrame_BaselineJS || type_ == JitFrame_IonJS || type_ == JitFrame_Bailout;

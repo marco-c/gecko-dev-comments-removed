@@ -1393,15 +1393,6 @@ class JitActivation : public Activation
     
     
     
-    
-    
-    bool isLazyLinkExitFrame_;
-
-    
-    
-    
-    
-    
     typedef Vector<RematerializedFrame*> RematerializedFrameVector;
     typedef HashMap<uint8_t*, RematerializedFrameVector> RematerializedFrameTable;
     RematerializedFrameTable* rematerializedFrames_;
@@ -1531,14 +1522,6 @@ class JitActivation : public Activation
 
     
     void cleanBailoutData();
-
-    
-    bool isLazyLinkExitFrame() const { return isLazyLinkExitFrame_; }
-
-    
-    void setLazyLinkExitFrame(bool isExitFrame) {
-        isLazyLinkExitFrame_ = isExitFrame;
-    }
 
     static size_t offsetOfLastProfilingFrame() {
         return offsetof(JitActivation, lastProfilingFrame_);
