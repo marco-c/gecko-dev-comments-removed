@@ -310,6 +310,7 @@
 
 
 
+
 #ifndef PNG_H
 #define PNG_H
 
@@ -325,9 +326,9 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.24+apng"
+#define PNG_LIBPNG_VER_STRING "1.6.25+apng"
 #define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.24+apng - August 4, 2016\n"
+     " libpng version 1.6.25+apng - September 1, 2016\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -335,7 +336,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 24
+#define PNG_LIBPNG_VER_RELEASE 25
 
 
 
@@ -366,7 +367,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10624 /* 1.6.24 */
+#define PNG_LIBPNG_VER 10625 /* 1.6.25 */
 
 
 
@@ -491,7 +492,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_24;
+typedef char* png_libpng_version_1_6_25;
 
 
 
@@ -3262,7 +3263,10 @@ PNG_EXPORT(245, int, png_image_write_to_memory, (png_imagep image, void *memory,
 #endif
 #define PNG_MAXIMUM_INFLATE_WINDOW 2 /* SOFTWARE: force maximum window */
 #define PNG_SKIP_sRGB_CHECK_PROFILE 4 /* SOFTWARE: Check ICC profile for sRGB */
-#define PNG_OPTION_NEXT  6 /* Next option - numbers must be even */
+#ifdef PNG_MIPS_MSA_API_SUPPORTED
+#  define PNG_MIPS_MSA   6 /* HARDWARE: MIPS Msa SIMD instructions supported */
+#endif
+#define PNG_OPTION_NEXT  8 /* Next option - numbers must be even */
 
 
 #define PNG_OPTION_UNSET   0 /* Unset - defaults to off */

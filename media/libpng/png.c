@@ -14,7 +14,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_24 Your_png_h_is_not_version_1_6_24;
+typedef png_libpng_version_1_6_25 Your_png_h_is_not_version_1_6_25;
 
 
 
@@ -775,7 +775,7 @@ png_get_copyright(png_const_structrp png_ptr)
 #else
 #  ifdef __STDC__
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.24+apng - August 4, 2016" PNG_STRING_NEWLINE \
+      "libpng version 1.6.25+apng - September 1, 2016" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2016 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
@@ -784,7 +784,7 @@ png_get_copyright(png_const_structrp png_ptr)
       "Portions Copyright (c) 2006-2007 Andrew Smith" PNG_STRING_NEWLINE \
       "Portions Copyright (c) 2008-2016 Max Stepin" PNG_STRING_NEWLINE ;
 #  else
-   return "libpng version 1.6.24+apng - August 4, 2016\
+   return "libpng version 1.6.25+apng - September 1, 2016\
       Copyright (c) 1998-2002,2004,2006-2016 Glenn Randers-Pehrson\
       Copyright (c) 1996-1997 Andreas Dilger\
       Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.\
@@ -1935,8 +1935,8 @@ png_colorspace_set_sRGB(png_const_structrp png_ptr, png_colorspacerp colorspace,
 static const png_byte D50_nCIEXYZ[12] =
    { 0x00, 0x00, 0xf6, 0xd6, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0xd3, 0x2d };
 
-int 
-png_icc_check_length(png_const_structrp png_ptr, png_colorspacerp colorspace,
+static int 
+icc_check_length(png_const_structrp png_ptr, png_colorspacerp colorspace,
     png_const_charp name, png_uint_32 profile_length)
 {
    if (profile_length < 132)
@@ -1945,6 +1945,40 @@ png_icc_check_length(png_const_structrp png_ptr, png_colorspacerp colorspace,
 
    return 1;
 }
+
+#ifdef PNG_READ_iCCP_SUPPORTED
+int 
+png_icc_check_length(png_const_structrp png_ptr, png_colorspacerp colorspace,
+    png_const_charp name, png_uint_32 profile_length)
+{
+   if (!icc_check_length(png_ptr, colorspace, name, profile_length))
+      return 0;
+
+   
+
+
+
+
+
+#  ifdef PNG_SET_USER_LIMITS_SUPPORTED
+      else if (png_ptr->user_chunk_malloc_max > 0 &&
+               png_ptr->user_chunk_malloc_max < profile_length)
+         return png_icc_profile_error(png_ptr, colorspace, name, profile_length,
+             "exceeds application limits");
+#  elif PNG_USER_CHUNK_MALLOC_MAX > 0
+      else if (PNG_USER_CHUNK_MALLOC_MAX < profile_length)
+         return png_icc_profile_error(png_ptr, colorspace, name, profile_length,
+             "exceeds libpng limits");
+#  else 
+      
+      else if (PNG_SIZE_MAX < profile_length)
+         return png_icc_profile_error(png_ptr, colorspace, name, profile_length,
+             "exceeds system limits");
+#  endif 
+
+   return 1;
+}
+#endif 
 
 int 
 png_icc_check_header(png_const_structrp png_ptr, png_colorspacerp colorspace,
@@ -2381,7 +2415,7 @@ png_colorspace_set_ICC(png_const_structrp png_ptr, png_colorspacerp colorspace,
    if ((colorspace->flags & PNG_COLORSPACE_INVALID) != 0)
       return 0;
 
-   if (png_icc_check_length(png_ptr, colorspace, name, profile_length) != 0 &&
+   if (icc_check_length(png_ptr, colorspace, name, profile_length) != 0 &&
        png_icc_check_header(png_ptr, colorspace, name, profile_length, profile,
            color_type) != 0 &&
        png_icc_check_tag_table(png_ptr, colorspace, name, profile_length,

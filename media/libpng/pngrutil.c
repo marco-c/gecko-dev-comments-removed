@@ -461,6 +461,7 @@ png_zlib_inflate(png_structrp png_ptr, int flush)
 #endif 
 
 #ifdef PNG_READ_COMPRESSED_TEXT_SUPPORTED
+#if defined(PNG_READ_zTXt_SUPPORTED) || defined (PNG_READ_iTXt_SUPPORTED)
 
 
 
@@ -590,7 +591,6 @@ png_inflate(png_structrp png_ptr, png_uint_32 owner, int finish,
    }
 }
 
-#if defined(PNG_READ_zTXt_SUPPORTED) || defined (PNG_READ_iTXt_SUPPORTED)
 
 
 
