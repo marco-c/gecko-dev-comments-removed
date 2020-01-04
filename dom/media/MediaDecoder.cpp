@@ -1025,14 +1025,8 @@ MediaDecoder::ResetConnectionState()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!IsShutdown());
-
-  
   mOwner->ResetConnectionState();
-
-  
-  
-  
-  Shutdown();
+  MOZ_ASSERT(IsShutdown());
 }
 
 void

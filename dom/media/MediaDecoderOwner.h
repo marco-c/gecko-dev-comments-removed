@@ -136,6 +136,8 @@ public:
 
   
   
+  
+  
   virtual void ResetConnectionState() = 0;
 
   
