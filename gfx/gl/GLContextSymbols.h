@@ -690,10 +690,6 @@ struct GLContextSymbols
     
     typedef void (GLAPIENTRY * PFNRESOLVEMULTISAMPLEFRAMEBUFFERAPPLE) (void);
     PFNRESOLVEMULTISAMPLEFRAMEBUFFERAPPLE fResolveMultisampleFramebufferAPPLE;
-
-    
-    typedef void (GLAPIENTRY * PFNTEXTUREBARRIERPROC) (void);
-    PFNTEXTUREBARRIERPROC fTextureBarrier;
 };
 
 } 
