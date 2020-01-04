@@ -59,13 +59,6 @@ BEGIN_TEST(testGCHeapPostBarriers)
     return true;
 }
 
-MOZ_NEVER_INLINE bool
-Passthrough(bool value)
-{
-    
-    return value;
-}
-
 bool
 CanAccessObject(JSObject* obj)
 {
