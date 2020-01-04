@@ -41,6 +41,14 @@ public:
   NS_IMETHOD_(MozExternalRefCountType) Release() = 0;
 
   
+  
+  ImageKey GetImageKey() const { return mImageKey; }
+
+  
+  
+  const SurfaceKey& GetSurfaceKey() const { return mSurfaceKey; }
+
+  
   virtual DrawableSurface Surface();
 
   
@@ -74,9 +82,15 @@ public:
   const AvailabilityState& Availability() const { return mAvailability; }
 
 protected:
-  explicit ISurfaceProvider(AvailabilityState aAvailability)
-    : mAvailability(aAvailability)
-  { }
+  ISurfaceProvider(const ImageKey aImageKey,
+                   const SurfaceKey& aSurfaceKey,
+                   AvailabilityState aAvailability)
+    : mImageKey(aImageKey)
+    , mSurfaceKey(aSurfaceKey)
+    , mAvailability(aAvailability)
+  {
+    MOZ_ASSERT(aImageKey, "Must have a valid image key");
+  }
 
   virtual ~ISurfaceProvider() { }
 
@@ -99,6 +113,8 @@ private:
   friend class CachedSurface;
   friend class DrawableSurface;
 
+  const ImageKey mImageKey;
+  const SurfaceKey mSurfaceKey;
   AvailabilityState mAvailability;
 };
 
@@ -220,10 +236,15 @@ class SimpleSurfaceProvider final : public ISurfaceProvider
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SimpleSurfaceProvider, override)
 
-  explicit SimpleSurfaceProvider(NotNull<imgFrame*> aSurface)
-    : ISurfaceProvider(AvailabilityState::StartAvailable())
+  SimpleSurfaceProvider(const ImageKey aImageKey,
+                        const SurfaceKey& aSurfaceKey,
+                        NotNull<imgFrame*> aSurface)
+    : ISurfaceProvider(aImageKey, aSurfaceKey,
+                       AvailabilityState::StartAvailable())
     , mSurface(aSurface)
-  { }
+  {
+    MOZ_ASSERT(aSurfaceKey.Size() == mSurface->GetSize());
+  }
 
   bool IsFinished() const override { return mSurface->IsFinished(); }
 

@@ -16,14 +16,14 @@ namespace mozilla {
 namespace image {
 
 AnimationSurfaceProvider::AnimationSurfaceProvider(NotNull<RasterImage*> aImage,
-                                                   NotNull<Decoder*> aDecoder,
-                                                   const SurfaceKey& aSurfaceKey)
-  : ISurfaceProvider(AvailabilityState::StartAsPlaceholder())
+                                                   const SurfaceKey& aSurfaceKey,
+                                                   NotNull<Decoder*> aDecoder)
+  : ISurfaceProvider(ImageKey(aImage.get()), aSurfaceKey,
+                     AvailabilityState::StartAsPlaceholder())
   , mImage(aImage.get())
   , mDecodingMutex("AnimationSurfaceProvider::mDecoder")
   , mDecoder(aDecoder.get())
   , mFramesMutex("AnimationSurfaceProvider::mFrames")
-  , mSurfaceKey(aSurfaceKey)
 {
   MOZ_ASSERT(!mDecoder->IsMetadataDecode(),
              "Use MetadataDecodingTask for metadata decodes");
@@ -111,7 +111,7 @@ AnimationSurfaceProvider::LogicalSizeInBytes() const
   
   
   
-  IntSize size = mSurfaceKey.Size();
+  IntSize size = GetSurfaceKey().Size();
   return 3 * size.width * size.height * sizeof(uint32_t);
 }
 
@@ -254,8 +254,8 @@ AnimationSurfaceProvider::AnnounceSurfaceAvailable()
   
   
   SurfaceCache::SurfaceAvailable(WrapNotNull(this),
-                                 ImageKey(mImage.get()),
-                                 mSurfaceKey);
+                                 GetImageKey(),
+                                 GetSurfaceKey());
 }
 
 void

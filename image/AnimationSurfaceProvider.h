@@ -30,8 +30,8 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AnimationSurfaceProvider, override)
 
   AnimationSurfaceProvider(NotNull<RasterImage*> aImage,
-                           NotNull<Decoder*> aDecoder,
-                           const SurfaceKey& aSurfaceKey);
+                           const SurfaceKey& aSurfaceKey,
+                           NotNull<Decoder*> aDecoder);
 
 
   
@@ -96,9 +96,6 @@ private:
 
   
   nsTArray<RawAccessFrameRef> mFrames;
-
-  
-  const SurfaceKey mSurfaceKey;
 };
 
 } 

@@ -29,8 +29,8 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecodedSurfaceProvider, override)
 
   DecodedSurfaceProvider(NotNull<RasterImage*> aImage,
-                         NotNull<Decoder*> aDecoder,
-                         const SurfaceKey& aSurfaceKey);
+                         const SurfaceKey& aSurfaceKey,
+                         NotNull<Decoder*> aDecoder);
 
 
   
@@ -81,9 +81,6 @@ private:
 
   
   DrawableFrameRef mLockRef;
-
-  
-  SurfaceKey mSurfaceKey;
 };
 
 } 
