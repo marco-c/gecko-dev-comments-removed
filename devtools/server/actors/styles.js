@@ -2086,6 +2086,13 @@ function getRuleText(initialText, line, column) {
   }
   
   
+  
+  if (endOffset === undefined) {
+    endOffset = startOffset;
+  }
+
+  
+  
   return {offset: textOffset + startOffset,
           text: text.substring(startOffset, endOffset)};
 }
