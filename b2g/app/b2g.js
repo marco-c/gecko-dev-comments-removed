@@ -1025,6 +1025,7 @@ pref("apz.fling_curve_threshold_inches_per_ms", "0.01");
 pref("apz.fling_friction", "0.0019");
 pref("apz.max_velocity_inches_per_ms", "0.07");
 pref("apz.overscroll.enabled", true);
+pref("apz.displayport_expiry_ms", 0); 
 
 
 pref("layout.event-regions.enabled", true);
