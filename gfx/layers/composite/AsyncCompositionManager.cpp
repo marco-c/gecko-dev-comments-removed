@@ -932,8 +932,8 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     
     
-    if (scrollMetadata.HasClipRect()) {
-      ParentLayerIntRect clip = scrollMetadata.ClipRect();
+    if (scrollMetadata.HasScrollClip()) {
+      ParentLayerIntRect clip = scrollMetadata.ScrollClip().GetClipRect();
       if (aLayer->GetParent() && aLayer->GetParent()->GetTransformIsPerspective()) {
         
         
@@ -961,10 +961,13 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     }
 
     
-    if (scrollMetadata.GetMaskLayerIndex()) {
-      size_t maskLayerIndex = scrollMetadata.GetMaskLayerIndex().value();
-      Layer* ancestorMaskLayer = aLayer->GetAncestorMaskLayerAt(maskLayerIndex);
-      ancestorMaskLayers.AppendElement(ancestorMaskLayer);
+    if (scrollMetadata.HasScrollClip()) {
+      const LayerClip& scrollClip = scrollMetadata.ScrollClip();
+      if (scrollClip.GetMaskLayerIndex()) {
+        size_t maskLayerIndex = scrollClip.GetMaskLayerIndex().value();
+        Layer* ancestorMaskLayer = aLayer->GetAncestorMaskLayerAt(maskLayerIndex);
+        ancestorMaskLayers.AppendElement(ancestorMaskLayer);
+      }
     }
   }
 

@@ -683,6 +683,52 @@ struct ScrollSnapInfo {
 
 
 
+struct LayerClip {
+  friend struct IPC::ParamTraits<mozilla::layers::LayerClip>;
+
+public:
+  LayerClip()
+    : mClipRect()
+    , mMaskLayerIndex()
+  {}
+
+  explicit LayerClip(const ParentLayerIntRect& aClipRect)
+    : mClipRect(aClipRect)
+    , mMaskLayerIndex()
+  {}
+
+  bool operator==(const LayerClip& aOther) const
+  {
+    return mClipRect == aOther.mClipRect &&
+           mMaskLayerIndex == aOther.mMaskLayerIndex;
+  }
+
+  void SetClipRect(const ParentLayerIntRect& aClipRect) {
+    mClipRect = aClipRect;
+  }
+  const ParentLayerIntRect& GetClipRect() const {
+    return mClipRect;
+  }
+
+  void SetMaskLayerIndex(const Maybe<size_t>& aIndex) {
+    mMaskLayerIndex = aIndex;
+  }
+  const Maybe<size_t>& GetMaskLayerIndex() const {
+    return mMaskLayerIndex;
+  }
+
+private:
+  ParentLayerIntRect mClipRect;
+
+  
+  
+  Maybe<size_t> mMaskLayerIndex;
+};
+
+
+
+
+
 
 
 
@@ -701,8 +747,7 @@ public:
     , mContentDescription()
     , mLineScrollAmount(0, 0)
     , mPageScrollAmount(0, 0)
-    , mMaskLayerIndex()
-    , mClipRect()
+    , mScrollClip()
     , mHasScrollgrab(false)
     , mAllowVerticalScrollWithWheel(false)
     , mIsLayersIdRoot(false)
@@ -719,8 +764,7 @@ public:
            
            mLineScrollAmount == aOther.mLineScrollAmount &&
            mPageScrollAmount == aOther.mPageScrollAmount &&
-           mMaskLayerIndex == aOther.mMaskLayerIndex &&
-           mClipRect == aOther.mClipRect &&
+           mScrollClip == aOther.mScrollClip &&
            mHasScrollgrab == aOther.mHasScrollgrab &&
            mAllowVerticalScrollWithWheel == aOther.mAllowVerticalScrollWithWheel &&
            mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
@@ -780,26 +824,28 @@ public:
   void SetPageScrollAmount(const LayoutDeviceIntSize& size) {
     mPageScrollAmount = size;
   }
-  void SetMaskLayerIndex(const Maybe<size_t>& aIndex) {
-    mMaskLayerIndex = aIndex;
+
+  void SetScrollClip(const Maybe<LayerClip>& aScrollClip) {
+    mScrollClip = aScrollClip;
   }
-  const Maybe<size_t>& GetMaskLayerIndex() const {
-    return mMaskLayerIndex;
+  const Maybe<LayerClip>& GetScrollClip() const {
+    return mScrollClip;
+  }
+  bool HasScrollClip() const {
+    return mScrollClip.isSome();
+  }
+  const LayerClip& ScrollClip() const {
+    return mScrollClip.ref();
+  }
+  LayerClip& ScrollClip() {
+    return mScrollClip.ref();
   }
 
-  void SetClipRect(const Maybe<ParentLayerIntRect>& aClipRect)
-  {
-    mClipRect = aClipRect;
+  bool HasMaskLayer() const {
+    return HasScrollClip() && ScrollClip().GetMaskLayerIndex();
   }
-  const Maybe<ParentLayerIntRect>& GetClipRect() const
-  {
-    return mClipRect;
-  }
-  bool HasClipRect() const {
-    return mClipRect.isSome();
-  }
-  const ParentLayerIntRect& ClipRect() const {
-    return mClipRect.ref();
+  Maybe<ParentLayerIntRect> GetClipRect() const {
+    return mScrollClip.isSome() ? Some(mScrollClip->GetClipRect()) : Nothing();
   }
 
   void SetHasScrollgrab(bool aHasScrollgrab) {
@@ -859,10 +905,10 @@ private:
   
   
   
-  Maybe<size_t> mMaskLayerIndex;
-
   
-  Maybe<ParentLayerIntRect> mClipRect;
+  
+  
+  Maybe<LayerClip> mScrollClip;
 
   
   bool mHasScrollgrab:1;
