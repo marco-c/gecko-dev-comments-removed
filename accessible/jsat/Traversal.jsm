@@ -224,6 +224,28 @@ this.TraversalRules = {
         Filters.IGNORE;
     }, null, true),
 
+  
+
+  Section: new BaseTraversalRule(
+    [],
+    function Section_match(aAccessible) {
+      if (aAccessible.role === Roles.HEADING) {
+        return Filters.MATCH;
+      }
+
+      let matchedRole = Utils.matchRoles(aAccessible, [
+        'banner',
+        'complementary',
+        'contentinfo',
+        'main',
+        'navigation',
+        'search',
+        'region'
+        ]);
+
+      return matchedRole ? Filters.MATCH : Filters.IGNORE;
+    }, null, true),
+
   Entry: new BaseTraversalRule(
     [Roles.ENTRY,
      Roles.PASSWORD_TEXT]),
