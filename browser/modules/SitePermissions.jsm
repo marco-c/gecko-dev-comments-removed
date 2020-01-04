@@ -58,15 +58,23 @@ this.SitePermissions = {
 
 
 
+  getPermissionItem: function (aId, aState) {
+    let availableStates = this.getAvailableStates(aId).map(state => {
+      return { id: state, label: this.getStateLabel(aId, state) };
+    });
+    if (aState == undefined)
+      aState = this.getDefault(aId);
+    return {id: aId, label: this.getPermissionLabel(aId),
+            state: aState, availableStates};
+  },
+
+  
+
+
   getPermissionDetailsByURI: function (aURI) {
     let permissions = [];
     for (let {state, id} of this.getAllByURI(aURI)) {
-      let availableStates = this.getAvailableStates(id).map( state => {
-        return { id: state, label: this.getStateLabel(id, state) };
-      });
-      let label = this.getPermissionLabel(id);
-
-      permissions.push({id, label, state, availableStates});
+      permissions.push(this.getPermissionItem(id, state));
     }
 
     return permissions;
@@ -159,9 +167,11 @@ this.SitePermissions = {
   
 
 
-  getStateLabel: function (aPermissionID, aState) {
+  getStateLabel: function (aPermissionID, aState, aInUse = false) {
     switch (aState) {
       case this.UNKNOWN:
+        if (aInUse)
+          return gStringBundle.GetStringFromName("allowTemporarily");
         return gStringBundle.GetStringFromName("alwaysAsk");
       case this.ALLOW:
         return gStringBundle.GetStringFromName("allow");
@@ -225,6 +235,9 @@ var gPermissionObject = {
 
   "camera": {},
   "microphone": {},
+  "screen": {
+    states: [ SitePermissions.UNKNOWN, SitePermissions.BLOCK ],
+  },
 
   "popup": {
     getDefault: function () {
