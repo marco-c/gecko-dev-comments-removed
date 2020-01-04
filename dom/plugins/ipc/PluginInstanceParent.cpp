@@ -828,6 +828,11 @@ PluginInstanceParent::SetCurrentImage(Image* aImage)
     imageList.AppendElement(holder);
     mImageContainer->SetCurrentImages(imageList);
 
+    
+    gfx::IntRect rect = aImage->GetPictureRect();
+    NPRect nprect = {uint16_t(rect.x), uint16_t(rect.y), uint16_t(rect.width), uint16_t(rect.height)};
+    RecvNPN_InvalidateRect(nprect);
+
     RecordDrawingModel();
 }
 
