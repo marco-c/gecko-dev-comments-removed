@@ -1030,7 +1030,11 @@ var DebuggerServer = {
         aConnection.cancelForwarding(prefix);
 
         
-        mm.sendAsyncMessage("debug:disconnect", { prefix: prefix });
+        try {
+          
+          
+          mm.sendAsyncMessage("debug:disconnect", { prefix: prefix });
+        } catch(e) {}
       } else {
         
         
