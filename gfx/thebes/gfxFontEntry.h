@@ -337,7 +337,7 @@ public:
     
     
     hb_blob_t *ShareFontTableAndGetBlob(uint32_t aTag,
-                                        FallibleTArray<uint8_t>* aTable);
+                                        nsTArray<uint8_t>* aTable);
 
     
     
@@ -469,7 +469,7 @@ protected:
     
     
     virtual nsresult CopyFontTable(uint32_t aTableTag,
-                                   FallibleTArray<uint8_t>& aBuffer) {
+                                   nsTArray<uint8_t>& aBuffer) {
         NS_NOTREACHED("forgot to override either GetFontTable or CopyFontTable?");
         return NS_ERROR_FAILURE;
     }
@@ -605,7 +605,7 @@ private:
         
         
         hb_blob_t *
-        ShareTableAndGetBlob(FallibleTArray<uint8_t>& aTable,
+        ShareTableAndGetBlob(nsTArray<uint8_t>&& aTable,
                              nsTHashtable<FontTableHashEntry> *aHashtable);
 
         
