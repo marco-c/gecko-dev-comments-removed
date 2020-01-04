@@ -1189,16 +1189,16 @@ function loadManifestFromRDF(aUri, aStream) {
     addon.userDisabled = !!LightweightThemeManager.currentTheme ||
                          addon.internalName != XPIProvider.selectedSkin;
   }
-  
-  
   else if (addon.type == "experiment") {
+    
+    
     addon.userDisabled = true;
   }
   else {
     addon.userDisabled = false;
-    addon.softDisabled = addon.blocklistState == Blocklist.STATE_SOFTBLOCKED;
   }
 
+  addon.softDisabled = addon.blocklistState == Blocklist.STATE_SOFTBLOCKED;
   addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DEFAULT;
 
   
@@ -1207,9 +1207,6 @@ function loadManifestFromRDF(aUri, aStream) {
     addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DISABLE;
     addon.updateURL = null;
     addon.updateKey = null;
-
-    addon.targetApplications = [];
-    addon.targetPlatforms = [];
   }
 
   
@@ -2328,8 +2325,6 @@ this.XPIProvider = {
   
   _telemetryDetails: {},
   
-  _enabledExperiments: null,
-  
   _addonFileMap: new Map(),
   
   _toolboxProcessLoaded: false,
@@ -2539,8 +2534,6 @@ this.XPIProvider = {
       this._shutdownError = null;
       
       this._telemetryDetails = {};
-      
-      this._enabledExperiments = new Set();
       
       AddonManagerPrivate.setTelemetryDetails("XPI", this._telemetryDetails);
 
@@ -4558,15 +4551,11 @@ this.XPIProvider = {
     let appDisabledChanged = aAddon.appDisabled != appDisabled;
 
     
-    
-    
-    if (aAddon.type != "experiment") {
-      XPIDatabase.setAddonProperties(aAddon, {
-        userDisabled: aUserDisabled,
-        appDisabled: appDisabled,
-        softDisabled: aSoftDisabled
-      });
-    }
+    XPIDatabase.setAddonProperties(aAddon, {
+      userDisabled: aUserDisabled,
+      appDisabled: appDisabled,
+      softDisabled: aSoftDisabled
+    });
 
     let wrapper = createWrapper(aAddon);
 
@@ -6387,17 +6376,6 @@ AddonInternal.prototype = {
   },
 
   isCompatibleWith: function AddonInternal_isCompatibleWith(aAppVersion, aPlatformVersion) {
-    
-    
-    
-    
-    
-    
-    
-    if (this.type == "experiment") {
-      return true;
-    }
-
     let app = this.matchingTargetApplication;
     if (!app)
       return false;
@@ -6573,13 +6551,6 @@ AddonInternal.prototype = {
     if (!(this.inDatabase))
       return permissions;
 
-    
-    
-    
-    if (this.type == "experiment") {
-      return AddonManager.PERM_CAN_UNINSTALL;
-    }
-
     if (!this.appDisabled) {
       if (this.userDisabled || this.softDisabled) {
         permissions |= AddonManager.PERM_CAN_ENABLE;
@@ -6593,7 +6564,8 @@ AddonInternal.prototype = {
     
     if (!this._installLocation.locked && !this.pendingUninstall) {
       
-      if (!this._installLocation.isLinkedAddon(this.id)) {
+      
+      if (this.type != "experiment" && !this._installLocation.isLinkedAddon(this.id)) {
         permissions |= AddonManager.PERM_CAN_UPGRADE;
       }
 
@@ -6924,15 +6896,10 @@ function AddonWrapper(aAddon) {
       return AddonManager.PENDING_UNINSTALL;
     }
 
-    
-    
-    
-    if (aAddon.type != "experiment") {
-      if (aAddon.active && aAddon.disabled)
-        pending |= AddonManager.PENDING_DISABLE;
-      else if (!aAddon.active && !aAddon.disabled)
-        pending |= AddonManager.PENDING_ENABLE;
-    }
+    if (aAddon.active && aAddon.disabled)
+      pending |= AddonManager.PENDING_DISABLE;
+    else if (!aAddon.active && !aAddon.disabled)
+      pending |= AddonManager.PENDING_ENABLE;
 
     if (aAddon.pendingUpgrade)
       pending |= AddonManager.PENDING_UPGRADE;
@@ -6971,23 +6938,11 @@ function AddonWrapper(aAddon) {
   });
 
   this.__defineGetter__("userDisabled", function AddonWrapper_userDisabledGetter() {
-    if (XPIProvider._enabledExperiments.has(aAddon.id)) {
-      return false;
-    }
-
     return aAddon.softDisabled || aAddon.userDisabled;
   });
   this.__defineSetter__("userDisabled", function AddonWrapper_userDisabledSetter(val) {
     if (val == this.userDisabled) {
       return val;
-    }
-
-    if (aAddon.type == "experiment") {
-      if (val) {
-        XPIProvider._enabledExperiments.delete(aAddon.id);
-      } else {
-        XPIProvider._enabledExperiments.add(aAddon.id);
-      }
     }
 
     if (aAddon.inDatabase) {
