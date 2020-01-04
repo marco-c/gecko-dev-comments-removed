@@ -577,8 +577,10 @@ public class Favicons {
 
 
 
-    public static void getPreferredSizeFaviconForPage(Context context, String url, OnFaviconLoadedListener onFaviconLoadedListener) {
+
+
+    public static void getPreferredSizeFaviconForPage(Context context, String url, String iconURL, OnFaviconLoadedListener onFaviconLoadedListener) {
         int preferredSize = GeckoAppShell.getPreferredIconSize();
-        loadUncachedFavicon(context, url, null, 0, preferredSize, onFaviconLoadedListener);
+        loadUncachedFavicon(context, url, iconURL, 0, preferredSize, onFaviconLoadedListener);
     }
 }

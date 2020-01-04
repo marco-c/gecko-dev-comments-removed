@@ -844,14 +844,13 @@ public class GeckoAppShell
             }
         };
 
-        if (touchIconURL != null) {
-            
-            
-            
-            Favicons.getSizedFavicon(getApplicationContext(), aURI, touchIconURL, Integer.MAX_VALUE, 0, listener);
-        } else {
-            Favicons.getPreferredSizeFaviconForPage(getApplicationContext(), aURI, listener);
-        }
+        
+        
+        
+        
+        
+        
+        Favicons.getPreferredSizeFaviconForPage(getApplicationContext(), aURI, touchIconURL, listener);
     }
 
     private static void createShortcutWithBitmap(final String aTitle, final String aURI, final Bitmap aBitmap) {
