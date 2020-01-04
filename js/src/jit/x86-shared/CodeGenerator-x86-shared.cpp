@@ -3751,20 +3751,43 @@ CodeGeneratorX86Shared::visitSimdShift(LSimdShift* ins)
     MOZ_ASSERT(ToFloatRegister(ins->vector()) == out); 
 
     
+    uint32_t shiftmask = (128u / SimdTypeToLength(ins->type())) - 1;
+
+    
+    
     const LAllocation* val = ins->value();
     if (val->isConstant()) {
         MOZ_ASSERT(ins->temp()->isBogusTemp());
-        Imm32 count(uint32_t(ToInt32(val)) % 32);
-        switch (ins->operation()) {
-          case MSimdShift::lsh:
-            masm.packedLeftShiftByScalar(count, out);
-            return;
-          case MSimdShift::rsh:
-            masm.packedRightShiftByScalar(count, out);
-            return;
-          case MSimdShift::ursh:
-            masm.packedUnsignedRightShiftByScalar(count, out);
-            return;
+        Imm32 count(uint32_t(ToInt32(val)) & shiftmask);
+        switch (ins->type()) {
+          case MIRType::Int16x8:
+            switch (ins->operation()) {
+              case MSimdShift::lsh:
+                masm.packedLeftShiftByScalarInt16x8(count, out);
+                return;
+              case MSimdShift::rsh:
+                masm.packedRightShiftByScalarInt16x8(count, out);
+                return;
+              case MSimdShift::ursh:
+                masm.packedUnsignedRightShiftByScalarInt16x8(count, out);
+                return;
+            }
+            break;
+          case MIRType::Int32x4:
+            switch (ins->operation()) {
+              case MSimdShift::lsh:
+                masm.packedLeftShiftByScalarInt32x4(count, out);
+                return;
+              case MSimdShift::rsh:
+                masm.packedRightShiftByScalarInt32x4(count, out);
+                return;
+              case MSimdShift::ursh:
+                masm.packedUnsignedRightShiftByScalarInt32x4(count, out);
+                return;
+            }
+            break;
+          default:
+            MOZ_CRASH("unsupported type for SIMD shifts");
         }
         MOZ_CRASH("unexpected SIMD bitwise op");
     }
@@ -3773,20 +3796,39 @@ CodeGeneratorX86Shared::visitSimdShift(LSimdShift* ins)
     MOZ_ASSERT(val->isRegister());
     Register count = ToRegister(ins->temp());
     masm.mov(ToRegister(val), count);
-    masm.andl(Imm32(31), count);
+    masm.andl(Imm32(shiftmask), count);
     ScratchFloat32Scope scratch(masm);
     masm.vmovd(count, scratch);
 
-    switch (ins->operation()) {
-      case MSimdShift::lsh:
-        masm.packedLeftShiftByScalar(scratch, out);
-        return;
-      case MSimdShift::rsh:
-        masm.packedRightShiftByScalar(scratch, out);
-        return;
-      case MSimdShift::ursh:
-        masm.packedUnsignedRightShiftByScalar(scratch, out);
-        return;
+    switch (ins->type()) {
+      case MIRType::Int16x8:
+        switch (ins->operation()) {
+          case MSimdShift::lsh:
+            masm.packedLeftShiftByScalarInt16x8(scratch, out);
+            return;
+          case MSimdShift::rsh:
+            masm.packedRightShiftByScalarInt16x8(scratch, out);
+            return;
+          case MSimdShift::ursh:
+            masm.packedUnsignedRightShiftByScalarInt16x8(scratch, out);
+            return;
+        }
+        break;
+      case MIRType::Int32x4:
+        switch (ins->operation()) {
+          case MSimdShift::lsh:
+            masm.packedLeftShiftByScalarInt32x4(scratch, out);
+            return;
+          case MSimdShift::rsh:
+            masm.packedRightShiftByScalarInt32x4(scratch, out);
+            return;
+          case MSimdShift::ursh:
+            masm.packedUnsignedRightShiftByScalarInt32x4(scratch, out);
+            return;
+        }
+        break;
+      default:
+        MOZ_CRASH("unsupported type for SIMD shifts");
     }
     MOZ_CRASH("unexpected SIMD bitwise op");
 }
@@ -3817,7 +3859,7 @@ CodeGeneratorX86Shared::visitSimdSelect(LSimdSelect* ins)
 
     
     if (!mir->mask()->isSimdBinaryComp())
-        masm.packedRightShiftByScalar(Imm32(31), temp);
+        masm.packedRightShiftByScalarInt32x4(Imm32(31), temp);
 
     masm.bitwiseAndSimd128(Operand(temp), output);
     masm.bitwiseAndNotSimd128(Operand(onFalse), temp);

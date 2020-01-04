@@ -625,6 +625,9 @@ class LSimdShift : public LInstructionHelper<1, 2, 1>
     MSimdShift* mir() const {
         return mir_->toSimdShift();
     }
+    MIRType type() const {
+        return mir_->type();
+    }
 };
 
 
