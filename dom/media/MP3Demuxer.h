@@ -297,10 +297,8 @@ public:
   
   const Frame& CurrentFrame() const;
 
-#ifdef ENABLE_TESTS
   
   const Frame& PrevFrame() const;
-#endif
 
   
   const Frame& FirstFrame() const;
@@ -343,9 +341,7 @@ private:
   
   Frame mFirstFrame;
   Frame mFrame;
-#ifdef ENABLE_TESTS
   Frame mPrevFrame;
-#endif
 };
 
 
@@ -372,10 +368,8 @@ public:
   
   media::TimeUnit SeekPosition() const;
 
-#ifdef ENABLE_TESTS
   const FrameParser::Frame& LastFrame() const;
   RefPtr<MediaRawData> DemuxSample();
-#endif
 
   const ID3Parser::ID3Header& ID3Header() const;
   const FrameParser::VBRHeader& VBRInfo() const;

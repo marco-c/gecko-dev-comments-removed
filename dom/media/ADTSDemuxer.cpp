@@ -193,11 +193,6 @@ public:
   const Frame& CurrentFrame() const { return mFrame; }
 
 
-#ifdef ENABLE_TESTS
-  
-  const Frame& PrevFrame() const { return mPrevFrame; }
-#endif
-
   
   const Frame& FirstFrame() const { return mFirstFrame; }
 
@@ -212,9 +207,6 @@ public:
   
   
   void EndFrameSession() {
-#ifdef ENABLE_TESTS
-    mPrevFrame = mFrame;
-#endif
     mFrame.Reset();
   }
 
@@ -237,9 +229,6 @@ private:
   
   Frame mFirstFrame;
   Frame mFrame;
-#ifdef ENABLE_TESTS
-  Frame mPrevFrame;
-#endif
 };
 
 
@@ -435,26 +424,6 @@ ADTSTrackDemuxer::Init()
 
   return mSamplesPerSecond && mChannels;
 }
-
-#ifdef ENABLE_TESTS
-const adts::Frame&
-ADTSTrackDemuxer::LastFrame() const
-{
-  return mParser->PrevFrame();
-}
-
-RefPtr<MediaRawData>
-ADTSTrackDemuxer::DemuxSample()
-{
-  return GetNextFrame(FindNextFrame());
-}
-
-media::TimeUnit
-ADTSTrackDemuxer::SeekPosition() const
-{
-  return Duration(mFrameIndex);
-}
-#endif
 
 UniquePtr<TrackInfo>
 ADTSTrackDemuxer::GetInfo() const
