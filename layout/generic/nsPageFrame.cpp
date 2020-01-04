@@ -626,7 +626,8 @@ nsPageFrame::PaintHeaderFooter(nsRenderingContext& aRenderingContext,
   nsRect rect(aPt, mRect.Size());
   aRenderingContext.ThebesContext()->SetColor(Color(0.f, 0.f, 0.f));
 
-  gfxContextAutoDisableSubpixelAntialiasing disable(aRenderingContext.ThebesContext(), aDisableSubpixelAA);
+  DrawTargetAutoDisableSubpixelAntialiasing
+    disable(aRenderingContext.GetDrawTarget(), aDisableSubpixelAA);
 
   
   RefPtr<nsFontMetrics> fontMet;
