@@ -178,6 +178,7 @@
 
 
 
+
 class JSAtom;
 struct JSCompartment;
 class JSFlatString;
@@ -382,6 +383,7 @@ class PreBarriered : public WriteBarrieredBase<T>
     
 
 
+
     MOZ_IMPLICIT PreBarriered(T v) : WriteBarrieredBase<T>(v) {}
     explicit PreBarriered(const PreBarriered<T>& v) : WriteBarrieredBase<T>(v.value) {}
     ~PreBarriered() { this->pre(); }
@@ -487,13 +489,13 @@ class GCPtr : public WriteBarrieredBase<T>
 
 
 template <class T>
-class RelocatablePtr : public WriteBarrieredBase<T>
+class HeapPtr : public WriteBarrieredBase<T>
 {
   public:
-    RelocatablePtr() : WriteBarrieredBase<T>(JS::GCPolicy<T>::initial()) {}
+    HeapPtr() : WriteBarrieredBase<T>(JS::GCPolicy<T>::initial()) {}
 
     
-    MOZ_IMPLICIT RelocatablePtr(const T& v) : WriteBarrieredBase<T>(v) {
+    MOZ_IMPLICIT HeapPtr(const T& v) : WriteBarrieredBase<T>(v) {
         this->post(JS::GCPolicy<T>::initial(), this->value);
     }
 
@@ -503,11 +505,11 @@ class RelocatablePtr : public WriteBarrieredBase<T>
 
 
 
-    MOZ_IMPLICIT RelocatablePtr(const RelocatablePtr<T>& v) : WriteBarrieredBase<T>(v) {
+    MOZ_IMPLICIT HeapPtr(const HeapPtr<T>& v) : WriteBarrieredBase<T>(v) {
         this->post(JS::GCPolicy<T>::initial(), this->value);
     }
 
-    ~RelocatablePtr() {
+    ~HeapPtr() {
         this->pre();
         this->post(this->value, JS::GCPolicy<T>::initial());
     }
@@ -517,14 +519,14 @@ class RelocatablePtr : public WriteBarrieredBase<T>
         this->post(JS::GCPolicy<T>::initial(), this->value);
     }
 
-    DECLARE_POINTER_ASSIGN_OPS(RelocatablePtr, T);
+    DECLARE_POINTER_ASSIGN_OPS(HeapPtr, T);
 
     
     template <class T1, class T2>
     friend inline void
     BarrieredSetPair(Zone* zone,
-                     RelocatablePtr<T1*>& v1, T1* val1,
-                     RelocatablePtr<T2*>& v2, T2* val2);
+                     HeapPtr<T1*>& v1, T1* val1,
+                     HeapPtr<T2*>& v2, T2* val2);
 
   protected:
     void set(const T& v) {
@@ -748,8 +750,8 @@ class HeapSlotArray
 template <class T1, class T2>
 static inline void
 BarrieredSetPair(Zone* zone,
-                 RelocatablePtr<T1*>& v1, T1* val1,
-                 RelocatablePtr<T2*>& v2, T2* val2)
+                 HeapPtr<T1*>& v1, T1* val1,
+                 HeapPtr<T2*>& v2, T2* val2)
 {
     if (T1::needWriteBarrierPre(zone)) {
         v1.pre();
@@ -805,9 +807,9 @@ struct MovableCellHasher<PreBarriered<T>>
 };
 
 template <typename T>
-struct MovableCellHasher<RelocatablePtr<T>>
+struct MovableCellHasher<HeapPtr<T>>
 {
-    using Key = RelocatablePtr<T>;
+    using Key = HeapPtr<T>;
     using Lookup = T;
 
     static HashNumber hash(const Lookup& l) { return MovableCellHasher<T>::hash(l); }
@@ -893,20 +895,6 @@ typedef PreBarriered<jit::JitCode*> PreBarrieredJitCode;
 typedef PreBarriered<JSString*> PreBarrieredString;
 typedef PreBarriered<JSAtom*> PreBarrieredAtom;
 
-typedef RelocatablePtr<JSObject*> RelocatablePtrObject;
-typedef RelocatablePtr<JSFunction*> RelocatablePtrFunction;
-typedef RelocatablePtr<PlainObject*> RelocatablePtrPlainObject;
-typedef RelocatablePtr<JSScript*> RelocatablePtrScript;
-typedef RelocatablePtr<NativeObject*> RelocatablePtrNativeObject;
-typedef RelocatablePtr<NestedScopeObject*> RelocatablePtrNestedScopeObject;
-typedef RelocatablePtr<Shape*> RelocatablePtrShape;
-typedef RelocatablePtr<ObjectGroup*> RelocatablePtrObjectGroup;
-typedef RelocatablePtr<jit::JitCode*> RelocatablePtrJitCode;
-typedef RelocatablePtr<JSLinearString*> RelocatablePtrLinearString;
-typedef RelocatablePtr<JSString*> RelocatablePtrString;
-typedef RelocatablePtr<JSAtom*> RelocatablePtrAtom;
-typedef RelocatablePtr<ArrayBufferObjectMaybeShared*> RelocatablePtrArrayBufferObjectMaybeShared;
-
 typedef GCPtr<NativeObject*> GCPtrNativeObject;
 typedef GCPtr<ArrayObject*> GCPtrArrayObject;
 typedef GCPtr<ArrayBufferObjectMaybeShared*> GCPtrArrayBufferObjectMaybeShared;
@@ -930,11 +918,9 @@ typedef GCPtr<jit::JitCode*> GCPtrJitCode;
 typedef GCPtr<ObjectGroup*> GCPtrObjectGroup;
 
 typedef PreBarriered<Value> PreBarrieredValue;
-typedef RelocatablePtr<Value> RelocatableValue;
 typedef GCPtr<Value> GCPtrValue;
 
 typedef PreBarriered<jsid> PreBarrieredId;
-typedef RelocatablePtr<jsid> RelocatableId;
 typedef GCPtr<jsid> GCPtrId;
 
 typedef ImmutableTenuredPtr<PropertyName*> ImmutablePropertyNamePtr;

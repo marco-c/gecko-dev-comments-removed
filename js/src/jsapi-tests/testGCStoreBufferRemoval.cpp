@@ -36,25 +36,25 @@ BEGIN_TEST(testGCStoreBufferRemoval)
     {
         JSObject* badObject = reinterpret_cast<JSObject*>(1);
         JSObject* punnedPtr = nullptr;
-        RelocatablePtrObject* relocPtr =
-            reinterpret_cast<RelocatablePtrObject*>(&punnedPtr);
-        new (relocPtr) RelocatablePtrObject;
+        HeapPtr<JSObject*>* relocPtr =
+            reinterpret_cast<HeapPtr<JSObject*>*>(&punnedPtr);
+        new (relocPtr) HeapPtr<JSObject*>;
         *relocPtr = NurseryObject();
-        relocPtr->~RelocatablePtrObject();
+        relocPtr->~HeapPtr<JSObject*>();
         punnedPtr = badObject;
         JS_GC(cx->runtime());
 
-        new (relocPtr) RelocatablePtrObject;
+        new (relocPtr) HeapPtr<JSObject*>;
         *relocPtr = NurseryObject();
         *relocPtr = tenuredObject;
-        relocPtr->~RelocatablePtrObject();
+        relocPtr->~HeapPtr<JSObject*>();
         punnedPtr = badObject;
         JS_GC(cx->runtime());
 
-        new (relocPtr) RelocatablePtrObject;
+        new (relocPtr) HeapPtr<JSObject*>;
         *relocPtr = NurseryObject();
         *relocPtr = nullptr;
-        relocPtr->~RelocatablePtrObject();
+        relocPtr->~HeapPtr<JSObject*>();
         punnedPtr = badObject;
         JS_GC(cx->runtime());
     }
@@ -62,24 +62,24 @@ BEGIN_TEST(testGCStoreBufferRemoval)
     
     {
         Value punnedValue;
-        RelocatableValue* relocValue = reinterpret_cast<RelocatableValue*>(&punnedValue);
-        new (relocValue) RelocatableValue;
+        HeapPtr<Value>* relocValue = reinterpret_cast<HeapPtr<Value>*>(&punnedValue);
+        new (relocValue) HeapPtr<Value>;
         *relocValue = ObjectValue(*NurseryObject());
-        relocValue->~RelocatableValue();
+        relocValue->~HeapPtr<Value>();
         punnedValue = ObjectValueCrashOnTouch();
         JS_GC(cx->runtime());
 
-        new (relocValue) RelocatableValue;
+        new (relocValue) HeapPtr<Value>;
         *relocValue = ObjectValue(*NurseryObject());
         *relocValue = ObjectValue(*tenuredObject);
-        relocValue->~RelocatableValue();
+        relocValue->~HeapPtr<Value>();
         punnedValue = ObjectValueCrashOnTouch();
         JS_GC(cx->runtime());
 
-        new (relocValue) RelocatableValue;
+        new (relocValue) HeapPtr<Value>;
         *relocValue = ObjectValue(*NurseryObject());
         *relocValue = NullValue();
-        relocValue->~RelocatableValue();
+        relocValue->~HeapPtr<Value>();
         punnedValue = ObjectValueCrashOnTouch();
         JS_GC(cx->runtime());
     }

@@ -339,8 +339,8 @@ struct Zone : public JS::shadow::Zone,
     
     
     
-    using TypeDescrObjectSet = js::GCHashSet<js::RelocatablePtrObject,
-                                             js::MovableCellHasher<js::RelocatablePtrObject>,
+    using TypeDescrObjectSet = js::GCHashSet<js::HeapPtr<JSObject*>,
+                                             js::MovableCellHasher<js::HeapPtr<JSObject*>>,
                                              js::SystemAllocPolicy>;
     JS::WeakCache<TypeDescrObjectSet> typeDescrObjects;
 

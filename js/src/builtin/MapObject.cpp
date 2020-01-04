@@ -438,7 +438,7 @@ MapObject::set(JSContext* cx, HandleObject obj, HandleValue k, HandleValue v)
     if (!key.setValue(cx, k))
         return false;
 
-    RelocatableValue rval(v);
+    HeapPtr<Value> rval(v);
     if (!map->put(key, rval)) {
         ReportOutOfMemory(cx);
         return false;
@@ -538,7 +538,7 @@ MapObject::construct(JSContext* cx, unsigned argc, Value* vp)
                 if (!hkey.setValue(cx, key))
                     return false;
 
-                RelocatableValue rval(val);
+                HeapPtr<Value> rval(val);
                 if (!map->put(hkey, rval)) {
                     ReportOutOfMemory(cx);
                     return false;
@@ -688,7 +688,7 @@ MapObject::set_impl(JSContext* cx, const CallArgs& args)
 
     ValueMap& map = extract(args);
     ARG0_KEY(cx, args, key);
-    RelocatableValue rval(args.get(1));
+    HeapPtr<Value> rval(args.get(1));
     if (!map.put(key, rval)) {
         ReportOutOfMemory(cx);
         return false;
