@@ -88,7 +88,8 @@ static const char* CSPStrDirectives[] = {
   "referrer",                  
   "manifest-src",              
   "upgrade-insecure-requests", 
-  "child-src"                  
+  "child-src",                 
+  "block-all-mixed-content"    
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir)
@@ -341,6 +342,29 @@ class nsCSPChildSrcDirective : public nsCSPDirective {
 
   private:
     bool mHandleFrameSrc;
+};
+
+
+
+class nsBlockAllMixedContentDirective : public nsCSPDirective {
+  public:
+    explicit nsBlockAllMixedContentDirective(CSPDirective aDirective);
+    ~nsBlockAllMixedContentDirective();
+
+    bool permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected,
+                 bool aReportOnly, bool aUpgradeInsecure) const
+      { return false; }
+
+    bool permits(nsIURI* aUri) const
+      { return false; }
+
+    bool allows(enum CSPKeyword aKeyword, const nsAString& aHashOrNonce) const
+      { return false; }
+
+    void toString(nsAString& outStr) const;
+
+    void addSrcs(const nsTArray<nsCSPBaseSrc*>& aSrcs)
+      {  MOZ_ASSERT(false, "block-all-mixed-content does not hold any srcs"); }
 };
 
 

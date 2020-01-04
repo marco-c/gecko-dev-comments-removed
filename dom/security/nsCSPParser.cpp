@@ -1009,6 +1009,11 @@ nsCSPParser::directiveName()
   }
 
   
+  if (CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT)) {
+    return new nsBlockAllMixedContentDirective(CSP_StringToCSPDirective(mCurToken));
+  }
+
+  
   if (CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::UPGRADE_IF_INSECURE_DIRECTIVE)) {
     return new nsUpgradeInsecureDirective(CSP_StringToCSPDirective(mCurToken));
   }
@@ -1056,6 +1061,20 @@ nsCSPParser::directive()
   nsCSPDirective* cspDir = directiveName();
   if (!cspDir) {
     
+    return;
+  }
+
+  
+  
+  if (cspDir->equals(nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT)) {
+    if (mCurDir.Length() > 1) {
+      const char16_t* params[] = { MOZ_UTF16("block-all-mixed-content") };
+      logWarningErrorToConsole(nsIScriptError::warningFlag,
+                               "ignoreSrcForDirective",
+                               params, ArrayLength(params));
+    }
+    
+    mPolicy->addDirective(cspDir);
     return;
   }
 
