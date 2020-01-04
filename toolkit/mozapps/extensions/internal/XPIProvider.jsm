@@ -3931,7 +3931,16 @@ this.XPIProvider = {
 
      for (let [id, val] of this.activeAddons) {
        if (aInstanceID == val.instanceID) {
-         return new Promise(resolve => this.getAddonByID(id, resolve));
+         if (val.safeWrapper) {
+           return Promise.resolve(val.safeWrapper);
+         }
+
+         return new Promise(resolve => {
+           this.getAddonByID(id, function(addon) {
+             val.safeWrapper = new PrivateWrapper(addon);
+             resolve(val.safeWrapper);
+           });
+         });
        }
      }
 
@@ -4218,7 +4227,7 @@ this.XPIProvider = {
 
     for (let [id, val] of this.activeAddons) {
       aConnection.setAddonOptions(
-        id, { global: val.bootstrapScope });
+        id, { global: val.debugGlobal || val.bootstrapScope });
     }
   },
 
@@ -4507,6 +4516,8 @@ this.XPIProvider = {
     this.addAddonsToCrashReporter();
 
     this.activeAddons.set(aId, {
+      debugGlobal: null,
+      safeWrapper: null,
       bootstrapScope: null,
       
       instanceID: Symbol(aId),
@@ -7338,6 +7349,32 @@ AddonWrapper.prototype = {
     return getURIForResourceInFile(addon._sourceBundle, aPath);
   }
 };
+
+
+
+
+
+function PrivateWrapper(aAddon) {
+  AddonWrapper.call(this, aAddon);
+}
+
+PrivateWrapper.prototype = Object.create(AddonWrapper.prototype);
+Object.assign(PrivateWrapper.prototype, {
+
+  
+
+
+
+
+
+
+  setDebugGlobal(global) {
+    let activeAddon;
+    if (activeAddon = XPIProvider.activeAddons.get(this.id)) {
+      activeAddon.debugGlobal = global;
+    }
+  }
+});
 
 function chooseValue(aAddon, aObj, aProp) {
   let repositoryAddon = aAddon._repositoryAddon;
