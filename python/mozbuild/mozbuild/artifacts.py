@@ -42,6 +42,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import collections
 import functools
+import glob
 import hashlib
 import logging
 import operator
@@ -261,10 +262,10 @@ class MacArtifactJob(ArtifactJob):
             
             
 
-            
-            
-            bundle_name = 'Nightly.app'
-            source = mozpath.join(tempdir, bundle_name)
+            bundle_dirs = glob.glob(mozpath.join(tempdir, '*.app'))
+            if len(bundle_dirs) != 1:
+                raise ValueError('Expected one source bundle, found: {}'.format(bundle_dirs))
+            [source] = bundle_dirs
 
             
             paths_no_keep_path = ('Contents/MacOS', [
