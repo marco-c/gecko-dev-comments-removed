@@ -1,0 +1,11 @@
+
+
+
+
+var DefaultDerivedClassConstructor =
+    class extends null {
+        constructor(...args) {
+            super(...allowContentSpread(args));
+        }
+    };
+MakeDefaultConstructor(DefaultDerivedClassConstructor);

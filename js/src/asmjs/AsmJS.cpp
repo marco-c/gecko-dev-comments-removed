@@ -6896,7 +6896,7 @@ ParseFunction(ModuleValidator& m, ParseNode** fnOut, unsigned* line, unsigned* c
     
     RootedFunction fun(m.cx(),
                        NewScriptedFunction(m.cx(), 0, JSFunction::INTERPRETED,
-                                           name, gc::AllocKind::FUNCTION,
+                                           name,  nullptr, gc::AllocKind::FUNCTION,
                                            TenuredObject));
     if (!fun)
         return false;
@@ -7831,7 +7831,7 @@ HandleDynamicLinkFailure(JSContext* cx, const CallArgs& args, AsmJSModule& modul
         return false;
 
     RootedFunction fun(cx, NewScriptedFunction(cx, 0, JSFunction::INTERPRETED_NORMAL,
-                                               name, gc::AllocKind::FUNCTION,
+                                               name,  nullptr, gc::AllocKind::FUNCTION,
                                                TenuredObject));
     if (!fun)
         return false;
