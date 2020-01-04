@@ -983,9 +983,6 @@ private:
   int64_t mDecodedVideoEndTime;
 
   
-  int64_t mPlaybackOffset;
-
-  
   double mPlaybackRate;
 
   
@@ -1314,6 +1311,9 @@ private:
   
   Canonical<int64_t> mCurrentPosition;
 
+  
+  Canonical<int64_t> mPlaybackOffset;
+
 public:
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() {
     return mReader->CanonicalBuffered();
@@ -1329,6 +1329,9 @@ public:
   }
   AbstractCanonical<int64_t>* CanonicalCurrentPosition() {
     return &mCurrentPosition;
+  }
+  AbstractCanonical<int64_t>* CanonicalPlaybackOffset() {
+    return &mPlaybackOffset;
   }
 };
 

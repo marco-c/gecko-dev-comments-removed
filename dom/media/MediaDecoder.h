@@ -655,10 +655,6 @@ public:
   int64_t GetDownloadPosition();
 
   
-  
-  void UpdatePlaybackOffset(int64_t aOffset);
-
-  
   MediaDecoderStateMachine* GetStateMachine() const;
 
   
@@ -885,12 +881,6 @@ protected:
   
   
   
-  int64_t mPlaybackPosition;
-
-  
-  
-  
-  
   
   double mLogicalPosition;
 
@@ -1047,6 +1037,12 @@ protected:
 
   
   Mirror<media::NullableTimeUnit> mStateMachineDuration;
+
+  
+  
+  
+  
+  Mirror<int64_t> mPlaybackPosition;
 
   
   Canonical<double> mVolume;
