@@ -306,6 +306,9 @@ AsyncResource.prototype = {
     ret.success = success;
     ret.headers = headers;
 
+    if (!success) {
+      this._log.warn(`${action} request to ${ret.url} failed with status ${status}`);
+    }
     
     
     
@@ -385,6 +388,8 @@ Resource.prototype = {
       if (Async.isShutdownException(ex)) {
         throw ex;
       }
+      this._log.warn("${action} request to ${url} failed: ${ex}",
+                     { action, url: this.uri.spec, ex });
       
       
       let error = Error(ex.message);
