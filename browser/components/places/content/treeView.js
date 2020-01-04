@@ -154,7 +154,7 @@ PlacesTreeView.prototype = {
     
     
     
-    let ancestors = [x for (x of PlacesUtils.nodeAncestors(aNode))];
+    let ancestors = Array.from(PlacesUtils.nodeAncestors(aNode));
     if (ancestors.length == 0 ||
         ancestors[ancestors.length - 1] != this._rootNode) {
       throw new Error("Removed node passed to _getRowForNode");
