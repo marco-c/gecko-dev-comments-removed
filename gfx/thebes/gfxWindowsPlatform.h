@@ -137,8 +137,7 @@ public:
         RENDER_MODE_MAX
     };
 
-    RenderMode GetRenderMode() { return mRenderMode; }
-    void SetRenderMode(RenderMode rmode) { mRenderMode = rmode; }
+    bool IsDirect2DBackend();
 
     
 

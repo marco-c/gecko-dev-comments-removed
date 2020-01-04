@@ -401,8 +401,7 @@ static CompositionOp
 OptimalFillOp()
 {
 #ifdef XP_WIN
-    if (gfxWindowsPlatform::GetPlatform()->GetRenderMode() ==
-        gfxWindowsPlatform::RENDER_DIRECT2D) {
+    if (gfxWindowsPlatform::GetPlatform()->IsDirect2DBackend()) {
         
         return CompositionOp::OP_OVER;
     }

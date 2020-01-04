@@ -97,22 +97,6 @@ static IconMetrics sIconMetrics[] = {
 
 
 
- bool
-nsWindow::IsRenderMode(gfxWindowsPlatform::RenderMode rmode)
-{
-  return gfxWindowsPlatform::GetPlatform()->GetRenderMode() == rmode;
-}
-
-
-
-
-
-
-
-
-
-
-
 
 nsIntRegion nsWindow::GetRegionToPaint(bool aForceFullRepaint,
                                        PAINTSTRUCT ps, HDC aDC)
@@ -327,50 +311,21 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
 
 #if defined(MOZ_XUL)
           
-          if ((IsRenderMode(gfxWindowsPlatform::RENDER_GDI) ||
-               IsRenderMode(gfxWindowsPlatform::RENDER_DIRECT2D)) &&
-              eTransparencyTransparent == mTransparencyMode) {
-            if (mTransparentSurface == nullptr)
+          if (eTransparencyTransparent == mTransparencyMode) {
+            if (mTransparentSurface == nullptr) {
               SetupTranslucentWindowMemoryBitmap(mTransparencyMode);
+            }
             targetSurface = mTransparentSurface;
           }
 #endif
 
           RefPtr<gfxWindowsSurface> targetSurfaceWin;
-          if (!targetSurface &&
-              (IsRenderMode(gfxWindowsPlatform::RENDER_GDI) ||
-               IsRenderMode(gfxWindowsPlatform::RENDER_DIRECT2D)))
+          if (!targetSurface)
           {
             uint32_t flags = (mTransparencyMode == eTransparencyOpaque) ? 0 :
                 gfxWindowsSurface::FLAG_IS_TRANSPARENT;
             targetSurfaceWin = new gfxWindowsSurface(hDC, flags);
             targetSurface = targetSurfaceWin;
-          }
-
-          RefPtr<gfxImageSurface> targetSurfaceImage;
-          if (!targetSurface &&
-              (IsRenderMode(gfxWindowsPlatform::RENDER_IMAGE_STRETCH32) ||
-               IsRenderMode(gfxWindowsPlatform::RENDER_IMAGE_STRETCH24)))
-          {
-            IntSize surfaceSize(ps.rcPaint.right - ps.rcPaint.left,
-                                ps.rcPaint.bottom - ps.rcPaint.top);
-
-            if (!EnsureSharedSurfaceSize(surfaceSize)) {
-              NS_ERROR("Couldn't allocate a shared image surface!");
-              return false;
-            }
-
-            
-            
-            targetSurfaceImage = new gfxImageSurface(sSharedSurfaceData.get(),
-                                                     surfaceSize,
-                                                     surfaceSize.width * 4,
-                                                     SurfaceFormat::X8R8G8B8_UINT32);
-
-            if (targetSurfaceImage && !targetSurfaceImage->CairoStatus()) {
-              targetSurfaceImage->SetDeviceOffset(gfxPoint(-ps.rcPaint.left, -ps.rcPaint.top));
-              targetSurface = targetSurfaceImage;
-            }
           }
 
           if (!targetSurface) {
@@ -391,27 +346,24 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
 
           
           BufferMode doubleBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
-          if (IsRenderMode(gfxWindowsPlatform::RENDER_GDI) ||
-              IsRenderMode(gfxWindowsPlatform::RENDER_DIRECT2D)) {
 #ifdef MOZ_XUL
-            switch (mTransparencyMode) {
-              case eTransparencyGlass:
-              case eTransparencyBorderlessGlass:
-              default:
-                
-                doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
-                break;
-              case eTransparencyTransparent:
-                
-                
-                dt->ClearRect(Rect(0.f, 0.f,
-                                   dt->GetSize().width, dt->GetSize().height));
-                break;
-            }
-#else
-            doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
-#endif
+          switch (mTransparencyMode) {
+            case eTransparencyGlass:
+            case eTransparencyBorderlessGlass:
+            default:
+              
+              doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
+              break;
+            case eTransparencyTransparent:
+              
+              
+              dt->ClearRect(Rect(0.f, 0.f,
+                                 dt->GetSize().width, dt->GetSize().height));
+              break;
           }
+#else
+          doubleBuffering = mozilla::layers::BufferMode::BUFFERED;
+#endif
 
           RefPtr<gfxContext> thebesContext = gfxContext::ForDrawTarget(dt);
           MOZ_ASSERT(thebesContext); 
@@ -424,106 +376,13 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
           }
 
 #ifdef MOZ_XUL
-          if ((IsRenderMode(gfxWindowsPlatform::RENDER_GDI) ||
-               IsRenderMode(gfxWindowsPlatform::RENDER_DIRECT2D))&&
-              eTransparencyTransparent == mTransparencyMode) {
+          if (eTransparencyTransparent == mTransparencyMode) {
             
             
             
             UpdateTranslucentWindow();
-          } else
-#endif
-
-          if (result) {
-            if (IsRenderMode(gfxWindowsPlatform::RENDER_IMAGE_STRETCH24) ||
-                IsRenderMode(gfxWindowsPlatform::RENDER_IMAGE_STRETCH32))
-            {
-              IntSize surfaceSize = targetSurfaceImage->GetSize();
-
-              
-              BITMAPINFOHEADER bi;
-              memset(&bi, 0, sizeof(BITMAPINFOHEADER));
-              bi.biSize = sizeof(BITMAPINFOHEADER);
-              bi.biWidth = surfaceSize.width;
-              bi.biHeight = - surfaceSize.height;
-              bi.biPlanes = 1;
-              bi.biBitCount = 32;
-              bi.biCompression = BI_RGB;
-
-              if (IsRenderMode(gfxWindowsPlatform::RENDER_IMAGE_STRETCH24)) {
-                
-                
-                
-                
-                
-                int srcstride = surfaceSize.width*4;
-                int dststride = surfaceSize.width*3;
-                dststride = (dststride + 3) & ~3;
-
-                
-                for (int j = 0; j < surfaceSize.height; ++j) {
-                  unsigned int *src = (unsigned int*) (targetSurfaceImage->Data() + j*srcstride);
-                  unsigned int *dst = (unsigned int*) (targetSurfaceImage->Data() + j*dststride);
-
-                  
-                  
-                  
-                  
-                  
-                  
-                  int width_left = surfaceSize.width;
-                  while (width_left >= 4) {
-                    unsigned int a = *src++;
-                    unsigned int b = *src++;
-                    unsigned int c = *src++;
-                    unsigned int d = *src++;
-
-                    *dst++ =  (a & 0x00ffffff)        | (b << 24);
-                    *dst++ = ((b & 0x00ffff00) >> 8)  | (c << 16);
-                    *dst++ = ((c & 0x00ff0000) >> 16) | (d << 8);
-
-                    width_left -= 4;
-                  }
-
-                  
-                  
-                  unsigned char *bsrc = (unsigned char*) src;
-                  unsigned char *bdst = (unsigned char*) dst;
-                  switch (width_left) {
-                    case 3:
-                      *bdst++ = *bsrc++;
-                      *bdst++ = *bsrc++;
-                      *bdst++ = *bsrc++;
-                      bsrc++;
-                    case 2:
-                      *bdst++ = *bsrc++;
-                      *bdst++ = *bsrc++;
-                      *bdst++ = *bsrc++;
-                      bsrc++;
-                    case 1:
-                      *bdst++ = *bsrc++;
-                      *bdst++ = *bsrc++;
-                      *bdst++ = *bsrc++;
-                      bsrc++;
-                    case 0:
-                      break;
-                  }
-                }
-
-                bi.biBitCount = 24;
-              }
-
-              StretchDIBits(hDC,
-                            ps.rcPaint.left, ps.rcPaint.top,
-                            surfaceSize.width, surfaceSize.height,
-                            0, 0,
-                            surfaceSize.width, surfaceSize.height,
-                            targetSurfaceImage->Data(),
-                            (BITMAPINFO*) &bi,
-                            DIB_RGB_COLORS,
-                            SRCCOPY);
-            }
           }
+#endif
         }
         break;
       case LayersBackend::LAYERS_CLIENT:
