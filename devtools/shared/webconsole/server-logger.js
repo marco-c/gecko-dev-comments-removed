@@ -153,7 +153,8 @@ var ServerLoggingListener = Class({
 
     switch (method) {
       case "examineHeaders":
-        return this.onExamineHeaders(msg);
+        this.onExamineHeaders(msg);
+        break;
       default:
         trace.log("Unknown method name: ", method);
     }
@@ -224,7 +225,7 @@ var ServerLoggingListener = Class({
 
 
 
-  _matchRequest: function(aChannel) {
+  _matchRequest: function(channel) {
     trace.log("_matchRequest ", this.window, ", ", this.topFrame);
 
     
@@ -234,15 +235,16 @@ var ServerLoggingListener = Class({
 
     
     
-    if (!aChannel.loadInfo &&
-        aChannel.loadInfo.loadingDocument === null &&
-        aChannel.loadInfo.loadingPrincipal === Services.scriptSecurityManager.getSystemPrincipal()) {
+    if (!channel.loadInfo &&
+        channel.loadInfo.loadingDocument === null &&
+        channel.loadInfo.loadingPrincipal ===
+        Services.scriptSecurityManager.getSystemPrincipal()) {
       return false;
     }
 
     
     
-    let win = NetworkHelper.getWindowForRequest(aChannel);
+    let win = NetworkHelper.getWindowForRequest(channel);
     while (win) {
       if (win == this.window) {
         return true;

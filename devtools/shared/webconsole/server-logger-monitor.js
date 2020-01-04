@@ -18,9 +18,10 @@ loader.lazyGetter(this, "NetworkHelper", () => require("devtools/shared/webconso
 const trace = {
   log: function(...args) {
   }
-}
+};
 
 const acceptableHeaders = ["x-chromelogger-data"];
+
 
 
 
@@ -159,7 +160,8 @@ var ServerLoggerMonitor = {
     
     if (!httpChannel.loadInfo &&
         httpChannel.loadInfo.loadingDocument === null &&
-        httpChannel.loadInfo.loadingPrincipal === Services.scriptSecurityManager.getSystemPrincipal()) {
+        httpChannel.loadInfo.loadingPrincipal ===
+        Services.scriptSecurityManager.getSystemPrincipal()) {
       return;
     }
 

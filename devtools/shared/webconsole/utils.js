@@ -15,7 +15,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 loader.lazyImporter(this, "VariablesView", "resource://devtools/client/shared/widgets/VariablesView.jsm");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 XPCOMUtils.defineLazyServiceGetter(this,
                                    "swm",
@@ -31,13 +30,13 @@ XPCOMUtils.defineLazyServiceGetter(this,
 const REGEX_MATCH_FUNCTION_NAME = /^\(?function\s+([^(\s]+)\s*\(/;
 
 
-const REGEX_MATCH_FUNCTION_ARGS = /^\(?function\s*[^\s(]*\s*\((.+?)\)/;
-
-
 const CONSOLE_ENTRY_THRESHOLD = 5;
 
-const CONSOLE_WORKER_IDS = exports.CONSOLE_WORKER_IDS = [ 'SharedWorker', 'ServiceWorker', 'Worker' ];
-
+const CONSOLE_WORKER_IDS = exports.CONSOLE_WORKER_IDS = [
+  "SharedWorker",
+  "ServiceWorker",
+  "Worker"
+];
 
 var WebConsoleUtils = {
 
@@ -47,11 +46,10 @@ var WebConsoleUtils = {
 
 
 
-  supportsString: function WCU_supportsString(aString)
-  {
-    let str = Cc["@mozilla.org/supports-string;1"].
-              createInstance(Ci.nsISupportsString);
-    str.data = aString;
+  supportsString: function(string) {
+    let str = Cc["@mozilla.org/supports-string;1"]
+              .createInstance(Ci.nsISupportsString);
+    str.data = string;
     return str;
   },
 
@@ -82,29 +80,27 @@ var WebConsoleUtils = {
 
 
 
-  cloneObject: function WCU_cloneObject(aObject, aRecursive, aFilter)
-  {
-    if (typeof aObject != "object") {
-      return aObject;
+  cloneObject: function(object, recursive, filter) {
+    if (typeof object != "object") {
+      return object;
     }
 
     let temp;
 
-    if (Array.isArray(aObject)) {
+    if (Array.isArray(object)) {
       temp = [];
-      Array.forEach(aObject, function(aValue, aIndex) {
-        if (!aFilter || aFilter(aIndex, aValue, aObject)) {
-          temp.push(aRecursive ? WCU_cloneObject(aValue) : aValue);
+      Array.forEach(object, function(value, index) {
+        if (!filter || filter(index, value, object)) {
+          temp.push(recursive ? WebConsoleUtils.cloneObject(value) : value);
         }
       });
-    }
-    else {
+    } else {
       temp = {};
-      for (let key in aObject) {
-        let value = aObject[key];
-        if (aObject.hasOwnProperty(key) &&
-            (!aFilter || aFilter(key, value, aObject))) {
-          temp[key] = aRecursive ? WCU_cloneObject(value) : value;
+      for (let key in object) {
+        let value = object[key];
+        if (object.hasOwnProperty(key) &&
+            (!filter || filter(key, value, object))) {
+          temp[key] = recursive ? WebConsoleUtils.cloneObject(value) : value;
         }
       }
     }
@@ -120,14 +116,13 @@ var WebConsoleUtils = {
 
 
 
-  copyTextStyles: function WCU_copyTextStyles(aFrom, aTo)
-  {
-    let win = aFrom.ownerDocument.defaultView;
-    let style = win.getComputedStyle(aFrom);
-    aTo.style.fontFamily = style.getPropertyCSSValue("font-family").cssText;
-    aTo.style.fontSize = style.getPropertyCSSValue("font-size").cssText;
-    aTo.style.fontWeight = style.getPropertyCSSValue("font-weight").cssText;
-    aTo.style.fontStyle = style.getPropertyCSSValue("font-style").cssText;
+  copyTextStyles: function(from, to) {
+    let win = from.ownerDocument.defaultView;
+    let style = win.getComputedStyle(from);
+    to.style.fontFamily = style.getPropertyCSSValue("font-family").cssText;
+    to.style.fontSize = style.getPropertyCSSValue("font-size").cssText;
+    to.style.fontWeight = style.getPropertyCSSValue("font-weight").cssText;
+    to.style.fontStyle = style.getPropertyCSSValue("font-style").cssText;
   },
 
   
@@ -137,10 +132,9 @@ var WebConsoleUtils = {
 
 
 
-  getInnerWindowId: function WCU_getInnerWindowId(aWindow)
-  {
-    return aWindow.QueryInterface(Ci.nsIInterfaceRequestor).
-             getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+  getInnerWindowId: function(window) {
+    return window.QueryInterface(Ci.nsIInterfaceRequestor)
+             .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
   },
 
   
@@ -151,14 +145,13 @@ var WebConsoleUtils = {
 
 
 
-  getInnerWindowIDsForFrames: function WCU_getInnerWindowIDsForFrames(aWindow)
-  {
-    let innerWindowID = this.getInnerWindowId(aWindow);
+  getInnerWindowIDsForFrames: function(window) {
+    let innerWindowID = this.getInnerWindowId(window);
     let ids = [innerWindowID];
 
-    if (aWindow.frames) {
-      for (let i = 0; i < aWindow.frames.length; i++) {
-        let frame = aWindow.frames[i];
+    if (window.frames) {
+      for (let i = 0; i < window.frames.length; i++) {
+        let frame = window.frames[i];
         ids = ids.concat(this.getInnerWindowIDsForFrames(frame));
       }
     }
@@ -166,7 +159,6 @@ var WebConsoleUtils = {
     return ids;
   },
 
-
   
 
 
@@ -174,10 +166,9 @@ var WebConsoleUtils = {
 
 
 
-  getOuterWindowId: function WCU_getOuterWindowId(aWindow)
-  {
-    return aWindow.QueryInterface(Ci.nsIInterfaceRequestor).
-           getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
+  getOuterWindowId: function(window) {
+    return window.QueryInterface(Ci.nsIInterfaceRequestor)
+           .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
   },
 
   
@@ -188,9 +179,8 @@ var WebConsoleUtils = {
 
 
 
-  isNativeFunction: function WCU_isNativeFunction(aFunction)
-  {
-    return typeof aFunction == "function" && !("prototype" in aFunction);
+  isNativeFunction: function(func) {
+    return typeof func == "function" && !("prototype" in func);
   },
 
   
@@ -204,12 +194,11 @@ var WebConsoleUtils = {
 
 
 
-  isNonNativeGetter: function WCU_isNonNativeGetter(aObject, aProp)
-  {
-    if (typeof aObject != "object") {
+  isNonNativeGetter: function(object, prop) {
+    if (typeof object != "object") {
       return false;
     }
-    let desc = this.getPropertyDescriptor(aObject, aProp);
+    let desc = this.getPropertyDescriptor(object, prop);
     return desc && desc.get && !this.isNativeFunction(desc.get);
   },
 
@@ -223,12 +212,11 @@ var WebConsoleUtils = {
 
 
 
-  getPropertyDescriptor: function WCU_getPropertyDescriptor(aObject, aProp)
-  {
+  getPropertyDescriptor: function(object, prop) {
     let desc = null;
-    while (aObject) {
+    while (object) {
       try {
-        if ((desc = Object.getOwnPropertyDescriptor(aObject, aProp))) {
+        if ((desc = Object.getOwnPropertyDescriptor(object, prop))) {
           break;
         }
       } catch (ex) {
@@ -242,7 +230,7 @@ var WebConsoleUtils = {
       }
 
       try {
-        aObject = Object.getPrototypeOf(aObject);
+        object = Object.getPrototypeOf(object);
       } catch (ex) {
         if (ex.name == "TypeError") {
           return desc;
@@ -265,32 +253,24 @@ var WebConsoleUtils = {
 
 
 
-  propertiesSort: function WCU_propertiesSort(a, b)
-  {
+  propertiesSort: function(a, b) {
     
-    let aNumber = parseFloat(a.name);
+    let number = parseFloat(a.name);
     let bNumber = parseFloat(b.name);
 
     
-    if (!isNaN(aNumber) && isNaN(bNumber)) {
+    if (!isNaN(number) && isNaN(bNumber)) {
       return -1;
-    }
-    else if (isNaN(aNumber) && !isNaN(bNumber)) {
+    } else if (isNaN(number) && !isNaN(bNumber)) {
+      return 1;
+    } else if (!isNaN(number) && !isNaN(bNumber)) {
+      return number - bNumber;
+    } else if (a.name < b.name) {
+      return -1;
+    } else if (a.name > b.name) {
       return 1;
     }
-    else if (!isNaN(aNumber) && !isNaN(bNumber)) {
-      return aNumber - bNumber;
-    }
-    
-    else if (a.name < b.name) {
-      return -1;
-    }
-    else if (a.name > b.name) {
-      return 1;
-    }
-    else {
-      return 0;
-    }
+    return 0;
   },
 
   
@@ -306,38 +286,35 @@ var WebConsoleUtils = {
 
 
 
-  createValueGrip: function WCU_createValueGrip(aValue, aObjectWrapper)
-  {
-    switch (typeof aValue) {
+  createValueGrip: function(value, objectWrapper) {
+    switch (typeof value) {
       case "boolean":
-        return aValue;
+        return value;
       case "string":
-        return aObjectWrapper(aValue);
+        return objectWrapper(value);
       case "number":
-        if (aValue === Infinity) {
+        if (value === Infinity) {
           return { type: "Infinity" };
-        }
-        else if (aValue === -Infinity) {
+        } else if (value === -Infinity) {
           return { type: "-Infinity" };
-        }
-        else if (Number.isNaN(aValue)) {
+        } else if (Number.isNaN(value)) {
           return { type: "NaN" };
-        }
-        else if (!aValue && 1 / aValue === -Infinity) {
+        } else if (!value && 1 / value === -Infinity) {
           return { type: "-0" };
         }
-        return aValue;
+        return value;
       case "undefined":
         return { type: "undefined" };
       case "object":
-        if (aValue === null) {
+        if (value === null) {
           return { type: "null" };
         }
+        
       case "function":
-        return aObjectWrapper(aValue);
+        return objectWrapper(value);
       default:
-        Cu.reportError("Failed to provide a grip for value of " + typeof aValue
-                       + ": " + aValue);
+        Cu.reportError("Failed to provide a grip for value of " + typeof value
+                       + ": " + value);
         return null;
     }
   },
@@ -351,26 +328,24 @@ var WebConsoleUtils = {
 
 
 
-  isIteratorOrGenerator: function WCU_isIteratorOrGenerator(aObject)
-  {
-    if (aObject === null) {
+  isIteratorOrGenerator: function(object) {
+    if (object === null) {
       return false;
     }
 
-    if (typeof aObject == "object") {
-      if (typeof aObject.__iterator__ == "function" ||
-          aObject.constructor && aObject.constructor.name == "Iterator") {
+    if (typeof object == "object") {
+      if (typeof object.__iterator__ == "function" ||
+          object.constructor && object.constructor.name == "Iterator") {
         return true;
       }
 
       try {
-        let str = aObject.toString();
-        if (typeof aObject.next == "function" &&
+        let str = object.toString();
+        if (typeof object.next == "function" &&
             str.indexOf("[object Generator") == 0) {
           return true;
         }
-      }
-      catch (ex) {
+      } catch (ex) {
         
         return false;
       }
@@ -389,14 +364,12 @@ var WebConsoleUtils = {
 
 
 
-  isMixedHTTPSRequest: function WCU_isMixedHTTPSRequest(aRequest, aLocation)
-  {
+  isMixedHTTPSRequest: function(request, location) {
     try {
-      let requestURI = Services.io.newURI(aRequest, null, null);
-      let contentURI = Services.io.newURI(aLocation, null, null);
+      let requestURI = Services.io.newURI(request, null, null);
+      let contentURI = Services.io.newURI(location, null, null);
       return (contentURI.scheme == "https" && requestURI.scheme != "https");
-    }
-    catch (ex) {
+    } catch (ex) {
       return false;
     }
   },
@@ -409,28 +382,28 @@ var WebConsoleUtils = {
 
 
 
-  getFunctionName: function WCF_getFunctionName(aFunction)
-  {
+  getFunctionName: function(func) {
     let name = null;
-    if (aFunction.name) {
-      name = aFunction.name;
-    }
-    else {
+    if (func.name) {
+      name = func.name;
+    } else {
       let desc;
       try {
-        desc = aFunction.getOwnPropertyDescriptor("displayName");
+        desc = func.getOwnPropertyDescriptor("displayName");
+      } catch (ex) {
+        
       }
-      catch (ex) { }
       if (desc && typeof desc.value == "string") {
         name = desc.value;
       }
     }
     if (!name) {
       try {
-        let str = (aFunction.toString() || aFunction.toSource()) + "";
+        let str = (func.toString() || func.toSource()) + "";
         name = (str.match(REGEX_MATCH_FUNCTION_NAME) || [])[1];
+      } catch (ex) {
+        
       }
-      catch (ex) { }
     }
     return name;
   },
@@ -444,16 +417,15 @@ var WebConsoleUtils = {
 
 
 
-  getObjectClassName: function WCU_getObjectClassName(aObject)
-  {
-    if (aObject === null) {
+  getObjectClassName: function(object) {
+    if (object === null) {
       return "null";
     }
-    if (aObject === undefined) {
+    if (object === undefined) {
       return "undefined";
     }
 
-    let type = typeof aObject;
+    let type = typeof object;
     if (type != "object") {
       
       return type.charAt(0).toUpperCase() + type.substr(1);
@@ -462,15 +434,17 @@ var WebConsoleUtils = {
     let className;
 
     try {
-      className = ((aObject + "").match(/^\[object (\S+)\]$/) || [])[1];
+      className = ((object + "").match(/^\[object (\S+)\]$/) || [])[1];
       if (!className) {
-        className = ((aObject.constructor + "").match(/^\[object (\S+)\]$/) || [])[1];
+        className = ((object.constructor + "")
+                     .match(/^\[object (\S+)\]$/) || [])[1];
       }
-      if (!className && typeof aObject.constructor == "function") {
-        className = this.getFunctionName(aObject.constructor);
+      if (!className && typeof object.constructor == "function") {
+        className = this.getFunctionName(object.constructor);
       }
+    } catch (ex) {
+      
     }
-    catch (ex) { }
 
     return className;
   },
@@ -483,10 +457,10 @@ var WebConsoleUtils = {
 
 
 
-  isActorGrip: function WCU_isActorGrip(aGrip)
-  {
-    return aGrip && typeof(aGrip) == "object" && aGrip.actor;
+  isActorGrip: function(grip) {
+    return grip && typeof (grip) == "object" && grip.actor;
   },
+
   
 
 
@@ -496,7 +470,8 @@ var WebConsoleUtils = {
   _usageCount: 0,
   get usageCount() {
     if (WebConsoleUtils._usageCount < CONSOLE_ENTRY_THRESHOLD) {
-      WebConsoleUtils._usageCount = Services.prefs.getIntPref("devtools.selfxss.count");
+      WebConsoleUtils._usageCount =
+        Services.prefs.getIntPref("devtools.selfxss.count");
       if (Services.prefs.getBoolPref("devtools.chrome.enabled")) {
         WebConsoleUtils.usageCount = CONSOLE_ENTRY_THRESHOLD;
       }
@@ -516,22 +491,24 @@ var WebConsoleUtils = {
 
 
 
-  pasteHandlerGen: function WCU_pasteHandlerGen(inputField, notificationBox, msg, okstring) {
-    let handler = function WCU_pasteHandler(aEvent) {
+
+
+  pasteHandlerGen: function(inputField, notificationBox, msg, okstring) {
+    let handler = function(event) {
       if (WebConsoleUtils.usageCount >= CONSOLE_ENTRY_THRESHOLD) {
         inputField.removeEventListener("paste", handler);
         inputField.removeEventListener("drop", handler);
         return true;
       }
       if (notificationBox.getNotificationWithValue("selfxss-notification")) {
-        aEvent.preventDefault();
-        aEvent.stopPropagation();
+        event.preventDefault();
+        event.stopPropagation();
         return false;
       }
 
-
       let notification = notificationBox.appendNotification(msg,
-        "selfxss-notification", null, notificationBox.PRIORITY_WARNING_HIGH, null,
+        "selfxss-notification", null,
+        notificationBox.PRIORITY_WARNING_HIGH, null,
         function(eventType) {
           
           if (eventType == "removed") {
@@ -539,7 +516,7 @@ var WebConsoleUtils = {
           }
         });
 
-      function pasteKeyUpHandler(aEvent2) {
+      function pasteKeyUpHandler(event2) {
         let value = inputField.value || inputField.textContent;
         if (value.includes(okstring)) {
           notificationBox.removeNotification(notification);
@@ -549,14 +526,12 @@ var WebConsoleUtils = {
       }
       inputField.addEventListener("keyup", pasteKeyUpHandler);
 
-      aEvent.preventDefault();
-      aEvent.stopPropagation();
+      event.preventDefault();
+      event.stopPropagation();
       return false;
     };
     return handler;
   },
-
-
 };
 
 exports.Utils = WebConsoleUtils;
@@ -572,8 +547,7 @@ WebConsoleUtils.L10n = function(bundleURI) {
 WebConsoleUtils.L10n.prototype = {
   _stringBundle: null,
 
-  get stringBundle()
-  {
+  get stringBundle() {
     if (!this._stringBundle) {
       this._stringBundle = Services.strings.createBundle(this._bundleUri);
     }
@@ -589,11 +563,11 @@ WebConsoleUtils.L10n.prototype = {
 
 
 
-  timestampString: function WCU_l10n_timestampString(aMilliseconds)
-  {
-    let d = new Date(aMilliseconds ? aMilliseconds : null);
+  timestampString: function(milliseconds) {
+    let d = new Date(milliseconds ? milliseconds : null);
     let hours = d.getHours(), minutes = d.getMinutes();
-    let seconds = d.getSeconds(), milliseconds = d.getMilliseconds();
+    let seconds = d.getSeconds();
+    milliseconds = d.getMilliseconds();
     let parameters = [hours, minutes, seconds, milliseconds];
     return this.getFormatStr("timestampFormat", parameters);
   },
@@ -606,14 +580,12 @@ WebConsoleUtils.L10n.prototype = {
 
 
 
-  getStr: function WCU_l10n_getStr(aName)
-  {
+  getStr: function(name) {
     let result;
     try {
-      result = this.stringBundle.GetStringFromName(aName);
-    }
-    catch (ex) {
-      Cu.reportError("Failed to get string: " + aName);
+      result = this.stringBundle.GetStringFromName(name);
+    } catch (ex) {
+      Cu.reportError("Failed to get string: " + name);
       throw ex;
     }
     return result;
@@ -630,14 +602,13 @@ WebConsoleUtils.L10n.prototype = {
 
 
 
-  getFormatStr: function WCU_l10n_getFormatStr(aName, aArray)
-  {
+  getFormatStr: function(name, array) {
     let result;
     try {
-      result = this.stringBundle.formatStringFromName(aName, aArray, aArray.length);
-    }
-    catch (ex) {
-      Cu.reportError("Failed to format string: " + aName);
+      result = this.stringBundle.formatStringFromName(name, array,
+                                                      array.length);
+    } catch (ex) {
+      Cu.reportError("Failed to format string: " + name);
       throw ex;
     }
     return result;
@@ -661,10 +632,9 @@ WebConsoleUtils.L10n.prototype = {
 
 
 
-function ConsoleServiceListener(aWindow, aListener)
-{
-  this.window = aWindow;
-  this.listener = aListener;
+function ConsoleServiceListener(window, listener) {
+  this.window = window;
+  this.listener = listener;
 }
 exports.ConsoleServiceListener = ConsoleServiceListener;
 
@@ -687,8 +657,7 @@ ConsoleServiceListener.prototype =
   
 
 
-  init: function CSL_init()
-  {
+  init: function() {
     Services.console.registerListener(this);
   },
 
@@ -700,26 +669,25 @@ ConsoleServiceListener.prototype =
 
 
 
-  observe: function CSL_observe(aMessage)
-  {
+  observe: function(message) {
     if (!this.listener) {
       return;
     }
 
     if (this.window) {
-      if (!(aMessage instanceof Ci.nsIScriptError) ||
-          !aMessage.outerWindowID ||
-          !this.isCategoryAllowed(aMessage.category)) {
+      if (!(message instanceof Ci.nsIScriptError) ||
+          !message.outerWindowID ||
+          !this.isCategoryAllowed(message.category)) {
         return;
       }
 
-      let errorWindow = Services.wm.getOuterWindowWithId(aMessage .outerWindowID);
+      let errorWindow = Services.wm.getOuterWindowWithId(message.outerWindowID);
       if (!errorWindow || !isWindowIncluded(this.window, errorWindow)) {
         return;
       }
     }
 
-    this.listener.onConsoleServiceMessage(aMessage);
+    this.listener.onConsoleServiceMessage(message);
   },
 
   
@@ -731,13 +699,12 @@ ConsoleServiceListener.prototype =
 
 
 
-  isCategoryAllowed: function CSL_isCategoryAllowed(aCategory)
-  {
-    if (!aCategory) {
+  isCategoryAllowed: function(category) {
+    if (!category) {
       return false;
     }
 
-    switch (aCategory) {
+    switch (category) {
       case "XPConnect JavaScript":
       case "component javascript":
       case "chrome javascript":
@@ -762,16 +729,15 @@ ConsoleServiceListener.prototype =
 
 
 
-  getCachedMessages: function CSL_getCachedMessages(aIncludePrivate = false)
-  {
+  getCachedMessages: function(includePrivate = false) {
     let errors = Services.console.getMessageArray() || [];
 
     
     
     if (!this.window) {
-      return errors.filter((aError) => {
-        if (aError instanceof Ci.nsIScriptError) {
-          if (!aIncludePrivate && aError.isFromPrivateWindow) {
+      return errors.filter((error) => {
+        if (error instanceof Ci.nsIScriptError) {
+          if (!includePrivate && error.isFromPrivateWindow) {
             return false;
           }
         }
@@ -782,18 +748,17 @@ ConsoleServiceListener.prototype =
 
     let ids = WebConsoleUtils.getInnerWindowIDsForFrames(this.window);
 
-    return errors.filter((aError) => {
-      if (aError instanceof Ci.nsIScriptError) {
-        if (!aIncludePrivate && aError.isFromPrivateWindow) {
+    return errors.filter((error) => {
+      if (error instanceof Ci.nsIScriptError) {
+        if (!includePrivate && error.isFromPrivateWindow) {
           return false;
         }
         if (ids &&
-            (ids.indexOf(aError.innerWindowID) == -1 ||
-             !this.isCategoryAllowed(aError.category))) {
+            (ids.indexOf(error.innerWindowID) == -1 ||
+             !this.isCategoryAllowed(error.category))) {
           return false;
         }
-      }
-      else if (ids && ids[0]) {
+      } else if (ids && ids[0]) {
         
         
         return false;
@@ -806,8 +771,7 @@ ConsoleServiceListener.prototype =
   
 
 
-  destroy: function CSL_destroy()
-  {
+  destroy: function() {
     Services.console.unregisterListener(this);
     this.listener = this.window = null;
   },
@@ -833,12 +797,10 @@ ConsoleServiceListener.prototype =
 
 
 
-
-function ConsoleAPIListener(aWindow, aOwner, aConsoleID)
-{
-  this.window = aWindow;
-  this.owner = aOwner;
-  this.consoleID = aConsoleID;
+function ConsoleAPIListener(window, owner, consoleID) {
+  this.window = window;
+  this.owner = owner;
+  this.consoleID = consoleID;
 }
 exports.ConsoleAPIListener = ConsoleAPIListener;
 
@@ -871,8 +833,7 @@ ConsoleAPIListener.prototype =
   
 
 
-  init: function CAL_init()
-  {
+  init: function() {
     
     
     Services.obs.addObserver(this, "console-api-log-event", false);
@@ -887,8 +848,7 @@ ConsoleAPIListener.prototype =
 
 
 
-  observe: function CAL_observe(aMessage, aTopic)
-  {
+  observe: function(message, topic) {
     if (!this.owner) {
       return;
     }
@@ -896,7 +856,7 @@ ConsoleAPIListener.prototype =
     
     
     
-    let apiMessage = aMessage.wrappedJSObject;
+    let apiMessage = message.wrappedJSObject;
 
     if (!this.isMessageRelevant(apiMessage)) {
       return;
@@ -952,8 +912,7 @@ ConsoleAPIListener.prototype =
 
 
 
-  getCachedMessages: function CAL_getCachedMessages(aIncludePrivate = false)
-  {
+  getCachedMessages: function(includePrivate = false) {
     let messages = [];
     let ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
                               .getService(Ci.nsIConsoleAPIStorage);
@@ -977,7 +936,7 @@ ConsoleAPIListener.prototype =
       return this.isMessageRelevant(msg);
     });
 
-    if (aIncludePrivate) {
+    if (includePrivate) {
       return messages;
     }
 
@@ -987,8 +946,7 @@ ConsoleAPIListener.prototype =
   
 
 
-  destroy: function CAL_destroy()
-  {
+  destroy: function() {
     Services.obs.removeObserver(this, "console-api-log-event");
     this.window = this.owner = null;
   },
@@ -1012,7 +970,7 @@ var WebConsoleCommands = {
 
 
 
-  _registerOriginal: function (name, command) {
+  _registerOriginal: function(name, command) {
     this.register(name, command);
     this._originalCommands.set(name, this.getCommand(name));
   },
@@ -1103,10 +1061,8 @@ exports.WebConsoleCommands = WebConsoleCommands;
 
 
 
-
-WebConsoleCommands._registerOriginal("$", function JSTH_$(aOwner, aSelector)
-{
-  return aOwner.window.document.querySelector(aSelector);
+WebConsoleCommands._registerOriginal("$", function(owner, selector) {
+  return owner.window.document.querySelector(selector);
 });
 
 
@@ -1117,13 +1073,12 @@ WebConsoleCommands._registerOriginal("$", function JSTH_$(aOwner, aSelector)
 
 
 
-WebConsoleCommands._registerOriginal("$$", function JSTH_$$(aOwner, aSelector)
-{
-  let nodes = aOwner.window.document.querySelectorAll(aSelector);
+WebConsoleCommands._registerOriginal("$$", function(owner, selector) {
+  let nodes = owner.window.document.querySelectorAll(selector);
 
   
   
-  let result = new aOwner.window.Array();
+  let result = new owner.window.Array();
   for (let i = 0; i < nodes.length; i++) {
     result.push(nodes[i]);
   }
@@ -1137,8 +1092,8 @@ WebConsoleCommands._registerOriginal("$$", function JSTH_$$(aOwner, aSelector)
 
 
 WebConsoleCommands._registerOriginal("$_", {
-  get: function(aOwner) {
-    return aOwner.consoleActor.getLastConsoleInputEvaluation();
+  get: function(owner) {
+    return owner.consoleActor.getLastConsoleInputEvaluation();
   }
 });
 
@@ -1151,17 +1106,15 @@ WebConsoleCommands._registerOriginal("$_", {
 
 
 
-
-WebConsoleCommands._registerOriginal("$x", function JSTH_$x(aOwner, aXPath, aContext)
-{
-  let nodes = new aOwner.window.Array();
+WebConsoleCommands._registerOriginal("$x", function(owner, xPath, context) {
+  let nodes = new owner.window.Array();
 
   
   
-  let doc =  aOwner.window.document;
-  aContext = aContext || doc;
+  let doc = owner.window.document;
+  context = context || doc;
 
-  let results = doc.evaluate(aXPath, aContext, null,
+  let results = doc.evaluate(xPath, context, null,
                              Ci.nsIDOMXPathResult.ANY_TYPE, null);
   let node;
   while ((node = results.iterateNext())) {
@@ -1178,17 +1131,16 @@ WebConsoleCommands._registerOriginal("$x", function JSTH_$x(aOwner, aXPath, aCon
 
 
 WebConsoleCommands._registerOriginal("$0", {
-  get: function(aOwner) {
-    return aOwner.makeDebuggeeValue(aOwner.selectedNode);
+  get: function(owner) {
+    return owner.makeDebuggeeValue(owner.selectedNode);
   }
 });
 
 
 
 
-WebConsoleCommands._registerOriginal("clear", function JSTH_clear(aOwner)
-{
-  aOwner.helperResult = {
+WebConsoleCommands._registerOriginal("clear", function(owner) {
+  owner.helperResult = {
     type: "clearOutput",
   };
 });
@@ -1196,9 +1148,8 @@ WebConsoleCommands._registerOriginal("clear", function JSTH_clear(aOwner)
 
 
 
-WebConsoleCommands._registerOriginal("clearHistory", function JSTH_clearHistory(aOwner)
-{
-  aOwner.helperResult = {
+WebConsoleCommands._registerOriginal("clearHistory", function(owner) {
+  owner.helperResult = {
     type: "clearHistory",
   };
 });
@@ -1210,10 +1161,9 @@ WebConsoleCommands._registerOriginal("clearHistory", function JSTH_clearHistory(
 
 
 
-WebConsoleCommands._registerOriginal("keys", function JSTH_keys(aOwner, aObject)
-{
+WebConsoleCommands._registerOriginal("keys", function(owner, object) {
   
-  return Cu.cloneInto(Object.keys(Cu.waiveXrays(aObject)), aOwner.window);
+  return Cu.cloneInto(Object.keys(Cu.waiveXrays(object)), owner.window);
 });
 
 
@@ -1223,26 +1173,24 @@ WebConsoleCommands._registerOriginal("keys", function JSTH_keys(aOwner, aObject)
 
 
 
-WebConsoleCommands._registerOriginal("values", function JSTH_values(aOwner, aObject)
-{
+WebConsoleCommands._registerOriginal("values", function(owner, object) {
   let values = [];
   
-  let waived = Cu.waiveXrays(aObject);
+  let waived = Cu.waiveXrays(object);
   let names = Object.getOwnPropertyNames(waived);
 
   for (let name of names) {
     values.push(waived[name]);
   }
 
-  return Cu.cloneInto(values, aOwner.window);
+  return Cu.cloneInto(values, owner.window);
 });
 
 
 
 
-WebConsoleCommands._registerOriginal("help", function JSTH_help(aOwner)
-{
-  aOwner.helperResult = { type: "help" };
+WebConsoleCommands._registerOriginal("help", function(owner) {
+  owner.helperResult = { type: "help" };
 });
 
 
@@ -1256,27 +1204,29 @@ WebConsoleCommands._registerOriginal("help", function JSTH_help(aOwner)
 
 
 
-WebConsoleCommands._registerOriginal("cd", function JSTH_cd(aOwner, aWindow)
-{
-  if (!aWindow) {
-    aOwner.consoleActor.evalWindow = null;
-    aOwner.helperResult = { type: "cd" };
+WebConsoleCommands._registerOriginal("cd", function(owner, window) {
+  if (!window) {
+    owner.consoleActor.evalWindow = null;
+    owner.helperResult = { type: "cd" };
     return;
   }
 
-  if (typeof aWindow == "string") {
-    aWindow = aOwner.window.document.querySelector(aWindow);
+  if (typeof window == "string") {
+    window = owner.window.document.querySelector(window);
   }
-  if (aWindow instanceof Ci.nsIDOMElement && aWindow.contentWindow) {
-    aWindow = aWindow.contentWindow;
+  if (window instanceof Ci.nsIDOMElement && window.contentWindow) {
+    window = window.contentWindow;
   }
-  if (!(aWindow instanceof Ci.nsIDOMWindow)) {
-    aOwner.helperResult = { type: "error", message: "cdFunctionInvalidArgument" };
+  if (!(window instanceof Ci.nsIDOMWindow)) {
+    owner.helperResult = {
+      type: "error",
+      message: "cdFunctionInvalidArgument"
+    };
     return;
   }
 
-  aOwner.consoleActor.evalWindow = aWindow;
-  aOwner.helperResult = { type: "cd" };
+  owner.consoleActor.evalWindow = window;
+  owner.helperResult = { type: "cd" };
 });
 
 
@@ -1285,13 +1235,12 @@ WebConsoleCommands._registerOriginal("cd", function JSTH_cd(aOwner, aWindow)
 
 
 
-WebConsoleCommands._registerOriginal("inspect", function JSTH_inspect(aOwner, aObject)
-{
-  let dbgObj = aOwner.makeDebuggeeValue(aObject);
-  let grip = aOwner.createValueGrip(dbgObj);
-  aOwner.helperResult = {
+WebConsoleCommands._registerOriginal("inspect", function(owner, object) {
+  let dbgObj = owner.makeDebuggeeValue(object);
+  let grip = owner.createValueGrip(dbgObj);
+  owner.helperResult = {
     type: "inspectObject",
-    input: aOwner.evalInput,
+    input: owner.evalInput,
     object: grip,
   };
 });
@@ -1303,26 +1252,25 @@ WebConsoleCommands._registerOriginal("inspect", function JSTH_inspect(aOwner, aO
 
 
 
-WebConsoleCommands._registerOriginal("pprint", function JSTH_pprint(aOwner, aObject)
-{
-  if (aObject === null || aObject === undefined || aObject === true ||
-      aObject === false) {
-    aOwner.helperResult = {
+WebConsoleCommands._registerOriginal("pprint", function(owner, object) {
+  if (object === null || object === undefined || object === true ||
+      object === false) {
+    owner.helperResult = {
       type: "error",
       message: "helperFuncUnsupportedTypeError",
     };
     return null;
   }
 
-  aOwner.helperResult = { rawOutput: true };
+  owner.helperResult = { rawOutput: true };
 
-  if (typeof aObject == "function") {
-    return aObject + "\n";
+  if (typeof object == "function") {
+    return object + "\n";
   }
 
   let output = [];
 
-  let obj = aObject;
+  let obj = object;
   for (let name in obj) {
     let desc = WebConsoleUtils.getPropertyDescriptor(obj, name) || {};
     if (desc.get || desc.set) {
@@ -1332,8 +1280,7 @@ WebConsoleCommands._registerOriginal("pprint", function JSTH_pprint(aOwner, aObj
       let getString = VariablesView.getString(getGrip);
       let setString = VariablesView.getString(setGrip);
       output.push(name + ":", "  get: " + getString, "  set: " + setString);
-    }
-    else {
+    } else {
       let valueGrip = VariablesView.getGrip(obj[name]);
       let valueString = VariablesView.getString(valueGrip);
       output.push(name + ": " + valueString);
@@ -1350,17 +1297,16 @@ WebConsoleCommands._registerOriginal("pprint", function JSTH_pprint(aOwner, aObj
 
 
 
-WebConsoleCommands._registerOriginal("print", function JSTH_print(aOwner, aValue)
-{
-  aOwner.helperResult = { rawOutput: true };
-  if (typeof aValue === "symbol") {
-    return Symbol.prototype.toString.call(aValue);
+WebConsoleCommands._registerOriginal("print", function(owner, value) {
+  owner.helperResult = { rawOutput: true };
+  if (typeof value === "symbol") {
+    return Symbol.prototype.toString.call(value);
   }
   
   
   
   
-  return String(Cu.waiveXrays(aValue));
+  return String(Cu.waiveXrays(value));
 });
 
 
@@ -1370,26 +1316,24 @@ WebConsoleCommands._registerOriginal("print", function JSTH_print(aOwner, aValue
 
 
 
-WebConsoleCommands._registerOriginal("copy", function JSTH_copy(aOwner, aValue)
-{
+WebConsoleCommands._registerOriginal("copy", function(owner, value) {
   let payload;
   try {
-    if (aValue instanceof Ci.nsIDOMElement) {
-      payload = aValue.outerHTML;
-    } else if (typeof aValue == "string") {
-      payload = aValue;
+    if (value instanceof Ci.nsIDOMElement) {
+      payload = value.outerHTML;
+    } else if (typeof value == "string") {
+      payload = value;
     } else {
-      payload = JSON.stringify(aValue, null, "  ");
+      payload = JSON.stringify(value, null, "  ");
     }
   } catch (ex) {
-    payload = "/* " + ex  + " */";
+    payload = "/* " + ex + " */";
   }
-  aOwner.helperResult = {
+  owner.helperResult = {
     type: "copyValueToClipboard",
     value: payload,
   };
 });
-
 
 
 
@@ -1405,8 +1349,7 @@ function addWebConsoleCommands(owner) {
   for (let [name, command] of WebConsoleCommands._registeredCommands) {
     if (typeof command === "function") {
       owner.sandbox[name] = command.bind(undefined, owner);
-    }
-    else if (typeof command === "object") {
+    } else if (typeof command === "object") {
       let clone = Object.assign({}, command, {
         
         
@@ -1440,12 +1383,11 @@ exports.addWebConsoleCommands = addWebConsoleCommands;
 
 
 
-function ConsoleReflowListener(aWindow, aListener)
-{
-  this.docshell = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+function ConsoleReflowListener(window, listener) {
+  this.docshell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIWebNavigation)
                          .QueryInterface(Ci.nsIDocShell);
-  this.listener = aListener;
+  this.listener = listener;
   this.docshell.addWeakReflowObserver(this);
 }
 
@@ -1465,8 +1407,7 @@ ConsoleReflowListener.prototype =
 
 
 
-  sendReflow: function CRL_sendReflow(aStart, aEnd, aInterruptible)
-  {
+  sendReflow: function(start, end, interruptible) {
     let frame = components.stack.caller.caller;
 
     let filename = frame ? frame.filename : null;
@@ -1478,9 +1419,9 @@ ConsoleReflowListener.prototype =
     }
 
     this.listener.onReflowActivity({
-      interruptible: aInterruptible,
-      start: aStart,
-      end: aEnd,
+      interruptible: interruptible,
+      start: start,
+      end: end,
       sourceURL: filename,
       sourceLine: frame ? frame.lineNumber : null,
       functionName: frame ? frame.name : null
@@ -1493,9 +1434,8 @@ ConsoleReflowListener.prototype =
 
 
 
-  reflow: function CRL_reflow(aStart, aEnd)
-  {
-    this.sendReflow(aStart, aEnd, false);
+  reflow: function(start, end) {
+    this.sendReflow(start, end, false);
   },
 
   
@@ -1504,23 +1444,20 @@ ConsoleReflowListener.prototype =
 
 
 
-  reflowInterruptible: function CRL_reflowInterruptible(aStart, aEnd)
-  {
-    this.sendReflow(aStart, aEnd, true);
+  reflowInterruptible: function(start, end) {
+    this.sendReflow(start, end, true);
   },
 
   
 
 
-  destroy: function CRL_destroy()
-  {
+  destroy: function() {
     this.docshell.removeWeakReflowObserver(this);
     this.listener = this.docshell = null;
   },
 };
 
-function gSequenceId()
-{
+function gSequenceId() {
   return gSequenceId.n++;
 }
 gSequenceId.n = 0;

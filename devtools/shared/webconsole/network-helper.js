@@ -52,9 +52,14 @@
 
 
 
+
+
+
+
+
 "use strict";
 
-const {components, Cc, Ci, Cu} = require("chrome");
+const {components, Cc, Ci} = require("chrome");
 loader.lazyImporter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const Services = require("Services");
@@ -79,16 +84,14 @@ var NetworkHelper = {
 
 
 
-  convertToUnicode: function NH_convertToUnicode(aText, aCharset)
-  {
-    let conv = Cc["@mozilla.org/intl/scriptableunicodeconverter"].
-               createInstance(Ci.nsIScriptableUnicodeConverter);
+  convertToUnicode: function(text, charset) {
+    let conv = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+        .createInstance(Ci.nsIScriptableUnicodeConverter);
     try {
-      conv.charset = aCharset || "UTF-8";
-      return conv.ConvertToUnicode(aText);
-    }
-    catch (ex) {
-      return aText;
+      conv.charset = charset || "UTF-8";
+      return conv.ConvertToUnicode(text);
+    } catch (ex) {
+      return text;
     }
   },
 
@@ -100,14 +103,12 @@ var NetworkHelper = {
 
 
 
-  readAndConvertFromStream: function NH_readAndConvertFromStream(aStream, aCharset)
-  {
+  readAndConvertFromStream: function(stream, charset) {
     let text = null;
     try {
-      text = NetUtil.readInputStreamToString(aStream, aStream.available())
-      return this.convertToUnicode(text, aCharset);
-    }
-    catch (err) {
+      text = NetUtil.readInputStreamToString(stream, stream.available());
+      return this.convertToUnicode(text, charset);
+    } catch (err) {
       return text;
     }
   },
@@ -122,10 +123,9 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromRequest: function NH_readPostTextFromRequest(aRequest, aCharset)
-  {
-    if (aRequest instanceof Ci.nsIUploadChannel) {
-      let iStream = aRequest.uploadStream;
+  readPostTextFromRequest: function(request, charset) {
+    if (request instanceof Ci.nsIUploadChannel) {
+      let iStream = request.uploadStream;
 
       let isSeekableStream = false;
       if (iStream instanceof Ci.nsISeekableStream) {
@@ -139,7 +139,7 @@ var NetworkHelper = {
       }
 
       
-      let text = this.readAndConvertFromStream(iStream, aCharset);
+      let text = this.readAndConvertFromStream(iStream, charset);
 
       
       
@@ -161,10 +161,9 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromPage: function NH_readPostTextFromPage(aDocShell, aCharset)
-  {
-    let webNav = aDocShell.QueryInterface(Ci.nsIWebNavigation);
-    return this.readPostTextFromPageViaWebNav(webNav, aCharset);
+  readPostTextFromPage: function(docShell, charset) {
+    let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
+    return this.readPostTextFromPageViaWebNav(webNav, charset);
   },
 
   
@@ -177,17 +176,15 @@ var NetworkHelper = {
 
 
 
-  readPostTextFromPageViaWebNav:
-  function NH_readPostTextFromPageViaWebNav(aWebNav, aCharset)
-  {
-    if (aWebNav instanceof Ci.nsIWebPageDescriptor) {
-      let descriptor = aWebNav.currentDescriptor;
+  readPostTextFromPageViaWebNav: function(webNav, charset) {
+    if (webNav instanceof Ci.nsIWebPageDescriptor) {
+      let descriptor = webNav.currentDescriptor;
 
       if (descriptor instanceof Ci.nsISHEntry && descriptor.postData &&
           descriptor instanceof Ci.nsISeekableStream) {
-        descriptor.seek(NS_SEEK_SET, 0);
+        descriptor.seek(Ci.nsISeekableStream.NS_SEEK_SET, 0);
 
-        return this.readAndConvertFromStream(descriptor, aCharset);
+        return this.readAndConvertFromStream(descriptor, charset);
       }
     }
     return null;
@@ -200,10 +197,9 @@ var NetworkHelper = {
 
 
 
-  getAppIdForRequest: function NH_getAppIdForRequest(aRequest)
-  {
+  getAppIdForRequest: function(request) {
     try {
-      return this.getRequestLoadContext(aRequest).appId;
+      return this.getRequestLoadContext(request).appId;
     } catch (ex) {
       
     }
@@ -219,10 +215,9 @@ var NetworkHelper = {
 
 
 
-  getTopFrameForRequest: function NH_getTopFrameForRequest(aRequest)
-  {
+  getTopFrameForRequest: function(request) {
     try {
-      return this.getRequestLoadContext(aRequest).topFrameElement;
+      return this.getRequestLoadContext(request).topFrameElement;
     } catch (ex) {
       
     }
@@ -235,10 +230,9 @@ var NetworkHelper = {
 
 
 
-  getWindowForRequest: function NH_getWindowForRequest(aRequest)
-  {
+  getWindowForRequest: function(request) {
     try {
-      return this.getRequestLoadContext(aRequest).associatedWindow;
+      return this.getRequestLoadContext(request).associatedWindow;
     } catch (ex) {
       
       
@@ -252,15 +246,19 @@ var NetworkHelper = {
 
 
 
-  getRequestLoadContext: function NH_getRequestLoadContext(aRequest)
-  {
+  getRequestLoadContext: function(request) {
     try {
-      return aRequest.notificationCallbacks.getInterface(Ci.nsILoadContext);
-    } catch (ex) { }
+      return request.notificationCallbacks.getInterface(Ci.nsILoadContext);
+    } catch (ex) {
+      
+    }
 
     try {
-      return aRequest.loadGroup.notificationCallbacks.getInterface(Ci.nsILoadContext);
-    } catch (ex) { }
+      return request.loadGroup.notificationCallbacks
+        .getInterface(Ci.nsILoadContext);
+    } catch (ex) {
+      
+    }
 
     return null;
   },
@@ -271,12 +269,11 @@ var NetworkHelper = {
 
 
 
-  isTopLevelLoad: function(aRequest)
-  {
-    if (aRequest instanceof Ci.nsIChannel) {
-      let loadInfo = aRequest.loadInfo;
+  isTopLevelLoad: function(request) {
+    if (request instanceof Ci.nsIChannel) {
+      let loadInfo = request.loadInfo;
       if (loadInfo && loadInfo.parentOuterWindowID == loadInfo.outerWindowID) {
-        return (aRequest.loadFlags & Ci.nsIChannel.LOAD_DOCUMENT_URI);
+        return (request.loadFlags & Ci.nsIChannel.LOAD_DOCUMENT_URI);
       }
     }
 
@@ -295,9 +292,9 @@ var NetworkHelper = {
 
 
 
-  loadFromCache: function NH_loadFromCache(aUrl, aCharset, aCallback)
-  {
-    let channel = NetUtil.newChannel({uri: aUrl, loadUsingSystemPrincipal: true});
+  loadFromCache: function(url, charset, callback) {
+    let channel = NetUtil.newChannel({uri: url,
+                                      loadUsingSystemPrincipal: true});
 
     
     channel.loadFlags = Ci.nsIRequest.LOAD_FROM_CACHE |
@@ -306,19 +303,19 @@ var NetworkHelper = {
 
     NetUtil.asyncFetch(
       channel,
-      (aInputStream, aStatusCode, aRequest) => {
-        if (!components.isSuccessCode(aStatusCode)) {
-          aCallback(null);
+      (inputStream, statusCode, request) => {
+        if (!components.isSuccessCode(statusCode)) {
+          callback(null);
           return;
         }
 
         
         
-        let aChannel = aRequest.QueryInterface(Ci.nsIChannel);
-        let contentCharset = aChannel.contentCharset || aCharset;
+        let requestChannel = request.QueryInterface(Ci.nsIChannel);
+        let contentCharset = requestChannel.contentCharset || charset;
 
         
-        aCallback(this.readAndConvertFromStream(aInputStream, contentCharset));
+        callback(this.readAndConvertFromStream(inputStream, contentCharset));
       });
   },
 
@@ -331,15 +328,14 @@ var NetworkHelper = {
 
 
 
-  parseCookieHeader: function NH_parseCookieHeader(aHeader)
-  {
-    let cookies = aHeader.split(";");
+  parseCookieHeader: function(header) {
+    let cookies = header.split(";");
     let result = [];
 
-    cookies.forEach(function(aCookie) {
-      let equal = aCookie.indexOf("=");
-      let name = aCookie.substr(0, equal);
-      let value = aCookie.substr(equal + 1);
+    cookies.forEach(function(cookie) {
+      let equal = cookie.indexOf("=");
+      let name = cookie.substr(0, equal);
+      let value = cookie.substr(equal + 1);
       result.push({name: unescape(name.trim()),
                    value: unescape(value.trim())});
     });
@@ -357,39 +353,36 @@ var NetworkHelper = {
 
 
 
-  parseSetCookieHeader: function NH_parseSetCookieHeader(aHeader)
-  {
-    let rawCookies = aHeader.split(/\r\n|\n|\r/);
+  parseSetCookieHeader: function(header) {
+    let rawCookies = header.split(/\r\n|\n|\r/);
     let cookies = [];
 
-    rawCookies.forEach(function(aCookie) {
-      let equal = aCookie.indexOf("=");
-      let name = unescape(aCookie.substr(0, equal).trim());
-      let parts = aCookie.substr(equal + 1).split(";");
+    rawCookies.forEach(function(cookie) {
+      let equal = cookie.indexOf("=");
+      let name = unescape(cookie.substr(0, equal).trim());
+      let parts = cookie.substr(equal + 1).split(";");
       let value = unescape(parts.shift().trim());
 
-      let cookie = {name: name, value: value};
+      cookie = {name: name, value: value};
 
-      parts.forEach(function(aPart) {
-        let part = aPart.trim();
+      parts.forEach(function(part) {
+        part = part.trim();
         if (part.toLowerCase() == "secure") {
           cookie.secure = true;
-        }
-        else if (part.toLowerCase() == "httponly") {
+        } else if (part.toLowerCase() == "httponly") {
           cookie.httpOnly = true;
-        }
-        else if (part.indexOf("=") > -1) {
+        } else if (part.indexOf("=") > -1) {
           let pair = part.split("=");
           pair[0] = pair[0].toLowerCase();
           if (pair[0] == "path" || pair[0] == "domain") {
             cookie[pair[0]] = pair[1];
-          }
-          else if (pair[0] == "expires") {
+          } else if (pair[0] == "expires") {
             try {
-              pair[1] = pair[1].replace(/-/g, ' ');
+              pair[1] = pair[1].replace(/-/g, " ");
               cookie.expires = new Date(pair[1]).toISOString();
+            } catch (ex) {
+              
             }
-            catch (ex) { }
           }
         }
       });
@@ -481,9 +474,8 @@ var NetworkHelper = {
 
 
 
-  isTextMimeType: function NH_isTextMimeType(aMimeType)
-  {
-    if (aMimeType.indexOf("text/") == 0) {
+  isTextMimeType: function(mimeType) {
+    if (mimeType.indexOf("text/") == 0) {
       return true;
     }
 
@@ -491,11 +483,11 @@ var NetworkHelper = {
     
     
     
-    if (/^application\/\w+(?:[\.-]\w+)*(?:\+xml|[-+]json)$/.test(aMimeType)) {
+    if (/^application\/\w+(?:[\.-]\w+)*(?:\+xml|[-+]json)$/.test(mimeType)) {
       return true;
     }
 
-    let category = this.mimeCategoryMap[aMimeType] || null;
+    let category = this.mimeCategoryMap[mimeType] || null;
     switch (category) {
       case "txt":
       case "js":
@@ -543,7 +535,9 @@ var NetworkHelper = {
 
 
 
-  parseSecurityInfo: function NH_parseSecurityInfo(securityInfo, httpActivity) {
+
+
+  parseSecurityInfo: function(securityInfo, httpActivity) {
     const info = {
       state: "insecure",
     };
@@ -589,7 +583,7 @@ var NetworkHelper = {
     securityInfo.QueryInterface(Ci.nsISSLStatusProvider);
 
     const wpl = Ci.nsIWebProgressListener;
-    const NSSErrorsService = Cc['@mozilla.org/nss_errors_service;1']
+    const NSSErrorsService = Cc["@mozilla.org/nss_errors_service;1"]
                                .getService(Ci.nsINSSErrorsService);
     const SSLStatus = securityInfo.SSLStatus;
     if (!NSSErrorsService.isNSSErrorCode(securityInfo.errorCode)) {
@@ -600,6 +594,7 @@ var NetworkHelper = {
         uri = httpActivity.channel.URI;
       }
       if (uri && !uri.schemeIs("https") && !uri.schemeIs("wss")) {
+        
         
         
         
@@ -626,7 +621,8 @@ var NetworkHelper = {
       info.cipherSuite = SSLStatus.cipherName;
 
       
-      info.protocolVersion = this.formatSecurityProtocol(SSLStatus.protocolVersion);
+      info.protocolVersion =
+        this.formatSecurityProtocol(SSLStatus.protocolVersion);
 
       
       info.cert = this.parseCertificateInfo(SSLStatus.serverCert);
@@ -635,7 +631,6 @@ var NetworkHelper = {
       if (httpActivity.hostname) {
         const sss = Cc["@mozilla.org/ssservice;1"]
                       .getService(Ci.nsISiteSecurityService);
-
 
         
         
@@ -653,7 +648,6 @@ var NetworkHelper = {
         info.hsts = false;
         info.hpkp = false;
       }
-
     } else {
       
       info.state = "broken";
@@ -677,7 +671,7 @@ var NetworkHelper = {
 
 
 
-  parseCertificateInfo: function NH_parseCertifificateInfo(cert) {
+  parseCertificateInfo: function(cert) {
     let info = {};
     if (cert) {
       info.subject = {
@@ -719,7 +713,7 @@ var NetworkHelper = {
 
 
 
-  formatSecurityProtocol: function NH_formatSecurityProtocol(version) {
+  formatSecurityProtocol: function(version) {
     switch (version) {
       case Ci.nsISSLStatus.TLS_VERSION_1:
         return "TLSv1";
@@ -745,7 +739,7 @@ var NetworkHelper = {
 
 
 
-  getReasonsForWeakness: function NH_getReasonsForWeakness(state) {
+  getReasonsForWeakness: function(state) {
     const wpl = Ci.nsIWebProgressListener;
 
     
@@ -777,21 +771,24 @@ var NetworkHelper = {
 
 
 
-  parseQueryString: function(aQueryString) {
+  parseQueryString: function(queryString) {
     
     
     
-    if (!aQueryString) {
-      return;
+    if (!queryString) {
+      return null;
     }
 
     
-    let paramsArray = aQueryString.replace(/^[?&]/, "").split("&").map(e => {
+    let paramsArray = queryString.replace(/^[?&]/, "").split("&").map(e => {
       let param = e.split("=");
       return {
-        name: param[0] ? NetworkHelper.convertToUnicode(unescape(param[0])) : "",
-        value: param[1] ? NetworkHelper.convertToUnicode(unescape(param[1])) : ""
-      }});
+        name: param[0] ?
+          NetworkHelper.convertToUnicode(unescape(param[0])) : "",
+        value: param[1] ?
+          NetworkHelper.convertToUnicode(unescape(param[1])) : ""
+      };
+    });
 
     return paramsArray;
   },
@@ -799,13 +796,13 @@ var NetworkHelper = {
   
 
 
-  nsIURL: function(aUrl, aStore = gNSURLStore) {
-    if (aStore.has(aUrl)) {
-      return aStore.get(aUrl);
+  nsIURL: function(url, store = gNSURLStore) {
+    if (store.has(url)) {
+      return store.get(url);
     }
 
-    let uri = Services.io.newURI(aUrl, null, null).QueryInterface(Ci.nsIURL);
-    aStore.set(aUrl, uri);
+    let uri = Services.io.newURI(url, null, null).QueryInterface(Ci.nsIURL);
+    store.set(url, uri);
     return uri;
   }
 };

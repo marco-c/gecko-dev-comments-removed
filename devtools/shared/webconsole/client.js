@@ -6,7 +6,6 @@
 
 "use strict";
 
-const {Cc, Ci, Cu} = require("chrome");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const EventEmitter = require("devtools/shared/event-emitter");
 const promise = require("promise");
@@ -22,12 +21,11 @@ const {LongStringClient} = require("devtools/shared/client/main");
 
 
 
-function WebConsoleClient(aDebuggerClient, aResponse)
-{
-  this._actor = aResponse.from;
-  this._client = aDebuggerClient;
+function WebConsoleClient(debuggerClient, response) {
+  this._actor = response.from;
+  this._client = debuggerClient;
   this._longStrings = {};
-  this.traits = aResponse.traits || {};
+  this.traits = response.traits || {};
   this.events = [];
   this._networkRequests = new Map();
 
@@ -72,7 +70,9 @@ WebConsoleClient.prototype = {
     return this._networkRequests.values();
   },
 
-  get actor() { return this._actor; },
+  get actor() {
+    return this._actor;
+  },
 
   
 
@@ -84,8 +84,7 @@ WebConsoleClient.prototype = {
 
 
 
-  _onNetworkEvent: function (type, packet)
-  {
+  _onNetworkEvent: function(type, packet) {
     if (packet.from == this._actor) {
       let actor = packet.eventActor;
       let networkInfo = {
@@ -103,7 +102,8 @@ WebConsoleClient.prototype = {
         isXHR: actor.isXHR,
         response: {},
         timings: {},
-        updates: [], 
+        
+        updates: [],
         private: actor.private,
         fromCache: actor.fromCache,
         fromServiceWorker: actor.fromServiceWorker
@@ -124,8 +124,7 @@ WebConsoleClient.prototype = {
 
 
 
-  _onNetworkEventUpdate: function (type, packet)
-  {
+  _onNetworkEventUpdate: function(type, packet) {
     let networkInfo = this.getNetworkRequest(packet.from);
     if (!networkInfo) {
       return;
@@ -182,14 +181,13 @@ WebConsoleClient.prototype = {
 
 
 
-  getCachedMessages: function WCC_getCachedMessages(types, aOnResponse)
-  {
+  getCachedMessages: function(types, onResponse) {
     let packet = {
       to: this._actor,
       type: "getCachedMessages",
       messageTypes: types,
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -200,14 +198,12 @@ WebConsoleClient.prototype = {
 
 
 
-  inspectObjectProperties:
-  function WCC_inspectObjectProperties(aActor, aOnResponse)
-  {
+  inspectObjectProperties: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "inspectProperties",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -246,49 +242,48 @@ WebConsoleClient.prototype = {
 
 
 
-  evaluateJS: function WCC_evaluateJS(aString, aOnResponse, aOptions = {})
-  {
+
+  evaluateJS: function(string, onResponse, options = {}) {
     let packet = {
       to: this._actor,
       type: "evaluateJS",
-      text: aString,
-      bindObjectActor: aOptions.bindObjectActor,
-      frameActor: aOptions.frameActor,
-      url: aOptions.url,
-      selectedNodeActor: aOptions.selectedNodeActor,
-      selectedObjectActor: aOptions.selectedObjectActor,
+      text: string,
+      bindObjectActor: options.bindObjectActor,
+      frameActor: options.frameActor,
+      url: options.url,
+      selectedNodeActor: options.selectedNodeActor,
+      selectedObjectActor: options.selectedObjectActor,
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
 
 
 
-  evaluateJSAsync: function(aString, aOnResponse, aOptions = {})
-  {
+  evaluateJSAsync: function(string, onResponse, options = {}) {
     
     if (!this.traits.evaluateJSAsync) {
-      this.evaluateJS(aString, aOnResponse, aOptions);
+      this.evaluateJS(string, onResponse, options);
       return;
     }
 
     let packet = {
       to: this._actor,
       type: "evaluateJSAsync",
-      text: aString,
-      bindObjectActor: aOptions.bindObjectActor,
-      frameActor: aOptions.frameActor,
-      url: aOptions.url,
-      selectedNodeActor: aOptions.selectedNodeActor,
-      selectedObjectActor: aOptions.selectedObjectActor,
+      text: string,
+      bindObjectActor: options.bindObjectActor,
+      frameActor: options.frameActor,
+      url: options.url,
+      selectedNodeActor: options.selectedNodeActor,
+      selectedObjectActor: options.selectedObjectActor,
     };
 
     this._client.request(packet, response => {
       
       
       if (this.pendingEvaluationResults) {
-        this.pendingEvaluationResults.set(response.resultID, aOnResponse);
+        this.pendingEvaluationResults.set(response.resultID, onResponse);
       }
     });
   },
@@ -296,24 +291,25 @@ WebConsoleClient.prototype = {
   
 
 
-  onEvaluationResult: function(aNotification, aPacket) {
+  onEvaluationResult: function(notification, packet) {
     
     
     
-    if (aPacket.from !== this._actor) {
+    if (packet.from !== this._actor) {
       return;
     }
 
     
     
     
-    let onResponse = this.pendingEvaluationResults.get(aPacket.resultID);
+    let onResponse = this.pendingEvaluationResults.get(packet.resultID);
     if (onResponse) {
-      onResponse(aPacket);
-      this.pendingEvaluationResults.delete(aPacket.resultID);
+      onResponse(packet);
+      this.pendingEvaluationResults.delete(packet.resultID);
     } else {
       DevToolsUtils.reportException("onEvaluationResult",
-        "No response handler for an evaluateJSAsync result (resultID: " + aPacket.resultID + ")");
+        "No response handler for an evaluateJSAsync result (resultID: " +
+                                    packet.resultID + ")");
     }
   },
 
@@ -329,23 +325,21 @@ WebConsoleClient.prototype = {
 
 
 
-  autocomplete: function WCC_autocomplete(aString, aCursor, aOnResponse, aFrameActor)
-  {
+  autocomplete: function(string, cursor, onResponse, frameActor) {
     let packet = {
       to: this._actor,
       type: "autocomplete",
-      text: aString,
-      cursor: aCursor,
-      frameActor: aFrameActor,
+      text: string,
+      cursor: cursor,
+      frameActor: frameActor,
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
 
 
-  clearMessagesCache: function WCC_clearMessagesCache()
-  {
+  clearMessagesCache: function() {
     let packet = {
       to: this._actor,
       type: "clearMessagesCache",
@@ -361,14 +355,13 @@ WebConsoleClient.prototype = {
 
 
 
-  getPreferences: function WCC_getPreferences(aPreferences, aOnResponse)
-  {
+  getPreferences: function(preferences, onResponse) {
     let packet = {
       to: this._actor,
       type: "getPreferences",
-      preferences: aPreferences,
+      preferences: preferences,
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -379,14 +372,13 @@ WebConsoleClient.prototype = {
 
 
 
-  setPreferences: function WCC_setPreferences(aPreferences, aOnResponse)
-  {
+  setPreferences: function(preferences, onResponse) {
     let packet = {
       to: this._actor,
       type: "setPreferences",
-      preferences: aPreferences,
+      preferences: preferences,
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -397,13 +389,12 @@ WebConsoleClient.prototype = {
 
 
 
-  getRequestHeaders: function WCC_getRequestHeaders(aActor, aOnResponse)
-  {
+  getRequestHeaders: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "getRequestHeaders",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -414,13 +405,12 @@ WebConsoleClient.prototype = {
 
 
 
-  getRequestCookies: function WCC_getRequestCookies(aActor, aOnResponse)
-  {
+  getRequestCookies: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "getRequestCookies",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -431,13 +421,12 @@ WebConsoleClient.prototype = {
 
 
 
-  getRequestPostData: function WCC_getRequestPostData(aActor, aOnResponse)
-  {
+  getRequestPostData: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "getRequestPostData",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -448,13 +437,12 @@ WebConsoleClient.prototype = {
 
 
 
-  getResponseHeaders: function WCC_getResponseHeaders(aActor, aOnResponse)
-  {
+  getResponseHeaders: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "getResponseHeaders",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -465,13 +453,12 @@ WebConsoleClient.prototype = {
 
 
 
-  getResponseCookies: function WCC_getResponseCookies(aActor, aOnResponse)
-  {
+  getResponseCookies: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "getResponseCookies",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -482,13 +469,12 @@ WebConsoleClient.prototype = {
 
 
 
-  getResponseContent: function WCC_getResponseContent(aActor, aOnResponse)
-  {
+  getResponseContent: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "getResponseContent",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -499,13 +485,12 @@ WebConsoleClient.prototype = {
 
 
 
-  getEventTimings: function WCC_getEventTimings(aActor, aOnResponse)
-  {
+  getEventTimings: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "getEventTimings",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -516,13 +501,12 @@ WebConsoleClient.prototype = {
 
 
 
-  getSecurityInfo: function WCC_getSecurityInfo(aActor, aOnResponse)
-  {
+  getSecurityInfo: function(actor, onResponse) {
     let packet = {
-      to: aActor,
+      to: actor,
       type: "getSecurityInfo",
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -533,13 +517,13 @@ WebConsoleClient.prototype = {
 
 
 
-  sendHTTPRequest: function WCC_sendHTTPRequest(aData, aOnResponse) {
+  sendHTTPRequest: function(data, onResponse) {
     let packet = {
       to: this._actor,
       type: "sendHTTPRequest",
-      request: aData
+      request: data
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -552,14 +536,13 @@ WebConsoleClient.prototype = {
 
 
 
-  startListeners: function WCC_startListeners(aListeners, aOnResponse)
-  {
+  startListeners: function(listeners, onResponse) {
     let packet = {
       to: this._actor,
       type: "startListeners",
-      listeners: aListeners,
+      listeners: listeners,
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -572,14 +555,13 @@ WebConsoleClient.prototype = {
 
 
 
-  stopListeners: function WCC_stopListeners(aListeners, aOnResponse)
-  {
+  stopListeners: function(listeners, onResponse) {
     let packet = {
       to: this._actor,
       type: "stopListeners",
-      listeners: aListeners,
+      listeners: listeners,
     };
-    this._client.request(packet, aOnResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -590,14 +572,13 @@ WebConsoleClient.prototype = {
 
 
 
-  longString: function WCC_longString(aGrip)
-  {
-    if (aGrip.actor in this._longStrings) {
-      return this._longStrings[aGrip.actor];
+  longString: function(grip) {
+    if (grip.actor in this._longStrings) {
+      return this._longStrings[grip.actor];
     }
 
-    let client = new LongStringClient(this._client, aGrip);
-    this._longStrings[aGrip.actor] = client;
+    let client = new LongStringClient(this._client, grip);
+    this._longStrings[grip.actor] = client;
     return client;
   },
 
@@ -608,12 +589,12 @@ WebConsoleClient.prototype = {
 
 
 
-  detach: function WCC_detach(aOnResponse)
-  {
+  detach: function(onResponse) {
     this._client.removeListener("evaluationResult", this.onEvaluationResult);
     this._client.removeListener("networkEvent", this.onNetworkEvent);
-    this._client.removeListener("networkEventUpdate", this.onNetworkEventUpdate);
-    this.stopListeners(null, aOnResponse);
+    this._client.removeListener("networkEventUpdate",
+                                this.onNetworkEventUpdate);
+    this.stopListeners(null, onResponse);
     this._longStrings = null;
     this._client = null;
     this.pendingEvaluationResults.clear();
@@ -622,7 +603,7 @@ WebConsoleClient.prototype = {
     this._networkRequests = null;
   },
 
-  clearNetworkRequests: function () {
+  clearNetworkRequests: function() {
     this._networkRequests.clear();
   },
 
@@ -640,7 +621,8 @@ WebConsoleClient.prototype = {
   getString: function(stringGrip) {
     
     if (typeof stringGrip != "object" || stringGrip.type != "longString") {
-      return promise.resolve(stringGrip); 
+      
+      return promise.resolve(stringGrip);
     }
 
     
@@ -649,18 +631,18 @@ WebConsoleClient.prototype = {
     }
 
     let deferred = stringGrip._fullText = promise.defer();
-    let { actor, initial, length } = stringGrip;
+    let { initial, length } = stringGrip;
     let longStringClient = this.longString(stringGrip);
 
-    longStringClient.substring(initial.length, length, aResponse => {
-      if (aResponse.error) {
+    longStringClient.substring(initial.length, length, response => {
+      if (response.error) {
         DevToolsUtils.reportException("getString",
-            aResponse.error + ": " + aResponse.message);
+            response.error + ": " + response.message);
 
-        deferred.reject(aResponse);
+        deferred.reject(response);
         return;
       }
-      deferred.resolve(initial + aResponse.substring);
+      deferred.resolve(initial + response.substring);
     });
 
     return deferred.promise;

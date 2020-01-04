@@ -6,7 +6,6 @@
 
 "use strict";
 
-const {Cc, Ci, Cu, components} = require("chrome");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 if (!isWorker) {
@@ -55,40 +54,34 @@ function hasArrayIndex(str) {
 
 
 
-function findCompletionBeginning(aStr)
-{
+function findCompletionBeginning(str) {
   let bodyStack = [];
 
   let state = STATE_NORMAL;
   let start = 0;
   let c;
-  for (let i = 0; i < aStr.length; i++) {
-    c = aStr[i];
+  for (let i = 0; i < str.length; i++) {
+    c = str[i];
 
     switch (state) {
       
       case STATE_NORMAL:
         if (c == '"') {
           state = STATE_DQUOTE;
-        }
-        else if (c == "'") {
+        } else if (c == "'") {
           state = STATE_QUOTE;
-        }
-        else if (c == ";") {
+        } else if (c == ";") {
           start = i + 1;
-        }
-        else if (c == " ") {
+        } else if (c == " ") {
           start = i + 1;
-        }
-        else if (OPEN_BODY.indexOf(c) != -1) {
+        } else if (OPEN_BODY.indexOf(c) != -1) {
           bodyStack.push({
             token: c,
             start: start
           });
           start = i + 1;
-        }
-        else if (CLOSE_BODY.indexOf(c) != -1) {
-          var last = bodyStack.pop();
+        } else if (CLOSE_BODY.indexOf(c) != -1) {
+          let last = bodyStack.pop();
           if (!last || OPEN_CLOSE_BODY[last.token] != c) {
             return {
               err: "syntax error"
@@ -96,8 +89,7 @@ function findCompletionBeginning(aStr)
           }
           if (c == "}") {
             start = i + 1;
-          }
-          else {
+          } else {
             start = last.start;
           }
         }
@@ -107,13 +99,11 @@ function findCompletionBeginning(aStr)
       case STATE_DQUOTE:
         if (c == "\\") {
           i++;
-        }
-        else if (c == "\n") {
+        } else if (c == "\n") {
           return {
             err: "unterminated string literal"
           };
-        }
-        else if (c == '"') {
+        } else if (c == '"') {
           state = STATE_NORMAL;
         }
         break;
@@ -122,13 +112,11 @@ function findCompletionBeginning(aStr)
       case STATE_QUOTE:
         if (c == "\\") {
           i++;
-        }
-        else if (c == "\n") {
+        } else if (c == "\n") {
           return {
             err: "unterminated string literal"
           };
-        }
-        else if (c == "'") {
+        } else if (c == "'") {
           state = STATE_NORMAL;
         }
         break;
@@ -166,13 +154,14 @@ function findCompletionBeginning(aStr)
 
 
 
-function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
-{
-  if (aCursor === undefined) {
-    aCursor = aInputValue.length;
+
+
+function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
+  if (cursor === undefined) {
+    cursor = inputValue.length;
   }
 
-  let inputValue = aInputValue.substring(0, aCursor);
+  inputValue = inputValue.substring(0, cursor);
 
   
   
@@ -225,7 +214,7 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
   
   let properties = completionPart.split(".");
   let matchProp = properties.pop().trimLeft();
-  let obj = aDbgObject;
+  let obj = dbgObject;
 
   
   
@@ -241,9 +230,10 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
     
     try {
       obj = env.object;
-    } catch(e) { }
-  }
-  else if (hasArrayIndex(firstProp)) {
+    } catch (e) {
+      
+    }
+  } else if (hasArrayIndex(firstProp)) {
     obj = getArrayMemberProperty(null, env, firstProp);
   } else {
     obj = getVariableInEnvironment(env, firstProp);
@@ -265,8 +255,7 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
       
       
       obj = getArrayMemberProperty(obj, null, prop);
-    }
-    else {
+    } else {
       obj = DevToolsUtils.getProperty(obj, prop);
     }
 
@@ -297,14 +286,12 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
 
 
 
-function getArrayMemberProperty(aObj, aEnv, aProp)
-{
+function getArrayMemberProperty(obj, env, prop) {
   
-  let obj = aObj;
-  let propWithoutIndices = aProp.substr(0, aProp.indexOf("["));
+  let propWithoutIndices = prop.substr(0, prop.indexOf("["));
 
-  if (aEnv) {
-    obj = getVariableInEnvironment(aEnv, propWithoutIndices);
+  if (env) {
+    obj = getVariableInEnvironment(env, propWithoutIndices);
   } else {
     obj = DevToolsUtils.getProperty(obj, propWithoutIndices);
   }
@@ -316,10 +303,10 @@ function getArrayMemberProperty(aObj, aEnv, aProp)
   
   let result;
   let arrayIndicesRegex = /\[[^\]]*\]/g;
-  while ((result = arrayIndicesRegex.exec(aProp)) !== null) {
+  while ((result = arrayIndicesRegex.exec(prop)) !== null) {
     let indexWithBrackets = result[0];
     let indexAsText = indexWithBrackets.substr(1, indexWithBrackets.length - 2);
-    let index = parseInt(indexAsText);
+    let index = parseInt(indexAsText, 10);
 
     if (isNaN(index)) {
       return null;
@@ -344,13 +331,12 @@ function getArrayMemberProperty(aObj, aEnv, aProp)
 
 
 
-function isObjectUsable(aObject)
-{
-  if (aObject == null) {
+function isObjectUsable(object) {
+  if (object == null) {
     return false;
   }
 
-  if (typeof aObject == "object" && aObject.class == "DeadObject") {
+  if (typeof object == "object" && object.class == "DeadObject") {
     return false;
   }
 
@@ -360,36 +346,32 @@ function isObjectUsable(aObject)
 
 
 
-function getVariableInEnvironment(anEnvironment, aName)
-{
-  return getExactMatch_impl(anEnvironment, aName, DebuggerEnvironmentSupport);
+function getVariableInEnvironment(anEnvironment, name) {
+  return getExactMatchImpl(anEnvironment, name, DebuggerEnvironmentSupport);
 }
 
 
 
 
-function getMatchedPropsInEnvironment(anEnvironment, aMatch)
-{
-  return getMatchedProps_impl(anEnvironment, aMatch, DebuggerEnvironmentSupport);
+function getMatchedPropsInEnvironment(anEnvironment, match) {
+  return getMatchedPropsImpl(anEnvironment, match, DebuggerEnvironmentSupport);
 }
 
 
 
 
-function getMatchedPropsInDbgObject(aDbgObject, aMatch)
-{
-  return getMatchedProps_impl(aDbgObject, aMatch, DebuggerObjectSupport);
+function getMatchedPropsInDbgObject(dbgObject, match) {
+  return getMatchedPropsImpl(dbgObject, match, DebuggerObjectSupport);
 }
 
 
 
 
-function getMatchedProps(aObj, aMatch)
-{
-  if (typeof aObj != "object") {
-    aObj = aObj.constructor.prototype;
+function getMatchedProps(obj, match) {
+  if (typeof obj != "object") {
+    obj = obj.constructor.prototype;
   }
-  return getMatchedProps_impl(aObj, aMatch, JSObjectSupport);
+  return getMatchedPropsImpl(obj, match, JSObjectSupport);
 }
 
 
@@ -403,14 +385,13 @@ function getMatchedProps(aObj, aMatch)
 
 
 
-function getMatchedProps_impl(aObj, aMatch, {chainIterator, getProperties})
-{
+function getMatchedPropsImpl(obj, match, {chainIterator, getProperties}) {
   let matches = new Set();
   let numProps = 0;
 
   
-  let iter = chainIterator(aObj);
-  for (let obj of iter) {
+  let iter = chainIterator(obj);
+  for (obj of iter) {
     let props = getProperties(obj);
     numProps += props.length;
 
@@ -424,10 +405,10 @@ function getMatchedProps_impl(aObj, aMatch, {chainIterator, getProperties})
 
     for (let i = 0; i < props.length; i++) {
       let prop = props[i];
-      if (prop.indexOf(aMatch) != 0) {
+      if (prop.indexOf(match) != 0) {
         continue;
       }
-      if (prop.indexOf('-') > -1) {
+      if (prop.indexOf("-") > -1) {
         continue;
       }
       
@@ -444,7 +425,7 @@ function getMatchedProps_impl(aObj, aMatch, {chainIterator, getProperties})
   }
 
   return {
-    matchProp: aMatch,
+    matchProp: match,
     matches: [...matches],
   };
 }
@@ -461,12 +442,11 @@ function getMatchedProps_impl(aObj, aMatch, {chainIterator, getProperties})
 
 
 
-function getExactMatch_impl(aObj, aName, {chainIterator, getProperty})
-{
+function getExactMatchImpl(obj, name, {chainIterator, getProperty}) {
   
-  let iter = chainIterator(aObj);
-  for (let obj of iter) {
-    let prop = getProperty(obj, aName, aObj);
+  let iter = chainIterator(obj);
+  for (obj of iter) {
+    let prop = getProperty(obj, name, obj);
     if (prop) {
       return prop.value;
     }
@@ -474,66 +454,57 @@ function getExactMatch_impl(aObj, aName, {chainIterator, getProperty})
   return undefined;
 }
 
-
 var JSObjectSupport = {
-  chainIterator: function*(aObj)
-  {
-    while (aObj) {
-      yield aObj;
-      aObj = Object.getPrototypeOf(aObj);
+  chainIterator: function*(obj) {
+    while (obj) {
+      yield obj;
+      obj = Object.getPrototypeOf(obj);
     }
   },
 
-  getProperties: function(aObj)
-  {
-    return Object.getOwnPropertyNames(aObj);
+  getProperties: function(obj) {
+    return Object.getOwnPropertyNames(obj);
   },
 
-  getProperty: function()
-  {
+  getProperty: function() {
     
-    throw "Unimplemented!";
+    throw new Error("Unimplemented!");
   },
 };
 
 var DebuggerObjectSupport = {
-  chainIterator: function*(aObj)
-  {
-    while (aObj) {
-      yield aObj;
-      aObj = aObj.proto;
+  chainIterator: function*(obj) {
+    while (obj) {
+      yield obj;
+      obj = obj.proto;
     }
   },
 
-  getProperties: function(aObj)
-  {
-    return aObj.getOwnPropertyNames();
+  getProperties: function(obj) {
+    return obj.getOwnPropertyNames();
   },
 
-  getProperty: function(aObj, aName, aRootObj)
-  {
+  getProperty: function(obj, name, rootObj) {
     
-    throw "Unimplemented!";
+    throw new Error("Unimplemented!");
   },
 };
 
 var DebuggerEnvironmentSupport = {
-  chainIterator: function*(aObj)
-  {
-    while (aObj) {
-      yield aObj;
-      aObj = aObj.parent;
+  chainIterator: function*(obj) {
+    while (obj) {
+      yield obj;
+      obj = obj.parent;
     }
   },
 
-  getProperties: function(aObj)
-  {
-    let names = aObj.names();
+  getProperties: function(obj) {
+    let names = obj.names();
 
     
     for (let i = 0; i < names.length; i++) {
-      if (i === names.length - 1 || names[i+1] > "this") {
-        names.splice(i+1, 0, "this");
+      if (i === names.length - 1 || names[i + 1] > "this") {
+        names.splice(i + 1, 0, "this");
         break;
       }
     }
@@ -541,24 +512,25 @@ var DebuggerEnvironmentSupport = {
     return names;
   },
 
-  getProperty: function(aObj, aName)
-  {
+  getProperty: function(obj, name) {
     let result;
     
     
     try {
       
-      result = aObj.getVariable(aName);
-    } catch(e) { }
+      result = obj.getVariable(name);
+    } catch (e) {
+      
+    }
 
     
-    if (result === undefined || result.optimizedOut || result.missingArguments) {
+    if (result === undefined || result.optimizedOut ||
+        result.missingArguments) {
       return null;
     }
     return { value: result };
   },
 };
-
 
 exports.JSPropertyProvider = DevToolsUtils.makeInfallible(JSPropertyProvider);
 
