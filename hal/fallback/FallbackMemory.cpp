@@ -16,11 +16,5 @@ GetTotalSystemMemory()
 	return 0;
 }
 
-uint32_t
-GetTotalSystemMemoryLevel()
-{
-	return 0;
-}
-
 } 
 } 
