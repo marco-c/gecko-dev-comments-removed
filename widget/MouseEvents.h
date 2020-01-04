@@ -462,6 +462,7 @@ private:
     , overflowDeltaY(0.0)
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
+    , mAllowToOverrideSystemScrollSpeed(false)
   {
   }
 
@@ -485,6 +486,7 @@ public:
     , overflowDeltaY(0.0)
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
+    , mAllowToOverrideSystemScrollSpeed(true)
   {
   }
 
@@ -599,6 +601,11 @@ public:
   
   bool mCanTriggerSwipe;
 
+  
+  
+  
+  bool mAllowToOverrideSystemScrollSpeed;
+
   void AssignWheelEventData(const WidgetWheelEvent& aEvent, bool aCopyTargets)
   {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
@@ -618,6 +625,8 @@ public:
     overflowDeltaY = aEvent.overflowDeltaY;
     mViewPortIsOverscrolled = aEvent.mViewPortIsOverscrolled;
     mCanTriggerSwipe = aEvent.mCanTriggerSwipe;
+    mAllowToOverrideSystemScrollSpeed =
+      aEvent.mAllowToOverrideSystemScrollSpeed;
   }
 
   

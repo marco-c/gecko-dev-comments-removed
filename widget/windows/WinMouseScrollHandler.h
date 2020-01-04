@@ -279,7 +279,13 @@ private:
     
     
     
-    void TrustedScrollSettingsDriver(bool aIsVertical);
+    void TrustedScrollSettingsDriver();
+
+    
+    
+    
+    
+    bool IsOverridingSystemScrollSpeedAllowed();
 
     int32_t GetScrollAmount(bool aForVertical) const
     {
@@ -310,7 +316,7 @@ private:
     bool InitScrollLines();
     bool InitScrollChars();
 
-    void RefreshCache(bool aForVertical);
+    void RefreshCache();
   };
 
   SystemSettings mSystemSettings;
