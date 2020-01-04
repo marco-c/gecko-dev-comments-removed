@@ -330,6 +330,20 @@ VariablesViewController.prototype = {
 
 
   _populateFromObject: function (aTarget, aGrip) {
+    if (aGrip.class === "Proxy") {
+      this.addExpander(
+        aTarget.addItem("<target>", { value: aGrip.proxyTarget }, { internalItem: true }),
+        aGrip.proxyTarget);
+      this.addExpander(
+        aTarget.addItem("<handler>", { value: aGrip.proxyHandler }, { internalItem: true }),
+        aGrip.proxyHandler);
+
+      
+      let deferred = defer();
+      deferred.resolve();
+      return deferred.promise;
+    }
+    
     if (aGrip.class === "Promise" && aGrip.promiseState) {
       const { state, value, reason } = aGrip.promiseState;
       aTarget.addItem("<state>", { value: state }, { internalItem: true });
