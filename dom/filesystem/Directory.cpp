@@ -130,8 +130,10 @@ Directory::WebkitBlinkDirectoryPickerEnabled(JSContext* aCx, JSObject* aObj)
     return Preferences::GetBool("dom.webkitBlink.dirPicker.enabled", false);
   }
 
+  
+  
   workers::WorkerPrivate* workerPrivate =
-    workers::GetWorkerPrivateFromContext(aCx);
+    workers::GetCurrentThreadWorkerPrivate();
   if (!workerPrivate) {
     return false;
   }
