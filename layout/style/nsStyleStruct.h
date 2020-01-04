@@ -2575,7 +2575,7 @@ struct nsStyleDisplay
 
   nsStyleCoord mVerticalAlign;  
 
-  AutoTArray<mozilla::StyleTransition, 1> mTransitions; 
+  nsStyleAutoArray<mozilla::StyleTransition> mTransitions; 
   
   
   uint32_t mTransitionTimingFunctionCount,
@@ -2583,7 +2583,7 @@ struct nsStyleDisplay
            mTransitionDelayCount,
            mTransitionPropertyCount;
 
-  AutoTArray<mozilla::StyleAnimation, 1> mAnimations; 
+  nsStyleAutoArray<mozilla::StyleAnimation> mAnimations; 
   
   
   uint32_t mAnimationTimingFunctionCount,
