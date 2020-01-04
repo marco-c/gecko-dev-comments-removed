@@ -745,6 +745,9 @@ BrowserGlue.prototype = {
     
     this._migrateUI();
 
+    
+    Cu.import("resource://gre/modules/Webapps.jsm", {});
+
     PageThumbs.init();
     webrtcUI.init();
     AboutHome.init();
