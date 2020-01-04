@@ -2039,6 +2039,9 @@ pref("security.csp.experimentalEnabled", false);
 pref("security.apps.privileged.CSP.default", "default-src * data: blob:; script-src 'self'; object-src 'none'; style-src 'self' 'unsafe-inline'");
 
 
+pref("security.signed_content.CSP.default", "script-src 'self'; style-src 'self'");
+
+
 pref("security.mixed_content.block_active_content", false);
 pref("security.mixed_content.block_display_content", false);
 
