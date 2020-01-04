@@ -7,6 +7,8 @@
 
 "use strict";
 
+var global = this;
+
 var Ci = Components.interfaces;
 var Cc = Components.classes;
 var Cu = Components.utils;
@@ -1624,7 +1626,19 @@ SpecialPowersAPI.prototype = {
     
     if (aWindow)
       aWindow.focus();
-    sendAsyncMessage("SpecialPowers.Focus", {});
+    var mm = global;
+    if (aWindow) {
+      try {
+        mm = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                                    .getInterface(Ci.nsIDocShell)
+                                    .QueryInterface(Ci.nsIInterfaceRequestor)
+                                    .getInterface(Ci.nsIContentFrameMessageManager);
+      } catch (ex) {
+        
+
+      }
+    }
+    mm.sendAsyncMessage("SpecialPowers.Focus", {});
   },
 
   getClipboardData: function(flavor, whichClipboard) {
