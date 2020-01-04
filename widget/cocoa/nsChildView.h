@@ -167,7 +167,7 @@ typedef NSInteger NSEventGestureAxis;
 #ifdef ACCESSIBILITY
                               mozAccessible,
 #endif
-                              mozView, NSTextInput, NSTextInputClient>
+                              mozView, NSTextInputClient>
 {
 @private
   
