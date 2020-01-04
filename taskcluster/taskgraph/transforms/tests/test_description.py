@@ -145,7 +145,7 @@ test_description_schema = Schema({
 
         
         
-        Optional('download-symbols'): Any(True, False, 'ondemand'),
+        Optional('download-symbols'): Any(True, 'ondemand'),
 
         
         
