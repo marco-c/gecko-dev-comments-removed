@@ -4699,8 +4699,12 @@ LIRGenerator::updateResumeState(MBasicBlock* block)
     
     
     
+    
+    
+    
     MOZ_ASSERT_IF(!mir()->compilingAsmJS() && !block->unreachable(), block->entryResumePoint());
-    MOZ_ASSERT_IF(block->unreachable(), block->graph().osrBlock());
+    MOZ_ASSERT_IF(block->unreachable(), block->graph().osrBlock() ||
+                  !mir()->optimizationInfo().gvnEnabled());
     lastResumePoint_ = block->entryResumePoint();
     if (JitSpewEnabled(JitSpew_IonSnapshots) && lastResumePoint_)
         SpewResumePoint(block, nullptr, lastResumePoint_);
@@ -4716,8 +4720,10 @@ LIRGenerator::visitBlock(MBasicBlock* block)
 
     
     
-    MOZ_ASSERT_IF(block->unreachable(), *block->begin() == block->lastIns());
-    MOZ_ASSERT_IF(block->unreachable(), block->graph().osrBlock());
+    MOZ_ASSERT_IF(block->unreachable(), *block->begin() == block->lastIns() ||
+                  !mir()->optimizationInfo().gvnEnabled());
+    MOZ_ASSERT_IF(block->unreachable(), block->graph().osrBlock() ||
+                  !mir()->optimizationInfo().gvnEnabled());
     for (MInstructionIterator iter = block->begin(); *iter != block->lastIns(); iter++) {
         if (!visitInstruction(*iter))
             return false;
