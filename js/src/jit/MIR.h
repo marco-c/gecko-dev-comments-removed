@@ -9379,7 +9379,7 @@ class MNot
 
 class MBoundsCheck
   : public MBinaryInstruction,
-    public NoTypePolicy::Data
+    public MixPolicy<IntPolicy<0>, IntPolicy<1>>::Data
 {
     
     int32_t minimum_;
@@ -9450,7 +9450,7 @@ class MBoundsCheck
 
 class MBoundsCheckLower
   : public MUnaryInstruction,
-    public NoTypePolicy::Data
+    public IntPolicy<0>::Data
 {
     int32_t minimum_;
     bool fallible_;
