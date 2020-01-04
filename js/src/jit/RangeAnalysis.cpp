@@ -2940,7 +2940,7 @@ ComputeRequestedTruncateKind(MDefinition* candidate, bool* shouldClone)
         
         
         
-        if (isRecoverableResult && candidate->canRecoverOnBailout())
+        if (!JitOptions.disableRecoverIns && isRecoverableResult && candidate->canRecoverOnBailout())
             *shouldClone = true;
         else
             kind = Min(kind, MDefinition::TruncateAfterBailouts);

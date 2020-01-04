@@ -2801,6 +2801,10 @@ IonBuilder::inlineAssertRecoveredOnBailout(CallInfo& callInfo)
     if (callInfo.argc() != 2)
         return InliningStatus_NotInlined;
 
+    
+    if (JitOptions.disableRecoverIns)
+        return InliningStatus_NotInlined;
+
     if (JitOptions.checkRangeAnalysis) {
         
         
