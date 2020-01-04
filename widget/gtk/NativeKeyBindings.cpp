@@ -65,9 +65,25 @@ delete_from_cursor_cb(GtkWidget *w, GtkDeleteType del_type,
                       gint count, gpointer user_data)
 {
   g_signal_stop_emission_by_name(w, "delete_from_cursor");
-  gHandled = true;
-
   bool forward = count > 0;
+
+#if (MOZ_WIDGET_GTK == 3)
+  
+  
+  if (del_type == GTK_DELETE_PARAGRAPH_ENDS && forward && GTK_IS_ENTRY(w) &&
+      !gtk_check_version(3, 14, 1) && gtk_check_version(3, 17, 9)) {
+    GtkStyleContext* context = gtk_widget_get_style_context(w);
+    GtkStateFlags flags = gtk_widget_get_state_flags(w);
+
+    GPtrArray* array;
+    gtk_style_context_get(context, flags, "gtk-key-bindings", &array, nullptr);
+    if (!array)
+      return;
+    g_ptr_array_unref(array);
+  }
+#endif
+
+  gHandled = true;
   if (uint32_t(del_type) >= ArrayLength(sDeleteCommands)) {
     
     return;
