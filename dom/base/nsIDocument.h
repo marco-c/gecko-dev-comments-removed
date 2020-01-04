@@ -155,8 +155,8 @@ typedef CallbackObjectHolder<NodeFilter, nsIDOMNodeFilter> NodeFilterHolder;
 } 
 
 #define NS_IDOCUMENT_IID \
-{ 0x72391609, 0x673d, 0x4bec, \
-  { 0xbd, 0x75, 0x64, 0xbf, 0x1f, 0x6a, 0x6b, 0x5e } }
+{ 0x5f51e18c, 0x9e0e, 0x4dc0, \
+  { 0x9f, 0x08, 0x7a, 0x32, 0x65, 0x52, 0xea, 0x11 } }
 
 
 enum DocumentFlavor {
@@ -773,7 +773,7 @@ public:
                          mozilla::ErrorResult& aError);
   void RemoveAnonymousContent(mozilla::dom::AnonymousContent& aContent,
                               mozilla::ErrorResult& aError);
-  nsTArray<RefPtr<mozilla::dom::AnonymousContent>>& GetAnonymousContents() {
+  nsTArray<nsRefPtr<mozilla::dom::AnonymousContent>>& GetAnonymousContents() {
     return mAnonymousContents;
   }
 
@@ -1093,6 +1093,11 @@ public:
 
 
   virtual Element* GetFullScreenElement() = 0;
+
+  
+
+
+  virtual nsTArray<Element*> GetFullscreenStack() const = 0;
 
   
 
@@ -2124,7 +2129,7 @@ public:
                                         int32_t *aHandle);
   void CancelFrameRequestCallback(int32_t aHandle);
 
-  typedef nsTArray<RefPtr<mozilla::dom::FrameRequestCallback>> FrameRequestCallbackList;
+  typedef nsTArray<nsRefPtr<mozilla::dom::FrameRequestCallback>> FrameRequestCallbackList;
   
 
 
@@ -2706,11 +2711,11 @@ protected:
   
   
   nsNodeInfoManager* mNodeInfoManager;
-  RefPtr<mozilla::css::Loader> mCSSLoader;
-  RefPtr<mozilla::css::ImageLoader> mStyleImageLoader;
-  RefPtr<nsHTMLStyleSheet> mAttrStyleSheet;
-  RefPtr<nsHTMLCSSStyleSheet> mStyleAttrStyleSheet;
-  RefPtr<mozilla::SVGAttrAnimationRuleProcessor> mSVGAttrAnimationRuleProcessor;
+  nsRefPtr<mozilla::css::Loader> mCSSLoader;
+  nsRefPtr<mozilla::css::ImageLoader> mStyleImageLoader;
+  nsRefPtr<nsHTMLStyleSheet> mAttrStyleSheet;
+  nsRefPtr<nsHTMLCSSStyleSheet> mStyleAttrStyleSheet;
+  nsRefPtr<mozilla::SVGAttrAnimationRuleProcessor> mSVGAttrAnimationRuleProcessor;
 
   
   
@@ -2725,7 +2730,7 @@ protected:
   nsTHashtable<nsPtrHashKey<mozilla::dom::Link> > mLinksToUpdate;
 
   
-  RefPtr<nsSMILAnimationController> mAnimationController;
+  nsRefPtr<nsSMILAnimationController> mAnimationController;
 
   
   nsPropertyTable mPropertyTable;
@@ -2735,7 +2740,7 @@ protected:
   nsCOMPtr<nsIHTMLCollection> mChildrenCollection;
 
   
-  RefPtr<mozilla::dom::FontFaceSet> mFontFaceSet;
+  nsRefPtr<mozilla::dom::FontFaceSet> mFontFaceSet;
 
   
   nsCompatibility mCompatMode;
@@ -3000,9 +3005,9 @@ protected:
 
   uint32_t mInSyncOperationCount;
 
-  RefPtr<mozilla::dom::XPathEvaluator> mXPathEvaluator;
+  nsRefPtr<mozilla::dom::XPathEvaluator> mXPathEvaluator;
 
-  nsTArray<RefPtr<mozilla::dom::AnonymousContent>> mAnonymousContents;
+  nsTArray<nsRefPtr<mozilla::dom::AnonymousContent>> mAnonymousContents;
 
   uint32_t mBlockDOMContentLoaded;
   bool mDidFireDOMContentLoaded:1;

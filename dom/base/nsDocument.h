@@ -107,11 +107,11 @@ struct FullscreenRequest : public LinkedListElement<FullscreenRequest>
   nsDocument* GetDocument() const { return mDocument; }
 
 private:
-  RefPtr<Element> mElement;
-  RefPtr<nsDocument> mDocument;
+  nsRefPtr<Element> mElement;
+  nsRefPtr<nsDocument> mDocument;
 
 public:
-  RefPtr<gfx::VRHMDInfo> mVRHMDDevice;
+  nsRefPtr<gfx::VRHMDInfo> mVRHMDDevice;
   
   
   bool mIsCallerChrome = false;
@@ -256,9 +256,9 @@ private:
   
   
   nsTArray<Element*> mIdContentList;
-  RefPtr<nsBaseContentList> mNameContentList;
+  nsRefPtr<nsBaseContentList> mNameContentList;
   nsAutoPtr<nsTHashtable<ChangeCallbackEntry> > mChangeCallbacks;
-  RefPtr<Element> mImageElement;
+  nsRefPtr<Element> mImageElement;
 };
 
 namespace mozilla {
@@ -332,8 +332,8 @@ public:
 
 private:
   
-  RefPtr<mozilla::dom::Element> mThisObject;
-  RefPtr<mozilla::dom::CallbackFunction> mCallback;
+  nsRefPtr<mozilla::dom::Element> mThisObject;
+  nsRefPtr<mozilla::dom::CallbackFunction> mCallback;
   
   nsIDocument::ElementCallbackType mType;
   
@@ -427,7 +427,7 @@ protected:
                            mozilla::dom::CustomElementDefinition>
     DefinitionMap;
   typedef nsClassHashtable<mozilla::dom::CustomElementHashKey,
-                           nsTArray<RefPtr<mozilla::dom::Element>>>
+                           nsTArray<nsRefPtr<mozilla::dom::Element>>>
     CandidateMap;
 
   
@@ -591,7 +591,7 @@ protected:
                          nsILoadGroup** aLoadGroup);
 
   private:
-    RefPtr<nsDocument> mDisplayDocument;
+    nsRefPtr<nsDocument> mDisplayDocument;
     nsCOMPtr<nsIStreamListener> mTargetListener;
     nsCOMPtr<nsIURI> mURI;
   };
@@ -1207,6 +1207,7 @@ public:
   virtual Element* FindImageMap(const nsAString& aNormalizedMapName) override;
 
   virtual Element* GetFullScreenElement() override;
+  virtual nsTArray<Element*> GetFullscreenStack() const override;
   virtual void AsyncRequestFullScreen(
     mozilla::UniquePtr<FullscreenRequest>&& aRequest) override;
   virtual void RestorePreviousFullScreenState() override;
@@ -1575,7 +1576,7 @@ protected:
 
   
   
-  RefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
+  nsRefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
 
   
   
@@ -1598,7 +1599,7 @@ private:
   
   
   
-  static mozilla::Maybe<nsTArray<RefPtr<mozilla::dom::CustomElementData>>> sProcessingStack;
+  static mozilla::Maybe<nsTArray<nsRefPtr<mozilla::dom::CustomElementData>>> sProcessingStack;
 
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
 
@@ -1613,12 +1614,12 @@ public:
   static bool IsWebComponentsEnabled(JSContext* aCx, JSObject* aObject);
 
   
-  RefPtr<mozilla::dom::Registry> mRegistry;
+  nsRefPtr<mozilla::dom::Registry> mRegistry;
 
-  RefPtr<mozilla::EventListenerManager> mListenerManager;
-  RefPtr<mozilla::dom::StyleSheetList> mDOMStyleSheets;
-  RefPtr<nsDOMStyleSheetSetList> mStyleSheetSetList;
-  RefPtr<nsScriptLoader> mScriptLoader;
+  nsRefPtr<mozilla::EventListenerManager> mListenerManager;
+  nsRefPtr<mozilla::dom::StyleSheetList> mDOMStyleSheets;
+  nsRefPtr<nsDOMStyleSheetSetList> mStyleSheetSetList;
+  nsRefPtr<nsScriptLoader> mScriptLoader;
   nsDocHeaderData* mHeaderData;
   
 
@@ -1673,7 +1674,7 @@ public:
 
   
   
-  RefPtr<mozilla::dom::Promise> mOrientationPendingPromise;
+  nsRefPtr<mozilla::dom::Promise> mOrientationPendingPromise;
 
   uint16_t mCurrentOrientationAngle;
   mozilla::dom::OrientationType mCurrentOrientationType;
@@ -1722,7 +1723,7 @@ public:
   mozilla::EventStates mDocumentState;
   mozilla::EventStates mGotDocumentState;
 
-  RefPtr<nsDOMNavigationTiming> mTiming;
+  nsRefPtr<nsDOMNavigationTiming> mTiming;
 private:
   friend class nsUnblockOnloadEvent;
   
@@ -1798,9 +1799,9 @@ private:
   
   nsString mLastStyleSheetSet;
 
-  nsTArray<RefPtr<nsFrameLoader> > mInitializableFrameLoaders;
+  nsTArray<nsRefPtr<nsFrameLoader> > mInitializableFrameLoaders;
   nsTArray<nsCOMPtr<nsIRunnable> > mFrameLoaderFinalizers;
-  RefPtr<nsRunnableMethod<nsDocument> > mFrameLoaderRunner;
+  nsRefPtr<nsRunnableMethod<nsDocument> > mFrameLoaderRunner;
 
   nsRevocableEventPtr<nsRunnableMethod<nsDocument, void, false> >
     mPendingTitleChangeEvent;
@@ -1824,9 +1825,9 @@ private:
   
   nsString mPreloadPictureFoundSource;
 
-  RefPtr<mozilla::dom::DOMImplementation> mDOMImplementation;
+  nsRefPtr<mozilla::dom::DOMImplementation> mDOMImplementation;
 
-  RefPtr<nsContentList> mImageMaps;
+  nsRefPtr<nsContentList> mImageMaps;
 
   nsCString mScrollToRef;
   uint8_t mScrolledToRefAlready : 1;
@@ -1838,9 +1839,9 @@ private:
   
   nsTHashtable< nsPtrHashKey<nsIObjectLoadingContent> > mPlugins;
 
-  RefPtr<mozilla::dom::UndoManager> mUndoManager;
+  nsRefPtr<mozilla::dom::UndoManager> mUndoManager;
 
-  RefPtr<mozilla::dom::DocumentTimeline> mDocumentTimeline;
+  nsRefPtr<mozilla::dom::DocumentTimeline> mDocumentTimeline;
 
   enum ViewportType {
     DisplayWidthHeight,
@@ -1866,7 +1867,7 @@ private:
   CSPErrorQueue mCSPWebConsoleErrorQueue;
 
   nsCOMPtr<nsIDocument> mMasterDocument;
-  RefPtr<mozilla::dom::ImportManager> mImportManager;
+  nsRefPtr<mozilla::dom::ImportManager> mImportManager;
   nsTArray<nsCOMPtr<nsINode> > mSubImportLinks;
 
   
