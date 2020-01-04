@@ -1678,7 +1678,7 @@
 
 
  \
-    macro(JSOP_SETTHIS  ,     163,"setthis",    NULL,     1,  1,  1,  JOF_BYTE) \
+    macro(JSOP_SETTHIS,       163,"setthis",    NULL,     1,  1,  1,  JOF_BYTE) \
     
 
 
