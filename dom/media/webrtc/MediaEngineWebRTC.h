@@ -129,7 +129,7 @@ protected:
 class AudioInput
 {
 public:
-  AudioInput(webrtc::VoiceEngine* aVoiceEngine) : mVoiceEngine(aVoiceEngine) {};
+  explicit AudioInput(webrtc::VoiceEngine* aVoiceEngine) : mVoiceEngine(aVoiceEngine) {};
   
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioInput)
@@ -152,14 +152,9 @@ protected:
 class AudioInputCubeb final : public AudioInput
 {
 public:
-  explicit AudioInputCubeb(webrtc::VoiceEngine* aVoiceEngine) :
-    AudioInput(aVoiceEngine), mSelectedDevice(0), mInUse(false)
-  {
-    
-    
-    int devices;
-    GetNumOfRecordingDevices(devices);
-  }
+  AudioInputCubeb(webrtc::VoiceEngine* aVoiceEngine, int aIndex = 0) :
+    AudioInput(aVoiceEngine), mSelectedDevice(aIndex), mInUse(false)
+  {}
 
   static void CleanupGlobalData()
   {
@@ -168,29 +163,13 @@ public:
       cubeb_device_collection_destroy(mDevices);
       mDevices = nullptr;
     }
+    mDeviceIndexes.Clear();
+    mDeviceNames.Clear();
   }
 
   int GetNumOfRecordingDevices(int& aDevices)
   {
-    if (!mDevices) {
-      if (CUBEB_OK != cubeb_enumerate_devices(CubebUtils::GetCubebContext(),
-                                              CUBEB_DEVICE_TYPE_INPUT,
-                                              &mDevices)) {
-        return 0;
-      }
-    }
-    
-    if (mDeviceIndexes.Length() == 0) {
-      for (uint32_t i = 0; i < mDevices->count; i++) {
-        if (mDevices->device[i]->type == CUBEB_DEVICE_TYPE_INPUT && 
-            (mDevices->device[i]->state == CUBEB_DEVICE_STATE_ENABLED ||
-             mDevices->device[i]->state == CUBEB_DEVICE_STATE_UNPLUGGED))
-        {
-          mDeviceIndexes.AppendElement(i);
-          
-        }
-      }
-    }
+    UpdateDeviceList();
     aDevices = mDeviceIndexes.Length();
     return 0;
   }
@@ -203,6 +182,7 @@ public:
     if (aIndex >= (int) mDeviceIndexes.Length()) {
       return -1;
     }
+    
     return mDeviceIndexes[aIndex]; 
   }
 
@@ -221,6 +201,7 @@ public:
 
   int GetRecordingDeviceStatus(bool& aIsAvailable)
   {
+    
     
     aIsAvailable = true;
     return 0;
@@ -263,10 +244,60 @@ protected:
   }
 
 private:
-  nsTArray<int> mDeviceIndexes;
+  
+  void UpdateDeviceList()
+  {
+    cubeb_device_collection *devices = nullptr;
+
+    if (CUBEB_OK != cubeb_enumerate_devices(CubebUtils::GetCubebContext(),
+                                            CUBEB_DEVICE_TYPE_INPUT,
+                                            &devices)) {
+      return;
+    }
+
+    for (auto& device_index : mDeviceIndexes) {
+      device_index = -1; 
+    }
+    
+
+    
+    
+    
+    for (uint32_t i = 0; i < devices->count; i++) {
+      if (devices->device[i]->type == CUBEB_DEVICE_TYPE_INPUT && 
+          (devices->device[i]->state == CUBEB_DEVICE_STATE_ENABLED ||
+           devices->device[i]->state == CUBEB_DEVICE_STATE_UNPLUGGED))
+      {
+        auto j = mDeviceNames.IndexOf(devices->device[i]->device_id);
+        if (j != nsTArray<nsCString>::NoIndex) {
+          
+          mDeviceIndexes[j] = i;
+        } else {
+          
+          mDeviceIndexes.AppendElement(i);
+          mDeviceNames.AppendElement(strdup(devices->device[i]->device_id));
+        }
+      }
+    }
+    
+    if (mDevices) {
+      cubeb_device_collection_destroy(mDevices);
+    }
+    mDevices = devices;
+  }
+
+  
+  
+  
+  
+  
+  
   int mSelectedDevice;
-  static cubeb_device_collection *mDevices;
   bool mInUse; 
+
+  static nsTArray<int> mDeviceIndexes;
+  static nsTArray<nsCString> mDeviceNames;
+  static cubeb_device_collection *mDevices;
   static bool mAnyInUse;
 };
 

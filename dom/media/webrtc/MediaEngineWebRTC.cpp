@@ -44,6 +44,9 @@ GetUserMediaLog()
 
 namespace mozilla {
 
+
+nsTArray<int> AudioInputCubeb::mDeviceIndexes;
+nsTArray<nsCString> AudioInputCubeb::mDeviceNames;
 cubeb_device_collection* AudioInputCubeb::mDevices = nullptr;
 bool AudioInputCubeb::mAnyInUse = false;
 
@@ -322,7 +325,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
     if (uniqueId[0] == '\0') {
       
       MOZ_ASSERT(sizeof(deviceName) == sizeof(uniqueId)); 
-      strcpy(uniqueId,deviceName); 
+      strcpy(uniqueId, deviceName); 
     }
 
     RefPtr<MediaEngineAudioSource> aSource;
@@ -338,7 +341,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
         
         
         
-        audioinput = new mozilla::AudioInputCubeb(mVoiceEngine);
+        audioinput = new mozilla::AudioInputCubeb(mVoiceEngine, i);
       }
       aSource = new MediaEngineWebRTCMicrophoneSource(mThread, mVoiceEngine, audioinput,
                                                       i, deviceName, uniqueId);
