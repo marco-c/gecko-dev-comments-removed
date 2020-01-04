@@ -1269,7 +1269,7 @@ class TreeMetadataEmitter(LoggingMixin):
                 'it is currently limited to one value.', context)
 
         for path in jar_manifests:
-            yield JARManifest(context, mozpath.join(context.srcdir, path))
+            yield JARManifest(context, path)
 
         
         
