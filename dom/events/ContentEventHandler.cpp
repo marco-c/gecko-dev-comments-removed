@@ -40,6 +40,56 @@ using namespace widget;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ContentEventHandler::ContentEventHandler(nsPresContext* aPresContext)
   : mPresContext(aPresContext)
   , mPresShell(aPresContext->GetPresShell())
@@ -414,6 +464,10 @@ ContentEventHandler::GenerateFlatTextContent(nsRange* aRange,
 {
   NS_ASSERTION(aString.IsEmpty(), "aString must be empty string");
 
+  if (aRange->Collapsed()) {
+    return NS_OK;
+  }
+
   nsINode* startNode = aRange->GetStartParent();
   nsINode* endNode = aRange->GetEndParent();
   if (NS_WARN_IF(!startNode) || NS_WARN_IF(!endNode)) {
@@ -580,6 +634,10 @@ ContentEventHandler::GenerateFlatFontRanges(nsRange* aRange,
 {
   MOZ_ASSERT(aFontRanges.IsEmpty(), "aRanges must be empty array");
 
+  if (aRange->Collapsed()) {
+    return NS_OK;
+  }
+
   nsINode* startNode = aRange->GetStartParent();
   nsINode* endNode = aRange->GetEndParent();
   if (NS_WARN_IF(!startNode) || NS_WARN_IF(!endNode)) {
@@ -696,6 +754,18 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
     *aNewOffset = aOffset;
   }
 
+  
+  if (!mRootContent->HasChildren()) {
+    nsresult rv = aRange->SetStart(mRootContent, 0);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    rv = aRange->SetEnd(mRootContent, 0);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
   nsCOMPtr<nsIContentIterator> iter = NS_NewPreContentIterator();
   nsresult rv = iter->Init(mRootContent);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -710,7 +780,8 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
     if (NS_WARN_IF(!node)) {
       break;
     }
-    if (!node->IsContent()) {
+    
+    if (node == mRootContent || !node->IsContent()) {
       continue;
     }
     nsIContent* content = node->AsContent();
@@ -723,12 +794,14 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
       continue;
     }
 
-    if (offset <= aOffset && aOffset < offset + textLength) {
-      uint32_t xpOffset;
-      if (!content->IsNodeOfType(nsINode::eTEXT)) {
-        xpOffset = 0;
-      } else {
-        xpOffset = aOffset - offset;
+    
+    
+    if (!startSet && aOffset <= offset + textLength) {
+      nsINode* startNode = nullptr;
+      int32_t startNodeOffset = -1;
+      if (content->IsNodeOfType(nsINode::eTEXT)) {
+        
+        uint32_t xpOffset = aOffset - offset;
         if (aLineBreakType == LINE_BREAK_TYPE_NATIVE) {
           xpOffset = ConvertToXPOffset(content, xpOffset);
         }
@@ -744,27 +817,61 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
             *aNewOffset -= (oldXPOffset - xpOffset);
           }
         }
+        startNode = content;
+        startNodeOffset = static_cast<int32_t>(xpOffset);
+      } else if (aOffset < offset + textLength) {
+        
+        startNode = content->GetParent();
+        if (NS_WARN_IF(!startNode)) {
+          return NS_ERROR_FAILURE;
+        }
+        startNodeOffset = startNode->IndexOf(content);
+        if (NS_WARN_IF(startNodeOffset == -1)) {
+          
+          return NS_ERROR_FAILURE;
+        }
+      } else if (!content->HasChildren()) {
+        
+        startNode = content->GetParent();
+        if (NS_WARN_IF(!startNode)) {
+          return NS_ERROR_FAILURE;
+        }
+        startNodeOffset = startNode->IndexOf(content) + 1;
+        if (NS_WARN_IF(startNodeOffset == 0)) {
+          
+          return NS_ERROR_FAILURE;
+        }
+      } else {
+        
+        startNode = content;
+        startNodeOffset = 0;
       }
-
-      rv = aRange->SetStart(content, int32_t(xpOffset));
+      NS_ASSERTION(startNode, "startNode must not be nullptr");
+      NS_ASSERTION(startNodeOffset >= 0,
+                   "startNodeOffset must not be negative");
+      rv = aRange->SetStart(startNode, startNodeOffset);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
       startSet = true;
-      if (aLength == 0) {
-        
-        rv = aRange->SetEnd(content, int32_t(xpOffset));
+
+      if (!aLength) {
+        rv = aRange->SetEnd(startNode, startNodeOffset);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
         return NS_OK;
       }
     }
+
+    
+    
     if (endOffset <= offset + textLength) {
-      nsINode* endNode = content;
-      uint32_t xpOffset;
+      MOZ_ASSERT(startSet,
+        "The start of the range should've been set already");
       if (content->IsNodeOfType(nsINode::eTEXT)) {
-        xpOffset = endOffset - offset;
+        
+        uint32_t xpOffset = endOffset - offset;
         if (aLineBreakType == LINE_BREAK_TYPE_NATIVE) {
           xpOffset = ConvertToXPOffset(content, xpOffset);
         }
@@ -774,18 +881,36 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
             return rv;
           }
         }
-      } else {
-        
-        
-        xpOffset = 0;
-        iter->Next();
-        if (iter->IsDone()) {
-          break;
+        NS_ASSERTION(xpOffset <= INT32_MAX,
+          "The end node offset is too large");
+        rv = aRange->SetEnd(content, static_cast<int32_t>(xpOffset));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
         }
-        endNode = iter->GetCurrentNode();
+        return NS_OK;
       }
 
-      rv = aRange->SetEnd(endNode, int32_t(xpOffset));
+      if (endOffset == offset) {
+        
+        
+        
+        
+        MOZ_ASSERT(false, "This case should've already been handled at "
+                          "the last node which caused some text");
+        return NS_ERROR_FAILURE;
+      }
+
+      
+      nsINode* endNode = content->GetParent();
+      if (NS_WARN_IF(!endNode)) {
+        return NS_ERROR_FAILURE;
+      }
+      int32_t indexInParent = endNode->IndexOf(content);
+      if (NS_WARN_IF(indexInParent == -1)) {
+        
+        return NS_ERROR_FAILURE;
+      }
+      rv = aRange->SetEnd(endNode, indexInParent + 1);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -795,13 +920,11 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
     offset += textLength;
   }
 
-  if (offset < aOffset) {
-    return NS_ERROR_FAILURE;
-  }
-
   if (!startSet) {
+    
     MOZ_ASSERT(!mRootContent->IsNodeOfType(nsINode::eTEXT));
-    rv = aRange->SetStart(mRootContent, int32_t(mRootContent->GetChildCount()));
+    rv = aRange->SetStart(mRootContent,
+                          static_cast<int32_t>(mRootContent->GetChildCount()));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -809,7 +932,9 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
       *aNewOffset = offset;
     }
   }
-  rv = aRange->SetEnd(mRootContent, int32_t(mRootContent->GetChildCount()));
+  
+  rv = aRange->SetEnd(mRootContent,
+                      static_cast<int32_t>(mRootContent->GetChildCount()));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1450,6 +1575,11 @@ ContentEventHandler::GetFlatTextLengthInRange(
     return NS_ERROR_INVALID_ARG;
   }
 
+  if (aStartPosition == aEndPosition) {
+    *aLength = 0;
+    return NS_OK;
+  }
+
   
   
   nsCOMPtr<nsIContentIterator> iter;
@@ -1655,33 +1785,36 @@ static void AdjustRangeForSelection(nsIContent* aRoot,
 {
   nsINode* node = *aNode;
   int32_t nodeOffset = *aNodeOffset;
-  if (aRoot != node && node->GetParent()) {
-    if (node->IsNodeOfType(nsINode::eTEXT)) {
-      
-      
-      
-      int32_t nodeLength =
-        static_cast<int32_t>(static_cast<nsIContent*>(node)->TextLength());
-      MOZ_ASSERT(nodeOffset <= nodeLength, "Offset is past length of text node");
-      if (nodeOffset == nodeLength) {
-        node = node->GetParent();
-        nodeOffset = node->IndexOf(*aNode) + 1;
-      }
-    } else {
-      node = node->GetParent();
-      nodeOffset = node->IndexOf(*aNode) + (nodeOffset ? 1 : 0);
-    }
+  if (aRoot == node || NS_WARN_IF(!node->GetParent()) ||
+      !node->IsNodeOfType(nsINode::eTEXT)) {
+    return;
   }
 
-  nsIContent* brContent = node->GetChildAt(nodeOffset - 1);
-  while (brContent && brContent->IsHTMLElement()) {
-    if (!brContent->IsHTMLElement(nsGkAtoms::br) || IsContentBR(brContent)) {
-      break;
-    }
-    brContent = node->GetChildAt(--nodeOffset - 1);
+  
+  
+  
+  int32_t textLength =
+    static_cast<int32_t>(static_cast<nsIContent*>(node)->TextLength());
+  MOZ_ASSERT(nodeOffset <= textLength, "Offset is past length of text node");
+  if (nodeOffset != textLength) {
+    return;
   }
-  *aNode = node;
-  *aNodeOffset = std::max(nodeOffset, 0);
+
+  nsIContent* aRootParent = aRoot->GetParent();
+  if (NS_WARN_IF(!aRootParent)) {
+    return;
+  }
+  
+  
+  
+  
+  if (!aRootParent->IsHTMLElement(nsGkAtoms::textarea)) {
+    return;
+  }
+
+  *aNode = node->GetParent();
+  MOZ_ASSERT((*aNode)->IndexOf(node) != -1);
+  *aNodeOffset = (*aNode)->IndexOf(node) + 1;
 }
 
 nsresult
