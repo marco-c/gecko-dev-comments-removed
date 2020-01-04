@@ -1908,6 +1908,8 @@ CanvasRenderingContext2D::ReturnTarget(bool aForceReset)
         
         mTarget->PopClip();
       }
+
+      mTarget->SetTransform(Matrix());
     }
 
     mBufferProvider->ReturnDrawTarget(mTarget.forget());
