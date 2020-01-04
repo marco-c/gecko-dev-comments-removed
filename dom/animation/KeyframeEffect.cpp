@@ -1405,7 +1405,7 @@ KeyframeEffectReadOnly::CanAnimateTransformOnCompositor(
   
   
   
-  if (aFrame->StyleDisplay()->BackfaceIsHidden()) {
+  if (aFrame->BackfaceIsHidden()) {
     aPerformanceWarning =
       AnimationPerformanceWarning::Type::TransformBackfaceVisibilityHidden;
     return false;
