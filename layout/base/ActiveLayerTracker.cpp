@@ -98,6 +98,13 @@ public:
   Maybe<gfxSize> mPreviousTransformScale;
 
   
+  
+  nsWeakFrame mAnimatingScrollHandlerFrame;
+  
+  
+  EnumSet<ActivityIndex> mScrollHandlerInducedActivity;
+
+  
   uint8_t mRestyleCounts[ACTIVITY_COUNT];
   bool mContentActive;
 };
@@ -109,12 +116,20 @@ public:
   LayerActivityTracker()
     : nsExpirationTracker<LayerActivity,4>(GENERATION_MS,
                                            "LayerActivityTracker")
+    , mDestroying(false)
   {}
   ~LayerActivityTracker() {
+    mDestroying = true;
     AgeAllGenerations();
   }
 
   virtual void NotifyExpired(LayerActivity* aObject);
+
+public:
+  nsWeakFrame mCurrentScrollHandlerFrame;
+
+private:
+  bool mDestroying;
 };
 
 static LayerActivityTracker* gLayerActivityTracker = nullptr;
@@ -133,6 +148,13 @@ NS_DECLARE_FRAME_PROPERTY(LayerActivityProperty, DeleteValue<LayerActivity>)
 void
 LayerActivityTracker::NotifyExpired(LayerActivity* aObject)
 {
+  if (!mDestroying && aObject->mAnimatingScrollHandlerFrame.IsAlive()) {
+    
+    PodArrayZero(aObject->mRestyleCounts);
+    MarkUsed(aObject);
+    return;
+  }
+
   RemoveObject(aObject);
 
   nsIFrame* f = aObject->mFrame;
@@ -294,6 +316,27 @@ ActiveLayerTracker::NotifyAnimated(nsIFrame* aFrame, nsCSSProperty aProperty)
   mutationCount = 0xFF;
 }
 
+ void
+ActiveLayerTracker::NotifyAnimatedFromScrollHandler(nsIFrame* aFrame, nsCSSProperty aProperty,
+                                                    nsIFrame* aScrollFrame)
+{
+  if (aFrame->PresContext() != aScrollFrame->PresContext()) {
+    
+    return;
+  }
+  LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
+  LayerActivity::ActivityIndex activityIndex = LayerActivity::GetActivityIndexForProperty(aProperty);
+
+  if (layerActivity->mAnimatingScrollHandlerFrame.GetFrame() != aScrollFrame) {
+    
+    
+    layerActivity->mScrollHandlerInducedActivity.clear();
+    layerActivity->mAnimatingScrollHandlerFrame = aScrollFrame;
+  }
+
+  layerActivity->mScrollHandlerInducedActivity += activityIndex;
+}
+
 static bool
 IsPresContextInScriptAnimationCallback(nsPresContext* aPresContext)
 {
@@ -310,16 +353,43 @@ IsPresContextInScriptAnimationCallback(nsPresContext* aPresContext)
 ActiveLayerTracker::NotifyInlineStyleRuleModified(nsIFrame* aFrame,
                                                   nsCSSProperty aProperty)
 {
-  if (!IsPresContextInScriptAnimationCallback(aFrame->PresContext())) {
-    return;
+  if (IsPresContextInScriptAnimationCallback(aFrame->PresContext())) {
+    NotifyAnimated(aFrame, aProperty);
   }
-  NotifyAnimated(aFrame, aProperty);
+  if (gLayerActivityTracker &&
+      gLayerActivityTracker->mCurrentScrollHandlerFrame.IsAlive()) {
+    NotifyAnimatedFromScrollHandler(aFrame, aProperty,
+      gLayerActivityTracker->mCurrentScrollHandlerFrame.GetFrame());
+  }
 }
 
  bool
 ActiveLayerTracker::IsStyleMaybeAnimated(nsIFrame* aFrame, nsCSSProperty aProperty)
 {
   return IsStyleAnimated(nullptr, aFrame, aProperty);
+}
+
+static bool
+CheckScrollInducedActivity(LayerActivity* aLayerActivity,
+                           LayerActivity::ActivityIndex aActivityIndex,
+                           nsDisplayListBuilder* aBuilder)
+{
+  if (!aLayerActivity->mScrollHandlerInducedActivity.contains(aActivityIndex) ||
+      !aLayerActivity->mAnimatingScrollHandlerFrame.IsAlive()) {
+    return false;
+  }
+
+  nsIScrollableFrame* scrollFrame =
+    do_QueryFrame(aLayerActivity->mAnimatingScrollHandlerFrame.GetFrame());
+  if (scrollFrame && (!aBuilder || scrollFrame->IsScrollingActive(aBuilder))) {
+    return true;
+  }
+
+  
+  
+  aLayerActivity->mAnimatingScrollHandlerFrame = nullptr;
+  aLayerActivity->mScrollHandlerInducedActivity.clear();
+  return false;
 }
 
  bool
@@ -340,7 +410,11 @@ ActiveLayerTracker::IsStyleAnimated(nsDisplayListBuilder* aBuilder,
 
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   if (layerActivity) {
-    if (layerActivity->RestyleCountForProperty(aProperty) >= 2) {
+    LayerActivity::ActivityIndex activityIndex = LayerActivity::GetActivityIndexForProperty(aProperty);
+    if (layerActivity->mRestyleCounts[activityIndex] >= 2) {
+      return true;
+    }
+    if (CheckScrollInducedActivity(layerActivity, activityIndex, aBuilder)) {
       return true;
     }
   }
@@ -456,6 +530,15 @@ ActiveLayerTracker::IsContentActive(nsIFrame* aFrame)
 {
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   return layerActivity && layerActivity->mContentActive;
+}
+
+ void
+ActiveLayerTracker::SetCurrentScrollHandlerFrame(nsIFrame* aFrame)
+{
+  if (!gLayerActivityTracker) {
+    gLayerActivityTracker = new LayerActivityTracker();
+  }
+  gLayerActivityTracker->mCurrentScrollHandlerFrame = aFrame;
 }
 
  void
