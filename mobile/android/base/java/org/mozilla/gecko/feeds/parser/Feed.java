@@ -52,34 +52,6 @@ public class Feed {
                 !TextUtils.isEmpty(lastItem.getTitle());
     }
 
-    
-
-
-    public boolean hasBeenUpdated(Feed newFeed) {
-        final Item otherItem = newFeed.getLastItem();
-
-        if (lastItem.getTimestamp() > otherItem.getTimestamp()) {
-            
-            
-            
-            return true;
-        }
-
-        if (lastItem.getTimestamp() == otherItem.getTimestamp() && lastItem.getTimestamp() != 0) {
-            
-            
-            return false;
-        }
-
-        if (!lastItem.getURL().equals(otherItem.getURL())) {
-            
-            
-            return true;
-        }
-
-        return false;
-    }
-
     public String getTitle() {
         return title;
     }
