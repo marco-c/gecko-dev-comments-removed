@@ -26,6 +26,7 @@ ServiceWorkerUnregisterJob::GetResult() const
   AssertIsOnMainThread();
   return mResult;
 }
+
 ServiceWorkerUnregisterJob::~ServiceWorkerUnregisterJob()
 {
 }
@@ -39,6 +40,11 @@ ServiceWorkerUnregisterJob::AsyncExecute()
     Finish(NS_ERROR_DOM_ABORT_ERR);
     return;
   }
+
+  
+  
+  
+  
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
 
