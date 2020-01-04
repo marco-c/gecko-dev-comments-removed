@@ -4,12 +4,12 @@
 
 
 
+
+
 #ifndef frontend_Parser_h
 #define frontend_Parser_h
 
-
-
-
+#include "mozilla/Maybe.h"
 
 #include "jspubtd.h"
 
@@ -669,7 +669,21 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     Node ifStatement(YieldHandling yieldHandling);
     Node doWhileStatement(YieldHandling yieldHandling);
     Node whileStatement(YieldHandling yieldHandling);
+
     Node forStatement(YieldHandling yieldHandling);
+    bool forHeadStart(YieldHandling yieldHandling,
+                      ParseNodeKind* forHeadKind,
+                      Node* forInitialPart,
+                      mozilla::Maybe<AutoPushStmtInfoPC>& letStmt,
+                      MutableHandle<StaticBlockObject*> blockObj,
+                      Node* forLetImpliedBlock,
+                      Node* forInOrOfExpression);
+    bool validateForInOrOfLHSExpression(Node target);
+    Node expressionAfterForInOrOf(ParseNodeKind forHeadKind, YieldHandling yieldHandling);
+
+    void assertCurrentLexicalStaticBlockIs(ParseContext<ParseHandler>* pc,
+                                           Handle<StaticBlockObject*> blockObj);
+
     Node switchStatement(YieldHandling yieldHandling);
     Node continueStatement(YieldHandling yieldHandling);
     Node breakStatement(YieldHandling yieldHandling);
@@ -685,11 +699,59 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     Node exportDeclaration();
     Node expressionStatement(YieldHandling yieldHandling,
                              InvokedPrediction invoked = PredictUninvoked);
-    Node variables(YieldHandling yieldHandling,
-                   ParseNodeKind kind,
-                   ForInitLocation location,
-                   bool* psimple = nullptr, StaticBlockObject* blockObj = nullptr,
-                   VarContext varContext = HoistVars);
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Node declarationList(YieldHandling yieldHandling,
+                         ParseNodeKind kind,
+                         StaticBlockObject* blockObj = nullptr,
+                         ParseNodeKind* forHeadKind = nullptr,
+                         Node* forInOrOfExpression = nullptr);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Node declarationPattern(Node decl, TokenKind tt, BindData<ParseHandler>* data,
+                            bool initialDeclaration, YieldHandling yieldHandling,
+                            ParseNodeKind* forHeadKind, Node* forInOrOfExpression);
+    Node declarationName(Node decl, TokenKind tt, BindData<ParseHandler>* data,
+                         bool initialDeclaration, YieldHandling yieldHandling,
+                         ParseNodeKind* forHeadKind, Node* forInOrOfExpression);
+
+    
+    
+    
+    
+    
+    bool initializerInNameDeclaration(Node decl, Node binding, Handle<PropertyName*> name,
+                                      BindData<ParseHandler>* data, bool initialDeclaration,
+                                      YieldHandling yieldHandling, ParseNodeKind* forHeadKind,
+                                      Node* forInOrOfExpression);
+
     Node expr(InHandling inHandling, YieldHandling yieldHandling,
               TripledotHandling tripledotHandling,
               InvokedPrediction invoked = PredictUninvoked);
@@ -783,7 +845,8 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
         CompoundAssignment,
         KeyedDestructuringAssignment,
         IncrementAssignment,
-        DecrementAssignment
+        DecrementAssignment,
+        ForInOrOfTarget
     };
 
     bool checkAndMarkAsAssignmentLhs(Node pn, AssignmentFlavor flavor);
@@ -801,10 +864,6 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
                                  bool* pbodyProcessed, Node* assignmentForAnnexBOut);
     bool finishFunctionDefinition(Node pn, FunctionBox* funbox, Node body);
     bool addFreeVariablesFromLazyFunction(JSFunction* fun, ParseContext<ParseHandler>* pc);
-
-    bool isValidForStatementLHS(Node pn1, JSVersion version, bool forDecl, bool forEach,
-                                ParseNodeKind headKind);
-    bool checkForHeadConstInitializers(Node pn1);
 
     
     bool shouldParseLetDeclaration(bool* parseDeclOut);
@@ -877,8 +936,10 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     bool bindUninitialized(BindData<ParseHandler>* data, HandlePropertyName name, Node pn);
     bool bindUninitialized(BindData<ParseHandler>* data, Node pn);
     bool makeSetCall(Node node, unsigned errnum);
-    Node cloneDestructuringDefault(Node opn);
+
+    Node cloneForInOrOfDeclarationForAssignment(Node decl);
     Node cloneLeftHandSide(Node opn);
+    Node cloneDestructuringDefault(Node opn);
     Node cloneParseTree(Node opn);
 
     Node newNumber(const Token& tok) {

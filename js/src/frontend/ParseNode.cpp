@@ -775,10 +775,6 @@ Parser<FullParseHandler>::cloneParseTree(ParseNode* opn)
     return pn;
 }
 
-template <>
-ParseNode*
-Parser<FullParseHandler>::cloneLeftHandSide(ParseNode* opn);
-
 
 
 
@@ -889,6 +885,16 @@ Parser<FullParseHandler>::cloneLeftHandSide(ParseNode* opn)
         }
     }
     return pn;
+}
+
+template <>
+SyntaxParseHandler::Node
+Parser<SyntaxParseHandler>::cloneLeftHandSide(Node node)
+{
+    
+    
+    MOZ_ASSERT(node == SyntaxParseHandler::NodeUnparenthesizedName);
+    return SyntaxParseHandler::NodeGeneric;
 }
 
 } 

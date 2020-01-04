@@ -1521,6 +1521,15 @@ struct BindData
         return isAnnexB_;
     }
 
+    
+    
+    
+    bool mustNotBindLet() {
+        MOZ_ASSERT(isInitialized());
+        return isConst_ ||
+               (kind_ == LexicalBinding && letData_.overflow != JSMSG_TOO_MANY_CATCH_VARS);
+    }
+
     const LetData& letData() {
         MOZ_ASSERT(kind_ == LexicalBinding);
         return letData_;
@@ -3552,6 +3561,13 @@ Parser<FullParseHandler>::bindLexical(BindData<FullParseHandler>* data,
         return false;
 
     ExclusiveContext* cx = parser->context;
+
+    
+    if (data->mustNotBindLet() && name == cx->names().let) {
+        parser->report(ParseError, false, pn, JSMSG_LEXICAL_DECL_DEFINES_LET);
+        return false;
+    }
+
     Rooted<StaticBlockObject*> blockObj(cx, data->letData().blockObj);
 
     uint32_t index = StaticBlockObject::LOCAL_INDEX_LIMIT;
@@ -4356,6 +4372,285 @@ Parser<ParseHandler>::newBindingNode(PropertyName* name, bool functionScope, Var
     return newName(name);
 }
 
+template <typename ParseHandler>
+typename ParseHandler::Node
+Parser<ParseHandler>::expressionAfterForInOrOf(ParseNodeKind forHeadKind,
+                                               YieldHandling yieldHandling)
+{
+    MOZ_ASSERT(forHeadKind == PNK_FORIN || forHeadKind == PNK_FOROF);
+
+    return forHeadKind == PNK_FOROF
+           ? assignExpr(InAllowed, yieldHandling, TripledotProhibited)
+           : expr(InAllowed, yieldHandling, TripledotProhibited);
+}
+
+template <typename ParseHandler>
+typename ParseHandler::Node
+Parser<ParseHandler>::declarationPattern(Node decl, TokenKind tt, BindData<ParseHandler>* data,
+                                         bool initialDeclaration, YieldHandling yieldHandling,
+                                         ParseNodeKind* forHeadKind,
+                                         Node* forInOrOfExpression)
+{
+    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_LB) ||
+               tokenStream.isCurrentTokenType(TOK_LC));
+
+    Node pattern;
+    {
+        pc->inDeclDestructuring = true;
+        pattern = primaryExpr(yieldHandling, TripledotProhibited, tt);
+        pc->inDeclDestructuring = false;
+    }
+    if (!pattern)
+        return null();
+
+    if (initialDeclaration && forHeadKind) {
+        bool isForIn, isForOf;
+        if (!matchInOrOf(&isForIn, &isForOf))
+            return null();
+
+        if (isForIn)
+            *forHeadKind = PNK_FORIN;
+        else if (isForOf)
+            *forHeadKind = PNK_FOROF;
+        else
+            *forHeadKind = PNK_FORHEAD;
+
+        if (*forHeadKind != PNK_FORHEAD) {
+            
+            
+            if (handler.declarationIsConst(decl)) {
+                report(ParseError, false, pattern, JSMSG_BAD_CONST_DECL);
+                return null();
+            }
+
+            if (!checkDestructuringPattern(data, pattern))
+                return null();
+
+            *forInOrOfExpression = expressionAfterForInOrOf(*forHeadKind, yieldHandling);
+            if (!*forInOrOfExpression)
+                return null();
+
+            return pattern;
+        }
+    }
+
+    
+    
+    bool bindBeforeInitializer = handler.declarationIsVar(decl);
+    if (bindBeforeInitializer) {
+        if (!checkDestructuringPattern(data, pattern))
+            return null();
+    }
+
+    MUST_MATCH_TOKEN(TOK_ASSIGN, JSMSG_BAD_DESTRUCT_DECL);
+
+    Node init = assignExpr(forHeadKind ? InProhibited : InAllowed,
+                           yieldHandling, TripledotProhibited);
+    if (!init)
+        return null();
+
+    if (forHeadKind) {
+        
+        
+        
+        
+        
+        tokenStream.addModifierException(TokenStream::OperandIsNone);
+    }
+
+    if (!bindBeforeInitializer) {
+        if (!checkDestructuringPattern(data, pattern))
+            return null();
+    }
+
+    return handler.newBinary(PNK_ASSIGN, pattern, init);
+}
+
+template <typename ParseHandler>
+bool
+Parser<ParseHandler>::initializerInNameDeclaration(Node decl, Node binding,
+                                                   Handle<PropertyName*> name,
+                                                   BindData<ParseHandler>* data,
+                                                   bool initialDeclaration,
+                                                   YieldHandling yieldHandling,
+                                                   ParseNodeKind* forHeadKind,
+                                                   Node* forInOrOfExpression)
+{
+    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_ASSIGN));
+
+    
+    
+    
+    
+    
+    
+    
+    bool bindBeforeInitializer = handler.declarationIsVar(decl);
+    if (bindBeforeInitializer) {
+        if (!data->bind(name, this))
+            return false;
+    }
+
+    Node initializer = assignExpr(forHeadKind ? InProhibited : InAllowed,
+                                  yieldHandling, TripledotProhibited);
+    if (!initializer)
+        return false;
+
+    bool performAssignment = true;
+    if (forHeadKind) {
+        if (initialDeclaration) {
+            bool isForIn, isForOf;
+            if (!matchInOrOf(&isForIn, &isForOf))
+                return false;
+
+            
+            
+            
+            if (isForOf) {
+                report(ParseError, false, binding, JSMSG_BAD_FOR_LEFTSIDE);
+                return false;
+            }
+
+            if (isForIn) {
+                
+                
+                
+                if (!handler.declarationIsVar(decl)) {
+                    report(ParseError, false, binding, JSMSG_BAD_FOR_LEFTSIDE);
+                    return false;
+                }
+
+                
+                
+                
+                
+                *forHeadKind = PNK_FORIN;
+                performAssignment = false;
+                if (!report(ParseWarning, pc->sc->strict(), initializer,
+                            JSMSG_INVALID_FOR_IN_DECL_WITH_INIT))
+                {
+                    return false;
+                }
+
+                *forInOrOfExpression = expressionAfterForInOrOf(PNK_FORIN, yieldHandling);
+                if (!*forInOrOfExpression)
+                    return null();
+            } else {
+                *forHeadKind = PNK_FORHEAD;
+            }
+        }
+
+        if (*forHeadKind == PNK_FORHEAD) {
+            
+            
+            
+            
+            tokenStream.addModifierException(TokenStream::OperandIsNone);
+        }
+    }
+
+    if (performAssignment) {
+        if (!bindBeforeInitializer && !data->bind(name, this))
+            return false;
+
+        if (!handler.finishInitializerAssignment(binding, initializer))
+            return false;
+    }
+
+    return true;
+}
+
+template <typename ParseHandler>
+typename ParseHandler::Node
+Parser<ParseHandler>::declarationName(Node decl, TokenKind tt, BindData<ParseHandler>* data,
+                                      bool initialDeclaration, YieldHandling yieldHandling,
+                                      ParseNodeKind* forHeadKind, Node* forInOrOfExpression)
+{
+    if (tt != TOK_NAME) {
+        
+        if (tt != TOK_YIELD) {
+            report(ParseError, false, null(), JSMSG_NO_VARIABLE_NAME);
+            return null();
+        }
+
+        
+        if (!checkYieldNameValidity())
+            return null();
+    }
+
+    RootedPropertyName name(context, tokenStream.currentName());
+    Node binding = newBindingNode(name, handler.declarationIsVar(decl), HoistVars);
+    if (!binding)
+        return null();
+    MOZ_ASSERT(data->isConst() == handler.declarationIsConst(decl));
+    if (data->isConst())
+        handler.setFlag(binding, PND_CONST);
+    data->setNameNode(binding);
+
+    
+    
+    
+    
+    
+    
+    
+    bool matched;
+    if (!tokenStream.matchToken(&matched, TOK_ASSIGN, TokenStream::Operand))
+        return null();
+
+    if (matched) {
+        if (!initializerInNameDeclaration(decl, binding, name, data, initialDeclaration,
+                                          yieldHandling, forHeadKind, forInOrOfExpression))
+        {
+            return null();
+        }
+    } else {
+        tokenStream.addModifierException(TokenStream::NoneIsOperand);
+
+        bool constRequiringInitializer = handler.declarationIsConst(decl);
+        if (initialDeclaration && forHeadKind) {
+            bool isForIn, isForOf;
+            if (!matchInOrOf(&isForIn, &isForOf))
+                return null();
+
+            if (isForIn || isForOf) {
+                
+                
+                
+
+                *forHeadKind = isForIn ? PNK_FORIN : PNK_FOROF;
+            } else {
+                *forHeadKind = PNK_FORHEAD;
+            }
+        }
+
+        if (constRequiringInitializer) {
+            report(ParseError, false, binding, JSMSG_BAD_CONST_DECL);
+            return null();
+        }
+
+        bool bindBeforeInitializer = handler.declarationIsVar(decl);
+        if (bindBeforeInitializer) {
+            if (!data->bind(name, this))
+                return null();
+        }
+
+        if (forHeadKind && *forHeadKind != PNK_FORHEAD) {
+            *forInOrOfExpression = expressionAfterForInOrOf(*forHeadKind, yieldHandling);
+            if (!*forInOrOfExpression)
+                return null();
+        }
+
+        if (!bindBeforeInitializer) {
+            if (!data->bind(name, this))
+                return null();
+        }
+    }
+
+    handler.setLexicalDeclarationOp(binding, data->op());
+    return binding;
+}
+
 
 
 
@@ -4363,18 +4658,14 @@ Parser<ParseHandler>::newBindingNode(PropertyName* name, bool functionScope, Var
 
 template <typename ParseHandler>
 typename ParseHandler::Node
-Parser<ParseHandler>::variables(YieldHandling yieldHandling,
-                                ParseNodeKind kind,
-                                ForInitLocation location,
-                                bool* psimple, StaticBlockObject* blockObj, VarContext varContext)
+Parser<ParseHandler>::declarationList(YieldHandling yieldHandling,
+                                      ParseNodeKind kind,
+                                      StaticBlockObject* blockObj ,
+                                      ParseNodeKind* forHeadKind ,
+                                      Node* forInOrOfExpression )
 {
-    MOZ_ASSERT(kind == PNK_VAR || kind == PNK_CONST || kind == PNK_LET);
-
-    
-
-
-
-    MOZ_ASSERT_IF(psimple, *psimple);
+    MOZ_ASSERT(kind == PNK_VAR || kind == PNK_LET || kind == PNK_CONST);
+    MOZ_ASSERT_IF(blockObj != nullptr, kind == PNK_LET || kind == PNK_CONST);
 
     JSOp op;
     switch (kind) {
@@ -4384,193 +4675,46 @@ Parser<ParseHandler>::variables(YieldHandling yieldHandling,
       default: MOZ_CRASH("unknown variable kind");
     }
 
-    Node pn = handler.newDeclarationList(kind, op);
-    if (!pn)
+    Node decl = handler.newDeclarationList(kind, op);
+    if (!decl)
         return null();
 
     BindData<ParseHandler> data(context);
     if (kind == PNK_VAR)
         data.initVar(op);
     else
-        data.initLexical(varContext, op, blockObj, JSMSG_TOO_MANY_LOCALS);
+        data.initLexical(HoistVars, op, blockObj, JSMSG_TOO_MANY_LOCALS);
 
-    bool first = true;
-    Node pn2;
-    while (true) {
-        do {
-            if (psimple && !first)
-                *psimple = false;
-            first = false;
+    bool matched;
+    bool initialDeclaration = true;
+    do {
+        MOZ_ASSERT_IF(!initialDeclaration && forHeadKind,
+                      *forHeadKind == PNK_FORHEAD);
 
-            TokenKind tt;
-            if (!tokenStream.getToken(&tt))
-                return null();
-            if (tt == TOK_LB || tt == TOK_LC) {
-                if (psimple)
-                    *psimple = false;
+        TokenKind tt;
+        if (!tokenStream.getToken(&tt))
+            return null();
 
-                pc->inDeclDestructuring = true;
-                pn2 = primaryExpr(yieldHandling, TripledotProhibited, tt);
-                pc->inDeclDestructuring = false;
-                if (!pn2)
-                    return null();
+        Node binding = (tt == TOK_LB || tt == TOK_LC)
+                       ? declarationPattern(decl, tt, &data, initialDeclaration, yieldHandling,
+                                            forHeadKind, forInOrOfExpression)
+                       : declarationName(decl, tt, &data, initialDeclaration, yieldHandling,
+                                         forHeadKind, forInOrOfExpression);
+        if (!binding)
+            return null();
 
-                bool parsingForInOrOfInit = false;
-                if (location == InForInit) {
-                    bool isForIn, isForOf;
-                    if (!matchInOrOf(&isForIn, &isForOf))
-                        return null();
-                    parsingForInOrOfInit = isForIn || isForOf;
-                }
+        handler.addList(decl, binding);
 
-                
-                
-                bool bindBeforeInitializer = (kind != PNK_LET && kind != PNK_CONST) ||
-                                             parsingForInOrOfInit;
-                if (bindBeforeInitializer && !checkDestructuringPattern(&data, pn2))
-                    return null();
+        if (forHeadKind && *forHeadKind != PNK_FORHEAD)
+            break;
 
-                if (parsingForInOrOfInit) {
-                    tokenStream.ungetToken();
-                    handler.addList(pn, pn2);
-                    break;
-                }
+        initialDeclaration = false;
 
-                MUST_MATCH_TOKEN(TOK_ASSIGN, JSMSG_BAD_DESTRUCT_DECL);
-
-                Node init = assignExpr(location == InForInit ? InProhibited : InAllowed,
-                                       yieldHandling, TripledotProhibited);
-                if (!init)
-                    return null();
-
-                
-                
-                if (location == InForInit && kind == PNK_VAR) {
-                    TokenKind afterInit;
-                    if (!tokenStream.peekToken(&afterInit))
-                        return null();
-                    if (afterInit == TOK_IN) {
-                        report(ParseError, false, init, JSMSG_INVALID_FOR_INOF_DECL_WITH_INIT,
-                               "in");
-                        return null();
-                    }
-                }
-
-                if (!bindBeforeInitializer && !checkDestructuringPattern(&data, pn2))
-                    return null();
-
-                pn2 = handler.newBinary(PNK_ASSIGN, pn2, init);
-                if (!pn2)
-                    return null();
-
-                handler.addList(pn, pn2);
-                break;
-            }
-
-            if (tt != TOK_NAME) {
-                if (tt == TOK_YIELD) {
-                    if (!checkYieldNameValidity())
-                        return null();
-                } else {
-                    report(ParseError, false, null(), JSMSG_NO_VARIABLE_NAME);
-                    return null();
-                }
-            }
-
-            RootedPropertyName name(context, tokenStream.currentName());
-            pn2 = newBindingNode(name, kind == PNK_VAR, varContext);
-            if (!pn2)
-                return null();
-            if (data.isConst())
-                handler.setFlag(pn2, PND_CONST);
-            data.setNameNode(pn2);
-
-            handler.addList(pn, pn2);
-
-            bool matched;
-            
-            
-            
-            
-            
-            
-            
-            
-            if (!tokenStream.matchToken(&matched, TOK_ASSIGN, TokenStream::Operand))
-                return null();
-            if (!matched) {
-                tokenStream.addModifierException(TokenStream::NoneIsOperand);
-
-                if (data.isConst() && location == NotInForInit) {
-                    report(ParseError, false, null(), JSMSG_BAD_CONST_DECL);
-                    return null();
-                }
-
-                if (!data.bind(name, this))
-                    return null();
-            } else {
-                if (psimple)
-                    *psimple = false;
-
-                
-                
-                
-                
-                
-                
-                
-                
-                bool bindBeforeInitializer = kind != PNK_LET && kind != PNK_CONST;
-                if (bindBeforeInitializer && !data.bind(name, this))
-                    return null();
-
-                Node init = assignExpr(location == InForInit ? InProhibited : InAllowed,
-                                       yieldHandling, TripledotProhibited);
-                if (!init)
-                    return null();
-
-                
-                
-                
-                
-                
-                
-                bool performAssignment = true;
-                if (location == InForInit && kind == PNK_VAR) {
-                    TokenKind afterInit;
-                    if (!tokenStream.peekToken(&afterInit))
-                        return null();
-                    if (afterInit == TOK_IN) {
-                        performAssignment = false;
-                        if (!report(ParseWarning, pc->sc->strict(), init,
-                                    JSMSG_INVALID_FOR_INOF_DECL_WITH_INIT, "in"))
-                        {
-                            return null();
-                        }
-                    }
-                }
-
-                if (performAssignment) {
-                    if (!bindBeforeInitializer && !data.bind(name, this))
-                        return null();
-
-                    if (!handler.finishInitializerAssignment(pn2, init))
-                        return null();
-                }
-            }
-
-            handler.setLexicalDeclarationOp(pn2, data.op());
-            handler.setEndPosition(pn, pn2);
-        } while (false);
-
-        bool matched;
         if (!tokenStream.matchToken(&matched, TOK_COMMA))
             return null();
-        if (!matched)
-            break;
-    }
+    } while (matched);
 
-    return pn;
+    return decl;
 }
 
 template <>
@@ -4685,6 +4829,21 @@ CurrentLexicalStaticBlock(ParseContext<FullParseHandler>* pc)
 }
 
 template <>
+void
+Parser<SyntaxParseHandler>::assertCurrentLexicalStaticBlockIs(ParseContext<SyntaxParseHandler>* pc,
+                                                              Handle<StaticBlockObject*> blockObj)
+{
+}
+
+template <>
+void
+Parser<FullParseHandler>::assertCurrentLexicalStaticBlockIs(ParseContext<FullParseHandler>* pc,
+                                                            Handle<StaticBlockObject*> blockObj)
+{
+    MOZ_ASSERT(CurrentLexicalStaticBlock(pc) == blockObj);
+}
+
+template <>
 bool
 Parser<FullParseHandler>::prepareAndBindInitializedLexicalWithNode(HandlePropertyName name,
                                                                    PrepareLexicalKind prepareWhat,
@@ -4746,12 +4905,13 @@ Parser<FullParseHandler>::lexicalDeclaration(YieldHandling yieldHandling, bool i
 
 
 
-    ParseNodeKind kind = isConst ? PNK_CONST : PNK_LET;
-    ParseNode* pn = variables(yieldHandling, kind, NotInForInit,
-                              nullptr, CurrentLexicalStaticBlock(pc), HoistVars);
-    if (!pn)
+    ParseNode* decl =
+        declarationList(yieldHandling, isConst ? PNK_CONST : PNK_LET,
+                        CurrentLexicalStaticBlock(pc));
+    if (!decl || !MatchOrInsertSemicolonAfterExpression(tokenStream))
         return null();
-    return MatchOrInsertSemicolonAfterExpression(tokenStream) ? pn : nullptr;
+
+    return decl;
 }
 
 template <>
@@ -5230,7 +5390,7 @@ Parser<FullParseHandler>::exportDeclaration()
       }
 
       case TOK_VAR:
-        kid = variables(YieldIsName, PNK_VAR, NotInForInit);
+        kid = declarationList(YieldIsName, PNK_VAR);
         if (!kid)
             return null();
         if (!MatchOrInsertSemicolonAfterExpression(tokenStream))
@@ -5420,6 +5580,7 @@ Parser<ParseHandler>::matchInOrOf(bool* isForInp, bool* isForOfp)
     TokenKind tt;
     if (!tokenStream.getToken(&tt))
         return false;
+
     *isForInp = tt == TOK_IN;
     *isForOfp = tt == TOK_NAME && tokenStream.currentToken().name() == context->names().of;
     if (!*isForInp && !*isForOfp) {
@@ -5428,51 +5589,179 @@ Parser<ParseHandler>::matchInOrOf(bool* isForInp, bool* isForOfp)
         if (tt == TOK_NAME && !checkUnescapedName())
             return false;
     }
+
+    MOZ_ASSERT_IF(*isForInp || *isForOfp, *isForInp != *isForOfp);
     return true;
 }
 
-template <>
+template <class ParseHandler>
 bool
-Parser<FullParseHandler>::isValidForStatementLHS(ParseNode* pn1, JSVersion version,
-                                                 bool isForDecl, bool isForEach,
-                                                 ParseNodeKind headKind)
+Parser<ParseHandler>::validateForInOrOfLHSExpression(Node target)
 {
-    if (isForDecl)
-        return pn1->pn_count < 2 && !pn1->isKind(PNK_CONST);
+    if (handler.isUnparenthesizedDestructuringPattern(target))
+        return checkDestructuringPattern(nullptr, target);
 
-    switch (pn1->getKind()) {
-      case PNK_ARRAY:
-      case PNK_CALL:
-      case PNK_DOT:
-      case PNK_ELEM:
-      case PNK_NAME:
-      case PNK_OBJECT:
+    
+    if (!reportIfNotValidSimpleAssignmentTarget(target, ForInOrOfTarget))
+        return false;
+
+    if (handler.isPropertyAccess(target))
         return true;
 
-      default:
+    if (handler.maybeNameAnyParentheses(target)) {
+        
+        
+        if (!reportIfArgumentsEvalTarget(target))
+            return false;
+
+        handler.adjustGetToSet(target);
+        handler.markAsAssigned(target);
+        return true;
+    }
+
+    if (handler.isFunctionCall(target))
+        return makeSetCall(target, JSMSG_BAD_FOR_LEFTSIDE);
+
+    report(ParseError, false, target, JSMSG_BAD_FOR_LEFTSIDE);
+    return false;
+}
+
+template <class ParseHandler>
+bool
+Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
+                                   ParseNodeKind* forHeadKind,
+                                   Node* forInitialPart,
+                                   Maybe<AutoPushStmtInfoPC>& letStmt,
+                                   MutableHandle<StaticBlockObject*> blockObj,
+                                   Node* forLetImpliedBlock,
+                                   Node* forInOrOfExpression)
+{
+    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_LP));
+
+    TokenKind tt;
+    if (!tokenStream.peekToken(&tt, TokenStream::Operand))
+        return null();
+
+    
+    
+    if (tt == TOK_SEMI) {
+        *forInitialPart = null();
+        *forHeadKind = PNK_FORHEAD;
+        return true;
+    }
+
+    
+    
+    
+    if (tt == TOK_VAR) {
+        tokenStream.consumeKnownToken(tt, TokenStream::Operand);
+
+        
+        *forInitialPart = declarationList(yieldHandling, PNK_VAR, nullptr, forHeadKind,
+                                          forInOrOfExpression);
+        return *forInitialPart != null();
+    }
+
+    
+
+    
+    
+    
+    
+    bool parsingLexicalDeclaration = false;
+    bool letIsIdentifier = false;
+    if (tt == TOK_LET || tt == TOK_CONST) {
+        parsingLexicalDeclaration = true;
+        tokenStream.consumeKnownToken(tt, TokenStream::Operand);
+    } else if (tt == TOK_NAME && tokenStream.nextName() == context->names().let) {
+        
+        
+        
+        if (!peekShouldParseLetDeclaration(&parsingLexicalDeclaration, TokenStream::Operand))
+            return false;
+
+        letIsIdentifier = !parsingLexicalDeclaration;
+    }
+
+    if (parsingLexicalDeclaration) {
+        handler.disableSyntaxParser();
+
+        
+        blockObj.set(StaticBlockObject::create(context));
+        if (!blockObj)
+            return false;
+        blockObj->initEnclosingScopeFromParser(pc->innermostStaticScope());
+        letStmt.emplace(*this, StmtType::BLOCK);
+        *forLetImpliedBlock = pushLetScope(blockObj, *letStmt);
+        if (!*forLetImpliedBlock)
+            return false;
+        (*letStmt)->isForLetBlock = true;
+
+        assertCurrentLexicalStaticBlockIs(pc, blockObj);
+        *forInitialPart = declarationList(yieldHandling, tt == TOK_CONST ? PNK_CONST : PNK_LET,
+                                          blockObj, forHeadKind, forInOrOfExpression);
+        return *forInitialPart != null();
+    }
+
+    
+    
+    
+    *forInitialPart = expr(InProhibited, yieldHandling, TripledotProhibited);
+    if (!*forInitialPart)
+        return false;
+
+    bool isForIn, isForOf;
+    if (!matchInOrOf(&isForIn, &isForOf))
+        return false;
+
+    
+    
+    
+    
+    if (!isForIn && !isForOf) {
+        *forHeadKind = PNK_FORHEAD;
+        tokenStream.addModifierException(TokenStream::OperandIsNone);
+        return true;
+    }
+
+    MOZ_ASSERT(isForIn != isForOf);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (isForOf && letIsIdentifier) {
+        report(ParseError, false, *forInitialPart, JSMSG_LET_STARTING_FOROF_LHS);
         return false;
     }
+
+    *forHeadKind = isForIn ? PNK_FORIN : PNK_FOROF;
+
+    if (!validateForInOrOfLHSExpression(*forInitialPart))
+        return false;
+
+    
+    
+    *forInOrOfExpression = expressionAfterForInOrOf(*forHeadKind, yieldHandling);
+    return *forInOrOfExpression != null();
 }
 
-template <>
-bool
-Parser<FullParseHandler>::checkForHeadConstInitializers(ParseNode* pn1)
+template <class ParseHandler>
+typename ParseHandler::Node
+Parser<ParseHandler>::cloneForInOrOfDeclarationForAssignment(Node decl)
 {
-    if (!pn1->isKind(PNK_CONST))
-        return true;
-
-    for (ParseNode* assign = pn1->pn_head; assign; assign = assign->pn_next) {
-        MOZ_ASSERT(assign->isKind(PNK_ASSIGN) || assign->isKind(PNK_NAME));
-        if (assign->isKind(PNK_NAME) && !assign->isAssigned())
-            return false;
-        
-    }
-    return true;
+    return cloneLeftHandSide(handler.singleBindingFromDeclaration(decl));
 }
 
-template <>
-ParseNode*
-Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
+template <class ParseHandler>
+typename ParseHandler::Node
+Parser<ParseHandler>::forStatement(YieldHandling yieldHandling)
 {
     MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_FOR));
     uint32_t begin = pos().begin;
@@ -5500,7 +5789,10 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
     MUST_MATCH_TOKEN(TOK_LP, JSMSG_PAREN_AFTER_FOR);
 
     
-    bool isForDecl = false;
+    ParseNodeKind headKind;
+
+    
+    Node startNode;
 
     
     
@@ -5515,6 +5807,9 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
     RootedStaticBlockObject blockObj(context);
 
     
+    Node forLetImpliedBlock = null();
+
+    
     
     
     
@@ -5523,115 +5818,40 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
     Maybe<AutoPushStmtInfoPC> letStmt;
 
     
-    ParseNode* forLetImpliedBlock = nullptr;
+    
+    Node iteratedExpr;
 
     
     
-    bool letIsIdentifier = false;
-
     
-    ParseNode* pn1;
-
-    TokenStream::Modifier modifier = TokenStream::Operand;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!forHeadStart(yieldHandling, &headKind, &startNode, letStmt, &blockObj,
+                      &forLetImpliedBlock, &iteratedExpr))
     {
-        TokenKind tt;
-        if (!tokenStream.peekToken(&tt, TokenStream::Operand))
-            return null();
-        if (tt == TOK_SEMI) {
-            pn1 = nullptr;
-        } else {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if (tt == TOK_VAR) {
-                isForDecl = true;
-                tokenStream.consumeKnownToken(tt, TokenStream::Operand);
-                pn1 = variables(yieldHandling, PNK_VAR, InForInit);
-            } else if (tt == TOK_LET || tt == TOK_CONST ||
-                       (tt == TOK_NAME && tokenStream.nextName() == context->names().let)) {
-                handler.disableSyntaxParser();
-
-                
-                
-                
-                bool parseDecl;
-                if (tt == TOK_NAME) {
-                    if (!peekShouldParseLetDeclaration(&parseDecl, TokenStream::Operand))
-                        return null();
-                    letIsIdentifier = !parseDecl;
-                } else {
-                    parseDecl = true;
-                    tokenStream.consumeKnownToken(tt, TokenStream::Operand);
-                }
-
-                if (parseDecl) {
-                    bool constDecl = tt == TOK_CONST;
-                    isForDecl = true;
-
-                    
-                    
-                    blockObj = StaticBlockObject::create(context);
-                    if (!blockObj)
-                        return null();
-                    blockObj->initEnclosingScopeFromParser(pc->innermostStaticScope());
-                    letStmt.emplace(*this, StmtType::BLOCK);
-                    forLetImpliedBlock = pushLetScope(blockObj, *letStmt);
-                    if (!forLetImpliedBlock)
-                        return null();
-                    (*letStmt)->isForLetBlock = true;
-
-                    MOZ_ASSERT(CurrentLexicalStaticBlock(pc) == blockObj);
-                    pn1 = variables(yieldHandling, constDecl ? PNK_CONST : PNK_LET, InForInit,
-                                    nullptr, blockObj, HoistVars);
-                } else {
-                    pn1 = expr(InProhibited, yieldHandling, TripledotProhibited);
-                }
-            } else {
-                
-                
-                
-                
-                pn1 = expr(InProhibited, yieldHandling, TripledotProhibited);
-            }
-            if (!pn1)
-                return null();
-            modifier = TokenStream::None;
-        }
+        return null();
     }
 
-    MOZ_ASSERT_IF(isForDecl, pn1->isArity(PN_LIST));
-    MOZ_ASSERT(letStmt.isSome() == (isForDecl && (pn1->isOp(JSOP_DEFLET) || pn1->isOp(JSOP_DEFCONST))));
+    MOZ_ASSERT(headKind == PNK_FORIN || headKind == PNK_FOROF || headKind == PNK_FORHEAD);
 
-    
-    
-    ParseNode* pn2;      
-    ParseNode* pn3;      
-    ParseNodeKind headKind = PNK_FORHEAD;
-    if (pn1) {
-        bool isForIn, isForOf;
-        if (!matchInOrOf(&isForIn, &isForOf))
-            return null();
-
-        
-        
-        
-        
-        
-        
-        
-        if (isForIn)
-            headKind = PNK_FORIN;
-        else if (isForOf && !letIsIdentifier)
-            headKind = PNK_FOROF;
-    }
-
+    Node pn1;
+    Node pn2;
+    Node pn3;
+    TokenStream::Modifier modifier;
     if (headKind == PNK_FOROF || headKind == PNK_FORIN) {
+        
+        
+        
+        Node target = startNode;
+
         
 
 
@@ -5643,7 +5863,7 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
         if (headKind == PNK_FOROF) {
             forStmt->type = StmtType::FOR_OF_LOOP;
             if (isForEach) {
-                report(ParseError, false, null(), JSMSG_BAD_FOR_EACH_LOOP);
+                report(ParseError, false, startNode, JSMSG_BAD_FOR_EACH_LOOP);
                 return null();
             }
         } else {
@@ -5652,267 +5872,109 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
         }
 
         
-        if (!isValidForStatementLHS(pn1, versionNumber(), isForDecl, isForEach, headKind)) {
-            report(ParseError, false, pn1, JSMSG_BAD_FOR_LEFTSIDE);
-            return null();
-        }
-
-        
 
 
 
 
 
-        if (isForDecl) {
-            pn2 = pn1->pn_head;
-            if ((pn2->isKind(PNK_NAME) && pn2->maybeExpr()) || pn2->isKind(PNK_ASSIGN)) {
-                MOZ_ASSERT(!(headKind == PNK_FORIN && pn1->isKind(PNK_VAR)),
-                           "Parser::variables should have ignored the "
-                           "initializer in the ES5-sanctioned, ES6-prohibited "
-                           "|for (var ... = ... in ...)| syntax");
+        if (handler.isDeclarationList(target)) {
+            pn1 = target;
 
-                
-                
-                
-                report(ParseError, false, pn2, JSMSG_INVALID_FOR_INOF_DECL_WITH_INIT,
-                       headKind == PNK_FOROF ? "of" : "in");
-                return null();
-            }
-        } else {
             
+            
+            pn2 = cloneForInOrOfDeclarationForAssignment(target);
+            if (!pn2)
+                return null();
+        } else {
             MOZ_ASSERT(!letStmt);
-            pn2 = pn1;
-            pn1 = nullptr;
+            pn1 = null();
+            pn2 = target;
 
             if (!checkAndMarkAsAssignmentLhs(pn2, PlainAssignment))
                 return null();
         }
 
-        pn3 = (headKind == PNK_FOROF)
-              ? assignExpr(InAllowed, yieldHandling, TripledotProhibited)
-              : expr(InAllowed, yieldHandling, TripledotProhibited);
-        if (!pn3)
-            return null();
+        pn3 = iteratedExpr;
+
+        if (handler.maybeNameAnyParentheses(pn2)) {
+            
+            handler.markAsAssigned(pn2);
+        }
+
+        
+        
+        
         modifier = TokenStream::None;
-
-        if (isForDecl) {
-            
-
-
-
-            pn2 = cloneLeftHandSide(pn2);
-            if (!pn2)
-                return null();
-        }
-
-        ParseNodeKind kind2 = pn2->getKind();
-        MOZ_ASSERT(kind2 != PNK_ASSIGN, "forStatement TOK_ASSIGN");
-
-        if (kind2 == PNK_NAME) {
-            
-            pn2->markAsAssigned();
-        }
     } else {
+        Node init = startNode;
+
         if (isForEach) {
             reportWithOffset(ParseError, false, begin, JSMSG_BAD_FOR_EACH_LOOP);
             return null();
         }
 
-        MOZ_ASSERT(headKind == PNK_FORHEAD);
-
-        if (letStmt) {
-            
-            
-            if (!checkForHeadConstInitializers(pn1)) {
-                report(ParseError, false, nullptr, JSMSG_BAD_CONST_DECL);
-                return null();
-            }
-        }
-
         
-        MUST_MATCH_TOKEN_MOD(TOK_SEMI, modifier, JSMSG_SEMI_AFTER_FOR_INIT);
+        
+        MUST_MATCH_TOKEN_MOD(TOK_SEMI, TokenStream::Operand, JSMSG_SEMI_AFTER_FOR_INIT);
+
         TokenKind tt;
         if (!tokenStream.peekToken(&tt, TokenStream::Operand))
             return null();
+
+        Node test;
+        TokenStream::Modifier mod;
         if (tt == TOK_SEMI) {
-            pn2 = nullptr;
-            modifier = TokenStream::Operand;
+            test = null();
+            mod = TokenStream::Operand;
         } else {
-            pn2 = expr(InAllowed, yieldHandling, TripledotProhibited);
-            if (!pn2)
+            test = expr(InAllowed, yieldHandling, TripledotProhibited);
+            if (!test)
                 return null();
-            modifier = TokenStream::None;
+            mod = TokenStream::None;
         }
 
-        
-        MUST_MATCH_TOKEN_MOD(TOK_SEMI, modifier, JSMSG_SEMI_AFTER_FOR_COND);
+        MUST_MATCH_TOKEN_MOD(TOK_SEMI, mod, JSMSG_SEMI_AFTER_FOR_COND);
+
         if (!tokenStream.peekToken(&tt, TokenStream::Operand))
             return null();
+
+        Node update;
         if (tt == TOK_RP) {
-            pn3 = nullptr;
-            modifier = TokenStream::Operand;
+            update = null();
+            mod = TokenStream::Operand;
         } else {
-            pn3 = expr(InAllowed, yieldHandling, TripledotProhibited);
-            if (!pn3)
+            update = expr(InAllowed, yieldHandling, TripledotProhibited);
+            if (!update)
                 return null();
-            modifier = TokenStream::None;
+            mod = TokenStream::None;
         }
+
+        modifier = mod;
+        pn1 = init;
+        pn2 = test;
+        pn3 = update;
     }
 
     MUST_MATCH_TOKEN_MOD(TOK_RP, modifier, JSMSG_PAREN_AFTER_FOR_CTRL);
 
     TokenPos headPos(begin, pos().end);
-    ParseNode* forHead = handler.newForHead(headKind, pn1, pn2, pn3, headPos);
+    Node forHead = handler.newForHead(headKind, pn1, pn2, pn3, headPos);
     if (!forHead)
         return null();
 
-    
-    ParseNode* body = statement(yieldHandling);
+    Node body = statement(yieldHandling);
     if (!body)
         return null();
 
-    ParseNode* forLoop = handler.newForStatement(begin, forHead, body, iflags);
+    Node forLoop = handler.newForStatement(begin, forHead, body, iflags);
     if (!forLoop)
         return null();
 
     if (forLetImpliedBlock) {
-        forLetImpliedBlock->pn_expr = forLoop;
-        forLetImpliedBlock->pn_pos = forLoop->pn_pos;
+        handler.initForLetBlock(forLetImpliedBlock, forLoop);
         return forLetImpliedBlock;
     }
     return forLoop;
-}
-
-template <>
-SyntaxParseHandler::Node
-Parser<SyntaxParseHandler>::forStatement(YieldHandling yieldHandling)
-{
-    
-
-
-
-
-
-    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_FOR));
-
-    AutoPushStmtInfoPC forStmt(*this, StmtType::FOR_LOOP);
-
-    
-    if (allowsForEachIn()) {
-        TokenKind tt;
-        if (!tokenStream.peekToken(&tt))
-            return null();
-        
-        
-        if (tt == TOK_NAME || tt == TOK_YIELD) {
-            JS_ALWAYS_FALSE(abortIfSyntaxParser());
-            return null();
-        }
-    }
-
-    MUST_MATCH_TOKEN(TOK_LP, JSMSG_PAREN_AFTER_FOR);
-
-    
-    bool isForDecl = false;
-    bool simpleForDecl = true;
-
-    
-    Node lhsNode;
-
-    TokenStream::Modifier modifier = TokenStream::Operand;
-    {
-        TokenKind tt;
-        if (!tokenStream.peekToken(&tt, TokenStream::Operand))
-            return null();
-        if (tt == TOK_SEMI) {
-            lhsNode = null();
-        } else {
-            
-            if (tt == TOK_VAR) {
-                isForDecl = true;
-                tokenStream.consumeKnownToken(tt, TokenStream::Operand);
-                lhsNode = variables(yieldHandling, PNK_VAR, InForInit, &simpleForDecl);
-            } else if (tt == TOK_CONST || tt == TOK_LET ||
-                       (tt == TOK_NAME && tokenStream.nextName() == context->names().let))
-            {
-                JS_ALWAYS_FALSE(abortIfSyntaxParser());
-                return null();
-            } else {
-                lhsNode = expr(InProhibited, yieldHandling, TripledotProhibited);
-            }
-            if (!lhsNode)
-                return null();
-            modifier = TokenStream::None;
-        }
-    }
-
-    
-    
-    bool isForIn = false, isForOf = false;
-    if (lhsNode) {
-        if (!matchInOrOf(&isForIn, &isForOf))
-            return null();
-    }
-    if (isForIn || isForOf) {
-        
-        forStmt->type = isForOf ? StmtType::FOR_OF_LOOP : StmtType::FOR_IN_LOOP;
-
-        
-        if (!isForDecl &&
-            !handler.maybeNameAnyParentheses(lhsNode) &&
-            !handler.isPropertyAccess(lhsNode))
-        {
-            JS_ALWAYS_FALSE(abortIfSyntaxParser());
-            return null();
-        }
-
-        if (!simpleForDecl) {
-            JS_ALWAYS_FALSE(abortIfSyntaxParser());
-            return null();
-        }
-
-        if (!isForDecl && !checkAndMarkAsAssignmentLhs(lhsNode, PlainAssignment))
-            return null();
-
-        if (!(isForIn
-              ? expr(InAllowed, yieldHandling, TripledotProhibited)
-              : assignExpr(InAllowed, yieldHandling, TripledotProhibited)))
-        {
-            return null();
-        }
-        modifier = TokenStream::None;
-    } else {
-        
-        MUST_MATCH_TOKEN_MOD(TOK_SEMI, modifier, JSMSG_SEMI_AFTER_FOR_INIT);
-        TokenKind tt;
-        if (!tokenStream.peekToken(&tt, TokenStream::Operand))
-            return null();
-        modifier = TokenStream::Operand;
-        if (tt != TOK_SEMI) {
-            if (!expr(InAllowed, yieldHandling, TripledotProhibited))
-                return null();
-            modifier = TokenStream::None;
-        }
-
-        
-        MUST_MATCH_TOKEN_MOD(TOK_SEMI, modifier, JSMSG_SEMI_AFTER_FOR_COND);
-        if (!tokenStream.peekToken(&tt, TokenStream::Operand))
-            return null();
-        modifier = TokenStream::Operand;
-        if (tt != TOK_RP) {
-            if (!expr(InAllowed, yieldHandling, TripledotProhibited))
-                return null();
-            modifier = TokenStream::None;
-        }
-    }
-
-    MUST_MATCH_TOKEN_MOD(TOK_RP, modifier, JSMSG_PAREN_AFTER_FOR_CTRL);
-
-    
-    if (!statement(yieldHandling))
-        return null();
-
-    return SyntaxParseHandler::NodeGeneric;
 }
 
 template <typename ParseHandler>
@@ -6906,25 +6968,36 @@ bool
 Parser<ParseHandler>::shouldParseLetDeclaration(bool* parseDeclOut)
 {
     TokenKind tt;
-    *parseDeclOut = false;
-
     if (!tokenStream.peekToken(&tt))
         return false;
 
-    switch (tt) {
-      case TOK_NAME:
+    if (tt == TOK_NAME) {
         
-        *parseDeclOut = tokenStream.nextName() != context->names().let;
-        break;
-
-      case TOK_LC:
-      case TOK_LB:
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         *parseDeclOut = true;
-        break;
-
-      default:
-        break;
+    } else if (tt == TOK_LB || tt == TOK_LC) {
+        *parseDeclOut = true;
+    } else {
+        
+        
+        *parseDeclOut = false;
     }
 
     return true;
@@ -6977,7 +7050,7 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirecti
 
       
       case TOK_VAR: {
-        Node pn = variables(yieldHandling, PNK_VAR, NotInForInit);
+        Node pn = declarationList(yieldHandling, PNK_VAR);
         if (!pn)
             return null();
         if (!MatchOrInsertSemicolonAfterExpression(tokenStream))
@@ -7030,10 +7103,13 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirecti
         
         
         
+        
+        
         if (tokenStream.currentName() == context->names().let) {
             bool parseDecl;
             if (!shouldParseLetDeclaration(&parseDecl))
                 return null();
+
             if (parseDecl)
                 return lexicalDeclaration(yieldHandling,  false);
         }
@@ -7646,6 +7722,10 @@ Parser<ParseHandler>::reportIfNotValidSimpleAssignmentTarget(Node target, Assign
       case PlainAssignment:
       case CompoundAssignment:
         errnum = JSMSG_BAD_LEFTSIDE_OF_ASS;
+        break;
+
+      case ForInOrOfTarget:
+        errnum = JSMSG_BAD_FOR_LEFTSIDE;
         break;
     }
 
@@ -8539,7 +8619,7 @@ Parser<ParseHandler>::comprehensionFor(GeneratorKind comprehensionKind)
     blockObj->initEnclosingScopeFromParser(pc->innermostStaticScope());
 
     data.initLexical(DontHoistVars, JSOP_DEFLET, blockObj, JSMSG_TOO_MANY_LOCALS);
-    Node decls = handler.newList(PNK_LET, lhs);
+    Node decls = handler.newComprehensionBinding(lhs);
     if (!decls)
         return null();
     data.setNameNode(lhs);
