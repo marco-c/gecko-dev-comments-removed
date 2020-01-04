@@ -32,47 +32,30 @@ ValidateSecurityFlags(nsILoadInfo* aLoadInfo)
   return NS_OK;
 }
 
-nsresult
-DoSOPChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo)
+static bool SchemeIs(nsIURI* aURI, const char* aScheme)
 {
-  nsSecurityFlags securityMode = aLoadInfo->GetSecurityMode();
+  nsCOMPtr<nsIURI> baseURI = NS_GetInnermostURI(aURI);
+  NS_ENSURE_TRUE(baseURI, false);
 
-  
-  if ((securityMode != nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS) &&
-      (securityMode != nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED)) {
-    return NS_OK;
-  }
-
-  nsIPrincipal* loadingPrincipal = aLoadInfo->LoadingPrincipal();
-  bool sameOriginDataInherits =
-    securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS;
-  return loadingPrincipal->CheckMayLoad(aURI,
-                                        true, 
-                                        sameOriginDataInherits);
+  bool isScheme = false;
+  return NS_SUCCEEDED(baseURI->SchemeIs(aScheme, &isScheme)) && isScheme;
 }
 
 nsresult
 DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo)
 {
   nsresult rv = NS_OK;
-  nsSecurityFlags securityMode = aLoadInfo->GetSecurityMode();
-  
-  
-  
-  
-  if ((securityMode != nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS) &&
-      (securityMode != nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL)) {
-    return NS_OK;
-  }
 
   nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->LoadingPrincipal();
-  
-  
-  
+  uint32_t flags = nsIScriptSecurityManager::STANDARD;
+  if (aLoadInfo->GetAllowChrome()) {
+    flags |= nsIScriptSecurityManager::ALLOW_CHROME;
+  }
+
   rv = nsContentUtils::GetSecurityManager()->
     CheckLoadURIWithPrincipal(loadingPrincipal,
                               aURI,
-                              nsIScriptSecurityManager::STANDARD);
+                              flags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -82,20 +65,33 @@ DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo)
     rv = nsContentUtils::GetSecurityManager()->
            CheckLoadURIWithPrincipal(triggeringPrincipal,
                                      aURI,
-                                     nsIScriptSecurityManager::STANDARD);
+                                     flags);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
 }
 
 nsresult
+DoSOPChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo)
+{
+  if (aLoadInfo->GetAllowChrome() && SchemeIs(aURI, "chrome")) {
+    
+    return DoCheckLoadURIChecks(aURI, aLoadInfo);
+  }
+
+  nsIPrincipal* loadingPrincipal = aLoadInfo->LoadingPrincipal();
+  bool sameOriginDataInherits =
+    aLoadInfo->GetSecurityMode() == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS;
+  return loadingPrincipal->CheckMayLoad(aURI,
+                                        true, 
+                                        sameOriginDataInherits);
+}
+
+nsresult
 DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
              nsCOMPtr<nsIStreamListener>& aInAndOutListener)
 {
-  if (aLoadInfo->GetSecurityMode() != nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
-    return NS_OK;
-  }
-
+  MOZ_ASSERT(aInAndOutListener, "can not perform CORS checks without a listener");
   nsIPrincipal* loadingPrincipal = aLoadInfo->LoadingPrincipal();
   nsRefPtr<nsCORSListenerProxy> corsListener =
     new nsCORSListenerProxy(aInAndOutListener,
@@ -144,9 +140,14 @@ DoContentSecurityChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo)
       break;
     }
 
-    case nsIContentPolicy::TYPE_REFRESH:
-    case nsIContentPolicy::TYPE_XBL: {
+    case nsIContentPolicy::TYPE_REFRESH: {
       MOZ_ASSERT(false, "contentPolicyType not supported yet");
+      break;
+    }
+
+    case nsIContentPolicy::TYPE_XBL: {
+      mimeTypeGuess = EmptyCString();
+      requestingContext = aLoadInfo->LoadingNode();
       break;
     }
 
@@ -307,9 +308,14 @@ nsContentSecurityManager::doContentSecurityCheck(nsIChannel* aChannel,
   rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalChannelURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
+
   
-  rv = DoSOPChecks(finalChannelURI, loadInfo);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if ((securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS) ||
+      (securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED)) {
+    rv = DoSOPChecks(finalChannelURI, loadInfo);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   
   
@@ -317,12 +323,20 @@ nsContentSecurityManager::doContentSecurityCheck(nsIChannel* aChannel,
     return NS_OK;
   }
 
-  rv = DoCheckLoadURIChecks(finalChannelURI, loadInfo);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if ((securityMode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS) ||
+      (securityMode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL)) {
+    
+    
+    
+    
+    rv = DoCheckLoadURIChecks(finalChannelURI, loadInfo);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
-  
-  rv = DoCORSChecks(aChannel, loadInfo, aInAndOutListener);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
+    rv = DoCORSChecks(aChannel, loadInfo, aInAndOutListener);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   
   rv = DoContentSecurityChecks(finalChannelURI, loadInfo);

@@ -856,21 +856,6 @@ static bool SchemeIs(nsIURI* aURI, const char* aScheme)
   return NS_SUCCEEDED(baseURI->SchemeIs(aScheme, &isScheme)) && isScheme;
 }
 
-static bool
-IsSystemOrChromeURLPrincipal(nsIPrincipal* aPrincipal)
-{
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
-    return true;
-  }
-
-  nsCOMPtr<nsIURI> uri;
-  aPrincipal->GetURI(getter_AddRefs(uri));
-  NS_ENSURE_TRUE(uri, false);
-
-  bool isChrome = false;
-  return NS_SUCCEEDED(uri->SchemeIs("chrome", &isChrome)) && isChrome;
-}
-
 nsresult
 nsXBLService::LoadBindingDocumentInfo(nsIContent* aBoundElement,
                                       nsIDocument* aBoundDocument,
@@ -883,45 +868,16 @@ nsXBLService::LoadBindingDocumentInfo(nsIContent* aBoundElement,
   NS_PRECONDITION(!aOriginPrincipal || aBoundDocument,
                   "If we're doing a security check, we better have a document!");
 
-  nsresult rv;
-  if (aOriginPrincipal) {
-    
-    
-    
-    
-    
-    
-    
-    
-    rv = nsContentUtils::
-      CheckSecurityBeforeLoad(aBindingURI, aOriginPrincipal,
-                              nsIScriptSecurityManager::ALLOW_CHROME,
-                              gAllowDataURIs,
-                              nsIContentPolicy::TYPE_XBL,
-                              aBoundDocument);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_XBL_BLOCKED);
-
-    if (!IsSystemOrChromeURLPrincipal(aOriginPrincipal)) {
-      
-      
-      if (!(gAllowDataURIs && SchemeIs(aBindingURI, "data")) &&
-          !SchemeIs(aBindingURI, "chrome")) {
-        rv = aBoundDocument->NodePrincipal()->CheckMayLoad(aBindingURI,
-                                                           true, false);
-        NS_ENSURE_SUCCESS(rv, NS_ERROR_XBL_BLOCKED);
-      }
-
-      
-      NS_ENSURE_TRUE(aBoundDocument->AllowXULXBL(),
-                     NS_ERROR_XBL_BLOCKED);
-    }
+  *aResult = nullptr;
+  if (aOriginPrincipal && !nsContentUtils::IsSystemPrincipal(aOriginPrincipal)) {
+    NS_ENSURE_TRUE(!aBoundDocument || aBoundDocument->AllowXULXBL(),
+                   NS_ERROR_XBL_BLOCKED);
   }
 
-  *aResult = nullptr;
   nsRefPtr<nsXBLDocumentInfo> info;
 
   nsCOMPtr<nsIURI> documentURI;
-  rv = aBindingURI->CloneIgnoringRef(getter_AddRefs(documentURI));
+  nsresult rv = aBindingURI->CloneIgnoringRef(getter_AddRefs(documentURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
 #ifdef MOZ_XUL
@@ -1005,9 +961,10 @@ nsXBLService::LoadBindingDocumentInfo(nsIContent* aBoundElement,
         aForceSyncLoad = true;
 
       nsCOMPtr<nsIDocument> document;
-      FetchBindingDocument(aBoundElement, aBoundDocument, documentURI,
-                           aBindingURI, aOriginPrincipal, aForceSyncLoad,
-                           getter_AddRefs(document));
+      rv = FetchBindingDocument(aBoundElement, aBoundDocument, documentURI,
+                                aBindingURI, aOriginPrincipal, aForceSyncLoad,
+                                getter_AddRefs(document));
+      NS_ENSURE_SUCCESS(rv, rv);
 
       if (document) {
         nsBindingManager *xblDocBindingManager = document->BindingManager();
@@ -1081,29 +1038,30 @@ nsXBLService::FetchBindingDocument(nsIContent* aBoundElement, nsIDocument* aBoun
 
   if (aOriginPrincipal) {
     
-    NS_ASSERTION(aBoundDocument, "can not create a channel without aBoundDocument");
+    MOZ_ASSERT(aBoundDocument, "can not create a channel without aBoundDocument");
+
+    if (!gAllowDataURIs && SchemeIs(aDocumentURI, "data")) {
+      return NS_ERROR_XBL_BLOCKED;
+    }
+
     rv = NS_NewChannelWithTriggeringPrincipal(getter_AddRefs(channel),
                                               aDocumentURI,
                                               aBoundDocument,
                                               aOriginPrincipal,
-                                              nsILoadInfo::SEC_NORMAL,
-                                              nsIContentPolicy::TYPE_OTHER,
+                                              nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS |
+                                              nsILoadInfo::SEC_ALLOW_CHROME,
+                                              nsIContentPolicy::TYPE_XBL,
                                               loadGroup);
   }
   else {
     rv = NS_NewChannel(getter_AddRefs(channel),
                        aDocumentURI,
                        nsContentUtils::GetSystemPrincipal(),
-                       nsILoadInfo::SEC_NORMAL,
-                       nsIContentPolicy::TYPE_OTHER,
+                       nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS,
+                       nsIContentPolicy::TYPE_XBL,
                        loadGroup);
   }
-
   NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIInterfaceRequestor> sameOriginChecker = nsContentUtils::SameOriginChecker();
-
-  channel->SetNotificationCallbacks(sameOriginChecker);
 
   if (!aForceSyncLoad) {
     
@@ -1126,7 +1084,7 @@ nsXBLService::FetchBindingDocument(nsIContent* aBoundElement, nsIDocument* aBoun
     xblListener->AddRequest(req);
 
     
-    rv = channel->AsyncOpen(xblListener, nullptr);
+    rv = channel->AsyncOpen2(xblListener);
     if (NS_FAILED(rv)) {
       
       if (bindingManager) {
@@ -1148,7 +1106,7 @@ nsXBLService::FetchBindingDocument(nsIContent* aBoundElement, nsIDocument* aBoun
 
   
   nsCOMPtr<nsIInputStream> in;
-  rv = channel->Open(getter_AddRefs(in));
+  rv = channel->Open2(getter_AddRefs(in));
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = nsSyncLoadService::PushSyncStreamToListener(in, listener, channel);
