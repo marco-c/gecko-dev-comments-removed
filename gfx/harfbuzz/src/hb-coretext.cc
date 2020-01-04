@@ -910,8 +910,6 @@ resize_and_retry:
 
 
 
-
-
 	bool matched = false;
 	for (unsigned int i = 0; i < range_records.len; i++)
 	  if (range_records[i].font && CFEqual (run_ct_font, range_records[i].font))

@@ -611,6 +611,15 @@ static inline unsigned char TOLOWER (unsigned char c)
 
 
 
+
+
+
+
+
+#ifdef NDEBUG
+#define HB_NDEBUG
+#endif
+
 #ifndef HB_DEBUG
 #define HB_DEBUG 0
 #endif

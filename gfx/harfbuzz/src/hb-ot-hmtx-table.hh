@@ -44,8 +44,8 @@ namespace OT {
 
 struct LongMetric
 {
-  USHORT	advance; 
-  SHORT		lsb; 
+  UFWORD	advance; 
+  FWORD		lsb; 
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -74,7 +74,7 @@ struct _mtx
 
 
 
-  SHORT		leadingBearingX[VAR];	
+  FWORD		leadingBearingX[VAR];	
 
 
 

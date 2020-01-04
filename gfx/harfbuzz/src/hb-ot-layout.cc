@@ -60,6 +60,35 @@ _hb_ot_layout_create (hb_face_t *face)
   layout->gpos_blob = OT::Sanitizer<OT::GPOS>::sanitize (face->reference_table (HB_OT_TAG_GPOS));
   layout->gpos = OT::Sanitizer<OT::GPOS>::lock_instance (layout->gpos_blob);
 
+  {
+    
+
+
+
+
+    unsigned int gdef_len = hb_blob_get_length (layout->gdef_blob);
+    unsigned int gsub_len = hb_blob_get_length (layout->gsub_blob);
+    unsigned int gpos_len = hb_blob_get_length (layout->gpos_blob);
+    if (0
+      || (442 == gdef_len && 42038 == gpos_len && 2874 == gsub_len) 
+      || (430 == gdef_len && 40662 == gpos_len && 2874 == gsub_len) 
+      || (442 == gdef_len && 39116 == gpos_len && 2874 == gsub_len) 
+      || (430 == gdef_len && 39374 == gpos_len && 2874 == gsub_len) 
+      || (490 == gdef_len && 41638 == gpos_len && 3046 == gsub_len) 
+      || (478 == gdef_len && 41902 == gpos_len && 3046 == gsub_len) 
+    )
+    {
+      
+
+
+
+
+
+     if (3 == layout->gdef->get_glyph_class (5))
+       layout->gdef = &OT::Null(OT::GDEF);
+    }
+  }
+
   layout->gsub_lookup_count = layout->gsub->get_lookup_count ();
   layout->gpos_lookup_count = layout->gpos->get_lookup_count ();
 

@@ -663,6 +663,15 @@ typedef SHORT FWORD;
 typedef USHORT UFWORD;
 
 
+struct F2DOT14 : SHORT
+{
+  
+  
+  public:
+  DEFINE_SIZE_STATIC (2);
+};
+
+
 
 struct LONGDATETIME
 {

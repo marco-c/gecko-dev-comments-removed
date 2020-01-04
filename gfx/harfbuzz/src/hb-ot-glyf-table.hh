@@ -90,10 +90,10 @@ struct glyfGlyphHeader
 
 
 
-  SHORT		xMin;			
-  SHORT		yMin;			
-  SHORT		xMax;			
-  SHORT		yMax;			
+  FWORD		xMin;			
+  FWORD		yMin;			
+  FWORD		xMax;			
+  FWORD		yMax;			
 
   DEFINE_SIZE_STATIC (10);
 };
