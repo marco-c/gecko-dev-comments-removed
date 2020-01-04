@@ -205,6 +205,10 @@ BenchmarkPlayback::MainThreadShutdown()
 {
   MOZ_ASSERT(OnThread());
 
+  if (mFinished) {
+    
+    return;
+  }
   mFinished = true;
 
   if (mDecoder) {
