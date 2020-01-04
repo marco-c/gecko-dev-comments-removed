@@ -248,7 +248,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     }
 
     let parentNode = this.walker.parentNode(this);
-    let inlineTextChild = this.walker.inlineTextChild(this);
+    let singleTextChild = this.walker.singleTextChild(this);
 
     let form = {
       actor: this.actorID,
@@ -257,10 +257,9 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       nodeType: this.rawNode.nodeType,
       namespaceURI: this.rawNode.namespaceURI,
       nodeName: this.rawNode.nodeName,
-      nodeValue: this.rawNode.nodeValue,
       displayName: getNodeDisplayName(this.rawNode),
       numChildren: this.numChildren,
-      inlineTextChild: inlineTextChild ? inlineTextChild.form() : undefined,
+      singleTextChild: singleTextChild ? singleTextChild.form() : undefined,
 
       
       name: this.rawNode.name,
@@ -284,6 +283,18 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
     if (this.isDocumentElement()) {
       form.isDocumentElement = true;
+    }
+
+    if (this.rawNode.nodeValue) {
+      
+      
+      if (this.rawNode.nodeValue.length > gValueSummaryLength) {
+        form.shortValue = this.rawNode.nodeValue
+          .substring(0, gValueSummaryLength);
+        form.incompleteValue = true;
+      } else {
+        form.shortValue = this.rawNode.nodeValue;
+      }
     }
 
     
@@ -319,7 +330,6 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       nativeAnonymousChildList: true,
       attributes: true,
       characterData: true,
-      characterDataOldValue: true,
       childList: true,
       subtree: true
     });
@@ -1142,7 +1152,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-  inlineTextChild: function (node) {
+  singleTextChild: function (node) {
     
     if (node.isBeforePseudoElement ||
         node.isAfterPseudoElement ||
@@ -1156,13 +1166,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     
     
-    
-    
     if (!firstChild ||
-        docWalker.nextSibling() ||
         firstChild.nodeType !== Ci.nsIDOMNode.TEXT_NODE ||
-        firstChild.nodeValue.length > gValueSummaryLength
-        ) {
+        docWalker.nextSibling()) {
       return undefined;
     }
 
@@ -2218,6 +2224,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+
   getMutations: function (options = {}) {
     let pending = this._pendingMutations || [];
     this._pendingMutations = [];
@@ -2281,8 +2288,13 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
                             targetNode.getAttribute(mutation.attributeName)
                             : null;
       } else if (type === "characterData") {
-        mutation.newValue = targetNode.nodeValue;
-        this._maybeQueueInlineTextChildMutation(change, targetNode);
+        if (targetNode.nodeValue.length > gValueSummaryLength) {
+          mutation.newValue = targetNode.nodeValue
+            .substring(0, gValueSummaryLength);
+          mutation.incompleteValue = true;
+        } else {
+          mutation.newValue = targetNode.nodeValue;
+        }
       } else if (type === "childList" || type === "nativeAnonymousChildList") {
         
         
@@ -2318,48 +2330,13 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         mutation.removed = removedActors;
         mutation.added = addedActors;
 
-        let inlineTextChild = this.inlineTextChild(targetActor);
-        if (inlineTextChild) {
-          mutation.inlineTextChild = inlineTextChild.form();
+        let singleTextChild = this.singleTextChild(targetActor);
+        if (singleTextChild) {
+          mutation.singleTextChild = singleTextChild.form();
         }
       }
       this.queueMutation(mutation);
     }
-  },
-
-  
-
-
-
-
-
-
-
-  _maybeQueueInlineTextChildMutation: function (mutation) {
-    let {oldValue, target} = mutation;
-    let newValue = target.nodeValue;
-    let limit = gValueSummaryLength;
-
-    if ((oldValue.length <= limit && newValue.length <= limit) ||
-        (oldValue.length > limit && newValue.length > limit)) {
-      
-      return;
-    }
-
-    let parentActor = this.getNode(target.parentNode);
-    if (!parentActor || parentActor.rawNode.children.length > 0) {
-      
-      
-      return;
-    }
-
-    let inlineTextChild = this.inlineTextChild(parentActor);
-    this.queueMutation({
-      type: "inlineTextChild",
-      target: parentActor.actorID,
-      inlineTextChild:
-        inlineTextChild ? inlineTextChild.form() : undefined
-    });
   },
 
   onFrameLoad: function ({ window, isTopLevel }) {
