@@ -2805,6 +2805,21 @@ int32_t AsyncPanZoomController::GetLastTouchIdentifier() const {
 }
 
 void AsyncPanZoomController::RequestContentRepaint() {
+  
+  
+  
+  
+  if (!NS_IsMainThread()) {
+    
+    auto func = static_cast<void (AsyncPanZoomController::*)()>
+        (&AsyncPanZoomController::RequestContentRepaint);
+    NS_DispatchToMainThread(NS_NewRunnableMethod(this, func));
+    return;
+  }
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  ReentrantMonitorAutoEnter lock(mMonitor);
   ParentLayerPoint velocity = GetVelocityVector();
   mFrameMetrics.SetDisplayPortMargins(CalculatePendingDisplayPort(mFrameMetrics, velocity));
   mFrameMetrics.SetUseDisplayPortMargins(true);
@@ -2827,6 +2842,8 @@ void
 AsyncPanZoomController::RequestContentRepaint(const FrameMetrics& aFrameMetrics,
                                               const ParentLayerPoint& aVelocity)
 {
+  MOZ_ASSERT(NS_IsMainThread());
+
   
   
   ScreenMargin marginDelta = (mLastPaintRequestMetrics.GetDisplayPortMargins()
@@ -2863,12 +2880,7 @@ AsyncPanZoomController::RequestContentRepaint(const FrameMetrics& aFrameMetrics,
         str);
   }
 
-  if (NS_IsMainThread()) {
-    controller->RequestContentRepaint(aFrameMetrics);
-  } else {
-    NS_DispatchToMainThread(NS_NewRunnableMethodWithArg<FrameMetrics>(
-      controller, &GeckoContentController::RequestContentRepaint, aFrameMetrics));
-  }
+  controller->RequestContentRepaint(aFrameMetrics);
   mExpectedGeckoMetrics = aFrameMetrics;
   mLastPaintRequestMetrics = aFrameMetrics;
 }
@@ -3467,7 +3479,16 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
       CalculatePendingDisplayPort(endZoomToMetrics, velocity));
     endZoomToMetrics.SetUseDisplayPortMargins(true);
     endZoomToMetrics.SetPaintRequestTime(TimeStamp::Now());
-    RequestContentRepaint(endZoomToMetrics, velocity);
+    if (NS_IsMainThread()) {
+      RequestContentRepaint(endZoomToMetrics, velocity);
+    } else {
+      
+      auto func = static_cast<void (AsyncPanZoomController::*)(const FrameMetrics&, const ParentLayerPoint&)>
+          (&AsyncPanZoomController::RequestContentRepaint);
+      NS_DispatchToMainThread(
+          NS_NewRunnableMethodWithArgs<FrameMetrics, ParentLayerPoint>(
+              this, func, endZoomToMetrics, velocity));
+    }
   }
 }
 

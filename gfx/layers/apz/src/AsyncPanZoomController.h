@@ -579,9 +579,12 @@ protected:
 
 
 
+
+
   void RequestContentRepaint();
 
   
+
 
 
 
