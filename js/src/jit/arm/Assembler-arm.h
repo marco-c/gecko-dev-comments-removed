@@ -1782,6 +1782,12 @@ class Assembler : public AssemblerShared
         return;
     }
 
+    void comment(const char* msg) {
+#ifdef JS_DISASM_ARM
+        spew("; %s", msg);
+#endif
+    }
+
     
     
     void executableCopy(uint8_t* buffer);
