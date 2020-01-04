@@ -56,32 +56,6 @@ this.error = {};
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-error.toJSON = function(err) {
-  let msg = err.message;
-  if (!error.isWebDriverError(err) && "name" in error) {
-    msg = `${err.name}: ${msg}`;
-  }
-  return {
-    message: msg,
-    stacktrace: err.stack || null,
-    status: err.status
-  };
-};
-
-
-
-
 error.isSuccess = status => status === "success";
 
 
@@ -110,7 +84,7 @@ error.isError = function(val) {
 
 error.isWebDriverError = function(obj) {
   return error.isError(obj) &&
-      ("name" in obj && errors.indexOf(obj.name) > 0);
+      ("name" in obj && errors.indexOf(obj.name) >= 0);
 };
 
 

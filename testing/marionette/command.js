@@ -14,94 +14,89 @@ Cu.import("chrome://marionette/content/error.js");
 this.EXPORTED_SYMBOLS = ["CommandProcessor", "Response"];
 const logger = Log.repository.getLogger("Marionette");
 
+const validator = {
+  exclusionary: {
+    "capabilities": ["error", "value"],
+    "error": ["value", "sessionId", "capabilities"],
+    "sessionId": ["error", "value"],
+    "value": ["error", "sessionId", "capabilities"],
+  },
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-this.Response = function(cmdId, okHandler, respHandler, msg, sanitizer) {
-  const removeEmpty = function(map) {
-    let rv = {};
-    for (let [key, value] of map) {
-      if (typeof value == "undefined") {
-        value = null;
+  set: function(obj, prop, val) {
+    let tests = this.exclusionary[prop];
+    if (tests) {
+      for (let t of tests) {
+        if (obj.hasOwnProperty(t)) {
+          throw new TypeError(`${t} set, cannot set ${prop}`);
+        }
       }
-      rv[key] = value;
     }
-    return rv;
-  };
 
-  this.id = cmdId;
-  this.ok = true;
-  this.okHandler = okHandler;
-  this.respHandler = respHandler;
-  this.sanitizer = sanitizer || removeEmpty;
-
-  this.data = new Map([
-    ["sessionId", msg.sessionId ? msg.sessionId : null],
-    ["status", msg.status ? msg.status : "success"],
-    ["value", msg.value ? msg.value : undefined],
-  ]);
+    obj[prop] = val;
+    return true;
+  },
 };
 
-Response.prototype = {
-  get name() { return this.data.get("name"); },
-  set name(n) { this.data.set("name", n); },
-  get sessionId() { return this.data.get("sessionId"); },
-  set sessionId(id) { this.data.set("sessionId", id); },
-  get status() { return this.data.get("status"); },
-  set status(ns) { this.data.set("status", ns); },
-  get value() { return this.data.get("value"); },
-  set value(val) {
-    this.data.set("value", val);
-    this.ok = false;
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+this.ResponseBody = () => new Proxy({}, validator);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.Response = function(cmdId, respHandler) {
+  this.id = cmdId;
+  this.respHandler = respHandler;
+  this.sent = false;
+  this.body = ResponseBody();
 };
 
 Response.prototype.send = function() {
   if (this.sent) {
-    logger.warn("Skipped sending response to command ID " +
-      this.id + " because response has already been sent");
-    return;
+    throw new RangeError("Response has already been sent: " + this.toString());
   }
-
-  if (this.ok) {
-    this.okHandler(this.id);
-  } else {
-    let rawData = this.sanitizer(this.data);
-    this.respHandler(rawData, this.id);
-  }
+  this.respHandler(this.body, this.id);
+  this.sent = true;
 };
 
-
-
-
-
-
 Response.prototype.sendError = function(err) {
-  this.status = "status" in err ? err.status : new UnknownError().status;
-  this.value = error.toJSON(err);
+  let wd = error.isWebDriverError(err);
+  let we = wd ? err : new WebDriverError(err.message);
+
+  this.body.error = we.status;
+  this.body.message = we.message || null;
+  this.body.stacktrace = we.stack || null;
+
   this.send();
 
   
-  if (!error.isWebDriverError(err)) {
+  if (!wd) {
     throw err;
   }
 };
@@ -136,12 +131,9 @@ this.CommandProcessor = function(driver) {
 
 
 
-
-
-CommandProcessor.prototype.execute = function(payload, okHandler, respHandler, cmdId) {
+CommandProcessor.prototype.execute = function(payload, respHandler, cmdId) {
   let cmd = payload;
-  let resp = new Response(
-    cmdId, okHandler, respHandler, {sessionId: this.driver.sessionId});
+  let resp = new Response(cmdId, respHandler);
   let sendResponse = resp.send.bind(resp);
   let sendError = resp.sendError.bind(resp);
 
@@ -156,7 +148,15 @@ CommandProcessor.prototype.execute = function(payload, okHandler, respHandler, c
       throw new UnknownCommandError(cmd.name);
     }
 
-    yield fn.bind(this.driver)(cmd, resp);
+    let rv = yield fn.bind(this.driver)(cmd, resp);
+
+    if (typeof rv != "undefined") {
+      if (typeof rv != "object") {
+        resp.body = {value: rv};
+      } else {
+        resp.body = rv;
+      }
+    }
   }.bind(this));
 
   req.then(sendResponse, sendError).catch(error.report);

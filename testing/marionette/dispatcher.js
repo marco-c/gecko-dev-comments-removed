@@ -17,6 +17,8 @@ Cu.import("chrome://marionette/content/driver.js");
 
 this.EXPORTED_SYMBOLS = ["Dispatcher"];
 
+const PROTOCOL_VERSION = 2;
+
 const logger = Log.repository.getLogger("Marionette");
 const uuidGen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 
@@ -39,12 +41,6 @@ this.Dispatcher = function(connId, transport, driverFactory, stopSignal) {
   this.conn = transport;
 
   
-  
-  
-  
-  this.actorId = "0";
-
-  
   this.onclose = null;
 
   
@@ -64,20 +60,16 @@ this.Dispatcher = function(connId, transport, driverFactory, stopSignal) {
 
 
 Dispatcher.prototype.onPacket = function(packet) {
-  
-  
-  
   if (logger.level <= Log.Level.Debug) {
-    logger.debug(this.id + " -> (" + JSON.stringify(packet) + ")");
+    logger.debug(this.id + " -> " + JSON.stringify(packet));
   }
 
   if (this.requests && this.requests[packet.name]) {
     this.requests[packet.name].bind(this)(packet);
   } else {
     let id = this.beginNewCommand();
-    let ok = this.sendOk.bind(this);
     let send = this.send.bind(this);
-    this.commandProcessor.execute(packet, ok, send, id);
+    this.commandProcessor.execute(packet, send, id);
   }
 };
 
@@ -93,11 +85,6 @@ Dispatcher.prototype.onClosed = function(status) {
 };
 
 
-
-Dispatcher.prototype.getMarionetteID = function() {
-  let id = this.beginNewCommand();
-  this.sendResponse({from: "root", id: this.actorId}, id);
-};
 
 Dispatcher.prototype.emulatorCmdResult = function(msg) {
   switch (this.driver.context) {
@@ -122,10 +109,7 @@ Dispatcher.prototype.quitApplication = function(msg) {
   let id = this.beginNewCommand();
 
   if (this.driver.appName != "Firefox") {
-    this.sendError({
-      "message": "In app initiated quit only supported on Firefox",
-      "status": "webdriver error",
-    }, id);
+    this.sendError(new WebDriverError("In app initiated quit only supported in Firefox"));
     return;
   }
 
@@ -145,60 +129,20 @@ Dispatcher.prototype.quitApplication = function(msg) {
 
 Dispatcher.prototype.sayHello = function() {
   let id = this.beginNewCommand();
-  let yo = {from: "root", applicationType: "gecko", traits: []};
-  this.sendResponse(yo, id);
+  let whatHo = {
+    applicationType: "gecko",
+    marionetteProtocol: PROTOCOL_VERSION,
+  };
+  this.send(whatHo, id);
 };
 
 Dispatcher.prototype.sendOk = function(cmdId) {
-  this.sendResponse({from: this.actorId, ok: true}, cmdId);
+  this.send({}, cmdId);
 };
 
 Dispatcher.prototype.sendError = function(err, cmdId) {
-  let packet = {
-    from: this.actorId,
-    status: err.status,
-    sessionId: this.driver.sessionId,
-    error: err
-  };
-  this.sendResponse(packet, cmdId);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Dispatcher.prototype.send = function(msg, cmdId) {
-  let packet = {
-    from: this.actorId,
-    value: msg.value,
-    status: msg.status,
-    sessionId: msg.sessionId,
-  };
-
-  if (typeof packet.value == "undefined") {
-    packet.value = null;
-  }
-
-  
-  
-  if (!error.isSuccess(msg.status)) {
-    packet.error = packet.value;
-    delete packet.value;
-  }
-
-  this.sendResponse(packet, cmdId);
+  let resp = new Response(cmdId, this.send.bind(this));
+  resp.sendError(err);
 };
 
 
@@ -218,9 +162,7 @@ Dispatcher.prototype.send = function(msg, cmdId) {
 
 
 
-
-
-Dispatcher.prototype.sendResponse = function(payload, cmdId) {
+Dispatcher.prototype.send = function(payload, cmdId) {
   if (emulator.isCallback(cmdId)) {
     this.sendToEmulator(payload);
   } else {
@@ -228,6 +170,8 @@ Dispatcher.prototype.sendResponse = function(payload, cmdId) {
     this.commandId = null;
   }
 };
+
+
 
 
 
@@ -265,11 +209,8 @@ Dispatcher.prototype.sendToClient = function(payload, cmdId) {
 
 
 Dispatcher.prototype.sendRaw = function(dest, payload) {
-  
-  
-  
   if (logger.level <= Log.Level.Debug) {
-    logger.debug(this.id + " " + dest + " <- (" + JSON.stringify(payload) + ")");
+    logger.debug(this.id + " " + dest + " <- " + JSON.stringify(payload));
   }
   this.conn.send(payload);
 };
@@ -292,7 +233,6 @@ Dispatcher.prototype.isOutOfSync = function(cmdId) {
 };
 
 Dispatcher.prototype.requests = {
-  getMarionetteID: Dispatcher.prototype.getMarionetteID,
   emulatorCmdResult: Dispatcher.prototype.emulatorCmdResult,
   quitApplication: Dispatcher.prototype.quitApplication
 };
