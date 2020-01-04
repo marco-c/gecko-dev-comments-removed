@@ -134,6 +134,7 @@ public:
     NS_IMETHOD AsyncOpen2(nsIStreamListener *aListener) override;
     
     NS_IMETHOD SetupFallbackChannel(const char *aFallbackKey) override;
+    NS_IMETHOD ForceIntercepted(uint64_t aInterceptionID) override;
     
     NS_IMETHOD SetPriority(int32_t value) override;
     
@@ -434,7 +435,8 @@ private:
         INTERCEPTED,       
     } mInterceptCache;
     
-    const uint64_t mInterceptionID;
+    
+    uint64_t mInterceptionID;
 
     bool PossiblyIntercepted() {
         return mInterceptCache != DO_NOT_INTERCEPT;

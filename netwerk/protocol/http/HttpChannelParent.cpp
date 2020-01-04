@@ -203,7 +203,9 @@ public:
 
   NS_IMETHOD Run()
   {
-    mChannel->FinishSynthesizedResponse();
+    
+    
+    mChannel->FinishSynthesizedResponse(EmptyCString());
     return NS_OK;
   }
 };
