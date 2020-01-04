@@ -6475,6 +6475,16 @@ GCRuntime::defaultBudget(JS::gcreason::Reason reason, int64_t millis)
 void
 GCRuntime::gc(JSGCInvocationKind gckind, JS::gcreason::Reason reason)
 {
+    
+    
+    
+    
+    
+    
+    
+    if (isIncrementalGCInProgress())
+        finishGC(reason);
+
     invocationKind = gckind;
     collect(true, SliceBudget::unlimited(), reason);
 }
