@@ -2063,8 +2063,8 @@ this.XPIDatabaseReconcile = {
           
           
           if (previousAddon.bootstrap && previousAddon._installLocation &&
-              currentAddon._installLocation != previousAddon._installLocation &&
-              previousAddon._sourceBundle.exists()) {
+              previousAddon._sourceBundle.exists() &&
+              currentAddon._sourceBundle.path != previousAddon._sourceBundle.path) {
 
             XPIProvider.callBootstrapMethod(previousAddon, previousAddon._sourceBundle,
                                             "uninstall", installReason,
@@ -2118,7 +2118,18 @@ this.XPIDatabaseReconcile = {
         continue;
 
       
+
+      
+      
+      if (previousAddon.bootstrap && previousAddon._sourceBundle.exists()) {
+        XPIProvider.callBootstrapMethod(previousAddon, previousAddon._sourceBundle,
+                                        "uninstall", BOOTSTRAP_REASONS.ADDON_UNINSTALL);
+        XPIProvider.unloadBootstrapScope(previousAddon.id);
+      }
       AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_UNINSTALLED, id);
+
+      
+      flushStartupCache();
     }
 
     
