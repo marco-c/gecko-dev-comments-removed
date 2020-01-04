@@ -44,7 +44,6 @@ global.IconDetails = {
         
         
         
-        let global = Cu.getGlobalForObject(imageData);
         if (instanceOf(imageData, "ImageData")) {
           imageData = {"19": imageData};
         }
