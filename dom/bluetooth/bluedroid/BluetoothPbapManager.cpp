@@ -275,7 +275,7 @@ BluetoothPbapManager::ReceiveSocketData(BluetoothSocket* aSocket,
       
       
       
-      BT_LOGR("PBAP shall always uses OBEX GetFinal instead of Get.");
+      BT_LOGR("PBAP shall always use OBEX GetFinal instead of Get.");
 
       
     case ObexRequestCode::GetFinal: {
@@ -731,7 +731,7 @@ BluetoothPbapManager::PackPropertiesMask(uint8_t* aData, int aSize)
                (aData[5] << 16) | (aData[4] << 24);
 
   uint32_t count = 0;
-  while (!x) {
+  while (x) {
     if (x & 1) {
       propSelector.AppendElement(count);
     }
