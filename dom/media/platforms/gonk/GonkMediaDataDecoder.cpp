@@ -75,16 +75,15 @@ GonkDecoderManager::ProcessQueuedSamples()
   status_t rv;
   while (mQueuedSamples.Length()) {
     RefPtr<MediaRawData> data = mQueuedSamples.ElementAt(0);
-    {
-      rv = mDecoder->Input(reinterpret_cast<const uint8_t*>(data->Data()),
-                           data->Size(),
-                           data->mTime,
-                           0,
-                           INPUT_TIMEOUT_US);
-    }
+    rv = mDecoder->Input(reinterpret_cast<const uint8_t*>(data->Data()),
+                         data->Size(),
+                         data->mTime,
+                         0,
+                         INPUT_TIMEOUT_US);
     if (rv == OK) {
       mQueuedSamples.RemoveElementAt(0);
-      mWaitOutput.AppendElement(data->mOffset);
+      mWaitOutput.AppendElement(WaitOutputInfo(data->mOffset, data->mTime,
+                                                data->Data() == nullptr));
     } else if (rv == -EAGAIN || rv == -ETIMEDOUT) {
       
       
@@ -171,7 +170,7 @@ GonkDecoderManager::ProcessInput(bool aEndOfStream)
 void
 GonkDecoderManager::ProcessFlush()
 {
-  mLastTime = 0;
+  mLastTime = INT64_MIN;
   MonitorAutoLock lock(mFlushMonitor);
   mWaitOutput.Clear();
   if (mDecoder->flush() != OK) {
@@ -180,6 +179,25 @@ GonkDecoderManager::ProcessFlush()
   }
   mIsFlushing = false;
   lock.NotifyAll();
+}
+
+
+
+
+
+void
+GonkDecoderManager::UpdateWaitingList(int64_t aForgetUpTo)
+{
+  size_t i;
+  for (i = 0; i < mWaitOutput.Length(); i++) {
+    const auto& item = mWaitOutput.ElementAt(i);
+    if (item.mEOS || item.mTimestamp > aForgetUpTo) {
+      break;
+    }
+  }
+  if (i > 0) {
+    mWaitOutput.RemoveElementsAt(0, i);
+  }
 }
 
 void
@@ -193,25 +211,22 @@ GonkDecoderManager::ProcessToDo(bool aEndOfStream)
     return;
   }
 
-  nsresult rv = NS_OK;
   while (mWaitOutput.Length() > 0) {
     RefPtr<MediaData> output;
-    int64_t offset = mWaitOutput.ElementAt(0);
-    rv = Output(offset, output);
+    WaitOutputInfo wait = mWaitOutput.ElementAt(0);
+    nsresult rv = Output(wait.mOffset, output);
     if (rv == NS_OK) {
-      mWaitOutput.RemoveElementAt(0);
       mDecodeCallback->Output(output);
+      UpdateWaitingList(output->mTime);
     } else if (rv == NS_ERROR_ABORT) {
       
       MOZ_ASSERT(mQueuedSamples.IsEmpty());
-      mWaitOutput.RemoveElementAt(0);
-      
-      
-      MOZ_ASSERT(mWaitOutput.IsEmpty() ||
-                 (mWaitOutput.Length() == 1 && output.get()));
       if (output) {
         mDecodeCallback->Output(output);
+        UpdateWaitingList(output->mTime);
       }
+      MOZ_ASSERT(mWaitOutput.Length() == 1);
+      mWaitOutput.RemoveElementAt(0);
       mDecodeCallback->DrainComplete();
       return;
     } else if (rv == NS_ERROR_NOT_AVAILABLE) {

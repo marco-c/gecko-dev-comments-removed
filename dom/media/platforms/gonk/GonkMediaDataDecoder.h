@@ -52,7 +52,7 @@ public:
 protected:
   GonkDecoderManager()
     : mMutex("GonkDecoderManager")
-    , mLastTime(0)
+    , mLastTime(INT64_MIN)
     , mFlushMonitor("GonkDecoderManager::Flush")
     , mIsFlushing(false)
     , mDecodeCallback(nullptr)
@@ -117,9 +117,23 @@ protected:
   android::sp<android::AMessage> mToDo;
 
   
-  nsTArray<int64_t> mWaitOutput;
+  struct WaitOutputInfo {
+    WaitOutputInfo(int64_t aOffset, int64_t aTimestamp, bool aEOS)
+      : mOffset(aOffset)
+      , mTimestamp(aTimestamp)
+      , mEOS(aEOS)
+    {}
+    const int64_t mOffset;
+    const int64_t mTimestamp;
+    const bool mEOS;
+  };
+
+  nsTArray<WaitOutputInfo> mWaitOutput;
 
   MediaDataDecoderCallback* mDecodeCallback; 
+
+private:
+  void UpdateWaitingList(int64_t aForgetUpTo);
 };
 
 class AutoReleaseMediaBuffer
