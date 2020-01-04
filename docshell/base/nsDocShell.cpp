@@ -3813,6 +3813,13 @@ nsDocShell::IsSandboxedFrom(nsIDocShell* aTargetDocShell)
   return true;
 }
 
+void
+nsDocShell::ApplySandboxAndFullscreenFlags(nsIDocument* aDoc)
+{
+  aDoc->SetSandboxFlags(mSandboxFlags);
+  aDoc->SetFullscreenEnabled(GetFullscreenAllowed());
+}
+
 NS_IMETHODIMP
 nsDocShell::GetTreeOwner(nsIDocShellTreeOwner** aTreeOwner)
 {
@@ -8028,7 +8035,7 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
 
       
       
-      blankDoc->SetSandboxFlags(mSandboxFlags);
+      ApplySandboxAndFullscreenFlags(blankDoc);
 
       
       docFactory->CreateInstanceForDocument(
