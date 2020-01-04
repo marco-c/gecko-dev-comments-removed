@@ -122,6 +122,14 @@ var WebProgressListener = {
     json.stateFlags = aStateFlags;
     json.status = aStatus;
 
+    
+    
+    
+    
+    if (aWebProgress && aWebProgress.isTopLevel) {
+      json.documentURI = content.document.documentURIObject.spec;
+    }
+
     this._send("Content:StateChange", json, objects);
   },
 

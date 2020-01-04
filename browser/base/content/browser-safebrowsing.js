@@ -9,8 +9,13 @@ var gSafeBrowsing = {
 
   setReportPhishingMenu: function() {
     
-    var uri = gBrowser.currentURI;
-    var isPhishingPage = uri && uri.spec.startsWith("about:blocked?e=phishingBlocked");
+    
+    
+    
+    
+    var docURI = gBrowser.selectedBrowser.documentURI;
+    var isPhishingPage =
+      docURI && docURI.spec.startsWith("about:blocked?e=phishingBlocked");
 
     
     document.getElementById("menu_HelpPopup_reportPhishingtoolmenu")
@@ -26,6 +31,9 @@ var gSafeBrowsing = {
     if (!broadcaster)
       return;
 
+    
+    
+    let uri = gBrowser.currentURI;
     if (uri && (uri.schemeIs("http") || uri.schemeIs("https")))
       broadcaster.removeAttribute("disabled");
     else
