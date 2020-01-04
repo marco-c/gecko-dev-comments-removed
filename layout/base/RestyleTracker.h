@@ -134,7 +134,7 @@ public:
                      "InitialOverflowProperty must be set first.");
 
         nsOverflowAreas* overflow = 
-          frame->Properties().Get(nsIFrame::InitialOverflowProperty());
+          static_cast<nsOverflowAreas*>(frame->Properties().Get(nsIFrame::InitialOverflowProperty()));
         if (overflow) {
           
           

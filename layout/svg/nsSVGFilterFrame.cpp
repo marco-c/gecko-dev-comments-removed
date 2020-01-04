@@ -106,8 +106,8 @@ nsSVGFilterFrame::GetReferencedFilter()
   if (mNoHRefURI)
     return nullptr;
 
-  nsSVGPaintingProperty *property =
-    Properties().Get(nsSVGEffects::HrefAsPaintingProperty());
+  nsSVGPaintingProperty *property = static_cast<nsSVGPaintingProperty*>
+    (Properties().Get(nsSVGEffects::HrefProperty()));
 
   if (!property) {
     
@@ -126,8 +126,7 @@ nsSVGFilterFrame::GetReferencedFilter()
                                               mContent->GetUncomposedDoc(), base);
 
     property =
-      nsSVGEffects::GetPaintingProperty(targetURI, this,
-                                        nsSVGEffects::HrefAsPaintingProperty());
+      nsSVGEffects::GetPaintingProperty(targetURI, this, nsSVGEffects::HrefProperty());
     if (!property)
       return nullptr;
   }
@@ -175,7 +174,7 @@ nsSVGFilterFrame::AttributeChanged(int32_t  aNameSpaceID,
   } else if (aNameSpaceID == kNameSpaceID_XLink &&
              aAttribute == nsGkAtoms::href) {
     
-    Properties().Delete(nsSVGEffects::HrefAsPaintingProperty());
+    Properties().Delete(nsSVGEffects::HrefProperty());
     mNoHRefURI = false;
     
     nsSVGEffects::InvalidateDirectRenderingObservers(this);

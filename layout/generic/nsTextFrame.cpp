@@ -2657,7 +2657,8 @@ nsTextFrame::EnsureTextRun(TextRunType aWhichTextRun,
       static const gfxSkipChars emptySkipChars;
       return gfxSkipCharsIterator(emptySkipChars, 0);
     }
-    TabWidthStore* tabWidths = Properties().Get(TabWidthProperty());
+    TabWidthStore* tabWidths =
+      static_cast<TabWidthStore*>(Properties().Get(TabWidthProperty()));
     if (tabWidths && tabWidths->mValidForContentOffset != GetContentOffset()) {
       Properties().Delete(TabWidthProperty());
     }
@@ -3282,7 +3283,8 @@ PropertyProvider::CalcTabWidths(Range aRange)
       return;
     }
     if (!mReflowing) {
-      mTabWidths = mFrame->Properties().Get(TabWidthProperty());
+      mTabWidths = static_cast<TabWidthStore*>
+        (mFrame->Properties().Get(TabWidthProperty()));
 #ifdef DEBUG
       
       
@@ -6217,7 +6219,7 @@ nsTextFrame::DrawEmphasisMarks(gfxContext* aContext, WritingMode aWM,
                                const nscolor* aDecorationOverrideColor,
                                PropertyProvider* aProvider)
 {
-  const EmphasisMarkInfo* info = Properties().Get(EmphasisMarkProperty());
+  const auto info = Properties().Get(EmphasisMarkProperty());
   if (!info) {
     return;
   }

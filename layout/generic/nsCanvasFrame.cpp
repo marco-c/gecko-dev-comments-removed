@@ -299,8 +299,8 @@ nsDisplayCanvasBackgroundImage::Paint(nsDisplayListBuilder* aBuilder,
     
     
     destRect.Round();
-    RefPtr<DrawTarget> dt = 
-      Frame()->Properties().Get(nsIFrame::CachedBackgroundImageDT());
+    RefPtr<DrawTarget> dt = static_cast<DrawTarget*>(
+      Frame()->Properties().Get(nsIFrame::CachedBackgroundImageDT()));
     DrawTarget* destDT = dest->GetDrawTarget();
     if (dt) {
       BlitSurface(destDT, destRect, dt);
