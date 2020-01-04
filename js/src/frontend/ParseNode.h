@@ -584,7 +584,7 @@ class ParseNode
 
     TokenPos            pn_pos;         
     int32_t             pn_offset;      
-    ParseNode*          pn_next;       
+    ParseNode*          pn_next;        
 
     
 
