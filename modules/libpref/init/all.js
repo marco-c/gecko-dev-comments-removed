@@ -4643,6 +4643,7 @@ pref("dom.mozPermissionSettings.enabled", false);
 
 
 
+
 #if defined(XP_MACOSX)
 pref("dom.w3c_touch_events.enabled", 0);
 #elif defined(XP_WIN) && !defined(NIGHTLY_BUILD)
