@@ -484,7 +484,7 @@ js::ExecuteInGlobalAndReturnScope(JSContext* cx, HandleObject global, HandleScri
         return false;
 
     RootedValue rval(cx);
-    if (!ExecuteKernel(cx, script, *scope, UndefinedValue(), EXECUTE_GLOBAL,
+    if (!ExecuteKernel(cx, script, *scope, UndefinedValue(), EXECUTE_GLOBAL_OR_MODULE,
                        NullFramePtr() , rval.address()))
     {
         return false;

@@ -1668,7 +1668,7 @@ class JSScript : public js::gc::TenuredCell
   public:
 
     
-    bool isForEval() { return isCachedEval() || isActiveEval(); }
+    bool isForEval() const { return isCachedEval() || isActiveEval(); }
 
     
 
