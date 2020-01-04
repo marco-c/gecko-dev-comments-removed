@@ -579,6 +579,9 @@ MediaDecoder::MediaDecoder(MediaDecoderOwner* aOwner)
   
   mWatchManager.Watch(mPlayState, &MediaDecoder::UpdateReadyState);
   mWatchManager.Watch(mNextFrameStatus, &MediaDecoder::UpdateReadyState);
+  
+  
+  mWatchManager.Watch(mBuffered, &MediaDecoder::UpdateReadyState);
 
   
   mWatchManager.Watch(mCurrentPosition, &MediaDecoder::UpdateLogicalPosition);
@@ -1526,10 +1529,6 @@ MediaDecoder::NotifyDataArrived() {
   }
 
   mDataArrivedEvent.Notify();
-
-  
-  
-  UpdateReadyState();
 }
 
 
