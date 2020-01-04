@@ -294,19 +294,25 @@ nsHttp::FindToken(const char *input, const char *token, const char *seps)
 bool
 nsHttp::ParseInt64(const char *input, const char **next, int64_t *r)
 {
-    const char *start = input;
-    *r = 0;
-    while (*input >= '0' && *input <= '9') {
-        int64_t next = 10 * (*r) + (*input - '0');
-        if (next < *r) 
-            return false;
-        *r = next;
-        ++input;
-    }
-    if (input == start) 
+    MOZ_ASSERT(input);
+    MOZ_ASSERT(r);
+
+    char *end = nullptr;
+    errno = 0; 
+    int64_t value = strtoll(input, &end,  10);
+
+    
+    
+    
+    if (errno != 0 || end == input || value < 0) {
+        LOG(("nsHttp::ParseInt64 value=%ld errno=%d", value, errno));
         return false;
-    if (next)
-        *next = input;
+    }
+
+    if (next) {
+        *next = end;
+    }
+    *r = value;
     return true;
 }
 
