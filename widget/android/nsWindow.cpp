@@ -988,7 +988,7 @@ nsWindow::OnContextmenuEvent(AndroidGeckoEvent *ae)
     }
 
     
-    WidgetMouseEvent contextMenuEvent(true, NS_CONTEXTMENU, this,
+    WidgetMouseEvent contextMenuEvent(true, eContextMenu, this,
                                       WidgetMouseEvent::eReal, WidgetMouseEvent::eNormal);
     contextMenuEvent.refPoint =
         RoundedToInt(pt * GetDefaultScale()) - WidgetToScreenOffset();

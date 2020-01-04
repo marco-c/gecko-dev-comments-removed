@@ -543,7 +543,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   *aStatus = nsEventStatus_eIgnore;
 
   switch (aEvent->mMessage) {
-  case NS_CONTEXTMENU:
+  case eContextMenu:
     if (sIsPointerLocked) {
       return NS_ERROR_DOM_INVALID_STATE_ERR;
     }
@@ -1174,7 +1174,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
     case eMouseDown:
     case eMouseUp:
     case eMouseMove:
-    case NS_CONTEXTMENU:
+    case eContextMenu:
     case eMouseEnterIntoWidget:
     case eMouseExitFromWidget:
       return true;
@@ -1452,7 +1452,7 @@ EventStateManager::FireContextClick()
 
     if (allowedToDispatch) {
       
-      WidgetMouseEvent event(true, NS_CONTEXTMENU, targetWidget,
+      WidgetMouseEvent event(true, eContextMenu, targetWidget,
                              WidgetMouseEvent::eReal);
       event.clickCount = 1;
       FillInEventFromGestureDown(&event);
