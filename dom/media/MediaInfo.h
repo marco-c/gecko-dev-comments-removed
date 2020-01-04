@@ -237,6 +237,27 @@ public:
 
   
   
+  
+  
+  
+  
+  
+  
+  nsIntRect ScaledImageRect(int64_t aWidth, int64_t aHeight) const
+  {
+    if (aWidth == mImage.width && aHeight == mImage.height) {
+      return ImageRect();
+    }
+    nsIntRect imageRect = ImageRect();
+    imageRect.x = (imageRect.x * aWidth) / mImage.width;
+    imageRect.y = (imageRect.y * aHeight) / mImage.height;
+    imageRect.width = (aWidth * imageRect.width) / mImage.width;
+    imageRect.height = (aHeight * imageRect.height) / mImage.height;
+    return imageRect;
+  }
+
+  
+  
   nsIntSize mDisplay;
 
   
