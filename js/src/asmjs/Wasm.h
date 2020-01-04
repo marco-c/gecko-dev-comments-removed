@@ -26,7 +26,7 @@
 
 namespace js {
 
-class ArrayBufferObject;
+class TypedArrayObject;
 
 namespace wasm {
 
@@ -49,7 +49,7 @@ static const uint64_t MappedSize = 2 * Uint32Range + PageSize;
 
 
 bool
-Eval(JSContext* cx, Handle<ArrayBufferObject*> code, HandleObject importObj,
+Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
      MutableHandleObject exportObj);
 
 }  
