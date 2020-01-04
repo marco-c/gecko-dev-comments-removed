@@ -1303,6 +1303,15 @@ nsWebBrowser::GetDevicePixelsPerDesktopPixel(double* aScale)
 }
 
 NS_IMETHODIMP
+nsWebBrowser::SetPositionDesktopPix(int32_t aX, int32_t aY)
+{
+  
+  
+  NS_ASSERTION(false, "implement me!");
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
 nsWebBrowser::SetPosition(int32_t aX, int32_t aY)
 {
   int32_t cx = 0;

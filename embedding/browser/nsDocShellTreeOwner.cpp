@@ -571,6 +571,15 @@ nsDocShellTreeOwner::GetDevicePixelsPerDesktopPixel(double* aScale)
 }
 
 NS_IMETHODIMP
+nsDocShellTreeOwner::SetPositionDesktopPix(int32_t aX, int32_t aY)
+{
+  
+  
+  NS_ASSERTION(false, "implement me!");
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
 nsDocShellTreeOwner::SetPosition(int32_t aX, int32_t aY)
 {
   nsCOMPtr<nsIEmbeddingSiteWindow> ownerWin = GetOwnerWin();
