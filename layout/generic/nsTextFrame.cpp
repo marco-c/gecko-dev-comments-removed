@@ -7030,8 +7030,32 @@ IsAcceptableCaretPosition(const gfxSkipCharsIterator& aIter,
     
     
     
-    if (aTextRun->CharIsLowSurrogate(index)) {
+    
+    uint32_t offs = aIter.GetOriginalOffset();
+    const nsTextFragment* frag = aFrame->GetContent()->GetText();
+    uint32_t ch = frag->CharAt(offs);
+
+    if (gfxFontUtils::IsVarSelector(ch) ||
+        (NS_IS_LOW_SURROGATE(ch) && offs > 0 &&
+         NS_IS_HIGH_SURROGATE(frag->CharAt(offs - 1)))) {
       return false;
+    }
+
+    
+    
+    if (NS_IS_HIGH_SURROGATE(ch) && offs + 1 < frag->GetLength()) {
+      uint32_t ch2 = frag->CharAt(offs + 1);
+      if (NS_IS_LOW_SURROGATE(ch2)) {
+        ch = SURROGATE_TO_UCS4(ch, ch2);
+        
+        
+        
+        if (gfxFontUtils::IsVarSelector(ch) ||
+            (gfxFontUtils::IsRegionalIndicator(ch) &&
+             !aTextRun->IsLigatureGroupStart(index))) {
+          return false;
+        }
+      }
     }
   }
   return true;

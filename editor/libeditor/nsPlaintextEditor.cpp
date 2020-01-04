@@ -5,6 +5,7 @@
 
 #include "nsPlaintextEditor.h"
 
+#include "gfxFontUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Selection.h"
@@ -603,6 +604,7 @@ nsPlaintextEditor::ExtendSelectionForDelete(Selection* aSelection,
         
         
         
+        
         nsCOMPtr<nsIDOMNode> node;
         int32_t offset;
         result = GetStartNodeAndOffset(aSelection, getter_AddRefs(node), &offset);
@@ -616,9 +618,11 @@ nsPlaintextEditor::ExtendSelectionForDelete(Selection* aSelection,
             result = charData->GetData(data);
             NS_ENSURE_SUCCESS(result, result);
 
-            if (offset > 1 &&
-                NS_IS_LOW_SURROGATE(data[offset - 1]) &&
-                NS_IS_HIGH_SURROGATE(data[offset - 2])) {
+            if ((offset > 1 &&
+                 NS_IS_LOW_SURROGATE(data[offset - 1]) &&
+                 NS_IS_HIGH_SURROGATE(data[offset - 2])) ||
+                (offset > 0 &&
+                 gfxFontUtils::IsVarSelector(data[offset - 1]))) {
               result = selCont->CharacterExtendForBackspace();
             }
           }

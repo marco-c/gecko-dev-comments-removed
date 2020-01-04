@@ -573,9 +573,6 @@ gfxShapedText::SetupClusterBoundaries(uint32_t        aOffset,
         
         while (aString < iter) {
             *glyphs = extendCluster;
-            if (NS_IS_LOW_SURROGATE(*aString)) {
-                glyphs->SetIsLowSurrogate();
-            }
             glyphs++;
             aString++;
         }
