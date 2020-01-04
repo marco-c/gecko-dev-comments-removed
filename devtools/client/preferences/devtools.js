@@ -296,6 +296,10 @@ pref("devtools.webconsole.timestampMessages", false);
 
 
 
+pref("devtools.webconsole.autoMultiline", true);
+
+
+
 
 pref("devtools.hud.loglimit.network", 1000);
 pref("devtools.hud.loglimit.cssparser", 1000);
