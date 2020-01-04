@@ -254,6 +254,7 @@ public:
 
 
 
+
   void Rollback();
 
   
@@ -286,6 +287,20 @@ public:
 
   void Claim(nsACString& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
   void Claim(nsDependentCSubstring& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
+
+  
+
+
+
+
+
+
+
+
+
+
+  bool ReadUntil(Token const& aToken, nsDependentCSubstring& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
+  bool ReadUntil(Token const& aToken, nsACString& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
 
 protected:
   
