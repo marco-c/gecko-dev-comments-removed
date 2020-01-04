@@ -2236,7 +2236,7 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
 
 
   
-  res = ExpandSelectionForDeletion(*aSelection);
+  res = ExpandSelectionForDeletion(aSelection);
   NS_ENSURE_SUCCESS(res, res);
 
   
@@ -5041,135 +5041,177 @@ nsHTMLEditRules::GetInnerContent(nsINode& aNode,
 
 
 
+
 nsresult
-nsHTMLEditRules::ExpandSelectionForDeletion(Selection& aSelection)
+nsHTMLEditRules::ExpandSelectionForDeletion(Selection* aSelection)
 {
+  NS_ENSURE_TRUE(aSelection, NS_ERROR_NULL_POINTER);
+
   
-  if (aSelection.Collapsed()) {
+  if (aSelection->Collapsed()) {
     return NS_OK;
   }
 
-  
-  
-  if (aSelection.RangeCount() != 1) {
-    return NS_OK;
-  }
+  int32_t rangeCount;
+  nsresult res = aSelection->GetRangeCount(&rangeCount);
+  NS_ENSURE_SUCCESS(res, res);
 
   
-  NS_ENSURE_TRUE(aSelection.GetRangeAt(0), NS_ERROR_NULL_POINTER);
-  OwningNonNull<nsRange> range = *aSelection.GetRangeAt(0);
-
-  nsCOMPtr<nsINode> selStartNode = range->GetStartParent();
-  int32_t selStartOffset = range->StartOffset();
-  nsCOMPtr<nsINode> selEndNode = range->GetEndParent();
-  int32_t selEndOffset = range->EndOffset();
+  if (rangeCount != 1) return NS_OK;
 
   
-  nsCOMPtr<Element> selCommon =
-    nsHTMLEditor::GetBlock(*range->GetCommonAncestor());
+  RefPtr<nsRange> range = aSelection->GetRangeAt(0);
+  NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
+  nsCOMPtr<nsIDOMNode> selStartNode, selEndNode, selCommon;
+  int32_t selStartOffset, selEndOffset;
+
+  res = range->GetStartContainer(getter_AddRefs(selStartNode));
+  NS_ENSURE_SUCCESS(res, res);
+  res = range->GetStartOffset(&selStartOffset);
+  NS_ENSURE_SUCCESS(res, res);
+  res = range->GetEndContainer(getter_AddRefs(selEndNode));
+  NS_ENSURE_SUCCESS(res, res);
+  res = range->GetEndOffset(&selEndOffset);
+  NS_ENSURE_SUCCESS(res, res);
+
+  
+  res = range->GetCommonAncestorContainer(getter_AddRefs(selCommon));
+  NS_ENSURE_SUCCESS(res, res);
+  if (!IsBlockNode(selCommon))
+    selCommon = nsHTMLEditor::GetBlockNodeParent(selCommon);
   NS_ENSURE_STATE(selCommon);
 
   
-  nsCOMPtr<nsINode> firstBRParent;
+  bool stillLooking = true;
+  nsCOMPtr<nsIDOMNode> firstBRParent;
   nsCOMPtr<nsINode> unused;
-  int32_t visOffset = 0, firstBROffset = 0;
+  int32_t visOffset=0, firstBROffset=0;
   WSType wsType;
-  nsCOMPtr<Element> root = mHTMLEditor->GetActiveEditingHost();
-  NS_ENSURE_TRUE(root, NS_ERROR_FAILURE);
+  nsCOMPtr<nsIContent> rootContent = mHTMLEditor->GetActiveEditingHost();
+  nsCOMPtr<nsIDOMNode> rootElement = do_QueryInterface(rootContent);
+  NS_ENSURE_TRUE(rootElement, NS_ERROR_FAILURE);
 
   
-  if (selStartNode != selCommon && selStartNode != root) {
-    while (true) {
+  if ((selStartNode!=selCommon) && (selStartNode!=rootElement))
+  {
+    while (stillLooking)
+    {
       nsWSRunObject wsObj(mHTMLEditor, selStartNode, selStartOffset);
-      wsObj.PriorVisibleNode(selStartNode, selStartOffset, address_of(unused),
+      nsCOMPtr<nsINode> selStartNode_(do_QueryInterface(selStartNode));
+      wsObj.PriorVisibleNode(selStartNode_, selStartOffset, address_of(unused),
                              &visOffset, &wsType);
-      if (wsType != WSType::thisBlock) {
-        break;
+      if (wsType == WSType::thisBlock) {
+        
+        
+        if (nsHTMLEditUtils::IsTableElement(wsObj.mStartReasonNode) ||
+            selCommon == GetAsDOMNode(wsObj.mStartReasonNode) ||
+            rootElement == GetAsDOMNode(wsObj.mStartReasonNode)) {
+          stillLooking = false;
+        }
+        else
+        {
+          selStartNode = nsEditor::GetNodeLocation(GetAsDOMNode(wsObj.mStartReasonNode),
+                                                   &selStartOffset);
+        }
       }
-      
-      
-      if (nsHTMLEditUtils::IsTableElement(wsObj.mStartReasonNode) ||
-          selCommon == wsObj.mStartReasonNode ||
-          root == wsObj.mStartReasonNode) {
-        break;
+      else
+      {
+        stillLooking = false;
       }
-      selStartNode = wsObj.mStartReasonNode->GetParentNode();
-      selStartOffset = selStartNode ?
-        selStartNode->IndexOf(wsObj.mStartReasonNode) : -1;
     }
   }
 
+  stillLooking = true;
   
-  if (selEndNode != selCommon && selEndNode != root) {
-    while (true) {
+  if ((selEndNode!=selCommon) && (selEndNode!=rootElement))
+  {
+    while (stillLooking)
+    {
       nsWSRunObject wsObj(mHTMLEditor, selEndNode, selEndOffset);
-      wsObj.NextVisibleNode(selEndNode, selEndOffset, address_of(unused),
+      nsCOMPtr<nsINode> selEndNode_(do_QueryInterface(selEndNode));
+      wsObj.NextVisibleNode(selEndNode_, selEndOffset, address_of(unused),
                             &visOffset, &wsType);
       if (wsType == WSType::br) {
-        if (mHTMLEditor->IsVisBreak(wsObj.mEndReasonNode)) {
-          break;
+        if (mHTMLEditor->IsVisBreak(wsObj.mEndReasonNode))
+        {
+          stillLooking = false;
         }
-        if (!firstBRParent) {
-          firstBRParent = selEndNode;
-          firstBROffset = selEndOffset;
+        else
+        {
+          if (!firstBRParent)
+          {
+            firstBRParent = selEndNode;
+            firstBROffset = selEndOffset;
+          }
+          selEndNode = nsEditor::GetNodeLocation(GetAsDOMNode(wsObj.mEndReasonNode), &selEndOffset);
+          ++selEndOffset;
         }
-        selEndNode = wsObj.mEndReasonNode->GetParentNode();
-        selEndOffset = selEndNode
-          ? selEndNode->IndexOf(wsObj.mEndReasonNode) + 1 : 0;
       } else if (wsType == WSType::thisBlock) {
         
         
         if (nsHTMLEditUtils::IsTableElement(wsObj.mEndReasonNode) ||
-            selCommon == wsObj.mEndReasonNode ||
-            root == wsObj.mEndReasonNode) {
-          break;
+            selCommon == GetAsDOMNode(wsObj.mEndReasonNode) ||
+            rootElement == GetAsDOMNode(wsObj.mEndReasonNode)) {
+          stillLooking = false;
         }
-        selEndNode = wsObj.mEndReasonNode->GetParentNode();
-        selEndOffset = 1 + selEndNode->IndexOf(wsObj.mEndReasonNode);
-      } else {
-        break;
+        else
+        {
+          selEndNode = nsEditor::GetNodeLocation(GetAsDOMNode(wsObj.mEndReasonNode), &selEndOffset);
+          ++selEndOffset;
+        }
+       }
+      else
+      {
+        stillLooking = false;
       }
     }
   }
   
-  aSelection.Collapse(selStartNode, selStartOffset);
+  aSelection->Collapse(selStartNode, selStartOffset);
 
   
   
-  nsresult res;
+  
   bool doEndExpansion = true;
-  if (firstBRParent) {
+  if (firstBRParent)
+  {
     
-    nsCOMPtr<Element> brBlock = nsHTMLEditor::GetBlock(*firstBRParent);
-    bool nodeBefore = false, nodeAfter = false;
+    nsCOMPtr<nsIDOMNode> brBlock = firstBRParent;
+    if (!IsBlockNode(brBlock))
+      brBlock = nsHTMLEditor::GetBlockNodeParent(brBlock);
+    bool nodeBefore=false, nodeAfter=false;
 
     
-    RefPtr<nsRange> range = new nsRange(selStartNode);
+    nsCOMPtr<nsINode> node = do_QueryInterface(selStartNode);
+    NS_ENSURE_STATE(node);
+    RefPtr<nsRange> range = new nsRange(node);
     res = range->SetStart(selStartNode, selStartOffset);
     NS_ENSURE_SUCCESS(res, res);
     res = range->SetEnd(selEndNode, selEndOffset);
     NS_ENSURE_SUCCESS(res, res);
 
     
-    if (brBlock) {
-      nsRange::CompareNodeToRange(brBlock, range, &nodeBefore, &nodeAfter);
+    nsCOMPtr<nsIContent> brContentBlock = do_QueryInterface(brBlock);
+    if (brContentBlock) {
+      res = nsRange::CompareNodeToRange(brContentBlock, range, &nodeBefore,
+                                        &nodeAfter);
     }
 
     
-    if (nodeBefore || nodeAfter) {
+    if (nodeBefore || nodeAfter)
       doEndExpansion = false;
-    }
   }
-  if (doEndExpansion) {
-    res = aSelection.Extend(selEndNode, selEndOffset);
-    NS_ENSURE_SUCCESS(res, res);
-  } else {
+  if (doEndExpansion)
+  {
+    res = aSelection->Extend(selEndNode, selEndOffset);
+  }
+  else
+  {
     
-    res = aSelection.Extend(firstBRParent, firstBROffset);
-    NS_ENSURE_SUCCESS(res, res);
+    res = aSelection->Extend(firstBRParent, firstBROffset);
   }
 
-  return NS_OK;
+  return res;
 }
 
 
