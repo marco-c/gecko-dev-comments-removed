@@ -867,8 +867,40 @@ ObjectGroup::newArrayObject(ExclusiveContext* cx,
             return nullptr;
     }
 
-    return NewCopiedArrayTryUseGroup(cx, group, vp, length, newKind,
-                                     ShouldUpdateTypes::DontUpdate);
+    
+    
+    
+    ShouldUpdateTypes updateTypes = ShouldUpdateTypes::DontUpdate;
+    if (group->maybePreliminaryObjects())
+        group->maybePreliminaryObjects()->maybeAnalyze(cx, group);
+    if (group->maybeUnboxedLayout()) {
+        switch (group->unboxedLayout().elementType()) {
+          case JSVAL_TYPE_BOOLEAN:
+            if (elementType != TypeSet::BooleanType())
+                updateTypes = ShouldUpdateTypes::Update;
+            break;
+          case JSVAL_TYPE_INT32:
+            if (elementType != TypeSet::Int32Type())
+                updateTypes = ShouldUpdateTypes::Update;
+            break;
+          case JSVAL_TYPE_DOUBLE:
+            if (elementType != TypeSet::Int32Type() && elementType != TypeSet::DoubleType())
+                updateTypes = ShouldUpdateTypes::Update;
+            break;
+          case JSVAL_TYPE_STRING:
+            if (elementType != TypeSet::StringType())
+                updateTypes = ShouldUpdateTypes::Update;
+            break;
+          case JSVAL_TYPE_OBJECT:
+            if (elementType != TypeSet::NullType() && !elementType.get().isObjectUnchecked())
+                updateTypes = ShouldUpdateTypes::Update;
+            break;
+          default:
+            MOZ_CRASH();
+        }
+    }
+
+    return NewCopiedArrayTryUseGroup(cx, group, vp, length, newKind, updateTypes);
 }
 
 
