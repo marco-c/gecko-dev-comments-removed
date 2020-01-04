@@ -103,9 +103,14 @@ public:
   
   
   
+  
+  
   bool    mNoContentDispatch : 1;
   
   bool    mOnlyChromeDispatch : 1;
+  
+  
+  bool    mOnlySystemGroupDispatchInContent : 1;
   
   
   

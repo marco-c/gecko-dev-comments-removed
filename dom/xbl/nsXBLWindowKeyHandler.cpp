@@ -306,7 +306,11 @@ nsXBLWindowKeyHandler::HandleEvent(nsIDOMEvent* aEvent)
   uint16_t eventPhase;
   aEvent->GetEventPhase(&eventPhase);
   if (eventPhase == nsIDOMEvent::CAPTURING_PHASE) {
-    HandleEventOnCapture(keyEvent);
+    if (aEvent->WidgetEventPtr()->mFlags.mInSystemGroup) {
+      HandleEventOnCaptureInSystemEventGroup(keyEvent);
+    } else {
+      HandleEventOnCaptureInDefaultEventGroup(keyEvent);
+    }
     return NS_OK;
   }
 
@@ -319,12 +323,41 @@ nsXBLWindowKeyHandler::HandleEvent(nsIDOMEvent* aEvent)
 }
 
 void
-nsXBLWindowKeyHandler::HandleEventOnCapture(nsIDOMKeyEvent* aEvent)
+nsXBLWindowKeyHandler::HandleEventOnCaptureInDefaultEventGroup(
+                         nsIDOMKeyEvent* aEvent)
+{
+  WidgetKeyboardEvent* widgetKeyboardEvent =
+    aEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
+
+  if (widgetKeyboardEvent->mFlags.mOnlySystemGroupDispatchInContent) {
+    MOZ_RELEASE_ASSERT(
+      widgetKeyboardEvent->mFlags.mNoCrossProcessBoundaryForwarding);
+    return;
+  }
+
+  bool isReserved = false;
+  if (HasHandlerForEvent(aEvent, &isReserved) && isReserved) {
+    
+    
+    
+    widgetKeyboardEvent->mFlags.mNoCrossProcessBoundaryForwarding = true;
+    
+    
+    
+    
+    widgetKeyboardEvent->mFlags.mOnlySystemGroupDispatchInContent = true;
+  }
+}
+
+void
+nsXBLWindowKeyHandler::HandleEventOnCaptureInSystemEventGroup(
+                         nsIDOMKeyEvent* aEvent)
 {
   WidgetKeyboardEvent* widgetEvent =
     aEvent->AsEvent()->WidgetEventPtr()->AsKeyboardEvent();
 
-  if (widgetEvent->mFlags.mNoCrossProcessBoundaryForwarding) {
+  if (widgetEvent->mFlags.mNoCrossProcessBoundaryForwarding ||
+      widgetEvent->mFlags.mOnlySystemGroupDispatchInContent) {
     return;
   }
 
@@ -334,27 +367,19 @@ nsXBLWindowKeyHandler::HandleEventOnCapture(nsIDOMKeyEvent* aEvent)
     return;
   }
 
-  bool aReservedForChrome = false;
-  if (!HasHandlerForEvent(aEvent, &aReservedForChrome)) {
+  if (!HasHandlerForEvent(aEvent)) {
     return;
   }
 
-  if (aReservedForChrome) {
-    
-    
-    
-    widgetEvent->mFlags.mNoCrossProcessBoundaryForwarding = true;
-  } else {
-    
-    
-    widgetEvent->mFlags.mWantReplyFromContentProcess = true;
-
-    
-    
-    
-    
-    aEvent->AsEvent()->StopPropagation();
-  }
+  
+  
+  widgetEvent->mFlags.mWantReplyFromContentProcess = true;
+  
+  
+  
+  
+  
+  aEvent->AsEvent()->StopPropagation();
 }
 
 

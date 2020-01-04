@@ -56,7 +56,9 @@ protected:
                               bool* aOutReservedForChrome = nullptr);
 
   
-  void HandleEventOnCapture(nsIDOMKeyEvent* aEvent);
+  void HandleEventOnCaptureInDefaultEventGroup(nsIDOMKeyEvent* aEvent);
+  
+  void HandleEventOnCaptureInSystemEventGroup(nsIDOMKeyEvent* aEvent);
 
   
   

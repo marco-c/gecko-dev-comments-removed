@@ -566,6 +566,16 @@ nsXBLService::AttachGlobalKeyHandler(EventTarget* aTarget)
 
   
   
+  
+  manager->AddEventListenerByType(handler, NS_LITERAL_STRING("keydown"),
+                                  TrustedEventsAtCapture());
+  manager->AddEventListenerByType(handler, NS_LITERAL_STRING("keyup"),
+                                  TrustedEventsAtCapture());
+  manager->AddEventListenerByType(handler, NS_LITERAL_STRING("keypress"),
+                                  TrustedEventsAtCapture());
+
+  
+  
   manager->AddEventListenerByType(handler, NS_LITERAL_STRING("keydown"),
                                   TrustedEventsAtSystemGroupCapture());
   manager->AddEventListenerByType(handler, NS_LITERAL_STRING("keyup"),
@@ -617,6 +627,13 @@ nsXBLService::DetachGlobalKeyHandler(EventTarget* aTarget)
                                      TrustedEventsAtSystemGroupBubble());
   manager->RemoveEventListenerByType(handler, NS_LITERAL_STRING("keypress"),
                                      TrustedEventsAtSystemGroupBubble());
+
+  manager->RemoveEventListenerByType(handler, NS_LITERAL_STRING("keydown"),
+                                     TrustedEventsAtCapture());
+  manager->RemoveEventListenerByType(handler, NS_LITERAL_STRING("keyup"),
+                                     TrustedEventsAtCapture());
+  manager->RemoveEventListenerByType(handler, NS_LITERAL_STRING("keypress"),
+                                     TrustedEventsAtCapture());
 
   manager->RemoveEventListenerByType(handler, NS_LITERAL_STRING("keydown"),
                                      TrustedEventsAtSystemGroupCapture());
