@@ -264,7 +264,6 @@ nsHttpChannel::nsHttpChannel()
     , mLocalBlocklist(false)
     , mWarningReporter(nullptr)
     , mDidReval(false)
-    , mStronglyFramed(false)
 {
     LOG(("Creating nsHttpChannel [this=%p]\n", this));
     mChannelCreationTime = PR_Now();
@@ -3559,14 +3558,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     mCachedContentIsValid = !doValidation;
 
     if (doValidation) {
-        nsXPIDLCString buf;
-        rv = entry->GetMetaDataElement("strongly-framed", getter_Copies(buf));
-        
-        
-        bool weaklyFramed = NS_SUCCEEDED(rv) && buf.EqualsLiteral("0");
-
-        
-        
         
         
         
@@ -3581,7 +3572,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
         
         if (!mCachedResponseHead->NoStore() &&
             (mRequestHead.IsGet() || mRequestHead.IsHead()) &&
-            !mCustomConditionalRequest && !weaklyFramed &&
+            !mCustomConditionalRequest &&
             (mCachedResponseHead->Status() < 400)) {
 
             if (mConcurentCacheAccess) {
@@ -4366,9 +4357,6 @@ nsHttpChannel::InitCacheEntry()
     rv = UpdateExpirationTime();
     if (NS_FAILED(rv)) return rv;
 
-    
-    mCacheEntry->SetMetaDataElement("strongly-framed", "0");
-
     rv = AddCacheEntryHeaders(mCacheEntry);
     if (NS_FAILED(rv)) return rv;
 
@@ -4572,12 +4560,6 @@ nsresult
 nsHttpChannel::FinalizeCacheEntry()
 {
     LOG(("nsHttpChannel::FinalizeCacheEntry [this=%p]\n", this));
-
-    
-    if (mStronglyFramed && !mCachedContentIsValid && mCacheEntry) {
-        LOG(("nsHttpChannel::FinalizeCacheEntry [this=%p] Is Strongly Framed\n", this));
-        mCacheEntry->SetMetaDataElement("strongly-framed", "1");
-    }
 
     if (mResponseHead && mResponseHeadersModified) {
         
@@ -6086,9 +6068,6 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
     if (mTransaction) {
         
         bool authRetry = mAuthRetryPending && NS_SUCCEEDED(status);
-        mStronglyFramed = mTransaction->ResponseIsComplete();
-        LOG(("nsHttpChannel %p has a strongly framed transaction: %d",
-             this, mStronglyFramed));
 
         
         

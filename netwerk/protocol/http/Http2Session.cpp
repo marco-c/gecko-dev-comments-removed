@@ -3314,7 +3314,6 @@ Http2Session::SetNeedsCleanup()
 
   
   MOZ_ASSERT(!mNeedsCleanup, "mNeedsCleanup unexpectedly set");
-  mInputFrameDataStream->SetResponseIsComplete();
   mNeedsCleanup = mInputFrameDataStream;
   ResetDownstreamState();
 }
