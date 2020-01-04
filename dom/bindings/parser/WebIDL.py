@@ -3633,6 +3633,11 @@ class IDLIterable(IDLMaplikeOrSetlikeOrIterableBase):
         specification during parsing.
         """
         
+        
+        if not self.isPairIterator():
+            return
+
+        
         self.addMethod("entries", members, False, self.iteratorType,
                        affectsNothing=True, newObject=True)
         

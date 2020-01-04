@@ -78,7 +78,7 @@ def WebIDLTest(parser, harness):
     
     iterableMembers.append(("__iterable", WebIDL.IDLIterable))
 
-    valueIterableMembers = list(iterableMembers)
+    valueIterableMembers = [("__iterable", WebIDL.IDLIterable)]
     valueIterableMembers.append(("__indexedgetter", WebIDL.IDLMethod))
     valueIterableMembers.append(("length", WebIDL.IDLAttribute))
 
