@@ -156,10 +156,26 @@ ResolveURI(const nsCString& uriStr)
 
 } 
 
-class GeckoThreadNatives final
-    : public widget::GeckoThread::Natives<GeckoThreadNatives>
+
+class GeckoThreadSupport final
+    : public widget::GeckoThread::Natives<GeckoThreadSupport>
+    , public UsesGeckoThreadProxy
 {
+    static uint32_t sPauseCount;
+
 public:
+    template<typename Functor>
+    static void OnNativeCall(Functor&& aCall)
+    {
+        if (aCall.IsTarget(&SpeculativeConnect) ||
+            aCall.IsTarget(&WaitOnGecko)) {
+
+            aCall();
+            return;
+        }
+        return UsesGeckoThreadProxy::OnNativeCall(aCall);
+    }
+
     static void SpeculativeConnect(jni::String::Param uriStr)
     {
         if (!NS_IsMainThread()) {
@@ -190,7 +206,71 @@ public:
         };
         nsAppShell::SyncRunEvent(NoOpEvent());
     }
+
+    static void OnPause()
+    {
+        MOZ_ASSERT(NS_IsMainThread());
+
+        if ((++sPauseCount) > 1) {
+            
+            return;
+        }
+
+        nsCOMPtr<nsIObserverService> obsServ =
+            mozilla::services::GetObserverService();
+        obsServ->NotifyObservers(nullptr, "application-background", nullptr);
+
+        NS_NAMED_LITERAL_STRING(minimize, "heap-minimize");
+        obsServ->NotifyObservers(nullptr, "memory-pressure", minimize.get());
+
+        
+        
+        
+        if (nsCacheService::GlobalInstance()) {
+            nsCacheService::GlobalInstance()->Shutdown();
+        }
+
+        
+        
+        
+        nsIPrefService* prefs = Preferences::GetService();
+        if (prefs) {
+            
+            nsCOMPtr<nsIPrefBranch> prefBranch;
+            prefs->GetBranch("browser.sessionstore.", getter_AddRefs(prefBranch));
+            if (prefBranch)
+                prefBranch->SetIntPref("recent_crashes", 0);
+
+            prefs->SavePrefFile(nullptr);
+        }
+    }
+
+    static void OnResume()
+    {
+        MOZ_ASSERT(NS_IsMainThread());
+
+        if (!sPauseCount || (--sPauseCount) > 0) {
+            
+            return;
+        }
+
+        
+        
+        
+        if (nsCacheService::GlobalInstance()) {
+            nsCacheService::GlobalInstance()->Init();
+        }
+
+        
+        
+        nsCOMPtr<nsIObserverService> obsServ =
+            mozilla::services::GetObserverService();
+        obsServ->NotifyObservers(nullptr, "application-foreground", nullptr);
+    }
 };
+
+uint32_t GeckoThreadSupport::sPauseCount;
+
 
 class GeckoAppShellSupport final
     : public widget::GeckoAppShell::Natives<GeckoAppShellSupport>
@@ -248,7 +328,7 @@ nsAppShell::nsAppShell()
         
         AndroidBridge::ConstructBridge();
         GeckoAppShellSupport::Init();
-        GeckoThreadNatives::Init();
+        GeckoThreadSupport::Init();
         mozilla::ANRReporter::Init();
         mozilla::PrefsHelper::Init();
         nsWindow::InitNatives();
@@ -597,53 +677,6 @@ nsAppShell::LegacyGeckoEvent::Run()
             gLocationCallback->Update(curEvent->GeoPosition());
         else
             NS_WARNING("Received location event without geoposition!");
-        break;
-    }
-
-    case AndroidGeckoEvent::APP_BACKGROUNDING: {
-        nsCOMPtr<nsIObserverService> obsServ =
-            mozilla::services::GetObserverService();
-        obsServ->NotifyObservers(nullptr, "application-background", nullptr);
-
-        NS_NAMED_LITERAL_STRING(minimize, "heap-minimize");
-        obsServ->NotifyObservers(nullptr, "memory-pressure", minimize.get());
-
-        
-        
-        
-        if (nsCacheService::GlobalInstance()) {
-            nsCacheService::GlobalInstance()->Shutdown();
-        }
-
-        
-        
-        
-        nsIPrefService* prefs = Preferences::GetService();
-        if (prefs) {
-            
-            nsCOMPtr<nsIPrefBranch> prefBranch;
-            prefs->GetBranch("browser.sessionstore.", getter_AddRefs(prefBranch));
-            if (prefBranch)
-                prefBranch->SetIntPref("recent_crashes", 0);
-
-            prefs->SavePrefFile(nullptr);
-        }
-        break;
-    }
-
-    case AndroidGeckoEvent::APP_FOREGROUNDING: {
-        
-        
-        
-        if (nsCacheService::GlobalInstance()) {
-            nsCacheService::GlobalInstance()->Init();
-        }
-
-        
-        
-        nsCOMPtr<nsIObserverService> obsServ =
-            mozilla::services::GetObserverService();
-        obsServ->NotifyObservers(nullptr, "application-foreground", nullptr);
         break;
     }
 

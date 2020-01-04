@@ -111,7 +111,7 @@ public class GeckoApplication extends Application
             
             
             
-            GeckoAppShell.sendEventToGecko(GeckoEvent.createAppBackgroundingEvent());
+            GeckoThread.onPause();
             mPausedGecko = true;
 
             final BrowserDB db = GeckoProfile.get(this).getDB();
@@ -128,7 +128,7 @@ public class GeckoApplication extends Application
 
     public void onActivityResume(GeckoActivityStatus activity) {
         if (mPausedGecko) {
-            GeckoAppShell.sendEventToGecko(GeckoEvent.createAppForegroundingEvent());
+            GeckoThread.onResume();
             mPausedGecko = false;
         }
 
