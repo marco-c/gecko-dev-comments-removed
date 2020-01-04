@@ -1352,7 +1352,16 @@ imgLoader::FindEntryProperties(nsIURI* uri,
   *_retval = nullptr;
 
   nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDOMDoc);
-  ImageCacheKey key(uri, doc);
+
+  PrincipalOriginAttributes attrs;
+  if (doc) {
+    nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
+    if (principal) {
+      attrs = BasePrincipal::Cast(principal)->OriginAttributesRef();
+    }
+  }
+
+  ImageCacheKey key(uri, attrs, doc);
   imgCacheTable& cache = GetCache(key);
 
   RefPtr<imgCacheEntry> entry;
@@ -2110,7 +2119,11 @@ imgLoader::LoadImage(nsIURI* aURI,
   
   
   
-  ImageCacheKey key(aURI, aLoadingDocument);
+  PrincipalOriginAttributes attrs;
+  if (aLoadingPrincipal) {
+    attrs = BasePrincipal::Cast(aLoadingPrincipal)->OriginAttributesRef();
+  }
+  ImageCacheKey key(aURI, attrs, aLoadingDocument);
   imgCacheTable& cache = GetCache(key);
 
   if (cache.Get(key, getter_AddRefs(entry)) && entry) {
@@ -2314,7 +2327,16 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
   nsCOMPtr<nsIURI> uri;
   channel->GetURI(getter_AddRefs(uri));
   nsCOMPtr<nsIDocument> doc = do_QueryInterface(aCX);
-  ImageCacheKey key(uri, doc);
+
+  NS_ENSURE_TRUE(channel, NS_ERROR_FAILURE);
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
+
+  PrincipalOriginAttributes attrs;
+  if (loadInfo) {
+    attrs.InheritFromNecko(loadInfo->GetOriginAttributes());
+  }
+
+  ImageCacheKey key(uri, attrs, doc);
 
   nsLoadFlags requestFlags = nsIRequest::LOAD_NORMAL;
   channel->GetLoadFlags(&requestFlags);
@@ -2416,7 +2438,7 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
     
     
     
-    ImageCacheKey originalURIKey(originalURI, doc);
+    ImageCacheKey originalURIKey(originalURI, attrs, doc);
 
     
     
