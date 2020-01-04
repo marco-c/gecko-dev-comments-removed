@@ -60,19 +60,21 @@ function Object_toLocaleString() {
     return callContentFunction(O.toString, O);
 }
 
+
 function ObjectDefineSetter(name, setter) {
     if (this === null || this === undefined)
         AddContentTelemetry(TELEMETRY_DEFINE_GETTER_SETTER_THIS_NULL_UNDEFINED, 1);
     else
         AddContentTelemetry(TELEMETRY_DEFINE_GETTER_SETTER_THIS_NULL_UNDEFINED, 0);
 
+    
     var object = ToObject(this);
 
+    
     if (!IsCallable(setter))
         ThrowTypeError(JSMSG_BAD_GETTER_OR_SETTER, "setter");
 
-    var key = ToPropertyKey(name);
-
+    
     var desc = {
         __proto__: null,
         enumerable: true,
@@ -80,8 +82,15 @@ function ObjectDefineSetter(name, setter) {
         set: setter
     };
 
+    
+    var key = ToPropertyKey(name);
+
+    
     std_Object_defineProperty(object, key, desc);
+
+    
 }
+
 
 function ObjectDefineGetter(name, getter) {
     if (this === null || this === undefined)
@@ -89,13 +98,14 @@ function ObjectDefineGetter(name, getter) {
     else
         AddContentTelemetry(TELEMETRY_DEFINE_GETTER_SETTER_THIS_NULL_UNDEFINED, 0);
 
+    
     var object = ToObject(this);
 
+    
     if (!IsCallable(getter))
         ThrowTypeError(JSMSG_BAD_GETTER_OR_SETTER, "getter");
 
-    var key = ToPropertyKey(name);
-
+    
     var desc = {
         __proto__: null,
         enumerable: true,
@@ -103,35 +113,69 @@ function ObjectDefineGetter(name, getter) {
         get: getter
     };
 
+    
+    var key = ToPropertyKey(name);
+
+    
     std_Object_defineProperty(object, key, desc);
+
+    
 }
+
 
 function ObjectLookupSetter(name) {
-    var key = ToPropertyKey(name);
+    
     var object = ToObject(this);
 
+    
+    var key = ToPropertyKey(name)
+
     do {
+        
         var desc = std_Object_getOwnPropertyDescriptor(object, key);
+
+        
         if (desc) {
+            
             if (callFunction(std_Object_hasOwnProperty, desc, "set"))
                 return desc.set;
+
+            
             return undefined;
         }
+
+        
         object = std_Reflect_getPrototypeOf(object);
     } while (object !== null);
+
+    
 }
 
+
 function ObjectLookupGetter(name) {
-    var key = ToPropertyKey(name);
+    
     var object = ToObject(this);
 
+    
+    var key = ToPropertyKey(name)
+
     do {
+        
         var desc = std_Object_getOwnPropertyDescriptor(object, key);
+
+        
         if (desc) {
+            
             if (callFunction(std_Object_hasOwnProperty, desc, "get"))
                 return desc.get;
+
+            
             return undefined;
         }
+
+        
         object = std_Reflect_getPrototypeOf(object);
     } while (object !== null);
+
+    
 }
