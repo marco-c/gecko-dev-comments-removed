@@ -54,16 +54,9 @@ public:
     nsresult rv = BodyCreateDir(aDBDir);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    {
-      mozStorageTransaction trans(aConn, false,
-                                  mozIStorageConnection::TRANSACTION_IMMEDIATE);
-
-      rv = db::CreateSchema(aConn);
-      if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-
-      rv = trans.Commit();
-      if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
-    }
+    
+    rv = db::CreateOrMigrateSchema(aConn);
+    if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
     
     

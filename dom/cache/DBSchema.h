@@ -29,8 +29,9 @@ struct SavedResponse;
 
 namespace db {
 
+
 nsresult
-CreateSchema(mozIStorageConnection* aConn);
+CreateOrMigrateSchema(mozIStorageConnection* aConn);
 
 
 nsresult
