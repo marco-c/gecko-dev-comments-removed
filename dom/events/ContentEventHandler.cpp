@@ -1581,6 +1581,13 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(nsRange* aRange)
       } else {
         nodePosition.mOffset = node->Length();
       }
+      
+      
+      
+      
+      if (!nodePosition.mOffset) {
+        continue;
+      }
       break;
     }
 
@@ -1618,8 +1625,8 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(nsRange* aRange)
   
   
   
-  if (nodePosition.mOffset == start) {
-    MOZ_ASSERT(nodePosition.mOffset);
+  
+  if (nodePosition.mOffset && nodePosition.mOffset == start) {
     GetFrameForTextRect(nodePosition.mNode, --nodePosition.mOffset,
                         true, &lastFrame);
     if (NS_WARN_IF(!lastFrame)) {
