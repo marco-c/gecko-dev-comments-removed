@@ -145,15 +145,6 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     return platform.toLowerCase().indexOf("firefox") !== -1;
   }
 
-  function isFirefoxOS(platform) {
-    
-    
-    
-    
-    
-    return !!window.MozActivity && /mobi/i.test(platform);
-  }
-
   function isOpera(platform) {
     return platform.toLowerCase().indexOf("opera") > -1 ||
            platform.toLowerCase().indexOf("opr") > -1;
@@ -798,7 +789,6 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
     getPlatform: getPlatform,
     isChrome: isChrome,
     isFirefox: isFirefox,
-    isFirefoxOS: isFirefoxOS,
     isOpera: isOpera,
     getUnsupportedPlatform: getUnsupportedPlatform,
     hasAudioOrVideoDevices: hasAudioOrVideoDevices,
