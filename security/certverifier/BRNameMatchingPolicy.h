@@ -28,13 +28,16 @@ namespace mozilla { namespace psm {
 
 
 
+
+
 class BRNameMatchingPolicy : public mozilla::pkix::NameMatchingPolicy
 {
 public:
   enum class Mode {
     DoNotEnforce = 0,
     EnforceAfter23August2016 = 1,
-    Enforce = 2,
+    EnforceAfter23August2015 = 2,
+    Enforce = 3,
   };
 
   explicit BRNameMatchingPolicy(Mode mode)

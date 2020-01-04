@@ -17,11 +17,18 @@ BRNameMatchingPolicy::FallBackToCommonName(
    FallBackToSearchWithinSubject& fallBackToCommonName)
 {
   
+  static const Time AUGUST_23_2015 = TimeFromEpochInSeconds(1440288000);
+  
   static const Time AUGUST_23_2016 = TimeFromEpochInSeconds(1471910400);
   switch (mMode)
   {
     case Mode::Enforce:
       fallBackToCommonName = FallBackToSearchWithinSubject::No;
+      break;
+    case Mode::EnforceAfter23August2015:
+      fallBackToCommonName = notBefore > AUGUST_23_2015
+                           ? FallBackToSearchWithinSubject::No
+                           : FallBackToSearchWithinSubject::Yes;
       break;
     case Mode::EnforceAfter23August2016:
       fallBackToCommonName = notBefore > AUGUST_23_2016
