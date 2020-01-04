@@ -4231,7 +4231,7 @@ IsTypedArrayElementSetInlineable(JSObject* obj, const Value& idval, const Value&
 {
     
     return IsAnyTypedArray(obj) && idval.isInt32() &&
-           !value.isString() && !value.isObject();
+           !value.isString() && !value.isObject() && !value.isSymbol();
 }
 
 static void
