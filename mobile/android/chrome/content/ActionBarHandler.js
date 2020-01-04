@@ -22,6 +22,8 @@ var ActionBarHandler = {
 
   _nextSelectionID: 1, 
   _selectionID: null, 
+
+  _boundingClientRect: null, 
   _actionBarActions: null, 
 
   
@@ -67,10 +69,13 @@ var ActionBarHandler = {
         
         if (e.reason == 'visibilitychange' || e.reason == 'presscaret' ||
             e.reason == 'scroll' ) {
+          
           this._updateVisibility();
         } else {
+          
+          this._boundingClientRect = e.boundingClientRect;
           let forceUpdate = e.reason == 'updateposition' || e.reason == 'releasecaret';
-          this._sendActionBarActions(forceUpdate, e.boundingClientRect);
+          this._sendActionBarActions(forceUpdate);
         }
       } else {
         
@@ -135,13 +140,14 @@ var ActionBarHandler = {
     
     this._selectionID = this._nextSelectionID++;
     [this._targetElement, this._contentWindow] = [element, win];
+    this._boundingClientRect = boundingClientRect;
 
     
     Messaging.sendRequest({
       type: "TextSelection:ActionbarInit",
       selectionID: this._selectionID,
     });
-    this._sendActionBarActions(true, boundingClientRect);
+    this._sendActionBarActions(true);
 
     return this.START_TOUCH_ERROR.NONE;
   },
@@ -209,6 +215,7 @@ var ActionBarHandler = {
     
     
     this._selectionID = null;
+    this._boundingClientRect = null;
 
     
     
@@ -248,8 +255,9 @@ var ActionBarHandler = {
 
 
 
-  _sendActionBarActions: function(sendAlways, boundingClientRect) {
+  _sendActionBarActions: function(sendAlways) {
     let actions = this._getActionBarActions();
+
     let actionCountUnchanged = this._actionBarActions &&
       actions.length === this._actionBarActions.length;
     let actionsMatch = actionCountUnchanged &&
@@ -260,12 +268,13 @@ var ActionBarHandler = {
     if (sendAlways || !actionsMatch) {
       Messaging.sendRequest({
         type: "TextSelection:ActionbarStatus",
+        selectionID: this._selectionID,
         actions: actions,
-        x: boundingClientRect.x,
-        y: boundingClientRect.y,
-        width: boundingClientRect.width,
-        height: boundingClientRect.height
-      });;
+        x: this._boundingClientRect.x,
+        y: this._boundingClientRect.y,
+        width: this._boundingClientRect.width,
+        height: this._boundingClientRect.height
+      });
     }
 
     this._actionBarActions = actions;
@@ -535,15 +544,32 @@ var ActionBarHandler = {
           if (!form || element.type == "password") {
             return false;
           }
+
           let method = form.method.toUpperCase();
-          return (method == "GET" || method == "") ||
-                 (form.enctype != "text/plain") && (form.enctype != "multipart/form-data");
+          let canAddEngine = (method == "GET") ||
+            (method == "POST" && (form.enctype != "text/plain" && form.enctype != "multipart/form-data"));
+          if (!canAddEngine) {
+            return false;
+          }
+
+          
+          if (SearchEngines.visibleEngineExists(element)) {
+            return false;
+          }
+
+          return true;
         },
       },
 
       action: function(element, win) {
         UITelemetry.addEvent("action.1", "actionbar", null, "add_search_engine");
-        SearchEngines.addEngine(element);
+
+        
+        SearchEngines.addEngine(element, (result) => {
+          if (result) {
+            ActionBarHandler._sendActionBarActions(true);
+          }
+        });
       },
     },
 

@@ -224,6 +224,11 @@ class ActionBarTextSelection extends Layer implements TextSelection, GeckoEventL
 
                     } else if (event.equals("TextSelection:ActionbarStatus")) {
                         
+                        if (selectionID != message.optString("selectionID")) {
+                            return;
+                        }
+
+                        
                         showActionMode(message.getJSONArray("actions"));
 
                     } else if (event.equals("TextSelection:ActionbarUninit")) {
