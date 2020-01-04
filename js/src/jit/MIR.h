@@ -2367,6 +2367,11 @@ class MSimdShift
         return new(alloc) MSimdShift(left, right, op);
     }
 
+    
+    static Operation rshForSign(SimdSign sign) {
+        return sign == SimdSign::Unsigned ? ursh : rsh;
+    }
+
     AliasSet getAliasSet() const override {
         return AliasSet::None();
     }

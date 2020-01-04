@@ -803,6 +803,45 @@ enum class SimdType : uint8_t {
 
 
 
+enum class SimdSign {
+    
+    NotApplicable,
+    
+    Unsigned,
+    
+    Signed,
+};
+
+
+inline SimdSign
+GetSimdSign(SimdType t)
+{
+    switch(t) {
+      case SimdType::Int8x16:
+      case SimdType::Int16x8:
+      case SimdType::Int32x4:
+        return SimdSign::Signed;
+
+      case SimdType::Uint8x16:
+      case SimdType::Uint16x8:
+      case SimdType::Uint32x4:
+        return SimdSign::Unsigned;
+
+      default:
+        return SimdSign::NotApplicable;
+    }
+}
+
+inline bool
+IsSignedIntSimdType(SimdType type)
+{
+    return GetSimdSign(type) == SimdSign::Signed;
+}
+
+
+
+
+
 inline SimdType
 GetBooleanSimdType(SimdType t)
 {
@@ -1040,8 +1079,6 @@ struct Bool64x2 {
         return BooleanValue(value);
     }
 };
-
-bool IsSignedIntSimdType(SimdType type);
 
 PropertyName* SimdTypeToName(JSContext* cx, SimdType type);
 
