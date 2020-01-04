@@ -34,20 +34,11 @@ XPCJSContextStack::Pop()
     uint32_t idx = mStack.Length() - 1; 
 
     mStack.RemoveElementAt(idx);
-    JSContext* newTop;
-    
-    if (idx == 0) {
-        newTop = nullptr;
-    } else {
-        newTop = mStack[idx-1];
-    }
-    js::Debug_SetActiveJSContext(mRuntime->Runtime(), newTop);
 }
 
 void
 XPCJSContextStack::Push(JSContext* cx)
 {
-    js::Debug_SetActiveJSContext(mRuntime->Runtime(), cx);
     mStack.AppendElement(cx);
 }
 

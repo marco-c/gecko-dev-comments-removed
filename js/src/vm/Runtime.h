@@ -1149,14 +1149,6 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 #ifdef DEBUG
     unsigned            checkRequestDepth;
-
-    
-
-
-
-
-
-    JSContext*         activeContext;
 #endif
 
     

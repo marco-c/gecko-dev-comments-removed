@@ -2691,20 +2691,6 @@ JS_FRIEND_API(void)
 SetScriptEnvironmentPreparer(JSRuntime* rt, ScriptEnvironmentPreparer*
 preparer);
 
-
-
-
-
-
-
-#ifdef DEBUG
-JS_FRIEND_API(void)
-Debug_SetActiveJSContext(JSRuntime* rt, JSContext* cx);
-#else
-inline void
-Debug_SetActiveJSContext(JSRuntime* rt, JSContext* cx) {}
-#endif
-
 enum CTypesActivityType {
     CTYPES_CALL_BEGIN,
     CTYPES_CALL_END,
