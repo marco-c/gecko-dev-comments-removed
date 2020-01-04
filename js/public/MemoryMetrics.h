@@ -56,7 +56,6 @@ struct TabSizes
 };
 
 
-
 struct ServoSizes
 {
     enum Kind {
@@ -103,7 +102,11 @@ namespace js {
 
 
 
+
+
 JS_FRIEND_API(size_t) MemoryReportingSundriesThreshold();
+
+
 
 
 
@@ -227,6 +230,8 @@ struct ClassInfo
 
 
 
+
+
 struct NotableClassInfo : public ClassInfo
 {
     NotableClassInfo();
@@ -305,6 +310,8 @@ struct GCSizes
 
 
 
+
+
 struct StringInfo
 {
 #define FOR_EACH_SIZE(macro) \
@@ -360,6 +367,8 @@ struct StringInfo
 
 
 
+
+
 struct NotableStringInfo : public StringInfo
 {
     static const size_t MAX_SAVED_CHARS = 1024;
@@ -379,6 +388,8 @@ struct NotableStringInfo : public StringInfo
   private:
     NotableStringInfo(const NotableStringInfo& info) = delete;
 };
+
+
 
 
 
@@ -428,6 +439,8 @@ struct ScriptSourceInfo
 
 
 
+
+
 struct NotableScriptSourceInfo : public ScriptSourceInfo
 {
     NotableScriptSourceInfo();
@@ -444,6 +457,8 @@ struct NotableScriptSourceInfo : public ScriptSourceInfo
   private:
     NotableScriptSourceInfo(const NotableScriptSourceInfo& info) = delete;
 };
+
+
 
 
 

@@ -31,16 +31,22 @@ enum WeakMapTraceKind {
     DoNotTraceWeakMaps,
 
     
-    
-    
+
+
+
+
     ExpandWeakMaps,
 
     
-    
+
+
+
     TraceWeakMapValues,
 
     
-    
+
+
+
     TraceWeakMapKeysValues
 };
 
@@ -335,6 +341,8 @@ JS_CallHashSetObjectTracer(JSTracer* trc, HashSetEnum& e, JSObject* const& key, 
 
 
 
+
+
 extern JS_PUBLIC_API(void)
 JS_CallTenuredObjectTracer(JSTracer* trc, JS::TenuredHeap<JSObject*>* objp, const char* name);
 
@@ -347,6 +355,8 @@ TraceChildren(JSTracer* trc, GCCellPtr thing);
 
 typedef js::HashSet<Zone*, js::DefaultHasher<Zone*>, js::SystemAllocPolicy> ZoneSet;
 } 
+
+
 
 
 

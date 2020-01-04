@@ -741,6 +741,7 @@ namespace JS {
 
 
 
+
 class MOZ_STACK_CLASS SourceBufferHolder final
 {
   public:
@@ -1020,6 +1021,8 @@ typedef void (*JS_ICUFreeFn)(const void*, void* p);
 
 
 
+
+
 extern JS_PUBLIC_API(bool)
 JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn, JS_ICUReallocFn reallocFn, JS_ICUFreeFn freeFn);
 
@@ -1127,6 +1130,8 @@ JS_ContextIterator(JSRuntime* rt, JSContext** iterp);
 
 extern JS_PUBLIC_API(JSVersion)
 JS_GetVersion(JSContext* cx);
+
+
 
 
 
@@ -2382,6 +2387,8 @@ CompartmentOptionsRef(JSContext* cx);
 
 
 
+
+
 enum OnNewGlobalHookOption {
     FireOnNewGlobalHook,
     DontFireOnNewGlobalHook
@@ -3329,8 +3336,12 @@ JS_NewArrayObject(JSContext* cx, size_t length);
 
 
 
+
+
 extern JS_PUBLIC_API(bool)
 JS_IsArrayObject(JSContext* cx, JS::HandleValue value, bool* isArray);
+
+
 
 
 
@@ -3473,6 +3484,8 @@ JS_IsNativeFunction(JSObject* funobj, JSNative call);
 
 extern JS_PUBLIC_API(bool)
 JS_IsConstructor(JSFunction* fun);
+
+
 
 
 
@@ -4966,6 +4979,8 @@ JS_NewDateObject(JSContext* cx, int year, int mon, int mday, int hour, int min, 
 
 
 
+
+
 extern JS_PUBLIC_API(bool)
 JS_ObjectIsDate(JSContext* cx, JS::HandleObject obj, bool* isDate);
 
@@ -5017,6 +5032,8 @@ JS_NewUCRegExpObjectNoStatics(JSContext* cx, char16_t* chars, size_t length, uns
 extern JS_PUBLIC_API(bool)
 JS_ExecuteRegExpNoStatics(JSContext* cx, JS::HandleObject reobj, char16_t* chars, size_t length,
                           size_t* indexp, bool test, JS::MutableHandleValue rval);
+
+
 
 
 
@@ -5393,6 +5410,7 @@ typedef js::Vector<char, 0, js::SystemAllocPolicy> BuildIdCharVector;
 
 
 
+
 typedef bool
 (* BuildIdOp)(BuildIdCharVector* buildId);
 
@@ -5634,6 +5652,8 @@ class AutoStopwatch;
 
 
 
+
+
 struct PerformanceData {
     
     
@@ -5681,6 +5701,8 @@ struct PerformanceData {
         return *this;
     }
 };
+
+
 
 
 

@@ -61,6 +61,8 @@ JS_NewObjectWithUniqueType(JSContext* cx, const JSClass* clasp, JS::HandleObject
 
 
 
+
+
 extern JS_FRIEND_API(JSObject*)
 JS_NewObjectWithoutMetadata(JSContext* cx, const JSClass* clasp, JS::Handle<JSObject*> proto);
 
@@ -569,6 +571,8 @@ public:
 
 
 
+
+
 struct Object {
     shadow::ObjectGroup* group;
     shadow::Shape*      shape;
@@ -1065,6 +1069,8 @@ GetPCCountScriptContents(JSContext* cx, size_t script);
 
 
 
+
+
 JS_FRIEND_API(char*)
 GetCodeCoverageSummary(JSContext* cx, size_t* length);
 
@@ -1353,6 +1359,8 @@ class MOZ_STACK_CLASS AutoStableStringChars
     AutoStableStringChars(const AutoStableStringChars& other) = delete;
     void operator=(const AutoStableStringChars& other) = delete;
 };
+
+
 
 
 
@@ -2299,11 +2307,6 @@ struct JSJitMethodCallArgsTraits
     static const size_t offsetOfArgc = offsetof(JSJitMethodCallArgs, argc_);
 };
 
-
-
-
-
-
 typedef bool
 (* JSJitGetterOp)(JSContext* cx, JS::HandleObject thisObj,
                   void* specializedThis, JSJitGetterCallArgs args);
@@ -2313,6 +2316,11 @@ typedef bool
 typedef bool
 (* JSJitMethodOp)(JSContext* cx, JS::HandleObject thisObj,
                   void* specializedThis, const JSJitMethodCallArgs& args);
+
+
+
+
+
 
 struct JSJitInfo {
     enum OpType {
@@ -2353,21 +2361,28 @@ struct JSJitInfo {
     static_assert(Any & Object, "Any must include Object.");
     static_assert(Any & Null, "Any must include Null.");
 
+    
+
+
+
+
     enum AliasSet {
         
-        
-        
 
-        
-        
+
+
         AliasNone,
 
         
-        
+
+
+
         AliasDOMSets,
 
         
-        
+
+
+
         AliasEverything,
 
         
@@ -2427,9 +2442,11 @@ struct JSJitInfo {
     uint32_t type_ : JITINFO_OP_TYPE_BITS;
 
     
-    
-    
-    
+
+
+
+
+
     uint32_t aliasSet_ : JITINFO_ALIAS_SET_BITS;
 
     
@@ -2446,29 +2463,46 @@ struct JSJitInfo {
 #undef JITINFO_ALIAS_SET_BITS
 #undef JITINFO_OP_TYPE_BITS
 
-    uint32_t isInfallible : 1; 
-    uint32_t isMovable : 1;    
-
-
-
-    uint32_t isEliminatable : 1; 
-
+    
+    uint32_t isInfallible : 1;
 
     
-    uint32_t isAlwaysInSlot : 1; 
-
-
-    uint32_t isLazilyCachedInSlot : 1; 
-
-
-
-    uint32_t isTypedMethod : 1; 
-
-    uint32_t slotIndex : JITINFO_SLOT_INDEX_BITS; 
 
 
 
 
+
+    uint32_t isMovable : 1;
+
+    
+
+
+
+
+    uint32_t isEliminatable : 1;
+
+    
+    
+
+
+
+    uint32_t isAlwaysInSlot : 1;
+
+    
+
+
+
+    uint32_t isLazilyCachedInSlot : 1;
+
+    
+    uint32_t isTypedMethod : 1;
+
+    
+
+
+
+
+    uint32_t slotIndex : JITINFO_SLOT_INDEX_BITS;
 
     static const size_t maxSlotIndex = (1 << JITINFO_SLOT_INDEX_BITS) - 1;
 
@@ -2772,6 +2806,8 @@ ExecuteInGlobalAndReturnScope(JSContext* cx, JS::HandleObject obj, JS::HandleScr
 typedef long
 (*JitExceptionHandler)(void* exceptionRecord,  
                        void* context);         
+
+
 
 
 

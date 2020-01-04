@@ -42,13 +42,17 @@ enum TransferableOwnership {
     SCTAG_TMO_MAPPED_DATA = 4,
 
     
-    
-    
+
+
+
+
     SCTAG_TMO_CUSTOM = 5,
 
     SCTAG_TMO_USER_MIN
 };
 } 
+
+
 
 
 
@@ -70,8 +74,12 @@ typedef JSObject* (*ReadStructuredCloneOp)(JSContext* cx, JSStructuredCloneReade
 
 
 
+
+
 typedef bool (*WriteStructuredCloneOp)(JSContext* cx, JSStructuredCloneWriter* w,
                                        JS::HandleObject obj, void* closure);
+
+
 
 
 
@@ -83,10 +91,13 @@ typedef void (*StructuredCloneErrorOp)(JSContext* cx, uint32_t errorid);
 
 
 
+
+
 typedef bool (*ReadTransferStructuredCloneOp)(JSContext* cx, JSStructuredCloneReader* r,
                                               uint32_t tag, void* content, uint64_t extraData,
                                               void* closure,
                                               JS::MutableHandleObject returnObject);
+
 
 
 
@@ -114,6 +125,8 @@ typedef bool (*TransferStructuredCloneOp)(JSContext* cx,
 
 
 
+
+
 typedef void (*FreeTransferStructuredCloneOp)(uint32_t tag, JS::TransferableOwnership ownership,
                                               void* content, uint64_t extraData, void* closure);
 
@@ -137,6 +150,8 @@ JS_PUBLIC_API(bool)
 JS_ReadStructuredClone(JSContext* cx, uint64_t* data, size_t nbytes, uint32_t version,
                        JS::MutableHandleValue vp,
                        const JSStructuredCloneCallbacks* optionalCallbacks, void* closure);
+
+
 
 
 
@@ -199,21 +214,27 @@ class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
               const JSStructuredCloneCallbacks* callbacks=nullptr, void* closure=nullptr);
 
     
-    
-    
+
+
+
+
     void adopt(uint64_t* data, size_t nbytes, uint32_t version=JS_STRUCTURED_CLONE_VERSION,
                const JSStructuredCloneCallbacks* callbacks=nullptr, void* closure=nullptr);
 
     
-    
-    
+
+
+
+
     void steal(uint64_t** datap, size_t* nbytesp, uint32_t* versionp=nullptr,
                const JSStructuredCloneCallbacks** callbacks=nullptr, void** closure=nullptr);
 
     
-    
-    
-    
+
+
+
+
+
     void abandon() { ownTransferables_ = IgnoreTransferablesIfAny; }
 
     bool read(JSContext* cx, JS::MutableHandleValue vp,

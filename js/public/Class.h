@@ -48,6 +48,8 @@ typedef AutoVectorRooter<jsid> AutoIdVector;
 
 
 
+
+
 enum class IsArrayAnswer
 {
     Array,
@@ -65,8 +67,12 @@ enum class IsArrayAnswer
 
 
 
+
+
 extern JS_PUBLIC_API(bool)
 IsArray(JSContext* cx, HandleObject obj, bool* isArray);
+
+
 
 
 
@@ -252,6 +258,8 @@ class ObjectOpResult
 
 
 
+
+
 typedef bool
 (* JSGetterOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
                JS::MutableHandleValue vp);
@@ -265,9 +273,13 @@ typedef bool
 
 
 
+
+
 typedef bool
 (* JSSetterOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
                JS::MutableHandleValue vp, JS::ObjectOpResult& result);
+
+
 
 
 
@@ -297,14 +309,19 @@ typedef bool
 
 
 
+
+
 typedef bool
 (* JSNewEnumerateOp)(JSContext* cx, JS::HandleObject obj, JS::AutoIdVector& properties,
                      bool enumerableOnly);
 
 
 
+
+
 typedef bool
 (* JSEnumerateOp)(JSContext* cx, JS::HandleObject obj);
+
 
 
 
@@ -327,8 +344,12 @@ typedef bool
 
 
 
+
+
 typedef bool
 (* JSMayResolveOp)(const JSAtomState& names, jsid id, JSObject* maybeObj);
+
+
 
 
 
@@ -344,9 +365,13 @@ struct JSStringFinalizer {
 
 
 
+
+
 typedef bool
 (* JSHasInstanceOp)(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp,
                     bool* bp);
+
+
 
 
 
@@ -439,6 +464,8 @@ class JS_FRIEND_API(ElementAdder)
 typedef bool
 (* GetElementsOp)(JSContext* cx, JS::HandleObject obj, uint32_t begin, uint32_t end,
                   ElementAdder* adder);
+
+
 
 
 

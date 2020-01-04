@@ -237,25 +237,60 @@ typedef uint64_t JSValueShiftedTag;
 
 typedef enum JSWhyMagic
 {
-    JS_ELEMENTS_HOLE,            
-    JS_NO_ITER_VALUE,            
-    JS_GENERATOR_CLOSING,        
-    JS_NO_CONSTANT,              
-    JS_THIS_POISON,              
-    JS_ARG_POISON,               
-    JS_SERIALIZE_NO_NODE,        
-    JS_LAZY_ARGUMENTS,           
-    JS_OPTIMIZED_ARGUMENTS,      
-    JS_IS_CONSTRUCTING,          
-    JS_OVERWRITTEN_CALLEE,       
-    JS_BLOCK_NEEDS_CLONE,        
-    JS_HASH_KEY_EMPTY,           
-    JS_ION_ERROR,                
-    JS_ION_BAILOUT,              
-    JS_OPTIMIZED_OUT,            
-    JS_UNINITIALIZED_LEXICAL,    
+    
+    JS_ELEMENTS_HOLE,
 
-    JS_GENERIC_MAGIC,            
+    
+    JS_NO_ITER_VALUE,
+
+    
+    JS_GENERATOR_CLOSING,
+
+    
+    JS_NO_CONSTANT,
+
+    
+    JS_THIS_POISON,
+
+    
+    JS_ARG_POISON,
+
+    
+    JS_SERIALIZE_NO_NODE,
+
+    
+    JS_LAZY_ARGUMENTS,
+
+    
+    JS_OPTIMIZED_ARGUMENTS,
+
+    
+    JS_IS_CONSTRUCTING,
+
+    
+    JS_OVERWRITTEN_CALLEE,
+
+    
+    JS_BLOCK_NEEDS_CLONE,
+
+    
+    JS_HASH_KEY_EMPTY,
+
+    
+    JS_ION_ERROR,
+
+    
+    JS_ION_BAILOUT,
+
+    
+    JS_OPTIMIZED_OUT,
+
+    
+    JS_UNINITIALIZED_LEXICAL,
+
+    
+    JS_GENERIC_MAGIC,
+
     JS_WHY_MAGIC_COUNT
 } JSWhyMagic;
 
