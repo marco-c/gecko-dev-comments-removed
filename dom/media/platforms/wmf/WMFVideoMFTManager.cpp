@@ -156,13 +156,23 @@ public:
 
   NS_IMETHOD Run() {
     NS_ASSERTION(NS_IsMainThread(), "Must be on main thread.");
+    nsACString* failureReason = &mFailureReason;
+    nsCString secondFailureReason;
     if (mBackend == LayersBackend::LAYERS_D3D11 &&
         Preferences::GetBool("media.windows-media-foundation.allow-d3d11-dxva", true) &&
         IsWin8OrLater()) {
-      mDXVA2Manager = DXVA2Manager::CreateD3D11DXVA(mFailureReason);
-    } else {
-      mDXVA2Manager = DXVA2Manager::CreateD3D9DXVA(mFailureReason);
+      mDXVA2Manager = DXVA2Manager::CreateD3D11DXVA(*failureReason);
+      if (mDXVA2Manager) {
+        return NS_OK;
+      }
+      
+      
+      failureReason = &secondFailureReason;
+      mFailureReason.Append(NS_LITERAL_CSTRING("; "));
     }
+    mDXVA2Manager = DXVA2Manager::CreateD3D9DXVA(*failureReason);
+    
+    mFailureReason.Append(secondFailureReason);
     return NS_OK;
   }
   nsAutoPtr<DXVA2Manager> mDXVA2Manager;
@@ -206,21 +216,13 @@ WMFVideoMFTManager::Init()
 {
   bool success = InitInternal( false);
 
-  
-  
-  if (!success && mDXVA2Manager && mDXVA2Manager->IsD3D11()) {
-    mDXVA2Manager = nullptr;
-    nsCString d3d11Failure = mDXVAFailureReason;
-    success = InitInternal(true);
-    mDXVAFailureReason.Append(NS_LITERAL_CSTRING("; "));
-    mDXVAFailureReason.Append(d3d11Failure);
-  }
-
   if (success && mDXVA2Manager) {
+    
+    
     if (mDXVA2Manager->IsD3D11()) {
-      mDXVAFailureReason.AssignLiteral("Using D3D11 API");
+      mDXVAFailureReason.Append(NS_LITERAL_CSTRING("Using D3D11 API"));
     } else {
-      mDXVAFailureReason.AssignLiteral("Using D3D9 API");
+      mDXVAFailureReason.Append(NS_LITERAL_CSTRING("Using D3D9 API"));
     }
   }
 
