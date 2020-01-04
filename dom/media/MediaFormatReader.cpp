@@ -1423,11 +1423,41 @@ MediaFormatReader::Reset(TrackType aTrack)
 }
 
 void
+MediaFormatReader::DropDecodedSamples(TrackType aTrack)
+{
+  MOZ_ASSERT(OnTaskQueue());
+  auto& decoder = GetDecoderData(aTrack);
+  size_t lengthDecodedQueue = decoder.mOutput.Length();
+  if (lengthDecodedQueue && decoder.mTimeThreshold.isSome()) {
+    TimeUnit time =
+      TimeUnit::FromMicroseconds(decoder.mOutput.LastElement()->mTime);
+    if (time >= decoder.mTimeThreshold.ref().Time()) {
+      
+      decoder.mTimeThreshold.reset();
+    }
+  }
+  decoder.mOutput.Clear();
+  decoder.mSizeOfQueue -= lengthDecodedQueue;
+  if (aTrack == TrackInfo::kVideoTrack && mDecoder) {
+    mDecoder->NotifyDecodedFrames(0, 0, lengthDecodedQueue);
+  }
+}
+
+void
 MediaFormatReader::SkipVideoDemuxToNextKeyFrame(media::TimeUnit aTimeThreshold)
 {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(mVideo.HasPromise());
   LOG("Skipping up to %lld", aTimeThreshold.ToMicroseconds());
+
+  
+  
+  
+  
+  
+  
+  
+  DropDecodedSamples(TrackInfo::kVideoTrack);
 
   mSkipRequest.Begin(mVideo.mTrackDemuxer->SkipToNextRandomAccessPoint(aTimeThreshold)
                           ->Then(OwnerThread(), __func__, this,
@@ -1440,10 +1470,10 @@ void
 MediaFormatReader::VideoSkipReset(uint32_t aSkipped)
 {
   MOZ_ASSERT(OnTaskQueue());
+
   
   
-  
-  
+  DropDecodedSamples(TrackInfo::kVideoTrack);
   
   if (mDecoder) {
     mDecoder->NotifyDecodedFrames(0, 0, SizeOfVideoQueueInFrames());
@@ -1483,6 +1513,9 @@ MediaFormatReader::OnVideoSkipFailed(MediaTrackDemuxer::SkipFailureHolder aFailu
   switch (aFailure.mFailure) {
     case DemuxerFailureReason::END_OF_STREAM: MOZ_FALLTHROUGH;
     case DemuxerFailureReason::WAITING_FOR_DATA:
+      
+      
+      DropDecodedSamples(TrackInfo::kVideoTrack);
       
       
       NotifyDecodingRequested(TrackInfo::kVideoTrack);
