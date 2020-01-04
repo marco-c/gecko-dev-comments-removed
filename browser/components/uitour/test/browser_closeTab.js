@@ -1,6 +1,3 @@
-
-
-
 "use strict";
 
 var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
@@ -9,15 +6,11 @@ var gTestTab;
 var gContentAPI;
 var gContentWindow;
 
-function test() {
-  UITourTest();
-}
+add_task(setup_UITourTest);
 
-var tests = [
-  taskify(function* test_closeTab() {
-    
-    
-    gContentAPI.closeTab();
-    gTestTab = null;
-  }),
-];
+add_UITour_task(function* test_closeTab() {
+  
+  
+  yield gContentAPI.closeTab();
+  gTestTab = null;
+});

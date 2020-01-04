@@ -1,19 +1,14 @@
-
-
-
 "use strict";
 
 var gTestTab;
 var gContentAPI;
 var gContentWindow;
 
-function test() {
-  UITourTest();
-}
+add_task(setup_UITourTest);
 
-var tests = [
-  
-  function test_resetFirefox(done) {
+
+add_UITour_task(function* test_resetFirefox() {
+  let dialogPromise = new Promise((resolve) => {
     let winWatcher = Cc["@mozilla.org/embedcomp/window-watcher;1"].
                      getService(Ci.nsIWindowWatcher);
     winWatcher.registerNotification(function onOpen(subj, topic, data) {
@@ -27,11 +22,13 @@ var tests = [
             is(subj.opener, window,
                "Reset Firefox event opened a reset profile window.");
             subj.close();
-            done();
+            resolve();
           }
         });
       }
     });
-    gContentAPI.resetFirefox();
-  },
-];
+  });
+  yield gContentAPI.resetFirefox();
+  yield dialogPromise;
+});
+

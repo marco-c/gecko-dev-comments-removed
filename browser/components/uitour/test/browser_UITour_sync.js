@@ -1,65 +1,29 @@
-
-
-
 "use strict";
 
 var gTestTab;
 var gContentAPI;
 var gContentWindow;
 
-function test() {
-  registerCleanupFunction(function() {
-    Services.prefs.clearUserPref("services.sync.username");
-  });
-  UITourTest();
-}
+registerCleanupFunction(function() {
+  Services.prefs.clearUserPref("services.sync.username");
+});
 
-var tests = [
-  function test_checkSyncSetup_disabled(done) {
-    function callback(result) {
-      is(result.setup, false, "Sync shouldn't be setup by default");
-      done();
-    }
+add_task(setup_UITourTest);
 
-    gContentAPI.getConfiguration("sync", callback);
-  },
+add_UITour_task(function* test_checkSyncSetup_disabled() {
+  let result = yield getConfigurationPromise("sync");
+  is(result.setup, false, "Sync shouldn't be setup by default");
+});
 
-  function test_checkSyncSetup_enabled(done) {
-    function callback(result) {
-      is(result.setup, true, "Sync should be setup");
-      done();
-    }
+add_UITour_task(function* test_checkSyncSetup_enabled() {
+  Services.prefs.setCharPref("services.sync.username", "uitour@tests.mozilla.org");
+  let result = yield getConfigurationPromise("sync");
+  is(result.setup, true, "Sync should be setup");
+});
 
-    Services.prefs.setCharPref("services.sync.username", "uitour@tests.mozilla.org");
-    gContentAPI.getConfiguration("sync", callback);
-  },
 
-  
-  function test_firefoxAccounts(done) {
-    
-    
-    Services.prefs.setCharPref("identity.fxaccounts.remote.signup.uri",
-                               "https://example.com/");
-
-    loadUITourTestPage(function(contentWindow) {
-      let tabBrowser = gBrowser.selectedBrowser;
-      
-      
-      tabBrowser.addEventListener("load", function onload(evt) {
-        tabBrowser.removeEventListener("load", onload, true);
-
-        is(tabBrowser.contentDocument.location.href,
-           "about:accounts?action=signup&entrypoint=uitour",
-           "about:accounts should have replaced the tab");
-
-        
-        
-        tabBrowser.contentDocument.location.href = "about:blank";
-        Services.prefs.clearUserPref("identity.fxaccounts.remote.signup.uri");
-        done();
-      }, true);
-
-      gContentAPI.showFirefoxAccounts();
-    });
-  },
-];
+add_UITour_task(function* test_firefoxAccounts() {
+  yield gContentAPI.showFirefoxAccounts();
+  yield BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
+                                       "about:accounts?action=signup&entrypoint=uitour");
+});

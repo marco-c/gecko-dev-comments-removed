@@ -38,13 +38,7 @@ var mockShellService = new MockObjectRegisterer("@mozilla.org/browser/shell-serv
 
 
 
-function test() {
-  UITourTest();
-}
-
-var tests = [
-
-  
+add_task(setup_UITourTest);
 
 
 
@@ -56,13 +50,12 @@ var tests = [
 
 
 
-  taskify(function* test_isDefaultBrowser(done) {
-    let shell = Components.classes["@mozilla.org/browser/shell-service;1"]
-                          .getService(Components.interfaces.nsIShellService);
-    let isDefault = shell.isDefaultBrowser(false);
-    gContentAPI.getConfiguration("appinfo", (data) => {
-      is(isDefault, data.defaultBrowser, "gContentAPI result should match shellService.isDefaultBrowser");
-      done();
-    });
-  }),
-];
+
+
+add_UITour_task(function* test_isDefaultBrowser() {
+  let shell = Components.classes["@mozilla.org/browser/shell-service;1"]
+        .getService(Components.interfaces.nsIShellService);
+  let isDefault = shell.isDefaultBrowser(false);
+  let data = yield getConfigurationPromise("appinfo");
+  is(isDefault, data.defaultBrowser, "gContentAPI result should match shellService.isDefaultBrowser");
+});
