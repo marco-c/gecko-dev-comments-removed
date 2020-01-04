@@ -1069,7 +1069,8 @@ bool nsWindow::OnMultitouchEvent(AndroidGeckoEvent *ae)
         
         
         
-        WidgetMouseEvent hittest(true, NS_MOUSE_MOZHITTEST, this, WidgetMouseEvent::eReal);
+        WidgetMouseEvent hittest(true, eMouseHitTest, this,
+                                 WidgetMouseEvent::eReal);
         hittest.refPoint = event.touches[0]->mRefPoint;
         hittest.ignoreRootScrollFrame = true;
         hittest.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_TOUCH;
