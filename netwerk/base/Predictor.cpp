@@ -637,7 +637,7 @@ public:
       
       Preferences::SetBool(PREDICTOR_CLEANED_UP_PREF, true);
     }
-    return mIOThread->Shutdown();
+    return mIOThread->AsyncShutdown();
   }
 
 private:
