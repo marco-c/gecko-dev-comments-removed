@@ -23,6 +23,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Deprecated",
+                                  "resource://gre/modules/Deprecated.jsm");
+
 var ContentAreaUtils = {
 
   
@@ -98,14 +101,68 @@ function saveURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
 const imgICache = Components.interfaces.imgICache;
 const nsISupportsCString = Components.interfaces.nsISupportsCString;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
-                      aSkipPrompt, aReferrer, aDoc, aContentType, aContentDisp)
+                      aSkipPrompt, aReferrer, aDoc, aContentType, aContentDisp,
+                      aIsContentWindowPrivate)
 {
   forbidCPOW(aURL, "saveImageURL", "aURL");
   forbidCPOW(aReferrer, "saveImageURL", "aReferrer");
   
+  
+  
+  if (aDoc && Components.utils.isCrossProcessWrapper(aDoc)) {
+    Deprecated.warning("saveImageURL should not be passed document CPOWs. " +
+                       "The caller should pass in the content type and " +
+                       "disposition themselves",
+                       "https://bugzilla.mozilla.org/show_bug.cgi?id=1243643");
+    if (aIsContentWindowPrivate == undefined) {
+      
+      
+      Deprecated.warning("saveImageURL should be passed the private state of " +
+                         "the containing window.",
+                         "https://bugzilla.mozilla.org/show_bug.cgi?id=1243643");
+      aIsContentWindowPrivate =
+        PrivateBrowsingUtils.isContentWindowPrivate(aDoc.defaultView);
+    }
+  }
 
-  if (!aShouldBypassCache &&
+  
+  if (aIsContentWindowPrivate == undefined) {
+    throw new Error("saveImageURL couldn't compute private state of content window");
+  }
+
+  if (!aShouldBypassCache && (aDoc && !Components.utils.isCrossProcessWrapper(aDoc)) &&
       (!aContentType && !aContentDisp)) {
     try {
       var imageCache = Components.classes["@mozilla.org/image/tools;1"]
@@ -121,9 +178,10 @@ function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
       
     }
   }
+
   internalSave(aURL, null, aFileName, aContentDisp, aContentType,
                aShouldBypassCache, aFilePickerTitleKey, null, aReferrer,
-               aDoc, aSkipPrompt, null);
+               null, aSkipPrompt, null, aIsContentWindowPrivate);
 }
 
 
