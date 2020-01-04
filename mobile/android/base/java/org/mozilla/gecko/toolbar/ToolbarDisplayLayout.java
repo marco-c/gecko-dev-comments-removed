@@ -120,6 +120,8 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
     
     private static final int LEVEL_SHIELD_ENABLED = 5;
     private static final int LEVEL_SHIELD_DISABLED = 6;
+    
+    private static final int LEVEL_SEARCH_ICON = 999;
 
     private final ForegroundColorSpan mBlockedColor;
 
@@ -317,7 +319,10 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
         }
 
         
-        if (loginInsecure) {
+        if (AboutPages.isTitlelessAboutPage(tab.getURL())) {
+            
+            imageLevel = LEVEL_SEARCH_ICON;
+        } else if (loginInsecure) {
             imageLevel = LEVEL_LOCK_DISABLED;
         } else if (trackingMode == TrackingMode.TRACKING_CONTENT_LOADED) {
             imageLevel = LEVEL_SHIELD_DISABLED;
