@@ -221,32 +221,9 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
             return false;
     }
 
-    
-    
-    
-    
-    
     global->setConstructor(key, ObjectValue(*ctor));
     global->setConstructorPropertySlot(key, ObjectValue(*ctor));
 
-    if (!defineConstructorPropertiesAndLinkPrototype(cx, global, key, clasp, id,
-                                                     ctor, proto))
-    {
-        global->setConstructor(key, UndefinedValue());
-        global->setConstructorPropertySlot(key, UndefinedValue());
-        return false;
-    }
-
-    return true;
-}
-
- bool
-GlobalObject::defineConstructorPropertiesAndLinkPrototype(JSContext* cx,
-                                                          Handle<GlobalObject*> global,
-                                                          JSProtoKey key, const Class* clasp,
-                                                          HandleId id, HandleObject ctor,
-                                                          HandleObject proto)
-{
     
     
     
