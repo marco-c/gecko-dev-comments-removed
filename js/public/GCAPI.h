@@ -354,6 +354,34 @@ SetGCSliceCallback(JSRuntime* rt, GCSliceCallback callback);
 
 
 
+enum class GCNurseryProgress {
+    
+
+
+    GC_NURSERY_COLLECTION_START,
+    
+
+
+    GC_NURSERY_COLLECTION_END
+};
+
+
+
+
+
+using GCNurseryCollectionCallback = void(*)(JSRuntime* rt, GCNurseryProgress progress,
+                                            gcreason::Reason reason);
+
+
+
+
+
+extern JS_PUBLIC_API(GCNurseryCollectionCallback)
+SetGCNurseryCollectionCallback(JSRuntime* rt, GCNurseryCollectionCallback callback);
+
+
+
+
 
 
 
