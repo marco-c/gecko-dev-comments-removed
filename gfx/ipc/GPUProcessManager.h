@@ -36,7 +36,6 @@ class CompositorWidget;
 namespace dom {
 class ContentParent;
 class TabParent;
-class PVideoDecoderManagerChild;
 } 
 namespace ipc {
 class GeckoChildProcessHost;
@@ -89,8 +88,6 @@ public:
                                 ipc::Endpoint<PImageBridgeChild>* aOutEndpoint);
   bool CreateContentVRManager(base::ProcessId aOtherProcess,
                               ipc::Endpoint<PVRManagerChild>* aOutEndpoint);
-  bool CreateContentVideoDecoderManager(base::ProcessId aOtherProcess,
-                                        ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutEndPoint);
 
   
   

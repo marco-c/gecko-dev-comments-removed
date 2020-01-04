@@ -4,7 +4,6 @@
 
 
 #include "GPUVideoTextureClient.h"
-#include "mozilla/dom/VideoDecoderManagerChild.h"
 
 namespace mozilla {
 namespace layers {
@@ -35,7 +34,6 @@ GPUVideoTextureData::FillInfo(TextureData::Info& aInfo) const
 void
 GPUVideoTextureData::Deallocate(ClientIPCAllocator* aAllocator)
 {
-  dom::VideoDecoderManagerChild::GetSingleton()->DeallocateSurfaceDescriptorGPUVideo(mSD);
   mSD = SurfaceDescriptorGPUVideo();
 }
 
