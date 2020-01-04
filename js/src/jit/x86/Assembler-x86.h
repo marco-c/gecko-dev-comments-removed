@@ -299,12 +299,10 @@ class Assembler : public AssemblerX86Shared
     void mov(Imm32 imm, const Operand& dest) {
         movl(imm, dest);
     }
-    void mov(AbsoluteLabel* label, Register dest) {
-        MOZ_ASSERT(!label->bound());
+    void mov(CodeOffsetLabel* label, Register dest) {
         
-        
-        masm.movl_i32r(label->prev(), dest.encoding());
-        label->setPrev(masm.size());
+        masm.movl_i32r(0, dest.encoding());
+        label->use(masm.size());
     }
     void mov(Register src, Register dest) {
         movl(src, dest);

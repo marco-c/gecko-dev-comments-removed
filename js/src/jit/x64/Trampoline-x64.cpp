@@ -162,6 +162,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     masm.push(r14);
 
     CodeLabel returnLabel;
+    CodeLabel oomReturnLabel;
     if (type == EnterJitBaseline) {
         
         AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
@@ -182,7 +183,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
         masm.movq(numStackValuesAddr, numStackValues);
 
         
-        masm.mov(returnLabel.dest(), scratch);
+        masm.mov(returnLabel.patchAt(), scratch);
         masm.push(scratch);
 
         
@@ -270,7 +271,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
         masm.mov(framePtr, rsp);
         masm.addPtr(Imm32(2 * sizeof(uintptr_t)), rsp);
         masm.moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
-        masm.mov(returnLabel.dest(), scratch);
+        masm.mov(oomReturnLabel.patchAt(), scratch);
         masm.jump(scratch);
 
         masm.bind(&notOsr);
@@ -286,8 +287,10 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
     if (type == EnterJitBaseline) {
         
-        masm.bind(returnLabel.src());
+        masm.use(returnLabel.target());
         masm.addCodeLabel(returnLabel);
+        masm.use(oomReturnLabel.target());
+        masm.addCodeLabel(oomReturnLabel);
     }
 
     

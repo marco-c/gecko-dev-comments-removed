@@ -7805,6 +7805,7 @@ CodeGenerator::generateAsmJS(AsmJSFunctionLabels* labels)
     
     
     
+    MOZ_ASSERT(!masm.failureLabel()->used());
     MOZ_ASSERT(snapshots_.listSize() == 0);
     MOZ_ASSERT(snapshots_.RVATableSize() == 0);
     MOZ_ASSERT(recovers_.size() == 0);
