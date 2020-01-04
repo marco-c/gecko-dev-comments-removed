@@ -342,14 +342,17 @@ nsCSPContext::GetReferrerPolicy(uint32_t* outPolicy, bool* outIsSet)
 
 NS_IMETHODIMP
 nsCSPContext::AppendPolicy(const nsAString& aPolicyString,
-                           bool aReportOnly)
+                           bool aReportOnly,
+                           bool aDeliveredViaMetaTag)
 {
   CSPCONTEXTLOG(("nsCSPContext::AppendPolicy: %s",
                  NS_ConvertUTF16toUTF8(aPolicyString).get()));
 
   
   NS_ASSERTION(mSelfURI, "mSelfURI required for AppendPolicy, but not set");
-  nsCSPPolicy* policy = nsCSPParser::parseContentSecurityPolicy(aPolicyString, mSelfURI, aReportOnly, this);
+  nsCSPPolicy* policy = nsCSPParser::parseContentSecurityPolicy(aPolicyString, mSelfURI,
+                                                                aReportOnly, this,
+                                                                aDeliveredViaMetaTag);
   if (policy) {
     mPolicies.AppendElement(policy);
     
@@ -1353,10 +1356,15 @@ nsCSPContext::Read(nsIObjectInputStream* aStream)
     rv = aStream->ReadBoolean(&reportOnly);
     NS_ENSURE_SUCCESS(rv, rv);
 
+    
+    
+    
+    
     nsCSPPolicy* policy = nsCSPParser::parseContentSecurityPolicy(policyString,
                                                                   mSelfURI,
                                                                   reportOnly,
-                                                                  this);
+                                                                  this,
+                                                                  false);
     if (policy) {
       mPolicies.AppendElement(policy);
     }

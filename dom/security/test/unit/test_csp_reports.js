@@ -84,7 +84,7 @@ function makeTest(id, expectedJSON, useReportOnlyPolicy, callback) {
 
   
   
-  csp.appendPolicy(policy, useReportOnlyPolicy);
+  csp.appendPolicy(policy, useReportOnlyPolicy, false);
 
   
   var handler = makeReportHandler("/test" + id, "Test " + id, expectedJSON);
