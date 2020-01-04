@@ -126,16 +126,14 @@ CERT_DecodeBasicConstraintValue(CERTBasicConstraints *value,
 
             if (value->isCA)
                 value->pathLenConstraint = CERT_UNLIMITED_PATH_CONSTRAINT;
-        }
-        else if (value->isCA) {
+        } else if (value->isCA) {
             long len = DER_GetInteger(&decodeContext.pathLenConstraint);
             if (len < 0 || len == LONG_MAX) {
                 PORT_SetError(SEC_ERROR_BAD_DER);
                 GEN_BREAK(SECFailure);
             }
             value->pathLenConstraint = len;
-        }
-        else {
+        } else {
             
 
             PORT_SetError(SEC_ERROR_BAD_DER);

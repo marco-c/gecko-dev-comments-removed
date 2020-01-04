@@ -59,14 +59,12 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags)
 
         if (nb > 0) {
             PRINT_BUF(60, (ss, "raw gather data:", bp, nb));
-        }
-        else if (nb == 0) {
+        } else if (nb == 0) {
             
             SSL_TRC(30, ("%d: SSL3[%d]: EOF", SSL_GETPID(), ss->fd));
             rv = 0;
             break;
-        }
-        else  {
+        } else  {
             SSL_DBG(("%d: SSL3[%d]: recv error %d", SSL_GETPID(), ss->fd,
                      PR_GetError()));
             rv = SECFailure;
@@ -194,14 +192,12 @@ dtls_GatherData(sslSocket *ss, sslGather *gs, int flags)
 
         if (nb > 0) {
             PRINT_BUF(60, (ss, "raw gather data:", gs->dtlsPacket.buf, nb));
-        }
-        else if (nb == 0) {
+        } else if (nb == 0) {
             
             SSL_TRC(30, ("%d: SSL3[%d]: EOF", SSL_GETPID(), ss->fd));
             rv = 0;
             return rv;
-        }
-        else  {
+        } else  {
             SSL_DBG(("%d: SSL3[%d]: recv error %d", SSL_GETPID(), ss->fd,
                      PR_GetError()));
             rv = SECFailure;
@@ -314,8 +310,7 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
         if (ss->ssl3.hs.msgState.buf) {
             if (ss->ssl3.hs.msgState.len == 0) {
                 ss->ssl3.hs.msgState.buf = NULL;
-            }
-            else {
+            } else {
                 handleRecordNow = PR_TRUE;
             }
         }
@@ -329,8 +324,7 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
 
 
             rv = ssl3_HandleRecord(ss, NULL, &ss->gs.buf);
-        }
-        else {
+        } else {
             
             if (ss->recvdCloseNotify) {
                 
@@ -340,8 +334,7 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
             }
             if (!IS_DTLS(ss)) {
                 rv = ssl3_GatherData(ss, &ss->gs, flags);
-            }
-            else {
+            } else {
                 rv = dtls_GatherData(ss, &ss->gs, flags);
 
                 
@@ -412,8 +405,7 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
             PORT_Assert(ss->firstHsDone);
             PORT_Assert(!ss->ssl3.hs.canFalseStart);
             keepGoing = PR_FALSE;
-        }
-        else if (ss->ssl3.hs.canFalseStart) {
+        } else if (ss->ssl3.hs.canFalseStart) {
             
 
 
@@ -426,8 +418,7 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
 
             if (ssl3_WaitingForServerSecondRound(ss)) {
                 keepGoing = PR_FALSE;
-            }
-            else {
+            } else {
                 ss->ssl3.hs.canFalseStart = PR_FALSE;
             }
         }

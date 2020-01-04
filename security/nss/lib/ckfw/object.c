@@ -584,8 +584,7 @@ nssCKFWObject_GetAttribute(
             *pError = CKR_HOST_MEMORY;
             goto done;
         }
-    }
-    else {
+    } else {
         rv = itemOpt;
     }
 
@@ -600,12 +599,10 @@ nssCKFWObject_GetAttribute(
             rv = (NSSItem *)NULL;
             goto done;
         }
-    }
-    else {
+    } else {
         if (rv->size >= mdItem.item->size) {
             rv->size = mdItem.item->size;
-        }
-        else {
+        } else {
             *pError = CKR_BUFFER_TOO_SMALL;
             
             
@@ -714,8 +711,7 @@ nssCKFWObject_SetAttribute(
 
 
             nssCKFWSession_RegisterSessionObject(fwSession, fwObject);
-        }
-        else {
+        } else {
             
 
 
@@ -731,8 +727,7 @@ nssCKFWObject_SetAttribute(
         nssCKFWObject_Destroy(newFwObject);
 
         return CKR_OK;
-    }
-    else {
+    } else {
         
 
 
