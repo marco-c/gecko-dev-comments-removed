@@ -1757,6 +1757,11 @@ public:
     {}
 
     
+    void DefaultAddInlineMinISize(nsIFrame* aFrame,
+                                  nscoord   aISize,
+                                  bool      aAllowBreak = true);
+
+    
     
     
     
@@ -1779,6 +1784,9 @@ public:
 
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
     void ForceBreak();
+
+    
+    void DefaultAddInlinePrefISize(nscoord aISize);
   };
 
   
