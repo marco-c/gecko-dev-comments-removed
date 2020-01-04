@@ -1024,6 +1024,27 @@ SelectBandwidth(webrtc::VideoCodec& vie_codec,
   }
 }
 
+static void ConstrainPreservingAspectRatio(uint16_t max_width,
+                                           uint16_t max_height,
+                                           unsigned short* width,
+                                           unsigned short* height)
+{
+  if (((*width) <= max_width) && ((*height) <= max_height)) {
+    return;
+  }
+
+  if ((*width) * max_height > max_width * (*height))
+  {
+    (*height) = max_width * (*height) / (*width);
+    (*width) = max_width;
+  }
+  else
+  {
+    (*width) = max_height * (*width) / (*height);
+    (*height) = max_height;
+  }
+}
+
 
 
 
@@ -1039,69 +1060,60 @@ WebrtcVideoConduit::SelectSendResolution(unsigned short width,
   mLastWidth = width;
   mLastHeight = height;
   
-  
-  if (mCurSendCodecConfig && mCurSendCodecConfig->mMaxFrameSize)
-  {
-    unsigned int cur_fs, max_width, max_height, mb_width, mb_height, mb_max;
-
-    mb_width = (width + 15) >> 4;
-    mb_height = (height + 15) >> 4;
-
-    cur_fs = mb_width * mb_height;
+  if (mCurSendCodecConfig) {
+    uint16_t max_width = mCurSendCodecConfig->mEncodingConstraints.maxWidth;
+    uint16_t max_height = mCurSendCodecConfig->mEncodingConstraints.maxHeight;
+    if (max_width || max_height) {
+      max_width = max_width ? max_width : UINT16_MAX;
+      max_height = max_height ? max_height : UINT16_MAX;
+      ConstrainPreservingAspectRatio(max_width, max_height, &width, &height);
+    }
 
     
-    if (cur_fs > mCurSendCodecConfig->mMaxFrameSize)
+    
+    if (mCurSendCodecConfig->mEncodingConstraints.maxFs)
     {
-      double scale_ratio;
-
-      scale_ratio = sqrt((double) mCurSendCodecConfig->mMaxFrameSize /
-                         (double) cur_fs);
-
-      mb_width = mb_width * scale_ratio;
-      mb_height = mb_height * scale_ratio;
+      uint32_t max_fs = mCurSendCodecConfig->mEncodingConstraints.maxFs;
+      unsigned int cur_fs, mb_width, mb_height, mb_max;
 
       
-      if (mb_width == 0) {
-        mb_width = 1;
-        mb_height = std::min(mb_height, mCurSendCodecConfig->mMaxFrameSize);
-      }
-      if (mb_height == 0) {
-        mb_height = 1;
-        mb_width = std::min(mb_width, mCurSendCodecConfig->mMaxFrameSize);
-      }
-    }
+      
+      
+      mb_width = (width + 15) >> 4;
+      mb_height = (height + 15) >> 4;
 
-    
-    mb_max = (unsigned) sqrt(8 * (double) mCurSendCodecConfig->mMaxFrameSize);
+      cur_fs = mb_width * mb_height;
 
-    max_width = 16 * std::min(mb_width, mb_max);
-    max_height = 16 * std::min(mb_height, mb_max);
-
-    if (width * max_height > max_width * height)
-    {
-      if (width > max_width)
+      
+      if (cur_fs > max_fs)
       {
-        
-        
-        height = max_width * height / width + 1;
-        width = max_width;
-      }
-    }
-    else
-    {
-      if (height > max_height)
-      {
-        
-        
-        width = max_height * width / height + 1;
-        height = max_height;
-      }
-    }
+        double scale_ratio;
 
-    
-    width = std::max(width & ~1, 2);
-    height = std::max(height & ~1, 2);
+        scale_ratio = sqrt((double) max_fs / (double) cur_fs);
+
+        mb_width = mb_width * scale_ratio;
+        mb_height = mb_height * scale_ratio;
+
+        
+        if (mb_width == 0) {
+          mb_width = 1;
+          mb_height = std::min(mb_height, max_fs);
+        }
+        if (mb_height == 0) {
+          mb_height = 1;
+          mb_width = std::min(mb_width, max_fs);
+        }
+      }
+
+      
+      mb_max = (unsigned) sqrt(8 * (double) max_fs);
+
+      max_width = 16 * std::min(mb_width, mb_max);
+      max_height = 16 * std::min(mb_height, mb_max);
+      ConstrainPreservingAspectRatio(max_width, max_height, &width, &height);
+    }
   }
+
 
   
   
@@ -1221,7 +1233,7 @@ WebrtcVideoConduit::SelectSendFrameRate(unsigned int framerate) const
   unsigned int new_framerate = framerate;
 
   
-  if (mCurSendCodecConfig && mCurSendCodecConfig->mMaxMBPS)
+  if (mCurSendCodecConfig && mCurSendCodecConfig->mEncodingConstraints.maxMbps)
   {
     unsigned int cur_fs, mb_width, mb_height, max_fps;
 
@@ -1229,14 +1241,14 @@ WebrtcVideoConduit::SelectSendFrameRate(unsigned int framerate) const
     mb_height = (mSendingHeight + 15) >> 4;
 
     cur_fs = mb_width * mb_height;
-    max_fps = mCurSendCodecConfig->mMaxMBPS/cur_fs;
+    max_fps = mCurSendCodecConfig->mEncodingConstraints.maxMbps/cur_fs;
     if (max_fps < mSendingFramerate) {
       new_framerate = max_fps;
     }
 
-    if (mCurSendCodecConfig->mMaxFrameRate != 0 &&
-      mCurSendCodecConfig->mMaxFrameRate < mSendingFramerate) {
-      new_framerate = mCurSendCodecConfig->mMaxFrameRate;
+    if (mCurSendCodecConfig->mEncodingConstraints.maxFps != 0 &&
+      mCurSendCodecConfig->mEncodingConstraints.maxFps < mSendingFramerate) {
+      new_framerate = mCurSendCodecConfig->mEncodingConstraints.maxFps;
     }
   }
   return new_framerate;
@@ -1674,8 +1686,8 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
 
   
   
-  if (codecInfo->mMaxFrameRate > 0) {
-    cinst.maxFramerate = codecInfo->mMaxFrameRate;
+  if (codecInfo->mEncodingConstraints.maxFps > 0) {
+    cinst.maxFramerate = codecInfo->mEncodingConstraints.maxFps;
   } else {
     cinst.maxFramerate = DEFAULT_VIDEO_MAX_FRAMERATE;
   }
@@ -1694,10 +1706,11 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
     cinst.codecSpecific.H264.constraints = codecInfo->mConstraints;
     cinst.codecSpecific.H264.level = codecInfo->mLevel;
     cinst.codecSpecific.H264.packetizationMode = codecInfo->mPacketizationMode;
-    if (codecInfo->mMaxBitrate > 0 && codecInfo->mMaxBitrate < cinst.maxBitrate) {
-      cinst.maxBitrate = codecInfo->mMaxBitrate;
+    if (codecInfo->mEncodingConstraints.maxBr > 0) {
+      cinst.maxBitrate = std::min(cinst.maxBitrate,
+                                  codecInfo->mEncodingConstraints.maxBr);
     }
-    if (codecInfo->mMaxMBPS > 0) {
+    if (codecInfo->mEncodingConstraints.maxMbps > 0) {
       
       CSFLogError(logTag,  "%s H.264 max_mbps not supported yet  ", __FUNCTION__);
     }
@@ -1730,8 +1743,7 @@ WebrtcVideoConduit::CheckCodecsForMatch(const VideoCodecConfig* curCodecConfig,
 
   if(curCodecConfig->mType  == codecInfo->mType &&
      curCodecConfig->mName.compare(codecInfo->mName) == 0 &&
-     curCodecConfig->mMaxFrameSize == codecInfo->mMaxFrameSize &&
-     curCodecConfig->mMaxFrameRate == codecInfo->mMaxFrameRate)
+     curCodecConfig->mEncodingConstraints == codecInfo->mEncodingConstraints)
   {
     return true;
   }
@@ -1805,8 +1817,8 @@ WebrtcVideoConduit::DumpCodecDB() const
   {
     CSFLogDebug(logTag,"Payload Name: %s", mRecvCodecList[i]->mName.c_str());
     CSFLogDebug(logTag,"Payload Type: %d", mRecvCodecList[i]->mType);
-    CSFLogDebug(logTag,"Payload Max Frame Size: %d", mRecvCodecList[i]->mMaxFrameSize);
-    CSFLogDebug(logTag,"Payload Max Frame Rate: %d", mRecvCodecList[i]->mMaxFrameRate);
+    CSFLogDebug(logTag,"Payload Max Frame Size: %d", mRecvCodecList[i]->mEncodingConstraints.maxFs);
+    CSFLogDebug(logTag,"Payload Max Frame Rate: %d", mRecvCodecList[i]->mEncodingConstraints.maxFps);
   }
 }
 
