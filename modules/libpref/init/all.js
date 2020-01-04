@@ -708,8 +708,6 @@ pref("gfx.bundled_fonts.force-enabled", false);
 
 pref("gfx.missing_fonts.notify", false);
 
-pref("gfx.filter.nearest.force-enabled", false);
-
 
 pref("gfx.font_loader.families_per_slice", 3); 
 #ifdef XP_WIN
@@ -1497,7 +1495,7 @@ pref("network.http.bypass-cachelock-threshold", 250);
 
 
 pref("network.http.spdy.enabled", true);
-pref("network.http.spdy.enabled.v3-1", false);
+pref("network.http.spdy.enabled.v3-1", true);
 pref("network.http.spdy.enabled.http2", true);
 pref("network.http.spdy.enabled.deps", true);
 pref("network.http.spdy.enforce-tls-profile", true);
@@ -5123,7 +5121,7 @@ pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozil
 pref("browser.safebrowsing.reportMalwareMistakeURL", "https://%LOCALE%.malware-error.mozilla.com/?hl=%LOCALE%&url=");
 
 
-pref("browser.safebrowsing.blockedURIs.enabled", false);
+pref("browser.safebrowsing.blockedURIs.enabled", true);
 pref("urlclassifier.blockedTable", "test-block-simple,mozplugin-block-digest256");
 
 

@@ -2290,12 +2290,6 @@ public:
 
 
 
-  static bool UseBackgroundNearestFiltering();
-
-  
-
-
-
   static bool GPUImageScalingEnabled();
 
   
