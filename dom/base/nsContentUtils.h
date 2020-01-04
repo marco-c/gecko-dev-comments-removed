@@ -2481,6 +2481,8 @@ public:
 
   static bool PushEnabled(JSContext* aCx, JSObject* aObj);
 
+  static bool IsWorkerLoad(nsContentPolicyType aLoadType);
+
   
   
   

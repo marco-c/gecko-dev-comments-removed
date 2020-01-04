@@ -8093,6 +8093,14 @@ nsContentUtils::PushEnabled(JSContext* aCx, JSObject* aObj)
 }
 
 
+bool
+nsContentUtils::IsWorkerLoad(nsContentPolicyType aType)
+{
+  return aType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
+         aType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER;
+}
+
+
 nsContentUtils::StorageAccess
 nsContentUtils::StorageAllowedForWindow(nsPIDOMWindow* aWindow)
 {
