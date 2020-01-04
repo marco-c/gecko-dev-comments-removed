@@ -100,7 +100,7 @@ public:
                            eSimpleGestureEventClass)
     , mAllowedDirections(0)
     , mDirection(0)
-    , clickCount(0)
+    , mClickCount(0)
     , delta(0.0)
   {
   }
@@ -110,7 +110,7 @@ public:
                            aOther.mWidget, eSimpleGestureEventClass)
     , mAllowedDirections(aOther.mAllowedDirections)
     , mDirection(aOther.mDirection)
-    , clickCount(0)
+    , mClickCount(0)
     , delta(aOther.delta)
   {
   }
@@ -132,7 +132,7 @@ public:
   
   uint32_t mDirection;
   
-  uint32_t clickCount;
+  uint32_t mClickCount;
   
   double delta;
 
@@ -145,7 +145,7 @@ public:
     
     mDirection = aEvent.mDirection;
     delta = aEvent.delta;
-    clickCount = aEvent.clickCount;
+    mClickCount = aEvent.mClickCount;
   }
 };
 

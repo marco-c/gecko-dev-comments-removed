@@ -398,13 +398,13 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
       
       
       evt.mMessage = eTapGesture;
-      evt.clickCount = 1;
+      evt.mClickCount = 1;
       break;
 
     case GID_PRESSANDTAP:
       
       evt.mMessage = ePressTapGesture;
-      evt.clickCount = 1;
+      evt.mClickCount = 1;
       break;
   }
 
