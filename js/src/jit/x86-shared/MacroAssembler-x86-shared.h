@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_x86_shared_MacroAssembler_x86_shared_h
 #define jit_x86_shared_MacroAssembler_x86_shared_h
@@ -40,7 +40,7 @@ class MacroAssembler;
 class MacroAssemblerX86Shared : public Assembler
 {
   private:
-    
+    // Perform a downcast. Should be removed by Bug 996602.
     MacroAssembler& asMasm();
     const MacroAssembler& asMasm() const;
 
@@ -49,8 +49,8 @@ class MacroAssemblerX86Shared : public Assembler
 
   protected:
 
-    
-    
+    // For Double, Float and SimdData, make the move ctors explicit so that MSVC
+    // knows what to use instead of copying these data structures.
     template<class T>
     struct Constant {
         typedef T Pod;
@@ -63,9 +63,9 @@ class MacroAssemblerX86Shared : public Assembler
         explicit Constant(const Constant<T>&) = delete;
     };
 
-    
-    
-    
+    // Containers use SystemAllocPolicy since asm.js releases memory after each
+    // function is compiled, and these need to live until after all functions
+    // are compiled.
     using Double = Constant<double>;
     Vector<Double, 0, SystemAllocPolicy> doubles_;
     typedef HashMap<double, size_t, DefaultHasher<double>, SystemAllocPolicy> DoubleMap;
@@ -120,9 +120,9 @@ class MacroAssemblerX86Shared : public Assembler
     void branchNegativeZeroFloat32(FloatRegister reg, Register scratch, Label* label);
 
     void move32(Imm32 imm, Register dest) {
-        
-        
-        
+        // Use the ImmWord version of mov to register, which has special
+        // optimizations. Casting to uint32_t here ensures that the value
+        // is zero-extended.
         mov(ImmWord(uint32_t(imm.value)), dest);
     }
     void move32(Imm32 imm, const Operand& dest) {
@@ -354,7 +354,7 @@ class MacroAssemblerX86Shared : public Assembler
         lock_xaddl(output, Operand(mem));
     }
 
-    
+    // requires output == eax
 #define ATOMIC_BITOP_BODY(LOAD, OP, LOCK_CMPXCHG) \
         MOZ_ASSERT(output == eax);                \
         LOAD(Operand(mem), eax);                  \
@@ -448,7 +448,7 @@ class MacroAssemblerX86Shared : public Assembler
 
 #undef ATOMIC_BITOP_BODY
 
-    
+    // S is Register or Imm32; T is Address or BaseIndex.
 
     template <typename S, typename T>
     void atomicAdd8(const S& src, const T& mem) {
@@ -512,7 +512,7 @@ class MacroAssemblerX86Shared : public Assembler
     }
 
     void storeLoadFence() {
-        
+        // This implementation follows Linux.
         if (HasSSE2())
             masm.mfence();
         else
@@ -548,12 +548,12 @@ class MacroAssemblerX86Shared : public Assembler
     }
 
     void convertInt32ToDouble(Register src, FloatRegister dest) {
-        
-        
-        
-        
-        
-        
+        // vcvtsi2sd and friends write only part of their output register, which
+        // causes slowdowns on out-of-order processors. Explicitly break
+        // dependencies with vxorpd (and vxorps elsewhere), which are handled
+        // specially in modern CPUs, for this purpose. See sections 8.14, 9.8,
+        // 10.8, 12.9, 13.16, 14.14, and 15.8 of Agner's Microarchitecture
+        // document.
         zeroDouble(dest);
         vcvtsi2sd(src, dest, dest);
     }
@@ -564,12 +564,12 @@ class MacroAssemblerX86Shared : public Assembler
         convertInt32ToDouble(Operand(src), dest);
     }
     void convertInt32ToDouble(const Operand& src, FloatRegister dest) {
-        
+        // Clear the output register first to break dependencies; see above;
         zeroDouble(dest);
         vcvtsi2sd(Operand(src), dest, dest);
     }
     void convertInt32ToFloat32(Register src, FloatRegister dest) {
-        
+        // Clear the output register first to break dependencies; see above;
         zeroFloat32(dest);
         vcvtsi2ss(src, dest, dest);
     }
@@ -577,7 +577,7 @@ class MacroAssemblerX86Shared : public Assembler
         convertInt32ToFloat32(Operand(src), dest);
     }
     void convertInt32ToFloat32(const Operand& src, FloatRegister dest) {
-        
+        // Clear the output register first to break dependencies; see above;
         zeroFloat32(dest);
         vcvtsi2ss(src, dest, dest);
     }
@@ -588,13 +588,13 @@ class MacroAssemblerX86Shared : public Assembler
         return truthy ? NonZero : Zero;
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // Class which ensures that registers used in byte ops are compatible with
+    // such instructions, even if the original register passed in wasn't. This
+    // only applies to x86, as on x64 all registers are valid single byte regs.
+    // This doesn't lead to great code but helps to simplify code generation.
+    //
+    // Note that this can currently only be used in cases where the register is
+    // read from by the guarded instruction, not written to.
     class AutoEnsureByteRegister {
         MacroAssemblerX86Shared* masm;
         Register original_;
@@ -795,7 +795,7 @@ class MacroAssemblerX86Shared : public Assembler
         }
     }
     void moveDouble(FloatRegister src, FloatRegister dest) {
-        
+        // Use vmovapd instead of vmovsd to avoid dependencies.
         vmovapd(src, dest);
     }
     void zeroDouble(FloatRegister reg) {
@@ -812,10 +812,10 @@ class MacroAssemblerX86Shared : public Assembler
     }
 
     void convertFloat32x4ToInt32x4(FloatRegister src, FloatRegister dest) {
-        
-        
-        
-        
+        // Note that if the conversion failed (because the converted
+        // result is larger than the maximum signed int32, or less than the
+        // least signed int32, or NaN), this will return the undefined integer
+        // value (0x8000000).
         vcvttps2dq(src, dest);
     }
     void convertInt32x4ToFloat32x4(FloatRegister src, FloatRegister dest) {
@@ -823,8 +823,8 @@ class MacroAssemblerX86Shared : public Assembler
     }
 
     void bitwiseAndX4(const Operand& src, FloatRegister dest) {
-        
-        
+        // TODO Using the "ps" variant for all types incurs a domain crossing
+        // penalty for integer types and double.
         vandps(src, dest, dest);
     }
     void bitwiseAndNotX4(const Operand& src, FloatRegister dest) {
@@ -964,13 +964,13 @@ class MacroAssemblerX86Shared : public Assembler
         vpsubd(src, dest, dest);
     }
     void packedRcpApproximationFloat32x4(const Operand& src, FloatRegister dest) {
-        
-        
-        
+        // This function is an approximation of the result, this might need
+        // fix up if the spec requires a given precision for this operation.
+        // TODO See also bug 1068028.
         vrcpps(src, dest);
     }
     void packedRcpSqrtApproximationFloat32x4(const Operand& src, FloatRegister dest) {
-        
+        // TODO See comment above. See also bug 1068028.
         vrsqrtps(src, dest);
     }
     void packedSqrtFloat32x4(const Operand& src, FloatRegister dest) {
@@ -1105,17 +1105,17 @@ class MacroAssemblerX86Shared : public Assembler
         vmovhlps(src, dest, dest);
     }
     void shuffleFloat32(uint32_t mask, FloatRegister src, FloatRegister dest) {
-        
-        
-        
-        
-        
+        // The shuffle instruction on x86 is such that it moves 2 words from
+        // the dest and 2 words from the src operands. To simplify things, just
+        // clobber the output with the input and apply the instruction
+        // afterwards.
+        // Note: this is useAtStart-safe because src isn't read afterwards.
         FloatRegister srcCopy = reusedInputFloat32x4(src, dest);
         vshufps(mask, srcCopy, srcCopy, dest);
     }
     void shuffleMix(uint32_t mask, const Operand& src, FloatRegister dest) {
-        
-        
+        // Note this uses vshufps, which is a cross-domain penalty on CPU where it
+        // applies, but that's the way clang and gcc do it.
         vshufps(mask, src, dest, dest);
     }
 
@@ -1172,17 +1172,17 @@ class MacroAssemblerX86Shared : public Assembler
         }
     }
     void moveFloat32(FloatRegister src, FloatRegister dest) {
-        
+        // Use vmovaps instead of vmovss to avoid dependencies.
         vmovaps(src, dest);
     }
 
-    
-    
-    
+    // Checks whether a double is representable as a 32-bit integer. If so, the
+    // integer is written to the output register. Otherwise, a bailout is taken to
+    // the given snapshot. This function overwrites the scratch float register.
     void convertDoubleToInt32(FloatRegister src, Register dest, Label* fail,
                               bool negativeZeroCheck = true)
     {
-        
+        // Check for -0.0
         if (negativeZeroCheck)
             branchNegativeZero(src, dest, fail);
 
@@ -1194,13 +1194,13 @@ class MacroAssemblerX86Shared : public Assembler
         j(Assembler::NotEqual, fail);
     }
 
-    
-    
-    
+    // Checks whether a float32 is representable as a 32-bit integer. If so, the
+    // integer is written to the output register. Otherwise, a bailout is taken to
+    // the given snapshot. This function overwrites the scratch float register.
     void convertFloat32ToInt32(FloatRegister src, Register dest, Label* fail,
                                bool negativeZeroCheck = true)
     {
-        
+        // Check for -0.0
         if (negativeZeroCheck)
             branchNegativeZeroFloat32(src, dest, fail);
 
@@ -1217,19 +1217,19 @@ class MacroAssemblerX86Shared : public Assembler
     bool maybeInlineDouble(double d, FloatRegister dest) {
         uint64_t u = mozilla::BitwiseCast<uint64_t>(d);
 
-        
+        // Loading zero with xor is specially optimized in hardware.
         if (u == 0) {
             zeroDouble(dest);
             return true;
         }
 
-        
-        
-        
-        
-        
-        
-        
+        // It is also possible to load several common constants using vpcmpeqw
+        // to get all ones and then vpsllq and vpsrlq to get zeros at the ends,
+        // as described in "13.4 Generating constants" of
+        // "2. Optimizing subroutines in assembly language" by Agner Fog, and as
+        // previously implemented here. However, with x86 and x64 both using
+        // constant pool loads for double constants, this is probably only
+        // worthwhile in cases where a load is likely to be delayed.
 
         return false;
     }
@@ -1237,7 +1237,7 @@ class MacroAssemblerX86Shared : public Assembler
     bool maybeInlineFloat(float f, FloatRegister dest) {
         uint32_t u = mozilla::BitwiseCast<uint32_t>(f);
 
-        
+        // See comment above
         if (u == 0) {
             zeroFloat32(dest);
             return true;
@@ -1245,7 +1245,7 @@ class MacroAssemblerX86Shared : public Assembler
         return false;
     }
 
-    bool maybeInlineInt32x4(const SimdConstant& v, const FloatRegister& dest) {
+    bool maybeInlineSimd128Int(const SimdConstant& v, const FloatRegister& dest) {
         static const SimdConstant zero = SimdConstant::SplatX4(0);
         static const SimdConstant minusOne = SimdConstant::SplatX4(-1);
         if (v == zero) {
@@ -1258,11 +1258,11 @@ class MacroAssemblerX86Shared : public Assembler
         }
         return false;
     }
-    bool maybeInlineFloat32x4(const SimdConstant& v, const FloatRegister& dest) {
+    bool maybeInlineSimd128Float(const SimdConstant& v, const FloatRegister& dest) {
         static const SimdConstant zero = SimdConstant::SplatX4(0.f);
         if (v == zero) {
-            
-            
+            // This won't get inlined if the SimdConstant v contains -0 in any
+            // lane, as operator== here does a memcmp.
             zeroFloat32x4(dest);
             return true;
         }
@@ -1270,16 +1270,16 @@ class MacroAssemblerX86Shared : public Assembler
     }
 
     void convertBoolToInt32(Register source, Register dest) {
-        
-        
+        // Note that C++ bool is only 1 byte, so zero extend it to clear the
+        // higher-order bits.
         movzbl(source, dest);
     }
 
     void emitSet(Assembler::Condition cond, Register dest,
                  Assembler::NaNCond ifNaN = Assembler::NaN_HandledByCond) {
         if (AllocatableGeneralRegisterSet(Registers::SingleByteRegs).has(dest)) {
-            
-            
+            // If the register we're defining is a single byte register,
+            // take advantage of the setCC instruction
             setCC(cond, dest);
             movzbl(dest, dest);
 
@@ -1295,10 +1295,10 @@ class MacroAssemblerX86Shared : public Assembler
 
             if (ifNaN == Assembler::NaN_IsFalse)
                 j(Assembler::Parity, &ifFalse);
-            
-            
-            
-            
+            // Note a subtlety here: FLAGS is live at this point, and the
+            // mov interface doesn't guarantee to preserve FLAGS. Use
+            // movl instead of mov, because the movl instruction
+            // preserves FLAGS.
             movl(Imm32(1), dest);
             j(cond, &end);
             if (ifNaN == Assembler::NaN_IsTrue)
@@ -1317,7 +1317,7 @@ class MacroAssemblerX86Shared : public Assembler
         emitSet(cond, dest);
     }
 
-    
+    // Emit a JMP that can be toggled to a CMP. See ToggleToJmp(), ToggleToCmp().
     CodeOffset toggledJump(Label* label) {
         CodeOffset offset(size());
         jump(label);
@@ -1330,7 +1330,7 @@ class MacroAssemblerX86Shared : public Assembler
     }
 
     void checkStackAlignment() {
-        
+        // Exists for ARM compatibility.
     }
 
     CodeOffset labelForPatch() {
@@ -1389,10 +1389,10 @@ MacroAssemblerX86Shared::storeScalar<float>(FloatRegister src, const Address& de
     storeFloat32(src, dest);
 }
 
-} 
-} 
+} // namespace jit
+} // namespace js
 
 #undef CHECK_BYTEREG
 #undef CHECK_BYTEREGS
 
-#endif 
+#endif /* jit_x86_shared_MacroAssembler_x86_shared_h */
