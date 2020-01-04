@@ -93,13 +93,16 @@ function SortByColumn(array, len, aux, col) {
 
 
 
-function RadixSort(array, len, nbytes, signed, floating, comparefn) {
+function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
 
     
     if (len < 128) {
         QuickSort(array, len, comparefn);
         return array;
     }
+
+    
+    assert(buffer !== null, "Attached data buffer should be reified when array length is >= 128.");
 
     let aux = new List();
     for (let i = 0; i < len; i++) {
@@ -111,7 +114,7 @@ function RadixSort(array, len, nbytes, signed, floating, comparefn) {
 
     
     if (floating) {
-        view = new Int32Array(array.buffer);
+        view = new Int32Array(buffer);
 
         
         

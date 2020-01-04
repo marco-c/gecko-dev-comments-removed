@@ -1044,10 +1044,12 @@ function TypedArraySort(comparefn) {
     var isTypedArray = IsObject(obj) && IsTypedArray(obj);
 
     var buffer;
-    if (isTypedArray)
+    if (isTypedArray) {
         buffer = GetAttachedArrayBuffer(obj);
-    else
+    }
+    else {
         buffer = callFunction(CallTypedArrayMethodIfWrapped, obj, obj, "GetAttachedArrayBuffer");
+    }
 
     
     var len;
@@ -1065,15 +1067,15 @@ function TypedArraySort(comparefn) {
         } else if (IsInt8TypedArray(obj)) {
             return CountingSort(obj, len, true );
         } else if (IsUint16TypedArray(obj)) {
-            return RadixSort(obj, len, 2 , false , false , comparefn);
+            return RadixSort(obj, len, buffer, 2 , false , false , comparefn);
         } else if (IsInt16TypedArray(obj)) {
-            return RadixSort(obj, len, 2 , true , false , comparefn);
+            return RadixSort(obj, len, buffer, 2 , true , false , comparefn);
         } else if (IsUint32TypedArray(obj)) {
-            return RadixSort(obj, len, 4 , false , false , comparefn);
+            return RadixSort(obj, len, buffer, 4 , false , false , comparefn);
         } else if (IsInt32TypedArray(obj)) {
-            return RadixSort(obj, len, 4 , true , false , comparefn);
+            return RadixSort(obj, len, buffer, 4 , true , false , comparefn);
         } else if (IsFloat32TypedArray(obj)) {
-            return RadixSort(obj, len, 4 , true , true , comparefn);
+            return RadixSort(obj, len, buffer, 4 , true , true , comparefn);
         }
     }
 
