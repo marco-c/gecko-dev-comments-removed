@@ -76,6 +76,7 @@ included_inclnames_to_ignore = set([
     'prthread.h',               
     'prtypes.h',                
     'selfhosted.out.h',         
+    'shellmoduleloader.out.h',  
     'unicode/locid.h',          
     'unicode/numsys.h',         
     'unicode/timezone.h',       
