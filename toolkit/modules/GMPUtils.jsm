@@ -81,9 +81,8 @@ this.GMPUtils = {
     } else if (aPlugin.id == WIDEVINE_ID) {
       
       
-      if ((Services.appinfo.OS == "WINNT" &&
-          Services.sysinfo.getPropertyAsInt32("version") >= 6) ||
-          Services.appinfo.OS == "Darwin") {
+      if (AppConstants.isPlatformAndVersionAtLeast("win", "6") ||
+          AppConstants.isPlatformAndVersionAtLeast("macosx", "10.7")) {
         return true;
       }
       return false;
