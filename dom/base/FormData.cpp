@@ -16,7 +16,7 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 FormData::FormData(nsISupports* aOwner)
-  : nsFormSubmission(NS_LITERAL_CSTRING("UTF-8"), nullptr)
+  : HTMLFormSubmission(NS_LITERAL_CSTRING("UTF-8"), nullptr)
   , mOwner(aOwner)
 {
 }

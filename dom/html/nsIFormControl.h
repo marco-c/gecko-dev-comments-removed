@@ -11,12 +11,12 @@
 
 class nsIDOMHTMLFormElement;
 class nsPresState;
-class nsFormSubmission;
 
 namespace mozilla {
 namespace dom {
 class Element;
 class HTMLFieldSetElement;
+class HTMLFormSubmission;
 } 
 } 
 
@@ -141,7 +141,8 @@ public:
 
 
 
-  NS_IMETHOD SubmitNamesValues(nsFormSubmission* aFormSubmission) = 0;
+  NS_IMETHOD
+  SubmitNamesValues(mozilla::dom::HTMLFormSubmission* aFormSubmission) = 0;
 
   
 

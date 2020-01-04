@@ -4,14 +4,17 @@
 
 
 
-#ifndef nsFormSubmissionConstants_h__
-#define nsFormSubmissionConstants_h__
+#ifndef mozilla_dom_HTMLFormSubmissionConstants_h
+#define mozilla_dom_HTMLFormSubmissionConstants_h
+
+#include "nsIForm.h"
 
 static const nsAttrValue::EnumTable kFormMethodTable[] = {
   { "get", NS_FORM_METHOD_GET },
   { "post", NS_FORM_METHOD_POST },
   { 0 }
 };
+
 
 static const nsAttrValue::EnumTable* kFormDefaultMethod = &kFormMethodTable[0];
 
@@ -22,7 +25,7 @@ static const nsAttrValue::EnumTable kFormEnctypeTable[] = {
   { 0 }
 };
 
+
 static const nsAttrValue::EnumTable* kFormDefaultEnctype = &kFormEnctypeTable[1];
 
 #endif 
-

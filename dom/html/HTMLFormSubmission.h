@@ -3,14 +3,15 @@
 
 
 
-#ifndef nsIFormSubmission_h___
-#define nsIFormSubmission_h___
+
+#ifndef mozilla_dom_HTMLFormSubmission_h
+#define mozilla_dom_HTMLFormSubmission_h
 
 #include "mozilla/Attributes.h"
-#include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"
 #include "nsNCRFallbackEncoderWrapper.h"
+#include "nsString.h"
 
 class nsIURI;
 class nsIInputStream;
@@ -19,20 +20,19 @@ class nsIMultiplexInputStream;
 
 namespace mozilla {
 namespace dom {
+
 class Blob;
-} 
-} 
 
 
 
 
 
-class nsFormSubmission
+class HTMLFormSubmission
 {
 public:
-  virtual ~nsFormSubmission()
+  virtual ~HTMLFormSubmission()
   {
-    MOZ_COUNT_DTOR(nsFormSubmission);
+    MOZ_COUNT_DTOR(HTMLFormSubmission);
   }
 
   
@@ -53,7 +53,7 @@ public:
 
 
   virtual nsresult AddNameBlobOrNullPair(const nsAString& aName,
-                                         mozilla::dom::Blob* aBlob) = 0;
+                                         Blob* aBlob) = 0;
 
   
 
@@ -106,11 +106,12 @@ protected:
 
 
 
-  nsFormSubmission(const nsACString& aCharset, nsIContent* aOriginatingElement)
+  HTMLFormSubmission(const nsACString& aCharset,
+                     nsIContent* aOriginatingElement)
     : mCharset(aCharset)
     , mOriginatingElement(aOriginatingElement)
   {
-    MOZ_COUNT_CTOR(nsFormSubmission);
+    MOZ_COUNT_CTOR(HTMLFormSubmission);
   }
 
   
@@ -120,7 +121,7 @@ protected:
   nsCOMPtr<nsIContent> mOriginatingElement;
 };
 
-class nsEncodingFormSubmission : public nsFormSubmission
+class nsEncodingFormSubmission : public HTMLFormSubmission
 {
 public:
   nsEncodingFormSubmission(const nsACString& aCharset,
@@ -162,7 +163,7 @@ public:
   virtual nsresult AddNameValuePair(const nsAString& aName,
                                     const nsAString& aValue) override;
   virtual nsresult AddNameBlobOrNullPair(const nsAString& aName,
-                                         mozilla::dom::Blob* aBlob) override;
+                                         Blob* aBlob) override;
   virtual nsresult GetEncodedSubmission(nsIURI* aURI,
                                         nsIInputStream** aPostDataStream) override;
 
@@ -220,6 +221,9 @@ private:
 
 nsresult GetSubmissionFromForm(nsGenericHTMLElement* aForm,
                                nsGenericHTMLElement* aOriginatingElement,
-                               nsFormSubmission** aFormSubmission);
+                               HTMLFormSubmission** aFormSubmission);
+
+} 
+} 
 
 #endif 

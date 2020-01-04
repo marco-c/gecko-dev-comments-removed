@@ -9,11 +9,11 @@
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/HTMLFormSubmission.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIForm.h"
 #include "nsIFormControl.h"
-#include "nsFormSubmission.h"
 #include "nsGenericHTMLElement.h"
 #include "nsIDOMHTMLFormElement.h"
 #include "nsIWebProgressListener.h"
@@ -283,7 +283,7 @@ public:
 
 
 
-  nsresult WalkFormElements(nsFormSubmission* aFormSubmission);
+  nsresult WalkFormElements(HTMLFormSubmission* aFormSubmission);
 
   
 
@@ -481,14 +481,14 @@ protected:
 
 
 
-  nsresult BuildSubmission(nsFormSubmission** aFormSubmission,
+  nsresult BuildSubmission(HTMLFormSubmission** aFormSubmission,
                            WidgetEvent* aEvent);
   
 
 
 
 
-  nsresult SubmitSubmission(nsFormSubmission* aFormSubmission);
+  nsresult SubmitSubmission(HTMLFormSubmission* aFormSubmission);
 
   
 
@@ -590,7 +590,7 @@ protected:
   bool mSubmitInitiatedFromUserInput;
 
   
-  nsAutoPtr<nsFormSubmission> mPendingSubmission;
+  nsAutoPtr<HTMLFormSubmission> mPendingSubmission;
   
   nsCOMPtr<nsIRequest> mSubmittingRequest;
   
