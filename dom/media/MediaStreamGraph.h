@@ -930,13 +930,19 @@ protected:
 
 
 
+
+
+
+
 class MediaInputPort final
 {
 private:
   
-  MediaInputPort(MediaStream* aSource, ProcessedMediaStream* aDest,
+  MediaInputPort(MediaStream* aSource, TrackID& aSourceTrack,
+                 ProcessedMediaStream* aDest,
                  uint16_t aInputNumber, uint16_t aOutputNumber)
     : mSource(aSource)
+    , mSourceTrack(aSourceTrack)
     , mDest(aDest)
     , mInputNumber(aInputNumber)
     , mOutputNumber(aOutputNumber)
@@ -969,7 +975,21 @@ public:
 
   
   MediaStream* GetSource() { return mSource; }
+  TrackID GetSourceTrackId() { return mSourceTrack; }
   ProcessedMediaStream* GetDestination() { return mDest; }
+
+  
+  void BlockTrackId(TrackID aTrackId);
+private:
+  void BlockTrackIdImpl(TrackID aTrackId);
+
+public:
+  
+  
+  bool PassTrackThrough(TrackID aTrackId) {
+    return !mBlockedTracks.Contains(aTrackId) &&
+           (mSourceTrack == TRACK_ANY || mSourceTrack == aTrackId);
+  }
 
   uint16_t InputNumber() const { return mInputNumber; }
   uint16_t OutputNumber() const { return mOutputNumber; }
@@ -1016,11 +1036,13 @@ private:
   friend class ProcessedMediaStream;
   
   MediaStream* mSource;
+  TrackID mSourceTrack;
   ProcessedMediaStream* mDest;
   
   
   const uint16_t mInputNumber;
   const uint16_t mOutputNumber;
+  nsTArray<TrackID> mBlockedTracks;
 
   
   MediaStreamGraphImpl* mGraph;
@@ -1043,7 +1065,12 @@ public:
 
 
 
+
+
+
+
   already_AddRefed<MediaInputPort> AllocateInputPort(MediaStream* aStream,
+                                                     TrackID aTrackID = TRACK_ANY,
                                                      uint16_t aInputNumber = 0,
                                                      uint16_t aOutputNumber = 0);
   
@@ -1190,7 +1217,8 @@ public:
   
 
 
-  ProcessedMediaStream* CreateAudioCaptureStream(DOMMediaStream* aWrapper);
+  ProcessedMediaStream* CreateAudioCaptureStream(DOMMediaStream* aWrapper,
+                                                 TrackID aTrackId);
 
   enum {
     ADD_STREAM_SUSPENDED = 0x01
