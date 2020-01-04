@@ -2527,6 +2527,9 @@ HTMLInputElement::UpdateFileList()
     }
   }
 
+  
+  mFilesAndDirectoriesPromise = nullptr;
+
   return NS_OK;
 }
 
@@ -4884,6 +4887,10 @@ MakeOrReuseFileSystem(const nsAString& aNewLocalRootPath,
 already_AddRefed<Promise>
 HTMLInputElement::GetFilesAndDirectories(ErrorResult& aRv)
 {
+  if (mFilesAndDirectoriesPromise) {
+    return nsRefPtr<Promise>(mFilesAndDirectoriesPromise).forget();
+  }
+
   nsCOMPtr<nsIGlobalObject> global = OwnerDoc()->GetScopeObject();
   MOZ_ASSERT(global);
   if (!global) {
@@ -4931,6 +4938,11 @@ HTMLInputElement::GetFilesAndDirectories(ErrorResult& aRv)
   }
 
   p->MaybeResolve(filesAndDirsSeq);
+
+  
+  
+  
+  mFilesAndDirectoriesPromise = p;
 
   return p.forget();
 }
