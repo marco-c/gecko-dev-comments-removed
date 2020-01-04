@@ -51,6 +51,13 @@ assertEq(result, 'resolved with 0,1,2');
 
 result = undefined;
 originalThen.call(GetWaitForAllPromise([]), v=>(result = v));
+drainJobQueue();
+assertEq(result instanceof Array, true);
+assertEq(result.length, 0);
+
+
+result = undefined;
+originalThen.call(GetWaitForAllPromise([]), v=>(result = v));
 
 drainJobQueue();
 

@@ -7,9 +7,12 @@
 
 #include "builtin/Promise.h"
 
+#include "mozilla/Atomics.h"
+
 #include "jscntxt.h"
 
 #include "gc/Heap.h"
+#include "js/Date.h"
 #include "js/Debug.h"
 
 #include "jsobjinlines.h"
@@ -89,6 +92,14 @@ PromiseObject::create(JSContext* cx, HandleObject executor, HandleObject proto )
         if (!reactions)
             return nullptr;
         promise->setFixedSlot(PROMISE_REJECT_REACTIONS_SLOT, ObjectValue(*reactions));
+
+        RootedObject stack(cx);
+        if (!JS::CaptureCurrentStack(cx, &stack, 0))
+            return nullptr;
+        promise->setFixedSlot(PROMISE_ALLOCATION_SITE_SLOT, ObjectValue(*stack));
+        Value now = JS::TimeValue(JS::TimeClip(static_cast<double>(PRMJ_Now()) /
+                                               PRMJ_USEC_PER_MSEC));
+        promise->setFixedSlot(PROMISE_ALLOCATION_TIME_SLOT, now);
     }
 
     RootedValue promiseVal(cx, ObjectValue(*promise));
@@ -170,6 +181,90 @@ PromiseObject::create(JSContext* cx, HandleObject executor, HandleObject proto )
 
     
     return promise;
+}
+
+namespace {
+
+mozilla::Atomic<uint64_t> gIDGenerator(0);
+} 
+
+double
+PromiseObject::getID()
+{
+    Value idVal(getReservedSlot(PROMISE_ID_SLOT));
+    if (idVal.isUndefined()) {
+        idVal.setDouble(++gIDGenerator);
+        setReservedSlot(PROMISE_ID_SLOT, idVal);
+    }
+    return idVal.toNumber();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool
+PromiseObject::dependentPromises(JSContext* cx, AutoValueVector& values)
+{
+    RootedValue rejectReactionsVal(cx, getReservedSlot(PROMISE_REJECT_REACTIONS_SLOT));
+    RootedObject rejectReactions(cx, rejectReactionsVal.toObjectOrNull());
+    if (!rejectReactions)
+        return true;
+
+    AutoIdVector keys(cx);
+    if (!GetPropertyKeys(cx, rejectReactions, JSITER_OWNONLY, &keys))
+        return false;
+
+    if (keys.length() == 0)
+        return true;
+
+    if (!values.growBy(keys.length()))
+        return false;
+
+    RootedAtom capabilitiesAtom(cx, Atomize(cx, "capabilities", strlen("capabilities")));
+    if (!capabilitiesAtom)
+        return false;
+    RootedId capabilitiesId(cx, AtomToId(capabilitiesAtom));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (size_t i = 0; i < keys.length(); i++) {
+        MutableHandleValue val = values[i];
+        if (!GetProperty(cx, rejectReactions, rejectReactions, keys[i], val))
+            return false;
+        RootedObject reaction(cx, &val.toObject());
+        if (!GetProperty(cx, reaction, reaction, capabilitiesId, val))
+            return false;
+        RootedObject capabilities(cx, &val.toObject());
+        if (!GetProperty(cx, capabilities, capabilities, cx->runtime()->commonNames->promise, val))
+            return false;
+    }
+
+    return true;
 }
 
 namespace js {

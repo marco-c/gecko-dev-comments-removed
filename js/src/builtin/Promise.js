@@ -128,6 +128,8 @@ function ResolvePromise(promise, valueOrReason, reactionsSlot, state) {
     
     assert(GetPromiseState(promise) === PROMISE_STATE_PENDING,
            "Can't resolve non-pending promise");
+    assert(state >= PROMISE_STATE_PENDING && state <= PROMISE_STATE_REJECTED,
+           `Invalid Promise state <${state}>`);
 
     
     var reactions = UnsafeGetObjectFromReservedSlot(promise, reactionsSlot);
@@ -148,6 +150,10 @@ function ResolvePromise(promise, valueOrReason, reactionsSlot, state) {
     UnsafeSetReservedSlot(promise, PROMISE_RESOLVE_FUNCTION_SLOT, null);
     UnsafeSetReservedSlot(promise, PROMISE_REJECT_FUNCTION_SLOT, null);
 
+    
+    let site = _dbg_captureCurrentStack(0);
+    UnsafeSetReservedSlot(promise, PROMISE_RESOLUTION_SITE_SLOT, site);
+    UnsafeSetReservedSlot(promise, PROMISE_RESOLUTION_TIME_SLOT, std_Date_now());
     _dbg_onPromiseSettled(promise);
 
     
@@ -348,6 +354,7 @@ function PerformPromiseAll(iteratorRecord, constructor, resultCapability) {
     let iterator = iteratorRecord.iterator;
     let next;
     let nextValue;
+    let allPromise = resultCapability.promise;
     while (true) {
         try {
             
@@ -377,7 +384,7 @@ function PerformPromiseAll(iteratorRecord, constructor, resultCapability) {
                 callContentFunction(resultCapability.resolve, undefined, values);
 
             
-            return resultCapability.promise;
+            return allPromise;
         }
         try {
             
@@ -405,8 +412,7 @@ function PerformPromiseAll(iteratorRecord, constructor, resultCapability) {
         remainingElementsCount.value++;
 
         
-        let result = callContentFunction(nextPromise.then, nextPromise, resolveElement,
-                                         resultCapability.reject);
+        BlockOnPromise(nextPromise, allPromise, resolveElement, resultCapability.reject);
 
         
         index++;
@@ -545,6 +551,7 @@ function PerformPromiseRace(iteratorRecord, resultCapability, C) {
 
     
     let iterator = iteratorRecord.iterator;
+    let racePromise = resultCapability.promise;
     let next;
     let nextValue;
     while (true) {
@@ -567,7 +574,7 @@ function PerformPromiseRace(iteratorRecord, resultCapability, C) {
             iteratorRecord.done = true;
 
             
-            return resultCapability.promise;
+            return racePromise;
         }
         try {
             
@@ -584,10 +591,115 @@ function PerformPromiseRace(iteratorRecord, resultCapability, C) {
         let nextPromise = callContentFunction(C.resolve, C, nextValue);
 
         
-        callContentFunction(nextPromise.then, nextPromise,
-                            resultCapability.resolve, resultCapability.reject);
+        BlockOnPromise(nextPromise, racePromise, resultCapability.resolve,
+                       resultCapability.reject);
     }
-    assert(false, "Shouldn't reach the end of PerformPromiseRace")
+    assert(false, "Shouldn't reach the end of PerformPromiseRace");
+}
+
+
+
+
+
+
+
+
+
+
+function BlockOnPromise(promise, blockedPromise, onResolve, onReject) {
+    let then = promise.then;
+
+    
+    
+    let addToDependent = true;
+    if (then === Promise_then && IsObject(promise) && IsPromise(promise)) {
+        
+        
+        let PromiseCtor = GetBuiltinConstructor('Promise');
+        let C = SpeciesConstructor(promise, PromiseCtor);
+        let resultCapability;
+
+        if (C === PromiseCtor) {
+            resultCapability = {
+                __proto__: PromiseCapabilityRecordProto,
+                promise: blockedPromise,
+                reject: NullFunction,
+                resolve: NullFunction
+            };
+            addToDependent = false;
+        } else {
+            
+            resultCapability = NewPromiseCapability(C);
+        }
+
+        
+        PerformPromiseThen(promise, onResolve, onReject, resultCapability);
+    } else {
+        
+        callContentFunction(then, promise, onResolve, onReject);
+    }
+    if (!addToDependent)
+        return;
+
+    
+    
+    
+    
+    
+    
+    
+    if (IsPromise(promise))
+        return callFunction(AddPromiseReaction, promise, PROMISE_REJECT_REACTIONS_SLOT,
+                            blockedPromise);
+
+    assert(IsWrappedPromise(promise), "Can only block on, maybe wrapped, Promise objects");
+    callFunction(CallPromiseMethodIfWrapped, promise, PROMISE_REJECT_REACTIONS_SLOT,
+                 blockedPromise, "AddPromiseReaction");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function AddPromiseReaction(slot, dependentPromise, onResolve, onReject, handler) {
+    assert(IsPromise(this), "AddPromiseReaction expects an unwrapped Promise as the receiver");
+    assert(slot === PROMISE_FULFILL_REACTIONS_SLOT || slot === PROMISE_REJECT_REACTIONS_SLOT,
+           "Invalid slot");
+
+    if (!onResolve)
+        onResolve = NullFunction;
+    if (!onReject)
+        onReject = NullFunction;
+    if (!handler)
+        handler = NullFunction;
+
+    let reactions = UnsafeGetReservedSlot(this, slot);
+
+    
+    if (!reactions) {
+        assert(GetPromiseState(this) !== PROMISE_STATE_PENDING,
+               "Pending promises must have reactions lists.");
+        return;
+    }
+    _DefineDataProperty(reactions, reactions.length, {
+                            __proto__: PromiseReactionRecordProto,
+                            capabilities: {
+                                __proto__: PromiseCapabilityRecordProto,
+                                promise: dependentPromise,
+                                reject: onReject,
+                                resolve: onResolve
+                            },
+                            handler: handler
+                        });
 }
 
 

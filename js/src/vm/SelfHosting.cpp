@@ -1964,6 +1964,30 @@ intrinsic_onPromiseSettled(JSContext* cx, unsigned argc, Value* vp)
 
 
 
+static bool
+intrinsic_captureCurrentStack(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() < 2);
+    unsigned maxFrameCount = 0;
+    if (args.length() == 1)
+        maxFrameCount = args[0].toInt32();
+
+    RootedObject stack(cx);
+    if (!JS::CaptureCurrentStack(cx, &stack, maxFrameCount))
+        return false;
+
+    args.rval().setObject(*stack);
+    return true;
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -2285,6 +2309,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("ModuleNamespaceExports", intrinsic_ModuleNamespaceExports, 1, 0),
 
     JS_FN("_dbg_onPromiseSettled", intrinsic_onPromiseSettled, 1, 0),
+    JS_FN("_dbg_captureCurrentStack", intrinsic_captureCurrentStack, 1, 0),
 
     JS_FS_END
 };

@@ -4340,8 +4340,34 @@ enum class PromiseState {
     Rejected
 };
 
+
+
+
 extern JS_PUBLIC_API(PromiseState)
 GetPromiseState(JS::HandleObject promise);
+
+
+
+
+JS_PUBLIC_API(double)
+GetPromiseID(JS::HandleObject promise);
+
+
+
+
+
+extern JS_PUBLIC_API(JS::Value)
+GetPromiseResult(JS::HandleObject promise);
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+GetPromiseAllocationSite(JS::HandleObject promise);
+
+extern JS_PUBLIC_API(JSObject*)
+GetPromiseResolutionSite(JS::HandleObject promise);
 
 
 
