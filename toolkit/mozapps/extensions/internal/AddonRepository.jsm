@@ -479,13 +479,6 @@ this.AddonRepository = {
 
 
   get cacheEnabled() {
-    
-    
-    if (!AddonDatabase.databaseOk) {
-      logger.warn("Cache is disabled because database is not OK");
-      return false;
-    }
-
     let preference = PREF_GETADDONS_CACHE_ENABLED;
     let enabled = false;
     try {
@@ -1561,9 +1554,6 @@ this.AddonRepository = {
 };
 
 var AddonDatabase = {
-  
-  databaseOk: true,
-
   connectionPromise: null,
   
   DB: BLANK_DB(),
@@ -1609,31 +1599,30 @@ var AddonDatabase = {
        } catch (e) {
          if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
            logger.debug("No " + FILE_DATABASE + " found.");
+         } else {
+           logger.error(`Malformed ${FILE_DATABASE}: ${e} - resetting to empty`);
+         }
 
-           
-           this._saveDBToDisk();
+         
+         this._saveDBToDisk();
 
-           let dbSchema = 0;
-           try {
-             dbSchema = Services.prefs.getIntPref(PREF_GETADDONS_DB_SCHEMA);
-           } catch (e) {}
+         let dbSchema = 0;
+         try {
+           dbSchema = Services.prefs.getIntPref(PREF_GETADDONS_DB_SCHEMA);
+         } catch (e) {}
 
-           if (dbSchema < DB_MIN_JSON_SCHEMA) {
-             let results = yield new Promise((resolve, reject) => {
-               AddonRepository_SQLiteMigrator.migrate(resolve);
-             });
+         if (dbSchema < DB_MIN_JSON_SCHEMA) {
+           let results = yield new Promise((resolve, reject) => {
+             AddonRepository_SQLiteMigrator.migrate(resolve);
+           });
 
-             if (results.length) {
-               yield this._insertAddons(results);
-             }
-
+           if (results.length) {
+             yield this._insertAddons(results);
            }
 
-           Services.prefs.setIntPref(PREF_GETADDONS_DB_SCHEMA, DB_SCHEMA);
-         } else {
-           logger.error("Malformed " + FILE_DATABASE + ": " + e);
-           this.databaseOk = false;
          }
+
+         Services.prefs.setIntPref(PREF_GETADDONS_DB_SCHEMA, DB_SCHEMA);
          return this.DB;
        }
 
@@ -1671,8 +1660,6 @@ var AddonDatabase = {
 
 
   shutdown: function(aSkipFlush) {
-    this.databaseOk = true;
-
     if (!this.connectionPromise) {
       return Promise.resolve();
     }
