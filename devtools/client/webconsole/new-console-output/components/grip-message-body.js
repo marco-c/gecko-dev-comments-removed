@@ -7,6 +7,12 @@
 "use strict";
 
 
+
+if (typeof define === "undefined") {
+  require("amd-loader");
+}
+
+
 const {
   createFactory,
   PropTypes

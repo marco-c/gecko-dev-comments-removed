@@ -1,0 +1,15 @@
+
+
+
+"use strict";
+
+
+module.exports = {
+  getStr: str => {
+    switch (str) {
+      case "severity.error":
+        return "Error";
+    }
+    return str;
+  }
+};
