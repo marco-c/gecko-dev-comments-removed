@@ -10,17 +10,21 @@ const { interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "Color", "resource://gre/modules/Color.jsm");
 
 const kHighlightIterationSizeMax = 100;
 const kModalHighlightRepaintFreqMs = 10;
 const kModalHighlightPref = "findbar.modalHighlight";
-const kFontPropsCSS = ["font-family", "font-kerning", "font-size", "font-size-adjust",
-  "font-stretch", "font-variant", "font-weight", "letter-spacing", "text-emphasis",
-  "text-orientation", "text-transform", "word-spacing"];
+const kFontPropsCSS = ["color", "font-family", "font-kerning", "font-size",
+  "font-size-adjust", "font-stretch", "font-variant", "font-weight", "letter-spacing",
+  "text-emphasis", "text-orientation", "text-transform", "word-spacing"];
 const kFontPropsCamelCase = kFontPropsCSS.map(prop => {
   let parts = prop.split("-");
   return parts.shift() + parts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join("");
 });
+const kRGBRE = /^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*/i
 
 
 
@@ -70,10 +74,18 @@ const kModalStyle = `
   z-index: 1;
 }
 
+.findbar-modalHighlight-outlineMask[brighttext] {
+  background: #fff;
+}
+
 .findbar-modalHighlight-rect {
   background: #fff;
   border: 1px solid #666;
   position: absolute;
+}
+
+.findbar-modalHighlight-outlineMask[brighttext] > .findbar-modalHighlight-rect {
+  background: #000;
 }`;
 const kXULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -278,6 +290,7 @@ FinderHighlighter.prototype = {
     window = window || this.finder._getWindow();
     this._removeHighlightAllMask(window);
     this._removeModalHighlightListeners(window);
+    delete this._brightText;
   },
 
   
@@ -321,6 +334,12 @@ FinderHighlighter.prototype = {
 
     let rect = foundRange.getBoundingClientRect();
     let fontStyle = this._getRangeFontStyle(foundRange);
+    if (typeof this._brightText == "undefined") {
+      this._brightText = this._isColorBright(fontStyle.color);
+    }
+
+    
+    delete fontStyle.color;
 
     let anonNode = this.show(window);
 
@@ -503,6 +522,20 @@ FinderHighlighter.prototype = {
 
 
 
+  _isColorBright(cssColor) {
+    cssColor = cssColor.match(kRGBRE);
+    if (!cssColor || !cssColor.length)
+      return false;
+    cssColor.shift();
+    return new Color(...cssColor).isBright;
+  },
+
+  
+
+
+
+
+
 
   _modalHighlight(range, controller, window) {
     if (!this._getRangeContentArray(range).length)
@@ -599,6 +632,8 @@ FinderHighlighter.prototype = {
     maskNode.setAttribute("id", kMaskId);
     maskNode.setAttribute("class", kMaskId);
     maskNode.setAttribute("style", `width: ${width}px; height: ${height}px;`);
+    if (this._brightText)
+      maskNode.setAttribute("brighttext", "true");
 
     
     let maskContent = [];
