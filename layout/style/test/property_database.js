@@ -4877,25 +4877,6 @@ function logical_box_prop_get_computed(cs, property)
 
 
 
-function webkit_orient_get_computed(cs, property)
-{
-  var writingMode = cs.getPropertyValue("writing-mode") || "horizontal-tb";
-
-  var mapping; 
-  if (writingMode == "horizontal-tb") {
-    
-    mapping = { "row" : "horizontal", "column" : "vertical"};
-  } else {
-    
-    mapping = { "row" : "vertical",   "column" : "horizontal"};
-  }
-
-  var flexDirection = cs.getPropertyValue("flex-direction");
-  return mapping[flexDirection];
-}
-
-
-
 function get_computed_value(cs, property)
 {
   var info = gCSSProperties[property];
@@ -7208,21 +7189,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
     type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
     alias_for: "-moz-box-ordinal-group",
     subproperties: [ "-moz-box-ordinal-group" ],
-  };
-  
-  gCSSProperties["-webkit-box-orient"] = {
-    domProp: "webkitBoxOrient",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    logical: true,
-    get_computed: webkit_orient_get_computed,
-    initial_values: [ "horizontal" ],
-    other_values: [ "vertical" ],
-    invalid_values: [
-      "0", "0px", "auto",
-      
-      "row", "column", "row-reverse", "column-reverse",
-    ],
   };
   gCSSProperties["-webkit-box-align"] = {
     domProp: "webkitBoxAlign",
