@@ -2,23 +2,8 @@
 
 
 
-
-function isTabFocused() {
-  let tabb = gBrowser.getBrowserForTab(gBrowser.selectedTab);
-  return Services.focus.focusedWindow == tabb.contentWindow;
-}
-
 function isChatFocused(chat) {
   return getChatBar()._isChatFocused(chat);
-}
-
-function openChatViaUser() {
-  let sidebarDoc = document.getElementById("social-sidebar-browser").contentDocument;
-  let button = sidebarDoc.getElementById("chat-opener");
-  
-  
-  
-  EventUtils.synthesizeMouseAtCenter(button, {}, sidebarDoc.defaultView);
 }
 
 function openChatViaSidebarMessage(port, data, callback) {
@@ -98,15 +83,18 @@ function test() {
   
   let url = "data:text/html;charset=utf-8," + encodeURI('<input id="theinput">');
   let tab = gBrowser.selectedTab = gBrowser.addTab(url, {skipAnimation: true});
-  tab.linkedBrowser.addEventListener("load", function tabLoad(event) {
-    tab.linkedBrowser.removeEventListener("load", tabLoad, true);
+  let browser = tab.linkedBrowser;
+  browser.addEventListener("load", function tabLoad(event) {
+    browser.removeEventListener("load", tabLoad, true);
     
     let preSubTest = function(cb) {
-      
-      
-      
-      tab.linkedBrowser.contentDocument.getElementById("theinput").focus();
-      waitForCondition(() => isTabFocused(), cb, "tab should have focus");
+      ContentTask.spawn(browser, null, function* () {
+        content.focus();
+        content.document.getElementById("theinput").focus();
+
+        yield ContentTaskUtils.waitForCondition(
+          () => Services.focus.focusedWindow == content, "tab should have focus");
+      }).then(cb);
     }
     let postSubTest = function(cb) {
       Task.spawn(closeAllChats).then(cb);
@@ -136,19 +124,28 @@ var tests = {
       openChatViaSidebarMessage(port, {stealFocus: 1}, function() {
         ok(true, "got chatbox message");
         is(chatbar.childElementCount, 1, "exactly 1 chat open");
-        ok(isTabFocused(), "tab should still be focused");
-        
-        openChatViaSidebarMessage(port, {stealFocus: 1}, function() {
-          is(chatbar.childElementCount, 1, "still exactly 1 chat open");
-          ok(isTabFocused(), "tab should still be focused");
+
+        let browser = gBrowser.selectedTab.linkedBrowser;
+        ContentTask.spawn(browser, null, function* () {
+          is(Services.focus.focusedWindow, content, "tab should still be focused");
+        }).then(() => {
           
-          openChatViaUser();
-          waitForCondition(() => isChatFocused(chatbar.selectedChat),
-                           function() {
+          openChatViaSidebarMessage(port, {stealFocus: 1}, function() {
             is(chatbar.childElementCount, 1, "still exactly 1 chat open");
-            is(chatbar.selectedChat, chatbar.firstElementChild, "chat should be selected");
-            next();
-          }, "chat should be focused");
+
+            ContentTask.spawn(browser, null, function* () {
+              is(Services.focus.focusedWindow, content, "tab should still be focused");
+            }).then(() => {
+              
+              openChatViaUser();
+              waitForCondition(() => isChatFocused(chatbar.selectedChat), function() {
+                is(chatbar.childElementCount, 1, "still exactly 1 chat open");
+                is(chatbar.selectedChat, chatbar.firstElementChild,
+                  "chat should be selected");
+                next();
+              }, "chat should be focused");
+            });
+          });
         });
       });
     });
@@ -161,8 +158,7 @@ var tests = {
       let chatbar = getChatBar();
       openChatViaUser();
       ok(chatbar.firstElementChild, "chat opened");
-      waitForCondition(() => isChatFocused(chatbar.selectedChat),
-                       function() {
+      waitForCondition(() => isChatFocused(chatbar.selectedChat), function() {
         is(chatbar.selectedChat, chatbar.firstElementChild, "chat is selected");
         next();
       }, "chat should be focused");

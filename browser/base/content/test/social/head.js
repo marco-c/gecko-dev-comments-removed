@@ -658,6 +658,15 @@ function closeAllChats() {
   }
 }
 
+function openChatViaUser() {
+  let sidebarDoc = document.getElementById("social-sidebar-browser").contentDocument;
+  let button = sidebarDoc.getElementById("chat-opener");
+  
+  
+  
+  EventUtils.synthesizeMouseAtCenter(button, {}, sidebarDoc.defaultView);
+}
+
 
 
 
