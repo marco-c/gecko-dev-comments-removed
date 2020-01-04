@@ -135,17 +135,9 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
       continue;
     }
     
-    if (appId == NECKO_NO_APP_ID) {
-      if (tabContext.HasOwnApp()) {
-        continue;
-      }
-      if (UsingNeckoIPCSecurity() && tabContext.IsIsolatedMozBrowserElement()) {
-        
-        
-        
-        
-        continue;
-      }
+    if (appId == NECKO_NO_APP_ID && tabContext.HasOwnApp() {
+      
+      continue;
     }
 
     if (!aSerialized.mOriginAttributes.mSignedPkg.IsEmpty() &&
