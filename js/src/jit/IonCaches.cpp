@@ -883,13 +883,15 @@ GenerateReadUnboxed(JSContext* cx, IonScript* ion, MacroAssembler& masm,
 static bool
 EmitGetterCall(JSContext* cx, MacroAssembler& masm,
                IonCache::StubAttacher& attacher, JSObject* obj,
-               JSObject* holder, HandleShape shape,
+               JSObject* holder, HandleShape shape, bool holderIsReceiver,
                LiveRegisterSet liveRegs, Register object,
                TypedOrValueRegister output,
                void* returnAddr)
 {
     MOZ_ASSERT(output.hasValue());
     MacroAssembler::AfterICSaveLive aic = masm.icSaveLive(liveRegs);
+
+    MOZ_ASSERT_IF(obj != holder, !holderIsReceiver);
 
     
     
@@ -975,7 +977,7 @@ EmitGetterCall(JSContext* cx, MacroAssembler& masm,
         masm.moveStackPtrTo(argIdReg);
 
         
-        if (obj == holder) {
+        if (holderIsReceiver) {
             
             
             
@@ -1108,7 +1110,8 @@ GenerateCallGetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
         masm.pop(object);
 
     
-    if (!EmitGetterCall(cx, masm, attacher, obj, holder, shape, liveRegs, object,
+    bool holderIsReceiver = (obj == holder);
+    if (!EmitGetterCall(cx, masm, attacher, obj, holder, shape, holderIsReceiver, liveRegs, object,
                         output, returnAddr))
         return false;
 
@@ -1853,10 +1856,12 @@ GetPropertyIC::tryAttachDOMProxyUnshadowed(JSContext* cx, HandleScript outerScri
             
             
             
+            
             MOZ_ASSERT(canCache == CanAttachCallGetter);
             MOZ_ASSERT(!idempotent());
-            if (!EmitGetterCall(cx, masm, attacher, checkObj, holder, shape, liveRegs_,
-                                object(), output(), returnAddr))
+            bool holderIsReceiver = (obj == holder);
+            if (!EmitGetterCall(cx, masm, attacher, checkObj, holder, shape, holderIsReceiver,
+                                liveRegs_, object(), output(), returnAddr))
             {
                 return false;
             }
