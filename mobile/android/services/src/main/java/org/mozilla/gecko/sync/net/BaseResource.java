@@ -497,6 +497,16 @@ public class BaseResource implements Resource {
     post(jsonEntity(o));
   }
 
+  
+
+
+
+  public void postBlocking(final ExtendedJSONObject o) {
+    
+    
+    post(jsonEntity(o));
+  }
+
   public void post(JSONObject jsonObject) throws UnsupportedEncodingException {
     post(jsonEntity(jsonObject));
   }
