@@ -2602,6 +2602,16 @@ public:
 
   void PropagateUseCounters(nsIDocument* aParentDocument);
 
+  void SetUserHasInteracted(bool aUserHasInteracted)
+  {
+    mUserHasInteracted = aUserHasInteracted;
+  }
+
+  bool UserHasInteracted()
+  {
+    return mUserHasInteracted;
+  }
+
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
@@ -3007,6 +3017,9 @@ protected:
   
   
   std::bitset<mozilla::eUseCounter_Count> mNotifiedPageForUseCounter;
+
+  
+  bool mUserHasInteracted;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument, NS_IDOCUMENT_IID)
