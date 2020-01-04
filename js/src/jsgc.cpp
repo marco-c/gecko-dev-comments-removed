@@ -3505,7 +3505,22 @@ GCRuntime::sweepBackgroundThings(ZoneList& zones, LifoAlloc& freeBlocks, ThreadT
     }
 
     AutoLockGC lock(rt);
-    ReleaseArenaList(rt, emptyArenas, lock);
+
+    
+    
+    static const size_t LockReleasePeriod = 32;
+    size_t releaseCount = 0;
+    Arena* next;
+    for (Arena* arena = emptyArenas; arena; arena = next) {
+        next = arena->next;
+        rt->gc.releaseArena(arena, lock);
+        releaseCount++;
+        if (releaseCount % LockReleasePeriod == 0) {
+            lock.unlock();
+            lock.lock();
+        }
+    }
+
     while (!zones.isEmpty())
         zones.removeFront();
 }
