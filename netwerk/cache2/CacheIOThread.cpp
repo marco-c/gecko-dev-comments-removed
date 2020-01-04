@@ -27,7 +27,9 @@ CacheIOThread::CacheIOThread()
 , mHasXPCOMEvents(false)
 , mRerunCurrentEvent(false)
 , mShutdown(false)
+#ifdef DEBUG
 , mInsideLoop(true)
+#endif
 {
   sSelf = this;
 }
@@ -242,8 +244,10 @@ loopStart:
 
     MOZ_ASSERT(!EventsPending());
 
+#ifdef DEBUG
     
     mInsideLoop = false;
+#endif
   } 
 
   if (threadInternal)
