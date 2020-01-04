@@ -3457,7 +3457,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
 
     mScrollMetadata = aScrollMetadata;
     if (scrollOffsetUpdated) {
-      needContentRepaint = true;
+      AcknowledgeScrollUpdate();
     }
     mExpectedGeckoMetrics = aLayerMetrics;
     ShareCompositorFrameMetrics();
@@ -3532,6 +3532,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
       
       
       mFrameMetrics.CopyScrollInfoFrom(aLayerMetrics);
+      AcknowledgeScrollUpdate();
       mExpectedGeckoMetrics = aLayerMetrics;
 
       
@@ -3563,7 +3564,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     
     
     mFrameMetrics.CopySmoothScrollInfoFrom(aLayerMetrics);
-    needContentRepaint = true;
+    AcknowledgeScrollUpdate();
     mExpectedGeckoMetrics = aLayerMetrics;
 
     SmoothScrollTo(mFrameMetrics.GetSmoothScrollOffset());
@@ -3573,6 +3574,21 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     RequestContentRepaint();
   }
   UpdateSharedCompositorFrameMetrics();
+}
+
+void
+AsyncPanZoomController::AcknowledgeScrollUpdate() const
+{
+  
+  
+  
+  
+  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  if (controller) {
+    APZC_LOG("%p sending scroll update acknowledgement with gen %u\n", this, mFrameMetrics.GetScrollGeneration());
+    controller->AcknowledgeScrollUpdate(mFrameMetrics.GetScrollId(),
+                                        mFrameMetrics.GetScrollGeneration());
+  }
 }
 
 const FrameMetrics& AsyncPanZoomController::GetFrameMetrics() const {

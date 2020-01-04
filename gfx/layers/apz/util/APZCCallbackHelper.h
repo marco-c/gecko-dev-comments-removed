@@ -67,6 +67,11 @@ public:
     static void InitializeRootDisplayport(nsIPresShell* aPresShell);
 
     
+
+    static void AcknowledgeScrollUpdate(const FrameMetrics::ViewID& aScrollId,
+                                        const uint32_t& aScrollGeneration);
+
+    
     static nsIPresShell* GetRootContentDocumentPresShellForContent(nsIContent* aContent);
 
     

@@ -51,6 +51,24 @@ RemoteContentController::RequestContentRepaint(const FrameMetrics& aFrameMetrics
 }
 
 void
+RemoteContentController::AcknowledgeScrollUpdate(const FrameMetrics::ViewID& aScrollId,
+                                                 const uint32_t& aScrollGeneration)
+{
+  if (MessageLoop::current() != mUILoop) {
+    
+    
+    mUILoop->PostTask(
+      FROM_HERE,
+      NewRunnableMethod(this, &RemoteContentController::AcknowledgeScrollUpdate,
+                        aScrollId, aScrollGeneration));
+    return;
+  }
+  if (CanSend()) {
+    Unused << SendAcknowledgeScrollUpdate(aScrollId, aScrollGeneration);
+  }
+}
+
+void
 RemoteContentController::HandleDoubleTap(const CSSPoint& aPoint,
                                          Modifiers aModifiers,
                                          const ScrollableLayerGuid& aGuid)
