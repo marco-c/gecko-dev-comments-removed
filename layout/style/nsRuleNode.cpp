@@ -5631,11 +5631,6 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
   }
 
   
-  SetFactor(*aRuleData->ValueForOpacity(), display->mOpacity, conditions,
-            parentDisplay->mOpacity, 1.0f,
-            SETFCT_OPACITY | SETFCT_UNSET_INITIAL);
-
-  
   SetDiscrete(*aRuleData->ValueForDisplay(), display->mDisplay, conditions,
               SETDSC_ENUMERATED | SETDSC_UNSET_INITIAL,
               parentDisplay->mDisplay,
@@ -10024,6 +10019,11 @@ nsRuleNode::ComputeEffectsData(void* aStartStruct,
   default:
     MOZ_ASSERT(false, "unrecognized clip unit");
   }
+
+  
+  SetFactor(*aRuleData->ValueForOpacity(), effects->mOpacity, conditions,
+            parentEffects->mOpacity, 1.0f,
+            SETFCT_OPACITY | SETFCT_UNSET_INITIAL);
 
   
   SetDiscrete(*aRuleData->ValueForMixBlendMode(), effects->mMixBlendMode,
