@@ -170,6 +170,14 @@ public:
 
 
 
+  void RemoveEntry(EntryType* aEntry)
+  {
+    mTable.RemoveEntry(aEntry);
+  }
+
+  
+
+
 
 
 
