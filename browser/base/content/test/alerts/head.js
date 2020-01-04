@@ -6,16 +6,19 @@ function promiseAlertWindow() {
         alertWindow.addEventListener("load", function onLoad() {
           alertWindow.removeEventListener("load", onLoad);
           let windowType = alertWindow.document.documentElement.getAttribute("windowtype");
-          if (windowType == "alert:alert") {
-            Services.wm.removeListener(listener);
-            resolve(alertWindow);
+          if (windowType != "alert:alert") {
+            return;
           }
+          Services.wm.removeListener(listener);
+          resolve(alertWindow);
         });
       },
     };
     Services.wm.addListener(listener);
   });
 }
+
+
 
 
 
