@@ -531,6 +531,9 @@ this.Collection = function Collection(uri, recordObj, service) {
   this._older = 0;
   this._newer = 0;
   this._data = [];
+  
+  this._batch = null;
+  this._commit = false;
 }
 Collection.prototype = {
   __proto__: Resource.prototype,
@@ -554,6 +557,10 @@ Collection.prototype = {
       args.push("ids=" + this.ids);
     if (this.limit > 0 && this.limit != Infinity)
       args.push("limit=" + this.limit);
+    if (this._batch)
+      args.push("batch=" + this._batch);
+    if (this._commit)
+      args.push("commit=true");
 
     this.uri.query = (args.length > 0)? '?' + args.join('&') : '';
   },
@@ -603,6 +610,19 @@ Collection.prototype = {
     this._rebuildURL();
   },
 
+  
+  get batch() { return _batch; },
+  set batch(value) {
+    this._batch = value;
+    this._rebuildURL();
+  },
+
+  get commit() { return _commit; },
+  set commit(value) {
+    this._commit = value && true;
+    this._rebuildURL();
+  },
+
   set recordHandler(onRecord) {
     
     let coll = this;
@@ -630,22 +650,75 @@ Collection.prototype = {
     throw new Error("Don't directly post to a collection - use newPostQueue instead");
   },
 
-  newPostQueue(log, postCallback) {
-    let poster = data => {
+  newPostQueue(log, timestamp, postCallback) {
+    let poster = (data, headers, batch, commit) => {
+      this.batch = batch;
+      this.commit = commit;
+      for (let [header, value] of headers) {
+        this.setHeader(header, value);
+      }
       return Resource.prototype.post.call(this, data);
     }
-    return new PostQueue(poster, log, postCallback);
+    let getConfig = (name, defaultVal) => {
+      if (this._service.serverConfiguration && this._service.serverConfiguration.hasOwnProperty(name)) {
+        return this._service.serverConfiguration[name];
+      }
+      return defaultVal;
+    }
+
+    let config = {
+      max_post_bytes: getConfig("max_post_bytes", MAX_UPLOAD_BYTES),
+      max_post_records: getConfig("max_post_records", MAX_UPLOAD_RECORDS),
+
+      max_batch_bytes: getConfig("max_total_bytes", Infinity),
+      max_batch_records: getConfig("max_total_records", Infinity),
+    }
+
+    
+    if (config.max_post_records <= 0) { config.max_post_records = MAX_UPLOAD_RECORDS; }
+    if (config.max_batch_records <= 0) { config.max_post_records = Infinity; }
+    if (config.max_post_bytes <= 0) { config.max_post_records = MAX_UPLOAD_BYTES; }
+    if (config.max_batch_bytes <= 0) { config.max_post_records = Infinity; }
+
+    
+    
+    
+    let requiredMax = 260 * 1024;
+    if (config.max_post_bytes < requiredMax) {
+      this._log.error("Server configuration max_post_bytes is too low", config);
+      throw new Error("Server configuration max_post_bytes is too low");
+    }
+
+    return new PostQueue(poster, timestamp, config, log, postCallback);
   },
 };
 
 
 
 
-function PostQueue(poster, log, postCallback) {
+
+
+
+
+
+
+
+
+
+
+
+function PostQueue(poster, timestamp, config, log, postCallback) {
   
   this.poster = poster;
   this.log = log;
 
+  
+  
+  this.config = config;
+
+  
+  
+  
   
   
   
@@ -659,6 +732,21 @@ function PostQueue(poster, log, postCallback) {
 
   
   this.numQueued = 0;
+
+  
+  
+  this.numAlreadyBatched = 0;
+  this.bytesAlreadyBatched = 0;
+
+  
+  
+  
+  
+  
+  this.batchID = undefined;
+
+  
+  this.lastModified = timestamp;
 }
 
 PostQueue.prototype = {
@@ -671,35 +759,128 @@ PostQueue.prototype = {
       throw new Error("You must only call this with objects that explicitly support JSON");
     }
     let bytes = JSON.stringify(jsonRepr);
-    
-    
-    
-    
-    
-    
 
     
-    let newLength = this.queued.length + bytes.length + 1; 
-    if (this.numQueued >= MAX_UPLOAD_RECORDS || newLength >= MAX_UPLOAD_BYTES) {
-      this.log.trace("PostQueue flushing"); 
+    
+    let newLength = this.queued.length + bytes.length + 2; 
+
+    let maxAllowedBytes = Math.min(256 * 1024, this.config.max_post_bytes);
+
+    let postSizeExceeded = this.numQueued >= this.config.max_post_records ||
+                           newLength >= maxAllowedBytes;
+
+    let batchSizeExceeded = (this.numQueued + this.numAlreadyBatched) >= this.config.max_batch_records ||
+                            (newLength + this.bytesAlreadyBatched) >= this.config.max_batch_bytes;
+
+    let singleRecordTooBig = bytes.length + 2 > maxAllowedBytes;
+
+    if (postSizeExceeded || batchSizeExceeded) {
+      this.log.trace(`PostQueue flushing due to postSizeExceeded=${postSizeExceeded}, batchSizeExceeded=${batchSizeExceeded}` +
+                     `, max_batch_bytes: ${this.config.max_batch_bytes}, max_post_bytes: ${this.config.max_post_bytes}`);
+
+      if (singleRecordTooBig) {
+        return { enqueued: false, error: new Error("Single record too large to submit to server") };
+      }
+
       
-      this.flush();
+      
+      
+      
+      if (this.numQueued) {
+        this.flush(batchSizeExceeded || singleRecordTooBig);
+      }
     }
     
     this.queued += this.numQueued ? "," : "[";
     this.queued += bytes;
     this.numQueued++;
+    return { enqueued: true };
   },
 
-  flush() {
+  flush(finalBatchPost) {
     if (!this.queued) {
       
+      
+      if (this.batchID) {
+        throw new Error(`Flush called when no queued records but we are in a batch ${this.batchID}`);
+      }
       return;
     }
-    this.log.info(`Posting ${this.numQueued} records of ${this.queued.length+1} bytes`);
+    
+    let batch;
+    let headers = [];
+    if (this.batchID === undefined) {
+      
+      batch = "true";
+    } else if (this.batchID) {
+      
+      batch = this.batchID;
+    } else {
+      
+      batch = null;
+    }
+
+    headers.push(["x-if-unmodified-since", this.lastModified]);
+
+    this.log.info(`Posting ${this.numQueued} records of ${this.queued.length+1} bytes with batch=${batch}`);
     let queued = this.queued + "]";
+    if (finalBatchPost) {
+      this.bytesAlreadyBatched = 0;
+      this.numAlreadyBatched = 0;
+    } else {
+      this.bytesAlreadyBatched += queued.length;
+      this.numAlreadyBatched += this.numQueued;
+    }
     this.queued = "";
     this.numQueued = 0;
-    this.postCallback(this.poster(queued));
+    let response = this.poster(queued, headers, batch, !!(finalBatchPost && this.batchID !== null));
+
+    if (!response.success) {
+      this.log.trace("Server error response during a batch", response);
+      
+      
+      return this.postCallback(response, !finalBatchPost);
+    }
+
+    if (finalBatchPost) {
+      this.log.trace("Committed batch", this.batchID);
+      this.batchID = undefined; 
+      this.lastModified = response.headers["x-last-modified"];
+      return this.postCallback(response, false);
+    }
+
+    if (response.status != 202) {
+      if (this.batchID) {
+        throw new Error("Server responded non-202 success code while a batch was in progress");
+      }
+      this.batchID = null; 
+      this.lastModified = response.headers["x-last-modified"];
+      return this.postCallback(response, false);
+    }
+
+    
+    
+    let responseBatchID = response.obj.batch;
+    this.log.trace("Server responsed 202 with batch", responseBatchID);
+    if (!responseBatchID) {
+      this.log.error("Invalid server response: 202 without a batch ID", response);
+      throw new Error("Invalid server response: 202 without a batch ID");
+    }
+
+    if (this.batchID === undefined) {
+      this.batchID = responseBatchID;
+      if (!this.lastModified) {
+        this.lastModified = response.headers["x-last-modified"];
+        if (!this.lastModified) {
+          throw new Error("Batch response without x-last-modified");
+        }
+      }
+    }
+
+    if (this.batchID != responseBatchID) {
+      throw new Error(`Invalid client/server batch state - client has ${this.batchID}, server has ${responseBatchID}`);
+    }
+
+    this.postCallback(response, true);
   },
 }

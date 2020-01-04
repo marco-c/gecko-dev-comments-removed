@@ -1066,8 +1066,43 @@ Sync11Service.prototype = {
 
   
   
+  _fetchServerConfiguration() {
+    
+
+    let infoURL = this.userBaseURL + "info/configuration";
+    this._log.debug("Fetching server configuration", infoURL);
+    let configResponse;
+    try {
+      configResponse = this.resource(infoURL).get();
+    } catch (ex) {
+      
+      this._log.warn("Failed to fetch info/configuration", ex);
+      this.errorHandler.checkServerError(ex);
+      return false;
+    }
+
+    if (configResponse.status == 404) {
+      
+      this._log.debug("info/configuration returned 404 - using default upload semantics");
+    } else if (configResponse.status != 200) {
+      this._log.warn(`info/configuration returned ${configResponse.status} - using default configuration`);
+      this.errorHandler.checkServerError(configResponse);
+      return false;
+    } else {
+      this.serverConfiguration = configResponse.obj;
+    }
+    this._log.trace("info/configuration for this server", this.serverConfiguration);
+    return true;
+  },
+
+  
+  
   _remoteSetup: function _remoteSetup(infoResponse) {
     let reset = false;
+
+    if (!this._fetchServerConfiguration()) {
+      return false;
+    }
 
     this._log.debug("Fetching global metadata record");
     let meta = this.recordManager.get(this.metaURL);

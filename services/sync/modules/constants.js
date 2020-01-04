@@ -149,6 +149,8 @@ ENGINE_APPLY_FAIL:                     "error.engine.reason.apply_fail",
 ENGINE_METARECORD_DOWNLOAD_FAIL:       "error.engine.reason.metarecord_download_fail",
 ENGINE_METARECORD_UPLOAD_FAIL:         "error.engine.reason.metarecord_upload_fail",
 
+ENGINE_BATCH_INTERRUPTED:              "error.engine.reason.batch_interrupted",
+
 JPAKE_ERROR_CHANNEL:                   "jpake.error.channel",
 JPAKE_ERROR_NETWORK:                   "jpake.error.network",
 JPAKE_ERROR_SERVER:                    "jpake.error.server",

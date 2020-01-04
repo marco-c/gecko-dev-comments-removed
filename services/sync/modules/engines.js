@@ -633,6 +633,12 @@ Engine.prototype = {
   
   eEngineAbortApplyIncoming: "error.engine.abort.applyincoming",
 
+  
+  
+  
+  
+  allowSkippedRecord: false,
+
   get prefName() {
     return this.name;
   },
@@ -1463,35 +1469,52 @@ SyncEngine.prototype = {
 
       
       let up = new Collection(this.engineURL, null, this.service);
-      let handleResponse = resp => {
+
+      let failed = [];
+      let successful = [];
+      let handleResponse = (resp, batchOngoing = false) => {
+        
+        
+        
         if (!resp.success) {
           this._log.debug("Uploading records failed: " + resp);
-          resp.failureCode = ENGINE_UPLOAD_FAIL;
+          resp.failureCode = resp.status == 412 ? ENGINE_BATCH_INTERRUPTED : ENGINE_UPLOAD_FAIL;
           throw resp;
         }
 
         
-        let modified = resp.headers["x-weave-timestamp"];
-        if (modified > this.lastSync)
-          this.lastSync = modified;
+        failed = failed.concat(Object.keys(resp.obj.failed));
+        successful = successful.concat(resp.obj.success);
 
-        let failed_ids = Object.keys(resp.obj.failed);
-        counts.failed += failed_ids.length;
-        if (failed_ids.length)
+        if (batchOngoing) {
+          
+          return;
+        }
+        
+        let modified = resp.headers["x-weave-timestamp"];
+        if (modified > this.lastSync) {
+          this.lastSync = modified;
+        }
+        if (failed.length && this._log.level <= Log.Level.Debug) {
           this._log.debug("Records that will be uploaded again because "
                           + "the server couldn't store them: "
-                          + failed_ids.join(", "));
+                          + failed.join(", "));
+        }
 
-        
-        const succeeded_ids = Object.values(resp.obj.success);
-        for (let id of succeeded_ids) {
+        counts.failed += failed.length;
+
+        for (let id of successful) {
           delete this._modified[id];
         }
 
-        this._onRecordsWritten(succeeded_ids, failed_ids);
-      }
+        this._onRecordsWritten(successful, failed);
 
-      let postQueue = up.newPostQueue(this._log, handleResponse);
+        
+        failed.length = 0;
+        successful.length = 0;
+      };
+
+      let postQueue = up.newPostQueue(this._log, this.lastSync, handleResponse);
 
       for (let id of modifiedIDs) {
         let out;
@@ -1510,11 +1533,17 @@ SyncEngine.prototype = {
           this._log.warn("Error creating record", ex);
         }
         if (ok) {
-          postQueue.enqueue(out);
+          let { enqueued, error } = postQueue.enqueue(out);
+          if (!enqueued) {
+            ++counts.failed;
+            if (!this.allowSkippedRecord) {
+              throw error;
+            }
+          }
         }
         this._store._sleep(0);
       }
-      postQueue.flush();
+      postQueue.flush(true);
       Observers.notify("weave:engine:sync:uploaded", counts, this.name);
     }
   },
