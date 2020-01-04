@@ -644,12 +644,13 @@ protected:
   void OnTouchEndOrCancel();
 
   
+  void ScrollSnap();
   
   
-  void RequestSnap();
+  void ScrollSnapToDestination();
+
   
-  
-  void RequestSnapToDestination();
+  void ScrollSnapNear(const CSSPoint& aDestination);
 
   uint64_t mLayersId;
   RefPtr<CompositorBridgeParent> mCompositorBridgeParent;

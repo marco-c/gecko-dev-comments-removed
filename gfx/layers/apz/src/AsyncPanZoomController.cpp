@@ -70,6 +70,7 @@
 #include "nsThreadUtils.h"              
 #include "prsystem.h"                   
 #include "SharedMemoryBasic.h"          
+#include "ScrollSnap.h"                 
 #include "WheelScrollAnimation.h"
 
 #define ENABLE_APZC_LOGGING 0
@@ -691,7 +692,13 @@ public:
       
       
       
-      mApzc.RequestSnap();
+      
+      
+      
+      if (!mDeferredTasks.append(NewRunnableMethod(&mApzc,
+                                                   &AsyncPanZoomController::ScrollSnap))) {
+        MOZ_CRASH();
+      }
       return false;
     }
     return true;
@@ -924,7 +931,7 @@ AsyncPanZoomController::Destroy()
 {
   APZThreadUtils::AssertOnCompositorThread();
 
-  CancelAnimation(CancelAnimationFlags::RequestSnap);
+  CancelAnimation(CancelAnimationFlags::ScrollSnap);
 
   { 
     MonitorAutoLock lock(mRefPtrMonitor);
@@ -1550,6 +1557,20 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
 
   {
     ReentrantMonitorAutoEnter lock(mMonitor);
+    ScheduleComposite();
+    RequestContentRepaint();
+    UpdateSharedCompositorFrameMetrics();
+  }
+
+  
+  if (aEvent.mFocusPoint.x != -1 && aEvent.mFocusPoint.y != -1) {
+    mPanDirRestricted = false;
+    mX.StartTouch(aEvent.mFocusPoint.x, aEvent.mTime);
+    mY.StartTouch(aEvent.mFocusPoint.y, aEvent.mTime);
+    SetState(TOUCHING);
+  } else {
+    
+    ReentrantMonitorAutoEnter lock(mMonitor);
 
     
     
@@ -1566,20 +1587,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
     }
     
     
-    
-    RequestSnap();
-
-    ScheduleComposite();
-    RequestContentRepaint();
-    UpdateSharedCompositorFrameMetrics();
-  }
-
-  
-  if (aEvent.mFocusPoint.x != -1 && aEvent.mFocusPoint.y != -1) {
-    mPanDirRestricted = false;
-    mX.StartTouch(aEvent.mFocusPoint.x, aEvent.mTime);
-    mY.StartTouch(aEvent.mFocusPoint.y, aEvent.mTime);
-    SetState(TOUCHING);
+    ScrollSnap();
   }
 
   return nsEventStatus_eConsumeNoDefault;
@@ -2003,7 +2011,7 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   RequestContentRepaint();
 
   if (!aEvent.mFollowedByMomentum) {
-    RequestSnap();
+    ScrollSnap();
   }
 
   return nsEventStatus_eConsumeNoDefault;
@@ -2018,7 +2026,7 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumStart(const PanGestureInput& 
   }
 
   SetState(PAN_MOMENTUM);
-  RequestSnapToDestination();
+  ScrollSnapToDestination();
 
   
   OnPan(aEvent, false);
@@ -2519,51 +2527,18 @@ void AsyncPanZoomController::AcceptFling(FlingHandoffState& aHandoffState) {
     mY.SetVelocity(mY.GetVelocity() + aHandoffState.mVelocity.y);
     aHandoffState.mVelocity.y = 0;
   }
-  SetState(FLING);
-  FlingAnimation *fling = new FlingAnimation(*this,
-      aHandoffState.mChain,
-      !aHandoffState.mIsHandoff,  
-      aHandoffState.mScrolledApzc);
-  RequestSnapToDestination();
-  StartAnimation(fling);
-}
-
-void
-AsyncPanZoomController::RequestSnapToDestination()
-{
-  ReentrantMonitorAutoEnter lock(mMonitor);
-
-  float friction = gfxPrefs::APZFlingFriction();
-  ParentLayerPoint velocity(mX.GetVelocity(), mY.GetVelocity());
-  ParentLayerPoint predictedDelta;
-  
-  
-  if (velocity.x != 0.0f) {
-    predictedDelta.x = -velocity.x / log(1.0 - friction);
-  }
-  if (velocity.y != 0.0f) {
-    predictedDelta.y = -velocity.y / log(1.0 - friction);
-  }
-  CSSPoint predictedDestination = mFrameMetrics.GetScrollOffset() + predictedDelta / mFrameMetrics.GetZoom();
 
   
   
   
-  bool flingWillOverscroll = IsOverscrolled() && ((velocity.x * mX.GetOverscroll() >= 0) ||
-                                                  (velocity.y * mY.GetOverscroll() >= 0));
-  if (!flingWillOverscroll) {
-    RefPtr<GeckoContentController> controller = GetGeckoContentController();
-    if (controller) {
-      APZC_LOG("%p fling snapping.  friction: %f velocity: %f, %f "
-               "predictedDelta: %f, %f position: %f, %f "
-               "predictedDestination: %f, %f\n",
-               this, friction, velocity.x, velocity.y, (float)predictedDelta.x,
-               (float)predictedDelta.y, (float)mFrameMetrics.GetScrollOffset().x,
-               (float)mFrameMetrics.GetScrollOffset().y,
-               (float)predictedDestination.x, (float)predictedDestination.y);
-      controller->RequestFlingSnap(mFrameMetrics.GetScrollId(),
-                                   predictedDestination);
-    }
+  ScrollSnapToDestination();
+  if (mState != SMOOTH_SCROLL) {
+    SetState(FLING);
+    FlingAnimation *fling = new FlingAnimation(*this,
+        aHandoffState.mChain,
+        !aHandoffState.mIsHandoff,  
+        aHandoffState.mScrolledApzc);
+    StartAnimation(fling);
   }
 }
 
@@ -2709,8 +2684,8 @@ void AsyncPanZoomController::CancelAnimation(CancelAnimationFlags aFlags) {
   }
   
   
-  if (aFlags & CancelAnimationFlags::RequestSnap) {
-    RequestSnap();
+  if (aFlags & CancelAnimationFlags::ScrollSnap) {
+    ScrollSnap();
   }
   if (repaint) {
     RequestContentRepaint();
@@ -2910,7 +2885,7 @@ bool AsyncPanZoomController::SnapBackIfOverscrolled() {
   
   
   if (mState != FLING) {
-    RequestSnap();
+    ScrollSnap();
   }
   return false;
 }
@@ -3752,7 +3727,7 @@ AsyncPanZoomController::CancelAnimationAndGestureState()
 {
   mX.CancelGesture();
   mY.CancelGesture();
-  CancelAnimation(CancelAnimationFlags::RequestSnap);
+  CancelAnimation(CancelAnimationFlags::ScrollSnap);
 }
 
 bool
@@ -3929,12 +3904,62 @@ void AsyncPanZoomController::ShareCompositorFrameMetrics() {
   }
 }
 
-void AsyncPanZoomController::RequestSnap() {
-  if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
-    APZC_LOG("%p requesting snap near %s\n", this,
-        Stringify(mFrameMetrics.GetScrollOffset()).c_str());
-    controller->RequestFlingSnap(mFrameMetrics.GetScrollId(),
-                                 mFrameMetrics.GetScrollOffset());
+void AsyncPanZoomController::ScrollSnapNear(const CSSPoint& aDestination) {
+  mMonitor.AssertCurrentThreadIn();
+  APZC_LOG("%p scroll snapping near %s\n", this, Stringify(aDestination).c_str());
+  CSSRect scrollRange = mFrameMetrics.CalculateScrollRange();
+  if (Maybe<nsPoint> snapPoint = ScrollSnapUtils::GetSnapPointForDestination(
+          mScrollMetadata.GetSnapInfo(),
+          nsIScrollableFrame::DEVICE_PIXELS,
+          CSSSize::ToAppUnits(mFrameMetrics.CalculateCompositedSizeInCssPixels()),
+          CSSRect::ToAppUnits(scrollRange),
+          CSSPoint::ToAppUnits(mFrameMetrics.GetScrollOffset()),
+          CSSPoint::ToAppUnits(aDestination))) {
+    CSSPoint cssSnapPoint = CSSPoint::FromAppUnits(snapPoint.ref());
+    
+    
+    
+    
+    cssSnapPoint = scrollRange.ClampPoint(cssSnapPoint);
+    SmoothScrollTo(cssSnapPoint);
+  }
+}
+
+void AsyncPanZoomController::ScrollSnap() {
+  ReentrantMonitorAutoEnter lock(mMonitor);
+  ScrollSnapNear(mFrameMetrics.GetScrollOffset());
+}
+
+void AsyncPanZoomController::ScrollSnapToDestination() {
+  ReentrantMonitorAutoEnter lock(mMonitor);
+
+  float friction = gfxPrefs::APZFlingFriction();
+  ParentLayerPoint velocity(mX.GetVelocity(), mY.GetVelocity());
+  ParentLayerPoint predictedDelta;
+  
+  
+  if (velocity.x != 0.0f) {
+    predictedDelta.x = -velocity.x / log(1.0 - friction);
+  }
+  if (velocity.y != 0.0f) {
+    predictedDelta.y = -velocity.y / log(1.0 - friction);
+  }
+  CSSPoint predictedDestination = mFrameMetrics.GetScrollOffset() + predictedDelta / mFrameMetrics.GetZoom();
+
+  
+  
+  bool flingWillOverscroll = IsOverscrolled() && ((velocity.x * mX.GetOverscroll() >= 0) ||
+                                                  (velocity.y * mY.GetOverscroll() >= 0));
+  if (!flingWillOverscroll) {
+    APZC_LOG("%p fling snapping.  friction: %f velocity: %f, %f "
+             "predictedDelta: %f, %f position: %f, %f "
+             "predictedDestination: %f, %f\n",
+             this, friction, velocity.x, velocity.y, (float)predictedDelta.x,
+             (float)predictedDelta.y, (float)mFrameMetrics.GetScrollOffset().x,
+             (float)mFrameMetrics.GetScrollOffset().y,
+             (float)predictedDestination.x, (float)predictedDestination.y);
+
+    ScrollSnapNear(predictedDestination);
   }
 }
 
