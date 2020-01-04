@@ -1614,12 +1614,19 @@ gfxWindowsPlatform::InitializeD3D11()
   
   
   
-  FeatureState& d3d11 = gfxConfig::GetFeature(Feature::D3D11_COMPOSITING);
-  if (!d3d11.IsEnabled()) {
+  if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
     return;
   }
 
-  DeviceManagerD3D11::Get()->CreateDevices();
+  DeviceManagerD3D11* dm = DeviceManagerD3D11::Get();
+  if (XRE_IsParentProcess()) {
+    if (!dm->CreateCompositorDevices()) {
+      return;
+    }
+  } else if (XRE_IsContentProcess()) {
+    dm->InheritDeviceInfo(GetParentDevicePrefs());
+  }
+  dm->CreateContentDevices();
 }
 
 void

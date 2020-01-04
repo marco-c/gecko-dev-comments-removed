@@ -87,67 +87,66 @@ DeviceManagerD3D11::LoadD3D11()
 }
 
 void
-DeviceManagerD3D11::CreateDevices()
+DeviceManagerD3D11::ReleaseD3D11()
 {
+  MOZ_ASSERT(!mCompositorDevice);
+  MOZ_ASSERT(!mContentDevice);
+  MOZ_ASSERT(!mDecoderDevice);
+
+  mD3D11Module.reset();
+  sD3D11CreateDeviceFn = nullptr;
+}
+
+bool
+DeviceManagerD3D11::CreateCompositorDevices()
+{
+  MOZ_ASSERT(XRE_IsParentProcess() || XRE_GetProcessType() == GeckoProcessType_GPU);
+
   FeatureState& d3d11 = gfxConfig::GetFeature(Feature::D3D11_COMPOSITING);
   MOZ_ASSERT(d3d11.IsEnabled());
+
+  if (!LoadD3D11()) {
+    return false;
+  }
+
+  CreateCompositorDevice(d3d11);
+
+  if (!d3d11.IsEnabled()) {
+    MOZ_ASSERT(!mCompositorDevice);
+    ReleaseD3D11();
+    return false;
+  }
+
+  
+  
+  
+  mD3D11Module.disown();
+
+  MOZ_ASSERT(mCompositorDevice);
+  return d3d11.IsEnabled();
+}
+
+void
+DeviceManagerD3D11::InheritDeviceInfo(const DeviceInitData& aDeviceInfo)
+{
+  MOZ_ASSERT_IF(!XRE_IsContentProcess(),
+                XRE_IsParentProcess() && gfxPrefs::GPUProcessDevEnabled());
+
+  mIsWARP = gfxPrefs::LayersD3D11ForceWARP();
+  mTextureSharingWorks = aDeviceInfo.d3d11TextureSharingWorks();
+}
+
+void
+DeviceManagerD3D11::CreateContentDevices()
+{
+  MOZ_ASSERT(gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING));
 
   if (!LoadD3D11()) {
     return;
   }
 
-  CreateDevicesImpl();
-
-  if (d3d11.IsEnabled()) {
-    
-    
-    
-    mD3D11Module.disown();
-  } else {
-    mD3D11Module.reset();
-    sD3D11CreateDeviceFn = nullptr;
-  }
-}
-
-void
-DeviceManagerD3D11::CreateDevicesImpl()
-{
-  FeatureState& d3d11 = gfxConfig::GetFeature(Feature::D3D11_COMPOSITING);
-  MOZ_ASSERT(d3d11.IsEnabled());
-
-  
-  if (gfxPrefs::DeviceFailForTesting()) {
-    d3d11.SetFailed(FeatureStatus::Failed, "Direct3D11 device failure simulated by preference",
-                    NS_LITERAL_CSTRING("FEATURE_FAILURE_D3D11_SIM"));
-    return;
-  }
-
-  if (XRE_IsParentProcess()) {
-    CreateCompositorDevice(d3d11);
-    if (d3d11.GetValue() == FeatureStatus::CrashedInHandler) {
-      return;
-    }
-
-    
-    if (!mCompositorDevice) {
-      MOZ_ASSERT(!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING));
-      return;
-    }
-
-    
-    MOZ_ASSERT(d3d11.IsEnabled());
-  } else {
-    
-    
-    
-    mIsWARP = gfxPrefs::LayersD3D11ForceWARP();
-    mTextureSharingWorks =
-      gfxPlatform::GetPlatform()->GetParentDevicePrefs().d3d11TextureSharingWorks();
-  }
-
   if (CreateContentDevice() == FeatureStatus::CrashedInHandler) {
     DisableD3D11AfterCrash();
-    return;
   }
 }
 
@@ -220,6 +219,13 @@ bool
 DeviceManagerD3D11::CreateCompositorDeviceHelper(
   FeatureState& aD3d11, IDXGIAdapter1* aAdapter, bool aAttemptVideoSupport, RefPtr<ID3D11Device>& aOutDevice)
 {
+  
+  if (gfxPrefs::DeviceFailForTesting()) {
+    aD3d11.SetFailed(FeatureStatus::Failed, "Direct3D11 device failure simulated by preference",
+                     NS_LITERAL_CSTRING("FEATURE_FAILURE_D3D11_SIM"));
+    return false;
+  }
+
   
   
   UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS;

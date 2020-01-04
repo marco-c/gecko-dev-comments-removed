@@ -56,7 +56,10 @@ public:
   bool TextureSharingWorks() const;
   bool IsWARP() const;
 
-  void CreateDevices();
+  bool CreateCompositorDevices();
+  void CreateContentDevices();
+
+  void InheritDeviceInfo(const DeviceInitData& aDeviceInfo);
   void ResetDevices();
 
   
@@ -88,11 +91,14 @@ private:
   bool ContentAdapterIsParentAdapter(ID3D11Device* device);
 
   bool LoadD3D11();
-  void CreateDevicesImpl();
+  void ReleaseD3D11();
 
 private:
   static StaticAutoPtr<DeviceManagerD3D11> sInstance;
 
+  
+  
+  
   nsModuleHandle mD3D11Module;
 
   mozilla::Mutex mDeviceLock;
