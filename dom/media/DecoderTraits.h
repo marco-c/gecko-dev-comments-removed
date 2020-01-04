@@ -70,8 +70,8 @@ public:
   
   static bool DecoderWaitsForOnConnected(const nsACString& aType);
 
-  static bool IsWebMType(const nsACString& aType);
-  static bool IsMP4Type(const nsACString& aType);
+  static bool IsWebMTypeAndEnabled(const nsACString& aType);
+  static bool IsMP4TypeAndEnabled(const nsACString& aType);
 };
 
 } 
