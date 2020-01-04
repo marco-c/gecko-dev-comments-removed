@@ -2622,8 +2622,15 @@ js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result, I
         }
     }
 
-    if (!obj->setFlags(cx, BaseShape::NOT_EXTENSIBLE, JSObject::GENERATE_SHAPE))
+    if (!obj->setFlags(cx, BaseShape::NOT_EXTENSIBLE, JSObject::GENERATE_SHAPE)) {
+        
+        
+        MOZ_ASSERT(obj->nonProxyIsExtensible());
+        if (obj->isNative() && obj->as<NativeObject>().getElementsHeader()->isFrozen())
+            obj->as<NativeObject>().getElementsHeader()->markNotFrozen();
         return false;
+    }
+
     return result.succeed();
 }
 
