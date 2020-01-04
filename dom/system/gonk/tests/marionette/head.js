@@ -40,6 +40,35 @@ ok(ril, "ril.constructor is " + ril.constructor);
 var radioInterface = ril.getRadioInterface(0);
 ok(radioInterface, "radioInterface.constructor is " + radioInterface.constrctor);
 
+let _pendingEmulatorShellCmdCount = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function runEmulatorShellCmdSafe(aCommands) {
+  return new Promise(function(aResolve, aReject) {
+    ++_pendingEmulatorShellCmdCount;
+    runEmulatorShell(aCommands, function(aResult) {
+      --_pendingEmulatorShellCmdCount;
+
+      log("Emulator shell response: " + JSON.stringify(aResult));
+      aResolve(aResult);
+    });
+  });
+}
+
 
 
 
@@ -181,10 +210,12 @@ function setDataEnabledAndWait(aEnabled) {
          aEnabled ? Ci.nsINetworkInfo.NETWORK_STATE_CONNECTED
                   : Ci.nsINetworkInfo.NETWORK_STATE_DISCONNECTED,
          "subject.state should be " + aEnabled ? "CONNECTED" : "DISCONNECTED");
+
+      return aSubject;
     }));
   promises.push(setSettings(SETTINGS_KEY_DATA_ENABLED, aEnabled));
 
-  return Promise.all(promises);
+  return Promise.all(promises).then(aValues => aValues[0]);
 }
 
 
@@ -210,10 +241,12 @@ function setupDataCallAndWait(aNetworkType) {
          "subject.type should be " + aNetworkType);
       is(aSubject.state, Ci.nsINetworkInfo.NETWORK_STATE_CONNECTED,
          "subject.state should be CONNECTED");
+
+      return aSubject;
     }));
   promises.push(radioInterface.setupDataCallByType(aNetworkType));
 
-  return Promise.all(promises);
+  return Promise.all(promises).then(aValues => aValues[0]);
 }
 
 
@@ -248,6 +281,19 @@ function deactivateDataCallAndWait(aNetworkType) {
 
 
 
+function cleanUp() {
+  
+  ok(true, ":: CLEANING UP ::");
+
+  waitFor(finish, function() {
+    return _pendingEmulatorShellCmdCount === 0;
+  });
+}
+
+
+
+
+
 
 
 
@@ -258,6 +304,6 @@ function startTestBase(aTestCaseMain) {
     .then(aTestCaseMain)
     .then(finish, function(aException) {
       ok(false, "promise rejects during test: " + aException);
-      finish();
+      cleanUp();
     });
 }
