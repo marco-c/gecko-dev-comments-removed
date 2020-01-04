@@ -243,8 +243,6 @@ private:
       , mNumSamplesOutput(0)
       , mNumSamplesOutputTotal(0)
       , mNumSamplesSkippedTotal(0)
-      , mNumSamplesOutputTotalSinceTelemetry(0)
-      , mNumSamplesSkippedTotalSinceTelemetry(0)
       , mSizeOfQueue(0)
       , mIsHardwareAccelerated(false)
       , mLastStreamSourceID(UINT32_MAX)
@@ -324,9 +322,6 @@ private:
     uint64_t mNumSamplesOutput;
     uint64_t mNumSamplesOutputTotal;
     uint64_t mNumSamplesSkippedTotal;
-
-    uint64_t mNumSamplesOutputTotalSinceTelemetry;
-    uint64_t mNumSamplesSkippedTotalSinceTelemetry;
 
     
     
@@ -538,9 +533,6 @@ private:
   {
     OnSeekFailed(TrackType::kAudioTrack, aFailure);
   }
-
-  void ReportDroppedFramesTelemetry();
-
   
   SeekTarget mOriginalSeekTarget;
   
