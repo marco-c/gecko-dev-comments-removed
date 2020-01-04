@@ -129,9 +129,14 @@ public:
                           int32_t aRunScript,
                           const gfxFontStyle* aStyle);
 
-    virtual gfxFontFamily*
-    FindFamily(const nsAString& aFamily, gfxFontStyle* aStyle = nullptr,
-               gfxFloat aDevToCssSize = 1.0);
+    
+    
+    
+    virtual bool
+    FindAndAddFamilies(const nsAString& aFamily,
+                       nsTArray<gfxFontFamily*>* aOutput,
+                       gfxFontStyle* aStyle = nullptr,
+                       gfxFloat aDevToCssSize = 1.0);
 
     gfxFontEntry* FindFontForFamily(const nsAString& aFamily, const gfxFontStyle* aStyle, bool& aNeedsBold);
 
@@ -253,6 +258,17 @@ protected:
     explicit gfxPlatformFontList(bool aNeedFullnamePostscriptNames = true);
 
     static gfxPlatformFontList *sPlatformFontList;
+
+    
+    
+    gfxFontFamily*
+    FindFamily(const nsAString& aFamily, gfxFontStyle* aStyle = nullptr,
+               gfxFloat aDevToCssSize = 1.0)
+    {
+        AutoTArray<gfxFontFamily*,1> families;
+        return FindAndAddFamilies(aFamily, &families, aStyle, aDevToCssSize)
+               ? families[0] : nullptr;
+    }
 
     
     

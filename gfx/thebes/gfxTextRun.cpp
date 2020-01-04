@@ -1611,7 +1611,7 @@ gfxFontGroup::BuildFontList()
     }
 
     
-    AutoTArray<gfxFontFamily*,4> fonts;
+    AutoTArray<gfxFontFamily*,10> fonts;
     gfxPlatformFontList *pfl = gfxPlatformFontList::PlatformFontList();
 
     
@@ -1646,8 +1646,6 @@ void
 gfxFontGroup::AddPlatformFont(const nsAString& aName,
                               nsTArray<gfxFontFamily*>& aFamilyList)
 {
-    gfxFontFamily* family = nullptr;
-
     
     
     
@@ -1655,18 +1653,16 @@ gfxFontGroup::AddPlatformFont(const nsAString& aName,
     if (mUserFontSet) {
         
         
-        family = mUserFontSet->LookupFamily(aName);
+        gfxFontFamily* family = mUserFontSet->LookupFamily(aName);
+        if (family) {
+            aFamilyList.AppendElement(family);
+            return;
+        }
     }
 
     
-    gfxPlatformFontList* fontList = gfxPlatformFontList::PlatformFontList();
-    if (!family) {
-        family = fontList->FindFamily(aName, &mStyle, mDevToCssSize);
-    }
-
-    if (family) {
-        aFamilyList.AppendElement(family);
-    }
+    gfxPlatformFontList::PlatformFontList()
+        ->FindAndAddFamilies(aName, &aFamilyList, &mStyle, mDevToCssSize);
 }
 
 void
