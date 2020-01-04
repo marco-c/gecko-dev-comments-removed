@@ -628,12 +628,9 @@ enum class SymbolicAddress
     StackLimit,
     ReportOverRecursed,
     OnOutOfBounds,
-    OnImpreciseConversion,
     BadIndirectCall,
-    UnreachableTrap,
-    IntegerOverflowTrap,
-    InvalidConversionToIntegerTrap,
     HandleExecutionInterrupt,
+    HandleTrap,
     InvokeImport_Void,
     InvokeImport_I32,
     InvokeImport_I64,
@@ -653,17 +650,37 @@ MOZ_MUST_USE bool ReadI64Object(JSContext* cx, HandleValue v, int64_t* val);
 
 
 
+enum class Trap
+{
+    
+    Unreachable,
+    
+    IntegerOverflow,
+    
+    InvalidConversionToInteger,
+    
+    
+    ImpreciseSimdConversion,
+
+    Limit
+};
+
+
+
+
 
 
 enum class JumpTarget
 {
+    
+    Unreachable = unsigned(Trap::Unreachable),
+    IntegerOverflow = unsigned(Trap::IntegerOverflow),
+    InvalidConversionToInteger = unsigned(Trap::InvalidConversionToInteger),
+    ImpreciseSimdConversion = unsigned(Trap::ImpreciseSimdConversion),
+    
     StackOverflow,
     OutOfBounds,
-    ConversionError,
     BadIndirectCall,
-    UnreachableTrap,
-    IntegerOverflowTrap,
-    InvalidConversionToIntegerTrap,
     Throw,
     Limit
 };
