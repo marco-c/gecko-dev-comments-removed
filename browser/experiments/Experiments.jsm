@@ -1043,6 +1043,14 @@ Experiments.Experiments.prototype = {
       if (!entry.initFromCacheData(item)) {
         continue;
       }
+
+      
+      if (entry.shouldDiscard()) {
+        
+        this._dirty = true;
+        continue;
+      }
+
       experiments.set(entry.id, entry);
     }
 
@@ -1543,7 +1551,9 @@ Experiments.ExperimentEntry.prototype = {
       }
     });
 
-    this._lastChangedDate = this._policy.now();
+    
+    
+    this._lastChangedDate = !!this._endDate ? this._endDate : this._policy.now();
 
     return true;
   },
