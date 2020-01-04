@@ -94,9 +94,27 @@ private:
         return mSizeAdjustFactor;
     }
 
-    virtual void FindPlatformFont(const nsAString& aName,
-                                  bool aUseFontSet,
-                                  void *aClosure);
+    
+    
+
+    
+    void EnumerateFontListPFG(nsIAtom *aLanguage, void *aClosure);
+
+    
+    void FindGenericFontsPFG(mozilla::FontFamilyType aGenericType,
+                             nsIAtom *aLanguage,
+                             void *aClosure);
+
+    
+    void FindPlatformFontPFG(const nsAString& aName,
+                             bool aUseFontSet,
+                             void *aClosure);
+
+    static void
+    ResolveGenericFontNamesPFG(mozilla::FontFamilyType aGenericType,
+                               nsIAtom *aLanguage,
+                               nsTArray<nsString>& aGenericFamilies);
+
 
     friend class gfxSystemFcFontEntry;
     static FT_Library GetFTLibrary();

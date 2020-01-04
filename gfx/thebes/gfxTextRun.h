@@ -1118,17 +1118,14 @@ protected:
     
 
     
-    void EnumerateFontList(nsIAtom *aLanguage, void *aClosure = nullptr);
+    void EnumerateFontList(nsIAtom *aLanguage);
 
     
     void FindGenericFonts(mozilla::FontFamilyType aGenericType,
-                          nsIAtom *aLanguage,
-                          void *aClosure);
+                          nsIAtom *aLanguage);
 
     
-    virtual void FindPlatformFont(const nsAString& aName,
-                                  bool aUseFontSet,
-                                  void *aClosure);
+    void FindPlatformFont(const nsAString& aName, bool aUseFontSet);
 
     static nsILanguageAtomService* gLangService;
 };
