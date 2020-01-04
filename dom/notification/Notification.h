@@ -259,8 +259,13 @@ public:
 
   
   
+  
+  
+  
+  
   static already_AddRefed<Promise>
-  ShowPersistentNotification(nsIGlobalObject* aGlobal,
+  ShowPersistentNotification(JSContext* aCx,
+                             nsIGlobalObject* aGlobal,
                              const nsAString& aScope,
                              const nsAString& aTitle,
                              const NotificationOptions& aOptions,
@@ -417,8 +422,12 @@ private:
   
   
   
+  
+  
+  
   static already_AddRefed<Notification>
-  CreateAndShow(nsIGlobalObject* aGlobal,
+  CreateAndShow(JSContext* aCx,
+                nsIGlobalObject* aGlobal,
                 const nsAString& aTitle,
                 const NotificationOptions& aOptions,
                 const nsAString& aScope,
