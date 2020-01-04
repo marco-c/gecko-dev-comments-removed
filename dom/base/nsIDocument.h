@@ -962,7 +962,8 @@ public:
 
 
 
-  virtual int32_t GetIndexOfStyleSheet(mozilla::StyleSheetHandle aSheet) const = 0;
+  virtual int32_t GetIndexOfStyleSheet(
+      const mozilla::StyleSheetHandle aSheet) const = 0;
 
   
 
