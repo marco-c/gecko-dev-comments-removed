@@ -5,6 +5,7 @@
 
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/RefCounted.h"
 
 using mozilla::RefCounted;
 using mozilla::RefPtr;
