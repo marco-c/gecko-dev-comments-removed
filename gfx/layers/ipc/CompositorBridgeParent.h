@@ -48,6 +48,7 @@ class CancelableRunnable;
 
 namespace gfx {
 class DrawTarget;
+class GPUProcessManager;
 } 
 
 namespace ipc {
@@ -66,6 +67,7 @@ class LayerTransactionParent;
 class PAPZParent;
 class CrossProcessCompositorBridgeParent;
 class CompositorThreadHolder;
+class InProcessCompositorSession;
 
 struct ScopedLayerTreeRegistration
 {
@@ -208,6 +210,8 @@ class CompositorBridgeParent final : public PCompositorBridgeParent,
 {
   friend class CompositorVsyncScheduler;
   friend class CompositorThreadHolder;
+  friend class InProcessCompositorSession;
+  friend class gfx::GPUProcessManager;
 
 public:
   explicit CompositorBridgeParent(widget::CompositorWidgetProxy* aWidget,
@@ -404,12 +408,6 @@ public:
 
 
 
-  static APZCTreeManager* GetAPZCTreeManager(uint64_t aLayersId);
-
-  
-
-
-
   static PCompositorBridgeParent*
   Create(Transport* aTransport, ProcessId aOtherProcess, mozilla::ipc::GeckoChildProcessHost* aProcessHost);
 
@@ -500,6 +498,13 @@ public:
   bool AsyncPanZoomEnabled() const {
     return !!mApzcTreeManager;
   }
+
+private:
+  
+
+
+
+  static already_AddRefed<APZCTreeManager> GetAPZCTreeManager(uint64_t aLayersId);
 
 protected:
   

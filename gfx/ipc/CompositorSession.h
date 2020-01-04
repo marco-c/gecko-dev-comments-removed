@@ -46,7 +46,7 @@ public:
   virtual uint64_t RootLayerTreeId() const = 0;
 
   
-  virtual APZCTreeManager* GetAPZCTreeManager() const = 0;
+  virtual already_AddRefed<APZCTreeManager> GetAPZCTreeManager() const = 0;
 
   
   CompositorBridgeChild* GetCompositorBridgeChild();
