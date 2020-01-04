@@ -16,6 +16,7 @@
 #include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/TouchEvents.h"
 #include "nsContentUtils.h"
+#include "nsContainerFrame.h"
 #include "nsIScrollableFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsIInterfaceRequestorUtils.h"
@@ -480,12 +481,32 @@ APZCCallbackHelper::ApplyCallbackTransform(const CSSPoint& aInput,
     
     
     
+    float nonRootResolution = 1.0f;
+    if (nsIPresShell* shell = GetRootContentDocumentPresShellForContent(content)) {
+      nonRootResolution = shell->GetCumulativeNonRootScaleResolution();
+    }
     
     
-    void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
-    if (property) {
-        CSSPoint delta = (*static_cast<CSSPoint*>(property));
-        input += delta;
+    
+    
+    
+    
+    
+    
+    nsIFrame* frame = content->GetPrimaryFrame();
+    nsCOMPtr<nsIContent> lastContent;
+    while (frame) {
+        if (content && (content != lastContent)) {
+            void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
+            if (property) {
+                CSSPoint delta = (*static_cast<CSSPoint*>(property));
+                delta = delta * nonRootResolution;
+                input += delta;
+            }
+        }
+        frame = frame->GetParent();
+        lastContent = content;
+        content = frame ? frame->GetContent() : nullptr;
     }
     return input;
 }
@@ -627,6 +648,19 @@ PrepareForSetTargetAPZCNotification(nsIWidget* aWidget,
                                     const LayoutDeviceIntPoint& aRefPoint,
                                     nsTArray<ScrollableLayerGuid>* aTargets)
 {
+#if defined(MOZ_ANDROID_APZ)
+  
+  
+  
+  if (nsIDocument* doc = aRootFrame->PresContext()->PresShell()->GetTouchEventTargetDocument()) {
+    if (nsIPresShell* shell = doc->GetShell()) {
+      if(nsIFrame* frame = shell->GetRootFrame()) {
+        aRootFrame = frame;
+      }
+    }
+  }
+#endif
+
   ScrollableLayerGuid guid(aGuid.mLayersId, 0, FrameMetrics::NULL_SCROLL_ID);
   nsPoint point =
     nsLayoutUtils::GetEventCoordinatesRelativeTo(aWidget, aRefPoint, aRootFrame);
