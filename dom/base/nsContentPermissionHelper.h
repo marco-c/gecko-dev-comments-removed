@@ -188,8 +188,8 @@ public:
                           nsPIDOMWindow* aWindow);
 
   
-  virtual bool RecvNotifyResult(const bool &aAllow,
-                                InfallibleTArray<PermissionChoice>&& aChoices) override;
+  virtual bool Recv__delete__(const bool &aAllow,
+                              InfallibleTArray<PermissionChoice>&& aChoices) override;
 
   virtual bool RecvGetVisibility() override;
 
