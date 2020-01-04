@@ -228,7 +228,6 @@ class TabChild final : public TabChildBase,
                        public nsITooltipListener
 {
     typedef mozilla::dom::ClonedMessageData ClonedMessageData;
-    typedef mozilla::OwningSerializedStructuredCloneBuffer OwningSerializedStructuredCloneBuffer;
     typedef mozilla::layout::RenderFrameChild RenderFrameChild;
     typedef mozilla::layers::APZEventState APZEventState;
     typedef mozilla::layers::SetTargetAPZCCallback SetTargetAPZCCallback;
@@ -280,7 +279,7 @@ public:
                                        mozilla::dom::StructuredCloneIPCHelper& aHelper,
                                        JS::Handle<JSObject *> aCpows,
                                        nsIPrincipal* aPrincipal,
-                                       nsTArray<OwningSerializedStructuredCloneBuffer>* aRetVal,
+                                       nsTArray<StructuredCloneIPCHelper>* aRetVal,
                                        bool aIsSync) override;
     virtual bool DoSendAsyncMessage(JSContext* aCx,
                                     const nsAString& aMessage,
@@ -531,11 +530,6 @@ protected:
 
 private:
     
-
-
-
-
-
 
 
     TabChild(nsIContentChild* aManager,
