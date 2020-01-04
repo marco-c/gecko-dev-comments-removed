@@ -770,8 +770,36 @@ nsProtocolProxyService::CanUseProxy(nsIURI *aURI, int32_t defaultPort)
                 
                 
                 const char *host_tail = host.get() + host_len - filter_host_len;
-                if (!PL_strncasecmp(host_tail, hinfo->name.host, filter_host_len))
-                    return false; 
+                if (!PL_strncasecmp(host_tail, hinfo->name.host, filter_host_len)) {
+                    
+
+                    if (filter_host_len > 0 && hinfo->name.host[0] == '.') {
+                        
+                        
+                        return false; 
+                    }
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (host_len > filter_host_len && *(host_tail - 1) == '.') {
+                            
+                            
+                            
+                            
+                            return false; 
+                    }
+
+                    if (host_len == filter_host_len) {
+                        
+                        
+                        return false; 
+                    }
+                }
+
             }
         }
     }
