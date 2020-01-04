@@ -371,8 +371,9 @@ nsIStyleRule*
 nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
                                        mozilla::dom::Element* aElement)
 {
-  if (!mPresContext->IsDynamic()) {
-    
+  
+  
+  if (!mPresContext->IsDynamic() || !aElement->IsInComposedDoc()) {
     return nullptr;
   }
 
