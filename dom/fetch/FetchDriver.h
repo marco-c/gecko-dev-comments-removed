@@ -82,22 +82,20 @@ private:
   nsCOMPtr<nsIOutputStream> mPipeOutputStream;
   RefPtr<FetchDriverObserver> mObserver;
   nsCOMPtr<nsIDocument> mDocument;
-  uint32_t mFetchRecursionCount;
   bool mHasBeenCrossSite;
 
   DebugOnly<bool> mResponseAvailableCalled;
+  DebugOnly<bool> mFetchCalled;
 
   FetchDriver() = delete;
   FetchDriver(const FetchDriver&) = delete;
   FetchDriver& operator=(const FetchDriver&) = delete;
   ~FetchDriver();
 
-  nsresult Fetch();
   nsresult SetTainting();
   nsresult ContinueFetch();
   nsresult HttpFetch();
   bool IsUnsafeRequest();
-  nsresult ContinueHttpFetchAfterNetworkFetch();
   
   
   already_AddRefed<InternalResponse>
@@ -105,7 +103,6 @@ private:
   
   
   nsresult FailWithNetworkError();
-  nsresult SucceedWithResponse();
 };
 
 } 
