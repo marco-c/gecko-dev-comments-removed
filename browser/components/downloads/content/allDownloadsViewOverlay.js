@@ -507,6 +507,17 @@ HistoryDownloadElementShell.prototype = {
 
 
 
+const DownloadsView = {
+  onDownloadCommand(event, command) {
+    goDoCommand(command);
+  },
+
+  onDownloadClick() {},
+};
+
+
+
+
 
 
 
