@@ -32,7 +32,7 @@ static StaticRefPtr<WifiProxyService> gWifiProxyService;
 static UniquePtr<WpaSupplicant> gWpaSupplicant;
 
 
-class WifiEventDispatcher : public nsRunnable
+class WifiEventDispatcher : public Runnable
 {
 public:
   WifiEventDispatcher(const nsAString& aEvent, const nsACString& aInterface)
@@ -55,7 +55,7 @@ private:
 };
 
 
-class EventRunnable : public nsRunnable
+class EventRunnable : public Runnable
 {
 public:
   EventRunnable(const nsACString& aInterface)
@@ -87,7 +87,7 @@ private:
 };
 
 
-class WifiResultDispatcher : public nsRunnable
+class WifiResultDispatcher : public Runnable
 {
 public:
   WifiResultDispatcher(WifiResultOptions& aResult, const nsACString& aInterface)
@@ -110,7 +110,7 @@ private:
 };
 
 
-class ControlRunnable : public nsRunnable
+class ControlRunnable : public Runnable
 {
 public:
   ControlRunnable(CommandOptions aOptions, const nsACString& aInterface)

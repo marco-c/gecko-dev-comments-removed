@@ -17,7 +17,7 @@ class nsIInputStream;
 
 
 
-class UploadStumbleRunnable final : public nsRunnable
+class UploadStumbleRunnable final : public Runnable
 {
 public:
   explicit UploadStumbleRunnable(nsIInputStream* aUploadInputStream);

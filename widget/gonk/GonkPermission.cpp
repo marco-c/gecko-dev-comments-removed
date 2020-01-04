@@ -39,7 +39,7 @@ using namespace mozilla;
 
 
 
-class GonkPermissionChecker : public nsRunnable {
+class GonkPermissionChecker : public Runnable {
   int32_t mPid;
   bool mCanUseCamera;
 

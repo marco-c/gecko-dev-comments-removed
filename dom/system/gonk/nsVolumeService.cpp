@@ -505,7 +505,7 @@ nsVolumeService::RemoveVolumeByName(const nsAString& aName)
 
 
 
-class UpdateVolumeRunnable : public nsRunnable
+class UpdateVolumeRunnable : public Runnable
 {
 public:
   UpdateVolumeRunnable(nsVolumeService* aVolumeService, const Volume* aVolume)

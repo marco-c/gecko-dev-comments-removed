@@ -119,7 +119,7 @@ static GonkDiskSpaceWatcher* gHalDiskSpaceWatcher = nullptr;
 static const char kWatchedPath[] = "/data";
 
 
-class DiskSpaceNotifier : public nsRunnable
+class DiskSpaceNotifier : public Runnable
 {
 public:
   DiskSpaceNotifier(const bool aIsDiskFull, const uint64_t aFreeSpace) :
@@ -139,7 +139,7 @@ private:
 };
 
 
-class DiskSpaceCleaner : public nsRunnable
+class DiskSpaceCleaner : public Runnable
 {
 public:
   NS_IMETHOD Run()

@@ -29,7 +29,7 @@ StaticRefPtr<NetworkWorker> gNetworkWorker;
 static nsAutoPtr<NetworkUtils> gNetworkUtils;
 
 
-class NetworkResultDispatcher : public nsRunnable
+class NetworkResultDispatcher : public Runnable
 {
 public:
   NetworkResultDispatcher(const NetworkResultOptions& aResult)
@@ -52,7 +52,7 @@ private:
 };
 
 
-class NetworkCommandDispatcher : public nsRunnable
+class NetworkCommandDispatcher : public Runnable
 {
 public:
   NetworkCommandDispatcher(const NetworkParams& aParams)
@@ -75,7 +75,7 @@ private:
 };
 
 
-class NetdEventRunnable : public nsRunnable
+class NetdEventRunnable : public Runnable
 {
 public:
   NetdEventRunnable(NetdCommand* aCommand)
