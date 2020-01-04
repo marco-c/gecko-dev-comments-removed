@@ -187,9 +187,8 @@ public:
 
 
 
-
-  Accessible* GetOrCreateAccessible(nsINode* aNode, Accessible* aContext,
-                                    bool* aIsSubtreeHidden = nullptr);
+  Accessible* CreateAccessible(nsINode* aNode, Accessible* aContext,
+                               bool* aIsSubtreeHidden = nullptr);
 
   mozilla::a11y::role MarkupRole(const nsIContent* aContent) const
   {

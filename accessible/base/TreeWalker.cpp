@@ -275,23 +275,23 @@ TreeWalker::Prev()
 Accessible*
 TreeWalker::AccessibleFor(nsIContent* aNode, uint32_t aFlags, bool* aSkipSubtree)
 {
-  Accessible* child = nullptr;
-  if (aFlags & eWalkCache) {
-    child = mDoc->GetAccessible(aNode);
-  }
-  else if (mContext->IsAcceptableChild(aNode)) {
-    child = GetAccService()->
-      GetOrCreateAccessible(aNode, mContext, aSkipSubtree);
+  
+  
+  Accessible* child = mDoc->GetAccessible(aNode);
+  if (child) {
+    if (child->IsRelocated()) {
+      *aSkipSubtree = true;
+      return nullptr;
+    }
+    return child;
   }
 
   
-  
-  if (child && child->IsRelocated()) {
-    *aSkipSubtree = true;
-    return nullptr;
+  if (!(aFlags & eWalkCache) && mContext->IsAcceptableChild(aNode)) {
+    return GetAccService()->CreateAccessible(aNode, mContext, aSkipSubtree);
   }
 
-  return child;
+  return nullptr;
 }
 
 dom::AllChildrenIterator*

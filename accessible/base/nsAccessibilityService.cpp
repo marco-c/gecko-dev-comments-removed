@@ -1010,26 +1010,20 @@ nsAccessibilityService::IsLogged(const nsAString& aModule, bool* aIsLogged)
 
 
 Accessible*
-nsAccessibilityService::GetOrCreateAccessible(nsINode* aNode,
-                                              Accessible* aContext,
-                                              bool* aIsSubtreeHidden)
+nsAccessibilityService::CreateAccessible(nsINode* aNode,
+                                         Accessible* aContext,
+                                         bool* aIsSubtreeHidden)
 {
-  NS_PRECONDITION(aContext && aNode && !gIsShutdown,
-                  "Maybe let'd do a crash? Oh, yes, baby!");
+  MOZ_ASSERT(aContext, "No context provided");
+  MOZ_ASSERT(aNode, "No node to create an accessible for");
+  MOZ_ASSERT(!gIsShutdown, "No creation after shutdown");
 
   if (aIsSubtreeHidden)
     *aIsSubtreeHidden = false;
 
   DocAccessible* document = aContext->Document();
-
-  
-  
-  
-  Accessible* cachedAccessible = document->GetAccessible(aNode);
-  if (cachedAccessible)
-    return cachedAccessible;
-
-  
+  MOZ_ASSERT(!document->GetAccessible(aNode),
+             "We already have an accessible for this node.");
 
   if (aNode->IsNodeOfType(nsINode::eDOCUMENT)) {
     
