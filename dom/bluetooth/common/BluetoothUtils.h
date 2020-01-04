@@ -44,6 +44,13 @@ StringToPinCode(const nsAString& aString, BluetoothPinCode& aPinCode);
 
 
 
+void
+RemoteNameToString(const BluetoothRemoteName& aRemoteName, nsAString& aString);
+
+
+
+
+
 
 
 

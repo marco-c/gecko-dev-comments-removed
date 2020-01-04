@@ -514,6 +514,10 @@ struct BluetoothRemoteInfo {
   int mManufacturer;
 };
 
+struct BluetoothRemoteName {
+  uint8_t mName[248]; 
+};
+
 struct BluetoothProperty {
   
   BluetoothPropertyType mType;
