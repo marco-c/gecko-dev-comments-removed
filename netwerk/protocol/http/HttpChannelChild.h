@@ -276,6 +276,7 @@ private:
   
   nsresult SetupRedirect(nsIURI* uri,
                          const nsHttpResponseHead* responseHead,
+                         const uint32_t& redirectFlags,
                          nsIChannel** outChannel);
 
   

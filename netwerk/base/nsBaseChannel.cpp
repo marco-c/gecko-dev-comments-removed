@@ -21,6 +21,7 @@
 #include "nsProxyRelease.h"
 #include "nsXULAppAPI.h"
 #include "nsContentSecurityManager.h"
+#include "LoadInfo.h"
 
 static PLDHashOperator
 CopyProperties(const nsAString &key, nsIVariant *data, void *closure)
@@ -88,7 +89,27 @@ nsBaseChannel::Redirect(nsIChannel *newChannel, uint32_t redirectFlags,
   newChannel->SetLoadGroup(mLoadGroup);
   newChannel->SetNotificationCallbacks(mCallbacks);
   newChannel->SetLoadFlags(mLoadFlags | LOAD_REPLACE);
-  newChannel->SetLoadInfo(mLoadInfo);
+
+  
+  
+  if (mLoadInfo) {
+    nsCOMPtr<nsILoadInfo> newLoadInfo =
+      static_cast<mozilla::LoadInfo*>(mLoadInfo.get())->Clone();
+
+    nsCOMPtr<nsIPrincipal> uriPrincipal;
+    nsIScriptSecurityManager *sm = nsContentUtils::GetSecurityManager();
+    sm->GetChannelURIPrincipal(this, getter_AddRefs(uriPrincipal));
+    bool isInternalRedirect =
+      (redirectFlags & (nsIChannelEventSink::REDIRECT_INTERNAL |
+                        nsIChannelEventSink::REDIRECT_STS_UPGRADE));
+    newLoadInfo->AppendRedirectedPrincipal(uriPrincipal, isInternalRedirect);
+    newChannel->SetLoadInfo(newLoadInfo);
+  }
+  else {
+    
+    
+    newChannel->SetLoadInfo(nullptr);
+  }
 
   
   if (mPrivateBrowsingOverriden) {
@@ -163,14 +184,6 @@ nsBaseChannel::ContinueRedirect()
       rv = mRedirectChannel->AsyncOpen(mListener, mListenerContext);
     }
     NS_ENSURE_SUCCESS(rv, rv);
-    
-    
-    if (mLoadInfo) {
-      nsCOMPtr<nsIPrincipal> uriPrincipal;
-      nsIScriptSecurityManager *sm = nsContentUtils::GetSecurityManager();
-      sm->GetChannelURIPrincipal(this, getter_AddRefs(uriPrincipal));
-      mLoadInfo->AppendRedirectedPrincipal(uriPrincipal, false);
-    }
   }
 
   mRedirectChannel = nullptr;

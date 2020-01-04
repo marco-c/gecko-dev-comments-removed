@@ -208,11 +208,6 @@ AutoRedirectVetoNotifier::ReportRedirectResult(bool succeeded)
     if (!mChannel)
         return;
 
-    
-    if (succeeded && mChannel->mLoadInfo) {
-        mChannel->mLoadInfo->AppendRedirectedPrincipal(mChannel->GetURIPrincipal(), false);
-    }
-
     mChannel->mRedirectChannel = nullptr;
 
     nsCOMPtr<nsIRedirectResultListener> vetoHook;
@@ -2002,7 +1997,7 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
                                ioService);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = SetupReplacementChannel(upgradedURI, newChannel, true);
+    rv = SetupReplacementChannel(upgradedURI, newChannel, true, flags);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2124,13 +2119,14 @@ nsHttpChannel::AsyncDoReplaceWithProxy(nsIProxyInfo* pi)
     if (NS_FAILED(rv))
         return rv;
 
-    rv = SetupReplacementChannel(mURI, newChannel, true);
+    uint32_t flags = nsIChannelEventSink::REDIRECT_INTERNAL;
+
+    rv = SetupReplacementChannel(mURI, newChannel, true, flags);
     if (NS_FAILED(rv))
         return rv;
 
     
     mRedirectChannel = newChannel;
-    uint32_t flags = nsIChannelEventSink::REDIRECT_INTERNAL;
 
     PushRedirectAsyncFunc(&nsHttpChannel::ContinueDoReplaceWithProxy);
     rv = gHttpHandler->AsyncOnChannelRedirect(this, newChannel, flags);
@@ -2776,7 +2772,8 @@ nsHttpChannel::ProcessFallback(bool *waitingForRedirectCallback)
                                    getter_AddRefs(newChannel));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = SetupReplacementChannel(mURI, newChannel, true);
+    uint32_t redirectFlags = nsIChannelEventSink::REDIRECT_INTERNAL;
+    rv = SetupReplacementChannel(mURI, newChannel, true, redirectFlags);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2793,7 +2790,6 @@ nsHttpChannel::ProcessFallback(bool *waitingForRedirectCallback)
 
     
     mRedirectChannel = newChannel;
-    uint32_t redirectFlags = nsIChannelEventSink::REDIRECT_INTERNAL;
 
     PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessFallback);
     rv = gHttpHandler->AsyncOnChannelRedirect(this, newChannel, redirectFlags);
@@ -4568,13 +4564,16 @@ nsHttpChannel::ClearBogusContentEncodingIfNeeded()
 nsresult
 nsHttpChannel::SetupReplacementChannel(nsIURI       *newURI,
                                        nsIChannel   *newChannel,
-                                       bool          preserveMethod)
+                                       bool          preserveMethod,
+                                       uint32_t      redirectFlags)
 {
     LOG(("nsHttpChannel::SetupReplacementChannel "
          "[this=%p newChannel=%p preserveMethod=%d]",
          this, newChannel, preserveMethod));
 
-    nsresult rv = HttpBaseChannel::SetupReplacementChannel(newURI, newChannel, preserveMethod);
+    nsresult rv =
+      HttpBaseChannel::SetupReplacementChannel(newURI, newChannel,
+                                               preserveMethod, redirectFlags);
     if (NS_FAILED(rv))
         return rv;
 
@@ -4705,14 +4704,15 @@ nsHttpChannel::ContinueProcessRedirectionAfterFallback(nsresult rv)
                                ioService);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = SetupReplacementChannel(mRedirectURI, newChannel, !rewriteToGET);
-    if (NS_FAILED(rv)) return rv;
-
     uint32_t redirectFlags;
     if (nsHttp::IsPermanentRedirect(mRedirectType))
         redirectFlags = nsIChannelEventSink::REDIRECT_PERMANENT;
     else
         redirectFlags = nsIChannelEventSink::REDIRECT_TEMPORARY;
+
+    rv = SetupReplacementChannel(mRedirectURI, newChannel,
+                                 !rewriteToGET, redirectFlags);
+    if (NS_FAILED(rv)) return rv;
 
     
     mRedirectChannel = newChannel;

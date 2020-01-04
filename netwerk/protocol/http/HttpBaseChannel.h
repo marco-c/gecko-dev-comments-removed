@@ -308,7 +308,8 @@ protected:
   void AddCookiesToRequest();
   virtual nsresult SetupReplacementChannel(nsIURI *,
                                            nsIChannel *,
-                                           bool preserveMethod);
+                                           bool preserveMethod,
+                                           uint32_t redirectFlags);
 
   
   inline void CallOnModifyRequestObservers() {

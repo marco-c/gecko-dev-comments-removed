@@ -42,8 +42,10 @@
 #include "mozIThirdPartyUtil.h"
 #include "nsStreamUtils.h"
 #include "nsContentSecurityManager.h"
+#include "nsIChannelEventSink.h"
 #include "nsILoadGroupChild.h"
 #include "mozilla/ConsoleReportCollector.h"
+#include "LoadInfo.h"
 
 #include <algorithm>
 
@@ -2501,11 +2503,13 @@ HttpBaseChannel::ShouldRewriteRedirectToGET(uint32_t httpStatus,
 nsresult
 HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
                                          nsIChannel   *newChannel,
-                                         bool          preserveMethod)
+                                         bool          preserveMethod,
+                                         uint32_t      redirectFlags)
 {
   LOG(("HttpBaseChannel::SetupReplacementChannel "
      "[this=%p newChannel=%p preserveMethod=%d]",
      this, newChannel, preserveMethod));
+
   uint32_t newLoadFlags = mLoadFlags | LOAD_REPLACE;
   
   
@@ -2535,7 +2539,21 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   }
 
   
-  newChannel->SetLoadInfo(mLoadInfo);
+  
+  if (mLoadInfo) {
+    nsCOMPtr<nsILoadInfo> newLoadInfo =
+      static_cast<mozilla::LoadInfo*>(mLoadInfo.get())->Clone();
+    bool isInternalRedirect =
+      (redirectFlags & (nsIChannelEventSink::REDIRECT_INTERNAL |
+                        nsIChannelEventSink::REDIRECT_STS_UPGRADE));
+    newLoadInfo->AppendRedirectedPrincipal(GetURIPrincipal(), isInternalRedirect);
+    newChannel->SetLoadInfo(newLoadInfo);
+  }
+  else {
+    
+    
+    newChannel->SetLoadInfo(nullptr);
+  }
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(newChannel);
   if (!httpChannel)
