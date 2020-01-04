@@ -120,6 +120,20 @@ public:
   }
 
   
+
+
+
+
+
+
+  uint8_t* AdvanceRow()
+  {
+    mCol = 0;
+    mRowPointer = DoAdvanceRow();
+    return mRowPointer;
+  }
+
+  
   uint8_t* CurrentRowPointer() const { return mRowPointer; }
 
   
@@ -191,9 +205,7 @@ public:
         }
       }
 
-      
-      mRowPointer = AdvanceRow();
-      mCol = 0;
+      AdvanceRow();  
     }
 
     
@@ -244,8 +256,7 @@ public:
 
       Maybe<WriteState> result = aFunc(rowPtr, mInputSize.width);
       if (result != Some(WriteState::FAILURE)) {
-        mCol = 0;
-        mRowPointer = AdvanceRow();  
+        AdvanceRow();  
       }
 
       if (IsSurfaceFinished()) {
@@ -281,15 +292,6 @@ public:
 
 
 
-
-  virtual uint8_t* AdvanceRow() = 0;
-
-  
-
-
-
-
-
   virtual Maybe<SurfaceInvalidRect> TakeInvalidRect() = 0;
 
 protected:
@@ -300,6 +302,14 @@ protected:
 
 
   virtual uint8_t* DoResetToFirstRow() = 0;
+
+  
+
+
+
+
+
+  virtual uint8_t* DoAdvanceRow() = 0;
 
 
   
@@ -360,10 +370,10 @@ public:
   nsresult Configure(const NullSurfaceConfig& aConfig);
 
   Maybe<SurfaceInvalidRect> TakeInvalidRect() override { return Nothing(); }
-  uint8_t* AdvanceRow() override { return nullptr; }
 
 protected:
   uint8_t* DoResetToFirstRow() override { return nullptr; }
+  uint8_t* DoAdvanceRow() override { return nullptr; }
 
 private:
   static UniquePtr<NullSurfaceSink> sSingleton;  
@@ -478,10 +488,10 @@ public:
   { }
 
   Maybe<SurfaceInvalidRect> TakeInvalidRect() override final;
-  uint8_t* AdvanceRow() override final;
 
 protected:
   uint8_t* DoResetToFirstRow() override final;
+  uint8_t* DoAdvanceRow() override final;
   virtual uint8_t* GetRowPointer() const = 0;
 
   gfx::IntRect mInvalidRect;  
