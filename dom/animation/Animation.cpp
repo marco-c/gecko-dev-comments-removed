@@ -358,7 +358,7 @@ Animation::GetFinished(ErrorResult& aRv)
 void
 Animation::Cancel()
 {
-  DoCancel();
+  CancelNoUpdate();
   PostUpdate();
 }
 
@@ -421,14 +421,14 @@ Animation::Finish(ErrorResult& aRv)
 void
 Animation::Play(ErrorResult& aRv, LimitBehavior aLimitBehavior)
 {
-  DoPlay(aRv, aLimitBehavior);
+  PlayNoUpdate(aRv, aLimitBehavior);
   PostUpdate();
 }
 
 void
 Animation::Pause(ErrorResult& aRv)
 {
-  DoPause(aRv);
+  PauseNoUpdate(aRv);
   PostUpdate();
 }
 
@@ -662,7 +662,7 @@ Animation::SilentlySetPlaybackRate(double aPlaybackRate)
 
 
 void
-Animation::DoCancel()
+Animation::CancelNoUpdate()
 {
   if (mPendingState != PendingState::NotPending) {
     CancelPendingTasks();
@@ -845,7 +845,7 @@ Animation::NotifyEffectTimingUpdated()
 
 
 void
-Animation::DoPlay(ErrorResult& aRv, LimitBehavior aLimitBehavior)
+Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior)
 {
   AutoMutationBatchForAnimation mb(*this);
 
@@ -925,7 +925,7 @@ Animation::DoPlay(ErrorResult& aRv, LimitBehavior aLimitBehavior)
 
 
 void
-Animation::DoPause(ErrorResult& aRv)
+Animation::PauseNoUpdate(ErrorResult& aRv)
 {
   if (IsPausedOrPausing()) {
     return;

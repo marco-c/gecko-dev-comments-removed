@@ -94,7 +94,7 @@ CSSAnimation::PlayFromStyle()
   mIsStylePaused = false;
   if (!mPauseShouldStick) {
     ErrorResult rv;
-    DoPlay(rv, Animation::LimitBehavior::Continue);
+    PlayNoUpdate(rv, Animation::LimitBehavior::Continue);
     
     MOZ_ASSERT(!rv.Failed(), "Unexpected exception playing animation");
   }
@@ -110,7 +110,7 @@ CSSAnimation::PauseFromStyle()
 
   mIsStylePaused = true;
   ErrorResult rv;
-  DoPause(rv);
+  PauseNoUpdate(rv);
   
   
   
