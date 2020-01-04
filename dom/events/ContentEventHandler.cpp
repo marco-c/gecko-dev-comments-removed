@@ -1584,6 +1584,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
   RefPtr<nsRange> range = new nsRange(mRootContent);
 
+  bool isVertical = false;
   LayoutDeviceIntRect rect;
   uint32_t offset = aEvent->mInput.mOffset;
   const uint32_t kEndOffset = offset + aEvent->mInput.mLength;
@@ -1598,6 +1599,9 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
     
     
+    if (range->Collapsed()) {
+      break;
+    }
 
     
     FrameAndNodeOffset firstFrame = GetFirstFrameHavingFlatTextInRange(range);
@@ -1623,6 +1627,9 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
     bool startsBetweenLineBreaker = false;
     nsAutoString chars;
+    
+    isVertical = firstFrame->GetWritingMode().IsVertical();
+
     AutoTArray<nsRect, 16> charRects;
 
     if (ShouldBreakLineBefore(firstContent, mRootContent)) {
@@ -1642,7 +1649,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
         
         brRect = lastCharRect - frameRect.TopLeft();
         if (!wasLineBreaker) {
-          if (firstFrame->GetWritingMode().IsVertical()) {
+          if (isVertical) {
             
             brRect.y = brRect.YMost() + 1;
             brRect.height = 1;
@@ -1746,6 +1753,54 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       offset++;
     }
   }
+
+  
+  
+  
+  
+  
+  
+  if (offset < kEndOffset || aEvent->mReply.mRectArray.IsEmpty()) {
+    
+    
+    
+    if (!aEvent->mReply.mRectArray.IsEmpty() && !wasLineBreaker) {
+      rect = aEvent->mReply.mRectArray.LastElement();
+      if (isVertical) {
+        rect.y = rect.YMost() + 1;
+        rect.height = 1;
+        MOZ_ASSERT(rect.width);
+      } else {
+        rect.x = rect.XMost() + 1;
+        rect.width = 1;
+        MOZ_ASSERT(rect.height);
+      }
+      aEvent->mReply.mRectArray.AppendElement(rect);
+    } else {
+      
+      
+      
+      
+      WidgetQueryContentEvent queryTextRect(eQueryTextRect, *aEvent);
+      WidgetQueryContentEvent::Options options(*aEvent);
+      queryTextRect.InitForQueryTextRect(offset, 1, options);
+      rv = OnQueryTextRect(&queryTextRect);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      if (NS_WARN_IF(!queryTextRect.mSucceeded)) {
+        return NS_ERROR_FAILURE;
+      }
+      MOZ_ASSERT(!queryTextRect.mReply.mRect.IsEmpty());
+      if (queryTextRect.mReply.mWritingMode.IsVertical()) {
+        queryTextRect.mReply.mRect.height = 1;
+      } else {
+        queryTextRect.mReply.mRect.width = 1;
+      }
+      aEvent->mReply.mRectArray.AppendElement(queryTextRect.mReply.mRect);
+    }
+  }
+
   aEvent->mSucceeded = true;
   return NS_OK;
 }
