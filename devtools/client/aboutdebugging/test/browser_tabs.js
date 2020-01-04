@@ -21,7 +21,7 @@ add_task(function* () {
 
   
   let onNewTab = waitForMutation(tabsElement, { childList: true });
-  let newTab = yield addTab(TAB_URL, null, true);
+  let newTab = yield addTab(TAB_URL, { background: true });
   yield onNewTab;
 
   
