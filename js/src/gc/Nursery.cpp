@@ -566,6 +566,10 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
 
     startProfile(ProfileKey::Total);
 
+    
+    
+    JS::AutoSuppressGCAnalysis nogc;
+
     TenureCountCache tenureCounts;
     double promotionRate = doCollection(rt, reason, tenureCounts);
 
