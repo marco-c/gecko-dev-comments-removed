@@ -91,6 +91,10 @@ public:
 
 
 
+
+
+
+
   NS_IMETHOD Convert(const char * aSrc, int32_t * aSrcLength, 
       char16_t * aDest, int32_t * aDestLength) = 0;
 
