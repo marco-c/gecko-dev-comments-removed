@@ -307,11 +307,11 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
     if (!IsRegExp(cx, args.get(0), &patternIsRegExp))
         return false;
 
-    if (args.isConstructing()) {
-        
-    } else {
-        
 
+    
+    
+    
+    if (!args.isConstructing()) {
         
         if (patternIsRegExp && !args.hasDefined(1)) {
             RootedObject patternObj(cx, &args[0].toObject());
@@ -341,6 +341,7 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
         
         RootedObject patternObj(cx, &patternValue.toObject());
 
+        
         RootedAtom sourceAtom(cx);
         RegExpFlag flags;
         {
@@ -353,26 +354,29 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
             if (!args.hasDefined(1)) {
                 
                 flags = g->getFlags();
-            } else {
-                
-                
-                
-                flags = RegExpFlag(0);
-                RootedString flagStr(cx, ToString<CanGC>(cx, args[1]));
-                if (!flagStr)
-                    return false;
-                if (!ParseRegExpFlags(cx, flagStr, &flags))
-                    return false;
             }
         }
 
         
-        
-        Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx));
+        RootedObject proto(cx);
+        if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
+            return false;
+
+        Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx, proto));
         if (!regexp)
             return false;
 
         
+        if (args.hasDefined(1)) {
+            
+            flags = RegExpFlag(0);
+            RootedString flagStr(cx, ToString<CanGC>(cx, args[1]));
+            if (!flagStr)
+                return false;
+            if (!ParseRegExpFlags(cx, flagStr, &flags))
+                return false;
+        }
+
         if (!RegExpObject::initFromAtom(cx, regexp, sourceAtom, flags))
             return false;
 
@@ -404,7 +408,11 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx));
+    RootedObject proto(cx);
+    if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
+        return false;
+
+    Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx, proto));
     if (!regexp)
         return false;
 
