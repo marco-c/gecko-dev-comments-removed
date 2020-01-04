@@ -34,6 +34,7 @@ public:
   uint32_t RegisterForCommand(nsMenuItemX* aItem);
   void UnregisterCommand(uint32_t aCommandID);
   nsMenuItemX* GetMenuItemForCommandID(uint32_t inCommandID);
+  void AddMenuItemInfoToSet(MenuItemInfo* info);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMUTATIONOBSERVER
@@ -51,6 +52,12 @@ protected:
 
   
   nsDataHashtable<nsUint32HashKey, nsMenuItemX *> mCommandToMenuObjectTable;
+
+  
+  
+  
+  
+  NSMutableSet* mInfoSet;
 };
 
 #endif 
