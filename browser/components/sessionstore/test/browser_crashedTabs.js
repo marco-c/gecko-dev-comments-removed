@@ -105,6 +105,23 @@ function promiseHistoryLength(browser, length) {
 
 
 
+
+
+
+
+function promiseTabCrashedReady(browser) {
+  return new Promise((resolve) => {
+    browser.addEventListener("AboutTabCrashedReady", function ready(e) {
+      browser.removeEventListener("AboutTabCrashedReady", ready, false, true);
+      resolve();
+    }, false, true);
+  });
+}
+
+
+
+
+
 add_task(function test_crash_page_not_in_history() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
@@ -375,7 +392,12 @@ add_task(function* test_hide_restore_all_button() {
   yield promiseBrowserLoaded(browser);
 
   
+  
+  
+  let otherBrowserReady = promiseTabCrashedReady(newTab2.linkedBrowser);
+  
   yield BrowserTestUtils.crashBrowser(browser);
+  yield otherBrowserReady;
 
   doc = browser.contentDocument;
   restoreAllButton = doc.getElementById("restoreAll");
