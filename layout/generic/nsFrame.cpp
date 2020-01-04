@@ -8119,9 +8119,15 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   nsSize oldSize = aOldSize ? *aOldSize : mRect.Size();
   bool sizeChanged = (oldSize != aNewSize);
 
+  
+
+
+
+  SetSize(aNewSize);
+
   if (ChildrenHavePerspective() && sizeChanged) {
     nsRect newBounds(nsPoint(0, 0), aNewSize);
-    RecomputePerspectiveChildrenOverflow(this, &newBounds);
+    RecomputePerspectiveChildrenOverflow(this);
   }
 
   if (hasTransform) {
@@ -8137,12 +8143,6 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 
       aOverflowAreas.SetAllTo(nsRect());
     } else {
-      
-
-
-
-      SetSize(aNewSize);
-
       NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
         nsRect& o = aOverflowAreas.Overflow(otype);
         o = nsDisplayTransform::TransformRect(o, this);
@@ -8155,13 +8155,13 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
       if (Extend3DContext()) {
         ComputePreserve3DChildrenOverflow(aOverflowAreas);
       }
-
-      
-      SetSize(oldSize);
     }
   } else {
     Properties().Delete(nsIFrame::PreTransformOverflowAreasProperty());
   }
+
+  
+  SetSize(oldSize);
 
   bool anyOverflowChanged;
   if (aOverflowAreas != nsOverflowAreas(bounds, bounds)) {
@@ -8177,13 +8177,8 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 }
 
 void
-nsIFrame::RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame, const nsRect* aBounds)
+nsIFrame::RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame)
 {
-  
-  nsSize oldSize = GetSize();
-  if (aBounds) {
-    SetSize(aBounds->Size());
-  }
   nsIFrame::ChildListIterator lists(this);
   for (; !lists.IsDone(); lists.Next()) {
     nsFrameList::Enumerator childFrames(lists.CurrentList());
@@ -8210,12 +8205,10 @@ nsIFrame::RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame, cons
         
         
         
-        child->RecomputePerspectiveChildrenOverflow(aStartFrame, nullptr);
+        child->RecomputePerspectiveChildrenOverflow(aStartFrame);
       }
     }
   }
-  
-  SetSize(oldSize);
 }
 
 void
