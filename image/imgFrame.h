@@ -223,13 +223,6 @@ public:
   uint32_t* GetPaletteData() const;
   uint8_t GetPaletteDepth() const { return mPaletteDepth; }
 
-  
-
-
-
-
-  SurfaceFormat GetFormat() const;
-
   AnimationData GetAnimationData() const;
 
   bool GetCompositingFailed() const;
