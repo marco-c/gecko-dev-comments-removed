@@ -7572,6 +7572,25 @@ Parser<ParseHandler>::unaryExpr(YieldHandling yieldHandling, TripledotHandling t
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LegacyCompExprTransplanter
 {
     ParseNode*      root;
@@ -8437,6 +8456,9 @@ Parser<ParseHandler>::generatorComprehension(uint32_t begin)
 
     return result;
 }
+
+
+
 
 template <typename ParseHandler>
 typename ParseHandler::Node
