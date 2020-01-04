@@ -26,11 +26,14 @@ class nsIX509Cert;
 
 
 
-class nsPKCS12Blob
+class nsPKCS12Blob : public nsNSSShutDownObject
 {
 public:
   nsPKCS12Blob();
   virtual ~nsPKCS12Blob();
+
+  
+  virtual void virtualDestroyNSSReference() override {}
 
   
   nsresult SetToken(nsIPK11Token *token);

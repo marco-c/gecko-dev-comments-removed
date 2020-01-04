@@ -27,28 +27,6 @@ public:
   void leave();
   
   
-  
-  void enterBlockingUIState();
-  void leaveBlockingUIState();
-  
-  
-  bool isBlockingUIActive();
-
-  
-  bool isUIForbidden();
-  
-  
-  
-  
-  bool ifPossibleDisallowUI();
-
-  
-  
-  
-  void allowUI();
-
-  
-  
   PRStatus restrictActivityToCurrentThread();
   
   
@@ -68,13 +46,6 @@ private:
 
   
   
-  int mBlockingUICounter;
-
-  
-  bool mIsUIForbidden;
-
-  
-  
   PRThread* mNSSRestrictedThread;
 };
 
@@ -84,16 +55,6 @@ class nsNSSShutDownPreventionLock
 public:
   nsNSSShutDownPreventionLock();
   ~nsNSSShutDownPreventionLock();
-};
-
-
-class nsPSMUITracker
-{
-public:
-  nsPSMUITracker();
-  ~nsPSMUITracker();
-  
-  bool isUIForbidden();
 };
 
 
@@ -114,13 +75,6 @@ public:
   static void remember(nsOnPK11LogoutCancelObject *o);
   static void forget(nsOnPK11LogoutCancelObject *o);
 
-  
-  
-  bool ifPossibleDisallowUI();
-
-  
-  void allowUI();
-  
   
   nsresult evaporateAllNSSResources();
 

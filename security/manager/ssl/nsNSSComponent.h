@@ -184,7 +184,6 @@ private:
   
   
   void DoProfileChangeNetTeardown();
-  void DoProfileChangeTeardown(nsISupports* aSubject);
   void DoProfileBeforeChange(nsISupports* aSubject);
   void DoProfileChangeNetRestore();
 
