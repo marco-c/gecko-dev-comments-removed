@@ -3698,7 +3698,10 @@ nsStyleTextReset::CalcDifference(const nsStyleTextReset& aNewData) const
   }
 
   
-  nscolor decColor, otherDecColor;
+  
+  
+  nscolor decColor = NS_RGBA(0, 0, 0, 0);
+  nscolor otherDecColor = NS_RGBA(0, 0, 0, 0);
   bool isFG, otherIsFG;
   GetDecorationColor(decColor, isFG);
   aNewData.GetDecorationColor(otherDecColor, otherIsFG);
