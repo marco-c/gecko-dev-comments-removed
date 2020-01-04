@@ -2196,10 +2196,7 @@ public:
         
         
         
-        if (mFlatJSObject) {
-            JS_CallTenuredObjectTracer(trc, &mFlatJSObject,
-                                       "XPCWrappedNative::mFlatJSObject");
-        }
+        JS::TraceNullableEdge(trc, &mFlatJSObject, "XPCWrappedNative::mFlatJSObject");
     }
 
     static void Trace(JSTracer* trc, JSObject* obj);
