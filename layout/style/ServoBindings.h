@@ -94,6 +94,9 @@ void Servo_AddRefComputedValues(ServoComputedValues*);
 void Servo_ReleaseComputedValues(ServoComputedValues*);
 
 
+void Servo_Initialize();
+
+
 void Servo_RestyleDocument(RawGeckoDocument* doc, RawServoStyleSet* set);
 
 
