@@ -290,6 +290,8 @@ class MacArtifactJob(ArtifactJob):
                 'libplugin_child_interpose.dylib',
                 
                 
+                'libmozavutil.dylib',
+                'libmozavcodec.dylib',
                 'libsoftokn3.dylib',
                 'plugin-container.app/Contents/MacOS/plugin-container',
                 'updater.app/Contents/MacOS/org.mozilla.updater',
