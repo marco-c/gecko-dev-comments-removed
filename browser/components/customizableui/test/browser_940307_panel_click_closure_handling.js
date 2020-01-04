@@ -70,9 +70,7 @@ add_task(function*() {
   
   
   
-  let suggestEnabled =
-    Services.prefs.getBoolPref("browser.search.suggest.enabled");
-  Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
+  yield SpecialPowers.pushPrefEnv({set: [["browser.search.suggest.enabled", false]]});
 
   searchbar.value = "foo";
   searchbar.focus();
@@ -100,7 +98,9 @@ add_task(function*() {
   yield hiddenPanelPromise;
   ok(!isPanelUIOpen(), "Panel should no longer be open");
 
-  Services.prefs.setBoolPref("browser.search.suggest.enabled", suggestEnabled);
+  
+  gURLBar.select();
+
   CustomizableUI.reset();
 });
 
