@@ -1382,6 +1382,8 @@ class Assembler : public AssemblerShared
     }
 
     static Condition InvertCondition(Condition cond);
+    static Condition UnsignedCondition(Condition cond);
+    static Condition ConditionWithoutEqual(Condition cond);
 
     
     void trace(JSTracer* trc);
