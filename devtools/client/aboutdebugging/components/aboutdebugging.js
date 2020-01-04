@@ -4,7 +4,6 @@
 
 
 
-
 "use strict";
 
 const { createFactory, createClass, DOM: dom } =
@@ -67,18 +66,9 @@ module.exports = createClass({
   },
 
   onHashChange() {
-    let hash = window.location.hash;
-    
-    let panelId = hash ? hash.substr(1) : defaultPanelId;
-
-    let isValid = panels.some(p => p.id == panelId);
-    if (isValid) {
-      this.setState({ selectedPanelId: panelId });
-    } else {
-      
-      
-      this.selectPanel(defaultPanelId);
-    }
+    this.setState({
+      selectedPanelId: window.location.hash.substr(1) || defaultPanelId
+    });
   },
 
   selectPanel(panelId) {
@@ -89,14 +79,24 @@ module.exports = createClass({
     let { client } = this.props;
     let { selectedPanelId } = this.state;
     let selectPanel = this.selectPanel;
-
     let selectedPanel = panels.find(p => p.id == selectedPanelId);
+    let panel;
+
+    if (selectedPanel) {
+      panel = selectedPanel.component({ client, id: selectedPanel.id });
+    } else {
+      panel = (
+        dom.div({ className: "page-not-found" },
+          dom.h1({ className: "header-name" },
+            Strings.GetStringFromName("pageNotFound")
+          )
+        )
+      );
+    }
 
     return dom.div({ className: "app" },
       PanelMenu({ panels, selectedPanelId, selectPanel }),
-      dom.div({ className: "main-content" },
-        selectedPanel.component({ client, id: selectedPanel.panelId })
-      )
+      dom.div({ className: "main-content" }, panel)
     );
   }
 });

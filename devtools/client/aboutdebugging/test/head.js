@@ -43,6 +43,27 @@ function* openAboutDebugging(page) {
   return { tab, document };
 }
 
+
+
+
+
+
+
+
+function changeAboutDebuggingHash(document, hash) {
+  info(`Opening about:debugging#${hash}`);
+  window.openUILinkIn(`about:debugging#${hash}`, "current");
+  return waitForMutation(
+    document.querySelector(".main-content"), {childList: true});
+}
+
+function openPanel(document, panelId) {
+  info(`Opening ${panelId} panel`);
+  document.querySelector(`[aria-controls="${panelId}"]`).click();
+  return waitForMutation(
+    document.querySelector(".main-content"), {childList: true});
+}
+
 function closeAboutDebugging(tab) {
   info("Closing about:debugging");
   return removeTab(tab);
