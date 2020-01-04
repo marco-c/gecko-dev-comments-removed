@@ -29,8 +29,7 @@
 
 
 
-static PRLogModuleInfo* gLog = nullptr;
-
+static mozilla::LazyLogModule gLog("Autodial");
 #undef LOGD
 #undef LOGE
 #define LOGD(args) MOZ_LOG(gLog, mozilla::LogLevel::Debug, args)
@@ -62,9 +61,6 @@ nsAutodial::~nsAutodial()
 
 nsresult nsAutodial::Init()
 {
-    if (!gLog)
-        gLog = PR_NewLogModule("Autodial");
-
     mDefaultEntryName[0] = '\0';
     mNumRASConnectionEntries = 0;
     mAutodialBehavior = QueryAutodialBehavior();

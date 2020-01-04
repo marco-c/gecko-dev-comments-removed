@@ -23,7 +23,7 @@
 
 
 
-extern PRLogModuleInfo *gWyciwygLog;
+extern mozilla::LazyLogModule gWyciwygLog;
 
 
 #define LOG1(args) MOZ_LOG(gWyciwygLog, mozilla::LogLevel::Error, args)

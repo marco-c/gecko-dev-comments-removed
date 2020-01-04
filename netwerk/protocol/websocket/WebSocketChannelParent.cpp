@@ -35,8 +35,6 @@ WebSocketChannelParent::WebSocketChannelParent(nsIAuthPromptProvider* aAuthProvi
 {
   
   MOZ_ASSERT_IF(!aLoadContext, aOverrideStatus == kPBOverride_Unset);
-  if (!webSocketLog)
-    webSocketLog = PR_NewLogModule("nsWebSocket");
   mObserver = new OfflineObserver(this);
 }
 

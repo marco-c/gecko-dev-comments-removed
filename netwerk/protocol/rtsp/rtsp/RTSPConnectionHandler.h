@@ -44,7 +44,11 @@
 #include "prio.h"
 #include "prnetdb.h"
 
-extern PRLogModuleInfo* gRtspLog;
+namespace mozilla {
+namespace net {
+extern LazyLogModule gRtspLog;
+}
+}
 
 
 

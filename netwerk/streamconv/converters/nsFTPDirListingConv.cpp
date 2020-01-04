@@ -30,8 +30,7 @@
 
 
 
-PRLogModuleInfo* gFTPDirListConvLog = nullptr;
-
+static mozilla::LazyLogModule gFTPDirListConvLog("nsFTPDirListingConv");
 
 
 NS_IMPL_ISUPPORTS(nsFTPDirListingConv,
@@ -190,19 +189,6 @@ nsFTPDirListingConv::~nsFTPDirListingConv() {
 }
 
 nsresult
-nsFTPDirListingConv::Init() {
-    
-    
-    
-    
-    if (nullptr == gFTPDirListConvLog) {
-        gFTPDirListConvLog = PR_NewLogModule("nsFTPDirListingConv");
-    }
-
-    return NS_OK;
-}
-
-nsresult
 nsFTPDirListingConv::GetHeaders(nsACString& headers,
                                 nsIURI* uri)
 {
@@ -358,5 +344,5 @@ NS_NewFTPDirListingConv(nsFTPDirListingConv** aFTPDirListingConv)
         return NS_ERROR_OUT_OF_MEMORY;
 
     NS_ADDREF(*aFTPDirListingConv);
-    return (*aFTPDirListingConv)->Init();
+    return NS_OK;
 }

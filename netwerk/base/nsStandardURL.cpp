@@ -40,7 +40,7 @@ char nsStandardURL::gHostLimitDigits[] = { '/', '\\', '?', '#', 0 };
 
 
 
-static PRLogModuleInfo *gStandardURLLog;
+static mozilla::LazyLogModule gStandardURLLog("nsStandardURL");
 
 
 #undef LOG
@@ -252,9 +252,6 @@ nsStandardURL::nsStandardURL(bool aSupportsFileURL, bool aTrackURL)
     , mMutable(true)
     , mSupportsFileURL(aSupportsFileURL)
 {
-    if (!gStandardURLLog)
-        gStandardURLLog = PR_NewLogModule("nsStandardURL");
-
     LOG(("Creating nsStandardURL @%p\n", this));
 
     if (!gInitialized) {

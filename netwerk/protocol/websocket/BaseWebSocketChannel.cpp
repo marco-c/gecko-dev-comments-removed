@@ -18,11 +18,10 @@
 
 using mozilla::dom::ContentChild;
 
-PRLogModuleInfo *webSocketLog = nullptr;
-
 namespace mozilla {
 namespace net {
 
+LazyLogModule webSocketLog("nsWebSocket");
 static uint64_t gNextWebSocketID = 0;
 
 
@@ -42,9 +41,6 @@ BaseWebSocketChannel::BaseWebSocketChannel()
   , mPingInterval(0)
   , mPingResponseTimeout(10000)
 {
-  if (!webSocketLog)
-    webSocketLog = PR_NewLogModule("nsWebSocket");
-
   
   uint64_t processID = 0;
   if (XRE_IsContentProcess()) {

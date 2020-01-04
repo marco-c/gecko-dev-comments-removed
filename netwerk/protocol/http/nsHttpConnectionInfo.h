@@ -14,8 +14,6 @@
 #include "mozilla/Logging.h"
 #include "ARefBase.h"
 
-extern PRLogModuleInfo *gHttpLog;
-
 
 
 
@@ -30,6 +28,8 @@ extern PRLogModuleInfo *gHttpLog;
 
 
 namespace mozilla { namespace net {
+
+extern LazyLogModule gHttpLog;
 
 class nsHttpConnectionInfo: public ARefBase
 {

@@ -16,13 +16,7 @@ namespace net {
 
 
 
-PRLogModuleInfo* GetCache2Log()
-{
-  static PRLogModuleInfo *sLog;
-  if (!sLog)
-    sLog = PR_NewLogModule("cache2");
-  return sLog;
-}
+LazyLogModule gCache2Log("cache2");
 
 } 
 } 
