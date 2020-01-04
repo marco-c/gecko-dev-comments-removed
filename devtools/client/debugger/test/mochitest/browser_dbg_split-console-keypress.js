@@ -10,6 +10,11 @@
 const TAB_URL = EXAMPLE_URL + "doc_step-many-statements.html";
 
 function test() {
+  
+  
+  
+  requestLongerTimeout(2);
+
   let gDebugger, gToolbox, gThreadClient, gTab, gPanel;
   initDebugger(TAB_URL).then(([aTab,debuggeeWin,aPanel]) => {
     gPanel = aPanel;
