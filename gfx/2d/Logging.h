@@ -565,7 +565,7 @@ typedef Log<LOG_CRITICAL, CriticalLogger> CriticalLog;
 
 
 
-#define gfxCrash(reason) gfxCriticalError(int(LogOptions::AutoPrefix) | int(LogOptions::AssertOnCall) | int(LogOptions::CrashAction), (reason))
+#define gfxDevCrash(reason) gfxCriticalError(int(LogOptions::AutoPrefix) | int(LogOptions::AssertOnCall) | int(LogOptions::CrashAction), (reason))
 
 
 
