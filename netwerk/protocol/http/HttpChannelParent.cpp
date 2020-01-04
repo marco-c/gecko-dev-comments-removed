@@ -1178,6 +1178,7 @@ HttpChannelParent::OnStopRequest(nsIRequest *aRequest,
   mChannel->GetEncodedBodySize(&timing.encodedBodySize);
   
   
+  mChannel->GetProtocolVersion(timing.protocolVersion);
 
   if (mIPCClosed || !SendOnStopRequest(aStatusCode, timing))
     return NS_ERROR_UNEXPECTED;

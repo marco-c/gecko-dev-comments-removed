@@ -860,6 +860,7 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
   mRedirectEndTimeStamp = timing.redirectEnd;
   mTransferSize = timing.transferSize;
   mEncodedBodySize = timing.encodedBodySize;
+  mProtocolVersion = timing.protocolVersion;
 
   nsPerformance* documentPerformance = GetPerformance();
   if (documentPerformance) {
@@ -1986,6 +1987,13 @@ HttpChannelChild::RedirectTo(nsIURI *newURI)
 {
   
   return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+HttpChannelChild::GetProtocolVersion(nsACString& aProtocolVersion)
+{
+  aProtocolVersion = mProtocolVersion;
+  return NS_OK;
 }
 
 
