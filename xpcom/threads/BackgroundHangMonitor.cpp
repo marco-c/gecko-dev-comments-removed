@@ -437,7 +437,9 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
   }
   
   newHistogram.Add(aHangTime, Move(mAnnotations));
-  mStats.mHangs.append(Move(newHistogram));
+  if (!mStats.mHangs.append(Move(newHistogram))) {
+    MOZ_CRASH();
+  }
   return mStats.mHangs.back();
 }
 
