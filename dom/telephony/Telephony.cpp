@@ -711,7 +711,7 @@ Telephony::WindowVolumeChanged(float aVolume, bool aMuted)
 }
 
 NS_IMETHODIMP
-Telephony::WindowAudioCaptureChanged()
+Telephony::WindowAudioCaptureChanged(bool aCapture)
 {
   
   return NS_OK;

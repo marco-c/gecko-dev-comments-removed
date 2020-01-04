@@ -716,7 +716,7 @@ nsSpeechTask::WindowVolumeChanged(float aVolume, bool aMuted)
 }
 
 NS_IMETHODIMP
-nsSpeechTask::WindowAudioCaptureChanged()
+nsSpeechTask::WindowAudioCaptureChanged(bool aCapture)
 {
   
   return NS_OK;
