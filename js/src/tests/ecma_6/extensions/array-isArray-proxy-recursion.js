@@ -17,7 +17,8 @@ var proxy = Proxy.revocable([], {}).proxy;
 
 
 
-for (var i = 0; i < 5e5; i++)
+
+for (var i = 0; i < 1e5; i++)
   proxy = new Proxy(proxy, {});
 
 try
