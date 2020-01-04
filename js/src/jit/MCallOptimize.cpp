@@ -3248,14 +3248,23 @@ IonBuilder::convertToBooleanSimdLane(MDefinition* scalar)
     return result;
 }
 
+static inline
+bool SimdTypeToMIRType(SimdType type, MIRType* mirType)
+{
+    switch (type) {
+      case SimdType::Int32x4:     *mirType = MIRType_Int32x4;   return true;
+      case SimdType::Float32x4:   *mirType = MIRType_Float32x4; return true;
+      case SimdType::Bool32x4:    *mirType = MIRType_Bool32x4;  return true;
+      default:                    return false;
+    }
+}
+
 IonBuilder::InliningStatus
 IonBuilder::inlineConstructSimdObject(CallInfo& callInfo, SimdTypeDescr* descr)
 {
     
-    MIRType simdType = SimdTypeDescrToMIRType(descr->type());
-
-    
-    if (simdType == MIRType_Undefined)
+    MIRType simdType;
+    if (!SimdTypeToMIRType(descr->type(), &simdType))
         return InliningStatus_NotInlined;
 
     

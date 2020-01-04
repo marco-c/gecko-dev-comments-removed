@@ -855,7 +855,6 @@ class IonBuilder
     InliningStatus inlineConstructSimdObject(CallInfo& callInfo, SimdTypeDescr* target);
 
     
-    static MIRType SimdTypeDescrToMIRType(SimdTypeDescr::Type type);
     bool canInlineSimd(CallInfo& callInfo, JSNative native, unsigned numArgs,
                        InlineTypedObject** templateObj);
     IonBuilder::InliningStatus boxSimd(CallInfo& callInfo, MInstruction* ins,
