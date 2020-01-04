@@ -83,7 +83,7 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph, Mac
         
         
         MOZ_ASSERT(graph->argumentSlotCount() == 0);
-        frameDepth_ += gen->maxAsmJSStackArgBytes();
+        frameDepth_ += gen->wasmMaxStackArgBytes();
 
         if (gen->usesSimd()) {
             
