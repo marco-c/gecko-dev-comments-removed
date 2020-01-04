@@ -17,6 +17,8 @@ const protocol = require("devtools/shared/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
 const {LongStringActor, ShortLongString} = require("devtools/server/actors/string");
 const {fetch} = require("devtools/shared/DevToolsUtils");
+const {OldStyleSheetFront} = require("devtools/shared/fronts/styleeditor");
+const {oldStyleSheetSpec} = require("devtools/shared/specs/styleeditor");
 
 loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css-logic").CssLogic);
 
@@ -32,28 +34,8 @@ transition-property: all !important;\
 
 var LOAD_ERROR = "error-load";
 
-
-
-
-var OldStyleSheetActor = protocol.ActorClass({
-  typeName: "old-stylesheet",
-
-  events: {
-    "property-change" : {
-      type: "propertyChange",
-      property: Arg(0, "string"),
-      value: Arg(1, "json")
-    },
-    "source-load" : {
-      type: "sourceLoad",
-      source: Arg(0, "string")
-    },
-    "style-applied" : {
-      type: "styleApplied"
-    }
-  },
-
-  toString: function () {
+var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
+  toString: function() {
     return "[OldStyleSheetActor " + this.actorID + "]";
   },
 
@@ -170,14 +152,12 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  toggleDisabled: method(function () {
+  toggleDisabled: function () {
     this.rawSheet.disabled = !this.rawSheet.disabled;
     this._notifyPropertyChanged("disabled");
 
     return this.rawSheet.disabled;
-  }, {
-    response: { disabled: RetVal("boolean")}
-  }),
+  },
 
   
 
@@ -194,11 +174,11 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  fetchSource: method(function () {
+  fetchSource: function () {
     this._getText().then((content) => {
       events.emit(this, "source-load", this.text);
     });
-  }),
+  },
 
   
 
@@ -290,7 +270,7 @@ var OldStyleSheetActor = protocol.ActorClass({
 
 
 
-  update: method(function (text, transition) {
+  update: function (text, transition) {
     DOMUtils.parseStyleSheet(this.rawSheet, text);
 
     this.text = text;
@@ -303,12 +283,7 @@ var OldStyleSheetActor = protocol.ActorClass({
     else {
       this._notifyStyleApplied();
     }
-  }, {
-    request: {
-      text: Arg(0, "string"),
-      transition: Arg(1, "boolean")
-    }
-  }),
+  },
 
   
 
@@ -345,6 +320,7 @@ var OldStyleSheetActor = protocol.ActorClass({
     events.emit(this, "style-applied");
   }
 });
+
 
 
 
