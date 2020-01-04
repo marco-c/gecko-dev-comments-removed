@@ -580,7 +580,11 @@ nsHttpAuthNode::SetAuthEntry(const char *path,
         entry = new nsHttpAuthEntry(path, realm, creds, challenge, ident, metadata);
         if (!entry)
             return NS_ERROR_OUT_OF_MEMORY;
-        mList.AppendElement(entry);
+
+        
+        
+        
+        mList.InsertElementAt(0, entry);
     }
     else {
         
