@@ -35,19 +35,24 @@ public:
   
   
   
-  void StoreDiagnostics(nsIDocument* aDocument,
-                        const nsAString& aFormat,
-                        const char* aCallSite);
+  void StoreFormatDiagnostics(nsIDocument* aDocument,
+                              const nsAString& aFormat,
+                              bool aCanPlay,
+                              const char* aCallSite);
+
+  
+  nsCString GetDescription() const;
 
   
 
-  void SetCanPlay() { mCanPlay = true; }
+  const nsAString& Format() const { return mFormat; }
   bool CanPlay() const { return mCanPlay; }
 
   void SetFFmpegFailedToLoad() { mFFmpegFailedToLoad = true; }
   bool DidFFmpegFailToLoad() const { return mFFmpegFailedToLoad; }
 
 private:
+  nsString mFormat;
   
   bool mCanPlay = false;
 
