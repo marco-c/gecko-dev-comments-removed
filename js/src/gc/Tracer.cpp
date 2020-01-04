@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "gc/Tracer.h"
 
@@ -37,10 +37,10 @@ namespace js {
 template<typename T>
 void
 CheckTracedThing(JSTracer* trc, T thing);
-} // namespace js
+} 
 
 
-/*** Callback Tracer Dispatch ********************************************************************/
+
 
 template <typename T>
 T
@@ -103,7 +103,7 @@ JS::CallbackTracer::getTracingEdgeName(char* buffer, size_t bufferSize)
 }
 
 
-/*** Public Tracing API **************************************************************************/
+
 
 JS_PUBLIC_API(void)
 JS::TraceChildren(JSTracer* trc, GCCellPtr thing)
@@ -140,18 +140,20 @@ JS::TraceIncomingCCWs(JSTracer* trc, const JS::CompartmentSet& compartments)
 
             switch (key.kind) {
               case CrossCompartmentKey::StringWrapper:
-                // StringWrappers are just used to avoid copying strings
-                // across zones multiple times, and don't hold a strong
-                // reference.
+                
+                
+                
                 continue;
 
               case CrossCompartmentKey::ObjectWrapper:
               case CrossCompartmentKey::DebuggerObject:
               case CrossCompartmentKey::DebuggerSource:
               case CrossCompartmentKey::DebuggerEnvironment:
+              case CrossCompartmentKey::DebuggerWasmScript:
+              case CrossCompartmentKey::DebuggerWasmSource:
                 obj = static_cast<JSObject*>(key.wrapped);
-                // Ignore CCWs whose wrapped value doesn't live in our given
-                // set of zones.
+                
+                
                 if (!compartments.has(obj->compartment()))
                     continue;
 
@@ -161,8 +163,8 @@ JS::TraceIncomingCCWs(JSTracer* trc, const JS::CompartmentSet& compartments)
 
               case CrossCompartmentKey::DebuggerScript:
                 script = static_cast<JSScript*>(key.wrapped);
-                // Ignore CCWs whose wrapped value doesn't live in our given
-                // set of compartments.
+                
+                
                 if (!compartments.has(script->compartment()))
                     continue;
 
@@ -175,26 +177,26 @@ JS::TraceIncomingCCWs(JSTracer* trc, const JS::CompartmentSet& compartments)
 }
 
 
-/*** Cycle Collector Helpers **********************************************************************/
 
-// This function is used by the Cycle Collector (CC) to trace through -- or in
-// CC parlance, traverse -- a Shape tree. The CC does not care about Shapes or
-// BaseShapes, only the JSObjects held live by them. Thus, we walk the Shape
-// lineage, but only report non-Shape things. This effectively makes the entire
-// shape lineage into a single node in the CC, saving tremendous amounts of
-// space and time in its algorithms.
-//
-// The algorithm implemented here uses only bounded stack space. This would be
-// possible to implement outside the engine, but would require much extra
-// infrastructure and many, many more slow GOT lookups. We have implemented it
-// inside SpiderMonkey, despite the lack of general applicability, for the
-// simplicity and performance of FireFox's embedding of this engine.
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape)
 {
-    // We need to mark the global, but it's OK to only do this once instead of
-    // doing it for every Shape in our lineage, since it's always the same
-    // global.
+    
+    
+    
     JSObject* global = shape->compartment()->unsafeUnbarrieredMaybeGlobal();
     MOZ_ASSERT(global);
     DoCallback(trc, &global, "global");
@@ -227,11 +229,11 @@ void
 TraceObjectGroupCycleCollectorChildrenCallback(JS::CallbackTracer* trc,
                                                void** thingp, JS::TraceKind kind);
 
-// Object groups can point to other object groups via an UnboxedLayout or the
-// the original unboxed group link. There can potentially be deep or cyclic
-// chains of such groups to trace through without going through a thing that
-// participates in cycle collection. These need to be handled iteratively to
-// avoid blowing the stack when running the cycle collector's callback tracer.
+
+
+
+
+
 struct ObjectGroupCycleCollectorTracer : public JS::CallbackTracer
 {
     explicit ObjectGroupCycleCollectorTracer(JS::CallbackTracer* innerTracer)
@@ -249,15 +251,15 @@ void
 ObjectGroupCycleCollectorTracer::onChild(const JS::GCCellPtr& thing)
 {
     if (thing.is<JSObject>() || thing.is<JSScript>()) {
-        // Invoke the inner cycle collector callback on this child. It will not
-        // recurse back into TraceChildren.
+        
+        
         innerTracer->onChild(thing);
         return;
     }
 
     if (thing.is<ObjectGroup>()) {
-        // If this group is required to be in an ObjectGroup chain, trace it
-        // via the provided worklist rather than continuing to recurse.
+        
+        
         ObjectGroup& group = thing.as<ObjectGroup>();
         if (group.maybeUnboxedLayout()) {
             for (size_t i = 0; i < seen.length(); i++) {
@@ -267,8 +269,8 @@ ObjectGroupCycleCollectorTracer::onChild(const JS::GCCellPtr& thing)
             if (seen.append(&group) && worklist.append(&group)) {
                 return;
             } else {
-                // If append fails, keep tracing normally. The worst that will
-                // happen is we end up overrecursing.
+                
+                
             }
         }
     }
@@ -281,7 +283,7 @@ gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, ObjectGroup* group)
 {
     MOZ_ASSERT(trc->isCallbackTracer());
 
-    // Early return if this group is not required to be in an ObjectGroup chain.
+    
     if (!group->maybeUnboxedLayout())
         return group->traceChildren(trc);
 
@@ -295,7 +297,7 @@ gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, ObjectGroup* group)
 }
 
 
-/*** Traced Edge Printer *************************************************************************/
+
 
 static size_t
 CountDecimalDigits(size_t num)
@@ -313,7 +315,7 @@ JS_PUBLIC_API(void)
 JS_GetTraceThingInfo(char* buf, size_t bufsize, JSTracer* trc, void* thing,
                      JS::TraceKind kind, bool details)
 {
-    const char* name = nullptr; /* silence uninitialized warning */
+    const char* name = nullptr; 
     size_t n;
 
     if (bufsize == 0)
