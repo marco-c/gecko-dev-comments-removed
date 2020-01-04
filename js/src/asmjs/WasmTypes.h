@@ -245,6 +245,13 @@ class Sig
     }
 };
 
+struct SigHashPolicy
+{
+    typedef const Sig& Lookup;
+    static HashNumber hash(Lookup sig) { return sig.hash(); }
+    static bool match(const Sig* lhs, Lookup rhs) { return *lhs == rhs; }
+};
+
 
 
 
