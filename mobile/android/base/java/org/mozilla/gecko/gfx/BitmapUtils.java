@@ -278,7 +278,7 @@ public final class BitmapUtils {
 
     public static int getDominantColor(Bitmap source, boolean applyThreshold) {
       if (source == null)
-        return Color.argb(255,255,255,255);
+        return Color.argb(255, 255, 255, 255);
 
       
       
@@ -331,7 +331,7 @@ public final class BitmapUtils {
 
       
       if (maxBin < 0)
-        return Color.argb(255,255,255,255);
+        return Color.argb(255, 255, 255, 255);
 
       
       hsv[0] = sumHue[maxBin]/colorBins[maxBin];
