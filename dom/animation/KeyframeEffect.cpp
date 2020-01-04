@@ -539,7 +539,8 @@ KeyframeEffectReadOnly::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
       (computedTiming.mProgress.Value() - segment->mFromKey) /
       (segment->mToKey - segment->mFromKey);
     double valuePosition =
-      segment->mTimingFunction.GetValue(positionInSegment);
+      ComputedTimingFunction::GetPortion(segment->mTimingFunction,
+                                         positionInSegment);
 
     StyleAnimationValue *val = aStyleRule->AddEmptyValue(prop.mProperty);
 
@@ -743,7 +744,7 @@ struct OrderedKeyframeValueEntry : KeyframeValue
 struct KeyframeValueEntry : KeyframeValue
 {
   float mOffset;
-  ComputedTimingFunction mTimingFunction;
+  Maybe<ComputedTimingFunction> mTimingFunction;
 
   struct PropertyOffsetComparator
   {
@@ -868,10 +869,9 @@ struct OffsetIndexedKeyframe
 
 
 
-static void
+static Maybe<ComputedTimingFunction>
 ParseEasing(Element* aTarget,
-            const nsAString& aEasing,
-            ComputedTimingFunction& aResult)
+            const nsAString& aEasing)
 {
   nsIDocument* doc = aTarget->OwnerDoc();
 
@@ -897,8 +897,9 @@ ParseEasing(Element* aTarget,
         case eCSSUnit_Steps: {
           nsTimingFunction timingFunction;
           nsRuleNode::ComputeTimingFunction(list->mValue, timingFunction);
-          aResult.Init(timingFunction);
-          return;
+          ComputedTimingFunction computedTimingFunction;
+          computedTimingFunction.Init(timingFunction);
+          return Some(computedTimingFunction);
         }
         default:
           MOZ_ASSERT_UNREACHABLE("unexpected animation-timing-function list "
@@ -917,8 +918,7 @@ ParseEasing(Element* aTarget,
       MOZ_ASSERT_UNREACHABLE("unexpected animation-timing-function unit");
       break;
   }
-
-  aResult.Init(nsTimingFunction(NS_STYLE_TRANSITION_TIMING_FUNCTION_LINEAR));
+  return Nothing();
 }
 
 
@@ -1209,8 +1209,8 @@ GenerateValueEntries(Element* aTarget,
 
   for (OffsetIndexedKeyframe& keyframe : aKeyframes) {
     float offset = float(keyframe.mKeyframeDict.mOffset.Value());
-    ComputedTimingFunction easing;
-    ParseEasing(aTarget, keyframe.mKeyframeDict.mEasing, easing);
+    Maybe<ComputedTimingFunction> easing =
+      ParseEasing(aTarget, keyframe.mKeyframeDict.mEasing);
     
     
 
@@ -1471,8 +1471,8 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
     return;
   }
 
-  ComputedTimingFunction easing;
-  ParseEasing(aTarget, keyframes.mEasing, easing);
+  Maybe<ComputedTimingFunction> easing =
+    ParseEasing(aTarget, keyframes.mEasing);
 
   
   
@@ -1705,6 +1705,14 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
 {
   nsTArray<OrderedKeyframeValueEntry> entries;
 
+  
+  
+  
+  
+  
+  ComputedTimingFunction linear;
+  linear.Init(nsTimingFunction(NS_STYLE_TRANSITION_TIMING_FUNCTION_LINEAR));
+
   for (const AnimationProperty& property : mProperties) {
     for (size_t i = 0, n = property.mSegments.Length(); i < n; i++) {
       const AnimationPropertySegment& segment = property.mSegments[i];
@@ -1727,7 +1735,7 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
       entry->mProperty = property.mProperty;
       entry->mValue = segment.mFromValue;
       entry->mOffset = segment.mFromKey;
-      entry->mTimingFunction = &segment.mTimingFunction;
+      entry->mTimingFunction = segment.mTimingFunction.ptrOr(&linear);
       entry->mPosition =
         segment.mFromKey == segment.mToKey && segment.mFromKey == 0.0f ?
           ValuePosition::First :
@@ -1739,8 +1747,9 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
         entry->mProperty = property.mProperty;
         entry->mValue = segment.mToValue;
         entry->mOffset = segment.mToKey;
-        entry->mTimingFunction =
-          segment.mToKey == 1.0f ? nullptr : &segment.mTimingFunction;
+        entry->mTimingFunction = segment.mToKey == 1.0f ?
+          nullptr :
+          segment.mTimingFunction.ptrOr(&linear);
         entry->mPosition =
           segment.mFromKey == segment.mToKey && segment.mToKey == 1.0f ?
             ValuePosition::Last :
