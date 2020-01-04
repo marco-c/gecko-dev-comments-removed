@@ -952,12 +952,40 @@ sec_asn1d_parse_more_length (sec_asn1d_state *state,
 }
 
 
+
+
+
+
+
+
+static PRBool
+sec_asn1d_check_and_subtract_length (unsigned long *remaining,
+                                     unsigned long consumed,
+                                     SEC_ASN1DecoderContext *cx)
+{
+    PORT_Assert(remaining);
+    PORT_Assert(cx);
+    if (!remaining || !cx) {
+        PORT_SetError (SEC_ERROR_INVALID_ARGS);
+        cx->status = decodeError;
+        return PR_FALSE;
+    }
+    if (*remaining < consumed) {
+        PORT_SetError (SEC_ERROR_BAD_DER);
+        cx->status = decodeError;
+        return PR_FALSE;
+    }
+    *remaining -= consumed;
+    return PR_TRUE;
+}
+
 static void
 sec_asn1d_prepare_for_contents (sec_asn1d_state *state)
 {
     SECItem *item;
     PLArenaPool *poolp;
     unsigned long alloc_len;
+    sec_asn1d_state *parent;
 
 #ifdef DEBUG_ASN1D_STATES
     {
@@ -965,6 +993,63 @@ sec_asn1d_prepare_for_contents (sec_asn1d_state *state)
                state->indefinite ? "indefinite" : "");
     }
 #endif
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    parent = sec_asn1d_get_enclosing_construct(state);
+    while (parent && parent->indefinite) {
+        parent = sec_asn1d_get_enclosing_construct(parent);
+    }
+    
+
+
+
+    if (parent) {
+        unsigned long remaining = parent->pending;
+        parent = state;
+        do {
+            if (!sec_asn1d_check_and_subtract_length(
+                     &remaining, parent->consumed, state->top) ||
+                
+
+                !sec_asn1d_check_and_subtract_length(
+                     &remaining, parent->contents_length, state->top) ||
+                
+
+                (parent->indefinite && !sec_asn1d_check_and_subtract_length(
+                                            &remaining, 2, state->top))) {
+                
+
+                return;
+            }
+        } while ((parent = sec_asn1d_get_enclosing_construct(parent)) &&
+                 parent->indefinite);
+    }
 
     
 
@@ -1006,21 +1091,6 @@ sec_asn1d_prepare_for_contents (sec_asn1d_state *state)
 
 
     state->pending = state->contents_length;
-
-    
-
-
-
-
-    if (state->contents_length > 0) {
-	sec_asn1d_state *parent = sec_asn1d_get_enclosing_construct(state);
-	if (parent && !parent->indefinite && 
-	    state->consumed + state->contents_length > parent->pending) {
-	    PORT_SetError (SEC_ERROR_BAD_DER);
-	    state->top->status = decodeError;
-	    return;
-	}
-    }
 
     
 
@@ -1720,10 +1790,107 @@ sec_asn1d_next_substring (sec_asn1d_state *state)
 	if (state->pending == 0)
 	    done = PR_TRUE;
     } else {
+	PRBool preallocatedString;
+	sec_asn1d_state *temp_state;
 	PORT_Assert (state->indefinite);
 
 	item = (SECItem *)(child->dest);
-	if (item != NULL && item->data != NULL) {
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	preallocatedString = PR_FALSE;
+	temp_state = state;
+	while (temp_state && item == temp_state->dest && temp_state->indefinite) {
+	    sec_asn1d_state *parent = sec_asn1d_get_enclosing_construct(temp_state);
+	    if (!parent || parent->underlying_kind != temp_state->underlying_kind) {
+	        
+
+
+	        break;
+	    }
+	    if (!parent->indefinite) {
+	        
+
+	        preallocatedString = PR_TRUE;
+	        break;
+	    }
+	    if (!parent->substring) {
+	        
+
+
+
+
+	        break;
+	    }
+	    temp_state = parent;
+	}
+	if (item != NULL && item->data != NULL && !preallocatedString) {
 	    
 
 
