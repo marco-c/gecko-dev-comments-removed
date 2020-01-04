@@ -156,22 +156,6 @@ struct RectTyped :
         Super(F(rect.x), F(rect.y),
               F(rect.width), F(rect.height)) {}
 
-    
-    
-    
-    
-    
-    
-    static RectTyped<units, F> MaxIntRect()
-    {
-      return RectTyped<units, F>(
-        -std::numeric_limits<int32_t>::max() * 0.5,
-        -std::numeric_limits<int32_t>::max() * 0.5,
-        std::numeric_limits<int32_t>::max(),
-        std::numeric_limits<int32_t>::max()
-      );
-    };
-
     void NudgeToIntegers()
     {
       NudgeToInteger(&(this->x));

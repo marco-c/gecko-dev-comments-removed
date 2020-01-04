@@ -2452,10 +2452,21 @@ nsPresContext::NotifyInvalidation(uint32_t aFlags)
 void
 nsPresContext::NotifyInvalidation(const nsIntRect& aRect, uint32_t aFlags)
 {
-  nsRect rect(DevPixelsToAppUnits(aRect.x),
-              DevPixelsToAppUnits(aRect.y),
-              DevPixelsToAppUnits(aRect.width),
-              DevPixelsToAppUnits(aRect.height));
+  
+  
+  
+  
+  
+  
+  nsIntRect clampedRect = nsIntRect::MaxIntRect();
+  clampedRect.ScaleInverseRoundIn(AppUnitsPerDevPixel());
+
+  clampedRect = clampedRect.Intersect(aRect);
+
+  nsRect rect(DevPixelsToAppUnits(clampedRect.x),
+              DevPixelsToAppUnits(clampedRect.y),
+              DevPixelsToAppUnits(clampedRect.width),
+              DevPixelsToAppUnits(clampedRect.height));
   NotifyInvalidation(rect, aFlags);
 }
 

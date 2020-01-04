@@ -545,6 +545,22 @@ struct BaseRect {
     return rect;
   }
 
+  
+  
+  
+  
+  
+  
+  static Sub MaxIntRect()
+  {
+    return Sub(
+      -std::numeric_limits<int32_t>::max() * 0.5,
+      -std::numeric_limits<int32_t>::max() * 0.5,
+      std::numeric_limits<int32_t>::max(),
+      std::numeric_limits<int32_t>::max()
+    );
+  };
+
   friend std::ostream& operator<<(std::ostream& stream,
       const BaseRect<T, Sub, Point, SizeT, MarginT>& aRect) {
     return stream << '(' << aRect.x << ',' << aRect.y << ','
