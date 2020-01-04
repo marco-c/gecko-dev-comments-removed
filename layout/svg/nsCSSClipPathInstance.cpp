@@ -65,12 +65,42 @@ nsCSSClipPathInstance::HitTestBasicShapeClip(nsIFrame* aFrame,
 nsRect
 nsCSSClipPathInstance::ComputeSVGReferenceRect()
 {
+  MOZ_ASSERT(mTargetFrame->GetContent()->IsSVGElement());
   nsRect r;
 
   
   
   switch (mClipPathStyle.GetReferenceBox()) {
+    case StyleClipPathGeometryBox::View: {
+      nsIContent* content = mTargetFrame->GetContent();
+      nsSVGElement* element = static_cast<nsSVGElement*>(content);
+      SVGSVGElement* svgElement = element->GetCtx();
+      MOZ_ASSERT(svgElement);
 
+      if (svgElement && svgElement->HasViewBoxRect()) {
+        
+        
+        
+        
+        
+        
+        nsSVGViewBox* viewBox = svgElement->GetViewBox();
+        const nsSVGViewBoxRect& value = viewBox->GetAnimValue();
+        r = nsRect(nsPresContext::CSSPixelsToAppUnits(value.x),
+                   nsPresContext::CSSPixelsToAppUnits(value.y),
+                   nsPresContext::CSSPixelsToAppUnits(value.width),
+                   nsPresContext::CSSPixelsToAppUnits(value.height));
+      } else {
+        
+        
+        svgFloatSize viewportSize = svgElement->GetViewportSize();
+        r = nsRect(0, 0,
+                   nsPresContext::CSSPixelsToAppUnits(viewportSize.width),
+                   nsPresContext::CSSPixelsToAppUnits(viewportSize.height));
+      }
+
+      break;
+    }
     case StyleClipPathGeometryBox::NoBox:
     case StyleClipPathGeometryBox::Border:
     case StyleClipPathGeometryBox::Content:
