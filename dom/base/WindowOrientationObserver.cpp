@@ -9,6 +9,8 @@
 #include "nsGlobalWindow.h"
 #include "mozilla/Hal.h"
 
+using namespace mozilla::dom;
+
 
 
 
