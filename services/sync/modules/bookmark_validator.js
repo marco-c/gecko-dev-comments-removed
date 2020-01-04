@@ -50,6 +50,9 @@ this.EXPORTED_SYMBOLS = ["BookmarkValidator", "BookmarkProblemData"];
 
 
 
+
+
+
 class BookmarkProblemData {
   constructor() {
     this.rootOnServer = false;
@@ -60,6 +63,7 @@ class BookmarkProblemData {
     this.cycles = [];
     this.orphans = [];
     this.missingChildren = [];
+    this.deletedChildren = [];
     this.multipleParents = [];
     this.deletedParents = [];
     this.childrenOnNonFolder = [];
@@ -100,6 +104,7 @@ class BookmarkProblemData {
       { name: "cycles", count: this.cycles.length },
       { name: "orphans", count: this.orphans.length },
       { name: "missingChildren", count: this.missingChildren.length },
+      { name: "deletedChildren", count: this.deletedChildren.length },
       { name: "multipleParents", count: this.multipleParents.length },
       { name: "deletedParents", count: this.deletedParents.length },
       { name: "childrenOnNonFolder", count: this.childrenOnNonFolder.length },
@@ -231,10 +236,18 @@ class BookmarkValidator {
           problemData.duplicates.push(record.id);
           continue;
         }
-        idToRecord.set(record.id, record);
       }
-      if (record.children && record.type !== "livemark") {
-        if (record.type !== 'folder') {
+      idToRecord.set(record.id, record);
+
+      if (record.children) {
+        if (record.type !== "folder") {
+          
+          
+          
+          if (!record.children.length) {
+            continue;
+          }
+          
           problemData.childrenOnNonFolder.push(record.id);
         }
         folders.push(record);
@@ -300,6 +313,10 @@ class BookmarkValidator {
         continue;
       }
 
+      if (record.isDeleted) {
+        continue;
+      }
+
       let parentID = record.parentid;
       if (!parentID) {
         problemData.orphans.push({id: record.id, parent: parentID});
@@ -314,6 +331,12 @@ class BookmarkValidator {
 
       if (parent.type !== 'folder') {
         problemData.parentNotFolder.push(record.id);
+        if (!parent.children) {
+          parent.children = [];
+        }
+        if (!parent.childGUIDs) {
+          parent.childGUIDs = [];
+        }
       }
 
       if (!record.isDeleted) {
@@ -343,34 +366,86 @@ class BookmarkValidator {
 
     
     for (let folder of folders) {
-      for (let ci = 0; ci < folder.children.length; ++ci) {
-        let child = folder.children[ci];
-        if (typeof child === 'string') {
-          let childObject = idToRecord.get(child);
+      folder.unfilteredChildren = folder.children;
+      folder.children = [];
+      for (let ci = 0; ci < folder.unfilteredChildren.length; ++ci) {
+        let child = folder.unfilteredChildren[ci];
+        let childObject;
+        if (typeof child == "string") {
+          
+          
+          
+          childObject = idToRecord.get(child);
           if (!childObject) {
             problemData.missingChildren.push({parent: folder.id, child});
           } else {
-            if (childObject.parentid === folder.id) {
-              
-              continue;
-            }
-
-            
-            let currentProblemRecord = problemData.multipleParents.find(pr =>
-              pr.child === child);
-
-            if (currentProblemRecord) {
-              currentProblemRecord.parents.push(folder.id);
-            } else {
-              problemData.multipleParents.push({ child, parents: [childObject.parentid, folder.id] });
+            folder.unfilteredChildren[ci] = childObject;
+            if (childObject.isDeleted) {
+              problemData.deletedChildren.push({ parent: folder.id, child });
             }
           }
-          
-          folder.children.splice(ci, 1);
-          --ci;
+        } else {
+          childObject = child;
         }
+
+        if (!childObject) {
+          continue;
+        }
+
+        if (childObject.parentid === folder.id) {
+          folder.children.push(childObject);
+          continue;
+        }
+
+        
+        
+        let currentProblemRecord = problemData.multipleParents.find(pr =>
+          pr.child === child);
+
+        if (currentProblemRecord) {
+          currentProblemRecord.parents.push(folder.id);
+          continue;
+        }
+
+        let otherParent = idToRecord.get(childObject.parentid);
+        
+        if (!otherParent) {
+          
+          problemData.multipleParents.push({
+            child,
+            parents: [folder.id]
+          });
+          if (!problemData.orphans.some(r => r.id === child)) {
+            problemData.orphans.push({
+              id: child,
+              parent: childObject.parentid
+            });
+          }
+          continue;
+        }
+
+        if (otherParent.isDeleted) {
+          if (!problemData.deletedParents.includes(child)) {
+            problemData.deletedParents.push(child);
+          }
+          continue;
+        }
+
+        if (otherParent.childGUIDs && !otherParent.childGUIDs.includes(child)) {
+          if (!problemData.parentChildMismatches.some(r => r.child === child)) {
+            
+            problemData.parentChildMismatches.push({ child, parent: folder.id });
+          }
+        }
+
+        problemData.multipleParents.push({
+          child,
+          parents: [childObject.parentid, folder.id]
+        });
       }
     }
+    problemData.multipleParents = problemData.multipleParents.filter(record =>
+      record.parents.length >= 2);
 
     problemData.cycles = this._detectCycles(resultRecords);
 
