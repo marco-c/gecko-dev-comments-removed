@@ -1290,11 +1290,21 @@ pref("media.gmp.decoder.h264", 2);
 
 pref("media.gmp.trial-create.enabled", true);
 
+
+
+
+
+
+
+
+
 #ifdef MOZ_ADOBE_EME
+pref("media.gmp-eme-adobe.visible", true);
 pref("media.gmp-eme-adobe.enabled", true);
 #endif
 
 #ifdef MOZ_WIDEVINE_EME
+pref("media.gmp-widevinecdm.visible", true);
 pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
