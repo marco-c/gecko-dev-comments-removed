@@ -5,7 +5,7 @@ const TEST_URI = "data:text/html;charset=utf-8,<p>browser_telemetry_toolboxtabs_
 
 
 
-const TOOL_DELAY = 200;
+const TOOL_DELAY = 1000;
 
 add_task(function* () {
   info("Activating the storage inspector");
