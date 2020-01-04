@@ -79,6 +79,11 @@ public:
   
 
 
+  static TextEventDispatcherListener* GetNativeTextEventDispatcherListener();
+
+  
+
+
   static bool GetOpenState(nsWindow* aWindow);
 
   

@@ -8,6 +8,7 @@
 #include "IMMHandler.h"
 #include "mozilla/Preferences.h"
 #include "nsWindowDefs.h"
+#include "WinTextEventDispatcherListener.h"
 
 #ifdef NS_ENABLE_TSF
 #include "TSFTextStore.h"
@@ -89,6 +90,7 @@ IMEHandler::Terminate()
 #endif 
 
   IMMHandler::Terminate();
+  WinTextEventDispatcherListener::Shutdown();
 }
 
 
@@ -357,6 +359,13 @@ IMEHandler::GetUpdatePreference()
 #endif 
 
   return IMMHandler::GetIMEUpdatePreference();
+}
+
+
+TextEventDispatcherListener*
+IMEHandler::GetNativeTextEventDispatcherListener()
+{
+  return WinTextEventDispatcherListener::GetInstance();
 }
 
 
