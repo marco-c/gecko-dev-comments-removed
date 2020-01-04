@@ -952,10 +952,11 @@ CompositorBridgeParent::ActorDestroy(ActorDestroyReason why)
   if (mLayerManager) {
     mLayerManager->Destroy();
     mLayerManager = nullptr;
-    { 
-      MonitorAutoLock lock(*sIndirectLayerTreesLock);
-      sIndirectLayerTrees.erase(mRootLayerTreeID);
-    }
+  }
+
+  { 
+    MonitorAutoLock lock(*sIndirectLayerTreesLock);
+    sIndirectLayerTrees.erase(mRootLayerTreeID);
   }
 
   if (mCompositor) {
