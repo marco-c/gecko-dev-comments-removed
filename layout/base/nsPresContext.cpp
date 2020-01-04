@@ -2503,7 +2503,8 @@ nsPresContext::HasCachedStyleData()
   if (!styleSet) {
     
     
-    return true;
+    
+    return mShell->DidInitialize();
   }
 
   return styleSet->HasCachedStyleData();
