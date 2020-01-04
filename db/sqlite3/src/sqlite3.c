@@ -336,9 +336,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.12.1"
-#define SQLITE_VERSION_NUMBER 3012001
-#define SQLITE_SOURCE_ID      "2016-04-08 15:09:49 fe7d3b75fe1bde41511b323925af8ae1b910bc4d"
+#define SQLITE_VERSION        "3.12.2"
+#define SQLITE_VERSION_NUMBER 3012002
+#define SQLITE_SOURCE_ID      "2016-04-18 17:30:31 92dc59fd5ad66f646666042eb04195e3a61a9e8e"
 
 
 
@@ -63948,6 +63948,28 @@ SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
 
 
 
+
+
+  if( bPreserve ){
+    if( !pPage->leaf 
+     || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
+    ){
+      
+
+      rc = saveCursorKey(pCur);
+      if( rc ) return rc;
+    }else{
+      bSkipnext = 1;
+    }
+  }
+
+  
+
+
+
+
+
+
   if( !pPage->leaf ){
     int notUsed = 0;
     rc = sqlite3BtreePrevious(pCur, &notUsed);
@@ -63965,28 +63987,6 @@ SQLITE_PRIVATE int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
 
   if( pCur->pKeyInfo==0 ){
     invalidateIncrblobCursors(p, pCur->info.nKey, 0);
-  }
-
-  
-
-
-
-
-
-
-
-
-  if( bPreserve ){
-    if( !pPage->leaf 
-     || (pPage->nFree+cellSizePtr(pPage,pCell)+2)>(int)(pBt->usableSize*2/3)
-    ){
-      
-
-      rc = saveCursorKey(pCur);
-      if( rc ) return rc;
-    }else{
-      bSkipnext = 1;
-    }
   }
 
   
@@ -82769,7 +82769,6 @@ SQLITE_PRIVATE int sqlite3VdbeSorterInit(
 ){
   int pgsz;                       
   int i;                          
-  int mxCache;                    
   VdbeSorter *pSorter;            
   KeyInfo *pKeyInfo;              
   int szKeyInfo;                  
@@ -82826,11 +82825,20 @@ SQLITE_PRIVATE int sqlite3VdbeSorterInit(
     }
 
     if( !sqlite3TempInMemory(db) ){
+      i64 mxCache;                
       u32 szPma = sqlite3GlobalConfig.szPma;
       pSorter->mnPmaSize = szPma * pgsz;
+
       mxCache = db->aDb[0].pSchema->cache_size;
-      if( mxCache<(int)szPma ) mxCache = (int)szPma;
-      pSorter->mxPmaSize = MIN((i64)mxCache*pgsz, SQLITE_MAX_PMASZ);
+      if( mxCache<0 ){
+        
+
+        mxCache = mxCache * -1024;
+      }else{
+        mxCache = mxCache * pgsz;
+      }
+      mxCache = MIN(mxCache, SQLITE_MAX_PMASZ);
+      pSorter->mxPmaSize = MAX(pSorter->mnPmaSize, (int)mxCache);
 
       
 
@@ -95563,6 +95571,7 @@ SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
     zType = z + sqlite3Strlen30(z) + 1;
     memcpy(zType, pType->z, pType->n);
     zType[pType->n] = 0;
+    sqlite3Dequote(zType);
     pCol->affinity = sqlite3AffinityType(zType, &pCol->szEst);
     pCol->colFlags |= COLFLAG_HASTYPE;
   }
@@ -121360,7 +121369,13 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
         }
       }
     }
-    sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
+    
+
+
+
+
+
+
     sqlite3ExprCachePop(pParse);
   }else
 #endif 
@@ -185458,7 +185473,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2016-04-08 15:09:49 fe7d3b75fe1bde41511b323925af8ae1b910bc4d", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2016-04-18 17:30:31 92dc59fd5ad66f646666042eb04195e3a61a9e8e", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
