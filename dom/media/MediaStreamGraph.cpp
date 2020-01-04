@@ -1285,6 +1285,27 @@ MediaStreamGraphImpl::PrepareUpdatesToMainThreadState(bool aFinalUpdate)
   
   
   if (aFinalUpdate || ShouldUpdateMainThread()) {
+    
+    
+    size_t keptUpdateCount = 0;
+    for (size_t i = 0; i < mStreamUpdates.Length(); ++i) {
+      MediaStream* stream = mStreamUpdates[i].mStream;
+      
+      
+      MOZ_ASSERT(!stream || stream->GraphImpl() == this);
+      if (!stream || stream->MainThreadNeedsUpdates()) {
+        
+        
+        continue;
+      }
+      if (keptUpdateCount != i) {
+        mStreamUpdates[keptUpdateCount] = Move(mStreamUpdates[i]);
+        MOZ_ASSERT(!mStreamUpdates[i].mStream);
+      }
+      ++keptUpdateCount;
+    }
+    mStreamUpdates.TruncateLength(keptUpdateCount);
+
     mStreamUpdates.SetCapacity(mStreamUpdates.Length() + mStreams.Length() +
         mSuspendedStreams.Length());
     for (MediaStream* stream : AllStreams()) {
