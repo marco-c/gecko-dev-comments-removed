@@ -366,7 +366,7 @@ pkix_pl_AIAMgr_GetHTTPCerts(
 cleanup:
         
 
-        if (PKIX_ERROR_RECEIVED && aiaMgr) {
+        if (PKIX_ERROR_RECEIVED) {
             if (aiaMgr->client.hdata.requestSession != NULL) {
                 (*hcv1->freeFcn)(aiaMgr->client.hdata.requestSession);
                 aiaMgr->client.hdata.requestSession = NULL;

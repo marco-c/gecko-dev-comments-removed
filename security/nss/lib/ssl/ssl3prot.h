@@ -17,7 +17,7 @@ typedef PRUint16 SSL3ProtocolVersion;
 
 
 
-#define TLS_1_3_DRAFT_VERSION 11
+#define TLS_1_3_DRAFT_VERSION 13
 
 typedef PRUint16 ssl3CipherSuite;
 
@@ -81,6 +81,7 @@ typedef enum { alert_warning = 1,
 
 typedef enum {
     close_notify = 0,
+    end_of_early_data = 1, 
     unexpected_message = 10,
     bad_record_mac = 20,
     decryption_failed_RESERVED = 21, 
@@ -291,8 +292,15 @@ typedef struct {
 typedef struct {
     PRUint32 received_timestamp;
     PRUint32 ticket_lifetime_hint;
+    PRUint32 flags;
     SECItem ticket;
 } NewSessionTicket;
+
+typedef enum {
+    ticket_allow_early_data = 1,
+    ticket_allow_dhe_resumption = 2,
+    ticket_allow_psk_resumption = 4
+} TLS13SessionTicketFlags;
 
 typedef enum {
     CLIENT_AUTH_ANONYMOUS = 0,

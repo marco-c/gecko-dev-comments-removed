@@ -10,10 +10,9 @@ var slugid = require("slugid");
 var flatmap = require("flatmap");
 
 
-var TC_REVISION = process.env.TC_REVISION || "{{tc_rev}}";
-var TC_REVISION_HASH = process.env.TC_REVISION_HASH || "{{tc_rev_hash}}";
 var TC_OWNER = process.env.TC_OWNER || "{{tc_owner}}";
 var TC_SOURCE = process.env.TC_SOURCE || "{{tc_source}}";
+var NSS_PUSHLOG_ID = process.env.NSS_PUSHLOG_ID || "{{nss_pushlog_id}}";
 var NSS_HEAD_REPOSITORY = process.env.NSS_HEAD_REPOSITORY || "{{nss_head_repo}}";
 var NSS_HEAD_REVISION = process.env.NSS_HEAD_REVISION || "{{nss_head_rev}}";
 
@@ -66,16 +65,9 @@ function decorateTask(task) {
   task.taskId = slugid.v4();
 
   
-  task.task.scopes = [
-    "queue:route:tc-treeherder-stage.nss." + TC_REVISION_HASH,
-    "queue:route:tc-treeherder.nss." + TC_REVISION_HASH,
-    "scheduler:extend-task-graph:*"
-  ];
-
-  
   task.task.routes = [
-    "tc-treeherder-stage.nss." + TC_REVISION_HASH,
-    "tc-treeherder.nss." + TC_REVISION_HASH
+    "tc-treeherder-stage.v2.nss." + NSS_HEAD_REVISION + "." + NSS_PUSHLOG_ID,
+    "tc-treeherder.v2.nss." + NSS_HEAD_REVISION + "." + NSS_PUSHLOG_ID
   ];
 }
 

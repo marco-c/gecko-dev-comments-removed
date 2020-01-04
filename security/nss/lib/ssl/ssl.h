@@ -222,6 +222,26 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 #define SSL_REQUIRE_DH_NAMED_GROUPS 32
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SSL_ENABLE_0RTT_DATA 33
+
 #ifdef SSL_DEPRECATED_FUNCTION
 
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRBool on);
@@ -286,7 +306,8 @@ typedef enum SSLNextProtoState {
     SSL_NEXT_PROTO_NO_SUPPORT = 0, 
     SSL_NEXT_PROTO_NEGOTIATED = 1, 
     SSL_NEXT_PROTO_NO_OVERLAP = 2, 
-    SSL_NEXT_PROTO_SELECTED = 3    
+    SSL_NEXT_PROTO_SELECTED = 3,   
+    SSL_NEXT_PROTO_EARLY_VALUE = 4 
 } SSLNextProtoState;
 
 

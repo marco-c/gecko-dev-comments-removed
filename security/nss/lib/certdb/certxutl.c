@@ -188,9 +188,6 @@ CERT_AddExtensionByOID(void *exthandle, SECItem *oid, SECItem *value,
     node->ext = ext;
 
     
-    ext->id = *oid;
-
-    
     if (critical) {
         ext->critical.data = (unsigned char *)&hextrue;
         ext->critical.len = 1;
@@ -198,11 +195,17 @@ CERT_AddExtensionByOID(void *exthandle, SECItem *oid, SECItem *value,
 
     
     if (copyData) {
+        rv = SECITEM_CopyItem(handle->ownerArena, &ext->id, oid);
+        if (rv) {
+            return (SECFailure);
+        }
+
         rv = SECITEM_CopyItem(handle->ownerArena, &ext->value, value);
         if (rv) {
             return (SECFailure);
         }
     } else {
+        ext->id = *oid;
         ext->value = *value;
     }
 
