@@ -4222,14 +4222,14 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
     MOZ_ASSERT(isLetExpr == (emitOption == PushInitialValues));
 
     ParseNode* next;
-    for (ParseNode* pn2 = pn->pn_head; pn2; pn2 = next) {
-        if (!updateSourceCoordNotes(pn2->pn_pos.begin))
+    for (ParseNode* binding = pn->pn_head; binding; binding = next) {
+        if (!updateSourceCoordNotes(binding->pn_pos.begin))
             return false;
-        next = pn2->pn_next;
+        next = binding->pn_next;
 
-        ParseNode* pn3;
-        if (!pn2->isKind(PNK_NAME)) {
-            if (pn2->isKind(PNK_ARRAY) || pn2->isKind(PNK_OBJECT)) {
+        ParseNode* initializer;
+        if (!binding->isKind(PNK_NAME)) {
+            if (binding->isKind(PNK_ARRAY) || binding->isKind(PNK_OBJECT)) {
                 
                 
                 
@@ -4239,24 +4239,27 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
                 
                 
                 
-                
-                
-                
-                
-                
-                
+
                 MOZ_ASSERT(pn->pn_count == 1);
                 if (emitOption == DefineVars) {
-                    if (!emitDestructuringDecls(pn->getOp(), pn2))
+                    
+                    
+                    
+                    
+                    if (!emitDestructuringDecls(pn->getOp(), binding))
                         return false;
                 } else {
+                    
+                    
+                    
+
                     
                     
                     MOZ_ASSERT(emitOption != DefineVars);
                     MOZ_ASSERT_IF(emitOption == InitializeVars, pn->pn_xflags & PNX_POPVAR);
                     if (!emit1(JSOP_UNDEFINED))
                         return false;
-                    if (!emitInitializeDestructuringDecls(pn->getOp(), pn2))
+                    if (!emitInitializeDestructuringDecls(pn->getOp(), binding))
                         return false;
                 }
                 continue;
@@ -4268,8 +4271,8 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
 
 
 
-            MOZ_ASSERT(pn2->isKind(PNK_ASSIGN));
-            MOZ_ASSERT(pn2->isOp(JSOP_NOP));
+            MOZ_ASSERT(binding->isKind(PNK_ASSIGN));
+            MOZ_ASSERT(binding->isOp(JSOP_NOP));
             MOZ_ASSERT(emitOption != DefineVars);
 
             
@@ -4277,20 +4280,20 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
 
 
 
-            if (pn2->pn_left->isKind(PNK_NAME)) {
-                pn3 = pn2->pn_right;
-                pn2 = pn2->pn_left;
+            if (binding->pn_left->isKind(PNK_NAME)) {
+                initializer = binding->pn_right;
+                binding = binding->pn_left;
                 goto do_name;
             }
 
-            pn3 = pn2->pn_left;
-            if (!emitDestructuringDecls(pn->getOp(), pn3))
+            initializer = binding->pn_left;
+            if (!emitDestructuringDecls(pn->getOp(), initializer))
                 return false;
 
-            if (!emitTree(pn2->pn_right))
+            if (!emitTree(binding->pn_right))
                 return false;
 
-            if (!emitDestructuringOps(pn3, isLetExpr))
+            if (!emitDestructuringOps(initializer, isLetExpr))
                 return false;
 
             
@@ -4305,23 +4308,23 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
 
 
 
-        pn3 = pn2->maybeExpr();
+        initializer = binding->maybeExpr();
 
      do_name:
-        if (!bindNameToSlot(pn2))
+        if (!bindNameToSlot(binding))
             return false;
 
 
         JSOp op;
-        op = pn2->getOp();
+        op = binding->getOp();
         MOZ_ASSERT(op != JSOP_CALLEE);
-        MOZ_ASSERT(!pn2->pn_scopecoord.isFree() || !pn->isOp(JSOP_NOP));
+        MOZ_ASSERT(!binding->pn_scopecoord.isFree() || !pn->isOp(JSOP_NOP));
 
         jsatomid atomIndex;
-        if (!maybeEmitVarDecl(pn->getOp(), pn2, &atomIndex))
+        if (!maybeEmitVarDecl(pn->getOp(), binding, &atomIndex))
             return false;
 
-        if (pn3) {
+        if (initializer) {
             MOZ_ASSERT(emitOption != DefineVars);
             if (op == JSOP_SETNAME ||
                 op == JSOP_STRICTSETNAME ||
@@ -4343,7 +4346,7 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
 
             bool oldEmittingForInit = emittingForInit;
             emittingForInit = false;
-            if (!emitTree(pn3))
+            if (!emitTree(initializer))
                 return false;
             emittingForInit = oldEmittingForInit;
         } else if (op == JSOP_INITLEXICAL || op == JSOP_INITGLEXICAL || isLetExpr) {
@@ -4360,9 +4363,9 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
         if (emitOption != InitializeVars)
             continue;
 
-        MOZ_ASSERT_IF(pn2->isDefn(), pn3 == pn2->pn_expr);
-        if (!pn2->pn_scopecoord.isFree()) {
-            if (!emitVarOp(pn2, op))
+        MOZ_ASSERT_IF(binding->isDefn(), initializer == binding->pn_expr);
+        if (!binding->pn_scopecoord.isFree()) {
+            if (!emitVarOp(binding, op))
                 return false;
         } else {
             if (!emitIndexOp(op, atomIndex))
