@@ -6,6 +6,7 @@ from marionette import MarionetteTestCase
 
 import os
 import sys
+import time
 import urlparse
 sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 
@@ -78,6 +79,8 @@ class Test1BrowserCall(MarionetteTestCase):
         self.marionette.switch_to_frame()
 
         
+        time.sleep(2)
+        
         
         chatbox = self.wait_for_element_exists(By.TAG_NAME, 'chatbox')
         script = ("return document.getAnonymousElementByAttribute("
@@ -130,7 +133,7 @@ class Test1BrowserCall(MarionetteTestCase):
     
     def check_video(self, selector):
         video = self.wait_for_element_displayed(By.CSS_SELECTOR,
-                                                selector, 20)
+                                                selector, 30)
         self.wait_for_element_attribute_to_be_false(video, "paused")
         self.assertEqual(video.get_attribute("ended"), "false")
 
