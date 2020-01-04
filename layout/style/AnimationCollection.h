@@ -21,12 +21,19 @@ class nsPresContext;
 
 namespace mozilla {
 
+
+
+
+
+template <class AnimationType>
+struct AnimationTypeTraits { };
+
 template <class AnimationType>
 class AnimationCollection
   : public LinkedListElement<AnimationCollection<AnimationType>>
 {
-public:
-  typedef AnimationCollection<AnimationType> self_type;
+  typedef AnimationCollection<AnimationType> SelfType;
+  typedef AnimationTypeTraits<AnimationType> TraitsType;
 
   AnimationCollection(dom::Element* aElement, nsIAtom* aElementProperty)
     : mElement(aElement)
@@ -38,12 +45,14 @@ public:
   {
     MOZ_COUNT_CTOR(AnimationCollection);
   }
+
+public:
   ~AnimationCollection()
   {
     MOZ_ASSERT(mCalledPropertyDtor,
                "must call destructor through element property dtor");
     MOZ_COUNT_DTOR(AnimationCollection);
-    LinkedListElement<self_type>::remove();
+    LinkedListElement<SelfType>::remove();
   }
 
   void Destroy()
@@ -55,19 +64,31 @@ public:
   static void PropertyDtor(void *aObject, nsIAtom *aPropertyName,
                            void *aPropertyValue, void *aData);
 
+  
+  
+  static AnimationCollection<AnimationType>*
+    GetAnimationCollection(dom::Element* aElement,
+                           CSSPseudoElementType aPseudoType,
+                           bool aCreateIfNeeded,
+                           bool* aCreatedCollection = nullptr);
+
+  
+  
+  
+  
+  static AnimationCollection<AnimationType>* GetAnimationCollection(
+    const nsIFrame* aFrame);
+
   bool IsForElement() const { 
-    return mElementProperty == nsGkAtoms::animationsProperty ||
-           mElementProperty == nsGkAtoms::transitionsProperty;
+    return mElementProperty == TraitsType::ElementPropertyAtom();
   }
 
   bool IsForBeforePseudo() const {
-    return mElementProperty == nsGkAtoms::animationsOfBeforeProperty ||
-           mElementProperty == nsGkAtoms::transitionsOfBeforeProperty;
+    return mElementProperty == TraitsType::BeforePropertyAtom();
   }
 
   bool IsForAfterPseudo() const {
-    return mElementProperty == nsGkAtoms::animationsOfAfterProperty ||
-           mElementProperty == nsGkAtoms::transitionsOfAfterProperty;
+    return mElementProperty == TraitsType::AfterPropertyAtom();
   }
 
   CSSPseudoElementType PseudoElementType() const
