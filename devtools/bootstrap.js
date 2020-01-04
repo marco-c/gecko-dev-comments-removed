@@ -83,10 +83,22 @@ function reload(event) {
 
   
   Services.obs.notifyObservers(null, "startupcache-invalidate", null);
-  Services.obs.notifyObservers(null, "chrome-flush-caches", null);
 
   
-  const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+  Services.ppmm.loadProcessScript("data:,new " + function () {
+    
+    let obs = Components.classes["@mozilla.org/observer-service;1"]
+                        .getService(Components.interfaces.nsIObserverService);
+    obs.notifyObservers(null, "message-manager-flush-caches", null);
+
+    
+
+    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
+      Services.obs.notifyObservers(null, "devtools-unload", "reload");
+    }
+  }, false);
+
+  const {devtools} = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
   devtools.reload();
 
   
