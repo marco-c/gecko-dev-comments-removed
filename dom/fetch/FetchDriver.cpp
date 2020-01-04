@@ -43,7 +43,7 @@ namespace mozilla {
 namespace dom {
 
 NS_IMPL_ISUPPORTS(FetchDriver,
-                  nsIStreamListener, nsIChannelEventSink, nsIInterfaceRequestor,
+                  nsIStreamListener, nsIInterfaceRequestor,
                   nsIThreadRetargetableStreamListener)
 
 FetchDriver::FetchDriver(InternalRequest* aRequest, nsIPrincipal* aPrincipal,
@@ -96,16 +96,6 @@ FetchDriver::ContinueFetch()
   }
  
   return rv;
-}
-
-static void
-AddLoadFlags(nsIRequest *aRequest, nsLoadFlags aNewFlags)
-{
-  MOZ_ASSERT(aRequest);
-  nsLoadFlags flags;
-  aRequest->GetLoadFlags(&flags);
-  flags |= aNewFlags;
-  aRequest->SetLoadFlags(flags);
 }
 
 
@@ -168,17 +158,13 @@ FetchDriver::HttpFetch()
   const nsLoadFlags bypassFlag = mRequest->SkipServiceWorker() ?
                                  nsIChannel::LOAD_BYPASS_SERVICE_WORKER : 0;
 
-  nsSecurityFlags secFlags;
-  if (mRequest->Mode() == RequestMode::Cors &&
-      mRequest->GetCredentialsMode() == RequestCredentials::Include) {
-    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS |
-               nsILoadInfo::SEC_REQUIRE_CORS_WITH_CREDENTIALS;
-  } else if (mRequest->Mode() == RequestMode::Cors) {
-    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
+  nsSecurityFlags secFlags = nsILoadInfo::SEC_ABOUT_BLANK_INHERITS;
+  if (mRequest->Mode() == RequestMode::Cors) {
+    secFlags |= nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
   } else if (mRequest->Mode() == RequestMode::Same_origin) {
-    secFlags = nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS;
+    secFlags |= nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS;
   } else if (mRequest->Mode() == RequestMode::No_cors) {
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS;
+    secFlags |= nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS;
   } else {
     MOZ_ASSERT_UNREACHABLE("Unexpected request mode!");
     return NS_ERROR_UNEXPECTED;
@@ -186,6 +172,20 @@ FetchDriver::HttpFetch()
 
   if (mRequest->GetRedirectMode() != RequestRedirect::Follow) {
     secFlags |= nsILoadInfo::SEC_DONT_FOLLOW_REDIRECTS;
+  }
+
+  
+  
+  
+  if (mRequest->GetCredentialsMode() == RequestCredentials::Include) {
+    secFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
+  } else if (mRequest->GetCredentialsMode() == RequestCredentials::Omit) {
+    secFlags |= nsILoadInfo::SEC_COOKIES_OMIT;
+  } else if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin) {
+    secFlags |= nsILoadInfo::SEC_COOKIES_SAME_ORIGIN;
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unexpected credentials mode!");
+    return NS_ERROR_UNEXPECTED;
   }
 
   
@@ -200,8 +200,7 @@ FetchDriver::HttpFetch()
     rv = NS_NewChannel(getter_AddRefs(chan),
                        uri,
                        mDocument,
-                       secFlags |
-                         nsILoadInfo::SEC_ABOUT_BLANK_INHERITS,
+                       secFlags,
                        mRequest->ContentPolicyType(),
                        mLoadGroup,
                        nullptr, 
@@ -211,8 +210,7 @@ FetchDriver::HttpFetch()
     rv = NS_NewChannel(getter_AddRefs(chan),
                        uri,
                        mPrincipal,
-                       secFlags |
-                         nsILoadInfo::SEC_ABOUT_BLANK_INHERITS,
+                       secFlags,
                        mRequest->ContentPolicyType(),
                        mLoadGroup,
                        nullptr, 
@@ -222,28 +220,6 @@ FetchDriver::HttpFetch()
   NS_ENSURE_SUCCESS(rv, rv);
 
   mLoadGroup = nullptr;
-
-  
-  
-#ifdef DEBUG
-  {
-    nsCOMPtr<nsIInterfaceRequestor> notificationCallbacks;
-    chan->GetNotificationCallbacks(getter_AddRefs(notificationCallbacks));
-    MOZ_ASSERT(!notificationCallbacks);
-  }
-#endif
-  chan->SetNotificationCallbacks(this);
-
-  
-  
-  
-  
-  
-  if (mRequest->GetCredentialsMode() == RequestCredentials::Omit ||
-      (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
-       NS_HasBeenCrossOrigin(chan))) {
-    AddLoadFlags(chan, nsIRequest::LOAD_ANONYMOUS);
-  }
 
   
   
@@ -698,84 +674,6 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
   return NS_OK;
 }
 
-
-NS_IMETHODIMP
-FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
-                                    nsIChannel* aNewChannel,
-                                    uint32_t aFlags,
-                                    nsIAsyncVerifyRedirectCallback *aCallback)
-{
-  NS_PRECONDITION(aNewChannel, "Redirect without a channel?");
-
-  
-  
-  MOZ_ASSERT(NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags) ||
-             NS_IsHSTSUpgradeRedirect(aOldChannel, aNewChannel, aFlags) ||
-             mRequest->GetRedirectMode() == RequestRedirect::Follow);
-
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
-
-  
-  
-  
-  
-  
-
-  
-  
-  
-
-  
-  if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
-      NS_HasBeenCrossOrigin(aNewChannel)) {
-    AddLoadFlags(aNewChannel, nsIRequest::LOAD_ANONYMOUS);
-  }
-
-#ifdef DEBUG
-  {
-    
-    
-    
-    nsLoadFlags flags;
-    aNewChannel->GetLoadFlags(&flags);
-    bool shouldBeAnon =
-      mRequest->GetCredentialsMode() == RequestCredentials::Omit ||
-      (NS_HasBeenCrossOrigin(aNewChannel) &&
-       mRequest->GetCredentialsMode() == RequestCredentials::Same_origin);
-    MOZ_ASSERT(!!(flags & nsIRequest::LOAD_ANONYMOUS) == shouldBeAnon);
-  }
-#endif
-
-  aCallback->OnRedirectVerifyCallback(NS_OK);
-
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 FetchDriver::CheckListenerChain()
 {
@@ -785,12 +683,6 @@ FetchDriver::CheckListenerChain()
 NS_IMETHODIMP
 FetchDriver::GetInterface(const nsIID& aIID, void **aResult)
 {
-  if (aIID.Equals(NS_GET_IID(nsIChannelEventSink))) {
-    *aResult = static_cast<nsIChannelEventSink*>(this);
-    NS_ADDREF_THIS();
-    return NS_OK;
-  }
-
   if (aIID.Equals(NS_GET_IID(nsIStreamListener))) {
     *aResult = static_cast<nsIStreamListener*>(this);
     NS_ADDREF_THIS();

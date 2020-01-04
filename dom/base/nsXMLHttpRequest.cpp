@@ -1691,6 +1691,10 @@ nsXMLHttpRequest::Open(const nsACString& inMethod, const nsACString& url,
                nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
 
+  if (mIsAnon) {
+    secFlags |= nsILoadInfo::SEC_COOKIES_OMIT;
+  }
+
   
   
   
@@ -2794,9 +2798,8 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
 
   ResetResponse();
 
-  bool withCredentials = !!(mState & XML_HTTP_REQUEST_AC_WITH_CREDENTIALS);
-
-  if (!IsSystemXHR() && withCredentials) {
+  if (!IsSystemXHR() && !mIsAnon &&
+      (mState & XML_HTTP_REQUEST_AC_WITH_CREDENTIALS)) {
     
     
     
@@ -2805,7 +2808,7 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
 
     
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    static_cast<LoadInfo*>(loadInfo.get())->SetWithCredentialsSecFlag();
+    static_cast<LoadInfo*>(loadInfo.get())->SetIncludeCookiesSecFlag();
   }
 
   
@@ -2827,10 +2830,7 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
     internalHttpChannel->SetResponseTimeoutEnabled(false);
   }
 
-  if (mIsAnon) {
-    AddLoadFlags(mChannel, nsIRequest::LOAD_ANONYMOUS);
-  }
-  else {
+  if (!mIsAnon) {
     AddLoadFlags(mChannel, nsIChannel::LOAD_EXPLICIT_CREDENTIALS);
   }
 
@@ -3250,8 +3250,9 @@ nsXMLHttpRequest::SetWithCredentials(bool aWithCredentials, ErrorResult& aRv)
   
   
   
-  if (!(mState & XML_HTTP_REQUEST_UNSENT) &&
-      !(mState & XML_HTTP_REQUEST_OPENED)) {
+  if ((!(mState & XML_HTTP_REQUEST_UNSENT) &&
+       !(mState & XML_HTTP_REQUEST_OPENED)) ||
+      mIsAnon) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
