@@ -567,16 +567,6 @@ protected:
 
   static uint32_t sNumLivingContexts;
 
-  
-
-
-  static uint8_t (*sUnpremultiplyTable)[256];
-
-  
-
-
-  static uint8_t (*sPremultiplyTable)[256];
-
   static mozilla::gfx::DrawTarget* sErrorTarget;
 
   
