@@ -519,12 +519,7 @@ AudioNodeStream::ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags)
   uint16_t outputCount = mLastChunks.Length();
   MOZ_ASSERT(outputCount == std::max(uint16_t(1), mEngine->OutputCount()));
 
-  
-  
-  
-  bool blocked = mFinished || mBlocked.GetAt(aFrom);
-  
-  if (blocked || InMutedCycle()) {
+  if (mFinished || InMutedCycle()) {
     mInputChunks.Clear();
     for (uint16_t i = 0; i < outputCount; ++i) {
       mLastChunks[i].SetNull(WEBAUDIO_BLOCK_SIZE);
@@ -562,7 +557,7 @@ AudioNodeStream::ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags)
     }
   }
 
-  if (!blocked) {
+  if (!mFinished) {
     
     AdvanceOutputSegment();
     if (mMarkAsFinishedAfterThisBlock && (aFlags & ALLOW_FINISH)) {
@@ -583,12 +578,7 @@ AudioNodeStream::ProduceOutputBeforeInput(GraphTime aFrom)
   MOZ_ASSERT(!InMutedCycle(), "DelayNodes should break cycles");
   MOZ_ASSERT(mLastChunks.Length() == 1);
 
-  
-  
-  
-  bool blocked = mFinished || mBlocked.GetAt(aFrom);
-  
-  if (blocked) {
+  if (mFinished) {
     mLastChunks[0].SetNull(WEBAUDIO_BLOCK_SIZE);
   } else {
     mEngine->ProduceBlockBeforeInput(&mLastChunks[0]);

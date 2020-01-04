@@ -65,8 +65,7 @@ AudioCaptureStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
   
   
   
-  bool blocked = mFinished || mBlocked.GetAt(aFrom);
-  if (blocked || InMutedCycle() || inputCount == 0) {
+  if (mFinished || InMutedCycle() || inputCount == 0) {
     track->Get<AudioSegment>()->AppendNullData(aTo - aFrom);
   } else {
     
