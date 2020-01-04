@@ -96,6 +96,7 @@ import org.mozilla.gecko.util.FloatUtils;
 import org.mozilla.gecko.util.GamepadUtils;
 import org.mozilla.gecko.util.GeckoEventListener;
 import org.mozilla.gecko.util.HardwareUtils;
+import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.util.MenuUtils;
 import org.mozilla.gecko.util.NativeEventListener;
 import org.mozilla.gecko.util.NativeJSObject;
@@ -176,6 +177,7 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -545,6 +547,7 @@ public class BrowserApp extends GeckoApp
         }
 
         final Intent intent = getIntent();
+        configureForTestsBasedOnEnvironment(intent);
 
         
         
@@ -764,8 +767,23 @@ public class BrowserApp extends GeckoApp
 
 
 
-    private void initSwitchboard(Intent intent) {
-        if (Experiments.isDisabled(new SafeIntent(intent)) || !AppConstants.MOZ_SWITCHBOARD) {
+
+
+
+
+
+
+    private void configureForTestsBasedOnEnvironment(final Intent intent) {
+        final HashMap<String, String> envVars = IntentUtils.getEnvVarMap(intent);
+        Experiments.setDisabledFromEnvVar(envVars);
+    }
+
+    
+
+
+
+    private void initSwitchboard(final Intent intent) {
+        if (Experiments.isDisabled() || !AppConstants.MOZ_SWITCHBOARD) {
             return;
         }
 
