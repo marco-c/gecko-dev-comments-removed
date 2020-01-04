@@ -8,29 +8,17 @@
 
 
 const {
-  createFactory,
   DOM: dom,
 } = require("devtools/client/shared/vendor/react");
-const MessageIcon = createFactory(require("devtools/client/webconsole/new-console-output/components/message-icon").MessageIcon);
 
 DefaultRenderer.displayName = "DefaultRenderer";
 
 function DefaultRenderer(props) {
-  const { category, severity } = props;
-
-  const icon = MessageIcon({ severity });
-
   
   
   
-  return dom.div({
-    class: "message cm-s-mozilla",
-    is: "fdt-message",
-    category: category,
-    severity: severity
-  },
-    icon,
-    "This evaluation result type is not supported yet."
+  return dom.div({},
+    "This message type is not supported yet."
   );
 }
 
