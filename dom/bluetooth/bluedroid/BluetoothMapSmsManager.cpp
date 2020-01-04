@@ -324,33 +324,20 @@ BluetoothMapSmsManager::MasDataHandler(UnixSocketBuffer* aMessage)
         return;
       }
 
-      
-      if (!pktHeaders.Has(ObexHeaderId::Type)) {
-        BT_LOGR("Missing OBEX PUT request Type header");
-        SendReply(ObexResponseCode::BadRequest);
-        return;
-      }
-
-      pktHeaders.GetContentType(type);
-      BT_LOGR("Type: %s", NS_ConvertUTF16toUTF8(type).get());
-
-      if (type.EqualsLiteral("x-bt/MAP-NotificationRegistration")) {
-        HandleNotificationRegistration(pktHeaders);
+      if (pktHeaders.Has(ObexHeaderId::Type)) {
+        pktHeaders.GetContentType(type);
+        BT_LOGR("Type: %s", NS_ConvertUTF16toUTF8(type).get());
         ReplyToPut();
-      } else if (type.EqualsLiteral("x-bt/messageStatus")) {
-        HandleSetMessageStatus(pktHeaders);
-      } else if (type.EqualsLiteral("x-bt/message")) {
-        HandleSmsMmsPushMessage(pktHeaders);
-      } else if (type.EqualsLiteral("x-bt/MAP-messageUpdate")) {
-        
 
-
-
-        SendReply(ObexResponseCode::NotImplemented);
-      } else {
-        BT_LOGR("Unknown MAP PUT request type: %s",
-          NS_ConvertUTF16toUTF8(type).get());
-        SendReply(ObexResponseCode::NotImplemented);
+        if (type.EqualsLiteral("x-bt/MAP-NotificationRegistration")) {
+          HandleNotificationRegistration(pktHeaders);
+        } else if (type.EqualsLiteral("x-bt/MAP-event-report")) {
+          HandleEventReport(pktHeaders);
+        } else if (type.EqualsLiteral("x-bt/messageStatus")) {
+          HandleSetMessageStatus(pktHeaders);
+        } else if (type.EqualsLiteral("x-bt/message")) {
+          HandleSmsMmsPushMessage(pktHeaders);
+        }
       }
       break;
     case ObexRequestCode::Get:
@@ -376,12 +363,6 @@ BluetoothMapSmsManager::MasDataHandler(UnixSocketBuffer* aMessage)
         return;
       }
 
-      if (!pktHeaders.Has(ObexHeaderId::Type)) {
-        BT_LOGR("Missing OBEX GET request Type header");
-        SendReply(ObexResponseCode::BadRequest);
-        return;
-      }
-
       pktHeaders.GetContentType(type);
       if (type.EqualsLiteral("x-obex/folder-listing")) {
         HandleSmsMmsFolderListing(pktHeaders);
@@ -390,9 +371,8 @@ BluetoothMapSmsManager::MasDataHandler(UnixSocketBuffer* aMessage)
       } else if (type.EqualsLiteral("x-bt/message")) {
         HandleSmsMmsGetMessage(pktHeaders);
       } else {
-        BT_LOGR("Unknown MAP GET request type: %s",
+        BT_LOGR("Unknown MAP request type: %s",
           NS_ConvertUTF16toUTF8(type).get());
-        SendReply(ObexResponseCode::NotImplemented);
       }
       break;
     }
@@ -420,24 +400,22 @@ BluetoothMapSmsManager::ReceiveSocketData(BluetoothSocket* aSocket,
 bool
 BluetoothMapSmsManager::CompareHeaderTarget(const ObexHeaderSet& aHeader)
 {
-  if (!aHeader.Has(ObexHeaderId::Target)) {
+  const ObexHeader* header = aHeader.GetHeader(ObexHeaderId::Target);
+
+  if (!header) {
     BT_LOGR("No ObexHeaderId::Target in header");
     return false;
   }
 
-  uint8_t* targetPtr;
-  int targetLength;
-  aHeader.GetTarget(&targetPtr, &targetLength);
-
-  if (targetLength != sizeof(BluetoothUuid)) {
-    BT_LOGR("Length mismatch: %d != 16", targetLength);
+  if (header->mDataLength != sizeof(BluetoothUuid)) {
+    BT_LOGR("Length mismatch: %d != 16", header->mDataLength);
     return false;
   }
 
   for (uint8_t i = 0; i < sizeof(BluetoothUuid); i++) {
-    if (targetPtr[i] != kMapMasObexTarget.mUuid[i]) {
+    if (header->mData[i] != kMapMasObexTarget.mUuid[i]) {
       BT_LOGR("UUID mismatch: received target[%d]=0x%x != 0x%x",
-              i, targetPtr[i], kMapMasObexTarget.mUuid[i]);
+              i, header->mData[i], kMapMasObexTarget.mUuid[i]);
       return false;
     }
   }
@@ -668,9 +646,10 @@ BluetoothMapSmsManager::ReplyToPut()
 
   
   
-  uint8_t req[kObexRespHeaderSize];
+  uint8_t req[255];
+  int index = 3;
 
-  SendMasObexData(req, ObexResponseCode::Success, kObexRespHeaderSize);
+  SendMasObexData(req, ObexResponseCode::Success, index);
 }
 
 bool
@@ -847,11 +826,15 @@ BluetoothMapSmsManager::ReplyToSendMessage(
 
   int len = aHandleId.Length();
   nsAutoArrayPtr<uint8_t> handleId(new uint8_t[(len + 1) * 2]);
+  const char16_t* handleIdPtr = aHandleId.BeginReading();
 
   for (int i = 0; i < len; i++) {
-    BigEndian::writeUint16(&handleId[i * 2], aHandleId[i]);
+    *(handleId + (i * 2)) = (uint8_t)(handleIdPtr[i] >> 8);
+    *(handleId + (i * 2 + 1)) = (uint8_t)handleIdPtr[i];
   }
-  BigEndian::writeUint16(&handleId[len * 2], 0);
+
+  *(handleId + (len * 2)) = 0x00;
+  *(handleId + (len * 2 + 1)) = 0x00;
 
   auto res = MakeUnique<uint8_t[]>(mRemoteMaxPacketLength);
   int index = kObexRespHeaderSize;
@@ -1333,6 +1316,12 @@ BluetoothMapSmsManager::HandleNotificationRegistration(
 }
 
 void
+BluetoothMapSmsManager::HandleEventReport(const ObexHeaderSet& aHeader)
+{
+  
+}
+
+void
 BluetoothMapSmsManager::HandleSetMessageStatus(const ObexHeaderSet& aHeader)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1409,7 +1398,7 @@ BluetoothMapSmsManager::HandleSmsMmsPushMessage(const ObexHeaderSet& aHeader)
   nsCString subject;
   bmsg->GetBody(subject);
   
-  AppendNamedValue(data, "messageBody", subject);
+  AppendNamedValue(data, "subject", subject);
 
   nsTArray<RefPtr<VCard>> recipients;
   bmsg->GetRecipients(recipients);
@@ -1421,7 +1410,7 @@ BluetoothMapSmsManager::HandleSmsMmsPushMessage(const ObexHeaderSet& aHeader)
     AppendNamedValue(data, "recipient", recipient);
   }
 
-  bs->DistributeSignal(NS_LITERAL_STRING(MAP_SEND_MESSAGE_REQ_ID),
+  bs->DistributeSignal(NS_LITERAL_STRING(MAP_PUSH_MESSAGE_REQ_ID),
                        NS_LITERAL_STRING(KEY_ADAPTER), data);
 }
 
@@ -1451,9 +1440,9 @@ BluetoothMapSmsManager::SendReply(uint8_t aResponseCode)
 
   
   
-  uint8_t req[kObexRespHeaderSize];
+  uint8_t req[3];
 
-  SendMasObexData(req, aResponseCode, kObexRespHeaderSize);
+  SendMasObexData(req, aResponseCode, 3);
 }
 
 void
