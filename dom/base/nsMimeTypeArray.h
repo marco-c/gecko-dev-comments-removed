@@ -63,7 +63,6 @@ public:
              const nsAString& aType,
              const nsAString& aDescription,
              const nsAString& aExtension);
-  nsMimeType(nsPIDOMWindowInner* aWindow, const nsAString& aMimeType);
   nsPIDOMWindowInner* GetParentObject() const;
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
@@ -83,7 +82,6 @@ protected:
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
 
-  
   
   
   

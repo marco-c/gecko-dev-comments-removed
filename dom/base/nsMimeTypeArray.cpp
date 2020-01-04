@@ -119,50 +119,7 @@ nsMimeTypeArray::NamedGetter(const nsAString& aName, bool &aFound)
     return mimeType;
   }
 
-  
-  nsCOMPtr<nsIMIMEService> mimeSrv = do_GetService("@mozilla.org/mime;1");
-  if (!mimeSrv) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIMIMEInfo> mimeInfo;
-  mimeSrv->GetFromTypeAndExtension(NS_ConvertUTF16toUTF8(lowerName),
-                                   EmptyCString(), getter_AddRefs(mimeInfo));
-  if (!mimeInfo) {
-    return nullptr;
-  }
-
-  
-  nsHandlerInfoAction action = nsIHandlerInfo::saveToDisk;
-  mimeInfo->GetPreferredAction(&action);
-  if (action != nsIMIMEInfo::handleInternally) {
-    bool hasHelper = false;
-    mimeInfo->GetHasDefaultHandler(&hasHelper);
-
-    if (!hasHelper) {
-      nsCOMPtr<nsIHandlerApp> helper;
-      mimeInfo->GetPreferredApplicationHandler(getter_AddRefs(helper));
-
-      if (!helper) {
-        
-        
-        nsAutoString defaultDescription;
-        mimeInfo->GetDefaultDescription(defaultDescription);
-
-        if (defaultDescription.IsEmpty()) {
-          
-          return nullptr;
-        }
-      }
-    }
-  }
-
-  
-  aFound = true;
-
-  nsMimeType *mt = new nsMimeType(mWindow, lowerName);
-  mMimeTypes.AppendElement(mt);
-  return mt;
+  return nullptr;
 }
 
 bool
@@ -228,13 +185,7 @@ nsMimeType::nsMimeType(nsPIDOMWindowInner* aWindow,
     mDescription(aDescription),
     mExtension(aExtension)
 {
-}
-
-nsMimeType::nsMimeType(nsPIDOMWindowInner* aWindow, const nsAString& aType)
-  : mWindow(aWindow),
-    mPluginElement(nullptr),
-    mType(aType)
-{
+  MOZ_ASSERT(aPluginElement);
 }
 
 nsMimeType::~nsMimeType()
@@ -263,6 +214,8 @@ nsMimeType::GetDescription(nsString& aRetval) const
 nsPluginElement*
 nsMimeType::GetEnabledPlugin() const
 {
+  
+  
   if (!mPluginElement || !mPluginElement->PluginTag()->IsEnabled()) {
     return nullptr;
   }
