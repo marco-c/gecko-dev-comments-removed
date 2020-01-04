@@ -44,6 +44,12 @@ protected:
   
   uint32_t mCompositionStart;
 
+  enum
+  {
+    ePrevCharRect = 1,
+    eNextCharRect = 0
+  };
+
   struct Selection final
   {
     
@@ -53,8 +59,12 @@ protected:
     WritingMode mWritingMode;
 
     
-    LayoutDeviceIntRect mAnchorCharRect;
-    LayoutDeviceIntRect mFocusCharRect;
+    
+    
+    
+    
+    LayoutDeviceIntRect mAnchorCharRects[2];
+    LayoutDeviceIntRect mFocusCharRects[2];
 
     
     LayoutDeviceIntRect mRect;
@@ -69,9 +79,22 @@ protected:
     {
       mAnchor = mFocus = UINT32_MAX;
       mWritingMode = WritingMode();
-      mAnchorCharRect.SetEmpty();
-      mFocusCharRect.SetEmpty();
+      ClearAnchorCharRects();
+      ClearFocusCharRects();
       mRect.SetEmpty();
+    }
+
+    void ClearAnchorCharRects()
+    {
+      for (size_t i = 0; i < ArrayLength(mAnchorCharRects); i++) {
+        mAnchorCharRects[i].SetEmpty();
+      }
+    }
+    void ClearFocusCharRects()
+    {
+      for (size_t i = 0; i < ArrayLength(mFocusCharRects); i++) {
+        mFocusCharRects[i].SetEmpty();
+      }
     }
 
     bool IsValid() const
@@ -112,13 +135,15 @@ protected:
     {
       NS_ASSERTION(IsValid(),
                    "The caller should check if the selection is valid");
-      return Reversed() ? mFocusCharRect : mAnchorCharRect;
+      return Reversed() ? mFocusCharRects[eNextCharRect] :
+                          mAnchorCharRects[eNextCharRect];
     }
     LayoutDeviceIntRect EndCharRect() const
     {
       NS_ASSERTION(IsValid(),
                    "The caller should check if the selection is valid");
-      return Reversed() ? mAnchorCharRect : mFocusCharRect;
+      return Reversed() ? mAnchorCharRects[eNextCharRect] :
+                          mFocusCharRects[eNextCharRect];
     }
   } mSelection;
 
@@ -280,6 +305,10 @@ private:
   bool QueryCharRect(nsIWidget* aWidget,
                      uint32_t aOffset,
                      LayoutDeviceIntRect& aCharRect) const;
+  bool QueryCharRectArray(nsIWidget* aWidget,
+                          uint32_t aOffset,
+                          uint32_t aLength,
+                          RectArray& aCharRectArray) const;
   bool CacheCaret(nsIWidget* aWidget,
                   const IMENotification* aNotification = nullptr);
   bool CacheTextRects(nsIWidget* aWidget,
