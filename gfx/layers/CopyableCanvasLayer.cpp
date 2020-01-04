@@ -85,10 +85,21 @@ CopyableCanvasLayer::IsDataValid(const Data& aData)
 void
 CopyableCanvasLayer::UpdateTarget(DrawTarget* aDestTarget)
 {
+  AutoReturnSnapshot autoReturn;
+
   if (mAsyncRenderer) {
     mSurface = mAsyncRenderer->GetSurface();
   } else if (!mGLFrontbuffer && mBufferProvider) {
-    mSurface = mBufferProvider->GetSnapshot();
+    mSurface = mBufferProvider->BorrowSnapshot();
+    if (aDestTarget) {
+      
+      
+      
+      autoReturn.mSnapshot = &mSurface;
+    }
+    
+    
+    autoReturn.mBufferProvider = mBufferProvider;
   }
 
   if (!mGLContext && aDestTarget) {
@@ -99,6 +110,7 @@ CopyableCanvasLayer::UpdateTarget(DrawTarget* aDestTarget)
                                IntPoint(0, 0));
       mSurface = nullptr;
     }
+
     return;
   }
 

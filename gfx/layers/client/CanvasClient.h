@@ -13,6 +13,7 @@
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureClient.h"  
+#include "mozilla/layers/PersistentBufferProvider.h"
 
 
 #undef None
@@ -76,6 +77,8 @@ public:
 
   virtual void UpdateAsync(AsyncCanvasRenderer* aRenderer) {}
 
+  virtual void UpdateFromTexture(TextureClient* aTexture) {}
+
   virtual void Updated() { }
 
 protected:
@@ -103,6 +106,8 @@ public:
   }
 
   virtual void Update(gfx::IntSize aSize, ClientCanvasLayer* aLayer) override;
+
+  virtual void UpdateFromTexture(TextureClient* aBuffer) override;
 
   virtual bool AddTextureClient(TextureClient* aTexture) override
   {
