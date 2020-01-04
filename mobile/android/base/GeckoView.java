@@ -118,6 +118,7 @@ public class GeckoView extends LayerView
         static native void open(Window instance, GeckoView view, int width, int height);
         static native void setLayerClient(Object client);
         @Override protected native void disposeNative();
+        native void close();
     }
 
     private final Window window = new Window();
@@ -238,9 +239,16 @@ public class GeckoView extends LayerView
     {
         super.onDetachedFromWindow();
 
+        
+        
+        
+
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+            
             window.disposeNative();
         } else {
+            
+            
             GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
                     window, "disposeNative");
         }

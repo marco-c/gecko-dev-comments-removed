@@ -28,12 +28,14 @@ using mozilla::unused;
 
 #include "nsWindow.h"
 
+#include "nsIBaseWindow.h"
 #include "nsIObserverService.h"
 #include "nsISelection.h"
 #include "nsISupportsArray.h"
 #include "nsISupportsPrimitives.h"
 #include "nsIWidgetListener.h"
 #include "nsIWindowWatcher.h"
+#include "nsIXULWindow.h"
 
 #include "nsAppShell.h"
 #include "nsFocusManager.h"
@@ -184,8 +186,7 @@ public:
     
 
 
-    
-    void DisposeNative(const GeckoView::Window::LocalRef& aInstance);
+    using Base::DisposeNative;
 
     
     static void Open(const jni::ClassObject::LocalRef& aCls,
@@ -200,6 +201,9 @@ public:
         AndroidBridge::Bridge()->SetLayerClient(
                 widget::GeckoLayerClient::Ref::From(aClient.Get()));
     }
+
+    
+    void Close();
 
     
 
@@ -288,22 +292,22 @@ nsWindow::Natives::Open(const jni::ClassObject::LocalRef& aCls,
 }
 
 void
-nsWindow::Natives::DisposeNative(const GeckoView::Window::LocalRef& aInstance)
+nsWindow::Natives::Close()
 {
+    nsIWidgetListener* const widgetListener = window.mWidgetListener;
+
+    if (!widgetListener) {
+        return;
+    }
+
+    nsCOMPtr<nsIXULWindow> xulWindow(widgetListener->GetXULWindow());
     
-    
-    
-    
+    MOZ_ASSERT(xulWindow);
 
+    nsCOMPtr<nsIBaseWindow> baseWindow(do_QueryInterface(xulWindow));
+    MOZ_ASSERT(baseWindow);
 
-
-
-
-
-
-
-
-    Base::DisposeNative(aInstance);
+    baseWindow->Destroy();
 }
 
 void
