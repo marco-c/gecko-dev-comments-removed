@@ -4,7 +4,8 @@
 
 
 
-package org.mozilla.gecko.util;
+
+package org.mozilla.gecko.mozglue;
 
 import android.content.Intent;
 import android.net.Uri;
