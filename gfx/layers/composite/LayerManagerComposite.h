@@ -207,14 +207,6 @@ public:
 
 
 
-  virtual already_AddRefed<mozilla::gfx::DrawTarget>
-    CreateDrawTarget(const mozilla::gfx::IntSize& aSize,
-                     mozilla::gfx::SurfaceFormat aFormat) override;
-
-  
-
-
-
 
 
 
