@@ -65,10 +65,26 @@ class ConfigureOutputHandler(logging.Handler):
         
         def fix_encoding(fh):
             try:
-                if not fh.isatty():
-                    return codecs.getwriter(locale.getpreferredencoding())(fh)
+                isatty = fh.isatty()
             except AttributeError:
-                pass
+                isatty = True
+
+            if not isatty:
+                encoding = None
+                try:
+                    encoding = locale.getpreferredencoding()
+                except ValueError:
+                    
+                    
+                    
+                    if os.environ.get('LC_ALL', '').upper() == 'UTF-8':
+                        encoding = 'utf-8'
+
+                
+                
+                
+                if encoding:
+                    return codecs.getwriter(encoding)(fh)
             return fh
 
         self._stdout = fix_encoding(stdout)
