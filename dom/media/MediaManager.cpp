@@ -680,13 +680,6 @@ public:
     }
   }
 
-  virtual void Stop() override
-  {
-    if (GetSourceStream()) {
-      GetSourceStream()->EndAllTrackAndFinish();
-    }
-  }
-
   
   
   
