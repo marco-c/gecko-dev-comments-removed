@@ -1249,18 +1249,6 @@ CompositorOGL::DrawQuad(const Rect& aRect,
       gfx::Filter filter = texturedEffect->mFilter;
       Matrix4x4 textureTransform = source->AsSourceOGL()->GetTextureTransform();
 
-#ifdef MOZ_WIDGET_ANDROID
-      gfx::Matrix textureTransform2D;
-      if (filter != gfx::Filter::POINT &&
-          aTransform.Is2DIntegerTranslation() &&
-          textureTransform.Is2D(&textureTransform2D) &&
-          textureTransform2D.HasOnlyIntegerTranslation()) {
-        
-        
-        
-        filter = gfx::Filter::POINT;
-      }
-#endif
       source->AsSourceOGL()->BindTexture(LOCAL_GL_TEXTURE0, filter);
 
       program->SetTextureUnit(0);
