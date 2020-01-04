@@ -53,9 +53,6 @@ NextFrameSeekTask::Discard()
   AssertOwnerThread();
 
   
-  mSeekJob.RejectIfExists(__func__);
-
-  
   RejectIfExist(__func__);
 
   
