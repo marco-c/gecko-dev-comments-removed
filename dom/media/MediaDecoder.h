@@ -874,7 +874,7 @@ protected:
   
   FrameStatistics mFrameStats;
 
-  RefPtr<VideoFrameContainer> mVideoFrameContainer;
+  const RefPtr<VideoFrameContainer> mVideoFrameContainer;
 
   
   
