@@ -880,6 +880,13 @@ KeymapWrapper::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
     }
     aKeyEvent.keyCode = ComputeDOMKeyCode(aGdkKeyEvent);
 
+    if (aKeyEvent.mKeyNameIndex != KEY_NAME_INDEX_USE_STRING ||
+        aKeyEvent.mMessage != eKeyPress) {
+        aKeyEvent.keyCode = ComputeDOMKeyCode(aGdkKeyEvent);
+    } else {
+        aKeyEvent.keyCode = 0;
+    }
+
     
     
     
@@ -987,10 +994,6 @@ KeymapWrapper::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
               (aKeyEvent.mMessage == eKeyPress) ? "eKeyPress" : "eKeyUp"),
          GetBoolName(aKeyEvent.IsShift()), GetBoolName(aKeyEvent.IsControl()),
          GetBoolName(aKeyEvent.IsAlt()), GetBoolName(aKeyEvent.IsMeta())));
-
-    if (aKeyEvent.mMessage == eKeyPress) {
-        keymapWrapper->InitKeypressEvent(aKeyEvent, aGdkKeyEvent);
-    }
 
     
     
@@ -1319,39 +1322,52 @@ KeymapWrapper::GetDOMKeyCodeFromKeyPairs(guint aGdkKeyval)
 }
 
 void
-KeymapWrapper::InitKeypressEvent(WidgetKeyboardEvent& aKeyEvent,
-                                 GdkEventKey* aGdkKeyEvent)
+KeymapWrapper::WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyEvent,
+                                         GdkEventKey* aGdkKeyEvent)
 {
-    NS_ENSURE_TRUE_VOID(aKeyEvent.mMessage == eKeyPress);
+    GetInstance()->WillDispatchKeyboardEventInternal(aKeyEvent, aGdkKeyEvent);
+}
 
-    aKeyEvent.charCode = GetCharCodeFor(aGdkKeyEvent);
-    if (!aKeyEvent.charCode) {
+void
+KeymapWrapper::WillDispatchKeyboardEventInternal(WidgetKeyboardEvent& aKeyEvent,
+                                                 GdkEventKey* aGdkKeyEvent)
+{
+    uint32_t charCode = GetCharCodeFor(aGdkKeyEvent);
+    if (!charCode) {
         MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
-            ("KeymapWrapper(%p): InitKeypressEvent, "
+            ("KeymapWrapper(%p): WillDispatchKeyboardEventInternal, "
              "keyCode=0x%02X, charCode=0x%08X",
              this, aKeyEvent.keyCode, aKeyEvent.charCode));
         return;
     }
 
-    
-    aKeyEvent.keyCode = 0;
-
-    
-    
-    
-    if (!aKeyEvent.IsControl() && !aKeyEvent.IsAlt() &&
-        !aKeyEvent.IsMeta() && !aKeyEvent.IsOS()) {
-        MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
-            ("KeymapWrapper(%p): InitKeypressEvent, "
-             "keyCode=0x%02X, charCode=0x%08X",
-             this, aKeyEvent.keyCode, aKeyEvent.charCode));
-        return;
+    AlternativeCharCode* firstAltCharCodes = nullptr;
+    if (aKeyEvent.mMessage == eKeyPress) {
+        
+        
+        
+        
+        aKeyEvent.charCode = charCode;
+        MOZ_ASSERT(!aKeyEvent.keyCode);
+    } else {
+        MOZ_ASSERT(charCode);
+        
+        
+        AlternativeCharCode altCharCodes(0, 0);
+        if (!aKeyEvent.IsShift()) {
+            altCharCodes.mUnshiftedCharCode = charCode;
+        } else {
+            altCharCodes.mShiftedCharCode = charCode;
+        }
+        MOZ_ASSERT(aKeyEvent.alternativeCharCodes.IsEmpty());
+        firstAltCharCodes =
+            aKeyEvent.alternativeCharCodes.AppendElement(altCharCodes);
     }
 
     gint level = GetKeyLevel(aGdkKeyEvent);
     if (level != 0 && level != 1) {
         MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
-            ("KeymapWrapper(%p): InitKeypressEvent, "
+            ("KeymapWrapper(%p): WillDispatchKeyboardEventInternal, "
              "keyCode=0x%02X, charCode=0x%08X, level=%d",
              this, aKeyEvent.keyCode, aKeyEvent.charCode, level));
         return;
@@ -1391,8 +1407,8 @@ KeymapWrapper::InitKeypressEvent(WidgetKeyboardEvent& aKeyEvent,
     
     if (!needLatinKeyCodes) {
         MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
-            ("KeymapWrapper(%p): InitKeypressEvent, keyCode=0x%02X, "
-             "charCode=0x%08X, level=%d, altCharCodes={ "
+            ("KeymapWrapper(%p): WillDispatchKeyboardEventInternal, "
+             "keyCode=0x%02X, charCode=0x%08X, level=%d, altCharCodes={ "
              "mUnshiftedCharCode=0x%08X, mShiftedCharCode=0x%08X }",
              this, aKeyEvent.keyCode, aKeyEvent.charCode, level,
              altCharCodes.mUnshiftedCharCode, altCharCodes.mShiftedCharCode));
@@ -1403,7 +1419,7 @@ KeymapWrapper::InitKeypressEvent(WidgetKeyboardEvent& aKeyEvent,
     gint minGroup = GetFirstLatinGroup();
     if (minGroup < 0) {
         MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
-            ("KeymapWrapper(%p): InitKeypressEvent, "
+            ("KeymapWrapper(%p): WillDispatchKeyboardEventInternal, "
              "Latin keyboard layout isn't found: "
              "keyCode=0x%02X, charCode=0x%08X, level=%d, "
              "altCharCodes={ mUnshiftedCharCode=0x%08X, "
@@ -1439,12 +1455,21 @@ KeymapWrapper::InitKeypressEvent(WidgetKeyboardEvent& aKeyEvent,
     ch = aKeyEvent.IsShift() ? altLatinCharCodes.mShiftedCharCode :
                                altLatinCharCodes.mUnshiftedCharCode;
     if (ch && !(aKeyEvent.IsAlt() || aKeyEvent.IsMeta()) &&
-        aKeyEvent.charCode == unmodifiedCh) {
-        aKeyEvent.charCode = ch;
+        charCode == unmodifiedCh) {
+        if (aKeyEvent.mMessage == eKeyPress) {
+            aKeyEvent.charCode = ch;
+        } else {
+            MOZ_RELEASE_ASSERT(firstAltCharCodes);
+            if (!aKeyEvent.IsShift()) {
+                firstAltCharCodes->mUnshiftedCharCode = ch;
+            } else {
+                firstAltCharCodes->mShiftedCharCode = ch;
+            }
+        }
     }
 
     MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,
-        ("KeymapWrapper(%p): InitKeypressEvent, "
+        ("KeymapWrapper(%p): WillDispatchKeyboardEventInternal, "
          "keyCode=0x%02X, charCode=0x%08X, level=%d, minGroup=%d, "
          "altCharCodes={ mUnshiftedCharCode=0x%08X, "
          "mShiftedCharCode=0x%08X } "

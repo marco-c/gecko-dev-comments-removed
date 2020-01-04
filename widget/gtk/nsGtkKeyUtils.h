@@ -126,6 +126,19 @@ public:
     
 
 
+
+
+
+
+
+
+
+    static void WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyEvent,
+                                          GdkEventKey* aGdkKeyEvent);
+
+    
+
+
     static void Shutdown();
 
 protected:
@@ -328,22 +341,15 @@ protected:
 
 
 
-
-
-
-
-
-    void InitKeypressEvent(WidgetKeyboardEvent& aKeyEvent,
-                           GdkEventKey* aGdkKeyEvent);
+    static GdkFilterReturn FilterEvents(GdkXEvent* aXEvent,
+                                        GdkEvent* aGdkEvent,
+                                        gpointer aData);
 
     
 
 
-
-
-    static GdkFilterReturn FilterEvents(GdkXEvent* aXEvent,
-                                        GdkEvent* aGdkEvent,
-                                        gpointer aData);
+    void WillDispatchKeyboardEventInternal(WidgetKeyboardEvent& aKeyEvent,
+                                           GdkEventKey* aGdkKeyEvent);
 };
 
 } 
