@@ -155,6 +155,12 @@ WorkerRunnable::PostDispatch(WorkerPrivate* aWorkerPrivate,
   }
 }
 
+bool
+WorkerRunnable::PreRun(WorkerPrivate* aWorkerPrivate)
+{
+  return true;
+}
+
 void
 WorkerRunnable::PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                         bool aRunResult)
@@ -256,6 +262,19 @@ WorkerRunnable::Run()
     return NS_OK;
   }
 
+  bool result = PreRun(mWorkerPrivate);
+  if (!result) {
+    MOZ_ASSERT(targetIsWorkerThread,
+               "The only PreRun implementation that can fail is "
+               "ScriptExecutorRunnable");
+    mWorkerPrivate->AssertIsOnWorkerThread();
+    MOZ_ASSERT(!JS_IsExceptionPending(mWorkerPrivate->GetJSContext()));
+    
+    
+    PostRun(mWorkerPrivate->GetJSContext(), mWorkerPrivate, false);
+    return NS_ERROR_FAILURE;
+  }
+
   
   nsCOMPtr<nsIGlobalObject> globalObject;
   bool isMainThread = !targetIsWorkerThread && !mWorkerPrivate->GetParent();
@@ -273,6 +292,12 @@ WorkerRunnable::Run()
     } else {
       globalObject = DefaultGlobalObject();
     }
+
+    
+    
+    
+    
+    
   } else {
     kungFuDeathGrip = mWorkerPrivate;
     if (isMainThread) {
@@ -290,7 +315,7 @@ WorkerRunnable::Run()
   
   
   
-  mozilla::dom::AutoJSAPI jsapi;
+  Maybe<mozilla::dom::AutoJSAPI> jsapi;
   Maybe<mozilla::dom::AutoEntryScript> aes;
   JSContext* cx;
   if (globalObject) {
@@ -299,8 +324,9 @@ WorkerRunnable::Run()
                 isMainThread ? nullptr : GetCurrentThreadJSContext());
     cx = aes->cx();
   } else {
-    jsapi.Init();
-    cx = jsapi.cx();
+    jsapi.emplace();
+    jsapi->Init();
+    cx = jsapi->cx();
   }
 
   
@@ -344,9 +370,12 @@ WorkerRunnable::Run()
     ac.emplace(cx, mWorkerPrivate->GetWrapper());
   }
 
-  bool result = WorkerRun(cx, mWorkerPrivate);
+  result = WorkerRun(cx, mWorkerPrivate);
   MOZ_ASSERT_IF(result, !JS_IsExceptionPending(cx));
   JS_ReportPendingException(cx);
+
+  
+  
 
   
   
