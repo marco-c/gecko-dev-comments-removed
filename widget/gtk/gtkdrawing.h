@@ -62,8 +62,6 @@ typedef enum {
   
   MOZ_GTK_TAB_MARGIN_MASK     = 0xFF,
   
-  MOZ_GTK_TAB_BOTTOM          = 1 << 8,
-  
   MOZ_GTK_TAB_FIRST           = 1 << 9,
   
   MOZ_GTK_TAB_SELECTED        = 1 << 10
@@ -179,7 +177,13 @@ typedef enum {
   
   MOZ_GTK_PROGRESS_CHUNK_VERTICAL_INDETERMINATE,
   
-  MOZ_GTK_TAB,
+  MOZ_GTK_NOTEBOOK,
+  
+  MOZ_GTK_NOTEBOOK_HEADER,
+  
+  MOZ_GTK_TAB_TOP,
+  
+  MOZ_GTK_TAB_BOTTOM,
   
   MOZ_GTK_TABPANELS,
   
@@ -317,9 +321,11 @@ gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
 
 
 
+
 gint
 moz_gtk_get_tab_border(gint* left, gint* top, gint* right, gint* bottom, 
-                       GtkTextDirection direction, GtkTabFlags flags);
+                       GtkTextDirection direction, GtkTabFlags flags,
+                       WidgetNodeType widget);
 
 
 
@@ -495,7 +501,8 @@ GtkWidget* moz_gtk_get_scrollbar_widget(void);
 
 
 
-gint moz_gtk_get_tab_thickness(void);
+gint
+moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
 
 
 
