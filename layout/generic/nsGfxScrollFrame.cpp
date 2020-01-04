@@ -61,6 +61,7 @@
 #include "nsPluginFrame.h"
 #include <mozilla/layers/AxisPhysicsModel.h>
 #include <mozilla/layers/AxisPhysicsMSDModel.h>
+#include "mozilla/unused.h"
 #include <algorithm>
 #include <cstdlib> 
 #include <cmath> 
@@ -2864,20 +2865,13 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   bool createLayersForScrollbars = mIsRoot &&
     mOuter->PresContext()->IsRootContentDocument();
 
-  bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
-    nsLayoutUtils::GetDisplayPort(mOuter->GetContent());
-
   if (aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping()) {
+    bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
+      nsLayoutUtils::GetDisplayPort(mOuter->GetContent());
+
     
     
     mAddClipRectToLayer = false;
-
-    if (usingDisplayPort) {
-      
-      
-      mWillBuildScrollableLayer = true;
-      mIsScrollableLayerInRootContainer = true;
-    }
 
     
     
@@ -2920,48 +2914,12 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   nsRect dirtyRect = aDirtyRect.Intersect(mScrollPort);
 
-  nsRect displayPort;
-  if (aBuilder->IsPaintingToWindow()) {
-    bool wasUsingDisplayPort = usingDisplayPort;
+  unused << DecideScrollableLayer(aBuilder, &dirtyRect,
+               !mIsRoot);
 
-    if (mIsRoot && gfxPrefs::LayoutUseContainersForRootFrames()) {
-      
-      
-      usingDisplayPort = nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &displayPort);
-    } else {
-      
-      
-      nsRect displayportBase = dirtyRect;
-      if (mIsRoot && mOuter->PresContext()->IsRootContentDocument()) {
-        displayportBase =
-          nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
-      }
-      usingDisplayPort = nsLayoutUtils::GetOrMaybeCreateDisplayPort(
-            *aBuilder, mOuter, displayportBase, &displayPort);
-    }
+  bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
+    nsLayoutUtils::GetDisplayPort(mOuter->GetContent());
 
-    
-    if (usingDisplayPort) {
-      dirtyRect = displayPort;
-
-      
-      
-      if (!wasUsingDisplayPort) {
-        aBuilder->RecomputeCurrentAnimatedGeometryRoot();
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mWillBuildScrollableLayer = usingDisplayPort || nsContentUtils::HasScrollgrab(mOuter->GetContent());
   
   
   
@@ -3170,6 +3128,64 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                       createLayersForScrollbars, true);
   scrolledContent.MoveTo(aLists);
 }
+
+bool
+ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
+                                         nsRect* aDirtyRect,
+                                         bool aAllowCreateDisplayPort)
+{
+  bool usingDisplayPort = false;
+  nsIContent* content = mOuter->GetContent();
+  if (aBuilder->IsPaintingToWindow()) {
+    bool wasUsingDisplayPort = nsLayoutUtils::GetDisplayPort(content);
+
+    nsRect displayportBase = *aDirtyRect;
+    nsPresContext* pc = mOuter->PresContext();
+    if (mIsRoot && (pc->IsRootContentDocument() || !pc->GetParentPresContext())) {
+      displayportBase =
+        nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
+    }
+
+    nsRect displayPort;
+    if (aAllowCreateDisplayPort) {
+      
+      
+      usingDisplayPort = nsLayoutUtils::GetOrMaybeCreateDisplayPort(
+            *aBuilder, mOuter, displayportBase, &displayPort);
+    } else {
+      
+      
+      MOZ_ASSERT(content->GetProperty(nsGkAtoms::DisplayPortBase));
+      usingDisplayPort = nsLayoutUtils::GetDisplayPort(content, &displayPort);
+    }
+
+    
+    if (usingDisplayPort) {
+      *aDirtyRect = displayPort;
+
+      
+      
+      if (!wasUsingDisplayPort) {
+        aBuilder->RecomputeCurrentAnimatedGeometryRoot();
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  mWillBuildScrollableLayer = usingDisplayPort || nsContentUtils::HasScrollgrab(content);
+
+  if (gfxPrefs::LayoutUseContainersForRootFrames() && mWillBuildScrollableLayer && mIsRoot) {
+    mIsScrollableLayerInRootContainer = true;
+  }
+
+  return mWillBuildScrollableLayer;
+}
+
 
 Maybe<DisplayItemClip>
 ScrollFrameHelper::ComputeScrollClip(bool aIsForCaret) const

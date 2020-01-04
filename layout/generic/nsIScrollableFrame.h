@@ -455,6 +455,19 @@ public:
   virtual bool UsesContainerScrolling() const = 0;
 
   virtual mozilla::Maybe<mozilla::DisplayItemClip> ComputeScrollClip(bool aIsForCaret) const = 0;
+
+  
+
+
+
+
+
+
+
+
+  virtual bool DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
+                                     nsRect* aDirtyRect,
+                                     bool aAllowCreateDisplayPort) = 0;
 };
 
 #endif
