@@ -648,22 +648,15 @@ PresentationControllingInfo::GetAddress()
     return rv;
   }
 
-#elif defined(MOZ_MULET)
-  
-  NS_DispatchToMainThread(
-    NewRunnableMethod<nsCString>(
-      this,
-      &PresentationControllingInfo::OnGetAddress,
-      "127.0.0.1"));
-
 #else
-  
+  nsCOMPtr<nsINetworkInfoService> networkInfo = do_GetService(NETWORKINFOSERVICE_CONTRACT_ID);
+  MOZ_ASSERT(networkInfo);
 
-  NS_DispatchToMainThread(
-    NewRunnableMethod<nsCString>(
-      this,
-      &PresentationControllingInfo::OnGetAddress,
-      EmptyCString()));
+  nsresult rv = networkInfo->ListNetworkAddresses(this);
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 #endif
 
   return NS_OK;
@@ -948,6 +941,50 @@ PresentationControllingInfo::Reconnect(nsIPresentationServiceCallback* aCallback
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return mReconnectCallback->NotifyError(rv);
   }
+
+  return NS_OK;
+}
+
+
+NS_IMETHODIMP
+PresentationControllingInfo::OnListedNetworkAddresses(const char** aAddressArray,
+                                                      uint32_t aAddressArraySize)
+{
+  if (!aAddressArraySize) {
+    return OnListNetworkAddressesFailed();
+  }
+
+  
+  
+  
+
+  nsAutoCString ip;
+  ip.Assign(aAddressArray[0]);
+
+  
+  
+  
+  NS_DispatchToMainThread(
+    NewRunnableMethod<nsCString>(
+      this,
+      &PresentationControllingInfo::OnGetAddress,
+      ip));
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+PresentationControllingInfo::OnListNetworkAddressesFailed()
+{
+  PRES_ERROR("PresentationControllingInfo:OnListNetworkAddressesFailed");
+
+  
+  
+  NS_DispatchToMainThread(
+    NewRunnableMethod<nsCString>(
+      this,
+      &PresentationControllingInfo::OnGetAddress,
+      "127.0.0.1"));
 
   return NS_OK;
 }

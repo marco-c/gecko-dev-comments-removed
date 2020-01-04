@@ -1,23 +1,12 @@
-<!DOCTYPE HTML>
 
-<html>
-  
 
-  <head>
-    <meta charset="utf-8">
-    <title>Test for B2G Presentation API when sender and receiver at the same side</title>
-    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
-    <script type="application/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
-  </head>
-  <body>
-    <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1234492">
-      Test for B2G Presentation API when sender and receiver at the same side</a>
-    <script type="application/javascript;version=1.8">
+
+
 
 'use strict';
 
 function debug(str) {
-  // info(str);
+  
 }
 
 var gScript = SpecialPowers.loadChromeScript(SimpleTest.getTestFileURL('PresentationSessionChromeScript1UA.js'));
@@ -54,8 +43,10 @@ function setup() {
     receiverIframe.setAttribute('src', receiverUrl);
     receiverIframe.setAttribute("mozbrowser", "true");
     receiverIframe.setAttribute("mozpresentation", receiverUrl);
+    var oop = location.pathname.indexOf('_inproc') == -1;
+    receiverIframe.setAttribute("remote", oop);
 
-    // This event is triggered when the iframe calls "alert".
+    
     receiverIframe.addEventListener("mozbrowsershowmodalprompt", function receiverListener(evt) {
       var message = evt.detail.message;
       debug('Got iframe message: ' + message);
@@ -88,18 +79,6 @@ function setup() {
     debug('Got message: promise-setup-ready');
     gScript.removeMessageListener('promise-setup-ready', promiseSetupReadyHandler);
     gScript.sendAsyncMessage('trigger-on-session-request', receiverUrl);
-  });
-
-  gScript.addMessageListener('offer-sent', function offerSentHandler() {
-    debug('Got message: offer-sent');
-    gScript.removeMessageListener('offer-sent', offerSentHandler);
-    gScript.sendAsyncMessage('trigger-on-offer');
-  });
-
-  gScript.addMessageListener('answer-sent', function answerSentHandler() {
-    debug('Got message: answer-sent');
-    gScript.removeMessageListener('answer-sent', answerSentHandler);
-    gScript.sendAsyncMessage('trigger-on-answer');
   });
 
   return Promise.resolve();
@@ -181,7 +160,7 @@ function testIncomingMessage() {
 
 function testCloseConnection() {
   info('Sender: --- testCloseConnection ---');
-  // Test terminate immediate after close.
+  
   function controlChannelEstablishedHandler()
   {
     gScript.removeMessageListener('control-channel-established',
@@ -252,18 +231,6 @@ function testReconnect() {
       gScript.sendAsyncMessage('trigger-reconnected-acked', url);
     });
 
-    gScript.addMessageListener('offer-sent', function offerSentHandler() {
-      debug('Got message: offer-sent');
-      gScript.removeMessageListener('offer-sent', offerSentHandler);
-      gScript.sendAsyncMessage('trigger-on-offer');
-    });
-
-    gScript.addMessageListener('answer-sent', function answerSentHandler() {
-      debug('Got message: answer-sent');
-      gScript.removeMessageListener('answer-sent', answerSentHandler);
-      gScript.sendAsyncMessage('trigger-on-answer');
-    });
-
     gScript.addMessageListener('ready-to-reconnect', function onReadyToReconnect() {
       gScript.removeMessageListener('ready-to-reconnect', onReadyToReconnect);
       request.reconnect(presentationId).then((aConnection) => {
@@ -316,14 +283,10 @@ SpecialPowers.pushPermissions([
   {type: "browser", allow: true, context: document},
 ], () => {
   SpecialPowers.pushPrefEnv({ 'set': [["dom.presentation.enabled", true],
-                                      /* Mocked TCP session transport builder in the test */
+                                      
                                       ["dom.presentation.session_transport.data_channel.enable", false],
                                       ["dom.presentation.test.enabled", true],
                                       ["dom.presentation.test.stage", 0],
                                       ["dom.mozBrowserFramesEnabled", true]]},
                             runTests);
 });
-
-    </script>
-  </body>
-</html>
