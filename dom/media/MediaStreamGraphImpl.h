@@ -223,8 +223,7 @@ public:
   
 
 
-  void UpdateCurrentTimeForStreams(GraphTime aPrevCurrentTime,
-                                   GraphTime aNextCurrentTime);
+  void UpdateCurrentTimeForStreams(GraphTime aPrevCurrentTime);
   
 
 
