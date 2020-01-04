@@ -129,6 +129,7 @@ var gPageListeners = null;
 var gOriginalPageListeners = null;
 var gSocialProviders = null;
 var gStringBundle = null;
+var gStubbedMessageHandlers = null;
 const kBatchMessage = "Batch";
 const kMaxLoopCount = 10;
 const kMessageName = "Loop:Message";
@@ -699,6 +700,22 @@ const kMessageHandlers = {
 
 
 
+  IsMultiProcessEnabled: function(message, reply) {
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    let browser = win && win.gBrowser.selectedBrowser;
+    reply(!!(browser && browser.getAttribute("remote") == "true"));
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -781,6 +798,22 @@ const kMessageHandlers = {
   OpenFxASettings: function(message, reply) {
     MozLoopService.openFxASettings();
     reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  OpenNonE10sWindow: function(message, reply) {
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    let url = message.data[0] ? message.data[0] : "about:home";
+    win.openDialog("chrome://browser/content/", "_blank", "chrome,all,dialog=no,non-remote", url);
   },
 
   
@@ -1060,8 +1093,19 @@ const LoopAPIInternal = {
     let wildcardName = handlerName + ":*";
     if (kMessageHandlers[wildcardName]) {
       
-      kMessageHandlers[wildcardName](action, message, reply);
+      if (gStubbedMessageHandlers && gStubbedMessageHandlers[wildcardName]) {
+        gStubbedMessageHandlers[wildcardName](action, message, reply);
+      } else {
+        
+        kMessageHandlers[wildcardName](action, message, reply);
+      }
       
+      return;
+    }
+
+    
+    if (gStubbedMessageHandlers && gStubbedMessageHandlers[handlerName]) {
+      gStubbedMessageHandlers[handlerName](message, reply);
       return;
     }
 
@@ -1252,9 +1296,13 @@ this.LoopAPI = Object.freeze({
     }
     gPageListeners = pageListeners;
   },
+  stubMessageHandlers: function(handlers) {
+    gStubbedMessageHandlers = handlers;
+  },
   restore: function() {
     if (gOriginalPageListeners) {
       gPageListeners = gOriginalPageListeners;
     }
+    gStubbedMessageHandlers = null;
   }
 });

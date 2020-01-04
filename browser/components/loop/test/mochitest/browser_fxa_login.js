@@ -8,6 +8,7 @@
 "use strict";
 
 const BASE_URL = Services.prefs.getCharPref("loop.server");
+const { LoopAPI } = Cu.import("resource:///modules/loop/MozLoopAPI.jsm", {});
 
 function* checkFxA401() {
   let err = MozLoopService.errors.get("login");
@@ -46,6 +47,11 @@ add_task(function* setup() {
   
   
 
+  LoopAPI.stubMessageHandlers({
+    IsMultiProcessEnabled: function(message, reply) {
+      reply(false);
+    }
+  });
   registerCleanupFunction(function* () {
     info("cleanup time");
     yield promiseDeletedOAuthParams(BASE_URL);

@@ -171,11 +171,14 @@ var LoopUI;
           this.LoopAPI.initialize();
 
           let anchor = event ? event.target : this.toolbarButton.anchor;
-
+          let setHeight = 410;
+          if (gBrowser.selectedBrowser.getAttribute("remote") === "true") {
+            setHeight = 262;
+          }
           this.PanelFrame.showPopup(window, anchor,
             "loop", null, "about:looppanel",
             
-            { width: 330, height: 410 },
+            { width: 330, height: setHeight },
             callback);
         });
       });
