@@ -591,7 +591,7 @@ InvokeInterruptCallback(JSContext* cx)
         
         
         if (cx->compartment()->isDebuggee()) {
-            ScriptFrameIter iter(cx);
+            ScriptFrameIter iter(cx, FrameIter::STOP_AT_SAVED);
             if (!iter.done() && iter.script()->stepModeEnabled()) {
                 RootedValue rval(cx);
                 switch (Debugger::onSingleStep(cx, &rval)) {
