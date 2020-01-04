@@ -1447,6 +1447,10 @@ HttpChannelChild::ConnectParent(uint32_t registrarId)
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
+  if (tabChild && tabChild->IsDestroyed()) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   AddIPDLReference();
@@ -1965,15 +1969,21 @@ HttpChannelChild::ContinueAsyncOpen()
   mChannelId.ToProvidedString(chid);
   openArgs.channelId().AssignASCII(chid);
 
+  if (tabChild && tabChild->IsDestroyed()) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   AddIPDLReference();
 
   PBrowserOrId browser = static_cast<ContentChild*>(gNeckoChild->Manager())
                          ->GetBrowserOrId(tabChild);
-  gNeckoChild->SendPHttpChannelConstructor(this, browser,
-                                           IPC::SerializedLoadContext(this),
-                                           openArgs);
+  if (!gNeckoChild->SendPHttpChannelConstructor(this, browser,
+                                                IPC::SerializedLoadContext(this),
+                                                openArgs)) {
+    return NS_ERROR_FAILURE;
+  }
 
   if (optionalFDs.type() ==
         OptionalFileDescriptorSet::TPFileDescriptorSetChild) {
