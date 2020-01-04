@@ -52,6 +52,7 @@ protected:
   void GetFileName(nsAString& aResult, nsIChannel* aChannel);
 
   nsresult LinkStylesheet(const nsAString& aStylesheet);
+  nsresult LinkScript(const nsAString& aScript);
 
   
   
