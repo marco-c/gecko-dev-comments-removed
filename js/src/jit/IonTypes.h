@@ -153,7 +153,7 @@ enum BailoutKind
     
     Bailout_BoundsCheck,
     
-    Bailout_Neutered,
+    Bailout_Detached,
 
     
     
@@ -246,8 +246,8 @@ BailoutKindString(BailoutKind kind)
         return "Bailout_ArgumentCheck";
       case Bailout_BoundsCheck:
         return "Bailout_BoundsCheck";
-      case Bailout_Neutered:
-        return "Bailout_Neutered";
+      case Bailout_Detached:
+        return "Bailout_Detached";
       case Bailout_ShapeGuard:
         return "Bailout_ShapeGuard";
       case Bailout_UninitializedLexical:

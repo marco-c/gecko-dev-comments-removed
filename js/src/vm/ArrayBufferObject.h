@@ -136,7 +136,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
         
         BUFFER_KIND_MASK    = BufferKind::KIND_MASK,
 
-        NEUTERED            = 0x4,
+        DETACHED            = 0x4,
 
         
         
@@ -159,9 +159,9 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
         TYPED_OBJECT_VIEWS  = 0x20
     };
 
-    static_assert(JS_ARRAYBUFFER_NEUTERED_FLAG == NEUTERED,
+    static_assert(JS_ARRAYBUFFER_NEUTERED_FLAG == DETACHED,
                   "self-hosted code with burned-in constants must use the "
-                  "correct NEUTERED bit value");
+                  "correct DETACHED bit value");
   public:
 
     class BufferContents {
@@ -313,7 +313,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     bool isAsmJSMalloced() const { return bufferKind() == ASMJS_MALLOCED; }
     bool isAsmJS() const { return isAsmJSMapped() || isAsmJSMalloced(); }
     bool isMapped() const { return bufferKind() == MAPPED; }
-    bool isNeutered() const { return flags() & NEUTERED; }
+    bool isNeutered() const { return flags() & DETACHED; }
 
     static bool prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buffer,
                                 bool usesSignalHandlers);
@@ -329,8 +329,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     static size_t offsetOfDataSlot() {
         return getFixedSlotOffset(DATA_SLOT);
     }
-
-    static uint32_t neuteredFlag() { return NEUTERED; }
 
     void setForInlineTypedObject() {
         setFlags(flags() | FOR_INLINE_TYPED_OBJECT);
@@ -356,7 +354,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     bool hasTypedObjectViews() const { return flags() & TYPED_OBJECT_VIEWS; }
 
     void setIsAsmJSMalloced() { setFlags((flags() & ~KIND_MASK) | ASMJS_MALLOCED); }
-    void setIsNeutered() { setFlags(flags() | NEUTERED); }
+    void setIsNeutered() { setFlags(flags() | DETACHED); }
 
     void initialize(size_t byteLength, BufferContents contents, OwnsState ownsState) {
         setByteLength(byteLength);

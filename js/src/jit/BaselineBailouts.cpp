@@ -1927,7 +1927,7 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
         
         break;
       case Bailout_BoundsCheck:
-      case Bailout_Neutered:
+      case Bailout_Detached:
         if (!HandleBoundsCheckFailure(cx, outerScript, innerScript))
             return false;
         break;
