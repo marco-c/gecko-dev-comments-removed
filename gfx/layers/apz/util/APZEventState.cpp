@@ -290,15 +290,11 @@ APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
     sentContentResponse = SendPendingTouchPreventedResponse(false);
     
     
-    if (!aEvent.mFlags.mHandledByAPZ) {
-      
-      
-      
-      
-      
-      APZES_LOG("Got a synthetic touch-start!\n");
-      break;
-    }
+
+    
+    
+    MOZ_ASSERT(aEvent.mFlags.mHandledByAPZ);
+
     if (isTouchPrevented) {
       mContentReceivedInputBlockCallback(aGuid, aInputBlockId, isTouchPrevented);
       sentContentResponse = true;
