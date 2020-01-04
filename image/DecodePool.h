@@ -95,9 +95,9 @@ private:
   RefPtr<DecodePoolImpl>    mImpl;
 
   
-  Mutex                     mMutex;
-  nsCOMArray<nsIThread>     mThreads;
-  nsCOMPtr<nsIThread>       mIOThread;
+  Mutex                         mMutex;
+  nsTArray<nsCOMPtr<nsIThread>> mThreads;
+  nsCOMPtr<nsIThread>           mIOThread;
 };
 
 } 
