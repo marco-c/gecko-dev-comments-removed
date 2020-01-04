@@ -126,7 +126,18 @@ function testLoad(kind, TA) {
         assertThrowsInstanceOf(() => SIMD[kind].load(), TypeError);
         assertThrowsInstanceOf(() => SIMD[kind].load(ta), TypeError);
         assertThrowsInstanceOf(() => SIMD[kind].load("hello", 0), TypeError);
+        
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, 1.5), RangeError);
         assertThrowsInstanceOf(() => SIMD[kind].load(ta, -1), RangeError);
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, "hello"), RangeError);
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, NaN), RangeError);
+        
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, 0x100000000), RangeError);
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, 0x80000000), RangeError);
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, 0x40000000), RangeError);
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, 0x20000000), RangeError);
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, (1<<30) * (1<<23) - 1), RangeError);
+        assertThrowsInstanceOf(() => SIMD[kind].load(ta, (1<<30) * (1<<23)), RangeError);
 
         
         var C = MakeComparator(kind, ta);
@@ -169,13 +180,15 @@ function testLoad(kind, TA) {
             assertThrowsInstanceOf(() => SIMD[kind].load2(ta, lastValidArgLoad2 + 1), RangeError);
             assertThrowsInstanceOf(() => SIMD[kind].load3(ta, lastValidArgLoad3 + 1), RangeError);
         }
+
+        
+        
+        C.load("1.0e0");
+        C.load(" 2");
     }
 
     if (lanes == 4) {
         
-        var v = SIMD[kind].load(TA, 12.5);
-        assertEqX4(v, [12, 13, 14, 15]);
-
         var obj = {
             valueOf: function() { return 12 }
         }
