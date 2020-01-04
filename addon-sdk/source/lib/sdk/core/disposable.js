@@ -8,20 +8,18 @@ module.metadata = {
   "stability": "experimental"
 };
 
-
 const { Class } = require("./heritage");
 const { Observer, subscribe, unsubscribe, observe } = require("./observer");
-const { isWeak, WeakReference } = require("./reference");
+const { isWeak } = require("./reference");
+const SDKWeakSet = require("../lang/weak-set");
+
 const method = require("../../method/core");
 
 const unloadSubject = require('@loader/unload');
 const addonUnloadTopic = "sdk:loader:destroy";
 
-
-
 const uninstall = method("disposable/uninstall");
 exports.uninstall = uninstall;
-
 
 const shutdown = method("disposable/shutdown");
 exports.shutdown = shutdown;
@@ -42,28 +40,94 @@ const dispose = method("disposable/dispose");
 exports.dispose = dispose;
 dispose.define(Object, object => object.dispose());
 
-
 const setup = method("disposable/setup");
 exports.setup = setup;
 setup.define(Object, (object, ...args) => object.setup(...args));
 
 
 
+
+const DisposablesUnloadObserver = Class({
+  implements: [Observer],
+  initialize: function(...args) {
+    
+    this.disposables = new Set();
+    
+    
+    this.weakDisposables = {};
+  },
+  subscribe(disposable) {
+    if (isWeak(disposable)) {
+      SDKWeakSet.add(this.weakDisposables, disposable);
+    } else {
+      this.disposables.add(disposable);
+    }
+  },
+  unsubscribe(disposable) {
+    if (isWeak(disposable)) {
+      SDKWeakSet.remove(this.weakDisposables, disposable);
+    } else {
+      this.disposables.delete(disposable);
+    }
+  },
+  tryUnloadDisposable(disposable) {
+    try {
+      if (disposable) {
+        unload(disposable);
+      }
+    } catch(e) {
+      console.error("Error unloading a",
+                    isWeak(disposable) ? "weak disposable" : "disposable",
+                    disposable, e);
+    }
+  },
+  unloadAll() {
+    
+    for (let disposable of this.disposables) {
+      this.tryUnloadDisposable(disposable);
+    }
+
+    this.disposables.clear();
+
+    
+    for (let disposable of SDKWeakSet.iterator(this.weakDisposables)) {
+      this.tryUnloadDisposable(disposable);
+    }
+
+    SDKWeakSet.clear(this.weakDisposables);
+  }
+});
+const disposablesUnloadObserver = new DisposablesUnloadObserver();
+
+
+
+
+observe.define(DisposablesUnloadObserver, (obj, subject, topic, data) => {
+  const isUnloadTopic = topic === addonUnloadTopic;
+  const isUnloadSubject = subject.wrappedJSObject === unloadSubject;
+  if (isUnloadTopic && isUnloadSubject) {
+    unsubscribe(disposablesUnloadObserver, addonUnloadTopic);
+    disposablesUnloadObserver.unloadAll();
+  }
+});
+
+subscribe(disposablesUnloadObserver, addonUnloadTopic, false);
+
+
 const setupDisposable = disposable => {
-  subscribe(disposable, addonUnloadTopic, isWeak(disposable));
+  disposablesUnloadObserver.subscribe(disposable);
 };
 exports.setupDisposable = setupDisposable;
 
 
 const disposeDisposable = disposable => {
-  unsubscribe(disposable, addonUnloadTopic);
+  disposablesUnloadObserver.unsubscribe(disposable);
 };
 exports.disposeDisposable = disposeDisposable;
 
 
 
 const Disposable = Class({
-  implements: [Observer],
   initialize: function(...args) {
     
     
@@ -86,17 +150,6 @@ const Disposable = Class({
 });
 exports.Disposable = Disposable;
 
-
-
-observe.define(Disposable, (disposable, subject, topic, data) => {
-  const isUnloadTopic = topic === addonUnloadTopic;
-  const isUnloadSubject = subject.wrappedJSObject === unloadSubject;
-  if (isUnloadTopic && isUnloadSubject) {
-    unsubscribe(disposable, topic);
-    unload(disposable);
-  }
-});
-
 const unloaders = {
   destroy: dispose,
   uninstall: uninstall,
@@ -104,7 +157,8 @@ const unloaders = {
   disable: disable,
   upgrade: upgrade,
   downgrade: downgrade
-}
+};
+
 const unloaded = new WeakMap();
 unload.define(Disposable, (disposable, reason) => {
   if (!unloaded.get(disposable)) {
@@ -116,7 +170,6 @@ unload.define(Disposable, (disposable, reason) => {
     unload(disposable);
   }
 });
-
 
 
 
