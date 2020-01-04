@@ -255,6 +255,7 @@ nsAppShell::Init()
     if (obsServ) {
         obsServ->AddObserver(this, "browser-delayed-startup-finished", false);
         obsServ->AddObserver(this, "profile-after-change", false);
+        obsServ->AddObserver(this, "quit-application-granted", false);
         obsServ->AddObserver(this, "xpcom-shutdown", false);
     }
 
@@ -271,6 +272,8 @@ nsAppShell::Observe(nsISupports* aSubject,
                     const char* aTopic,
                     const char16_t* aData)
 {
+    bool removeObserver = false;
+
     if (!strcmp(aTopic, "xpcom-shutdown")) {
         
         
@@ -303,10 +306,27 @@ nsAppShell::Observe(nsISupports* aSubject,
                 appStartup->EnterLastWindowClosingSurvivalArea();
             }
         }
+        removeObserver = true;
+
+    } else if (!strcmp(aTopic, "quit-application-granted")) {
+        if (jni::IsAvailable()) {
+            
+            
+            
+            nsCOMPtr<nsIAppStartup> appStartup =
+                do_GetService(NS_APPSTARTUP_CONTRACTID);
+            if (appStartup) {
+                appStartup->ExitLastWindowClosingSurvivalArea();
+            }
+        }
+        removeObserver = true;
+    }
+
+    if (removeObserver) {
         nsCOMPtr<nsIObserverService> obsServ =
             mozilla::services::GetObserverService();
         if (obsServ) {
-            obsServ->RemoveObserver(this, "profile-after-change");
+            obsServ->RemoveObserver(this, aTopic);
         }
     }
     return NS_OK;
