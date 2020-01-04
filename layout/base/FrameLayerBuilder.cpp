@@ -2284,7 +2284,7 @@ ComputeAndSetIgnoreInvalidationRect(PaintedLayer* aLayer,
   nsIntRect maxNewVisibleBounds =
     dirtyRect.ScaleToOutsidePixels(aData->mXScale, aData->mYScale,
                                    aData->mAppUnitsPerDevPixel) - aLayerTranslation;
-  aData->mOldVisibleBounds = aLayer->GetVisibleRegion().GetBounds();
+  aData->mOldVisibleBounds = aLayer->GetVisibleRegion().ToUnknownRegion().GetBounds();
 
   
   
@@ -2462,7 +2462,7 @@ SetOuterVisibleRegion(Layer* aLayer, nsIntRegion* aOuterVisibleRegion,
     }
   }
 
-  aLayer->SetVisibleRegion(*aOuterVisibleRegion);
+  aLayer->SetVisibleRegion(LayerIntRegion::FromUnknownRegion(*aOuterVisibleRegion));
 }
 
 void
@@ -3181,7 +3181,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       
       ParentLayerIntRect emptyRect;
       data->mLayer->SetClipRect(Some(emptyRect));
-      data->mLayer->SetVisibleRegion(nsIntRegion());
+      data->mLayer->SetVisibleRegion(LayerIntRegion());
       data->mLayer->InvalidateRegion(data->mLayer->GetValidRegion().GetBounds());
       data->mLayer->SetEventRegions(EventRegions());
     }
@@ -4808,7 +4808,7 @@ InvalidateVisibleBoundsChangesForScrolledLayer(PaintedLayer* aLayer)
     
     
     nsIntRegion rgn;
-    rgn.Or(data->mOldVisibleBounds, aLayer->GetVisibleRegion().GetBounds());
+    rgn.Or(data->mOldVisibleBounds, aLayer->GetVisibleRegion().ToUnknownRegion().GetBounds());
     rgn.Sub(rgn, *data->mIgnoreInvalidationsOutsideRect);
     if (!rgn.IsEmpty()) {
       aLayer->InvalidateRegion(rgn);
@@ -5408,7 +5408,7 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
   
   
   if (!aContainerItem) {
-    containerLayer->SetVisibleRegion(pixBounds);
+    containerLayer->SetVisibleRegion(LayerIntRegion::FromUnknownRegion(pixBounds));
   }
   if (aParameters.mLayerContentsVisibleRect) {
     *aParameters.mLayerContentsVisibleRect = pixBounds + scaleParameters.mOffset;
@@ -5743,7 +5743,7 @@ static void DrawForcedBackgroundColor(DrawTarget& aDrawTarget,
                                       aBackgroundColor)
 {
   if (NS_GET_A(aBackgroundColor) > 0) {
-    nsIntRect r = aLayer->GetVisibleRegion().GetBounds();
+    LayerIntRect r = aLayer->GetVisibleRegion().GetBounds();
     ColorPattern color(ToDeviceColor(aBackgroundColor));
     aDrawTarget.FillRect(Rect(r.x, r.y, r.width, r.height), color);
   }

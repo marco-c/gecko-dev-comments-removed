@@ -238,7 +238,7 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
 
   
   LayerComposite* composite = aLayer->AsLayerComposite();
-  LayerIntRegion visible = LayerIntRegion::FromUnknownRegion(composite->GetShadowVisibleRegion());
+  LayerIntRegion visible = composite->GetShadowVisibleRegion();
 
   
   
@@ -251,7 +251,7 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
     visible.SubOut(LayerIntRegion::FromUnknownRegion(obscured));
   }
 
-  composite->SetShadowVisibleRegion(visible.ToUnknownRegion());
+  composite->SetShadowVisibleRegion(visible);
 
   
   
@@ -1140,7 +1140,7 @@ LayerManagerComposite::ComputeRenderIntegrityInternal(Layer* aLayer,
   }
 
   
-  nsIntRegion incompleteRegion = aLayer->GetEffectiveVisibleRegion();
+  nsIntRegion incompleteRegion = aLayer->GetEffectiveVisibleRegion().ToUnknownRegion();
   incompleteRegion.Sub(incompleteRegion, paintedLayer->GetValidRegion());
 
   if (!incompleteRegion.IsEmpty()) {
@@ -1475,14 +1475,14 @@ nsIntRegion
 LayerComposite::GetFullyRenderedRegion() {
   if (TiledContentHost* tiled = GetCompositableHost() ? GetCompositableHost()->AsTiledContentHost()
                                                         : nullptr) {
-    nsIntRegion shadowVisibleRegion = GetShadowVisibleRegion();
+    nsIntRegion shadowVisibleRegion = GetShadowVisibleRegion().ToUnknownRegion();
     
     
     
     shadowVisibleRegion.And(shadowVisibleRegion, tiled->GetValidRegion());
     return shadowVisibleRegion;
   } else {
-    return GetShadowVisibleRegion();
+    return GetShadowVisibleRegion().ToUnknownRegion();
   }
 }
 

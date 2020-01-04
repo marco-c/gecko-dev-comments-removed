@@ -221,14 +221,14 @@ RotatedContentBuffer::DrawTo(PaintedLayer* aLayer,
   
   if (!aLayer->GetValidRegion().Contains(BufferRect()) ||
       (ToData(aLayer)->GetClipToVisibleRegion() &&
-       !aLayer->GetVisibleRegion().Contains(BufferRect())) ||
-      IsClippingCheap(aTarget, aLayer->GetEffectiveVisibleRegion())) {
+       !aLayer->GetVisibleRegion().ToUnknownRegion().Contains(BufferRect())) ||
+      IsClippingCheap(aTarget, aLayer->GetEffectiveVisibleRegion().ToUnknownRegion())) {
     
     
     
     
     
-    gfxUtils::ClipToRegion(aTarget, aLayer->GetEffectiveVisibleRegion());
+    gfxUtils::ClipToRegion(aTarget, aLayer->GetEffectiveVisibleRegion().ToUnknownRegion());
     clipped = true;
   }
 
@@ -454,7 +454,7 @@ RotatedContentBuffer::BeginPaint(PaintedLayer* aLayer,
 
   while (true) {
     mode = aLayer->GetSurfaceMode();
-    neededRegion = aLayer->GetVisibleRegion();
+    neededRegion = aLayer->GetVisibleRegion().ToUnknownRegion();
     canReuseBuffer &= BufferSizeOkFor(neededRegion.GetBounds().Size());
     result.mContentType = layerContentType;
 

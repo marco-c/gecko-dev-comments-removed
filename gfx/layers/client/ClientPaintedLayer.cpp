@@ -75,7 +75,7 @@ ClientPaintedLayer::PaintThebes()
   
   
   state.mRegionToInvalidate.And(state.mRegionToInvalidate,
-                                GetEffectiveVisibleRegion());
+                                GetEffectiveVisibleRegion().ToUnknownRegion());
 
   bool didUpdate = false;
   RotatedContentBuffer::DrawIterator iter;
@@ -110,7 +110,7 @@ ClientPaintedLayer::PaintThebes()
     
     ClientManager()->Hold(this);
     contentClientRemote->Updated(state.mRegionToDraw,
-                                 mVisibleRegion,
+                                 mVisibleRegion.ToUnknownRegion(),
                                  state.mDidSelfCopy);
   }
 }

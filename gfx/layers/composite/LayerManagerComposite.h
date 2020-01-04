@@ -449,7 +449,7 @@ public:
 
 
 
-  void SetShadowVisibleRegion(const nsIntRegion& aRegion)
+  void SetShadowVisibleRegion(const LayerIntRegion& aRegion)
   {
     mShadowVisibleRegion = aRegion;
   }
@@ -486,7 +486,7 @@ public:
   
   float GetShadowOpacity() { return mShadowOpacity; }
   const Maybe<ParentLayerIntRect>& GetShadowClipRect() { return mShadowClipRect; }
-  const nsIntRegion& GetShadowVisibleRegion() { return mShadowVisibleRegion; }
+  const LayerIntRegion& GetShadowVisibleRegion() { return mShadowVisibleRegion; }
   const gfx::Matrix4x4& GetShadowTransform() { return mShadowTransform; }
   bool GetShadowTransformSetByAnimation() { return mShadowTransformSetByAnimation; }
   bool HasLayerBeenComposited() { return mLayerComposited; }
@@ -501,7 +501,7 @@ public:
 
 protected:
   gfx::Matrix4x4 mShadowTransform;
-  nsIntRegion mShadowVisibleRegion;
+  LayerIntRegion mShadowVisibleRegion;
   Maybe<ParentLayerIntRect> mShadowClipRect;
   LayerManagerComposite* mCompositeManager;
   RefPtr<Compositor> mCompositor;
@@ -576,7 +576,7 @@ RenderWithAllMasks(Layer* aLayer, Compositor* aCompositor,
   
 
   
-  gfx::Rect visibleRect(aLayer->GetEffectiveVisibleRegion().GetBounds());
+  gfx::Rect visibleRect(aLayer->GetEffectiveVisibleRegion().ToUnknownRegion().GetBounds());
   gfx::Matrix4x4 transform = aLayer->GetEffectiveTransform();
   
   gfx::IntRect surfaceRect =
