@@ -1089,6 +1089,14 @@ MacroAssemblerMIPSShared::atomicExchange(int nbytes, bool signExtend, const Base
 
 
 void
+MacroAssembler::flush()
+{
+}
+
+
+
+
+void
 MacroAssembler::Push(Register reg)
 {
     ma_push(reg);
@@ -1290,9 +1298,5 @@ MacroAssembler::branchPtrInNurseryRange(Condition cond, Register ptr, Register t
     branchPtr(cond == Assembler::Equal ? Assembler::Below : Assembler::AboveOrEqual,
               SecondScratchReg, Imm32(nursery.nurserySize()), label);
 }
-
-void
-MacroAssembler::flush()
-{}
 
 

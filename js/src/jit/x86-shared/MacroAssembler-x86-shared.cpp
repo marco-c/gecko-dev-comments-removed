@@ -320,6 +320,14 @@ MacroAssemblerX86Shared::asmMergeWith(const MacroAssemblerX86Shared& other)
 
 
 void
+MacroAssembler::flush()
+{
+}
+
+
+
+
+void
 MacroAssembler::PushRegsInMask(LiveRegisterSet set)
 {
     FloatRegisterSet fpuSet(set.fpus().reduceSetForPush());
@@ -590,9 +598,5 @@ MacroAssembler::pushFakeReturnAddress(Register scratch)
     addCodeLabel(cl);
     return retAddr;
 }
-
-void
-MacroAssembler::flush()
-{}
 
 

@@ -312,6 +312,15 @@ MacroAssemblerCompat::atomicExchangeToTypedIntArray(Scalar::Type arrayType, cons
 
 
 void
+MacroAssembler::flush()
+{
+    Assembler::flush();
+}
+
+
+
+
+void
 MacroAssembler::PushRegsInMask(LiveRegisterSet set)
 {
     for (GeneralRegisterBackwardIterator iter(set.gprs()); iter.more(); ) {
@@ -734,12 +743,6 @@ MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
     moveValue(rhs, ValueOperand(scratch64.asUnsized()));
     Cmp(ARMRegister(lhs.valueReg(), 64), scratch64);
     B(label, cond);
-}
-
-void
-MacroAssembler::flush()
-{
-    Assembler::flush();
 }
 
 

@@ -4582,6 +4582,15 @@ MacroAssemblerARMCompat::asMasm() const
 
 
 void
+MacroAssembler::flush()
+{
+    Assembler::flush();
+}
+
+
+
+
+void
 MacroAssembler::PushRegsInMask(LiveRegisterSet set)
 {
     int32_t diffF = set.fpus().getPushSizeInBytes();
@@ -5040,12 +5049,6 @@ MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
         ma_cmp(lhs.payloadReg(), Imm32(jv.s.payload.i32));
     ma_cmp(lhs.typeReg(), Imm32(jv.s.tag), Equal);
     ma_b(label, cond);
-}
-
-void
-MacroAssembler::flush()
-{
-    Assembler::flush();
 }
 
 
