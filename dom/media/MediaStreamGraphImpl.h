@@ -323,7 +323,7 @@ public:
 
 
 
-  StreamTime GraphTimeToStreamTime(MediaStream* aStream, GraphTime aTime);
+  StreamTime GraphTimeToStreamTimeWithBlocking(MediaStream* aStream, GraphTime aTime);
   
 
 
@@ -344,7 +344,7 @@ public:
 
 
 
-  GraphTime StreamTimeToGraphTime(MediaStream* aStream, StreamTime aTime,
+  GraphTime StreamTimeToGraphTimeWithBlocking(MediaStream* aStream, StreamTime aTime,
                                   uint32_t aFlags = 0);
   
 
