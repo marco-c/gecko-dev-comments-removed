@@ -3077,6 +3077,16 @@ static void FindClusterEnd(gfxTextRun* aTextRun, int32_t aOriginalEnd,
 void
 PropertyProvider::ComputeJustification(Range aRange)
 {
+  
+  
+  
+  
+  
+  
+  if (mFrame->StyleContext()->IsTextCombined()) {
+    return;
+  }
+
   bool isCJ = IsChineseOrJapanese(mFrame);
   nsSkipCharsRunIterator run(
     mStart, nsSkipCharsRunIterator::LENGTH_INCLUDES_SKIPPED, aRange.Length());
@@ -3168,6 +3178,10 @@ PropertyProvider::GetSpacingInternal(Range aRange, Spacing* aSpacing,
   for (index = 0; index < aRange.Length(); ++index) {
     aSpacing[index].mBefore = 0.0;
     aSpacing[index].mAfter = 0.0;
+  }
+
+  if (mFrame->StyleContext()->IsTextCombined()) {
+    return;
   }
 
   
