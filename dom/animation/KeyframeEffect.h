@@ -290,7 +290,8 @@ public:
   
   
   
-  void CopyPropertiesFrom(const KeyframeEffectReadOnly& aOther);
+  void UpdateProperties(
+    const InfallibleTArray<AnimationProperty>& aProperties);
 
   
   
