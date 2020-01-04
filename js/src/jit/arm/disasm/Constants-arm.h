@@ -171,6 +171,29 @@ enum MiscInstructionsBits74 {
 
 
 
+
+enum {
+    ExclusiveOpHi = 24,         
+    ExclusiveOpLo = 23,         
+    ExclusiveSizeHi = 22,       
+    ExclusiveSizeLo = 21,       
+    ExclusiveLoad = 20          
+};
+
+
+enum {
+    ExclusiveOpcode = 3
+};
+
+
+enum {
+    ExclusiveWord = 0,
+    ExclusiveDouble = 1,
+    ExclusiveByte = 2,
+    ExclusiveHalf = 3
+};
+
+
 enum {
     H = 1 << 5,   
     S6 = 1 << 6,  
