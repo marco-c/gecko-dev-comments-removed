@@ -72,12 +72,7 @@ class Message : public Pickle {
           MessageCompression compression = COMPRESSION_NONE,
           const char* const name="???");
 
-  
-  
-  
-  
-  
-  Message(const char* data, int data_len, Ownership ownership = BORROWS);
+  Message(const char* data, int data_len);
 
   Message(const Message& other) = delete;
   Message(Message&& other);
@@ -242,14 +237,9 @@ class Message : public Pickle {
 
   
   
-  static const char* FindNext(const char* range_start, const char* range_end) {
-    return Pickle::FindNext(sizeof(Header), range_start, range_end);
-  }
-
   
-  
-  static uint32_t GetLength(const char* range_start, const char* range_end) {
-    return Pickle::GetLength(sizeof(Header), range_start, range_end);
+  static uint32_t MessageSize(const char* range_start, const char* range_end) {
+    return Pickle::MessageSize(sizeof(Header), range_start, range_end);
   }
 
 #if defined(OS_POSIX)

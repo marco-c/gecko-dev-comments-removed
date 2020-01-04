@@ -35,6 +35,9 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/UniquePtr.h"
 
+
+static const size_t kMaxIOVecSize = 256;
+
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracerImpl.h"
 using namespace mozilla::tasktracer;
@@ -185,7 +188,8 @@ void Channel::ChannelImpl::Init(Mode mode, Listener* listener) {
 
   mode_ = mode;
   is_blocked_on_write_ = false;
-  message_send_bytes_written_ = 0;
+  partial_write_iter_.reset();
+  input_buf_offset_ = 0;
   server_listen_pipe_ = -1;
   pipe_ = -1;
   client_pipe_ = -1;
@@ -263,11 +267,6 @@ bool Channel::ChannelImpl::EnqueueHelloMessage() {
   return true;
 }
 
-void Channel::ChannelImpl::ClearAndShrinkInputOverflowBuf()
-{
-  input_overflow_buf_.clear();
-}
-
 bool Channel::ChannelImpl::Connect() {
   if (pipe_ == -1) {
     return false;
@@ -287,10 +286,8 @@ bool Channel::ChannelImpl::Connect() {
 }
 
 bool Channel::ChannelImpl::ProcessIncomingMessages() {
-  ssize_t bytes_read = 0;
-
   struct msghdr msg = {0};
-  struct iovec iov = {input_buf_, Channel::kReadBufferSize};
+  struct iovec iov;
 
   msg.msg_iov = &iov;
   msg.msg_iovlen = 1;
@@ -299,27 +296,30 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
   for (;;) {
     msg.msg_controllen = sizeof(input_cmsg_buf_);
 
-    if (bytes_read == 0) {
-      if (pipe_ == -1)
-        return false;
+    if (pipe_ == -1)
+      return false;
 
-      
-      
-      
-      bytes_read = HANDLE_EINTR(recvmsg(pipe_, &msg, MSG_DONTWAIT));
+    
+    
+    iov.iov_base = input_buf_ + input_buf_offset_;
+    iov.iov_len = Channel::kReadBufferSize - input_buf_offset_;
 
-      if (bytes_read < 0) {
-        if (errno == EAGAIN) {
-          return true;
-        } else {
-          CHROMIUM_LOG(ERROR) << "pipe error (" << pipe_ << "): " << strerror(errno);
-          return false;
-        }
-      } else if (bytes_read == 0) {
-        
-        Close();
+    
+    
+    
+    ssize_t bytes_read = HANDLE_EINTR(recvmsg(pipe_, &msg, MSG_DONTWAIT));
+
+    if (bytes_read < 0) {
+      if (errno == EAGAIN) {
+        return true;
+      } else {
+        CHROMIUM_LOG(ERROR) << "pipe error (" << pipe_ << "): " << strerror(errno);
         return false;
       }
+    } else if (bytes_read == 0) {
+      
+      Close();
+      return false;
     }
     DCHECK(bytes_read);
 
@@ -373,44 +373,8 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
     }
 
     
-    const char *p;
-    const char *overflowp;
-    const char *end;
-    if (input_overflow_buf_.empty()) {
-      overflowp = NULL;
-      p = input_buf_;
-      end = p + bytes_read;
-    } else {
-      if (input_overflow_buf_.size() >
-         static_cast<size_t>(kMaximumMessageSize - bytes_read)) {
-        ClearAndShrinkInputOverflowBuf();
-        CHROMIUM_LOG(ERROR) << "IPC message is too big";
-        return false;
-      }
-
-      input_overflow_buf_.append(input_buf_, bytes_read);
-      overflowp = p = input_overflow_buf_.data();
-      end = p + input_overflow_buf_.size();
-
-      
-      
-      
-      
-      uint32_t length = Message::GetLength(p, end);
-      if (length) {
-        if (length > kMaximumMessageSize) {
-          ClearAndShrinkInputOverflowBuf();
-          CHROMIUM_LOG(ERROR) << "IPC message is too big";
-          return false;
-        }
-
-        input_overflow_buf_.reserve(length + kReadBufferSize);
-
-        
-        overflowp = p = input_overflow_buf_.data();
-        end = p + input_overflow_buf_.size();
-      }
-    }
+    const char *p = input_buf_;
+    const char *end = input_buf_ + input_buf_offset_ + bytes_read;
 
     
     
@@ -430,131 +394,154 @@ bool Channel::ChannelImpl::ProcessIncomingMessages() {
       num_fds = input_overflow_fds_.size();
     }
 
+    
+    
+    
+
     while (p < end) {
-      const char* message_tail = Message::FindNext(p, end);
-      if (message_tail) {
-        int len = static_cast<int>(message_tail - p);
-        char* buf;
+      
+      
+      uint32_t message_length = 0;
+      if (incoming_message_.isSome()) {
+        message_length = incoming_message_.ref().size();
+      } else {
+        message_length = Message::MessageSize(p, end);
+      }
+
+      if (!message_length) {
+        
+        MOZ_ASSERT(incoming_message_.isNothing());
 
         
         
         
-        
-        if (len > kMaxCopySize) {
-          
-          
-          
-          
-          MOZ_RELEASE_ASSERT(p == overflowp);
-          buf = input_overflow_buf_.trade_bytes(len);
+        memmove(input_buf_, p, end - p);
+        input_buf_offset_ = end - p;
 
+        break;
+      }
+
+      input_buf_offset_ = 0;
+
+      bool partial;
+      if (incoming_message_.isSome()) {
+        
+        
+        Message& m = incoming_message_.ref();
+
+        
+        
+        MOZ_ASSERT(message_length > m.CurrentSize());
+        uint32_t remaining = message_length - m.CurrentSize();
+
+        
+        uint32_t in_buf = std::min(remaining, uint32_t(end - p));
+
+        m.InputBytes(p, in_buf);
+        p += in_buf;
+
+        
+        partial = in_buf != remaining;
+      } else {
+        
+        uint32_t in_buf = std::min(message_length, uint32_t(end - p));
+
+        incoming_message_.emplace(p, in_buf);
+        p += in_buf;
+
+        
+        partial = in_buf != message_length;
+      }
+
+      if (partial) {
+        break;
+      }
+
+      Message& m = incoming_message_.ref();
+
+      if (m.header()->num_fds) {
+        
+        const char* error = NULL;
+        if (m.header()->num_fds > num_fds - fds_i) {
           
           
-          
-          p = nullptr;
-          overflowp = message_tail = input_overflow_buf_.data();
-          end = overflowp + input_overflow_buf_.size();
-        } else {
-          buf = (char*)moz_xmalloc(len);
-          memcpy(buf, p, len);
+          error = "Message needs unreceived descriptors";
         }
-        Message m(buf, len, Message::OWNS);
-        if (m.header()->num_fds) {
+
+        if (m.header()->num_fds >
+            FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE) {
           
-          const char* error = NULL;
-          if (m.header()->num_fds > num_fds - fds_i) {
-            
-            
-            error = "Message needs unreceived descriptors";
-          }
+          error = "Message requires an excessive number of descriptors";
+        }
 
-          if (m.header()->num_fds >
-              FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE) {
-            
-            error = "Message requires an excessive number of descriptors";
-          }
-
-          if (error) {
-            CHROMIUM_LOG(WARNING) << error
-                                  << " channel:" << this
-                                  << " message-type:" << m.type()
-                                  << " header()->num_fds:" << m.header()->num_fds
-                                  << " num_fds:" << num_fds
-                                  << " fds_i:" << fds_i;
-            
-            for (unsigned i = fds_i; i < num_fds; ++i)
-              HANDLE_EINTR(close(fds[i]));
-            input_overflow_fds_.clear();
-            
-            return false;
-          }
+        if (error) {
+          CHROMIUM_LOG(WARNING) << error
+                                << " channel:" << this
+                                << " message-type:" << m.type()
+                                << " header()->num_fds:" << m.header()->num_fds
+                                << " num_fds:" << num_fds
+                                << " fds_i:" << fds_i;
+          
+          for (unsigned i = fds_i; i < num_fds; ++i)
+            HANDLE_EINTR(close(fds[i]));
+          input_overflow_fds_.clear();
+          
+          return false;
+        }
 
 #if defined(OS_MACOSX)
-          
-          
-          Message *fdAck = new Message(MSG_ROUTING_NONE,
-                                       RECEIVED_FDS_MESSAGE_TYPE,
-                                       IPC::Message::PRIORITY_NORMAL);
-          DCHECK(m.fd_cookie() != 0);
-          fdAck->set_fd_cookie(m.fd_cookie());
-          OutputQueuePush(fdAck);
+        
+        
+        Message *fdAck = new Message(MSG_ROUTING_NONE,
+                                     RECEIVED_FDS_MESSAGE_TYPE,
+                                     IPC::Message::PRIORITY_NORMAL);
+        DCHECK(m.fd_cookie() != 0);
+        fdAck->set_fd_cookie(m.fd_cookie());
+        OutputQueuePush(fdAck);
 #endif
 
-          m.file_descriptor_set()->SetDescriptors(
-              &fds[fds_i], m.header()->num_fds);
-          fds_i += m.header()->num_fds;
-        }
+        m.file_descriptor_set()->SetDescriptors(
+                                                &fds[fds_i], m.header()->num_fds);
+        fds_i += m.header()->num_fds;
+      }
 #ifdef IPC_MESSAGE_DEBUG_EXTRA
-        DLOG(INFO) << "received message on channel @" << this <<
-                      " with type " << m.type();
+      DLOG(INFO) << "received message on channel @" << this <<
+        " with type " << m.type();
 #endif
 
 #ifdef MOZ_TASK_TRACER
-        AutoSaveCurTraceInfo saveCurTraceInfo;
-        SetCurTraceInfo(m.header()->source_event_id,
-                        m.header()->parent_task_id,
-                        m.header()->source_event_type);
+      AutoSaveCurTraceInfo saveCurTraceInfo;
+      SetCurTraceInfo(m.header()->source_event_id,
+                      m.header()->parent_task_id,
+                      m.header()->source_event_type);
 #endif
 
-        if (m.routing_id() == MSG_ROUTING_NONE &&
-            m.type() == HELLO_MESSAGE_TYPE) {
-          
-          listener_->OnChannelConnected(MessageIterator(m).NextInt());
-#if defined(OS_MACOSX)
-        } else if (m.routing_id() == MSG_ROUTING_NONE &&
-                   m.type() == RECEIVED_FDS_MESSAGE_TYPE) {
-          DCHECK(m.fd_cookie() != 0);
-          CloseDescriptors(m.fd_cookie());
-#endif
-        } else {
-          listener_->OnMessageReceived(mozilla::Move(m));
-        }
-        p = message_tail;
-      } else {
+      if (m.routing_id() == MSG_ROUTING_NONE &&
+          m.type() == HELLO_MESSAGE_TYPE) {
         
-        break;
+        listener_->OnChannelConnected(MessageIterator(m).NextInt());
+#if defined(OS_MACOSX)
+      } else if (m.routing_id() == MSG_ROUTING_NONE &&
+                 m.type() == RECEIVED_FDS_MESSAGE_TYPE) {
+        DCHECK(m.fd_cookie() != 0);
+        CloseDescriptors(m.fd_cookie());
+#endif
+      } else {
+        listener_->OnMessageReceived(mozilla::Move(m));
       }
+
+      incoming_message_.reset();
     }
-    if (end == p) {
-      ClearAndShrinkInputOverflowBuf();
-    } else if (!overflowp) {
-      
-      input_overflow_buf_.assign(p, end - p);
-    } else if (p > overflowp) {
-      
-      input_overflow_buf_.erase(0, p - overflowp);
-    }
+
     input_overflow_fds_ = std::vector<int>(&fds[fds_i], &fds[num_fds]);
 
     
     
     
-    if (input_overflow_buf_.empty() && !input_overflow_fds_.empty()) {
+    if (incoming_message_.isNothing() && input_buf_offset_ == 0 && !input_overflow_fds_.empty()) {
       
       return false;
     }
-
-    bytes_read = 0;  
   }
 
   return true;
@@ -582,7 +569,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
         int[FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE]));
     char buf[tmp];
 
-    if (message_send_bytes_written_ == 0 &&
+    if (partial_write_iter_.isNothing() &&
         !msg->file_descriptor_set()->empty()) {
       
       struct cmsghdr *cmsg;
@@ -610,16 +597,46 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
 #endif
     }
 
-    size_t amt_to_write = msg->size() - message_send_bytes_written_;
-    DCHECK(amt_to_write != 0);
-    const char *out_bytes = reinterpret_cast<const char*>(msg->data()) +
-        message_send_bytes_written_;
+    struct iovec iov[kMaxIOVecSize];
+    size_t iov_count = 0;
+    size_t amt_to_write = 0;
 
-    struct iovec iov = {const_cast<char*>(out_bytes), amt_to_write};
-    msgh.msg_iov = &iov;
-    msgh.msg_iovlen = 1;
+    if (partial_write_iter_.isNothing()) {
+      Pickle::BufferList::IterImpl iter(msg->Buffers());
+      partial_write_iter_.emplace(iter);
+    }
+
+    
+    Pickle::BufferList::IterImpl iter = partial_write_iter_.value();
+
+    
+    iov[0].iov_base = const_cast<char*>(iter.Data());
+    iov[0].iov_len = iter.RemainingInSegment();
+    amt_to_write += iov[0].iov_len;
+    iter.Advance(msg->Buffers(), iov[0].iov_len);
+    iov_count++;
+
+    
+    while (!iter.Done()) {
+      char* data = iter.Data();
+      size_t size = iter.RemainingInSegment();
+
+      
+      
+      if (iov_count < kMaxIOVecSize) {
+        iov[iov_count].iov_base = data;
+        iov[iov_count].iov_len = size;
+        iov_count++;
+      }
+      amt_to_write += size;
+      iter.Advance(msg->Buffers(), size);
+    }
+
+    msgh.msg_iov = iov;
+    msgh.msg_iovlen = iov_count;
 
     ssize_t bytes_written = HANDLE_EINTR(sendmsg(pipe_, &msgh, MSG_DONTWAIT));
+
 #if !defined(OS_MACOSX)
     
     
@@ -663,9 +680,9 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
     }
 
     if (static_cast<size_t>(bytes_written) != amt_to_write) {
+      
       if (bytes_written > 0) {
-        
-        message_send_bytes_written_ += bytes_written;
+        partial_write_iter_.ref().AdvanceAcrossSegments(msg->Buffers(), bytes_written);
       }
 
       
@@ -678,7 +695,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
           this);
       return true;
     } else {
-      message_send_bytes_written_ = 0;
+      partial_write_iter_.reset();
 
 #if defined(OS_MACOSX)
       if (!msg->file_descriptor_set()->empty())

@@ -14,6 +14,8 @@
 #include "base/string16.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/BufferList.h"
+#include "mozilla/mozalloc.h"
 
 class Pickle;
 
@@ -24,10 +26,10 @@ public:
 private:
   friend class Pickle;
 
-  template<typename T>
-  void CopyFrom(T* dest);
+  mozilla::BufferList<InfallibleAllocPolicy>::IterImpl iter_;
 
-  void* iter_;
+  template<typename T>
+  void CopyInto(T* dest);
 };
 
 
@@ -49,28 +51,16 @@ private:
 
 class Pickle {
  public:
-  enum Ownership {
-    BORROWS,
-    OWNS,
-  };
-
   ~Pickle();
 
-  
-  Pickle();
+  Pickle() = delete;
 
   
   
   
-  explicit Pickle(int header_size);
+  explicit Pickle(uint32_t header_size);
 
-  
-  
-  
-  
-  
-  
-  Pickle(const char* data, int data_len, Ownership ownership = BORROWS);
+  Pickle(uint32_t header_size, const char* data, uint32_t length);
 
   Pickle(const Pickle& other) = delete;
 
@@ -82,16 +72,13 @@ class Pickle {
   Pickle& operator=(Pickle&& other);
 
   
-  int size() const { return static_cast<int>(header_size_ +
-                                             header_->payload_size); }
+  uint32_t size() const { return header_size_ + header_->payload_size; }
 
-  
-  uint32_t capacity() const {
-    return capacity_;
-  }
+  typedef mozilla::BufferList<InfallibleAllocPolicy> BufferList;
 
-  
-  const void* data() const { return header_; }
+  const BufferList& Buffers() const { return buffers_; }
+
+  uint32_t CurrentSize() const { return buffers_.Size(); }
 
   
   
@@ -114,9 +101,9 @@ class Pickle {
   MOZ_MUST_USE bool ReadUnsignedChar(PickleIterator* iter, unsigned char* result) const;
   MOZ_MUST_USE bool ReadString(PickleIterator* iter, std::string* result) const;
   MOZ_MUST_USE bool ReadWString(PickleIterator* iter, std::wstring* result) const;
-  MOZ_MUST_USE bool ReadBytesInto(PickleIterator* iter, void* data, int length) const;
-  MOZ_MUST_USE bool FlattenBytes(PickleIterator* iter, const char** data, int length,
-                                 uint32_t alignment = sizeof(memberAlignmentType)) const;
+  MOZ_MUST_USE bool ReadBytesInto(PickleIterator* iter, void* data, uint32_t length) const;
+  MOZ_MUST_USE bool FlattenBytes(PickleIterator* iter, const char** data, uint32_t length,
+                                 uint32_t alignment = sizeof(memberAlignmentType));
 
   
   
@@ -124,9 +111,7 @@ class Pickle {
 
   MOZ_MUST_USE bool ReadSentinel(PickleIterator* iter, uint32_t sentinel) const;
 
-  void EndRead(PickleIterator& iter) const {
-    DCHECK(iter.iter_ == end_of_payload());
-  }
+  void EndRead(PickleIterator& iter) const;
 
   
   
@@ -184,21 +169,15 @@ class Pickle {
   }
   bool WriteString(const std::string& value);
   bool WriteWString(const std::wstring& value);
-  bool WriteData(const char* data, int length);
-  bool WriteBytes(const void* data, int data_len,
+  bool WriteData(const char* data, uint32_t length);
+  bool WriteBytes(const void* data, uint32_t data_len,
                   uint32_t alignment = sizeof(memberAlignmentType));
 
   bool WriteSentinel(uint32_t sentinel);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  char* BeginWriteData(int length);
+  int32_t* GetInt32PtrForTest(uint32_t offset);
+
+  void InputBytes(const char* data, uint32_t length);
 
   
   struct Header {
@@ -219,59 +198,21 @@ class Pickle {
     return static_cast<const T*>(header_);
   }
 
-  
-  
-  
-  bool IteratorHasRoomFor(const PickleIterator& iter, int len) const {
-    if ((len < 0) || (iter.iter_ < header_) || iter.iter_ > end_of_payload())
-      return false;
-    const char* end_of_region = reinterpret_cast<const char*>(iter.iter_) + len;
-    
-    return (iter.iter_ <= end_of_region) && (end_of_region <= end_of_payload());
-  }
-
   typedef uint32_t memberAlignmentType;
 
  protected:
-  MOZ_MUST_USE bool ReadBytes(PickleIterator* iter, const char** data, int length,
-                              uint32_t alignment = sizeof(memberAlignmentType)) const;
-
   uint32_t payload_size() const { return header_->payload_size; }
 
-  char* payload() {
-    return reinterpret_cast<char*>(header_) + header_size_;
-  }
-  const char* payload() const {
-    return reinterpret_cast<const char*>(header_) + header_size_;
-  }
-
   
   
-  char* end_of_payload() {
-    
-    return payload() + payload_size();
-  }
-  const char* end_of_payload() const {
-    
-    return header_ ? payload() + payload_size() : nullptr;
-  }
+  
+  
+  void BeginWrite(uint32_t length, uint32_t alignment);
 
   
   
   
-  
-  char* BeginWrite(uint32_t length, uint32_t alignment);
-
-  
-  
-  
-  void EndWrite(char* dest, int length);
-
-  
-  
-  
-  
-  void Resize(uint32_t new_capacity);
+  void EndWrite(uint32_t length);
 
   
   
@@ -287,35 +228,37 @@ class Pickle {
     return ConstantAligner<sizeof(memberAlignmentType)>::align(bytes);
   }
 
-  
-  
-  
-  static void UpdateIter(PickleIterator* iter, int bytes) {
-    iter->iter_ = static_cast<char*>(iter->iter_) + AlignInt(bytes);
+  static uint32_t AlignCapacity(int bytes) {
+    return ConstantAligner<kSegmentAlignment>::align(bytes);
   }
 
   
   
-  static const char* FindNext(uint32_t header_size,
+  
+  bool IteratorHasRoomFor(const PickleIterator& iter, uint32_t len) const;
+
+  
+  
+  
+  void UpdateIter(PickleIterator* iter, uint32_t bytes) const;
+
+  
+  
+  
+  static uint32_t MessageSize(uint32_t header_size,
                               const char* range_start,
                               const char* range_end);
 
   
   
-  static uint32_t GetLength(uint32_t header_size,
-                            const char* range_start,
-                            const char* range_end);
-
-  
-  static const int kPayloadUnit;
+  static const uint32_t kSegmentAlignment = 8;
 
  private:
   friend class PickleIterator;
 
+  BufferList buffers_;
   Header* header_;
   uint32_t header_size_;
-  uint32_t capacity_;
-  uint32_t variable_buffer_offset_;
 };
 
 #endif  

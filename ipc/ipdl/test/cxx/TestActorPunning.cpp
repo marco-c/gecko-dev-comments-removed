@@ -110,9 +110,8 @@ using namespace mozilla::ipc;
  void
 ParamTraits<Bad>::Write(Message* aMsg, const paramType& aParam)
 {
-    char* ptr = aMsg->BeginWriteData(4);
-    ptr -= intptr_t(sizeof(int));
-    ptr -= intptr_t(sizeof(ActorHandle));
+    
+    int32_t* ptr = aMsg->GetInt32PtrForTest(2 * sizeof(int32_t));
     ActorHandle* ah = reinterpret_cast<ActorHandle*>(ptr);
     if (ah->mId != -3)
         fail("guessed wrong offset (value is %d, should be -3)", ah->mId);
@@ -122,9 +121,6 @@ ParamTraits<Bad>::Write(Message* aMsg, const paramType& aParam)
  bool
 ParamTraits<Bad>::Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
 {
-    const char* ptr;
-    int len;
-    mozilla::Unused << aMsg->ReadData(aIter, &ptr, &len);
     return true;
 }
 

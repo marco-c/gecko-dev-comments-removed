@@ -16,12 +16,13 @@
 #include <vector>
 #include <list>
 
-#include "base/buffer.h"
 #include "base/message_loop.h"
 #include "base/task.h"
 #include "chrome/common/file_descriptor_set_posix.h"
 
 #include "nsAutoPtr.h"
+
+#include "mozilla/Maybe.h"
 
 namespace IPC {
 
@@ -63,8 +64,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   bool ProcessIncomingMessages();
   bool ProcessOutgoingMessages();
 
-  void ClearAndShrinkInputOverflowBuf();
-
   
   virtual void OnFileCanReadWithoutBlocking(int fd);
   virtual void OnFileCanWriteWithoutBlocking(int fd);
@@ -89,7 +88,8 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
   
   
-  size_t message_send_bytes_written_;
+  
+  mozilla::Maybe<Pickle::BufferList::IterImpl> partial_write_iter_;
 
   int server_listen_pipe_;
   int pipe_;
@@ -106,6 +106,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
   
   char input_buf_[Channel::kReadBufferSize];
+  size_t input_buf_offset_;
 
   
   
@@ -131,7 +132,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
   
   
-  Buffer input_overflow_buf_;
+  mozilla::Maybe<Message> incoming_message_;
   std::vector<int> input_overflow_fds_;
 
   

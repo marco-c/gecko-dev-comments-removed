@@ -12,10 +12,11 @@
 #include <queue>
 #include <string>
 
-#include "base/buffer.h"
 #include "base/message_loop.h"
 #include "base/task.h"
 #include "nsISupportsImpl.h"
+
+#include "mozilla/Maybe.h"
 
 namespace IPC {
 
@@ -84,11 +85,17 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   std::queue<Message*> output_queue_;
 
   
+  
+  
+  mozilla::Maybe<Pickle::BufferList::IterImpl> partial_write_iter_;
+
+  
   char input_buf_[Channel::kReadBufferSize];
+  size_t input_buf_offset_;
 
   
   
-  Buffer input_overflow_buf_;
+  mozilla::Maybe<Message> incoming_message_;
 
   
   
