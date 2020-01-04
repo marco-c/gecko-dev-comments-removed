@@ -79,8 +79,6 @@ public:
     return "omx decoder";
   }
 
-  void SetSeekThreshold(const media::TimeUnit& aTime) override;
-
   
   bool Event(OMX_EVENTTYPE aEvent, OMX_U32 aData1, OMX_U32 aData2);
 
@@ -199,9 +197,6 @@ protected:
   RefPtr<MediaDataHelper> mMediaDataHelper;
 
   MediaDataDecoderCallback* mCallback;
-
-  
-  Maybe<media::TimeUnit> mSeekTargetThreshold;
 };
 
 template<class T>
