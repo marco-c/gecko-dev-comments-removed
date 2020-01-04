@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 
@@ -473,4 +474,18 @@ function pushPref(preferenceName, value) {
     let options = {"set": [[preferenceName, value]]};
     SpecialPowers.pushPrefEnv(options, resolve);
   });
+}
+
+
+
+
+
+
+
+
+
+
+function lookupPath(obj, path) {
+  let segments = path.split(".");
+  return segments.reduce((prev, current) => prev[current], obj);
 }

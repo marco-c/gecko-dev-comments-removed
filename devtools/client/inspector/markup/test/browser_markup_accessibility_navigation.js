@@ -2,11 +2,12 @@
 
 
 
+
 "use strict";
 
 
 
-
+loadHelperScript("helper_markup_accessibility_navigation.js");
 
 
 
@@ -237,15 +238,12 @@ const TESTS = [
   },
 ];
 
-let elms = {};
 let containerID = 0;
+let elms = {};
 
 add_task(function* () {
   let { inspector } = yield openInspectorForURL(`data:text/html;charset=utf-8,
     <h1 id="some-id" class="some-class">foo<span>Child span<span></h1>`);
-  let markup = inspector.markup;
-  let doc = markup.doc;
-  let win = doc.defaultView;
 
   
   
@@ -254,48 +252,26 @@ add_task(function* () {
     inspector.off("container-created", memorizeContainer);
   });
 
-  elms.docBody = doc.body;
-  elms.root = markup.getContainer(markup._rootNode);
+  elms.docBody = inspector.markup.doc.body;
+  elms.root = inspector.markup.getContainer(inspector.markup._rootNode);
   elms.header = yield getContainerForSelector("h1", inspector);
   elms.body = yield getContainerForSelector("body", inspector);
 
   
   
-  testNavigationState(doc, elms.docBody, elms.body.tagLine);
+  testNavigationState(inspector, elms, elms.docBody, elms.body.tagLine);
 
   
   elms.root.elt.focus();
 
-  for (let {desc, waitFor, focused, activedescendant, key, options} of TESTS) {
-    info(desc);
-    let updated;
-    if (waitFor) {
-      updated = waitFor === "inspector-updated" ?
-        inspector.once(waitFor) : markup.once(waitFor);
-    } else {
-      updated = Promise.resolve();
-    }
-
-    EventUtils.synthesizeKey(key, options, win);
-    yield updated;
-    testNavigationState(doc, getElm(focused), getElm(activedescendant));
+  for (let testData of TESTS) {
+    yield runAccessibilityNavigationTest(inspector, elms, testData);
   }
+
+  elms = null;
 });
 
 
 function memorizeContainer(event, container) {
   elms[`container-${containerID++}`] = container;
-}
-
-
-function getElm(path) {
-  let segments = path.split(".");
-  return segments.reduce((prev, current) => prev[current], elms);
-}
-
-function testNavigationState(doc, focused, activedescendant) {
-  let id = activedescendant.getAttribute("id");
-  is(doc.activeElement, focused, `Keyboard focus should be set to ${focused}`);
-  is(elms.root.elt.getAttribute("aria-activedescendant"), id,
-    `Active descendant should be set to ${id}`);
 }
