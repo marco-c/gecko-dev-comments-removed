@@ -8243,6 +8243,24 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
     }
   }
 
+  nsCOMPtr<nsIPermissionManager> permissionManager =
+    services::GetPermissionManager();
+  if (!permissionManager) {
+    return StorageAccess::eDeny;
+  }
+
+  
+  
+  uint32_t perm;
+  permissionManager->TestPermissionFromPrincipal(aPrincipal, "cookie", &perm);
+  if (perm == nsIPermissionManager::DENY_ACTION) {
+    return StorageAccess::eDeny;
+  } else if (perm == nsICookiePermission::ACCESS_SESSION) {
+    return std::min(access, StorageAccess::eSessionScoped);
+  } else if (perm == nsIPermissionManager::ALLOW_ACTION) {
+    return access;
+  }
+
   
   if (sCookiesLifetimePolicy == nsICookieService::ACCEPT_SESSION) {
     
@@ -8282,24 +8300,6 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
     if (isAbout) {
       return access;
     }
-  }
-
-  nsCOMPtr<nsIPermissionManager> permissionManager =
-    services::GetPermissionManager();
-  if (!permissionManager) {
-    return StorageAccess::eDeny;
-  }
-
-  
-  
-  uint32_t perm;
-  permissionManager->TestPermissionFromPrincipal(aPrincipal, "cookie", &perm);
-  if (perm == nsIPermissionManager::DENY_ACTION) {
-    return StorageAccess::eDeny;
-  } else if (perm == nsICookiePermission::ACCESS_SESSION) {
-    return std::min(access, StorageAccess::eSessionScoped);
-  } else if (perm == nsIPermissionManager::ALLOW_ACTION) {
-    return access;
   }
 
   
