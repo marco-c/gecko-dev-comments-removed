@@ -4,6 +4,17 @@
 
 
 
+
+#ifdef NTDDI_VERSION
+#undef NTDDI_VERSION
+#endif
+#define NTDDI_VERSION 0x06010000
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
+#define _WIN32_WINNT 0x0601
+
+#include "DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/RefPtr.h"
 
@@ -11,6 +22,28 @@
 
 namespace mozilla {
 namespace mscom {
+
+bool
+IsCurrentThreadMTA()
+{
+  static DynamicallyLinkedFunctionPtr<decltype(&::CoGetApartmentType)>
+    pCoGetApartmentType(L"ole32.dll", "CoGetApartmentType");
+
+  
+  
+  if (!pCoGetApartmentType) {
+    return false;
+  }
+
+  APTTYPE aptType;
+  APTTYPEQUALIFIER aptTypeQualifier;
+  HRESULT hr = pCoGetApartmentType(&aptType, &aptTypeQualifier);
+  if (FAILED(hr)) {
+    return false;
+  }
+
+  return aptType == APTTYPE_MTA;
+}
 
 bool
 IsProxy(IUnknown* aUnknown)
