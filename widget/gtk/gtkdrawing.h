@@ -192,7 +192,7 @@ typedef enum {
   MOZ_GTK_WINDOW,
   
   MOZ_GTK_INFO_BAR
-} GtkThemeWidgetType;
+} WidgetNodeType;
 
 
 
@@ -242,13 +242,13 @@ GdkColormap* moz_gtk_widget_get_colormap();
 
 
 gint
-moz_gtk_widget_paint(GtkThemeWidgetType widget, GdkDrawable* drawable,
+moz_gtk_widget_paint(WidgetNodeType widget, GdkDrawable* drawable,
                      GdkRectangle* rect, GdkRectangle* cliprect,
                      GtkWidgetState* state, gint flags,
                      GtkTextDirection direction);
 #else
 gint
-moz_gtk_widget_paint(GtkThemeWidgetType widget, cairo_t *cr,
+moz_gtk_widget_paint(WidgetNodeType widget, cairo_t *cr,
                      GdkRectangle* rect,
                      GtkWidgetState* state, gint flags,
                      GtkTextDirection direction);
@@ -266,7 +266,7 @@ moz_gtk_widget_paint(GtkThemeWidgetType widget, cairo_t *cr,
 
 
 
-gint moz_gtk_get_widget_border(GtkThemeWidgetType widget, gint* left, gint* top, 
+gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
                                gint* right, gint* bottom, GtkTextDirection direction,
                                gboolean inhtml);
 
@@ -397,7 +397,7 @@ gint moz_gtk_get_tab_scroll_arrow_size(gint* width, gint* height);
 
 
 void
-moz_gtk_get_arrow_size(GtkThemeWidgetType widgetType,
+moz_gtk_get_arrow_size(WidgetNodeType widgetType,
                        gint* width, gint* height);
 
 
