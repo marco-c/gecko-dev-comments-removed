@@ -1,7 +1,7 @@
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
-Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 
 
@@ -14,18 +14,11 @@ function run_test() {
   url = "jar:" + url + "!/test_bug370103";
 
   
-  var channel = ioService.newChannel2(url,
-                                      null,
-                                      null,
-                                      null,      
-                                      Services.scriptSecurityManager.getSystemPrincipal(),
-                                      null,      
-                                      Ci.nsILoadInfo.SEC_NORMAL,
-                                      Ci.nsIContentPolicy.TYPE_OTHER);
+  var channel = NetUtil.newChannel({uri: url, loadUsingSystemPrincipal: true});
 
   var exception = false;
   try {
-    channel.asyncOpen(null, null);
+    channel.asyncOpen2(null);
   }
   catch(e) {
     exception = true;
