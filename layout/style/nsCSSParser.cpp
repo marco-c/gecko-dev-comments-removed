@@ -1189,6 +1189,9 @@ protected:
     eGradient_Repeating    = 1 << 0, 
     eGradient_MozLegacy    = 1 << 1, 
     eGradient_WebkitLegacy = 1 << 2, 
+
+    
+    eGradient_AnyLegacy = eGradient_MozLegacy | eGradient_WebkitLegacy
   };
   bool ParseLinearGradient(nsCSSValue& aValue, uint8_t aFlags);
   bool ParseRadialGradient(nsCSSValue& aValue, uint8_t aFlags);
@@ -9493,7 +9496,7 @@ CSSParserImpl::ParseRadialGradient(nsCSSValue& aValue,
 
   bool haveSize =
     ParseSingleTokenVariant(cssGradient->GetRadialSize(), VARIANT_KEYWORD,
-                            (aFlags & eGradient_MozLegacy) ?
+                            (aFlags & eGradient_AnyLegacy) ?
                             nsCSSProps::kRadialGradientLegacySizeKTable :
                             nsCSSProps::kRadialGradientSizeKTable);
   if (haveSize) {
@@ -9503,7 +9506,7 @@ CSSParserImpl::ParseRadialGradient(nsCSSValue& aValue,
         ParseSingleTokenVariant(cssGradient->GetRadialShape(), VARIANT_KEYWORD,
                                 nsCSSProps::kRadialGradientShapeKTable);
     }
-  } else if (!(aFlags & eGradient_MozLegacy)) {
+  } else if (!(aFlags & eGradient_AnyLegacy)) {
     
     
     int32_t shape =
@@ -9557,7 +9560,7 @@ CSSParserImpl::ParseRadialGradient(nsCSSValue& aValue,
     return false;
   }
 
-  if (!(aFlags & eGradient_MozLegacy)) {
+  if (!(aFlags & eGradient_AnyLegacy)) {
     if (mToken.mType == eCSSToken_Ident &&
         mToken.mIdent.LowerCaseEqualsLiteral("at")) {
       
@@ -9588,8 +9591,10 @@ CSSParserImpl::ParseRadialGradient(nsCSSValue& aValue,
       haveGradientLine = IsLegacyGradientLine(ty, id);
   }
   if (haveGradientLine) {
-    bool haveAngle =
-      ParseSingleTokenVariant(cssGradient->mAngle, VARIANT_ANGLE, nullptr);
+    
+    bool haveAngle = (aFlags & eGradient_WebkitLegacy)
+      ? false
+      : ParseSingleTokenVariant(cssGradient->mAngle, VARIANT_ANGLE, nullptr);
 
     
     if (!haveAngle || !ExpectSymbol(',', true)) {
@@ -9602,6 +9607,7 @@ CSSParserImpl::ParseRadialGradient(nsCSSValue& aValue,
           
           
           (haveAngle ||
+           (aFlags & eGradient_WebkitLegacy) ||
            !ParseSingleTokenVariant(cssGradient->mAngle, VARIANT_ANGLE,
                                     nullptr) ||
            

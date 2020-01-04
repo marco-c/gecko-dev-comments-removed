@@ -260,6 +260,9 @@ var validGradientAndElementValues = [
   "-moz-radial-gradient(.414rad bottom, red, blue)",
 
   "-moz-radial-gradient(cover, red, blue)",
+  "-moz-radial-gradient(cover circle, red, blue)",
+  "-moz-radial-gradient(contain, red, blue)",
+  "-moz-radial-gradient(contain ellipse, red, blue)",
   "-moz-radial-gradient(circle, red, blue)",
   "-moz-radial-gradient(ellipse closest-corner, red, blue)",
   "-moz-radial-gradient(farthest-side circle, red, blue)",
@@ -638,10 +641,34 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
     "-webkit-radial-gradient(circle farthest-corner, white, black)",
 
     
+    "-webkit-radial-gradient(cover, red, blue)",
+    "-webkit-radial-gradient(cover circle, red, blue)",
+    "-webkit-radial-gradient(contain, red, blue)",
+    "-webkit-radial-gradient(contain ellipse, red, blue)",
+
+    
+    "-webkit-radial-gradient(right, red, blue)",
+    "-webkit-radial-gradient(left bottom, red, blue)",
+    "-webkit-radial-gradient(bottom left, red, blue)",
+    "-webkit-radial-gradient(center, red, blue)",
+    "-webkit-radial-gradient(center right, red, blue)",
+    "-webkit-radial-gradient(center center, red, blue)",
+    "-webkit-radial-gradient(center top, red, blue)",
+    "-webkit-radial-gradient(left 50%, red, blue)",
+    "-webkit-radial-gradient(20px top, red, blue)",
+    "-webkit-radial-gradient(20em 30%, red, blue)",
+
+    
+    "-webkit-radial-gradient(center, circle closest-corner, red, blue)",
+    "-webkit-radial-gradient(10px 20px, cover circle, red, blue)",
+    "-webkit-radial-gradient(5em 50%, ellipse contain, red, blue)",
+
+    
     "-webkit-repeating-linear-gradient(red 10%, blue 30%)",
     "-webkit-repeating-linear-gradient(30deg, pink 20px, orange 70px)",
     "-webkit-repeating-radial-gradient(circle, red, blue 10%, red 20%)",
-    "-webkit-repeating-radial-gradient(circle farthest-corner, gray 10px, yellow 20px)"
+    "-webkit-repeating-radial-gradient(circle farthest-corner, gray 10px, yellow 20px)",
+    "-webkit-repeating-radial-gradient(top left, circle, red, blue 4%, red 8%)"
   );
 
   invalidGradientAndElementValues.push(
@@ -657,7 +684,28 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
 
     
     
-    "-webkit-linear-gradient(10px, red, blue)"
+    
+    "-webkit-linear-gradient(10px, red, blue)",
+
+    
+    "-webkit-radial-gradient(circle 10deg, red, blue)",
+
+    
+    
+    
+    "-webkit-radial-gradient(circle at left bottom, red, blue)",
+    
+    "-webkit-radial-gradient(circle 10px, red, blue)",
+    "-webkit-radial-gradient(ellipse 40px 20px, red, blue)",
+
+    
+    
+    
+    "-webkit-radial-gradient(30deg, red, blue)",
+    
+    "-webkit-radial-gradient(top 30deg, red, blue)",
+    "-webkit-radial-gradient(left top 30deg, red, blue)",
+    "-webkit-radial-gradient(10px 20px 30deg, red, blue)"
 
     
     
