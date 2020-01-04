@@ -586,6 +586,25 @@ public class TopSitesPanel extends HomeFragment {
         }
 
         @Override
+        public long getItemId(int position) {
+            
+            
+            
+            
+
+            final Cursor cursor = getCursor();
+            cursor.moveToPosition(position);
+
+            final long historyId = cursor.getLong(cursor.getColumnIndexOrThrow(TopSites.HISTORY_ID));
+            if (historyId != 0) {
+                return historyId;
+            }
+
+            final long bookmarkId = cursor.getLong(cursor.getColumnIndexOrThrow(TopSites.BOOKMARK_ID));
+            return -1 * bookmarkId;
+        }
+
+        @Override
         public void bindView(View bindView, Context context, Cursor cursor) {
             final String url = cursor.getString(cursor.getColumnIndexOrThrow(TopSites.URL));
             final String title = cursor.getString(cursor.getColumnIndexOrThrow(TopSites.TITLE));
