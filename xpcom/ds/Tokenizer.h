@@ -163,6 +163,12 @@ public:
 
   
 
+
+
+  void SkipUntil(Token const& aToken);
+
+  
+
   
 
 
@@ -300,12 +306,10 @@ public:
 
 
 
-  MOZ_MUST_USE bool
-  ReadUntil(Token const& aToken, nsDependentCSubstring& aResult,
-            ClaimInclusion aInclude = EXCLUDE_LAST);
-  MOZ_MUST_USE bool
-  ReadUntil(Token const& aToken, nsACString& aResult,
-            ClaimInclusion aInclude = EXCLUDE_LAST);
+  MOZ_MUST_USE bool ReadUntil(Token const& aToken, nsDependentCSubstring& aResult,
+                              ClaimInclusion aInclude = EXCLUDE_LAST);
+  MOZ_MUST_USE bool ReadUntil(Token const& aToken, nsACString& aResult,
+                              ClaimInclusion aInclude = EXCLUDE_LAST);
 
 protected:
   
