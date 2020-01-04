@@ -163,10 +163,6 @@ var interfaceNamesInGlobalScope =
 
     "PerformanceMeasure",
 
-    { name: "PerformanceObserver", nightly: true },
-
-    { name: "PerformanceObserverEntryList", nightly: true },
-
     "Promise",
 
     { name: "PushManager", b2g: false, nightlyAndroid: true, android: false },
