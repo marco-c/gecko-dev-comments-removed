@@ -82,7 +82,7 @@ SharedPlanarYCbCrImage::GetAsSourceSurface()
 }
 
 bool
-SharedPlanarYCbCrImage::SetData(const PlanarYCbCrData& aData)
+SharedPlanarYCbCrImage::CopyData(const PlanarYCbCrData& aData)
 {
   
   
@@ -140,7 +140,7 @@ SharedPlanarYCbCrImage::AllocateAndGetNewBuffer(uint32_t aSize)
 }
 
 bool
-SharedPlanarYCbCrImage::SetDataNoCopy(const Data &aData)
+SharedPlanarYCbCrImage::AdoptData(const Data &aData)
 {
   
   

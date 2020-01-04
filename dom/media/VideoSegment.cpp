@@ -80,7 +80,7 @@ VideoFrame::CreateBlackImage(const gfx::IntSize& aSize)
   data.mStereoMode = StereoMode::MONO;
 
   
-  if (!image->SetData(data)) {
+  if (!image->CopyData(data)) {
     MOZ_ASSERT(false);
     return nullptr;
   }

@@ -529,7 +529,7 @@ public:
 
     gfx::IntSize picSize(buffer->GetSize());
     nsAutoPtr<layers::GrallocImage> grallocImage(new layers::GrallocImage());
-    grallocImage->SetData(buffer, picSize);
+    grallocImage->AdoptData(buffer, picSize);
 
     
     int64_t timestamp = -1;
@@ -1005,7 +1005,7 @@ WebrtcOMXH264VideoEncoder::Encode(const webrtc::I420VideoFrame& aInputImage,
   yuvData.mStereoMode = StereoMode::MONO;
   layers::RecyclingPlanarYCbCrImage img(nullptr);
   
-  img.SetDataNoCopy(yuvData);
+  img.AdoptData(yuvData);
 
   CODEC_LOGD("Encode frame: %dx%d, timestamp %u (%lld), renderTimeMs %" PRIu64,
              aInputImage.width(), aInputImage.height(),

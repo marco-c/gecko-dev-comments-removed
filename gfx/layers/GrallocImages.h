@@ -63,11 +63,12 @@ public:
 
   virtual bool SetData(const Data& aData);
 
+  using RecyclingPlanarYCbCrImage::AdoptData;
   
 
 
 
-  void SetData(TextureClient* aGraphicBuffer, const gfx::IntSize& aSize);
+  void AdoptData(TextureClient* aGraphicBuffer, const gfx::IntSize& aSize);
 
   
   enum {

@@ -727,7 +727,7 @@ public:
 
 
 
-  virtual bool SetData(const Data& aData) = 0;
+  virtual bool CopyData(const Data& aData) = 0;
 
   
 
@@ -736,7 +736,7 @@ public:
 
 
 
-  virtual bool SetDataNoCopy(const Data &aData);
+  virtual bool AdoptData(const Data &aData);
 
   
 
@@ -793,16 +793,10 @@ class RecyclingPlanarYCbCrImage: public PlanarYCbCrImage {
 public:
   explicit RecyclingPlanarYCbCrImage(BufferRecycleBin *aRecycleBin) : mRecycleBin(aRecycleBin) {}
   virtual ~RecyclingPlanarYCbCrImage() override;
-  virtual bool SetData(const Data& aData) override;
+  virtual bool CopyData(const Data& aData) override;
   virtual uint8_t* AllocateAndGetNewBuffer(uint32_t aSize) override;
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
 protected:
-  
-
-
-
-
-  bool CopyData(const Data& aData);
 
   
 
