@@ -24,7 +24,6 @@ public:
   nsCookiePermission()
     : mCookiesLifetimeSec(INT64_MAX)
     , mCookiesLifetimePolicy(0) 
-    , mCookiesAlwaysAcceptSession(false)
     {}
 
   bool Init();
@@ -40,7 +39,6 @@ private:
 
   int64_t      mCookiesLifetimeSec;            
   uint8_t      mCookiesLifetimePolicy;         
-  bool mCookiesAlwaysAcceptSession;    
 };
 
 
