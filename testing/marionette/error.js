@@ -88,17 +88,6 @@ error.wrap = function(err) {
 
 
 
-error.wrap = function(err) {
-  if (error.isWebDriverError(err)) {
-    return err;
-  }
-  return new WebDriverError(err.message, err.stacktrace);
-};
-
-
-
-
-
 error.report = function(err) {
   let msg = `Marionette threw an error: ${error.stringify(err)}`;
   dump(msg + "\n");
@@ -177,7 +166,6 @@ this.WebDriverError = function(msg, stack = undefined) {
   Error.call(this, msg);
   this.name = "WebDriverError";
   this.message = msg;
-  this.stack = stack;
   this.status = "webdriver error";
   this.stack = stack;
 };

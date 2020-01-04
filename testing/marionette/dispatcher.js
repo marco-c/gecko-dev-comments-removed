@@ -47,7 +47,7 @@ this.Dispatcher = function(connId, transport, driverFactory) {
   
   this.lastId = 0;
 
-  this.emulator = new emulator.EmulatorService(this.sendEmulator.bind(this));
+  this.emulator = new Emulator(this.sendEmulator.bind(this));
   this.driver = driverFactory(this.emulator);
 
   
