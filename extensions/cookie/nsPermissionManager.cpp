@@ -1671,6 +1671,7 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
         id = aID;
       }
 
+#ifdef MOZ_B2G
       
       
       
@@ -1680,6 +1681,7 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
         aPermission = nsIPermissionManager::PROMPT_ACTION;
         aExpireType = nsIPermissionManager::EXPIRE_NEVER;
       }
+#endif 
 
       entry->GetPermissions().AppendElement(PermissionEntry(id, typeIndex, aPermission,
                                                             aExpireType, aExpireTime,
