@@ -4,7 +4,7 @@
 
 import time
 from marionette import MarionetteTestCase
-from marionette_driver.by import By
+from marionette_driver import By, Wait
 
 
 class TestSwitchWindow(MarionetteTestCase):
@@ -41,7 +41,9 @@ if (win != null)
         self.assertEqual(self.marionette.current_window_handle, orig_win)
         now_available = self.marionette.window_handles
         
-        self.assertEqual(len(now_available), len(orig_available) + 1)
+        Wait(self.marionette).until(
+            lambda _: len(now_available) == len(orig_available) + 1,
+            message="The new window has not been opened.")
         
         self.assertTrue(orig_win in now_available)
         new_win = None
