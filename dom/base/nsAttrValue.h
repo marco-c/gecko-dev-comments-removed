@@ -329,6 +329,18 @@ public:
 
 
 
+
+  void ParseIntWithFallback(const nsAString& aString, int32_t aDefault,
+                            int32_t aMax = INT32_MAX);
+
+  
+
+
+
+
+
+
+
   bool ParseNonNegativeIntValue(const nsAString& aString);
 
   
