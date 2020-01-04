@@ -9,6 +9,7 @@
 #include "RestyleManager.h"
 #include "nsCycleCollectionNoteChild.h" 
 #include "nsPresContext.h"
+#include "nsLayoutUtils.h"
 
 namespace mozilla {
 
@@ -70,6 +71,10 @@ EffectSet::GetEffectSet(const nsIFrame* aFrame)
       return nullptr;
     }
   } else {
+    if (nsLayoutUtils::GetStyleFrame(content) != aFrame) {
+      
+      return nullptr;
+    }
     propName = nsGkAtoms::animationEffectsProperty;
   }
 

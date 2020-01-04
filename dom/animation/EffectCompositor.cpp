@@ -516,6 +516,11 @@ EffectCompositor::GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame)
     if (!content) {
       return result;
     }
+  } else {
+    if (nsLayoutUtils::GetStyleFrame(content) != aFrame) {
+      
+      return result;
+    }
   }
 
   if (!content->IsElement()) {
