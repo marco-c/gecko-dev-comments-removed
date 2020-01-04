@@ -60,6 +60,10 @@ struct ComputedTiming
   
   
   
+  StickyTimeDuration  mEndTime;
+  
+  
+  
   
   Nullable<double>    mProgress;
   
