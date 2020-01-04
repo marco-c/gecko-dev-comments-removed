@@ -41,7 +41,7 @@ const CONTENT_SECURITY_POLICY_REPORT_ONLY_MSG = l10n.lookup("securityCSPROHeader
 const NEXT_URI_HEADER = l10n.lookup("securityReferrerNextURI");
 const CALCULATED_REFERRER_HEADER = l10n.lookup("securityReferrerCalculatedReferrer");
 
-const REFERRER_POLICY_NAMES = [ "None When Downgrade", "None", "Origin Only", "Origin When Cross-Origin", "Unsafe URL" ];
+const REFERRER_POLICY_NAMES = [ "None When Downgrade (default)", "None", "Origin Only", "Origin When Cross-Origin", "Unsafe URL" ];
 
 exports.items = [
   {
@@ -201,35 +201,54 @@ exports.items = [
       var sameDomainReferrer = "";
       var otherDomainReferrer = "";
       var downgradeReferrer = "";
+      var otherDowngradeReferrer = "";
       var origin = pageURI.prePath;
 
       switch (referrerPolicy) {
         case Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER:
           
-          sameDomainReferrer = otherDomainReferrer = downgradeReferrer = "(no referrer)";
+          sameDomainReferrer
+            = otherDomainReferrer
+            = downgradeReferrer
+            = otherDowngradeReferrer
+            = "(no referrer)";
           break;
         case Ci.nsIHttpChannel.REFERRER_POLICY_ORIGIN:
           
-          sameDomainReferrer = otherDomainReferrer = downgradeReferrer = origin;
+          sameDomainReferrer
+            = otherDomainReferrer
+            = downgradeReferrer
+            = otherDowngradeReferrer
+            = origin;
           break;
         case Ci.nsIHttpChannel.REFERRER_POLICY_ORIGIN_WHEN_XORIGIN:
           
           sameDomainReferrer = pageURI.spec;
-          otherDomainReferrer = origin;
-          downgradeReferrer = "(no referrer)";
+          otherDomainReferrer
+            = downgradeReferrer
+            = otherDowngradeReferrer
+            = origin;
           break;
         case Ci.nsIHttpChannel.REFERRER_POLICY_UNSAFE_URL:
           
-          sameDomainReferrer = otherDomainReferrer = downgradeReferrer = pageURI.spec;
+          sameDomainReferrer
+            = otherDomainReferrer
+            = downgradeReferrer
+            = otherDowngradeReferrer
+            = pageURI.spec;
           break;
         case Ci.nsIHttpChannel.REFERRER_POLICY_NO_REFERRER_WHEN_DOWNGRADE:
           
           sameDomainReferrer = otherDomainReferrer = pageURI.spec;
-          downgradeReferrer = "(no referrer)";
+          downgradeReferrer = otherDowngradeReferrer = "(no referrer)";
           break;
         default:
           
-          sameDomainReferrer = otherDomainReferrer = downgradeReferrer = "(unknown Referrer Policy)";
+          sameDomainReferrer
+            = otherDomainReferrer
+            = downgradeReferrer
+            = otherDowngradeReferrer
+            = "(unknown Referrer Policy)";
           break;
       }
 
@@ -237,17 +256,39 @@ exports.items = [
 
       var referrerUrls = [
         
-        {uri: 'http://example.com/', referrer: otherDomainReferrer},
-        {uri: sameDomainUri, referrer: sameDomainReferrer}
+        {
+          uri: pageURI.scheme+'://example.com/',
+          referrer: otherDomainReferrer,
+          description: l10n.lookup('securityReferrerPolicyOtherDomain')},
+        {
+          uri: sameDomainUri,
+          referrer: sameDomainReferrer,
+          description: l10n.lookup('securityReferrerPolicySameDomain')}
       ];
 
       if (pageURI.schemeIs('https')) {
         
-        referrerUrls.push({uri: "http://"+pageURI.hostPort+"/*", referrer: downgradeReferrer});
+        if (sameDomainReferrer != downgradeReferrer) {
+          referrerUrls.push({
+            uri: "http://"+pageURI.hostPort+"/*",
+            referrer: downgradeReferrer,
+            description:
+              l10n.lookup('securityReferrerPolicySameDomainDowngrade')
+          });
+        }
+        if (otherDomainReferrer != otherDowngradeReferrer) {
+          referrerUrls.push({
+            uri: "http://example.com/",
+            referrer: otherDowngradeReferrer,
+            description:
+              l10n.lookup('securityReferrerPolicyOtherDomainDowngrade')
+          });
+        }
       }
 
       return {
-        header: l10n.lookupFormat("securityReferrerPolicyReportHeader", [pageURI.spec]),
+        header: l10n.lookupFormat("securityReferrerPolicyReportHeader",
+                                  [pageURI.spec]),
         policyName: REFERRER_POLICY_NAMES[referrerPolicy],
         urls: referrerUrls
       }
@@ -264,10 +305,13 @@ exports.items = [
           "  <strong> ${rpi.header} </strong> <br />" +
           "  ${rpi.policyName} <br />" +
           "  <table class='gcli-referrer-policy-detail' cellspacing='10' >" +
-          "    <tr><th> " + NEXT_URI_HEADER + " </th><th> " + CALCULATED_REFERRER_HEADER + " </th></tr>" +
+          "    <tr>" +
+          "      <th> " + NEXT_URI_HEADER + " </th>" +
+          "      <th> " + CALCULATED_REFERRER_HEADER + " </th>" +
+          "    </tr>" +
           
           "    <tr foreach='nextURI in ${rpi.urls}' >" +
-          "      <td> ${nextURI.uri} </td>" +
+          "      <td> ${nextURI.description} (e.g., ${nextURI.uri}) </td>" +
           "      <td> ${nextURI.referrer} </td>" +
           "    </tr>" +
           "  </table>" +
