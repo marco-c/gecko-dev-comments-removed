@@ -83,6 +83,12 @@ public:
 
 
 
+  virtual void UIResolutionChanged();
+
+  
+
+
+
 
 
 
