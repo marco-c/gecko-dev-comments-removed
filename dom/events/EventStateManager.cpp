@@ -500,7 +500,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   if (aEvent->mFlags.mIsTrusted &&
       ((mouseEvent && mouseEvent->IsReal() &&
         mouseEvent->mMessage != eMouseEnterIntoWidget &&
-        mouseEvent->mMessage != NS_MOUSE_EXIT_WIDGET) ||
+        mouseEvent->mMessage != eMouseExitFromWidget) ||
        aEvent->mClass == eWheelEventClass ||
        aEvent->mClass == eKeyboardEventClass)) {
     if (gMouseOrKeyboardEventCounter == 0) {
@@ -592,7 +592,8 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     
     aEvent->mFlags.mNoCrossProcessBoundaryForwarding = true;
     break;
-  case NS_MOUSE_EXIT_WIDGET:
+  case eMouseExitFromWidget:
+    
     
     
     
@@ -1175,7 +1176,7 @@ CrossProcessSafeEvent(const WidgetEvent& aEvent)
     case eMouseMove:
     case NS_CONTEXTMENU:
     case eMouseEnterIntoWidget:
-    case NS_MOUSE_EXIT_WIDGET:
+    case eMouseExitFromWidget:
       return true;
     default:
       return false;
@@ -3791,7 +3792,7 @@ EventStateManager::DispatchMouseOrPointerEvent(WidgetMouseEvent* aMouseEvent,
       if (aMessage == NS_MOUSE_OUT) {
         
         nsAutoPtr<WidgetMouseEvent> remoteEvent;
-        CreateMouseOrPointerWidgetEvent(aMouseEvent, NS_MOUSE_EXIT_WIDGET,
+        CreateMouseOrPointerWidgetEvent(aMouseEvent, eMouseExitFromWidget,
                                         aRelatedContent, remoteEvent);
         remoteEvent->exit = WidgetMouseEvent::eTopLevel;
 
@@ -4166,7 +4167,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
     break;
   case NS_POINTER_LEAVE:
   case NS_POINTER_CANCEL:
-  case NS_MOUSE_EXIT_WIDGET:
+  case eMouseExitFromWidget:
     {
       
       

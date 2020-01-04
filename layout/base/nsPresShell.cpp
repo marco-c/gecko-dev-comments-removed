@@ -6371,7 +6371,7 @@ PresShell::UpdateActivePointerState(WidgetGUIEvent* aEvent)
       }
     }
     break;
-  case NS_MOUSE_EXIT_WIDGET:
+  case eMouseExitFromWidget:
     
     if (WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent()) {
       gActivePointersIds->Remove(mouseEvent->pointerId);
@@ -6592,7 +6592,7 @@ PresShell::RecordMouseLocation(WidgetGUIEvent* aEvent)
     if (aEvent->mMessage == eMouseEnterIntoWidget) {
       SynthesizeMouseMove(false);
     }
-  } else if (aEvent->mMessage == NS_MOUSE_EXIT_WIDGET) {
+  } else if (aEvent->mMessage == eMouseExitFromWidget) {
     
     
     
@@ -7313,7 +7313,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
     }
 
     WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-    bool isWindowLevelMouseExit = (aEvent->mMessage == NS_MOUSE_EXIT_WIDGET) &&
+    bool isWindowLevelMouseExit = (aEvent->mMessage == eMouseExitFromWidget) &&
       (mouseEvent && mouseEvent->exit == WidgetMouseEvent::eTopLevel);
 
     

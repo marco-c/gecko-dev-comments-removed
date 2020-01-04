@@ -754,7 +754,7 @@ nsViewManager::DispatchEvent(WidgetGUIEvent *aEvent,
        
        
        
-       mouseEvent->mMessage != NS_MOUSE_EXIT_WIDGET &&
+       mouseEvent->mMessage != eMouseExitFromWidget &&
        mouseEvent->mMessage != eMouseEnterIntoWidget) ||
       aEvent->HasKeyEventMessage() ||
       aEvent->HasIMEEventMessage() ||
