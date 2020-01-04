@@ -6,7 +6,12 @@
 
 
 "use strict";
-dump("############################### browserElementPanning.js loaded\n");
+
+function debug(msg) {
+  
+}
+
+debug("loaded");
 
 var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu }  = Components;
 Cu.import("resource://gre/modules/Services.jsm");
@@ -161,7 +166,7 @@ const ContentPanning = {
     let ratioW = (aRect.width / vRect.width);
     let ratioH = (aRect.height / vRect.height);
 
-    return (showing > 0.9 && (ratioW > 0.9 || ratioH > 0.9)); 
+    return (showing > 0.9 && (ratioW > 0.9 || ratioH > 0.9));
   },
 
   _unloadHandler: function() {

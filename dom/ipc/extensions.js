@@ -4,7 +4,11 @@
 
 "use strict";
 
-dump("######################## extensions.js loaded\n");
+function debug(msg) {
+  
+}
+
+debug("loaded");
 
 ExtensionContent.init(this);
 
