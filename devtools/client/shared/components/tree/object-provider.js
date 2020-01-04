@@ -6,82 +6,85 @@
 "use strict";
 
 
+define(function(require, exports, module) {
+  
 
 
 
 
-var ObjectProvider = {
-  getChildren: function(object) {
-    let children = [];
+  let ObjectProvider = {
+    getChildren: function(object) {
+      let children = [];
 
-    if (object instanceof ObjectProperty) {
-      object = object.value;
-    }
-
-    if (!object) {
-      return [];
-    }
-
-    if (typeof (object) == "string") {
-      return [];
-    }
-
-    for (let prop in object) {
-      try {
-        children.push(new ObjectProperty(prop, object[prop]));
-      } catch (e) {
-        console.error(e);
+      if (object instanceof ObjectProperty) {
+        object = object.value;
       }
+
+      if (!object) {
+        return [];
+      }
+
+      if (typeof (object) == "string") {
+        return [];
+      }
+
+      for (let prop in object) {
+        try {
+          children.push(new ObjectProperty(prop, object[prop]));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      return children;
+    },
+
+    hasChildren: function(object) {
+      if (object instanceof ObjectProperty) {
+        object = object.value;
+      }
+
+      if (!object) {
+        return false;
+      }
+
+      if (typeof object == "string") {
+        return false;
+      }
+
+      if (typeof object !== "object") {
+        return false;
+      }
+
+      return Object.keys(object).length > 1;
+    },
+
+    getLabel: function(object) {
+      return (object instanceof ObjectProperty) ?
+        object.name : null;
+    },
+
+    getValue: function(object) {
+      return (object instanceof ObjectProperty) ?
+        object.value : null;
+    },
+
+    getKey: function(object) {
+      return (object instanceof ObjectProperty) ?
+        object.name : null;
+    },
+
+    getType: function(object) {
+      return (object instanceof ObjectProperty) ?
+        typeof object.value : typeof object;
     }
-    return children;
-  },
+  };
 
-  hasChildren: function(object) {
-    if (object instanceof ObjectProperty) {
-      object = object.value;
-    }
-
-    if (!object) {
-      return false;
-    }
-
-    if (typeof object == "string") {
-      return false;
-    }
-
-    if (typeof object !== "object") {
-      return false;
-    }
-
-    return Object.keys(object).length > 1;
-  },
-
-  getLabel: function(object) {
-    return (object instanceof ObjectProperty) ?
-      object.name : null;
-  },
-
-  getValue: function(object) {
-    return (object instanceof ObjectProperty) ?
-      object.value : null;
-  },
-
-  getKey: function(object) {
-    return (object instanceof ObjectProperty) ?
-      object.name : null;
-  },
-
-  getType: function(object) {
-    return (object instanceof ObjectProperty) ?
-      typeof object.value : typeof object;
+  function ObjectProperty(name, value) {
+    this.name = name;
+    this.value = value;
   }
-};
 
-function ObjectProperty(name, value) {
-  this.name = name;
-  this.value = value;
-}
-
-
-exports.ObjectProperty = ObjectProperty;
-exports.ObjectProvider = ObjectProvider;
+  
+  exports.ObjectProperty = ObjectProperty;
+  exports.ObjectProvider = ObjectProvider;
+});

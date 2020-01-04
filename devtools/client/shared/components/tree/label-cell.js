@@ -6,47 +6,50 @@
 "use strict";
 
 
-const React = require("devtools/client/shared/vendor/react");
-
-
-const { td, span } = React.DOM;
-const PropTypes = React.PropTypes;
-
-
-
-
-var LabelCell = React.createClass({
+define(function(require, exports, module) {
   
+  const React = require("devtools/client/shared/vendor/react");
+
   
-  propTypes: {
-    member: PropTypes.object.isRequired
-  },
+  const { td, span } = React.DOM;
+  const PropTypes = React.PropTypes;
 
-  displayName: "LabelCell",
+  
 
-  render: function() {
-    let member = this.props.member;
-    let level = member.level || 0;
 
+  let LabelCell = React.createClass({
     
     
-    let rowStyle = {
-      "paddingLeft": (level * 16) + "px",
-    };
+    propTypes: {
+      member: PropTypes.object.isRequired
+    },
 
-    return (
-      td({
-        className: "treeLabelCell",
-        key: "default",
-        style: rowStyle},
-        span({ className: "treeIcon" }),
-        span({ className: "treeLabel " + member.type + "Label" },
-          member.name
+    displayName: "LabelCell",
+
+    render: function() {
+      let member = this.props.member;
+      let level = member.level || 0;
+
+      
+      
+      let rowStyle = {
+        "paddingLeft": (level * 16) + "px",
+      };
+
+      return (
+        td({
+          className: "treeLabelCell",
+          key: "default",
+          style: rowStyle},
+          span({ className: "treeIcon" }),
+          span({ className: "treeLabel " + member.type + "Label" },
+            member.name
+          )
         )
-      )
-    );
-  }
+      );
+    }
+  });
+
+  
+  module.exports = LabelCell;
 });
-
-
-module.exports = LabelCell;
