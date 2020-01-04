@@ -5,6 +5,7 @@
 
 
 
+const TIMES_TO_UPDATE = 2;
 function* spawnTest() {
   
   requestLongerTimeout(2);
@@ -51,7 +52,7 @@ function* spawnTest() {
   let updated = 0;
   OverviewView.on(EVENTS.OVERVIEW_RENDERED, () => updated++);
 
-  ok((yield waitUntil(() => updated > 10)),
+  ok((yield waitUntil(() => updated > TIMES_TO_UPDATE)),
     "The overviews were updated several times.");
 
   ok("selectionEnabled" in framerate,
