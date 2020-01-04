@@ -177,25 +177,25 @@ AudioNode::DisconnectFromGraph()
   DestroyMediaStream();
 }
 
-void
+AudioNode*
 AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
                    uint32_t aInput, ErrorResult& aRv)
 {
   if (aOutput >= NumberOfOutputs() ||
       aInput >= aDestination.NumberOfInputs()) {
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
-    return;
+    return nullptr;
   }
 
   if (Context() != aDestination.Context()) {
     aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
-    return;
+    return nullptr;
   }
 
   if (FindIndexOfNodeWithPorts(aDestination.mInputNodes, this, aInput, aOutput) !=
       nsTArray<AudioNode::InputNode>::NoIndex) {
     
-    return;
+    return &aDestination;
   }
 
   
@@ -220,6 +220,8 @@ AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
 
   
   Context()->UpdatePannerSource();
+
+  return &aDestination;
 }
 
 void
