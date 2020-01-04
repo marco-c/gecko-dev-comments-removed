@@ -414,16 +414,26 @@ class BuildMonitor(MozbuildObject):
         
         o['system'] = dict(
             architecture=list(platform.architecture()),
-            logical_cpu_count=psutil.cpu_count(),
             machine=platform.machine(),
-            physical_cpu_count=psutil.cpu_count(logical=False),
             python_version=platform.python_version(),
             release=platform.release(),
             system=platform.system(),
-            swap_total=psutil.swap_memory()[0],
             version=platform.version(),
-            vmem_total=psutil.virtual_memory()[0],
         )
+
+        
+        
+        
+        
+        
+        
+        if psutil:
+            o['system'].update(dict(
+                logical_cpu_count=psutil.cpu_count(),
+                physical_cpu_count=psutil.cpu_count(logical=False),
+                swap_total=psutil.swap_memory()[0],
+                vmem_total=psutil.virtual_memory()[0],
+            ))
 
         if platform.system() == 'Linux':
             dist = list(platform.linux_distribution())
