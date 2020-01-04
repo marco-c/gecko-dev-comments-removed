@@ -2434,7 +2434,7 @@ nsDisplayBackgroundImage::CanOptimizeToImageLayer(LayerManager* aManager,
   
 
   int32_t appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-  mDestRect =
+  mImageLayerDestRect =
     LayoutDeviceRect::FromAppUnits(state.mDestArea, appUnitsPerDevPixel);
 
   
@@ -2527,7 +2527,7 @@ nsDisplayBackgroundImage::GetLayerState(nsDisplayListBuilder* aBuilder,
     mImage->GetHeight(&imageHeight);
     NS_ASSERTION(imageWidth != 0 && imageHeight != 0, "Invalid image size!");
 
-    const LayerRect destLayerRect = mDestRect * aParameters.Scale();
+    const LayerRect destLayerRect = mImageLayerDestRect * aParameters.Scale();
 
     
     const gfxSize scale = gfxSize(destLayerRect.width / imageWidth,
@@ -2589,10 +2589,10 @@ nsDisplayBackgroundImage::ConfigureLayer(ImageLayer* aLayer,
   
   MOZ_ASSERT(aParameters.Offset() == LayerIntPoint(0,0));
 
-  const LayoutDevicePoint p = mDestRect.TopLeft();
+  const LayoutDevicePoint p = mImageLayerDestRect.TopLeft();
   Matrix transform = Matrix::Translation(p.x, p.y);
-  transform.PreScale(mDestRect.width / imageWidth,
-                     mDestRect.height / imageHeight);
+  transform.PreScale(mImageLayerDestRect.width / imageWidth,
+                     mImageLayerDestRect.height / imageHeight);
   aLayer->SetBaseTransform(gfx::Matrix4x4::From2D(transform));
 }
 

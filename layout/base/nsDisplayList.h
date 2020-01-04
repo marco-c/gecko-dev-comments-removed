@@ -2634,7 +2634,7 @@ protected:
   const nsStyleBackground* mBackgroundStyle;
   nsCOMPtr<imgIContainer> mImage;
   RefPtr<ImageContainer> mImageContainer;
-  LayoutDeviceRect mDestRect;
+  LayoutDeviceRect mImageLayerDestRect;
   
   nsRect mBounds;
   uint32_t mLayer;
