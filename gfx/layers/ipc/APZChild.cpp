@@ -5,98 +5,37 @@
 
 
 #include "mozilla/layers/APZChild.h"
+#include "mozilla/layers/GeckoContentController.h"
 
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 
+#include "InputData.h" 
+
 namespace mozilla {
 namespace layers {
 
-
-
-
-
-
-class TabChildCreatedObserver : public nsIObserver
+APZChild::APZChild(RefPtr<GeckoContentController> aController)
+  : mController(aController)
 {
-public:
-  TabChildCreatedObserver(APZChild* aAPZChild, const dom::TabId& aTabId)
-    : mAPZChild(aAPZChild),
-      mTabId(aTabId)
-  {}
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
-
-private:
-  virtual ~TabChildCreatedObserver()
-  {}
-
-  
-  
-  APZChild* mAPZChild;
-  dom::TabId mTabId;
-};
-
-NS_IMPL_ISUPPORTS(TabChildCreatedObserver, nsIObserver)
-
-NS_IMETHODIMP
-TabChildCreatedObserver::Observe(nsISupports* aSubject,
-                                 const char* aTopic,
-                                 const char16_t* aData)
-{
-  MOZ_ASSERT(strcmp(aTopic, "tab-child-created") == 0);
-
-  nsCOMPtr<nsITabChild> tabChild(do_QueryInterface(aSubject));
-  NS_ENSURE_TRUE(tabChild, NS_ERROR_FAILURE);
-
-  dom::TabChild* browser = static_cast<dom::TabChild*>(tabChild.get());
-  if (browser->GetTabId() == mTabId) {
-    mAPZChild->SetBrowser(browser);
-  }
-  return NS_OK;
-}
-
-APZChild*
-APZChild::Create(const dom::TabId& aTabId)
-{
-  RefPtr<dom::TabChild> browser = dom::TabChild::FindTabChild(aTabId);
-  nsAutoPtr<APZChild> apz(new APZChild);
-  if (browser) {
-    apz->SetBrowser(browser);
-  } else {
-    RefPtr<TabChildCreatedObserver> observer =
-      new TabChildCreatedObserver(apz, aTabId);
-    nsCOMPtr<nsIObserverService> os = services::GetObserverService();
-    if (!os ||
-        NS_FAILED(os->AddObserver(observer, "tab-child-created", false))) {
-      return nullptr;
-    }
-    apz->SetObserver(observer);
-  }
-
-  return apz.forget();
-}
-
-APZChild::APZChild()
-  : mDestroyed(false)
-{
+  MOZ_ASSERT(mController);
 }
 
 APZChild::~APZChild()
 {
-  if (mObserver) {
-    nsCOMPtr<nsIObserverService> os = services::GetObserverService();
-    os->RemoveObserver(mObserver, "tab-child-created");
-  } else if (mBrowser) {
-    mBrowser->SetAPZChild(nullptr);
+  if (mController) {
+    mController->Destroy();
+    mController = nullptr;
   }
 }
 
 bool
 APZChild::RecvRequestContentRepaint(const FrameMetrics& aFrameMetrics)
 {
-  return mBrowser->UpdateFrame(aFrameMetrics);
+  MOZ_ASSERT(mController->IsRepaintThread());
+
+  mController->RequestContentRepaint(aFrameMetrics);
+  return true;
 }
 
 bool
@@ -107,77 +46,66 @@ APZChild::RecvHandleTap(const TapType& aType,
                         const uint64_t& aInputBlockId,
                         const bool& aCallTakeFocusForClickFromTap)
 {
-  mBrowser->HandleTap(aType, aPoint - mBrowser->GetChromeDisplacement(), aModifiers, aGuid,
-      aInputBlockId, aCallTakeFocusForClickFromTap);
+  mController->HandleTap(aType, aPoint, aModifiers, aGuid,
+      aInputBlockId);
   return true;
 }
 
 bool
-APZChild::RecvNotifyMozMouseScrollEvent(const uint64_t& aLayersId,
-                                        const ViewID& aScrollId,
+APZChild::RecvUpdateOverscrollVelocity(const float& aX, const float& aY, const bool& aIsRootContent)
+{
+  mController->UpdateOverscrollVelocity(aX, aY, aIsRootContent);
+  return true;
+}
+
+bool
+APZChild::RecvUpdateOverscrollOffset(const float& aX, const float& aY, const bool& aIsRootContent)
+{
+  mController->UpdateOverscrollOffset(aX, aY, aIsRootContent);
+  return true;
+}
+
+bool
+APZChild::RecvSetScrollingRootContent(const bool& aIsRootContent)
+{
+  mController->SetScrollingRootContent(aIsRootContent);
+  return true;
+}
+
+bool
+APZChild::RecvNotifyMozMouseScrollEvent(const ViewID& aScrollId,
                                         const nsString& aEvent)
 {
-  if (mBrowser) {
-    mBrowser->RecvMouseScrollTestEvent(aLayersId, aScrollId, aEvent);
-  }
+  mController->NotifyMozMouseScrollEvent(aScrollId, aEvent);
   return true;
 }
 
 bool
-APZChild::RecvNotifyAPZStateChange(const ViewID& aViewId,
+APZChild::RecvNotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
                                    const APZStateChange& aChange,
                                    const int& aArg)
 {
-  return mBrowser->NotifyAPZStateChange(aViewId, aChange, aArg);
+  mController->NotifyAPZStateChange(aGuid, aChange, aArg);
+  return true;
 }
 
 bool
 APZChild::RecvNotifyFlushComplete()
 {
-  nsCOMPtr<nsIPresShell> shell;
-  if (nsCOMPtr<nsIDocument> doc = mBrowser->GetDocument()) {
-    shell = doc->GetShell();
-  }
-  APZCCallbackHelper::NotifyFlushComplete(shell.get());
+  MOZ_ASSERT(mController->IsRepaintThread());
+
+  mController->NotifyFlushComplete();
   return true;
 }
 
 bool
 APZChild::RecvDestroy()
 {
-  mDestroyed = true;
-  if (mBrowser) {
-    mBrowser->SetAPZChild(nullptr);
-    mBrowser = nullptr;
-  }
+  
   PAPZChild::Send__delete__(this);
   return true;
 }
 
-void
-APZChild::SetObserver(nsIObserver* aObserver)
-{
-  MOZ_ASSERT(!mBrowser);
-  mObserver = aObserver;
-}
-
-void
-APZChild::SetBrowser(dom::TabChild* aBrowser)
-{
-  MOZ_ASSERT(!mBrowser);
-  if (mObserver) {
-    nsCOMPtr<nsIObserverService> os = services::GetObserverService();
-    os->RemoveObserver(mObserver, "tab-child-created");
-    mObserver = nullptr;
-  }
-  
-  
-  
-  if (!mDestroyed) {
-    mBrowser = aBrowser;
-    mBrowser->SetAPZChild(this);
-  }
-}
 
 } 
 } 
