@@ -424,7 +424,6 @@ public:
   virtual SourceMediaStream* AsSourceStream() { return nullptr; }
   virtual ProcessedMediaStream* AsProcessedStream() { return nullptr; }
   virtual AudioNodeStream* AsAudioNodeStream() { return nullptr; }
-  virtual CameraPreviewMediaStream* AsCameraPreviewStream() { return nullptr; }
 
   
   

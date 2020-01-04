@@ -1601,7 +1601,7 @@ MediaStream::MediaStream(DOMMediaStream* aWrapper)
   
   
   
-  NS_ASSERTION(!aWrapper || !aWrapper->GetStream(),
+  NS_ASSERTION(!aWrapper || !aWrapper->GetPlaybackStream(),
                "Wrapper already has another media stream hooked up to it!");
 }
 
