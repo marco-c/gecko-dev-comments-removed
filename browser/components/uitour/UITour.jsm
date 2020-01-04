@@ -1871,6 +1871,16 @@ this.UITour = {
         let props = ["defaultUpdateChannel", "version"];
         let appinfo = {};
         props.forEach(property => appinfo[property] = Services.appinfo[property]);
+
+        
+        
+        
+        let distribution = "default";
+        try {
+          distribution = Services.prefs.getDefaultBranch("distribution.").getCharPref("id");
+        } catch(e) {}
+        appinfo["distribution"] = distribution;
+
         let isDefaultBrowser = null;
         try {
           let shell = aWindow.getShellService();
