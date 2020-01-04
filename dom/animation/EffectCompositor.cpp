@@ -135,12 +135,18 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
                                  RestyleType aRestyleType,
                                  CascadeLevel aCascadeLevel)
 {
+  if (!mPresContext) {
+    
+    return;
+  }
+
   auto& elementsToRestyle = mElementsToRestyle[aCascadeLevel];
   PseudoElementHashKey key = { aElement, aPseudoType };
 
   if (aRestyleType == RestyleType::Throttled &&
       !elementsToRestyle.Contains(key)) {
     elementsToRestyle.Put(key, false);
+    mPresContext->Document()->SetNeedStyleFlush();
   } else {
     elementsToRestyle.Put(key, true);
   }
