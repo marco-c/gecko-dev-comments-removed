@@ -7,7 +7,7 @@
 "use strict";
 
 const promise = require("promise");
-const { method } = require("devtools/server/protocol");
+const { method } = require("devtools/shared/protocol");
 
 
 

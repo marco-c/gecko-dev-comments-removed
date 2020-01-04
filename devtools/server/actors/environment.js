@@ -5,7 +5,7 @@
 
 "use strict";
 
-const { ActorClass, Arg, RetVal, method } = require("devtools/server/protocol");
+const { ActorClass, Arg, RetVal, method } = require("devtools/shared/protocol");
 const { createValueGrip } = require("devtools/server/actors/object");
 
 

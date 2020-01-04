@@ -3,7 +3,7 @@
 
 "use strict";
 
-const protocol = require("devtools/server/protocol");
+const protocol = require("devtools/shared/protocol");
 const specs = require("devtools/shared/specs/storage");
 
 for (let childSpec of Object.values(specs.childSpecs)) {

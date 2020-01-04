@@ -3,7 +3,7 @@
 
 "use strict";
 
-const protocol = require("devtools/server/protocol");
+const protocol = require("devtools/shared/protocol");
 const { actorBridge } = require("devtools/server/actors/common");
 const { method, custom, Arg, Option, RetVal } = protocol;
 const { on, once, off, emit } = require("sdk/event/core");

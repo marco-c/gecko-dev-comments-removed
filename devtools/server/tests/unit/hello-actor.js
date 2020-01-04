@@ -1,7 +1,7 @@
 
 
 
-const protocol = require("devtools/server/protocol");
+const protocol = require("devtools/shared/protocol");
 
 var HelloActor = protocol.ActorClass({
   typeName: "helloActor",

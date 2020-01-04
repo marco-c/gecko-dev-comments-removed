@@ -3,7 +3,7 @@
 
 "use strict";
 
-const protocol = require("devtools/server/protocol");
+const protocol = require("devtools/shared/protocol");
 const { Arg, RetVal, types } = protocol;
 
 let childSpecs = {};

@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Front, FrontClassWithSpec } = require("devtools/server/protocol.js");
+const { Front, FrontClassWithSpec } = require("devtools/shared/protocol.js");
 const {
   getIndentationFromPrefs,
   getIndentationFromString

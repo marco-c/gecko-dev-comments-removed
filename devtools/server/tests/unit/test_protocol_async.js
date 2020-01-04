@@ -7,7 +7,7 @@
 
 
 
-var protocol = require("devtools/server/protocol");
+var protocol = require("devtools/shared/protocol");
 var {method, Arg, Option, RetVal} = protocol;
 var events = require("sdk/event/core");
 

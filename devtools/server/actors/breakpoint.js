@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { ActorClass, method } = require("devtools/server/protocol");
+const { ActorClass, method } = require("devtools/shared/protocol");
 
 
 

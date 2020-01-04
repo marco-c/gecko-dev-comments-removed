@@ -3,7 +3,7 @@
 
 
 const {Cc, Ci, Cu, CC} = require("chrome");
-const protocol = require("devtools/server/protocol");
+const protocol = require("devtools/shared/protocol");
 const {Arg, method, RetVal} = protocol;
 const {DebuggerServer} = require("devtools/server/main");
 const promise = require("promise");
