@@ -325,7 +325,7 @@ WebConsoleActor.prototype =
       
       
       let console = aWindow.wrappedJSObject.console;
-      isNative = console instanceof aWindow.Console;
+      isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE
     }
     catch (ex) { }
     return isNative;
