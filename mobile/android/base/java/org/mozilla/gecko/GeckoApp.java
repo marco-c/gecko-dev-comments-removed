@@ -1154,6 +1154,8 @@ public abstract class GeckoApp
         
         GeckoAppShell.setNotificationClient(makeNotificationClient());
 
+        Tabs.getInstance().attachToContext(this);
+
         
         
         
@@ -1264,8 +1266,6 @@ public abstract class GeckoApp
         mGeckoLayout = (RelativeLayout) findViewById(R.id.gecko_layout);
         mMainLayout = (RelativeLayout) findViewById(R.id.main_layout);
         mLayerView = (GeckoView) findViewById(R.id.layer_view);
-
-        Tabs.getInstance().attachToContext(this, mLayerView);
 
         
         mMainLayout.getViewTreeObserver().addOnGlobalLayoutListener(this);
@@ -2573,7 +2573,9 @@ public abstract class GeckoApp
             if (CPU.equals(topic)) {
               wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, topic);
             } else if (SCREEN.equals(topic)) {
-              wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, topic);
+              
+              
+              wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, topic);
             }
 
             if (wl != null) {
@@ -2878,9 +2880,5 @@ public abstract class GeckoApp
     public String getDefaultChromeURI() {
         
         return null;
-    }
-
-    public GeckoView getGeckoView() {
-        return mLayerView;
     }
 }
