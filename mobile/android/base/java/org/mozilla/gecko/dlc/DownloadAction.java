@@ -41,9 +41,6 @@ public class DownloadAction extends BaseAction {
 
     private static final String CDN_BASE_URL = "https://mobile.cdn.mozilla.net/";
 
-    private static final int STATUS_OK = 200;
-    private static final int STATUS_PARTIAL_CONTENT = 206;
-
     public interface Callback {
         void onContentDownloaded(DownloadContent content);
     }
@@ -159,7 +156,7 @@ public class DownloadAction extends BaseAction {
             }
 
             final int status = connection.getResponseCode();
-            if (status != STATUS_OK && status != STATUS_PARTIAL_CONTENT) {
+            if (status != HttpURLConnection.HTTP_OK && status != HttpURLConnection.HTTP_PARTIAL) {
                 
                 
                 if (status >= 500) {
@@ -179,7 +176,7 @@ public class DownloadAction extends BaseAction {
             }
 
             inputStream = new BufferedInputStream(connection.getInputStream());
-            outputStream = openFile(temporaryFile, status == STATUS_PARTIAL_CONTENT);
+            outputStream = openFile(temporaryFile, status == HttpURLConnection.HTTP_PARTIAL);
 
             IOUtils.copy(inputStream, outputStream);
 
@@ -255,24 +252,9 @@ public class DownloadAction extends BaseAction {
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
     }
 
-    protected HttpURLConnection buildHttpURLConnection(String url)
-            throws UnrecoverableDownloadContentException, IOException {
-        
-        try {
-            System.setProperty("http.keepAlive", "true");
-
-            HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-            connection.setRequestProperty("User-Agent", HardwareUtils.isTablet() ?
-                    AppConstants.USER_AGENT_FENNEC_TABLET :
-                    AppConstants.USER_AGENT_FENNEC_MOBILE);
-            connection.setRequestMethod("GET");
-            return connection;
-        } catch (MalformedURLException e) {
-            throw new UnrecoverableDownloadContentException(e);
-        }
-    }
-
     protected String createDownloadURL(DownloadContent content) {
+        final String location = content.getLocation();
+
         return CDN_BASE_URL + content.getLocation();
     }
 

@@ -24,9 +24,30 @@ import android.util.Log;
 public class DownloadContentService extends IntentService {
     private static final String LOGTAG = "GeckoDLCService";
 
+    
+
+
     private static final String ACTION_STUDY_CATALOG = AppConstants.ANDROID_PACKAGE_NAME + ".DLC.STUDY";
+
+    
+
+
     private static final String ACTION_VERIFY_CONTENT = AppConstants.ANDROID_PACKAGE_NAME + ".DLC.VERIFY";
+
+    
+
+
     private static final String ACTION_DOWNLOAD_CONTENT = AppConstants.ANDROID_PACKAGE_NAME + ".DLC.DOWNLOAD";
+
+    
+
+
+    private static final String ACTION_SYNCHRONIZE_CATALOG = AppConstants.ANDROID_PACKAGE_NAME + ".DLC.SYNC";
+
+    
+
+
+    private static final String ACTION_CLEANUP_FILES = AppConstants.ANDROID_PACKAGE_NAME + ".DLC.CLEANUP";
 
     public static void startStudy(Context context) {
         Intent intent = new Intent(ACTION_STUDY_CATALOG);
@@ -42,6 +63,18 @@ public class DownloadContentService extends IntentService {
 
     public static void startDownloads(Context context) {
         Intent intent = new Intent(ACTION_DOWNLOAD_CONTENT);
+        intent.setComponent(new ComponentName(context, DownloadContentService.class));
+        context.startService(intent);
+    }
+
+    public static void startSync(Context context) {
+        Intent intent = new Intent(ACTION_SYNCHRONIZE_CATALOG);
+        intent.setComponent(new ComponentName(context, DownloadContentService.class));
+        context.startService(intent);
+    }
+
+    public static void startCleanup(Context context) {
+        Intent intent = new Intent(ACTION_CLEANUP_FILES);
         intent.setComponent(new ComponentName(context, DownloadContentService.class));
         context.startService(intent);
     }
@@ -95,6 +128,10 @@ public class DownloadContentService extends IntentService {
 
             case ACTION_VERIFY_CONTENT:
                 action = new VerifyAction();
+                break;
+
+            case ACTION_SYNCHRONIZE_CATALOG:
+                action = new SyncAction();
                 break;
 
             default:

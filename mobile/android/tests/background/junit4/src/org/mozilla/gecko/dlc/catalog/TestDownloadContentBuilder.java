@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 import org.mozilla.gecko.background.testhelpers.TestRunner;
 
 @RunWith(TestRunner.class)
-public class TestDownloadContent {
+public class TestDownloadContentBuilder {
     
 
 
@@ -35,7 +35,7 @@ public class TestDownloadContent {
 
 
     public void testJSONSerializationAndDeserialization() throws JSONException {
-        DownloadContent content = DownloadContent.fromJSON(createTestContent().toJSON());
+        DownloadContent content = DownloadContentBuilder.fromJSON(DownloadContentBuilder.toJSON(createTestContent()));
 
         Assert.assertEquals("Some-ID", content.getId());
         Assert.assertEquals("/somewhere/something", content.getLocation());
@@ -53,7 +53,7 @@ public class TestDownloadContent {
 
 
     private DownloadContent createTestContent() {
-        return new DownloadContent.Builder()
+        return new DownloadContentBuilder()
                 .setId("Some-ID")
                 .setLocation("/somewhere/something")
                 .setFilename("some.file")
