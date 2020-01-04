@@ -1388,9 +1388,17 @@ class MConstant : public MNullaryInstruction
     const js::Value* vp() const {
         return &value_;
     }
-    bool valueToBoolean() const {
-        
-        return ToBoolean(HandleValue::fromMarkedLocation(&value_));
+
+    
+    
+    bool valueToBoolean(bool* res) const;
+
+    
+    
+    bool valueToBooleanInfallible() const {
+        bool res;
+        MOZ_ALWAYS_TRUE(valueToBoolean(&res));
+        return res;
     }
 
     void printOpcode(GenericPrinter& out) const override;
