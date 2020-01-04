@@ -1099,8 +1099,8 @@ nsEventStatus AsyncPanZoomController::HandleInputEvent(const InputData& aEvent,
     break;
   }
   case MOUSE_INPUT: {
-    ScrollWheelInput scrollInput = aEvent.AsScrollWheelInput();
-    if (!scrollInput.TransformToLocal(aTransformToApzc)) { 
+    MouseInput mouseInput = aEvent.AsMouseInput();
+    if (!mouseInput.TransformToLocal(aTransformToApzc)) {
       return rv;
     }
 
