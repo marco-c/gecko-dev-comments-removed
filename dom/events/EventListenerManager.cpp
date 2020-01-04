@@ -456,7 +456,9 @@ EventListenerManager::EnableDevice(EventMessage aEventMessage)
   switch (aEventMessage) {
     case eDeviceOrientation:
 #ifdef MOZ_WIDGET_ANDROID
-      window->EnableDeviceSensor(SENSOR_ROTATION_VECTOR);
+      
+      
+      window->EnableDeviceSensor(SENSOR_GAME_ROTATION_VECTOR);
 #else
       window->EnableDeviceSensor(SENSOR_ORIENTATION);
 #endif
