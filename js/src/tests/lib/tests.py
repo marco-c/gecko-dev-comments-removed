@@ -57,6 +57,8 @@ def get_environment_overlay(js_shell):
         'TZ': 'PST8PDT',
         
         'LC_TIME': 'en_US.UTF-8',
+        
+        'XRE_NO_WINDOWS_CRASH_DIALOG': '1',
     }
     
     
