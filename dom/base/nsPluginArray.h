@@ -60,6 +60,10 @@ private:
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsTArray<RefPtr<nsPluginElement> > mPlugins;
+  
+
+
+  nsTArray<RefPtr<nsPluginElement> > mCTPPlugins;
 };
 
 class nsPluginElement final : public nsISupports,
