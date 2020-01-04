@@ -8,6 +8,7 @@
 #define GECKO_TASK_TRACER_H
 
 #include "nsCOMPtr.h"
+#include "mozilla/UniquePtr.h"
 
 
 
@@ -64,7 +65,7 @@ void AddLabel(const char* aFormat, ...);
 
 void StartLogging();
 void StopLogging();
-nsTArray<nsCString>* GetLoggedData(TimeStamp aStartTime);
+UniquePtr<nsTArray<nsCString>> GetLoggedData(TimeStamp aStartTime);
 
 
 const PRTime GetStartTime();
