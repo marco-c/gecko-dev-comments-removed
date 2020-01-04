@@ -7,6 +7,11 @@ var Cr = Components.results;
 var {require} = Cu.import("resource://devtools/shared/Loader.jsm");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
+DevToolsUtils.testing = true;
+do_register_cleanup(() => {
+  DevToolsUtils.testing = false;
+});
+
 
 
 
