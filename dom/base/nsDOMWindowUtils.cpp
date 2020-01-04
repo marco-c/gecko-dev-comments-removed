@@ -3214,6 +3214,10 @@ PrepareForFullscreenChange(nsIPresShell* aPresShell, const nsSize& aSize,
   }
   if (nsRefreshDriver* rd = aPresShell->GetRefreshDriver()) {
     rd->SetIsResizeSuppressed();
+    
+    
+    
+    rd->ScheduleViewManagerFlush();
   }
   if (!aSize.IsEmpty()) {
     if (nsViewManager* viewManager = aPresShell->GetViewManager()) {
