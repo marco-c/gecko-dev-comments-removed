@@ -896,15 +896,21 @@ Search.prototype = {
     
     
     this._addingHeuristicFirstMatch = true;
-    yield this._matchFirstHeuristicResult(conn);
+    let hasHeuristic = yield this._matchFirstHeuristicResult(conn);
     this._addingHeuristicFirstMatch = false;
+    if (!this.pending)
+      return;
 
     
     
     
-    yield this._sleep(Prefs.delay);
-    if (!this.pending)
-      return;
+    
+    
+    if (hasHeuristic) {
+      yield this._sleep(Prefs.delay);
+      if (!this.pending)
+        return;
+    }
 
     if (this._enableActions) {
       yield this._matchSearchSuggestions();
@@ -950,7 +956,7 @@ Search.prototype = {
       
       let matched = yield this._matchPlacesKeyword();
       if (matched) {
-        return;
+        return true;
       }
     }
 
@@ -959,7 +965,7 @@ Search.prototype = {
       
       let matched = yield this._matchSearchEngineAlias();
       if (matched) {
-        return;
+        return true;
       }
     }
 
@@ -968,7 +974,7 @@ Search.prototype = {
       
       let matched = yield this._matchKnownUrl(conn);
       if (matched) {
-        return;
+        return true;
       }
     }
 
@@ -976,7 +982,7 @@ Search.prototype = {
       
       let matched = yield this._matchSearchEngineUrl();
       if (matched) {
-        return;
+        return true;
       }
     }
 
@@ -990,7 +996,7 @@ Search.prototype = {
       
       let matched = yield this._matchUnknownUrl();
       if (matched) {
-        return;
+        return true;
       }
     }
 
@@ -999,9 +1005,11 @@ Search.prototype = {
       
       let matched = yield this._matchCurrentSearchEngine();
       if (matched) {
-        return;
+        return true;
       }
     }
+
+    return false;
   },
 
   *_matchSearchSuggestions() {
