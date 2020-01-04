@@ -787,15 +787,13 @@ AndroidBridge::OpenGraphicsLibraries()
             ANativeWindow_fromSurface = (void* (*)(JNIEnv*, jobject))dlsym(handle, "ANativeWindow_fromSurface");
             ANativeWindow_release = (void (*)(void*))dlsym(handle, "ANativeWindow_release");
             ANativeWindow_setBuffersGeometry = (int (*)(void*, int, int, int)) dlsym(handle, "ANativeWindow_setBuffersGeometry");
-            ANativeWindow_lock = (int (*)(void*, void*, void*)) dlsym(handle, "ANativeWindow_lock");
-            ANativeWindow_unlockAndPost = (int (*)(void*))dlsym(handle, "ANativeWindow_unlockAndPost");
             ANativeWindow_getWidth = (int (*)(void*))dlsym(handle, "ANativeWindow_getWidth");
             ANativeWindow_getHeight = (int (*)(void*))dlsym(handle, "ANativeWindow_getHeight");
 
             
             ANativeWindow_fromSurfaceTexture = (void* (*)(JNIEnv*, jobject))dlsym(handle, "ANativeWindow_fromSurfaceTexture");
 
-            mHasNativeWindowAccess = ANativeWindow_fromSurface && ANativeWindow_release && ANativeWindow_lock && ANativeWindow_unlockAndPost;
+            mHasNativeWindowAccess = ANativeWindow_fromSurface && ANativeWindow_release;
 
             ALOG_BRIDGE("Successfully opened libandroid.so, have native window access? %d", mHasNativeWindowAccess);
         }
@@ -1387,78 +1385,6 @@ AndroidBridge::ReleaseNativeWindowForSurfaceTexture(void *window)
     
 }
 
-bool
-AndroidBridge::LockWindow(void *window, unsigned char **bits, int *width, int *height, int *format, int *stride)
-{
-    
-    typedef struct ANativeWindow_Buffer {
-        
-        int32_t width;
-
-        
-        int32_t height;
-
-        
-        
-        int32_t stride;
-
-        
-        int32_t format;
-
-        
-        void* bits;
-
-        
-        uint32_t reserved[6];
-    } ANativeWindow_Buffer;
-
-    
-    
-    struct SurfaceInfo {
-        uint32_t    w;
-        uint32_t    h;
-        uint32_t    s;
-        uint32_t    usage;
-        uint32_t    format;
-        unsigned char* bits;
-        uint32_t    reserved[2];
-    };
-
-    int err;
-    *bits = nullptr;
-    *width = *height = *format = 0;
-
-    if (mHasNativeWindowAccess) {
-        ANativeWindow_Buffer buffer;
-
-        if ((err = ANativeWindow_lock(window, (void*)&buffer, nullptr)) != 0) {
-            ALOG_BRIDGE("ANativeWindow_lock failed! (error %d)", err);
-            return false;
-        }
-
-        *bits = (unsigned char*)buffer.bits;
-        *width = buffer.width;
-        *height = buffer.height;
-        *format = buffer.format;
-        *stride = buffer.stride;
-    } else if (mHasNativeWindowFallback) {
-        SurfaceInfo info;
-
-        if ((err = Surface_lock(window, &info, nullptr, true)) != 0) {
-            ALOG_BRIDGE("Surface_lock failed! (error %d)", err);
-            return false;
-        }
-
-        *bits = info.bits;
-        *width = info.w;
-        *height = info.h;
-        *format = info.format;
-        *stride = info.s;
-    } else return false;
-
-    return true;
-}
-
 jobject
 AndroidBridge::GetGlobalContextRef() {
     if (sGlobalContext) {
@@ -1493,25 +1419,6 @@ AndroidBridge::GetGlobalContextRef() {
     sGlobalContext = env->NewGlobalRef(appContext);
     MOZ_ASSERT(sGlobalContext);
     return sGlobalContext;
-}
-
-bool
-AndroidBridge::UnlockWindow(void* window)
-{
-    int err;
-
-    if (!HasNativeWindowAccess())
-        return false;
-
-    if (mHasNativeWindowAccess && (err = ANativeWindow_unlockAndPost(window)) != 0) {
-        ALOG_BRIDGE("ANativeWindow_unlockAndPost failed! (error %d)", err);
-        return false;
-    } else if (mHasNativeWindowFallback && (err = Surface_unlockAndPost(window)) != 0) {
-        ALOG_BRIDGE("Surface_unlockAndPost failed! (error %d)", err);
-        return false;
-    }
-
-    return true;
 }
 
 void
