@@ -145,7 +145,8 @@ function eventSource(aProto) {
 const ThreadStateTypes = {
   "paused": "paused",
   "resumed": "attached",
-  "detached": "detached"
+  "detached": "detached",
+  "running": "attached"
 };
 
 
@@ -1739,6 +1740,7 @@ ThreadClient.prototype = {
 
       
       
+      this._previousState = this._state;
       this._state = "resuming";
 
       if (this._pauseOnExceptions) {
@@ -1753,10 +1755,17 @@ ThreadClient.prototype = {
       return aPacket;
     },
     after: function (aResponse) {
-      if (aResponse.error) {
+      if (aResponse.error && this._state == "resuming") {
         
-        this._state = "paused";
+        
+        
+        if (aResponse.state) {
+          this._state = ThreadStateTypes[aResponse.state];
+        } else {
+          this._state = this._previousState;
+        }
       }
+      delete this._previousState;
       return aResponse;
     },
   }),
