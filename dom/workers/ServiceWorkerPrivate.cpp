@@ -205,42 +205,152 @@ namespace {
 
 
 
-class KeepAliveHandler final : public PromiseNativeHandler
+class KeepAliveHandler final
 {
-  nsMainThreadPtrHandle<KeepAliveToken> mKeepAliveToken;
+  
+  
+  
+  
+  class InternalHandler final : public PromiseNativeHandler
+                              , public WorkerFeature
+  {
+    nsMainThreadPtrHandle<KeepAliveToken> mKeepAliveToken;
 
-  virtual ~KeepAliveHandler()
-  {}
+    
+    WorkerPrivate* mWorkerPrivate;
+    RefPtr<Promise> mPromise;
+    bool mFeatureAdded;
+
+    ~InternalHandler()
+    {
+      MaybeCleanup();
+    }
+
+    bool
+    AddFeature()
+    {
+      MOZ_ASSERT(mWorkerPrivate);
+      mWorkerPrivate->AssertIsOnWorkerThread();
+      MOZ_ASSERT(!mFeatureAdded);
+      mFeatureAdded = mWorkerPrivate->AddFeature(this);
+      return mFeatureAdded;
+    }
+
+    void
+    MaybeCleanup()
+    {
+      MOZ_ASSERT(mWorkerPrivate);
+      mWorkerPrivate->AssertIsOnWorkerThread();
+      if (!mPromise) {
+        return;
+      }
+      if (mFeatureAdded) {
+        mWorkerPrivate->RemoveFeature(this);
+      }
+      mPromise = nullptr;
+      mKeepAliveToken = nullptr;
+    }
+
+    void
+    ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+    {
+      MOZ_ASSERT(mWorkerPrivate);
+      mWorkerPrivate->AssertIsOnWorkerThread();
+      MaybeCleanup();
+    }
+
+    void
+    RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+    {
+      MOZ_ASSERT(mWorkerPrivate);
+      mWorkerPrivate->AssertIsOnWorkerThread();
+      MaybeCleanup();
+    }
+
+    bool
+    Notify(Status aStatus) override
+    {
+      MOZ_ASSERT(mWorkerPrivate);
+      mWorkerPrivate->AssertIsOnWorkerThread();
+      if (aStatus < Terminating) {
+        return true;
+      }
+      MaybeCleanup();
+      return true;
+    }
+
+    InternalHandler(const nsMainThreadPtrHandle<KeepAliveToken>& aKeepAliveToken,
+                    WorkerPrivate* aWorkerPrivate,
+                    Promise* aPromise)
+      : mKeepAliveToken(aKeepAliveToken)
+      , mWorkerPrivate(aWorkerPrivate)
+      , mPromise(aPromise)
+      , mFeatureAdded(false)
+    {
+      MOZ_ASSERT(mKeepAliveToken);
+      MOZ_ASSERT(mWorkerPrivate);
+      MOZ_ASSERT(mPromise);
+    }
+
+  public:
+    static already_AddRefed<InternalHandler>
+    Create(const nsMainThreadPtrHandle<KeepAliveToken>& aKeepAliveToken,
+           WorkerPrivate* aWorkerPrivate,
+           Promise* aPromise)
+    {
+      RefPtr<InternalHandler> ref = new InternalHandler(aKeepAliveToken,
+                                                        aWorkerPrivate,
+                                                        aPromise);
+
+      if (NS_WARN_IF(!ref->AddFeature())) {
+        return nullptr;
+      }
+
+      return ref.forget();
+    }
+
+    NS_DECL_ISUPPORTS
+  };
+
+  
+  
+  
+  
+  
+  KeepAliveHandler() = delete;
+  ~KeepAliveHandler() = delete;
 
 public:
-  NS_DECL_ISUPPORTS
-
-  explicit KeepAliveHandler(const nsMainThreadPtrHandle<KeepAliveToken>& aKeepAliveToken)
-    : mKeepAliveToken(aKeepAliveToken)
-  { }
-
-  void
-  ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
+  
+  
+  
+  
+  static void
+  CreateAndAttachToPromise(const nsMainThreadPtrHandle<KeepAliveToken>& aKeepAliveToken,
+                           Promise* aPromise)
   {
-#ifdef DEBUG
     WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
     MOZ_ASSERT(workerPrivate);
     workerPrivate->AssertIsOnWorkerThread();
-#endif
-  }
+    MOZ_ASSERT(aKeepAliveToken);
+    MOZ_ASSERT(aPromise);
 
-  void
-  RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override
-  {
-#ifdef DEBUG
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
-    workerPrivate->AssertIsOnWorkerThread();
-#endif
+    
+    RefPtr<InternalHandler> handler = InternalHandler::Create(aKeepAliveToken,
+                                                              workerPrivate,
+                                                              aPromise);
+    if (NS_WARN_IF(!handler)) {
+      return;
+    }
+
+    
+    
+    
+    aPromise->AppendNativeHandler(handler);
   }
 };
 
-NS_IMPL_ISUPPORTS0(KeepAliveHandler)
+NS_IMPL_ISUPPORTS0(KeepAliveHandler::InternalHandler)
 
 class RegistrationUpdateRunnable : public Runnable
 {
@@ -311,9 +421,8 @@ public:
     }
 
     MOZ_ASSERT(waitUntilPromise);
-    RefPtr<KeepAliveHandler> keepAliveHandler =
-      new KeepAliveHandler(mKeepAliveToken);
-    waitUntilPromise->AppendNativeHandler(keepAliveHandler);
+    KeepAliveHandler::CreateAndAttachToPromise(mKeepAliveToken,
+                                               waitUntilPromise);
 
     if (aWaitUntilPromise) {
       waitUntilPromise.forget(aWaitUntilPromise);
@@ -1389,9 +1498,8 @@ private:
 
     RefPtr<Promise> waitUntilPromise = event->GetPromise();
     if (waitUntilPromise) {
-      RefPtr<KeepAliveHandler> keepAliveHandler =
-        new KeepAliveHandler(mKeepAliveToken);
-      waitUntilPromise->AppendNativeHandler(keepAliveHandler);
+      KeepAliveHandler::CreateAndAttachToPromise(mKeepAliveToken,
+                                                 waitUntilPromise);
     }
 
     return true;
