@@ -533,6 +533,14 @@ ImageTestCase NoFrameDelayGIFTestCase()
   return ImageTestCase("no-frame-delay.gif", "image/gif", IntSize(100, 100));
 }
 
+ImageTestCase ExtraImageSubBlocksAnimatedGIFTestCase()
+{
+  
+  
+  return ImageTestCase("animated-with-extra-image-sub-blocks.gif", "image/gif",
+                       IntSize(100, 100));
+}
+
 ImageTestCase DownscaledPNGTestCase()
 {
   

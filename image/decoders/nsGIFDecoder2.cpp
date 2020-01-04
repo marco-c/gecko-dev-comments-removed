@@ -495,6 +495,8 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
             return ReadImageDataSubBlock(aData);
           case State::LZW_DATA:
             return ReadLZWData(aData, aLength);
+          case State::SKIP_LZW_DATA:
+            return Transition::ContinueUnbuffered(State::SKIP_LZW_DATA);
           case State::FINISHED_LZW_DATA:
             return Transition::To(State::IMAGE_DATA_SUB_BLOCK, SUB_BLOCK_HEADER_LEN);
           case State::SKIP_SUB_BLOCKS:
@@ -989,6 +991,7 @@ nsGIFDecoder2::ReadImageDataSubBlock(const char* aData)
   if (mGIFStruct.pixels_remaining == 0) {
     
     
+
     if (subBlockLength == GIF_TRAILER) {
       
       
@@ -996,7 +999,10 @@ nsGIFDecoder2::ReadImageDataSubBlock(const char* aData)
       return Transition::TerminateSuccess();
     }
 
-    return Transition::To(State::IMAGE_DATA_SUB_BLOCK, SUB_BLOCK_HEADER_LEN);
+    
+    return Transition::ToUnbuffered(State::FINISHED_LZW_DATA,
+                                    State::SKIP_LZW_DATA,
+                                    subBlockLength);
   }
 
   
