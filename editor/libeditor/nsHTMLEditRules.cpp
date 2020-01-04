@@ -656,8 +656,7 @@ nsHTMLEditRules::WillDoAction(Selection* aSelection,
     case EditAction::align:
       return WillAlign(*aSelection, *info->alignType, aCancel, aHandled);
     case EditAction::makeBasicBlock:
-      return WillMakeBasicBlock(*aSelection, *info->blockType, aCancel,
-                                aHandled);
+      return WillMakeBasicBlock(aSelection, info->blockType, aCancel, aHandled);
     case EditAction::removeList:
       return WillRemoveList(aSelection, info->bOrdered, aCancel, aHandled);
     case EditAction::makeDefListItem:
@@ -3330,93 +3329,110 @@ nsHTMLEditRules::WillMakeDefListItem(Selection* aSelection,
 }
 
 nsresult
-nsHTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
-                                    const nsAString& aBlockType,
-                                    bool* aCancel,
-                                    bool* aHandled)
+nsHTMLEditRules::WillMakeBasicBlock(Selection* aSelection,
+                                    const nsAString *aBlockType,
+                                    bool *aCancel,
+                                    bool *aHandled)
 {
-<<<<<<< HEAD
   OwningNonNull<nsIAtom> blockType = NS_Atomize(*aBlockType);
   if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
   
-=======
-  MOZ_ASSERT(aCancel && aHandled);
-
-  NS_ENSURE_STATE(mHTMLEditor);
-  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
-
-  OwningNonNull<nsIAtom> blockType = do_GetAtom(aBlockType);
-
-  WillInsert(aSelection, aCancel);
-  
->>>>>>> Bug 1191356 part 6 - Clean up nsHTMLEditRules::WillMakeBasicBlock
   *aCancel = false;
   *aHandled = false;
 
-  nsresult res = NormalizeSelection(&aSelection);
+  WillInsert(*aSelection, aCancel);
+  
+  
+  *aCancel = false;
+  nsresult res = NormalizeSelection(aSelection);
   NS_ENSURE_SUCCESS(res, res);
-  nsAutoSelectionReset selectionResetter(&aSelection, mHTMLEditor);
+  NS_ENSURE_STATE(mHTMLEditor);
+  nsAutoSelectionReset selectionResetter(aSelection, mHTMLEditor);
+  NS_ENSURE_STATE(mHTMLEditor);
   nsAutoTxnsConserveSelection dontSpazMySelection(mHTMLEditor);
   *aHandled = true;
+  nsString tString(*aBlockType);
 
   
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-  res = GetNodesFromSelection(aSelection, EditAction::makeBasicBlock,
+  res = GetNodesFromSelection(*aSelection, EditAction::makeBasicBlock,
                               arrayOfNodes);
   NS_ENSURE_SUCCESS(res, res);
 
   
-  for (int32_t i = arrayOfNodes.Length() - 1; i >= 0; i--) {
+  int32_t listCount = arrayOfNodes.Length();
+  int32_t i;
+  for (i=listCount-1; i>=0; i--)
+  {
+    NS_ENSURE_STATE(mHTMLEditor);
     if (!mHTMLEditor->IsEditable(arrayOfNodes[i])) {
       arrayOfNodes.RemoveElementAt(i);
     }
   }
 
   
-  if (ListIsEmptyLine(arrayOfNodes)) {
-    
-    NS_ENSURE_STATE(aSelection.GetRangeAt(0) &&
-                    aSelection.GetRangeAt(0)->GetStartParent());
-    OwningNonNull<nsINode> parent =
-      *aSelection.GetRangeAt(0)->GetStartParent();
-    int32_t offset = aSelection.GetRangeAt(0)->StartOffset();
+  listCount = arrayOfNodes.Length();
 
-    if (blockType == nsGkAtoms::normal ||
-        blockType == nsGkAtoms::_empty) {
-      
-      NS_ENSURE_TRUE(mHTMLEditor->GetBlock(parent), NS_ERROR_NULL_POINTER);
-      OwningNonNull<Element> curBlock = *mHTMLEditor->GetBlock(parent);
-      if (nsHTMLEditUtils::IsFormatNode(curBlock)) {
+  
+  if (ListIsEmptyLine(arrayOfNodes))
+  {
+    nsCOMPtr<nsIDOMNode> theBlock;
+
+    
+    NS_ENSURE_STATE(aSelection->RangeCount());
+    nsCOMPtr<nsINode> parent = aSelection->GetRangeAt(0)->GetStartParent();
+    int32_t offset = aSelection->GetRangeAt(0)->StartOffset();
+    NS_ENSURE_STATE(parent);
+    if (tString.EqualsLiteral("normal") ||
+        tString.IsEmpty() ) 
+    {
+      NS_ENSURE_STATE(mHTMLEditor);
+      nsCOMPtr<Element> curBlock = mHTMLEditor->GetBlock(*parent);
+      NS_ENSURE_TRUE(curBlock, NS_ERROR_NULL_POINTER);
+      nsCOMPtr<nsIDOMNode> curBlockPar =
+        GetAsDOMNode(curBlock->GetParentNode());
+      if (nsHTMLEditUtils::IsFormatNode(curBlock))
+      {
         
         
-        
-        nsCOMPtr<nsIContent> brNode =
-          mHTMLEditor->GetNextHTMLNode(parent, offset);
-        if (brNode && brNode->IsHTMLElement(nsGkAtoms::br)) {
+        nsCOMPtr<nsIDOMNode> brNode;
+        NS_ENSURE_STATE(mHTMLEditor);
+        res = mHTMLEditor->GetNextHTMLNode(parent->AsDOMNode(), offset,
+                                           address_of(brNode));
+        NS_ENSURE_SUCCESS(res, res);
+        if (brNode && nsTextEditUtils::IsBreak(brNode))
+        {
+          NS_ENSURE_STATE(mHTMLEditor);
           res = mHTMLEditor->DeleteNode(brNode);
           NS_ENSURE_SUCCESS(res, res);
         }
         
-        offset = mHTMLEditor->SplitNodeDeep(curBlock, *parent->AsContent(),
+        NS_ENSURE_STATE(mHTMLEditor);
+        offset = mHTMLEditor->SplitNodeDeep(*curBlock, *parent->AsContent(),
                                             offset,
                                             nsHTMLEditor::EmptyContainers::no);
         NS_ENSURE_STATE(offset != -1);
         
-        brNode = mHTMLEditor->CreateBR(curBlock->GetParentNode(), offset);
-        NS_ENSURE_STATE(brNode);
-        
-        res = aSelection.Collapse(curBlock->GetParentNode(), offset);
-        
-        selectionResetter.Abort();
-        *aHandled = true;
+        NS_ENSURE_STATE(mHTMLEditor);
+        res = mHTMLEditor->CreateBR(curBlockPar, offset, address_of(brNode));
         NS_ENSURE_SUCCESS(res, res);
+        
+        res = aSelection->Collapse(curBlockPar, offset);
+        selectionResetter.Abort();  
+        *aHandled = true;
       }
       
-    } else {
+    }
+    else  
+    {
       
+      NS_ENSURE_STATE(mHTMLEditor);
       nsCOMPtr<nsIContent> brNode =
         mHTMLEditor->GetNextHTMLNode(parent, offset, true);
-      if (brNode && brNode->IsHTMLElement(nsGkAtoms::br)) {
+      NS_ENSURE_SUCCESS(res, res);
+      if (brNode && nsTextEditUtils::IsBreak(brNode))
+      {
+        NS_ENSURE_STATE(mHTMLEditor);
         res = mHTMLEditor->DeleteNode(brNode);
         NS_ENSURE_SUCCESS(res, res);
         
@@ -3425,42 +3441,42 @@ nsHTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
       
       res = SplitAsNeeded(blockType, parent, offset);
       NS_ENSURE_SUCCESS(res, res);
-      nsCOMPtr<Element> block =
-        mHTMLEditor->CreateNode(blockType, parent, offset);
-      NS_ENSURE_STATE(block);
+      NS_ENSURE_STATE(mHTMLEditor);
+      theBlock = dont_AddRef(GetAsDOMNode(
+        mHTMLEditor->CreateNode(blockType, parent, offset).take()));
+      NS_ENSURE_STATE(theBlock);
       
-      mNewBlock = block->AsDOMNode();
+      mNewBlock = theBlock;
       
       while (!arrayOfNodes.IsEmpty()) {
         OwningNonNull<nsINode> curNode = arrayOfNodes[0];
+        NS_ENSURE_STATE(mHTMLEditor);
         res = mHTMLEditor->DeleteNode(curNode);
         NS_ENSURE_SUCCESS(res, res);
         arrayOfNodes.RemoveElementAt(0);
       }
       
-      res = aSelection.Collapse(block, 0);
-      
-      selectionResetter.Abort();
+      res = aSelection->Collapse(theBlock,0);
+      selectionResetter.Abort();  
       *aHandled = true;
-      NS_ENSURE_SUCCESS(res, res);
     }
-    return NS_OK;
+    return res;
   }
-  
-  
-  
-  if (blockType == nsGkAtoms::blockquote) {
-    res = MakeBlockquote(arrayOfNodes);
-    NS_ENSURE_SUCCESS(res, res);
-  } else if (blockType == nsGkAtoms::normal ||
-             blockType == nsGkAtoms::_empty) {
-    res = RemoveBlockStyle(arrayOfNodes);
-    NS_ENSURE_SUCCESS(res, res);
-  } else {
-    res = ApplyBlockStyle(arrayOfNodes, blockType);
-    NS_ENSURE_SUCCESS(res, res);
+  else
+  {
+    
+    
+    
+    if (tString.EqualsLiteral("blockquote")) {
+      res = MakeBlockquote(arrayOfNodes);
+    } else if (tString.EqualsLiteral("normal") || tString.IsEmpty()) {
+      res = RemoveBlockStyle(arrayOfNodes);
+    } else {
+      res = ApplyBlockStyle(arrayOfNodes, *blockType);
+    }
+    return res;
   }
-  return NS_OK;
+  return res;
 }
 
 nsresult
@@ -6846,18 +6862,6 @@ nsHTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
 
 
 
-
-nsresult
-nsHTMLEditRules::SplitAsNeeded(nsIAtom& aTag,
-                               OwningNonNull<nsINode>& aInOutParent,
-                               int32_t& aInOutOffset)
-{
-  
-  nsCOMPtr<nsINode> parent = aInOutParent.forget();
-  nsresult res = SplitAsNeeded(aTag, parent, aInOutOffset);
-  aInOutParent = parent.forget();
-  return res;
-}
 
 nsresult
 nsHTMLEditRules::SplitAsNeeded(nsIAtom& aTag,
