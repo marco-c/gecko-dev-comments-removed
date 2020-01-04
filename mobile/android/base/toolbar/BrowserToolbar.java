@@ -374,17 +374,6 @@ public abstract class BrowserToolbar extends ThemedRelativeLayout
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        
-        
-        if (event != null && event.getY() > getHeight() + ViewHelper.getTranslationY(this)) {
-            return false;
-        }
-
-        return super.onTouchEvent(event);
-    }
-
-    @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
 
