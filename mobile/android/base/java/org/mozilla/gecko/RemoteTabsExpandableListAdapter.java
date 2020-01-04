@@ -169,7 +169,7 @@ public class RemoteTabsExpandableListAdapter extends BaseExpandableListAdapter {
         
         
         final GeckoProfile profile = GeckoProfile.get(context);
-        holder.lastModifiedView.setText(this.getLastSyncedString(context, now, client.lastModified));
+        holder.lastModifiedView.setText(getLastSyncedString(context, now, client.lastModified));
 
         
         
@@ -236,7 +236,7 @@ public class RemoteTabsExpandableListAdapter extends BaseExpandableListAdapter {
 
 
 
-    public String getLastSyncedString(Context context, long now, long time) {
+    public static String getLastSyncedString(Context context, long now, long time) {
         if (new Date(time).before(EARLIEST_VALID_SYNCED_DATE)) {
             return context.getString(R.string.remote_tabs_never_synced);
         }
