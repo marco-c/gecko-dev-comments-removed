@@ -337,6 +337,13 @@ public:
     bool IsH2MandatorySuiteEnabled() { return mH2MandatorySuiteEnabled; }
 
     
+    
+    bool NewTabContentSignaturesDisabled()
+    {
+      return mNewTabContentSignaturesDisabled;
+    }
+
+    
     bool Active() { return mHandlerActive; }
 
     
@@ -561,6 +568,9 @@ private:
     FrameCheckLevel mEnforceH1Framing;
 
     nsCOMPtr<nsISchedulingContextService> mSchedulingContextService;
+
+    
+    bool mNewTabContentSignaturesDisabled;
 
 private:
     
