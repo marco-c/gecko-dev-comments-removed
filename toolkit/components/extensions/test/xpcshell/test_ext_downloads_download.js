@@ -94,10 +94,10 @@ function touch(filename) {
 }
 
 
-function remove(filename) {
+function remove(filename, recursive = false) {
   let file = downloadDir.clone();
   file.append(filename);
-  file.remove(false);
+  file.remove(recursive);
 }
 
 add_task(function* test_downloads() {
@@ -121,7 +121,8 @@ add_task(function* test_downloads() {
       return waitForDownloads();
     }).then(() => {
       let localPath = downloadDir.clone();
-      localPath.append(localFile);
+      let parts = Array.isArray(localFile) ? localFile : [localFile];
+      parts.map(p => localPath.append(p));
       equal(localPath.fileSize, expectedSize, "Downloaded file has expected size");
       localPath.remove(false);
     });
@@ -139,6 +140,35 @@ add_task(function* test_downloads() {
     url: FILE_URL,
     filename: "newpath.txt",
   }, "newpath.txt", FILE_LEN, "source and filename");
+
+  
+  yield testDownload({
+    url: FILE_URL,
+    filename: "sub/dir/file",
+  }, ["sub", "dir", "file"], FILE_LEN, "source and filename with subdirs");
+
+  
+  yield testDownload({
+    url: FILE_URL,
+    filename: "sub/dir/file2",
+  }, ["sub", "dir", "file2"], FILE_LEN, "source and filename with existing subdirs");
+
+  
+  if (WINDOWS) {
+    
+    yield testDownload({
+      url: FILE_URL,
+      filename: "sub\\dir\\file3",
+    }, ["sub", "dir", "file3"], FILE_LEN, "filename with Windows path separator");
+  }
+  remove("sub", true);
+
+  
+  yield testDownload({
+    url: FILE_URL,
+    filename: "skip//part",
+  }, ["skip", "part"], FILE_LEN, "source, filename, with subdir, skipping parts");
+  remove("skip", true);
 
   
   touch(FILE_NAME);

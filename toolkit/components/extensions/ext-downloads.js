@@ -23,6 +23,7 @@ const {
   normalizeTime,
   runSafeSync,
   SingletonEventManager,
+  PlatformInfo,
 } = ExtensionUtils;
 
 const DOWNLOAD_ITEM_FIELDS = ["id", "url", "referrer", "filename", "incognito",
@@ -391,12 +392,18 @@ extensions.registerSchemaAPI("downloads", "addon_parent", context => {
   return {
     downloads: {
       download(options) {
-        if (options.filename != null) {
-          if (options.filename.length == 0) {
+        let {filename} = options;
+        if (filename && PlatformInfo.os === "win") {
+          
+          filename = filename.replace(/\//g, "\\");
+        }
+
+        if (filename != null) {
+          if (filename.length == 0) {
             return Promise.reject({message: "filename must not be empty"});
           }
 
-          let path = OS.Path.split(options.filename);
+          let path = OS.Path.split(filename);
           if (path.absolute) {
             return Promise.reject({message: "filename must not be an absolute path"});
           }
@@ -416,23 +423,27 @@ extensions.registerSchemaAPI("downloads", "addon_parent", context => {
           
 
           let target;
-          if (options.filename) {
-            target = OS.Path.join(downloadsDir, options.filename);
+          if (filename) {
+            target = OS.Path.join(downloadsDir, filename);
           } else {
             let uri = NetUtil.newURI(options.url);
 
-            let filename;
+            let remote = "download";
             if (uri instanceof Ci.nsIURL) {
-              filename = uri.fileName;
+              remote = uri.fileName;
             }
-            target = OS.Path.join(downloadsDir, filename || "download");
+            target = OS.Path.join(downloadsDir, remote);
           }
 
           
-          
-          
-          
-          return OS.File.exists(target).then(exists => {
+          const dir = OS.Path.dirname(target);
+          return OS.File.makeDir(dir, {from: downloadsDir}).then(() => {
+            return OS.File.exists(target);
+          }).then(exists => {
+            
+            
+            
+            
             if (exists) {
               switch (options.conflictAction) {
                 case "uniquify":
