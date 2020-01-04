@@ -3544,6 +3544,17 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
     FrameMetrics endZoomToMetrics = mFrameMetrics;
     if (aFlags & PAN_INTO_VIEW_ONLY) {
       targetZoom = currentZoom;
+    } else if(aFlags & ONLY_ZOOM_TO_DEFAULT_SCALE) {
+      CSSToParentLayerScale zoomAtDefaultScale =
+        mFrameMetrics.GetDevPixelsPerCSSPixel() * LayoutDeviceToParentLayerScale(1.0);
+      if (targetZoom.scale > zoomAtDefaultScale.scale) {
+        
+        if (currentZoom.scale < zoomAtDefaultScale.scale) {
+          targetZoom = zoomAtDefaultScale;
+        } else {
+          targetZoom = currentZoom;
+        }
+      }
     }
     endZoomToMetrics.SetZoom(CSSToParentLayerScale2D(targetZoom));
 
