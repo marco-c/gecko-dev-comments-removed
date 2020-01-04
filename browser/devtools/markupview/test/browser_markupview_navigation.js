@@ -83,14 +83,10 @@ add_task(function*() {
     info("Checking the right node is selected");
     checkSelectedNode(key, className, inspector);
   }
-
-  
-  
-  yield inspector.once("inspector-updated");
 });
 
 function pressKey(key) {
-  switch (key) {
+  switch(key) {
     case "right":
       EventUtils.synthesizeKey("VK_RIGHT", {});
       break;
