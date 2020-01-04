@@ -973,8 +973,8 @@ nsTableRowFrame::ReflowChildren(nsPresContext*           aPresContext,
         
         
         
-        nsMargin* computedOffsetProp = static_cast<nsMargin*>
-          (kidFrame->Properties().Get(nsIFrame::ComputedOffsetProperty()));
+        nsMargin* computedOffsetProp =
+          kidFrame->Properties().Get(nsIFrame::ComputedOffsetProperty());
         
         
         LogicalMargin computedOffsets(wm, computedOffsetProp ?

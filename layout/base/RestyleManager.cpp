@@ -2268,16 +2268,16 @@ GetPrevContinuationWithPossiblySameStyle(nsIFrame* aFrame)
   
   
   
-  nsIFrame *prevContinuation = aFrame->GetPrevContinuation();
+  nsIFrame* prevContinuation = aFrame->GetPrevContinuation();
   if (!prevContinuation &&
       (aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT)) {
     
     
-    prevContinuation = static_cast<nsIFrame*>(
-      aFrame->Properties().Get(nsIFrame::IBSplitPrevSibling()));
+    prevContinuation =
+      aFrame->Properties().Get(nsIFrame::IBSplitPrevSibling());
     if (prevContinuation) {
-      prevContinuation = static_cast<nsIFrame*>(
-        prevContinuation->Properties().Get(nsIFrame::IBSplitPrevSibling()));
+      prevContinuation =
+        prevContinuation->Properties().Get(nsIFrame::IBSplitPrevSibling());
     }
   }
 
@@ -2335,11 +2335,11 @@ GetNextContinuationWithSameStyle(nsIFrame* aFrame,
       (aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT)) {
     
     
-    nextContinuation = static_cast<nsIFrame*>(aFrame->FirstContinuation()->
-      Properties().Get(nsIFrame::IBSplitSibling()));
+    nextContinuation = aFrame->FirstContinuation()->
+      Properties().Get(nsIFrame::IBSplitSibling());
     if (nextContinuation) {
-      nextContinuation = static_cast<nsIFrame*>(
-        nextContinuation->Properties().Get(nsIFrame::IBSplitSibling()));
+      nextContinuation =
+        nextContinuation->Properties().Get(nsIFrame::IBSplitSibling());
     }
   }
 
@@ -2515,8 +2515,8 @@ RestyleManager::ReparentStyleContext(nsIFrame* aFrame)
       
       if ((aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) &&
           !aFrame->GetPrevContinuation()) {
-        nsIFrame* sib = static_cast<nsIFrame*>
-          (aFrame->Properties().Get(nsIFrame::IBSplitSibling()));
+        nsIFrame* sib =
+          aFrame->Properties().Get(nsIFrame::IBSplitSibling());
         if (sib) {
           ReparentStyleContext(sib);
         }
