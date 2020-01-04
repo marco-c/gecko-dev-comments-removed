@@ -6547,15 +6547,11 @@ bool nsWindow::OnTouch(WPARAM wParam, LPARAM lParam)
 
     
     if (!touchInput.mTimeStamp.IsNull()) {
-      
-      WidgetTouchEvent widgetTouchEvent = touchInput.ToWidgetTouchEvent(this);
-      DispatchInputEvent(&widgetTouchEvent);
+      DispatchTouchInput(touchInput);
     }
     
     if (!touchEndInput.mTimeStamp.IsNull()) {
-      
-      WidgetTouchEvent widgetTouchEvent = touchEndInput.ToWidgetTouchEvent(this);
-      DispatchInputEvent(&widgetTouchEvent);
+      DispatchTouchInput(touchEndInput);
     }
   }
 
