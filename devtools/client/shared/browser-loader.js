@@ -9,7 +9,7 @@ var appConstants;
 
 
 try {
-  const system = devtools.require("devtools/shared/shared/system");
+  const system = devtools.require("devtools/shared/system");
   appConstants = system.constants;
 }
 catch(e) {
