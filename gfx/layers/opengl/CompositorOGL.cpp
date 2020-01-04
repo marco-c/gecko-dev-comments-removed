@@ -619,7 +619,6 @@ CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
 
   MOZ_ASSERT(!mFrameInProgress, "frame still in progress (should have called EndFrame");
 
-  mFrameInProgress = true;
   gfx::Rect rect;
   if (mUseExternalSurfaceSize) {
     rect = gfx::Rect(0, 0, mSurfaceSize.width, mSurfaceSize.height);
@@ -638,6 +637,9 @@ CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   if (width == 0 || height == 0)
     return;
+
+  
+  mFrameInProgress = true;
 
   
   
