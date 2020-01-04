@@ -2775,17 +2775,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable
 
   nsChangeHint CalcDifference(const nsStyleTable& aNewData) const;
   static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
+    return nsChangeHint_ReconstructFrame;
   }
   static nsChangeHint DifferenceAlwaysHandledForDescendants() {
     
     
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
+    return nsChangeHint(0);
   }
 
   uint8_t       mLayoutStrategy;
@@ -3096,8 +3091,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUserInterface
     return nsChangeHint_ReconstructFrame |
            nsChangeHint_NeedReflow |
            nsChangeHint_NeedDirtyReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics |
            NS_STYLE_HINT_VISUAL |
            nsChangeHint_UpdateCursor |
            nsChangeHint_NeutralChange;
@@ -3105,9 +3098,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUserInterface
   static nsChangeHint DifferenceAlwaysHandledForDescendants() {
     
     
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
+    return nsChangeHint_NeedReflow;
   }
 
   uint8_t   mUserInput;       
