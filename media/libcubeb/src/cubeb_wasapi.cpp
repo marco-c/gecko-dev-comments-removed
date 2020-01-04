@@ -1718,6 +1718,7 @@ cubeb_ops const wasapi_ops = {
    NULL,
    NULL,
    NULL,
+   NULL,
    NULL
 };
 } 
