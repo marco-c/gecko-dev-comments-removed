@@ -38,9 +38,6 @@ function disableRadio() {
 }
 
 addMessageListener('prepare-network', function(message) {
-  
-  Services.obs.notifyObservers(null, 'system-message-listener-ready', null);
-
   connection.addEventListener('datachange', function onDataChange() {
     if (connection.data.connected) {
       connection.removeEventListener('datachange', onDataChange);

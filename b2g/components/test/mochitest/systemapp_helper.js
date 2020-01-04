@@ -27,10 +27,11 @@ function next() {
 
 
 var isLoaded = false;
+var isReady = false;
 var n = 0;
 function listener(event) {
   if (!isLoaded) {
-    assert.ok(false, "Received event before the iframe is ready");
+    assert.ok(false, "Received event before the iframe is loaded");
     return;
   }
   n++;
@@ -43,14 +44,32 @@ function listener(event) {
 
     next(); 
   } else if (n == 3) {
+    if (!isReady) {
+      assert.ok(false, "Received event before the iframe is loaded");
+      return;
+    }
+
     assert.equal(event.type, "custom");
     assert.equal(event.detail.name, "third");
   } else if (n == 4) {
+    if (!isReady) {
+      assert.ok(false, "Received event before the iframe is loaded");
+      return;
+    }
+
     assert.equal(event.type, "mozChromeEvent");
     assert.equal(event.detail.name, "fourth");
+
+    next(); 
   } else if (n == 5) {
     assert.equal(event.type, "custom");
     assert.equal(event.detail.name, "fifth");
+  } else if (n === 6) {
+    assert.equal(event.type, "mozChromeEvent");
+    assert.equal(event.detail.name, "sixth");
+  } else if (n === 7) {
+    assert.equal(event.type, "custom");
+    assert.equal(event.detail.name, "seventh");
     assert.equal(event.target, customEventTarget);
 
     next(); 
@@ -72,8 +91,8 @@ var steps = [
 
   function earlyEvents() {
     
-    SystemAppProxy.dispatchEvent({ name: "first" });
-    SystemAppProxy._sendCustomEvent("custom", { name: "second" });
+    SystemAppProxy._sendCustomEvent("mozChromeEvent", { name: "first" }, true);
+    SystemAppProxy._sendCustomEvent("custom", { name: "second" }, true);
     next();
   },
 
@@ -110,7 +129,7 @@ var steps = [
       
       
       isLoaded = true;
-      SystemAppProxy.setIsReady();
+      SystemAppProxy.setIsLoaded();
       assert.ok(true, "Frame declared as loaded");
 
       let gotFrame = SystemAppProxy.getFrame();
@@ -123,12 +142,23 @@ var steps = [
     frame.setAttribute("src", "data:text/html,system app");
   },
 
-  function checkEventDispatching() {
+  function checkEventPendingBeforeLoad() {
     
     
     SystemAppProxy._sendCustomEvent("custom", { name: "third" });
     SystemAppProxy.dispatchEvent({ name: "fourth" });
-    SystemAppProxy._sendCustomEvent("custom", { name: "fifth" }, false, customEventTarget);
+
+    isReady = true;
+    SystemAppProxy.setIsReady();
+    
+  },
+
+  function checkEventDispatching() {
+    
+    
+    SystemAppProxy._sendCustomEvent("custom", { name: "fifth" });
+    SystemAppProxy.dispatchEvent({ name: "sixth" });
+    SystemAppProxy._sendCustomEvent("custom", { name: "seventh" }, false, customEventTarget);
     
   },
 

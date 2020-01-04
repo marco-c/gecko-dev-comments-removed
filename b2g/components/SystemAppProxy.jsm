@@ -13,8 +13,10 @@ this.EXPORTED_SYMBOLS = ['SystemAppProxy'];
 
 var SystemAppProxy = {
   _frame: null,
+  _isLoaded: false,
   _isReady: false,
-  _pendingEvents: [],
+  _pendingLoadedEvents: [],
+  _pendingReadyEvents: [],
   _pendingListeners: [],
 
   
@@ -35,20 +37,43 @@ var SystemAppProxy = {
   },
 
   
+  
+  setIsLoaded: function () {
+    if (this._isLoaded) {
+      Cu.reportError('SystemApp has already been declared as being loaded.');
+    }
+    this._isLoaded = true;
+
+    
+    this._pendingLoadedEvents
+        .forEach(([type, details]) =>
+                 this._sendCustomEvent(type, details, true));
+    this._pendingLoadedEvents = [];
+  },
+
+  
+  
   setIsReady: function () {
+    if (!this._isLoaded) {
+      Cu.reportError('SystemApp.setIsLoaded() should be called before setIsReady().');
+    }
+
     if (this._isReady) {
       Cu.reportError('SystemApp has already been declared as being ready.');
     }
     this._isReady = true;
 
     
-    this._pendingEvents
+    this._pendingReadyEvents
         .forEach(([type, details]) =>
                  this._sendCustomEvent(type, details));
-    this._pendingEvents = [];
+    this._pendingReadyEvents = [];
   },
 
   
+
+
+
 
 
 
@@ -71,8 +96,20 @@ var SystemAppProxy = {
 
     
     
-    if (!content || (!this._isReady && !noPending)) {
-      this._pendingEvents.push([type, details]);
+    if (!content || !this._isLoaded) {
+      if (noPending) {
+        this._pendingLoadedEvents.push([type, details]);
+      } else {
+        this._pendingReadyEvents.push([type, details]);
+      }
+
+      return null;
+    }
+
+    
+    
+    if (!this._isReady && !noPending) {
+      this._pendingReadyEvents.push([type, details]);
       return null;
     }
 
@@ -85,6 +122,10 @@ var SystemAppProxy = {
       payload = details;
     } else {
       payload = details ? Cu.cloneInto(details, content) : {};
+    }
+
+    if ((target || content) === this._frame.contentWindow) {
+      dump('XXX FIXME : Dispatch a ' + type + ': ' + details.type + "\n");
     }
 
     event.initCustomEvent(type, true, false, payload);

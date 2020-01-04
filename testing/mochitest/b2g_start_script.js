@@ -33,6 +33,9 @@ var SECURITY_PREF = "security.turn_off_all_security_so_that_viruses_can_take_ove
 Components.utils.import("resource://gre/modules/Services.jsm");
 Services.prefs.setBoolPref(SECURITY_PREF, true);
 
+
+Services.obs.notifyObservers(null, 'system-message-listener-ready', null);
+
 function openWindow(aEvent) {
   var popupIframe = aEvent.detail.frameElement;
   popupIframe.id = 'popupiframe';
