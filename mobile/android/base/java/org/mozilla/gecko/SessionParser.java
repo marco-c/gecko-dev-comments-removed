@@ -58,7 +58,7 @@ public abstract class SessionParser {
 
 
 
-    public void onClosedTabsRead(final JSONArray closedTabs) throws JSONException{
+    public void onClosedTabsRead(final JSONArray closedTabs) throws JSONException {
     }
 
     public void parse(String... sessionStrings) {

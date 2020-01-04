@@ -29,7 +29,7 @@ import org.mozilla.gecko.util.NetworkUtils;
 
 
 public class BookmarksListView extends HomeListView
-                               implements AdapterView.OnItemClickListener{
+                               implements AdapterView.OnItemClickListener {
     public static final String LOGTAG = "GeckoBookmarksListView";
 
     public BookmarksListView(Context context) {

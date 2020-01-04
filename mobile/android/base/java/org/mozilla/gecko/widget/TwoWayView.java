@@ -2239,7 +2239,7 @@ public class TwoWayView extends AdapterView<ListAdapter> implements
                 newFocus.requestFocus(direction);
                 mArrowScrollFocusResult.populate(positionOfNewFocus, focusScroll);
                 return mArrowScrollFocusResult;
-            } else if (distanceToView(newFocus) < maxScrollAmount){
+            } else if (distanceToView(newFocus) < maxScrollAmount) {
                 
                 
                 

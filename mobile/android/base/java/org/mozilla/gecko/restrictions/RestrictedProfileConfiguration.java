@@ -52,7 +52,7 @@ public class RestrictedProfileConfiguration implements RestrictionConfiguration 
         hiddenRestrictions.add(Restrictable.DEFAULT_THEME);
 
         
-        if (!AppConstants.NIGHTLY_BUILD){
+        if (!AppConstants.NIGHTLY_BUILD) {
             hiddenRestrictions.add(Restrictable.BLOCK_LIST);
         }
     }
