@@ -22,6 +22,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
+#include "mozilla/Tokenizer.h"
 #include "nsIObserverService.h"
 #include "nsXULAppAPI.h"
 
@@ -122,6 +123,35 @@ nsDefaultURIFixup::CreateFixupURI(const nsACString& aStringURI,
 
   fixupInfo->GetPreferredURI(aURI);
   return rv;
+}
+
+
+static bool
+HasUserPassword(const nsACString& aStringURI)
+{
+  mozilla::Tokenizer parser(aStringURI);
+  mozilla::Tokenizer::Token token;
+
+  
+  if (parser.Check(Tokenizer::TOKEN_WORD, token)) { 
+  }
+  if (parser.CheckChar(':')) { 
+  }
+  while (parser.CheckChar('/')) { 
+  }
+
+  while (parser.Next(token)) {
+    if (token.Type() == Tokenizer::TOKEN_CHAR) {
+      if (token.AsChar() == '/') {
+        return false;
+      }
+      if (token.AsChar() == '@') {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 NS_IMETHODIMP
@@ -327,7 +357,14 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
       
       
       if (!handlerExists) {
-        TryKeywordFixupForURIInfo(uriString, info, aPostData);
+        bool hasUserPassword = HasUserPassword(uriString);
+        if (!hasUserPassword) {
+          TryKeywordFixupForURIInfo(uriString, info, aPostData);
+        } else {
+          
+          
+          info->mFixedURI = nullptr;
+        }
       }
     }
   }
@@ -741,6 +778,7 @@ nsDefaultURIFixup::FixupURIProtocol(const nsACString& aURIString,
   nsAutoCString uriString(aURIString);
   *aURI = nullptr;
 
+  
   
   
   
