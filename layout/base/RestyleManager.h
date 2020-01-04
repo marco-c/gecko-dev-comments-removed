@@ -758,9 +758,27 @@ private:
     eNotifyHidden
   };
 
-  void AddPendingRestylesForDescendantsMatchingSelectors(Element* aElement,
-                                                         Element* aRestyleRoot);
-  void AddPendingRestylesForDescendantsMatchingSelectors(nsIContent* aContent);
+  
+  
+  
+  
+  void ConditionallyRestyleChildren();
+  void ConditionallyRestyleChildren(nsIFrame* aFrame,
+                                    Element* aRestyleRoot);
+  void ConditionallyRestyleContentChildren(nsIFrame* aFrame,
+                                           Element* aRestyleRoot);
+  void ConditionallyRestyleUndisplayedDescendants(nsIFrame* aFrame,
+                                                  Element* aRestyleRoot);
+  void DoConditionallyRestyleUndisplayedDescendants(nsIContent* aParent,
+                                                    Element* aRestyleRoot);
+  void ConditionallyRestyleUndisplayedNodes(UndisplayedNode* aUndisplayed,
+                                            nsIContent* aUndisplayedParent,
+                                            const uint8_t aDisplay,
+                                            Element* aRestyleRoot);
+  void ConditionallyRestyleContentDescendants(Element* aElement,
+                                              Element* aRestyleRoot);
+  bool ConditionallyRestyle(nsIFrame* aFrame, Element* aRestyleRoot);
+  bool ConditionallyRestyle(Element* aElement, Element* aRestyleRoot);
 
 #ifdef RESTYLE_LOGGING
   int32_t& LoggingDepth() { return mLoggingDepth; }
