@@ -27,6 +27,46 @@ FocusManager::~FocusManager()
 {
 }
 
+Accessible*
+FocusManager::FocusedAccessible() const
+{
+  if (mActiveItem)
+    return mActiveItem;
+
+  nsINode* focusedNode = FocusedDOMNode();
+  if (focusedNode) {
+    DocAccessible* doc = 
+      GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
+    return doc ? doc->GetAccessibleEvenIfNotInMapOrContainer(focusedNode) : nullptr;
+  }
+
+  return nullptr;
+}
+
+bool
+FocusManager::IsFocused(const Accessible* aAccessible) const
+{
+  if (mActiveItem)
+    return mActiveItem == aAccessible;
+
+  nsINode* focusedNode = FocusedDOMNode();
+  if (focusedNode) {
+    
+    
+    
+    
+    
+    
+    if (focusedNode->OwnerDoc() == aAccessible->GetNode()->OwnerDoc()) {
+      DocAccessible* doc = 
+        GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
+      return aAccessible ==
+        (doc ? doc->GetAccessibleEvenIfNotInMapOrContainer(focusedNode) : nullptr);
+    }
+  }
+  return false;
+}
+
 bool
 FocusManager::IsFocusWithin(const Accessible* aContainer) const
 {
@@ -153,23 +193,9 @@ FocusManager::ActiveItemChanged(Accessible* aItem, bool aCheckIfActive)
   
   
   
-  Accessible* target = nullptr;
-  if (aItem) {
-    target = aItem;
-  } else {
-    nsINode* focusedNode = FocusedDOMNode();
-    if (focusedNode) {
-      DocAccessible* doc =
-        GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
-      if (doc) {
-        target = doc->GetAccessibleEvenIfNotInMapOrContainer(focusedNode);
-      }
-    }
-  }
-
-  if (target) {
+  Accessible* target = FocusedAccessible();
+  if (target)
     DispatchFocusEvent(target->Document(), target);
-  }
 }
 
 void
@@ -269,9 +295,6 @@ FocusManager::ProcessFocusEvent(AccEvent* aEvent)
       target = activeItem;
     }
   }
-
-  mFocusedAcc = target;
-  mFocusedProxy = nullptr;
 
   
   if (target->IsARIARole(nsGkAtoms::menuitem)) {
