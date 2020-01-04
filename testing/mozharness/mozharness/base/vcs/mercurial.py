@@ -75,7 +75,6 @@ class MercurialVCS(ScriptMixin, LogMixin, TransferMixin):
     
     
     
-    
 
     def __init__(self, log_obj=None, config=None, vcs_config=None,
                  script_obj=None):
