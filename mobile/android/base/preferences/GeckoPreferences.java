@@ -790,13 +790,6 @@ OnSharedPreferenceChangeListener
                             return true;
                         }
                     });
-                } else if (handlers.containsKey(key)) {
-                    PrefHandler handler = handlers.get(key);
-                    if (!handler.setupPref(this, pref)) {
-                        preferences.removePreference(pref);
-                        i--;
-                        continue;
-                    }
                 } else if (PREFS_TAB_QUEUE.equals(key)) {
                     
                     if (!TabQueueHelper.TAB_QUEUE_ENABLED) {
@@ -860,6 +853,15 @@ OnSharedPreferenceChangeListener
 
                     final String url = getResources().getString(R.string.faq_link, VERSION, OS, LOCALE);
                     ((LinkPreference) pref).setUrl(url);
+                } else if (handlers.containsKey(key)) {
+                    
+                    
+                    PrefHandler handler = handlers.get(key);
+                    if (!handler.setupPref(this, pref)) {
+                        preferences.removePreference(pref);
+                        i--;
+                        continue;
+                    }
                 }
 
                 
