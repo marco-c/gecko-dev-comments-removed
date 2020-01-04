@@ -96,12 +96,36 @@ testLoad('i32', '16_s', 16, 0, 0, -0xe10);
 testLoad('i32', '16_u', 16, 0, 0, 0xf1f0);
 
 
+function testLoadNYI(ext) {
+    assertErrorMessage(() => wasmEvalText(`(module (memory 0x10000) (func (i64.load${ext} (i32.const 0))))`), TypeError, /NYI/);
+}
+testLoadNYI('');
+testLoadNYI('8_s');
+testLoadNYI('8_u');
+testLoadNYI('16_s');
+testLoadNYI('16_u');
+testLoadNYI('32_s');
+testLoadNYI('32_u');
+
+
 
 
 
 
 
 testStore('i32', '', 0, 0, 0, -0x3f3e2c2c);
+
+
+
+
+function testStoreNYI(ext) {
+    assertErrorMessage(() => wasmEvalText(`(module (memory 0x10000) (func (i64.store${ext} (i32.const 0) (i32.const 0))))`), TypeError, /NYI/);
+}
+testStoreNYI('');
+testStoreNYI('8');
+testStoreNYI('16');
+testStoreNYI('32');
+
 
 
 
@@ -120,9 +144,6 @@ testStore('f64', '', 0, 0, 0, 0.89012345);
 
 testStore('i32', '8', 0, 0, 0, 0x23);
 testStore('i32', '16', 0, 0, 0, 0x2345);
-
-
-
 
 testLoadError('i32', '', 0, 0, 3, /memory access alignment must be a power of two/);
 testStoreError('i32', '', 0, 0, 3, /memory access alignment must be a power of two/);
