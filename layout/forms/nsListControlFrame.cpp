@@ -1325,7 +1325,7 @@ nsListControlFrame::UpdateSelection()
       }
     }
     if (mIsAllContentHere) {
-      FireOnChange();
+      FireOnInputAndOnChange();
     }
     return weakFrame.IsAlive();
   }
@@ -1360,21 +1360,28 @@ nsListControlFrame::ComboboxFinish(int32_t aIndex)
 
 
 void
-nsListControlFrame::FireOnChange()
+nsListControlFrame::FireOnInputAndOnChange()
 {
   if (mComboboxFrame) {
     
     int32_t index = mComboboxFrame->UpdateRecentIndex(NS_SKIP_NOTIFY_INDEX);
-    if (index == NS_SKIP_NOTIFY_INDEX)
+    if (index == NS_SKIP_NOTIFY_INDEX) {
       return;
+    }
 
     
-    if (index == GetSelectedIndex())
+    if (index == GetSelectedIndex()) {
       return;
+    }
   }
 
+  nsCOMPtr<nsIContent> content = mContent;
   
-  nsContentUtils::DispatchTrustedEvent(mContent->OwnerDoc(), mContent,
+  nsContentUtils::DispatchTrustedEvent(content->OwnerDoc(), content,
+                                       NS_LITERAL_STRING("input"), true,
+                                       false);
+  
+  nsContentUtils::DispatchTrustedEvent(content->OwnerDoc(), content,
                                        NS_LITERAL_STRING("change"), true,
                                        false);
 }
@@ -1666,9 +1673,11 @@ nsListControlFrame::MouseUp(nsIDOMEvent* aMouseEvent)
       if (kNothingSelected != selectedIndex) {
         nsWeakFrame weakFrame(this);
         ComboboxFinish(selectedIndex);
-        if (!weakFrame.IsAlive())
+        if (!weakFrame.IsAlive()) {
           return NS_OK;
-        FireOnChange();
+        }
+
+        FireOnInputAndOnChange();
       }
 
       mouseEvent->mClickCount = 1;
@@ -1684,7 +1693,7 @@ nsListControlFrame::MouseUp(nsIDOMEvent* aMouseEvent)
       
       
       mChangesSinceDragStart = false;
-      FireOnChange();
+      FireOnInputAndOnChange();
     }
   }
 
@@ -2079,7 +2088,7 @@ nsListControlFrame::DropDownToggleKey(nsIDOMEvent* aKeyEvent)
       
       ComboboxFinish(mEndSelectionIndex);
       if (weakFrame.IsAlive()) {
-        FireOnChange();
+        FireOnInputAndOnChange();
       }
     }
   }
@@ -2184,7 +2193,7 @@ nsListControlFrame::KeyDown(nsIDOMEvent* aKeyEvent)
             return NS_OK;
           }
         }
-        FireOnChange();
+        FireOnInputAndOnChange();
         return NS_OK;
       }
 

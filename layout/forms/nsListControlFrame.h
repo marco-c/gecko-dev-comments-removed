@@ -142,7 +142,7 @@ public:
 
 
 
-  virtual void FireOnChange() override;
+  virtual void FireOnInputAndOnChange() override;
 
   
 

@@ -287,7 +287,7 @@ nsComboboxControlFrame::SetFocus(bool aOn, bool aRepaint)
       }
     }
     
-    mListControlFrame->FireOnChange();
+    mListControlFrame->FireOnInputAndOnChange();
   }
 
   if (!weakFrame.IsAlive()) {

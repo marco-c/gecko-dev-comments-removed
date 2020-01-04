@@ -78,7 +78,7 @@ public:
   
 
 
-  virtual void FireOnChange() = 0;
+  virtual void FireOnInputAndOnChange() = 0;
 
   
 
