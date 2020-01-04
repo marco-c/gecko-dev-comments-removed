@@ -7,9 +7,9 @@
 #ifndef mozilla_EffectSet_h
 #define mozilla_EffectSet_h
 
+#include "mozilla/AnimValuesStyleRule.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/EnumeratedArray.h"
-#include "AnimationCommon.h" 
 #include "nsCSSPseudoElements.h" 
 #include "nsHashKeys.h" 
 #include "nsTHashtable.h" 
