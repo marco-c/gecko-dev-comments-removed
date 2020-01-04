@@ -341,6 +341,8 @@ class IonCache
         MOZ_ASSERT(pc_);
         return pc_;
     }
+
+    void trace(JSTracer* trc);
 };
 
 

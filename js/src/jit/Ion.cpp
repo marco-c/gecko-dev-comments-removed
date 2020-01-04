@@ -1020,6 +1020,10 @@ IonScript::trace(JSTracer* trc)
         ICEntry& ent = sharedStubList()[i];
         ent.trace(trc);
     }
+
+    
+    for (size_t i = 0; i < numCaches(); i++)
+        getCacheFromIndex(i).trace(trc);
 }
 
  void
