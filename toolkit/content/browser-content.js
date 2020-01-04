@@ -278,18 +278,34 @@ var PopupBlocking = {
           
           
           if (dwi && dwi.document == internals.requestingDocument) {
-            dwi.open(data.popupWindowURI, data.popupWindowName, data.popupWindowFeatures);
+            dwi.open(data.popupWindowURIspec, data.popupWindowName, data.popupWindowFeatures);
           }
         }
         break;
       }
 
       case "PopupBlocking:GetBlockedPopupList": {
-        sendAsyncMessage("PopupBlocking:ReplyGetBlockedPopupList",
-                          
-                         { popupData: this.popupData ?
-                                      this.popupData.slice(0, 15) :
-                                      [] });
+        let popupData = [];
+        let length = this.popupData ? this.popupData.length : 0;
+
+        
+        length = Math.min(length, 15);
+
+        for (let i = 0; i < length; i++) {
+          let popupWindowURIspec = this.popupData[i].popupWindowURIspec;
+
+          if (popupWindowURIspec == global.content.location.href) {
+            popupWindowURIspec = "<self>";
+          } else {
+            
+            
+            popupWindowURIspec = popupWindowURIspec.substring(0, 500)
+          }
+
+          popupData.push({popupWindowURIspec});
+        }
+
+        sendAsyncMessage("PopupBlocking:ReplyGetBlockedPopupList", {popupData});
         break;
       }
     }
@@ -314,7 +330,7 @@ var PopupBlocking = {
     }
 
     let obj = {
-      popupWindowURI: ev.popupWindowURI ? ev.popupWindowURI.spec : "about:blank",
+      popupWindowURIspec: ev.popupWindowURI ? ev.popupWindowURI.spec : "about:blank",
       popupWindowFeatures: ev.popupWindowFeatures,
       popupWindowName: ev.popupWindowName
     };

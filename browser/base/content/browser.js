@@ -597,10 +597,10 @@ var gPopupBlockerObserver = {
 
           
           
-          if (!blockedPopup.popupWindowURI)
+          if (!blockedPopup.popupWindowURIspec)
             continue;
 
-          var popupURIspec = blockedPopup.popupWindowURI.spec;
+          var popupURIspec = blockedPopup.popupWindowURIspec;
 
           
           
@@ -608,6 +608,7 @@ var gPopupBlockerObserver = {
           
           
           if (popupURIspec == "" || popupURIspec == "about:blank" ||
+              popupURIspec == "<self>" ||
               popupURIspec == uri.spec)
             continue;
 
@@ -660,7 +661,7 @@ var gPopupBlockerObserver = {
   {
     let popups = aBrowser.retrieveListOfBlockedPopups().then(popups => {
       for (let i = 0; i < popups.length; i++) {
-        if (popups[i].popupWindowURI)
+        if (popups[i].popupWindowURIspec)
           aBrowser.unblockPopup(i);
       }
     }, null);
