@@ -613,7 +613,7 @@ AsyncFetchAndSetIconForPage::OnStopRequest(nsIRequest* aRequest,
 
   
   
-  if (mIcon.data.Length() > MAX_FAVICON_SIZE) {
+  if (mIcon.data.Length() > nsIFaviconService::MAX_FAVICON_SIZE) {
     return NS_OK;
   }
 

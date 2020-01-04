@@ -347,7 +347,7 @@ nsFaviconService::ReplaceFaviconData(nsIURI* aFaviconURI,
     rv = OptimizeFaviconImage(aData, aDataLen, aMimeType, iconData->data, iconData->mimeType);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (iconData->data.Length() > MAX_FAVICON_SIZE) {
+    if (iconData->data.Length() > nsIFaviconService::MAX_FAVICON_SIZE) {
       
       
       mUnassociatedIcons.RemoveEntry(aFaviconURI);
