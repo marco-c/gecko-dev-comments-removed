@@ -1392,6 +1392,7 @@ void
 MediaFormatReader::SkipVideoDemuxToNextKeyFrame(media::TimeUnit aTimeThreshold)
 {
   MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(mVideo.HasPromise());
   LOG("Skipping up to %lld", aTimeThreshold.ToMicroseconds());
 
   
@@ -1408,6 +1409,13 @@ MediaFormatReader::SkipVideoDemuxToNextKeyFrame(media::TimeUnit aTimeThreshold)
     LOGV("Internal Seek pending, cancelling it");
   }
   Reset(TrackInfo::kVideoTrack);
+
+  if (mVideo.mError) {
+    
+    
+    mVideo.RejectPromise(DECODE_ERROR, __func__);
+    return;
+  }
 
   mSkipRequest.Begin(mVideo.mTrackDemuxer->SkipToNextRandomAccessPoint(aTimeThreshold)
                           ->Then(OwnerThread(), __func__, this,
