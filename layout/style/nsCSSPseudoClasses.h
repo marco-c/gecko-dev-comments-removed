@@ -29,7 +29,8 @@ enum class CSSPseudoClassType : CSSPseudoClassTypeBase
 #include "nsCSSPseudoClassList.h"
 #undef CSS_PSEUDO_CLASS
   Count,
-  NotPseudo   
+  NotPseudo,  
+  MAX
 };
 
 } 
