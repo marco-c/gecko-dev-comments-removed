@@ -140,8 +140,6 @@ ScriptSettingsStackEntry::ScriptSettingsStackEntry(nsIGlobalObject *aGlobal,
              "Must have an actual JS global for the duration on the stack");
   MOZ_ASSERT(JS_IsGlobalObject(mGlobalObject->GetGlobalJSObject()),
              "No outer windows allowed");
-
-  ScriptSettingsStack::Push(this);
 }
 
 
@@ -150,15 +148,12 @@ ScriptSettingsStackEntry::ScriptSettingsStackEntry()
    , mType(eNoJSAPI)
    , mOlder(nullptr)
 {
-  ScriptSettingsStack::Push(this);
 }
 
 ScriptSettingsStackEntry::~ScriptSettingsStackEntry()
 {
   
   MOZ_ASSERT_IF(mGlobalObject, mGlobalObject->GetGlobalJSObject());
-
-  ScriptSettingsStack::Pop(this);
 }
 
 
@@ -622,6 +617,8 @@ AutoEntryScript::AutoEntryScript(nsIGlobalObject* aGlobalObject,
   MOZ_ASSERT_IF(!aCx, aIsMainThread); 
   MOZ_ASSERT_IF(aCx && aIsMainThread, aCx == nsContentUtils::GetSafeJSContext());
 
+  ScriptSettingsStack::Push(this);
+
   if (aIsMainThread && gRunToCompletionListeners > 0) {
     mDocShellEntryMonitor.emplace(cx(), aReason);
   }
@@ -641,6 +638,8 @@ AutoEntryScript::~AutoEntryScript()
   
   
   JS_MaybeGC(cx());
+
+  ScriptSettingsStack::Pop(this);
 }
 
 AutoEntryScript::DocshellEntryMonitor::DocshellEntryMonitor(JSContext* aCx,
@@ -722,6 +721,12 @@ AutoIncumbentScript::AutoIncumbentScript(nsIGlobalObject* aGlobalObject)
   : ScriptSettingsStackEntry(aGlobalObject, eIncumbentScript)
   , mCallerOverride(nsContentUtils::GetCurrentJSContextForThread())
 {
+  ScriptSettingsStack::Push(this);
+}
+
+AutoIncumbentScript::~AutoIncumbentScript()
+{
+  ScriptSettingsStack::Pop(this);
 }
 
 AutoNoJSAPI::AutoNoJSAPI(bool aIsMainThread)
@@ -731,6 +736,13 @@ AutoNoJSAPI::AutoNoJSAPI(bool aIsMainThread)
     mCxPusher.emplace(static_cast<JSContext*>(nullptr),
                        true);
   }
+
+  ScriptSettingsStack::Push(this);
+}
+
+AutoNoJSAPI::~AutoNoJSAPI()
+{
+  ScriptSettingsStack::Pop(this);
 }
 
 danger::AutoCxPusher::AutoCxPusher(JSContext* cx, bool allowNull)
