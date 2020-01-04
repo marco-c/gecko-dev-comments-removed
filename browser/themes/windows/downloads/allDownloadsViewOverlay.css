@@ -2,6 +2,8 @@
 
 
 
+%include ../../shared/downloads/allDownloadsViewOverlay.inc.css
+
 #downloadsRichListBox {
   
   -moz-appearance: none;

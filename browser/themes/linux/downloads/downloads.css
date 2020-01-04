@@ -2,6 +2,8 @@
 
 
 
+%include ../../shared/downloads/downloads.inc.css
+
 
 
 #downloadsPanel > .panel-arrowcontainer > .panel-arrowcontent {
