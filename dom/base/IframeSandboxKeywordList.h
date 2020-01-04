@@ -8,8 +8,6 @@
 
 
 
-#include "nsSandboxFlags.h"
-
 
 
 SANDBOX_KEYWORD("allow-same-origin", allowsameorigin,  SANDBOXED_ORIGIN)
