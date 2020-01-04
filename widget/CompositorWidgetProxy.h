@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_widget_CompositorWidget_h__
-#define mozilla_widget_CompositorWidget_h__
+#ifndef mozilla_widget_CompositorWidgetProxy_h__
+#define mozilla_widget_CompositorWidgetProxy_h__
 
 #include "nsISupports.h"
 #include "mozilla/RefPtr.h"
@@ -28,42 +28,15 @@ class SourceSurface;
 } 
 namespace widget {
 
-class WinCompositorWidget;
-class CompositorWidgetInitData;
+class WinCompositorWidgetProxy;
 
 
 
 
-
-
-class CompositorWidgetDelegate;
-
-
-#if defined(XP_WIN)
-
-
-class CompositorWidgetParent;
-
-
-
-class CompositorWidgetChild;
-
-# define MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
-#endif
-
-
-
-
-class CompositorWidget
+class CompositorWidgetProxy
 {
 public:
-  NS_INLINE_DECL_REFCOUNTING(mozilla::widget::CompositorWidget)
-
-  
-
-
-
-  static RefPtr<CompositorWidget> CreateLocal(const CompositorWidgetInitData& aInitData, nsIWidget* aWidget);
+  NS_INLINE_DECL_REFCOUNTING(mozilla::widget::CompositorWidgetProxy)
 
   
 
@@ -227,22 +200,51 @@ public:
 
   virtual already_AddRefed<CompositorVsyncDispatcher> GetCompositorVsyncDispatcher() = 0;
 
-  virtual WinCompositorWidget* AsWindows() {
-    return nullptr;
-  }
-
-  
-
-
-  virtual CompositorWidgetDelegate* AsDelegate() {
+  virtual WinCompositorWidgetProxy* AsWindowsProxy() {
     return nullptr;
   }
 
 protected:
-  virtual ~CompositorWidget();
+  virtual ~CompositorWidgetProxy();
 
   
   RefPtr<gfx::DrawTarget> mLastBackBuffer;
+};
+
+
+
+class CompositorWidgetProxyWrapper : public CompositorWidgetProxy
+{
+public:
+  explicit CompositorWidgetProxyWrapper(nsBaseWidget* aWidget);
+
+  virtual bool PreRender(layers::LayerManagerComposite* aManager) override;
+  virtual void PostRender(layers::LayerManagerComposite* aManager) override;
+  virtual void DrawWindowUnderlay(layers::LayerManagerComposite* aManager,
+                                  LayoutDeviceIntRect aRect) override;
+  virtual void DrawWindowOverlay(layers::LayerManagerComposite* aManager,
+                                 LayoutDeviceIntRect aRect) override;
+  virtual already_AddRefed<gfx::DrawTarget> StartRemoteDrawing() override;
+  virtual already_AddRefed<gfx::DrawTarget>
+  StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
+                             layers::BufferMode* aBufferMode) override;
+  virtual void EndRemoteDrawing() override;
+  virtual void EndRemoteDrawingInRegion(gfx::DrawTarget* aDrawTarget,
+                                        LayoutDeviceIntRegion& aInvalidRegion) override;
+  virtual void CleanupRemoteDrawing() override;
+  virtual void CleanupWindowEffects() override;
+  virtual bool InitCompositor(layers::Compositor* aCompositor) override;
+  virtual LayoutDeviceIntSize GetClientSize() override;
+  virtual uint32_t GetGLFrameBufferFormat() override;
+  virtual layers::Composer2D* GetComposer2D() override;
+  virtual already_AddRefed<CompositorVsyncDispatcher> GetCompositorVsyncDispatcher() override;
+  virtual uintptr_t GetWidgetKey() override;
+
+  
+  nsIWidget* RealWidget() override;
+
+private:
+  nsBaseWidget* mWidget;
 };
 
 } 

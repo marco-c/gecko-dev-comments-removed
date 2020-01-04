@@ -21,6 +21,7 @@
 #include "nsIWidgetListener.h"
 #include "nsPIDOMWindow.h"
 #include "nsWeakReference.h"
+#include "CompositorWidgetProxy.h"
 #include <algorithm>
 class nsIContent;
 class nsAutoRollup;
@@ -47,11 +48,6 @@ class GeckoContentController;
 class APZEventState;
 class CompositorSession;
 struct ScrollableLayerGuid;
-} 
-
-namespace widget {
-class CompositorWidgetDelegate;
-class InProcessCompositorWidget;
 } 
 
 class CompositorVsyncDispatcher;
@@ -99,7 +95,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference
 {
   friend class nsAutoRollup;
   friend class DispatchWheelEventOnMainThread;
-  friend class mozilla::widget::InProcessCompositorWidget;
+  friend class mozilla::widget::CompositorWidgetProxyWrapper;
 
 protected:
   typedef base::Thread Thread;
@@ -116,7 +112,7 @@ protected:
   typedef mozilla::CSSIntRect CSSIntRect;
   typedef mozilla::CSSRect CSSRect;
   typedef mozilla::ScreenRotation ScreenRotation;
-  typedef mozilla::widget::CompositorWidgetDelegate CompositorWidgetDelegate;
+  typedef mozilla::widget::CompositorWidgetProxy CompositorWidgetProxy;
   typedef mozilla::layers::CompositorSession CompositorSession;
 
   virtual ~nsBaseWidget();
@@ -355,6 +351,9 @@ public:
 
   void Shutdown();
 
+  
+  virtual CompositorWidgetProxy* NewCompositorWidgetProxy();
+
 protected:
   
   
@@ -589,7 +588,7 @@ protected:
   nsPopupType       mPopupType;
   SizeConstraints   mSizeConstraints;
 
-  CompositorWidgetDelegate* mCompositorWidgetDelegate;
+  RefPtr<CompositorWidgetProxy> mCompositorWidgetProxy;
 
   bool              mUpdateCursor;
   bool              mUseAttachedEvents;

@@ -280,6 +280,12 @@ protected:
   virtual nsresult NotifyIMEInternal(
                      const IMENotification& aIMENotification) override;
 
+  
+  widget::CompositorWidgetProxy* NewCompositorWidgetProxy() override {
+    MOZ_ASSERT_UNREACHABLE("PuppetWidgets should not have widget proxies");
+    return nullptr;
+  }
+
 private:
   nsresult Paint();
 

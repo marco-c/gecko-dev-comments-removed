@@ -3,51 +3,25 @@
 
 
 
-#ifndef widget_windows_CompositorWidgetParent_h
-#define widget_windows_CompositorWidgetParent_h
+#ifndef _widget_windows_WinCompositorWidget_h__
+#define _widget_windows_WinCompositorWidget_h__
 
-#include "CompositorWidget.h"
-#include "gfxASurface.h"
+#include "CompositorWidgetProxy.h"
 #include "mozilla/gfx/CriticalSection.h"
-#include "mozilla/gfx/Point.h"
-#include "nsIWidget.h"
 
 class nsWindow;
 
 namespace mozilla {
 namespace widget {
-
-class CompositorWidgetDelegate
-{
-public:
-  
-  virtual void EnterPresentLock() = 0;
-  virtual void LeavePresentLock() = 0;
-  virtual void OnDestroyWindow() = 0;
-
-  
-  virtual void UpdateTransparency(nsTransparencyMode aMode) = 0;
-  virtual void ClearTransparentWindow() = 0;
-
-  
-  virtual void ResizeTransparentWindow(const gfx::IntSize& aSize) = 0;
-
-  
-  
-  virtual HDC GetTransparentDC() const = 0;
-};
  
 
 
 
 
-class WinCompositorWidget
- : public CompositorWidget,
-   public CompositorWidgetDelegate
+class WinCompositorWidgetProxy : public CompositorWidgetProxy
 {
 public:
-  WinCompositorWidget(const CompositorWidgetInitData& aInitData,
-                      nsWindow* aWindow = nullptr);
+  WinCompositorWidgetProxy(nsWindow* aWindow);
 
   bool PreRender(layers::LayerManagerComposite*) override;
   void PostRender(layers::LayerManagerComposite*) override;
@@ -61,24 +35,27 @@ public:
   already_AddRefed<CompositorVsyncDispatcher> GetCompositorVsyncDispatcher() override;
   uintptr_t GetWidgetKey() override;
   nsIWidget* RealWidget() override;
-  WinCompositorWidget* AsWindows() override {
+  WinCompositorWidgetProxy* AsWindowsProxy() override {
     return this;
   }
 
   
-  void EnterPresentLock() override;
-  void LeavePresentLock() override;
-  void OnDestroyWindow() override;
-  void UpdateTransparency(nsTransparencyMode aMode) override;
-  void ClearTransparentWindow() override;
-  void ResizeTransparentWindow(const gfx::IntSize& aSize) override;
+  void EnterPresentLock();
+  void LeavePresentLock();
+  void OnDestroyWindow();
 
+  
+  void UpdateTransparency(nsTransparencyMode aMode);
+  void ClearTransparentWindow();
   bool RedrawTransparentWindow();
+
+  
+  void ResizeTransparentWindow(int32_t aNewWidth, int32_t aNewHeight);
 
   
   RefPtr<gfxASurface> EnsureTransparentSurface();
 
-  HDC GetTransparentDC() const override {
+  HDC GetTransparentDC() const {
     return mMemoryDC;
   }
   HWND GetHwnd() const {
@@ -89,7 +66,7 @@ private:
   HDC GetWindowSurface();
   void FreeWindowSurface(HDC dc);
 
-  void CreateTransparentSurface(const gfx::IntSize& aSize);
+  void CreateTransparentSurface(int32_t aWidth, int32_t aHeight);
 
 private:
   nsWindow* mWindow;
