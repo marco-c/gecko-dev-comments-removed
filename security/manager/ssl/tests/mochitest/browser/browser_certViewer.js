@@ -3,38 +3,265 @@
 
 "use strict";
 
-var gBugWindow;
-
-function onLoad() {
-  gBugWindow.removeEventListener("load", onLoad);
-  gBugWindow.addEventListener("unload", onUnload);
-  gBugWindow.close();
-}
-
-function onUnload() {
-  gBugWindow.removeEventListener("unload", onUnload);
-  window.focus();
-  finish();
-}
 
 
 
-function test() {
-  waitForExplicitFinish();
+
+
+var { OS } = Cu.import("resource://gre/modules/osfile.jsm", {});
+
+var certificates = [];
+
+registerCleanupFunction(function() {
   let certdb = Cc["@mozilla.org/security/x509certdb;1"]
                  .getService(Ci.nsIX509CertDB);
-  let certList = certdb.getCerts();
-  let enumerator = certList.getEnumerator();
-  ok(enumerator.hasMoreElements(), "we have at least one certificate");
-  let cert = enumerator.getNext().QueryInterface(Ci.nsIX509Cert);
-  ok(cert, "found a certificate to look at");
-  info("looking at certificate with nickname " + cert.nickname);
+  certificates.forEach(cert => {
+    certdb.deleteCertificate(cert);
+  });
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("ca.pem", "CTu,CTu,CTu");
+  let win = yield displayCertificate(cert);
+  checkUsages(win, ["SSL Certificate Authority"]);
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("ssl-ee.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkUsages(win, ["SSL Server Certificate", "SSL Client Certificate"]);
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("email-ee.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkUsages(win, ["Email Recipient Certificate", "Email Signer Certificate"]);
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("code-ee.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkUsages(win, ["Object Signer"]);
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("expired-ca.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkError(win, "Could not verify this certificate because it has expired.");
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("ee-from-expired-ca.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkError(win,
+             "Could not verify this certificate because the CA certificate " +
+             "is invalid.");
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("unknown-issuer.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkError(win,
+             "Could not verify this certificate because the issuer is " +
+             "unknown.");
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("md5-ee.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkError(win,
+             "Could not verify this certificate because it was signed using " +
+             "a signature algorithm that was disabled because that algorithm " +
+             "is not secure.");
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("untrusted-ca.pem", "p,p,p");
+  let win = yield displayCertificate(cert);
+  checkError(win,
+             "Could not verify this certificate because it is not trusted.");
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  let cert = yield readCertificate("ee-from-untrusted-ca.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkError(win,
+             "Could not verify this certificate because the issuer is not " +
+             "trusted.");
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  
+  
+  
+  let certBlocklist = Cc["@mozilla.org/security/certblocklist;1"]
+                        .getService(Ci.nsICertBlocklist);
+  certBlocklist.revokeCertBySubjectAndPubKey(
+    "MBIxEDAOBgNVBAMMB3Jldm9rZWQ=", 
+    "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8="); 
+  let cert = yield readCertificate("revoked.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkError(win,
+             "Could not verify this certificate because it has been revoked.");
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+add_task(function* () {
+  
+  
+  
+  
+  let cert = yield readCertificate("invalid.pem", ",,");
+  let win = yield displayCertificate(cert);
+  checkError(win, "Could not verify this certificate for unknown reasons.");
+  yield BrowserTestUtils.closeWindow(win);
+});
+
+
+
+
+function pemToBase64(pem) {
+  return pem.replace(/-----BEGIN CERTIFICATE-----/, "")
+            .replace(/-----END CERTIFICATE-----/, "")
+            .replace(/[\r\n]/g, "");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function readCertificate(filename, trustString) {
+  return OS.File.read(getTestFilePath(filename)).then(data => {
+    let decoder = new TextDecoder();
+    let pem = decoder.decode(data);
+    let certdb = Cc["@mozilla.org/security/x509certdb;1"]
+                   .getService(Ci.nsIX509CertDB);
+    let base64 = pemToBase64(pem);
+    certdb.addCertFromBase64(base64, trustString, "unused");
+    let cert = certdb.constructX509FromBase64(base64);
+    certificates.push(cert); 
+    return cert;
+  }, error => { throw error; });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function displayCertificate(certificate) {
   let array = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
-  array.appendElement(cert, false);
+  array.appendElement(certificate, false);
   let params = Cc["@mozilla.org/embedcomp/dialogparam;1"]
                  .createInstance(Ci.nsIDialogParamBlock);
   params.objects = array;
-  gBugWindow = window.openDialog("chrome://pippki/content/certViewer.xul",
-                                 "", "", params);
-  gBugWindow.addEventListener("load", onLoad);
+  let win = window.openDialog("chrome://pippki/content/certViewer.xul", "",
+                              "", params);
+  return TestUtils.topicObserved("ViewCertDetails:CertUsagesDone",
+                                 (subject, data) => subject == win)
+  .then(([subject, data]) => subject, error => { throw error; });
+}
+
+
+
+
+
+
+
+
+
+
+
+function getUsages(win) {
+  let determinedUsages = [];
+  let verifyInfoBox = win.document.getElementById("verify_info_box");
+  Array.from(verifyInfoBox.children).forEach(child => {
+    if (child.getAttribute("hidden") != "true" &&
+        child.getAttribute("id") != "verified") {
+      determinedUsages.push(child.getAttribute("value"));
+    }
+  });
+  return determinedUsages.sort();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getError(win) {
+  return win.document.getElementById("verified").textContent;
+}
+
+
+
+
+
+
+
+
+
+
+
+function checkUsages(win, usages) {
+  Assert.equal(getError(win),
+               "This certificate has been verified for the following uses:",
+               "should have successful verification message");
+  let determinedUsages = getUsages(win);
+  usages.sort();
+  Assert.equal(determinedUsages.length, usages.length,
+               "number of usages as determined by cert viewer should be equal");
+  while (usages.length > 0) {
+    Assert.equal(determinedUsages.pop(), usages.pop(),
+                 "usages as determined by cert viewer should be equal");
+  }
+}
+
+
+
+
+
+
+
+
+
+
+function checkError(win, error) {
+  let determinedUsages = getUsages(win);
+  Assert.equal(determinedUsages.length, 0,
+               "should not have any successful usages in error case");
+  Assert.equal(getError(win), error,
+               "determined error should be the same as expected error");
 }
