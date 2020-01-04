@@ -1245,11 +1245,29 @@ UnboxedArrayObject::objectMovedDuringMinorGC(JSTracer* trc, JSObject* dst, JSObj
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  const uint32_t
 UnboxedArrayObject::CapacityArray[] = {
     UINT32_MAX, 
-    0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 13, 16, 17, 18, 20, 24, 26, 32, 34, 36, 40, 48, 52, 64, 68,
-    72, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288,
+    0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 13, 16, 17, 18, 24, 26, 32, 34, 40, 64, 72, 96, 104, 128, 136,
+    256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288,
     1048576, 2097152, 3145728, 4194304, 5242880, 6291456, 7340032, 8388608, 9437184, 11534336,
     13631488, 15728640, 17825792, 20971520, 24117248, 27262976, 31457280, 35651584, 40894464,
     46137344, 52428800, 59768832, MaximumCapacity
@@ -1257,13 +1275,15 @@ UnboxedArrayObject::CapacityArray[] = {
 
 static const uint32_t
 Pow2CapacityIndexes[] = {
-    1,  
     2,  
-    4,  
+    3,  
+    5,  
     8,  
     13, 
-    19, 
+    18, 
+    21, 
     25, 
+    27, 
     28, 
     29, 
     30, 
@@ -1275,12 +1295,10 @@ Pow2CapacityIndexes[] = {
     36, 
     37, 
     38, 
-    39, 
-    40, 
-    41  
+    39  
 };
 
-static const uint32_t MebiCapacityIndex = 41;
+static const uint32_t MebiCapacityIndex = 39;
 
  uint32_t
 UnboxedArrayObject::chooseCapacityIndex(uint32_t capacity, uint32_t length)
