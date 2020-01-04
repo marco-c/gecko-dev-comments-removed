@@ -226,7 +226,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
         masm.push(valuesSize);
         masm.push(Imm32(0)); 
         
-        masm.enterFakeExitFrame(ExitFrameLayout::BareToken());
+        masm.enterFakeExitFrame(ExitFrameLayoutBareToken);
 
         regs.add(valuesSize);
 

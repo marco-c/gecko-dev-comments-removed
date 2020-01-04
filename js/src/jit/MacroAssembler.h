@@ -173,6 +173,9 @@ namespace js {
 namespace jit {
 
 
+enum ExitFrameTokenValues;
+
+
 
 
 class MacroAssembler : public MacroAssemblerSpecific
@@ -599,6 +602,50 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     uint32_t pushFakeReturnAddress(Register scratch) PER_SHARED_ARCH;
+
+  public:
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    inline void PushStubCode();
+
+    
+    
+    inline bool hasSelfReference() const;
+
+    
+    inline void enterExitFrame(const VMFunction* f = nullptr);
+
+    
+    
+    inline void enterFakeExitFrame(enum ExitFrameTokenValues token);
+
+    
+    inline void leaveExitFrame(size_t extraFrame = 0);
+
+  private:
+    
+    
+    void linkExitFrame();
+
+    
+    void linkSelfReference(JitCode* code);
+
+    
+    
+    
+    CodeOffsetLabel selfReferencePatch_;
 
     
   public:
@@ -1095,30 +1142,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     void compareStrings(JSOp op, Register left, Register right, Register result,
                         Label* fail);
 
-    
-    
-    
-  private:
-    CodeOffsetLabel exitCodePatch_;
-
-  private:
-    void linkExitFrame();
-
   public:
-    inline void PushStubCode();
-
-    
-    inline void enterExitFrame(const VMFunction* f = nullptr);
-
-    
-    
-    inline void enterFakeExitFrame(JitCode* codeVal);
-
-    
-    inline void leaveExitFrame(size_t extraFrame = 0);
-
-    inline bool hasEnteredExitFrame() const;
-
     
     void generateBailoutTail(Register scratch, Register bailoutInfo);
 

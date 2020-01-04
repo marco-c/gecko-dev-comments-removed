@@ -319,7 +319,7 @@ AsmJSModule::finish(ExclusiveContext* cx, TokenStream& tokenStream, MacroAssembl
     MOZ_ASSERT(masm.jumpRelocationTableBytes() == 0);
     MOZ_ASSERT(masm.dataRelocationTableBytes() == 0);
     MOZ_ASSERT(masm.preBarrierTableBytes() == 0);
-    MOZ_ASSERT(!masm.hasEnteredExitFrame());
+    MOZ_ASSERT(!masm.hasSelfReference());
 
     
 

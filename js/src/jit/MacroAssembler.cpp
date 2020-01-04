@@ -1588,15 +1588,6 @@ MacroAssembler::loadStringChar(Register str, Register index, Register output)
     bind(&done);
 }
 
-
-
-void
-MacroAssembler::linkExitFrame()
-{
-    AbsoluteAddress jitTop(GetJitContext()->runtime->addressOfJitTop());
-    storeStackPtr(jitTop);
-}
-
 static void
 BailoutReportOverRecursed(JSContext* cx)
 {
@@ -1667,7 +1658,7 @@ MacroAssembler::generateBailoutTail(Register scratch, Register bailoutInfo)
         push(temp);
         push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
         
-        enterFakeExitFrame(ExitFrameLayout::BareToken());
+        enterFakeExitFrame(ExitFrameLayoutBareToken);
 
         
         Label noMonitor;
@@ -2365,16 +2356,7 @@ void
 MacroAssembler::link(JitCode* code)
 {
     MOZ_ASSERT(!oom());
-    
-    
-    
-    if (hasEnteredExitFrame()) {
-        exitCodePatch_.fixup(this);
-        PatchDataWithValueCheck(CodeLocationLabel(code, exitCodePatch_),
-                                ImmPtr(code),
-                                ImmPtr((void*)-1));
-    }
-
+    linkSelfReference(code);
     linkProfilerCallSites(code);
 }
 
@@ -2877,6 +2859,30 @@ MacroAssembler::callWithABINoProfiler(AsmJSImmPtr imm, MoveOp::Type result)
     callWithABIPre(&stackAdjust,  true);
     call(imm);
     callWithABIPost(stackAdjust, result);
+}
+
+
+
+
+void
+MacroAssembler::linkExitFrame()
+{
+    AbsoluteAddress jitTop(GetJitContext()->runtime->addressOfJitTop());
+    storeStackPtr(jitTop);
+}
+
+void
+MacroAssembler::linkSelfReference(JitCode* code)
+{
+    
+    
+    
+    if (hasSelfReference()) {
+        selfReferencePatch_.fixup(this);
+        PatchDataWithValueCheck(CodeLocationLabel(code, selfReferencePatch_),
+                                ImmPtr(code),
+                                ImmPtr((void*)-1));
+    }
 }
 
 

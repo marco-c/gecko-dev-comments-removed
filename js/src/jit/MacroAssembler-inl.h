@@ -205,7 +205,9 @@ MacroAssembler::buildFakeExitFrame(Register scratch)
 void
 MacroAssembler::PushStubCode()
 {
-    exitCodePatch_ = PushWithPatch(ImmWord(-1));
+    
+    MOZ_ASSERT(!hasSelfReference());
+    selfReferencePatch_ = PushWithPatch(ImmWord(-1));
 }
 
 void
@@ -219,10 +221,10 @@ MacroAssembler::enterExitFrame(const VMFunction* f)
 }
 
 void
-MacroAssembler::enterFakeExitFrame(JitCode* codeVal)
+MacroAssembler::enterFakeExitFrame(enum ExitFrameTokenValues token)
 {
     linkExitFrame();
-    Push(ImmPtr(codeVal));
+    Push(Imm32(token));
     Push(ImmPtr(nullptr));
 }
 
@@ -233,10 +235,13 @@ MacroAssembler::leaveExitFrame(size_t extraFrame)
 }
 
 bool
-MacroAssembler::hasEnteredExitFrame() const
+MacroAssembler::hasSelfReference() const
 {
-    return exitCodePatch_.offset() != 0;
+    return selfReferencePatch_.offset() != 0;
 }
+
+
+
 
 } 
 } 

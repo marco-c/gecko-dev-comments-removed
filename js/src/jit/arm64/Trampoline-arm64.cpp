@@ -189,7 +189,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
         masm.makeFrameDescriptor(r19, JitFrame_BaselineJS);
         masm.asVIXL().Push(x19, xzr); 
         
-        masm.enterFakeExitFrame(ExitFrameLayout::BareToken());
+        masm.enterFakeExitFrame(ExitFrameLayoutBareToken);
 
         masm.push(BaselineFrameReg, reg_code);
 
