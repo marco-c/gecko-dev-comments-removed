@@ -646,9 +646,10 @@ WebrtcGmpVideoEncoder::Encoded(GMPVideoEncodedFrame* aEncodedFrame,
       webrtc::EncodedImage unit(aEncodedFrame->Buffer(), size, size);
       unit._frameType = ft;
       unit._timeStamp = timestamp;
+      
+      unit.capture_time_ms_ = -1;
       unit._completeFrame = true;
 
-      
       
       
       
