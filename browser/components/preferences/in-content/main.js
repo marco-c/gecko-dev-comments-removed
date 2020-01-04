@@ -83,21 +83,38 @@ var gMainPane = {
     setEventListener("e10sAutoStart", "command",
                      gMainPane.enableE10SChange);
     let e10sCheckbox = document.getElementById("e10sAutoStart");
+    e10sCheckbox.checked = Services.appinfo.browserTabsRemoteAutostart;
 
-    let e10sPref = document.getElementById("browser.tabs.remote.autostart");
-    let e10sTempPref = document.getElementById("e10sTempPref");
-    let e10sForceEnable = document.getElementById("e10sForceEnable");
-
-    let preffedOn = e10sPref.value || e10sTempPref.value || e10sForceEnable.value;
-
-    if (preffedOn) {
-      
-      e10sCheckbox.checked = true;
-
-      
-      e10sCheckbox.disabled = !Services.appinfo.browserTabsRemoteAutostart;
+    
+    
+    if (!Services.appinfo.browserTabsRemoteAutostart) {
+      let e10sBlockedReason = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
+      let appinfo = Services.appinfo.QueryInterface(Ci.nsIObserver);
+      appinfo.observe(e10sBlockedReason, "getE10SBlocked", "")
+      if (e10sBlockedReason.data) {
+        if (e10sBlockedReason.data == "Safe mode") {
+          
+          
+          
+          
+          
+          
+          e10sCheckbox.checked = true;
+        } else {
+          e10sCheckbox.disabled = true;
+          let updateChannel = UpdateUtils.UpdateChannel;
+          
+          if (updateChannel == "default" ||
+              updateChannel == "nightly" ||
+              updateChannel == "aurora") {
+            e10sCheckbox.label += " (disabled: " + e10sBlockedReason.data + ")";
+          }
+        }
+      }
     }
 
+    
+    
 #endif
 
 #ifdef MOZ_DEV_EDITION
