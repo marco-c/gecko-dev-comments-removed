@@ -382,11 +382,6 @@ public:
                                         FontListSizes* aSizes) const;
 
     
-    
-    size_t
-    ComputedSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-    
     struct ScriptRange {
         uint32_t         rangeStart;
         uint32_t         rangeEnd;
@@ -458,7 +453,6 @@ protected:
     friend class gfxUserFcFontEntry;
     friend class gfxFontFamily;
     friend class gfxSingleFaceMacFontFamily;
-    friend class gfxUserFontEntry;
 
     gfxFontEntry();
 
@@ -536,12 +530,6 @@ protected:
                                   size_t *aLen);
     static void GrReleaseTable(const void *aAppFaceHandle,
                                const void *aTableBuffer);
-
-    
-    
-    
-    
-    uint32_t mComputedSizeOfUserFont;
 
 private:
     
