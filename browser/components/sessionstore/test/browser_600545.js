@@ -2,6 +2,8 @@
 
 
 
+requestLongerTimeout(2);
+
 var stateBackup = JSON.parse(ss.getBrowserState());
 
 function test() {
