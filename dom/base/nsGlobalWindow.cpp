@@ -3421,6 +3421,16 @@ nsGlobalWindow::AreDialogsEnabled()
     }
   }
 
+  
+  
+  
+  
+  
+  
+  if (!mDoc || (mDoc->GetSandboxFlags() & SANDBOXED_MODALS)) {
+    return false;
+  }
+
   return topWindow->mAreDialogsEnabled;
 }
 

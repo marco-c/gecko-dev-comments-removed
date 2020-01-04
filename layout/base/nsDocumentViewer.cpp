@@ -86,6 +86,8 @@
 #include "nsIPrompt.h"
 #include "imgIContainer.h" 
 
+#include "nsSandboxFlags.h"
+
 #include "mozilla/DocLoadingTimelineMarker.h"
 
 
@@ -1146,7 +1148,8 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
 
   
   
-  if (!sIsBeforeUnloadDisabled && *aShouldPrompt && dialogsAreEnabled && mDocument &&
+  if (!sIsBeforeUnloadDisabled && *aShouldPrompt && dialogsAreEnabled &&
+      mDocument && !(mDocument->GetSandboxFlags() & SANDBOXED_MODALS) &&
       (!sBeforeUnloadRequiresInteraction || mDocument->UserHasInteracted()) &&
       (event->WidgetEventPtr()->DefaultPrevented() || !text.IsEmpty())) {
     
