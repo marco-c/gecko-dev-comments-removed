@@ -1667,11 +1667,8 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
 
   switch (aEvent.mScrollMode) {
     case ScrollWheelInput::SCROLLMODE_INSTANT: {
-      
       ScreenPoint distance = ToScreenCoordinates(
         ParentLayerPoint(fabs(delta.x), fabs(delta.y)), aEvent.mLocalOrigin);
-
-      ReentrantMonitorAutoEnter lock(mMonitor);
 
       CancelAnimation();
       SetState(WHEEL_SCROLL);
@@ -1685,6 +1682,10 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
       CallDispatchScroll(startPoint, endPoint, handoffState);
 
       SetState(NOTHING);
+
+      
+      
+      ReentrantMonitorAutoEnter lock(mMonitor);
       RequestContentRepaint();
 
       break;
