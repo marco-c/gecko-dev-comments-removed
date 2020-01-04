@@ -691,9 +691,6 @@ FunctionHasDefaultHasInstance(JSFunction* fun, const WellKnownSymbols& symbols);
 extern bool
 fun_symbolHasInstance(JSContext* cx, unsigned argc, Value* vp);
 
-extern bool
-OrdinaryHasInstance(JSContext* cx, HandleObject objArg, MutableHandleValue v, bool* bp);
-
 
 
 
