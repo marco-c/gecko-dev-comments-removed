@@ -405,9 +405,8 @@ protected:
   PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override;
 
-  virtual void
-  PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-          bool aRunResult) override;
+  
+  
 };
 
 

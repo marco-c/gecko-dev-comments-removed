@@ -2523,6 +2523,9 @@ public:
   bool
   PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
   {
+    
+    
+    AssertIsOnMainThread();
     return true;
   }
 
@@ -2530,6 +2533,9 @@ public:
   PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult)
   {
+    
+    
+    AssertIsOnMainThread();
   }
 
 private:
@@ -2696,6 +2702,10 @@ public:
   bool
   PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
   {
+    
+    
+    
+    
     return true;
   }
 
@@ -2703,6 +2713,10 @@ public:
   PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult)
   {
+    
+    
+    
+    
   }
 
 private:

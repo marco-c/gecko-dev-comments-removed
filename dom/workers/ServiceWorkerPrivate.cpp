@@ -319,6 +319,8 @@ public:
     nsCOMPtr<nsIRunnable> runnable =
       new RegistrationUpdateRunnable(mRegistration, true );
     NS_DispatchToMainThread(runnable.forget());
+
+    ExtendableEventWorkerRunnable::PostRun(aCx, aWorkerPrivate, aRunResult);
   }
 };
 

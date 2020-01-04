@@ -375,6 +375,9 @@ protected:
   bool
   PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
+    
+    
+    AssertIsOnMainThread();
     return true;
   }
 
@@ -382,6 +385,9 @@ protected:
   PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                bool aDispatchResult) override
   {
+    
+    
+    AssertIsOnMainThread();
   }
 
   bool

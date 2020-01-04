@@ -610,9 +610,7 @@ private:
     WorkerRunnable::PostRun(aCx, aWorkerPrivate, aRunResult);
 
     
-    if (!aWorkerPrivate->ModifyBusyCountFromWorker(aCx, false)) {
-      JS_ReportPendingException(aCx);
-    }
+    aWorkerPrivate->ModifyBusyCountFromWorker(aCx, false);
 
     aWorkerPrivate->CloseHandlerFinished();
   }
