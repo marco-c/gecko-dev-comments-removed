@@ -81,26 +81,12 @@ FrameAnimator::AdvanceFrame(TimeStamp aTime)
                "Given time appears to be in the future");
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::GRAPHICS);
 
+  RefreshResult ret;
+
+  
   uint32_t currentFrameIndex = mCurrentAnimationFrameIndex;
   uint32_t nextFrameIndex = currentFrameIndex + 1;
 
-  RefreshResult ret;
-  RawAccessFrameRef nextFrame = GetRawFrame(nextFrameIndex);
-
-  
-  
-  
-  bool canDisplay = mDoneDecoding ||
-                    (nextFrame && nextFrame->IsImageComplete());
-
-  if (!canDisplay) {
-    
-    
-    return ret;
-  }
-
-  
-  
   if (mImage->GetNumFrames() == nextFrameIndex) {
     
     
@@ -143,6 +129,26 @@ FrameAnimator::AdvanceFrame(TimeStamp aTime)
     if (ret.animationFinished) {
       return ret;
     }
+  }
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(nextFrameIndex < mImage->GetNumFrames());
+  RawAccessFrameRef nextFrame = GetRawFrame(nextFrameIndex);
+
+  
+  
+  
+  bool canDisplay = mDoneDecoding ||
+                    (nextFrame && nextFrame->IsImageComplete());
+
+  if (!canDisplay) {
+    
+    
+    return ret;
   }
 
   
