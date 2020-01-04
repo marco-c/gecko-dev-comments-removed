@@ -883,7 +883,7 @@ TextureClient::InitIPDLActor(CompositableForwarder* aForwarder)
       
       
       if (currentTexFwd && currentTexFwd != aForwarder->AsTextureForwarder()) {
-        gfxCriticalError() << "Attempt to move a texture to a different channel.";
+        gfxCriticalError() << "Attempt to move a texture to a different channel CF.";
         return false;
       }
       if (currentFwd && currentFwd->GetCompositorBackendType() != aForwarder->GetCompositorBackendType()) {
@@ -940,7 +940,7 @@ TextureClient::InitIPDLActor(TextureForwarder* aForwarder, LayersBackend aBacken
     }
 
     if (currentTexFwd && currentTexFwd != aForwarder) {
-      gfxCriticalError() << "Attempt to move a texture to a different channel.";
+      gfxCriticalError() << "Attempt to move a texture to a different channel TF.";
       return false;
     }
     mActor->mTextureForwarder = aForwarder;
