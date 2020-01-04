@@ -14,6 +14,10 @@
   position: absolute;
 }
 
+#sidebar-panel-computedview > .devtools-toolbar {
+  display: flex;
+}
+
 #browser-style-checkbox {
   
 
@@ -140,11 +144,6 @@
 
 .legendKey {
   margin: 0 5px;
-}
-
-#root .devtools-toolbar {
-  width: 100%;
-  display: flex;
 }
 
 .link {
