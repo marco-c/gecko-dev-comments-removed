@@ -705,8 +705,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
   
   
   
-  nsIDocument* currentDoc = frame->PresContext()->Document();
-  bool shouldGenerateMaskLayer = currentDoc->IsSVGDocument()
+  bool shouldGenerateMaskLayer = hasSVGLayout
                                  ? maskFrames.Length() == 1 && maskFrames[0]
                                  : maskFrames.Length() > 0;
 
