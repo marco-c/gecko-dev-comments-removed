@@ -77,7 +77,7 @@ function run_test() {
   server.start(-1);
 
   
-  Services.prefs.setCharPref("services.kinto.base",
+  Services.prefs.setCharPref("services.settings.server",
                              `http://localhost:${server.identity.primaryPort}/v1`);
 
   

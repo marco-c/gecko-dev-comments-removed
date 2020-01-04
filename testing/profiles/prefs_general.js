@@ -110,7 +110,7 @@ user_pref("extensions.getAddons.getWithPerformance.url", "http://%(server)s/exte
 user_pref("extensions.getAddons.search.browseURL", "http://%(server)s/extensions-dummy/repositoryBrowseURL");
 user_pref("extensions.getAddons.search.url", "http://%(server)s/extensions-dummy/repositorySearchURL");
 
-user_pref("services.kinto.base", "http://%(server)s/dummy-kinto/v1");
+user_pref("services.settings.server", "http://%(server)s/dummy-kinto/v1");
 
 user_pref("plugins.update.url", "http://%(server)s/plugins-dummy/updateCheckURL");
 
@@ -310,6 +310,8 @@ user_pref("media.autoplay.enabled", true);
 user_pref("media.decoder.heuristic.dormant.timeout", 0);
 #endif
 
+
+user_pref("browser.displayedE10SPrompt.1", 5);
 
 user_pref("browser.tabs.remote.autostart.1", false);
 user_pref("browser.tabs.remote.autostart.2", false);
