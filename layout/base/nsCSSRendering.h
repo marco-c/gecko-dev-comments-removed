@@ -432,7 +432,7 @@ struct nsCSSRendering {
 
 
   static void PaintFocus(nsPresContext* aPresContext,
-                         nsRenderingContext& aRenderingContext,
+                         DrawTarget* aDrawTarget,
                          const nsRect& aFocusRect,
                          nscolor aColor);
 

@@ -193,7 +193,8 @@ public:
 
 
 
-  void PaintFocus(nsRenderingContext& aRC, nsPoint aPt);
+  void PaintFocus(mozilla::gfx::DrawTarget* aDrawTarget, nsPoint aPt);
+
   
 
 
