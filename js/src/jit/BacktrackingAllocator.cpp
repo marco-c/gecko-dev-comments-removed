@@ -375,10 +375,6 @@ BacktrackingAllocator::init()
     if (!liveIn)
         return false;
 
-    callRanges = LiveBundle::FallibleNew(alloc(), nullptr, nullptr);
-    if (!callRanges)
-        return false;
-
     size_t numVregs = graph.numVirtualRegisters();
     if (!vregs.init(mir->alloc(), numVregs))
         return false;
@@ -431,6 +427,7 @@ BacktrackingAllocator::init()
     }
 
     hotcode.setAllocator(lifoAlloc);
+    callRanges.setAllocator(lifoAlloc);
 
     
     
@@ -490,8 +487,6 @@ IsInputReused(LInstruction* ins, LUse* use)
     return false;
 }
 #endif
-
-
 
 
 
@@ -579,7 +574,13 @@ BacktrackingAllocator::buildLivenessInfo()
                             return false;
                     }
                 }
-                if (!callRanges->addRange(alloc(), 0, outputOf(*ins), outputOf(*ins).next()))
+
+                CallRange* callRange = new(alloc()) CallRange(outputOf(*ins), outputOf(*ins).next());
+                if (!callRange)
+                    return false;
+
+                callRangesList.pushFront(callRange);
+                if (!callRanges.insert(callRange))
                     return false;
             }
             DebugOnly<bool> hasDoubleDef = false;
@@ -809,9 +810,6 @@ BacktrackingAllocator::go()
 
     if (!buildLivenessInfo())
         return false;
-
-    if (JitSpewEnabled(JitSpew_RegAlloc))
-        dumpFixedRanges();
 
     if (!allocationQueue.reserve(graph.numVirtualRegisters() * 3 / 2))
         return false;
@@ -1822,32 +1820,39 @@ BacktrackingAllocator::resolveControlFlow()
                     return false;
             }
         }
+    }
 
-        
-        
-        BitSet& live = liveIn[mSuccessor->id()];
+    
+    
+    for (size_t i = 1; i < graph.numVirtualRegisters(); i++) {
+        VirtualRegister& reg = vregs[i];
+        for (LiveRange::RegisterLinkIterator iter = reg.rangesBegin(); iter; iter++) {
+            LiveRange* targetRange = LiveRange::get(*iter);
 
-        for (BitSet::Iterator liveRegId(live); liveRegId; ++liveRegId) {
-            VirtualRegister& reg = vregs[*liveRegId];
+            size_t firstBlockId = insData[targetRange->from()]->block()->mir()->id();
+            if (!targetRange->covers(entryOf(graph.getBlock(firstBlockId))))
+                firstBlockId++;
+            for (size_t id = firstBlockId; id < graph.numBlocks(); id++) {
+                LBlock* successor = graph.getBlock(id);
+                if (!targetRange->covers(entryOf(successor)))
+                    break;
 
-            for (size_t j = 0; j < mSuccessor->numPredecessors(); j++) {
-                LBlock* predecessor = mSuccessor->getPredecessor(j)->lir();
+                BitSet& live = liveIn[id];
+                if (!live.contains(i))
+                    continue;
 
-                for (LiveRange::RegisterLinkIterator iter = reg.rangesBegin(); iter; iter++) {
-                    LiveRange* to = LiveRange::get(*iter);
-                    if (!to->covers(entryOf(successor)))
+                for (size_t j = 0; j < successor->mir()->numPredecessors(); j++) {
+                    LBlock* predecessor = successor->mir()->getPredecessor(j)->lir();
+                    if (targetRange->covers(exitOf(predecessor)))
                         continue;
-                    if (to->covers(exitOf(predecessor)))
-                        continue;
 
-                    LiveRange* from = reg.rangeFor(exitOf(predecessor),  true);
-
-                    if (mSuccessor->numPredecessors() > 1) {
+                    LiveRange* from = reg.rangeFor(exitOf(predecessor), true);
+                    if (successor->mir()->numPredecessors() > 1) {
                         MOZ_ASSERT(predecessor->mir()->numSuccessors() == 1);
-                        if (!moveAtExit(predecessor, from, to, reg.type()))
+                        if (!moveAtExit(predecessor, from, targetRange, reg.type()))
                             return false;
                     } else {
-                        if (!moveAtEntry(successor, from, to, reg.type()))
+                        if (!moveAtEntry(successor, from, targetRange, reg.type()))
                             return false;
                     }
                 }
@@ -2307,14 +2312,6 @@ BacktrackingAllocator::dumpVregs()
         }
     }
 #endif
-}
-
-void
-BacktrackingAllocator::dumpFixedRanges()
-{
-#ifdef JS_JITSPEW
-    fprintf(stderr, "Live ranges by physical register: %s\n", callRanges->toString().get());
-#endif 
 }
 
 #ifdef JS_JITSPEW
@@ -2998,11 +2995,44 @@ BacktrackingAllocator::splitAcrossCalls(LiveBundle* bundle)
 
     
     SplitPositionVector callPositions;
-    for (LiveRange::BundleLinkIterator iter = callRanges->rangesBegin(); iter; iter++) {
-        LiveRange* callRange = LiveRange::get(*iter);
-        if (bundle->rangeFor(callRange->from()) && bundle->rangeFor(callRange->from().previous())) {
-            if (!callPositions.append(callRange->from()))
-                return false;
+    for (LiveRange::BundleLinkIterator iter = bundle->rangesBegin(); iter; iter++) {
+        LiveRange* range = LiveRange::get(*iter);
+        CallRange searchRange(range->from(), range->to());
+        CallRange* callRange;
+        if (!callRanges.contains(&searchRange, &callRange)) {
+            
+            continue;
+        }
+        MOZ_ASSERT(range->covers(callRange->range.from));
+
+        
+        
+        for (CallRangeList::reverse_iterator riter = callRangesList.rbegin(callRange);
+             riter != callRangesList.rend();
+             ++riter)
+        {
+            CodePosition pos = riter->range.from;
+            if (range->covers(pos))
+                callRange = *riter;
+            else
+                break;
+        }
+
+        
+        for (CallRangeList::iterator iter = callRangesList.begin(callRange);
+             iter != callRangesList.end();
+             ++iter)
+        {
+            CodePosition pos = iter->range.from;
+            if (!range->covers(pos))
+                break;
+
+            
+            if (range->covers(pos.previous())) {
+                MOZ_ASSERT_IF(callPositions.length(), pos > callPositions.back());
+                if (!callPositions.append(pos))
+                    return false;
+            }
         }
     }
     MOZ_ASSERT(callPositions.length());

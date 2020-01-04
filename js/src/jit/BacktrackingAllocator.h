@@ -601,9 +601,6 @@ class BacktrackingAllocator : protected RegisterAllocator
     FixedList<VirtualRegister> vregs;
 
     
-    LiveBundle* callRanges;
-
-    
     StackSlotAllocator stackSlotAllocator;
 
     
@@ -641,6 +638,28 @@ class BacktrackingAllocator : protected RegisterAllocator
     
     
     LiveRangeSet hotcode;
+
+    struct CallRange : public TempObject, public InlineListNode<CallRange> {
+        LiveRange::Range range;
+
+        CallRange(CodePosition from, CodePosition to)
+          : range(from, to)
+        {}
+
+        
+        static int compare(CallRange* v0, CallRange* v1) {
+            if (v0->range.to <= v1->range.from)
+                return -1;
+            if (v0->range.from >= v1->range.to)
+                return 1;
+            return 0;
+        }
+    };
+
+    
+    typedef InlineList<CallRange> CallRangeList;
+    CallRangeList callRangesList;
+    SplayTree<CallRange*, CallRange> callRanges;
 
     
     struct SpillSlot : public TempObject, public InlineForwardListNode<SpillSlot> {
@@ -754,7 +773,6 @@ class BacktrackingAllocator : protected RegisterAllocator
     }
 
     
-    void dumpFixedRanges();
     void dumpAllocations();
 
     struct PrintLiveRange;
