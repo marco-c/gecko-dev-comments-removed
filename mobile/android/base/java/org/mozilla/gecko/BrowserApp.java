@@ -3979,6 +3979,9 @@ public class BrowserApp extends GeckoApp
         final SharedPreferences sharedPrefs = GeckoSharedPrefs.forProfileName(this, profile.getName());
         final int seq = sharedPrefs.getInt(TelemetryConstants.PREF_SEQ_COUNT, 1);
 
+        
+        sharedPrefs.edit().putInt(TelemetryConstants.PREF_SEQ_COUNT, seq + 1).commit();
+
         final Intent i = new Intent(TelemetryConstants.ACTION_UPLOAD_CORE);
         i.setClass(this, TelemetryUploadService.class);
         i.putExtra(TelemetryConstants.EXTRA_DOC_ID, UUID.randomUUID().toString());
@@ -3986,9 +3989,6 @@ public class BrowserApp extends GeckoApp
         i.putExtra(TelemetryConstants.EXTRA_PROFILE_PATH, profile.getDir().toString());
         i.putExtra(TelemetryConstants.EXTRA_SEQ, seq);
         startService(i);
-
-        
-        sharedPrefs.edit().putInt(TelemetryConstants.PREF_SEQ_COUNT, seq + 1).apply();
     }
 
     public static interface TabStripInterface {
