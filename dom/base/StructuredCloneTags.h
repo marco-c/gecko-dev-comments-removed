@@ -54,9 +54,6 @@ enum StructuredCloneTags {
 
   SCTAG_DOM_DIRECTORY,
 
-  
-  SCTAG_DOM_URLSEARCHPARAMS,
-
   SCTAG_DOM_MAX
 };
 
