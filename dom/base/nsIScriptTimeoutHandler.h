@@ -34,7 +34,7 @@ public:
   virtual mozilla::dom::Function *GetCallback() = 0;
 
   
-  virtual void GetHandlerText(nsAString& aString) = 0;
+  virtual const nsAString& GetHandlerText() = 0;
 
   
   
