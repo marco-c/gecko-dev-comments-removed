@@ -9,7 +9,6 @@
 
 #include "RasterImage.h"
 
-#include "base/histogram.h"
 #include "gfxPlatform.h"
 #include "nsComponentManagerUtils.h"
 #include "nsError.h"
@@ -96,7 +95,6 @@ RasterImage::RasterImage(ImageURL* aURI ) :
   mAnimationFinished(false),
   mWantFullDecode(false)
 {
-  Telemetry::GetHistogramById(Telemetry::IMAGE_DECODE_COUNT)->Add(0);
 }
 
 
@@ -110,6 +108,16 @@ RasterImage::~RasterImage()
 
   
   SurfaceCache::RemoveImage(ImageKey(this));
+
+  
+  Telemetry::Accumulate(Telemetry::IMAGE_DECODE_COUNT, mDecodeCount);
+
+  if (mDecodeCount > sMaxDecodeCount) {
+    sMaxDecodeCount = mDecodeCount;
+    
+    Telemetry::ClearHistogram(Telemetry::IMAGE_MAX_DECODE_COUNT);
+    Telemetry::Accumulate(Telemetry::IMAGE_MAX_DECODE_COUNT, sMaxDecodeCount);
+  }
 }
 
 nsresult
@@ -1327,24 +1335,7 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
     return NS_ERROR_FAILURE;
   }
 
-  
-  Telemetry::GetHistogramById(Telemetry::IMAGE_DECODE_COUNT)
-    ->Subtract(mDecodeCount);
   mDecodeCount++;
-  Telemetry::GetHistogramById(Telemetry::IMAGE_DECODE_COUNT)
-    ->Add(mDecodeCount);
-
-  if (mDecodeCount > sMaxDecodeCount) {
-    
-    
-    if (sMaxDecodeCount > 0) {
-      Telemetry::GetHistogramById(Telemetry::IMAGE_MAX_DECODE_COUNT)
-        ->Subtract(sMaxDecodeCount);
-    }
-    sMaxDecodeCount = mDecodeCount;
-    Telemetry::GetHistogramById(Telemetry::IMAGE_MAX_DECODE_COUNT)
-      ->Add(sMaxDecodeCount);
-  }
 
   
   LaunchDecoder(decoder, this, aFlags, mHasSourceData);
