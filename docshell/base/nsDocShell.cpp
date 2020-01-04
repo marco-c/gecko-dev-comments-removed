@@ -3492,22 +3492,19 @@ nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
 
   nsCOMPtr<nsIDocShell> targetDS = do_QueryInterface(aTargetItem);
   nsCOMPtr<nsIDocShell> accessingDS = do_QueryInterface(aAccessingItem);
-  if (!!targetDS != !!accessingDS) {
+  if (!targetDS || !accessingDS) {
     
     return false;
   }
 
-  if (targetDS && accessingDS &&
-      (targetDS->GetIsInBrowserElement() !=
-         accessingDS->GetIsInBrowserElement() ||
-       targetDS->GetAppId() != accessingDS->GetAppId())) {
+  if (targetDS->GetIsInBrowserElement() != accessingDS->GetIsInBrowserElement() ||
+      targetDS->GetAppId() != accessingDS->GetAppId()) {
     return false;
   }
 
   
-  if (aTargetItem->GetDocument()->GetLoadContext()->UsePrivateBrowsing() !=
-      aAccessingItem->GetDocument()->GetLoadContext()->UsePrivateBrowsing())
-  {
+  if (static_cast<nsDocShell*>(targetDS.get())->UsePrivateBrowsing() !=
+      static_cast<nsDocShell*>(accessingDS.get())->UsePrivateBrowsing()) {
     return false;
   }
 
