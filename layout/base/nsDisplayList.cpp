@@ -2883,13 +2883,12 @@ nsDisplayBackgroundImage::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
   return result;
 }
 
-bool
-nsDisplayBackgroundImage::IsUniform(nsDisplayListBuilder* aBuilder, nscolor* aColor) {
+Maybe<nscolor>
+nsDisplayBackgroundImage::IsUniform(nsDisplayListBuilder* aBuilder) {
   if (!mBackgroundStyle) {
-    *aColor = NS_RGBA(0,0,0,0);
-    return true;
+    return Some(NS_RGBA(0,0,0,0));
   }
-  return false;
+  return Nothing();
 }
 
 nsRect
@@ -3134,14 +3133,13 @@ nsDisplayThemedBackground::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
   return result;
 }
 
-bool
-nsDisplayThemedBackground::IsUniform(nsDisplayListBuilder* aBuilder, nscolor* aColor) {
+Maybe<nscolor>
+nsDisplayThemedBackground::IsUniform(nsDisplayListBuilder* aBuilder) {
   if (mAppearance == NS_THEME_WIN_BORDERLESS_GLASS ||
       mAppearance == NS_THEME_WIN_GLASS) {
-    *aColor = NS_RGBA(0,0,0,0);
-    return true;
+    return Some(NS_RGBA(0,0,0,0));
   }
-  return false;
+  return Nothing();
 }
 
 bool
@@ -3432,11 +3430,10 @@ nsDisplayBackgroundColor::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                                                        mBackgroundRect, mBackgroundRect);
 }
 
-bool
-nsDisplayBackgroundColor::IsUniform(nsDisplayListBuilder* aBuilder, nscolor* aColor)
+Maybe<nscolor>
+nsDisplayBackgroundColor::IsUniform(nsDisplayListBuilder* aBuilder)
 {
-  *aColor = mColor.ToABGR();
-  return true;
+  return Some(mColor.ToABGR());
 }
 
 void
@@ -4096,9 +4093,10 @@ nsDisplayWrapList::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
   return result;
 }
 
-bool nsDisplayWrapList::IsUniform(nsDisplayListBuilder* aBuilder, nscolor* aColor) {
+Maybe<nscolor>
+nsDisplayWrapList::IsUniform(nsDisplayListBuilder* aBuilder) {
   
-  return false;
+  return Nothing();
 }
 
 void nsDisplayWrapList::Paint(nsDisplayListBuilder* aBuilder,
@@ -6272,19 +6270,23 @@ nsRegion nsDisplayTransform::GetOpaqueRegion(nsDisplayListBuilder *aBuilder,
 
 
 
-bool nsDisplayTransform::IsUniform(nsDisplayListBuilder *aBuilder, nscolor* aColor)
+Maybe<nscolor>
+nsDisplayTransform::IsUniform(nsDisplayListBuilder *aBuilder)
 {
   nsRect untransformedVisible;
   if (!UntransformVisibleRect(aBuilder, &untransformedVisible)) {
-    return false;
+    return Nothing();
   }
   const Matrix4x4& matrix = GetTransform();
 
   Matrix matrix2d;
-  return matrix.Is2D(&matrix2d) &&
-         matrix2d.PreservesAxisAlignedRectangles() &&
-         mStoredList.GetVisibleRect().Contains(untransformedVisible) &&
-         mStoredList.IsUniform(aBuilder, aColor);
+  if (matrix.Is2D(&matrix2d) &&
+      matrix2d.PreservesAxisAlignedRectangles() &&
+      mStoredList.GetVisibleRect().Contains(untransformedVisible)) {
+    return mStoredList.IsUniform(aBuilder);
+  }
+
+  return Nothing();
 }
 
 
