@@ -527,16 +527,6 @@ public:
     {
       return mChannelMap;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool MappingTable(const ChannelLayout& aOther, uint8_t* aMap = nullptr) const;
     bool IsValid() const {
       return mValid;
     }
