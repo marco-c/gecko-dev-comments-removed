@@ -204,22 +204,6 @@ public:
 
   
   
-  void AssertOnGraphThreadOrNotRunning() const
-  {
-    
-    
-#ifdef DEBUG
-    
-    if (!mDriver->OnThread()) {
-      if (!(mDetectedNotRunning &&
-            mLifecycleState > LIFECYCLE_RUNNING &&
-            NS_IsMainThread())) {
-        mMonitor.AssertCurrentThreadOwns();
-      }
-    }
-#endif
-  }
-
   void CollectSizesForMemoryReport(
          already_AddRefed<nsIHandleReportCallback> aHandleReport,
          already_AddRefed<nsISupports> aHandlerData);
