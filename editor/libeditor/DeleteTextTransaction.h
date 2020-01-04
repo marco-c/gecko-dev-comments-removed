@@ -3,8 +3,8 @@
 
 
 
-#ifndef DeleteTextTxn_h__
-#define DeleteTextTxn_h__
+#ifndef DeleteTextTransaction_h
+#define DeleteTextTransaction_h
 
 #include "EditTxn.h"
 #include "nsCOMPtr.h"
@@ -18,12 +18,11 @@ class nsEditor;
 class nsRangeUpdater;
 
 namespace mozilla {
-namespace dom {
 
 
 
 
-class DeleteTextTxn : public EditTxn
+class DeleteTextTransaction final : public EditTxn
 {
 public:
   
@@ -32,15 +31,17 @@ public:
 
 
 
-  DeleteTextTxn(nsEditor& aEditor,
-                nsGenericDOMDataNode& aCharData,
-                uint32_t aOffset,
-                uint32_t aNumCharsToDelete,
-                nsRangeUpdater* aRangeUpdater);
+
+
+  DeleteTextTransaction(nsEditor& aEditor,
+                        nsGenericDOMDataNode& aCharData,
+                        uint32_t aOffset,
+                        uint32_t aNumCharsToDelete,
+                        nsRangeUpdater* aRangeUpdater);
 
   nsresult Init();
 
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteTextTxn, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteTextTransaction, EditTxn)
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   NS_DECL_EDITTXN
@@ -50,7 +51,6 @@ public:
   uint32_t GetNumCharsToDelete() { return mNumCharsToDelete; }
 
 protected:
-
   
   nsEditor& mEditor;
 
@@ -71,6 +71,5 @@ protected:
 };
 
 } 
-} 
 
-#endif
+#endif 
