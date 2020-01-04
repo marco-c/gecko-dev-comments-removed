@@ -4507,6 +4507,10 @@ pref("dom.push.maxQuotaPerSubscription", 16);
 
 
 
+pref("dom.push.quotaUpdateDelay", 3000); 
+
+
+
 pref("dom.push.connection.enabled", true);
 
 
