@@ -1325,6 +1325,9 @@ public class testBrowserProvider extends ContentProviderTest {
                          "Inserted history entry has correct specified title");
 
             
+            
+            
+            
             values = new ContentValues();
             values.put(BrowserContract.History.VISITS, 10);
 
@@ -1341,7 +1344,7 @@ public class testBrowserProvider extends ContentProviderTest {
                          "Updated history entry has correct unchanged title");
             mAsserter.is(c.getString(c.getColumnIndex(BrowserContract.History.URL)), TEST_URL_2,
                          "Updated history entry has correct unchanged URL");
-            mAsserter.is(c.getLong(c.getColumnIndex(BrowserContract.History.VISITS)), 20L,
+            mAsserter.is(c.getLong(c.getColumnIndex(BrowserContract.History.VISITS)), 11L,
                          "Updated history entry has correct number of visits");
             mAsserter.is(c.getLong(c.getColumnIndex(BrowserContract.History.DATE_CREATED)), dateCreated,
                          "Updated history entry has same creation date");
