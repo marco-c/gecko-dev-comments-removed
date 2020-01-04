@@ -24,17 +24,27 @@ const Census = {};
   
   
   
-  Census.walkCensus = (subject, name, walker) => walk(subject, name, walker, 0);
-  function walk(subject, name, walker, count) {
+  
+  
+  
+  
+  Census.walkCensus = (subject, name, walker, ignore = new Set()) =>
+    walk(subject, name, walker, ignore, 0);
+
+  function walk(subject, name, walker, ignore, count) {
     if (typeof subject === 'object') {
       print(name);
       for (let prop in subject) {
+        if (ignore.has(prop)) {
+          continue;
+        }
         count = walk(subject[prop],
                      name + "[" + uneval(prop) + "]",
                      walker.enter(prop),
+                     ignore,
                      count);
       }
-      walker.done();
+      walker.done(ignore);
     } else {
       print(name + " = " + uneval(subject));
       walker.check(subject);
@@ -93,7 +103,7 @@ const Census = {};
             }
           },
 
-          done: () => unvisited.forEach(prop => missing(prop, basis[prop])),
+          done: ignore => [...unvisited].filter(p => !ignore.has(p)).forEach(p => missing(p, basis[p])),
           check: expectedObject
         };
       } else {
