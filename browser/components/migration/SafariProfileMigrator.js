@@ -346,22 +346,6 @@ Preferences.prototype = {
         this._set("WebKitDisplayImagesKey", "permissions.default.image",
                   webkitVal => webkitVal ? 1 : 2);
 
-        if (AppConstants.platform == "win") {
-          
-          
-          
-          
-          
-          
-          let firefoxVal = 0;
-          if (webkitVal != 0) {
-            firefoxVal = webkitVal == 1 ? 2 : 1;
-          }
-          this._set("WebKitCookieStorageAcceptPolicy",
-            "network.cookie.cookieBehavior",
-            firefoxVal);
-        }
-
         this._migrateFontSettings();
         yield this._migrateDownloadsFolder();
 
@@ -493,17 +477,10 @@ Preferences.prototype = {
   },
 
   _migrateDownloadsFolder: Task.async(function* () {
-    
-    
-    let key;
-    if (this._dict.has("DownloadsPath"))
-      key = "DownloadsPath";
-    else if (this._dict.has("DownloadPath"))
-      key = "DownloadPath";
-    else
+    if (!this._dict.has("DownloadsPath"))
       return;
 
-    let downloadsFolder = FileUtils.File(this._dict.get(key));
+    let downloadsFolder = FileUtils.File(this._dict.get("DownloadsPath"));
 
     
     
@@ -552,7 +529,6 @@ SearchStrings.prototype = {
 
 
 
-
 function WebFoundationCookieBehavior(aWebFoundationFile) {
   this._file = aWebFoundationFile;
 }
@@ -590,12 +566,7 @@ function SafariProfileMigrator() {
 SafariProfileMigrator.prototype = Object.create(MigratorPrototype);
 
 SafariProfileMigrator.prototype.getResources = function SM_getResources() {
-  let profileDir;
-  if (AppConstants.platform == "macosx") {
-    profileDir = FileUtils.getDir("ULibDir", ["Safari"], false);
-  } else {
-    profileDir = FileUtils.getDir("AppData", ["Apple Computer", "Safari"], false);
-  }
+  let profileDir = FileUtils.getDir("ULibDir", ["Safari"], false);
   if (!profileDir.exists())
     return null;
 
@@ -617,12 +588,7 @@ SafariProfileMigrator.prototype.getResources = function SM_getResources() {
   
   pushProfileFileResource("ReadingList.plist", Bookmarks);
 
-  let prefsDir;
-  if (AppConstants.platform == "macosx") {
-    prefsDir = FileUtils.getDir("UsrPrfs", [], false);
-  } else {
-    prefsDir = FileUtils.getDir("AppData", ["Apple Computer", "Preferences"], false);
-  }
+  let prefsDir = FileUtils.getDir("UsrPrfs", [], false);
 
   let prefs = this.mainPreferencesPropertyList;
   if (prefs) {
@@ -630,24 +596,15 @@ SafariProfileMigrator.prototype.getResources = function SM_getResources() {
     resources.push(new SearchStrings(prefs));
   }
 
-  if (AppConstants.platform == "macosx") {
-    
-    
-    let wfFile = FileUtils.getFile("UsrPrfs", ["com.apple.WebFoundation.plist"]);
-    if (wfFile.exists())
-      resources.push(new WebFoundationCookieBehavior(wfFile));
-  }
+  let wfFile = FileUtils.getFile("UsrPrfs", ["com.apple.WebFoundation.plist"]);
+  if (wfFile.exists())
+    resources.push(new WebFoundationCookieBehavior(wfFile));
 
   return resources;
 };
 
 SafariProfileMigrator.prototype.getLastUsedDate = function SM_getLastUsedDate() {
-  let profileDir;
-  if (AppConstants.platform == "macosx") {
-    profileDir = FileUtils.getDir("ULibDir", ["Safari"], false);
-  } else {
-    profileDir = FileUtils.getDir("AppData", ["Apple Computer", "Safari"], false);
-  }
+  let profileDir = FileUtils.getDir("ULibDir", ["Safari"], false);
   let datePromises = ["Bookmarks.plist", "History.plist"].map(file => {
     let path = OS.Path.join(profileDir.path, file);
     return OS.File.stat(path).catch(_ => null).then(info => {
@@ -662,12 +619,7 @@ SafariProfileMigrator.prototype.getLastUsedDate = function SM_getLastUsedDate() 
 Object.defineProperty(SafariProfileMigrator.prototype, "mainPreferencesPropertyList", {
   get: function get_mainPreferencesPropertyList() {
     if (this._mainPreferencesPropertyList === undefined) {
-      let file;
-      if (AppConstants.platform == "macosx") {
-        file = FileUtils.getDir("UsrPrfs", [], false);
-      } else {
-        file = FileUtils.getDir("AppData", ["Apple Computer", "Preferences"], false);
-      }
+      let file = FileUtils.getDir("UsrPrfs", [], false);
       if (file.exists()) {
         file.append("com.apple.Safari.plist");
         if (file.exists()) {

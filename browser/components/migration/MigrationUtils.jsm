@@ -33,7 +33,7 @@ var gMigrationBundle = null;
 XPCOMUtils.defineLazyGetter(this, "gAvailableMigratorKeys", function() {
   if (AppConstants.platform == "win") {
     return [
-      "firefox", "edge", "ie", "chrome", "chromium", "safari", "360se",
+      "firefox", "edge", "ie", "chrome", "chromium", "360se",
       "canary"
     ];
   }
