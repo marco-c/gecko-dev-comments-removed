@@ -49,9 +49,6 @@ public:
   virtual void SetContentController(GeckoContentController* aController) = 0;
 
   
-  virtual uint64_t RootLayerTreeId() const = 0;
-
-  
   virtual already_AddRefed<APZCTreeManager> GetAPZCTreeManager() const = 0;
 
   
@@ -62,14 +59,21 @@ public:
     return mCompositorWidgetDelegate;
   }
 
+  
+  uint64_t RootLayerTreeId() const {
+    return mRootLayerTreeId;
+  }
+
 protected:
   CompositorSession(CompositorWidgetDelegate* aDelegate,
-                    CompositorBridgeChild* aChild);
+                    CompositorBridgeChild* aChild,
+                    const uint64_t& aRootLayerTreeId);
   virtual ~CompositorSession();
 
 protected:
   CompositorWidgetDelegate* mCompositorWidgetDelegate;
   RefPtr<CompositorBridgeChild> mCompositorBridgeChild;
+  uint64_t mRootLayerTreeId;
 
 private:
   DISALLOW_COPY_AND_ASSIGN(CompositorSession);

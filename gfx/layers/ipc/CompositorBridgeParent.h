@@ -219,7 +219,9 @@ public:
   
   
   
-  void InitSameProcess(widget::CompositorWidget* aWidget, bool aUseAPZ);
+  void InitSameProcess(widget::CompositorWidget* aWidget,
+                       const uint64_t& aLayerTreeId,
+                       bool aUseAPZ);
 
   virtual bool RecvGetFrameUniformity(FrameUniformityData* aOutData) override;
   virtual bool RecvRequestOverfill() override;
@@ -498,13 +500,6 @@ private:
 
 
 
-
-  static uint64_t AllocateLayerTreeId();
-  
-
-
-
-
   static void DeallocateLayerTreeId(uint64_t aId);
 
   static void RequestNotifyLayerTreeReady(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
@@ -612,7 +607,7 @@ protected:
   mozilla::Monitor mResetCompositorMonitor;
 
   uint64_t mCompositorID;
-  const uint64_t mRootLayerTreeID;
+  uint64_t mRootLayerTreeID;
 
   bool mOverrideComposeReadiness;
   RefPtr<CancelableRunnable> mForceCompositionTask;
