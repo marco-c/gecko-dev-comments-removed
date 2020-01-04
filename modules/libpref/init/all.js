@@ -354,13 +354,6 @@ pref("media.apple.mp4.enabled", true);
 
 
 
-
-
-
-pref("media.gmp.storage.version.expected", 1);
-
-
-
 pref("media.decoder-doctor.notifications-allowed", "MediaWidevineNoWMFNoSilverlight");
 
 pref("media.decoder-doctor.verbose", false);
@@ -5254,6 +5247,9 @@ pref("reader.errors.includeURLs", false);
 
 
 pref("reader.font_size", 5);
+
+
+pref("reader.content_width", 3);
 
 
 
