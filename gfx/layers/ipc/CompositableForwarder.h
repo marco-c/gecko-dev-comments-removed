@@ -10,6 +10,7 @@
 #include <stdint.h>                     
 #include "gfxTypes.h"
 #include "mozilla/Attributes.h"         
+#include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersTypes.h"  
@@ -127,6 +128,20 @@ public:
     mTexturesToRemove.Clear();
   }
 
+  
+
+
+  void HoldUntilTransaction(CompositableClient* aClient)
+  {
+    if (aClient) {
+      mCompositableClientsToRemove.AppendElement(aClient);
+    }
+  }
+  void RemoveCompositablesIfNecessary()
+  {
+    mCompositableClientsToRemove.Clear();
+  }
+
   struct TimedTextureClient {
     TimedTextureClient()
         : mTextureClient(nullptr), mFrameID(0), mProducerID(0) {}
@@ -190,6 +205,7 @@ public:
 protected:
   TextureFactoryIdentifier mTextureFactoryIdentifier;
   nsTArray<RefPtr<TextureClient> > mTexturesToRemove;
+  nsTArray<RefPtr<CompositableClient>> mCompositableClientsToRemove;
   RefPtr<SyncObject> mSyncObject;
   const int32_t mSerial;
   static mozilla::Atomic<int32_t> sSerialCounter;
