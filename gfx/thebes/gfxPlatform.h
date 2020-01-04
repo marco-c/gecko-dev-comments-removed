@@ -636,10 +636,6 @@ public:
     }
 
     
-    virtual void TestDeviceReset(DeviceResetReason aReason)
-    {}
-
-    
     
     virtual void GetDeviceInitData(mozilla::gfx::DeviceInitData* aOut);
 
