@@ -363,6 +363,8 @@ private:
   uint32_t ChromeEpochForContent();
   void SetChromeEpochForContent(uint32_t aEpoch);
 
+  void UpdateInMemoryPluginInfo(nsPluginTag* aPluginTag);
+
   
   
   bool ShouldAddPlugin(nsPluginTag* aPluginTag);
