@@ -5,8 +5,10 @@
 
 
 #include "WebSocketFrame.h"
+#include "WebSocketFrameListenerChild.h"
 #include "WebSocketFrameService.h"
 
+#include "mozilla/net/NeckoChild.h"
 #include "mozilla/StaticPtr.h"
 #include "nsISupportsPrimitives.h"
 #include "nsXULAppAPI.h"
@@ -19,6 +21,12 @@ namespace net {
 namespace {
 
 StaticRefPtr<WebSocketFrameService> gWebSocketFrameService;
+
+bool
+IsChildProcess()
+{
+  return XRE_GetProcessType() != GeckoProcessType_Default;
+}
 
 } 
 
@@ -82,7 +90,6 @@ protected:
 WebSocketFrameService::GetOrCreate()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(XRE_IsParentProcess());
 
   if (!gWebSocketFrameService) {
     gWebSocketFrameService = new WebSocketFrameService();
@@ -105,7 +112,6 @@ WebSocketFrameService::WebSocketFrameService()
   : mCountListeners(0)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(XRE_IsParentProcess());
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
@@ -127,9 +133,6 @@ WebSocketFrameService::FrameReceived(uint32_t aWebSocketSerialID,
   MOZ_ASSERT(aFrame);
 
   
-  MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-
-  
   if (!HasListeners()) {
     return;
   }
@@ -147,9 +150,6 @@ WebSocketFrameService::FrameSent(uint32_t aWebSocketSerialID,
                                  WebSocketFrame* aFrame)
 {
   MOZ_ASSERT(aFrame);
-
-  
-  MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
 
   
   if (!HasListeners()) {
@@ -176,13 +176,23 @@ WebSocketFrameService::AddListener(uint64_t aInnerWindowID,
 
   ++mCountListeners;
 
-  WindowListeners* listeners = mWindows.Get(aInnerWindowID);
-  if (!listeners) {
-    listeners = new WindowListeners();
-    mWindows.Put(aInnerWindowID, listeners);
+  WindowListener* listener = mWindows.Get(aInnerWindowID);
+  if (!listener) {
+    listener = new WindowListener();
+
+    if (IsChildProcess()) {
+      PWebSocketFrameListenerChild* actor =
+        gNeckoChild->SendPWebSocketFrameListenerConstructor(aInnerWindowID);
+
+      listener->mActor = static_cast<WebSocketFrameListenerChild*>(actor);
+      MOZ_ASSERT(listener->mActor);
+    }
+
+    mWindows.Put(aInnerWindowID, listener);
   }
 
-  listeners->AppendElement(aListener);
+  listener->mListeners.AppendElement(aListener);
+
   return NS_OK;
 }
 
@@ -196,17 +206,21 @@ WebSocketFrameService::RemoveListener(uint64_t aInnerWindowID,
     return NS_ERROR_FAILURE;
   }
 
-  WindowListeners* listeners = mWindows.Get(aInnerWindowID);
-  if (!listeners) {
+  WindowListener* listener = mWindows.Get(aInnerWindowID);
+  if (!listener) {
     return NS_ERROR_FAILURE;
   }
 
-  if (!listeners->RemoveElement(aListener)) {
+  if (!listener->mListeners.RemoveElement(aListener)) {
     return NS_ERROR_FAILURE;
   }
 
   
-  if (listeners->IsEmpty()) {
+  if (listener->mListeners.IsEmpty()) {
+    if (IsChildProcess()) {
+      ShutdownActorListener(listener);
+    }
+
     mWindows.Remove(aInnerWindowID);
   }
 
@@ -235,13 +249,17 @@ WebSocketFrameService::Observe(nsISupports* aSubject, const char* aTopic,
     nsresult rv = wrapper->GetData(&innerID);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    WindowListeners* listeners = mWindows.Get(innerID);
-    if (!listeners) {
+    WindowListener* listener = mWindows.Get(innerID);
+    if (!listener) {
       return NS_OK;
     }
 
-    MOZ_ASSERT(mCountListeners >= listeners->Length());
-    mCountListeners -= listeners->Length();
+    MOZ_ASSERT(mCountListeners >= listener->mListeners.Length());
+    mCountListeners -= listener->mListeners.Length();
+
+    if (IsChildProcess()) {
+      ShutdownActorListener(listener);
+    }
 
     mWindows.Remove(innerID);
   }
@@ -276,7 +294,17 @@ WebSocketFrameService::HasListeners() const
 WebSocketFrameService::WindowListeners*
 WebSocketFrameService::GetListeners(uint64_t aInnerWindowID) const
 {
-  return mWindows.Get(aInnerWindowID);
+  WindowListener* listener = mWindows.Get(aInnerWindowID);
+  return listener ? &listener->mListeners : nullptr;
+}
+
+void
+WebSocketFrameService::ShutdownActorListener(WindowListener* aListener)
+{
+  MOZ_ASSERT(aListener);
+  MOZ_ASSERT(aListener->mActor);
+  aListener->mActor->Close();
+  aListener->mActor = nullptr;
 }
 
 WebSocketFrame*
