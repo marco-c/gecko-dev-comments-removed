@@ -338,20 +338,6 @@ using mozilla::gfx::PointTyped;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
