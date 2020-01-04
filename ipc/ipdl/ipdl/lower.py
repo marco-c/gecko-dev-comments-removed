@@ -2384,7 +2384,10 @@ def _generateCxxUnion(ud):
 
     
     dtor = DestructorDefn(DestructorDecl(ud.name))
-    dtor.addstmt(StmtExpr(callMaybeDestroy(tnonevar)))
+    
+    
+    dtor.addstmt(StmtExpr(ExprCast(callMaybeDestroy(tnonevar), Type.VOID,
+                                   static=1)))
     cls.addstmts([ dtor, Whitespace.NL ])
 
     
@@ -2425,9 +2428,14 @@ def _generateCxxUnion(ud):
             StmtBreak()
         ])
         opeqswitch.addcase(CaseLabel(c.enum()), case)
-    opeqswitch.addcase(CaseLabel(tnonevar.name),
-                       StmtBlock([ StmtExpr(callMaybeDestroy(rhstypevar)),
-                                   StmtBreak() ]))
+    opeqswitch.addcase(
+        CaseLabel(tnonevar.name),
+        
+        
+        StmtBlock([ StmtExpr(ExprCast(callMaybeDestroy(rhstypevar), Type.VOID,
+                                      static=1)),
+                    StmtBreak() ])
+    )
     opeqswitch.addcase(
         DefaultLabel(),
         StmtBlock([ _logicError('unreached'), StmtBreak() ]))
