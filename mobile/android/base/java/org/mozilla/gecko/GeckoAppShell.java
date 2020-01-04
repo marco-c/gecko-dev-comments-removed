@@ -33,7 +33,6 @@ import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.gfx.PanZoomController;
-import org.mozilla.gecko.notifications.NotificationClient;
 import org.mozilla.gecko.permissions.Permissions;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoRequest;
@@ -185,10 +184,6 @@ public class GeckoAppShell
 
     
      static NotificationClient notificationClient;
-
-    public static NotificationClient getNotificationClient() {
-        return notificationClient;
-    }
 
     
     private static final int HIGH_MEMORY_DEVICE_THRESHOLD_MB = 768;
@@ -897,7 +892,7 @@ public class GeckoAppShell
     }
 
     @WrapForJNI
-    static void scheduleRestart() {
+    public static void scheduleRestart() {
         getGeckoInterface().doRestart();
     }
 
