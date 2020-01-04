@@ -468,22 +468,6 @@ private:
   JSAutoCompartment mAc;
 };
 
-
-
-
-class MOZ_RAII ThreadsafeAutoSafeJSContext {
-public:
-  explicit ThreadsafeAutoSafeJSContext(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
-  operator JSContext*() const;
-
-private:
-  JSContext* mCx; 
-  Maybe<JSAutoRequest> mRequest; 
-  Maybe<AutoSafeJSContext> mAutoSafeJSContext; 
-  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-};
-
-
 } 
 
 #endif 
