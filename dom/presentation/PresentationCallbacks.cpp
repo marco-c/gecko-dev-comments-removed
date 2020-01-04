@@ -50,7 +50,6 @@ PresentationRequesterCallback::NotifySuccess()
   
   RefPtr<PresentationConnection> connection =
     PresentationConnection::Create(mRequest->GetOwner(), mSessionId,
-                                   nsIPresentationService::ROLE_CONTROLLER,
                                    PresentationConnectionState::Connected);
   if (NS_WARN_IF(!connection)) {
     mPromise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
