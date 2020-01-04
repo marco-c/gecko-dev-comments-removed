@@ -1283,20 +1283,20 @@ class JSScript : public js::gc::TenuredCell
     
     
     size_t nfixed() const {
-        return function_ ? bindings.numFixedLocals() : bindings.numBlockScoped();
+        return isGlobalCode() ? bindings.numBlockScoped() : bindings.numFixedLocals();
     }
 
     
     
     size_t nfixedvars() const {
-        return function_ ? bindings.numUnaliasedVars() : 0;
+        return isGlobalCode() ? 0 : bindings.numUnaliasedVars();
     }
 
     
     
     
     size_t nbodyfixed() const {
-        return function_ ? bindings.numUnaliasedBodyLevelLocals() : 0;
+        return isGlobalCode() ? 0 : bindings.numUnaliasedBodyLevelLocals();
     }
 
     

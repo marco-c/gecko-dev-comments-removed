@@ -332,11 +332,6 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
     }
 
     
-    bool atModuleScope() {
-        return sc->isModuleBox() && !innermostScopeStmt();
-    }
-
-    
     
     bool isFunctionConstructorBody() const {
         return sc->isFunctionBox() && !parent && sc->asFunctionBox()->function()->isLambda();
