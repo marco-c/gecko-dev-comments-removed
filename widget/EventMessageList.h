@@ -388,6 +388,8 @@ NS_EVENT_MESSAGE(eTouchCancel)
 
 NS_EVENT_MESSAGE(ePointerLockChange)
 NS_EVENT_MESSAGE(ePointerLockError)
+NS_EVENT_MESSAGE(eMozPointerLockChange)
+NS_EVENT_MESSAGE(eMozPointerLockError)
 
 
 NS_EVENT_MESSAGE(eWheel)
