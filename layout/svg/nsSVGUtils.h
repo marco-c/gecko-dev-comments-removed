@@ -185,7 +185,6 @@ public:
   typedef mozilla::gfx::GeneralPattern GeneralPattern;
   typedef mozilla::gfx::Size Size;
   typedef mozilla::SVGTextContextPaint SVGTextContextPaint;
-  typedef mozilla::image::DrawResult DrawResult;
 
   static void Init();
 
@@ -283,7 +282,7 @@ public:
 
   
 
-  static DrawResult
+  static void
   PaintFrameWithEffects(nsIFrame *aFrame,
                         gfxContext& aContext,
                         const gfxMatrix& aTransform,
