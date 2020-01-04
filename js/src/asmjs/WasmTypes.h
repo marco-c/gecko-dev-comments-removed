@@ -92,6 +92,26 @@ typedef Vector<Type, 0, SystemAllocPolicy> VectorName;
 
 
 
+template <class T>
+struct ShareableBase : RefCounted<T>
+{
+    using SeenSet = HashSet<const T*, DefaultHasher<const T*>, SystemAllocPolicy>;
+
+    size_t sizeOfIncludingThisIfNotSeen(MallocSizeOf mallocSizeOf, SeenSet* seen) const {
+        const T* self = static_cast<const T*>(this);
+        typename SeenSet::AddPtr p = seen->lookupForAdd(self);
+        if (p)
+            return 0;
+        bool ok = seen->add(p, self);
+        (void)ok;  
+        return mallocSizeOf(self) + self->sizeOfExcludingThis(mallocSizeOf);
+    }
+};
+
+
+
+
+
 
 
 const ExprType AnyType = ExprType::Limit;

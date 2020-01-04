@@ -20,6 +20,7 @@
 #define wasm_instance_h
 
 #include "asmjs/WasmCode.h"
+#include "asmjs/WasmTable.h"
 #include "gc/Barrier.h"
 
 namespace js {
@@ -35,22 +36,6 @@ struct ExportMap;
 
 
 
-struct TypedFuncTable
-{
-    uint32_t globalDataOffset;
-    uint32_t numElems;
-
-    TypedFuncTable(uint32_t globalDataOffset, uint32_t numElems)
-      : globalDataOffset(globalDataOffset), numElems(numElems)
-    {}
-};
-
-typedef Vector<TypedFuncTable, 0, SystemAllocPolicy> TypedFuncTableVector;
-
-
-
-
-
 
 
 
@@ -59,14 +44,15 @@ class Instance
     const UniqueCodeSegment              codeSegment_;
     const SharedMetadata                 metadata_;
     const SharedBytes                    maybeBytecode_;
-    const TypedFuncTableVector           typedFuncTables_;
     GCPtrWasmMemoryObject                memory_;
+    SharedTableVector                    tables_;
 
     bool                                 profilingEnabled_;
     CacheableCharsVector                 funcLabels_;
 
     
     uint8_t** addressOfMemoryBase() const;
+    void** addressOfTableBase(size_t tableIndex) const;
     FuncImportExit& funcImportToExit(const FuncImport& fi);
     MOZ_MUST_USE bool toggleProfiling(JSContext* cx);
 
@@ -88,8 +74,8 @@ class Instance
     Instance(UniqueCodeSegment codeSegment,
              const Metadata& metadata,
              const ShareableBytes* maybeBytecode,
-             TypedFuncTableVector&& typedFuncTables,
              HandleWasmMemoryObject memory,
+             SharedTableVector&& tables,
              Handle<FunctionVector> funcImports);
     ~Instance();
     void trace(JSTracer* trc);
@@ -147,7 +133,9 @@ class Instance
     void addSizeOfMisc(MallocSizeOf mallocSizeOf,
                        Metadata::SeenSet* seenMetadata,
                        ShareableBytes::SeenSet* seenBytes,
-                       size_t* code, size_t* data) const;
+                       Table::SeenSet* seenTables,
+                       size_t* code,
+                       size_t* data) const;
 };
 
 typedef UniquePtr<Instance> UniqueInstance;
