@@ -385,9 +385,6 @@ class FirefoxProfile(Profile):
                    
                    
                    'toolkit.telemetry.server' : 'http://%(server)s/telemetry-dummy/',
-                   
-                   
-                   'toolkit.telemetry.unifiedIsOptIn': True,
                    }
 
 class MetroFirefoxProfile(Profile):

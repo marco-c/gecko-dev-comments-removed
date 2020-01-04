@@ -145,15 +145,13 @@ user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
 
 
 user_pref("datareporting.healthreport.documentServerURI", "http://%(server)s/healthreport/");
-user_pref("datareporting.healthreport.about.reportUrl", "http://%(server)s/abouthealthreport/");
-user_pref("datareporting.healthreport.about.reportUrlUnified", "http://%(server)s/abouthealthreport/v4/");
+user_pref("datareporting.healthreport.about.reportUrl", "http://%(server)s/abouthealthreport/v4/");
 
 
 user_pref("layout.css.report_errors", true);
 
 
 user_pref("layout.css.grid.enabled", true);
-user_pref("layout.css.grid-template-subgrid-value.enabled", true);
 
 
 user_pref("layout.css.contain.enabled", true);
@@ -234,9 +232,6 @@ user_pref('browser.contentHandlers.types.5.uri', 'http://test1.example.org/rss?u
 
 
 user_pref('toolkit.telemetry.server', 'https://%(server)s/telemetry-dummy/');
-
-
-user_pref('toolkit.telemetry.unifiedIsOptIn', false);
 
 
 

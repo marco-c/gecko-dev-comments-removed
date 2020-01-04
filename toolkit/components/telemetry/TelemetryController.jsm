@@ -39,15 +39,10 @@ const PREF_CACHED_CLIENTID = PREF_BRANCH + "cachedClientID";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 const PREF_SESSIONS_BRANCH = "datareporting.sessions.";
 const PREF_UNIFIED = PREF_BRANCH + "unified";
-const PREF_UNIFIED_OPTIN = PREF_BRANCH + "unifiedIsOptIn";
-const PREF_OPTOUT_SAMPLE = PREF_BRANCH + "optoutSample";
 
 
 
 const IS_UNIFIED_TELEMETRY = Preferences.get(PREF_UNIFIED, false);
-
-
-const IS_UNIFIED_OPTIN = Preferences.get(PREF_UNIFIED_OPTIN, false);
 
 const PING_FORMAT_VERSION = 4;
 
@@ -90,29 +85,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "TelemetrySend",
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryReportingPolicy",
                                   "resource://gre/modules/TelemetryReportingPolicy.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "gCrcTable", function() {
-  let c;
-  let table = [];
-  for (let n = 0; n < 256; n++) {
-      c = n;
-      for (let k =0; k < 8; k++) {
-          c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
-      }
-      table[n] = c;
-  }
-  return table;
-});
-
-function crc32(str) {
-    let crc = 0 ^ (-1);
-
-    for (let i = 0; i < str.length; i++ ) {
-        crc = (crc >>> 8) ^ gCrcTable[(crc ^ str.charCodeAt(i)) & 0xFF];
-    }
-
-    return (crc ^ (-1)) >>> 0;
-}
-
 
 
 
@@ -153,7 +125,6 @@ var Policy = {
   now: () => new Date(),
   generatePingId: () => Utils.generateUUID(),
   getCachedClientID: () => ClientID.getCachedClientID(),
-  isUnifiedOptin: () => IS_UNIFIED_OPTIN,
 }
 
 this.EXPORTED_SYMBOLS = ["TelemetryController"];
@@ -325,15 +296,6 @@ this.TelemetryController = Object.freeze({
 
   get clientID() {
     return Impl.clientID;
-  },
-
-  
-
-
-
-
-  get isInOptoutSample() {
-    return Impl.isInOptoutSample;
   },
 
   
@@ -622,34 +584,6 @@ var Impl = {
   
 
 
-  _isInOptoutSample: function() {
-    if (!Preferences.get(PREF_OPTOUT_SAMPLE, false)) {
-      this._log.config("_sampleForOptoutTelemetry - optout sampling is disabled");
-      return false;
-    }
-
-    const clientId = Policy.getCachedClientID();
-    if (!clientId) {
-      this._log.config("_sampleForOptoutTelemetry - no cached client id available")
-      return false;
-    }
-
-    
-    
-    
-    const sample = crc32(clientId) % 100;
-    const offset = 42;
-    const range = 5; 
-
-    const optout = (sample >= offset && sample < (offset + range));
-    this._log.config("_sampleForOptoutTelemetry - sampling for optout Telemetry - " +
-                     "offset: " + offset + ", range: " + range + ", sample: " + sample);
-    return optout;
-  },
-
-  
-
-
 
 
   enableTelemetryRecording: function enableTelemetryRecording() {
@@ -666,10 +600,8 @@ var Impl = {
     
     
     
-    
     const enabled = Utils.isTelemetryEnabled;
-    const isOptout = IS_UNIFIED_TELEMETRY && (!Policy.isUnifiedOptin() || this._isInOptoutSample());
-    Telemetry.canRecordBase = enabled || isOptout;
+    Telemetry.canRecordBase = enabled || IS_UNIFIED_TELEMETRY;
     Telemetry.canRecordExtended = enabled;
 
     this._log.config("enableTelemetryRecording - canRecordBase:" + Telemetry.canRecordBase +
@@ -866,10 +798,6 @@ var Impl = {
 
   get clientID() {
     return this._clientID;
-  },
-
-  get isInOptoutSample() {
-    return this._isInOptoutSample();
   },
 
   
