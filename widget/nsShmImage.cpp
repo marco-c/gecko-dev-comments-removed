@@ -25,18 +25,19 @@ nsShmImage::nsShmImage(Display* aDisplay,
                        Drawable aWindow,
                        Visual* aVisual,
                        unsigned int aDepth)
-  : mImage(nullptr)
-  , mDisplay(aDisplay)
-  , mWindow(aWindow)
+  : mWindow(aWindow)
   , mVisual(aVisual)
   , mDepth(aDepth)
   , mFormat(mozilla::gfx::SurfaceFormat::UNKNOWN)
-  , mPixmap(None)
-  , mGC(nullptr)
-  , mRequest(0)
-  , mPreviousRequestProcessed(0)
+  , mSize(0, 0)
+  , mPixmap(XCB_NONE)
+  , mGC(XCB_NONE)
+  , mShmSeg(XCB_NONE)
+  , mShmId(-1)
+  , mShmAddr(nullptr)
 {
-  memset(&mInfo, -1, sizeof(mInfo));
+  mConnection = XGetXCBConnection(aDisplay);
+  mozilla::PodZero(&mLastRequest);
 }
 
 nsShmImage::~nsShmImage()
@@ -52,38 +53,25 @@ bool nsShmImage::UseShm()
   return gShmAvailable;
 }
 
-static int gShmError = 0;
-
-static int
-TrapShmError(Display* aDisplay, XErrorEvent* aEvent)
-{
-  
-  gShmError = aEvent->error_code;
-  return 0;
-}
-
 bool
 nsShmImage::CreateShmSegment()
 {
-  if (!mImage) {
+  size_t size = SharedMemory::PageAlignedSize(BytesPerPixel(mFormat) *
+                                              mSize.width * mSize.height);
+
+  mShmId = shmget(IPC_PRIVATE, size, IPC_CREAT | 0600);
+  if (mShmId == -1) {
     return false;
   }
-
-  size_t size = SharedMemory::PageAlignedSize(mImage->bytes_per_line * mImage->height);
-
-  mInfo.shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | 0600);
-  if (mInfo.shmid == -1) {
-    return false;
-  }
-
-  mInfo.shmaddr = (char *)shmat(mInfo.shmid, nullptr, 0);
+  mShmAddr = (uint8_t*) shmat(mShmId, nullptr, 0);
+  mShmSeg = xcb_generate_id(mConnection);
 
   
-  shmctl(mInfo.shmid, IPC_RMID, nullptr);
+  shmctl(mShmId, IPC_RMID, nullptr);
 
-  if (mInfo.shmaddr == (void *)-1) {
+  if (mShmAddr == (void *)-1) {
     
-    mInfo.shmid = -1;
+    mShmId = -1;
 
     nsPrintfCString warning("shmat(): %s (%d)\n", strerror(errno), errno);
     NS_WARNING(warning.get());
@@ -92,7 +80,7 @@ nsShmImage::CreateShmSegment()
 
 #ifdef DEBUG
   struct shmid_ds info;
-  if (shmctl(mInfo.shmid, IPC_STAT, &info) < 0) {
+  if (shmctl(mShmId, IPC_STAT, &info) < 0) {
     return false;
   }
 
@@ -100,25 +88,20 @@ nsShmImage::CreateShmSegment()
              "Segment doesn't have enough space!");
 #endif
 
-  mInfo.readOnly = False;
-
-  mImage->data = mInfo.shmaddr;
-
   return true;
 }
 
 void
 nsShmImage::DestroyShmSegment()
 {
-  if (mInfo.shmid != -1) {
-    shmdt(mInfo.shmaddr);
-    mInfo.shmid = -1;
+  if (mShmId != -1) {
+    shmdt(mShmAddr);
+    mShmId = -1;
   }
 }
 
 static bool gShmInitialized = false;
-static int gShmEvent = -1;
-static Atom gShmPixmapAtom = None;
+static bool gUseShmPixmaps = false;
 
 bool
 nsShmImage::InitExtension()
@@ -129,27 +112,27 @@ nsShmImage::InitExtension()
 
   gShmInitialized = true;
 
-  if (!XShmQueryExtension(mDisplay)) {
+  const xcb_query_extension_reply_t* extReply;
+  extReply = xcb_get_extension_data(mConnection, &xcb_shm_id);
+  if (!extReply || !extReply->present) {
     gShmAvailable = false;
     return false;
   }
 
-  int major, minor;
-  Bool pixmaps;
-  if (!XShmQueryVersion(mDisplay, &major, &minor, &pixmaps)) {
+  xcb_shm_query_version_reply_t* shmReply = xcb_shm_query_version_reply(
+      mConnection,
+      xcb_shm_query_version(mConnection),
+      nullptr);
+
+  if (!shmReply) {
     gShmAvailable = false;
     return false;
   }
 
-  gShmEvent = XShmGetEventBase(mDisplay);
-  if (gShmEvent < 0) {
-    gShmAvailable = false;
-    return false;
-  }
+  gUseShmPixmaps = shmReply->shared_pixmaps &&
+                   shmReply->pixmap_format == XCB_IMAGE_FORMAT_Z_PIXMAP;
 
-  if (pixmaps && XShmPixmapFormat(mDisplay) == ZPixmap) {
-    gShmPixmapAtom = XInternAtom(mDisplay, "_MOZ_SHM_PIXMAP", False);
-  }
+  free(shmReply);
 
   return true;
 }
@@ -157,11 +140,13 @@ nsShmImage::InitExtension()
 bool
 nsShmImage::CreateImage(const IntSize& aSize)
 {
-  MOZ_ASSERT(mDisplay && mVisual);
+  MOZ_ASSERT(mConnection && mVisual);
 
   if (!InitExtension()) {
     return false;
   }
+
+  mSize = aSize;
 
   BackendType backend = gfxPlatform::GetPlatform()->GetDefaultContentBackend();
 
@@ -200,38 +185,36 @@ nsShmImage::CreateImage(const IntSize& aSize)
     return false;
   }
 
-  mImage = XShmCreateImage(mDisplay, mVisual, mDepth,
-                           ZPixmap, nullptr,
-                           &mInfo,
-                           aSize.width, aSize.height);
-  if (!mImage || !CreateShmSegment()) {
+  if (!CreateShmSegment()) {
     DestroyImage();
     return false;
   }
 
-  gShmError = 0;
-  XErrorHandler previousHandler = XSetErrorHandler(TrapShmError);
-  Status attachOk = XShmAttach(mDisplay, &mInfo);
-  XSync(mDisplay, False);
-  XSetErrorHandler(previousHandler);
-  if (gShmError) {
-    attachOk = 0;
-  }
+  xcb_generic_error_t* error;
+  xcb_void_cookie_t cookie;
 
-  if (!attachOk) {
-    DestroyShmSegment();
+  cookie = xcb_shm_attach_checked(mConnection, mShmSeg, mShmId, 0);
+
+  if ((error = xcb_request_check(mConnection, cookie))) {
+    NS_WARNING("Failed to attach MIT-SHM segment.");
     DestroyImage();
-
-    
-    
     gShmAvailable = false;
+    free(error);
     return false;
   }
 
-  if (gShmPixmapAtom != None) {
-    mPixmap = XShmCreatePixmap(mDisplay, mWindow,
-                               mImage->data, &mInfo,
-                               mImage->width, mImage->height, mImage->depth);
+  if (gUseShmPixmaps) {
+    mPixmap = xcb_generate_id(mConnection);
+    cookie = xcb_shm_create_pixmap_checked(mConnection, mPixmap, mWindow,
+                                           aSize.width, aSize.height, mDepth,
+                                           mShmSeg, 0);
+
+    if ((error = xcb_request_check(mConnection, cookie))) {
+      
+      mPixmap = XCB_NONE;
+      gUseShmPixmaps = false;
+      free(error);
+    }
   }
 
   return true;
@@ -240,23 +223,17 @@ nsShmImage::CreateImage(const IntSize& aSize)
 void
 nsShmImage::DestroyImage()
 {
-  if (mImage) {
-    mozilla::FinishX(mDisplay);
-  }
   if (mGC) {
-    XFreeGC(mDisplay, mGC);
-    mGC = nullptr;
+    xcb_free_gc(mConnection, mGC);
+    mGC = XCB_NONE;
   }
-  if (mPixmap != None) {
-    XFreePixmap(mDisplay, mPixmap);
-    mPixmap = None;
+  if (mPixmap != XCB_NONE) {
+    xcb_free_pixmap(mConnection, mPixmap);
+    mPixmap = XCB_NONE;
   }
-  if (mImage) {
-    if (mInfo.shmid != -1) {
-      XShmDetach(mDisplay, &mInfo);
-    }
-    XDestroyImage(mImage);
-    mImage = nullptr;
+  if (mShmSeg != XCB_NONE) {
+    xcb_shm_detach_checked(mConnection, mShmSeg);
+    mShmSeg = XCB_NONE;
   }
   DestroyShmSegment();
 }
@@ -265,7 +242,16 @@ already_AddRefed<DrawTarget>
 nsShmImage::CreateDrawTarget(const mozilla::LayoutDeviceIntRegion& aRegion)
 {
   
-  WaitForRequest();
+  
+  
+  xcb_generic_error_t* error;
+  if (mLastRequest.sequence != XCB_NONE &&
+      (error = xcb_request_check(mConnection, mLastRequest)))
+  {
+    gShmAvailable = false;
+    free(error);
+    return nullptr;
+  }
 
   
   
@@ -273,7 +259,7 @@ nsShmImage::CreateDrawTarget(const mozilla::LayoutDeviceIntRegion& aRegion)
   
   IntRect bounds = aRegion.GetBounds().ToUnknownRect();
   IntSize size(bounds.XMost(), bounds.YMost());
-  if (!mImage || size.width > mImage->width || size.height > mImage->height) {
+  if (size.width > mSize.width || size.height > mSize.height) {
     DestroyImage();
     if (!CreateImage(size)) {
       return nullptr;
@@ -281,97 +267,46 @@ nsShmImage::CreateDrawTarget(const mozilla::LayoutDeviceIntRegion& aRegion)
   }
 
   return gfxPlatform::GetPlatform()->CreateDrawTargetForData(
-    reinterpret_cast<unsigned char*>(mImage->data)
-      + bounds.y * mImage->bytes_per_line + bounds.x * BytesPerPixel(mFormat),
+    reinterpret_cast<unsigned char*>(mShmAddr)
+      + BytesPerPixel(mFormat) * (bounds.y * mSize.width + bounds.x),
     bounds.Size(),
-    mImage->bytes_per_line,
+    BytesPerPixel(mFormat) * mSize.width,
     mFormat);
-}
-
-bool
-nsShmImage::RequestWasProcessed()
-{
-  
-  
-  
-  unsigned long processed = LastKnownRequestProcessed(mDisplay);
-  return long(processed - mRequest) >= 0 ||
-         long(processed - mPreviousRequestProcessed) < 0;
-}
-
-Bool
-nsShmImage::FindEvent(Display* aDisplay, XEvent* aEvent, XPointer aArg)
-{
-  nsShmImage* image = (nsShmImage*)aArg;
-  return image->RequestWasProcessed();
-}
-
-void
-nsShmImage::WaitForRequest()
-{
-  if (!mRequest) {
-    return;
-  }
-
-  if (!RequestWasProcessed()) {
-    XEvent event;
-    XPeekIfEvent(mDisplay, &event, FindEvent, (XPointer)this);
-  }
-
-  mRequest = 0;
-}
-
-void
-nsShmImage::SendEvent()
-{
-  XClientMessageEvent event;
-  memset(&event, 0, sizeof(event));
-
-  event.type = ClientMessage;
-  event.window = mWindow;
-  event.message_type = gShmPixmapAtom;
-  event.format = 32;
-  event.data.l[0] = (long)mInfo.shmseg;
-
-  XSendEvent(mDisplay, mWindow, False, 0, (XEvent*)&event);
 }
 
 void
 nsShmImage::Put(const mozilla::LayoutDeviceIntRegion& aRegion)
 {
-  if (!mImage) {
-    return;
-  }
-
-  AutoTArray<XRectangle, 32> xrects;
+  AutoTArray<xcb_rectangle_t, 32> xrects;
   xrects.SetCapacity(aRegion.GetNumRects());
 
   for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
     const mozilla::LayoutDeviceIntRect &r = iter.Get();
-    XRectangle xrect = { (short)r.x, (short)r.y, (unsigned short)r.width, (unsigned short)r.height };
+    xcb_rectangle_t xrect = { (short)r.x, (short)r.y, (unsigned short)r.width, (unsigned short)r.height };
     xrects.AppendElement(xrect);
   }
 
   if (!mGC) {
-    mGC = XCreateGC(mDisplay, mWindow, 0, nullptr);
-    if (!mGC) {
-      return;
-    }
+    mGC = xcb_generate_id(mConnection);
+    xcb_create_gc(mConnection, mGC, mWindow, 0, nullptr);
   }
-  XSetClipRectangles(mDisplay, mGC, 0, 0, xrects.Elements(), xrects.Length(), YXBanded);
 
-  mRequest = XNextRequest(mDisplay);
-  if (mPixmap != None) {
-    XCopyArea(mDisplay, mPixmap, mWindow, mGC, 0, 0, mImage->width, mImage->height, 0, 0);
-    
-    SendEvent();
+  xcb_set_clip_rectangles(mConnection, XCB_CLIP_ORDERING_YX_BANDED, mGC, 0, 0,
+                          xrects.Length(), xrects.Elements());
+
+  if (mPixmap != XCB_NONE) {
+    mLastRequest = xcb_copy_area_checked(mConnection, mPixmap, mWindow, mGC,
+                                         0, 0, 0, 0, mSize.width, mSize.height);
   } else {
-    
-    XShmPutImage(mDisplay, mWindow, mGC, mImage, 0, 0, 0, 0, mImage->width, mImage->height, True);
+    mLastRequest = xcb_shm_put_image_checked(mConnection, mWindow, mGC,
+                                             mSize.width, mSize.height,
+                                             0, 0, mSize.width, mSize.height,
+                                             0, 0, mDepth,
+                                             XCB_IMAGE_FORMAT_Z_PIXMAP, 0,
+                                             mShmSeg, 0);
   }
 
-  mPreviousRequestProcessed = LastKnownRequestProcessed(mDisplay);
-  XFlush(mDisplay);
+  xcb_flush(mConnection);
 }
 
 #endif  
