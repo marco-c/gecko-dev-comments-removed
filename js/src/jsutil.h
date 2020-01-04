@@ -328,7 +328,19 @@ PodSet(T* aDst, T aSrc, size_t aNElem)
 #define JS_MOVED_TENURED_PATTERN 0x49
 #define JS_SWEPT_TENURED_PATTERN 0x4B
 #define JS_ALLOCATED_TENURED_PATTERN 0x4D
-#define JS_SWEPT_CODE_PATTERN 0x3B
+
+
+
+
+
+
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_NONE)
+# define JS_SWEPT_CODE_PATTERN 0xED // IN instruction, crashes in user mode.
+#elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+# define JS_SWEPT_CODE_PATTERN 0xA3 // undefined instruction
+#else
+# error "JS_SWEPT_CODE_PATTERN not defined for this platform"
+#endif
 
 static inline void*
 Poison(void* ptr, uint8_t value, size_t num)
