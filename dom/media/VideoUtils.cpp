@@ -475,7 +475,8 @@ IsAACCodecString(const nsAString& aCodec)
   return
     aCodec.EqualsLiteral("mp4a.40.2") || 
     aCodec.EqualsLiteral("mp4a.40.5") || 
-    aCodec.EqualsLiteral("mp4a.67"); 
+    aCodec.EqualsLiteral("mp4a.67")   || 
+    aCodec.EqualsLiteral("mp4a.40.29");  
 }
 
 bool
