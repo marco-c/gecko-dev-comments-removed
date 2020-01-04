@@ -4,8 +4,10 @@
 
 "use strict";
 
+const { Ci, Cr } = require("chrome");
 const promise = require("promise");
 const { Task } = require("resource://gre/modules/Task.jsm");
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
 
 const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
@@ -69,14 +71,14 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
 
 
-  closeIfNeeded(window, tab) {
+  closeIfNeeded: Task.async(function*(window, tab) {
     if (this.isActiveForTab(tab)) {
-      this.activeTabs.get(tab).destroy();
+      yield this.activeTabs.get(tab).destroy();
       this.activeTabs.delete(tab);
       this.emit("off", { tab });
     }
     return promise.resolve();
-  },
+  }),
 
   
 
@@ -201,14 +203,17 @@ ResponsiveUI.prototype = {
     yield waitForMessage(toolWindow, "browser-mounted");
   }),
 
-  destroy() {
+  destroy: Task.async(function*() {
     let tabBrowser = this.tab.linkedBrowser;
-    tabBrowser.goBack();
-    this.window = null;
+    let browserWindow = this.browserWindow;
+    this.browserWindow = null;
     this.tab = null;
     this.inited = null;
     this.toolWindow = null;
-  },
+    let loaded = waitForDocLoadComplete(browserWindow.gBrowser);
+    tabBrowser.goBack();
+    yield loaded;
+  }),
 
   handleEvent(event) {
     let { tab, window } = this;
@@ -278,5 +283,29 @@ function tabLoaded(tab) {
   }
 
   tab.linkedBrowser.addEventListener("load", handle, true);
+  return deferred.promise;
+}
+
+
+
+
+function waitForDocLoadComplete(gBrowser) {
+  let deferred = promise.defer();
+  let progressListener = {
+    onStateChange: function(webProgress, req, flags, status) {
+      let docStop = Ci.nsIWebProgressListener.STATE_IS_NETWORK |
+                    Ci.nsIWebProgressListener.STATE_STOP;
+
+      
+      
+      if ((flags & docStop) == docStop && status != Cr.NS_BINDING_ABORTED) {
+        gBrowser.removeProgressListener(progressListener);
+        deferred.resolve();
+      }
+    },
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
+                                           Ci.nsISupportsWeakReference])
+  };
+  gBrowser.addProgressListener(progressListener);
   return deferred.promise;
 }
