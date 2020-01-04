@@ -1,4 +1,4 @@
-
+ 
 
 
 
@@ -6,6 +6,7 @@
 package org.mozilla.gecko.home;
 
 import java.util.EnumSet;
+import java.util.List;
 
 import android.util.Log;
 import org.mozilla.gecko.R;
@@ -64,13 +65,66 @@ public class BookmarksListView extends HomeListView
         });
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+    private String getTelemetryExtraForFolder(int folderID, int baseFolderID) {
+        if (folderID == Bookmarks.FAKE_DESKTOP_FOLDER_ID) {
+            return "folder_desktop";
+        } else if (folderID == Bookmarks.FIXED_SCREENSHOT_FOLDER_ID) {
+            return "folder_screenshots";
+        } else if (folderID == Bookmarks.FAKE_READINGLIST_SMARTFOLDER_ID) {
+            return "folder_reading_list";
+        } else {
+            
+            
+            
+            
+            if (baseFolderID == Bookmarks.FAKE_DESKTOP_FOLDER_ID) {
+                return "folder_desktop_subfolder";
+            } else {
+                return "folder_mobile_subfolder";
+            }
+        }
+    }
+
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         final BookmarksListAdapter adapter = getBookmarksListAdapter();
         if (adapter.isShowingChildFolder()) {
             if (position == 0) {
                 
+
+                final List<BookmarksListAdapter.FolderInfo> parentStack = ((BookmarksListAdapter) getAdapter()).getParentStack();
+                if (parentStack.size() < 2) {
+                    throw new IllegalStateException("Cannot move to parent folder if we are already in the root folder");
+                }
+
+                
+                BookmarksListAdapter.FolderInfo folder = parentStack.get(1);
+                final int parentID = folder.id;
+                final int baseFolderID;
+                if (parentStack.size() > 2) {
+                    baseFolderID = parentStack.get(parentStack.size() - 2).id;
+                } else {
+                    baseFolderID = Bookmarks.FIXED_ROOT_ID;
+                }
+
+                final String extra = getTelemetryExtraForFolder(parentID, baseFolderID);
+
+                
                 adapter.moveToParentFolder();
+
+                Telemetry.sendUIEvent(TelemetryContract.Event.SHOW, TelemetryContract.Method.LIST_ITEM, extra);
                 return;
             }
 
@@ -99,6 +153,18 @@ public class BookmarksListView extends HomeListView
             final int folderId = cursor.getInt(cursor.getColumnIndexOrThrow(Bookmarks._ID));
             final String folderTitle = adapter.getFolderTitle(parent.getContext(), cursor);
             adapter.moveToChildFolder(folderId, folderTitle);
+
+            final List<BookmarksListAdapter.FolderInfo> parentStack = ((BookmarksListAdapter) getAdapter()).getParentStack();
+
+            final int baseFolderID;
+            if (parentStack.size() > 2) {
+                baseFolderID = parentStack.get(parentStack.size() - 2).id;
+            } else {
+                baseFolderID = Bookmarks.FIXED_ROOT_ID;
+            }
+
+            final String extra = getTelemetryExtraForFolder(folderId, baseFolderID);
+            Telemetry.sendUIEvent(TelemetryContract.Event.SHOW, TelemetryContract.Method.LIST_ITEM, extra);
         } else {
             
             final String url = cursor.getString(cursor.getColumnIndexOrThrow(Bookmarks.URL));
