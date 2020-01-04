@@ -896,8 +896,6 @@ private:
   
   bool AllowScrollHandoffInCurrentBlock() const;
 
-  void AcknowledgeScrollUpdate() const;
-
   
 
 
