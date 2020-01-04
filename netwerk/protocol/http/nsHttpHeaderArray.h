@@ -31,6 +31,9 @@ public:
                        bool merge = false);
 
     
+    nsresult SetEmptyHeader(nsHttpAtom header);
+
+    
     
     nsresult SetHeaderFromNet(nsHttpAtom header, const nsACString &value);
 
@@ -169,18 +172,20 @@ nsHttpHeaderArray::MergeHeader(nsHttpAtom header,
     if (value.IsEmpty())
         return;   
 
-    
-    if (header == nsHttp::Set_Cookie ||
-        header == nsHttp::WWW_Authenticate ||
-        header == nsHttp::Proxy_Authenticate)
-    {
+    if (!entry->value.IsEmpty()) {
         
-        
-        
-        entry->value.Append('\n');
-    } else {
-        
-        entry->value.AppendLiteral(", ");
+        if (header == nsHttp::Set_Cookie ||
+            header == nsHttp::WWW_Authenticate ||
+            header == nsHttp::Proxy_Authenticate)
+        {
+            
+            
+            
+            entry->value.Append('\n');
+        } else {
+            
+            entry->value.AppendLiteral(", ");
+        }
     }
     entry->value.Append(value);
 }
