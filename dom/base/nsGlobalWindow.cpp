@@ -6918,7 +6918,9 @@ nsGlobalWindow::AlertOrConfirm(bool aAlert,
   MOZ_ASSERT(IsOuterWindow());
 
   if (!AreDialogsEnabled()) {
-    aError.Throw(NS_ERROR_NOT_AVAILABLE);
+    
+    
+    
     return false;
   }
 
@@ -7058,7 +7060,7 @@ nsGlobalWindow::PromptOuter(const nsAString& aMessage, const nsAString& aInitial
   SetDOMStringToNull(aReturn);
 
   if (!AreDialogsEnabled()) {
-    aError.Throw(NS_ERROR_NOT_AVAILABLE);
+    
     return;
   }
 
@@ -7496,6 +7498,8 @@ nsGlobalWindow::PrintOuter(ErrorResult& aError)
   }
 
   if (!AreDialogsEnabled()) {
+    
+    
     aError.Throw(NS_ERROR_NOT_AVAILABLE);
     return;
   }
@@ -9553,6 +9557,8 @@ nsGlobalWindow::ShowModalDialogOuter(const nsAString& aUrl, nsIVariant* aArgumen
   EnsureReflowFlushAndPaint();
 
   if (!AreDialogsEnabled()) {
+    
+    
     aError.Throw(NS_ERROR_NOT_AVAILABLE);
     return nullptr;
   }
