@@ -475,6 +475,17 @@ sslBuffer_Append(sslBuffer *b, const void *data, unsigned int len)
     return SECSuccess;
 }
 
+void
+sslBuffer_Clear(sslBuffer *b)
+{
+    if (b->len > 0) {
+        PORT_Free(b->buf);
+        b->buf = NULL;
+        b->len = 0;
+        b->space = 0;
+    }
+}
+
 
 
 

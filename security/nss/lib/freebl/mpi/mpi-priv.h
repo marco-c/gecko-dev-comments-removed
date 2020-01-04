@@ -100,10 +100,6 @@ void     s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count);
 void    *s_mp_alloc(size_t nb, size_t ni);       
 void     s_mp_free(void *ptr);                   
 
-extern unsigned long mp_allocs;
-extern unsigned long mp_frees;
-extern unsigned long mp_copies;
-
 mp_err   s_mp_grow(mp_int *mp, mp_size min);   
 mp_err   s_mp_pad(mp_int *mp, mp_size min);    
 

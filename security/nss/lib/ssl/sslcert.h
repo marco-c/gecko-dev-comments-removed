@@ -22,13 +22,11 @@
 
 typedef struct sslServerCertTypeStr {
     SSLAuthType authType;
-    union {
-        
+    
 
 
 
-        ECName namedCurve;
-    } u;
+    const namedGroupDef *namedCurve;
 } sslServerCertType;
 
 typedef struct sslServerCertStr {
@@ -39,7 +37,7 @@ typedef struct sslServerCertStr {
     
     CERTCertificate *serverCert;
     CERTCertificateList *serverCertChain;
-    ssl3KeyPair *serverKeyPair;
+    sslKeyPair *serverKeyPair;
     unsigned int serverKeyBits;
     
     SECItemArray *certStatusArray;

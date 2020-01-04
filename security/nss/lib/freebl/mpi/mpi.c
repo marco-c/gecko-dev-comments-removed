@@ -62,10 +62,6 @@ static const char *s_dmap_1 =
 
 
 
-unsigned long mp_allocs;
-unsigned long mp_frees;
-unsigned long mp_copies;
-
 
 
 
@@ -2809,8 +2805,6 @@ inline void s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count)
 #else
   memcpy(dp, sp, count * sizeof(mp_digit));
 #endif
-  ++mp_copies;
-
 } 
 
 
@@ -2820,7 +2814,6 @@ inline void s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count)
 
 inline void *s_mp_alloc(size_t nb, size_t ni)
 {
-  ++mp_allocs;
   return calloc(nb, ni);
 
 } 
@@ -2833,7 +2826,6 @@ inline void *s_mp_alloc(size_t nb, size_t ni)
 inline void s_mp_free(void *ptr)
 {
   if(ptr) {
-    ++mp_frees;
     free(ptr);
   }
 } 

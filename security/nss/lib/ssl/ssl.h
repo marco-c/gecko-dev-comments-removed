@@ -206,6 +206,22 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 #define SSL_ENABLE_SIGNED_CERT_TIMESTAMPS 31
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SSL_REQUIRE_DH_NAMED_GROUPS 32
+
 #ifdef SSL_DEPRECATED_FUNCTION
 
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRBool on);
@@ -356,7 +372,7 @@ SSL_IMPORT unsigned int SSL_SignatureMaxCount();
 
 
 SSL_IMPORT SECStatus SSL_DHEGroupPrefSet(PRFileDesc *fd,
-                                         SSLDHEGroupType *groups,
+                                         const SSLDHEGroupType *groups,
                                          PRUint16 num_groups);
 
 
