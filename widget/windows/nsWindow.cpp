@@ -737,17 +737,17 @@ nsWindow::Create(nsIWidget* aParent,
 }
 
 
-NS_IMETHODIMP nsWindow::Destroy()
+void nsWindow::Destroy()
 {
   
   if (mOnDestroyCalled)
-    return NS_OK;
+    return;
 
   
   
   mDestroyCalled = true;
   if (mPickerDisplayCount)
-    return NS_OK;
+    return;
 
   
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
@@ -781,8 +781,6 @@ NS_IMETHODIMP nsWindow::Destroy()
     mWindowHook.Notify(mWnd, WM_DESTROY, 0, 0, msgResult);
     OnDestroy();
   }
-
-  return NS_OK;
 }
 
 

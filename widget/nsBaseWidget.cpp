@@ -512,7 +512,7 @@ void nsBaseWidget::SetAttachedWidgetListener(nsIWidgetListener* aListener)
 
 
 
-NS_IMETHODIMP nsBaseWidget::Destroy()
+void nsBaseWidget::Destroy()
 {
   
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
@@ -526,8 +526,6 @@ NS_IMETHODIMP nsBaseWidget::Destroy()
   
   mScrollCaptureContainer = nullptr;
 #endif
-
-  return NS_OK;
 }
 
 
