@@ -19,7 +19,8 @@ function dprint(s) {
 
 
 
-var mem = new SharedInt32Array(3);
+var sab = new SharedArrayBuffer(12);
+var mem = new Int32Array(sab);
 
 
 
@@ -30,7 +31,7 @@ assertEq(getSharedArrayBuffer() == null, false);
 
 var v = getSharedArrayBuffer();
 assertEq(v.byteLength, mem.buffer.byteLength); 
-var w = new SharedInt32Array(v);
+var w = new Int32Array(v);
 mem[0] = 314159;
 assertEq(w[0], 314159);		
 mem[0] = 0;
@@ -52,7 +53,6 @@ assertThrowsInstanceOf(() => setSharedArrayBuffer({x:10, y:20}), Error);
 assertThrowsInstanceOf(() => setSharedArrayBuffer([1,2]), Error);
 assertThrowsInstanceOf(() => setSharedArrayBuffer(new ArrayBuffer(10)), Error);
 assertThrowsInstanceOf(() => setSharedArrayBuffer(new Int32Array(10)), Error);
-assertThrowsInstanceOf(() => setSharedArrayBuffer(new SharedInt32Array(10)), Error);
 assertThrowsInstanceOf(() => setSharedArrayBuffer(false), Error);
 assertThrowsInstanceOf(() => setSharedArrayBuffer(3.14), Error);
 assertThrowsInstanceOf(() => setSharedArrayBuffer(mem), Error);
@@ -76,7 +76,7 @@ if (helperThreadCount() === 0) {
 }
 
 evalInWorker(`
-var mem = new SharedInt32Array(getSharedArrayBuffer());
+var mem = new Int32Array(getSharedArrayBuffer());
 function dprint(s) {
     if (mem[2]) print(s);
 }
