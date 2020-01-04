@@ -356,21 +356,16 @@ private:
   public:
     DocshellEntryMonitor(JSContext* aCx, const char* aReason);
 
-    
-    
-    
-    
-    
     void Entry(JSContext* aCx, JSFunction* aFunction,
                JS::Handle<JS::Value> aAsyncStack,
-               const char* aAsyncCause) override
+               JS::Handle<JSString*> aAsyncCause) override
     {
       Entry(aCx, aFunction, nullptr, aAsyncStack, aAsyncCause);
     }
 
     void Entry(JSContext* aCx, JSScript* aScript,
                JS::Handle<JS::Value> aAsyncStack,
-               const char* aAsyncCause) override
+               JS::Handle<JSString*> aAsyncCause) override
     {
       Entry(aCx, nullptr, aScript, aAsyncStack, aAsyncCause);
     }
@@ -380,7 +375,7 @@ private:
   private:
     void Entry(JSContext* aCx, JSFunction* aFunction, JSScript* aScript,
                JS::Handle<JS::Value> aAsyncStack,
-               const char* aAsyncCause);
+               JS::Handle<JSString*> aAsyncCause);
 
     const char* mReason;
   };

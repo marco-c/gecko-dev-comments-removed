@@ -708,7 +708,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     
 
 
-    const char* asyncCauseForNewActivations;
+    JS::PersistentRooted<JSString*> asyncCauseForNewActivations;
 
     
 
