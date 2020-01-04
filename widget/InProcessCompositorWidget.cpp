@@ -3,9 +3,21 @@
 
 
 #include "InProcessCompositorWidget.h"
+#include "nsBaseWidget.h"
 
 namespace mozilla {
 namespace widget {
+
+
+
+#if !defined(XP_WIN)
+ RefPtr<CompositorWidget>
+CompositorWidget::CreateLocal(const CompositorWidgetInitData& aInitData, nsIWidget* aWidget)
+{
+  MOZ_ASSERT(aWidget);
+  return new InProcessCompositorWidget(static_cast<nsBaseWidget*>(aWidget));
+}
+#endif
 
 InProcessCompositorWidget::InProcessCompositorWidget(nsBaseWidget* aWidget)
  : mWidget(aWidget)
