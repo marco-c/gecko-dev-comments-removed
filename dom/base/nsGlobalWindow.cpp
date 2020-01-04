@@ -6181,7 +6181,9 @@ private:
     
     
     
-    eAfterToggle
+    eAfterToggle,
+    
+    eEnd
   };
 
   class Observer final : public nsIObserver
@@ -6227,10 +6229,12 @@ FullscreenTransitionTask::Run()
     return NS_OK;
   }
   if (stage == eBeforeToggle) {
+    PROFILER_MARKER("Fullscreen transition start");
     mWidget->PerformFullscreenTransition(nsIWidget::eBeforeFullscreenToggle,
                                          mDuration.mFadeIn, mTransitionData,
                                          this);
   } else if (stage == eToggleFullscreen) {
+    PROFILER_MARKER("Fullscreen toggle start");
     if (MOZ_UNLIKELY(mWindow->mFullScreen != mFullscreen)) {
       
       
@@ -6270,6 +6274,8 @@ FullscreenTransitionTask::Run()
     mWidget->PerformFullscreenTransition(nsIWidget::eAfterFullscreenToggle,
                                          mDuration.mFadeOut, mTransitionData,
                                          this);
+  } else if (stage == eEnd) {
+    PROFILER_MARKER("Fullscreen transition end");
   }
   return NS_OK;
 }
@@ -6290,6 +6296,7 @@ FullscreenTransitionTask::Observer::Observe(nsISupports* aSubject,
       
       mTask->mTimer->Cancel();
       shouldContinue = true;
+      PROFILER_MARKER("Fullscreen toggle end");
     }
   } else {
 #ifdef DEBUG
@@ -6300,6 +6307,7 @@ FullscreenTransitionTask::Observer::Observe(nsISupports* aSubject,
                "Should only trigger this with the timer the task created");
 #endif
     shouldContinue = true;
+    PROFILER_MARKER("Fullscreen toggle timeout");
   }
   if (shouldContinue) {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
