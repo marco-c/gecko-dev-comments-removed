@@ -5447,6 +5447,13 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
               0, 0, 0, 0);
 
   
+  SetDiscrete(*aRuleData->ValueForTopLayer(), display->mTopLayer,
+              conditions,
+              SETDSC_ENUMERATED | SETDSC_UNSET_INITIAL,
+              parentDisplay->mTopLayer, NS_STYLE_TOP_LAYER_NONE,
+              0, 0, 0, 0);
+
+  
   
   
   display->mOriginalDisplay = display->mDisplay;
@@ -5485,6 +5492,16 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
               SETDSC_ENUMERATED | SETDSC_UNSET_INITIAL,
               parentDisplay->mPosition,
               NS_STYLE_POSITION_STATIC, 0, 0, 0, 0);
+  
+  
+  
+  if (display->mTopLayer != NS_STYLE_TOP_LAYER_NONE &&
+      !display->IsAbsolutelyPositionedStyle()) {
+    display->mPosition = NS_STYLE_POSITION_ABSOLUTE;
+    
+    
+    conditions.SetUncacheable();
+  }
 
   
   SetDiscrete(*aRuleData->ValueForClear(), display->mBreakType, conditions,
