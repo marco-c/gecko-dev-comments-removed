@@ -1103,8 +1103,9 @@ struct FuncImportTls
 
     
     
-    GCPtrFunction fun;
-    static_assert(sizeof(GCPtrFunction) == sizeof(void*), "for JIT access");
+    
+    GCPtrObject obj;
+    static_assert(sizeof(GCPtrObject) == sizeof(void*), "for JIT access");
 };
 
 
