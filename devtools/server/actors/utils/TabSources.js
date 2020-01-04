@@ -259,11 +259,6 @@ TabSources.prototype = {
 
 
   _isMinifiedURL: function (aURL) {
-    
-    if (!aUrl) {
-      return false;
-    }
-
     try {
       let url = new URL(aURL);
       let pathname = url.pathname;
