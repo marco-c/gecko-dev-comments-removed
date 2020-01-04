@@ -1336,7 +1336,7 @@ BrowserGlue.prototype = {
     if (AppConstants.E10S_TESTING_ONLY) {
       E10SUINotification.checkStatus();
     }
-    if (AppConstants.XP_WIN) {
+    if (AppConstants.platform == "win") {
       
       
       E10SAccessibilityCheck.init();
