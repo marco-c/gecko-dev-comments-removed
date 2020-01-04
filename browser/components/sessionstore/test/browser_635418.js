@@ -9,6 +9,12 @@ function test() {
   waitForExplicitFinish();
   
   
+  TabView._initFrame(runTest);
+}
+
+function runTest() {
+  
+  
   Services.prefs.setIntPref("browser.sessionstore.interval", 2000);
 
   

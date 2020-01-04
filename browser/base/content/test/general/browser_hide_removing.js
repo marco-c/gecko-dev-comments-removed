@@ -8,6 +8,12 @@ function test() {
   waitForExplicitFinish();
 
   
+  
+  TabView._initFrame(runTest);
+}
+
+function runTest() {
+  
   let testTab = gBrowser.addTab("about:blank", {skipAnimation: true});
   is(gBrowser.visibleTabs.length, 2, "just added a tab, so 2 tabs");
   gBrowser.selectedTab = testTab;
