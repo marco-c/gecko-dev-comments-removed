@@ -138,6 +138,10 @@ this.UserCustomizations = {
       result.icons = aManifest.icons;
     }
 
+    if (aManifest.version) {
+      result.version = aManifest.version;
+    }
+
     
     
     

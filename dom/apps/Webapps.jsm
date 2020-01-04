@@ -3812,6 +3812,10 @@ this.DOMApplicationRegistry = {
         throw "INVALID_MANIFEST";
       }
       newManifest = UserCustomizations.convertManifest(newManifest);
+      
+      if (newManifest.version) {
+        aNewApp.extensionVersion = newManifest.version;
+      }
     }
 
     if (!AppsUtils.checkManifest(newManifest, aOldApp)) {
