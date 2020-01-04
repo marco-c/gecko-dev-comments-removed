@@ -920,15 +920,31 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     {
         
         
+        IPC_LOG("Prio forbids send");
+        return false;
+    }
+
+    if (mCurrentTransaction &&
+        (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_URGENT ||
+         DispatchingAsyncMessagePriority() == IPC::Message::PRIORITY_URGENT))
+    {
+        
+        
+        
+        MOZ_ASSERT(msg->priority() == IPC::Message::PRIORITY_HIGH);
         return false;
     }
 
     if (mCurrentTransaction &&
         (msg->priority() < DispatchingSyncMessagePriority() ||
-         mAwaitingSyncReplyPriority > msg->priority()))
+         msg->priority() < AwaitingSyncReplyPriority()))
     {
+        MOZ_ASSERT(DispatchingSyncMessage() || DispatchingAsyncMessage());
+        IPC_LOG("Cancel from Send");
+        CancelMessage *cancel = new CancelMessage();
+        cancel->set_transaction_id(mCurrentTransaction);
+        mLink->SendMessage(cancel);
         CancelCurrentTransactionInternal();
-        mLink->SendMessage(new CancelMessage());
     }
 
     IPC_ASSERT(msg->is_sync(), "can only Send() sync messages here");
