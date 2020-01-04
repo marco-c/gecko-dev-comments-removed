@@ -1319,10 +1319,14 @@ nsPlainTextSerializer::AddToLine(const char16_t * aLineFragment,
       }
       
       if (!mLineBreaker) {
-        goodSpace = mWrapColumn-prefixwidth;
-        while (goodSpace >= 0 &&
-               !nsCRT::IsAsciiSpace(mCurrentLine.CharAt(goodSpace))) {
-          goodSpace--;
+        if (mCurrentLine.IsEmpty() || mWrapColumn < prefixwidth) {
+          goodSpace = NS_LINEBREAKER_NEED_MORE_TEXT;
+        } else {
+          goodSpace = std::min(mWrapColumn - prefixwidth, mCurrentLine.Length() - 1);
+          while (goodSpace >= 0 &&
+                 !nsCRT::IsAsciiSpace(mCurrentLine.CharAt(goodSpace))) {
+            goodSpace--;
+          }
         }
       }
       
