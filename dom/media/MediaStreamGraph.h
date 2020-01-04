@@ -631,9 +631,7 @@ protected:
   
   
   
-  
-  
-  TimeVarying<GraphTime,bool,5> mBlocked;
+  GraphTime mStartBlocking;
 
   
   nsTArray<MediaInputPort*> mConsumers;
