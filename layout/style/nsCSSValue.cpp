@@ -2649,36 +2649,6 @@ css::URLValueData::operator==(const URLValueData& aOther) const
 }
 
 bool
-css::URLValueData::MaybeUnresolvedURIEquals(const URLValueData& aOther) const
-{
-  if (!mURIResolved || !aOther.mURIResolved) {
-    return false;
-  }
-
-  return URIEquals(aOther);
-}
-
-bool
-css::URLValueData::URIEquals(const URLValueData& aOther) const
-{
-  MOZ_ASSERT(mURIResolved && aOther.mURIResolved,
-             "How do you know the URIs aren't null?");
-  bool eq;
-  
-  auto& self = *const_cast<URLValueData*>(this);
-  auto& other = const_cast<URLValueData&>(aOther);
-  
-  
-  
-  
-  return (mURI == aOther.mURI ||
-          (NS_SUCCEEDED(mURI->Equals(aOther.mURI, &eq)) && eq)) &&
-         (mOriginPrincipal == aOther.mOriginPrincipal ||
-          self.mOriginPrincipal.get()->Equals(other.mOriginPrincipal.get())) &&
-         mLocalURLFlag == aOther.mLocalURLFlag;
-}
-
-bool
 css::URLValueData::DefinitelyEqualURIs(const URLValueData& aOther) const
 {
   return mBaseURI == aOther.mBaseURI &&
