@@ -21,7 +21,6 @@ var methods = {
     construct: 2,
     defineProperty: 3,
     deleteProperty: 2,
-    
     get: 2,
     getOwnPropertyDescriptor: 2,
     getPrototypeOf: 1,

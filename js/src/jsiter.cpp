@@ -806,7 +806,6 @@ js::GetIterator(JSContext* cx, HandleObject obj, unsigned flags, MutableHandleOb
     
     
     
-    
     if (flags == 0 || flags == JSITER_ENUMERATE) {
         if (obj->is<ProxyObject>())
             return Proxy::enumerate(cx, obj, objp);

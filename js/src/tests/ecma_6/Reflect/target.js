@@ -10,7 +10,6 @@ var methodInfo = {
     construct: [[]],
     defineProperty: ["x", {}],
     deleteProperty: ["x"],
-    
     get: ["x", {}],
     getOwnPropertyDescriptor: ["x"],
     getPrototypeOf: [],

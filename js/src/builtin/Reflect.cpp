@@ -177,33 +177,6 @@ Reflect_deleteProperty(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-#if 0
-
-
-
-
-
-
-
-static bool
-Reflect_enumerate(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    RootedObject obj(cx, NonNullObject(cx, args.get(0)));
-    if (!obj)
-        return false;
-
-    
-    RootedObject iterator(cx);
-    if (!Enumerate(cx, obj, &iterator))
-        return false;
-    args.rval().setObject(*iterator);
-    return true;
-}
-#endif
-
 
 static bool
 Reflect_get(JSContext* cx, unsigned argc, Value* vp)
@@ -380,7 +353,6 @@ static const JSFunctionSpec methods[] = {
     JS_FN("construct", Reflect_construct, 2, 0),
     JS_FN("defineProperty", Reflect_defineProperty, 3, 0),
     JS_FN("deleteProperty", Reflect_deleteProperty, 2, 0),
-    
     JS_FN("get", Reflect_get, 2, 0),
     JS_FN("getOwnPropertyDescriptor", Reflect_getOwnPropertyDescriptor, 2, 0),
     JS_FN("getPrototypeOf", Reflect_getPrototypeOf, 1, 0),
