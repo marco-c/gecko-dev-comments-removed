@@ -444,7 +444,7 @@ HyperTextAccessible::ClosestNotGeneratedDOMPoint(const DOMPoint& aDOMPoint,
 
   
   if (aElementContent &&
-      aElementContent->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore) {
+      aElementContent->IsGeneratedContentContainerForBefore()) {
     MOZ_ASSERT(aElementContent->GetParent(),
                "::before must have parent element");
     
@@ -454,7 +454,7 @@ HyperTextAccessible::ClosestNotGeneratedDOMPoint(const DOMPoint& aDOMPoint,
 
   
   if (aElementContent &&
-      aElementContent->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentafter) {
+      aElementContent->IsGeneratedContentContainerForAfter()) {
     MOZ_ASSERT(aElementContent->GetParent(),
                "::after must have parent element");
     
