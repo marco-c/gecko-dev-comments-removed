@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Object, 'getOwnPropertyDescriptors');
+assertEq(desc.enumerable, false);
+assertEq(desc.writable, true);
+assertEq(desc.configurable, true);

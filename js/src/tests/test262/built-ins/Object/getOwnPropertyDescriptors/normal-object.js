@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Object.getOwnPropertyDescriptors({})),
+  Object.prototype
+);

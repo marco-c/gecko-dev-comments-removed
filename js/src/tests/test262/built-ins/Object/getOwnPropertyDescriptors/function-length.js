@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getOwnPropertyDescriptors.length, 1, 'Expected Object.getOwnPropertyDescriptors.length to be 1');
+
+var desc = Object.getOwnPropertyDescriptor(Object.getOwnPropertyDescriptors, 'length');
+assertEq(desc.enumerable, false);
+assertEq(desc.writable, false);
+assertEq(desc.configurable, true);
