@@ -143,7 +143,7 @@ public:
 
   
   nsresult CopyLastEditableChildStyles(nsIDOMNode *aPreviousBlock, nsIDOMNode *aNewBlock,
-                                       mozilla::dom::Element** aOutBrNode);
+                                         nsIDOMNode **aOutBrNode);
 
   nsresult LoadHTML(const nsAString &aInputString);
 
