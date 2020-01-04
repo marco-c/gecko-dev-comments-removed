@@ -18,6 +18,7 @@ public interface GlobalSyncStage {
     idle,                       
     checkPreconditions,         
     fetchInfoCollections,       
+    fetchInfoConfiguration,     
     fetchMetaGlobal,
     ensureKeysStage,
     

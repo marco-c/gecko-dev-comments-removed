@@ -11,6 +11,7 @@ import org.mozilla.gecko.sync.net.SyncStorageResponse;
 
 
 
+
 public interface JSONRecordFetchDelegate {
   public void handleSuccess(ExtendedJSONObject body);
   public void handleFailure(SyncStorageResponse response);
