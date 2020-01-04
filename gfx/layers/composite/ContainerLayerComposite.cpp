@@ -565,7 +565,7 @@ RenderLayers(ContainerT* aContainer,
     if (layerToRender->HasLayerBeenComposited()) {
       
       
-      layerToRender->SetLayerComposited(false);
+      
       gfx::IntRect clearRect = layerToRender->GetClearRect();
       if (!clearRect.IsEmpty()) {
         

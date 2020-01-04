@@ -762,6 +762,21 @@ LayerManagerComposite::PopGroupForLayerEffects(RefPtr<CompositingRenderTarget> a
                         Matrix4x4());
 }
 
+
+static void
+ClearLayerFlags(Layer* aLayer) {
+  if (!aLayer) {
+    return;
+  }
+  if (aLayer->AsLayerComposite()) {
+    aLayer->AsLayerComposite()->SetLayerComposited(false);
+  }
+  for (Layer* child = aLayer->GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    ClearLayerFlags(child);
+  }
+}
+
 void
 LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion)
 {
@@ -772,6 +787,8 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion)
     NS_WARNING("Call on destroyed layer manager");
     return;
   }
+
+  ClearLayerFlags(mRoot);
 
   
   
