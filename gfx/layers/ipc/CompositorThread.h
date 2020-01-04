@@ -46,6 +46,9 @@ public:
 
   static MessageLoop* Loop();
 
+  
+  static bool IsInCompositorThread();
+
 private:
   ~CompositorThreadHolder();
 

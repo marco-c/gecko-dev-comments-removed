@@ -475,11 +475,6 @@ public:
 
   float ComputeRenderIntegrity();
 
-  
-
-
-  static bool IsInCompositorThread();
-
   widget::CompositorWidgetProxy* GetWidgetProxy() { return mWidgetProxy; }
 
   void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect = nullptr);

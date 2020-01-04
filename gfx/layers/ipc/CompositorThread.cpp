@@ -142,5 +142,12 @@ CompositorThreadHolder::Shutdown()
   CompositorBridgeParent::FinishShutdown();
 }
 
+ bool
+CompositorThreadHolder::IsInCompositorThread()
+{
+  return CompositorThread() &&
+         CompositorThread()->thread_id() == PlatformThread::CurrentId();
+}
+
 } 
 } 
