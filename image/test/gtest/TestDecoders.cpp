@@ -90,10 +90,6 @@ CheckDecoderResults(const ImageTestCase& aTestCase, Decoder* aDecoder)
     return;
   }
 
-  if (aTestCase.mFlags & TEST_CASE_IGNORE_OUTPUT) {
-    return;
-  }
-
   
   EXPECT_TRUE(IsSolidColor(surface, BGRAColor::Green(),
                            aTestCase.mFlags & TEST_CASE_IS_FUZZY ? 1 : 0));
@@ -210,10 +206,6 @@ CheckDownscaleDuringDecode(const ImageTestCase& aTestCase)
     
     EXPECT_TRUE(surface != nullptr);
 
-    if (aTestCase.mFlags & TEST_CASE_IGNORE_OUTPUT) {
-      return;
-    }
-
     
     
     
@@ -298,11 +290,6 @@ TEST(ImageDecoders, ICOMultiChunk)
 TEST(ImageDecoders, ICODownscaleDuringDecode)
 {
   CheckDownscaleDuringDecode(DownscaledICOTestCase());
-}
-
-TEST(ImageDecoders, ICOWithANDMaskDownscaleDuringDecode)
-{
-  CheckDownscaleDuringDecode(DownscaledTransparentICOWithANDMaskTestCase());
 }
 
 TEST(ImageDecoders, IconSingleChunk)
