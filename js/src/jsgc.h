@@ -24,6 +24,7 @@
 
 namespace js {
 
+class AutoLockHelperThreadState;
 unsigned GetCPUCount();
 
 enum ThreadType
@@ -956,7 +957,7 @@ class GCParallelTask
     
     
     bool startWithLockHeld();
-    void joinWithLockHeld();
+    void joinWithLockHeld(AutoLockHelperThreadState& locked);
 
     
     void runFromMainThread(JSRuntime* rt);
@@ -975,7 +976,7 @@ class GCParallelTask
     
     
   public:
-    virtual void runFromHelperThread();
+    virtual void runFromHelperThread(AutoLockHelperThreadState& locked);
 };
 
 typedef void (*IterateChunkCallback)(JSRuntime* rt, void* data, gc::Chunk* chunk);

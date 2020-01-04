@@ -294,7 +294,7 @@ GCRuntime::startBackgroundAllocTaskIfIdle()
 
     
     
-    allocTask.joinWithLockHeld();
+    allocTask.joinWithLockHeld(helperLock);
     allocTask.startWithLockHeld();
 }
 
@@ -335,7 +335,7 @@ GCRuntime::refillFreeListOffMainThread(ExclusiveContext* cx, AllocKind thingKind
     
     AutoLockHelperThreadState lock;
     while (rt->isHeapBusy())
-        HelperThreadState().wait(GlobalHelperThreadState::PRODUCER);
+        HelperThreadState().wait(lock, GlobalHelperThreadState::PRODUCER);
 
     return arenas->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
 }
