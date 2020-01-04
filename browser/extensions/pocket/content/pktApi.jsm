@@ -341,9 +341,8 @@ var pktApi = (function() {
             since: since ? since : 0
         };
 
-        var title = options.title;
-        if (title !== "undefined") {
-            sendData.title = title;
+        if (options.title) {
+            sendData.title = options.title;
         }
 
         return apiRequest({
