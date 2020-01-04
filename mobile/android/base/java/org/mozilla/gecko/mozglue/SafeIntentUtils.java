@@ -24,6 +24,11 @@ public class SafeIntentUtils {
         return new SafeIntent(intent).getBooleanExtra(name, defaultValue);
     }
 
+    
+
+
+
+
     public static class SafeIntent {
         private final Intent intent;
 
