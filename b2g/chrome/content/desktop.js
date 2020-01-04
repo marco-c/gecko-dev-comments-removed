@@ -141,16 +141,6 @@ function initResponsiveDesign() {
 
     
     responsive.enableTouch();
-
-    
-    let width = 320, height = 480;
-    
-    
-    width += 15*2; 
-    width += 1*2; 
-    height += 60; 
-    height += 1; 
-    responsive.setSize(width, height);
   });
 
 
