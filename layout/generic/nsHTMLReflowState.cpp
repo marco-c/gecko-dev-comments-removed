@@ -638,6 +638,29 @@ nsHTMLReflowState::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameT
     
     
     SetBResize(mCBReflowState->IsBResize());
+  } else if (mCBReflowState && !nsLayoutUtils::GetAsBlock(frame)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SetBResize(mCBReflowState->IsBResize());
+    if (ComputedBSize() == NS_AUTOHEIGHT) {
+      SetBResize(IsBResize() || NS_SUBTREE_DIRTY(frame));
+    }
   } else if (ComputedBSize() == NS_AUTOHEIGHT) {
     if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
         mCBReflowState) {
