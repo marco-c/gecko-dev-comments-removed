@@ -225,10 +225,6 @@ gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape)
     } while (shape);
 }
 
-void
-TraceObjectGroupCycleCollectorChildrenCallback(JS::CallbackTracer* trc,
-                                               void** thingp, JS::TraceKind kind);
-
 
 
 
@@ -250,6 +246,12 @@ struct ObjectGroupCycleCollectorTracer : public JS::CallbackTracer
 void
 ObjectGroupCycleCollectorTracer::onChild(const JS::GCCellPtr& thing)
 {
+    if (thing.is<BaseShape>()) {
+        
+        
+        return;
+    }
+
     if (thing.is<JSObject>() || thing.is<JSScript>()) {
         
         
