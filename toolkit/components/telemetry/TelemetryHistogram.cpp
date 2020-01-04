@@ -16,6 +16,7 @@
 
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ToJSValue.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/StartupTimeline.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
@@ -194,7 +195,8 @@ base::StatisticsRecorder* gStatisticsRecorder = nullptr;
 
 
 nsITimer* gIPCTimer = nullptr;
-bool gIPCTimerArmed = false;
+mozilla::Atomic<bool, mozilla::Relaxed> gIPCTimerArmed(false);
+mozilla::Atomic<bool, mozilla::Relaxed> gIPCTimerArming(false);
 StaticAutoPtr<nsTArray<Accumulation>> gAccumulations;
 StaticAutoPtr<nsTArray<KeyedAccumulation>> gKeyedAccumulations;
 
@@ -1239,6 +1241,14 @@ internal_AddonReflector(AddonEntryType *entry, JSContext *cx,
 
 
 
+
+
+
+
+
+
+static StaticMutex gTelemetryHistogramMutex;
+
 namespace {
 
 void
@@ -1268,8 +1278,10 @@ internal_SetHistogramRecordingEnabled(mozilla::Telemetry::ID aID, bool aEnabled)
   MOZ_ASSERT(false, "Telemetry::SetHistogramRecordingEnabled(...) id not found");
 }
 
-void internal_armIPCTimer()
+void internal_armIPCTimerMainThread()
 {
+  MOZ_ASSERT(NS_IsMainThread());
+  gIPCTimerArming = false;
   if (gIPCTimerArmed) {
     return;
   }
@@ -1281,6 +1293,22 @@ void internal_armIPCTimer()
                                     nullptr, kBatchTimeoutMs,
                                     nsITimer::TYPE_ONE_SHOT);
     gIPCTimerArmed = true;
+  }
+}
+
+void internal_armIPCTimer()
+{
+  if (gIPCTimerArmed || gIPCTimerArming) {
+    return;
+  }
+  gIPCTimerArming = true;
+  if (NS_IsMainThread()) {
+    internal_armIPCTimerMainThread();
+  } else {
+    NS_DispatchToMainThread(NS_NewRunnableFunction([]() -> void {
+      StaticMutexAutoLock locker(gTelemetryHistogramMutex);
+      internal_armIPCTimerMainThread();
+    }));
   }
 }
 
@@ -1889,14 +1917,6 @@ internal_WrapAndReturnKeyedHistogram(KeyedHistogram *h, JSContext *cx,
 
 
 
-
-
-
-
-
-
-
-static StaticMutex gTelemetryHistogramMutex;
 
 
 
@@ -2598,10 +2618,10 @@ TelemetryHistogram::GetHistogramSizesofIncludingThis(mozilla::MallocSizeOf
 
 
 
-
 void
 TelemetryHistogram::IPCTimerFired(nsITimer* aTimer, void* aClosure)
 {
+  MOZ_ASSERT(NS_IsMainThread());
   nsTArray<Accumulation> accumulationsToSend;
   nsTArray<KeyedAccumulation> keyedAccumulationsToSend;
   {
