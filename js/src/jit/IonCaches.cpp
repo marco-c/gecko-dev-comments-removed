@@ -4241,29 +4241,18 @@ GetPropertyIC::tryAttachArgumentsElement(JSContext* cx, HandleScript outerScript
         indexReg = index.typedReg().gpr();
         masm.branch32(Assembler::AboveOrEqual, indexReg, tmpReg, &failures);
     }
-    
-    Label failurePopIndex;
-    masm.push(indexReg);
 
     
     masm.loadPrivate(Address(object(), ArgumentsObject::getDataSlotOffset()), tmpReg);
-    masm.loadPtr(Address(tmpReg, offsetof(ArgumentsData, deletedBits)), tmpReg);
-
-    
-    const uint32_t shift = FloorLog2<(sizeof(size_t) * JS_BITS_PER_BYTE)>::value;
-    MOZ_ASSERT(shift == 5 || shift == 6);
-    masm.rshiftPtr(Imm32(shift), indexReg);
-    masm.loadPtr(BaseIndex(tmpReg, indexReg, ScaleFromElemWidth(sizeof(size_t))), tmpReg);
-
-    
-    masm.branchPtr(Assembler::NotEqual, tmpReg, ImmPtr(nullptr), &failurePopIndex);
+    masm.branchPtr(Assembler::NotEqual,
+                   Address(tmpReg, offsetof(ArgumentsData, rareData)),
+                   ImmWord(0),
+                   &failureRestoreIndex);
 
     
     masm.loadPrivate(Address(object(), ArgumentsObject::getDataSlotOffset()), tmpReg);
     masm.addPtr(Imm32(ArgumentsData::offsetOfArgs()), tmpReg);
 
-    
-    masm.pop(indexReg);
     BaseValueIndex elemIdx(tmpReg, indexReg);
 
     
@@ -4279,7 +4268,6 @@ GetPropertyIC::tryAttachArgumentsElement(JSContext* cx, HandleScript outerScript
     attacher.jumpRejoin(masm);
 
     
-    masm.bind(&failurePopIndex);
     masm.pop(indexReg);
     masm.bind(&failureRestoreIndex);
     if (index.hasValue())

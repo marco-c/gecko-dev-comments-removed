@@ -24,6 +24,40 @@ class JitFrameLayout;
 
 
 
+class RareArgumentsData
+{
+    
+    
+    
+    size_t* deletedBits_;
+
+    explicit RareArgumentsData(size_t* deletedBits)
+      : deletedBits_(deletedBits)
+    {}
+
+    RareArgumentsData(const RareArgumentsData&) = delete;
+    void operator=(const RareArgumentsData&) = delete;
+
+  public:
+    static RareArgumentsData* create(JSContext* cx, ArgumentsObject* obj);
+    static size_t bytesRequired(size_t numActuals);
+
+    bool isAnyElementDeleted(size_t len) const {
+        return IsAnyBitArrayElementSet(deletedBits_, len);
+    }
+    bool isElementDeleted(size_t len, size_t i) const {
+        MOZ_ASSERT(i < len);
+        return IsBitArrayElementSet(deletedBits_, len, i);
+    }
+    void markElementDeleted(size_t len, size_t i) const {
+        MOZ_ASSERT(i < len);
+        SetBitArrayElement(deletedBits_, len, i);
+    }
+};
+
+
+
+
 
 
 
@@ -38,6 +72,8 @@ struct ArgumentsData
     
     uint32_t    dataBytes;
 
+    RareArgumentsData* rareData;
+
     
 
 
@@ -46,12 +82,6 @@ struct ArgumentsData
 
     
     JSScript*   script;
-
-    
-
-
-
-    size_t*     deletedBits;
 
     
 
@@ -140,6 +170,18 @@ class ArgumentsObject : public NativeObject
 
     ArgumentsData* data() const {
         return reinterpret_cast<ArgumentsData*>(getFixedSlot(DATA_SLOT).toPrivate());
+    }
+
+    RareArgumentsData* maybeRareData() const {
+        return data()->rareData;
+    }
+
+    MOZ_MUST_USE bool createRareData(JSContext* cx);
+
+    RareArgumentsData* getOrCreateRareData(JSContext* cx) {
+        if (!data()->rareData && !createRareData(cx))
+            return nullptr;
+        return data()->rareData;
     }
 
     static bool obj_delProperty(JSContext* cx, HandleObject obj, HandleId id,
@@ -233,16 +275,14 @@ class ArgumentsObject : public NativeObject
         MOZ_ASSERT(i < data()->numArgs);
         if (i >= initialLength())
             return false;
-        return IsBitArrayElementSet(data()->deletedBits, initialLength(), i);
+        return maybeRareData() && maybeRareData()->isElementDeleted(initialLength(), i);
     }
 
     bool isAnyElementDeleted() const {
-        return IsAnyBitArrayElementSet(data()->deletedBits, initialLength());
+        return maybeRareData() && maybeRareData()->isAnyElementDeleted(initialLength());
     }
 
-    void markElementDeleted(uint32_t i) {
-        SetBitArrayElement(data()->deletedBits, initialLength(), i);
-    }
+    bool markElementDeleted(JSContext* cx, uint32_t i);
 
     
 

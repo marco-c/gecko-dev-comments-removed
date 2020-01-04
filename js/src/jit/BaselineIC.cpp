@@ -2298,28 +2298,19 @@ ICGetElem_Arguments::Compiler::generateStubCode(MacroAssembler& masm)
     regs.takeUnchecked(idxReg);
     regs.take(scratchReg);
     Register argData = regs.takeAny();
-    Register tempReg = regs.takeAny();
 
     
     masm.loadPrivate(Address(objReg, ArgumentsObject::getDataSlotOffset()), argData);
 
     
-    masm.loadPtr(Address(argData, offsetof(ArgumentsData, deletedBits)), scratchReg);
-
-    
-    masm.movePtr(idxReg, tempReg);
-    const uint32_t shift = mozilla::tl::FloorLog2<(sizeof(size_t) * JS_BITS_PER_BYTE)>::value;
-    MOZ_ASSERT(shift == 5 || shift == 6);
-    masm.rshiftPtr(Imm32(shift), tempReg);
-    masm.loadPtr(BaseIndex(scratchReg, tempReg, ScaleFromElemWidth(sizeof(size_t))), scratchReg);
-
-    
-    masm.branchPtr(Assembler::NotEqual, scratchReg, ImmPtr(nullptr), &failureReconstructInputs);
+    masm.branchPtr(Assembler::NotEqual,
+                   Address(argData, offsetof(ArgumentsData, rareData)),
+                   ImmWord(0),
+                   &failureReconstructInputs);
 
     
     masm.addPtr(Imm32(ArgumentsData::offsetOfArgs()), argData);
     regs.add(scratchReg);
-    regs.add(tempReg);
     ValueOperand tempVal = regs.takeAnyValue();
     masm.loadValue(BaseValueIndex(argData, idxReg), tempVal);
 
