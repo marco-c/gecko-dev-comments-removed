@@ -255,7 +255,7 @@ var gSearchPane = {
 
       
       let engines = gEngineView._engineStore.engines;
-      for each (let engine in engines) {
+      for (let engine of engines) {
         if (engine.alias == aNewKeyword &&
             engine.name != aEngine.name) {
           eduplicate = true;
@@ -337,11 +337,7 @@ EngineStore.prototype = {
   },
 
   _getEngineByName: function ES_getEngineByName(aName) {
-    for each (var engine in this._engines)
-      if (engine.name == aName)
-        return engine;
-
-    return null;
+    return this._engines.find(engine => engine.name == aName);
   },
 
   _cloneEngine: function ES_cloneEngine(aEngine) {
