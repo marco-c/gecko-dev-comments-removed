@@ -751,6 +751,25 @@ nsLayoutUtils::FindContentFor(ViewID aId)
   }
 }
 
+nsIFrame*
+GetScrollFrameFromContent(nsIContent* aContent)
+{
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+  if (aContent->OwnerDoc()->GetRootElement() == aContent) {
+    nsIPresShell* presShell = frame ? frame->PresContext()->PresShell() : nullptr;
+    if (!presShell) {
+      presShell = aContent->OwnerDoc()->GetShell();
+    }
+    
+    
+    nsIFrame* rootScrollFrame = presShell ? presShell->GetRootScrollFrame() : nullptr;
+    if (rootScrollFrame) {
+      frame = rootScrollFrame;
+    }
+  }
+  return frame;
+}
+
 nsIScrollableFrame*
 nsLayoutUtils::FindScrollableFrameFor(ViewID aId)
 {
@@ -759,13 +778,8 @@ nsLayoutUtils::FindScrollableFrameFor(ViewID aId)
     return nullptr;
   }
 
-  nsIFrame* scrolledFrame = content->GetPrimaryFrame();
-  if (scrolledFrame && content->OwnerDoc()->GetRootElement() == content) {
-    
-    
-    scrolledFrame = scrolledFrame->PresContext()->PresShell()->GetRootScrollFrame();
-  }
-  return scrolledFrame ? scrolledFrame->GetScrollTargetFrame() : nullptr;
+  nsIFrame* scrollFrame = GetScrollFrameFromContent(content);
+  return scrollFrame ? scrollFrame->GetScrollTargetFrame() : nullptr;
 }
 
 static nsRect
@@ -860,25 +874,6 @@ GetDisplayPortFromRectData(nsIContent* aContent,
   
   
   return ApplyRectMultiplier(aRectData->mRect, aMultiplier);
-}
-
-nsIFrame*
-GetScrollFrameFromContent(nsIContent* aContent)
-{
-  nsIFrame* frame = aContent->GetPrimaryFrame();
-  if (aContent->OwnerDoc()->GetRootElement() == aContent) {
-    nsIPresShell* presShell = frame ? frame->PresContext()->PresShell() : nullptr;
-    if (!presShell) {
-      presShell = aContent->OwnerDoc()->GetShell();
-    }
-    
-    
-    nsIFrame* rootScrollFrame = presShell ? presShell->GetRootScrollFrame() : nullptr;
-    if (rootScrollFrame) {
-      frame = rootScrollFrame;
-    }
-  }
-  return frame;
 }
 
 static nsRect
