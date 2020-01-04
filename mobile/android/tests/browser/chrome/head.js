@@ -1,6 +1,10 @@
 
 
 
+function fuzzyEquals(a, b) {
+  return (Math.abs(a - b) < 1e-6);
+}
+
 function promiseBrowserEvent(browser, eventType) {
   return new Promise((resolve) => {
     function handle(event) {
