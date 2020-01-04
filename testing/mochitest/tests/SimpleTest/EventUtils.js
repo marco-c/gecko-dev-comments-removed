@@ -1569,9 +1569,38 @@ const QUERY_CONTENT_FLAG_SELECTION_FIND                      = 0x0080;
 const QUERY_CONTENT_FLAG_SELECTION_URLSECONDARY              = 0x0100;
 const QUERY_CONTENT_FLAG_SELECTION_URLSTRIKEOUT              = 0x0200;
 
+const QUERY_CONTENT_FLAG_OFFSET_RELATIVE_TO_INSERTION_POINT  = 0x0400;
+
 const SELECTION_SET_FLAG_USE_NATIVE_LINE_BREAK          = 0x0000;
 const SELECTION_SET_FLAG_USE_XP_LINE_BREAK              = 0x0001;
 const SELECTION_SET_FLAG_REVERSE                        = 0x0002;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function synthesizeQueryTextContent(aOffset, aLength, aIsRelative, aWindow)
+{
+  var utils = _getDOMWindowUtils(aWindow);
+  if (!utils) {
+    return nullptr;
+  }
+  var flags = QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK;
+  if (aIsRelative === true) {
+    flags |= QUERY_CONTENT_FLAG_OFFSET_RELATIVE_TO_INSERTION_POINT;
+  }
+  return utils.sendQueryContentEvent(utils.QUERY_TEXT_CONTENT,
+                                     aOffset, aLength, 0, 0, flags);
+}
 
 
 

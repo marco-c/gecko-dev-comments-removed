@@ -23,28 +23,6 @@ scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtil
 
 
 
-function synthesizeQueryTextContent(aOffset, aLength, aWindow)
-{
-  var utils = _getDOMWindowUtils(aWindow);
-  if (!utils) {
-    return nullptr;
-  }
-  return utils.sendQueryContentEvent(utils.QUERY_TEXT_CONTENT,
-                                     aOffset, aLength, 0, 0,
-                                     QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK);
-}
-
-
-
-
-
-
-
-
-
-
-
-
 function synthesizeQueryTextRect(aOffset, aLength, aWindow)
 {
   var utils = _getDOMWindowUtils(aWindow);
