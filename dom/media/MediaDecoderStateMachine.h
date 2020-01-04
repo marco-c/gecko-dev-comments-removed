@@ -1188,13 +1188,6 @@ private:
   const RefPtr<OutputStreamManager> mOutputStreamManager;
 
   
-  
-  
-  
-  
-  RefPtr<DecodedStream> mStreamSink;
-
-  
   RefPtr<MediaResource> mResource;
 
   

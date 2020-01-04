@@ -337,9 +337,6 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
 {
   MOZ_ASSERT(OnTaskQueue());
 
-  mStreamSink = new DecodedStream(mTaskQueue, mAudioQueue, mVideoQueue,
-                                  mOutputStreamManager, mSameOriginMedia.Ref());
-
   
   mBuffered.Connect(mReader->CanonicalBuffered());
   mEstimatedDuration.Connect(aDecoder->CanonicalEstimatedDuration());
@@ -389,11 +386,10 @@ MediaDecoderStateMachine::CreateAudioSink()
 already_AddRefed<media::MediaSink>
 MediaDecoderStateMachine::CreateMediaSink(bool aAudioCaptured)
 {
-  
-  
-  
-  RefPtr<media::MediaSink> audioSink = aAudioCaptured ?
-    mStreamSink : CreateAudioSink();
+  RefPtr<media::MediaSink> audioSink = aAudioCaptured
+    ? new DecodedStream(mTaskQueue, mAudioQueue, mVideoQueue,
+                        mOutputStreamManager, mSameOriginMedia.Ref())
+    : CreateAudioSink();
 
   RefPtr<media::MediaSink> mediaSink =
     new VideoSink(mTaskQueue, audioSink, mVideoQueue,
