@@ -5,22 +5,8 @@
 
 const { Ci, ChromeWorker } = require("chrome");
 const Services = require("Services");
-const EventEmitter = require("devtools/shared/event-emitter");
-
-const HOTRELOAD_PREF = "devtools.loader.hotreload";
-
-function resolveResourcePath(uri) {
-  const handler = Services.io.getProtocolHandler("resource")
-        .QueryInterface(Ci.nsIResProtocolHandler);
-  const resolved = handler.resolveURI(Services.io.newURI(uri, null, null));
-  return resolved.replace(/file:\/\//, "");
-}
 
 function watchFiles(path, onFileChanged) {
-  if (!path.startsWith("devtools/")) {
-    throw new Error("`watchFiles` expects a devtools path");
-  }
-
   const watchWorker = new ChromeWorker(
     "resource://devtools/client/shared/file-watcher-worker.js"
   );
@@ -30,35 +16,14 @@ function watchFiles(path, onFileChanged) {
     
     
     
-    const { relativePath, fullPath } = event.data;
-    onFileChanged(relativePath, fullPath);
+    const { path } = event.data;
+    onFileChanged(path);
   };
 
   watchWorker.postMessage({
-    path: path,
-    
-    
-    devtoolsPath: resolveResourcePath("resource://devtools"),
-    fileRegex: /\.(js|css|svg|png)$/ });
+    path,
+    fileRegex: /\.(js|css|svg|png)$/
+  });
   return watchWorker;
 }
-
-EventEmitter.decorate(module.exports);
-
-let watchWorker;
-function onPrefChange() {
-  if (Services.prefs.getBoolPref(HOTRELOAD_PREF) && !watchWorker) {
-    watchWorker = watchFiles("devtools/client", (relativePath, fullPath) => {
-      module.exports.emit("file-changed", relativePath, fullPath);
-    });
-  } else if (watchWorker) {
-    watchWorker.terminate();
-    watchWorker = null;
-  }
-}
-
-Services.prefs.addObserver(HOTRELOAD_PREF, {
-  observe: onPrefChange
-}, false);
-
-onPrefChange();
+exports.watchFiles = watchFiles;

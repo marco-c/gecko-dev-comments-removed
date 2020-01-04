@@ -9,17 +9,6 @@ importScripts("resource://gre/modules/osfile.jsm");
 
 const modifiedTimes = new Map();
 
-function findSourceDir(path) {
-  if (path === "" || path === "/") {
-    return null;
-  } else if (OS.File.exists(
-    OS.Path.join(path, "devtools/client/shared/file-watcher.js")
-  )) {
-    return path;
-  }
-  return findSourceDir(OS.Path.dirname(path));
-}
-
 function gatherFiles(path, fileRegex) {
   let files = [];
   const iterator = new OS.File.DirectoryIterator(path);
@@ -71,28 +60,8 @@ function scanFiles(files, onChangedFile) {
 
 onmessage = function(event) {
   const { path, fileRegex } = event.data;
-  const devtoolsPath = event.data.devtoolsPath.replace(/\/$/, "");
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const searchPoint = OS.Path.dirname(OS.Path.dirname(devtoolsPath));
-  const srcPath = findSourceDir(searchPoint);
-  const rootPath = srcPath ? OS.Path.join(srcPath, "devtools") : devtoolsPath;
-  const watchPath = OS.Path.join(rootPath, path.replace(/^devtools\//, ""));
-
-  const info = OS.File.stat(watchPath);
+  const info = OS.File.stat(path);
   if (!info.isDir) {
     throw new Error("Watcher expects a directory as root path");
   }
@@ -100,14 +69,13 @@ onmessage = function(event) {
   
   
   
-  const files = gatherFiles(watchPath, fileRegex || /.*/);
+  const files = gatherFiles(path, fileRegex || /.*/);
 
   
   
   setInterval(() => {
     scanFiles(files, changedFile => {
-      postMessage({ fullPath: changedFile,
-                    relativePath: changedFile.replace(rootPath + "/", "") });
+      postMessage({ path: changedFile });
     });
   }, 1000);
 };
