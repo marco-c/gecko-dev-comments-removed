@@ -30,9 +30,9 @@ class WrapperOwner : public virtual JavaScriptShared
     
     
     bool getOwnPropertyDescriptor(JSContext* cx, JS::HandleObject proxy, JS::HandleId id,
-                                  JS::MutableHandle<JSPropertyDescriptor> desc);
+                                  JS::MutableHandle<JS::PropertyDescriptor> desc);
     bool defineProperty(JSContext* cx, JS::HandleObject proxy, JS::HandleId id,
-                        JS::Handle<JSPropertyDescriptor> desc,
+                        JS::Handle<JS::PropertyDescriptor> desc,
                         JS::ObjectOpResult& result);
     bool ownPropertyKeys(JSContext* cx, JS::HandleObject proxy, JS::AutoIdVector& props);
     bool delete_(JSContext* cx, JS::HandleObject proxy, JS::HandleId id,
@@ -49,7 +49,7 @@ class WrapperOwner : public virtual JavaScriptShared
 
     
     bool getPropertyDescriptor(JSContext* cx, JS::HandleObject proxy, JS::HandleId id,
-                               JS::MutableHandle<JSPropertyDescriptor> desc);
+                               JS::MutableHandle<JS::PropertyDescriptor> desc);
     bool hasOwn(JSContext* cx, JS::HandleObject proxy, JS::HandleId id, bool* bp);
     bool getOwnEnumerablePropertyKeys(JSContext* cx, JS::HandleObject proxy,
                                       JS::AutoIdVector& props);

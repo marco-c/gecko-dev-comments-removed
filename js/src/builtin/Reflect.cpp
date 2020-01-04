@@ -140,7 +140,7 @@ Reflect_defineProperty(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    Rooted<JSPropertyDescriptor> desc(cx);
+    Rooted<PropertyDescriptor> desc(cx);
     if (!ToPropertyDescriptor(cx, args.get(2), true, &desc))
         return false;
 
