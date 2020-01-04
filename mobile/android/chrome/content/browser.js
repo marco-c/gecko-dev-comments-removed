@@ -2998,8 +2998,7 @@ var NativeWindow = {
       if (href)
         return href;
 
-      href = aLink.getAttribute("href") ||
-             aLink.getAttributeNS(kXLinkNamespace, "href");
+      href = aLink.getAttributeNS(kXLinkNamespace, "href");
       if (!href || !href.match(/\S/)) {
         
         
@@ -6788,6 +6787,8 @@ var Distribution = {
   
   _file: null,
 
+  _preferencesJSON: null,
+
   init: function dc_init() {
     Services.obs.addObserver(this, "Distribution:Changed", false);
     Services.obs.addObserver(this, "Distribution:Set", false);
@@ -6813,6 +6814,13 @@ var Distribution = {
         
 
       case "Distribution:Set":
+        if (aData) {
+          try {
+            this._preferencesJSON = JSON.parse(aData);
+          } catch (e) {
+            console.log("Invalid distribution JSON.");
+          }
+        }
         
         Services.prefs.QueryInterface(Ci.nsIObserver).observe(null, "reload-default-prefs", null);
         this.installDistroAddons();
@@ -6847,6 +6855,12 @@ var Distribution = {
   },
 
   getPrefs: function dc_getPrefs() {
+    if (this._preferencesJSON) {
+        this.applyPrefs(this._preferencesJSON);
+        this._preferencesJSON = null;
+        return;
+    }
+
     
     let file = FileUtils.getDir("XREAppDist", [], false);
     if (!file.exists())
