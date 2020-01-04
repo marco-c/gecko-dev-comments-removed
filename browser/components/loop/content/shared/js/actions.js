@@ -471,6 +471,13 @@ loop.shared.actions = (function() {
     
 
 
+    UserAgentHandlesRoom: Action.define("userAgentHandlesRoom", {
+      handlesRoom: Boolean
+    }),
+
+    
+
+
 
     UpdateSocialShareInfo: Action.define("updateSocialShareInfo", {
       socialShareProviders: Array
@@ -481,6 +488,16 @@ loop.shared.actions = (function() {
 
 
     JoinRoom: Action.define("joinRoom", {
+    }),
+
+    
+
+
+
+
+    MetricsLogJoinRoom: Action.define("metricsLogJoinRoom", {
+      userAgentHandledRoom: Boolean
+      
     }),
 
     

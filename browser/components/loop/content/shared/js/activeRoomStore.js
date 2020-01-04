@@ -134,6 +134,9 @@ loop.store.ActiveRoomStore = (function() {
         failureReason: undefined,
         
         
+        userAgentHandlesRoom: undefined,
+        
+        
         
         
         used: false,
@@ -237,6 +240,7 @@ loop.store.ActiveRoomStore = (function() {
         "roomFailure",
         "retryAfterRoomFailure",
         "updateRoomInfo",
+        "userAgentHandlesRoom",
         "gotMediaPermission",
         "joinRoom",
         "joinedRoom",
@@ -328,6 +332,9 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
+
+
+
     fetchServerData: function(actionData) {
       if (actionData.windowType !== "room") {
         
@@ -342,68 +349,144 @@ loop.store.ActiveRoomStore = (function() {
 
       this._registerPostSetupActions();
 
-      this._getRoomDataForStandalone(actionData.cryptoKey);
+      var dataPromise = this._getRoomDataForStandalone(actionData.cryptoKey);
+
+      var userAgentHandlesPromise = this._promiseDetectUserAgentHandles();
+
+      return Promise.all([dataPromise, userAgentHandlesPromise]).then(function(results) {
+        results.forEach(function(result) {
+          this.dispatcher.dispatch(result);
+        }.bind(this));
+      }.bind(this));
     },
 
+    
+
+
+
+
+
+
     _getRoomDataForStandalone: function(roomCryptoKey) {
-      this._mozLoop.rooms.get(this._storeState.roomToken, function(err, result) {
-        if (err) {
-          this.dispatchAction(new sharedActions.RoomFailure({
-            error: err,
-            failedJoinRequest: false
+      return new Promise(function(resolve, reject) {
+        this._mozLoop.rooms.get(this._storeState.roomToken, function(err, result) {
+          if (err) {
+            resolve(new sharedActions.RoomFailure({
+              error: err,
+              failedJoinRequest: false
+            }));
+            return;
+          }
+
+          var roomInfoData = new sharedActions.UpdateRoomInfo({
+            
+            
+            
+            
+            roomState: ROOM_STATES.READY,
+            roomUrl: result.roomUrl
+          });
+
+          if (!result.context && !result.roomName) {
+            roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.NO_DATA;
+            resolve(roomInfoData);
+            return;
+          }
+
+          
+          if (result.roomName && !result.context) {
+            roomInfoData.roomName = result.roomName;
+            resolve(roomInfoData);
+            return;
+          }
+
+          if (!crypto.isSupported()) {
+            roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.WEB_CRYPTO_UNSUPPORTED;
+            resolve(roomInfoData);
+            return;
+          }
+
+          if (!roomCryptoKey) {
+            roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.NO_CRYPTO_KEY;
+            resolve(roomInfoData);
+            return;
+          }
+
+          crypto.decryptBytes(roomCryptoKey, result.context.value)
+                .then(function(decryptedResult) {
+            var realResult = JSON.parse(decryptedResult);
+
+            roomInfoData.roomDescription = realResult.description;
+            roomInfoData.roomContextUrls = realResult.urls;
+            roomInfoData.roomName = realResult.roomName;
+
+            resolve(roomInfoData);
+          }, function(error) {
+            roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.DECRYPT_FAILED;
+            resolve(roomInfoData);
+          });
+        }.bind(this));
+      }.bind(this));
+    },
+
+    
+
+
+
+
+
+
+    _promiseDetectUserAgentHandles: function() {
+      return new Promise(function(resolve, reject) {
+        function resolveWithNotHandlingResponse() {
+          resolve(new sharedActions.UserAgentHandlesRoom({
+            handlesRoom: false
           }));
-          return;
         }
 
-        var roomInfoData = new sharedActions.UpdateRoomInfo({
-          
-          
-          
-          
-          roomState: ROOM_STATES.READY,
-          roomUrl: result.roomUrl
-        });
-
-        if (!result.context && !result.roomName) {
-          roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.NO_DATA;
-          this.dispatcher.dispatch(roomInfoData);
+        
+        
+        if (!loop.shared.utils.isFirefox(navigator.userAgent)) {
+          resolveWithNotHandlingResponse();
           return;
         }
 
         
-        if (result.roomName && !result.context) {
-          roomInfoData.roomName = result.roomName;
-          this.dispatcher.dispatch(roomInfoData);
-          return;
+        var timer = setTimeout(resolveWithNotHandlingResponse, 250);
+        var webChannelListenerFunc;
+
+        
+        function webChannelListener(e) {
+          if (e.detail.id !== "loop-link-clicker") {
+            return;
+          }
+
+          
+          clearTimeout(timer);
+
+          
+          window.removeEventListener("WebChannelMessageToContent", webChannelListenerFunc);
+
+          
+          resolve(new sharedActions.UserAgentHandlesRoom({
+            handlesRoom: !!e.detail.message && e.detail.message.response
+          }));
         }
 
-        if (!crypto.isSupported()) {
-          roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.WEB_CRYPTO_UNSUPPORTED;
-          this.dispatcher.dispatch(roomInfoData);
-          return;
-        }
+        webChannelListenerFunc = webChannelListener.bind(this);
 
-        if (!roomCryptoKey) {
-          roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.NO_CRYPTO_KEY;
-          this.dispatcher.dispatch(roomInfoData);
-          return;
-        }
+        window.addEventListener("WebChannelMessageToContent", webChannelListenerFunc);
 
-        var dispatcher = this.dispatcher;
-
-        crypto.decryptBytes(roomCryptoKey, result.context.value)
-              .then(function(decryptedResult) {
-          var realResult = JSON.parse(decryptedResult);
-
-          roomInfoData.roomDescription = realResult.description;
-          roomInfoData.roomContextUrls = realResult.urls;
-          roomInfoData.roomName = realResult.roomName;
-
-          dispatcher.dispatch(roomInfoData);
-        }, function(error) {
-          roomInfoData.roomInfoFailure = ROOM_INFO_FAILURES.DECRYPT_FAILED;
-          dispatcher.dispatch(roomInfoData);
-        });
+        
+        window.dispatchEvent(new window.CustomEvent("WebChannelMessageToChrome", {
+          detail: {
+            id: "loop-link-clicker",
+            message: {
+              command: "checkWillOpenRoom",
+              roomToken: this._storeState.roomToken
+            }
+          }
+        }));
       }.bind(this));
     },
 
@@ -424,6 +507,18 @@ loop.store.ActiveRoomStore = (function() {
         }
       });
       this.setStoreState(newState);
+    },
+
+    
+
+
+
+
+
+    userAgentHandlesRoom: function(actionData) {
+      this.setStoreState({
+        userAgentHandlesRoom: actionData.handlesRoom
+      });
     },
 
     
@@ -479,12 +574,9 @@ loop.store.ActiveRoomStore = (function() {
     
 
 
-    joinRoom: function() {
-      
-      if (this.getStoreState().failureReason) {
-        this.setStoreState({failureReason: undefined});
-      }
 
+
+    _checkDevicesAndJoinRoom: function() {
       
       
       
@@ -499,6 +591,77 @@ loop.store.ActiveRoomStore = (function() {
           }));
         }
       }.bind(this));
+    },
+
+    
+
+
+    _handoffRoomJoin: function() {
+      var channelListener;
+
+      function handleRoomJoinResponse(e) {
+        if (e.detail.id !== "loop-link-clicker") {
+          return;
+        }
+
+        window.removeEventListener("WebChannelMessageToContent", channelListener);
+
+        if (!e.detail.message || !e.detail.message.response) {
+          
+          
+          console.error("Firefox didn't handle room it said it could.");
+        } else {
+          this.dispatcher.dispatch(new sharedActions.JoinedRoom({
+            apiKey: "",
+            sessionToken: "",
+            sessionId: "",
+            expires: 0
+          }));
+        }
+      }
+
+      channelListener = handleRoomJoinResponse.bind(this);
+
+      window.addEventListener("WebChannelMessageToContent", channelListener);
+
+      
+      window.dispatchEvent(new window.CustomEvent("WebChannelMessageToChrome", {
+        detail: {
+          id: "loop-link-clicker",
+          message: {
+            command: "openRoom",
+            roomToken: this._storeState.roomToken
+          }
+        }
+      }));
+    },
+
+    
+
+
+    joinRoom: function() {
+      
+      if (this.getStoreState().failureReason) {
+        this.setStoreState({ failureReason: undefined });
+      }
+
+      
+      
+      if (this._storeState.standalone && this._storeState.userAgentHandlesRoom) {
+        this.dispatcher.dispatch(new sharedActions.MetricsLogJoinRoom({
+          userAgentHandledRoom: true,
+          ownRoom: true
+        }));
+        this._handoffRoomJoin();
+        return;
+      }
+
+      this.dispatcher.dispatch(new sharedActions.MetricsLogJoinRoom({
+        userAgentHandledRoom: false
+      }));
+
+      
+      this._checkDevicesAndJoinRoom();
     },
 
     
@@ -540,6 +703,15 @@ loop.store.ActiveRoomStore = (function() {
 
 
     joinedRoom: function(actionData) {
+      
+      
+      if (this._storeState.standalone && this._storeState.userAgentHandlesRoom) {
+        this.setStoreState({
+          roomState: ROOM_STATES.JOINED
+        });
+        return;
+      }
+
       this.setStoreState({
         apiKey: actionData.apiKey,
         sessionToken: actionData.sessionToken,
