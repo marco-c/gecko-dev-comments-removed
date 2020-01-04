@@ -177,7 +177,10 @@ SeekTask::GetSeekJob()
 bool
 SeekTask::Exists() const
 {
-  return mSeekJob.Exists();
+  
+  
+  
+  return !mSeekTaskPromise.IsEmpty() || mSeekJob.Exists();
 }
 
 RefPtr<SeekTask::SeekTaskPromise>
