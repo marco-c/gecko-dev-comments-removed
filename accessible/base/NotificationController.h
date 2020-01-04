@@ -249,42 +249,8 @@ private:
   
 
 
-  class ContentInsertion
-  {
-  public:
-    ContentInsertion(DocAccessible* aDocument, Accessible* aContainer);
-
-    NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ContentInsertion)
-    NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ContentInsertion)
-
-    bool InitChildList(nsIContent* aStartChildNode, nsIContent* aEndChildNode);
-    void Process();
-
-  protected:
-    virtual ~ContentInsertion() { mDocument = nullptr; }
-
-  private:
-    ContentInsertion();
-    ContentInsertion(const ContentInsertion&);
-    ContentInsertion& operator = (const ContentInsertion&);
-
-    
-    
-    
-    DocAccessible* mDocument;
-
-    
-    RefPtr<Accessible> mContainer;
-
-    
-    nsTArray<nsCOMPtr<nsIContent> > mInsertedContent;
-  };
-
-  
-
-
-
-  nsTArray<RefPtr<ContentInsertion> > mContentInsertions;
+  nsClassHashtable<nsRefPtrHashKey<Accessible>,
+                   nsTArray<nsCOMPtr<nsIContent>>> mContentInsertions;
 
   template<class T>
   class nsCOMPtrHashKey : public PLDHashEntryHdr
