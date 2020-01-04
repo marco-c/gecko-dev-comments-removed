@@ -114,6 +114,12 @@ add_task(function checkAllTheCSS() {
   
   
   let allPromises = [];
+
+  
+  let isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
+  let devtoolsPathBits = ["webide", "devtools"];
+  uris = uris.filter(uri => isDevtools == devtoolsPathBits.some(path => uri.spec.includes(path)));
+
   for (let uri of uris) {
     let linkEl = doc.createElement("link");
     linkEl.setAttribute("rel", "stylesheet");
