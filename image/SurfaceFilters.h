@@ -515,11 +515,12 @@ protected:
 
     
     
-    mNext.template WriteRows<uint32_t>([&](uint32_t* aRow, uint32_t aLength) {
-      memset(rowPtr, 0, aLength * sizeof(uint32_t));
+    mNext.template WriteRows<uint32_t>([](uint32_t* aRow, uint32_t aLength) {
+      memset(aRow, 0, aLength * sizeof(uint32_t));
       return Nothing();
     });
 
+    mRow = InputSize().height;
     return nullptr;  
   }
 
