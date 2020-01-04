@@ -2271,10 +2271,59 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   nsDisplayListBuilder::AutoBuildingDisplayList
     buildingDisplayList(aBuilder, this, dirtyRect, true);
 
+  
+  
+  
+  
+  enum class ContainerItemType : uint8_t {
+    eNone = 0,
+    eOwnLayerIfNeeded,
+    eBlendMode,
+    eFixedPosition,
+    eStickyPosition,
+    eOwnLayerForTransformWithRoundedClip,
+    ePerspective,
+    eTransform,
+    eSeparatorTransforms,
+    eOpacity,
+    eSVGEffects,
+    eBlendContainer
+  };
+
   DisplayListClipState::AutoSaveRestore clipState(aBuilder);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  ContainerItemType clipCapturedBy = ContainerItemType::eNone;
+  if (useFixedPosition) {
+    clipCapturedBy = ContainerItemType::eFixedPosition;
+  } else if (useStickyPosition) {
+    clipCapturedBy = ContainerItemType::eStickyPosition;
+  } else if (isTransformed) {
+    if ((hasPerspective || extend3DContext) && clipState.SavedStateHasRoundedCorners()) {
+      
+      
+      
+      
+      
+      clipCapturedBy = ContainerItemType::eOwnLayerForTransformWithRoundedClip;
+    } else if (hasPerspective) {
+      clipCapturedBy = ContainerItemType::ePerspective;
+    } else {
+      clipCapturedBy = ContainerItemType::eTransform;
+    }
+  } else if (usingSVGEffects) {
+    clipCapturedBy = ContainerItemType::eSVGEffects;
+  }
+
   bool clearClip = false;
-  if (isTransformed || usingSVGEffects || useFixedPosition || useStickyPosition) {
+  if (clipCapturedBy != ContainerItemType::eNone) {
     
     
     
@@ -2411,18 +2460,15 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                                      containerItemScrollClip));
   }
 
-  if (!isTransformed && !useFixedPosition && !useStickyPosition) {
-    
-    
-    clipState.ExitStackingContextContents(&containerItemScrollClip);
-  }
-
   
 
 
 
 
   if (usingSVGEffects) {
+    if (clipCapturedBy == ContainerItemType::eSVGEffects) {
+      clipState.ExitStackingContextContents(&containerItemScrollClip);
+    }
     
     buildingDisplayList.SetDirtyRect(dirtyRectOutsideSVGEffects);
     
@@ -2488,19 +2534,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     resultList.AppendToTop(&participants);
   }
 
-  
-
-
-
-
-  bool needsLayerForMask = isTransformed && (extend3DContext || hasPerspective) &&
-                           clipState.SavedStateHasRoundedCorners();
-  NS_ASSERTION(!Combines3DTransformWithAncestors() || !clipState.SavedStateHasRoundedCorners(),
-               "Can't support mask layers on intermediate preserve-3d frames");
-
   if (isTransformed && !resultList.IsEmpty()) {
-    
-    if (!hasPerspective && !useFixedPosition && !useStickyPosition && !needsLayerForMask) {
+    if (clipCapturedBy == ContainerItemType::eTransform) {
+      
       clipState.ExitStackingContextContents(&containerItemScrollClip);
     }
     
@@ -2529,7 +2565,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     }
 
     if (hasPerspective) {
-      if (!useFixedPosition && !useStickyPosition && !needsLayerForMask) {
+      if (clipCapturedBy == ContainerItemType::ePerspective) {
         clipState.ExitStackingContextContents(&containerItemScrollClip);
       }
       resultList.AppendNewToTop(
@@ -2539,11 +2575,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  if (useFixedPosition || useStickyPosition || needsLayerForMask) {
+  if (clipCapturedBy == ContainerItemType::eOwnLayerForTransformWithRoundedClip) {
     clipState.ExitStackingContextContents(&containerItemScrollClip);
-  }
-
-  if (needsLayerForMask) {
     resultList.AppendNewToTop(
       new (aBuilder) nsDisplayOwnLayer(aBuilder, this, &resultList, 0,
                                        mozilla::layers::FrameMetrics::NULL_SCROLL_ID,
@@ -2553,9 +2586,15 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
 
   if (useFixedPosition) {
+    if (clipCapturedBy == ContainerItemType::eFixedPosition) {
+      clipState.ExitStackingContextContents(&containerItemScrollClip);
+    }
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplayFixedPosition(aBuilder, this, &resultList));
   } else if (useStickyPosition) {
+    if (clipCapturedBy == ContainerItemType::eStickyPosition) {
+      clipState.ExitStackingContextContents(&containerItemScrollClip);
+    }
     resultList.AppendNewToTop(
         new (aBuilder) nsDisplayStickyPosition(aBuilder, this, &resultList));
   }
