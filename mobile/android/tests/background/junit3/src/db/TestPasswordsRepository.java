@@ -10,6 +10,7 @@ import org.mozilla.gecko.background.helpers.AndroidSyncTestCase;
 import org.mozilla.gecko.background.sync.helpers.ExpectFetchDelegate;
 import org.mozilla.gecko.background.sync.helpers.ExpectFetchSinceDelegate;
 import org.mozilla.gecko.background.sync.helpers.ExpectGuidsSinceDelegate;
+import org.mozilla.gecko.background.sync.helpers.ExpectNoStoreDelegate;
 import org.mozilla.gecko.background.sync.helpers.ExpectStoredDelegate;
 import org.mozilla.gecko.background.sync.helpers.PasswordHelpers;
 import org.mozilla.gecko.background.sync.helpers.SessionTestHelper;
@@ -24,10 +25,12 @@ import org.mozilla.gecko.sync.repositories.android.BrowserContractHelpers;
 import org.mozilla.gecko.sync.repositories.android.PasswordsRepositorySession;
 import org.mozilla.gecko.sync.repositories.android.RepoUtils;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionCreationDelegate;
+import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDelegate;
 import org.mozilla.gecko.sync.repositories.domain.PasswordRecord;
 import org.mozilla.gecko.sync.repositories.domain.Record;
 
 import android.content.ContentProviderClient;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.RemoteException;
@@ -176,6 +179,37 @@ public class TestPasswordsRepository extends AndroidSyncTestCase {
 
     
     performWait(fetchAllRunnable(session, new Record[] { remote }));
+
+    
+    PasswordRecord local2 = PasswordHelpers.createPassword3();
+    updatePassword(NEW_PASSWORD2, local2, System.currentTimeMillis() - 1000);
+    performWait(storeRunnable(session, local2));
+
+    
+    PasswordRecord remote2 = PasswordHelpers.createPassword3();
+    remote2.guid = local2.guid;
+    remote2.deleted = true;
+    updatePassword(NEW_PASSWORD2, remote2);
+    performWait(storeRunnable(session, remote2));
+
+    
+    performWait(fetchRunnable(session, new String[] { remote2.guid }, new Record[] {}));
+
+    
+    PasswordRecord local3 = PasswordHelpers.createPassword4();
+    updatePassword(NEW_PASSWORD2, local3, System.currentTimeMillis() - 1000);
+    local3.deleted = true;
+    storeLocalDeletedRecord(local3, System.currentTimeMillis() - 1000);
+
+    
+    PasswordRecord remote3 = PasswordHelpers.createPassword5();
+    remote3.guid = local3.guid;
+    remote3.deleted = true;
+    updatePassword(NEW_PASSWORD2, remote3);
+    performWait(storeRunnable(session, remote3));
+
+    
+    performWait(fetchRunnable(session, new String[] { remote3.guid }, new Record[] {}));
     dispose(session);
   }
 
@@ -196,6 +230,41 @@ public class TestPasswordsRepository extends AndroidSyncTestCase {
 
     
     performWait(fetchAllRunnable(session, new Record[] { local }));
+
+    
+    PasswordRecord remote2 = PasswordHelpers.createPassword3();
+    updatePassword(NEW_PASSWORD1, remote2, System.currentTimeMillis() - 1000);
+
+    
+    PasswordRecord local2 = PasswordHelpers.createPassword3();
+    updatePassword(NEW_PASSWORD2, local2);
+    local2.deleted = true;
+    storeLocalDeletedRecord(local2, System.currentTimeMillis());
+
+    
+    remote2.guid = local2.guid;
+    performWait(storeRunnable(session, remote2, new ExpectNoStoreDelegate()));
+
+    
+    performWait(fetchRunnable(session, new String[] { local2.guid }, new Record[] { local2 }));
+
+    
+    PasswordRecord remote3 = PasswordHelpers.createPassword4();
+    updatePassword(NEW_PASSWORD1, remote3, System.currentTimeMillis() - 1000);
+
+    
+    PasswordRecord local3 = PasswordHelpers.createPassword4();
+    updatePassword(NEW_PASSWORD2, local3);
+    local3.deleted = true;
+    storeLocalDeletedRecord(local3, System.currentTimeMillis());
+
+    
+    remote3.guid = local3.guid;
+    remote3.deleted = true;
+    performWait(storeRunnable(session, remote3));
+
+    
+    performWait(fetchRunnable(session, new String[] { local3.guid }, new Record[] {}));
     dispose(session);
   }
 
@@ -323,6 +392,17 @@ public class TestPasswordsRepository extends AndroidSyncTestCase {
     context.getContentResolver().delete(BrowserContractHelpers.DELETED_PASSWORDS_CONTENT_URI, null, null);
   }
 
+  private void storeLocalDeletedRecord(Record record, long time) {
+    
+    wipe();
+    
+    ContentValues contentValues = new ContentValues();
+    contentValues.put(BrowserContract.DeletedColumns.GUID, record.guid);
+    contentValues.put(BrowserContract.DeletedColumns.TIME_DELETED, time);
+    contentValues.put(BrowserContract.DeletedColumns.ID, record.androidID);
+    getApplicationContext().getContentResolver().insert(BrowserContractHelpers.DELETED_PASSWORDS_CONTENT_URI, contentValues);
+  }
+
   private static void dispose(RepositorySession session) {
     if (session != null) {
       session.abort();
@@ -342,10 +422,14 @@ public class TestPasswordsRepository extends AndroidSyncTestCase {
 
   
   private static Runnable storeRunnable(final RepositorySession session, final Record record) {
+    return storeRunnable(session, record, new ExpectStoredDelegate(record.guid));
+  }
+
+  private static Runnable storeRunnable(final RepositorySession session, final Record record, final RepositorySessionStoreDelegate delegate) {
     return new Runnable() {
       @Override
       public void run() {
-        session.setStoreDelegate(new ExpectStoredDelegate(record.guid));
+        session.setStoreDelegate(delegate);
         try {
           session.store(record);
           session.storeDone();
