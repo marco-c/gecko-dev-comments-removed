@@ -600,10 +600,13 @@ Layer::SnapTransformTranslation(const Matrix4x4& aTransform,
     *aResidualTransform = Matrix();
   }
 
+  if (!mManager->IsSnappingEffectiveTransforms()) {
+    return aTransform;
+  }
+
   Matrix matrix2D;
   Matrix4x4 result;
-  if (mManager->IsSnappingEffectiveTransforms() &&
-      aTransform.Is2D(&matrix2D) &&
+  if (aTransform.Is2D(&matrix2D) &&
       !matrix2D.HasNonTranslation() &&
       matrix2D.HasNonIntegerTranslation()) {
     IntPoint snappedTranslation = RoundedToInt(matrix2D.GetTranslation());
@@ -618,9 +621,65 @@ Layer::SnapTransformTranslation(const Matrix4x4& aTransform,
         Matrix::Translation(matrix2D._31 - snappedTranslation.x,
                             matrix2D._32 - snappedTranslation.y);
     }
-  } else {
-    result = aTransform;
+    return result;
   }
+
+  if(aTransform.IsSingular() ||
+     (aTransform._14 != 0 || aTransform._24 != 0 || aTransform._34 != 0)) {
+    
+    
+    
+    
+    return aTransform;
+  }
+
+  
+
+  Point3D transformedOrigin = aTransform * Point3D();
+
+  
+  
+  IntPoint transformedSnapXY =
+    RoundedToInt(Point(transformedOrigin.x, transformedOrigin.y));
+  Matrix4x4 inverse = aTransform;
+  inverse.Invert();
+  
+  Float transformedSnapZ =
+    inverse._33 == 0 ? 0 : (-(transformedSnapXY.x * inverse._13 +
+                              transformedSnapXY.y * inverse._23 +
+                              inverse._43) / inverse._33);
+  Point3D transformedSnap =
+    Point3D(transformedSnapXY.x, transformedSnapXY.y, transformedSnapZ);
+  if (transformedOrigin == transformedSnap) {
+    return aTransform;
+  }
+
+  
+  Point3D snap = inverse * transformedSnap;
+  if (snap.z > 0.001 || snap.z < -0.001) {
+    
+    MOZ_ASSERT(inverse._33 == 0.0);
+    return aTransform;
+  }
+
+  
+  if (aResidualTransform) {
+    
+    
+    *aResidualTransform = Matrix::Translation(-snap.x, -snap.y);
+  }
+
+  
+  
+  Point3D transformedShift = transformedSnap - transformedOrigin;
+  result = aTransform;
+  result.PostTranslate(transformedShift.x,
+                       transformedShift.y,
+                       transformedShift.z);
+
+  
+  
+
   return result;
 }
 
