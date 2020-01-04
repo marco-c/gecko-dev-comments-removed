@@ -52,8 +52,6 @@ pref("extensions.getAddons.link.url", "https://addons.mozilla.org/%LOCALE%/firef
 
 
 pref("extensions.blocklist.enabled", true);
-
-
 pref("extensions.blocklist.interval", 86400);
 
 
@@ -1423,7 +1421,8 @@ pref("devtools.performance.memory.sample-probability", "0.05");
 
 
 pref("devtools.performance.memory.max-log-length", 125000);
-pref("devtools.performance.timeline.hidden-markers", "[\"Composite\"]");
+pref("devtools.performance.timeline.hidden-markers",
+  "[\"Composite\",\"CompositeForwardTransaction\"]");
 pref("devtools.performance.profiler.buffer-size", 10000000);
 pref("devtools.performance.profiler.sample-frequency-khz", 1);
 pref("devtools.performance.ui.invert-call-tree", true);
@@ -1748,7 +1747,7 @@ pref("security.cert_pinning.enforcement_level", 1);
 
 
 
-pref("security.onecrl.maximum_staleness_in_seconds", 108000);
+pref("security.onecrl.maximum_staleness_in_seconds", 0);
 
 
 pref("plain_text.wrap_long_lines", true);
