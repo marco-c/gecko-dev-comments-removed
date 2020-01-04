@@ -75,20 +75,6 @@ AsyncResource.prototype = {
   authenticator: null,
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  _userAgent:
-    Services.appinfo.name + "/" + Services.appinfo.version +  
-    " FxSync/" + WEAVE_VERSION + "." +                        
-    Services.appinfo.appBuildID + ".",                        
-
-  
   ABORT_TIMEOUT: 300000,
 
   
@@ -161,8 +147,7 @@ AsyncResource.prototype = {
 
     
     if (Svc.Prefs.get("sendVersionInfo", true)) {
-      let ua = this._userAgent + Svc.Prefs.get("client.type", "desktop");
-      channel.setRequestHeader("user-agent", ua, false);
+      channel.setRequestHeader("user-agent", Utils.userAgent, false);
     }
 
     let headers = this.headers;

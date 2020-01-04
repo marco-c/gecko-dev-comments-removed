@@ -30,28 +30,12 @@ SyncStorageRequest.prototype = {
   
 
 
-
-
-
-
-
-
-
-  userAgent:
-    Services.appinfo.name + "/" + Services.appinfo.version +  
-    " FxSync/" + WEAVE_VERSION + "." +                        
-    Services.appinfo.appBuildID + ".",                        
-
-  
-
-
   timeout: STORAGE_REQUEST_TIMEOUT,
 
   dispatch: function dispatch(method, data, onComplete, onProgress) {
     
     if (Svc.Prefs.get("sendVersionInfo", true)) {
-      let ua = this.userAgent + Svc.Prefs.get("client.type", "desktop");
-      this.setHeader("user-agent", ua);
+      this.setHeader("user-agent", Utils.userAgent);
     }
 
     if (this.authenticator) {
