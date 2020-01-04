@@ -10,6 +10,9 @@ var { Ci, Cu, Cc, components } = require("chrome");
 var Services = require("Services");
 var promise = require("promise");
 
+loader.lazyRequireGetter(this, "FileUtils",
+                         "resource://gre/modules/FileUtils.jsm", true);
+
 
 
 
@@ -713,3 +716,27 @@ Object.defineProperty(exports, "testing", {
     testing = state;
   }
 });
+
+
+
+
+
+
+
+
+exports.openFileStream = function (filePath) {
+  return new Promise((resolve, reject) => {
+    const uri = NetUtil.newURI(new FileUtils.File(filePath));
+    NetUtil.asyncFetch(
+      { uri, loadUsingSystemPrincipal: true },
+      (stream, result) => {
+        if (!components.isSuccessCode(result)) {
+          reject(new Error(`Could not open "${filePath}": result = ${result}`));
+          return;
+        }
+
+        resolve(stream);
+      }
+    );
+  });
+}

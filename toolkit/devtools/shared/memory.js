@@ -14,6 +14,9 @@ loader.lazyRequireGetter(this, "DeferredTask",
   "resource://gre/modules/DeferredTask.jsm", true);
 loader.lazyRequireGetter(this, "StackFrameCache",
   "devtools/server/actors/utils/stack", true);
+loader.lazyRequireGetter(this, "ThreadSafeChromeUtils");
+loader.lazyRequireGetter(this, "HeapSnapshotFileUtils",
+  "devtools/toolkit/heapsnapshot/HeapSnapshotFileUtils");
 
 
 
@@ -61,7 +64,6 @@ let Memory = exports.Memory = Class({
     }
     return this._dbg;
   },
-
 
   
 
@@ -129,6 +131,18 @@ let Memory = exports.Memory = Class({
   isRecordingAllocations: function () {
     return this.dbg.memory.trackingAllocationSites;
   },
+
+  
+
+
+
+
+
+  saveHeapSnapshot: expectState("attached", function () {
+    const path = HeapSnapshotFileUtils.getNewUniqueHeapSnapshotTempFilePath();
+    ThreadSafeChromeUtils.saveHeapSnapshot(path, { debugger: this.dbg });
+    return HeapSnapshotFileUtils.getSnapshotIdFromPath(path);
+  }, "saveHeapSnapshot"),
 
   
 

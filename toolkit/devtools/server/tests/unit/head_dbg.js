@@ -8,7 +8,7 @@ const Cu = Components.utils;
 const Cr = Components.results;
 const CC = Components.Constructor;
 
-const { require } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+const { require, loader } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
 const { worker } = Cu.import("resource://gre/modules/devtools/worker-loader.js", {})
 const promise = require("promise");
 const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
@@ -25,6 +25,7 @@ const DevToolsUtils = require("devtools/toolkit/DevToolsUtils.js");
 const { DebuggerServer } = require("devtools/server/main");
 const { DebuggerServer: WorkerDebuggerServer } = worker.require("devtools/server/main");
 const { DebuggerClient, ObjectClient } = require("devtools/toolkit/client/main");
+const { MemoryFront } = require("devtools/server/actors/memory");
 
 const { addDebuggerToGlobal } = Cu.import("resource://gre/modules/jsdebugger.jsm", {});
 
@@ -33,6 +34,42 @@ const systemPrincipal = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.n
 let loadSubScript = Cc[
   '@mozilla.org/moz/jssubscript-loader;1'
 ].getService(Ci.mozIJSSubScriptLoader).loadSubScript;
+
+
+
+
+
+
+
+
+
+
+
+
+function makeMemoryActorTest(testGeneratorFunction) {
+  const TEST_GLOBAL_NAME = "test_MemoryActor";
+
+  return function run_test() {
+    do_test_pending();
+    startTestDebuggerServer(TEST_GLOBAL_NAME).then(client => {
+      getTestTab(client, TEST_GLOBAL_NAME, function (tabForm) {
+        Task.spawn(function* () {
+          try {
+            const memoryFront = new MemoryFront(client, tabForm);
+            yield memoryFront.attach();
+            yield* testGeneratorFunction(client, memoryFront);
+            yield memoryFront.detach();
+          } catch(err) {
+            DevToolsUtils.reportException("makeMemoryActorTest", err);
+            ok(false, "Got an error: " + err);
+          }
+
+          finishClient(client);
+        });
+      });
+    });
+  };
+}
 
 function createTestGlobal(name) {
   let sandbox = Cu.Sandbox(
@@ -176,41 +213,47 @@ function dbg_assert(cond, e) {
 let errorCount = 0;
 let listener = {
   observe: function (aMessage) {
-    errorCount++;
     try {
-      
-      
-      var scriptError = aMessage.QueryInterface(Ci.nsIScriptError);
-      dumpn(aMessage.sourceName + ":" + aMessage.lineNumber + ": " +
-            scriptErrorFlagsToKind(aMessage.flags) + ": " +
-            aMessage.errorMessage);
-      var string = aMessage.errorMessage;
-    } catch (x) {
-      
-      
+      errorCount++;
       try {
-        var string = "" + aMessage.message;
+        
+        
+        var scriptError = aMessage.QueryInterface(Ci.nsIScriptError);
+        dumpn(aMessage.sourceName + ":" + aMessage.lineNumber + ": " +
+              scriptErrorFlagsToKind(aMessage.flags) + ": " +
+              aMessage.errorMessage);
+        var string = aMessage.errorMessage;
       } catch (x) {
-        var string = "<error converting error message to string>";
+        
+        
+        try {
+          var string = "" + aMessage.message;
+        } catch (x) {
+          var string = "<error converting error message to string>";
+        }
       }
-    }
 
-    
-    while (DebuggerServer.xpcInspector
-           && DebuggerServer.xpcInspector.eventLoopNestLevel > 0) {
-      DebuggerServer.xpcInspector.exitNestedEventLoop();
-    }
+      
+      while (DebuggerServer
+             && DebuggerServer.xpcInspector
+             && DebuggerServer.xpcInspector.eventLoopNestLevel > 0) {
+        DebuggerServer.xpcInspector.exitNestedEventLoop();
+      }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    dumpn("head_dbg.js observed a console message: " + string);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      dumpn("head_dbg.js observed a console message: " + string);
+    } catch (_) {
+      
+      
+    }
   }
 };
 
