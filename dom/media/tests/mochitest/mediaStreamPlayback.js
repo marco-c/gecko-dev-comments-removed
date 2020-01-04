@@ -170,10 +170,10 @@ LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype
 
 
 
-  playMediaWithStreamStop : {
+  playMediaWithDeprecatedStreamStop : {
     value: function(isResume) {
       return this.startMedia(isResume)
-        .then(() => this.stopStreamInMediaPlayback())
+        .then(() => this.deprecatedStopStreamInMediaPlayback())
         .then(() => this.stopMediaElement());
     }
   },
@@ -186,7 +186,7 @@ LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype
 
 
 
-  stopStreamInMediaPlayback : {
+  deprecatedStopStreamInMediaPlayback : {
     value: function () {
       return new Promise((resolve, reject) => {
         
