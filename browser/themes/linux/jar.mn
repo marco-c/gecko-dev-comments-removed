@@ -41,7 +41,9 @@ browser.jar:
   skin/classic/browser/setDesktopBackground.css
   skin/classic/browser/slowStartup-16.png
   skin/classic/browser/Toolbar.png
+  skin/classic/browser/Toolbar@2x.png
   skin/classic/browser/Toolbar-inverted.png
+  skin/classic/browser/Toolbar-inverted@2x.png
   skin/classic/browser/Toolbar-small.png
   skin/classic/browser/webRTC-indicator.css
 * skin/classic/browser/controlcenter/panel.css        (controlcenter/panel.css)
@@ -82,6 +84,9 @@ browser.jar:
   skin/classic/browser/places/unsortedBookmarks.png   (places/unsortedBookmarks.png)
   skin/classic/browser/places/downloads.png           (places/downloads.png)
   skin/classic/browser/preferences/alwaysAsk.png      (preferences/alwaysAsk.png)
+  skin/classic/browser/preferences/mail.png           (preferences/mail.png)
+  skin/classic/browser/preferences/Options.png        (preferences/Options.png)
+  skin/classic/browser/preferences/Options-sync.png   (preferences/Options-sync.png)
   skin/classic/browser/preferences/preferences.css    (preferences/preferences.css)
 * skin/classic/browser/preferences/in-content/preferences.css (preferences/in-content/preferences.css)
 * skin/classic/browser/preferences/in-content/dialog.css      (preferences/in-content/dialog.css)
