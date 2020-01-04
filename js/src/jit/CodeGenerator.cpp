@@ -8983,8 +8983,10 @@ CodeGenerator::generateWasm(wasm::SigIdDesc sigId, wasm::FuncOffsets* offsets)
     
     Label onOverflow;
     if (!omitOverRecursedCheck()) {
+        
+        
         masm.branchPtr(Assembler::AboveOrEqual,
-                       wasm::SymbolicAddress::StackLimit,
+                       Address(WasmTlsReg, offsetof(wasm::TlsData, stackLimit)),
                        masm.getStackPointer(),
                        &onOverflow);
     }
