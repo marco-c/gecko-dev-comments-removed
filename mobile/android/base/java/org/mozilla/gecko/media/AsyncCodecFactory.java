@@ -1,0 +1,14 @@
+
+
+
+
+package org.mozilla.gecko.media;
+
+import java.io.IOException;
+
+public final class AsyncCodecFactory {
+    public static AsyncCodec create(String name) throws IOException {
+        
+        return new JellyBeanAsyncCodec(name);
+    }
+}
