@@ -737,8 +737,10 @@ public:
   static const KTableEntry kAlignNormalBaseline[]; 
   static const KTableEntry kAlignContentDistribution[]; 
   static const KTableEntry kAlignContentPosition[]; 
-  static const KTableEntry kAlignSelfKTable[];
-  static const KTableEntry kJustifyContentKTable[];
+  
+  static const KTableEntry kAutoCompletionAlignJustifySelf[];
+  static const KTableEntry kAutoCompletionAlignItems[];
+  static const KTableEntry kAutoCompletionAlignJustifyContent[];
   
   static const KTableEntry kFlexDirectionKTable[];
   static const KTableEntry kFlexWrapKTable[];
