@@ -233,6 +233,17 @@ protected:
   void CallInitFunction(const GlobalObject& aGlobal, PromiseInit& aInit,
                         ErrorResult& aRv);
 
+  
+  
+  
+  
+  
+  static void NewPromiseCapability(JSContext* aCx, nsIGlobalObject* aGlobal,
+                                   JS::Handle<JS::Value> aConstructor,
+                                   bool aForceCallbackCreation,
+                                   PromiseCapability& aCapability,
+                                   ErrorResult& aRv);
+
   bool IsPending()
   {
     return mResolvePending;
