@@ -951,6 +951,10 @@ body[platform="win"] .share-service-dropdown.overflow > .dropdown-menu-item {
   align-items: flex-start;
 }
 
+.text-chat-header > p {
+  margin: 0;
+}
+
 .text-chat-entry {
   
   text-align: start;
@@ -979,8 +983,6 @@ html[dir="rtl"] .text-chat-entry.received {
   margin-left: 0;
   margin-right: 5px;
 }
-
-
 
 .text-chat-entry > p {
   position: relative;
