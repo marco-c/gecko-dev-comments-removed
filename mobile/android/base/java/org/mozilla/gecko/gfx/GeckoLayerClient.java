@@ -766,7 +766,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         
         
         
-        mView.getGLController().resumeCompositor(mWindowSize.width, mWindowSize.height);
+        mView.getGLController().resumeCompositor(width, height);
     }
 
     
