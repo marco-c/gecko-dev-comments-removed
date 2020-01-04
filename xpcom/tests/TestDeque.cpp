@@ -19,6 +19,8 @@ private:
   int OriginalFlaw();
   int AssignFlaw();
   int TestRemove();
+  int TestPushFront();
+  int TestEmpty();
 };
 
 class _Dealloc: public nsDequeFunctor {
@@ -44,6 +46,8 @@ int _TestDeque::Test() {
   results+=OriginalFlaw();
   results+=AssignFlaw();
   results+=TestRemove();
+  results+=TestPushFront();
+  results+=TestEmpty();
   return results;
 }
 
@@ -229,8 +233,82 @@ int _TestDeque::TestRemove() {
   return 0;
 }
 
+int _TestDeque::TestPushFront() {
+  
+  
+  
+
+  nsDeque d;
+
+  const int kPoolSize = 10;
+  const int kMaxSizeBeforeGrowth = 8;
+
+  int pool[kPoolSize];
+  for (int i = 0; i < kPoolSize; i++) {
+    pool[i] = i;
+  }
+
+  for (int i = 0; i < kMaxSizeBeforeGrowth; i++) {
+    d.PushFront(pool + i);
+  }
+
+  TEST(d.GetSize() == kMaxSizeBeforeGrowth, "verify size");
+
+  static const int t1[] = {7,6,5,4,3,2,1,0};
+  TEST(VerifyContents(d, t1, kMaxSizeBeforeGrowth), "verify pushfront 1");
+
+  
+  d.PushFront(pool + kMaxSizeBeforeGrowth);
+  TEST(d.GetSize() == kMaxSizeBeforeGrowth + 1, "verify size");
+
+  static const int t2[] = {8,7,6,5,4,3,2,1,0};
+  TEST(VerifyContents(d, t2, kMaxSizeBeforeGrowth + 1), "verify pushfront 2");
+
+  
+  d.PushFront(pool + kMaxSizeBeforeGrowth + 1);
+  TEST(d.GetSize() == kMaxSizeBeforeGrowth + 2, "verify size");
+
+  static const int t3[] = {9,8,7,6,5,4,3,2,1,0};
+  TEST(VerifyContents(d, t3, kMaxSizeBeforeGrowth + 2), "verify pushfront 3");
+
+  return 0;
+}
+
+int _TestDeque::TestEmpty() {
+  
+  nsDeque d;
+
+  TEST(d.GetSize() == 0, "Size should be 0");
+  TEST(d.Pop() == nullptr, "Invalid operation should return nullptr");
+  TEST(d.PopFront() == nullptr, "Invalid operation should return nullptr");
+  TEST(d.Peek() == nullptr, "Invalid operation should return nullptr");
+  TEST(d.PeekFront() == nullptr, "Invalid operation should return nullptr");
+  TEST(d.ObjectAt(0) == nullptr, "Invalid operation should return nullptr");
+  TEST(d.Last() == nullptr, "Invalid operation should return nullptr");
+
+  
+  for (size_t i = 0; i < 8; i++) {
+    d.Push((void*)0xAA);
+  }
+
+  for (size_t i = 0; i < 8; i++) {
+    (void)d.Pop();
+  }
+
+  
+  TEST(d.GetSize() == 0, "Size should be 0");
+  TEST(d.Pop() == nullptr, "Invalid operation should return nullptr");
+  TEST(d.PopFront() == nullptr, "Invalid operation should return nullptr");
+  TEST(d.Peek() == nullptr, "Invalid operation should return nullptr");
+  TEST(d.PeekFront() == nullptr, "Invalid operation should return nullptr");
+  TEST(d.ObjectAt(0) == nullptr, "Invalid operation should return nullptr");
+  TEST(d.Last() == nullptr, "Invalid operation should return nullptr");
+
+  return 0;
+}
+
 int main (void) {
-  ScopedXPCOM xpcom("TestTimers");
+  ScopedXPCOM xpcom("TestDeque");
   NS_ENSURE_FALSE(xpcom.failed(), 1);
 
   _TestDeque test;
