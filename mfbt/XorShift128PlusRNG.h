@@ -36,6 +36,11 @@ namespace non_crypto {
 
 
 
+
+
+
+
+
 class XorShift128PlusRNG {
   uint64_t mState[2];
 
@@ -45,11 +50,17 @@ class XorShift128PlusRNG {
 
 
 
+
+
+
+
   XorShift128PlusRNG(uint64_t aInitial0, uint64_t aInitial1) {
     setState(aInitial0, aInitial1);
   }
 
   
+
+
   uint64_t next() {
     
 
@@ -66,6 +77,7 @@ class XorShift128PlusRNG {
   }
 
   
+
 
 
 
