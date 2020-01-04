@@ -205,7 +205,7 @@ OnProxyAvailable(nsICancelable *request,
                  nsIProxyInfo *proxyinfo,
                  nsresult result) {
 
-  if (result == NS_ERROR_ABORT) {
+  if (!pcm_->mProxyRequest) {
     
     return NS_OK;
   }
@@ -217,6 +217,7 @@ OnProxyAvailable(nsICancelable *request,
   }
 
   pcm_->mProxyResolveCompleted = true;
+  pcm_->mProxyRequest = nullptr;
   pcm_->FlushIceCtxOperationQueueIfReady();
 
   return NS_OK;
@@ -995,6 +996,7 @@ PeerConnectionMedia::SelfDestruct()
 
   if (mProxyRequest) {
     mProxyRequest->Cancel(NS_ERROR_ABORT);
+    mProxyRequest = nullptr;
   }
 
   
