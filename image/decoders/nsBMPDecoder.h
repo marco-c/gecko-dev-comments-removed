@@ -11,6 +11,7 @@
 #include "Decoder.h"
 #include "gfxColor.h"
 #include "StreamingLexer.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace image {
@@ -190,7 +191,7 @@ private:
 
   uint32_t mNumColors;      
                             
-  bmp::ColorTableEntry* mColors; 
+  UniquePtr<bmp::ColorTableEntry[]> mColors; 
   uint32_t mBytesPerColor;  
 
   
