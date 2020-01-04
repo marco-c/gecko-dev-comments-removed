@@ -1,15 +1,26 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=8 et :
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <map>
 
 #include <mach/vm_map.h>
 #include <mach/mach_port.h>
+#if defined(XP_IOS)
+#include <mach/vm_map.h>
+#define mach_vm_address_t vm_address_t
+#define mach_vm_allocate vm_allocate
+#define mach_vm_deallocate vm_deallocate
+#define mach_vm_map vm_map
+#define mach_vm_read vm_read
+#define mach_vm_region_recurse vm_region_recurse_64
+#define mach_vm_size_t vm_size_t
+#else
 #include <mach/mach_vm.h>
+#endif
 #include <pthread.h>
 #include <unistd.h>
 #include "SharedMemoryBasic.h"
@@ -36,38 +47,38 @@
   }                                                             \
   PR_END_MACRO
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * This code is responsible for sharing memory between processes. Memory can be
+ * shared between parent and child or between two children. Each memory region is
+ * referenced via a Mach port. Mach ports are also used for messaging when
+ * sharing a memory region.
+ *
+ * When the parent starts a child, it starts a thread whose only purpose is to
+ * communicate with the child about shared memory. Once the child has started,
+ * it starts a similar thread for communicating with the parent. Each side can
+ * communicate with the thread on the other side via Mach ports. When either
+ * side wants to share memory with the other, it sends a Mach message to the
+ * other side. Attached to the message is the port that references the shared
+ * memory region. When the other side receives the message, it automatically
+ * gets access to the region. It sends a reply (also via a Mach port) so that
+ * the originating side can continue.
+ *
+ * The two sides communicate using four ports. Two ports are used when the
+ * parent shares memory with the child. The other two are used when the child
+ * shares memory with the parent. One of these two ports is used for sending the
+ * "share" message and the other is used for the reply.
+ *
+ * If a child wants to share memory with another child, it sends a "GetPorts"
+ * message to the parent. The parent forwards this GetPorts message to the
+ * target child. The message includes some ports so that the children can talk
+ * directly. Both children start up a thread to communicate with the other child,
+ * similar to the way parent and child communicate. In the future, when these
+ * two children want to communicate, they re-use the channels that were created.
+ *
+ * When a child shuts down, the parent notifies all other children. Those
+ * children then have the opportunity to shut down any threads they might have
+ * been using to communicate directly with that child.
+ */
 
 namespace mozilla {
 namespace ipc {
@@ -81,7 +92,7 @@ struct MemoryPorts {
    : mSender(sender), mReceiver(receiver) {}
 };
 
-
+// Protects gMemoryCommPorts and gThreads.
 static StaticMutex gMutex;
 
 static std::map<pid_t, MemoryPorts> gMemoryCommPorts;
@@ -149,8 +160,8 @@ SetupMachMemory(pid_t pid,
   gMemoryCommPorts[pid] = MemoryPorts(send_port, send_port_ack);
 }
 
-
-
+// Send two communication ports to another process along with the pid of the process that is
+// listening on them.
 bool
 SendPortsMessage(MachPortSender* sender,
                  mach_port_t ports_in_receiver,
@@ -176,7 +187,7 @@ SendPortsMessage(MachPortSender* sender,
   return true;
 }
 
-
+// Receive two communication ports from another process
 bool
 RecvPortsMessage(ReceivePort* receiver, mach_port_t* ports_in_sender, mach_port_t* ports_out_sender)
 {
@@ -199,7 +210,7 @@ RecvPortsMessage(ReceivePort* receiver, mach_port_t* ports_in_sender, mach_port_
   return true;
 }
 
-
+// Send two communication ports to another process and receive two back
 bool
 RequestPorts(const MemoryPorts& request_ports,
              mach_port_t  ports_in_receiver,
@@ -220,18 +231,18 @@ GetMemoryPortsForPid(pid_t pid)
   gMutex.AssertCurrentThreadOwns();
 
   if (gMemoryCommPorts.find(pid) == gMemoryCommPorts.end()) {
-    
-    
+    // We don't have the ports open to communicate with that pid, so we're going to
+    // ask our parent process over IPC to set them up for us.
     if (gParentPid == 0) {
-      
+      // If we're the top level parent process, we have no parent to ask.
       LOG_ERROR("request for ports for pid %d, but we're the chrome process\n", pid);
       return nullptr;
     }
     const MemoryPorts& parent = gMemoryCommPorts[gParentPid];
 
-    
-    
-    
+    // Create two receiving ports in this process to send to the parent. One will be used for
+    // for listening for incoming memory to be shared, the other for getting the Handle of
+    // memory we share to the other process.
     ReceivePort* ports_in_receiver = new ReceivePort();
     ReceivePort* ports_out_receiver = new ReceivePort();
     mach_port_t raw_ports_in_sender, raw_ports_out_sender;
@@ -244,8 +255,8 @@ GetMemoryPortsForPid(pid_t pid)
       LOG_ERROR("failed to request ports\n");
       return nullptr;
     }
-    
-    
+    // Our parent process sent us two ports, one is for sending new memory to, the other
+    // is for replying with the Handle when we receive new memory.
     MachPortSender* ports_in_sender = new MachPortSender(raw_ports_in_sender);
     MachPortSender* ports_out_sender = new MachPortSender(raw_ports_out_sender);
     SetupMachMemory(pid,
@@ -259,9 +270,9 @@ GetMemoryPortsForPid(pid_t pid)
   return &gMemoryCommPorts.at(pid);
 }
 
-
-
-
+// We just received a port representing a region of shared memory, reply to
+// the process that set it with the mach_port_t that represents it in this process.
+// That will be the Handle to be shared over normal IPC
 void
 HandleSharePortsMessage(MachReceiveMessage* rmsg, MemoryPorts* ports)
 {
@@ -274,8 +285,8 @@ HandleSharePortsMessage(MachReceiveMessage* rmsg, MemoryPorts* ports)
   }
 }
 
-
-
+// We were asked by another process to get communications ports to some process. Return
+// those ports via an IPC message.
 bool
 SendReturnPortsMsg(MachPortSender* sender,
                    mach_port_t raw_ports_in_sender,
@@ -299,8 +310,8 @@ SendReturnPortsMsg(MachPortSender* sender,
   return true;
 }
 
-
-
+// We were asked for communcations ports to a process that isn't us. Assuming that process
+// is one of our children, forward that request on.
 void
 ForwardGetPortsMessage(MachReceiveMessage* rmsg, MemoryPorts* ports, PIDPair* pid_pair)
 {
@@ -326,7 +337,7 @@ ForwardGetPortsMessage(MachReceiveMessage* rmsg, MemoryPorts* ports, PIDPair* pi
   SendReturnPortsMsg(ports->mSender, raw_ports_in_sender, raw_ports_out_sender);
 }
 
-
+// We receieved a message asking us to get communications ports for another process
 void
 HandleGetPortsMessage(MachReceiveMessage* rmsg, MemoryPorts* ports)
 {
@@ -337,7 +348,7 @@ HandleGetPortsMessage(MachReceiveMessage* rmsg, MemoryPorts* ports)
   }
   pid_pair = reinterpret_cast<PIDPair*>(rmsg->GetData());
   if (pid_pair->mRequested != getpid()) {
-    
+    // This request is for ports to a process that isn't us, forward it to that process
     ForwardGetPortsMessage(rmsg, ports, pid_pair);
   } else {
     if (rmsg->GetTranslatedPort(0) == MACH_PORT_NULL) {
@@ -457,11 +468,11 @@ SharedMemoryBasic::CleanupForPid(pid_t pid)
   gThreads.erase(pid);
 
   if (gParentPid == 0) {
-    
+    // We're the parent. Broadcast the cleanup message to everyone else.
     for (auto it = gMemoryCommPorts.begin(); it != gMemoryCommPorts.end(); ++it) {
       MachSendMessage msg(kCleanupMsg);
       msg.SetData(&pid, sizeof(pid));
-      
+      // We don't really care if this fails, we could be trying to send to an already shut down proc
       it->second.mSender->SendMessage(msg, kTimeout);
     }
   }
@@ -627,5 +638,5 @@ SharedMemoryBasic::IsHandleValid(const Handle& aHandle)
   return aHandle > 0;
 }
 
-} 
-} 
+} // namespace ipc
+} // namespace mozilla
