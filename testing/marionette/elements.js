@@ -2,7 +2,7 @@
 
 
 
-var {utils: Cu} = Components;
+let {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -11,6 +11,15 @@ XPCOMUtils.defineLazyModuleGetter(this, 'setInterval',
   'resource://gre/modules/Timer.jsm');
 XPCOMUtils.defineLazyModuleGetter(this, 'clearInterval',
   'resource://gre/modules/Timer.jsm');
+
+
+
+
+
+
+
+
+
 
 
 
@@ -240,7 +249,7 @@ Accessibility.prototype = {
 
 this.ElementManager = function ElementManager(notSupported) {
   this.seenItems = {};
-  this.timer = Components.classes["@mozilla.org/timer;1"].createInstance(Components.interfaces.nsITimer);
+  this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
   this.elementKey = 'ELEMENT';
   this.w3cElementKey = 'element-6066-11e4-a52e-4f735466cecf';
   this.elementStrategies = [CLASS_NAME, SELECTOR, ID, NAME, LINK_TEXT, PARTIAL_LINK_TEXT, TAG, XPATH, ANON, ANON_ATTRIBUTE];
@@ -632,28 +641,37 @@ ElementManager.prototype = {
 
 
 
+
+
+
   findElement: function EM_findElement(using, value, rootNode, startNode) {
     let element;
+
     switch (using) {
       case ID:
         element = startNode.getElementById ?
                   startNode.getElementById(value) :
                   this.findByXPath(rootNode, './/*[@id="' + value + '"]', startNode);
         break;
+
       case NAME:
         element = startNode.getElementsByName ?
                   startNode.getElementsByName(value)[0] :
                   this.findByXPath(rootNode, './/*[@name="' + value + '"]', startNode);
         break;
+
       case CLASS_NAME:
         element = startNode.getElementsByClassName(value)[0]; 
         break;
+
       case TAG:
         element = startNode.getElementsByTagName(value)[0]; 
         break;
+
       case XPATH:
         element = this.findByXPath(rootNode, value, startNode);
         break;
+
       case LINK_TEXT:
       case PARTIAL_LINK_TEXT:
         let allLinks = startNode.getElementsByTagName('A');
@@ -669,21 +687,29 @@ ElementManager.prototype = {
         }
         break;
       case SELECTOR:
-        element = startNode.querySelector(value);
+        try {
+          element = startNode.querySelector(value);
+        } catch (e) {
+          throw new InvalidSelectorError(`${e.message}: "${value}"`);
+        }
         break;
+
       case ANON:
         element = rootNode.getAnonymousNodes(startNode);
         if (element != null) {
           element = element[0];
         }
         break;
+
       case ANON_ATTRIBUTE:
         let attr = Object.keys(value)[0];
         element = rootNode.getAnonymousElementByAttribute(startNode, attr, value[attr]);
         break;
+
       default:
         throw new InvalidSelectorError("No such strategy: " + using);
     }
+
     return element;
   },
 
