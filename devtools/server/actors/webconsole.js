@@ -91,7 +91,8 @@ function WebConsoleActor(aConnection, aParentActor)
   this.traits = {
     customNetworkRequest: !this._parentIsContentActor,
     evaluateJSAsync: true,
-    transferredResponseSize: true
+    transferredResponseSize: true,
+    selectedObjectActor: true, 
   };
 }
 
@@ -832,6 +833,7 @@ WebConsoleActor.prototype =
       frameActor: aRequest.frameActor,
       url: aRequest.url,
       selectedNodeActor: aRequest.selectedNodeActor,
+      selectedObjectActor: aRequest.selectedObjectActor,
     };
 
     let evalInfo = this.evalWithDebugger(input, evalOptions);
@@ -1113,6 +1115,8 @@ WebConsoleActor.prototype =
 
 
 
+
+
   evalWithDebugger: function WCA_evalWithDebugger(aString, aOptions = {})
   {
     let trimmedString = aString.trim();
@@ -1151,8 +1155,9 @@ WebConsoleActor.prototype =
     
     
     let bindSelf = null;
-    if (aOptions.bindObjectActor) {
-      let objActor = this.getActorByID(aOptions.bindObjectActor);
+    if (aOptions.bindObjectActor || aOptions.selectedObjectActor) {
+      let objActor = this.getActorByID(aOptions.bindObjectActor ||
+                                       aOptions.selectedObjectActor);
       if (objActor) {
         let jsObj = objActor.obj.unsafeDereference();
         
@@ -1160,8 +1165,12 @@ WebConsoleActor.prototype =
         
         
         let global = Cu.getGlobalForObject(jsObj);
-        dbgWindow = dbg.makeGlobalObjectReference(global);
+        let _dbgWindow = dbg.makeGlobalObjectReference(global);
         bindSelf = dbgWindow.makeDebuggeeValue(jsObj);
+
+        if (aOptions.bindObjectActor) {
+          dbgWindow = _dbgWindow;
+        }
       }
     }
 

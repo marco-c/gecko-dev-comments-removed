@@ -9,8 +9,9 @@
 "use strict";
 
 const TEST_URI = `data:text/html,<script>
+  window.bar = { baz: 1 };
   console.log("foo");
-  console.log("foo", window);
+  console.log("foo", window.bar);
 </script>`;
 
 add_task(function*() {
@@ -32,20 +33,34 @@ add_task(function*() {
 
   let contextMenu = hud.iframeWindow.document
                                     .getElementById("output-contextmenu");
-  let openInVarViewItem = contextMenu.querySelector("#menu_openInVarView");
+  let storeAsGlobalItem = contextMenu.querySelector("#menu_storeAsGlobal");
   let obj = msgWithObj.querySelector(".cm-variable");
   let text = msgWithText.querySelector(".console-string");
+  let onceInputSet = hud.jsterm.once("set-input-value");
 
+  info("Waiting for context menu on the object");
   yield waitForContextMenu(contextMenu, obj, () => {
-    ok(openInVarViewItem.disabled === false, "The \"Open In Variables View\" " +
+    ok(storeAsGlobalItem.disabled === false, "The \"Store as global\" " +
       "context menu item should be available for objects");
+    storeAsGlobalItem.click();
   }, () => {
-    ok(openInVarViewItem.disabled === true, "The \"Open In Variables View\" " +
+    ok(storeAsGlobalItem.disabled === true, "The \"Store as global\" " +
       "context menu item should be disabled on popup hiding");
   });
 
+  info("Waiting for context menu on the text node");
   yield waitForContextMenu(contextMenu, text, () => {
-    ok(openInVarViewItem.disabled === true, "The \"Open In Variables View\" " +
+    ok(storeAsGlobalItem.disabled === true, "The \"Store as global\" " +
       "context menu item should be disabled for texts");
   });
+
+  info("Waiting for input to be set");
+  yield onceInputSet;
+
+  is(hud.jsterm.inputNode.value, "temp0", "Input was set");
+  let executedResult = yield hud.jsterm.execute();
+
+  ok(executedResult.textContent.includes("{ baz: 1 }"),
+     "Correct variable assigned into console");
+
 });
