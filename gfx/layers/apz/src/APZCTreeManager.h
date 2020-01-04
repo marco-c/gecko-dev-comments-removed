@@ -393,9 +393,9 @@ protected:
   virtual ~APZCTreeManager();
 
   
-  virtual AsyncPanZoomController* MakeAPZCInstance(uint64_t aLayersId,
-                                                   GeckoContentController* aController,
-                                                   TaskThrottler* aPaintThrottler);
+  virtual AsyncPanZoomController* NewAPZCInstance(uint64_t aLayersId,
+                                                  GeckoContentController* aController,
+                                                  TaskThrottler* aPaintThrottler);
 public:
   
   virtual TimeStamp GetFrameTime();
