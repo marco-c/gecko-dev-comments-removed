@@ -508,6 +508,11 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
         ParentLayerPoint translation = TransformBy(localTransformTyped, transformedAnchor)
                                      - TransformBy(localTransformTyped, anchor);
 
+        
+        
+        
+        bool translationConsumed = true;
+
         if (layer->GetIsStickyPosition()) {
           
           
@@ -519,10 +524,14 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
 
           
           
+          ParentLayerPoint originalTranslation = translation;
           translation.y = IntervalOverlap(translation.y, stickyOuter.y, stickyOuter.YMost()) -
                           IntervalOverlap(translation.y, stickyInner.y, stickyInner.YMost());
           translation.x = IntervalOverlap(translation.x, stickyOuter.x, stickyOuter.XMost()) -
                           IntervalOverlap(translation.x, stickyInner.x, stickyInner.XMost());
+          if (translation != originalTranslation) {
+            translationConsumed = false;
+          }
         }
 
         
@@ -533,7 +542,13 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
         TranslateShadowLayer(layer, ThebesPoint(translation.ToUnknownPoint()),
             true, aClipPartsCache);
 
-        return TraversalFlag::Skip;
+        
+        
+        
+        
+        
+        
+        return translationConsumed ? TraversalFlag::Skip : TraversalFlag::Continue;
       });
 }
 
