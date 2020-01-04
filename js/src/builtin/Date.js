@@ -5,8 +5,72 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var dateTimeFormatCache = new Record();
 
+
+
+
+
+
+
+
+
+
+function GetCachedFormat(format, required, defaults) {
+    assert(format === "dateTimeFormat" ||
+           format === "dateFormat" ||
+           format === "timeFormat",
+           "unexpected format key: please update the comment by " +
+           "dateTimeFormatCache");
+
+    var runtimeDefaultLocale = RuntimeDefaultLocale();
+    var localTZA = LocalTZA();
+
+    var formatters;
+    if (dateTimeFormatCache.runtimeDefaultLocale !== runtimeDefaultLocale ||
+        dateTimeFormatCache.localTZA !== localTZA)
+    {
+        formatters = dateTimeFormatCache.formatters = new Record();
+        dateTimeFormatCache.runtimeDefaultLocale = runtimeDefaultLocale;
+        dateTimeFormatCache.localTZA = localTZA;
+    } else {
+        formatters = dateTimeFormatCache.formatters;
+    }
+
+    var fmt = formatters[format];
+    if (fmt === undefined) {
+        var options = ToDateTimeOptions(undefined, required, defaults);
+        fmt = formatters[format] = intl_DateTimeFormat(undefined, options);
+    }
+
+    return fmt;
+}
 
 
 
@@ -30,11 +94,7 @@ function Date_toLocaleString() {
     if (locales === undefined && options === undefined) {
         
         
-        if (dateTimeFormatCache.dateTimeFormat === undefined) {
-            options = ToDateTimeOptions(options, "any", "all");
-            dateTimeFormatCache.dateTimeFormat = intl_DateTimeFormat(locales, options);
-        }
-        dateTimeFormat = dateTimeFormatCache.dateTimeFormat;
+        dateTimeFormat = GetCachedFormat("dateTimeFormat", "any", "all");
     } else {
         options = ToDateTimeOptions(options, "any", "all");
         dateTimeFormat = intl_DateTimeFormat(locales, options);
@@ -67,11 +127,7 @@ function Date_toLocaleDateString() {
     if (locales === undefined && options === undefined) {
         
         
-        if (dateTimeFormatCache.dateFormat === undefined) {
-            options = ToDateTimeOptions(options, "date", "date");
-            dateTimeFormatCache.dateFormat = intl_DateTimeFormat(locales, options);
-        }
-        dateTimeFormat = dateTimeFormatCache.dateFormat;
+        dateTimeFormat = GetCachedFormat("dateFormat", "date", "date");
     } else {
         options = ToDateTimeOptions(options, "date", "date");
         dateTimeFormat = intl_DateTimeFormat(locales, options);
@@ -104,11 +160,7 @@ function Date_toLocaleTimeString() {
     if (locales === undefined && options === undefined) {
         
         
-        if (dateTimeFormatCache.timeFormat === undefined) {
-            options = ToDateTimeOptions(options, "time", "time");
-            dateTimeFormatCache.timeFormat = intl_DateTimeFormat(locales, options);
-        }
-        dateTimeFormat = dateTimeFormatCache.timeFormat;
+        dateTimeFormat = GetCachedFormat("timeFormat", "time", "time");
     } else {
         options = ToDateTimeOptions(options, "time", "time");
         dateTimeFormat = intl_DateTimeFormat(locales, options);
