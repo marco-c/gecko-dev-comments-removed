@@ -646,13 +646,6 @@ public:
   void SetType(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::type, aValue, aRv);
-    if (aValue.EqualsLiteral("number")) {
-      
-      
-      
-      
-      FlushFrames();
-    }
   }
 
   
