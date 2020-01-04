@@ -845,6 +845,7 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
 
 
 
+
   uint8_t* res = new uint8_t[mRemoteMaxPacketLength];
   uint8_t opcode;
 
@@ -883,40 +884,54 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
   } else {
     MOZ_ASSERT(mVCardDataStream);
 
-    
-    
-    uint32_t remainingPacketSize =
-      mRemoteMaxPacketLength - kObexBodyHeaderSize - index;
-
-    
-    uint32_t numRead = 0;
-    nsAutoArrayPtr<char> buf(new char[remainingPacketSize]);
-    nsresult rv = mVCardDataStream->Read(buf, remainingPacketSize, &numRead);
+    uint64_t bytesAvailable = 0;
+    nsresult rv = mVCardDataStream->Available(&bytesAvailable);
     if (NS_FAILED(rv)) {
-      BT_LOGR("Failed to read from input stream. rv=0x%x",
+      BT_LOGR("Failed to get available bytes from input stream. rv=0x%x",
               static_cast<uint32_t>(rv));
       return false;
     }
 
-    if (numRead) {
-      index += AppendHeaderBody(&res[index],
-                                remainingPacketSize,
-                                (uint8_t*) buf.forget(),
-                                numRead);
-    }
+    
 
-    
-    
-    if (numRead + kObexBodyHeaderSize > remainingPacketSize) {
-      opcode = ObexResponseCode::Continue;
-    } else {
+
+
+
+
+    if (!bytesAvailable) {
       
-      opcode = ObexResponseCode::Success;
       index += AppendHeaderEndOfBody(&res[index]);
 
       
       mVCardDataStream->Close();
       mVCardDataStream = nullptr;
+
+      opcode = ObexResponseCode::Success;
+    } else {
+      
+      uint32_t remainingPacketSize =
+        mRemoteMaxPacketLength - kObexBodyHeaderSize - index;
+
+      
+      uint32_t numRead = 0;
+      nsAutoArrayPtr<char> buf(new char[remainingPacketSize]);
+      rv = mVCardDataStream->Read(buf, remainingPacketSize, &numRead);
+      if (NS_FAILED(rv)) {
+        BT_LOGR("Failed to read from input stream. rv=0x%x",
+                static_cast<uint32_t>(rv));
+        return false;
+      }
+
+      
+      MOZ_ASSERT(numRead);
+
+      
+      index += AppendHeaderBody(&res[index],
+                                remainingPacketSize,
+                                (uint8_t*) buf.forget(),
+                                numRead);
+
+      opcode = ObexResponseCode::Continue;
     }
   }
 
