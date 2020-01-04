@@ -9,27 +9,35 @@
 
 
 
-const kWhitelist = [
+let whitelist = [
   
-  {sourceName: /codemirror\.css$/i},
+  {sourceName: /codemirror\.css$/i,
+   isFromDevTools: true},
   
   {sourceName: /web\/viewer\.css$/i,
-   errorMessage: /Unknown pseudo-class.*(fullscreen|selection)/i},
+   errorMessage: /Unknown pseudo-class.*(fullscreen|selection)/i,
+   isFromDevTools: false},
   
-  {sourceName: /aboutaccounts\/(main|normalize)\.css$/i},
+  {sourceName: /aboutaccounts\/(main|normalize)\.css$/i,
+    isFromDevTools: false},
   
-  {sourceName: /loop\/.*sdk-content\/.*\.css$/i},
+  {sourceName: /loop\/.*sdk-content\/.*\.css$/i,
+    isFromDevTools: false},
   
   {sourceName: /loop\/.*\.css$/i,
-   errorMessage: /Unknown pseudo-class.*placeholder/i},
+   errorMessage: /Unknown pseudo-class.*placeholder/i,
+   isFromDevTools: false},
   {sourceName: /loop\/.*shared\/css\/common.css$/i,
-   errorMessage: /Unknown property .user-select./i},
+   errorMessage: /Unknown property .user-select./i,
+   isFromDevTools: false},
   
   {sourceName: /highlighters\.css$/i,
-   errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i},
+   errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i,
+   isFromDevTools: true},
   
   {sourceName: /responsive-ua\.css$/i,
-   errorMessage: /Unknown pseudo-class.*moz-dropdown-list/i},
+   errorMessage: /Unknown pseudo-class.*moz-dropdown-list/i,
+   isFromDevTools: true},
 ];
 
 var moduleLocation = gTestPath.replace(/\/[^\/]*$/i, "/parsingTestHelpers.jsm");
@@ -48,15 +56,17 @@ const kPathSuffix = "?always-parse-css-" + Math.random();
 
 
 function ignoredError(aErrorObject) {
-  for (let whitelistItem of kWhitelist) {
+  for (let whitelistItem of whitelist) {
     let matches = true;
-    for (let prop in whitelistItem) {
-      if (!whitelistItem[prop].test(aErrorObject[prop] || "")) {
+    for (let prop of ["sourceName", "errorMessage"]) {
+      if (whitelistItem.hasOwnProperty(prop) &&
+          !whitelistItem[prop].test(aErrorObject[prop] || "")) {
         matches = false;
         break;
       }
     }
     if (matches) {
+      whitelistItem.used = true;
       return true;
     }
   }
@@ -233,6 +243,15 @@ add_task(function* checkAllTheCSS() {
   
   let errors = messages.filter(messageIsCSSError);
   is(errors.length, 0, "All the styles (" + allPromises.length + ") loaded without errors.");
+
+  
+  for (let item of whitelist) {
+    if (!item.used && isDevtools == item.isFromDevTools) {
+      ok(false, "Unused whitelist item. " +
+                (item.sourceName ? " sourceName: " + item.sourceName : "") +
+                (item.errorMessage ? " errorMessage: " + item.errorMessage : ""));
+    }
+  }
 
   
   iframe.remove();
