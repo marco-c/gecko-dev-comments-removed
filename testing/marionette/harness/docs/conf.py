@@ -11,7 +11,8 @@
 
 
 
-import sys, os
+import os
+import sys
 
 
 
@@ -186,21 +187,21 @@ htmlhelp_basename = 'MarionettePythonClientdoc'
 
 
 latex_elements = {
+    
+    
 
+    
+    
 
-
-
-
-
-
-
+    
+    
 }
 
 
 
 latex_documents = [
-  ('index', 'MarionettePythonClient.tex', u'Marionette Python Client Documentation',
-   u'Mozilla Automation and Tools team', 'manual'),
+    ('index', 'MarionettePythonClient.tex', u'Marionette Python Client Documentation',
+     u'Mozilla Automation and Tools team', 'manual'),
 ]
 
 
@@ -243,9 +244,9 @@ man_pages = [
 
 
 texinfo_documents = [
-  ('index', 'MarionettePythonClient', u'Marionette Python Client Documentation',
-   u'Mozilla Automation and Tools team', 'MarionettePythonClient', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'MarionettePythonClient', 'Marionette Python Client Documentation',
+     'Mozilla Automation and Tools team', 'MarionettePythonClient',
+     'One line description of project.', 'Miscellaneous'),
 ]
 
 
