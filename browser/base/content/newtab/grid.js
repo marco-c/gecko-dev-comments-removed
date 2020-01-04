@@ -9,6 +9,7 @@
 
 const GRID_BOTTOM_EXTRA = 7; 
 const GRID_WIDTH_EXTRA = 1; 
+const SPONSORED_TAG_BUFFER = 2; 
 
 
 
@@ -178,6 +179,15 @@ let gGrid = {
   
 
 
+
+  _isHistoricalTile: function Grid_isHistoricalTile(aPos) {
+    let site = this.sites[aPos];
+    return site && (site.isPinned() || site.link && site.link.type == "history");
+  },
+
+  
+
+
   _resizeGrid: function Grid_resizeGrid() {
     
     
@@ -195,9 +205,50 @@ let gGrid = {
         parseFloat(getComputedStyle(refCell).marginBottom);
       this._cellWidth = refCell.offsetWidth + this._cellMargin;
     }
-    this._node.style.height = this._computeHeight() + "px";
-    this._node.style.maxHeight = this._node.style.height;
+
+    let searchContainer = document.querySelector("#newtab-search-container");
+    
+    if (this._searchContainerMargin  === undefined) {
+      this._searchContainerMargin = parseFloat(getComputedStyle(searchContainer).marginBottom) +
+                                    parseFloat(getComputedStyle(searchContainer).marginTop);
+    }
+
+    
+    let availHeight = document.documentElement.clientHeight - this._cellMargin -
+                      searchContainer.offsetHeight - this._searchContainerMargin;
+    let visibleRows = Math.floor(availHeight / this._cellHeight);
+
+    
+    let maxGridWidth = gGridPrefs.gridColumns * this._cellWidth + GRID_WIDTH_EXTRA;
+    
+    let availWidth = Math.min(document.querySelector("#newtab-grid").clientWidth,
+                              maxGridWidth);
+    
+    let gridColumns =  Math.floor(availWidth / this._cellWidth);
+    
+    let tileIndex = Math.min(gGridPrefs.gridRows * gridColumns, this.sites.length) - 1;
+    while (tileIndex >= visibleRows * gridColumns) {
+      if (this._isHistoricalTile(tileIndex)) {
+        break;
+      }
+      tileIndex --;
+    }
+
+    
+    
+    
+    
+    let gridRows = Math.floor(tileIndex / gridColumns) + 1;
+
+    
+    
+    
+    
+    
+    this._node.style.width = gridColumns * this._cellWidth + "px";
     this._node.style.maxWidth = gGridPrefs.gridColumns * this._cellWidth +
                                 GRID_WIDTH_EXTRA + "px";
+    this._node.style.height = this._computeHeight() + "px";
+    this._node.style.maxHeight = this._computeHeight(gridRows) - SPONSORED_TAG_BUFFER + "px";
   }
 };
