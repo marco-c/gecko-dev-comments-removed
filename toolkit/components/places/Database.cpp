@@ -24,6 +24,7 @@
 
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
+#include "prenv.h"
 #include "prsystem.h"
 #include "nsPrintfCString.h"
 #include "mozilla/Preferences.h"
@@ -46,6 +47,15 @@
 
 
 #define PREF_GROWTH_INCREMENT_KIB "places.database.growthIncrementKiB"
+
+
+
+
+
+
+
+#define PREF_DISABLE_DURABILITY "places.database.disableDurability"
+#define ENV_ALLOW_CORRUPTION "ALLOW_PLACES_DATABASE_TO_LOSE_DATA_AND_BECOME_CORRUPT"
 
 
 
@@ -625,31 +635,41 @@ Database::InitSchema(bool* aDatabaseMigrated)
       MOZ_STORAGE_UNIQUIFY_QUERY_STR "PRAGMA temp_store = MEMORY"));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  if (JOURNAL_WAL == SetJournalMode(mMainConn, JOURNAL_WAL)) {
+  if (PR_GetEnv(ENV_ALLOW_CORRUPTION) && Preferences::GetBool(PREF_DISABLE_DURABILITY, false)) {
     
     
-    
-    
-    int32_t checkpointPages =
-      static_cast<int32_t>(DATABASE_MAX_WAL_SIZE_IN_KIBIBYTES * 1024 / mDBPageSize);
-    nsAutoCString checkpointPragma("PRAGMA wal_autocheckpoint = ");
-    checkpointPragma.AppendInt(checkpointPages);
-    rv = mMainConn->ExecuteSimpleSQL(checkpointPragma);
+    SetJournalMode(mMainConn, JOURNAL_MEMORY);
+    rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+        "PRAGMA synchronous = OFF"));
     NS_ENSURE_SUCCESS(rv, rv);
   }
   else {
     
     
-    
-    (void)SetJournalMode(mMainConn, JOURNAL_TRUNCATE);
+    if (JOURNAL_WAL == SetJournalMode(mMainConn, JOURNAL_WAL)) {
+      
+      
+      
+      
+      int32_t checkpointPages =
+        static_cast<int32_t>(DATABASE_MAX_WAL_SIZE_IN_KIBIBYTES * 1024 / mDBPageSize);
+      nsAutoCString checkpointPragma("PRAGMA wal_autocheckpoint = ");
+      checkpointPragma.AppendInt(checkpointPages);
+      rv = mMainConn->ExecuteSimpleSQL(checkpointPragma);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    else {
+      
+      
+      
+      (void)SetJournalMode(mMainConn, JOURNAL_TRUNCATE);
 
-    
-    
-    rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-        "PRAGMA synchronous = FULL"));
-    NS_ENSURE_SUCCESS(rv, rv);
+      
+      
+      rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+          "PRAGMA synchronous = FULL"));
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
   }
 
   
