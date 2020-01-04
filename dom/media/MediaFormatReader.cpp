@@ -750,7 +750,7 @@ MediaFormatReader::NeedInput(DecoderData& aDecoder)
   
   
   return
-    !(aDecoder.mDraining || aDecoder.mDrainComplete) &&
+    !aDecoder.HasPendingDrain() &&
     !aDecoder.HasFatalError() &&
     aDecoder.mDecodingRequested &&
     !aDecoder.mDemuxRequest.Exists() &&
@@ -813,7 +813,7 @@ MediaFormatReader::UpdateReceivedNewData(TrackType aTrack)
     return false;
   }
 
-  if (decoder.mDrainComplete || decoder.mDraining) {
+  if (decoder.HasPendingDrain()) {
     
     
     return false;
@@ -1205,8 +1205,7 @@ MediaFormatReader::Update(TrackType aTrack)
         return;
       }
     } else if (decoder.mDemuxEOS && !decoder.mNeedDraining &&
-               !decoder.mDraining && !decoder.mDrainComplete &&
-               decoder.mQueuedSamples.IsEmpty()) {
+               !decoder.HasPendingDrain() && decoder.mQueuedSamples.IsEmpty()) {
       
       
       
