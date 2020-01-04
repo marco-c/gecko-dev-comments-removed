@@ -43,7 +43,7 @@ nsMediaSnifferEntry sFtypEntries[] = {
   PATTERN_ENTRY("\xFF\xFF\xFF", "3gp", VIDEO_3GPP), 
   PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "M4A ", AUDIO_MP4),
   PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "M4P ", AUDIO_MP4),
-  PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "qt  ", VIDEO_MP4),
+  PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "qt  ", VIDEO_QUICKTIME),
 };
 
 static bool MatchesBrands(const uint8_t aData[4], nsACString& aSniffedType)
