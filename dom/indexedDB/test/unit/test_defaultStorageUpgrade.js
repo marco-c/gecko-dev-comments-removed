@@ -47,10 +47,6 @@ function testSteps()
     { dbName: "dbL", dbVersion: 1 },
 
     
-    { appId: 1007, inIsolatedMozBrowser: false, url: "app://system.gaiamobile.org",
-      dbName: "dbM", dbVersion: 1 },
-
-    
     { appId: 1007, inIsolatedMozBrowser: true, url: "https://developer.cdn.mozilla.net",
       dbName: "dbN", dbVersion: 1 },
 
@@ -90,10 +86,6 @@ function testSteps()
     
     { url: "http://localhost:82", dbName: "dbW",
       dbOptions: { version: 1, storage: "temporary" } },
-
-    
-    { appId: 1007, inIsolatedMozBrowser: false, url: "app://system.gaiamobile.org",
-      dbName: "dbX", dbOptions: { version: 1, storage: "temporary" } },
 
     
     { appId: 1007, inIsolatedMozBrowser: true, url: "https://developer.cdn.mozilla.net",
