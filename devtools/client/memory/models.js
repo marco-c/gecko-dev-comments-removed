@@ -57,6 +57,8 @@ let censusModel = exports.censusModel = PropTypes.shape({
   
   report: PropTypes.object,
   
+  parentMap: PropTypes.object,
+  
   breakdown: breakdownModel,
   
   inverted: PropTypes.bool,

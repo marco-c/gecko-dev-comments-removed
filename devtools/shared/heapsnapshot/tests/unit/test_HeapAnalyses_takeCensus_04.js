@@ -49,7 +49,7 @@ add_task(function* test() {
   
   
 
-  const report = yield client.takeCensus(snapshotFilePath, {
+  const { report } = yield client.takeCensus(snapshotFilePath, {
     breakdown: { by: 'objectClass',
                  then: { by: 'allocationStack',
                          then: { by: 'count',
