@@ -2206,6 +2206,9 @@ class MochitestDesktop(MochitestBase):
         self.killNamedOrphans('ssltunnel')
         self.killNamedOrphans('xpcshell')
 
+        if options.cleanupCrashes:
+            mozcrash.cleanup_pending_crash_reports()
+
         
         
 
