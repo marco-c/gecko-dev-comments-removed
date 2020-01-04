@@ -2534,6 +2534,8 @@ UpdateThreadFunc(void *param)
     
     if (sReplaceRequest) {
       WriteStatusFile(sUsingService ? "pending-service" : "pending");
+    } else {
+      WriteStatusFile(rv);
     }
 #ifdef TEST_UPDATER
     

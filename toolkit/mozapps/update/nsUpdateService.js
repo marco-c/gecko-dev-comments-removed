@@ -1093,12 +1093,15 @@ function cleanUpMozUpdaterDirs() {
 
 
 
-function cleanUpUpdatesDir(aBackgroundUpdate) {
-  
+
+
+function cleanUpUpdatesDir(aRemovePatchFiles = true) {
   let updateDir;
   try {
     updateDir = getUpdatesDir();
   } catch (e) {
+    LOG("cleanUpUpdatesDir - unable to get the updates patch directory. " +
+        "Exception: " + e);
     return;
   }
 
@@ -1126,7 +1129,7 @@ function cleanUpUpdatesDir(aBackgroundUpdate) {
     }
   }
 
-  if (!aBackgroundUpdate) {
+  if (aRemovePatchFiles) {
     let e = updateDir.directoryEntries;
     while (e.hasMoreElements()) {
       let f = e.getNext().QueryInterface(Ci.nsIFile);
@@ -2138,7 +2141,22 @@ UpdateService.prototype = {
       }
       update = new Update(null);
     }
-    update.state = status;
+
+    let parts = status.split(":");
+    update.state = parts[0];
+    if (update.state == STATE_FAILED && parts[1]) {
+      update.errorCode = parseInt(parts[1]);
+    }
+
+
+    if (status != STATE_SUCCEEDED) {
+      
+      
+      um.saveUpdates();
+      
+      
+      cleanUpUpdatesDir(false);
+    }
 
     if (status == STATE_SUCCEEDED) {
       update.statusText = gUpdateBundle.GetStringFromName("installSuccess");
@@ -2158,16 +2176,8 @@ UpdateService.prototype = {
       
       
       
-      
-      
-      
-      
-      
-      var ary = status.split(":");
-      update.state = ary[0];
-      if (update.state == STATE_FAILED && ary[1]) {
-        if (handleUpdateFailure(update, ary[1])) {
-          cleanUpUpdatesDir(true);
+      if (update.state == STATE_FAILED && update.errorCode) {
+        if (handleUpdateFailure(update, update.errorCode)) {
           return;
         }
       }
@@ -3119,7 +3129,13 @@ UpdateManager.prototype = {
     this._ensureUpdates();
     if (this._updates) {
       for (var i = 0; i < this._updates.length; ++i) {
-        if (this._updates[i] &&
+        
+        
+        
+        
+        if (update.state != STATE_FAILED &&
+            this._updates[i] &&
+            this._updates[i].state != STATE_FAILED &&
             this._updates[i].appVersion == update.appVersion &&
             this._updates[i].buildID == update.buildID) {
           
@@ -3196,7 +3212,7 @@ UpdateManager.prototype = {
         }
       }
 
-      this._writeUpdatesToXMLFile(updates.slice(0, 10),
+      this._writeUpdatesToXMLFile(updates.slice(0, 20),
                                   getUpdateFile([FILE_UPDATES_XML]));
     }
   },
@@ -3214,10 +3230,19 @@ UpdateManager.prototype = {
     pingStateAndStatusCodes(update, false, status);
     var parts = status.split(":");
     update.state = parts[0];
+    if (update.state == STATE_FAILED && parts[1]) {
+      update.errorCode = parseInt(parts[1]);
+    }
+    let um = Cc["@mozilla.org/updates/update-manager;1"].
+             getService(Ci.nsIUpdateManager);
+    
+    
+    um.saveUpdates();
 
     
     
-    cleanUpUpdatesDir(true);
+    
+    cleanUpUpdatesDir(false);
 
     if (update.state == STATE_FAILED && parts[1]) {
       updateSucceeded = false;
@@ -3227,17 +3252,6 @@ UpdateManager.prototype = {
     }
     if (update.state == STATE_APPLIED && shouldUseService()) {
       writeStatusFile(getUpdatesDir(), update.state = STATE_APPLIED_SERVICE);
-    }
-    var um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
-    um.saveUpdates();
-
-    if (update.state != STATE_PENDING &&
-        update.state != STATE_PENDING_SERVICE &&
-        update.state != STATE_PENDING_ELEVATE) {
-      
-      
-      cleanUpUpdatesDir(updateSucceeded);
     }
 
     
