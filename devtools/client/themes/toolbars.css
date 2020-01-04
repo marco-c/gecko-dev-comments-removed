@@ -980,16 +980,14 @@
 
 .devtools-invisible-splitter {
   border-color: transparent;
+  background-color: transparent;
 }
 
-.devtools-horizontal-splitter {
-  border-bottom: 1px solid var(--theme-splitter-color);
-}
-
+.devtools-horizontal-splitter,
 .devtools-side-splitter {
-  -moz-border-end: 1px solid var(--theme-splitter-color);
-  border-color: var(--theme-splitter-color); 
+  background-color: var(--theme-splitter-color);
 }
+
 
 
 .devtools-throbber::before {
