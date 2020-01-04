@@ -502,6 +502,12 @@ function _execute_test() {
   _PromiseTestUtils.init();
   _PromiseTestUtils.Assert = Assert;
 
+  let coverageCollector = null;
+  if (typeof _JSCOV_DIR === 'string') {
+    let _CoverageCollector = Components.utils.import("resource://testing-common/CoverageUtils.jsm", {}).CoverageCollector;
+    coverageCollector = new _CoverageCollector(_JSCOV_DIR);
+  }
+
   
   _load_files(_HEAD_FILES);
   
@@ -529,6 +535,11 @@ function _execute_test() {
     } else {
       run_next_test();
     }
+
+    if (coverageCollector != null) {
+      coverageCollector.recordTestCoverage(_TEST_FILE);
+    }
+
     do_test_finished("MAIN run_test");
     _do_main();
     _PromiseTestUtils.assertNoUncaughtRejections();
@@ -539,6 +550,10 @@ function _execute_test() {
     
     
     
+    if (coverageCollector != null) {
+      coverageCollector.recordTestCoverage(_TEST_FILE);
+    }
+
     if (!_quit || e != Components.results.NS_ERROR_ABORT) {
       let extra = {};
       if (e.fileName) {
@@ -555,6 +570,10 @@ function _execute_test() {
       }
       _testLogger.error(message, extra);
     }
+  }
+
+  if (coverageCollector != null) {
+    coverageCollector.finalize();
   }
 
   
@@ -1248,6 +1267,10 @@ function do_load_child_test_harness()
       
       + "const _JSDEBUGGER_PORT=0; "
       + "const _XPCSHELL_PROCESS='child';";
+
+  if (typeof _JSCOV_DIR === 'string') {
+    command += " const _JSCOV_DIR=" + uneval(_JSCOV_DIR) + ";";
+  }
 
   if (_TESTING_MODULES_DIR) {
     command += " const _TESTING_MODULES_DIR=" + uneval(_TESTING_MODULES_DIR) + ";";
