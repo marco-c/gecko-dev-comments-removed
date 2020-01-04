@@ -409,11 +409,78 @@ private:
   nsPoint mOffset;
 };
 
+static IntRect
+ComputeMaskGeometry(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
+                    const nsStyleSVGReset *svgReset,
+                    const nsPoint& aOffsetToUserSpace,
+                    const nsTArray<nsSVGMaskFrame *>& aMaskFrames)
+{
+  gfxContext& ctx = aParams.ctx;
+  nsIFrame* frame = aParams.frame;
+
+  
+  int32_t appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
+  nsRect userSpaceBorderArea = aParams.borderArea - aOffsetToUserSpace;
+  nsRect userSpaceDirtyRect = aParams.dirtyRect - aOffsetToUserSpace;
+
+  
+  gfxRect maskInUserSpace;
+  for (size_t i = 0; i < aMaskFrames.Length() ; i++) {
+    nsSVGMaskFrame* maskFrame = aMaskFrames[i];
+    gfxRect currentMaskSurfaceRect;
+
+    if (maskFrame) {
+      currentMaskSurfaceRect = maskFrame->GetMaskArea(aParams.frame);
+    } else {
+      nsCSSRendering::ImageLayerClipState clipState;
+      nsCSSRendering::GetImageLayerClip(svgReset->mMask.mLayers[i],
+                                       frame,
+                                       *frame->StyleBorder(),
+                                       userSpaceBorderArea,
+                                       userSpaceDirtyRect,
+                                       false, 
+                                       appUnitsPerDevPixel,
+                                       &clipState);
+      currentMaskSurfaceRect = clipState.mDirtyRectGfx;
+    }
+
+    maskInUserSpace = maskInUserSpace.Union(currentMaskSurfaceRect);
+  }
+
+  ctx.Save();
+
+  
+  gfxRect frameVisualOverflowRect =
+    nsLayoutUtils::RectToGfxRect(frame->GetVisualOverflowRectRelativeToSelf(),
+                                 appUnitsPerDevPixel);
+  ctx.Clip(frameVisualOverflowRect);
+  
+  
+  
+  
+  if (!maskInUserSpace.IsEmpty()) {
+    ctx.Clip(maskInUserSpace);
+  }
+
+  
+  ctx.SetMatrix(gfxMatrix());
+  gfxRect clippedFrameSurfaceRect = ctx.GetClipExtents();
+  clippedFrameSurfaceRect.RoundOut();
+
+  ctx.Restore();
+
+  IntRect result;
+  ToRect(clippedFrameSurfaceRect).ToIntRect(&result);
+  return mozilla::gfx::Factory::CheckSurfaceSize(result.Size()) ? result
+                                                                : IntRect();
+}
+
 static void
 GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
                     float aOpacity, nsStyleContext* aSC,
                     const nsTArray<nsSVGMaskFrame *>& aMaskFrames,
-                    const gfxPoint& aOffest, Matrix& aOutMaskTransform,
+                    const nsPoint& aOffsetToUserSpace,
+                    Matrix& aOutMaskTransform,
                     RefPtr<SourceSurface>& aOutMaskSurface)
 {
   const nsStyleSVGReset *svgReset = aSC->StyleSVGReset();
@@ -434,16 +501,12 @@ GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
     return;
   }
 
-  ctx.Save();
-  ctx.SetMatrix(gfxMatrix());
-  gfxRect clipExtents = ctx.GetClipExtents();
-  IntRect maskSurfaceRect = RoundedOut(ToRect(clipExtents));
-  ctx.Restore();
-
+  IntRect maskSurfaceRect = ComputeMaskGeometry(aParams, svgReset,
+                                                aOffsetToUserSpace,
+                                                aMaskFrames);
   if (maskSurfaceRect.IsEmpty()) {
     return;
   }
-
 
   
   
@@ -461,6 +524,11 @@ GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
 
   RefPtr<gfxContext> maskContext = gfxContext::CreateOrNull(maskDT);
   MOZ_ASSERT(maskContext);
+
+  nsPresContext* presContext = aParams.frame->PresContext();
+  gfxPoint devPixelOffsetToUserSpace =
+    nsLayoutUtils::PointToGfxPoint(aOffsetToUserSpace,
+                                   presContext->AppUnitsPerDevPixel());
 
   
   
@@ -497,10 +565,10 @@ GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
     } else {
       gfxContextMatrixAutoSaveRestore matRestore(maskContext);
 
-      maskContext->Multiply(gfxMatrix::Translation(-aOffest));
+      maskContext->Multiply(gfxMatrix::Translation(-devPixelOffsetToUserSpace));
       nsRenderingContext rc(maskContext);
       nsCSSRendering::PaintBGParams  params =
-        nsCSSRendering::PaintBGParams::ForSingleLayer(*aParams.frame->PresContext(),
+        nsCSSRendering::PaintBGParams::ForSingleLayer(*presContext,
                                                       rc, aParams.dirtyRect,
                                                       aParams.borderArea,
                                                       aParams.frame,
@@ -660,7 +728,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
 
     if (shouldGenerateMaskLayer) {
       GenerateMaskSurface(aParams, opacity, firstFrame->StyleContext(),
-                          maskFrames, devPixelOffsetToUserSpace,
+                          maskFrames, offsetToUserSpace,
                           maskTransform, maskSurface);
     }
 
