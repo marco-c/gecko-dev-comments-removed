@@ -675,7 +675,7 @@ protected:
   
   
   
-  MediaDecoderOwner* const mOwner;
+  MediaDecoderOwner* mOwner;
 
   
   const RefPtr<FrameStatistics> mFrameStats;
