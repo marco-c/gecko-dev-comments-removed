@@ -675,16 +675,6 @@ function isUsableAddon(aAddon) {
   if (aAddon.blocklistState == Blocklist.STATE_BLOCKED)
     return false;
 
-  
-  
-  
-  
-  
-  
-  
-  if (aAddon.type == "experiment")
-    return true;
-
   if (AddonManager.checkUpdateSecurity && !aAddon.providesUpdatesSecurely)
     return false;
 
@@ -916,7 +906,7 @@ function loadManifestFromWebManifest(aStream) {
 
   addon.targetApplications = [{
     id: TOOLKIT_ID,
-    minVersion: "42a1",
+    minVersion: AddonManagerPrivate.webExtensionsMinPlatformVersion,
     maxVersion: "*",
   }];
 
