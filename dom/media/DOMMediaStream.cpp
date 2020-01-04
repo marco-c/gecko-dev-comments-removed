@@ -172,7 +172,8 @@ public:
 
     RefPtr<MediaStreamTrack> newTrack =
       mStream->CreateDOMTrack(aTrackID, aType, source);
-    mStream->AddTrackInternal(newTrack);
+    NS_DispatchToMainThread(NewRunnableMethod<RefPtr<MediaStreamTrack>>(
+        mStream, &DOMMediaStream::AddTrackInternal, newTrack));
   }
 
   void DoNotifyTrackEnded(MediaStream* aInputStream, TrackID aInputTrackID,
@@ -279,7 +280,11 @@ public:
       return;
     }
 
-    mStream->NotifyTracksCreated();
+    
+    
+    
+    NS_DispatchToMainThread(
+        NewRunnableMethod(mStream, &DOMMediaStream::NotifyTracksCreated));
   }
 
   
