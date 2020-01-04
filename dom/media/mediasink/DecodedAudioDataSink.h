@@ -58,6 +58,10 @@ public:
   void SetPreservesPitch(bool aPreservesPitch) override;
   void SetPlaying(bool aPlaying) override;
 
+  MediaEventSource<bool>& AudibleEvent() {
+    return mAudibleEvent;
+  }
+
 private:
   virtual ~DecodedAudioDataSink();
 
@@ -69,6 +73,8 @@ private:
   UniquePtr<AudioStream::Chunk> PopFrames(uint32_t aFrames) override;
   bool Ended() const override;
   void Drained() override;
+
+  void CheckIsAudible(const AudioData* aData);
 
   
   RefPtr<AudioStream> mAudioStream;
@@ -146,6 +152,11 @@ private:
   
   uint32_t mOutputRate;
   uint32_t mOutputChannels;
+
+  
+  bool mIsAudioDataAudible;
+
+  MediaEventProducer<bool> mAudibleEvent;
 };
 
 } 
