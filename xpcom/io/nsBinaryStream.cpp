@@ -863,11 +863,13 @@ nsBinaryInputStream::ReadArrayBuffer(uint32_t aLength,
     
 
     JS::AutoCheckCannotGC nogc;
+    bool isShared;
     if (bufferLength != JS_GetArrayBufferByteLength(buffer)) {
       return NS_ERROR_FAILURE;
     }
 
-    char* data = reinterpret_cast<char*>(JS_GetArrayBufferData(buffer, nogc));
+    char* data = reinterpret_cast<char*>(JS_GetArrayBufferData(buffer, &isShared, nogc));
+    MOZ_ASSERT(!isShared);      
     if (!data) {
       return NS_ERROR_FAILURE;
     }
