@@ -63,7 +63,7 @@ public:
     }
 
     
-    mPromiseProxy->CleanUp(aCx);
+    mPromiseProxy->CleanUp();
 
     return true;
   }

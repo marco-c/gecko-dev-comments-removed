@@ -154,7 +154,7 @@ public:
   
   
   
-  void CleanUp(JSContext* aCx);
+  void CleanUp();
 
   Mutex& Lock()
   {

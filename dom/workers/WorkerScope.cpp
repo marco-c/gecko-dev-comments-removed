@@ -559,7 +559,7 @@ public:
     promise->MaybeResolve(JS::UndefinedHandleValue);
 
     
-    mPromiseProxy->CleanUp(aCx);
+    mPromiseProxy->CleanUp();
 
     return true;
   }

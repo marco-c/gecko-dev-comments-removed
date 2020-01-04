@@ -2747,7 +2747,7 @@ public:
     (workerPromise->*mFunc)(aCx, value);
 
     
-    mPromiseWorkerProxy->CleanUp(aCx);
+    mPromiseWorkerProxy->CleanUp();
     return true;
   }
 
@@ -2925,14 +2925,14 @@ bool
 PromiseWorkerProxy::Notify(JSContext* aCx, Status aStatus)
 {
   if (aStatus >= Canceling) {
-    CleanUp(aCx);
+    CleanUp();
   }
 
   return true;
 }
 
 void
-PromiseWorkerProxy::CleanUp(JSContext* aCx)
+PromiseWorkerProxy::CleanUp()
 {
   
   {
@@ -2946,7 +2946,6 @@ PromiseWorkerProxy::CleanUp(JSContext* aCx)
 
     MOZ_ASSERT(mWorkerPrivate);
     mWorkerPrivate->AssertIsOnWorkerThread();
-    MOZ_ASSERT(mWorkerPrivate->GetJSContext() == aCx);
 
     
     
