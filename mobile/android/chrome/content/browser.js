@@ -1971,8 +1971,6 @@ var BrowserApp = {
           ];
           let message = Strings.browser.GetStringFromName("vibrationRequest.message");
           let options = {};
-          
-          NativeWindow.doorhanger.hide("vibration-request", BrowserApp.selectedTab.id);
           NativeWindow.doorhanger.show(message, "vibration-request", buttons,
               BrowserApp.selectedTab.id, options, "VIBRATION");
         }
