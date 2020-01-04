@@ -208,8 +208,6 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
     
     IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
                                      : GetSize();
-    IntRect targetFrameRect = mDownscaler ? IntRect(IntPoint(), targetSize)
-                                          : aFrameRect;
 
     
     pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
@@ -218,7 +216,7 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
     pipe =
       SurfacePipeFactory::CreateSurfacePipe(this, mGIFStruct.images_decoded,
                                             GetSize(), targetSize,
-                                            targetFrameRect, format, pipeFlags);
+                                            aFrameRect, format, pipeFlags);
   } else {
     
     
