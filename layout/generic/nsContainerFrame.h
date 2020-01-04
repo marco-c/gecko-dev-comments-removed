@@ -601,20 +601,20 @@ protected:
 
 
 
-  nsFrameList* GetPropTableFrames(const FramePropertyDescriptor* aProperty) const;
+  nsFrameList* GetPropTableFrames(PropertyDescriptor<> aProperty) const;
 
   
 
 
 
-  nsFrameList* RemovePropTableFrames(const FramePropertyDescriptor* aProperty);
+  nsFrameList* RemovePropTableFrames(PropertyDescriptor<> aProperty);
 
   
 
 
 
   void SetPropTableFrames(nsFrameList*                   aFrameList,
-                          const FramePropertyDescriptor* aProperty);
+                          PropertyDescriptor<> aProperty);
 
   
 
@@ -624,7 +624,7 @@ protected:
   void SafelyDestroyFrameListProp(nsIFrame* aDestructRoot,
                                   nsIPresShell* aPresShell,
                                   mozilla::FramePropertyTable* aPropTable,
-                                  const FramePropertyDescriptor* aProp);
+                                  PropertyDescriptor<> aProp);
 
   
 

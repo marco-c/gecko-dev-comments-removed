@@ -386,8 +386,10 @@ private:
 
 class nsSVGEffects {
 public:
+  template<typename T=void>
+  using FramePropertyDescriptor = mozilla::FramePropertyDescriptor<T>;
+
   typedef mozilla::dom::Element Element;
-  typedef mozilla::FramePropertyDescriptor FramePropertyDescriptor;
   typedef nsInterfaceHashtable<nsURIHashKey, nsIMutationObserver>
     URIObserverHashtable;
 
@@ -420,7 +422,7 @@ public:
 
   static nsSVGPaintServerFrame *GetPaintServer(nsIFrame *aTargetFrame,
                                                const nsStyleSVGPaint *aPaint,
-                                               const FramePropertyDescriptor *aProperty);
+                                               const FramePropertyDescriptor<>* aProperty);
 
   struct EffectProperties {
     nsSVGFilterProperty*   mFilter;
@@ -523,26 +525,26 @@ public:
 
   static nsSVGMarkerProperty *
   GetMarkerProperty(nsIURI *aURI, nsIFrame *aFrame,
-                    const FramePropertyDescriptor *aProperty);
+                    const FramePropertyDescriptor<> *aProperty);
   
 
 
   static nsSVGTextPathProperty *
   GetTextPathProperty(nsIURI *aURI, nsIFrame *aFrame,
-                      const FramePropertyDescriptor *aProperty);
+                      const FramePropertyDescriptor<> *aProperty);
   
 
 
   static nsSVGPaintingProperty *
   GetPaintingProperty(nsIURI *aURI, nsIFrame *aFrame,
-                      const FramePropertyDescriptor *aProperty);
+                      const FramePropertyDescriptor<> *aProperty);
   
 
 
 
   static nsSVGPaintingProperty *
   GetPaintingPropertyForURI(nsIURI *aURI, nsIFrame *aFrame,
-                            const FramePropertyDescriptor *aProp);
+                            const FramePropertyDescriptor<> *aProp);
 };
 
 #endif 
