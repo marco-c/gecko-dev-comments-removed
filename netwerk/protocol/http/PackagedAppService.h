@@ -68,9 +68,9 @@ private:
     nsCOMPtr<nsICacheEntry> mEntry;
 
     
-    NS_METHOD ConsumeData(const char *aBuf,
-                          uint32_t aCount,
-                          uint32_t *aWriteCount);
+    nsresult ConsumeData(const char *aBuf,
+                         uint32_t aCount,
+                         uint32_t *aWriteCount);
 
   private:
     CacheEntryWriter() { }
