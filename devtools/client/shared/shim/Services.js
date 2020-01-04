@@ -501,6 +501,24 @@ const Services = {
       return true;
     },
   },
+
+  
+
+
+
+  telemetry: {
+    getHistogramById: function (name) {
+      return {
+        add: () => {}
+      };
+    },
+
+    getKeyedHistogramById: function (name) {
+      return {
+        add: () => {}
+      };
+    },
+  },
 };
 
 
