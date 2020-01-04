@@ -601,12 +601,9 @@ function RegExpSplit(string, limit) {
     
     var unicodeMatching = callFunction(std_String_includes, flags, "u");
 
-    
-    var size = S.length;
-
     var optimizable = IsRegExpSplitOptimizable(rx, C);
     var splitter;
-    if (optimizable && size !== 0) {
+    if (optimizable) {
         
 
         
@@ -645,9 +642,16 @@ function RegExpSplit(string, limit) {
         return A;
 
     
+    var size = S.length;
+
+    
     if (size === 0) {
         
-        var z = RegExpExec(splitter, S, false);
+        var z;
+        if (optimizable)
+            z = RegExpMatcher(splitter, S, 0);
+        else
+            z = RegExpExec(splitter, S, false);
 
         
         if (z !== null)
