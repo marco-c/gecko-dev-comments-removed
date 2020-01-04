@@ -785,10 +785,10 @@ AsmJSModule::initHeap(Handle<ArrayBufferObjectMaybeShared*> heap, JSContext* cx)
     
     
     
-    heapDatum() = heap->dataPointerMaybeShared().unwrap();
+    heapDatum() = heap->dataPointerEither().unwrap();
 
 #if defined(JS_CODEGEN_X86)
-    uint8_t* heapOffset = heap->dataPointerMaybeShared().unwrap();
+    uint8_t* heapOffset = heap->dataPointerEither().unwrap();
     uint32_t heapLength = heap->byteLength();
     for (unsigned i = 0; i < heapAccesses_.length(); i++) {
         const jit::AsmJSHeapAccess& access = heapAccesses_[i];
@@ -834,7 +834,7 @@ AsmJSModule::restoreHeapToInitialState(ArrayBufferObjectMaybeShared* maybePrevBu
 #if defined(JS_CODEGEN_X86)
     if (maybePrevBuffer) {
         
-        uint8_t* ptrBase = maybePrevBuffer->dataPointerMaybeShared().unwrap();
+        uint8_t* ptrBase = maybePrevBuffer->dataPointerEither().unwrap();
         uint32_t heapLength = maybePrevBuffer->byteLength();
         for (unsigned i = 0; i < heapAccesses_.length(); i++) {
             const jit::AsmJSHeapAccess& access = heapAccesses_[i];
