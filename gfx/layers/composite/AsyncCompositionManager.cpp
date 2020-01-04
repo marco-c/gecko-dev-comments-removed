@@ -647,7 +647,17 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
     
 
 #if defined(MOZ_ANDROID_APZ)
-    if (metrics.IsRootContent()) {
+    bool rootContentLayer = metrics.IsRootContent();
+#ifdef MOZ_B2GDROID
+    
+    
+    
+    
+    
+    
+    rootContentLayer = (aLayer->GetParent() == nullptr);
+#endif 
+    if (rootContentLayer) {
       if (mIsFirstPaint) {
         CSSToLayerScale geckoZoom = metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
         LayerIntPoint scrollOffsetLayerPixels = RoundedToInt(metrics.GetScrollOffset() * geckoZoom);
@@ -659,7 +669,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
       mIsFirstPaint = false;
       mLayersUpdated = false;
     }
-#endif
+#endif 
 
     
     
