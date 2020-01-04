@@ -375,12 +375,6 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
 
     void testUndefinedSet(Condition cond, const ValueOperand& value, Register dest);
 
-    void branchTestMagicValue(Condition cond, const ValueOperand& val, JSWhyMagic why,
-                              Label* label) {
-        MOZ_ASSERT(cond == Equal || cond == NotEqual);
-        branchTestValue(cond, val, MagicValue(why), label);
-    }
-
     
     Operand ToPayload(Operand base);
     Address ToPayload(Address base) {
