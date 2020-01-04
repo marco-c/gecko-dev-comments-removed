@@ -1881,7 +1881,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
       
       
       nsAutoCString parsedMime, dummy;
-      NS_ParseContentType(newMime, parsedMime, dummy);
+      NS_ParseResponseContentType(newMime, parsedMime, dummy);
       if (!parsedMime.IsEmpty()) {
         mChannel->SetContentType(parsedMime);
       }
