@@ -377,6 +377,11 @@ protected:
 
   
   
+  
+  uint64_t mCurrentIterationOnLastCompose = 0;
+
+  
+  
   bool mInEffectOnLastAnimationTimingUpdate;
 
 private:
@@ -386,6 +391,10 @@ private:
 
   bool CanThrottle() const;
   bool CanThrottleTransformChanges(nsIFrame& aFrame) const;
+
+  
+  
+  bool HasComputedTimingChanged() const;
 
   
   

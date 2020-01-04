@@ -111,12 +111,7 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   }
 
   
-  
-  
-  
-  if (mAnimation &&
-      !mProperties.IsEmpty() &&
-      GetComputedTiming().mProgress != mProgressOnLastCompose) {
+  if (mAnimation && !mProperties.IsEmpty() && HasComputedTimingChanged()) {
     EffectCompositor::RestyleType restyleType =
       CanThrottle() ?
       EffectCompositor::RestyleType::Throttled :
@@ -128,8 +123,10 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   
   
   
+  
   if (!inEffect) {
      mProgressOnLastCompose.SetNull();
+     mCurrentIterationOnLastCompose = 0;
   }
 }
 
@@ -312,6 +309,7 @@ KeyframeEffectReadOnly::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
 {
   ComputedTiming computedTiming = GetComputedTiming();
   mProgressOnLastCompose = computedTiming.mProgress;
+  mCurrentIterationOnLastCompose = computedTiming.mCurrentIteration;
 
   
   
@@ -1309,6 +1307,21 @@ KeyframeEffectReadOnly::MarkCascadeNeedsUpdate()
     return;
   }
   effectSet->MarkCascadeNeedsUpdate();
+}
+
+bool
+KeyframeEffectReadOnly::HasComputedTimingChanged() const
+{
+  
+  
+  
+  
+  ComputedTiming computedTiming = GetComputedTiming();
+  return computedTiming.mProgress != mProgressOnLastCompose ||
+         (mEffectOptions.mIterationComposite ==
+            IterationCompositeOperation::Accumulate &&
+         computedTiming.mCurrentIteration !=
+          mCurrentIterationOnLastCompose);
 }
 
 } 
