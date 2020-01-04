@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko.preferences;
 
+import android.content.ContentValues;
 import android.os.Build;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.db.BrowserContract;
@@ -115,6 +116,7 @@ public class AndroidImport implements Runnable {
     }
 
     public void mergeHistory() {
+        ArrayList<ContentValues> visitsToSynthesize = new ArrayList<>();
         Cursor cursor = null;
         try {
             cursor = query (LegacyBrowserProvider.BOOKMARKS_URI,
@@ -140,6 +142,11 @@ public class AndroidImport implements Runnable {
                     if (data != null) {
                         mDB.updateFaviconInBatch(mCr, mOperations, url, null, null, data);
                     }
+                    ContentValues visitData = new ContentValues();
+                    visitData.put(LocalBrowserDB.HISTORY_VISITS_DATE, date);
+                    visitData.put(LocalBrowserDB.HISTORY_VISITS_URL, url);
+                    visitData.put(LocalBrowserDB.HISTORY_VISITS_COUNT, visits);
+                    visitsToSynthesize.add(visitData);
                     cursor.moveToNext();
                 }
             }
@@ -147,6 +154,12 @@ public class AndroidImport implements Runnable {
             if (cursor != null)
                 cursor.close();
         }
+
+        flushBatchOperations();
+
+        
+        
+        mDB.insertVisitsFromImportHistoryInBatch(mCr, mOperations, visitsToSynthesize);
 
         flushBatchOperations();
     }
