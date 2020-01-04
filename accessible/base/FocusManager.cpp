@@ -279,7 +279,7 @@ FocusManager::ProcessFocusEvent(AccEvent* aEvent)
 
     
     
-    DocAccessible* document = aEvent->GetDocAccessible();
+    DocAccessible* document = aEvent->Document();
     nsINode* focusedNode = FocusedDOMNode();
     if (!focusedNode)
       return;
