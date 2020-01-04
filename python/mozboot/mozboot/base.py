@@ -10,7 +10,6 @@ import subprocess
 import sys
 
 from distutils.version import LooseVersion
-from distutils.version import StrictVersion
 
 
 NO_MERCURIAL = '''
@@ -76,7 +75,7 @@ We recommend the following tools for installing Python:
 
 
 
-MODERN_MERCURIAL_VERSION = StrictVersion('3.5.2')
+MODERN_MERCURIAL_VERSION = LooseVersion('3.5.2')
 
 
 MODERN_PYTHON_VERSION = LooseVersion('2.7.3')
@@ -294,7 +293,7 @@ class BaseBootstrapper(object):
             print('ERROR: Unable to identify Mercurial version.')
             return True, False, None
 
-        our = StrictVersion(match.group(1))
+        our = LooseVersion(match.group(1))
 
         return True, our >= MODERN_MERCURIAL_VERSION, our
 
