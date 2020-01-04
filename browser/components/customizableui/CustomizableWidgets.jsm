@@ -11,6 +11,7 @@ Cu.import("resource:///modules/CustomizableUI.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
+Cu.import("resource://gre/modules/ContextualIdentityService.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BrowserUITelemetry",
   "resource:///modules/BrowserUITelemetry.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
@@ -27,8 +28,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SyncedTabs",
   "resource://services-sync/SyncedTabs.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "ContextualIdentityService",
-  "resource://gre/modules/ContextualIdentityService.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "CharsetBundle", function() {
   const kCharsetBundle = "chrome://global/locale/charsetMenu.properties";
@@ -748,13 +747,6 @@ const CustomizableWidgets = [
           updateZoomResetButton();
         }.bind(this),
 
-        onWidgetUndoMove: function(aWidgetNode) {
-          if (aWidgetNode != node)
-            return;
-          updateCombinedWidgetStyle(node, this.currentArea, true);
-          updateZoomResetButton();
-        }.bind(this),
-
         onWidgetMoved: function(aWidgetId, aArea) {
           if (aWidgetId != this.id)
             return;
@@ -861,12 +853,6 @@ const CustomizableWidgets = [
         }.bind(this),
 
         onWidgetReset: function(aWidgetNode) {
-          if (aWidgetNode != node)
-            return;
-          updateCombinedWidgetStyle(node, this.currentArea);
-        }.bind(this),
-
-        onWidgetUndoMove: function(aWidgetNode) {
           if (aWidgetNode != node)
             return;
           updateCombinedWidgetStyle(node, this.currentArea);
