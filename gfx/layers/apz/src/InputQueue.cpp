@@ -214,6 +214,17 @@ InputQueue::ReceiveScrollWheelInput(const nsRefPtr<AsyncPanZoomController>& aTar
   return nsEventStatus_eConsumeDoDefault;
 }
 
+static bool
+CanScrollTargetHorizontally(const PanGestureInput& aInitialEvent,
+                            PanGestureBlockState* aBlock)
+{
+  PanGestureInput horizontalComponent = aInitialEvent;
+  horizontalComponent.mPanDisplacement.y = 0;
+  nsRefPtr<AsyncPanZoomController> horizontallyScrollableAPZC =
+    aBlock->GetOverscrollHandoffChain()->FindFirstScrollable(horizontalComponent);
+  return horizontallyScrollableAPZC && horizontallyScrollableAPZC == aBlock->GetTargetApzc();
+}
+
 nsEventStatus
 InputQueue::ReceivePanGestureInput(const nsRefPtr<AsyncPanZoomController>& aTarget,
                                    bool aTargetConfirmed,
@@ -231,6 +242,8 @@ InputQueue::ReceivePanGestureInput(const nsRefPtr<AsyncPanZoomController>& aTarg
     block = mInputBlockQueue.LastElement()->AsPanGestureBlock();
   }
 
+  nsEventStatus result = nsEventStatus_eConsumeDoDefault;
+
   if (!block || block->WasInterrupted()) {
     if (aEvent.mType != PanGestureInput::PANGESTURE_START) {
       
@@ -238,6 +251,20 @@ InputQueue::ReceivePanGestureInput(const nsRefPtr<AsyncPanZoomController>& aTarg
     }
     block = new PanGestureBlockState(aTarget, aTargetConfirmed, aEvent);
     INPQ_LOG("started new pan gesture block %p for target %p\n", block, aTarget.get());
+
+    if (aTargetConfirmed &&
+        aEvent.mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection &&
+        !CanScrollTargetHorizontally(aEvent, block)) {
+      
+      
+      
+      
+      block->SetNeedsToWaitForContentResponse(true);
+
+      
+      
+      result = nsEventStatus_eIgnore;
+    }
 
     SweepDepletedBlocks();
     mInputBlockQueue.AppendElement(block);
@@ -261,7 +288,7 @@ InputQueue::ReceivePanGestureInput(const nsRefPtr<AsyncPanZoomController>& aTarg
     block->AddEvent(aEvent.AsPanGestureInput());
   }
 
-  return nsEventStatus_eConsumeDoDefault;
+  return result;
 }
 
 void

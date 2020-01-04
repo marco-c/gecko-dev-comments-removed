@@ -311,7 +311,7 @@ public:
       mLineOrPageDeltaX(0),
       mLineOrPageDeltaY(0),
       mHandledByAPZ(false),
-      mRequiresContentResponse(false)
+      mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection(false)
   {
   }
 
@@ -342,7 +342,9 @@ public:
   
   
   
-  bool mRequiresContentResponse;
+  
+  
+  bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection;
 };
 
 
