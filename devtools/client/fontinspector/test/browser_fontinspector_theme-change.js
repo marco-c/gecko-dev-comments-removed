@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 
 
 const { getTheme, setTheme } = require("devtools/client/shared/theme");
