@@ -98,6 +98,11 @@ registerCleanupFunction(function () {
   return watchLinksChangeOnce();
 });
 
+function pushPrefs(...aPrefs) {
+  return new Promise(resolve =>
+                     SpecialPowers.pushPrefEnv({"set": aPrefs}, resolve));
+}
+
 
 
 
@@ -114,61 +119,36 @@ function watchLinksChangeOnce() {
   return deferred.promise;
 };
 
+add_task(function* setup() {
+  registerCleanupFunction(function() {
+    return new Promise(resolve => {
+      function cleanupAndFinish() {
+        PlacesTestUtils.clearHistory().then(() => {
+          whenPagesUpdated(resolve);
+          NewTabUtils.restore();
+        });
+      }
 
+      let callbacks = NewTabUtils.links._populateCallbacks;
+      let numCallbacks = callbacks.length;
 
-
-
-
-
-
-function isTestPortedToAddTask() {
-  return gTestPath.endsWith("browser_newtab_bug722273.js");
-}
-if (!isTestPortedToAddTask()) {
-  this.test = function() {
-    waitForExplicitFinish();
-    
-    watchLinksChangeOnce().then(() => {
-      
-      whenPagesUpdated(() => TestRunner.run(), true);
+      if (numCallbacks)
+        callbacks.splice(0, numCallbacks, cleanupAndFinish);
+      else
+        cleanupAndFinish();
     });
-
-    
-    gOrigDirectorySource = Services.prefs.getCharPref(PREF_NEWTAB_DIRECTORYSOURCE);
-    Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gDirectorySource);
-  }
-} else {
-  add_task(function* setup() {
-    registerCleanupFunction(function() {
-      return new Promise(resolve => {
-        function cleanupAndFinish() {
-          PlacesTestUtils.clearHistory().then(() => {
-            whenPagesUpdated(resolve);
-            NewTabUtils.restore();
-          });
-        }
-
-        let callbacks = NewTabUtils.links._populateCallbacks;
-        let numCallbacks = callbacks.length;
-
-        if (numCallbacks)
-          callbacks.splice(0, numCallbacks, cleanupAndFinish);
-        else
-          cleanupAndFinish();
-      });
-    });
-
-    let promiseReady = Task.spawn(function*() {
-      yield watchLinksChangeOnce();
-      yield new Promise(resolve => whenPagesUpdated(resolve, true));
-    });
-
-    
-    gOrigDirectorySource = Services.prefs.getCharPref(PREF_NEWTAB_DIRECTORYSOURCE);
-    Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gDirectorySource);
-    yield promiseReady;
   });
-}
+
+  let promiseReady = Task.spawn(function*() {
+    yield watchLinksChangeOnce();
+    yield new Promise(resolve => whenPagesUpdated(resolve, true));
+  });
+
+  
+  gOrigDirectorySource = Services.prefs.getCharPref(PREF_NEWTAB_DIRECTORYSOURCE);
+  Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gDirectorySource);
+  yield promiseReady;
+});
 
 
 
@@ -389,37 +369,26 @@ function waitForCondition(aConditionFn, aMaxTries=50, aCheckInterval=100) {
 
 
 
-function addNewTabPageTab() {
-  addNewTabPageTabPromise().then(TestRunner.next);
-}
-
-function addNewTabPageTabPromise() {
-  let deferred = Promise.defer();
-
-  let tab = gWindow.gBrowser.selectedTab = gWindow.gBrowser.addTab("about:newtab");
+function* addNewTabPageTab() {
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
   let browser = tab.linkedBrowser;
 
-  function whenNewTabLoaded() {
+  
+  yield waitForCondition(() => !browser.contentDocument.hidden)
+
+  yield new Promise(resolve => {
     if (NewTabUtils.allPages.enabled) {
       
       NewTabUtils.links.populateCache(function () {
-        deferred.resolve(whenSearchInitDone());
+        whenSearchInitDone().then(resolve);
       });
     } else {
-      deferred.resolve();
+      resolve();
     }
-  }
-
-  
-  waitForBrowserLoad(browser, function () {
-    
-    waitForCondition(() => !browser.contentDocument.hidden).then(whenNewTabLoaded);
   });
-
-  return deferred.promise;
 }
 
-function waitForBrowserLoad(browser, callback = TestRunner.next) {
+function waitForBrowserLoad(browser) {
   if (browser.contentDocument.readyState == "complete") {
     executeSoon(callback);
     return;
@@ -441,23 +410,30 @@ function waitForBrowserLoad(browser, callback = TestRunner.next) {
 
 
 
-function checkGrid(aSitesPattern, aSites) {
+function* checkGrid(aSitesPattern, aSites) {
   let length = aSitesPattern.split(",").length;
-  let sites = (aSites || getGrid().sites).slice(0, length);
-  let current = sites.map(function (aSite) {
-    if (!aSite)
-      return "";
 
-    let pinned = aSite.isPinned();
-    let hasPinnedAttr = aSite.node.hasAttribute("pinned");
+  let foundPattern = 
+    yield ContentTask.spawn(gBrowser.selectedBrowser,
+                            { length: length, sites: aSites }, function* (args) {
+      let grid = content.wrappedJSObject.gGrid;
 
-    if (pinned != hasPinnedAttr)
-      ok(false, "invalid state (site.isPinned() != site[pinned])");
+      let sites = (args.sites || grid.sites).slice(0, args.length);
+      return sites.map(function (aSite) {
+        if (!aSite)
+          return "";
 
-    return aSite.url.replace(/^http:\/\/example(\d+)\.com\/$/, "$1") + (pinned ? "p" : "");
+        let pinned = aSite.isPinned();
+        let hasPinnedAttr = aSite.node.hasAttribute("pinned");
+
+        if (pinned != hasPinnedAttr)
+          ok(false, "invalid state (site.isPinned() != site[pinned])");
+
+        return aSite.url.replace(/^http:\/\/example(\d+)\.com\/$/, "$1") + (pinned ? "p" : "");
+      });
   });
 
-  is(current, aSitesPattern, "grid status = " + aSitesPattern);
+  is(foundPattern, aSitesPattern, "grid status = " + aSitesPattern);
 }
 
 
@@ -762,27 +738,32 @@ function whenPagesUpdated(aCallback = TestRunner.next) {
 
 
 function whenSearchInitDone() {
-  let deferred = Promise.defer();
-  let searchController = getContentWindow().gSearch._contentSearchController;
-  if (searchController.defaultEngine) {
-    return Promise.resolve();
-  }
-  let eventName = "ContentSearchService";
-  getContentWindow().addEventListener(eventName, function onEvent(event) {
-    if (event.detail.type == "State") {
-      getContentWindow().removeEventListener(eventName, onEvent);
-      
-      let resolver = function() {
+  return ContentTask.spawn(gWindow.gBrowser.selectedBrowser, {}, function*() {
+    return new Promise(resolve => {
+      if (content.gSearch) {
+        let searchController = content.gSearch._contentSearchController;
         if (searchController.defaultEngine) {
-          deferred.resolve();
+          resolve();
           return;
         }
-        executeSoon(resolver);
       }
-      executeSoon(resolver);
-    }
+
+      let eventName = "ContentSearchService";
+      content.addEventListener(eventName, function onEvent(event) {
+        if (event.detail.type == "State") {
+          content.removeEventListener(eventName, onEvent);
+          let resolver = function() {
+            
+            if (content.gSearch._contentSearchController.defaultEngine) {
+              resolve();
+              return;
+            }
+          }
+          content.setTimeout(resolver, 0);
+        }
+      });
+    });
   });
-  return deferred.promise;
 }
 
 
