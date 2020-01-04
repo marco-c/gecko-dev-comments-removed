@@ -132,10 +132,14 @@ DirectoryProvider.prototype = {
     }
 
     
-    let defLocale = Services.prefs.getCharPref("distribution.searchplugins.defaultLocale");
-    let defLocalePlugins = localePlugins.clone();
-    if (defLocalePlugins.exists())
-      array.push(defLocalePlugins);
+    try {
+      let defLocale = Services.prefs.getCharPref("distribution.searchplugins.defaultLocale");
+      let defLocalePlugins = localePlugins.clone();
+      defLocalePlugins.append(defLocale);
+      if (defLocalePlugins.exists())
+        array.push(defLocalePlugins);
+    } catch(e) {
+    }
   },
 
   getFiles: function(prop) {
