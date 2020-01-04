@@ -14,7 +14,7 @@
 #include "mozilla/Variant.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
-#include "asmjs/WasmJS.h"
+#include "asmjs/WasmCompartment.h"
 #include "builtin/RegExp.h"
 #include "gc/Barrier.h"
 #include "gc/Zone.h"
@@ -517,10 +517,7 @@ struct JSCompartment
     mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
 
     
-    using WasmInstanceObjectSet = js::GCHashSet<js::ReadBarriered<js::WasmInstanceObject*>,
-                                                js::MovableCellHasher<js::ReadBarriered<js::WasmInstanceObject*>>,
-                                                js::SystemAllocPolicy>;
-    JS::WeakCache<WasmInstanceObjectSet> wasmInstances;
+    js::wasm::Compartment wasm;
 
   private:
     

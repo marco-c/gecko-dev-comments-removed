@@ -23,6 +23,8 @@
 #include "asmjs/WasmSerialize.h"
 #include "jit/JitOptions.h"
 
+#include "jsatominlines.h"
+
 #include "vm/ArrayBufferObject-inl.h"
 #include "vm/Debugger-inl.h"
 
@@ -469,8 +471,18 @@ Module::initElems(JSContext* cx, HandleWasmInstanceObject instanceObj,
             }
         }
 
-        for (uint32_t i = 0; i < seg.elems.length(); i++)
-            table.array()[offset + i] = codeSegment.code() + seg.elems[i];
+        
+        
+        
+        bool useProfilingEntry = instance.profilingEnabled() && table.isTypedFunction();
+
+        uint8_t* code = codeSegment.code();
+        for (uint32_t i = 0; i < seg.elems.length(); i++) {
+            void* callee = code + seg.elems[i];
+            if (useProfilingEntry)
+                callee = code + instance.lookupCodeRange(callee)->funcProfilingEntry();
+            table.array()[offset + i] = callee;
+        }
 
         prevEnd = offset + seg.elems.length();
     }
@@ -748,15 +760,18 @@ Module::instantiate(JSContext* cx,
 
     
     
+
+    if (!cx->compartment()->wasm.registerInstance(cx, instanceObj))
+        return false;
+
+    
+    
+    
     
     
 
     if (!initElems(cx, instanceObj, globalImports, table))
         return false;
-
-    
-
-    Debugger::onNewWasmInstance(cx, instanceObj);
 
     
     
