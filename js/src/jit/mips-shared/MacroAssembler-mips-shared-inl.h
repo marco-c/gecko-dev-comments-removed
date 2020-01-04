@@ -751,6 +751,19 @@ MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& address, Label*
 
 
 
+void
+MacroAssembler::storeFloat32x3(FloatRegister src, const Address& dest)
+{
+    MOZ_CRASH("NYI");
+}
+void
+MacroAssembler::storeFloat32x3(FloatRegister src, const BaseIndex& dest)
+{
+    MOZ_CRASH("NYI");
+}
+
+
+
 
 } 
 } 

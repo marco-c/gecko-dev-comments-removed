@@ -1415,35 +1415,6 @@ MacroAssemblerMIPSCompat::getType(const Value& val)
     return jv.s.tag;
 }
 
-template <typename T>
-void
-MacroAssemblerMIPSCompat::storeUnboxedValue(ConstantOrRegister value, MIRType valueType, const T& dest,
-                                            MIRType slotType)
-{
-    if (valueType == MIRType::Double) {
-        storeDouble(value.reg().typedReg().fpu(), dest);
-        return;
-    }
-
-    
-    if (valueType != slotType)
-        storeTypeTag(ImmType(ValueTypeFromMIRType(valueType)), dest);
-
-    
-    if (value.constant())
-        storePayload(value.value(), dest);
-    else
-        storePayload(value.reg().typedReg().gpr(), dest);
-}
-
-template void
-MacroAssemblerMIPSCompat::storeUnboxedValue(ConstantOrRegister value, MIRType valueType, const Address& dest,
-                                            MIRType slotType);
-
-template void
-MacroAssemblerMIPSCompat::storeUnboxedValue(ConstantOrRegister value, MIRType valueType, const BaseIndex& dest,
-                                            MIRType slotType);
-
 void
 MacroAssemblerMIPSCompat::moveData(const Value& val, Register data)
 {
@@ -2253,5 +2224,35 @@ MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
         ma_b(lhs.typeReg(), Imm32(getType(rhs)), label, NotEqual);
     }
 }
+
+
+
+template <typename T>
+void
+MacroAssembler::storeUnboxedValue(ConstantOrRegister value, MIRType valueType, const T& dest,
+                                  MIRType slotType)
+{
+    if (valueType == MIRType::Double) {
+        storeDouble(value.reg().typedReg().fpu(), dest);
+        return;
+    }
+
+    
+    if (valueType != slotType)
+        storeTypeTag(ImmType(ValueTypeFromMIRType(valueType)), dest);
+
+    
+    if (value.constant())
+        storePayload(value.value(), dest);
+    else
+        storePayload(value.reg().typedReg().gpr(), dest);
+}
+
+template void
+MacroAssembler::storeUnboxedValue(ConstantOrRegister value, MIRType valueType, const Address& dest,
+                                  MIRType slotType);
+template void
+MacroAssembler::storeUnboxedValue(ConstantOrRegister value, MIRType valueType, const BaseIndex& dest,
+                                  MIRType slotType);
 
 
