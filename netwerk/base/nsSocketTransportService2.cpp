@@ -8,7 +8,6 @@
 #include "nsSocketTransport2.h"
 #include "NetworkActivityMonitor.h"
 #include "mozilla/Preferences.h"
-#include "ClosingService.h"
 #endif 
 #include "nsASocketHandler.h"
 #include "nsError.h"
@@ -561,13 +560,6 @@ nsSocketTransportService::Init()
         obsSvc->AddObserver(this, "last-pb-context-exited", false);
     }
 
-#if !defined(MOZILLA_XPCOMRT_API)
-    
-    
-    
-    ClosingService::Start();
-#endif 
-
     mInitialized = true;
     return NS_OK;
 }
@@ -618,7 +610,6 @@ nsSocketTransportService::Shutdown()
 
 #if !defined(MOZILLA_XPCOMRT_API)
     mozilla::net::NetworkActivityMonitor::Shutdown();
-    ClosingService::Shutdown();
 #endif 
 
     mInitialized = false;

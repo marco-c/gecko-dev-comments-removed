@@ -187,6 +187,11 @@ ClosingService::ShutdownInternal()
 {
   {
     mozilla::MonitorAutoLock mon(mMonitor);
+    if (mShutdown) {
+      
+      return;
+    }
+
     mShutdown = true;
     
     if (mQueue.Length() == 0) {
