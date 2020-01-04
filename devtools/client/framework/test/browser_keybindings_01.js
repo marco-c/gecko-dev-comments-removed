@@ -60,25 +60,28 @@ function test()
     }
 
     gDevTools.once("toolbox-ready", (e, toolbox) => {
-      
-      
-      
-      gDevTools.once("select-tool-command", () => {
-        inspectorShouldBeSelected(toolbox.getCurrentPanel(), toolbox);
-      });
+      inspectorShouldBeOpenAndHighlighting(toolbox.getCurrentPanel(), toolbox);
     });
 
     keysetMap.inspector.synthesizeKey();
   }
 
-  function inspectorShouldBeSelected(aInspector, aToolbox)
+  function inspectorShouldBeOpenAndHighlighting(aInspector, aToolbox)
   {
     is (aToolbox.currentToolId, "inspector", "Correct tool has been loaded");
 
-    gDevTools.once("select-tool-command", (x, toolId) => {
-      webconsoleShouldBeSelected(aToolbox);
+    aToolbox.once("picker-started", () => {
+      ok(true, "picker-started event received, highlighter started");
+      keysetMap.inspector.synthesizeKey();
+
+      aToolbox.once("picker-stopped", () => {
+        ok(true, "picker-stopped event received, highlighter stopped");
+        gDevTools.once("select-tool-command", () => {
+          webconsoleShouldBeSelected(aToolbox);
+        });
+        keysetMap.webconsole.synthesizeKey();
+      });
     });
-    keysetMap.webconsole.synthesizeKey();
   }
 
   function webconsoleShouldBeSelected(aToolbox)

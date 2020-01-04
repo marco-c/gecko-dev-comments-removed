@@ -93,6 +93,20 @@ function getNode(nodeOrSelector, options = {}) {
 
 
 
+var startPicker = Task.async(function*(toolbox) {
+  info("Start the element picker");
+  yield toolbox.highlighterUtils.startPicker();
+  
+  
+  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
+    content.focus();
+  });
+});
+
+
+
+
+
 
 
 
