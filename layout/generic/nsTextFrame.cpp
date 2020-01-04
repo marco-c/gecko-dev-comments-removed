@@ -1606,12 +1606,14 @@ BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1, nsTextFr
   
   
   
-  if (mBidiEnabled &&
-      (nsBidi::GetEmbeddingLevel(aFrame1) !=
-       nsBidi::GetEmbeddingLevel(aFrame2) ||
-       nsBidi::GetParagraphDepth(aFrame1) !=
-       nsBidi::GetParagraphDepth(aFrame2)))
-    return false;
+  if (mBidiEnabled) {
+    FrameBidiData data1 = nsBidi::GetBidiData(aFrame1);
+    FrameBidiData data2 = nsBidi::GetBidiData(aFrame2);
+    if (data1.embeddingLevel != data2.embeddingLevel ||
+        data1.paragraphDepth != data2.paragraphDepth) {
+      return false;
+    }
+  }
 
   nsStyleContext* sc1 = aFrame1->StyleContext();
   const nsStyleText* textStyle1 = sc1->StyleText();
@@ -4149,18 +4151,8 @@ nsContinuingTextFrame::Init(nsIContent*       aContent,
     }
   }
   if (aPrevInFlow->GetStateBits() & NS_FRAME_IS_BIDI) {
-    FramePropertyTable *propTable = PresContext()->PropertyTable();
-    
-    
-    auto embeddingLevel =
-      propTable->Get(aPrevInFlow, nsBidi::EmbeddingLevelProperty());
-    auto baseLevel =
-      propTable->Get(aPrevInFlow, nsBidi::BaseLevelProperty());
-    auto paragraphDepth =
-      propTable->Get(aPrevInFlow, nsBidi::ParagraphDepthProperty());
-    propTable->Set(this, nsBidi::EmbeddingLevelProperty(), embeddingLevel);
-    propTable->Set(this, nsBidi::BaseLevelProperty(), baseLevel);
-    propTable->Set(this, nsBidi::ParagraphDepthProperty(), paragraphDepth);
+    FrameBidiData bidiData = nsBidi::GetBidiData(aPrevInFlow);
+    Properties().Set(nsBidi::BidiDataProperty(), bidiData);
 
     if (nextContinuation) {
       SetNextContinuation(nextContinuation);
@@ -4168,14 +4160,13 @@ nsContinuingTextFrame::Init(nsIContent*       aContent,
       
       while (nextContinuation &&
              nextContinuation->GetContentOffset() < mContentOffset) {
-        NS_ASSERTION(
-          embeddingLevel == propTable->Get(
-            nextContinuation, nsBidi::EmbeddingLevelProperty()) &&
-          baseLevel == propTable->Get(
-            nextContinuation, nsBidi::BaseLevelProperty()) &&
-          paragraphDepth == propTable->Get(
-            nextContinuation, nsBidi::ParagraphDepthProperty()),
-          "stealing text from different type of BIDI continuation");
+#ifdef DEBUG
+        FrameBidiData nextBidiData = nsBidi::GetBidiData(nextContinuation);
+        NS_ASSERTION(bidiData.embeddingLevel == nextBidiData.embeddingLevel &&
+                     bidiData.baseLevel == nextBidiData.baseLevel &&
+                     bidiData.paragraphDepth == nextBidiData.paragraphDepth,
+                     "stealing text from different type of BIDI continuation");
+#endif
         nextContinuation->mContentOffset = mContentOffset;
         nextContinuation = static_cast<nsTextFrame*>(nextContinuation->GetNextContinuation());
       }

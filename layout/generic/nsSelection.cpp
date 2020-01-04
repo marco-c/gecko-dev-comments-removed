@@ -1117,16 +1117,17 @@ nsFrameSelection::MoveCaret(nsDirection       aDirection,
     {
       switch (aAmount) {
         case eSelectBeginLine:
-        case eSelectEndLine:
+        case eSelectEndLine: {
           
           
           
           
           
-          SetCaretBidiLevel(visualMovement ? nsBidi::GetEmbeddingLevel(theFrame)
-                                           : nsBidi::GetBaseLevel(theFrame));
+          FrameBidiData bidiData = nsBidi::GetBidiData(theFrame);
+          SetCaretBidiLevel(visualMovement ? bidiData.embeddingLevel
+                                           : bidiData.baseLevel);
           break;
-
+        }
         default:
           
           
@@ -1378,21 +1379,21 @@ nsFrameSelection::GetPrevNextBidiLevels(nsIContent*        aNode,
   if (NS_FAILED(rv))
     newFrame = nullptr;
 
-  nsBidiLevel baseLevel = nsBidi::GetBaseLevel(currentFrame);
-  nsBidiLevel currentLevel = nsBidi::GetEmbeddingLevel(currentFrame);
+  FrameBidiData currentBidi = nsBidi::GetBidiData(currentFrame);
+  nsBidiLevel currentLevel = currentBidi.embeddingLevel;
   nsBidiLevel newLevel = newFrame ? nsBidi::GetEmbeddingLevel(newFrame)
-                                  : baseLevel;
+                                  : currentBidi.baseLevel;
   
   
   
   if (!aJumpLines) {
     if (currentFrame->GetType() == nsGkAtoms::brFrame) {
       currentFrame = nullptr;
-      currentLevel = baseLevel;
+      currentLevel = currentBidi.baseLevel;
     }
     if (newFrame && newFrame->GetType() == nsGkAtoms::brFrame) {
       newFrame = nullptr;
-      newLevel = baseLevel;
+      newLevel = currentBidi.baseLevel;
     }
   }
   
