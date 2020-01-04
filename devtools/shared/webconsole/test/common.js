@@ -97,6 +97,9 @@ function _attachConsole(aListeners, aCallback, aAttachToTab, aAttachToWorker)
           if (aAttachToWorker) {
             let workerName = "console-test-worker.js#" + new Date().getTime();
             var worker = new Worker(workerName);
+            
+            
+            aState._worker_ref = worker;
             worker.addEventListener("message", function listener() {
               worker.removeEventListener("message", listener);
               tabClient.listWorkers(function (response) {
