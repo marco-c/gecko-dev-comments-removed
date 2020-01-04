@@ -70,7 +70,7 @@ function testEventListeners(aThreadClient) {
 
     
     
-    is(aPacket.listeners.length, 4, "Found all event listeners.");
+    is(aPacket.listeners.length, 3, "Found all event listeners.");
     aThreadClient.resume(deferred.resolve);
   });
 
