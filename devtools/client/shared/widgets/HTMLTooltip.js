@@ -56,6 +56,128 @@ const EXTRA_BORDER = {
 
 
 
+
+
+
+
+
+const calculateVerticalPosition = function (anchorRect, docRect, preferredHeight, pos) {
+  let {TOP, BOTTOM} = POSITION;
+
+  let {top: anchorTop, height: anchorHeight} = anchorRect;
+  let {bottom: docBottom} = docRect;
+
+  
+  let availableTop = anchorTop;
+  let availableBottom = docBottom - (anchorTop + anchorHeight);
+
+  
+  let keepPosition = false;
+  if (pos === TOP) {
+    keepPosition = availableTop >= preferredHeight;
+  } else if (pos === BOTTOM) {
+    keepPosition = availableBottom >= preferredHeight;
+  }
+  if (!keepPosition) {
+    pos = availableTop > availableBottom ? TOP : BOTTOM;
+  }
+
+  
+  let availableHeight = pos === TOP ? availableTop : availableBottom;
+  let height = Math.min(preferredHeight, availableHeight);
+  height = Math.floor(height);
+
+  
+  let top = pos === TOP ? anchorTop - height : anchorTop + anchorHeight;
+
+  return {top, height, computedPosition: pos};
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const calculateHorizontalPosition = function (anchorRect, docRect, preferredWidth, type) {
+  let {left: anchorLeft, width: anchorWidth} = anchorRect;
+  let {right: docRight} = docRect;
+
+  
+  let availableWidth = docRight;
+  let width = Math.min(preferredWidth, availableWidth);
+
+  
+  
+  
+  let left = Math.min(anchorLeft, docRight - width);
+
+  
+  let arrowLeft;
+  
+  if (type === TYPE.ARROW) {
+    let arrowCenter = left + ARROW_OFFSET + ARROW_WIDTH / 2;
+    let anchorCenter = anchorLeft + anchorWidth / 2;
+    
+    if (arrowCenter > anchorCenter) {
+      left = Math.max(0, left - (arrowCenter - anchorCenter));
+    }
+    
+    arrowLeft = Math.min(ARROW_OFFSET, (anchorWidth - ARROW_WIDTH) / 2) | 0;
+    
+    arrowLeft += anchorLeft - left;
+    
+    arrowLeft = Math.min(arrowLeft, width - ARROW_WIDTH);
+    arrowLeft = Math.max(arrowLeft, 0);
+  }
+
+  return {left, width, arrowLeft};
+};
+
+
+
+
+
+
+const getRelativeRect = function (node, relativeTo) {
+  
+  let {width, height} = node.getBoundingClientRect();
+
+  let quads = node.getBoxQuads({relativeTo});
+  let top = quads[0].bounds.top;
+  let left = quads[0].bounds.left;
+
+  
+  let right = left + width;
+  let bottom = top + height;
+
+  return {top, right, bottom, left, width, height};
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function HTMLTooltip(toolbox,
   {type = "normal", autofocus = false, consumeOutsideClicks = true} = {}) {
   EventEmitter.decorate(this);
@@ -114,12 +236,11 @@ HTMLTooltip.prototype = {
 
 
 
-  setContent: function (content, {width, height = Infinity}) {
-    let themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
-    let themeWidth = 2 * EXTRA_BORDER[this.type];
 
-    this.preferredWidth = width + themeWidth;
-    this.preferredHeight = height + themeHeight;
+
+  setContent: function (content, {width = "auto", height = Infinity} = {}) {
+    this.preferredWidth = width;
+    this.preferredHeight = height;
 
     this.panel.innerHTML = "";
     this.panel.appendChild(content);
@@ -138,19 +259,36 @@ HTMLTooltip.prototype = {
 
 
   show: function (anchor, {position} = {}) {
-    let computedPosition = this._findBestPosition(anchor, position);
+    
+    let anchorRect = getRelativeRect(anchor, this.doc);
+    
+    let docRect = this.doc.documentElement.getBoundingClientRect();
 
-    let isTop = computedPosition.position === POSITION.TOP;
+    let themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
+    let preferredHeight = this.preferredHeight + themeHeight;
+
+    let {top, height, computedPosition} =
+      calculateVerticalPosition(anchorRect, docRect, preferredHeight, position);
+
+    
+    let isTop = computedPosition === POSITION.TOP;
     this.container.classList.toggle("tooltip-top", isTop);
     this.container.classList.toggle("tooltip-bottom", !isTop);
+    this.container.style.height = height + "px";
+    this.container.style.top = top + "px";
 
-    this.container.style.width = computedPosition.width + "px";
-    this.container.style.height = computedPosition.height + "px";
-    this.container.style.top = computedPosition.top + "px";
-    this.container.style.left = computedPosition.left + "px";
+    let themeWidth = 2 * EXTRA_BORDER[this.type];
+    let preferredWidth = this.preferredWidth === "auto" ?
+      this._measureContainerWidth() : this.preferredWidth + themeWidth;
+
+    let {left, width, arrowLeft} =
+      calculateHorizontalPosition(anchorRect, docRect, preferredWidth, this.type);
+
+    this.container.style.width = width + "px";
+    this.container.style.left = left + "px";
 
     if (this.type === TYPE.ARROW) {
-      this.arrow.style.left = computedPosition.arrowLeft + "px";
+      this.arrow.style.left = arrowLeft + "px";
     }
 
     this.container.classList.add("tooltip-visible");
@@ -164,6 +302,13 @@ HTMLTooltip.prototype = {
       this.topWindow.addEventListener("click", this._onClick, true);
       this.emit("shown");
     }, 0);
+  },
+
+  _measureContainerWidth: function () {
+    this.container.classList.add("tooltip-hidden");
+    let width = this.container.getBoundingClientRect().width;
+    this.container.classList.remove("tooltip-hidden");
+    return width;
   },
 
   
@@ -256,102 +401,6 @@ HTMLTooltip.prototype = {
     }
 
     return false;
-  },
-
-  
-
-
-
-
-
-
-
-
-  _findBestPosition: function (anchor, position) {
-    let {TOP, BOTTOM} = POSITION;
-
-    
-    let {
-      left: anchorLeft, top: anchorTop,
-      height: anchorHeight, width: anchorWidth
-    } = this._getRelativeRect(anchor, this.doc);
-
-    
-    let {bottom: docBottom, right: docRight} =
-      this.doc.documentElement.getBoundingClientRect();
-
-    
-    let availableTop = anchorTop;
-    let availableBottom = docBottom - (anchorTop + anchorHeight);
-
-    
-    let keepPosition = false;
-    if (position === TOP) {
-      keepPosition = availableTop >= this.preferredHeight;
-    } else if (position === BOTTOM) {
-      keepPosition = availableBottom >= this.preferredHeight;
-    }
-    if (!keepPosition) {
-      position = availableTop > availableBottom ? TOP : BOTTOM;
-    }
-
-    
-    let availableHeight = position === TOP ? availableTop : availableBottom;
-    let height = Math.min(this.preferredHeight, availableHeight);
-    height = Math.floor(height);
-
-    
-    let top = position === TOP ? anchorTop - height : anchorTop + anchorHeight;
-
-    
-    let availableWidth = docRight;
-    let width = Math.min(this.preferredWidth, availableWidth);
-
-    
-    
-    
-    let left = Math.min(anchorLeft, docRight - width);
-
-    
-    let arrowLeft;
-    
-    if (this.type === TYPE.ARROW) {
-      let arrowCenter = left + ARROW_OFFSET + ARROW_WIDTH / 2;
-      let anchorCenter = anchorLeft + anchorWidth / 2;
-      
-      if (arrowCenter > anchorCenter) {
-        left = Math.max(0, left - (arrowCenter - anchorCenter));
-      }
-      
-      arrowLeft = Math.min(ARROW_OFFSET, (anchorWidth - ARROW_WIDTH) / 2) | 0;
-      
-      arrowLeft += anchorLeft - left;
-      
-      arrowLeft = Math.min(arrowLeft, width - ARROW_WIDTH);
-      arrowLeft = Math.max(arrowLeft, 0);
-    }
-
-    return {top, left, width, height, position, arrowLeft};
-  },
-
-  
-
-
-
-
-  _getRelativeRect: function (node, relativeTo) {
-    
-    let {width, height} = node.getBoundingClientRect();
-
-    let quads = node.getBoxQuads({relativeTo});
-    let top = quads[0].bounds.top;
-    let left = quads[0].bounds.left;
-
-    
-    let right = left + width;
-    let bottom = top + height;
-
-    return {top, right, bottom, left, width, height};
   },
 
   
