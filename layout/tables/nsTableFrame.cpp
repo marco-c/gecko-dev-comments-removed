@@ -56,6 +56,8 @@ using namespace mozilla::layout;
 
 
 
+namespace mozilla {
+
 struct nsTableReflowState {
 
   
@@ -102,6 +104,8 @@ struct nsTableReflowState {
     }
   }
 };
+
+} 
 
 
 

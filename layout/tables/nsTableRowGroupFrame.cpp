@@ -24,6 +24,35 @@
 using namespace mozilla;
 using namespace mozilla::layout;
 
+namespace mozilla {
+
+struct nsRowGroupReflowState {
+  const ReflowInput& reflowState;  
+
+  nsTableFrame* tableFrame;
+
+  
+  mozilla::LogicalSize availSize;
+
+  
+  nscoord bCoord;
+
+  nsRowGroupReflowState(const ReflowInput& aReflowState,
+                        nsTableFrame*            aTableFrame)
+      : reflowState(aReflowState)
+      , tableFrame(aTableFrame)
+      , availSize(aReflowState.GetWritingMode(),
+                  aReflowState.AvailableISize(),
+                  aReflowState.AvailableBSize())
+      , bCoord(0)
+  {
+  }
+
+  ~nsRowGroupReflowState() {}
+};
+
+} 
+
 nsTableRowGroupFrame::nsTableRowGroupFrame(nsStyleContext* aContext):
   nsContainerFrame(aContext)
 {

@@ -13,7 +13,9 @@
 #include "mozilla/WritingModes.h"
 
 class  nsTableCellFrame;
+namespace mozilla {
 struct nsTableCellReflowState;
+} 
 
 
 
@@ -27,6 +29,8 @@ struct nsTableCellReflowState;
 
 class nsTableRowFrame : public nsContainerFrame
 {
+  using nsTableCellReflowState = mozilla::nsTableCellReflowState;
+
 public:
   NS_DECL_QUERYFRAME_TARGET(nsTableRowFrame)
   NS_DECL_QUERYFRAME
