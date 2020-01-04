@@ -17,6 +17,9 @@ config = {
     },
 
     
+    'proxxy': {},
+
+    
     'exes': {
         'gittool.py': [
             
