@@ -393,6 +393,12 @@ nsCategoryManager::GetSingleton()
  void
 nsCategoryManager::Destroy()
 {
+  
+  
+  
+  
+  MOZ_ASSERT(NS_FAILED(UnregisterWeakMemoryReporter(gCategoryManager)));
+
   delete gCategoryManager;
   gCategoryManager = nullptr;
 }
@@ -418,7 +424,7 @@ nsCategoryManager::nsCategoryManager()
 void
 nsCategoryManager::InitMemoryReporter()
 {
-  RegisterStrongMemoryReporter(this);
+  RegisterWeakMemoryReporter(this);
 }
 
 nsCategoryManager::~nsCategoryManager()
