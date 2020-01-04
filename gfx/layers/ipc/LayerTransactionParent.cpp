@@ -969,20 +969,8 @@ LayerTransactionParent::AllocPTextureParent(const SurfaceDescriptor& aSharedData
                                             const LayersBackend& aLayersBackend,
                                             const TextureFlags& aFlags)
 {
-  TextureFlags flags = aFlags;
-
-  if (mPendingCompositorUpdates) {
-    
-    
-    
-    
-    
-    flags |= TextureFlags::INVALID_COMPOSITOR;
-  } else if (aLayersBackend != mLayerManager->GetCompositor()->GetBackendType()) {
-    gfxDevCrash(LogReason::PAllocTextureBackendMismatch, "Texture backend is wrong");
-  }
-
-  return TextureHost::CreateIPDLActor(this, aSharedData, aLayersBackend, flags);
+  MOZ_ASSERT(aLayersBackend == mLayerManager->GetCompositor()->GetBackendType());
+  return TextureHost::CreateIPDLActor(this, aSharedData, aLayersBackend, aFlags);
 }
 
 bool

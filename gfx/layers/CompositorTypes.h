@@ -63,12 +63,9 @@ enum class TextureFlags : uint32_t {
   IMMEDIATE_UPLOAD   = 1 << 10,
   
   COMPONENT_ALPHA    = 1 << 11,
-  
-  
-  INVALID_COMPOSITOR = 1 << 12,
 
   
-  ALL_BITS           = (1 << 13) - 1,
+  ALL_BITS           = (1 << 12) - 1,
   
   DEFAULT = NO_FLAGS
 };
