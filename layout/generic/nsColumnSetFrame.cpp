@@ -5,6 +5,7 @@
 
 
 
+#include "mozilla/unused.h"
 #include "nsColumnSetFrame.h"
 #include "nsCSSRendering.h"
 #include "nsDisplayList.h"
@@ -136,9 +137,17 @@ nsColumnSetFrame::PaintColumnRule(nsRenderingContext* aCtx,
     }
 
     nsRect lineRect(linePt, ruleSize);
-    nsCSSRendering::PaintBorderWithStyleBorder(presContext, *aCtx, this,
-        aDirtyRect, lineRect, border, StyleContext(),
-        skipSides);
+
+    
+    
+    MOZ_ASSERT(border.mBorderImageSource.GetType() == eStyleImageType_Null);
+
+    unused <<
+      nsCSSRendering::PaintBorderWithStyleBorder(presContext, *aCtx, this,
+                                                 aDirtyRect, lineRect, border,
+                                                 StyleContext(),
+                                                 PaintBorderFlags::SYNC_DECODE_IMAGES,
+                                                 skipSides);
 
     child = nextSibling;
     nextSibling = nextSibling->GetNextSibling();
