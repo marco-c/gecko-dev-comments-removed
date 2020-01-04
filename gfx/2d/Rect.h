@@ -282,10 +282,9 @@ RectTyped<units> IntRectToRect(const IntRectTyped<units>& aRect)
 }
 
 
-template <typename Units>
-Maybe<IntRectTyped<Units>>
-IntersectMaybeRects(const Maybe<IntRectTyped<Units>>& a,
-                    const Maybe<IntRectTyped<Units>>& b)
+template <typename T>
+Maybe<T>
+IntersectMaybeRects(const Maybe<T>& a, const Maybe<T>& b)
 {
   if (!a) {
     return b;
