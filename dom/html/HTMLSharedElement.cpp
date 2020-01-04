@@ -165,13 +165,14 @@ SetBaseURIUsingFirstBaseWithHref(nsIDocument* aDocument, nsIContent* aMustMatch)
       }
 
       
+      
       nsAutoString href;
       child->GetAttr(kNameSpaceID_None, nsGkAtoms::href, href);
 
       nsCOMPtr<nsIURI> newBaseURI;
       nsContentUtils::NewURIWithDocumentCharset(
         getter_AddRefs(newBaseURI), href, aDocument,
-        aDocument->GetDocumentURI());
+        aDocument->GetFallbackBaseURI());
 
       
       nsresult rv = aDocument->SetBaseURI(newBaseURI);
