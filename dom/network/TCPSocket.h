@@ -14,6 +14,7 @@
 #include "nsISupportsImpl.h"
 #include "nsIObserver.h"
 #include "nsWeakReference.h"
+#include "nsITCPSocketCallback.h"
 #include "js/RootingAPI.h"
 
 class nsISocketTransport;
@@ -72,6 +73,7 @@ class TCPSocket final : public DOMEventTargetHelper
                       , public nsIInputStreamCallback
                       , public nsIObserver
                       , public nsSupportsWeakReference
+                      , public nsITCPSocketCallback
 {
 public:
   TCPSocket(nsIGlobalObject* aGlobal, const nsAString& aHost, uint16_t aPort,
@@ -84,6 +86,7 @@ public:
   NS_DECL_NSITRANSPORTEVENTSINK
   NS_DECL_NSIINPUTSTREAMCALLBACK
   NS_DECL_NSIOBSERVER
+  NS_DECL_NSITCPSOCKETCALLBACK
 
   nsPIDOMWindow* GetParentObject() const
   {
@@ -153,20 +156,6 @@ public:
 
   
   void NotifyCopyComplete(nsresult aStatus);
-
-  
-  
-  void UpdateBufferedAmount(uint32_t aAmount, uint32_t aTrackingNumber);
-  
-  void UpdateReadyState(uint32_t aReadyState);
-  
-  void FireErrorEvent(const nsAString& aName, const nsAString& aMessage);
-  
-  void FireEvent(const nsAString& aType);
-  
-  void FireDataEvent(const nsAString& aType, const InfallibleTArray<uint8_t>& buffer);
-  void FireDataEvent(const nsAString& aType, const nsAString& aString);
-  void FireDataEvent(JSContext* aCx, const nsAString& aType, JS::Handle<JS::Value> aData);
 
   
   
