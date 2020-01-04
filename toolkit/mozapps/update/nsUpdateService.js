@@ -2717,7 +2717,7 @@ UpdateService.prototype = {
     if (status == STATE_NONE) {
       cleanupActiveUpdate();
     }
-    AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DOWNLOAD_UPDATE);
+    AUSTLMY.pingCheckCode(this._pingSuffix,AUSTLMY.CHK_DOWNLOAD_UPDATE);
   },
 
   _showPrompt: function AUS__showPrompt(update) {
@@ -3399,11 +3399,7 @@ Checker.prototype = {
       return;
 
     this._request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
-                    createInstance(Ci.nsISupports);
-    
-    if (this._request.wrappedJSObject) {
-      this._request = this._request.wrappedJSObject;
-    }
+                    createInstance(Ci.nsIXMLHttpRequest);
     this._request.open("GET", url, true);
     var allowNonBuiltIn = !getPref("getBoolPref",
                                    PREF_APP_UPDATE_CERT_REQUIREBUILTIN, true);
@@ -3423,7 +3419,7 @@ Checker.prototype = {
     this._request.setRequestHeader("Pragma", "no-cache");
 
     var self = this;
-    this._request.addEventListener("error", function(event) { self.onError(event); }, false);
+    this._request.addEventListener("error", function(event) { self.onError(event); } ,false);
     this._request.addEventListener("load", function(event) { self.onLoad(event); }, false);
 
     LOG("Checker:checkForUpdates - sending request to: " + url);
