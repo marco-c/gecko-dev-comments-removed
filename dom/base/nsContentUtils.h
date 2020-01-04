@@ -121,6 +121,7 @@ class DocumentFragment;
 class Element;
 class EventTarget;
 class IPCDataTransfer;
+class IPCDataTransferItem;
 class NodeInfo;
 class nsIContentChild;
 class nsIContentParent;
@@ -2427,6 +2428,21 @@ public:
 
 
   static bool IsFileImage(nsIFile* aFile, nsACString& aType);
+
+  
+
+
+
+
+
+  static nsresult DataTransferItemToImage(const mozilla::dom::IPCDataTransferItem& aItem,
+                                          imgIContainer** aContainer);
+
+  
+
+
+
+  static bool IsFlavorImage(const nsACString& aFlavor);
 
   static void TransferablesToIPCTransferables(nsISupportsArray* aTransferables,
                                               nsTArray<mozilla::dom::IPCDataTransfer>& aIPC,
