@@ -31,6 +31,18 @@
 
 #define BHR_BETA_MOD 100;
 
+
+
+static const size_t kMaxThreadHangStackDepth = 11;
+
+
+
+bool StackScriptEntriesCollapser(const char* aStackEntry, const char *aAnotherStackEntry)
+{
+  return !strcmp(aStackEntry, aAnotherStackEntry) &&
+         (!strcmp(aStackEntry, "(chrome script)") || !strcmp(aStackEntry, "(content script)"));
+}
+
 namespace mozilla {
 
 
@@ -396,6 +408,20 @@ BackgroundHangThread::ReportHang(PRIntervalTime aHangTime)
     if (!mHangStack.IsInBuffer(*f) && !strcmp(*f, "js::RunScript")) {
       mHangStack.erase(f);
     }
+  }
+
+  
+  auto it = std::unique(mHangStack.begin(), mHangStack.end(), StackScriptEntriesCollapser);
+  mHangStack.erase(it, mHangStack.end());
+
+  
+  
+  if (mHangStack.length() > kMaxThreadHangStackDepth) {
+    const int elementsToRemove = mHangStack.length() - kMaxThreadHangStackDepth;
+    
+    
+    mHangStack[0] = "(reduced stack)";
+    mHangStack.erase(mHangStack.begin() + 1, mHangStack.begin() + elementsToRemove);
   }
 
   Telemetry::HangHistogram newHistogram(Move(mHangStack));
