@@ -27,7 +27,6 @@ class AnimationState
 public:
   explicit AnimationState(uint16_t aAnimationMode)
     : mCurrentAnimationFrameIndex(0)
-    , mLastCompositedFrameIndex(-1)
     , mLoopRemainingCount(-1)
     , mLoopCount(-1)
     , mFirstFrameTimeout(0)
@@ -107,9 +106,6 @@ private:
   uint32_t mCurrentAnimationFrameIndex;
 
   
-  int32_t mLastCompositedFrameIndex;
-
-  
   int32_t mLoopRemainingCount;
 
   
@@ -131,6 +127,7 @@ public:
   FrameAnimator(RasterImage* aImage, gfx::IntSize aSize)
     : mImage(aImage)
     , mSize(aSize)
+    , mLastCompositedFrameIndex(-1)
   {
      MOZ_COUNT_CTOR(FrameAnimator);
   }
@@ -188,7 +185,7 @@ public:
 
 
 
-  LookupResult GetCompositedFrame(AnimationState& aState, uint32_t aFrameNum);
+  LookupResult GetCompositedFrame(uint32_t aFrameNum);
 
   
 
@@ -242,8 +239,7 @@ private:
 
   TimeStamp GetCurrentImgFrameEndTime(AnimationState& aState) const;
 
-  bool DoBlend(AnimationState& aState,
-               nsIntRect* aDirtyRect,
+  bool DoBlend(nsIntRect* aDirtyRect,
                uint32_t aPrevFrameIndex,
                uint32_t aNextFrameIndex);
 
@@ -311,6 +307,9 @@ private:
 
 
   RawAccessFrameRef mCompositingPrevFrame;
+
+  
+  int32_t mLastCompositedFrameIndex;
 };
 
 } 

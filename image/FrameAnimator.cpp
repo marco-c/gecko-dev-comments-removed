@@ -34,7 +34,6 @@ void
 AnimationState::ResetAnimation()
 {
   mCurrentAnimationFrameIndex = 0;
-  mLastCompositedFrameIndex = -1;
 }
 
 void
@@ -223,7 +222,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
     MOZ_ASSERT(nextFrameIndex == currentFrameIndex + 1);
 
     
-    if (!DoBlend(aState, &ret.dirtyRect, currentFrameIndex, nextFrameIndex)) {
+    if (!DoBlend(&ret.dirtyRect, currentFrameIndex, nextFrameIndex)) {
       
       NS_WARNING("FrameAnimator::AdvanceFrame(): Compositing of frame failed");
       nextFrame->SetCompositingFailed(true);
@@ -299,12 +298,12 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
 }
 
 LookupResult
-FrameAnimator::GetCompositedFrame(AnimationState& aState, uint32_t aFrameNum)
+FrameAnimator::GetCompositedFrame(uint32_t aFrameNum)
 {
   MOZ_ASSERT(aFrameNum != 0, "First frame is never composited");
 
   
-  if (aState.mLastCompositedFrameIndex == int32_t(aFrameNum)) {
+  if (mLastCompositedFrameIndex == int32_t(aFrameNum)) {
     return LookupResult(mCompositingFrame->DrawableRef(), MatchType::EXACT);
   }
 
@@ -416,8 +415,7 @@ FrameAnimator::GetRawFrame(uint32_t aFrameNum) const
 
 
 bool
-FrameAnimator::DoBlend(AnimationState& aState,
-                       nsIntRect* aDirtyRect,
+FrameAnimator::DoBlend(nsIntRect* aDirtyRect,
                        uint32_t aPrevFrameIndex,
                        uint32_t aNextFrameIndex)
 {
@@ -504,7 +502,7 @@ FrameAnimator::DoBlend(AnimationState& aState,
   
   
   
-  if (aState.mLastCompositedFrameIndex == int32_t(aNextFrameIndex)) {
+  if (mLastCompositedFrameIndex == int32_t(aNextFrameIndex)) {
     return true;
   }
 
@@ -521,7 +519,7 @@ FrameAnimator::DoBlend(AnimationState& aState,
     }
     mCompositingFrame = newFrame->RawAccessRef();
     needToBlankComposite = true;
-  } else if (int32_t(aNextFrameIndex) != aState.mLastCompositedFrameIndex+1) {
+  } else if (int32_t(aNextFrameIndex) != mLastCompositedFrameIndex+1) {
 
     
     
@@ -615,7 +613,7 @@ FrameAnimator::DoBlend(AnimationState& aState,
         
         
         
-        if (aState.mLastCompositedFrameIndex != int32_t(aNextFrameIndex - 1)) {
+        if (mLastCompositedFrameIndex != int32_t(aNextFrameIndex - 1)) {
           if (isFullPrevFrame && !prevFrame->GetIsPaletted()) {
             
             CopyFrameImage(prevFrameData.mRawData,
@@ -690,7 +688,7 @@ FrameAnimator::DoBlend(AnimationState& aState,
   
   mCompositingFrame->Finish();
 
-  aState.mLastCompositedFrameIndex = int32_t(aNextFrameIndex);
+  mLastCompositedFrameIndex = int32_t(aNextFrameIndex);
 
   return true;
 }
