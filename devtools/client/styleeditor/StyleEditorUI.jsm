@@ -945,11 +945,11 @@ StyleEditorUI.prototype = {
 
 
 
-  _launchResponsiveMode: function(options = {}) {
+  _launchResponsiveMode: Task.async(function*(options = {}) {
     let tab = this._target.tab;
     let win = this._target.tab.ownerGlobal;
 
-    ResponsiveUIManager.runIfNeeded(win, tab);
+    yield ResponsiveUIManager.runIfNeeded(win, tab);
     if (options.width && options.height) {
       ResponsiveUIManager.getResponsiveUIForTab(tab).setSize(options.width,
                                                              options.height);
@@ -958,7 +958,7 @@ StyleEditorUI.prototype = {
     } else if (options.height) {
       ResponsiveUIManager.getResponsiveUIForTab(tab).setHeight(options.height);
     }
-  },
+  }),
 
   
 

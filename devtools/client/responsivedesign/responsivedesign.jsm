@@ -64,11 +64,17 @@ var Manager = {
 
 
 
-  runIfNeeded: function(aWindow, aTab) {
+
+  runIfNeeded: Task.async(function*(aWindow, aTab) {
+    let ui;
     if (!this.isActiveForTab(aTab)) {
-      new ResponsiveUI(aWindow, aTab);
+      ui = new ResponsiveUI(aWindow, aTab);
+      yield ui.inited;
+    } else {
+      ui = this.getResponsiveUIForTab(aTab);
     }
-  },
+    return ui;
+  }),
 
   
 
@@ -97,9 +103,7 @@ var Manager = {
   handleGcliCommand: Task.async(function*(aWindow, aTab, aCommand, aArgs) {
     switch (aCommand) {
       case "resize to":
-        this.runIfNeeded(aWindow, aTab);
-        let ui = ActiveTabs.get(aTab);
-        yield ui.inited;
+        let ui = yield this.runIfNeeded(aWindow, aTab);
         ui.setSize(aArgs.width, aArgs.height);
         break;
       case "resize on":
