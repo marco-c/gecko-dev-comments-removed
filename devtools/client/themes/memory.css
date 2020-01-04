@@ -58,9 +58,10 @@ html, body, #app, #memory-tool {
 
 
 
-  flex: 0 0 calc(var(--sidebar-width) - 3px);
+  flex: 0 0 calc(var(--sidebar-width) - 4px);
   border-inline-end: 1px solid var(--theme-splitter-color);
   margin-inline-end: 5px;
+  padding-right: 1px;
 }
 
 .devtools-toolbar > .toolbar-group {
@@ -111,8 +112,13 @@ html, body, #app, #memory-tool {
 
 
 
-#import-snapshot {
-  min-width: 78px;
+#import-snapshot,
+#clear-snapshots {
+  -moz-box-align: center;
+  flex-grow: 1;
+  padding: 1px;
+  margin: 2px 1px;
+  min-width: unset;
 }
 
 .spacer {
