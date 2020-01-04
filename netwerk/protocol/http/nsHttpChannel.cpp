@@ -7,7 +7,6 @@
 
 #include "HttpLog.h"
 
-#include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "nsHttp.h"
 #include "nsHttpChannel.h"
@@ -56,7 +55,6 @@
 #include "nsIClassOfService.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
-#include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsISSLStatus.h"
 #include "nsISSLStatusProvider.h"
@@ -319,83 +317,24 @@ nsHttpChannel::Connect()
 
     LOG(("nsHttpChannel::Connect [this=%p]\n", this));
 
-    
-    
-    
-    
     bool isHttps = false;
     rv = mURI->SchemeIs("https", &isHttps);
     NS_ENSURE_SUCCESS(rv,rv);
-
-    if (!isHttps) {
-        
-        
-        
-        
-        if (mLoadInfo && mLoadInfo->GetUpgradeInsecureRequests()) {
-            
-            
-            
-            nsCOMPtr<nsIPrincipal> resultPrincipal;
-            nsContentUtils::GetSecurityManager()->
-                GetChannelResultPrincipal(this, getter_AddRefs(resultPrincipal));
-            bool crossOriginNavigation =
-                (mLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) &&
-                (!resultPrincipal->Equals(mLoadInfo->LoadingPrincipal()));
-
-            if (!crossOriginNavigation) {
-                
-                nsAutoCString spec, scheme;
-                mURI->GetSpec(spec);
-                mURI->GetScheme(scheme);
-                
-                scheme.AppendASCII("s");
-                NS_ConvertUTF8toUTF16 reportSpec(spec);
-                NS_ConvertUTF8toUTF16 reportScheme(scheme);
-
-                const char16_t* params[] = { reportSpec.get(), reportScheme.get() };
-                uint32_t innerWindowId = mLoadInfo ? mLoadInfo->GetInnerWindowID() : 0;
-                CSP_LogLocalizedStr(MOZ_UTF16("upgradeInsecureRequest"),
-                                    params, ArrayLength(params),
-                                    EmptyString(), 
-                                    EmptyString(), 
-                                    0, 
-                                    0, 
-                                    nsIScriptError::warningFlag, "CSP",
-                                    innerWindowId);
-
-                Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 4);
-                return AsyncCall(&nsHttpChannel::HandleAsyncRedirectChannelToHttps);
-            }
-        }
-
-        
-        nsISiteSecurityService* sss = gHttpHandler->GetSSService();
-        NS_ENSURE_TRUE(sss, NS_ERROR_OUT_OF_MEMORY);
-
-        bool isStsHost = false;
-        uint32_t flags = mPrivateBrowsing ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
-        rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, mURI, flags,
-                              &isStsHost);
-
-        
-        
-        
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        if (isStsHost) {
-            LOG(("nsHttpChannel::Connect() STS permissions found\n"));
-            if (mAllowSTS) {
-                Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 3);
-                return AsyncCall(&nsHttpChannel::HandleAsyncRedirectChannelToHttps);
-            } else {
-                Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 2);
-            }
-        } else {
-            Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 1);
-        }
-    } else {
-        Telemetry::Accumulate(Telemetry::HTTP_SCHEME_UPGRADE, 0);
+    nsCOMPtr<nsIPrincipal> resultPrincipal;
+    if (!isHttps && mLoadInfo && mLoadInfo->GetUpgradeInsecureRequests()) {
+        nsContentUtils::GetSecurityManager()->
+          GetChannelResultPrincipal(this, getter_AddRefs(resultPrincipal));
+    }
+    bool shouldUpgrade = false;
+    rv = NS_ShouldSecureUpgrade(mURI,
+                                mLoadInfo,
+                                resultPrincipal,
+                                mPrivateBrowsing,
+                                mAllowSTS,
+                                shouldUpgrade);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (shouldUpgrade) {
+        return AsyncCall(&nsHttpChannel::HandleAsyncRedirectChannelToHttps);
     }
 
     
