@@ -92,9 +92,6 @@ nsEventQueue::PutEvent(nsIRunnable* aRunnable)
 void
 nsEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aRunnable)
 {
-  
-  nsCOMPtr<nsIRunnable> event(aRunnable);
-
   if (ChaosMode::isActive(ChaosFeature::ThreadScheduling)) {
     
     
@@ -121,7 +118,9 @@ nsEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aRunnable)
     mOffsetTail = 0;
   }
 
-  event.swap(mTail->mEvents[mOffsetTail]);
+  nsIRunnable*& queueLocation = mTail->mEvents[mOffsetTail];
+  MOZ_ASSERT(!queueLocation);
+  queueLocation = aRunnable.take();
   ++mOffsetTail;
   LOG(("EVENTQ(%p): notify\n", this));
   mon.NotifyAll();
