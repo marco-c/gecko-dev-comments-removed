@@ -1333,6 +1333,7 @@ XPCJSRuntime::EnvironmentPreparer::invoke(HandleObject scope, js::ScriptEnvironm
 {
     MOZ_ASSERT(NS_IsMainThread());
     nsIGlobalObject* global = NativeGlobal(scope);
+
     
     NS_ENSURE_TRUE_VOID(global && global->GetGlobalJSObject());
     AutoEntryScript aes(global, "JS-engine-initiated execution");

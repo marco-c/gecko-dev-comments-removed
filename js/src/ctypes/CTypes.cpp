@@ -7025,6 +7025,9 @@ bool CClosure::ArgClosure::operator()(JSContext* cx)
       size_t copySize = CType::GetSize(fninfo->mReturnType);
       MOZ_ASSERT(copySize <= rvSize);
       memcpy(result, cinfo->errResult, copySize);
+
+      
+      
     } else {
       
       
