@@ -125,15 +125,6 @@ struct ImmWord
     { }
 };
 
-
-struct Imm64
-{
-    uint64_t value;
-
-    explicit Imm64(uint64_t value) : value(value)
-    { }
-};
-
 #ifdef DEBUG
 static inline bool
 IsCompilingAsmJS()

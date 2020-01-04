@@ -441,11 +441,6 @@ LIRGeneratorX86::visitSubstr(MSubstr* ins)
 void
 LIRGeneratorX86::visitRandom(MRandom* ins)
 {
-    
-    LRandom *lir = new(alloc()) LRandom(tempFixed(eax),
-                                        tempFixed(edx),
-                                        temp(),
-                                        temp(),
-                                        temp());
-    defineFixed(lir, ins, LFloatReg(ReturnDoubleReg));
+    LRandom* lir = new(alloc()) LRandom(tempFixed(CallTempReg0), tempFixed(CallTempReg1));
+    defineReturn(lir, ins);
 }

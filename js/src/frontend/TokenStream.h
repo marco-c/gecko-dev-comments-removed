@@ -129,20 +129,6 @@ struct Token
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         NoneIsOperand,
 
         
