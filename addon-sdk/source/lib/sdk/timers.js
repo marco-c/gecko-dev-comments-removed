@@ -62,7 +62,7 @@ var dispatcher = _ => {
   
   
   
-  let ids = [id for ([id] of immediates)];
+  let ids = [...immediates.keys()];
   for (let id of ids) {
     let immediate = immediates.get(id);
     if (immediate) {
