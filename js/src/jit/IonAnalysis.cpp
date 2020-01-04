@@ -1848,7 +1848,7 @@ jit::MakeMRegExpHoistable(MIRGraph& graph)
 
                 
                 MDefinition* use = i->consumer()->toDefinition();
-                if (use->isRegExpReplace())
+                if (use->isRegExpMatcher() || use->isRegExpTester())
                     continue;
 
                 hoistable = false;
