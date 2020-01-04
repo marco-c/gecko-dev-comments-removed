@@ -8,6 +8,7 @@
 #include <IOKit/network/IOEthernetInterface.h>
 #include <IOKit/network/IONetworkInterface.h>
 #include <vector>
+#include <string>
 
 
 
