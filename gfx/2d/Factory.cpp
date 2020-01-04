@@ -265,6 +265,15 @@ Factory::CheckSurfaceSize(const IntSize &sz,
     return false;
   }
 
+#if defined(XP_MACOSX)
+  
+  
+  if (sz.height > SHRT_MAX) {
+    gfxDebug() << "Surface size too large (exceeds CoreGraphics limit)!";
+    return false;
+  }
+#endif
+
   
   CheckedInt<int32_t> tmp = sz.width;
   tmp *= sz.height;
