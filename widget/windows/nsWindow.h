@@ -585,7 +585,7 @@ protected:
   HDC                   mPaintDC; 
   HDC                   mCompositeDC; 
 
-  nsIntRect             mLastPaintBounds;
+  LayoutDeviceIntRect   mLastPaintBounds;
 
   
   enum ResizeState {

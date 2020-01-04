@@ -515,7 +515,7 @@ protected:
   RefPtr<TextEventDispatcher> mTextEventDispatcher;
   nsCursor          mCursor;
   nsBorderStyle     mBorderStyle;
-  nsIntRect         mBounds;
+  LayoutDeviceIntRect mBounds;
   LayoutDeviceIntRect* mOriginalBounds;
   
   mozilla::UniquePtr<LayoutDeviceIntRect[]> mClipRects;

@@ -1075,7 +1075,7 @@ nsWindow::Create(nsIWidget* aParent,
         }
     }
 
-    mBounds = aRect.ToUnknownRect();
+    mBounds = aRect;
 
     
     if (!parent) {
