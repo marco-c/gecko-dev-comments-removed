@@ -95,15 +95,8 @@ var gSearchPane = {
   buildDefaultEngineDropDown: function() {
     
     let list = document.getElementById("defaultEngine");
-    let currentEngine;
-
     
-    if (list.selectedItem)
-      currentEngine = list.selectedItem.label;
-
-    
-    if (!currentEngine)
-      currentEngine = Services.search.currentEngine.name;
+    let currentEngine = Services.search.currentEngine.name;
 
     
     let engines = gEngineView._engineStore._engines;
@@ -411,6 +404,7 @@ EngineStore.prototype = {
         added++;
       }
     }
+    Services.search.resetToOriginalDefaultEngine();
     gSearchPane.showRestoreDefaults(false);
     gSearchPane.buildDefaultEngineDropDown();
     return added;
