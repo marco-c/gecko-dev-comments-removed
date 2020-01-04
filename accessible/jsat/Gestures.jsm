@@ -35,11 +35,8 @@
 
 
 
-
-
 'use strict';
 
-const Ci = Components.interfaces;
 const Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = ['GestureSettings', 'GestureTracker']; 
@@ -73,8 +70,6 @@ const TAP_MAX_RADIUS = 0.2;
 
 
 const DIRECTNESS_COEFF = 1.44;
-
-const MOUSE_ID = 'mouse';
 
 const EDGE = 0.1;
 
@@ -211,7 +206,6 @@ this.GestureTracker = {
     if (aDetail.type !== 'pointerdown') {
       return;
     }
-    let points = aDetail.points;
     let GestureConstructor = aGesture || (IS_ANDROID ? DoubleTap : Tap);
     this._create(GestureConstructor);
     this._update(aDetail, aTimeStamp);
@@ -270,6 +264,7 @@ this.GestureTracker = {
       this._create(gestureType, current.startTime, current.points,
         current.lastEvent);
     } else {
+      this.current.clearTimer();
       delete this.current;
     }
   }
@@ -608,6 +603,9 @@ TravelGesture.prototype = Object.create(Gesture.prototype);
 
 
 TravelGesture.prototype.test = function TravelGesture_test() {
+  if (!this._travelTo) {
+    return;
+  }
   for (let identifier in this.points) {
     let point = this.points[identifier];
     if (point.totalDistanceTraveled / Utils.dpi > this._threshold) {
@@ -722,11 +720,12 @@ TapGesture.prototype.pointerup = function TapGesture_pointerup(aPoints) {
 };
 
 TapGesture.prototype.pointerdown = function TapGesture_pointerdown(aPoints, aTimeStamp) {
-  TravelGesture.prototype.pointerdown.call(this, aPoints, aTimeStamp);
   if (this._pointerUpTimer) {
     clearTimeout(this._pointerUpTimer);
     delete this._pointerUpTimer;
     this._deferred.reject(this._rejectToOnPointerDown);
+  } else {
+    TravelGesture.prototype.pointerdown.call(this, aPoints, aTimeStamp);
   }
 };
 
@@ -771,7 +770,7 @@ DoubleTap.prototype.type = 'doubletap';
 
 function TripleTap(aTimeStamp, aPoints, aLastEvent) {
   this._inProgress = true;
-  TapGesture.call(this, aTimeStamp, aPoints, aLastEvent, DoubleTapHold);
+  TapGesture.call(this, aTimeStamp, aPoints, aLastEvent, DoubleTapHold, null, null);
 }
 
 TripleTap.prototype = Object.create(TapGesture.prototype);
