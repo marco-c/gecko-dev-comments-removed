@@ -1872,7 +1872,7 @@ MediaStream::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   amount += mVideoOutputs.ShallowSizeOfExcludingThis(aMallocSizeOf);
   amount += mListeners.ShallowSizeOfExcludingThis(aMallocSizeOf);
   amount += mMainThreadListeners.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  amount += mDisabledTracks.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  amount += mDisabledTrackIDs.ShallowSizeOfExcludingThis(aMallocSizeOf);
   amount += mConsumers.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   return amount;
@@ -2485,75 +2485,43 @@ MediaStream::RunAfterPendingUpdates(already_AddRefed<nsIRunnable> aRunnable)
 }
 
 void
-MediaStream::SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode)
+MediaStream::SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled)
 {
-  if (aMode == DisabledTrackMode::ENABLED) {
-    for (int32_t i = mDisabledTracks.Length() - 1; i >= 0; --i) {
-      if (aTrackID == mDisabledTracks[i].mTrackID) {
-        mDisabledTracks.RemoveElementAt(i);
-        return;
-      }
-    }
+  if (aEnabled) {
+    mDisabledTrackIDs.RemoveElement(aTrackID);
   } else {
-    for (const DisabledTrack& t : mDisabledTracks) {
-      if (aTrackID == t.mTrackID) {
-        NS_ERROR("Changing disabled track mode for a track is not allowed");
-        return;
-      }
-    }
-    mDisabledTracks.AppendElement(Move(DisabledTrack(aTrackID, aMode)));
-  }
-}
-
-DisabledTrackMode
-MediaStream::GetDisabledTrackMode(TrackID aTrackID)
-{
-  for (const DisabledTrack& t : mDisabledTracks) {
-    if (t.mTrackID == aTrackID) {
-      return t.mMode;
+    if (!mDisabledTrackIDs.Contains(aTrackID)) {
+      mDisabledTrackIDs.AppendElement(aTrackID);
     }
   }
-  return DisabledTrackMode::ENABLED;
 }
 
 void
-MediaStream::SetTrackEnabled(TrackID aTrackID, DisabledTrackMode aMode)
+MediaStream::SetTrackEnabled(TrackID aTrackID, bool aEnabled)
 {
   class Message : public ControlMessage {
   public:
-    Message(MediaStream* aStream, TrackID aTrackID, DisabledTrackMode aMode) :
-      ControlMessage(aStream),
-      mTrackID(aTrackID),
-      mMode(aMode) {}
+    Message(MediaStream* aStream, TrackID aTrackID, bool aEnabled) :
+      ControlMessage(aStream), mTrackID(aTrackID), mEnabled(aEnabled) {}
     void Run() override
     {
-      mStream->SetTrackEnabledImpl(mTrackID, mMode);
+      mStream->SetTrackEnabledImpl(mTrackID, mEnabled);
     }
     TrackID mTrackID;
-    DisabledTrackMode mMode;
+    bool mEnabled;
   };
-  GraphImpl()->AppendMessage(MakeUnique<Message>(this, aTrackID, aMode));
+  GraphImpl()->AppendMessage(MakeUnique<Message>(this, aTrackID, aEnabled));
 }
 
 void
 MediaStream::ApplyTrackDisabling(TrackID aTrackID, MediaSegment* aSegment, MediaSegment* aRawSegment)
 {
-  DisabledTrackMode mode = GetDisabledTrackMode(aTrackID);
-  if (mode == DisabledTrackMode::ENABLED) {
+  if (!mDisabledTrackIDs.Contains(aTrackID)) {
     return;
   }
-  if (mode == DisabledTrackMode::SILENCE_BLACK) {
-    aSegment->ReplaceWithDisabled();
-    if (aRawSegment) {
-      aRawSegment->ReplaceWithDisabled();
-    }
-  } else if (mode == DisabledTrackMode::SILENCE_FREEZE) {
-    aSegment->ReplaceWithNull();
-    if (aRawSegment) {
-      aRawSegment->ReplaceWithNull();
-    }
-  } else {
-    MOZ_CRASH("Unsupported mode");
+  aSegment->ReplaceWithDisabled();
+  if (aRawSegment) {
+    aRawSegment->ReplaceWithDisabled();
   }
 }
 
@@ -2971,30 +2939,28 @@ SourceMediaStream::FinishWithLockHeld()
 }
 
 void
-SourceMediaStream::SetTrackEnabledImpl(TrackID aTrackID, DisabledTrackMode aMode)
+SourceMediaStream::SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled)
 {
   {
     MutexAutoLock lock(mMutex);
     for (TrackBound<DirectMediaStreamTrackListener>& l: mDirectTrackListeners) {
-      if (l.mTrackID != aTrackID) {
-        continue;
-      }
-      DisabledTrackMode oldMode = GetDisabledTrackMode(aTrackID);
-      bool oldEnabled = oldMode == DisabledTrackMode::ENABLED;
-      if (!oldEnabled && aMode == DisabledTrackMode::ENABLED) {
-        STREAM_LOG(LogLevel::Debug, ("SourceMediaStream %p track %d setting "
-                                     "direct listener enabled",
-                                     this, aTrackID));
-        l.mListener->DecreaseDisabled(oldMode);
-      } else if (oldEnabled && aMode != DisabledTrackMode::ENABLED) {
-        STREAM_LOG(LogLevel::Debug, ("SourceMediaStream %p track %d setting "
-                                     "direct listener disabled",
-                                     this, aTrackID));
-        l.mListener->IncreaseDisabled(aMode);
+      if (l.mTrackID == aTrackID) {
+        bool oldEnabled = !mDisabledTrackIDs.Contains(aTrackID);
+        if (!oldEnabled && aEnabled) {
+          STREAM_LOG(LogLevel::Debug, ("SourceMediaStream %p track %d setting "
+                                       "direct listener enabled",
+                                       this, aTrackID));
+          l.mListener->DecreaseDisabled();
+        } else if (oldEnabled && !aEnabled) {
+          STREAM_LOG(LogLevel::Debug, ("SourceMediaStream %p track %d setting "
+                                       "direct listener disabled",
+                                       this, aTrackID));
+          l.mListener->IncreaseDisabled();
+        }
       }
     }
   }
-  MediaStream::SetTrackEnabledImpl(aTrackID, aMode);
+  MediaStream::SetTrackEnabledImpl(aTrackID, aEnabled);
 }
 
 void
@@ -3532,15 +3498,9 @@ FinishCollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
   if (!manager)
     return;
 
-#define REPORT(_path, _amount, _desc)                                       \
-  do {                                                                      \
-    nsresult rv;                                                            \
-    rv = aHandleReport->Callback(EmptyCString(), _path,                     \
-                                 KIND_HEAP, UNITS_BYTES, _amount,           \
-                                 NS_LITERAL_CSTRING(_desc), aData);         \
-    if (NS_WARN_IF(NS_FAILED(rv)))                                          \
-      return;                                                               \
-  } while (0)
+#define REPORT(_path, _amount, _desc) \
+  aHandleReport->Callback(EmptyCString(), _path, KIND_HEAP, UNITS_BYTES, \
+                          _amount, NS_LITERAL_CSTRING(_desc), aData);
 
   for (size_t i = 0; i < aAudioStreamSizes.Length(); i++) {
     const AudioNodeSizes& usage = aAudioStreamSizes[i];
@@ -3561,9 +3521,8 @@ FinishCollectReports(nsIHandleReportCallback* aHandleReport, nsISupports* aData,
 
   size_t hrtfLoaders = WebCore::HRTFDatabaseLoader::sizeOfLoaders(MallocSizeOf);
   if (hrtfLoaders) {
-
     REPORT(NS_LITERAL_CSTRING(
-              "explicit/webaudio/audio-node/PannerNode/hrtf-databases"),
+             "explicit/webaudio/audio-node/PannerNode/hrtf-databases"),
            hrtfLoaders,
            "Memory used by PannerNode databases (Web Audio).");
   }

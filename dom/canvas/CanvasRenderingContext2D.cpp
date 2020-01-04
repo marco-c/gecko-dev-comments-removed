@@ -178,11 +178,12 @@ public:
   NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
                             nsISupports* aData, bool aAnonymize) override
   {
-    return MOZ_COLLECT_REPORT(
-      "canvas-2d-pixels", KIND_OTHER, UNITS_BYTES,
-      gCanvasAzureMemoryUsed,
+    MOZ_COLLECT_REPORT(
+      "canvas-2d-pixels", KIND_OTHER, UNITS_BYTES, gCanvasAzureMemoryUsed,
       "Memory used by 2D canvases. Each canvas requires "
       "(width * height * 4) bytes.");
+
+    return NS_OK;
   }
 };
 
@@ -1802,7 +1803,7 @@ CanvasRenderingContext2D::ReturnTarget(bool aForceReset)
 
 NS_IMETHODIMP
 CanvasRenderingContext2D::InitializeWithDrawTarget(nsIDocShell* aShell,
-                                                   NotNull<gfx::DrawTarget*> aTarget)
+                                                   gfx::DrawTarget* aTarget)
 {
   RemovePostRefreshObserver();
   mDocShell = aShell;
@@ -1811,8 +1812,13 @@ CanvasRenderingContext2D::InitializeWithDrawTarget(nsIDocShell* aShell,
   IntSize size = aTarget->GetSize();
   SetDimensions(size.width, size.height);
 
-  mTarget = aTarget;
-  mBufferProvider = new PersistentBufferProviderBasic(aTarget);
+  if (aTarget) {
+    mTarget = aTarget;
+    mBufferProvider = new PersistentBufferProviderBasic(aTarget);
+  } else {
+    EnsureErrorTarget();
+    mTarget = sErrorTarget;
+  }
 
   if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
     

@@ -103,7 +103,6 @@
 #ifdef MOZ_ENABLE_PROFILER_SPS
 #include "mozilla/ProfileGatherer.h"
 #endif
-#include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
@@ -483,9 +482,10 @@ public:
 NS_IMPL_ISUPPORTS(ContentParentsMemoryReporter, nsIMemoryReporter)
 
 NS_IMETHODIMP
-ContentParentsMemoryReporter::CollectReports(nsIMemoryReporterCallback* cb,
-                                             nsISupports* aClosure,
-                                             bool aAnonymize)
+ContentParentsMemoryReporter::CollectReports(
+  nsIHandleReportCallback* aHandleReport,
+  nsISupports* aData,
+  bool aAnonymize)
 {
   AutoTArray<ContentParent*, 16> cps;
   ContentParent::GetAllEvenIfDead(cps);
@@ -523,15 +523,9 @@ ContentParentsMemoryReporter::CollectReports(nsIMemoryReporterCallback* cb,
       "messages.  Similarly, a ContentParent object for a process that's no "
       "longer running could indicate that we're leaking ContentParents.");
 
-    nsresult rv = cb->Callback( EmptyCString(),
-                               path,
-                               KIND_OTHER,
-                               UNITS_COUNT,
-                               numQueuedMessages,
-                               desc,
-                               aClosure);
-
-    NS_ENSURE_SUCCESS(rv, rv);
+    aHandleReport->Callback( EmptyCString(), path,
+                            KIND_OTHER, UNITS_COUNT,
+                            numQueuedMessages, desc, aData);
   }
 
   return NS_OK;
@@ -4445,9 +4439,6 @@ ContentParent::RecvKeywordToURI(const nsCString& aKeyword,
                                 OptionalInputStreamParams* aPostData,
                                 OptionalURIParams* aURI)
 {
-  *aPostData = void_t();
-  *aURI = void_t();
-
   nsCOMPtr<nsIURIFixup> fixup = do_GetService(NS_URIFIXUP_CONTRACTID);
   if (!fixup) {
     return true;
@@ -5007,14 +4998,6 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
 
   TabParent* newTab = TabParent::GetFrom(aNewTab);
   MOZ_ASSERT(newTab);
-
-  auto destroyNewTabOnError = MakeScopeExit([&] {
-    if (!*aWindowIsNew || NS_FAILED(*aResult)) {
-      if (newTab) {
-        newTab->Destroy();
-      }
-    }
-  });
 
   
   

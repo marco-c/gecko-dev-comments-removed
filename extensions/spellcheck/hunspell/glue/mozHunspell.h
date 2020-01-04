@@ -101,8 +101,7 @@ public:
   
   nsresult ConvertCharset(const char16_t* aStr, char ** aDst);
 
-  NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
-                            nsISupports* aData, bool aAnonymize) override;
+  NS_DECL_NSIMEMORYREPORTER
 
 protected:
   virtual ~mozHunspell();
