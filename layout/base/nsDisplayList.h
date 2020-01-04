@@ -843,6 +843,10 @@ public:
   const nsRect& GetAccumulatedRect() {
     return mPreserves3DCtx.mAccumulatedRect;
   }
+  
+
+
+
   int GetAccumulatedRectLevels() {
     return mPreserves3DCtx.mAccumulatedRectLevels;
   }
@@ -1606,6 +1610,21 @@ public:
 
   virtual nsDisplayList* GetSameCoordinateSystemChildren() { return nullptr; }
   virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) {}
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void DoUpdateBoundsPreserves3D(nsDisplayListBuilder* aBuilder) {}
 
   
 
@@ -3617,13 +3636,18 @@ class nsDisplayTransform: public nsDisplayItem
       nsDisplayWrapList(aBuilder, aFrame, aItem) {}
     virtual ~StoreList() {}
 
-    virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) override {}
-    virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
-                             bool* aSnap) override {
+    virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) override {
       
       
+      if (!mFrame->Extend3DContext()) {
+        nsDisplayWrapList::UpdateBounds(aBuilder);
+      }
+    }
+    virtual void DoUpdateBoundsPreserves3D(nsDisplayListBuilder* aBuilder) override {
+      for (nsDisplayItem *i = mList.GetBottom(); i; i = i->GetAbove()) {
+        i->DoUpdateBoundsPreserves3D(aBuilder);
+      }
       nsDisplayWrapList::UpdateBounds(aBuilder);
-      return nsDisplayWrapList::GetBounds(aBuilder, aSnap);
     }
   };
 
@@ -3865,7 +3889,54 @@ public:
   
   void SetNoExtendContext() { mNoExtendContext = true; }
 
+  virtual void DoUpdateBoundsPreserves3D(nsDisplayListBuilder* aBuilder) override {
+    MOZ_ASSERT(mFrame->Combines3DTransformWithAncestors() ||
+               IsTransformSeparator());
+    
+    ComputeBounds(aBuilder);
+  }
+
+  
+
+
+
+
+
+  void UpdateBoundsFor3D(nsDisplayListBuilder* aBuilder) {
+    if (!mFrame->Extend3DContext() ||
+        mFrame->Combines3DTransformWithAncestors() ||
+        IsTransformSeparator()) {
+      
+      return;
+    }
+    
+
+    nsDisplayListBuilder::AutoAccumulateRect accRect(aBuilder);
+    nsDisplayListBuilder::AutoAccumulateTransform accTransform(aBuilder);
+    accTransform.StartRoot();
+    ComputeBounds(aBuilder);
+    mBounds = aBuilder->GetAccumulatedRect();
+    mHasBounds = true;
+  }
+
+  
+
+
+
+
+  bool IsTransformSeparator() { return mIsTransformSeparator; }
+  
+
+
+
+  bool IsLeafOf3DContext() {
+    return (IsTransformSeparator() ||
+            (!mFrame->Extend3DContext() &&
+             mFrame->Combines3DTransformWithAncestors()));
+  }
+
 private:
+  void ComputeBounds(nsDisplayListBuilder* aBuilder);
   void SetReferenceFrameToAncestor(nsDisplayListBuilder* aBuilder);
   void Init(nsDisplayListBuilder* aBuilder);
 
@@ -3884,6 +3955,9 @@ private:
   ComputeTransformFunction mTransformGetter;
   nsRect mChildrenVisibleRect;
   uint32_t mIndex;
+  nsRect mBounds;
+  
+  bool mHasBounds;
   
   
   bool mMaybePrerender;
@@ -3895,7 +3969,8 @@ private:
   
   bool mNoExtendContext;
   
-  bool mHasPresetTransform;
+  
+  bool mIsTransformSeparator;
   
   bool mTransformPreserves3DInited;
 };
