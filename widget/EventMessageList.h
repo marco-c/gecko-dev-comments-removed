@@ -222,7 +222,7 @@ NS_EVENT_MESSAGE(eQuerySelectedText,            eQueryContentEventFirst)
 NS_EVENT_MESSAGE(eQueryTextContent,             eQueryContentEventFirst + 1)
 
 
-NS_EVENT_MESSAGE(NS_QUERY_CARET_RECT,           eQueryContentEventFirst + 3)
+NS_EVENT_MESSAGE(eQueryCaretRect,               eQueryContentEventFirst + 3)
 
 
 
