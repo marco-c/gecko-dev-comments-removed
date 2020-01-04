@@ -710,13 +710,6 @@ public:
   
 
 
-  bool StyleUpdateForAllAnimationsIsUpToDate() const;
-  void TickLastStyleUpdateForAllAnimations();
-  void ClearLastStyleUpdateForAllAnimations();
-
-  
-
-
 
 
 

@@ -1051,9 +1051,6 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
   }
 
   
-  mLastStyleUpdateForAllAnimations = mRefreshDriver->MostRecentRefresh();
-
-  
   
   
   
@@ -1760,24 +1757,6 @@ nsPresContext::Detach()
   if (mShell) {
     mShell->CancelInvalidatePresShellIfHidden();
   }
-}
-
-bool
-nsPresContext::StyleUpdateForAllAnimationsIsUpToDate() const
-{
-  return mLastStyleUpdateForAllAnimations == mRefreshDriver->MostRecentRefresh();
-}
-
-void
-nsPresContext::TickLastStyleUpdateForAllAnimations()
-{
-  mLastStyleUpdateForAllAnimations = mRefreshDriver->MostRecentRefresh();
-}
-
-void
-nsPresContext::ClearLastStyleUpdateForAllAnimations()
-{
-  mLastStyleUpdateForAllAnimations = TimeStamp();
 }
 
 bool
