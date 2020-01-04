@@ -247,6 +247,13 @@ exports.isSavedFrame = function (thing) {
 
 
 
+exports.isSet = function(thing) {
+  return Object.prototype.toString.call(thing) === "[object Set]";
+};
+
+
+
+
 
 
 
