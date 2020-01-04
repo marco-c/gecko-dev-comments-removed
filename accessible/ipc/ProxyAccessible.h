@@ -94,6 +94,17 @@ public:
   
 
 
+  bool IsEmbeddedObject() const
+  {
+    role role = Role();
+    return role != roles::TEXT_LEAF &&
+           role != roles::WHITESPACE &&
+           role != roles::STATICTEXT;
+  }
+
+  
+
+
   uint64_t State() const;
 
   
