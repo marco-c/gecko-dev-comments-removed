@@ -33,7 +33,7 @@ FrameAnimator::GetSingleLoopTime() const
     return -1;
   }
 
-  uint32_t looptime = 0;
+  int32_t looptime = 0;
   for (uint32_t i = 0; i < mImage->GetNumFrames(); ++i) {
     int32_t timeout = GetTimeoutForFrame(i);
     if (timeout >= 0) {
@@ -181,8 +181,13 @@ FrameAnimator::AdvanceFrame(TimeStamp aTime)
 
   
   
-  uint32_t loopTime = GetSingleLoopTime();
+  
+  int32_t loopTime = GetSingleLoopTime();
   if (loopTime > 0) {
+    
+    
+    
+    MOZ_ASSERT(mDoneDecoding);
     TimeDuration delay = aTime - mCurrentAnimationFrameTime;
     if (delay.ToMilliseconds() > loopTime) {
       
