@@ -314,15 +314,20 @@ public class CrashReporter extends AppCompatActivity
     }
 
     private String readLogcat() {
+        final String crashReporterProc = " " + android.os.Process.myPid() + ' ';
         BufferedReader br = null;
         try {
             
             Process proc = Runtime.getRuntime().exec(new String[] {
-                "logcat", "-v", "threadtime", "-t", "200", "-d", "*:D"
+                "logcat", "-v", "threadtime", "-t", "400", "-d", "*:D"
             });
             StringBuilder sb = new StringBuilder();
             br = new BufferedReader(new InputStreamReader(proc.getInputStream()));
             for (String s = br.readLine(); s != null; s = br.readLine()) {
+                if (s.contains(crashReporterProc)) {
+                    
+                    break;
+                }
                 sb.append(s).append('\n');
             }
             return sb.toString();
