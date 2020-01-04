@@ -123,7 +123,7 @@ class JitCode : public gc::TenuredCell
         hasBytecodeMap_ = true;
     }
 
-    void togglePreBarriers(bool enabled);
+    void togglePreBarriers(bool enabled, ReprotectCode reprotect);
 
     
     
@@ -512,7 +512,7 @@ struct IonScript
         MOZ_ASSERT(locIndex < runtimeSize_);
         return (CacheLocation*) &runtimeData()[locIndex];
     }
-    void toggleBarriers(bool enabled);
+    void toggleBarriers(bool enabled, ReprotectCode reprotect = Reprotect);
     void purgeCaches();
     void unlinkFromRuntime(FreeOp* fop);
     void copySnapshots(const SnapshotWriter* writer);

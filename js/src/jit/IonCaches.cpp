@@ -99,20 +99,6 @@ IonCache::CacheName(IonCache::Kind kind)
     return names[kind];
 }
 
-IonCache::LinkStatus
-IonCache::linkCode(JSContext* cx, MacroAssembler& masm, IonScript* ion, JitCode** code)
-{
-    Linker linker(masm);
-    *code = linker.newCode<CanGC>(cx, ION_CODE);
-    if (!*code)
-        return LINK_ERROR;
-
-    if (ion->invalidated())
-        return CACHE_FLUSHED;
-
-    return LINK_GOOD;
-}
-
 const size_t IonCache::MAX_STUBS = 16;
 
 
@@ -239,13 +225,11 @@ class IonCache::StubAttacher
     void patchRejoinJump(MacroAssembler& masm, JitCode* code) {
         rejoinOffset_.fixup(&masm);
         CodeLocationJump rejoinJump(code, rejoinOffset_);
-        AutoWritableJitCode awjc(code);
         PatchJump(rejoinJump, rejoinLabel_);
     }
 
     void patchStubCodePointer(JitCode* code) {
         if (hasStubCodePatchOffset_) {
-            AutoWritableJitCode awjc(code);
             Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, stubCodePatchOffset_),
                                                ImmPtr(code), STUB_ADDR);
         }
@@ -254,12 +238,7 @@ class IonCache::StubAttacher
     void patchNextStubJump(MacroAssembler& masm, JitCode* code) {
         
         
-        PatchJump(cache_.lastJump_, CodeLocationLabel(code), Reprotect);
-
-        
-        
         if (hasNextStubOffset_) {
-            AutoWritableJitCode awjc(code);
             nextStubOffset_.fixup(&masm);
             CodeLocationJump nextStubJump(code, nextStubOffset_);
             PatchJump(nextStubJump, cache_.fallbackLabel_);
@@ -285,21 +264,41 @@ IonCache::emitInitialJump(MacroAssembler& masm, RepatchLabel& entry)
 }
 
 void
-IonCache::attachStub(MacroAssembler& masm, StubAttacher& attacher, Handle<JitCode*> code)
+IonCache::attachStub(MacroAssembler& masm, StubAttacher& attacher, CodeLocationJump lastJump,
+                     Handle<JitCode*> code)
 {
     MOZ_ASSERT(canAttachStub());
     incrementStubCount();
 
     
-    attacher.patchRejoinJump(masm, code);
+    
+    PatchJump(lastJump, CodeLocationLabel(code), Reprotect);
+}
+
+IonCache::LinkStatus
+IonCache::linkCode(JSContext* cx, MacroAssembler& masm, StubAttacher& attacher, IonScript* ion,
+                   JitCode** code)
+{
+    Linker linker(masm);
+    *code = linker.newCode<CanGC>(cx, ION_CODE);
+    if (!*code)
+        return LINK_ERROR;
+
+    if (ion->invalidated())
+        return CACHE_FLUSHED;
+
+    
+    attacher.patchRejoinJump(masm, *code);
 
     
     
     
-    attacher.patchStubCodePointer(code);
+    attacher.patchStubCodePointer(*code);
 
     
-    attacher.patchNextStubJump(masm, code);
+    attacher.patchNextStubJump(masm, *code);
+
+    return LINK_GOOD;
 }
 
 bool
@@ -307,12 +306,13 @@ IonCache::linkAndAttachStub(JSContext* cx, MacroAssembler& masm, StubAttacher& a
                             IonScript* ion, const char* attachKind,
                             JS::TrackedOutcome trackedOutcome)
 {
+    CodeLocationJump lastJumpBefore = lastJump_;
     Rooted<JitCode*> code(cx);
     {
         
         
         AutoFlushICache afc("IonCache");
-        LinkStatus status = linkCode(cx, masm, ion, code.address());
+        LinkStatus status = linkCode(cx, masm, attacher, ion, code.address());
         if (status != LINK_GOOD)
             return status != LINK_ERROR;
     }
@@ -330,7 +330,7 @@ IonCache::linkAndAttachStub(JSContext* cx, MacroAssembler& masm, StubAttacher& a
     writePerfSpewerJitCodeProfile(code, "IonCache");
 #endif
 
-    attachStub(masm, attacher, code);
+    attachStub(masm, attacher, lastJumpBefore, code);
 
     
     if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(cx->runtime())) {

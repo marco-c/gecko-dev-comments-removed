@@ -747,7 +747,7 @@ ICStubCompiler::getStubCode()
 
     
     if (cx->zone()->needsIncrementalBarrier())
-        newStubCode->togglePreBarriers(true);
+        newStubCode->togglePreBarriers(true, DontReprotect);
 
     
     if (!comp->putStubCode(cx, stubKey, newStubCode))

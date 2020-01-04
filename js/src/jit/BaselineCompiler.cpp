@@ -239,13 +239,11 @@ BaselineCompiler::compile()
 
     
     if (cx->zone()->needsIncrementalBarrier())
-        baselineScript->toggleBarriers(true);
+        baselineScript->toggleBarriers(true, DontReprotect);
 
     
     if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(cx->runtime()))
         baselineScript->toggleProfilerInstrumentation(true);
-
-    AutoWritableJitCode awjc(code);
 
     
     for (size_t i = 0; i < icLoadLabels_.length(); i++) {

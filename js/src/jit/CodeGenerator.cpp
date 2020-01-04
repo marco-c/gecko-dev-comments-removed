@@ -1446,7 +1446,7 @@ JitCompartment::generateRegExpExecStub(JSContext* cx)
 #endif
 
     if (cx->zone()->needsIncrementalBarrier())
-        code->togglePreBarriers(true);
+        code->togglePreBarriers(true, DontReprotect);
 
     return code;
 }
@@ -1579,7 +1579,7 @@ JitCompartment::generateRegExpTestStub(JSContext* cx)
 #endif
 
     if (cx->zone()->needsIncrementalBarrier())
-        code->togglePreBarriers(true);
+        code->togglePreBarriers(true, DontReprotect);
 
     return code;
 }
@@ -8261,60 +8261,57 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     
     ionScript->adoptFallbackStubs(&stubSpace_);
 
-    {
-        AutoWritableJitCode awjc(code);
-        Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, invalidateEpilogueData_),
+    Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, invalidateEpilogueData_),
+                                       ImmPtr(ionScript),
+                                       ImmPtr((void*)-1));
+
+    for (size_t i = 0; i < ionScriptLabels_.length(); i++) {
+        Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, ionScriptLabels_[i]),
                                            ImmPtr(ionScript),
                                            ImmPtr((void*)-1));
-
-        for (size_t i = 0; i < ionScriptLabels_.length(); i++) {
-            Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, ionScriptLabels_[i]),
-                                               ImmPtr(ionScript),
-                                               ImmPtr((void*)-1));
-        }
+    }
 
 #ifdef JS_TRACE_LOGGING
-        TraceLoggerThread* logger = TraceLoggerForMainThread(cx->runtime());
-        for (uint32_t i = 0; i < patchableTraceLoggers_.length(); i++) {
-            Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, patchableTraceLoggers_[i]),
-                                               ImmPtr(logger),
-                                               ImmPtr(nullptr));
-        }
-
-        if (patchableTLScripts_.length() > 0) {
-            MOZ_ASSERT(TraceLogTextIdEnabled(TraceLogger_Scripts));
-            TraceLoggerEvent event(logger, TraceLogger_Scripts, script);
-            ionScript->setTraceLoggerEvent(event);
-            uint32_t textId = event.payload()->textId();
-            for (uint32_t i = 0; i < patchableTLScripts_.length(); i++) {
-                Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, patchableTLScripts_[i]),
-                                                   ImmPtr((void*) uintptr_t(textId)),
-                                                   ImmPtr((void*)0));
-            }
-        }
-#endif
-        
-        for (size_t i = 0; i < sharedStubs_.length(); i++) {
-            CodeOffset label = sharedStubs_[i].label;
-
-            IonICEntry& entry = ionScript->sharedStubList()[i];
-            entry = sharedStubs_[i].entry;
-            Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, label),
-                                               ImmPtr(&entry),
-                                               ImmPtr((void*)-1));
-
-            MOZ_ASSERT(entry.hasStub());
-            MOZ_ASSERT(entry.firstStub()->isFallback());
-
-            entry.firstStub()->toFallbackStub()->fixupICEntry(&entry);
-        }
-
-        
-        if (runtimeData_.length())
-            ionScript->copyRuntimeData(&runtimeData_[0]);
-        if (cacheList_.length())
-            ionScript->copyCacheEntries(&cacheList_[0], masm);
+    TraceLoggerThread* logger = TraceLoggerForMainThread(cx->runtime());
+    for (uint32_t i = 0; i < patchableTraceLoggers_.length(); i++) {
+        Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, patchableTraceLoggers_[i]),
+                                           ImmPtr(logger),
+                                           ImmPtr(nullptr));
     }
+
+    if (patchableTLScripts_.length() > 0) {
+        MOZ_ASSERT(TraceLogTextIdEnabled(TraceLogger_Scripts));
+        TraceLoggerEvent event(logger, TraceLogger_Scripts, script);
+        ionScript->setTraceLoggerEvent(event);
+        uint32_t textId = event.payload()->textId();
+        for (uint32_t i = 0; i < patchableTLScripts_.length(); i++) {
+            Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, patchableTLScripts_[i]),
+                                               ImmPtr((void*) uintptr_t(textId)),
+                                               ImmPtr((void*)0));
+        }
+    }
+#endif
+    
+    for (size_t i = 0; i < sharedStubs_.length(); i++) {
+        CodeOffset label = sharedStubs_[i].label;
+
+        IonICEntry& entry = ionScript->sharedStubList()[i];
+        entry = sharedStubs_[i].entry;
+        Assembler::PatchDataWithValueCheck(CodeLocationLabel(code, label),
+                                           ImmPtr(&entry),
+                                           ImmPtr((void*)-1));
+
+        MOZ_ASSERT(entry.hasStub());
+        MOZ_ASSERT(entry.firstStub()->isFallback());
+
+        entry.firstStub()->toFallbackStub()->fixupICEntry(&entry);
+    }
+
+    
+    if (runtimeData_.length())
+        ionScript->copyRuntimeData(&runtimeData_[0]);
+    if (cacheList_.length())
+        ionScript->copyCacheEntries(&cacheList_[0], masm);
 
     JitSpew(JitSpew_Codegen, "Created IonScript %p (raw %p)",
             (void*) ionScript, (void*) code->raw());
@@ -8365,7 +8362,7 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     
     
     if (cx->zone()->needsIncrementalBarrier())
-        ionScript->toggleBarriers(true);
+        ionScript->toggleBarriers(true, DontReprotect);
 
     
     if (IonScriptCounts* counts = extractScriptCounts())
