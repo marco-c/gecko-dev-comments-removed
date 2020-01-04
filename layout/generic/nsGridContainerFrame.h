@@ -184,6 +184,16 @@ private:
     GetNearestFragmentainer(const GridReflowState& aState) const;
 
   
+  void ReflowInFlowChild(nsIFrame*              aChild,
+                         const GridItemInfo*    aGridItemInfo,
+                         nsSize                 aContainerSize,
+                         const Fragmentainer*   aFragmentainer,
+                         const GridReflowState& aState,
+                         const LogicalRect&     aContentArea,
+                         nsHTMLReflowMetrics&   aDesiredSize,
+                         nsReflowStatus&        aStatus);
+
+  
 
 
   nscoord mCachedMinISize;
