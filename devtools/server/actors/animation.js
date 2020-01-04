@@ -448,11 +448,13 @@ var AnimationPlayerActor = ActorClass({
 
 
   getProperties: method(function() {
-    return this.player.effect.getProperties();
+    return this.player.effect.getProperties().map(property => {
+      return {name: property.property, values: property.values};
+    });
   }, {
     request: {},
     response: {
-      frames: RetVal("json")
+      properties: RetVal("array:json")
     }
   })
 });
