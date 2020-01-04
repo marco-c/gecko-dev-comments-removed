@@ -75,7 +75,9 @@ WinWifiScanner::WinWifiScanner()
   
   
   mWlanLibrary = WinWLANLibrary::Load();
-  MOZ_ASSERT(mWlanLibrary);
+  if (!mWlanLibrary) {
+    NS_WARNING("Could not initialize Windows Wi-Fi scanner");
+  }
 }
 
 WinWifiScanner::~WinWifiScanner()
