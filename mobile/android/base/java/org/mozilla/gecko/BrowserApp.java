@@ -3846,7 +3846,16 @@ public class BrowserApp extends GeckoApp
             intent.setData(Uri.parse(url));
             startActivity(intent);
         } else {
-            final String pageURL = SavedReaderViewHelper.getReaderURLIfCached(getContext(), url);
+            
+            
+            
+            
+            final String pageURL;
+            if (!flags.contains(OnUrlOpenListener.Flags.NO_READER_VIEW)) {
+                pageURL = SavedReaderViewHelper.getReaderURLIfCached(getContext(), url);
+            } else {
+                pageURL = url;
+            }
 
             if (!maybeSwitchToTab(pageURL, flags)) {
                 openUrlAndStopEditing(pageURL);

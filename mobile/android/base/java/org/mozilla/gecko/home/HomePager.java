@@ -78,7 +78,12 @@ public class HomePager extends ViewPager {
     public interface OnUrlOpenListener {
         public enum Flags {
             ALLOW_SWITCH_TO_TAB,
-            OPEN_WITH_INTENT
+            OPEN_WITH_INTENT,
+            
+
+
+
+            NO_READER_VIEW
         }
 
         public void onUrlOpen(String url, EnumSet<Flags> flags);
