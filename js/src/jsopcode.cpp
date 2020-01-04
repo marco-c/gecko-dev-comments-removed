@@ -2059,6 +2059,14 @@ LcovWriteScript(JSContext* cx, LcovSourceFile& lsf, JSScript* script)
 
         
         
+        if (sc) {
+            const PCCounts* counts = sc->maybeGetThrowCounts(script->pcToOffset(pc));
+            if (counts)
+                hits -= counts->numExec();
+        }
+
+        
+        
         if (jump && fallsthrough) {
             jsbytecode* target = pc + GET_JUMP_OFFSET(pc);
             jsbytecode* fallthroughTarget = GetNextPc(pc);

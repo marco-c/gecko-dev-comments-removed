@@ -54,6 +54,7 @@ function checkLcov(fun) {
   for (ref of lcovRef) {
     if (lcovRes.indexOf(ref) == -1) {
       print("Cannot find `" + ref + "` in the following Lcov result:\n", lcovResRaw);
+      print("In the following source:\n", source);
       assertEq(true, false);
     }
   }
@@ -148,6 +149,67 @@ checkLcov(function () {
 
   f(5);           
   f(5);           
+  
+  
+});
+
+checkLcov(function () { 
+  try {                     
+    var l = ",".split(','); 
+    if (l.length == 2) {    
+      l.push('');           
+      throw l;              
+    }
+    l.pop();                
+  } catch (x) {             
+    x.pop();                
+  }
+  
+  
+  
+         
+  
+  
+  
+});
+
+checkLcov(function () { 
+  var l = ",".split(',');   
+  try {                     
+    try {                   
+      if (l.length == 2) {  
+        l.push('');         
+        throw l;            
+      }
+      l.pop();              
+    } finally {             
+      l.pop();              
+    }
+  } catch (x) {             
+  }
+  
+  
+  
+  
+  
+  
+});
+
+checkLcov(function () { 
+  function f() {            
+    throw 1;                
+    f();                    
+  }
+  var l = ",".split(',');   
+  try {                     
+    f();                    
+    f();                    
+  } catch (x) {             
+  }
+  
+  
+  
+  
   
   
 });
