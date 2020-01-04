@@ -129,11 +129,9 @@ public:
   }
   
   void SetCapitalization(uint32_t aStart, uint32_t aLength,
-                         bool* aCapitalization,
-                         gfxContext* aRefContext);
+                         bool* aCapitalization);
   virtual bool SetPotentialLineBreaks(uint32_t aStart, uint32_t aLength,
-                                        uint8_t* aBreakBefore,
-                                        gfxContext* aRefContext);
+                                      uint8_t* aBreakBefore);
   
 
 
