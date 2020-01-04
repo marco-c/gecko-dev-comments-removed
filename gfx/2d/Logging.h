@@ -62,24 +62,9 @@ inline mozilla::LogLevel PRLogLevelForLevel(int aLevel) {
 }
 #endif
 
-class PreferenceAccess
+class LoggingPrefs
 {
 public:
-  virtual ~PreferenceAccess();
-
-  
-  
-  
-  virtual void LivePref(const char* aName, int32_t* aVar, int32_t aDefault);
-
-public:
-  static void SetAccess(PreferenceAccess* aAccess);
-
-public:
-  
-  
-  
-
   
   
   
@@ -88,15 +73,6 @@ public:
   
   
   static int32_t sGfxLogLevel;
-
-private:
-  static void RegisterAll() {
-    
-    
-    
-    sAccess->LivePref("gfx.logging.level", &sGfxLogLevel, LOG_DEFAULT);
-  }
-  static PreferenceAccess* sAccess;
 };
 
 
@@ -164,7 +140,7 @@ struct BasicLogger
   
   
   static bool ShouldOutputMessage(int aLevel) {
-    if (PreferenceAccess::sGfxLogLevel >= aLevel) {
+    if (LoggingPrefs::sGfxLogLevel >= aLevel) {
 #if defined(MOZ_WIDGET_GONK) || defined(MOZ_WIDGET_ANDROID)
       return true;
 #else
@@ -173,7 +149,7 @@ struct BasicLogger
         return true;
       } else
 #endif
-      if ((PreferenceAccess::sGfxLogLevel >= LOG_DEBUG_PRLOG) ||
+      if ((LoggingPrefs::sGfxLogLevel >= LOG_DEBUG_PRLOG) ||
                  (aLevel < LOG_DEBUG)) {
         return true;
       }
@@ -197,7 +173,7 @@ struct BasicLogger
     
     
     
-    if (PreferenceAccess::sGfxLogLevel >= aLevel) {
+    if (LoggingPrefs::sGfxLogLevel >= aLevel) {
 #if defined(MOZ_WIDGET_GONK) || defined(MOZ_WIDGET_ANDROID)
       printf_stderr("%s%s", aString.c_str(), aNoNewline ? "" : "\n");
 #else
@@ -206,7 +182,7 @@ struct BasicLogger
         PR_LogPrint("%s%s", aString.c_str(), aNoNewline ? "" : "\n");
       } else
 #endif
-      if ((PreferenceAccess::sGfxLogLevel >= LOG_DEBUG_PRLOG) ||
+      if ((LoggingPrefs::sGfxLogLevel >= LOG_DEBUG_PRLOG) ||
                  (aLevel < LOG_DEBUG)) {
         printf("%s%s", aString.c_str(), aNoNewline ? "" : "\n");
       }
