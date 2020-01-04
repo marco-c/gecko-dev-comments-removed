@@ -4213,13 +4213,19 @@ this.XPIProvider = {
 
 
   isBlockingE10s: function(aAddon) {
-    
-    if (aAddon.type != "extension")
+    if (aAddon.type != "extension" &&
+        aAddon.type != "webextension" &&
+        aAddon.type != "theme")
       return false;
 
     
     let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
     if (hotfixID && hotfixID == aAddon.id)
+      return false;
+
+    
+    if (aAddon.type == "theme" &&
+        aAddon.internalName == XPIProvider.defaultSkin)
       return false;
 
     
