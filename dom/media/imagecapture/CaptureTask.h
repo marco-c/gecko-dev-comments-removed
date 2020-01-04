@@ -60,9 +60,8 @@ public:
   void DetachTrack();
 
   
-  CaptureTask(dom::ImageCapture* aImageCapture, TrackID aTrackID)
+  explicit CaptureTask(dom::ImageCapture* aImageCapture)
     : mImageCapture(aImageCapture)
-    , mTrackID(aTrackID)
     , mImageGrabbedOrTrackEnd(false)
     , mPrincipalChanged(false) {}
 
@@ -77,8 +76,6 @@ protected:
   
   
   RefPtr<dom::ImageCapture> mImageCapture;
-
-  TrackID mTrackID;
 
   
   

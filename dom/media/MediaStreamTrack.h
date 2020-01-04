@@ -22,6 +22,7 @@ class MediaStreamGraph;
 class MediaStreamTrackListener;
 class PeerConnectionImpl;
 class ProcessedMediaStream;
+class RemoteSourceStreamInfo;
 
 namespace dom {
 
@@ -172,6 +173,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
   
   friend class mozilla::PeerConnectionImpl;
+  friend class mozilla::RemoteSourceStreamInfo;
 
 public:
   
@@ -186,24 +188,8 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MediaStreamTrack,
                                            DOMEventTargetHelper)
 
-  DOMMediaStream* GetParentObject() const { return mOwningStream; }
+  nsPIDOMWindowInner* GetParentObject() const;
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override = 0;
-
-  
-
-
-  DOMMediaStream* GetStream() const { return mOwningStream; }
-
-  
-
-
-
-  TrackID GetTrackID() const { return mTrackID; }
-
-  
-
-
-  TrackID GetInputTrackID() const { return mInputTrackID; }
 
   virtual AudioStreamTrack* AsAudioStreamTrack() { return nullptr; }
   virtual VideoStreamTrack* AsVideoStreamTrack() { return nullptr; }
