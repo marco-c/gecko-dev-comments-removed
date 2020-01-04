@@ -287,7 +287,23 @@ ScrollbarsProp::SetVisible(bool aVisible, ErrorResult& aRv)
 
 
 
-  nsContentUtils::SetScrollbarsVisibility(mDOMWindow->GetDocShell(), aVisible);
+  nsCOMPtr<nsIScrollable> scroller =
+    do_QueryInterface(mDOMWindow->GetDocShell());
+
+  if (scroller) {
+    int32_t prefValue;
+
+    if (aVisible) {
+      prefValue = nsIScrollable::Scrollbar_Auto;
+    } else {
+      prefValue = nsIScrollable::Scrollbar_Never;
+    }
+
+    scroller->SetDefaultScrollbarPreferences(
+                nsIScrollable::ScrollOrientation_Y, prefValue);
+    scroller->SetDefaultScrollbarPreferences(
+                nsIScrollable::ScrollOrientation_X, prefValue);
+  }
 
   
 
