@@ -46,6 +46,13 @@ var constants = require('./content/constants');
 
 
 var DebuggerView = {
+
+  
+
+
+
+  LARGE_FILE_SIZE: 1048576, 
+
   
 
 
