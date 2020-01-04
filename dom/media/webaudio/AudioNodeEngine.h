@@ -132,12 +132,6 @@ private:
 
 
 
-
-void AllocateAudioBlock(uint32_t aChannelCount, AudioChunk* aChunk);
-
-
-
-
 void WriteZeroesToAudioBlock(AudioChunk* aChunk, uint32_t aStart, uint32_t aLength);
 
 
