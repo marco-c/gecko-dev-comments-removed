@@ -429,11 +429,6 @@ public:
   
 
 
-
-  bool GetHadToIgnorePaintSuppression() { return mHadToIgnoreSuppression; }
-  
-
-
   void SetPaintingToWindow(bool aToWindow) { mIsPaintingToWindow = aToWindow; }
   bool IsPaintingToWindow() const { return mIsPaintingToWindow; }
   
@@ -1261,7 +1256,6 @@ private:
   bool                           mCurrentScrollbarWillHaveLayer;
   bool                           mBuildCaret;
   bool                           mIgnoreSuppression;
-  bool                           mHadToIgnoreSuppression;
   bool                           mIsAtRootOfPseudoStackingContext;
   bool                           mIncludeAllOutOfFlows;
   bool                           mDescendIntoSubdocuments;

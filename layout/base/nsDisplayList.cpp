@@ -729,7 +729,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mCurrentScrollbarWillHaveLayer(false),
       mBuildCaret(aBuildCaret),
       mIgnoreSuppression(false),
-      mHadToIgnoreSuppression(false),
       mIsAtRootOfPseudoStackingContext(false),
       mIncludeAllOutOfFlows(false),
       mDescendIntoSubdocuments(true),
@@ -987,9 +986,6 @@ nsDisplayListBuilder::EnterPresShell(nsIFrame* aReferenceFrame,
 
   bool buildCaret = mBuildCaret;
   if (mIgnoreSuppression || !state->mPresShell->IsPaintingSuppressed()) {
-    if (state->mPresShell->IsPaintingSuppressed()) {
-      mHadToIgnoreSuppression = true;
-    }
     state->mIsBackgroundOnly = false;
   } else {
     state->mIsBackgroundOnly = true;
@@ -2932,7 +2928,7 @@ nsDisplayBackgroundImage::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
   
   
   if (mFrame->StyleBorder()->mBoxDecorationBreak ==
-        StyleBoxDecorationBreak::Clone ||
+        NS_STYLE_BOX_DECORATION_BREAK_CLONE ||
       (!mFrame->GetPrevContinuation() && !mFrame->GetNextContinuation())) {
     const nsStyleImageLayers::Layer& layer = mBackgroundStyle->mImage.mLayers[mLayer];
     if (layer.mImage.IsOpaque() && layer.mBlendMode == NS_STYLE_BLEND_NORMAL &&
@@ -5882,7 +5878,7 @@ nsDisplayOpacity::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
   }
 
   EffectCompositor::SetPerformanceWarning(
-    mFrame, eCSSProperty_opacity,
+    mFrame, eCSSProperty_transform,
     AnimationPerformanceWarning(
       AnimationPerformanceWarning::Type::OpacityFrameInactive));
 
