@@ -261,6 +261,15 @@ body {
 #mocha-stats .progress {
   float: right;
   padding-top: 0;
+  
+  
+
+
+
+
+  height: auto;
+  box-shadow: none;
+  background-color: initial;
 }
 
 #mocha-stats em {

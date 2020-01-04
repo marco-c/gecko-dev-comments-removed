@@ -47,15 +47,6 @@ loop.OTSdkDriver = function () {
 
     
     
-    
-    
-    
-    loop.shared.utils.getBoolPreference("debug.twoWayMediaTelemetry", function (enabled) {
-      this._debugTwoWayMediaTelemetry = enabled;}.
-    bind(this));
-
-    
-    
     loop.shared.utils.getBoolPreference("debug.sdk", function (enabled) {
       
       
@@ -263,16 +254,8 @@ loop.OTSdkDriver = function () {
 
 
 
-
-
-
-
-
     connectSession: function connectSession(sessionData) {
       this.session = this.sdk.initSession(sessionData.sessionId);
-
-      this._sendTwoWayMediaTelemetry = !!sessionData.sendTwoWayMediaTelemetry;
-      this._setTwoWayMediaStartTime(this.CONNECTION_START_TIME_UNINITIALIZED);
 
       this.session.on("sessionDisconnected", 
       this._onSessionDisconnected.bind(this));
@@ -324,8 +307,6 @@ loop.OTSdkDriver = function () {
       
       this._resetMetrics();
 
-      this._noteConnectionLengthIfNeeded(this._getTwoWayMediaStartTime(), performance.now());
-
       
       delete this._sessionConnected;
       delete this._publisherReady;
@@ -334,8 +315,7 @@ loop.OTSdkDriver = function () {
       delete this._mockPublisherEl;
       delete this._publisherChannel;
       delete this._subscriberChannel;
-      this.connections = {};
-      this._setTwoWayMediaStartTime(this.CONNECTION_START_TIME_UNINITIALIZED);}, 
+      this.connections = {};}, 
 
 
     
@@ -407,8 +387,6 @@ loop.OTSdkDriver = function () {
 
       this._notifyMetricsEvent("Session.connectionDestroyed", "peer");
 
-      this._noteConnectionLengthIfNeeded(this._getTwoWayMediaStartTime(), performance.now());
-
       this.dispatcher.dispatch(new sharedActions.RemotePeerDisconnected({ 
         peerHungup: event.reason === "clientDisconnected" }));}, 
 
@@ -435,8 +413,6 @@ loop.OTSdkDriver = function () {
           return;}
 
 
-      this._noteConnectionLengthIfNeeded(this._getTwoWayMediaStartTime(), 
-      performance.now());
       this._notifyMetricsEvent("Session." + event.reason);
       this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
         reason: reason }));}, 
@@ -526,6 +502,8 @@ loop.OTSdkDriver = function () {
           break;
         case "Session.networkDisconnected":
         case "Session.forceDisconnected":
+        case "Session.subscribeCompleted":
+        case "Session.screen.subscribeCompleted":
           break;
         default:
           
@@ -646,9 +624,9 @@ loop.OTSdkDriver = function () {
         srcMediaElement: sdkSubscriberVideo }));
 
 
+      this._notifyMetricsEvent("Session.subscribeCompleted");
       this._subscribedRemoteStream = true;
       if (this._checkAllStreamsConnected()) {
-        this._setTwoWayMediaStartTime(performance.now());
         this.dispatcher.dispatch(new sharedActions.MediaConnected());}
 
 
@@ -677,9 +655,10 @@ loop.OTSdkDriver = function () {
       
       
       this.dispatcher.dispatch(new sharedActions.ReceivingScreenShare({ 
-        receiving: true, srcMediaElement: sdkSubscriberVideo }));}, 
+        receiving: true, srcMediaElement: sdkSubscriberVideo }));
 
 
+      this._notifyMetricsEvent("Session.screen.subscribeCompleted");}, 
 
 
     
@@ -879,57 +858,6 @@ loop.OTSdkDriver = function () {
 
 
 
-    __twoWayMediaStartTime: undefined, 
-
-    
-
-
-
-    CONNECTION_START_TIME_UNINITIALIZED: -1, 
-
-    
-
-
-
-    CONNECTION_START_TIME_ALREADY_NOTED: -2, 
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    _setTwoWayMediaStartTime: function _setTwoWayMediaStartTime(start) {
-      if (!this._sendTwoWayMediaTelemetry) {
-        return;}
-
-
-      this.__twoWayMediaStartTime = start;
-      if (this._debugTwoWayMediaTelemetry) {
-        console.log("Loop Telemetry: noted two-way connection start, " + 
-        "start time in ms:", start);}}, 
-
-
-    _getTwoWayMediaStartTime: function _getTwoWayMediaStartTime() {
-      return this.__twoWayMediaStartTime;}, 
-
-
-    
-
-
-
-
-
     _onRemoteStreamDestroyed: function _onRemoteStreamDestroyed(event) {
       this._notifyMetricsEvent("Session.streamDestroyed");
 
@@ -1050,13 +978,18 @@ loop.OTSdkDriver = function () {
 
 
     _onOTException: function _onOTException(event) {
+      var baseException = "sdk.exception.";
+      if (event.target && event.target === this.screenshare) {
+        baseException += "screen.";}
+
+
       switch (event.code) {
         case OT.ExceptionCodes.PUBLISHER_ICE_WORKFLOW_FAILED:
         case OT.ExceptionCodes.SUBSCRIBER_ICE_WORKFLOW_FAILED:
           this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
             reason: FAILURE_DETAILS.ICE_FAILED }));
 
-          this._notifyMetricsEvent("sdk.exception." + event.code);
+          this._notifyMetricsEvent(baseException + event.code);
           break;
         case OT.ExceptionCodes.TERMS_OF_SERVICE_FAILURE:
           this.dispatcher.dispatch(new sharedActions.ConnectionFailure({ 
@@ -1064,21 +997,17 @@ loop.OTSdkDriver = function () {
 
           
           
-          this._notifyMetricsEvent("sdk.exception." + event.code);
+          this._notifyMetricsEvent(baseException + event.code);
           break;
         case OT.ExceptionCodes.UNABLE_TO_PUBLISH:
           
           
           if (event.message !== "GetUserMedia") {
-            var baseException = "sdk.exception.";
-            if (event.target && event.target === this.screenshare) {
-              baseException += "screen.";}
-
             this._notifyMetricsEvent(baseException + event.code + "." + event.message);}
 
           break;
         default:
-          this._notifyMetricsEvent("sdk.exception." + event.code);
+          this._notifyMetricsEvent(baseException + event.code);
           break;}}, 
 
 
@@ -1150,7 +1079,6 @@ loop.OTSdkDriver = function () {
         
         this._publishedLocalStream = true;
         if (this._checkAllStreamsConnected()) {
-          this._setTwoWayMediaStartTime(performance.now());
           this.dispatcher.dispatch(new sharedActions.MediaConnected());}}}, 
 
 
@@ -1215,92 +1143,8 @@ loop.OTSdkDriver = function () {
 
 
     _onScreenShareStreamCreated: function _onScreenShareStreamCreated() {
-      this._notifyMetricsEvent("Publisher.streamCreated");}, 
+      this._notifyMetricsEvent("Publisher.streamCreated");} };
 
-
-    
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-    _connectionLengthNotedCalls: 0, 
-
-    
-
-
-
-
-
-
-
-    _noteConnectionLength: function _noteConnectionLength(callLengthSeconds) {
-      var buckets = this._constants.TWO_WAY_MEDIA_CONN_LENGTH;
-
-      var bucket = buckets.SHORTER_THAN_10S;
-      if (callLengthSeconds >= 10 && callLengthSeconds <= 30) {
-        bucket = buckets.BETWEEN_10S_AND_30S;} else 
-      if (callLengthSeconds > 30 && callLengthSeconds <= 300) {
-        bucket = buckets.BETWEEN_30S_AND_5M;} else 
-      if (callLengthSeconds > 300) {
-        bucket = buckets.MORE_THAN_5M;}
-
-
-      loop.request("TelemetryAddValue", "LOOP_TWO_WAY_MEDIA_CONN_LENGTH_1", bucket);
-      this._setTwoWayMediaStartTime(this.CONNECTION_START_TIME_ALREADY_NOTED);
-
-      this._connectionLengthNotedCalls++;
-      if (this._debugTwoWayMediaTelemetry) {
-        console.log("Loop Telemetry: noted two-way media connection " + 
-        "in bucket: ", bucket);}}, 
-
-
-
-    
-
-
-
-
-
-
-
-
-    _noteConnectionLengthIfNeeded: function _noteConnectionLengthIfNeeded(startTime, endTime) {
-      if (!this._sendTwoWayMediaTelemetry) {
-        return;}
-
-
-      if (startTime === this.CONNECTION_START_TIME_ALREADY_NOTED || 
-      startTime === this.CONNECTION_START_TIME_UNINITIALIZED || 
-      startTime > endTime) {
-        if (this._debugTwoWayMediaTelemetry) {
-          console.log("_noteConnectionLengthIfNeeded called with " + 
-          " invalid params, either the calls were never" + 
-          " connected or there is a bug; startTime:", startTime, 
-          "endTime:", endTime);}
-
-        return;}
-
-
-      var callLengthSeconds = (endTime - startTime) / 1000;
-      this._noteConnectionLength(callLengthSeconds);}, 
-
-
-    
-
-
-
-    _debugTwoWayMediaTelemetry: false };
 
 
   return OTSdkDriver;}();

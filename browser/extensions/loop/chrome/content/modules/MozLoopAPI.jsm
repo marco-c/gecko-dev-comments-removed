@@ -88,47 +88,6 @@ var getObjectAPIFunctionName = function getObjectAPIFunctionName(action) {
 
 
 
-
-
-
-var updateSocialProvidersCache = function updateSocialProvidersCache() {
-  var providers = [];var _iteratorNormalCompletion2 = true;var _didIteratorError2 = false;var _iteratorError2 = undefined;try {
-
-    for (var _iterator2 = Social.providers[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {var provider = _step2.value;
-      if (!provider.shareURL) {
-        continue;}
-
-
-      
-      providers.push({ 
-        iconURL: provider.iconURL, 
-        name: provider.name, 
-        origin: provider.origin });}} catch (err) {_didIteratorError2 = true;_iteratorError2 = err;} finally {try {if (!_iteratorNormalCompletion2 && _iterator2.return) {_iterator2.return();}} finally {if (_didIteratorError2) {throw _iteratorError2;}}}
-
-
-
-  var providersWasSet = !!gSocialProviders;
-  
-  gSocialProviders = providers.sort(function (a, b) {return (
-      a.name.toLowerCase().localeCompare(b.name.toLowerCase()));});
-
-  
-  
-  if (!providersWasSet) {
-    Services.obs.addObserver(updateSocialProvidersCache, "social:providers-changed", false);} else 
-  {
-    
-    LoopAPIInternal.broadcastPushMessage("SocialProvidersChanged");}
-
-
-  return gSocialProviders;};
-
-
-
-
-
-
-
 var isMultiProcessActive = function isMultiProcessActive() {
   var win = Services.wm.getMostRecentWindow("navigator:browser");
   return !!win.gMultiProcessBrowser;};
@@ -139,7 +98,6 @@ var gBrowserSharingListeners = new Set();
 var gBrowserSharingWindows = new Set();
 var gPageListeners = null;
 var gOriginalPageListeners = null;
-var gSocialProviders = null;
 var gStringBundle = null;
 var gStubbedMessageHandlers = null;
 var kBatchMessage = "Batch";
@@ -288,27 +246,6 @@ var kMessageHandlers = {
 
 
 
-  AddSocialShareProvider: function AddSocialShareProvider(message, reply) {
-    var win = Services.wm.getMostRecentWindow("navigator:browser");
-    if (!win || !win.SocialShare) {
-      reply();
-      return;}
-
-    win.SocialShare.showDirectory(win.LoopUI.toolbarButton.anchor);
-    reply();}, 
-
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -415,9 +352,9 @@ var kMessageHandlers = {
     
     var strings = MozLoopService.getStrings();
     
-    gStringBundle = {};var _iteratorNormalCompletion3 = true;var _didIteratorError3 = false;var _iteratorError3 = undefined;try {
-      for (var _iterator3 = strings.entries()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {var _ref = _step3.value;var _ref2 = _slicedToArray(_ref, 2);var key = _ref2[0];var value = _ref2[1];
-        gStringBundle[key] = value;}} catch (err) {_didIteratorError3 = true;_iteratorError3 = err;} finally {try {if (!_iteratorNormalCompletion3 && _iterator3.return) {_iterator3.return();}} finally {if (_didIteratorError3) {throw _iteratorError3;}}}
+    gStringBundle = {};var _iteratorNormalCompletion2 = true;var _didIteratorError2 = false;var _iteratorError2 = undefined;try {
+      for (var _iterator2 = strings.entries()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {var _ref = _step2.value;var _ref2 = _slicedToArray(_ref, 2);var key = _ref2[0];var value = _ref2[1];
+        gStringBundle[key] = value;}} catch (err) {_didIteratorError2 = true;_iteratorError2 = err;} finally {try {if (!_iteratorNormalCompletion2 && _iterator2.return) {_iterator2.return();}} finally {if (_didIteratorError2) {throw _iteratorError2;}}}
 
     reply(gStringBundle);}, 
 
@@ -438,10 +375,7 @@ var kMessageHandlers = {
       LOOP_SESSION_TYPE: LOOP_SESSION_TYPE, 
       LOOP_MAU_TYPE: LOOP_MAU_TYPE, 
       ROOM_CREATE: ROOM_CREATE, 
-      ROOM_DELETE: ROOM_DELETE, 
-      SHARING_ROOM_URL: SHARING_ROOM_URL, 
-      SHARING_SCREEN: SHARING_SCREEN, 
-      TWO_WAY_MEDIA_CONN_LENGTH: TWO_WAY_MEDIA_CONN_LENGTH });}, 
+      SHARING_ROOM_URL: SHARING_ROOM_URL });}, 
 
 
 
@@ -555,8 +489,8 @@ var kMessageHandlers = {
 
 
   GetErrors: function GetErrors(message, reply) {
-    var errors = {};var _iteratorNormalCompletion4 = true;var _didIteratorError4 = false;var _iteratorError4 = undefined;try {
-      for (var _iterator4 = MozLoopService.errors[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {var _ref3 = _step4.value;var _ref4 = _slicedToArray(_ref3, 2);var type = _ref4[0];var error = _ref4[1];
+    var errors = {};var _iteratorNormalCompletion3 = true;var _didIteratorError3 = false;var _iteratorError3 = undefined;try {
+      for (var _iterator3 = MozLoopService.errors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {var _ref3 = _step3.value;var _ref4 = _slicedToArray(_ref3, 2);var type = _ref4[0];var error = _ref4[1];
         
         
         if (error.error instanceof Ci.nsIException) {
@@ -566,7 +500,7 @@ var kMessageHandlers = {
           delete error.error;}
 
 
-        errors[type] = cloneableError(error);}} catch (err) {_didIteratorError4 = true;_iteratorError4 = err;} finally {try {if (!_iteratorNormalCompletion4 && _iterator4.return) {_iterator4.return();}} finally {if (_didIteratorError4) {throw _iteratorError4;}}}
+        errors[type] = cloneableError(error);}} catch (err) {_didIteratorError3 = true;_iteratorError3 = err;} finally {try {if (!_iteratorNormalCompletion3 && _iterator3.return) {_iterator3.return();}} finally {if (_didIteratorError3) {throw _iteratorError3;}}}
 
     return reply(errors);}, 
 
@@ -697,25 +631,6 @@ var kMessageHandlers = {
 
 
     win.gBrowser.selectedBrowser.messageManager.sendAsyncMessage("PageMetadata:GetPageData");}, 
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  GetSocialShareProviders: function GetSocialShareProviders(message, reply) {
-    if (!gSocialProviders) {
-      updateSocialProvidersCache();}
-
-    reply(gSocialProviders);}, 
 
 
   
@@ -990,15 +905,15 @@ var kMessageHandlers = {
     if (gBrowserSharingListeners.size > 0) {
       
       reply();
-      return;}var _iteratorNormalCompletion5 = true;var _didIteratorError5 = false;var _iteratorError5 = undefined;try {
+      return;}var _iteratorNormalCompletion4 = true;var _didIteratorError4 = false;var _iteratorError4 = undefined;try {
 
 
-      for (var _iterator5 = gBrowserSharingWindows[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {var win = _step5.value;
+      for (var _iterator4 = gBrowserSharingWindows[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {var win = _step4.value;
         win = win.get();
         if (!win) {
           continue;}
 
-        win.LoopUI.stopBrowserSharing();}} catch (err) {_didIteratorError5 = true;_iteratorError5 = err;} finally {try {if (!_iteratorNormalCompletion5 && _iterator5.return) {_iterator5.return();}} finally {if (_didIteratorError5) {throw _iteratorError5;}}}
+        win.LoopUI.stopBrowserSharing();}} catch (err) {_didIteratorError4 = true;_iteratorError4 = err;} finally {try {if (!_iteratorNormalCompletion4 && _iterator4.return) {_iterator4.return();}} finally {if (_didIteratorError4) {throw _iteratorError4;}}}
 
 
     NewTabURL.reset();
@@ -1105,44 +1020,8 @@ var kMessageHandlers = {
 
 
 
-
-  SocialShareRoom: function SocialShareRoom(message, reply) {
-    var win = Services.wm.getMostRecentWindow("navigator:browser");
-    if (!win || !win.SocialShare) {
-      reply();
-      return;}var _message$data10 = _slicedToArray(
-
-
-    message.data, 4);var providerOrigin = _message$data10[0];var roomURL = _message$data10[1];var title = _message$data10[2];var body = _message$data10[3];
-    var graphData = { 
-      url: roomURL, 
-      title: title };
-
-    if (body) {
-      graphData.body = body;}
-
-    win.SocialShare.sharePage(providerOrigin, graphData, null, 
-    win.LoopUI.toolbarButton.anchor);
-    reply();}, 
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  TelemetryAddValue: function TelemetryAddValue(message, reply) {var _message$data11 = _slicedToArray(
-    message.data, 2);var histogramId = _message$data11[0];var value = _message$data11[1];
+  TelemetryAddValue: function TelemetryAddValue(message, reply) {var _message$data10 = _slicedToArray(
+    message.data, 2);var histogramId = _message$data10[0];var value = _message$data10[1];
 
     if (histogramId === "LOOP_ACTIVITY_COUNTER") {
       var pref = "mau." + kMauPrefMap.get(value);
@@ -1189,13 +1068,13 @@ var LoopAPIInternal = {
     new RemotePages("about:loopconversation"), 
     
     
-    new RemotePages("chrome://loop/content/panels/slideshow.html")];var _iteratorNormalCompletion6 = true;var _didIteratorError6 = false;var _iteratorError6 = undefined;try {
-      for (var _iterator6 = gPageListeners[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {var page = _step6.value;
+    new RemotePages("chrome://loop/content/panels/slideshow.html")];var _iteratorNormalCompletion5 = true;var _didIteratorError5 = false;var _iteratorError5 = undefined;try {
+      for (var _iterator5 = gPageListeners[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {var page = _step5.value;
         page.addMessageListener(kMessageName, this.handleMessage.bind(this));}
 
 
       
-    } catch (err) {_didIteratorError6 = true;_iteratorError6 = err;} finally {try {if (!_iteratorNormalCompletion6 && _iterator6.return) {_iterator6.return();}} finally {if (_didIteratorError6) {throw _iteratorError6;}}}Services.obs.addObserver(this.handleStatusChanged, "loop-status-changed", false);}, 
+    } catch (err) {_didIteratorError5 = true;_iteratorError5 = err;} finally {try {if (!_iteratorNormalCompletion5 && _iterator5.return) {_iterator5.return();}} finally {if (_didIteratorError5) {throw _iteratorError5;}}}Services.obs.addObserver(this.handleStatusChanged, "loop-status-changed", false);}, 
 
 
   
@@ -1351,14 +1230,14 @@ var LoopAPIInternal = {
             MozLoopService.log.debug("Unable to send event through to target: " + 
             ex.message);
             
-            var _iteratorNormalCompletion7 = true;var _didIteratorError7 = false;var _iteratorError7 = undefined;try {for (var _iterator7 = events[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {var eventName = _step7.value;
-                api.off(eventName, handlerFunc);}} catch (err) {_didIteratorError7 = true;_iteratorError7 = err;} finally {try {if (!_iteratorNormalCompletion7 && _iterator7.return) {_iterator7.return();}} finally {if (_didIteratorError7) {throw _iteratorError7;}}}}};var _iteratorNormalCompletion8 = true;var _didIteratorError8 = false;var _iteratorError8 = undefined;try {
+            var _iteratorNormalCompletion6 = true;var _didIteratorError6 = false;var _iteratorError6 = undefined;try {for (var _iterator6 = events[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {var eventName = _step6.value;
+                api.off(eventName, handlerFunc);}} catch (err) {_didIteratorError6 = true;_iteratorError6 = err;} finally {try {if (!_iteratorNormalCompletion6 && _iterator6.return) {_iterator6.return();}} finally {if (_didIteratorError6) {throw _iteratorError6;}}}}};var _iteratorNormalCompletion7 = true;var _didIteratorError7 = false;var _iteratorError7 = undefined;try {
 
 
 
 
-          for (var _iterator8 = events[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {var eventName = _step8.value;
-            api.on(eventName, handlerFunc);}} catch (err) {_didIteratorError8 = true;_iteratorError8 = err;} finally {try {if (!_iteratorNormalCompletion8 && _iterator8.return) {_iterator8.return();}} finally {if (_didIteratorError8) {throw _iteratorError8;}}}
+          for (var _iterator7 = events[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {var eventName = _step7.value;
+            api.on(eventName, handlerFunc);}} catch (err) {_didIteratorError7 = true;_iteratorError7 = err;} finally {try {if (!_iteratorNormalCompletion7 && _iterator7.return) {_iterator7.return();}} finally {if (_didIteratorError7) {throw _iteratorError7;}}}
 
         reply();
         return { v: void 0 };}();if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;}
@@ -1388,16 +1267,16 @@ var LoopAPIInternal = {
 
   broadcastPushMessage: function broadcastPushMessage(name, data) {
     if (!gPageListeners) {
-      return;}var _iteratorNormalCompletion9 = true;var _didIteratorError9 = false;var _iteratorError9 = undefined;try {
+      return;}var _iteratorNormalCompletion8 = true;var _didIteratorError8 = false;var _iteratorError8 = undefined;try {
 
-      for (var _iterator9 = gPageListeners[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {var page = _step9.value;
+      for (var _iterator8 = gPageListeners[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {var page = _step8.value;
         try {
           page.sendAsyncMessage(kPushMessageName, [name, data]);} 
         catch (ex) {
           
           
           if (ex.result != Components.results.NS_ERROR_NOT_INITIALIZED) {
-            throw ex;}}}} catch (err) {_didIteratorError9 = true;_iteratorError9 = err;} finally {try {if (!_iteratorNormalCompletion9 && _iterator9.return) {_iterator9.return();}} finally {if (_didIteratorError9) {throw _iteratorError9;}}}}, 
+            throw ex;}}}} catch (err) {_didIteratorError8 = true;_iteratorError8 = err;} finally {try {if (!_iteratorNormalCompletion8 && _iterator8.return) {_iterator8.return();}} finally {if (_didIteratorError8) {throw _iteratorError8;}}}}, 
 
 
 
@@ -1408,19 +1287,15 @@ var LoopAPIInternal = {
 
   destroy: function destroy() {
     if (!gPageListeners) {
-      return;}var _iteratorNormalCompletion10 = true;var _didIteratorError10 = false;var _iteratorError10 = undefined;try {
+      return;}var _iteratorNormalCompletion9 = true;var _didIteratorError9 = false;var _iteratorError9 = undefined;try {
 
-      for (var _iterator10 = gPageListeners[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {var listener = _step10.value;
-        listener.destroy();}} catch (err) {_didIteratorError10 = true;_iteratorError10 = err;} finally {try {if (!_iteratorNormalCompletion10 && _iterator10.return) {_iterator10.return();}} finally {if (_didIteratorError10) {throw _iteratorError10;}}}
+      for (var _iterator9 = gPageListeners[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {var listener = _step9.value;
+        listener.destroy();}} catch (err) {_didIteratorError9 = true;_iteratorError9 = err;} finally {try {if (!_iteratorNormalCompletion9 && _iterator9.return) {_iterator9.return();}} finally {if (_didIteratorError9) {throw _iteratorError9;}}}
 
     gPageListeners = null;
 
     
-    Services.obs.removeObserver(this.handleStatusChanged, "loop-status-changed");
-    
-    if (gSocialProviders) {
-      Services.obs.removeObserver(updateSocialProvidersCache, "social:providers-changed");}} };
-
+    Services.obs.removeObserver(this.handleStatusChanged, "loop-status-changed");} };
 
 
 

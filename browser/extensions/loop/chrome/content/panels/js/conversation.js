@@ -180,9 +180,6 @@ loop.conversation = function (mozL10n) {
 
 
       
-      loop.conversation._sdkDriver = sdkDriver;
-
-      
       var activeRoomStore = new loop.store.ActiveRoomStore(dispatcher, { 
         isDesktop: true, 
         sdkDriver: sdkDriver });
@@ -236,15 +233,7 @@ loop.conversation = function (mozL10n) {
 
   return { 
     AppControllerView: AppControllerView, 
-    init: init, 
-
-    
-
-
-
-
-
-    _sdkDriver: null };}(
+    init: init };}(
 
 document.mozL10n);
 

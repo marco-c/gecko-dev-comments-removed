@@ -147,38 +147,6 @@ class Test1BrowserCall(LoopTestDriver, MarionetteTestCase):
 
         return self.marionette.execute_script(script, [chatbox])
 
-    def local_get_media_start_time(self):
-        return self.local_get_chatbox_window_expr(
-            "loop.conversation._sdkDriver._getTwoWayMediaStartTime()")
-
-    
-    def local_get_media_start_time_uninitialized(self):
-        return self.local_get_chatbox_window_expr(
-            "loop.conversation._sdkDriver.CONNECTION_START_TIME_UNINITIALIZED"
-        )
-
-    def local_check_media_start_time_uninitialized(self):
-        self.assertEqual(
-            self.local_get_media_start_time(),
-            self.local_get_media_start_time_uninitialized(),
-            "media start time should be uninitialized before "
-            "link clicker enters room")
-
-    def local_check_media_start_time_initialized(self):
-        self.assertNotEqual(
-            self.local_get_media_start_time(),
-            self.local_get_media_start_time_uninitialized(),
-            "media start time should be initialized after "
-            "media is bidirectionally connected")
-
-    def local_check_connection_length_noted(self):
-        noted_calls = self.local_get_chatbox_window_expr(
-            "loop.conversation._sdkDriver._connectionLengthNotedCalls")
-
-        self.assertGreater(noted_calls, 0,
-                           "OTSdkDriver._connectionLengthNotedCalls should be "
-                           "> 0, noted_calls = " + str(noted_calls))
-
     def local_close_conversation(self):
         self.marionette.set_context("chrome")
         self.marionette.switch_to_frame()
@@ -216,9 +184,6 @@ class Test1BrowserCall(LoopTestDriver, MarionetteTestCase):
         
         self.local_check_room_self_video()
 
-        
-        self.local_check_media_start_time_uninitialized()
-
         room_url = self.local_get_and_verify_room_url()
 
         
@@ -232,10 +197,6 @@ class Test1BrowserCall(LoopTestDriver, MarionetteTestCase):
         self.check_text_messaging()
 
         
-        
-        self.local_check_media_start_time_initialized()
-
-        
         self.standalone_check_remote_screenshare()
 
         
@@ -244,8 +205,6 @@ class Test1BrowserCall(LoopTestDriver, MarionetteTestCase):
         
         
         self.remote_leave_room()
-
-        self.local_check_connection_length_noted()
 
         
         self.local_close_conversation()

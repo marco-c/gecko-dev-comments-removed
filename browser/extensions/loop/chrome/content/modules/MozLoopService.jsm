@@ -18,20 +18,6 @@ var LOOP_SESSION_TYPE = {
 
 
 
-var TWO_WAY_MEDIA_CONN_LENGTH = { 
-  SHORTER_THAN_10S: 0, 
-  BETWEEN_10S_AND_30S: 1, 
-  BETWEEN_30S_AND_5M: 2, 
-  MORE_THAN_5M: 3 };
-
-
-
-
-
-
-
-
-
 var SHARING_ROOM_URL = { 
   COPY_FROM_PANEL: 0, 
   COPY_FROM_CONVERSATION: 1, 
@@ -49,26 +35,6 @@ var SHARING_ROOM_URL = {
 var ROOM_CREATE = { 
   CREATE_SUCCESS: 0, 
   CREATE_FAIL: 1 };
-
-
-
-
-
-
-
-var ROOM_DELETE = { 
-  DELETE_SUCCESS: 0, 
-  DELETE_FAIL: 1 };
-
-
-
-
-
-
-
-var SHARING_SCREEN = { 
-  PAUSED: 0, 
-  RESUMED: 1 };
 
 
 
@@ -126,16 +92,12 @@ Cu.import("resource://gre/modules/FxAccountsOAuthClient.jsm");
 Cu.importGlobalProperties(["URL"]);
 
 this.EXPORTED_SYMBOLS = ["MozLoopService", "LOOP_SESSION_TYPE", "LOOP_MAU_TYPE", 
-"TWO_WAY_MEDIA_CONN_LENGTH", "SHARING_ROOM_URL", "SHARING_SCREEN", "COPY_PANEL", 
-"ROOM_CREATE", "ROOM_DELETE"];
+"SHARING_ROOM_URL", "COPY_PANEL", "ROOM_CREATE"];
 
 XPCOMUtils.defineConstant(this, "LOOP_SESSION_TYPE", LOOP_SESSION_TYPE);
-XPCOMUtils.defineConstant(this, "TWO_WAY_MEDIA_CONN_LENGTH", TWO_WAY_MEDIA_CONN_LENGTH);
 XPCOMUtils.defineConstant(this, "SHARING_ROOM_URL", SHARING_ROOM_URL);
-XPCOMUtils.defineConstant(this, "SHARING_SCREEN", SHARING_SCREEN);
 XPCOMUtils.defineConstant(this, "COPY_PANEL", COPY_PANEL);
 XPCOMUtils.defineConstant(this, "ROOM_CREATE", ROOM_CREATE);
-XPCOMUtils.defineConstant(this, "ROOM_DELETE", ROOM_DELETE);
 XPCOMUtils.defineConstant(this, "LOOP_MAU_TYPE", LOOP_MAU_TYPE);
 
 XPCOMUtils.defineLazyModuleGetter(this, "LoopAPI", 
@@ -829,7 +791,9 @@ var MozLoopServiceInternal = {
 
       var report = convertToRTCStatsReport(internalFormat);
       var logStr = "";
-      logs.forEach(function (s) {logStr += s + "\n";});
+      logs.forEach(function (s) {
+        logStr += s + "\n";});
+
 
       
 

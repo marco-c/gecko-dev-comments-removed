@@ -420,24 +420,6 @@ loop.shared.actions = function () {
     
 
 
-
-
-
-    ShareRoomUrl: Action.define("shareRoomUrl", { 
-      provider: Object, 
-      roomUrl: String }), 
-
-
-    
-
-
-
-    AddSocialShareProvider: Action.define("addSocialShareProvider", {}), 
-
-
-    
-
-
     RoomFailure: Action.define("roomFailure", { 
       error: Object, 
       
@@ -458,23 +440,14 @@ loop.shared.actions = function () {
       
       
       
-      roomUrl: String
-      
-    }), 
+      roomUrl: String }), 
+
 
     
 
 
     UserAgentHandlesRoom: Action.define("userAgentHandlesRoom", { 
       handlesRoom: Boolean }), 
-
-
-    
-
-
-
-    UpdateSocialShareInfo: Action.define("updateSocialShareInfo", { 
-      socialShareProviders: Array }), 
 
 
     
