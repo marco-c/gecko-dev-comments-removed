@@ -257,14 +257,6 @@ var Activities = {
   startActivity: function activities_startActivity(aMsg) {
     debug("StartActivity: " + JSON.stringify(aMsg));
 
-    
-    
-    let callerApp = this.callers[aMsg.id].mm;
-    if (aMsg.options.name === 'internal-system-engineering-mode' &&
-        !callerApp.assertAppHasStatus(Ci.nsIPrincipal.APP_STATUS_CERTIFIED)) {
-      return;
-    }
-
     let self = this;
     let successCb = function successCb(aResults) {
       debug(JSON.stringify(aResults));
@@ -384,13 +376,6 @@ var Activities = {
     };
 
     let matchFunc = function matchFunc(aResult) {
-      let calleeApp = DOMApplicationRegistry.getAppByManifestURL(aResult.manifest);
-      
-      if (aMsg.options.name === 'internal-system-engineering-mode' &&
-          calleeApp.appStatus !== Ci.nsIPrincipal.APP_STATUS_CERTIFIED) {
-        return false;
-      }
-
       
       
       let isSystemApp = false;

@@ -63,14 +63,6 @@ ActivityProxy.prototype = {
     }
 
     
-    if (aOptions.name === 'internal-system-engineering-mode' &&
-        principal.appStatus != Ci.nsIPrincipal.APP_STATUS_CERTIFIED) {
-      Services.DOMRequest.fireErrorAsync(this.activity, "SecurityError");
-      Services.obs.notifyObservers(null, "Activity:Error", null);
-      return;
-    }
-
-    
     let devMode = false;
     let isDevModeActivity = false;
     try {
