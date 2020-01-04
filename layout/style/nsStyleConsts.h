@@ -133,7 +133,6 @@ enum class StyleUserSelect : uint8_t {
   TriState,
   Auto,     
   MozAll,   
-  MozNone,  
   MozText,  
 };
 
