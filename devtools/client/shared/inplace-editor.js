@@ -93,6 +93,9 @@ Cu.import("resource://gre/modules/devtools/shared/event-emitter.js");
 
 
 
+
+
+
 function editableField(options) {
   return editableItem(options, function(element, event) {
     if (!options.element.inplaceEditor) {
@@ -204,6 +207,9 @@ function InplaceEditor(options, event) {
   this.contentType = options.contentType || CONTENT_TYPES.PLAIN_TEXT;
   this.property = options.property;
   this.popup = options.popup;
+  this.preserveTextStyles = options.preserveTextStyles === undefined
+                          ? false
+                          : !!options.preserveTextStyles;
 
   this._onBlur = this._onBlur.bind(this);
   this._onKeyPress = this._onKeyPress.bind(this);
@@ -283,8 +289,9 @@ InplaceEditor.prototype = {
     this.input.inplaceEditor = this;
     this.input.classList.add("styleinspector-propertyeditor");
     this.input.value = this.initial;
-
-    copyTextStyles(this.elt, this.input);
+    if (!this.preserveTextStyles) {
+      copyTextStyles(this.elt, this.input);
+    }
   },
 
   
