@@ -70,7 +70,15 @@ public:
 
 
 
-  Connection(Service *aService, int aFlags, bool aAsyncOnly);
+
+
+
+
+
+
+
+  Connection(Service *aService, int aFlags, bool aAsyncOnly,
+             bool aIgnoreLockingMode = false);
 
   
 
@@ -355,6 +363,11 @@ private:
 
 
   const int mFlags;
+
+  
+
+
+  const bool mIgnoreLockingMode;
 
   
   
