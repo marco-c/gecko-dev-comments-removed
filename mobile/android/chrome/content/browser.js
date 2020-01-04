@@ -1318,6 +1318,7 @@ var BrowserApp = {
 
 
   getTabWithURL: function getTabWithURL(aURL, aOptions) {
+    aOptions = aOptions || {};
     let uri = Services.io.newURI(aURL, null, null);
     for (let i = 0; i < this._tabs.length; ++i) {
       let tab = this._tabs[i];
