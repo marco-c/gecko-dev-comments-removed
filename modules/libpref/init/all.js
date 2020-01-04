@@ -3254,7 +3254,11 @@ pref("ui.window_class_override", "");
 pref("ui.elantech_gesture_hacks.enabled", -1);
 
 
+#ifdef RELEASE_BUILD
+pref("ui.osk.enabled", false);
+#else
 pref("ui.osk.enabled", true);
+#endif
 
 
 pref("ui.osk.detect_physical_keyboard", true);
@@ -5093,6 +5097,9 @@ pref("memory.report_concurrency", 10);
 
 
 pref("media.useAudioChannelAPI", false);
+
+
+pref("dom.requestcache.enabled", false);
 
 
 pref("dom.requestcontext.enabled", false);
