@@ -146,6 +146,13 @@ private:
                            nsTArray<TextTrack*>& aTextTracks);
   bool TrackIsDefault(TextTrack* aTextTrack);
 
+  void ReportTelemetryForTrack(TextTrack* aTextTrack) const;
+  void ReportTelemetryForCue();
+
+  
+  
+  bool mCueTelemetryReported;
+
   class ShutdownObserverProxy final : public nsIObserver
   {
     NS_DECL_ISUPPORTS
