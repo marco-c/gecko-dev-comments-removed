@@ -340,6 +340,8 @@ protected:
     bool IsValid() const { return mFrame && mStartOffsetInNode >= 0; }
   };
   
+  
+  
   FrameAndNodeOffset GetFirstFrameHavingFlatTextInRange(nsRange* aRange);
 
   struct MOZ_STACK_CLASS FrameRelativeRect final
