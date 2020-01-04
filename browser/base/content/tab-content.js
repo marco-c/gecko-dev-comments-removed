@@ -888,7 +888,7 @@ var UserContextIdNotifier = {
     
     this.uninit();
     let userContextId = content.document.nodePrincipal.originAttributes.userContextId;
-    sendAsyncMessage("Browser:FirstContentLoaded", { userContextId });
+    sendAsyncMessage("Browser:WindowCreated", { userContextId });
   }
 };
 
