@@ -716,7 +716,7 @@ js::Execute(JSContext* cx, HandleScript script, JSObject& scopeChainArg, Value* 
 
 
 extern bool
-js::InstanceOfOperator(JSContext* cx, HandleObject obj, MutableHandleValue v, bool* bp)
+js::InstanceOfOperator(JSContext* cx, HandleObject obj, HandleValue v, bool* bp)
 {
     
 
@@ -755,7 +755,7 @@ js::HasInstance(JSContext* cx, HandleObject obj, HandleValue v, bool* bp)
     RootedValue local(cx, v);
     if (JSHasInstanceOp hasInstance = clasp->getHasInstance())
         return hasInstance(cx, obj, &local, bp);
-    return js::InstanceOfOperator(cx, obj, &local, bp);
+    return js::InstanceOfOperator(cx, obj, local, bp);
 }
 
 static inline bool
