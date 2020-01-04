@@ -20,7 +20,12 @@ TaskThrottler::TaskThrottler(const TimeStamp& aTimeStamp, const TimeDuration& aM
   , mMaxWait(aMaxWait)
   , mMean(1)
   , mTimer(do_CreateInstance(NS_TIMER_CONTRACTID))
-{ }
+{
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+}
 
 TaskThrottler::~TaskThrottler()
 {

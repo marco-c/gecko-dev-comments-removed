@@ -137,6 +137,17 @@ public:
 
 
 
+  void InitializeForLayersId(uint64_t aLayersId);
+
+  
+
+
+  void AdoptLayersId(uint64_t aLayersId, APZCTreeManager* aOldManager);
+
+  
+
+
+
 
   void FlushApzRepaints(uint64_t aLayersId);
 
