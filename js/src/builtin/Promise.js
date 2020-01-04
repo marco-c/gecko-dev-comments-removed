@@ -5,11 +5,13 @@
 
 
 var PromiseReactionRecordProto = {__proto__: null};
-function PromiseReactionRecord(promise, resolve, reject, handler, incumbentGlobal) {
+function PromiseReactionRecord(promise, resolve, reject, fulfillHandler, rejectHandler,
+                               incumbentGlobal) {
     this.promise = promise;
     this.resolve = resolve;
     this.reject = reject;
-    this.handler = handler;
+    this.fulfillHandler = fulfillHandler;
+    this.rejectHandler = rejectHandler;
     this.incumbentGlobal = incumbentGlobal;
 }
 
@@ -125,32 +127,36 @@ function CreateResolvingFunctions(promise) {
 
 
 function FulfillPromise(promise, value) {
-    return ResolvePromise(promise, value, PROMISE_FULFILL_REACTIONS_SLOT, PROMISE_STATE_FULFILLED);
+    return ResolvePromise(promise, value, PROMISE_STATE_FULFILLED);
 }
 function FulfillUnwrappedPromise(value) {
-    return ResolvePromise(this, value, PROMISE_FULFILL_REACTIONS_SLOT, PROMISE_STATE_FULFILLED);
+    return ResolvePromise(this, value, PROMISE_STATE_FULFILLED);
 }
 
 
 
-function ResolvePromise(promise, valueOrReason, reactionsSlot, state) {
+function ResolvePromise(promise, valueOrReason, state) {
     
     assert(GetPromiseState(promise) === PROMISE_STATE_PENDING,
            "Can't resolve non-pending promise");
-    assert(state >= PROMISE_STATE_PENDING && state <= PROMISE_STATE_REJECTED,
-           `Invalid Promise state <${state}>`);
+    assert(state >= PROMISE_STATE_FULFILLED && state <= PROMISE_STATE_REJECTED,
+           `Invalid Promise resolution state <${state}>`);
 
     
-    var reactions = UnsafeGetObjectFromReservedSlot(promise, reactionsSlot);
+    
+    
+    
+    
+    var reactions = UnsafeGetObjectFromReservedSlot(promise, PROMISE_REACTIONS_SLOT);
+    let jobType = state === PROMISE_STATE_FULFILLED
+                  ? PROMISE_JOB_TYPE_FULFILL
+                  : PROMISE_JOB_TYPE_REJECT;
 
     
     UnsafeSetReservedSlot(promise, PROMISE_RESULT_SLOT, valueOrReason);
 
     
-    UnsafeSetReservedSlot(promise, PROMISE_FULFILL_REACTIONS_SLOT, null);
-
-    
-    UnsafeSetReservedSlot(promise, PROMISE_REJECT_REACTIONS_SLOT, null);
+    UnsafeSetReservedSlot(promise, PROMISE_REACTIONS_SLOT, null);
 
     
     UnsafeSetReservedSlot(promise, PROMISE_STATE_SLOT, state);
@@ -165,7 +171,7 @@ function ResolvePromise(promise, valueOrReason, reactionsSlot, state) {
 
     
     
-    return TriggerPromiseReactions(reactions, valueOrReason);
+    return TriggerPromiseReactions(reactions, jobType, valueOrReason);
 }
 
 
@@ -219,22 +225,26 @@ function NewPromiseCapability(C) {
 
 
 function RejectPromise(promise, reason) {
-    return ResolvePromise(promise, reason, PROMISE_REJECT_REACTIONS_SLOT, PROMISE_STATE_REJECTED);
+    return ResolvePromise(promise, reason, PROMISE_STATE_REJECTED);
 }
 
 
-function TriggerPromiseReactions(reactions, argument) {
+function TriggerPromiseReactions(reactions, jobType, argument) {
     
     for (var i = 0, len = reactions.length; i < len; i++)
-        EnqueuePromiseReactionJob(reactions[i], argument);
+        EnqueuePromiseReactionJob(reactions[i], jobType, argument);
     
 }
 
 
 
 
-function EnqueuePromiseReactionJob(reaction, argument) {
-    _EnqueuePromiseReactionJob(reaction.handler,
+function EnqueuePromiseReactionJob(reaction, jobType, argument) {
+    
+    
+    assert(jobType === PROMISE_JOB_TYPE_FULFILL || jobType === PROMISE_JOB_TYPE_REJECT,
+           "Invalid job type");
+    _EnqueuePromiseReactionJob(reaction[jobType],
                                argument,
                                reaction.resolve,
                                reaction.reject,
@@ -611,15 +621,11 @@ function BlockOnPromise(promise, blockedPromise, onResolve, onReject) {
     
     
     
-    if (IsPromise(promise)) {
-        return callFunction(AddPromiseReaction, promise, PROMISE_REJECT_REACTIONS_SLOT,
-                            blockedPromise);
-    }
+    if (IsPromise(promise))
+        return callFunction(AddDependentPromise, promise, blockedPromise);
 
-    if (IsWrappedPromise(promise)) {
-        callFunction(CallPromiseMethodIfWrapped, promise, PROMISE_REJECT_REACTIONS_SLOT,
-                     blockedPromise, "AddPromiseReaction");
-    }
+    if (IsWrappedPromise(promise))
+        callFunction(CallPromiseMethodIfWrapped, promise, blockedPromise, "AddDependentPromise");
 }
 
 
@@ -633,21 +639,13 @@ function BlockOnPromise(promise, blockedPromise, onResolve, onReject) {
 
 
 
+function AddDependentPromise(dependentPromise) {
+    assert(IsPromise(this), "AddDependentPromise expects an unwrapped Promise as the receiver");
 
+    let reaction = new PromiseReactionRecord(dependentPromise, NullFunction, NullFunction,
+                                             NullFunction, NullFunction, null);
 
-function AddPromiseReaction(slot, dependentPromise, onResolve, onReject, handler) {
-    assert(IsPromise(this), "AddPromiseReaction expects an unwrapped Promise as the receiver");
-    assert(slot === PROMISE_FULFILL_REACTIONS_SLOT || slot === PROMISE_REJECT_REACTIONS_SLOT,
-           "Invalid slot");
-
-    if (!onResolve)
-        onResolve = NullFunction;
-    if (!onReject)
-        onReject = NullFunction;
-    if (!handler)
-        handler = NullFunction;
-
-    let reactions = UnsafeGetReservedSlot(this, slot);
+    let reactions = UnsafeGetReservedSlot(this, PROMISE_REACTIONS_SLOT);
 
     
     if (!reactions) {
@@ -655,7 +653,6 @@ function AddPromiseReaction(slot, dependentPromise, onResolve, onReject, handler
                "Pending promises must have reactions lists.");
         return;
     }
-    let reaction = new PromiseReactionRecord(promise, reject, resolve, handler, null);
     _DefineDataProperty(reactions, reactions.length, reaction);
 }
 
@@ -888,31 +885,23 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
 
     let incumbentGlobal = _GetObjectFromIncumbentGlobal();
     
-    let fulfillReaction = new PromiseReactionRecord(resultCapability.promise,
-                                                    resultCapability.resolve,
-                                                    resultCapability.reject,
-                                                    onFulfilled,
-                                                    incumbentGlobal);
-
     
-    let rejectReaction = new PromiseReactionRecord(resultCapability.promise,
-                                                   resultCapability.resolve,
-                                                   resultCapability.reject,
-                                                   onRejected,
-                                                   incumbentGlobal);
+    
+    
+    let reaction = new PromiseReactionRecord(resultCapability.promise,
+                                             resultCapability.resolve,
+                                             resultCapability.reject,
+                                             onFulfilled,
+                                             onRejected,
+                                             incumbentGlobal);
 
     
     let state = GetPromiseState(promise);
     if (state === PROMISE_STATE_PENDING) {
         
-        let fulfillReactions = UnsafeGetObjectFromReservedSlot(promise,
-                                                               PROMISE_FULFILL_REACTIONS_SLOT);
-        _DefineDataProperty(fulfillReactions, fulfillReactions.length, fulfillReaction);
-
         
-        let rejectReactions = UnsafeGetObjectFromReservedSlot(promise,
-                                                              PROMISE_REJECT_REACTIONS_SLOT);
-        _DefineDataProperty(rejectReactions, rejectReactions.length, rejectReaction);
+        let reactions = UnsafeGetObjectFromReservedSlot(promise, PROMISE_REACTIONS_SLOT);
+        _DefineDataProperty(reactions, reactions.length, reaction);
     }
 
     
@@ -921,7 +910,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
         let value = UnsafeGetReservedSlot(promise, PROMISE_RESULT_SLOT);
 
         
-        EnqueuePromiseReactionJob(fulfillReaction, value);
+        EnqueuePromiseReactionJob(reaction, PROMISE_JOB_TYPE_FULFILL, value);
     }
 
     
@@ -940,7 +929,7 @@ function PerformPromiseThen(promise, onFulfilled, onRejected, resultCapability) 
         }
 
         
-        EnqueuePromiseReactionJob(rejectReaction, reason);
+        EnqueuePromiseReactionJob(reaction, PROMISE_JOB_TYPE_REJECT, reason);
     }
 
     

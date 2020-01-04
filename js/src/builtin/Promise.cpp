@@ -115,16 +115,11 @@ PromiseObject::create(JSContext* cx, HandleObject executor, HandleObject proto )
         promise->setFixedSlot(PROMISE_STATE_SLOT, Int32Value(PROMISE_STATE_PENDING));
 
         
+        
         RootedArrayObject reactions(cx, NewDenseEmptyArray(cx));
         if (!reactions)
             return nullptr;
-        promise->setFixedSlot(PROMISE_FULFILL_REACTIONS_SLOT, ObjectValue(*reactions));
-
-        
-        reactions = NewDenseEmptyArray(cx);
-        if (!reactions)
-            return nullptr;
-        promise->setFixedSlot(PROMISE_REJECT_REACTIONS_SLOT, ObjectValue(*reactions));
+        promise->setFixedSlot(PROMISE_REACTIONS_SLOT, ObjectValue(*reactions));
 
         
         promise->setFixedSlot(PROMISE_IS_HANDLED_SLOT,
@@ -242,23 +237,16 @@ PromiseObject::getID()
 
 
 
-
-
-
-
-
-
-
 bool
 PromiseObject::dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> values)
 {
-    RootedValue rejectReactionsVal(cx, getReservedSlot(PROMISE_REJECT_REACTIONS_SLOT));
-    RootedObject rejectReactions(cx, rejectReactionsVal.toObjectOrNull());
-    if (!rejectReactions)
+    RootedValue reactionsVal(cx, getReservedSlot(PROMISE_REACTIONS_SLOT));
+    RootedObject reactions(cx, reactionsVal.toObjectOrNull());
+    if (!reactions)
         return true;
 
     AutoIdVector keys(cx);
-    if (!GetPropertyKeys(cx, rejectReactions, JSITER_OWNONLY, &keys))
+    if (!GetPropertyKeys(cx, reactions, JSITER_OWNONLY, &keys))
         return false;
 
     if (keys.length() == 0)
@@ -279,7 +267,7 @@ PromiseObject::dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> v
     
     for (size_t i = 0; i < keys.length(); i++) {
         MutableHandleValue val = values[i];
-        if (!GetProperty(cx, rejectReactions, rejectReactions, keys[i], val))
+        if (!GetProperty(cx, reactions, reactions, keys[i], val))
             return false;
         RootedObject reaction(cx, &val.toObject());
         if (!GetProperty(cx, reaction, reaction, cx->runtime()->commonNames->promise, val))
