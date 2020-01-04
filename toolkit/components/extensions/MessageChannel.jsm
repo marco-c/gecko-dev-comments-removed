@@ -343,6 +343,11 @@ this.MessageChannel = {
   
 
 
+  RESPONSE_NONE: 3,
+
+  
+
+
 
 
   setupMessageManagers(messageManagers) {
@@ -508,6 +513,17 @@ this.MessageChannel = {
     let channelId = `${gChannelId++}-${Services.appinfo.uniqueProcessID}`;
     let message = {messageName, channelId, sender, recipient, data, responseType};
 
+    if (responseType == this.RESPONSE_NONE) {
+      try {
+        target.sendAsyncMessage(MESSAGE_MESSAGE, message);
+      } catch (e) {
+        
+        Cu.reportError(e);
+        return Promise.reject(e);
+      }
+      return Promise.resolve();  
+    }
+
     let deferred = PromiseUtils.defer();
     deferred.sender = recipient;
     deferred.messageManager = target;
@@ -600,6 +616,19 @@ this.MessageChannel = {
     let {target} = data;
     if (!(target instanceof Ci.nsIMessageSender)) {
       target = target.messageManager;
+    }
+
+    if (data.responseType == this.RESPONSE_NONE) {
+      handlers.forEach(handler => {
+        
+        new Promise(resolve => {
+          resolve(handler.receiveMessage(data));
+        }).catch(e => {
+          Cu.reportError(e.stack ? `${e}\n${e.stack}` : e.message || e);
+        });
+      });
+      
+      return;
     }
 
     let deferred = {
