@@ -460,6 +460,7 @@ js::StartOffThreadParseScript(JSContext* cx, const ReadOnlyCompileOptions& optio
     
     
     gc::AutoSuppressGC nogc(cx);
+    gc::AutoAssertNoNurseryAlloc noNurseryAlloc(cx->runtime());
 
     JSObject* global = CreateGlobalForOffThreadParse(cx, ParseTaskKind::Script, nogc);
     if (!global)
