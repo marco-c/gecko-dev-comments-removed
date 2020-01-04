@@ -4296,7 +4296,7 @@ WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
 
       
       
-      JS::UniqueChars fileName;
+      JS::AutoFilename fileName;
       if (JS::DescribeScriptedCaller(aCx, &fileName)) {
         
         
