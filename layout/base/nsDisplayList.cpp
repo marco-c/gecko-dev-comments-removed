@@ -4378,23 +4378,23 @@ nsDisplayOpacity::BuildLayer(nsDisplayListBuilder* aBuilder,
 
 
 static bool
-IsItemTooSmallForActiveLayer(nsDisplayItem* aItem)
+IsItemTooSmallForActiveLayer(nsIFrame* aFrame)
 {
-  nsIntRect visibleDevPixels = aItem->Frame()->GetVisualOverflowRectRelativeToSelf().ToOutsidePixels(
-          aItem->Frame()->PresContext()->AppUnitsPerDevPixel());
+  nsIntRect visibleDevPixels = aFrame->GetVisualOverflowRectRelativeToSelf().ToOutsidePixels(
+          aFrame->PresContext()->AppUnitsPerDevPixel());
   static const int MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS = 16;
   return visibleDevPixels.Size() <
     nsIntSize(MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS, MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS);
 }
 
 static void
-SetAnimationPerformanceWarningForTooSmallItem(nsDisplayItem* aItem,
+SetAnimationPerformanceWarningForTooSmallItem(nsIFrame* aFrame,
                                               nsCSSProperty aProperty)
 {
   
   
-  nsIntRect visibleDevPixels = aItem->Frame()->GetVisualOverflowRectRelativeToSelf().ToNearestPixels(
-          aItem->Frame()->PresContext()->AppUnitsPerDevPixel());
+  nsIntRect visibleDevPixels = aFrame->GetVisualOverflowRectRelativeToSelf().ToNearestPixels(
+          aFrame->PresContext()->AppUnitsPerDevPixel());
 
   
   
@@ -4402,23 +4402,23 @@ SetAnimationPerformanceWarningForTooSmallItem(nsDisplayItem* aItem,
     return;
   }
 
-  EffectCompositor::SetPerformanceWarning(aItem->Frame(), aProperty,
+  EffectCompositor::SetPerformanceWarning(aFrame, aProperty,
       AnimationPerformanceWarning(
         AnimationPerformanceWarning::Type::ContentTooSmall,
         { visibleDevPixels.Width(), visibleDevPixels.Height() }));
 }
 
-bool
-nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder)
+ bool
+nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
 {
-  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame,
+  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, aFrame,
                                           eCSSProperty_opacity) ||
-      EffectCompositor::HasAnimationsForCompositor(mFrame,
+      EffectCompositor::HasAnimationsForCompositor(aFrame,
                                                    eCSSProperty_opacity)) {
-    if (!IsItemTooSmallForActiveLayer(this)) {
+    if (!IsItemTooSmallForActiveLayer(aFrame)) {
       return true;
     }
-    SetAnimationPerformanceWarningForTooSmallItem(this, eCSSProperty_opacity);
+    SetAnimationPerformanceWarningForTooSmallItem(aFrame, eCSSProperty_opacity);
   }
   return false;
 }
@@ -4444,7 +4444,7 @@ nsDisplayOpacity::CanApplyOpacity() const
 bool
 nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder)
 {
-  if (NeedsActiveLayer(aBuilder) || mOpacity == 0.0) {
+  if (NeedsActiveLayer(aBuilder, mFrame) || mOpacity == 0.0) {
     
     
     
@@ -4506,7 +4506,7 @@ nsDisplayOpacity::GetLayerState(nsDisplayListBuilder* aBuilder,
     return LAYER_INACTIVE;
   }
 
-  if (NeedsActiveLayer(aBuilder)) {
+  if (NeedsActiveLayer(aBuilder, mFrame)) {
     
     
     return LAYER_ACTIVE_FORCE;
@@ -6021,10 +6021,10 @@ nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder)
                                           eCSSProperty_transform) ||
       EffectCompositor::HasAnimationsForCompositor(mFrame,
                                                    eCSSProperty_transform)) {
-    if (!IsItemTooSmallForActiveLayer(this)) {
+    if (!IsItemTooSmallForActiveLayer(mFrame)) {
       return true;
     }
-    SetAnimationPerformanceWarningForTooSmallItem(this, eCSSProperty_transform);
+    SetAnimationPerformanceWarningForTooSmallItem(mFrame, eCSSProperty_transform);
   }
   return false;
 }
