@@ -106,10 +106,14 @@ Downscaler::BeginFrame(const nsIntSize& aOriginalSize,
 
   
   
-  mRowBuffer.reset(new (fallible) uint8_t[mOriginalSize.width * sizeof(uint32_t) + 15]);
+  size_t bufferLen = mOriginalSize.width * sizeof(uint32_t) + 15;
+  mRowBuffer.reset(new (fallible) uint8_t[bufferLen]);
   if (MOZ_UNLIKELY(!mRowBuffer)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
+
+  
+  memset(mRowBuffer.get(), 0, bufferLen);
 
   
   
