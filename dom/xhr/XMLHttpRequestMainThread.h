@@ -703,6 +703,14 @@ protected:
   
   bool mFlagSend;
 
+  
+  
+  
+  
+  
+  
+  bool mSendExtraLoadingEvents;
+
   RefPtr<XMLHttpRequestUpload> mUpload;
   int64_t mUploadTransferred;
   int64_t mUploadTotal;
