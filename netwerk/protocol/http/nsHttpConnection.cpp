@@ -1035,21 +1035,25 @@ nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
         }
     }
 
-    const char *upgradeReq = requestHead->PeekHeader(nsHttp::Upgrade);
+    nsAutoCString upgradeReq;
+    bool hasUpgradeReq = NS_SUCCEEDED(requestHead->GetHeader(nsHttp::Upgrade,
+                                                             upgradeReq));
     
     
-    if (upgradeReq && responseStatus != 401 && responseStatus != 407) {
+    if (hasUpgradeReq && responseStatus != 401 && responseStatus != 407) {
         LOG(("HTTP Upgrade in play - disable keepalive\n"));
         DontReuse();
     }
 
     if (responseStatus == 101) {
         const char *upgradeResp = responseHead->PeekHeader(nsHttp::Upgrade);
-        if (!upgradeReq || !upgradeResp ||
-            !nsHttp::FindToken(upgradeResp, upgradeReq,
+        if (!hasUpgradeReq || !upgradeResp ||
+            !nsHttp::FindToken(upgradeResp, upgradeReq.get(),
                                HTTP_HEADER_VALUE_SEPS)) {
             LOG(("HTTP 101 Upgrade header mismatch req = %s, resp = %s\n",
-                 upgradeReq, upgradeResp));
+                 upgradeReq.get(),
+                 upgradeResp ? upgradeResp :
+                               "RESPONSE's nsHttp::Upgrade is empty"));
             Close(NS_ERROR_ABORT);
         }
         else {
@@ -1865,11 +1869,13 @@ nsHttpConnection::MakeConnectString(nsAHttpTransaction *trans,
     
     request->SetHeader(nsHttp::Host, result);
 
-    const char *val = trans->RequestHead()->PeekHeader(nsHttp::Proxy_Authorization);
-    if (val) {
+    nsAutoCString val;
+    if (NS_SUCCEEDED(trans->RequestHead()->GetHeader(
+                         nsHttp::Proxy_Authorization,
+                         val))) {
         
         
-        request->SetHeader(nsHttp::Proxy_Authorization, nsDependentCString(val));
+        request->SetHeader(nsHttp::Proxy_Authorization, val);
     }
 
     result.Truncate();
