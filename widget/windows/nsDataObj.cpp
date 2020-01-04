@@ -1290,7 +1290,27 @@ HRESULT nsDataObj::GetText(const nsACString & aDataFlavor, FORMATETC& aFE, STGME
   
   
   DWORD allocLen = (DWORD)len;
-  if ( aFE.cfFormat == nsClipboard::CF_HTML ) {
+  if ( aFE.cfFormat == CF_TEXT ) {
+    
+    
+    size_t bufferSize = sizeof(char)*(len + 2);
+    char* plainTextData = static_cast<char*>(moz_xmalloc(bufferSize));
+    char16_t* castedUnicode = reinterpret_cast<char16_t*>(data);
+    int32_t plainTextLen = WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)castedUnicode, len / 2 + 1, plainTextData, bufferSize, NULL, NULL);
+    
+    
+    free(data);
+    if ( plainTextLen ) {
+      data = plainTextData;
+      allocLen = plainTextLen;
+    }
+    else {
+      free(plainTextData);
+      NS_WARNING ( "Oh no, couldn't convert unicode to plain text" );
+      return S_OK;
+    }
+  }
+  else if ( aFE.cfFormat == nsClipboard::CF_HTML ) {
     
     
     NS_ConvertUTF16toUTF8 converter ( reinterpret_cast<char16_t*>(data) );
