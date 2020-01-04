@@ -12,12 +12,12 @@ external_tools_path = os.path.join(
 )
 
 config = {
+    
+    'developer_mode': True,
+
     'env': {
         'PIP_TRUSTED_HOST': 'pypi.pub.build.mozilla.org',
     },
-
-    
-    'proxxy': {},
 
     
     'exes': {
