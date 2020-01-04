@@ -4432,9 +4432,8 @@ PresShell::ContentRemoved(nsIDocument *aDocument,
   
   for (auto iter = gPointerCaptureList->Iter(); !iter.Done(); iter.Next()) {
     nsIPresShell::PointerCaptureInfo* data = iter.UserData();
-    if (data && data->mOverrideContent &&
-        nsContentUtils::ContentIsDescendantOf(data->mOverrideContent,
-                                              aChild)) {
+    if (data && data->mPendingContent &&
+        nsContentUtils::ContentIsDescendantOf(data->mPendingContent, aChild)) {
       nsIPresShell::ReleasePointerCapturingContent(iter.Key());
     }
   }
@@ -6696,17 +6695,15 @@ nsIPresShell::SetCapturingContent(nsIContent* aContent, uint8_t aFlags)
 nsIPresShell::SetPointerCapturingContent(uint32_t aPointerId, nsIContent* aContent)
 {
   PointerCaptureInfo* pointerCaptureInfo = nullptr;
-  gPointerCaptureList->Get(aPointerId, &pointerCaptureInfo);
-  nsIContent* content = pointerCaptureInfo ?
-    pointerCaptureInfo->mOverrideContent.get() : nullptr;
+  MOZ_ASSERT(aContent != nullptr);
 
-  if (!content && (nsIDOMMouseEvent::MOZ_SOURCE_MOUSE == GetPointerType(aPointerId))) {
+  if (nsIDOMMouseEvent::MOZ_SOURCE_MOUSE == GetPointerType(aPointerId)) {
     SetCapturingContent(aContent, CAPTURE_PREVENTDRAG);
   }
 
-  if (pointerCaptureInfo) {
+  if (gPointerCaptureList->Get(aPointerId, &pointerCaptureInfo) &&
+      pointerCaptureInfo) {
     pointerCaptureInfo->mPendingContent = aContent;
-    pointerCaptureInfo->mReleaseContent = false;
   } else {
     gPointerCaptureList->Put(aPointerId,
                              new PointerCaptureInfo(aContent, GetPointerPrimaryState(aPointerId)));
@@ -6716,14 +6713,14 @@ nsIPresShell::SetPointerCapturingContent(uint32_t aPointerId, nsIContent* aConte
  void
 nsIPresShell::ReleasePointerCapturingContent(uint32_t aPointerId)
 {
-  if (gActivePointersIds->Get(aPointerId)) {
+  if (nsIDOMMouseEvent::MOZ_SOURCE_MOUSE == GetPointerType(aPointerId)) {
     SetCapturingContent(nullptr, CAPTURE_PREVENTDRAG);
   }
 
   PointerCaptureInfo* pointerCaptureInfo = nullptr;
-  if (gPointerCaptureList->Get(aPointerId, &pointerCaptureInfo) && pointerCaptureInfo) {
-    
-    pointerCaptureInfo->mReleaseContent = true;
+  if (gPointerCaptureList->Get(aPointerId, &pointerCaptureInfo) &&
+      pointerCaptureInfo) {
+    pointerCaptureInfo->mPendingContent = nullptr;
   }
 }
 
@@ -6737,49 +6734,31 @@ nsIPresShell::GetPointerCapturingContent(uint32_t aPointerId)
   return nullptr;
 }
 
- bool
+ void
 nsIPresShell::CheckPointerCaptureState(uint32_t aPointerId,
                                        uint16_t aPointerType, bool aIsPrimary)
 {
-  bool didDispatchEvent = false;
-  PointerCaptureInfo* pointerCaptureInfo = nullptr;
-  if (gPointerCaptureList->Get(aPointerId, &pointerCaptureInfo) && pointerCaptureInfo) {
+  PointerCaptureInfo* captureInfo = nullptr;
+  if (gPointerCaptureList->Get(aPointerId, &captureInfo) && captureInfo &&
+      captureInfo->mPendingContent != captureInfo->mOverrideContent) {
     
     
-    if (pointerCaptureInfo->mPendingContent || pointerCaptureInfo->mReleaseContent) {
-      if (pointerCaptureInfo->mOverrideContent) {
-        nsCOMPtr<nsIContent> content;
-        pointerCaptureInfo->mOverrideContent.swap(content);
-        if (pointerCaptureInfo->mReleaseContent) {
-          pointerCaptureInfo->mPendingContent = nullptr;
-        }
-        if (pointerCaptureInfo->Empty()) {
-          gPointerCaptureList->Remove(aPointerId);
-        }
-        DispatchGotOrLostPointerCaptureEvent(false, aPointerId, aPointerType,
-                                             aIsPrimary, content);
-        didDispatchEvent = true;
-      } else if (pointerCaptureInfo->mPendingContent && pointerCaptureInfo->mReleaseContent) {
-        
-        
-        pointerCaptureInfo->mPendingContent = nullptr;
-        pointerCaptureInfo->mReleaseContent = false;
-      }
+    nsIContent* pendingContent = captureInfo->mPendingContent.get();
+    if (captureInfo->mOverrideContent) {
+      DispatchGotOrLostPointerCaptureEvent( false,
+                                           aPointerId, aPointerType, aIsPrimary,
+                                           captureInfo->mOverrideContent);
+    }
+    if (pendingContent) {
+      DispatchGotOrLostPointerCaptureEvent( true, aPointerId,
+                                           aPointerType, aIsPrimary,
+                                           pendingContent);
+    }
+    captureInfo->mOverrideContent = pendingContent;
+    if (captureInfo->Empty()) {
+      gPointerCaptureList->Remove(aPointerId);
     }
   }
-  if (gPointerCaptureList->Get(aPointerId, &pointerCaptureInfo) && pointerCaptureInfo) {
-    
-    if (pointerCaptureInfo && pointerCaptureInfo->mPendingContent) {
-      pointerCaptureInfo->mOverrideContent = pointerCaptureInfo->mPendingContent;
-      pointerCaptureInfo->mPendingContent = nullptr;
-      pointerCaptureInfo->mReleaseContent = false;
-      DispatchGotOrLostPointerCaptureEvent(true, aPointerId, aPointerType,
-                                           aIsPrimary,
-                                           pointerCaptureInfo->mOverrideContent);
-      didDispatchEvent = true;
-    }
-  }
-  return didDispatchEvent;
 }
 
  uint16_t

@@ -1265,11 +1265,10 @@ public:
   {
     nsCOMPtr<nsIContent> mPendingContent;
     nsCOMPtr<nsIContent> mOverrideContent;
-    bool                 mReleaseContent;
     bool                 mPrimaryState;
 
     explicit PointerCaptureInfo(nsIContent* aPendingContent, bool aPrimaryState) :
-      mPendingContent(aPendingContent), mReleaseContent(false), mPrimaryState(aPrimaryState)
+      mPendingContent(aPendingContent), mPrimaryState(aPrimaryState)
     {
       MOZ_COUNT_CTOR(PointerCaptureInfo);
     }
@@ -1311,8 +1310,7 @@ public:
   static nsIContent* GetPointerCapturingContent(uint32_t aPointerId);
 
   
-  
-  static bool CheckPointerCaptureState(uint32_t aPointerId,
+  static void CheckPointerCaptureState(uint32_t aPointerId,
                                        uint16_t aPointerType, bool aIsPrimary);
 
   
