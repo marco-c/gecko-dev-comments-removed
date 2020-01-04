@@ -9,6 +9,8 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "CubebUtils.h"
 
+#include "webrtc/MediaEngineWebRTC.h"
+
 #ifdef XP_MACOSX
 #include <sys/sysctl.h>
 #endif
@@ -606,15 +608,22 @@ AudioCallbackDriver::Init()
   input = output;
   input.channels = mInputChannels; 
 
-  cubeb_stream* stream;
+  cubeb_stream* stream = nullptr;
+  CubebUtils::AudioDeviceID input_id = nullptr, output_id = nullptr;
   
   
-  
-  if (cubeb_stream_init(CubebUtils::GetCubebContext(), &stream,
+  if ((!mGraphImpl->mInputWanted ||
+       AudioInputCubeb::GetDeviceID(mGraphImpl->mInputDeviceID, input_id)) &&
+      (mGraphImpl->mOutputDeviceID == -1 || 
+       AudioInputCubeb::GetDeviceID(mGraphImpl->mOutputDeviceID, output_id)) &&
+      
+      
+      
+      cubeb_stream_init(CubebUtils::GetCubebContext(), &stream,
                         "AudioCallbackDriver",
-                        mGraphImpl->mInputDeviceID,
+                        input_id,
                         mGraphImpl->mInputWanted ? &input : nullptr,
-                        mGraphImpl->mOutputDeviceID,
+                        output_id,
                         mGraphImpl->mOutputWanted ? &output : nullptr, latency,
                         DataCallback_s, StateCallback_s, this) == CUBEB_OK) {
     mAudioStream.own(stream);

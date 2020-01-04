@@ -183,7 +183,7 @@ public:
     return 0;
   }
 
-  int32_t DeviceIndex(int aIndex)
+  static int32_t DeviceIndex(int aIndex)
   {
     if (aIndex == -1) {
       aIndex = 0; 
@@ -193,6 +193,16 @@ public:
     }
     
     return (*mDeviceIndexes)[aIndex]; 
+  }
+
+  static bool GetDeviceID(int aDeviceIndex, CubebUtils::AudioDeviceID &aID)
+  {
+    int dev_index = DeviceIndex(aDeviceIndex);
+    if (dev_index != -1) {
+      aID = mDevices->device[dev_index]->device_id;
+      return true;
+    }
+    return false;
   }
 
   int GetRecordingDeviceName(int aIndex, char aStrNameUTF8[128],
@@ -230,7 +240,7 @@ public:
     }
     mInUseCount++;
     
-    aStream->OpenAudioInput(mDevices->device[mSelectedDevice]->devid, aListener);
+    aStream->OpenAudioInput(mSelectedDevice, aListener);
   }
 
   void StopRecording(SourceMediaStream *aStream)
@@ -243,11 +253,7 @@ public:
 
   int SetRecordingDevice(int aIndex)
   {
-    int32_t devindex = DeviceIndex(aIndex);
-    if (!mDevices || devindex < 0) {
-      return 1;
-    }
-    mSelectedDevice = devindex;
+    mSelectedDevice = aIndex;
     return 0;
   }
 
@@ -258,50 +264,7 @@ protected:
 
 private:
   
-  void UpdateDeviceList()
-  {
-    cubeb_device_collection *devices = nullptr;
-
-    if (CUBEB_OK != cubeb_enumerate_devices(CubebUtils::GetCubebContext(),
-                                            CUBEB_DEVICE_TYPE_INPUT,
-                                            &devices)) {
-      return;
-    }
-
-    for (auto& device_index : (*mDeviceIndexes)) {
-      device_index = -1; 
-    }
-    
-
-    
-    
-    
-    
-    
-    for (uint32_t i = 0; i < devices->count; i++) {
-      if (devices->device[i]->type == CUBEB_DEVICE_TYPE_INPUT && 
-          (devices->device[i]->state == CUBEB_DEVICE_STATE_ENABLED ||
-           devices->device[i]->state == CUBEB_DEVICE_STATE_UNPLUGGED ||
-           (devices->device[i]->state == CUBEB_DEVICE_STATE_DISABLED &&
-            strcmp(devices->device[i]->friendly_name, "Sine source at 440 Hz") == 0)))
-      {
-        auto j = mDeviceNames->IndexOf(devices->device[i]->device_id);
-        if (j != nsTArray<nsCString>::NoIndex) {
-          
-          (*mDeviceIndexes)[j] = i;
-        } else {
-          
-          mDeviceIndexes->AppendElement(i);
-          mDeviceNames->AppendElement(devices->device[i]->device_id);
-        }
-      }
-    }
-    
-    if (mDevices) {
-      cubeb_device_collection_destroy(mDevices);
-    }
-    mDevices = devices;
-  }
+  void UpdateDeviceList();
 
   
   

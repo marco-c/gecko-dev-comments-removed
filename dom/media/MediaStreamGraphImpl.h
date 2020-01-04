@@ -395,9 +395,9 @@ public:
 
 
 
-  void OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
+  void OpenAudioInputImpl(int aID,
                           AudioDataListener *aListener);
-  virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
+  virtual nsresult OpenAudioInput(int aID,
                                   AudioDataListener *aListener) override;
   void CloseAudioInputImpl(AudioDataListener *aListener);
   virtual void CloseAudioInput(AudioDataListener *aListener) override;
@@ -634,9 +634,9 @@ public:
 
 
   bool mInputWanted;
-  CubebUtils::AudioDeviceID mInputDeviceID;
+  int mInputDeviceID;
   bool mOutputWanted;
-  CubebUtils::AudioDeviceID mOutputDeviceID;
+  int mOutputDeviceID;
   
   
   nsDataHashtable<nsPtrHashKey<AudioDataListener>, uint32_t> mInputDeviceUsers;

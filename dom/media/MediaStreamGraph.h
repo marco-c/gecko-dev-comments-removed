@@ -739,7 +739,7 @@ public:
   
   
   
-  nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
+  nsresult OpenAudioInput(int aID,
                           AudioDataListener *aListener);
   
   void CloseAudioInput();
@@ -1224,7 +1224,7 @@ public:
   
   static void DestroyNonRealtimeInstance(MediaStreamGraph* aGraph);
 
-  virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
+  virtual nsresult OpenAudioInput(int aID,
                                   AudioDataListener *aListener) {
     return NS_ERROR_FAILURE;
   }
