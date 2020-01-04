@@ -16,9 +16,19 @@ XPCOMUtils.defineLazyModuleGetter(this, "Messaging", "resource://gre/modules/Mes
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils", "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FormData", "resource://gre/modules/FormData.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryStopwatch", "resource://gre/modules/TelemetryStopwatch.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Log", "resource://gre/modules/AndroidLog.jsm", "AndroidLog");
 
 function dump(a) {
   Services.console.logStringMessage(a);
+}
+
+let loggingEnabled = false;
+
+function log(a) {
+  if (!loggingEnabled) {
+    return;
+  }
+  Log.d("SessionStore", a);
 }
 
 
@@ -56,6 +66,8 @@ SessionStore.prototype = {
   _notifyClosedTabs: false,
 
   init: function ss_init() {
+    loggingEnabled = Services.prefs.getBoolPref("browser.sessionstore.debug_logging");
+
     
     this._sessionFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
     this._sessionFileBackup = this._sessionFile.clone();
@@ -127,6 +139,7 @@ SessionStore.prototype = {
       case "timer-callback":
         
         this._saveTimer = null;
+        log("timer-callback, pendingWrite = " + this._pendingWrite);
         if (this._pendingWrite) {
           this.saveState();
         }
@@ -175,6 +188,7 @@ SessionStore.prototype = {
         
         
         
+        log("application-background");
         this.flushPendingState();
         break;
       case "ClosedTabs:StartNotifications":
@@ -204,27 +218,32 @@ SessionStore.prototype = {
     switch (aEvent.type) {
       case "TabOpen": {
         let browser = aEvent.target;
+        log("TabOpen for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabAdd(window, browser);
         break;
       }
       case "TabClose": {
         let browser = aEvent.target;
+        log("TabClose for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabClose(window, browser, aEvent.detail);
         this.onTabRemove(window, browser);
         break;
       }
       case "TabPreZombify": {
         let browser = aEvent.target;
+        log("TabPreZombify for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabRemove(window, browser, true);
         break;
       }
       case "TabPostZombify": {
         let browser = aEvent.target;
+        log("TabPostZombify for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabAdd(window, browser, true);
         break;
       }
       case "TabSelect": {
         let browser = aEvent.target;
+        log("TabSelect for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabSelect(window, browser);
         break;
       }
@@ -240,6 +259,7 @@ SessionStore.prototype = {
         
         
         
+        log("DOMTitleChanged for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabLoad(window, browser);
         break;
       }
@@ -248,6 +268,7 @@ SessionStore.prototype = {
         
         
         let browser = aEvent.currentTarget;
+        log("load for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         if (browser.__SS_restore_text_data) {
           this._restoreTextData(browser.__SS_data.formdata, browser);
         }
@@ -257,6 +278,7 @@ SessionStore.prototype = {
       case "input":
       case "DOMAutoComplete": {
         let browser = aEvent.currentTarget;
+        log("TabInput for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabInput(window, browser);
         break;
       }
@@ -341,6 +363,8 @@ SessionStore.prototype = {
     aBrowser.addEventListener("input", this, true);
     aBrowser.addEventListener("DOMAutoComplete", this, true);
 
+    log("onTabAdd() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id +
+        ", aNoNotification = " + aNoNotification);
     if (!aNoNotification) {
       this.saveStateDelayed();
     }
@@ -355,13 +379,17 @@ SessionStore.prototype = {
     aBrowser.removeEventListener("input", this, true);
     aBrowser.removeEventListener("DOMAutoComplete", this, true);
 
+    let tabId = aWindow.BrowserApp.getTabForBrowser(aBrowser).id;
+
     
     if (aBrowser.__SS_restore) {
+      log("onTabRemove() ran for zombie tab " + tabId + ", aNoNotification = " + aNoNotification);
       return;
     }
 
     delete aBrowser.__SS_data;
 
+    log("onTabRemove() ran for tab " + tabId + ", aNoNotification = " + aNoNotification);
     if (!aNoNotification) {
       this.saveStateDelayed();
     }
@@ -390,6 +418,7 @@ SessionStore.prototype = {
         this._sendClosedTabsToJava(aWindow);
       }
 
+      log("onTabClose() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
       let evt = new Event("SSTabCloseProcessed", {"bubbles":true, "cancelable":false});
       aBrowser.dispatchEvent(evt);
     }
@@ -446,6 +475,7 @@ SessionStore.prototype = {
       this.onTabInput(aWindow, aBrowser);
     }
 
+    log("onTabLoad() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
     let evt = new Event("SSTabDataUpdated", {"bubbles":true, "cancelable":false});
     aBrowser.dispatchEvent(evt);
     this.saveStateDelayed();
@@ -462,6 +492,8 @@ SessionStore.prototype = {
     let index = browsers.selectedIndex;
     this._windows[aWindow.__SSID].selected = parseInt(index) + 1; 
 
+    let tabId = aWindow.BrowserApp.getTabForBrowser(aBrowser).id;
+
     
     if (aBrowser.__SS_restore) {
       let data = aBrowser.__SS_data;
@@ -469,8 +501,10 @@ SessionStore.prototype = {
 
       delete aBrowser.__SS_restore;
       aBrowser.removeAttribute("pending");
+      log("onTabSelect() restored zombie tab " + tabId);
     }
 
+    log("onTabSelect() ran for tab " + tabId);
     this.saveStateDelayed();
     this._updateCrashReportURL(aWindow);
 
@@ -529,6 +563,7 @@ SessionStore.prototype = {
     
     if (Object.keys(formdata).length) {
       data.formdata = formdata;
+      log("onTabInput() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
       this.saveStateDelayed();
     }
   },
@@ -544,34 +579,43 @@ SessionStore.prototype = {
         this._pendingWrite++;
         this._saveTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
         this._saveTimer.init(this, delay, Ci.nsITimer.TYPE_ONE_SHOT);
+        log("saveStateDelayed() timer delay = " + delay +
+             ", incrementing _pendingWrite to " + this._pendingWrite);
       } else {
+        log("saveStateDelayed() no delay");
         this.saveState();
       }
     }
+    log("saveStateDelayed() timer already running, taking no action");
   },
 
   saveState: function ss_saveState() {
     this._pendingWrite++;
+    log("saveState(), incrementing _pendingWrite to " + this._pendingWrite);
     this._saveState(true);
   },
 
   
   flushPendingState: function ss_flushPendingState() {
+    log("flushPendingState(), _pendingWrite = " + this._pendingWrite);
     if (this._pendingWrite) {
       this._saveState(false);
     }
   },
 
   _saveState: function ss_saveState(aAsync) {
+    log("_saveState(aAsync = " + aAsync + ")");
     
     if (this._saveTimer) {
       this._saveTimer.cancel();
       this._saveTimer = null;
+      log("_saveState() killed queued timer");
     }
 
     let data = this._getCurrentState();
     let normalData = { windows: [] };
     let privateData = { windows: [] };
+    log("_saveState() current state collected");
 
     for (let winIndex = 0; winIndex < data.windows.length; ++winIndex) {
       let win = data.windows[winIndex];
@@ -601,6 +645,8 @@ SessionStore.prototype = {
     }
 
     
+    log("_saveState() writing normal data, " +
+         normalData.windows[0].tabs.length + " tabs in window[0]");
     this._writeFile(this._sessionFile, normalData, aAsync);
 
     
@@ -699,7 +745,8 @@ SessionStore.prototype = {
 
     Services.obs.notifyObservers(null, "sessionstore-state-write", "");
     let startWriteMs = Cu.now();
- 
+
+    log("_writeFile(aAsync = " + aAsync + "), _pendingWrite = " + this._pendingWrite);
     let pendingWrite = this._pendingWrite;
     this._write(aFile, buffer, aAsync).then(() => {
       let stopWriteMs = Cu.now();
@@ -710,6 +757,8 @@ SessionStore.prototype = {
       if (pendingWrite === this._pendingWrite) {
         this._pendingWrite = 0;
       }
+
+      log("_writeFile() _write() returned, _pendingWrite = " + this._pendingWrite);
 
       
       
@@ -728,6 +777,7 @@ SessionStore.prototype = {
   _write: function ss_write(aFile, aBuffer, aAsync) {
     
     if (aAsync) {
+      log("_write() writing asynchronously");
       return OS.File.writeAtomic(aFile.path, aBuffer, { tmpPath: aFile.path + ".tmp" });
     }
 
@@ -737,6 +787,7 @@ SessionStore.prototype = {
     stream.init(aFile, 0x02 | 0x08 | 0x20, 0o666, 0);
     stream.write(bytes, bytes.length);
     stream.close();
+    log("_write() writing synchronously");
 
     
     return Promise.resolve();
@@ -1098,6 +1149,7 @@ SessionStore.prototype = {
 
   _restoreTextData: function ss_restoreTextData(aFormData, aBrowser) {
     if (aFormData) {
+      log("_restoreTextData()");
       FormData.restoreTree(aBrowser.contentWindow, aFormData);
     }
     delete aBrowser.__SS_restore_text_data;
@@ -1124,9 +1176,12 @@ SessionStore.prototype = {
 
     let tabs = state.windows[0].tabs;
     let selected = state.windows[0].selected;
+    log("_restoreWindow() selected tab in aData is " + selected + " of " + tabs.length)
     if (selected == null || selected > tabs.length) { 
+      log("_restoreWindow() resetting selected tab");
       selected = 1;
     }
+    log("restoreWindow() window.BrowserApp.selectedTab is " + window.BrowserApp.selectedTab.id);
 
     for (let i = 0; i < tabs.length; i++) {
       let tabData = tabs[i];
