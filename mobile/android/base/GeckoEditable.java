@@ -66,13 +66,12 @@ final class GeckoEditable extends JNIObject
     private Handler mIcPostHandler;
 
     private GeckoEditableListener mListener;
-    private int mSavedSelectionStart;
-    private volatile int mGeckoUpdateSeqno;
     private int mIcUpdateSeqno;
     private int mLastIcUpdateSeqno;
     private boolean mUpdateGecko;
     private boolean mFocused; 
     private boolean mGeckoFocused; 
+    private boolean mIgnoreSelectionChange;
     private volatile boolean mSuppressCompositions;
     private volatile boolean mSuppressKeyUp;
 
@@ -162,10 +161,7 @@ final class GeckoEditable extends JNIObject
         
         static final int TYPE_REPLACE_TEXT = 1;
         
-
-
-
-        static final int TYPE_SET_SELECTION = 2;
+        static final int TYPE_COMPOSE_TEXT = 2;
         
         static final int TYPE_SET_SPAN = 3;
         
@@ -174,8 +170,6 @@ final class GeckoEditable extends JNIObject
         static final int TYPE_ACKNOWLEDGE_FOCUS = 5;
         
         static final int TYPE_SET_HANDLER = 6;
-        
-        static final int TYPE_COMPOSE_TEXT = 7;
 
         final int mType;
         int mStart;
@@ -212,19 +206,6 @@ final class GeckoEditable extends JNIObject
 
             final Action action = new Action(actionType);
             action.mSequence = text;
-            action.mStart = start;
-            action.mEnd = end;
-            return action;
-        }
-
-        static Action newSetSelection(int start, int end) {
-            
-            
-            if (start < -1 || end < -1) {
-                Log.e(LOGTAG, "invalid selection offsets: " + start + " to " + end);
-                throw new IllegalArgumentException("invalid selection offsets");
-            }
-            final Action action = new Action(TYPE_SET_SELECTION);
             action.mStart = start;
             action.mEnd = end;
             return action;
@@ -292,7 +273,6 @@ final class GeckoEditable extends JNIObject
 
             switch (action.mType) {
             case Action.TYPE_EVENT:
-            case Action.TYPE_SET_SELECTION:
             case Action.TYPE_SET_SPAN:
             case Action.TYPE_REMOVE_SPAN:
             case Action.TYPE_SET_HANDLER:
@@ -427,7 +407,6 @@ final class GeckoEditable extends JNIObject
             ThreadUtils.assertOnGeckoThread();
         }
         mActionQueue = new ActionQueue();
-        mSavedSelectionStart = -1;
         mUpdateGecko = true;
 
         mText = new SpannableStringBuilder();
@@ -507,18 +486,11 @@ final class GeckoEditable extends JNIObject
     }
 
     private void geckoUpdateGecko(final boolean force) {
-        
-
-
-        final int seqnoWhenPosted = mGeckoUpdateSeqno;
-
         geckoPostToIc(new Runnable() {
             @Override
             public void run() {
                 mActionQueue.syncWithGecko();
-                if (seqnoWhenPosted == mGeckoUpdateSeqno) {
-                    icUpdateGecko(force);
-                }
+                icUpdateGecko(force);
             }
         });
     }
@@ -808,34 +780,6 @@ final class GeckoEditable extends JNIObject
                           getConstantName(Action.class, "TYPE_", action.mType) + ")");
         }
         switch (action.mType) {
-        case Action.TYPE_SET_SELECTION:
-            final int len = mText.length();
-            final int curStart = Selection.getSelectionStart(mText);
-            final int curEnd = Selection.getSelectionEnd(mText);
-            
-            
-            final int selStart = Math.min(action.mStart < 0 ? curStart : action.mStart, len);
-            final int selEnd = Math.min(action.mEnd < 0 ? curEnd : action.mEnd, len);
-
-            if (selStart < action.mStart || selEnd < action.mEnd) {
-                Log.w(LOGTAG, "IME sync error: selection out of bounds");
-            }
-            Selection.setSelection(mText, selStart, selEnd);
-            geckoPostToIc(new Runnable() {
-                @Override
-                public void run() {
-                    mActionQueue.syncWithGecko();
-                    final int start = Selection.getSelectionStart(mText);
-                    final int end = Selection.getSelectionEnd(mText);
-                    if (selStart == start && selEnd == end) {
-                        
-                        
-                        mListener.onSelectionChange(start, end);
-                    }
-                }
-            });
-            break;
-
         case Action.TYPE_SET_SPAN:
             mText.setSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
             break;
@@ -968,7 +912,7 @@ final class GeckoEditable extends JNIObject
     }
 
     @WrapForJNI @Override
-    public void onSelectionChange(final int start, final int end) {
+    public void onSelectionChange(int start, int end) {
         if (DEBUG) {
             
             ThreadUtils.assertOnGeckoThread();
@@ -979,34 +923,22 @@ final class GeckoEditable extends JNIObject
                   start + " to " + end + ", length: " + mText.length());
             throw new IllegalArgumentException("invalid selection notification range");
         }
-        final int seqnoWhenPosted = ++mGeckoUpdateSeqno;
 
-        
+        if (mIgnoreSelectionChange) {
+            start = Selection.getSelectionStart(mText);
+            end = Selection.getSelectionEnd(mText);
+            mIgnoreSelectionChange = false;
 
-
-        final Action action = mActionQueue.peek();
-        if (action != null && action.mType == Action.TYPE_EVENT) {
+        } else {
             Selection.setSelection(mText, start, end);
-            return;
         }
 
+        final int newStart = start;
+        final int newEnd = end;
         geckoPostToIc(new Runnable() {
             @Override
             public void run() {
-                mActionQueue.syncWithGecko();
-                
-
-
-                if (mGeckoUpdateSeqno == seqnoWhenPosted) {
-                    
-
-
-
-                    boolean oldUpdateGecko = mUpdateGecko;
-                    mUpdateGecko = false;
-                    Selection.setSelection(mProxy, start, end);
-                    mUpdateGecko = oldUpdateGecko;
-                }
+                mListener.onSelectionChange(newStart, newEnd);
             }
         });
     }
@@ -1053,12 +985,6 @@ final class GeckoEditable extends JNIObject
         final int newEnd = start + text.length();
         final Action action = mActionQueue.peek();
 
-        
-
-
-
-        ++mGeckoUpdateSeqno;
-
         if (action != null && action.mType == Action.TYPE_ACKNOWLEDGE_FOCUS) {
             
             mText.replace(0, mText.length(), text);
@@ -1104,11 +1030,18 @@ final class GeckoEditable extends JNIObject
                                   Spanned.SPAN_POINT_POINT);
                 }
 
+                
+                
+                mIgnoreSelectionChange = true;
+
             } else {
                 
                 if (isSameText(start, oldEnd, mChangedText)) {
                     
                     
+                    
+                    
+                    mIgnoreSelectionChange = true;
                     return;
                 }
                 geckoReplaceText(start, oldEnd, mChangedText);
@@ -1236,19 +1169,7 @@ final class GeckoEditable extends JNIObject
 
     @Override
     public void setSpan(Object what, int start, int end, int flags) {
-        if (what == Selection.SELECTION_START) {
-            if ((flags & Spanned.SPAN_INTERMEDIATE) != 0) {
-                
-                mSavedSelectionStart = start;
-            } else {
-                mActionQueue.offer(Action.newSetSelection(start, -1));
-            }
-        } else if (what == Selection.SELECTION_END) {
-            mActionQueue.offer(Action.newSetSelection(mSavedSelectionStart, end));
-            mSavedSelectionStart = -1;
-        } else {
-            mActionQueue.offer(Action.newSetSpan(what, start, end, flags));
-        }
+        mActionQueue.offer(Action.newSetSpan(what, start, end, flags));
     }
 
     

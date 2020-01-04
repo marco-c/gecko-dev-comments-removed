@@ -241,7 +241,6 @@ public:
         , mIMEMaskEventsCount(1) 
         , mIMEUpdatingContext(false)
         , mIMESelectionChanged(false)
-        , mIMEMaskSelectionUpdate(false)
     {}
 
     ~Natives();
@@ -317,7 +316,6 @@ private:
     int32_t mIMEMaskEventsCount; 
     bool mIMEUpdatingContext;
     bool mIMESelectionChanged;
-    bool mIMEMaskSelectionUpdate;
 
     void SendIMEDummyKeyEvents();
     void AddIMETextChange(const IMETextChange& aChange);
@@ -1914,18 +1912,6 @@ ConvertAndroidColor(uint32_t aArgb)
                    (aArgb & 0xff000000) >> 24);
 }
 
-class AutoIMEMask {
-private:
-    bool mOldMask, *mMask;
-public:
-    AutoIMEMask(bool &aMask) : mOldMask(aMask), mMask(&aMask) {
-        aMask = true;
-    }
-    ~AutoIMEMask() {
-        *mMask = mOldMask;
-    }
-};
-
 
 
 
@@ -2164,10 +2150,6 @@ nsWindow::Natives::NotifyIME(const IMENotification& aIMENotification)
         }
 
         case NOTIFY_IME_OF_SELECTION_CHANGE: {
-            if (mIMEMaskSelectionUpdate) {
-                return true;
-            }
-
             ALOGIME("IME: NOTIFY_IME_OF_SELECTION_CHANGE");
 
             PostFlushIMEChanges();
@@ -2274,7 +2256,6 @@ nsWindow::Natives::OnImeSynchronize()
 void
 nsWindow::Natives::OnImeAcknowledgeFocus()
 {
-    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
     MOZ_ASSERT(mIMEMaskEventsCount > 0);
 
     if (--mIMEMaskEventsCount > 0) {
@@ -2302,8 +2283,6 @@ void
 nsWindow::Natives::OnImeReplaceText(int32_t aStart, int32_t aEnd,
                                     jni::String::Param aText, bool aComposing)
 {
-    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
-
     if (mIMEMaskEventsCount > 0) {
         
         return OnImeSynchronize();
@@ -2312,11 +2291,7 @@ nsWindow::Natives::OnImeReplaceText(int32_t aStart, int32_t aEnd,
     
 
 
-
-
-
     RefPtr<nsWindow> kungFuDeathGrip(&window);
-    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
     nsString string(aText);
 
     const auto composition(window.GetIMEComposition());
@@ -2410,8 +2385,6 @@ nsWindow::Natives::OnImeReplaceText(int32_t aStart, int32_t aEnd,
 void
 nsWindow::Natives::OnImeSetSelection(int32_t aStart, int32_t aEnd)
 {
-    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
-
     if (mIMEMaskEventsCount > 0) {
         
         return;
@@ -2420,11 +2393,7 @@ nsWindow::Natives::OnImeSetSelection(int32_t aStart, int32_t aEnd)
     
 
 
-
-
-
     RefPtr<nsWindow> kungFuDeathGrip(&window);
-    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
     WidgetSelectionEvent selEvent(true, eSetSelection, &window);
 
     window.InitEvent(selEvent, nullptr);
@@ -2453,8 +2422,6 @@ nsWindow::Natives::OnImeSetSelection(int32_t aStart, int32_t aEnd)
 void
 nsWindow::Natives::OnImeRemoveComposition()
 {
-    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
-
     if (mIMEMaskEventsCount > 0) {
         
         return;
@@ -2464,10 +2431,6 @@ nsWindow::Natives::OnImeRemoveComposition()
 
 
 
-
-
-
-    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
     window.RemoveIMEComposition();
     mIMERanges->Clear();
 }
@@ -2478,8 +2441,6 @@ nsWindow::Natives::OnImeAddCompositionRange(
         int32_t aRangeLineStyle, bool aRangeBoldLine, int32_t aRangeForeColor,
         int32_t aRangeBackColor, int32_t aRangeLineColor)
 {
-    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
-
     if (mIMEMaskEventsCount > 0) {
         
         return;
@@ -2504,8 +2465,6 @@ nsWindow::Natives::OnImeAddCompositionRange(
 void
 nsWindow::Natives::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
 {
-    MOZ_ASSERT(!mIMEMaskSelectionUpdate);
-
     if (mIMEMaskEventsCount > 0) {
         
         return;
@@ -2519,11 +2478,7 @@ nsWindow::Natives::OnImeUpdateComposition(int32_t aStart, int32_t aEnd)
 
 
 
-
-
-
     RefPtr<nsWindow> kungFuDeathGrip(&window);
-    AutoIMEMask selMask(mIMEMaskSelectionUpdate);
     const auto composition(window.GetIMEComposition());
     MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
 
