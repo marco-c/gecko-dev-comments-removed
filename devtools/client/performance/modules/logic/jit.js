@@ -128,41 +128,6 @@ const OptimizationSite = function (id, opts) {
 
 
 
-OptimizationSite.prototype.hasSuccessfulOutcome = function () {
-  let attempts = this.getAttempts();
-  let lastOutcome = attempts[attempts.length - 1].outcome;
-  return OptimizationSite.isSuccessfulOutcome(lastOutcome);
-};
-
-
-
-
-
-
-
-OptimizationSite.prototype.getAttempts = function () {
-  return this.data.attempts;
-};
-
-
-
-
-
-
-
-OptimizationSite.prototype.getIonTypes = function () {
-  return this.data.types;
-};
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -240,8 +205,22 @@ JITOptimizations.prototype = {
 
 
 
-OptimizationSite.isSuccessfulOutcome = JITOptimizations.isSuccessfulOutcome = function (outcome) {
+function isSuccessfulOutcome (outcome) {
   return !!~SUCCESSFUL_OUTCOMES.indexOf(outcome);
+};
+
+
+
+
+
+
+
+
+
+function hasSuccessfulOutcome (optimizationSite) {
+  let attempts = optimizationSite.data.attempts;
+  let lastOutcome = attempts[attempts.length - 1].outcome;
+  return isSuccessfulOutcome(lastOutcome);
 };
 
 function maybeString(stringTable, index) {
@@ -355,3 +334,6 @@ function createTierGraphDataFromFrameNode (frameNode, sampleTimes, bucketSize) {
 exports.createTierGraphDataFromFrameNode = createTierGraphDataFromFrameNode;
 exports.OptimizationSite = OptimizationSite;
 exports.JITOptimizations = JITOptimizations;
+exports.hasSuccessfulOutcome = hasSuccessfulOutcome;
+exports.isSuccessfulOutcome = isSuccessfulOutcome;
+exports.SUCCESSFUL_OUTCOMES = SUCCESSFUL_OUTCOMES;
