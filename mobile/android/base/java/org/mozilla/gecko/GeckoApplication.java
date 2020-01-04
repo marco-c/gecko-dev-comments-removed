@@ -4,8 +4,15 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.AdjustConstants;
-import org.mozilla.gecko.AppConstants;
+import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.os.SystemClock;
+import android.util.Log;
+
+import com.squareup.leakcanary.LeakCanary;
+
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.LocalBrowserDB;
@@ -17,16 +24,8 @@ import org.mozilla.gecko.util.Clipboard;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
-import android.app.Application;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.Configuration;
-import android.os.SystemClock;
-import android.util.Log;
-
-import com.squareup.leakcanary.LeakCanary;
-
 import java.io.File;
+import java.lang.reflect.Method;
 
 public class GeckoApplication extends Application 
     implements ContextGetter {
@@ -164,6 +163,26 @@ public class GeckoApplication extends Application
         GeckoService.register();
 
         super.onCreate();
+
+        if (AppConstants.MOZ_ANDROID_GCM) {
+            
+            ThreadUtils.postToBackgroundThread(new Runnable() {
+                @Override
+                public void run() {
+                    
+                    
+                    
+                    try {
+                        final Class<?> clazz = Class.forName("org.mozilla.gecko.push.PushService");
+                        final Method onCreate = clazz.getMethod("onCreate", Context.class);
+                        onCreate.invoke(null, getApplicationContext()); 
+                    } catch (Exception e) {
+                        Log.e(LOG_TAG, "Got exception during startup; ignoring.", e);
+                        return;
+                    }
+                }
+            });
+        }
 
         if (AppConstants.MOZ_ANDROID_DOWNLOAD_CONTENT_SERVICE) {
             DownloadContentService.startStudy(this);
