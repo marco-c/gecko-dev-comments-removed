@@ -232,6 +232,7 @@ private:
                             
   int32_t mCurrentPos;      
                             
+                            
 
   
   uint32_t mAbsoluteModeNumPixels;
