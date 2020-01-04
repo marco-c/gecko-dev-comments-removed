@@ -185,18 +185,9 @@ loop.roomViews = function (mozL10n) {
       nextState.roomState === ROOM_STATES.MEDIA_WAIT) {
         this.props.dispatcher.dispatch(new sharedActions.SetupStreamElements({ 
           publisherConfig: this.getDefaultPublisherConfig({ 
-            publishVideo: !this.state.videoMuted }) }));}
+            publishVideo: !this.state.videoMuted }) }));}}, 
 
 
-
-
-      
-      
-      
-      if (nextState.roomState === ROOM_STATES.SESSION_CONNECTED && 
-      !(this.state.roomState === ROOM_STATES.SESSION_CONNECTED || 
-      this.state.roomState === ROOM_STATES.HAS_PARTICIPANTS)) {
-        this.props.dispatcher.dispatch(new sharedActions.StartBrowserShare());}}, 
 
 
 

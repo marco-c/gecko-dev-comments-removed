@@ -881,12 +881,46 @@ var WindowListener = {
 
 
 
+      _lastNotification: {}, 
+
+      
+
+
+
+      _showingBrowserSharingInfoBar: function _showingBrowserSharingInfoBar() {
+        var browser = gBrowser.selectedBrowser;
+        var box = gBrowser.getNotificationBox(browser);
+        var notification = box.getNotificationWithValue(kBrowserSharingNotificationId);
+
+        return !!notification;}, 
+
+
+      
+
+
+
+
 
 
       _maybeShowBrowserSharingInfoBar: function _maybeShowBrowserSharingInfoBar(currentRoomToken) {var _this13 = this;
-        this._hideBrowserSharingInfoBar();
-
         var participantsCount = this.LoopRooms.getNumParticipants(currentRoomToken);
+
+        if (this._showingBrowserSharingInfoBar()) {
+          
+          
+          
+          var notAlone = participantsCount > 1;
+          var previousNotAlone = this._lastNotification.participantsCount <= 1;
+
+          
+          
+          if (notAlone !== previousNotAlone && 
+          this._browserSharePaused === this._lastNotification.paused) {
+            return;}
+
+
+          this._hideBrowserSharingInfoBar();}
+
 
         var initStrings = this._setInfoBarStrings(participantsCount > 1, this._browserSharePaused);
 
@@ -935,7 +969,10 @@ var WindowListener = {
         bar.classList.toggle("paused", !!this._browserSharePaused);
 
         
-        bar.persistence = -1;}, 
+        bar.persistence = -1;
+
+        this._lastNotification.participantsCount = participantsCount;
+        this._lastNotification.paused = this._browserSharePaused;}, 
 
 
       

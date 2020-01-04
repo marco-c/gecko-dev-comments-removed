@@ -41,8 +41,7 @@ loop.OTSdkDriver = function () {
 
     this.dispatcher.register(this, [
     "setupStreamElements", 
-    "setMute", 
-    "toggleBrowserSharing"]);
+    "setMute"]);
 
 
     
@@ -239,9 +238,10 @@ loop.OTSdkDriver = function () {
 
 
 
+    toggleBrowserSharing: function toggleBrowserSharing(enabled) {
+      if (this.screenshare) {
+        this.screenshare.publishVideo(enabled);}}, 
 
-    toggleBrowserSharing: function toggleBrowserSharing(actionData) {
-      this.screenshare.publishVideo(actionData.enabled);}, 
 
 
     
@@ -537,10 +537,8 @@ loop.OTSdkDriver = function () {
     _handleRemoteScreenShareCreated: function _handleRemoteScreenShareCreated(stream) {
       
       
-      if (!stream[STREAM_PROPERTIES.HAS_VIDEO]) {
-        this.dispatcher.dispatch(new sharedActions.VideoScreenStreamChanged({ 
-          hasVideo: false }));}
-
+      this.dispatcher.dispatch(new sharedActions.VideoScreenStreamChanged({ 
+        hasVideo: stream[STREAM_PROPERTIES.HAS_VIDEO] }));
 
 
       

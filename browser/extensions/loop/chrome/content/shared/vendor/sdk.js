@@ -14169,12 +14169,40 @@ var substr = 'ab'.substr(-1) === 'b'
 
 
 var process = module.exports = {};
+
+
+
+
+
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+(function () {
+  try {
+    cachedSetTimeout = setTimeout;
+  } catch (e) {
+    cachedSetTimeout = function () {
+      throw new Error('setTimeout is not defined');
+    }
+  }
+  try {
+    cachedClearTimeout = clearTimeout;
+  } catch (e) {
+    cachedClearTimeout = function () {
+      throw new Error('clearTimeout is not defined');
+    }
+  }
+} ())
 var queue = [];
 var draining = false;
 var currentQueue;
 var queueIndex = -1;
 
 function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
     draining = false;
     if (currentQueue.length) {
         queue = currentQueue.concat(queue);
@@ -14190,7 +14218,7 @@ function drainQueue() {
     if (draining) {
         return;
     }
-    var timeout = setTimeout(cleanUpNextTick);
+    var timeout = cachedSetTimeout(cleanUpNextTick);
     draining = true;
 
     var len = queue.length;
@@ -14207,7 +14235,7 @@ function drainQueue() {
     }
     currentQueue = null;
     draining = false;
-    clearTimeout(timeout);
+    cachedClearTimeout(timeout);
 }
 
 process.nextTick = function (fun) {
@@ -14219,7 +14247,7 @@ process.nextTick = function (fun) {
     }
     queue.push(new Item(fun, args));
     if (queue.length === 1 && !draining) {
-        setTimeout(drainQueue, 0);
+        cachedSetTimeout(drainQueue, 0);
     }
 };
 
@@ -20254,9 +20282,9 @@ if (WebSocket) ws.prototype = WebSocket.prototype;
 
 },{}],111:[function(require,module,exports){
 module.exports = {
-  "version": "v2.7.5",
-  "build": "ccd6792",
-  "buildTime": "March 18 10:46:49 2016",
+  "version": "v2.7.6",
+  "build": "cff9122",
+  "buildTime": "June 24 07:05:32 2016",
   "debug": "false",
   "websiteURL": "http://www.tokbox.com",
   "cdnURL": "http://static.opentok.com",
@@ -29954,6 +29982,7 @@ var PeerConnection = function(config) {
       subscribeProcessor(
         _peerConnection,
         config.numberOfSimulcastStreams,
+        config.offerConstraints,
 
         
         function(offer) {
@@ -30423,8 +30452,13 @@ module.exports = function PublisherPeerConnection(
     var pcConfig = {
       iceServers: iceServers,
       channels: channels,
-      numberOfSimulcastStreams: numberOfSimulcastStreams
+      numberOfSimulcastStreams: numberOfSimulcastStreams,
+      offerConstraints: {}
     };
+
+    if (session.sessionInfo.reconnection) {
+      pcConfig.offerConstraints.iceRestart = true;
+    }
 
     setCertificates(pcConfig, function(err, pcConfigWithCerts) {
       if (err) {
@@ -31224,6 +31258,7 @@ var SDPHelpers = require('./sdp_helpers.js');
 module.exports = function subscribeProcessor(
   peerConnection,
   numberOfSimulcastStreams,
+  offerConstraints,
   success,
   failure
 ) {
@@ -31270,9 +31305,7 @@ module.exports = function subscribeProcessor(
     generateErrorCallback('Error while creating Offer', 'CreateOffer'),
 
     
-    {
-      iceRestart: true
-    }
+    offerConstraints
   );
 };
 
@@ -31486,7 +31519,13 @@ module.exports = function SubscriberPeerConnection(remoteConnection, session, st
 
   
   this.init = function(completion) {
-    var pcConfig = {};
+    var pcConfig = {
+      offerConstraints: {}
+    };
+
+    if (session.sessionInfo.reconnection) {
+      pcConfig.offerConstraints.iceRestart = true;
+    }
 
     setCertificates(pcConfig, function(err, pcConfigWithCerts) {
       if (err) {

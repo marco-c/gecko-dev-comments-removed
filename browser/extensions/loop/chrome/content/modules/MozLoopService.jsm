@@ -1105,19 +1105,19 @@ var MozLoopServiceInternal = {
         
         
       } else if (chatboxInstance.setAttribute) {
-          
-          
-          chatboxInstance.setAttribute("customSize", "loopDefault");
-          chatboxInstance.parentNode.setAttribute("customSize", "loopDefault");
-          var buttons = "minimize,";
-          if (MozLoopService.getLoopPref("conversationPopOut.enabled")) {
-            buttons += "swap,";}
+        
+        
+        chatboxInstance.setAttribute("customSize", "loopDefault");
+        chatboxInstance.parentNode.setAttribute("customSize", "loopDefault");
+        var buttons = "minimize,";
+        if (MozLoopService.getLoopPref("conversationPopOut.enabled")) {
+          buttons += "swap,";}
 
-          Chat.loadButtonSet(chatboxInstance, buttons + kChatboxHangupButton.id);
-          
-          
-        } else {
-            resolve(windowId);}});}, 
+        Chat.loadButtonSet(chatboxInstance, buttons + kChatboxHangupButton.id);
+        
+        
+      } else {
+        resolve(windowId);}});}, 
 
 
 

@@ -718,8 +718,16 @@ loop.store.ActiveRoomStore = function (mozL10n) {
 
       this._sdkDriver.connectSession(actionData);
 
-      loop.request("AddConversationContext", this._storeState.windowId, 
-      actionData.sessionId, "");}, 
+      this._browserSharingListener = this._handleSwitchBrowserShare.bind(this);
+
+      
+      
+      
+      loop.subscribe("BrowserSwitch", this._browserSharingListener);
+
+      loop.requestMulti(["AddConversationContext", this._storeState.windowId, 
+      actionData.sessionId, ""], 
+      ["AddBrowserSharingListener", this.getStoreState().windowId]);}, 
 
 
     
@@ -780,7 +788,14 @@ loop.store.ActiveRoomStore = function (mozL10n) {
       this.setStoreState({ 
         remoteAudioEnabled: actionData.hasAudio, 
         remoteVideoEnabled: actionData.hasVideo, 
-        remoteSrcMediaElement: actionData.srcMediaElement });}, 
+        remoteSrcMediaElement: actionData.srcMediaElement });
+
+
+      
+      
+      
+      if (this._isDesktop) {
+        this.startBrowserShare();}}, 
 
 
 
@@ -866,10 +881,9 @@ loop.store.ActiveRoomStore = function (mozL10n) {
       if (Array.isArray(windowId)) {
         windowId = windowId[0];}
 
-      if (!windowId) {
-        return;}
 
-      if (windowId.isError) {
+      
+      if (windowId && windowId.isError) {
         console.error("Error getting the windowId: " + windowId.message);
         this.dispatchAction(new sharedActions.ScreenSharingState({ 
           state: SCREEN_SHARE_STATES.INACTIVE }));
@@ -877,7 +891,26 @@ loop.store.ActiveRoomStore = function (mozL10n) {
         return;}
 
 
+      
+      if (!windowId) {
+        
+        if (!this._savedWindowId) {
+          return;}
+
+
+        windowId = this._savedWindowId;
+        delete this._savedWindowId;}
+
+
       var screenSharingState = this.getStoreState().screenSharingState;
+
+      
+      
+      if (screenSharingState === SCREEN_SHARE_STATES.INACTIVE || 
+      this._storeState.sharingPaused) {
+        this._savedWindowId = windowId;
+        return;}
+
 
       if (screenSharingState === SCREEN_SHARE_STATES.PENDING) {
         
@@ -947,14 +980,10 @@ loop.store.ActiveRoomStore = function (mozL10n) {
         state: SCREEN_SHARE_STATES.PENDING }));
 
 
-      this._browserSharingListener = this._handleSwitchBrowserShare.bind(this);
-
       
       
       
-      loop.request("AddBrowserSharingListener", this.getStoreState().windowId).
-      then(this._browserSharingListener);
-      loop.subscribe("BrowserSwitch", this._browserSharingListener);}, 
+      this._handleSwitchBrowserShare();}, 
 
 
     
@@ -983,6 +1012,16 @@ loop.store.ActiveRoomStore = function (mozL10n) {
     toggleBrowserSharing: function toggleBrowserSharing(actionData) {
       this.setStoreState({ 
         sharingPaused: !actionData.enabled });
+
+
+      
+      
+      if (actionData.enabled && 
+      this._storeState.screenSharingState === SCREEN_SHARE_STATES.PENDING) {
+        this._handleSwitchBrowserShare();} else 
+      {
+        
+        this._sdkDriver.toggleBrowserSharing(actionData.enabled);}
 
 
       

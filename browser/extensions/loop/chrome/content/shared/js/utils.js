@@ -361,17 +361,17 @@ if (inChrome) {
       
       
     } else if ("MediaStreamTrack" in rootObject && 
-      "getSources" in rootObject.MediaStreamTrack) {
-        rootObject.MediaStreamTrack.getSources(function (result) {
-          function checkForInput(device) {
-            return device.kind === "audio" || device.kind === "video";}
+    "getSources" in rootObject.MediaStreamTrack) {
+      rootObject.MediaStreamTrack.getSources(function (result) {
+        function checkForInput(device) {
+          return device.kind === "audio" || device.kind === "video";}
 
 
-          callback(result.some(checkForInput));});} else 
+        callback(result.some(checkForInput));});} else 
 
-      {
-        
-        callback(true);}}
+    {
+      
+      callback(true);}}
 
 
 
