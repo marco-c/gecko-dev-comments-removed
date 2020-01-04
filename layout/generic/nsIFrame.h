@@ -2953,6 +2953,7 @@ NS_PTR_TO_INT32(frame->Properties().Get(nsIFrame::ParagraphDepthProperty()))
 
 
   inline bool IsFlexOrGridItem() const;
+  inline bool IsFlexOrGridContainer() const;
 
   
 

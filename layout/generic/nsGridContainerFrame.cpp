@@ -2799,12 +2799,13 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
     }
     WritingMode childWM = child->GetWritingMode();
     LogicalSize childCBSize = cb.Size(wm).ConvertTo(childWM, wm);
+    LogicalSize percentBasis(childCBSize);
     
     
     childCBSize.BSize(childWM) = NS_UNCONSTRAINEDSIZE;
 
     Maybe<nsHTMLReflowState> childRS; 
-    childRS.emplace(pc, *aState.mReflowState, child, childCBSize);
+    childRS.emplace(pc, *aState.mReflowState, child, childCBSize, &percentBasis);
     
     
     
@@ -2835,7 +2836,7 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
                           NS_FRAME_NO_MOVE_FRAME | NS_FRAME_NO_SIZE_VIEW);
         childSize.reset(); 
         childRS.reset();   
-        childRS.emplace(pc, *aState.mReflowState, child, childCBSize);
+        childRS.emplace(pc, *aState.mReflowState, child, childCBSize, &percentBasis);
         if ((alignResize && alignResize.value() == eLogicalAxisBlock) ||
             (justifyResize && justifyResize.value() == eLogicalAxisBlock)) {
           childRS->SetComputedBSize(newContentSize.BSize(childWM));
