@@ -28,6 +28,7 @@ BUILD_KINDS = set([
     'hazard',
     'l10n',
     'upload-symbols',
+    'valgrind',
 ])
 
 
