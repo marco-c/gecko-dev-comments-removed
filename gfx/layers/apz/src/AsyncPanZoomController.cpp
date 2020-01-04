@@ -1318,7 +1318,6 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
     
     if (!SnapBackIfOverscrolled()) {
       SetState(NOTHING);
-      RequestSnap();
     }
     return nsEventStatus_eIgnore;
 
@@ -2687,6 +2686,9 @@ bool AsyncPanZoomController::SnapBackIfOverscrolled() {
     StartOverscrollAnimation(ParentLayerPoint(0, 0));
     return true;
   }
+  
+  
+  RequestSnap();
   return false;
 }
 
