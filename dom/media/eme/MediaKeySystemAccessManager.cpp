@@ -13,6 +13,9 @@
 #ifdef XP_WIN
 #include "mozilla/WindowsVersion.h"
 #endif
+#ifdef XP_MACOSX
+#include "nsCocoaFeatures.h"
+#endif
 #include "nsPrintfCString.h"
 
 namespace mozilla {
@@ -72,6 +75,23 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
   Sequence<MediaKeySystemOptions> optionsNotPassed;
   const auto& options = aOptions.WasPassed() ? aOptions.Value() : optionsNotPassed;
   Request(aPromise, aKeySystem, options, RequestType::Initial);
+}
+
+static bool
+ShouldTrialCreateGMP(const nsAString& aKeySystem)
+{
+  
+  
+  
+  return
+#ifdef XP_WIN
+    IsVistaOrLater();
+#elif defined(XP_MACOSX)
+    aKeySystem.EqualsLiteral("com.adobe.primetime") &&
+    nsCocoaFeatures::OnLionOrLater();
+#else
+    false;
+#endif
 }
 
 void
@@ -161,16 +181,13 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
   if (aOptions.IsEmpty() ||
       MediaKeySystemAccess::IsSupported(keySystem, aOptions)) {
     nsRefPtr<MediaKeySystemAccess> access(new MediaKeySystemAccess(mWindow, keySystem));
-#ifdef XP_WIN
-    if (IsVistaOrLater()) {
-      
+   if (ShouldTrialCreateGMP(keySystem)) {
       
       
       
       mTrialCreator->MaybeAwaitTrialCreate(keySystem, access, aPromise, mWindow);
       return;
     }
-#endif
     aPromise->MaybeResolve(access);
     return;
   }
