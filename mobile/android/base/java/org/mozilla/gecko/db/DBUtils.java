@@ -63,6 +63,34 @@ public class DBUtils {
         return result;
     }
 
+    
+
+
+    public static String[] concatenateSelectionArgs(String[]... values) {
+        
+        
+        
+        int totalLength = 0;
+        for (String[] v : values) {
+            if (v != null) {
+                totalLength += v.length;
+            }
+        }
+
+        String[] result = new String[totalLength];
+
+        int position = 0;
+        for (String[] v: values) {
+            if (v != null) {
+                int currentLength = v.length;
+                System.arraycopy(v, 0, result, position, currentLength);
+                position += currentLength;
+            }
+        }
+
+        return result;
+    }
+
     public static void replaceKey(ContentValues aValues, String aOriginalKey,
                                   String aNewKey, String aDefault) {
         String value = aDefault;
