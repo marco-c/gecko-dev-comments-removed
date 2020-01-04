@@ -250,6 +250,11 @@ class nsObjectLoadingContent : public nsImageLoadingContent
       return runID;
     }
 
+    bool IsRewrittenYoutubeEmbed() const
+    {
+      return mRewrittenYoutubeEmbed;
+    }
+
   protected:
     
 
@@ -628,7 +633,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     FallbackType                mFallbackType : 8;
 
     uint32_t                    mRunID;
-    bool                        mHasRunID;
+    bool                        mHasRunID : 1;
 
     
     
@@ -657,6 +662,12 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     
     
     bool                        mScriptRequested : 1;
+
+    
+    
+    
+    
+    bool                        mRewrittenYoutubeEmbed : 1;
 
     nsWeakFrame                 mPrintFrame;
 

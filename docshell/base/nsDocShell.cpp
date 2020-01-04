@@ -86,6 +86,7 @@
 #include "nsWhitespaceTokenizer.h"
 #include "nsICookieService.h"
 #include "nsIConsoleReportCollector.h"
+#include "nsObjectLoadingContent.h"
 
 
 
@@ -2524,15 +2525,35 @@ nsDocShell::GetFullscreenAllowed(bool* aFullscreenAllowed)
   if (frameElement && !frameElement->IsXULElement()) {
     
     
-    if (!frameElement->IsHTMLElement(nsGkAtoms::iframe)) {
-      return NS_OK;
-    }
-    
-    
-    if (!frameElement->HasAttr(kNameSpaceID_None,
-                               nsGkAtoms::allowfullscreen) &&
-        !frameElement->HasAttr(kNameSpaceID_None,
-                               nsGkAtoms::mozallowfullscreen)) {
+    if (frameElement->IsHTMLElement(nsGkAtoms::iframe)) {
+      
+      
+      if (!frameElement->HasAttr(kNameSpaceID_None,
+                                 nsGkAtoms::allowfullscreen) &&
+          !frameElement->HasAttr(kNameSpaceID_None,
+                                 nsGkAtoms::mozallowfullscreen)) {
+        return NS_OK;
+      }
+    } else if (frameElement->IsHTMLElement(nsGkAtoms::embed)) {
+      
+      nsCOMPtr<nsIObjectLoadingContent> objectLoadingContent =
+        do_QueryInterface(frameElement);
+      if (!objectLoadingContent) {
+        return NS_OK;
+      }
+      nsObjectLoadingContent* olc =
+        static_cast<nsObjectLoadingContent*>(objectLoadingContent.get());
+      if (!olc->IsRewrittenYoutubeEmbed()) {
+        return NS_OK;
+      }
+      
+      
+      if (!frameElement->HasAttr(kNameSpaceID_None,
+                                 nsGkAtoms::allowfullscreen)) {
+        return NS_OK;
+      }
+    } else {
+      
       return NS_OK;
     }
     nsIDocument* doc = frameElement->GetUncomposedDoc();
