@@ -2550,7 +2550,7 @@ struct nsStyleDisplay
                                 
                                 
                                 
-  AutoTArray<nsString, 1> mWillChange;
+  nsTArray<nsString> mWillChange;
 
   uint8_t mTouchAction;         
   uint8_t mScrollBehavior;      
