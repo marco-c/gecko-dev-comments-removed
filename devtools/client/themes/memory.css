@@ -58,6 +58,12 @@ html, body, #app, #memory-tool {
 
 
 
+  display: flex;
+  align-items: center;
+  
+
+
+
 
   margin-inline-start: calc(var(--sidebar-width) - 3px - 32px);
   border-inline-start: 1px solid var(--theme-splitter-color);
@@ -65,6 +71,12 @@ html, body, #app, #memory-tool {
 }
 
 .devtools-toolbar > .toolbar-group > label {
+  
+
+
+
+  display: flex;
+  align-items: center;
   margin-inline-end: 5px;
 }
 
