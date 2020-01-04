@@ -142,7 +142,7 @@ New_HTMLLink(nsIContent* aContent, Accessible* aContext)
 {
   
   
-  nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(aContent);
+  nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(aContent->AsElement());
   if (roleMapEntry && roleMapEntry->role != roles::NOTHING &&
       roleMapEntry->role != roles::LINK) {
     return new HyperTextAccessibleWrap(aContent, aContext->Document());
@@ -1128,11 +1128,11 @@ nsAccessibilityService::GetOrCreateAccessible(nsINode* aNode,
     }
 
     newAcc = new HyperTextAccessibleWrap(content, document);
-    document->BindToDocument(newAcc, aria::GetRoleMap(aNode));
+    document->BindToDocument(newAcc, aria::GetRoleMap(content->AsElement()));
     return newAcc;
   }
 
-  nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(aNode);
+  nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
 
   
   

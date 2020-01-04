@@ -1463,10 +1463,10 @@ DocAccessible::DoInitialUpdate()
   
   
   
-  nsIContent* contentElm = nsCoreUtils::GetRoleContent(mDocumentNode);
-  if (contentElm) {
-    mContent = contentElm;
-    SetRoleMapEntry(aria::GetRoleMap(mContent));
+  dom::Element* rootEl = nsCoreUtils::GetRoleContent(mDocumentNode);
+  if (rootEl) {
+    mContent = rootEl;
+    SetRoleMapEntry(aria::GetRoleMap(rootEl));
   }
 
   
@@ -1700,10 +1700,10 @@ DocAccessible::ProcessContentInserted(Accessible* aContainer,
 
     if (container == this) {
       
-      nsIContent* rootContent = nsCoreUtils::GetRoleContent(mDocumentNode);
-      if (rootContent != mContent) {
-        mContent = rootContent;
-        SetRoleMapEntry(aria::GetRoleMap(mContent));
+      dom::Element* rootEl = nsCoreUtils::GetRoleContent(mDocumentNode);
+      if (rootEl != mContent) {
+        mContent = rootEl;
+        SetRoleMapEntry(aria::GetRoleMap(rootEl));
       }
 
       

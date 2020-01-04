@@ -85,8 +85,8 @@ public:
 
 
   static void SetLiveContainerAttributes(nsIPersistentProperties *aAttributes,
-                                         nsIContent *aStartContent,
-                                         nsIContent *aTopContent);
+                                         nsIContent* aStartContent,
+                                         mozilla::dom::Element* aTopEl);
 
   
 

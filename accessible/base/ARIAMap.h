@@ -210,7 +210,7 @@ extern nsRoleMapEntry gEmptyRoleMap;
 
 
 
-nsRoleMapEntry* GetRoleMap(nsINode* aNode);
+nsRoleMapEntry* GetRoleMap(dom::Element* aEl);
 
 
 

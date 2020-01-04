@@ -117,7 +117,7 @@ public:
 
 
 
-  static nsIContent* GetRoleContent(nsINode *aNode);
+  static mozilla::dom::Element* GetRoleContent(nsINode *aNode);
 
   
 
