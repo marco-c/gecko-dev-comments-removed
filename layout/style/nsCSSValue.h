@@ -1554,6 +1554,21 @@ private:
   nsCSSValueGradient& operator=(const nsCSSValueGradient& aOther) = delete;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct nsCSSValueTokenStream final {
   nsCSSValueTokenStream();
 

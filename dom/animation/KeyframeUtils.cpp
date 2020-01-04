@@ -373,6 +373,12 @@ static bool
 HasValidOffsets(const nsTArray<Keyframe>& aKeyframes);
 
 static void
+MarkAsComputeValuesFailureKey(PropertyValuePair& aPair);
+
+static bool
+IsComputeValuesFailureKey(const PropertyValuePair& aPair);
+
+static void
 BuildSegmentsFromValueEntries(nsStyleContext* aStyleContext,
                               nsTArray<KeyframeValueEntry>& aEntries,
                               nsTArray<AnimationProperty>& aResult);
@@ -518,7 +524,8 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
         nsCSSValueTokenStream* tokenStream = pair.mValue.GetTokenStreamValue();
         if (!StyleAnimationValue::ComputeValues(pair.mProperty,
               CSSEnabledState::eForAllContent, aElement, aStyleContext,
-              tokenStream->mTokenStream,  false, values)) {
+              tokenStream->mTokenStream,  false, values) ||
+            IsComputeValuesFailureKey(pair)) {
           continue;
         }
       } else {
@@ -677,6 +684,17 @@ ConvertKeyframeSequence(JSContext* aCx,
       MOZ_ASSERT(pair.mValues.Length() == 1);
       keyframe->mPropertyValues.AppendElement(
         MakePropertyValuePair(pair.mProperty, pair.mValues[0], parser, doc));
+
+      
+      
+      
+      
+      
+      
+      if (nsCSSProps::IsShorthand(pair.mProperty) &&
+          keyframeDict.mSimulateComputeValuesFailure) {
+        MarkAsComputeValuesFailureKey(keyframe->mPropertyValues.LastElement());
+      }
     }
   }
 
@@ -907,6 +925,51 @@ HasValidOffsets(const nsTArray<Keyframe>& aKeyframes)
     }
   }
   return true;
+}
+
+
+
+
+
+
+
+
+
+static void
+MarkAsComputeValuesFailureKey(PropertyValuePair& aPair)
+{
+  MOZ_ASSERT(nsCSSProps::IsShorthand(aPair.mProperty),
+             "Only shorthand property values can be marked as failure values");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCSSValueTokenStream* tokenStream = aPair.mValue.GetTokenStreamValue();
+  MOZ_ASSERT(tokenStream->mPropertyID == eCSSProperty_UNKNOWN,
+             "Shorthand value should initially have an unknown property ID");
+  tokenStream->mPropertyID = eCSSPropertyExtra_no_properties;
+}
+
+
+
+
+
+
+
+
+
+
+static bool
+IsComputeValuesFailureKey(const PropertyValuePair& aPair)
+{
+  return nsCSSProps::IsShorthand(aPair.mProperty) &&
+         aPair.mValue.GetTokenStreamValue()->mPropertyID ==
+           eCSSPropertyExtra_no_properties;
 }
 
 static already_AddRefed<nsStyleContext>
