@@ -60,6 +60,10 @@ public:
                     
                     
                     
+    eRestore,       
+                    
+                    
+                    
 
     eSentinel       
   };
@@ -359,6 +363,12 @@ public:
   void SetScrollOffsetUpdated(uint32_t aScrollGeneration)
   {
     mScrollUpdateType = eMainThread;
+    mScrollGeneration = aScrollGeneration;
+  }
+
+  void SetScrollOffsetRestored(uint32_t aScrollGeneration)
+  {
+    mScrollUpdateType = eRestore;
     mScrollGeneration = aScrollGeneration;
   }
 

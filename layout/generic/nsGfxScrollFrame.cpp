@@ -2124,7 +2124,7 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
 
   nsRect scrollRange = GetScrollRangeForClamping();
   mDestination = scrollRange.ClampPoint(aScrollPosition);
-  if (mDestination != aScrollPosition && aOrigin == nsGkAtoms::restore) {
+  if (mDestination != aScrollPosition && aOrigin == nsGkAtoms::restore && !PageIsStillLoading()) {
     
     
     aOrigin = nsGkAtoms::other;

@@ -3226,6 +3226,20 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
     APZC_LOG("%p NotifyLayersUpdated short-circuit\n", this);
     return;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  CSSPoint lastScrollOffset = mLastContentPaintMetadata.GetMetrics().GetScrollOffset();
+  bool userScrolled =
+    !FuzzyEqualsAdditive(mFrameMetrics.GetScrollOffset().x, lastScrollOffset.x) ||
+    !FuzzyEqualsAdditive(mFrameMetrics.GetScrollOffset().y, lastScrollOffset.y);
+
   if (aLayerMetrics.GetScrollUpdateType() != FrameMetrics::ScrollOffsetUpdateType::ePending) {
     mLastContentPaintMetadata = aScrollMetadata;
   }
@@ -3290,6 +3304,12 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
   
   bool scrollOffsetUpdated = aLayerMetrics.GetScrollOffsetUpdated()
         && (aLayerMetrics.GetScrollGeneration() != mFrameMetrics.GetScrollGeneration());
+
+  if (scrollOffsetUpdated && userScrolled &&
+      aLayerMetrics.GetScrollUpdateType() == FrameMetrics::ScrollOffsetUpdateType::eRestore) {
+    APZC_LOG("%p dropping scroll update of type eRestore because of user scroll\n", this);
+    scrollOffsetUpdated = false;
+  }
 
   bool smoothScrollRequested = aLayerMetrics.GetDoSmoothScroll()
        && (aLayerMetrics.GetScrollGeneration() != mFrameMetrics.GetScrollGeneration());

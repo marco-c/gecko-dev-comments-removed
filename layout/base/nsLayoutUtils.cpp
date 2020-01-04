@@ -8864,9 +8864,14 @@ nsLayoutUtils::ComputeScrollMetadata(nsIFrame* aForFrame,
     
     
     
-    if (CanScrollOriginClobberApz(scrollableFrame->LastScrollOrigin())) {
+    
+    
+    if (scrollableFrame->LastScrollOrigin() == nsGkAtoms::restore) {
+      metrics.SetScrollOffsetRestored(scrollableFrame->CurrentScrollGeneration());
+    } else if (CanScrollOriginClobberApz(scrollableFrame->LastScrollOrigin())) {
       metrics.SetScrollOffsetUpdated(scrollableFrame->CurrentScrollGeneration());
     }
+
     nsIAtom* lastSmoothScrollOrigin = scrollableFrame->LastSmoothScrollOrigin();
     if (lastSmoothScrollOrigin) {
       metrics.SetSmoothScrollOffsetUpdated(scrollableFrame->CurrentScrollGeneration());
