@@ -3407,13 +3407,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     bool isForcedValid = false;
     entry->GetIsForcedValid(&isForcedValid);
 
-    nsXPIDLCString framedBuf;
-    rv = entry->GetMetaDataElement("strongly-framed", getter_Copies(framedBuf));
-    
-    
-    bool weaklyFramed = NS_SUCCEEDED(rv) && framedBuf.EqualsLiteral("0");
-    bool isImmutable = !weaklyFramed && isHttps && mCachedResponseHead->Immutable();
-
     
     if (ResponseWouldVary(entry)) {
         LOG(("Validating based on Vary headers returning TRUE\n"));
@@ -3439,7 +3432,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     }
     
     
-    else if ((mLoadFlags & nsIRequest::VALIDATE_ALWAYS) && !isImmutable) {
+    else if (mLoadFlags & nsIRequest::VALIDATE_ALWAYS) {
         LOG(("Validating based on VALIDATE_ALWAYS load flag\n"));
         doValidation = true;
     }
@@ -3566,6 +3559,12 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     mCachedContentIsValid = !doValidation;
 
     if (doValidation) {
+        nsXPIDLCString buf;
+        rv = entry->GetMetaDataElement("strongly-framed", getter_Copies(buf));
+        
+        
+        bool weaklyFramed = NS_SUCCEEDED(rv) && buf.EqualsLiteral("0");
+
         
         
         
@@ -3582,7 +3581,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
         
         if (!mCachedResponseHead->NoStore() &&
             (mRequestHead.IsGet() || mRequestHead.IsHead()) &&
-            !mCustomConditionalRequest && !weaklyFramed && !isImmutable &&
+            !mCustomConditionalRequest && !weaklyFramed &&
             (mCachedResponseHead->Status() < 400)) {
 
             if (mConcurentCacheAccess) {
