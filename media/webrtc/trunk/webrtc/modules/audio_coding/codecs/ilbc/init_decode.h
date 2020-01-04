@@ -26,7 +26,7 @@
 
 
 int16_t WebRtcIlbcfix_InitDecode(  
-    iLBC_Dec_Inst_t *iLBCdec_inst, 
+    IlbcDecoder *iLBCdec_inst, 
     int16_t mode,     
     int use_enhancer           
 

@@ -19,6 +19,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/ipaddress.h"
 #include "webrtc/base/messagehandler.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/sigslot.h"
 
 #if defined(WEBRTC_POSIX)
@@ -33,11 +34,15 @@ class Thread;
 enum AdapterType {
   
   ADAPTER_TYPE_UNKNOWN = 0,
-  ADAPTER_TYPE_ETHERNET = 1,
-  ADAPTER_TYPE_WIFI = 2,
-  ADAPTER_TYPE_CELLULAR = 3,
-  ADAPTER_TYPE_VPN = 4
+  ADAPTER_TYPE_ETHERNET = 1 << 0,
+  ADAPTER_TYPE_WIFI = 1 << 1,
+  ADAPTER_TYPE_CELLULAR = 1 << 2,
+  ADAPTER_TYPE_VPN = 1 << 3,
+  ADAPTER_TYPE_LOOPBACK = 1 << 4
 };
+
+
+const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 
 
 
@@ -75,18 +80,38 @@ class NetworkManager {
   virtual void GetNetworks(NetworkList* networks) const = 0;
 
   
+  
+  
+  
+  
+  virtual void GetAnyAddressNetworks(NetworkList* networks) {}
+
+  
   virtual void DumpNetworks(bool include_ignored) {}
+
+  struct Stats {
+    int ipv4_network_count;
+    int ipv6_network_count;
+    Stats() {
+      ipv4_network_count = 0;
+      ipv6_network_count = 0;
+    }
+  };
 };
 
 
 class NetworkManagerBase : public NetworkManager {
  public:
   NetworkManagerBase();
-  virtual ~NetworkManagerBase();
+  ~NetworkManagerBase() override;
 
-  virtual void GetNetworks(std::vector<Network*>* networks) const;
+  void GetNetworks(std::vector<Network*>* networks) const override;
+  void GetAnyAddressNetworks(NetworkList* networks) override;
   bool ipv6_enabled() const { return ipv6_enabled_; }
   void set_ipv6_enabled(bool enabled) { ipv6_enabled_ = enabled; }
+
+  void set_max_ipv6_networks(int networks) { max_ipv6_networks_ = networks; }
+  int max_ipv6_networks() { return max_ipv6_networks_; }
 
  protected:
   typedef std::map<std::string, Network*> NetworkMap;
@@ -97,13 +122,23 @@ class NetworkManagerBase : public NetworkManager {
   
   void MergeNetworkList(const NetworkList& list, bool* changed);
 
+  
+  void MergeNetworkList(const NetworkList& list,
+                        bool* changed,
+                        NetworkManager::Stats* stats);
+
  private:
   friend class NetworkTest;
   void DoUpdateNetworks();
 
   NetworkList networks_;
+  int max_ipv6_networks_;
+
   NetworkMap networks_map_;
   bool ipv6_enabled_;
+
+  rtc::scoped_ptr<rtc::Network> ipv4_any_address_network_;
+  rtc::scoped_ptr<rtc::Network> ipv6_any_address_network_;
 };
 
 
@@ -112,16 +147,16 @@ class BasicNetworkManager : public NetworkManagerBase,
                             public MessageHandler {
  public:
   BasicNetworkManager();
-  virtual ~BasicNetworkManager();
+  ~BasicNetworkManager() override;
 
-  virtual void StartUpdating();
-  virtual void StopUpdating();
-
-  
-  virtual void DumpNetworks(bool include_ignored);
+  void StartUpdating() override;
+  void StopUpdating() override;
 
   
-  virtual void OnMessage(Message* msg);
+  void DumpNetworks(bool include_ignored) override;
+
+  
+  void OnMessage(Message* msg) override;
   bool started() { return start_count_ > 0; }
 
   
@@ -129,6 +164,19 @@ class BasicNetworkManager : public NetworkManagerBase,
   void set_network_ignore_list(const std::vector<std::string>& list) {
     network_ignore_list_ = list;
   }
+
+  
+  
+  
+  void set_network_ignore_mask(int network_ignore_mask) {
+    
+    
+    
+    network_ignore_mask_ = network_ignore_mask;
+  }
+
+  int network_ignore_mask() const { return network_ignore_mask_; }
+
 #if defined(WEBRTC_LINUX)
   
   void set_ignore_non_default_routes(bool value) {
@@ -148,6 +196,7 @@ class BasicNetworkManager : public NetworkManagerBase,
   bool CreateNetworks(bool include_ignored, NetworkList* networks) const;
 
   
+  
   bool IsIgnoredNetwork(const Network& network) const;
 
  private:
@@ -159,6 +208,7 @@ class BasicNetworkManager : public NetworkManagerBase,
   bool sent_first_update_;
   int start_count_;
   std::vector<std::string> network_ignore_list_;
+  int network_ignore_mask_;
   bool ignore_non_default_routes_;
 };
 
@@ -170,6 +220,7 @@ class Network {
 
   Network(const std::string& name, const std::string& description,
           const IPAddress& prefix, int prefix_length, AdapterType type);
+  ~Network();
 
   
   const std::string& name() const { return name_; }

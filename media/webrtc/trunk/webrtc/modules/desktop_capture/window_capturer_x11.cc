@@ -19,19 +19,71 @@
 
 #include <algorithm>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
 #include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
 #include "webrtc/modules/desktop_capture/x11/x_server_pixel_buffer.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/scoped_refptr.h"
-#include "webrtc/modules/desktop_capture/x11/shared_x_util.h"
 
 namespace webrtc {
 
 namespace {
+
+
+template <class PropertyType>
+class XWindowProperty {
+ public:
+  XWindowProperty(Display* display, Window window, Atom property)
+      : is_valid_(false),
+        size_(0),
+        data_(NULL) {
+    const int kBitsPerByte = 8;
+    Atom actual_type;
+    int actual_format;
+    unsigned long bytes_after;  
+    int status = XGetWindowProperty(display, window, property, 0L, ~0L, False,
+                                    AnyPropertyType, &actual_type,
+                                    &actual_format, &size_,
+                                    &bytes_after, &data_);
+    if (status != Success) {
+      data_ = NULL;
+      return;
+    }
+    if (sizeof(PropertyType) * kBitsPerByte != actual_format) {
+      size_ = 0;
+      return;
+    }
+
+    is_valid_ = true;
+  }
+
+  ~XWindowProperty() {
+    if (data_)
+      XFree(data_);
+  }
+
+  
+  bool is_valid() const { return is_valid_; }
+
+  
+  size_t size() const { return size_; }
+  const PropertyType* data() const {
+    return reinterpret_cast<PropertyType*>(data_);
+  }
+  PropertyType* data() {
+    return reinterpret_cast<PropertyType*>(data_);
+  }
+
+ private:
+  bool is_valid_;
+  unsigned long size_;  
+  unsigned char* data_;
+
+  DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
+};
 
 class WindowCapturerLinux : public WindowCapturer,
                             public SharedXDisplay::XEventHandler {
@@ -40,16 +92,16 @@ class WindowCapturerLinux : public WindowCapturer,
   virtual ~WindowCapturerLinux();
 
   
-  virtual bool GetWindowList(WindowList* windows) OVERRIDE;
-  virtual bool SelectWindow(WindowId id) OVERRIDE;
-  virtual bool BringSelectedWindowToFront() OVERRIDE;
+  bool GetWindowList(WindowList* windows) override;
+  bool SelectWindow(WindowId id) override;
+  bool BringSelectedWindowToFront() override;
 
   
-  virtual void Start(Callback* callback) OVERRIDE;
-  virtual void Capture(const DesktopRegion& region) OVERRIDE;
+  void Start(Callback* callback) override;
+  void Capture(const DesktopRegion& region) override;
 
   
-  virtual bool HandleXEvent(const XEvent& event) OVERRIDE;
+  bool HandleXEvent(const XEvent& event) override;
 
  private:
   Display* display() { return x_display_->display(); }
@@ -226,13 +278,13 @@ void WindowCapturerLinux::Start(Callback* callback) {
 }
 
 void WindowCapturerLinux::Capture(const DesktopRegion& region) {
-  x_display_->ProcessPendingXEvents();
-
   if (!x_server_pixel_buffer_.IsWindowValid()) {
     LOG(LS_INFO) << "The window is no longer valid.";
     callback_->OnCaptureCompleted(NULL);
     return;
   }
+
+  x_display_->ProcessPendingXEvents();
 
   if (!has_composite_extension_) {
     

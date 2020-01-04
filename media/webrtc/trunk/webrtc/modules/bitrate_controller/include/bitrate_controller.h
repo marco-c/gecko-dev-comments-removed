@@ -15,66 +15,49 @@
 #ifndef WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
 #define WEBRTC_MODULES_BITRATE_CONTROLLER_INCLUDE_BITRATE_CONTROLLER_H_
 
+#include <map>
+
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
+class CriticalSectionWrapper;
+
 class BitrateObserver {
- 
-
-
-
-
-
-
+  
+  
+  
+  
+  
  public:
-  virtual void OnNetworkChanged(const uint32_t target_bitrate,
-                                const uint8_t fraction_loss,  
-                                const uint32_t rtt) = 0;
+  virtual void OnNetworkChanged(uint32_t bitrate_bps,
+                                uint8_t fraction_loss,  
+                                int64_t rtt_ms) = 0;
 
   virtual ~BitrateObserver() {}
 };
 
 class BitrateController : public Module {
-
-
-
-
-
-
+  
+  
+  
+  
  public:
-  
-  
-  
-  
-  
+  static const int kDefaultStartBitrateKbps = 300;
+
   static BitrateController* CreateBitrateController(Clock* clock,
-                                                    bool enforce_min_bitrate);
+                                                    BitrateObserver* observer);
   virtual ~BitrateController() {}
 
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;
 
+  virtual void SetStartBitrate(int start_bitrate_bps) = 0;
+  virtual void SetMinMaxBitrate(int min_bitrate_bps, int max_bitrate_bps) = 0;
+
   
   
   virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;
-
-  
-
-
-
-
-
-
-  virtual void SetBitrateObserver(BitrateObserver* observer,
-                                  const uint32_t start_bitrate,
-                                  const uint32_t min_bitrate,
-                                  const uint32_t max_bitrate) = 0;
-
-  virtual void RemoveBitrateObserver(BitrateObserver* observer) = 0;
-
-  
-  virtual void EnforceMinBitrate(bool enforce_min_bitrate) = 0;
 
   virtual void SetReservedBitrate(uint32_t reserved_bitrate_bps) = 0;
 };

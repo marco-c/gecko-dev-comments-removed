@@ -92,7 +92,7 @@ int WebRtcIlbcfix_XcorrCoef(
       EnergyMod=(int16_t)WEBRTC_SPL_SHIFT_W32(Energy, Energyscale);
 
       
-      crossCorrSqMod=(int16_t)WEBRTC_SPL_MUL_16_16_RSFT(crossCorrmod, crossCorrmod, 16);
+      crossCorrSqMod = (int16_t)((crossCorrmod * crossCorrmod) >> 16);
 
       
 

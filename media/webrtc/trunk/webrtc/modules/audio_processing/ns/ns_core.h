@@ -13,7 +13,7 @@
 
 #include "webrtc/modules/audio_processing/ns/defines.h"
 
-typedef struct NSParaExtract_t_ {
+typedef struct NSParaExtract_ {
   
   float binSizeLrt;
   float binSizeSpecFlat;
@@ -47,9 +47,9 @@ typedef struct NSParaExtract_t_ {
   int thresWeightSpecFlat;
   int thresWeightSpecDiff;
 
-} NSParaExtract_t;
+} NSParaExtract;
 
-typedef struct NSinst_t_ {
+typedef struct NoiseSuppressionC_ {
   uint32_t fs;
   int blockLen;
   int windShift;
@@ -101,16 +101,17 @@ typedef struct NSinst_t_ {
   float pinkNoiseExp;  
   float parametricNoise[HALF_ANAL_BLOCKL];
   
-  NSParaExtract_t featureExtractionParams;
+  NSParaExtract featureExtractionParams;
   
   int histLrt[HIST_PAR_EST];
   int histSpecFlat[HIST_PAR_EST];
   int histSpecDiff[HIST_PAR_EST];
   
   float speechProb[HALF_ANAL_BLOCKL];  
-  float dataBufHB[ANAL_BLOCKL_MAX];  
+  
+  float dataBufHB[NUM_HIGH_BANDS_MAX][ANAL_BLOCKL_MAX];
 
-} NSinst_t;
+} NoiseSuppressionC;
 
 #ifdef __cplusplus
 extern "C" {
@@ -131,7 +132,7 @@ extern "C" {
 
 
 
-int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs);
+int WebRtcNs_InitCore(NoiseSuppressionC* self, uint32_t fs);
 
 
 
@@ -148,7 +149,21 @@ int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs);
 
 
 
-int WebRtcNs_set_policy_core(NSinst_t* self, int mode);
+int WebRtcNs_set_policy_core(NoiseSuppressionC* self, int mode);
+
+
+
+
+
+
+
+
+
+
+
+
+
+void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame);
 
 
 
@@ -164,32 +179,10 @@ int WebRtcNs_set_policy_core(NSinst_t* self, int mode);
 
 
 
-
-int WebRtcNs_AnalyzeCore(NSinst_t* self, float* speechFrame);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int WebRtcNs_ProcessCore(NSinst_t* self,
-                         float* inFrameLow,
-                         float* inFrameHigh,
-                         float* outFrameLow,
-                         float* outFrameHigh);
+void WebRtcNs_ProcessCore(NoiseSuppressionC* self,
+                          const float* const* inFrame,
+                          int num_bands,
+                          float* const* outFrame);
 
 #ifdef __cplusplus
 }

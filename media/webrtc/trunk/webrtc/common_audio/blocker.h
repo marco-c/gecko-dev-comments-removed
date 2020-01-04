@@ -11,8 +11,9 @@
 #ifndef WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 #define WEBRTC_INTERNAL_BEAMFORMER_BLOCKER_H_
 
-#include "webrtc/modules/audio_processing/common.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
+#include "webrtc/common_audio/audio_ring_buffer.h"
+#include "webrtc/common_audio/channel_buffer.h"
 
 namespace webrtc {
 
@@ -29,6 +30,9 @@ class BlockerCallback {
                             int num_output_channels,
                             float* const* output) = 0;
 };
+
+
+
 
 
 
@@ -80,8 +84,6 @@ class Blocker {
   const int num_output_channels_;
 
   
-  
-  
   const int initial_delay_;
 
   
@@ -96,7 +98,9 @@ class Blocker {
   
   
   
-  ChannelBuffer<float> input_buffer_;
+  
+  
+  AudioRingBuffer input_buffer_;
   ChannelBuffer<float> output_buffer_;
 
   
@@ -105,7 +109,7 @@ class Blocker {
   
   ChannelBuffer<float> output_block_;
 
-  scoped_ptr<float[]> window_;
+  rtc::scoped_ptr<float[]> window_;
 
   
   

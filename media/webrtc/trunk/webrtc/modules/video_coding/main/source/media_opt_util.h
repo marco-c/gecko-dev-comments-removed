@@ -41,21 +41,18 @@ enum FilterPacketLossMode {
 
 
 
-enum HybridNackTH {
-    kHighRttNackMs = 100,
-    kLowRttNackMs = 20
-};
+const int64_t kLowRttNackMs = 20;
 
 struct VCMProtectionParameters
 {
     VCMProtectionParameters() : rtt(0), lossPr(0.0f), bitRate(0.0f),
         packetsPerFrame(0.0f), packetsPerFrameKey(0.0f), frameRate(0.0f),
         keyFrameSize(0.0f), fecRateDelta(0), fecRateKey(0),
-        residualPacketLossFec(0.0f), codecWidth(0), codecHeight(0),
+        codecWidth(0), codecHeight(0),
         numLayers(1)
         {}
 
-    int                 rtt;
+    int64_t             rtt;
     float               lossPr;
     float               bitRate;
     float               packetsPerFrame;
@@ -64,7 +61,6 @@ struct VCMProtectionParameters
     float               keyFrameSize;
     uint8_t       fecRateDelta;
     uint8_t       fecRateKey;
-    float               residualPacketLossFec;
     uint16_t      codecWidth;
     uint16_t      codecHeight;
     int                 numLayers;
@@ -116,12 +112,6 @@ public:
     
     
     
-    
-    virtual float RequiredBitRate() { return _efficiency; }
-
-    
-    
-    
     virtual uint8_t RequiredPacketLossER() { return _effectivePacketLoss; }
 
     
@@ -155,7 +145,6 @@ protected:
     uint8_t                        _protectionFactorK;
     uint8_t                        _protectionFactorD;
     
-    float                                _residualPacketLossFec;
     float                                _scaleProtKey;
     int32_t                        _maxPayloadSize;
 
@@ -164,7 +153,6 @@ protected:
     bool                                 _useUepProtectionD;
     float                                _corrFecCost;
     enum VCMProtectionMethodEnum         _type;
-    float                                _efficiency;
 };
 
 class VCMNackMethod : public VCMProtectionMethod
@@ -211,16 +199,14 @@ protected:
     enum { kMaxBytesPerFrameForFecLow = 400 };
     
     enum { kMaxBytesPerFrameForFecHigh = 1000 };
-    
-    enum { kMaxRttTurnOffFec = 200 };
 };
 
 
 class VCMNackFecMethod : public VCMFecMethod
 {
 public:
-    VCMNackFecMethod(int lowRttNackThresholdMs,
-                     int highRttNackThresholdMs);
+    VCMNackFecMethod(int64_t lowRttNackThresholdMs,
+                     int64_t highRttNackThresholdMs);
     virtual ~VCMNackFecMethod();
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
     
@@ -234,8 +220,8 @@ public:
 private:
     int ComputeMaxFramesFec(const VCMProtectionParameters* parameters);
 
-    int _lowRttNackMs;
-    int _highRttNackMs;
+    int64_t _lowRttNackMs;
+    int64_t _highRttNackMs;
     int _maxFramesFec;
 };
 
@@ -250,31 +236,13 @@ public:
     
     
     
-    
-    bool SetMethod(VCMProtectionMethodEnum newMethodType);
+    void SetMethod(VCMProtectionMethodEnum newMethodType);
 
     
     
     
     
-    
-    bool RemoveMethod(VCMProtectionMethodEnum method);
-
-    
-    float RequiredBitRate() const;
-
-    
-    
-    
-    
-    void UpdateRtt(uint32_t rtt);
-
-    
-    
-    
-    
-    
-    void UpdateResidualPacketLoss(float _residualPacketLoss);
+    void UpdateRtt(int64_t rtt);
 
     
     
@@ -369,7 +337,7 @@ private:
     uint8_t MaxFilteredLossPr(int64_t nowMs) const;
     VCMProtectionMethod* _selectedMethod;
     VCMProtectionParameters _currentParameters;
-    uint32_t _rtt;
+    int64_t _rtt;
     float _lossPr;
     float _bitRate;
     float _frameRate;
@@ -384,7 +352,6 @@ private:
     uint8_t _shortMaxLossPr255;
     rtc::ExpFilter _packetsPerFrame;
     rtc::ExpFilter _packetsPerFrameKey;
-    float _residualPacketLossFec;
     uint16_t _codecWidth;
     uint16_t _codecHeight;
     int _numLayers;

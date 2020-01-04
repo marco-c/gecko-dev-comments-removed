@@ -28,7 +28,7 @@ class TraceToStderr : public TraceCallback {
   
   
   explicit TraceToStderr(bool override_time);
-  virtual ~TraceToStderr();
+  ~TraceToStderr() override;
 
   
   
@@ -39,9 +39,7 @@ class TraceToStderr : public TraceCallback {
   virtual void SetTimeSeconds(float time);
 
   
-  virtual void Print(TraceLevel level,
-                     const char* msg_array,
-                     int length) OVERRIDE;
+  void Print(TraceLevel level, const char* msg_array, int length) override;
 
  private:
   bool override_time_;

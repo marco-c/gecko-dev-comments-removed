@@ -11,18 +11,11 @@
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_H_
 
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/modules/video_capture/include/video_capture_defines.h"
 
-#if defined(ANDROID) && !defined(WEBRTC_GONK)
-#include <jni.h>
-#endif
-
 namespace webrtc {
-
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD) && !defined(WEBRTC_GONK)
-  int32_t SetCaptureAndroidVM(JavaVM* javaVM);
-#endif
 
 class VideoCaptureModule: public RefCountedModule {
  public:
@@ -30,7 +23,6 @@ class VideoCaptureModule: public RefCountedModule {
   class DeviceInfo {
    public:
     virtual uint32_t NumberOfDevices() = 0;
-    virtual int32_t Refresh() = 0;
 
     
     
@@ -61,9 +53,8 @@ class VideoCaptureModule: public RefCountedModule {
 
     
     
-    virtual int32_t GetOrientation(
-        const char* deviceUniqueIdUTF8,
-        VideoCaptureRotation& orientation) = 0;
+    virtual int32_t GetOrientation(const char* deviceUniqueIdUTF8,
+                                   VideoRotation& orientation) = 0;
 
     
     
@@ -96,7 +87,7 @@ class VideoCaptureModule: public RefCountedModule {
     
     
     
-    virtual int32_t SetChannelParameters(uint32_t packetLoss, int rtt) = 0;
+    virtual int32_t SetChannelParameters(uint32_t packetLoss, int64_t rtt) = 0;
 
     
     virtual int32_t EncodeFrameType(const FrameType type) = 0;
@@ -142,7 +133,16 @@ class VideoCaptureModule: public RefCountedModule {
   
   
   
-  virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation) = 0;
+  virtual int32_t SetCaptureRotation(VideoRotation rotation) = 0;
+
+  
+  
+  
+  
+  virtual bool SetApplyRotation(bool enable) = 0;
+
+  
+  virtual bool GetApplyRotation() = 0;
 
   
   

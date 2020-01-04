@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <Iphlpapi.h>
 
+#include <algorithm>
+
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/ipaddress.h"
@@ -129,7 +131,7 @@ inline uint32 ReplySize(uint32 data_size, int family) {
   if (family == AF_INET) {
     
     
-    return sizeof(ICMP_ECHO_REPLY) + rtc::_max<uint32>(8, data_size);
+    return sizeof(ICMP_ECHO_REPLY) + std::max<uint32>(8, data_size);
   } else if (family == AF_INET6) {
     
     

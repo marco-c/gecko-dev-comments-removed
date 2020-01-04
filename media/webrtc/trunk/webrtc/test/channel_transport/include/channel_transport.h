@@ -28,15 +28,15 @@ class VoiceChannelTransport : public UdpTransportData {
   virtual ~VoiceChannelTransport();
 
   
-  virtual void IncomingRTPPacket(const int8_t* incoming_rtp_packet,
-                                 const int32_t packet_length,
-                                 const char* ,
-                                 const uint16_t ) OVERRIDE;
+  void IncomingRTPPacket(const int8_t* incoming_rtp_packet,
+                         const size_t packet_length,
+                         const char* ,
+                         const uint16_t ) override;
 
-  virtual void IncomingRTCPPacket(const int8_t* incoming_rtcp_packet,
-                                  const int32_t packet_length,
-                                  const char* ,
-                                  const uint16_t ) OVERRIDE;
+  void IncomingRTCPPacket(const int8_t* incoming_rtcp_packet,
+                          const size_t packet_length,
+                          const char* ,
+                          const uint16_t ) override;
   
 
   
@@ -59,15 +59,15 @@ class VideoChannelTransport : public UdpTransportData {
   virtual  ~VideoChannelTransport();
 
   
-  virtual void IncomingRTPPacket(const int8_t* incoming_rtp_packet,
-                         const int32_t packet_length,
+  void IncomingRTPPacket(const int8_t* incoming_rtp_packet,
+                         const size_t packet_length,
                          const char* ,
-                         const uint16_t ) OVERRIDE;
+                         const uint16_t ) override;
 
-  virtual void IncomingRTCPPacket(const int8_t* incoming_rtcp_packet,
-                          const int32_t packet_length,
+  void IncomingRTCPPacket(const int8_t* incoming_rtcp_packet,
+                          const size_t packet_length,
                           const char* ,
-                          const uint16_t ) OVERRIDE;
+                          const uint16_t ) override;
   
 
   

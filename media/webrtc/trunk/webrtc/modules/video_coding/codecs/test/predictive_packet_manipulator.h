@@ -33,7 +33,7 @@ class PredictivePacketManipulator : public PacketManipulatorImpl {
   void AddRandomResult(double result);
  protected:
   
-  virtual double RandomUniform() OVERRIDE;
+  double RandomUniform() override;
 
  private:
   std::queue<double> random_results_;

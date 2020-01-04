@@ -47,6 +47,11 @@ class WEBRTC_DLLEXPORT ViENetwork {
   
   virtual int Release() = 0;
 
+  virtual void SetBitrateConfig(int video_channel,
+                                int min_bitrate_bps,
+                                int start_bitrate_bps,
+                                int max_bitrate_bps) = 0;
+
   
   
   virtual void SetNetworkTransmissionState(const int video_channel,
@@ -65,14 +70,14 @@ class WEBRTC_DLLEXPORT ViENetwork {
   
   virtual int ReceivedRTPPacket(const int video_channel,
                                 const void* data,
-                                const int length,
+                                const size_t length,
                                 const PacketTime& packet_time) = 0;
 
   
   
   virtual int ReceivedRTCPPacket(const int video_channel,
                                  const void* data,
-                                 const int length) = 0;
+                                 const size_t length) = 0;
 
   
   
@@ -82,15 +87,8 @@ class WEBRTC_DLLEXPORT ViENetwork {
   
   
   virtual int ReceivedBWEPacket(const int video_channel,
-      int64_t arrival_time_ms, int payload_size, const RTPHeader& header) {
+      int64_t arrival_time_ms, size_t payload_size, const RTPHeader& header) {
     return 0;
-  }
-
-  
-  
-  virtual bool SetBandwidthEstimationConfig(int video_channel,
-                                            const webrtc::Config& config) {
-    return false;
   }
 
  protected:

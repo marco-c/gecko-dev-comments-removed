@@ -69,10 +69,10 @@ public:
     
     virtual int ReceivedRTPPacket(int channel,
                                   const void* data,
-                                  unsigned int length) = 0;
+                                  size_t length) = 0;
     virtual int ReceivedRTPPacket(int channel,
                                   const void* data,
-                                  unsigned int length,
+                                  size_t length,
                                   const PacketTime& packet_time) {
       return 0;
     }
@@ -80,8 +80,9 @@ public:
     
     
     
-    virtual int ReceivedRTCPPacket(
-        int channel, const void* data, unsigned int length) = 0;
+    virtual int ReceivedRTCPPacket(int channel,
+                                   const void* data,
+                                   size_t length) = 0;
 
 protected:
     VoENetwork() {}

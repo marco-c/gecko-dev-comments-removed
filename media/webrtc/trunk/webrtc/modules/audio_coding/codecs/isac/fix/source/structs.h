@@ -299,7 +299,7 @@ typedef struct {
   
   int     minBytes;
 
-} ISAC_SaveEncData_t;
+} IsacSaveEncoderData;
 
 typedef struct {
 
@@ -327,14 +327,14 @@ typedef struct {
   PostFiltBankstr     interpolatorstr_obj;
 #endif
 
-  ISAC_SaveEncData_t *SaveEnc_ptr;
+  IsacSaveEncoderData *SaveEnc_ptr;
   int16_t         payloadLimitBytes30; 
   int16_t         payloadLimitBytes60; 
   int16_t         maxPayloadBytes;     
   int16_t         maxRateInBytes;      
   int16_t         enforceFrameSize;    
 
-} ISACFIX_EncInst_t;
+} IsacFixEncoderInstance;
 
 
 typedef struct {
@@ -349,14 +349,14 @@ typedef struct {
   PreFiltBankstr      decimatorstr_obj;
 #endif
 
-} ISACFIX_DecInst_t;
+} IsacFixDecoderInstance;
 
 
 
 typedef struct {
 
-  ISACFIX_EncInst_t ISACenc_obj;
-  ISACFIX_DecInst_t ISACdec_obj;
+  IsacFixEncoderInstance ISACenc_obj;
+  IsacFixDecoderInstance ISACdec_obj;
   BwEstimatorstr     bwestimator_obj;
   int16_t         CodingMode;       
   int16_t   errorcode;

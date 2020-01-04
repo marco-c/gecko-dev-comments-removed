@@ -21,6 +21,7 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -103,7 +104,7 @@ int VP9EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
 
 int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
                                int number_of_cores,
-                               uint32_t ) {
+                               size_t ) {
   if (inst == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -167,7 +168,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_end_usage = VPX_CBR;
   config_->g_pass = VPX_RC_ONE_PASS;
   config_->rc_min_quantizer = 2;
-  config_->rc_max_quantizer = 56;
+  config_->rc_max_quantizer = 52;
   config_->rc_undershoot_pct = 50;
   config_->rc_overshoot_pct = 50;
   config_->rc_buf_initial_sz = 500;
@@ -181,7 +182,27 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   } else {
     config_->kf_mode = VPX_KF_DISABLED;
   }
+
+  
+  config_->g_threads = NumberOfThreads(config_->g_w,
+                                       config_->g_h,
+                                       number_of_cores);
   return InitAndSetControlSettings(inst);
+}
+
+int VP9EncoderImpl::NumberOfThreads(int width,
+                                    int height,
+                                    int number_of_cores) {
+  
+  
+  if (width * height >= 1280 * 720 && number_of_cores > 4) {
+    return 4;
+  } else if (width * height >= 640 * 480 && number_of_cores > 2) {
+    return 2;
+  } else {
+    
+    return 1;
+  }
 }
 
 int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
@@ -190,7 +211,7 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   }
   
   
-  cpu_speed_ = 6;
+  cpu_speed_ = 7;
   
   
   vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
@@ -199,10 +220,16 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   vpx_codec_control(encoder_, VP9E_SET_AQ_MODE,
                     inst->codecSpecific.VP9.adaptiveQpMode ? 3 : 0);
   
-
   
   
-
+  
+  vpx_codec_control(encoder_, VP9E_SET_TILE_COLUMNS, (config_->g_threads >> 1));
+#if !defined(WEBRTC_ARCH_ARM)
+  
+  
+  vpx_codec_control(encoder_, VP9E_SET_NOISE_SENSITIVITY,
+                    inst->codecSpecific.VP9.denoisingOn ? 1 : 0);
+#endif
   inited_ = true;
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -239,6 +266,8 @@ int VP9EncoderImpl::Encode(const I420VideoFrame& input_image,
   if (frame_types && frame_types->size() > 0) {
     frame_type = (*frame_types)[0];
   }
+  DCHECK_EQ(input_image.width(), static_cast<int>(raw_->d_w));
+  DCHECK_EQ(input_image.height(), static_cast<int>(raw_->d_h));
   
   
   raw_->planes[VPX_PLANE_Y] = const_cast<uint8_t*>(input_image.buffer(kYPlane));
@@ -334,7 +363,7 @@ int VP9EncoderImpl::GetEncodedPartitions(const I420VideoFrame& input_image) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int rtt) {
+int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -378,7 +407,7 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
     return ret_val;
   }
   if (decoder_ == NULL) {
-    decoder_ = new vpx_dec_ctx_t;
+    decoder_ = new vpx_codec_ctx_t;
   }
   vpx_codec_dec_cfg_t  cfg;
   
@@ -428,7 +457,7 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   }
   if (vpx_codec_decode(decoder_,
                        buffer,
-                       input_image._length,
+                       static_cast<unsigned int>(input_image._length),
                        0,
                        VPX_DL_REALTIME)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -446,13 +475,9 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
     
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
-  int half_height = (img->d_h + 1) / 2;
-  int size_y = img->stride[VPX_PLANE_Y] * img->d_h;
-  int size_u = img->stride[VPX_PLANE_U] * half_height;
-  int size_v = img->stride[VPX_PLANE_V] * half_height;
-  decoded_image_.CreateFrame(size_y, img->planes[VPX_PLANE_Y],
-                             size_u, img->planes[VPX_PLANE_U],
-                             size_v, img->planes[VPX_PLANE_V],
+  decoded_image_.CreateFrame(img->planes[VPX_PLANE_Y],
+                             img->planes[VPX_PLANE_U],
+                             img->planes[VPX_PLANE_V],
                              img->d_w, img->d_h,
                              img->stride[VPX_PLANE_Y],
                              img->stride[VPX_PLANE_U],

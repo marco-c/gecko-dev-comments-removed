@@ -19,8 +19,8 @@ namespace rtc {
 
 class AsyncResolverInterface {
  public:
-  AsyncResolverInterface() {}
-  virtual ~AsyncResolverInterface() {}
+  AsyncResolverInterface();
+  virtual ~AsyncResolverInterface();
 
   
   virtual void Start(const SocketAddress& addr) = 0;

@@ -1099,6 +1099,13 @@ static int16_t Decode(ISACStruct* ISAC_main_inst,
   
 
 
+
+
+  numSamplesLB = 0;
+
+  
+
+
   numDecodedBytesLB = WebRtcIsac_DecodeLb(outFrame, decInstLB,
                                           &numSamplesLB, isRCUPayload);
 

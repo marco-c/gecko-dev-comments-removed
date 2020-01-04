@@ -145,9 +145,8 @@ class CondVarTest : public ::testing::Test {
 
   virtual void SetUp() {
     thread_ = ThreadWrapper::CreateThread(&WaitingRunFunction,
-                                          &baton_);
-    unsigned int id = 42;
-    ASSERT_TRUE(thread_->Start(id));
+                                          &baton_, "CondVarTest");
+    ASSERT_TRUE(thread_->Start());
   }
 
   virtual void TearDown() {
@@ -157,27 +156,26 @@ class CondVarTest : public ::testing::Test {
     
     
     ASSERT_TRUE(baton_.Pass(kShortWaitMs));
-    thread_->SetNotAlive();
     ASSERT_TRUE(baton_.Grab(kShortWaitMs));
     ASSERT_TRUE(thread_->Stop());
-    delete thread_;
   }
 
  protected:
   Baton baton_;
 
  private:
-  ThreadWrapper* thread_;
+  rtc::scoped_ptr<ThreadWrapper> thread_;
 };
 
 
 
-TEST_F(CondVarTest, InitFunctionsWork) {
+
+TEST_F(CondVarTest, DISABLED_InitFunctionsWork) {
   
 }
 
 
-TEST_F(CondVarTest, PassBatonMultipleTimes) {
+TEST_F(CondVarTest, DISABLED_PassBatonMultipleTimes) {
   const int kNumberOfRounds = 2;
   for (int i = 0; i < kNumberOfRounds; ++i) {
     ASSERT_TRUE(baton_.Pass(kShortWaitMs));

@@ -36,13 +36,12 @@ class AudioPacketizationCallback {
  public:
   virtual ~AudioPacketizationCallback() {}
 
-  virtual int32_t SendData(
-      FrameType frame_type,
-      uint8_t payload_type,
-      uint32_t timestamp,
-      const uint8_t* payload_data,
-      uint16_t payload_len_bytes,
-      const RTPFragmentationHeader* fragmentation) = 0;
+  virtual int32_t SendData(FrameType frame_type,
+                           uint8_t payload_type,
+                           uint32_t timestamp,
+                           const uint8_t* payload_data,
+                           size_t payload_len_bytes,
+                           const RTPFragmentationHeader* fragmentation) = 0;
 };
 
 
@@ -59,7 +58,7 @@ class ACMVADCallback {
  public:
   virtual ~ACMVADCallback() {}
 
-  virtual int32_t InFrameType(int16_t frameType) = 0;
+  virtual int32_t InFrameType(FrameType frame_type) = 0;
 };
 
 
@@ -75,7 +74,7 @@ class ACMVQMonCallback {
       const uint16_t delayMS) = 0;  
 };
 
-class AudioCodingModule: public Module {
+class AudioCodingModule {
  protected:
   AudioCodingModule() {}
 
@@ -200,20 +199,6 @@ class AudioCodingModule: public Module {
   
   
   
-  
-  
-  
-  virtual int32_t InitializeSender() = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
   virtual int32_t ResetEncoder() = 0;
 
   
@@ -256,47 +241,7 @@ class AudioCodingModule: public Module {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int RegisterSecondarySendCodec(const CodecInst& send_codec) = 0;
-
-  
-  
-  
-  
-  virtual void UnregisterSecondarySendCodec() = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   virtual int32_t SendCodec(CodecInst* current_send_codec) const = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual int SecondarySendCodec(CodecInst* secondary_codec) const = 0;
 
   
   
@@ -354,6 +299,7 @@ class AudioCodingModule: public Module {
   virtual int32_t RegisterTransportCallback(
       AudioPacketizationCallback* transport) = 0;
 
+  
   
   
   
@@ -519,7 +465,6 @@ class AudioCodingModule: public Module {
   
   
   
-  
   virtual int32_t ReplaceInternalDTXWithWebRtc(
       const bool use_webrtc_dtx = false) = 0;
 
@@ -668,8 +613,8 @@ class AudioCodingModule: public Module {
   
   
   virtual int32_t IncomingPacket(const uint8_t* incoming_payload,
-                                       const int32_t payload_len_bytes,
-                                       const WebRtcRTPHeader& rtp_info) = 0;
+                                 const size_t payload_len_bytes,
+                                 const WebRtcRTPHeader& rtp_info) = 0;
 
   
   
@@ -696,9 +641,9 @@ class AudioCodingModule: public Module {
   
   
   virtual int32_t IncomingPayload(const uint8_t* incoming_payload,
-                                        const int32_t payload_len_byte,
-                                        const uint8_t payload_type,
-                                        const uint32_t timestamp = 0) = 0;
+                                  const size_t payload_len_byte,
+                                  const uint8_t payload_type,
+                                  const uint32_t timestamp = 0) = 0;
 
   
   
@@ -930,11 +875,57 @@ class AudioCodingModule: public Module {
   
   
   
+  
+  
+  
+  
+  
+  virtual int SetOpusApplication(OpusApplicationMode application,
+                                 bool force_dtx) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   virtual int SetOpusMaxPlaybackRate(int frequency_hz) = 0;
 
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual int EnableOpusDtx(bool force_application) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual int DisableOpusDtx() = 0;
+
+  
+  
+  
 
   
   
@@ -948,8 +939,8 @@ class AudioCodingModule: public Module {
   
   
   
-  virtual int32_t NetworkStatistics(
-      ACMNetworkStatistics* network_statistics) = 0;
+  virtual int32_t GetNetworkStatistics(
+      NetworkStatistics* network_statistics) = 0;
 
   
   
@@ -993,7 +984,8 @@ class AudioCodingModule: public Module {
   
   
   
-  virtual std::vector<uint16_t> GetNackList(int round_trip_time_ms) const = 0;
+  virtual std::vector<uint16_t> GetNackList(
+      int64_t round_trip_time_ms) const = 0;
 
   virtual void GetDecodingCallStatistics(
       AudioDecodingCallStats* call_stats) const = 0;
@@ -1090,12 +1082,12 @@ class AudioCoding {
   
   
   virtual bool InsertPacket(const uint8_t* incoming_payload,
-                            int32_t payload_len_bytes,
+                            size_t payload_len_bytes,
                             const WebRtcRTPHeader& rtp_info) = 0;
 
   
   virtual bool InsertPayload(const uint8_t* incoming_payload,
-                             int32_t payload_len_byte,
+                             size_t payload_len_byte,
                              uint8_t payload_type,
                              uint32_t timestamp) = 0;
 
@@ -1134,7 +1126,7 @@ class AudioCoding {
 
   
   
-  virtual bool NetworkStatistics(ACMNetworkStatistics* network_statistics) = 0;
+  virtual bool GetNetworkStatistics(NetworkStatistics* network_statistics) = 0;
 
   
   

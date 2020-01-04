@@ -26,9 +26,9 @@ public:
     
     void Reset();
     
-    void Update(uint32_t rttMs);
+    void Update(int64_t rttMs);
     
-    uint32_t RttMs() const;
+    int64_t RttMs() const;
 
 private:
     
@@ -39,19 +39,19 @@ private:
     
     
     
-    bool JumpDetection(uint32_t rttMs);
+    bool JumpDetection(int64_t rttMs);
     
     
     
     
-    bool DriftDetection(uint32_t rttMs);
+    bool DriftDetection(int64_t rttMs);
     
-    void ShortRttFilter(uint32_t* buf, uint32_t length);
+    void ShortRttFilter(int64_t* buf, uint32_t length);
 
     bool                  _gotNonZeroUpdate;
     double                _avgRtt;
     double                _varRtt;
-    uint32_t        _maxRtt;
+    int64_t         _maxRtt;
     uint32_t        _filtFactCount;
     const uint32_t  _filtFactMax;
     const double          _jumpStdDevs;
@@ -59,8 +59,8 @@ private:
     int32_t         _jumpCount;
     int32_t         _driftCount;
     const int32_t   _detectThreshold;
-    uint32_t        _jumpBuf[kMaxDriftJumpCount];
-    uint32_t        _driftBuf[kMaxDriftJumpCount];
+    int64_t         _jumpBuf[kMaxDriftJumpCount];
+    int64_t         _driftBuf[kMaxDriftJumpCount];
 };
 
 }  

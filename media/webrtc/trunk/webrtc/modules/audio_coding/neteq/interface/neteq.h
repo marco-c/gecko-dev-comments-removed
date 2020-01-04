@@ -17,7 +17,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -34,10 +34,14 @@ struct NetEqNetworkStatistics {
   uint16_t packet_discard_rate;  
   uint16_t expand_rate;  
                          
+  uint16_t speech_expand_rate;  
+                                
   uint16_t preemptive_rate;  
                              
   uint16_t accelerate_rate;  
                              
+  uint16_t secondary_decoded_rate;  
+                                    
   int32_t clockdrift_ppm;  
                            
   int added_zero_samples;  
@@ -132,7 +136,7 @@ class NetEq {
   
   virtual int InsertPacket(const WebRtcRTPHeader& rtp_header,
                            const uint8_t* payload,
-                           int length_bytes,
+                           size_t length_bytes,
                            uint32_t receive_timestamp) = 0;
 
   

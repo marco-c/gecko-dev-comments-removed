@@ -34,7 +34,7 @@ void WebRtcIlbcfix_DoThePlc(
     int16_t *decresidual,  
     int16_t *lpc,    
     int16_t inlag,    
-    iLBC_Dec_Inst_t *iLBCdec_inst
+    IlbcDecoder *iLBCdec_inst
     
                             );
 

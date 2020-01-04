@@ -13,11 +13,30 @@
 #ifndef WEBRTC_BASE_THREAD_CHECKER_IMPL_H_
 #define WEBRTC_BASE_THREAD_CHECKER_IMPL_H_
 
+#if defined(WEBRTC_POSIX)
+#include <pthread.h>
+#include <unistd.h>
+#endif
+
 #include "webrtc/base/criticalsection.h"
 
 namespace rtc {
 
-class Thread;
+
+#if defined(WEBRTC_WIN)
+typedef DWORD PlatformThreadId;
+typedef DWORD PlatformThreadRef;
+#elif defined(WEBRTC_POSIX)
+typedef pid_t PlatformThreadId;
+typedef pthread_t PlatformThreadRef;
+#endif
+
+
+PlatformThreadId CurrentThreadId();
+PlatformThreadRef CurrentThreadRef();
+
+
+bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b);
 
 
 
@@ -38,12 +57,10 @@ class ThreadCheckerImpl {
   void DetachFromThread();
 
  private:
-  void EnsureThreadIdAssigned() const;
-
   mutable CriticalSection lock_;
   
   
-  mutable const Thread* valid_thread_;
+  mutable PlatformThreadRef valid_thread_;
 };
 
 }  

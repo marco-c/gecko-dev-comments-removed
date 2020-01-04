@@ -49,16 +49,18 @@ class Accelerate : public TimeStretch {
  protected:
   
   
-  virtual void SetParametersForPassiveSpeech(size_t len,
-                                             int16_t* best_correlation,
-                                             int* peak_index) const OVERRIDE;
+  void SetParametersForPassiveSpeech(size_t len,
+                                     int16_t* best_correlation,
+                                     int* peak_index) const override;
 
   
   
-  virtual ReturnCodes CheckCriteriaAndStretch(
-      const int16_t* input, size_t input_length, size_t peak_index,
-      int16_t best_correlation, bool active_speech,
-      AudioMultiVector* output) const OVERRIDE;
+  ReturnCodes CheckCriteriaAndStretch(const int16_t* input,
+                                      size_t input_length,
+                                      size_t peak_index,
+                                      int16_t best_correlation,
+                                      bool active_speech,
+                                      AudioMultiVector* output) const override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Accelerate);

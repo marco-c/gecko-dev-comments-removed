@@ -43,7 +43,7 @@ int32_t WebRtcVad_GaussianProbability(int16_t input,
   
   tmp16 = (inv_std >> 2);  
   
-  inv_std2 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(tmp16, tmp16, 2);
+  inv_std2 = (int16_t)((tmp16 * tmp16) >> 2);
   
   
   
@@ -54,12 +54,12 @@ int32_t WebRtcVad_GaussianProbability(int16_t input,
   
   
   
-  *delta = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(inv_std2, tmp16, 10);
+  *delta = (int16_t)((inv_std2 * tmp16) >> 10);
 
   
   
   
-  tmp32 = WEBRTC_SPL_MUL_16_16_RSFT(*delta, tmp16, 9);
+  tmp32 = (*delta * tmp16) >> 9;
 
   
   
@@ -67,7 +67,7 @@ int32_t WebRtcVad_GaussianProbability(int16_t input,
   if (tmp32 < kCompVar) {
     
     
-    tmp16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(kLog2Exp, (int16_t) tmp32, 12);
+    tmp16 = (int16_t)((kLog2Exp * tmp32) >> 12);
     tmp16 = -tmp16;
     exp_value = (0x0400 | (tmp16 & 0x03FF));
     tmp16 ^= 0xFFFF;
@@ -79,5 +79,5 @@ int32_t WebRtcVad_GaussianProbability(int16_t input,
 
   
   
-  return WEBRTC_SPL_MUL_16_16(inv_std, exp_value);
+  return inv_std * exp_value;
 }

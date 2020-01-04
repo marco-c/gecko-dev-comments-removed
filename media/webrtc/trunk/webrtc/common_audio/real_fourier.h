@@ -13,8 +13,8 @@
 
 #include <complex>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/aligned_malloc.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 
 
@@ -25,24 +25,24 @@ namespace webrtc {
 class RealFourier {
  public:
   
-  typedef scoped_ptr<float[], AlignedFreeDeleter> fft_real_scoper;
-  typedef scoped_ptr<std::complex<float>[], AlignedFreeDeleter> fft_cplx_scoper;
-
-  
-  static const int kMaxFftOrder;
+  typedef rtc::scoped_ptr<float[], AlignedFreeDeleter> fft_real_scoper;
+  typedef rtc::scoped_ptr<std::complex<float>[], AlignedFreeDeleter>
+      fft_cplx_scoper;
 
   
   static const int kFftBufferAlignment;
 
   
   
-  explicit RealFourier(int fft_order);
-  ~RealFourier();
+  static rtc::scoped_ptr<RealFourier> Create(int fft_order);
+  virtual ~RealFourier() {};
 
   
   
-  
   static int FftOrder(int length);
+
+  
+  static int FftLength(int order);
 
   
   
@@ -60,23 +60,13 @@ class RealFourier {
   
   
   
-  void Forward(const float* src, std::complex<float>* dest) const;
+  virtual void Forward(const float* src, std::complex<float>* dest) const = 0;
 
   
   
-  void Inverse(const std::complex<float>* src, float* dest) const;
+  virtual void Inverse(const std::complex<float>* src, float* dest) const = 0;
 
-  int order() const {
-    return order_;
-  }
-
- private:
-  
-  
-  typedef void OMXFFTSpec_R_F32_;
-  const int order_;
-
-  OMXFFTSpec_R_F32_* omx_spec_;
+  virtual int order() const = 0;
 };
 
 }  

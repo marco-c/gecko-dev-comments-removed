@@ -13,14 +13,14 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "webrtc/common_audio/fft4g.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/ns/include/noise_suppression.h"
 #include "webrtc/modules/audio_processing/ns/ns_core.h"
 #include "webrtc/modules/audio_processing/ns/windows_private.h"
-#include "webrtc/modules/audio_processing/utility/fft4g.h"
 
 
-static void set_feature_extraction_parameters(NSinst_t* self) {
+static void set_feature_extraction_parameters(NoiseSuppressionC* self) {
   
   self->featureExtractionParams.binSizeLrt = 0.1f;
   self->featureExtractionParams.binSizeSpecFlat = 0.05f;
@@ -71,7 +71,7 @@ static void set_feature_extraction_parameters(NSinst_t* self) {
 }
 
 
-int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs) {
+int WebRtcNs_InitCore(NoiseSuppressionC* self, uint32_t fs) {
   int i;
   
   if (self == NULL) {
@@ -79,24 +79,18 @@ int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs) {
   }
 
   
-  if (fs == 8000 || fs == 16000 || fs == 32000) {
+  if (fs == 8000 || fs == 16000 || fs == 32000 || fs == 48000) {
     self->fs = fs;
   } else {
     return -1;
   }
   self->windShift = 0;
+  
   if (fs == 8000) {
-    
     self->blockLen = 80;
     self->anaLen = 128;
     self->window = kBlocks80w128;
-  } else if (fs == 16000) {
-    
-    self->blockLen = 160;
-    self->anaLen = 256;
-    self->window = kBlocks160w256;
-  } else if (fs == 32000) {
-    
+  } else {
     self->blockLen = 160;
     self->anaLen = 256;
     self->window = kBlocks160w256;
@@ -113,7 +107,9 @@ int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs) {
   memset(self->syntBuf, 0, sizeof(float) * ANAL_BLOCKL_MAX);
 
   
-  memset(self->dataBufHB, 0, sizeof(float) * ANAL_BLOCKL_MAX);
+  memset(self->dataBufHB,
+         0,
+         sizeof(float) * NUM_HIGH_BANDS_MAX * ANAL_BLOCKL_MAX);
 
   
   memset(self->quantile, 0, sizeof(float) * HALF_ANAL_BLOCKL);
@@ -218,7 +214,9 @@ int WebRtcNs_InitCore(NSinst_t* self, uint32_t fs) {
 }
 
 
-static void NoiseEstimation(NSinst_t* self, float* magn, float* noise) {
+static void NoiseEstimation(NoiseSuppressionC* self,
+                            float* magn,
+                            float* noise) {
   int i, s, offset;
   float lmagn[HALF_ANAL_BLOCKL], delta;
 
@@ -292,7 +290,7 @@ static void NoiseEstimation(NSinst_t* self, float* magn, float* noise) {
 
 
 
-static void FeatureParameterExtraction(NSinst_t* self, int flag) {
+static void FeatureParameterExtraction(NoiseSuppressionC* self, int flag) {
   int i, useFeatureSpecFlat, useFeatureSpecDiff, numHistLrt;
   int maxPeak1, maxPeak2;
   int weightPeak1SpecFlat, weightPeak2SpecFlat, weightPeak1SpecDiff,
@@ -522,7 +520,8 @@ static void FeatureParameterExtraction(NSinst_t* self, int flag) {
 
 
 
-static void ComputeSpectralFlatness(NSinst_t* self, const float* magnIn) {
+static void ComputeSpectralFlatness(NoiseSuppressionC* self,
+                                    const float* magnIn) {
   int i;
   int shiftLP = 1;  
   float avgSpectralFlatnessNum, avgSpectralFlatnessDen, spectralTmp;
@@ -564,7 +563,7 @@ static void ComputeSpectralFlatness(NSinst_t* self, const float* magnIn) {
 
 
 
-static void ComputeSnr(const NSinst_t* self,
+static void ComputeSnr(const NoiseSuppressionC* self,
                        const float* magn,
                        const float* noise,
                        float* snrLocPrior,
@@ -593,7 +592,7 @@ static void ComputeSnr(const NSinst_t* self,
 
 
 
-static void ComputeSpectralDifference(NSinst_t* self,
+static void ComputeSpectralDifference(NoiseSuppressionC* self,
                                       const float* magnIn) {
   
   
@@ -640,7 +639,7 @@ static void ComputeSpectralDifference(NSinst_t* self,
 
 
 
-static void SpeechNoiseProb(NSinst_t* self,
+static void SpeechNoiseProb(NoiseSuppressionC* self,
                             float* probSpeechFinal,
                             const float* snrLocPrior,
                             const float* snrLocPost) {
@@ -753,7 +752,7 @@ static void SpeechNoiseProb(NSinst_t* self,
 
 
 
-static void FeatureUpdate(NSinst_t* self,
+static void FeatureUpdate(NoiseSuppressionC* self,
                           const float* magn,
                           int updateParsFlag) {
   
@@ -798,7 +797,7 @@ static void FeatureUpdate(NSinst_t* self,
 
 
 
-static void UpdateNoiseEstimate(NSinst_t* self,
+static void UpdateNoiseEstimate(NoiseSuppressionC* self,
                                 const float* magn,
                                 const float* snrLocPrior,
                                 const float* snrLocPost,
@@ -884,7 +883,7 @@ static void UpdateBuffer(const float* frame,
 
 
 
-static void FFT(NSinst_t* self,
+static void FFT(NoiseSuppressionC* self,
                 float* time_data,
                 int time_data_length,
                 int magnitude_length,
@@ -921,7 +920,7 @@ static void FFT(NSinst_t* self,
 
 
 
-static void IFFT(NSinst_t* self,
+static void IFFT(NoiseSuppressionC* self,
                  const float* real,
                  const float* imag,
                  int magnitude_length,
@@ -983,7 +982,7 @@ static void Windowing(const float* window,
 
 
 
-static void ComputeDdBasedWienerFilter(const NSinst_t* self,
+static void ComputeDdBasedWienerFilter(const NoiseSuppressionC* self,
                                        const float* magn,
                                        float* theFilter) {
   int i;
@@ -1011,7 +1010,7 @@ static void ComputeDdBasedWienerFilter(const NSinst_t* self,
 
 
 
-int WebRtcNs_set_policy_core(NSinst_t* self, int mode) {
+int WebRtcNs_set_policy_core(NoiseSuppressionC* self, int mode) {
   
   if (mode < 0 || mode > 3) {
     return (-1);
@@ -1041,7 +1040,7 @@ int WebRtcNs_set_policy_core(NSinst_t* self, int mode) {
   return 0;
 }
 
-int WebRtcNs_AnalyzeCore(NSinst_t* self, float* speechFrame) {
+void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
   int i;
   const int kStartBand = 5;  
   int updateParsFlag;
@@ -1062,9 +1061,7 @@ int WebRtcNs_AnalyzeCore(NSinst_t* self, float* speechFrame) {
   float parametric_num = 0.0;
 
   
-  if (self->initFlag != 1) {
-    return (-1);
-  }
+  assert(self->initFlag == 1);
   updateParsFlag = self->modelUpdatePars[0];
 
   
@@ -1081,7 +1078,7 @@ int WebRtcNs_AnalyzeCore(NSinst_t* self, float* speechFrame) {
     
     
     
-    return 0;
+    return;
   }
 
   self->blockInd++;  
@@ -1181,18 +1178,15 @@ int WebRtcNs_AnalyzeCore(NSinst_t* self, float* speechFrame) {
   
   memcpy(self->noise, noise, sizeof(*noise) * self->magnLen);
   memcpy(self->magnPrevAnalyze, magn, sizeof(*magn) * self->magnLen);
-
-  return 0;
 }
 
-int WebRtcNs_ProcessCore(NSinst_t* self,
-                         float* speechFrame,
-                         float* speechFrameHB,
-                         float* outFrame,
-                         float* outFrameHB) {
+void WebRtcNs_ProcessCore(NoiseSuppressionC* self,
+                          const float* const* speechFrame,
+                          int num_bands,
+                          float* const* outFrame) {
   
   int flagHB = 0;
-  int i;
+  int i, j;
 
   float energy1, energy2, gain, factor, factor1, factor2;
   float fout[BLOCKL_MAX];
@@ -1211,14 +1205,16 @@ int WebRtcNs_ProcessCore(NSinst_t* self,
   float sumMagnAnalyze, sumMagnProcess;
 
   
-  if (self->initFlag != 1) {
-    return (-1);
-  }
-  
-  if (self->fs == 32000) {
-    if (speechFrameHB == NULL) {
-      return -1;
-    }
+  assert(self->initFlag == 1);
+  assert((num_bands - 1) <= NUM_HIGH_BANDS_MAX);
+
+  const float* const* speechFrameHB = NULL;
+  float* const* outFrameHB = NULL;
+  int num_high_bands = 0;
+  if (num_bands > 1) {
+    speechFrameHB = &speechFrame[1];
+    outFrameHB = &outFrame[1];
+    num_high_bands = num_bands - 1;
     flagHB = 1;
     
     deltaBweHB = (int)self->magnLen / 4;
@@ -1226,11 +1222,16 @@ int WebRtcNs_ProcessCore(NSinst_t* self,
   }
 
   
-  UpdateBuffer(speechFrame, self->blockLen, self->anaLen, self->dataBuf);
+  UpdateBuffer(speechFrame[0], self->blockLen, self->anaLen, self->dataBuf);
 
   if (flagHB == 1) {
     
-    UpdateBuffer(speechFrameHB, self->blockLen, self->anaLen, self->dataBufHB);
+    for (i = 0; i < num_high_bands; ++i) {
+      UpdateBuffer(speechFrameHB[i],
+                   self->blockLen,
+                   self->anaLen,
+                   self->dataBufHB[i]);
+    }
   }
 
   Windowing(self->window, self->dataBuf, self->anaLen, winData);
@@ -1245,16 +1246,21 @@ int WebRtcNs_ProcessCore(NSinst_t* self,
     UpdateBuffer(NULL, self->blockLen, self->anaLen, self->syntBuf);
 
     for (i = 0; i < self->blockLen; ++i)
-      outFrame[i] =
+      outFrame[0][i] =
           WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX, fout[i], WEBRTC_SPL_WORD16_MIN);
 
     
-    if (flagHB == 1)
-      for (i = 0; i < self->blockLen; ++i)
-        outFrameHB[i] = WEBRTC_SPL_SAT(
-            WEBRTC_SPL_WORD16_MAX, self->dataBufHB[i], WEBRTC_SPL_WORD16_MIN);
+    if (flagHB == 1) {
+      for (i = 0; i < num_high_bands; ++i) {
+        for (j = 0; j < self->blockLen; ++j) {
+          outFrameHB[i][j] = WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
+                                            self->dataBufHB[i][j],
+                                            WEBRTC_SPL_WORD16_MIN);
+        }
+      }
+    }
 
-    return 0;
+    return;
   }
 
   FFT(self, winData, self->anaLen, self->magnLen, real, imag, magn);
@@ -1349,7 +1355,7 @@ int WebRtcNs_ProcessCore(NSinst_t* self,
   UpdateBuffer(NULL, self->blockLen, self->anaLen, self->syntBuf);
 
   for (i = 0; i < self->blockLen; ++i)
-    outFrame[i] =
+    outFrame[0][i] =
         WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX, fout[i], WEBRTC_SPL_WORD16_MIN);
 
   
@@ -1397,12 +1403,13 @@ int WebRtcNs_ProcessCore(NSinst_t* self,
       gainTimeDomainHB = 1.f;
     }
     
-    for (i = 0; i < self->blockLen; i++) {
-      float o = gainTimeDomainHB * self->dataBufHB[i];
-      outFrameHB[i] =
-          WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX, o, WEBRTC_SPL_WORD16_MIN);
+    for (i = 0; i < num_high_bands; ++i) {
+      for (j = 0; j < self->blockLen; j++) {
+        outFrameHB[i][j] =
+            WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
+                           gainTimeDomainHB * self->dataBufHB[i][j],
+                           WEBRTC_SPL_WORD16_MIN);
+      }
     }
   }  
-
-  return 0;
 }

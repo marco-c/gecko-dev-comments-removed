@@ -8,13 +8,30 @@
 
 
 
+#include "webrtc/modules/video_coding/codecs/vp8/vp8_factory.h"
 
+#include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/codecs/vp8/vp8_impl.h"
 
 namespace webrtc {
 
+bool VP8EncoderFactoryConfig::use_simulcast_adapter_ = false;
+
+class VP8EncoderImplFactory : public VideoEncoderFactory {
+ public:
+  VideoEncoder* Create() override { return new VP8EncoderImpl(); }
+
+  void Destroy(VideoEncoder* encoder) override { delete encoder; }
+
+  virtual ~VP8EncoderImplFactory() {}
+};
+
 VP8Encoder* VP8Encoder::Create() {
-  return new VP8EncoderImpl();
+  if (VP8EncoderFactoryConfig::use_simulcast_adapter()) {
+    return new SimulcastEncoderAdapter(new VP8EncoderImplFactory());
+  } else {
+    return new VP8EncoderImpl();
+  }
 }
 
 VP8Decoder* VP8Decoder::Create() {

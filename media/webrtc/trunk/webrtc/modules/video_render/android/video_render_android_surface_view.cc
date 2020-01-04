@@ -412,10 +412,10 @@ int32_t AndroidSurfaceViewChannel::Init(
 
 int32_t AndroidSurfaceViewChannel::RenderFrame(
     const uint32_t ,
-    I420VideoFrame& videoFrame) {
+    const I420VideoFrame& videoFrame) {
   
   _renderCritSect.Enter();
-  _bufferToRender.SwapFrame(&videoFrame);
+  _bufferToRender = videoFrame;
   _renderCritSect.Leave();
   _renderer.ReDraw();
   return 0;

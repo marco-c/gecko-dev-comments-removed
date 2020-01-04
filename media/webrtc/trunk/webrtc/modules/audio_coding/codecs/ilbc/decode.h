@@ -28,7 +28,7 @@
 void WebRtcIlbcfix_DecodeImpl(
     int16_t *decblock,    
     const uint16_t *bytes, 
-    iLBC_Dec_Inst_t *iLBCdec_inst, 
+    IlbcDecoder *iLBCdec_inst, 
 
     int16_t mode      
 

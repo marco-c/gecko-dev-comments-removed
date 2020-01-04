@@ -20,7 +20,7 @@
 #include "third_party/jsoncpp/json.h"
 #endif
 
-
+namespace rtc {
 
 
 
@@ -85,5 +85,7 @@ bool GetDoubleFromJsonObject(const Json::Value& in, const std::string& k,
 
 
 std::string JsonValueToString(const Json::Value& json);
+
+}  
 
 #endif  

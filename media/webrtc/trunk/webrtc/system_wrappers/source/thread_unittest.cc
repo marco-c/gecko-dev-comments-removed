@@ -11,7 +11,7 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 
 namespace webrtc {
@@ -23,11 +23,10 @@ bool NullRunFunction(void* obj) {
 }
 
 TEST(ThreadTest, StartStop) {
-  ThreadWrapper* thread = ThreadWrapper::CreateThread(&NullRunFunction, NULL);
-  unsigned int id = 42;
-  ASSERT_TRUE(thread->Start(id));
+  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
+      &NullRunFunction, nullptr, "ThreadTest");
+  ASSERT_TRUE(thread->Start());
   EXPECT_TRUE(thread->Stop());
-  delete thread;
 }
 
 
@@ -40,17 +39,15 @@ bool SetFlagRunFunction(void* obj) {
 
 TEST(ThreadTest, RunFunctionIsCalled) {
   bool flag = false;
-  ThreadWrapper* thread = ThreadWrapper::CreateThread(&SetFlagRunFunction,
-                                                      &flag);
-  unsigned int id = 42;
-  ASSERT_TRUE(thread->Start(id));
+  rtc::scoped_ptr<ThreadWrapper> thread = ThreadWrapper::CreateThread(
+      &SetFlagRunFunction, &flag, "RunFunctionIsCalled");
+  ASSERT_TRUE(thread->Start());
 
   
   EXPECT_TRUE(thread->Stop());
 
   
   EXPECT_TRUE(flag);
-  delete thread;
 }
 
 }  

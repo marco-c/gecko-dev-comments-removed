@@ -48,10 +48,16 @@ void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
 
 
 
+
+
 void RenderInWindow(webrtc::ViERender* video_render_interface,
-                    int  frame_provider_id,
+                    int frame_provider_id,
                     void* os_window,
                     float z_index);
+
+
+void StopRenderInWindow(webrtc::ViERender* video_render_interface,
+                        int frame_provider_id);
 
 
 

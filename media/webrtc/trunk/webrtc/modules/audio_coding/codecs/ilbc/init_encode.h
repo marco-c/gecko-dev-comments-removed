@@ -26,7 +26,7 @@
 
 
 int16_t WebRtcIlbcfix_InitEncode(  
-    iLBC_Enc_Inst_t *iLBCenc_inst, 
+    IlbcEncoder *iLBCenc_inst, 
     int16_t mode     
                                          );
 

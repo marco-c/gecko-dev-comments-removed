@@ -91,7 +91,7 @@ void AsyncHttpRequest::DoWork() {
   
   
   
-  Thread::Current()->ProcessMessages(kForever);
+  Thread::Current()->ProcessMessages(Thread::kForever);
 }
 
 void AsyncHttpRequest::LaunchRequest() {

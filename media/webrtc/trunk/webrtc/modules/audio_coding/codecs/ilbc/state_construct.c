@@ -60,7 +60,8 @@ void WebRtcIlbcfix_StateConstruct(
     for(k=0; k<len; k++){
       
 
-      (*tmp1) = (int16_t) ((WEBRTC_SPL_MUL_16_16(maxVal,WebRtcIlbcfix_kStateSq3[(*tmp2)])+(int32_t)2097152) >> 22);
+      *tmp1 = (int16_t)((maxVal * WebRtcIlbcfix_kStateSq3[*tmp2] + 2097152) >>
+          22);
       tmp1++;
       tmp2--;
     }
@@ -68,7 +69,8 @@ void WebRtcIlbcfix_StateConstruct(
     for(k=0; k<len; k++){
       
 
-      (*tmp1) = (int16_t) ((WEBRTC_SPL_MUL_16_16(maxVal,WebRtcIlbcfix_kStateSq3[(*tmp2)])+(int32_t)262144) >> 19);
+      *tmp1 = (int16_t)((maxVal * WebRtcIlbcfix_kStateSq3[*tmp2] + 262144) >>
+          19);
       tmp1++;
       tmp2--;
     }
@@ -76,7 +78,8 @@ void WebRtcIlbcfix_StateConstruct(
     for(k=0; k<len; k++){
       
 
-      (*tmp1) = (int16_t) ((WEBRTC_SPL_MUL_16_16(maxVal,WebRtcIlbcfix_kStateSq3[(*tmp2)])+(int32_t)65536) >> 17);
+      *tmp1 = (int16_t)((maxVal * WebRtcIlbcfix_kStateSq3[*tmp2] + 65536) >>
+          17);
       tmp1++;
       tmp2--;
     }

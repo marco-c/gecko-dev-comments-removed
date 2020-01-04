@@ -15,19 +15,10 @@
 
 #include <limits>
 
-#include "webrtc/base/common.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions_impl.h"
 
 namespace rtc {
-
-inline void Check(bool condition) {
-  if (!condition) {
-    LOG(LS_ERROR) << "CHECK failed.";
-    Break();
-    
-  }
-}
 
 
 
@@ -41,7 +32,7 @@ inline bool IsValueInRangeForNumericType(Src value) {
 
 template <typename Dst, typename Src>
 inline Dst checked_cast(Src value) {
-  Check(IsValueInRangeForNumericType<Dst>(value));
+  CHECK(IsValueInRangeForNumericType<Dst>(value));
   return static_cast<Dst>(value);
 }
 
@@ -66,11 +57,11 @@ inline Dst saturated_cast(Src value) {
 
     
     case internal::TYPE_INVALID:
-      Check(false);
+      FATAL();
       return std::numeric_limits<Dst>::max();
   }
 
-  Check(false); 
+  FATAL();
   return static_cast<Dst>(value);
 }
 

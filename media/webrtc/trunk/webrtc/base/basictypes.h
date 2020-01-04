@@ -111,15 +111,6 @@ typedef int socklen_t;
 
 
 #ifdef __cplusplus
-namespace rtc {
-  template<class T> inline T _min(T a, T b) { return (a > b) ? b : a; }
-  template<class T> inline T _max(T a, T b) { return (a < b) ? b : a; }
-
-  
-  
-  const int kForever = -1;
-}
-
 #define ALIGNP(p, t) \
     (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \
     ((t) - 1)) & ~((t) - 1))))

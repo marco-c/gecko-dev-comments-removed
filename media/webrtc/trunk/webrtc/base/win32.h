@@ -110,6 +110,13 @@ inline bool IsWindowsXpOrLater() {
           (major == kWindows2000 && minor >= 1)));
 }
 
+inline bool IsWindows8OrLater() {
+  int major, minor;
+  return (GetOsVersion(&major, &minor, NULL) &&
+          (major > kWindowsVista ||
+          (major == kWindowsVista && minor >= 2)));
+}
+
 
 bool GetCurrentProcessIntegrityLevel(int* level);
 

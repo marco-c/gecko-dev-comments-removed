@@ -52,11 +52,11 @@ class FrameWriterImpl : public FrameWriter {
   
   
   FrameWriterImpl(std::string output_filename, size_t frame_length_in_bytes);
-  virtual ~FrameWriterImpl();
-  virtual bool Init() OVERRIDE;
-  virtual bool WriteFrame(uint8_t* frame_buffer) OVERRIDE;
-  virtual void Close() OVERRIDE;
-  virtual size_t FrameLength() OVERRIDE;
+  ~FrameWriterImpl() override;
+  bool Init() override;
+  bool WriteFrame(uint8_t* frame_buffer) override;
+  void Close() override;
+  size_t FrameLength() override;
 
  private:
   std::string output_filename_;

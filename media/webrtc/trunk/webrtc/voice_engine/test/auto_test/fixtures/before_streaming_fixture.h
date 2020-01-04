@@ -41,6 +41,9 @@ class BeforeStreamingFixture : public AfterInitializationFixture {
   
   void ResumePlaying();
 
+  
+  void WaitForTransmittedPackets(int32_t packet_count);
+
  private:
   void SetUpLocalPlayback();
 

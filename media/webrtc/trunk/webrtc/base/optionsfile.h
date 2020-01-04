@@ -22,6 +22,7 @@ namespace rtc {
 class OptionsFile {
  public:
   OptionsFile(const std::string &path);
+  ~OptionsFile();
 
   
   bool Load();

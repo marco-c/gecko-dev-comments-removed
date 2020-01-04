@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_FINE_AUDIO_BUFFER_H_
 #define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_FINE_AUDIO_BUFFER_H_
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -56,7 +56,7 @@ class FineAudioBuffer {
   int bytes_per_10_ms_;
 
   
-  scoped_ptr<int8_t[]> cache_buffer_;
+  rtc::scoped_ptr<int8_t[]> cache_buffer_;
   int cached_buffer_start_;  
   int cached_bytes_;  
 };

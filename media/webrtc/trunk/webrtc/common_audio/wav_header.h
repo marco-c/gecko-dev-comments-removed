@@ -18,6 +18,13 @@ namespace webrtc {
 
 static const size_t kWavHeaderSize = 44;
 
+class ReadableWav {
+ public:
+  
+  size_t virtual Read(void* buf, size_t num_bytes) = 0;
+  virtual ~ReadableWav() {}
+};
+
 enum WavFormat {
   kWavFormatPcm   = 1,  
   kWavFormatALaw  = 6,  
@@ -44,7 +51,8 @@ void WriteWavHeader(uint8_t* buf,
 
 
 
-bool ReadWavHeader(const uint8_t* buf,
+
+bool ReadWavHeader(ReadableWav* readable,
                    int* num_channels,
                    int* sample_rate,
                    WavFormat* format,

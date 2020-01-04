@@ -12,10 +12,12 @@
 #define WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_
 
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 
 #include <stdio.h>
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
@@ -33,13 +35,11 @@ public:
     VCMEncodedFrameCallback(EncodedImageCallback* post_encode_callback);
     virtual ~VCMEncodedFrameCallback();
 
-  void SetCritSect(CriticalSectionWrapper* critSect);
-
     
 
 
     int32_t Encoded(
-        EncodedImage& encodedImage,
+        const EncodedImage& encodedImage,
         const CodecSpecificInfo* codecSpecificInfo = NULL,
         const RTPFragmentationHeader* fragmentationHeader = NULL);
     
@@ -54,12 +54,14 @@ public:
     void SetPayloadType(uint8_t payloadType) { _payloadType = payloadType; };
     void SetInternalSource(bool internalSource) { _internalSource = internalSource; };
 
+    void SetRotation(VideoRotation rotation) { _rotation = rotation; }
+
 private:
     VCMPacketizationCallback* _sendCallback;
-    CriticalSectionWrapper* _critSect;
     media_optimization::MediaOptimization* _mediaOpt;
     uint8_t _payloadType;
     bool _internalSource;
+    VideoRotation _rotation;
 
     EncodedImageCallback* post_encode_callback_;
 
@@ -76,7 +78,9 @@ class VCMGenericEncoder
 {
     friend class VCMCodecDataBase;
 public:
-    VCMGenericEncoder(VideoEncoder& encoder, bool internalSource = false);
+    VCMGenericEncoder(VideoEncoder* encoder,
+                      VideoEncoderRateObserver* rate_observer,
+                      bool internalSource);
     ~VCMGenericEncoder();
     
 
@@ -87,7 +91,7 @@ public:
 
     int32_t InitEncode(const VideoCodec* settings,
                        int32_t numberOfCores,
-                       uint32_t maxPayloadSize);
+                       size_t maxPayloadSize);
     
 
 
@@ -102,11 +106,14 @@ public:
 
 
 
+    
+    
+    
     int32_t SetRates(uint32_t target_bitrate, uint32_t frameRate);
     
 
 
-    int32_t SetChannelParameters(int32_t packetLoss, int rtt);
+    int32_t SetChannelParameters(int32_t packetLoss, int64_t rtt);
     int32_t CodecConfigParameters(uint8_t* buffer, int32_t size);
     
 
@@ -130,12 +137,14 @@ public:
     bool InternalSource() const;
 
 private:
-    VideoEncoder&               _encoder;
-    VideoCodecType              _codecType;
-    VCMEncodedFrameCallback*    _VCMencodedFrameCallback;
-    uint32_t                    _bitRate;
-    uint32_t                    _frameRate;
-    bool                        _internalSource;
+    VideoEncoder* const encoder_;
+    VideoEncoderRateObserver* const rate_observer_;
+    VCMEncodedFrameCallback*  vcm_encoded_frame_callback_;
+    uint32_t bit_rate_;
+    uint32_t frame_rate_;
+    const bool internal_source_;
+    mutable rtc::CriticalSection rates_lock_;
+    VideoRotation rotation_;
 }; 
 
 }  

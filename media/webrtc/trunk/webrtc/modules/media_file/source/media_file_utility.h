@@ -18,7 +18,6 @@
 #include "webrtc/modules/media_file/interface/media_file_defines.h"
 
 namespace webrtc {
-class AviFile;
 class InStream;
 class OutStream;
 
@@ -28,61 +27,6 @@ public:
 
     ModuleFileUtility(const int32_t id);
     ~ModuleFileUtility();
-
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    
-    
-    
-    
-    int32_t InitAviReading(const char* fileName, bool videoOnly, bool loop);
-
-    
-    
-    
-    
-    
-    
-    int32_t ReadAviAudioData(int8_t* outBuffer,
-                             const uint32_t bufferLengthInBytes);
-
-    
-    
-    
-    int32_t ReadAviVideoData(int8_t* videoBuffer,
-                             const uint32_t bufferLengthInBytes);
-
-    
-    
-    
-    
-    int32_t InitAviWriting(const char* filename,
-                           const CodecInst& codecInst,
-                           const VideoCodec& videoCodecInst,
-                           const bool videoOnly);
-
-    
-    
-    
-    
-    
-    int32_t WriteAviAudioData(const int8_t* audioBuffer,
-                              uint32_t bufferLengthInBytes);
-
-
-    
-    
-    
-    
-    
-    
-    int32_t WriteAviVideoData(const int8_t* videoBuffer,
-                              uint32_t bufferLengthInBytes);
-
-    
-    int32_t CloseAviFile();
-
-    int32_t VideoCodecInst(VideoCodec& codecInst);
-#endif 
 
     
     
@@ -98,7 +42,7 @@ public:
     
     
     int32_t ReadWavDataAsMono(InStream& stream, int8_t* audioBuffer,
-                              const uint32_t dataLengthInBytes);
+                              const size_t dataLengthInBytes);
 
     
     
@@ -111,7 +55,7 @@ public:
     int32_t ReadWavDataAsStereo(InStream& wav,
                                 int8_t* audioBufferLeft,
                                 int8_t* audioBufferRight,
-                                const uint32_t bufferLength);
+                                const size_t bufferLength);
 
     
     
@@ -125,7 +69,7 @@ public:
     
     int32_t WriteWavData(OutStream& stream,
                          const int8_t* audioBuffer,
-                         const uint32_t bufferLength);
+                         const size_t bufferLength);
 
     
     
@@ -148,7 +92,7 @@ public:
     
     
     int32_t ReadPCMData(InStream& stream, int8_t* audioBuffer,
-                        const uint32_t dataLengthInBytes);
+                        const size_t dataLengthInBytes);
 
     
     
@@ -161,7 +105,7 @@ public:
     
     int32_t WritePCMData(OutStream& stream,
                          const int8_t* audioBuffer,
-                         uint32_t bufferLength);
+                         size_t bufferLength);
 
     
     
@@ -175,7 +119,7 @@ public:
     
     int32_t ReadCompressedData(InStream& stream,
                                int8_t* audioBuffer,
-                               const uint32_t dataLengthInBytes);
+                               const size_t dataLengthInBytes);
 
     
     
@@ -189,7 +133,7 @@ public:
     
     int32_t WriteCompressedData(OutStream& stream,
                                 const int8_t* audioBuffer,
-                                const uint32_t bufferLength);
+                                const size_t bufferLength);
 
     
     
@@ -201,7 +145,7 @@ public:
     
     int32_t ReadPreEncodedData(InStream& stream,
                                int8_t* audioBuffer,
-                               const uint32_t dataLengthInBytes);
+                               const size_t dataLengthInBytes);
 
     
     
@@ -215,7 +159,7 @@ public:
     
     int32_t WritePreEncodedData(OutStream& stream,
                                 const int8_t* inData,
-                                const uint32_t dataLengthInBytes);
+                                const size_t dataLengthInBytes);
 
     
     
@@ -320,7 +264,7 @@ private:
     uint32_t _stopPointInMs;
     uint32_t _startPointInMs;
     uint32_t _playoutPositionMs;
-    uint32_t _bytesWritten;
+    size_t _bytesWritten;
 
     CodecInst codec_info_;
     MediaFileUtility_CodecType _codecId;
@@ -335,13 +279,6 @@ private:
 
     
     uint8_t _tempData[WAV_MAX_BUFFER_SIZE];
-
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    AviFile* _aviAudioInFile;
-    AviFile* _aviVideoInFile;
-    AviFile* _aviOutFile;
-    VideoCodec _videoCodec;
-#endif
 };
 }  
 #endif 

@@ -12,38 +12,72 @@
 #define WEBRTC_MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
 
 #include <list>
+#include <queue>
 
+#include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/utility/interface/process_thread.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class ProcessThreadImpl : public ProcessThread
-{
-public:
-    ProcessThreadImpl();
-    virtual ~ProcessThreadImpl();
 
-    virtual int32_t Start();
-    virtual int32_t Stop();
+class ProcessThreadImpl : public ProcessThread {
+ public:
+  ProcessThreadImpl();
+  ~ProcessThreadImpl() override;
 
-    virtual int32_t RegisterModule(Module* module);
-    virtual int32_t DeRegisterModule(const Module* module);
+  void Start() override;
+  void Stop() override;
 
-protected:
-    static bool Run(void* obj);
+  void WakeUp(Module* module) override;
+  void PostTask(rtc::scoped_ptr<ProcessTask> task) override;
 
-    bool Process();
+  void RegisterModule(Module* module) override;
+  void DeRegisterModule(Module* module) override;
 
-private:
-    typedef std::list<Module*> ModuleList;
-    EventWrapper&           _timeEvent;
-    CriticalSectionWrapper* _critSectModules;
-    ModuleList              _modules;
-    ThreadWrapper*          _thread;
+ protected:
+  static bool Run(void* obj);
+  bool Process();
+
+ private:
+  struct ModuleCallback {
+    ModuleCallback() : module(nullptr), next_callback(0) {}
+    ModuleCallback(const ModuleCallback& cb)
+        : module(cb.module), next_callback(cb.next_callback) {}
+    ModuleCallback(Module* module) : module(module), next_callback(0) {}
+    bool operator==(const ModuleCallback& cb) const {
+      return cb.module == module;
+    }
+
+    Module* const module;
+    int64_t next_callback;  
+
+   private:
+    ModuleCallback& operator=(ModuleCallback&);
+  };
+
+  typedef std::list<ModuleCallback> ModuleList;
+
+  
+  
+  
+  
+  
+  
+  rtc::CriticalSection lock_;  
+
+  rtc::ThreadChecker thread_checker_;
+  const rtc::scoped_ptr<EventWrapper> wake_up_;
+  rtc::scoped_ptr<ThreadWrapper> thread_;
+
+  ModuleList modules_;
+  
+  std::queue<ProcessTask*> queue_;
+  bool stop_;
 };
+
 }  
 
 #endif 

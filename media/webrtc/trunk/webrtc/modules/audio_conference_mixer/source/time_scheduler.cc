@@ -12,7 +12,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
-TimeScheduler::TimeScheduler(const uint32_t periodicityInMs)
+TimeScheduler::TimeScheduler(const int64_t periodicityInMs)
     : _crit(CriticalSectionWrapper::CreateCriticalSection()),
       _isStarted(false),
       _lastPeriodMark(),
@@ -50,8 +50,7 @@ int32_t TimeScheduler::UpdateScheduler()
     int64_t amassedMs = amassedTicks.Milliseconds();
 
     
-    int32_t periodsToClaim = static_cast<int32_t>(amassedMs /
-        static_cast<int32_t>(_periodicityInMs));
+    int64_t periodsToClaim = amassedMs / _periodicityInMs;
 
     
     
@@ -65,7 +64,7 @@ int32_t TimeScheduler::UpdateScheduler()
     
     
     
-    for(int32_t i = 0; i < periodsToClaim; i++)
+    for(int64_t i = 0; i < periodsToClaim; i++)
     {
         _lastPeriodMark += _periodicityInTicks;
     }
@@ -77,7 +76,7 @@ int32_t TimeScheduler::UpdateScheduler()
 }
 
 int32_t TimeScheduler::TimeToNextUpdate(
-    int32_t& updateTimeInMS) const
+    int64_t& updateTimeInMS) const
 {
     CriticalSectionScoped cs(_crit);
     
@@ -92,8 +91,8 @@ int32_t TimeScheduler::TimeToNextUpdate(
     
     TickTime tickNow = TickTime::Now();
     TickInterval ticksSinceLastUpdate = tickNow - _lastPeriodMark;
-    const int32_t millisecondsSinceLastUpdate =
-        static_cast<int32_t>(ticksSinceLastUpdate.Milliseconds());
+    const int64_t millisecondsSinceLastUpdate =
+        ticksSinceLastUpdate.Milliseconds();
 
     updateTimeInMS = _periodicityInMs - millisecondsSinceLastUpdate;
     updateTimeInMS =  (updateTimeInMS < 0) ? 0 : updateTimeInMS;

@@ -43,7 +43,7 @@ public:
     
     
     virtual int32_t DumpPacket(const uint8_t* packet,
-                               uint16_t packetLength) = 0;
+                               size_t packetLength) = 0;
 
 protected:
     virtual ~RtpDump();

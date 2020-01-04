@@ -121,6 +121,10 @@ class SSLStreamAdapter : public StreamAdapterInterface {
 
   
   
+  virtual bool GetSslCipher(std::string* cipher);
+
+  
+  
   
   
   
@@ -136,24 +140,20 @@ class SSLStreamAdapter : public StreamAdapterInterface {
                                     size_t context_len,
                                     bool use_context,
                                     uint8* result,
-                                    size_t result_len) {
-    return false;  
-  }
-
+                                    size_t result_len);
 
   
-  virtual bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers) {
-    return false;
-  }
-
-  virtual bool GetDtlsSrtpCipher(std::string* cipher) {
-    return false;
-  }
+  virtual bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers);
+  virtual bool GetDtlsSrtpCipher(std::string* cipher);
 
   
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
+
+  
+  
+  static std::string GetDefaultSslCipher();
 
  private:
   

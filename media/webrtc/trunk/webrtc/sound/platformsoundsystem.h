@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef WEBRTC_SOUND_PLATFORMSOUNDSYSTEM_H_
+#define WEBRTC_SOUND_PLATFORMSOUNDSYSTEM_H_
+
+namespace rtc {
+
+class SoundSystemInterface;
+
+
+SoundSystemInterface *CreatePlatformSoundSystem();
+
+}  
+
+#endif  

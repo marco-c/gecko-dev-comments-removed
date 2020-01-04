@@ -28,7 +28,7 @@
 void WebRtcIlbcfix_EncodeImpl(
     uint16_t *bytes,     
     const int16_t *block, 
-    iLBC_Enc_Inst_t *iLBCenc_inst 
+    IlbcEncoder *iLBCenc_inst 
 
                           );
 

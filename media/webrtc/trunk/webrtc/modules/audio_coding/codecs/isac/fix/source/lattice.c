@@ -115,11 +115,11 @@ void WebRtcIsacfix_NormLatticeFilterMa(int16_t orderCoef,
 
   for (u=0;u<SUBFRAMES;u++)
   {
-    int32_t temp1 = WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN);
+    int32_t temp1 = u * HALF_SUBFRAMELEN;
 
     
-    temp2 = (int16_t)WEBRTC_SPL_MUL_16_16(u, orderCoef);
-    temp3 = (int16_t)WEBRTC_SPL_MUL_16_16(2, u)+lo_hi;
+    temp2 = (int16_t)(u * orderCoef);
+    temp3 = (int16_t)(2 * u + lo_hi);
 
     
     memcpy(sthQ15, &filt_coefQ15[temp2], orderCoef * sizeof(int16_t));
@@ -129,7 +129,7 @@ void WebRtcIsacfix_NormLatticeFilterMa(int16_t orderCoef,
     
     gain32 = gain_lo_hiQ17[temp3];
     gain_sh = WebRtcSpl_NormW32(gain32);
-    gain32 = WEBRTC_SPL_LSHIFT_W32(gain32, gain_sh); 
+    gain32 <<= gain_sh;  
 
     for (k=0;k<orderCoef;k++)
     {
@@ -144,8 +144,8 @@ void WebRtcIsacfix_NormLatticeFilterMa(int16_t orderCoef,
     
     for (i=0;i<HALF_SUBFRAMELEN;i++)
     {
-      fQ15vec[i] = WEBRTC_SPL_LSHIFT_W32((int32_t)lat_inQ0[i + temp1], 15); 
-      gQ15[0][i] = WEBRTC_SPL_LSHIFT_W32((int32_t)lat_inQ0[i + temp1], 15); 
+      fQ15vec[i] = lat_inQ0[i + temp1] << 15;  
+      gQ15[0][i] = lat_inQ0[i + temp1] << 15;  
     }
 
 
@@ -159,7 +159,7 @@ void WebRtcIsacfix_NormLatticeFilterMa(int16_t orderCoef,
       tmp32b= fQtmp + tmp32; 
       tmp32 = inv_cthQ16[i-1]; 
       t16a = (int16_t)(tmp32 >> 16);
-      t16b = (int16_t) (tmp32-WEBRTC_SPL_LSHIFT_W32(((int32_t)t16a), 16));
+      t16b = (int16_t)(tmp32 - (t16a << 16));
       if (t16b<0) t16a++;
       tmp32 = LATTICE_MUL_32_32_RSFT16(t16a, t16b, tmp32b);
       fQtmp = tmp32; 
@@ -238,11 +238,11 @@ void WebRtcIsacfix_NormLatticeFilterAr(int16_t orderCoef,
 
   for (u=0;u<SUBFRAMES;u++)
   {
-    int32_t temp1 = WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN);
+    int32_t temp1 = u * HALF_SUBFRAMELEN;
 
     
-    temp2 = (int16_t)WEBRTC_SPL_MUL_16_16(u, orderCoef);
-    temp3 = (int16_t)WEBRTC_SPL_MUL_16_16(2, u) + lo_hi;
+    temp2 = (int16_t)(u * orderCoef);
+    temp3 = (int16_t)(2 * u + lo_hi);
 
     for (ii=0; ii<orderCoef; ii++) {
       sthQ15[ii] = filt_coefQ15[temp2+ii];
@@ -256,7 +256,7 @@ void WebRtcIsacfix_NormLatticeFilterAr(int16_t orderCoef,
 
 
 
-    tmp32 = WEBRTC_SPL_LSHIFT_W32(gain_lo_hiQ17[temp3], 10); 
+    tmp32 = gain_lo_hiQ17[temp3] << 10;  
 
     for (k=0;k<orderCoef;k++) {
       tmp32 = WEBRTC_SPL_MUL_16_32_RSFT15(cthQ15[k], tmp32); 
@@ -272,7 +272,7 @@ void WebRtcIsacfix_NormLatticeFilterAr(int16_t orderCoef,
     for (i=0;i<HALF_SUBFRAMELEN;i++)
     {
 
-      tmp32 = WEBRTC_SPL_LSHIFT_W32(lat_inQ25[i + temp1], 1); 
+      tmp32 = lat_inQ25[i + temp1] << 1;  
       tmp32 = WEBRTC_SPL_MUL_16_32_RSFT16(inv_gain16, tmp32); 
       tmp32 = WEBRTC_SPL_SHIFT_W32(tmp32, -(28-sh)); 
 

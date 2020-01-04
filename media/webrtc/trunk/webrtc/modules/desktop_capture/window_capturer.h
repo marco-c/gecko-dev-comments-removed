@@ -52,11 +52,7 @@ class WindowCapturer : public DesktopCapturer {
 
   
   
-  
-  
-  virtual bool BringSelectedWindowToFront() {
-    return true;
-  }
+  virtual bool BringSelectedWindowToFront() = 0;
 };
 
 }  

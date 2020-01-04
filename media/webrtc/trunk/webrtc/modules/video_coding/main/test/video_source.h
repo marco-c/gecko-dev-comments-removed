@@ -69,7 +69,7 @@ public:
     
     std::string GetName() const;
 
-    int32_t GetFrameLength() const;
+    size_t GetFrameLength() const;
 
 private:
     std::string         _fileName;

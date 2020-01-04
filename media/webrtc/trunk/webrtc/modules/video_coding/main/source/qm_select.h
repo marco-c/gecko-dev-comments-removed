@@ -42,11 +42,6 @@ struct VCMResolutionScale {
   bool change_resolution_temporal;
 };
 
-
-
-
-
-
 enum ImageType {
   kQCIF = 0,            
   kHCIF,                
@@ -221,8 +216,7 @@ class VCMQmResolution : public VCMQmMethod {
 
   
   
-  void UpdateEncodedSize(int encoded_size,
-                         FrameType encoded_frame_type);
+  void UpdateEncodedSize(size_t encoded_size);
 
   
   
@@ -235,9 +229,6 @@ class VCMQmResolution : public VCMQmMethod {
   
   
   int SelectResolution(VCMResolutionScale** qm);
-
-  
-  void SetCPULoadState(CPULoadState state);
 
  private:
   
@@ -285,6 +276,10 @@ class VCMQmResolution : public VCMQmMethod {
 
   
   void ConvertSpatialFractionalToWhole();
+
+  
+  
+  bool EvenFrameSize();
 
   
   void InsertLatestDownAction();
@@ -342,7 +337,6 @@ class VCMQmResolution : public VCMQmMethod {
   
   ResolutionAction down_action_history_[kDownActionHistorySize];
   int num_layers_;
-  CPULoadState loadstate_;
 };
 
 
@@ -359,7 +353,7 @@ class VCMQmRobustness : public VCMQmMethod {
   float AdjustFecFactor(uint8_t code_rate_delta,
                         float total_rate,
                         float framerate,
-                        uint32_t rtt_time,
+                        int64_t rtt_time,
                         uint8_t packet_loss);
 
   
@@ -371,7 +365,7 @@ class VCMQmRobustness : public VCMQmMethod {
  private:
   
   float prev_total_rate_;
-  uint32_t prev_rtt_time_;
+  int64_t prev_rtt_time_;
   uint8_t prev_packet_loss_;
   uint8_t prev_code_rate_delta_;
 };

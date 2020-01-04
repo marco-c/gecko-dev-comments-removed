@@ -69,7 +69,7 @@ class DtmfBuffer {
   
   static int ParseEvent(uint32_t rtp_timestamp,
                         const uint8_t* payload,
-                        int payload_length_bytes,
+                        size_t payload_length_bytes,
                         DtmfEvent* event);
 
   

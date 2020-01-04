@@ -15,7 +15,12 @@
 #include "webrtc/base/thread_annotations.h"
 
 #if defined(WEBRTC_WIN)
-#include "webrtc/base/win32.h"
+
+
+
+
+#include <winsock2.h>
+#include <windows.h>
 #endif
 
 #if defined(WEBRTC_POSIX)
@@ -37,37 +42,25 @@ namespace rtc {
 #if defined(WEBRTC_WIN)
 class LOCKABLE CriticalSection {
  public:
-  CriticalSection() {
-    InitializeCriticalSection(&crit_);
-    
-    TRACK_OWNER(thread_ = 0);
-  }
-  ~CriticalSection() {
-    DeleteCriticalSection(&crit_);
-  }
+  CriticalSection() { InitializeCriticalSection(&crit_); }
+  ~CriticalSection() { DeleteCriticalSection(&crit_); }
   void Enter() EXCLUSIVE_LOCK_FUNCTION() {
     EnterCriticalSection(&crit_);
-    TRACK_OWNER(thread_ = GetCurrentThreadId());
   }
   bool TryEnter() EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    if (TryEnterCriticalSection(&crit_) != FALSE) {
-      TRACK_OWNER(thread_ = GetCurrentThreadId());
-      return true;
-    }
-    return false;
+    return TryEnterCriticalSection(&crit_) != FALSE;
   }
   void Leave() UNLOCK_FUNCTION() {
-    TRACK_OWNER(thread_ = 0);
     LeaveCriticalSection(&crit_);
   }
 
-#if CS_TRACK_OWNER
-  bool CurrentThreadIsOwner() const { return thread_ == GetCurrentThreadId(); }
-#endif  
+  
+  bool CurrentThreadIsOwner() const {
+    return crit_.OwningThread == reinterpret_cast<HANDLE>(GetCurrentThreadId());
+  }
 
  private:
   CRITICAL_SECTION crit_;
-  TRACK_OWNER(DWORD thread_);  
 };
 #endif 
 
@@ -101,9 +94,14 @@ class LOCKABLE CriticalSection {
     pthread_mutex_unlock(&mutex_);
   }
 
+  
+  bool CurrentThreadIsOwner() const {
 #if CS_TRACK_OWNER
-  bool CurrentThreadIsOwner() const { return pthread_equal(thread_, pthread_self()); }
+    return pthread_equal(thread_, pthread_self());
+#else
+    return true;
 #endif  
+  }
 
  private:
   pthread_mutex_t mutex_;
@@ -159,20 +157,59 @@ class AtomicOps {
  public:
 #if defined(WEBRTC_WIN)
   
-  static int Increment(int* i) {
-    return ::InterlockedIncrement(reinterpret_cast<LONG*>(i));
+  static int Increment(volatile int* i) {
+    return ::InterlockedIncrement(reinterpret_cast<volatile LONG*>(i));
   }
-  static int Decrement(int* i) {
-    return ::InterlockedDecrement(reinterpret_cast<LONG*>(i));
+  static int Decrement(volatile int* i) {
+    return ::InterlockedDecrement(reinterpret_cast<volatile LONG*>(i));
+  }
+  static int Load(volatile const int* i) {
+    return *i;
+  }
+  static void Store(volatile int* i, int value) {
+    *i = value;
+  }
+  static int CompareAndSwap(volatile int* i, int old_value, int new_value) {
+    return ::InterlockedCompareExchange(reinterpret_cast<volatile LONG*>(i),
+                                        new_value,
+                                        old_value);
   }
 #else
-  static int Increment(int* i) {
+  static int Increment(volatile int* i) {
     return __sync_add_and_fetch(i, 1);
   }
-  static int Decrement(int* i) {
+  static int Decrement(volatile int* i) {
     return __sync_sub_and_fetch(i, 1);
   }
+  static int Load(volatile const int* i) {
+    
+    return __sync_add_and_fetch(const_cast<volatile int*>(i), 0);
+  }
+  static void Store(volatile int* i, int value) {
+    __sync_synchronize();
+    *i = value;
+  }
+  static int CompareAndSwap(volatile int* i, int old_value, int new_value) {
+    return __sync_val_compare_and_swap(i, old_value, new_value);
+  }
 #endif
+};
+
+
+
+
+class LOCKABLE GlobalLockPod {
+ public:
+  void Lock() EXCLUSIVE_LOCK_FUNCTION();
+
+  void Unlock() UNLOCK_FUNCTION();
+
+  volatile int lock_acquired;
+};
+
+class GlobalLock : public GlobalLockPod {
+ public:
+  GlobalLock();
 };
 
 } 

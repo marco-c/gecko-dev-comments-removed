@@ -293,20 +293,16 @@ static int16_t GmmProbability(VadInstT* self, int16_t* features,
           
 
           
-          delt = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(ngprvec[gaussian],
-                                                     deltaN[gaussian],
-                                                     11);
+          delt = (int16_t)((ngprvec[gaussian] * deltaN[gaussian]) >> 11);
           
-          nmk2 = nmk + (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(delt,
-                                                           kNoiseUpdateConst,
-                                                           22);
+          nmk2 = nmk + (int16_t)((delt * kNoiseUpdateConst) >> 22);
         }
 
         
         
         ndelt = (feature_minimum << 4) - tmp1_s16;
         
-        nmk3 = nmk2 + (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(ndelt, kBackEta, 9);
+        nmk3 = nmk2 + (int16_t)((ndelt * kBackEta) >> 9);
 
         
         tmp_s16 = (int16_t) ((k + 5) << 7);
@@ -326,13 +322,9 @@ static int16_t GmmProbability(VadInstT* self, int16_t* features,
           
 
           
-          delt = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(sgprvec[gaussian],
-                                                     deltaS[gaussian],
-                                                     11);
+          delt = (int16_t)((sgprvec[gaussian] * deltaS[gaussian]) >> 11);
           
-          tmp_s16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(delt,
-                                                        kSpeechUpdateConst,
-                                                        21);
+          tmp_s16 = (int16_t)((delt * kSpeechUpdateConst) >> 21);
           
           smk2 = smk + ((tmp_s16 + 1) >> 1);
 
@@ -351,7 +343,7 @@ static int16_t GmmProbability(VadInstT* self, int16_t* features,
 
           tmp_s16 = features[channel] - tmp_s16;  
           
-          tmp1_s32 = WEBRTC_SPL_MUL_16_16_RSFT(deltaS[gaussian], tmp_s16, 3);
+          tmp1_s32 = (deltaS[gaussian] * tmp_s16) >> 3;
           tmp2_s32 = tmp1_s32 - 4096;
           tmp_s16 = sgprvec[gaussian] >> 2;
           
@@ -381,7 +373,7 @@ static int16_t GmmProbability(VadInstT* self, int16_t* features,
           
           tmp_s16 = features[channel] - (nmk >> 3);
           
-          tmp1_s32 = WEBRTC_SPL_MUL_16_16_RSFT(deltaN[gaussian], tmp_s16, 3);
+          tmp1_s32 = (deltaN[gaussian] * tmp_s16) >> 3;
           tmp1_s32 -= 4096;
 
           
@@ -425,8 +417,8 @@ static int16_t GmmProbability(VadInstT* self, int16_t* features,
 
         
         
-        tmp1_s16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(13, tmp_s16, 2);
-        tmp2_s16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(3, tmp_s16, 2);
+        tmp1_s16 = (int16_t)((13 * tmp_s16) >> 2);
+        tmp2_s16 = (int16_t)((3 * tmp_s16) >> 2);
 
         
         

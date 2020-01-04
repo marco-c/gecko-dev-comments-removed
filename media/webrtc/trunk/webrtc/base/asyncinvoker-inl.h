@@ -29,10 +29,11 @@ class AsyncInvoker;
 
 class AsyncClosure : public RefCountInterface {
  public:
-  virtual ~AsyncClosure() {}
   
   
   virtual void Execute() = 0;
+ protected:
+  ~AsyncClosure() override {}
 };
 
 
@@ -54,7 +55,7 @@ class FireAndForgetAsyncClosure : public AsyncClosure {
 class NotifyingAsyncClosureBase : public AsyncClosure,
                                   public sigslot::has_slots<> {
  public:
-  virtual ~NotifyingAsyncClosureBase() { disconnect_all(); }
+  ~NotifyingAsyncClosureBase() override;
 
  protected:
   NotifyingAsyncClosureBase(AsyncInvoker* invoker, Thread* calling_thread);

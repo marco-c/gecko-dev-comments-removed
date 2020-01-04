@@ -20,6 +20,7 @@
 
 namespace webrtc {
 
+class I420VideoFrame;
 class VideoEngine;
 class VideoRender;
 class VideoRenderCallback;
@@ -36,7 +37,7 @@ class ExternalRenderer {
 
   
   virtual int DeliverFrame(unsigned char* buffer,
-                           int buffer_size,
+                           size_t buffer_size,
                            
                            uint32_t timestamp,
                            
@@ -46,6 +47,9 @@ class ExternalRenderer {
                            int64_t render_time_ms,
                            
                            void* handle) = 0;
+
+  
+  virtual int DeliverI420Frame(const I420VideoFrame& webrtc_frame) = 0;
 
   
   
@@ -105,22 +109,9 @@ class ViERender {
                               const float bottom) = 0;
 
   
-  virtual int MirrorRenderStream(const int render_id,
-                                 const bool enable,
-                                 const bool mirror_xaxis,
-                                 const bool mirror_yaxis) = 0;
-
-  
   virtual int AddRenderer(const int render_id,
                           RawVideoType video_input_format,
                           ExternalRenderer* renderer) = 0;
-
-  
-  
-  
-  virtual int AddRenderCallback(int render_id, VideoRenderCallback* callback) {
-    return 0;
-  }
 
  protected:
   ViERender() {}

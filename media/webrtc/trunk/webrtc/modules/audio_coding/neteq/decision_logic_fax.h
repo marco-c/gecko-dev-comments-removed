@@ -47,13 +47,13 @@ class DecisionLogicFax : public DecisionLogic {
   
   
   
-  virtual Operations GetDecisionSpecialized(const SyncBuffer& sync_buffer,
-                                            const Expand& expand,
-                                            int decoder_frame_length,
-                                            const RTPHeader* packet_header,
-                                            Modes prev_mode,
-                                            bool play_dtmf,
-                                            bool* reset_decoder) OVERRIDE;
+  Operations GetDecisionSpecialized(const SyncBuffer& sync_buffer,
+                                    const Expand& expand,
+                                    int decoder_frame_length,
+                                    const RTPHeader* packet_header,
+                                    Modes prev_mode,
+                                    bool play_dtmf,
+                                    bool* reset_decoder) override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(DecisionLogicFax);

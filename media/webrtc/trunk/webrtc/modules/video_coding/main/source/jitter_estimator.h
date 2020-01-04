@@ -59,7 +59,7 @@ public:
     
     
     
-    void UpdateRtt(uint32_t rttMs);
+    void UpdateRtt(int64_t rttMs);
 
     void UpdateMaxFrameSize(uint32_t frameSizeBytes);
 

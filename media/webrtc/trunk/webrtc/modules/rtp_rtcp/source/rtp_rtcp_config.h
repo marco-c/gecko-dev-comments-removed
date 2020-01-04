@@ -13,11 +13,6 @@
 
 
 namespace webrtc {
-enum { kRtpRtcpMaxIdleTimeProcess = 5,
-       kRtpRtcpBitrateProcessTimeMs = 10,
-       kRtpRtcpPacketTimeoutProcessTimeMs = 100,
-       kRtpRtcpRttProcessTimeMs = 1000 };
-
 enum { NACK_BYTECOUNT_SIZE      = 60};   
 
 enum { kSendSideNackListSizeSanity = 20000 };

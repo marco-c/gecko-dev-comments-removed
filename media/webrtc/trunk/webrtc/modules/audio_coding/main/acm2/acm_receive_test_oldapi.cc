@@ -144,7 +144,7 @@ void AcmReceiveTestOldApi::RegisterNetEqTestCodecs() {
 }
 
 void AcmReceiveTestOldApi::Run() {
-  for (scoped_ptr<Packet> packet(packet_source_->NextPacket()); packet;
+  for (rtc::scoped_ptr<Packet> packet(packet_source_->NextPacket()); packet;
        packet.reset(packet_source_->NextPacket())) {
     
     while (clock_.TimeInMilliseconds() < packet->time_ms()) {

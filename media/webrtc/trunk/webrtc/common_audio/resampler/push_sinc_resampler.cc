@@ -8,12 +8,12 @@
 
 
 
-#include "webrtc/common_audio/include/audio_util.h"
-
-#include <assert.h>
-#include <string.h>
-
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
+
+#include <cstring>
+
+#include "webrtc/base/checks.h"
+#include "webrtc/common_audio/include/audio_util.h"
 
 namespace webrtc {
 
@@ -21,8 +21,8 @@ PushSincResampler::PushSincResampler(int source_frames, int destination_frames)
     : resampler_(new SincResampler(source_frames * 1.0 / destination_frames,
                                    source_frames,
                                    this)),
-      source_ptr_(NULL),
-      source_ptr_int_(NULL),
+      source_ptr_(nullptr),
+      source_ptr_int_(nullptr),
       destination_frames_(destination_frames),
       first_pass_(true),
       source_available_(0) {}
@@ -39,9 +39,9 @@ int PushSincResampler::Resample(const int16_t* source,
 
   source_ptr_int_ = source;
   
-  Resample(NULL, source_length, float_buffer_.get(), destination_frames_);
+  Resample(nullptr, source_length, float_buffer_.get(), destination_frames_);
   FloatS16ToS16(float_buffer_.get(), destination_frames_, destination);
-  source_ptr_int_ = NULL;
+  source_ptr_int_ = nullptr;
   return destination_frames_;
 }
 
@@ -49,8 +49,8 @@ int PushSincResampler::Resample(const float* source,
                                 int source_length,
                                 float* destination,
                                 int destination_capacity) {
-  assert(source_length == resampler_->request_frames());
-  assert(destination_capacity >= destination_frames_);
+  CHECK_EQ(source_length, resampler_->request_frames());
+  CHECK_GE(destination_capacity, destination_frames_);
   
   
   source_ptr_ = source;
@@ -73,25 +73,25 @@ int PushSincResampler::Resample(const float* source,
     resampler_->Resample(resampler_->ChunkSize(), destination);
 
   resampler_->Resample(destination_frames_, destination);
-  source_ptr_ = NULL;
+  source_ptr_ = nullptr;
   return destination_frames_;
 }
 
 void PushSincResampler::Run(int frames, float* destination) {
   
   
-  assert(source_available_ == frames);
+  CHECK_EQ(source_available_, frames);
 
   if (first_pass_) {
     
     
-    memset(destination, 0, frames * sizeof(float));
+    std::memset(destination, 0, frames * sizeof(*destination));
     first_pass_ = false;
     return;
   }
 
   if (source_ptr_) {
-    memcpy(destination, source_ptr_, frames * sizeof(float));
+    std::memcpy(destination, source_ptr_, frames * sizeof(*destination));
   } else {
     for (int i = 0; i < frames; ++i)
       destination[i] = static_cast<float>(source_ptr_int_[i]);

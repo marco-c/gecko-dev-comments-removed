@@ -62,10 +62,6 @@ class VCMFrameBuffer : public VCMEncodedFrame {
   bool NonReference() const;
 
   
-  void SetCountedFrame(bool frameCounted);
-  bool GetCountedFrame() const;
-
-  
   
   void IncrementNackCount();
   
@@ -85,7 +81,6 @@ class VCMFrameBuffer : public VCMEncodedFrame {
   void SetState(VCMFrameBufferStateEnum state);  
 
   VCMFrameBufferStateEnum    _state;         
-  bool                       _frameCounted;  
   VCMSessionInfo             _sessionInfo;
   uint16_t             _nackCount;
   int64_t              _latestPacketTimeMs;

@@ -27,8 +27,6 @@ class VPMFramePreprocessor {
   VPMFramePreprocessor();
   ~VPMFramePreprocessor();
 
-  int32_t ChangeUniqueId(const int32_t id);
-
   void Reset();
 
   
@@ -63,7 +61,6 @@ class VPMFramePreprocessor {
   
   enum { kSkipFrameCA = 2 };
 
-  int32_t id_;
   VideoContentMetrics* content_metrics_;
   I420VideoFrame resampled_frame_;
   VPMSpatialResampler* spatial_resampler_;

@@ -378,8 +378,9 @@ bool Win32Filesystem::GetAppTempFolder(Pathname* path) {
   return GetTemporaryFolder(*path, true, &filename);
 }
 
-bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path, int64 *freebytes) {
-  if (!freebytes) {
+bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
+                                       int64 *free_bytes) {
+  if (!free_bytes) {
     return false;
   }
   char drive[4];
@@ -398,24 +399,24 @@ bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path, int64 *freebytes) {
     
     
   }
-  UINT driveType = ::GetDriveType(target_drive);
-  if ( (driveType & DRIVE_REMOTE) || (driveType & DRIVE_UNKNOWN) ) {
-    LOG(LS_VERBOSE) << " remove or unknown drive " << drive;
+  UINT drive_type = ::GetDriveType(target_drive);
+  if ((drive_type == DRIVE_REMOTE) || (drive_type == DRIVE_UNKNOWN)) {
+    LOG(LS_VERBOSE) << "Remote or unknown drive: " << drive;
     return false;
   }
 
-  int64 totalNumberOfBytes;  
-  int64 totalNumberOfFreeBytes;  
+  int64 total_number_of_bytes;  
+  int64 total_number_of_free_bytes;  
   
   
   ASSERT(sizeof(ULARGE_INTEGER) == sizeof(uint64));  
   if (::GetDiskFreeSpaceEx(target_drive,
-                           (PULARGE_INTEGER)freebytes,
-                           (PULARGE_INTEGER)&totalNumberOfBytes,
-                           (PULARGE_INTEGER)&totalNumberOfFreeBytes)) {
+                           (PULARGE_INTEGER)free_bytes,
+                           (PULARGE_INTEGER)&total_number_of_bytes,
+                           (PULARGE_INTEGER)&total_number_of_free_bytes)) {
     return true;
   } else {
-    LOG(LS_VERBOSE) << " GetDiskFreeSpaceEx returns error ";
+    LOG(LS_VERBOSE) << "GetDiskFreeSpaceEx returns error.";
     return false;
   }
 }

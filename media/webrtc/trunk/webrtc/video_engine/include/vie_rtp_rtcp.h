@@ -69,27 +69,6 @@ class WEBRTC_DLLEXPORT ViERTPObserver {
   virtual ~ViERTPObserver() {}
 };
 
-
-
-
-
-
-class WEBRTC_DLLEXPORT ViERTCPObserver {
- public:
-  
-  
-  virtual void OnApplicationDataReceived(
-      const int video_channel,
-      const unsigned char sub_type,
-      const unsigned int name,
-      const char* data,
-      const unsigned short data_length_in_bytes) = 0;
- protected:
-  virtual ~ViERTCPObserver() {}
-};
-
-struct SenderInfo;
-
 class WEBRTC_DLLEXPORT ViERTP_RTCP {
  public:
   enum { KDefaultDeltaTransmitTimeSeconds = 15 };
@@ -137,15 +116,6 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int SetRtxSendPayloadType(const int video_channel,
                                     const uint8_t payload_type) = 0;
 
-  
-  
-  
-  
-  
-  virtual int SetPadWithRedundantPayloads(int video_channel, bool enable) {
-    return 0;
-  }
-
   virtual int SetRtxReceivePayloadType(const int video_channel,
                                        const uint8_t payload_type) = 0;
 
@@ -191,16 +161,6 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int GetRemoteRTCPCName(
       const int video_channel,
       char rtcp_cname[KMaxRTCPCNameLength]) const = 0;
-
-  virtual int GetRemoteRTCPReceiverInfo(const int video_channel,
-                                        uint32_t& NTPHigh,
-                                        uint32_t& NTPLow,
-                                        uint32_t& receivedPacketCount,
-                                        uint64_t& receivedOctetCount,
-                                        uint32_t* jitter,
-                                        uint16_t* fractionLost,
-                                        uint32_t* cumulativeLost,
-                                        int32_t* rttMs) const = 0;
 
   
   virtual int SendApplicationDefinedRTCPPacket(
@@ -285,6 +245,14 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                                bool enable,
                                                int id) = 0;
 
+  virtual int SetSendVideoRotationStatus(int video_channel,
+                                         bool enable,
+                                         int id) = 0;
+
+  virtual int SetReceiveVideoRotationStatus(int video_channel,
+                                            bool enable,
+                                            int id) = 0;
+
   
   
   virtual int SetRtcpXrRrtrStatus(int video_channel, bool enable) = 0;
@@ -315,7 +283,7 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   
   virtual int GetReceiveChannelRtcpStatistics(const int video_channel,
                                               RtcpStatistics& basic_stats,
-                                              int& rtt_ms) const = 0;
+                                              int64_t& rtt_ms) const = 0;
 
   
   
@@ -324,16 +292,16 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   
   virtual int GetSendChannelRtcpStatistics(const int video_channel,
                                            RtcpStatistics& basic_stats,
-                                           int& rtt_ms) const = 0;
+                                           int64_t& rtt_ms) const = 0;
 
   
   
   virtual int GetReceivedRTCPStatistics(const int video_channel,
-                                unsigned short& fraction_lost,
-                                unsigned int& cumulative_lost,
-                                unsigned int& extended_max,
-                                unsigned int& jitter,
-                                int& rtt_ms) const {
+                                        unsigned short& fraction_lost,
+                                        unsigned int& cumulative_lost,
+                                        unsigned int& extended_max,
+                                        unsigned int& jitter,
+                                        int64_t& rtt_ms) const {
     RtcpStatistics stats;
     int ret_code = GetReceiveChannelRtcpStatistics(video_channel,
                                              stats,
@@ -345,11 +313,11 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
     return ret_code;
   }
   virtual int GetSentRTCPStatistics(const int video_channel,
-                            unsigned short& fraction_lost,
-                            unsigned int& cumulative_lost,
-                            unsigned int& extended_max,
-                            unsigned int& jitter,
-                            int& rtt_ms) const {
+                                    unsigned short& fraction_lost,
+                                    unsigned int& cumulative_lost,
+                                    unsigned int& extended_max,
+                                    unsigned int& jitter,
+                                    int64_t& rtt_ms) const {
     RtcpStatistics stats;
     int ret_code = GetSendChannelRtcpStatistics(video_channel,
                                                 stats,
@@ -382,17 +350,17 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   
   
   virtual int GetRTPStatistics(const int video_channel,
-                       unsigned int& bytes_sent,
+                       size_t& bytes_sent,
                        unsigned int& packets_sent,
-                       unsigned int& bytes_received,
+                       size_t& bytes_received,
                        unsigned int& packets_received) const {
     StreamDataCounters sent;
     StreamDataCounters received;
     int ret_code = GetRtpStatistics(video_channel, sent, received);
-    bytes_sent = sent.bytes;
-    packets_sent = sent.packets;
-    bytes_received = received.bytes;
-    packets_received = received.packets;
+    bytes_sent = sent.transmitted.payload_bytes;
+    packets_sent = sent.transmitted.packets;
+    bytes_received = received.transmitted.payload_bytes;
+    packets_received = received.transmitted.packets;
     return ret_code;
   }
 
@@ -410,15 +378,13 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
 
   
-  
-  virtual int GetRtcpPacketTypeCounters(
+  virtual int GetSendRtcpPacketTypeCounter(
       int video_channel,
-      RtcpPacketTypeCounter* packets_sent,
-      RtcpPacketTypeCounter* packets_received) const { return -1; }
+      RtcpPacketTypeCounter* packet_counter) const = 0;
 
-  
-  virtual int GetRemoteRTCPSenderInfo(const int video_channel,
-                                      SenderInfo* sender_info) const = 0;
+  virtual int GetReceiveRtcpPacketTypeCounter(
+      int video_channel,
+      RtcpPacketTypeCounter* packet_counter) const = 0;
 
   
   
@@ -452,15 +418,8 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
   
   
-  
-  virtual int GetReceiveBandwidthEstimatorStats(
-      const int video_channel,
-      ReceiveBandwidthEstimatorStats* output) const { return -1; }
-
-  
-  
   virtual int GetPacerQueuingDelayMs(
-      const int video_channel, int* delay_ms) const {
+      const int video_channel, int64_t* delay_ms) const {
     return -1;
   }
 
@@ -485,19 +444,18 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int DeregisterRTPObserver(const int video_channel) = 0;
 
   
-  virtual int RegisterRTCPObserver(const int video_channel,
-                                   ViERTCPObserver& observer) = 0;
-
-  
-  virtual int DeregisterRTCPObserver(const int video_channel) = 0;
-
-  
   virtual int RegisterSendFrameCountObserver(
       int video_channel, FrameCountObserver* observer) = 0;
 
   
   virtual int DeregisterSendFrameCountObserver(
       int video_channel, FrameCountObserver* observer) = 0;
+
+  
+  
+  virtual int RegisterRtcpPacketTypeCounterObserver(
+      int video_channel,
+      RtcpPacketTypeCounterObserver* observer) = 0;
 
  protected:
   virtual ~ViERTP_RTCP() {}

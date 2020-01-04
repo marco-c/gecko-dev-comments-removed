@@ -25,6 +25,7 @@ public:
   SChannelAdapter(AsyncSocket* socket);
   virtual ~SChannelAdapter();
 
+  virtual void SetMode(SSLMode mode);
   virtual int StartSSL(const char* hostname, bool restartable);
   virtual int Send(const void* pv, size_t cb);
   virtual int Recv(void* pv, size_t cb);
@@ -60,9 +61,10 @@ protected:
 
 private:
   SSLState state_;
+  SSLMode mode_;
   std::string ssl_host_name_;
   
-  bool restartable_; 
+  bool restartable_;
   
   bool signal_close_;
   

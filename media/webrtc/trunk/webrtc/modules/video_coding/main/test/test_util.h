@@ -25,36 +25,6 @@
 enum { kMaxNackListSize = 250 };
 enum { kMaxPacketAgeToNack = 450 };
 
-
-class CmdArgs {
- public:
-  CmdArgs();
-
-  std::string codecName;
-  webrtc::VideoCodecType codecType;
-  int width;
-  int height;
-  int bitRate;
-  int frameRate;
-  int packetLoss;
-  int rtt;
-  int protectionMode;
-  int camaEnable;
-  std::string inputFile;
-  std::string outputFile;
-  std::string fv_outputfile;
-  int testNum;
-};
-
-int MTRxTxTest(CmdArgs& args);
-double NormalDist(double mean, double stdDev);
-
-struct RtpPacket {
-  uint8_t data[1650]; 
-  int32_t length;
-  int64_t receiveTime;
-};
-
 class NullEvent : public webrtc::EventWrapper {
  public:
   virtual ~NullEvent() {}
@@ -101,7 +71,17 @@ class FileOutputFrameReceiver : public webrtc::VCMReceiveCallback {
   DISALLOW_IMPLICIT_CONSTRUCTORS(FileOutputFrameReceiver);
 };
 
+class CmdArgs {
+ public:
+  CmdArgs();
 
-webrtc::RtpVideoCodecTypes ConvertCodecType(const char* plname);
+  std::string codecName;
+  webrtc::VideoCodecType codecType;
+  int width;
+  int height;
+  int rtt;
+  std::string inputFile;
+  std::string outputFile;
+};
 
 #endif

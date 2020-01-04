@@ -344,7 +344,11 @@ bool DBusMonitor::AddFilter(DBusSigFilter *filter) {
 bool DBusMonitor::StartMonitoring() {
   if (!monitoring_thread_) {
     g_type_init();
+    
+    
+#if !GLIB_CHECK_VERSION(2, 31, 0)
     g_thread_init(NULL);
+#endif
     GetSymbols()->dbus_g_thread_init()();
 
     GMainContext *context = g_main_context_new();

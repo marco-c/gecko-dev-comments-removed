@@ -58,25 +58,6 @@ const int kIsacPacSize1440 = 1440;
 
 
 
-enum WebRtcACMEncodingType {
-  kNoEncoding,
-  kActiveNormalEncoded,
-  kPassiveNormalEncoded,
-  kPassiveDTXNB,
-  kPassiveDTXWB,
-  kPassiveDTXSWB,
-  kPassiveDTXFB
-};
-
-
-
-
-
-
-
-
-
-
 struct WebRtcACMCodecParams {
   CodecInst codec_inst;
   bool enable_dtx;

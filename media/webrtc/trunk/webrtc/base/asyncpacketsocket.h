@@ -22,10 +22,8 @@ namespace rtc {
 
 
 struct PacketTimeUpdateParams {
-  PacketTimeUpdateParams()
-      : rtp_sendtime_extension_id(-1), srtp_auth_tag_len(-1),
-        srtp_packet_index(-1) {
-  }
+  PacketTimeUpdateParams();
+  ~PacketTimeUpdateParams();
 
   int rtp_sendtime_extension_id;    
   std::vector<char> srtp_auth_key;  
@@ -75,8 +73,8 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
     STATE_CONNECTED
   };
 
-  AsyncPacketSocket() { }
-  virtual ~AsyncPacketSocket() { }
+  AsyncPacketSocket();
+  ~AsyncPacketSocket() override;
 
   
   

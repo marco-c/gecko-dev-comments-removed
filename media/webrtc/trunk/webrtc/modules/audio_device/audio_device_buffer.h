@@ -22,7 +22,6 @@ const uint32_t kPulsePeriodMs = 1000;
 const uint32_t kMaxBufferSizeBytes = 3840; 
 
 class AudioDeviceObserver;
-class MediaFile;
 
 class AudioDeviceBuffer
 {

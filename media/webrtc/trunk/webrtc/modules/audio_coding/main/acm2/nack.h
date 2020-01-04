@@ -14,8 +14,8 @@
 #include <vector>
 #include <map>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/gtest_prod_util.h"
 
 
@@ -87,7 +87,7 @@ class Nack {
   
   
   
-  std::vector<uint16_t> GetNackList(int round_trip_time_ms) const;
+  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms) const;
 
   
   
@@ -98,7 +98,7 @@ class Nack {
   FRIEND_TEST_ALL_PREFIXES(NackTest, EstimateTimestampAndTimeToPlay);
 
   struct NackElement {
-    NackElement(int initial_time_to_play_ms,
+    NackElement(int64_t initial_time_to_play_ms,
                 uint32_t initial_timestamp,
                 bool missing)
         : time_to_play_ms(initial_time_to_play_ms),
@@ -107,7 +107,7 @@ class Nack {
 
     
     
-    int time_to_play_ms;
+    int64_t time_to_play_ms;
 
     
     
@@ -171,7 +171,7 @@ class Nack {
   uint32_t EstimateTimestamp(uint16_t sequence_number);
 
   
-  int TimeToPlay(uint32_t timestamp) const;
+  int64_t TimeToPlay(uint32_t timestamp) const;
 
   
   

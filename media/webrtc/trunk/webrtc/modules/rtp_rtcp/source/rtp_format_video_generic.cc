@@ -36,7 +36,7 @@ void RtpPacketizerGeneric::SetPayloadData(
   payload_size_ = payload_size;
 
   
-  uint32_t num_packets =
+  size_t num_packets =
       (payload_size_ + max_payload_len_ - 1) / max_payload_len_;
   payload_length_ = (payload_size_ + num_packets - 1) / num_packets;
   assert(payload_length_ <= max_payload_len_);

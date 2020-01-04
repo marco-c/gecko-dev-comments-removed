@@ -65,23 +65,6 @@ public:
     virtual int GetSendCodec(int channel, CodecInst& codec) = 0;
 
     
-    
-    
-    
-    
-    
-    
-    virtual int SetSecondarySendCodec(int channel, const CodecInst& codec,
-                                      int red_payload_type) = 0;
-
-    
-    
-    virtual int RemoveSecondarySendCodec(int channel) = 0;
-
-    
-    virtual int GetSecondarySendCodec(int channel, CodecInst& codec) = 0;
-
-    
     virtual int GetRecCodec(int channel, CodecInst& codec) = 0;
 
     
@@ -133,6 +116,10 @@ public:
     virtual int SetOpusMaxPlaybackRate(int channel, int frequency_hz) {
       return -1;
     }
+
+    
+    
+    virtual int SetOpusDtx(int channel, bool enable_dtx) = 0;
 
     
     virtual int SetAMREncFormat(int channel, AmrMode mode) { return -1; }

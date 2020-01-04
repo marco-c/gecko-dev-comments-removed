@@ -94,11 +94,10 @@ int16_t WebRtcG722_FreeEncoder(G722EncInst *G722enc_inst);
 
 
 
-
-int16_t WebRtcG722_Encode(G722EncInst *G722enc_inst,
-                          int16_t *speechIn,
+int16_t WebRtcG722_Encode(G722EncInst* G722enc_inst,
+                          const int16_t* speechIn,
                           int16_t len,
-                          int16_t *encoded);
+                          uint8_t* encoded);
 
 
 
@@ -168,7 +167,7 @@ int16_t WebRtcG722_FreeDecoder(G722DecInst *G722dec_inst);
 
 
 int16_t WebRtcG722_Decode(G722DecInst *G722dec_inst,
-                          int16_t *encoded,
+                          const uint8_t* encoded,
                           int16_t len,
                           int16_t *decoded,
                           int16_t *speechType);

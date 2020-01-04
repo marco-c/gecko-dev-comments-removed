@@ -21,16 +21,12 @@ namespace webrtc {
 class VideoRenderFrames {
  public:
   VideoRenderFrames();
-  ~VideoRenderFrames();
 
   
-  int32_t AddFrame(I420VideoFrame* new_frame);
+  int32_t AddFrame(const I420VideoFrame& new_frame);
 
   
-  I420VideoFrame* FrameToRender();
-
-  
-  int32_t ReturnFrame(I420VideoFrame* old_frame);
+  I420VideoFrame FrameToRender();
 
   
   int32_t ReleaseAllFrames();
@@ -42,8 +38,6 @@ class VideoRenderFrames {
   int32_t SetRenderDelay(const uint32_t render_delay);
 
  private:
-  typedef std::list<I420VideoFrame*> FrameList;
-
   
   enum { KMaxNumberOfFrames = 300 };
   
@@ -52,9 +46,7 @@ class VideoRenderFrames {
   enum { KFutureRenderTimestampMS = 10000 };
 
   
-  FrameList incoming_frames_;
-  
-  FrameList empty_frames_;
+  std::list<I420VideoFrame> incoming_frames_;
 
   
   uint32_t render_delay_ms_;

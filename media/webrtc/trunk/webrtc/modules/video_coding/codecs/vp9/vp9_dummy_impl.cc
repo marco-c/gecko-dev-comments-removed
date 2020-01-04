@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "webrtc/modules/video_coding/codecs/vp9/vp9_impl.h"
+
+namespace webrtc {
+VP9Encoder* VP9Encoder::Create() { return nullptr; }
+VP9Decoder* VP9Decoder::Create() { return nullptr; }
+}

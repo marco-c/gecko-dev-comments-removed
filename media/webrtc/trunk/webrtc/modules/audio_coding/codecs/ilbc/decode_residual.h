@@ -26,7 +26,7 @@
 
 
 void WebRtcIlbcfix_DecodeResidual(
-    iLBC_Dec_Inst_t *iLBCdec_inst,
+    IlbcDecoder *iLBCdec_inst,
     
     iLBC_bits *iLBC_encbits, 
 

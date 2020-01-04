@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
@@ -63,14 +64,13 @@ class FrameList
     : public std::map<uint32_t, VCMFrameBuffer*, TimestampLessThan> {
  public:
   void InsertFrame(VCMFrameBuffer* frame);
-  VCMFrameBuffer* FindFrame(uint16_t seq_num, uint32_t timestamp) const;
   VCMFrameBuffer* PopFrame(uint32_t timestamp);
   VCMFrameBuffer* Front() const;
   VCMFrameBuffer* Back() const;
   int RecycleFramesUntilKeyFrame(FrameList::iterator* key_frame_it,
       UnorderedFrameList* free_frames);
-  int CleanUpOldOrEmptyFrames(VCMDecodingState* decoding_state,
-      UnorderedFrameList* free_frames);
+  void CleanUpOldOrEmptyFrames(VCMDecodingState* decoding_state,
+                               UnorderedFrameList* free_frames);
   void Reset(UnorderedFrameList* free_frames);
 };
 
@@ -79,9 +79,6 @@ class VCMJitterBuffer {
   VCMJitterBuffer(Clock* clock,
                   EventFactory* event_factory);
   virtual ~VCMJitterBuffer();
-
-  
-  void CopyFrom(const VCMJitterBuffer& rhs);
 
   
   void Start();
@@ -97,7 +94,7 @@ class VCMJitterBuffer {
 
   
   
-  std::map<FrameType, uint32_t> FrameStatistics() const;
+  FrameCounts FrameStatistics() const;
 
   
   
@@ -156,7 +153,7 @@ class VCMJitterBuffer {
   uint32_t EstimatedJitterMs();
 
   
-  void UpdateRtt(uint32_t rtt_ms);
+  void UpdateRtt(int64_t rtt_ms);
 
   
   
@@ -164,8 +161,8 @@ class VCMJitterBuffer {
   
   
   
-  void SetNackMode(VCMNackMode mode, int low_rtt_nack_threshold_ms,
-                   int high_rtt_nack_threshold_ms);
+  void SetNackMode(VCMNackMode mode, int64_t low_rtt_nack_threshold_ms,
+                   int64_t high_rtt_nack_threshold_ms);
 
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
@@ -187,6 +184,8 @@ class VCMJitterBuffer {
   
   void RenderBufferSize(uint32_t* timestamp_start, uint32_t* timestamp_end);
 
+  void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
+
  private:
   class SequenceNumberLessThan {
    public:
@@ -200,34 +199,43 @@ class VCMJitterBuffer {
   
   
   
-  VCMFrameBufferEnum GetFrame(const VCMPacket& packet, VCMFrameBuffer** frame);
-  void CopyFrames(FrameList* to_list, const FrameList& from_list);
-  void CopyFrames(FrameList* to_list, const FrameList& from_list, int* index);
+  
+  VCMFrameBufferEnum GetFrame(const VCMPacket& packet,
+                              VCMFrameBuffer** frame,
+                              FrameList** frame_list)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
   
   
   bool IsContinuousInState(const VCMFrameBuffer& frame,
-      const VCMDecodingState& decoding_state) const;
+                           const VCMDecodingState& decoding_state) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   
-  bool IsContinuous(const VCMFrameBuffer& frame) const;
-  
-  
-  
-  void FindAndInsertContinuousFrames(const VCMFrameBuffer& new_frame);
-  VCMFrameBuffer* NextFrame() const;
+  bool IsContinuous(const VCMFrameBuffer& frame) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   
   
-  bool UpdateNackList(uint16_t sequence_number);
+  void FindAndInsertContinuousFrames(const VCMFrameBuffer& new_frame)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  VCMFrameBuffer* NextFrame() const EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  
+  
+  
+  bool UpdateNackList(uint16_t sequence_number)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   bool TooLargeNackList() const;
   
   
-  bool HandleTooLargeNackList();
-  bool MissingTooOldPacket(uint16_t latest_sequence_number) const;
+  bool HandleTooLargeNackList() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+  bool MissingTooOldPacket(uint16_t latest_sequence_number) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   
   
-  bool HandleTooOldPackets(uint16_t latest_sequence_number);
+  bool HandleTooOldPackets(uint16_t latest_sequence_number)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
   
   void DropPacketsFromNackList(uint16_t last_decoded_sequence_number);
 
@@ -235,27 +243,28 @@ class VCMJitterBuffer {
 
   
   
-  VCMFrameBuffer* GetEmptyFrame();
+  VCMFrameBuffer* GetEmptyFrame() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
-  bool TryToIncreaseJitterBufferSize();
+  bool TryToIncreaseJitterBufferSize() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
-  bool RecycleFramesUntilKeyFrame();
+  bool RecycleFramesUntilKeyFrame() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   
   
-  void CountFrame(const VCMFrameBuffer& frame);
+  void CountFrame(const VCMFrameBuffer& frame)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   void UpdateAveragePacketsPerFrame(int current_number_packets_);
 
   
   
-  void CleanUpOldOrEmptyFrames();
+  void CleanUpOldOrEmptyFrames() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   
   bool IsPacketRetransmitted(const VCMPacket& packet) const;
@@ -273,50 +282,48 @@ class VCMJitterBuffer {
   
   bool WaitForRetransmissions();
 
-  int NonContinuousOrIncompleteDuration();
+  int NonContinuousOrIncompleteDuration() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   uint16_t EstimatedLowSequenceNumber(const VCMFrameBuffer& frame) const;
 
-  void UpdateHistograms();
+  void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   Clock* clock_;
   
   bool running_;
   CriticalSectionWrapper* crit_sect_;
   
-  scoped_ptr<EventWrapper> frame_event_;
-  
-  scoped_ptr<EventWrapper> packet_event_;
+  rtc::scoped_ptr<EventWrapper> frame_event_;
   
   int max_number_of_frames_;
-  
-  VCMFrameBuffer* frame_buffers_[kMaxNumberOfFrames];
-  UnorderedFrameList free_frames_;
-  FrameList decodable_frames_;
-  FrameList incomplete_frames_;
-  VCMDecodingState last_decoded_state_;
+  UnorderedFrameList free_frames_ GUARDED_BY(crit_sect_);
+  FrameList decodable_frames_ GUARDED_BY(crit_sect_);
+  FrameList incomplete_frames_ GUARDED_BY(crit_sect_);
+  VCMDecodingState last_decoded_state_ GUARDED_BY(crit_sect_);
   bool first_packet_since_reset_;
 
   
+  VCMReceiveStatisticsCallback* stats_callback_ GUARDED_BY(crit_sect_);
   
-  std::map<FrameType, uint32_t> receive_statistics_;
+  FrameCounts receive_statistics_;
   
   unsigned int incoming_frame_rate_;
   unsigned int incoming_frame_count_;
   int64_t time_last_incoming_frame_count_;
   unsigned int incoming_bit_count_;
   unsigned int incoming_bit_rate_;
-  unsigned int drop_count_;  
   
   int num_consecutive_old_frames_;
   
   int num_consecutive_old_packets_;
   
-  int num_packets_;
+  int num_packets_ GUARDED_BY(crit_sect_);
   
-  int num_duplicated_packets_;
+  int num_duplicated_packets_ GUARDED_BY(crit_sect_);
   
-  int num_discarded_packets_;
+  int num_discarded_packets_ GUARDED_BY(crit_sect_);
+  
+  int64_t time_first_packet_ms_ GUARDED_BY(crit_sect_);
 
   
   
@@ -324,12 +331,12 @@ class VCMJitterBuffer {
   
   VCMInterFrameDelay inter_frame_delay_;
   VCMJitterSample waiting_for_completion_;
-  uint32_t rtt_ms_;
+  int64_t rtt_ms_;
 
   
   VCMNackMode nack_mode_;
-  int low_rtt_nack_threshold_ms_;
-  int high_rtt_nack_threshold_ms_;
+  int64_t low_rtt_nack_threshold_ms_;
+  int64_t high_rtt_nack_threshold_ms_;
   
   SequenceNumberSet missing_sequence_numbers_;
   uint16_t latest_received_sequence_number_;

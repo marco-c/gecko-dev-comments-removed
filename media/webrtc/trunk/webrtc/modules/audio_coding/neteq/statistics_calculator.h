@@ -71,6 +71,9 @@ class StatisticsCalculator {
   void StoreWaitingTime(int waiting_time_ms);
 
   
+  void SecondaryDecodedSamples(int num_samples);
+
+  
   
   
   
@@ -93,7 +96,7 @@ class StatisticsCalculator {
   uint32_t preemptive_samples_;
   uint32_t accelerate_samples_;
   int added_zero_samples_;
-  uint32_t expanded_voice_samples_;
+  uint32_t expanded_speech_samples_;
   uint32_t expanded_noise_samples_;
   int discarded_packets_;
   uint32_t lost_timestamps_;
@@ -101,6 +104,7 @@ class StatisticsCalculator {
   int waiting_times_[kLenWaitingTimes];  
   int len_waiting_times_;
   int next_waiting_time_index_;
+  uint32_t secondary_decoded_samples_;
 
   DISALLOW_COPY_AND_ASSIGN(StatisticsCalculator);
 };

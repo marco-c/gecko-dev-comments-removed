@@ -69,17 +69,8 @@ class FileWrapper : public InStream, public OutStream {
   
   
   
-  virtual int Read(void* buf, int length) = 0;
-
   
-  
-  
-  virtual bool Write(const void* buf, int length) = 0;
-
-  
-  
-  
-  virtual int Rewind() = 0;
+  int Rewind() override;
 };
 
 }  

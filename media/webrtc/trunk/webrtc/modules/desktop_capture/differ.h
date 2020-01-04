@@ -13,8 +13,8 @@
 
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -76,7 +76,7 @@ class Differ {
   int bytes_per_row_;
 
   
-  scoped_ptr<DiffInfo[]> diff_info_;
+  rtc::scoped_ptr<DiffInfo[]> diff_info_;
 
   
   int diff_info_width_;

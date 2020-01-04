@@ -16,13 +16,14 @@
 
 namespace webrtc {
 
+bool FileAudioDeviceFactory::_isConfigured = false;
 char FileAudioDeviceFactory::_inputAudioFilename[MAX_FILENAME_LEN] = "";
 char FileAudioDeviceFactory::_outputAudioFilename[MAX_FILENAME_LEN] = "";
 
 FileAudioDevice* FileAudioDeviceFactory::CreateFileAudioDevice(
     const int32_t id) {
   
-  if (strlen(_inputAudioFilename) == 0 || strlen(_outputAudioFilename) == 0) {
+  if (!_isConfigured) {
     printf("Was compiled with WEBRTC_DUMMY_AUDIO_PLAY_STATIC_FILE "
            "but did not set input/output files to use. Bailing out.\n");
     exit(1);
@@ -39,6 +40,7 @@ void FileAudioDeviceFactory::SetFilenamesToUse(
   
   strncpy(_inputAudioFilename, inputAudioFilename, MAX_FILENAME_LEN);
   strncpy(_outputAudioFilename, outputAudioFilename, MAX_FILENAME_LEN);
+  _isConfigured = true;
 #else
   
   printf("Trying to use dummy file devices, but is not compiled "

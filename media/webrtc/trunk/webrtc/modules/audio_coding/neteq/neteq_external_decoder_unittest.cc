@@ -10,222 +10,238 @@
 
 
 
-#include <string>
-#include <list>
-
 #include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_external_decoder_pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
+#include "webrtc/modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
-#include "webrtc/system_wrappers/interface/compile_assert.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
 using ::testing::_;
 using ::testing::Return;
 
-
-
-
-
-
-class NetEqExternalDecoderTest : public ::testing::Test {
+class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
  protected:
-  static const int kTimeStepMs = 10;
-  static const int kMaxBlockSize = 480;  
-  static const uint8_t kPayloadType = 95;
-  static const int kSampleRateHz = 32000;
+  static const int kFrameSizeMs = 10;  
 
-  NetEqExternalDecoderTest()
-      : sample_rate_hz_(kSampleRateHz),
-        samples_per_ms_(sample_rate_hz_ / 1000),
-        frame_size_ms_(10),
-        frame_size_samples_(frame_size_ms_ * samples_per_ms_),
-        output_size_samples_(frame_size_ms_ * samples_per_ms_),
-        external_decoder_(new MockExternalPcm16B),
+  NetEqExternalDecoderUnitTest(NetEqDecoder codec,
+                               MockExternalPcm16B* decoder)
+      : NetEqExternalDecoderTest(codec, decoder),
+        external_decoder_(decoder),
+        samples_per_ms_(CodecSampleRateHz(codec) / 1000),
+        frame_size_samples_(kFrameSizeMs * samples_per_ms_),
         rtp_generator_(new test::RtpGenerator(samples_per_ms_)),
+        input_(new int16_t[frame_size_samples_]),
+        
+        encoded_(new uint8_t[2 * frame_size_samples_]),
         payload_size_bytes_(0),
         last_send_time_(0),
         last_arrival_time_(0) {
-    config_.sample_rate_hz = sample_rate_hz_;
-    neteq_external_ = NetEq::Create(config_);
-    neteq_ = NetEq::Create(config_);
-    input_ = new int16_t[frame_size_samples_];
-    encoded_ = new uint8_t[2 * frame_size_samples_];
-  }
-
-  ~NetEqExternalDecoderTest() {
-    delete neteq_external_;
-    delete neteq_;
     
-    EXPECT_CALL(*external_decoder_, Die()).Times(1);
-    delete [] input_;
-    delete [] encoded_;
-  }
-
-  virtual void SetUp() {
-    const std::string file_name =
-        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
-    input_file_.reset(new test::InputAudioFile(file_name));
-    assert(sample_rate_hz_ == 32000);
-    NetEqDecoder decoder = kDecoderPCM16Bswb32kHz;
     EXPECT_CALL(*external_decoder_, Init());
     
     EXPECT_CALL(*external_decoder_, Die()).Times(0);
-    ASSERT_EQ(NetEq::kOK,
-              neteq_external_->RegisterExternalDecoder(
-                  external_decoder_.get(), decoder, kPayloadType));
-    ASSERT_EQ(NetEq::kOK,
-              neteq_->RegisterPayloadType(decoder, kPayloadType));
+    Init();
+
+    const std::string file_name =
+        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+    input_file_.reset(new test::InputAudioFile(file_name));
   }
 
-  virtual void TearDown() {}
+  virtual ~NetEqExternalDecoderUnitTest() {
+    delete [] input_;
+    delete [] encoded_;
+    
+    
+    EXPECT_CALL(*external_decoder_, Die()).Times(1);
+  }
 
-  int GetNewPackets() {
+  
+  
+  virtual void GetAndVerifyOutput() = 0;
+
+  
+  
+  virtual int NumExpectedDecodeCalls(int num_loops) = 0;
+
+  
+  int GetNewPacket() {
     if (!input_file_->Read(frame_size_samples_, input_)) {
       return -1;
     }
     payload_size_bytes_ = WebRtcPcm16b_Encode(input_, frame_size_samples_,
-                                             encoded_);
-    if (frame_size_samples_ * 2 != payload_size_bytes_) {
-      return -1;
-    }
+                                              encoded_);;
+
     int next_send_time = rtp_generator_->GetRtpHeader(
         kPayloadType, frame_size_samples_, &rtp_header_);
     return next_send_time;
   }
 
-  virtual void VerifyOutput(size_t num_samples) const {
-    for (size_t i = 0; i < num_samples; ++i) {
-      ASSERT_EQ(output_[i], output_external_[i]) <<
-          "Diff in sample " << i << ".";
-    }
-  }
+  
+  virtual bool Lost() { return false; }
 
-  virtual int GetArrivalTime(int send_time) {
+  
+  int GetArrivalTime(int send_time) {
     int arrival_time = last_arrival_time_ + (send_time - last_send_time_);
     last_send_time_ = send_time;
     last_arrival_time_ = arrival_time;
     return arrival_time;
   }
 
-  virtual bool Lost() { return false; }
-
-  virtual void InsertPackets(int next_arrival_time) {
-    
-    ASSERT_EQ(
-        NetEq::kOK,
-        neteq_->InsertPacket(
-            rtp_header_, encoded_, payload_size_bytes_, next_arrival_time));
-    
-    EXPECT_CALL(*external_decoder_,
-                IncomingPacket(_,
-                               payload_size_bytes_,
-                               rtp_header_.header.sequenceNumber,
-                               rtp_header_.header.timestamp,
-                               next_arrival_time));
-    ASSERT_EQ(
-        NetEq::kOK,
-        neteq_external_->InsertPacket(
-            rtp_header_, encoded_, payload_size_bytes_, next_arrival_time));
-  }
-
-  virtual void GetOutputAudio() {
-    NetEqOutputType output_type;
-    
-    int samples_per_channel;
-    int num_channels;
-    EXPECT_EQ(NetEq::kOK,
-              neteq_->GetAudio(kMaxBlockSize,
-                               output_,
-                               &samples_per_channel,
-                               &num_channels,
-                               &output_type));
-    EXPECT_EQ(1, num_channels);
-    EXPECT_EQ(output_size_samples_, samples_per_channel);
-    
-    ASSERT_EQ(NetEq::kOK,
-              neteq_external_->GetAudio(kMaxBlockSize,
-                                        output_external_,
-                                        &samples_per_channel,
-                                        &num_channels,
-                                        &output_type));
-    EXPECT_EQ(1, num_channels);
-    EXPECT_EQ(output_size_samples_, samples_per_channel);
-  }
-
-  virtual int NumExpectedDecodeCalls(int num_loops) const { return num_loops; }
-
   void RunTest(int num_loops) {
     
-    int next_send_time;
-    int next_arrival_time;
+    uint32_t next_send_time;
+    uint32_t next_arrival_time;
     do {
-      next_send_time = GetNewPackets();
-      ASSERT_NE(-1, next_send_time);
+      next_send_time = GetNewPacket();
       next_arrival_time = GetArrivalTime(next_send_time);
     } while (Lost());  
 
-    EXPECT_CALL(*external_decoder_, Decode(_, payload_size_bytes_, _, _))
+    EXPECT_CALL(*external_decoder_,
+                Decode(_, payload_size_bytes_, 1000 * samples_per_ms_, _, _, _))
         .Times(NumExpectedDecodeCalls(num_loops));
 
-    int time_now = 0;
+    uint32_t time_now = 0;
     for (int k = 0; k < num_loops; ++k) {
       while (time_now >= next_arrival_time) {
-        InsertPackets(next_arrival_time);
-
+        InsertPacket(rtp_header_, encoded_, payload_size_bytes_,
+                     next_arrival_time);
         
         do {
-          next_send_time = GetNewPackets();
-          ASSERT_NE(-1, next_send_time);
+          next_send_time = GetNewPacket();
           next_arrival_time = GetArrivalTime(next_send_time);
         } while (Lost());  
       }
-
-      GetOutputAudio();
 
       std::ostringstream ss;
       ss << "Lap number " << k << ".";
       SCOPED_TRACE(ss.str());  
       
-      ASSERT_NO_FATAL_FAILURE(VerifyOutput(output_size_samples_));
+      ASSERT_NO_FATAL_FAILURE(GetAndVerifyOutput());
 
-      time_now += kTimeStepMs;
+      time_now += kOutputLengthMs;
     }
   }
 
-  NetEq::Config config_;
-  int sample_rate_hz_;
+  void InsertPacket(WebRtcRTPHeader rtp_header, const uint8_t* payload,
+                    size_t payload_size_bytes,
+                    uint32_t receive_timestamp) override {
+    EXPECT_CALL(*external_decoder_,
+                IncomingPacket(_,
+                               payload_size_bytes,
+                               rtp_header.header.sequenceNumber,
+                               rtp_header.header.timestamp,
+                               receive_timestamp));
+    NetEqExternalDecoderTest::InsertPacket(rtp_header, payload,
+                                           payload_size_bytes,
+                                           receive_timestamp);
+  }
+
+  MockExternalPcm16B* external_decoder() { return external_decoder_.get(); }
+
+  void ResetRtpGenerator(test::RtpGenerator* rtp_generator) {
+    rtp_generator_.reset(rtp_generator);
+  }
+
+  int samples_per_ms() const { return samples_per_ms_; }
+ private:
+  rtc::scoped_ptr<MockExternalPcm16B> external_decoder_;
   int samples_per_ms_;
-  const int frame_size_ms_;
-  int frame_size_samples_;
-  int output_size_samples_;
-  NetEq* neteq_external_;
-  NetEq* neteq_;
-  scoped_ptr<MockExternalPcm16B> external_decoder_;
-  scoped_ptr<test::RtpGenerator> rtp_generator_;
+  size_t frame_size_samples_;
+  rtc::scoped_ptr<test::RtpGenerator> rtp_generator_;
   int16_t* input_;
   uint8_t* encoded_;
-  int16_t output_[kMaxBlockSize];
-  int16_t output_external_[kMaxBlockSize];
+  size_t payload_size_bytes_;
+  uint32_t last_send_time_;
+  uint32_t last_arrival_time_;
+  rtc::scoped_ptr<test::InputAudioFile> input_file_;
   WebRtcRTPHeader rtp_header_;
-  int payload_size_bytes_;
-  int last_send_time_;
-  int last_arrival_time_;
-  scoped_ptr<test::InputAudioFile> input_file_;
 };
 
-TEST_F(NetEqExternalDecoderTest, RunTest) {
+
+
+
+
+
+class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
+                                           public ::testing::Test {
+ protected:
+  static const int kMaxBlockSize = 480;  
+
+  NetEqExternalVsInternalDecoderTest()
+      : NetEqExternalDecoderUnitTest(kDecoderPCM16Bswb32kHz,
+                                     new MockExternalPcm16B),
+        sample_rate_hz_(CodecSampleRateHz(kDecoderPCM16Bswb32kHz)) {
+    NetEq::Config config;
+    config.sample_rate_hz = CodecSampleRateHz(kDecoderPCM16Bswb32kHz);
+    neteq_internal_.reset(NetEq::Create(config));
+  }
+
+  void SetUp() override {
+    ASSERT_EQ(NetEq::kOK,
+              neteq_internal_->RegisterPayloadType(kDecoderPCM16Bswb32kHz,
+                                                   kPayloadType));
+  }
+
+  void GetAndVerifyOutput() override {
+    NetEqOutputType output_type;
+    int samples_per_channel;
+    int num_channels;
+    
+    EXPECT_EQ(NetEq::kOK,
+              neteq_internal_->GetAudio(kMaxBlockSize,
+                                        output_internal_,
+                                        &samples_per_channel,
+                                        &num_channels,
+                                        &output_type));
+    EXPECT_EQ(1, num_channels);
+    EXPECT_EQ(kOutputLengthMs * sample_rate_hz_ / 1000, samples_per_channel);
+
+    
+    samples_per_channel = GetOutputAudio(kMaxBlockSize, output_, &output_type);
+
+    for (int i = 0; i < samples_per_channel; ++i) {
+      ASSERT_EQ(output_[i], output_internal_[i]) <<
+          "Diff in sample " << i << ".";
+    }
+  }
+
+  void InsertPacket(WebRtcRTPHeader rtp_header, const uint8_t* payload,
+                    size_t payload_size_bytes,
+                    uint32_t receive_timestamp) override {
+    
+    ASSERT_EQ(
+        NetEq::kOK,
+        neteq_internal_->InsertPacket(
+            rtp_header, payload, payload_size_bytes, receive_timestamp));
+
+    
+    NetEqExternalDecoderUnitTest::InsertPacket(rtp_header, payload,
+                                               payload_size_bytes,
+                                               receive_timestamp);
+  }
+
+  int NumExpectedDecodeCalls(int num_loops) override { return num_loops; }
+
+ private:
+  int sample_rate_hz_;
+  rtc::scoped_ptr<NetEq> neteq_internal_;
+  int16_t output_internal_[kMaxBlockSize];
+  int16_t output_[kMaxBlockSize];
+};
+
+TEST_F(NetEqExternalVsInternalDecoderTest, RunTest) {
   RunTest(100);  
 }
 
-class LargeTimestampJumpTest : public NetEqExternalDecoderTest {
+class LargeTimestampJumpTest : public NetEqExternalDecoderUnitTest,
+                               public ::testing::Test {
  protected:
+  static const int kMaxBlockSize = 480;  
+
   enum TestStates {
     kInitialPhase,
     kNormalPhase,
@@ -235,60 +251,11 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderTest {
   };
 
   LargeTimestampJumpTest()
-      : NetEqExternalDecoderTest(), test_state_(kInitialPhase) {
-    sample_rate_hz_ = 8000;
-    samples_per_ms_ = sample_rate_hz_ / 1000;
-    frame_size_samples_ = frame_size_ms_ * samples_per_ms_;
-    output_size_samples_ = frame_size_ms_ * samples_per_ms_;
-    EXPECT_CALL(*external_decoder_, Die()).Times(1);
-    external_decoder_.reset(new MockExternalPcm16B);
-  }
-
-  void SetUp() OVERRIDE {
-    const std::string file_name =
-        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
-    input_file_.reset(new test::InputAudioFile(file_name));
-    assert(sample_rate_hz_ == 8000);
-    NetEqDecoder decoder = kDecoderPCM16B;
-    EXPECT_CALL(*external_decoder_, Init());
-    EXPECT_CALL(*external_decoder_, HasDecodePlc())
+      : NetEqExternalDecoderUnitTest(kDecoderPCM16B,
+                                     new MockExternalPcm16B),
+        test_state_(kInitialPhase) {
+    EXPECT_CALL(*external_decoder(), HasDecodePlc())
         .WillRepeatedly(Return(false));
-    
-    EXPECT_CALL(*external_decoder_, Die()).Times(0);
-    ASSERT_EQ(NetEq::kOK,
-              neteq_external_->RegisterExternalDecoder(
-                  external_decoder_.get(), decoder, kPayloadType));
-    ASSERT_EQ(NetEq::kOK, neteq_->RegisterPayloadType(decoder, kPayloadType));
-  }
-
-  void InsertPackets(int next_arrival_time) OVERRIDE {
-    
-    EXPECT_CALL(*external_decoder_,
-                IncomingPacket(_,
-                               payload_size_bytes_,
-                               rtp_header_.header.sequenceNumber,
-                               rtp_header_.header.timestamp,
-                               next_arrival_time));
-    ASSERT_EQ(
-        NetEq::kOK,
-        neteq_external_->InsertPacket(
-            rtp_header_, encoded_, payload_size_bytes_, next_arrival_time));
-  }
-
-  void GetOutputAudio() OVERRIDE {
-    NetEqOutputType output_type;
-    int samples_per_channel;
-    int num_channels;
-    
-    ASSERT_EQ(NetEq::kOK,
-              neteq_external_->GetAudio(kMaxBlockSize,
-                                        output_external_,
-                                        &samples_per_channel,
-                                        &num_channels,
-                                        &output_type));
-    EXPECT_EQ(1, num_channels);
-    EXPECT_EQ(output_size_samples_, samples_per_channel);
-    UpdateState(output_type);
   }
 
   virtual void UpdateState(NetEqOutputType output_type) {
@@ -325,20 +292,26 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderTest {
     }
   }
 
-  void VerifyOutput(size_t num_samples) const OVERRIDE {
+  void GetAndVerifyOutput() override {
+    int num_samples;
+    NetEqOutputType output_type;
+    num_samples = GetOutputAudio(kMaxBlockSize, output_, &output_type);
+    UpdateState(output_type);
+
     if (test_state_ == kExpandPhase || test_state_ == kFadedExpandPhase) {
       
       return;
     }
-    for (size_t i = 0; i < num_samples; ++i) {
-      if (output_external_[i] != 0)
+
+    for (int i = 0; i < num_samples; ++i) {
+      if (output_[i] != 0)
         return;
     }
     EXPECT_TRUE(false)
         << "Expected at least one non-zero sample in each output block.";
   }
 
-  int NumExpectedDecodeCalls(int num_loops) const OVERRIDE {
+  int NumExpectedDecodeCalls(int num_loops) override {
     
     
     
@@ -350,6 +323,9 @@ class LargeTimestampJumpTest : public NetEqExternalDecoderTest {
   }
 
   TestStates test_state_;
+
+ private:
+  int16_t output_[kMaxBlockSize];
 };
 
 TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRange) {
@@ -360,17 +336,17 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRange) {
   static const uint32_t kStartTimestamp = 2880;
   static const uint32_t kJumpFromTimestamp = 7200;
   static const uint32_t kJumpToTimestamp = 2869342376;
-  COMPILE_ASSERT(kJumpFromTimestamp < kJumpToTimestamp,
-                 timestamp_jump_should_not_result_in_wrap);
-  COMPILE_ASSERT(
+  static_assert(kJumpFromTimestamp < kJumpToTimestamp,
+                "timestamp jump should not result in wrap");
+  static_assert(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) > 0x7FFFFFFF,
-      jump_should_be_larger_than_half_range);
+      "jump should be larger than half range");
   
-  rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
-                                                           kStartSeqeunceNumber,
-                                                           kStartTimestamp,
-                                                           kJumpFromTimestamp,
-                                                           kJumpToTimestamp));
+  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(samples_per_ms(),
+                                                        kStartSeqeunceNumber,
+                                                        kStartTimestamp,
+                                                        kJumpFromTimestamp,
+                                                        kJumpToTimestamp));
 
   RunTest(130);  
   EXPECT_EQ(kRecovered, test_state_);
@@ -384,17 +360,17 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRangeAndWrap) {
   static const uint32_t kStartTimestamp = 3221223116;
   static const uint32_t kJumpFromTimestamp = 3221223216;
   static const uint32_t kJumpToTimestamp = 1073744278;
-  COMPILE_ASSERT(kJumpToTimestamp < kJumpFromTimestamp,
-                 timestamp_jump_should_result_in_wrap);
-  COMPILE_ASSERT(
+  static_assert(kJumpToTimestamp < kJumpFromTimestamp,
+                "timestamp jump should result in wrap");
+  static_assert(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) > 0x7FFFFFFF,
-      jump_should_be_larger_than_half_range);
+      "jump should be larger than half range");
   
-  rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
-                                                           kStartSeqeunceNumber,
-                                                           kStartTimestamp,
-                                                           kJumpFromTimestamp,
-                                                           kJumpToTimestamp));
+  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(samples_per_ms(),
+                                                        kStartSeqeunceNumber,
+                                                        kStartTimestamp,
+                                                        kJumpFromTimestamp,
+                                                        kJumpToTimestamp));
 
   RunTest(130);  
   EXPECT_EQ(kRecovered, test_state_);
@@ -402,7 +378,7 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRangeAndWrap) {
 
 class ShortTimestampJumpTest : public LargeTimestampJumpTest {
  protected:
-  void UpdateState(NetEqOutputType output_type) OVERRIDE {
+  void UpdateState(NetEqOutputType output_type) override {
     switch (test_state_) {
       case kInitialPhase: {
         if (output_type == kOutputNormal) {
@@ -429,7 +405,7 @@ class ShortTimestampJumpTest : public LargeTimestampJumpTest {
     }
   }
 
-  int NumExpectedDecodeCalls(int num_loops) const OVERRIDE {
+  int NumExpectedDecodeCalls(int num_loops) override {
     
     return num_loops - 2;
   }
@@ -443,17 +419,17 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRange) {
   static const uint32_t kStartTimestamp = 4711;
   static const uint32_t kJumpFromTimestamp = 4811;
   static const uint32_t kJumpToTimestamp = 2147483747;
-  COMPILE_ASSERT(kJumpFromTimestamp < kJumpToTimestamp,
-                 timestamp_jump_should_not_result_in_wrap);
-  COMPILE_ASSERT(
+  static_assert(kJumpFromTimestamp < kJumpToTimestamp,
+                "timestamp jump should not result in wrap");
+  static_assert(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) < 0x7FFFFFFF,
-      jump_should_be_smaller_than_half_range);
+      "jump should be smaller than half range");
   
-  rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
-                                                           kStartSeqeunceNumber,
-                                                           kStartTimestamp,
-                                                           kJumpFromTimestamp,
-                                                           kJumpToTimestamp));
+  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(samples_per_ms(),
+                                                        kStartSeqeunceNumber,
+                                                        kStartTimestamp,
+                                                        kJumpFromTimestamp,
+                                                        kJumpToTimestamp));
 
   RunTest(130);  
   EXPECT_EQ(kRecovered, test_state_);
@@ -467,17 +443,17 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRangeAndWrap) {
   static const uint32_t kStartTimestamp = 3221227827;
   static const uint32_t kJumpFromTimestamp = 3221227927;
   static const uint32_t kJumpToTimestamp = 1073739567;
-  COMPILE_ASSERT(kJumpToTimestamp < kJumpFromTimestamp,
-                 timestamp_jump_should_result_in_wrap);
-  COMPILE_ASSERT(
+  static_assert(kJumpToTimestamp < kJumpFromTimestamp,
+                "timestamp jump should result in wrap");
+  static_assert(
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) < 0x7FFFFFFF,
-      jump_should_be_smaller_than_half_range);
+      "jump should be smaller than half range");
   
-  rtp_generator_.reset(new test::TimestampJumpRtpGenerator(samples_per_ms_,
-                                                           kStartSeqeunceNumber,
-                                                           kStartTimestamp,
-                                                           kJumpFromTimestamp,
-                                                           kJumpToTimestamp));
+  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(samples_per_ms(),
+                                                        kStartSeqeunceNumber,
+                                                        kStartTimestamp,
+                                                        kJumpFromTimestamp,
+                                                        kJumpToTimestamp));
 
   RunTest(130);  
   EXPECT_EQ(kRecovered, test_state_);

@@ -20,6 +20,7 @@
 
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
+typedef struct ssl_cipher_st SSL_CIPHER;
 typedef struct x509_store_ctx_st X509_STORE_CTX;
 
 namespace rtc {
@@ -58,49 +59,60 @@ class OpenSSLIdentity;
 class OpenSSLStreamAdapter : public SSLStreamAdapter {
  public:
   explicit OpenSSLStreamAdapter(StreamInterface* stream);
-  virtual ~OpenSSLStreamAdapter();
+  ~OpenSSLStreamAdapter() override;
 
-  virtual void SetIdentity(SSLIdentity* identity);
-
-  
-  virtual void SetServerRole(SSLRole role = SSL_SERVER);
-  virtual bool SetPeerCertificateDigest(const std::string& digest_alg,
-                                        const unsigned char* digest_val,
-                                        size_t digest_len);
-
-  virtual bool GetPeerCertificate(SSLCertificate** cert) const;
-
-  virtual int StartSSLWithServer(const char* server_name);
-  virtual int StartSSLWithPeer();
-  virtual void SetMode(SSLMode mode);
-
-  virtual StreamResult Read(void* data, size_t data_len,
-                            size_t* read, int* error);
-  virtual StreamResult Write(const void* data, size_t data_len,
-                             size_t* written, int* error);
-  virtual void Close();
-  virtual StreamState GetState() const;
+  void SetIdentity(SSLIdentity* identity) override;
 
   
-  virtual bool ExportKeyingMaterial(const std::string& label,
-                                    const uint8* context,
-                                    size_t context_len,
-                                    bool use_context,
-                                    uint8* result,
-                                    size_t result_len);
+  void SetServerRole(SSLRole role = SSL_SERVER) override;
+  bool SetPeerCertificateDigest(const std::string& digest_alg,
+                                const unsigned char* digest_val,
+                                size_t digest_len) override;
 
+  bool GetPeerCertificate(SSLCertificate** cert) const override;
+
+  int StartSSLWithServer(const char* server_name) override;
+  int StartSSLWithPeer() override;
+  void SetMode(SSLMode mode) override;
+
+  StreamResult Read(void* data,
+                    size_t data_len,
+                    size_t* read,
+                    int* error) override;
+  StreamResult Write(const void* data,
+                     size_t data_len,
+                     size_t* written,
+                     int* error) override;
+  void Close() override;
+  StreamState GetState() const override;
+
+#ifndef OPENSSL_IS_BORINGSSL
+  
+  static const char* GetRfcSslCipherName(const SSL_CIPHER* cipher);
+#endif
+
+  bool GetSslCipher(std::string* cipher) override;
 
   
-  virtual bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers);
-  virtual bool GetDtlsSrtpCipher(std::string* cipher);
+  bool ExportKeyingMaterial(const std::string& label,
+                            const uint8* context,
+                            size_t context_len,
+                            bool use_context,
+                            uint8* result,
+                            size_t result_len) override;
+
+  
+  bool SetDtlsSrtpCiphers(const std::vector<std::string>& ciphers) override;
+  bool GetDtlsSrtpCipher(std::string* cipher) override;
 
   
   static bool HaveDtls();
   static bool HaveDtlsSrtp();
   static bool HaveExporter();
+  static std::string GetDefaultSslCipher();
 
  protected:
-  virtual void OnEvent(StreamInterface* stream, int events, int err);
+  void OnEvent(StreamInterface* stream, int events, int err) override;
 
  private:
   enum SSLState {
@@ -140,7 +152,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   void Cleanup();
 
   
-  virtual void OnMessage(Message* msg);
+  void OnMessage(Message* msg) override;
 
   
   void FlushInput(unsigned int left);

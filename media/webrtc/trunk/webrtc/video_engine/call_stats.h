@@ -14,8 +14,8 @@
 #include <list>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/interface/module.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -32,8 +32,8 @@ class CallStats : public Module {
   ~CallStats();
 
   
-  virtual int32_t TimeUntilNextProcess() OVERRIDE;
-  virtual int32_t Process() OVERRIDE;
+  int64_t TimeUntilNextProcess() override;
+  int32_t Process() override;
 
   
   
@@ -43,28 +43,29 @@ class CallStats : public Module {
   void RegisterStatsObserver(CallStatsObserver* observer);
   void DeregisterStatsObserver(CallStatsObserver* observer);
 
- protected:
-  void OnRttUpdate(uint32_t rtt);
-
-  uint32_t last_processed_rtt_ms() const;
-
- private:
   
   struct RttTime {
-    RttTime(uint32_t new_rtt, int64_t rtt_time)
+    RttTime(int64_t new_rtt, int64_t rtt_time)
         : rtt(new_rtt), time(rtt_time) {}
-    const uint32_t rtt;
+    const int64_t rtt;
     const int64_t time;
   };
 
+ protected:
+  void OnRttUpdate(int64_t rtt);
+
+  int64_t avg_rtt_ms() const;
+
+ private:
   
-  scoped_ptr<CriticalSectionWrapper> crit_;
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_;
   
-  scoped_ptr<RtcpRttStats> rtcp_rtt_stats_;
+  rtc::scoped_ptr<RtcpRttStats> rtcp_rtt_stats_;
   
   int64_t last_process_time_;
   
-  uint32_t last_processed_rtt_ms_;
+  int64_t max_rtt_ms_;
+  int64_t avg_rtt_ms_;
 
   
   std::list<RttTime> reports_;

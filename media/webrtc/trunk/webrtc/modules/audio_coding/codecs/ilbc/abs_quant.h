@@ -27,7 +27,7 @@
 
 
 void WebRtcIlbcfix_AbsQuant(
-    iLBC_Enc_Inst_t *iLBCenc_inst,
+    IlbcEncoder *iLBCenc_inst,
     
     iLBC_bits *iLBC_encbits, 
 

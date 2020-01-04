@@ -63,8 +63,10 @@
 
 
 
-ring_buffer_size_t PaUtil_InitializeRingBuffer( PaUtilRingBuffer *rbuf, ring_buffer_size_t elementSizeBytes, ring_buffer_size_t elementCount, void *dataPtr )
-{
+PaRingBufferSize PaUtil_InitializeRingBuffer(PaUtilRingBuffer* rbuf,
+                                             PaRingBufferSize elementSizeBytes,
+                                             PaRingBufferSize elementCount,
+                                             void* dataPtr) {
     if( ((elementCount-1) & elementCount) != 0) return -1; 
     rbuf->bufferSize = elementCount;
     rbuf->buffer = (char *)dataPtr;
@@ -77,14 +79,14 @@ ring_buffer_size_t PaUtil_InitializeRingBuffer( PaUtilRingBuffer *rbuf, ring_buf
 
 
 
-ring_buffer_size_t PaUtil_GetRingBufferReadAvailable( PaUtilRingBuffer *rbuf )
+PaRingBufferSize PaUtil_GetRingBufferReadAvailable( PaUtilRingBuffer *rbuf )
 {
     PaUtil_ReadMemoryBarrier();
     return ( (rbuf->writeIndex - rbuf->readIndex) & rbuf->bigMask );
 }
 
 
-ring_buffer_size_t PaUtil_GetRingBufferWriteAvailable( PaUtilRingBuffer *rbuf )
+PaRingBufferSize PaUtil_GetRingBufferWriteAvailable( PaUtilRingBuffer *rbuf )
 {
     
     return ( rbuf->bufferSize - PaUtil_GetRingBufferReadAvailable(rbuf));
@@ -103,19 +105,21 @@ void PaUtil_FlushRingBuffer( PaUtilRingBuffer *rbuf )
 
 
 
-ring_buffer_size_t PaUtil_GetRingBufferWriteRegions( PaUtilRingBuffer *rbuf, ring_buffer_size_t elementCount,
-                                       void **dataPtr1, ring_buffer_size_t *sizePtr1,
-                                       void **dataPtr2, ring_buffer_size_t *sizePtr2 )
-{
-    ring_buffer_size_t   index;
-    ring_buffer_size_t   available = PaUtil_GetRingBufferWriteAvailable( rbuf );
+PaRingBufferSize PaUtil_GetRingBufferWriteRegions(PaUtilRingBuffer* rbuf,
+                                                  PaRingBufferSize elementCount,
+                                                  void** dataPtr1,
+                                                  PaRingBufferSize* sizePtr1,
+                                                  void** dataPtr2,
+                                                  PaRingBufferSize* sizePtr2) {
+    PaRingBufferSize   index;
+    PaRingBufferSize   available = PaUtil_GetRingBufferWriteAvailable( rbuf );
     if( elementCount > available ) elementCount = available;
     
     index = rbuf->writeIndex & rbuf->smallMask;
     if( (index + elementCount) > rbuf->bufferSize )
     {
         
-        ring_buffer_size_t   firstHalf = rbuf->bufferSize - index;
+        PaRingBufferSize   firstHalf = rbuf->bufferSize - index;
         *dataPtr1 = &rbuf->buffer[index*rbuf->elementSizeBytes];
         *sizePtr1 = firstHalf;
         *dataPtr2 = &rbuf->buffer[0];
@@ -134,8 +138,9 @@ ring_buffer_size_t PaUtil_GetRingBufferWriteRegions( PaUtilRingBuffer *rbuf, rin
 
 
 
-ring_buffer_size_t PaUtil_AdvanceRingBufferWriteIndex( PaUtilRingBuffer *rbuf, ring_buffer_size_t elementCount )
-{
+PaRingBufferSize PaUtil_AdvanceRingBufferWriteIndex(
+    PaUtilRingBuffer* rbuf,
+    PaRingBufferSize elementCount) {
     
     PaUtil_WriteMemoryBarrier();
     return rbuf->writeIndex = (rbuf->writeIndex + elementCount) & rbuf->bigMask;
@@ -147,19 +152,21 @@ ring_buffer_size_t PaUtil_AdvanceRingBufferWriteIndex( PaUtilRingBuffer *rbuf, r
 
 
 
-ring_buffer_size_t PaUtil_GetRingBufferReadRegions( PaUtilRingBuffer *rbuf, ring_buffer_size_t elementCount,
-                                void **dataPtr1, ring_buffer_size_t *sizePtr1,
-                                void **dataPtr2, ring_buffer_size_t *sizePtr2 )
-{
-    ring_buffer_size_t   index;
-    ring_buffer_size_t   available = PaUtil_GetRingBufferReadAvailable( rbuf );
+PaRingBufferSize PaUtil_GetRingBufferReadRegions(PaUtilRingBuffer* rbuf,
+                                                 PaRingBufferSize elementCount,
+                                                 void** dataPtr1,
+                                                 PaRingBufferSize* sizePtr1,
+                                                 void** dataPtr2,
+                                                 PaRingBufferSize* sizePtr2) {
+    PaRingBufferSize   index;
+    PaRingBufferSize   available = PaUtil_GetRingBufferReadAvailable( rbuf );
     if( elementCount > available ) elementCount = available;
     
     index = rbuf->readIndex & rbuf->smallMask;
     if( (index + elementCount) > rbuf->bufferSize )
     {
         
-        ring_buffer_size_t firstHalf = rbuf->bufferSize - index;
+        PaRingBufferSize firstHalf = rbuf->bufferSize - index;
         *dataPtr1 = &rbuf->buffer[index*rbuf->elementSizeBytes];
         *sizePtr1 = firstHalf;
         *dataPtr2 = &rbuf->buffer[0];
@@ -176,8 +183,9 @@ ring_buffer_size_t PaUtil_GetRingBufferReadRegions( PaUtilRingBuffer *rbuf, ring
 }
 
 
-ring_buffer_size_t PaUtil_AdvanceRingBufferReadIndex( PaUtilRingBuffer *rbuf, ring_buffer_size_t elementCount )
-{
+PaRingBufferSize PaUtil_AdvanceRingBufferReadIndex(
+    PaUtilRingBuffer* rbuf,
+    PaRingBufferSize elementCount) {
     
     PaUtil_WriteMemoryBarrier();
     return rbuf->readIndex = (rbuf->readIndex + elementCount) & rbuf->bigMask;
@@ -185,9 +193,10 @@ ring_buffer_size_t PaUtil_AdvanceRingBufferReadIndex( PaUtilRingBuffer *rbuf, ri
 
 
 
-ring_buffer_size_t PaUtil_WriteRingBuffer( PaUtilRingBuffer *rbuf, const void *data, ring_buffer_size_t elementCount )
-{
-    ring_buffer_size_t size1, size2, numWritten;
+PaRingBufferSize PaUtil_WriteRingBuffer(PaUtilRingBuffer* rbuf,
+                                        const void* data,
+                                        PaRingBufferSize elementCount) {
+    PaRingBufferSize size1, size2, numWritten;
     void *data1, *data2;
     numWritten = PaUtil_GetRingBufferWriteRegions( rbuf, elementCount, &data1, &size1, &data2, &size2 );
     if( size2 > 0 )
@@ -207,9 +216,10 @@ ring_buffer_size_t PaUtil_WriteRingBuffer( PaUtilRingBuffer *rbuf, const void *d
 
 
 
-ring_buffer_size_t PaUtil_ReadRingBuffer( PaUtilRingBuffer *rbuf, void *data, ring_buffer_size_t elementCount )
-{
-    ring_buffer_size_t size1, size2, numRead;
+PaRingBufferSize PaUtil_ReadRingBuffer(PaUtilRingBuffer* rbuf,
+                                       void* data,
+                                       PaRingBufferSize elementCount) {
+    PaRingBufferSize size1, size2, numRead;
     void *data1, *data2;
     numRead = PaUtil_GetRingBufferReadRegions( rbuf, elementCount, &data1, &size1, &data2, &size2 );
     if( size2 > 0 )

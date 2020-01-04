@@ -21,14 +21,12 @@
 
 #include "webrtc/common_types.h"
 
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD) && !defined(MOZ_WIDGET_GONK)
-#include <jni.h>
-#endif
-
 namespace webrtc {
 
 class Config;
 class VoiceEngine;
+class ReceiveStatisticsProxy;
+class SendStatisticsProxy;
 
 
 
@@ -45,12 +43,12 @@ class CpuOveruseObserver {
 
 struct CpuOveruseOptions {
   CpuOveruseOptions()
-      : enable_capture_jitter_method(true),
+      : enable_capture_jitter_method(false),
         low_capture_jitter_threshold_ms(20.0f),
         high_capture_jitter_threshold_ms(30.0f),
-        enable_encode_usage_method(false),
-        low_encode_usage_threshold_percent(60),
-        high_encode_usage_threshold_percent(90),
+        enable_encode_usage_method(true),
+        low_encode_usage_threshold_percent(55),
+        high_encode_usage_threshold_percent(85),
         low_encode_time_rsd_threshold(-1),
         high_encode_time_rsd_threshold(-1),
         enable_extended_processing_usage(true),
@@ -114,7 +112,6 @@ struct CpuOveruseMetrics {
       : capture_jitter_ms(-1),
         avg_encode_time_ms(-1),
         encode_usage_percent(-1),
-        encode_rsd(-1),
         capture_queue_delay_ms_per_s(-1) {}
 
   int capture_jitter_ms;  
@@ -122,12 +119,16 @@ struct CpuOveruseMetrics {
   int avg_encode_time_ms;   
   int encode_usage_percent; 
                             
-  
-  int encode_rsd;           
   int capture_queue_delay_ms_per_s;  
                                      
                                      
                                      
+};
+
+class CpuOveruseMetricsObserver {
+ public:
+  virtual ~CpuOveruseMetricsObserver() {}
+  virtual void CpuOveruseMetricsUpdated(const CpuOveruseMetrics& metrics) = 0;
 };
 
 class WEBRTC_DLLEXPORT VideoEngine {
@@ -150,11 +151,6 @@ class WEBRTC_DLLEXPORT VideoEngine {
   
   
   static int SetTraceCallback(TraceCallback* callback);
-
-#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD) && !defined(MOZ_WIDGET_GONK)
-  
-  static int SetAndroidObjects(JavaVM* java_vm);
-#endif
 
  protected:
   VideoEngine() {}
@@ -191,6 +187,9 @@ class WEBRTC_DLLEXPORT ViEBase {
   virtual int CreateChannel(int& video_channel,
                             int original_channel) = 0;
 
+  virtual int CreateChannelWithoutDefaultEncoder(int& video_channel,
+                                                 int original_channel) = 0;
+
   
   
   
@@ -212,6 +211,9 @@ class WEBRTC_DLLEXPORT ViEBase {
 
   
   virtual int GetCpuOveruseMetrics(int channel, CpuOveruseMetrics* metrics) = 0;
+  virtual void RegisterCpuOveruseMetricsObserver(
+      int channel,
+      CpuOveruseMetricsObserver* observer) = 0;
 
   
   
@@ -219,10 +221,6 @@ class WEBRTC_DLLEXPORT ViEBase {
   
   virtual void RegisterSendSideDelayObserver(
       int channel, SendSideDelayObserver* observer) {}
-
-  
-  
-  virtual void SetLoadManager(CPULoadStateCallbackInvoker* load_manager) = 0;
 
   
   
@@ -250,6 +248,14 @@ class WEBRTC_DLLEXPORT ViEBase {
 
   
   virtual int LastError() = 0;
+
+  virtual void RegisterSendStatisticsProxy(
+      int channel,
+      SendStatisticsProxy* send_statistics_proxy) = 0;
+
+  virtual void RegisterReceiveStatisticsProxy(
+      int channel,
+      ReceiveStatisticsProxy* receive_statistics_proxy) = 0;
 
  protected:
   ViEBase() {}

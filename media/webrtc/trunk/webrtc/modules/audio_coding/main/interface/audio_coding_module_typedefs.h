@@ -152,52 +152,22 @@ enum ACMAMRPackingFormat {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct {
-  uint16_t currentBufferSize;
-  uint16_t preferredBufferSize;
-  bool jitterPeaksFound;
-  uint16_t currentPacketLossRate;
-  uint16_t currentDiscardRate;
-  uint16_t currentExpandRate;
-  uint16_t currentPreemptiveRate;
-  uint16_t currentAccelerateRate;
-  int32_t clockDriftPPM;
-  int meanWaitingTimeMs;
-  int medianWaitingTimeMs;
-  int minWaitingTimeMs;
-  int maxWaitingTimeMs;
-  int addedSamples;
-} ACMNetworkStatistics;
-
-
-
-
-
-
-
-
-
 enum ACMBackgroundNoiseMode {
   On,
   Fade,
   Off
+};
+
+
+
+
+
+
+
+
+enum OpusApplicationMode {
+ kVoip = 0,
+ kAudio = 1,
 };
 
 }  

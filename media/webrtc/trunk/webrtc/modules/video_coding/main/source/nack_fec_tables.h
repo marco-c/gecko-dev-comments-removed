@@ -17,7 +17,6 @@ namespace webrtc
 
 
 
-
 const uint16_t VCMNackFecTable[100] = {
 0,
 0,

@@ -22,7 +22,7 @@ namespace webrtc {
 
 
 struct FrameData {
-  int rtt_ms;
+  int64_t rtt_ms;
   float rolling_average_packets_per_frame;
 };
 
@@ -56,15 +56,15 @@ class VCMSessionInfo {
   
   
   
-  int BuildVP8FragmentationHeader(uint8_t* frame_buffer,
-                                  int frame_buffer_length,
-                                  RTPFragmentationHeader* fragmentation);
+  size_t BuildVP8FragmentationHeader(uint8_t* frame_buffer,
+                                     size_t frame_buffer_length,
+                                     RTPFragmentationHeader* fragmentation);
 
   
   
   
   
-  int MakeDecodable();
+  size_t MakeDecodable();
 
   
   
@@ -72,7 +72,7 @@ class VCMSessionInfo {
   
   void SetNotDecodableIfIncomplete();
 
-  int SessionLength() const;
+  size_t SessionLength() const;
   int NumPackets() const;
   bool HaveFirstPacket() const;
   bool HaveLastPacket() const;
@@ -114,8 +114,8 @@ class VCMSessionInfo {
   PacketIterator FindPartitionEnd(PacketIterator it) const;
   static bool InSequence(const PacketIterator& it,
                          const PacketIterator& prev_it);
-  int InsertBuffer(uint8_t* frame_buffer,
-                   PacketIterator packetIterator);
+  size_t InsertBuffer(uint8_t* frame_buffer,
+                      PacketIterator packetIterator);
   size_t Insert(const uint8_t* buffer,
                 size_t length,
                 bool insert_start_code,
@@ -124,8 +124,8 @@ class VCMSessionInfo {
   PacketIterator FindNaluEnd(PacketIterator packet_iter) const;
   
   
-  int DeletePacketData(PacketIterator start,
-                       PacketIterator end);
+  size_t DeletePacketData(PacketIterator start,
+                          PacketIterator end);
   void UpdateCompleteSession();
 
   

@@ -18,28 +18,26 @@
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
-#include "webrtc/modules/video_coding/main/source/er_tables_xor.h"
 #include "webrtc/modules/video_coding/main/source/fec_tables_xor.h"
 #include "webrtc/modules/video_coding/main/source/nack_fec_tables.h"
 
 namespace webrtc {
+
+static const int kPacketLossMax = 129;
+
 namespace media_optimization {
 
-VCMProtectionMethod::VCMProtectionMethod():
-_effectivePacketLoss(0),
-_protectionFactorK(0),
-_protectionFactorD(0),
-_residualPacketLossFec(0.0f),
-_scaleProtKey(2.0f),
-_maxPayloadSize(1460),
-_qmRobustness(new VCMQmRobustness()),
-_useUepProtectionK(false),
-_useUepProtectionD(true),
-_corrFecCost(1.0),
-_type(kNone),
-_efficiency(0)
-{
-    
+VCMProtectionMethod::VCMProtectionMethod()
+    : _effectivePacketLoss(0),
+      _protectionFactorK(0),
+      _protectionFactorD(0),
+      _scaleProtKey(2.0f),
+      _maxPayloadSize(1460),
+      _qmRobustness(new VCMQmRobustness()),
+      _useUepProtectionK(false),
+      _useUepProtectionD(true),
+      _corrFecCost(1.0),
+      _type(kNone) {
 }
 
 VCMProtectionMethod::~VCMProtectionMethod()
@@ -53,8 +51,8 @@ VCMProtectionMethod::UpdateContentMetrics(const
     _qmRobustness->UpdateContent(contentMetrics);
 }
 
-VCMNackFecMethod::VCMNackFecMethod(int lowRttNackThresholdMs,
-                                   int highRttNackThresholdMs)
+VCMNackFecMethod::VCMNackFecMethod(int64_t lowRttNackThresholdMs,
+                                   int64_t highRttNackThresholdMs)
     : VCMFecMethod(),
       _lowRttNackMs(lowRttNackThresholdMs),
       _highRttNackMs(highRttNackThresholdMs),
@@ -159,6 +157,8 @@ bool VCMNackFecMethod::BitRateTooLowForFec(
   }
   
   
+  
+  const int64_t kMaxRttTurnOffFec = 200;
   if (estimate_bytes_per_frame < max_bytes_per_frame &&
       parameters->numLayers < 3 &&
       parameters->rtt < kMaxRttTurnOffFec) {
@@ -185,20 +185,6 @@ VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     if (BitRateTooLowForFec(parameters)) {
       _protectionFactorK = 0;
       _protectionFactorD = 0;
-    }
-
-    
-
-    
-    float fecRate = static_cast<float> (_protectionFactorD) / 255.0f;
-    _efficiency = parameters->bitRate * fecRate * _corrFecCost;
-
-    
-    if (_highRttNackMs == -1 || parameters->rtt < _highRttNackMs)
-    {
-        
-        _efficiency += parameters->bitRate * _residualPacketLossFec /
-                       (1.0f + _residualPacketLossFec);
     }
 
     
@@ -238,8 +224,6 @@ VCMNackMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     EffectivePacketLoss(parameters);
 
     
-    _efficiency = parameters->bitRate * parameters->lossPr /
-                  (1.0f + parameters->lossPr);
     return true;
 }
 
@@ -289,84 +273,6 @@ void
 VCMFecMethod::UpdateProtectionFactorK(uint8_t protectionFactorK)
 {
     _protectionFactorK = protectionFactorK;
-}
-
-
-
-
-float
-VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
-{
-    
-    
-    const uint16_t bitRatePerFrame = static_cast<uint16_t>
-                        (parameters->bitRate / (parameters->frameRate));
-
-    
-    const uint8_t avgTotPackets = 1 + static_cast<uint8_t>
-                        (static_cast<float> (bitRatePerFrame * 1000.0) /
-                         static_cast<float> (8.0 * _maxPayloadSize) + 0.5);
-
-    const float protectionFactor = static_cast<float>(_protectionFactorD) /
-                                                      255.0;
-
-    
-    
-    uint8_t fecPacketsPerFrame = static_cast<uint8_t>
-                                      (protectionFactor * avgTotPackets);
-
-    uint8_t sourcePacketsPerFrame = avgTotPackets - fecPacketsPerFrame;
-
-    if ( (fecPacketsPerFrame == 0) || (sourcePacketsPerFrame == 0) )
-    {
-        
-        return 0.0;
-    }
-
-    
-    if (sourcePacketsPerFrame > kMaxNumPackets)
-    {
-        sourcePacketsPerFrame = kMaxNumPackets;
-    }
-
-    
-    if (fecPacketsPerFrame > kMaxNumPackets)
-    {
-        fecPacketsPerFrame = kMaxNumPackets;
-    }
-
-    
-    uint16_t codeIndexTable[kMaxNumPackets * kMaxNumPackets];
-    uint16_t k = 0;
-    for (uint8_t i = 1; i <= kMaxNumPackets; i++)
-    {
-        for (uint8_t j = 1; j <= i; j++)
-        {
-            codeIndexTable[(j - 1) * kMaxNumPackets + i - 1] = k;
-            k += 1;
-        }
-    }
-
-    uint8_t lossRate = static_cast<uint8_t> (255.0 *
-                             parameters->lossPr + 0.5f);
-
-    
-    if (lossRate >= kPacketLossMax)
-    {
-        lossRate = kPacketLossMax - 1;
-    }
-
-    const uint16_t codeIndex = (fecPacketsPerFrame - 1) * kMaxNumPackets +
-                                     (sourcePacketsPerFrame - 1);
-
-    const uint16_t indexTable = codeIndexTable[codeIndex] * kPacketLossMax +
-                                      lossRate;
-
-    
-    assert(indexTable < kSizeAvgFECRecoveryXOR);
-    float avgFecRecov = static_cast<float>(kAvgFECRecoveryXOR[indexTable]);
-
-    return avgFecRecov;
 }
 
 bool
@@ -588,14 +494,6 @@ VCMFecMethod::EffectivePacketLoss(const VCMProtectionParameters* parameters)
     
 
     
-    uint8_t packetLoss = (uint8_t) (255 * parameters->lossPr);
-
-    float avgFecRecov = AvgRecoveryFEC(parameters);
-
-    
-    _residualPacketLossFec = (float) (packetLoss - avgFecRecov) / 255.0f;
-
-    
     _effectivePacketLoss = 0;
 
     return true;
@@ -609,25 +507,6 @@ VCMFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
 
     
     EffectivePacketLoss(parameters);
-
-    
-    
-    float fecRate = static_cast<float> (_protectionFactorD) / 255.0f;
-    if (fecRate >= 0.0f)
-    {
-        
-        
-        
-        
-
-        
-        
-        _efficiency = parameters->bitRate * fecRate * _corrFecCost;
-    }
-    else
-    {
-        _efficiency = 0.0f;
-    }
 
     
     
@@ -655,7 +534,6 @@ _lossPrHistory(),
 _shortMaxLossPr255(0),
 _packetsPerFrame(0.9999f),
 _packetsPerFrameKey(0.9999f),
-_residualPacketLossFec(0),
 _codecWidth(0),
 _codecHeight(0),
 _numLayers(1)
@@ -668,84 +546,36 @@ VCMLossProtectionLogic::~VCMLossProtectionLogic()
     Release();
 }
 
-bool
-VCMLossProtectionLogic::SetMethod(enum VCMProtectionMethodEnum newMethodType)
-{
-    if (_selectedMethod != NULL)
-    {
-        if (_selectedMethod->Type() == newMethodType)
-        {
-            
-            return false;
-        }
-        
-        delete _selectedMethod;
-    }
-    VCMProtectionMethod *newMethod = NULL;
-    switch (newMethodType)
-    {
-        case kNack:
-        {
-            newMethod = new VCMNackMethod();
-            break;
-        }
-        case kFec:
-        {
-            newMethod  = new VCMFecMethod();
-            break;
-        }
-        case kNackFec:
-        {
-            
-            newMethod =  new VCMNackFecMethod(kLowRttNackMs, -1);
-            break;
-        }
-        default:
-        {
-          return false;
-          break;
-        }
+void VCMLossProtectionLogic::SetMethod(
+    enum VCMProtectionMethodEnum newMethodType) {
+  if (_selectedMethod != nullptr) {
+    if (_selectedMethod->Type() == newMethodType)
+      return;
+    
+    delete _selectedMethod;
+  }
 
-    }
-    _selectedMethod = newMethod;
-    return true;
-}
-bool
-VCMLossProtectionLogic::RemoveMethod(enum VCMProtectionMethodEnum method)
-{
-    if (_selectedMethod == NULL)
-    {
-        return false;
-    }
-    else if (_selectedMethod->Type() == method)
-    {
-        delete _selectedMethod;
-        _selectedMethod = NULL;
-    }
-    return true;
-}
-
-float
-VCMLossProtectionLogic::RequiredBitRate() const
-{
-    float RequiredBitRate = 0.0f;
-    if (_selectedMethod != NULL)
-    {
-        RequiredBitRate = _selectedMethod->RequiredBitRate();
-    }
-    return RequiredBitRate;
+  switch(newMethodType) {
+    case kNack:
+      _selectedMethod = new VCMNackMethod();
+      break;
+    case kFec:
+      _selectedMethod = new VCMFecMethod();
+      break;
+    case kNackFec:
+      _selectedMethod = new VCMNackFecMethod(kLowRttNackMs, -1);
+      break;
+    case kNone:
+      _selectedMethod = nullptr;
+      break;
+  }
+  UpdateMethod();
 }
 
 void
-VCMLossProtectionLogic::UpdateRtt(uint32_t rtt)
+VCMLossProtectionLogic::UpdateRtt(int64_t rtt)
 {
     _rtt = rtt;
-}
-
-void
-VCMLossProtectionLogic::UpdateResidualPacketLoss(float residualPacketLoss)
-{
-    _residualPacketLossFec = residualPacketLoss;
 }
 
 void
@@ -909,7 +739,6 @@ VCMLossProtectionLogic::UpdateMethod()
     _currentParameters.fecRateKey = _fecRateKey;
     _currentParameters.packetsPerFrame = _packetsPerFrame.filtered();
     _currentParameters.packetsPerFrameKey = _packetsPerFrameKey.filtered();
-    _currentParameters.residualPacketLossFec = _residualPacketLossFec;
     _currentParameters.codecWidth = _codecWidth;
     _currentParameters.codecHeight = _codecHeight;
     _currentParameters.numLayers = _numLayers;
@@ -922,10 +751,8 @@ VCMLossProtectionLogic::SelectedMethod() const
     return _selectedMethod;
 }
 
-VCMProtectionMethodEnum
-VCMLossProtectionLogic::SelectedType() const
-{
-    return _selectedMethod->Type();
+VCMProtectionMethodEnum VCMLossProtectionLogic::SelectedType() const {
+  return _selectedMethod == nullptr ? kNone : _selectedMethod->Type();
 }
 
 void

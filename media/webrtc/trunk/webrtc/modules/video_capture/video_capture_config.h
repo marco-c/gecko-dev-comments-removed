@@ -24,7 +24,6 @@ enum {kMaxFrameRate =60};
 enum {kDefaultCaptureDelay = 120}; 
 enum {kMaxCaptureDelay = 270}; 
 
-enum {kProcessInterval = 300}; 
 enum {kFrameRateCallbackInterval = 1000}; 
 enum {kFrameRateCountHistorySize = 90};
 enum {kFrameRateHistoryWindowMs = 2000};

@@ -16,6 +16,17 @@
 
 namespace webrtc {
 
+struct FecPacketCounter {
+  FecPacketCounter()
+      : num_packets(0),
+        num_fec_packets(0),
+        num_recovered_packets(0) {}
+
+  size_t num_packets;            
+  size_t num_fec_packets;        
+  size_t num_recovered_packets;  
+};
+
 class FecReceiver {
  public:
   static FecReceiver* Create(RtpData* callback);
@@ -24,10 +35,12 @@ class FecReceiver {
 
   virtual int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
                                        const uint8_t* incoming_rtp_packet,
-                                       int packet_length,
+                                       size_t packet_length,
                                        uint8_t ulpfec_payload_type) = 0;
 
   virtual int32_t ProcessReceivedFec() = 0;
+
+  virtual FecPacketCounter GetPacketCounter() const = 0;
 };
 }  
 #endif  

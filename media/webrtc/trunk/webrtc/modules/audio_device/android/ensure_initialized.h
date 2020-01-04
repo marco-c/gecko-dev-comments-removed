@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+namespace webrtc {
+namespace audiodevicemodule {
+
+void EnsureInitialized();
+
+}  
+}  

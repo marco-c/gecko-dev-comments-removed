@@ -11,6 +11,7 @@
 #ifndef WEBRTC_TEST_TESTSUPPORT_PACKET_READER_H_
 #define WEBRTC_TEST_TESTSUPPORT_PACKET_READER_H_
 
+#include <cstddef>
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -28,8 +29,8 @@ class PacketReader {
   
   
   
-  virtual void InitializeReading(uint8_t* data, int data_length_in_bytes,
-                                 int packet_size_in_bytes);
+  virtual void InitializeReading(uint8_t* data, size_t data_length_in_bytes,
+                                 size_t packet_size_in_bytes);
 
   
   
@@ -41,9 +42,9 @@ class PacketReader {
 
  private:
   uint8_t* data_;
-  int data_length_;
-  int packet_size_;
-  int currentIndex_;
+  size_t data_length_;
+  size_t packet_size_;
+  size_t currentIndex_;
   bool initialized_;
 };
 

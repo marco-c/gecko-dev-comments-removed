@@ -12,46 +12,88 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/wav_header.h"
-#include "webrtc/system_wrappers/interface/compile_assert.h"
+
+namespace webrtc {
+
+
+class ReadableWavBuffer : public ReadableWav {
+ public:
+  ReadableWavBuffer(const uint8_t* buf, size_t size)
+      : buf_(buf),
+        size_(size),
+        pos_(0),
+        buf_exhausted_(false),
+        check_read_size_(true) {}
+  ReadableWavBuffer(const uint8_t* buf, size_t size, bool check_read_size)
+      : buf_(buf),
+        size_(size),
+        pos_(0),
+        buf_exhausted_(false),
+        check_read_size_(check_read_size) {}
+
+  virtual ~ReadableWavBuffer() {
+    
+    if (check_read_size_)
+      EXPECT_EQ(size_, pos_);
+  }
+
+  virtual size_t Read(void* buf, size_t num_bytes) {
+    
+    if (size_ >= kWavHeaderSize)
+      EXPECT_GE(size_, pos_ + num_bytes);
+    EXPECT_FALSE(buf_exhausted_);
+
+    const size_t bytes_remaining = size_ - pos_;
+    if (num_bytes > bytes_remaining) {
+      
+      
+      
+      buf_exhausted_ = true;
+      num_bytes = bytes_remaining;
+    }
+    memcpy(buf, &buf_[pos_], num_bytes);
+    pos_ += num_bytes;
+    return num_bytes;
+  }
+
+ private:
+  const uint8_t* buf_;
+  const size_t size_;
+  size_t pos_;
+  bool buf_exhausted_;
+  const bool check_read_size_;
+};
 
 
 
 TEST(WavHeaderTest, CheckWavParameters) {
   
-  EXPECT_TRUE(webrtc::CheckWavParameters(1, 8000, webrtc::kWavFormatPcm, 1, 0));
-  EXPECT_FALSE(
-      webrtc::CheckWavParameters(0, 8000, webrtc::kWavFormatPcm, 1, 0));
-  EXPECT_FALSE(
-      webrtc::CheckWavParameters(-1, 8000, webrtc::kWavFormatPcm, 1, 0));
-  EXPECT_FALSE(webrtc::CheckWavParameters(1, 0, webrtc::kWavFormatPcm, 1, 0));
-  EXPECT_FALSE(webrtc::CheckWavParameters(1, 8000, webrtc::WavFormat(0), 1, 0));
-  EXPECT_FALSE(
-      webrtc::CheckWavParameters(1, 8000, webrtc::kWavFormatPcm, 0, 0));
+  EXPECT_TRUE(CheckWavParameters(1, 8000, kWavFormatPcm, 1, 0));
+  EXPECT_FALSE(CheckWavParameters(0, 8000, kWavFormatPcm, 1, 0));
+  EXPECT_FALSE(CheckWavParameters(-1, 8000, kWavFormatPcm, 1, 0));
+  EXPECT_FALSE(CheckWavParameters(1, 0, kWavFormatPcm, 1, 0));
+  EXPECT_FALSE(CheckWavParameters(1, 8000, WavFormat(0), 1, 0));
+  EXPECT_FALSE(CheckWavParameters(1, 8000, kWavFormatPcm, 0, 0));
 
   
-  EXPECT_TRUE(webrtc::CheckWavParameters(1, 8000, webrtc::kWavFormatPcm, 2, 0));
-  EXPECT_FALSE(
-      webrtc::CheckWavParameters(1, 8000, webrtc::kWavFormatPcm, 4, 0));
-  EXPECT_FALSE(
-      webrtc::CheckWavParameters(1, 8000, webrtc::kWavFormatALaw, 2, 0));
-  EXPECT_FALSE(
-      webrtc::CheckWavParameters(1, 8000, webrtc::kWavFormatMuLaw, 2, 0));
+  EXPECT_TRUE(CheckWavParameters(1, 8000, kWavFormatPcm, 2, 0));
+  EXPECT_FALSE(CheckWavParameters(1, 8000, kWavFormatPcm, 4, 0));
+  EXPECT_FALSE(CheckWavParameters(1, 8000, kWavFormatALaw, 2, 0));
+  EXPECT_FALSE(CheckWavParameters(1, 8000, kWavFormatMuLaw, 2, 0));
 
   
-  EXPECT_FALSE(webrtc::CheckWavParameters(
-      1 << 20, 1 << 20, webrtc::kWavFormatPcm, 1, 0));
-  EXPECT_FALSE(webrtc::CheckWavParameters(
-      1, 8000, webrtc::kWavFormatPcm, 1, std::numeric_limits<uint32_t>::max()));
+  EXPECT_FALSE(CheckWavParameters(1 << 20, 1 << 20, kWavFormatPcm, 1, 0));
+  EXPECT_FALSE(CheckWavParameters(
+      1, 8000, kWavFormatPcm, 1, std::numeric_limits<uint32_t>::max()));
 
   
-  EXPECT_FALSE(
-      webrtc::CheckWavParameters(3, 8000, webrtc::kWavFormatPcm, 1, 5));
+  EXPECT_FALSE(CheckWavParameters(3, 8000, kWavFormatPcm, 1, 5));
 }
 
 TEST(WavHeaderTest, ReadWavHeaderWithErrors) {
   int num_channels = 0;
   int sample_rate = 0;
-  webrtc::WavFormat format = webrtc::kWavFormatPcm;
+  WavFormat format = kWavFormatPcm;
   int bytes_per_sample = 0;
   uint32_t num_samples = 0;
 
@@ -59,74 +101,153 @@ TEST(WavHeaderTest, ReadWavHeaderWithErrors) {
   
   
   
-  static const uint8_t kBadRiffID[] = {
-    'R', 'i', 'f', 'f',  
-    0xbd, 0xd0, 0x5b, 0x07,  
-    'W', 'A', 'V', 'E',
-    'f', 'm', 't', ' ',
-    16, 0, 0, 0,  
-    6, 0,  
-    17, 0,  
-    0x39, 0x30, 0, 0,  
-    0xc9, 0x33, 0x03, 0,  
-    17, 0,  
-    8, 0,  
-    'd', 'a', 't', 'a',
-    0x99, 0xd0, 0x5b, 0x07,  
-    0xa4, 0xa4, 0xa4, 0xa4,  
-  };
-  EXPECT_FALSE(
-      webrtc::ReadWavHeader(kBadRiffID, &num_channels, &sample_rate,
-                            &format, &bytes_per_sample, &num_samples));
-
-  static const uint8_t kBadBitsPerSample[] = {
-    'R', 'I', 'F', 'F',
-    0xbd, 0xd0, 0x5b, 0x07,  
-    'W', 'A', 'V', 'E',
-    'f', 'm', 't', ' ',
-    16, 0, 0, 0,  
-    6, 0,  
-    17, 0,  
-    0x39, 0x30, 0, 0,  
-    0xc9, 0x33, 0x03, 0,  
-    17, 0,  
-    1, 0,  
-    'd', 'a', 't', 'a',
-    0x99, 0xd0, 0x5b, 0x07,  
-    0xa4, 0xa4, 0xa4, 0xa4,  
-  };
-  EXPECT_FALSE(
-      webrtc::ReadWavHeader(kBadBitsPerSample, &num_channels, &sample_rate,
-                            &format, &bytes_per_sample, &num_samples));
-
-  static const uint8_t kBadByteRate[] = {
-    'R', 'I', 'F', 'F',
-    0xbd, 0xd0, 0x5b, 0x07,  
-    'W', 'A', 'V', 'E',
-    'f', 'm', 't', ' ',
-    16, 0, 0, 0,  
-    6, 0,  
-    17, 0,  
-    0x39, 0x30, 0, 0,  
-    0x00, 0x33, 0x03, 0,  
-    17, 0,  
-    8, 0,  
-    'd', 'a', 't', 'a',
-    0x99, 0xd0, 0x5b, 0x07,  
-    0xa4, 0xa4, 0xa4, 0xa4,  
-  };
-  EXPECT_FALSE(
-      webrtc::ReadWavHeader(kBadByteRate, &num_channels, &sample_rate,
-                            &format, &bytes_per_sample, &num_samples));
+  {
+    static const uint8_t kBadRiffID[] = {
+      'R', 'i', 'f', 'f',  
+      0xbd, 0xd0, 0x5b, 0x07,  
+      'W', 'A', 'V', 'E',
+      'f', 'm', 't', ' ',
+      16, 0, 0, 0,  
+      6, 0,  
+      17, 0,  
+      0x39, 0x30, 0, 0,  
+      0xc9, 0x33, 0x03, 0,  
+      17, 0,  
+      8, 0,  
+      'd', 'a', 't', 'a',
+      0x99, 0xd0, 0x5b, 0x07,  
+    };
+    ReadableWavBuffer r(kBadRiffID, sizeof(kBadRiffID));
+    EXPECT_FALSE(
+        ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                      &bytes_per_sample, &num_samples));
+  }
+  {
+    static const uint8_t kBadBitsPerSample[] = {
+      'R', 'I', 'F', 'F',
+      0xbd, 0xd0, 0x5b, 0x07,  
+      'W', 'A', 'V', 'E',
+      'f', 'm', 't', ' ',
+      16, 0, 0, 0,  
+      6, 0,  
+      17, 0,  
+      0x39, 0x30, 0, 0,  
+      0xc9, 0x33, 0x03, 0,  
+      17, 0,  
+      1, 0,  
+      'd', 'a', 't', 'a',
+      0x99, 0xd0, 0x5b, 0x07,  
+    };
+    ReadableWavBuffer r(kBadBitsPerSample, sizeof(kBadBitsPerSample));
+    EXPECT_FALSE(
+        ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                      &bytes_per_sample, &num_samples));
+  }
+  {
+    static const uint8_t kBadByteRate[] = {
+      'R', 'I', 'F', 'F',
+      0xbd, 0xd0, 0x5b, 0x07,  
+      'W', 'A', 'V', 'E',
+      'f', 'm', 't', ' ',
+      16, 0, 0, 0,  
+      6, 0,  
+      17, 0,  
+      0x39, 0x30, 0, 0,  
+      0x00, 0x33, 0x03, 0,  
+      17, 0,  
+      8, 0,  
+      'd', 'a', 't', 'a',
+      0x99, 0xd0, 0x5b, 0x07,  
+    };
+    ReadableWavBuffer r(kBadByteRate, sizeof(kBadByteRate));
+    EXPECT_FALSE(
+        ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                      &bytes_per_sample, &num_samples));
+  }
+  {
+    static const uint8_t kBadFmtHeaderSize[] = {
+      'R', 'I', 'F', 'F',
+      0xbd, 0xd0, 0x5b, 0x07,  
+      'W', 'A', 'V', 'E',
+      'f', 'm', 't', ' ',
+      17, 0, 0, 0,  
+      6, 0,  
+      17, 0,  
+      0x39, 0x30, 0, 0,  
+      0xc9, 0x33, 0x03, 0,  
+      17, 0,  
+      8, 0,  
+      0,  
+      'd', 'a', 't', 'a',
+      0x99, 0xd0, 0x5b, 0x07,  
+    };
+    ReadableWavBuffer r(kBadFmtHeaderSize, sizeof(kBadFmtHeaderSize), false);
+    EXPECT_FALSE(
+        ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                      &bytes_per_sample, &num_samples));
+  }
+  {
+    static const uint8_t kNonZeroExtensionField[] = {
+      'R', 'I', 'F', 'F',
+      0xbd, 0xd0, 0x5b, 0x07,  
+      'W', 'A', 'V', 'E',
+      'f', 'm', 't', ' ',
+      18, 0, 0, 0,  
+      6, 0,  
+      17, 0,  
+      0x39, 0x30, 0, 0,  
+      0xc9, 0x33, 0x03, 0,  
+      17, 0,  
+      8, 0,  
+      1, 0,  
+      'd', 'a', 't', 'a',
+      0x99, 0xd0, 0x5b, 0x07,  
+    };
+    ReadableWavBuffer r(kNonZeroExtensionField, sizeof(kNonZeroExtensionField),
+                        false);
+    EXPECT_FALSE(
+        ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                      &bytes_per_sample, &num_samples));
+  }
+  {
+    static const uint8_t kMissingDataChunk[] = {
+      'R', 'I', 'F', 'F',
+      0xbd, 0xd0, 0x5b, 0x07,  
+      'W', 'A', 'V', 'E',
+      'f', 'm', 't', ' ',
+      16, 0, 0, 0,  
+      6, 0,  
+      17, 0,  
+      0x39, 0x30, 0, 0,  
+      0xc9, 0x33, 0x03, 0,  
+      17, 0,  
+      8, 0,  
+    };
+    ReadableWavBuffer r(kMissingDataChunk, sizeof(kMissingDataChunk));
+    EXPECT_FALSE(
+        ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                      &bytes_per_sample, &num_samples));
+  }
+  {
+    static const uint8_t kMissingFmtAndDataChunks[] = {
+      'R', 'I', 'F', 'F',
+      0xbd, 0xd0, 0x5b, 0x07,  
+      'W', 'A', 'V', 'E',
+    };
+    ReadableWavBuffer r(kMissingFmtAndDataChunks,
+                        sizeof(kMissingFmtAndDataChunks));
+    EXPECT_FALSE(
+        ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                      &bytes_per_sample, &num_samples));
+  }
 }
 
 
 TEST(WavHeaderTest, WriteAndReadWavHeader) {
-  static const int kSize = 4 + webrtc::kWavHeaderSize + 4;
+  static const int kSize = 4 + kWavHeaderSize + 4;
   uint8_t buf[kSize];
   memset(buf, 0xa4, sizeof(buf));
-  webrtc::WriteWavHeader(
-      buf + 4, 17, 12345, webrtc::kWavFormatALaw, 1, 123457689);
+  WriteWavHeader(buf + 4, 17, 12345, kWavFormatALaw, 1, 123457689);
   static const uint8_t kExpectedBuf[] = {
     0xa4, 0xa4, 0xa4, 0xa4,  
     'R', 'I', 'F', 'F',
@@ -144,20 +265,59 @@ TEST(WavHeaderTest, WriteAndReadWavHeader) {
     0x99, 0xd0, 0x5b, 0x07,  
     0xa4, 0xa4, 0xa4, 0xa4,  
   };
-  COMPILE_ASSERT(sizeof(kExpectedBuf) == kSize, buf_size);
+  static_assert(sizeof(kExpectedBuf) == kSize, "buffer size");
   EXPECT_EQ(0, memcmp(kExpectedBuf, buf, kSize));
 
   int num_channels = 0;
   int sample_rate = 0;
-  webrtc::WavFormat format = webrtc::kWavFormatPcm;
+  WavFormat format = kWavFormatPcm;
   int bytes_per_sample = 0;
   uint32_t num_samples = 0;
+  ReadableWavBuffer r(buf + 4, sizeof(buf) - 8);
   EXPECT_TRUE(
-      webrtc::ReadWavHeader(buf + 4, &num_channels, &sample_rate, &format,
-                            &bytes_per_sample, &num_samples));
+      ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                    &bytes_per_sample, &num_samples));
   EXPECT_EQ(17, num_channels);
   EXPECT_EQ(12345, sample_rate);
-  EXPECT_EQ(webrtc::kWavFormatALaw, format);
+  EXPECT_EQ(kWavFormatALaw, format);
   EXPECT_EQ(1, bytes_per_sample);
   EXPECT_EQ(123457689u, num_samples);
 }
+
+
+TEST(WavHeaderTest, ReadAtypicalWavHeader) {
+  static const uint8_t kBuf[] = {
+    'R', 'I', 'F', 'F',
+    0x3d, 0xd1, 0x5b, 0x07,  
+                             
+    'W', 'A', 'V', 'E',
+    'f', 'm', 't', ' ',
+    18, 0, 0, 0,  
+    6, 0,  
+    17, 0,  
+    0x39, 0x30, 0, 0,  
+    0xc9, 0x33, 0x03, 0,  
+    17, 0,  
+    8, 0,  
+    0, 0,  
+    'd', 'a', 't', 'a',
+    0x99, 0xd0, 0x5b, 0x07,  
+  };
+
+  int num_channels = 0;
+  int sample_rate = 0;
+  WavFormat format = kWavFormatPcm;
+  int bytes_per_sample = 0;
+  uint32_t num_samples = 0;
+  ReadableWavBuffer r(kBuf, sizeof(kBuf));
+  EXPECT_TRUE(
+      ReadWavHeader(&r, &num_channels, &sample_rate, &format,
+                    &bytes_per_sample, &num_samples));
+  EXPECT_EQ(17, num_channels);
+  EXPECT_EQ(12345, sample_rate);
+  EXPECT_EQ(kWavFormatALaw, format);
+  EXPECT_EQ(1, bytes_per_sample);
+  EXPECT_EQ(123457689u, num_samples);
+}
+
+}  

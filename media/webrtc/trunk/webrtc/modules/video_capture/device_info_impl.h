@@ -36,15 +36,13 @@ public:
         const char* deviceUniqueIdUTF8,
         const VideoCaptureCapability& requested,
         VideoCaptureCapability& resulting);
-    virtual int32_t GetOrientation(
-        const char* deviceUniqueIdUTF8,
-        VideoCaptureRotation& orientation);
+    virtual int32_t GetOrientation(const char* deviceUniqueIdUTF8,
+                                   VideoRotation& orientation);
 
 protected:
     
 
     virtual int32_t Init()=0;
-    virtual int32_t Refresh() { return 0; }
     
 
 

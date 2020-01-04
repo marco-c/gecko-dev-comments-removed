@@ -23,7 +23,7 @@
 #endif  
 
 #if defined(WEBRTC_POSIX)
-#ifdef WEBRTC_BSD
+#ifdef BSD
 #include <stdlib.h>
 #else  
 #include <alloca.h>

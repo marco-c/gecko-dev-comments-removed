@@ -41,5 +41,5 @@ int16_t WebRtcIlbcfix_GainDequant(
   
   gain = WebRtcIlbcfix_kGain[stage];
 
-  return((int16_t)((WEBRTC_SPL_MUL_16_16(scale, gain[index])+8192)>>14));
+  return (int16_t)((scale * gain[index] + 8192) >> 14);
 }

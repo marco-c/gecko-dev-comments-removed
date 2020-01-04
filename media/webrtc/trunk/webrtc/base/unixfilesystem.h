@@ -20,7 +20,7 @@ namespace rtc {
 class UnixFilesystem : public FilesystemInterface {
  public:
   UnixFilesystem();
-  virtual ~UnixFilesystem();
+  ~UnixFilesystem() override;
 
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
   
@@ -36,21 +36,21 @@ class UnixFilesystem : public FilesystemInterface {
 
   
   
-  virtual FileStream *OpenFile(const Pathname &filename,
-                               const std::string &mode);
+  FileStream* OpenFile(const Pathname& filename,
+                       const std::string& mode) override;
 
   
   
-  virtual bool CreatePrivateFile(const Pathname &filename);
+  bool CreatePrivateFile(const Pathname& filename) override;
 
   
   
-  virtual bool DeleteFile(const Pathname &filename);
+  bool DeleteFile(const Pathname& filename) override;
 
   
   
   
-  virtual bool DeleteEmptyFolder(const Pathname &folder);
+  bool DeleteEmptyFolder(const Pathname& folder) override;
 
   
   
@@ -59,56 +59,58 @@ class UnixFilesystem : public FilesystemInterface {
   virtual bool CreateFolder(const Pathname &pathname, mode_t mode);
 
   
-  virtual bool CreateFolder(const Pathname &pathname);
+  bool CreateFolder(const Pathname& pathname) override;
 
   
   
   
-  virtual bool MoveFile(const Pathname &old_path, const Pathname &new_path);
-  virtual bool MoveFolder(const Pathname &old_path, const Pathname &new_path);
+  bool MoveFile(const Pathname& old_path, const Pathname& new_path) override;
+  bool MoveFolder(const Pathname& old_path, const Pathname& new_path) override;
 
   
   
   
-  virtual bool CopyFile(const Pathname &old_path, const Pathname &new_path);
+  bool CopyFile(const Pathname& old_path, const Pathname& new_path) override;
 
   
-  virtual bool IsFolder(const Pathname& pathname);
+  bool IsFolder(const Pathname& pathname) override;
 
   
-  virtual bool IsTemporaryPath(const Pathname& pathname);
+  bool IsTemporaryPath(const Pathname& pathname) override;
 
   
-  virtual bool IsFile(const Pathname& pathname);
-
-  
-  
-  virtual bool IsAbsent(const Pathname& pathname);
-
-  virtual std::string TempFilename(const Pathname &dir,
-                                   const std::string &prefix);
+  bool IsFile(const Pathname& pathname) override;
 
   
   
-  virtual bool GetTemporaryFolder(Pathname &path, bool create,
-                                 const std::string *append);
+  bool IsAbsent(const Pathname& pathname) override;
 
-  virtual bool GetFileSize(const Pathname& path, size_t* size);
-  virtual bool GetFileTime(const Pathname& path, FileTimeType which,
-                           time_t* time);
+  std::string TempFilename(const Pathname& dir,
+                           const std::string& prefix) override;
 
   
-  virtual bool GetAppPathname(Pathname* path);
+  
+  bool GetTemporaryFolder(Pathname& path,
+                          bool create,
+                          const std::string* append) override;
 
-  virtual bool GetAppDataFolder(Pathname* path, bool per_user);
+  bool GetFileSize(const Pathname& path, size_t* size) override;
+  bool GetFileTime(const Pathname& path,
+                   FileTimeType which,
+                   time_t* time) override;
 
   
-  virtual bool GetAppTempFolder(Pathname* path);
+  bool GetAppPathname(Pathname* path) override;
 
-  virtual bool GetDiskFreeSpace(const Pathname& path, int64 *freebytes);
+  bool GetAppDataFolder(Pathname* path, bool per_user) override;
 
   
-  virtual Pathname GetCurrentDirectory();
+  bool GetAppTempFolder(Pathname* path) override;
+
+  bool GetDiskFreeSpace(const Pathname& path, int64* freebytes) override;
+
+  
+  Pathname GetCurrentDirectory() override;
 
  private:
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)

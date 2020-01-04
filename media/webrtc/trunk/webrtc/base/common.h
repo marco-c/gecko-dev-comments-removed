@@ -52,12 +52,7 @@ inline void RtcUnused(const void*) {}
 #define stricmp(x, y) strcasecmp(x, y)
 #endif
 
-
-
-#define stdmax(x, y) std::max(x, y)
-#else
-#define stdmax(x, y) rtc::_max(x, y)
-#endif
+#endif  
 
 #define ARRAY_SIZE(x) (static_cast<int>(sizeof(x) / sizeof(x[0])))
 
@@ -186,28 +181,6 @@ inline bool ImplicitCastToBool(bool result) { return result; }
 #define FORCE_INLINE __forceinline
 #else
 #define FORCE_INLINE
-#endif
-
-
-
-
-
-
-#if defined(WEBRTC_WIN)
-#define OVERRIDE override
-#elif defined(__clang__)
-
-
-
-
-#pragma clang diagnostic ignored "-Wc++11-extensions"
-#define OVERRIDE override
-#elif defined(__GNUC__) && __cplusplus >= 201103 && \
-    (__GNUC__ * 10000 + __GNUC_MINOR__ * 100) >= 40700
-
-#define OVERRIDE override
-#else
-#define OVERRIDE
 #endif
 
 

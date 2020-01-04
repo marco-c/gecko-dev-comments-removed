@@ -25,7 +25,7 @@
 
 int16_t WebRtcIlbcfix_FrameClassify(
     
-    iLBC_Enc_Inst_t *iLBCenc_inst,
+    IlbcEncoder *iLBCenc_inst,
     
     int16_t *residualFIX 
                                                 ){
@@ -46,7 +46,7 @@ int16_t WebRtcIlbcfix_FrameClassify(
 
 
   max = WebRtcSpl_MaxAbsValueW16(residualFIX, iLBCenc_inst->blockl);
-  scale=WebRtcSpl_GetSizeInBits(WEBRTC_SPL_MUL_16_16(max,max));
+  scale = WebRtcSpl_GetSizeInBits((uint32_t)(max * max));
 
   
   scale = scale-24;

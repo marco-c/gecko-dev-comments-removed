@@ -68,6 +68,10 @@ static const SrtpCipherMapEntry kSrtpCipherMap[] = {
 
 
 
+static const char kDefaultSslCipher[] = "TLS_RSA_WITH_AES_128_CBC_SHA";
+
+
+
 static PRStatus StreamClose(PRFileDesc *socket) {
   ASSERT(!socket->lower);
   socket->dtor(socket);
@@ -569,7 +573,7 @@ int NSSStreamAdapter::ContinueSSL() {
         return -1;
       } else {
         LOG(LS_INFO) << "Malformed DTLS message. Ignoring.";
-        
+        FALLTHROUGH();  
       }
     case PR_WOULD_BLOCK_ERROR:
       LOG(LS_INFO) << "Would have blocked";
@@ -608,6 +612,11 @@ void NSSStreamAdapter::Cleanup() {
   peer_certificate_.reset();
 
   Thread::Current()->Clear(this, MSG_DTLS_TIMEOUT);
+}
+
+bool NSSStreamAdapter::GetDigestLength(const std::string& algorithm,
+                                       size_t* length) {
+  return NSSCertificate::GetDigestLength(algorithm, length);
 }
 
 StreamResult NSSStreamAdapter::Read(void* data, size_t data_len,
@@ -866,6 +875,27 @@ SECStatus NSSStreamAdapter::GetClientAuthDataHook(void *arg, PRFileDesc *fd,
   return SECSuccess;
 }
 
+bool NSSStreamAdapter::GetSslCipher(std::string* cipher) {
+  ASSERT(state_ == SSL_CONNECTED);
+  if (state_ != SSL_CONNECTED)
+    return false;
+
+  SSLChannelInfo channel_info;
+  SECStatus rv = SSL_GetChannelInfo(ssl_fd_, &channel_info,
+                                    sizeof(channel_info));
+  if (rv == SECFailure)
+    return false;
+
+  SSLCipherSuiteInfo ciphersuite_info;
+  rv = SSL_GetCipherSuiteInfo(channel_info.cipherSuite, &ciphersuite_info,
+                              sizeof(ciphersuite_info));
+  if (rv == SECFailure)
+    return false;
+
+  *cipher = ciphersuite_info.cipherSuiteName;
+  return true;
+}
+
 
 bool NSSStreamAdapter::ExportKeyingMaterial(const std::string& label,
                                             const uint8* context,
@@ -948,24 +978,26 @@ bool NSSStreamAdapter::GetDtlsSrtpCipher(std::string* cipher) {
 }
 
 
-bool NSSContext::initialized;
+GlobalLockPod NSSContext::lock;
 NSSContext *NSSContext::global_nss_context;
 
 
 NSSContext *NSSContext::Instance() {
+  lock.Lock();
   if (!global_nss_context) {
-    scoped_ptr<NSSContext> new_ctx(new NSSContext());
-    new_ctx->slot_ = PK11_GetInternalSlot();
+    scoped_ptr<NSSContext> new_ctx(new NSSContext(PK11_GetInternalSlot()));
     if (new_ctx->slot_)
       global_nss_context = new_ctx.release();
   }
+  lock.Unlock();
+
   return global_nss_context;
 }
 
-
-
 bool NSSContext::InitializeSSL(VerificationCallback callback) {
   ASSERT(!callback);
+
+  static bool initialized = false;
 
   if (!initialized) {
     SECStatus rv;
@@ -1009,6 +1041,10 @@ bool NSSStreamAdapter::HaveDtlsSrtp() {
 
 bool NSSStreamAdapter::HaveExporter() {
   return true;
+}
+
+std::string NSSStreamAdapter::GetDefaultSslCipher() {
+  return kDefaultSslCipher;
 }
 
 }  

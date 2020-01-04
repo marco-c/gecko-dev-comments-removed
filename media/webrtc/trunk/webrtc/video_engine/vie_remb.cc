@@ -136,8 +136,7 @@ void VieRemb::OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
   list_crit_->Leave();
 
   if (sender) {
-    
-    sender->SetREMBData(bitrate_, ssrcs.size(), &ssrcs[0]);
+    sender->SetREMBData(bitrate_, ssrcs);
   }
 }
 

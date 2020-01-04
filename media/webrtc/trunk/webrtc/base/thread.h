@@ -33,6 +33,8 @@ class Thread;
 
 class ThreadManager {
  public:
+  static const int kForever = -1;
+
   ThreadManager();
   ~ThreadManager();
 
@@ -104,7 +106,7 @@ class Thread : public MessageQueue {
   
   
   
-  virtual ~Thread();
+  ~Thread() override;
 
   static Thread* Current();
 
@@ -165,15 +167,18 @@ class Thread : public MessageQueue {
   
   template <class ReturnT, class FunctorT>
   ReturnT Invoke(const FunctorT& functor) {
+    InvokeBegin();
     FunctorMessageHandler<ReturnT, FunctorT> handler(functor);
     Send(&handler);
+    InvokeEnd();
     return handler.result();
   }
 
   
-  virtual void Clear(MessageHandler *phandler, uint32 id = MQID_ANY,
-                     MessageList* removed = NULL);
-  virtual void ReceiveSends();
+  void Clear(MessageHandler* phandler,
+             uint32 id = MQID_ANY,
+             MessageList* removed = NULL) override;
+  void ReceiveSends() override;
 
   
   
@@ -259,6 +264,10 @@ class Thread : public MessageQueue {
   
   bool PopSendMessageFromThread(const Thread* source, _SendMessage* msg);
 
+  
+  void InvokeBegin();
+  void InvokeEnd();
+
   std::list<_SendMessage> sendlist_;
   std::string name_;
   ThreadPriority priority_;
@@ -288,7 +297,7 @@ class Thread : public MessageQueue {
 class AutoThread : public Thread {
  public:
   explicit AutoThread(SocketServer* ss = 0);
-  virtual ~AutoThread();
+  ~AutoThread() override;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(AutoThread);

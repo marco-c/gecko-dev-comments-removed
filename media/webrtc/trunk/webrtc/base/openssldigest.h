@@ -22,13 +22,13 @@ class OpenSSLDigest : public MessageDigest {
  public:
   
   explicit OpenSSLDigest(const std::string& algorithm);
-  ~OpenSSLDigest();
+  ~OpenSSLDigest() override;
   
-  virtual size_t Size() const;
+  size_t Size() const override;
   
-  virtual void Update(const void* buf, size_t len);
+  void Update(const void* buf, size_t len) override;
   
-  virtual size_t Finish(void* buf, size_t len);
+  size_t Finish(void* buf, size_t len) override;
 
   
   static bool GetDigestEVP(const std::string &algorithm,

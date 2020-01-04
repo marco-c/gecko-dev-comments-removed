@@ -90,11 +90,7 @@ int WebRtcNs_set_policy(NsHandle* NS_inst, int mode);
 
 
 
-
-
-
-int WebRtcNs_Analyze(NsHandle* NS_inst, float* spframe);
-
+void WebRtcNs_Analyze(NsHandle* NS_inst, const float* spframe);
 
 
 
@@ -109,15 +105,10 @@ int WebRtcNs_Analyze(NsHandle* NS_inst, float* spframe);
 
 
 
-
-
-
-
-int WebRtcNs_Process(NsHandle* NS_inst,
-                     float* spframe,
-                     float* spframe_H,
-                     float* outframe,
-                     float* outframe_H);
+void WebRtcNs_Process(NsHandle* NS_inst,
+                     const float* const* spframe,
+                     int num_bands,
+                     float* const* outframe);
 
 
 

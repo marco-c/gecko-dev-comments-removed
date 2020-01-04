@@ -71,16 +71,16 @@ class PayloadSplitter {
   
   
   virtual void SplitBySamples(const Packet* packet,
-                              int bytes_per_ms,
-                              int timestamps_per_ms,
+                              size_t bytes_per_ms,
+                              uint32_t timestamps_per_ms,
                               PacketList* new_packets);
 
   
   
   
   virtual int SplitByFrames(const Packet* packet,
-                            int bytes_per_frame,
-                            int timestamps_per_frame,
+                            size_t bytes_per_frame,
+                            uint32_t timestamps_per_frame,
                             PacketList* new_packets);
 
   DISALLOW_COPY_AND_ASSIGN(PayloadSplitter);

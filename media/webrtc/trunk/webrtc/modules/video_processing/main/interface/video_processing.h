@@ -89,12 +89,12 @@ class VideoProcessingModule : public Module {
   
 
 
-  virtual int32_t TimeUntilNextProcess() OVERRIDE { return -1; }
+  int64_t TimeUntilNextProcess() override { return -1; }
 
   
 
 
-  virtual int32_t Process() OVERRIDE { return -1; }
+  int32_t Process() override { return -1; }
 
   
 

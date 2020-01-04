@@ -38,9 +38,9 @@ extern "C" {
 
 
 
-int16_t WebRtcG711_EncodeA(int16_t* speechIn,
+int16_t WebRtcG711_EncodeA(const int16_t* speechIn,
                            int16_t len,
-                           int16_t* encoded);
+                           uint8_t* encoded);
 
 
 
@@ -59,9 +59,9 @@ int16_t WebRtcG711_EncodeA(int16_t* speechIn,
 
 
 
-int16_t WebRtcG711_EncodeU(int16_t* speechIn,
+int16_t WebRtcG711_EncodeU(const int16_t* speechIn,
                            int16_t len,
-                           int16_t* encoded);
+                           uint8_t* encoded);
 
 
 
@@ -82,7 +82,7 @@ int16_t WebRtcG711_EncodeU(int16_t* speechIn,
 
 
 
-int16_t WebRtcG711_DecodeA(int16_t* encoded,
+int16_t WebRtcG711_DecodeA(const uint8_t* encoded,
                            int16_t len,
                            int16_t* decoded,
                            int16_t* speechType);
@@ -106,7 +106,7 @@ int16_t WebRtcG711_DecodeA(int16_t* encoded,
 
 
 
-int16_t WebRtcG711_DecodeU(int16_t* encoded,
+int16_t WebRtcG711_DecodeU(const uint8_t* encoded,
                            int16_t len,
                            int16_t* decoded,
                            int16_t* speechType);

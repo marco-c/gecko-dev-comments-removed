@@ -21,8 +21,8 @@ static const int kOpusSamplingKhz = 48;
 class OpusSpeedTest : public AudioCodecSpeedTest {
  protected:
   OpusSpeedTest();
-  virtual void SetUp() OVERRIDE;
-  virtual void TearDown() OVERRIDE;
+  void SetUp() override;
+  void TearDown() override;
   virtual float EncodeABlock(int16_t* in_data, uint8_t* bit_stream,
                              int max_bytes, int* encoded_bytes);
   virtual float DecodeABlock(const uint8_t* bit_stream, int encoded_bytes,
@@ -42,7 +42,9 @@ OpusSpeedTest::OpusSpeedTest()
 void OpusSpeedTest::SetUp() {
   AudioCodecSpeedTest::SetUp();
   
-  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_encoder_, channels_));
+  int app = channels_ == 1 ? 0 : 1;
+  
+  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, app));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_decoder_, channels_));
   
   EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_encoder_, bit_rate_));
@@ -72,8 +74,8 @@ float OpusSpeedTest::DecodeABlock(const uint8_t* bit_stream,
   int value;
   int16_t audio_type;
   clock_t clocks = clock();
-  value = WebRtcOpus_DecodeNew(opus_decoder_, bit_stream, encoded_bytes,
-                               out_data, &audio_type);
+  value = WebRtcOpus_Decode(opus_decoder_, bit_stream, encoded_bytes, out_data,
+                            &audio_type);
   clocks = clock() - clocks;
   EXPECT_EQ(output_length_sample_, value);
   return 1000.0 * clocks / CLOCKS_PER_SEC;

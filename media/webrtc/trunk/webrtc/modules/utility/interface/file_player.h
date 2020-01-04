@@ -28,7 +28,6 @@ public:
     enum {MAX_AUDIO_BUFFER_IN_BYTES = MAX_AUDIO_BUFFER_IN_SAMPLES*2};
 
     
-    
     static FilePlayer* CreateFilePlayer(const uint32_t instanceID,
                                         const FileFormats fileFormat);
 

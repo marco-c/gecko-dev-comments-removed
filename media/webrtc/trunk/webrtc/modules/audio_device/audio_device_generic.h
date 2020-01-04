@@ -156,7 +156,12 @@ class AudioDeviceGeneric
                                        unsigned int par4 = 0);
 
     
+    virtual bool BuiltInAECIsAvailable() const;
+
+    
     virtual int32_t EnableBuiltInAEC(bool enable);
+
+    
     virtual bool BuiltInAECIsEnabled() const;
 
 public:

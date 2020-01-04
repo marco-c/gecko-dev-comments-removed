@@ -95,9 +95,7 @@ class FilesystemInterface {
 
   
   
-  virtual DirectoryIterator *IterateDirectory() {
-    return new DirectoryIterator();
-  }
+  virtual DirectoryIterator* IterateDirectory();
 
   
   
@@ -133,9 +131,7 @@ class FilesystemInterface {
 
   
   
-  virtual bool DeleteFolderAndContents(const Pathname &folder) {
-    return DeleteFolderContents(folder) && DeleteEmptyFolder(folder);
-  }
+  virtual bool DeleteFolderAndContents(const Pathname& folder);
 
   
   

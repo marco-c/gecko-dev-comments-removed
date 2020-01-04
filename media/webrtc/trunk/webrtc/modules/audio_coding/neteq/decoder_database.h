@@ -15,14 +15,11 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_types.h"  
-#include "webrtc/modules/audio_coding/neteq/interface/audio_decoder.h"
+#include "webrtc/modules/audio_coding/neteq/audio_decoder_impl.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
-
-class AudioDecoder;
 
 class DecoderDatabase {
  public:
@@ -60,7 +57,6 @@ class DecoderDatabase {
     bool external;
   };
 
-  static const uint8_t kMaxRtpPayloadType = 0x7F;  
   
   
   static const uint8_t kRtpPayloadTypeError = 0xFF;

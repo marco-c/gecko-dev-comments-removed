@@ -187,7 +187,9 @@ public:
     
     
     
-    virtual int GetEcDelayMetrics(int& delay_median, int& delay_std) = 0;
+    
+    virtual int GetEcDelayMetrics(int& delay_median, int& delay_std,
+                                  float& fraction_poor_delays) = 0;
 
     
     

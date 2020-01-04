@@ -40,9 +40,8 @@ public:
     virtual ~AudioConferenceMixer() {}
 
     
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE = 0;
-    virtual int32_t TimeUntilNextProcess() OVERRIDE = 0;
-    virtual int32_t Process() OVERRIDE = 0;
+    int64_t TimeUntilNextProcess() override = 0;
+    int32_t Process() override = 0;
 
     
     virtual int32_t RegisterMixedStreamCallback(

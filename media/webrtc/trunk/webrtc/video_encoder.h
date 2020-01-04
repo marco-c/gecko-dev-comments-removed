@@ -29,11 +29,9 @@ class EncodedImageCallback {
   virtual ~EncodedImageCallback() {}
 
   
-  
-  virtual int32_t Encoded(
-      EncodedImage& encoded_image,
-      const CodecSpecificInfo* codec_specific_info = NULL,
-      const RTPFragmentationHeader* fragmentation = NULL) = 0;
+  virtual int32_t Encoded(const EncodedImage& encoded_image,
+                          const CodecSpecificInfo* codec_specific_info,
+                          const RTPFragmentationHeader* fragmentation) = 0;
 };
 
 class VideoEncoder {
@@ -68,7 +66,7 @@ class VideoEncoder {
   
   virtual int32_t InitEncode(const VideoCodec* codec_settings,
                              int32_t number_of_cores,
-                             uint32_t max_payload_size) = 0;
+                             size_t max_payload_size) = 0;
 
   
   
@@ -109,7 +107,7 @@ class VideoEncoder {
   
   
   
-  virtual int32_t SetChannelParameters(uint32_t packet_loss, int rtt) = 0;
+  virtual int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) = 0;
 
   
   

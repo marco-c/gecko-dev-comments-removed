@@ -36,9 +36,6 @@ class EventWrapper {
   virtual bool Set() = 0;
 
   
-  virtual bool Reset() = 0;
-
-  
   
   
   

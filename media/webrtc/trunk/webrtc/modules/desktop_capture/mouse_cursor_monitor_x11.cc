@@ -14,12 +14,12 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "webrtc/modules/desktop_capture/x11/x_error_trap.h"
 #include "webrtc/system_wrappers/interface/logging.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace {
 
@@ -30,7 +30,6 @@ namespace {
 
 
 Window GetTopLevelWindow(Display* display, Window window) {
-  webrtc::XErrorTrap error_trap(display);
   while (true) {
     
     ::Window root, parent;
@@ -64,12 +63,12 @@ class MouseCursorMonitorX11 : public MouseCursorMonitor,
   MouseCursorMonitorX11(const DesktopCaptureOptions& options, Window window);
   virtual ~MouseCursorMonitorX11();
 
-  virtual void Init(Callback* callback, Mode mode) OVERRIDE;
-  virtual void Capture() OVERRIDE;
+  void Init(Callback* callback, Mode mode) override;
+  void Capture() override;
 
  private:
   
-  virtual bool HandleXEvent(const XEvent& event) OVERRIDE;
+  bool HandleXEvent(const XEvent& event) override;
 
   Display* display() { return x_display_->display(); }
 
@@ -85,7 +84,7 @@ class MouseCursorMonitorX11 : public MouseCursorMonitor,
   int xfixes_event_base_;
   int xfixes_error_base_;
 
-  scoped_ptr<MouseCursor> cursor_shape_;
+  rtc::scoped_ptr<MouseCursor> cursor_shape_;
 };
 
 MouseCursorMonitorX11::MouseCursorMonitorX11(
@@ -119,7 +118,6 @@ void MouseCursorMonitorX11::Init(Callback* callback, Mode mode) {
 
   if (have_xfixes_) {
     
-    XErrorTrap error_trap(display());
     XFixesSelectCursorInput(display(), window_, XFixesDisplayCursorNotifyMask);
     x_display_->AddEventHandler(xfixes_event_base_ + XFixesCursorNotify, this);
 
@@ -192,8 +190,8 @@ void MouseCursorMonitorX11::CaptureCursor() {
        return;
    }
 
-  scoped_ptr<DesktopFrame> image(
-      new BasicDesktopFrame(DesktopSize(img->width, img->height)));
+   rtc::scoped_ptr<DesktopFrame> image(
+       new BasicDesktopFrame(DesktopSize(img->width, img->height)));
 
   
   unsigned long* src = img->pixels;

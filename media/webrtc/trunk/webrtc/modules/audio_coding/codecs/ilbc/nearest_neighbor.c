@@ -38,7 +38,7 @@ void WebRtcIlbcfix_NearestNeighbor(
   
   for(i=0;i<arlength;i++){
     diff=array[i]-value;
-    crit[i]=WEBRTC_SPL_MUL_16_16(diff, diff);
+    crit[i] = diff * diff;
   }
 
   

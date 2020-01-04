@@ -8,164 +8,230 @@
 
 
 
-#include "webrtc/modules/interface/module.h"
 #include "webrtc/modules/utility/source/process_thread_impl.h"
 
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/interface/module.h"
+#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 
 namespace webrtc {
-ProcessThread::~ProcessThread()
-{
+namespace {
+
+
+
+
+const int64_t kCallProcessImmediately = -1;
+
+int64_t GetNextCallbackTime(Module* module, int64_t time_now) {
+  int64_t interval = module->TimeUntilNextProcess();
+  
+  
+  if (interval < 0) {
+    LOG(LS_ERROR) << "TimeUntilNextProcess returned an invalid value "
+                  << interval;
+    interval = 0;
+  }
+  return time_now + interval;
+}
 }
 
-ProcessThread* ProcessThread::CreateProcessThread()
-{
-    return new ProcessThreadImpl();
-}
+ProcessThread::~ProcessThread() {}
 
-void ProcessThread::DestroyProcessThread(ProcessThread* module)
-{
-    delete module;
+
+rtc::scoped_ptr<ProcessThread> ProcessThread::Create() {
+  return rtc::scoped_ptr<ProcessThread>(new ProcessThreadImpl()).Pass();
 }
 
 ProcessThreadImpl::ProcessThreadImpl()
-    : _timeEvent(*EventWrapper::Create()),
-      _critSectModules(CriticalSectionWrapper::CreateCriticalSection()),
-      _thread(NULL)
-{
+    : wake_up_(EventWrapper::Create()), stop_(false) {
 }
 
-ProcessThreadImpl::~ProcessThreadImpl()
-{
-    delete _critSectModules;
-    delete &_timeEvent;
+ProcessThreadImpl::~ProcessThreadImpl() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  DCHECK(!thread_.get());
+  DCHECK(!stop_);
+
+  while (!queue_.empty()) {
+    delete queue_.front();
+    queue_.pop();
+  }
 }
 
-int32_t ProcessThreadImpl::Start()
-{
-    CriticalSectionScoped lock(_critSectModules);
-    if(_thread)
-    {
-        return -1;
-    }
-    _thread = ThreadWrapper::CreateThread(Run, this, kNormalPriority,
-                                          "ProcessThread");
-    unsigned int id;
-    int32_t retVal = _thread->Start(id);
-    if(retVal >= 0)
-    {
-        return 0;
-    }
-    delete _thread;
-    _thread = NULL;
-    return -1;
-}
+void ProcessThreadImpl::Start() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  DCHECK(!thread_.get());
+  if (thread_.get())
+    return;
 
-int32_t ProcessThreadImpl::Stop()
-{
-    _critSectModules->Enter();
-    if(_thread)
-    {
-        _thread->SetNotAlive();
+  DCHECK(!stop_);
 
-        ThreadWrapper* thread = _thread;
-        _thread = NULL;
-
-        _timeEvent.Set();
-        _critSectModules->Leave();
-
-        if(thread->Stop())
-        {
-            delete thread;
-        } else {
-            return -1;
-        }
-    } else {
-        _critSectModules->Leave();
-    }
-    return 0;
-}
-
-int32_t ProcessThreadImpl::RegisterModule(Module* module)
-{
-    CriticalSectionScoped lock(_critSectModules);
-
-    
-    for (ModuleList::iterator iter = _modules.begin();
-         iter != _modules.end(); ++iter) {
-        if(module == *iter)
-        {
-            return -1;
-        }
-    }
-
-    _modules.push_front(module);
-
+  {
     
     
     
-    _timeEvent.Set();
-    return 0;
+    
+    rtc::CritScope lock(&lock_);
+    for (ModuleCallback& m : modules_)
+      m.module->ProcessThreadAttached(this);
+  }
+
+  thread_ = ThreadWrapper::CreateThread(
+      &ProcessThreadImpl::Run, this, "ProcessThread");
+  CHECK(thread_->Start());
 }
 
-int32_t ProcessThreadImpl::DeRegisterModule(const Module* module)
-{
-    CriticalSectionScoped lock(_critSectModules);
-    for (ModuleList::iterator iter = _modules.begin();
-         iter != _modules.end(); ++iter) {
-        if(module == *iter)
-        {
-            _modules.erase(iter);
-            return 0;
-        }
+void ProcessThreadImpl::Stop() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  if(!thread_.get())
+    return;
+
+  {
+    rtc::CritScope lock(&lock_);
+    stop_ = true;
+  }
+
+  wake_up_->Set();
+
+  CHECK(thread_->Stop());
+  stop_ = false;
+
+  
+  
+  
+  
+  
+  
+  rtc::CritScope lock(&lock_);
+  thread_.reset();
+  for (ModuleCallback& m : modules_)
+    m.module->ProcessThreadAttached(nullptr);
+}
+
+void ProcessThreadImpl::WakeUp(Module* module) {
+  
+  {
+    rtc::CritScope lock(&lock_);
+    for (ModuleCallback& m : modules_) {
+      if (m.module == module)
+        m.next_callback = kCallProcessImmediately;
     }
-    return -1;
+  }
+  wake_up_->Set();
 }
 
-bool ProcessThreadImpl::Run(void* obj)
-{
-    return static_cast<ProcessThreadImpl*>(obj)->Process();
+void ProcessThreadImpl::PostTask(rtc::scoped_ptr<ProcessTask> task) {
+  
+  {
+    rtc::CritScope lock(&lock_);
+    queue_.push(task.release());
+  }
+  wake_up_->Set();
 }
 
-bool ProcessThreadImpl::Process()
-{
+void ProcessThreadImpl::RegisterModule(Module* module) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  DCHECK(module);
+
+#if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+  {
+    
+    rtc::CritScope lock(&lock_);
+    for (const ModuleCallback& mc : modules_)
+      DCHECK(mc.module != module);
+  }
+#endif
+
+  
+  
+  
+  if (thread_.get())
+    module->ProcessThreadAttached(this);
+
+  {
+    rtc::CritScope lock(&lock_);
+    modules_.push_back(ModuleCallback(module));
+  }
+
+  
+  
+  
+  wake_up_->Set();
+}
+
+void ProcessThreadImpl::DeRegisterModule(Module* module) {
+  
+  
+  DCHECK(module);
+
+  {
+    rtc::CritScope lock(&lock_);
+    modules_.remove_if([&module](const ModuleCallback& m) {
+        return m.module == module;
+      });
+
     
     
-    int32_t minTimeToNext = 100;
-    {
-        CriticalSectionScoped lock(_critSectModules);
-        for (ModuleList::iterator iter = _modules.begin();
-             iter != _modules.end(); ++iter) {
-          int32_t timeToNext = (*iter)->TimeUntilNextProcess();
-            if(minTimeToNext > timeToNext)
-            {
-                minTimeToNext = timeToNext;
-            }
-        }
+    
+    
+    
+    
+
+    
+    if (thread_.get())
+      module->ProcessThreadAttached(nullptr);
+  }
+}
+
+
+bool ProcessThreadImpl::Run(void* obj) {
+  return static_cast<ProcessThreadImpl*>(obj)->Process();
+}
+
+bool ProcessThreadImpl::Process() {
+  int64_t now = TickTime::MillisecondTimestamp();
+  int64_t next_checkpoint = now + (1000 * 60);
+
+  {
+    rtc::CritScope lock(&lock_);
+    if (stop_)
+      return false;
+    for (ModuleCallback& m : modules_) {
+      
+      
+      
+      
+      if (m.next_callback == 0)
+        m.next_callback = GetNextCallbackTime(m.module, now);
+
+      if (m.next_callback <= now ||
+          m.next_callback == kCallProcessImmediately) {
+        m.module->Process();
+        
+        
+        
+        int64_t new_now = TickTime::MillisecondTimestamp();
+        m.next_callback = GetNextCallbackTime(m.module, new_now);
+      }
+
+      if (m.next_callback < next_checkpoint)
+        next_checkpoint = m.next_callback;
     }
 
-    if(minTimeToNext > 0)
-    {
-        if(kEventError == _timeEvent.Wait(minTimeToNext))
-        {
-            return true;
-        }
-        CriticalSectionScoped lock(_critSectModules);
-        if(!_thread)
-        {
-            return false;
-        }
+    while (!queue_.empty()) {
+      ProcessTask* task = queue_.front();
+      queue_.pop();
+      lock_.Leave();
+      task->Run();
+      delete task;
+      lock_.Enter();
     }
-    {
-        CriticalSectionScoped lock(_critSectModules);
-        for (ModuleList::iterator iter = _modules.begin();
-             iter != _modules.end(); ++iter) {
-          int32_t timeToNext = (*iter)->TimeUntilNextProcess();
-            if(timeToNext < 1)
-            {
-                (*iter)->Process();
-            }
-        }
-    }
-    return true;
+  }
+
+  int64_t time_to_wait = next_checkpoint - TickTime::MillisecondTimestamp();
+  if (time_to_wait > 0)
+    wake_up_->Wait(static_cast<unsigned long>(time_to_wait));
+
+  return true;
 }
 }  

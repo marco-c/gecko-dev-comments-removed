@@ -11,160 +11,161 @@
 #ifndef WEBRTC_VIDEO_FRAME_H_
 #define WEBRTC_VIDEO_FRAME_H_
 
-#include <assert.h>
-
-#include "webrtc/common_video/plane.h"
-
-
-#include "webrtc/system_wrappers/interface/scoped_refptr.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/common_video/interface/native_handle.h"
+#include "webrtc/common_video/interface/video_frame_buffer.h"
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-enum PlaneType {
-  kYPlane = 0,
-  kUPlane = 1,
-  kVPlane = 2,
-  kNumOfPlanes = 3
-};
-
 class I420VideoFrame {
  public:
   I420VideoFrame();
-  virtual ~I420VideoFrame();
+  I420VideoFrame(const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer,
+                 uint32_t timestamp,
+                 int64_t render_time_ms,
+                 VideoRotation rotation);
+  I420VideoFrame(NativeHandle* handle,
+                 int width,
+                 int height,
+                 uint32_t timestamp,
+                 int64_t render_time_ms);
+
   
   
-  
-  
-  
-  
-  virtual int32_t AddRef() {
-    assert(false);
-    return -1;
-  }
-  virtual int32_t Release() {
-    assert(false);
-    return -1;
-  }
 
   
   
   
   
   
-  virtual int CreateEmptyFrame(int width,
-                               int height,
-                               int stride_y,
-                               int stride_u,
-                               int stride_v);
+  int CreateEmptyFrame(int width,
+                       int height,
+                       int stride_y,
+                       int stride_u,
+                       int stride_v);
 
   
   
   
-  virtual int CreateFrame(int size_y,
-                          const uint8_t* buffer_y,
-                          int size_u,
-                          const uint8_t* buffer_u,
-                          int size_v,
-                          const uint8_t* buffer_v,
-                          int width,
-                          int height,
-                          int stride_y,
-                          int stride_u,
-                          int stride_v);
+  int CreateFrame(const uint8_t* buffer_y,
+                  const uint8_t* buffer_u,
+                  const uint8_t* buffer_v,
+                  int width,
+                  int height,
+                  int stride_y,
+                  int stride_u,
+                  int stride_v);
+
+  
+  int CreateFrame(const uint8_t* buffer_y,
+                  const uint8_t* buffer_u,
+                  const uint8_t* buffer_v,
+                  int width,
+                  int height,
+                  int stride_y,
+                  int stride_u,
+                  int stride_v,
+                  VideoRotation rotation);
 
   
   
   
-  virtual int CopyFrame(const I420VideoFrame& videoFrame);
+  
+  int CreateFrame(const uint8_t* buffer,
+                  int width,
+                  int height,
+                  VideoRotation rotation);
 
   
   
-  virtual I420VideoFrame* CloneFrame() const;
+  
+  int CopyFrame(const I420VideoFrame& videoFrame);
 
   
-  virtual void SwapFrame(I420VideoFrame* videoFrame);
+  
+  void ShallowCopy(const I420VideoFrame& videoFrame);
 
   
-  virtual uint8_t* buffer(PlaneType type);
-  
-  virtual const uint8_t* buffer(PlaneType type) const;
+  void Reset();
 
   
-  virtual int allocated_size(PlaneType type) const;
+  uint8_t* buffer(PlaneType type);
+  
+  const uint8_t* buffer(PlaneType type) const;
 
   
-  virtual int stride(PlaneType type) const;
+  int allocated_size(PlaneType type) const;
 
   
-  virtual int set_width(int width);
+  int stride(PlaneType type) const;
 
   
-  virtual int set_height(int height);
+  int width() const;
 
   
-  virtual int width() const { return width_; }
+  int height() const;
 
   
-  virtual int height() const { return height_; }
+  void set_timestamp(uint32_t timestamp) { timestamp_ = timestamp; }
 
   
-  virtual void set_timestamp(uint32_t timestamp) { timestamp_ = timestamp; }
+  uint32_t timestamp() const { return timestamp_; }
 
   
-  virtual uint32_t timestamp() const { return timestamp_; }
-
-  
-  virtual void set_ntp_time_ms(int64_t ntp_time_ms) {
+  void set_ntp_time_ms(int64_t ntp_time_ms) {
     ntp_time_ms_ = ntp_time_ms;
   }
 
   
-  virtual int64_t ntp_time_ms() const { return ntp_time_ms_; }
+  int64_t ntp_time_ms() const { return ntp_time_ms_; }
 
   
-  virtual void set_render_time_ms(int64_t render_time_ms) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  VideoRotation rotation() const { return rotation_; }
+  void set_rotation(VideoRotation rotation) {
+    rotation_ = rotation;
+  }
+
+  
+  void set_render_time_ms(int64_t render_time_ms) {
     render_time_ms_ = render_time_ms;
   }
 
   
-  virtual int64_t render_time_ms() const { return render_time_ms_; }
+  int64_t render_time_ms() const { return render_time_ms_; }
 
   
-  virtual bool IsZeroSize() const;
-
-  
-  
-  virtual void ResetSize();
+  bool IsZeroSize() const;
 
   
   
   
-  virtual void* native_handle() const;
+  void* native_handle() const;
 
- protected:
   
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
+
   
-  virtual int CheckDimensions(int width,
-                              int height,
-                              int stride_y,
-                              int stride_u,
-                              int stride_v);
+  void set_video_frame_buffer(
+      const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& buffer);
 
  private:
   
-  const Plane* GetPlane(PlaneType type) const;
-  
-  Plane* GetPlane(PlaneType type);
-
-  Plane y_plane_;
-  Plane u_plane_;
-  Plane v_plane_;
-  int width_;
-  int height_;
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
   uint32_t timestamp_;
   int64_t ntp_time_ms_;
   int64_t render_time_ms_;
+  VideoRotation rotation_;
 };
 
 enum VideoFrameType {
@@ -178,42 +179,23 @@ enum VideoFrameType {
 
 class EncodedImage {
  public:
-  EncodedImage()
-      : _encodedWidth(0),
-        _encodedHeight(0),
-        _timeStamp(0),
-        capture_time_ms_(0),
-        _frameType(kDeltaFrame),
-        _buffer(NULL),
-        _length(0),
-        _size(0),
-        _completeFrame(false) {}
+  EncodedImage() : EncodedImage(nullptr, 0, 0) {}
+  EncodedImage(uint8_t* buffer, size_t length, size_t size)
+      : _buffer(buffer), _length(length), _size(size) {}
 
-  EncodedImage(uint8_t* buffer, uint32_t length, uint32_t size)
-      : _encodedWidth(0),
-        _encodedHeight(0),
-        _timeStamp(0),
-        ntp_time_ms_(0),
-        capture_time_ms_(0),
-        _frameType(kDeltaFrame),
-        _buffer(buffer),
-        _length(length),
-        _size(size),
-        _completeFrame(false) {}
-
-  uint32_t _encodedWidth;
-  uint32_t _encodedHeight;
-  uint32_t _timeStamp;
+  uint32_t _encodedWidth = 0;
+  uint32_t _encodedHeight = 0;
+  uint32_t _timeStamp = 0;
   
-  int64_t ntp_time_ms_;
-  int64_t capture_time_ms_;
-  VideoFrameType _frameType;
+  int64_t ntp_time_ms_ = 0;
+  int64_t capture_time_ms_ = 0;
+  
+  VideoFrameType _frameType = kDeltaFrame;
   uint8_t* _buffer;
-  uint32_t _length;
-  uint32_t _size;
-  bool _completeFrame;
+  size_t _length;
+  size_t _size;
+  bool _completeFrame = false;
 };
 
 }  
 #endif  
-

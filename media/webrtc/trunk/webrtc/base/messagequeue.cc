@@ -12,6 +12,8 @@
 #include <sys/time.h>
 #endif
 
+#include <algorithm>
+
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
@@ -57,7 +59,9 @@ void MessageQueueManager::AddInternal(MessageQueue *message_queue) {
   
   
   
+#if CS_TRACK_OWNER  
   ASSERT(!crit_.CurrentThreadIsOwner());
+#endif
   CritScope cs(&crit_);
   message_queues_.push_back(message_queue);
 }
@@ -69,7 +73,9 @@ void MessageQueueManager::Remove(MessageQueue *message_queue) {
   return Instance()->RemoveInternal(message_queue);
 }
 void MessageQueueManager::RemoveInternal(MessageQueue *message_queue) {
+#if CS_TRACK_OWNER  
   ASSERT(!crit_.CurrentThreadIsOwner());  
+#endif
   
   
   
@@ -98,7 +104,9 @@ void MessageQueueManager::Clear(MessageHandler *handler) {
   return Instance()->ClearInternal(handler);
 }
 void MessageQueueManager::ClearInternal(MessageHandler *handler) {
+#if CS_TRACK_OWNER  
   ASSERT(!crit_.CurrentThreadIsOwner());  
+#endif
   CritScope cs(&crit_);
   std::vector<MessageQueue *>::iterator iter;
   for (iter = message_queues_.begin(); iter != message_queues_.end(); iter++)
@@ -244,7 +252,7 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
     if (cmsWait == kForever) {
       cmsNext = cmsDelayNext;
     } else {
-      cmsNext = _max(0, cmsTotal - cmsElapsed);
+      cmsNext = std::max(0, cmsTotal - cmsElapsed);
       if ((cmsDelayNext != kForever) && (cmsDelayNext < cmsNext))
         cmsNext = cmsDelayNext;
     }
@@ -287,6 +295,20 @@ void MessageQueue::Post(MessageHandler *phandler, uint32 id,
   }
   msgq_.push_back(msg);
   ss_->WakeUp();
+}
+
+void MessageQueue::PostDelayed(int cmsDelay,
+                               MessageHandler* phandler,
+                               uint32 id,
+                               MessageData* pdata) {
+  return DoDelayPost(cmsDelay, TimeAfter(cmsDelay), phandler, id, pdata);
+}
+
+void MessageQueue::PostAt(uint32 tstamp,
+                          MessageHandler* phandler,
+                          uint32 id,
+                          MessageData* pdata) {
+  return DoDelayPost(TimeUntil(tstamp), tstamp, phandler, id, pdata);
 }
 
 void MessageQueue::DoDelayPost(int cmsDelay, uint32 tstamp,

@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef WEBRTC_BASE_TEMPLATE_UTIL_H_
 #define WEBRTC_BASE_TEMPLATE_UTIL_H_
 
@@ -33,7 +35,7 @@ template <class T> struct is_pointer : false_type {};
 template <class T> struct is_pointer<T*> : true_type {};
 
 template <class T, class U> struct is_same : public false_type {};
-template <class T> struct is_same<T,T> : true_type {};
+template <class T> struct is_same<T, T> : true_type {};
 
 template<class> struct is_array : public false_type {};
 template<class T, size_t n> struct is_array<T[n]> : public true_type {};

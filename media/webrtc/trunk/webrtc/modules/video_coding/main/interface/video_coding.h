@@ -11,6 +11,16 @@
 #ifndef WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
 #define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
 
+#if defined(WEBRTC_WIN)
+
+
+
+
+
+
+#include <windows.h>
+#endif
+
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -68,11 +78,11 @@ public:
         kNone,
         kHardNack,
         kSoftNack,
-        kDualDecoder,
         kReferenceSelection
     };
 
-    static VideoCodingModule* Create();
+    static VideoCodingModule* Create(
+        VideoEncoderRateObserver* encoder_rate_observer);
 
     static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
@@ -115,8 +125,12 @@ public:
     
     
     
+    
+    
     virtual int32_t InitializeSender() = 0;
 
+    
+    
     
     
     
@@ -140,8 +154,27 @@ public:
     
     
     
+    virtual const VideoCodec& GetSendCodec() const = 0;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     virtual int32_t SendCodec(VideoCodec* currentSendCodec) const = 0;
 
+    
+    
+    
     
     
     
@@ -159,8 +192,8 @@ public:
     
     
     virtual int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                                                  uint8_t payloadType,
-                                                  bool internalSource = false) = 0;
+                                            uint8_t payloadType,
+                                            bool internalSource = false) = 0;
 
     
     
@@ -197,8 +230,8 @@ public:
     
     
     virtual int32_t SetChannelParameters(uint32_t target_bitrate,
-                                               uint8_t lossRate,
-                                               uint32_t rtt) = 0;
+                                         uint8_t lossRate,
+                                         int64_t rtt) = 0;
 
     
     
@@ -210,7 +243,7 @@ public:
     
     
     
-    virtual int32_t SetReceiveChannelParameters(uint32_t rtt) = 0;
+    virtual int32_t SetReceiveChannelParameters(int64_t rtt) = 0;
 
     
     
@@ -348,8 +381,8 @@ public:
     
     
     virtual int32_t RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                                                  uint8_t payloadType,
-                                                  bool internalRenderTiming) = 0;
+                                            uint8_t payloadType,
+                                            bool internalRenderTiming) = 0;
 
     
     
@@ -417,35 +450,11 @@ public:
     
     
     
-    
-    
-    
-    
-    virtual int32_t RegisterReceiveStateCallback(
-                                  VCMReceiveStateCallback* callback) = 0;
-
-    
-    
-    
-    
-    
-    
     virtual int32_t Decode(uint16_t maxWaitTimeMs = 200) = 0;
 
     
     virtual int RegisterRenderBufferSizeCallback(
         VCMRenderBufferSizeCallback* callback) = 0;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    virtual int32_t DecodeDualFrame(uint16_t maxWaitTimeMs = 200) = 0;
 
     
     
@@ -480,8 +489,8 @@ public:
     
     
     virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
-                                       uint32_t payloadLength,
-                                       const WebRtcRTPHeader& rtpInfo) = 0;
+                                   size_t payloadLength,
+                                   const WebRtcRTPHeader& rtpInfo) = 0;
 
     
     
@@ -514,52 +523,10 @@ public:
     
     
     
-    
-    
-    
-    
-    virtual int32_t ReceivedFrameCount(VCMFrameCount& frameCount) const = 0;
-
-    
-    
-    
-    
     virtual uint32_t DiscardedPackets() const = 0;
 
 
     
-
-    
-    
-    
-    
-    
-    
-    virtual int SetSenderNackMode(SenderNackMode mode) = 0;
-
-    
-    
-    
-    
-    
-    
-    virtual int SetSenderReferenceSelection(bool enable) = 0;
-
-    
-    
-    
-    
-    
-    
-    virtual int SetSenderFEC(bool enable) = 0;
-
-    
-    
-    
-    
-    
-    
-    virtual int SetSenderKeyFramePeriod(int periodMs) = 0;
 
     
     
@@ -599,9 +566,6 @@ public:
     virtual int SetMinReceiverDelay(int desired_delay_ms) = 0;
 
     
-    virtual void SetCPULoadState(CPULoadState state) = 0;
-
-    
     virtual int StartDebugRecording(const char* file_name_utf8) = 0;
 
     
@@ -620,6 +584,8 @@ public:
         EncodedImageCallback* observer) = 0;
     virtual void RegisterPostEncodeImageCallback(
         EncodedImageCallback* post_encode_callback) = 0;
+    
+    virtual void TriggerDecoderShutdown() = 0;
 };
 
 }  

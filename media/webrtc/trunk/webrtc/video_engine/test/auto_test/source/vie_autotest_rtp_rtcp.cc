@@ -40,52 +40,6 @@ public:
     }
 };
 
-class ViERtcpObserver: public webrtc::ViERTCPObserver
-{
-public:
-    int _channel;
-    unsigned char _subType;
-    unsigned int _name;
-    char* _data;
-    unsigned short _dataLength;
-
-    ViERtcpObserver() :
-        _channel(-1),
-        _subType(0),
-        _name(0),
-        _data(NULL),
-        _dataLength(0)
-    {
-    }
-    ~ViERtcpObserver()
-    {
-        if (_data)
-        {
-            delete[] _data;
-        }
-    }
-    virtual void OnApplicationDataReceived(
-        const int videoChannel, const unsigned char subType,
-        const unsigned int name, const char* data,
-        const unsigned short dataLengthInBytes)
-    {
-        _channel = videoChannel;
-        _subType = subType;
-        _name = name;
-        if (dataLengthInBytes > _dataLength)
-        {
-            delete[] _data;
-            _data = NULL;
-        }
-        if (_data == NULL)
-        {
-            _data = new char[dataLengthInBytes];
-        }
-        memcpy(_data, data, dataLengthInBytes);
-        _dataLength = dataLengthInBytes;
-    }
-};
-
 void ViEAutoTest::ViERtpRtcpStandardTest()
 {
     
@@ -166,7 +120,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     
     
     webrtc::RtcpStatistics received;
-    int recRttMs = 0;
+    int64_t recRttMs = 0;
     unsigned int sentTotalBitrate = 0;
     unsigned int sentVideoBitrate = 0;
     unsigned int sentFecBitrate = 0;
@@ -286,7 +240,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
     webrtc::RtcpStatistics sent;
-    int sentRttMs = 0;
+    int64_t sentRttMs = 0;
 
     
     
@@ -542,21 +496,24 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->GetRtpStatistics(tbChannel.videoChannel,
                                                 sent_after, received_after));
     if (FLAGS_include_timing_dependent_tests) {
-      EXPECT_GT(received_after.bytes, received_before.bytes);
+      EXPECT_GT(received_after.transmitted.payload_bytes,
+                received_before.transmitted.payload_bytes);
     }
     
     ViE.network->SetNetworkTransmissionState(tbChannel.videoChannel, false);
     
     
     AutoTestSleep(kAutoTestSleepTimeMs);
-    received_before.bytes = received_after.bytes;
+    received_before.transmitted.payload_bytes =
+        received_after.transmitted.payload_bytes;
     ViETest::Log("Network Down...\n");
     AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.rtp_rtcp->GetRtpStatistics(tbChannel.videoChannel,
                                                 sent_before,
                                                 received_before));
     if (FLAGS_include_timing_dependent_tests) {
-      EXPECT_EQ(received_before.bytes, received_after.bytes);
+      EXPECT_EQ(received_before.transmitted.payload_bytes,
+                received_after.transmitted.payload_bytes);
     }
 
     
@@ -567,9 +524,11 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
                                                 sent_before,
                                                 received_before));
     if (FLAGS_include_timing_dependent_tests) {
-      EXPECT_GT(received_before.bytes, received_after.bytes);
+      EXPECT_GT(received_before.transmitted.payload_bytes,
+                received_after.transmitted.payload_bytes);
     }
-    received_after.bytes = received_before.bytes;
+    received_after.transmitted.payload_bytes =
+        received_before.transmitted.payload_bytes;
     
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
@@ -593,15 +552,18 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
                                                 sent_before,
                                                 received_before));
     if (FLAGS_include_timing_dependent_tests) {
-      EXPECT_GT(received_before.bytes, received_after.bytes);
+      EXPECT_GT(received_before.transmitted.payload_bytes,
+                received_after.transmitted.payload_bytes);
     }
-    received_after.bytes = received_before.bytes;
+    received_after.transmitted.payload_bytes =
+        received_before.transmitted.payload_bytes;
     AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.rtp_rtcp->GetRtpStatistics(tbChannel.videoChannel,
                                                 sent_before,
                                                 received_before));
     if (FLAGS_include_timing_dependent_tests) {
-      EXPECT_EQ(received_after.bytes, received_before.bytes);
+      EXPECT_EQ(received_after.transmitted.payload_bytes,
+                received_before.transmitted.payload_bytes);
     }
     
     ViETest::Log("Network Up...\n");
@@ -611,7 +573,8 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
                                                 sent_before,
                                                 received_before));
     if (FLAGS_include_timing_dependent_tests) {
-      EXPECT_GT(received_before.bytes, received_after.bytes);
+      EXPECT_GT(received_before.transmitted.payload_bytes,
+                received_after.transmitted.payload_bytes);
     }
     
     
@@ -628,70 +591,6 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     
     
     
-}
-
-void ViEAutoTest::ViERtpRtcpExtendedTest()
-{
-    
-    
-    
-    
-    TbInterfaces ViE("ViERtpRtcpExtendedTest");
-    
-    TbVideoChannel tbChannel(ViE, webrtc::kVideoCodecVP8);
-    
-    TbCaptureDevice tbCapture(ViE);
-    tbCapture.ConnectTo(tbChannel.videoChannel);
-
-    
-    
-    TbExternalTransport myTransport(*(ViE.network), tbChannel.videoChannel,
-                                    NULL);
-
-    EXPECT_EQ(0, ViE.network->DeregisterSendTransport(tbChannel.videoChannel));
-    EXPECT_EQ(0, ViE.network->RegisterSendTransport(
-        tbChannel.videoChannel, myTransport));
-    EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
-    EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
-
-    
-    
-    
-
-    
-    
-    
-    
-
-    ViERtcpObserver rtcpObserver;
-    EXPECT_EQ(0, ViE.rtp_rtcp->RegisterRTCPObserver(
-        tbChannel.videoChannel, rtcpObserver));
-
-    unsigned char subType = 3;
-    unsigned int name = static_cast<unsigned int> (0x41424344); 
-    const char* data = "ViEAutoTest Data of length 32 -\0";
-    const unsigned short numBytes = 32;
-
-    EXPECT_EQ(0, ViE.rtp_rtcp->SendApplicationDefinedRTCPPacket(
-        tbChannel.videoChannel, subType, name, data, numBytes));
-
-    ViETest::Log("Sending RTCP application data...\n");
-    AutoTestSleep(kAutoTestSleepTimeMs);
-
-    EXPECT_EQ(subType, rtcpObserver._subType);
-    EXPECT_STRCASEEQ(data, rtcpObserver._data);
-    EXPECT_EQ(name, rtcpObserver._name);
-    EXPECT_EQ(numBytes, rtcpObserver._dataLength);
-
-    ViETest::Log("\t RTCP application data received\n");
-
-    
-    
-    
-    EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
-    EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
-
-    EXPECT_EQ(0, ViE.network->DeregisterSendTransport(tbChannel.videoChannel));
 }
 
 void ViEAutoTest::ViERtpRtcpAPITest()
@@ -852,16 +751,6 @@ void ViEAutoTest::ViERtpRtcpAPITest()
         EXPECT_EQ(0, ViE.rtp_rtcp->DeregisterRTPObserver(
             tbChannel.videoChannel));
         EXPECT_NE(0, ViE.rtp_rtcp->DeregisterRTPObserver(
-            tbChannel.videoChannel));
-
-        ViERtcpObserver rtcpObserver;
-        EXPECT_EQ(0, ViE.rtp_rtcp->RegisterRTCPObserver(
-            tbChannel.videoChannel, rtcpObserver));
-        EXPECT_NE(0, ViE.rtp_rtcp->RegisterRTCPObserver(
-            tbChannel.videoChannel, rtcpObserver));
-        EXPECT_EQ(0, ViE.rtp_rtcp->DeregisterRTCPObserver(
-            tbChannel.videoChannel));
-        EXPECT_NE(0, ViE.rtp_rtcp->DeregisterRTCPObserver(
             tbChannel.videoChannel));
     }
     

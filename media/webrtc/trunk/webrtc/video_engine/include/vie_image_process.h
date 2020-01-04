@@ -32,7 +32,7 @@ class WEBRTC_DLLEXPORT ViEEffectFilter {
  public:
   
   
-  virtual int Transform(int size,
+  virtual int Transform(size_t size,
                         unsigned char* frame_buffer,
                         int64_t ntp_time_ms,
                         unsigned int timestamp,

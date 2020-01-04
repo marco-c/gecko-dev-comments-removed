@@ -36,10 +36,7 @@ class OpenSSLKeyPair {
 
   virtual ~OpenSSLKeyPair();
 
-  virtual OpenSSLKeyPair* GetReference() {
-    AddReference();
-    return new OpenSSLKeyPair(pkey_);
-  }
+  virtual OpenSSLKeyPair* GetReference();
 
   EVP_PKEY* pkey() const { return pkey_; }
 
@@ -64,23 +61,21 @@ class OpenSSLCertificate : public SSLCertificate {
                                       const SSLIdentityParams& params);
   static OpenSSLCertificate* FromPEMString(const std::string& pem_string);
 
-  virtual ~OpenSSLCertificate();
+  ~OpenSSLCertificate() override;
 
-  virtual OpenSSLCertificate* GetReference() const {
-    return new OpenSSLCertificate(x509_);
-  }
+  OpenSSLCertificate* GetReference() const override;
 
   X509* x509() const { return x509_; }
 
-  virtual std::string ToPEMString() const;
+  std::string ToPEMString() const override;
 
-  virtual void ToDER(Buffer* der_buffer) const;
+  void ToDER(Buffer* der_buffer) const override;
 
   
-  virtual bool ComputeDigest(const std::string& algorithm,
-                             unsigned char* digest,
-                             size_t size,
-                             size_t* length) const;
+  bool ComputeDigest(const std::string& algorithm,
+                     unsigned char* digest,
+                     size_t size,
+                     size_t* length) const override;
 
   
   static bool ComputeDigest(const X509* x509,
@@ -89,14 +84,8 @@ class OpenSSLCertificate : public SSLCertificate {
                             size_t size,
                             size_t* length);
 
-  virtual bool GetSignatureDigestAlgorithm(std::string* algorithm) const;
-
-  virtual bool GetChain(SSLCertChain** chain) const {
-    
-    
-    
-    return false;
-  }
+  bool GetSignatureDigestAlgorithm(std::string* algorithm) const override;
+  bool GetChain(SSLCertChain** chain) const override;
 
  private:
   void AddReference() const;
@@ -114,27 +103,16 @@ class OpenSSLIdentity : public SSLIdentity {
   static OpenSSLIdentity* GenerateForTest(const SSLIdentityParams& params);
   static SSLIdentity* FromPEMStrings(const std::string& private_key,
                                      const std::string& certificate);
-  virtual ~OpenSSLIdentity() { }
+  ~OpenSSLIdentity() override;
 
-  virtual const OpenSSLCertificate& certificate() const {
-    return *certificate_;
-  }
-
-  virtual OpenSSLIdentity* GetReference() const {
-    return new OpenSSLIdentity(key_pair_->GetReference(),
-                               certificate_->GetReference());
-  }
+  const OpenSSLCertificate& certificate() const override;
+  OpenSSLIdentity* GetReference() const override;
 
   
   bool ConfigureIdentity(SSL_CTX* ctx);
 
  private:
-  OpenSSLIdentity(OpenSSLKeyPair* key_pair,
-                  OpenSSLCertificate* certificate)
-      : key_pair_(key_pair), certificate_(certificate) {
-    ASSERT(key_pair != NULL);
-    ASSERT(certificate != NULL);
-  }
+  OpenSSLIdentity(OpenSSLKeyPair* key_pair, OpenSSLCertificate* certificate);
 
   static OpenSSLIdentity* GenerateInternal(const SSLIdentityParams& params);
 

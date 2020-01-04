@@ -56,6 +56,7 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
       
       numerator_ = 2;
       denominator_ = 3;
+      break;
     }
     case kDecoderAVT:
     case kDecoderCNGnb:

@@ -100,7 +100,6 @@ public:
 
     
     void ViERtpRtcpStandardTest();
-    void ViERtpRtcpExtendedTest();
     void ViERtpRtcpAPITest();
 
 private:
@@ -112,6 +111,13 @@ private:
     void RenderCaptureDeviceAndOutputStream(TbInterfaces* video_engine,
                                             TbVideoChannel* video_channel,
                                             TbCaptureDevice* capture_device);
+
+    
+    
+    void StopRenderCaptureDeviceAndOutputStream(
+        TbInterfaces* video_engine,
+        TbVideoChannel* video_channel,
+        TbCaptureDevice* capture_device);
 
     void* _window1;
     void* _window2;

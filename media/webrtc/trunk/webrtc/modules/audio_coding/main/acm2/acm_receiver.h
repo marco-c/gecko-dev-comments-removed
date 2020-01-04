@@ -11,8 +11,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RECEIVER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RECEIVER_H_
 
+#include <map>
 #include <vector>
 
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/engine_configurations.h"
@@ -23,7 +25,6 @@
 #include "webrtc/modules/audio_coding/main/acm2/initial_delay_manager.h"
 #include "webrtc/modules/audio_coding/neteq/interface/neteq.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -39,7 +40,7 @@ class Nack;
 class AcmReceiver {
  public:
   struct Decoder {
-    bool registered;
+    int acm_codec_id;
     uint8_t payload_type;
     
     
@@ -67,7 +68,7 @@ class AcmReceiver {
   
   int InsertPacket(const WebRtcRTPHeader& rtp_header,
                    const uint8_t* incoming_payload,
-                   int length_payload);
+                   size_t length_payload);
 
   
   
@@ -191,7 +192,7 @@ class AcmReceiver {
   
   
   
-  void NetworkStatistics(ACMNetworkStatistics* statistics);
+  void GetNetworkStatistics(NetworkStatistics* statistics);
 
   
   
@@ -251,12 +252,6 @@ class AcmReceiver {
   
   
   
-  int last_audio_payload_type() const;  
-
-  
-  
-  
-  
   
   int LastAudioCodec(CodecInst* codec) const;
 
@@ -305,42 +300,42 @@ class AcmReceiver {
   
   
   
-  std::vector<uint16_t> GetNackList(int round_trip_time_ms) const;
+  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms) const;
 
   
   
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
 
  private:
-  int PayloadType2CodecIndex(uint8_t payload_type) const;
-
   bool GetSilence(int desired_sample_rate_hz, AudioFrame* frame)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   int GetNumSyncPacketToInsert(uint16_t received_squence_number);
 
-  int RtpHeaderToCodecIndex(
-      const RTPHeader& rtp_header, const uint8_t* payload) const;
+  const Decoder* RtpHeaderToDecoder(const RTPHeader& rtp_header,
+                                    const uint8_t* payload) const
+      EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   uint32_t NowInTimestamp(int decoder_sampling_rate) const;
 
   void InsertStreamOfSyncPackets(InitialDelayManager::SyncStream* sync_stream);
 
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::scoped_ptr<CriticalSectionWrapper> crit_sect_;
   int id_;  
-  int last_audio_decoder_ GUARDED_BY(crit_sect_);
+  const Decoder* last_audio_decoder_ GUARDED_BY(crit_sect_);
   AudioFrame::VADActivity previous_audio_activity_ GUARDED_BY(crit_sect_);
   int current_sample_rate_hz_ GUARDED_BY(crit_sect_);
   ACMResampler resampler_ GUARDED_BY(crit_sect_);
   
   
-  scoped_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
-  scoped_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
-  scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
+  rtc::scoped_ptr<int16_t[]> audio_buffer_ GUARDED_BY(crit_sect_);
+  rtc::scoped_ptr<int16_t[]> last_audio_buffer_ GUARDED_BY(crit_sect_);
+  rtc::scoped_ptr<Nack> nack_ GUARDED_BY(crit_sect_);
   bool nack_enabled_ GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ GUARDED_BY(crit_sect_);
   NetEq* neteq_;
-  Decoder decoders_[ACMCodecDB::kMaxNumCodecs];
+  
+  std::map<uint8_t, Decoder> decoders_ GUARDED_BY(crit_sect_);
   bool vad_enabled_;
   Clock* clock_;  
   bool resampled_last_output_frame_ GUARDED_BY(crit_sect_);
@@ -348,15 +343,15 @@ class AcmReceiver {
   
   
   bool av_sync_;
-  scoped_ptr<InitialDelayManager> initial_delay_manager_;
+  rtc::scoped_ptr<InitialDelayManager> initial_delay_manager_;
 
   
   
   
   
   
-  scoped_ptr<InitialDelayManager::SyncStream> missing_packets_sync_stream_;
-  scoped_ptr<InitialDelayManager::SyncStream> late_packets_sync_stream_;
+  rtc::scoped_ptr<InitialDelayManager::SyncStream> missing_packets_sync_stream_;
+  rtc::scoped_ptr<InitialDelayManager::SyncStream> late_packets_sync_stream_;
 };
 
 }  

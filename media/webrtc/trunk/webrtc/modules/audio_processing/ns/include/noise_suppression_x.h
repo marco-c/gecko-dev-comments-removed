@@ -91,16 +91,10 @@ int WebRtcNsx_set_policy(NsxHandle* nsxInst, int mode);
 
 
 
-
-
-
-
-
-int WebRtcNsx_Process(NsxHandle* nsxInst,
-                      short* speechFrame,
-                      short* speechFrameHB,
-                      short* outFrame,
-                      short* outFrameHB);
+void WebRtcNsx_Process(NsxHandle* nsxInst,
+                       const short* const* speechFrame,
+                       int num_bands,
+                       short* const* outFrame);
 
 #ifdef __cplusplus
 }

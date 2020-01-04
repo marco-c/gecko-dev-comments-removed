@@ -12,6 +12,7 @@
 #define WEBRTC_BASE_SSLADAPTER_H_
 
 #include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/sslstreamadapter.h"
 
 namespace rtc {
 
@@ -24,6 +25,9 @@ class SSLAdapter : public AsyncSocketAdapter {
 
   bool ignore_bad_cert() const { return ignore_bad_cert_; }
   void set_ignore_bad_cert(bool ignore) { ignore_bad_cert_ = ignore; }
+
+  
+  virtual void SetMode(SSLMode mode) = 0;
 
   
   

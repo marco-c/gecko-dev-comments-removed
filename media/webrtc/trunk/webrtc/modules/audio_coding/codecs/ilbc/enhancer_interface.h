@@ -28,7 +28,7 @@
 int WebRtcIlbcfix_EnhancerInterface( 
     int16_t *out,     
     int16_t *in,      
-    iLBC_Dec_Inst_t *iLBCdec_inst 
+    IlbcDecoder *iLBCdec_inst 
                                         );
 
 #endif

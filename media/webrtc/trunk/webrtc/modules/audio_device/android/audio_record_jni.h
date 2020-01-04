@@ -13,168 +13,144 @@
 
 #include <jni.h>
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/base/thread_checker.h"
+#include "webrtc/modules/audio_device/android/audio_manager.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/modules/utility/interface/helpers_android.h"
 
 namespace webrtc {
 
-class EventWrapper;
-class ThreadWrapper;
 class PlayoutDelayProvider;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class AudioRecordJni {
  public:
-  static int32_t SetAndroidAudioDeviceObjects(void* javaVM, void* env,
-                                              void* context);
-
-  static int32_t SetAndroidAudioDeviceObjects(void* javaVM,
-                                              void* context);
-
+  
+  
+  
+  
+  
+  
+  static void SetAndroidAudioDeviceObjects(void* jvm, void* context);
+  
+  
   static void ClearAndroidAudioDeviceObjects();
 
-  AudioRecordJni(const int32_t id, PlayoutDelayProvider* delay_provider);
+  AudioRecordJni(
+      PlayoutDelayProvider* delay_provider, AudioManager* audio_manager);
   ~AudioRecordJni();
 
-  
   int32_t Init();
   int32_t Terminate();
-  bool Initialized() const { return _initialized; }
 
-  
-  int16_t RecordingDevices() { return 1; }  
-  int32_t RecordingDeviceName(uint16_t index,
-                              char name[kAdmMaxDeviceNameSize],
-                              char guid[kAdmMaxGuidSize]);
-
-  
-  int32_t SetRecordingDevice(uint16_t index);
-  int32_t SetRecordingDevice(
-      AudioDeviceModule::WindowsDeviceType device);
-
-  
-  int32_t RecordingIsAvailable(bool& available);  
   int32_t InitRecording();
-  bool RecordingIsInitialized() const { return _recIsInitialized; }
+  bool RecordingIsInitialized() const { return initialized_; }
 
-  
   int32_t StartRecording();
-  int32_t StopRecording();
-  bool Recording() const { return _recording; }
+  int32_t StopRecording ();
+  bool Recording() const { return recording_; }
 
-  
-  int32_t SetAGC(bool enable);
-  bool AGC() const { return _AGC; }
+  int32_t RecordingDelay(uint16_t& delayMS) const;
 
-  
-  int32_t InitMicrophone();
-  bool MicrophoneIsInitialized() const { return _micIsInitialized; }
-
-  
-  int32_t MicrophoneVolumeIsAvailable(bool& available);  
-  
-  
-  int32_t SetMicrophoneVolume(uint32_t volume);
-  int32_t MicrophoneVolume(uint32_t& volume) const;  
-  int32_t MaxMicrophoneVolume(uint32_t& maxVolume) const;  
-  int32_t MinMicrophoneVolume(uint32_t& minVolume) const;  
-  int32_t MicrophoneVolumeStepSize(
-      uint16_t& stepSize) const;  
-
-  
-  int32_t MicrophoneMuteIsAvailable(bool& available);  
-  int32_t SetMicrophoneMute(bool enable);
-  int32_t MicrophoneMute(bool& enabled) const;  
-
-  
-  int32_t MicrophoneBoostIsAvailable(bool& available);  
-  int32_t SetMicrophoneBoost(bool enable);
-  int32_t MicrophoneBoost(bool& enabled) const;  
-
-  
-  int32_t StereoRecordingIsAvailable(bool& available);  
-  int32_t SetStereoRecording(bool enable);
-  int32_t StereoRecording(bool& enabled) const;  
-
-  
-  int32_t RecordingDelay(uint16_t& delayMS) const;  
-
-  bool RecordingWarning() const;
-  bool RecordingError() const;
-  void ClearRecordingWarning();
-  void ClearRecordingError();
-
-  
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
-  int32_t SetRecordingSampleRate(const uint32_t samplesPerSec);
-
-  static const uint32_t N_REC_SAMPLES_PER_SEC = 16000; 
-  static const uint32_t N_REC_CHANNELS = 1; 
-  static const uint32_t REC_BUF_SIZE_IN_SAMPLES = 480; 
+  bool BuiltInAECIsAvailable() const;
+  int32_t EnableBuiltInAEC(bool enable);
 
  private:
-  void Lock() EXCLUSIVE_LOCK_FUNCTION(_critSect) {
-    _critSect.Enter();
-  }
-  void UnLock() UNLOCK_FUNCTION(_critSect) {
-    _critSect.Leave();
-  }
-
-  int32_t InitJavaResources();
-  int32_t InitSampleRate();
-
-  static bool RecThreadFunc(void*);
-  bool RecThreadProcess();
+  
+  
+  
+  
+  
+  static void JNICALL CacheDirectBufferAddress(
+    JNIEnv* env, jobject obj, jobject byte_buffer, jlong nativeAudioRecord);
+  void OnCacheDirectBufferAddress(JNIEnv* env, jobject byte_buffer);
 
   
   
   
-  static JavaVM* globalJvm;
-  static JNIEnv* globalJNIEnv;
-  static jobject globalContext;
-  static jclass globalScClass;
+  
+  
+  
+  static void JNICALL DataIsRecorded(
+    JNIEnv* env, jobject obj, jint length, jlong nativeAudioRecord);
+  void OnDataIsRecorded(int length);
 
-  JavaVM* _javaVM; 
-  JNIEnv* _jniEnvRec; 
-  jclass _javaScClass; 
-  jobject _javaScObj; 
-  jobject _javaRecBuffer;
-  void* _javaDirectRecBuffer; 
-  jmethodID _javaMidRecAudio; 
+  
+  
+  bool HasDeviceObjects();
 
-  AudioDeviceBuffer* _ptrAudioBuffer;
-  CriticalSectionWrapper& _critSect;
-  int32_t _id;
-  PlayoutDelayProvider* _delay_provider;
-  bool _initialized;
+  
+  void CreateJavaInstance();
 
-  EventWrapper& _timeEventRec;
-  EventWrapper& _recStartStopEvent;
-  ThreadWrapper* _ptrThreadRec;
-  uint32_t _recThreadID;
-  bool _recThreadIsInitialized;
-  bool _shutdownRecThread;
+  
+  
+  
+  
+  rtc::ThreadChecker thread_checker_;
 
-  int8_t _recBuffer[2 * REC_BUF_SIZE_IN_SAMPLES];
-  bool _recordingDeviceIsSpecified;
+  
+  
+  rtc::ThreadChecker thread_checker_java_;
 
-  bool _recording;
-  bool _recIsInitialized;
-  bool _micIsInitialized;
+  
+  
+  
+  
+  PlayoutDelayProvider* delay_provider_;
 
-  bool _startRec;
+  
+  
+  const AudioParameters audio_parameters_;
 
-  uint16_t _recWarning;
-  uint16_t _recError;
+  
+  jobject j_audio_record_;
 
-  uint16_t _delayRecording;
+  
+  void* direct_buffer_address_;
 
-  bool _AGC;
+  
+  int direct_buffer_capacity_in_bytes_;
 
-  uint16_t _samplingFreqIn; 
-  int _recAudioSource;
+  
+  
+  
+  
+  int frames_per_buffer_;
 
+  bool initialized_;
+
+  bool recording_;
+
+  
+  
+  AudioDeviceBuffer* audio_device_buffer_;
+
+  
+  int playout_delay_in_milliseconds_;
 };
 
 }  

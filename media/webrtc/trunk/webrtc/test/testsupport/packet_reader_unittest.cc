@@ -26,11 +26,11 @@ class PacketReaderTest: public PacketRelatedTest {
   void TearDown() {
     delete reader_;
   }
-  void VerifyPacketData(int expected_length,
+  void VerifyPacketData(size_t expected_length,
                         int actual_length,
                         uint8_t* original_data_pointer,
                         uint8_t* new_data_pointer) {
-    EXPECT_EQ(expected_length, actual_length);
+    EXPECT_EQ(static_cast<int>(expected_length), actual_length);
     EXPECT_EQ(*original_data_pointer, *new_data_pointer);
     EXPECT_EQ(0, memcmp(original_data_pointer, new_data_pointer,
                         actual_length));
@@ -82,7 +82,7 @@ TEST_F(PacketReaderTest, NormalOnePacketData) {
   
   length_to_read = reader_->NextPacket(&data_pointer);
   EXPECT_EQ(0, length_to_read);
-  EXPECT_EQ(kPacketSizeInBytes, data_pointer - data);
+  EXPECT_EQ(kPacketSizeInBytes, static_cast<size_t>(data_pointer - data));
 }
 
 
@@ -105,7 +105,8 @@ TEST_F(PacketReaderTest, NormalLargeData) {
   
   length_to_read = reader_->NextPacket(&packet_data_pointer_);
   EXPECT_EQ(0, length_to_read);
-  EXPECT_EQ(kPacketDataLength, packet_data_pointer_ - packet_data_);
+  EXPECT_EQ(kPacketDataLength,
+            static_cast<size_t>(packet_data_pointer_ - packet_data_));
 }
 
 

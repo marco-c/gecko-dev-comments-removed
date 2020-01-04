@@ -66,30 +66,8 @@ namespace RtpUtility {
                        const char* str2,
                        const uint32_t length);
 
-    void AssignUWord32ToBuffer(uint8_t* dataBuffer, uint32_t value);
-    void AssignUWord24ToBuffer(uint8_t* dataBuffer, uint32_t value);
-    void AssignUWord16ToBuffer(uint8_t* dataBuffer, uint16_t value);
-
     
-
-
-
-
-    uint16_t BufferToUWord16(const uint8_t* dataBuffer);
-
-    
-
-
-
-
-    uint32_t BufferToUWord24(const uint8_t* dataBuffer);
-
-    
-
-
-
-
-    uint32_t BufferToUWord32(const uint8_t* dataBuffer);
+    size_t Word32Align(size_t size);
 
     class RtpHeaderParser {
     public:

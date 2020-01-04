@@ -13,9 +13,11 @@
 
 #include <stddef.h>  
 #include <stdio.h>  
+#include <vector>
 
 #include "webrtc/base/platform_file.h"
 #include "webrtc/common.h"
+#include "webrtc/modules/audio_processing/beamformer/array_util.h"
 #include "webrtc/typedefs.h"
 
 struct AecCore;
@@ -23,6 +25,10 @@ struct AecCore;
 namespace webrtc {
 
 class AudioFrame;
+
+template<typename T>
+class Beamformer;
+
 class EchoCancellation;
 class EchoControlMobile;
 class GainControl;
@@ -79,6 +85,26 @@ struct ExperimentalAgc {
 struct ExperimentalNs {
   ExperimentalNs() : enabled(false) {}
   explicit ExperimentalNs(bool enabled) : enabled(enabled) {}
+  bool enabled;
+};
+
+
+
+struct Beamforming {
+  Beamforming() : enabled(false) {}
+  Beamforming(bool enabled, const std::vector<Point>& array_geometry)
+      : enabled(enabled),
+        array_geometry(array_geometry) {}
+  const bool enabled;
+  const std::vector<Point> array_geometry;
+};
+
+
+
+
+struct AudioProcessing48kHzSupport {
+  AudioProcessing48kHzSupport() : enabled(false) {}
+  explicit AudioProcessing48kHzSupport(bool enabled) : enabled(enabled) {}
   bool enabled;
 };
 
@@ -178,7 +204,8 @@ class AudioProcessing {
   
   static AudioProcessing* Create(const Config& config);
   
-  static AudioProcessing* Create(int id);
+  static AudioProcessing* Create(const Config& config,
+                                 Beamformer<float>* beamformer);
   virtual ~AudioProcessing() {}
 
   
@@ -380,7 +407,8 @@ class AudioProcessing {
   enum NativeRate {
     kSampleRate8kHz = 8000,
     kSampleRate16kHz = 16000,
-    kSampleRate32kHz = 32000
+    kSampleRate32kHz = 32000,
+    kSampleRate48kHz = 48000
   };
 
   static const int kChunkSizeMs = 10;
@@ -465,7 +493,15 @@ class EchoCancellation {
   
   
   
+  
+  
+  
+  
+  
+  
   virtual int GetDelayMetrics(int* median, int* std) = 0;
+  virtual int GetDelayMetrics(int* median, int* std,
+                              float* fraction_poor_delays) = 0;
 
   
   

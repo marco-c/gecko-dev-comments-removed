@@ -24,6 +24,8 @@ class MessageQueue;
 
 class SocketServer : public SocketFactory {
  public:
+  static const int kForever = -1;
+
   
   
   

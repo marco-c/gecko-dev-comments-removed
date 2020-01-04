@@ -27,7 +27,7 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
   webrtc::SetRenderAndroidVM(javaVM);
 #ifndef WEBRTC_ANDROID_OPENSLES
   
-  webrtc::VoiceEngine::SetAndroidObjects(javaVM, env, context);
+  webrtc::VoiceEngine::SetAndroidObjects(javaVM, context);
 #endif
 
   if (subTestSelection == 0) {
@@ -150,7 +150,8 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
           break;
 
         case 8: 
-          vieAutoTest.ViERtpRtcpExtendedTest();
+          
+          
           break;
 
         default:

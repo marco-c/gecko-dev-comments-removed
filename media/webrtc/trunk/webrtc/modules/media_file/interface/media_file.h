@@ -27,9 +27,6 @@ public:
     static void DestroyMediaFile(MediaFile* module);
 
     
-    virtual int32_t ChangeUniqueId(const int32_t id) OVERRIDE = 0;
-
-    
     
     
     
@@ -39,15 +36,7 @@ public:
     
     virtual int32_t PlayoutAudioData(
         int8_t* audioBuffer,
-        uint32_t& dataLengthInBytes) = 0;
-
-    
-    
-    
-    
-    virtual int32_t PlayoutAVIVideoData(
-        int8_t* videoBuffer,
-        uint32_t& dataLengthInBytes) = 0;
+        size_t& dataLengthInBytes) = 0;
 
     
     
@@ -61,7 +50,7 @@ public:
     virtual int32_t PlayoutStereoData(
         int8_t* audioBufferLeft,
         int8_t* audioBufferRight,
-        uint32_t& dataLengthInBytes) = 0;
+        size_t& dataLengthInBytes) = 0;
 
     
     
@@ -84,16 +73,6 @@ public:
         const CodecInst* codecInst              = NULL,
         const uint32_t startPointMs       = 0,
         const uint32_t stopPointMs        = 0) = 0;
-
-    
-    
-    
-    
-    
-    virtual int32_t StartPlayingVideoFile(const char* fileName,
-                                                const bool loop,
-                                                bool videoOnly,
-                                                const FileFormats format) = 0;
 
     
     
@@ -130,18 +109,8 @@ public:
     
     
     virtual int32_t IncomingAudioData(
-        const int8_t*  audioBuffer,
-        const uint32_t bufferLength) = 0;
-
-    
-    
-    
-    
-    
-    
-    virtual int32_t IncomingAVIVideoData(
-        const int8_t*  videoBuffer,
-        const uint32_t bufferLength) = 0;
+        const int8_t* audioBuffer,
+        const size_t bufferLength) = 0;
 
     
     
@@ -159,18 +128,6 @@ public:
         const CodecInst&     codecInst,
         const uint32_t notificationTimeMs = 0,
         const uint32_t maxSizeBytes       = 0) = 0;
-
-    
-    
-    
-    
-    
-    virtual int32_t StartRecordingVideoFile(
-        const char* fileName,
-        const FileFormats   format,
-        const CodecInst&    codecInst,
-        const VideoCodec&   videoCodecInst,
-        bool videoOnly = false) = 0;
 
     
     
@@ -214,10 +171,6 @@ public:
     
     
     virtual int32_t codec_info(CodecInst& codecInst) const = 0;
-
-    
-    
-    virtual int32_t VideoCodecInst(VideoCodec& videoCodecInst) const = 0;
 
 protected:
     MediaFile() {}

@@ -65,12 +65,12 @@ void WebRtcIlbcfix_CbSearchCore(
 
   for (i=0;i<range;i++) {
     
-    tmp32 = WEBRTC_SPL_LSHIFT_W32(*cDotPtr,sh);
+    tmp32 = *cDotPtr << sh;
     tmp16 = (int16_t)(tmp32 >> 16);
     cDotSqW16 = (int16_t)(((int32_t)(tmp16)*(tmp16))>>16);
 
     
-    *critPtr=WEBRTC_SPL_MUL_16_16(cDotSqW16, (*inverseEnergyPtr));
+    *critPtr = cDotSqW16 * *inverseEnergyPtr;
 
     
 

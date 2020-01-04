@@ -56,7 +56,7 @@ public:
     
 
 
-    uint32_t Length() const {return _length;}
+    size_t Length() const {return _length;}
     
 
 
@@ -69,6 +69,10 @@ public:
 
 
     webrtc::FrameType FrameType() const {return ConvertFrameType(_frameType);}
+    
+
+
+    VideoRotation rotation() const { return _rotation; }
     
 
 
@@ -116,6 +120,12 @@ protected:
     CodecSpecificInfo             _codecSpecificInfo;
     webrtc::VideoCodecType        _codec;
     RTPFragmentationHeader        _fragmentation;
+    VideoRotation                 _rotation;
+
+    
+    
+    
+    bool                          _rotation_set;
 };
 
 }  

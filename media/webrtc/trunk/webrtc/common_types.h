@@ -56,8 +56,10 @@ class Config;
 class InStream
 {
 public:
-    virtual int Read(void *buf,int len) = 0;
-    virtual int Rewind() {return -1;}
+ 
+ 
+    virtual int Read(void *buf, size_t len) = 0;
+    virtual int Rewind();
     virtual ~InStream() {}
 protected:
     InStream() {}
@@ -66,8 +68,10 @@ protected:
 class OutStream
 {
 public:
-    virtual bool Write(const void *buf,int len) = 0;
-    virtual int Rewind() {return -1;}
+ 
+ 
+    virtual bool Write(const void *buf, size_t len) = 0;
+    virtual int Rewind();
     virtual ~OutStream() {}
 protected:
     OutStream() {}
@@ -137,7 +141,6 @@ enum FileFormats
 {
     kFileFormatWavFile        = 1,
     kFileFormatCompressedFile = 2,
-    kFileFormatAviFile        = 3,
     kFileFormatPreencodedFile = 4,
     kFileFormatPcm16kHzFile   = 7,
     kFileFormatPcm8kHzFile    = 8,
@@ -166,8 +169,8 @@ enum FrameType
 class Transport
 {
 public:
-    virtual int SendPacket(int channel, const void *data, int len) = 0;
-    virtual int SendRTCPPacket(int channel, const void *data, int len) = 0;
+    virtual int SendPacket(int channel, const void *data, size_t len) = 0;
+    virtual int SendRTCPPacket(int channel, const void *data, size_t len) = 0;
 
 protected:
     virtual ~Transport() {}
@@ -188,19 +191,20 @@ struct RtcpStatistics {
   uint32_t jitter;
 };
 
-
 class RtcpStatisticsCallback {
  public:
   virtual ~RtcpStatisticsCallback() {}
 
   virtual void StatisticsUpdated(const RtcpStatistics& statistics,
                                  uint32_t ssrc) = 0;
+  virtual void CNameChanged(const char* cname, uint32_t ssrc) = 0;
 };
 
 
 struct RtcpPacketTypeCounter {
   RtcpPacketTypeCounter()
-    : nack_packets(0),
+    : first_packet_time_ms(-1),
+      nack_packets(0),
       fir_packets(0),
       pli_packets(0),
       nack_requests(0),
@@ -212,6 +216,16 @@ struct RtcpPacketTypeCounter {
     pli_packets += other.pli_packets;
     nack_requests += other.nack_requests;
     unique_nack_requests += other.unique_nack_requests;
+    if (other.first_packet_time_ms != -1 &&
+       (other.first_packet_time_ms < first_packet_time_ms ||
+        first_packet_time_ms == -1)) {
+      
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
+  int64_t TimeSinceFirstPacketInMs(int64_t now_ms) const {
+    return (first_packet_time_ms == -1) ? -1 : (now_ms - first_packet_time_ms);
   }
 
   int UniqueNackRequestsInPercent() const {
@@ -222,39 +236,20 @@ struct RtcpPacketTypeCounter {
         (unique_nack_requests * 100.0f / nack_requests) + 0.5f);
   }
 
-  uint32_t nack_packets;          
-  uint32_t fir_packets;           
-  uint32_t pli_packets;           
-  uint32_t nack_requests;         
+  int64_t first_packet_time_ms;  
+  uint32_t nack_packets;   
+  uint32_t fir_packets;    
+  uint32_t pli_packets;    
+  uint32_t nack_requests;  
   uint32_t unique_nack_requests;  
 };
 
-
-struct StreamDataCounters {
-  StreamDataCounters()
-   : bytes(0),
-     header_bytes(0),
-     padding_bytes(0),
-     packets(0),
-     retransmitted_packets(0),
-     fec_packets(0) {}
-
-  
-  uint32_t bytes;  
-  uint32_t header_bytes;  
-  uint32_t padding_bytes;  
-  uint32_t packets;  
-  uint32_t retransmitted_packets;  
-  uint32_t fec_packets;  
-};
-
-
-class StreamDataCountersCallback {
+class RtcpPacketTypeCounterObserver {
  public:
-  virtual ~StreamDataCountersCallback() {}
-
-  virtual void DataCountersUpdated(const StreamDataCounters& counters,
-                                   uint32_t ssrc) = 0;
+  virtual ~RtcpPacketTypeCounterObserver() {}
+  virtual void RtcpPacketTypesCounterUpdated(
+      uint32_t ssrc,
+      const RtcpPacketTypeCounter& packet_counter) = 0;
 };
 
 
@@ -276,13 +271,18 @@ class BitrateStatisticsObserver {
                       uint32_t ssrc) = 0;
 };
 
+struct FrameCounts {
+  FrameCounts() : key_frames(0), delta_frames(0) {}
+  int key_frames;
+  int delta_frames;
+};
+
 
 class FrameCountObserver {
  public:
   virtual ~FrameCountObserver() {}
-  virtual void FrameCountUpdated(FrameType frame_type,
-                                 uint32_t frame_count,
-                                 const unsigned int ssrc) = 0;
+  virtual void FrameCountUpdated(const FrameCounts& frame_counts,
+                                 uint32_t ssrc) = 0;
 };
 
 
@@ -362,9 +362,14 @@ struct NetworkStatistics
     uint16_t currentExpandRate;
     
     
+    uint16_t currentSpeechExpandRate;
+    
+    
     uint16_t currentPreemptiveRate;
     
     uint16_t currentAccelerateRate;
+    
+    uint16_t currentSecondaryDecodedRate;
     
     int32_t clockDriftPPM;
     
@@ -430,7 +435,7 @@ enum NsModes
     kNsLowSuppression,  
     kNsModerateSuppression,
     kNsHighSuppression,
-    kNsVeryHighSuppression     
+    kNsVeryHighSuppression,     
 };
 
 enum AgcModes                  
@@ -455,7 +460,7 @@ enum EcModes
     kEcDefault,                
     kEcConference,             
     kEcAec,                    
-    kEcAecm                    
+    kEcAecm,                   
 };
 
 
@@ -491,8 +496,7 @@ enum AudioLayers
     kAudioWindowsWave = 1,
     kAudioWindowsCore = 2,
     kAudioLinuxAlsa = 3,
-    kAudioLinuxPulse = 4,
-    kAudioSndio = 5
+    kAudioLinuxPulse = 4
 };
 
 
@@ -509,7 +513,7 @@ enum NetEqModes
     kNetEqFax = 2,
     
     
-    kNetEqOff = 3
+    kNetEqOff = 3,
 };
 
 
@@ -525,7 +529,7 @@ enum AmrMode
 {
     kRfc3267BwEfficient = 0,
     kRfc3267OctetAligned = 1,
-    kRfc3267FileStorage = 2
+    kRfc3267FileStorage = 2,
 };
 
 
@@ -550,16 +554,6 @@ enum RawVideoType
     kVideoNV21     = 12,
     kVideoBGRA     = 13,
     kVideoUnknown  = 99
-};
-
-enum VideoReceiveState
-{
-  kReceiveStateInitial,            
-  kReceiveStateNormal,
-  kReceiveStatePreemptiveNACK,     
-  kReceiveStateWaitingKey,         
-  kReceiveStateDecodingWithErrors, 
-  kReceiveStateNoIncoming,         
 };
 
 
@@ -638,10 +632,6 @@ struct VideoCodecVP9 {
 
 struct VideoCodecH264 {
   VideoCodecProfile profile;
-  uint8_t        profile_byte;
-  uint8_t        constraints;
-  uint8_t        level;
-  uint8_t        packetizationMode; 
   bool           frameDroppingOn;
   int            keyFrameInterval;
   
@@ -709,8 +699,6 @@ struct VideoCodec {
 
   unsigned short      width;
   unsigned short      height;
-  
-  unsigned char       resolution_divisor;
 
   unsigned int        startBitrate;  
   unsigned int        maxBitrate;  
@@ -787,26 +775,6 @@ struct OverUseDetectorOptions {
   double initial_threshold;
 };
 
-enum CPULoadState {
-  kLoadRelaxed = 0,
-  kLoadNormal,
-  kLoadStressed,
-  kLoadLast,
-};
-
-class CPULoadStateObserver {
-public:
-  virtual void onLoadStateChanged(CPULoadState aNewState) = 0;
-  virtual ~CPULoadStateObserver() {};
-};
-
-class CPULoadStateCallbackInvoker {
-public:
-    virtual void AddObserver(CPULoadStateObserver* aObserver) = 0;
-    virtual void RemoveObserver(CPULoadStateObserver* aObserver) = 0;
-    virtual ~CPULoadStateCallbackInvoker() {};
-};
-
 
 
 struct PacketTime {
@@ -824,39 +792,29 @@ struct PacketTime {
 };
 
 struct RTPHeaderExtension {
-  RTPHeaderExtension()
-      : hasTransmissionTimeOffset(false),
-        transmissionTimeOffset(0),
-        hasAbsoluteSendTime(false),
-        absoluteSendTime(0),
-        hasAudioLevel(false),
-        audioLevel(0) {}
+  RTPHeaderExtension();
 
   bool hasTransmissionTimeOffset;
   int32_t transmissionTimeOffset;
   bool hasAbsoluteSendTime;
   uint32_t absoluteSendTime;
+  bool hasTransportSequenceNumber;
+  uint16_t transportSequenceNumber;
 
   
   
   bool hasAudioLevel;
   uint8_t audioLevel;
+
+  
+  
+  
+  bool hasVideoRotation;
+  uint8_t videoRotation;
 };
 
 struct RTPHeader {
-  RTPHeader()
-      : markerBit(false),
-        payloadType(0),
-        sequenceNumber(0),
-        timestamp(0),
-        ssrc(0),
-        numCSRCs(0),
-        paddingLength(0),
-        headerLength(0),
-        payload_type_frequency(0),
-        extension() {
-    memset(&arrOfCSRCs, 0, sizeof(arrOfCSRCs));
-  }
+  RTPHeader();
 
   bool markerBit;
   uint8_t payloadType;
@@ -865,12 +823,86 @@ struct RTPHeader {
   uint32_t ssrc;
   uint8_t numCSRCs;
   uint32_t arrOfCSRCs[kRtpCsrcSize];
-  uint8_t paddingLength;
-  uint16_t headerLength;
+  size_t paddingLength;
+  size_t headerLength;
   int payload_type_frequency;
   RTPHeaderExtension extension;
 };
 
+struct RtpPacketCounter {
+  RtpPacketCounter()
+    : header_bytes(0),
+      payload_bytes(0),
+      padding_bytes(0),
+      packets(0) {}
+
+  void Add(const RtpPacketCounter& other) {
+    header_bytes += other.header_bytes;
+    payload_bytes += other.payload_bytes;
+    padding_bytes += other.padding_bytes;
+    packets += other.packets;
+  }
+
+  void AddPacket(size_t packet_length, const RTPHeader& header) {
+    ++packets;
+    header_bytes += header.headerLength;
+    padding_bytes += header.paddingLength;
+    payload_bytes +=
+        packet_length - (header.headerLength + header.paddingLength);
+  }
+
+  size_t TotalBytes() const {
+    return header_bytes + payload_bytes + padding_bytes;
+  }
+
+  size_t header_bytes;   
+  size_t payload_bytes;  
+  size_t padding_bytes;  
+  uint32_t packets;      
+};
+
+
+struct StreamDataCounters {
+  StreamDataCounters();
+
+  void Add(const StreamDataCounters& other) {
+    transmitted.Add(other.transmitted);
+    retransmitted.Add(other.retransmitted);
+    fec.Add(other.fec);
+    if (other.first_packet_time_ms != -1 &&
+       (other.first_packet_time_ms < first_packet_time_ms ||
+        first_packet_time_ms == -1)) {
+      
+      first_packet_time_ms = other.first_packet_time_ms;
+    }
+  }
+
+  int64_t TimeSinceFirstPacketInMs(int64_t now_ms) const {
+    return (first_packet_time_ms == -1) ? -1 : (now_ms - first_packet_time_ms);
+  }
+
+  
+  
+  
+  size_t MediaPayloadBytes() const {
+    return transmitted.payload_bytes - retransmitted.payload_bytes -
+           fec.payload_bytes;
+  }
+
+  int64_t first_packet_time_ms;  
+  RtpPacketCounter transmitted;  
+  RtpPacketCounter retransmitted;  
+  RtpPacketCounter fec;  
+};
+
+
+class StreamDataCountersCallback {
+ public:
+  virtual ~StreamDataCountersCallback() {}
+
+  virtual void DataCountersUpdated(const StreamDataCounters& counters,
+                                   uint32_t ssrc) = 0;
+};
 }  
 
 #endif  

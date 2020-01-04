@@ -27,7 +27,6 @@ class FileRecorder
 public:
 
     
-    
     static FileRecorder* CreateFileRecorder(const uint32_t instanceID,
                                             const FileFormats fileFormat);
 

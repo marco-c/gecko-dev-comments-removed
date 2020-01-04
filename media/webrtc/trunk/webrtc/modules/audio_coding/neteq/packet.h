@@ -22,7 +22,7 @@ namespace webrtc {
 struct Packet {
   RTPHeader header;
   uint8_t* payload;  
-  int payload_length;
+  size_t payload_length;
   bool primary;  
   int waiting_time;
   bool sync_packet;

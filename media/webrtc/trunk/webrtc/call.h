@@ -65,8 +65,7 @@ class Call {
         : webrtc_config(NULL),
           send_transport(send_transport),
           voice_engine(NULL),
-          overuse_callback(NULL),
-          stream_start_bitrate_bps(kDefaultStartBitrateBps) {}
+          overuse_callback(NULL) {}
 
     static const int kDefaultStartBitrateBps;
 
@@ -83,17 +82,28 @@ class Call {
 
     
     
-    
-    
-    int stream_start_bitrate_bps;
+    struct BitrateConfig {
+      BitrateConfig()
+          : min_bitrate_bps(0),
+            start_bitrate_bps(kDefaultStartBitrateBps),
+            max_bitrate_bps(-1) {}
+      int min_bitrate_bps;
+      int start_bitrate_bps;
+      int max_bitrate_bps;
+    } bitrate_config;
   };
 
   struct Stats {
-    Stats() : send_bandwidth_bps(0), recv_bandwidth_bps(0), pacer_delay_ms(0) {}
+    Stats()
+        : send_bandwidth_bps(0),
+          recv_bandwidth_bps(0),
+          pacer_delay_ms(0),
+          rtt_ms(-1) {}
 
     int send_bandwidth_bps;
     int recv_bandwidth_bps;
-    int pacer_delay_ms;
+    int64_t pacer_delay_ms;
+    int64_t rtt_ms;
   };
 
   static Call* Create(const Call::Config& config);
@@ -121,6 +131,13 @@ class Call {
   
   virtual Stats GetStats() const = 0;
 
+  
+  
+  
+  
+  
+  virtual void SetBitrateConfig(
+      const Config::BitrateConfig& bitrate_config) = 0;
   virtual void SignalNetworkState(NetworkState state) = 0;
 
   virtual ~Call() {}

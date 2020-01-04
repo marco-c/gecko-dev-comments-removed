@@ -59,7 +59,8 @@ class VCMTiming {
   
   int32_t StopDecodeTimer(uint32_t time_stamp,
                           int64_t start_time_ms,
-                          int64_t now_ms);
+                          int64_t now_ms,
+                          int64_t render_time_ms);
 
   
   
@@ -101,6 +102,8 @@ class VCMTiming {
   uint32_t TargetDelayInternal() const EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
  private:
+  void UpdateHistograms() const;
+
   CriticalSectionWrapper* crit_sect_;
   Clock* const clock_;
   bool master_ GUARDED_BY(crit_sect_);
@@ -112,6 +115,12 @@ class VCMTiming {
   uint32_t current_delay_ms_ GUARDED_BY(crit_sect_);
   int last_decode_ms_ GUARDED_BY(crit_sect_);
   uint32_t prev_frame_timestamp_ GUARDED_BY(crit_sect_);
+
+  
+  size_t num_decoded_frames_ GUARDED_BY(crit_sect_);
+  size_t num_delayed_decoded_frames_ GUARDED_BY(crit_sect_);
+  int64_t first_decoded_frame_ms_ GUARDED_BY(crit_sect_);
+  uint64_t sum_missed_render_deadline_ms_ GUARDED_BY(crit_sect_);
 };
 }  
 

@@ -21,7 +21,29 @@ extern "C" {
 typedef struct WebRtcOpusEncInst OpusEncInst;
 typedef struct WebRtcOpusDecInst OpusDecInst;
 
-int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst, int32_t channels);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
+                                 int32_t channels,
+                                 int32_t application);
+
 int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
 
 
@@ -141,6 +163,32 @@ int16_t WebRtcOpus_DisableFec(OpusEncInst* inst);
 
 
 
+int16_t WebRtcOpus_EnableDtx(OpusEncInst* inst);
+
+
+
+
+
+
+
+
+
+
+
+
+int16_t WebRtcOpus_DisableDtx(OpusEncInst* inst);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 int16_t WebRtcOpus_SetComplexity(OpusEncInst* inst, int32_t complexity);
@@ -166,9 +214,7 @@ int WebRtcOpus_DecoderChannels(OpusDecInst* inst);
 
 
 
-int16_t WebRtcOpus_DecoderInitNew(OpusDecInst* inst);
 int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst);
-int16_t WebRtcOpus_DecoderInitSlave(OpusDecInst* inst);
 
 
 
@@ -190,18 +236,9 @@ int16_t WebRtcOpus_DecoderInitSlave(OpusDecInst* inst);
 
 
 
-int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
-                             int16_t encoded_bytes, int16_t* decoded,
-                             int16_t* audio_type);
 int16_t WebRtcOpus_Decode(OpusDecInst* inst, const uint8_t* encoded,
                           int16_t encoded_bytes, int16_t* decoded,
                           int16_t* audio_type);
-int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const uint8_t* encoded,
-                               int16_t encoded_bytes, int16_t* decoded,
-                               int16_t* audio_type);
-
-
-
 
 
 
@@ -219,10 +256,6 @@ int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const uint8_t* encoded,
 
 int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
                              int16_t number_of_lost_frames);
-int16_t WebRtcOpus_DecodePlcMaster(OpusDecInst* inst, int16_t* decoded,
-                                   int16_t number_of_lost_frames);
-int16_t WebRtcOpus_DecodePlcSlave(OpusDecInst* inst, int16_t* decoded,
-                                  int16_t number_of_lost_frames);
 
 
 

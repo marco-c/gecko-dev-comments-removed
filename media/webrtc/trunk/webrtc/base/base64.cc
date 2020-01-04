@@ -79,8 +79,7 @@ bool Base64::GetNextBase64Char(char ch, char* next_ch) {
   if (next_ch == NULL) {
     return false;
   }
-  
-  const char* p = strchr(Base64Table, &ch);
+  const char* p = strchr(Base64Table, ch);
   if (!p)
     return false;
   ++p;

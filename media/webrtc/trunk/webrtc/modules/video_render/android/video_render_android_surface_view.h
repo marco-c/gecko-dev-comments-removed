@@ -33,7 +33,7 @@ class AndroidSurfaceViewChannel : public AndroidStream {
 
   
   virtual int32_t RenderFrame(const uint32_t streamId,
-                              I420VideoFrame& videoFrame);
+                              const I420VideoFrame& videoFrame);
 
   
   virtual void DeliverFrame(JNIEnv* jniEnv);

@@ -34,7 +34,7 @@ class Worker : private MessageHandler {
   Worker();
 
   
-  virtual ~Worker();
+  ~Worker() override;
 
   
   
@@ -59,7 +59,7 @@ class Worker : private MessageHandler {
 
  private:
   
-  virtual void OnMessage(Message *msg);
+  void OnMessage(Message* msg) override;
 
   
   Thread *worker_thread_;

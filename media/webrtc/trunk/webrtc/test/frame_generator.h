@@ -10,6 +10,9 @@
 #ifndef WEBRTC_COMMON_VIDEO_TEST_FRAME_GENERATOR_H_
 #define WEBRTC_COMMON_VIDEO_TEST_FRAME_GENERATOR_H_
 
+#include <string>
+#include <vector>
+
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/typedefs.h"
 
@@ -24,10 +27,17 @@ class FrameGenerator {
   
   virtual I420VideoFrame* NextFrame() = 0;
 
-  static FrameGenerator* Create(size_t width, size_t height);
-  static FrameGenerator* CreateFromYuvFile(const char* file,
+  
+  
+  static FrameGenerator* CreateChromaGenerator(size_t width, size_t height);
+
+  
+  
+  
+  static FrameGenerator* CreateFromYuvFile(std::vector<std::string> files,
                                            size_t width,
-                                           size_t height);
+                                           size_t height,
+                                           int frame_repeat_count);
 };
 }  
 }  

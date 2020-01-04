@@ -24,13 +24,13 @@ class PartitionTreeNode {
  public:
   
   PartitionTreeNode(PartitionTreeNode* parent,
-                    const int* size_vector,
-                    int num_partitions,
-                    int this_size);
+                    const size_t* size_vector,
+                    size_t num_partitions,
+                    size_t this_size);
 
   
-  static PartitionTreeNode* CreateRootNode(const int* size_vector,
-                                           int num_partitions);
+  static PartitionTreeNode* CreateRootNode(const size_t* size_vector,
+                                           size_t num_partitions);
 
   ~PartitionTreeNode();
 
@@ -38,18 +38,18 @@ class PartitionTreeNode {
   
   
   
-  int Cost(int penalty);
+  int Cost(size_t penalty);
 
   
-  bool CreateChildren(int max_size);
+  bool CreateChildren(size_t max_size);
 
   
-  int NumPackets();
+  size_t NumPackets();
 
   
   
   
-  PartitionTreeNode* GetOptimalNode(int max_size, int penalty);
+  PartitionTreeNode* GetOptimalNode(size_t max_size, size_t penalty);
 
   
   void set_max_parent_size(int size) { max_parent_size_ = size; }
@@ -57,7 +57,7 @@ class PartitionTreeNode {
   PartitionTreeNode* parent() const { return parent_; }
   PartitionTreeNode* left_child() const { return children_[kLeftChild]; }
   PartitionTreeNode* right_child() const { return children_[kRightChild]; }
-  int this_size() const { return this_size_; }
+  size_t this_size() const { return this_size_; }
   bool packet_start() const { return packet_start_; }
 
  private:
@@ -66,13 +66,14 @@ class PartitionTreeNode {
     kRightChild = 1
   };
 
+  int this_size_int() const { return static_cast<int>(this_size_); }
   void set_packet_start(bool value) { packet_start_ = value; }
 
   PartitionTreeNode* parent_;
   PartitionTreeNode* children_[2];
-  int this_size_;
-  const int* size_vector_;
-  int num_partitions_;
+  size_t this_size_;
+  const size_t* size_vector_;
+  size_t num_partitions_;
   int max_parent_size_;
   int min_parent_size_;
   bool packet_start_;
@@ -84,13 +85,14 @@ class PartitionTreeNode {
 
 class Vp8PartitionAggregator {
  public:
-  typedef std::vector<int> ConfigVec;
+  typedef std::vector<size_t> ConfigVec;
 
   
   
   
   Vp8PartitionAggregator(const RTPFragmentationHeader& fragmentation,
-                         int first_partition_idx, int last_partition_idx);
+                         size_t first_partition_idx,
+                         size_t last_partition_idx);
 
   ~Vp8PartitionAggregator();
 
@@ -103,7 +105,7 @@ class Vp8PartitionAggregator {
   
   
   
-  ConfigVec FindOptimalConfiguration(int max_size, int penalty);
+  ConfigVec FindOptimalConfiguration(size_t max_size, size_t penalty);
 
   
   
@@ -116,17 +118,17 @@ class Vp8PartitionAggregator {
   
   
   
-  static int CalcNumberOfFragments(int large_partition_size,
-                                   int max_payload_size,
-                                   int penalty,
-                                   int min_size,
-                                   int max_size);
+  static size_t CalcNumberOfFragments(size_t large_partition_size,
+                                      size_t max_payload_size,
+                                      size_t penalty,
+                                      int min_size,
+                                      int max_size);
 
  private:
   PartitionTreeNode* root_;
   size_t num_partitions_;
-  int* size_vector_;
-  int largest_partition_size_;
+  size_t* size_vector_;
+  size_t largest_partition_size_;
 
   DISALLOW_COPY_AND_ASSIGN(Vp8PartitionAggregator);
 };

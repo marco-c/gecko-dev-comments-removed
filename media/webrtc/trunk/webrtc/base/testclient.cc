@@ -34,7 +34,7 @@ TestClient::~TestClient() {
 
 bool TestClient::CheckConnState(AsyncPacketSocket::State state) {
   
-  uint32 end = TimeAfter(kTimeout);
+  uint32 end = TimeAfter(kTimeoutMs);
   while (socket_->GetState() != state && TimeUntil(end) > 0)
     Thread::Current()->ProcessMessages(1);
   return (socket_->GetState() == state);
@@ -51,7 +51,7 @@ int TestClient::SendTo(const char* buf, size_t size,
   return socket_->SendTo(buf, size, dest, options);
 }
 
-TestClient::Packet* TestClient::NextPacket() {
+TestClient::Packet* TestClient::NextPacket(int timeout_ms) {
   
   
   
@@ -63,7 +63,7 @@ TestClient::Packet* TestClient::NextPacket() {
   
   
 
-  uint32 end = TimeAfter(kTimeout);
+  uint32 end = TimeAfter(timeout_ms);
   while (TimeUntil(end) > 0) {
     {
       CritScope cs(&crit_);
@@ -88,7 +88,7 @@ TestClient::Packet* TestClient::NextPacket() {
 bool TestClient::CheckNextPacket(const char* buf, size_t size,
                                  SocketAddress* addr) {
   bool res = false;
-  Packet* packet = NextPacket();
+  Packet* packet = NextPacket(kTimeoutMs);
   if (packet) {
     res = (packet->size == size && memcmp(packet->buf, buf, size) == 0);
     if (addr)
@@ -100,7 +100,7 @@ bool TestClient::CheckNextPacket(const char* buf, size_t size,
 
 bool TestClient::CheckNoPacket() {
   bool res;
-  Packet* packet = NextPacket();
+  Packet* packet = NextPacket(kNoPacketTimeoutMs);
   res = (packet == NULL);
   delete packet;
   return res;

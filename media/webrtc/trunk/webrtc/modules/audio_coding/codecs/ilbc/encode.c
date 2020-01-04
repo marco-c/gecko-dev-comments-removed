@@ -45,7 +45,7 @@
 void WebRtcIlbcfix_EncodeImpl(
     uint16_t *bytes,     
     const int16_t *block, 
-    iLBC_Enc_Inst_t *iLBCenc_inst 
+    IlbcEncoder *iLBCenc_inst 
 
                           ){
   int n, meml_gotten, Nfor, Nback;
@@ -154,7 +154,7 @@ void WebRtcIlbcfix_EncodeImpl(
 
     index = (iLBCbits_inst->startIdx-1)*SUBL;
     max=WebRtcSpl_MaxAbsValueW16(&residual[index], 2*SUBL);
-    scale=WebRtcSpl_GetSizeInBits(WEBRTC_SPL_MUL_16_16(max,max));
+    scale = WebRtcSpl_GetSizeInBits((uint32_t)(max * max));
 
     
     scale = scale - 25;

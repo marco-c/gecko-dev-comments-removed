@@ -20,7 +20,7 @@
 
 enum
 {
-    kMaxBandFrameLength = 240  
+    kMaxBandFrameLength = 320  
 };
 
 

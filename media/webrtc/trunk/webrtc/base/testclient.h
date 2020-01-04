@@ -33,9 +33,12 @@ class TestClient : public sigslot::has_slots<> {
   };
 
   
+  static const int kTimeoutMs = 5000;
+
+  
   
   explicit TestClient(AsyncPacketSocket* socket);
-  ~TestClient();
+  ~TestClient() override;
 
   SocketAddress address() const { return socket_->GetLocalAddress(); }
   SocketAddress remote_address() const { return socket_->GetRemoteAddress(); }
@@ -57,7 +60,7 @@ class TestClient : public sigslot::has_slots<> {
   
   
   
-  Packet* NextPacket();
+  Packet* NextPacket(int timeout_ms);
 
   
   
@@ -72,7 +75,8 @@ class TestClient : public sigslot::has_slots<> {
   bool ready_to_send() const;
 
  private:
-  static const int kTimeout = 1000;
+  
+  static const int kNoPacketTimeoutMs = 1000;
   
   Socket::ConnState GetState();
   

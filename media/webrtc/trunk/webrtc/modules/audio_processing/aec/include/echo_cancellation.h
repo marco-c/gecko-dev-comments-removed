@@ -150,14 +150,10 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
 
 
 
-
-
-
 int32_t WebRtcAec_Process(void* aecInst,
-                          const float* nearend,
-                          const float* nearendH,
-                          float* out,
-                          float* outH,
+                          const float* const* nearend,
+                          int num_bands,
+                          float* const* out,
                           int16_t nrOfSamples,
                           int16_t msInSndCardBuf,
                           int32_t skew);
@@ -225,7 +221,12 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics);
 
 
 
-int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std);
+
+
+int WebRtcAec_GetDelayMetrics(void* handle,
+                              int* median,
+                              int* std,
+                              float* fraction_poor_delays);
 
 
 

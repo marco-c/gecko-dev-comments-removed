@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "webrtc/common_types.h"  
+#include "webrtc/common_video/rotation.h"
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/typedefs.h"
 
@@ -52,15 +53,6 @@ VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type);
 
 
 
-enum VideoRotationMode {
-  kRotateNone = 0,
-  kRotate90 = 90,
-  kRotate180 = 180,
-  kRotate270 = 270,
-};
-
-
-
 
 
 
@@ -82,7 +74,7 @@ void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv);
 
 
 
-int CalcBufferSize(VideoType type, int width, int height);
+size_t CalcBufferSize(VideoType type, int width, int height);
 
 
 
@@ -101,7 +93,7 @@ int PrintI420VideoFrame(const I420VideoFrame& frame, FILE* file);
 
 
 int ExtractBuffer(const I420VideoFrame& input_frame,
-                  int size, uint8_t* buffer);
+                  size_t size, uint8_t* buffer);
 
 
 
@@ -117,10 +109,12 @@ int ExtractBuffer(const I420VideoFrame& input_frame,
 
 int ConvertToI420(VideoType src_video_type,
                   const uint8_t* src_frame,
-                  int crop_x, int crop_y,
-                  int src_width, int src_height,
-                  int sample_size,
-                  VideoRotationMode rotation,
+                  int crop_x,
+                  int crop_y,
+                  int src_width,
+                  int src_height,
+                  size_t sample_size,
+                  VideoRotation rotation,
                   I420VideoFrame* dst_frame);
 
 
@@ -151,19 +145,6 @@ int ConvertRGB24ToARGB(const uint8_t* src_frame,
 int ConvertNV12ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,
                         int width, int height);
-
-
-
-
-
-
-
-
-
-int MirrorI420LeftRight(const I420VideoFrame* src_frame,
-                        I420VideoFrame* dst_frame);
-int MirrorI420UpDown(const I420VideoFrame* src_frame,
-                     I420VideoFrame* dst_frame);
 
 
 

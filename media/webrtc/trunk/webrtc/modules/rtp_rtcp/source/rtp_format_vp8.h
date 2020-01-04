@@ -51,19 +51,18 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   
   
   RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
-                   int max_payload_len,
+                   size_t max_payload_len,
                    VP8PacketizerMode mode);
 
   
   
-  RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info, int max_payload_len);
+  RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info, size_t max_payload_len);
 
   virtual ~RtpPacketizerVp8();
 
-  virtual void SetPayloadData(
-      const uint8_t* payload_data,
-      size_t payload_size,
-      const RTPFragmentationHeader* fragmentation) OVERRIDE;
+  void SetPayloadData(const uint8_t* payload_data,
+                      size_t payload_size,
+                      const RTPFragmentationHeader* fragmentation) override;
 
   
   
@@ -76,22 +75,22 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   
   
   
-  virtual bool NextPacket(uint8_t* buffer,
-                          size_t* bytes_to_send,
-                          bool* last_packet) OVERRIDE;
+  bool NextPacket(uint8_t* buffer,
+                  size_t* bytes_to_send,
+                  bool* last_packet) override;
 
-  virtual ProtectionType GetProtectionType() OVERRIDE;
+  ProtectionType GetProtectionType() override;
 
-  virtual StorageType GetStorageType(uint32_t retransmission_settings) OVERRIDE;
+  StorageType GetStorageType(uint32_t retransmission_settings) override;
 
-  virtual std::string ToString() OVERRIDE;
+  std::string ToString() override;
 
  private:
   typedef struct {
-    int payload_start_pos;
-    int size;
+    size_t payload_start_pos;
+    size_t size;
     bool first_fragment;
-    int first_partition_ix;
+    size_t first_partition_ix;
   } InfoStruct;
   typedef std::queue<InfoStruct> InfoQueue;
   enum AggregationMode {
@@ -115,9 +114,9 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   static const int kYBit = 0x20;
 
   
-  int CalcNextSize(int max_payload_len,
-                   int remaining_bytes,
-                   bool split_payload) const;
+  size_t CalcNextSize(size_t max_payload_len,
+                      size_t remaining_bytes,
+                      bool split_payload) const;
 
   
   int GeneratePackets();
@@ -140,9 +139,9 @@ class RtpPacketizerVp8 : public RtpPacketizer {
                                 int* max_size);
 
   
-  void QueuePacket(int start_pos,
-                   int packet_size,
-                   int first_partition_in_packet,
+  void QueuePacket(size_t start_pos,
+                   size_t packet_size,
+                   size_t first_partition_in_packet,
                    bool start_on_new_fragment);
 
   
@@ -150,47 +149,47 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   
   int WriteHeaderAndPayload(const InfoStruct& packet_info,
                             uint8_t* buffer,
-                            int buffer_length) const;
+                            size_t buffer_length) const;
 
   
   
   
-  int WriteExtensionFields(uint8_t* buffer, int buffer_length) const;
+  int WriteExtensionFields(uint8_t* buffer, size_t buffer_length) const;
 
   
   
   int WritePictureIDFields(uint8_t* x_field,
                            uint8_t* buffer,
-                           int buffer_length,
-                           int* extension_length) const;
+                           size_t buffer_length,
+                           size_t* extension_length) const;
 
   
   
   int WriteTl0PicIdxFields(uint8_t* x_field,
                            uint8_t* buffer,
-                           int buffer_length,
-                           int* extension_length) const;
+                           size_t buffer_length,
+                           size_t* extension_length) const;
 
   
   
   
   int WriteTIDAndKeyIdxFields(uint8_t* x_field,
                               uint8_t* buffer,
-                              int buffer_length,
-                              int* extension_length) const;
+                              size_t buffer_length,
+                              size_t* extension_length) const;
 
   
   
   
-  int WritePictureID(uint8_t* buffer, int buffer_length) const;
+  int WritePictureID(uint8_t* buffer, size_t buffer_length) const;
 
   
   
-  int PayloadDescriptorExtraLength() const;
+  size_t PayloadDescriptorExtraLength() const;
 
   
   
-  int PictureIdLength() const;
+  size_t PictureIdLength() const;
 
   
   bool XFieldPresent() const;
@@ -200,16 +199,16 @@ class RtpPacketizerVp8 : public RtpPacketizer {
   bool PictureIdPresent() const { return (PictureIdLength() > 0); }
 
   const uint8_t* payload_data_;
-  int payload_size_;
+  size_t payload_size_;
   RTPFragmentationHeader part_info_;
-  const int vp8_fixed_payload_descriptor_bytes_;  
-                                                  
+  const size_t vp8_fixed_payload_descriptor_bytes_;  
+                                                     
   const AggregationMode aggr_mode_;
   const bool balance_;
   const bool separate_first_;
   const RTPVideoHeaderVP8 hdr_info_;
-  int num_partitions_;
-  const int max_payload_len_;
+  size_t num_partitions_;
+  const size_t max_payload_len_;
   InfoQueue packets_;
   bool packets_calculated_;
 
@@ -221,9 +220,9 @@ class RtpDepacketizerVp8 : public RtpDepacketizer {
  public:
   virtual ~RtpDepacketizerVp8() {}
 
-  virtual bool Parse(ParsedPayload* parsed_payload,
-                     const uint8_t* payload_data,
-                     size_t payload_data_length) OVERRIDE;
+  bool Parse(ParsedPayload* parsed_payload,
+             const uint8_t* payload_data,
+             size_t payload_data_length) override;
 };
 }  
 #endif  

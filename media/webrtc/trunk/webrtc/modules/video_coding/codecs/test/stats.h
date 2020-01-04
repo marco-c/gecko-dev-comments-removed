@@ -31,14 +31,14 @@ struct FrameStatistic {
   int frame_number;
   
   int packets_dropped;
-  int total_packets;
+  size_t total_packets;
 
   
   
   int bit_rate_in_kbps;
 
   
-  int encoded_frame_length_in_bytes;
+  size_t encoded_frame_length_in_bytes;
   webrtc::VideoFrameType frame_type;
 };
 

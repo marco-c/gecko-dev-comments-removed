@@ -17,6 +17,9 @@ enum {
   kDefaultSampleRate = 44100,
   kNumChannels = 1,
   kDefaultBufSizeInSamples = kDefaultSampleRate * 10 / 1000,
+  
+  
+  kBytesPerFrame = kNumChannels * (16 / 8),
 };
 
 class PlayoutDelayProvider {

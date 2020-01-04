@@ -31,7 +31,7 @@ void WebRtcIlbcfix_DecoderInterpolateLsp(
 
     int16_t *lsfdeq,   
     int16_t length,   
-    iLBC_Dec_Inst_t *iLBCdec_inst
+    IlbcDecoder *iLBCdec_inst
     
                                           ){
   int  i, pos, lp_length;

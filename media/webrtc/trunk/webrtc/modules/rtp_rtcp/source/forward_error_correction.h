@@ -49,7 +49,7 @@ class ForwardErrorCorrection {
     
     virtual int32_t Release();
 
-    uint16_t length;               
+    size_t length;               
     uint8_t data[IP_PACKET_SIZE];  
 
    private:
@@ -200,7 +200,7 @@ class ForwardErrorCorrection {
   
   
   
-  static uint16_t PacketOverhead();
+  static size_t PacketOverhead();
 
   
   

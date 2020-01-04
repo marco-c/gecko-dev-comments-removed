@@ -12,8 +12,8 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_ENCODER_H_
 
 #include <algorithm>
+#include <vector>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -22,6 +22,38 @@ namespace webrtc {
 
 class AudioEncoder {
  public:
+  struct EncodedInfoLeaf {
+    EncodedInfoLeaf()
+        : encoded_bytes(0),
+          encoded_timestamp(0),
+          payload_type(0),
+          send_even_if_empty(false),
+          speech(true) {}
+
+    size_t encoded_bytes;
+    uint32_t encoded_timestamp;
+    int payload_type;
+    bool send_even_if_empty;
+    bool speech;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct EncodedInfo : public EncodedInfoLeaf {
+    EncodedInfo();
+    ~EncodedInfo();
+
+    std::vector<EncodedInfoLeaf> redundant;
+  };
+
   virtual ~AudioEncoder() {}
 
   
@@ -30,30 +62,28 @@ class AudioEncoder {
   
   
   
-  
-  bool Encode(uint32_t timestamp,
-              const int16_t* audio,
-              size_t num_samples_per_channel,
-              size_t max_encoded_bytes,
-              uint8_t* encoded,
-              size_t* encoded_bytes,
-              uint32_t* encoded_timestamp) {
-    CHECK_EQ(num_samples_per_channel,
-             static_cast<size_t>(sample_rate_hz() / 100));
-    bool ret = Encode(timestamp,
-                      audio,
-                      max_encoded_bytes,
-                      encoded,
-                      encoded_bytes,
-                      encoded_timestamp);
-    CHECK_LE(*encoded_bytes, max_encoded_bytes);
-    return ret;
-  }
+  EncodedInfo Encode(uint32_t rtp_timestamp,
+                     const int16_t* audio,
+                     size_t num_samples_per_channel,
+                     size_t max_encoded_bytes,
+                     uint8_t* encoded);
 
   
   
-  virtual int sample_rate_hz() const = 0;
-  virtual int num_channels() const = 0;
+  virtual int SampleRateHz() const = 0;
+  virtual int NumChannels() const = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual size_t MaxEncodedBytes() const = 0;
+
+  
+  
+  virtual int RtpTimestampRateHz() const;
 
   
   
@@ -62,13 +92,24 @@ class AudioEncoder {
   
   virtual int Num10MsFramesInNextPacket() const = 0;
 
+  
+  
+  virtual int Max10MsFramesInAPacket() const = 0;
+
+  
+  
+  virtual void SetTargetBitrate(int bits_per_second) {}
+
+  
+  
+  
+  virtual void SetProjectedPacketLossRate(double fraction) {}
+
  protected:
-  virtual bool Encode(uint32_t timestamp,
-                      const int16_t* audio,
-                      size_t max_encoded_bytes,
-                      uint8_t* encoded,
-                      size_t* encoded_bytes,
-                      uint32_t* encoded_timestamp) = 0;
+  virtual EncodedInfo EncodeInternal(uint32_t rtp_timestamp,
+                                     const int16_t* audio,
+                                     size_t max_encoded_bytes,
+                                     uint8_t* encoded) = 0;
 };
 
 }  

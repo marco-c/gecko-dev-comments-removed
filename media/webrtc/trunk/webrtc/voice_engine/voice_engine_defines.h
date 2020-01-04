@@ -64,13 +64,13 @@ enum { kVoiceEngineVersionMaxMessageSize = 1024 };
 
 const NoiseSuppression::Level kDefaultNsMode = NoiseSuppression::kModerate;
 const GainControl::Mode kDefaultAgcMode =
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_GONK) 
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
   GainControl::kAdaptiveDigital;
 #else
   GainControl::kAdaptiveAnalog;
 #endif
 const bool kDefaultAgcState =
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS) || defined(WEBRTC_GONK) 
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
   false;
 #else
   true;
@@ -268,11 +268,9 @@ inline int VoEChannelId(int moduleId)
 
 
 
-#if defined(WEBRTC_BSD) || defined(WEBRTC_MAC)
+#ifdef WEBRTC_MAC
 
-#if !defined(WEBRTC_BSD)
 #include <AudioUnit/AudioUnit.h>
-#endif
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -288,7 +286,7 @@ inline int VoEChannelId(int moduleId)
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#if !defined(WEBRTC_BSD) && !defined(WEBRTC_IOS)
+#if !defined(WEBRTC_IOS)
   #include <CoreServices/CoreServices.h>
   #include <CoreAudio/CoreAudio.h>
   #include <AudioToolbox/DefaultAudioOutput.h>

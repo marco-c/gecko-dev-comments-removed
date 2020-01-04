@@ -72,9 +72,14 @@ namespace rtc {
   !(condition) ? static_cast<void>(0) : rtc::FatalMessageVoidify() & (stream)
 
 
-#define EAT_STREAM_PARAMETERS                                           \
-  true ? static_cast<void>(0)                                           \
-       : rtc::FatalMessageVoidify() & rtc::FatalMessage("", 0).stream()
+
+
+
+
+#define EAT_STREAM_PARAMETERS(condition) \
+  (true ? true : !(condition))           \
+      ? static_cast<void>(0)             \
+      : rtc::FatalMessageVoidify() & rtc::FatalMessage("", 0).stream()
 
 
 
@@ -161,6 +166,7 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 
 
 
+
 #if (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
 #define DCHECK(condition) CHECK(condition)
 #define DCHECK_EQ(v1, v2) CHECK_EQ(v1, v2)
@@ -170,13 +176,13 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define DCHECK_GE(v1, v2) CHECK_GE(v1, v2)
 #define DCHECK_GT(v1, v2) CHECK_GT(v1, v2)
 #else
-#define DCHECK(condition) EAT_STREAM_PARAMETERS
-#define DCHECK_EQ(v1, v2) EAT_STREAM_PARAMETERS
-#define DCHECK_NE(v1, v2) EAT_STREAM_PARAMETERS
-#define DCHECK_LE(v1, v2) EAT_STREAM_PARAMETERS
-#define DCHECK_LT(v1, v2) EAT_STREAM_PARAMETERS
-#define DCHECK_GE(v1, v2) EAT_STREAM_PARAMETERS
-#define DCHECK_GT(v1, v2) EAT_STREAM_PARAMETERS
+#define DCHECK(condition) EAT_STREAM_PARAMETERS(condition)
+#define DCHECK_EQ(v1, v2) EAT_STREAM_PARAMETERS((v1) == (v2))
+#define DCHECK_NE(v1, v2) EAT_STREAM_PARAMETERS((v1) != (v2))
+#define DCHECK_LE(v1, v2) EAT_STREAM_PARAMETERS((v1) <= (v2))
+#define DCHECK_LT(v1, v2) EAT_STREAM_PARAMETERS((v1) < (v2))
+#define DCHECK_GE(v1, v2) EAT_STREAM_PARAMETERS((v1) >= (v2))
+#define DCHECK_GT(v1, v2) EAT_STREAM_PARAMETERS((v1) > (v2))
 #endif
 
 
@@ -189,6 +195,9 @@ class FatalMessageVoidify {
 };
 
 #endif  
+
+#define RTC_UNREACHABLE_CODE_HIT false
+#define RTC_NOTREACHED() DCHECK(RTC_UNREACHABLE_CODE_HIT)
 
 #define FATAL() rtc::FatalMessage(__FILE__, __LINE__).stream()
 
@@ -210,6 +219,14 @@ class FatalMessage {
 
   std::ostringstream stream_;
 };
+
+
+
+template <typename T>
+inline T CheckedDivExact(T a, T b) {
+  CHECK_EQ(a % b, static_cast<T>(0));
+  return a / b;
+}
 
 }  
 

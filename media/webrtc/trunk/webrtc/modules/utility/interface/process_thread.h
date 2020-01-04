@@ -12,23 +12,55 @@
 #define WEBRTC_MODULES_UTILITY_INTERFACE_PROCESS_THREAD_H_
 
 #include "webrtc/typedefs.h"
+#include "webrtc/base/scoped_ptr.h"
 
 namespace webrtc {
 class Module;
 
-class ProcessThread
-{
-public:
-    static ProcessThread* CreateProcessThread();
-    static void DestroyProcessThread(ProcessThread* module);
+class ProcessTask {
+ public:
+  ProcessTask() {}
+  virtual ~ProcessTask() {}
 
-    virtual int32_t Start() = 0;
-    virtual int32_t Stop() = 0;
-
-    virtual int32_t RegisterModule(Module* module) = 0;
-    virtual int32_t DeRegisterModule(const Module* module) = 0;
-protected:
-    virtual ~ProcessThread();
+  virtual void Run() = 0;
 };
+
+class ProcessThread {
+ public:
+  virtual ~ProcessThread();
+
+  static rtc::scoped_ptr<ProcessThread> Create();
+
+  
+  virtual void Start() = 0;
+
+  
+  virtual void Stop() = 0;
+
+  
+  
+  
+  
+  
+  virtual void WakeUp(Module* module) = 0;
+
+  
+  
+  
+  
+  
+  
+  virtual void PostTask(rtc::scoped_ptr<ProcessTask> task) = 0;
+
+  
+  
+  virtual void RegisterModule(Module* module) = 0;
+
+  
+  
+  virtual void DeRegisterModule(Module* module) = 0;
+};
+
 }  
+
 #endif 

@@ -26,10 +26,9 @@ class RtpPacketizerH264 : public RtpPacketizer {
 
   virtual ~RtpPacketizerH264();
 
-  virtual void SetPayloadData(
-      const uint8_t* payload_data,
-      size_t payload_size,
-      const RTPFragmentationHeader* fragmentation) OVERRIDE;
+  void SetPayloadData(const uint8_t* payload_data,
+                      size_t payload_size,
+                      const RTPFragmentationHeader* fragmentation) override;
 
   
   
@@ -38,15 +37,15 @@ class RtpPacketizerH264 : public RtpPacketizer {
   
   
   
-  virtual bool NextPacket(uint8_t* buffer,
-                          size_t* bytes_to_send,
-                          bool* last_packet) OVERRIDE;
+  bool NextPacket(uint8_t* buffer,
+                  size_t* bytes_to_send,
+                  bool* last_packet) override;
 
-  virtual ProtectionType GetProtectionType() OVERRIDE;
+  ProtectionType GetProtectionType() override;
 
-  virtual StorageType GetStorageType(uint32_t retransmission_settings) OVERRIDE;
+  StorageType GetStorageType(uint32_t retransmission_settings) override;
 
-  virtual std::string ToString() OVERRIDE;
+  std::string ToString() override;
 
  private:
   struct Packet {
@@ -95,9 +94,9 @@ class RtpDepacketizerH264 : public RtpDepacketizer {
  public:
   virtual ~RtpDepacketizerH264() {}
 
-  virtual bool Parse(ParsedPayload* parsed_payload,
-                     const uint8_t* payload_data,
-                     size_t payload_data_length) OVERRIDE;
+  bool Parse(ParsedPayload* parsed_payload,
+             const uint8_t* payload_data,
+             size_t payload_data_length) override;
 };
 }  
 #endif  

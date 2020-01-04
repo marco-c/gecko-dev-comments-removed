@@ -29,9 +29,9 @@
 
 
 
-typedef struct iLBC_encinst_t_ iLBC_encinst_t;
+typedef struct iLBC_encinst_t_ IlbcEncoderInstance;
 
-typedef struct iLBC_decinst_t_ iLBC_decinst_t;
+typedef struct iLBC_decinst_t_ IlbcDecoderInstance;
 
 
 
@@ -60,10 +60,10 @@ extern "C" {
 
 
 
-  int16_t WebRtcIlbcfix_EncoderAssign(iLBC_encinst_t **iLBC_encinst,
+  int16_t WebRtcIlbcfix_EncoderAssign(IlbcEncoderInstance **iLBC_encinst,
                                       int16_t *ILBCENC_inst_Addr,
                                       int16_t *size);
-  int16_t WebRtcIlbcfix_DecoderAssign(iLBC_decinst_t **iLBC_decinst,
+  int16_t WebRtcIlbcfix_DecoderAssign(IlbcDecoderInstance **iLBC_decinst,
                                       int16_t *ILBCDEC_inst_Addr,
                                       int16_t *size);
 
@@ -80,8 +80,8 @@ extern "C" {
 
 
 
-  int16_t WebRtcIlbcfix_EncoderCreate(iLBC_encinst_t **iLBC_encinst);
-  int16_t WebRtcIlbcfix_DecoderCreate(iLBC_decinst_t **iLBC_decinst);
+  int16_t WebRtcIlbcfix_EncoderCreate(IlbcEncoderInstance **iLBC_encinst);
+  int16_t WebRtcIlbcfix_DecoderCreate(IlbcDecoderInstance **iLBC_decinst);
 
   
 
@@ -95,8 +95,8 @@ extern "C" {
 
 
 
-  int16_t WebRtcIlbcfix_EncoderFree(iLBC_encinst_t *iLBC_encinst);
-  int16_t WebRtcIlbcfix_DecoderFree(iLBC_decinst_t *iLBC_decinst);
+  int16_t WebRtcIlbcfix_EncoderFree(IlbcEncoderInstance *iLBC_encinst);
+  int16_t WebRtcIlbcfix_DecoderFree(IlbcDecoderInstance *iLBC_decinst);
 
 
   
@@ -113,7 +113,7 @@ extern "C" {
 
 
 
-  int16_t WebRtcIlbcfix_EncoderInit(iLBC_encinst_t *iLBCenc_inst,
+  int16_t WebRtcIlbcfix_EncoderInit(IlbcEncoderInstance *iLBCenc_inst,
                                     int16_t frameLen);
 
   
@@ -135,10 +135,10 @@ extern "C" {
 
 
 
-  int16_t WebRtcIlbcfix_Encode(iLBC_encinst_t *iLBCenc_inst,
+  int16_t WebRtcIlbcfix_Encode(IlbcEncoderInstance *iLBCenc_inst,
                                const int16_t *speechIn,
                                int16_t len,
-                               int16_t *encoded);
+                               uint8_t* encoded);
 
   
 
@@ -155,11 +155,10 @@ extern "C" {
 
 
 
-
-  int16_t WebRtcIlbcfix_DecoderInit(iLBC_decinst_t *iLBCdec_inst,
+  int16_t WebRtcIlbcfix_DecoderInit(IlbcDecoderInstance *iLBCdec_inst,
                                     int16_t frameLen);
-  int16_t WebRtcIlbcfix_DecoderInit20Ms(iLBC_decinst_t *iLBCdec_inst);
-  int16_t WebRtcIlbcfix_Decoderinit30Ms(iLBC_decinst_t *iLBCdec_inst);
+  int16_t WebRtcIlbcfix_DecoderInit20Ms(IlbcDecoderInstance *iLBCdec_inst);
+  int16_t WebRtcIlbcfix_Decoderinit30Ms(IlbcDecoderInstance *iLBCdec_inst);
 
   
 
@@ -181,21 +180,21 @@ extern "C" {
 
 
 
-  int16_t WebRtcIlbcfix_Decode(iLBC_decinst_t *iLBCdec_inst,
-                               const int16_t* encoded,
+  int16_t WebRtcIlbcfix_Decode(IlbcDecoderInstance* iLBCdec_inst,
+                               const uint8_t* encoded,
                                int16_t len,
-                               int16_t *decoded,
-                               int16_t *speechType);
-  int16_t WebRtcIlbcfix_Decode20Ms(iLBC_decinst_t *iLBCdec_inst,
-                                   const int16_t *encoded,
+                               int16_t* decoded,
+                               int16_t* speechType);
+  int16_t WebRtcIlbcfix_Decode20Ms(IlbcDecoderInstance* iLBCdec_inst,
+                                   const uint8_t* encoded,
                                    int16_t len,
-                                   int16_t *decoded,
-                                   int16_t *speechType);
-  int16_t WebRtcIlbcfix_Decode30Ms(iLBC_decinst_t *iLBCdec_inst,
-                                   const int16_t *encoded,
+                                   int16_t* decoded,
+                                   int16_t* speechType);
+  int16_t WebRtcIlbcfix_Decode30Ms(IlbcDecoderInstance* iLBCdec_inst,
+                                   const uint8_t* encoded,
                                    int16_t len,
-                                   int16_t *decoded,
-                                   int16_t *speechType);
+                                   int16_t* decoded,
+                                   int16_t* speechType);
 
   
 
@@ -215,7 +214,7 @@ extern "C" {
 
 
 
-  int16_t WebRtcIlbcfix_DecodePlc(iLBC_decinst_t *iLBCdec_inst,
+  int16_t WebRtcIlbcfix_DecodePlc(IlbcDecoderInstance *iLBCdec_inst,
                                   int16_t *decoded,
                                   int16_t noOfLostFrames);
 
@@ -237,7 +236,7 @@ extern "C" {
 
 
 
-  int16_t WebRtcIlbcfix_NetEqPlc(iLBC_decinst_t *iLBCdec_inst,
+  int16_t WebRtcIlbcfix_NetEqPlc(IlbcDecoderInstance *iLBCdec_inst,
                                  int16_t *decoded,
                                  int16_t noOfLostFrames);
 

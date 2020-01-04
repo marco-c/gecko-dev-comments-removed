@@ -16,6 +16,11 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
 
+#if defined(WEBRTC_WIN)
+#include <windows.h>
+#endif
+
+#include "webrtc/base/scoped_ptr.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 
@@ -23,26 +28,33 @@ namespace webrtc {
 
 
 
-#define ThreadObj void*
 
-
-
-
-typedef bool(*ThreadRunFunction)(ThreadObj);
+typedef bool(*ThreadRunFunction)(void*);
 
 enum ThreadPriority {
+#ifdef WEBRTC_WIN
+  kLowPriority = THREAD_PRIORITY_BELOW_NORMAL,
+  kNormalPriority = THREAD_PRIORITY_NORMAL,
+  kHighPriority = THREAD_PRIORITY_ABOVE_NORMAL,
+  kHighestPriority = THREAD_PRIORITY_HIGHEST,
+  kRealtimePriority = THREAD_PRIORITY_TIME_CRITICAL
+#else
   kLowPriority = 1,
   kNormalPriority = 2,
   kHighPriority = 3,
   kHighestPriority = 4,
   kRealtimePriority = 5
+#endif
 };
+
+
+
+
+
 
 class ThreadWrapper {
  public:
-  enum {kThreadMaxNameLength = 64};
-
-  virtual ~ThreadWrapper() {};
+  virtual ~ThreadWrapper() {}
 
   
   
@@ -52,38 +64,20 @@ class ThreadWrapper {
   
   
   
-  static ThreadWrapper* CreateThread(ThreadRunFunction func,
-                                     ThreadObj obj,
-                                     ThreadPriority prio = kNormalPriority,
-                                     const char* thread_name = NULL);
+  static rtc::scoped_ptr<ThreadWrapper> CreateThread(ThreadRunFunction func,
+      void* obj, const char* thread_name);
 
-  static ThreadWrapper* CreateUIThread(ThreadRunFunction func,
-                                       ThreadObj obj,
-                                       ThreadPriority prio = kNormalPriority,
-                                       const char* thread_name = NULL);
-
+  
+  
+  
   
   static uint32_t GetThreadId();
 
   
   
-  virtual void SetNotAlive() = 0;
-
   
   
-  
-  
-  
-  
-  virtual bool Start(unsigned int& id) = 0;
-
-  
-  
-  
-  
-  
-  virtual bool SetAffinity(const int* processor_numbers,
-                           const unsigned int amount_of_processors);
+  virtual bool Start() = 0;
 
   
   
@@ -93,7 +87,7 @@ class ThreadWrapper {
 
   
   
-  virtual bool RequestCallbackTimer(unsigned int milliseconds);
+  virtual bool SetPriority(ThreadPriority priority) = 0;
 };
 
 }  

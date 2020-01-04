@@ -21,6 +21,7 @@
 #define PART_LEN 64               // Length of partition
 #define PART_LEN1 (PART_LEN + 1)  // Unique fft coefficients
 #define PART_LEN2 (PART_LEN * 2)  // Length of partition * 2
+#define NUM_HIGH_BANDS_MAX  2     // Max number of high bands
 
 typedef float complex_t[2];
 
@@ -62,12 +63,12 @@ void WebRtcAec_InitAec_neon(void);
 #endif
 
 void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend);
-void WebRtcAec_ProcessFrame(AecCore* aec,
-                            const float* nearend,
-                            const float* nearendH,
-                            int knownDelay,
-                            float* out,
-                            float* outH);
+void WebRtcAec_ProcessFrames(AecCore* aec,
+                             const float* const* nearend,
+                             int num_bands,
+                             int num_samples,
+                             int knownDelay,
+                             float* const* out);
 
 
 
@@ -76,7 +77,12 @@ int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements);
 
 
 
-int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std);
+
+
+
+
+int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std,
+                                  float* fraction_poor_delays);
 
 
 int WebRtcAec_echo_state(AecCore* self);

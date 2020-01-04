@@ -42,11 +42,11 @@ struct NetworkingConfig {
   }
 
   
-  int packet_size_in_bytes;
+  size_t packet_size_in_bytes;
 
   
   
-  int max_payload_size_in_bytes;
+  size_t max_payload_size_in_bytes;
 
   
   
@@ -82,8 +82,7 @@ class PacketManipulator {
   
   
   
-  virtual int
-    ManipulatePackets(webrtc::EncodedImage* encoded_image) = 0;
+  virtual int ManipulatePackets(webrtc::EncodedImage* encoded_image) = 0;
 };
 
 class PacketManipulatorImpl : public PacketManipulator {
@@ -92,7 +91,7 @@ class PacketManipulatorImpl : public PacketManipulator {
                         const NetworkingConfig& config,
                         bool verbose);
   virtual ~PacketManipulatorImpl();
-  virtual int ManipulatePackets(webrtc::EncodedImage* encoded_image) OVERRIDE;
+  int ManipulatePackets(webrtc::EncodedImage* encoded_image) override;
   virtual void InitializeRandomSeed(unsigned int seed);
  protected:
   

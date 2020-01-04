@@ -26,9 +26,6 @@
 
 namespace rtc {
 
-
-typedef struct MD5Context MD5_CTX;
-
 struct MD5Context {
   uint32 buf[4];
   uint32 bits[2];

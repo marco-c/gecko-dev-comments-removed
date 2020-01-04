@@ -16,9 +16,6 @@
 #include "webrtc/modules/video_capture/device_info_impl.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
 
-#define AndroidJavaCaptureDeviceInfoClass "org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid"
-#define AndroidJavaCaptureCapabilityClass "org/webrtc/videoengine/CaptureCapabilityAndroid"
-
 namespace webrtc
 {
 namespace videocapturemodule
@@ -55,7 +52,7 @@ class DeviceInfoAndroid : public DeviceInfoImpl {
       uint32_t ,
       uint32_t ) { return -1; }
   virtual int32_t GetOrientation(const char* deviceUniqueIdUTF8,
-                                 VideoCaptureRotation& orientation);
+                                 VideoRotation& orientation);
 
   
   
