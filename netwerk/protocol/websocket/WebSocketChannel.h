@@ -294,6 +294,8 @@ private:
   bool                            mPrivateBrowsing;
 
   nsCOMPtr<nsIDashboardEventNotifier> mConnectionLogService;
+  uint32_t mSerial;
+  static uint32_t sSerialSeed;
 
 
 
