@@ -188,4 +188,8 @@ function* testJSTerm(hud) {
       return node.parentNode.getElementsByTagName("a")[0].title == url;
     }, `error links to ${url}`);
   }
+
+  
+  
+  yield jsterm.execute("new Request('',{redirect:'foo'})");
 }
