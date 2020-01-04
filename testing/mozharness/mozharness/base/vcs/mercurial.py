@@ -13,6 +13,7 @@ https://hg.mozilla.org/build/tools/file/cf265ea8fb5e/lib/python/util/hg.py .
 import os
 import re
 import subprocess
+from collections import namedtuple
 from urlparse import urlsplit
 
 import sys
@@ -21,6 +22,7 @@ sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.dirname(sys.path[0]))
 from mozharness.base.errors import HgErrorList, VCSException
 from mozharness.base.log import LogMixin
 from mozharness.base.script import ScriptMixin
+from mozharness.base.transfer import TransferMixin
 
 HG_OPTIONS = ['--config', 'ui.merge=internal:merge']
 
@@ -50,7 +52,7 @@ def make_hg_url(hg_host, repo_path, protocol='http', revision=None,
         return '/'.join([p.strip('/') for p in [repo, 'raw-file', revision, filename]])
 
 
-class MercurialVCS(ScriptMixin, LogMixin, object):
+class MercurialVCS(ScriptMixin, LogMixin, TransferMixin):
     
     
     
@@ -531,6 +533,41 @@ class MercurialVCS(ScriptMixin, LogMixin, object):
         for r in reversed(outgoingRevs):
             self.run_command(self.hg + ['strip', '-n', r[REVISION]],
                              cwd=reponame, error_list=HgErrorList)
+
+    def query_pushinfo(self, repository, revision):
+        """Query the pushdate and pushid of a repository/revision.
+        This is intended to be used on hg.mozilla.org/mozilla-central and
+        similar. It may or may not work for other hg repositories.
+        """
+        PushInfo = namedtuple('PushInfo', ['pushid', 'pushdate'])
+
+        try:
+            url = '%s/json-pushes?changeset=%s' % (repository, revision)
+            self.info('Pushdate URL is: %s' % url)
+            contents = self.retry(self.load_json_from_url, args=(url,))
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            pushid = contents.iterkeys().next()
+            self.info('Pushid is: %s' % pushid)
+            pushdate = contents[pushid]['date']
+            self.info('Pushdate is: %s' % pushdate)
+            return PushInfo(pushid, pushdate)
+
+        except Exception:
+            self.exception("Failed to get push info from hg.mozilla.org")
+            raise
 
 
 
