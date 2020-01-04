@@ -1317,9 +1317,14 @@ nsListControlFrame::UpdateSelection()
     nsWeakFrame weakFrame(this);
     if (mComboboxFrame) {
       mComboboxFrame->RedisplaySelectedText();
+
+      
+      
+      if (mComboboxFrame->IsDroppedDown()) {
+        return weakFrame.IsAlive();
+      }
     }
-    
-    else if (mIsAllContentHere) {
+    if (mIsAllContentHere) {
       FireOnChange();
     }
     return weakFrame.IsAlive();
@@ -2164,9 +2169,6 @@ nsListControlFrame::KeyDown(nsIDOMEvent* aKeyEvent)
             return NS_OK;
           }
         }
-        
-        
-        
         FireOnChange();
         return NS_OK;
       }
