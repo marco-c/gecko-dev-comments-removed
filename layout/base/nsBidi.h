@@ -73,6 +73,14 @@
 
 
 
+
+
+
+
+
+
+
+
 typedef uint8_t nsBidiLevel;
 
 
@@ -124,21 +132,59 @@ typedef enum nsBidiDirection nsBidiDirection;
 
 
 
+
+
+
+
+
+#define NSBIDI_KEEP_BASE_COMBINING       1
+
+
+
+
+
+
+
+
+#define NSBIDI_DO_MIRRORING              2
+
+
+
+
+
+
+
+#define NSBIDI_REMOVE_BIDI_CONTROLS      8
+
+
 #define GETDIRPROPSMEMORY(length) \
                                   GetMemory((void **)&mDirPropsMemory, &mDirPropsSize, \
-                                  (length))
+                                  mMayAllocateText, (length))
 
 #define GETLEVELSMEMORY(length) \
                                 GetMemory((void **)&mLevelsMemory, &mLevelsSize, \
-                                (length))
+                                mMayAllocateText, (length))
 
 #define GETRUNSMEMORY(length) \
                               GetMemory((void **)&mRunsMemory, &mRunsSize, \
-                              (length)*sizeof(Run))
+                              mMayAllocateRuns, (length)*sizeof(Run))
 
-#define GETISOLATESMEMORY(length) \
-                                  GetMemory((void **)&mIsolatesMemory, &mIsolatesSize, \
-                                  (length)*sizeof(Isolate))
+
+#define GETINITIALDIRPROPSMEMORY(length) \
+                                         GetMemory((void **)&mDirPropsMemory, &mDirPropsSize, \
+                                         true, (length))
+
+#define GETINITIALLEVELSMEMORY(length) \
+                                       GetMemory((void **)&mLevelsMemory, &mLevelsSize, \
+                                       true, (length))
+
+#define GETINITIALRUNSMEMORY(length) \
+                                     GetMemory((void **)&mRunsMemory, &mRunsSize, \
+                                     true, (length)*sizeof(Run))
+
+#define GETINITIALISOLATESMEMORY(length) \
+                                     GetMemory((void **)&mIsolatesMemory, &mIsolatesSize, \
+                                     true, (length)*sizeof(Isolate))
 
 
 
@@ -460,7 +506,27 @@ public:
 
 
 
-  nsresult SetPara(const char16_t *aText, int32_t aLength, nsBidiLevel aParaLevel);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SetPara(const char16_t *aText, int32_t aLength, nsBidiLevel aParaLevel, nsBidiLevel *aEmbeddingLevels);
 
   
 
@@ -482,6 +548,73 @@ public:
 
   nsresult GetParaLevel(nsBidiLevel* aParaLevel);
 
+#ifdef FULL_BIDI_ENGINE
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SetLine(const nsBidi* aParaBidi, int32_t aStart, int32_t aLimit);
+
+  
+
+
+
+
+  nsresult GetLength(int32_t* aLength);
+
+  
+
+
+
+
+
+
+
+
+  nsresult GetLevelAt(int32_t aCharIndex,  nsBidiLevel* aLevel);
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult GetLevels(nsBidiLevel** aLevels);
+#endif 
   
 
 
@@ -574,6 +707,92 @@ public:
 
   nsresult GetVisualRun(int32_t aRunIndex, int32_t* aLogicalStart, int32_t* aLength, nsBidiDirection* aDirection);
 
+#ifdef FULL_BIDI_ENGINE
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult GetVisualIndex(int32_t aLogicalIndex, int32_t* aVisualIndex);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult GetLogicalIndex(int32_t aVisualIndex, int32_t* aLogicalIndex);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult GetLogicalMap(int32_t *aIndexMap);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult GetVisualMap(int32_t *aIndexMap);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsresult ReorderLogical(const nsBidiLevel *aLevels, int32_t aLength, int32_t *aIndexMap);
+#endif 
   
 
 
@@ -595,6 +814,22 @@ public:
 
   static nsresult ReorderVisual(const nsBidiLevel *aLevels, int32_t aLength, int32_t *aIndexMap);
 
+#ifdef FULL_BIDI_ENGINE
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult InvertMap(const int32_t *aSrcMap, int32_t *aDestMap, int32_t aLength);
+#endif 
   
 
 
@@ -648,6 +883,9 @@ protected:
   Run* mRunsMemory;
   Isolate* mIsolatesMemory;
 
+  
+  bool mMayAllocateText, mMayAllocateRuns;
+
   DirProp* mDirProps;
   nsBidiLevel* mLevels;
 
@@ -686,13 +924,15 @@ private:
 
   void Init();
 
-  bool GetMemory(void **aMemory, size_t* aSize, size_t aSizeNeeded);
+  bool GetMemory(void **aMemory, size_t* aSize, bool aMayAllocate, size_t aSizeNeeded);
 
   void Free();
 
   void GetDirProps(const char16_t *aText);
 
   void ResolveExplicitLevels(nsBidiDirection *aDirection);
+
+  nsresult CheckExplicitLevels(nsBidiDirection *aDirection);
 
   nsBidiDirection DirectionFromFlags(Flags aFlags);
 
@@ -711,6 +951,10 @@ private:
   void ReorderLine(nsBidiLevel aMinLevel, nsBidiLevel aMaxLevel);
 
   static bool PrepareReorder(const nsBidiLevel *aLevels, int32_t aLength, int32_t *aIndexMap, nsBidiLevel *aMinLevel, nsBidiLevel *aMaxLevel);
+
+  int32_t doWriteReverse(const char16_t *src, int32_t srcLength,
+                         char16_t *dest, uint16_t options);
+
 };
 
 #endif 
