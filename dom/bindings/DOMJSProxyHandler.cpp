@@ -260,35 +260,6 @@ BaseDOMProxyHandler::getOwnEnumerablePropertyKeys(JSContext* cx,
 }
 
 bool
-DOMProxyHandler::has(JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id, bool* bp) const
-{
-  if (!hasOwn(cx, proxy, id, bp)) {
-    return false;
-  }
-
-  if (*bp) {
-    
-    
-    return true;
-  }
-
-  
-  JS::Rooted<JSObject*> proto(cx);
-  if (!js::GetObjectProto(cx, proxy, &proto)) {
-    return false;
-  }
-  if (!proto) {
-    return true;
-  }
-  bool protoHasProp;
-  bool ok = JS_HasPropertyById(cx, proto, id, &protoHasProp);
-  if (ok) {
-    *bp = protoHasProp;
-  }
-  return ok;
-}
-
-bool
 DOMProxyHandler::setCustom(JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
                            JS::Handle<JS::Value> v, bool *done) const
 {

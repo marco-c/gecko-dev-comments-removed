@@ -26,10 +26,32 @@ bool
 BaseProxyHandler::has(JSContext* cx, HandleObject proxy, HandleId id, bool* bp) const
 {
     assertEnteredPolicy(cx, proxy, id, GET);
-    Rooted<PropertyDescriptor> desc(cx);
-    if (!getPropertyDescriptor(cx, proxy, id, &desc))
+
+    
+    
+
+    
+    
+    if (!hasOwn(cx, proxy, id, bp))
         return false;
-    *bp = !!desc.object();
+
+    
+    if (*bp)
+        return true;
+
+    
+    
+    
+    RootedObject proto(cx);
+    if (!GetPrototype(cx, proxy, &proto))
+        return false;
+
+    
+    if (proto)
+        return HasProperty(cx, proto, id, bp);
+
+    
+    *bp = false;
     return true;
 }
 
