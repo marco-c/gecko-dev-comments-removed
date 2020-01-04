@@ -183,8 +183,6 @@ struct BytecodeEmitter
     CGConstList     constList;      
 
     CGObjectList    objectList;     
-    CGObjectList    regexpList;     
-
     CGTryNoteList   tryNoteList;    
     CGBlockScopeList blockScopeList;
 

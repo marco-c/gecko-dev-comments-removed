@@ -29,7 +29,9 @@ namespace js {
 
 
 
-static const uint32_t XDR_BYTECODE_VERSION_SUBTRAHEND = 343;
+
+
+static const uint32_t XDR_BYTECODE_VERSION_SUBTRAHEND = 344;
 static const uint32_t XDR_BYTECODE_VERSION =
     uint32_t(0xb973c0de - XDR_BYTECODE_VERSION_SUBTRAHEND);
 

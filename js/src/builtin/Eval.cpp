@@ -45,8 +45,7 @@ IsEvalCacheCandidate(JSScript* script)
     
     return script->savedCallerFun() &&
            !script->hasSingletons() &&
-           script->objects()->length == 1 &&
-           !script->hasRegexps();
+           script->objects()->length == 1;
 }
 
  HashNumber
