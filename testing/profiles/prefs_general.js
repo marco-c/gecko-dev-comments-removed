@@ -252,6 +252,9 @@ user_pref("identity.fxaccounts.settings.uri", "https://%(server)s/fxa-settings")
 user_pref('identity.fxaccounts.remote.webchannel.uri', 'https://%(server)s/');
 
 
+user_pref('identity.fxaccounts.skipDeviceRegistration', true);
+
+
 
 
 

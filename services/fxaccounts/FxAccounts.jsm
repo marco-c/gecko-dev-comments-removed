@@ -17,6 +17,8 @@ Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/FxAccountsStorage.jsm");
 Cu.import("resource://gre/modules/FxAccountsCommon.js");
+Cu.import("resource://services-sync/constants.js");
+Cu.import("resource://services-sync/util.js");
 
 XPCOMUtils.defineLazyModuleGetter(this, "FxAccountsClient",
   "resource://gre/modules/FxAccountsClient.jsm");
@@ -37,6 +39,7 @@ var publicProperties = [
   "getAccountsSignInURI",
   "getAccountsSignUpURI",
   "getAssertion",
+  "getDeviceId",
   "getKeys",
   "getSignedInUser",
   "getOAuthToken",
@@ -51,6 +54,7 @@ var publicProperties = [
   "resendVerificationEmail",
   "setSignedInUser",
   "signOut",
+  "updateDeviceRegistration",
   "whenVerified"
 ];
 
@@ -490,7 +494,9 @@ FxAccountsInternal.prototype = {
       
       
       
-      return currentAccountState.promiseInitialized.then(() => {
+      return currentAccountState.promiseInitialized.then(() =>
+        this.updateDeviceRegistration()
+      ).then(() => {
         Services.telemetry.getHistogramById("FXA_CONFIGURED").add(1);
         this.notifyObservers(ONLOGIN_NOTIFICATION);
         if (!this.isUserEmailVerified(credentials)) {
@@ -537,6 +543,26 @@ FxAccountsInternal.prototype = {
         }
       );
     }).then(result => currentState.resolve(result));
+  },
+
+  getDeviceId() {
+    return this.currentAccountState.getUserAccountData()
+      .then(data => {
+        if (data) {
+          if (data.isDeviceStale || !data.deviceId) {
+            
+            
+            
+            return this._registerOrUpdateDevice(data);
+          }
+
+          
+          return data.deviceId;
+        }
+
+        
+        return null;
+      });
   },
 
   
@@ -605,10 +631,15 @@ FxAccountsInternal.prototype = {
     let currentState = this.currentAccountState;
     let sessionToken;
     let tokensToRevoke;
+    let deviceId;
     return currentState.getUserAccountData().then(data => {
       
-      sessionToken = data && data.sessionToken;
-      tokensToRevoke = data && data.oauthTokens;
+      
+      if (data) {
+        sessionToken = data.sessionToken;
+        tokensToRevoke = data.oauthTokens;
+        deviceId = data.deviceId;
+      }
       return this._signOutLocal();
     }).then(() => {
       
@@ -620,7 +651,7 @@ FxAccountsInternal.prototype = {
           
           
           
-          return this._signOutServer(sessionToken);
+          return this._signOutServer(sessionToken, deviceId);
         }).catch(err => {
           log.error("Error during remote sign out of Firefox Accounts", err);
         }).then(() => {
@@ -652,11 +683,22 @@ FxAccountsInternal.prototype = {
     });
   },
 
-  _signOutServer: function signOutServer(sessionToken) {
+  _signOutServer(sessionToken, deviceId) {
     
     
     
-    return this.fxAccountsClient.signOut(sessionToken, {service: "sync"});
+    
+
+    const options = { service: "sync" };
+
+    if (deviceId) {
+      log.debug("destroying device and session");
+      return this.fxAccountsClient.signOutAndDestroyDevice(sessionToken, deviceId, options)
+        .then(() => this.currentAccountState.updateUserAccountData({ deviceId: null }));
+    }
+
+    log.debug("destroying session");
+    return this.fxAccountsClient.signOut(sessionToken, options);
   },
 
   
@@ -1334,6 +1376,124 @@ FxAccountsInternal.prototype = {
       }
     ).catch(err => Promise.reject(this._errorToErrorClass(err)));
   },
+
+  
+  
+  
+  updateDeviceRegistration() {
+    return this.getSignedInUser().then(signedInUser => {
+      if (signedInUser) {
+        return this._registerOrUpdateDevice(signedInUser);
+      }
+    }).catch(error => this._logErrorAndSetStaleDeviceFlag(error));
+  },
+
+  _registerOrUpdateDevice(signedInUser) {
+    try {
+      
+      if (Services.prefs.getBoolPref("identity.fxaccounts.skipDeviceRegistration")) {
+        return Promise.resolve();
+      }
+    } catch(ignore) {}
+
+    return Promise.resolve().then(() => {
+      const deviceName = this._getDeviceName();
+
+      if (signedInUser.deviceId) {
+        log.debug("updating existing device details");
+        return this.fxAccountsClient.updateDevice(
+          signedInUser.sessionToken, signedInUser.deviceId, deviceName);
+      }
+
+      log.debug("registering new device details");
+      return this.fxAccountsClient.registerDevice(
+        signedInUser.sessionToken, deviceName, this._getDeviceType());
+    }).then(device =>
+      this.currentAccountState.updateUserAccountData({
+        deviceId: device.id,
+        isDeviceStale: null
+      }).then(() => device.id)
+    ).catch(error => this._handleDeviceError(error, signedInUser.sessionToken));
+  },
+
+  _getDeviceName() {
+    return Utils.getDeviceName();
+  },
+
+  _getDeviceType() {
+    return Utils.getDeviceType();
+  },
+
+  _handleDeviceError(error, sessionToken) {
+    return Promise.resolve().then(() => {
+      if (error.code === 400) {
+        if (error.errno === ERRNO_UNKNOWN_DEVICE) {
+          return this._recoverFromUnknownDevice();
+        }
+
+        if (error.errno === ERRNO_DEVICE_SESSION_CONFLICT) {
+          return this._recoverFromDeviceSessionConflict(error, sessionToken);
+        }
+      }
+
+      return this._logErrorAndSetStaleDeviceFlag(error);
+    }).catch(() => {});
+  },
+
+  _recoverFromUnknownDevice() {
+    
+    
+    
+    log.warn("unknown device id, clearing the local device data");
+    return this.currentAccountState.updateUserAccountData({ deviceId: null })
+      .catch(error => this._logErrorAndSetStaleDeviceFlag(error));
+  },
+
+  _recoverFromDeviceSessionConflict(error, sessionToken) {
+    
+    
+    
+    
+    
+    
+    
+    
+    log.warn("device session conflict, attempting to ascertain the correct device id");
+    return this.fxAccountsClient.getDeviceList(sessionToken)
+      .then(devices => {
+        const matchingDevices = devices.filter(device => device.isCurrentDevice);
+        const length = matchingDevices.length;
+        if (length === 1) {
+          const deviceId = matchingDevices[0].id
+          return this.currentAccountState.updateUserAccountData({
+            deviceId,
+            isDeviceStale: true
+          }).then(() => deviceId);
+        }
+        if (length > 1) {
+          log.error("insane server state, " + length + " devices for this session");
+        }
+        return this._logErrorAndSetStaleDeviceFlag(error);
+      }).catch(secondError => {
+        log.error("failed to recover from device-session conflict", secondError);
+        this._logErrorAndSetStaleDeviceFlag(error)
+      });
+  },
+
+  _logErrorAndSetStaleDeviceFlag(error) {
+    
+    
+    
+    
+    log.error("device registration failed", error);
+    return this.currentAccountState.updateUserAccountData({
+      isDeviceStale: true
+    }).catch(secondError => {
+      log.error(
+        "failed to set stale device flag, device registration won't be retried",
+        secondError);
+    }).then(() => {});
+  }
 };
 
 
