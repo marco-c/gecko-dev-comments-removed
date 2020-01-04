@@ -9,12 +9,6 @@ const ADD_CHUNKNUM = 524;
 const SUB_CHUNKNUM = 523;
 const HASHLEN = 32;
 
-const PREFS = {
-  PROVIDER_LISTS : "browser.safebrowsing.provider.mozilla.lists",
-  DISALLOW_COMPLETIONS : "urlclassifier.disallow_completions",
-  PROVIDER_GETHASHURL : "browser.safebrowsing.provider.mozilla.gethashURL"
-};
-
 
 
 classifierHelper._updates = [];
@@ -25,27 +19,6 @@ classifierHelper._updatesToCleanup = [];
 
 
 
-
-
-classifierHelper.allowCompletion = function(lists, url) {
-  for (var list of lists) {
-    
-    var pref = SpecialPowers.getCharPref(PREFS.PROVIDER_LISTS);
-    pref += "," + list;
-    SpecialPowers.setCharPref(PREFS.PROVIDER_LISTS, pref);
-
-    
-    pref = SpecialPowers.getCharPref(PREFS.DISALLOW_COMPLETIONS);
-    pref = pref.replace(list, list + "-backup");
-    SpecialPowers.setCharPref(PREFS.DISALLOW_COMPLETIONS, pref);
-  }
-
-  
-  SpecialPowers.setCharPref(PREFS.PROVIDER_GETHASHURL, url);
-}
-
-
-
 classifierHelper.addUrlToDB = function(updateData) {
   return new Promise(function(resolve, reject) {
     var testUpdate = "";
@@ -53,7 +26,6 @@ classifierHelper.addUrlToDB = function(updateData) {
       var LISTNAME = update.db;
       var CHUNKDATA = update.url;
       var CHUNKLEN = CHUNKDATA.length;
-      var HASHLEN = update.len ? update.len : 32;
 
       classifierHelper._updatesToCleanup.push(update);
       testUpdate +=
@@ -77,7 +49,6 @@ classifierHelper.removeUrlFromDB = function(updateData) {
       var LISTNAME = update.db;
       var CHUNKDATA = ADD_CHUNKNUM + ":" + update.url;
       var CHUNKLEN = CHUNKDATA.length;
-      var HASHLEN = update.len ? update.len : 32;
 
       testUpdate +=
         "n:1000\n" +
@@ -156,11 +127,6 @@ classifierHelper._setup = function() {
 };
 
 classifierHelper._cleanup = function() {
-  
-  for (var pref in PREFS) {
-    SpecialPowers.clearUserPref(pref);
-  }
-
   if (!classifierHelper._updatesToCleanup) {
     return Promise.resolve();
   }
