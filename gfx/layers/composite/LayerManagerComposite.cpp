@@ -422,11 +422,9 @@ LayerManagerComposite::UpdateAndRender()
     mInvalidRegion.SetEmpty();
   }
 
-  
-  mClonedLayerTreeProperties = LayerProperties::CloneFrom(GetRoot());
-
   if (invalid.IsEmpty() && !mWindowOverlayChanged) {
     
+    mClonedLayerTreeProperties = LayerProperties::CloneFrom(GetRoot());
     return;
   }
 
@@ -450,6 +448,9 @@ LayerManagerComposite::UpdateAndRender()
 #endif
   mGeometryChanged = false;
   mWindowOverlayChanged = false;
+
+  
+  mClonedLayerTreeProperties = LayerProperties::CloneFrom(GetRoot());
 }
 
 already_AddRefed<DrawTarget>
