@@ -7,6 +7,7 @@
 #define MEDIASTREAMTRACK_H_
 
 #include "mozilla/DOMEventTargetHelper.h"
+#include "nsError.h"
 #include "nsID.h"
 #include "StreamBuffer.h"
 #include "MediaTrackConstraints.h"
@@ -14,11 +15,118 @@
 namespace mozilla {
 
 class DOMMediaStream;
+class MediaEnginePhotoCallback;
 
 namespace dom {
 
 class AudioStreamTrack;
 class VideoStreamTrack;
+
+
+
+
+
+
+
+
+class MediaStreamTrackSource : public nsISupports
+{
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(MediaStreamTrackSource)
+
+public:
+  explicit MediaStreamTrackSource(const bool aIsRemote)
+    : mNrSinks(0), mIsRemote(aIsRemote), mStopped(false)
+  {
+    MOZ_COUNT_CTOR(MediaStreamTrackSource);
+  }
+
+  
+
+
+  virtual MediaSourceEnum GetMediaSource() const = 0;
+
+  
+
+
+
+  virtual bool IsRemote() const { return mIsRemote; }
+
+  
+
+
+
+
+  virtual nsresult TakePhoto(MediaEnginePhotoCallback*) const { return NS_ERROR_NOT_IMPLEMENTED; }
+
+  
+
+
+  virtual void Stop() = 0;
+
+  
+
+
+  void RegisterSink()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (mStopped) {
+      return;
+    }
+    ++mNrSinks;
+  }
+
+  
+
+
+  void UnregisterSink()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    NS_ASSERTION(mNrSinks > 0, "Unmatched UnregisterSink()");
+    --mNrSinks;
+    if (mNrSinks == 0 && !IsRemote()) {
+      Stop();
+      mStopped = true;
+    }
+  }
+
+protected:
+  virtual ~MediaStreamTrackSource()
+  {
+    MOZ_COUNT_DTOR(MediaStreamTrackSource);
+    NS_ASSERTION(mNrSinks == 0, "Some sinks did not unregister");
+  }
+
+  
+  size_t mNrSinks;
+
+  
+  const bool mIsRemote;
+
+  
+  
+  bool mStopped;
+};
+
+
+
+
+class BasicUnstoppableTrackSource : public MediaStreamTrackSource
+{
+public:
+  explicit BasicUnstoppableTrackSource(const MediaSourceEnum aMediaSource =
+                                         MediaSourceEnum::Other)
+    : MediaStreamTrackSource(true), mMediaSource(aMediaSource) {}
+
+  MediaSourceEnum GetMediaSource() const override { return mMediaSource; }
+
+  void Stop() override {}
+
+protected:
+  ~BasicUnstoppableTrackSource() {}
+
+  const MediaSourceEnum mMediaSource;
+};
 
 
 
@@ -29,7 +137,9 @@ public:
 
 
 
-  MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID, const nsString& aLabel);
+  MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID,
+                   const nsString& aLabel,
+                   MediaStreamTrackSource* aSource);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MediaStreamTrack,
@@ -65,6 +175,12 @@ public:
   
   void NotifyEnded() { mEnded = true; }
 
+  MediaStreamTrackSource& GetSource() const
+  {
+    MOZ_RELEASE_ASSERT(mSource, "The track source is only removed on destruction");
+    return *mSource;
+  }
+
   
   
   void AssignId(const nsAString& aID) { mID = aID; }
@@ -74,11 +190,15 @@ protected:
 
   RefPtr<DOMMediaStream> mOwningStream;
   TrackID mTrackID;
+  TrackID mInputTrackID;
+  RefPtr<MediaStreamTrackSource> mSource;
   RefPtr<MediaStreamTrack> mOriginalTrack;
   nsString mID;
   nsString mLabel;
   bool mEnded;
   bool mEnabled;
+  const bool mRemote;
+  bool mStopped;
 };
 
 } 

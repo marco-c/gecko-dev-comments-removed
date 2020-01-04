@@ -141,6 +141,7 @@ using dom::MediaSourceEnum;
 using dom::MediaStreamConstraints;
 using dom::MediaStreamError;
 using dom::MediaStreamTrack;
+using dom::MediaStreamTrackSource;
 using dom::MediaTrackConstraints;
 using dom::MediaTrackConstraintSet;
 using dom::OwningBooleanOrMediaTrackConstraints;
@@ -666,26 +667,18 @@ public:
   static already_AddRefed<nsDOMUserMediaStream>
   CreateSourceStream(nsPIDOMWindowInner* aWindow,
                      GetUserMediaCallbackMediaStreamListener* aListener,
-                     AudioDevice* aAudioDevice,
-                     VideoDevice* aVideoDevice,
                      MediaStreamGraph* aMSG)
   {
     RefPtr<nsDOMUserMediaStream> stream = new nsDOMUserMediaStream(aWindow,
-                                                                   aListener,
-                                                                   aAudioDevice,
-                                                                   aVideoDevice);
+                                                                   aListener);
     stream->InitSourceStream(aMSG);
     return stream.forget();
   }
 
   nsDOMUserMediaStream(nsPIDOMWindowInner* aWindow,
-                       GetUserMediaCallbackMediaStreamListener* aListener,
-                       AudioDevice *aAudioDevice,
-                       VideoDevice *aVideoDevice) :
+                       GetUserMediaCallbackMediaStreamListener* aListener) :
     DOMLocalMediaStream(aWindow),
-    mListener(aListener),
-    mAudioDevice(aAudioDevice),
-    mVideoDevice(aVideoDevice)
+    mListener(aListener)
   {}
 
   virtual ~nsDOMUserMediaStream()
@@ -694,26 +687,6 @@ public:
 
     if (GetSourceStream()) {
       GetSourceStream()->Destroy();
-    }
-  }
-
-  
-  
-  
-  
-  void StopTrack(TrackID aTrackID) override
-  {
-    if (GetSourceStream()) {
-      GetSourceStream()->EndTrack(aTrackID);
-      
-      
-      
-      RefPtr<dom::MediaStreamTrack> ownedTrack = FindOwnedDOMTrack(mOwnedStream, aTrackID);
-      if (ownedTrack) {
-        mListener->StopTrack(aTrackID);
-      } else {
-        LOG(("StopTrack(%d) on non-existent track", aTrackID));
-      }
     }
   }
 
@@ -784,20 +757,6 @@ public:
     return this;
   }
 
-  MediaEngineSource* GetMediaEngine(TrackID aTrackID) override
-  {
-    
-    
-    if (aTrackID == kVideoTrack) {
-      return mVideoDevice ? mVideoDevice->GetSource() : nullptr;
-    }
-    else if (aTrackID == kAudioTrack) {
-      return mAudioDevice ? mAudioDevice->GetSource() : nullptr;
-    }
-
-    return nullptr;
-  }
-
   SourceMediaStream* GetSourceStream()
   {
     if (GetInputStream()) {
@@ -807,8 +766,6 @@ public:
   }
 
   RefPtr<GetUserMediaCallbackMediaStreamListener> mListener;
-  RefPtr<AudioDevice> mAudioDevice; 
-  RefPtr<VideoDevice> mVideoDevice;
 };
 
 
@@ -949,21 +906,60 @@ public:
             mWindowID, domStream->GetInputStream()->AsProcessedStream());
       window->SetAudioCapture(true);
     } else {
+      class LocalTrackSource : public MediaStreamTrackSource
+      {
+      public:
+        LocalTrackSource(GetUserMediaCallbackMediaStreamListener* aListener,
+                         const MediaSourceEnum aSource,
+                         const TrackID aTrackID)
+          : MediaStreamTrackSource(false), mListener(aListener),
+            mSource(aSource), mTrackID(aTrackID) {}
+
+        MediaSourceEnum GetMediaSource() const override
+        {
+          return mSource;
+        }
+
+        void Stop() override
+        {
+          if (mListener) {
+            mListener->StopTrack(mTrackID);
+            mListener = nullptr;
+          }
+        }
+
+      protected:
+        ~LocalTrackSource() {}
+
+        RefPtr<GetUserMediaCallbackMediaStreamListener> mListener;
+        const MediaSourceEnum mSource;
+        const TrackID mTrackID;
+      };
+
       
       
       domStream = nsDOMUserMediaStream::CreateSourceStream(window, mListener,
-                                                           mAudioDevice, mVideoDevice,
                                                            msg);
 
       if (mAudioDevice) {
         nsString audioDeviceName;
         mAudioDevice->GetName(audioDeviceName);
-        domStream->CreateOwnDOMTrack(kAudioTrack, MediaSegment::AUDIO, audioDeviceName);
+        const MediaSourceEnum source =
+          mAudioDevice->GetSource()->GetMediaSource();
+        RefPtr<MediaStreamTrackSource> audioSource =
+          new LocalTrackSource(mListener, source, kAudioTrack);
+        domStream->CreateOwnDOMTrack(kAudioTrack, MediaSegment::AUDIO,
+                                     audioDeviceName, audioSource);
       }
       if (mVideoDevice) {
         nsString videoDeviceName;
         mVideoDevice->GetName(videoDeviceName);
-        domStream->CreateOwnDOMTrack(kVideoTrack, MediaSegment::VIDEO, videoDeviceName);
+        const MediaSourceEnum source =
+          mVideoDevice->GetSource()->GetMediaSource();
+        RefPtr<MediaStreamTrackSource> videoSource =
+          new LocalTrackSource(mListener, source, kVideoTrack);
+        domStream->CreateOwnDOMTrack(kVideoTrack, MediaSegment::VIDEO,
+                                     videoDeviceName, videoSource);
       }
 
       nsCOMPtr<nsIPrincipal> principal;
