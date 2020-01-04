@@ -272,7 +272,10 @@ var add_task = (function () {
           
           try {
             for (var task of task_list) {
+              var name = task.name || "";
+              info("SpawnTask.js | Entering test " + name);
               yield task();
+              info("SpawnTask.js | Leaving test " + name);
             }
           } catch (ex) {
             try {
