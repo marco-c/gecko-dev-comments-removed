@@ -183,6 +183,14 @@ class Nursery
 
     void waitBackgroundFreeEnd();
 
+    bool addedUniqueIdToCell(gc::Cell* cell) {
+        if (!IsInsideNursery(cell) || !isEnabled())
+            return true;
+        MOZ_ASSERT(cellsWithUid_.initialized());
+        MOZ_ASSERT(!cellsWithUid_.has(cell));
+        return cellsWithUid_.put(cell);
+    }
+
     size_t sizeOfHeapCommitted() const {
         return numActiveChunks_ * gc::ChunkSize;
     }
@@ -267,6 +275,21 @@ class Nursery
     ForwardedBufferMap forwardedBuffers;
 
     
+
+
+
+
+
+
+
+
+
+
+
+    using CellsWithUniqueIdSet = HashSet<gc::Cell*, PointerHasher<gc::Cell*, 3>, SystemAllocPolicy>;
+    CellsWithUniqueIdSet cellsWithUid_;
+
+    
     static const size_t MaxNurseryBufferSize = 1024;
 
     
@@ -287,10 +310,8 @@ class Nursery
     }
 
     MOZ_ALWAYS_INLINE void initChunk(int chunkno) {
-        NurseryChunkLayout& c = chunk(chunkno);
-        c.trailer.storeBuffer = JS::shadow::Runtime::asShadowRuntime(runtime())->gcStoreBufferPtr();
-        c.trailer.location = gc::ChunkLocationBitNursery;
-        c.trailer.runtime = runtime();
+        gc::StoreBuffer* sb = JS::shadow::Runtime::asShadowRuntime(runtime())->gcStoreBufferPtr();
+        new (&chunk(chunkno).trailer) gc::ChunkTrailer(runtime(), sb);
     }
 
     MOZ_ALWAYS_INLINE void setCurrentChunk(int chunkno) {

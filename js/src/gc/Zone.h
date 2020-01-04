@@ -13,9 +13,11 @@
 
 #include "jscntxt.h"
 
+#include "ds/SplayTree.h"
 #include "gc/FindSCCs.h"
 #include "gc/GCRuntime.h"
 #include "js/TracingAPI.h"
+#include "vm/MallocProvider.h"
 #include "vm/TypeInference.h"
 
 namespace js {
@@ -57,6 +59,11 @@ class ZoneHeapThreshold
                                           JSGCInvocationKind gckind,
                                           const GCSchedulingTunables& tunables);
 };
+
+
+using UniqueIdMap = HashMap<Cell*, uint64_t, PointerHasher<Cell*, 3>, SystemAllocPolicy>;
+
+extern uint64_t NextCellUniqueId(JSRuntime* rt);
 
 } 
 } 
@@ -242,6 +249,7 @@ struct Zone : public JS::shadow::Zone,
     LogTenurePromotionQueue awaitingTenureLogging;
 
     void sweepBreakpoints(js::FreeOp* fop);
+    void sweepUniqueIds(js::FreeOp* fop);
     void sweepWeakMaps();
     void sweepCompartments(js::FreeOp* fop, bool keepAtleastOne, bool lastGC);
 
@@ -250,6 +258,9 @@ struct Zone : public JS::shadow::Zone,
     bool isQueuedForBackgroundSweep() {
         return isOnList();
     }
+
+    
+    js::gc::UniqueIdMap uniqueIds_;
 
   public:
     bool hasDebuggers() const { return debuggers && debuggers->length(); }
@@ -322,6 +333,73 @@ struct Zone : public JS::shadow::Zone,
     bool active;
 
     mozilla::DebugOnly<unsigned> gcLastZoneGroupIndex;
+
+    
+    bool getHashCode(js::gc::Cell* cell, js::HashNumber* hashp) {
+        uint64_t uid;
+        if (!getUniqueId(cell, &uid))
+            return false;
+        *hashp = js::HashNumber(uid >> 32) ^ js::HashNumber(uid & 0xFFFFFFFF);
+        return true;
+    }
+
+    
+    
+    bool getUniqueId(js::gc::Cell* cell, uint64_t* uidp) {
+        MOZ_ASSERT(uidp);
+        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
+
+        
+        auto p = uniqueIds_.lookupForAdd(cell);
+        if (p) {
+            *uidp = p->value();
+            return true;
+        }
+
+        
+        *uidp = js::gc::NextCellUniqueId(runtimeFromAnyThread());
+        if (!uniqueIds_.add(p, cell, *uidp))
+            return false;
+
+        
+        
+        
+        if (!runtimeFromAnyThread()->gc.nursery.addedUniqueIdToCell(cell))
+            js::CrashAtUnhandlableOOM("failed to allocate tracking data for a nursery uid");
+        return true;
+    }
+
+    
+    bool hasUniqueId(js::gc::Cell* cell) {
+        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
+        return uniqueIds_.has(cell);
+    }
+
+    
+    
+    void transferUniqueId(js::gc::Cell* tgt, js::gc::Cell* src) {
+        MOZ_ASSERT(src != tgt);
+        MOZ_ASSERT(!IsInsideNursery(tgt));
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtimeFromMainThread()));
+        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
+        uniqueIds_.rekeyIfMoved(src, tgt);
+    }
+
+    
+    void removeUniqueId(js::gc::Cell* cell) {
+        MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
+        uniqueIds_.remove(cell);
+    }
+
+    
+    void assertNoUniqueIdsInZone() const {
+        MOZ_ASSERT(uniqueIds_.count() == 0);
+    }
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+    
+    void checkUniqueIdTableAfterMovingGC();
+#endif
 
   private:
     js::jit::JitZone* jitZone_;
