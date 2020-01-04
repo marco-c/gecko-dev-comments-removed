@@ -56,7 +56,6 @@
 #ifdef DEBUG
   #define NSCAP_FEATURE_TEST_DONTQUERY_CASES
   #undef NSCAP_FEATURE_USE_BASE
-
 #endif
 
 #ifdef __GNUC__
