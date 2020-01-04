@@ -40,7 +40,11 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 static bool sInited = 0;
-uint32_t nsCCUncollectableMarker::sGeneration = 0;
+
+
+
+
+uint32_t nsCCUncollectableMarker::sGeneration = 1;
 #ifdef MOZ_XUL
 #include "nsXULPrototypeCache.h"
 #endif
