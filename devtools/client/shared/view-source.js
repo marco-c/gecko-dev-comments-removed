@@ -8,6 +8,7 @@ var { Task } = require("devtools/shared/task");
 
 var Services = require("Services");
 var {gDevTools} = require("devtools/client/framework/devtools");
+var { getSourceText } = require("devtools/client/debugger/content/queries");
 
 
 
@@ -67,12 +68,35 @@ exports.viewSourceInDebugger = Task.async(function* (toolbox, sourceURL,
   let item = Sources.getItemForAttachment(a => a.source.url === sourceURL);
   if (item) {
     yield toolbox.selectTool("jsdebugger");
-    const isLoading = dbg.DebuggerController.getState().sources.selectedSource
-                      !== item.attachment.source.actor;
-    DebuggerView.setEditorLocation(item.attachment.source.actor, sourceLine, {
-      noDebug: true
-    });
-    if (isLoading) {
+
+    
+    
+    
+    
+    
+    const { actor } = item.attachment.source;
+    const state = dbg.DebuggerController.getState();
+
+    
+    const selected = state.sources.selectedSource;
+    const isSelected = selected === actor;
+
+    
+    let isLoading = false;
+
+    
+    
+    
+    if (isSelected) {
+      const sourceTextInfo = getSourceText(state, selected);
+      isLoading = sourceTextInfo && sourceTextInfo.loading;
+    }
+
+    
+    DebuggerView.setEditorLocation(actor, sourceLine, { noDebug: true });
+
+    
+    if (!isSelected || isLoading) {
       yield dbg.DebuggerController.waitForSourceShown(sourceURL);
     }
     return true;
