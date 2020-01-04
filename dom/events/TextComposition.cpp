@@ -434,6 +434,42 @@ TextComposition::HandleSelectionEvent(nsPresContext* aPresContext,
   handler.OnSelectionEvent(aSelectionEvent);
 }
 
+uint32_t
+TextComposition::GetSelectionStartOffset()
+{
+  nsCOMPtr<nsIWidget> widget = mPresContext->GetRootWidget();
+  WidgetQueryContentEvent selectedTextEvent(true, eQuerySelectedText, widget);
+
+  
+  
+  RefPtr<IMEContentObserver> contentObserver =
+    IMEStateManager::GetActiveContentObserver();
+  bool doQuerySelection = true;
+  if (contentObserver) {
+    if (contentObserver->IsManaging(this)) {
+      doQuerySelection = false;
+      contentObserver->HandleQueryContentEvent(&selectedTextEvent);
+    }
+    
+    
+    else if (NS_WARN_IF(contentObserver->GetPresContext() == mPresContext)) {
+      return 0;  
+    }
+  }
+
+  
+  
+  if (doQuerySelection) {
+    ContentEventHandler handler(mPresContext);
+    handler.HandleQueryContentEvent(&selectedTextEvent);
+  }
+
+  if (NS_WARN_IF(!selectedTextEvent.mSucceeded)) {
+    return 0; 
+  }
+  return selectedTextEvent.mReply.mOffset;
+}
+
 void
 TextComposition::OnCompositionEventDispatched(
                    const WidgetCompositionEvent* aCompositionEvent)
@@ -457,21 +493,8 @@ TextComposition::OnCompositionEventDispatched(
       !aCompositionEvent->CausesDOMCompositionEndEvent()) {
     
     
-    nsCOMPtr<nsIWidget> widget = mPresContext->GetRootWidget();
-    WidgetQueryContentEvent selectedTextEvent(true, eQuerySelectedText, widget);
-    nsEventStatus status = nsEventStatus_eIgnore;
-    if (mString.IsEmpty()) {
-      widget->DispatchEvent(&selectedTextEvent, status);
-    } else {
-      MOZ_ASSERT(aCompositionEvent->mMessage == eCompositionChange);
-      
-    }
-    if (NS_WARN_IF(!selectedTextEvent.mSucceeded)) {
-      
-      mCompositionStartOffset = 0;
-    } else {
-      mCompositionStartOffset = selectedTextEvent.mReply.mOffset;
-    }
+    
+    mCompositionStartOffset = GetSelectionStartOffset();
     mTargetClauseOffsetInComposition = 0;
   }
 

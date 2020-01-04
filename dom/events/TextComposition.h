@@ -398,6 +398,13 @@ private:
 
 
 
+
+  uint32_t GetSelectionStartOffset();
+
+  
+
+
+
   class CompositionEventDispatcher : public Runnable
   {
   public:
