@@ -2913,6 +2913,7 @@ class MGoto
   public:
     INSTRUCTION_HEADER(Goto)
     static MGoto* New(TempAllocator& alloc, MBasicBlock* target);
+    static MGoto* New(TempAllocator::Fallible alloc, MBasicBlock* target);
 
     
     static MGoto* NewAsm(TempAllocator& alloc);
