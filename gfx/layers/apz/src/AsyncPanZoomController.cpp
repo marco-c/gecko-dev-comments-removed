@@ -2331,7 +2331,7 @@ void AsyncPanZoomController::AcceptFling(ParentLayerPoint& aVelocity,
       aOverscrollHandoffChain,
       !aHandoff);  
 
-  float friction = gfxPrefs::APZFlingFriction();
+  float friction = gfxPrefs::APZFlingSnapFriction();
   ParentLayerPoint velocity(mX.GetVelocity(), mY.GetVelocity());
   ParentLayerPoint predictedDelta;
   
