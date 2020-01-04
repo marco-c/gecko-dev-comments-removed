@@ -1118,7 +1118,7 @@ nsXULPopupManager::HidePopupCallback(nsIContent* aPopup,
   
   
   nsEventStatus status = nsEventStatus_eIgnore;
-  WidgetMouseEvent event(true, NS_XUL_POPUP_HIDDEN, nullptr,
+  WidgetMouseEvent event(true, eXULPopupHidden, nullptr,
                          WidgetMouseEvent::eReal);
   EventDispatcher::Dispatch(aPopup, aPopupFrame->PresContext(),
                             &event, nullptr, &status);
