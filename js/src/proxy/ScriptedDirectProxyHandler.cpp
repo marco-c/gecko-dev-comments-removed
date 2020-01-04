@@ -130,6 +130,38 @@ GetDirectProxyHandlerObject(JSObject* proxy)
 
 
 
+
+static bool
+GetProxyTrap(JSContext* cx, HandleObject handler, HandlePropertyName name, MutableHandleValue func)
+{
+    
+    if (!GetProperty(cx, handler, handler, name, func))
+        return false;
+
+    
+    if (func.isUndefined())
+        return true;
+
+    if (func.isNull()) {
+        func.setUndefined();
+        return true;
+    }
+
+    
+    if (!IsCallable(func)) {
+        JSAutoByteString bytes(cx, name);
+        if (!bytes)
+            return false;
+
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_BAD_TRAP, bytes.ptr());
+        return false;
+    }
+
+    return true;
+}
+
+
+
 bool
 ScriptedDirectProxyHandler::getPrototype(JSContext* cx, HandleObject proxy,
                                          MutableHandleObject protop) const
@@ -189,7 +221,7 @@ ScriptedDirectProxyHandler::preventExtensions(JSContext* cx, HandleObject proxy,
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().preventExtensions, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().preventExtensions, &trap))
         return false;
 
     
@@ -237,7 +269,7 @@ ScriptedDirectProxyHandler::isExtensible(JSContext* cx, HandleObject proxy, bool
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().isExtensible, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().isExtensible, &trap))
         return false;
 
     
@@ -290,7 +322,7 @@ ScriptedDirectProxyHandler::getOwnPropertyDescriptor(JSContext* cx, HandleObject
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().getOwnPropertyDescriptor, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().getOwnPropertyDescriptor, &trap))
         return false;
 
     
@@ -410,7 +442,7 @@ ScriptedDirectProxyHandler::defineProperty(JSContext* cx, HandleObject proxy, Ha
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().defineProperty, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().defineProperty, &trap))
         return false;
 
     
@@ -537,7 +569,7 @@ ScriptedDirectProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().ownKeys, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().ownKeys, &trap))
         return false;
 
     
@@ -674,7 +706,7 @@ ScriptedDirectProxyHandler::delete_(JSContext* cx, HandleObject proxy, HandleId 
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().deleteProperty, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().deleteProperty, &trap))
         return false;
 
     
@@ -731,7 +763,7 @@ ScriptedDirectProxyHandler::has(JSContext* cx, HandleObject proxy, HandleId id, 
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().has, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().has, &trap))
         return false;
 
     
@@ -799,7 +831,7 @@ ScriptedDirectProxyHandler::get(JSContext* cx, HandleObject proxy, HandleValue r
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().get, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().get, &trap))
         return false;
 
     
@@ -864,7 +896,7 @@ ScriptedDirectProxyHandler::set(JSContext* cx, HandleObject proxy, HandleId id, 
     
     RootedObject target(cx, proxy->as<ProxyObject>().target());
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().set, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().set, &trap))
         return false;
 
     
@@ -940,7 +972,7 @@ ScriptedDirectProxyHandler::call(JSContext* cx, HandleObject proxy, const CallAr
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().apply, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().apply, &trap))
         return false;
 
     
@@ -983,7 +1015,7 @@ ScriptedDirectProxyHandler::construct(JSContext* cx, HandleObject proxy, const C
 
     
     RootedValue trap(cx);
-    if (!GetProperty(cx, handler, handler, cx->names().construct, &trap))
+    if (!GetProxyTrap(cx, handler, cx->names().construct, &trap))
         return false;
 
     
