@@ -317,29 +317,8 @@ CSSAnimation::ElapsedTimeToTimeStamp(const StickyTimeDuration&
 
 NS_IMPL_CYCLE_COLLECTION(nsAnimationManager, mEventDispatcher)
 
-NS_IMPL_CYCLE_COLLECTING_ADDREF(nsAnimationManager)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(nsAnimationManager)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsAnimationManager)
-  NS_INTERFACE_MAP_ENTRY(nsIStyleRuleProcessor)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIStyleRuleProcessor)
-NS_INTERFACE_MAP_END
-
- size_t
-nsAnimationManager::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-{
-  return CommonAnimationManager::SizeOfExcludingThis(aMallocSizeOf);
-
-  
-  
-  
-}
-
- size_t
-nsAnimationManager::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-{
-  return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
-}
+NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(nsAnimationManager, AddRef)
+NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsAnimationManager, Release)
 
 nsIStyleRule*
 nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
