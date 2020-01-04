@@ -10,13 +10,6 @@
 
 const char kDelimiters[] = ", ";
 const char kAdditionalWordChars[] = "_-";
-const char* kReservedNames[] = {
-  "all",
-  "append",
-  "bufsize",
-  "sync",
-  "timestamp",
-};
 
 namespace mozilla {
 
@@ -51,19 +44,7 @@ NSPRLogModulesParser(const char* aLogModules,
       }
     }
 
-    
-    
-    bool isReserved = false;
-    for (size_t i = 0; i < PR_ARRAY_SIZE(kReservedNames); i++) {
-      if (moduleName.EqualsASCII(kReservedNames[i])) {
-        isReserved = true;
-        break;
-      }
-    }
-
-    if (!isReserved) {
-      aCallback(moduleName.get(), logLevel);
-    }
+    aCallback(moduleName.get(), logLevel);
 
     
     parser.SkipWhites();
