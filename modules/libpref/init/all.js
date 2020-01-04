@@ -130,9 +130,6 @@ pref("dom.indexedDB.logging.profiler-marks", false);
 pref("dom.fileHandle.enabled", true);
 
 
-pref("dom.permissions.enabled", true);
-
-
 #ifdef NIGHTLY_BUILD
 pref("dom.select_events.enabled", true);
 #else
