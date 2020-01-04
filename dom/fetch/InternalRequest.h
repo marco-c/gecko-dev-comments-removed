@@ -88,7 +88,7 @@ class InternalRequest final
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(InternalRequest)
 
-  explicit InternalRequest()
+  InternalRequest()
     : mMethod("GET")
     , mHeaders(new InternalHeaders(HeadersGuardEnum::None))
     , mContentPolicyType(nsIContentPolicy::TYPE_FETCH)
@@ -104,6 +104,36 @@ public:
       
       
       
+      
+    , mSameOriginDataURL(true)
+    , mSkipServiceWorker(false)
+    , mSynchronous(false)
+    , mUnsafeRequest(false)
+    , mUseURLCredentials(false)
+  {
+  }
+
+  InternalRequest(const nsACString& aURL,
+                  const nsACString& aMethod,
+                  already_AddRefed<InternalHeaders> aHeaders,
+                  RequestMode aMode,
+                  RequestRedirect aRequestRedirect,
+                  RequestCredentials aRequestCredentials,
+                  const nsAString& aReferrer,
+                  nsContentPolicyType aContentPolicyType)
+    : mMethod(aMethod)
+    , mURL(aURL)
+    , mHeaders(aHeaders)
+    , mContentPolicyType(aContentPolicyType)
+    , mReferrer(aReferrer)
+    , mMode(aMode)
+    , mCredentialsMode(aRequestCredentials)
+    , mResponseTainting(LoadTainting::Basic)
+    , mCacheMode(RequestCache::Default)
+    , mRedirectMode(aRequestRedirect)
+    , mAuthenticationFlag(false)
+    , mForceOriginHeader(false)
+    , mPreserveContentCodings(false)
       
     , mSameOriginDataURL(true)
     , mSkipServiceWorker(false)
