@@ -2933,10 +2933,14 @@ var SessionStoreInternal = {
       let userContextId = winData.tabs[t].userContextId;
       let reuseExisting = t < openTabCount &&
                           (tabbrowser.tabs[t].getAttribute("usercontextid") == (userContextId || ""));
+      
+      
+      
+      let forceNotRemote = !winData.tabs[t].pinned;
       let tab = reuseExisting ? tabbrowser.tabs[t] :
                                 tabbrowser.addTab("about:blank",
                                                   {skipAnimation: true,
-                                                   forceNotRemote: true,
+                                                   forceNotRemote,
                                                    userContextId});
 
       
