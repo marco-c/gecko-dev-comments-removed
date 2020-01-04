@@ -5213,14 +5213,6 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     {
       
       
-      
-      if (mAPZC && MOUSE_INPUT_SOURCE() == nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
-        result = true;
-        break;
-      }
-
-      
-      
       LPARAM pos;
       bool contextMenukey = false;
       if (lParam == -1)
