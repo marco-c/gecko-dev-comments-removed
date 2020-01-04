@@ -2408,13 +2408,30 @@ public:
                                       CallOnRemoteChildFunction aCallback,
                                       void* aArg);
 
+  
+
+
+
+
+
+  static nsresult SlurpFileToString(nsIFile* aFile, nsACString& aString);
+
+  
+
+
+
+
+  static bool IsFileImage(nsIFile* aFile, nsACString& aType);
+
   static void TransferablesToIPCTransferables(nsISupportsArray* aTransferables,
                                               nsTArray<mozilla::dom::IPCDataTransfer>& aIPC,
+                                              bool aInSyncMessage,
                                               mozilla::dom::nsIContentChild* aChild,
                                               mozilla::dom::nsIContentParent* aParent);
 
   static void TransferableToIPCTransferable(nsITransferable* aTransferable,
                                             mozilla::dom::IPCDataTransfer* aIPCDataTransfer,
+                                            bool aInSyncMessage,
                                             mozilla::dom::nsIContentChild* aChild,
                                             mozilla::dom::nsIContentParent* aParent);
 
