@@ -340,7 +340,7 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
 
     var bodies_visited = new Map();
 
-    let worklist = [{body: start_body, ppoint: start_point, gcInfo: null, why: null}];
+    let worklist = [{body: start_body, ppoint: start_point, preGCLive: false, gcInfo: null, why: null}];
     while (worklist.length) {
         
         
@@ -348,7 +348,7 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
         
 
         var entry = worklist.pop();
-        var { body, ppoint, gcInfo } = entry;
+        var { body, ppoint, gcInfo, preGCLive } = entry;
 
         
         
@@ -399,7 +399,13 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
             } else if (variable.Kind == "Arg" && gcInfo) {
                 
                 
-                return {gcInfo: gcInfo, why: entry};
+                return entry;
+            } else if (entry.preGCLive) {
+                
+                
+                
+                
+                return entry;
             }
         }
 
@@ -425,17 +431,19 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
                 
                 
                 if (gcInfo)
-                    return {gcInfo: gcInfo, why: {body: body, ppoint: source, gcInfo: gcInfo, why: entry } };
+                    return {body: body, ppoint: source, gcInfo: gcInfo, why: entry };
 
                 
                 
                 continue;
             }
 
+            var src_gcInfo = gcInfo;
+            var src_preGCLive = preGCLive;
             if (!gcInfo && !(source in body.suppressed) && !suppressed) {
                 var gcName = edgeCanGC(edge, body);
                 if (gcName)
-                    gcInfo = {name:gcName, body:body, ppoint:source};
+                    src_gcInfo = {name:gcName, body:body, ppoint:source};
             }
 
             if (edge_uses) {
@@ -444,8 +452,31 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
                 
                 
                 
-                if (gcInfo)
-                    return {gcInfo:gcInfo, why:entry};
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                if (src_gcInfo) {
+                    src_preGCLive = true;
+                    if (edge.Kind == 'Assign')
+                        return {body:body, ppoint:source, gcInfo:src_gcInfo, why:entry};
+                }
             }
 
             if (edge.Kind == "Loop") {
@@ -457,7 +488,8 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
                         assert(!found);
                         found = true;
                         worklist.push({body:xbody, ppoint:xbody.Index[1],
-                                       gcInfo:gcInfo, why:entry});
+                                       preGCLive: src_preGCLive, gcInfo:src_gcInfo,
+                                       why:entry});
                     }
                 }
                 assert(found);
@@ -465,7 +497,9 @@ function findGCBeforeVariableUse(start_body, start_point, suppressed, variable)
             }
 
             
-            worklist.push({body:body, ppoint:source, gcInfo:gcInfo, why:entry});
+            worklist.push({body:body, ppoint:source,
+                           preGCLive: src_preGCLive, gcInfo:src_gcInfo,
+                           why:entry});
         }
     }
 
@@ -564,13 +598,21 @@ function loadPrintedLines(functionName)
     }
 }
 
-function findLocation(body, ppoint)
+function findLocation(body, ppoint, opts={brief: false})
 {
     var location = body.PPoint[ppoint - 1].Location;
-    var text = location.CacheString + ":" + location.Line;
-    if (text.indexOf(sourceRoot) == 0)
-        return text.substring(sourceRoot.length);
-    return text;
+    var file = location.CacheString;
+
+    if (file.indexOf(sourceRoot) == 0)
+        file = file.substring(sourceRoot.length);
+
+    if (opts.brief) {
+        var m = /.*\/(.*)/.exec(file);
+        if (m)
+            file = m[1];
+    }
+
+    return file + ":" + location.Line;
 }
 
 function locationLine(text)
@@ -589,7 +631,7 @@ function printEntryTrace(functionName, entry)
 
     while (entry) {
         var ppoint = entry.ppoint;
-        var lineText = findLocation(entry.body, ppoint);
+        var lineText = findLocation(entry.body, ppoint, {"brief": true});
 
         var edgeText = "";
         if (entry.why && entry.why.body == entry.body) {
@@ -687,7 +729,7 @@ function processBodies(functionName)
                       " of type '" + typeDesc(variable.Type) + "'" +
                       " live across GC call " + result.gcInfo.name +
                       " at " + lineText);
-                printEntryTrace(functionName, result.why);
+                printEntryTrace(functionName, result);
             }
             result = unsafeVariableAddressTaken(suppressed, variable.Variable);
             if (result) {
