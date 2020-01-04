@@ -328,6 +328,9 @@ GetDisplayMode(nsPresContext* aPresContext, const nsMediaFeature*,
   baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
   int32_t displayMode;
   nsSizeMode mode = mainWidget ? mainWidget->SizeMode() : nsSizeMode_Normal;
+  
+  
+  
   switch (mode) {
     case nsSizeMode_Fullscreen:
       displayMode = NS_STYLE_DISPLAY_MODE_FULLSCREEN;
