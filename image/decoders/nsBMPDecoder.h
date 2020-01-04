@@ -9,6 +9,7 @@
 
 #include "BMPFileHeaders.h"
 #include "Decoder.h"
+#include "Downscaler.h"
 #include "gfxColor.h"
 #include "nsAutoPtr.h"
 
@@ -23,6 +24,8 @@ class nsBMPDecoder : public Decoder
 {
 public:
     ~nsBMPDecoder();
+
+    nsresult SetTargetSize(const nsIntSize& aSize) override;
 
     
     
@@ -73,6 +76,8 @@ private:
     BITMAPV5HEADER mBIH;
     char mRawBuf[BIH_INTERNAL_LENGTH::WIN_V3]; 
                                                
+
+    Maybe<Downscaler> mDownscaler;
 
     uint32_t mLOH; 
 
