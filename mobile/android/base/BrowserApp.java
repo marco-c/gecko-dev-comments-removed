@@ -1793,7 +1793,7 @@ public class BrowserApp extends GeckoApp
                     }
                 }
 
-                if (AppConstants.MOZ_STUMBLER_BUILD_TIME_ENABLED && RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_LOCATION_SERVICE)) {
+                if (AppConstants.MOZ_STUMBLER_BUILD_TIME_ENABLED && Restrictions.isAllowed(this, Restriction.DISALLOW_LOCATION_SERVICE)) {
                     
                     
                     
@@ -2497,7 +2497,7 @@ public class BrowserApp extends GeckoApp
             });
 
             
-            if (!RestrictedProfiles.isUserRestricted()) {
+            if (!Restrictions.isUserRestricted()) {
                 final ViewStub homeBannerStub = (ViewStub) findViewById(R.id.home_banner_stub);
                 final HomeBanner homeBanner = (HomeBanner) homeBannerStub.inflate();
                 mHomePager.setBanner(homeBanner);
@@ -3084,11 +3084,11 @@ public class BrowserApp extends GeckoApp
         }
 
         
-        final boolean shareVisible = RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_SHARE);
+        final boolean shareVisible = Restrictions.isAllowed(this, Restriction.DISALLOW_SHARE);
         share.setVisible(shareVisible);
         final boolean shareEnabled = StringUtils.isShareableUrl(url) && shareVisible;
         share.setEnabled(shareEnabled);
-        MenuUtils.safeSetEnabled(aMenu, R.id.downloads, RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_DOWNLOADS));
+        MenuUtils.safeSetEnabled(aMenu, R.id.downloads, Restrictions.isAllowed(this, Restriction.DISALLOW_DOWNLOADS));
 
         
         
@@ -3151,7 +3151,7 @@ public class BrowserApp extends GeckoApp
             }
         }
 
-        final boolean privateTabVisible = RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_PRIVATE_BROWSING);
+        final boolean privateTabVisible = Restrictions.isAllowed(this, Restriction.DISALLOW_PRIVATE_BROWSING);
         MenuUtils.safeSetVisible(aMenu, R.id.new_private_tab, privateTabVisible);
 
         
@@ -3173,11 +3173,11 @@ public class BrowserApp extends GeckoApp
             enterGuestMode.setVisible(true);
         }
 
-        if (!RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_GUEST_BROWSING)) {
+        if (!Restrictions.isAllowed(this, Restriction.DISALLOW_GUEST_BROWSING)) {
             MenuUtils.safeSetVisible(aMenu, R.id.new_guest_session, false);
         }
 
-        if (!RestrictedProfiles.isAllowed(this, Restriction.DISALLOW_INSTALL_EXTENSION)) {
+        if (!Restrictions.isAllowed(this, Restriction.DISALLOW_INSTALL_EXTENSION)) {
             MenuUtils.safeSetVisible(aMenu, R.id.addons, false);
         }
 
@@ -3796,7 +3796,7 @@ public class BrowserApp extends GeckoApp
         if (inGuestMode) {
             return StartupAction.GUEST;
         }
-        if (RestrictedProfiles.isRestrictedProfile(this)) {
+        if (Restrictions.isRestrictedProfile(this)) {
             return StartupAction.RESTRICTED;
         }
         return (passedURL == null ? StartupAction.NORMAL : StartupAction.URL);
