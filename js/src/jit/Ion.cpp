@@ -841,18 +841,16 @@ JitCode::traceChildren(JSTracer* trc)
     if (invalidated())
         return;
 
-    
-    ReprotectCode reprotect = (trc->runtime()->isHeapMinorCollecting() || zone()->isGCCompacting())
-                              ? Reprotect
-                              : DontReprotect;
-    MaybeAutoWritableJitCode awjc(this, reprotect);
-
     if (jumpRelocTableBytes_) {
         uint8_t* start = code_ + jumpRelocTableOffset();
         CompactBufferReader reader(start, start + jumpRelocTableBytes_);
         MacroAssembler::TraceJumpRelocations(trc, this, reader);
     }
     if (dataRelocTableBytes_) {
+        
+        bool movingObjects = trc->runtime()->isHeapMinorCollecting() || zone()->isGCCompacting();
+        MaybeAutoWritableJitCode awjc(this, movingObjects ? Reprotect : DontReprotect);
+
         uint8_t* start = code_ + dataRelocTableOffset();
         CompactBufferReader reader(start, start + dataRelocTableBytes_);
         MacroAssembler::TraceDataRelocations(trc, this, reader);
@@ -872,24 +870,22 @@ JitCode::finalize(FreeOp* fop)
     }
 #endif
 
-    
-    
-    
-    {
-        AutoWritableJitCode awjc(this);
-        memset(code_, JS_SWEPT_CODE_PATTERN, bufferSize_);
-        code_ = nullptr;
-    }
+    MOZ_ASSERT(pool_);
 
     
     
-    if (pool_) {
-        
-        
-        if (!PerfEnabled())
-            pool_->release(headerSize_ + bufferSize_, CodeKind(kind_));
-        pool_ = nullptr;
-    }
+    
+    if (fop->appendJitPoisonRange(JitPoisonRange(pool_, code_, bufferSize_)))
+        pool_->addRef();
+    code_ = nullptr;
+
+    
+    
+    
+    
+    if (!PerfEnabled())
+        pool_->release(headerSize_ + bufferSize_, CodeKind(kind_));
+    pool_ = nullptr;
 }
 
 void
@@ -1359,6 +1355,9 @@ IonScript::purgeCaches()
     
     
     if (invalidated())
+        return;
+
+    if (numCaches() == 0)
         return;
 
     AutoWritableJitCode awjc(method());
