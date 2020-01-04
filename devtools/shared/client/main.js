@@ -2493,6 +2493,31 @@ ObjectClient.prototype = {
 
 
 
+  enumEntries: DebuggerClient.requester({
+    type: "enumEntries"
+  }, {
+    before: function(packet) {
+      if (!["Map", "WeakMap", "Set", "WeakSet"].includes(this._grip.class)) {
+        throw new Error("enumEntries is only valid for Map/Set-like grips.");
+      }
+      return packet;
+    },
+    after: function(response) {
+      if (response.iterator) {
+        return {
+          iterator: new PropertyIteratorClient(this._client, response.iterator)
+        };
+      }
+      return response;
+    }
+  }),
+
+  
+
+
+
+
+
   getProperty: DebuggerClient.requester({
     type: "property",
     name: args(0)

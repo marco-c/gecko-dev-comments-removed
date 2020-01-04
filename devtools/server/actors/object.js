@@ -228,6 +228,16 @@ ObjectActor.prototype = {
   
 
 
+  onEnumEntries: function() {
+    let actor = new PropertyIteratorActor(this, { enumEntries: true });
+    this.registeredPool.addActor(actor);
+    this.iterators.add(actor);
+    return { iterator: actor.grip() };
+  },
+
+  
+
+
 
   onPrototypeAndProperties: function() {
     let ownProperties = Object.create(null);
@@ -680,7 +690,8 @@ ObjectActor.prototype.requestTypes = {
   "dependentPromises": ObjectActor.prototype.onDependentPromises,
   "allocationStack": ObjectActor.prototype.onAllocationStack,
   "fulfillmentStack": ObjectActor.prototype.onFulfillmentStack,
-  "rejectionStack": ObjectActor.prototype.onRejectionStack
+  "rejectionStack": ObjectActor.prototype.onRejectionStack,
+  "enumEntries": ObjectActor.prototype.onEnumEntries,
 };
 
 
@@ -708,105 +719,169 @@ ObjectActor.prototype.requestTypes = {
 
 
 
-function PropertyIteratorActor(objectActor, options){
+
+
+
+function PropertyIteratorActor(objectActor, options) {
   this.objectActor = objectActor;
 
-  let ownProperties = Object.create(null);
-  let names = [];
-  try {
-    names = this.objectActor.obj.getOwnPropertyNames();
-  } catch (ex) {}
-
-  let safeGetterValues = {};
-  let safeGetterNames = [];
-  if (!options.ignoreSafeGetters) {
-    
-    safeGetterValues = this.objectActor._findSafeGetterValues(names);
-    safeGetterNames = Object.keys(safeGetterValues);
-    for (let name of safeGetterNames) {
-      if (names.indexOf(name) === -1) {
-        names.push(name);
-      }
-    }
+  if (options.enumEntries) {
+    this._initEntries();
+  } else {
+    this._initProperties(options);
   }
-
-  if (options.ignoreIndexedProperties || options.ignoreNonIndexedProperties) {
-    let length = DevToolsUtils.getProperty(this.objectActor.obj, "length");
-    if (typeof(length) !== "number") {
-      
-      
-      length = 0;
-      for (let key of names) {
-        if (isNaN(key) || key != length++) {
-          break;
-        }
-      }
-    }
-
-    if (options.ignoreIndexedProperties) {
-      names = names.filter(i => {
-        
-        
-        
-        i = parseFloat(i);
-        return !Number.isInteger(i) || i < 0 || i >= length;
-      });
-    }
-
-    if (options.ignoreNonIndexedProperties) {
-      names = names.filter(i => {
-        i = parseFloat(i);
-        return Number.isInteger(i) && i >= 0 && i < length;
-      });
-    }
-  }
-
-  if (options.query) {
-    let { query } = options;
-    query = query.toLowerCase();
-    names = names.filter(name => {
-      
-      if (name.toLowerCase().includes(query)) {
-        return true;
-      }
-      
-      let desc;
-      try {
-        desc = this.obj.getOwnPropertyDescriptor(name);
-      } catch(e) {}
-      if (desc && desc.value &&
-          String(desc.value).includes(query)) {
-        return true;
-      }
-      return false;
-    });
-  }
-
-  if (options.sort) {
-    names.sort();
-  }
-
-  
-  for (let name of names) {
-    let desc = this.objectActor._propertyDescriptor(name);
-    if (!desc) {
-      desc = safeGetterValues[name];
-    }
-    else if (name in safeGetterValues) {
-      
-      let { getterValue, getterPrototypeLevel } = safeGetterValues[name];
-      desc.getterValue = getterValue;
-      desc.getterPrototypeLevel = getterPrototypeLevel;
-    }
-    ownProperties[name] = desc;
-  }
-
-  this.names = names;
-  this.ownProperties = ownProperties;
 }
 
 PropertyIteratorActor.prototype = {
   actorPrefix: "propertyIterator",
+
+  _initEntries: function() {
+    let names = [];
+    let ownProperties = Object.create(null);
+
+    switch (this.objectActor.obj.class) {
+      case "Map":
+      case "WeakMap": {
+        let idx = 0;
+        let enumFn = this.objectActor.obj.class === "Map" ?
+          enumMapEntries : enumWeakMapEntries;
+        for (let entry of enumFn(this.objectActor)) {
+          names.push(idx);
+          ownProperties[idx] = {
+            enumerable: true,
+            value: {
+              type: "mapEntry",
+              preview: {
+                key: entry[0],
+                value: entry[1]
+              }
+            }
+          };
+
+          idx++;
+        }
+        break;
+      }
+      case "Set":
+      case "WeakSet": {
+        let idx = 0;
+        let enumFn = this.objectActor.obj.class === "Set" ?
+          enumSetEntries : enumWeakSetEntries;
+        for (let item of enumFn(this.objectActor)) {
+          names.push(idx);
+          ownProperties[idx] = {
+            enumerable: true,
+            value: item
+          };
+
+          idx++;
+        }
+        break;
+      }
+      default:
+        
+        break;
+    }
+
+    this.names = names;
+    this.ownProperties = ownProperties;
+  },
+
+  _initProperties: function(options) {
+    let names = [];
+    let ownProperties = Object.create(null);
+
+    try {
+      names = this.objectActor.obj.getOwnPropertyNames();
+    } catch (ex) {}
+
+    let safeGetterValues = {};
+    let safeGetterNames = [];
+    if (!options.ignoreSafeGetters) {
+      
+      safeGetterValues = this.objectActor._findSafeGetterValues(names);
+      safeGetterNames = Object.keys(safeGetterValues);
+      for (let name of safeGetterNames) {
+        if (names.indexOf(name) === -1) {
+          names.push(name);
+        }
+      }
+    }
+
+    if (options.ignoreIndexedProperties || options.ignoreNonIndexedProperties) {
+      let length = DevToolsUtils.getProperty(this.objectActor.obj, "length");
+      if (typeof(length) !== "number") {
+        
+        
+        length = 0;
+        for (let key of names) {
+          if (isNaN(key) || key != length++) {
+            break;
+          }
+        }
+      }
+
+      if (options.ignoreIndexedProperties) {
+        names = names.filter(i => {
+          
+          
+          
+          i = parseFloat(i);
+          return !Number.isInteger(i) || i < 0 || i >= length;
+        });
+      }
+
+      if (options.ignoreNonIndexedProperties) {
+        names = names.filter(i => {
+          i = parseFloat(i);
+          return Number.isInteger(i) && i >= 0 && i < length;
+        });
+      }
+    }
+
+    if (options.query) {
+      let { query } = options;
+      query = query.toLowerCase();
+      names = names.filter(name => {
+        
+        if (name.toLowerCase().includes(query)) {
+          return true;
+        }
+        
+        let desc;
+        try {
+          desc = this.obj.getOwnPropertyDescriptor(name);
+        } catch(e) {}
+        if (desc && desc.value &&
+            String(desc.value).includes(query)) {
+          return true;
+        }
+        return false;
+      });
+    }
+
+    if (options.sort) {
+      names.sort();
+    }
+
+    
+    for (let name of names) {
+      let desc = this.objectActor._propertyDescriptor(name);
+      if (!desc) {
+        desc = safeGetterValues[name];
+      }
+      else if (name in safeGetterValues) {
+        
+        let { getterValue, getterPrototypeLevel } = safeGetterValues[name];
+        desc.getterValue = getterValue;
+        desc.getterPrototypeLevel = getterPrototypeLevel;
+      }
+      ownProperties[name] = desc;
+    }
+
+    this.names = names;
+    this.ownProperties = ownProperties;
+  },
 
   grip: function() {
     return {
@@ -849,6 +924,109 @@ PropertyIteratorActor.prototype.requestTypes = {
   "slice": PropertyIteratorActor.prototype.slice,
   "all": PropertyIteratorActor.prototype.all,
 };
+
+
+
+
+function gripFromEntry({ obj, hooks }, entry) {
+  return hooks.createValueGrip(
+    makeDebuggeeValueIfNeeded(obj, Cu.unwaiveXrays(entry)));
+}
+
+function enumMapEntries(objectActor) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let raw = objectActor.obj.unsafeDereference();
+
+  return {
+    [Symbol.iterator]: function*() {
+      for (let keyValuePair of Cu.waiveXrays(Map.prototype.entries.call(raw))) {
+        yield keyValuePair.map(val => gripFromEntry(objectActor, val));
+      }
+    }
+  };
+}
+
+function enumWeakMapEntries(objectActor) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let raw = objectActor.obj.unsafeDereference();
+  let keys = Cu.waiveXrays(ThreadSafeChromeUtils.nondeterministicGetWeakMapKeys(raw));
+
+  return {
+    size: keys.length,
+    [Symbol.iterator]: function*() {
+      for (let key of keys) {
+        let value = WeakMap.prototype.get.call(raw, key);
+        yield [ key, value ].map(val => gripFromEntry(objectActor, val));
+      }
+    }
+  };
+}
+
+function enumSetEntries(objectActor) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let raw = objectActor.obj.unsafeDereference();
+
+  return {
+    [Symbol.iterator]: function*() {
+      for (let item of Cu.waiveXrays(Set.prototype.values.call(raw))) {
+        yield gripFromEntry(objectActor, item);
+      }
+    }
+  };
+}
+
+function enumWeakSetEntries(objectActor) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let raw = objectActor.obj.unsafeDereference();
+  let keys = Cu.waiveXrays(ThreadSafeChromeUtils.nondeterministicGetWeakSetKeys(raw));
+
+  return {
+    size: keys.length,
+    [Symbol.iterator]: function*() {
+      for (let item of keys) {
+        yield gripFromEntry(objectActor, item);
+      }
+    }
+  };
+}
 
 
 
@@ -984,8 +1162,8 @@ DebuggerServer.ObjectActorPreviewers = {
     return true;
   }],
 
-  Set: [function({obj, hooks}, grip) {
-    let size = DevToolsUtils.getProperty(obj, "size");
+  Set: [function(objectActor, grip) {
+    let size = DevToolsUtils.getProperty(objectActor.obj, "size");
     if (typeof size != "number") {
       return false;
     }
@@ -996,26 +1174,13 @@ DebuggerServer.ObjectActorPreviewers = {
     };
 
     
-    if (hooks.getGripDepth() > 1) {
+    if (objectActor.hooks.getGripDepth() > 1) {
       return true;
     }
 
-    let raw = obj.unsafeDereference();
     let items = grip.preview.items = [];
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (let item of Cu.waiveXrays(Set.prototype.values.call(raw))) {
-      item = Cu.unwaiveXrays(item);
-      item = makeDebuggeeValueIfNeeded(obj, item);
-      items.push(hooks.createValueGrip(item));
+    for (let item of enumSetEntries(objectActor)) {
+      items.push(item);
       if (items.length == OBJECT_PREVIEW_MAX_ITEMS) {
         break;
       }
@@ -1024,35 +1189,22 @@ DebuggerServer.ObjectActorPreviewers = {
     return true;
   }],
 
-  WeakSet: [function({obj, hooks}, grip) {
-    let raw = obj.unsafeDereference();
+  WeakSet: [function(objectActor, grip) {
+    let enumEntries = enumWeakSetEntries(objectActor);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let keys = Cu.waiveXrays(ThreadSafeChromeUtils.nondeterministicGetWeakSetKeys(raw));
     grip.preview = {
       kind: "ArrayLike",
-      length: keys.length,
+      length: enumEntries.size
     };
 
     
-    if (hooks.getGripDepth() > 1) {
+    if (objectActor.hooks.getGripDepth() > 1) {
       return true;
     }
 
     let items = grip.preview.items = [];
-    for (let item of keys) {
-      item = Cu.unwaiveXrays(item);
-      item = makeDebuggeeValueIfNeeded(obj, item);
-      items.push(hooks.createValueGrip(item));
+    for (let item of enumEntries) {
+      items.push(item);
       if (items.length == OBJECT_PREVIEW_MAX_ITEMS) {
         break;
       }
@@ -1061,8 +1213,8 @@ DebuggerServer.ObjectActorPreviewers = {
     return true;
   }],
 
-  Map: [function({obj, hooks}, grip) {
-    let size = DevToolsUtils.getProperty(obj, "size");
+  Map: [function(objectActor, grip) {
+    let size = DevToolsUtils.getProperty(objectActor.obj, "size");
     if (typeof size != "number") {
       return false;
     }
@@ -1072,31 +1224,13 @@ DebuggerServer.ObjectActorPreviewers = {
       size: size,
     };
 
-    if (hooks.getGripDepth() > 1) {
+    if (objectActor.hooks.getGripDepth() > 1) {
       return true;
     }
 
-    let raw = obj.unsafeDereference();
     let entries = grip.preview.entries = [];
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (let keyValuePair of Cu.waiveXrays(Map.prototype.entries.call(raw))) {
-      let key = Cu.unwaiveXrays(keyValuePair[0]);
-      let value = Cu.unwaiveXrays(keyValuePair[1]);
-      key = makeDebuggeeValueIfNeeded(obj, key);
-      value = makeDebuggeeValueIfNeeded(obj, value);
-      entries.push([hooks.createValueGrip(key),
-                    hooks.createValueGrip(value)]);
+    for (let entry of enumMapEntries(objectActor)) {
+      entries.push(entry);
       if (entries.length == OBJECT_PREVIEW_MAX_ITEMS) {
         break;
       }
@@ -1105,37 +1239,21 @@ DebuggerServer.ObjectActorPreviewers = {
     return true;
   }],
 
-  WeakMap: [function({obj, hooks}, grip) {
-    let raw = obj.unsafeDereference();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let rawEntries = Cu.waiveXrays(ThreadSafeChromeUtils.nondeterministicGetWeakMapKeys(raw));
+  WeakMap: [function(objectActor, grip) {
+    let enumEntries = enumWeakMapEntries(objectActor);
 
     grip.preview = {
       kind: "MapLike",
-      size: rawEntries.length,
+      size: enumEntries.size
     };
 
-    if (hooks.getGripDepth() > 1) {
+    if (objectActor.hooks.getGripDepth() > 1) {
       return true;
     }
 
     let entries = grip.preview.entries = [];
-    for (let key of rawEntries) {
-      let value = Cu.unwaiveXrays(WeakMap.prototype.get.call(raw, key));
-      key = Cu.unwaiveXrays(key);
-      key = makeDebuggeeValueIfNeeded(obj, key);
-      value = makeDebuggeeValueIfNeeded(obj, value);
-      entries.push([hooks.createValueGrip(key),
-                    hooks.createValueGrip(value)]);
+    for (let entry of enumEntries) {
+      entries.push(entry);
       if (entries.length == OBJECT_PREVIEW_MAX_ITEMS) {
         break;
       }
