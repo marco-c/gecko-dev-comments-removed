@@ -7,11 +7,20 @@ package org.mozilla.gecko.toolbar;
 import android.content.Context;
 import android.util.AttributeSet;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.tabs.TabCurve;
 
 public class PhoneTabsButton extends ShapedButton {
     public PhoneTabsButton(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        if (!AppConstants.Versions.preLollipop) {
+            
+            
+            
+            
+            setLayerType(LAYER_TYPE_HARDWARE, null);
+        }
     }
 
     @Override
