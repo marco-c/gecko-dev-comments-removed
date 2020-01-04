@@ -5,7 +5,7 @@
 
 
 const BASIC_REQUESTS = [
-  { url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=sample" },
+  { url: "sjs_content-type-test-server.sjs?fmt=html&res=undefined&text=Sample" },
   { url: "sjs_content-type-test-server.sjs?fmt=css&text=sample" },
   { url: "sjs_content-type-test-server.sjs?fmt=js&text=sample" },
 ];
@@ -115,6 +115,12 @@ function test() {
           
           EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-all-button"));
           setFreetextFilter("sample");
+          return testContents([1, 1, 1, 0, 0, 0, 0, 0]);
+        })
+        .then(() => {
+          
+          EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-all-button"));
+          setFreetextFilter("SAMPLE");
           return testContents([1, 1, 1, 0, 0, 0, 0, 0]);
         })
         
