@@ -634,7 +634,10 @@ ErrorReportToString(JSContext* cx, JSErrorReport* reportp)
 
 
     JSExnType type = static_cast<JSExnType>(reportp->exnType);
-    RootedString str(cx, ClassName(GetExceptionProtoKey(type), cx));
+    RootedString str(cx);
+    if (type != JSEXN_WARN)
+        str = ClassName(GetExceptionProtoKey(type), cx);
+
     
 
 
