@@ -199,9 +199,15 @@ PresentationRequest::StartWithDevice(const nsAString& aDeviceId,
     return promise.forget();
   }
 
+  
+  
+  
+  
+  nsCOMPtr<nsIDOMEventTarget> handler =
+    do_QueryInterface(GetOwner()->GetChromeEventHandler());
   nsCOMPtr<nsIPresentationServiceCallback> callback =
     new PresentationRequesterCallback(this, id, promise);
-  rv = service->StartSession(mUrls, id, origin, aDeviceId, GetOwner()->WindowID(), callback);
+  rv = service->StartSession(mUrls, id, origin, aDeviceId, GetOwner()->WindowID(), handler, callback);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     promise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
   }
