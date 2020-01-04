@@ -468,6 +468,26 @@ public:
   {
     return DECODER_STATE_SEEKING;
   }
+
+  bool HandleDormant(bool aDormant) override
+  {
+    if (!aDormant) {
+      return true;
+    }
+    MOZ_ASSERT(!mMaster->mQueuedSeek.Exists());
+    MOZ_ASSERT(mMaster->mCurrentSeek.Exists());
+    
+    
+    
+    
+    if (mMaster->mCurrentSeek.mTarget.IsVideoOnly()) {
+      mMaster->mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
+      mMaster->mCurrentSeek.mTarget.SetVideoOnly(false);
+    }
+    mMaster->mQueuedSeek = Move(mMaster->mCurrentSeek);
+    SetState(DECODER_STATE_DORMANT);
+    return true;
+  }
 };
 
 class MediaDecoderStateMachine::BufferingState
@@ -1508,8 +1528,8 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
   }
 
   
-  
-  MOZ_ASSERT(mState != DECODER_STATE_DORMANT);
+  MOZ_ASSERT(mState != DECODER_STATE_DORMANT &&
+             mState != DECODER_STATE_SEEKING);
 
   
   if (!aDormant) {
@@ -1518,26 +1538,12 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
 
   DECODER_LOG("Enter dormant state");
 
-  if (mState == DECODER_STATE_SEEKING) {
-    MOZ_ASSERT(!mQueuedSeek.Exists());
-    MOZ_ASSERT(mCurrentSeek.Exists());
-    
-    
-    
-    
-    if (mCurrentSeek.mTarget.IsVideoOnly()) {
-      mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
-      mCurrentSeek.mTarget.SetVideoOnly(false);
-    }
-    mQueuedSeek = Move(mCurrentSeek);
-  } else {
-    mQueuedSeek.mTarget = SeekTarget(mCurrentPosition,
-                                     SeekTarget::Accurate,
-                                     MediaDecoderEventVisibility::Suppressed);
-    
-    
-    RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
-  }
+  mQueuedSeek.mTarget = SeekTarget(mCurrentPosition,
+                                   SeekTarget::Accurate,
+                                   MediaDecoderEventVisibility::Suppressed);
+  
+  
+  RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
 
   SetState(DECODER_STATE_DORMANT);
 }
