@@ -5,6 +5,7 @@
 
 
 
+
 #include "nsROCSSPrimitiveValue.h"
 
 #include "mozilla/dom/CSSPrimitiveValueBinding.h"
@@ -526,9 +527,9 @@ nsROCSSPrimitiveValue::GetRGBColorValue(ErrorResult& aRv)
 void
 nsROCSSPrimitiveValue::SetNumber(float aValue)
 {
-    Reset();
-    mValue.mFloat = aValue;
-    mType = CSS_NUMBER;
+  Reset();
+  mValue.mFloat = aValue;
+  mType = CSS_NUMBER;
 }
 
 void

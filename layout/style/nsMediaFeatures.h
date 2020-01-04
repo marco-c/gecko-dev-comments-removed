@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef nsMediaFeatures_h_
 #define nsMediaFeatures_h_
 
@@ -20,64 +21,66 @@ typedef nsresult
                               const nsMediaFeature* aFeature,
                               nsCSSValue& aResult);
 
-struct nsMediaFeature {
-    nsIAtom **mName; 
+struct nsMediaFeature
+{
+  nsIAtom **mName; 
 
-    enum RangeType { eMinMaxAllowed, eMinMaxNotAllowed };
-    RangeType mRangeType;
+  enum RangeType { eMinMaxAllowed, eMinMaxNotAllowed };
+  RangeType mRangeType;
 
-    enum ValueType {
-        
-        
-        eLength,     
-        eInteger,    
-        eFloat,      
-        eBoolInteger,
-        eIntRatio,   
-        eResolution, 
-                     
-                     
-        eEnumerated, 
-        eIdent       
-        
-        
-        
-        
-    };
-    ValueType mValueType;
-
-    enum RequirementFlags : uint8_t {
-      
-      
-      eNoRequirements = 0,
-      eHasWebkitPrefix = 1 
-                           
-    };
-    uint8_t mReqFlags;
-
-    union {
-      
-      
-      
-      const void* mInitializer_;
-      
-      
-      const nsCSSProps::KTableEntry* mKeywordTable;
-      
-      
-      nsIAtom * const * mMetric;
-    } mData;
-
+  enum ValueType {
+    
+    
+    eLength,     
+    eInteger,    
+    eFloat,      
+    eBoolInteger,
+    eIntRatio,   
+    eResolution, 
+                 
+                 
+    eEnumerated, 
+    eIdent       
     
     
     
-    nsMediaFeatureValueGetter mGetter;
+    
+  };
+  ValueType mValueType;
+
+  enum RequirementFlags : uint8_t {
+    
+    
+    eNoRequirements = 0,
+    eHasWebkitPrefix = 1 
+                         
+  };
+  uint8_t mReqFlags;
+
+  union {
+    
+    
+    
+    const void* mInitializer_;
+    
+    
+    const nsCSSProps::KTableEntry* mKeywordTable;
+    
+    
+    nsIAtom * const * mMetric;
+  } mData;
+
+  
+  
+  
+  nsMediaFeatureValueGetter mGetter;
 };
 
-class nsMediaFeatures {
+class nsMediaFeatures
+{
 public:
-    
-    static const nsMediaFeature features[];
+  
+  static const nsMediaFeature features[];
 };
 
 #endif 
