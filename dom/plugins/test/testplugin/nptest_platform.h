@@ -145,11 +145,4 @@ bool pluginCrashInNestedLoop(InstanceData* instanceData);
 
 bool pluginDestroySharedGfxStuff(InstanceData* instanceData);
 
-
-
-
-
-
-bool pluginNativeWidgetIsVisible(InstanceData* instanceData);
-
 #endif 
