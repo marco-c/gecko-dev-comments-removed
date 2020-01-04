@@ -88,16 +88,6 @@ exports.screenshot = {
 
 
 
-exports.touchSimulation = {
-
-  
-  enabled: PropTypes.bool.isRequired,
-
-};
-
-
-
-
 exports.viewport = {
 
   

@@ -44,9 +44,6 @@ createEnum([
   
   "UPDATE_DEVICE_MODAL_OPEN",
 
-  
-  "UPDATE_TOUCH_SIMULATION_ENABLED",
-
 ], module.exports);
 
 

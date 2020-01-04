@@ -3,6 +3,7 @@
 
 "use strict";
 
+var { Ci } = require("chrome");
 var promise = require("promise");
 var Services = require("Services");
 
@@ -24,7 +25,12 @@ function TouchEventSimulator(browser) {
     return simulator;
   }
 
-  let mm = browser.frameLoader.messageManager;
+  let mm = browser.messageManager;
+  if (!mm) {
+    
+    mm = browser.QueryInterface(Ci.nsIFrameLoaderOwner)
+                .frameLoader.messageManager;
+  }
   mm.loadFrameScript(FRAME_SCRIPT, true);
 
   simulator = {
