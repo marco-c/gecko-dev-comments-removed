@@ -133,7 +133,8 @@ enum class LogReason : int {
   MustBeMoreThanThis = -1,
   
   
-
+  D3D11InvalidCallDeviceRemoved = 0,
+  D3D11InvalidCall = 1,
   
   MustBeLessThanThis = 101,
 };
