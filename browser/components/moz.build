@@ -6,6 +6,7 @@
 
 DIRS += [
     'about',
+    'contextualidentity',
     'customizableui',
     'dirprovider',
     'downloads',
@@ -21,6 +22,7 @@ DIRS += [
     'sessionstore',
     'shell',
     'selfsupport',
+    'tabview',
     'uitour',
     'translation',
 ]
