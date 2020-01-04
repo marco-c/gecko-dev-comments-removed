@@ -244,10 +244,10 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
       rv = ParseContentRangeHeader(hc, rangeStart, rangeEnd, rangeTotal);
 
       
-      acceptsRanges = NS_SUCCEEDED(rv);
+      bool gotRangeHeader = NS_SUCCEEDED(rv);
 
       if (!mByteRange.IsEmpty()) {
-        if (!acceptsRanges) {
+        if (!gotRangeHeader) {
           
           
           CMLOG("Error processing \'Content-Range' for "
@@ -275,10 +275,10 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
         }
         mCacheStream.NotifyDataStarted(rangeStart);
         mOffset = rangeStart;
-      } else if (contentLength < 0 && acceptsRanges && rangeTotal > 0) {
-        
-        contentLength = rangeTotal;
+      } else if (gotRangeHeader && rangeTotal > 0) {
+        contentLength = std::max(contentLength, rangeTotal);
       }
+      acceptsRanges = gotRangeHeader;
     } else if (((mOffset > 0) || !mByteRange.IsEmpty())
                && (responseStatus == HTTP_OK_CODE)) {
       
