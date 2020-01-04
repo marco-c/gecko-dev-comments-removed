@@ -546,20 +546,17 @@ typedef Log<LOG_CRITICAL, CriticalLogger> CriticalLog;
 
 
 
-#ifdef GFX_LOG_DEBUG
+#if defined(DEBUG)
 #define gfxDebug mozilla::gfx::DebugLog
 #define gfxDebugOnce static gfxDebug GFX_LOGGING_GLUE(sOnceAtLine,__LINE__) = gfxDebug
 #else
 #define gfxDebug if (1) ; else mozilla::gfx::NoLog
 #define gfxDebugOnce if (1) ; else mozilla::gfx::NoLog
 #endif
-#ifdef GFX_LOG_WARNING
+
+
 #define gfxWarning mozilla::gfx::WarningLog
 #define gfxWarningOnce static gfxWarning GFX_LOGGING_GLUE(sOnceAtLine,__LINE__) = gfxWarning
-#else
-#define gfxWarning if (1) ; else mozilla::gfx::NoLog
-#define gfxWarningOnce if (1) ; else mozilla::gfx::NoLog
-#endif
 
 
 
