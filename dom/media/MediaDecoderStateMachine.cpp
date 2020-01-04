@@ -1368,7 +1368,7 @@ void MediaDecoderStateMachine::VisibilityChanged()
     }
 
     
-    InitiateDecodeRecoverySeek(TrackSet(TrackInfo::kVideoTrack));
+    InitiateDecodeRecoverySeek();
   }
 }
 
@@ -1378,21 +1378,15 @@ void MediaDecoderStateMachine::VisibilityChanged()
 
 
 
-
-
-
-
-void MediaDecoderStateMachine::InitiateDecodeRecoverySeek(TrackSet aTracks)
+void
+MediaDecoderStateMachine::InitiateDecodeRecoverySeek()
 {
   MOZ_ASSERT(OnTaskQueue());
-
   DECODER_LOG("InitiateDecodeRecoverySeek");
 
   SeekJob seekJob;
-  SeekTarget::Type seekTargetType = aTracks.contains(TrackInfo::kAudioTrack)
-                                    ? SeekTarget::Type::Accurate
-                                    : SeekTarget::Type::AccurateVideoOnly;
-  seekJob.mTarget = SeekTarget(GetMediaTime(), seekTargetType,
+  seekJob.mTarget = SeekTarget(GetMediaTime(),
+                               SeekTarget::Type::AccurateVideoOnly,
                                MediaDecoderEventVisibility::Suppressed);
 
   SetState(DECODER_STATE_SEEKING);
@@ -1414,7 +1408,7 @@ void MediaDecoderStateMachine::InitiateDecodeRecoverySeek(TrackSet aTracks)
 
   
   if (mSeekTask->NeedToResetMDSM()) {
-    Reset(aTracks);
+    Reset(TrackInfo::kVideoTrack);
   }
 
   

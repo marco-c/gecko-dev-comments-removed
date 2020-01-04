@@ -513,8 +513,7 @@ protected:
   
   
   
-  
-  void InitiateDecodeRecoverySeek(TrackSet aTracks);
+  void InitiateDecodeRecoverySeek();
 
   nsresult DispatchAudioDecodeTaskIfNeeded();
 
