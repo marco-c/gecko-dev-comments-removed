@@ -45,12 +45,6 @@ XPCJSContextStack::Pop()
     --idx; 
 
     XPCJSContextInfo& e = mStack[idx];
-    if (e.cx && e.savedFrameChain) {
-        
-        JSAutoRequest ar(e.cx);
-        JS_RestoreFrameChain(e.cx);
-        e.savedFrameChain = false;
-    }
     js::Debug_SetActiveJSContext(mRuntime->Runtime(), e.cx);
     return cx;
 }
@@ -59,42 +53,6 @@ bool
 XPCJSContextStack::Push(JSContext* cx)
 {
     js::Debug_SetActiveJSContext(mRuntime->Runtime(), cx);
-    if (mStack.Length() == 0) {
-        mStack.AppendElement(cx);
-        return true;
-    }
-
-    XPCJSContextInfo& e = mStack[mStack.Length() - 1];
-    if (e.cx) {
-        
-        
-        
-        if (e.cx == cx) {
-            
-            
-            
-            
-            RootedObject defaultScope(cx, GetDefaultScopeFromJSContext(cx));
-            if (defaultScope) {
-                nsIPrincipal* currentPrincipal =
-                  GetCompartmentPrincipal(js::GetContextCompartment(cx));
-                nsIPrincipal* defaultPrincipal = GetObjectPrincipal(defaultScope);
-                if (currentPrincipal->Equals(defaultPrincipal)) {
-                    mStack.AppendElement(cx);
-                    return true;
-                }
-            }
-        }
-
-        {
-            
-            JSAutoRequest ar(e.cx);
-            if (!JS_SaveFrameChain(e.cx))
-                return false;
-            e.savedFrameChain = true;
-        }
-    }
-
     mStack.AppendElement(cx);
     return true;
 }
