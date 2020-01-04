@@ -20,6 +20,20 @@ namespace rx
 
 class FunctionsGLX;
 
+
+
+struct SwapControlData
+{
+    SwapControlData();
+
+    
+    int targetSwapInterval;
+
+    
+    int maxSwapInterval;
+    int currentSwapInterval;
+};
+
 class DisplayGLX : public DisplayGL
 {
   public:
@@ -59,13 +73,22 @@ class DisplayGLX : public DisplayGL
     
     void syncXCommands() const;
 
+    
+    
+    
+    
+    void setSwapInterval(glx::Drawable drawable, SwapControlData *data);
+
   private:
     const FunctionsGL *getFunctionsGL() const override;
+
+    glx::Context initializeContext(glx::FBConfig config, const egl::AttributeMap &eglAttributes);
 
     void generateExtensions(egl::DisplayExtensions *outExtensions) const override;
     void generateCaps(egl::Caps *outCaps) const override;
 
     int getGLXFBConfigAttrib(glx::FBConfig config, int attrib) const;
+    glx::Context createContextAttribs(glx::FBConfig, const std::vector<int> &attribs) const;
 
     FunctionsGL *mFunctionsGL;
 
@@ -78,6 +101,21 @@ class DisplayGLX : public DisplayGL
     glx::Pbuffer mDummyPbuffer;
 
     bool mUsesNewXDisplay;
+    bool mIsMesa;
+    bool mHasMultisample;
+    bool mHasARBCreateContext;
+
+    enum class SwapControl
+    {
+        Absent,
+        EXT,
+        Mesa,
+        SGI,
+    };
+    SwapControl mSwapControl;
+    int mMinSwapInterval;
+    int mMaxSwapInterval;
+    int mCurrentSwapInterval;
 
     FunctionsGLX mGLX;
     egl::Display *mEGLDisplay;

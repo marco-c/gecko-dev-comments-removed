@@ -98,6 +98,13 @@ class ANGLETest : public ::testing::TestWithParam<angle::PlatformParameters>
     bool isIntel() const;
     bool isAMD() const;
     bool isNVidia() const;
+    
+    bool isD3D11() const;
+    bool isD3D11_FL93() const;
+    
+    bool isD3D9() const;
+    
+    bool isD3DSM3() const;
     EGLint getPlatformRenderer() const;
 
   private:

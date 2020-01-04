@@ -582,6 +582,9 @@ struct TPublicType
     TType *userDef;
     TSourceLoc line;
 
+    
+    bool isStructSpecifier;
+
     void setBasic(TBasicType bt, TQualifier q, const TSourceLoc &ln)
     {
         type = bt;
@@ -595,6 +598,7 @@ struct TPublicType
         arraySize = 0;
         userDef = 0;
         line = ln;
+        isStructSpecifier = false;
     }
 
     void setAggregate(unsigned char size)

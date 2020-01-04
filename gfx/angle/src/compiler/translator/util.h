@@ -22,7 +22,7 @@ bool strtof_clamp(const std::string &str, float *value);
 
 
 
-bool atoi_clamp(const char *str, int *value);
+bool atoi_clamp(const char *str, unsigned int *value);
 
 class TSymbolTable;
 

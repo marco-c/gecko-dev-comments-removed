@@ -500,6 +500,10 @@ gl::Error InputLayoutCache::applyVertexBuffers(const std::vector<TranslatedAttri
             instancedPointSpritesActive ? pointSpriteVertexStride : 0;
         mCurrentVertexOffsets[nextAvailableIndex] = 0;
 
+        
+        
+        maxDiff = std::max(maxDiff, nextAvailableIndex);
+
         if (!mPointSpriteIndexBuffer)
         {
             

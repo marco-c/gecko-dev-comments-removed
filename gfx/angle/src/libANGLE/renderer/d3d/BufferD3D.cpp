@@ -8,6 +8,7 @@
 
 #include "libANGLE/renderer/d3d/BufferD3D.h"
 
+#include "common/mathutil.h"
 #include "common/utilities.h"
 #include "libANGLE/renderer/d3d/IndexBuffer.h"
 #include "libANGLE/renderer/d3d/VertexBuffer.h"
@@ -22,6 +23,9 @@ BufferD3D::BufferD3D(BufferFactoryD3D *factory)
       mFactory(factory),
       mStaticVertexBuffer(nullptr),
       mStaticIndexBuffer(nullptr),
+      mStaticBufferCache(nullptr),
+      mStaticBufferCacheTotalSize(0),
+      mStaticVertexBufferOutOfDate(false),
       mUnmodifiedDataUse(0),
       mUsage(D3D_BUFFER_USAGE_STATIC)
 {
@@ -32,6 +36,14 @@ BufferD3D::~BufferD3D()
 {
     SafeDelete(mStaticVertexBuffer);
     SafeDelete(mStaticIndexBuffer);
+
+    
+    if (mStaticBufferCache != nullptr)
+    {
+        SafeDeleteContainer(*mStaticBufferCache);
+    }
+
+    mStaticBufferCacheTotalSize = 0;
 }
 
 void BufferD3D::updateSerial()
@@ -75,8 +87,130 @@ void BufferD3D::initializeStaticData()
     }
 }
 
-void BufferD3D::invalidateStaticData()
+StaticIndexBufferInterface *BufferD3D::getStaticIndexBuffer()
 {
+    return mStaticIndexBuffer;
+}
+
+StaticVertexBufferInterface *BufferD3D::getStaticVertexBuffer(
+    const gl::VertexAttribute &attribute,
+    D3DStaticBufferCreationType creationType)
+{
+    if (!mStaticVertexBuffer)
+    {
+        
+        ASSERT(mStaticBufferCache == nullptr);
+        return nullptr;
+    }
+
+    if (mStaticBufferCache == nullptr && !mStaticVertexBuffer->isCommitted())
+    {
+        
+        return mStaticVertexBuffer;
+    }
+
+    
+
+    
+    if (mStaticVertexBuffer->lookupAttribute(attribute, nullptr))
+    {
+        return mStaticVertexBuffer;
+    }
+
+    if (mStaticBufferCache != nullptr)
+    {
+        
+        for (StaticVertexBufferInterface *staticBuffer : *mStaticBufferCache)
+        {
+            if (staticBuffer->lookupAttribute(attribute, nullptr))
+            {
+                return staticBuffer;
+            }
+        }
+    }
+
+    if (!mStaticVertexBuffer->isCommitted())
+    {
+        
+        
+        return mStaticVertexBuffer;
+    }
+
+    
+    if (creationType != D3D_BUFFER_CREATE_IF_NECESSARY)
+    {
+        return nullptr;
+    }
+
+    ASSERT(mStaticVertexBuffer);
+    ASSERT(mStaticVertexBuffer->isCommitted());
+    unsigned int staticVertexBufferSize = mStaticVertexBuffer->getBufferSize();
+    if (IsUnsignedAdditionSafe(staticVertexBufferSize, mStaticBufferCacheTotalSize))
+    {
+        
+        
+        unsigned int maxStaticCacheSize =
+            IsUnsignedMultiplicationSafe(static_cast<unsigned int>(getSize()), 4u)
+                ? 4u * static_cast<unsigned int>(getSize())
+                : std::numeric_limits<unsigned int>::max();
+
+        
+        if (staticVertexBufferSize + mStaticBufferCacheTotalSize <= maxStaticCacheSize)
+        {
+            if (mStaticBufferCache == nullptr)
+            {
+                mStaticBufferCache = new std::vector<StaticVertexBufferInterface *>();
+            }
+
+            mStaticBufferCacheTotalSize += staticVertexBufferSize;
+            (*mStaticBufferCache).push_back(mStaticVertexBuffer);
+            mStaticVertexBuffer = nullptr;
+
+            
+            initializeStaticData();
+
+            
+            return mStaticVertexBuffer;
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    mStaticVertexBufferOutOfDate = true;
+    return nullptr;
+}
+
+void BufferD3D::reinitOutOfDateStaticData()
+{
+    if (mStaticVertexBufferOutOfDate)
+    {
+        
+        
+        
+        
+        invalidateStaticData(D3D_BUFFER_INVALIDATE_DEFAULT_BUFFER_ONLY);
+        mStaticVertexBufferOutOfDate = false;
+    }
+}
+
+void BufferD3D::invalidateStaticData(D3DBufferInvalidationType invalidationType)
+{
+    if (invalidationType == D3D_BUFFER_INVALIDATE_WHOLE_CACHE && mStaticBufferCache != nullptr)
+    {
+        
+        for (StaticVertexBufferInterface *staticBuffer : *mStaticBufferCache)
+        {
+            SafeDelete(staticBuffer);
+        }
+        mStaticBufferCache->clear();
+        mStaticBufferCacheTotalSize = 0;
+    }
+
     if ((mStaticVertexBuffer && mStaticVertexBuffer->getBufferSize() != 0) || (mStaticIndexBuffer && mStaticIndexBuffer->getBufferSize() != 0))
     {
         SafeDelete(mStaticVertexBuffer);
@@ -98,6 +232,10 @@ void BufferD3D::promoteStaticUsage(int dataSize)
 {
     if (!mStaticVertexBuffer && !mStaticIndexBuffer)
     {
+        
+        
+        ASSERT(mStaticBufferCache == nullptr);
+
         mUnmodifiedDataUse += dataSize;
 
         if (mUnmodifiedDataUse > 3 * getSize())

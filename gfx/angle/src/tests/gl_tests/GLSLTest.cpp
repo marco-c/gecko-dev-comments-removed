@@ -346,6 +346,91 @@ class GLSLTest : public ANGLETest
         }
     }
 
+    void CompileGLSLWithUniformsAndSamplers(GLint vertexUniformCount,
+                                            GLint fragmentUniformCount,
+                                            GLint vertexSamplersCount,
+                                            GLint fragmentSamplersCount,
+                                            bool expectSuccess)
+    {
+        std::stringstream vertexShader;
+        std::stringstream fragmentShader;
+
+        
+        vertexShader << "precision mediump float;\n";
+
+        for (int i = 0; i < vertexUniformCount; i++)
+        {
+            vertexShader << "uniform vec4 v" << i << ";\n";
+        }
+
+        for (int i = 0; i < vertexSamplersCount; i++)
+        {
+            vertexShader << "uniform sampler2D s" << i << ";\n";
+        }
+
+        vertexShader << "void main()\n{\n";
+
+        for (int i = 0; i < vertexUniformCount; i++)
+        {
+            vertexShader << "    gl_Position +=  v" << i << ";\n";
+        }
+
+        for (int i = 0; i < vertexSamplersCount; i++)
+        {
+            vertexShader << "    gl_Position +=  texture2D(s" << i << ", vec2(0.0, 0.0));\n";
+        }
+
+        if (vertexUniformCount == 0 && vertexSamplersCount == 0)
+        {
+            vertexShader << "   gl_Position = vec4(0.0);\n";
+        }
+
+        vertexShader << "}\n";
+
+        
+        fragmentShader << "precision mediump float;\n";
+
+        for (int i = 0; i < fragmentUniformCount; i++)
+        {
+            fragmentShader << "uniform vec4 v" << i << ";\n";
+        }
+
+        for (int i = 0; i < fragmentSamplersCount; i++)
+        {
+            fragmentShader << "uniform sampler2D s" << i << ";\n";
+        }
+
+        fragmentShader << "void main()\n{\n";
+
+        for (int i = 0; i < fragmentUniformCount; i++)
+        {
+            fragmentShader << "    gl_FragColor +=  v" << i << ";\n";
+        }
+
+        for (int i = 0; i < fragmentSamplersCount; i++)
+        {
+            fragmentShader << "    gl_FragColor +=  texture2D(s" << i << ", vec2(0.0, 0.0));\n";
+        }
+
+        if (fragmentUniformCount == 0 && fragmentSamplersCount == 0)
+        {
+            fragmentShader << "    gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);\n";
+        }
+
+        fragmentShader << "}\n";
+
+        GLuint program = CompileProgram(vertexShader.str(), fragmentShader.str());
+
+        if (expectSuccess)
+        {
+            EXPECT_NE(0u, program);
+        }
+        else
+        {
+            EXPECT_EQ(0u, program);
+        }
+    }
+
     std::string mSimpleVSSource;
 };
 
@@ -743,8 +828,14 @@ TEST_P(GLSLTest, MaxVaryingVec3Array)
 }
 
 
-TEST_P(GLSLTest, DISABLED_MaxVaryingVec3AndOneFloat)
+TEST_P(GLSLTest, MaxVaryingVec3AndOneFloat)
 {
+    if (isD3D9())
+    {
+        std::cout << "Test disabled on D3D9." << std::endl;
+        return;
+    }
+
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
@@ -752,8 +843,14 @@ TEST_P(GLSLTest, DISABLED_MaxVaryingVec3AndOneFloat)
 }
 
 
-TEST_P(GLSLTest, DISABLED_MaxVaryingVec3ArrayAndOneFloatArray)
+TEST_P(GLSLTest, MaxVaryingVec3ArrayAndOneFloatArray)
 {
+    if (isD3D9())
+    {
+        std::cout << "Test disabled on D3D9." << std::endl;
+        return;
+    }
+
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
@@ -761,8 +858,14 @@ TEST_P(GLSLTest, DISABLED_MaxVaryingVec3ArrayAndOneFloatArray)
 }
 
 
-TEST_P(GLSLTest, DISABLED_TwiceMaxVaryingVec2)
+TEST_P(GLSLTest, TwiceMaxVaryingVec2)
 {
+    if (isD3D9())
+    {
+        std::cout << "Test disabled on D3D9." << std::endl;
+        return;
+    }
+
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
@@ -770,8 +873,14 @@ TEST_P(GLSLTest, DISABLED_TwiceMaxVaryingVec2)
 }
 
 
-TEST_P(GLSLTest, DISABLED_MaxVaryingVec2Arrays)
+TEST_P(GLSLTest, MaxVaryingVec2Arrays)
 {
+    if (isD3DSM3())
+    {
+        std::cout << "Test disabled on SM3." << std::endl;
+        return;
+    }
+
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
@@ -1132,160 +1241,78 @@ TEST_P(GLSLTest, LoopIndexingValidation)
 
 TEST_P(GLSLTest, VerifyMaxVertexUniformVectors)
 {
-    const std::string &fragmentShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        void main()
-        {
-            gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-        }
-    );
-
     int maxUniforms = 10000;
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxUniforms);
     EXPECT_GL_NO_ERROR();
     std::cout << "Validating GL_MAX_VERTEX_UNIFORM_VECTORS = " << maxUniforms << std::endl;
 
-    std::stringstream vshaderSource;
-    vshaderSource << "precision mediump float;\n";
+    CompileGLSLWithUniformsAndSamplers(maxUniforms, 0, 0, 0, true);
+}
 
-    for (int i = 0; i < maxUniforms; i++)
-    {
-        vshaderSource << "uniform vec4 v" << i << ";\n";
-    }
 
-    vshaderSource << "void main()\n{\n";
 
-    for (int i = 0; i < maxUniforms; i++)
-    {
-        vshaderSource << "    gl_Position +=  v" << i << ";\n";
-    }
+TEST_P(GLSLTest, VerifyMaxVertexUniformVectorsWithSamplers)
+{
+    int maxUniforms = 10000;
+    glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxUniforms);
+    EXPECT_GL_NO_ERROR();
+    std::cout << "Validating GL_MAX_VERTEX_UNIFORM_VECTORS = " << maxUniforms << std::endl;
 
-    vshaderSource << "}\n";
+    int maxTextureImageUnits = 0;
+    glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &maxTextureImageUnits);
 
-    GLuint program = CompileProgram(vshaderSource.str(), fragmentShaderSource);
-    EXPECT_NE(0u, program);
+    CompileGLSLWithUniformsAndSamplers(maxUniforms, 0, maxTextureImageUnits, 0, true);
 }
 
 
 
 TEST_P(GLSLTest, VerifyMaxVertexUniformVectorsExceeded)
 {
-    const std::string &fragmentShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        void main()
-        {
-            gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-        }
-    );
-
     int maxUniforms = 10000;
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxUniforms);
     EXPECT_GL_NO_ERROR();
-    
-    maxUniforms += 1;
-    std::cout << "Validating GL_MAX_VERTEX_UNIFORM_VECTORS + 1 = " << maxUniforms << std::endl;
+    std::cout << "Validating GL_MAX_VERTEX_UNIFORM_VECTORS + 1 = " << maxUniforms + 1 << std::endl;
 
-    std::stringstream vshaderSource;
-    vshaderSource << "precision mediump float;\n";
-
-    for (int i = 0; i < maxUniforms; i++)
-    {
-        vshaderSource << "uniform vec4 v" << i << ";\n";
-    }
-
-    vshaderSource << "void main()\n{\n";
-
-    for (int i = 0; i < maxUniforms; i++)
-    {
-        vshaderSource << "    gl_Position +=  v" << i << ";\n";
-    }
-
-    vshaderSource << "}\n";
-
-    GLuint program = CompileProgram(vshaderSource.str(), fragmentShaderSource);
-    EXPECT_EQ(0u, program);
+    CompileGLSLWithUniformsAndSamplers(maxUniforms + 1, 0, 0, 0, false);
 }
 
 
 
-TEST_P(GLSLTest, VerifyMaxFragmentUniformVectorsFragment)
+TEST_P(GLSLTest, VerifyMaxFragmentUniformVectors)
 {
-    const std::string &vertexShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        void main()
-        {
-            gl_Position = vec4(0.0);
-        }
-    );
-
     int maxUniforms = 10000;
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxUniforms);
     EXPECT_GL_NO_ERROR();
     std::cout << "Validating GL_MAX_FRAGMENT_UNIFORM_VECTORS = " << maxUniforms << std::endl;
 
-    std::stringstream fshaderSource;
-    fshaderSource << "precision mediump float;\n";
-
-    for (int i = 0; i < maxUniforms; i++)
-    {
-        fshaderSource << "uniform vec4 v" << i << ";\n";
-    }
-
-    fshaderSource << "void main()\n{\n";
-
-    for (int i = 0; i < maxUniforms; i++)
-    {
-        fshaderSource << "    gl_FragColor +=  v" << i << ";\n";
-    }
-
-    fshaderSource << "}\n";
-
-    GLuint program = CompileProgram(vertexShaderSource, fshaderSource.str());
-    EXPECT_NE(0u, program);
+    CompileGLSLWithUniformsAndSamplers(0, maxUniforms, 0, 0, true);
 }
 
 
 
-TEST_P(GLSLTest, VerifyMaxFragmentUniformVectorsFragmentExceeded)
+TEST_P(GLSLTest, VerifyMaxFragmentUniformVectorsWithSamplers)
 {
-    const std::string &vertexShaderSource = SHADER_SOURCE
-    (
-        precision mediump float;
-        void main()
-        {
-            gl_Position = vec4(0.0);
-        }
-    );
-
     int maxUniforms = 10000;
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxUniforms);
     EXPECT_GL_NO_ERROR();
-    
-    maxUniforms += 1;
-    std::cout << "Validating GL_MAX_FRAGMENT_UNIFORM_VECTORS + 1 = " << maxUniforms << std::endl;
 
-    std::stringstream fshaderSource;
-    fshaderSource << "precision mediump float;\n";
+    int maxTextureImageUnits = 0;
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureImageUnits);
 
-    for (int i = 0; i < maxUniforms; i++)
-    {
-        fshaderSource << "uniform vec4 v" << i << ";\n";
-    }
+    CompileGLSLWithUniformsAndSamplers(0, maxUniforms, 0, maxTextureImageUnits, true);
+}
 
-    fshaderSource << "void main()\n{\n";
 
-    for (int i = 0; i < maxUniforms; i++)
-    {
-        fshaderSource << "    gl_FragColor +=  v" << i << ";\n";
-    }
 
-    fshaderSource << "}\n";
+TEST_P(GLSLTest, VerifyMaxFragmentUniformVectorsExceeded)
+{
+    int maxUniforms = 10000;
+    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxUniforms);
+    EXPECT_GL_NO_ERROR();
+    std::cout << "Validating GL_MAX_FRAGMENT_UNIFORM_VECTORS + 1 = " << maxUniforms + 1
+              << std::endl;
 
-    GLuint program = CompileProgram(vertexShaderSource, fshaderSource.str());
-    EXPECT_EQ(0u, program);
+    CompileGLSLWithUniformsAndSamplers(0, maxUniforms + 1, 0, 0, false);
 }
 
 

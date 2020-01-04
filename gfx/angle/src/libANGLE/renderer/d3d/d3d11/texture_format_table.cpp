@@ -340,16 +340,19 @@ const D3D11ES3FormatMap &BuildD3D11FormatMap()
 
     
     
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_R11_EAC,                        DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SIGNED_R11_EAC,                 DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_RG11_EAC,                       DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SIGNED_RG11_EAC,                DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_RGB8_ETC2,                      DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SRGB8_ETC2,                     DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2,  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2, DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_RGBA8_ETC2_EAC,                 DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
-    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC,          DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,                  DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_R11_EAC,                        DXGI_FORMAT_R8_UNORM,            DXGI_FORMAT_R8_UNORM,                 DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SIGNED_R11_EAC,                 DXGI_FORMAT_R8_SNORM,            DXGI_FORMAT_R8_SNORM,                 DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_RG11_EAC,                       DXGI_FORMAT_R8G8_UNORM,          DXGI_FORMAT_R8G8_UNORM,               DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SIGNED_RG11_EAC,                DXGI_FORMAT_R8G8_SNORM,          DXGI_FORMAT_R8G8_SNORM,               DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_RGB8_ETC2,                      DXGI_FORMAT_R8G8B8A8_UNORM,      DXGI_FORMAT_R8G8B8A8_UNORM,           DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SRGB8_ETC2,                     DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,      DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2,  DXGI_FORMAT_R8G8B8A8_UNORM,      DXGI_FORMAT_R8G8B8A8_UNORM,           DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,      DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_RGBA8_ETC2_EAC,                 DXGI_FORMAT_R8G8B8A8_UNORM,      DXGI_FORMAT_R8G8B8A8_UNORM,           DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+    InsertD3D11FormatInfo(&map, GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC,          DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,      DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              OnlyFL10Plus);
+
+    
+    InsertD3D11FormatInfo(&map, GL_ETC1_RGB8_OES,                             DXGI_FORMAT_R8G8B8A8_UNORM,      DXGI_FORMAT_R8G8B8A8_UNORM,           DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              AnyDevice);
 
     
     InsertD3D11FormatInfo(&map, GL_COMPRESSED_RGB_S3TC_DXT1_EXT,              DXGI_FORMAT_BC1_UNORM,           DXGI_FORMAT_BC1_UNORM,                DXGI_FORMAT_UNKNOWN,             DXGI_FORMAT_UNKNOWN,              AnyDevice);

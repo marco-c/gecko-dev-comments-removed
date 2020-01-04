@@ -268,6 +268,8 @@ typedef struct
 
     
     
+    
+    
     int FragmentPrecisionHigh;
 
     

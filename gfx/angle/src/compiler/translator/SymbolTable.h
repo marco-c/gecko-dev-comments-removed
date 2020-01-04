@@ -128,34 +128,16 @@ class TVariable : public TSymbol
         type.setQualifier(qualifier);
     }
 
-    TConstantUnion *getConstPointer()
-    { 
-        if (!unionArray)
-            unionArray = new TConstantUnion[type.getObjectSize()];
+    const TConstantUnion *getConstPointer() const { return unionArray; }
 
-        return unionArray;
-    }
-
-    TConstantUnion *getConstPointer() const
-    {
-        return unionArray;
-    }
-
-    void shareConstPointer(TConstantUnion *constArray)
-    {
-        if (unionArray == constArray)
-            return;
-
-        delete[] unionArray;
-        unionArray = constArray;  
-    }
+    void shareConstPointer(const TConstantUnion *constArray) { unionArray = constArray; }
 
   private:
     TType type;
     bool userType;
     
     
-    TConstantUnion *unionArray;
+    const TConstantUnion *unionArray;
 };
 
 
@@ -400,7 +382,9 @@ class TSymbolTable : angle::NonCopyable
     {
         TVariable *constant = new TVariable(
             NewPoolTString(name), TType(EbtInt, EbpUndefined, EvqConst, 1));
-        constant->getConstPointer()->setIConst(value);
+        TConstantUnion *unionArray = new TConstantUnion[1];
+        unionArray[0].setIConst(value);
+        constant->shareConstPointer(unionArray);
         return insert(level, constant);
     }
 
@@ -408,7 +392,9 @@ class TSymbolTable : angle::NonCopyable
     {
         TVariable *constant =
             new TVariable(NewPoolTString(name), TType(EbtInt, EbpUndefined, EvqConst, 1));
-        constant->getConstPointer()->setIConst(value);
+        TConstantUnion *unionArray = new TConstantUnion[1];
+        unionArray[0].setIConst(value);
+        constant->shareConstPointer(unionArray);
         return insert(level, ext, constant);
     }
 

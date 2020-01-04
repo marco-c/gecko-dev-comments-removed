@@ -797,32 +797,7 @@ void writeFile(const char* path, const void* content, size_t size)
 
 void ScheduleYield()
 {
-#if defined(ANGLE_ENABLE_WINDOWS_STORE)
-    
-    static HANDLE singletonEvent = nullptr;
-    HANDLE sleepEvent = singletonEvent;
-    if (!sleepEvent)
-    {
-        sleepEvent = CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
-
-        if (!sleepEvent)
-            return;
-
-        HANDLE previousEvent = InterlockedCompareExchangePointerRelease(&singletonEvent, sleepEvent, nullptr);
-
-        if (previousEvent)
-        {
-            
-            CloseHandle(sleepEvent);
-            sleepEvent = previousEvent;
-        }
-    }
-
-    
-    WaitForSingleObjectEx(sleepEvent, 0, false);
-#else
     Sleep(0);
-#endif
 }
 
 #endif

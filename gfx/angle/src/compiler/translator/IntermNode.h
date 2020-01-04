@@ -173,14 +173,13 @@ class TIntermLoop : public TIntermNode
 {
   public:
     TIntermLoop(TLoopType type,
-                TIntermNode *init, TIntermTyped *cond, TIntermTyped *expr,
-                TIntermNode *body)
-        : mType(type),
-          mInit(init),
-          mCond(cond),
-          mExpr(expr),
-          mBody(body),
-          mUnrollFlag(false) { }
+                TIntermNode *init,
+                TIntermTyped *cond,
+                TIntermTyped *expr,
+                TIntermAggregate *body)
+        : mType(type), mInit(init), mCond(cond), mExpr(expr), mBody(body), mUnrollFlag(false)
+    {
+    }
 
     TIntermLoop *getAsLoopNode() override { return this; }
     void traverse(TIntermTraverser *it) override;
@@ -190,7 +189,7 @@ class TIntermLoop : public TIntermNode
     TIntermNode *getInit() { return mInit; }
     TIntermTyped *getCondition() { return mCond; }
     TIntermTyped *getExpression() { return mExpr; }
-    TIntermNode *getBody() { return mBody; }
+    TIntermAggregate *getBody() { return mBody; }
 
     void setUnrollFlag(bool flag) { mUnrollFlag = flag; }
     bool getUnrollFlag() const { return mUnrollFlag; }
@@ -200,7 +199,7 @@ class TIntermLoop : public TIntermNode
     TIntermNode *mInit;  
     TIntermTyped *mCond; 
     TIntermTyped *mExpr; 
-    TIntermNode *mBody;  
+    TIntermAggregate *mBody;  
 
     bool mUnrollFlag; 
 };
@@ -294,19 +293,25 @@ class TIntermRaw : public TIntermTyped
     TString mRawText;
 };
 
+
+
+
+
+
+
 class TIntermConstantUnion : public TIntermTyped
 {
   public:
-    TIntermConstantUnion(TConstantUnion *unionPointer, const TType &type)
-        : TIntermTyped(type),
-          mUnionArrayPointer(unionPointer) { }
+    TIntermConstantUnion(const TConstantUnion *unionPointer, const TType &type)
+        : TIntermTyped(type), mUnionArrayPointer(unionPointer)
+    {
+    }
 
     TIntermTyped *deepCopy() const override { return new TIntermConstantUnion(*this); }
 
     bool hasSideEffects() const override { return false; }
 
     const TConstantUnion *getUnionArrayPointer() const { return mUnionArrayPointer; }
-    TConstantUnion *getUnionArrayPointer() { return mUnionArrayPointer; }
 
     int getIConst(size_t index) const
     {
@@ -325,7 +330,7 @@ class TIntermConstantUnion : public TIntermTyped
         return mUnionArrayPointer ? mUnionArrayPointer[index].getBConst() : false;
     }
 
-    void replaceConstantUnion(TConstantUnion *safeConstantUnion)
+    void replaceConstantUnion(const TConstantUnion *safeConstantUnion)
     {
         
         mUnionArrayPointer = safeConstantUnion;
@@ -339,10 +344,13 @@ class TIntermConstantUnion : public TIntermTyped
     TConstantUnion *foldUnaryWithDifferentReturnType(TOperator op, TInfoSink &infoSink);
     TConstantUnion *foldUnaryWithSameReturnType(TOperator op, TInfoSink &infoSink);
 
+    static TConstantUnion *FoldAggregateConstructor(TIntermAggregate *aggregate,
+                                                    TInfoSink &infoSink);
     static TConstantUnion *FoldAggregateBuiltIn(TIntermAggregate *aggregate, TInfoSink &infoSink);
 
   protected:
-    TConstantUnion *mUnionArrayPointer;
+    
+    const TConstantUnion *mUnionArrayPointer;
 
   private:
     typedef float(*FloatTypeUnaryFunc) (float);
@@ -516,6 +524,7 @@ class TIntermAggregate : public TIntermOperator
     void setUseEmulatedFunction() { mUseEmulatedFunction = true; }
     bool getUseEmulatedFunction() { return mUseEmulatedFunction; }
 
+    bool areChildrenConstQualified();
     void setPrecisionFromChildren();
     void setBuiltInFunctionPrecision();
 

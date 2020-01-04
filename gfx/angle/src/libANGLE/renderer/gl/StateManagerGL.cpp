@@ -11,6 +11,7 @@
 #include "common/BitSetIterator.h"
 #include "libANGLE/Data.h"
 #include "libANGLE/Framebuffer.h"
+#include "libANGLE/TransformFeedback.h"
 #include "libANGLE/VertexArray.h"
 #include "libANGLE/Query.h"
 #include "libANGLE/renderer/gl/BufferGL.h"
@@ -19,6 +20,7 @@
 #include "libANGLE/renderer/gl/ProgramGL.h"
 #include "libANGLE/renderer/gl/SamplerGL.h"
 #include "libANGLE/renderer/gl/TextureGL.h"
+#include "libANGLE/renderer/gl/TransformFeedbackGL.h"
 #include "libANGLE/renderer/gl/VertexArrayGL.h"
 #include "libANGLE/renderer/gl/QueryGL.h"
 
@@ -42,7 +44,9 @@ StateManagerGL::StateManagerGL(const FunctionsGL *functions, const gl::Caps &ren
       mTextureUnitIndex(0),
       mTextures(),
       mSamplers(rendererCaps.maxCombinedTextureImageUnits, 0),
+      mTransformFeedback(0),
       mQueries(),
+      mPrevDrawTransformFeedback(nullptr),
       mPrevDrawQueries(),
       mPrevDrawContext(0),
       mUnpackAlignment(4),
@@ -256,6 +260,25 @@ void StateManagerGL::deleteRenderbuffer(GLuint rbo)
         }
 
         mFunctions->deleteRenderbuffers(1, &rbo);
+    }
+}
+
+void StateManagerGL::deleteTransformFeedback(GLuint transformFeedback)
+{
+    if (transformFeedback != 0)
+    {
+        if (mTransformFeedback == transformFeedback)
+        {
+            bindTransformFeedback(GL_TRANSFORM_FEEDBACK, 0);
+        }
+
+        if (mPrevDrawTransformFeedback != nullptr &&
+            mPrevDrawTransformFeedback->getTransformFeedbackID() == transformFeedback)
+        {
+            mPrevDrawTransformFeedback = nullptr;
+        }
+
+        mFunctions->deleteTransformFeedbacks(1, &transformFeedback);
     }
 }
 
@@ -516,6 +539,26 @@ void StateManagerGL::bindRenderbuffer(GLenum type, GLuint renderbuffer)
     }
 }
 
+void StateManagerGL::bindTransformFeedback(GLenum type, GLuint transformFeedback)
+{
+    ASSERT(type == GL_TRANSFORM_FEEDBACK);
+    if (mTransformFeedback != transformFeedback)
+    {
+        
+        
+        
+        if (mPrevDrawTransformFeedback != nullptr &&
+            mPrevDrawTransformFeedback->getTransformFeedbackID() != transformFeedback)
+        {
+            mPrevDrawTransformFeedback->syncPausedState(true);
+            mPrevDrawTransformFeedback = nullptr;
+        }
+
+        mTransformFeedback = transformFeedback;
+        mFunctions->bindTransformFeedback(type, mTransformFeedback);
+    }
+}
+
 void StateManagerGL::beginQuery(GLenum type, GLuint query)
 {
     
@@ -594,6 +637,25 @@ gl::Error StateManagerGL::setGenericDrawState(const gl::Data &data)
 {
     const gl::State &state = *data.state;
 
+    
+    if (data.context != mPrevDrawContext)
+    {
+        if (mPrevDrawTransformFeedback != nullptr)
+        {
+            mPrevDrawTransformFeedback->syncPausedState(true);
+        }
+
+        for (QueryGL *prevQuery : mPrevDrawQueries)
+        {
+            prevQuery->pause();
+        }
+    }
+    mPrevDrawTransformFeedback = nullptr;
+    mPrevDrawQueries.clear();
+
+    mPrevDrawContext = data.context;
+
+    
     const gl::Program *program = state.getProgram();
     const ProgramGL *programGL = GetImplAs<ProgramGL>(program);
     useProgram(programGL->getProgramID());
@@ -672,16 +734,22 @@ gl::Error StateManagerGL::setGenericDrawState(const gl::Data &data)
     setTextureCubemapSeamlessEnabled(data.clientVersion >= 3);
 
     
-    if (data.context != mPrevDrawContext)
+    gl::TransformFeedback *transformFeedback = state.getCurrentTransformFeedback();
+    if (transformFeedback)
     {
-        for (QueryGL *prevQuery : mPrevDrawQueries)
-        {
-            prevQuery->pause();
-        }
+        TransformFeedbackGL *transformFeedbackGL =
+            GetImplAs<TransformFeedbackGL>(transformFeedback);
+        bindTransformFeedback(GL_TRANSFORM_FEEDBACK, transformFeedbackGL->getTransformFeedbackID());
+        transformFeedbackGL->syncActiveState(transformFeedback->isActive(),
+                                             transformFeedback->getPrimitiveMode());
+        transformFeedbackGL->syncPausedState(transformFeedback->isPaused());
+        mPrevDrawTransformFeedback = transformFeedbackGL;
     }
-    mPrevDrawQueries.clear();
-
-    mPrevDrawContext = data.context;
+    else
+    {
+        bindTransformFeedback(GL_TRANSFORM_FEEDBACK, 0);
+        mPrevDrawTransformFeedback = nullptr;
+    }
 
     
     for (GLenum queryType : QueryTypes)

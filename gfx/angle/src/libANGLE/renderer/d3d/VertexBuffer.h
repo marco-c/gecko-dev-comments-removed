@@ -135,6 +135,11 @@ class StaticVertexBufferInterface : public VertexBufferInterface
 
     bool lookupAttribute(const gl::VertexAttribute &attribute, unsigned int* outStreamFffset);
 
+    
+    
+    void commit();
+    bool isCommitted() { return mIsCommitted; }
+
   protected:
     gl::Error reserveSpace(unsigned int size);
 
@@ -151,6 +156,7 @@ class StaticVertexBufferInterface : public VertexBufferInterface
         unsigned int streamOffset;
     };
 
+    bool mIsCommitted;
     std::vector<VertexElement> mCache;
 };
 

@@ -260,7 +260,7 @@ TIntermNode *TIntermediate::addSelection(
     
     
 
-    if (cond->getAsTyped() && cond->getAsTyped()->getAsConstantUnion())
+    if (cond->getAsConstantUnion())
     {
         if (cond->getAsConstantUnion()->getBConst(0) == true)
         {
@@ -281,22 +281,32 @@ TIntermNode *TIntermediate::addSelection(
     return node;
 }
 
-TIntermTyped *TIntermediate::addComma(
-    TIntermTyped *left, TIntermTyped *right, const TSourceLoc &line)
+TIntermTyped *TIntermediate::addComma(TIntermTyped *left,
+                                      TIntermTyped *right,
+                                      const TSourceLoc &line,
+                                      int shaderVersion)
 {
-    if (left->getType().getQualifier() == EvqConst &&
-        right->getType().getQualifier() == EvqConst)
+    TQualifier resultQualifier = EvqConst;
+    
+    if (shaderVersion >= 300 || left->getQualifier() != EvqConst ||
+        right->getQualifier() != EvqConst)
     {
-        return right;
+        resultQualifier = EvqTemporary;
+    }
+
+    TIntermTyped *commaNode = nullptr;
+    if (!left->hasSideEffects())
+    {
+        commaNode = right;
     }
     else
     {
-        TIntermTyped *commaAggregate = growAggregate(left, right, line);
-        commaAggregate->getAsAggregate()->setOp(EOpComma);
-        commaAggregate->setType(right->getType());
-        commaAggregate->getTypePointer()->setQualifier(EvqTemporary);
-        return commaAggregate;
+        commaNode = growAggregate(left, right, line);
+        commaNode->getAsAggregate()->setOp(EOpComma);
+        commaNode->setType(right->getType());
     }
+    commaNode->getTypePointer()->setQualifier(resultQualifier);
+    return commaNode;
 }
 
 
@@ -309,27 +319,33 @@ TIntermTyped *TIntermediate::addComma(
 TIntermTyped *TIntermediate::addSelection(TIntermTyped *cond, TIntermTyped *trueBlock, TIntermTyped *falseBlock,
                                           const TSourceLoc &line)
 {
+    TQualifier resultQualifier = EvqTemporary;
+    if (cond->getQualifier() == EvqConst && trueBlock->getQualifier() == EvqConst &&
+        falseBlock->getQualifier() == EvqConst)
+    {
+        resultQualifier = EvqConst;
+    }
     
     
-    
-    
-    
-    
-    if (cond->getAsConstantUnion() &&
-        trueBlock->getAsConstantUnion() &&
-        falseBlock->getAsConstantUnion())
+    if (cond->getAsConstantUnion())
     {
         if (cond->getAsConstantUnion()->getBConst(0))
+        {
+            trueBlock->getTypePointer()->setQualifier(resultQualifier);
             return trueBlock;
+        }
         else
+        {
+            falseBlock->getTypePointer()->setQualifier(resultQualifier);
             return falseBlock;
+        }
     }
 
     
     
     
     TIntermSelection *node = new TIntermSelection(cond, trueBlock, falseBlock, trueBlock->getType());
-    node->getTypePointer()->setQualifier(EvqTemporary);
+    node->getTypePointer()->setQualifier(resultQualifier);
     node->setLine(line);
 
     return node;
@@ -359,8 +375,9 @@ TIntermCase *TIntermediate::addCase(
 
 
 
-TIntermConstantUnion *TIntermediate::addConstantUnion(
-    TConstantUnion *constantUnion, const TType &type, const TSourceLoc &line)
+TIntermConstantUnion *TIntermediate::addConstantUnion(const TConstantUnion *constantUnion,
+                                                      const TType &type,
+                                                      const TSourceLoc &line)
 {
     TIntermConstantUnion *node = new TIntermConstantUnion(constantUnion, type);
     node->setLine(line);
@@ -453,33 +470,38 @@ TIntermTyped *TIntermediate::foldAggregateBuiltIn(TIntermAggregate *aggregate)
 {
     switch (aggregate->getOp())
     {
-      case EOpAtan:
-      case EOpPow:
-      case EOpMod:
-      case EOpMin:
-      case EOpMax:
-      case EOpClamp:
-      case EOpMix:
-      case EOpStep:
-      case EOpSmoothStep:
-      case EOpMul:
-      case EOpOuterProduct:
-      case EOpLessThan:
-      case EOpLessThanEqual:
-      case EOpGreaterThan:
-      case EOpGreaterThanEqual:
-      case EOpVectorEqual:
-      case EOpVectorNotEqual:
-      case EOpDistance:
-      case EOpDot:
-      case EOpCross:
-      case EOpFaceForward:
-      case EOpReflect:
-      case EOpRefract:
-        return aggregate->fold(mInfoSink);
-      default:
-        
-        return nullptr;
+        case EOpAtan:
+        case EOpPow:
+        case EOpMod:
+        case EOpMin:
+        case EOpMax:
+        case EOpClamp:
+        case EOpMix:
+        case EOpStep:
+        case EOpSmoothStep:
+        case EOpMul:
+        case EOpOuterProduct:
+        case EOpLessThan:
+        case EOpLessThanEqual:
+        case EOpGreaterThan:
+        case EOpGreaterThanEqual:
+        case EOpVectorEqual:
+        case EOpVectorNotEqual:
+        case EOpDistance:
+        case EOpDot:
+        case EOpCross:
+        case EOpFaceForward:
+        case EOpReflect:
+        case EOpRefract:
+            return aggregate->fold(mInfoSink);
+        default:
+            
+            if (aggregate->isConstructor() && !aggregate->isArray())
+            {
+                return aggregate->fold(mInfoSink);
+            }
+            
+            return nullptr;
     }
 
     return nullptr;

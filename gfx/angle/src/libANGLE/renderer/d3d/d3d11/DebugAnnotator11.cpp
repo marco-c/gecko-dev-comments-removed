@@ -39,29 +39,50 @@ void DebugAnnotator11::beginEvent(const wchar_t *eventName)
 {
     initializeDevice();
 
-    mUserDefinedAnnotation->BeginEvent(eventName);
+    if (mUserDefinedAnnotation != nullptr)
+    {
+        mUserDefinedAnnotation->BeginEvent(eventName);
+    }
 }
 
 void DebugAnnotator11::endEvent()
 {
     initializeDevice();
 
-    mUserDefinedAnnotation->EndEvent();
+    if (mUserDefinedAnnotation != nullptr)
+    {
+        mUserDefinedAnnotation->EndEvent();
+    }
 }
 
 void DebugAnnotator11::setMarker(const wchar_t *markerName)
 {
     initializeDevice();
 
-    mUserDefinedAnnotation->SetMarker(markerName);
+    if (mUserDefinedAnnotation != nullptr)
+    {
+        mUserDefinedAnnotation->SetMarker(markerName);
+    }
 }
 
 bool DebugAnnotator11::getStatus()
 {
-    
+#if defined(ANGLE_ENABLE_WINDOWS_STORE)
+#if (NTDDI_VERSION == NTDDI_WIN10)
+    initializeDevice();
+
+    if (mUserDefinedAnnotation != nullptr)
+    {
+        return !!(mUserDefinedAnnotation->GetStatus());
+    }
+
+    return true;  
+#elif defined(_DEBUG)
     static bool underCapture = true;
 
-#if defined(_DEBUG) && defined(ANGLE_ENABLE_WINDOWS_STORE)
+    
+    
+    
     
     
     
@@ -82,9 +103,16 @@ bool DebugAnnotator11::getStatus()
         SafeRelease(graphicsAnalysis);
         triedIDXGraphicsAnalysis = true;
     }
-#endif 
 
     return underCapture;
+#else
+    
+    return true;
+#endif  
+#else
+    
+    return true;
+#endif  
 }
 
 void DebugAnnotator11::initializeDevice()

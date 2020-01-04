@@ -43,10 +43,16 @@ PbufferSurfaceGLX::~PbufferSurfaceGLX()
 
 egl::Error PbufferSurfaceGLX::initialize()
 {
+    
+    
+    
+    int width = std::max(1, static_cast<int>(mWidth));
+    int height = std::max(1, static_cast<int>(mHeight));
+
     const int attribs[] =
     {
-        GLX_PBUFFER_WIDTH, static_cast<int>(mWidth),
-        GLX_PBUFFER_HEIGHT, static_cast<int>(mHeight),
+        GLX_PBUFFER_WIDTH, width,
+        GLX_PBUFFER_HEIGHT, height,
         GLX_LARGEST_PBUFFER, mLargest,
         None
     };

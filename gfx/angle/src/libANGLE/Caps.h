@@ -83,6 +83,8 @@ struct Extensions
     
     
     
+    
+    
     void setTextureExtensionSupport(const TextureCapsMap &textureCaps);
 
     
@@ -137,6 +139,16 @@ struct Extensions
     bool textureCompressionDXT1;
     bool textureCompressionDXT3;
     bool textureCompressionDXT5;
+
+    
+    bool textureCompressionASTCHDR;
+
+    
+    bool textureCompressionASTCLDR;
+
+    
+    
+    bool compressedETC1RGB8Texture;
 
     
     
@@ -233,6 +245,9 @@ struct Extensions
 
     
     bool packSubimage;
+
+    
+    bool vertexArrayObject;
 
     
 

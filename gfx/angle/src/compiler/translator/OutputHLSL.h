@@ -47,6 +47,8 @@ class OutputHLSL : public TIntermTraverser
 
     TInfoSinkBase &getInfoSink() { ASSERT(!mInfoSinkStack.empty()); return *mInfoSinkStack.top(); }
 
+    static bool canWriteAsHLSLLiteral(TIntermTyped *expression);
+
   protected:
     void header(const BuiltInFunctionEmulator *builtInFunctionEmulator);
 
@@ -84,6 +86,11 @@ class OutputHLSL : public TIntermTraverser
 
     
     bool writeSameSymbolInitializer(TInfoSinkBase &out, TIntermSymbol *symbolNode, TIntermTyped *expression);
+    
+    bool writeConstantInitialization(TInfoSinkBase &out,
+                                     TIntermSymbol *symbolNode,
+                                     TIntermTyped *expression);
+
     void writeDeferredGlobalInitializers(TInfoSinkBase &out);
     void writeSelection(TIntermSelection *node);
 

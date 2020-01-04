@@ -10,9 +10,15 @@
 
 
 
+
+
+
+
+
 #include "compiler/translator/SeparateArrayInitialization.h"
 
 #include "compiler/translator/IntermNode.h"
+#include "compiler/translator/OutputHLSL.h"
 
 namespace
 {
@@ -47,7 +53,7 @@ bool SeparateArrayInitTraverser::visitAggregate(Visit, TIntermAggregate *node)
         if (initNode != nullptr && initNode->getOp() == EOpInitialize)
         {
             TIntermTyped *initializer = initNode->getRight();
-            if (initializer->isArray())
+            if (initializer->isArray() && !sh::OutputHLSL::canWriteAsHLSLLiteral(initializer))
             {
                 
                 ASSERT(sequence->size() == 1);
