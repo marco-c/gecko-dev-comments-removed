@@ -755,22 +755,6 @@ ThreadActor.prototype = {
     return this._tabClosed ? null : undefined;
   },
 
-  
-
-
-
-
-
-
-  _forceCompletion: function (aRequest) {
-    
-    
-    return {
-      error: "notImplemented",
-      message: "forced completion is not yet implemented."
-    };
-  },
-
   _makeOnEnterFrame: function ({ pauseAndRespond }) {
     return aFrame => {
       const generatedLocation = this.sources.getFrameLocation(aFrame);
@@ -1010,10 +994,6 @@ ThreadActor.prototype = {
         message: "trying to resume in the wrong order.",
         lastPausedUrl: this._nestedEventLoops.lastPausedUrl
       };
-    }
-
-    if (aRequest && aRequest.forceCompletion) {
-      return this._forceCompletion(aRequest);
     }
 
     let resumeLimitHandled;
