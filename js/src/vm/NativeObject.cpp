@@ -94,12 +94,6 @@ ObjectElements::MakeElementsCopyOnWrite(ExclusiveContext* cx, NativeObject* obj)
 
     
     
-    
-    
-    header->clearInWholeCellBuffer();
-
-    
-    
     MOZ_ASSERT(!header->isCopyOnWrite());
     header->flags |= COPY_ON_WRITE;
 

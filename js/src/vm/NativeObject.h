@@ -181,14 +181,6 @@ class ObjectElements
         
         
         SHARED_MEMORY               = 0x8,
-
-        
-        
-        
-        
-        
-        
-        IN_WHOLE_CELL_BUFFER        = 0x10,
     };
 
   private:
@@ -244,19 +236,6 @@ class ObjectElements
     void clearCopyOnWrite() {
         MOZ_ASSERT(isCopyOnWrite());
         flags &= ~COPY_ON_WRITE;
-    }
-    bool isInWholeCellBuffer() const {
-        return flags & IN_WHOLE_CELL_BUFFER;
-    }
-    void setInWholeCellBuffer() {
-        MOZ_ASSERT(!isSharedMemory());
-        MOZ_ASSERT(!isCopyOnWrite());
-        flags |= IN_WHOLE_CELL_BUFFER;
-    }
-    void clearInWholeCellBuffer() {
-        MOZ_ASSERT(!isSharedMemory());
-        MOZ_ASSERT(!isCopyOnWrite());
-        flags &= ~IN_WHOLE_CELL_BUFFER;
     }
 
   public:
@@ -481,15 +460,9 @@ class NativeObject : public JSObject
     }
 
     bool isInWholeCellBuffer() const {
-        return getElementsHeader()->isInWholeCellBuffer();
-    }
-    void setInWholeCellBuffer() {
-        if (!hasEmptyElements() && !isSharedMemory() && !getElementsHeader()->isCopyOnWrite())
-            getElementsHeader()->setInWholeCellBuffer();
-    }
-    void clearInWholeCellBuffer() {
-        if (!hasEmptyElements() && !isSharedMemory() && !getElementsHeader()->isCopyOnWrite())
-            getElementsHeader()->clearInWholeCellBuffer();
+        const gc::TenuredCell* cell = &asTenured();
+        gc::ArenaCellSet* cells = cell->arena()->bufferedCells;
+        return cells && cells->hasCell(cell);
     }
 
   protected:

@@ -21,6 +21,8 @@
 namespace js {
 namespace gc {
 
+class ArenaCellSet;
+
 
 
 
@@ -334,27 +336,6 @@ class StoreBuffer
         } Hasher;
     };
 
-    struct WholeCellEdges
-    {
-        Cell* edge;
-
-        WholeCellEdges() : edge(nullptr) {}
-        explicit WholeCellEdges(Cell* cell) : edge(cell) {
-            MOZ_ASSERT(edge->isTenured());
-        }
-
-        bool operator==(const WholeCellEdges& other) const { return edge == other.edge; }
-        bool operator!=(const WholeCellEdges& other) const { return edge != other.edge; }
-
-        bool maybeInRememberedSet(const Nursery&) const { return true; }
-
-        void trace(TenuringTracer& mover) const;
-
-        explicit operator bool() const { return edge != nullptr; }
-
-        typedef PointerEdgeHasher<WholeCellEdges> Hasher;
-    };
-
     template <typename Buffer, typename Edge>
     void unput(Buffer& buffer, const Edge& edge) {
         MOZ_ASSERT(!JS::shadow::Runtime::asShadowRuntime(runtime_)->isHeapBusy());
@@ -379,7 +360,7 @@ class StoreBuffer
     MonoTypeBuffer<ValueEdge> bufferVal;
     MonoTypeBuffer<CellPtrEdge> bufferCell;
     MonoTypeBuffer<SlotsEdge> bufferSlot;
-    MonoTypeBuffer<WholeCellEdges> bufferWholeCell;
+    ArenaCellSet* bufferWholeCell;
     GenericBuffer bufferGeneric;
     bool cancelIonCompilations_;
 
@@ -394,7 +375,7 @@ class StoreBuffer
 
   public:
     explicit StoreBuffer(JSRuntime* rt, const Nursery& nursery)
-      : bufferVal(), bufferCell(), bufferSlot(), bufferWholeCell(), bufferGeneric(),
+      : bufferVal(), bufferCell(), bufferSlot(), bufferWholeCell(nullptr), bufferGeneric(),
         cancelIonCompilations_(false), runtime_(rt), nursery_(nursery), aboutToOverflow_(false),
         enabled_(false)
 #ifdef DEBUG
@@ -440,14 +421,66 @@ class StoreBuffer
     void traceValues(TenuringTracer& mover)            { bufferVal.trace(this, mover); }
     void traceCells(TenuringTracer& mover)             { bufferCell.trace(this, mover); }
     void traceSlots(TenuringTracer& mover)             { bufferSlot.trace(this, mover); }
-    void traceWholeCells(TenuringTracer& mover)        { bufferWholeCell.trace(this, mover); }
     void traceGenericEntries(JSTracer *trc)            { bufferGeneric.trace(this, trc); }
+
+    void traceWholeCells(TenuringTracer& mover);
+    void traceWholeCell(TenuringTracer& mover, JS::TraceKind kind, Cell* cell);
 
     
     void setAboutToOverflow();
 
+    void addToWholeCellBuffer(ArenaCellSet* set);
+
     void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::GCSizes* sizes);
 };
+
+
+class ArenaCellSet
+{
+    friend class StoreBuffer;
+
+    
+    Arena* arena;
+
+    
+    ArenaCellSet* next;
+
+    
+    BitArray<ArenaCellCount> bits;
+
+  public:
+    ArenaCellSet(Arena* arena);
+
+    bool hasCell(const TenuredCell* cell) const {
+        return hasCell(getCellIndex(cell));
+    }
+
+    void putCell(const TenuredCell* cell) {
+        putCell(getCellIndex(cell));
+    }
+
+    bool isEmpty() const {
+        return this == &Empty;
+    }
+
+    bool hasCell(size_t cellIndex) const;
+
+    void putCell(size_t cellIndex);
+
+    void check() const;
+
+    
+    static ArenaCellSet Empty;
+
+    static size_t getCellIndex(const TenuredCell* cell);
+    static void getWordIndexAndMask(size_t cellIndex, size_t* wordp, uint32_t* maskp);
+
+    
+    
+    static const size_t NurseryFreeThresholdBytes = 64 * 1024;
+};
+
+ArenaCellSet* AllocateWholeCellSet(Arena* arena);
 
 } 
 } 

@@ -63,6 +63,7 @@ TraceManuallyBarrieredGenericPointerEdge(JSTracer* trc, gc::Cell** thingp, const
 namespace gc {
 
 class Arena;
+class ArenaCellSet;
 class ArenaList;
 class SortedArenaList;
 struct Chunk;
@@ -328,16 +329,23 @@ class TenuredCell : public Cell
 
 const uintptr_t LargestTaggedNullCellPointer = (1 << CellShift) - 1;
 
+MOZ_CONSTEXPR size_t
+DivideAndRoundUp(size_t numerator, size_t divisor) {
+    return (numerator + divisor - 1) / divisor;
+}
+
+const size_t ArenaCellCount = ArenaSize / CellSize;
+static_assert(ArenaSize % CellSize == 0, "Arena size must be a multiple of cell size");
 
 
 
 
 
 
-const size_t ArenaCellCount = size_t(1) << (ArenaShift - CellShift);
+
 const size_t ArenaBitmapBits = ArenaCellCount;
-const size_t ArenaBitmapBytes = ArenaBitmapBits / 8;
-const size_t ArenaBitmapWords = ArenaBitmapBits / JS_BITS_PER_WORD;
+const size_t ArenaBitmapBytes = DivideAndRoundUp(ArenaBitmapBits, 8);
+const size_t ArenaBitmapWords = DivideAndRoundUp(ArenaBitmapBits, JS_BITS_PER_WORD);
 
 
 
@@ -522,7 +530,10 @@ class Arena
                   "enough bits to cover allocKind and hasDelayedMarking.");
 
     
-    void* extra;
+
+
+
+    ArenaCellSet* bufferedCells;
 
     
 
@@ -532,20 +543,7 @@ class Arena
 
     uint8_t data[ArenaSize - ArenaHeaderSize];
 
-    void init(JS::Zone* zoneArg, AllocKind kind) {
-        MOZ_ASSERT(firstFreeSpan.isEmpty());
-        MOZ_ASSERT(!zone);
-        MOZ_ASSERT(!allocated());
-        MOZ_ASSERT(!hasDelayedMarking);
-        MOZ_ASSERT(!allocatedDuringIncremental);
-        MOZ_ASSERT(!markOverflow);
-        MOZ_ASSERT(!auxNextLink);
-
-        zone = zoneArg;
-        allocKind = size_t(kind);
-        setAsFullyUnused();
-        extra = nullptr;
-    }
+    void init(JS::Zone* zoneArg, AllocKind kind);
 
     
     
@@ -565,6 +563,7 @@ class Arena
         allocatedDuringIncremental = 0;
         markOverflow = 0;
         auxNextLink = 0;
+        bufferedCells = nullptr;
     }
 
     uintptr_t address() const {
