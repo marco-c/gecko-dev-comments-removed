@@ -1161,7 +1161,12 @@ function getPropertyBagValue(bag, key) {
 
 
 
-function promiseCrashReport(expectedExtra) {
+
+
+
+
+
+function promiseCrashReport(expectedExtra={}) {
   return Task.spawn(function*() {
     info("Starting wait on crash-report-status");
     let [subject, data] =
@@ -1200,8 +1205,12 @@ function promiseCrashReport(expectedExtra) {
       let key = enumerator.getNext().QueryInterface(Ci.nsIProperty).name;
       let value = extra.getPropertyAsAString(key);
       if (key in expectedExtra) {
-        is(value, expectedExtra[key],
-           `Crash report had the right extra value for ${key}`);
+        if (expectedExtra[key] == null) {
+          ok(false, `Got unexpected key ${key} with value ${value}`);
+        } else {
+          is(value, expectedExtra[key],
+             `Crash report had the right extra value for ${key}`);
+        }
       }
     }
   });

@@ -163,13 +163,31 @@ this.TabCrashHandler = {
       URL,
     } = message.data;
 
+    let extraExtraKeyVals = {
+      "Comments": comments,
+      "Email": email,
+      "URL": URL,
+    };
+
+    
+    
+    for (let key in extraExtraKeyVals) {
+      let val = extraExtraKeyVals[key].trim();
+      if (!val) {
+        delete extraExtraKeyVals[key];
+      }
+    }
+
+    
+    
+    
+    if (!includeURL) {
+      extraExtraKeyVals["URL"] = "";
+    }
+
     CrashSubmit.submit(dumpID, {
       recordSubmission: true,
-      extraExtraKeyVals: {
-        Comments: comments,
-        Email: email,
-        URL: URL,
-      },
+      extraExtraKeyVals,
     }).then(null, Cu.reportError);
 
     this.prefs.setBoolPref("sendReport", true);
