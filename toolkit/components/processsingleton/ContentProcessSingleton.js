@@ -14,6 +14,27 @@ XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
                                    "@mozilla.org/childprocessmessagemanager;1",
                                    "nsIMessageSender");
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const MSG_MGR_CONSOLE_MAX_SIZE = 1024 * 1024; 
+const MSG_MGR_CONSOLE_VAR_SIZE = 8;
+const MSG_MGR_CONSOLE_INFO_MAX = 1024;
+
 function ContentProcessSingleton() {}
 ContentProcessSingleton.prototype = {
   classID: Components.ID("{ca2a8470-45c7-11e4-916c-0800200c9a66}"),
@@ -33,20 +54,41 @@ ContentProcessSingleton.prototype = {
 
       let msgData = {
         level: consoleMsg.level,
-        filename: consoleMsg.filename,
+        filename: consoleMsg.filename.substring(0, MSG_MGR_CONSOLE_INFO_MAX),
         lineNumber: consoleMsg.lineNumber,
-        functionName: consoleMsg.functionName,
+        functionName: consoleMsg.functionName.substring(0,
+          MSG_MGR_CONSOLE_INFO_MAX),
         timeStamp: consoleMsg.timeStamp,
         arguments: [],
       };
 
       
       
+      let unavailString = "<unavailable>";
+      let unavailStringLength = unavailString.length * 2; 
+
+      
+      
+      let totalArgLength = 0;
+
+      
       for (let arg of consoleMsg.arguments) {
-        if ((typeof arg == "object" || typeof arg == "function") && arg !== null) {
-          msgData.arguments.push("<unavailable>");
+        if ((typeof arg == "object" || typeof arg == "function") &&
+            arg !== null) {
+          arg = unavailString;
+          totalArgLength += unavailStringLength;
+        } else if (typeof arg == "string") {
+          totalArgLength += arg.length * 2; 
         } else {
+          totalArgLength += MSG_MGR_CONSOLE_VAR_SIZE;
+        }
+
+        if (totalArgLength <= MSG_MGR_CONSOLE_MAX_SIZE) {
           msgData.arguments.push(arg);
+        } else {
+          
+          msgData.arguments = ["<truncated>"];
+          break;
         }
       }
 
