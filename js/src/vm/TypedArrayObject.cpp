@@ -121,22 +121,105 @@ TypedArrayObject::trace(JSTracer* trc, JSObject* objArg)
 {
     
     ArrayBufferViewObject::trace(trc, objArg);
+}
+
+void
+TypedArrayObject::finalize(FreeOp* fop, JSObject* obj)
+{
+    MOZ_ASSERT(!IsInsideNursery(obj));
+    TypedArrayObject* curObj = &obj->as<TypedArrayObject>();
 
     
-    
-    
-    TypedArrayObject& obj = objArg->as<TypedArrayObject>();
-    if (!obj.hasBuffer() && obj.getPrivate() != obj.fixedData(FIXED_DATA_START)) {
-        void* oldData = obj.getPrivate();
-        void* newData = obj.fixedData(FIXED_DATA_START);
+    if (curObj->hasBuffer())
+        return;
 
-        obj.setPrivateUnbarriered(newData);
-
-        
-        
-        
-        trc->runtime()->gc.nursery.maybeSetForwardingPointer(trc, oldData, newData, true);
+    
+    if (!curObj->hasInlineElements()) {
+        MOZ_ASSERT(!fop->runtime()->gc.nursery.isInside(curObj->elements()));
+        js_free(curObj->elements());
     }
+}
+
+ void
+TypedArrayObject::objectMoved(JSObject* obj, const JSObject* old)
+{
+    TypedArrayObject* newObj = &obj->as<TypedArrayObject>();
+    const TypedArrayObject* oldObj = &old->as<TypedArrayObject>();
+
+    
+    if (oldObj->hasBuffer())
+        return;
+
+    
+    if (oldObj->hasInlineElements())
+        newObj->setInlineElements();
+}
+
+ size_t
+TypedArrayObject::objectMovedDuringMinorGC(JSTracer* trc, JSObject* obj, const JSObject* old,
+                                           gc::AllocKind newAllocKind)
+{
+    TypedArrayObject* newObj = &obj->as<TypedArrayObject>();
+    const TypedArrayObject* oldObj = &old->as<TypedArrayObject>();
+    MOZ_ASSERT(newObj->elements() == oldObj->elements());
+
+    
+    if (oldObj->hasBuffer())
+        return 0;
+
+    Nursery& nursery = trc->runtime()->gc.nursery;
+    void* buf = oldObj->elements();
+
+    if (!nursery.isInside(buf)) {
+        nursery.removeMallocedBuffer(buf);
+        return 0;
+    }
+
+    
+    
+    
+    size_t nbytes = 0;
+    switch (oldObj->type()) {
+#define OBJECT_MOVED_TYPED_ARRAY(T, N) \
+      case Scalar::N: \
+        nbytes = oldObj->length() * sizeof(T); \
+        break;
+JS_FOR_EACH_TYPED_ARRAY(OBJECT_MOVED_TYPED_ARRAY)
+#undef OBJECT_MOVED_TYPED_ARRAY
+      default:
+        MOZ_CRASH("Unsupported TypedArray type");
+    }
+
+    if (dataOffset() + nbytes <= GetGCKindBytes(newAllocKind)) {
+        newObj->setInlineElements();
+    } else {
+        AutoEnterOOMUnsafeRegion oomUnsafe;
+        uint8_t* data = newObj->zone()->pod_malloc<uint8_t>(nbytes);
+        if (!data)
+            oomUnsafe.crash("Failed to allocate typed array elements while tenuring.");
+        newObj->initPrivate(data);
+    }
+
+    mozilla::PodCopy(newObj->elements(), oldObj->elements(), nbytes);
+
+    
+    
+    nursery.maybeSetForwardingPointer(trc, oldObj->elements(), newObj->elements(), true);
+
+    return newObj->hasInlineElements() ? 0 : nbytes;
+}
+
+bool
+TypedArrayObject::hasInlineElements() const
+{
+    return elements() == this->fixedData(TypedArrayObject::FIXED_DATA_START);
+}
+
+void
+TypedArrayObject::setInlineElements()
+{
+    char* dataSlot = reinterpret_cast<char*>(this) + this->dataOffset();
+    *reinterpret_cast<void**>(dataSlot) = this->fixedData(TypedArrayObject::FIXED_DATA_START);
 }
 
 
@@ -177,17 +260,6 @@ js::ClampDoubleToUint8(const double x)
 template<typename ElementType>
 static inline JSObject*
 NewArray(JSContext* cx, uint32_t nelements);
-
-#define JS_FOR_EACH_TYPED_ARRAY(macro) \
-    macro(int8_t, Int8) \
-    macro(uint8_t, Uint8) \
-    macro(int16_t, Int16) \
-    macro(uint16_t, Uint16) \
-    macro(int32_t, Int32) \
-    macro(uint32_t, Uint32) \
-    macro(float, Float32) \
-    macro(double, Float64) \
-    macro(uint8_clamped, Uint8Clamped)
 
 namespace {
 
@@ -458,15 +530,21 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     }
 
     static TypedArrayObject*
-    makeTemplateObject(JSContext* cx, uint32_t len, NewObjectKind newKind)
+    makeTemplateObject(JSContext* cx, uint32_t len)
     {
-        MOZ_ASSERT(len <= TypedArrayObject::INLINE_BUFFER_LIMIT / sizeof(NativeType));
-        gc::AllocKind allocKind = AllocKindForLazyBuffer(len * sizeof(NativeType));
+        size_t nbytes;
+        MOZ_ALWAYS_TRUE(CalculateAllocSize<NativeType>(len, &nbytes));
+        MOZ_ASSERT(nbytes < TypedArrayObject::SINGLETON_BYTE_LENGTH);
+        NewObjectKind newKind = TenuredObject;
+        bool fitsInline = nbytes <= INLINE_BUFFER_LIMIT;
+        const Class* clasp = instanceClass();
+        gc::AllocKind allocKind = !fitsInline
+                                  ? GetGCObjectKind(clasp)
+                                  : AllocKindForLazyBuffer(len * sizeof(NativeType));
+        MOZ_ASSERT(CanBeFinalizedInBackground(allocKind, clasp));
+        allocKind = GetBackgroundAllocKind(allocKind);
 
         AutoSetNewObjectMetadata metadata(cx);
-        MOZ_ASSERT(len * sizeof(NativeType) < TypedArrayObject::SINGLETON_BYTE_LENGTH);
-
-        const Class* clasp = instanceClass();
         jsbytecode* pc;
         RootedScript script(cx, cx->currentScript(&pc));
         if (script && ObjectGroup::useSingletonForAllocationSite(script, pc, clasp))
@@ -481,11 +559,19 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         }
 
         TypedArrayObject* tarray = &tmp->as<TypedArrayObject>();
+        
+        
+        
+        void* buf = tarray->fixedData(FIXED_DATA_START);
+        initTypedArraySlots(tarray, len, buf, allocKind);
 
-        void* data = tarray->fixedData(FIXED_DATA_START);
-        tarray->initPrivate(data);
-        memset(data, 0, len * sizeof(NativeType));
+        return tarray;
+    }
 
+    static void
+    initTypedArraySlots(TypedArrayObject* tarray, uint32_t len, void* buf,
+                        AllocKind allocKind)
+    {
         tarray->setFixedSlot(TypedArrayObject::BUFFER_SLOT, NullValue());
         tarray->setFixedSlot(TypedArrayObject::LENGTH_SLOT, Int32Value(AssertedCast<int32_t>(len)));
         tarray->setFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT, Int32Value(0));
@@ -493,7 +579,73 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         
         MOZ_ASSERT(tarray->numFixedSlots() == TypedArrayObject::DATA_SLOT);
 
-        return tarray;
+        if (buf) {
+            tarray->initPrivate(buf);
+        } else {
+            size_t nbytes = len * sizeof(NativeType);
+#ifdef DEBUG
+            size_t dataOffset = TypedArrayObject::dataOffset();
+            size_t offset = dataOffset + sizeof(HeapSlot);
+            MOZ_ASSERT(offset + nbytes <= GetGCKindBytes(allocKind));
+#endif
+
+            void* data = tarray->fixedData(FIXED_DATA_START);
+            tarray->initPrivate(data);
+            memset(data, 0, nbytes);
+        }
+    }
+
+    static void*
+    allocateTypedArrayElementsBuffer(JSContext* cx, uint32_t len)
+    {
+        if (len == 0)
+            return nullptr;
+
+        void* buf = cx->runtime()->pod_callocCanGC<HeapSlot>(len);
+        if (!buf) {
+            ReportOutOfMemory(cx);
+            return nullptr;
+        }
+        return buf;
+    }
+
+    static TypedArrayObject*
+    makeTypedArrayWithTemplate(JSContext* cx, TypedArrayObject* templateObj, uint32_t len)
+    {
+        size_t nbytes;
+        if (!js::CalculateAllocSize<NativeType>(len, &nbytes))
+            return nullptr;
+
+        MOZ_ASSERT(nbytes < TypedArrayObject::SINGLETON_BYTE_LENGTH);
+        bool fitsInline = nbytes <= INLINE_BUFFER_LIMIT;
+
+        AutoSetNewObjectMetadata metadata(cx);
+
+        const Class* clasp = templateObj->group()->clasp();
+        gc::AllocKind allocKind = !fitsInline
+                                  ? GetGCObjectKind(clasp)
+                                  : AllocKindForLazyBuffer(len * sizeof(NativeType));
+        MOZ_ASSERT(CanBeFinalizedInBackground(allocKind, clasp));
+        allocKind = GetBackgroundAllocKind(allocKind);
+        RootedObjectGroup group(cx, templateObj->group());
+
+        NewObjectKind newKind = GenericObject;
+
+        void* buf = nullptr;
+        if (!fitsInline) {
+            buf = allocateTypedArrayElementsBuffer(cx, len);
+            if (!buf)
+                return nullptr;
+        }
+
+        RootedObject tmp(cx, NewObjectWithGroup<TypedArrayObject>(cx, group, allocKind, newKind));
+        if (!tmp)
+            return nullptr;
+
+        TypedArrayObject* obj = &tmp->as<TypedArrayObject>();
+        initTypedArraySlots(obj, len, buf, allocKind);
+
+        return obj;
     }
 
     
@@ -793,38 +945,16 @@ JS_FOR_EACH_TYPED_ARRAY(CREATE_TYPE_FOR_TYPED_ARRAY)
 
 } 
 
-static void
-UpdateTypedArrayAfterMove(JSObject* obj, const JSObject* old)
-{
-    MOZ_ASSERT(obj->is<TypedArrayObject>());
-    MOZ_ASSERT(old->is<TypedArrayObject>());
-    TypedArrayObject* newObj = &obj->as<TypedArrayObject>();
-    const TypedArrayObject* oldObj = &old->as<TypedArrayObject>();
-
-    
-    
-    if (oldObj->hasBuffer())
-        return;
-
-    
-    void* oldData = newObj->fixedData(TypedArrayObject::FIXED_DATA_START);
-    if (oldData == ((char *)oldObj) + oldObj->dataOffset()) {
-        void* newData = newObj->fixedData(TypedArrayObject::FIXED_DATA_START);
-        *(void **)((((char *)newObj) + newObj->dataOffset())) = newData;
-    }
-}
-
 TypedArrayObject*
-js::TypedArrayCreateWithTemplate(JSContext* cx, HandleObject templateObj)
+js::TypedArrayCreateWithTemplate(JSContext* cx, HandleObject templateObj, int32_t len)
 {
     MOZ_ASSERT(templateObj->is<TypedArrayObject>());
-    TypedArrayObject* obj = &templateObj->as<TypedArrayObject>();
-    size_t len = obj->length();
+    TypedArrayObject* tobj = &templateObj->as<TypedArrayObject>();
 
-    switch (obj->type()) {
+    switch (tobj->type()) {
 #define CREATE_TYPED_ARRAY(T, N) \
       case Scalar::N: \
-        return TypedArrayObjectTemplate<T>::makeTemplateObject(cx, len, GenericObject);
+        return TypedArrayObjectTemplate<T>::makeTypedArrayWithTemplate(cx, tobj, len);
 JS_FOR_EACH_TYPED_ARRAY(CREATE_TYPED_ARRAY)
 #undef CREATE_TYPED_ARRAY
       default:
@@ -1118,11 +1248,15 @@ TypedArrayObject::GetTemplateObjectForNative(JSContext* cx, Native native, uint3
                                              MutableHandleObject res)
 {
 #define CHECK_TYPED_ARRAY_CONSTRUCTOR(T, N) \
-    if (native == &TypedArrayObjectTemplate<T>::class_constructor &&  \
-            len <= TypedArrayObject::INLINE_BUFFER_LIMIT / sizeof(T)) \
-    { \
-        res.set(TypedArrayObjectTemplate<T>::makeTemplateObject(cx, len, TenuredObject)); \
-        return true; \
+    if (native == &TypedArrayObjectTemplate<T>::class_constructor) { \
+        size_t nbytes; \
+        if (!js::CalculateAllocSize<T>(len, &nbytes)) \
+            return false; \
+        \
+        if (nbytes < TypedArrayObject::SINGLETON_BYTE_LENGTH) { \
+            res.set(TypedArrayObjectTemplate<T>::makeTemplateObject(cx, len)); \
+            return !!res; \
+        } \
     }
 JS_FOR_EACH_TYPED_ARRAY(CHECK_TYPED_ARRAY_CONSTRUCTOR)
 #undef CHECK_TYPED_ARRAY_CONSTRUCTOR
@@ -2299,7 +2433,7 @@ static const ClassOps TypedArrayClassOps = {
     nullptr,                 
     nullptr,                 
     nullptr,                 
-    nullptr,                 
+    TypedArrayObject::finalize, 
     nullptr,                 
     nullptr,                 
     nullptr,                 
@@ -2308,7 +2442,7 @@ static const ClassOps TypedArrayClassOps = {
 
 static const ClassExtension TypedArrayClassExtension = {
     nullptr,
-    UpdateTypedArrayAfterMove,
+    TypedArrayObject::objectMoved,
 };
 
 #define IMPL_TYPED_ARRAY_CLASS_SPEC(_type)                                     \
@@ -2341,7 +2475,9 @@ static const ClassSpec TypedArrayObjectClassSpecs[Scalar::MaxTypedArrayViewType]
     JSCLASS_HAS_RESERVED_SLOTS(TypedArrayObject::RESERVED_SLOTS) |             \
     JSCLASS_HAS_PRIVATE |                                                      \
     JSCLASS_HAS_CACHED_PROTO(JSProto_##_type##Array) |                         \
-    JSCLASS_DELAY_METADATA_BUILDER,                                            \
+    JSCLASS_DELAY_METADATA_BUILDER |                                           \
+    JSCLASS_SKIP_NURSERY_FINALIZE |                                            \
+    JSCLASS_BACKGROUND_FINALIZE,                                               \
     &TypedArrayClassOps,                                                       \
     &TypedArrayObjectClassSpecs[Scalar::Type::_type],                          \
     &TypedArrayClassExtension                                                  \
