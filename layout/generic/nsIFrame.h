@@ -1899,7 +1899,7 @@ public:
     
 
 
-    eUseAutoHeight =     1 << 1
+    eUseAutoBSize =      1 << 1
   };
 
   

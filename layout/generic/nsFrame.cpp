@@ -4729,7 +4729,7 @@ nsFrame::ComputeSize(nsRenderingContext *aRenderingContext,
   
   
   
-  if (!(aFlags & nsIFrame::eUseAutoHeight)) {
+  if (!(aFlags & nsIFrame::eUseAutoBSize)) {
     if (!nsLayoutUtils::IsAutoBSize(*blockStyleCoord, aCBSize.BSize(aWM))) {
       result.BSize(aWM) =
         nsLayoutUtils::ComputeBSizeValue(aCBSize.BSize(aWM),
