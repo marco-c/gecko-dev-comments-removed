@@ -50,6 +50,7 @@ class LazyScript;
 class ModuleObject;
 class NestedStaticScope;
 class StaticScope;
+class StaticFunctionScope;
 class RegExpObject;
 struct SourceCompressionTask;
 class Shape;
@@ -1004,7 +1005,22 @@ class JSScript : public js::gc::TenuredCell
 
     js::HeapPtrFunction function_;
     js::HeapPtr<js::ModuleObject*> module_;
-    js::HeapPtrObject   enclosingStaticScope_;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    js::HeapPtr<js::StaticScope*> staticScope_;
 
     
 
@@ -1213,7 +1229,7 @@ class JSScript : public js::gc::TenuredCell
 
   public:
     static JSScript* Create(js::ExclusiveContext* cx,
-                            js::HandleObject enclosingScope, bool savedCallerFun,
+                            js::HandleObject staticScope, bool savedCallerFun,
                             const JS::ReadOnlyCompileOptions& options,
                             js::HandleObject sourceObject, uint32_t sourceStart,
                             uint32_t sourceEnd);
@@ -1698,10 +1714,13 @@ class JSScript : public js::gc::TenuredCell
     inline js::GlobalObject& global() const;
     js::GlobalObject& uninlinedGlobal() const;
 
+    js::StaticScope* staticScope() const { return staticScope_; }
+
     
-    JSObject* enclosingStaticScope() const {
-        return enclosingStaticScope_;
-    }
+
+
+
+    inline JSObject* enclosingStaticScope() const;
 
     
     
@@ -2142,7 +2161,8 @@ class LazyScript : public gc::TenuredCell
     HeapPtrFunction function_;
 
     
-    HeapPtrObject enclosingScope_;
+    
+    HeapPtr<StaticFunctionScope*> staticScope_;
 
     
     
@@ -2194,13 +2214,14 @@ class LazyScript : public gc::TenuredCell
     uint32_t lineno_;
     uint32_t column_;
 
-    LazyScript(JSFunction* fun, void* table, uint64_t packedFields,
+    LazyScript(JSFunction* fun, StaticFunctionScope* funScope, void* table, uint64_t packedFields,
                uint32_t begin, uint32_t end, uint32_t lineno, uint32_t column);
 
     
     
     
     static LazyScript* CreateRaw(ExclusiveContext* cx, HandleFunction fun,
+                                 Handle<StaticFunctionScope*> funScope,
                                  uint64_t packedData, uint32_t begin, uint32_t end,
                                  uint32_t lineno, uint32_t column);
 
@@ -2209,6 +2230,7 @@ class LazyScript : public gc::TenuredCell
     
     
     static LazyScript* CreateRaw(ExclusiveContext* cx, HandleFunction fun,
+                                 Handle<StaticFunctionScope*> funScope,
                                  uint32_t numFreeVariables, uint32_t numInnerFunctions,
                                  JSVersion version, uint32_t begin, uint32_t end,
                                  uint32_t lineno, uint32_t column);
@@ -2223,7 +2245,7 @@ class LazyScript : public gc::TenuredCell
     
     
     static LazyScript* Create(ExclusiveContext* cx, HandleFunction fun,
-                              HandleScript script, HandleObject enclosingScope,
+                              HandleScript script, Handle<StaticFunctionScope*> funScope,
                               HandleScript sourceObjectScript,
                               uint64_t packedData, uint32_t begin, uint32_t end,
                               uint32_t lineno, uint32_t column);
@@ -2248,9 +2270,8 @@ class LazyScript : public gc::TenuredCell
         return bool(script_);
     }
 
-    JSObject* enclosingScope() const {
-        return enclosingScope_;
-    }
+    StaticFunctionScope* staticScope() const { return staticScope_; }
+    JSObject* enclosingScope() const;
 
     
     
@@ -2269,7 +2290,7 @@ class LazyScript : public gc::TenuredCell
         return (p_.version == JS_BIT(8) - 1) ? JSVERSION_UNKNOWN : JSVersion(p_.version);
     }
 
-    void setParent(JSObject* enclosingScope, ScriptSourceObject* sourceObject);
+    void initSource(ScriptSourceObject* sourceObject);
 
     uint32_t numFreeVariables() const {
         return p_.numFreeVariables;

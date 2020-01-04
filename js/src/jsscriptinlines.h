@@ -92,7 +92,22 @@ LazyScript::functionDelazifying(JSContext* cx) const
     return function_;
 }
 
+inline JSObject*
+LazyScript::enclosingScope() const
+{
+    return staticScope_->enclosingScope();
+}
+
 } 
+
+inline JSObject*
+JSScript::enclosingStaticScope() const
+{
+    
+    
+    
+    return function_ ? staticScope_->enclosingScope() : staticScope_;
+}
 
 inline JSFunction*
 JSScript::functionDelazifying() const

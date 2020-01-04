@@ -91,7 +91,7 @@ class StaticScope : public NativeObject
         setReservedSlot(ENCLOSING_SCOPE_SLOT, ObjectOrNullValue(obj));
     }
 
-    void setEnclosingScope(HandleObject obj);
+    void setEnclosingScope(JSObject* obj);
 };
 
 class NestedStaticScope : public StaticScope
@@ -232,7 +232,10 @@ class StaticBlockScope : public NestedStaticScope
 
     
     bool isGlobal() const {
-        return !enclosingStaticScope();
+        
+        
+        
+        return getFixedSlot(ENCLOSING_SCOPE_SLOT).isNull();
     }
 
     bool isSyntactic() const {
@@ -298,6 +301,28 @@ class StaticBlockScope : public NestedStaticScope
 
     static Shape* addVar(ExclusiveContext* cx, Handle<StaticBlockScope*> block, HandleId id,
                          bool constant, unsigned index, bool* redeclared);
+};
+
+class StaticFunctionScope : public StaticScope
+{
+    static const unsigned FUNCTION_OBJECT_SLOT = StaticScope::RESERVED_SLOTS;
+
+  public:
+    static const unsigned RESERVED_SLOTS = FUNCTION_OBJECT_SLOT + 1;
+    static const Class class_;
+
+    static StaticFunctionScope* create(ExclusiveContext* cx, HandleFunction functionObject,
+                                       Handle<StaticScope*> enclosingScope);
+
+    JSFunction& function() {
+        return getFixedSlot(FUNCTION_OBJECT_SLOT).toObject().as<JSFunction>();
+    }
+
+    bool isNamedLambda() { return function().isNamedLambda(); }
+
+    Shape* environmentShape() {
+        return function().nonLazyScript()->callObjShape();
+    }
 };
 
 
@@ -489,11 +514,11 @@ class StaticScopeIter
 
     static bool IsStaticScope(JSObject* obj) {
         return obj->is<StaticBlockScope>() ||
+               obj->is<StaticFunctionScope>() ||
                obj->is<StaticModuleScope>() ||
                obj->is<StaticWithScope>() ||
                obj->is<StaticEvalScope>() ||
-               obj->is<StaticNonSyntacticScope>() ||
-               obj->is<JSFunction>();
+               obj->is<StaticNonSyntacticScope>();
     }
 
   public:
@@ -548,8 +573,8 @@ class StaticScopeIter
     StaticWithScope& staticWith() const;
     StaticEvalScope& eval() const;
     StaticNonSyntacticScope& nonSyntactic() const;
+    StaticFunctionScope& fun() const;
     JSScript* funScript() const;
-    JSFunction& fun() const;
     frontend::FunctionBox* maybeFunctionBox() const;
 };
 
@@ -609,6 +634,8 @@ ScopeCoordinateName(ScopeCoordinateNameCache& cache, JSScript* script, jsbytecod
 
 extern JSScript*
 ScopeCoordinateFunctionScript(JSScript* script, jsbytecode* pc);
+
+
 
 
 
@@ -1120,7 +1147,7 @@ class MOZ_RAII ScopeIter
     StaticWithScope& staticWith() const { return ssi_.staticWith(); }
     StaticEvalScope& staticEval() const { return ssi_.eval(); }
     StaticNonSyntacticScope& staticNonSyntactic() const { return ssi_.nonSyntactic(); }
-    JSFunction& fun() const { return ssi_.fun(); }
+    StaticFunctionScope& fun() const { return ssi_.fun(); }
 
     bool withinInitialFrame() const { return !!frame_; }
     AbstractFramePtr initialFrame() const { MOZ_ASSERT(withinInitialFrame()); return frame_; }
@@ -1376,6 +1403,7 @@ inline bool
 JSObject::is<js::StaticScope>() const
 {
     return is<js::NestedStaticScope>() ||
+           is<js::StaticFunctionScope>() ||
            is<js::StaticModuleScope>() ||
            is<js::StaticEvalScope>() ||
            is<js::StaticNonSyntacticScope>();

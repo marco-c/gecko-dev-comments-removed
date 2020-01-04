@@ -1467,7 +1467,7 @@ BytecodeEmitter::computeDefinitionIsAliased(BytecodeEmitter* bceOfDef, Definitio
         
         
         uint32_t slot = dn->pn_scopecoord.slot();
-        if (blockScopeOfDef(dn)->is<JSFunction>() ||
+        if (blockScopeOfDef(dn)->is<StaticFunctionScope>() ||
             blockScopeOfDef(dn)->is<StaticModuleScope>())
         {
             MOZ_ASSERT(IsArgOp(*op) || slot < bceOfDef->script->bindings.numBodyLevelLocals());
@@ -1569,8 +1569,11 @@ BytecodeEmitter::tryConvertFreeName(ParseNode* pn)
             
             if (ssi.type() == StaticScopeIter<NoGC>::Function) {
                 RootedScript funScript(cx, ssi.funScript());
-                if (funScript->funHasExtensibleScope() || ssi.fun().atom() == pn->pn_atom)
+                if (funScript->funHasExtensibleScope() ||
+                    ssi.fun().function().atom() == pn->pn_atom)
+                {
                     return false;
+                }
 
                 
                 
@@ -1834,12 +1837,11 @@ BytecodeEmitter::bindNameToSlotHelper(ParseNode* pn)
 
 
 
-        JSFunction* fun = sc->asFunctionBox()->function();
-        if (blockScopeOfDef(dn) != fun)
+        if (blockScopeOfDef(dn) != sc->asFunctionBox()->staticScope())
             return true;
 
-        MOZ_ASSERT(fun->isLambda());
-        MOZ_ASSERT(pn->pn_atom == fun->atom());
+        MOZ_ASSERT(sc->asFunctionBox()->function()->isLambda());
+        MOZ_ASSERT(pn->pn_atom == sc->asFunctionBox()->function()->atom());
 
         
 
@@ -6391,14 +6393,22 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
         SharedContext* outersc = sc;
         if (fun->isInterpretedLazy()) {
             if (!fun->lazyScript()->sourceObject()) {
-                JSObject* scope = innermostStaticScope();
+                
+                
+                
+                
+                
+                
+                Rooted<StaticScope*> funScope(cx, fun->lazyScript()->staticScope());
+                RootedObject enclosingScope(cx, innermostStaticScope());
+                funScope->setEnclosingScope(enclosingScope);
+
                 JSObject* source = script->sourceObject();
-                fun->lazyScript()->setParent(scope, &source->as<ScriptSourceObject>());
+                fun->lazyScript()->initSource(&source->as<ScriptSourceObject>());
             }
             if (emittingRunOnceLambda)
                 fun->lazyScript()->setTreatAsRunOnce();
         } else {
-
             if (outersc->isFunctionBox() && outersc->asFunctionBox()->mightAliasLocals())
                 funbox->setMightAliasLocals();      
             MOZ_ASSERT_IF(outersc->strict(), funbox->strictScript);
@@ -6411,9 +6421,13 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
             const TransitiveCompileOptions& transitiveOptions = parser->options();
             CompileOptions options(cx, transitiveOptions);
 
-            Rooted<JSObject*> enclosingScope(cx, innermostStaticScope());
+            
+            Rooted<StaticScope*> funScope(cx, &funbox->staticScope()->as<StaticScope>());
+            RootedObject enclosingScope(cx, innermostStaticScope());
+            funScope->setEnclosingScope(enclosingScope);
+
             Rooted<JSObject*> sourceObject(cx, script->sourceObject());
-            Rooted<JSScript*> script(cx, JSScript::Create(cx, enclosingScope, false, options,
+            Rooted<JSScript*> script(cx, JSScript::Create(cx, funScope, false, options,
                                                           sourceObject,
                                                           funbox->bufStart, funbox->bufEnd));
             if (!script)
