@@ -38,13 +38,13 @@ public:
     return "libvpx video decoder";
   }
 
-  
-  static bool IsVPX(const nsACString& aMimeType);
-
-  enum Codec {
-    VP8,
-    VP9
+  enum Codec: uint8_t {
+    VP8 = 1 << 0,
+    VP9 = 1 << 1
   };
+
+  
+  static bool IsVPX(const nsACString& aMimeType, uint8_t aCodecMask=VP8|VP9);
 
 private:
   void DecodeFrame (MediaRawData* aSample);
