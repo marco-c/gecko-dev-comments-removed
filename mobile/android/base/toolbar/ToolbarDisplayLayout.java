@@ -343,12 +343,6 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout
             return;
         }
 
-        
-        if (!mPrefs.shouldShowUrl() || url == null) {
-            setTitle(tab.getDisplayTitle());
-            return;
-        }
-
         String strippedURL = stripAboutReaderURL(url);
 
         if (mPrefs.shouldTrimUrls()) {
