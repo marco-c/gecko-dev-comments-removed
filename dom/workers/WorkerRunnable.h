@@ -407,8 +407,6 @@ protected:
   virtual bool MainThreadRun() = 0;
 
 public:
-  bool Dispatch(JSContext* aCx);
-
   
   
   
