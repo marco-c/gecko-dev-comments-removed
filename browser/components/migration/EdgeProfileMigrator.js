@@ -103,7 +103,7 @@ EdgeProfileMigrator.prototype.getResources = function() {
 
 
 EdgeProfileMigrator.prototype.__defineGetter__("sourceProfiles", function() {
-  let isWin10OrHigher = AppConstants.isPlatformAndVersionAtLeast("win", "10.0");
+  let isWin10OrHigher = AppConstants.isPlatformAndVersionAtLeast("win", "10");
   return isWin10OrHigher ? null : [];
 });
 
