@@ -73,7 +73,7 @@ protected:
   DISALLOW_EVIL_CONSTRUCTORS(ContentBridgeChild);
 
 protected: 
-  RefPtr<ContentBridgeChild> mSelfRef;
+  nsRefPtr<ContentBridgeChild> mSelfRef;
   Transport* mTransport; 
 };
 

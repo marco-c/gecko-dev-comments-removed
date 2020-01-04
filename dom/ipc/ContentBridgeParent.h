@@ -109,7 +109,7 @@ protected:
   DISALLOW_EVIL_CONSTRUCTORS(ContentBridgeParent);
 
 protected: 
-  RefPtr<ContentBridgeParent> mSelfRef;
+  nsRefPtr<ContentBridgeParent> mSelfRef;
   Transport* mTransport; 
   ContentParentId mChildID;
   bool mIsForApp;

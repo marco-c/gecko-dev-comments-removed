@@ -47,14 +47,14 @@ private:
   
   void MarkIndependent();
 
-  RefPtr<ID3D10ShaderResourceView> mSRView;
-  RefPtr<ID2D1Bitmap> mBitmap;
+  nsRefPtr<ID3D10ShaderResourceView> mSRView;
+  nsRefPtr<ID2D1Bitmap> mBitmap;
   
   
   
   
   DrawTargetD2D* mDrawTarget;
-  mutable RefPtr<ID3D10Texture2D> mTexture;
+  mutable nsRefPtr<ID3D10Texture2D> mTexture;
   SurfaceFormat mFormat;
   bool mOwnsCopy;
 };
@@ -78,7 +78,7 @@ private:
   friend class SourceSurfaceD2DTarget;
   void EnsureMapped();
 
-  mutable RefPtr<ID3D10Texture2D> mTexture;
+  mutable nsRefPtr<ID3D10Texture2D> mTexture;
   SurfaceFormat mFormat;
   D3D10_MAPPED_TEXTURE2D mMap;
   bool mMapped;

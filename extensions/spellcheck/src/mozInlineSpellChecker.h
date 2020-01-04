@@ -55,7 +55,7 @@ public:
     return mOp == eOpChange && !mRange;
   }
 
-  RefPtr<mozInlineSpellChecker> mSpellChecker;
+  nsRefPtr<mozInlineSpellChecker> mSpellChecker;
 
   
   
@@ -72,14 +72,14 @@ public:
 
   
   
-  RefPtr<nsRange> mRange;
+  nsRefPtr<nsRange> mRange;
 
   
   
-  RefPtr<nsRange> mCreatedRange;
+  nsRefPtr<nsRange> mCreatedRange;
 
   
-  RefPtr<nsRange> mNoCheckRange;
+  nsRefPtr<nsRange> mNoCheckRange;
 
   
   
@@ -170,7 +170,7 @@ private:
 
   
   
-  RefPtr<InitEditorSpellCheckCallback> mPendingInitEditorSpellCheckCallback;
+  nsRefPtr<InitEditorSpellCheckCallback> mPendingInitEditorSpellCheckCallback;
 
   
   

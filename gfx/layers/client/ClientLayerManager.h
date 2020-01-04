@@ -39,7 +39,7 @@ class TextureClientPool;
 
 class ClientLayerManager final : public LayerManager
 {
-  typedef nsTArray<RefPtr<Layer> > LayerRefArray;
+  typedef nsTArray<nsRefPtr<Layer> > LayerRefArray;
 
 public:
   explicit ClientLayerManager(nsIWidget* aWidget);
@@ -321,9 +321,9 @@ private:
   
   
   
-  RefPtr<gfxContext> mShadowTarget;
+  nsRefPtr<gfxContext> mShadowTarget;
 
-  RefPtr<TransactionIdAllocator> mTransactionIdAllocator;
+  nsRefPtr<TransactionIdAllocator> mTransactionIdAllocator;
   uint64_t mLatestTransactionId;
 
   
@@ -346,12 +346,12 @@ private:
 
   APZTestData mApzTestData;
 
-  RefPtr<ShadowLayerForwarder> mForwarder;
-  nsAutoTArray<RefPtr<TextureClientPool>,2> mTexturePools;
+  nsRefPtr<ShadowLayerForwarder> mForwarder;
+  nsAutoTArray<nsRefPtr<TextureClientPool>,2> mTexturePools;
   nsAutoTArray<dom::OverfillCallback*,0> mOverfillCallbacks;
   mozilla::TimeStamp mTransactionStart;
 
-  RefPtr<MemoryPressureObserver> mMemoryPressureObserver;
+  nsRefPtr<MemoryPressureObserver> mMemoryPressureObserver;
 };
 
 class ClientLayer : public ShadowableLayer

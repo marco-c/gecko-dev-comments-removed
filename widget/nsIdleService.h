@@ -180,7 +180,7 @@ private:
   
 
 
-  RefPtr<nsIdleServiceDaily> mDailyIdle;
+  nsRefPtr<nsIdleServiceDaily> mDailyIdle;
 
   
 

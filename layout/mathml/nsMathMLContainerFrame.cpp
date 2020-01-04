@@ -51,7 +51,7 @@ nsMathMLContainerFrame::ReflowError(nsRenderingContext& aRenderingContext,
 
   
   
-  RefPtr<nsFontMetrics> fm;
+  nsRefPtr<nsFontMetrics> fm;
   nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm),
                                         nsLayoutUtils::
                                         FontSizeInflationFor(this));
@@ -96,7 +96,7 @@ void nsDisplayMathMLError::Paint(nsDisplayListBuilder* aBuilder,
                                  nsRenderingContext* aCtx)
 {
   
-  RefPtr<nsFontMetrics> fm;
+  nsRefPtr<nsFontMetrics> fm;
   nsLayoutUtils::GetFontMetricsForFrame(mFrame, getter_AddRefs(fm));
 
   nsPoint pt = ToReferenceFrame();

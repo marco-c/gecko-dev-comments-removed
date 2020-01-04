@@ -280,7 +280,7 @@ void
 InitGonkMemoryPressureMonitoring()
 {
   
-  RefPtr<MemoryPressureWatcher> memoryPressureWatcher =
+  nsRefPtr<MemoryPressureWatcher> memoryPressureWatcher =
     new MemoryPressureWatcher();
   NS_ENSURE_SUCCESS_VOID(memoryPressureWatcher->Init());
 

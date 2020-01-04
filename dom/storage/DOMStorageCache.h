@@ -173,11 +173,11 @@ private:
   
   
   
-  RefPtr<DOMStorageManager> mManager;
+  nsRefPtr<DOMStorageManager> mManager;
 
   
   
-  RefPtr<DOMStorageUsage> mUsage;
+  nsRefPtr<DOMStorageUsage> mUsage;
 
   
   nsCOMPtr<nsITimer> mKeepAliveTimer;

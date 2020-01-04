@@ -137,7 +137,7 @@ private:
   mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mTextNodeInfo; 
   mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mCommentNodeInfo; 
   mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mDocumentNodeInfo; 
-  RefPtr<nsBindingManager> mBindingManager;
+  nsRefPtr<nsBindingManager> mBindingManager;
 };
 
 #endif 

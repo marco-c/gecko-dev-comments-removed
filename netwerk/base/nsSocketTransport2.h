@@ -361,7 +361,7 @@ private:
     
     
     
-    RefPtr<nsSocketTransportService> mSocketTransportService;
+    nsRefPtr<nsSocketTransportService> mSocketTransportService;
 
     nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
     nsCOMPtr<nsITransportEventSink> mEventSink;

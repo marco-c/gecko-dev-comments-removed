@@ -67,7 +67,7 @@ private:
 
   nsRefPtrHashtable<nsPtrHashKey<PRThread>, nsThread> mThreadsByPRThread;
   unsigned            mCurThreadIndex;  
-  RefPtr<nsThread>  mMainThread;
+  nsRefPtr<nsThread>  mMainThread;
   PRThread*           mMainPRThread;
   mozilla::OffTheBooksMutex mLock;  
   mozilla::Atomic<bool> mInitialized;

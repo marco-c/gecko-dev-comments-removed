@@ -8,7 +8,7 @@
 
 #include "Layers.h"                     
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "nsDebug.h"                    
@@ -72,7 +72,7 @@ private:
   gfx::Filter GetEffectFilter();
 
 private:
-  RefPtr<CompositableHost> mCompositableHost;
+  nsRefPtr<CompositableHost> mCompositableHost;
 };
 
 } 

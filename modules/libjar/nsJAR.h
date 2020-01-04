@@ -102,7 +102,7 @@ class nsJAR final : public nsIZipReader
     
     nsCOMPtr<nsIFile>        mZipFile;        
     nsCString                mOuterZipEntry;  
-    RefPtr<nsZipArchive>   mZip;            
+    nsRefPtr<nsZipArchive>   mZip;            
     ManifestDataHashtable    mManifestData;   
     bool                     mParsedManifest; 
     nsCOMPtr<nsIX509Cert>    mSigningCert;    

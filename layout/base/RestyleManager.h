@@ -251,7 +251,7 @@ public:
   static bool
   TryStartingTransition(nsPresContext* aPresContext, nsIContent* aContent,
                         nsStyleContext* aOldStyleContext,
-                        RefPtr<nsStyleContext>* aNewStyleContext );
+                        nsRefPtr<nsStyleContext>* aNewStyleContext );
 
   
   
@@ -287,7 +287,7 @@ public:
     void StopAnimationsForElementsWithoutFrames();
 
   private:
-    void StopAnimationsWithoutFrame(nsTArray<RefPtr<nsIContent>>& aArray,
+    void StopAnimationsWithoutFrame(nsTArray<nsRefPtr<nsIContent>>& aArray,
                                     nsCSSPseudoElements::Type aPseudoType);
 
     RestyleManager* mRestyleManager;
@@ -299,9 +299,9 @@ public:
     
     
     
-    nsTArray<RefPtr<nsIContent>> mContents;
-    nsTArray<RefPtr<nsIContent>> mBeforeContents;
-    nsTArray<RefPtr<nsIContent>> mAfterContents;
+    nsTArray<nsRefPtr<nsIContent>> mContents;
+    nsTArray<nsRefPtr<nsIContent>> mBeforeContents;
+    nsTArray<nsRefPtr<nsIContent>> mAfterContents;
   };
 
   
@@ -586,7 +586,7 @@ public:
   typedef mozilla::dom::Element Element;
 
   struct ContextToClear {
-    RefPtr<nsStyleContext> mStyleContext;
+    nsRefPtr<nsStyleContext> mStyleContext;
     uint32_t mStructs;
   };
 
@@ -600,7 +600,7 @@ public:
                   TreeMatchContext& aTreeMatchContext,
                   nsTArray<nsIContent*>& aVisibleKidsOfHiddenElement,
                   nsTArray<ContextToClear>& aContextsToClear,
-                  nsTArray<RefPtr<nsStyleContext>>& aSwappedStructOwners);
+                  nsTArray<nsRefPtr<nsStyleContext>>& aSwappedStructOwners);
 
   
   enum ConstructorFlags {
@@ -631,7 +631,7 @@ public:
                   TreeMatchContext& aTreeMatchContext,
                   nsTArray<nsIContent*>& aVisibleKidsOfHiddenElement,
                   nsTArray<ContextToClear>& aContextsToClear,
-                  nsTArray<RefPtr<nsStyleContext>>& aSwappedStructOwners);
+                  nsTArray<nsRefPtr<nsStyleContext>>& aSwappedStructOwners);
 
   
 
@@ -676,7 +676,7 @@ public:
                                     nsRestyleHint      aRestyleHint,
                                     const RestyleHintData& aRestyleHintData,
                                     nsTArray<ContextToClear>& aContextsToClear,
-                                    nsTArray<RefPtr<nsStyleContext>>&
+                                    nsTArray<nsRefPtr<nsStyleContext>>&
                                       aSwappedStructOwners);
 
 #ifdef RESTYLE_LOGGING
@@ -709,8 +709,8 @@ private:
 
   struct SwapInstruction
   {
-    RefPtr<nsStyleContext> mOldContext;
-    RefPtr<nsStyleContext> mNewContext;
+    nsRefPtr<nsStyleContext> mOldContext;
+    nsRefPtr<nsStyleContext> mNewContext;
     uint32_t mStructsToSwap;
   };
 
@@ -890,7 +890,7 @@ private:
   
   
   
-  nsTArray<RefPtr<nsStyleContext>>& mSwappedStructOwners;
+  nsTArray<nsRefPtr<nsStyleContext>>& mSwappedStructOwners;
   
   bool mIsRootOfRestyle;
 

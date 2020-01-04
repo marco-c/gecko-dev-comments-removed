@@ -160,7 +160,7 @@ class nsBindingValues
 protected:
 
     
-    RefPtr<RDFBindingSet> mBindings;
+    nsRefPtr<RDFBindingSet> mBindings;
 
     
 

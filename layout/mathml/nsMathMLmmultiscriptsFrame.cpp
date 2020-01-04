@@ -185,7 +185,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*      aPresContext,
 
   
   const nsStyleFont* font = aFrame->StyleFont();
-  RefPtr<nsFontMetrics> fm;
+  nsRefPtr<nsFontMetrics> fm;
   nsLayoutUtils::GetFontMetricsForFrame(baseFrame, getter_AddRefs(fm),
                                         aFontSizeInflation);
 

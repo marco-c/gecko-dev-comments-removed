@@ -192,9 +192,9 @@ private:
   bool mSsl;
 
   
-  RefPtr<TCPSocketChild> mSocketBridgeChild;
+  nsRefPtr<TCPSocketChild> mSocketBridgeChild;
   
-  RefPtr<TCPSocketParent> mSocketBridgeParent;
+  nsRefPtr<TCPSocketParent> mSocketBridgeParent;
 
   
   nsCOMPtr<nsISocketTransport> mTransport;

@@ -114,7 +114,7 @@ ImageLoader::MaybeRegisterCSSImage(ImageLoader::Image* aImage)
     return;
   }
 
-  RefPtr<imgRequestProxy> request;
+  nsRefPtr<imgRequestProxy> request;
 
   
   
@@ -262,7 +262,7 @@ ImageLoader::LoadImage(nsIURI* aURI, nsIPrincipal* aOriginPrincipal,
     return;
   }
 
-  RefPtr<imgRequestProxy> request;
+  nsRefPtr<imgRequestProxy> request;
   nsContentUtils::LoadImage(aURI, mDocument, aOriginPrincipal, aReferrer,
                             mDocument->GetReferrerPolicy(),
                             nullptr, nsIRequest::LOAD_NORMAL,
@@ -273,7 +273,7 @@ ImageLoader::LoadImage(nsIURI* aURI, nsIPrincipal* aOriginPrincipal,
     return;
   }
 
-  RefPtr<imgRequestProxy> clonedRequest;
+  nsRefPtr<imgRequestProxy> clonedRequest;
   mInClone = true;
   nsresult rv = request->Clone(this, getter_AddRefs(clonedRequest));
   mInClone = false;

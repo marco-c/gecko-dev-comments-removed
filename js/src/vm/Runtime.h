@@ -1460,12 +1460,11 @@ struct JSRuntime : public JS::shadow::Runtime,
         T* p = pod_calloc<T>(numElems);
         if (MOZ_LIKELY(!!p))
             return p;
-        size_t bytes;
-        if (MOZ_UNLIKELY(!js::CalculateAllocSize<T>(numElems, &bytes))) {
+        if (numElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
             reportAllocationOverflow();
             return nullptr;
         }
-        return static_cast<T*>(onOutOfMemoryCanGC(js::AllocFunction::Calloc, bytes));
+        return (T*)onOutOfMemoryCanGC(js::AllocFunction::Calloc, numElems * sizeof(T));
     }
 
     template <typename T>
@@ -1473,12 +1472,11 @@ struct JSRuntime : public JS::shadow::Runtime,
         T* p2 = pod_realloc<T>(p, oldSize, newSize);
         if (MOZ_LIKELY(!!p2))
             return p2;
-        size_t bytes;
-        if (MOZ_UNLIKELY(!js::CalculateAllocSize<T>(newSize, &bytes))) {
+        if (newSize & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
             reportAllocationOverflow();
             return nullptr;
         }
-        return static_cast<T*>(onOutOfMemoryCanGC(js::AllocFunction::Realloc, bytes, p));
+        return (T*)onOutOfMemoryCanGC(js::AllocFunction::Realloc, newSize * sizeof(T), p);
     }
 
     
@@ -1784,7 +1782,7 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-        mozilla::Vector<mozilla::RefPtr<js::PerformanceGroup>> touchedGroups;
+        mozilla::Vector<nsRefPtr<js::PerformanceGroup>> touchedGroups;
     };
     Stopwatch stopwatch;
 };

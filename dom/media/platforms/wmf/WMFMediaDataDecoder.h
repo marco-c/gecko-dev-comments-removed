@@ -10,7 +10,7 @@
 
 #include "WMF.h"
 #include "MFTDecoder.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "PlatformDecoderModule.h"
 
 namespace mozilla {
@@ -34,7 +34,7 @@ public:
   
   
   virtual HRESULT Output(int64_t aStreamOffset,
-                         RefPtr<MediaData>& aOutput) = 0;
+                         nsRefPtr<MediaData>& aOutput) = 0;
 
   void Flush() { mDecoder->Flush(); }
 
@@ -54,7 +54,7 @@ public:
 
 protected:
   
-  RefPtr<MFTDecoder> mDecoder;
+  nsRefPtr<MFTDecoder> mDecoder;
 };
 
 
@@ -69,7 +69,7 @@ public:
                       MediaDataDecoderCallback* aCallback);
   ~WMFMediaDataDecoder();
 
-  RefPtr<MediaDataDecoder::InitPromise> Init() override;
+  nsRefPtr<MediaDataDecoder::InitPromise> Init() override;
 
   nsresult Input(MediaRawData* aSample);
 
@@ -101,7 +101,7 @@ private:
 
   void ProcessShutdown();
 
-  RefPtr<FlushableTaskQueue> mTaskQueue;
+  nsRefPtr<FlushableTaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
 
   nsAutoPtr<MFTManager> mMFTManager;

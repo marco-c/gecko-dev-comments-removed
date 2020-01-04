@@ -1,14 +1,14 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * A base class which implements nsIStyleSheetLinkingElement and can
+ * be subclassed by various content nodes that want to load
+ * stylesheets (<style>, <link>, processing instructions, etc).
+ */
 
 #include "nsStyleLinkElement.h"
 
@@ -112,36 +112,36 @@ nsStyleLinkElement::SetEnableUpdates(bool aEnableUpdates)
 NS_IMETHODIMP
 nsStyleLinkElement::GetCharset(nsAString& aCharset)
 {
-  
+  // descendants have to implement this themselves
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
- void
+/* virtual */ void
 nsStyleLinkElement::OverrideBaseURI(nsIURI* aNewBaseURI)
 {
   NS_NOTREACHED("Base URI can't be overriden in this implementation "
                 "of nsIStyleSheetLinkingElement.");
 }
 
- void
+/* virtual */ void
 nsStyleLinkElement::SetLineNumber(uint32_t aLineNumber)
 {
   mLineNumber = aLineNumber;
 }
 
- uint32_t
+/* virtual */ uint32_t
 nsStyleLinkElement::GetLineNumber()
 {
   return mLineNumber;
 }
 
- bool
+/* static */ bool
 nsStyleLinkElement::IsImportEnabled()
 {
   static bool sAdded = false;
   static bool sImportsEnabled;
   if (!sAdded) {
-    
+    // This part runs only once because of the static flag.
     Preferences::AddBoolVarCache(&sImportsEnabled,
                                  "dom.htmlimports.enabled",
                                  false);
@@ -215,7 +215,7 @@ nsStyleLinkElement::UpdateStyleSheet(nsICSSLoaderObserver* aObserver,
                                      bool aForceReload)
 {
   if (aForceReload) {
-    
+    // We remove this stylesheet from the cache to load a new version.
     nsCOMPtr<nsIContent> thisContent;
     CallQueryInterface(this, getter_AddRefs(thisContent));
     nsCOMPtr<nsIDocument> doc = thisContent->IsInShadowTree() ?
@@ -242,9 +242,9 @@ nsStyleLinkElement::UpdateStyleSheetInternal(nsIDocument *aOldDocument,
 static bool
 IsScopedStyleElement(nsIContent* aContent)
 {
-  
-  
-  
+  // This is quicker than, say, QIing aContent to nsStyleLinkElement
+  // and then calling its virtual GetStyleSheetInfo method to find out
+  // if it is scoped.
   return (aContent->IsHTMLElement(nsGkAtoms::style) ||
           aContent->IsSVGElement(nsGkAtoms::style)) &&
          aContent->HasAttr(kNameSpaceID_None, nsGkAtoms::scoped);
@@ -261,7 +261,7 @@ HasScopedStyleSheetChild(nsIContent* aContent)
   return false;
 }
 
-
+// Called when aElement has had a <style scoped> child removed.
 static void
 UpdateIsElementInStyleScopeFlagOnSubtree(Element* aElement)
 {
@@ -291,7 +291,7 @@ UpdateIsElementInStyleScopeFlagOnSubtree(Element* aElement)
 static Element*
 GetScopeElement(nsIStyleSheet* aSheet)
 {
-  RefPtr<CSSStyleSheet> cssStyleSheet = do_QueryObject(aSheet);
+  nsRefPtr<CSSStyleSheet> cssStyleSheet = do_QueryObject(aSheet);
   if (!cssStyleSheet) {
     return nullptr;
   }
@@ -312,18 +312,18 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
   nsCOMPtr<nsIContent> thisContent;
   CallQueryInterface(this, getter_AddRefs(thisContent));
 
-  
+  // All instances of nsStyleLinkElement should implement nsIContent.
   NS_ENSURE_TRUE(thisContent, NS_ERROR_FAILURE);
 
   if (thisContent->IsInAnonymousSubtree() &&
       thisContent->IsAnonymousContentInSVGUseSubtree()) {
-    
-    
+    // Stylesheets in <use>-cloned subtrees are disabled until we figure out
+    // how they should behave.
     return NS_OK;
   }
 
-  
-  
+  // Check for a ShadowRoot because link elements are inert in a
+  // ShadowRoot.
   ShadowRoot* containingShadow = thisContent->GetContainingShadow();
   if (thisContent->IsHTMLElement(nsGkAtoms::link) &&
       (aOldShadowRoot || containingShadow)) {
@@ -338,10 +338,10 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                "there should not be a old document and old "
                "ShadowRoot simultaneously.");
 
-    
-    
-    
-    
+    // We're removing the link element from the document or shadow tree,
+    // unload the stylesheet.  We want to do this even if updates are
+    // disabled, since otherwise a sheet with a stale linking element pointer
+    // will be hanging around -- not good!
     if (aOldShadowRoot) {
       aOldShadowRoot->RemoveSheet(mStyleSheet);
     } else {
@@ -356,7 +356,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
     }
   }
 
-  
+  // When static documents are created, stylesheets are cloned manually.
   if (mDontLoadStyle || !mUpdatesEnabled ||
       thisContent->OwnerDoc()->IsStaticDocument()) {
     return NS_OK;
@@ -377,7 +377,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
       bool equal;
       nsresult rv = oldURI->Equals(uri, &equal);
       if (NS_SUCCEEDED(rv) && equal) {
-        return NS_OK; 
+        return NS_OK; // We already loaded this stylesheet
       }
     }
   }
@@ -396,7 +396,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
   }
 
   if (!uri && !isInline) {
-    return NS_OK; 
+    return NS_OK; // If href is empty and this is not inline style then just bail
   }
 
   nsAutoString title, type, media;
@@ -431,7 +431,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                                            mLineNumber, text, &rv))
       return rv;
 
-    
+    // Parse the style sheet.
     rv = doc->CSSLoader()->
       LoadInlineStyle(thisContent, text, mLineNumber, title, media,
                       scopeElement, aObserver, &doneLoading, &isAlternate);
@@ -445,7 +445,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                NS_ConvertUTF16toUTF8(integrity).get()));
     }
 
-    
+    // XXXbz clone the URI here to work around content policies modifying URIs.
     nsCOMPtr<nsIURI> clonedURI;
     uri->Clone(getter_AddRefs(clonedURI));
     NS_ENSURE_TRUE(clonedURI, NS_ERROR_OUT_OF_MEMORY);
@@ -454,9 +454,9 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
                     GetCORSMode(), doc->GetReferrerPolicy(), integrity,
                     aObserver, &isAlternate);
     if (NS_FAILED(rv)) {
-      
-      
-      
+      // Don't propagate LoadStyleLink() errors further than this, since some
+      // consumers (e.g. nsXMLContentSink) will completely abort on innocuous
+      // things like a stylesheet load being blocked by the security system.
       doneLoading = true;
       isAlternate = false;
       rv = NS_OK;

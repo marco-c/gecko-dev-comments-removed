@@ -32,7 +32,7 @@ nsresult RtspOmxReader::InitOmxDecoder()
   return NS_OK;
 }
 
-RefPtr<MediaDecoderReader::SeekPromise>
+nsRefPtr<MediaDecoderReader::SeekPromise>
 RtspOmxReader::Seek(int64_t aTime, int64_t aEndTime)
 {
   
@@ -86,14 +86,14 @@ void RtspOmxReader::EnsureActive() {
   MediaOmxReader::EnsureActive();
 }
 
-RefPtr<MediaDecoderReader::MetadataPromise>
+nsRefPtr<MediaDecoderReader::MetadataPromise>
 RtspOmxReader::AsyncReadMetadata()
 {
   
   
   mRtspResource->DisablePlayoutDelay();
 
-  RefPtr<MediaDecoderReader::MetadataPromise> p =
+  nsRefPtr<MediaDecoderReader::MetadataPromise> p =
     MediaOmxReader::AsyncReadMetadata();
 
   

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDOMMutationObserver.h"
 
@@ -22,7 +22,7 @@
 using mozilla::dom::TreeOrderComparator;
 using mozilla::dom::Animation;
 
-nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>*
+nsAutoTArray<nsRefPtr<nsDOMMutationObserver>, 4>*
   nsDOMMutationObserver::sScheduledMutationObservers = nullptr;
 
 nsDOMMutationObserver* nsDOMMutationObserver::sCurrentObserver = nullptr;
@@ -30,7 +30,7 @@ nsDOMMutationObserver* nsDOMMutationObserver::sCurrentObserver = nullptr;
 uint32_t nsDOMMutationObserver::sMutationLevel = 0;
 uint64_t nsDOMMutationObserver::sCount = 0;
 
-nsAutoTArray<nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>, 4>*
+nsAutoTArray<nsAutoTArray<nsRefPtr<nsDOMMutationObserver>, 4>, 4>*
 nsDOMMutationObserver::sCurrentlyHandlingObservers = nullptr;
 
 nsINodeList*
@@ -67,7 +67,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsDOMMutationRecord,
                                       mChangedAnimations,
                                       mNext, mOwner)
 
-
+// Observer
 
 bool
 nsMutationReceiverBase::IsObservable(nsIContent* aContent)
@@ -110,7 +110,7 @@ nsMutationReceiver::Disconnect(bool aRemoveFromObserver)
     if (aRemoveFromObserver) {
       static_cast<nsDOMMutationObserver*>(observer)->RemoveReceiver(this);
     }
-    
+    // UnbindObject may delete 'this'!
     target->UnbindObject(observer);
   }
 }
@@ -239,7 +239,7 @@ nsMutationReceiver::ContentAppended(nsIDocument* aDocument,
   NS_ASSERTION(!m->mTarget || m->mTarget == parent,
                "Wrong target!");
   if (m->mTarget) {
-    
+    // Already handled case.
     return;
   }
   m->mTarget = parent;
@@ -278,7 +278,7 @@ nsMutationReceiver::ContentInserted(nsIDocument* aDocument,
   nsDOMMutationRecord* m =
     Observer()->CurrentRecord(nsGkAtoms::childList);
   if (m->mTarget) {
-    
+    // Already handled case.
     return;  
   }
   m->mTarget = parent;
@@ -305,8 +305,8 @@ nsMutationReceiver::ContentRemoved(nsIDocument* aDocument,
   }
   if (nsAutoMutationBatch::IsBatching()) {
     if (nsAutoMutationBatch::IsRemovalDone()) {
-      
-      
+      // This can happen for example if HTML parser parses to
+      // context node, but needs to move elements around.
       return;
     }
     if (nsAutoMutationBatch::GetBatchTarget() != parent) {
@@ -323,8 +323,8 @@ nsMutationReceiver::ContentRemoved(nsIDocument* aDocument,
   }
 
   if (Subtree()) {
-    
-    
+    // Try to avoid creating transient observer if the node
+    // already has an observer observing the same set of nodes.
     nsMutationReceiver* orig = GetParent() ? GetParent() : this;
     if (Observer()->GetReceiverFor(aChild, false, false) != orig) {
       bool transientExists = false;
@@ -342,8 +342,8 @@ nsMutationReceiver::ContentRemoved(nsIDocument* aDocument,
         }
       }
       if (!transientExists) {
-        
-        
+        // Make sure the elements which are removed from the
+        // subtree are kept in the same observation set.
         nsMutationReceiver* tr;
         if (orig->Animations()) {
           tr = nsAnimationReceiver::Create(aChild, orig);
@@ -359,7 +359,7 @@ nsMutationReceiver::ContentRemoved(nsIDocument* aDocument,
     nsDOMMutationRecord* m =
       Observer()->CurrentRecord(nsGkAtoms::childList);
     if (m->mTarget) {
-      
+      // Already handled case.
       return;
     }
     m->mTarget = parent;
@@ -368,8 +368,8 @@ nsMutationReceiver::ContentRemoved(nsIDocument* aDocument,
     m->mPreviousSibling = aPreviousSibling;
     m->mNextSibling = parent->GetChildAt(aIndexInContainer);
   }
-  
-  
+  // We need to schedule always, so that after microtask mTransientReceivers
+  // can be cleared correctly.
   Observer()->ScheduleForRun();
 }
 
@@ -459,7 +459,7 @@ nsAnimationReceiver::AnimationRemoved(Animation* aAnimation)
 NS_IMPL_ISUPPORTS_INHERITED(nsAnimationReceiver, nsMutationReceiver,
                             nsIAnimationObserver)
 
-
+// Observer
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDOMMutationObserver)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -485,7 +485,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsDOMMutationObserver)
   tmp->mReceivers.Clear();
   tmp->ClearPendingRecords();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCallback)
-  
+  // No need to handle mTransientReceivers
   NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsDOMMutationObserver)
@@ -494,7 +494,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsDOMMutationObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReceivers)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFirstPendingMutation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCallback)
-  
+  // No need to handle mTransientReceivers
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 nsMutationReceiver*
@@ -545,8 +545,8 @@ nsDOMMutationObserver::GetAllSubtreeObserversFor(nsINode* aNode,
       nsMutationReceiver* r = GetReceiverFor(n, false, false);
       if (r && r->Subtree() && !aReceivers.Contains(r)) {
         aReceivers.AppendElement(r);
-        
-        
+        // If we've found all the receivers the observer has,
+        // no need to search for more.
         if (mReceivers.Count() == int32_t(aReceivers.Length())) {
           return;
         }
@@ -585,7 +585,7 @@ void
 nsDOMMutationObserver::RescheduleForRun()
 {
   if (!sScheduledMutationObservers) {
-    sScheduledMutationObservers = new nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>;
+    sScheduledMutationObservers = new nsAutoTArray<nsRefPtr<nsDOMMutationObserver>, 4>;
   }
 
   bool didInsert = false;
@@ -718,14 +718,14 @@ nsDOMMutationObserver::Disconnect()
 
 void
 nsDOMMutationObserver::TakeRecords(
-                         nsTArray<RefPtr<nsDOMMutationRecord> >& aRetVal)
+                         nsTArray<nsRefPtr<nsDOMMutationRecord> >& aRetVal)
 {
   aRetVal.Clear();
   aRetVal.SetCapacity(mPendingMutationCount);
-  RefPtr<nsDOMMutationRecord> current;
+  nsRefPtr<nsDOMMutationRecord> current;
   current.swap(mFirstPendingMutation);
   for (uint32_t i = 0; i < mPendingMutationCount; ++i) {
-    RefPtr<nsDOMMutationRecord> next;
+    nsRefPtr<nsDOMMutationRecord> next;
     current->mNext.swap(next);
     if (!mMergeAttributeRecords ||
         !MergeableAttributeRecord(aRetVal.SafeLastElement(nullptr),
@@ -771,7 +771,7 @@ nsDOMMutationObserver::GetObservingInfo(
   }
 }
 
-
+// static
 already_AddRefed<nsDOMMutationObserver>
 nsDOMMutationObserver::Constructor(const mozilla::dom::GlobalObject& aGlobal,
                                    mozilla::dom::MutationCallback& aCb,
@@ -784,7 +784,7 @@ nsDOMMutationObserver::Constructor(const mozilla::dom::GlobalObject& aGlobal,
   }
   MOZ_ASSERT(window->IsInnerWindow());
   bool isChrome = nsContentUtils::IsChromeDoc(window->GetExtantDoc());
-  RefPtr<nsDOMMutationObserver> observer =
+  nsRefPtr<nsDOMMutationObserver> observer =
     new nsDOMMutationObserver(window.forget(), aCb, isChrome);
   return observer.forget();
 }
@@ -828,12 +828,12 @@ nsDOMMutationObserver::HandleMutation()
   mozilla::dom::Sequence<mozilla::OwningNonNull<nsDOMMutationRecord> >
     mutations;
   if (mutations.SetCapacity(mPendingMutationCount, mozilla::fallible)) {
-    
-    
-    RefPtr<nsDOMMutationRecord> current;
+    // We can't use TakeRecords easily here, because it deals with a
+    // different type of array, and we want to optimize out any extra copying.
+    nsRefPtr<nsDOMMutationRecord> current;
     current.swap(mFirstPendingMutation);
     for (uint32_t i = 0; i < mPendingMutationCount; ++i) {
-      RefPtr<nsDOMMutationRecord> next;
+      nsRefPtr<nsDOMMutationRecord> next;
       current->mNext.swap(next);
       if (!mMergeAttributeRecords ||
           !MergeableAttributeRecord(mutations.Length() ?
@@ -867,21 +867,21 @@ nsDOMMutationObserver::HandleMutationsInternal()
     nsContentUtils::AddScriptRunner(new AsyncMutationHandler());
     return;
   }
-  static RefPtr<nsDOMMutationObserver> sCurrentObserver;
+  static nsRefPtr<nsDOMMutationObserver> sCurrentObserver;
   if (sCurrentObserver && !sCurrentObserver->Suppressed()) {
-    
-    
-    
-    
-    
-    
+    // In normal cases sScheduledMutationObservers will be handled
+    // after previous mutations are handled. But in case some
+    // callback calls a sync API, which spins the eventloop, we need to still
+    // process other mutations happening during that sync call.
+    // This does *not* catch all cases, but should work for stuff running
+    // in separate tabs.
     return;
   }
 
-  nsTArray<RefPtr<nsDOMMutationObserver> >* suppressedObservers = nullptr;
+  nsTArray<nsRefPtr<nsDOMMutationObserver> >* suppressedObservers = nullptr;
 
   while (sScheduledMutationObservers) {
-    nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>* observers =
+    nsAutoTArray<nsRefPtr<nsDOMMutationObserver>, 4>* observers =
       sScheduledMutationObservers;
     sScheduledMutationObservers = nullptr;
     for (uint32_t i = 0; i < observers->Length(); ++i) {
@@ -890,7 +890,7 @@ nsDOMMutationObserver::HandleMutationsInternal()
         sCurrentObserver->HandleMutation();
       } else {
         if (!suppressedObservers) {
-          suppressedObservers = new nsTArray<RefPtr<nsDOMMutationObserver> >;
+          suppressedObservers = new nsTArray<nsRefPtr<nsDOMMutationObserver> >;
         }
         if (!suppressedObservers->Contains(sCurrentObserver)) {
           suppressedObservers->AppendElement(sCurrentObserver);
@@ -922,7 +922,7 @@ nsDOMMutationObserver::CurrentRecord(nsIAtom* aType)
 
   uint32_t last = sMutationLevel - 1;
   if (!mCurrentMutations[last]) {
-    RefPtr<nsDOMMutationRecord> r = new nsDOMMutationRecord(aType, GetParentObject());
+    nsRefPtr<nsDOMMutationRecord> r = new nsDOMMutationRecord(aType, GetParentObject());
     mCurrentMutations[last] = r;
     AppendMutationRecord(r.forget());
     ScheduleForRun();
@@ -947,22 +947,22 @@ nsDOMMutationObserver::EnterMutationHandling()
   ++sMutationLevel;
 }
 
-
-
-
-
+// Leave the current mutation level (there can be several levels if in case
+// of nested calls to the nsIMutationObserver methods).
+// The most recent mutation record is removed from mCurrentMutations, so
+// that is doesn't get modified anymore by receivers.
 void
 nsDOMMutationObserver::LeaveMutationHandling()
 {
   if (sCurrentlyHandlingObservers &&
       sCurrentlyHandlingObservers->Length() == sMutationLevel) {
-    nsTArray<RefPtr<nsDOMMutationObserver> >& obs =
+    nsTArray<nsRefPtr<nsDOMMutationObserver> >& obs =
       sCurrentlyHandlingObservers->ElementAt(sMutationLevel - 1);
     for (uint32_t i = 0; i < obs.Length(); ++i) {
       nsDOMMutationObserver* o =
         static_cast<nsDOMMutationObserver*>(obs[i]);
       if (o->mCurrentMutations.Length() == sMutationLevel) {
-        
+        // It is already in pending mutations.
         o->mCurrentMutations.RemoveElementAt(sMutationLevel - 1);
       }
     }
@@ -978,7 +978,7 @@ nsDOMMutationObserver::AddCurrentlyHandlingObserver(nsDOMMutationObserver* aObse
 
   if (!sCurrentlyHandlingObservers) {
     sCurrentlyHandlingObservers =
-      new nsAutoTArray<nsAutoTArray<RefPtr<nsDOMMutationObserver>, 4>, 4>;
+      new nsAutoTArray<nsAutoTArray<nsRefPtr<nsDOMMutationObserver>, 4>, 4>;
   }
 
   while (sCurrentlyHandlingObservers->Length() < sMutationLevel) {
@@ -1014,7 +1014,7 @@ nsAutoMutationBatch::Done()
   sCurrentBatch = mPreviousBatch;
   if (mObservers.IsEmpty()) {
     nsDOMMutationObserver::LeaveMutationHandling();
-    
+    // Nothing to do.
     return;
   }
 
@@ -1023,7 +1023,7 @@ nsAutoMutationBatch::Done()
     nsDOMMutationObserver* ob = mObservers[i].mObserver;
     bool wantsChildList = mObservers[i].mWantsChildList;
 
-    RefPtr<nsSimpleContentList> removedList;
+    nsRefPtr<nsSimpleContentList> removedList;
     if (wantsChildList) {
       removedList = new nsSimpleContentList(mBatchTarget);
     }
@@ -1050,8 +1050,8 @@ nsAutoMutationBatch::Done()
           nsMutationReceiver* r = allObservers[k];
           nsMutationReceiver* orig = r->GetParent() ? r->GetParent() : r;
           if (ob->GetReceiverFor(removed, false, false) != orig) {
-            
-            
+            // Make sure the elements which are removed from the
+            // subtree are kept in the same observation set.
             nsMutationReceiver* tr;
             if (orig->Animations()) {
               tr = nsAnimationReceiver::Create(removed, orig);
@@ -1064,12 +1064,12 @@ nsAutoMutationBatch::Done()
       }
     }
     if (wantsChildList && (mRemovedNodes.Length() || mAddedNodes.Length())) {
-      RefPtr<nsSimpleContentList> addedList =
+      nsRefPtr<nsSimpleContentList> addedList =
         new nsSimpleContentList(mBatchTarget);
       for (uint32_t i = 0; i < mAddedNodes.Length(); ++i) {
         addedList->AppendElement(mAddedNodes[i]);
       }
-      RefPtr<nsDOMMutationRecord> m =
+      nsRefPtr<nsDOMMutationRecord> m =
         new nsDOMMutationRecord(nsGkAtoms::childList,
                                 ob->GetParentObject());
       m->mTarget = mBatchTarget;
@@ -1079,8 +1079,8 @@ nsAutoMutationBatch::Done()
       m->mNextSibling = mNextSibling;
       ob->AppendMutationRecord(m.forget());
     }
-    
-    
+    // Always schedule the observer so that transient receivers are
+    // removed correctly.
     ob->ScheduleForRun();
   }
   nsDOMMutationObserver::LeaveMutationHandling();
@@ -1099,7 +1099,7 @@ nsAutoAnimationMutationBatch::Done()
   sCurrentBatch = nullptr;
   if (mObservers.IsEmpty()) {
     nsDOMMutationObserver::LeaveMutationHandling();
-    
+    // Nothing to do.
     return;
   }
 
@@ -1113,7 +1113,7 @@ nsAutoAnimationMutationBatch::Done()
       MOZ_ASSERT(entries,
         "Targets in entry table and targets list should match");
 
-      RefPtr<nsDOMMutationRecord> m =
+      nsRefPtr<nsDOMMutationRecord> m =
         new nsDOMMutationRecord(nsGkAtoms::animations, ob->GetParentObject());
       m->mTarget = target;
 

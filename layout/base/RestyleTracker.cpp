@@ -58,7 +58,7 @@ RestyleTracker::Document() const {
 
 struct LaterSiblingCollector {
   RestyleTracker* tracker;
-  nsTArray< RefPtr<dom::Element> >* elements;
+  nsTArray< nsRefPtr<dom::Element> >* elements;
 };
 
 static PLDHashOperator
@@ -84,7 +84,7 @@ CollectLaterSiblings(nsISupports* aElement,
 }
 
 struct RestyleEnumerateData : RestyleTracker::Hints {
-  RefPtr<dom::Element> mElement;
+  nsRefPtr<dom::Element> mElement;
 #if defined(MOZ_ENABLE_PROFILER_SPS) && !defined(MOZILLA_XPCOMRT_API)
   UniquePtr<ProfilerBacktrace> mBacktrace;
 #endif
@@ -268,7 +268,7 @@ RestyleTracker::DoProcessRestyles()
     while (mPendingRestyles.Count()) {
       if (mHaveLaterSiblingRestyles) {
         
-        nsAutoTArray<RefPtr<Element>, RESTYLE_ARRAY_STACKSIZE> laterSiblingArr;
+        nsAutoTArray<nsRefPtr<Element>, RESTYLE_ARRAY_STACKSIZE> laterSiblingArr;
         LaterSiblingCollector siblingCollector = { this, &laterSiblingArr };
         mPendingRestyles.Enumerate(CollectLaterSiblings, &siblingCollector);
         for (uint32_t i = 0; i < laterSiblingArr.Length(); ++i) {
@@ -316,7 +316,7 @@ RestyleTracker::DoProcessRestyles()
         
         
         
-        RefPtr<Element> element;
+        nsRefPtr<Element> element;
         element.swap(mRestyleRoots[rootCount - 1]);
         mRestyleRoots.RemoveElementAt(rootCount - 1);
 
@@ -465,7 +465,7 @@ RestyleTracker::GetRestyleData(Element* aElement, nsAutoPtr<RestyleData>& aData)
 
 void
 RestyleTracker::AddRestyleRootsIfAwaitingRestyle(
-                                   const nsTArray<RefPtr<Element>>& aElements)
+                                   const nsTArray<nsRefPtr<Element>>& aElements)
 {
   
   

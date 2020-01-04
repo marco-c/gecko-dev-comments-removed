@@ -130,21 +130,21 @@ protected:
   MediaStream* GetSourceMediaStream();
   nsIPrincipal* GetSourcePrincipal();
   
-  RefPtr<DOMMediaStream> mDOMStream;
+  nsRefPtr<DOMMediaStream> mDOMStream;
   
-  RefPtr<AudioNode> mAudioNode;
+  nsRefPtr<AudioNode> mAudioNode;
   
   
   
-  RefPtr<AudioNodeStream> mPipeStream;
+  nsRefPtr<AudioNodeStream> mPipeStream;
   
-  RefPtr<MediaInputPort> mInputPort;
+  nsRefPtr<MediaInputPort> mInputPort;
 
   
   RecordingState mState;
   
   
-  nsTArray<RefPtr<Session> > mSessions;
+  nsTArray<nsRefPtr<Session> > mSessions;
   
   nsString mMimeType;
 

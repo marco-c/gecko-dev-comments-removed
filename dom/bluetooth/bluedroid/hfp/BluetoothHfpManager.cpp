@@ -269,7 +269,7 @@ BluetoothHfpManager::Init()
   nsresult rv = settings->CreateLock(nullptr, getter_AddRefs(settingsLock));
   NS_ENSURE_SUCCESS(rv, false);
 
-  RefPtr<GetVolumeTask> callback = new GetVolumeTask();
+  nsRefPtr<GetVolumeTask> callback = new GetVolumeTask();
   rv = settingsLock->Get(AUDIO_VOLUME_BT_SCO_ID, callback);
   NS_ENSURE_SUCCESS(rv, false);
 
@@ -323,7 +323,7 @@ public:
 
 private:
   BluetoothHandsfreeInterface* mInterface;
-  RefPtr<BluetoothProfileResultHandler> mRes;
+  nsRefPtr<BluetoothProfileResultHandler> mRes;
 };
 
 class BluetoothHfpManager::InitResultHandlerRunnable final
@@ -343,7 +343,7 @@ public:
   }
 
 private:
-  RefPtr<CleanupInitResultHandler> mRes;
+  nsRefPtr<CleanupInitResultHandler> mRes;
 };
 
 class BluetoothHfpManager::OnErrorProfileResultHandlerRunnable final
@@ -365,7 +365,7 @@ public:
   }
 
 private:
-  RefPtr<BluetoothProfileResultHandler> mRes;
+  nsRefPtr<BluetoothProfileResultHandler> mRes;
   nsresult mRv;
 };
 
@@ -377,7 +377,7 @@ BluetoothHfpManager::InitHfpInterface(BluetoothProfileResultHandler* aRes)
   if (NS_WARN_IF(!btInf)) {
     
     
-    RefPtr<nsRunnable> r =
+    nsRefPtr<nsRunnable> r =
       new OnErrorProfileResultHandlerRunnable(aRes, NS_ERROR_FAILURE);
     if (NS_FAILED(NS_DispatchToMainThread(r))) {
       BT_LOGR("Failed to dispatch HFP OnError runnable");
@@ -390,7 +390,7 @@ BluetoothHfpManager::InitHfpInterface(BluetoothProfileResultHandler* aRes)
   if (NS_WARN_IF(!interface)) {
     
     
-    RefPtr<nsRunnable> r =
+    nsRefPtr<nsRunnable> r =
       new OnErrorProfileResultHandlerRunnable(aRes, NS_ERROR_FAILURE);
     if (NS_FAILED(NS_DispatchToMainThread(r))) {
       BT_LOGR("Failed to dispatch HFP OnError runnable");
@@ -398,7 +398,7 @@ BluetoothHfpManager::InitHfpInterface(BluetoothProfileResultHandler* aRes)
     return;
   }
 
-  RefPtr<CleanupInitResultHandler> res =
+  nsRefPtr<CleanupInitResultHandler> res =
     new CleanupInitResultHandler(interface, aRes);
 
   if (sBluetoothHfpInterface) {
@@ -407,7 +407,7 @@ BluetoothHfpManager::InitHfpInterface(BluetoothProfileResultHandler* aRes)
   } else {
     
     
-    RefPtr<nsRunnable> r = new InitResultHandlerRunnable(res);
+    nsRefPtr<nsRunnable> r = new InitResultHandlerRunnable(res);
     if (NS_FAILED(NS_DispatchToMainThread(r))) {
       BT_LOGR("Failed to dispatch HFP init runnable");
     }
@@ -460,7 +460,7 @@ public:
   }
 
 private:
-  RefPtr<BluetoothProfileResultHandler> mRes;
+  nsRefPtr<BluetoothProfileResultHandler> mRes;
 };
 
 class BluetoothHfpManager::DeinitResultHandlerRunnable final
@@ -480,7 +480,7 @@ public:
   }
 
 private:
-  RefPtr<BluetoothProfileResultHandler> mRes;
+  nsRefPtr<BluetoothProfileResultHandler> mRes;
 };
 
 
@@ -492,7 +492,7 @@ BluetoothHfpManager::DeinitHfpInterface(BluetoothProfileResultHandler* aRes)
   } else if (aRes) {
     
     
-    RefPtr<nsRunnable> r = new DeinitResultHandlerRunnable(aRes);
+    nsRefPtr<nsRunnable> r = new DeinitResultHandlerRunnable(aRes);
     if (NS_FAILED(NS_DispatchToMainThread(r))) {
       BT_LOGR("Failed to dispatch cleanup-result-handler runnable");
     }

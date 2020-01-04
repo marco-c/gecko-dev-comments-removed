@@ -158,16 +158,16 @@ private:
   }
 
   
-  RefPtr<DeviceManagerD3D9> mDeviceManager;
+  nsRefPtr<DeviceManagerD3D9> mDeviceManager;
 
   
-  RefPtr<SwapChainD3D9> mSwapChain;
+  nsRefPtr<SwapChainD3D9> mSwapChain;
 
   
   nsIWidget *mWidget;
 
-  RefPtr<CompositingRenderTargetD3D9> mDefaultRT;
-  RefPtr<CompositingRenderTargetD3D9> mCurrentRT;
+  nsRefPtr<CompositingRenderTargetD3D9> mDefaultRT;
+  nsRefPtr<CompositingRenderTargetD3D9> mCurrentRT;
 
   gfx::IntSize mSize;
 

@@ -126,6 +126,7 @@ public:
 
   void Tick() override;
   void QueueEvents();
+  bool HasEndEventToQueue() const override;
 
   bool IsStylePaused() const { return mIsStylePaused; }
 

@@ -431,7 +431,7 @@ protected:
     }
   };
 
-  RefPtr<FormPasswordEventDispatcher> mFormPasswordEventDispatcher;
+  nsRefPtr<FormPasswordEventDispatcher> mFormPasswordEventDispatcher;
 
   class RemoveElementRunnable;
   friend class RemoveElementRunnable;
@@ -448,7 +448,7 @@ protected:
     }
 
   private:
-    RefPtr<HTMLFormElement> mForm;
+    nsRefPtr<HTMLFormElement> mForm;
   };
 
   nsresult DoSubmitOrReset(WidgetEvent* aEvent,
@@ -561,7 +561,7 @@ protected:
   
   
   
-  RefPtr<HTMLFormControlsCollection> mControls;
+  nsRefPtr<HTMLFormControlsCollection> mControls;
   
   nsRefPtrHashtable<nsStringCaseInsensitiveHashKey, HTMLInputElement> mSelectedRadioButtons;
   

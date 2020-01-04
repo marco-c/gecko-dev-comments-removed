@@ -164,7 +164,7 @@ GMPAudioDecoderParent::Close()
   
 
   
-  RefPtr<GMPAudioDecoderParent> kungfudeathgrip(this);
+  nsRefPtr<GMPAudioDecoderParent> kungfudeathgrip(this);
   Release();
   Shutdown();
 

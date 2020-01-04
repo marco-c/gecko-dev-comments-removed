@@ -75,7 +75,7 @@ public:
       MOZ_ALWAYS_TRUE(NS_SUCCEEDED(rv));
 
       
-      RefPtr<PeerConnectionCtxShutdown> kungFuDeathGrip(this);
+      nsRefPtr<PeerConnectionCtxShutdown> kungFuDeathGrip(this);
       PeerConnectionCtx::gPeerConnectionCtxShutdown = nullptr;
     }
     return NS_OK;

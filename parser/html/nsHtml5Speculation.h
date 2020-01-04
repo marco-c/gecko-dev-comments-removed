@@ -55,7 +55,7 @@ class nsHtml5Speculation final : public nsAHtml5TreeOpSink
     
 
 
-    RefPtr<nsHtml5OwningUTF16Buffer>  mBuffer;
+    nsRefPtr<nsHtml5OwningUTF16Buffer>  mBuffer;
     
     
 

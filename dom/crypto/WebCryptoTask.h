@@ -7,7 +7,8 @@
 #ifndef mozilla_dom_WebCryptoTask_h
 #define mozilla_dom_WebCryptoTask_h
 
-#include "nsNSSShutDown.h"
+#include "CryptoTask.h"
+
 #include "nsIGlobalObject.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/DOMException.h"
@@ -57,15 +58,30 @@ if (NS_FAILED(rv)) { \
   return; \
 }
 
-class WebCryptoTask : public nsCancelableRunnable,
-                      public nsNSSShutDownObject
+class WebCryptoTask : public CryptoTask
 {
 public:
-  virtual void DispatchWithPromise(Promise* aResultPromise);
-
-  void Skip()
+  virtual void DispatchWithPromise(Promise* aResultPromise)
   {
-    virtualDestroyNSSReference();
+    MOZ_ASSERT(NS_IsMainThread());
+    mResultPromise = aResultPromise;
+
+    
+    MAYBE_EARLY_FAIL(mEarlyRv)
+
+    
+    mEarlyRv = BeforeCrypto();
+    MAYBE_EARLY_FAIL(mEarlyRv)
+
+    
+    if (mEarlyComplete) {
+      CallCallback(mEarlyRv);
+      Skip();
+      return;
+    }
+
+     mEarlyRv = Dispatch("SubtleCrypto");
+     MAYBE_EARLY_FAIL(mEarlyRv)
   }
 
 protected:
@@ -168,24 +184,7 @@ protected:
   WebCryptoTask()
     : mEarlyRv(NS_OK)
     , mEarlyComplete(false)
-    , mOriginalThread(nullptr)
-    , mReleasedNSSResources(false)
-    , mRv(NS_ERROR_NOT_INITIALIZED)
   {}
-
-  virtual ~WebCryptoTask()
-  {
-    MOZ_ASSERT(mReleasedNSSResources);
-
-    nsNSSShutDownPreventionLock lock;
-    if (!isAlreadyShutDown()) {
-      shutdown(calledFromObject);
-    }
-  }
-
-  bool IsOnOriginalThread() {
-    return !mOriginalThread || NS_GetCurrentThread() == mOriginalThread;
-  }
 
   
   
@@ -199,29 +198,11 @@ protected:
 
   
   
-  virtual void ReleaseNSSResources() {}
+  virtual void ReleaseNSSResources() override {}
 
-  virtual nsresult CalculateResult() final;
+  virtual nsresult CalculateResult() override final;
 
-  virtual void CallCallback(nsresult rv) final;
-
-private:
-  NS_IMETHOD Run() override final;
-
-  virtual void
-  virtualDestroyNSSReference() override final
-  {
-    MOZ_ASSERT(IsOnOriginalThread());
-
-    if (!mReleasedNSSResources) {
-      mReleasedNSSResources = true;
-      ReleaseNSSResources();
-    }
-  }
-
-  nsCOMPtr<nsIThread> mOriginalThread;
-  bool mReleasedNSSResources;
-  nsresult mRv;
+  virtual void CallCallback(nsresult rv) override final;
 };
 
 
@@ -233,7 +214,7 @@ public:
                             const Sequence<nsString>& aKeyUsages);
 protected:
   ScopedPLArenaPool mArena;
-  UniquePtr<CryptoKeyPair> mKeyPair;
+  CryptoKeyPair mKeyPair;
   nsString mAlgName;
   CK_MECHANISM_TYPE mMechanism;
   PK11RSAGenParams mRsaParams;
@@ -243,7 +224,6 @@ protected:
   virtual void ReleaseNSSResources() override;
   virtual nsresult DoCrypto() override;
   virtual void Resolve() override;
-  virtual void Cleanup() override;
 
 private:
   ScopedSECKEYPublicKey mPublicKey;

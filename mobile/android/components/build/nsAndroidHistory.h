@@ -64,7 +64,7 @@ private:
 
 
 
-  RefPtr<nsITimer> mTimer;
+  nsRefPtr<nsITimer> mTimer;
   typedef nsAutoTArray<nsCOMPtr<nsIURI>, RECENTLY_VISITED_URI_SIZE> PendingVisitArray;
   PendingVisitArray mPendingVisitURIs;
 

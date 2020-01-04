@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_domrequest_h__
 #define mozilla_dom_domrequest_h__
@@ -29,8 +29,8 @@ class DOMRequest : public DOMEventTargetHelper,
 {
 protected:
   JS::Heap<JS::Value> mResult;
-  RefPtr<DOMError> mError;
-  RefPtr<Promise> mPromise;
+  nsRefPtr<DOMError> mError;
+  nsRefPtr<Promise> mPromise;
   bool mDone;
 
 public:
@@ -41,7 +41,7 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(DOMRequest,
                                                          DOMEventTargetHelper)
 
-  // WrapperCache
+  
   nsPIDOMWindow* GetParentObject() const
   {
     return GetOwner();
@@ -49,7 +49,7 @@ public:
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  // WebIDL Interface
+  
   DOMRequestReadyState ReadyState() const
   {
     return mDone ? DOMRequestReadyState::Done
@@ -102,7 +102,7 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMREQUESTSERVICE
 
-  // Returns an owning reference! No one should call this but the factory.
+  
   static DOMRequestService* FactoryCreate()
   {
     DOMRequestService* res = new DOMRequestService;
@@ -111,9 +111,9 @@ public:
   }
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 #define DOMREQUEST_SERVICE_CONTRACTID "@mozilla.org/dom/dom-request-service;1"
 
-#endif // mozilla_dom_domrequest_h__
+#endif 

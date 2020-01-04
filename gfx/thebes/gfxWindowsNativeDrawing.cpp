@@ -269,7 +269,7 @@ gfxWindowsNativeDrawing::PaintToContext()
             NS_ERROR("Alpha recovery failure");
             return;
         }
-        RefPtr<DataSourceSurface> source =
+        nsRefPtr<DataSourceSurface> source =
             Factory::CreateWrappingDataSourceSurface(black->Data(),
                                                      black->Stride(),
                                                      black->GetSize(),
@@ -288,7 +288,7 @@ gfxWindowsNativeDrawing::PaintToContext()
         pat->SetMatrix(m);
 
         if (mNativeDrawFlags & DO_NEAREST_NEIGHBOR_FILTERING)
-            pat->SetFilter(Filter::LINEAR);
+            pat->SetFilter(GraphicsFilter::FILTER_FAST);
 
         pat->SetExtend(ExtendMode::CLAMP);
         mContext->SetPattern(pat);

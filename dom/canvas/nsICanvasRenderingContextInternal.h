@@ -12,7 +12,8 @@
 #include "nsIDocShell.h"
 #include "nsRefreshDriver.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
-#include "mozilla/RefPtr.h"
+#include "GraphicsFilter.h"
+#include "mozilla/nsRefPtr.h"
 
 #define NS_ICANVASRENDERINGCONTEXTINTERNAL_IID \
 { 0x3cc9e801, 0x1806, 0x4ff6, \

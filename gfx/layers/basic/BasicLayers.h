@@ -182,11 +182,11 @@ protected:
   
   nsIWidget* mWidget;
   
-  RefPtr<gfxContext> mDefaultTarget;
+  nsRefPtr<gfxContext> mDefaultTarget;
   
-  RefPtr<gfxContext> mTarget;
+  nsRefPtr<gfxContext> mTarget;
   
-  RefPtr<ImageFactory> mFactory;
+  nsRefPtr<ImageFactory> mFactory;
 
   BufferMode mDoubleBuffering;
   BasicLayerManagerType mType;

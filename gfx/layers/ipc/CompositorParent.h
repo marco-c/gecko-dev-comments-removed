@@ -23,7 +23,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
 #include "mozilla/Monitor.h"            
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -381,20 +381,6 @@ public:
 
   static LayerTreeState* GetIndirectShadowTree(uint64_t aId);
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  
-
-
-
-  bool UpdatePluginWindowState(uint64_t aId);
-#endif
-
-  
-
-
-
-  virtual bool RecvRemotePluginsReady() override;
-
   
 
 
@@ -458,7 +444,7 @@ protected:
 
   nsRefPtr<LayerManagerComposite> mLayerManager;
   nsRefPtr<Compositor> mCompositor;
-  RefPtr<AsyncCompositionManager> mCompositionManager;
+  nsRefPtr<AsyncCompositionManager> mCompositionManager;
   nsIWidget* mWidget;
   TimeStamp mTestTime;
   bool mIsTesting;
@@ -483,19 +469,6 @@ protected:
 
   nsRefPtr<CompositorThreadHolder> mCompositorThreadHolder;
   nsRefPtr<CompositorVsyncScheduler> mCompositorScheduler;
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  
-  uint64_t mLastPluginUpdateLayerTreeId;
-  nsIntPoint mPluginsLayerOffset;
-  nsIntRegion mPluginsLayerVisibleRegion;
-  nsTArray<PluginWindowData> mCachedPluginData;
-#endif
-#if defined(XP_WIN)
-  
-  
-  bool mPluginUpdateResponsePending;
-#endif
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorParent);
 };

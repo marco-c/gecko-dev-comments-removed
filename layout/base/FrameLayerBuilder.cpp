@@ -659,7 +659,7 @@ struct NewLayerEntry {
   {}
   
   
-  RefPtr<Layer> mLayer;
+  nsRefPtr<Layer> mLayer;
   const nsIFrame* mAnimatedGeometryRoot;
   
   
@@ -1406,7 +1406,7 @@ protected:
     Maybe<size_t> mAncestorIndex;
   };
 
-  nsDataHashtable<nsGenericHashKey<MaskLayerKey>, RefPtr<ImageLayer>>
+  nsDataHashtable<nsGenericHashKey<MaskLayerKey>, nsRefPtr<ImageLayer>>
     mRecycledMaskImageLayers;
 };
 
@@ -1489,8 +1489,8 @@ public:
   
   Maybe<nsIntRect> mIgnoreInvalidationsOutsideRect;
 
-  RefPtr<ColorLayer> mColorLayer;
-  RefPtr<ImageLayer> mImageLayer;
+  nsRefPtr<ColorLayer> mColorLayer;
+  nsRefPtr<ImageLayer> mImageLayer;
 
   
   
@@ -1716,7 +1716,7 @@ FrameLayerBuilder::RemoveFrameFromLayerManager(nsIFrame* aFrame,
 
   
   
-  nsTArray<RefPtr<DisplayItemData> > arrayCopy;
+  nsTArray<nsRefPtr<DisplayItemData> > arrayCopy;
   for (uint32_t i = 0; i < array->Length(); ++i) {
     arrayCopy.AppendElement(array->ElementAt(i));
   }
@@ -1975,7 +1975,7 @@ ContainerState::CreateOrRecycleColorLayer(PaintedLayer *aPainted)
 {
   PaintedDisplayItemLayerUserData* data =
       static_cast<PaintedDisplayItemLayerUserData*>(aPainted->GetUserData(&gPaintedDisplayItemLayerUserData));
-  RefPtr<ColorLayer> layer = data->mColorLayer;
+  nsRefPtr<ColorLayer> layer = data->mColorLayer;
   if (layer) {
     layer->SetMaskLayer(nullptr);
     layer->ClearExtraDumpInfo();
@@ -1999,7 +1999,7 @@ ContainerState::CreateOrRecycleImageLayer(PaintedLayer *aPainted)
 {
   PaintedDisplayItemLayerUserData* data =
       static_cast<PaintedDisplayItemLayerUserData*>(aPainted->GetUserData(&gPaintedDisplayItemLayerUserData));
-  RefPtr<ImageLayer> layer = data->mImageLayer;
+  nsRefPtr<ImageLayer> layer = data->mImageLayer;
   if (layer) {
     layer->SetMaskLayer(nullptr);
     layer->ClearExtraDumpInfo();
@@ -2021,7 +2021,7 @@ ContainerState::CreateOrRecycleImageLayer(PaintedLayer *aPainted)
 already_AddRefed<ImageLayer>
 ContainerState::CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey)
 {
-  RefPtr<ImageLayer> result = mRecycledMaskImageLayers.Get(aKey);
+  nsRefPtr<ImageLayer> result = mRecycledMaskImageLayers.Get(aKey);
   if (result) {
     mRecycledMaskImageLayers.Remove(aKey);
     aKey.mLayer->ClearExtraDumpInfo();
@@ -2134,7 +2134,7 @@ ContainerState::AttemptToRecyclePaintedLayer(const nsIFrame* aAnimatedGeometryRo
   }
 
   
-  RefPtr<PaintedLayer> layer = oldLayer->AsPaintedLayer();
+  nsRefPtr<PaintedLayer> layer = oldLayer->AsPaintedLayer();
   mPaintedLayersAvailableForRecycling.RemoveEntry(layer);
 
   
@@ -2161,7 +2161,7 @@ ContainerState::CreatePaintedLayer(PaintedLayerData* aData)
     GetLayerCreationHint(aData->mAnimatedGeometryRoot);
 
   
-  RefPtr<PaintedLayer> layer = mManager->CreatePaintedLayerWithHint(creationHint);
+  nsRefPtr<PaintedLayer> layer = mManager->CreatePaintedLayerWithHint(creationHint);
   if (!layer) {
     return nullptr;
   }
@@ -3065,13 +3065,13 @@ static int32_t FindIndexOfLayerIn(nsTArray<NewLayerEntry>& aArray,
 already_AddRefed<Layer>
 ContainerState::PrepareImageLayer(PaintedLayerData* aData)
 {
-  RefPtr<ImageContainer> imageContainer =
+  nsRefPtr<ImageContainer> imageContainer =
     aData->GetContainerForImageLayer(mBuilder);
   if (!imageContainer) {
     return nullptr;
   }
 
-  RefPtr<ImageLayer> imageLayer = CreateOrRecycleImageLayer(aData->mLayer);
+  nsRefPtr<ImageLayer> imageLayer = CreateOrRecycleImageLayer(aData->mLayer);
   imageLayer->SetContainer(imageContainer);
   aData->mImage->ConfigureLayer(imageLayer, mParameters);
   imageLayer->SetPostScale(mParameters.mXScale,
@@ -3096,7 +3096,7 @@ ContainerState::PrepareImageLayer(PaintedLayerData* aData)
 already_AddRefed<Layer>
 ContainerState::PrepareColorLayer(PaintedLayerData* aData)
 {
-  RefPtr<ColorLayer> colorLayer = CreateOrRecycleColorLayer(aData->mLayer);
+  nsRefPtr<ColorLayer> colorLayer = CreateOrRecycleColorLayer(aData->mLayer);
   colorLayer->SetColor(Color::FromABGR(aData->mSolidColor));
 
   
@@ -3134,7 +3134,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
 
   if (!data->mLayer) {
     
-    RefPtr<PaintedLayer> paintedLayer = CreatePaintedLayer(data);
+    nsRefPtr<PaintedLayer> paintedLayer = CreatePaintedLayer(data);
     data->mLayer = paintedLayer;
 
     NS_ASSERTION(FindIndexOfLayerIn(mNewChildLayers, paintedLayer) < 0,
@@ -3153,7 +3153,7 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
 
   NewLayerEntry* newLayerEntry = &mNewChildLayers[data->mNewChildLayersIndex];
 
-  RefPtr<Layer> layer;
+  nsRefPtr<Layer> layer;
   bool canOptimizeToImageLayer = data->CanOptimizeToImageLayer(mBuilder);
 
   FLB_LOG_PAINTED_LAYER_DECISION(data, "Selecting layer for pld=%p\n", data);
@@ -3628,13 +3628,13 @@ PaintInactiveLayer(nsDisplayListBuilder* aBuilder,
   
   
   BasicLayerManager* basic = static_cast<BasicLayerManager*>(aManager);
-  RefPtr<gfxContext> context = aContext;
+  nsRefPtr<gfxContext> context = aContext;
 #ifdef MOZ_DUMP_PAINTING
   int32_t appUnitsPerDevPixel = AppUnitsPerDevPixel(aItem);
   nsIntRect itemVisibleRect =
     aItem->GetVisibleRect().ToOutsidePixels(appUnitsPerDevPixel);
 
-  RefPtr<DrawTarget> tempDT;
+  nsRefPtr<DrawTarget> tempDT;
   if (gfxUtils::sDumpPainting) {
     tempDT = gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
                                       itemVisibleRect.Size(),
@@ -3666,7 +3666,7 @@ PaintInactiveLayer(nsDisplayListBuilder* aBuilder,
 
 #ifdef MOZ_DUMP_PAINTING
   if (gfxUtils::sDumpPainting && tempDT) {
-    RefPtr<SourceSurface> surface = tempDT->Snapshot();
+    nsRefPtr<SourceSurface> surface = tempDT->Snapshot();
     DumpPaintedImage(aItem, surface);
 
     DrawTarget* drawTarget = aContext->GetDrawTarget();
@@ -4064,7 +4064,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       
       nsIntRect layerContentsVisibleRect(0, 0, -1, -1);
       mParameters.mLayerContentsVisibleRect = &layerContentsVisibleRect;
-      RefPtr<Layer> ownLayer = item->BuildLayer(mBuilder, mManager, mParameters);
+      nsRefPtr<Layer> ownLayer = item->BuildLayer(mBuilder, mManager, mParameters);
       if (!ownLayer) {
         continue;
       }
@@ -4233,7 +4233,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
         if (!paintedLayerData->mLayer) {
           
-          RefPtr<PaintedLayer> layer =
+          nsRefPtr<PaintedLayer> layer =
             AttemptToRecyclePaintedLayer(animatedGeometryRoot, item, topLeft);
           if (layer) {
             paintedLayerData->mLayer = layer;
@@ -4405,7 +4405,7 @@ FrameLayerBuilder::AddPaintedDisplayItem(PaintedLayerData* aLayerData,
   PaintedDisplayItemLayerUserData* paintedData =
     static_cast<PaintedDisplayItemLayerUserData*>
       (layer->GetUserData(&gPaintedDisplayItemLayerUserData));
-  RefPtr<BasicLayerManager> tempManager;
+  nsRefPtr<BasicLayerManager> tempManager;
   nsIntRect intClip;
   bool hasClip = false;
   if (aLayerState != LAYER_NONE) {
@@ -4451,7 +4451,7 @@ FrameLayerBuilder::AddPaintedDisplayItem(PaintedLayerData* aLayerData,
       }
 
       UniquePtr<LayerProperties> props(LayerProperties::CloneFrom(tempManager->GetRoot()));
-      RefPtr<Layer> tmpLayer =
+      nsRefPtr<Layer> tmpLayer =
         aItem->BuildLayer(mDisplayListBuilder, tempManager, ContainerLayerParameters());
       
       
@@ -4539,7 +4539,7 @@ FrameLayerBuilder::StoreDataForFrame(nsDisplayItem* aItem, Layer* aLayer, LayerS
   LayerManagerData* lmd = static_cast<LayerManagerData*>
     (mRetainingManager->GetUserData(&gLayerManagerUserData));
 
-  RefPtr<DisplayItemData> data =
+  nsRefPtr<DisplayItemData> data =
     new DisplayItemData(lmd, aItem->GetPerFrameKey(), aLayer);
 
   data->BeginUpdate(aLayer, aState, mContainerLayerGeneration, aItem);
@@ -4563,7 +4563,7 @@ FrameLayerBuilder::StoreDataForFrame(nsIFrame* aFrame,
   LayerManagerData* lmd = static_cast<LayerManagerData*>
     (mRetainingManager->GetUserData(&gLayerManagerUserData));
 
-  RefPtr<DisplayItemData> data =
+  nsRefPtr<DisplayItemData> data =
     new DisplayItemData(lmd, aDisplayItemKey, aLayer, aFrame);
 
   data->BeginUpdate(aLayer, aState, mContainerLayerGeneration);
@@ -4702,7 +4702,7 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
   uint32_t baseLength = metricsArray.Length();
 
   
-  nsTArray<RefPtr<Layer>> maskLayers;
+  nsTArray<nsRefPtr<Layer>> maskLayers;
 
   nsIFrame* fParent;
   for (const nsIFrame* f = aEntry->mAnimatedGeometryRootForScrollMetadata;
@@ -4746,7 +4746,7 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
       
       
       Maybe<size_t> nextIndex = Some(maskLayers.Length());
-      RefPtr<Layer> maskLayer =
+      nsRefPtr<Layer> maskLayer =
         CreateMaskLayer(aEntry->mLayer, *clip, aEntry->mVisibleRegion, nextIndex, clip->GetRoundedRectCount());
       if (maskLayer) {
         metrics.SetMaskLayerIndex(nextIndex);
@@ -5195,7 +5195,7 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
     return nullptr;
   }
 
-  RefPtr<ContainerLayer> containerLayer;
+  nsRefPtr<ContainerLayer> containerLayer;
   if (aManager == mRetainingManager) {
     
     
@@ -5263,7 +5263,7 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
   uint32_t oldGeneration = mContainerLayerGeneration;
   mContainerLayerGeneration = ++mMaxContainerLayerGeneration;
 
-  RefPtr<RefCountedRegion> paintedLayerInvalidRegion = nullptr;
+  nsRefPtr<RefCountedRegion> paintedLayerInvalidRegion = nullptr;
   if (mRetainingManager) {
     if (aContainerItem) {
       StoreDataForFrame(aContainerItem, containerLayer, LAYER_ACTIVE);
@@ -5532,15 +5532,15 @@ static void DebugPaintItem(DrawTarget& aDrawTarget,
   Rect bounds = NSRectToRect(aItem->GetBounds(aBuilder, &snap),
                              aPresContext->AppUnitsPerDevPixel());
 
-  RefPtr<DrawTarget> tempDT =
+  nsRefPtr<DrawTarget> tempDT =
     aDrawTarget.CreateSimilarDrawTarget(IntSize(bounds.width, bounds.height),
                                         SurfaceFormat::B8G8R8A8);
-  RefPtr<gfxContext> context = new gfxContext(tempDT);
+  nsRefPtr<gfxContext> context = new gfxContext(tempDT);
   context->SetMatrix(gfxMatrix::Translation(-bounds.x, -bounds.y));
   nsRenderingContext ctx(context);
 
   aItem->Paint(aBuilder, &ctx);
-  RefPtr<SourceSurface> surface = tempDT->Snapshot();
+  nsRefPtr<SourceSurface> surface = tempDT->Snapshot();
   DumpPaintedImage(aItem, surface);
 
   aDrawTarget.DrawSurface(surface, bounds, Rect(Point(0,0), bounds.Size()));
@@ -5980,7 +5980,7 @@ ContainerState::SetupMaskLayer(Layer *aLayer,
     return;
   }
 
-  RefPtr<Layer> maskLayer =
+  nsRefPtr<Layer> maskLayer =
     CreateMaskLayer(aLayer, aClip, aLayerVisibleRegion, Nothing(), aRoundedRectClipCount);
 
   if (!maskLayer) {
@@ -6001,7 +6001,7 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
 {
   
   MaskLayerKey recycleKey(aLayer, aForAncestorMaskLayer);
-  RefPtr<ImageLayer> maskLayer = CreateOrRecycleMaskImageLayerFor(recycleKey);
+  nsRefPtr<ImageLayer> maskLayer = CreateOrRecycleMaskImageLayerFor(recycleKey);
   MaskLayerUserData* userData = GetMaskLayerUserData(maskLayer);
 
   MaskLayerUserData newData;
@@ -6052,14 +6052,14 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
   const MaskLayerImageCache::MaskLayerImageKey* lookupKey = newKey;
 
   
-  RefPtr<ImageContainer> container =
+  nsRefPtr<ImageContainer> container =
     GetMaskLayerImageCache()->FindImageFor(&lookupKey);
 
   if (!container) {
     IntSize surfaceSizeInt(NSToIntCeil(surfaceSize.width),
                            NSToIntCeil(surfaceSize.height));
     
-    RefPtr<DrawTarget> dt =
+    nsRefPtr<DrawTarget> dt =
       aLayer->Manager()->CreateOptimalMaskDrawTarget(surfaceSizeInt);
 
     
@@ -6068,7 +6068,7 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
       return nullptr;
     }
 
-    RefPtr<gfxContext> context = new gfxContext(dt);
+    nsRefPtr<gfxContext> context = new gfxContext(dt);
     context->Multiply(ThebesMatrix(imageTransform));
 
     
@@ -6078,12 +6078,12 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
                                              0,
                                              aRoundedRectClipCount);
 
-    RefPtr<SourceSurface> surface = dt->Snapshot();
+    nsRefPtr<SourceSurface> surface = dt->Snapshot();
 
     
     container = aLayer->Manager()->CreateImageContainer();
     NS_ASSERTION(container, "Could not create image container for mask layer.");
-    RefPtr<Image> image = container->CreateImage(ImageFormat::CAIRO_SURFACE);
+    nsRefPtr<Image> image = container->CreateImage(ImageFormat::CAIRO_SURFACE);
     NS_ASSERTION(image, "Could not create image container for mask layer.");
     CairoImage::Data data;
     data.mSize = surfaceSizeInt;

@@ -96,7 +96,7 @@ public:
 protected: 
   StorageBaseStatementInternal();
 
-  RefPtr<Connection> mDBConnection;
+  nsRefPtr<Connection> mDBConnection;
   sqlite3 *mNativeConnection;
 
   

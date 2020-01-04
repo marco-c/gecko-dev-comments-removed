@@ -398,7 +398,7 @@ private:
   nsCString mMethod;
   
   nsCString mURL;
-  RefPtr<InternalHeaders> mHeaders;
+  nsRefPtr<InternalHeaders> mHeaders;
   nsCOMPtr<nsIInputStream> mBodyStream;
 
   nsContentPolicyType mContentPolicyType;

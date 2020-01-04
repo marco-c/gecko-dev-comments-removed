@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/TestInterfaceSetlikeNode.h"
 #include "mozilla/dom/TestInterfaceJSMaplikeSetlikeBinding.h"
@@ -26,7 +26,7 @@ TestInterfaceSetlikeNode::TestInterfaceSetlikeNode(JSContext* aCx,
 {
 }
 
-
+//static
 already_AddRefed<TestInterfaceSetlikeNode>
 TestInterfaceSetlikeNode::Constructor(const GlobalObject& aGlobal,
                                       ErrorResult& aRv)
@@ -37,7 +37,7 @@ TestInterfaceSetlikeNode::Constructor(const GlobalObject& aGlobal,
     return nullptr;
   }
 
-  RefPtr<TestInterfaceSetlikeNode> r = new TestInterfaceSetlikeNode(nullptr, window);
+  nsRefPtr<TestInterfaceSetlikeNode> r = new TestInterfaceSetlikeNode(nullptr, window);
   return r.forget();
 }
 
@@ -54,5 +54,5 @@ TestInterfaceSetlikeNode::GetParentObject() const
   return mParent;
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

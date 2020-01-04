@@ -64,11 +64,11 @@ private:
   GetOutputBufferSize() const;
 
   static uint32_t sOutputBufferSize;
-  RefPtr<Promise> mPromise;
+  nsRefPtr<Promise> mPromise;
   nsString mTargetRealPath;
 
   
-  RefPtr<Blob> mBlobData;
+  nsRefPtr<Blob> mBlobData;
 
   nsCOMPtr<nsIInputStream> mBlobStream;
   InfallibleTArray<uint8_t> mArrayData;
@@ -76,7 +76,7 @@ private:
 
   
   
-  RefPtr<BlobImpl> mTargetBlobImpl;
+  nsRefPtr<BlobImpl> mTargetBlobImpl;
 };
 
 } 

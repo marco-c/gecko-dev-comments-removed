@@ -40,7 +40,7 @@ class MediaRawDataQueue {
   }
 
   already_AddRefed<MediaRawData> PopFront() {
-    RefPtr<MediaRawData> result = mQueue.front().forget();
+    nsRefPtr<MediaRawData> result = mQueue.front().forget();
     mQueue.pop_front();
     return result.forget();
   }
@@ -56,16 +56,16 @@ class MediaRawDataQueue {
     return *this;
   }
 
-  const RefPtr<MediaRawData>& First() const {
+  const nsRefPtr<MediaRawData>& First() const {
     return mQueue.front();
   }
 
-  const RefPtr<MediaRawData>& Last() const {
+  const nsRefPtr<MediaRawData>& Last() const {
     return mQueue.back();
   }
 
 private:
-  std::deque<RefPtr<MediaRawData>> mQueue;
+  std::deque<nsRefPtr<MediaRawData>> mQueue;
 };
 
 class WebMTrackDemuxer;
@@ -78,7 +78,7 @@ public:
   
   WebMDemuxer(MediaResource* aResource, bool aIsMediaSource);
   
-  RefPtr<InitPromise> Init() override;
+  nsRefPtr<InitPromise> Init() override;
 
   bool HasTrackType(TrackInfo::TrackType aType) const override;
 
@@ -138,20 +138,20 @@ private:
   
   
   
-  RefPtr<NesteggPacketHolder> NextPacket(TrackInfo::TrackType aType);
+  nsRefPtr<NesteggPacketHolder> NextPacket(TrackInfo::TrackType aType);
 
   
   
-  RefPtr<NesteggPacketHolder> DemuxPacket();
+  nsRefPtr<NesteggPacketHolder> DemuxPacket();
 
   MediaResourceIndex mResource;
   MediaInfo mInfo;
-  nsTArray<RefPtr<WebMTrackDemuxer>> mDemuxers;
+  nsTArray<nsRefPtr<WebMTrackDemuxer>> mDemuxers;
 
   
   
-  RefPtr<WebMBufferedState> mBufferedState;
-  RefPtr<MediaByteBuffer> mInitData;
+  nsRefPtr<WebMBufferedState> mBufferedState;
+  nsRefPtr<MediaByteBuffer> mInitData;
 
   
   
@@ -203,15 +203,15 @@ public:
 
   UniquePtr<TrackInfo> GetInfo() const override;
 
-  RefPtr<SeekPromise> Seek(media::TimeUnit aTime) override;
+  nsRefPtr<SeekPromise> Seek(media::TimeUnit aTime) override;
 
-  RefPtr<SamplesPromise> GetSamples(int32_t aNumSamples = 1) override;
+  nsRefPtr<SamplesPromise> GetSamples(int32_t aNumSamples = 1) override;
 
   void Reset() override;
 
   nsresult GetNextRandomAccessPoint(media::TimeUnit* aTime) override;
 
-  RefPtr<SkipAccessPointPromise> SkipToNextRandomAccessPoint(media::TimeUnit aTimeThreshold) override;
+  nsRefPtr<SkipAccessPointPromise> SkipToNextRandomAccessPoint(media::TimeUnit aTimeThreshold) override;
 
   media::TimeIntervals GetBuffered() override;
 
@@ -220,10 +220,10 @@ public:
 private:
   friend class WebMDemuxer;
   ~WebMTrackDemuxer();
-  void UpdateSamples(nsTArray<RefPtr<MediaRawData>>& aSamples);
+  void UpdateSamples(nsTArray<nsRefPtr<MediaRawData>>& aSamples);
   void SetNextKeyFrameTime();
-  RefPtr<MediaRawData> NextSample ();
-  RefPtr<WebMDemuxer> mParent;
+  nsRefPtr<MediaRawData> NextSample ();
+  nsRefPtr<WebMDemuxer> mParent;
   TrackInfo::TrackType mType;
   UniquePtr<TrackInfo> mInfo;
   Maybe<media::TimeUnit> mNextKeyframeTime;

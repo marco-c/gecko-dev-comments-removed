@@ -189,8 +189,8 @@ protected:
 
 
 
-  std::vector<RefPtr<SourceSurface> > mInputSurfaces;
-  std::vector<RefPtr<FilterNodeSoftware> > mInputFilters;
+  std::vector<nsRefPtr<SourceSurface> > mInputSurfaces;
+  std::vector<nsRefPtr<FilterNodeSoftware> > mInputFilters;
 
   
 
@@ -210,7 +210,7 @@ protected:
 
 
   IntRect mCachedRect;
-  RefPtr<DataSourceSurface> mCachedOutput;
+  nsRefPtr<DataSourceSurface> mCachedOutput;
 };
 
 

@@ -115,7 +115,7 @@ private:
 
         MutexAutoLock lock(mHandlerMutex);
 
-        RefPtr<SocketHandler> temp = new SocketHandler();
+        nsRefPtr<SocketHandler> temp = new SocketHandler();
         temp->OpenStream(aTransport);
         mHandlers.AppendElement(temp.get());
     }
@@ -199,9 +199,9 @@ private:
         bool                          mConnected;
     };
 
-    nsTArray<RefPtr<SocketHandler> > mHandlers;
+    nsTArray<nsRefPtr<SocketHandler> > mHandlers;
     nsCOMPtr<nsIThread>                   mDebugSenderThread;
-    RefPtr<DebugDataSender>             mCurrentSender;
+    nsRefPtr<DebugDataSender>             mCurrentSender;
     nsCOMPtr<nsIServerSocket>             mServerSocket;
 
     
@@ -773,7 +773,7 @@ public:
         
         
         
-        RefPtr<DebugDataSender> mHost;
+        nsRefPtr<DebugDataSender> mHost;
     };
 
     
@@ -793,7 +793,7 @@ public:
     private:
         virtual ~ClearTask() { }
 
-        RefPtr<DebugDataSender> mHost;
+        nsRefPtr<DebugDataSender> mHost;
     };
 
     
@@ -825,7 +825,7 @@ public:
     private:
         virtual ~SendTask() { }
 
-        RefPtr<DebugDataSender> mHost;
+        nsRefPtr<DebugDataSender> mHost;
     };
 
     explicit DebugDataSender(nsIThread *thread)
@@ -1052,7 +1052,7 @@ SenderHelper::SendTextureSource(GLContext* aGLContext,
 
     
     
-    RefPtr<DataSourceSurface> img =
+    nsRefPtr<DataSourceSurface> img =
         aGLContext->ReadTexImageHelper()->ReadTexImage(0, textureTarget,
                                                          size,
                                                          shaderConfig, aFlipY);

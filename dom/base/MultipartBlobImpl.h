@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_MultipartBlobImpl_h
 #define mozilla_dom_MultipartBlobImpl_h
@@ -24,8 +24,8 @@ class MultipartBlobImpl final : public BlobImplBase
 public:
   NS_DECL_ISUPPORTS_INHERITED
 
-  // Create as a file
-  MultipartBlobImpl(const nsTArray<RefPtr<BlobImpl>>& aBlobImpls,
+  
+  MultipartBlobImpl(const nsTArray<nsRefPtr<BlobImpl>>& aBlobImpls,
                     const nsAString& aName,
                     const nsAString& aContentType)
     : BlobImplBase(aName, aContentType, UINT64_MAX),
@@ -35,8 +35,8 @@ public:
     SetLengthAndModifiedDate();
   }
 
-  // Create as a blob
-  MultipartBlobImpl(const nsTArray<RefPtr<BlobImpl>>& aBlobImpls,
+  
+  MultipartBlobImpl(const nsTArray<nsRefPtr<BlobImpl>>& aBlobImpls,
                     const nsAString& aContentType)
     : BlobImplBase(aContentType, UINT64_MAX),
       mBlobImpls(aBlobImpls),
@@ -45,14 +45,14 @@ public:
     SetLengthAndModifiedDate();
   }
 
-  // Create as a file to be later initialized
+  
   explicit MultipartBlobImpl(const nsAString& aName)
     : BlobImplBase(aName, EmptyString(), UINT64_MAX),
       mIsFromNsIFile(false)
   {
   }
 
-  // Create as a blob to be later initialized
+  
   MultipartBlobImpl()
     : BlobImplBase(EmptyString(), UINT64_MAX),
       mIsFromNsIFile(false)
@@ -96,7 +96,7 @@ public:
   virtual void GetInternalStream(nsIInputStream** aInputStream,
                                  ErrorResult& aRv) override;
 
-  virtual const nsTArray<RefPtr<BlobImpl>>* GetSubBlobImpls() const override
+  virtual const nsTArray<nsRefPtr<BlobImpl>>* GetSubBlobImpls() const override
   {
     return mBlobImpls.Length() ? &mBlobImpls : nullptr;
   }
@@ -124,8 +124,8 @@ protected:
 
   void SetLengthAndModifiedDate();
 
-  nsTArray<RefPtr<BlobImpl>> mBlobImpls;
+  nsTArray<nsRefPtr<BlobImpl>> mBlobImpls;
   bool mIsFromNsIFile;
 };
 
-#endif // mozilla_dom_MultipartBlobImpl_h
+#endif 

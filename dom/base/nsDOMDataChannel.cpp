@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDOMDataChannel.h"
 
@@ -30,8 +30,8 @@ extern PRLogModuleInfo* GetDataChannelLog();
 
 #include "DataChannel.h"
 
-
-
+// Since we've moved the windows.h include down here, we have to explicitly
+// undef GetBinaryType, otherwise we'll get really odd conflicts
 #ifdef GetBinaryType
 #undef GetBinaryType
 #endif
@@ -41,15 +41,15 @@ using namespace mozilla::dom;
 
 nsDOMDataChannel::~nsDOMDataChannel()
 {
-  
-  
-  
+  // Don't call us anymore!  Likely isn't an issue (or maybe just less of
+  // one) once we block GC until all the (appropriate) onXxxx handlers
+  // are dropped. (See WebRTC spec)
   LOG(("Close()ing %p", mDataChannel.get()));
   mDataChannel->SetListener(nullptr, nullptr);
   mDataChannel->Close();
 }
 
- JSObject*
+/* virtual */ JSObject*
 nsDOMDataChannel::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
   return DataChannelBinding::Wrap(aCx, this, aGivenProto);
@@ -90,7 +90,7 @@ nsDOMDataChannel::Init(nsPIDOMWindow* aDOMWindow)
   MOZ_ASSERT(mDataChannel);
   mDataChannel->SetListener(this, nullptr);
 
-  
+  // Now grovel through the objects to get a usable origin for onMessage
   nsCOMPtr<nsIScriptGlobalObject> sgo = do_QueryInterface(aDOMWindow);
   NS_ENSURE_STATE(sgo);
   nsCOMPtr<nsIScriptContext> scriptContext = sgo->GetContext();
@@ -101,7 +101,7 @@ nsDOMDataChannel::Init(nsPIDOMWindow* aDOMWindow)
   nsCOMPtr<nsIPrincipal> principal = scriptPrincipal->GetPrincipal();
   NS_ENSURE_STATE(principal);
 
-  
+  // Attempt to kill "ghost" DataChannel (if one can happen): but usually too early for check to fail
   rv = CheckInnerWindowCorrectness();
   NS_ENSURE_SUCCESS(rv,rv);
 
@@ -155,7 +155,7 @@ nsDOMDataChannel::GetStream(uint16_t *aStream)
   return NS_OK;
 }
 
-
+// XXX should be GetType()?  Open question for the spec
 bool
 nsDOMDataChannel::Reliable() const
 {
@@ -193,14 +193,14 @@ NS_IMETHODIMP
 nsDOMDataChannel::GetReadyState(nsAString& aReadyState)
 {
   uint16_t readyState = mDataChannel->GetReadyState();
-  
+  // From the WebRTC spec
   const char * stateName[] = {
     "connecting",
     "open",
     "closing",
     "closed"
   };
-  MOZ_ASSERT( 
+  MOZ_ASSERT(/*readyState >= mozilla::DataChannel::CONNECTING && */ // Always true due to datatypes
              readyState <= mozilla::DataChannel::CLOSED);
   aReadyState.AssignASCII(stateName[readyState]);
 
@@ -267,7 +267,7 @@ nsDOMDataChannel::Close()
   return NS_OK;
 }
 
-
+// All of the following is copy/pasted from WebSocket.cpp.
 void
 nsDOMDataChannel::Send(const nsAString& aData, ErrorResult& aRv)
 {
@@ -341,8 +341,8 @@ nsDOMDataChannel::Send(nsIInputStream* aMsgStream,
   MOZ_ASSERT(NS_IsMainThread());
   uint16_t state = mDataChannel->GetReadyState();
 
-  
-  
+  // In reality, the DataChannel protocol allows this, but we want it to
+  // look like WebSockets
   if (state == mozilla::DataChannel::CONNECTING) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
@@ -413,7 +413,7 @@ nsDOMDataChannel::DoOnMessageAvailable(const nsACString& aData,
     jsData.setString(jsString);
   }
 
-  RefPtr<MessageEvent> event = NS_NewDOMMessageEvent(this, nullptr, nullptr);
+  nsRefPtr<MessageEvent> event = NS_NewDOMMessageEvent(this, nullptr, nullptr);
 
   rv = event->InitMessageEvent(NS_LITERAL_STRING("message"), false, false,
                                jsData, mOrigin, EmptyString(), nullptr);
@@ -454,7 +454,7 @@ nsDOMDataChannel::OnSimpleEvent(nsISupports* aContext, const nsAString& aName)
     return NS_OK;
   }
 
-  RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
+  nsRefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
 
   rv = event->InitEvent(aName, false, false);
   NS_ENSURE_SUCCESS(rv,rv);
@@ -494,13 +494,13 @@ nsDOMDataChannel::AppReady()
   mDataChannel->AppReady();
 }
 
-
+/* static */
 nsresult
 NS_NewDOMDataChannel(already_AddRefed<mozilla::DataChannel>&& aDataChannel,
                      nsPIDOMWindow* aWindow,
                      nsIDOMDataChannel** aDomDataChannel)
 {
-  RefPtr<nsDOMDataChannel> domdc =
+  nsRefPtr<nsDOMDataChannel> domdc =
     new nsDOMDataChannel(aDataChannel, aWindow);
 
   nsresult rv = domdc->Init(aWindow);
@@ -509,7 +509,7 @@ NS_NewDOMDataChannel(already_AddRefed<mozilla::DataChannel>&& aDataChannel,
   return CallQueryInterface(domdc, aDomDataChannel);
 }
 
-
+/* static */
 void
 NS_DataChannelAppReady(nsIDOMDataChannel* aDomDataChannel)
 {

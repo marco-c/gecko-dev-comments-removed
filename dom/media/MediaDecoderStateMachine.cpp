@@ -400,17 +400,14 @@ bool MediaDecoderStateMachine::HaveNextFrameData()
          (!HasVideo() || VideoQueue().GetSize() > 1);
 }
 
-int64_t
-MediaDecoderStateMachine::GetDecodedAudioDuration()
+int64_t MediaDecoderStateMachine::GetDecodedAudioDuration()
 {
   MOZ_ASSERT(OnTaskQueue());
+  int64_t audioDecoded = AudioQueue().Duration();
   if (mMediaSink->IsStarted()) {
-    
-    
-    return mDecodedAudioEndTime != -1 ? mDecodedAudioEndTime - GetClock() : 0;
+    audioDecoded += AudioEndTime() - GetMediaTime();
   }
-  
-  return AudioQueue().Duration();
+  return audioDecoded;
 }
 
 void MediaDecoderStateMachine::DiscardStreamData()
@@ -2228,7 +2225,7 @@ MediaDecoderStateMachine::FinishShutdown()
   
   
   DECODER_LOG("Shutting down state machine task queue");
-  RefPtr<DecoderDisposer> disposer = new DecoderDisposer(mDecoder, this);
+  nsRefPtr<DecoderDisposer> disposer = new DecoderDisposer(mDecoder, this);
   OwnerThread()->BeginShutdown()->Then(AbstractThread::MainThread(), __func__,
                                        disposer.get(),
                                        &DecoderDisposer::OnTaskQueueShutdown,

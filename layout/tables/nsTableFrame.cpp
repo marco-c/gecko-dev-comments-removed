@@ -649,7 +649,7 @@ nsTableFrame::CreateAnonymousColGroupFrame(nsTableColGroupType aColGroupType)
   nsPresContext* presContext = PresContext();
   nsIPresShell *shell = presContext->PresShell();
 
-  RefPtr<nsStyleContext> colGroupStyle;
+  nsRefPtr<nsStyleContext> colGroupStyle;
   colGroupStyle = shell->StyleSet()->
     ResolveAnonymousBoxStyle(nsCSSAnonBoxes::tableColGroup, mStyleContext);
   
@@ -705,7 +705,7 @@ nsTableFrame::AppendAnonymousColFrames(nsTableColGroupFrame* aColGroupFrame,
 
   for (int32_t childX = startIndex; childX <= lastIndex; childX++) {
     nsIContent* iContent;
-    RefPtr<nsStyleContext> styleContext;
+    nsRefPtr<nsStyleContext> styleContext;
     nsStyleContext* parentStyleContext;
 
     

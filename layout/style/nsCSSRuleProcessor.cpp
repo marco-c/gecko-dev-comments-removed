@@ -56,7 +56,6 @@
 #include "mozilla/TypedEnumBits.h"
 #include "RuleProcessorCache.h"
 #include "nsIDOMMutationEvent.h"
-#include "nsIMozBrowserFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -2152,17 +2151,6 @@ static bool SelectorMatches(Element* aElement,
           if (!val ||
               (val->Type() == nsAttrValue::eInteger &&
                val->GetIntegerValue() == 0)) {
-            return false;
-          }
-        }
-        break;
-
-      case nsCSSPseudoClasses::ePseudoClass_mozBrowserFrame:
-        {
-          nsCOMPtr<nsIMozBrowserFrame>
-            browserFrame = do_QueryInterface(aElement);
-          if (!browserFrame ||
-              !browserFrame->GetReallyIsBrowserOrApp()) {
             return false;
           }
         }

@@ -969,21 +969,21 @@ private:
   char                     *mRWBuf;
   uint32_t                  mRWBufSize;
   uint32_t                  mRWBufPos;
-  RefPtr<CacheHash>       mRWHash;
+  nsRefPtr<CacheHash>       mRWHash;
 
   
   bool                      mJournalReadSuccessfully;
 
   
-  RefPtr<CacheFileHandle> mIndexHandle;
+  nsRefPtr<CacheFileHandle> mIndexHandle;
   
-  RefPtr<CacheFileHandle> mJournalHandle;
+  nsRefPtr<CacheFileHandle> mJournalHandle;
   
-  RefPtr<CacheFileHandle> mTmpHandle;
+  nsRefPtr<CacheFileHandle> mTmpHandle;
 
-  RefPtr<FileOpenHelper>  mIndexFileOpener;
-  RefPtr<FileOpenHelper>  mJournalFileOpener;
-  RefPtr<FileOpenHelper>  mTmpFileOpener;
+  nsRefPtr<FileOpenHelper>  mIndexFileOpener;
+  nsRefPtr<FileOpenHelper>  mJournalFileOpener;
+  nsRefPtr<FileOpenHelper>  mTmpFileOpener;
 
   
   nsCOMPtr<nsIDirectoryEnumerator> mDirEnumerator;
@@ -1069,7 +1069,7 @@ private:
   };
 
   
-  nsTArray<RefPtr<DiskConsumptionObserver> > mDiskConsumptionObservers;
+  nsTArray<nsRefPtr<DiskConsumptionObserver> > mDiskConsumptionObservers;
 };
 
 class CacheIndexAutoLock {
@@ -1100,7 +1100,7 @@ public:
   }
 
 private:
-  RefPtr<CacheIndex> mIndex;
+  nsRefPtr<CacheIndex> mIndex;
   bool mLocked;
 };
 
@@ -1132,7 +1132,7 @@ public:
   }
 
 private:
-  RefPtr<CacheIndex> mIndex;
+  nsRefPtr<CacheIndex> mIndex;
   bool mLocked;
 };
 

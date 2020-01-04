@@ -76,7 +76,7 @@ NS_IMETHODIMP PlaceholderTxn::UndoTransaction(void)
   NS_ENSURE_TRUE(mStartSel, NS_ERROR_NULL_POINTER);
 
   
-  RefPtr<Selection> selection = mEditor->GetSelection();
+  nsRefPtr<Selection> selection = mEditor->GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
   return mStartSel->RestoreSelection(selection);
 }
@@ -89,7 +89,7 @@ NS_IMETHODIMP PlaceholderTxn::RedoTransaction(void)
   NS_ENSURE_SUCCESS(res, res);
 
   
-  RefPtr<Selection> selection = mEditor->GetSelection();
+  nsRefPtr<Selection> selection = mEditor->GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
   return mEndSel.RestoreSelection(selection);
 }
@@ -123,7 +123,7 @@ NS_IMETHODIMP PlaceholderTxn::Merge(nsITransaction *aTransaction, bool *aDidMerg
   
   if (mAbsorb)
   {
-    RefPtr<IMETextTxn> otherTxn = do_QueryObject(aTransaction);
+    nsRefPtr<IMETextTxn> otherTxn = do_QueryObject(aTransaction);
     if (otherTxn) {
       
       
@@ -254,7 +254,7 @@ NS_IMETHODIMP PlaceholderTxn::Commit()
 
 nsresult PlaceholderTxn::RememberEndingSelection()
 {
-  RefPtr<Selection> selection = mEditor->GetSelection();
+  nsRefPtr<Selection> selection = mEditor->GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
   mEndSel.SaveSelection(selection);
   return NS_OK;

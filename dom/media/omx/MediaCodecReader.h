@@ -70,7 +70,7 @@ public:
   
   
   
-  virtual RefPtr<ShutdownPromise> Shutdown();
+  virtual nsRefPtr<ShutdownPromise> Shutdown();
 
 protected:
   
@@ -83,22 +83,22 @@ public:
   virtual nsresult ResetDecode() override;
 
   
-  virtual RefPtr<VideoDataPromise>
+  virtual nsRefPtr<VideoDataPromise>
   RequestVideoData(bool aSkipToNextKeyframe,
                    int64_t aTimeThreshold) override;
 
   
-  virtual RefPtr<AudioDataPromise> RequestAudioData() override;
+  virtual nsRefPtr<AudioDataPromise> RequestAudioData() override;
 
   virtual bool HasAudio();
   virtual bool HasVideo();
 
-  virtual RefPtr<MediaDecoderReader::MetadataPromise> AsyncReadMetadata() override;
+  virtual nsRefPtr<MediaDecoderReader::MetadataPromise> AsyncReadMetadata() override;
 
   
   
   
-  virtual RefPtr<SeekPromise>
+  virtual nsRefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aEndTime) override;
 
   virtual bool IsMediaSeekable() override;
@@ -155,7 +155,7 @@ protected:
     int64_t mSeekTimeUs;
     bool mFlushed; 
     bool mDiscontinuity;
-    RefPtr<TaskQueue> mTaskQueue;
+    nsRefPtr<TaskQueue> mTaskQueue;
     Monitor mTrackMonitor;
 
   private:
@@ -241,7 +241,7 @@ private:
     
     MozPromiseHolder<VideoDataPromise> mVideoPromise;
 
-    RefPtr<TaskQueue> mReleaseBufferTaskQueue;
+    nsRefPtr<TaskQueue> mReleaseBufferTaskQueue;
   private:
     
     VideoTrack(const VideoTrack &rhs) = delete;
@@ -285,11 +285,11 @@ private:
   class ParseCachedDataRunnable : public nsRunnable
   {
   public:
-    ParseCachedDataRunnable(RefPtr<MediaCodecReader> aReader,
+    ParseCachedDataRunnable(nsRefPtr<MediaCodecReader> aReader,
                             const char* aBuffer,
                             uint32_t aLength,
                             int64_t aOffset,
-                            RefPtr<SignalObject> aSignal);
+                            nsRefPtr<SignalObject> aSignal);
 
     NS_IMETHOD Run() override;
 
@@ -299,18 +299,18 @@ private:
     ParseCachedDataRunnable(const ParseCachedDataRunnable &rhs) = delete;
     const ParseCachedDataRunnable &operator=(const ParseCachedDataRunnable &rhs) = delete;
 
-    RefPtr<MediaCodecReader> mReader;
+    nsRefPtr<MediaCodecReader> mReader;
     nsAutoArrayPtr<const char> mBuffer;
     uint32_t mLength;
     int64_t mOffset;
-    RefPtr<SignalObject> mSignal;
+    nsRefPtr<SignalObject> mSignal;
   };
   friend class ParseCachedDataRunnable;
 
   class ProcessCachedDataTask : public Task
   {
   public:
-    ProcessCachedDataTask(RefPtr<MediaCodecReader> aReader,
+    ProcessCachedDataTask(nsRefPtr<MediaCodecReader> aReader,
                           int64_t aOffset);
 
     void Run() override;
@@ -321,7 +321,7 @@ private:
     ProcessCachedDataTask(const ProcessCachedDataTask &rhs) = delete;
     const ProcessCachedDataTask &operator=(const ProcessCachedDataTask &rhs) = delete;
 
-    RefPtr<MediaCodecReader> mReader;
+    nsRefPtr<MediaCodecReader> mReader;
     int64_t mOffset;
   };
   friend class ProcessCachedDataTask;
@@ -342,7 +342,7 @@ private:
   bool CreateMediaSources();
   void DestroyMediaSources();
 
-  RefPtr<MediaResourcePromise> CreateMediaCodecs();
+  nsRefPtr<MediaResourcePromise> CreateMediaCodecs();
   static bool CreateMediaCodec(android::sp<android::ALooper>& aLooper,
                                Track& aTrack,
                                bool aAsync,
@@ -388,7 +388,7 @@ private:
   void ClearColorConverterBuffer();
 
   int64_t ProcessCachedData(int64_t aOffset,
-                            RefPtr<SignalObject> aSignal);
+                            nsRefPtr<SignalObject> aSignal);
   bool ParseDataSegment(const char* aBuffer,
                         uint32_t aLength,
                         int64_t aOffset);

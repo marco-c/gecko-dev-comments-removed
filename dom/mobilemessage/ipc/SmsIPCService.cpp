@@ -67,12 +67,12 @@ SendCursorRequest(const IPCMobileMessageCursor& aRequest,
   PSmsChild* smsChild = GetSmsChild();
   NS_ENSURE_TRUE(smsChild, NS_ERROR_FAILURE);
 
-  RefPtr<MobileMessageCursorChild> actor =
+  nsRefPtr<MobileMessageCursorChild> actor =
     new MobileMessageCursorChild(aRequestReply);
 
   
   
-  RefPtr<MobileMessageCursorChild> actorCopy(actor);
+  nsRefPtr<MobileMessageCursorChild> actorCopy(actor);
   mozilla::unused << actorCopy.forget().take();
 
   smsChild->SendPMobileMessageCursorConstructor(actor, aRequest);
@@ -112,7 +112,7 @@ SmsIPCService::GetSingleton()
     sSingleton = new SmsIPCService();
   }
 
-  RefPtr<SmsIPCService> service = sSingleton;
+  nsRefPtr<SmsIPCService> service = sSingleton;
   return service.forget();
 }
 

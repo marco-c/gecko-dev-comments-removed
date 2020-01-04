@@ -56,7 +56,6 @@
 #include "nsTArray.h"                   
 #include "nsThreadUtils.h"              
 #include "nsXULAppAPI.h"                
-#include "nsIXULRuntime.h"              
 #ifdef XP_WIN
 #include "mozilla/layers/CompositorD3D11.h"
 #include "mozilla/layers/CompositorD3D9.h"
@@ -552,12 +551,6 @@ CompositorParent::CompositorParent(nsIWidget* aWidget,
   , mForceCompositionTask(nullptr)
   , mCompositorThreadHolder(sCompositorThreadHolder)
   , mCompositorScheduler(nullptr)
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  , mLastPluginUpdateLayerTreeId(0)
-#endif
-#if defined(XP_WIN)
-  , mPluginUpdateResponsePending(false)
-#endif
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(CompositorThread(),
@@ -710,7 +703,7 @@ bool
 CompositorParent::RecvMakeSnapshot(const SurfaceDescriptor& aInSnapshot,
                                    const gfx::IntRect& aRect)
 {
-  RefPtr<DrawTarget> target = GetDrawTargetForDescriptor(aInSnapshot, gfx::BackendType::CAIRO);
+  nsRefPtr<DrawTarget> target = GetDrawTargetForDescriptor(aInSnapshot, gfx::BackendType::CAIRO);
   ForceComposeToTarget(target, &aRect);
   return true;
 }
@@ -722,7 +715,7 @@ CompositorParent::RecvMakeWidgetSnapshot(const SurfaceDescriptor& aInSnapshot)
     return false;
   }
 
-  RefPtr<DrawTarget> target = GetDrawTargetForDescriptor(aInSnapshot, gfx::BackendType::CAIRO);
+  nsRefPtr<DrawTarget> target = GetDrawTargetForDescriptor(aInSnapshot, gfx::BackendType::CAIRO);
   mCompositor->GetWidget()->CaptureWidgetOnScreen(target);
   return true;
 }
@@ -1047,59 +1040,7 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
     return;
   }
 
-#if defined(XP_WIN)
-  
-  if (mPluginUpdateResponsePending) {
-    return;
-  }
-#endif
-
-  bool hasRemoteContent = false;
-  bool pluginsUpdatedFlag = true;
-  AutoResolveRefLayers resolve(mCompositionManager, this,
-                               &hasRemoteContent,
-                               &pluginsUpdatedFlag);
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(XP_WIN)
-  if (pluginsUpdatedFlag) {
-    mPluginUpdateResponsePending = true;
-    return;
-  }
-#endif
-
-  
-  
-  if (!hasRemoteContent && BrowserTabsRemoteAutostart() &&
-      mCachedPluginData.Length()) {
-    unused << SendHideAllPlugins((uintptr_t)GetWidget());
-    mCachedPluginData.Clear();
-#if defined(XP_WIN)
-    
-    mPluginUpdateResponsePending = true;
-    return;
-#endif
-  }
-#endif
+  AutoResolveRefLayers resolve(mCompositionManager);
 
   if (aTarget) {
     mLayerManager->BeginTransactionWithDrawTarget(aTarget, *aRect);
@@ -1175,20 +1116,6 @@ CompositorParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRect* aRe
 
   mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME, start);
   profiler_tracing("Paint", "Composite", TRACING_INTERVAL_END);
-}
-
-bool
-CompositorParent::RecvRemotePluginsReady()
-{
-#if defined(XP_WIN)
-  mPluginUpdateResponsePending = false;
-  ScheduleComposition();
-  return true;
-#else
-  NS_NOTREACHED("CompositorParent::RecvRemotePluginsReady calls "
-                "unexpected on this platform.");
-  return false;
-#endif
 }
 
 void
@@ -1419,7 +1346,7 @@ CompositorParent::InitializeLayerManager(const nsTArray<LayersBackend>& aBackend
   NS_ASSERTION(!mCompositor,   "Already initialised mCompositor");
 
   for (size_t i = 0; i < aBackendHints.Length(); ++i) {
-    RefPtr<Compositor> compositor;
+    nsRefPtr<Compositor> compositor;
     if (aBackendHints[i] == LayersBackend::LAYERS_OPENGL) {
       compositor = new CompositorOGL(mWidget,
                                      mEGLSurfaceSize.width,
@@ -1449,7 +1376,7 @@ CompositorParent::InitializeLayerManager(const nsTArray<LayersBackend>& aBackend
     }
 
     compositor->SetCompositorID(mCompositorID);
-    RefPtr<LayerManagerComposite> layerManager = new LayerManagerComposite(compositor);
+    nsRefPtr<LayerManagerComposite> layerManager = new LayerManagerComposite(compositor);
 
     if (layerManager->Initialize()) {
       mLayerManager = layerManager;
@@ -1806,7 +1733,6 @@ public:
                                       const nsTArray<ScrollableLayerGuid>& aTargets) override;
 
   virtual AsyncCompositionManager* GetCompositionManager(LayerTransactionParent* aParent) override;
-  virtual bool RecvRemotePluginsReady()  override { return false; }
 
   void DidComposite(uint64_t aId,
                     TimeStamp& aCompositeStart,
@@ -2073,62 +1999,32 @@ CrossProcessCompositorParent::ShadowLayersUpdated(
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 
-
-
-#define PLUGINS_LOG(...)
-
-bool
-CompositorParent::UpdatePluginWindowState(uint64_t aId)
+static void
+UpdatePluginWindowState(uint64_t aId)
 {
   CompositorParent::LayerTreeState& lts = sIndirectLayerTrees[aId];
-  
-  if (!lts.mUpdatedPluginDataAvailable) {
-    PLUGINS_LOG("[%" PRIu64 "] no plugin data", aId);
-    return false;
+  if (!lts.mPluginData.Length() && !lts.mUpdatedPluginDataAvailable) {
+    return;
   }
 
-  
-  
-  
-  bool pluginMetricsChanged = false;
+  bool shouldComposePlugin = !!lts.mRoot &&
+                             !!lts.mRoot->GetParent();
 
-  
-  if (mLastPluginUpdateLayerTreeId == aId) {
-    
-    if (!mCachedPluginData.Length() && !lts.mPluginData.Length()) {
-      PLUGINS_LOG("[%" PRIu64 "] no data, no changes", aId);
-      return false;
+  bool shouldHidePlugin = !lts.mRoot ||
+                          !lts.mRoot->GetParent();
+
+  if (shouldComposePlugin) {
+    if (!lts.mPluginData.Length()) {
+      
+      
+      
+      
+      uintptr_t parentWidget = (uintptr_t)lts.mParent->GetWidget();
+      unused << lts.mParent->SendHideAllPlugins(parentWidget);
+      lts.mUpdatedPluginDataAvailable = false;
+      return;
     }
 
-    if (mCachedPluginData.Length() == lts.mPluginData.Length()) {
-      
-      for (uint32_t idx = 0; idx < lts.mPluginData.Length(); idx++) {
-        if (!(mCachedPluginData[idx] == lts.mPluginData[idx])) {
-          pluginMetricsChanged = true;
-          break;
-        }
-      }
-    } else {
-      
-      pluginMetricsChanged = true;
-    }
-  } else {
-    
-    pluginMetricsChanged = true;
-  }
-
-  if (!lts.mPluginData.Length()) {
-    
-    
-    
-    
-    mPluginsLayerOffset = nsIntPoint(0,0);
-    mPluginsLayerVisibleRegion.SetEmpty();
-    uintptr_t parentWidget = (uintptr_t)lts.mParent->GetWidget();
-    unused << lts.mParent->SendHideAllPlugins(parentWidget);
-    lts.mUpdatedPluginDataAvailable = false;
-    PLUGINS_LOG("[%" PRIu64 "] hide all", aId);
-  } else {
     
     
     
@@ -2138,29 +2034,32 @@ CompositorParent::UpdatePluginWindowState(uint64_t aId)
       nsIntPoint offset;
       nsIntRegion visibleRegion;
       if (contentRoot->GetVisibleRegionRelativeToRootLayer(visibleRegion,
-                                                            &offset)) {
-        
-        
-        if (!pluginMetricsChanged &&
-            mPluginsLayerVisibleRegion == visibleRegion &&
-            mPluginsLayerOffset == offset) {
-          PLUGINS_LOG("[%" PRIu64 "] no change", aId);
-          return false;
-        }
-        mPluginsLayerOffset = offset;
-        mPluginsLayerVisibleRegion = visibleRegion;
+                                                           &offset)) {
         unused <<
           lts.mParent->SendUpdatePluginConfigurations(offset, visibleRegion,
                                                       lts.mPluginData);
         lts.mUpdatedPluginDataAvailable = false;
-        PLUGINS_LOG("[%" PRIu64 "] updated", aId);
+      } else {
+        shouldHidePlugin = true;
       }
     }
   }
 
-  mLastPluginUpdateLayerTreeId = aId;
-  mCachedPluginData = lts.mPluginData;
-  return true;
+  
+  if (shouldHidePlugin) {
+    for (uint32_t pluginsIdx = 0; pluginsIdx < lts.mPluginData.Length();
+         pluginsIdx++) {
+      lts.mPluginData[pluginsIdx].visible() = false;
+    }
+    nsIntPoint offset;
+    nsIntRegion region;
+    unused << lts.mParent->SendUpdatePluginConfigurations(offset,
+                                                          region,
+                                                          lts.mPluginData);
+    
+    
+    lts.mPluginData.Clear();
+  }
 }
 #endif 
 
@@ -2175,6 +2074,9 @@ CrossProcessCompositorParent::DidComposite(uint64_t aId,
     unused << SendDidComposite(aId, layerTree->GetPendingTransactionId(), aCompositeStart, aCompositeEnd);
     layerTree->SetPendingTransactionId(0);
   }
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+      UpdatePluginWindowState(aId);
+#endif
 }
 
 void

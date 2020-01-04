@@ -48,7 +48,7 @@ PresentationRequesterCallback::NotifySuccess()
 
   
   
-  RefPtr<PresentationSession> session =
+  nsRefPtr<PresentationSession> session =
     PresentationSession::Create(mRequest->GetOwner(), mSessionId,
                                 PresentationSessionState::Connected);
   if (NS_WARN_IF(!session)) {

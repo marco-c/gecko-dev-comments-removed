@@ -56,7 +56,7 @@ class DocumentRule;
 
 class nsCSSRuleProcessor: public nsIStyleRuleProcessor {
 public:
-  typedef nsTArray<RefPtr<mozilla::CSSStyleSheet>> sheet_array_type;
+  typedef nsTArray<nsRefPtr<mozilla::CSSStyleSheet>> sheet_array_type;
 
   
   
@@ -253,7 +253,7 @@ private:
 
   
   
-  RefPtr<mozilla::dom::Element> mScopeElement;
+  nsRefPtr<mozilla::dom::Element> mScopeElement;
 
   nsTArray<mozilla::css::DocumentRule*> mDocumentRules;
   nsDocumentRuleResultCacheKey mDocumentCacheKey;

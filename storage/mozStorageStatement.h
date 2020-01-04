@@ -90,7 +90,7 @@ private:
 
 
 
-    RefPtr<BindingParamsArray> mParamsArray;
+    nsRefPtr<BindingParamsArray> mParamsArray;
 
     
 

@@ -100,7 +100,7 @@ private:
   static void* operator new(size_t) CPP_THROW_NEW { return 0; }
   static void operator delete(void*, size_t) {}
   
-  RefPtr<HTMLSelectElement> mSelect;
+  nsRefPtr<HTMLSelectElement> mSelect;
   
   bool                       mTopLevelMutation;
   
@@ -618,7 +618,7 @@ protected:
   }
 
   
-  RefPtr<HTMLOptionsCollection> mOptions;
+  nsRefPtr<HTMLOptionsCollection> mOptions;
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
   
   bool            mIsDoneAddingChildren;
@@ -667,7 +667,7 @@ protected:
   
 
 
-  RefPtr<nsContentList> mSelectedOptions;
+  nsRefPtr<nsContentList> mSelectedOptions;
 
 private:
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,

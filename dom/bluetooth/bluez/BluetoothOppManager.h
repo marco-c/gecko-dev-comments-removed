@@ -193,7 +193,7 @@ private:
   nsAutoArrayPtr<uint8_t> mReceivedDataBuffer;
 
   int mCurrentBlobIndex;
-  RefPtr<Blob> mBlob;
+  nsRefPtr<Blob> mBlob;
   nsTArray<SendFileBatch> mBatches;
 
   
@@ -204,20 +204,20 @@ private:
   nsCOMPtr<nsIOutputStream> mOutputStream;
   nsCOMPtr<nsIInputStream> mInputStream;
   nsCOMPtr<nsIVolumeMountLock> mMountLock;
-  RefPtr<DeviceStorageFile> mDsFile;
-  RefPtr<DeviceStorageFile> mDummyDsFile;
+  nsRefPtr<DeviceStorageFile> mDsFile;
+  nsRefPtr<DeviceStorageFile> mDummyDsFile;
 
   
   
   
   
-  RefPtr<BluetoothSocket> mSocket;
+  nsRefPtr<BluetoothSocket> mSocket;
 
   
   
   
-  RefPtr<BluetoothSocket> mRfcommSocket;
-  RefPtr<BluetoothSocket> mL2capSocket;
+  nsRefPtr<BluetoothSocket> mRfcommSocket;
+  nsRefPtr<BluetoothSocket> mL2capSocket;
 
   BluetoothSocketType mSocketType;
 

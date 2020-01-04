@@ -162,7 +162,7 @@ private:
   bool IndexIsValid();
 #endif
 
-  RefPtr<DOMSVGNumberList> mList;
+  nsRefPtr<DOMSVGNumberList> mList;
   nsCOMPtr<nsISupports> mParent;
 
   

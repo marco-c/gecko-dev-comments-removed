@@ -230,7 +230,7 @@ private:
   
   
   
-  RefPtr<ImageURL> mURI;
+  nsRefPtr<ImageURL> mURI;
   
   nsCOMPtr<nsIURI> mCurrentURI;
   
@@ -249,7 +249,7 @@ private:
   nsCString mContentType;
 
   
-  RefPtr<imgCacheEntry> mCacheEntry;
+  nsRefPtr<imgCacheEntry> mCacheEntry;
 
   
   ImageCacheKey mCacheKey;
@@ -281,8 +281,8 @@ private:
   
   
   
-  RefPtr<ProgressTracker> mProgressTracker;
-  RefPtr<Image> mImage;
+  nsRefPtr<ProgressTracker> mProgressTracker;
+  nsRefPtr<Image> mImage;
   bool mIsMultiPartChannel : 1;
   bool mGotData : 1;
   bool mIsInCache : 1;

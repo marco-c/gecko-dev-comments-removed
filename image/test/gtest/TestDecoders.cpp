@@ -17,7 +17,7 @@
 #include "nsIInputStream.h"
 #include "nsIRunnable.h"
 #include "nsIThread.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -71,7 +71,7 @@ CheckDecoderResults(const ImageTestCase& aTestCase, Decoder* aDecoder)
   
   
   RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-  RefPtr<SourceSurface> surface = currentFrame->GetSurface();
+  nsRefPtr<SourceSurface> surface = currentFrame->GetSurface();
 
   
   EXPECT_EQ(SurfaceType::DATA, surface->GetType());
@@ -94,7 +94,7 @@ CheckDecoderSingleChunk(const ImageTestCase& aTestCase)
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
-  RefPtr<SourceBuffer> sourceBuffer = new SourceBuffer();
+  nsRefPtr<SourceBuffer> sourceBuffer = new SourceBuffer();
   sourceBuffer->ExpectLength(length);
   rv = sourceBuffer->AppendFromInputStream(inputStream, length);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
@@ -103,7 +103,7 @@ CheckDecoderSingleChunk(const ImageTestCase& aTestCase)
   
   DecoderType decoderType =
     DecoderFactory::GetDecoderType(aTestCase.mMimeType);
-  RefPtr<Decoder> decoder =
+  nsRefPtr<Decoder> decoder =
     DecoderFactory::CreateAnonymousDecoder(decoderType, sourceBuffer,
                                            DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
@@ -136,11 +136,11 @@ CheckDecoderMultiChunk(const ImageTestCase& aTestCase)
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
-  RefPtr<SourceBuffer> sourceBuffer = new SourceBuffer();
+  nsRefPtr<SourceBuffer> sourceBuffer = new SourceBuffer();
   sourceBuffer->ExpectLength(length);
   DecoderType decoderType =
     DecoderFactory::GetDecoderType(aTestCase.mMimeType);
-  RefPtr<Decoder> decoder =
+  nsRefPtr<Decoder> decoder =
     DecoderFactory::CreateAnonymousDecoder(decoderType, sourceBuffer,
                                            DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
@@ -148,7 +148,7 @@ CheckDecoderMultiChunk(const ImageTestCase& aTestCase)
   
   
   
-  RefPtr<NoResume> noResume = new NoResume();
+  nsRefPtr<NoResume> noResume = new NoResume();
   for (uint64_t read = 0; read < length ; ++read) {
     uint64_t available = 0;
     rv = inputStream->Available(&available);

@@ -69,7 +69,7 @@ public:
     return mBlobImpl;
   }
 
-  void Ready(nsTArray<RefPtr<File>>& aFileList, nsresult aStatus);
+  void Ready(nsTArray<nsRefPtr<File>>& aFileList, nsresult aStatus);
 
 private:
   ~ArchiveReader();
@@ -82,7 +82,7 @@ private:
 
 protected:
   
-  RefPtr<BlobImpl> mBlobImpl;
+  nsRefPtr<BlobImpl> mBlobImpl;
 
   
   nsCOMPtr<nsPIDOMWindow> mWindow;
@@ -103,11 +103,11 @@ protected:
   } mReadStatus;
 
   
-  nsTArray<RefPtr<ArchiveRequest> > mRequests;
+  nsTArray<nsRefPtr<ArchiveRequest> > mRequests;
 
   
   struct {
-    nsTArray<RefPtr<File>> fileList;
+    nsTArray<nsRefPtr<File>> fileList;
     nsresult status;
   } mData;
 

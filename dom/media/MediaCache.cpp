@@ -340,7 +340,7 @@ protected:
   
   nsTArray<Block> mIndex;
   
-  RefPtr<FileBlockCache> mFileCache;
+  nsRefPtr<FileBlockCache> mFileCache;
   
   BlockList       mFreeBlocks;
   

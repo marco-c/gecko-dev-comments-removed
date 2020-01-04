@@ -31,6 +31,9 @@ MediaOmxCommonDecoder::MediaOmxCommonDecoder()
   , mIsCaptured(false)
 {
   mDormantSupported = true;
+  if (!gMediaDecoderLog) {
+    gMediaDecoderLog = PR_NewLogModule("MediaDecoder");
+  }
 }
 
 MediaOmxCommonDecoder::~MediaOmxCommonDecoder() {}

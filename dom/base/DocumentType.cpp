@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * Implementation of DOM Core's nsIDOMDocumentType node.
- */
+
+
+
+
+
+
+
+
 
 #include "mozilla/dom/DocumentType.h"
 #include "nsGkAtoms.h"
@@ -52,7 +52,7 @@ NS_NewDOMDocumentType(nsNodeInfoManager* aNodeInfoManager,
                                   nsIDOMNode::DOCUMENT_TYPE_NODE,
                                   aName);
 
-  RefPtr<mozilla::dom::DocumentType> docType =
+  nsRefPtr<mozilla::dom::DocumentType> docType =
     new mozilla::dom::DocumentType(ni, aPublicId, aSystemId, aInternalSubset);
   return docType.forget();
 }
@@ -89,10 +89,10 @@ NS_IMPL_ISUPPORTS_INHERITED(DocumentType, nsGenericDOMDataNode, nsIDOMNode,
 bool
 DocumentType::IsNodeOfType(uint32_t aFlags) const
 {
-  // Don't claim to be eDATA_NODE since we're just inheriting
-  // nsGenericDOMDataNode for convinience. Doctypes aren't really
-  // data nodes (they have a null .nodeValue and don't implement
-  // nsIDOMCharacterData)
+  
+  
+  
+  
   return !(aFlags & ~eCONTENT);
 }
 
@@ -142,10 +142,10 @@ DocumentType::MozRemove()
 nsGenericDOMDataNode*
 DocumentType::CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo, bool aCloneText) const
 {
-  already_AddRefed<mozilla::dom::NodeInfo> ni = RefPtr<mozilla::dom::NodeInfo>(aNodeInfo).forget();
+  already_AddRefed<mozilla::dom::NodeInfo> ni = nsRefPtr<mozilla::dom::NodeInfo>(aNodeInfo).forget();
   return new DocumentType(ni, mPublicId, mSystemId, mInternalSubset);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 

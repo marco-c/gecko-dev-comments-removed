@@ -175,7 +175,7 @@ protected:
     return false;
   }
 
-  RefPtr<EventListenerManager> mListenerManager;
+  nsRefPtr<EventListenerManager> mListenerManager;
   
   nsresult DispatchTrustedEvent(nsIDOMEvent* aEvent);
 

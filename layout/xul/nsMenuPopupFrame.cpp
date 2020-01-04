@@ -370,7 +370,7 @@ NS_IMETHODIMP nsXULPopupShownEvent::HandleEvent(nsIDOMEvent* aEvent)
   if (popup) {
     
     
-    RefPtr<nsXULPopupShownEvent> event = this;
+    nsRefPtr<nsXULPopupShownEvent> event = this;
     
     
     if (popup->ClearPopupShownDispatcher()) {

@@ -9,7 +9,7 @@
 #include "Units.h"                      
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/dom/ScreenOrientation.h"  
 #include "mozilla/gfx/BasePoint.h"      
@@ -26,7 +26,6 @@ class AsyncPanZoomController;
 class Layer;
 class LayerManagerComposite;
 class AutoResolveRefLayers;
-class CompositorParent;
 
 
 struct ViewTransform {
@@ -187,15 +186,7 @@ private:
 
 
 
-
-
-
-
-
-
-  void ResolveRefLayers(CompositorParent* aCompositor, bool* aHasRemoteContent,
-                        bool* aResolvePlugins);
-
+  void ResolveRefLayers();
   
 
 
@@ -233,14 +224,10 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AsyncCompositionManager::TransformsToSkip)
 
 class MOZ_STACK_CLASS AutoResolveRefLayers {
 public:
-  explicit AutoResolveRefLayers(AsyncCompositionManager* aManager,
-                                CompositorParent* aCompositor = nullptr,
-                                bool* aHasRemoteContent = nullptr,
-                                bool* aResolvePlugins = nullptr) :
-    mManager(aManager)
+  explicit AutoResolveRefLayers(AsyncCompositionManager* aManager) : mManager(aManager)
   {
     if (mManager) {
-      mManager->ResolveRefLayers(aCompositor, aHasRemoteContent, aResolvePlugins);
+      mManager->ResolveRefLayers();
     }
   }
 

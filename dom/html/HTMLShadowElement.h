@@ -75,7 +75,7 @@ protected:
   virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   
-  RefPtr<ShadowRoot> mProjectedShadow;
+  nsRefPtr<ShadowRoot> mProjectedShadow;
 
   bool mIsInsertionPoint;
 };

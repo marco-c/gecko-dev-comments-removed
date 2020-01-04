@@ -55,8 +55,8 @@ private:
   
   uint64_t mWindowId;
 
-  nsTArray<RefPtr<PresentationSession>> mSessions;
-  nsTArray<RefPtr<Promise>> mPendingGetSessionPromises;
+  nsTArray<nsRefPtr<PresentationSession>> mSessions;
+  nsTArray<nsRefPtr<Promise>> mPendingGetSessionPromises;
 };
 
 } 

@@ -83,7 +83,7 @@ GMPVideoDecoderParent::Close()
   
 
   
-  RefPtr<GMPVideoDecoderParent> kungfudeathgrip(this);
+  nsRefPtr<GMPVideoDecoderParent> kungfudeathgrip(this);
   Release();
   Shutdown();
 }
@@ -182,7 +182,7 @@ GMPVideoDecoderParent::Reset()
 
   mIsAwaitingResetComplete = true;
 
-  RefPtr<GMPVideoDecoderParent> self(this);
+  nsRefPtr<GMPVideoDecoderParent> self(this);
   nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction([self]() -> void
   {
     LOGD(("GMPVideoDecoderParent[%p]::ResetCompleteTimeout() timed out waiting for ResetComplete", self.get()));

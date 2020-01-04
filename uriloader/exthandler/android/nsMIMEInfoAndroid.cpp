@@ -48,7 +48,7 @@ bool
 nsMIMEInfoAndroid::GetMimeInfoForMimeType(const nsACString& aMimeType,
                                           nsMIMEInfoAndroid** aMimeInfo)
 {
-  RefPtr<nsMIMEInfoAndroid> info = new nsMIMEInfoAndroid(aMimeType);
+  nsRefPtr<nsMIMEInfoAndroid> info = new nsMIMEInfoAndroid(aMimeType);
   mozilla::AndroidBridge* bridge = mozilla::AndroidBridge::Bridge();
   
   

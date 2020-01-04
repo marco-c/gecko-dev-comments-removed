@@ -9,7 +9,7 @@
 #include <pthread.h>
 #include "Zip.h"
 #include "SeekableZStream.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "zlib.h"
 
@@ -174,7 +174,7 @@ private:
   MappableDeflate(_MappableBuffer *buf, Zip *zip, Zip::Stream *stream);
 
   
-  RefPtr<Zip> zip;
+  nsRefPtr<Zip> zip;
 
   
   mozilla::UniquePtr<_MappableBuffer> buffer;
@@ -214,7 +214,7 @@ private:
   MappableSeekableZStream(Zip *zip);
 
   
-  RefPtr<Zip> zip;
+  nsRefPtr<Zip> zip;
 
   
   mozilla::UniquePtr<_MappableBuffer> buffer;

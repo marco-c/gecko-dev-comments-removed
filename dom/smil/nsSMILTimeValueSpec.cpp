@@ -104,7 +104,7 @@ nsSMILTimeValueSpec::ResolveReferences(nsIContent* aContextNode)
   
   
   
-  RefPtr<Element> oldReferencedElement = mReferencedElement.get();
+  nsRefPtr<Element> oldReferencedElement = mReferencedElement.get();
 
   if (mParams.mDependentElemID) {
     mReferencedElement.ResetWithID(aContextNode,
@@ -146,7 +146,7 @@ nsSMILTimeValueSpec::HandleNewInterval(nsSMILInterval& aInterval,
   }
 
   
-  RefPtr<nsSMILInstanceTime> newInstance =
+  nsRefPtr<nsSMILInstanceTime> newInstance =
     new nsSMILInstanceTime(newTime, nsSMILInstanceTime::SOURCE_SYNCBASE, this,
                            &aInterval);
   mOwner->AddInstanceTime(newInstance, mIsBegin);
@@ -391,7 +391,7 @@ nsSMILTimeValueSpec::HandleEvent(nsIDOMEvent* aEvent)
     return;
   }
 
-  RefPtr<nsSMILInstanceTime> newInstance =
+  nsRefPtr<nsSMILInstanceTime> newInstance =
     new nsSMILInstanceTime(newTime, nsSMILInstanceTime::SOURCE_EVENT);
   mOwner->AddInstanceTime(newInstance, mIsBegin);
 }

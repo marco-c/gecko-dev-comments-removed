@@ -140,7 +140,7 @@ protected:
     
     
     
-    RefPtr<mozilla::gfx::DrawTarget> mFramebufferTarget;
+    nsRefPtr<mozilla::gfx::DrawTarget> mFramebufferTarget;
     ANativeWindowBuffer* mFramebuffer;
     
     
@@ -150,7 +150,7 @@ protected:
     
     
     
-    RefPtr<mozilla::gfx::DrawTarget> mBackBuffer;
+    nsRefPtr<mozilla::gfx::DrawTarget> mBackBuffer;
 
     virtual ~nsWindow();
 
@@ -165,9 +165,9 @@ private:
     
     nsAutoPtr<mozilla::MultiTouchInput> mSynthesizedTouchInput;
 
-    RefPtr<nsScreenGonk> mScreen;
+    nsRefPtr<nsScreenGonk> mScreen;
 
-    RefPtr<mozilla::HwcComposer2D> mComposer2D;
+    nsRefPtr<mozilla::HwcComposer2D> mComposer2D;
 };
 
 #endif 

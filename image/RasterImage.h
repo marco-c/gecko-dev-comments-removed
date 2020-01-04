@@ -253,13 +253,13 @@ private:
                           gfxContext* aContext,
                           const nsIntSize& aSize,
                           const ImageRegion& aRegion,
-                          gfx::Filter aFilter,
+                          GraphicsFilter aFilter,
                           uint32_t aFlags);
 
   already_AddRefed<gfx::SourceSurface> CopyFrame(uint32_t aWhichFrame,
                                              uint32_t aFlags);
 
-  Pair<DrawResult, RefPtr<gfx::SourceSurface>>
+  Pair<DrawResult, nsRefPtr<gfx::SourceSurface>>
     GetFrameInternal(const gfx::IntSize& aSize,
                      uint32_t aWhichFrame,
                      uint32_t aFlags);

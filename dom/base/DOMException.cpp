@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/DOMException.h"
 
@@ -27,7 +27,7 @@
 using namespace mozilla;
 
 enum DOM4ErrorTypeCodeMap {
-  /* DOM4 errors from http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#domexception */
+  
   IndexSizeError             = nsIDOMDOMException::INDEX_SIZE_ERR,
   HierarchyRequestError      = nsIDOMDOMException::HIERARCHY_REQUEST_ERR,
   WrongDocumentError         = nsIDOMDOMException::WRONG_DOCUMENT_ERR,
@@ -35,7 +35,7 @@ enum DOM4ErrorTypeCodeMap {
   NoModificationAllowedError = nsIDOMDOMException::NO_MODIFICATION_ALLOWED_ERR,
   NotFoundError              = nsIDOMDOMException::NOT_FOUND_ERR,
   NotSupportedError          = nsIDOMDOMException::NOT_SUPPORTED_ERR,
-  // Can't remove until setNamedItem is removed
+  
   InUseAttributeError        = nsIDOMDOMException::INUSE_ATTRIBUTE_ERR,
   InvalidStateError          = nsIDOMDOMException::INVALID_STATE_ERR,
   SyntaxError                = nsIDOMDOMException::SYNTAX_ERR,
@@ -54,11 +54,11 @@ enum DOM4ErrorTypeCodeMap {
   InvalidPointerId           = nsIDOMDOMException::INVALID_POINTER_ERR,
   EncodingError              = 0,
 
-  /* XXX Should be JavaScript native errors */
+  
   TypeError                  = 0,
   RangeError                 = 0,
 
-  /* IndexedDB errors http://dvcs.w3.org/hg/IndexedDB/raw-file/tip/Overview.html#exceptions */
+  
   UnknownError             = 0,
   ConstraintError          = 0,
   DataError                = 0,
@@ -66,16 +66,16 @@ enum DOM4ErrorTypeCodeMap {
   ReadOnlyError            = 0,
   VersionError             = 0,
 
-  /* File API errors http://dev.w3.org/2006/webapi/FileAPI/#ErrorAndException */
+  
   NotReadableError         = 0,
 
-  /* FileHandle API errors */
+  
   FileHandleInactiveError = 0,
 
-  /* WebCrypto errors https://dvcs.w3.org/hg/webcrypto-api/raw-file/tip/spec/Overview.html#dfn-DataError */
+  
   OperationError           = 0,
 
-  /* Bluetooth API errors */
+  
   BtFailError              = 0,
   BtNotReadyError          = 0,
   BtNoMemError             = 0,
@@ -202,13 +202,13 @@ Exception::Exception(const nsACString& aMessage,
   mInitialized(false),
   mHoldingJSVal(false)
 {
-  // A little hack... The nsIGenericModule nsIClassInfo scheme relies on there
-  // having been at least one instance made via the factory. Otherwise, the
-  // shared factory/classinsance object never gets created and our QI getter
-  // for our instance's pointer to our nsIClassInfo will always return null.
-  // This is bad because it means that wrapped exceptions will never have a
-  // shared prototype. So... We force one to be created via the factory
-  // *once* and then go about our business.
+  
+  
+  
+  
+  
+  
+  
   if (!sEverMadeOneFromFactory) {
     nsCOMPtr<nsIXPCException> e =
         do_CreateInstance(XPC_EXCEPTION_CONTRACTID);
@@ -220,13 +220,13 @@ Exception::Exception(const nsACString& aMessage,
     location = aLocation;
   } else {
     location = GetCurrentJSStack();
-    // it is legal for there to be no active JS stack, if C++ code
-    // is operating on a JS-implemented interface pointer without
-    // having been called in turn by JS.  This happens in the JS
-    // component loader, and will become more common as additional
-    // components are implemented in JS.
+    
+    
+    
+    
+    
   }
-  // We want to trim off any leading native 'dataless' frames
+  
   if (location) {
     while (1) {
       uint32_t language;
@@ -420,7 +420,7 @@ Exception::ToString(nsACString& _retval)
   nsCString location;
 
   if (mLocation) {
-    // we need to free this if it does not fail
+    
     nsresult rv = mLocation->ToString(location);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -448,9 +448,9 @@ Exception::ToString(nsACString& _retval)
   return NS_OK;
 }
 
-/* void initialize (in AUTF8String aMessage, in nsresult aResult,
- *                  in AUTF8String aName, in nsIStackFrame aLocation,
- *                  in nsISupports aData, in nsIException aInner); */
+
+
+
 NS_IMETHODIMP
 Exception::Initialize(const nsACString& aMessage, nsresult aResult,
                       const nsACString& aName, nsIStackFrame *aLocation,
@@ -598,8 +598,8 @@ DOMException::GetCode(uint16_t* aCode)
   NS_ENSURE_ARG_POINTER(aCode);
   *aCode = mCode;
 
-  // Warn only when the code was changed (other than DOM Core)
-  // or the code is useless (zero)
+  
+  
   if (NS_ERROR_GET_MODULE(mResult) != NS_ERROR_MODULE_DOM || !mCode) {
     nsCOMPtr<nsIDocument> doc = nsContentUtils::GetDocumentFromCaller();
     if (doc) {
@@ -668,7 +668,7 @@ DOMException::GetMessageMoz(nsString& retval)
 }
 
 already_AddRefed<DOMException>
-DOMException::Constructor(GlobalObject& /* unused */,
+DOMException::Constructor(GlobalObject& ,
                           const nsAString& aMessage,
                           const Optional<nsAString>& aName,
                           ErrorResult& aError)
@@ -688,7 +688,7 @@ DOMException::Constructor(GlobalObject& /* unused */,
     }
   }
 
-  RefPtr<DOMException> retval =
+  nsRefPtr<DOMException> retval =
     new DOMException(exceptionResult,
                      NS_ConvertUTF16toUTF8(aMessage),
                      name,
@@ -702,29 +702,29 @@ DOMException::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
   return DOMExceptionBinding::Wrap(aCx, this, aGivenProto);
 }
 
-/* static */already_AddRefed<DOMException>
+already_AddRefed<DOMException>
 DOMException::Create(nsresult aRv)
 {
   nsCString name;
   nsCString message;
   uint16_t code;
   NSResultToNameAndMessage(aRv, name, message, &code);
-  RefPtr<DOMException> inst =
+  nsRefPtr<DOMException> inst =
     new DOMException(aRv, message, name, code);
   return inst.forget();
 }
 
-/* static */already_AddRefed<DOMException>
+already_AddRefed<DOMException>
 DOMException::Create(nsresult aRv, const nsACString& aMessage)
 {
   nsCString name;
   nsCString message;
   uint16_t code;
   NSResultToNameAndMessage(aRv, name, message, &code);
-  RefPtr<DOMException> inst =
+  nsRefPtr<DOMException> inst =
     new DOMException(aRv, aMessage, name, code);
   return inst.forget();
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

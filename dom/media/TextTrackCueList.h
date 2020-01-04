@@ -52,7 +52,7 @@ public:
   void RemoveCue(TextTrackCue& aCue, ErrorResult& aRv);
   void RemoveCueAt(uint32_t aIndex);
   void RemoveAll();
-  void GetArray(nsTArray<RefPtr<TextTrackCue> >& aCues);
+  void GetArray(nsTArray<nsRefPtr<TextTrackCue> >& aCues);
 
 private:
   ~TextTrackCueList();
@@ -61,7 +61,7 @@ private:
 
   
   
-  nsTArray< RefPtr<TextTrackCue> > mList;
+  nsTArray< nsRefPtr<TextTrackCue> > mList;
 };
 
 } 

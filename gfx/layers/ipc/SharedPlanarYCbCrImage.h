@@ -6,7 +6,7 @@
 #include <stdint.h>                     
 #include "ImageContainer.h"             
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/ipc/Shmem.h"          
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
@@ -54,8 +54,8 @@ public:
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
 
 private:
-  RefPtr<BufferTextureClient> mTextureClient;
-  RefPtr<ImageClient> mCompositable;
+  nsRefPtr<BufferTextureClient> mTextureClient;
+  nsRefPtr<ImageClient> mCompositable;
 };
 
 } 

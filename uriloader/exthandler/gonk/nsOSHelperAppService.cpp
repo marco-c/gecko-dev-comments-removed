@@ -43,7 +43,7 @@ nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
     *aFound = false;
     
     
-    RefPtr<nsGonkMIMEInfo> mimeInfo = new nsGonkMIMEInfo(aMIMEType);
+    nsRefPtr<nsGonkMIMEInfo> mimeInfo = new nsGonkMIMEInfo(aMIMEType);
     return mimeInfo.forget();
 }
 

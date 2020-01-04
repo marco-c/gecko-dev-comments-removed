@@ -55,7 +55,7 @@ protected:
   nsEditor& mEditor;
 
   
-  RefPtr<nsGenericDOMDataNode> mCharData;
+  nsRefPtr<nsGenericDOMDataNode> mCharData;
 
   
   uint32_t mOffset;

@@ -44,8 +44,8 @@ public:
   nsISupports* GetParentObject() const;
 
   struct HandleChangeData {
-    RefPtr<MediaQueryList> mql;
-    RefPtr<mozilla::dom::MediaQueryListListener> callback;
+    nsRefPtr<MediaQueryList> mql;
+    nsRefPtr<mozilla::dom::MediaQueryListListener> callback;
   };
 
   
@@ -82,10 +82,10 @@ private:
   
   nsCOMPtr<nsIDocument> mDocument;
 
-  RefPtr<nsMediaList> mMediaList;
+  nsRefPtr<nsMediaList> mMediaList;
   bool mMatches;
   bool mMatchesValid;
-  nsTArray<RefPtr<mozilla::dom::MediaQueryListListener>> mCallbacks;
+  nsTArray<nsRefPtr<mozilla::dom::MediaQueryListListener>> mCallbacks;
 };
 
 } 

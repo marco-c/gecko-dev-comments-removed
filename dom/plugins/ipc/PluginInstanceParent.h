@@ -340,7 +340,7 @@ private:
 
 private:
     PluginModuleParent* mParent;
-    RefPtr<PluginAsyncSurrogate> mSurrogate;
+    nsRefPtr<PluginAsyncSurrogate> mSurrogate;
     bool mUseSurrogate;
     NPP mNPP;
     const NPNetscapeFuncs* mNPNIface;
@@ -388,12 +388,12 @@ private:
     uint16_t               mShWidth;
     uint16_t               mShHeight;
     CGColorSpaceRef        mShColorSpace;
-    RefPtr<MacIOSurface> mIOSurface;
-    RefPtr<MacIOSurface> mFrontIOSurface;
+    nsRefPtr<MacIOSurface> mIOSurface;
+    nsRefPtr<MacIOSurface> mFrontIOSurface;
 #endif 
 
     
-    RefPtr<gfxASurface>    mFrontSurface;
+    nsRefPtr<gfxASurface>    mFrontSurface;
     
     
     
@@ -403,9 +403,9 @@ private:
     
     
     
-    RefPtr<gfxASurface>    mBackground;
+    nsRefPtr<gfxASurface>    mBackground;
 
-    RefPtr<ImageContainer> mImageContainer;
+    nsRefPtr<ImageContainer> mImageContainer;
 };
 
 

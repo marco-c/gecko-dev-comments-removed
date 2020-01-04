@@ -21,7 +21,7 @@ SourceBufferContentManager::CreateManager(dom::SourceBufferAttributes* aAttribut
                                           MediaSourceDecoder* aParentDecoder,
                                           const nsACString &aType)
 {
-  RefPtr<SourceBufferContentManager> manager;
+  nsRefPtr<SourceBufferContentManager> manager;
   manager = new TrackBuffersManager(aAttributes, aParentDecoder, aType);
 
   

@@ -42,7 +42,7 @@ private:
   virtual ~SVGAnimatedRect();
 
   nsSVGViewBox* mVal; 
-  RefPtr<nsSVGElement> mSVGElement;
+  nsRefPtr<nsSVGElement> mSVGElement;
 };
 
 } 

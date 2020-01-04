@@ -125,8 +125,8 @@ protected:
   
   
   
-  RefPtr<ChromeTooltipListener> mChromeTooltipListener;
-  RefPtr<ChromeContextMenuListener> mChromeContextMenuListener;
+  nsRefPtr<ChromeTooltipListener> mChromeTooltipListener;
+  nsRefPtr<ChromeContextMenuListener> mChromeContextMenuListener;
 
   nsCOMPtr<nsIPrompt> mPrompter;
   nsCOMPtr<nsIAuthPrompt> mAuthPrompter;

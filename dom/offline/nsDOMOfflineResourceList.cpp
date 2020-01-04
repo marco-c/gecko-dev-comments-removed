@@ -193,7 +193,7 @@ nsDOMOfflineResourceList::GetMozItems(ErrorResult& aRv)
     return nullptr;
   }
 
-  RefPtr<DOMStringList> items = new DOMStringList();
+  nsRefPtr<DOMStringList> items = new DOMStringList();
 
   
   
@@ -228,7 +228,7 @@ NS_IMETHODIMP
 nsDOMOfflineResourceList::GetMozItems(nsISupports** aItems)
 {
   ErrorResult rv;
-  RefPtr<DOMStringList> items = GetMozItems(rv);
+  nsRefPtr<DOMStringList> items = GetMozItems(rv);
   items.forget(aItems);
   return rv.StealNSResult();
 }
@@ -551,7 +551,7 @@ nsDOMOfflineResourceList::SendEvent(const nsAString &aEventName)
     return NS_OK;
   }
 
-  RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
+  nsRefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
   event->InitEvent(aEventName, false, true);
 
   

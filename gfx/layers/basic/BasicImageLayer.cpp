@@ -78,15 +78,15 @@ BasicImageLayer::Paint(DrawTarget* aDT,
     mContainer->SetImageFactory(originalIF);
     return;
   }
-  RefPtr<gfx::SourceSurface> surface = image->GetAsSourceSurface();
+  nsRefPtr<gfx::SourceSurface> surface = image->GetAsSourceSurface();
   if (!surface || !surface->IsValid()) {
     mContainer->SetImageFactory(originalIF);
     return;
   }
 
   gfx::IntSize size = mSize = surface->GetSize();
-  FillRectWithMask(aDT, aDeviceOffset, Rect(0, 0, size.width, size.height),
-                   surface, mFilter,
+  FillRectWithMask(aDT, aDeviceOffset, Rect(0, 0, size.width, size.height), 
+                   surface, ToFilter(mFilter),
                    DrawOptions(GetEffectiveOpacity(), GetEffectiveOperator(this)),
                    aMaskLayer);
 

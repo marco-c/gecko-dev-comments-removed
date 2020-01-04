@@ -96,7 +96,7 @@ OrientedImage::GetFrame(uint32_t aWhichFrame,
   }
 
   
-  RefPtr<DrawTarget> target =
+  nsRefPtr<DrawTarget> target =
     gfxPlatform::GetPlatform()->
       CreateOffscreenContentDrawTarget(size, surfaceFormat);
   if (!target) {
@@ -106,7 +106,7 @@ OrientedImage::GetFrame(uint32_t aWhichFrame,
 
 
   
-  RefPtr<SourceSurface> innerSurface =
+  nsRefPtr<SourceSurface> innerSurface =
     InnerImage()->GetFrame(aWhichFrame, aFlags);
   NS_ENSURE_TRUE(innerSurface, nullptr);
   nsRefPtr<gfxDrawable> drawable =
@@ -115,8 +115,9 @@ OrientedImage::GetFrame(uint32_t aWhichFrame,
   
   nsRefPtr<gfxContext> ctx = new gfxContext(target);
   ctx->Multiply(OrientationMatrix(size));
-  gfxUtils::DrawPixelSnapped(ctx, drawable, size, ImageRegion::Create(size),
-                             surfaceFormat, Filter::LINEAR);
+  gfxUtils::DrawPixelSnapped(ctx, drawable, size,
+                             ImageRegion::Create(size),
+                             surfaceFormat, GraphicsFilter::FILTER_FAST);
 
   return target->Snapshot();
 }
@@ -272,7 +273,7 @@ OrientedImage::Draw(gfxContext* aContext,
                     const nsIntSize& aSize,
                     const ImageRegion& aRegion,
                     uint32_t aWhichFrame,
-                    Filter aFilter,
+                    GraphicsFilter aFilter,
                     const Maybe<SVGImageContext>& aSVGContext,
                     uint32_t aFlags)
 {
@@ -309,7 +310,7 @@ OrientedImage::Draw(gfxContext* aContext,
 nsIntSize
 OrientedImage::OptimalImageSizeForDest(const gfxSize& aDest,
                                        uint32_t aWhichFrame,
-                                       Filter aFilter, uint32_t aFlags)
+                                       GraphicsFilter aFilter, uint32_t aFlags)
 {
   if (!mOrientation.SwapsWidthAndHeight()) {
     return InnerImage()->OptimalImageSizeForDest(aDest, aWhichFrame, aFilter,

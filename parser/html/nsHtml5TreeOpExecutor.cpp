@@ -45,7 +45,7 @@ NS_IMPL_RELEASE_INHERITED(nsHtml5TreeOpExecutor, nsContentSink)
 class nsHtml5ExecutorReflusher : public nsRunnable
 {
   private:
-    RefPtr<nsHtml5TreeOpExecutor> mExecutor;
+    nsRefPtr<nsHtml5TreeOpExecutor> mExecutor;
   public:
     explicit nsHtml5ExecutorReflusher(nsHtml5TreeOpExecutor* aExecutor)
       : mExecutor(aExecutor)
@@ -242,7 +242,7 @@ nsHtml5TreeOpExecutor::MarkAsBroken(nsresult aReason)
 void
 FlushTimerCallback(nsITimer* aTimer, void* aClosure)
 {
-  RefPtr<nsHtml5TreeOpExecutor> ex = gBackgroundFlushList->popFirst();
+  nsRefPtr<nsHtml5TreeOpExecutor> ex = gBackgroundFlushList->popFirst();
   if (ex) {
     ex->RunFlushLoop();
   }
@@ -303,7 +303,7 @@ nsHtml5TreeOpExecutor::FlushSpeculativeLoads()
 class nsHtml5FlushLoopGuard
 {
   private:
-    RefPtr<nsHtml5TreeOpExecutor> mExecutor;
+    nsRefPtr<nsHtml5TreeOpExecutor> mExecutor;
     #ifdef DEBUG_NS_HTML5_TREE_OP_EXECUTOR_FLUSH
     uint32_t mStartTime;
     #endif
@@ -411,7 +411,7 @@ nsHtml5TreeOpExecutor::RunFlushLoop()
       }
       
       
-      RefPtr<nsHtml5StreamParser> streamKungFuDeathGrip = 
+      nsRefPtr<nsHtml5StreamParser> streamKungFuDeathGrip = 
         GetParser()->GetStreamParser();
       
       
@@ -525,8 +525,8 @@ nsHtml5TreeOpExecutor::FlushDocumentWrite()
   mFlushState = eInFlush;
 
   
-  RefPtr<nsHtml5TreeOpExecutor> kungFuDeathGrip(this);
-  RefPtr<nsParserBase> parserKungFuDeathGrip(mParser);
+  nsRefPtr<nsHtml5TreeOpExecutor> kungFuDeathGrip(this);
+  nsRefPtr<nsParserBase> parserKungFuDeathGrip(mParser);
 
   NS_ASSERTION(!mReadingFromStage,
     "Got doc write flush when reading from stage");

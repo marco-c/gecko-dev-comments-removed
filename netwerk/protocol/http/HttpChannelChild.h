@@ -178,8 +178,8 @@ private:
 
   RequestHeaderTuples mClientSetRequestHeaders;
   nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
-  RefPtr<InterceptStreamListener> mInterceptListener;
-  RefPtr<nsInputStreamPump> mSynthesizedResponsePump;
+  nsRefPtr<InterceptStreamListener> mInterceptListener;
+  nsRefPtr<nsInputStreamPump> mSynthesizedResponsePump;
   int64_t mSynthesizedStreamLength;
 
   bool mIsFromCache;
@@ -193,7 +193,7 @@ private:
 
   bool mIPCOpen;
   bool mKeptAlive;            
-  RefPtr<ChannelEventQueue> mEventQ;
+  nsRefPtr<ChannelEventQueue> mEventQ;
 
   
   bool mDivertingToParent;

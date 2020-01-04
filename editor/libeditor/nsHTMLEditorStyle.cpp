@@ -117,7 +117,7 @@ nsHTMLEditor::SetInlineProperty(nsIAtom* aProperty,
   nsCOMPtr<nsIEditRules> kungFuDeathGrip(mRules);
   ForceCompositionEnd();
 
-  RefPtr<Selection> selection = GetSelection();
+  nsRefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   if (selection->Collapsed()) {
@@ -141,7 +141,7 @@ nsHTMLEditor::SetInlineProperty(nsIAtom* aProperty,
     
     uint32_t rangeCount = selection->RangeCount();
     for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; rangeIdx++) {
-      RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
+      nsRefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
 
       
       
@@ -335,7 +335,7 @@ nsHTMLEditor::SetInlinePropertyOnTextNode(Text& aText,
 
   
   ErrorResult rv;
-  RefPtr<Text> text = &aText;
+  nsRefPtr<Text> text = &aText;
   if (uint32_t(aEndOffset) != aText.Length()) {
     
     text = SplitNode(aText, aEndOffset, rv)->GetAsText();
@@ -739,7 +739,7 @@ nsHTMLEditor::RemoveStyleInside(nsIContent& aNode,
   }
 
   
-  RefPtr<nsIContent> child = aNode.GetFirstChild();
+  nsRefPtr<nsIContent> child = aNode.GetFirstChild();
   while (child) {
     
     nsCOMPtr<nsIContent> next = child->GetNextSibling();
@@ -1055,11 +1055,11 @@ nsHTMLEditor::GetInlinePropertyBase(nsIAtom& aProperty,
   *aFirst = false;
   bool first = true;
 
-  RefPtr<Selection> selection = GetSelection();
+  nsRefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   bool isCollapsed = selection->Collapsed();
-  RefPtr<nsRange> range = selection->GetRangeAt(0);
+  nsRefPtr<nsRange> range = selection->GetRangeAt(0);
   
   
   if (range) {
@@ -1275,7 +1275,7 @@ nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
   NS_ENSURE_TRUE(mRules, NS_ERROR_NOT_INITIALIZED);
   ForceCompositionEnd();
 
-  RefPtr<Selection> selection = GetSelection();
+  nsRefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   if (selection->Collapsed()) {
@@ -1311,7 +1311,7 @@ nsHTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
     
     uint32_t rangeCount = selection->RangeCount();
     for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-      RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
+      nsRefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
       if (aProperty == nsGkAtoms::name) {
         
         
@@ -1418,7 +1418,7 @@ nsHTMLEditor::RelativeFontChange(FontSize aDir)
   ForceCompositionEnd();
 
   
-  RefPtr<Selection> selection = GetSelection();
+  nsRefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
   
   if (selection->Collapsed()) {
@@ -1454,7 +1454,7 @@ nsHTMLEditor::RelativeFontChange(FontSize aDir)
   
   uint32_t rangeCount = selection->RangeCount();
   for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-    RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
+    nsRefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
 
     
     nsresult res = PromoteInlineRange(range);

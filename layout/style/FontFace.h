@@ -207,15 +207,15 @@ private:
 
   
   
-  RefPtr<mozilla::dom::Promise> mLoaded;
+  nsRefPtr<mozilla::dom::Promise> mLoaded;
 
   
   
-  RefPtr<nsCSSFontFaceRule> mRule;
+  nsRefPtr<nsCSSFontFaceRule> mRule;
 
   
   
-  RefPtr<Entry> mUserFontEntry;
+  nsRefPtr<Entry> mUserFontEntry;
 
   
   
@@ -245,7 +245,7 @@ private:
 
   
   
-  RefPtr<FontFaceSet> mFontFaceSet;
+  nsRefPtr<FontFaceSet> mFontFaceSet;
 
   
   bool mInFontFaceSet;

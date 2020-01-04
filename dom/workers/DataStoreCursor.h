@@ -56,7 +56,7 @@ private:
   nsMainThreadPtrHandle<DataStoreCursor> mBackingCursor;
 
   
-  RefPtr<WorkerDataStore> mWorkerStore;
+  nsRefPtr<WorkerDataStore> mWorkerStore;
 };
 
 } 

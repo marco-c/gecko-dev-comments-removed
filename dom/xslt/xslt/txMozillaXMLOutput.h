@@ -96,13 +96,13 @@ private:
                                         
                                         
     nsCOMPtr<mozilla::dom::Element> mOpenedElement;
-    RefPtr<nsNodeInfoManager> mNodeInfoManager;
+    nsRefPtr<nsNodeInfoManager> mNodeInfoManager;
 
     nsCOMArray<nsINode> mCurrentNodeStack;
 
     nsCOMPtr<nsIContent> mNonAddedNode;
 
-    RefPtr<txTransformNotifier> mNotifier;
+    nsRefPtr<txTransformNotifier> mNotifier;
 
     uint32_t mTreeDepth, mBadChildLevel;
     nsCString mRefreshString;

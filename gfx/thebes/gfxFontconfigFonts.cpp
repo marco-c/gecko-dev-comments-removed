@@ -751,7 +751,7 @@ private:
     struct FontEntry {
         explicit FontEntry(FcPattern *aPattern) : mPattern(aPattern) {}
         nsCountedRef<FcPattern> mPattern;
-        RefPtr<gfxFcFont> mFont;
+        nsRefPtr<gfxFcFont> mFont;
     };
 
     struct LangSupportEntry {
@@ -775,7 +775,7 @@ private:
     
     nsCountedRef<FcPattern> mSortPattern;
     
-    RefPtr<gfxUserFontSet> mUserFontSet;
+    nsRefPtr<gfxUserFontSet> mUserFontSet;
     
     
     nsTArray<FontEntry> mFonts;
@@ -1487,7 +1487,7 @@ gfxPangoFontGroup::MakeFontSet(PangoLanguage *aLang, gfxFloat aSizeAdjustFactor,
 {
     const char *lang = pango_language_to_string(aLang);
 
-    RefPtr<nsIAtom> langGroup;
+    nsRefPtr <nsIAtom> langGroup;
     if (aLang != mPangoLanguage) {
         
         langGroup = do_GetAtom(lang);
@@ -1505,7 +1505,7 @@ gfxPangoFontGroup::MakeFontSet(PangoLanguage *aLang, gfxFloat aSizeAdjustFactor,
 
     PrepareSortPattern(pattern, mStyle.size, aSizeAdjustFactor, mStyle.printerFont);
 
-    RefPtr<gfxFcFontSet> fontset =
+    nsRefPtr<gfxFcFontSet> fontset =
         new gfxFcFontSet(pattern, mUserFontSet);
 
     mSkipDrawing = fontset->WaitingForUserFont();
@@ -1536,7 +1536,7 @@ gfxPangoFontGroup::GetFontSet(PangoLanguage *aLang)
             return mFontSets[i].mFontSet;
     }
 
-    RefPtr<gfxFcFontSet> fontSet =
+    nsRefPtr<gfxFcFontSet> fontSet =
         MakeFontSet(aLang, mSizeAdjustFactor);
     mFontSets.AppendElement(FontSetByLangEntry(aLang, fontSet));
 
@@ -1555,7 +1555,7 @@ gfxPangoFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
         
         uint8_t category = GetGeneralCategory(aCh);
         if (category == HB_UNICODE_GENERAL_CATEGORY_CONTROL) {
-            return RefPtr<gfxFont>(aPrevMatchedFont).forget();
+            return nsRefPtr<gfxFont>(aPrevMatchedFont).forget();
         }
 
         
@@ -1563,7 +1563,7 @@ gfxPangoFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
         if (gfxFontUtils::IsJoinControl(aCh) ||
             gfxFontUtils::IsJoinCauser(aPrevCh)) {
             if (aPrevMatchedFont->HasCharacter(aCh)) {
-                return RefPtr<gfxFont>(aPrevMatchedFont).forget();
+                return nsRefPtr<gfxFont>(aPrevMatchedFont).forget();
             }
         }
     }
@@ -1573,7 +1573,7 @@ gfxPangoFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
     
     if (gfxFontUtils::IsVarSelector(aCh)) {
         if (aPrevMatchedFont) {
-            return RefPtr<gfxFont>(aPrevMatchedFont).forget();
+            return nsRefPtr<gfxFont>(aPrevMatchedFont).forget();
         }
         
         return nullptr;
@@ -1618,7 +1618,7 @@ gfxPangoFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
         basePattern = fontSet->GetFontPatternAt(0);
         if (HasChar(basePattern, aCh)) {
             *aMatchType = gfxTextRange::kFontGroup;
-            return RefPtr<gfxFont>(GetBaseFont()).forget();
+            return nsRefPtr<gfxFont>(GetBaseFont()).forget();
         }
 
         nextFont = 1;
@@ -1646,7 +1646,7 @@ gfxPangoFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
 
         if (HasChar(pattern, aCh)) {
             *aMatchType = gfxTextRange::kFontGroup;
-            return RefPtr<gfxFont>(fontSet->GetFontAt(i, GetStyle())).forget();
+            return nsRefPtr<gfxFont>(fontSet->GetFontAt(i, GetStyle())).forget();
         }
     }
 
@@ -1700,7 +1700,7 @@ already_AddRefed<gfxFont>
 gfxFcFont::MakeScaledFont(gfxFontStyle *aFontStyle, gfxFloat aScaleFactor)
 {
     gfxFcFontEntry* fe = static_cast<gfxFcFontEntry*>(GetFontEntry());
-    RefPtr<gfxFont> font = gfxFontCache::GetCache()->Lookup(fe, aFontStyle);
+    nsRefPtr<gfxFont> font = gfxFontCache::GetCache()->Lookup(fe, aFontStyle);
     if (font) {
         return font.forget();
     }
@@ -1811,7 +1811,7 @@ gfxPangoFontGroup::GetFTLibrary()
         
         
         gfxFontStyle style;
-        RefPtr<gfxPangoFontGroup> fontGroup =
+        nsRefPtr<gfxPangoFontGroup> fontGroup =
             new gfxPangoFontGroup(FontFamilyList(eFamily_sans_serif),
                                   &style, nullptr);
 
@@ -1912,7 +1912,7 @@ gfxFcFont::GetOrMakeFont(FcPattern *aRequestedPattern, FcPattern *aFontPattern,
         cairo_ft_font_face_create_for_pattern(renderPattern);
 
     
-    RefPtr<gfxFcFontEntry> fe = gfxFcFontEntry::LookupFontEntry(face);
+    nsRefPtr<gfxFcFontEntry> fe = gfxFcFontEntry::LookupFontEntry(face);
     if (!fe) {
         gfxDownloadedFcFontEntry *downloadedFontEntry =
             GetDownloadedFontEntry(aFontPattern);
@@ -1960,7 +1960,7 @@ gfxFcFont::GetOrMakeFont(FcPattern *aRequestedPattern, FcPattern *aFontPattern,
     style.style = gfxFontconfigUtils::GetThebesStyle(renderPattern);
     style.weight = gfxFontconfigUtils::GetThebesWeight(renderPattern);
 
-    RefPtr<gfxFont> font = gfxFontCache::GetCache()->Lookup(fe, &style);
+    nsRefPtr<gfxFont> font = gfxFontCache::GetCache()->Lookup(fe, &style);
     if (!font) {
         
         
@@ -1977,7 +1977,7 @@ gfxFcFont::GetOrMakeFont(FcPattern *aRequestedPattern, FcPattern *aFontPattern,
 
     cairo_font_face_destroy(face);
 
-    RefPtr<gfxFcFont> retval(static_cast<gfxFcFont*>(font.get()));
+    nsRefPtr<gfxFcFont> retval(static_cast<gfxFcFont*>(font.get()));
     return retval.forget();
 }
 
@@ -1989,7 +1989,7 @@ gfxPangoFontGroup::GetBaseFontSet()
 
     mSizeAdjustFactor = 1.0; 
     nsAutoRef<FcPattern> pattern;
-    RefPtr<gfxFcFontSet> fontSet =
+    nsRefPtr<gfxFcFontSet> fontSet =
         MakeFontSet(mPangoLanguage, mSizeAdjustFactor, &pattern);
 
     double size = GetPixelSize(pattern);

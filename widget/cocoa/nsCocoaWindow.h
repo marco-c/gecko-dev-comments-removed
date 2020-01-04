@@ -419,7 +419,7 @@ protected:
   nsIWidget*           mParent;         
   BaseWindow*          mWindow;         
   WindowDelegate*      mDelegate;       
-  RefPtr<nsMenuBarX> mMenuBar;
+  nsRefPtr<nsMenuBarX> mMenuBar;
   NSWindow*            mSheetWindowParent; 
   nsChildView*         mPopupContentView; 
   

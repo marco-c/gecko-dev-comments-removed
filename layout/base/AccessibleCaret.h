@@ -15,7 +15,7 @@
 #include "nsISupportsBase.h"
 #include "nsISupportsImpl.h"
 #include "nsRect.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsString.h"
 
 class nsIDocument;
@@ -203,14 +203,14 @@ protected:
   
   nsIPresShell* MOZ_NON_OWNING_REF const mPresShell = nullptr;
 
-  RefPtr<dom::AnonymousContent> mCaretElementHolder;
+  nsRefPtr<dom::AnonymousContent> mCaretElementHolder;
 
   
   nsRect mImaginaryCaretRect;
 
   
   
-  RefPtr<DummyTouchListener> mDummyTouchListener{new DummyTouchListener()};
+  nsRefPtr<DummyTouchListener> mDummyTouchListener{new DummyTouchListener()};
 
   
   static float sWidth;

@@ -5868,10 +5868,10 @@ nsLayoutUtils::GetClosestLayer(nsIFrame* aFrame)
   return aFrame->PresContext()->PresShell()->FrameManager()->GetRootFrame();
 }
 
-Filter
+GraphicsFilter
 nsLayoutUtils::GetGraphicsFilterForFrame(nsIFrame* aForFrame)
 {
-  Filter defaultFilter = Filter::GOOD;
+  GraphicsFilter defaultFilter = GraphicsFilter::FILTER_GOOD;
   nsStyleContext *sc;
   if (nsCSSRendering::IsCanvasFrame(aForFrame)) {
     nsCSSRendering::FindBackground(aForFrame, &sc);
@@ -5881,11 +5881,11 @@ nsLayoutUtils::GetGraphicsFilterForFrame(nsIFrame* aForFrame)
 
   switch (sc->StyleSVG()->mImageRendering) {
   case NS_STYLE_IMAGE_RENDERING_OPTIMIZESPEED:
-    return Filter::POINT;
+    return GraphicsFilter::FILTER_FAST;
   case NS_STYLE_IMAGE_RENDERING_OPTIMIZEQUALITY:
-    return Filter::LINEAR;
+    return GraphicsFilter::FILTER_BEST;
   case NS_STYLE_IMAGE_RENDERING_CRISPEDGES:
-    return Filter::POINT;
+    return GraphicsFilter::FILTER_NEAREST;
   default:
     return defaultFilter;
   }
@@ -6021,7 +6021,7 @@ ComputeSnappedImageDrawingParameters(gfxContext*     aCtx,
                                      const nsPoint   aAnchor,
                                      const nsRect    aDirty,
                                      imgIContainer*  aImage,
-                                     Filter          aGraphicsFilter,
+                                     GraphicsFilter  aGraphicsFilter,
                                      uint32_t        aImageFlags)
 {
   if (aDest.IsEmpty() || aFill.IsEmpty())
@@ -6203,7 +6203,7 @@ static DrawResult
 DrawImageInternal(gfxContext&            aContext,
                   nsPresContext*         aPresContext,
                   imgIContainer*         aImage,
-                  Filter                 aGraphicsFilter,
+                  GraphicsFilter         aGraphicsFilter,
                   const nsRect&          aDest,
                   const nsRect&          aFill,
                   const nsPoint&         aAnchor,
@@ -6249,7 +6249,7 @@ DrawImageInternal(gfxContext&            aContext,
 nsLayoutUtils::DrawSingleUnscaledImage(gfxContext&          aContext,
                                        nsPresContext*       aPresContext,
                                        imgIContainer*       aImage,
-                                       Filter               aGraphicsFilter,
+                                       GraphicsFilter       aGraphicsFilter,
                                        const nsPoint&       aDest,
                                        const nsRect*        aDirty,
                                        uint32_t             aImageFlags,
@@ -6287,7 +6287,7 @@ nsLayoutUtils::DrawSingleUnscaledImage(gfxContext&          aContext,
 nsLayoutUtils::DrawSingleImage(gfxContext&            aContext,
                                nsPresContext*         aPresContext,
                                imgIContainer*         aImage,
-                               Filter                 aGraphicsFilter,
+                               GraphicsFilter         aGraphicsFilter,
                                const nsRect&          aDest,
                                const nsRect&          aDirty,
                                const SVGImageContext* aSVGContext,
@@ -6403,7 +6403,7 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
                                    nsPresContext*      aPresContext,
                                    imgIContainer*      aImage,
                                    const CSSIntSize&   aImageSize,
-                                   Filter              aGraphicsFilter,
+                                   GraphicsFilter      aGraphicsFilter,
                                    const nsRect&       aDest,
                                    const nsRect&       aFill,
                                    const nsPoint&      aAnchor,
@@ -6414,7 +6414,7 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
                  js::ProfileEntry::Category::GRAPHICS);
 
   if (UseBackgroundNearestFiltering()) {
-    aGraphicsFilter = Filter::POINT;
+    aGraphicsFilter = GraphicsFilter::FILTER_NEAREST;
   }
 
   SVGImageContext svgContext(aImageSize, Nothing());
@@ -6428,7 +6428,7 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
 nsLayoutUtils::DrawImage(gfxContext&         aContext,
                          nsPresContext*      aPresContext,
                          imgIContainer*      aImage,
-                         Filter              aGraphicsFilter,
+                         GraphicsFilter      aGraphicsFilter,
                          const nsRect&       aDest,
                          const nsRect&       aFill,
                          const nsPoint&      aAnchor,
@@ -6832,7 +6832,7 @@ nsLayoutUtils::SurfaceFromElement(nsIImageLoadingContent* aElement,
     
     
     if (aTarget) {
-      RefPtr<SourceSurface> optSurface =
+      nsRefPtr<SourceSurface> optSurface =
         aTarget->OptimizeSourceSurface(result.mSourceSurface);
       if (optSurface) {
         result.mSourceSurface = optSurface;
@@ -6886,13 +6886,13 @@ nsLayoutUtils::SurfaceFromElement(HTMLCanvasElement* aElement,
      
      
      DrawTarget *ref = aTarget ? aTarget : gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-     RefPtr<DrawTarget> dt = ref->CreateSimilarDrawTarget(IntSize(size.width, size.height),
+     nsRefPtr<DrawTarget> dt = ref->CreateSimilarDrawTarget(IntSize(size.width, size.height),
                                                           SurfaceFormat::B8G8R8A8);
      if (dt) {
        result.mSourceSurface = dt->Snapshot();
      }
   } else if (aTarget) {
-    RefPtr<SourceSurface> opt = aTarget->OptimizeSourceSurface(result.mSourceSurface);
+    nsRefPtr<SourceSurface> opt = aTarget->OptimizeSourceSurface(result.mSourceSurface);
     if (opt) {
       result.mSourceSurface = opt;
     }
@@ -6952,7 +6952,7 @@ nsLayoutUtils::SurfaceFromElement(HTMLVideoElement* aElement,
     return result;
 
   if (aTarget) {
-    RefPtr<SourceSurface> opt = aTarget->OptimizeSourceSurface(result.mSourceSurface);
+    nsRefPtr<SourceSurface> opt = aTarget->OptimizeSourceSurface(result.mSourceSurface);
     if (opt) {
       result.mSourceSurface = opt;
     }

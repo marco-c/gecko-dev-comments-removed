@@ -11,7 +11,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsError.h"
 #include "nsString.h"
 #include "nsSVGPathDataParser.h"
@@ -516,9 +516,9 @@ SVGPathData::BuildPathForMeasuring() const
   
   
 
-  RefPtr<DrawTarget> drawTarget =
+  nsRefPtr<DrawTarget> drawTarget =
     gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-  RefPtr<PathBuilder> builder =
+  nsRefPtr<PathBuilder> builder =
     drawTarget->CreatePathBuilder(FillRule::FILL_WINDING);
   return BuildPath(builder, NS_STYLE_STROKE_LINECAP_BUTT, 0);
 }

@@ -149,14 +149,14 @@ nsXMLPrettyPrinter::PrettyPrint(nsIDocument* aDocument,
         GetSystemPrincipal(getter_AddRefs(sysPrincipal));
 
     
-    RefPtr<nsXBLBinding> unused;
+    nsRefPtr<nsXBLBinding> unused;
     bool ignored;
     rv = xblService->LoadBindings(rootCont, bindingUri, sysPrincipal,
                                   getter_AddRefs(unused), &ignored);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    RefPtr<CustomEvent> event =
+    nsRefPtr<CustomEvent> event =
       NS_NewDOMCustomEvent(rootCont, nullptr, nullptr);
     MOZ_ASSERT(event);
     nsCOMPtr<nsIWritableVariant> resultFragmentVariant = new nsVariant();

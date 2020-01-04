@@ -132,9 +132,9 @@ private:
   ~Request();
 
   nsCOMPtr<nsIGlobalObject> mOwner;
-  RefPtr<InternalRequest> mRequest;
+  nsRefPtr<InternalRequest> mRequest;
   
-  RefPtr<Headers> mHeaders;
+  nsRefPtr<Headers> mHeaders;
 };
 
 } 

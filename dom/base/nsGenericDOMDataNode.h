@@ -1,13 +1,13 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+/*
+ * Base class for DOM Core's nsIDOMComment, nsIDOMDocumentType, nsIDOMText,
+ * nsIDOMCDATASection, and nsIDOMProcessingInstruction nodes.
+ */
 
 #ifndef nsGenericDOMDataNode_h___
 #define nsGenericDOMDataNode_h___
@@ -28,28 +28,28 @@ class nsIDOMText;
 
 #define DATA_NODE_FLAG_BIT(n_) NODE_FLAG_BIT(NODE_TYPE_SPECIFIC_BITS_OFFSET + (n_))
 
-
+// Data node specific flags
 enum {
-  
-  
-  
+  // This bit is set to indicate that if the text node changes to
+  // non-whitespace, we may need to create a frame for it. This bit must
+  // not be set on nodes that already have a frame.
   NS_CREATE_FRAME_IF_NON_WHITESPACE =     DATA_NODE_FLAG_BIT(0),
 
-  
-  
+  // This bit is set to indicate that if the text node changes to
+  // whitespace, we may need to reframe it (or its ancestors).
   NS_REFRAME_IF_WHITESPACE =              DATA_NODE_FLAG_BIT(1),
 
-  
-  
+  // This bit is set to indicate that we have a cached
+  // TextIsOnlyWhitespace value
   NS_CACHED_TEXT_IS_ONLY_WHITESPACE =     DATA_NODE_FLAG_BIT(2),
 
-  
-  
-  
+  // This bit is only meaningful if the NS_CACHED_TEXT_IS_ONLY_WHITESPACE
+  // bit is set, and if so it indicates whether we're only whitespace or
+  // not.
   NS_TEXT_IS_ONLY_WHITESPACE =            DATA_NODE_FLAG_BIT(3),
 };
 
-
+// Make sure we have enough space for those bits
 ASSERT_NODE_FLAGS_SPACE(NODE_TYPE_SPECIFIC_BITS_OFFSET + 4);
 
 #undef DATA_NODE_FLAG_BIT
@@ -68,7 +68,7 @@ public:
   virtual void SetNodeValueInternal(const nsAString& aNodeValue,
                                     mozilla::ErrorResult& aError) override;
 
-  
+  // Implementation for nsIDOMCharacterData
   nsresult GetData(nsAString& aData) const;
   nsresult SetData(const nsAString& aData);
   nsresult GetLength(uint32_t* aLength);
@@ -81,7 +81,7 @@ public:
                        const nsAString& aArg);
   NS_IMETHOD MozRemove();
 
-  
+  // nsINode methods
   virtual uint32_t GetChildCount() const override;
   virtual nsIContent *GetChildAt(uint32_t aIndex) const override;
   virtual nsIContent * const * GetChildArray(uint32_t* aChildCount) const override;
@@ -97,12 +97,12 @@ public:
   virtual void SetTextContentInternal(const nsAString& aTextContent,
                                       mozilla::ErrorResult& aError) override
   {
-    
+    // Batch possible DOMSubtreeModified events.
     mozAutoSubtreeModified subtree(OwnerDoc(), nullptr);
     return SetNodeValue(aTextContent, aError);
   }
 
-  
+  // Implementation for nsIContent
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent,
                               bool aCompileEventHandlers) override;
@@ -128,7 +128,7 @@ public:
   virtual uint32_t TextLength() const override;
   virtual nsresult SetText(const char16_t* aBuffer, uint32_t aLength,
                            bool aNotify) override;
-  
+  // Need to implement this here too to avoid hiding.
   nsresult SetText(const nsAString& aStr, bool aNotify)
   {
     return SetText(aStr.BeginReading(), aStr.Length(), aNotify);
@@ -186,13 +186,13 @@ public:
   nsresult SplitData(uint32_t aOffset, nsIContent** aReturn,
                      bool aCloneAfterOriginal = true);
 
-  
-  
+  // WebIDL API
+  // Our XPCOM GetData is just fine for WebIDL
   virtual void SetData(const nsAString& aData, mozilla::ErrorResult& rv)
   {
     rv = SetData(aData);
   }
-  
+  // nsINode::Length() returns the right thing for our length attribute
   void SubstringData(uint32_t aStart, uint32_t aCount, nsAString& aReturn,
                      mozilla::ErrorResult& rv);
   void AppendData(const nsAString& aData, mozilla::ErrorResult& rv)
@@ -214,7 +214,7 @@ public:
     rv = ReplaceData(aOffset, aCount, aData);
   }
 
-  
+  //----------------------------------------
 
 #ifdef DEBUG
   void ToCString(nsAString& aBuf, int32_t aOffset, int32_t aLen) const;
@@ -232,14 +232,14 @@ protected:
     return parent && parent->IsElement() ? parent->AsElement() : nullptr;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * There are a set of DOM- and scripting-specific instance variables
+   * that may only be instantiated when a content object is accessed
+   * through the DOM. Rather than burn actual slots in the content
+   * objects for each of these instance variables, we put them off
+   * in a side structure that's only allocated when the content is
+   * accessed through the DOM.
+   */
   class nsDataSlots : public nsINode::nsSlots
   {
   public:
@@ -248,29 +248,29 @@ protected:
     void Traverse(nsCycleCollectionTraversalCallback &cb);
     void Unlink();
 
-    
+    /**
+     * The nearest enclosing content node with a binding that created us.
+     * @see nsIContent::GetBindingParent
+     */
+    nsIContent* mBindingParent;  // [Weak]
 
-
-
-    nsIContent* mBindingParent;  
-
-    
-
-
+    /**
+     * @see nsIContent::GetXBLInsertionParent
+     */
     nsCOMPtr<nsIContent> mXBLInsertionParent;
 
-    
+    /**
+     * @see nsIContent::GetContainingShadow
+     */
+    nsRefPtr<mozilla::dom::ShadowRoot> mContainingShadow;
 
-
-    RefPtr<mozilla::dom::ShadowRoot> mContainingShadow;
-
-    
-
-
+    /**
+     * @see nsIContent::GetDestInsertionPoints
+     */
     nsTArray<nsIContent*> mDestInsertionPoints;
   };
 
-  
+  // Override from nsINode
   virtual nsINode::nsSlots* CreateSlots() override;
 
   nsDataSlots* DataSlots()
@@ -299,14 +299,14 @@ protected:
                            bool aNotify,
                            CharacterDataChangeInfo::Details* aDetails = nullptr);
 
-  
-
-
-
-
-
-
-
+  /**
+   * Method to clone this node. This needs to be overriden by all derived
+   * classes. If aCloneText is true the text content will be cloned too.
+   *
+   * @param aOwnerDocument the ownerDocument of the clone
+   * @param aCloneText if true the text content will be cloned too
+   * @return the clone
+   */
   virtual nsGenericDOMDataNode *CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo,
                                               bool aCloneText) const = 0;
 
@@ -331,4 +331,4 @@ private:
   already_AddRefed<nsIAtom> GetCurrentValueAtom();
 };
 
-#endif 
+#endif /* nsGenericDOMDataNode_h___ */

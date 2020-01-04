@@ -213,7 +213,7 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
     , mManager(aManager)
     , mAnimationGeneration(0)
     , mCheckGeneration(0)
-    , mStyleChanging(true)
+    , mNeedsRefreshes(true)
     , mHasPendingAnimationRestyle(false)
 #ifdef DEBUG
     , mCalledPropertyDtor(false)
@@ -410,7 +410,7 @@ public:
   
   
   
-  bool mStyleChanging;
+  bool mNeedsRefreshes;
 
 private:
   

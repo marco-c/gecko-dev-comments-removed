@@ -173,24 +173,6 @@ public:
     mozilla::safebrowsing::LookupResultArray* mResults;
   };
 
-  class SetLastUpdateTimeRunnable : public nsRunnable
-  {
-  public:
-    SetLastUpdateTimeRunnable(nsUrlClassifierDBServiceWorker* aTarget,
-                              const nsACString& table,
-                              uint64_t updateTime)
-      : mTarget(aTarget),
-        mTable(table),
-        mUpdateTime(updateTime)
-    { }
-
-    NS_DECL_NSIRUNNABLE
-  private:
-    nsRefPtr<nsUrlClassifierDBServiceWorker> mTarget;
-    nsCString mTable;
-    uint64_t mUpdateTime;
-  };
-
 public:
   nsresult DoLocalLookup(const nsACString& spec,
                          const nsACString& tables,

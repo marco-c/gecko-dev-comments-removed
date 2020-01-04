@@ -103,7 +103,7 @@ public:
 #endif
 
 protected:
-  RefPtr<nsMenuBarListener> mMenuBarListener; 
+  nsRefPtr<nsMenuBarListener> mMenuBarListener; 
 
   
   

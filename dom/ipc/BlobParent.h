@@ -74,7 +74,7 @@ class BlobParent final
   
   nsTArray<nsRevocableEventPtr<OpenStreamRunnable>> mOpenStreamRunnables;
 
-  RefPtr<IDTableEntry> mIDTableEntry;
+  nsRefPtr<IDTableEntry> mIDTableEntry;
 
   bool mOwnsBlobImpl;
 

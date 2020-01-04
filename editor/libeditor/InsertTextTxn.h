@@ -59,7 +59,7 @@ private:
   bool IsSequentialInsert(InsertTextTxn& aOtherTxn);
 
   
-  RefPtr<Text> mTextNode;
+  nsRefPtr<Text> mTextNode;
 
   
   uint32_t mOffset;

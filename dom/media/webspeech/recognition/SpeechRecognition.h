@@ -127,8 +127,8 @@ public:
 
   void DispatchError(EventType aErrorType, SpeechRecognitionErrorCode aErrorCode, const nsAString& aMessage);
   uint32_t FillSamplesBuffer(const int16_t* aSamples, uint32_t aSampleCount);
-  uint32_t SplitSamplesBuffer(const int16_t* aSamplesBuffer, uint32_t aSampleCount, nsTArray<RefPtr<SharedBuffer>>& aResult);
-  AudioSegment* CreateAudioSegment(nsTArray<RefPtr<SharedBuffer>>& aChunks);
+  uint32_t SplitSamplesBuffer(const int16_t* aSamplesBuffer, uint32_t aSampleCount, nsTArray<nsRefPtr<SharedBuffer>>& aResult);
+  AudioSegment* CreateAudioSegment(nsTArray<nsRefPtr<SharedBuffer>>& aChunks);
   void FeedAudioData(already_AddRefed<SharedBuffer> aSamples, uint32_t aDuration, MediaStreamListener* aProvider, TrackRate aTrackRate);
 
   static struct TestConfig
@@ -191,7 +191,7 @@ private:
   private:
     virtual ~GetUserMediaSuccessCallback() {}
 
-    RefPtr<SpeechRecognition> mRecognition;
+    nsRefPtr<SpeechRecognition> mRecognition;
   };
 
   class GetUserMediaErrorCallback : public nsIDOMGetUserMediaErrorCallback
@@ -207,7 +207,7 @@ private:
   private:
     virtual ~GetUserMediaErrorCallback() {}
 
-    RefPtr<SpeechRecognition> mRecognition;
+    nsRefPtr<SpeechRecognition> mRecognition;
   };
 
   NS_IMETHOD StartRecording(DOMMediaStream* aDOMStream);
@@ -232,8 +232,8 @@ private:
   void AbortSilently(SpeechEvent* aEvent);
   void AbortError(SpeechEvent* aEvent);
 
-  RefPtr<DOMMediaStream> mDOMStream;
-  RefPtr<SpeechStreamListener> mSpeechListener;
+  nsRefPtr<DOMMediaStream> mDOMStream;
+  nsRefPtr<SpeechStreamListener> mSpeechListener;
   nsCOMPtr<nsISpeechRecognitionService> mRecognitionService;
 
   FSMState mCurrentState;
@@ -245,7 +245,7 @@ private:
 
   
   
-  RefPtr<SharedBuffer> mAudioSamplesBuffer;
+  nsRefPtr<SharedBuffer> mAudioSamplesBuffer;
   uint32_t mBufferedSamples;
 
   nsCOMPtr<nsITimer> mSpeechDetectionTimer;
@@ -253,7 +253,7 @@ private:
 
   nsString mLang;
 
-  RefPtr<SpeechGrammarList> mSpeechGrammarList;
+  nsRefPtr<SpeechGrammarList> mSpeechGrammarList;
 
   
   
@@ -300,8 +300,8 @@ public:
 
   NS_IMETHOD Run() override;
   AudioSegment* mAudioSegment;
-  RefPtr<SpeechRecognitionResultList> mRecognitionResultList; 
-  RefPtr<SpeechRecognitionError> mError;
+  nsRefPtr<SpeechRecognitionResultList> mRecognitionResultList; 
+  nsRefPtr<SpeechRecognitionError> mError;
 
   friend class SpeechRecognition;
 private:
@@ -311,7 +311,7 @@ private:
   
   
   
-  RefPtr<MediaStreamListener> mProvider;
+  nsRefPtr<MediaStreamListener> mProvider;
   SpeechRecognition::EventType mType;
   TrackRate mTrackRate;
 };

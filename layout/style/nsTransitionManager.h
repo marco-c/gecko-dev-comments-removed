@@ -164,6 +164,7 @@ protected:
                     SyncNotifyFlag aSyncNotifyFlag) override;
 
   void QueueEvents();
+  bool HasEndEventToQueue() const override;
 
   
   

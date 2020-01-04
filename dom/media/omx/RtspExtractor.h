@@ -45,7 +45,7 @@ private:
   RtspMediaResource* mRtspResource;
   
   
-  RefPtr<nsIStreamingProtocolController> mController;
+  nsRefPtr<nsIStreamingProtocolController> mController;
 };
 
 } 

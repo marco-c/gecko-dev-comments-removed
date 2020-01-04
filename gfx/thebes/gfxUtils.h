@@ -7,9 +7,10 @@
 #define GFX_UTILS_H
 
 #include "gfxTypes.h"
+#include "GraphicsFilter.h"
 #include "imgIContainer.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsColor.h"
 #include "nsPrintfCString.h"
 #include "mozilla/gfx/Rect.h"
@@ -78,7 +79,7 @@ public:
                                  const gfxSize&     aImageSize,
                                  const ImageRegion& aRegion,
                                  const mozilla::gfx::SurfaceFormat aFormat,
-                                 mozilla::gfx::Filter aFilter,
+                                 GraphicsFilter     aFilter,
                                  uint32_t           aImageFlags = imgIContainer::FLAG_NONE,
                                  gfxFloat           aOpacity = 1.0);
 

@@ -389,7 +389,7 @@ GMPDecryptorParent::Close()
   
 
   
-  RefPtr<GMPDecryptorParent> kungfudeathgrip(this);
+  nsRefPtr<GMPDecryptorParent> kungfudeathgrip(this);
   this->Release();
   Shutdown();
 }

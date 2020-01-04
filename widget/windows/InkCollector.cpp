@@ -50,7 +50,7 @@ void InkCollector::Initialize()
   }
 
   
-  RefPtr<IConnectionPointContainer> connPointContainer;
+  nsRefPtr<IConnectionPointContainer> connPointContainer;
 
   
   if (SUCCEEDED(mInkCollector->QueryInterface(IID_IConnectionPointContainer,

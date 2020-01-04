@@ -9,7 +9,7 @@
 #define IPC_FencerUtils_h
 
 #include "ipc/IPCMessageUtils.h"
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 
 namespace mozilla {
 namespace layers {
@@ -63,7 +63,7 @@ public:
   already_AddRefed<FdObj> GetDupFdObj();
 
 private:
-  RefPtr<FdObj> mFence;
+  nsRefPtr<FdObj> mFence;
 };
 
 } 

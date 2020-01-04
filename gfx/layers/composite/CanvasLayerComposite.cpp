@@ -6,6 +6,7 @@
 #include "CanvasLayerComposite.h"
 #include "composite/CompositableHost.h"  
 #include "gfx2DGlue.h"                  
+#include "GraphicsFilter.h"             
 #include "gfxUtils.h"                   
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
@@ -89,7 +90,7 @@ CanvasLayerComposite::RenderLayer(const IntRect& aClipRect)
 
 #ifdef MOZ_DUMP_PAINTING
   if (gfxUtils::sDumpCompositorTextures) {
-    RefPtr<gfx::DataSourceSurface> surf = mCompositableHost->GetAsSurface();
+    nsRefPtr<gfx::DataSourceSurface> surf = mCompositableHost->GetAsSurface();
     WriteSnapshotToDumpFile(this, surf);
   }
 #endif
@@ -128,7 +129,7 @@ CanvasLayerComposite::CleanupResources()
 gfx::Filter
 CanvasLayerComposite::GetEffectFilter()
 {
-  gfx::Filter filter = mFilter;
+  GraphicsFilter filter = mFilter;
 #ifdef ANDROID
   
   
@@ -136,10 +137,10 @@ CanvasLayerComposite::GetEffectFilter()
   Matrix matrix;
   bool is2D = GetEffectiveTransform().Is2D(&matrix);
   if (is2D && !ThebesMatrix(matrix).HasNonTranslationOrFlip()) {
-    filter = Filter::POINT;
+    filter = GraphicsFilter::FILTER_NEAREST;
   }
 #endif
-  return filter;
+  return gfx::ToFilter(filter);
 }
 
 void

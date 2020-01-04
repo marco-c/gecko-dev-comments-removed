@@ -287,7 +287,7 @@ private:
         explicit nsConnectionEntry(nsHttpConnectionInfo *ci);
         ~nsConnectionEntry();
 
-        RefPtr<nsHttpConnectionInfo> mConnInfo;
+        nsRefPtr<nsHttpConnectionInfo> mConnInfo;
         nsTArray<nsHttpTransaction*> mPendingQ;    
         nsTArray<nsHttpConnection*>  mActiveConns; 
         nsTArray<nsHttpConnection*>  mIdleConns;   
@@ -467,7 +467,7 @@ private:
         void PrintDiagnostics(nsCString &log);
     private:
         nsConnectionEntry              *mEnt;
-        RefPtr<nsAHttpTransaction>   mTransaction;
+        nsRefPtr<nsAHttpTransaction>   mTransaction;
         bool                           mDispatchedMTransaction;
         nsCOMPtr<nsISocketTransport>   mSocketTransport;
         nsCOMPtr<nsIAsyncOutputStream> mStreamOut;

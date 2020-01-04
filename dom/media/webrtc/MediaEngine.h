@@ -5,7 +5,7 @@
 #ifndef MEDIAENGINE_H_
 #define MEDIAENGINE_H_
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "DOMMediaStream.h"
 #include "MediaStreamGraph.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
@@ -63,12 +63,12 @@ public:
   
 
   virtual void EnumerateVideoDevices(dom::MediaSourceEnum,
-                                     nsTArray<RefPtr<MediaEngineVideoSource> >*) = 0;
+                                     nsTArray<nsRefPtr<MediaEngineVideoSource> >*) = 0;
 
   
 
   virtual void EnumerateAudioDevices(dom::MediaSourceEnum,
-                                     nsTArray<RefPtr<MediaEngineAudioSource> >*) = 0;
+                                     nsTArray<nsRefPtr<MediaEngineAudioSource> >*) = 0;
 
   virtual void Shutdown() = 0;
 

@@ -222,7 +222,7 @@ LoadManagerSingleton::RemoveObserver(webrtc::CPULoadStateObserver * aObserver)
       }
 
       
-      RefPtr<LoadMonitor> loadMonitor = mLoadMonitor.forget();
+      nsRefPtr<LoadMonitor> loadMonitor = mLoadMonitor.forget();
       MutexAutoUnlock unlock(mLock);
 
       loadMonitor->Shutdown();

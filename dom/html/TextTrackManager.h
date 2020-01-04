@@ -93,14 +93,14 @@ public:
   void AddListeners();
 
   
-  RefPtr<HTMLMediaElement> mMediaElement;
+  nsRefPtr<HTMLMediaElement> mMediaElement;
 private:
   
-  RefPtr<TextTrackList> mTextTracks;
+  nsRefPtr<TextTrackList> mTextTracks;
   
-  RefPtr<TextTrackList> mPendingTextTracks;
+  nsRefPtr<TextTrackList> mPendingTextTracks;
   
-  RefPtr<TextTrackCueList> mNewCues;
+  nsRefPtr<TextTrackCueList> mNewCues;
 
   static StaticRefPtr<nsIWebVTTParserWrapper> sParserWrapper;
 

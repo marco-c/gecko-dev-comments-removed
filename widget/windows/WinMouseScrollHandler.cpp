@@ -624,7 +624,7 @@ MouseScrollHandler::HandleMouseWheelMessage(nsWindowBase* aWidget,
   ModifierKeyState modKeyState = GetModifierKeyState(aMessage);
 
   
-  RefPtr<nsWindowBase> kungFuDethGrip(aWidget);
+  nsRefPtr<nsWindowBase> kungFuDethGrip(aWidget);
 
   WidgetWheelEvent wheelEvent(true, eWheel, aWidget);
   if (mLastEventInfo.InitWheelEvent(aWidget, wheelEvent, modKeyState)) {

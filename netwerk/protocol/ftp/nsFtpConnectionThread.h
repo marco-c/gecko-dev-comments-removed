@@ -163,7 +163,7 @@ private:
     nsCString           mResponseMsg;       
 
         
-    RefPtr<nsFtpControlConnection> mControlConnection;       
+    nsRefPtr<nsFtpControlConnection> mControlConnection;       
     bool                            mReceivedControlData;  
     bool                            mTryingCachedControl;     
     bool                            mRETRFailed;              
@@ -171,7 +171,7 @@ private:
     nsCString                       mModTime;
 
         
-    RefPtr<nsFtpChannel>          mChannel;         
+    nsRefPtr<nsFtpChannel>          mChannel;         
     nsCOMPtr<nsIProxyInfo>          mProxyInfo;
 
         

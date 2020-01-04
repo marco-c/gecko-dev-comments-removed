@@ -52,8 +52,8 @@ private:
   NotifyGetCardLockEnabled(bool aResult);
 
   nsCOMPtr<nsPIDOMWindow> mWindow;
-  RefPtr<DOMRequest> mRequest;
-  RefPtr<Promise> mPromise;
+  nsRefPtr<DOMRequest> mRequest;
+  nsRefPtr<Promise> mPromise;
   
   
   bool mIsCardLockEnabled;

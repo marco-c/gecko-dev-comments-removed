@@ -129,7 +129,7 @@ nsGeoGridFuzzer::FuzzLocation(const GeolocationSetting & aSetting,
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   
-  RefPtr<nsGeoPosition> pos = new nsGeoPosition(lat, lon, 0.0, 0.0,
+  nsRefPtr<nsGeoPosition> pos = new nsGeoPosition(lat, lon, 0.0, 0.0,
                                                   0.0, 0.0, 0.0, ts);
   return pos.forget();
 }

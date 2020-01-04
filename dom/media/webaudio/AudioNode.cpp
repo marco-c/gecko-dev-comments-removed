@@ -152,7 +152,7 @@ AudioNode::DisconnectFromGraph()
 {
   
   
-  RefPtr<AudioNode> kungFuDeathGrip = this;
+  nsRefPtr<AudioNode> kungFuDeathGrip = this;
 
   
   
@@ -160,14 +160,14 @@ AudioNode::DisconnectFromGraph()
   
   while (!mInputNodes.IsEmpty()) {
     size_t i = mInputNodes.Length() - 1;
-    RefPtr<AudioNode> input = mInputNodes[i].mInputNode;
+    nsRefPtr<AudioNode> input = mInputNodes[i].mInputNode;
     mInputNodes.RemoveElementAt(i);
     input->mOutputNodes.RemoveElement(this);
   }
 
   while (!mOutputNodes.IsEmpty()) {
     size_t i = mOutputNodes.Length() - 1;
-    RefPtr<AudioNode> output = mOutputNodes[i].forget();
+    nsRefPtr<AudioNode> output = mOutputNodes[i].forget();
     mOutputNodes.RemoveElementAt(i);
     size_t inputIndex = FindIndexOfNode(output->mInputNodes, this);
     
@@ -179,7 +179,7 @@ AudioNode::DisconnectFromGraph()
 
   while (!mOutputParams.IsEmpty()) {
     size_t i = mOutputParams.Length() - 1;
-    RefPtr<AudioParam> output = mOutputParams[i].forget();
+    nsRefPtr<AudioParam> output = mOutputParams[i].forget();
     mOutputParams.RemoveElementAt(i);
     size_t inputIndex = FindIndexOfNode(output->InputNodes(), this);
     
@@ -328,7 +328,7 @@ AudioNode::Disconnect(uint32_t aOutput, ErrorResult& aRv)
       return NS_OK;
     }
   private:
-    RefPtr<AudioNode> mNode;
+    nsRefPtr<AudioNode> mNode;
   };
 
   for (int32_t i = mOutputNodes.Length() - 1; i >= 0; --i) {
@@ -343,11 +343,11 @@ AudioNode::Disconnect(uint32_t aOutput, ErrorResult& aRv)
         
         
         
-        RefPtr<AudioNode> output = mOutputNodes[i].forget();
+        nsRefPtr<AudioNode> output = mOutputNodes[i].forget();
         mOutputNodes.RemoveElementAt(i);
         output->NotifyInputsChanged();
         if (mStream) {
-          RefPtr<nsIRunnable> runnable = new RunnableRelease(output.forget());
+          nsRefPtr<nsIRunnable> runnable = new RunnableRelease(output.forget());
           mStream->RunAfterPendingUpdates(runnable.forget());
         }
         break;

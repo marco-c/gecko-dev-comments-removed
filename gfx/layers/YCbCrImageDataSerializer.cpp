@@ -281,7 +281,7 @@ YCbCrImageDataSerializer::CopyData(const uint8_t* aYData,
 already_AddRefed<DataSourceSurface>
 YCbCrImageDataDeserializer::ToDataSourceSurface()
 {
-  RefPtr<DataSourceSurface> result =
+  nsRefPtr<DataSourceSurface> result =
     Factory::CreateDataSourceSurface(GetYSize(), gfx::SurfaceFormat::B8G8R8X8);
   if (NS_WARN_IF(!result)) {
     return nullptr;
@@ -292,14 +292,13 @@ YCbCrImageDataDeserializer::ToDataSourceSurface()
     return nullptr;
   }
 
-  gfx::YUVType type = TypeFromSize(GetYSize().width, GetYSize().height,
-                                   GetCbCrSize().width, GetCbCrSize().height);
   gfx::ConvertYCbCrToRGB32(GetYData(), GetCbData(), GetCrData(),
                            map.mData,
                            0, 0, 
                            GetYSize().width, GetYSize().height,
                            GetYStride(), GetCbCrStride(),
-                           map.mStride, type);
+                           map.mStride,
+                           gfx::YV12);
   result->Unmap();
   return result.forget();
 }

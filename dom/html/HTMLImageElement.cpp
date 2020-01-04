@@ -99,7 +99,7 @@ public:
 
 private:
   ~ImageLoadTask() {}
-  RefPtr<HTMLImageElement> mElement;
+  nsRefPtr<HTMLImageElement> mElement;
   nsCOMPtr<nsIDocument> mDocument;
 };
 
@@ -720,7 +720,7 @@ HTMLImageElement::Image(const GlobalObject& aGlobal,
                                         kNameSpaceID_XHTML,
                                         nsIDOMNode::ELEMENT_NODE);
 
-  RefPtr<HTMLImageElement> img = new HTMLImageElement(nodeInfo);
+  nsRefPtr<HTMLImageElement> img = new HTMLImageElement(nodeInfo);
 
   if (aWidth.WasPassed()) {
     img->SetWidth(aWidth.Value(), aError);
@@ -1195,7 +1195,7 @@ HTMLImageElement::TryCreateResponsiveSelector(nsIContent *aSourceNode,
 
 
   
-  RefPtr<ResponsiveImageSelector> sel = new ResponsiveImageSelector(aSourceNode);
+  nsRefPtr<ResponsiveImageSelector> sel = new ResponsiveImageSelector(aSourceNode);
   if (!sel->SetCandidatesFromSourceSet(srcset)) {
     
     return false;
@@ -1262,7 +1262,7 @@ HTMLImageElement::SelectSourceForTagWithAttrs(nsIDocument *aDocument,
   }
 
   
-  RefPtr<ResponsiveImageSelector> sel =
+  nsRefPtr<ResponsiveImageSelector> sel =
     new ResponsiveImageSelector(aDocument);
 
   sel->SetCandidatesFromSourceSet(aSrcsetAttr);

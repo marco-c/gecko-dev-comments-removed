@@ -45,7 +45,7 @@ private:
 
   
   
-  RefPtr<nsSHEntryShared> mShared;
+  nsRefPtr<nsSHEntryShared> mShared;
 
   
   nsCOMPtr<nsIURI> mURI;

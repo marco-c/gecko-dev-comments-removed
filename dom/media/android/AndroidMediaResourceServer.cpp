@@ -115,7 +115,7 @@ private:
 
   
   
-  RefPtr<AndroidMediaResourceServer> mServer;
+  nsRefPtr<AndroidMediaResourceServer> mServer;
 
   
   
@@ -179,7 +179,7 @@ ServeResourceEvent::GetMediaResource(nsCString const& aHTTPRequest)
   
   
   nsCString relative(url_start, url_end - url_start);
-  RefPtr<MediaResource> resource =
+  nsRefPtr<MediaResource> resource =
     mServer->GetResource(mServer->GetURLPrefix() + relative);
   return resource.forget();
 }
@@ -194,7 +194,7 @@ ServeResourceEvent::Run() {
 
   
   
-  RefPtr<MediaResource> resource = GetMediaResource(line);
+  nsRefPtr<MediaResource> resource = GetMediaResource(line);
   if (!resource) {
     const char* response_404 = "HTTP/1.1 404 Not Found\r\n"
                                "Content-Length: 0\r\n\r\n";
@@ -346,7 +346,7 @@ class ResourceSocketListener : public nsIServerSocketListener
 public:
   
   
-  RefPtr<AndroidMediaResourceServer> mServer;
+  nsRefPtr<AndroidMediaResourceServer> mServer;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSISERVERSOCKETLISTENER
@@ -422,7 +422,7 @@ already_AddRefed<AndroidMediaResourceServer>
 AndroidMediaResourceServer::Start()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<AndroidMediaResourceServer> server = new AndroidMediaResourceServer();
+  nsRefPtr<AndroidMediaResourceServer> server = new AndroidMediaResourceServer();
   server->Run();
   return server.forget();
 }
@@ -500,6 +500,6 @@ AndroidMediaResourceServer::GetResource(nsCString const& aUrl)
   ResourceMap::const_iterator it = mResources.find(aUrl);
   if (it == mResources.end()) return nullptr;
 
-  RefPtr<MediaResource> resource = it->second;
+  nsRefPtr<MediaResource> resource = it->second;
   return resource.forget();
 }

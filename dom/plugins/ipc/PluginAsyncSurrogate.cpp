@@ -137,7 +137,7 @@ PluginAsyncSurrogate::Create(PluginModuleParent* aParent, NPMIMEType aPluginType
                              NPP aInstance, uint16_t aMode, int16_t aArgc,
                              char* aArgn[], char* aArgv[])
 {
-  RefPtr<PluginAsyncSurrogate> surrogate(new PluginAsyncSurrogate(aParent));
+  nsRefPtr<PluginAsyncSurrogate> surrogate(new PluginAsyncSurrogate(aParent));
   if (!surrogate->Init(aPluginType, aInstance, aMode, aArgc, aArgn, aArgv)) {
     return false;
   }
@@ -316,7 +316,7 @@ PluginAsyncSurrogate::NPP_Destroy(NPP aInstance, NPSavedData** aSave)
   PluginModuleParent* module = rawSurrogate->GetParent();
   if (module && !module->IsInitialized()) {
     
-    RefPtr<PluginAsyncSurrogate> surrogate(dont_AddRef(rawSurrogate));
+    nsRefPtr<PluginAsyncSurrogate> surrogate(dont_AddRef(rawSurrogate));
     aInstance->pdata = nullptr;
     
     

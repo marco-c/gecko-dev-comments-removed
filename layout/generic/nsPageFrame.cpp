@@ -629,7 +629,7 @@ nsPageFrame::PaintHeaderFooter(nsRenderingContext& aRenderingContext,
   gfxContextAutoDisableSubpixelAntialiasing disable(aRenderingContext.ThebesContext(), aDisableSubpixelAA);
 
   
-  RefPtr<nsFontMetrics> fontMet;
+  nsRefPtr<nsFontMetrics> fontMet;
   pc->DeviceContext()->GetMetricsFor(mPD->mHeadFootFont, nullptr, false,
                                      gfxFont::eHorizontal,
                                      pc->GetUserFontSet(),

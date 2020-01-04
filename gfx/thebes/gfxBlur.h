@@ -10,7 +10,7 @@
 #include "nsSize.h"
 #include "nsAutoPtr.h"
 #include "gfxPoint.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/UniquePtr.h"
 
 class gfxContext;
@@ -177,7 +177,7 @@ protected:
     
 
 
-    RefPtr<gfxContext> mContext;
+    nsRefPtr<gfxContext> mContext;
 
     
 

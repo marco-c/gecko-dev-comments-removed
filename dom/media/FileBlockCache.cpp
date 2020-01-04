@@ -218,7 +218,7 @@ nsresult FileBlockCache::Run()
     
     
     int32_t blockIndex = mChangeIndexList.PopFront();
-    RefPtr<BlockChange> change = mBlockChanges[blockIndex];
+    nsRefPtr<BlockChange> change = mBlockChanges[blockIndex];
     MOZ_ASSERT(change,
                "Change index list should only contain entries for blocks "
                "with changes");
@@ -265,7 +265,7 @@ nsresult FileBlockCache::Read(int64_t aOffset,
     
     
     int32_t bytesRead = 0;
-    RefPtr<BlockChange> change = mBlockChanges[blockIndex];
+    nsRefPtr<BlockChange> change = mBlockChanges[blockIndex];
     if (change && change->IsWrite()) {
       
       const uint8_t* blockData = change->mData.get();

@@ -88,7 +88,7 @@ ImageLayerComposite::RenderLayer(const IntRect& aClipRect)
 
 #ifdef MOZ_DUMP_PAINTING
   if (gfxUtils::sDumpCompositorTextures) {
-    RefPtr<gfx::DataSourceSurface> surf = mImageHost->GetAsSurface();
+    nsRefPtr<gfx::DataSourceSurface> surf = mImageHost->GetAsSurface();
     WriteSnapshotToDumpFile(this, surf);
   }
 #endif
@@ -166,7 +166,7 @@ ImageLayerComposite::CleanupResources()
 gfx::Filter
 ImageLayerComposite::GetEffectFilter()
 {
-  return mFilter;
+  return gfx::ToFilter(mFilter);
 }
 
 void

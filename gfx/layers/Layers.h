@@ -13,6 +13,7 @@
 #include "Units.h"                      
 #include "gfxContext.h"
 #include "gfxTypes.h"
+#include "GraphicsFilter.h"             
 #include "gfxPoint.h"                   
 #include "gfxRect.h"                    
 #include "gfx2DGlue.h"
@@ -20,7 +21,7 @@
 #include "mozilla/DebugOnly.h"          
 #include "mozilla/EventForwards.h"      
 #include "mozilla/Maybe.h"              
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/StyleAnimationValue.h" 
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/UniquePtr.h"          
@@ -2371,7 +2372,7 @@ public:
 
 
 
-  void SetFilter(gfx::Filter aFilter)
+  void SetFilter(GraphicsFilter aFilter)
   {
     if (mFilter != aFilter) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Filter", this));
@@ -2379,7 +2380,7 @@ public:
       Mutated();
     }
   }
-  gfx::Filter GetFilter() const { return mFilter; }
+  GraphicsFilter GetFilter() const { return mFilter; }
 
   MOZ_LAYER_DECL_NAME("CanvasLayer", TYPE_CANVAS)
 
@@ -2403,7 +2404,7 @@ protected:
     , mPreTransCallbackData(nullptr)
     , mPostTransCallback(nullptr)
     , mPostTransCallbackData(nullptr)
-    , mFilter(gfx::Filter::GOOD)
+    , mFilter(GraphicsFilter::FILTER_GOOD)
     , mDirty(false)
   {}
 
@@ -2426,7 +2427,7 @@ protected:
   void* mPreTransCallbackData;
   DidTransactionCallback mPostTransCallback;
   void* mPostTransCallbackData;
-  gfx::Filter mFilter;
+  GraphicsFilter mFilter;
 
 private:
   

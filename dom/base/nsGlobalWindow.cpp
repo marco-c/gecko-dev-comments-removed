@@ -7252,9 +7252,11 @@ nsGlobalWindow::FocusOuter(ErrorResult& aError)
     }
     return;
   }
-
+  if (nsCOMPtr<nsITabChild> child = do_GetInterface(mDocShell)) {
+    child->SendRequestFocus(canFocus);
+    return;
+  }
   if (canFocus) {
-    
     
     
     aError = fm->SetActiveWindow(this);
@@ -13376,11 +13378,9 @@ nsGlobalWindow::RestoreWindowState(nsISupports *aState)
 
 void
 nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
-                                bool aFreezeChildren,
-                                bool aFreezeWorkers)
+                                bool aFreezeChildren)
 {
-  FORWARD_TO_INNER_VOID(SuspendTimeouts,
-                        (aIncrease, aFreezeChildren, aFreezeWorkers));
+  FORWARD_TO_INNER_VOID(SuspendTimeouts, (aIncrease, aFreezeChildren));
 
   bool suspended = (mTimeoutsSuspendDepth != 0);
   mTimeoutsSuspendDepth += aIncrease;
@@ -13394,11 +13394,7 @@ nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
     DisableGamepadUpdates();
 
     
-    if (aFreezeWorkers) {
-      mozilla::dom::workers::FreezeWorkersForWindow(this);
-    } else {
-      mozilla::dom::workers::SuspendWorkersForWindow(this);
-    }
+    mozilla::dom::workers::FreezeWorkersForWindow(this);
 
     TimeStamp now = TimeStamp::Now();
     for (nsTimeout *t = mTimeouts.getFirst(); t; t = t->getNext()) {
@@ -13454,7 +13450,7 @@ nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
           continue;
         }
 
-        win->SuspendTimeouts(aIncrease, aFreezeChildren, aFreezeWorkers);
+        win->SuspendTimeouts(aIncrease, aFreezeChildren);
 
         if (inner && aFreezeChildren) {
           inner->Freeze();
@@ -13465,10 +13461,9 @@ nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
 }
 
 nsresult
-nsGlobalWindow::ResumeTimeouts(bool aThawChildren, bool aThawWorkers)
+nsGlobalWindow::ResumeTimeouts(bool aThawChildren)
 {
-  FORWARD_TO_INNER(ResumeTimeouts, (aThawChildren, aThawWorkers),
-                   NS_ERROR_NOT_INITIALIZED);
+  FORWARD_TO_INNER(ResumeTimeouts, (), NS_ERROR_NOT_INITIALIZED);
 
   NS_ASSERTION(mTimeoutsSuspendDepth, "Mismatched calls to ResumeTimeouts!");
   --mTimeoutsSuspendDepth;
@@ -13490,11 +13485,7 @@ nsGlobalWindow::ResumeTimeouts(bool aThawChildren, bool aThawWorkers)
     }
 
     
-    if (aThawWorkers) {
-      mozilla::dom::workers::ThawWorkersForWindow(this);
-    } else {
-      mozilla::dom::workers::ResumeWorkersForWindow(this);
-    }
+    mozilla::dom::workers::ThawWorkersForWindow(this);
 
     
     
@@ -13573,7 +13564,7 @@ nsGlobalWindow::ResumeTimeouts(bool aThawChildren, bool aThawWorkers)
           inner->Thaw();
         }
 
-        rv = win->ResumeTimeouts(aThawChildren, aThawWorkers);
+        rv = win->ResumeTimeouts(aThawChildren);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }

@@ -93,9 +93,9 @@ protected:
   
   
   Monitor mMonitor;
-  RefPtr<layers::Image> mImage;
+  nsRefPtr<layers::Image> mImage;
 
-  RefPtr<layers::ImageContainer> mImageContainer;
+  nsRefPtr<layers::ImageContainer> mImageContainer;
 
   MediaEnginePrefs mOpts;
   int mCb;
@@ -175,9 +175,9 @@ public:
   {}
 
   virtual void EnumerateVideoDevices(dom::MediaSourceEnum,
-                                     nsTArray<RefPtr<MediaEngineVideoSource> >*) override;
+                                     nsTArray<nsRefPtr<MediaEngineVideoSource> >*) override;
   virtual void EnumerateAudioDevices(dom::MediaSourceEnum,
-                                     nsTArray<RefPtr<MediaEngineAudioSource> >*) override;
+                                     nsTArray<nsRefPtr<MediaEngineAudioSource> >*) override;
   virtual void Shutdown() override {
     MutexAutoLock lock(mMutex);
 
@@ -196,8 +196,8 @@ private:
   Mutex mMutex;
   
 
-  nsTArray<RefPtr<MediaEngineVideoSource> > mVSources;
-  nsTArray<RefPtr<MediaEngineAudioSource> > mASources;
+  nsTArray<nsRefPtr<MediaEngineVideoSource> > mVSources;
+  nsTArray<nsRefPtr<MediaEngineAudioSource> > mASources;
 };
 
 } 

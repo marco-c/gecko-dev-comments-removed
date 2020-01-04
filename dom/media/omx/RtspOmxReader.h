@@ -48,7 +48,7 @@ public:
   }
 
   
-  virtual RefPtr<SeekPromise>
+  virtual nsRefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aEndTime) final override;
 
   
@@ -66,7 +66,7 @@ public:
 
   virtual void SetIdle() override;
 
-  virtual RefPtr<MediaDecoderReader::MetadataPromise> AsyncReadMetadata()
+  virtual nsRefPtr<MediaDecoderReader::MetadataPromise> AsyncReadMetadata()
     override;
 
   virtual void HandleResourceAllocated() override;

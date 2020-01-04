@@ -81,7 +81,7 @@ private:
 
   Class* mInstance;
   Callback mCallback;
-  Tuple<RefPtr<Args> ...> mArgs;
+  Tuple<nsRefPtr<Args> ...> mArgs;
 };
 
 
@@ -161,7 +161,7 @@ public:
       return;
     }
 
-    RefPtr<Notification> notification =
+    nsRefPtr<Notification> notification =
       new TNotification<Class, Arg>(aInstance, aMethod, aArg);
     if (notification && mNotifications.AppendElement(notification))
       ScheduleProcessing();
@@ -177,7 +177,7 @@ public:
   inline void ScheduleNotification(Class* aInstance,
                                    typename TNotification<Class>::Callback aMethod)
   {
-    RefPtr<Notification> notification =
+    nsRefPtr<Notification> notification =
       new TNotification<Class>(aInstance, aMethod);
     if (notification && mNotifications.AppendElement(notification))
       ScheduleProcessing();
@@ -227,7 +227,7 @@ private:
   
 
 
-  nsTArray<RefPtr<DocAccessible> > mHangingChildDocuments;
+  nsTArray<nsRefPtr<DocAccessible> > mHangingChildDocuments;
 
   
 
@@ -257,7 +257,7 @@ private:
     DocAccessible* mDocument;
 
     
-    RefPtr<Accessible> mContainer;
+    nsRefPtr<Accessible> mContainer;
 
     
     nsTArray<nsCOMPtr<nsIContent> > mInsertedContent;
@@ -267,7 +267,7 @@ private:
 
 
 
-  nsTArray<RefPtr<ContentInsertion> > mContentInsertions;
+  nsTArray<nsRefPtr<ContentInsertion> > mContentInsertions;
 
   template<class T>
   class nsCOMPtrHashKey : public PLDHashEntryHdr
@@ -302,7 +302,7 @@ private:
 
 
 
-  nsTArray<RefPtr<Notification> > mNotifications;
+  nsTArray<nsRefPtr<Notification> > mNotifications;
 };
 
 } 

@@ -295,12 +295,6 @@ FreezeWorkersForWindow(nsPIDOMWindow* aWindow);
 void
 ThawWorkersForWindow(nsPIDOMWindow* aWindow);
 
-void
-SuspendWorkersForWindow(nsPIDOMWindow* aWindow);
-
-void
-ResumeWorkersForWindow(nsPIDOMWindow* aWindow);
-
 class WorkerTask
 {
 protected:

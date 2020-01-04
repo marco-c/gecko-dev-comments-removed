@@ -99,7 +99,7 @@ public:
 
 
   nsresult BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                           nsTArray<RefPtr<SourceSurface>>& aInputImages);
+                           nsTArray<nsRefPtr<SourceSurface>>& aInputImages);
 
   
 

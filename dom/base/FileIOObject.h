@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef FileIOObject_h__
 #define FileIOObject_h__
@@ -25,7 +25,7 @@ namespace dom {
 
 extern const uint64_t kUnknownSize;
 
-// A common base class for FileReader and FileSaver
+
 
 class FileIOObject : public DOMEventTargetHelper,
                      public nsIInputStreamCallback,
@@ -36,7 +36,7 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // Common methods
+  
   void Abort(ErrorResult& aRv);
   uint16_t ReadyState() const
   {
@@ -67,7 +67,7 @@ public:
 protected:
   virtual ~FileIOObject();
 
-  // Implemented by the derived class to do whatever it needs to do for abort
+  
   virtual void DoAbort(nsAString& aEvent) = 0;
 
   virtual nsresult DoReadData(nsIAsyncInputStream* aStream, uint64_t aCount) = 0;
@@ -89,7 +89,7 @@ protected:
 
   nsCOMPtr<nsIAsyncInputStream> mAsyncStream;
 
-  RefPtr<DOMError> mError;
+  nsRefPtr<DOMError> mError;
 
   uint16_t mReadyState;
 
@@ -97,7 +97,7 @@ protected:
   uint64_t mTransferred;
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 
 
 #endif

@@ -143,11 +143,11 @@ public:
   Http2Session *Session() { return mSession; }
 
   static nsresult MakeOriginURL(const nsACString &origin,
-                                RefPtr<nsStandardURL> &url);
+                                nsRefPtr<nsStandardURL> &url);
 
   static nsresult MakeOriginURL(const nsACString &scheme,
                                 const nsACString &origin,
-                                RefPtr<nsStandardURL> &url);
+                                nsRefPtr<nsStandardURL> &url);
 
 protected:
   static void CreatePushHashKey(const nsCString &scheme,
@@ -216,7 +216,7 @@ private:
   
   
   
-  RefPtr<nsAHttpTransaction> mTransaction;
+  nsRefPtr<nsAHttpTransaction> mTransaction;
 
   
   nsISocketTransport         *mSocketTransport;

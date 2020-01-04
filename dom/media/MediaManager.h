@@ -474,7 +474,6 @@ public:
   static bool IsPrivateBrowsing(nsPIDOMWindow *window);
 private:
   typedef media::Pledge<SourceSet*, dom::MediaStreamError*> PledgeSourceSet;
-  typedef media::Pledge<const char*, dom::MediaStreamError*> PledgeChar;
 
   static bool IsPrivileged();
   static bool IsLoop(nsIURI* aDocURI);
@@ -494,10 +493,6 @@ private:
                        dom::MediaSourceEnum aVideoSrcType,
                        dom::MediaSourceEnum aAudioSrcType,
                        bool aFake = false, bool aFakeTracks = false);
-  already_AddRefed<PledgeChar>
-  SelectSettings(
-      dom::MediaStreamConstraints& aConstraints,
-      nsRefPtr<media::Refcountable<ScopedDeletePtr<SourceSet>>>& aSources);
 
   StreamListeners* AddWindowID(uint64_t aWindowId);
   WindowTable *GetActiveWindows() {
@@ -533,12 +528,11 @@ private:
 
   Mutex mMutex;
   
-  RefPtr<MediaEngine> mBackend;
+  nsRefPtr<MediaEngine> mBackend;
 
   static StaticRefPtr<MediaManager> sSingleton;
 
   media::CoatCheck<PledgeSourceSet> mOutstandingPledges;
-  media::CoatCheck<PledgeChar> mOutstandingCharPledges;
   media::CoatCheck<GetUserMediaCallbackMediaStreamListener::PledgeVoid> mOutstandingVoidPledges;
 #if defined(MOZ_B2G_CAMERA) && defined(MOZ_WIDGET_GONK)
   nsRefPtr<nsDOMCameraManager> mCameraManager;

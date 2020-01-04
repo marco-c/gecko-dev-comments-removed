@@ -35,7 +35,7 @@ public:
   
   
   
-  nsresult GetFirstFragment(nsTArray<RefPtr<EncodedFrame>>& aFragment,
+  nsresult GetFirstFragment(nsTArray<nsRefPtr<EncodedFrame>>& aFragment,
                             bool aFlush = false);
 
   
@@ -107,12 +107,12 @@ private:
 
   
   
-  nsTArray<nsTArray<RefPtr<EncodedFrame>>> mFragArray;
+  nsTArray<nsTArray<nsRefPtr<EncodedFrame>>> mFragArray;
 
   
   
   
-  RefPtr<EncodedFrame> mCSDFrame;
+  nsRefPtr<EncodedFrame> mCSDFrame;
 
   
   bool mEOS;
@@ -190,8 +190,8 @@ public:
   uint32_t GetMuxingType() { return mMuxingType; }
 
   nsresult SetMetadata(TrackMetadataBase* aTrackMeta);
-  nsresult GetAudioMetadata(RefPtr<AudioTrackMetadata>& aAudMeta);
-  nsresult GetVideoMetadata(RefPtr<VideoTrackMetadata>& aVidMeta);
+  nsresult GetAudioMetadata(nsRefPtr<AudioTrackMetadata>& aAudMeta);
+  nsresult GetVideoMetadata(nsRefPtr<VideoTrackMetadata>& aVidMeta);
 
   
   
@@ -219,7 +219,7 @@ private:
   uint32_t mFragNum;
 
   
-  nsTArray<RefPtr<TrackMetadataBase>> mMetaArray;
+  nsTArray<nsRefPtr<TrackMetadataBase>> mMetaArray;
 
   
   

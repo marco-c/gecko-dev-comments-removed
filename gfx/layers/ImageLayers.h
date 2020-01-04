@@ -7,6 +7,7 @@
 #define GFX_IMAGELAYER_H
 
 #include "Layers.h"                     
+#include "GraphicsFilter.h"             
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/layers/LayersTypes.h"
@@ -38,7 +39,7 @@ public:
 
 
 
-  void SetFilter(gfx::Filter aFilter)
+  void SetFilter(GraphicsFilter aFilter)
   {
     if (mFilter != aFilter) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Filter", this));
@@ -62,7 +63,7 @@ public:
 
 
   ImageContainer* GetContainer() { return mContainer; }
-  gfx::Filter GetFilter() { return mFilter; }
+  GraphicsFilter GetFilter() { return mFilter; }
   const gfx::IntSize& GetScaleToSize() { return mScaleToSize; }
   ScaleMode GetScaleMode() { return mScaleMode; }
 
@@ -94,7 +95,7 @@ protected:
   virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
 
   nsRefPtr<ImageContainer> mContainer;
-  gfx::Filter mFilter;
+  GraphicsFilter mFilter;
   gfx::IntSize mScaleToSize;
   ScaleMode mScaleMode;
   bool mDisallowBigImage;

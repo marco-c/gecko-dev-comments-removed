@@ -421,7 +421,7 @@ Preferences::GetInstanceForService()
   
   
   
-  RefPtr<AddPreferencesMemoryReporterRunnable> runnable =
+  nsRefPtr<AddPreferencesMemoryReporterRunnable> runnable =
     new AddPreferencesMemoryReporterRunnable();
   NS_DispatchToMainThread(runnable);
 
@@ -745,7 +745,7 @@ Preferences::GetBranch(const char *aPrefRoot, nsIPrefBranch **_retval)
 
   if ((nullptr != aPrefRoot) && (*aPrefRoot != '\0')) {
     
-    RefPtr<nsPrefBranch> prefBranch = new nsPrefBranch(aPrefRoot, false);
+    nsRefPtr<nsPrefBranch> prefBranch = new nsPrefBranch(aPrefRoot, false);
     prefBranch.forget(_retval);
     rv = NS_OK;
   } else {
@@ -767,7 +767,7 @@ Preferences::GetDefaultBranch(const char *aPrefRoot, nsIPrefBranch **_retval)
   }
 
   
-  RefPtr<nsPrefBranch> prefBranch = new nsPrefBranch(aPrefRoot, true);
+  nsRefPtr<nsPrefBranch> prefBranch = new nsPrefBranch(aPrefRoot, true);
   if (!prefBranch)
     return NS_ERROR_OUT_OF_MEMORY;
 
@@ -1233,7 +1233,7 @@ static nsresult pref_InitInitialObjects()
   const char *entryName;
   uint16_t entryNameLen;
 
-  RefPtr<nsZipArchive> jarReader = mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
+  nsRefPtr<nsZipArchive> jarReader = mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
   if (jarReader) {
     
     rv = pref_ReadPrefFromJar(jarReader, "greprefs.js");
@@ -1298,7 +1298,7 @@ static nsresult pref_InitInitialObjects()
 
   
   
-  RefPtr<nsZipArchive> appJarReader = mozilla::Omnijar::GetReader(mozilla::Omnijar::APP);
+  nsRefPtr<nsZipArchive> appJarReader = mozilla::Omnijar::GetReader(mozilla::Omnijar::APP);
   
   
   if (!appJarReader)
@@ -1671,7 +1671,7 @@ Preferences::RegisterCallback(PrefChangedFunc aCallback,
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
   ValueObserverHashKey hashKey(aPref, aCallback);
-  RefPtr<ValueObserver> observer;
+  nsRefPtr<ValueObserver> observer;
   gObserverTable->Get(&hashKey, getter_AddRefs(observer));
   if (observer) {
     observer->AppendClosure(aClosure);
@@ -1711,7 +1711,7 @@ Preferences::UnregisterCallback(PrefChangedFunc aCallback,
   NS_ENSURE_TRUE(sPreferences, NS_ERROR_NOT_AVAILABLE);
 
   ValueObserverHashKey hashKey(aPref, aCallback);
-  RefPtr<ValueObserver> observer;
+  nsRefPtr<ValueObserver> observer;
   gObserverTable->Get(&hashKey, getter_AddRefs(observer));
   if (!observer) {
     return NS_OK;

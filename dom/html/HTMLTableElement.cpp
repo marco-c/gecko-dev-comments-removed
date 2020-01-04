@@ -61,7 +61,7 @@ protected:
 
   
   HTMLTableElement* mParent;
-  RefPtr<nsContentList> mOrphanRows;  
+  nsRefPtr<nsContentList> mOrphanRows;  
 };
 
 
@@ -366,10 +366,10 @@ HTMLTableElement::TBodies()
 already_AddRefed<nsGenericHTMLElement>
 HTMLTableElement::CreateTHead()
 {
-  RefPtr<nsGenericHTMLElement> head = GetTHead();
+  nsRefPtr<nsGenericHTMLElement> head = GetTHead();
   if (!head) {
     
-    RefPtr<mozilla::dom::NodeInfo> nodeInfo;
+    nsRefPtr<mozilla::dom::NodeInfo> nodeInfo;
     nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::thead,
                                 getter_AddRefs(nodeInfo));
 
@@ -398,10 +398,10 @@ HTMLTableElement::DeleteTHead()
 already_AddRefed<nsGenericHTMLElement>
 HTMLTableElement::CreateTFoot()
 {
-  RefPtr<nsGenericHTMLElement> foot = GetTFoot();
+  nsRefPtr<nsGenericHTMLElement> foot = GetTFoot();
   if (!foot) {
     
-    RefPtr<mozilla::dom::NodeInfo> nodeInfo;
+    nsRefPtr<mozilla::dom::NodeInfo> nodeInfo;
     nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tfoot,
                                 getter_AddRefs(nodeInfo));
 
@@ -429,10 +429,10 @@ HTMLTableElement::DeleteTFoot()
 already_AddRefed<nsGenericHTMLElement>
 HTMLTableElement::CreateCaption()
 {
-  RefPtr<nsGenericHTMLElement> caption = GetCaption();
+  nsRefPtr<nsGenericHTMLElement> caption = GetCaption();
   if (!caption) {
     
-    RefPtr<mozilla::dom::NodeInfo> nodeInfo;
+    nsRefPtr<mozilla::dom::NodeInfo> nodeInfo;
     nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::caption,
                                 getter_AddRefs(nodeInfo));
 
@@ -460,13 +460,13 @@ HTMLTableElement::DeleteCaption()
 already_AddRefed<nsGenericHTMLElement>
 HTMLTableElement::CreateTBody()
 {
-  RefPtr<mozilla::dom::NodeInfo> nodeInfo =
+  nsRefPtr<mozilla::dom::NodeInfo> nodeInfo =
     OwnerDoc()->NodeInfoManager()->GetNodeInfo(nsGkAtoms::tbody, nullptr,
                                                kNameSpaceID_XHTML,
                                                nsIDOMNode::ELEMENT_NODE);
   MOZ_ASSERT(nodeInfo);
 
-  RefPtr<nsGenericHTMLElement> newBody =
+  nsRefPtr<nsGenericHTMLElement> newBody =
     NS_NewHTMLTableSectionElement(nodeInfo.forget());
   MOZ_ASSERT(newBody);
 
@@ -512,7 +512,7 @@ HTMLTableElement::InsertRow(int32_t aIndex, ErrorResult& aError)
   
   uint32_t refIndex = (uint32_t)aIndex;
 
-  RefPtr<nsGenericHTMLElement> newRow;
+  nsRefPtr<nsGenericHTMLElement> newRow;
   if (rowCount > 0) {
     if (refIndex == rowCount || aIndex == -1) {
       
@@ -525,7 +525,7 @@ HTMLTableElement::InsertRow(int32_t aIndex, ErrorResult& aError)
     nsINode* parent = refRow->GetParentNode();
 
     
-    RefPtr<mozilla::dom::NodeInfo> nodeInfo;
+    nsRefPtr<mozilla::dom::NodeInfo> nodeInfo;
     nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tr,
                                 getter_AddRefs(nodeInfo));
 
@@ -559,7 +559,7 @@ HTMLTableElement::InsertRow(int32_t aIndex, ErrorResult& aError)
     }
 
     if (!rowGroup) { 
-      RefPtr<mozilla::dom::NodeInfo> nodeInfo;
+      nsRefPtr<mozilla::dom::NodeInfo> nodeInfo;
       nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tbody,
                                   getter_AddRefs(nodeInfo));
 
@@ -573,7 +573,7 @@ HTMLTableElement::InsertRow(int32_t aIndex, ErrorResult& aError)
     }
 
     if (rowGroup) {
-      RefPtr<mozilla::dom::NodeInfo> nodeInfo;
+      nsRefPtr<mozilla::dom::NodeInfo> nodeInfo;
       nsContentUtils::NameChanged(mNodeInfo, nsGkAtoms::tr,
                                   getter_AddRefs(nodeInfo));
 
@@ -897,11 +897,11 @@ HTMLTableElement::BuildInheritedAttributes()
   nsIDocument *document = GetComposedDoc();
   nsHTMLStyleSheet* sheet = document ?
                               document->GetAttributeStyleSheet() : nullptr;
-  RefPtr<nsMappedAttributes> newAttrs;
+  nsRefPtr<nsMappedAttributes> newAttrs;
   if (sheet) {
     const nsAttrValue* value = mAttrsAndChildren.GetAttr(nsGkAtoms::cellpadding);
     if (value) {
-      RefPtr<nsMappedAttributes> modifiableMapped = new
+      nsRefPtr<nsMappedAttributes> modifiableMapped = new
       nsMappedAttributes(sheet, MapInheritedTableAttributesIntoRule);
 
       if (modifiableMapped) {

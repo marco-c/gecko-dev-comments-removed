@@ -90,7 +90,7 @@ protected:
     nsresult AddText(const char16_t* aText, int32_t aLength);
 
 
-    RefPtr<nsNodeInfoManager> mNodeInfoManager;
+    nsRefPtr<nsNodeInfoManager> mNodeInfoManager;
 
     nsresult NormalizeAttributeString(const char16_t *aExpatName,
                                       nsAttrName &aName);
@@ -108,7 +108,7 @@ protected:
     class ContextStack {
     protected:
         struct Entry {
-            RefPtr<nsXULPrototypeNode> mNode;
+            nsRefPtr<nsXULPrototypeNode> mNode;
             
             nsPrototypeArray    mChildren;
             State               mState;
@@ -128,7 +128,7 @@ protected:
         nsresult Push(nsXULPrototypeNode* aNode, State aState);
         nsresult Pop(State* aState);
 
-        nsresult GetTopNode(RefPtr<nsXULPrototypeNode>& aNode);
+        nsresult GetTopNode(nsRefPtr<nsXULPrototypeNode>& aNode);
         nsresult GetTopChildren(nsPrototypeArray** aChildren);
 
         void Clear();
@@ -142,9 +142,9 @@ protected:
     nsWeakPtr              mDocument;             
     nsCOMPtr<nsIURI>       mDocumentURL;          
 
-    RefPtr<nsXULPrototypeDocument> mPrototype;  
+    nsRefPtr<nsXULPrototypeDocument> mPrototype;  
 
-    RefPtr<nsParserBase> mParser;
+    nsRefPtr<nsParserBase> mParser;
     nsCOMPtr<nsIScriptSecurityManager> mSecMan;
 };
 

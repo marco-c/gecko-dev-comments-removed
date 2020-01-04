@@ -9,7 +9,7 @@
 #include "ImageWrapper.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 
 namespace mozilla {
 namespace image {
@@ -50,7 +50,7 @@ public:
                                const nsIntSize& aSize,
                                const ImageRegion& aRegion,
                                uint32_t aWhichFrame,
-                               gfx::Filter aFilter,
+                               GraphicsFilter aFilter,
                                const Maybe<SVGImageContext>& aSVGContext,
                                uint32_t aFlags) override;
   NS_IMETHOD RequestDiscard() override;
@@ -59,7 +59,7 @@ public:
     override;
   nsIntSize OptimalImageSizeForDest(const gfxSize& aDest,
                                     uint32_t aWhichFrame,
-                                    gfx::Filter aFilter,
+                                    GraphicsFilter aFilter,
                                     uint32_t aFlags) override;
 
 protected:
@@ -68,7 +68,7 @@ protected:
   virtual ~ClippedImage();
 
 private:
-  Pair<DrawResult, RefPtr<SourceSurface>>
+  Pair<DrawResult, nsRefPtr<SourceSurface>>
     GetFrameInternal(const nsIntSize& aSize,
                      const Maybe<SVGImageContext>& aSVGContext,
                      uint32_t aWhichFrame,
@@ -78,7 +78,7 @@ private:
                             const nsIntSize& aSize,
                             const ImageRegion& aRegion,
                             uint32_t aWhichFrame,
-                            gfx::Filter aFilter,
+                            GraphicsFilter aFilter,
                             const Maybe<SVGImageContext>& aSVGContext,
                             uint32_t aFlags);
 

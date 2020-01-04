@@ -145,9 +145,9 @@ private:
 
 
 
-  RefPtr<mozilla::places::Database> mDB;
+  nsRefPtr<mozilla::places::Database> mDB;
 
-  RefPtr<ConcurrentStatementsHolder> mConcurrentStatementsHolder;
+  nsRefPtr<ConcurrentStatementsHolder> mConcurrentStatementsHolder;
 
   
 

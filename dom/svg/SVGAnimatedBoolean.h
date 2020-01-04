@@ -36,7 +36,7 @@ protected:
   ~SVGAnimatedBoolean();
 
   nsSVGBoolean* mVal; 
-  RefPtr<nsSVGElement> mSVGElement;
+  nsRefPtr<nsSVGElement> mSVGElement;
 };
 
 } 

@@ -109,7 +109,7 @@ CacheChild::StartDestroy()
     return;
   }
 
-  RefPtr<Cache> listener = mListener;
+  nsRefPtr<Cache> listener = mListener;
 
   
   
@@ -131,7 +131,7 @@ void
 CacheChild::ActorDestroy(ActorDestroyReason aReason)
 {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
-  RefPtr<Cache> listener = mListener;
+  nsRefPtr<Cache> listener = mListener;
   if (listener) {
     listener->DestroyInternal(this);
     

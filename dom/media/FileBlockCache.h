@@ -195,7 +195,7 @@ private:
   
   
   
-  nsTArray< RefPtr<BlockChange> > mBlockChanges;
+  nsTArray< nsRefPtr<BlockChange> > mBlockChanges;
   
   
   

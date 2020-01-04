@@ -430,12 +430,6 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
 
   
   
-  
-  const nsLoadFlags bypassFlag = mRequest->SkipServiceWorker() ?
-                                 nsIChannel::LOAD_BYPASS_SERVICE_WORKER : 0;
-
-  
-  
   MOZ_ASSERT(mLoadGroup);
   nsCOMPtr<nsIChannel> chan;
   rv = NS_NewChannel(getter_AddRefs(chan),
@@ -445,7 +439,7 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
                      mRequest->ContentPolicyType(),
                      mLoadGroup,
                      nullptr, 
-                     nsIRequest::LOAD_NORMAL | credentialsFlag | bypassFlag,
+                     nsIRequest::LOAD_NORMAL | credentialsFlag,
                      ios);
   mLoadGroup = nullptr;
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -578,6 +572,21 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return FailWithNetworkError();
       }
+    }
+  }
+
+  
+  
+  
+  if (mRequest->SkipServiceWorker()) {
+    if (httpChan) {
+      nsCOMPtr<nsIHttpChannelInternal> internalChan = do_QueryInterface(httpChan);
+      internalChan->ForceNoIntercept();
+    } else {
+      nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(chan);
+      
+      MOZ_ASSERT(jarChannel);
+      jarChannel->ForceNoIntercept();
     }
   }
 

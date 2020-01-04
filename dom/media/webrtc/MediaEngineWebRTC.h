@@ -215,7 +215,7 @@ private:
   
   
   Monitor mMonitor;
-  nsTArray<RefPtr<SourceMediaStream>> mSources; 
+  nsTArray<nsRefPtr<SourceMediaStream>> mSources; 
   nsCOMPtr<nsIThread> mThread;
   int mCapIndex;
   int mChannel;
@@ -246,9 +246,9 @@ public:
   void Shutdown() override;
 
   virtual void EnumerateVideoDevices(dom::MediaSourceEnum,
-                                     nsTArray<RefPtr<MediaEngineVideoSource>>*) override;
+                                     nsTArray<nsRefPtr<MediaEngineVideoSource>>*) override;
   virtual void EnumerateAudioDevices(dom::MediaSourceEnum,
-                                     nsTArray<RefPtr<MediaEngineAudioSource>>*) override;
+                                     nsTArray<nsRefPtr<MediaEngineAudioSource>>*) override;
 private:
   ~MediaEngineWebRTC() {
     Shutdown();

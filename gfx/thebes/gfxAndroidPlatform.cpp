@@ -125,7 +125,7 @@ already_AddRefed<gfxASurface>
 gfxAndroidPlatform::CreateOffscreenSurface(const IntSize& aSize,
                                            gfxImageFormat aFormat)
 {
-    RefPtr<gfxASurface> newSurface;
+    nsRefPtr<gfxASurface> newSurface;
     newSurface = new gfxImageSurface(aSize, aFormat);
 
     return newSurface.forget();
@@ -499,7 +499,7 @@ gfxAndroidPlatform::CreateHardwareVsyncSource()
     
     
 #if defined(MOZ_WIDGET_GONK) && (ANDROID_VERSION == 19 || ANDROID_VERSION >= 21)
-    RefPtr<GonkVsyncSource> vsyncSource = new GonkVsyncSource();
+    nsRefPtr<GonkVsyncSource> vsyncSource = new GonkVsyncSource();
     VsyncSource::Display& display = vsyncSource->GetGlobalDisplay();
     display.EnableVsync();
     if (!display.IsVsyncEnabled()) {

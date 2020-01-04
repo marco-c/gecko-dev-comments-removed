@@ -18,8 +18,10 @@
 #include "GLUploadHelpers.h"
 #include "Layers.h"                     
 #include "LayerScope.h"                 
+#include "gfx2DGlue.h"                  
 #include "gfxCrashReporterUtils.h"      
 #include "gfxMatrix.h"                  
+#include "GraphicsFilter.h"             
 #include "gfxPlatform.h"                
 #include "gfxPrefs.h"                   
 #include "gfxRect.h"                    
@@ -225,7 +227,7 @@ CompositorOGL::DrawVRDistortion(const gfx::Rect& aRect,
   if (vrEffect->mRenderTarget)
     textureTarget = mFBOTextureTarget;
 
-  RefPtr<CompositingRenderTargetOGL> surface =
+  nsRefPtr<CompositingRenderTargetOGL> surface =
     static_cast<CompositingRenderTargetOGL*>(vrEffect->mRenderTarget.get());
 
   VRHMDInfo* hmdInfo = vrEffect->mHMD;

@@ -218,7 +218,7 @@ FocusManager::DispatchFocusEvent(DocAccessible* aDocument,
 {
   NS_PRECONDITION(aDocument, "No document for focused accessible!");
   if (aDocument) {
-    RefPtr<AccEvent> event =
+    nsRefPtr<AccEvent> event =
       new AccEvent(nsIAccessibleEvent::EVENT_FOCUS, aTarget,
                    eAutoDetect, AccEvent::eCoalesceOfSameType);
     aDocument->FireDelayedEvent(event);
@@ -331,7 +331,7 @@ FocusManager::ProcessFocusEvent(AccEvent* aEvent)
     if (ARIAMenubar != mActiveARIAMenubar) {
       
       if (mActiveARIAMenubar) {
-        RefPtr<AccEvent> menuEndEvent =
+        nsRefPtr<AccEvent> menuEndEvent =
           new AccEvent(nsIAccessibleEvent::EVENT_MENU_END, mActiveARIAMenubar,
                        aEvent->FromUserInput());
         nsEventShell::FireEvent(menuEndEvent);
@@ -341,7 +341,7 @@ FocusManager::ProcessFocusEvent(AccEvent* aEvent)
 
       
       if (mActiveARIAMenubar) {
-        RefPtr<AccEvent> menuStartEvent =
+        nsRefPtr<AccEvent> menuStartEvent =
           new AccEvent(nsIAccessibleEvent::EVENT_MENU_START,
                        mActiveARIAMenubar, aEvent->FromUserInput());
         nsEventShell::FireEvent(menuStartEvent);
@@ -349,7 +349,7 @@ FocusManager::ProcessFocusEvent(AccEvent* aEvent)
     }
   } else if (mActiveARIAMenubar) {
     
-    RefPtr<AccEvent> menuEndEvent =
+    nsRefPtr<AccEvent> menuEndEvent =
       new AccEvent(nsIAccessibleEvent::EVENT_MENU_END, mActiveARIAMenubar,
                    aEvent->FromUserInput());
     nsEventShell::FireEvent(menuEndEvent);
@@ -367,7 +367,7 @@ FocusManager::ProcessFocusEvent(AccEvent* aEvent)
   
   SelectionMgr()->ResetCaretOffset();
 
-  RefPtr<AccEvent> focusEvent =
+  nsRefPtr<AccEvent> focusEvent =
     new AccEvent(nsIAccessibleEvent::EVENT_FOCUS, target, aEvent->FromUserInput());
   nsEventShell::FireEvent(focusEvent);
 

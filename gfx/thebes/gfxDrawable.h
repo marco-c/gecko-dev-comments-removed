@@ -9,6 +9,7 @@
 #include "nsAutoPtr.h"
 #include "gfxRect.h"
 #include "gfxMatrix.h"
+#include "GraphicsFilter.h"
 #include "mozilla/gfx/2D.h"
 
 class gfxContext;
@@ -35,14 +36,14 @@ public:
     virtual bool Draw(gfxContext* aContext,
                         const gfxRect& aFillRect,
                         bool aRepeat,
-                        const mozilla::gfx::Filter& aFilter,
+                        const GraphicsFilter& aFilter,
                         gfxFloat aOpacity = 1.0,
                         const gfxMatrix& aTransform = gfxMatrix()) = 0;
     virtual bool DrawWithSamplingRect(gfxContext* aContext,
                                       const gfxRect& aFillRect,
                                       const gfxRect& aSamplingRect,
                                       bool aRepeat,
-                                      const mozilla::gfx::Filter& aFilter,
+                                      const GraphicsFilter& aFilter,
                                       gfxFloat aOpacity = 1.0)
     {
         return false;
@@ -70,14 +71,14 @@ public:
     virtual bool Draw(gfxContext* aContext,
                         const gfxRect& aFillRect,
                         bool aRepeat,
-                        const mozilla::gfx::Filter& aFilter,
+                        const GraphicsFilter& aFilter,
                         gfxFloat aOpacity = 1.0,
                         const gfxMatrix& aTransform = gfxMatrix());
     virtual bool DrawWithSamplingRect(gfxContext* aContext,
                                       const gfxRect& aFillRect,
                                       const gfxRect& aSamplingRect,
                                       bool aRepeat,
-                                      const mozilla::gfx::Filter& aFilter,
+                                      const GraphicsFilter& aFilter,
                                       gfxFloat aOpacity = 1.0);
     
 protected:
@@ -85,11 +86,11 @@ protected:
                       const gfxRect& aFillRect,
                       const mozilla::gfx::IntRect& aSamplingRect,
                       bool aRepeat,
-                      const mozilla::gfx::Filter& aFilter,
+                      const GraphicsFilter& aFilter,
                       gfxFloat aOpacity,
                       const gfxMatrix& aTransform = gfxMatrix());
 
-    mozilla::RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
+    nsRefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
     const gfxMatrix mTransform;
 };
 
@@ -112,9 +113,9 @@ public:
 
 
     virtual bool operator()(gfxContext* aContext,
-                            const gfxRect& aFillRect,
-                            const mozilla::gfx::Filter& aFilter,
-                            const gfxMatrix& aTransform = gfxMatrix()) = 0;
+                              const gfxRect& aFillRect,
+                              const GraphicsFilter& aFilter,
+                              const gfxMatrix& aTransform = gfxMatrix()) = 0;
 
 };
 
@@ -128,14 +129,14 @@ public:
     virtual ~gfxCallbackDrawable() {}
 
     virtual bool Draw(gfxContext* aContext,
-                      const gfxRect& aFillRect,
-                      bool aRepeat,
-                      const mozilla::gfx::Filter& aFilter,
-                      gfxFloat aOpacity = 1.0,
-                      const gfxMatrix& aTransform = gfxMatrix());
+                        const gfxRect& aFillRect,
+                        bool aRepeat,
+                        const GraphicsFilter& aFilter,
+                        gfxFloat aOpacity = 1.0,
+                        const gfxMatrix& aTransform = gfxMatrix());
 
 protected:
-    already_AddRefed<gfxSurfaceDrawable> MakeSurfaceDrawable(mozilla::gfx::Filter aFilter = mozilla::gfx::Filter::LINEAR);
+    already_AddRefed<gfxSurfaceDrawable> MakeSurfaceDrawable(const GraphicsFilter aFilter = GraphicsFilter::FILTER_FAST);
 
     nsRefPtr<gfxDrawingCallback> mCallback;
     nsRefPtr<gfxSurfaceDrawable> mSurfaceDrawable;
@@ -152,11 +153,11 @@ public:
     virtual ~gfxPatternDrawable();
 
     virtual bool Draw(gfxContext* aContext,
-                      const gfxRect& aFillRect,
-                      bool aRepeat,
-                      const mozilla::gfx::Filter& aFilter,
-                      gfxFloat aOpacity = 1.0,
-                      const gfxMatrix& aTransform = gfxMatrix());
+                        const gfxRect& aFillRect,
+                        bool aRepeat,
+                        const GraphicsFilter& aFilter,
+                        gfxFloat aOpacity = 1.0,
+                        const gfxMatrix& aTransform = gfxMatrix());
 
 protected:
     already_AddRefed<gfxCallbackDrawable> MakeCallbackDrawable();

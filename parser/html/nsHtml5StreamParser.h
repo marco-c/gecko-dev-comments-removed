@@ -435,7 +435,7 @@ class nsHtml5StreamParser : public nsICharsetDetectionObserver {
     
 
 
-    RefPtr<nsHtml5OwningUTF16Buffer> mFirstBuffer;
+    nsRefPtr<nsHtml5OwningUTF16Buffer> mFirstBuffer;
 
     
 
@@ -472,7 +472,7 @@ class nsHtml5StreamParser : public nsICharsetDetectionObserver {
     
 
 
-    RefPtr<nsHtml5Parser>       mOwner;
+    nsRefPtr<nsHtml5Parser>       mOwner;
 
     
 

@@ -326,7 +326,7 @@ private:
   
   
   
-  RefPtr<Database> mDatabase;
+  nsRefPtr<Database> mDatabase;
 
   
   
@@ -697,7 +697,7 @@ Database::Init()
   
   
   if (NS_FAILED(rv)) {
-    RefPtr<PlacesEvent> lockedEvent = new PlacesEvent(TOPIC_DATABASE_LOCKED);
+    nsRefPtr<PlacesEvent> lockedEvent = new PlacesEvent(TOPIC_DATABASE_LOCKED);
     (void)NS_DispatchToMainThread(lockedEvent);
     return rv;
   }
@@ -734,7 +734,7 @@ Database::Init()
   
   
   
-  RefPtr<PlacesEvent> completeEvent =
+  nsRefPtr<PlacesEvent> completeEvent =
     new PlacesEvent(TOPIC_PLACES_INIT_COMPLETE);
   rv = NS_DispatchToMainThread(completeEvent);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1928,7 +1928,7 @@ Database::Shutdown()
   mMainThreadStatements.FinalizeStatements();
   mMainThreadAsyncStatements.FinalizeStatements();
 
-  RefPtr< FinalizeStatementCacheProxy<mozIStorageStatement> > event =
+  nsRefPtr< FinalizeStatementCacheProxy<mozIStorageStatement> > event =
     new FinalizeStatementCacheProxy<mozIStorageStatement>(
           mAsyncThreadStatements,
           NS_ISUPPORTS_CAST(nsIObserver*, this)

@@ -98,7 +98,7 @@ private:
   
   void ProcessDrain();
 
-  RefPtr<FlushableTaskQueue> mTaskQueue;
+  nsRefPtr<FlushableTaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
 
   nsAutoPtr<GonkDecoderManager> mManager;

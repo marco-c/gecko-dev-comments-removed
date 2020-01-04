@@ -149,7 +149,7 @@ protected:
 
 private:
   nsCOMPtr<nsIContent> mPopup;
-  RefPtr<nsPresContext> mPresContext;
+  nsRefPtr<nsPresContext> mPresContext;
 };
 
 class nsMenuPopupFrame final : public nsBoxFrame, public nsMenuParent,
@@ -503,7 +503,7 @@ protected:
 
   nsMenuFrame* mCurrentMenu; 
 
-  RefPtr<nsXULPopupShownEvent> mPopupShownDispatcher;
+  nsRefPtr<nsXULPopupShownEvent> mPopupShownDispatcher;
 
   
   

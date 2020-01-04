@@ -69,7 +69,7 @@ private:
   StreamTime mRemainingTicks;
 
   
-  RefPtr<layers::Image> mMuteFrame;
+  nsRefPtr<layers::Image> mMuteFrame;
 
   
   nsTArray<uint8_t> mI420Frame;

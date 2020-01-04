@@ -55,7 +55,7 @@ gfxReusableSharedImageSurfaceWrapper::GetWritable(gfxImageSurface** aSurface)
   }
 
   
-  RefPtr<gfxSharedImageSurface> copySurface =
+  nsRefPtr<gfxSharedImageSurface> copySurface =
     gfxSharedImageSurface::CreateUnsafe(mAllocator.get(), mSurface->GetSize(), mSurface->Format());
   copySurface->CopyFrom(mSurface);
   *aSurface = copySurface;
@@ -91,8 +91,8 @@ gfxReusableSharedImageSurfaceWrapper::GetShmem()
  already_AddRefed<gfxReusableSharedImageSurfaceWrapper>
 gfxReusableSharedImageSurfaceWrapper::Open(ISurfaceAllocator* aAllocator, const Shmem& aShmem)
 {
-  RefPtr<gfxSharedImageSurface> sharedImage = gfxSharedImageSurface::Open(aShmem);
-  RefPtr<gfxReusableSharedImageSurfaceWrapper> wrapper = new gfxReusableSharedImageSurfaceWrapper(aAllocator, sharedImage);
+  nsRefPtr<gfxSharedImageSurface> sharedImage = gfxSharedImageSurface::Open(aShmem);
+  nsRefPtr<gfxReusableSharedImageSurfaceWrapper> wrapper = new gfxReusableSharedImageSurfaceWrapper(aAllocator, sharedImage);
   wrapper->ReadUnlock();
   return wrapper.forget();
 }

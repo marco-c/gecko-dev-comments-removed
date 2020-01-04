@@ -127,7 +127,7 @@ private:
                                     nsIAtom* aAtom, void* aData);
 
   
-  RefPtr<nsContentList> mElements;
+  nsRefPtr<nsContentList> mElements;
 
   
   nsTArray<nsGenericHTMLFormElement*> mDependentElements;

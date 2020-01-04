@@ -124,7 +124,7 @@ struct GonkBufferSlot {
     bool mAttachedByConsumer;
 
     
-    RefPtr<TextureClient> mTextureClient;
+    nsRefPtr<TextureClient> mTextureClient;
 };
 
 } 

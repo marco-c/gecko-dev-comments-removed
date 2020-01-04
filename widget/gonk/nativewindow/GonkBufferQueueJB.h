@@ -445,7 +445,7 @@ private:
         sp<GraphicBuffer> mGraphicBuffer;
 
         
-        RefPtr<TextureClient> mTextureClient;
+        nsRefPtr<TextureClient> mTextureClient;
 
         
         

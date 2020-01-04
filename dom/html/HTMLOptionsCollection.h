@@ -160,7 +160,7 @@ public:
 private:
   
 
-  nsTArray<RefPtr<mozilla::dom::HTMLOptionElement> > mElements;
+  nsTArray<nsRefPtr<mozilla::dom::HTMLOptionElement> > mElements;
   
   HTMLSelectElement* mSelect;
 };

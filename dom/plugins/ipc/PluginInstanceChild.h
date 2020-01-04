@@ -457,7 +457,7 @@ private:
 #endif
     CGColorSpaceRef               mShColorSpace;
     CGContextRef                  mShContext;
-    RefPtr<nsCARenderer> mCARenderer;
+    nsRefPtr<nsCARenderer> mCARenderer;
     void                         *mCGLayer;
 
     
@@ -564,11 +564,11 @@ private:
     bool mLayersRendering;
 
     
-    RefPtr<gfxASurface> mCurrentSurface;
+    nsRefPtr<gfxASurface> mCurrentSurface;
 
     
     
-    RefPtr<gfxASurface> mBackSurface;
+    nsRefPtr<gfxASurface> mBackSurface;
 
 #ifdef XP_MACOSX
     
@@ -581,7 +581,7 @@ private:
     
     
     
-    RefPtr<gfxASurface> mBackground;
+    nsRefPtr<gfxASurface> mBackground;
 
 #ifdef XP_WIN
     
@@ -615,7 +615,7 @@ private:
     
     
     
-    RefPtr<gfxASurface> mHelperSurface;
+    nsRefPtr<gfxASurface> mHelperSurface;
 
     
     

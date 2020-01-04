@@ -503,10 +503,7 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
     }
 
   } else {
-    nsLoadFlags loadFlags;
-    mChannel->GetLoadFlags(&loadFlags);
-    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-    mChannel->SetLoadFlags(loadFlags);
+    mChannel->ForceNoIntercept();
   }
 
   nsCOMPtr<nsISupportsPRUint32> cacheKey =

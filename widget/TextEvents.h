@@ -390,7 +390,7 @@ public:
   
   nsString mData;
 
-  RefPtr<TextRangeArray> mRanges;
+  nsRefPtr<TextRangeArray> mRanges;
 
   
   

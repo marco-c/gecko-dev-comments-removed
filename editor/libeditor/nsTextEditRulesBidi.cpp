@@ -47,7 +47,7 @@ nsTextEditRules::CheckBidiLevelForDeletion(Selection* aSelection,
 
   nsBidiLevel levelBefore;
   nsBidiLevel levelAfter;
-  RefPtr<nsFrameSelection> frameSelection =
+  nsRefPtr<nsFrameSelection> frameSelection =
     static_cast<Selection*>(aSelection)->GetFrameSelection();
   NS_ENSURE_TRUE(frameSelection, NS_ERROR_NULL_POINTER);
 
@@ -91,7 +91,7 @@ nsTextEditRules::UndefineCaretBidiLevel(Selection* aSelection)
 
 
 
-  RefPtr<nsFrameSelection> frameSelection = aSelection->GetFrameSelection();
+  nsRefPtr<nsFrameSelection> frameSelection = aSelection->GetFrameSelection();
   if (frameSelection) {
     frameSelection->UndefineCaretBidiLevel();
   }

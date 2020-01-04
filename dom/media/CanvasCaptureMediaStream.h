@@ -76,7 +76,7 @@ public:
 
 
 
-  void SetImage(const RefPtr<layers::Image>& aImage);
+  void SetImage(const nsRefPtr<layers::Image>& aImage);
 
   
 
@@ -89,8 +89,8 @@ protected:
   class StreamListener;
 
 private:
-  RefPtr<SourceMediaStream> mSourceStream;
-  RefPtr<StreamListener> mStreamListener;
+  nsRefPtr<SourceMediaStream> mSourceStream;
+  nsRefPtr<StreamListener> mStreamListener;
 };
 
 class CanvasCaptureMediaStream : public DOMMediaStream
@@ -121,8 +121,8 @@ protected:
   ~CanvasCaptureMediaStream();
 
 private:
-  RefPtr<HTMLCanvasElement> mCanvas;
-  RefPtr<OutputStreamDriver> mOutputStreamDriver;
+  nsRefPtr<HTMLCanvasElement> mCanvas;
+  nsRefPtr<OutputStreamDriver> mOutputStreamDriver;
 };
 
 } 

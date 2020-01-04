@@ -269,7 +269,7 @@ NS_IMETHODIMP JumpListShortcut::Equals(nsIJumpListItem *aItem, bool *aResult)
 
 
 
-nsresult JumpListSeparator::GetSeparator(RefPtr<IShellLinkW>& aShellLink)
+nsresult JumpListSeparator::GetSeparator(nsRefPtr<IShellLinkW>& aShellLink)
 {
   HRESULT hr;
   IShellLinkW* psl;
@@ -301,7 +301,7 @@ nsresult JumpListSeparator::GetSeparator(RefPtr<IShellLinkW>& aShellLink)
 
 
 nsresult JumpListShortcut::GetShellLink(nsCOMPtr<nsIJumpListItem>& item, 
-                                        RefPtr<IShellLinkW>& aShellLink,
+                                        nsRefPtr<IShellLinkW>& aShellLink,
                                         nsCOMPtr<nsIThread> &aIOThread)
 {
   HRESULT hr;
@@ -527,7 +527,7 @@ nsresult JumpListShortcut::GetJumpListShortcut(IShellLinkW *pLink, nsCOMPtr<nsIJ
 
 
 
-nsresult JumpListLink::GetShellItem(nsCOMPtr<nsIJumpListItem>& item, RefPtr<IShellItem2>& aShellItem)
+nsresult JumpListLink::GetShellItem(nsCOMPtr<nsIJumpListItem>& item, nsRefPtr<IShellItem2>& aShellItem)
 {
   IShellItem2 *psi = nullptr;
   nsresult rv;

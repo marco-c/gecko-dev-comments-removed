@@ -118,19 +118,19 @@ protected:
 
   mozilla::ReentrantMonitor mCallbackMonitor; 
   
-  RefPtr<ICameraControl> mCameraControl;
-  RefPtr<dom::File> mLastCapture;
+  nsRefPtr<ICameraControl> mCameraControl;
+  nsRefPtr<dom::File> mLastCapture;
 
   android::sp<android::GonkCameraSource> mCameraSource;
 
   
-  nsTArray<RefPtr<PhotoCallback>> mPhotoCallbacks;
+  nsTArray<nsRefPtr<PhotoCallback>> mPhotoCallbacks;
   int mRotation;
   int mCameraAngle; 
   bool mBackCamera;
   bool mOrientationChanged; 
 
-  RefPtr<layers::TextureClientRecycleAllocator> mTextureClientAllocator;
+  nsRefPtr<layers::TextureClientRecycleAllocator> mTextureClientAllocator;
 };
 
 } 

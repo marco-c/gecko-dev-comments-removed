@@ -7,7 +7,7 @@
 #define AudioSink_h__
 
 #include "mozilla/MozPromise.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -30,7 +30,7 @@ public:
 
   
   
-  virtual RefPtr<GenericPromise> Init() = 0;
+  virtual nsRefPtr<GenericPromise> Init() = 0;
 
   virtual int64_t GetEndTime() const = 0;
   virtual int64_t GetPosition() = 0;

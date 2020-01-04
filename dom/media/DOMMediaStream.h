@@ -195,14 +195,14 @@ public:
 
 
     virtual void
-    NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack) {};
+    NotifyTrackAdded(const nsRefPtr<MediaStreamTrack>& aTrack) {};
 
     
 
 
 
     virtual void
-    NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack) {};
+    NotifyTrackRemoved(const nsRefPtr<MediaStreamTrack>& aTrack) {};
 
   protected:
     virtual ~TrackListener() {}
@@ -227,9 +227,9 @@ public:
 
   void GetId(nsAString& aID) const;
 
-  void GetAudioTracks(nsTArray<RefPtr<AudioStreamTrack> >& aTracks);
-  void GetVideoTracks(nsTArray<RefPtr<VideoStreamTrack> >& aTracks);
-  void GetTracks(nsTArray<RefPtr<MediaStreamTrack> >& aTracks);
+  void GetAudioTracks(nsTArray<nsRefPtr<AudioStreamTrack> >& aTracks);
+  void GetVideoTracks(nsTArray<nsRefPtr<VideoStreamTrack> >& aTracks);
+  void GetTracks(nsTArray<nsRefPtr<MediaStreamTrack> >& aTracks);
   void AddTrack(MediaStreamTrack& aTrack);
   void RemoveTrack(MediaStreamTrack& aTrack);
 
@@ -433,10 +433,10 @@ protected:
   void NotifyTracksCreated();
 
   
-  void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
+  void NotifyTrackAdded(const nsRefPtr<MediaStreamTrack>& aTrack);
 
   
-  void NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack);
+  void NotifyTrackRemoved(const nsRefPtr<MediaStreamTrack>& aTrack);
 
   class OwnedStreamListener;
   friend class OwnedStreamListener;
@@ -470,20 +470,20 @@ protected:
   ProcessedMediaStream* mPlaybackStream;
 
   
-  RefPtr<MediaInputPort> mOwnedPort;
+  nsRefPtr<MediaInputPort> mOwnedPort;
 
   
   
-  RefPtr<MediaInputPort> mPlaybackPort;
+  nsRefPtr<MediaInputPort> mPlaybackPort;
 
   
-  nsAutoTArray<RefPtr<TrackPort>, 2> mOwnedTracks;
+  nsAutoTArray<nsRefPtr<TrackPort>, 2> mOwnedTracks;
 
   
-  nsAutoTArray<RefPtr<TrackPort>, 2> mTracks;
+  nsAutoTArray<nsRefPtr<TrackPort>, 2> mTracks;
 
-  RefPtr<OwnedStreamListener> mOwnedListener;
-  RefPtr<PlaybackStreamListener> mPlaybackListener;
+  nsRefPtr<OwnedStreamListener> mOwnedListener;
+  nsRefPtr<PlaybackStreamListener> mPlaybackListener;
 
   nsTArray<nsAutoPtr<OnTracksAvailableCallback> > mRunOnTracksAvailable;
 
@@ -498,7 +498,7 @@ protected:
   bool mNotifiedOfMediaStreamGraphShutdown;
 
   
-  nsTArray<RefPtr<TrackListener>> mTrackListeners;
+  nsTArray<nsRefPtr<TrackListener>> mTrackListeners;
 
 private:
   void NotifyPrincipalChanged();
@@ -586,7 +586,7 @@ protected:
 private:
   
   
-  RefPtr<AudioNode> mStreamNode;
+  nsRefPtr<AudioNode> mStreamNode;
 };
 
 class DOMHwMediaStream : public DOMLocalMediaStream
@@ -614,11 +614,11 @@ private:
   void Init(MediaStream* aStream);
 
 #ifdef MOZ_WIDGET_GONK
-  RefPtr<ImageContainer> mImageContainer;
+  nsRefPtr<ImageContainer> mImageContainer;
   const int DEFAULT_IMAGE_ID = 0x01;
   const int DEFAULT_IMAGE_WIDTH = 400;
   const int DEFAULT_IMAGE_HEIGHT = 300;
-  RefPtr<OverlayImage> mOverlayImage;
+  nsRefPtr<OverlayImage> mOverlayImage;
   Data mImageData;
 #endif
 };

@@ -135,7 +135,7 @@ private:
   }
 
   
-  std::vector<RefPtr<LibHandle> > dependencies;
+  std::vector<nsRefPtr<LibHandle> > dependencies;
 
   
   Array<Elf::Reloc> relocations;

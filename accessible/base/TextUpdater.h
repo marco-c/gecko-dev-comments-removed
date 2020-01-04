@@ -51,15 +51,15 @@ private:
   void ComputeTextChangeEvents(const nsAString& aStr1,
                                const nsAString& aStr2,
                                uint32_t* aEntries,
-                               nsTArray<RefPtr<AccEvent> >& aEvents);
+                               nsTArray<nsRefPtr<AccEvent> >& aEvents);
 
   
 
 
   inline void FireInsertEvent(const nsAString& aText, uint32_t aAddlOffset,
-                              nsTArray<RefPtr<AccEvent> >& aEvents)
+                              nsTArray<nsRefPtr<AccEvent> >& aEvents)
   {
-    RefPtr<AccEvent> event =
+    nsRefPtr<AccEvent> event =
       new AccTextChangeEvent(mHyperText, mTextOffset + aAddlOffset,
                              aText, true);
     aEvents.AppendElement(event);
@@ -69,9 +69,9 @@ private:
 
 
   inline void FireDeleteEvent(const nsAString& aText, uint32_t aAddlOffset,
-                              nsTArray<RefPtr<AccEvent> >& aEvents)
+                              nsTArray<nsRefPtr<AccEvent> >& aEvents)
   {
-    RefPtr<AccEvent> event =
+    nsRefPtr<AccEvent> event =
       new AccTextChangeEvent(mHyperText, mTextOffset + aAddlOffset,
                              aText, false);
     aEvents.AppendElement(event);

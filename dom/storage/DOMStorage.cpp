@@ -219,10 +219,10 @@ DOMStorage::BroadcastChangeNotification(const nsSubstring& aKey,
 
   
   
-  RefPtr<StorageEvent> event =
+  nsRefPtr<StorageEvent> event =
     StorageEvent::Constructor(nullptr, NS_LITERAL_STRING("storage"), dict);
 
-  RefPtr<StorageNotifierRunnable> r =
+  nsRefPtr<StorageNotifierRunnable> r =
     new StorageNotifierRunnable(event,
                                 GetType() == LocalStorage
                                   ? MOZ_UTF16("localStorage")

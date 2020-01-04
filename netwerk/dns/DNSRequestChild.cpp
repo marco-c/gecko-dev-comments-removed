@@ -178,7 +178,7 @@ public:
     return NS_OK;
   }
 private:
-  RefPtr<DNSRequestChild> mDnsRequest;
+  nsRefPtr<DNSRequestChild> mDnsRequest;
   nsresult mReasonForCancel;
 };
 
@@ -273,7 +273,7 @@ void
 DNSRequestChild::ReleaseIPDLReference()
 {
   
-  RefPtr<ChildDNSService> dnsServiceChild =
+  nsRefPtr<ChildDNSService> dnsServiceChild =
     dont_AddRef(ChildDNSService::GetSingleton());
   dnsServiceChild->NotifyRequestDone(this);
 

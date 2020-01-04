@@ -217,7 +217,7 @@ nsBindingManager::RemovedFromDocumentInternal(nsIContent* aContent,
 {
   NS_PRECONDITION(aOldDocument != nullptr, "no old document");
 
-  RefPtr<nsXBLBinding> binding = aContent->GetXBLBinding();
+  nsRefPtr<nsXBLBinding> binding = aContent->GetXBLBinding();
   if (binding) {
     
     
@@ -272,7 +272,7 @@ nsresult
 nsBindingManager::ClearBinding(nsIContent* aContent)
 {
   
-  RefPtr<nsXBLBinding> binding =
+  nsRefPtr<nsXBLBinding> binding =
     aContent ? aContent->GetXBLBinding() : nullptr;
 
   if (!binding) {
@@ -320,7 +320,7 @@ nsBindingManager::LoadBindingDocument(nsIDocument* aBoundDoc,
     return NS_ERROR_FAILURE;
 
   
-  RefPtr<nsXBLDocumentInfo> info;
+  nsRefPtr<nsXBLDocumentInfo> info;
   xblService->LoadBindingDocumentInfo(nullptr, aBoundDoc, aURL,
                                       aOriginPrincipal, true,
                                       getter_AddRefs(info));
@@ -374,7 +374,7 @@ nsBindingManager::PostProcessAttachedQueueEvent()
 void
 nsBindingManager::PostPAQEventCallback(nsITimer* aTimer, void* aClosure)
 {
-  RefPtr<nsBindingManager> mgr = 
+  nsRefPtr<nsBindingManager> mgr = 
     already_AddRefed<nsBindingManager>(static_cast<nsBindingManager*>(aClosure));
   mgr->PostProcessAttachedQueueEvent();
   NS_RELEASE(aTimer);
@@ -431,7 +431,7 @@ nsBindingManager::ProcessAttachedQueue(uint32_t aSkipSize)
   
   while (mAttachedStack.Length() > aSkipSize) {
     uint32_t lastItem = mAttachedStack.Length() - 1;
-    RefPtr<nsXBLBinding> binding = mAttachedStack.ElementAt(lastItem);
+    nsRefPtr<nsXBLBinding> binding = mAttachedStack.ElementAt(lastItem);
     mAttachedStack.RemoveElementAt(lastItem);
     if (binding) {
       binding->ExecuteAttachedHandler();

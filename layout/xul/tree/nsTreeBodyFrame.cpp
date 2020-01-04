@@ -3419,11 +3419,11 @@ nsTreeBodyFrame::PaintTwisty(int32_t              aRowIndex,
         if (imageSize.height < twistyRect.height) {
           pt.y += (twistyRect.height - imageSize.height)/2;
         }
-
+          
         
-        nsLayoutUtils::DrawSingleUnscaledImage(
-            *aRenderingContext.ThebesContext(), aPresContext, image,
-            Filter::POINT, pt, &aDirtyRect,
+        nsLayoutUtils::DrawSingleUnscaledImage(*aRenderingContext.ThebesContext(),
+            aPresContext, image,
+            GraphicsFilter::FILTER_NEAREST, pt, &aDirtyRect,
             imgIContainer::FLAG_NONE, &imageSize);
       }
     }
@@ -3767,7 +3767,7 @@ nsTreeBodyFrame::PaintCheckbox(int32_t              aRowIndex,
     
     nsLayoutUtils::DrawSingleUnscaledImage(*aRenderingContext.ThebesContext(),
         aPresContext,
-        image, Filter::POINT, pt, &aDirtyRect,
+        image, GraphicsFilter::FILTER_NEAREST, pt, &aDirtyRect,
         imgIContainer::FLAG_NONE, &imageSize);
   }
 }

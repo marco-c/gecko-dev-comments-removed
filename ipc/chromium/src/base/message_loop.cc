@@ -321,7 +321,7 @@ void MessageLoop::PostTask_Helper(
   
   
 
-  RefPtr<base::MessagePump> pump;
+  nsRefPtr<base::MessagePump> pump;
   {
     AutoLock locked(incoming_queue_lock_);
     incoming_queue_.push(pending_task);

@@ -133,15 +133,15 @@ private:
   
   void SourceBufferIsActive(SourceBuffer* aSourceBuffer);
 
-  RefPtr<SourceBufferList> mSourceBuffers;
-  RefPtr<SourceBufferList> mActiveSourceBuffers;
+  nsRefPtr<SourceBufferList> mSourceBuffers;
+  nsRefPtr<SourceBufferList> mActiveSourceBuffers;
 
-  RefPtr<MediaSourceDecoder> mDecoder;
+  nsRefPtr<MediaSourceDecoder> mDecoder;
   
   
-  RefPtr<HTMLMediaElement> mMediaElement;
+  nsRefPtr<HTMLMediaElement> mMediaElement;
 
-  RefPtr<nsIPrincipal> mPrincipal;
+  nsRefPtr<nsIPrincipal> mPrincipal;
 
   MediaSourceReadyState mReadyState;
 };

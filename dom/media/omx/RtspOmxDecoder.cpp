@@ -34,7 +34,7 @@ RtspOmxDecoder::ChangeState(PlayState aState)
   
   
   if (mPlayState == PLAY_STATE_ENDED) {
-    RefPtr<RtspMediaResource> resource = mResource->GetRtspPointer();
+    nsRefPtr<RtspMediaResource> resource = mResource->GetRtspPointer();
     if (resource) {
       nsIStreamingProtocolController* controller =
         resource->GetMediaStreamController();

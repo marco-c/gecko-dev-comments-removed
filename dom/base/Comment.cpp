@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * Implementations of DOM Core's nsIDOMComment node.
- */
+
+
+
+
+
+
+
+
 
 #include "nsCOMPtr.h"
 #include "mozilla/dom/Comment.h"
@@ -35,7 +35,7 @@ Comment::IsNodeOfType(uint32_t aFlags) const
 nsGenericDOMDataNode*
 Comment::CloneDataNode(mozilla::dom::NodeInfo *aNodeInfo, bool aCloneText) const
 {
-  RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
+  nsRefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
   Comment *it = new Comment(ni.forget());
   if (it && aCloneText) {
     it->mText = mText;
@@ -61,7 +61,7 @@ Comment::List(FILE* out, int32_t aIndent) const
 }
 #endif
 
-/* static */ already_AddRefed<Comment>
+ already_AddRefed<Comment>
 Comment::Constructor(const GlobalObject& aGlobal,
                      const nsAString& aData, ErrorResult& aRv)
 {
@@ -80,5 +80,5 @@ Comment::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
   return CommentBinding::Wrap(aCx, this, aGivenProto);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

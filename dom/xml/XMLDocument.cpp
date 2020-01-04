@@ -179,7 +179,7 @@ nsresult
 NS_NewXMLDocument(nsIDocument** aInstancePtrResult, bool aLoadedAsData,
                   bool aIsPlainDocument)
 {
-  RefPtr<XMLDocument> doc = new XMLDocument();
+  nsRefPtr<XMLDocument> doc = new XMLDocument();
 
   nsresult rv = doc->Init();
 
@@ -384,7 +384,7 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
   
   
   
-  RefPtr<EventListenerManager> elm(mListenerManager);
+  nsRefPtr<EventListenerManager> elm(mListenerManager);
   mListenerManager = nullptr;
 
   
@@ -586,7 +586,7 @@ XMLDocument::Clone(mozilla::dom::NodeInfo *aNodeInfo, nsINode **aResult) const
   NS_ASSERTION(aNodeInfo->NodeInfoManager() == mNodeInfoManager,
                "Can't import this document into another document!");
 
-  RefPtr<XMLDocument> clone = new XMLDocument();
+  nsRefPtr<XMLDocument> clone = new XMLDocument();
   nsresult rv = CloneDocHelper(clone);
   NS_ENSURE_SUCCESS(rv, rv);
 

@@ -7,7 +7,7 @@
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "ImageRegion.h"
 #include "Orientation.h"
 #include "SVGImageContext.h"
@@ -178,7 +178,7 @@ DynamicImage::GetFrameAtSize(const IntSize& aSize,
                              uint32_t aWhichFrame,
                              uint32_t aFlags)
 {
-  RefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
+  nsRefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
     CreateOffscreenContentDrawTarget(aSize, SurfaceFormat::B8G8R8A8);
   if (!dt) {
     gfxWarning() <<
@@ -188,7 +188,8 @@ DynamicImage::GetFrameAtSize(const IntSize& aSize,
   nsRefPtr<gfxContext> context = new gfxContext(dt);
 
   auto result = Draw(context, aSize, ImageRegion::Create(aSize),
-                     aWhichFrame, Filter::POINT, Nothing(), aFlags);
+                     aWhichFrame, GraphicsFilter::FILTER_NEAREST,
+                     Nothing(), aFlags);
 
   return result == DrawResult::SUCCESS ? dt->Snapshot() : nullptr;
 }
@@ -218,7 +219,7 @@ DynamicImage::Draw(gfxContext* aContext,
                    const nsIntSize& aSize,
                    const ImageRegion& aRegion,
                    uint32_t aWhichFrame,
-                   Filter aFilter,
+                   GraphicsFilter aFilter,
                    const Maybe<SVGImageContext>& aSVGContext,
                    uint32_t aFlags)
 {
@@ -324,7 +325,7 @@ DynamicImage::SetAnimationStartTime(const mozilla::TimeStamp& aTime)
 nsIntSize
 DynamicImage::OptimalImageSizeForDest(const gfxSize& aDest,
                                       uint32_t aWhichFrame,
-                                      Filter aFilter, uint32_t aFlags)
+                                      GraphicsFilter aFilter, uint32_t aFlags)
 {
   IntSize size(mDrawable->Size());
   return nsIntSize(size.width, size.height);

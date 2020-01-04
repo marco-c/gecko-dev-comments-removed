@@ -60,7 +60,7 @@ protected:
   explicit BindingParams(mozIStorageBindingParamsArray *aOwningArray);
   
   
-  nsTArray<RefPtr<Variant_base> > mParameters;
+  nsTArray<nsRefPtr<Variant_base> > mParameters;
   bool mLocked;
 
 private:

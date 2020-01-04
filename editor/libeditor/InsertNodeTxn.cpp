@@ -64,7 +64,7 @@ InsertNodeTxn::DoTransaction()
 
   
   if (mEditor.GetShouldTxnSetSelection()) {
-    RefPtr<Selection> selection = mEditor.GetSelection();
+    nsRefPtr<Selection> selection = mEditor.GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
     
     selection->Collapse(mParent, mOffset + 1);

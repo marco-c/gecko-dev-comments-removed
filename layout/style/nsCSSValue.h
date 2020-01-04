@@ -108,7 +108,7 @@ private:
   
   mutable nsCOMPtr<nsIURI> mURI;
 public:
-  RefPtr<nsStringBuffer> mString;
+  nsRefPtr<nsStringBuffer> mString;
   nsCOMPtr<nsIURI> mReferrer;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
 

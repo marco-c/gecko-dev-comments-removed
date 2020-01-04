@@ -46,7 +46,7 @@ protected:
 #endif 
   virtual ~nsIAttribute();
 
-  RefPtr<nsDOMAttributeMap> mAttrMap;
+  nsRefPtr<nsDOMAttributeMap> mAttrMap;
   bool mNsAware;
 };
 

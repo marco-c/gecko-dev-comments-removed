@@ -556,7 +556,7 @@ private:
     
     
     void MakeNewRequestTokenBucket();
-    RefPtr<EventTokenBucket> mRequestTokenBucket;
+    nsRefPtr<EventTokenBucket> mRequestTokenBucket;
 
 public:
     
@@ -575,7 +575,7 @@ public:
     }
 
 private:
-    RefPtr<Tickler> mWifiTickler;
+    nsRefPtr<Tickler> mWifiTickler;
     void TickleWifi(nsIInterfaceRequestor *cb);
 
 private:

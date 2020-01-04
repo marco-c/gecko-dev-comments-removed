@@ -172,7 +172,7 @@ private:
   
   FallibleTArray<DOMSVGLength*> mItems;
 
-  RefPtr<DOMSVGAnimatedLengthList> mAList;
+  nsRefPtr<DOMSVGAnimatedLengthList> mAList;
 };
 
 } 

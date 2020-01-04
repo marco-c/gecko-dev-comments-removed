@@ -105,7 +105,7 @@ DOMSVGPointList::GetDOMWrapper(void *aList,
                                nsSVGElement *aElement,
                                bool aIsAnimValList)
 {
-  RefPtr<DOMSVGPointList> wrapper =
+  nsRefPtr<DOMSVGPointList> wrapper =
     SVGPointListTearoffTable().GetTearoff(aList);
   if (!wrapper) {
     wrapper = new DOMSVGPointList(aElement, aIsAnimValList);
@@ -152,7 +152,7 @@ DOMSVGPointList::InternalListWillChangeTo(const SVGPointList& aNewValue)
     newLength = nsISVGPoint::MaxListIndex();
   }
 
-  RefPtr<DOMSVGPointList> kungFuDeathGrip;
+  nsRefPtr<DOMSVGPointList> kungFuDeathGrip;
   if (newLength < oldLength) {
     
     
@@ -263,7 +263,7 @@ already_AddRefed<nsISVGPoint>
 DOMSVGPointList::GetItem(uint32_t index, ErrorResult& error)
 {
   bool found;
-  RefPtr<nsISVGPoint> item = IndexedGetter(index, found, error);
+  nsRefPtr<nsISVGPoint> item = IndexedGetter(index, found, error);
   if (!found) {
     error.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
   }
@@ -386,7 +386,7 @@ DOMSVGPointList::RemoveItem(uint32_t aIndex, ErrorResult& aError)
   MaybeRemoveItemFromAnimValListAt(aIndex);
 
   
-  RefPtr<nsISVGPoint> result = GetItemAt(aIndex);
+  nsRefPtr<nsISVGPoint> result = GetItemAt(aIndex);
 
   
   
@@ -408,7 +408,7 @@ DOMSVGPointList::GetItemAt(uint32_t aIndex)
   if (!mItems[aIndex]) {
     mItems[aIndex] = new DOMSVGPoint(this, aIndex, IsAnimValList());
   }
-  RefPtr<nsISVGPoint> result = mItems[aIndex];
+  nsRefPtr<nsISVGPoint> result = mItems[aIndex];
   return result.forget();
 }
 
@@ -450,7 +450,7 @@ DOMSVGPointList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex)
 
   
   
-  RefPtr<DOMSVGPointList> animVal =
+  nsRefPtr<DOMSVGPointList> animVal =
     GetDOMWrapperIfExists(InternalAList().GetAnimValKey());
   if (!animVal) {
     

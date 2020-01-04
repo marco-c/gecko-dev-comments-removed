@@ -368,7 +368,7 @@ private:
   nsPresContext *mPresContext; 
                                
 
-  RefPtr<nsRefreshDriver> mRootRefresh;
+  nsRefPtr<nsRefreshDriver> mRootRefresh;
 
   
   uint64_t mPendingTransaction;

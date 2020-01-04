@@ -18,7 +18,6 @@
 #include "nsIAccessibleTypes.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "Relation.h"
-#include "nsAccessibilityService.h"
 
 #include "nsIPersistentProperties2.h"
 #include "nsISimpleEnumerator.h"
@@ -652,27 +651,7 @@ ia2Accessible::get_accessibleWithCaret(IUnknown** aAccessible,
 
   *aAccessible = nullptr;
   *aCaretOffset = -1;
-
-  AccessibleWrap* acc = static_cast<AccessibleWrap*>(this);
-  if (acc->IsDefunct())
-    return CO_E_OBJNOTCONNECTED;
-
-  int32_t caretOffset = -1;
-  Accessible* accWithCaret = SelectionMgr()->AccessibleWithCaret(&caretOffset);
-  if (acc->Document() != accWithCaret->Document())
-    return S_FALSE;
-
-  Accessible* child = accWithCaret;
-  while (child != acc)
-    child = child->Parent();
-
-  if (!child)
-    return S_FALSE;
-
-  *aAccessible =  static_cast<IAccessible2*>(
-    static_cast<AccessibleWrap*>(accWithCaret));
-  *aCaretOffset = caretOffset;
-  return S_OK;
+  return E_NOTIMPL;
 
   A11Y_TRYBLOCK_END
 }

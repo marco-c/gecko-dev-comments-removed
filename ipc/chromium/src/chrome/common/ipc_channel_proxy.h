@@ -188,7 +188,7 @@ class ChannelProxy : public Message::Sender {
     Channel::Listener* listener_;
 
     
-    std::vector<RefPtr<MessageFilter> > filters_;
+    std::vector<nsRefPtr<MessageFilter> > filters_;
     MessageLoop* ipc_message_loop_;
     Channel* channel_;
     std::wstring channel_id_;
@@ -205,7 +205,7 @@ class ChannelProxy : public Message::Sender {
   
   
   
-  RefPtr<Context> context_;
+  nsRefPtr<Context> context_;
 };
 
 }  

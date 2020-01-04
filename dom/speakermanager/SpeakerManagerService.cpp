@@ -40,7 +40,7 @@ SpeakerManagerService::GetOrCreateSpeakerManagerService()
   }
 
   
-  RefPtr<SpeakerManagerService> service = new SpeakerManagerService();
+  nsRefPtr<SpeakerManagerService> service = new SpeakerManagerService();
 
   gSpeakerManagerService = service;
 
@@ -182,7 +182,7 @@ SpeakerManagerService::Observe(nsISupports* aSubject,
   } else if (!strcmp(aTopic, "xpcom-will-shutdown")) {
     
     
-    RefPtr<AudioChannelService> audioChannelService =
+    nsRefPtr<AudioChannelService> audioChannelService =
       AudioChannelService::GetOrCreate();
     audioChannelService->UnregisterSpeakerManager(this);
 
@@ -209,7 +209,7 @@ SpeakerManagerService::SpeakerManagerService()
       obs->AddObserver(this, "xpcom-will-shutdown", false);
     }
   }
-  RefPtr<AudioChannelService> audioChannelService =
+  nsRefPtr<AudioChannelService> audioChannelService =
     AudioChannelService::GetOrCreate();
   audioChannelService->RegisterSpeakerManager(this);
 }

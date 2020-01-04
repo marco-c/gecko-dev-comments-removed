@@ -1422,15 +1422,13 @@ AsyncPanZoomController::ConvertToGecko(const ScreenIntPoint& aPoint, CSSPoint* a
     
     
     
-    Maybe<LayoutDeviceIntPoint> layoutPoint = UntransformTo<LayoutDevicePixel>(
+    MOZ_ASSERT(transformScreenToGecko.Is2D());
+    LayoutDevicePoint layoutPoint = TransformTo<LayoutDevicePixel>(
         transformScreenToGecko, aPoint);
-    if (!layoutPoint) {
-      return false;
-    }
 
     { 
       ReentrantMonitorAutoEnter lock(mMonitor);
-      *aOut = LayoutDevicePoint(*layoutPoint) / mFrameMetrics.GetDevPixelsPerCSSPixel();
+      *aOut = layoutPoint / mFrameMetrics.GetDevPixelsPerCSSPixel();
     }
     return true;
   }

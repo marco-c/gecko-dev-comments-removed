@@ -47,7 +47,7 @@ private:
   void NotifyConnectionStatusChanged();
 
   nsString mDeviceAddress;
-  RefPtr<BluetoothProfileController> mController;
+  nsRefPtr<BluetoothProfileController> mController;
 
   
   bool mA2dpConnected;

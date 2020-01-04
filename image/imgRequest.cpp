@@ -188,7 +188,7 @@ imgRequest::GetProgressTracker() const
   } else {
     MOZ_ASSERT(mProgressTracker,
                "Should have mProgressTracker until we create mImage");
-    RefPtr<ProgressTracker> progressTracker = mProgressTracker;
+    nsRefPtr<ProgressTracker> progressTracker = mProgressTracker;
     MOZ_ASSERT(progressTracker);
     return progressTracker.forget();
   }
@@ -227,7 +227,7 @@ imgRequest::AddProxy(imgRequestProxy* proxy)
 
   
   
-  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   if (progressTracker->ObserverCount() == 0) {
     MOZ_ASSERT(mURI, "Trying to SetHasProxies without key uri.");
     if (mLoader) {
@@ -252,7 +252,7 @@ imgRequest::RemoveProxy(imgRequestProxy* proxy, nsresult aStatus)
   
   
   
-  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   if (!progressTracker->RemoveObserver(proxy)) {
     return NS_OK;
   }
@@ -336,7 +336,7 @@ public:
     return NS_OK;
   }
 private:
-  RefPtr<imgRequest> mImgRequest;
+  nsRefPtr<imgRequest> mImgRequest;
   nsresult mStatus;
 };
 
@@ -358,7 +358,7 @@ imgRequest::ContinueCancel(nsresult aStatus)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   progressTracker->SyncNotifyProgress(FLAG_HAS_ERROR | FLAG_ONLOAD_UNBLOCKED);
 
   RemoveFromCache();
@@ -385,7 +385,7 @@ public:
     return NS_OK;
   }
 private:
-  RefPtr<imgRequest> mImgRequest;
+  nsRefPtr<imgRequest> mImgRequest;
 };
 
 
@@ -510,7 +510,7 @@ imgRequest::RemoveFromCache()
 bool
 imgRequest::HasConsumers() const
 {
-  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   return progressTracker && progressTracker->ObserverCount() > 0;
 }
 
@@ -518,7 +518,7 @@ already_AddRefed<Image>
 imgRequest::GetImage() const
 {
   MutexAutoLock lock(mMutex);
-  RefPtr<Image> image = mImage;
+  nsRefPtr<Image> image = mImage;
   return image.forget();
 }
 
@@ -575,7 +575,7 @@ imgRequest::UpdateCacheEntrySize()
     return;
   }
 
-  RefPtr<Image> image = GetImage();
+  nsRefPtr<Image> image = GetImage();
   size_t size = image->SizeOfSourceWithComputedFallback(moz_malloc_size_of);
   mCacheEntry->SetDataSize(size);
 }
@@ -721,7 +721,7 @@ imgRequest::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
 {
   LOG_SCOPE(GetImgLog(), "imgRequest::OnStartRequest");
 
-  RefPtr<Image> image;
+  nsRefPtr<Image> image;
 
   
   nsCOMPtr<nsIMultiPartChannel> multiPartChannel = do_QueryInterface(aRequest);
@@ -776,7 +776,7 @@ imgRequest::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
 
   
   
-  RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+  nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
   if (progressTracker->ObserverCount() == 0) {
     this->Cancel(NS_IMAGELIB_ERROR_FAILURE);
   }
@@ -812,7 +812,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest,
   LOG_FUNC(GetImgLog(), "imgRequest::OnStopRequest");
   MOZ_ASSERT(NS_IsMainThread(), "Can't send notifications off-main-thread");
 
-  RefPtr<Image> image = GetImage();
+  nsRefPtr<Image> image = GetImage();
 
   
   
@@ -881,7 +881,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest,
     Progress progress =
       LoadCompleteProgress(lastPart,  false, status);
 
-    RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+    nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
     progressTracker->SyncNotifyProgress(progress);
   }
 
@@ -922,7 +922,7 @@ struct NewPartResult final
 
   nsAutoCString mContentType;
   nsAutoCString mContentDisposition;
-  RefPtr<Image> mImage;
+  nsRefPtr<Image> mImage;
   const bool mIsFirstPart;
   bool mSucceeded;
   bool mShouldResetCacheEntry;
@@ -970,8 +970,8 @@ PrepareForNewPart(nsIRequest* aRequest, nsIInputStream* aInStr, uint32_t aCount,
   
   if (aIsMultipart) {
     
-    RefPtr<ProgressTracker> progressTracker = new ProgressTracker();
-    RefPtr<Image> partImage =
+    nsRefPtr<ProgressTracker> progressTracker = new ProgressTracker();
+    nsRefPtr<Image> partImage =
       ImageFactory::CreateImage(aRequest, progressTracker, result.mContentType,
                                 aURI,  true,
                                 aInnerWindowId);
@@ -1029,7 +1029,7 @@ public:
   }
 
 private:
-  RefPtr<imgRequest> mImgRequest;
+  nsRefPtr<imgRequest> mImgRequest;
   NewPartResult mResult;
 };
 
@@ -1044,7 +1044,7 @@ imgRequest::FinishPreparingForNewPart(const NewPartResult& aResult)
 
   if (aResult.mIsFirstPart) {
     
-    RefPtr<ProgressTracker> progressTracker = GetProgressTracker();
+    nsRefPtr<ProgressTracker> progressTracker = GetProgressTracker();
     progressTracker->OnImageAvailable();
     MOZ_ASSERT(progressTracker->HasImage());
   }
@@ -1068,8 +1068,8 @@ imgRequest::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
 
   NS_ASSERTION(aRequest, "imgRequest::OnDataAvailable -- no request!");
 
-  RefPtr<Image> image;
-  RefPtr<ProgressTracker> progressTracker;
+  nsRefPtr<Image> image;
+  nsRefPtr<ProgressTracker> progressTracker;
   bool isMultipart = false;
   bool newPartPending = false;
 

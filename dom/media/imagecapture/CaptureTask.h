@@ -79,7 +79,7 @@ protected:
   
   
   
-  RefPtr<dom::ImageCapture> mImageCapture;
+  nsRefPtr<dom::ImageCapture> mImageCapture;
 
   TrackID mTrackID;
 

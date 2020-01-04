@@ -475,7 +475,7 @@ private:
 protected:
 
   
-  RefPtr<mozilla::places::Database> mDB;
+  nsRefPtr<mozilla::places::Database> mDB;
 
   
 

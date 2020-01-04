@@ -2009,12 +2009,10 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
 
     
     
-    nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
-    rv = mRedirectChannel->GetLoadFlags(&loadFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
-    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-    rv = mRedirectChannel->SetLoadFlags(loadFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIHttpChannelInternal> httpRedirect = do_QueryInterface(mRedirectChannel);
+    if (httpRedirect) {
+        httpRedirect->ForceNoIntercept();
+    }
 
     PushRedirectAsyncFunc(
         &nsHttpChannel::ContinueAsyncRedirectChannelToURI);
@@ -7023,7 +7021,6 @@ nsHttpChannel::OnPush(const nsACString &url, Http2PushedStream *pushedStream)
 void
 nsHttpChannel::SetCouldBeSynthesized()
 {
-  MOZ_ASSERT(!BypassServiceWorker());
   mResponseCouldBeSynthesized = true;
 }
 

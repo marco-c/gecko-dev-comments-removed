@@ -986,7 +986,7 @@ OMXCodecWrapper::GetNextEncodedFrame(nsTArray<uint8_t>* aOutputBuf,
       }
     } else if ((mCodecType == AMR_NB_ENC) && !mAMRCSDProvided){
       
-      RefPtr<EncodedFrame> audiodata = new EncodedFrame();
+      nsRefPtr<EncodedFrame> audiodata = new EncodedFrame();
       
       const uint8_t decConfig[] = {
         0x0, 0x0, 0x0, 0x0, 

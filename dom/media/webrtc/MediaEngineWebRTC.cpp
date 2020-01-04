@@ -71,7 +71,7 @@ MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
 
 void
 MediaEngineWebRTC::EnumerateVideoDevices(dom::MediaSourceEnum aMediaSource,
-                                         nsTArray<RefPtr<MediaEngineVideoSource> >* aVSources)
+                                         nsTArray<nsRefPtr<MediaEngineVideoSource> >* aVSources)
 {
   
   MutexAutoLock lock(mMutex);
@@ -104,7 +104,7 @@ MediaEngineWebRTC::EnumerateVideoDevices(dom::MediaSourceEnum aMediaSource,
       continue;
     }
 
-    RefPtr<MediaEngineVideoSource> vSource;
+    nsRefPtr<MediaEngineVideoSource> vSource;
     NS_ConvertUTF8toUTF16 uuid(cameraName);
     if (mVideoSources.Get(uuid, getter_AddRefs(vSource))) {
       
@@ -210,7 +210,7 @@ MediaEngineWebRTC::EnumerateVideoDevices(dom::MediaSourceEnum aMediaSource,
       uniqueId[sizeof(uniqueId)-1] = '\0'; 
     }
 
-    RefPtr<MediaEngineVideoSource> vSource;
+    nsRefPtr<MediaEngineVideoSource> vSource;
     NS_ConvertUTF8toUTF16 uuid(uniqueId);
     if (mVideoSources.Get(uuid, getter_AddRefs(vSource))) {
       
@@ -231,7 +231,7 @@ MediaEngineWebRTC::EnumerateVideoDevices(dom::MediaSourceEnum aMediaSource,
 
 void
 MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
-                                         nsTArray<RefPtr<MediaEngineAudioSource> >* aASources)
+                                         nsTArray<nsRefPtr<MediaEngineAudioSource> >* aASources)
 {
   ScopedCustomReleasePtr<webrtc::VoEBase> ptrVoEBase;
   ScopedCustomReleasePtr<webrtc::VoEHardware> ptrVoEHw;
@@ -239,7 +239,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
   MutexAutoLock lock(mMutex);
 
   if (aMediaSource == dom::MediaSourceEnum::AudioCapture) {
-    RefPtr<MediaEngineWebRTCAudioCaptureSource> audioCaptureSource =
+    nsRefPtr<MediaEngineWebRTCAudioCaptureSource> audioCaptureSource =
       new MediaEngineWebRTCAudioCaptureSource(nullptr);
     aASources->AppendElement(audioCaptureSource);
     return;
@@ -313,7 +313,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
       strcpy(uniqueId,deviceName); 
     }
 
-    RefPtr<MediaEngineAudioSource> aSource;
+    nsRefPtr<MediaEngineAudioSource> aSource;
     NS_ConvertUTF8toUTF16 uuid(uniqueId);
     if (mAudioSources.Get(uuid, getter_AddRefs(aSource))) {
       

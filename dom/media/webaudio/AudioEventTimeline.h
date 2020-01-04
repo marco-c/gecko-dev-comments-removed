@@ -114,7 +114,7 @@ struct AudioTimelineEvent final
   
   
   float* mCurve;
-  RefPtr<MediaStream> mStream;
+  nsRefPtr<MediaStream> mStream;
   double mTimeConstant;
   double mDuration;
 #ifdef DEBUG

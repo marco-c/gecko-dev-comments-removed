@@ -44,7 +44,7 @@ bool
 MessagePortParent::RecvPostMessages(nsTArray<MessagePortMessage>&& aMessages)
 {
   
-  FallibleTArray<RefPtr<SharedMessagePortMessage>> messages;
+  FallibleTArray<nsRefPtr<SharedMessagePortMessage>> messages;
   if (NS_WARN_IF(
       !SharedMessagePortMessage::FromMessagesToSharedParent(aMessages,
                                                             messages))) {
@@ -71,7 +71,7 @@ bool
 MessagePortParent::RecvDisentangle(nsTArray<MessagePortMessage>&& aMessages)
 {
   
-  FallibleTArray<RefPtr<SharedMessagePortMessage>> messages;
+  FallibleTArray<nsRefPtr<SharedMessagePortMessage>> messages;
   if (NS_WARN_IF(
       !SharedMessagePortMessage::FromMessagesToSharedParent(aMessages,
                                                             messages))) {
@@ -132,7 +132,7 @@ MessagePortParent::ActorDestroy(ActorDestroyReason aWhy)
   if (mService && mEntangled) {
     
     
-    RefPtr<MessagePortService> kungFuDeathGrip = mService;
+    nsRefPtr<MessagePortService> kungFuDeathGrip = mService;
     mService->ParentDestroy(this);
   }
 }

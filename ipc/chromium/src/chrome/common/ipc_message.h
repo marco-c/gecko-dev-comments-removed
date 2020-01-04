@@ -332,7 +332,7 @@ class Message : public Pickle {
 
 #if defined(OS_POSIX)
   
-  RefPtr<FileDescriptorSet> file_descriptor_set_;
+  nsRefPtr<FileDescriptorSet> file_descriptor_set_;
 
   
   void EnsureFileDescriptorSet();

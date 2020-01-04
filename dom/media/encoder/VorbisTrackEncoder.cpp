@@ -104,7 +104,7 @@ VorbisTrackEncoder::GetMetadata()
 
   
   
-  RefPtr<VorbisMetadata> meta = new VorbisMetadata();
+  nsRefPtr<VorbisMetadata> meta = new VorbisMetadata();
   meta->mBitDepth = 32; 
   meta->mChannels = mChannels;
   meta->mSamplingFrequency = mSamplingRate;

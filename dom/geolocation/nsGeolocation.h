@@ -201,8 +201,8 @@ private:
   
   
 
-  nsTArray<RefPtr<nsGeolocationRequest> > mPendingCallbacks;
-  nsTArray<RefPtr<nsGeolocationRequest> > mWatchingCallbacks;
+  nsTArray<nsRefPtr<nsGeolocationRequest> > mPendingCallbacks;
+  nsTArray<nsRefPtr<nsGeolocationRequest> > mWatchingCallbacks;
 
   
   nsWeakPtr mOwner;
@@ -211,13 +211,13 @@ private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
-  RefPtr<nsGeolocationService> mService;
+  nsRefPtr<nsGeolocationService> mService;
 
   
   uint32_t mLastWatchId;
 
   
-  nsTArray<RefPtr<nsGeolocationRequest> > mPendingRequests;
+  nsTArray<nsRefPtr<nsGeolocationRequest> > mPendingRequests;
 
   
   nsTArray<int32_t> mClearedWatchIDs;
@@ -246,7 +246,7 @@ public:
 private:
   ~PositionError();
   int16_t mCode;
-  RefPtr<Geolocation> mParent;
+  nsRefPtr<Geolocation> mParent;
 };
 
 } 

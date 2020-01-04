@@ -5,7 +5,7 @@
 
 #include "ImageWrapper.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "Orientation.h"
 
 #include "mozilla/MemoryReporting.h"
@@ -13,7 +13,6 @@
 namespace mozilla {
 
 using gfx::DataSourceSurface;
-using gfx::Filter;
 using gfx::SourceSurface;
 using layers::LayerManager;
 using layers::ImageContainer;
@@ -206,7 +205,7 @@ ImageWrapper::Draw(gfxContext* aContext,
                    const nsIntSize& aSize,
                    const ImageRegion& aRegion,
                    uint32_t aWhichFrame,
-                   Filter aFilter,
+                   GraphicsFilter aFilter,
                    const Maybe<SVGImageContext>& aSVGContext,
                    uint32_t aFlags)
 {
@@ -305,7 +304,7 @@ ImageWrapper::PropagateUseCounters(nsIDocument* aParentDocument)
 nsIntSize
 ImageWrapper::OptimalImageSizeForDest(const gfxSize& aDest,
                                       uint32_t aWhichFrame,
-                                      Filter aFilter, uint32_t aFlags)
+                                      GraphicsFilter aFilter, uint32_t aFlags)
 {
   return mInnerImage->OptimalImageSizeForDest(aDest, aWhichFrame, aFilter,
                                               aFlags);

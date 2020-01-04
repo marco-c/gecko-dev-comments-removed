@@ -135,7 +135,7 @@ private:
   uint32_t mCount;
   nsCOMPtr<nsIOutputStream> mSink;
   
-  RefPtr<nsInputStreamTee> mTee;
+  nsRefPtr<nsInputStreamTee> mTee;
 };
 
 nsInputStreamTee::nsInputStreamTee(): mLock(nullptr)

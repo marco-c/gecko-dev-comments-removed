@@ -59,7 +59,7 @@ public:
 
 protected:
     
-    RefPtr<IDWriteFontFamily> mDWFamily;
+    nsRefPtr<IDWriteFontFamily> mDWFamily;
     bool mForceGDIClassic;
 };
 
@@ -180,12 +180,12 @@ protected:
 
 
 
-    RefPtr<IDWriteFont> mFont;
-    RefPtr<IDWriteFontFile> mFontFile;
+    nsRefPtr<IDWriteFont> mFont;
+    nsRefPtr<IDWriteFontFile> mFontFile;
 
     
     
-    RefPtr<IDWriteFontFace> mFontFace;
+    nsRefPtr<IDWriteFontFace> mFontFace;
 
     DWRITE_FONT_FACE_TYPE mFaceType;
 
@@ -327,7 +327,7 @@ public:
 
 protected:
     long mRefCount;
-    RefPtr<IDWriteFontCollection> mSystemFonts;
+    nsRefPtr<IDWriteFontCollection> mSystemFonts;
     nsString mFamilyName;
 };
 
@@ -416,14 +416,14 @@ private:
 
     
     bool mGDIFontTableAccess;
-    RefPtr<IDWriteGdiInterop> mGDIInterop;
+    nsRefPtr<IDWriteGdiInterop> mGDIInterop;
 
-    RefPtr<FontFallbackRenderer> mFallbackRenderer;
-    RefPtr<IDWriteTextFormat>    mFallbackFormat;
+    nsRefPtr<FontFallbackRenderer> mFallbackRenderer;
+    nsRefPtr<IDWriteTextFormat>    mFallbackFormat;
 
-    RefPtr<IDWriteFontCollection> mSystemFonts;
+    nsRefPtr<IDWriteFontCollection> mSystemFonts;
 #ifdef MOZ_BUNDLED_FONTS
-    RefPtr<IDWriteFontCollection> mBundledFonts;
+    nsRefPtr<IDWriteFontCollection> mBundledFonts;
 #endif
 };
 

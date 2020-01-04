@@ -119,7 +119,7 @@ class nsCookieEntry : public nsCookieKey
 {
   public:
     
-    typedef nsTArray< RefPtr<nsCookie> > ArrayType;
+    typedef nsTArray< nsRefPtr<nsCookie> > ArrayType;
     typedef ArrayType::index_type IndexType;
 
     explicit nsCookieEntry(KeyTypePointer aKey)
@@ -148,7 +148,7 @@ class nsCookieEntry : public nsCookieKey
 struct CookieDomainTuple
 {
   nsCookieKey key;
-  RefPtr<nsCookie> cookie;
+  nsRefPtr<nsCookie> cookie;
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 };
@@ -340,8 +340,8 @@ class nsCookieService final : public nsICookieService
     
     
     DBState                      *mDBState;
-    RefPtr<DBState>             mDefaultDBState;
-    RefPtr<DBState>             mPrivateDBState;
+    nsRefPtr<DBState>             mDefaultDBState;
+    nsRefPtr<DBState>             mPrivateDBState;
 
     
     uint8_t                       mCookieBehavior; 

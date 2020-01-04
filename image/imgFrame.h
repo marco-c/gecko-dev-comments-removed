@@ -108,7 +108,6 @@ class imgFrame
   typedef gfx::Color Color;
   typedef gfx::DataSourceSurface DataSourceSurface;
   typedef gfx::DrawTarget DrawTarget;
-  typedef gfx::Filter Filter;
   typedef gfx::IntSize IntSize;
   typedef gfx::SourceSurface SourceSurface;
   typedef gfx::SurfaceFormat SurfaceFormat;
@@ -155,7 +154,7 @@ public:
   nsresult InitWithDrawable(gfxDrawable* aDrawable,
                             const nsIntSize& aSize,
                             const SurfaceFormat aFormat,
-                            Filter aFilter,
+                            GraphicsFilter aFilter,
                             uint32_t aImageFlags);
 
   DrawableFrameRef DrawableRef();
@@ -174,7 +173,7 @@ public:
   void SetRawAccessOnly();
 
   bool Draw(gfxContext* aContext, const ImageRegion& aRegion,
-            Filter aFilter, uint32_t aImageFlags);
+            GraphicsFilter aFilter, uint32_t aImageFlags);
 
   nsresult ImageUpdated(const nsIntRect& aUpdateRect);
 
@@ -322,10 +321,10 @@ private:
 
   mutable Monitor mMonitor;
 
-  RefPtr<DataSourceSurface> mImageSurface;
-  RefPtr<SourceSurface> mOptSurface;
+  nsRefPtr<DataSourceSurface> mImageSurface;
+  nsRefPtr<SourceSurface> mOptSurface;
 
-  RefPtr<VolatileBuffer> mVBuf;
+  nsRefPtr<VolatileBuffer> mVBuf;
   VolatileBufferPtr<uint8_t> mVBufPtr;
 
   nsIntRect mDecoded;

@@ -178,12 +178,12 @@ private:
   
   
   
-  RefPtr<workers::ServiceWorker> mInstallingWorker;
-  RefPtr<workers::ServiceWorker> mWaitingWorker;
-  RefPtr<workers::ServiceWorker> mActiveWorker;
+  nsRefPtr<workers::ServiceWorker> mInstallingWorker;
+  nsRefPtr<workers::ServiceWorker> mWaitingWorker;
+  nsRefPtr<workers::ServiceWorker> mActiveWorker;
 
 #ifndef MOZ_SIMPLEPUSH
-  RefPtr<PushManager> mPushManager;
+  nsRefPtr<PushManager> mPushManager;
 #endif
 };
 
@@ -254,10 +254,10 @@ private:
   ReleaseListener(Reason aReason);
 
   workers::WorkerPrivate* mWorkerPrivate;
-  RefPtr<WorkerListener> mListener;
+  nsRefPtr<WorkerListener> mListener;
 
 #ifndef MOZ_SIMPLEPUSH
-  RefPtr<WorkerPushManager> mPushManager;
+  nsRefPtr<WorkerPushManager> mPushManager;
 #endif
 };
 

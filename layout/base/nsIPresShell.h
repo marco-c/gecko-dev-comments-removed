@@ -1722,12 +1722,12 @@ protected:
   
   
   nsCOMPtr<nsIDocument>     mDocument;
-  RefPtr<nsPresContext>   mPresContext;
+  nsRefPtr<nsPresContext>   mPresContext;
   nsStyleSet*               mStyleSet;      
   nsCSSFrameConstructor*    mFrameConstructor; 
   nsViewManager*           mViewManager;   
   nsPresArena               mFrameArena;
-  RefPtr<nsFrameSelection> mSelection;
+  nsRefPtr<nsFrameSelection> mSelection;
   
   
   nsFrameManagerBase*       mFrameManager;
@@ -1817,7 +1817,7 @@ protected:
   
   
   
-  nsAutoTArray<RefPtr<mozilla::dom::Element>,1> mChangedScopeStyleRoots;
+  nsAutoTArray<nsRefPtr<mozilla::dom::Element>,1> mChangedScopeStyleRoots;
 
   static nsIContent*        gKeyDownTarget;
 

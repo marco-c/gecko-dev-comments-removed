@@ -173,7 +173,7 @@ private:
   
 
 
-  RefPtr<BluetoothClassOfDevice> mCod;
+  nsRefPtr<BluetoothClassOfDevice> mCod;
 
   
 
@@ -198,7 +198,7 @@ private:
   
 
 
-  RefPtr<BluetoothGatt> mGatt;
+  nsRefPtr<BluetoothGatt> mGatt;
 };
 
 END_BLUETOOTH_NAMESPACE
@@ -211,13 +211,13 @@ END_BLUETOOTH_NAMESPACE
 
 
 template <>
-class nsDefaultComparator <RefPtr<mozilla::dom::bluetooth::BluetoothDevice>,
-                           RefPtr<mozilla::dom::bluetooth::BluetoothDevice>> {
+class nsDefaultComparator <nsRefPtr<mozilla::dom::bluetooth::BluetoothDevice>,
+                           nsRefPtr<mozilla::dom::bluetooth::BluetoothDevice>> {
   public:
 
     bool Equals(
-      const RefPtr<mozilla::dom::bluetooth::BluetoothDevice>& aDeviceA,
-      const RefPtr<mozilla::dom::bluetooth::BluetoothDevice>& aDeviceB) const
+      const nsRefPtr<mozilla::dom::bluetooth::BluetoothDevice>& aDeviceA,
+      const nsRefPtr<mozilla::dom::bluetooth::BluetoothDevice>& aDeviceB) const
     {
       nsString addressA, addressB;
       aDeviceA->GetAddress(addressA);
@@ -236,11 +236,11 @@ class nsDefaultComparator <RefPtr<mozilla::dom::bluetooth::BluetoothDevice>,
 
 
 template <>
-class nsDefaultComparator <RefPtr<mozilla::dom::bluetooth::BluetoothDevice>,
+class nsDefaultComparator <nsRefPtr<mozilla::dom::bluetooth::BluetoothDevice>,
                            nsString> {
 public:
   bool Equals(
-    const RefPtr<mozilla::dom::bluetooth::BluetoothDevice>& aDevice,
+    const nsRefPtr<mozilla::dom::bluetooth::BluetoothDevice>& aDevice,
     const nsString& aAddress) const
   {
     nsString deviceAddress;

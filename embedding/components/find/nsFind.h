@@ -71,7 +71,7 @@ protected:
   
   nsresult InitIterator(nsIDOMNode* aStartNode, int32_t aStartOffset,
                         nsIDOMNode* aEndNode, int32_t aEndOffset);
-  RefPtr<nsFindContentIterator> mIterator;
+  nsRefPtr<nsFindContentIterator> mIterator;
 };
 
 #endif 

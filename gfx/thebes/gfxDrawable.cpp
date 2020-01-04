@@ -34,7 +34,7 @@ gfxSurfaceDrawable::DrawWithSamplingRect(gfxContext* aContext,
                                          const gfxRect& aFillRect,
                                          const gfxRect& aSamplingRect,
                                          bool aRepeat,
-                                         const Filter& aFilter,
+                                         const GraphicsFilter& aFilter,
                                          gfxFloat aOpacity)
 {
   if (!mSourceSurface) {
@@ -60,7 +60,7 @@ bool
 gfxSurfaceDrawable::Draw(gfxContext* aContext,
                          const gfxRect& aFillRect,
                          bool aRepeat,
-                         const Filter& aFilter,
+                         const GraphicsFilter& aFilter,
                          gfxFloat aOpacity,
                          const gfxMatrix& aTransform)
 {
@@ -77,7 +77,7 @@ gfxSurfaceDrawable::DrawInternal(gfxContext* aContext,
                                  const gfxRect& aFillRect,
                                  const IntRect& aSamplingRect,
                                  bool aRepeat,
-                                 const Filter& aFilter,
+                                 const GraphicsFilter& aFilter,
                                  gfxFloat aOpacity,
                                  const gfxMatrix& aTransform)
 {
@@ -91,7 +91,7 @@ gfxSurfaceDrawable::DrawInternal(gfxContext* aContext,
     patternTransform.Invert();
 
     SurfacePattern pattern(mSourceSurface, extend,
-                           patternTransform, aFilter, aSamplingRect);
+                           patternTransform, ToFilter(aFilter), aSamplingRect);
 
     Rect fillRect = ToRect(aFillRect);
     DrawTarget* dt = aContext->GetDrawTarget();
@@ -116,11 +116,11 @@ gfxCallbackDrawable::gfxCallbackDrawable(gfxDrawingCallback* aCallback,
 }
 
 already_AddRefed<gfxSurfaceDrawable>
-gfxCallbackDrawable::MakeSurfaceDrawable(const Filter aFilter)
+gfxCallbackDrawable::MakeSurfaceDrawable(const GraphicsFilter aFilter)
 {
     SurfaceFormat format =
         gfxPlatform::GetPlatform()->Optimal2DFormatForContent(gfxContentType::COLOR_ALPHA);
-    RefPtr<DrawTarget> dt =
+    nsRefPtr<DrawTarget> dt =
         gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(mSize,
                                                                      format);
     if (!dt)
@@ -129,7 +129,7 @@ gfxCallbackDrawable::MakeSurfaceDrawable(const Filter aFilter)
     nsRefPtr<gfxContext> ctx = new gfxContext(dt);
     Draw(ctx, gfxRect(0, 0, mSize.width, mSize.height), false, aFilter);
 
-    RefPtr<SourceSurface> surface = dt->Snapshot();
+    nsRefPtr<SourceSurface> surface = dt->Snapshot();
     if (surface) {
         nsRefPtr<gfxSurfaceDrawable> drawable = new gfxSurfaceDrawable(surface, mSize);
         return drawable.forget();
@@ -141,7 +141,7 @@ bool
 gfxCallbackDrawable::Draw(gfxContext* aContext,
                           const gfxRect& aFillRect,
                           bool aRepeat,
-                          const Filter& aFilter,
+                          const GraphicsFilter& aFilter,
                           gfxFloat aOpacity,
                           const gfxMatrix& aTransform)
 {
@@ -181,7 +181,7 @@ public:
 
     virtual bool operator()(gfxContext* aContext,
                               const gfxRect& aFillRect,
-                              const Filter& aFilter,
+                              const GraphicsFilter& aFilter,
                               const gfxMatrix& aTransform = gfxMatrix())
     {
         return mDrawable->Draw(aContext, aFillRect, false, aFilter, 1.0,
@@ -205,7 +205,7 @@ bool
 gfxPatternDrawable::Draw(gfxContext* aContext,
                          const gfxRect& aFillRect,
                          bool aRepeat,
-                         const Filter& aFilter,
+                         const GraphicsFilter& aFilter,
                          gfxFloat aOpacity,
                          const gfxMatrix& aTransform)
 {

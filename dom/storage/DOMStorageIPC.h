@@ -86,7 +86,7 @@ private:
   NS_DECL_OWNINGTHREAD
 
   
-  RefPtr<DOMLocalStorageManager> mManager;
+  nsRefPtr<DOMLocalStorageManager> mManager;
 
   
   nsAutoPtr<nsTHashtable<nsCStringHashKey> > mScopesHavingData;
@@ -149,7 +149,7 @@ public:
     virtual void LoadWait();
 
   private:
-    RefPtr<DOMStorageDBParent> mParent;
+    nsRefPtr<DOMStorageDBParent> mParent;
     nsCString mScope;
     bool mLoaded;
     uint32_t mLoadedCount;
@@ -168,7 +168,7 @@ public:
     virtual void LoadUsage(const int64_t usage);
 
   private:
-    RefPtr<DOMStorageDBParent> mParent;
+    nsRefPtr<DOMStorageDBParent> mParent;
     nsCString mScope;
   };
 

@@ -156,8 +156,8 @@ TEST(VorbisTrackEncoder, Metadata)
   int rate = 44100;
   encoder.TestVorbisCreation(channels, rate);
 
-  RefPtr<TrackMetadataBase> meta = encoder.GetMetadata();
-  RefPtr<VorbisMetadata> vorbisMetadata(static_cast<VorbisMetadata*>(meta.get()));
+  nsRefPtr<TrackMetadataBase> meta = encoder.GetMetadata();
+  nsRefPtr<VorbisMetadata> vorbisMetadata(static_cast<VorbisMetadata*>(meta.get()));
 
   
   
@@ -177,7 +177,7 @@ TEST(VorbisTrackEncoder, EncodedFrame)
 
   
   
-  RefPtr<mozilla::SharedBuffer> samples =
+  nsRefPtr<mozilla::SharedBuffer> samples =
     mozilla::SharedBuffer::Create(rate * sizeof(AudioDataValue));
   AudioDataValue* data = static_cast<AudioDataValue*>(samples->Data());
   for (int i = 0; i < rate; i++) {

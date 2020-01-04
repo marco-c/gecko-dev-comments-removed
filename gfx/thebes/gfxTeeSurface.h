@@ -31,7 +31,7 @@ public:
     
 
 
-    void GetSurfaces(nsTArray<RefPtr<gfxASurface> > *aSurfaces);
+    void GetSurfaces(nsTArray<nsRefPtr<gfxASurface> > *aSurfaces);
 };
 
 #endif 

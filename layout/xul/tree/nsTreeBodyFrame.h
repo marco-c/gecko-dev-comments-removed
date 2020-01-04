@@ -71,7 +71,7 @@ public:
   
   already_AddRefed<nsTreeColumns> Columns() const
   {
-    RefPtr<nsTreeColumns> cols = mColumns;
+    nsRefPtr<nsTreeColumns> cols = mColumns;
     return cols.forget();
   }
   already_AddRefed<nsITreeView> GetExistingView() const
@@ -558,13 +558,13 @@ protected:
 
   nsRevocableEventPtr<ScrollEvent> mScrollEvent;
 
-  RefPtr<ScrollbarActivity> mScrollbarActivity;
+  nsRefPtr<ScrollbarActivity> mScrollbarActivity;
 
   
   nsCOMPtr<nsITreeBoxObject> mTreeBoxObject;
 
   
-  RefPtr<nsTreeColumns> mColumns;
+  nsRefPtr<nsTreeColumns> mColumns;
 
   
   

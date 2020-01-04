@@ -78,15 +78,15 @@ private:
   
   
   
-  typedef Pair<RefPtr<MediaData>, bool> MediaDataAndInputExhausted;
+  typedef Pair<nsRefPtr<MediaData>, bool> MediaDataAndInputExhausted;
   std::deque<MediaDataAndInputExhausted> mDelayedOutput;
-  RefPtr<MediaTimer> mDelayedOutputTimer;
+  nsRefPtr<MediaTimer> mDelayedOutputTimer;
   
   
   bool mDraining;
   
   
-  RefPtr<TaskQueue> mTaskQueue;
+  nsRefPtr<TaskQueue> mTaskQueue;
   void ScheduleOutputDelayedFrame();
   void OutputDelayedFrame();
 public: 
@@ -103,7 +103,7 @@ public:
 
 private:
   
-  RefPtr<InitPromise> Init() override;
+  nsRefPtr<InitPromise> Init() override;
   nsresult Input(MediaRawData* aSample) override;
   nsresult Flush() override;
   nsresult Drain() override;
@@ -111,8 +111,8 @@ private:
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
   nsresult ConfigurationChanged(const TrackInfo& aConfig) override;
 
-  RefPtr<MediaDataDecoder> mDecoder;
-  RefPtr<DecoderCallbackFuzzingWrapper> mCallbackWrapper;
+  nsRefPtr<MediaDataDecoder> mDecoder;
+  nsRefPtr<DecoderCallbackFuzzingWrapper> mCallbackWrapper;
 };
 
 } 

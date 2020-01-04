@@ -386,8 +386,8 @@ private:
 private:
   nsCSSSelectorList*      mSelector; 
   Declaration*            mDeclaration;
-  RefPtr<ImportantRule> mImportantRule; 
-  RefPtr<DOMCSSStyleRule> mDOMRule;
+  nsRefPtr<ImportantRule> mImportantRule; 
+  nsRefPtr<DOMCSSStyleRule> mDOMRule;
 
 private:
   StyleRule& operator=(const StyleRule& aCopy) = delete;

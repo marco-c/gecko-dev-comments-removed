@@ -41,7 +41,7 @@ public:
   
   
   
-  virtual RefPtr<AppendPromise> BufferAppend() = 0;
+  virtual nsRefPtr<AppendPromise> BufferAppend() = 0;
 
   
   virtual void AbortAppendData() = 0;
@@ -53,7 +53,7 @@ public:
 
   
   
-  virtual RefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
+  virtual nsRefPtr<RangeRemovalPromise> RangeRemoval(media::TimeUnit aStart,
                                                      media::TimeUnit aEnd) = 0;
 
   enum class EvictDataResult : int8_t

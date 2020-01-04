@@ -81,7 +81,7 @@ public:
   
   
 
-  RefPtr<Mappable> mappable;
+  nsRefPtr<Mappable> mappable;
 
   
   MappedPtr base;

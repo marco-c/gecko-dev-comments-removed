@@ -55,7 +55,7 @@ protected:
   nsresult OnFrameComplete(imgIRequest* aRequest);
 
   nsCOMPtr<nsIContent>      mContent;
-  RefPtr<imgRequestProxy> mIconRequest;
+  nsRefPtr<imgRequestProxy> mIconRequest;
   nsMenuObjectX*            mMenuObject; 
   nsIntRect                 mImageRegionRect;
   bool                      mLoadedIcon;

@@ -76,7 +76,7 @@ nsTreeStyleCache::GetStyleContext(nsICSSPseudoComparator* aComparator,
   }
   if (!result) {
     
-    RefPtr<nsStyleContext> newResult = aPresContext->StyleSet()->
+    nsRefPtr<nsStyleContext> newResult = aPresContext->StyleSet()->
       ResolveXULTreePseudoStyle(aContent->AsElement(), aPseudoElement,
                                 aContext, aComparator);
 

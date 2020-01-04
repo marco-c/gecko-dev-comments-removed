@@ -837,7 +837,7 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
 
     
     
-    RefPtr<CSPReportRedirectSink> reportSink = new CSPReportRedirectSink();
+    nsRefPtr<CSPReportRedirectSink> reportSink = new CSPReportRedirectSink();
     if (docShell) {
       nsCOMPtr<nsINetworkInterceptController> interceptController = do_QueryInterface(docShell);
       reportSink->SetInterceptController(interceptController);
@@ -893,7 +893,7 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
       httpChannel->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
     }
 
-    RefPtr<CSPViolationReportListener> listener = new CSPViolationReportListener();
+    nsRefPtr<CSPViolationReportListener> listener = new CSPViolationReportListener();
     rv = reportChannel->AsyncOpen(listener, nullptr);
 
     
@@ -1014,7 +1014,7 @@ class CSPReportSenderRunnable final : public nsRunnable
     nsString                mScriptSample;
     uint32_t                mLineNum;
     uint64_t                mInnerWindowID;
-    RefPtr<nsCSPContext>  mCSPContext;
+    nsRefPtr<nsCSPContext>  mCSPContext;
 };
 
 

@@ -140,7 +140,7 @@ private:
 
   void SetState(GestureState aState);
 
-  RefPtr<AsyncPanZoomController> mAsyncPanZoomController;
+  nsRefPtr<AsyncPanZoomController> mAsyncPanZoomController;
 
   
 

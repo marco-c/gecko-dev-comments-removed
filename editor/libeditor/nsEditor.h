@@ -838,9 +838,9 @@ protected:
 
   nsCOMPtr<nsIInlineSpellChecker> mInlineSpellChecker;
 
-  RefPtr<nsTransactionManager> mTxnMgr;
+  nsRefPtr<nsTransactionManager> mTxnMgr;
   nsCOMPtr<mozilla::dom::Element> mRootElement; 
-  RefPtr<mozilla::dom::Text>    mIMETextNode; 
+  nsRefPtr<mozilla::dom::Text>    mIMETextNode; 
   nsCOMPtr<mozilla::dom::EventTarget> mEventTarget; 
   nsCOMPtr<nsIDOMEventListener> mEventListener;
   nsWeakPtr        mSelConWeak;          
@@ -851,7 +851,7 @@ protected:
   nsString         *mPhonetic;
   
   
-  RefPtr<mozilla::TextComposition> mComposition;
+  nsRefPtr<mozilla::TextComposition> mComposition;
 
   
   

@@ -59,7 +59,7 @@ EncodedBufferCache::ExtractBlob(nsISupports* aParent,
                                 const nsAString &aContentType)
 {
   MutexAutoLock lock(mMutex);
-  RefPtr<dom::Blob> blob;
+  nsRefPtr<dom::Blob> blob;
   if (mTempFileEnabled) {
     
     blob = dom::Blob::CreateTemporaryBlob(aParent, mFD, 0, mDataSize,

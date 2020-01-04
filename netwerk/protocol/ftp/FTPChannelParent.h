@@ -127,10 +127,10 @@ protected:
   
   
   bool mSuspendedForDiversion;
-  RefPtr<OfflineObserver> mObserver;
-  RefPtr<mozilla::dom::TabParent> mTabParent;
+  nsRefPtr<OfflineObserver> mObserver;
+  nsRefPtr<mozilla::dom::TabParent> mTabParent;
 
-  RefPtr<ChannelEventQueue> mEventQ;
+  nsRefPtr<ChannelEventQueue> mEventQ;
 };
 
 } 

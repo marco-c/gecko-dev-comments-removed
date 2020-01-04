@@ -159,7 +159,7 @@ private:
   Transport* mTransport;
   
   
-  RefPtr<ImageBridgeParent> mSelfRef;
+  nsRefPtr<ImageBridgeParent> mSelfRef;
 
   bool mSetChildThreadPriority;
 
@@ -170,7 +170,7 @@ private:
 
   static MessageLoop* sMainLoop;
 
-  RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
+  nsRefPtr<CompositorThreadHolder> mCompositorThreadHolder;
 };
 
 } 

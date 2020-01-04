@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/DOMImplementation.h"
 
@@ -18,7 +18,7 @@
 namespace mozilla {
 namespace dom {
 
-// QueryInterface implementation for DOMImplementation
+
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMImplementation)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsIDOMDOMImplementation)
@@ -76,8 +76,8 @@ DOMImplementation::CreateDocumentType(const nsAString& aQualifiedName,
     return nullptr;
   }
 
-  // Indicate that there is no internal subset (not just an empty one)
-  RefPtr<DocumentType> docType =
+  
+  nsRefPtr<DocumentType> docType =
     NS_NewDOMDocumentType(mOwner->NodeInfoManager(), name, aPublicId,
                           aSystemId, NullString(), aRv);
   return docType.forget();
@@ -135,9 +135,9 @@ DOMImplementation::CreateDocument(const nsAString& aNamespaceURI,
                          DocumentFlavorLegacyGuess);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // When DOMImplementation's createDocument method is invoked with
-  // namespace set to HTML Namespace use the registry of the associated
-  // document to the new instance.
+  
+  
+  
   nsCOMPtr<nsIDocument> doc = do_QueryInterface(document);
   if (aNamespaceURI.EqualsLiteral("http://www.w3.org/1999/xhtml")) {
     doc->UseRegistryFromDocument(mOwner);
@@ -185,13 +185,13 @@ DOMImplementation::CreateHTMLDocument(const nsAString& aTitle,
   NS_ENSURE_STATE(mOwner);
 
   nsCOMPtr<nsIDOMDocumentType> doctype;
-  // Indicate that there is no internal subset (not just an empty one)
+  
   nsresult rv = NS_NewDOMDocumentType(getter_AddRefs(doctype),
                                       mOwner->NodeInfoManager(),
-                                      nsGkAtoms::html, // aName
-                                      EmptyString(), // aPublicId
-                                      EmptyString(), // aSystemId
-                                      NullString()); // aInternalSubset
+                                      nsGkAtoms::html, 
+                                      EmptyString(), 
+                                      EmptyString(), 
+                                      NullString()); 
   NS_ENSURE_SUCCESS(rv, rv);
 
 
@@ -226,7 +226,7 @@ DOMImplementation::CreateHTMLDocument(const nsAString& aTitle,
     rv = head->AppendChildTo(title, false);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    RefPtr<nsTextNode> titleText = new nsTextNode(doc->NodeInfoManager());
+    nsRefPtr<nsTextNode> titleText = new nsTextNode(doc->NodeInfoManager());
     rv = titleText->SetText(aTitle, false);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = title->AppendChildTo(titleText, false);
@@ -238,8 +238,8 @@ DOMImplementation::CreateHTMLDocument(const nsAString& aTitle,
   rv = root->AppendChildTo(body, false);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // When the createHTMLDocument method is invoked,
-  // use the registry of the associated document to the new instance.
+  
+  
   doc->UseRegistryFromDocument(mOwner);
 
   doc->SetReadyStateInternal(nsIDocument::READYSTATE_COMPLETE);
@@ -270,5 +270,5 @@ DOMImplementation::CreateHTMLDocument(const nsAString& aTitle,
   return CreateHTMLDocument(aTitle, getter_AddRefs(document), aReturn);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

@@ -305,7 +305,7 @@ public:
 template<class ClassType, bool Owning>
 struct nsRunnableMethodReceiver
 {
-  RefPtr<ClassType> mObj;
+  nsRefPtr<ClassType> mObj;
   explicit nsRunnableMethodReceiver(ClassType* aObj) : mObj(aObj) {}
   ~nsRunnableMethodReceiver() { Revoke(); }
   ClassType* Get() const { return mObj.get(); }
@@ -449,7 +449,7 @@ struct IsParameterStorageClass<StoreConstRefPassByConstLRef<S>>
 template<typename T>
 struct StorensRefPtrPassByPtr
 {
-  typedef RefPtr<T> stored_type;
+  typedef nsRefPtr<T> stored_type;
   typedef T* passed_type;
   stored_type m;
   template <typename A>
@@ -546,7 +546,7 @@ struct IsRefcountedSmartPointer : public mozilla::FalseType
 {};
 
 template<typename T>
-struct IsRefcountedSmartPointer<RefPtr<T>> : public mozilla::TrueType
+struct IsRefcountedSmartPointer<nsRefPtr<T>> : public mozilla::TrueType
 {};
 
 template<typename T>
@@ -560,7 +560,7 @@ struct StripSmartPointer
 };
 
 template<typename T>
-struct StripSmartPointer<RefPtr<T>>
+struct StripSmartPointer<nsRefPtr<T>>
 {
   typedef T Type;
 };
@@ -1015,7 +1015,7 @@ private:
   nsRevocableEventPtr(const nsRevocableEventPtr&);
   nsRevocableEventPtr& operator=(const nsRevocableEventPtr&);
 
-  RefPtr<T> mEvent;
+  nsRefPtr<T> mEvent;
 };
 
 

@@ -68,7 +68,7 @@ protected:
   nsMenuGroupOwnerX*        mMenuGroupOwner;      
   nsCOMPtr<nsIContent>      mCommandContent;
   
-  RefPtr<nsMenuItemIconX> mIcon;
+  nsRefPtr<nsMenuItemIconX> mIcon;
   bool                      mIsChecked;
 };
 

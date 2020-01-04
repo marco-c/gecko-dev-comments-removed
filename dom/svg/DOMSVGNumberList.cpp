@@ -118,7 +118,7 @@ DOMSVGNumberList::InternalListLengthWillChange(uint32_t aNewLength)
     aNewLength = DOMSVGNumber::MaxListIndex();
   }
 
-  RefPtr<DOMSVGNumberList> kungFuDeathGrip;
+  nsRefPtr<DOMSVGNumberList> kungFuDeathGrip;
   if (aNewLength < oldLength) {
     
     
@@ -188,7 +188,7 @@ DOMSVGNumberList::Initialize(DOMSVGNumber& aItem,
   
   
   
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  nsRefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
 
   Clear(error);
   MOZ_ASSERT(!error.Failed());
@@ -199,7 +199,7 @@ already_AddRefed<DOMSVGNumber>
 DOMSVGNumberList::GetItem(uint32_t index, ErrorResult& error)
 {
   bool found;
-  RefPtr<DOMSVGNumber> item = IndexedGetter(index, found, error);
+  nsRefPtr<DOMSVGNumber> item = IndexedGetter(index, found, error);
   if (!found) {
     error.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
   }
@@ -236,7 +236,7 @@ DOMSVGNumberList::InsertItemBefore(DOMSVGNumber& aItem,
   }
 
   
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  nsRefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
 
   
   if (!mItems.SetCapacity(mItems.Length() + 1, fallible) ||
@@ -278,7 +278,7 @@ DOMSVGNumberList::ReplaceItem(DOMSVGNumber& aItem,
   }
 
   
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  nsRefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
 
   AutoChangeNumberListNotifier notifier(this);
   if (mItems[index]) {
@@ -317,7 +317,7 @@ DOMSVGNumberList::RemoveItem(uint32_t index,
   MaybeRemoveItemFromAnimValListAt(index);
 
   
-  RefPtr<DOMSVGNumber> result = GetItemAt(index);
+  nsRefPtr<DOMSVGNumber> result = GetItemAt(index);
 
   AutoChangeNumberListNotifier notifier(this);
   
@@ -340,7 +340,7 @@ DOMSVGNumberList::GetItemAt(uint32_t aIndex)
   if (!mItems[aIndex]) {
     mItems[aIndex] = new DOMSVGNumber(this, AttrEnum(), aIndex, IsAnimValList());
   }
-  RefPtr<DOMSVGNumber> result = mItems[aIndex];
+  nsRefPtr<DOMSVGNumber> result = mItems[aIndex];
   return result.forget();
 }
 
@@ -371,7 +371,7 @@ DOMSVGNumberList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex)
 
   
   
-  RefPtr<DOMSVGNumberList> animVal = mAList->mAnimVal;
+  nsRefPtr<DOMSVGNumberList> animVal = mAList->mAnimVal;
 
   if (!animVal || mAList->IsAnimating()) {
     

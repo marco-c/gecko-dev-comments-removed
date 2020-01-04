@@ -343,7 +343,7 @@ protected:
 
 
 
-    nsTArray<RefPtr<CSSStyleSheet>> mOverlaySheets;
+    nsTArray<nsRefPtr<CSSStyleSheet>> mOverlaySheets;
 
     nsCOMPtr<nsIDOMXULCommandDispatcher>     mCommandDispatcher; 
 
@@ -517,7 +517,7 @@ protected:
     {
     protected:
         XULDocument* mDocument;              
-        RefPtr<Element> mObservesElement; 
+        nsRefPtr<Element> mObservesElement; 
         bool mResolved;
 
     public:
@@ -610,19 +610,19 @@ protected:
 
 
 
-    RefPtr<nsXULPrototypeDocument> mCurrentPrototype;
+    nsRefPtr<nsXULPrototypeDocument> mCurrentPrototype;
 
     
 
 
 
-    RefPtr<nsXULPrototypeDocument> mMasterPrototype;
+    nsRefPtr<nsXULPrototypeDocument> mMasterPrototype;
 
     
 
 
 
-    nsTArray< RefPtr<nsXULPrototypeDocument> > mPrototypes;
+    nsTArray< nsRefPtr<nsXULPrototypeDocument> > mPrototypes;
 
     
 
@@ -689,7 +689,7 @@ protected:
 
     class CachedChromeStreamListener : public nsIStreamListener {
     protected:
-        RefPtr<XULDocument> mDocument;
+        nsRefPtr<XULDocument> mDocument;
         bool mProtoLoaded;
 
         virtual ~CachedChromeStreamListener();
@@ -708,8 +708,8 @@ protected:
 
     class ParserObserver : public nsIRequestObserver {
     protected:
-        RefPtr<XULDocument> mDocument;
-        RefPtr<nsXULPrototypeDocument> mPrototype;
+        nsRefPtr<XULDocument> mDocument;
+        nsRefPtr<nsXULPrototypeDocument> mPrototype;
         virtual ~ParserObserver();
 
     public:

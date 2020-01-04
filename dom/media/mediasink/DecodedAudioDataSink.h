@@ -9,7 +9,7 @@
 #include "AudioSink.h"
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsISupportsImpl.h"
 
 #include "mozilla/dom/AudioChannelBinding.h"
@@ -34,7 +34,7 @@ public:
 
   
   
-  RefPtr<GenericPromise> Init() override;
+  nsRefPtr<GenericPromise> Init() override;
 
   
 
@@ -146,7 +146,7 @@ private:
   
   
   
-  RefPtr<AudioStream> mAudioStream;
+  nsRefPtr<AudioStream> mAudioStream;
 
   
   

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "FileIOObject.h"
 #include "mozilla/dom/File.h"
@@ -85,7 +85,7 @@ FileIOObject::ClearProgressEventTimer()
 void
 FileIOObject::DispatchError(nsresult rv, nsAString& finalEvent)
 {
-  // Set the status attribute, and dispatch the error event
+  
   switch (rv) {
   case NS_ERROR_FILE_NOT_FOUND:
     mError = new DOMError(GetOwner(), NS_LITERAL_STRING("NotFoundError"));
@@ -98,7 +98,7 @@ FileIOObject::DispatchError(nsresult rv, nsAString& finalEvent)
     break;
   }
 
-  // Dispatch error event to signify load failure
+  
   DispatchProgressEvent(NS_LITERAL_STRING(ERROR_STR));
   DispatchProgressEvent(finalEvent);
 }
@@ -118,14 +118,14 @@ FileIOObject::DispatchProgressEvent(const nsAString& aType)
     init.mLengthComputable = false;
     init.mTotal = 0;
   }
-  RefPtr<ProgressEvent> event =
+  nsRefPtr<ProgressEvent> event =
     ProgressEvent::Constructor(this, aType, init);
   event->SetTrusted(true);
 
   return DispatchDOMEvent(nullptr, event, nullptr, nullptr);
 }
 
-// nsITimerCallback
+
 NS_IMETHODIMP
 FileIOObject::Notify(nsITimer* aTimer)
 {
@@ -142,7 +142,7 @@ FileIOObject::Notify(nsITimer* aTimer)
   return NS_OK;
 }
 
-// InputStreamCallback
+
 NS_IMETHODIMP
 FileIOObject::OnInputStreamReady(nsIAsyncInputStream* aStream)
 {
@@ -170,7 +170,7 @@ FileIOObject::OnInputStreamReady(nsIAsyncInputStream* aStream)
 
   mTransferred += aCount;
 
-  //Notify the timer is the appropriate timeframe has passed
+  
   if (mTimerIsActive) {
     mProgressEventWasDelayed = true;
   } else {
@@ -186,23 +186,23 @@ FileIOObject::OnInputStreamReady(nsIAsyncInputStream* aStream)
 nsresult
 FileIOObject::OnLoadEnd(nsresult aStatus)
 {
-  // Cancel the progress event timer
+  
   ClearProgressEventTimer();
 
-  // FileIOObject must be in DONE stage after an operation
+  
   mReadyState = 2;
 
   nsString successEvent, termEvent;
   nsresult rv = DoOnLoadEnd(aStatus, successEvent, termEvent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Set the status field as appropriate
+  
   if (NS_FAILED(aStatus)) {
     DispatchError(aStatus, termEvent);
     return NS_OK;
   }
 
-  // Dispatch event to signify end of a successful operation
+  
   DispatchProgressEvent(successEvent);
   DispatchProgressEvent(termEvent);
 
@@ -213,8 +213,8 @@ nsresult
 FileIOObject::DoAsyncWait(nsIAsyncInputStream* aStream)
 {
   return aStream->AsyncWait(this,
-                            /* aFlags*/ 0,
-                            /* aRequestedCount */ 0,
+                             0,
+                             0,
                             NS_GetCurrentThread());
 }
 
@@ -222,25 +222,25 @@ void
 FileIOObject::Abort(ErrorResult& aRv)
 {
   if (mReadyState != 1) {
-    // XXX The spec doesn't say this
+    
     aRv.Throw(NS_ERROR_DOM_FILE_ABORT_ERR);
     return;
   }
 
   ClearProgressEventTimer();
 
-  mReadyState = 2; // There are DONE constants on multiple interfaces,
-                   // but they all have value 2.
-  // XXX The spec doesn't say this
+  mReadyState = 2; 
+                   
+  
   mError = new DOMError(GetOwner(), NS_LITERAL_STRING("AbortError"));
 
   nsString finalEvent;
   DoAbort(finalEvent);
 
-  // Dispatch the events
+  
   DispatchProgressEvent(NS_LITERAL_STRING(ABORT_STR));
   DispatchProgressEvent(finalEvent);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

@@ -15,7 +15,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsIDOMEvent.h"
 #include "nsIPresShell.h"
 #include "nsIStreamListener.h"
@@ -263,7 +263,7 @@ public:
   { }
   virtual bool operator()(gfxContext* aContext,
                           const gfxRect& aFillRect,
-                          const Filter& aFilter,
+                          const GraphicsFilter& aFilter,
                           const gfxMatrix& aTransform);
 private:
   nsRefPtr<SVGDocumentWrapper> mSVGDocumentWrapper;
@@ -276,7 +276,7 @@ private:
 bool
 SVGDrawingCallback::operator()(gfxContext* aContext,
                                const gfxRect& aFillRect,
-                               const Filter& aFilter,
+                               const GraphicsFilter& aFilter,
                                const gfxMatrix& aTransform)
 {
   MOZ_ASSERT(mSVGDocumentWrapper, "need an SVGDocumentWrapper");
@@ -726,7 +726,7 @@ VectorImage::GetFrameAtSize(const IntSize& aSize,
 
   
   
-  RefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
+  nsRefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
     CreateOffscreenContentDrawTarget(aSize, SurfaceFormat::B8G8R8A8);
   if (!dt) {
     NS_ERROR("Could not create a DrawTarget");
@@ -735,8 +735,10 @@ VectorImage::GetFrameAtSize(const IntSize& aSize,
 
   nsRefPtr<gfxContext> context = new gfxContext(dt);
 
-  auto result = Draw(context, aSize, ImageRegion::Create(aSize),
-                     aWhichFrame, Filter::POINT, Nothing(), aFlags);
+  auto result = Draw(context, aSize,
+                     ImageRegion::Create(aSize),
+                     aWhichFrame, GraphicsFilter::FILTER_NEAREST,
+                     Nothing(), aFlags);
 
   return result == DrawResult::SUCCESS ? dt->Snapshot() : nullptr;
 }
@@ -759,7 +761,7 @@ struct SVGDrawingParameters
   SVGDrawingParameters(gfxContext* aContext,
                        const nsIntSize& aSize,
                        const ImageRegion& aRegion,
-                       Filter aFilter,
+                       GraphicsFilter aFilter,
                        const Maybe<SVGImageContext>& aSVGContext,
                        float aAnimationTime,
                        uint32_t aFlags)
@@ -784,7 +786,7 @@ struct SVGDrawingParameters
   IntSize                       size;
   IntRect                       imageRect;
   ImageRegion                   region;
-  Filter                        filter;
+  GraphicsFilter                filter;
   const Maybe<SVGImageContext>& svgContext;
   nsIntSize                     viewportSize;
   float                         animationTime;
@@ -805,7 +807,7 @@ VectorImage::Draw(gfxContext* aContext,
                   const nsIntSize& aSize,
                   const ImageRegion& aRegion,
                   uint32_t aWhichFrame,
-                  Filter aFilter,
+                  GraphicsFilter aFilter,
                   const Maybe<SVGImageContext>& aSVGContext,
                   uint32_t aFlags)
 {
@@ -860,7 +862,7 @@ VectorImage::Draw(gfxContext* aContext,
 
   
   if (result) {
-    RefPtr<SourceSurface> surface = result.DrawableRef()->GetSurface();
+    nsRefPtr<SourceSurface> surface = result.DrawableRef()->GetSurface();
     if (surface) {
       nsRefPtr<gfxDrawable> svgDrawable =
         new gfxSurfaceDrawable(surface, result.DrawableRef()->GetSize());
@@ -916,7 +918,7 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
   nsresult rv =
     frame->InitWithDrawable(svgDrawable, aParams.size,
                             SurfaceFormat::B8G8R8A8,
-                            Filter::POINT, aParams.flags);
+                            GraphicsFilter::FILTER_NEAREST, aParams.flags);
 
   
   
@@ -927,7 +929,7 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
 
   
   
-  RefPtr<SourceSurface> surface = frame->GetSurface();
+  nsRefPtr<SourceSurface> surface = frame->GetSurface();
   if (!surface) {
     return Show(svgDrawable, aParams);
   }
@@ -1296,7 +1298,7 @@ VectorImage::ReportUseCounters()
 nsIntSize
 VectorImage::OptimalImageSizeForDest(const gfxSize& aDest,
                                      uint32_t aWhichFrame,
-                                     Filter aFilter,
+                                     GraphicsFilter aFilter,
                                      uint32_t aFlags)
 {
   MOZ_ASSERT(aDest.width >= 0 || ceil(aDest.width) <= INT32_MAX ||

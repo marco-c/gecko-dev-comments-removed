@@ -87,7 +87,7 @@ private:
     nsDownloadScanner *mDLScanner;
     PRTime mStartTime;
     HANDLE mThread;
-    RefPtr<nsDownload> mDownload;
+    nsRefPtr<nsDownload> mDownload;
     
     CRITICAL_SECTION mStateSync;
     AVScanState mStatus;

@@ -122,7 +122,7 @@ private:
   virtual ~nsContentPermissionRequester();
 
   nsCOMPtr<nsPIDOMWindow> mWindow;
-  RefPtr<VisibilityChangeListener> mListener;
+  nsRefPtr<VisibilityChangeListener> mListener;
 };
 
 } 
@@ -171,7 +171,7 @@ private:
   
   ContentPermissionRequestParent* mParent;
   nsTArray<mozilla::dom::PermissionRequest> mPermissionRequests;
-  RefPtr<nsContentPermissionRequesterProxy> mRequester;
+  nsRefPtr<nsContentPermissionRequesterProxy> mRequester;
 };
 
 
@@ -217,7 +217,7 @@ private:
   nsCOMPtr<nsIContentPermissionRequest> mRequest;
   nsCOMPtr<nsPIDOMWindow>               mWindow;
   bool                                  mIPCOpen;
-  RefPtr<VisibilityChangeListener>    mListener;
+  nsRefPtr<VisibilityChangeListener>    mListener;
 };
 
 #endif 

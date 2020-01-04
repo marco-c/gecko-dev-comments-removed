@@ -128,6 +128,10 @@ MediaOmxReader::MediaOmxReader(AbstractMediaDecoder *aDecoder)
   , mIsShutdown(false)
   , mMP3FrameParser(-1)
 {
+  if (!gMediaDecoderLog) {
+    gMediaDecoderLog = PR_NewLogModule("MediaDecoder");
+  }
+
   mAudioChannel = dom::AudioChannelService::GetDefaultAudioChannel();
 }
 

@@ -1,14 +1,14 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ImageEncoder.h"
 #include "mozilla/dom/CanvasRenderingContext2D.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/unused.h"
 #include "gfxUtils.h"
@@ -19,17 +19,17 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace dom {
 
-// This class should be placed inside GetBRGADataSourceSurfaceSync(). However,
-// due to B2G ICS uses old complier (C++98/03) which forbids local class as
-// template parameter, we need to move this class outside.
+
+
+
 class SurfaceHelper : public nsRunnable {
 public:
   explicit SurfaceHelper(already_AddRefed<layers::Image> aImage) : mImage(aImage) {}
 
-  // It retrieves a SourceSurface reference and convert color format on main
-  // thread and passes DataSourceSurface to caller thread.
+  
+  
   NS_IMETHOD Run() {
-    // It guarantees the reference will be released on main thread.
+    
     nsCountedRef<nsMainThreadSourceSurfaceRef> surface;
     surface.own(mImage->GetAsSourceSurface().take());
 
@@ -52,19 +52,19 @@ public:
   }
 
 private:
-  RefPtr<layers::Image> mImage;
-  RefPtr<gfx::DataSourceSurface> mDataSourceSurface;
+  nsRefPtr<layers::Image> mImage;
+  nsRefPtr<gfx::DataSourceSurface> mDataSourceSurface;
 };
 
-// This function returns a DataSourceSurface in B8G8R8A8 format.
-// It uses SourceSurface to do format convert. Because most SourceSurface in
-// image formats should be referenced or dereferenced on main thread, it uses a
-// sync class SurfaceHelper to retrieve SourceSurface and convert to B8G8R8A8 on
-// main thread.
+
+
+
+
+
 already_AddRefed<DataSourceSurface>
 GetBRGADataSourceSurfaceSync(already_AddRefed<layers::Image> aImage)
 {
-  RefPtr<SurfaceHelper> helper = new SurfaceHelper(Move(aImage));
+  nsRefPtr<SurfaceHelper> helper = new SurfaceHelper(Move(aImage));
   return helper->GetDataSurfaceSafe();
 }
 
@@ -91,8 +91,8 @@ public:
     MOZ_ASSERT(NS_IsMainThread());
 
     if (!mFailed) {
-      // The correct parentObject has to be set by the mEncodeCompleteCallback.
-      RefPtr<Blob> blob =
+      
+      nsRefPtr<Blob> blob =
         Blob::CreateMemoryBlob(nullptr, mImgData, mImgSize, mType);
       MOZ_ASSERT(blob);
 
@@ -122,7 +122,7 @@ private:
   nsAutoString mType;
   void* mImgData;
   nsCOMPtr<nsIThread> mEncoderThread;
-  RefPtr<EncodeCompleteCallback> mEncodeCompleteCallback;
+  nsRefPtr<EncodeCompleteCallback> mEncodeCompleteCallback;
   bool mFailed;
 };
 
@@ -168,8 +168,8 @@ public:
                                                     getter_AddRefs(stream),
                                                     mEncoder);
 
-    // If there are unrecognized custom parse options, we should fall back to
-    // the default values for the encoder without any options at all.
+    
+    
     if (rv == NS_ERROR_INVALID_ARG && mUsingCustomOptions) {
       rv = ImageEncoder::ExtractDataInternal(mType,
                                              EmptyString(),
@@ -206,7 +206,7 @@ public:
     }
     rv = NS_DispatchToMainThread(mEncodingCompleteEvent);
     if (NS_FAILED(rv)) {
-      // Better to leak than to crash.
+      
       unused << mEncodingCompleteEvent.forget();
       return rv;
     }
@@ -218,9 +218,9 @@ private:
   nsAutoString mType;
   nsAutoString mOptions;
   nsAutoArrayPtr<uint8_t> mImageBuffer;
-  RefPtr<layers::Image> mImage;
+  nsRefPtr<layers::Image> mImage;
   nsCOMPtr<imgIEncoder> mEncoder;
-  RefPtr<EncodingCompleteEvent> mEncodingCompleteEvent;
+  nsRefPtr<EncodingCompleteEvent> mEncodingCompleteEvent;
   int32_t mFormat;
   const nsIntSize mSize;
   bool mUsingCustomOptions;
@@ -228,7 +228,7 @@ private:
 
 NS_IMPL_ISUPPORTS_INHERITED0(EncodingRunnable, nsRunnable);
 
-/* static */
+
 nsresult
 ImageEncoder::ExtractData(nsAString& aType,
                           const nsAString& aOptions,
@@ -246,7 +246,7 @@ ImageEncoder::ExtractData(nsAString& aType,
 }
 
 
-/* static */
+
 nsresult
 ImageEncoder::ExtractDataFromLayersImageAsync(nsAString& aType,
                                               const nsAString& aOptions,
@@ -263,7 +263,7 @@ ImageEncoder::ExtractDataFromLayersImageAsync(nsAString& aType,
   nsresult rv = NS_NewThread(getter_AddRefs(encoderThread), nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  RefPtr<EncodingCompleteEvent> completeEvent =
+  nsRefPtr<EncodingCompleteEvent> completeEvent =
     new EncodingCompleteEvent(encoderThread, aEncodeCallback);
 
   nsIntSize size(aImage->GetSize().width, aImage->GetSize().height);
@@ -279,7 +279,7 @@ ImageEncoder::ExtractDataFromLayersImageAsync(nsAString& aType,
   return encoderThread->Dispatch(event, NS_DISPATCH_NORMAL);
 }
 
-/* static */
+
 nsresult
 ImageEncoder::ExtractDataAsync(nsAString& aType,
                                const nsAString& aOptions,
@@ -298,7 +298,7 @@ ImageEncoder::ExtractDataAsync(nsAString& aType,
   nsresult rv = NS_NewThread(getter_AddRefs(encoderThread), nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  RefPtr<EncodingCompleteEvent> completeEvent =
+  nsRefPtr<EncodingCompleteEvent> completeEvent =
     new EncodingCompleteEvent(encoderThread, aEncodeCallback);
 
   nsCOMPtr<nsIRunnable> event = new EncodingRunnable(aType,
@@ -313,7 +313,7 @@ ImageEncoder::ExtractDataAsync(nsAString& aType,
   return encoderThread->Dispatch(event, NS_DISPATCH_NORMAL);
 }
 
-/*static*/ nsresult
+ nsresult
 ImageEncoder::GetInputStream(int32_t aWidth,
                              int32_t aHeight,
                              uint8_t* aImageBuffer,
@@ -332,7 +332,7 @@ ImageEncoder::GetInputStream(int32_t aWidth,
   return CallQueryInterface(aEncoder, aStream);
 }
 
-/* static */
+
 nsresult
 ImageEncoder::ExtractDataInternal(const nsAString& aType,
                                   const nsAString& aOptions,
@@ -350,7 +350,7 @@ ImageEncoder::ExtractDataInternal(const nsAString& aType,
 
   nsCOMPtr<nsIInputStream> imgStream;
 
-  // get image bytes
+  
   nsresult rv;
   if (aImageBuffer) {
     rv = ImageEncoder::GetInputStream(
@@ -367,10 +367,10 @@ ImageEncoder::ExtractDataInternal(const nsAString& aType,
                                   nsPromiseFlatString(aOptions).get(),
                                   getter_AddRefs(imgStream));
   } else if (aImage) {
-    // It is safe to convert PlanarYCbCr format from YUV to RGB off-main-thread.
-    // Other image formats could have problem to convert format off-main-thread.
-    // So here it uses a help function GetBRGADataSourceSurfaceSync() to convert
-    // format on main thread.
+    
+    
+    
+    
     if (aImage->GetFormat() == ImageFormat::PLANAR_YCBCR) {
       nsTArray<uint8_t> data;
       layers::PlanarYCbCrImage* ycbcrImage = static_cast<layers::PlanarYCbCrImage*> (aImage);
@@ -393,8 +393,8 @@ ImageEncoder::ExtractDataInternal(const nsAString& aType,
                                   imgIEncoder::INPUT_FORMAT_HOSTARGB,
                                   aOptions);
     } else {
-      RefPtr<gfx::DataSourceSurface> dataSurface;
-      RefPtr<layers::Image> image(aImage);
+      nsRefPtr<gfx::DataSourceSurface> dataSurface;
+      nsRefPtr<layers::Image> image(aImage);
       dataSurface = GetBRGADataSourceSurfaceSync(image.forget());
 
       DataSourceSurface::MappedSurface map;
@@ -415,11 +415,11 @@ ImageEncoder::ExtractDataInternal(const nsAString& aType,
       imgStream = do_QueryInterface(aEncoder);
     }
   } else {
-    // no context, so we have to encode an empty image
-    // note that if we didn't have a current context, the spec says we're
-    // supposed to just return transparent black pixels of the canvas
-    // dimensions.
-    RefPtr<DataSourceSurface> emptyCanvas =
+    
+    
+    
+    
+    nsRefPtr<DataSourceSurface> emptyCanvas =
       Factory::CreateDataSourceSurfaceWithStride(IntSize(aSize.width, aSize.height),
                                                  SurfaceFormat::B8G8R8A8,
                                                  4 * aSize.width, true);
@@ -449,19 +449,19 @@ ImageEncoder::ExtractDataInternal(const nsAString& aType,
   return rv;
 }
 
-/* static */
+
 already_AddRefed<imgIEncoder>
 ImageEncoder::GetImageEncoder(nsAString& aType)
 {
-  // Get an image encoder for the media type.
+  
   nsCString encoderCID("@mozilla.org/image/encoder;2?type=");
   NS_ConvertUTF16toUTF8 encoderType(aType);
   encoderCID += encoderType;
   nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(encoderCID.get());
 
   if (!encoder && aType != NS_LITERAL_STRING("image/png")) {
-    // Unable to create an encoder instance of the specified type. Falling back
-    // to PNG.
+    
+    
     aType.AssignLiteral("image/png");
     nsCString PNGEncoderCID("@mozilla.org/image/encoder;2?type=image/png");
     encoder = do_CreateInstance(PNGEncoderCID.get());
@@ -470,5 +470,5 @@ ImageEncoder::GetImageEncoder(nsAString& aType)
   return encoder.forget();
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

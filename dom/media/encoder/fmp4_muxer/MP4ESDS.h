@@ -40,7 +40,7 @@ public:
   nsresult Generate(uint32_t* aBoxSize) override;
   nsresult Write() override;
   nsresult Find(const nsACString& aType,
-                nsTArray<RefPtr<MuxerOperation>>& aOperations) override;
+                nsTArray<nsRefPtr<MuxerOperation>>& aOperations) override;
 
   
   ES_Descriptor(ISOControl* aControl);
@@ -55,7 +55,7 @@ protected:
 class ESDBox : public FullBox {
 public:
   
-  RefPtr<ES_Descriptor> es_descriptor;
+  nsRefPtr<ES_Descriptor> es_descriptor;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;
@@ -71,7 +71,7 @@ public:
 class MP4AudioSampleEntry : public AudioSampleEntry {
 public:
   
-  RefPtr<ESDBox> es;
+  nsRefPtr<ESDBox> es;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;

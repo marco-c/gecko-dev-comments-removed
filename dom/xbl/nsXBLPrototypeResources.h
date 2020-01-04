@@ -60,13 +60,13 @@ public:
 
 private:
   
-  RefPtr<nsXBLResourceLoader> mLoader;
+  nsRefPtr<nsXBLResourceLoader> mLoader;
 
   
-  nsTArray<RefPtr<mozilla::CSSStyleSheet>> mStyleSheetList;
+  nsTArray<nsRefPtr<mozilla::CSSStyleSheet>> mStyleSheetList;
 
   
-  RefPtr<nsCSSRuleProcessor> mRuleProcessor;
+  nsRefPtr<nsCSSRuleProcessor> mRuleProcessor;
 };
 
 #endif

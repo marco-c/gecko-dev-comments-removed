@@ -427,7 +427,7 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
   
   
   nsIContent *rootElm = nsCoreUtils::GetRoleContent(aDocument);
-  RefPtr<DocAccessible> docAcc = isRootDoc ?
+  nsRefPtr<DocAccessible> docAcc = isRootDoc ?
     new RootAccessibleWrap(aDocument, rootElm, presShell) :
     new DocAccessibleWrap(aDocument, rootElm, presShell);
 

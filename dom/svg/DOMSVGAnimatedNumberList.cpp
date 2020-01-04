@@ -47,7 +47,7 @@ DOMSVGAnimatedNumberList::BaseVal()
   if (!mBaseVal) {
     mBaseVal = new DOMSVGNumberList(this, InternalAList().GetBaseValue());
   }
-  RefPtr<DOMSVGNumberList> baseVal = mBaseVal;
+  nsRefPtr<DOMSVGNumberList> baseVal = mBaseVal;
   return baseVal.forget();
 }
 
@@ -57,7 +57,7 @@ DOMSVGAnimatedNumberList::AnimVal()
   if (!mAnimVal) {
     mAnimVal = new DOMSVGNumberList(this, InternalAList().GetAnimValue());
   }
-  RefPtr<DOMSVGNumberList> animVal = mAnimVal;
+  nsRefPtr<DOMSVGNumberList> animVal = mAnimVal;
   return animVal.forget();
 }
 
@@ -66,7 +66,7 @@ DOMSVGAnimatedNumberList::GetDOMWrapper(SVGAnimatedNumberList *aList,
                                         nsSVGElement *aElement,
                                         uint8_t aAttrEnum)
 {
-  RefPtr<DOMSVGAnimatedNumberList> wrapper =
+  nsRefPtr<DOMSVGAnimatedNumberList> wrapper =
     SVGAnimatedNumberListTearoffTable().GetTearoff(aList);
   if (!wrapper) {
     wrapper = new DOMSVGAnimatedNumberList(aElement, aAttrEnum);
@@ -98,7 +98,7 @@ DOMSVGAnimatedNumberList::InternalBaseValListWillChangeTo(const SVGNumberList& a
   
   
 
-  RefPtr<DOMSVGAnimatedNumberList> kungFuDeathGrip;
+  nsRefPtr<DOMSVGAnimatedNumberList> kungFuDeathGrip;
   if (mBaseVal) {
     if (aNewValue.Length() < mBaseVal->LengthNoFlush()) {
       

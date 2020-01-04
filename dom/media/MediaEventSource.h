@@ -148,7 +148,7 @@ class ListenerHelper {
     }
 
   private:
-    RefPtr<RevocableToken> mToken;
+    nsRefPtr<RevocableToken> mToken;
     Function mFunction;
     ArgType mEvent;
   };
@@ -169,7 +169,7 @@ public:
   template <typename F, typename T>
   typename EnableIf<!TakeArgs<F>::value, void>::Type
   Dispatch(const F& aFunc, T&&) {
-    const RefPtr<RevocableToken>& token = mToken;
+    const nsRefPtr<RevocableToken>& token = mToken;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
       
       if (!token->IsRevoked()) {
@@ -185,8 +185,8 @@ public:
   }
 
 private:
-  RefPtr<RevocableToken> mToken;
-  const RefPtr<Target> mTarget;
+  nsRefPtr<RevocableToken> mToken;
+  const nsRefPtr<Target> mTarget;
   Function mFunction;
 };
 
@@ -213,7 +213,7 @@ public:
     return mToken;
   }
 private:
-  const RefPtr<RevocableToken> mToken;
+  const nsRefPtr<RevocableToken> mToken;
 };
 
 
@@ -347,7 +347,7 @@ private:
   
   
   explicit MediaEventListener(RevocableToken* aToken) : mToken(aToken) {}
-  RefPtr<RevocableToken> mToken;
+  nsRefPtr<RevocableToken> mToken;
 };
 
 

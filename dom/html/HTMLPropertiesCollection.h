@@ -45,7 +45,7 @@ protected:
 
   virtual void EnsureFresh() override;
 
-  RefPtr<HTMLPropertiesCollection> mCollection;
+  nsRefPtr<HTMLPropertiesCollection> mCollection;
 };
 
 class HTMLPropertiesCollection final : public nsIHTMLCollection,
@@ -131,16 +131,16 @@ protected:
   }
 
   
-  nsTArray<RefPtr<nsGenericHTMLElement> > mProperties;
+  nsTArray<nsRefPtr<nsGenericHTMLElement> > mProperties;
 
   
-  RefPtr<PropertyStringList> mNames;
+  nsRefPtr<PropertyStringList> mNames;
 
   
   nsRefPtrHashtable<nsStringHashKey, PropertyNodeList> mNamedItemEntries;
 
   
-  RefPtr<nsGenericHTMLElement> mRoot;
+  nsRefPtr<nsGenericHTMLElement> mRoot;
 
   
   nsCOMPtr<nsIDocument> mDoc;
@@ -205,13 +205,13 @@ protected:
   nsCOMPtr<nsIDocument> mDoc;
 
   
-  RefPtr<HTMLPropertiesCollection> mCollection;
+  nsRefPtr<HTMLPropertiesCollection> mCollection;
 
   
   nsCOMPtr<nsINode> mParent;
 
   
-  nsTArray<RefPtr<nsGenericHTMLElement> > mElements;
+  nsTArray<nsRefPtr<nsGenericHTMLElement> > mElements;
 
   
   bool mIsDirty;

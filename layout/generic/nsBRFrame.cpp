@@ -121,7 +121,7 @@ BRFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      RefPtr<nsFontMetrics> fm;
+      nsRefPtr<nsFontMetrics> fm;
       nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm),
         nsLayoutUtils::FontSizeInflationFor(this));
       if (fm) {

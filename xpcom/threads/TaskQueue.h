@@ -9,7 +9,7 @@
 
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/TaskDispatcher.h"
 #include "mozilla/unused.h"
 
@@ -55,7 +55,7 @@ public:
   
   
   
-  RefPtr<ShutdownPromise> BeginShutdown();
+  nsRefPtr<ShutdownPromise> BeginShutdown();
 
   
   void AwaitIdle();
@@ -94,7 +94,7 @@ protected:
     }
   }
 
-  RefPtr<SharedThreadPool> mPool;
+  nsRefPtr<SharedThreadPool> mPool;
 
   
   Monitor mQueueMonitor;
@@ -167,7 +167,7 @@ protected:
     }
     NS_METHOD Run() override;
   private:
-    RefPtr<TaskQueue> mQueue;
+    nsRefPtr<TaskQueue> mQueue;
   };
 };
 

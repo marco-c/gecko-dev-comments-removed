@@ -1536,7 +1536,7 @@ nsContentSink::DropParserAndPerfHint(void)
   
   
   
-  RefPtr<nsParserBase> kungFuDeathGrip(mParser.forget());
+  nsRefPtr<nsParserBase> kungFuDeathGrip(mParser.forget());
 
   if (mDynamicLowerValue) {
     

@@ -89,7 +89,7 @@ public:
                                    gfxSparseBitSet* aUnicodeRanges) override;
 
   private:
-    RefPtr<FontFaceSet> mFontFaceSet;
+    nsRefPtr<FontFaceSet> mFontFaceSet;
   };
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -225,7 +225,7 @@ private:
   
   
   struct FontFaceRecord {
-    RefPtr<FontFace> mFontFace;
+    nsRefPtr<FontFace> mFontFace;
     uint8_t mSheetType;  
 
     
@@ -277,7 +277,7 @@ private:
 
   void ParseFontShorthandForMatching(
               const nsAString& aFont,
-              RefPtr<mozilla::css::FontFamilyListRefCnt>& aFamilyList,
+              nsRefPtr<mozilla::css::FontFamilyListRefCnt>& aFamilyList,
               uint32_t& aWeight,
               int32_t& aStretch,
               uint32_t& aItalicStyle,
@@ -287,7 +287,7 @@ private:
                              nsTArray<FontFace*>& aFontFaces,
                              mozilla::ErrorResult& aRv);
 
-  RefPtr<UserFontSet> mUserFontSet;
+  nsRefPtr<UserFontSet> mUserFontSet;
 
   
   nsCOMPtr<nsIDocument> mDocument;
@@ -298,7 +298,7 @@ private:
   
   
   
-  RefPtr<mozilla::dom::Promise> mReady;
+  nsRefPtr<mozilla::dom::Promise> mReady;
 
   
   

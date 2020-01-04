@@ -196,7 +196,7 @@ public:
 private:
   ~CryptoKey();
 
-  RefPtr<nsIGlobalObject> mGlobal;
+  nsRefPtr<nsIGlobalObject> mGlobal;
   uint32_t mAttributes; 
   KeyAlgorithmProxy mAlgorithm;
 

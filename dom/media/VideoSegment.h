@@ -60,7 +60,7 @@ public:
 protected:
   
   
-  RefPtr<Image> mImage;
+  nsRefPtr<Image> mImage;
   
   gfx::IntSize mIntrinsicSize;
   bool mForceBlack;

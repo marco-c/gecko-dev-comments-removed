@@ -406,7 +406,7 @@ nsWSRunObject::DeleteWSBackward()
   
   
   if (nsCRT::IsAsciiSpace(point.mChar)) {
-    RefPtr<Text> startNodeText, endNodeText;
+    nsRefPtr<Text> startNodeText, endNodeText;
     int32_t startOffset, endOffset;
     GetAsciiWSBounds(eBoth, point.mTextNode, point.mOffset + 1,
                      getter_AddRefs(startNodeText), &startOffset,
@@ -457,7 +457,7 @@ nsWSRunObject::DeleteWSForward()
   
   
   if (nsCRT::IsAsciiSpace(point.mChar)) {
-    RefPtr<Text> startNodeText, endNodeText;
+    nsRefPtr<Text> startNodeText, endNodeText;
     int32_t startOffset, endOffset;
     GetAsciiWSBounds(eBoth, point.mTextNode, point.mOffset + 1,
                      getter_AddRefs(startNodeText), &startOffset,
@@ -627,7 +627,7 @@ nsWSRunObject::GetWSNodes()
   nsCOMPtr<nsINode> wsBoundingParent = GetWSBoundingParent();
 
   
-  if (RefPtr<Text> textNode = mNode->GetAsText()) {
+  if (nsRefPtr<Text> textNode = mNode->GetAsText()) {
     const nsTextFragment* textFrag = textNode->GetText();
 
     mNodeArray.InsertElementAt(0, textNode);
@@ -671,7 +671,7 @@ nsWSRunObject::GetWSNodes()
         mStartOffset = start.offset;
         mStartReason = WSType::otherBlock;
         mStartReasonNode = priorNode;
-      } else if (RefPtr<Text> textNode = priorNode->GetAsText()) {
+      } else if (nsRefPtr<Text> textNode = priorNode->GetAsText()) {
         mNodeArray.InsertElementAt(0, textNode);
         const nsTextFragment *textFrag;
         if (!textNode || !(textFrag = textNode->GetText())) {
@@ -733,7 +733,7 @@ nsWSRunObject::GetWSNodes()
   }
 
   
-  if (RefPtr<Text> textNode = mNode->GetAsText()) {
+  if (nsRefPtr<Text> textNode = mNode->GetAsText()) {
     
     const nsTextFragment *textFrag = textNode->GetText();
 
@@ -778,7 +778,7 @@ nsWSRunObject::GetWSNodes()
         mEndOffset = end.offset;
         mEndReason = WSType::otherBlock;
         mEndReasonNode = nextNode;
-      } else if (RefPtr<Text> textNode = nextNode->GetAsText()) {
+      } else if (nsRefPtr<Text> textNode = nextNode->GetAsText()) {
         mNodeArray.AppendElement(textNode);
         const nsTextFragment *textFrag;
         if (!textNode || !(textFrag = textNode->GetText())) {
@@ -1224,7 +1224,7 @@ nsWSRunObject::PrepareToDeleteRangePriv(nsWSRunObject* aEndObject)
       WSPoint point = GetCharBefore(mNode, mOffset);
       if (point.mTextNode && nsCRT::IsAsciiSpace(point.mChar))
       {
-        RefPtr<Text> wsStartNode, wsEndNode;
+        nsRefPtr<Text> wsStartNode, wsEndNode;
         int32_t wsStartOffset, wsEndOffset;
         GetAsciiWSBounds(eBoth, mNode, mOffset,
                          getter_AddRefs(wsStartNode), &wsStartOffset,
@@ -1269,7 +1269,7 @@ nsWSRunObject::PrepareToSplitAcrossBlocksPriv()
     WSPoint point = GetCharBefore(mNode, mOffset);
     if (point.mTextNode && nsCRT::IsAsciiSpace(point.mChar))
     {
-      RefPtr<Text> wsStartNode, wsEndNode;
+      nsRefPtr<Text> wsStartNode, wsEndNode;
       int32_t wsStartOffset, wsEndOffset;
       GetAsciiWSBounds(eBoth, mNode, mOffset,
                        getter_AddRefs(wsStartNode), &wsStartOffset,
@@ -1326,10 +1326,10 @@ nsWSRunObject::DeleteChars(nsINode* aStartNode, int32_t aStartOffset,
   }
 
   nsresult res;
-  RefPtr<nsRange> range;
+  nsRefPtr<nsRange> range;
   int32_t count = mNodeArray.Length();
   for (; idx < count; idx++) {
-    RefPtr<Text> node = mNodeArray[idx];
+    nsRefPtr<Text> node = mNodeArray[idx];
     if (!node) {
       
       return NS_OK;
@@ -1489,7 +1489,7 @@ nsWSRunObject::ConvertToNBSP(WSPoint aPoint, AreaRestriction aAR)
   NS_ENSURE_SUCCESS(res, res);
 
   
-  RefPtr<Text> startNode, endNode;
+  nsRefPtr<Text> startNode, endNode;
   int32_t startOffset = 0, endOffset = 0;
 
   GetAsciiWSBounds(eAfter, aPoint.mTextNode, aPoint.mOffset + 1,
@@ -1513,7 +1513,7 @@ nsWSRunObject::GetAsciiWSBounds(int16_t aDir, nsINode* aNode, int32_t aOffset,
   MOZ_ASSERT(aNode && outStartNode && outStartOffset && outEndNode &&
              outEndOffset);
 
-  RefPtr<Text> startNode, endNode;
+  nsRefPtr<Text> startNode, endNode;
   int32_t startOffset = 0, endOffset = 0;
 
   if (aDir & eAfter) {
@@ -1638,7 +1638,7 @@ nsWSRunObject::GetWSPointAfter(nsINode* aNode, int32_t aOffset)
 
   uint32_t firstNum = 0, curNum = numNodes/2, lastNum = numNodes;
   int16_t cmp = 0;
-  RefPtr<Text> curNode;
+  nsRefPtr<Text> curNode;
 
   
   
@@ -1660,12 +1660,12 @@ nsWSRunObject::GetWSPointAfter(nsINode* aNode, int32_t aOffset)
   if (curNum == mNodeArray.Length()) {
     
     
-    RefPtr<Text> textNode(mNodeArray[curNum - 1]);
+    nsRefPtr<Text> textNode(mNodeArray[curNum - 1]);
     WSPoint point(textNode, textNode->TextLength(), 0);
     return GetCharAfter(point);
   } else {
     
-    RefPtr<Text> textNode(mNodeArray[curNum]);
+    nsRefPtr<Text> textNode(mNodeArray[curNum]);
     WSPoint point(textNode, 0, 0);
     return GetCharAfter(point);
   }
@@ -1687,7 +1687,7 @@ nsWSRunObject::GetWSPointBefore(nsINode* aNode, int32_t aOffset)
 
   uint32_t firstNum = 0, curNum = numNodes/2, lastNum = numNodes;
   int16_t cmp = 0;
-  RefPtr<Text>  curNode;
+  nsRefPtr<Text>  curNode;
 
   
   
@@ -1709,14 +1709,14 @@ nsWSRunObject::GetWSPointBefore(nsINode* aNode, int32_t aOffset)
   if (curNum == mNodeArray.Length()) {
     
     
-    RefPtr<Text> textNode(mNodeArray[curNum - 1]);
+    nsRefPtr<Text> textNode(mNodeArray[curNum - 1]);
     WSPoint point(textNode, textNode->TextLength(), 0);
     return GetCharBefore(point);
   } else {
     
     
     
-    RefPtr<Text> textNode(mNodeArray[curNum]);
+    nsRefPtr<Text> textNode(mNodeArray[curNum]);
     WSPoint point(textNode, 0, 0);
     return GetCharBefore(point);
   }
@@ -1816,7 +1816,7 @@ nsWSRunObject::CheckTrailingNBSPOfRun(WSFragment *aRun)
       
       
 
-      RefPtr<Text> startNode, endNode;
+      nsRefPtr<Text> startNode, endNode;
       int32_t startOffset, endOffset;
       GetAsciiWSBounds(eBoth, prevPoint.mTextNode, prevPoint.mOffset + 1,
                        getter_AddRefs(startNode), &startOffset,

@@ -155,6 +155,17 @@ CSSTransition::QueueEvents()
                                           this));
 }
 
+bool
+CSSTransition::HasEndEventToQueue() const
+{
+  if (!mEffect) {
+    return false;
+  }
+
+  return !mWasFinishedOnLastTick &&
+         PlayState() == AnimationPlayState::Finished;
+}
+
 void
 CSSTransition::Tick()
 {
@@ -476,7 +487,7 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     
     collection->mStyleRuleRefreshTime = TimeStamp();
     collection->UpdateCheckGeneration(mPresContext);
-    collection->mStyleChanging = true;
+    collection->mNeedsRefreshes = true;
     TimeStamp now = mPresContext->RefreshDriver()->MostRecentRefresh();
     collection->EnsureStyleRuleFor(now);
   }

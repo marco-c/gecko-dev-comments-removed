@@ -157,7 +157,6 @@ nsPluginFrame::nsPluginFrame(nsStyleContext* aContext)
   : nsPluginFrameSuper(aContext)
   , mInstanceOwner(nullptr)
   , mReflowCallbackPosted(false)
-  , mIsHiddenDueToScroll(false)
 {
   MOZ_LOG(GetObjectFrameLog(), LogLevel::Debug,
          ("Created new nsPluginFrame %p\n", this));
@@ -765,23 +764,6 @@ nsPluginFrame::IsHidden(bool aCheckVisibilityStyle) const
   return false;
 }
 
-
-
-void
-nsPluginFrame::SetScrollVisibility(bool aState)
-{
-  
-  if (mWidget) {
-    bool changed = mIsHiddenDueToScroll != aState;
-    mIsHiddenDueToScroll = aState;
-    
-    
-    if (changed) {
-      SchedulePaint();
-    }
-  }
-}
-
 mozilla::LayoutDeviceIntPoint
 nsPluginFrame::GetRemoteTabChromeOffset()
 {
@@ -1116,11 +1098,6 @@ nsPluginFrame::DidSetWidgetGeometry()
 bool
 nsPluginFrame::IsOpaque() const
 {
-  
-  
-  if (mIsHiddenDueToScroll) {
-    return false;
-  }
 #if defined(XP_MACOSX)
   return false;
 #elif defined(MOZ_WIDGET_ANDROID)
@@ -1166,12 +1143,6 @@ nsPluginFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists)
 {
-  
-  
-  if (mIsHiddenDueToScroll) {
-    return;
-  }
-
   
   if (!IsVisibleOrCollapsedForPainting(aBuilder))
     return;
@@ -1457,11 +1428,12 @@ nsPluginFrame::BuildLayer(nsDisplayListBuilder* aBuilder,
 
     imglayer->SetScaleToSize(size, ScaleMode::STRETCH);
     imglayer->SetContainer(container);
-    Filter filter = nsLayoutUtils::GetGraphicsFilterForFrame(this);
+    GraphicsFilter filter =
+      nsLayoutUtils::GetGraphicsFilterForFrame(this);
 #ifdef MOZ_GFX_OPTIMIZE_MOBILE
     if (!aManager->IsCompositingCheap()) {
       
-      filter = Filter::POINT;
+      filter = GraphicsFilter::FILTER_NEAREST;
     }
 #endif
     imglayer->SetFilter(filter);

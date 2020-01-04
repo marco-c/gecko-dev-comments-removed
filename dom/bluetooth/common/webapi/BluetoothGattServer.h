@@ -38,7 +38,7 @@ public:
 
 
   void GetServices(
-    nsTArray<RefPtr<BluetoothGattService>>& aServices) const
+    nsTArray<nsRefPtr<BluetoothGattService>>& aServices) const
   {
     aServices = mServices;
   }
@@ -126,8 +126,8 @@ private:
     { }
 
     BluetoothAttributeHandle mHandle;
-    RefPtr<BluetoothGattCharacteristic> mCharacteristic;
-    RefPtr<BluetoothGattDescriptor> mDescriptor;
+    nsRefPtr<BluetoothGattCharacteristic> mCharacteristic;
+    nsRefPtr<BluetoothGattDescriptor> mDescriptor;
   };
 
   void HandleServerRegistered(const BluetoothValue& aValue);
@@ -160,12 +160,12 @@ private:
   
 
 
-  nsTArray<RefPtr<BluetoothGattService>> mServices;
+  nsTArray<nsRefPtr<BluetoothGattService>> mServices;
 
   
 
 
-  RefPtr<BluetoothGattService> mPendingService;
+  nsRefPtr<BluetoothGattService> mPendingService;
 
   
 

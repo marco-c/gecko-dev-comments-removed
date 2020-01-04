@@ -44,7 +44,7 @@ public:
 class AVCSampleEntry : public VisualSampleEntry {
 public:
   
-  RefPtr<AVCConfigurationBox> avcConfigBox;
+  nsRefPtr<AVCConfigurationBox> avcConfigBox;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;

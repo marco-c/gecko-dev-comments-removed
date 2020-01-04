@@ -35,7 +35,6 @@ using mozilla::gfx::BackendType;
 using mozilla::gfx::DataSourceSurface;
 using mozilla::gfx::DrawTarget;
 using mozilla::gfx::Factory;
-using mozilla::gfx::Filter;
 using mozilla::gfx::IntPoint;
 using mozilla::gfx::IntRect;
 using mozilla::gfx::IntSize;
@@ -363,7 +362,7 @@ void data_ss_release_callback(void *aDataSourceSurface,
 nsresult nsCocoaUtils::CreateCGImageFromSurface(SourceSurface* aSurface,
                                                 CGImageRef* aResult)
 {
-  RefPtr<DataSourceSurface> dataSurface;
+  nsRefPtr<DataSourceSurface> dataSurface;
 
   if (aSurface->GetFormat() ==  SurfaceFormat::B8G8R8A8) {
     dataSurface = aSurface->GetDataSurface();
@@ -469,7 +468,7 @@ nsresult nsCocoaUtils::CreateNSImageFromCGImage(CGImageRef aInputImage, NSImage 
 
 nsresult nsCocoaUtils::CreateNSImageFromImageContainer(imgIContainer *aImage, uint32_t aWhichFrame, NSImage **aResult, CGFloat scaleFactor)
 {
-  RefPtr<SourceSurface> surface;
+  nsRefPtr<SourceSurface> surface;
   int32_t width = 0, height = 0;
   aImage->GetWidth(&width);
   aImage->GetHeight(&height);
@@ -478,7 +477,7 @@ nsresult nsCocoaUtils::CreateNSImageFromImageContainer(imgIContainer *aImage, ui
   if (aImage->GetType() == imgIContainer::TYPE_VECTOR && scaleFactor != 1.0f) {
     IntSize scaledSize(ceil(width * scaleFactor), ceil(height * scaleFactor));
 
-    RefPtr<DrawTarget> drawTarget = gfxPlatform::GetPlatform()->
+    nsRefPtr<DrawTarget> drawTarget = gfxPlatform::GetPlatform()->
       CreateOffscreenContentDrawTarget(scaledSize, SurfaceFormat::B8G8R8A8);
     if (!drawTarget) {
       NS_ERROR("Failed to create DrawTarget");
@@ -492,7 +491,7 @@ nsresult nsCocoaUtils::CreateNSImageFromImageContainer(imgIContainer *aImage, ui
     }
 
     aImage->Draw(context, scaledSize, ImageRegion::Create(scaledSize),
-                 aWhichFrame, Filter::POINT, Nothing(),
+                 aWhichFrame, GraphicsFilter::FILTER_NEAREST, Nothing(),
                  imgIContainer::FLAG_SYNC_DECODE);
 
     surface = drawTarget->Snapshot();

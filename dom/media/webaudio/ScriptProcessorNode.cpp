@@ -380,7 +380,7 @@ private:
 
       NS_IMETHOD Run() override
       {
-        RefPtr<ThreadSharedFloatArrayBufferList> output;
+        nsRefPtr<ThreadSharedFloatArrayBufferList> output;
 
         auto engine =
           static_cast<ScriptProcessorNodeEngine*>(mStream->Engine());
@@ -421,7 +421,7 @@ private:
         uint32_t inputChannelCount = aNode->ChannelCount();
 
         
-        RefPtr<AudioBuffer> inputBuffer;
+        nsRefPtr<AudioBuffer> inputBuffer;
         if (mInputBuffer) {
           ErrorResult rv;
           inputBuffer =
@@ -438,7 +438,7 @@ private:
         
         
         
-        RefPtr<AudioProcessingEvent> event =
+        nsRefPtr<AudioProcessingEvent> event =
           new AudioProcessingEvent(aNode, nullptr, nullptr);
         event->InitEvent(inputBuffer, inputChannelCount, mPlaybackTime);
         aNode->DispatchTrustedEvent(event);
@@ -459,8 +459,8 @@ private:
         return nullptr;
       }
     private:
-      RefPtr<AudioNodeStream> mStream;
-      RefPtr<ThreadSharedFloatArrayBufferList> mInputBuffer;
+      nsRefPtr<AudioNodeStream> mStream;
+      nsRefPtr<ThreadSharedFloatArrayBufferList> mInputBuffer;
       double mPlaybackTime;
     };
 
@@ -472,7 +472,7 @@ private:
 
   AudioNodeStream* mDestination;
   nsAutoPtr<SharedBuffers> mSharedBuffers;
-  RefPtr<ThreadSharedFloatArrayBufferList> mInputBuffer;
+  nsRefPtr<ThreadSharedFloatArrayBufferList> mInputBuffer;
   const uint32_t mBufferSize;
   const uint32_t mInputChannelCount;
   

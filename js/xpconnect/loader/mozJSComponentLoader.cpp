@@ -325,25 +325,6 @@ mozJSComponentLoader::ReallyInit()
     return NS_OK;
 }
 
-
-
-
-static JSObject*
-ResolveModuleObjectProperty(JSContext* aCx, HandleObject aModObj, const char* name)
-{
-    if (JS_HasExtensibleLexicalScope(aModObj)) {
-        RootedObject lexical(aCx, JS_ExtensibleLexicalScope(aModObj));
-        bool found;
-        if (!JS_HasOwnProperty(aCx, lexical, name, &found)) {
-            return nullptr;
-        }
-        if (found) {
-            return lexical;
-        }
-    }
-    return aModObj;
-}
-
 const mozilla::Module*
 mozJSComponentLoader::LoadModule(FileLocation& aFile)
 {
@@ -391,12 +372,9 @@ mozJSComponentLoader::LoadModule(FileLocation& aFile)
     JSAutoCompartment ac(cx, entry->obj);
     RootedObject entryObj(cx, entry->obj);
 
-    RootedObject NSGetFactoryHolder(cx, ResolveModuleObjectProperty(cx, entryObj, "NSGetFactory"));
     RootedValue NSGetFactory_val(cx);
-    if (!NSGetFactoryHolder ||
-        !JS_GetProperty(cx, NSGetFactoryHolder, "NSGetFactory", &NSGetFactory_val) ||
-        NSGetFactory_val.isUndefined())
-    {
+    if (!JS_GetProperty(cx, entryObj, "NSGetFactory", &NSGetFactory_val) ||
+        NSGetFactory_val.isUndefined()) {
         return nullptr;
     }
 
@@ -446,7 +424,7 @@ mozJSComponentLoader::FindTargetObject(JSContext* aCx,
     if (mReuseLoaderGlobal) {
         JSFunction* fun = js::GetOutermostEnclosingFunctionOfScriptedCaller(aCx);
         if (fun) {
-            JSObject* funParent = js::GetNearestEnclosingWithScopeObjectForFunction(fun);
+            JSObject* funParent = js::GetObjectEnvironmentObjectForFunction(fun);
             if (JS_GetClass(funParent) == &kFakeBackstagePassJSClass)
                 targetObject = funParent;
         }
@@ -986,9 +964,6 @@ mozJSComponentLoader::UnloadModules()
         RootedObject global(cx, mLoaderGlobal->GetJSObject());
         if (global) {
             JSAutoCompartment ac(cx, global);
-            if (JS_HasExtensibleLexicalScope(global)) {
-                JS_SetAllNonReservedSlotsToUndefined(cx, JS_ExtensibleLexicalScope(global));
-            }
             JS_SetAllNonReservedSlotsToUndefined(cx, global);
         } else {
             NS_WARNING("Going to leak!");
@@ -1099,22 +1074,6 @@ mozJSComponentLoader::IsModuleLoaded(const nsACString& aLocation,
     return NS_OK;
 }
 
-static JSObject*
-ResolveModuleObjectPropertyById(JSContext* aCx, HandleObject aModObj, HandleId id)
-{
-    if (JS_HasExtensibleLexicalScope(aModObj)) {
-        RootedObject lexical(aCx, JS_ExtensibleLexicalScope(aModObj));
-        bool found;
-        if (!JS_HasOwnPropertyById(aCx, lexical, id, &found)) {
-            return nullptr;
-        }
-        if (found) {
-            return lexical;
-        }
-    }
-    return aModObj;
-}
-
 nsresult
 mozJSComponentLoader::ImportInto(const nsACString& aLocation,
                                  HandleObject targetObj,
@@ -1219,10 +1178,8 @@ mozJSComponentLoader::ImportInto(const nsACString& aLocation,
         JSAutoCompartment ac(cx, mod->obj);
 
         RootedValue symbols(cx);
-        RootedObject exportedSymbolsHolder(cx, ResolveModuleObjectProperty(cx, mod->obj,
-                                                                           "EXPORTED_SYMBOLS"));
-        if (!exportedSymbolsHolder ||
-            !JS_GetProperty(cx, exportedSymbolsHolder,
+        RootedObject modObj(cx, mod->obj);
+        if (!JS_GetProperty(cx, modObj,
                             "EXPORTED_SYMBOLS", &symbols)) {
             return ReportOnCaller(cxhelper, ERROR_NOT_PRESENT,
                                   PromiseFlatCString(aLocation).get());
@@ -1253,7 +1210,6 @@ mozJSComponentLoader::ImportInto(const nsACString& aLocation,
 
         RootedValue value(cx);
         RootedId symbolId(cx);
-        RootedObject symbolHolder(cx);
         for (uint32_t i = 0; i < symbolCount; ++i) {
             if (!JS_GetElement(cx, symbolsObj, i, &value) ||
                 !value.isString() ||
@@ -1262,9 +1218,8 @@ mozJSComponentLoader::ImportInto(const nsACString& aLocation,
                                       PromiseFlatCString(aLocation).get(), i);
             }
 
-            symbolHolder = ResolveModuleObjectPropertyById(cx, mod->obj, symbolId);
-            if (!symbolHolder ||
-                !JS_GetPropertyById(cx, symbolHolder, symbolId, &value)) {
+            RootedObject modObj(cx, mod->obj);
+            if (!JS_GetPropertyById(cx, modObj, symbolId, &value)) {
                 JSAutoByteString bytes(cx, JSID_TO_STRING(symbolId));
                 if (!bytes)
                     return NS_ERROR_FAILURE;

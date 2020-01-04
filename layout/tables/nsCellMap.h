@@ -583,7 +583,7 @@ protected:
   bool mIsBC;
 
   
-  RefPtr<nsPresContext> mPresContext;
+  nsRefPtr<nsPresContext> mPresContext;
 };
 
 

@@ -1425,8 +1425,8 @@ nsDOMWindowUtils::CompareCanvases(nsIDOMHTMLCanvasElement *aCanvas1,
       retVal == nullptr)
     return NS_ERROR_FAILURE;
 
-  RefPtr<DataSourceSurface> img1 = CanvasToDataSourceSurface(aCanvas1);
-  RefPtr<DataSourceSurface> img2 = CanvasToDataSourceSurface(aCanvas2);
+  nsRefPtr<DataSourceSurface> img1 = CanvasToDataSourceSurface(aCanvas1);
+  nsRefPtr<DataSourceSurface> img2 = CanvasToDataSourceSurface(aCanvas2);
 
   DataSourceSurface::ScopedMap map1(img1, DataSourceSurface::READ);
   DataSourceSurface::ScopedMap map2(img2, DataSourceSurface::READ);
@@ -2081,7 +2081,7 @@ nsDOMWindowUtils::SuspendTimeouts()
   nsCOMPtr<nsPIDOMWindow> window = do_QueryReferent(mWindow);
   NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
 
-  window->SuspendTimeouts(1, true, false);
+  window->SuspendTimeouts();
 
   return NS_OK;
 }
@@ -2092,7 +2092,7 @@ nsDOMWindowUtils::ResumeTimeouts()
   nsCOMPtr<nsPIDOMWindow> window = do_QueryReferent(mWindow);
   NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
 
-  window->ResumeTimeouts(true, false);
+  window->ResumeTimeouts();
 
   return NS_OK;
 }
@@ -2268,7 +2268,7 @@ nsDOMWindowUtils::AdvanceTimeAndRefresh(int64_t aMilliseconds)
     nsRefreshDriver* driver = presContext->RefreshDriver();
     driver->AdvanceTimeAndRefresh(aMilliseconds);
 
-    RefPtr<LayerTransactionChild> transaction = GetLayerTransaction();
+    nsRefPtr<LayerTransactionChild> transaction = GetLayerTransaction();
     if (transaction && transaction->IPCOpen()) {
       transaction->SendSetTestSampleTime(driver->MostRecentRefresh());
     }
@@ -2283,7 +2283,7 @@ nsDOMWindowUtils::RestoreNormalRefresh()
   
   
   
-  RefPtr<LayerTransactionChild> transaction = GetLayerTransaction();
+  nsRefPtr<LayerTransactionChild> transaction = GetLayerTransaction();
   if (transaction && transaction->IPCOpen()) {
     transaction->SendLeaveTestMode();
   }

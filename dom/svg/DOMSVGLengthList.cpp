@@ -117,7 +117,7 @@ DOMSVGLengthList::InternalListLengthWillChange(uint32_t aNewLength)
     aNewLength = DOMSVGLength::MaxListIndex();
   }
 
-  RefPtr<DOMSVGLengthList> kungFuDeathGrip;
+  nsRefPtr<DOMSVGLengthList> kungFuDeathGrip;
   if (aNewLength < oldLength) {
     
     
@@ -190,7 +190,7 @@ DOMSVGLengthList::Initialize(DOMSVGLength& newItem,
   
   
 
-  RefPtr<DOMSVGLength> domItem = &newItem;
+  nsRefPtr<DOMSVGLength> domItem = &newItem;
   if (!domItem) {
     error.Throw(NS_ERROR_DOM_SVG_WRONG_TYPE_ERR);
     return nullptr;
@@ -209,7 +209,7 @@ already_AddRefed<DOMSVGLength>
 DOMSVGLengthList::GetItem(uint32_t index, ErrorResult& error)
 {
   bool found;
-  RefPtr<DOMSVGLength> item = IndexedGetter(index, found, error);
+  nsRefPtr<DOMSVGLength> item = IndexedGetter(index, found, error);
   if (!found) {
     error.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
   }
@@ -245,7 +245,7 @@ DOMSVGLengthList::InsertItemBefore(DOMSVGLength& newItem,
     return nullptr;
   }
 
-  RefPtr<DOMSVGLength> domItem = &newItem;
+  nsRefPtr<DOMSVGLength> domItem = &newItem;
   if (!domItem) {
     error.Throw(NS_ERROR_DOM_SVG_WRONG_TYPE_ERR);
     return nullptr;
@@ -288,7 +288,7 @@ DOMSVGLengthList::ReplaceItem(DOMSVGLength& newItem,
     return nullptr;
   }
 
-  RefPtr<DOMSVGLength> domItem = &newItem;
+  nsRefPtr<DOMSVGLength> domItem = &newItem;
   if (!domItem) {
     error.Throw(NS_ERROR_DOM_SVG_WRONG_TYPE_ERR);
     return nullptr;
@@ -361,7 +361,7 @@ DOMSVGLengthList::GetItemAt(uint32_t aIndex)
   if (!mItems[aIndex]) {
     mItems[aIndex] = new DOMSVGLength(this, AttrEnum(), aIndex, IsAnimValList());
   }
-  RefPtr<DOMSVGLength> result = mItems[aIndex];
+  nsRefPtr<DOMSVGLength> result = mItems[aIndex];
   return result.forget();
 }
 
@@ -392,7 +392,7 @@ DOMSVGLengthList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex)
 
   
   
-  RefPtr<DOMSVGLengthList> animVal = mAList->mAnimVal;
+  nsRefPtr<DOMSVGLengthList> animVal = mAList->mAnimVal;
 
   if (!animVal || mAList->IsAnimating()) {
     

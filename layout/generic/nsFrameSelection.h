@@ -681,7 +681,7 @@ private:
   
   nsresult     NotifySelectionListeners(SelectionType aType);     
 
-  RefPtr<mozilla::dom::Selection> mDomSelections[nsISelectionController::NUM_SELECTIONTYPES];
+  nsRefPtr<mozilla::dom::Selection> mDomSelections[nsISelectionController::NUM_SELECTIONTYPES];
 
   
   nsITableCellLayout* GetCellLayout(nsIContent *aCellContent) const;
@@ -719,7 +719,7 @@ private:
   int32_t  mSelectedCellIndex;
 
   
-  RefPtr<nsRange> mMaintainRange;
+  nsRefPtr<nsRange> mMaintainRange;
   nsSelectionAmount mMaintainedAmount;
 
   

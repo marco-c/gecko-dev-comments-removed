@@ -165,7 +165,7 @@ private:
   
   FallibleTArray<DOMSVGNumber*> mItems;
 
-  RefPtr<DOMSVGAnimatedNumberList> mAList;
+  nsRefPtr<DOMSVGAnimatedNumberList> mAList;
 };
 
 } 

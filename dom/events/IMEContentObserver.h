@@ -285,7 +285,7 @@ private:
       MOZ_ASSERT(mIMEContentObserver);
     }
 
-    RefPtr<IMEContentObserver> mIMEContentObserver;
+    nsRefPtr<IMEContentObserver> mIMEContentObserver;
 
     
 

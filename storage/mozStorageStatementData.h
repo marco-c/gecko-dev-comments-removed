@@ -135,7 +135,7 @@ public:
 
 private:
   sqlite3_stmt *mStatement;
-  RefPtr<BindingParamsArray> mParamsArray;
+  nsRefPtr<BindingParamsArray> mParamsArray;
 
   
 

@@ -535,7 +535,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     private:
       
       
-      RefPtr<nsIObjectLoadingContent> mContent;
+      nsRefPtr<nsIObjectLoadingContent> mContent;
     };
 
     
@@ -553,7 +553,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     nsCOMPtr<nsIStreamListener> mFinalListener;
 
     
-    RefPtr<nsFrameLoader>     mFrameLoader;
+    nsRefPtr<nsFrameLoader>     mFrameLoader;
 
     
     nsCOMPtr<nsIRunnable>       mPendingInstantiateEvent;
@@ -629,7 +629,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
     nsWeakFrame                 mPrintFrame;
 
-    RefPtr<nsPluginInstanceOwner> mInstanceOwner;
+    nsRefPtr<nsPluginInstanceOwner> mInstanceOwner;
     nsTArray<mozilla::dom::MozPluginParameter> mCachedAttributes;
     nsTArray<mozilla::dom::MozPluginParameter> mCachedParameters;
 };

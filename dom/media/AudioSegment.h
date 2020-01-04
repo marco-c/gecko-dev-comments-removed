@@ -225,7 +225,7 @@ struct AudioChunk {
   }
 
   StreamTime mDuration; 
-  RefPtr<ThreadSharedObject> mBuffer; 
+  nsRefPtr<ThreadSharedObject> mBuffer; 
   nsTArray<const void*> mChannelData; 
   float mVolume; 
   SampleFormat mBufferFormat; 

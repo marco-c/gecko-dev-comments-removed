@@ -13,7 +13,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
 #include "mozilla/RangedPtr.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -1571,15 +1571,6 @@ JS_GetGlobalForObject(JSContext* cx, JSObject* obj);
 
 extern JS_PUBLIC_API(bool)
 JS_IsGlobalObject(JSObject* obj);
-
-extern JS_PUBLIC_API(JSObject*)
-JS_GlobalLexicalScope(JSObject* obj);
-
-extern JS_PUBLIC_API(bool)
-JS_HasExtensibleLexicalScope(JSObject* obj);
-
-extern JS_PUBLIC_API(JSObject*)
-JS_ExtensibleLexicalScope(JSObject* obj);
 
 
 
@@ -5660,8 +5651,8 @@ struct PerformanceGroupHolder {
     
     
     
-    mozilla::RefPtr<js::PerformanceGroup> sharedGroup_;
-    mozilla::RefPtr<js::PerformanceGroup> ownGroup_;
+    nsRefPtr<js::PerformanceGroup> sharedGroup_;
+    nsRefPtr<js::PerformanceGroup> ownGroup_;
 };
 
 

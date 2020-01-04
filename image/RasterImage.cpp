@@ -35,7 +35,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/Move.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Services.h"
@@ -495,7 +495,7 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
   
 
   IntSize size(mSize.width, mSize.height);
-  RefPtr<DataSourceSurface> surf =
+  nsRefPtr<DataSourceSurface> surf =
     Factory::CreateDataSourceSurface(size,
                                      SurfaceFormat::B8G8R8A8,
                                       true);
@@ -509,7 +509,7 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
     return nullptr;
   }
 
-  RefPtr<DrawTarget> target =
+  nsRefPtr<DrawTarget> target =
     Factory::CreateDrawTargetForData(BackendType::CAIRO,
                                      mapping.mData,
                                      size,
@@ -527,7 +527,7 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
     target->FillRect(rect, ColorPattern(frameRef->SinglePixelColor()),
                      DrawOptions(1.0f, CompositionOp::OP_SOURCE));
   } else {
-    RefPtr<SourceSurface> srcSurf = frameRef->GetSurface();
+    nsRefPtr<SourceSurface> srcSurf = frameRef->GetSurface();
     if (!srcSurf) {
       RecoverFromInvalidFrames(mSize, aFlags);
       return nullptr;
@@ -561,7 +561,7 @@ RasterImage::GetFrameAtSize(const IntSize& aSize,
   return GetFrameInternal(aSize, aWhichFrame, aFlags).second().forget();
 }
 
-Pair<DrawResult, RefPtr<SourceSurface>>
+Pair<DrawResult, nsRefPtr<SourceSurface>>
 RasterImage::GetFrameInternal(const IntSize& aSize,
                               uint32_t aWhichFrame,
                               uint32_t aFlags)
@@ -569,15 +569,15 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
   MOZ_ASSERT(aWhichFrame <= FRAME_MAX_VALUE);
 
   if (aSize.IsEmpty()) {
-    return MakePair(DrawResult::BAD_ARGS, RefPtr<SourceSurface>());
+    return MakePair(DrawResult::BAD_ARGS, nsRefPtr<SourceSurface>());
   }
 
   if (aWhichFrame > FRAME_MAX_VALUE) {
-    return MakePair(DrawResult::BAD_ARGS, RefPtr<SourceSurface>());
+    return MakePair(DrawResult::BAD_ARGS, nsRefPtr<SourceSurface>());
   }
 
   if (mError) {
-    return MakePair(DrawResult::BAD_IMAGE, RefPtr<SourceSurface>());
+    return MakePair(DrawResult::BAD_IMAGE, nsRefPtr<SourceSurface>());
   }
 
   
@@ -587,12 +587,12 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
     LookupFrame(GetRequestedFrameIndex(aWhichFrame), aSize, aFlags);
   if (!frameRef) {
     
-    return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<SourceSurface>());
+    return MakePair(DrawResult::TEMPORARY_ERROR, nsRefPtr<SourceSurface>());
   }
 
   
   
-  RefPtr<SourceSurface> frameSurf;
+  nsRefPtr<SourceSurface> frameSurf;
   if (!frameRef->NeedsPadding() &&
       frameRef->GetSize() == aSize) {
     frameSurf = frameRef->GetSurface();
@@ -620,7 +620,7 @@ RasterImage::GetCurrentImage(ImageContainer* aContainer, uint32_t aFlags)
   MOZ_ASSERT(aContainer);
 
   DrawResult drawResult;
-  RefPtr<SourceSurface> surface;
+  nsRefPtr<SourceSurface> surface;
   Tie(drawResult, surface) =
     GetFrameInternal(mSize, FRAME_CURRENT, aFlags | FLAG_ASYNC_NOTIFY);
   if (!surface) {
@@ -1445,7 +1445,7 @@ RasterImage::DrawInternal(DrawableFrameRef&& aFrameRef,
                           gfxContext* aContext,
                           const IntSize& aSize,
                           const ImageRegion& aRegion,
-                          Filter aFilter,
+                          GraphicsFilter aFilter,
                           uint32_t aFlags)
 {
   gfxContextMatrixAutoSaveRestore saveMatrix(aContext);
@@ -1493,7 +1493,7 @@ RasterImage::Draw(gfxContext* aContext,
                   const IntSize& aSize,
                   const ImageRegion& aRegion,
                   uint32_t aWhichFrame,
-                  Filter aFilter,
+                  GraphicsFilter aFilter,
                   const Maybe<SVGImageContext>& ,
                   uint32_t aFlags)
 {
@@ -1522,7 +1522,7 @@ RasterImage::Draw(gfxContext* aContext,
 
   
   
-  uint32_t flags = aFilter == Filter::GOOD
+  uint32_t flags = aFilter == GraphicsFilter::FILTER_GOOD
                  ? aFlags
                  : aFlags & ~FLAG_HIGH_QUALITY_SCALING;
 
@@ -1850,7 +1850,7 @@ RasterImage::PropagateUseCounters(nsIDocument*)
 
 IntSize
 RasterImage::OptimalImageSizeForDest(const gfxSize& aDest, uint32_t aWhichFrame,
-                                     Filter aFilter, uint32_t aFlags)
+                                     GraphicsFilter aFilter, uint32_t aFlags)
 {
   MOZ_ASSERT(aDest.width >= 0 || ceil(aDest.width) <= INT32_MAX ||
              aDest.height >= 0 || ceil(aDest.height) <= INT32_MAX,
@@ -1862,7 +1862,8 @@ RasterImage::OptimalImageSizeForDest(const gfxSize& aDest, uint32_t aWhichFrame,
 
   IntSize destSize(ceil(aDest.width), ceil(aDest.height));
 
-  if (aFilter == Filter::GOOD && CanDownscaleDuringDecode(destSize, aFlags)) {
+  if (aFilter == GraphicsFilter::FILTER_GOOD &&
+      CanDownscaleDuringDecode(destSize, aFlags)) {
     return destSize;
   }
 

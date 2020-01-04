@@ -77,7 +77,7 @@ class nsXMLQuery final : public nsISupports
 
     nsAutoPtr<mozilla::dom::XPathExpression> mResultsExpr;
 
-    RefPtr<nsXMLBindingSet> mRequiredBindings;
+    nsRefPtr<nsXMLBindingSet> mRequiredBindings;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsXMLQuery, NS_IXMLQUERY_IID)
@@ -90,10 +90,10 @@ private:
     nsCOMPtr<nsXMLQuery> mQuery;
 
     
-    RefPtr<nsXMLBindingSet> mBindingSet;
+    nsRefPtr<nsXMLBindingSet> mBindingSet;
 
     
-    RefPtr<mozilla::dom::XPathResult> mResults;
+    nsRefPtr<mozilla::dom::XPathResult> mResults;
 
     
     uint32_t mPosition;
@@ -158,7 +158,7 @@ private:
 
     nsCOMPtr<mozilla::dom::Element> mRoot;
 
-    RefPtr<mozilla::dom::XPathEvaluator> mEvaluator;
+    nsRefPtr<mozilla::dom::XPathEvaluator> mEvaluator;
 
     nsCOMPtr<nsIXULTemplateBuilder> mTemplateBuilder;
 

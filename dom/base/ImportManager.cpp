@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ImportManager.h"
 
@@ -21,9 +21,9 @@
 #include "nsScriptLoader.h"
 #include "nsNetUtil.h"
 
-//-----------------------------------------------------------------------------
-// AutoError
-//-----------------------------------------------------------------------------
+
+
+
 
 class AutoError {
 public:
@@ -51,35 +51,35 @@ private:
 namespace mozilla {
 namespace dom {
 
-//-----------------------------------------------------------------------------
-// ImportLoader::Updater
-//-----------------------------------------------------------------------------
+
+
+
 
 void
 ImportLoader::Updater::GetReferrerChain(nsINode* aNode,
                                         nsTArray<nsINode*>& aResult)
 {
-  // We fill up the array backward. First the last link: aNode.
+  
   MOZ_ASSERT(mLoader->mLinks.Contains(aNode));
 
   aResult.AppendElement(aNode);
   nsINode* node = aNode;
-  RefPtr<ImportManager> manager = mLoader->Manager();
+  nsRefPtr<ImportManager> manager = mLoader->Manager();
   for (ImportLoader* referrersLoader = manager->Find(node->OwnerDoc());
        referrersLoader;
        referrersLoader = manager->Find(node->OwnerDoc()))
   {
-    // Then walking up the main referrer chain and append each link
-    // to the array.
+    
+    
     node = referrersLoader->GetMainReferrer();
     MOZ_ASSERT(node);
     aResult.AppendElement(node);
   }
 
-  // The reversed order is more useful for consumers.
-  // XXX: This should probably go to nsTArray or some generic utility
-  // lib for our containers that we don't have... I would really like to
-  // get rid of this part...
+  
+  
+  
+  
   uint32_t l = aResult.Length();
   for (uint32_t i = 0; i < l / 2; i++) {
     Swap(aResult[i], aResult[l - i - 1]);
@@ -93,12 +93,12 @@ ImportLoader::Updater::ShouldUpdate(nsTArray<nsINode*>& aNewPath)
       mLoader->mBlockingPredecessor) {
     return true;
   }
-  // Let's walk down on the main referrer chains of both the current main and
-  // the new link, and find the last pair of links that are from the same
-  // document. This is the junction point between the two referrer chain. Their
-  // order in the subimport list of that document will determine if we have to
-  // update the spanning tree or this new edge changes nothing in the script
-  // execution order.
+  
+  
+  
+  
+  
+  
   nsTArray<nsINode*> oldPath;
   GetReferrerChain(mLoader->mLinks[mLoader->mMainReferrer], oldPath);
   uint32_t max = std::min(oldPath.Length(), aNewPath.Length());
@@ -118,8 +118,8 @@ ImportLoader::Updater::ShouldUpdate(nsTArray<nsINode*>& aNewPath)
 
   if ((lastCommonImportAncestor == max - 1) &&
       newLink == oldLink ) {
-    // If one chain contains the other entirely, then this is a simple cycle,
-    // nothing to be done here.
+    
+    
     MOZ_ASSERT(oldPath.Length() != aNewPath.Length(),
                "This would mean that new link == main referrer link");
     return false;
@@ -140,21 +140,21 @@ ImportLoader::Updater::UpdateMainReferrer(uint32_t aNewIdx)
   MOZ_ASSERT(aNewIdx < mLoader->mLinks.Length());
   nsINode* newMainReferrer = mLoader->mLinks[aNewIdx];
 
-  // This new link means we have to execute our scripts sooner...
-  // Let's make sure that unblocking a loader does not trigger a script execution.
-  // So we start with placing the new blockers and only then will we remove any
-  // blockers.
+  
+  
+  
+  
   if (mLoader->IsBlocking()) {
-    // Our import parent is changed, let's block the new one and later unblock
-    // the old one.
+    
+    
     newMainReferrer->OwnerDoc()->ScriptLoader()->AddExecuteBlocker();
     newMainReferrer->OwnerDoc()->BlockDOMContentLoaded();
   }
 
   if (mLoader->mDocument) {
-    // Our nearest predecessor has changed. So let's add the ScriptLoader to the
-    // new one if there is any. And remove it from the old one.
-    RefPtr<ImportManager> manager = mLoader->Manager();
+    
+    
+    nsRefPtr<ImportManager> manager = mLoader->Manager();
     nsScriptLoader* loader = mLoader->mDocument->ScriptLoader();
     ImportLoader*& pred = mLoader->mBlockingPredecessor;
     ImportLoader* newPred = manager->GetNearestPredecessor(newMainReferrer);
@@ -171,7 +171,7 @@ ImportLoader::Updater::UpdateMainReferrer(uint32_t aNewIdx)
     mLoader->mImportParent->UnblockDOMContentLoaded();
   }
 
-  // Finally update mMainReferrer to point to the newly added link.
+  
   mLoader->mMainReferrer = aNewIdx;
   mLoader->mImportParent = newMainReferrer->OwnerDoc();
 }
@@ -181,9 +181,9 @@ ImportLoader::Updater::NextDependant(nsINode* aCurrentLink,
                                      nsTArray<nsINode*>& aPath,
                                      NodeTable& aVisitedNodes, bool aSkipChildren)
 {
-  // Depth first graph traversal.
+  
   if (!aSkipChildren) {
-    // "first child"
+    
     ImportLoader* loader = mLoader->Manager()->Find(aCurrentLink);
     if (loader && loader->GetDocument()) {
       nsINode* firstSubImport = loader->GetDocument()->GetSubImportLink(0);
@@ -196,12 +196,12 @@ ImportLoader::Updater::NextDependant(nsINode* aCurrentLink,
   }
 
   aPath.AppendElement(aCurrentLink);
-  // "(parent's) next sibling"
+  
   while(aPath.Length() > 1) {
     aCurrentLink = aPath[aPath.Length() - 1];
     aPath.RemoveElementAt(aPath.Length() - 1);
 
-    // Let's find the next "sibling"
+    
     ImportLoader* loader =  mLoader->Manager()->Find(aCurrentLink->OwnerDoc());
     MOZ_ASSERT(loader && loader->GetDocument(), "How can this happend?");
     nsIDocument* doc = loader->GetDocument();
@@ -209,9 +209,9 @@ ImportLoader::Updater::NextDependant(nsINode* aCurrentLink,
     uint32_t idx = doc->IndexOfSubImportLink(aCurrentLink);
     nsINode* next = doc->GetSubImportLink(idx + 1);
     if (next) {
-      // Note: If we found an already visited link that means the parent links has
-      // closed the circle it's always the "first child" section that should find
-      // the first already visited node. Let's just assert that.
+      
+      
+      
       MOZ_ASSERT(!aVisitedNodes.Contains(next));
       aVisitedNodes.PutEntry(next);
       return next;
@@ -249,12 +249,12 @@ void
 ImportLoader::Updater::UpdateSpanningTree(nsINode* aNode)
 {
   if (mLoader->mReady || mLoader->mStopped) {
-    // Scripts already executed, nothing to be done here.
+    
     return;
   }
 
   if (mLoader->mLinks.Length() == 1) {
-    // If this is the first referrer, let's mark it.
+    
     mLoader->mMainReferrer = 0;
     return;
   }
@@ -267,9 +267,9 @@ ImportLoader::Updater::UpdateSpanningTree(nsINode* aNode)
   }
 }
 
-//-----------------------------------------------------------------------------
-// ImportLoader
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_INTERFACE_MAP_BEGIN(ImportLoader)
   NS_INTERFACE_MAP_ENTRY(nsIStreamListener)
@@ -345,7 +345,7 @@ ImportLoader::AddBlockedScriptLoader(nsScriptLoader* aScriptLoader)
 
   aScriptLoader->AddExecuteBlocker();
 
-  // Let's keep track of the pending script loaders.
+  
   mBlockedScriptLoaders.AppendElement(aScriptLoader);
 }
 
@@ -359,10 +359,10 @@ ImportLoader::RemoveBlockedScriptLoader(nsScriptLoader* aScriptLoader)
 void
 ImportLoader::AddLinkElement(nsINode* aNode)
 {
-  // If a new link element is added to the import tree that
-  // refers to an import that is already finished loading or
-  // stopped trying, we need to fire the corresponding event
-  // on it.
+  
+  
+  
+  
   mLinks.AppendElement(aNode);
   mUpdater.UpdateSpanningTree(aNode);
   DispatchEventIfFinished(aNode);
@@ -374,10 +374,10 @@ ImportLoader::RemoveLinkElement(nsINode* aNode)
   mLinks.RemoveElement(aNode);
 }
 
-// Events has to be fired with a script runner, so mImport can
-// be set on the link element before the load event is fired even
-// if ImportLoader::Get returns an already loaded import and we
-// fire the load event immediately on the new referring link element.
+
+
+
+
 class AsyncEvent : public nsRunnable {
 public:
   AsyncEvent(nsINode* aNode, bool aSuccess)
@@ -392,8 +392,8 @@ public:
                                                 mNode,
                                                 mSuccess ? NS_LITERAL_STRING("load")
                                                          : NS_LITERAL_STRING("error"),
-                                                /* aCanBubble = */ false,
-                                                /* aCancelable = */ false);
+                                                 false,
+                                                 false);
   }
 
 private:
@@ -404,13 +404,13 @@ private:
 void
 ImportLoader::DispatchErrorEvent(nsINode* aNode)
 {
-  nsContentUtils::AddScriptRunner(new AsyncEvent(aNode, /* aSuccess = */ false));
+  nsContentUtils::AddScriptRunner(new AsyncEvent(aNode,  false));
 }
 
 void
 ImportLoader::DispatchLoadEvent(nsINode* aNode)
 {
-  nsContentUtils::AddScriptRunner(new AsyncEvent(aNode, /* aSuccess = */ true));
+  nsContentUtils::AddScriptRunner(new AsyncEvent(aNode,  true));
 }
 
 void
@@ -440,8 +440,8 @@ ImportLoader::Error(bool aUnblockScripts)
   ReleaseResources();
 }
 
-// Release all the resources we don't need after there is no more
-// data available on the channel, and the parser is done.
+
+
 void ImportLoader::ReleaseResources()
 {
   mParserStreamListener = nullptr;
@@ -473,7 +473,7 @@ ImportLoader::Open()
                               nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
                               nsIContentPolicy::TYPE_SUBDOCUMENT,
                               loadGroup,
-                              nullptr,  // aCallbacks
+                              nullptr,  
                               nsIRequest::LOAD_BACKGROUND);
 
   NS_ENSURE_SUCCESS_VOID(rv);
@@ -523,11 +523,11 @@ ImportLoader::OnStopRequest(nsIRequest* aRequest,
                             nsISupports* aContext,
                             nsresult aStatus)
 {
-  // OnStartRequest throws a special error code to let us know that we
-  // shouldn't do anything else.
+  
+  
   if (aStatus == NS_ERROR_DOM_ABORT_ERR) {
-    // We failed in OnStartRequest, nothing more to do (we've already
-    // dispatched an error event) just return here.
+    
+    
     MOZ_ASSERT(mStopped);
     return NS_OK;
   }
@@ -537,8 +537,8 @@ ImportLoader::OnStopRequest(nsIRequest* aRequest,
   }
 
   if (!mDocument) {
-    // If at this point we don't have a document, then the error was
-    // already reported.
+    
+    
     return NS_ERROR_DOM_ABORT_ERR;
   }
 
@@ -562,7 +562,7 @@ ImportLoader::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   }
 
   if (nsContentUtils::IsSystemPrincipal(principal)) {
-    // We should never import non-system documents and run their scripts with system principal!
+    
     nsCOMPtr<nsIPrincipal> channelPrincipal;
     nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(channel,
                                                                     getter_AddRefs(channelPrincipal));
@@ -579,8 +579,8 @@ ImportLoader::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
     return NS_ERROR_DOM_ABORT_ERR;
   }
 
-  // The scope object is same for all the imports in an import tree,
-  // let's get it form the import parent.
+  
+  
   nsCOMPtr<nsIGlobalObject> global = mImportParent->GetScopeObject();
   nsCOMPtr<nsIDOMDocument> importDoc;
   nsCOMPtr<nsIURI> baseURI = mImportParent->GetBaseURI();
@@ -591,16 +591,16 @@ ImportLoader::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
                                   DocumentFlavorHTML);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_ABORT_ERR);
 
-  // The imported document must know which master document it belongs to.
+  
   mDocument = do_QueryInterface(importDoc);
   nsCOMPtr<nsIDocument> master = mImportParent->MasterDocument();
   mDocument->SetMasterDocument(master);
 
-  // We want to inherit the sandbox flags from the master document.
+  
   mDocument->SetSandboxFlags(master->GetSandboxFlags());
 
-  // We have to connect the blank document we created with the channel we opened,
-  // and create its own LoadGroup for it.
+  
+  
   nsCOMPtr<nsIStreamListener> listener;
   nsCOMPtr<nsILoadGroup> loadGroup;
   channel->GetLoadGroup(getter_AddRefs(loadGroup));
@@ -626,11 +626,11 @@ ImportLoader::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_ABORT_ERR);
 
   if (!equals) {
-    // In case of a redirection we must add the new URI to the import map.
+    
     Manager()->AddLoaderWithNewURI(this, URI);
   }
 
-  // Let's start the parser.
+  
   mParserStreamListener = listener;
   rv = listener->OnStartRequest(aRequest, aContext);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_ABORT_ERR);
@@ -639,9 +639,9 @@ ImportLoader::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// ImportManager
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMPL_CYCLE_COLLECTION(ImportManager,
                          mImports)
@@ -656,9 +656,9 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(ImportManager)
 already_AddRefed<ImportLoader>
 ImportManager::Get(nsIURI* aURI, nsINode* aNode, nsIDocument* aOrigDocument)
 {
-  // Check if we have a loader for that URI, if not create one,
-  // and start it up.
-  RefPtr<ImportLoader> loader;
+  
+  
+  nsRefPtr<ImportLoader> loader;
   mImports.Get(aURI, getter_AddRefs(loader));
   bool needToStart = false;
   if (!loader) {
@@ -668,10 +668,10 @@ ImportManager::Get(nsIURI* aURI, nsINode* aNode, nsIDocument* aOrigDocument)
   }
 
   MOZ_ASSERT(loader);
-  // Let's keep track of the sub imports links in each document. It will
-  // be used later for scrip execution order calculation. (see UpdateSpanningTree)
-  // NOTE: removing and adding back the link to the tree somewhere else will
-  // NOT have an effect on script execution order.
+  
+  
+  
+  
   if (!aOrigDocument->HasSubImportLink(aNode)) {
     aOrigDocument->AddSubImportLink(aNode);
   }
@@ -707,7 +707,7 @@ ImportManager::AddLoaderWithNewURI(ImportLoader* aLoader, nsIURI* aNewURI)
 
 ImportLoader* ImportManager::GetNearestPredecessor(nsINode* aNode)
 {
-  // Return the previous link if there is any in the same document.
+  
   nsIDocument* doc = aNode->OwnerDoc();
   int32_t idx = doc->IndexOfSubImportLink(aNode);
   MOZ_ASSERT(idx != -1, "aNode must be a sub import link of its owner document");
@@ -716,9 +716,9 @@ ImportLoader* ImportManager::GetNearestPredecessor(nsINode* aNode)
     HTMLLinkElement* link =
       static_cast<HTMLLinkElement*>(doc->GetSubImportLink(idx - 1));
     nsCOMPtr<nsIURI> uri = link->GetHrefURI();
-    RefPtr<ImportLoader> ret;
+    nsRefPtr<ImportLoader> ret;
     mImports.Get(uri, getter_AddRefs(ret));
-    // Only main referrer links are interesting.
+    
     if (ret->GetMainReferrer() == link) {
       return ret;
     }
@@ -726,12 +726,12 @@ ImportLoader* ImportManager::GetNearestPredecessor(nsINode* aNode)
 
   if (idx == 0) {
     if (doc->IsMasterDocument()) {
-      // If there is no previous one, and it was the master document, then
-      // there is no predecessor.
+      
+      
       return nullptr;
     }
-    // Else we find the main referrer of the import parent of the link's document.
-    // And do a recursion.
+    
+    
     ImportLoader* owner = Find(doc);
     MOZ_ASSERT(owner);
     nsCOMPtr<nsINode> mainReferrer = owner->GetMainReferrer();
@@ -741,5 +741,5 @@ ImportLoader* ImportManager::GetNearestPredecessor(nsINode* aNode)
   return nullptr;
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

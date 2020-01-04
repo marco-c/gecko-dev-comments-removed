@@ -189,10 +189,10 @@ protected:
   Atomic<uint32_t>          mDeferConfigUpdate;
   GonkCameraParameters      mParams;
 
-  RefPtr<mozilla::layers::ImageContainer> mImageContainer;
+  nsRefPtr<mozilla::layers::ImageContainer> mImageContainer;
 
 #ifdef MOZ_WIDGET_GONK
-  RefPtr<android::GonkRecorder> mRecorder;
+  nsRefPtr<android::GonkRecorder> mRecorder;
 #endif
   
   
@@ -202,7 +202,7 @@ protected:
   
   nsRefPtrHashtable<nsStringHashKey, RecorderProfile> mRecorderProfiles;
 
-  RefPtr<DeviceStorageFile> mVideoFile;
+  nsRefPtr<DeviceStorageFile> mVideoFile;
   nsString                  mFileFormat;
 
   Atomic<bool>              mCapturePoster;

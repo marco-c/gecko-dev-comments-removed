@@ -185,7 +185,6 @@ private:
   uint64_t mBusyCount;
   Status mParentStatus;
   bool mParentFrozen;
-  bool mParentSuspended;
   bool mIsChromeWorker;
   bool mMainThreadObjectsForgotten;
   WorkerType mWorkerType;
@@ -306,12 +305,6 @@ public:
   bool
   Thaw(JSContext* aCx, nsPIDOMWindow* aWindow);
 
-  void
-  Suspend();
-
-  void
-  Resume();
-
   bool
   Terminate(JSContext* aCx)
   {
@@ -404,13 +397,6 @@ public:
   {
     AssertIsOnParentThread();
     return mParentFrozen;
-  }
-
-  bool
-  IsSuspended() const
-  {
-    AssertIsOnParentThread();
-    return mParentSuspended;
   }
 
   bool

@@ -15,7 +15,7 @@
 #include "Units.h"                      
 #include "gfxTypes.h"
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/ipc/Shmem.h"          
 #include "mozilla/ipc/SharedMemory.h"   
 #include "mozilla/layers/AsyncCompositionManager.h"  
@@ -118,7 +118,7 @@ public:
   static already_AddRefed<gfxShmSharedReadLock>
   Open(mozilla::layers::ISurfaceAllocator* aAllocator, const mozilla::layers::ShmemSection& aShmemSection)
   {
-    RefPtr<gfxShmSharedReadLock> readLock = new gfxShmSharedReadLock(aAllocator, aShmemSection);
+    nsRefPtr<gfxShmSharedReadLock> readLock = new gfxShmSharedReadLock(aAllocator, aShmemSection);
     return readLock.forget();
   }
 
@@ -137,7 +137,7 @@ private:
       (mShmemSection.shmem().get<char>() + mShmemSection.offset());
   }
 
-  RefPtr<ISurfaceAllocator> mAllocator;
+  nsRefPtr<ISurfaceAllocator> mAllocator;
   mozilla::layers::ShmemSection mShmemSection;
   bool mAllocSuccess;
 };
@@ -246,7 +246,7 @@ struct TileClient
   TextureClient* GetBackBuffer(const nsIntRegion& aDirtyRegion,
                                gfxContentType aContent, SurfaceMode aMode,
                                nsIntRegion& aAddPaintedRegion,
-                               RefPtr<TextureClient>* aTextureClientOnWhite);
+                               nsRefPtr<TextureClient>* aTextureClientOnWhite);
 
   void DiscardFrontBuffer();
 
@@ -257,23 +257,23 @@ struct TileClient
 
   class PrivateProtector {
     public:
-      void Set(TileClient * container, RefPtr<TextureClient>);
+      void Set(TileClient * container, nsRefPtr<TextureClient>);
       void Set(TileClient * container, TextureClient*);
       
       
       operator TextureClient*() const { return mBuffer; }
-      RefPtr<TextureClient> operator ->() { return mBuffer; }
+      nsRefPtr<TextureClient> operator ->() { return mBuffer; }
     private:
       PrivateProtector& operator=(const PrivateProtector &);
-      RefPtr<TextureClient> mBuffer;
+      nsRefPtr<TextureClient> mBuffer;
   } mBackBuffer;
-  RefPtr<TextureClient> mBackBufferOnWhite;
-  RefPtr<TextureClient> mFrontBuffer;
-  RefPtr<TextureClient> mFrontBufferOnWhite;
-  RefPtr<gfxSharedReadLock> mBackLock;
-  RefPtr<gfxSharedReadLock> mFrontLock;
-  RefPtr<ClientLayerManager> mManager;
-  RefPtr<TextureClientAllocator> mAllocator;
+  nsRefPtr<TextureClient> mBackBufferOnWhite;
+  nsRefPtr<TextureClient> mFrontBuffer;
+  nsRefPtr<TextureClient> mFrontBufferOnWhite;
+  nsRefPtr<gfxSharedReadLock> mBackLock;
+  nsRefPtr<gfxSharedReadLock> mFrontLock;
+  nsRefPtr<ClientLayerManager> mManager;
+  nsRefPtr<TextureClientAllocator> mAllocator;
   gfx::IntRect mUpdateRect;
   CompositableClient* mCompositableClient;
 #ifdef GFX_TILEDLAYER_DEBUG_OVERLAY
@@ -552,7 +552,7 @@ private:
   nsIntRegion mNewValidRegion;
 
   
-  RefPtr<gfx::DrawTarget>       mSinglePaintDrawTarget;
+  nsRefPtr<gfx::DrawTarget>       mSinglePaintDrawTarget;
   nsIntPoint                    mSinglePaintBufferOffset;
   SharedFrameMetricsHelper*  mSharedFrameMetricsHelper;
   

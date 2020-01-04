@@ -51,7 +51,7 @@ private:
   
   
   typedef std::map<nsCString,
-                  RefPtr<mozilla::MediaResource> > ResourceMap;
+                  nsRefPtr<mozilla::MediaResource> > ResourceMap;
   ResourceMap mResources;
 
   

@@ -49,7 +49,7 @@ protected:
 
   
   
-  nsTArray<RefPtr<nsMimeType> > mMimeTypes;
+  nsTArray<nsRefPtr<nsMimeType> > mMimeTypes;
 };
 
 class nsMimeType final : public nsWrapperCache
@@ -87,7 +87,7 @@ protected:
   
   
   
-  RefPtr<nsPluginElement> mPluginElement;
+  nsRefPtr<nsPluginElement> mPluginElement;
   nsString mType;
   nsString mDescription;
   nsString mExtension;

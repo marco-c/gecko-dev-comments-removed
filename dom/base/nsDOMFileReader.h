@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsDOMFileReader_h__
 #define nsDOMFileReader_h__
@@ -28,8 +28,8 @@
 namespace mozilla {
 namespace dom {
 class Blob;
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 class nsDOMFileReader final : public mozilla::dom::FileIOObject,
                               public nsIDOMFileReader,
@@ -49,10 +49,10 @@ public:
 
   NS_REALLY_FORWARD_NSIDOMEVENTTARGET(mozilla::DOMEventTargetHelper)
 
-  
+  // nsIInterfaceRequestor 
   NS_DECL_NSIINTERFACEREQUESTOR
 
-  
+  // FileIOObject overrides
   virtual void DoAbort(nsAString& aEvent) override;
 
   virtual nsresult DoReadData(nsIAsyncInputStream* aStream, uint64_t aCount) override;
@@ -66,7 +66,7 @@ public:
   }
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  
+  // WebIDL
   static already_AddRefed<nsDOMFileReader>
   Constructor(const GlobalObject& aGlobal, ErrorResult& aRv);
   void ReadAsArrayBuffer(JSContext* aCx, Blob& aBlob, ErrorResult& aRv)
@@ -86,7 +86,7 @@ public:
 
   using FileIOObject::Abort;
 
-  
+  // Inherited ReadyState().
 
   void GetResult(JSContext* aCx, JS::MutableHandle<JS::Value> aResult,
                  ErrorResult& aRv);
@@ -141,7 +141,7 @@ protected:
   }
 
   char *mFileData;
-  RefPtr<Blob> mBlob;
+  nsRefPtr<Blob> mBlob;
   nsCString mCharset;
   uint32_t mDataLen;
 

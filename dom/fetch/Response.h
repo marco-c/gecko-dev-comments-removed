@@ -134,9 +134,9 @@ private:
   ~Response();
 
   nsCOMPtr<nsIGlobalObject> mOwner;
-  RefPtr<InternalResponse> mInternalResponse;
+  nsRefPtr<InternalResponse> mInternalResponse;
   
-  RefPtr<Headers> mHeaders;
+  nsRefPtr<Headers> mHeaders;
 };
 
 } 

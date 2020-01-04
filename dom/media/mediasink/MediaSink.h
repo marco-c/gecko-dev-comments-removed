@@ -7,7 +7,7 @@
 #ifndef MediaSink_h_
 #define MediaSink_h_
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/MozPromise.h"
 #include "nsISupportsImpl.h"
 #include "MediaInfo.h"
@@ -57,7 +57,7 @@ public:
   
   
   
-  virtual RefPtr<GenericPromise> OnEnded(TrackType aType) = 0;
+  virtual nsRefPtr<GenericPromise> OnEnded(TrackType aType) = 0;
 
   
   

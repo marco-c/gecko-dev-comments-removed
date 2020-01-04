@@ -162,7 +162,7 @@ protected:
     nsCString           mToken;
     uint32_t            mTokenLen;
 
-    RefPtr<nsPartChannel> mPartChannel;   
+    nsRefPtr<nsPartChannel> mPartChannel;   
                                         
     nsCOMPtr<nsISupports> mContext;
     nsCString           mContentType;

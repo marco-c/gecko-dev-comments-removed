@@ -360,8 +360,6 @@ public:
       
       mOuter->SchedulePaint();
     }
-    
-    NotifyPluginFrames(aTransforming ? BEGIN_APZ : END_APZ);
   }
   bool IsTransformingByAPZ() const {
     return mTransformingByAPZ;
@@ -559,14 +557,6 @@ protected:
                             = nsIScrollbarMediator::DISABLE_SNAP);
 
   void CompleteAsyncScroll(const nsRect &aRange, nsIAtom* aOrigin = nullptr);
-
-  
-
-
-
-  enum AsyncScrollEventType { BEGIN_DOM, BEGIN_APZ, END_DOM, END_APZ };
-  void NotifyPluginFrames(AsyncScrollEventType aEvent);
-  AsyncScrollEventType mAsyncScrollEvent;
 
   static void EnsureImageVisPrefsCached();
   static bool sImageVisPrefsCached;

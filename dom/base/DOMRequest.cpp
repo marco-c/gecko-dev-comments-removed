@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "DOMRequest.h"
 
@@ -60,8 +60,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(DOMRequest,
                                                DOMEventTargetHelper)
-  // Don't need NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER because
-  // DOMEventTargetHelper does it for us.
+  
+  
   NS_IMPL_CYCLE_COLLECTION_TRACE_JSVAL_MEMBER_CALLBACK(mResult)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
@@ -72,7 +72,7 @@ NS_INTERFACE_MAP_END_INHERITING(DOMEventTargetHelper)
 NS_IMPL_ADDREF_INHERITED(DOMRequest, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(DOMRequest, DOMEventTargetHelper)
 
-/* virtual */ JSObject*
+ JSObject*
 DOMRequest::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
   return DOMRequestBinding::Wrap(aCx, this, aGivenProto);
@@ -192,7 +192,7 @@ DOMRequest::FireEvent(const nsAString& aType, bool aBubble, bool aCancelable)
     return;
   }
 
-  RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
+  nsRefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
   nsresult rv = event->InitEvent(aType, aBubble, aCancelable);
   if (NS_FAILED(rv)) {
     return;
@@ -220,10 +220,10 @@ DOMRequest::Then(JSContext* aCx, AnyCallback* aResolveCallback,
       return nullptr;
     }
     if (mDone) {
-      // Since we create mPromise lazily, it's possible that the DOMRequest object
-      // has already fired its success/error event.  In that case we should
-      // manually resolve/reject mPromise here.  mPromise will take care of
-      // calling the callbacks on |promise| as needed.
+      
+      
+      
+      
       if (mError) {
         mPromise->MaybeRejectBrokenly(mError);
       } else {
@@ -306,15 +306,15 @@ class FireSuccessAsyncTask : public nsRunnable
 
 public:
 
-  // Due to the fact that initialization can fail during shutdown (since we
-  // can't fetch a js context), set up an initiatization function to make sure
-  // we can return the failure appropriately
+  
+  
+  
   static nsresult
   Dispatch(DOMRequest* aRequest,
            const JS::Value& aResult)
   {
     mozilla::ThreadsafeAutoSafeJSContext cx;
-    RefPtr<FireSuccessAsyncTask> asyncTask = new FireSuccessAsyncTask(cx, aRequest, aResult);
+    nsRefPtr<FireSuccessAsyncTask> asyncTask = new FireSuccessAsyncTask(cx, aRequest, aResult);
     MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToCurrentThread(asyncTask)));
     return NS_OK;
   }
@@ -327,7 +327,7 @@ public:
   }
 
 private:
-  RefPtr<DOMRequest> mReq;
+  nsRefPtr<DOMRequest> mReq;
   JS::PersistentRooted<JS::Value> mResult;
 };
 
@@ -348,7 +348,7 @@ public:
     return NS_OK;
   }
 private:
-  RefPtr<DOMRequest> mReq;
+  nsRefPtr<DOMRequest> mReq;
   nsString mError;
 };
 

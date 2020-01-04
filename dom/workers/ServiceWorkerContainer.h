@@ -77,9 +77,9 @@ private:
 
   
   
-  RefPtr<workers::ServiceWorker> mControllerWorker;
+  nsRefPtr<workers::ServiceWorker> mControllerWorker;
 
-  RefPtr<Promise> mReadyPromise;
+  nsRefPtr<Promise> mReadyPromise;
 };
 
 } 

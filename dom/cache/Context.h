@@ -91,7 +91,7 @@ public:
 
     
     
-    RefPtr<Context> mStrongRef;
+    nsRefPtr<Context> mStrongRef;
 
     
     
@@ -181,7 +181,7 @@ private:
   struct PendingAction
   {
     nsCOMPtr<nsIEventTarget> mTarget;
-    RefPtr<Action> mAction;
+    nsRefPtr<Action> mAction;
   };
 
   Context(Manager* aManager, nsIThread* aTarget, Action* aInitAction);
@@ -201,14 +201,14 @@ private:
   void
   DoomTargetData();
 
-  RefPtr<Manager> mManager;
+  nsRefPtr<Manager> mManager;
   nsCOMPtr<nsIThread> mTarget;
-  RefPtr<Data> mData;
+  nsRefPtr<Data> mData;
   State mState;
   bool mOrphanedData;
   QuotaInfo mQuotaInfo;
-  RefPtr<QuotaInitRunnable> mInitRunnable;
-  RefPtr<Action> mInitAction;
+  nsRefPtr<QuotaInitRunnable> mInitRunnable;
+  nsRefPtr<Action> mInitAction;
   nsTArray<PendingAction> mPendingActions;
 
   
@@ -219,10 +219,10 @@ private:
   
   
   
-  RefPtr<ThreadsafeHandle> mThreadsafeHandle;
+  nsRefPtr<ThreadsafeHandle> mThreadsafeHandle;
 
   nsMainThreadPtrHandle<DirectoryLock> mDirectoryLock;
-  RefPtr<Context> mNextContext;
+  nsRefPtr<Context> mNextContext;
 
 public:
   NS_INLINE_DECL_REFCOUNTING(cache::Context)

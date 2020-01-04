@@ -66,7 +66,7 @@ private:
   nsresult SetSelectionForRanges();
 
   
-  RefPtr<Text> mTextNode;
+  nsRefPtr<Text> mTextNode;
 
   
   uint32_t mOffset;
@@ -74,7 +74,7 @@ private:
   uint32_t mReplaceLength;
 
   
-  RefPtr<TextRangeArray> mRanges;
+  nsRefPtr<TextRangeArray> mRanges;
 
   
   nsString mStringToInsert;

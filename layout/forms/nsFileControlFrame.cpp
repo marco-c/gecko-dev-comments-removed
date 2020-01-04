@@ -79,7 +79,7 @@ MakeAnonButton(nsIDocument* aDoc, const char* labelKey,
                HTMLInputElement* aInputElement,
                const nsAString& aAccessKey)
 {
-  RefPtr<Element> button = aDoc->CreateHTMLElement(nsGkAtoms::button);
+  nsRefPtr<Element> button = aDoc->CreateHTMLElement(nsGkAtoms::button);
   
   
   button->SetIsNativeAnonymousRoot();
@@ -93,7 +93,7 @@ MakeAnonButton(nsIDocument* aDoc, const char* labelKey,
 
   
   
-  RefPtr<nsTextNode> textContent =
+  nsRefPtr<nsTextNode> textContent =
     new nsTextNode(button->NodeInfo()->NodeInfoManager());
 
   textContent->SetText(buttonTxt, false);
@@ -105,7 +105,7 @@ MakeAnonButton(nsIDocument* aDoc, const char* labelKey,
 
   
   
-  RefPtr<HTMLButtonElement> buttonElement =
+  nsRefPtr<HTMLButtonElement> buttonElement =
     HTMLButtonElement::FromContentOrNull(button);
 
   if (!aAccessKey.IsEmpty()) {
@@ -131,7 +131,7 @@ nsFileControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   bool isDirPicker = Preferences::GetBool("dom.input.dirpicker", false) &&
                      content && content->HasAttr(kNameSpaceID_None, nsGkAtoms::directory);
 
-  RefPtr<HTMLInputElement> fileContent = HTMLInputElement::FromContentOrNull(mContent);
+  nsRefPtr<HTMLInputElement> fileContent = HTMLInputElement::FromContentOrNull(mContent);
 
   
   
@@ -158,7 +158,7 @@ nsFileControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   }
 
   
-  RefPtr<NodeInfo> nodeInfo;
+  nsRefPtr<NodeInfo> nodeInfo;
   nodeInfo = doc->NodeInfoManager()->GetNodeInfo(nsGkAtoms::label, nullptr,
                                                  kNameSpaceID_XUL,
                                                  nsIDOMNode::ELEMENT_NODE);
@@ -286,7 +286,7 @@ nsFileControlFrame::DnDListener::IsValidDropData(nsIDOMDataTransfer* aDOMDataTra
   NS_ENSURE_TRUE(dataTransfer, false);
 
   
-  RefPtr<DOMStringList> types = dataTransfer->Types();
+  nsRefPtr<DOMStringList> types = dataTransfer->Types();
   return types->Contains(NS_LITERAL_STRING("Files"));
 }
 

@@ -71,7 +71,7 @@ private:
   FRIEND_TEST(ThreadProfile, MemoryMeasure);
   ThreadInfo* mThreadInfo;
 
-  const RefPtr<ProfileBuffer> mBuffer;
+  const nsRefPtr<ProfileBuffer> mBuffer;
 
   
   

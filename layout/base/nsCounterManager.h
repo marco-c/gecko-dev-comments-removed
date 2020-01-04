@@ -80,10 +80,10 @@ struct nsCounterUseNode : public nsCounterNode {
     
     
     
-    RefPtr<nsCSSValue::Array> mCounterFunction;
+    nsRefPtr<nsCSSValue::Array> mCounterFunction;
 
     nsPresContext* mPresContext;
-    RefPtr<mozilla::CounterStyle> mCounterStyle;
+    nsRefPtr<mozilla::CounterStyle> mCounterStyle;
 
     
     bool mAllCounters;

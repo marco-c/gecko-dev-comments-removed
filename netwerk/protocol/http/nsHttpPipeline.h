@@ -59,7 +59,7 @@ private:
     
     nsHttpPipeline *QueryPipeline() override;
 
-    RefPtr<nsAHttpConnection>   mConnection;
+    nsRefPtr<nsAHttpConnection>   mConnection;
     nsTArray<nsAHttpTransaction*> mRequestQ;  
     nsTArray<nsAHttpTransaction*> mResponseQ; 
     nsresult                      mStatus;

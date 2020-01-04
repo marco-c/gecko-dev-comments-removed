@@ -98,7 +98,7 @@ public:
   
   virtual MediaDecoderOwner::NextFrameStatus GetNextFrameStatus() override;
 
-  virtual RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget) override;
+  virtual nsRefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget) override;
 
   void TimeUpdate();
 
@@ -190,7 +190,7 @@ private:
 
   
   
-  RefPtr<mozilla::dom::WakeLock> mWakeLock;
+  nsRefPtr<mozilla::dom::WakeLock> mWakeLock;
 
   
   

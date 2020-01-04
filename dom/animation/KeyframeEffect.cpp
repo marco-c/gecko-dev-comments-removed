@@ -109,8 +109,7 @@ namespace dom {
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(KeyframeEffectReadOnly,
                                    AnimationEffectReadOnly,
-                                   mTarget,
-                                   mAnimation)
+                                   mTarget)
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(KeyframeEffectReadOnly,
                                                AnimationEffectReadOnly)
@@ -144,27 +143,20 @@ KeyframeEffectReadOnly::WrapObject(JSContext* aCx,
 }
 
 void
-KeyframeEffectReadOnly::SetTiming(const AnimationTiming& aTiming)
+KeyframeEffectReadOnly::SetParentTime(Nullable<TimeDuration> aParentTime)
+{
+  mParentTime = aParentTime;
+}
+
+void
+KeyframeEffectReadOnly::SetTiming(const AnimationTiming& aTiming,
+                                  Animation& aOwningAnimation)
 {
   if (mTiming == aTiming) {
     return;
   }
   mTiming = aTiming;
-  if (mAnimation) {
-    mAnimation->NotifyEffectTimingUpdated();
-  }
-}
-
-Nullable<TimeDuration>
-KeyframeEffectReadOnly::GetLocalTime() const
-{
-  
-  
-  Nullable<TimeDuration> result;
-  if (mAnimation) {
-    result = mAnimation->GetCurrentTime();
-  }
-  return result;
+  aOwningAnimation.NotifyEffectTimingUpdated();
 }
 
 ComputedTiming
@@ -314,9 +306,9 @@ KeyframeEffectReadOnly::ActiveDuration(const AnimationTiming& aTiming)
 
 
 bool
-KeyframeEffectReadOnly::IsInPlay() const
+KeyframeEffectReadOnly::IsInPlay(const Animation& aAnimation) const
 {
-  if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
+  if (aAnimation.PlayState() == AnimationPlayState::Finished) {
     return false;
   }
 
@@ -325,9 +317,9 @@ KeyframeEffectReadOnly::IsInPlay() const
 
 
 bool
-KeyframeEffectReadOnly::IsCurrent() const
+KeyframeEffectReadOnly::IsCurrent(const Animation& aAnimation) const
 {
-  if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
+  if (aAnimation.PlayState() == AnimationPlayState::Finished) {
     return false;
   }
 
@@ -336,18 +328,11 @@ KeyframeEffectReadOnly::IsCurrent() const
          computedTiming.mPhase == ComputedTiming::AnimationPhase_Active;
 }
 
-
 bool
 KeyframeEffectReadOnly::IsInEffect() const
 {
   ComputedTiming computedTiming = GetComputedTiming();
   return computedTiming.mProgress != ComputedTiming::kNullProgress;
-}
-
-void
-KeyframeEffectReadOnly::SetAnimation(Animation* aAnimation)
-{
-  mAnimation = aAnimation;
 }
 
 const AnimationProperty*
@@ -507,12 +492,6 @@ KeyframeEffectReadOnly::SetIsRunningOnCompositor(nsCSSProperty aProperty,
       return;
     }
   }
-}
-
-
-
-KeyframeEffectReadOnly::~KeyframeEffectReadOnly()
-{
 }
 
 void

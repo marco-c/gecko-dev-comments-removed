@@ -41,7 +41,7 @@ nsresult xpcJSWeakReference::Init(JSContext* cx, const JS::Value& object)
     
 
     
-    RefPtr<nsXPCWrappedJS> wrapped;
+    nsRefPtr<nsXPCWrappedJS> wrapped;
     nsresult rv = nsXPCWrappedJS::GetNewOrUsed(obj,
                                                NS_GET_IID(nsISupports),
                                                getter_AddRefs(wrapped));

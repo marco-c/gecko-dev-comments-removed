@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "base/basictypes.h"
 
@@ -67,7 +67,7 @@ using namespace mozilla::dom::ipc;
 
 nsFrameMessageManager::nsFrameMessageManager(mozilla::dom::ipc::MessageManagerCallback* aCallback,
                                              nsFrameMessageManager* aParentManager,
-                                              uint32_t aFlags)
+                                             /* mozilla::dom::ipc::MessageManagerFlags */ uint32_t aFlags)
  : mChrome(!!(aFlags & mozilla::dom::ipc::MM_CHROME)),
    mGlobal(!!(aFlags & mozilla::dom::ipc::MM_GLOBAL)),
    mIsProcessManager(!!(aFlags & mozilla::dom::ipc::MM_PROCESSMANAGER)),
@@ -85,10 +85,10 @@ nsFrameMessageManager::nsFrameMessageManager(mozilla::dom::ipc::MessageManagerCa
   if (mIsProcessManager && (!mChrome || IsBroadcaster())) {
     mozilla::HoldJSObjects(this);
   }
-  
-  
-  
-  
+  // This is a bit hackish. When parent manager is global, we want
+  // to attach the message manager to it immediately.
+  // Is it just the frame message manager which waits until the
+  // content process is running.
   if (mParentManager && (mCallback || IsBroadcaster())) {
     mParentManager->AddChildManager(this);
   }
@@ -164,10 +164,10 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFrameMessageManager)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIContentFrameMessageManager)
 
-  
-
-
-
+  /* nsFrameMessageManager implements nsIMessageSender and nsIMessageBroadcaster,
+   * both of which descend from nsIMessageListenerManager. QI'ing to
+   * nsIMessageListenerManager is therefore ambiguous and needs explicit casts
+   * depending on which child interface applies. */
   NS_INTERFACE_MAP_ENTRY_AGGREGATED(nsIMessageListenerManager,
                                     (mIsBroadcaster ?
                                        static_cast<nsIMessageListenerManager*>(
@@ -175,31 +175,31 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFrameMessageManager)
                                        static_cast<nsIMessageListenerManager*>(
                                          static_cast<nsIMessageSender*>(this))))
 
-  
-
-
-
+  /* Message managers in child process implement nsIMessageSender and
+     nsISyncMessageSender.  Message managers in the chrome process are
+     either broadcasters (if they have subordinate/child message
+     managers) or they're simple message senders. */
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsISyncMessageSender, !mChrome)
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIMessageSender, !mChrome || !mIsBroadcaster)
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIMessageBroadcaster, mChrome && mIsBroadcaster)
 
-  
+  /* nsIContentFrameMessageManager is accessible only in TabChildGlobal. */
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIContentFrameMessageManager,
                                      !mChrome && !mIsProcessManager)
 
-  
+  /* Frame message managers (non-process message managers) support nsIFrameScriptLoader. */
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIFrameScriptLoader,
                                      mChrome && !mIsProcessManager)
 
-  
+  /* Process message managers (process message managers) support nsIProcessScriptLoader. */
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIProcessScriptLoader,
                                      mChrome && mIsProcessManager)
 
-  
+  /* Global process message managers (process message managers) support nsIGlobalProcessScriptLoader. */
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIGlobalProcessScriptLoader,
                                      mChrome && mIsProcessManager && mIsBroadcaster)
 
-  
+  /* Message senders in the chrome process support nsIProcessChecker. */
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIProcessChecker,
                                      mChrome && !mIsBroadcaster)
 
@@ -282,7 +282,7 @@ BuildClonedMessageData(typename BlobTraits<Flavor>::ConcreteContentManagerType* 
   SerializedStructuredCloneBuffer& buffer = aClonedData.data();
   buffer.data = aData.Data();
   buffer.dataLength = aData.DataLength();
-  const nsTArray<RefPtr<BlobImpl>>& blobImpls = aData.BlobImpls();
+  const nsTArray<nsRefPtr<BlobImpl>>& blobImpls = aData.BlobImpls();
 
   if (!blobImpls.IsEmpty()) {
     typedef typename BlobTraits<Flavor>::ProtocolType ProtocolType;
@@ -336,7 +336,7 @@ UnpackClonedMessageData(const ClonedMessageData& aClonedData,
         static_cast<typename BlobTraits<Flavor>::BlobType*>(blobs[i]);
       MOZ_ASSERT(blob);
 
-      RefPtr<BlobImpl> blobImpl = blob->GetBlobImpl();
+      nsRefPtr<BlobImpl> blobImpl = blob->GetBlobImpl();
       MOZ_ASSERT(blobImpl);
 
       aData.BlobImpls().AppendElement(blobImpl);
@@ -370,7 +370,7 @@ SameProcessCpowHolder::ToObject(JSContext* aCx,
   return JS_WrapObject(aCx, aObjp);
 }
 
-
+// nsIMessageListenerManager
 
 NS_IMETHODIMP
 nsFrameMessageManager::AddMessageListener(const nsAString& aMessage,
@@ -455,10 +455,10 @@ nsFrameMessageManager::AddWeakMessageListener(const nsAString& aMessage,
   NS_ENSURE_TRUE(weak, NS_ERROR_NO_INTERFACE);
 
 #ifdef DEBUG
-  
-  
-  
-  
+  // It's technically possible that one object X could give two different
+  // nsIWeakReference*'s when you do_GetWeakReference(X).  We really don't want
+  // this to happen; it will break e.g. RemoveWeakMessageListener.  So let's
+  // check that we're not getting ourselves into that situation.
   nsCOMPtr<nsISupports> canonical = do_QueryInterface(aListener);
   CanonicalCheckerParams params;
   params.mCanonical = canonical;
@@ -510,7 +510,7 @@ nsFrameMessageManager::RemoveWeakMessageListener(const nsAString& aMessage,
   return NS_OK;
 }
 
-
+// nsIFrameScriptLoader
 
 NS_IMETHODIMP
 nsFrameMessageManager::LoadScript(const nsAString& aURL,
@@ -518,7 +518,7 @@ nsFrameMessageManager::LoadScript(const nsAString& aURL,
                                   bool aRunInGlobalScope)
 {
   if (aAllowDelayedLoad) {
-    
+    // Cache for future windows or frames
     mPendingScripts.AppendElement(aURL);
     mPendingScriptsGlobalStates.AppendElement(aRunInGlobalScope);
   }
@@ -532,11 +532,11 @@ nsFrameMessageManager::LoadScript(const nsAString& aURL,
   }
 
   for (int32_t i = 0; i < mChildManagers.Count(); ++i) {
-    RefPtr<nsFrameMessageManager> mm =
+    nsRefPtr<nsFrameMessageManager> mm =
       static_cast<nsFrameMessageManager*>(mChildManagers[i]);
     if (mm) {
-      
-      
+      // Use false here, so that child managers don't cache the script, which
+      // is already cached in the parent.
       mm->LoadScript(aURL, false, aRunInGlobalScope);
     }
   }
@@ -559,8 +559,8 @@ nsFrameMessageManager::RemoveDelayedScript(const nsAString& aURL)
 NS_IMETHODIMP
 nsFrameMessageManager::GetDelayedScripts(JSContext* aCx, JS::MutableHandle<JS::Value> aList)
 {
-  
-  
+  // Frame message managers may return an incomplete list because scripts
+  // that were loaded after it was connected are not added to the list.
   if (!IsGlobal() && !IsBroadcaster()) {
     NS_WARNING("Cannot retrieve list of pending frame scripts for frame"
                "message managers as it may be incomplete");
@@ -591,7 +591,7 @@ nsFrameMessageManager::GetDelayedScripts(JSContext* aCx, JS::MutableHandle<JS::V
   return NS_OK;
 }
 
-
+// nsIFrameScriptLoader
 
 NS_IMETHODIMP
 nsFrameMessageManager::LoadFrameScript(const nsAString& aURL,
@@ -613,7 +613,7 @@ nsFrameMessageManager::GetDelayedFrameScripts(JSContext* aCx, JS::MutableHandle<
   return GetDelayedScripts(aCx, aList);
 }
 
-
+// nsIProcessScriptLoader
 
 NS_IMETHODIMP
 nsFrameMessageManager::LoadProcessScript(const nsAString& aURL,
@@ -648,7 +648,7 @@ GetParamsForMessage(JSContext* aCx,
                     const JS::Value& aValue,
                     StructuredCloneData& aData)
 {
-  
+  // First try to use structured clone on the whole thing.
   JS::RootedValue v(aCx, aValue);
   ErrorResult rv;
   aData.Write(aCx, v, rv);
@@ -671,10 +671,10 @@ GetParamsForMessage(JSContext* aCx,
     console->LogMessage(error);
   }
 
-  
-  
-  
-  
+  // Not clonable, try JSON
+  //XXX This is ugly but currently structured cloning doesn't handle
+  //    properly cases when interface is implemented in JS and used
+  //    as a dictionary.
   nsAutoString json;
   NS_ENSURE_TRUE(JS_Stringify(aCx, &v, nullptr, JS::NullHandleValue,
                               JSONCreator, &json), false);
@@ -693,7 +693,7 @@ GetParamsForMessage(JSContext* aCx,
   return true;
 }
 
-
+// nsISyncMessageSender
 
 static bool sSendingSyncMessage = false;
 
@@ -741,7 +741,7 @@ nsFrameMessageManager::SendMessage(const nsAString& aMessageName,
   NS_ENSURE_TRUE(mCallback, NS_ERROR_NOT_INITIALIZED);
 
   if (sSendingSyncMessage && aIsSync) {
-    
+    // No kind of blocking send should be issued on top of a sync message.
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -838,7 +838,7 @@ nsFrameMessageManager::DispatchAsyncMessage(const nsAString& aMessageName,
 }
 
 
-
+// nsIMessageSender
 
 NS_IMETHODIMP
 nsFrameMessageManager::SendAsyncMessage(const nsAString& aMessageName,
@@ -853,7 +853,7 @@ nsFrameMessageManager::SendAsyncMessage(const nsAString& aMessageName,
 }
 
 
-
+// nsIMessageBroadcaster
 
 NS_IMETHODIMP
 nsFrameMessageManager::BroadcastAsyncMessage(const nsAString& aMessageName,
@@ -885,7 +885,7 @@ nsFrameMessageManager::GetChildAt(uint32_t aIndex,
 }
 
 
-
+// nsIContentFrameMessageManager
 
 NS_IMETHODIMP
 nsFrameMessageManager::Dump(const nsAString& aStr)
@@ -942,7 +942,7 @@ nsFrameMessageManager::Atob(const nsAString& aAsciiString,
   return nsContentUtils::Atob(aAsciiString, aBinaryData);
 }
 
-
+// nsIProcessChecker
 
 NS_IMETHODIMP
 nsFrameMessageManager::KillChild(bool *aValid)
@@ -963,7 +963,7 @@ nsFrameMessageManager::AssertProcessInternal(ProcessCheckerType aType,
 {
   *aValid = false;
 
-  
+  // This API is only supported for message senders in the chrome process.
   if (!mChrome || mIsBroadcaster) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -1019,7 +1019,7 @@ nsFrameMessageManager::AssertAppHasStatus(unsigned short aStatus,
 {
   *aHasStatus = false;
 
-  
+  // This API is only supported for message senders in the chrome process.
   if (!mChrome || mIsBroadcaster) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -1051,11 +1051,11 @@ public:
   }
 
   bool mWasHandlingMessage;
-  RefPtr<nsFrameMessageManager> mMM;
+  nsRefPtr<nsFrameMessageManager> mMM;
 };
 
 
-
+// nsIMessageListener
 
 nsresult
 nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
@@ -1092,7 +1092,7 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
       iter(*listeners);
     while(iter.HasMore()) {
       nsMessageListenerInfo& listener = iter.GetNext();
-      
+      // Remove mListeners[i] if it's an expired weak listener.
       nsCOMPtr<nsISupports> weakListener;
       if (listener.mWeakListener) {
         weakListener = do_QueryReferent(listener.mWeakListener);
@@ -1121,13 +1121,13 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
         continue;
       }
 
-      
-      
-      
-      
-      
-      
-      
+      // Note - The ergonomics here will get a lot better with bug 971673:
+      //
+      // AutoEntryScript aes;
+      // if (!aes.Init(wrappedJS->GetJSObject())) {
+      //   continue;
+      // }
+      // JSContext* cx = aes.cx();
       nsIGlobalObject* nativeGlobal =
         xpc::NativeGlobal(js::GetGlobalForObjectCrossCompartment(wrappedJS->GetJSObject()));
       AutoEntryScript aes(nativeGlobal, "message manager handler");
@@ -1135,7 +1135,7 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
       JSContext* cx = aes.cx();
       JS::Rooted<JSObject*> object(cx, wrappedJS->GetJSObject());
 
-      
+      // The parameter for the listener function.
       JS::Rooted<JSObject*> param(cx, JS_NewPlainObject(cx));
       NS_ENSURE_TRUE(param, NS_ERROR_OUT_OF_MEMORY);
 
@@ -1179,7 +1179,7 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
       bool ok = JS_DefineProperty(cx, param, "target", targetv, JSPROP_ENUMERATE) &&
                 JS_DefineProperty(cx, param, "name", jsMessage, JSPROP_ENUMERATE) &&
                 JS_DefineProperty(cx, param, "sync", syncv, JSPROP_ENUMERATE) &&
-                JS_DefineProperty(cx, param, "json", json, JSPROP_ENUMERATE) && 
+                JS_DefineProperty(cx, param, "json", json, JSPROP_ENUMERATE) && // deprecated
                 JS_DefineProperty(cx, param, "data", json, JSPROP_ENUMERATE) &&
                 JS_DefineProperty(cx, param, "objects", cpowsv, JSPROP_ENUMERATE);
       NS_ENSURE_TRUE(ok, NS_ERROR_UNEXPECTED);
@@ -1194,14 +1194,14 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
         NS_ENSURE_TRUE(ok, NS_ERROR_UNEXPECTED);
       }
 
-      
+      // message.principal == null
       if (!aPrincipal) {
         bool ok = JS_DefineProperty(cx, param, "principal",
                                     JS::UndefinedHandleValue, JSPROP_ENUMERATE);
         NS_ENSURE_TRUE(ok, NS_ERROR_UNEXPECTED);
       }
 
-      
+      // message.principal = the principal
       else {
         JS::Rooted<JS::Value> principalValue(cx);
         nsresult rv = nsContentUtils::WrapNative(cx, aPrincipal,
@@ -1217,11 +1217,11 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
 
       JS::Rooted<JS::Value> funval(cx);
       if (JS::IsCallable(object)) {
-        
+        // If the listener is a JS function:
         funval.setObject(*object);
 
-        
-        
+        // A small hack to get 'this' value right on content side where
+        // messageManager is wrapped in TabChildGlobal.
         nsCOMPtr<nsISupports> defaultThisValue;
         if (mChrome) {
           defaultThisValue = do_QueryObject(this);
@@ -1232,13 +1232,13 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
         nsresult rv = nsContentUtils::WrapNative(cx, defaultThisValue, &thisValue);
         NS_ENSURE_SUCCESS(rv, rv);
       } else {
-        
+        // If the listener is a JS object which has receiveMessage function:
         if (!JS_GetProperty(cx, object, "receiveMessage", &funval) ||
             !funval.isObject()) {
           return NS_ERROR_UNEXPECTED;
         }
 
-        
+        // Check if the object is even callable.
         NS_ENSURE_STATE(JS::IsCallable(&funval.toObject()));
         thisValue.setObject(*object);
       }
@@ -1281,7 +1281,7 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
       }
     }
   }
-  RefPtr<nsFrameMessageManager> kungfuDeathGrip = mParentManager;
+  nsRefPtr<nsFrameMessageManager> kungfuDeathGrip = mParentManager;
   return mParentManager ? mParentManager->ReceiveMessage(aTarget, aTargetFrameLoader,
                                                          aTargetClosed, aMessage,
                                                          aIsSync, aCloneData,
@@ -1294,8 +1294,8 @@ nsFrameMessageManager::AddChildManager(nsFrameMessageManager* aManager)
 {
   mChildManagers.AppendObject(aManager);
 
-  RefPtr<nsFrameMessageManager> kungfuDeathGrip = this;
-  RefPtr<nsFrameMessageManager> kungfuDeathGrip2 = aManager;
+  nsRefPtr<nsFrameMessageManager> kungfuDeathGrip = this;
+  nsRefPtr<nsFrameMessageManager> kungfuDeathGrip2 = aManager;
 
   LoadPendingScripts(this, aManager);
 }
@@ -1304,10 +1304,10 @@ void
 nsFrameMessageManager::LoadPendingScripts(nsFrameMessageManager* aManager,
                                           nsFrameMessageManager* aChildMM)
 {
-  
-  
-  
-  
+  // We have parent manager if we're a message broadcaster.
+  // In that case we want to load the pending scripts from all parent
+  // message managers in the hierarchy. Process the parent first so
+  // that pending scripts higher up in the hierarchy are loaded before others.
   if (aManager->mParentManager) {
     LoadPendingScripts(aManager->mParentManager, aChildMM);
   }
@@ -1322,7 +1322,7 @@ nsFrameMessageManager::LoadPendingScripts(nsFrameMessageManager* aManager,
 void
 nsFrameMessageManager::LoadPendingScripts()
 {
-  RefPtr<nsFrameMessageManager> kungfuDeathGrip = this;
+  nsRefPtr<nsFrameMessageManager> kungfuDeathGrip = this;
   LoadPendingScripts(this, this);
 }
 
@@ -1343,13 +1343,13 @@ void
 nsFrameMessageManager::InitWithCallback(MessageManagerCallback* aCallback)
 {
   if (mCallback) {
-    
+    // Initialization should only happen once.
     return;
   }
 
   SetCallback(aCallback);
 
-  
+  // First load parent scripts by adding this to parent manager.
   if (mParentManager) {
     mParentManager->AddChildManager(this);
   }
@@ -1388,7 +1388,7 @@ nsFrameMessageManager::Close()
 void
 nsFrameMessageManager::Disconnect(bool aRemoveFromParent)
 {
-  
+  // Notify message-manager-close if we haven't already.
   Close();
 
   if (!mDisconnected) {
@@ -1424,8 +1424,8 @@ nsFrameMessageManager::GetInitialProcessData(JSContext* aCx, JS::MutableHandleVa
 
   JS::RootedValue init(aCx, mInitialProcessData);
   if (mChrome && init.isUndefined()) {
-    
-    
+    // We create the initial object in the junk scope. If we created it in a
+    // normal compartment, that compartment would leak until shutdown.
     JS::RootedObject global(aCx, xpc::PrivilegedJunkScope());
     JSAutoCompartment ac(aCx, global);
 
@@ -1439,7 +1439,7 @@ nsFrameMessageManager::GetInitialProcessData(JSContext* aCx, JS::MutableHandleVa
   }
 
   if (!mChrome && XRE_IsParentProcess()) {
-    
+    // This is the cpmm in the parent process. We should use the same object as the ppmm.
     nsCOMPtr<nsIGlobalProcessScriptLoader> ppmm =
       do_GetService("@mozilla.org/parentprocessmessagemanager;1");
     ppmm->GetInitialProcessData(aCx, &init);
@@ -1465,7 +1465,7 @@ struct MessageManagerReferentCount
   nsDataHashtable<nsStringHashKey, uint32_t> mMessageCounter;
 };
 
-} 
+} // namespace
 
 namespace mozilla {
 namespace dom {
@@ -1505,8 +1505,8 @@ CollectMessageListenerData(const nsAString& aKey,
   uint32_t currentCount = oldCount + listenerCount;
   referentCount->mMessageCounter.Put(key, currentCount);
 
-  
-  
+  // Keep track of messages that have a suspiciously large
+  // number of referents (symptom of leak).
   if (currentCount == MessageManagerReporter::kSuspectReferentCount) {
     referentCount->mSuspectMessages.AppendElement(key);
   }
@@ -1536,10 +1536,10 @@ MessageManagerReporter::CountReferents(nsFrameMessageManager* aMessageManager,
   aMessageManager->mListeners.EnumerateRead(CollectMessageListenerData,
                                             aReferentCount);
 
-  
-  
+  // Add referent count in child managers because the listeners
+  // participate in messages dispatched from parent message manager.
   for (uint32_t i = 0; i < aMessageManager->mChildManagers.Length(); ++i) {
-    RefPtr<nsFrameMessageManager> mm =
+    nsRefPtr<nsFrameMessageManager> mm =
       static_cast<nsFrameMessageManager*>(aMessageManager->mChildManagers[i]);
     CountReferents(mm, aReferentCount);
   }
@@ -1603,7 +1603,7 @@ MessageManagerReporter::CollectReports(nsIMemoryReporterCallback* aCb,
     nsCOMPtr<nsIMessageBroadcaster> globalmm =
       do_GetService("@mozilla.org/globalmessagemanager;1");
     if (globalmm) {
-      RefPtr<nsFrameMessageManager> mm =
+      nsRefPtr<nsFrameMessageManager> mm =
         static_cast<nsFrameMessageManager*>(globalmm.get());
       MessageManagerReferentCount count;
       CountReferents(mm, &count);
@@ -1629,15 +1629,15 @@ MessageManagerReporter::CollectReports(nsIMemoryReporterCallback* aCb,
   return NS_OK;
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 nsresult
 NS_NewGlobalMessageManager(nsIMessageBroadcaster** aResult)
 {
   NS_ENSURE_TRUE(XRE_IsParentProcess(),
                  NS_ERROR_NOT_AVAILABLE);
-  RefPtr<nsFrameMessageManager> mm = new nsFrameMessageManager(nullptr,
+  nsRefPtr<nsFrameMessageManager> mm = new nsFrameMessageManager(nullptr,
                                                                  nullptr,
                                                                  MM_CHROME | MM_GLOBAL | MM_BROADCASTER);
   RegisterStrongMemoryReporter(new MessageManagerReporter());
@@ -1657,7 +1657,7 @@ nsMessageManagerScriptExecutor::DidCreateGlobal()
     sCachedScripts =
       new nsDataHashtable<nsStringHashKey, nsMessageManagerScriptHolder*>;
 
-    RefPtr<nsScriptCacheCleaner> scriptCacheCleaner =
+    nsRefPtr<nsScriptCacheCleaner> scriptCacheCleaner =
       new nsScriptCacheCleaner();
     scriptCacheCleaner.forget(&sScriptCacheCleaner);
   }
@@ -1672,7 +1672,7 @@ RemoveCachedScriptEntry(const nsAString& aKey,
   return PL_DHASH_REMOVE;
 }
 
-
+// static
 void
 nsMessageManagerScriptExecutor::Shutdown()
 {
@@ -1684,7 +1684,7 @@ nsMessageManagerScriptExecutor::Shutdown()
     delete sCachedScripts;
     sCachedScripts = nullptr;
 
-    RefPtr<nsScriptCacheCleaner> scriptCacheCleaner;
+    nsRefPtr<nsScriptCacheCleaner> scriptCacheCleaner;
     scriptCacheCleaner.swap(sScriptCacheCleaner);
   }
 }
@@ -1704,8 +1704,8 @@ nsMessageManagerScriptExecutor::LoadScriptInternal(const nsAString& aURL,
   if (holder && holder->WillRunInGlobalScope() == aRunInGlobalScope) {
     script = holder->mScript;
   } else {
-    
-    
+    // Don't put anything in the cache if we already have an entry
+    // with a different WillRunInGlobalScope() value.
     bool shouldCache = !holder;
     TryCacheLoadAndCompileScript(aURL, aRunInGlobalScope,
                                  shouldCache, &script);
@@ -1724,7 +1724,7 @@ nsMessageManagerScriptExecutor::LoadScriptInternal(const nsAString& aURL,
         JS::Rooted<JSObject*> scope(cx);
         bool ok = js::ExecuteInGlobalAndReturnScope(cx, global, script, &scope);
         if (ok) {
-          
+          // Force the scope to stay alive.
           mAnonymousGlobalScopes.AppendElement(scope);
         }
       }
@@ -1792,8 +1792,8 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
 
   if (dataStringBuf && dataStringLength > 0) {
     AutoSafeJSContext cx;
-    
-    
+    // Compile the script in the compilation scope instead of the current global
+    // to avoid keeping the current compartment alive.
     JS::Rooted<JSObject*> global(cx, xpc::CompilationScope());
 
     JSAutoCompartment ac(cx, global);
@@ -1806,7 +1806,7 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
       if (!JS::Compile(cx, options, srcBuf, &script)) {
         return;
       }
-    
+    // We're going to run these against some non-global scope.
     } else if (!JS::CompileForNonSyntacticScope(cx, options, srcBuf, &script)) {
       return;
     }
@@ -1816,9 +1816,9 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
 
     nsAutoCString scheme;
     uri->GetScheme(scheme);
-    
+    // We don't cache data: scripts!
     if (aShouldCache && !scheme.EqualsLiteral("data")) {
-      
+      // Root the object also for caching.
       nsMessageManagerScriptHolder* holder =
         new nsMessageManagerScriptHolder(cx, script, aRunInGlobalScope);
       sCachedScripts->Put(aURL, holder);
@@ -1860,8 +1860,8 @@ nsMessageManagerScriptExecutor::InitChildGlobalInternal(
   JS::Rooted<JSObject*> global(cx, mGlobal->GetJSObject());
   NS_ENSURE_TRUE(global, false);
 
-  
-  
+  // Set the location information for the new global, so that tools like
+  // about:memory may use that information.
   xpc::SetLocationForGlobal(global, aID);
 
   DidCreateGlobal();
@@ -1907,9 +1907,9 @@ public:
 };
 
 
-
-
-
+/**
+ * Send messages to an imaginary child process in a single-process scenario.
+ */
 class SameParentProcessMessageManagerCallback : public MessageManagerCallback
 {
 public:
@@ -1946,33 +1946,33 @@ public:
 
   bool CheckPermission(const nsAString& aPermission) override
   {
-    
+    // In a single-process scenario, the child always has all capabilities.
     return true;
   }
 
   bool CheckManifestURL(const nsAString& aManifestURL) override
   {
-    
+    // In a single-process scenario, the child always has all capabilities.
     return true;
   }
 
   bool CheckAppHasPermission(const nsAString& aPermission) override
   {
-    
+    // In a single-process scenario, the child always has all capabilities.
     return true;
   }
 
   virtual bool CheckAppHasStatus(unsigned short aStatus) override
   {
-    
+    // In a single-process scenario, the child always has all capabilities.
     return true;
   }
 };
 
 
-
-
-
+/**
+ * Send messages to the parent process.
+ */
 class ChildProcessMessageManagerCallback : public MessageManagerCallback
 {
 public:
@@ -2061,9 +2061,9 @@ public:
   }
 };
 
-
-
-
+/**
+ * Send messages to the imaginary parent process in a single-process scenario.
+ */
 class SameChildProcessMessageManagerCallback : public MessageManagerCallback
 {
 public:
@@ -2089,7 +2089,7 @@ public:
 
     if (nsFrameMessageManager::sSameProcessParentManager) {
       SameProcessCpowHolder cpows(js::GetRuntime(aCx), aCpows);
-      RefPtr<nsFrameMessageManager> ppm = nsFrameMessageManager::sSameProcessParentManager;
+      nsRefPtr<nsFrameMessageManager> ppm = nsFrameMessageManager::sSameProcessParentManager;
       ppm->ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(ppm.get()), nullptr, aMessage,
                           true, &aData, &cpows, aPrincipal, aRetVal);
     }
@@ -2103,7 +2103,7 @@ public:
                                   nsIPrincipal* aPrincipal) override
   {
     SameProcessMessageQueue* queue = SameProcessMessageQueue::Get();
-    RefPtr<nsAsyncMessageToSameProcessParent> ev =
+    nsRefPtr<nsAsyncMessageToSameProcessParent> ev =
       new nsAsyncMessageToSameProcessParent(aCx, aMessage, aData, aCpows, aPrincipal);
     queue->Push(ev);
     return true;
@@ -2112,17 +2112,17 @@ public:
 };
 
 
-
+// This creates the global parent process message manager.
 nsresult
 NS_NewParentProcessMessageManager(nsIMessageBroadcaster** aResult)
 {
   NS_ASSERTION(!nsFrameMessageManager::sParentProcessManager,
                "Re-creating sParentProcessManager");
-  RefPtr<nsFrameMessageManager> mm = new nsFrameMessageManager(nullptr,
+  nsRefPtr<nsFrameMessageManager> mm = new nsFrameMessageManager(nullptr,
                                                                  nullptr,
                                                                  MM_CHROME | MM_PROCESSMANAGER | MM_BROADCASTER);
   nsFrameMessageManager::sParentProcessManager = mm;
-  nsFrameMessageManager::NewProcessMessageManager(false); 
+  nsFrameMessageManager::NewProcessMessageManager(false); // Create same process message manager.
   mm.forget(aResult);
   return NS_OK;
 }
@@ -2140,8 +2140,8 @@ nsFrameMessageManager::NewProcessMessageManager(bool aIsRemote)
              "parent process manager not created");
   nsFrameMessageManager* mm;
   if (aIsRemote) {
-    
-    
+    // Callback is set in ContentParent::InitInternal so that the process has
+    // already started when we send pending scripts.
     mm = new nsFrameMessageManager(nullptr,
                                    nsFrameMessageManager::sParentProcessManager,
                                    MM_CHROME | MM_PROCESSMANAGER);
@@ -2171,7 +2171,7 @@ NS_NewChildProcessMessageManager(nsISyncMessageSender** aResult)
                                                         nullptr,
                                                         MM_PROCESSMANAGER | MM_OWNSCALLBACK);
   nsFrameMessageManager::SetChildProcessManager(mm);
-  RefPtr<ProcessGlobal> global = new ProcessGlobal(mm);
+  nsRefPtr<ProcessGlobal> global = new ProcessGlobal(mm);
   NS_ENSURE_TRUE(global->Init(), NS_ERROR_UNEXPECTED);
   global.forget(aResult);
   return NS_OK;
@@ -2229,7 +2229,7 @@ nsSameProcessAsyncMessageBase::ReceiveMessage(nsISupports* aTarget,
   if (aManager) {
     SameProcessCpowHolder cpows(mRuntime, mCpows);
 
-    RefPtr<nsFrameMessageManager> mm = aManager;
+    nsRefPtr<nsFrameMessageManager> mm = aManager;
     mm->ReceiveMessage(aTarget, aTargetFrameLoader, mMessage, false, &mData,
                        &cpows, mPrincipal, nullptr);
   }

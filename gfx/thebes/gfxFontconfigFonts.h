@@ -68,7 +68,7 @@ private:
     public:
         FontSetByLangEntry(PangoLanguage *aLang, gfxFcFontSet *aFontSet);
         PangoLanguage *mLang;
-        RefPtr<gfxFcFontSet> mFontSet;
+        nsRefPtr<gfxFcFontSet> mFontSet;
     };
     
     

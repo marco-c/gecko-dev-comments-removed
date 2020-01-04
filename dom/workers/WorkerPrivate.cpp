@@ -678,8 +678,7 @@ private:
         return true;
       }
 
-      if (aWorkerPrivate->IsFrozen() || aWorkerPrivate->IsSuspended()) {
-        MOZ_ASSERT(!IsDebuggerRunnable());
+      if (aWorkerPrivate->IsFrozen()) {
         aWorkerPrivate->QueueRunnable(this);
         return true;
       }
@@ -1007,8 +1006,7 @@ private:
     else {
       AssertIsOnMainThread();
 
-      if (aWorkerPrivate->IsFrozen() || aWorkerPrivate->IsSuspended()) {
-        MOZ_ASSERT(!IsDebuggerRunnable());
+      if (aWorkerPrivate->IsFrozen()) {
         aWorkerPrivate->QueueRunnable(this);
         return true;
       }
@@ -2110,8 +2108,8 @@ WorkerPrivateParent<Derived>::WorkerPrivateParent(
   mParent(aParent), mScriptURL(aScriptURL),
   mWorkerName(aWorkerName), mLoadingWorkerScript(false),
   mBusyCount(0), mParentStatus(Pending), mParentFrozen(false),
-  mParentSuspended(false), mIsChromeWorker(aIsChromeWorker),
-  mMainThreadObjectsForgotten(false), mWorkerType(aWorkerType),
+  mIsChromeWorker(aIsChromeWorker), mMainThreadObjectsForgotten(false),
+  mWorkerType(aWorkerType),
   mCreationTimeStamp(TimeStamp::Now()),
   mCreationTimeHighRes((double)PR_Now() / PR_USEC_PER_MSEC)
 {
@@ -2578,7 +2576,7 @@ WorkerPrivateParent<Derived>::Thaw(JSContext* aCx, nsPIDOMWindow* aWindow)
 
   
   
-  if (!IsSuspended() && !mQueuedRunnables.IsEmpty()) {
+  if (!mQueuedRunnables.IsEmpty()) {
     AssertIsOnMainThread();
     MOZ_ASSERT(IsDedicatedWorker());
 
@@ -2597,50 +2595,6 @@ WorkerPrivateParent<Derived>::Thaw(JSContext* aCx, nsPIDOMWindow* aWindow)
   }
 
   return true;
-}
-
-template <class Derived>
-void
-WorkerPrivateParent<Derived>::Suspend()
-{
-  AssertIsOnMainThread();
-
-  MOZ_ASSERT(!mParentSuspended, "Suspended more than once!");
-
-  mParentSuspended = true;
-}
-
-template <class Derived>
-void
-WorkerPrivateParent<Derived>::Resume()
-{
-  AssertIsOnMainThread();
-
-  MOZ_ASSERT(mParentSuspended, "Resumed more than once!");
-
-  mParentSuspended = false;
-
-  {
-    MutexAutoLock lock(mMutex);
-
-    if (mParentStatus >= Terminating) {
-      return;
-    }
-  }
-
-  
-  
-  if (!IsFrozen() && !mQueuedRunnables.IsEmpty()) {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(IsDedicatedWorker());
-
-    nsTArray<nsCOMPtr<nsIRunnable>> runnables;
-    mQueuedRunnables.SwapElements(runnables);
-
-    for (uint32_t index = 0; index < runnables.Length(); index++) {
-      runnables[index]->Run();
-    }
-  }
 }
 
 template <class Derived>

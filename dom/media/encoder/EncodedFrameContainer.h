@@ -27,14 +27,14 @@ public:
     mEncodedFrames.AppendElement(aEncodedFrame);
   }
   
-  const nsTArray<RefPtr<EncodedFrame> >& GetEncodedFrames() const
+  const nsTArray<nsRefPtr<EncodedFrame> >& GetEncodedFrames() const
   {
     return mEncodedFrames;
   }
 private:
   
   
-  nsTArray<RefPtr<EncodedFrame> > mEncodedFrames;
+  nsTArray<nsRefPtr<EncodedFrame> > mEncodedFrames;
 };
 
 

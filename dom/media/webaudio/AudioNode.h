@@ -168,7 +168,7 @@ public:
 
     
     AudioNode* mInputNode;
-    RefPtr<MediaInputPort> mStreamPort;
+    nsRefPtr<MediaInputPort> mStreamPort;
     
     
     uint32_t mInputPort;
@@ -183,11 +183,11 @@ public:
   {
     return mInputNodes;
   }
-  const nsTArray<RefPtr<AudioNode> >& OutputNodes() const
+  const nsTArray<nsRefPtr<AudioNode> >& OutputNodes() const
   {
     return mOutputNodes;
   }
-  const nsTArray<RefPtr<AudioParam> >& OutputParams() const
+  const nsTArray<nsRefPtr<AudioParam> >& OutputParams() const
   {
     return mOutputParams;
   }
@@ -222,11 +222,11 @@ protected:
   void SendChannelMixingParametersToStream();
 
 private:
-  RefPtr<AudioContext> mContext;
+  nsRefPtr<AudioContext> mContext;
 
 protected:
   
-  RefPtr<AudioNodeStream> mStream;
+  nsRefPtr<AudioNodeStream> mStream;
 
 private:
   
@@ -236,13 +236,13 @@ private:
   
   
   
-  nsTArray<RefPtr<AudioNode> > mOutputNodes;
+  nsTArray<nsRefPtr<AudioNode> > mOutputNodes;
   
   
   
   
   
-  nsTArray<RefPtr<AudioParam> > mOutputParams;
+  nsTArray<nsRefPtr<AudioParam> > mOutputParams;
   uint32_t mChannelCount;
   ChannelCountMode mChannelCountMode;
   ChannelInterpretation mChannelInterpretation;

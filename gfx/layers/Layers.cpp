@@ -167,7 +167,7 @@ already_AddRefed<PersistentBufferProvider>
 LayerManager::CreatePersistentBufferProvider(const mozilla::gfx::IntSize &aSize,
                                              mozilla::gfx::SurfaceFormat aFormat)
 {
-  RefPtr<PersistentBufferProviderBasic> bufferProvider =
+  nsRefPtr<PersistentBufferProviderBasic> bufferProvider =
     new PersistentBufferProviderBasic(aSize, aFormat,
                                       gfxPlatform::GetPlatform()->GetPreferredCanvasBackend());
 
@@ -993,10 +993,6 @@ Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
 {
   MOZ_ASSERT(aLayerOffset, "invalid offset pointer");
 
-  if (!GetParent()) {
-    return false;
-  }
-
   IntPoint offset;
   aResult = GetEffectiveVisibleRegion();
   for (Layer* layer = this; layer; layer = layer->GetParent()) {
@@ -1661,8 +1657,8 @@ void WriteSnapshotToDumpFile(LayerManager* aManager, DataSourceSurface* aSurf)
 
 void WriteSnapshotToDumpFile(Compositor* aCompositor, DrawTarget* aTarget)
 {
-  RefPtr<SourceSurface> surf = aTarget->Snapshot();
-  RefPtr<DataSourceSurface> dSurf = surf->GetDataSurface();
+  nsRefPtr<SourceSurface> surf = aTarget->Snapshot();
+  nsRefPtr<DataSourceSurface> dSurf = surf->GetDataSurface();
   WriteSnapshotToDumpFile_internal(aCompositor, dSurf);
 }
 #endif
@@ -2136,7 +2132,7 @@ void
 CanvasLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix)
 {
   Layer::PrintInfo(aStream, aPrefix);
-  if (mFilter != Filter::GOOD) {
+  if (mFilter != GraphicsFilter::FILTER_GOOD) {
     AppendToString(aStream, mFilter, " [filter=", "]");
   }
 }
@@ -2144,18 +2140,27 @@ CanvasLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix)
 
 
 static void
-DumpFilter(layerscope::LayersPacket::Layer* aLayer, const Filter& aFilter)
+DumpFilter(layerscope::LayersPacket::Layer* aLayer, const GraphicsFilter& aFilter)
 {
   using namespace layerscope;
   switch (aFilter) {
-    case Filter::GOOD:
+    case GraphicsFilter::FILTER_FAST:
+      aLayer->set_filter(LayersPacket::Layer::FILTER_FAST);
+      break;
+    case GraphicsFilter::FILTER_GOOD:
       aLayer->set_filter(LayersPacket::Layer::FILTER_GOOD);
       break;
-    case Filter::LINEAR:
-      aLayer->set_filter(LayersPacket::Layer::FILTER_LINEAR);
+    case GraphicsFilter::FILTER_BEST:
+      aLayer->set_filter(LayersPacket::Layer::FILTER_BEST);
       break;
-    case Filter::POINT:
-      aLayer->set_filter(LayersPacket::Layer::FILTER_POINT);
+    case GraphicsFilter::FILTER_NEAREST:
+      aLayer->set_filter(LayersPacket::Layer::FILTER_NEAREST);
+      break;
+    case GraphicsFilter::FILTER_BILINEAR:
+      aLayer->set_filter(LayersPacket::Layer::FILTER_BILINEAR);
+      break;
+    case GraphicsFilter::FILTER_GAUSSIAN:
+      aLayer->set_filter(LayersPacket::Layer::FILTER_GAUSSIAN);
       break;
     default:
       
@@ -2178,7 +2183,7 @@ void
 ImageLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix)
 {
   Layer::PrintInfo(aStream, aPrefix);
-  if (mFilter != Filter::GOOD) {
+  if (mFilter != GraphicsFilter::FILTER_GOOD) {
     AppendToString(aStream, mFilter, " [filter=", "]");
   }
 }

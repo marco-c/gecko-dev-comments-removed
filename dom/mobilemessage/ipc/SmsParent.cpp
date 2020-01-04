@@ -53,7 +53,7 @@ MmsAttachmentDataToJSObject(JSContext* aContext,
     return nullptr;
   }
 
-  RefPtr<BlobImpl> blobImpl = static_cast<BlobParent*>(aAttachment.contentParent())->GetBlobImpl();
+  nsRefPtr<BlobImpl> blobImpl = static_cast<BlobParent*>(aAttachment.contentParent())->GetBlobImpl();
 
   
   
@@ -65,7 +65,7 @@ MmsAttachmentDataToJSObject(JSContext* aContext,
     nsIGlobalObject *global = xpc::NativeGlobal(JS::CurrentGlobalOrNull(aContext));
     MOZ_ASSERT(global);
 
-    RefPtr<Blob> blob = Blob::Create(global, blobImpl);
+    nsRefPtr<Blob> blob = Blob::Create(global, blobImpl);
     if (!ToJSValue(aContext, blob, &content)) {
       return nullptr;
     }

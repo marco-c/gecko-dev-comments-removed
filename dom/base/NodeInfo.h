@@ -280,7 +280,7 @@ protected:
 
   NodeInfoInner mInner;
 
-  RefPtr<nsNodeInfoManager> mOwnerManager;
+  nsRefPtr<nsNodeInfoManager> mOwnerManager;
 
   
 

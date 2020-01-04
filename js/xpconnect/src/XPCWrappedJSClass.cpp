@@ -107,7 +107,7 @@ nsXPCWrappedJSClass::GetNewOrUsed(JSContext* cx, REFNSIID aIID, bool allowNonScr
 {
     XPCJSRuntime* rt = nsXPConnect::GetRuntimeInstance();
     IID2WrappedJSClassMap* map = rt->GetWrappedJSClassMap();
-    RefPtr<nsXPCWrappedJSClass> clasp = map->Find(aIID);
+    nsRefPtr<nsXPCWrappedJSClass> clasp = map->Find(aIID);
 
     if (!clasp) {
         nsCOMPtr<nsIInterfaceInfo> info;
@@ -566,7 +566,7 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
         
         
         
-        RefPtr<nsXPCWrappedJS> wrapper;
+        nsRefPtr<nsXPCWrappedJS> wrapper;
         nsresult rv = nsXPCWrappedJS::GetNewOrUsed(jsobj, aIID, getter_AddRefs(wrapper));
         if (NS_SUCCEEDED(rv) && wrapper) {
             

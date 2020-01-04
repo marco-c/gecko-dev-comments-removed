@@ -124,7 +124,7 @@ private:
 
   
   
-  RefPtr<nsSVGElement> mElement;
+  nsRefPtr<nsSVGElement> mElement;
 
   uint8_t mAttrEnum;
 };

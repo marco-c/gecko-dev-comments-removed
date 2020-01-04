@@ -529,7 +529,7 @@ EventListenerManager::RemoveEventListenerInternal(
       ++typeCount;
       if (listener->mListener == aListenerHolder &&
           listener->mFlags.EqualsIgnoringTrustness(aFlags)) {
-        RefPtr<EventListenerManager> kungFuDeathGrip(this);
+        nsRefPtr<EventListenerManager> kungFuDeathGrip(this);
         mListeners.RemoveElementAt(i);
         --count;
         mNoListenerForEvent = eVoidEvent;
@@ -965,15 +965,15 @@ EventListenerManager::CompileEventHandlerInternal(Listener* aListener,
   NS_ENSURE_TRUE(handler, NS_ERROR_FAILURE);
 
   if (jsEventHandler->EventName() == nsGkAtoms::onerror && win) {
-    RefPtr<OnErrorEventHandlerNonNull> handlerCallback =
+    nsRefPtr<OnErrorEventHandlerNonNull> handlerCallback =
       new OnErrorEventHandlerNonNull(nullptr, handler,  nullptr);
     jsEventHandler->SetHandler(handlerCallback);
   } else if (jsEventHandler->EventName() == nsGkAtoms::onbeforeunload && win) {
-    RefPtr<OnBeforeUnloadEventHandlerNonNull> handlerCallback =
+    nsRefPtr<OnBeforeUnloadEventHandlerNonNull> handlerCallback =
       new OnBeforeUnloadEventHandlerNonNull(nullptr, handler,  nullptr);
     jsEventHandler->SetHandler(handlerCallback);
   } else {
-    RefPtr<EventHandlerNonNull> handlerCallback =
+    nsRefPtr<EventHandlerNonNull> handlerCallback =
       new EventHandlerNonNull(nullptr, handler,  nullptr);
     jsEventHandler->SetHandler(handlerCallback);
   }
@@ -1099,7 +1099,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
           
           nsCOMPtr<EventTarget> et =
             do_QueryInterface(aEvent->originalTarget);
-          RefPtr<Event> event = EventDispatcher::CreateEvent(et, aPresContext,
+          nsRefPtr<Event> event = EventDispatcher::CreateEvent(et, aPresContext,
                                                                aEvent,
                                                                EmptyString());
           event.forget(aDOMEvent);
@@ -1325,7 +1325,7 @@ EventListenerManager::GetListenerInfo(nsCOMArray<nsIEventListenerInfo>* aList)
     }
     
     
-    RefPtr<EventListenerInfo> info =
+    nsRefPtr<EventListenerInfo> info =
       new EventListenerInfo(eventType, listener.mListener.ToXPCOMCallback(),
                             listener.mFlags.mCapture,
                             listener.mFlags.mAllowUntrustedEvents,

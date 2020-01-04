@@ -134,7 +134,7 @@ private:
 
   
   void ClearStyleContext();
-  void SetResolvedStyleContext(RefPtr<nsStyleContext>&& aContext);
+  void SetResolvedStyleContext(nsRefPtr<nsStyleContext>&& aContext);
   void SetFrameStyleContext(nsStyleContext* aContext);
 
 #define STYLE_STRUCT(name_, checkdata_cb_)                              \

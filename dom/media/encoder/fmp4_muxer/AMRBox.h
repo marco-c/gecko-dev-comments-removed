@@ -34,7 +34,7 @@ public:
 class AMRSampleEntry : public AudioSampleEntry {
 public:
   
-  RefPtr<AMRSpecificBox> amr_special_box;
+  nsRefPtr<AMRSpecificBox> amr_special_box;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;

@@ -8,7 +8,7 @@
 #include <vector>
 #include <dlfcn.h>
 #include <signal.h>
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "Zip.h"
 #include "Elfxx.h"
@@ -234,7 +234,7 @@ private:
   char *path;
 
   
-  mutable RefPtr<Mappable> mappable;
+  mutable nsRefPtr<Mappable> mappable;
 };
 
 
@@ -468,14 +468,14 @@ private:
 
   
 
-  RefPtr<LibHandle> self_elf;
+  nsRefPtr<LibHandle> self_elf;
 
 #if defined(ANDROID)
   
 
 
 
-  RefPtr<LibHandle> libc;
+  nsRefPtr<LibHandle> libc;
 #endif
 
   

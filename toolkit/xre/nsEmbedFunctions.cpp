@@ -827,7 +827,7 @@ ContentParent* gContentParent;
 TestShellParent* GetOrCreateTestShellParent()
 {
     if (!gContentParent) {
-        RefPtr<ContentParent> parent = ContentParent::GetNewOrUsedBrowserProcess();
+        nsRefPtr<ContentParent> parent = ContentParent::GetNewOrUsedBrowserProcess();
         parent.forget(&gContentParent);
     } else if (!gContentParent->IsAlive()) {
         return nullptr;

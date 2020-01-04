@@ -213,7 +213,7 @@ RemoteOpenFileChild::AsyncRemoteFileOpen(int32_t aFlags,
 #if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA)
   
   
-  RefPtr<CallsListenerInNewEvent> runnable =
+  nsRefPtr<CallsListenerInNewEvent> runnable =
     new CallsListenerInNewEvent(aListener, NS_OK);
   runnable->Dispatch();
 
@@ -293,7 +293,7 @@ RemoteOpenFileChild::HandleFileDescriptorAndNotifyListener(
     
     
     if (aFD.IsValid()) {
-      RefPtr<CloseFileRunnable> runnable = new CloseFileRunnable(aFD);
+      nsRefPtr<CloseFileRunnable> runnable = new CloseFileRunnable(aFD);
       runnable->Dispatch();
     }
     return;
@@ -301,7 +301,7 @@ RemoteOpenFileChild::HandleFileDescriptorAndNotifyListener(
 
   MOZ_ASSERT(!mNSPRFileDesc);
 
-  RefPtr<TabChild> tabChild;
+  nsRefPtr<TabChild> tabChild;
   mTabChild.swap(tabChild);
 
   
@@ -335,7 +335,7 @@ RemoteOpenFileChild::NotifyListener(nsresult aResult)
   mListener->OnRemoteFileOpenComplete(aResult);
   mListener = nullptr;     
 
-  RefPtr<nsJARProtocolHandler> handler(gJarHandler);
+  nsRefPtr<nsJARProtocolHandler> handler(gJarHandler);
   NS_WARN_IF_FALSE(handler, "nsJARProtocolHandler is already gone!");
 
   if (handler) {

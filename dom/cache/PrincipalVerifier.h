@@ -61,12 +61,12 @@ private:
 
   
   
-  RefPtr<ContentParent> mActor;
+  nsRefPtr<ContentParent> mActor;
 
   const mozilla::ipc::PrincipalInfo mPrincipalInfo;
   nsCOMPtr<nsIThread> mInitiatingThread;
   nsresult mResult;
-  RefPtr<ManagerId> mManagerId;
+  nsRefPtr<ManagerId> mManagerId;
 
 public:
   NS_DECL_NSIRUNNABLE

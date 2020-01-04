@@ -1387,7 +1387,7 @@ XPCJSRuntime::InterruptCallback(JSContext* cx)
     
     
     RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
-    RefPtr<nsGlobalWindow> win = WindowOrNull(global);
+    nsRefPtr<nsGlobalWindow> win = WindowOrNull(global);
     if (!win && IsSandbox(global)) {
         
         
@@ -3293,7 +3293,7 @@ GetCurrentPerfGroupCallback(JSContext* cx) {
     
     
     
-    RefPtr<nsGlobalWindow> win = WindowOrNull(global);
+    nsRefPtr<nsGlobalWindow> win = WindowOrNull(global);
     if (win) {
         nsCOMPtr<nsIDOMWindow> top;
         nsresult rv = win->GetScriptableTop(getter_AddRefs(top));

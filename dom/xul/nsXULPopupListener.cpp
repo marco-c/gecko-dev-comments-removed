@@ -234,7 +234,7 @@ nsXULPopupListener::FireFocusOnTargetContent(nsIDOMNode* aTargetNode)
 
     
     
-    RefPtr<nsPresContext> context = shell->GetPresContext();
+    nsRefPtr<nsPresContext> context = shell->GetPresContext();
  
     nsCOMPtr<nsIContent> content = do_QueryInterface(aTargetNode);
     nsIFrame* targetFrame = content->GetPrimaryFrame();

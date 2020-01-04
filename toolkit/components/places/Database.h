@@ -304,7 +304,7 @@ private:
 
 
 
-  RefPtr<DatabaseShutdown> mConnectionShutdown;
+  nsRefPtr<DatabaseShutdown> mConnectionShutdown;
 };
 
 } 

@@ -158,8 +158,8 @@ BasicTextureImage::EndUpdate()
 
     
 
-    RefPtr<gfx::SourceSurface> updateSnapshot = mUpdateDrawTarget->Snapshot();
-    RefPtr<gfx::DataSourceSurface> updateData = updateSnapshot->GetDataSurface();
+    nsRefPtr<gfx::SourceSurface> updateSnapshot = mUpdateDrawTarget->Snapshot();
+    nsRefPtr<gfx::DataSourceSurface> updateData = updateSnapshot->GetDataSurface();
 
     bool relative = FinishedSurfaceUpdate();
 
@@ -270,7 +270,7 @@ TextureImage::TextureImage(const gfx::IntSize& aSize,
     : mSize(aSize)
     , mWrapMode(aWrapMode)
     , mContentType(aContentType)
-    , mFilter(Filter::GOOD)
+    , mFilter(GraphicsFilter::FILTER_GOOD)
     , mFlags(aFlags)
 {}
 
@@ -463,7 +463,7 @@ TiledTextureImage::BeginUpdate(nsIntRegion& aRegion)
             
             aRegion.MoveBy(-xPos, -yPos);
             
-            RefPtr<gfx::DrawTarget> drawTarget = mImages[i]->BeginUpdate(aRegion);
+            nsRefPtr<gfx::DrawTarget> drawTarget = mImages[i]->BeginUpdate(aRegion);
             
             aRegion.MoveBy(xPos, yPos);
             
@@ -503,8 +503,8 @@ TiledTextureImage::EndUpdate()
         return;
     }
 
-    RefPtr<gfx::SourceSurface> updateSnapshot = mUpdateDrawTarget->Snapshot();
-    RefPtr<gfx::DataSourceSurface> updateData = updateSnapshot->GetDataSurface();
+    nsRefPtr<gfx::SourceSurface> updateSnapshot = mUpdateDrawTarget->Snapshot();
+    nsRefPtr<gfx::DataSourceSurface> updateData = updateSnapshot->GetDataSurface();
 
     
     for (unsigned i = 0; i < mImages.Length(); i++) {

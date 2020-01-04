@@ -1121,7 +1121,7 @@ nsXULTemplateBuilder::ContentRemoved(nsIDocument* aDocument,
                                      nsIContent* aPreviousSibling)
 {
     if (mRoot && nsContentUtils::ContentIsDescendantOf(mRoot, aChild)) {
-        RefPtr<nsXULTemplateBuilder> kungFuDeathGrip(this);
+        nsRefPtr<nsXULTemplateBuilder> kungFuDeathGrip(this);
 
         if (mQueryProcessor)
             mQueryProcessor->Done();
@@ -1156,7 +1156,7 @@ nsXULTemplateBuilder::NodeWillBeDestroyed(const nsINode* aNode)
 {
     
     
-    RefPtr<nsXULTemplateBuilder> kungFuDeathGrip(this);
+    nsRefPtr<nsXULTemplateBuilder> kungFuDeathGrip(this);
 
     
     if (mQueryProcessor)

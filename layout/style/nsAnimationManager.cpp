@@ -275,6 +275,21 @@ CSSAnimation::QueueEvents()
                                          this));
 }
 
+bool
+CSSAnimation::HasEndEventToQueue() const
+{
+  if (!mEffect) {
+    return false;
+  }
+
+  bool wasActive = mPreviousPhaseOrIteration != PREVIOUS_PHASE_BEFORE &&
+                   mPreviousPhaseOrIteration != PREVIOUS_PHASE_AFTER;
+  bool isActive = mEffect->GetComputedTiming().mPhase ==
+                    ComputedTiming::AnimationPhase_Active;
+
+  return wasActive && !isActive;
+}
+
 CommonAnimationManager*
 CSSAnimation::GetAnimationManager() const
 {
@@ -490,7 +505,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
           animationChanged =
             oldEffect->Timing() != newEffect->Timing() ||
             oldEffect->Properties() != newEffect->Properties();
-          oldEffect->SetTiming(newEffect->Timing());
+          oldEffect->SetTiming(newEffect->Timing(), *oldAnim);
           oldEffect->Properties() = newEffect->Properties();
         }
 
@@ -546,7 +561,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
     }
   }
   collection->mAnimations.SwapElements(newAnimations);
-  collection->mStyleChanging = true;
+  collection->mNeedsRefreshes = true;
 
   
   for (size_t newAnimIdx = newAnimations.Length(); newAnimIdx-- != 0; ) {

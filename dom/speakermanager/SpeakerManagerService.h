@@ -61,7 +61,7 @@ protected:
 
   static void Shutdown();
 
-  nsTArray<RefPtr<SpeakerManager> > mRegisteredSpeakerManagers;
+  nsTArray<nsRefPtr<SpeakerManager> > mRegisteredSpeakerManagers;
   
   nsCheapSet<nsUint64HashKey> mSpeakerStatusSet;
   

@@ -252,7 +252,7 @@ private:
 
 private:
     PLHashTable *mDB; 
-    RefPtr<AppDataClearObserver> mObserver;
+    nsRefPtr<AppDataClearObserver> mObserver;
 };
 
 } 

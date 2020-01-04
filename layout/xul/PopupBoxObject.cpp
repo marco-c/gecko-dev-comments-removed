@@ -271,7 +271,7 @@ PopupBoxObject::GetAnchorNode() const
 already_AddRefed<DOMRect>
 PopupBoxObject::GetOuterScreenRect()
 {
-  RefPtr<DOMRect> rect = new DOMRect(mContent);
+  nsRefPtr<DOMRect> rect = new DOMRect(mContent);
 
   
   nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetFrame(false));

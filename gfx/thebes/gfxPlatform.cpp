@@ -733,7 +733,7 @@ already_AddRefed<DrawTarget>
 gfxPlatform::CreateDrawTargetForSurface(gfxASurface *aSurface, const IntSize& aSize)
 {
   SurfaceFormat format = aSurface->GetSurfaceFormat();
-  RefPtr<DrawTarget> drawTarget = Factory::CreateDrawTargetForCairoSurface(aSurface->CairoSurface(), aSize, &format);
+  nsRefPtr<DrawTarget> drawTarget = Factory::CreateDrawTargetForCairoSurface(aSurface->CairoSurface(), aSize, &format);
   if (!drawTarget) {
     gfxWarning() << "gfxPlatform::CreateDrawTargetForSurface failed in CreateDrawTargetForCairoSurface";
     return nullptr;
@@ -771,7 +771,7 @@ cairo_user_data_key_t kSourceSurface;
 
 struct SourceSurfaceUserData
 {
-  RefPtr<SourceSurface> mSrcSurface;
+  nsRefPtr<SourceSurface> mSrcSurface;
   BackendType mBackendType;
 };
 
@@ -818,7 +818,7 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     SourceSurfaceUserData *surf = static_cast<SourceSurfaceUserData*>(userData);
 
     if (surf->mSrcSurface->IsValid() && surf->mBackendType == aTarget->GetBackendType()) {
-      RefPtr<SourceSurface> srcSurface(surf->mSrcSurface);
+      nsRefPtr<SourceSurface> srcSurface(surf->mSrcSurface);
       return srcSurface.forget();
     }
     
@@ -854,14 +854,14 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     return aTarget->CreateSourceSurfaceFromNativeSurface(surf);
   }
 
-  RefPtr<SourceSurface> srcBuffer;
+  nsRefPtr<SourceSurface> srcBuffer;
 
   
 
   if (!srcBuffer) {
     
     
-    RefPtr<DataSourceSurface> surf = GetWrappedDataSourceSurface(aSurface);
+    nsRefPtr<DataSourceSurface> surf = GetWrappedDataSourceSurface(aSurface);
     if (surf) {
       srcBuffer = aTarget->OptimizeSourceSurface(surf);
       if (srcBuffer == surf) {
@@ -897,7 +897,7 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     surf.mType = NativeSurfaceType::CAIRO_SURFACE;
     surf.mSurface = aSurface->CairoSurface();
     surf.mSize = aSurface->GetSize();
-    RefPtr<DrawTarget> drawTarget =
+    nsRefPtr<DrawTarget> drawTarget =
       Factory::CreateDrawTarget(BackendType::CAIRO, IntSize(1, 1), format);
     if (!drawTarget) {
       gfxWarning() << "gfxPlatform::GetSourceSurfaceForSurface failed in CreateDrawTarget";
@@ -939,7 +939,7 @@ gfxPlatform::GetWrappedDataSourceSurface(gfxASurface* aSurface)
   if (!image) {
     return nullptr;
   }
-  RefPtr<DataSourceSurface> result =
+  nsRefPtr<DataSourceSurface> result =
     Factory::CreateWrappingDataSourceSurface(image->Data(),
                                              image->Stride(),
                                              image->GetSize(),
@@ -1180,7 +1180,7 @@ already_AddRefed<DrawTarget>
 gfxPlatform::CreateOffscreenCanvasDrawTarget(const IntSize& aSize, SurfaceFormat aFormat)
 {
   NS_ASSERTION(mPreferredCanvasBackend != BackendType::NONE, "No backend.");
-  RefPtr<DrawTarget> target = CreateDrawTargetForBackend(mPreferredCanvasBackend, aSize, aFormat);
+  nsRefPtr<DrawTarget> target = CreateDrawTargetForBackend(mPreferredCanvasBackend, aSize, aFormat);
   if (target ||
       mFallbackCanvasBackend == BackendType::NONE) {
     return target.forget();
@@ -1212,7 +1212,7 @@ gfxPlatform::CreateDrawTargetForData(unsigned char* aData, const IntSize& aSize,
     backendType = BackendType::CAIRO;
   }
 
-  RefPtr<DrawTarget> dt = Factory::CreateDrawTargetForData(backendType,
+  nsRefPtr<DrawTarget> dt = Factory::CreateDrawTargetForData(backendType,
                                                            aData, aSize,
                                                            aStride, aFormat);
 
@@ -1501,12 +1501,12 @@ gfxPlatform::TransformPixel(const Color& in, Color& out, qcms_transform *transfo
         out = Color::FromABGR(packed);
 #else
         
-        uint32_t packed = in.UnusualToARGB();
+        uint32_t packed = in.ToARGB();
         
         qcms_transform_data(transform,
                        (uint8_t *)&packed + 1, (uint8_t *)&packed + 1,
                        1);
-        out = Color::UnusualFromARGB(packed);
+        out = Color::FromARGB(packed);
 #endif
     }
 

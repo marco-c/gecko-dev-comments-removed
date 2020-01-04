@@ -435,7 +435,7 @@ nsHTMLEditor::GetPositionAndDimensions(nsIDOMElement * aElement,
     mResizedObjectIsAbsolutelyPositioned = true;
 
     
-    RefPtr<nsComputedDOMStyle> cssDecl =
+    nsRefPtr<nsComputedDOMStyle> cssDecl =
       mHTMLCSSUtils->GetComputedStyle(element);
     NS_ENSURE_STATE(cssDecl);
 

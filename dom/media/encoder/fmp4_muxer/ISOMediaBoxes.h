@@ -50,7 +50,7 @@ public:
   
   nsresult Write() override;
   nsresult Find(const nsACString& aType,
-                nsTArray<RefPtr<MuxerOperation>>& aOperations) override;
+                nsTArray<nsRefPtr<MuxerOperation>>& aOperations) override;
 
   
   
@@ -69,8 +69,8 @@ protected:
   Box(const nsACString& aType, ISOControl* aControl);
 
   ISOControl* mControl;
-  RefPtr<AudioTrackMetadata> mAudioMeta;
-  RefPtr<VideoTrackMetadata> mVideoMeta;
+  nsRefPtr<AudioTrackMetadata> mAudioMeta;
+  nsRefPtr<VideoTrackMetadata> mVideoMeta;
 };
 
 
@@ -112,14 +112,14 @@ public:
   nsresult Generate(uint32_t* aBoxSize) override;
   nsresult Write() override;
   nsresult Find(const nsACString& aType,
-                nsTArray<RefPtr<MuxerOperation>>& aOperations) override;
+                nsTArray<nsRefPtr<MuxerOperation>>& aOperations) override;
 
 protected:
   
   DefaultContainerImpl(const nsACString& aType, ISOControl* aControl);
   DefaultContainerImpl() = delete;
 
-  nsTArray<RefPtr<MuxerOperation>> boxes;
+  nsTArray<nsRefPtr<MuxerOperation>> boxes;
 };
 
 
@@ -510,7 +510,7 @@ class SampleDescriptionBox : public FullBox {
 public:
   
   uint32_t entry_count;
-  RefPtr<SampleEntryBox> sample_entry_box;
+  nsRefPtr<SampleEntryBox> sample_entry_box;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;
@@ -521,8 +521,8 @@ public:
   ~SampleDescriptionBox();
 
 protected:
-  nsresult CreateAudioSampleEntry(RefPtr<SampleEntryBox>& aSampleEntry);
-  nsresult CreateVideoSampleEntry(RefPtr<SampleEntryBox>& aSampleEntry);
+  nsresult CreateAudioSampleEntry(nsRefPtr<SampleEntryBox>& aSampleEntry);
+  nsresult CreateVideoSampleEntry(nsRefPtr<SampleEntryBox>& aSampleEntry);
 
   uint32_t mTrackType;
 };

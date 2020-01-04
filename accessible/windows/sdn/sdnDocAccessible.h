@@ -44,7 +44,7 @@ public:
      BSTR __RPC_FAR *commaSeparatedMediaTypes);
 
 protected:
-  RefPtr<DocAccessibleWrap> mAccessible;
+  nsRefPtr<DocAccessibleWrap> mAccessible;
 };
 
 } 

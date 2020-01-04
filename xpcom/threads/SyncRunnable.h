@@ -65,7 +65,7 @@ public:
                                nsIRunnable* aRunnable,
                                bool aForceDispatch = false)
   {
-    RefPtr<SyncRunnable> s(new SyncRunnable(aRunnable));
+    nsRefPtr<SyncRunnable> s(new SyncRunnable(aRunnable));
     s->DispatchToThread(aThread, aForceDispatch);
   }
 

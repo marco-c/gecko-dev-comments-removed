@@ -52,7 +52,7 @@ private:
 
     void LoadHasChanged(webrtc::CPULoadState aNewState);
 
-    RefPtr<LoadMonitor> mLoadMonitor;
+    nsRefPtr<LoadMonitor> mLoadMonitor;
 
     
     

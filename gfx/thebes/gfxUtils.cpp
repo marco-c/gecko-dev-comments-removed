@@ -16,7 +16,7 @@
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/Vector.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIClipboardHelper.h"
@@ -77,7 +77,7 @@ void mozilla_dump_image(void* bytes, int width, int height, int bytepp,
         break;
     }
 
-    RefPtr<DataSourceSurface> surf =
+    nsRefPtr<DataSourceSurface> surf =
         Factory::CreateWrappingDataSourceSurface((uint8_t*)bytes, strideBytes,
                                                  IntSize(width, height),
                                                  format);
@@ -282,7 +282,7 @@ gfxUtils::UnpremultiplyDataSurface(DataSourceSurface* srcSurf,
 
 static bool
 MapSrcAndCreateMappedDest(DataSourceSurface* srcSurf,
-                          RefPtr<DataSourceSurface>* out_destSurf,
+                          nsRefPtr<DataSourceSurface>* out_destSurf,
                           DataSourceSurface::MappedSurface* out_srcMap,
                           DataSourceSurface::MappedSurface* out_destMap)
 {
@@ -302,7 +302,7 @@ MapSrcAndCreateMappedDest(DataSourceSurface* srcSurf,
     }
 
     
-    RefPtr<DataSourceSurface> destSurf =
+    nsRefPtr<DataSourceSurface> destSurf =
         Factory::CreateDataSourceSurfaceWithStride(srcSurf->GetSize(),
                                                    srcSurf->GetFormat(),
                                                    srcMap.mStride);
@@ -326,12 +326,12 @@ MapSrcAndCreateMappedDest(DataSourceSurface* srcSurf,
 already_AddRefed<DataSourceSurface>
 gfxUtils::CreatePremultipliedDataSurface(DataSourceSurface* srcSurf)
 {
-    RefPtr<DataSourceSurface> destSurf;
+    nsRefPtr<DataSourceSurface> destSurf;
     DataSourceSurface::MappedSurface srcMap;
     DataSourceSurface::MappedSurface destMap;
     if (!MapSrcAndCreateMappedDest(srcSurf, &destSurf, &srcMap, &destMap)) {
         MOZ_ASSERT(false, "MapSrcAndCreateMappedDest failed.");
-        RefPtr<DataSourceSurface> surface(srcSurf);
+        nsRefPtr<DataSourceSurface> surface(srcSurf);
         return surface.forget();
     }
 
@@ -347,12 +347,12 @@ gfxUtils::CreatePremultipliedDataSurface(DataSourceSurface* srcSurf)
 already_AddRefed<DataSourceSurface>
 gfxUtils::CreateUnpremultipliedDataSurface(DataSourceSurface* srcSurf)
 {
-    RefPtr<DataSourceSurface> destSurf;
+    nsRefPtr<DataSourceSurface> destSurf;
     DataSourceSurface::MappedSurface srcMap;
     DataSourceSurface::MappedSurface destMap;
     if (!MapSrcAndCreateMappedDest(srcSurf, &destSurf, &srcMap, &destMap)) {
         MOZ_ASSERT(false, "MapSrcAndCreateMappedDest failed.");
-        RefPtr<DataSourceSurface> surface(srcSurf);
+        nsRefPtr<DataSourceSurface> surface(srcSurf);
         return surface.forget();
     }
 
@@ -445,7 +445,7 @@ CreateSamplingRestrictedDrawable(gfxDrawable* aDrawable,
 
     IntSize size(int32_t(needed.Width()), int32_t(needed.Height()));
 
-    RefPtr<DrawTarget> target =
+    nsRefPtr<DrawTarget> target =
       gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(size, aFormat);
     if (!target) {
       return nullptr;
@@ -453,9 +453,9 @@ CreateSamplingRestrictedDrawable(gfxDrawable* aDrawable,
 
     nsRefPtr<gfxContext> tmpCtx = new gfxContext(target);
     tmpCtx->SetOp(OptimalFillOp());
-    aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), true, Filter::LINEAR,
-                    1.0, gfxMatrix::Translation(needed.TopLeft()));
-    RefPtr<SourceSurface> surface = target->Snapshot();
+    aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), true,
+                    GraphicsFilter::FILTER_FAST, 1.0, gfxMatrix::Translation(needed.TopLeft()));
+    nsRefPtr<SourceSurface> surface = target->Snapshot();
 
     nsRefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(surface, size, gfxMatrix::Translation(-needed.TopLeft()));
     return drawable.forget();
@@ -542,9 +542,9 @@ DeviceToImageTransform(gfxContext* aContext)
 
 
 #ifdef MOZ_GFX_OPTIMIZE_MOBILE
-static Filter ReduceResamplingFilter(Filter aFilter,
-                                     int aImgWidth, int aImgHeight,
-                                     float aSourceWidth, float aSourceHeight)
+static GraphicsFilter ReduceResamplingFilter(GraphicsFilter aFilter,
+                                             int aImgWidth, int aImgHeight,
+                                             float aSourceWidth, float aSourceHeight)
 {
     
     
@@ -559,7 +559,7 @@ static Filter ReduceResamplingFilter(Filter aFilter,
         || aImgHeight <= kSmallImageSizeThreshold) {
         
         
-        return Filter::POINT;
+        return GraphicsFilter::FILTER_NEAREST;
     }
 
     if (aImgHeight * kLargeStretch <= aSourceHeight || aImgWidth * kLargeStretch <= aSourceWidth) {
@@ -570,7 +570,7 @@ static Filter ReduceResamplingFilter(Filter aFilter,
         
         
         if (fabs(aSourceWidth - aImgWidth)/aImgWidth < 0.5 || fabs(aSourceHeight - aImgHeight)/aImgHeight < 0.5)
-            return Filter::POINT;
+            return GraphicsFilter::FILTER_NEAREST;
 
         
         
@@ -598,9 +598,9 @@ static Filter ReduceResamplingFilter(Filter aFilter,
     return aFilter;
 }
 #else
-static Filter ReduceResamplingFilter(Filter aFilter,
-                                     int aImgWidth, int aImgHeight,
-                                     int aSourceWidth, int aSourceHeight)
+static GraphicsFilter ReduceResamplingFilter(GraphicsFilter aFilter,
+                                             int aImgWidth, int aImgHeight,
+                                             int aSourceWidth, int aSourceHeight)
 {
     
     return aFilter;
@@ -627,7 +627,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
                         gfxContext* aContext,
                         const ImageRegion& aRegion,
                         Rect aImageRect,
-                        const Filter& aFilter,
+                        const GraphicsFilter& aFilter,
                         const SurfaceFormat aFormat,
                         gfxFloat aOpacity)
 {
@@ -669,7 +669,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
     return false;
   }
 
-  RefPtr<DrawTarget> scaledDT =
+  nsRefPtr<DrawTarget> scaledDT =
     gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(scaledImageSize, aFormat);
   if (!scaledDT) {
     return false;
@@ -680,7 +680,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
   gfxRect gfxImageRect(aImageRect.x, aImageRect.y, aImageRect.width, aImageRect.height);
   aDrawable->Draw(tmpCtx, gfxImageRect, true, aFilter, 1.0, gfxMatrix());
 
-  RefPtr<SourceSurface> scaledImage = scaledDT->Snapshot();
+  nsRefPtr<SourceSurface> scaledImage = scaledDT->Snapshot();
 
   {
     gfxContextMatrixAutoSaveRestore autoSR(aContext);
@@ -695,7 +695,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
                             aContext->CurrentAntialiasMode());
 
     SurfacePattern scaledImagePattern(scaledImage, ExtendMode::REPEAT,
-                                      Matrix(), aFilter);
+                                      Matrix(), ToFilter(aFilter));
     destDrawTarget->FillRect(scaledNeededRect, scaledImagePattern, drawOptions);
   }
   return true;
@@ -708,7 +708,7 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
                            const gfxSize&      aImageSize,
                            const ImageRegion&  aRegion,
                            const SurfaceFormat aFormat,
-                           Filter              aFilter,
+                           GraphicsFilter      aFilter,
                            uint32_t            aImageFlags,
                            gfxFloat            aOpacity)
 {
@@ -814,7 +814,7 @@ ClipToRegionInternal(gfxContext* aContext, const nsIntRegion& aRegion)
 static already_AddRefed<Path>
 PathFromRegionInternal(DrawTarget* aTarget, const nsIntRegion& aRegion)
 {
-  RefPtr<PathBuilder> pb = aTarget->CreatePathBuilder();
+  nsRefPtr<PathBuilder> pb = aTarget->CreatePathBuilder();
   nsIntRegionRectIterator iter(aRegion);
 
   const IntRect* r;
@@ -837,7 +837,7 @@ ClipToRegionInternal(DrawTarget* aTarget, const nsIntRegion& aRegion)
     return;
   }
 
-  RefPtr<Path> path = PathFromRegionInternal(aTarget, aRegion);
+  nsRefPtr<Path> path = PathFromRegionInternal(aTarget, aRegion);
   aTarget->PushClip(path);
 }
 
@@ -1135,7 +1135,7 @@ gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
     
     
     
-    RefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
+    nsRefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
       CreateOffscreenContentDrawTarget(aSurface->GetSize(), aFormat);
     if (!dt) {
       gfxWarning() << "gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat failed in CreateOffscreenContentDrawTarget";
@@ -1148,7 +1148,7 @@ gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
     
     dt->DrawSurface(aSurface, bounds, bounds, DrawSurfaceOptions(),
                     DrawOptions(1.0f, CompositionOp::OP_OVER));
-    RefPtr<SourceSurface> surface = dt->Snapshot();
+    nsRefPtr<SourceSurface> surface = dt->Snapshot();
     return surface->GetDataSurface();
   }
 
@@ -1167,14 +1167,14 @@ gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
   
   
   
-  RefPtr<DataSourceSurface> dataSurface =
+  nsRefPtr<DataSourceSurface> dataSurface =
     Factory::CreateDataSourceSurface(aSurface->GetSize(), aFormat);
   DataSourceSurface::MappedSurface map;
   if (!dataSurface ||
       !dataSurface->Map(DataSourceSurface::MapType::READ_WRITE, &map)) {
     return nullptr;
   }
-  RefPtr<DrawTarget> dt =
+  nsRefPtr<DrawTarget> dt =
     Factory::CreateDrawTargetForData(BackendType::CAIRO,
                                      map.mData,
                                      dataSurface->GetSize(),
@@ -1236,7 +1236,7 @@ EncodeSourceSurfaceInternal(SourceSurface* aSurface,
   }
   const Size floatSize(size.width, size.height);
 
-  RefPtr<DataSourceSurface> dataSurface;
+  nsRefPtr<DataSourceSurface> dataSurface;
   if (aSurface->GetFormat() != SurfaceFormat::B8G8R8A8) {
     
     dataSurface =
@@ -1438,7 +1438,7 @@ gfxUtils::WriteAsPNG(DrawTarget* aDT, const nsAString& aFile)
  void
 gfxUtils::WriteAsPNG(DrawTarget* aDT, const char* aFile)
 {
-  RefPtr<SourceSurface> surface = aDT->Snapshot();
+  nsRefPtr<SourceSurface> surface = aDT->Snapshot();
   if (surface) {
     WriteAsPNG(surface, aFile);
   } else {
@@ -1453,7 +1453,7 @@ gfxUtils::WriteAsPNG(nsIPresShell* aShell, const char* aFile)
   nsRect r(0, 0, aShell->GetPresContext()->DevPixelsToAppUnits(width),
            aShell->GetPresContext()->DevPixelsToAppUnits(height));
 
-  RefPtr<mozilla::gfx::DrawTarget> dt = gfxPlatform::GetPlatform()->
+  nsRefPtr<mozilla::gfx::DrawTarget> dt = gfxPlatform::GetPlatform()->
     CreateOffscreenContentDrawTarget(IntSize(width, height),
                                      SurfaceFormat::B8G8R8A8);
   NS_ENSURE_TRUE(dt, );
@@ -1479,7 +1479,7 @@ gfxUtils::GetAsDataURI(SourceSurface* aSurface)
  void
 gfxUtils::DumpAsDataURI(DrawTarget* aDT, FILE* aFile)
 {
-  RefPtr<SourceSurface> surface = aDT->Snapshot();
+  nsRefPtr<SourceSurface> surface = aDT->Snapshot();
   if (surface) {
     DumpAsDataURI(surface, aFile);
   } else {
@@ -1516,7 +1516,7 @@ gfxUtils::GetAsLZ4Base64Str(DataSourceSurface* aSourceSurface)
  nsCString
 gfxUtils::GetAsDataURI(DrawTarget* aDT)
 {
-  RefPtr<SourceSurface> surface = aDT->Snapshot();
+  nsRefPtr<SourceSurface> surface = aDT->Snapshot();
   if (surface) {
     return EncodeSourceSurfaceAsPNGURI(surface);
   } else {
@@ -1535,7 +1535,7 @@ gfxUtils::CopyAsDataURI(SourceSurface* aSurface)
  void
 gfxUtils::CopyAsDataURI(DrawTarget* aDT)
 {
-  RefPtr<SourceSurface> surface = aDT->Snapshot();
+  nsRefPtr<SourceSurface> surface = aDT->Snapshot();
   if (surface) {
     CopyAsDataURI(surface);
   } else {

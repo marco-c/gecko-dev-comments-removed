@@ -183,12 +183,12 @@ private:
   bool statementsNeedTransaction();
 
   StatementDataArray mStatements;
-  RefPtr<Connection> mConnection;
+  nsRefPtr<Connection> mConnection;
   sqlite3 *mNativeConnection;
   bool mHasTransaction;
   mozIStorageStatementCallback *mCallback;
   nsCOMPtr<nsIThread> mCallingThread;
-  RefPtr<ResultSet> mResultSet;
+  nsRefPtr<ResultSet> mResultSet;
 
   
 

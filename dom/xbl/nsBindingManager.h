@@ -28,7 +28,7 @@ class nsXBLDocumentInfo;
 class nsIStreamListener;
 class nsXBLBinding;
 template<class E> class nsRefPtr;
-typedef nsTArray<RefPtr<nsXBLBinding> > nsBindingList;
+typedef nsTArray<nsRefPtr<nsXBLBinding> > nsBindingList;
 class nsIPrincipal;
 class nsITimer;
 
@@ -199,7 +199,7 @@ protected:
 
   
   friend class nsRunnableMethod<nsBindingManager>;
-  RefPtr< nsRunnableMethod<nsBindingManager> > mProcessAttachedQueueEvent;
+  nsRefPtr< nsRunnableMethod<nsBindingManager> > mProcessAttachedQueueEvent;
 
   
   nsIDocument* mDocument;

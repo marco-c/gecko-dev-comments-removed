@@ -160,7 +160,7 @@ public:
   
   bool EnsureMetadata();
 
-  RefPtr<MediaResourcePromise> AllocateMediaResources();
+  nsRefPtr<MediaResourcePromise> AllocateMediaResources();
   void ReleaseMediaResources();
   bool SetVideoFormat();
   bool SetAudioFormat();

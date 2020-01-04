@@ -209,8 +209,8 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
   
   
   
-  RefPtr<nsHtml5StreamParser> streamKungFuDeathGrip(GetStreamParser());
-  RefPtr<nsHtml5TreeOpExecutor> treeOpKungFuDeathGrip(mExecutor);
+  nsRefPtr<nsHtml5StreamParser> streamKungFuDeathGrip(GetStreamParser());
+  nsRefPtr<nsHtml5TreeOpExecutor> treeOpKungFuDeathGrip(mExecutor);
 
   if (!mExecutor->HasStarted()) {
     NS_ASSERTION(!GetStreamParser(),
@@ -313,8 +313,8 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
   
   
   
-  RefPtr<nsHtml5OwningUTF16Buffer> prevSearchBuf;
-  RefPtr<nsHtml5OwningUTF16Buffer> firstLevelMarker;
+  nsRefPtr<nsHtml5OwningUTF16Buffer> prevSearchBuf;
+  nsRefPtr<nsHtml5OwningUTF16Buffer> firstLevelMarker;
 
   if (aKey) {
     if (mFirstBuffer == mLastBuffer) {
@@ -398,7 +398,7 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
     }
   }
 
-  RefPtr<nsHtml5OwningUTF16Buffer> heapBuffer;
+  nsRefPtr<nsHtml5OwningUTF16Buffer> heapBuffer;
   if (stackBuffer.hasMore()) {
     
     
@@ -514,8 +514,8 @@ nsHtml5Parser::Terminate()
   
   
   nsCOMPtr<nsIParser> kungFuDeathGrip(this);
-  RefPtr<nsHtml5StreamParser> streamKungFuDeathGrip(GetStreamParser());
-  RefPtr<nsHtml5TreeOpExecutor> treeOpKungFuDeathGrip(mExecutor);
+  nsRefPtr<nsHtml5StreamParser> streamKungFuDeathGrip(GetStreamParser());
+  nsRefPtr<nsHtml5TreeOpExecutor> treeOpKungFuDeathGrip(mExecutor);
   if (GetStreamParser()) {
     GetStreamParser()->Terminate();
   }

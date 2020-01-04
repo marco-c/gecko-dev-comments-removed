@@ -680,12 +680,9 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         
         Matrix4x4 transformToGecko = GetScreenToApzcTransform(apzc)
                                    * GetApzcToGeckoTransform(apzc);
-        Maybe<ScreenPoint> untransformedOrigin = UntransformTo<ScreenPixel>(
+        MOZ_ASSERT(transformToGecko.Is2D());
+        ScreenPoint untransformedOrigin = TransformTo<ScreenPixel>(
           transformToGecko, wheelInput.mOrigin);
-
-        if (!untransformedOrigin) {
-          return result;
-        }
 
         result = mInputQueue->ReceiveInputEvent(
           apzc,
@@ -694,7 +691,7 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         
         apzc->GetGuid(aOutTargetGuid);
-        wheelInput.mOrigin = *untransformedOrigin;
+        wheelInput.mOrigin = untransformedOrigin;
       }
       break;
     } case PANGESTURE_INPUT: {
@@ -720,14 +717,11 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
         
         Matrix4x4 transformToGecko = GetScreenToApzcTransform(apzc)
                                    * GetApzcToGeckoTransform(apzc);
-        Maybe<ScreenPoint> untransformedStartPoint = UntransformTo<ScreenPixel>(
+        MOZ_ASSERT(transformToGecko.Is2D());
+        ScreenPoint untransformedStartPoint = TransformTo<ScreenPixel>(
           transformToGecko, panInput.mPanStartPoint);
-        Maybe<ScreenPoint> untransformedDisplacement = UntransformVector<ScreenPixel>(
+        ScreenPoint untransformedDisplacement = TransformVector<ScreenPixel>(
             transformToGecko, panInput.mPanDisplacement, panInput.mPanStartPoint);
-
-        if (!untransformedStartPoint || !untransformedDisplacement) {
-          return result;
-        }
 
         result = mInputQueue->ReceiveInputEvent(
             apzc,
@@ -736,8 +730,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         
         apzc->GetGuid(aOutTargetGuid);
-        panInput.mPanStartPoint = *untransformedStartPoint;
-        panInput.mPanDisplacement = *untransformedDisplacement;
+        panInput.mPanStartPoint = untransformedStartPoint;
+        panInput.mPanDisplacement = untransformedDisplacement;
       }
       break;
     } case PINCHGESTURE_INPUT: {  
@@ -747,15 +741,6 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       if (apzc) {
         MOZ_ASSERT(hitResult == HitLayer || hitResult == HitDispatchToContentRegion);
 
-        Matrix4x4 outTransform = GetScreenToApzcTransform(apzc)
-                               * GetApzcToGeckoTransform(apzc);
-        Maybe<ScreenPoint> untransformedFocusPoint = UntransformTo<ScreenPixel>(
-          outTransform, pinchInput.mFocusPoint);
-
-        if (!untransformedFocusPoint) {
-          return result;
-        }
-
         result = mInputQueue->ReceiveInputEvent(
             apzc,
              hitResult == HitLayer,
@@ -763,7 +748,11 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         
         apzc->GetGuid(aOutTargetGuid);
-        pinchInput.mFocusPoint = *untransformedFocusPoint;
+        Matrix4x4 outTransform = GetScreenToApzcTransform(apzc)
+                               * GetApzcToGeckoTransform(apzc);
+        MOZ_ASSERT(outTransform.Is2D());
+        pinchInput.mFocusPoint = TransformTo<ScreenPixel>(
+            outTransform, pinchInput.mFocusPoint);
       }
       break;
     } case TAPGESTURE_INPUT: {  
@@ -773,15 +762,6 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       if (apzc) {
         MOZ_ASSERT(hitResult == HitLayer || hitResult == HitDispatchToContentRegion);
 
-        Matrix4x4 outTransform = GetScreenToApzcTransform(apzc)
-                               * GetApzcToGeckoTransform(apzc);
-        Maybe<ScreenIntPoint> untransformedPoint =
-          UntransformTo<ScreenPixel>(outTransform, tapInput.mPoint);
-
-        if (!untransformedPoint) {
-          return result;
-        }
-
         result = mInputQueue->ReceiveInputEvent(
             apzc,
              hitResult == HitLayer,
@@ -789,7 +769,10 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         
         apzc->GetGuid(aOutTargetGuid);
-        tapInput.mPoint = *untransformedPoint;
+        Matrix4x4 outTransform = GetScreenToApzcTransform(apzc)
+                               * GetApzcToGeckoTransform(apzc);
+        MOZ_ASSERT(outTransform.Is2D());
+        tapInput.mPoint = TransformTo<ScreenPixel>(outTransform, tapInput.mPoint);
       }
       break;
     }
@@ -881,15 +864,12 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
     Matrix4x4 transformToApzc = GetScreenToApzcTransform(mApzcForInputBlock);
     Matrix4x4 transformToGecko = GetApzcToGeckoTransform(mApzcForInputBlock);
     Matrix4x4 outTransform = transformToApzc * transformToGecko;
+    MOZ_ASSERT(outTransform.Is2D());
     
     for (size_t i = 0; i < aInput.mTouches.Length(); i++) {
       SingleTouchData& touchData = aInput.mTouches[i];
-      Maybe<ScreenIntPoint> untransformedScreenPoint = UntransformTo<ScreenPixel>(
+      touchData.mScreenPoint = TransformTo<ScreenPixel>(
           outTransform, touchData.mScreenPoint);
-      if (!untransformedScreenPoint) {
-        return nsEventStatus_eIgnore;
-      }
-      touchData.mScreenPoint = *untransformedScreenPoint;
     }
   }
 
@@ -904,6 +884,21 @@ APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput,
   }
 
   return result;
+}
+
+void
+APZCTreeManager::TransformCoordinateToGecko(const ScreenIntPoint& aPoint,
+                                            LayoutDeviceIntPoint* aOutTransformedPoint)
+{
+  MOZ_ASSERT(aOutTransformedPoint);
+  nsRefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(aPoint, nullptr);
+  if (apzc && aOutTransformedPoint) {
+    Matrix4x4 transformToApzc = GetScreenToApzcTransform(apzc);
+    Matrix4x4 transformToGecko = GetApzcToGeckoTransform(apzc);
+    Matrix4x4 outTransform = transformToApzc * transformToGecko;
+    MOZ_ASSERT(outTransform.Is2D());
+    *aOutTransformedPoint = TransformTo<LayoutDevicePixel>(outTransform, aPoint);
+  }
 }
 
 void
@@ -971,11 +966,8 @@ APZCTreeManager::ProcessEvent(WidgetInputEvent& aEvent,
     Matrix4x4 transformToApzc = GetScreenToApzcTransform(apzc);
     Matrix4x4 transformToGecko = GetApzcToGeckoTransform(apzc);
     Matrix4x4 outTransform = transformToApzc * transformToGecko;
-    Maybe<LayoutDeviceIntPoint> untransformedRefPoint =
-      UntransformTo<LayoutDevicePixel>(outTransform, aEvent.refPoint);
-    if (untransformedRefPoint) {
-      aEvent.refPoint = *untransformedRefPoint;
-    }
+    MOZ_ASSERT(outTransform.Is2D());
+    aEvent.refPoint = TransformTo<LayoutDevicePixel>(outTransform, aEvent.refPoint);
   }
   return result;
 }

@@ -107,9 +107,9 @@ private:
   
   nsIDocument* GetResponsibleDocument() const;
 
-  RefPtr<nsScreen> mScreen;
-  RefPtr<FullScreenEventListener> mFullScreenListener;
-  RefPtr<VisibleEventListener> mVisibleListener;
+  nsRefPtr<nsScreen> mScreen;
+  nsRefPtr<FullScreenEventListener> mFullScreenListener;
+  nsRefPtr<VisibleEventListener> mVisibleListener;
   OrientationType mType;
   uint16_t mAngle;
 };

@@ -58,7 +58,7 @@ DocumentTimeline::GetCurrentTimeStamp() const
   
   
   if (result.IsNull()) {
-    RefPtr<nsDOMNavigationTiming> timing = mDocument->GetNavigationTiming();
+    nsRefPtr<nsDOMNavigationTiming> timing = mDocument->GetNavigationTiming();
     if (timing) {
       result = timing->GetNavigationStartTimeStamp();
       
@@ -83,7 +83,7 @@ DocumentTimeline::ToTimelineTime(const TimeStamp& aTimeStamp) const
     return result;
   }
 
-  RefPtr<nsDOMNavigationTiming> timing = mDocument->GetNavigationTiming();
+  nsRefPtr<nsDOMNavigationTiming> timing = mDocument->GetNavigationTiming();
   if (MOZ_UNLIKELY(!timing)) {
     return result;
   }
@@ -176,7 +176,7 @@ TimeStamp
 DocumentTimeline::ToTimeStamp(const TimeDuration& aTimeDuration) const
 {
   TimeStamp result;
-  RefPtr<nsDOMNavigationTiming> timing = mDocument->GetNavigationTiming();
+  nsRefPtr<nsDOMNavigationTiming> timing = mDocument->GetNavigationTiming();
   if (MOZ_UNLIKELY(!timing)) {
     return result;
   }

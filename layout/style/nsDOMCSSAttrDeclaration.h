@@ -46,7 +46,7 @@ protected:
   virtual nsresult SetCSSDeclaration(mozilla::css::Declaration* aDecl) override;
   virtual nsIDocument* DocToUpdate() override;
 
-  RefPtr<Element> mElement;
+  nsRefPtr<Element> mElement;
 
   
 
