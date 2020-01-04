@@ -210,6 +210,12 @@ var AboutConfig = {
     }, this);
 
     
+    let match = /[?&]filter=([^&]+)/i.exec(window.location.href);
+    if (match) {
+      this.filterInput.value = decodeURIComponent(match[1]);
+    }
+
+    
     this.bufferFilterInput();
 
     
