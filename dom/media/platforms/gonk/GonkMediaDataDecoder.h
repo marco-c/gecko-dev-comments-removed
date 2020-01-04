@@ -26,18 +26,11 @@ public:
 
   virtual ~GonkDecoderManager() {}
 
-  
-  nsresult Input(MediaRawData* aSample);
+  virtual nsRefPtr<InitPromise> Init() = 0;
 
   
   
-  
-  
-  
-  
-  virtual nsresult Output(int64_t aStreamOffset,
-                          nsRefPtr<MediaData>& aOutput) = 0;
-  virtual nsRefPtr<InitPromise> Init() = 0;
+  nsresult Input(MediaRawData* aSample);
 
   
   nsresult Flush();
@@ -59,12 +52,29 @@ protected:
   GonkDecoderManager()
     : mMutex("GonkDecoderManager")
     , mLastTime(0)
+    , mFlushMonitor("GonkDecoderManager::Flush")
+    , mIsFlushing(false)
     , mDecodeCallback(nullptr)
   {}
 
   bool InitLoopers(MediaData::Type aType);
 
   void onMessageReceived(const android::sp<android::AMessage> &aMessage) override;
+
+  
+  
+  
+  
+  virtual nsresult Output(int64_t aStreamOffset,
+                          nsRefPtr<MediaData>& aOutput) = 0;
+
+  
+  
+  int32_t ProcessQueuedSamples();
+
+  void ProcessInput(bool aEndOfStream);
+  void ProcessFlush();
+  void ProcessToDo(bool aEndOfStream);
 
   nsRefPtr<MediaByteBuffer> mCodecSpecificData;
 
@@ -75,7 +85,17 @@ protected:
   
   android::sp<android::ALooper> mDecodeLooper;
   
+  
   android::sp<android::ALooper> mTaskLooper;
+  enum {
+    
+    
+    kNotifyDecoderActivity = 'nda ',
+    
+    kNotifyProcessFlush = 'npf ',
+    
+    kNotifyProcessInput = 'npi ',
+  };
 
   MozPromiseHolder<InitPromise> mInitPromise;
 
@@ -86,6 +106,17 @@ protected:
   nsTArray<nsRefPtr<MediaRawData>> mQueuedSamples;
 
   int64_t mLastTime;  
+
+  Monitor mFlushMonitor; 
+  bool mIsFlushing;
+
+  
+  
+  
+  android::sp<android::AMessage> mToDo;
+
+  
+  nsTArray<int64_t> mWaitOutput;
 
   MediaDataDecoderCallback* mDecodeCallback; 
 };
@@ -114,33 +145,9 @@ public:
   nsresult Shutdown() override;
 
 private:
-
-  
-  
-  
-  
-  void ProcessDecode(MediaRawData* aSample);
-
-  
-  
-  void ProcessOutput();
-
-  
-  
-  void ProcessDrain();
-
   RefPtr<FlushableTaskQueue> mTaskQueue;
-  MediaDataDecoderCallback* mCallback;
 
   android::sp<GonkDecoderManager> mManager;
-
-  
-  
-  int64_t mLastStreamOffset;
-  
-  bool mSignaledEOS;
-  
-  bool mDrainComplete;
 };
 
 } 
