@@ -332,23 +332,16 @@ class H264
 {
 public:
   static bool DecodeSPSFromExtraData(const mozilla::MediaByteBuffer* aExtraData, SPSData& aDest);
-
   
 
 
 
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(const mozilla::MediaByteBuffer* aNAL);
-
   
   static bool DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest);
-
   
   
   static bool EnsureSPSIsSane(SPSData& aSPS);
-
-  
-  
-  static uint32_t ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData);
 
 private:
   static void vui_parameters(BitReader& aBr, SPSData& aDest);
