@@ -495,7 +495,8 @@ ValueNumberer::removePredecessorAndDoDCE(MBasicBlock* block, MBasicBlock* pred, 
             phi = nextDef_->toPhi();
             iter++;
             nextDef_ = iter != end ? *iter : nullptr;
-            discardDefsRecursively(phi);
+            if (!discardDefsRecursively(phi))
+                return false;
         }
     }
     nextDef_ = nullptr;
@@ -1226,8 +1227,10 @@ ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)
 
     
     
-    if (graph_.osrBlock())
-        insertOSRFixups();
+    if (graph_.osrBlock()) {
+        if (!insertOSRFixups())
+            return false;
+    }
 
     
     
@@ -1284,7 +1287,8 @@ ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)
     }
 
     if (MOZ_UNLIKELY(hasOSRFixups_)) {
-        cleanupOSRFixups();
+        if (!cleanupOSRFixups())
+            return false;
         hasOSRFixups_ = false;
     }
 
