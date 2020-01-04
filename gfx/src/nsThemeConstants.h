@@ -28,13 +28,13 @@
 #define NS_THEME_TOOLBAR                                   12
 
 
-#define NS_THEME_TOOLBAR_BUTTON                            13
+#define NS_THEME_TOOLBARBUTTON                             13
 
 
-#define NS_THEME_TOOLBAR_DUAL_BUTTON                       14
+#define NS_THEME_DUALBUTTON                                14
 
 
-#define NS_THEME_TOOLBAR_BUTTON_DROPDOWN                   15
+#define NS_THEME_TOOLBARBUTTON_DROPDOWN                    15
 
 
 #define NS_THEME_BUTTON_ARROW_UP                           16
@@ -43,10 +43,10 @@
 #define NS_THEME_BUTTON_ARROW_PREVIOUS                     19
 
 
-#define NS_THEME_TOOLBAR_SEPARATOR                         20
+#define NS_THEME_SEPARATOR                                 20
 
 
-#define NS_THEME_TOOLBAR_GRIPPER                           21
+#define NS_THEME_TOOLBARGRIPPER                            21
 
 
 #define NS_THEME_SPLITTER                                  22
@@ -55,11 +55,11 @@
 #define NS_THEME_STATUSBAR                                 23
 
 
-#define NS_THEME_STATUSBAR_PANEL                           24
+#define NS_THEME_STATUSBARPANEL                            24
 
 
 
-#define NS_THEME_STATUSBAR_RESIZER_PANEL                   25
+#define NS_THEME_RESIZER_PANEL                             25
 
 
 #define NS_THEME_RESIZER                                   26
@@ -68,62 +68,62 @@
 #define NS_THEME_LISTBOX                                   31
 
 
-#define NS_THEME_LISTBOX_LISTITEM                          32
+#define NS_THEME_LISTITEM                                  32
 
 
 #define NS_THEME_TREEVIEW                                  41
 
 
-#define NS_THEME_TREEVIEW_TREEITEM                         42
+#define NS_THEME_TREEITEM                                  42
 
 
-#define NS_THEME_TREEVIEW_TWISTY                           43
+#define NS_THEME_TREETWISTY                                43
 
 
-#define NS_THEME_TREEVIEW_LINE                             44
+#define NS_THEME_TREELINE                                  44
 
 
-#define NS_THEME_TREEVIEW_HEADER                           45
+#define NS_THEME_TREEHEADER                                45
 
 
-#define NS_THEME_TREEVIEW_HEADER_CELL                      46
+#define NS_THEME_TREEHEADERCELL                            46
 
 
-#define NS_THEME_TREEVIEW_HEADER_SORTARROW                 47
+#define NS_THEME_TREEHEADERSORTARROW                       47
 
 
-#define NS_THEME_TREEVIEW_TWISTY_OPEN                      48
+#define NS_THEME_TREETWISTYOPEN                            48
 
 
 #define NS_THEME_PROGRESSBAR                               51
 
 
-#define NS_THEME_PROGRESSBAR_CHUNK                         52
+#define NS_THEME_PROGRESSCHUNK                             52
 
 
 #define NS_THEME_PROGRESSBAR_VERTICAL                      53
 
 
-#define NS_THEME_PROGRESSBAR_CHUNK_VERTICAL                54
+#define NS_THEME_PROGRESSCHUNK_VERTICAL                    54
 
 
 #define NS_THEME_METERBAR                                  55
 
 
-#define NS_THEME_METERBAR_CHUNK                            56
+#define NS_THEME_METERCHUNK                                56
 
 
 #define NS_THEME_TAB                                       61
 
 
-#define NS_THEME_TAB_PANEL                                 62
+#define NS_THEME_TABPANEL                                  62
 
 
-#define NS_THEME_TAB_PANELS                                65
+#define NS_THEME_TABPANELS                                 65
 
 
-#define NS_THEME_TAB_SCROLLARROW_BACK                      66
-#define NS_THEME_TAB_SCROLLARROW_FORWARD                   67
+#define NS_THEME_TAB_SCROLL_ARROW_BACK                     66
+#define NS_THEME_TAB_SCROLL_ARROW_FORWARD                  67
 
 
 #define NS_THEME_TOOLTIP                                   71
@@ -132,10 +132,10 @@
 #define NS_THEME_SPINNER                                   72
 
 
-#define NS_THEME_SPINNER_UP_BUTTON                         73
+#define NS_THEME_SPINNER_UPBUTTON                          73
 
 
-#define NS_THEME_SPINNER_DOWN_BUTTON                       74
+#define NS_THEME_SPINNER_DOWNBUTTON                        74
 
 
 #define NS_THEME_SPINNER_TEXTFIELD                         75
@@ -154,18 +154,18 @@
 #define NS_THEME_SCROLLBAR_VERTICAL                        83
 
 
-#define NS_THEME_SCROLLBAR_BUTTON_UP                       84
-#define NS_THEME_SCROLLBAR_BUTTON_DOWN                     85
-#define NS_THEME_SCROLLBAR_BUTTON_LEFT                     86
-#define NS_THEME_SCROLLBAR_BUTTON_RIGHT                    87
+#define NS_THEME_SCROLLBARBUTTON_UP                        84
+#define NS_THEME_SCROLLBARBUTTON_DOWN                      85
+#define NS_THEME_SCROLLBARBUTTON_LEFT                      86
+#define NS_THEME_SCROLLBARBUTTON_RIGHT                     87
 
 
-#define NS_THEME_SCROLLBAR_TRACK_HORIZONTAL                88
-#define NS_THEME_SCROLLBAR_TRACK_VERTICAL                  89
+#define NS_THEME_SCROLLBARTRACK_HORIZONTAL                 88
+#define NS_THEME_SCROLLBARTRACK_VERTICAL                   89
 
 
-#define NS_THEME_SCROLLBAR_THUMB_HORIZONTAL                90
-#define NS_THEME_SCROLLBAR_THUMB_VERTICAL                  91
+#define NS_THEME_SCROLLBARTHUMB_HORIZONTAL                 90
+#define NS_THEME_SCROLLBARTHUMB_VERTICAL                   91
 
 
 #define NS_THEME_SCROLLBAR_NON_DISAPPEARING                92
@@ -183,36 +183,36 @@
 #define NS_THEME_SEARCHFIELD                               98
 
 
-#define NS_THEME_DROPDOWN                                  101
+#define NS_THEME_MENULIST                                  101
 
 
-#define NS_THEME_DROPDOWN_BUTTON                           102
+#define NS_THEME_MENULIST_BUTTON                           102
 
 
-#define NS_THEME_DROPDOWN_TEXT                             103
+#define NS_THEME_MENULIST_TEXT                             103
 
 
-#define NS_THEME_DROPDOWN_TEXTFIELD                        104
+#define NS_THEME_MENULIST_TEXTFIELD                        104
 
 
-#define NS_THEME_SCALE_HORIZONTAL                         111
-#define NS_THEME_SCALE_VERTICAL                           112
+#define NS_THEME_SCALE_HORIZONTAL                          111
+#define NS_THEME_SCALE_VERTICAL                            112
 
 
-#define NS_THEME_SCALE_THUMB_HORIZONTAL                   113
-#define NS_THEME_SCALE_THUMB_VERTICAL                     114
+#define NS_THEME_SCALETHUMB_HORIZONTAL                     113
+#define NS_THEME_SCALETHUMB_VERTICAL                       114
 
 
 
-#define NS_THEME_SCALE_THUMB_START                        115
-#define NS_THEME_SCALE_THUMB_END                          116
+#define NS_THEME_SCALETHUMBSTART                           115
+#define NS_THEME_SCALETHUMBEND                             116
 
 
-#define NS_THEME_SCALE_TICK                               117
+#define NS_THEME_SCALETHUMBTICK                            117
 
 
-#define NS_THEME_RANGE                                    120
-#define NS_THEME_RANGE_THUMB                              121
+#define NS_THEME_RANGE                                     120
+#define NS_THEME_RANGE_THUMB                               121
 
 
 #define NS_THEME_GROUPBOX                                  149
@@ -257,13 +257,13 @@
 
 #define NS_THEME_WIN_COMMUNICATIONS_TOOLBOX                221
 #define NS_THEME_WIN_MEDIA_TOOLBOX                         222
-#define NS_THEME_WIN_BROWSER_TAB_BAR_TOOLBOX               223
+#define NS_THEME_WIN_BROWSERTABBAR_TOOLBOX                 223
 
 
-#define NS_THEME_MOZ_MAC_FULLSCREEN_BUTTON                 226
+#define NS_THEME_MAC_FULLSCREEN_BUTTON                     226
 
 
-#define NS_THEME_MOZ_MAC_HELP_BUTTON                       227
+#define NS_THEME_MAC_HELP_BUTTON                           227
 
 
 #define NS_THEME_WIN_BORDERLESS_GLASS                      229
