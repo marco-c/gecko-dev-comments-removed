@@ -12,6 +12,11 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 
+
+
+var gContent = content;
+
+
 docShell.isAppTab = true;
 
 var gDOMContentLoaded = false;
@@ -25,8 +30,8 @@ addEventListener("DOMTitleChanged", function(e) {
     sendAsyncMessage("DOMTitleChanged", {
       title: e.target.title
     });
-    gDOMTitleChangedByUs = false;
   }
+  gDOMTitleChangedByUs = false;
 });
 
 
