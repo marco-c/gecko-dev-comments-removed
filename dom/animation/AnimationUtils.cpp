@@ -15,7 +15,6 @@
 #include "nsString.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedTimingFunction.h" 
-#include "mozilla/dom/Element.h" 
 #include "xpcpublic.h" 
 
 namespace mozilla {
@@ -41,22 +40,18 @@ AnimationUtils::LogAsyncAnimationFailure(nsCString& aMessage,
 }
 
  Maybe<ComputedTimingFunction>
-AnimationUtils::ParseEasing(const dom::Element* aTarget,
-                            const nsAString& aEasing)
+AnimationUtils::ParseEasing(const nsAString& aEasing,
+                            nsIDocument* aDocument)
 {
-  if (!aTarget) {
-    return Nothing();
-  }
-
-  nsIDocument* doc = aTarget->OwnerDoc();
+  MOZ_ASSERT(aDocument);
 
   nsCSSValue value;
   nsCSSParser parser;
   parser.ParseLonghandProperty(eCSSProperty_animation_timing_function,
                                aEasing,
-                               doc->GetDocumentURI(),
-                               doc->GetDocumentURI(),
-                               doc->NodePrincipal(),
+                               aDocument->GetDocumentURI(),
+                               aDocument->GetDocumentURI(),
+                               aDocument->NodePrincipal(),
                                value);
 
   switch (value.GetUnit()) {

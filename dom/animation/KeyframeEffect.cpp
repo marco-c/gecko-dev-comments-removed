@@ -1287,10 +1287,9 @@ GenerateValueEntries(Element* aTarget,
 
   for (OffsetIndexedKeyframe& keyframe : aKeyframes) {
     float offset = float(keyframe.mKeyframeDict.mOffset.Value());
-    
-    
     Maybe<ComputedTimingFunction> easing =
-      AnimationUtils::ParseEasing(aTarget, keyframe.mKeyframeDict.mEasing);
+      AnimationUtils::ParseEasing(keyframe.mKeyframeDict.mEasing,
+                                  aTarget->OwnerDoc());
     
     
 
@@ -1554,10 +1553,8 @@ BuildAnimationPropertyListFromPropertyIndexedKeyframes(
     return;
   }
 
-  
-  
   Maybe<ComputedTimingFunction> easing =
-    AnimationUtils::ParseEasing(aTarget, keyframes.mEasing);
+    AnimationUtils::ParseEasing(keyframes.mEasing, aTarget->OwnerDoc());
 
   
   

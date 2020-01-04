@@ -19,10 +19,6 @@ namespace mozilla {
 
 class ComputedTimingFunction;
 
-namespace dom {
-class Element;
-}
-
 class AnimationUtils
 {
 public:
@@ -59,7 +55,7 @@ public:
 
 
   static Maybe<ComputedTimingFunction>
-  ParseEasing(const dom::Element* aTarget, const nsAString& aEasing);
+  ParseEasing(const nsAString& aEasing, nsIDocument* aDocument);
 
   
 
