@@ -441,6 +441,9 @@ private:
 
   DECL_GFX_PREF(Live, "webgl.webgl2-compat-mode",              WebGL2CompatMode, bool, false);
 
+  DECL_GFX_PREF(Once, "media.hardware-video-decoding.force-enabled",
+                                                               HardwareVideoDecodingForceEnabled, bool, false);
+
   
   
   
