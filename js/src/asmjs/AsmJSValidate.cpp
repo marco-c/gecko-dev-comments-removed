@@ -1304,8 +1304,12 @@ class MOZ_STACK_CLASS ModuleValidator
     }
 
     
+    bool hasAlreadyFailed() const {
+        return !!errorString_;
+    }
+
     bool failOffset(uint32_t offset, const char* str) {
-        MOZ_ASSERT(!errorString_);
+        MOZ_ASSERT(!hasAlreadyFailed());
         MOZ_ASSERT(errorOffset_ == UINT32_MAX);
         MOZ_ASSERT(str);
         errorOffset_ = offset;
@@ -1318,7 +1322,7 @@ class MOZ_STACK_CLASS ModuleValidator
     }
 
     bool failfVAOffset(uint32_t offset, const char* fmt, va_list ap) {
-        MOZ_ASSERT(!errorString_);
+        MOZ_ASSERT(!hasAlreadyFailed());
         MOZ_ASSERT(errorOffset_ == UINT32_MAX);
         MOZ_ASSERT(fmt);
         errorOffset_ = offset;
@@ -6787,9 +6791,13 @@ CheckFunctions(ModuleValidator& m, ScopedJSDeletePtr<ModuleCompileResults>* resu
         CancelOutstandingJobs(group);
 
         
-        if (void* maybeFunc = HelperThreadState().maybeAsmJSFailedFunction()) {
-            AsmFunction* func = reinterpret_cast<AsmFunction*>(maybeFunc);
-            return m.failOffset(func->srcBegin(), "allocation failure during compilation");
+        
+        
+        if (!m.hasAlreadyFailed()) {
+            if (void* maybeFunc = HelperThreadState().maybeAsmJSFailedFunction()) {
+                AsmFunction* func = reinterpret_cast<AsmFunction*>(maybeFunc);
+                return m.failOffset(func->srcBegin(), "allocation failure during compilation");
+            }
         }
 
         
