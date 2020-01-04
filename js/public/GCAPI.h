@@ -393,7 +393,7 @@ SetGCNurseryCollectionCallback(JSContext* cx, GCNurseryCollectionCallback callba
 
 
 extern JS_PUBLIC_API(void)
-DisableIncrementalGC(JSRuntime* rt);
+DisableIncrementalGC(JSContext* cx);
 
 
 
@@ -404,14 +404,14 @@ DisableIncrementalGC(JSRuntime* rt);
 
 
 extern JS_PUBLIC_API(bool)
-IsIncrementalGCEnabled(JSRuntime* rt);
+IsIncrementalGCEnabled(JSContext* cx);
 
 
 
 
 
 extern JS_PUBLIC_API(bool)
-IsIncrementalGCInProgress(JSRuntime* rt);
+IsIncrementalGCInProgress(JSContext* cx);
 
 
 
@@ -419,7 +419,7 @@ IsIncrementalGCInProgress(JSRuntime* rt);
 
 
 extern JS_PUBLIC_API(bool)
-IsIncrementalBarrierNeeded(JSRuntime* rt);
+IsIncrementalBarrierNeeded(JSContext* cx);
 
 
 
@@ -438,7 +438,7 @@ IncrementalObjectBarrier(JSObject* obj);
 
 
 extern JS_PUBLIC_API(bool)
-WasIncrementalGC(JSRuntime* rt);
+WasIncrementalGC(JSContext* cx);
 
 
 

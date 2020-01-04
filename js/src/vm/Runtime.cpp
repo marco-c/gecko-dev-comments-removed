@@ -385,8 +385,9 @@ JSRuntime::destroyRuntime()
 
 
 
-        if (JS::IsIncrementalGCInProgress(this))
-            FinishGC(this);
+        JSContext* cx = contextFromMainThread();
+        if (JS::IsIncrementalGCInProgress(cx))
+            FinishGC(cx);
 
         
         sourceHook = nullptr;

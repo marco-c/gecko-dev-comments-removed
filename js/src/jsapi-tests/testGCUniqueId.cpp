@@ -12,13 +12,13 @@
 #include "jsapi-tests/tests.h"
 
 static void
-MinimizeHeap(JSRuntime* rt)
+MinimizeHeap(JSContext* cx)
 {
     
     
-    JS_GC(JS_GetContext(rt));
-    JS_GC(JS_GetContext(rt));
-    js::gc::FinishGC(rt);
+    JS_GC(cx);
+    JS_GC(cx);
+    js::gc::FinishGC(cx);
 }
 
 BEGIN_TEST(testGCUID)
@@ -31,7 +31,7 @@ BEGIN_TEST(testGCUID)
     uint64_t tmp = 0;
 
     
-    MinimizeHeap(rt);
+    MinimizeHeap(cx);
 
     JS::RootedObject obj(cx, JS_NewPlainObject(cx));
     uintptr_t nurseryAddr = uintptr_t(obj.get());
@@ -53,7 +53,7 @@ BEGIN_TEST(testGCUID)
     CHECK(uid == tmp);
 
     
-    MinimizeHeap(rt);
+    MinimizeHeap(cx);
     uintptr_t tenuredAddr = uintptr_t(obj.get());
     CHECK(tenuredAddr != nurseryAddr);
     CHECK(!js::gc::IsInsideNursery(obj));
@@ -71,9 +71,9 @@ BEGIN_TEST(testGCUID)
     
     
     obj = nullptr;
-    MinimizeHeap(rt);
+    MinimizeHeap(cx);
     obj = JS_NewPlainObject(cx);
-    MinimizeHeap(rt);
+    MinimizeHeap(cx);
     CHECK(uintptr_t(obj.get()) == tenuredAddr);
     CHECK(!obj->zone()->hasUniqueId(obj));
     CHECK(obj->zone()->getUniqueId(obj, &tmp));
@@ -91,7 +91,7 @@ BEGIN_TEST(testGCUID)
     }
 
     
-    MinimizeHeap(rt);
+    MinimizeHeap(cx);
 
     
     JS::Rooted<ObjectVector> vec2(cx, ObjectVector(cx));
@@ -100,7 +100,7 @@ BEGIN_TEST(testGCUID)
             vec2.append(vec[i]);
     }
     vec.clear();
-    MinimizeHeap(rt);
+    MinimizeHeap(cx);
 
     
     obj = vec2.back();
@@ -112,7 +112,7 @@ BEGIN_TEST(testGCUID)
     
     JS::PrepareForFullGC(cx);
     JS::GCForReason(cx, GC_SHRINK, JS::gcreason::API);
-    MinimizeHeap(rt);
+    MinimizeHeap(cx);
     CHECK(uintptr_t(obj.get()) != tenuredAddr);
     CHECK(obj->zone()->hasUniqueId(obj));
     CHECK(obj->zone()->getUniqueId(obj, &tmp));

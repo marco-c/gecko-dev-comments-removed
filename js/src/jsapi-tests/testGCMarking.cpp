@@ -168,7 +168,7 @@ BEGIN_TEST(testIncrementalRoots)
     
     
     
-    MOZ_ASSERT(JS::IsIncrementalGCInProgress(rt));
+    MOZ_ASSERT(JS::IsIncrementalGCInProgress(cx));
 
     
     MOZ_ASSERT(vec[0]->asTenured().isMarked());

@@ -856,7 +856,7 @@ JS_TransplantObject(JSContext* cx, HandleObject origobj, HandleObject target)
     RootedObject newIdentity(cx);
 
     
-    AutoDisableCompactingGC nocgc(cx->runtime());
+    AutoDisableCompactingGC nocgc(cx);
 
     AutoDisableProxyCheck adpc(cx->runtime());
 
