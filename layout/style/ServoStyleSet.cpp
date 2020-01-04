@@ -96,7 +96,8 @@ ServoStyleSet::GetContext(nsIContent* aContent,
                           nsIAtom* aPseudoTag,
                           CSSPseudoElementType aPseudoType)
 {
-  RefPtr<ServoComputedValues> computedValues = Servo_GetComputedValues(aContent).Consume();
+  RefPtr<ServoComputedValues> computedValues =
+    Servo_GetComputedValues(aContent).Consume();
   MOZ_ASSERT(computedValues);
   return GetContext(computedValues.forget(), aParentContext, aPseudoTag, aPseudoType);
 }
@@ -133,8 +134,40 @@ ServoStyleSet::ResolveStyleForText(nsIContent* aTextNode,
                                    nsStyleContext* aParentContext)
 {
   MOZ_ASSERT(aTextNode && aTextNode->IsNodeOfType(nsINode::eTEXT));
-  return GetContext(aTextNode, aParentContext, nsCSSAnonBoxes::mozText,
-                    CSSPseudoElementType::AnonBox);
+  MOZ_ASSERT(aTextNode->GetParent());
+
+  nsIContent* parent = aTextNode->GetParent();
+  nsIAtom* parentName = parent->NodeInfo()->NameAtom();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ServoComputedValues> computedValues;
+  if (parent->IsRootOfAnonymousSubtree() &&
+      (parentName == nsGkAtoms::mozgeneratedcontentbefore ||
+       parentName == nsGkAtoms::mozgeneratedcontentafter)) {
+    MOZ_ASSERT(aParentContext);
+    ServoComputedValues* parentComputedValues =
+      aParentContext->StyleSource().AsServoComputedValues();
+    computedValues =
+      Servo_InheritComputedValues(parentComputedValues).Consume();
+  } else {
+    computedValues = Servo_GetComputedValues(aTextNode).Consume();
+  }
+
+  return GetContext(computedValues.forget(), aParentContext,
+                    nsCSSAnonBoxes::mozText, CSSPseudoElementType::AnonBox);
 }
 
 already_AddRefed<nsStyleContext>
@@ -144,7 +177,8 @@ ServoStyleSet::ResolveStyleForOtherNonElement(nsStyleContext* aParentContext)
   
   ServoComputedValues* parent =
     aParentContext ? aParentContext->StyleSource().AsServoComputedValues() : nullptr;
-  RefPtr<ServoComputedValues> computedValues = Servo_InheritComputedValues(parent).Consume();
+  RefPtr<ServoComputedValues> computedValues =
+    Servo_InheritComputedValues(parent).Consume();
   MOZ_ASSERT(computedValues);
 
   return GetContext(computedValues.forget(), aParentContext,
