@@ -980,19 +980,25 @@ MediaStreamGraphImpl::OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
   count++;
   mInputDeviceUsers.Put(aListener, count); 
 
-  
-  
-  mInputDeviceID = aID;
   if (count == 1) { 
+    
+    
+    mInputDeviceID = aID;
     mAudioInputs.AppendElement(aListener); 
-  }
 
-  
-  MonitorAutoLock mon(mMonitor);
-  if (mLifecycleState == LIFECYCLE_RUNNING) {
-    AudioCallbackDriver* driver = new AudioCallbackDriver(this);
-    driver->SetInputListener(aListener);
-    CurrentDriver()->SwitchAtNextIteration(driver);
+    
+    MonitorAutoLock mon(mMonitor);
+    if (mLifecycleState == LIFECYCLE_RUNNING) {
+      AudioCallbackDriver* driver = new AudioCallbackDriver(this);
+      STREAM_LOG(LogLevel::Debug, ("OpenAudioInput: starting new AudioCallbackDriver(input) %p", driver));
+      LIFECYCLE_LOG("OpenAudioInput: starting new AudioCallbackDriver(input) %p", driver);
+      driver->SetInputListener(aListener);
+      CurrentDriver()->SwitchAtNextIteration(driver);
+   } else {
+      STREAM_LOG(LogLevel::Error, ("OpenAudioInput in shutdown!"));
+      LIFECYCLE_LOG("OpenAudioInput in shutdown!");
+      NS_ASSERTION(false, "Can't open cubeb inputs in shutdown");
+    }
   }
 }
 
