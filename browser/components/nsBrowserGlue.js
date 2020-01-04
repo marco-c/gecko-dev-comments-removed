@@ -1927,7 +1927,7 @@ BrowserGlue.prototype = {
   },
 
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 39;
+    const UI_VERSION = 40;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -2238,6 +2238,21 @@ BrowserGlue.prototype = {
         xulStore.removeValue(BROWSER_DOCURL, toolbarId, "defaultset");
       }
     }
+
+    if (currentUIVersion < 40) {
+      const kOldSafeBrowsingPref = "browser.safebrowsing.enabled";
+      
+      
+      if (Services.prefs.prefHasUserValue(kOldSafeBrowsingPref) &&
+          !Services.prefs.getBoolPref(kOldSafeBrowsingPref)) {
+        Services.prefs.setBoolPref("browser.safebrowsing.phishing.enabled",
+                                   false);
+        
+        
+        Services.prefs.clearUserPref(kOldSafeBrowsingPref);
+      }
+    }
+
     
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   },

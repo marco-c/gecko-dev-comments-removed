@@ -975,7 +975,7 @@ var BrowserApp = {
   },
 
   _migrateUI: function() {
-    const UI_VERSION = 2;
+    const UI_VERSION = 3;
     let currentUIVersion = 0;
     try {
       currentUIVersion = Services.prefs.getIntPref("browser.migration.version");
@@ -1037,6 +1037,20 @@ var BrowserApp = {
             Services.obs.notifyObservers(null, "default-search-engine-migrated", "");
           }
         });
+      }
+    }
+
+    if (currentUIVersion < 3) {
+      const kOldSafeBrowsingPref = "browser.safebrowsing.enabled";
+      
+      
+      if (Services.prefs.prefHasUserValue(kOldSafeBrowsingPref) &&
+          !Services.prefs.getBoolPref(kOldSafeBrowsingPref)) {
+        Services.prefs.setBoolPref("browser.safebrowsing.phishing.enabled",
+                                   false);
+        
+        
+        Services.prefs.clearUserPref(kOldSafeBrowsingPref);
       }
     }
 
