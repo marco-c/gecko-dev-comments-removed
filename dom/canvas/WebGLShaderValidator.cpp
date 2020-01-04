@@ -474,13 +474,43 @@ ShaderValidator::FindUniformByMappedName(const std::string& mappedName,
         return true;
     }
 
+    const size_t dotPos = mappedName.find(".");
+
     const std::vector<sh::InterfaceBlock>& interfaces = *ShGetInterfaceBlocks(mHandle);
     for (const auto& interface : interfaces) {
+
+        std::string mappedFieldName;
+        const bool hasInstanceName = !interface.instanceName.empty();
+
+        
+        
+        
+        if (hasInstanceName) {
+
+            
+            if (std::string::npos == dotPos)
+                continue;
+
+            
+            const std::string mappedInterfaceBlockName = mappedName.substr(0, dotPos);
+            if (interface.mappedName != mappedInterfaceBlockName)
+                continue;
+
+            mappedFieldName = mappedName.substr(dotPos + 1);
+        } else {
+            mappedFieldName = mappedName;
+        }
+
         for (const auto& field : interface.fields) {
             const sh::ShaderVariable* found;
 
-            if (!field.findInfoByMappedName(mappedName, &found, out_userName))
+            if (!field.findInfoByMappedName(mappedFieldName, &found, out_userName))
                 continue;
+
+            if (hasInstanceName) {
+                
+                *out_userName = interface.name + "." + *out_userName;
+            }
 
             *out_isArray = found->isArray();
             return true;
