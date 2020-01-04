@@ -1782,8 +1782,8 @@ NPObjWrapper_ObjectMoved(JSObject *obj, const JSObject *old)
   
   JS::AutoSuppressGCAnalysis nogc;
 
-  NPObjWrapperHashEntry *entry = static_cast<NPObjWrapperHashEntry *>
-    (PL_DHashTableSearch(sNPObjWrappers, npobj));
+  auto entry =
+    static_cast<NPObjWrapperHashEntry*>(sNPObjWrappers->Search(npobj));
   MOZ_ASSERT(entry && entry->mJSObj);
   MOZ_ASSERT(entry->mJSObj == old);
   entry->mJSObj = obj;
@@ -1835,8 +1835,8 @@ nsNPObjWrapper::OnDestroy(NPObject *npobj)
     return;
   }
 
-  NPObjWrapperHashEntry *entry = static_cast<NPObjWrapperHashEntry *>
-    (PL_DHashTableSearch(sNPObjWrappers, npobj));
+  auto entry =
+    static_cast<NPObjWrapperHashEntry*>(sNPObjWrappers->Search(npobj));
 
   if (entry && entry->mJSObj) {
     
@@ -1919,7 +1919,7 @@ nsNPObjWrapper::GetNewOrUsed(NPP npp, JSContext *cx, NPObject *npobj)
       
       
 
-      NS_ASSERTION(PL_DHashTableSearch(sNPObjWrappers, npobj),
+      NS_ASSERTION(sNPObjWrappers->Search(npobj),
                    "Hashtable didn't find what we just added?");
   }
 
