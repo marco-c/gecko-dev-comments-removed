@@ -26,7 +26,7 @@ namespace wasm {
 
 
 bool
-DefineTestingFunctions(JSContext* cx, HandleObject globalObj);
+DefineTestingFunctions(JSContext* cx, JS::HandleObject globalObj);
 
 }  
 }  
