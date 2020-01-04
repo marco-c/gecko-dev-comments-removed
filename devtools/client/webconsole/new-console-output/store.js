@@ -3,13 +3,16 @@
 
 "use strict";
 
-const Services = require("Services");
 const {FilterState} = require("devtools/client/webconsole/new-console-output/reducers/filters");
 const {PrefState} = require("devtools/client/webconsole/new-console-output/reducers/prefs");
 const { combineReducers, createStore } = require("devtools/client/shared/vendor/redux");
 const { reducers } = require("./reducers/index");
 
-function storeFactory() {
+function configureStore(Services) {
+  if (!Services) {
+    Services = require("Services");
+  }
+
   const initialState = {
     prefs: new PrefState({
       logLimit: Math.max(Services.prefs.getIntPref("devtools.hud.loglimit"), 1),
@@ -27,8 +30,6 @@ function storeFactory() {
 }
 
 
-module.exports.store = storeFactory();
 
-
-module.exports.storeFactory = storeFactory;
+module.exports.configureStore = configureStore;
 

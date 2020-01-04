@@ -1,0 +1,21 @@
+
+
+
+"use strict";
+
+module.exports = {
+  prefs: {
+    getIntPref: pref => {
+      switch (pref) {
+        case "devtools.hud.loglimit":
+          return 1000;
+      }
+    },
+    getBoolPref: pref => {
+      switch (pref) {
+        default:
+          return true;
+      }
+    }
+  }
+};
