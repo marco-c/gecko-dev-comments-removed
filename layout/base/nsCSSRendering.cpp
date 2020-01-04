@@ -3953,15 +3953,6 @@ DrawBorderImage(nsPresContext*       aPresContext,
 
   DrawResult result = DrawResult::SUCCESS;
 
-  
-  
-  
-  
-  Maybe<nsSize> svgViewportSize = intrinsicSize.CanComputeConcreteSize() ?
-    Nothing() : Some(imageSize);
-  bool hasIntrinsicRatio = intrinsicSize.HasRatio();
-  renderer.PurgeCacheForViewportChange(svgViewportSize, hasIntrinsicRatio);
-
   for (int i = LEFT; i <= RIGHT; i++) {
     for (int j = TOP; j <= BOTTOM; j++) {
       uint8_t fillStyleH, fillStyleV;
@@ -4048,6 +4039,12 @@ DrawBorderImage(nsPresContext*       aPresContext,
         continue;
 
       nsIntRect intSubArea = subArea.ToOutsidePixels(nsPresContext::AppUnitsPerCSSPixel());
+      
+      
+      
+      
+      Maybe<nsSize> svgViewportSize = intrinsicSize.CanComputeConcreteSize() ?
+        Nothing() : Some(imageSize);
       result &=
         renderer.DrawBorderImageComponent(aPresContext,
                                           aRenderingContext, aDirtyRect,
@@ -4057,7 +4054,7 @@ DrawBorderImage(nsPresContext*       aPresContext,
                                                                intSubArea.height),
                                           fillStyleH, fillStyleV,
                                           unitSize, j * (RIGHT + 1) + i,
-                                          svgViewportSize, hasIntrinsicRatio);
+                                          svgViewportSize);
     }
   }
 
@@ -5684,8 +5681,7 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
                                           uint8_t              aVFill,
                                           const nsSize&        aUnitSize,
                                           uint8_t              aIndex,
-                                          const Maybe<nsSize>& aSVGViewportSize,
-                                          const bool           aHasIntrinsicRatio)
+                                          const Maybe<nsSize>& aSVGViewportSize)
 {
   if (!IsReady()) {
     NS_NOTREACHED("Ensure PrepareImage() has returned true before calling me");
@@ -5709,7 +5705,7 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
     
     
     
-    if (!aHasIntrinsicRatio) {
+    if (!ComputeIntrinsicSize().HasRatio()) {
       drawFlags = drawFlags | imgIContainer::FLAG_FORCE_UNIFORM_SCALING;
     }
     
@@ -5806,18 +5802,6 @@ nsImageRenderer::GetImage()
 
   nsCOMPtr<imgIContainer> image = mImageContainer;
   return image.forget();
-}
-
-void
-nsImageRenderer::PurgeCacheForViewportChange(
-  const Maybe<nsSize>& aSVGViewportSize, const bool aHasIntrinsicRatio)
-{
-  
-  
-  if (mImageContainer &&
-      mImageContainer->GetType() == imgIContainer::TYPE_VECTOR) {
-    mImage->PurgeCacheForViewportChange(aSVGViewportSize, aHasIntrinsicRatio);
-  }
 }
 
 #define MAX_BLUR_RADIUS 300

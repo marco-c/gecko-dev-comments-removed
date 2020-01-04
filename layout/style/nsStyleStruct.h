@@ -15,7 +15,6 @@
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CSSVariableValues.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/SheetType.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StyleStructContext.h"
@@ -250,19 +249,11 @@ enum nsStyleImageType {
 
 struct CachedBorderImageData
 {
-  
-  
-  void SetCachedSVGViewportSize(const mozilla::Maybe<nsSize>& aSVGViewportSize);
-  const mozilla::Maybe<nsSize>& GetCachedSVGViewportSize();
   void PurgeCachedImages();
   void SetSubImage(uint8_t aIndex, imgIContainer* aSubImage);
   imgIContainer* GetSubImage(uint8_t aIndex);
 
 private:
-  
-  
-  
-  mozilla::Maybe<nsSize> mCachedSVGViewportSize;
   nsCOMArray<imgIContainer> mSubImages;
 };
 
@@ -378,9 +369,6 @@ struct nsStyleImage
   
   inline void SetSubImage(uint8_t aIndex, imgIContainer* aSubImage) const;
   inline imgIContainer* GetSubImage(uint8_t aIndex) const;
-  void PurgeCacheForViewportChange(
-    const mozilla::Maybe<nsSize>& aSVGViewportSize,
-    const bool aHasIntrinsicRatio) const;
 
 private:
   void DoCopy(const nsStyleImage& aOther);
