@@ -160,6 +160,7 @@ class BaseEmulator(Device):
         if self.proc:
             self.proc.kill()
             self.proc = None
+            self.connected = False
 
         
         shutil.rmtree(self.tmpdir)
