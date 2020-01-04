@@ -1562,27 +1562,25 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
   switch (aEvent.mScrollMode) {
     case ScrollWheelInput::SCROLLMODE_INSTANT: {
       
-      PanGestureInput start(PanGestureInput::PANGESTURE_START, aEvent.mTime, aEvent.mTimeStamp,
-                            aEvent.mOrigin, ScreenPoint(0, 0), aEvent.modifiers);
-      start.mLocalPanStartPoint = aEvent.mLocalOrigin;
-      OnPanBegin(start);
+      ScreenPoint distance = ToScreenCoordinates(
+        ParentLayerPoint(fabs(delta.x), fabs(delta.y)), aEvent.mLocalOrigin);
 
-      
-      
-      ParentLayerPoint panDelta = -delta;
+      ReentrantMonitorAutoEnter lock(mMonitor);
 
-      PanGestureInput move(PanGestureInput::PANGESTURE_PAN, aEvent.mTime, aEvent.mTimeStamp,
-                           aEvent.mOrigin,
-                           ToScreenCoordinates(panDelta, aEvent.mLocalOrigin),
-                           aEvent.modifiers);
-      move.mLocalPanStartPoint = aEvent.mLocalOrigin;
-      move.mLocalPanDisplacement = panDelta;
-      OnPan(move, ScrollSource::Wheel, false);
+      CancelAnimation();
+      SetState(WHEEL_SCROLL);
 
-      PanGestureInput end(PanGestureInput::PANGESTURE_END, aEvent.mTime, aEvent.mTimeStamp,
-                            aEvent.mOrigin, ScreenPoint(0, 0), aEvent.modifiers);
-      end.mLocalPanStartPoint = aEvent.mLocalOrigin;
-      OnPanEnd(start);
+      OverscrollHandoffState handoffState(
+          *mInputQueue->CurrentWheelBlock()->GetOverscrollHandoffChain(),
+          distance,
+          ScrollSource::Wheel);
+      CallDispatchScroll(aEvent.mLocalOrigin,
+                         aEvent.mLocalOrigin - delta,
+                         handoffState);
+
+      SetState(NOTHING);
+      RequestContentRepaint();
+
       break;
     }
 
@@ -1602,10 +1600,10 @@ nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEve
           initialPosition));
       }
 
-      
-      
       nsPoint deltaInAppUnits =
         CSSPoint::ToAppUnits(delta / mFrameMetrics.GetZoom());
+      
+      
       nsPoint velocity =
         CSSPoint::ToAppUnits(CSSPoint(mX.GetVelocity(), mY.GetVelocity())) * 1000.0f;
 
