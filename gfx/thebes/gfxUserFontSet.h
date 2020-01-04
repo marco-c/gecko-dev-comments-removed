@@ -626,6 +626,15 @@ protected:
                            uint8_t            aCompression);
 
     
+    
+    
+    virtual void GetUserFontSets(nsTArray<gfxUserFontSet*>& aResult);
+
+    
+    
+    void IncrementGeneration();
+
+    
     UserFontLoadState        mUserFontLoadState;
 
     

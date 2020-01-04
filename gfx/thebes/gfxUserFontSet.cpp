@@ -413,7 +413,13 @@ gfxUserFontEntry::LoadNextSrc()
                                                             mWeight,
                                                             mStretch,
                                                             mItalic);
-            mFontSet->SetLocalRulesUsed();
+            nsTArray<gfxUserFontSet*> fontSets;
+            GetUserFontSets(fontSets);
+            for (gfxUserFontSet* fontSet : fontSets) {
+                
+                
+                fontSet->SetLocalRulesUsed();
+            }
             if (fe) {
                 LOG(("userfonts (%p) [src %d] loaded local: (%s) for (%s) gen: %8.8x\n",
                      mFontSet, mSrcIndex,
@@ -680,6 +686,16 @@ gfxUserFontEntry::Load()
     }
 }
 
+void
+gfxUserFontEntry::IncrementGeneration()
+{
+    nsTArray<gfxUserFontSet*> fontSets;
+    GetUserFontSets(fontSets);
+    for (gfxUserFontSet* fontSet : fontSets) {
+        fontSet->IncrementGeneration();
+    }
+}
+
 
 
 
@@ -698,7 +714,7 @@ gfxUserFontEntry::FontDataDownloadComplete(const uint8_t* aFontData,
         aFontData = nullptr;
 
         if (loaded) {
-            mFontSet->IncrementGeneration();
+            IncrementGeneration();
             return true;
         }
 
@@ -720,8 +736,15 @@ gfxUserFontEntry::FontDataDownloadComplete(const uint8_t* aFontData,
     
     
     
-    mFontSet->IncrementGeneration();
+    IncrementGeneration();
     return true;
+}
+
+void
+gfxUserFontEntry::GetUserFontSets(nsTArray<gfxUserFontSet*>& aResult)
+{
+    aResult.Clear();
+    aResult.AppendElement(mFontSet);
 }
 
 gfxUserFontSet::gfxUserFontSet()

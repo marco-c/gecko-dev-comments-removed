@@ -24,6 +24,7 @@
 #include "mozilla/gfx/2D.h"
 
 using namespace mozilla;
+using namespace mozilla::dom;
 
 #define LOG(args) MOZ_LOG(gfxUserFontSet::GetUserFontsLog(), mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(gfxUserFontSet::GetUserFontsLog(), \
@@ -31,7 +32,7 @@ using namespace mozilla;
 
 nsFontFaceLoader::nsFontFaceLoader(gfxUserFontEntry* aUserFontEntry,
                                    nsIURI* aFontURI,
-                                   mozilla::dom::FontFaceSet* aFontFaceSet,
+                                   FontFaceSet* aFontFaceSet,
                                    nsIChannel* aChannel)
   : mUserFontEntry(aUserFontEntry),
     mFontURI(aFontURI),
@@ -73,7 +74,7 @@ nsFontFaceLoader::StartedLoading(nsIStreamLoader* aStreamLoader)
   mStreamLoader = aStreamLoader;
 }
 
-void
+ void
 nsFontFaceLoader::LoadTimerCallback(nsITimer* aTimer, void* aClosure)
 {
   nsFontFaceLoader* loader = static_cast<nsFontFaceLoader*>(aClosure);
@@ -117,11 +118,16 @@ nsFontFaceLoader::LoadTimerCallback(nsITimer* aTimer, void* aClosure)
   
   if (updateUserFontSet) {
     ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_SLOWLY;
-    nsPresContext* ctx = loader->mFontFaceSet->GetPresContext();
-    if (ctx) {
-      loader->mFontFaceSet->IncrementGeneration();
-      ctx->UserFontSetUpdated(loader->GetUserFontEntry());
-      LOG(("userfonts (%p) timeout reflow\n", loader));
+    nsTArray<gfxUserFontSet*> fontSets;
+    ufe->GetUserFontSets(fontSets);
+    for (gfxUserFontSet* fontSet : fontSets) {
+      nsPresContext* ctx = FontFaceSet::GetPresContextFor(fontSet);
+      if (ctx) {
+        fontSet->IncrementGeneration();
+        ctx->UserFontSetUpdated(ufe);
+        LOG(("userfonts (%p) timeout reflow for pres context %p\n",
+             loader, ctx));
+      }
     }
   }
 }
@@ -179,16 +185,22 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
   
   
   
-  nsPresContext* ctx = mFontFaceSet->GetPresContext();
   bool fontUpdate =
     mUserFontEntry->FontDataDownloadComplete(aString, aStringLen, aStatus);
 
   
-  if (fontUpdate && ctx) {
-    
-    
-    ctx->UserFontSetUpdated(mUserFontEntry);
-    LOG(("userfonts (%p) reflow\n", this));
+  if (fontUpdate) {
+    nsTArray<gfxUserFontSet*> fontSets;
+    mUserFontEntry->GetUserFontSets(fontSets);
+    for (gfxUserFontSet* fontSet : fontSets) {
+      nsPresContext* ctx = FontFaceSet::GetPresContextFor(fontSet);
+      if (ctx) {
+        
+        
+        ctx->UserFontSetUpdated(mUserFontEntry);
+        LOG(("userfonts (%p) reflow for pres context %p\n", this, ctx));
+      }
+    }
   }
 
   
@@ -214,7 +226,7 @@ nsFontFaceLoader::Cancel()
   mChannel->Cancel(NS_BINDING_ABORTED);
 }
 
-nsresult
+ nsresult
 nsFontFaceLoader::CheckLoadAllowed(nsIPrincipal* aSourcePrincipal,
                                    nsIURI* aTargetURI,
                                    nsISupports* aContext)
