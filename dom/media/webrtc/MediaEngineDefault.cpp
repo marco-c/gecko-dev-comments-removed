@@ -302,15 +302,16 @@ class SineWaveGenerator
 {
 public:
   static const int bytesPerSample = 2;
-  static const int millisecondsPerSecond = 1000;
-  static const int frequency = 1000;
+  static const int millisecondsPerSecond = PR_MSEC_PER_SEC;
 
-  explicit SineWaveGenerator(int aSampleRate) :
-    mTotalLength(aSampleRate / frequency),
+  explicit SineWaveGenerator(uint32_t aSampleRate, uint32_t aFrequency) :
+    mTotalLength(aSampleRate / aFrequency),
     mReadLength(0) {
-    MOZ_ASSERT(mTotalLength * frequency == aSampleRate);
+    
+    
+    
     mAudioBuffer = new int16_t[mTotalLength];
-    for(int i = 0; i < mTotalLength; i++) {
+    for (int i = 0; i < mTotalLength; i++) {
       
       mAudioBuffer[i] = (3276.8f * sin(2 * M_PI * i / mTotalLength));
     }
@@ -398,7 +399,8 @@ MediaEngineDefaultAudioSource::Allocate(const dom::MediaTrackConstraints &aConst
 
   mState = kAllocated;
   
-  mSineGenerator = new SineWaveGenerator(AUDIO_RATE);
+  mSineGenerator = new SineWaveGenerator(AUDIO_RATE,
+                                         static_cast<uint32_t>(aPrefs.mFreq ? aPrefs.mFreq : 1000));
   return NS_OK;
 }
 
