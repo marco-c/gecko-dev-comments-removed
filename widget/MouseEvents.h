@@ -455,7 +455,7 @@ private:
     , mCustomizedByUserPrefs(false)
     , mIsMomentum(false)
     , mIsNoLineOrPageDelta(false)
-    , lineOrPageDeltaX(0)
+    , mLineOrPageDeltaX(0)
     , lineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
     , overflowDeltaX(0.0)
@@ -479,7 +479,7 @@ public:
     , mMayHaveMomentum(false)
     , mIsMomentum(false)
     , mIsNoLineOrPageDelta(false)
-    , lineOrPageDeltaX(0)
+    , mLineOrPageDeltaX(0)
     , lineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
     , overflowDeltaX(0.0)
@@ -543,28 +543,28 @@ public:
   
   
   
-  int32_t lineOrPageDeltaX;
+  int32_t mLineOrPageDeltaX;
   int32_t lineOrPageDeltaY;
 
   
   
   int32_t GetPreferredIntDelta()
   {
-    if (!lineOrPageDeltaX && !lineOrPageDeltaY) {
+    if (!mLineOrPageDeltaX && !lineOrPageDeltaY) {
       return 0;
     }
-    if (lineOrPageDeltaY && !lineOrPageDeltaX) {
+    if (lineOrPageDeltaY && !mLineOrPageDeltaX) {
       return lineOrPageDeltaY;
     }
-    if (lineOrPageDeltaX && !lineOrPageDeltaY) {
-      return lineOrPageDeltaX;
+    if (mLineOrPageDeltaX && !lineOrPageDeltaY) {
+      return mLineOrPageDeltaX;
     }
-    if ((lineOrPageDeltaX < 0 && lineOrPageDeltaY > 0) ||
-        (lineOrPageDeltaX > 0 && lineOrPageDeltaY < 0)) {
+    if ((mLineOrPageDeltaX < 0 && lineOrPageDeltaY > 0) ||
+        (mLineOrPageDeltaX > 0 && lineOrPageDeltaY < 0)) {
       return 0; 
     }
-    return (Abs(lineOrPageDeltaX) > Abs(lineOrPageDeltaY)) ?
-             lineOrPageDeltaX : lineOrPageDeltaY;
+    return (Abs(mLineOrPageDeltaX) > Abs(lineOrPageDeltaY)) ?
+             mLineOrPageDeltaX : lineOrPageDeltaY;
   }
 
   
@@ -618,7 +618,7 @@ public:
     mMayHaveMomentum = aEvent.mMayHaveMomentum;
     mIsMomentum = aEvent.mIsMomentum;
     mIsNoLineOrPageDelta = aEvent.mIsNoLineOrPageDelta;
-    lineOrPageDeltaX = aEvent.lineOrPageDeltaX;
+    mLineOrPageDeltaX = aEvent.mLineOrPageDeltaX;
     lineOrPageDeltaY = aEvent.lineOrPageDeltaY;
     mScrollType = aEvent.mScrollType;
     overflowDeltaX = aEvent.overflowDeltaX;
