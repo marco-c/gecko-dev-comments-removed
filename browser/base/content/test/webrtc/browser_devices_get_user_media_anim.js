@@ -42,7 +42,7 @@ var gTests = [
 
       
       
-      gBrowser.selectedTab = gBrowser.addTab();
+      yield BrowserTestUtils.switchTab(gBrowser, gBrowser.addTab());
       is(gBrowser.selectedTab.getAttribute("sharing"), "",
          "the new tab doesn't have the 'sharing' attribute");
       is(tab.getAttribute("sharing"), aSharing,
@@ -51,7 +51,7 @@ var gTests = [
             "the animated sharing icon of the tab is now visible");
 
       
-      gBrowser.removeCurrentTab();
+      yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
       ok(tab.selected, "the tab with ongoing sharing is selected again");
       is(window.getComputedStyle(icon).display, "none",
          "the animated sharing icon is gone after selecting the tab again");
