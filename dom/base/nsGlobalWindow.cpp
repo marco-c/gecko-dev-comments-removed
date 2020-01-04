@@ -6524,7 +6524,15 @@ nsGlobalWindow::SetFullscreenInternal(FullscreenReason aReason,
   
   
   if (aReason == eForFullscreenMode) {
-    mFullscreenMode = aFullScreen;
+    if (!aFullScreen && !mFullscreenMode) {
+      
+      
+      
+      
+      aReason = eForFullscreenAPI;
+    } else {
+      mFullscreenMode = aFullScreen;
+    }
   } else {
     
     
