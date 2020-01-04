@@ -3,7 +3,7 @@
 
 
 
-#include "xpcprivate.h"
+#include "xpcpublic.h"
 #include "nsString.h"
 #include "nsIObjectOutputStream.h"
 #include "nsIObjectInputStream.h"
