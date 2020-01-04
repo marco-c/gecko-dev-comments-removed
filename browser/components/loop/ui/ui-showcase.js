@@ -385,7 +385,6 @@
   
   textChatStore.updateRoomInfo(new sharedActions.UpdateRoomInfo({
     roomName: "A Very Long Conversation Name",
-    roomOwner: "fake",
     roomUrl: "http://showcase",
     urls: [{
       description: "A wonderful page!",
