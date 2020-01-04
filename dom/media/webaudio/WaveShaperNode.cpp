@@ -327,6 +327,11 @@ WaveShaperNode::SetCurve(const Nullable<Float32Array>& aCurve, ErrorResult& aRv)
     const Float32Array& floats = aCurve.Value();
 
     floats.ComputeLengthAndData();
+    if (floats.IsShared()) {
+      
+      aRv.ThrowTypeError<MSG_TYPEDARRAY_IS_SHARED>(NS_LITERAL_STRING("Argument of WaveShaperNode.setCurve"));
+      return;
+    }
 
     uint32_t argLength = floats.Length();
     if (argLength < 2) {

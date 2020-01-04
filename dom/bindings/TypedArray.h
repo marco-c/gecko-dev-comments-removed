@@ -64,13 +64,14 @@ private:
 
 template<typename T,
          JSObject* UnwrapArray(JSObject*),
-         void GetLengthAndData(JSObject*, uint32_t*, T**)>
+         void GetLengthAndDataAndSharedness(JSObject*, uint32_t*, bool*, T**)>
 struct TypedArray_base : public TypedArrayObjectStorage {
   typedef T element_type;
 
   TypedArray_base()
     : mData(nullptr),
       mLength(0),
+      mShared(false),
       mComputed(false)
   {
   }
@@ -79,16 +80,19 @@ struct TypedArray_base : public TypedArrayObjectStorage {
     : TypedArrayObjectStorage(Move(aOther)),
       mData(aOther.mData),
       mLength(aOther.mLength),
+      mShared(aOther.mShared),
       mComputed(aOther.mComputed)
   {
     aOther.mData = nullptr;
     aOther.mLength = 0;
+    aOther.mShared = false;
     aOther.mComputed = false;
   }
 
 private:
   mutable T* mData;
   mutable uint32_t mLength;
+  mutable bool mShared;
   mutable bool mComputed;
 
 public:
@@ -103,12 +107,73 @@ public:
     return !!mTypedObj;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  inline bool IsShared() const {
+    MOZ_ASSERT(mComputed);
+    return mShared;
+  }
+
   inline T *Data() const {
+    MOZ_ASSERT(mComputed);
+    if (mShared)
+      return nullptr;
+    return mData;
+  }
+
+  inline T *DataAllowShared() const {
     MOZ_ASSERT(mComputed);
     return mData;
   }
 
   inline uint32_t Length() const {
+    MOZ_ASSERT(mComputed);
+    if (mShared)
+      return 0;
+    return mLength;
+  }
+
+  inline uint32_t LengthAllowShared() const {
     MOZ_ASSERT(mComputed);
     return mLength;
   }
@@ -128,7 +193,7 @@ public:
   {
     MOZ_ASSERT(inited());
     MOZ_ASSERT(!mComputed);
-    GetLengthAndData(mTypedObj, &mLength, &mData);
+    GetLengthAndDataAndSharedness(mTypedObj, &mLength, &mShared, &mData);
     mComputed = true;
   }
 
@@ -138,12 +203,14 @@ private:
 
 template<typename T,
          JSObject* UnwrapArray(JSObject*),
-         T* GetData(JSObject*, const JS::AutoCheckCannotGC&),
-         void GetLengthAndData(JSObject*, uint32_t*, T**),
+         T* GetData(JSObject*, bool* isShared, const JS::AutoCheckCannotGC&),
+         void GetLengthAndDataAndSharedness(JSObject*, uint32_t*, bool*, T**),
          JSObject* CreateNew(JSContext*, uint32_t)>
-struct TypedArray : public TypedArray_base<T, UnwrapArray, GetLengthAndData> {
+struct TypedArray
+  : public TypedArray_base<T, UnwrapArray, GetLengthAndDataAndSharedness>
+{
 private:
-  typedef TypedArray_base<T, UnwrapArray, GetLengthAndData> Base;
+  typedef TypedArray_base<T, UnwrapArray, GetLengthAndDataAndSharedness> Base;
 
 public:
   TypedArray()
@@ -181,7 +248,11 @@ private:
     }
     if (data) {
       JS::AutoCheckCannotGC nogc;
-      T* buf = static_cast<T*>(GetData(obj, nogc));
+      bool isShared;
+      T* buf = static_cast<T*>(GetData(obj, &isShared, nogc));
+      
+      
+      MOZ_ASSERT(!isShared);
       memcpy(buf, data, length*sizeof(T));
     }
     return obj;
@@ -191,12 +262,15 @@ private:
 };
 
 template<JSObject* UnwrapArray(JSObject*),
-         void GetLengthAndData(JSObject*, uint32_t*, uint8_t**),
+         void GetLengthAndDataAndSharedness(JSObject*, uint32_t*, bool*,
+                                            uint8_t**),
          js::Scalar::Type GetViewType(JSObject*)>
-struct ArrayBufferView_base : public TypedArray_base<uint8_t, UnwrapArray,
-                                                     GetLengthAndData> {
+struct ArrayBufferView_base
+  : public TypedArray_base<uint8_t, UnwrapArray, GetLengthAndDataAndSharedness>
+{
 private:
-  typedef TypedArray_base<uint8_t, UnwrapArray, GetLengthAndData> Base;
+  typedef TypedArray_base<uint8_t, UnwrapArray, GetLengthAndDataAndSharedness>
+          Base;
 
 public:
   ArrayBufferView_base()
@@ -267,37 +341,6 @@ typedef TypedArray<uint8_t, js::UnwrapArrayBuffer, JS_GetArrayBufferData,
                    js::GetArrayBufferLengthAndData, JS_NewArrayBuffer>
         ArrayBuffer;
 
-typedef TypedArray<int8_t, js::UnwrapSharedInt8Array, JS_GetSharedInt8ArrayData,
-                   js::GetSharedInt8ArrayLengthAndData, JS_NewSharedInt8Array>
-        SharedInt8Array;
-typedef TypedArray<uint8_t, js::UnwrapSharedUint8Array, JS_GetSharedUint8ArrayData,
-                   js::GetSharedUint8ArrayLengthAndData, JS_NewSharedUint8Array>
-        SharedUint8Array;
-typedef TypedArray<uint8_t, js::UnwrapSharedUint8ClampedArray, JS_GetSharedUint8ClampedArrayData,
-                   js::GetSharedUint8ClampedArrayLengthAndData, JS_NewSharedUint8ClampedArray>
-        SharedUint8ClampedArray;
-typedef TypedArray<int16_t, js::UnwrapSharedInt16Array, JS_GetSharedInt16ArrayData,
-                   js::GetSharedInt16ArrayLengthAndData, JS_NewSharedInt16Array>
-        SharedInt16Array;
-typedef TypedArray<uint16_t, js::UnwrapSharedUint16Array, JS_GetSharedUint16ArrayData,
-                   js::GetSharedUint16ArrayLengthAndData, JS_NewSharedUint16Array>
-        SharedUint16Array;
-typedef TypedArray<int32_t, js::UnwrapSharedInt32Array, JS_GetSharedInt32ArrayData,
-                   js::GetSharedInt32ArrayLengthAndData, JS_NewSharedInt32Array>
-        SharedInt32Array;
-typedef TypedArray<uint32_t, js::UnwrapSharedUint32Array, JS_GetSharedUint32ArrayData,
-                   js::GetSharedUint32ArrayLengthAndData, JS_NewSharedUint32Array>
-        SharedUint32Array;
-typedef TypedArray<float, js::UnwrapSharedFloat32Array, JS_GetSharedFloat32ArrayData,
-                   js::GetSharedFloat32ArrayLengthAndData, JS_NewSharedFloat32Array>
-        SharedFloat32Array;
-typedef TypedArray<double, js::UnwrapSharedFloat64Array, JS_GetSharedFloat64ArrayData,
-                   js::GetSharedFloat64ArrayLengthAndData, JS_NewSharedFloat64Array>
-        SharedFloat64Array;
-typedef ArrayBufferView_base<js::UnwrapSharedArrayBufferView,
-                             js::GetSharedArrayBufferViewLengthAndData,
-                             JS_GetSharedArrayBufferViewType>
-        SharedArrayBufferView;
 typedef TypedArray<uint8_t, js::UnwrapSharedArrayBuffer, JS_GetSharedArrayBufferData,
                    js::GetSharedArrayBufferLengthAndData, JS_NewSharedArrayBuffer>
         SharedArrayBuffer;

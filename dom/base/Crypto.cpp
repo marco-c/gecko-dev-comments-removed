@@ -62,6 +62,12 @@ Crypto::GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
 
   JS::Rooted<JSObject*> view(aCx, aArray.Obj());
 
+  if (JS_IsTypedArrayObject(view) && JS_GetTypedArraySharedness(view)) {
+    
+    aRv.ThrowTypeError<MSG_TYPEDARRAY_IS_SHARED>(NS_LITERAL_STRING("Argument of Crypto.getRandomValues"));
+    return;
+  }
+
   
   
   switch (JS_GetArrayBufferViewType(view)) {
