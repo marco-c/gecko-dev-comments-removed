@@ -37,9 +37,6 @@
 
 #include "mozilla/Telemetry.h"
 
-
-extern PRThread *gSocketThread;
-
 namespace mozilla {
 namespace net {
 
