@@ -349,7 +349,7 @@ TextureHost::UnbindTextureSource()
     
     
     if (compositor) {
-      compositor->UnlockAfterComposition(mReadLock.forget());
+      compositor->UnlockAfterComposition(this);
     } else {
       
       
@@ -1058,6 +1058,10 @@ TextureParent::Destroy()
   if (!mTextureHost) {
     return;
   }
+
+  
+  
+  mTextureHost->ReadUnlock();
 
   if (mTextureHost->GetFlags() & TextureFlags::DEALLOCATE_CLIENT) {
     mTextureHost->ForgetSharedData();

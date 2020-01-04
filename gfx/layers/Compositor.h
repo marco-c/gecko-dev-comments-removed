@@ -541,10 +541,7 @@ public:
   
   
   
-  void UnlockAfterComposition(already_AddRefed<TextureReadLock> aLock)
-  {
-    mUnlockAfterComposition.AppendElement(aLock);
-  }
+  void UnlockAfterComposition(TextureHost* aTexture);
 
   
   
@@ -566,6 +563,9 @@ protected:
   bool ShouldDrawDiagnostics(DiagnosticFlags);
 
   
+  void ReadUnlockTextures();
+
+  
 
 
 
@@ -583,7 +583,7 @@ protected:
   
 
 
-  nsTArray<RefPtr<TextureReadLock>> mUnlockAfterComposition;
+  nsTArray<RefPtr<TextureHost>> mUnlockAfterComposition;
 
   
 
