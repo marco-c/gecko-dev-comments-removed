@@ -266,9 +266,7 @@ appUpdater.prototype =
         return;
       }
 
-      
-      
-      if (gAppUpdater.update.billboardURL || gAppUpdater.update.licenseURL) {
+      if (gAppUpdater.update.billboardURL) {
         gAppUpdater.selectPanel("applyBillboard");
         return;
       }
