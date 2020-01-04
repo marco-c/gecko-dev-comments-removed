@@ -32,7 +32,7 @@ public final class ThumbnailHelper {
 
     public static final float TABS_PANEL_THUMBNAIL_ASPECT_RATIO = 0.8333333f;
     public static final float TOP_SITES_THUMBNAIL_ASPECT_RATIO = 0.571428571f;  
-    private static final float THUMBNAIL_ASPECT_RATIO;
+    public static final float THUMBNAIL_ASPECT_RATIO;
 
     static {
       
