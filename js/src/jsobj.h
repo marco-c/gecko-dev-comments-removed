@@ -248,11 +248,10 @@ class JSObject : public js::gc::Cell
     inline bool isUnqualifiedVarObj() const;
 
     
-
-
-
-
-
+    
+    
+    
+    
     inline bool hasUncacheableProto() const;
     bool setUncacheableProto(js::ExclusiveContext* cx) {
         return setFlags(cx, js::BaseShape::UNCACHEABLE_PROTO, GENERATE_SHAPE);

@@ -1925,6 +1925,9 @@ js::SetClassAndProto(JSContext* cx, HandleObject obj,
     RootedObject oldproto(cx, obj);
     while (oldproto && oldproto->isNative()) {
         if (oldproto->isSingleton()) {
+            
+            
+            
             if (!oldproto->as<NativeObject>().generateOwnShape(cx))
                 return false;
         } else {

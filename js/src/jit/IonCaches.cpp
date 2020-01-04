@@ -3880,8 +3880,11 @@ GenerateDenseElementHole(JSContext* cx, MacroAssembler& masm, IonCache::StubAtta
         MOZ_ASSERT(pobj->as<NativeObject>().lastProperty());
 
         masm.movePtr(ImmGCPtr(pobj), scratchReg);
-        if (pobj->hasUncacheableProto()) {
-            MOZ_ASSERT(!pobj->isSingleton());
+
+        
+        
+        
+        if (pobj->hasUncacheableProto() && !pobj->isSingleton()) {
             Address groupAddr(scratchReg, JSObject::offsetOfGroup());
             masm.branchPtr(Assembler::NotEqual, groupAddr, ImmGCPtr(pobj->group()), &failures);
         }
