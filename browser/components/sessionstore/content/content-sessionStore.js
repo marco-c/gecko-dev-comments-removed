@@ -199,6 +199,52 @@ var MessageListener = {
 
 
 
+var SyncHandler = {
+  init: function () {
+    
+    
+    
+    
+    sendSyncMessage("SessionStore:setupSyncHandler", {}, {handler: this});
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  flush: function (id) {
+    MessageQueue.flush(id);
+  },
+
+  
+
+
+
+
+
+  flushAsync: function () {
+    if (!Services.prefs.getBoolPref("browser.sessionstore.debug")) {
+      throw new Error("flushAsync() must be used for testing, only.");
+    }
+
+    MessageQueue.send();
+  }
+};
+
+
+
+
+
+
+
+
+
 
 
 var SessionHistoryListener = {
@@ -594,7 +640,21 @@ var MessageQueue = {
 
 
 
+  _id: 1,
+
+  
+
+
+
+
   _data: new Map(),
+
+  
+
+
+
+
+  _lastUpdated: new Map(),
 
   
 
@@ -669,6 +729,7 @@ var MessageQueue = {
 
   push: function (key, fn) {
     this._data.set(key, createLazy(fn));
+    this._lastUpdated.set(key, this._id);
 
     if (!this._timeout && !this._timeoutDisabled) {
       
@@ -677,6 +738,8 @@ var MessageQueue = {
   },
 
   
+
+
 
 
 
@@ -696,14 +759,36 @@ var MessageQueue = {
       this._timeout = null;
     }
 
+    let sync = options && options.sync;
+    let startID = (options && options.id) || this._id;
     let flushID = (options && options.flushID) || 0;
+
+    
+    
+    
+    
+    let sendMessage = sync ? sendRpcMessage : sendAsyncMessage;
 
     let durationMs = Date.now();
 
     let data = {};
     let telemetry = {};
-    for (let [key, func] of this._data) {
-      let value = func();
+    for (let [key, id] of this._lastUpdated) {
+      
+      
+      if (!this._data.has(key)) {
+        continue;
+      }
+
+      if (startID > id) {
+        
+        
+        
+        this._data.delete(key);
+        continue;
+      }
+
+      let value = this._data.get(key)();
       if (key == "telemetry") {
         for (let histogramId of Object.keys(value)) {
           telemetry[histogramId] = value[histogramId];
@@ -718,8 +803,8 @@ var MessageQueue = {
 
     try {
       
-      sendAsyncMessage("SessionStore:update", {
-        data, telemetry, flushID,
+      sendMessage("SessionStore:update", {
+        id: this._id, data, telemetry, flushID,
         isFinal: options.isFinal || false,
         epoch: gCurrentEpoch
       });
@@ -727,16 +812,39 @@ var MessageQueue = {
       let telemetry = {
         FX_SESSION_RESTORE_SEND_UPDATE_CAUSED_OOM: 1
       };
-      sendAsyncMessage("SessionStore:error", {
+      sendMessage("SessionStore:error", {
         telemetry
       });
     }
+
+    
+    this._id++;
   },
+
+  
+
+
+
+
+
+
+
+
+  flush: function (id) {
+    
+    
+    
+    this.send({id: id + 1, sync: true});
+
+    this._data.clear();
+    this._lastUpdated.clear();
+  }
 };
 
 EventListener.init();
 MessageListener.init();
 FormDataListener.init();
+SyncHandler.init();
 PageStyleListener.init();
 SessionHistoryListener.init();
 SessionStorageListener.init();
