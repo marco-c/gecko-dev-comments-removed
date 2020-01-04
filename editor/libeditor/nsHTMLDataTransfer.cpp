@@ -1786,12 +1786,11 @@ nsHTMLEditor::InsertAsPlaintextQuotation(const nsAString & aQuotedText,
   
   if (newNode) {
     
-    
     newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::mozquote,
                      NS_LITERAL_STRING("true"), true);
     
     newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                     NS_LITERAL_STRING("white-space: pre;"), true);
+                     NS_LITERAL_STRING("white-space: pre-wrap;"), true);
 
     
     selection->Collapse(newNode, 0);
