@@ -41,7 +41,6 @@ const PREF_APP_UPDATE_NEVER_BRANCH         = "app.update.never.";
 const PREF_APP_UPDATE_NOTIFIEDUNSUPPORTED  = "app.update.notifiedUnsupported";
 const PREF_APP_UPDATE_POSTUPDATE           = "app.update.postupdate";
 const PREF_APP_UPDATE_PROMPTWAITTIME       = "app.update.promptWaitTime";
-const PREF_APP_UPDATE_SHOW_INSTALLED_UI    = "app.update.showInstalledUI";
 const PREF_APP_UPDATE_SILENT               = "app.update.silent";
 const PREF_APP_UPDATE_STAGING_ENABLED      = "app.update.staging.enabled";
 const PREF_APP_UPDATE_URL                  = "app.update.url";
@@ -1806,7 +1805,6 @@ Update.prototype = {
   serialize: function Update_serialize(updates) {
     
     
-    
     if (!this.appVersion) {
       return null;
     }
@@ -2182,7 +2180,6 @@ UpdateService.prototype = {
       
       um.activeUpdate = update;
       Services.prefs.setBoolPref(PREF_APP_UPDATE_POSTUPDATE, true);
-      prompter.showUpdateInstalled();
 
       
       cleanupActiveUpdate();
@@ -3190,7 +3187,6 @@ UpdateManager.prototype = {
       var doc = parser.parseFromString(EMPTY_UPDATES_DOCUMENT, "text/xml");
 
       for (var i = 0; i < updates.length; ++i) {
-        
         
         
         if (updates[i] && updates[i].appVersion) {
@@ -4489,23 +4485,6 @@ UpdatePrompt.prototype = {
       this._showUI(null, URI_UPDATE_PROMPT_DIALOG, null,
                    UPDATE_WINDOW_NAME, "finishedBackground", update);
     }
-  },
-
-  
-
-
-  showUpdateInstalled: function UP_showUpdateInstalled() {
-    if (getPref("getBoolPref", PREF_APP_UPDATE_SILENT, false) ||
-        !getPref("getBoolPref", PREF_APP_UPDATE_SHOW_INSTALLED_UI, false) ||
-        this._getUpdateWindow()) {
-      return;
-    }
-
-    let openFeatures = "chrome,centerscreen,dialog=no,resizable=no,titlebar,toolbar=no";
-    let arg = Cc["@mozilla.org/supports-string;1"].
-              createInstance(Ci.nsISupportsString);
-    arg.data = "installed";
-    Services.ww.openWindow(null, URI_UPDATE_PROMPT_DIALOG, null, openFeatures, arg);
   },
 
   

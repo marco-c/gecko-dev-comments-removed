@@ -381,7 +381,6 @@ var gUpdates = {
 
 
 
-
   getStartPageID: function(aCallback) {
     if ("arguments" in window && window.arguments[0]) {
       var arg0 = window.arguments[0];
@@ -455,10 +454,6 @@ var gUpdates = {
         }
 
         aCallback(this.updatesFoundPageId);
-        return;
-      }
-      else if (arg0 == "installed") {
-        aCallback("installed");
         return;
       }
     }
@@ -1568,30 +1563,6 @@ var gFinishedPage = {
     gUpdates.never();
     gUpdates.wiz.cancel();
   }),
-};
-
-
-
-
-var gInstalledPage = {
-  
-
-
-  onPageShow: function() {
-    var branding = document.getElementById("brandStrings");
-    try {
-      
-      var url = branding.getFormattedString("whatsNewURL", [Services.appinfo.version]);
-      var whatsnewLink = document.getElementById("whatsnewLink");
-      whatsnewLink.setAttribute("url", url);
-      whatsnewLink.hidden = false;
-    }
-    catch (e) {
-    }
-
-    gUpdates.setButtons(null, null, "okButton", true);
-    gUpdates.wiz.getButton("finish").focus();
-  }
 };
 
 

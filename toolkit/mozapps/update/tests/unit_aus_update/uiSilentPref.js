@@ -9,7 +9,6 @@ Components.utils.import("resource://testing-common/MockRegistrar.jsm");
 
 
 
-
 function run_test() {
   setupTestCommon();
 
@@ -26,16 +25,6 @@ function run_test() {
   });
 
   standardInit();
-
-  debugDump("testing showUpdateInstalled should not call openWindow");
-  Services.prefs.setBoolPref(PREF_APP_UPDATE_SHOW_INSTALLED_UI, true);
-
-  gCheckFunc = check_showUpdateInstalled;
-  gUP.showUpdateInstalled();
-  
-  
-  Assert.ok(true,
-            "calling showUpdateInstalled should not attempt to open a window");
 
   debugDump("testing showUpdateAvailable should not call openWindow");
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), false);
@@ -64,10 +53,6 @@ function run_test() {
             "calling showUpdateError should not attempt to open a window");
 
   doTestFinish();
-}
-
-function check_showUpdateInstalled() {
-  do_throw("showUpdateInstalled should not have called openWindow!");
 }
 
 function check_showUpdateAvailable() {
