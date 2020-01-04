@@ -23,6 +23,7 @@ Cu.import("chrome://marionette/content/evaluate.js");
 Cu.import("chrome://marionette/content/event.js");
 Cu.import("chrome://marionette/content/interaction.js");
 Cu.import("chrome://marionette/content/logging.js");
+Cu.import("chrome://marionette/content/navigate.js");
 Cu.import("chrome://marionette/content/proxy.js");
 Cu.import("chrome://marionette/content/simpletest.js");
 
@@ -881,43 +882,48 @@ function multiAction(args, maxLen) {
 
 
 
-function pollForReadyState(msg, start, callback) {
+function pollForReadyState(msg, start = undefined, callback = undefined) {
   let {pageTimeout, url, command_id} = msg.json;
-  start = start ? start : new Date().getTime();
-
+  if (!start) {
+    start = new Date().getTime();
+  }
   if (!callback) {
     callback = () => {};
   }
 
-  let end = null;
-  function checkLoad() {
+  let checkLoad = function() {
     navTimer.cancel();
-    end = new Date().getTime();
-    let aboutErrorRegex = /about:.+(error)\?/;
-    let elapse = end - start;
+
     let doc = curContainer.frame.document;
-    if (pageTimeout == null || elapse <= pageTimeout) {
+    let now = new Date().getTime();
+    if (pageTimeout == null || (now - start) <= pageTimeout) {
+      
       if (doc.readyState == "complete") {
         callback();
         sendOk(command_id);
+
+      
       } else if (doc.readyState == "interactive" &&
-                 aboutErrorRegex.exec(doc.baseURI) &&
-                 !doc.baseURI.startsWith(url)) {
-        
+          /about:.+(error)\?/.exec(doc.baseURI) &&
+          !doc.baseURI.startsWith(url)) {
         callback();
-        sendError(new UnknownError("Error loading page"), command_id);
-      } else if (doc.readyState == "interactive" &&
-                 doc.baseURI.startsWith("about:")) {
+        sendError(new UnknownError("Reached error page: " + doc.baseURI), command_id);
+
+      
+      } else if (doc.readyState == "interactive" && doc.baseURI.startsWith("about:")) {
         callback();
         sendOk(command_id);
+
+      
       } else {
         navTimer.initWithCallback(checkLoad, 100, Ci.nsITimer.TYPE_ONE_SHOT);
       }
+
     } else {
       callback();
       sendError(new TimeoutError("Error loading page, timed out (checkLoad)"), command_id);
     }
-  }
+  };
   checkLoad();
 }
 
@@ -929,16 +935,28 @@ function pollForReadyState(msg, start, callback) {
 
 function get(msg) {
   let start = new Date().getTime();
-  let requestedURL = new URL(msg.json.url).toString();
+  let command_id = msg.json.command_id;
+
   let docShell = curContainer.frame
-                             .document
-                             .defaultView
-                             .QueryInterface(Ci.nsIInterfaceRequestor)
-                             .getInterface(Ci.nsIWebNavigation)
-                             .QueryInterface(Ci.nsIDocShell);
+      .document
+      .defaultView
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebNavigation)
+      .QueryInterface(Ci.nsIDocShell);
   let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIWebProgress);
+      .getInterface(Ci.nsIWebProgress);
   let sawLoad = false;
+
+  let requestedURL;
+  let loadEventExpected = false;
+  try {
+    requestedURL = new URL(msg.json.url).toString();
+    let curURL = curContainer.frame.location;
+    loadEventExpected = navigate.isLoadEventExpected(curURL, requestedURL);
+  } catch (e) {
+    sendError(new InvalidArgumentError("Malformed URL: " + e.message), command_id);
+    return;
+  }
 
   
   
@@ -946,8 +964,9 @@ function get(msg) {
   
   
   let loadListener = {
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
-                                           Ci.nsISupportsWeakReference]),
+    QueryInterface: XPCOMUtils.generateQI(
+        [Ci.nsIWebProgressListener, Ci.nsISupportsWeakReference]),
+
     onStateChange(webProgress, request, state, status) {
       if (!(request instanceof Ci.nsIChannel)) {
         return;
@@ -961,7 +980,7 @@ function get(msg) {
       
       let originalURL = request.originalURI.spec;
       let isRequestedURL = loadedURL == requestedURL ||
-                           originalURL == requestedURL;
+          originalURL == requestedURL;
 
       if (isDocument && isStart && isRequestedURL) {
         
@@ -979,16 +998,15 @@ function get(msg) {
     onSecurityChange() {},
   };
 
-  webProgress.addProgressListener(loadListener,
-                                  Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
+  webProgress.addProgressListener(
+      loadListener, Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
 
   
   
   
   onDOMContentLoaded = function onDOMContentLoaded(event) {
-    let correctFrame =
-      !event.originalTarget.defaultView.frameElement ||
-      event.originalTarget.defaultView.frameElement == curContainer.frame.frameElement;
+    let frameEl = event.originalTarget.defaultView.frameElement;
+    let correctFrame = !frameEl || frameEl == curContainer.frame.frameElement;
 
     
     
@@ -1012,26 +1030,33 @@ function get(msg) {
     }
   };
 
-  function timerFunc() {
-    removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
-    webProgress.removeProgressListener(loadListener);
-    sendError(new TimeoutError("Error loading page, timed out (onDOMContentLoaded)"), msg.json.command_id);
+  if (msg.json.pageTimeout) {
+    let onTimeout = function() {
+      if (loadEventExpected) {
+        removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+      }
+      webProgress.removeProgressListener(loadListener);
+      sendError(new TimeoutError("Error loading page, timed out (onDOMContentLoaded)"), command_id);
+    }
+    navTimer.initWithCallback(onTimeout, msg.json.pageTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
   }
-  if (msg.json.pageTimeout != null) {
-    navTimer.initWithCallback(timerFunc, msg.json.pageTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
-  }
-  addEventListener("DOMContentLoaded", onDOMContentLoaded, false);
-  if (isB2G) {
-    curContainer.frame.location = requestedURL;
-  } else {
-    
-    sendSyncMessage("Marionette:switchedToFrame", { frameValue: null });
+
+  
+  if (!isB2G) {
+    sendSyncMessage("Marionette:switchedToFrame", {frameValue: null});
     curContainer.frame = content;
-    curContainer.frame.location = requestedURL;
+  }
+
+  if (loadEventExpected) {
+    addEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+  }
+  curContainer.frame.location = requestedURL;
+  if (!loadEventExpected) {
+    sendOk(command_id);
   }
 }
 
- 
+
 
 
 
