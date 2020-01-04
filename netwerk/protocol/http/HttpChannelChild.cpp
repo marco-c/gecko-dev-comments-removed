@@ -1990,12 +1990,16 @@ HttpChannelChild::ContinueAsyncOpen()
     return NS_ERROR_FAILURE;
   }
 
+  ContentChild* cc = static_cast<ContentChild*>(gNeckoChild->Manager());
+  if (cc->IsShuttingDown()) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   AddIPDLReference();
 
-  PBrowserOrId browser = static_cast<ContentChild*>(gNeckoChild->Manager())
-                         ->GetBrowserOrId(tabChild);
+  PBrowserOrId browser = cc->GetBrowserOrId(tabChild);
   if (!gNeckoChild->SendPHttpChannelConstructor(this, browser,
                                                 IPC::SerializedLoadContext(this),
                                                 openArgs)) {
