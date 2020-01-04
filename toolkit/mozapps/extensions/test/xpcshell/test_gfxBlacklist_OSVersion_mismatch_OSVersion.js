@@ -59,7 +59,7 @@ function run_test() {
       return;
     case "Darwin":
       
-      gfxInfo.spoofOSVersion(0x1070);
+      gfxInfo.spoofOSVersion(0x1080);
       break;
     case "Android":
       
