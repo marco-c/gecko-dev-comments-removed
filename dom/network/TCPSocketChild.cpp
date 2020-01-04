@@ -34,7 +34,9 @@ DeserializeArrayBuffer(JSContext* cx,
   JSObject* obj = JS_NewArrayBufferWithContents(cx, aBuffer.Length(), data.get());
   if (!obj)
       return false;
-  data.release();
+  
+  
+  mozilla::Unused << data.release();
 
   aVal.setObject(*obj);
   return true;
