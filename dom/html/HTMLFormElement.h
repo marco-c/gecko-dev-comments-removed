@@ -283,6 +283,15 @@ public:
 
 
 
+
+  bool SubmissionCanProceed(Element* aSubmitter);
+
+  
+
+
+
+
+
   nsresult WalkFormElements(HTMLFormSubmission* aFormSubmission);
 
   

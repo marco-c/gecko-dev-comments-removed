@@ -381,11 +381,7 @@ HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
         
         
         if (presShell && (event.mMessage != eFormSubmit ||
-                          mForm->HasAttr(kNameSpaceID_None, nsGkAtoms::novalidate) ||
-                          
-                          
-                          HasAttr(kNameSpaceID_None, nsGkAtoms::formnovalidate) ||
-                          mForm->CheckValidFormSubmission())) {
+                          mForm->SubmissionCanProceed(this))) {
           
           
           
