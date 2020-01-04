@@ -361,9 +361,6 @@ txExprLexer::parse(const nsASingleFragmentString& aPattern)
 
   
   newToken = new Token(end, end, Token::END);
-  if (!newToken) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
   addToken(newToken);
 
   return NS_OK;

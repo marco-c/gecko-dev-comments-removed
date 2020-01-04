@@ -103,8 +103,6 @@ txExecutionState::init(const txXPathNode& aNode,
 
     
     mEvalContext = new txSingleNodeContext(aNode, this);
-    NS_ENSURE_TRUE(mEvalContext, NS_ERROR_OUT_OF_MEMORY);
-
     mInitialEvalContext = mEvalContext;
 
     
@@ -129,7 +127,6 @@ txExecutionState::init(const txXPathNode& aNode,
     
     
     mGlobalVarPlaceholderValue = new StringResult(NS_LITERAL_STRING("Error"), nullptr);
-    NS_ENSURE_TRUE(mGlobalVarPlaceholderValue, NS_ERROR_OUT_OF_MEMORY);
 
     
     
@@ -482,7 +479,6 @@ txExecutionState::bindVariable(const txExpandedName& aName,
 {
     if (!mLocalVariables) {
         mLocalVariables = new txVariableMap;
-        NS_ENSURE_TRUE(mLocalVariables, NS_ERROR_OUT_OF_MEMORY);
     }
     return mLocalVariables->bindVariable(aName, aValue);
 }
