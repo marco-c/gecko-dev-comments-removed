@@ -90,7 +90,7 @@ GonkPermissionChecker::Run()
   }
 
   
-  const ManagedContainer<PBrowserParent>& browsers =
+  const ManagedContainer<dom::PBrowserParent>& browsers =
     contentParent->ManagedPBrowserParent();
   for (auto iter = browsers.ConstIter(); !iter.Done(); iter.Next()) {
     dom::TabParent *tabParent =
