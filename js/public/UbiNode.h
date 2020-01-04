@@ -439,6 +439,25 @@ bool ConstructSavedFrameStackSlow(JSContext* cx, JS::ubi::StackFrame& frame,
 
 
 
+
+
+
+
+
+
+
+
+
+
+enum class CoarseType: uint32_t {
+    Object = 0,
+    Script = 1,
+    String = 2,
+    Other  = 3
+};
+
+
+
 class Base {
     friend class Node;
 
@@ -484,6 +503,9 @@ class Base {
     
     
     virtual bool isLive() const { return true; };
+
+    
+    virtual CoarseType coarseType() const { return CoarseType::Other; }
 
     
     
@@ -680,6 +702,7 @@ class Node {
     
     JS::Value exposeToJS() const;
 
+    CoarseType coarseType()         const { return base()->coarseType(); }
     const char16_t* typeName()      const { return base()->typeName(); }
     JS::Zone* zone()                const { return base()->zone(); }
     JSCompartment* compartment()    const { return base()->compartment(); }
@@ -963,7 +986,16 @@ class TracerConcreteWithCompartment : public TracerConcrete<Referent> {
 
 
 template<> struct Concrete<JS::Symbol> : TracerConcrete<JS::Symbol> { };
-template<> struct Concrete<JSScript> : TracerConcreteWithCompartment<JSScript> { };
+
+template<> struct Concrete<JSScript> : TracerConcreteWithCompartment<JSScript> {
+    CoarseType coarseType() const final { return CoarseType::Script; }
+
+  protected:
+    explicit Concrete(JSScript *ptr) : TracerConcreteWithCompartment<JSScript>(ptr) { }
+
+  public:
+    static void construct(void *storage, JSScript *ptr) { new (storage) Concrete(ptr); }
+};
 
 
 template<>
@@ -975,6 +1007,8 @@ class Concrete<JSObject> : public TracerConcreteWithCompartment<JSObject> {
 
     bool hasAllocationStack() const override;
     StackFrame allocationStack() const override;
+
+    CoarseType coarseType() const final { return CoarseType::Object; }
 
   protected:
     explicit Concrete(JSObject* ptr) : TracerConcreteWithCompartment(ptr) { }
@@ -988,6 +1022,8 @@ class Concrete<JSObject> : public TracerConcreteWithCompartment<JSObject> {
 
 template<> struct Concrete<JSString> : TracerConcrete<JSString> {
     Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+
+    CoarseType coarseType() const final { return CoarseType::String; }
 
   protected:
     explicit Concrete(JSString *ptr) : TracerConcrete<JSString>(ptr) { }
@@ -1004,6 +1040,7 @@ class Concrete<void> : public Base {
     UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
     JS::Zone* zone() const override;
     JSCompartment* compartment() const override;
+    CoarseType coarseType() const final;
 
     explicit Concrete(void* ptr) : Base(ptr) { }
 
