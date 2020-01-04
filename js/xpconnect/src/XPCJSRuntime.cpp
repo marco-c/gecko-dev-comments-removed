@@ -703,7 +703,7 @@ xpc_UnmarkSkippableJSHolders()
 }
 
  void
-XPCJSRuntime::GCSliceCallback(JSRuntime* rt,
+XPCJSRuntime::GCSliceCallback(JSContext* cx,
                               JS::GCProgress progress,
                               const JS::GCDescription& desc)
 {
@@ -717,7 +717,7 @@ XPCJSRuntime::GCSliceCallback(JSRuntime* rt,
 #endif
 
     if (self->mPrevGCSliceCallback)
-        (*self->mPrevGCSliceCallback)(rt, progress, desc);
+        (*self->mPrevGCSliceCallback)(cx, progress, desc);
 }
 
 void
@@ -941,7 +941,7 @@ XPCJSRuntime::FinalizeCallback(JSFreeOp* fop,
 }
 
  void
-XPCJSRuntime::WeakPointerZoneGroupCallback(JSRuntime* rt, void* data)
+XPCJSRuntime::WeakPointerZoneGroupCallback(JSContext* cx, void* data)
 {
     
     
@@ -954,7 +954,7 @@ XPCJSRuntime::WeakPointerZoneGroupCallback(JSRuntime* rt, void* data)
 }
 
  void
-XPCJSRuntime::WeakPointerCompartmentCallback(JSRuntime* rt, JSCompartment* comp, void* data)
+XPCJSRuntime::WeakPointerCompartmentCallback(JSContext* cx, JSCompartment* comp, void* data)
 {
     
     
@@ -2706,7 +2706,7 @@ class JSMainRuntimeCompartmentsReporter final : public nsIMemoryReporter
         js::Vector<nsCString, 0, js::SystemAllocPolicy> paths;
     };
 
-    static void CompartmentCallback(JSRuntime* rt, void* vdata, JSCompartment* c) {
+    static void CompartmentCallback(JSContext* cx, void* vdata, JSCompartment* c) {
         
         Data* data = static_cast<Data*>(vdata);
         nsCString path;
@@ -3238,7 +3238,7 @@ AccumulateTelemetryCallback(int id, uint32_t sample, const char* key)
 }
 
 static void
-CompartmentNameCallback(JSRuntime* rt, JSCompartment* comp,
+CompartmentNameCallback(JSContext* cx, JSCompartment* comp,
                         char* buf, size_t bufsize)
 {
     nsCString name;
