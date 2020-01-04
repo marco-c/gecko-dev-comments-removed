@@ -36,7 +36,7 @@ class ZoneHeapThreshold
     double gcHeapGrowthFactor_;
 
     
-    size_t gcTriggerBytes_;
+    mozilla::Atomic<size_t, mozilla::Relaxed> gcTriggerBytes_;
 
   public:
     ZoneHeapThreshold()
