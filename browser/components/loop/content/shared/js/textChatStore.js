@@ -118,7 +118,8 @@ loop.store.TextChatStore = (function() {
 
       
       
-      if (message.contentType !== CHAT_CONTENT_TYPES.ROOM_NAME) {
+      if (message.contentType !== CHAT_CONTENT_TYPES.ROOM_NAME &&
+          message.contentType !== CHAT_CONTENT_TYPES.CONTEXT) {
         if (this._storeState.textChatEnabled) {
           window.dispatchEvent(new CustomEvent("LoopChatMessageAppended"));
         } else {
