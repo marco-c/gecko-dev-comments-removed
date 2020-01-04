@@ -1864,6 +1864,17 @@ UpdateService.prototype = {
   observe: function AUS_observe(subject, topic, data) {
     switch (topic) {
       case "post-update-processing":
+        if (readStatusFile(getUpdatesDir()) == STATE_SUCCEEDED) {
+          
+          
+          
+          let um = Cc["@mozilla.org/updates/update-manager;1"].
+                   getService(Ci.nsIUpdateManager);
+          um.activeUpdate.state = STATE_SUCCEEDED;
+          um.saveUpdates();
+          Services.prefs.setBoolPref(PREF_APP_UPDATE_POSTUPDATE, true);
+        }
+
         if (Services.appinfo.ID in APPID_TO_TOPIC) {
           
           
@@ -2076,7 +2087,6 @@ UpdateService.prototype = {
 
       
       um.activeUpdate = update;
-      Services.prefs.setBoolPref(PREF_APP_UPDATE_POSTUPDATE, true);
 
       
       cleanupActiveUpdate();
