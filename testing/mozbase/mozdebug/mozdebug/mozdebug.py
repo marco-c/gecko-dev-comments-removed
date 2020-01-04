@@ -107,15 +107,19 @@ def get_debugger_info(debugger, debuggerArgs = None, debuggerInteractive = False
 
         debuggerPath = find_executable(debugger)
 
-    
-    
-    
-    
-    if not debuggerPath and debugger == 'windbg.exe':
-        for candidate in _windbg_installation_paths():
-            if os.path.exists(candidate):
-                debuggerPath = candidate
-                break
+    if not debuggerPath:
+        
+        
+        
+        
+        if debugger == 'windbg.exe':
+            for candidate in _windbg_installation_paths():
+                if os.path.exists(candidate):
+                    debuggerPath = candidate
+                    break
+        else:
+            if os.path.exists(debugger):
+                debuggerPath = debugger
 
     if not debuggerPath:
         print 'Error: Could not find debugger %s.' % debugger
