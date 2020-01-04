@@ -23,7 +23,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
 loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", true);
 
-const DefaultTools = require("devtools/client/definitions").defaultTools;
+const {defaultTools: DefaultTools, defaultThemes: DefaultThemes} =
+  require("devtools/client/definitions");
 const EventEmitter = require("devtools/shared/event-emitter");
 const Telemetry = require("devtools/client/shared/telemetry");
 const {JsonView} = require("devtools/client/jsonview/main");
@@ -289,7 +290,14 @@ DevTools.prototype = {
     
     
     
-    if (!Services.startup.shuttingDown && theme.id == currTheme) {
+    let isCoreTheme = DefaultThemes.some(t => t.id === themeId);
+
+    
+    
+    
+    if (!Services.startup.shuttingDown &&
+        !isCoreTheme &&
+        theme.id == currTheme) {
       Services.prefs.setCharPref("devtools.theme", "light");
 
       let data = {
