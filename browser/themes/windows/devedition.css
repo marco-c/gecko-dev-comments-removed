@@ -43,7 +43,6 @@
 #forward-button > .toolbarbutton-icon {
   background: var(--chrome-nav-buttons-background) !important;
   border-radius: 0 !important;
-  width: auto !important;
   height: auto !important;
   padding: var(--toolbarbutton-vertical-inner-padding) 5px !important;
   margin: 0 !important;
@@ -51,28 +50,19 @@
   box-shadow: none !important;
 }
 
+#back-button > .toolbarbutton-icon {
+  
+  width: 30px !important;
+}
 
-#back-button[open="true"] > .toolbarbutton-icon {
-  box-shadow: none !important;
+#forward-button > .toolbarbutton-icon {
+  
+  width: 29px !important;
 }
 
 
-
-@media (min-resolution: 1.1dppx) {
-  #back-button,
-  #forward-button {
-    list-style-image: url("chrome://browser/skin/Toolbar.png");
-  }
-
-  toolbar[brighttext] #back-button,
-  toolbar[brighttext] #forward-button {
-    list-style-image: url("chrome://browser/skin/Toolbar-inverted.png");
-  }
-
-  
-  #forward-button {
-    -moz-image-region: rect(0px, 72px, 18px, 54px);
-  }
+#back-button[open="true"] > .toolbarbutton-icon {
+  box-shadow: none !important;
 }
 
 #forward-button > .toolbarbutton-icon {
