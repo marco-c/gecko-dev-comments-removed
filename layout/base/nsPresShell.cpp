@@ -1404,6 +1404,11 @@ PresShell::RemovePreferenceStyles()
 void
 PresShell::AddUserSheet(nsISupports* aSheet)
 {
+  if (mStyleSet->IsServo()) {
+    NS_ERROR("stylo: nsStyleSheetService doesn't handle ServoStyleSheets yet");
+    return;
+  }
+
   
   
   
