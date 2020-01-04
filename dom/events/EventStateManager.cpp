@@ -2488,24 +2488,9 @@ EventStateManager::DoScrollText(nsIScrollableFrame* aScrollableFrame,
 
   nsIFrame* scrollFrame = do_QueryFrame(aScrollableFrame);
   MOZ_ASSERT(scrollFrame);
+
   nsWeakFrame scrollFrameWeak(scrollFrame);
-
-  nsIFrame* lastScrollFrame = WheelTransaction::GetTargetFrame();
-  if (!lastScrollFrame) {
-    WheelTransaction::BeginTransaction(scrollFrame, aEvent);
-  } else if (lastScrollFrame != scrollFrame) {
-    WheelTransaction::EndTransaction();
-    WheelTransaction::BeginTransaction(scrollFrame, aEvent);
-  } else {
-    WheelTransaction::UpdateTransaction(aEvent);
-  }
-
-  
-  
-  
-  
-  if (!scrollFrameWeak.IsAlive()) {
-    WheelTransaction::EndTransaction();
+  if (!WheelTransaction::WillHandleDefaultAction(aEvent, scrollFrameWeak)) {
     return;
   }
 
@@ -3201,8 +3186,19 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         }
         case WheelPrefs::ACTION_SEND_TO_PLUGIN:
           MOZ_ASSERT(pluginFrame);
-          
-          
+
+          if (wheelEvent->mMessage != eWheel ||
+              (!wheelEvent->deltaX && !wheelEvent->deltaY)) {
+            break;
+          }
+
+          MOZ_ASSERT(static_cast<void*>(frameToScroll) ==
+                       static_cast<void*>(pluginFrame));
+          if (!WheelTransaction::WillHandleDefaultAction(wheelEvent,
+                                                         frameToScroll)) {
+            break;
+          }
+
           pluginFrame->HandleWheelEventAsDefaultAction(wheelEvent);
           break;
         case WheelPrefs::ACTION_NONE:

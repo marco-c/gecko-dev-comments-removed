@@ -57,6 +57,14 @@ public:
 
 
 
+
+
+  static bool CanScrollOn(nsIFrame* aFrame,
+                          double aDirectionX, double aDirectionY);
+  
+
+
+
   static bool CanScrollOn(nsIScrollableFrame* aScrollFrame,
                           double aDirectionX, double aDirectionY);
 
@@ -117,13 +125,22 @@ class WheelTransaction
 {
 public:
   static nsIFrame* GetTargetFrame() { return sTargetFrame; }
-  static void BeginTransaction(nsIFrame* aTargetFrame,
-                               WidgetWheelEvent* aEvent);
-  
-  
-  static bool UpdateTransaction(WidgetWheelEvent* aEvent);
-  static void MayEndTransaction();
   static void EndTransaction();
+  
+
+
+
+
+
+ 
+  static bool WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
+                                      nsWeakFrame& aTargetWeakFrame);
+  static bool WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
+                                      nsIFrame* aTargetFrame)
+  {
+    nsWeakFrame targetWeakFrame(aTargetFrame);
+    return WillHandleDefaultAction(aWheelEvent, targetWeakFrame);
+  }
   static void OnEvent(WidgetEvent* aEvent);
   static void Shutdown();
   static uint32_t GetTimeoutTime();
@@ -135,6 +152,14 @@ public:
 
 protected:
   static const uint32_t kScrollSeriesTimeout = 80; 
+
+  static void BeginTransaction(nsIFrame* aTargetFrame,
+                               WidgetWheelEvent* aEvent);
+  
+  
+  static bool UpdateTransaction(WidgetWheelEvent* aEvent);
+  static void MayEndTransaction();
+
   static nsIntPoint GetScreenPoint(WidgetGUIEvent* aEvent);
   static void OnFailToScrollTarget();
   static void OnTimeout(nsITimer* aTimer, void* aClosure);

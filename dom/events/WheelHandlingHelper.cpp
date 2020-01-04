@@ -17,6 +17,7 @@
 #include "nsIPresShell.h"
 #include "nsIScrollableFrame.h"
 #include "nsITimer.h"
+#include "nsPluginFrame.h"
 #include "nsPresContext.h"
 #include "prtime.h"
 #include "Units.h"
@@ -43,6 +44,18 @@ WheelHandlingUtils::CanScrollInRange(nscoord aMin, nscoord aValue, nscoord aMax,
 {
   return aDirection > 0.0 ? aValue < static_cast<double>(aMax) :
                             static_cast<double>(aMin) < aValue;
+}
+
+ bool
+WheelHandlingUtils::CanScrollOn(nsIFrame* aFrame,
+                                double aDirectionX, double aDirectionY)
+{
+  nsIScrollableFrame* scrollableFrame = do_QueryFrame(aFrame);
+  if (scrollableFrame) {
+    return CanScrollOn(scrollableFrame, aDirectionX, aDirectionY);
+  }
+  nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
+  return pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction();
 }
 
  bool
@@ -108,10 +121,14 @@ WheelTransaction::BeginTransaction(nsIFrame* aTargetFrame,
  bool
 WheelTransaction::UpdateTransaction(WidgetWheelEvent* aEvent)
 {
-  nsIScrollableFrame* sf = GetTargetFrame()->GetScrollTargetFrame();
-  NS_ENSURE_TRUE(sf, false);
+  nsIFrame* scrollToFrame = GetTargetFrame();
+  nsIScrollableFrame* scrollableFrame = scrollToFrame->GetScrollTargetFrame();
+  if (scrollableFrame) {
+    scrollToFrame = do_QueryFrame(scrollableFrame);
+  }
 
-  if (!WheelHandlingUtils::CanScrollOn(sf, aEvent->deltaX, aEvent->deltaY)) {
+  if (!WheelHandlingUtils::CanScrollOn(scrollToFrame,
+                                       aEvent->deltaX, aEvent->deltaY)) {
     OnFailToScrollTarget();
     
     
@@ -157,6 +174,32 @@ WheelTransaction::EndTransaction()
     ScrollbarsForWheel::OwnWheelTransaction(false);
     ScrollbarsForWheel::Inactivate();
   }
+}
+
+ bool
+WheelTransaction::WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
+                                          nsWeakFrame& aTargetWeakFrame)
+{
+  nsIFrame* lastTargetFrame = GetTargetFrame();
+  if (!lastTargetFrame) {
+    BeginTransaction(aTargetWeakFrame.GetFrame(), aWheelEvent);
+  } else if (lastTargetFrame != aTargetWeakFrame.GetFrame()) {
+    EndTransaction();
+    BeginTransaction(aTargetWeakFrame.GetFrame(), aWheelEvent);
+  } else {
+    UpdateTransaction(aWheelEvent);
+  }
+
+  
+  
+  
+  
+  if (!aTargetWeakFrame.IsAlive()) {
+    EndTransaction();
+    return false;
+  }
+
+  return true;
 }
 
  void
