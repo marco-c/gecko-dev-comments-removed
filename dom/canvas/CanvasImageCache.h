@@ -6,6 +6,7 @@
 #ifndef CANVASIMAGECACHE_H_
 #define CANVASIMAGECACHE_H_
 
+#include "mozilla/RefPtr.h"
 #include "nsSize.h"
 
 namespace mozilla {
@@ -17,7 +18,7 @@ namespace gfx {
 class SourceSurface;
 } 
 } 
-class imgIRequest;
+class imgIContainer;
 
 namespace mozilla {
 
@@ -31,7 +32,6 @@ public:
 
   static void NotifyDrawImage(dom::Element* aImage,
                               dom::HTMLCanvasElement* aCanvas,
-                              imgIRequest* aRequest,
                               SourceSurface* aSource,
                               const gfx::IntSize& aSize,
                               bool aIsAccelerated);
@@ -40,19 +40,16 @@ public:
 
 
 
-
-
-  static SourceSurface* Lookup(dom::Element* aImage,
-                               dom::HTMLCanvasElement* aCanvas,
-                               gfx::IntSize* aSize,
-                               bool aIsAccelerated);
+  static SourceSurface* LookupAllCanvas(dom::Element* aImage,
+                                        bool aIsAccelerated);
 
   
 
 
 
-
-  static SourceSurface* SimpleLookup(dom::Element* aImage,
+  static SourceSurface* LookupCanvas(dom::Element* aImage,
+                                     dom::HTMLCanvasElement* aCanvas,
+                                     gfx::IntSize* aSizeOut,
                                      bool aIsAccelerated);
 };
 
