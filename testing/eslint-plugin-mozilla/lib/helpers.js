@@ -313,6 +313,22 @@ module.exports = {
 
 
 
+  getIsHeadFile: function(scope) {
+    var pathAndFilename = scope.getFilename();
+
+    return /.*[\\/]head(_.+)?\.js$/.test(pathAndFilename);
+  },
+
+  
+
+
+
+
+
+
+
+
+
   getIsBrowserMochitest: function(scope) {
     var pathAndFilename = scope.getFilename();
 

@@ -83,6 +83,7 @@ if (AppConstants.platform != "macosx") {
   var gEditUIVisible = true;
 }
 
+
 [
   ["gBrowser",            "content"],
   ["gNavToolbox",         "navigator-toolbox"],
