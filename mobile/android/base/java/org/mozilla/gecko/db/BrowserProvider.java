@@ -786,6 +786,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                                                                     suggestedSitesCursor.getString(titleColumnIndex)
                                                             });
         }
+        suggestedSitesCursor.close();
 
         
         
