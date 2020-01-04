@@ -83,8 +83,10 @@ function run_test_early() {
         "resource://gre/modules/addons/XPIProvider.jsm", {});
 
       
-      do_check_null(s.XPIProvider.mapURIToAddonID(uri));
+      
       do_check_null(AddonManager.mapURIToAddonID(uri));
+      
+      do_check_eq(s.XPIProvider.mapURIToAddonID(uri), id);
 
       
       startupManager(false);
