@@ -218,6 +218,11 @@ this.HawkClient.prototype = {
       if (error) {
         log.warn("hawk request error", error);
       }
+      
+      if (!this.response) {
+        deferred.reject(error);
+        return;
+      }
       let restResponse = this.response;
       let status = restResponse.status;
 
