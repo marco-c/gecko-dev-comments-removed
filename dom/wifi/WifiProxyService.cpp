@@ -29,7 +29,7 @@ namespace mozilla {
 static StaticRefPtr<WifiProxyService> gWifiProxyService;
 
 
-static nsAutoPtr<WpaSupplicant> gWpaSupplicant;
+static UniquePtr<WpaSupplicant> gWpaSupplicant;
 
 
 class WifiEventDispatcher : public nsRunnable
@@ -160,7 +160,7 @@ WifiProxyService::FactoryCreate()
     gWifiProxyService = new WifiProxyService();
     ClearOnShutdown(&gWifiProxyService);
 
-    gWpaSupplicant = new WpaSupplicant();
+    gWpaSupplicant = MakeUnique<WpaSupplicant>();
     ClearOnShutdown(&gWpaSupplicant);
   }
 

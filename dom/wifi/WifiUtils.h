@@ -13,8 +13,8 @@
 #define WifiUtils_h
 
 #include "nsString.h"
-#include "nsAutoPtr.h"
 #include "mozilla/dom/WifiOptionsBinding.h"
+#include "mozilla/UniquePtr.h"
 #include "WifiHotspotUtils.h"
 
 
@@ -94,8 +94,8 @@ public:
                       const nsCString& aInterface);
 
 private:
-  nsAutoPtr<WpaSupplicantImpl> mImpl;
-  nsAutoPtr<WifiHotspotUtils> mWifiHotspotUtils;
+  UniquePtr<WpaSupplicantImpl> mImpl;
+  UniquePtr<WifiHotspotUtils> mWifiHotspotUtils;
 
   uint32_t mSdkVersion;
 
