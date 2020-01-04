@@ -39,6 +39,7 @@ public:
     kCandidateAttribute,
     kConnectionAttribute,
     kDirectionAttribute,
+    kDtlsMessageAttribute,
     kEndOfCandidatesAttribute,
     kExtmapAttribute,
     kFingerprintAttribute,
@@ -219,6 +220,67 @@ inline std::ostream& operator<<(std::ostream& os,
   }
   return os;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+class SdpDtlsMessageAttribute : public SdpAttribute
+{
+public:
+  enum Role {
+    kClient,
+    kServer
+  };
+
+  explicit SdpDtlsMessageAttribute(Role role, const std::string& value)
+    : SdpAttribute(kDtlsMessageAttribute),
+      mRole(role),
+      mValue(value)
+  {}
+
+  explicit SdpDtlsMessageAttribute(const std::string& unparsed)
+    : SdpAttribute(kDtlsMessageAttribute),
+      mRole(kClient)
+  {
+    std::istringstream is(unparsed);
+    std::string error;
+    
+    
+    Parse(is, &error);
+  }
+
+  virtual void Serialize(std::ostream& os) const override;
+  bool Parse(std::istream& is, std::string* error);
+
+  Role mRole;
+  std::string mValue;
+};
+
+inline std::ostream& operator<<(std::ostream& os,
+                                SdpDtlsMessageAttribute::Role r)
+{
+  switch (r) {
+    case SdpDtlsMessageAttribute::kClient:
+      os << "client";
+      break;
+    case SdpDtlsMessageAttribute::kServer:
+      os << "server";
+      break;
+    default:
+      MOZ_ASSERT(false);
+      os << "?";
+  }
+  return os;
+}
+
 
 
 

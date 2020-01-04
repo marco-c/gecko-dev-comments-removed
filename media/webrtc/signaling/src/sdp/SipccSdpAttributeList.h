@@ -49,6 +49,7 @@ public:
   virtual const SdpSetupAttribute& GetSetup() const override;
   virtual const SdpSsrcAttributeList& GetSsrc() const override;
   virtual const SdpSsrcGroupAttributeList& GetSsrcGroup() const override;
+  virtual const SdpDtlsMessageAttribute& GetDtlsMessage() const override;
 
   
   
@@ -114,6 +115,7 @@ private:
                          uint16_t level,
                          SdpErrorHolder& errorHolder);
   void LoadIdentity(sdp_t* sdp, uint16_t level);
+  void LoadDtlsMessage(sdp_t* sdp, uint16_t level);
   void LoadFmtp(sdp_t* sdp, uint16_t level);
   void LoadMsids(sdp_t* sdp, uint16_t level, SdpErrorHolder& errorHolder);
   bool LoadRid(sdp_t* sdp, uint16_t level, SdpErrorHolder& errorHolder);
