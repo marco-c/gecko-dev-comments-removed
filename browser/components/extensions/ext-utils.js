@@ -686,6 +686,15 @@ global.TabManager = {
 
 
 
+
+
+
+
+
+
+
+
+
   getTab(tabId, context, default_ = undefined) {
     
     for (let window of WindowListManager.browserWindows()) {
