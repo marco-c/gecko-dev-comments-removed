@@ -2239,6 +2239,11 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument,
     }
   }
 
+  sheet = nsLayoutStylesheetCache::FullScreenOverrideSheet();
+  if (sheet) {
+    styleSet->PrependStyleSheet(nsStyleSet::eOverrideSheet, sheet);
+  }
+
   if (!aDocument->IsSVGDocument()) {
     
     
