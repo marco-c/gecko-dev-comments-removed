@@ -199,9 +199,10 @@ function setPassword()
     success = true;
   }
 
-  if (success && params)
+  if (success && params) {
     
     params.SetInt(1, 1);
+  }
 
   
   return success;
