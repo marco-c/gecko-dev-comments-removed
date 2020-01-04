@@ -252,7 +252,7 @@ nsStackLayout::GetOffset(nsIFrame* aChild, nsMargin& aOffset)
 
 
 NS_IMETHODIMP
-nsStackLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
+nsStackLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
   nsRect clientRect;
   aBox->GetClientRect(clientRect);
@@ -339,7 +339,7 @@ nsStackLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
           child->SetXULBounds(aState, childRect);
 
           
-          child->Layout(aState);
+          child->XULLayout(aState);
 
           
           childRect = child->GetRect();

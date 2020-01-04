@@ -168,7 +168,7 @@ HandleBoxPack(nsIFrame* aBox, const nsFrameState& aFrameState, nscoord& aX, nsco
 }
 
 NS_IMETHODIMP
-nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
+nsSprocketLayout::XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
   
   
@@ -481,7 +481,7 @@ nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
       
       
       if (layout || sizeChanged)
-        child->Layout(aState);
+        child->XULLayout(aState);
       
       
       
@@ -1136,7 +1136,7 @@ nsSprocketLayout::ChildResized(nsIFrame* aBox,
           rect.Deflate(margin);
 
         aChild->SetXULBounds(aState, rect);
-        aChild->Layout(aState);
+        aChild->XULLayout(aState);
       }
 
 }

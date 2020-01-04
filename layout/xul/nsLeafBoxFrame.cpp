@@ -301,7 +301,7 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
   SetXULBounds(state, r);
  
   
-  Layout(state);
+  XULLayout(state);
   
   
   aDesiredSize.Width() = mRect.width;

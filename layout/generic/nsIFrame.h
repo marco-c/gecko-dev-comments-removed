@@ -2908,7 +2908,7 @@ public:
   
   virtual void SetXULBounds(nsBoxLayoutState& aBoxLayoutState, const nsRect& aRect,
                             bool aRemoveOverflowAreas = false) = 0;
-  nsresult Layout(nsBoxLayoutState& aBoxLayoutState);
+  nsresult XULLayout(nsBoxLayoutState& aBoxLayoutState);
   
   
   virtual nsresult GetBorderAndPadding(nsMargin& aBorderAndPadding);
