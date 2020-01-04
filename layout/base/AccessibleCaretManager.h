@@ -76,9 +76,6 @@ public:
   virtual void OnScrollEnd();
 
   
-  virtual void OnScrolling();
-
-  
   
   virtual void OnScrollPositionChanged();
 
