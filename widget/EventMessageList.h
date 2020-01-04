@@ -238,7 +238,7 @@ NS_EVENT_MESSAGE(eQuerySelectionAsTransferable, eQueryContentEventFirst + 7)
 
 
 
-NS_EVENT_MESSAGE(NS_QUERY_CHARACTER_AT_POINT,   eQueryContentEventFirst + 8)
+NS_EVENT_MESSAGE(eQueryCharacterAtPoint,        eQueryContentEventFirst + 8)
 
 
 NS_EVENT_MESSAGE(NS_QUERY_DOM_WIDGET_HITTEST,   eQueryContentEventFirst + 9)
