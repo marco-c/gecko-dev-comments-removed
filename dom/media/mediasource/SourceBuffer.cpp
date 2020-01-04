@@ -512,21 +512,12 @@ SourceBuffer::PrepareAppend(const uint8_t* aData, uint32_t aLength, ErrorResult&
   
   
   
-  
-  
-  
-  TimeUnit newBufferStartTime;
-  
-  
   Result evicted =
     mTrackBuffersManager->EvictData(TimeUnit::FromSeconds(mMediaSource->GetDecoder()->GetCurrentTime()),
-                                    aLength, &newBufferStartTime);
+                                    aLength);
 
   
-  
-  
-  if (aLength > mTrackBuffersManager->EvictionThreshold() ||
-      evicted == Result::BUFFER_FULL) {
+  if (evicted == Result::BUFFER_FULL) {
     aRv.Throw(NS_ERROR_DOM_QUOTA_EXCEEDED_ERR);
     return nullptr;
   }

@@ -109,10 +109,7 @@ public:
   
   
   
-  EvictDataResult
-  EvictData(media::TimeUnit aPlaybackTime,
-            int64_t aThresholdReduct,
-            media::TimeUnit* aBufferStartTime);
+  EvictDataResult EvictData(const media::TimeUnit& aPlaybackTime, int64_t aSize);
 
   
   
@@ -120,7 +117,7 @@ public:
   media::TimeIntervals Buffered();
 
   
-  int64_t GetSize();
+  int64_t GetSize() const;
 
   
   void Ended();
