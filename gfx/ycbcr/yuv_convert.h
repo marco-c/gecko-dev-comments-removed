@@ -6,7 +6,6 @@
 #define MEDIA_BASE_YUV_CONVERT_H_
 
 #include "chromium_types.h"
-#include "gfxCore.h"
 
 namespace mozilla {
 
@@ -41,39 +40,39 @@ enum ScaleFilter {
   FILTER_BILINEAR = 3     
 };
 
-NS_GFX_(YUVType) TypeFromSize(int ywidth, int yheight, int cbcrwidth, int cbcrheight);
+YUVType TypeFromSize(int ywidth, int yheight, int cbcrwidth, int cbcrheight);
 
 
 
-NS_GFX_(void) ConvertYCbCrToRGB32(const uint8* yplane,
-                                  const uint8* uplane,
-                                  const uint8* vplane,
-                                  uint8* rgbframe,
-                                  int pic_x,
-                                  int pic_y,
-                                  int pic_width,
-                                  int pic_height,
-                                  int ystride,
-                                  int uvstride,
-                                  int rgbstride,
-                                  YUVType yuv_type);
+void ConvertYCbCrToRGB32(const uint8* yplane,
+                         const uint8* uplane,
+                         const uint8* vplane,
+                         uint8* rgbframe,
+                         int pic_x,
+                         int pic_y,
+                         int pic_width,
+                         int pic_height,
+                         int ystride,
+                         int uvstride,
+                         int rgbstride,
+                         YUVType yuv_type);
 
 
 
-NS_GFX_(void) ScaleYCbCrToRGB32(const uint8* yplane,
-                                const uint8* uplane,
-                                const uint8* vplane,
-                                uint8* rgbframe,
-                                int source_width,
-                                int source_height,
-                                int width,
-                                int height,
-                                int ystride,
-                                int uvstride,
-                                int rgbstride,
-                                YUVType yuv_type,
-                                Rotate view_rotate,
-                                ScaleFilter filter);
+void ScaleYCbCrToRGB32(const uint8* yplane,
+                       const uint8* uplane,
+                       const uint8* vplane,
+                       uint8* rgbframe,
+                       int source_width,
+                       int source_height,
+                       int width,
+                       int height,
+                       int ystride,
+                       int uvstride,
+                       int rgbstride,
+                       YUVType yuv_type,
+                       Rotate view_rotate,
+                       ScaleFilter filter);
 
 } 
 } 

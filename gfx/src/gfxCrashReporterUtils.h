@@ -6,7 +6,6 @@
 #ifndef gfxCrashReporterUtils_h__
 #define gfxCrashReporterUtils_h__
 
-#include "gfxCore.h"
 
 namespace mozilla {
 
@@ -21,7 +20,7 @@ namespace mozilla {
 
 
 
-class NS_GFX ScopedGfxFeatureReporter
+class ScopedGfxFeatureReporter
 {
 public:
   explicit ScopedGfxFeatureReporter(const char *aFeature, bool force = false)

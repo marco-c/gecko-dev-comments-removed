@@ -10,7 +10,6 @@
 #include <stdio.h>                      
 #include <stdint.h>                     
 #include <algorithm>                    
-#include "gfxCore.h"                    
 #include "mozilla/Likely.h"             
 #include "mozilla/gfx/Rect.h"
 #include "nsCoord.h"                    
@@ -24,7 +23,7 @@ struct nsIntMargin;
 
 typedef mozilla::gfx::IntRect nsIntRect;
 
-struct NS_GFX nsRect :
+struct nsRect :
   public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize, nsMargin> {
   typedef mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize, nsMargin> Super;
 
@@ -290,7 +289,7 @@ ToAppUnits(const mozilla::gfx::IntRect& aRect, nscoord aAppUnitsPerPixel);
 
 #ifdef DEBUG
 
-extern NS_GFX FILE* operator<<(FILE* out, const nsRect& rect);
+extern FILE* operator<<(FILE* out, const nsRect& rect);
 #endif 
 
 #endif 

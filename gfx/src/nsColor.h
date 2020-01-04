@@ -8,7 +8,6 @@
 
 #include <stddef.h>                     
 #include <stdint.h>                     
-#include "gfxCore.h"                    
 #include "nscore.h"                     
 
 class nsAString;
@@ -53,37 +52,37 @@ typedef uint32_t nscolor;
 
 
 
-NS_GFX_(bool) NS_HexToRGB(const nsAString& aBuf, nscolor* aResult);
+bool NS_HexToRGB(const nsAString& aBuf, nscolor* aResult);
 
 
 
-NS_GFX_(nscolor) NS_ComposeColors(nscolor aBG, nscolor aFG);
-
-
-
-
-NS_GFX_(bool) NS_LooseHexToRGB(const nsString& aBuf, nscolor* aResult);
+nscolor NS_ComposeColors(nscolor aBG, nscolor aFG);
 
 
 
 
-
-
-NS_GFX_(bool) NS_ColorNameToRGB(const nsAString& aBuf, nscolor* aResult);
-
-
-
-NS_GFX_(const char * const *) NS_AllColorNames(size_t *aSizeArray);
-
-
-
-NS_GFX_(nscolor) NS_HSL2RGB(float h, float s, float l);
+bool NS_LooseHexToRGB(const nsString& aBuf, nscolor* aResult);
 
 
 
 
 
 
-NS_GFX_(const char*) NS_RGBToColorName(nscolor aColor);
+bool NS_ColorNameToRGB(const nsAString& aBuf, nscolor* aResult);
+
+
+
+const char * const * NS_AllColorNames(size_t *aSizeArray);
+
+
+
+nscolor NS_HSL2RGB(float h, float s, float l);
+
+
+
+
+
+
+const char* NS_RGBToColorName(nscolor aColor);
 
 #endif 

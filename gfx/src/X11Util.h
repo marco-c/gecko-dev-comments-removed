@@ -22,7 +22,6 @@
 #endif 
 
 #include <string.h>                     
-#include "gfxCore.h"                    
 #include "mozilla/Scoped.h"             
 
 namespace mozilla {
@@ -91,7 +90,7 @@ SCOPED_TEMPLATE(ScopedXFree, ScopedXFreePtrTraits)
 
 
 
-class NS_GFX ScopedXErrorHandler
+class ScopedXErrorHandler
 {
 public:
     
