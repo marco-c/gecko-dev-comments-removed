@@ -7,8 +7,9 @@
 #ifndef js_TraceKind_h
 #define js_TraceKind_h
 
-#include "js/TypeDecls.h"
 #include "mozilla/UniquePtr.h"
+
+#include "js/TypeDecls.h"
 
 
 namespace js {
