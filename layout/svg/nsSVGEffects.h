@@ -322,6 +322,24 @@ protected:
   virtual void DoUpdate() override;
 };
 
+class nsSVGMaskProperty final : public nsISupports
+{
+public:
+  explicit nsSVGMaskProperty(nsIFrame* aFrame);
+
+  
+  NS_DECL_ISUPPORTS
+
+  const nsTArray<RefPtr<nsSVGPaintingProperty>>& GetProps() const
+  {
+    return mProperties;
+  }
+
+private:
+  virtual ~nsSVGMaskProperty() {}
+  nsTArray<RefPtr<nsSVGPaintingProperty>> mProperties;
+};
+
 
 
 
@@ -407,7 +425,7 @@ public:
 
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(FilterProperty, nsSVGFilterProperty,
                                       DestroyFilterProperty)
-  NS_DECLARE_FRAME_PROPERTY_RELEASABLE(MaskProperty, nsISupports)
+  NS_DECLARE_FRAME_PROPERTY_RELEASABLE(MaskProperty, nsSVGMaskProperty)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(ClipPathProperty, nsISupports)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(MarkerBeginProperty, nsISupports)
   NS_DECLARE_FRAME_PROPERTY_RELEASABLE(MarkerMiddleProperty, nsISupports)
@@ -427,7 +445,7 @@ public:
 
   struct EffectProperties {
     nsSVGFilterProperty*   mFilter;
-    nsSVGPaintingProperty* mMask;
+    nsSVGMaskProperty*     mMask;
     nsSVGPaintingProperty* mClipPath;
 
     
@@ -443,7 +461,12 @@ public:
 
 
 
-    nsSVGMaskFrame *GetMaskFrame(bool *aOK);
+    nsSVGMaskFrame *GetFirstMaskFrame(bool *aOK = nullptr);
+
+    
+
+
+    nsTArray<nsSVGMaskFrame*> GetMaskFrames();
 
     bool HasValidFilter() {
       return mFilter && mFilter->ReferencesValidResources();

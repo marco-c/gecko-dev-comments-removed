@@ -416,7 +416,7 @@ HasMaskToDraw(const nsStyleSVGReset* aSVGReset,
   bool isOK = true;
   
   
-  nsSVGMaskFrame *svgMaskFrame = aEffectProperties.GetMaskFrame(&isOK);
+  nsSVGMaskFrame *svgMaskFrame = aEffectProperties.GetFirstMaskFrame(&isOK);
 
   
   
@@ -443,10 +443,9 @@ GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
   const nsStyleSVGReset *svgReset = aSC->StyleSVGReset();
   MOZ_ASSERT(HasMaskToDraw(svgReset, aEffectProperties));
 
-  bool isOK = true;
   
   
-  nsSVGMaskFrame *svgMaskFrame = aEffectProperties.GetMaskFrame(&isOK);
+  nsSVGMaskFrame *svgMaskFrame = aEffectProperties.GetFirstMaskFrame();
   gfxContext& ctx = aParams.ctx;
 
   if (svgMaskFrame) {
