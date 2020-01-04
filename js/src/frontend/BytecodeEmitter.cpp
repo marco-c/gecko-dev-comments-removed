@@ -2344,6 +2344,10 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
         MOZ_ASSERT(pn->pn_count == 1);
         return checkSideEffects(pn->pn_head, answer);
 
+      case PNK_ANNEXB_FUNCTION:
+        MOZ_ASSERT(pn->isArity(PN_BINARY));
+        return checkSideEffects(pn->pn_left, answer);
+
       case PNK_ARGSBODY:
         *answer = true;
         return true;
@@ -5292,6 +5296,23 @@ BytecodeEmitter::emitLetBlock(ParseNode* pnLet)
     return true;
 }
 
+bool
+BytecodeEmitter::emitHoistedFunctionsInList(ParseNode* list)
+{
+    MOZ_ASSERT(list->pn_xflags & PNX_FUNCDEFS);
+
+    for (ParseNode* pn = list->pn_head; pn; pn = pn->pn_next) {
+        if (pn->isKind(PNK_ANNEXB_FUNCTION) ||
+            (pn->isKind(PNK_FUNCTION) && pn->functionIsHoisted()))
+        {
+            if (!emitTree(pn))
+                return false;
+        }
+    }
+
+    return true;
+}
+
 
 
 MOZ_NEVER_INLINE bool
@@ -5303,7 +5324,17 @@ BytecodeEmitter::emitLexicalScope(ParseNode* pn)
     if (!enterBlockScope(&stmtInfo, pn->pn_objbox, JSOP_UNINITIALIZED, 0))
         return false;
 
-    if (!emitTree(pn->pn_expr))
+    ParseNode* body = pn->pn_expr;
+
+    if (body->isKind(PNK_STATEMENTLIST) && body->pn_xflags & PNX_FUNCDEFS) {
+        
+        
+        
+        if (!emitHoistedFunctionsInList(body))
+            return false;
+    }
+
+    if (!emitTree(body))
         return false;
 
     if (!leaveNestedScope(&stmtInfo))
@@ -6164,6 +6195,12 @@ BytecodeEmitter::emitComprehensionFor(ParseNode* compFor)
 MOZ_NEVER_INLINE bool
 BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 {
+    ParseNode* assignmentForAnnexB = nullptr;
+    if (pn->isKind(PNK_ANNEXB_FUNCTION)) {
+        assignmentForAnnexB = pn->pn_right;
+        pn = pn->pn_left;
+    }
+
     FunctionBox* funbox = pn->pn_funbox;
     RootedFunction fun(cx, funbox->function());
     MOZ_ASSERT_IF(fun->isInterpretedLazy(), fun->lazyScript());
@@ -6174,9 +6211,24 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
 
     if (funbox->wasEmitted) {
+        
+        
+        
+        
+        if (assignmentForAnnexB) {
+            if (!emitTree(assignmentForAnnexB))
+                return false;
+
+            
+            
+            if (assignmentForAnnexB->isKind(PNK_ASSIGN)) {
+                if (!emit1(JSOP_POP))
+                    return false;
+            }
+        }
+
         MOZ_ASSERT_IF(fun->hasScript(), fun->nonLazyScript());
         MOZ_ASSERT(pn->functionIsHoisted());
-        MOZ_ASSERT(sc->isFunctionBox());
         return true;
     }
 
@@ -6284,7 +6336,15 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
 
 
-    if (sc->isGlobalContext()) {
+    if (!atBodyLevel()) {
+        if (!emitIndexOp(JSOP_LAMBDA, index))
+            return false;
+        MOZ_ASSERT(pn->getOp() == JSOP_INITLEXICAL);
+        if (!emitVarOp(pn, pn->getOp()))
+            return false;
+        if (!emit1(JSOP_POP))
+            return false;
+    } else if (sc->isGlobalContext()) {
         MOZ_ASSERT(pn->pn_scopecoord.isFree());
         MOZ_ASSERT(pn->getOp() == JSOP_NOP);
         MOZ_ASSERT(atBodyLevel());
@@ -7924,7 +7984,6 @@ BytecodeEmitter::emitArgsBody(ParseNode *pn)
     
     
     
-    ParseNode* pnchild = pnlast->pn_head;
     bool hasDefaults = sc->asFunctionBox()->hasDefaults();
     ParseNode* rest = nullptr;
     bool restIsDefn = false;
@@ -7988,18 +8047,8 @@ BytecodeEmitter::emitArgsBody(ParseNode *pn)
         
         
         
-        
-        
-        
-        
-        
-        
-        for (ParseNode* pn2 = pnchild; pn2; pn2 = pn2->pn_next) {
-            if (pn2->isKind(PNK_FUNCTION) && pn2->functionIsHoisted()) {
-                if (!emitTree(pn2))
-                    return false;
-            }
-        }
+        if (!emitHoistedFunctionsInList(pnlast))
+            return false;
     }
     return emitTree(pnlast);
 }
@@ -8218,6 +8267,7 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
 
     switch (pn->getKind()) {
       case PNK_FUNCTION:
+      case PNK_ANNEXB_FUNCTION:
         if (!emitFunction(pn))
             return false;
         break;

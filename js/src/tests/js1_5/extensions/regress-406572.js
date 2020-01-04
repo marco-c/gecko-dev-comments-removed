@@ -22,12 +22,14 @@ if (typeof window != 'undefined')
     window = 1;
     reportCompare(windowString, String(window), "window should be readonly");
 
-    actual = ""; 
-
     if (1)
       function window() { return 1; }
 
-    actual = "FAIL: this line should never be reached";
+    
+    
+    
+    
+    actual = "";
 
     
     

@@ -1196,18 +1196,6 @@ bool
 Parser<FullParseHandler>::checkFunctionArguments()
 {
     
-
-
-
-    if (FuncStmtSet* set = pc->funcStmts) {
-        for (FuncStmtSet::Range r = set->all(); !r.empty(); r.popFront()) {
-            PropertyName* name = r.front()->asPropertyName();
-            if (Definition* dn = pc->decls().lookupFirst(name))
-                dn->pn_dflags |= PND_CLOSED;
-        }
-    }
-
-    
     HandlePropertyName arguments = context->names().arguments;
 
     
@@ -1487,18 +1475,22 @@ struct BindData
     void initLexical(VarContext varContext, JSOp op, StaticBlockObject* blockObj,
                      unsigned overflow)
     {
-        init(LexicalBinding, op, op == JSOP_DEFCONST);
+        init(LexicalBinding, op, op == JSOP_DEFCONST, false);
         letData_.varContext = varContext;
         letData_.blockObj = blockObj;
         letData_.overflow = overflow;
     }
 
     void initVar(JSOp op) {
-        init(VarBinding, op, false);
+        init(VarBinding, op, false, false);
+    }
+
+    void initAnnexBVar() {
+        init(VarBinding, JSOP_DEFVAR, false, true);
     }
 
     void initDestructuring(JSOp op) {
-        init(DestructuringBinding, op, false);
+        init(DestructuringBinding, op, false, false);
     }
 
     void setNameNode(typename ParseHandler::Node pn) {
@@ -1519,6 +1511,11 @@ struct BindData
     bool isConst() {
         MOZ_ASSERT(isInitialized());
         return isConst_;
+    }
+
+    bool isAnnexB() {
+        MOZ_ASSERT(isInitialized());
+        return isAnnexB_;
     }
 
     const LetData& letData() {
@@ -1557,17 +1554,19 @@ struct BindData
 
     JSOp op_;         
     bool isConst_;    
+    bool isAnnexB_;   
     LetData letData_;
 
     bool isInitialized() {
         return kind_ != Uninitialized;
     }
 
-    void init(BindingKind kind, JSOp op, bool isConst) {
+    void init(BindingKind kind, JSOp op, bool isConst, bool isAnnexB) {
         MOZ_ASSERT(!isInitialized());
         kind_ = kind;
         op_ = op;
         isConst_ = isConst;
+        isAnnexB_ = isAnnexB;
     }
 };
 
@@ -2233,136 +2232,191 @@ Parser<ParseHandler>::functionArguments(YieldHandling yieldHandling, FunctionSyn
 
 template <>
 bool
+Parser<FullParseHandler>::bindBodyLevelFunctionName(HandlePropertyName funName,
+                                                    ParseNode** pn_)
+{
+    MOZ_ASSERT(pc->atBodyLevel() || !pc->sc->strict());
+
+    ParseNode*& pn = *pn_;
+
+    
+
+
+
+    if (Definition* dn = pc->decls().lookupFirst(funName)) {
+        MOZ_ASSERT(!dn->isUsed());
+        MOZ_ASSERT(dn->isDefn());
+
+        if (dn->kind() == Definition::CONSTANT || dn->kind() == Definition::LET)
+            return reportRedeclaration(nullptr, Definition::VAR, funName);
+
+        
+
+
+
+
+
+
+
+        if (dn->kind() == Definition::ARG) {
+            
+            
+            
+            
+            pn->setOp(JSOP_GETARG);
+            pn->setDefn(true);
+            pn->pn_scopecoord = dn->pn_scopecoord;
+            pn->pn_blockid = dn->pn_blockid;
+            pn->pn_dflags |= PND_BOUND;
+            dn->markAsAssigned();
+        } else {
+            if (!makeDefIntoUse(dn, pn, funName))
+                return false;
+        }
+    } else {
+        
+
+
+
+
+        if (Definition* fn = pc->lexdeps.lookupDefn<FullParseHandler>(funName)) {
+            MOZ_ASSERT(fn->isDefn());
+            fn->setKind(PNK_FUNCTION);
+            fn->setArity(PN_CODE);
+            fn->pn_pos.begin = pn->pn_pos.begin;
+            fn->pn_pos.end = pn->pn_pos.end;
+
+            fn->pn_body = nullptr;
+            fn->pn_scopecoord.makeFree();
+
+            pc->lexdeps->remove(funName);
+            handler.freeTree(pn);
+            pn = fn;
+        }
+
+        if (!pc->define(tokenStream, funName, pn, Definition::VAR))
+            return false;
+    }
+
+    
+    pn->pn_dflags |= PND_BOUND;
+
+    MOZ_ASSERT(pn->functionIsHoisted());
+    MOZ_ASSERT(pc->sc->isGlobalContext() == pn->pn_scopecoord.isFree());
+
+    return true;
+}
+
+template <>
+bool
+Parser<FullParseHandler>::bindLexicalFunctionName(HandlePropertyName funName,
+                                                  ParseNode* pn);
+
+template <>
+bool
 Parser<FullParseHandler>::checkFunctionDefinition(HandlePropertyName funName,
                                                   ParseNode** pn_, FunctionSyntaxKind kind,
-                                                  bool* pbodyProcessed)
+                                                  bool* pbodyProcessed,
+                                                  ParseNode** assignmentForAnnexBOut)
 {
     ParseNode*& pn = *pn_;
     *pbodyProcessed = false;
 
-    
-    bool bodyLevel = pc->atBodyLevel();
-
     if (kind == Statement) {
-        
+        MOZ_ASSERT(assignmentForAnnexBOut);
+        *assignmentForAnnexBOut = nullptr;
 
-
-
-        if (Definition* dn = pc->decls().lookupFirst(funName)) {
-            MOZ_ASSERT(!dn->isUsed());
-            MOZ_ASSERT(dn->isDefn());
-
-            bool throwRedeclarationError = dn->kind() == Definition::CONSTANT ||
-                                           dn->kind() == Definition::LET;
-            if (options().extraWarningsOption || throwRedeclarationError) {
-                JSAutoByteString name;
-                ParseReportKind reporter = throwRedeclarationError
-                                           ? ParseError
-                                           : ParseExtraWarning;
-                if (!AtomToPrintableString(context, funName, &name) ||
-                    !report(reporter, false, nullptr, JSMSG_REDECLARED_VAR,
-                            Definition::kindString(dn->kind()), name.ptr()))
-                {
-                    return false;
-                }
-            }
-
-            
-
-
-
-
-
-
-
-            if (bodyLevel) {
-                if (dn->kind() == Definition::ARG) {
-                    
-                    
-                    
-                    
-                    pn->setOp(JSOP_GETARG);
-                    pn->setDefn(true);
-                    pn->pn_scopecoord = dn->pn_scopecoord;
-                    pn->pn_blockid = dn->pn_blockid;
-                    pn->pn_dflags |= PND_BOUND;
-                    dn->markAsAssigned();
-                } else {
-                    if (!makeDefIntoUse(dn, pn, funName))
-                        return false;
-                }
-            }
-        } else if (bodyLevel) {
-            
-
-
-
-
-            if (Definition* fn = pc->lexdeps.lookupDefn<FullParseHandler>(funName)) {
-                MOZ_ASSERT(fn->isDefn());
-                fn->setKind(PNK_FUNCTION);
-                fn->setArity(PN_CODE);
-                fn->pn_pos.begin = pn->pn_pos.begin;
-                fn->pn_pos.end = pn->pn_pos.end;
-
-                fn->pn_body = nullptr;
-                fn->pn_scopecoord.makeFree();
-
-                pc->lexdeps->remove(funName);
-                handler.freeTree(pn);
-                pn = fn;
-            }
-
-            if (!pc->define(tokenStream, funName, pn, Definition::VAR))
+        if (pc->atBodyLevel()) {
+            if (!bindBodyLevelFunctionName(funName, pn_))
                 return false;
-        }
-
-        if (bodyLevel) {
-            MOZ_ASSERT(pn->functionIsHoisted());
-            MOZ_ASSERT(pc->sc->isGlobalContext() == pn->pn_scopecoord.isFree());
         } else {
-            
+            Definition* annexDef = nullptr;
+            Node synthesizedDeclarationList = null();
 
+            if (!pc->sc->strict()) {
+                
+                
+                
+                
+                
 
+                annexDef = pc->decls().lookupFirst(funName);
+                if (annexDef) {
+                    if (annexDef->kind() == Definition::CONSTANT ||
+                        annexDef->kind() == Definition::LET)
+                    {
+                        
+                        
+                        annexDef = nullptr;
+                    }
+                } else {
+                    
+                    ParseNode* varNode = newBindingNode(funName,  true);
+                    if (!varNode)
+                        return false;
 
+                    
+                    
+                    
+                    
+                    
+                    varNode->pn_blockid = pc->bodyid;
 
-            MOZ_ASSERT(!pc->sc->strict());
-            MOZ_ASSERT(pn->pn_scopecoord.isFree());
-            if (pc->sc->isFunctionBox()) {
-                FunctionBox* funbox = pc->sc->asFunctionBox();
-                funbox->setMightAliasLocals();
-                funbox->setHasExtensibleScope();
-            }
-            pn->setOp(JSOP_DEFFUN);
+                    BindData<FullParseHandler> data(context);
+                    data.initAnnexBVar();
+                    data.setNameNode(varNode);
+                    if (!data.bind(funName, this))
+                        return false;
 
-            
+                    MOZ_ASSERT(varNode->isDefn());
+                    annexDef = static_cast<Definition*>(varNode);
 
-
-
-
-
-            if (!pc->funcStmts) {
-                pc->funcStmts = alloc.new_<FuncStmtSet>(alloc);
-                if (!pc->funcStmts || !pc->funcStmts->init()) {
-                    ReportOutOfMemory(context);
-                    return false;
+                    synthesizedDeclarationList = handler.newDeclarationList(PNK_VAR, JSOP_DEFVAR);
+                    if (!synthesizedDeclarationList)
+                        return false;
+                    handler.addList(synthesizedDeclarationList, annexDef);
                 }
             }
-            if (!pc->funcStmts->put(funName))
+
+            if (!bindLexicalFunctionName(funName, pn))
                 return false;
 
-            
+            if (annexDef) {
+                MOZ_ASSERT(!pc->sc->strict());
 
+                
+                
 
+                ParseNode* rhs = newName(funName);
+                if (!rhs)
+                    return false;
+                if (!noteNameUse(funName, rhs))
+                    return false;
 
+                
+                
+                
+                if (synthesizedDeclarationList) {
+                    if (!handler.finishInitializerAssignment(annexDef, rhs))
+                        return false;
+                    *assignmentForAnnexBOut = synthesizedDeclarationList;
+                } else {
+                    ParseNode* lhs = newName(funName);
+                    if (!lhs)
+                        return false;
+                    lhs->setOp(JSOP_SETNAME);
 
+                    
+                    handler.linkUseToDef(lhs, annexDef);
 
-            if (funName == context->names().arguments)
-                pc->sc->setBindingsAccessedDynamically();
+                    ParseNode* assign = handler.newAssignment(PNK_ASSIGN, lhs, rhs, pc, JSOP_NOP);
+                    if (!assign)
+                        return false;
+
+                    *assignmentForAnnexBOut = assign;
+                }
+            }
         }
-
-        
-        pn->pn_dflags |= PND_BOUND;
     } else {
         
         pn->setOp(kind == Arrow ? JSOP_LAMBDA_ARROW : JSOP_LAMBDA);
@@ -2471,7 +2525,8 @@ template <>
 bool
 Parser<SyntaxParseHandler>::checkFunctionDefinition(HandlePropertyName funName,
                                                     Node* pn, FunctionSyntaxKind kind,
-                                                    bool* pbodyProcessed)
+                                                    bool* pbodyProcessed,
+                                                    Node* assignmentForAnnexBOut)
 {
     *pbodyProcessed = false;
 
@@ -2479,7 +2534,15 @@ Parser<SyntaxParseHandler>::checkFunctionDefinition(HandlePropertyName funName,
     bool bodyLevel = pc->atBodyLevel();
 
     if (kind == Statement) {
+        *assignmentForAnnexBOut = null();
+
+        if (!bodyLevel) {
+            
+            return abortIfSyntaxParser();
+        }
+
         
+
 
 
 
@@ -2493,16 +2556,13 @@ Parser<SyntaxParseHandler>::checkFunctionDefinition(HandlePropertyName funName,
                     return false;
                 }
             }
-        } else if (bodyLevel) {
+        } else {
             if (pc->lexdeps.lookupDefn<SyntaxParseHandler>(funName))
                 pc->lexdeps->remove(funName);
 
             if (!pc->define(tokenStream, funName, *pn, Definition::VAR))
                 return false;
         }
-
-        if (!bodyLevel && funName == context->names().arguments)
-            pc->sc->setBindingsAccessedDynamically();
     }
 
     if (kind == Arrow) {
@@ -2583,7 +2643,8 @@ template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::functionDef(InHandling inHandling, YieldHandling yieldHandling,
                                   HandlePropertyName funName, FunctionSyntaxKind kind,
-                                  GeneratorKind generatorKind, InvokedPrediction invoked)
+                                  GeneratorKind generatorKind, InvokedPrediction invoked,
+                                  Node* assignmentForAnnexBOut)
 {
     MOZ_ASSERT_IF(kind == Statement, funName);
 
@@ -2591,12 +2652,13 @@ Parser<ParseHandler>::functionDef(InHandling inHandling, YieldHandling yieldHand
     Node pn = handler.newFunctionDefinition();
     if (!pn)
         return null();
+    handler.setBlockId(pn, pc->blockid());
 
     if (invoked)
         pn = handler.setLikelyIIFE(pn);
 
     bool bodyProcessed;
-    if (!checkFunctionDefinition(funName, &pn, kind, &bodyProcessed))
+    if (!checkFunctionDefinition(funName, &pn, kind, &bodyProcessed, assignmentForAnnexBOut))
         return null();
 
     if (bodyProcessed)
@@ -2783,7 +2845,6 @@ Parser<FullParseHandler>::functionArgsAndBody(InHandling inHandling, ParseNode* 
         if (!addFreeVariablesFromLazyFunction(fun, pc))
             return false;
 
-        pn->pn_blockid = outerpc->blockid();
         PropagateTransitiveParseFlags(funbox, outerpc->sc);
         return true;
     } while (false);
@@ -2800,8 +2861,6 @@ Parser<FullParseHandler>::functionArgsAndBody(InHandling inHandling, ParseNode* 
 
     if (!leaveFunction(pn, outerpc, kind))
         return false;
-
-    pn->pn_blockid = outerpc->blockid();
 
     
 
@@ -3044,6 +3103,24 @@ Parser<ParseHandler>::functionStmt(YieldHandling yieldHandling, DefaultHandling 
 {
     MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_FUNCTION));
 
+    
+    
+    
+    Maybe<AutoPushStmtInfoPC> synthesizedStmtInfoForAnnexB;
+    Node synthesizedBlockForAnnexB = null();
+    StmtInfoPC *stmt = pc->innermostStmt();
+    if (!pc->sc->strict() && stmt &&
+        (stmt->type == StmtType::IF || stmt->type == StmtType::ELSE))
+    {
+        if (!abortIfSyntaxParser())
+            return null();
+
+        synthesizedStmtInfoForAnnexB.emplace(*this, StmtType::BLOCK);
+        synthesizedBlockForAnnexB = pushLexicalScope(*synthesizedStmtInfoForAnnexB);
+        if (!synthesizedBlockForAnnexB)
+            return null();
+    }
+
     RootedPropertyName name(context);
     GeneratorKind generatorKind = NotGenerator;
     TokenKind tt;
@@ -3071,12 +3148,35 @@ Parser<ParseHandler>::functionStmt(YieldHandling yieldHandling, DefaultHandling 
         return null();
     }
 
-    
-    if (!pc->atBodyLevel() && pc->sc->needStrictChecks() &&
-        !report(ParseStrictError, pc->sc->strict(), null(), JSMSG_STRICT_FUNCTION_STATEMENT))
+    Node assignmentForAnnexB;
+    Node fun = functionDef(InAllowed, yieldHandling, name, Statement, generatorKind,
+                           PredictUninvoked, &assignmentForAnnexB);
+    if (!fun)
         return null();
 
-    return functionDef(InAllowed, yieldHandling, name, Statement, generatorKind);
+    if (assignmentForAnnexB) {
+        fun = handler.newFunctionDefinitionForAnnexB(fun, assignmentForAnnexB);
+        if (!fun)
+            return null();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (synthesizedBlockForAnnexB) {
+        Node body = handler.newStatementList(pc->blockid(), handler.getPosition(fun));
+        if (!body)
+            return null();
+        handler.addStatementToList(body, fun, pc);
+        handler.setLexicalScopeBody(synthesizedBlockForAnnexB, body);
+        return synthesizedBlockForAnnexB;
+    }
+
+    return fun;
 }
 
 template <typename ParseHandler>
@@ -3680,19 +3780,24 @@ Parser<ParseHandler>::bindVar(BindData<ParseHandler>* data,
     StmtInfoPC* stmt = LexicalLookup(pc, name);
 
     if (stmt && stmt->type == StmtType::WITH) {
-        parser->handler.setFlag(pn, PND_DEOPTIMIZED);
-        if (pc->sc->isFunctionBox()) {
-            FunctionBox* funbox = pc->sc->asFunctionBox();
-            funbox->setMightAliasLocals();
-        }
-
         
+        
+        
+        
+        if (!data->isAnnexB()) {
+            parser->handler.setFlag(pn, PND_DEOPTIMIZED);
+            if (pc->sc->isFunctionBox()) {
+                FunctionBox* funbox = pc->sc->asFunctionBox();
+                funbox->setMightAliasLocals();
+            }
 
-
-
-
-        if (name == cx->names().arguments)
-            pc->sc->setHasDebuggerStatement();
+            
+            
+            
+            
+            if (name == cx->names().arguments)
+                pc->sc->setHasDebuggerStatement();
+        }
 
         
         
@@ -4424,7 +4529,7 @@ Parser<ParseHandler>::variables(YieldHandling yieldHandling,
                     if (!bindBeforeInitializer && !data.bind(name, this))
                         return null();
 
-                    if (!handler.finishInitializerAssignment(pn2, init, data.op()))
+                    if (!handler.finishInitializerAssignment(pn2, init))
                         return null();
                 }
             }
@@ -4542,7 +4647,7 @@ Parser<FullParseHandler>::prepareAndBindInitializedLexicalWithNode(HandlePropert
 {
     BindData<FullParseHandler> data(context);
     if (!checkAndPrepareLexical(isConst, pos))
-        return null();
+        return false;
     data.initLexical(HoistVars, isConst ? JSOP_DEFCONST : JSOP_DEFLET,
                      CurrentLexicalStaticBlock(pc), JSMSG_TOO_MANY_LOCALS);
     return bindInitialized(&data, name, pn);
@@ -4562,6 +4667,16 @@ Parser<FullParseHandler>::makeInitializedLexicalBinding(HandlePropertyName name,
         return null();
 
     return dn;
+}
+
+template <>
+bool
+Parser<FullParseHandler>::bindLexicalFunctionName(HandlePropertyName funName,
+                                                  ParseNode* pn)
+{
+    MOZ_ASSERT(!pc->atBodyLevel());
+    pn->pn_blockid = pc->blockid();
+    return prepareAndBindInitializedLexicalWithNode(funName,  false, pn, pos());
 }
 
 template <>
