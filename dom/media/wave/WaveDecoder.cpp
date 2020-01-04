@@ -3,15 +3,58 @@
 
 
 
+
+#include "WaveDemuxer.h"
+#include "mozilla/Preferences.h"
 #include "MediaDecoderStateMachine.h"
 #include "WaveReader.h"
 #include "WaveDecoder.h"
+#include "MediaFormatReader.h"
+#include "PDMFactory.h"
 
 namespace mozilla {
 
-MediaDecoderStateMachine* WaveDecoder::CreateStateMachine()
+MediaDecoder*
+WaveDecoder::Clone(MediaDecoderOwner* aOwner)
 {
-  return new MediaDecoderStateMachine(this, new WaveReader(this));
+  if (!IsEnabled())
+    return nullptr;
+
+  return new WaveDecoder(aOwner);
+}
+
+MediaDecoderStateMachine*
+WaveDecoder::CreateStateMachine()
+{
+  if (Preferences::GetBool("media.wave.decoder.enabled")) {
+    RefPtr<MediaDecoderReader> reader =
+        new MediaFormatReader(this, new WAVDemuxer(GetResource()));
+    return new MediaDecoderStateMachine(this, reader);
+  } else {
+    return new MediaDecoderStateMachine(this, new WaveReader(this));
+  }
+}
+
+
+bool
+WaveDecoder::IsEnabled()
+{
+  PDMFactory::Init();
+  RefPtr<PDMFactory> platform = new PDMFactory();
+  return platform->SupportsMimeType(NS_LITERAL_CSTRING("audio/x-wav"));
+}
+
+
+bool
+WaveDecoder::CanHandleMediaType(const nsACString& aType,
+                               const nsAString& aCodecs)
+{
+  if (aType.EqualsASCII("audio/wave") || aType.EqualsASCII("audio/x-wav") ||
+      aType.EqualsASCII("audio/wav")  || aType.EqualsASCII("audio/x-pn-wav")) {
+    return IsEnabled() && (aCodecs.IsEmpty() || aCodecs.EqualsASCII("1"));
+  }
+
+  return false;
 }
 
 } 
