@@ -1186,6 +1186,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
   bool hasListener = false;
   bool hasListenerForCurrentGroup = false;
   bool usingLegacyMessage = false;
+  bool hasRemovedListener = false;
   EventMessage eventMessage = aEvent->mMessage;
 
   while (true) {
@@ -1250,6 +1251,15 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
             }
 
             aEvent->mFlags.mInPassiveListener = listener->mFlags.mPassive;
+            Maybe<Listener> listenerHolder;
+            if (listener->mFlags.mOnce) {
+              
+              
+              
+              listenerHolder.emplace(Move(*listener));
+              listener = listenerHolder.ptr();
+              hasRemovedListener = true;
+            }
             if (NS_FAILED(HandleEventSubType(listener, *aDOMEvent, aCurrentTarget))) {
               aEvent->mFlags.mExceptionWasRaised = true;
             }
@@ -1285,6 +1295,36 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
   }
 
   aEvent->mCurrentTarget = nullptr;
+
+  if (hasRemovedListener) {
+    
+    
+    
+    
+    mListeners.RemoveElementsBy([](const Listener& aListener) {
+      return aListener.mListenerType == Listener::eNoListener;
+    });
+    NotifyEventListenerRemoved(aEvent->mSpecifiedEventType);
+    if (IsDeviceType(aEvent->mMessage)) {
+      
+      
+      bool hasAnyListener = false;
+      nsAutoTObserverArray<Listener, 2>::ForwardIterator iter(mListeners);
+      while (iter.HasMore()) {
+        Listener* listener = &iter.GetNext();
+        if (EVENT_TYPE_EQUALS(listener, aEvent->mMessage,
+                              aEvent->mSpecifiedEventType,
+                              aEvent->mSpecifiedEventTypeString,
+                               false)) {
+          hasAnyListener = true;
+          break;
+        }
+      }
+      if (!hasAnyListener) {
+        DisableDevice(aEvent->mMessage);
+      }
+    }
+  }
 
   if (mIsMainThreadELM && !hasListener) {
     mNoListenerForEvent = aEvent->mMessage;
@@ -1331,6 +1371,7 @@ EventListenerManager::AddEventListener(
     flags.mCapture = options.mCapture;
     flags.mInSystemGroup = options.mMozSystemGroup;
     flags.mPassive = options.mPassive;
+    flags.mOnce = options.mOnce;
   }
   flags.mAllowUntrustedEvents = aWantsUntrusted;
   return AddEventListenerByType(Move(aListenerHolder), aType, flags);

@@ -61,11 +61,14 @@ public:
   
   
   bool mPassive : 1;
+  
+  
+  bool mOnce : 1;
 
   EventListenerFlags() :
     mListenerIsJSListener(false),
     mCapture(false), mInSystemGroup(false), mAllowUntrustedEvents(false),
-    mPassive(false)
+    mPassive(false), mOnce(false)
   {
   }
 
