@@ -16,8 +16,8 @@
 
 
 
-#ifndef wasm_text_h
-#define wasm_text_h
+#ifndef wasm_text_to_binary_h
+#define wasm_text_to_binary_h
 
 #include "asmjs/WasmBinary.h"
 #include "js/Utility.h"
