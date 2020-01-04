@@ -308,24 +308,36 @@ var PerformanceController = {
     this.emit(EVENTS.RECORDING_EXPORTED, recording, file);
   }),
 
-  
+   
 
 
 
   clearRecordings: Task.async(function* () {
-    let latest = this.getLatestManualRecording();
-    if (latest && latest.isRecording()) {
-      yield this.stopRecording();
+    for (let i = this._recordings.length - 1; i >= 0; i--) {
+      let model = this._recordings[i];
+      if (!model.isConsole() && model.isRecording()) {
+        yield this.stopRecording();
+      }
+      
+      
+      if (!model.isRecording() && !model.isCompleted()) {
+        yield this.waitForStateChangeOnRecording(model, "recording-stopped");
+      }
+      
+      
+      if (model.isCompleted()) {
+        this.emit(EVENTS.RECORDING_DELETED, model);
+        this._recordings.splice(i, 1);
+      }
     }
-    
-    
-    if (latest && !latest.isCompleted()) {
-      yield this.waitForStateChangeOnRecording(latest, "recording-stopped");
+    if (this._recordings.length > 0) {
+      if (!this._recordings.includes(this.getCurrentRecording())) {
+        this.setCurrentRecording(this._recordings[0]);
+      }
     }
-
-    this._recordings.length = 0;
-    this.setCurrentRecording(null);
-    this.emit(EVENTS.RECORDINGS_CLEARED);
+    else {
+      this.setCurrentRecording(null);
+    }
   }),
 
   

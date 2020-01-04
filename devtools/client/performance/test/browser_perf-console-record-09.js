@@ -12,10 +12,15 @@ function* spawnTest() {
   let win = panel.panelWin;
   let { gFront, PerformanceController } = win;
 
+  yield startRecording(panel);
+  yield stopRecording(panel);
+
   info("Starting console.profile()...");
   yield consoleProfile(win);
   yield PerformanceController.clearRecordings();
-
+  let recordings = PerformanceController.getRecordings();
+  is(recordings.length, 1, "1 recording found");
+  is(recordings[0].isConsole(), true, "recording from console.profile is not cleared.");
   info("Ending console.profileEnd()...");
   consoleMethod("profileEnd");
   
@@ -25,6 +30,11 @@ function* spawnTest() {
   
   yield idleWait(100);
   ok(true, "Stopping an in-progress console profile after clearing recordings does not throw.");
+
+  yield PerformanceController.clearRecordings();
+  is(recordings.length, 0, "No recordings found");
+  is(PerformanceController.getCurrentRecording(), null,
+    "There should be no current recording.");
 
   yield teardown(panel);
   finish();
