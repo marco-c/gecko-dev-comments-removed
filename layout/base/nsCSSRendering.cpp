@@ -2532,6 +2532,79 @@ ResolvePremultipliedAlpha(nsTArray<ColorStop>& aStops)
   }
 }
 
+static ColorStop
+InterpolateColorStop(const ColorStop& aFirst, const ColorStop& aSecond,
+                     double aPosition, const Color& aDefault)
+{
+  MOZ_ASSERT(aFirst.mPosition <= aPosition);
+  MOZ_ASSERT(aPosition <= aSecond.mPosition);
+
+  double delta = aSecond.mPosition - aFirst.mPosition;
+
+  if (delta < 1e-6) {
+    return ColorStop(aPosition, false, aDefault);
+  }
+
+  return ColorStop(aPosition, false,
+                   Unpremultiply(InterpolateColor(Premultiply(aFirst.mColor),
+                                                  Premultiply(aSecond.mColor),
+                                                  (aPosition - aFirst.mPosition) / delta)));
+}
+
+
+
+static void
+ClampColorStops(nsTArray<ColorStop>& aStops)
+{
+  MOZ_ASSERT(aStops.Length() > 0);
+
+  
+  
+  if (aStops.Length() < 2 || aStops[0].mPosition > 1 ||
+      aStops.LastElement().mPosition < 0) {
+    Color c = aStops[0].mPosition > 1 ? aStops[0].mColor : aStops.LastElement().mColor;
+    aStops.Clear();
+    aStops.AppendElement(ColorStop(0, false, c));
+    return;
+  }
+
+  
+  
+  
+  
+  for (size_t i = aStops.Length() - 1; i > 0; i--) {
+    if (aStops[i - 1].mPosition < 1 && aStops[i].mPosition >= 1) {
+      
+      aStops[i] = InterpolateColorStop(aStops[i - 1], aStops[i],
+                                        1,
+                                       aStops[i - 1].mColor);
+      
+      aStops.RemoveElementsAt(i + 1, aStops.Length() - (i + 1));
+    }
+    if (aStops[i - 1].mPosition <= 0 && aStops[i].mPosition > 0) {
+      
+      aStops[i - 1] = InterpolateColorStop(aStops[i - 1], aStops[i],
+                                            0,
+                                           aStops[i].mColor);
+      
+      aStops.RemoveElementsAt(0, i - 1);
+      break;
+    }
+  }
+
+  MOZ_ASSERT(aStops[0].mPosition >= 0);
+  MOZ_ASSERT(aStops.LastElement().mPosition <= 1);
+
+  
+  
+  if (aStops[0].mPosition > 0) {
+    aStops.InsertElementAt(0, ColorStop(0, false, aStops[0].mColor));
+  }
+  if (aStops.LastElement().mPosition < 1) {
+    aStops.AppendElement(ColorStop(1, false, aStops.LastElement().mColor));
+  }
+}
+
 void
 nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
                               nsRenderingContext& aRenderingContext,
@@ -2647,6 +2720,55 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
   }
 
   
+  
+  
+  bool forceRepeatToCoverTiles =
+    aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR &&
+    (lineStart.x == lineEnd.x) != (lineStart.y == lineEnd.y) &&
+    aRepeatSize.width == aDest.width && aRepeatSize.height == aDest.height &&
+    !aGradient->mRepeating && !cellContainsFill;
+
+  gfxMatrix matrix;
+  if (forceRepeatToCoverTiles) {
+    
+    double rectLen;
+    
+    double offset;
+
+    
+    
+    
+    if (lineStart.x > lineEnd.x || lineStart.y > lineEnd.y) {
+      std::swap(lineStart, lineEnd);
+      matrix.Scale(-1, -1);
+    }
+
+    
+    if (lineStart.x != lineEnd.x) {
+      rectLen = srcSize.width;
+      offset = ((double)aSrc.x - lineStart.x) / lineLength;
+      lineStart.x = aSrc.x;
+      lineEnd.x = aSrc.x + srcSize.width;
+    } else {
+      rectLen = srcSize.height;
+      offset = ((double)aSrc.y - lineStart.y) / lineLength;
+      lineStart.y = aSrc.y;
+      lineEnd.y = aSrc.y + srcSize.height;
+    }
+
+    
+    double scale = lineLength / rectLen;
+    for (size_t i = 0; i < stops.Length(); i++) {
+      stops[i].mPosition = (stops[i].mPosition - offset) * fabs(scale);
+    }
+
+    
+    ClampColorStops(stops);
+
+    lineLength = rectLen;
+  }
+
+  
   double firstStop = stops[0].mPosition;
   if (aGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR && firstStop < 0.0) {
     if (aGradient->mRepeating) {
@@ -2745,8 +2867,6 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
 
   
   RefPtr<gfxPattern> gradientPattern;
-  bool forceRepeatToCoverTiles = false;
-  gfxMatrix matrix;
   gfxPoint gradientStart;
   gfxPoint gradientEnd;
   if (aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR) {
@@ -2770,18 +2890,6 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
 
     gradientPattern = new gfxPattern(gradientStart.x, gradientStart.y,
                                       gradientEnd.x, gradientEnd.y);
-
-    
-    
-    
-    if (!cellContainsFill &&
-        stopDelta != 0.0 && 
-        ((gradientStopStart.y == gradientStopEnd.y && gradientStopStart.x == 0 &&
-          gradientStopEnd.x == srcSize.width) ||
-          (gradientStopStart.x == gradientStopEnd.x && gradientStopStart.y == 0 &&
-          gradientStopEnd.y == srcSize.height))) {
-      forceRepeatToCoverTiles = true;
-    }
   } else {
     NS_ASSERTION(firstStop >= 0.0,
                   "Negative stops not allowed for radial gradients");
