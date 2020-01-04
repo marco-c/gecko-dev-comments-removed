@@ -309,14 +309,6 @@ public:
 
   already_AddRefed<ServiceWorkerContainer> ServiceWorker();
 
-  bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
-                 JS::Handle<jsid> aId,
-                 JS::MutableHandle<JS::PropertyDescriptor> aDesc);
-  
-  
-  static bool MayResolve(jsid aId);
-  void GetOwnPropertyNames(JSContext* aCx, nsTArray<nsString>& aNames,
-                           ErrorResult& aRv);
   void GetLanguages(nsTArray<nsString>& aLanguages);
 
   bool MozE10sEnabled();
@@ -421,13 +413,6 @@ private:
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   RefPtr<DeviceStorageAreaListener> mDeviceStorageAreaListener;
   RefPtr<Presentation> mPresentation;
-
-  
-  
-  
-  
-  
-  nsInterfaceHashtable<nsStringHashKey, nsISupports> mCachedResolveResults;
 
   nsTArray<RefPtr<Promise> > mVRGetDevicesPromises;
 };

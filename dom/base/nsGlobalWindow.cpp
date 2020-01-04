@@ -4239,13 +4239,7 @@ nsGlobalWindow::MayResolve(jsid aId)
   nsAutoString name;
   AssignJSFlatString(name, JSID_TO_FLAT_STRING(aId));
 
-  const nsGlobalNameStruct *name_struct =
-    nameSpaceManager->LookupName(name);
-
-  
-  MOZ_ASSERT_IF(name_struct,
-                name_struct->mType != nsGlobalNameStruct::eTypeNavigatorProperty);
-  return name_struct;
+  return nameSpaceManager->LookupName(name);
 }
 
 void
