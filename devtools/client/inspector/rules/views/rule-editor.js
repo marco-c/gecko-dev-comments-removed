@@ -442,7 +442,7 @@ RuleEditor.prototype = {
 
     
     this.editor.input.addEventListener("paste",
-      blurOnMultipleProperties, false);
+      blurOnMultipleProperties(this.rule.cssProperties), false);
   },
 
   
@@ -462,7 +462,8 @@ RuleEditor.prototype = {
     
     
     this.multipleAddedProperties =
-      parseDeclarations(value, true).filter(d => d.name);
+      parseDeclarations(this.rule.cssProperties.isKnown, value, true)
+      .filter(d => d.name);
 
     
     

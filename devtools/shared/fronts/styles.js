@@ -129,9 +129,13 @@ const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
 
 
 
-  startModifyingProperties: function () {
+
+
+
+
+  startModifyingProperties: function (cssProperties) {
     if (this.canSetRuleText) {
-      return new RuleRewriter(this, this.authoredText);
+      return new RuleRewriter(cssProperties.isKnown, this, this.authoredText);
     }
     return new RuleModificationList(this);
   },
@@ -416,4 +420,3 @@ var RuleModificationList = Class({
     
   },
 });
-

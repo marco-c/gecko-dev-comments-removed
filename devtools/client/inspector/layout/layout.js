@@ -12,6 +12,7 @@ const {InplaceEditor, editableItem} =
       require("devtools/client/shared/inplace-editor");
 const {ReflowFront} = require("devtools/server/actors/layout");
 const {LocalizationHelper} = require("devtools/client/shared/l10n");
+const {getCssProperties} = require("devtools/shared/fronts/css-properties");
 
 const STRINGS_URI = "chrome://devtools/locale/shared.properties";
 const SHARED_L10N = new LocalizationHelper(STRINGS_URI);
@@ -27,10 +28,13 @@ const LONG_TEXT_ROTATE_LIMIT = 3;
 
 
 
-function EditingSession(doc, rules) {
+
+
+function EditingSession({inspector, doc, elementRules}) {
   this._doc = doc;
-  this._rules = rules;
+  this._rules = elementRules;
   this._modifications = new Map();
+  this._cssProperties = getCssProperties(inspector.toolbox);
 }
 
 EditingSession.prototype = {
@@ -110,7 +114,8 @@ EditingSession.prototype = {
       
       
       
-      let modifications = this._rules[0].startModifyingProperties();
+      let modifications = this._rules[0].startModifyingProperties(
+        this._cssProperties);
 
       
       if (!this._modifications.has(property.name)) {
@@ -143,7 +148,8 @@ EditingSession.prototype = {
     
     
     for (let [property, value] of this._modifications) {
-      let modifications = this._rules[0].startModifyingProperties();
+      let modifications = this._rules[0].startModifyingProperties(
+        this._cssProperties);
 
       
       let index = this.getPropertyIndex(property);
@@ -358,7 +364,7 @@ LayoutView.prototype = {
 
   initEditor: function (element, event, dimension) {
     let { property } = dimension;
-    let session = new EditingSession(this.doc, this.elementRules);
+    let session = new EditingSession(this);
     let initialValue = session.getProperty(property);
 
     let editor = new InplaceEditor({

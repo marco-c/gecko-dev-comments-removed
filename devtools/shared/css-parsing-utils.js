@@ -14,14 +14,10 @@
 
 "use strict";
 
-const {Cc, Ci} = require("chrome");
 loader.lazyRequireGetter(this, "CSS", "CSS");
 const promise = require("promise");
 const {getCSSLexer} = require("devtools/shared/css-lexer");
 const {Task} = require("devtools/shared/task");
-loader.lazyGetter(this, "DOMUtils", () => {
-  return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
-});
 
 const SELECTOR_ATTRIBUTE = exports.SELECTOR_ATTRIBUTE = 1;
 const SELECTOR_ELEMENT = exports.SELECTOR_ELEMENT = 2;
@@ -159,17 +155,6 @@ function unescapeCSSComment(inputString) {
 
 
 
-function shouldParsePropertyInComment(name) {
-  try {
-    
-    
-    
-    DOMUtils.cssPropertyIsShorthand(name);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
 
 
 
@@ -179,14 +164,8 @@ function shouldParsePropertyInComment(name) {
 
 
 
-
-
-
-
-
-
-
-function parseCommentDeclarations(commentText, startOffset, endOffset) {
+function parseCommentDeclarations(isCssPropertyKnown, commentText, startOffset,
+                                  endOffset) {
   let commentOverride = false;
   if (commentText === "") {
     return [];
@@ -242,8 +221,8 @@ function parseCommentDeclarations(commentText, startOffset, endOffset) {
   
   
   
-  let newDecls = parseDeclarationsInternal(rewrittenText, false,
-                                           true, commentOverride);
+  let newDecls = parseDeclarationsInternal(isCssPropertyKnown, rewrittenText,
+                                           false, true, commentOverride);
   for (let decl of newDecls) {
     decl.offsets[0] = rewrites[decl.offsets[0]];
     decl.offsets[1] = rewrites[decl.offsets[1]];
@@ -287,8 +266,10 @@ function getEmptyDeclaration() {
 
 
 
-function parseDeclarationsInternal(inputString, parseComments,
-                                   inComment, commentOverride) {
+
+
+function parseDeclarationsInternal(isCssPropertyKnown, inputString,
+                                   parseComments, inComment, commentOverride) {
   if (inputString === null || inputString === undefined) {
     throw new Error("empty input string");
   }
@@ -335,7 +316,7 @@ function parseDeclarationsInternal(inputString, parseComments,
         
         
         if (inComment && !commentOverride &&
-            !shouldParsePropertyInComment(lastProp.name)) {
+            !isCssPropertyKnown(lastProp.name)) {
           lastProp.name = null;
           break;
         }
@@ -378,7 +359,8 @@ function parseDeclarationsInternal(inputString, parseComments,
       if (parseComments && !lastProp.name && !lastProp.value) {
         let commentText = inputString.substring(token.startOffset + 2,
                                                 token.endOffset - 2);
-        let newDecls = parseCommentDeclarations(commentText, token.startOffset,
+        let newDecls = parseCommentDeclarations(isCssPropertyKnown, commentText,
+                                                token.startOffset,
                                                 token.endOffset);
 
         
@@ -450,8 +432,15 @@ function parseDeclarationsInternal(inputString, parseComments,
 
 
 
-function parseDeclarations(inputString, parseComments = false) {
-  return parseDeclarationsInternal(inputString, parseComments, false, false);
+
+
+
+
+
+function parseDeclarations(isCssPropertyKnown, inputString,
+                           parseComments = false) {
+  return parseDeclarationsInternal(isCssPropertyKnown, inputString,
+                                   parseComments, false, false);
 }
 
 
@@ -484,7 +473,15 @@ function parseDeclarations(inputString, parseComments = false) {
 
 
 
-function RuleRewriter(rule, inputString) {
+
+
+
+
+
+
+
+
+function RuleRewriter(isCssPropertyKnown, rule, inputString) {
   this.rule = rule;
   this.inputString = inputString;
   
@@ -493,7 +490,8 @@ function RuleRewriter(rule, inputString) {
   
   this.changedDeclarations = {};
   
-  this.declarations = parseDeclarations(this.inputString, true);
+  this.declarations = parseDeclarations(isCssPropertyKnown, this.inputString,
+                                        true);
 
   this.decl = null;
   this.result = null;
@@ -1086,8 +1084,13 @@ function parsePseudoClassesAndAttributes(value) {
 
 
 
-function parseSingleValue(value) {
-  let declaration = parseDeclarations("a: " + value + ";")[0];
+
+
+
+
+function parseSingleValue(isCssPropertyKnown, value) {
+  let declaration = parseDeclarations(isCssPropertyKnown,
+                                      "a: " + value + ";")[0];
   return {
     value: declaration ? declaration.value : "",
     priority: declaration ? declaration.priority : ""
