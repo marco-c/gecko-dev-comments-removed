@@ -54,6 +54,18 @@ add_task(function*() {
   info("Entering a property value");
   editor.input.value = "red";
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  info("Waiting for preview to be applied.");
+  yield view.once("ruleview-changed");
+
   info("Escaping out of the field");
   onRuleViewChanged = view.once("ruleview-changed");
   EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
