@@ -2048,7 +2048,7 @@ public:
 
 
   virtual void Reflow(nsPresContext*           aPresContext,
-                      ReflowOutput&     aReflowMetrics,
+                      ReflowOutput&     aReflowOutput,
                       const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus) = 0;
 

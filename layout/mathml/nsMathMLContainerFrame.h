@@ -300,7 +300,7 @@ protected:
   
   static void
   SaveReflowAndBoundingMetricsFor(nsIFrame*                  aFrame,
-                                  const ReflowOutput& aReflowMetrics,
+                                  const ReflowOutput& aReflowOutput,
                                   const nsBoundingMetrics&   aBoundingMetrics);
 
   
@@ -312,7 +312,7 @@ protected:
   
   static void
   GetReflowAndBoundingMetricsFor(nsIFrame*            aFrame,
-                                 ReflowOutput& aReflowMetrics,
+                                 ReflowOutput& aReflowOutput,
                                  nsBoundingMetrics&   aBoundingMetrics,
                                  eMathMLFrameType*    aMathMLFrameType = nullptr);
 
