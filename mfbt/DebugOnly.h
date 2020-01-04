@@ -34,8 +34,9 @@ namespace mozilla {
 
 
 
+
 template<typename T>
-class DebugOnly
+class MOZ_STACK_CLASS DebugOnly
 {
 public:
 #ifdef DEBUG
