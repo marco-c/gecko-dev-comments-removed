@@ -548,6 +548,7 @@ public:
 
     mData = aEvent.mData;
     mOriginalMessage = aEvent.mOriginalMessage;
+    mRanges = aEvent.mRanges;
 
     
     
