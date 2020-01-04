@@ -80,8 +80,7 @@ add_task(function* test() {
     
     for (let part of title) {
       let [storageMethodName, value] = part.split("=");
-      let is_f = storageMethodName == "cookie" ? is : todo_is;
-      is_f(value, expectedContext,
+      is(value, expectedContext,
             "the title reflects the expected contextual identity of " +
             expectedContext + " for method " + storageMethodName + ": " + value);
     }

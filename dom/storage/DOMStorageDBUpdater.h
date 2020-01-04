@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef DOMStorageDBUpdater_h___
+#define DOMStorageDBUpdater_h___
+
+namespace mozilla {
+namespace dom {
+
+namespace DOMStorageDBUpdater {
+
+nsresult Update(mozIStorageConnection *aWorkerConnection);
+
+} 
+
+} 
+} 
+
+#endif

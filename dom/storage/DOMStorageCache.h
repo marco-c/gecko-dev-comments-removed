@@ -34,7 +34,15 @@ public:
   NS_IMETHOD_(void) Release(void);
 
   
-  virtual const nsCString& Scope() const = 0;
+  
+  virtual const nsCString Origin() const = 0;
+
+  
+  
+  virtual const nsCString& OriginSuffix() const = 0;
+
+  
+  virtual const nsCString& OriginNoSuffix() const = 0;
 
   
   virtual bool Loaded() = 0;
@@ -70,14 +78,17 @@ class DOMStorageCache : public DOMStorageCacheBridge
 public:
   NS_IMETHOD_(void) Release(void);
 
-  explicit DOMStorageCache(const nsACString* aScope);
+  
+  
+  
+  explicit DOMStorageCache(const nsACString* aOriginNoSuffix);
 
 protected:
   virtual ~DOMStorageCache();
 
 public:
   void Init(DOMStorageManager* aManager, bool aPersistent, nsIPrincipal* aPrincipal,
-            const nsACString& aQuotaScope);
+            const nsACString& aQuotaOriginScope);
 
   
   void CloneFrom(const DOMStorageCache* aThat);
@@ -114,7 +125,9 @@ public:
 
   
 
-  virtual const nsCString& Scope() const { return mScope; }
+  virtual const nsCString Origin() const;
+  virtual const nsCString& OriginNoSuffix() const { return mOriginNoSuffix; }
+  virtual const nsCString& OriginSuffix() const { return mOriginSuffix; }
   virtual bool Loaded() { return mLoaded; }
   virtual uint32_t LoadedCount();
   virtual bool LoadItem(const nsAString& aKey, const nsString& aValue);
@@ -189,10 +202,14 @@ private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
-  nsCString mScope;
+  nsCString mOriginNoSuffix;
 
   
-  nsCString mQuotaScope;
+  nsCString mOriginSuffix;
+
+  
+  
+  nsCString mQuotaOriginScope;
 
   
   Data mData[kDataSetCount];
@@ -241,7 +258,7 @@ class DOMStorageUsageBridge
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DOMStorageUsageBridge)
 
-  virtual const nsCString& Scope() = 0;
+  virtual const nsCString& OriginScope() = 0;
   virtual void LoadUsage(const int64_t aUsage) = 0;
 
 protected:
@@ -252,15 +269,15 @@ protected:
 class DOMStorageUsage : public DOMStorageUsageBridge
 {
 public:
-  explicit DOMStorageUsage(const nsACString& aScope);
+  explicit DOMStorageUsage(const nsACString& aOriginScope);
 
   bool CheckAndSetETLD1UsageDelta(uint32_t aDataSetIndex, int64_t aUsageDelta);
 
 private:
-  virtual const nsCString& Scope() { return mScope; }
+  virtual const nsCString& OriginScope() { return mOriginScope; }
   virtual void LoadUsage(const int64_t aUsage);
 
-  nsCString mScope;
+  nsCString mOriginScope;
   int64_t mUsage[DOMStorageCache::kDataSetCount];
 };
 

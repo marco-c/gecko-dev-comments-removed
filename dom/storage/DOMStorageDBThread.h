@@ -12,6 +12,7 @@
 #include "nsTArray.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/storage/StatementCache.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
@@ -74,16 +75,19 @@ public:
   virtual void AsyncClearAll() = 0;
 
   
-  virtual void AsyncClearMatchingScope(const nsACString& aScope) = 0;
+  virtual void AsyncClearMatchingOrigin(const nsACString& aOriginNoSuffix) = 0;
+
+  
+  virtual void AsyncClearMatchingOriginAttributes(const OriginAttributesPattern& aPattern) = 0;
 
   
   virtual void AsyncFlush() = 0;
 
   
-  virtual bool ShouldPreloadScope(const nsACString& aScope) = 0;
+  virtual bool ShouldPreloadOrigin(const nsACString& aOriginNoSuffix) = 0;
 
   
-  virtual void GetScopesHavingData(InfallibleTArray<nsCString>* aScopes) = 0;
+  virtual void GetOriginsHavingData(InfallibleTArray<nsCString>* aOrigins) = 0;
 };
 
 
@@ -114,11 +118,17 @@ public:
       opAddItem,
       opUpdateItem,
       opRemoveItem,
+      
       opClear,
 
       
+
+      
       opClearAll,
-      opClearMatchingScope,
+      
+      opClearMatchingOrigin,
+      
+      opClearMatchingOriginAttributes,
     } OperationType;
 
     explicit DBOperation(const OperationType aType,
@@ -128,7 +138,9 @@ public:
     DBOperation(const OperationType aType,
                 DOMStorageUsageBridge* aUsage);
     DBOperation(const OperationType aType,
-                const nsACString& aScope);
+                const nsACString& aOriginNoSuffix);
+    DBOperation(const OperationType aType,
+                const OriginAttributesPattern& aOriginNoSuffix);
     ~DBOperation();
 
     
@@ -138,13 +150,23 @@ public:
     void Finalize(nsresult aRv);
 
     
-    OperationType Type() { return mType; }
+    OperationType Type() const { return mType; }
 
     
-    const nsCString Scope();
+    const nsCString OriginNoSuffix() const;
 
     
-    const nsCString Target();
+    const nsCString OriginSuffix() const;
+
+    
+    
+    const nsCString Origin() const;
+
+    
+    const nsCString Target() const;
+
+    
+    const OriginAttributesPattern& OriginPattern() const { return mOriginPattern; }
 
   private:
     
@@ -154,9 +176,10 @@ public:
     OperationType mType;
     RefPtr<DOMStorageCacheBridge> mCache;
     RefPtr<DOMStorageUsageBridge> mUsage;
-    nsString mKey;
-    nsString mValue;
-    nsCString mScope;
+    nsString const mKey;
+    nsString const mValue;
+    nsCString const mOrigin;
+    OriginAttributesPattern const mOriginPattern;
   };
 
   
@@ -170,7 +193,7 @@ public:
     void Add(DBOperation* aOperation);
 
     
-    bool HasTasks();
+    bool HasTasks() const;
 
     
     
@@ -186,10 +209,11 @@ public:
 
     
     
-    bool IsScopeClearPending(const nsACString& aScope);
+    
+    bool IsOriginClearPending(const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix) const;
 
     
-    bool IsScopeUpdatePending(const nsACString& aScope);
+    bool IsOriginUpdatePending(const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix) const;
 
   private:
     
@@ -269,13 +293,16 @@ public:
   virtual void AsyncClearAll()
     { InsertDBOp(new DBOperation(DBOperation::opClearAll)); }
 
-  virtual void AsyncClearMatchingScope(const nsACString& aScope)
-    { InsertDBOp(new DBOperation(DBOperation::opClearMatchingScope, aScope)); }
+  virtual void AsyncClearMatchingOrigin(const nsACString& aOriginNoSuffix)
+    { InsertDBOp(new DBOperation(DBOperation::opClearMatchingOrigin, aOriginNoSuffix)); }
+
+  virtual void AsyncClearMatchingOriginAttributes(const OriginAttributesPattern& aPattern)
+    { InsertDBOp(new DBOperation(DBOperation::opClearMatchingOriginAttributes, aPattern)); }
 
   virtual void AsyncFlush();
 
-  virtual bool ShouldPreloadScope(const nsACString& aScope);
-  virtual void GetScopesHavingData(InfallibleTArray<nsCString>* aScopes);
+  virtual bool ShouldPreloadOrigin(const nsACString& aOrigin);
+  virtual void GetOriginsHavingData(InfallibleTArray<nsCString>* aOrigins);
 
 private:
   nsCOMPtr<nsIFile> mDatabaseFile;
@@ -299,7 +326,7 @@ private:
   nsresult mStatus;
 
   
-  nsTHashtable<nsCStringHashKey> mScopesHavingData;
+  nsTHashtable<nsCStringHashKey> mOriginsHavingData;
 
   
   nsCOMPtr<mozIStorageConnection> mWorkerConnection;

@@ -15,11 +15,15 @@
 
 #include "nsTHashtable.h"
 #include "nsDataHashtable.h"
+#include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 
 class nsIDOMWindow;
 
 namespace mozilla {
+
+class OriginAttributesPattern;
+
 namespace dom {
 
 const DOMStorage::StorageType SessionStorage = DOMStorage::SessionStorage;
@@ -37,9 +41,11 @@ public:
   
   static uint32_t GetQuota();
   
-  DOMStorageCache* GetCache(const nsACString& aScope) const;
+  DOMStorageCache* GetCache(const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix);
   
-  already_AddRefed<DOMStorageUsage> GetScopeUsage(const nsACString& aScope);
+  already_AddRefed<DOMStorageUsage> GetOriginUsage(const nsACString& aOriginNoSuffix);
+
+  static nsCString CreateOrigin(const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix);
 
 protected:
   explicit DOMStorageManager(DOMStorage::StorageType aType);
@@ -47,7 +53,9 @@ protected:
 
 private:
   
-  virtual nsresult Observe(const char* aTopic, const nsACString& aScopePrefix) override;
+  virtual nsresult Observe(const char* aTopic,
+                           const nsAString& aOriginAttributesPattern,
+                           const nsACString& aOriginScope) override;
 
   
   
@@ -78,7 +86,8 @@ private:
 
   
   
-  already_AddRefed<DOMStorageCache> PutCache(const nsACString& aScope,
+  already_AddRefed<DOMStorageCache> PutCache(const nsACString& aOriginSuffix,
+                                             const nsACString& aOriginNoSuffix,
                                              nsIPrincipal* aPrincipal);
 
   
@@ -90,7 +99,9 @@ private:
                               nsIDOMStorage** aRetval);
 
   
-  nsTHashtable<DOMStorageCacheHashKey> mCaches;
+  typedef nsTHashtable<DOMStorageCacheHashKey> CacheOriginHashtable;
+  nsClassHashtable<nsCStringHashKey, CacheOriginHashtable> mCaches;
+
   const DOMStorage::StorageType mType;
 
   
@@ -99,7 +110,9 @@ private:
   bool mLowDiskSpace;
   bool IsLowDiskSpace() const { return mLowDiskSpace; };
 
-  void ClearCaches(uint32_t aUnloadFlags, const nsACString& aKeyPrefix);
+  void ClearCaches(uint32_t aUnloadFlags,
+                   const OriginAttributesPattern& aPattern,
+                   const nsACString& aKeyPrefix);
 
 protected:
   
