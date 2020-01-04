@@ -16,6 +16,7 @@ const Services = require("Services");
 const MenuStrings = Services.strings.createBundle("chrome://devtools/locale/menus.properties");
 
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
+loader.lazyRequireGetter(this, "gDevToolsBrowser", "devtools/client/framework/devtools-browser", true);
 
 
 
@@ -44,26 +45,27 @@ function l10n(key) {
 
 
 
-
-
-
-
-function createKey(doc, l10nKey, command, key) {
+function createKey({ doc, id, shortcut, keytext, modifiers, oncommand }) {
   let k = doc.createElement("key");
-  k.id = "key_" + key.id;
-  let shortcut = l10n(l10nKey + ".key");
+  k.id = "key_" + id;
+
   if (shortcut.startsWith("VK_")) {
     k.setAttribute("keycode", shortcut);
-    k.setAttribute("keytext", l10n(l10nKey + ".keytext"));
+    if (keytext) {
+      k.setAttribute("keytext", keytext);
+    }
   } else {
     k.setAttribute("key", shortcut);
   }
-  if (command) {
-    k.setAttribute("command", command);
+
+  if (modifiers) {
+    k.setAttribute("modifiers", modifiers);
   }
-  if (key.modifiers) {
-    k.setAttribute("modifiers", key.modifiers);
-  }
+
+  
+  k.setAttribute("oncommand", ";");
+  k.addEventListener("command", oncommand);
+
   return k;
 }
 
@@ -84,17 +86,10 @@ function createKey(doc, l10nKey, command, key) {
 
 
 
-
-
-function createMenuItem({ doc, id, label, broadcasterId, accesskey, isCheckbox }) {
+function createMenuItem({ doc, id, label, accesskey, isCheckbox }) {
   let menuitem = doc.createElement("menuitem");
   menuitem.id = id;
-  if (label) {
-    menuitem.setAttribute("label", label);
-  }
-  if (broadcasterId) {
-    menuitem.setAttribute("observes", broadcasterId);
-  }
+  menuitem.setAttribute("label", label);
   if (accesskey) {
     menuitem.setAttribute("accesskey", accesskey);
   }
@@ -103,56 +98,6 @@ function createMenuItem({ doc, id, label, broadcasterId, accesskey, isCheckbox }
     menuitem.setAttribute("autocheck", "false");
   }
   return menuitem;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createBroadcaster({ doc, id, label, isCheckbox }) {
-  let broadcaster = doc.createElement("broadcaster");
-  broadcaster.id = id;
-  broadcaster.setAttribute("label", label);
-  if (isCheckbox) {
-    broadcaster.setAttribute("type", "checkbox");
-    broadcaster.setAttribute("autocheck", "false");
-  }
-  return broadcaster;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createCommand({ doc, id, oncommand, disabled }) {
-  let command = doc.createElement("command");
-  command.id = id;
-  command.setAttribute("oncommand", oncommand);
-  if (disabled) {
-    command.setAttribute("disabled", "true");
-    command.setAttribute("hidden", "true");
-  }
-  return command;
 }
 
 
@@ -188,56 +133,44 @@ function attachKeybindingsToBrowser(doc, keys) {
 
 function createToolMenuElements(toolDefinition, doc) {
   let id = toolDefinition.id;
+  let menuId = "menuitem_" + id;
 
   
-  if (doc.getElementById("Tools:" + id)) {
+  if (doc.getElementById(menuId)) {
     return;
   }
 
-  let cmd = createCommand({
-    doc,
-    id: "Tools:" + id,
-    oncommand: 'gDevToolsBrowser.selectToolCommand(gBrowser, "' + id + '");',
-  });
+  let oncommand = function (id, event) {
+    let window = event.target.ownerDocument.defaultView;
+    gDevToolsBrowser.selectToolCommand(window.gBrowser, id);
+  }.bind(null, id);
 
   let key = null;
   if (toolDefinition.key) {
-    key = doc.createElement("key");
-    key.id = "key_" + id;
-
-    if (toolDefinition.key.startsWith("VK_")) {
-      key.setAttribute("keycode", toolDefinition.key);
-    } else {
-      key.setAttribute("key", toolDefinition.key);
-    }
-
-    key.setAttribute("command", cmd.id);
-    key.setAttribute("modifiers", toolDefinition.modifiers);
-  }
-
-  let bc = createBroadcaster({
-    doc,
-    id: "devtoolsMenuBroadcaster_" + id,
-    label: toolDefinition.menuLabel || toolDefinition.label
-  });
-  bc.setAttribute("command", cmd.id);
-
-  if (key) {
-    bc.setAttribute("key", "key_" + id);
+    key = createKey({
+      doc,
+      id,
+      shortcut: toolDefinition.key,
+      modifiers: toolDefinition.modifiers,
+      oncommand: oncommand
+    });
   }
 
   let menuitem = createMenuItem({
     doc,
     id: "menuitem_" + id,
-    broadcasterId: "devtoolsMenuBroadcaster_" + id,
+    label: toolDefinition.menuLabel || toolDefinition.label,
     accesskey: toolDefinition.accesskey
   });
+  if (key) {
+    
+    menuitem.setAttribute("key", key.id);
+  }
+  menuitem.addEventListener("command", oncommand);
 
   return {
-    cmd: cmd,
-    key: key,
-    bc: bc,
-    menuitem: menuitem
+    key,
+    menuitem
   };
 }
 
@@ -253,15 +186,11 @@ function createToolMenuElements(toolDefinition, doc) {
 
 
 function insertToolMenuElements(doc, toolDefinition, prevDef) {
-  let elements = createToolMenuElements(toolDefinition, doc);
+  let { key, menuitem } = createToolMenuElements(toolDefinition, doc);
 
-  doc.getElementById("mainCommandSet").appendChild(elements.cmd);
-
-  if (elements.key) {
-    attachKeybindingsToBrowser(doc, elements.key);
+  if (key) {
+    attachKeybindingsToBrowser(doc, key);
   }
-
-  doc.getElementById("mainBroadcasterSet").appendChild(elements.bc);
 
   let ref;
   if (prevDef) {
@@ -272,7 +201,7 @@ function insertToolMenuElements(doc, toolDefinition, prevDef) {
   }
 
   if (ref) {
-    ref.parentNode.insertBefore(elements.menuitem, ref);
+    ref.parentNode.insertBefore(menuitem, ref);
   }
 }
 exports.insertToolMenuElements = insertToolMenuElements;
@@ -286,24 +215,14 @@ exports.insertToolMenuElements = insertToolMenuElements;
 
 
 function removeToolFromMenu(toolId, doc) {
-  let command = doc.getElementById("Tools:" + toolId);
-  if (command) {
-    command.parentNode.removeChild(command);
-  }
-
   let key = doc.getElementById("key_" + toolId);
   if (key) {
-    key.parentNode.removeChild(key);
-  }
-
-  let bc = doc.getElementById("devtoolsMenuBroadcaster_" + toolId);
-  if (bc) {
-    bc.parentNode.removeChild(bc);
+    key.remove();
   }
 
   let menuitem = doc.getElementById("menuitem_" + toolId);
   if (menuitem) {
-    menuitem.parentNode.removeChild(menuitem);
+    menuitem.remove();
   }
 }
 exports.removeToolFromMenu = removeToolFromMenu;
@@ -315,9 +234,7 @@ exports.removeToolFromMenu = removeToolFromMenu;
 
 
 function addAllToolsToMenu(doc) {
-  let fragCommands = doc.createDocumentFragment();
   let fragKeys = doc.createDocumentFragment();
-  let fragBroadcasters = doc.createDocumentFragment();
   let fragMenuItems = doc.createDocumentFragment();
 
   for (let toolDefinition of gDevTools.getToolDefinitionArray()) {
@@ -331,21 +248,13 @@ function addAllToolsToMenu(doc) {
       continue;
     }
 
-    fragCommands.appendChild(elements.cmd);
     if (elements.key) {
       fragKeys.appendChild(elements.key);
     }
-    fragBroadcasters.appendChild(elements.bc);
     fragMenuItems.appendChild(elements.menuitem);
   }
 
-  let mcs = doc.getElementById("mainCommandSet");
-  mcs.appendChild(fragCommands);
-
   attachKeybindingsToBrowser(doc, fragKeys);
-
-  let mbs = doc.getElementById("mainBroadcasterSet");
-  mbs.appendChild(fragBroadcasters);
 
   let mps = doc.getElementById("menu_devtools_separator");
   if (mps) {
@@ -385,10 +294,15 @@ function addTopLevelItems(doc) {
 
       if (item.key && l10nKey) {
         
-        let key = createKey(doc, l10nKey, null, item.key);
-        
-        key.setAttribute("oncommand", ";");
-        key.addEventListener("command", item.oncommand);
+        let shortcut = l10n(l10nKey + ".key");
+        let key = createKey({
+          doc,
+          id: item.key.id,
+          shortcut: shortcut,
+          keytext: shortcut.startsWith("VK_") ? l10n(l10nKey + ".keytext") : null,
+          modifiers: item.key.modifiers,
+          oncommand: item.oncommand
+        });
         
         menuitem.setAttribute("key", key.id);
         keys.appendChild(key);
@@ -396,10 +310,15 @@ function addTopLevelItems(doc) {
       if (item.additionalKeys) {
         
         for (let key of item.additionalKeys) {
-          let node = createKey(doc, key.l10nKey, null, key);
-          
-          node.setAttribute("oncommand", ";");
-          node.addEventListener("command", item.oncommand);
+          let shortcut = l10n(key.l10nKey + ".key");
+          let node = createKey({
+            doc,
+            id: key.id,
+            shortcut: shortcut,
+            keytext: shortcut.startsWith("VK_") ? l10n(key.l10nKey + ".keytext") : null,
+            modifiers: key.modifiers,
+            oncommand: item.oncommand
+          });
           keys.appendChild(node);
         }
       }
