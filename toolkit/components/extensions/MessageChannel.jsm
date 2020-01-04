@@ -155,7 +155,7 @@ class FilteringMessageManager {
 
 
   receiveMessage({data, target}) {
-    let handlers = Array.from(this.getHandlers(data.messageName, data.recipient));
+    let handlers = Array.from(this.getHandlers(data.messageName, data.sender, data.recipient));
 
     data.target = target;
     this.callback(handlers, data);
@@ -170,11 +170,14 @@ class FilteringMessageManager {
 
 
 
-  * getHandlers(messageName, recipient) {
+
+
+  * getHandlers(messageName, sender, recipient) {
     let handlers = this.handlers.get(messageName) || new Set();
     for (let handler of handlers) {
       if (MessageChannel.matchesFilter(handler.messageFilterStrict || {}, recipient) &&
-          MessageChannel.matchesFilter(handler.messageFilterPermissive || {}, recipient, false)) {
+          MessageChannel.matchesFilter(handler.messageFilterPermissive || {}, recipient, false) &&
+          (!handler.filterMessage || handler.filterMessage(sender, recipient))) {
         yield handler;
       }
     }
@@ -437,6 +440,10 @@ this.MessageChannel = {
 
 
 
+
+
+
+
   addListener(targets, messageName, handler) {
     for (let target of [].concat(targets)) {
       this.messageManagers.get(target).addHandler(messageName, handler);
@@ -462,6 +469,7 @@ this.MessageChannel = {
   },
 
   
+
 
 
 
