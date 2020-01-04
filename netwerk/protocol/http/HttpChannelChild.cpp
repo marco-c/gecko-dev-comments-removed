@@ -1740,9 +1740,6 @@ HttpChannelChild::AsyncOpen(nsIStreamListener *listener, nsISupports *aContext)
     return NS_OK;
   }
 
-  
-  HttpBaseChannel::SetDocshellUserAgentOverride();
-
   if (ShouldIntercept()) {
     mResponseCouldBeSynthesized = true;
 
