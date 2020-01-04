@@ -1814,6 +1814,9 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight)
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  const bool isHeightChanging =
+    (mPresContext->GetVisibleArea().height != aHeight);
+
   mPresContext->SetVisibleArea(nsRect(0, 0, aWidth, aHeight));
 
   
@@ -1840,6 +1843,14 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight)
     if (!mIsDestroying && rootFrame) {
       
       
+
+      if (isHeightChanging) {
+        
+        
+        
+        
+        nsLayoutUtils::MarkIntrinsicISizesDirtyIfDependentOnBSize(rootFrame);
+      }
 
       {
         nsAutoCauseReflowNotifier crNotifier(this);

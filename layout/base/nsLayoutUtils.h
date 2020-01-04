@@ -1490,6 +1490,8 @@ public:
 
   static void MarkDescendantsDirty(nsIFrame *aSubtreeRoot);
 
+  static void MarkIntrinsicISizesDirtyIfDependentOnBSize(nsIFrame* aFrame);
+
   
 
 
