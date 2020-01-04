@@ -217,17 +217,6 @@
 
 
 
-.devtools-eyedropper-panel {
-  pointer-events: none;
-  -moz-appearance: none;
-  width: 156px;
-  height: 120px;
-  background-color: transparent;
-  border: none;
-}
-
-
-
 .devtools-source-link {
   font-family: var(--monospace-font-family);
   color: var(--theme-highlight-blue);
