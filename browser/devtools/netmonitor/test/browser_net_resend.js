@@ -138,7 +138,12 @@ function editCustomForm(callback) {
     }, false);
     headers.focus();
   }, false);
-  query.focus();
+
+  
+  
+  executeSoon(() => {
+    query.focus();
+  });
 }
 
 
