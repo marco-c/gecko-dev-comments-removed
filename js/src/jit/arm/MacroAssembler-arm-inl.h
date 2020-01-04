@@ -132,6 +132,12 @@ MacroAssembler::xorPtr(Imm32 imm, Register dest)
 
 
 void
+MacroAssembler::lshiftPtr(Imm32 imm, Register dest)
+{
+    ma_lsl(imm, dest, dest);
+}
+
+void
 MacroAssembler::rshiftPtr(Imm32 imm, Register dest)
 {
     ma_lsr(imm, dest, dest);
