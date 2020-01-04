@@ -955,6 +955,17 @@ DeleteElement(JSContext* cx, HandleObject obj, uint32_t index, ObjectOpResult& r
 
 
 
+
+extern bool
+GetPrototypeIfOrdinary(JSContext* cx, HandleObject obj, bool* isOrdinary,
+                       MutableHandleObject protop);
+
+
+
+
+
+
+
 extern bool
 SetImmutablePrototype(js::ExclusiveContext* cx, JS::HandleObject obj, bool* succeeded);
 

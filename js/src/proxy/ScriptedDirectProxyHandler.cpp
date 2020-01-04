@@ -166,32 +166,151 @@ GetProxyTrap(JSContext* cx, HandleObject handler, HandlePropertyName name, Mutab
 }
 
 
-
 bool
 ScriptedDirectProxyHandler::getPrototype(JSContext* cx, HandleObject proxy,
                                          MutableHandleObject protop) const
 {
-    RootedObject target(cx, proxy->as<ProxyObject>().target());
     
-    if (!target) {
+    RootedObject handler(cx, GetDirectProxyHandlerObject(proxy));
+    if (!handler) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_PROXY_REVOKED);
         return false;
     }
 
-    return GetPrototype(cx, target, protop);
+    
+    RootedObject target(cx, proxy->as<ProxyObject>().target());
+    MOZ_ASSERT(target);
+
+    
+    RootedValue trap(cx);
+    if (!GetProxyTrap(cx, handler, cx->names().getPrototypeOf, &trap))
+        return false;
+
+    
+    if (trap.isUndefined())
+        return GetPrototype(cx, target, protop);
+
+    
+    RootedValue handlerProto(cx);
+    {
+        FixedInvokeArgs<1> args(cx);
+
+        args[0].setObject(*target);
+
+        handlerProto.setObject(*handler);
+
+        if (!js::Call(cx, trap, handlerProto, args, &handlerProto))
+            return false;
+    }
+
+    
+    if (!handlerProto.isObjectOrNull()) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_BAD_GETPROTOTYPEOF_TRAP_RETURN);
+        return false;
+    }
+
+    
+    bool extensibleTarget;
+    if (!IsExtensible(cx, target, &extensibleTarget))
+        return false;
+
+    
+    if (extensibleTarget) {
+        protop.set(handlerProto.toObjectOrNull());
+        return true;
+    }
+
+    
+    RootedObject targetProto(cx);
+    if (!GetPrototype(cx, target, &targetProto))
+        return false;
+
+    
+    if (handlerProto.toObjectOrNull() != targetProto) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_INCONSISTENT_GETPROTOTYPEOF_TRAP);
+        return false;
+    }
+
+    
+    protop.set(handlerProto.toObjectOrNull());
+    return true;
 }
+
 
 bool
 ScriptedDirectProxyHandler::setPrototype(JSContext* cx, HandleObject proxy, HandleObject proto,
                                          ObjectOpResult& result) const
 {
-    RootedObject target(cx, proxy->as<ProxyObject>().target());
-    if (!target) {
+    
+    RootedObject handler(cx, GetDirectProxyHandlerObject(proxy));
+    if (!handler) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_PROXY_REVOKED);
         return false;
     }
 
-    return SetPrototype(cx, target, proto, result);
+    
+    RootedObject target(cx, proxy->as<ProxyObject>().target());
+    MOZ_ASSERT(target);
+
+    
+    RootedValue trap(cx);
+    if (!GetProxyTrap(cx, handler, cx->names().setPrototypeOf, &trap))
+        return false;
+
+    
+    if (trap.isUndefined())
+        return SetPrototype(cx, target, proto, result);
+
+    
+    bool booleanTrapResult;
+    {
+        FixedInvokeArgs<2> args(cx);
+
+        args[0].setObject(*target);
+        args[1].setObjectOrNull(proto);
+
+        RootedValue hval(cx, ObjectValue(*handler));
+        if (!js::Call(cx, trap, hval, args, &hval))
+            return false;
+
+        booleanTrapResult = ToBoolean(hval);
+    }
+
+    
+    if (!booleanTrapResult)
+        return result.fail(JSMSG_PROXY_SETPROTOTYPEOF_RETURNED_FALSE);
+
+    
+    bool extensibleTarget;
+    if (!IsExtensible(cx, target, &extensibleTarget))
+        return false;
+
+    
+    if (extensibleTarget)
+        return result.succeed();
+
+    
+    RootedObject targetProto(cx);
+    if (!GetPrototype(cx, target, &targetProto))
+        return false;
+
+    
+    if (proto != targetProto) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_INCONSISTENT_SETPROTOTYPEOF_TRAP);
+        return false;
+    }
+
+    
+    return result.succeed();
+}
+
+bool
+ScriptedDirectProxyHandler::getPrototypeIfOrdinary(JSContext* cx, HandleObject proxy,
+                                                   bool* isOrdinary,
+                                                   MutableHandleObject protop) const
+{
+    *isOrdinary = false;
+    return true;
 }
 
 

@@ -46,14 +46,10 @@ assertEq(Reflect.setPrototypeOf(proto, obj), false);
 
 obj = {};
 var proxy = new Proxy(Object.create(obj), {});
-if (Reflect.setPrototypeOf(obj, proxy) !== false) {
-    throw new Error("Congratulations on implementing ES6 [[SetPrototype]]! " +
-                    "Update this test for 1 karma point!");
-    
-}
 
-
-
+assertEq(Reflect.setPrototypeOf(obj, proxy), true);
+assertEq(Reflect.getPrototypeOf(obj), proxy);
+assertEq(Reflect.getPrototypeOf(proxy), obj);
 
 
 var hits = 0;
@@ -67,14 +63,9 @@ proxy = new Proxy(obj, {
         return 0;
     }
 });
-if (Reflect.setPrototypeOf(proxy, proto) !== true) {
-    throw new Error("Congratulations on implementing the setPrototypeOf trap for proxies! " +
-                    "Please update this test.");
-    
-    
-}
 
-
+assertEq(Reflect.setPrototypeOf(proxy, proto), false);
+assertEq(hits, 1);
 
 
 

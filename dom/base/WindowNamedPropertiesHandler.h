@@ -36,6 +36,11 @@ public:
   virtual bool
   delete_(JSContext* aCx, JS::Handle<JSObject*> aProxy, JS::Handle<jsid> aId,
           JS::ObjectOpResult &aResult) const override;
+
+  
+  
+  
+
   virtual bool
   preventExtensions(JSContext* aCx, JS::Handle<JSObject*> aProxy,
                     JS::ObjectOpResult& aResult) const override

@@ -35,6 +35,9 @@ class ScriptedDirectProxyHandler : public BaseProxyHandler {
     virtual bool setPrototype(JSContext* cx, HandleObject proxy, HandleObject proto,
                               ObjectOpResult& result) const override;
     
+    virtual bool getPrototypeIfOrdinary(JSContext* cx, HandleObject proxy, bool* isOrdinary,
+                                       MutableHandleObject protop) const override;
+    
     virtual bool setImmutablePrototype(JSContext* cx, HandleObject proxy,
                                        bool* succeeded) const override;
 

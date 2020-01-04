@@ -2347,6 +2347,22 @@ XrayWrapper<Base, Traits>::setPrototype(JSContext* cx, JS::HandleObject wrapper,
 
 template <typename Base, typename Traits>
 bool
+XrayWrapper<Base, Traits>::getPrototypeIfOrdinary(JSContext* cx, JS::HandleObject wrapper,
+                                                  bool* isOrdinary,
+                                                  JS::MutableHandleObject protop) const
+{
+    
+    
+    
+    
+    
+    
+    *isOrdinary = false;
+    return true;
+}
+
+template <typename Base, typename Traits>
+bool
 XrayWrapper<Base, Traits>::setImmutablePrototype(JSContext* cx, JS::HandleObject wrapper,
                                                  bool* succeeded) const
 {

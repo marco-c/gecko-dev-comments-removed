@@ -2881,6 +2881,17 @@ JS_GetPrototype(JSContext* cx, JS::HandleObject obj, JS::MutableHandleObject res
 
 
 
+extern JS_PUBLIC_API(bool)
+JS_GetPrototypeIfOrdinary(JSContext* cx, JS::HandleObject obj, bool* isOrdinary,
+                          JS::MutableHandleObject result);
+
+
+
+
+
+
+
+
 
 
 
