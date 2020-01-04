@@ -244,7 +244,6 @@ if (typeof Mozilla == 'undefined') {
 
 
 
-
   Mozilla.UITour.showFirefoxAccounts = function(extraURLCampaignParams) {
     _sendEvent('showFirefoxAccounts', {
       extraURLCampaignParams: JSON.stringify(extraURLCampaignParams),
