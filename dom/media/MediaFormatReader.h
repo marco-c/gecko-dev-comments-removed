@@ -73,6 +73,9 @@ public:
 
   virtual bool ForceZeroStartTime() const override;
 
+  
+  void ReleaseMediaResources() override;
+
   nsresult ResetDecode() override;
 
   RefPtr<ShutdownPromise> Shutdown() override;
@@ -439,10 +442,6 @@ private:
 #if defined(READER_DORMANT_HEURISTIC)
   const bool mDormantEnabled;
 #endif
-
-private:
-  
-  void ReleaseMediaResourcesInternal() override;
 };
 
 } 

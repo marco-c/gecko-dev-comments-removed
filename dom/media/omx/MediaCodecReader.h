@@ -61,6 +61,9 @@ public:
   virtual ~MediaCodecReader();
 
   
+  virtual void ReleaseMediaResources();
+
+  
   
   
   virtual RefPtr<ShutdownPromise> Shutdown();
@@ -433,10 +436,6 @@ private:
   nsTArray<ReleaseItem> mPendingReleaseItems;
 
   NotifyDataArrivedFilter mFilter;
-
-private:
-  
-  virtual void ReleaseMediaResourcesInternal() override;
 };
 
 } 

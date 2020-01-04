@@ -1582,9 +1582,8 @@ MediaFormatReader::GetBuffered()
   return intervals.Shift(media::TimeUnit::FromMicroseconds(-startTime));
 }
 
-void MediaFormatReader::ReleaseMediaResourcesInternal()
+void MediaFormatReader::ReleaseMediaResources()
 {
-  MOZ_ASSERT(OnTaskQueue());
   
   
   if (mVideoFrameContainer) {

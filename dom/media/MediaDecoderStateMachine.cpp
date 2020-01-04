@@ -1287,7 +1287,8 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     
     
     
-    mReader->ReleaseMediaResources();
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(mReader, &MediaDecoderReader::ReleaseMediaResources);
+    DecodeTaskQueue()->Dispatch(r.forget());
   } else if ((aDormant != true) && (mState == DECODER_STATE_DORMANT)) {
     ScheduleStateMachine();
     mDecodingFirstFrame = true;
