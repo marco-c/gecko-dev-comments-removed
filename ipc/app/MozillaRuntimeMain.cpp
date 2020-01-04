@@ -5,8 +5,15 @@
 
 
 #include "../contentproc/plugin-container.cpp"
- 
+
+#include "mozilla/WindowsDllBlocklist.h"
+
 int
-main(int argc, char *argv[]) {
-    return content_process_main(argc, argv);
+main(int argc, char *argv[])
+{
+#ifdef HAS_DLL_BLOCKLIST
+  DllBlocklist_Initialize();
+#endif
+
+  return content_process_main(argc, argv);
 }

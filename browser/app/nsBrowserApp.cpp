@@ -322,6 +322,20 @@ sizeof(XPCOM_DLL) - 1))
 
 int main(int argc, char* argv[], char* envp[])
 {
+  mozilla::TimeStamp start = mozilla::TimeStamp::Now();
+
+#ifdef HAS_DLL_BLOCKLIST
+  DllBlocklist_Initialize();
+
+#ifdef DEBUG
+  
+  
+  if (GetModuleHandleA("user32.dll")) {
+    fprintf(stderr, "DLL blocklist was unable to intercept AppInit DLLs.\n");
+  }
+#endif
+#endif
+
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
   
   
@@ -349,21 +363,8 @@ int main(int argc, char* argv[], char* envp[])
   }
 #endif
 
-  mozilla::TimeStamp start = mozilla::TimeStamp::Now();
 
   nsIFile *xreDirectory;
-
-#ifdef HAS_DLL_BLOCKLIST
-  DllBlocklist_Initialize();
-
-#ifdef DEBUG
-  
-  
-  if (GetModuleHandleA("user32.dll")) {
-    fprintf(stderr, "DLL blocklist was unable to intercept AppInit DLLs.\n");
-  }
-#endif
-#endif
 
   nsresult rv = InitXPCOMGlue(argv[0], &xreDirectory);
   if (NS_FAILED(rv)) {
