@@ -195,7 +195,7 @@ class ZoneCellIterImpl
     ZoneCellIterImpl(JS::Zone* zone, AllocKind kind) {
         JSRuntime* rt = zone->runtimeFromAnyThread();
         MOZ_ASSERT(zone);
-        MOZ_ASSERT(rt->gc.nursery.isEmpty());
+        MOZ_ASSERT_IF(IsNurseryAllocable(kind), rt->gc.nursery.isEmpty());
 
         
         
@@ -257,7 +257,9 @@ class ZoneCellIter
         JSRuntime* rt = zone->runtimeFromMainThread();
         if (!rt->isHeapBusy()) {
             
-            rt->gc.evictNursery();
+            
+            if (IsNurseryAllocable(kind))
+                rt->gc.evictNursery();
 
             
             noAlloc.disallowAlloc(rt);
