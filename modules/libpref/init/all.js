@@ -161,6 +161,9 @@ pref("dom.serviceWorkers.idle_timeout", 30000);
 pref("dom.serviceWorkers.idle_extended_timeout", 300000);
 
 
+pref("dom.serviceWorkers.testUpdateOverOneDay", false);
+
+
 pref("dom.enable_performance", true);
 
 
@@ -3254,7 +3257,11 @@ pref("ui.window_class_override", "");
 pref("ui.elantech_gesture_hacks.enabled", -1);
 
 
+#ifdef RELEASE_BUILD
+pref("ui.osk.enabled", false);
+#else
 pref("ui.osk.enabled", true);
+#endif
 
 
 pref("ui.osk.detect_physical_keyboard", true);
