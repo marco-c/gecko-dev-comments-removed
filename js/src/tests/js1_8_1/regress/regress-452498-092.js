@@ -22,7 +22,7 @@ function test()
 
 
 
-  expect = 'TypeError: redeclaration of formal parameter e';
+  expect = 'SyntaxError: redeclaration of formal parameter e';
   try
   {
     eval('(function (e) { var e; const e = undefined; });');
