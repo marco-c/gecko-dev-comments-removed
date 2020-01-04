@@ -33,9 +33,6 @@ public:
 
   
   
-  
-  
-  
   virtual void     OfflineDisconnect() { }
 };
 
@@ -67,11 +64,7 @@ private:
   void RemoveOfflineObserverMainThread();
 private:
   virtual ~OfflineObserver() { }
-  
-  
   DisconnectableParent * mParent;
-  
-  mozilla::Mutex mLock;
 };
 
 } 
