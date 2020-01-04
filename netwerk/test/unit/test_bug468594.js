@@ -23,14 +23,15 @@ var tests = [
     {url: "/freshness",   server: "1", expected: "0"}, 
 
     
+    
     {url: "/freshness?a", server: "2", expected: "2"},
-    {url: "/freshness?a", server: "3", expected: "3"},
+    {url: "/freshness?a", server: "3", expected: "2"},
 
     
     {url: "/freshness?b", server: "4", expected: "4",
      responseheader: "Expires: "+getDateString(1)},
     {url: "/freshness?b", server: "5", expected: "4"},
-    
+
     {url: "/freshness?c", server: "6", expected: "6",
      responseheader: "Cache-Control: max-age=3600"},
     {url: "/freshness?c", server: "7", expected: "6"}, 
@@ -39,7 +40,7 @@ var tests = [
     {url: "/freshness?d", server: "8", expected: "8",
      responseheader: "Expires: "+getDateString(-1)},
     {url: "/freshness?d", server: "9", expected: "9"},
-    
+
     {url: "/freshness?e", server: "10", expected: "10",
      responseheader: "Cache-Control: max-age=0"},
     {url: "/freshness?e", server: "11", expected: "11"},
@@ -104,7 +105,7 @@ function handler(metadata, response) {
     var body = metadata.getHeader("x-request");
     response.setHeader("Content-Type", "text/plain", false);
     response.setHeader("Date", getDateString(0), false);
-    
+
     var header = tests[index].responseheader;
     if (header == null) {
         response.setHeader("Last-Modified", getDateString(-1), false);
@@ -112,11 +113,11 @@ function handler(metadata, response) {
         var splitHdr = header.split(": ");
         response.setHeader(splitHdr[0], splitHdr[1], false);
     }
-    
+
     response.setStatusLine(metadata.httpVersion, 200, "OK");
     response.bodyOutputStream.write(body, body.length);
 }
- 
+
 function getDateString(yearDelta) {
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
