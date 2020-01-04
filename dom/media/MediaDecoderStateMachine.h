@@ -873,11 +873,6 @@ private:
   
   
   
-  bool mDispatchedEventToDecode;
-
-  
-  
-  
   
   
   bool mQuickBuffering;
