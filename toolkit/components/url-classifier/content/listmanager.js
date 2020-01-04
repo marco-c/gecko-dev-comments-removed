@@ -93,6 +93,7 @@ PROT_ListManager.prototype.shutdown_ = function() {
 
 
 PROT_ListManager.prototype.registerTable = function(tableName,
+                                                    providerName,
                                                     updateUrl,
                                                     gethashUrl) {
   log("registering " + tableName + " with " + updateUrl);
@@ -103,6 +104,7 @@ PROT_ListManager.prototype.registerTable = function(tableName,
   this.tablesData[tableName] = {};
   this.tablesData[tableName].updateUrl = updateUrl;
   this.tablesData[tableName].gethashUrl = gethashUrl;
+  this.tablesData[tableName].provider = providerName;
 
   
   if (!this.needsUpdate_[updateUrl]) {
@@ -196,6 +198,8 @@ PROT_ListManager.prototype.kickoffUpdate_ = function (onDiskTableData)
 {
   this.startingUpdate_ = false;
   var initialUpdateDelay = 3000;
+  
+  initialUpdateDelay += Math.floor(Math.random() * (5 * 60 * 1000));
 
   
   log("needsUpdate: " + JSON.stringify(this.needsUpdate_, undefined, 2));
@@ -206,10 +210,46 @@ PROT_ListManager.prototype.kickoffUpdate_ = function (onDiskTableData)
     
     
     if (this.updatesNeeded_(updateUrl) && !this.updateCheckers_[updateUrl]) {
-      log("Initializing update checker for " + updateUrl);
+      let provider = null;
+      Object.keys(this.tablesData).forEach(function(table) {
+        if (this.tablesData[table].updateUrl === updateUrl) {
+          let newProvider = this.tablesData[table].provider;
+          if (provider) {
+            if (newProvider !== provider) {
+              log("Multiple tables for the same updateURL have a different provider?!");
+            }
+          } else {
+            provider = newProvider;
+          }
+        }
+      }, this);
+      log("Initializing update checker for " + updateUrl
+          + " provided by " + provider);
+
+      
+      
+      let updateDelay = initialUpdateDelay;
+      let targetPref = "browser.safebrowsing.provider." + provider + ".nextupdatetime";
+      let nextUpdate = this.prefs_.getPref(targetPref);
+      if (nextUpdate) {
+        updateDelay = Math.max(0, nextUpdate - Date.now());
+        log("Next update at " + nextUpdate
+            + " which is " + updateDelay + "ms from now");
+      }
+
+      
+      let freshnessPref = "browser.safebrowsing.provider." + provider + ".lastupdatetime";
+      let freshness = this.prefs_.getPref(freshnessPref);
+      if (freshness) {
+        Object.keys(this.tablesData).forEach(function(table) {
+        if (this.tablesData[table].provider === provider) {
+          this.dbService_.setLastUpdateTime(table, freshness);
+        }}, this);
+      }
+
       this.updateCheckers_[updateUrl] =
         new G_Alarm(BindToObject(this.checkForUpdates, this, updateUrl),
-                    initialUpdateDelay, false );
+                    updateDelay, false );
     } else {
       log("No updates needed or already initialized for " + updateUrl);
     }
@@ -407,6 +447,34 @@ PROT_ListManager.prototype.updateSuccess_ = function(tableList, updateUrl,
 
   
   this.requestBackoffs_[updateUrl].noteServerResponse(200);
+
+  
+  
+  let tables = tableList.split(",");
+  let provider = null;
+  for (let table of tables) {
+    let newProvider = this.tablesData[table].provider;
+    if (provider) {
+      if (newProvider !== provider) {
+        log("Multiple tables for the same updateURL have a different provider?!");
+      }
+    } else {
+      provider = newProvider;
+    }
+  }
+
+  
+  
+  let lastUpdatePref = "browser.safebrowsing.provider." + provider + ".lastupdatetime";
+  let now = Date.now();
+  log("Setting last update of " + provider + " to " + now);
+  this.prefs_.setPref(lastUpdatePref, now.toString());
+
+  let nextUpdatePref = "browser.safebrowsing.provider." + provider + ".nextupdatetime";
+  let targetTime = now + delay;
+  log("Setting next update of " + provider + " to " + targetTime
+      + " (" + delay + "ms from now)");
+  this.prefs_.setPref(nextUpdatePref, targetTime.toString());
 }
 
 
