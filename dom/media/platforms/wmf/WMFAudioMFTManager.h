@@ -21,17 +21,17 @@ public:
 
   bool Init();
 
-  virtual HRESULT Input(MediaRawData* aSample) override;
+  HRESULT Input(MediaRawData* aSample) override;
 
   
   
   
-  virtual HRESULT Output(int64_t aStreamOffset,
+  HRESULT Output(int64_t aStreamOffset,
                          nsRefPtr<MediaData>& aOutput) override;
 
-  virtual void Shutdown() override;
+  void Shutdown() override;
 
-  virtual TrackInfo::TrackType GetType() override {
+  TrackInfo::TrackType GetType() override {
     return TrackInfo::kAudioTrack;
   }
 

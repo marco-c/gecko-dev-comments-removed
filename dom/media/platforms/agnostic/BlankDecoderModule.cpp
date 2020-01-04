@@ -34,11 +34,11 @@ public:
   {
   }
 
-  virtual nsRefPtr<InitPromise> Init() override {
+  nsRefPtr<InitPromise> Init() override {
     return InitPromise::CreateAndResolve(mType, __func__);
   }
 
-  virtual nsresult Shutdown() override {
+  nsresult Shutdown() override {
     return NS_OK;
   }
 
@@ -67,7 +67,7 @@ public:
     MediaDataDecoderCallback* mCallback;
   };
 
-  virtual nsresult Input(MediaRawData* aSample) override
+  nsresult Input(MediaRawData* aSample) override
   {
     
     
@@ -77,12 +77,12 @@ public:
     return NS_OK;
   }
 
-  virtual nsresult Flush() override {
+  nsresult Flush() override {
     mTaskQueue->Flush();
     return NS_OK;
   }
 
-  virtual nsresult Drain() override {
+  nsresult Drain() override {
     mCallback->DrainComplete();
     return NS_OK;
   }
@@ -213,7 +213,7 @@ class BlankDecoderModule : public PlatformDecoderModule {
 public:
 
   
-  virtual already_AddRefed<MediaDataDecoder>
+  already_AddRefed<MediaDataDecoder>
   CreateVideoDecoder(const VideoInfo& aConfig,
                      layers::LayersBackend aLayersBackend,
                      layers::ImageContainer* aImageContainer,
@@ -230,7 +230,7 @@ public:
   }
 
   
-  virtual already_AddRefed<MediaDataDecoder>
+  already_AddRefed<MediaDataDecoder>
   CreateAudioDecoder(const AudioInfo& aConfig,
                      FlushableTaskQueue* aAudioTaskQueue,
                      MediaDataDecoderCallback* aCallback) override {
@@ -245,18 +245,18 @@ public:
     return decoder.forget();
   }
 
-  virtual bool
+  bool
   SupportsMimeType(const nsACString& aMimeType) override
   {
     return true;
   }
 
-  virtual bool
+  bool
   SupportsSharedDecoders(const VideoInfo& aConfig) const override {
     return false;
   }
 
-  virtual ConversionRequired
+  ConversionRequired
   DecoderNeedsConversion(const TrackInfo& aConfig) const override
   {
     return kNeedNone;
