@@ -4,6 +4,7 @@
 
 
 #include "GPUChild.h"
+#include "gfxPrefs.h"
 #include "GPUProcessHost.h"
 
 namespace mozilla {
@@ -18,6 +19,28 @@ GPUChild::GPUChild(GPUProcessHost* aHost)
 GPUChild::~GPUChild()
 {
   MOZ_COUNT_DTOR(GPUChild);
+}
+
+void
+GPUChild::Init()
+{
+  
+  
+  
+  
+  
+  nsTArray<GfxPrefSetting> prefs;
+  for (auto pref : gfxPrefs::all()) {
+    if (pref->HasDefaultValue()) {
+      return;
+    }
+
+    GfxPrefValue value;
+    pref->GetCachedValue(&value);
+    prefs.AppendElement(GfxPrefSetting(pref->Index(), value));
+  }
+
+  SendInit(prefs);
 }
 
 void
