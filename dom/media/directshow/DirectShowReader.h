@@ -9,6 +9,7 @@
 
 #include "windows.h" 
 #include "MediaDecoderReader.h"
+#include "MediaResource.h"
 #include "mozilla/RefPtr.h"
 #include "MP3FrameParser.h"
 
@@ -105,7 +106,7 @@ private:
   
   int64_t mDuration;
 
-  NotifyDataArrivedFilter mFilter;
+  MediaByteRangeSet mLastCachedRanges;
 };
 
 } 
