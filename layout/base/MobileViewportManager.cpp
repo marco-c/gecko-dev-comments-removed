@@ -81,6 +81,13 @@ MobileViewportManager::RequestReflow()
   RefreshViewportSize(false);
 }
 
+void
+MobileViewportManager::ResolutionUpdated()
+{
+  MVM_LOG("%p: resolution updated\n", this);
+  RefreshSPCSPS();
+}
+
 NS_IMETHODIMP
 MobileViewportManager::HandleEvent(nsIDOMEvent* event)
 {
@@ -223,6 +230,28 @@ MobileViewportManager::UpdateDisplayPortMargins()
     nsLayoutUtils::CalculateAndSetDisplayPortMargins(scrollable,
       nsLayoutUtils::RepaintMode::DoNotRepaint);
   }
+}
+
+void
+MobileViewportManager::RefreshSPCSPS()
+{
+  
+  
+
+  if (!gfxPrefs::APZAllowZooming()) {
+    return;
+  }
+
+  ScreenIntSize displaySize = ViewAs<ScreenPixel>(
+    mDisplaySize, PixelCastJustification::LayoutDeviceIsScreenForBounds);
+
+  CSSToLayoutDeviceScale cssToDev =
+      mPresShell->GetPresContext()->CSSToDevPixelScale();
+  LayoutDeviceToLayerScale res(nsLayoutUtils::GetResolution(mPresShell));
+  CSSToScreenScale zoom = ViewTargetAs<ScreenPixel>(cssToDev * res / ParentLayerToLayerScale(1),
+    PixelCastJustification::ScreenIsParentLayerForRoot);
+
+  UpdateSPCSPS(displaySize, zoom);
 }
 
 void

@@ -32,12 +32,19 @@ public:
 
   void RequestReflow();
 
+  
+
+  void ResolutionUpdated();
+
 private:
   ~MobileViewportManager();
 
   
 
   void RefreshViewportSize(bool aForceAdjustResolution);
+
+  
+  void RefreshSPCSPS();
 
   
   mozilla::CSSToScreenScale UpdateResolution(const nsViewportInfo& aViewportInfo,

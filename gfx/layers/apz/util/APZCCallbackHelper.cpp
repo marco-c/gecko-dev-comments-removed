@@ -222,18 +222,6 @@ APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    CSSSize scrollPort = aMetrics.CalculateCompositedSizeInCssPixels();
-    nsLayoutUtils::SetScrollPositionClampingScrollPortSize(shell, scrollPort);
-
-    
-    
     presShellResolution = aMetrics.GetPresShellResolution()
                         * aMetrics.GetAsyncZoom().scale;
     nsLayoutUtils::SetResolutionAndScaleTo(shell, presShellResolution);
