@@ -1087,9 +1087,13 @@ public:
 
   static bool StyloEnabled()
   {
+    
+    
+    
+    
 #ifdef MOZ_STYLO
-    static bool enabled = PR_GetEnv("MOZ_STYLO");
-    return enabled;
+    static bool disabled = PR_GetEnv("MOZ_DISABLE_STYLO");
+    return !disabled;
 #else
     return false;
 #endif
