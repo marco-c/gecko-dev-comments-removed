@@ -144,20 +144,23 @@ function checkButtonsStatus(shouldBeActive) {
   }
 }
 
-function* testButtonActions(startNotification, endNotification) {
+function* testButtonActions(startNotification, endNotification, expectActive = true) {
   checkButtonsStatus(false);
   
   yield notifyAndPromiseUIUpdated(startNotification);
-  checkButtonsStatus(true);
+  checkButtonsStatus(expectActive);
   
   yield notifyAndPromiseUIUpdated(endNotification);
   checkButtonsStatus(false);
 }
 
 function *doTestButtonActivities() {
-  yield testButtonActions("weave:service:login:start", "weave:service:login:finish");
-  yield testButtonActions("weave:service:login:start", "weave:service:login:error");
+  
+  
+  yield testButtonActions("weave:service:login:start", "weave:service:login:finish", false);
+  yield testButtonActions("weave:service:login:start", "weave:service:login:error", false);
 
+  
   yield testButtonActions("weave:service:sync:start", "weave:service:sync:finish");
   yield testButtonActions("weave:service:sync:start", "weave:service:sync:error");
 
