@@ -39,7 +39,7 @@ nsTArray_base<Alloc, Copy>::GetAutoArrayBufferUnsafe(size_t aElemAlign) const
 
   static_assert(sizeof(void*) != 4 ||
                 (MOZ_ALIGNOF(mozilla::AlignedElem<8>) == 8 &&
-                 sizeof(nsAutoTArray<mozilla::AlignedElem<8>, 1>) ==
+                 sizeof(AutoTArray<mozilla::AlignedElem<8>, 1>) ==
                    sizeof(void*) + sizeof(nsTArrayHeader) +
                    4 + sizeof(mozilla::AlignedElem<8>)),
                 "auto array padding wasn't what we expected");

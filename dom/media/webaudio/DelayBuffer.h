@@ -94,7 +94,7 @@ private:
   
   FallibleTArray<AudioChunk> mChunks;
   
-  nsAutoTArray<const float*,GUESS_AUDIO_CHANNELS> mUpmixChannels;
+  AutoTArray<const float*,GUESS_AUDIO_CHANNELS> mUpmixChannels;
   double mSmoothingRate;
   
   double mCurrentDelay;

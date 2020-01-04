@@ -90,7 +90,7 @@ protected:
 
   nsImageFrame* mImageFrame;  
   nsCOMPtr<nsIContent> mMap;
-  nsAutoTArray<Area*, 8> mAreas; 
+  AutoTArray<Area*, 8> mAreas; 
   bool mContainsBlockContents;
 };
 

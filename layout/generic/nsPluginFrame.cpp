@@ -313,7 +313,7 @@ nsPluginFrame::PrepForDrawing(nsIWidget *aWidget)
     
     
     
-    nsAutoTArray<nsIWidget::Configuration,1> configurations;
+    AutoTArray<nsIWidget::Configuration,1> configurations;
     nsIWidget::Configuration* configuration = configurations.AppendElement();
     nscoord appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
     configuration->mChild = mWidget;

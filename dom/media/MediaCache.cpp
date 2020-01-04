@@ -794,7 +794,7 @@ MediaCache::FindReusableBlock(TimeStamp aNow,
   
   
   
-  nsAutoTArray<uint32_t,8> candidates;
+  AutoTArray<uint32_t,8> candidates;
   for (uint32_t i = 0; i < mStreams.Length(); ++i) {
     MediaCacheStream* stream = mStreams[i];
     if (stream->mPinCount > 0) {
@@ -1040,7 +1040,7 @@ MediaCache::Update()
   
   
   
-  nsAutoTArray<StreamAction,10> actions;
+  AutoTArray<StreamAction,10> actions;
 
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);

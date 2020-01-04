@@ -254,7 +254,7 @@ LazyIdleThread::ShutdownThread()
   
   
   
-  nsAutoTArray<nsCOMPtr<nsIRunnable>, 10> queuedRunnables;
+  AutoTArray<nsCOMPtr<nsIRunnable>, 10> queuedRunnables;
 
   nsresult rv;
 

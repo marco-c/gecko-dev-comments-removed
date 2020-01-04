@@ -111,7 +111,7 @@ protected:
   virtual ~nsHtml5DocumentBuilder();
 
 protected:
-  nsAutoTArray<nsCOMPtr<nsIContent>, 32> mOwnedElements;
+  AutoTArray<nsCOMPtr<nsIContent>, 32> mOwnedElements;
   
 
 

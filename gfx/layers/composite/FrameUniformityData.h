@@ -30,7 +30,7 @@ struct LayerTransforms {
   gfx::Point GetStdDev();
 
   
-  nsAutoTArray<gfx::Point, 300> mTransforms;
+  AutoTArray<gfx::Point, 300> mTransforms;
 };
 
 class LayerTransformRecorder {

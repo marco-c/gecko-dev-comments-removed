@@ -583,10 +583,10 @@ protected:
   RefPtr<MediaInputPort> mPlaybackPort;
 
   
-  nsAutoTArray<RefPtr<TrackPort>, 2> mOwnedTracks;
+  AutoTArray<RefPtr<TrackPort>, 2> mOwnedTracks;
 
   
-  nsAutoTArray<RefPtr<TrackPort>, 2> mTracks;
+  AutoTArray<RefPtr<TrackPort>, 2> mTracks;
 
   RefPtr<OwnedStreamListener> mOwnedListener;
   RefPtr<PlaybackStreamListener> mPlaybackListener;

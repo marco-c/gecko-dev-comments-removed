@@ -2315,21 +2315,21 @@ class nsAutoArrayBase<TArrayBase, 0> : public TArrayBase
 
 
 template<class E, size_t N>
-class nsAutoTArray : public nsAutoArrayBase<nsTArray<E>, N>
+class AutoTArray : public nsAutoArrayBase<nsTArray<E>, N>
 {
-  typedef nsAutoTArray<E, N> self_type;
+  typedef AutoTArray<E, N> self_type;
   typedef nsAutoArrayBase<nsTArray<E>, N> Base;
 
 public:
-  nsAutoTArray() {}
+  AutoTArray() {}
 
   template<typename Allocator>
-  explicit nsAutoTArray(const nsTArray_Impl<E, Allocator>& aOther)
+  explicit AutoTArray(const nsTArray_Impl<E, Allocator>& aOther)
   {
     Base::AppendElements(aOther);
   }
   template<typename Allocator>
-  explicit nsAutoTArray(nsTArray_Impl<E, Allocator>&& aOther)
+  explicit AutoTArray(nsTArray_Impl<E, Allocator>&& aOther)
     : Base(mozilla::Move(aOther))
   {
   }
@@ -2378,16 +2378,16 @@ public:
     return *this;
   }
 
-  operator const nsAutoTArray<E, N>&() const
+  operator const AutoTArray<E, N>&() const
   {
-    return *reinterpret_cast<const nsAutoTArray<E, N>*>(this);
+    return *reinterpret_cast<const AutoTArray<E, N>*>(this);
   }
 };
 
 template<class E, size_t N>
-struct nsTArray_CopyChooser<nsAutoTArray<E, N>>
+struct nsTArray_CopyChooser<AutoTArray<E, N>>
 {
-  typedef nsTArray_CopyWithConstructors<nsAutoTArray<E, N>> Type;
+  typedef nsTArray_CopyWithConstructors<AutoTArray<E, N>> Type;
 };
 
 
@@ -2403,9 +2403,9 @@ struct nsTArray_CopyChooser<nsAutoTArray<E, N>>
 
 
 
-static_assert(sizeof(nsAutoTArray<uint32_t, 2>) ==
+static_assert(sizeof(AutoTArray<uint32_t, 2>) ==
               sizeof(void*) + sizeof(nsTArrayHeader) + sizeof(uint32_t) * 2,
-              "nsAutoTArray shouldn't contain any extra padding, "
+              "AutoTArray shouldn't contain any extra padding, "
               "see the comment");
 
 

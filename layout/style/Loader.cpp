@@ -1801,7 +1801,7 @@ Loader::SheetComplete(SheetLoadData* aLoadData, nsresult aStatus)
   
   
   
-  nsAutoTArray<RefPtr<SheetLoadData>, 8> datasToNotify;
+  AutoTArray<RefPtr<SheetLoadData>, 8> datasToNotify;
   DoSheetComplete(aLoadData, aStatus, datasToNotify);
 
   

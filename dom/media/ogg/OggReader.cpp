@@ -296,7 +296,7 @@ void OggReader::SetupTargetSkeleton(SkeletonState* aSkeletonState)
     } else if (ReadHeaders(aSkeletonState) && aSkeletonState->HasIndex()) {
       
       
-      nsAutoTArray<uint32_t, 2> tracks;
+      AutoTArray<uint32_t, 2> tracks;
       BuildSerialList(tracks);
       int64_t duration = 0;
       if (NS_SUCCEEDED(aSkeletonState->GetDuration(tracks, duration))) {
@@ -395,7 +395,7 @@ nsresult OggReader::ReadMetadata(MediaInfo* aInfo,
   *aTags = nullptr;
 
   ogg_page page;
-  nsAutoTArray<OggCodecState*,4> bitstreams;
+  AutoTArray<OggCodecState*,4> bitstreams;
   nsTArray<uint32_t> serials;
   bool readAllBOS = false;
   while (!readAllBOS) {
@@ -1254,7 +1254,7 @@ OggReader::IndexedSeekResult OggReader::SeekToKeyframeUsingIndex(int64_t aTarget
     return SEEK_INDEX_FAIL;
   }
   
-  nsAutoTArray<uint32_t, 2> tracks;
+  AutoTArray<uint32_t, 2> tracks;
   BuildSerialList(tracks);
   SkeletonState::nsSeekTarget keyframe;
   if (NS_FAILED(mSkeletonState->IndexedSeekTarget(aTarget,
@@ -1449,7 +1449,7 @@ nsresult OggReader::SeekInternal(int64_t aTarget, int64_t aEndTime)
       
       
       
-      nsAutoTArray<SeekRange, 16> ranges;
+      AutoTArray<SeekRange, 16> ranges;
       res = GetSeekRanges(ranges);
       NS_ENSURE_SUCCESS(res,res);
 

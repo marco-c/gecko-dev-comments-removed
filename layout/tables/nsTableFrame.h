@@ -712,7 +712,7 @@ protected:
 
   nsIFrame* GetFirstBodyRowGroupFrame();
 public:
-  typedef nsAutoTArray<nsTableRowGroupFrame*, 8> RowGroupArray;
+  typedef AutoTArray<nsTableRowGroupFrame*, 8> RowGroupArray;
   
 
 
@@ -857,7 +857,7 @@ protected:
   void DumpRowGroup(nsIFrame* aChildFrame);
 #endif
   
-  nsAutoTArray<nsTableColFrame*, 8> mColFrames;
+  AutoTArray<nsTableColFrame*, 8> mColFrames;
 
   struct TableBits {
     uint32_t mHaveReflowedColGroups:1; 

@@ -175,7 +175,7 @@ struct RuleHashTableEntry : public PLDHashEntryHdr {
   
   
   
-  nsAutoTArray<RuleValue, 1> mRules;
+  AutoTArray<RuleValue, 1> mRules;
 };
 
 struct RuleHashTagTableEntry : public RuleHashTableEntry {
@@ -812,7 +812,7 @@ struct AtomSelectorEntry : public PLDHashEntryHdr {
   nsIAtom *mAtom;
   
   
-  nsAutoTArray<SelectorPair, 2> mSelectors;
+  AutoTArray<SelectorPair, 2> mSelectors;
 };
 
 static void
@@ -4026,7 +4026,7 @@ TreeMatchContext::InitAncestors(Element *aElement)
                "for the assumption that GetParentNode() is non-null "
                "on all element ancestors of aElement to be true");
     
-    nsAutoTArray<Element*, 50> ancestors;
+    AutoTArray<Element*, 50> ancestors;
     Element* cur = aElement;
     do {
       ancestors.AppendElement(cur);
@@ -4048,7 +4048,7 @@ TreeMatchContext::InitStyleScopes(Element* aElement)
 
   if (MOZ_LIKELY(aElement)) {
     
-    nsAutoTArray<Element*, 50> ancestors;
+    AutoTArray<Element*, 50> ancestors;
     Element* cur = aElement;
     do {
       ancestors.AppendElement(cur);

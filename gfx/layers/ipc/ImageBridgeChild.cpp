@@ -146,7 +146,7 @@ ImageBridgeChild::UseTextures(CompositableClient* aCompositable,
   MOZ_ASSERT(aCompositable->GetIPDLActor());
   MOZ_ASSERT(aCompositable->IsConnected());
 
-  nsAutoTArray<TimedTexture,4> textures;
+  AutoTArray<TimedTexture,4> textures;
 
   for (auto& t : aTextures) {
     MOZ_ASSERT(t.mTextureClient);

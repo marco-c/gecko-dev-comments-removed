@@ -136,7 +136,7 @@ protected:
     
     
     
-    typedef nsAutoTArray<RefPtr<nsDocLoader>, 8> WebProgressList;
+    typedef AutoTArray<RefPtr<nsDocLoader>, 8> WebProgressList;
     void GatherAncestorWebProgresses(WebProgressList& aList);
 
     void FireOnStateChange(nsIWebProgress *aProgress,

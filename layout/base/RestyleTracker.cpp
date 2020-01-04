@@ -165,7 +165,7 @@ RestyleTracker::DoProcessRestyles()
     while (mPendingRestyles.Count()) {
       if (mHaveLaterSiblingRestyles) {
         
-        nsAutoTArray<RefPtr<Element>, RESTYLE_ARRAY_STACKSIZE> laterSiblingArr;
+        AutoTArray<RefPtr<Element>, RESTYLE_ARRAY_STACKSIZE> laterSiblingArr;
         for (auto iter = mPendingRestyles.Iter(); !iter.Done(); iter.Next()) {
           auto element = static_cast<dom::Element*>(iter.Key());
           
@@ -280,7 +280,7 @@ RestyleTracker::DoProcessRestyles()
       
       
       
-      nsAutoTArray<RestyleEnumerateData, RESTYLE_ARRAY_STACKSIZE> restyleArr;
+      AutoTArray<RestyleEnumerateData, RESTYLE_ARRAY_STACKSIZE> restyleArr;
       RestyleEnumerateData* restylesToProcess =
         restyleArr.AppendElements(mPendingRestyles.Count());
       if (restylesToProcess) {

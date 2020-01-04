@@ -958,7 +958,7 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Tracks
   }
 #endif
 
-  nsAutoTArray<TrackSize, 32> mSizes;
+  AutoTArray<TrackSize, 32> mSizes;
   nscoord mContentBoxSize;
   nscoord mGridGap;
   LogicalAxis mAxis;
@@ -2563,7 +2563,7 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
   
   
   
-  nsAutoTArray<TrackSize::StateBits, 16> stateBitsPerSpan;
+  AutoTArray<TrackSize::StateBits, 16> stateBitsPerSpan;
   nsTArray<Step2ItemData> step2Items;
   GridItemCSSOrderIterator& iter = aState.mIter;
   nsRenderingContext* rc = &aState.mRenderingContext;

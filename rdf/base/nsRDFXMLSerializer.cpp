@@ -607,7 +607,7 @@ nsRDFXMLSerializer::SerializeDescription(nsIOutputStream* aStream,
 
     
     
-    nsAutoTArray<nsIRDFResource*, 8> visited;
+    AutoTArray<nsIRDFResource*, 8> visited;
     int32_t skipped = 0;
 
     nsCOMPtr<nsISimpleEnumerator> arcs;

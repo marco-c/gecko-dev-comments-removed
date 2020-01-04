@@ -247,7 +247,7 @@ protected:
   void DeleteIEndBEndBorders();
 
   nsTableFrame&               mTableFrame;
-  nsAutoTArray<nsColInfo, 8>  mCols;
+  AutoTArray<nsColInfo, 8>  mCols;
   nsCellMap*                  mFirstMap;
   
   BCInfo*                     mBCInfo;

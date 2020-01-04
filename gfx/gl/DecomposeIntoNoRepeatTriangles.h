@@ -45,8 +45,8 @@ public:
     }
 private:
     
-    nsAutoTArray<coord, 6> mVertexCoords;
-    nsAutoTArray<coord, 6> mTexCoords;
+    AutoTArray<coord, 6> mVertexCoords;
+    AutoTArray<coord, 6> mTexCoords;
 
     static void
     AppendRectToCoordArray(InfallibleTArray<coord>& array, GLfloat x0, GLfloat y0, GLfloat x1, GLfloat y1);

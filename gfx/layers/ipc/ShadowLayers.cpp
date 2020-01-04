@@ -387,7 +387,7 @@ ShadowLayerForwarder::UseTextures(CompositableClient* aCompositable,
 {
   MOZ_ASSERT(aCompositable && aCompositable->IsConnected());
 
-  nsAutoTArray<TimedTexture,4> textures;
+  AutoTArray<TimedTexture,4> textures;
 
   for (auto& t : aTextures) {
     MOZ_ASSERT(t.mTextureClient);

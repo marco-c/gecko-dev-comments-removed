@@ -214,7 +214,7 @@ nsControllerCommandGroup::AddCommandToGroup(const char* aCommand,
   nsTArray<nsCString>* commandList = mGroupsHash.Get(groupKey);
   if (!commandList) {
     
-    commandList = new nsAutoTArray<nsCString, 8>;
+    commandList = new AutoTArray<nsCString, 8>;
     mGroupsHash.Put(groupKey, commandList);
   }
 

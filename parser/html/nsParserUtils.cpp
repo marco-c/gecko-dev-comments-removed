@@ -160,7 +160,7 @@ nsParserUtils::ParseFragment(const nsAString& aFragment,
 
   
   
-  nsAutoTArray<nsString, 2> tagStack;
+  AutoTArray<nsString, 2> tagStack;
   nsAutoCString base, spec;
   if (aIsXML) {
     

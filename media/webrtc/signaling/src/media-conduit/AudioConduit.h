@@ -273,7 +273,7 @@ private:
     TimeStamp mTimeStamp;
     uint32_t mRTPTimeStamp; 
   };
-  nsAutoTArray<Processing,8> mProcessing;
+  AutoTArray<Processing,8> mProcessing;
 
   int mChannel;
   RecvCodecList    mRecvCodecList;
