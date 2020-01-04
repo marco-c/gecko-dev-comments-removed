@@ -2014,7 +2014,9 @@ const ThreadActor = ActorClass({
       
       
       for (let actor of bpActors) {
-        actor.originalLocation.originalSourceActor._setBreakpoint(actor);
+        if (actor.isPending) {
+          actor.originalLocation.originalSourceActor._setBreakpoint(actor);
+        }
       }
     }
 
