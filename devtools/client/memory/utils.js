@@ -3,9 +3,12 @@
 
 
 const { Cu } = require("chrome");
+
 Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
 const STRINGS_URI = "chrome://browser/locale/devtools/memory.properties"
 const L10N = exports.L10N = new ViewHelpers.L10N(STRINGS_URI);
+
+const { URL } = require("sdk/url");
 const { assert } = require("devtools/shared/DevToolsUtils");
 const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 const CUSTOM_BREAKDOWN_PREF = "devtools.memory.custom-breakdowns";
@@ -267,4 +270,47 @@ exports.getSnapshotTotals = function (snapshot) {
     bytes: bytes || 0,
     count: count || 0,
   };
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+exports.parseSource = function (source) {
+  const sourceStr = source ? String(source) : "";
+
+  let short;
+  let long;
+  let host;
+
+  try {
+    const url = new URL(sourceStr);
+    short = url.fileName;
+    host = url.host;
+    long = url.toString();
+  } catch (e) {
+    
+    long = sourceStr;
+    short = sourceStr.slice(0, 100);
+  }
+
+  if (!short) {
+    
+
+    if (!long) {
+      long = L10N.getStr("unknownSource");
+    }
+
+    short = long.slice(0, 100);
+  }
+
+  return { short, long, host };
 };
