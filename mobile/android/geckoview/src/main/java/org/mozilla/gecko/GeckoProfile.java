@@ -938,11 +938,6 @@ public final class GeckoProfile {
         if (!isDefaultSet) {
             
             profileSection.setProperty("Default", 1);
-
-            
-            
-            
-            Telemetry.startUISession(TelemetryContract.Session.FIRSTRUN);
         }
 
         parser.addSection(profileSection);

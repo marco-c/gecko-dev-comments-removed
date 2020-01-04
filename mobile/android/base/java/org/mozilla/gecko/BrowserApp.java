@@ -933,8 +933,14 @@ public class BrowserApp extends GeckoApp
                         });
                     }
                 }
+
                 
                 prefs.edit().putBoolean(FirstrunAnimationContainer.PREF_FIRSTRUN_ENABLED, false).apply();
+
+                
+                
+                
+                Telemetry.startUISession(TelemetryContract.Session.FIRSTRUN);
             }
         } finally {
             StrictMode.setThreadPolicy(savedPolicy);
