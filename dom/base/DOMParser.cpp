@@ -352,7 +352,6 @@ DOMParser::Init(nsIPrincipal* principal, nsIURI* documentURI,
       
       
       mPrincipal = nsNullPrincipal::Create();
-      NS_ENSURE_TRUE(mPrincipal, NS_ERROR_FAILURE);
 
       if (!mDocumentURI) {
         rv = mPrincipal->GetURI(getter_AddRefs(mDocumentURI));
@@ -468,8 +467,6 @@ DOMParser::SetUpDocument(DocumentFlavor aFlavor, nsIDOMDocument** aResult)
     AttemptedInitMarker marker(&mAttemptedInit);
 
     nsCOMPtr<nsIPrincipal> prin = nsNullPrincipal::Create();
-    NS_ENSURE_TRUE(prin, NS_ERROR_FAILURE);
-
     rv = Init(prin, nullptr, nullptr, scriptHandlingObject);
     NS_ENSURE_SUCCESS(rv, rv);
   }

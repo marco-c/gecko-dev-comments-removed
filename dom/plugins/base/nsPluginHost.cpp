@@ -646,7 +646,6 @@ nsresult nsPluginHost::FindProxyForURL(const char* url, char* *result)
   NS_ENSURE_SUCCESS(res, res);
 
   nsCOMPtr<nsIPrincipal> nullPrincipal = nsNullPrincipal::Create();
-  NS_ENSURE_TRUE(nullPrincipal, NS_ERROR_FAILURE);
   
   
   nsCOMPtr<nsIChannel> tempChannel;

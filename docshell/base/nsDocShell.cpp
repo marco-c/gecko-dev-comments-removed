@@ -1475,8 +1475,8 @@ nsDocShell::LoadURI(nsIURI* aURI,
   
   
 
+  nsCOMPtr<nsIPrincipal> ownerPrincipal = do_QueryInterface(owner);
   if (owner && mItemType != typeChrome) {
-    nsCOMPtr<nsIPrincipal> ownerPrincipal = do_QueryInterface(owner);
     if (nsContentUtils::IsSystemPrincipal(ownerPrincipal)) {
       if (ownerIsExplicit) {
         return NS_ERROR_DOM_SECURITY_ERR;
@@ -1489,7 +1489,10 @@ nsDocShell::LoadURI(nsIURI* aURI,
       }
       
       
-      owner = nsNullPrincipal::Create();
+      
+      
+      
+      owner = nsNullPrincipal::CreateWithInheritedAttributes(this);
       inheritOwner = false;
     }
   }
@@ -1500,7 +1503,9 @@ nsDocShell::LoadURI(nsIURI* aURI,
 
   if (aLoadFlags & LOAD_FLAGS_DISALLOW_INHERIT_OWNER) {
     inheritOwner = false;
-    owner = nsNullPrincipal::Create();
+    owner = ownerPrincipal ?
+              nsNullPrincipal::CreateWithInheritedAttributes(ownerPrincipal) :
+              nsNullPrincipal::CreateWithInheritedAttributes(this);
   }
 
   uint32_t flags = 0;
@@ -7948,7 +7953,6 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
     nsCOMPtr<nsIPrincipal> principal;
     if (mSandboxFlags & SANDBOXED_ORIGIN) {
       principal = nsNullPrincipal::CreateWithInheritedAttributes(aPrincipal);
-      NS_ENSURE_TRUE(principal, NS_ERROR_FAILURE);
     } else {
       principal = aPrincipal;
     }
@@ -12070,7 +12074,6 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
           if (loadInfo->LoadingPrincipal()) {
             owner = nsNullPrincipal::CreateWithInheritedAttributes(
               loadInfo->LoadingPrincipal());
-            NS_ENSURE_TRUE(owner, NS_ERROR_FAILURE);
           } else {
             
             NeckoOriginAttributes nAttrs;
@@ -12079,7 +12082,6 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
             pAttrs.InheritFromNecko(nAttrs);
 
             owner = nsNullPrincipal::Create(pAttrs);
-            NS_ENSURE_TRUE(owner, NS_ERROR_FAILURE);
           }
         } else if (loadInfo->GetForceInheritPrincipal()) {
           owner = loadInfo->TriggeringPrincipal();
@@ -12252,8 +12254,7 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
       
       
       
-      owner = nsNullPrincipal::Create();
-      NS_ENSURE_TRUE(owner, NS_ERROR_OUT_OF_MEMORY);
+      owner = nsNullPrincipal::CreateWithInheritedAttributes(this);
     }
   }
 
@@ -13934,8 +13935,7 @@ nsDocShell::GetPrintPreview(nsIWebBrowserPrint** aPrintPreview)
   nsCOMPtr<nsIDocumentViewerPrint> print = do_QueryInterface(mContentViewer);
   if (!print || !print->IsInitializedForPrintPreview()) {
     Stop(nsIWebNavigation::STOP_ALL);
-    nsCOMPtr<nsIPrincipal> principal = nsNullPrincipal::Create();
-    NS_ENSURE_STATE(principal);
+    nsCOMPtr<nsIPrincipal> principal = nsNullPrincipal::CreateWithInheritedAttributes(this);
     nsresult rv = CreateAboutBlankContentViewer(principal, nullptr);
     NS_ENSURE_SUCCESS(rv, rv);
     print = do_QueryInterface(mContentViewer);
