@@ -864,6 +864,7 @@ pref("accessibility.typeaheadfind.matchesCountTimeout", 100);
 pref("accessibility.typeaheadfind.matchesCountLimit", 1000);
 pref("findbar.highlightAll", false);
 pref("findbar.modalHighlight", false);
+pref("findbar.entireword", false);
 
 
 pref("gfx.use_text_smoothing_setting", false);

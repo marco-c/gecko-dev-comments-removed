@@ -719,8 +719,7 @@ nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow, bool aWrapping,
   (void)find->SetCaseSensitive(mMatchCase);
   (void)find->SetFindBackwards(mFindBackwards);
 
-  
-  (void)find->SetWordBreaker(nullptr);
+  (void)find->SetEntireWord(mEntireWord);
 
   
   

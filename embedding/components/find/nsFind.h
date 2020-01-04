@@ -44,6 +44,8 @@ protected:
   bool mFindBackward;
   bool mCaseSensitive;
 
+  
+  
   nsCOMPtr<nsIWordBreaker> mWordBreaker;
 
   int32_t mIterOffset;
@@ -65,12 +67,19 @@ protected:
                     bool aContinueOk);
 
   
+  char16_t PeekNextChar(nsIDOMRange* aSearchRange,
+                        nsIDOMRange* aStartPoint,
+                        nsIDOMRange* aEndPoint);
+
+  
   void ResetAll();
 
   
   nsresult InitIterator(nsIDOMNode* aStartNode, int32_t aStartOffset,
                         nsIDOMNode* aEndNode, int32_t aEndOffset);
   RefPtr<nsFindContentIterator> mIterator;
+
+  friend class PeekNextCharRestoreState;
 };
 
 #endif 
