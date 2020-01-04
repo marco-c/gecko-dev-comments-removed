@@ -2729,7 +2729,7 @@ DebugScopes::onPopCall(AbstractFramePtr frame, JSContext* cx)
 
 
 
-        AutoValueVector vec(cx);
+        Rooted<GCVector<Value>> vec(cx, GCVector<Value>(cx));
         if (!frame.copyRawFrameSlots(&vec) || vec.length() == 0)
             return;
 
