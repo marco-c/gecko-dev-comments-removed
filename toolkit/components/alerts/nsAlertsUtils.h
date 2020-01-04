@@ -1,0 +1,39 @@
+
+
+
+
+#ifndef nsAlertsUtils_h
+#define nsAlertsUtils_h
+
+#include "nsIPrincipal.h"
+#include "nsString.h"
+
+class nsAlertsUtils final
+{
+private:
+  nsAlertsUtils() = delete;
+
+public:
+  
+
+
+
+
+  static bool
+  IsActionablePrincipal(nsIPrincipal* aPrincipal);
+
+  
+
+
+
+  static void
+  GetSource(nsIPrincipal* aPrincipal, nsAString& aSource);
+
+  
+
+
+
+  static void
+  GetSourceHostPort(nsIPrincipal* aPrincipal, nsAString& aHostPort);
+};
+#endif 
