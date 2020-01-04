@@ -485,6 +485,9 @@ pref("security.mixed_content.block_active_content", true);
 pref("security.cert_pinning.enforcement_level", 1);
 
 
+pref("security.pki.sha1_enforcement_level", 2);
+
+
 
 pref("security.onecrl.maximum_staleness_in_seconds", 108000);
 

@@ -278,7 +278,8 @@ public:
   
   
   virtual Result CheckSignatureDigestAlgorithm(DigestAlgorithm digestAlg,
-                                               EndEntityOrCA endEntityOrCA) = 0;
+                                               EndEntityOrCA endEntityOrCA,
+                                               Time notBefore) = 0;
 
   
   

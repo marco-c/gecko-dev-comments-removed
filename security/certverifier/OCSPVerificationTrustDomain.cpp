@@ -51,7 +51,7 @@ OCSPVerificationTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&,
 
 Result
 OCSPVerificationTrustDomain::CheckSignatureDigestAlgorithm(
-  DigestAlgorithm aAlg, EndEntityOrCA aEEOrCA)
+  DigestAlgorithm aAlg, EndEntityOrCA aEEOrCA, Time notBefore)
 {
   
   

@@ -228,7 +228,7 @@ PathBuildingStep::Check(Input potentialIssuerDER,
     Time notAfter(Time::uninitialized);
     
     
-    rv = CheckValidity(subject.GetValidity(), time, &notBefore, &notAfter);
+    rv = ParseValidity(subject.GetValidity(), &notBefore, &notAfter);
     if (rv != Success) {
       return rv;
     }

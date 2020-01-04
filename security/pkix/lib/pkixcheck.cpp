@@ -35,6 +35,7 @@ namespace mozilla { namespace pkix {
 Result
 CheckSignatureAlgorithm(TrustDomain& trustDomain,
                         EndEntityOrCA endEntityOrCA,
+                        Time notBefore,
                         const der::SignedDataWithSignature& signedData,
                         Input signatureValue)
 {
@@ -91,7 +92,8 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
   
   
 
-  rv = trustDomain.CheckSignatureDigestAlgorithm(digestAlg, endEntityOrCA);
+  rv = trustDomain.CheckSignatureDigestAlgorithm(digestAlg, endEntityOrCA,
+                                                 notBefore);
   if (rv != Success) {
     return rv;
   }
@@ -125,7 +127,7 @@ CheckSignatureAlgorithm(TrustDomain& trustDomain,
 
 
 Result
-CheckValidity(Input encodedValidity, Time time,
+ParseValidity(Input encodedValidity,
                Time* notBeforeOut,
                Time* notAfterOut)
 {
@@ -148,6 +150,19 @@ CheckValidity(Input encodedValidity, Time time,
     return Result::ERROR_INVALID_DER_TIME;
   }
 
+  if (notBeforeOut) {
+    *notBeforeOut = notBefore;
+  }
+  if (notAfterOut) {
+    *notAfterOut = notAfter;
+  }
+
+  return Success;
+}
+
+Result
+CheckValidity(Time time, Time notBefore, Time notAfter)
+{
   if (time < notBefore) {
     return Result::ERROR_NOT_YET_VALID_CERTIFICATE;
   }
@@ -156,12 +171,6 @@ CheckValidity(Input encodedValidity, Time time,
     return Result::ERROR_EXPIRED_CERTIFICATE;
   }
 
-  if (notBeforeOut) {
-    *notBeforeOut = notBefore;
-  }
-  if (notAfterOut) {
-    *notAfterOut = notAfter;
-  }
   return Success;
 }
 
@@ -844,6 +853,17 @@ CheckIssuerIndependentProperties(TrustDomain& trustDomain,
     return rv;
   }
 
+  
+  
+  
+  
+  Time notBefore(Time::uninitialized);
+  Time notAfter(Time::uninitialized);
+  rv = ParseValidity(cert.GetValidity(), &notBefore, &notAfter);
+  if (rv != Success) {
+    return rv;
+  }
+
   if (trustLevel == TrustLevel::TrustAnchor &&
       endEntityOrCA == EndEntityOrCA::MustBeEndEntity &&
       requiredEKUIfPresent == KeyPurposeId::id_kp_OCSPSigning) {
@@ -856,7 +876,7 @@ CheckIssuerIndependentProperties(TrustDomain& trustDomain,
 
   switch (trustLevel) {
     case TrustLevel::InheritsTrust:
-      rv = CheckSignatureAlgorithm(trustDomain, endEntityOrCA,
+      rv = CheckSignatureAlgorithm(trustDomain, endEntityOrCA, notBefore,
                                    cert.GetSignedData(), cert.GetSignature());
       if (rv != Success) {
         return rv;
@@ -947,9 +967,7 @@ CheckIssuerIndependentProperties(TrustDomain& trustDomain,
 
   
   
-  Time notBefore(Time::uninitialized);
-  Time notAfter(Time::uninitialized);
-  rv = CheckValidity(cert.GetValidity(), time, &notBefore, &notAfter);
+  rv = CheckValidity(time, notBefore, notAfter);
   if (rv != Success) {
     return rv;
   }
