@@ -50,7 +50,7 @@
 
 
 
-const {Cc, Ci, Cu, Cr} = require("chrome");
+const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
 const protocol = require("devtools/server/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
@@ -59,7 +59,6 @@ const promise = require("promise");
 const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 const object = require("sdk/util/object");
 const events = require("sdk/event/core");
-const {Unknown} = require("sdk/platform/xpcom");
 const {Class} = require("sdk/core/heritage");
 const {WalkerSearch} = require("devtools/server/actors/utils/walker-search");
 const {PageStyleActor, getFontPreviewData} = require("devtools/server/actors/styles");
@@ -89,7 +88,8 @@ const HIDDEN_CLASS = "__fx-devtools-hide-shortcut__";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const IMAGE_FETCHING_TIMEOUT = 500;
-const RX_FUNC_NAME = /((var|const|let)\s+)?([\w$.]+\s*[:=]\s*)*(function)?\s*\*?\s*([\w$]+)?\s*$/;
+const RX_FUNC_NAME =
+  /((var|const|let)\s+)?([\w$.]+\s*[:=]\s*)*(function)?\s*\*?\s*([\w$]+)?\s*$/;
 
 
 
@@ -123,19 +123,28 @@ const PSEUDO_SELECTORS = [
   ["::selection", 0]
 ];
 
-var HELPER_SHEET = ".__fx-devtools-hide-shortcut__ { visibility: hidden !important } ";
-HELPER_SHEET += ":-moz-devtools-highlighted { outline: 2px dashed #F06!important; outline-offset: -2px!important } ";
+var HELPER_SHEET = `
+  .__fx-devtools-hide-shortcut__ {
+    visibility: hidden !important;
+  }
+
+  :-moz-devtools-highlighted {
+    outline: 2px dashed #F06!important;
+    outline-offset: -2px !important;
+  }
+`;
 
 loader.lazyRequireGetter(this, "DevToolsUtils",
                          "devtools/shared/DevToolsUtils");
 
 loader.lazyRequireGetter(this, "AsyncUtils", "devtools/shared/async-utils");
 
-loader.lazyGetter(this, "DOMParser", function() {
-  return Cc["@mozilla.org/xmlextras/domparser;1"].createInstance(Ci.nsIDOMParser);
+loader.lazyGetter(this, "DOMParser", function () {
+  return Cc["@mozilla.org/xmlextras/domparser;1"]
+           .createInstance(Ci.nsIDOMParser);
 });
 
-loader.lazyGetter(this, "eventListenerService", function() {
+loader.lazyGetter(this, "eventListenerService", function () {
   return Cc["@mozilla.org/eventlistenerservice;1"]
            .getService(Ci.nsIEventListenerService);
 });
@@ -145,20 +154,20 @@ loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css
 
 
 function makeInfallible(handler) {
-  return function(...args) {
+  return function (...args) {
     try {
       return handler.apply(this, args);
     } catch(ex) {
       console.error(ex);
     }
     return undefined;
-  }
+  };
 }
 
 
 function delayedResolve(value) {
   let deferred = promise.defer();
-  Services.tm.mainThread.dispatch(makeInfallible(function delayedResolveHandler() {
+  Services.tm.mainThread.dispatch(makeInfallible(() => {
     deferred.resolve(value);
   }), 0);
   return deferred.promise;
@@ -178,11 +187,11 @@ types.addDictType("imageData", {
 exports.DEFAULT_VALUE_SUMMARY_LENGTH = 50;
 var gValueSummaryLength = exports.DEFAULT_VALUE_SUMMARY_LENGTH;
 
-exports.getValueSummaryLength = function() {
+exports.getValueSummaryLength = function () {
   return gValueSummaryLength;
 };
 
-exports.setValueSummaryLength = function(val) {
+exports.setValueSummaryLength = function (val) {
   gValueSummaryLength = val;
 };
 
@@ -196,7 +205,7 @@ var gInspectingNode = null;
 
 
 
-exports.setInspectingNode = function(val) {
+exports.setInspectingNode = function (val) {
   gInspectingNode = val;
 };
 
@@ -206,7 +215,7 @@ exports.setInspectingNode = function(val) {
 var NodeActor = exports.NodeActor = protocol.ActorClass({
   typeName: "domnode",
 
-  initialize: function(walker, node) {
+  initialize: function (walker, node) {
     protocol.Actor.prototype.initialize.call(this, null);
     this.walker = walker;
     this.rawNode = node;
@@ -217,8 +226,9 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
     this.wasDisplayed = this.isDisplayed;
   },
 
-  toString: function() {
-    return "[NodeActor " + this.actorID + " for " + this.rawNode.toString() + "]";
+  toString: function () {
+    return "[NodeActor " + this.actorID + " for " +
+      this.rawNode.toString() + "]";
   },
 
   
@@ -229,7 +239,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
     return this.walker.conn;
   },
 
-  isDocumentElement: function() {
+  isDocumentElement: function () {
     return this.rawNode.ownerDocument &&
            this.rawNode.ownerDocument.documentElement === this.rawNode;
   },
@@ -248,7 +258,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
   },
 
   
-  form: function(detail) {
+  form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
     }
@@ -294,7 +304,8 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
       
       
       if (this.rawNode.nodeValue.length > gValueSummaryLength) {
-        form.shortValue = this.rawNode.nodeValue.substring(0, gValueSummaryLength);
+        form.shortValue = this.rawNode.nodeValue
+          .substring(0, gValueSummaryLength);
         form.incompleteValue = true;
       } else {
         form.shortValue = this.rawNode.nodeValue;
@@ -324,7 +335,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  watchDocument: function(callback) {
+  watchDocument: function (callback) {
     let node = this.rawNode;
     
     
@@ -341,11 +352,11 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
   },
 
   get isBeforePseudoElement() {
-    return this.rawNode.nodeName === "_moz_generated_content_before"
+    return this.rawNode.nodeName === "_moz_generated_content_before";
   },
 
   get isAfterPseudoElement() {
-    return this.rawNode.nodeName === "_moz_generated_content_after"
+    return this.rawNode.nodeName === "_moz_generated_content_after";
   },
 
   
@@ -396,9 +407,9 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
     let style = this.computedStyle;
     if (!style) {
       return true;
-    } else {
-      return style.display !== "none";
     }
+
+    return style.display !== "none";
   },
 
   
@@ -408,7 +419,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
   get _hasEventListeners() {
     let parsers = this._eventParsers;
-    for (let [,{hasListeners}] of parsers) {
+    for (let [, {hasListeners}] of parsers) {
       try {
         if (hasListeners && hasListeners(this.rawNode)) {
           return true;
@@ -421,7 +432,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
     return false;
   },
 
-  writeAttrs: function() {
+  writeAttrs: function () {
     if (!this.rawNode.attributes) {
       return undefined;
     }
@@ -434,7 +445,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
     });
   },
 
-  writePseudoClassLocks: function() {
+  writePseudoClassLocks: function () {
     if (this.rawNode.nodeType !== Ci.nsIDOMNode.ELEMENT_NODE) {
       return undefined;
     }
@@ -454,12 +465,12 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  getEventListeners: function(node) {
+  getEventListeners: function (node) {
     let parsers = this._eventParsers;
     let dbg = this.parent().tabActor.makeDebugger();
     let events = [];
 
-    for (let [,{getListeners, normalizeHandler}] of parsers) {
+    for (let [, {getListeners, normalizeHandler}] of parsers) {
       try {
         let eventInfos = getListeners(node);
 
@@ -516,7 +527,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  processHandlerForEvent: function(node, events, dbg, eventInfo) {
+  processHandlerForEvent: function (node, events, dbg, eventInfo) {
     let type = eventInfo.type || "";
     let handler = eventInfo.handler;
     let tags = eventInfo.tags || "";
@@ -615,7 +626,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
   
 
 
-  getNodeValue: method(function() {
+  getNodeValue: method(function () {
     return new LongStringActor(this.conn, this.rawNode.nodeValue || "");
   }, {
     request: {},
@@ -627,7 +638,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
   
 
 
-  setNodeValue: method(function(value) {
+  setNodeValue: method(function (value) {
     this.rawNode.nodeValue = value;
   }, {
     request: { value: Arg(0) },
@@ -637,7 +648,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
   
 
 
-  getUniqueSelector: method(function() {
+  getUniqueSelector: method(function () {
     return CssLogic.findCssSelector(this.rawNode);
   }, {
     request: {},
@@ -649,7 +660,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
   
 
 
-  scrollIntoView: method(function() {
+  scrollIntoView: method(function () {
     this.rawNode.scrollIntoView(true);
   }, {
     request: {},
@@ -667,7 +678,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  getImageData: method(function(maxDim) {
+  getImageData: method(function (maxDim) {
     return imageToImageData(this.rawNode, maxDim).then(imageData => {
       return {
         data: LongStringActor(this.conn, imageData.data),
@@ -682,7 +693,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
   
 
 
-  getEventListenerInfo: method(function() {
+  getEventListenerInfo: method(function () {
     if (this.rawNode.nodeName.toLowerCase() === "html") {
       return this.getEventListeners(this.rawNode.ownerGlobal);
     }
@@ -707,21 +718,21 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  modifyAttributes: method(function(modifications) {
+  modifyAttributes: method(function (modifications) {
     let rawNode = this.rawNode;
     for (let change of modifications) {
       if (change.newValue == null) {
         if (change.attributeNamespace) {
-          rawNode.removeAttributeNS(change.attributeNamespace, change.attributeName);
+          rawNode.removeAttributeNS(change.attributeNamespace,
+                                    change.attributeName);
         } else {
           rawNode.removeAttribute(change.attributeName);
         }
+      } else if (change.attributeNamespace) {
+        rawNode.setAttributeNS(change.attributeNamespace, change.attributeName,
+                               change.newValue);
       } else {
-        if (change.attributeNamespace) {
-          rawNode.setAttributeNS(change.attributeNamespace, change.attributeName, change.newValue);
-        } else {
-          rawNode.setAttribute(change.attributeName, change.newValue);
-        }
+        rawNode.setAttribute(change.attributeName, change.newValue);
       }
     }
   }, {
@@ -738,13 +749,13 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-  getFontFamilyDataURL: method(function(font, fillStyle="black") {
+  getFontFamilyDataURL: method(function (font, fillStyle = "black") {
     let doc = this.rawNode.ownerDocument;
     let options = {
       previewText: FONT_FAMILY_PREVIEW_TEXT,
       previewFontSize: FONT_FAMILY_PREVIEW_TEXT_SIZE,
       fillStyle: fillStyle
-    }
+    };
     let { dataURL, size } = getFontPreviewData(font, doc, options);
 
     return { data: LongStringActor(this.conn, dataURL), size: size };
@@ -769,11 +780,15 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 var NodeFront = protocol.FrontClass(NodeActor, {
-  initialize: function(conn, form, detail, ctx) {
-    this._parent = null; 
-    this._child = null;  
-    this._next = null;   
-    this._prev = null;   
+  initialize: function (conn, form, detail, ctx) {
+    
+    this._parent = null;
+    
+    this._child = null;
+    
+    this._next = null;
+    
+    this._prev = null;
     protocol.Front.prototype.initialize.call(this, conn, form, detail, ctx);
   },
 
@@ -782,12 +797,12 @@ var NodeFront = protocol.FrontClass(NodeActor, {
 
 
 
-  destroy: function() {
+  destroy: function () {
     protocol.Front.prototype.destroy.call(this);
   },
 
   
-  form: function(form, detail, ctx) {
+  form: function (form, detail, ctx) {
     if (detail === "actorid") {
       this.actorID = form;
       return;
@@ -816,7 +831,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
   
 
 
-  parentNode: function() {
+  parentNode: function () {
     return this._parent;
   },
 
@@ -826,7 +841,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
 
 
 
-  updateMutation: function(change) {
+  updateMutation: function (change) {
     if (change.type === "attributes") {
       
       this._attrMap = undefined;
@@ -848,7 +863,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
       }
       
       
-      if (!found && change.newValue !== null)  {
+      if (!found && change.newValue !== null) {
         this.attributes.push({
           name: change.attributeName,
           namespace: change.attributeNamespace,
@@ -881,10 +896,10 @@ var NodeFront = protocol.FrontClass(NodeActor, {
     return this._form.nodeName;
   },
   get doctypeString() {
-    return '<!DOCTYPE ' + this._form.name +
-     (this._form.publicId ? ' PUBLIC "' +  this._form.publicId + '"': '') +
-     (this._form.systemId ? ' "' + this._form.systemId + '"' : '') +
-     '>';
+    return "<!DOCTYPE " + this._form.name +
+     (this._form.publicId ? " PUBLIC \"" + this._form.publicId + "\"" : "") +
+     (this._form.systemId ? " \"" + this._form.systemId + "\"" : "") +
+     ">";
   },
 
   get baseURI() {
@@ -892,7 +907,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
   },
 
   get className() {
-    return this.getAttribute("class") || '';
+    return this.getAttribute("class") || "";
   },
 
   get hasChildren() {
@@ -945,11 +960,11 @@ var NodeFront = protocol.FrontClass(NodeActor, {
     return this._form.systemId;
   },
 
-  getAttribute: function(name) {
+  getAttribute: function (name) {
     let attr = this._getAttribute(name);
     return attr ? attr.value : null;
   },
-  hasAttribute: function(name) {
+  hasAttribute: function (name) {
     this._cacheAttributes();
     return (name in this._attrMap);
   },
@@ -966,7 +981,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
   get pseudoClassLocks() {
     return this._form.pseudoClassLocks || [];
   },
-  hasPseudoClassLock: function(pseudo) {
+  hasPseudoClassLock: function (pseudo) {
     return this.pseudoClassLocks.some(locked => locked === pseudo);
   },
 
@@ -987,23 +1002,23 @@ var NodeFront = protocol.FrontClass(NodeActor, {
     return true;
   },
 
-  getNodeValue: protocol.custom(function() {
+  getNodeValue: protocol.custom(function () {
     if (!this.incompleteValue) {
       return delayedResolve(new ShortLongString(this.shortValue));
-    } else {
-      return this._getNodeValue();
     }
+
+    return this._getNodeValue();
   }, {
     impl: "_getNodeValue"
   }),
 
   
 
-  getFormProperty: function(name) {
+  getFormProperty: function (name) {
     return this._form.props ? this._form.props[name] : null;
   },
 
-  hasFormProperty: function(name) {
+  hasFormProperty: function (name) {
     return this._form.props ? (name in this._form.props) : null;
   },
 
@@ -1014,12 +1029,12 @@ var NodeFront = protocol.FrontClass(NodeActor, {
   
 
 
-  startModifyingAttributes: function() {
+  startModifyingAttributes: function () {
     return AttributeModificationList(this);
   },
 
-  _cacheAttributes: function() {
-    if (typeof(this._attrMap) != "undefined") {
+  _cacheAttributes: function () {
+    if (typeof this._attrMap != "undefined") {
       return;
     }
     this._attrMap = {};
@@ -1028,7 +1043,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
     }
   },
 
-  _getAttribute: function(name) {
+  _getAttribute: function (name) {
     this._cacheAttributes();
     return this._attrMap[name] || undefined;
   },
@@ -1038,7 +1053,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
 
 
 
-  reparent: function(parent) {
+  reparent: function (parent) {
     if (this._parent === parent) {
       return;
     }
@@ -1069,7 +1084,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
   
 
 
-  treeChildren: function() {
+  treeChildren: function () {
     let ret = [];
     for (let child = this._child; child != null; child = child._next) {
       ret.push(child);
@@ -1084,7 +1099,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
 
 
 
-  isLocal_toBeDeprecated: function() {
+  isLocal_toBeDeprecated: function () {
     return !!this.conn._transport._serverConnection;
   },
 
@@ -1093,7 +1108,7 @@ var NodeFront = protocol.FrontClass(NodeActor, {
 
 
 
-  rawNode: function(rawNode) {
+  rawNode: function (rawNode) {
     if (!this.conn._transport._serverConnection) {
       console.warn("Tried to use rawNode on a remote connection.");
       return null;
@@ -1116,6 +1131,7 @@ types.addDictType("disconnectedNode", {
   
   node: "domnode",
 
+  
   
   newParents: "array:domnode"
 });
@@ -1143,13 +1159,13 @@ types.addDictType("searchresult", {
 var NodeListActor = exports.NodeListActor = protocol.ActorClass({
   typeName: "domnodelist",
 
-  initialize: function(walker, nodeList) {
+  initialize: function (walker, nodeList) {
     protocol.Actor.prototype.initialize.call(this);
     this.walker = walker;
     this.nodeList = nodeList || [];
   },
 
-  destroy: function() {
+  destroy: function () {
     protocol.Actor.prototype.destroy.call(this);
   },
 
@@ -1164,22 +1180,22 @@ var NodeListActor = exports.NodeListActor = protocol.ActorClass({
   
 
 
-  marshallPool: function() {
+  marshallPool: function () {
     return this.walker;
   },
 
   
-  form: function() {
+  form: function () {
     return {
       actor: this.actorID,
       length: this.nodeList ? this.nodeList.length : 0
-    }
+    };
   },
 
   
 
 
-  item: method(function(index) {
+  item: method(function (index) {
     return this.walker.attachElement(this.nodeList[index]);
   }, {
     request: { item: Arg(0) },
@@ -1189,8 +1205,9 @@ var NodeListActor = exports.NodeListActor = protocol.ActorClass({
   
 
 
-  items: method(function(start=0, end=this.nodeList.length) {
-    let items = Array.prototype.slice.call(this.nodeList, start, end).map(item => this.walker._ref(item));
+  items: method(function (start = 0, end = this.nodeList.length) {
+    let items = Array.prototype.slice.call(this.nodeList, start, end)
+      .map(item => this.walker._ref(item));
     return this.walker.attachElements(items);
   }, {
     request: {
@@ -1200,31 +1217,31 @@ var NodeListActor = exports.NodeListActor = protocol.ActorClass({
     response: RetVal("disconnectedNodeArray")
   }),
 
-  release: method(function() {}, { release: true })
+  release: method(function () {}, { release: true })
 });
 
 
 
 
-var NodeListFront = exports.NodeListFront = protocol.FrontClass(NodeListActor, {
-  initialize: function(client, form) {
+var NodeListFront = protocol.FrontClass(NodeListActor, {
+  initialize: function (client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
   },
 
-  destroy: function() {
+  destroy: function () {
     protocol.Front.prototype.destroy.call(this);
   },
 
-  marshallPool: function() {
+  marshallPool: function () {
     return this.parent();
   },
 
   
-  form: function(json) {
+  form: function (json) {
     this.length = json.length;
   },
 
-  item: protocol.custom(function(index) {
+  item: protocol.custom(function (index) {
     return this._item(index).then(response => {
       return response.node;
     });
@@ -1232,7 +1249,7 @@ var NodeListFront = exports.NodeListFront = protocol.FrontClass(NodeListActor, {
     impl: "_item"
   }),
 
-  items: protocol.custom(function(start, end) {
+  items: protocol.custom(function (start, end) {
     return this._items(start, end).then(response => {
       return response.nodes;
     });
@@ -1240,6 +1257,8 @@ var NodeListFront = exports.NodeListFront = protocol.FrontClass(NodeListActor, {
     impl: "_items"
   })
 });
+
+exports.NodeListFront = NodeListFront;
 
 
 
@@ -1264,7 +1283,7 @@ var traversalMethod = {
   response: {
     node: RetVal("nullable:domnode")
   }
-}
+};
 
 
 
@@ -1311,7 +1330,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  initialize: function(conn, tabActor, options) {
+  initialize: function (conn, tabActor, options) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
     this.rootWin = tabActor.window;
@@ -1359,7 +1378,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  _onEventListenerChange: function(changesEnum) {
+  _onEventListenerChange: function (changesEnum) {
     let changes = changesEnum.enumerate();
     while (changes.hasMoreElements()) {
       let current = changes.getNext().QueryInterface(Ci.nsIEventListenerChange);
@@ -1378,7 +1397,7 @@ var WalkerActor = protocol.ActorClass({
   },
 
   
-  form: function() {
+  form: function () {
     return {
       actor: this.actorID,
       root: this.rootNode.form(),
@@ -1394,14 +1413,14 @@ var WalkerActor = protocol.ActorClass({
         multiFrameQuerySelectorAll: true,
         textSearch: true,
       }
-    }
+    };
   },
 
-  toString: function() {
+  toString: function () {
     return "[WalkerActor " + this.actorID + "]";
   },
 
-  getDocumentWalker: function(node, whatToShow) {
+  getDocumentWalker: function (node, whatToShow) {
     
     let nodeFilter = this.showAllAnonymousContent
                         ? allAnonymousContentTreeWalkerFilter
@@ -1409,7 +1428,7 @@ var WalkerActor = protocol.ActorClass({
     return new DocumentWalker(node, this.rootWin, whatToShow, nodeFilter);
   },
 
-  destroy: function() {
+  destroy: function () {
     if (this._destroyed) {
       return;
     }
@@ -1452,12 +1471,11 @@ var WalkerActor = protocol.ActorClass({
     } catch(e) {
       console.error(e);
     }
-
   },
 
-  release: method(function() {}, { release: true }),
+  release: method(function () {}, { release: true }),
 
-  unmanage: function(actor) {
+  unmanage: function (actor) {
     if (actor instanceof NodeActor) {
       if (this._activePseudoClassLocks &&
           this._activePseudoClassLocks.has(actor)) {
@@ -1473,7 +1491,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  hasNode: function(rawNode) {
+  hasNode: function (rawNode) {
     return this._refMap.has(rawNode);
   },
 
@@ -1483,11 +1501,11 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getNode: function(rawNode) {
+  getNode: function (rawNode) {
     return this._refMap.get(rawNode);
   },
 
-  _ref: function(node) {
+  _ref: function (node) {
     let actor = this.getNode(node);
     if (actor) {
       return actor;
@@ -1506,7 +1524,7 @@ var WalkerActor = protocol.ActorClass({
     return actor;
   },
 
-  _onReflows: function(reflows) {
+  _onReflows: function (reflows) {
     
     
     let changes = [];
@@ -1531,7 +1549,7 @@ var WalkerActor = protocol.ActorClass({
   
 
 
-  _onResize: function() {
+  _onResize: function () {
     events.emit(this, "resize");
   },
 
@@ -1553,9 +1571,14 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  pick: method(function() {}, {request: {}, response: RetVal("disconnectedNode")}),
-  cancelPick: method(function() {}),
-  highlight: method(function(node) {}, {request: {node: Arg(0, "nullable:domnode")}}),
+  pick: method(function () {}, {
+    request: {},
+    response: RetVal("disconnectedNode")
+  }),
+  cancelPick: method(function () {}),
+  highlight: method(function (node) {}, {
+    request: {node: Arg(0, "nullable:domnode")}
+  }),
 
   
 
@@ -1563,7 +1586,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  attachElement: function(node) {
+  attachElement: function (node) {
     let { nodes, newParents } = this.attachElements([node]);
     return {
       node: nodes[0],
@@ -1577,7 +1600,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  attachElements: function(nodes) {
+  attachElements: function (nodes) {
     let nodeActors = [];
     let newParents = new Set();
     for (let node of nodes) {
@@ -1611,7 +1634,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  document: method(function(node) {
+  document: method(function (node) {
     let doc = isNodeDead(node) ? this.rootDoc : nodeDocument(node.rawNode);
     return this._ref(doc);
   }, {
@@ -1626,7 +1649,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  documentElement: method(function(node) {
+  documentElement: method(function (node) {
     let elt = isNodeDead(node)
               ? this.rootDoc.documentElement
               : nodeDocument(node.rawNode).documentElement;
@@ -1648,7 +1671,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  parents: method(function(node, options={}) {
+  parents: method(function (node, options = {}) {
     if (isNodeDead(node)) {
       return [];
     }
@@ -1657,12 +1680,14 @@ var WalkerActor = protocol.ActorClass({
     let parents = [];
     let cur;
     while((cur = walker.parentNode())) {
-      if (options.sameDocument && nodeDocument(cur) != nodeDocument(node.rawNode)) {
+      if (options.sameDocument &&
+          nodeDocument(cur) != nodeDocument(node.rawNode)) {
         break;
       }
 
       if (options.sameTypeRootTreeItem &&
-          nodeDocshell(cur).sameTypeRootTreeItem != nodeDocshell(node.rawNode).sameTypeRootTreeItem) {
+          nodeDocshell(cur).sameTypeRootTreeItem !=
+          nodeDocshell(node.rawNode).sameTypeRootTreeItem) {
         break;
       }
 
@@ -1680,7 +1705,7 @@ var WalkerActor = protocol.ActorClass({
     },
   }),
 
-  parentNode: function(node) {
+  parentNode: function (node) {
     let walker = this.getDocumentWalker(node.rawNode);
     let parent = walker.parentNode();
     if (parent) {
@@ -1695,7 +1720,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  singleTextChild: function(node) {
+  singleTextChild: function (node) {
     
     if (node.isBeforePseudoElement ||
         node.isAfterPseudoElement ||
@@ -1735,7 +1760,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  retainNode: method(function(node) {
+  retainNode: method(function (node) {
     node.retained = true;
   }, {
     request: { node: Arg(0, "domnode") },
@@ -1746,7 +1771,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  unretainNode: method(function(node) {
+  unretainNode: method(function (node) {
     node.retained = false;
     if (this._retainedOrphans.has(node)) {
       this._retainedOrphans.delete(node);
@@ -1760,7 +1785,7 @@ var WalkerActor = protocol.ActorClass({
   
 
 
-  releaseNode: method(function(node, options={}) {
+  releaseNode: method(function (node, options = {}) {
     if (isNodeDead(node)) {
       return;
     }
@@ -1798,7 +1823,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  ensurePathToRoot: function(node, newParents=new Set()) {
+  ensurePathToRoot: function (node, newParents = new Set()) {
     if (!node) {
       return newParents;
     }
@@ -1841,7 +1866,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  children: method(function(node, options={}) {
+  children: method(function (node, options = {}) {
     if (isNodeDead(node)) {
       return { hasFirst: true, hasLast: true, nodes: [] };
     }
@@ -1856,9 +1881,9 @@ var WalkerActor = protocol.ActorClass({
 
     
     
-    let getFilteredWalker = (node) => {
+    let getFilteredWalker = node => {
       return this.getDocumentWalker(node, options.whatToShow);
-    }
+    };
 
     
     let rawNode = node.rawNode;
@@ -1939,12 +1964,13 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  siblings: method(function(node, options={}) {
+  siblings: method(function (node, options = {}) {
     if (isNodeDead(node)) {
       return { hasFirst: true, hasLast: true, nodes: [] };
     }
 
-    let parentNode = this.getDocumentWalker(node.rawNode, options.whatToShow).parentNode();
+    let parentNode = this.getDocumentWalker(node.rawNode, options.whatToShow)
+                         .parentNode();
     if (!parentNode) {
       return {
         hasFirst: true,
@@ -1969,7 +1995,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  nextSibling: method(function(node, options={}) {
+  nextSibling: method(function (node, options = {}) {
     if (isNodeDead(node)) {
       return null;
     }
@@ -1988,7 +2014,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  previousSibling: method(function(node, options={}) {
+  previousSibling: method(function (node, options = {}) {
     if (isNodeDead(node)) {
       return null;
     }
@@ -2002,7 +2028,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  _readForward: function(walker, count) {
+  _readForward: function (walker, count) {
     let ret = [];
     let node = walker.currentNode;
     do {
@@ -2016,7 +2042,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  _readBackward: function(walker, count) {
+  _readBackward: function (walker, count) {
     let ret = [];
     let node = walker.currentNode;
     do {
@@ -2034,11 +2060,11 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  findInspectingNode: method(function() {
+  findInspectingNode: method(function () {
     let node = gInspectingNode;
     if (!node) {
-      return {}
-    };
+      return {};
+    }
 
     return this.attachElement(node);
   }, {
@@ -2053,15 +2079,15 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  querySelector: method(function(baseNode, selector) {
+  querySelector: method(function (baseNode, selector) {
     if (isNodeDead(baseNode)) {
       return {};
     }
 
     let node = baseNode.rawNode.querySelector(selector);
     if (!node) {
-      return {}
-    };
+      return {};
+    }
 
     return this.attachElement(node);
   }, {
@@ -2079,7 +2105,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  querySelectorAll: method(function(baseNode, selector) {
+  querySelectorAll: method(function (baseNode, selector) {
     let nodeList = null;
 
     try {
@@ -2105,7 +2131,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  _multiFrameQuerySelectorAll: function(selector) {
+  _multiFrameQuerySelectorAll: function (selector) {
     let nodes = [];
 
     for (let {document} of this.tabActor.windows) {
@@ -2124,7 +2150,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  multiFrameQuerySelectorAll: method(function(selector) {
+  multiFrameQuerySelectorAll: method(function (selector) {
     return new NodeListActor(this, this._multiFrameQuerySelectorAll(selector));
   }, {
     request: {
@@ -2145,14 +2171,14 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  search: method(function(query) {
+  search: method(function (query) {
     let results = this.walkerSearch.search(query);
     let nodeList = new NodeListActor(this, results.map(r => r.node));
 
     return {
       list: nodeList,
       metadata: []
-    }
+    };
   }, {
     request: {
       query: Arg(0),
@@ -2172,11 +2198,11 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getSuggestionsForQuery: method(function(query, completing, selectorState) {
+  getSuggestionsForQuery: method(function (query, completing, selectorState) {
     let sugs = {
-      classes: new Map,
-      tags: new Map,
-      ids: new Map
+      classes: new Map(),
+      tags: new Map(),
+      ids: new Map()
     };
     let result = [];
     let nodes = null;
@@ -2191,8 +2217,7 @@ var WalkerActor = protocol.ActorClass({
       case "class":
         if (!query) {
           nodes = this._multiFrameQuerySelectorAll("[class]");
-        }
-        else {
+        } else {
           nodes = this._multiFrameQuerySelectorAll(query);
         }
         for (let node of nodes) {
@@ -2216,8 +2241,7 @@ var WalkerActor = protocol.ActorClass({
       case "id":
         if (!query) {
           nodes = this._multiFrameQuerySelectorAll("[id]");
-        }
-        else {
+        } else {
           nodes = this._multiFrameQuerySelectorAll(query);
         }
         for (let node of nodes) {
@@ -2233,8 +2257,7 @@ var WalkerActor = protocol.ActorClass({
       case "tag":
         if (!query) {
           nodes = this._multiFrameQuerySelectorAll("*");
-        }
-        else {
+        } else {
           nodes = this._multiFrameQuerySelectorAll(query);
         }
         for (let node of nodes) {
@@ -2252,8 +2275,10 @@ var WalkerActor = protocol.ActorClass({
         if (!query) {
           result = [
             ...result,
-            ...this.getSuggestionsForQuery(null, completing, "class").suggestions,
-            ...this.getSuggestionsForQuery(null, completing, "id").suggestions
+            ...this.getSuggestionsForQuery(null, completing, "class")
+                   .suggestions,
+            ...this.getSuggestionsForQuery(null, completing, "id")
+                   .suggestions
           ];
         }
 
@@ -2289,8 +2314,8 @@ var WalkerActor = protocol.ActorClass({
     
     result = result.sort((a, b) => {
       
-      let sortA = (10000-a[1]) + a[0];
-      let sortB = (10000-b[1]) + b[0];
+      let sortA = (10000 - a[1]) + a[0];
+      let sortB = (10000 - b[1]) + b[0];
 
       
       let firstA = a[0].substring(0, 1);
@@ -2298,21 +2323,17 @@ var WalkerActor = protocol.ActorClass({
 
       if (firstA === "#") {
         sortA = "2" + sortA;
-      }
-      else if (firstA === ".") {
+      } else if (firstA === ".") {
         sortA = "1" + sortA;
-      }
-      else {
+      } else {
         sortA = "0" + sortA;
       }
 
       if (firstB === "#") {
         sortB = "2" + sortB;
-      }
-      else if (firstB === ".") {
+      } else if (firstB === ".") {
         sortB = "1" + sortB;
-      }
-      else {
+      } else {
         sortB = "0" + sortB;
       }
 
@@ -2351,7 +2372,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  addPseudoClassLock: method(function(node, pseudo, options={}) {
+  addPseudoClassLock: method(function (node, pseudo, options = {}) {
     if (isNodeDead(node)) {
       return;
     }
@@ -2377,7 +2398,7 @@ var WalkerActor = protocol.ActorClass({
     response: {}
   }),
 
-  _queuePseudoClassMutation: function(node) {
+  _queuePseudoClassMutation: function (node) {
     this.queueMutation({
       target: node.actorID,
       type: "pseudoClassLock",
@@ -2385,7 +2406,7 @@ var WalkerActor = protocol.ActorClass({
     });
   },
 
-  _addPseudoClassLock: function(node, pseudo) {
+  _addPseudoClassLock: function (node, pseudo) {
     if (node.rawNode.nodeType !== Ci.nsIDOMNode.ELEMENT_NODE) {
       return false;
     }
@@ -2395,9 +2416,9 @@ var WalkerActor = protocol.ActorClass({
     return true;
   },
 
-  _installHelperSheet: function(node) {
+  _installHelperSheet: function (node) {
     if (!this.installedHelpers) {
-      this.installedHelpers = new WeakMap;
+      this.installedHelpers = new WeakMap();
     }
     let win = node.rawNode.ownerDocument.defaultView;
     if (!this.installedHelpers.has(win)) {
@@ -2409,7 +2430,7 @@ var WalkerActor = protocol.ActorClass({
     }
   },
 
-  hideNode: method(function(node) {
+  hideNode: method(function (node) {
     if (isNodeDead(node)) {
       return;
     }
@@ -2420,7 +2441,7 @@ var WalkerActor = protocol.ActorClass({
     request: { node: Arg(0, "domnode") }
   }),
 
-  unhideNode: method(function(node) {
+  unhideNode: method(function (node) {
     if (isNodeDead(node)) {
       return;
     }
@@ -2444,7 +2465,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  removePseudoClassLock: method(function(node, pseudo, options={}) {
+  removePseudoClassLock: method(function (node, pseudo, options = {}) {
     if (isNodeDead(node)) {
       return;
     }
@@ -2470,7 +2491,7 @@ var WalkerActor = protocol.ActorClass({
     response: {}
   }),
 
-  _removePseudoClassLock: function(node, pseudo) {
+  _removePseudoClassLock: function (node, pseudo) {
     if (node.rawNode.nodeType != Ci.nsIDOMNode.ELEMENT_NODE) {
       return false;
     }
@@ -2487,7 +2508,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  clearPseudoClassLocks: method(function(node) {
+  clearPseudoClassLocks: method(function (node) {
     if (node && isNodeDead(node)) {
       return;
     }
@@ -2513,7 +2534,7 @@ var WalkerActor = protocol.ActorClass({
   
 
 
-  innerHTML: method(function(node) {
+  innerHTML: method(function (node) {
     let html = "";
     if (!isNodeDead(node)) {
       html = node.rawNode.innerHTML;
@@ -2534,14 +2555,15 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  setInnerHTML: method(function(node, value) {
+  setInnerHTML: method(function (node, value) {
     if (isNodeDead(node)) {
       return;
     }
 
     let rawNode = node.rawNode;
-    if (rawNode.nodeType !== rawNode.ownerDocument.ELEMENT_NODE)
+    if (rawNode.nodeType !== rawNode.ownerDocument.ELEMENT_NODE) {
       throw new Error("Can only change innerHTML to element nodes");
+    }
     rawNode.innerHTML = value;
   }, {
     request: {
@@ -2556,7 +2578,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  outerHTML: method(function(node) {
+  outerHTML: method(function (node) {
     let outerHTML = "";
     if (!isNodeDead(node)) {
       outerHTML = node.rawNode.outerHTML;
@@ -2577,7 +2599,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  setOuterHTML: method(function(node, value) {
+  setOuterHTML: method(function (node, value) {
     if (isNodeDead(node)) {
       return;
     }
@@ -2641,9 +2663,9 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  insertAdjacentHTML: method(function(node, position, value) {
+  insertAdjacentHTML: method(function (node, position, value) {
     if (isNodeDead(node)) {
-      return {node: [], newParents: []}
+      return {node: [], newParents: []};
     }
 
     let rawNode = node.rawNode;
@@ -2685,6 +2707,7 @@ var WalkerActor = protocol.ActorClass({
         
         
         rawParentNode.insertBefore(docFrag, rawNode.nextSibling);
+        break;
       case "afterBegin":
         rawNode.insertBefore(docFrag, rawNode.firstChild);
         break;
@@ -2692,8 +2715,8 @@ var WalkerActor = protocol.ActorClass({
         rawNode.appendChild(docFrag);
         break;
       default:
-        throw new Error('Invalid position value. Must be either ' +
-          '"beforeBegin", "beforeEnd", "afterBegin" or "afterEnd".');
+        throw new Error("Invalid position value. Must be either " +
+          "'beforeBegin', 'beforeEnd', 'afterBegin' or 'afterEnd'.");
     }
 
     return this.attachElements(newRawNodes);
@@ -2711,7 +2734,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  duplicateNode: method(function({rawNode}) {
+  duplicateNode: method(function ({rawNode}) {
     let clonedNode = rawNode.cloneNode(true);
     rawNode.parentNode.insertBefore(clonedNode, rawNode.nextSibling);
   }, {
@@ -2727,10 +2750,10 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  isDocumentOrDocumentElementNode: function(node) {
-      return ((node.rawNode.ownerDocument &&
-        node.rawNode.ownerDocument.documentElement === this.rawNode) ||
-        node.rawNode.nodeType === Ci.nsIDOMNode.DOCUMENT_NODE);
+  isDocumentOrDocumentElementNode: function (node) {
+    return ((node.rawNode.ownerDocument &&
+      node.rawNode.ownerDocument.documentElement === this.rawNode) ||
+      node.rawNode.nodeType === Ci.nsIDOMNode.DOCUMENT_NODE);
   },
 
   
@@ -2739,7 +2762,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  removeNode: method(function(node) {
+  removeNode: method(function (node) {
     if (isNodeDead(node) || this.isDocumentOrDocumentElementNode(node)) {
       throw Error("Cannot remove document, document elements or dead nodes.");
     }
@@ -2762,7 +2785,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  removeNodes: method(function(nodes) {
+  removeNodes: method(function (nodes) {
     
     for (let node of nodes) {
       if (isNodeDead(node) || this.isDocumentOrDocumentElementNode(node)) {
@@ -2784,7 +2807,7 @@ var WalkerActor = protocol.ActorClass({
   
 
 
-  insertBefore: method(function(node, parent, sibling) {
+  insertBefore: method(function (node, parent, sibling) {
     if (isNodeDead(node) ||
         isNodeDead(parent) ||
         (sibling && isNodeDead(sibling))) {
@@ -2803,7 +2826,7 @@ var WalkerActor = protocol.ActorClass({
                                                 null;
 
       if (rawNode === rawSibling || currentNextSibling === rawSibling) {
-        return;
+        return null;
       }
     }
 
@@ -2823,9 +2846,9 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  editTagName: method(function(node, tagName) {
+  editTagName: method(function (node, tagName) {
     if (isNodeDead(node)) {
-      return;
+      return null;
     }
 
     let oldNode = node.rawNode;
@@ -2838,11 +2861,12 @@ var WalkerActor = protocol.ActorClass({
     } catch(x) {
       
       
-      return Promise.reject(new Error("Could not change node's tagName to " + tagName));
+      return Promise.reject(new Error("Could not change node's tagName to " +
+        tagName));
     }
 
     let attrs = oldNode.attributes;
-    for (let i = 0; i < attrs.length; i ++) {
+    for (let i = 0; i < attrs.length; i++) {
       newNode.setAttribute(attrs[i].name, attrs[i].value);
     }
 
@@ -2906,7 +2930,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getMutations: method(function(options={}) {
+  getMutations: method(function (options = {}) {
     let pending = this._pendingMutations || [];
     this._pendingMutations = [];
 
@@ -2929,7 +2953,7 @@ var WalkerActor = protocol.ActorClass({
     }
   }),
 
-  queueMutation: function(mutation) {
+  queueMutation: function (mutation) {
     if (!this.actorID || this._destroyed) {
       
       return;
@@ -2951,7 +2975,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  onMutations: function(mutations) {
+  onMutations: function (mutations) {
     
     
     
@@ -2977,7 +3001,8 @@ var WalkerActor = protocol.ActorClass({
                             : null;
       } else if (type === "characterData") {
         if (targetNode.nodeValue.length > gValueSummaryLength) {
-          mutation.newValue = targetNode.nodeValue.substring(0, gValueSummaryLength);
+          mutation.newValue = targetNode.nodeValue
+            .substring(0, gValueSummaryLength);
           mutation.incompleteValue = true;
         } else {
           mutation.newValue = targetNode.nodeValue;
@@ -3026,7 +3051,7 @@ var WalkerActor = protocol.ActorClass({
     }
   },
 
-  onFrameLoad: function({ window, isTopLevel }) {
+  onFrameLoad: function ({ window, isTopLevel }) {
     if (!this.rootDoc && isTopLevel) {
       this.rootDoc = window.document;
       this.rootNode = this.document();
@@ -3053,11 +3078,11 @@ var WalkerActor = protocol.ActorClass({
       target: frameActor.actorID,
       added: [],
       removed: []
-    })
+    });
   },
 
   
-  _childOfWindow: function(window, domNode) {
+  _childOfWindow: function (window, domNode) {
     let win = nodeDocument(domNode).defaultView;
     while (win) {
       if (win === window) {
@@ -3068,7 +3093,7 @@ var WalkerActor = protocol.ActorClass({
     return false;
   },
 
-  onFrameUnload: function({ window }) {
+  onFrameUnload: function ({ window }) {
     
     
     
@@ -3131,7 +3156,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  _isInDOMTree: function(rawNode) {
+  _isInDOMTree: function (rawNode) {
     let walker = this.getDocumentWalker(rawNode);
     let current = walker.currentNode;
 
@@ -3154,7 +3179,7 @@ var WalkerActor = protocol.ActorClass({
   
 
 
-  isInDOMTree: method(function(node) {
+  isInDOMTree: method(function (node) {
     if (isNodeDead(node)) {
       return false;
     }
@@ -3168,7 +3193,8 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getNodeActorFromObjectActor: method(function(objectActorID) {
+
+  getNodeActorFromObjectActor: method(function (objectActorID) {
     let actor = this.conn.getActor(objectActorID);
     if (!actor) {
       return null;
@@ -3203,7 +3229,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getStyleSheetOwnerNode: method(function(styleSheetActorID) {
+  getStyleSheetOwnerNode: method(function (styleSheetActorID) {
     return this.getNodeFromActor(styleSheetActorID, ["ownerNode"]);
   }, {
     request: {
@@ -3243,7 +3269,8 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-  getNodeFromActor: method(function(actorID, path) {
+
+  getNodeFromActor: method(function (actorID, path) {
     let actor = this.conn.getActor(actorID);
     if (!actor) {
       return null;
@@ -3272,7 +3299,7 @@ var WalkerActor = protocol.ActorClass({
 
 
 
-var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
+var WalkerFront = protocol.FrontClass(WalkerActor, {
   
   autoCleanup: true,
 
@@ -3280,25 +3307,25 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
 
 
 
-  pick: protocol.custom(function() {
+  pick: protocol.custom(function () {
     return this._pick().then(response => {
       return response.node;
     });
   }, {impl: "_pick"}),
 
-  initialize: function(client, form) {
+  initialize: function (client, form) {
     this._createRootNodePromise();
     protocol.Front.prototype.initialize.call(this, client, form);
     this._orphaned = new Set();
     this._retainedOrphans = new Set();
   },
 
-  destroy: function() {
+  destroy: function () {
     protocol.Front.prototype.destroy.call(this);
   },
 
   
-  form: function(json) {
+  form: function (json) {
     this.actorID = json.actor;
     this.rootNode = types.getType("domnode").read(json.root, this);
     this._rootNodeDeferred.resolve(this.rootNode);
@@ -3312,7 +3339,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
 
 
 
-  getRootNode: function() {
+  getRootNode: function () {
     return this._rootNodeDeferred.promise;
   },
 
@@ -3320,7 +3347,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
 
 
 
-  _createRootNodePromise: function() {
+  _createRootNodePromise: function () {
     this._rootNodeDeferred = promise.defer();
     this._rootNodeDeferred.promise.then(() => {
       events.emit(this, "new-root");
@@ -3335,7 +3362,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
 
 
 
-  ensureParentFront: function(id) {
+  ensureParentFront: function (id) {
     let front = this.get(id);
     if (front) {
       return front;
@@ -3364,7 +3391,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
 
 
 
-  retainNode: protocol.custom(function(node) {
+  retainNode: protocol.custom(function (node) {
     return this._retainNode(node).then(() => {
       node.retained = true;
     });
@@ -3372,7 +3399,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     impl: "_retainNode",
   }),
 
-  unretainNode: protocol.custom(function(node) {
+  unretainNode: protocol.custom(function (node) {
     return this._unretainNode(node).then(() => {
       node.retained = false;
       if (this._retainedOrphans.has(node)) {
@@ -3384,7 +3411,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     impl: "_unretainNode"
   }),
 
-  releaseNode: protocol.custom(function(node, options={}) {
+  releaseNode: protocol.custom(function (node, options = {}) {
     
     
     let actorID = node.actorID;
@@ -3394,7 +3421,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     impl: "_releaseNode"
   }),
 
-  findInspectingNode: protocol.custom(function() {
+  findInspectingNode: protocol.custom(function () {
     return this._findInspectingNode().then(response => {
       return response.node;
     });
@@ -3402,7 +3429,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     impl: "_findInspectingNode"
   }),
 
-  querySelector: protocol.custom(function(queryNode, selector) {
+  querySelector: protocol.custom(function (queryNode, selector) {
     return this._querySelector(queryNode, selector).then(response => {
       return response.node;
     });
@@ -3410,7 +3437,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     impl: "_querySelector"
   }),
 
-  getNodeActorFromObjectActor: protocol.custom(function(objectActorID) {
+  getNodeActorFromObjectActor: protocol.custom(function (objectActorID) {
     return this._getNodeActorFromObjectActor(objectActorID).then(response => {
       return response ? response.node : null;
     });
@@ -3418,7 +3445,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     impl: "_getNodeActorFromObjectActor"
   }),
 
-  getStyleSheetOwnerNode: protocol.custom(function(styleSheetActorID) {
+  getStyleSheetOwnerNode: protocol.custom(function (styleSheetActorID) {
     return this._getStyleSheetOwnerNode(styleSheetActorID).then(response => {
       return response ? response.node : null;
     });
@@ -3426,7 +3453,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     impl: "_getStyleSheetOwnerNode"
   }),
 
-  getNodeFromActor: protocol.custom(function(actorID, path) {
+  getNodeFromActor: protocol.custom(function (actorID, path) {
     return this._getNodeFromActor(actorID, path).then(response => {
       return response ? response.node : null;
     });
@@ -3503,7 +3530,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     impl: "_search"
   }),
 
-  _releaseFront: function(node, force) {
+  _releaseFront: function (node, force) {
     if (node.retained && !force) {
       node.reparent(null);
       this._retainedOrphans.add(node);
@@ -3528,7 +3555,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
   
 
 
-  getMutations: protocol.custom(function(options={}) {
+  getMutations: protocol.custom(function (options = {}) {
     return this._getMutations(options).then(mutations => {
       let emitMutations = [];
       for (let change of mutations) {
@@ -3547,20 +3574,23 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
         }
 
         if (!targetFront) {
-          console.trace("Got a mutation for an unexpected actor: " + targetID + ", please file a bug on bugzilla.mozilla.org!");
+          console.trace("Got a mutation for an unexpected actor: " + targetID +
+            ", please file a bug on bugzilla.mozilla.org!");
           continue;
         }
 
         let emittedMutation = object.merge(change, { target: targetFront });
 
-        if (change.type === "childList" || change.type === "nativeAnonymousChildList") {
+        if (change.type === "childList" ||
+            change.type === "nativeAnonymousChildList") {
           
           let addedFronts = [];
           let removedFronts = [];
           for (let removed of change.removed) {
             let removedFront = this.get(removed);
             if (!removedFront) {
-              console.error("Got a removal of an actor we didn't know about: " + removed);
+              console.error("Got a removal of an actor we didn't know about: " +
+                removed);
               continue;
             }
             
@@ -3574,10 +3604,11 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
           for (let added of change.added) {
             let addedFront = this.get(added);
             if (!addedFront) {
-              console.error("Got an addition of an actor we didn't know about: " + added);
+              console.error("Got an addition of an actor we didn't know " +
+                "about: " + added);
               continue;
             }
-            addedFront.reparent(targetFront)
+            addedFront.reparent(targetFront);
 
             
             
@@ -3600,7 +3631,7 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
           
           
           
-          if ('numChildren' in change) {
+          if ("numChildren" in change) {
             targetFront._form.numChildren = change.numChildren;
           }
         } else if (change.type === "frameLoad") {
@@ -3609,7 +3640,8 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
           
           for (let child of targetFront.treeChildren()) {
             if (child.nodeType === Ci.nsIDOMNode.DOCUMENT_NODE) {
-              console.trace("Got an unexpected frameLoad in the inspector, please file a bug on bugzilla.mozilla.org!");
+              console.trace("Got an unexpected frameLoad in the inspector, " +
+                "please file a bug on bugzilla.mozilla.org!");
             }
           }
         } else if (change.type === "documentUnload") {
@@ -3657,23 +3689,24 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
 
 
 
-  onMutations: protocol.preEvent("new-mutations", function() {
+  onMutations: protocol.preEvent("new-mutations", function () {
     
     this.getMutations({cleanup: this.autoCleanup}).catch(() => {});
   }),
 
-  isLocal: function() {
+  isLocal: function () {
     return !!this.conn._transport._serverConnection;
   },
 
   
   
-  frontForRawNode: function(rawNode) {
+  frontForRawNode: function (rawNode) {
     if (!this.isLocal()) {
       console.warn("Tried to use frontForRawNode on a remote connection.");
       return null;
     }
-    let walkerActor = this.conn._transport._serverConnection.getActor(this.actorID);
+    let walkerActor = this.conn._transport._serverConnection
+      .getActor(this.actorID);
     if (!walkerActor) {
       throw Error("Could not find client side for actor " + this.actorID);
     }
@@ -3681,7 +3714,8 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
 
     
     let nodeType = types.getType("domnode");
-    let returnNode = nodeType.read(nodeType.write(nodeActor, walkerActor), this);
+    let returnNode = nodeType.read(
+      nodeType.write(nodeActor, walkerActor), this);
     let top = returnNode;
     let extras = walkerActor.parents(nodeActor, {sameTypeRootTreeItem: true});
     for (let extraActor of extras) {
@@ -3691,7 +3725,8 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     if (top !== this.rootNode) {
       
       this._orphaned.add(top);
-      walkerActor._orphaned.add(this.conn._transport._serverConnection.getActor(top.actorID));
+      walkerActor._orphaned
+        .add(this.conn._transport._serverConnection.getActor(top.actorID));
     }
     return returnNode;
   },
@@ -3708,27 +3743,29 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
   }),
 });
 
+exports.WalkerFront = WalkerFront;
+
 
 
 
 
 var AttributeModificationList = Class({
-  initialize: function(node) {
+  initialize: function (node) {
     this.node = node;
     this.modifications = [];
   },
 
-  apply: function() {
+  apply: function () {
     let ret = this.node.modifyAttributes(this.modifications);
     return ret;
   },
 
-  destroy: function() {
+  destroy: function () {
     this.node = null;
     this.modification = null;
   },
 
-  setAttributeNS: function(ns, name, value) {
+  setAttributeNS: function (ns, name, value) {
     this.modifications.push({
       attributeNamespace: ns,
       attributeName: name,
@@ -3736,18 +3773,18 @@ var AttributeModificationList = Class({
     });
   },
 
-  setAttribute: function(name, value) {
+  setAttribute: function (name, value) {
     this.setAttributeNS(undefined, name, value);
   },
 
-  removeAttributeNS: function(ns, name) {
+  removeAttributeNS: function (ns, name) {
     this.setAttributeNS(ns, name, undefined);
   },
 
-  removeAttribute: function(name) {
+  removeAttribute: function (name) {
     this.setAttributeNS(undefined, name, undefined);
   }
-})
+});
 
 
 
@@ -3756,7 +3793,7 @@ var AttributeModificationList = Class({
 var InspectorActor = exports.InspectorActor = protocol.ActorClass({
   typeName: "inspector",
 
-  initialize: function(conn, tabActor) {
+  initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
   },
@@ -3773,7 +3810,7 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClass({
 
   
   
-  disconnect: function() {
+  disconnect: function () {
     this.destroy();
   },
 
@@ -3781,7 +3818,7 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClass({
     return this.tabActor.window;
   },
 
-  getWalker: method(function(options={}) {
+  getWalker: method(function (options = {}) {
     if (this._walkerPromise) {
       return this._walkerPromise;
     }
@@ -3790,7 +3827,7 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClass({
     this._walkerPromise = deferred.promise;
 
     let window = this.window;
-    var domReady = () => {
+    let domReady = () => {
       let tabActor = this.tabActor;
       window.removeEventListener("DOMContentLoaded", domReady, true);
       this.walker = WalkerActor(this.conn, tabActor, options);
@@ -3818,7 +3855,7 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClass({
     }
   }),
 
-  getPageStyle: method(function() {
+  getPageStyle: method(function () {
     if (this._pageStylePromise) {
       return this._pageStylePromise;
     }
@@ -3883,9 +3920,8 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClass({
   getHighlighterByType: method(function (typeName) {
     if (isTypeRegistered(typeName)) {
       return CustomHighlighterActor(this, typeName);
-    } else {
-      return null;
     }
+    return null;
   }, {
     request: {
       typeName: Arg(0)
@@ -3930,17 +3966,17 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClass({
 
 
 
-  resolveRelativeURL: method(function(url, node) {
+  resolveRelativeURL: method(function (url, node) {
     let document = isNodeDead(node)
                    ? this.window.document
                    : nodeDocument(node.rawNode);
 
     if (!document) {
       return url;
-    } else {
-      let baseURI = Services.io.newURI(document.location.href, null, null);
-      return Services.io.newURI(url, null, baseURI).spec;
     }
+
+    let baseURI = Services.io.newURI(document.location.href, null, null);
+    return Services.io.newURI(url, null, baseURI).spec;
   }, {
     request: {url: Arg(0, "string"), node: Arg(1, "nullable:domnode")},
     response: {value: RetVal("string")}
@@ -3951,8 +3987,8 @@ var InspectorActor = exports.InspectorActor = protocol.ActorClass({
 
 
 
-var InspectorFront = exports.InspectorFront = protocol.FrontClass(InspectorActor, {
-  initialize: function(client, tabForm) {
+var InspectorFront = protocol.FrontClass(InspectorActor, {
+  initialize: function (client, tabForm) {
     protocol.Front.prototype.initialize.call(this, client);
     this.actorID = tabForm.inspectorActor;
 
@@ -3961,12 +3997,12 @@ var InspectorFront = exports.InspectorFront = protocol.FrontClass(InspectorActor
     this.manage(this);
   },
 
-  destroy: function() {
+  destroy: function () {
     delete this.walker;
     protocol.Front.prototype.destroy.call(this);
   },
 
-  getWalker: protocol.custom(function(options = {}) {
+  getWalker: protocol.custom(function (options = {}) {
     return this._getWalker(options).then(walker => {
       this.walker = walker;
       return walker;
@@ -3975,7 +4011,7 @@ var InspectorFront = exports.InspectorFront = protocol.FrontClass(InspectorActor
     impl: "_getWalker"
   }),
 
-  getPageStyle: protocol.custom(function() {
+  getPageStyle: protocol.custom(function () {
     return this._getPageStyle().then(pageStyle => {
       
       
@@ -3991,6 +4027,8 @@ var InspectorFront = exports.InspectorFront = protocol.FrontClass(InspectorActor
   })
 });
 
+exports.InspectorFront = InspectorFront;
+
 
 exports._documentWalker = DocumentWalker;
 
@@ -3998,16 +4036,16 @@ function nodeDocument(node) {
   if (Cu.isDeadWrapper(node)) {
     return null;
   }
-  return node.ownerDocument || (node.nodeType == Ci.nsIDOMNode.DOCUMENT_NODE ? node : null);
+  return node.ownerDocument ||
+         (node.nodeType == Ci.nsIDOMNode.DOCUMENT_NODE ? node : null);
 }
 
 function nodeDocshell(node) {
   let doc = node ? nodeDocument(node) : null;
   let win = doc ? doc.defaultView : null;
   if (win) {
-    return win.
-           QueryInterface(Ci.nsIInterfaceRequestor).
-           getInterface(Ci.nsIDocShell);
+    return win.QueryInterface(Ci.nsIInterfaceRequestor)
+              .getInterface(Ci.nsIDocShell);
   }
 }
 
@@ -4025,12 +4063,16 @@ function isNodeDead(node) {
 
 
 
-function DocumentWalker(node, rootWin, whatToShow=Ci.nsIDOMNodeFilter.SHOW_ALL, filter=standardTreeWalkerFilter) {
+
+function DocumentWalker(node, rootWin,
+    whatToShow = Ci.nsIDOMNodeFilter.SHOW_ALL,
+    filter = standardTreeWalkerFilter) {
   if (!rootWin.location) {
     throw new Error("Got an invalid root window in DocumentWalker");
   }
 
-  this.walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"].createInstance(Ci.inIDeepTreeWalker);
+  this.walker = Cc["@mozilla.org/inspector/deep-tree-walker;1"]
+    .createInstance(Ci.inIDeepTreeWalker);
   this.walker.showAnonymousContent = true;
   this.walker.showSubDocuments = true;
   this.walker.showDocumentsAsNodes = true;
@@ -4057,11 +4099,11 @@ DocumentWalker.prototype = {
   get currentNode() {
     return this.walker.currentNode;
   },
-  set currentNode(aVal) {
-    this.walker.currentNode = aVal;
+  set currentNode(val) {
+    this.walker.currentNode = val;
   },
 
-  parentNode: function() {
+  parentNode: function () {
     return this.walker.parentNode();
   },
 
@@ -4072,42 +4114,45 @@ DocumentWalker.prototype = {
     }
 
     let nextNode = this.walker.nextNode();
-    while (nextNode && this.filter(nextNode) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+    while (nextNode &&
+           this.filter(nextNode) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
       nextNode = this.walker.nextNode();
     }
 
     return nextNode;
   },
 
-  firstChild: function() {
+  firstChild: function () {
     let node = this.walker.currentNode;
     if (!node) {
       return null;
     }
 
     let firstChild = this.walker.firstChild();
-    while (firstChild && this.filter(firstChild) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+    while (firstChild &&
+           this.filter(firstChild) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
       firstChild = this.walker.nextSibling();
     }
 
     return firstChild;
   },
 
-  lastChild: function() {
+  lastChild: function () {
     let node = this.walker.currentNode;
     if (!node) {
       return null;
     }
 
     let lastChild = this.walker.lastChild();
-    while (lastChild && this.filter(lastChild) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+    while (lastChild &&
+           this.filter(lastChild) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
       lastChild = this.walker.previousSibling();
     }
 
     return lastChild;
   },
 
-  previousSibling: function() {
+  previousSibling: function () {
     let node = this.walker.previousSibling();
     while (node && this.filter(node) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
       node = this.walker.previousSibling();
@@ -4115,7 +4160,7 @@ DocumentWalker.prototype = {
     return node;
   },
 
-  nextSibling: function() {
+  nextSibling: function () {
     let node = this.walker.nextSibling();
     while (node && this.filter(node) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
       node = this.walker.nextSibling();
@@ -4136,23 +4181,23 @@ function isInXULDocument(el) {
 
 
 
-function standardTreeWalkerFilter(aNode) {
+function standardTreeWalkerFilter(node) {
   
   
-  if (aNode.nodeName === "_moz_generated_content_before" ||
-      aNode.nodeName === "_moz_generated_content_after") {
+  if (node.nodeName === "_moz_generated_content_before" ||
+      node.nodeName === "_moz_generated_content_after") {
     return Ci.nsIDOMNodeFilter.FILTER_ACCEPT;
   }
 
   
-  if (aNode.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
-      !/[^\s]/.exec(aNode.nodeValue)) {
+  if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
+      !/[^\s]/.exec(node.nodeValue)) {
     return Ci.nsIDOMNodeFilter.FILTER_SKIP;
   }
 
   
-  if (!isInXULDocument(aNode) && (isXBLAnonymous(aNode) ||
-                                  isNativeAnonymous(aNode))) {
+  if (!isInXULDocument(node) && (isXBLAnonymous(node) ||
+                                  isNativeAnonymous(node))) {
     
     
     
@@ -4167,13 +4212,13 @@ function standardTreeWalkerFilter(aNode) {
 
 
 
-function allAnonymousContentTreeWalkerFilter(aNode) {
+function allAnonymousContentTreeWalkerFilter(node) {
   
-  if (aNode.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
-      !/[^\s]/.exec(aNode.nodeValue)) {
+  if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
+      !/[^\s]/.exec(node.nodeValue)) {
     return Ci.nsIDOMNodeFilter.FILTER_SKIP;
   }
-  return Ci.nsIDOMNodeFilter.FILTER_ACCEPT
+  return Ci.nsIDOMNodeFilter.FILTER_ACCEPT;
 }
 
 
@@ -4249,7 +4294,7 @@ var imageToImageData = Task.async(function* (node, maxDim) {
   let isCanvas = node instanceof HTMLCanvasElement;
 
   if (!isImg && !isCanvas) {
-    throw "node is not a <canvas> or <img> element.";
+    throw new Error("node is not a <canvas> or <img> element.");
   }
 
   if (isImg) {
@@ -4291,7 +4336,7 @@ var imageToImageData = Task.async(function* (node, maxDim) {
       naturalHeight: imgHeight,
       resized: resizeRatio !== 1
     }
-  }
+  };
 });
 
 loader.lazyGetter(this, "DOMUtils", function () {
