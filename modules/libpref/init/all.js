@@ -141,10 +141,6 @@ pref("dom.select_events.enabled", true);
 
 pref("dom.workers.enabled", true);
 
-
-
-pref("dom.workers.maxPerDomain", 512);
-
 pref("dom.serviceWorkers.enabled", false);
 
 
@@ -5515,9 +5511,6 @@ pref("media.seekToNextFrame.enabled", false);
 #else
 pref("media.seekToNextFrame.enabled", true);
 #endif
-
-
-pref("dom.maxHardwareConcurrency", 16);
 
 
 #if !defined(RELEASE_BUILD)
