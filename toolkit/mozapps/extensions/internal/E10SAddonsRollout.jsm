@@ -46,8 +46,12 @@ const ADDONS = {
     id: "jid0-GXjLLfbCoAx0LcltEdFrEkQdQPI@jetpack", minVersion: "3.0.10",
   },
 
-  "PersonasPlus": {
+  "PersonasPlus": { 
     id: "personas@christopher.beard", minVersion: "1.8.0",
+  },
+
+  "ACR": { 
+    id: "compatibility@addons.mozilla.org", minVersion: "2.2.0",
   },
 
   
@@ -62,9 +66,7 @@ const ADDONS = {
 
 
 
-const set1 = [ADDONS.Emoji,
-              ADDONS.ASP,
-              ADDONS.DYTV];
+
 
 const set2 = [ADDONS.Greasemonkey,
               ADDONS.DYTV,
@@ -76,15 +78,45 @@ const set2 = [ADDONS.Greasemonkey,
               ADDONS.ASP,
               ADDONS.PersonasPlus];
 
+const set49Release = [
+  ADDONS.Greasemonkey,
+  ADDONS.DYTV,
+  ADDONS.VDH,
+  ADDONS.Lightbeam,
+  ADDONS.ABP,
+  ADDONS.uBlockOrigin,
+  ADDONS.Emoji,
+  ADDONS.ASP,
+  ADDONS.PersonasPlus,
+  ADDONS.ACR
+];
+
+
+
+
+const set49PaneOnly = [
+  ADDONS.ABP,
+  ADDONS.VDH,
+  ADDONS.Emoji,
+  ADDONS.ASP,
+  ADDONS.ACR
+]
+
 
 
 
 const RolloutPolicy = {
-  "1a": { addons: set1, webextensions: true },
+  
   "2a": { addons: set2, webextensions: true },
-
-  "1b": { addons: set1, webextensions: false },
   "2b": { addons: set2, webextensions: false },
+
+  
+  "49a": { addons: set49Release, webextensions: true },
+  "49b": { addons: set49Release, webextensions: false },
+
+  
+  "49limiteda": { addons: set49PaneOnly, webextensions: true },
+  "49limitedb": { addons: set49PaneOnly, webextensions: false },
 
   "xpcshell-test": { addons: [ADDONS.test1, ADDONS.test2], webextensions: false },
 };
