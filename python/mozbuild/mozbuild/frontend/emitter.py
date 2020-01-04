@@ -699,7 +699,7 @@ class TreeMetadataEmitter(LoggingMixin):
                     'RESOURCES_FILES cannot be used with DIST_SUBDIR or '
                     'XPI_NAME.', context)
 
-            yield cls(context, all_files, context['FINAL_TARGET'])
+            yield cls(context, all_files)
 
         
         if any(e.endswith('.js') for e in components) and \
