@@ -293,6 +293,10 @@ pref("devtools.webconsole.timestampMessages", false);
 
 
 
+pref("devtools.webconsole.autoMultiline", true);
+
+
+
 
 pref("devtools.hud.loglimit.network", 1000);
 pref("devtools.hud.loglimit.cssparser", 1000);
@@ -326,11 +330,10 @@ pref("devtools.fontinspector.enabled", true);
 pref("devtools.telemetry.tools.opened.version", "{}");
 
 
-
-#ifdef RELEASE_BUILD
-pref("devtools.jsonview.enabled", false);
+#ifdef MOZ_DEV_EDITION
+  pref("devtools.jsonview.enabled", true);
 #else
-pref("devtools.jsonview.enabled", true);
+  pref("devtools.jsonview.enabled", false);
 #endif
 
 
