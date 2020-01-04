@@ -78,12 +78,6 @@ public:
     static already_AddRefed<gfxContext>
         ForDrawTargetWithTransform(mozilla::gfx::DrawTarget* aTarget);
 
-    
-
-
-
-    already_AddRefed<gfxASurface> CurrentSurface();
-
     mozilla::gfx::DrawTarget *GetDrawTarget() { return mDT; }
 
     

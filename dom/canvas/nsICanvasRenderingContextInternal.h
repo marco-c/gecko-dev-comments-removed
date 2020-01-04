@@ -96,7 +96,10 @@ public:
   
   NS_IMETHOD SetDimensions(int32_t width, int32_t height) = 0;
 
-  NS_IMETHOD InitializeWithSurface(nsIDocShell *docShell, gfxASurface *surface, int32_t width, int32_t height) = 0;
+  
+  
+  NS_IMETHOD InitializeWithDrawTarget(nsIDocShell *aDocShell,
+                                      mozilla::gfx::DrawTarget* aTarget) = 0;
 
   
   virtual mozilla::UniquePtr<uint8_t[]> GetImageBuffer(int32_t* format) = 0;
