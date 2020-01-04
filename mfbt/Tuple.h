@@ -95,7 +95,12 @@ struct TupleImpl;
 
 
 template<std::size_t Index>
-struct TupleImpl<Index> {};
+struct TupleImpl<Index> {
+  bool operator==(const TupleImpl<Index>& aOther) const
+  {
+    return true;
+  }
+};
 
 
 
@@ -182,6 +187,10 @@ struct TupleImpl<Index, HeadT, TailT...>
     Tail(*this) = Move(Tail(aOther));
     return *this;
   }
+  bool operator==(const TupleImpl& aOther) const
+  {
+    return Head(*this) == Head(aOther) && Tail(*this) == Tail(aOther);
+  }
 private:
   HeadT mHead;  
 };
@@ -245,6 +254,10 @@ public:
   {
     static_cast<Impl&>(*this) = Move(aOther);
     return *this;
+  }
+  bool operator==(const Tuple& aOther) const
+  {
+    return static_cast<const Impl&>(*this) == static_cast<const Impl&>(aOther);
   }
 };
 
