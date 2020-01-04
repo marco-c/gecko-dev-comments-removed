@@ -45,9 +45,6 @@ public:
 
 
 
-
-
-
 class GMPLoader {
 public:
   virtual ~GMPLoader() {}
@@ -75,8 +72,6 @@ public:
   virtual void SetSandboxInfo(MacSandboxInfo* aSandboxInfo) = 0;
 #endif
 };
-
-
 
 
 
