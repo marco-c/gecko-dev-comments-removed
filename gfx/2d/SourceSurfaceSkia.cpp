@@ -135,7 +135,7 @@ SourceSurfaceSkia::DrawTargetWillChange()
 
     
     
-    if (!mBitmap.deepCopyTo(&mBitmap) ||
+    if (!mBitmap.deepCopyTo(&mBitmap) &&
         !mBitmap.copyTo(&mBitmap)) {
       mBitmap.reset();
     }
