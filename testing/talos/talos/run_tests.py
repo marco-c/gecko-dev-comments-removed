@@ -178,7 +178,6 @@ def run_tests(config, browser_config):
     else:
         
         results_urls = dict(output_urls=[os.path.abspath('local.json')])
-    talos_results.check_output_formats(results_urls)
 
     httpd = setup_webserver(browser_config['webserver'])
     httpd.start()
