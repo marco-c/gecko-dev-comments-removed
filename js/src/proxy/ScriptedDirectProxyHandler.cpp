@@ -651,29 +651,41 @@ ScriptedDirectProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
         return props.appendAll(trapResult);
 
     
-    AutoIdVector uncheckedResultKeys(cx);
-    if (!uncheckedResultKeys.appendAll(trapResult))
+    Rooted<GCHashSet<jsid>> uncheckedResultKeys(cx, GCHashSet<jsid>(cx));
+    if (!uncheckedResultKeys.init(trapResult.length()))
         return false;
 
-    
-    RootedId key(cx);
-    for (size_t i = 0; i < targetNonconfigurableKeys.length(); ++i) {
-        key = targetNonconfigurableKeys[i];
-        MOZ_ASSERT(key != JSID_VOID);
+    bool foundDuplicate = false;
+    for (size_t i = 0, len = trapResult.length(); i < len; i++) {
+        MOZ_ASSERT(!JSID_IS_VOID(trapResult[i]));
 
-        bool found = false;
-        for (size_t j = 0; j < uncheckedResultKeys.length(); ++j) {
-            if (key == uncheckedResultKeys[j]) {
-                uncheckedResultKeys[j].set(JSID_VOID);
-                found = true;
-                break;
-            }
+        
+        
+        
+        
+        auto ptr = uncheckedResultKeys.lookupForAdd(trapResult[i]);
+        if (!ptr) {
+            if (!uncheckedResultKeys.add(ptr, trapResult[i]))
+                return false;
+        } else {
+            foundDuplicate = true;
         }
+    }
 
-        if (!found) {
+    
+    for (size_t i = 0; i < targetNonconfigurableKeys.length(); ++i) {
+        MOZ_ASSERT(!JSID_IS_VOID(targetNonconfigurableKeys[i]));
+
+        auto ptr = uncheckedResultKeys.lookup(targetNonconfigurableKeys[i]);
+
+        
+        if (!ptr) {
             JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_SKIP_NC);
             return false;
         }
+
+        
+        uncheckedResultKeys.remove(ptr);
     }
 
     
@@ -682,30 +694,24 @@ ScriptedDirectProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
 
     
     for (size_t i = 0; i < targetConfigurableKeys.length(); ++i) {
-        key = targetConfigurableKeys[i];
-        MOZ_ASSERT(key != JSID_VOID);
+        MOZ_ASSERT(!JSID_IS_VOID(targetConfigurableKeys[i]));
 
-        bool found = false;
-        for (size_t j = 0; j < uncheckedResultKeys.length(); ++j) {
-            if (key == uncheckedResultKeys[j]) {
-                uncheckedResultKeys[j].set(JSID_VOID);
-                found = true;
-                break;
-            }
-        }
+        auto ptr = uncheckedResultKeys.lookup(targetConfigurableKeys[i]);
 
-        if (!found) {
+        
+        if (!ptr) {
             JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_E_AS_NE);
             return false;
         }
+
+        
+        uncheckedResultKeys.remove(ptr);
     }
 
     
-    for (size_t i = 0; i < uncheckedResultKeys.length(); ++i) {
-        if (uncheckedResultKeys[i].get() != JSID_VOID) {
-            JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_NEW);
-            return false;
-        }
+    if (!uncheckedResultKeys.empty() || foundDuplicate) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_REPORT_NEW);
+        return false;
     }
 
     
