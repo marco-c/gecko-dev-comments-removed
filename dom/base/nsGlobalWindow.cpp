@@ -3658,8 +3658,8 @@ nsPIDOMWindowInner::CreatePerformanceObjectIfNeeded()
     
     
     nsPerformance* parentPerformance = nullptr;
-    nsCOMPtr<nsPIDOMWindowOuter> parentWindow = GetScriptableParent();
-    if (GetOuterWindow() != parentWindow) {
+    nsCOMPtr<nsPIDOMWindowOuter> parentWindow = GetScriptableParentOrNull();
+    if (parentWindow) {
       nsPIDOMWindowInner* parentInnerWindow = nullptr;
       if (parentWindow) {
         parentInnerWindow = parentWindow->GetCurrentInnerWindow();
@@ -3876,6 +3876,19 @@ nsGlobalWindow::GetScriptableParent()
 
   nsCOMPtr<nsPIDOMWindowOuter> parent = GetParentOuter();
   return parent.get();
+}
+
+
+
+
+
+nsPIDOMWindowOuter*
+nsGlobalWindow::GetScriptableParentOrNull()
+{
+  FORWARD_TO_OUTER(GetScriptableParentOrNull, (), nullptr);
+
+  nsPIDOMWindowOuter* parent = GetScriptableParent();
+  return (Cast(parent) == this) ? nullptr : parent;
 }
 
 

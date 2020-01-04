@@ -119,6 +119,12 @@ public:
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() = 0;
 
   
+
+
+
+  virtual nsPIDOMWindowOuter* GetScriptableParentOrNull() = 0;
+
+  
   virtual nsresult RegisterIdleObserver(nsIIdleObserver* aIdleObserver) = 0;
   virtual nsresult UnregisterIdleObserver(nsIIdleObserver* aIdleObserver) = 0;
 
