@@ -100,7 +100,8 @@ this.SitePermissions = {
 
 
   getPermissionLabel: function (aPermissionID) {
-    return gStringBundle.GetStringFromName("permission." + aPermissionID + ".label");
+    let labelID = gPermissionObject[aPermissionID].labelID || aPermissionID;
+    return gStringBundle.GetStringFromName("permission." + labelID + ".label");
   },
 
   
@@ -141,6 +142,10 @@ var gPermissionObject = {
 
 
 
+
+
+
+
   "image": {
     getDefault: function () {
       return Services.prefs.getIntPref("permissions.default.image") == 2 ?
@@ -162,7 +167,8 @@ var gPermissionObject = {
   },
 
   "desktop-notification": {
-    exactHostMatch: true
+    exactHostMatch: true,
+    labelID: "desktop-notification2",
   },
 
   "camera": {},
