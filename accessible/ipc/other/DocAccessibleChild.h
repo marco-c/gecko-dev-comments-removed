@@ -7,57 +7,35 @@
 #ifndef mozilla_a11y_DocAccessibleChild_h
 #define mozilla_a11y_DocAccessibleChild_h
 
-#include "mozilla/a11y/DocAccessible.h"
-#include "mozilla/a11y/PDocAccessibleChild.h"
-#include "nsISupportsImpl.h"
+#include "mozilla/a11y/DocAccessibleChildBase.h"
 
 namespace mozilla {
 namespace a11y {
+
 class Accessible;
 class HyperTextAccessible;
 class TextLeafAccessible;
 class ImageAccessible;
 class TableAccessible;
 class TableCellAccessible;
-class AccShowEvent;
-
-  
 
 
 
-class DocAccessibleChild : public PDocAccessibleChild
+
+
+class DocAccessibleChild : public DocAccessibleChildBase
 {
 public:
-  explicit DocAccessibleChild(DocAccessible* aDoc) :
-    mDoc(aDoc)
-  { MOZ_COUNT_CTOR(DocAccessibleChild); }
+  explicit DocAccessibleChild(DocAccessible* aDoc)
+    : DocAccessibleChildBase(aDoc)
+  {
+    MOZ_COUNT_CTOR_INHERITED(DocAccessibleChild, DocAccessibleChildBase);
+  }
+
   ~DocAccessibleChild()
   {
-    
-    
-    MOZ_ASSERT(!mDoc);
-    if (mDoc)
-      mDoc->SetIPCDoc(nullptr);
-    MOZ_COUNT_DTOR(DocAccessibleChild);
+    MOZ_COUNT_DTOR_INHERITED(DocAccessibleChild, DocAccessibleChildBase);
   }
-
-  void Shutdown()
-  {
-    mDoc->SetIPCDoc(nullptr);
-    mDoc = nullptr;
-    SendShutdown();
-  }
-
-  virtual void ActorDestroy(ActorDestroyReason) override
-  {
-    if (!mDoc)
-      return;
-
-    mDoc->SetIPCDoc(nullptr);
-    mDoc = nullptr;
-  }
-
-  void ShowEvent(AccShowEvent* aShowEvent);
 
   
 
@@ -496,8 +474,6 @@ private:
 
   bool PersistentPropertiesToArray(nsIPersistentProperties* aProps,
                                    nsTArray<Attribute>* aAttributes);
-
-  DocAccessible* mDoc;
 };
 
 }
