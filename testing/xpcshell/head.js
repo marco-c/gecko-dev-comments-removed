@@ -613,6 +613,18 @@ function _execute_test() {
   
   _fakeIdleService.deactivate();
 
+  if (_profileInitialized) {
+    
+    
+    let obs = Components.classes["@mozilla.org/observer-service;1"]
+                        .getService(Components.interfaces.nsIObserverService);
+    obs.notifyObservers(null, "profile-change-net-teardown", null);
+    obs.notifyObservers(null, "profile-change-teardown", null);
+    obs.notifyObservers(null, "profile-before-change", null);
+
+    _profileInitialized = false;
+  }
+
   if (!_passed)
     return;
 }
@@ -1143,18 +1155,6 @@ function do_get_profile(notifyProfileAfterChange = false) {
   if (!runningInParent) {
     _testLogger.info("Ignoring profile creation from child process.");
     return null;
-  }
-
-  if (!_profileInitialized) {
-    
-    
-    do_register_cleanup(function() {
-      let obsSvc = Components.classes["@mozilla.org/observer-service;1"].
-                   getService(Components.interfaces.nsIObserverService);
-      obsSvc.notifyObservers(null, "profile-change-net-teardown", null);
-      obsSvc.notifyObservers(null, "profile-change-teardown", null);
-      obsSvc.notifyObservers(null, "profile-before-change", null);
-    });
   }
 
   let env = Components.classes["@mozilla.org/process/environment;1"]
