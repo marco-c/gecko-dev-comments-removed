@@ -997,7 +997,11 @@ GetPropertyValuesPairs(JSContext* aCx,
       nsCSSProps::LookupPropertyByIDLName(propName,
                                           nsCSSProps::eEnabledForAllContent);
     if (property != eCSSProperty_UNKNOWN &&
-        nsCSSProps::kAnimTypeTable[property] != eStyleAnimType_None) {
+        (nsCSSProps::IsShorthand(property) ||
+         nsCSSProps::kAnimTypeTable[property] != eStyleAnimType_None)) {
+      
+      
+      
       AdditionalProperty* p = properties.AppendElement();
       p->mProperty = property;
       p->mJsidIndex = i;
