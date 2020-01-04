@@ -8,6 +8,8 @@ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/AppConstants.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "LaterRun",
+                                  "resource:///modules/LaterRun.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
@@ -523,6 +525,8 @@ nsBrowserContentHandler.prototype = {
             
             overridePage = Services.urlFormatter.formatURLPref("startup.homepage_welcome_url");
             additionalPage = Services.urlFormatter.formatURLPref("startup.homepage_welcome_url.additional");
+            
+            LaterRun.enabled = true;
             break;
           case OVERRIDE_NEW_MSTONE:
             
@@ -562,6 +566,10 @@ nsBrowserContentHandler.prototype = {
           additionalPage += "&utm_content=firstrun";
         }
       }
+    }
+
+    if (!additionalPage) {
+      additionalPage = LaterRun.getURL() || "";
     }
 
     if (additionalPage && additionalPage != "about:blank") {
