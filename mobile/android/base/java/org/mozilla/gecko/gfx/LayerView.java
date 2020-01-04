@@ -237,11 +237,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         if (mToolbarAnimator != null && mToolbarAnimator.onInterceptTouchEvent(event)) {
             return true;
         }
-        if (AppConstants.MOZ_ANDROID_APZ && !mGeckoIsReady) {
-            
-            
-            return true;
-        }
         if (mPanZoomController != null && mPanZoomController.onTouchEvent(event)) {
             return true;
         }
@@ -257,21 +252,12 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
             return false;
         }
 
-        if (AppConstants.MOZ_ANDROID_APZ && mPanZoomController != null && mPanZoomController.onTouchEvent(event)) {
-            return true;
-        }
-
         return sendEventToGecko(event);
     }
 
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
         if (AndroidGamepadManager.handleMotionEvent(event)) {
-            return true;
-        }
-        if (AppConstants.MOZ_ANDROID_APZ && !mGeckoIsReady) {
-            
-            
             return true;
         }
         if (mPanZoomController != null && mPanZoomController.onMotionEvent(event)) {
@@ -380,11 +366,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (AppConstants.MOZ_ANDROID_APZ && !mGeckoIsReady) {
-            
-            
-            return true;
-        }
         if (mPanZoomController != null && mPanZoomController.onKeyEvent(event)) {
             return true;
         }

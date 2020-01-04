@@ -78,7 +78,7 @@ class NativePanZoomController implements PanZoomController, GeckoEventListener {
     public void notifyDefaultActionPrevented(boolean prevented) {
         
         
-        throw new IllegalStateException("APZCCallbackHandler::NotifyDefaultPrevented should be getting called, not this!");
+        
     }
 
     @Override
@@ -92,17 +92,10 @@ class NativePanZoomController implements PanZoomController, GeckoEventListener {
     public native void destroy();
     @Override
     public native boolean getRedrawHint();
-
     @Override
-    public void setOverScrollMode(int overscrollMode) {
-        
-    }
-
+    public native void setOverScrollMode(int overscrollMode);
     @Override
-    public int getOverScrollMode() {
-        
-        return 0;
-    }
+    public native int getOverScrollMode();
 
     @WrapForJNI(allowMultithread = true, stubName = "RequestContentRepaintWrapper")
     private void requestContentRepaint(float x, float y, float width, float height, float resolution) {
