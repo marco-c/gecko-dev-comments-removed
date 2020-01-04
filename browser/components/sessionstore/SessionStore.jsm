@@ -827,6 +827,8 @@ var SessionStoreInternal = {
         this._sendTabRestoredNotification(tab);
         break;
       case "SessionStore:crashedTabRevived":
+        
+        
         this._crashedBrowsers.delete(browser.permanentKey);
         break;
       case "SessionStore:error":
@@ -3146,6 +3148,10 @@ var SessionStoreInternal = {
     browser.__SS_restoreState = TAB_STATE_NEEDS_RESTORE;
     browser.setAttribute("pending", "true");
     tab.setAttribute("pending", "true");
+
+    
+    
+    this._crashedBrowsers.delete(browser.permanentKey);
 
     
     TabStateCache.update(browser, {
