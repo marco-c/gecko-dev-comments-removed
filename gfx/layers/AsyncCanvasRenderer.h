@@ -9,8 +9,10 @@
 
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/RefPtr.h"             
+#include "nsCOMPtr.h"                   
 
 class nsICanvasRenderingContextInternal;
+class nsIThread;
 
 namespace mozilla {
 
@@ -82,6 +84,7 @@ public:
   
   RefPtr<gl::GLContext> mGLContext;
 
+  nsCOMPtr<nsIThread> mActiveThread;
 private:
 
   virtual ~AsyncCanvasRenderer();

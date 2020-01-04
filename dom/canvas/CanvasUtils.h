@@ -21,6 +21,7 @@ class HTMLCanvasElement;
 
 namespace CanvasUtils {
 
+bool GetCanvasContextType(const nsAString& str, dom::CanvasContextType* const out_type);
 
 
 
