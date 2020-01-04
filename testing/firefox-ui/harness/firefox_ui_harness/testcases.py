@@ -2,6 +2,7 @@
 
 
 
+import os
 import pprint
 from datetime import datetime
 
@@ -115,9 +116,11 @@ class UpdateTestCase(FirefoxTestCase):
             self.browser.tabbar.close_all_tabs([self.browser.tabbar.selected_tab])
 
             
+            self.updates[self.current_update_index]['update_log'] = self.read_update_log()
+
+            
             output = pprint.pformat(self.updates)
             self.logger.info('Update test results: \n{}'.format(output))
-
         finally:
             super(UpdateTestCase, self).tearDown()
 
@@ -355,11 +358,25 @@ class UpdateTestCase(FirefoxTestCase):
         
         self.restart()
 
+    def read_update_log(self):
+        """Read the content of the update log file for the last update attempt."""
+        path = os.path.join(os.path.dirname(self.software_update.staging_directory),
+                            'last-update.log')
+        try:
+            with open(path, 'rb') as f:
+                return f.read().splitlines()
+        except IOError as exc:
+            self.logger.warning(str(exc))
+            return None
+
     def remove_downloaded_update(self):
-        """Remove an already downloaded update from the update staging directory."""
-        self.logger.info('Clean-up update staging directory: {}'.format(
-            self.software_update.staging_directory))
-        mozfile.remove(self.software_update.staging_directory)
+        """Remove an already downloaded update from the update staging directory.
+
+        Hereby not only remove the update subdir but everything below 'updates'.
+        """
+        path = os.path.dirname(self.software_update.staging_directory)
+        self.logger.info('Clean-up update staging directory: {}'.format(path))
+        mozfile.remove(path)
 
     def restore_config_files(self):
         
