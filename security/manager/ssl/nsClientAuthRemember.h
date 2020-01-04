@@ -87,9 +87,7 @@ class nsClientAuthRememberEntry final : public PLDHashEntryHdr
 
     static PLDHashNumber HashKey(KeyTypePointer aKey)
     {
-      
-      
-      return PLDHashTable::HashStringKey(nullptr, aKey);
+      return PLDHashTable::HashStringKey(aKey);
     }
 
     enum { ALLOW_MEMMOVE = false };

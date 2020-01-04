@@ -157,7 +157,7 @@ TEST(PLDHashTableTest, LazyStorage)
 
 
 static PLDHashNumber
-TrivialHash(PLDHashTable *table, const void *key)
+TrivialHash(const void *key)
 {
   return (PLDHashNumber)(size_t)key;
 }

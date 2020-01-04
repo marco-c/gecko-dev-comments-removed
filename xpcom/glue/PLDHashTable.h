@@ -396,18 +396,15 @@ public:
   static const PLDHashTableOps* StubOps();
 
   
-  static PLDHashNumber HashVoidPtrKeyStub(PLDHashTable* aTable,
-                                          const void* aKey);
-  static bool MatchEntryStub(PLDHashTable* aTable,
-                             const PLDHashEntryHdr* aEntry, const void* aKey);
+  static PLDHashNumber HashVoidPtrKeyStub(const void* aKey);
+  static bool MatchEntryStub(const PLDHashEntryHdr* aEntry, const void* aKey);
   static void MoveEntryStub(PLDHashTable* aTable, const PLDHashEntryHdr* aFrom,
                             PLDHashEntryHdr* aTo);
   static void ClearEntryStub(PLDHashTable* aTable, PLDHashEntryHdr* aEntry);
 
   
-  static PLDHashNumber HashStringKey(PLDHashTable* aTable, const void* aKey);
-  static bool MatchStringKey(PLDHashTable* aTable,
-                             const PLDHashEntryHdr* aEntry, const void* aKey);
+  static PLDHashNumber HashStringKey(const void* aKey);
+  static bool MatchStringKey(const PLDHashEntryHdr* aEntry, const void* aKey);
 
   
   
@@ -557,13 +554,11 @@ private:
 
 
 
-typedef PLDHashNumber (*PLDHashHashKey)(PLDHashTable* aTable,
-                                        const void* aKey);
+typedef PLDHashNumber (*PLDHashHashKey)(const void* aKey);
 
 
 
-typedef bool (*PLDHashMatchEntry)(PLDHashTable* aTable,
-                                  const PLDHashEntryHdr* aEntry,
+typedef bool (*PLDHashMatchEntry)(const PLDHashEntryHdr* aEntry,
                                   const void* aKey);
 
 
