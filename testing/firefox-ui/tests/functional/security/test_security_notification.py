@@ -36,14 +36,14 @@ class TestSecurityNotification(FirefoxTestCase):
 
             
             text = self.marionette.find_element(By.ID, 'badCertTechnicalInfo')
-            self.assertIn(self.urls[0][8:], text.get_attribute('textContent'))
+            self.assertIn(self.urls[0][8:], text.get_property('textContent'))
 
             
             self.assertIsNotNone(self.marionette.find_element(By.ID, 'returnButton'))
             self.assertIsNotNone(self.marionette.find_element(By.ID, 'advancedButton'))
 
             
-            self.assertIn('SEC_ERROR_EXPIRED_CERTIFICATE', text.get_attribute('textContent'))
+            self.assertIn('SEC_ERROR_EXPIRED_CERTIFICATE', text.get_property('textContent'))
 
     def test_secure_website(self):
         with self.marionette.using_context('content'):
