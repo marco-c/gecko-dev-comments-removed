@@ -2359,55 +2359,9 @@ TelemetryImpl::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
   return n;
 }
 
-struct StackFrame
-{
-  uintptr_t mPC;      
-  uint16_t mIndex;    
-  uint16_t mModIndex; 
-};
-
-#ifdef MOZ_ENABLE_PROFILER_SPS
-static bool CompareByPC(const StackFrame &a, const StackFrame &b)
-{
-  return a.mPC < b.mPC;
-}
-
-static bool CompareByIndex(const StackFrame &a, const StackFrame &b)
-{
-  return a.mIndex < b.mIndex;
-}
-#endif
-
 } 
 
-
-
-
-
-
-
-
-NSMODULE_DEFN(nsTelemetryModule) = &kTelemetryModule;
-
-
-
-
-
-void
-XRE_TelemetryAccumulate(int aID, uint32_t aSample)
-{
-  mozilla::Telemetry::Accumulate((mozilla::Telemetry::ID) aID, aSample);
-}
-
-
-
-
-
-
-
-
 namespace mozilla {
-
 void
 RecordShutdownStartTimeStamp() {
 #ifdef DEBUG
@@ -2473,256 +2427,6 @@ RecordShutdownEndTimeStamp() {
   PR_Rename(tmpName.get(), name.get());
 }
 
-} 
-
-
-
-
-
-
-
-
-namespace mozilla {
-namespace Telemetry {
-
-ProcessedStack::ProcessedStack()
-{
-}
-
-size_t ProcessedStack::GetStackSize() const
-{
-  return mStack.size();
-}
-
-size_t ProcessedStack::GetNumModules() const
-{
-  return mModules.size();
-}
-
-bool ProcessedStack::Module::operator==(const Module& aOther) const {
-  return  mName == aOther.mName &&
-    mBreakpadId == aOther.mBreakpadId;
-}
-
-const ProcessedStack::Frame &ProcessedStack::GetFrame(unsigned aIndex) const
-{
-  MOZ_ASSERT(aIndex < mStack.size());
-  return mStack[aIndex];
-}
-
-void ProcessedStack::AddFrame(const Frame &aFrame)
-{
-  mStack.push_back(aFrame);
-}
-
-const ProcessedStack::Module &ProcessedStack::GetModule(unsigned aIndex) const
-{
-  MOZ_ASSERT(aIndex < mModules.size());
-  return mModules[aIndex];
-}
-
-void ProcessedStack::AddModule(const Module &aModule)
-{
-  mModules.push_back(aModule);
-}
-
-void ProcessedStack::Clear() {
-  mModules.clear();
-  mStack.clear();
-}
-
-ProcessedStack
-GetStackAndModules(const std::vector<uintptr_t>& aPCs)
-{
-  std::vector<StackFrame> rawStack;
-  auto stackEnd = aPCs.begin() + std::min(aPCs.size(), kMaxChromeStackDepth);
-  for (auto i = aPCs.begin(); i != stackEnd; ++i) {
-    uintptr_t aPC = *i;
-    StackFrame Frame = {aPC, static_cast<uint16_t>(rawStack.size()),
-                        std::numeric_limits<uint16_t>::max()};
-    rawStack.push_back(Frame);
-  }
-
-#ifdef MOZ_ENABLE_PROFILER_SPS
-  
-  std::sort(rawStack.begin(), rawStack.end(), CompareByPC);
-
-  size_t moduleIndex = 0;
-  size_t stackIndex = 0;
-  size_t stackSize = rawStack.size();
-
-  SharedLibraryInfo rawModules = SharedLibraryInfo::GetInfoForSelf();
-  rawModules.SortByAddress();
-
-  while (moduleIndex < rawModules.GetSize()) {
-    const SharedLibrary& module = rawModules.GetEntry(moduleIndex);
-    uintptr_t moduleStart = module.GetStart();
-    uintptr_t moduleEnd = module.GetEnd() - 1;
-    
-
-    bool moduleReferenced = false;
-    for (;stackIndex < stackSize; ++stackIndex) {
-      uintptr_t pc = rawStack[stackIndex].mPC;
-      if (pc >= moduleEnd)
-        break;
-
-      if (pc >= moduleStart) {
-        
-        
-        moduleReferenced = true;
-        rawStack[stackIndex].mPC -= moduleStart;
-        rawStack[stackIndex].mModIndex = moduleIndex;
-      } else {
-        
-        
-        
-        rawStack[stackIndex].mPC =
-          std::numeric_limits<uintptr_t>::max();
-      }
-    }
-
-    if (moduleReferenced) {
-      ++moduleIndex;
-    } else {
-      
-      rawModules.RemoveEntries(moduleIndex, moduleIndex + 1);
-    }
-  }
-
-  for (;stackIndex < stackSize; ++stackIndex) {
-    
-    rawStack[stackIndex].mPC = std::numeric_limits<uintptr_t>::max();
-  }
-
-  std::sort(rawStack.begin(), rawStack.end(), CompareByIndex);
-#endif
-
-  
-  ProcessedStack Ret;
-  for (std::vector<StackFrame>::iterator i = rawStack.begin(),
-         e = rawStack.end(); i != e; ++i) {
-    const StackFrame &rawFrame = *i;
-    mozilla::Telemetry::ProcessedStack::Frame frame = { rawFrame.mPC, rawFrame.mModIndex };
-    Ret.AddFrame(frame);
-  }
-
-#ifdef MOZ_ENABLE_PROFILER_SPS
-  for (unsigned i = 0, n = rawModules.GetSize(); i != n; ++i) {
-    const SharedLibrary &info = rawModules.GetEntry(i);
-    const std::string &name = info.GetName();
-    std::string basename = name;
-#ifdef XP_MACOSX
-    
-    
-    
-    size_t pos = name.rfind('/');
-    if (pos != std::string::npos) {
-      basename = name.substr(pos + 1);
-    }
-#endif
-    mozilla::Telemetry::ProcessedStack::Module module = {
-      basename,
-      info.GetBreakpadId()
-    };
-    Ret.AddModule(module);
-  }
-#endif
-
-  return Ret;
-}
-
-void
-TimeHistogram::Add(PRIntervalTime aTime)
-{
-  uint32_t timeMs = PR_IntervalToMilliseconds(aTime);
-  size_t index = mozilla::FloorLog2(timeMs);
-  operator[](index)++;
-}
-
-const char*
-HangStack::InfallibleAppendViaBuffer(const char* aText, size_t aLength)
-{
-  MOZ_ASSERT(this->canAppendWithoutRealloc(1));
-  
-  MOZ_ASSERT(mBuffer.canAppendWithoutRealloc(aLength + 1));
-
-  const char* const entry = mBuffer.end();
-  mBuffer.infallibleAppend(aText, aLength);
-  mBuffer.infallibleAppend('\0'); 
-  this->infallibleAppend(entry);
-  return entry;
-}
-
-const char*
-HangStack::AppendViaBuffer(const char* aText, size_t aLength)
-{
-  if (!this->reserve(this->length() + 1)) {
-    return nullptr;
-  }
-
-  
-  const char* const prevStart = mBuffer.begin();
-  const char* const prevEnd = mBuffer.end();
-
-  
-  if (!mBuffer.reserve(mBuffer.length() + aLength + 1)) {
-    return nullptr;
-  }
-
-  if (prevStart != mBuffer.begin()) {
-    
-    for (const char** entry = this->begin(); entry != this->end(); entry++) {
-      if (*entry >= prevStart && *entry < prevEnd) {
-        
-        *entry += mBuffer.begin() - prevStart;
-      }
-    }
-  }
-
-  return InfallibleAppendViaBuffer(aText, aLength);
-}
-
-uint32_t
-HangHistogram::GetHash(const HangStack& aStack)
-{
-  uint32_t hash = 0;
-  for (const char* const* label = aStack.begin();
-       label != aStack.end(); label++) {
-    
-
-
-    if (aStack.IsInBuffer(*label)) {
-      hash = AddToHash(hash, HashString(*label));
-    } else {
-      hash = AddToHash(hash, *label);
-    }
-  }
-  return hash;
-}
-
-bool
-HangHistogram::operator==(const HangHistogram& aOther) const
-{
-  if (mHash != aOther.mHash) {
-    return false;
-  }
-  if (mStack.length() != aOther.mStack.length()) {
-    return false;
-  }
-  return mStack == aOther.mStack;
-}
-
-} 
-} 
-
-
-
-
-
-
-
-
-namespace mozilla {
 namespace Telemetry {
 
 
@@ -2828,6 +2532,171 @@ void RecordThreadHangStats(ThreadHangStats& aStats)
   TelemetryImpl::RecordThreadHangStats(aStats);
 }
 
+ProcessedStack::ProcessedStack()
+{
+}
+
+size_t ProcessedStack::GetStackSize() const
+{
+  return mStack.size();
+}
+
+const ProcessedStack::Frame &ProcessedStack::GetFrame(unsigned aIndex) const
+{
+  MOZ_ASSERT(aIndex < mStack.size());
+  return mStack[aIndex];
+}
+
+void ProcessedStack::AddFrame(const Frame &aFrame)
+{
+  mStack.push_back(aFrame);
+}
+
+size_t ProcessedStack::GetNumModules() const
+{
+  return mModules.size();
+}
+
+const ProcessedStack::Module &ProcessedStack::GetModule(unsigned aIndex) const
+{
+  MOZ_ASSERT(aIndex < mModules.size());
+  return mModules[aIndex];
+}
+
+void ProcessedStack::AddModule(const Module &aModule)
+{
+  mModules.push_back(aModule);
+}
+
+void ProcessedStack::Clear() {
+  mModules.clear();
+  mStack.clear();
+}
+
+bool ProcessedStack::Module::operator==(const Module& aOther) const {
+  return  mName == aOther.mName &&
+    mBreakpadId == aOther.mBreakpadId;
+}
+
+struct StackFrame
+{
+  uintptr_t mPC;      
+  uint16_t mIndex;    
+  uint16_t mModIndex; 
+};
+
+
+#ifdef MOZ_ENABLE_PROFILER_SPS
+static bool CompareByPC(const StackFrame &a, const StackFrame &b)
+{
+  return a.mPC < b.mPC;
+}
+
+static bool CompareByIndex(const StackFrame &a, const StackFrame &b)
+{
+  return a.mIndex < b.mIndex;
+}
+#endif
+
+ProcessedStack
+GetStackAndModules(const std::vector<uintptr_t>& aPCs)
+{
+  std::vector<StackFrame> rawStack;
+  auto stackEnd = aPCs.begin() + std::min(aPCs.size(), kMaxChromeStackDepth);
+  for (auto i = aPCs.begin(); i != stackEnd; ++i) {
+    uintptr_t aPC = *i;
+    StackFrame Frame = {aPC, static_cast<uint16_t>(rawStack.size()),
+                        std::numeric_limits<uint16_t>::max()};
+    rawStack.push_back(Frame);
+  }
+
+#ifdef MOZ_ENABLE_PROFILER_SPS
+  
+  std::sort(rawStack.begin(), rawStack.end(), CompareByPC);
+
+  size_t moduleIndex = 0;
+  size_t stackIndex = 0;
+  size_t stackSize = rawStack.size();
+
+  SharedLibraryInfo rawModules = SharedLibraryInfo::GetInfoForSelf();
+  rawModules.SortByAddress();
+
+  while (moduleIndex < rawModules.GetSize()) {
+    const SharedLibrary& module = rawModules.GetEntry(moduleIndex);
+    uintptr_t moduleStart = module.GetStart();
+    uintptr_t moduleEnd = module.GetEnd() - 1;
+    
+
+    bool moduleReferenced = false;
+    for (;stackIndex < stackSize; ++stackIndex) {
+      uintptr_t pc = rawStack[stackIndex].mPC;
+      if (pc >= moduleEnd)
+        break;
+
+      if (pc >= moduleStart) {
+        
+        
+        moduleReferenced = true;
+        rawStack[stackIndex].mPC -= moduleStart;
+        rawStack[stackIndex].mModIndex = moduleIndex;
+      } else {
+        
+        
+        
+        rawStack[stackIndex].mPC =
+          std::numeric_limits<uintptr_t>::max();
+      }
+    }
+
+    if (moduleReferenced) {
+      ++moduleIndex;
+    } else {
+      
+      rawModules.RemoveEntries(moduleIndex, moduleIndex + 1);
+    }
+  }
+
+  for (;stackIndex < stackSize; ++stackIndex) {
+    
+    rawStack[stackIndex].mPC = std::numeric_limits<uintptr_t>::max();
+  }
+
+  std::sort(rawStack.begin(), rawStack.end(), CompareByIndex);
+#endif
+
+  
+  ProcessedStack Ret;
+  for (std::vector<StackFrame>::iterator i = rawStack.begin(),
+         e = rawStack.end(); i != e; ++i) {
+    const StackFrame &rawFrame = *i;
+    ProcessedStack::Frame frame = { rawFrame.mPC, rawFrame.mModIndex };
+    Ret.AddFrame(frame);
+  }
+
+#ifdef MOZ_ENABLE_PROFILER_SPS
+  for (unsigned i = 0, n = rawModules.GetSize(); i != n; ++i) {
+    const SharedLibrary &info = rawModules.GetEntry(i);
+    const std::string &name = info.GetName();
+    std::string basename = name;
+#ifdef XP_MACOSX
+    
+    
+    
+    size_t pos = name.rfind('/');
+    if (pos != std::string::npos) {
+      basename = name.substr(pos + 1);
+    }
+#endif
+    ProcessedStack::Module module = {
+      basename,
+      info.GetBreakpadId()
+    };
+    Ret.AddModule(module);
+  }
+#endif
+
+  return Ret;
+}
 
 void
 WriteFailedProfileLock(nsIFile* aProfileDir)
@@ -2906,5 +2775,99 @@ SetProfileDir(nsIFile* aProfD)
   sTelemetryIOObserver->AddPath(profDirPath, NS_LITERAL_STRING("{profile}"));
 }
 
+void
+TimeHistogram::Add(PRIntervalTime aTime)
+{
+  uint32_t timeMs = PR_IntervalToMilliseconds(aTime);
+  size_t index = mozilla::FloorLog2(timeMs);
+  operator[](index)++;
+}
+
+const char*
+HangStack::InfallibleAppendViaBuffer(const char* aText, size_t aLength)
+{
+  MOZ_ASSERT(this->canAppendWithoutRealloc(1));
+  
+  MOZ_ASSERT(mBuffer.canAppendWithoutRealloc(aLength + 1));
+
+  const char* const entry = mBuffer.end();
+  mBuffer.infallibleAppend(aText, aLength);
+  mBuffer.infallibleAppend('\0'); 
+  this->infallibleAppend(entry);
+  return entry;
+}
+
+const char*
+HangStack::AppendViaBuffer(const char* aText, size_t aLength)
+{
+  if (!this->reserve(this->length() + 1)) {
+    return nullptr;
+  }
+
+  
+  const char* const prevStart = mBuffer.begin();
+  const char* const prevEnd = mBuffer.end();
+
+  
+  if (!mBuffer.reserve(mBuffer.length() + aLength + 1)) {
+    return nullptr;
+  }
+
+  if (prevStart != mBuffer.begin()) {
+    
+    for (const char** entry = this->begin(); entry != this->end(); entry++) {
+      if (*entry >= prevStart && *entry < prevEnd) {
+        
+        *entry += mBuffer.begin() - prevStart;
+      }
+    }
+  }
+
+  return InfallibleAppendViaBuffer(aText, aLength);
+}
+
+uint32_t
+HangHistogram::GetHash(const HangStack& aStack)
+{
+  uint32_t hash = 0;
+  for (const char* const* label = aStack.begin();
+       label != aStack.end(); label++) {
+    
+
+
+    if (aStack.IsInBuffer(*label)) {
+      hash = AddToHash(hash, HashString(*label));
+    } else {
+      hash = AddToHash(hash, *label);
+    }
+  }
+  return hash;
+}
+
+bool
+HangHistogram::operator==(const HangHistogram& aOther) const
+{
+  if (mHash != aOther.mHash) {
+    return false;
+  }
+  if (mStack.length() != aOther.mStack.length()) {
+    return false;
+  }
+  return mStack == aOther.mStack;
+}
+
+
 } 
 } 
+
+NSMODULE_DEFN(nsTelemetryModule) = &kTelemetryModule;
+
+
+
+
+
+void
+XRE_TelemetryAccumulate(int aID, uint32_t aSample)
+{
+  mozilla::Telemetry::Accumulate((mozilla::Telemetry::ID) aID, aSample);
+}
