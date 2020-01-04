@@ -252,9 +252,9 @@ loop.store.ActiveRoomStore = (function() {
         "windowUnload",
         "leaveRoom",
         "feedbackComplete",
-        "localVideoEnabled",
-        "remoteVideoEnabled",
-        "remoteVideoDisabled",
+        "mediaStreamCreated",
+        "mediaStreamDestroyed",
+        "remoteVideoStatus",
         "videoDimensionsChanged",
         "startScreenShare",
         "endScreenShare",
@@ -636,18 +636,17 @@ loop.store.ActiveRoomStore = (function() {
 
 
 
-    localVideoEnabled: function(actionData) {
-      this.setStoreState({localSrcVideoObject: actionData.srcVideoObject});
-    },
+    mediaStreamCreated: function(actionData) {
+      if (actionData.isLocal) {
+        this.setStoreState({
+          localVideoEnabled: actionData.hasVideo,
+          localSrcVideoObject: actionData.srcVideoObject
+        });
+        return;
+      }
 
-    
-
-
-
-
-    remoteVideoEnabled: function(actionData) {
       this.setStoreState({
-        remoteVideoEnabled: true,
+        remoteVideoEnabled: actionData.hasVideo,
         remoteSrcVideoObject: actionData.srcVideoObject
       });
     },
@@ -655,8 +654,30 @@ loop.store.ActiveRoomStore = (function() {
     
 
 
-    remoteVideoDisabled: function() {
-      this.setStoreState({remoteVideoEnabled: false});
+
+
+    mediaStreamDestroyed: function(actionData) {
+      if (actionData.isLocal) {
+        this.setStoreState({
+          localSrcVideoObject: null
+        });
+        return;
+      }
+
+      this.setStoreState({
+        remoteSrcVideoObject: null
+      });
+    },
+
+    
+
+
+
+
+    remoteVideoStatus: function(actionData) {
+      this.setStoreState({
+        remoteVideoEnabled: actionData.videoEnabled
+      });
     },
 
     
@@ -805,6 +826,7 @@ loop.store.ActiveRoomStore = (function() {
       }
 
       this.setStoreState({
+        mediaConnected: false,
         participants: participants,
         roomState: ROOM_STATES.SESSION_CONNECTED,
         remoteSrcVideoObject: null

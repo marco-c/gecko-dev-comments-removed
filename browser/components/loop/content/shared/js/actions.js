@@ -230,25 +230,17 @@ loop.shared.actions = (function() {
     
 
 
-
-
-
-
-
-
-
-    RemoteVideoEnabled: Action.define("remoteVideoEnabled", {
-      
-
+    MediaStreamCreated: Action.define("mediaStreamCreated", {
+      hasVideo: Boolean,
+      isLocal: Boolean,
       srcVideoObject: Object
     }),
 
     
 
 
-
-
-    RemoteVideoDisabled: Action.define("remoteVideoDisabled", {
+    MediaStreamDestroyed: Action.define("mediaStreamDestroyed", {
+      isLocal: Boolean
     }),
 
     
@@ -257,10 +249,10 @@ loop.shared.actions = (function() {
 
 
 
-    LocalVideoEnabled: Action.define("localVideoEnabled", {
-      
 
-      srcVideoObject: Object
+
+    RemoteVideoStatus: Action.define("remoteVideoStatus", {
+      videoEnabled: Boolean
     }),
 
     

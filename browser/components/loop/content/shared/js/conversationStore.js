@@ -223,9 +223,9 @@ loop.store = loop.store || {};
         "mediaConnected",
         "setMute",
         "fetchRoomEmailLink",
-        "localVideoEnabled",
-        "remoteVideoDisabled",
-        "remoteVideoEnabled",
+        "mediaStreamCreated",
+        "mediaStreamDestroyed",
+        "remoteVideoStatus",
         "windowUnload"
       ]);
 
@@ -444,9 +444,17 @@ loop.store = loop.store || {};
 
 
 
-    remoteVideoEnabled: function(actionData) {
+    mediaStreamCreated: function(actionData) {
+      if (actionData.isLocal) {
+        this.setStoreState({
+          localVideoEnabled: actionData.hasVideo,
+          localSrcVideoObject: actionData.srcVideoObject
+        });
+        return;
+      }
+
       this.setStoreState({
-        remoteVideoEnabled: true,
+        remoteVideoEnabled: actionData.hasVideo,
         remoteSrcVideoObject: actionData.srcVideoObject
       });
     },
@@ -456,10 +464,17 @@ loop.store = loop.store || {};
 
 
 
-    remoteVideoDisabled: function(actionData) {
+    mediaStreamDestroyed: function(actionData) {
+      if (actionData.isLocal) {
+        this.setStoreState({
+          localSrcVideoObject: null
+        });
+        return;
+      }
+
       this.setStoreState({
-        remoteVideoEnabled: false,
-        remoteSrcVideoObject: undefined});
+        remoteSrcVideoObject: null
+      });
     },
 
     
@@ -467,13 +482,9 @@ loop.store = loop.store || {};
 
 
 
-
-
-
-
-    localVideoEnabled: function(actionData) {
+    remoteVideoStatus: function(actionData) {
       this.setStoreState({
-        localSrcVideoObject: actionData.srcVideoObject
+        remoteVideoEnabled: actionData.videoEnabled
       });
     },
 
