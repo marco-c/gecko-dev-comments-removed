@@ -497,6 +497,8 @@ public:
   static nscolor GetFallbackOrPaintColor(nsStyleContext *aStyleContext,
                                          nsStyleSVGPaint nsStyleSVG::*aFillOrStroke);
 
+  static gfxTextContextPaint* GetContextPaint(nsIContent* aContent);
+
   static DrawMode
   SetupContextPaint(const DrawTarget* aDrawTarget,
                     const gfxMatrix& aContextMatrix,
@@ -560,8 +562,7 @@ public:
 
 
 
-  static bool PaintSVGGlyph(Element* aElement, gfxContext* aContext,
-                            gfxTextContextPaint* aContextPaint);
+  static bool PaintSVGGlyph(Element* aElement, gfxContext* aContext);
   
 
 

@@ -165,6 +165,26 @@ private:
 
 
 
+
+
+
+
+class MOZ_RAII AutoSetRestoreSVGContextPaint
+{
+public:
+  AutoSetRestoreSVGContextPaint(gfxTextContextPaint* aContextPaint,
+                                nsIDocument* aSVGDocument);
+  ~AutoSetRestoreSVGContextPaint();
+private:
+  nsIDocument* mSVGDocument;
+  
+  
+  void* mOuterContextPaint;
+};
+
+
+
+
 class gfxTextContextPaint
 {
 protected:
@@ -173,8 +193,6 @@ protected:
     gfxTextContextPaint() { }
 
 public:
-    static mozilla::gfx::UserDataKey sUserDataKey;
-
     
 
 

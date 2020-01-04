@@ -1300,6 +1300,19 @@ nsSVGUtils::GetFallbackOrPaintColor(nsStyleContext *aStyleContext,
   return color;
 }
 
+ gfxTextContextPaint*
+nsSVGUtils::GetContextPaint(nsIContent* aContent)
+{
+  nsIDocument* ownerDoc = aContent->OwnerDoc();
+
+  if (!ownerDoc->IsBeingUsedAsImage()) {
+    return nullptr;
+  }
+
+  return static_cast<gfxTextContextPaint*>(
+           ownerDoc->GetProperty(nsGkAtoms::svgContextPaint));
+}
+
 
 
 
@@ -1322,7 +1335,7 @@ SetupInheritablePaint(const DrawTarget* aDrawTarget,
 {
   const nsStyleSVG *style = aFrame->StyleSVG();
   nsSVGPaintServerFrame *ps =
-    nsSVGEffects::GetPaintServer(aFrame, aFillOrStroke, aProperty);
+    nsSVGEffects::GetPaintServer(aFrame, &(style->*aFillOrStroke), aProperty);
 
   if (ps) {
     RefPtr<gfxPattern> pattern =
@@ -1433,7 +1446,7 @@ nsSVGUtils::MakeFillPatternFor(nsIFrame* aFrame,
   const DrawTarget* dt = aContext->GetDrawTarget();
 
   nsSVGPaintServerFrame *ps =
-    nsSVGEffects::GetPaintServer(aFrame, &nsStyleSVG::mFill,
+    nsSVGEffects::GetPaintServer(aFrame, &style->mFill,
                                  nsSVGEffects::FillProperty());
   if (ps) {
     RefPtr<gfxPattern> pattern =
@@ -1501,7 +1514,7 @@ nsSVGUtils::MakeStrokePatternFor(nsIFrame* aFrame,
   const DrawTarget* dt = aContext->GetDrawTarget();
 
   nsSVGPaintServerFrame *ps =
-    nsSVGEffects::GetPaintServer(aFrame, &nsStyleSVG::mStroke,
+    nsSVGEffects::GetPaintServer(aFrame, &style->mStroke,
                                  nsSVGEffects::StrokeProperty());
   if (ps) {
     RefPtr<gfxPattern> pattern =
@@ -1771,16 +1784,13 @@ nsSVGUtils::GetGeometryHitTestFlags(nsIFrame* aFrame)
 }
 
 bool
-nsSVGUtils::PaintSVGGlyph(Element* aElement, gfxContext* aContext,
-                          gfxTextContextPaint* aContextPaint)
+nsSVGUtils::PaintSVGGlyph(Element* aElement, gfxContext* aContext)
 {
   nsIFrame* frame = aElement->GetPrimaryFrame();
   nsISVGChildFrame* svgFrame = do_QueryFrame(frame);
   if (!svgFrame) {
     return false;
   }
-  aContext->GetDrawTarget()->AddUserData(&gfxTextContextPaint::sUserDataKey,
-                                         aContextPaint, nullptr);
   gfxMatrix m;
   if (frame->GetContent()->IsSVGElement()) {
     

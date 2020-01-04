@@ -714,20 +714,15 @@ nsSVGPathGeometryFrame::GetMarkerProperties(nsSVGPathGeometryFrame *aFrame)
   NS_ASSERTION(!aFrame->GetPrevContinuation(), "aFrame should be first continuation");
 
   MarkerProperties result;
-  nsCOMPtr<nsIURI> markerURL =
-    nsSVGEffects::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerStart);
+  const nsStyleSVG *style = aFrame->StyleSVG();
   result.mMarkerStart =
-    nsSVGEffects::GetMarkerProperty(markerURL, aFrame,
+    nsSVGEffects::GetMarkerProperty(style->mMarkerStart, aFrame,
                                     nsSVGEffects::MarkerBeginProperty());
-
-  markerURL = nsSVGEffects::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerMid);
   result.mMarkerMid =
-    nsSVGEffects::GetMarkerProperty(markerURL, aFrame,
+    nsSVGEffects::GetMarkerProperty(style->mMarkerMid, aFrame,
                                     nsSVGEffects::MarkerMiddleProperty());
-
-  markerURL = nsSVGEffects::GetMarkerURI(aFrame, &nsStyleSVG::mMarkerEnd);
   result.mMarkerEnd =
-    nsSVGEffects::GetMarkerProperty(markerURL, aFrame,
+    nsSVGEffects::GetMarkerProperty(style->mMarkerEnd, aFrame,
                                     nsSVGEffects::MarkerEndProperty());
   return result;
 }
@@ -809,9 +804,7 @@ nsSVGPathGeometryFrame::Render(gfxContext* aContext,
     }
   }
 
-  gfxTextContextPaint *contextPaint =
-    (gfxTextContextPaint*)drawTarget->
-      GetUserData(&gfxTextContextPaint::sUserDataKey);
+  gfxTextContextPaint* contextPaint = nsSVGUtils::GetContextPaint(mContent);
 
   if (aRenderComponents & eRenderFill) {
     GeneralPattern fillPattern;
@@ -879,8 +872,7 @@ void
 nsSVGPathGeometryFrame::PaintMarkers(gfxContext& aContext,
                                      const gfxMatrix& aTransform)
 {
-  gfxTextContextPaint *contextPaint =
-    (gfxTextContextPaint*)aContext.GetDrawTarget()->GetUserData(&gfxTextContextPaint::sUserDataKey);
+  gfxTextContextPaint* contextPaint = nsSVGUtils::GetContextPaint(mContent);
 
   if (static_cast<nsSVGPathGeometryElement*>(mContent)->IsMarkable()) {
     MarkerProperties properties = GetMarkerProperties(this);
