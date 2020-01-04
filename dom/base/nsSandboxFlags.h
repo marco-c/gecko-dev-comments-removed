@@ -97,5 +97,14 @@ const unsigned long SANDBOXED_DOMAIN = 0x800;
 
 
 
-const unsigned long SANDBOXED_ORIENTATION_LOCK = 0x1000;
+
+
+const unsigned long SANDBOXED_MODALS = 0x1000;
+
+
+
+
+const unsigned long SANDBOXED_ORIENTATION_LOCK = 0x2000;
+
+const unsigned long SANDBOX_ALL_FLAGS = 0x3FFF;
 #endif
