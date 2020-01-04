@@ -1525,6 +1525,10 @@ const DownloadsFooter = {
       } else {
         this._footerNode.removeAttribute("showingsummary");
       }
+      if (!aValue && this._showingSummary) {
+        
+        DownloadsBlockedSubview.view.setHeightToFit();
+      }
       this._showingSummary = aValue;
     }
     return aValue;
