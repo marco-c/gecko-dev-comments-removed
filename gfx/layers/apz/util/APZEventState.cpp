@@ -424,6 +424,17 @@ APZEventState::ProcessAPZStateChange(const nsCOMPtr<nsIDocument>& aDocument,
   }
 }
 
+void
+APZEventState::ProcessClusterHit()
+{
+  
+  
+#ifndef MOZ_ANDROID_APZ
+  MOZ_ASSERT(false);
+#endif
+  mActiveElementManager->ClearActivation();
+}
+
 bool
 APZEventState::SendPendingTouchPreventedResponse(bool aPreventDefault)
 {
