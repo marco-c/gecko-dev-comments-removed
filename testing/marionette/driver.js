@@ -1677,6 +1677,29 @@ GeckoDriver.prototype.switchToFrame = function(cmd, resp) {
           checkTimer.initWithCallback(checkLoad.bind(this), 100, Ci.nsITimer.TYPE_ONE_SHOT);
           return;
         }
+
+        
+        let parent = curWindow.document.getBindingParent(wantedFrame);
+        
+        if (parent && !(parent.shadowRoot && parent.shadowRoot.contains(wantedFrame))) {
+          let anonNodes = [...curWindow.document.getAnonymousNodes(parent) || []];
+          if (anonNodes.length > 0) {
+            let el = wantedFrame;
+            while (el) {
+              if (anonNodes.indexOf(el) > -1) {
+                curWindow = wantedFrame.contentWindow;
+                this.curFrame = curWindow;
+                if (focus) {
+                  this.curFrame.focus();
+                }
+                checkTimer.initWithCallback(checkLoad.bind(this), 100, Ci.nsITimer.TYPE_ONE_SHOT);
+                return;
+              }
+              el = el.parentNode;
+            }
+          }
+        }
+
         
         let frames = curWindow.document.getElementsByTagName("iframe");
         let numFrames = frames.length;
