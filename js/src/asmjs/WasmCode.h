@@ -100,6 +100,11 @@ class CodeSegment
     bool containsCodePC(const void* pc) const {
         return pc >= base() && pc < (base() + codeLength_);
     }
+
+    
+    
+
+    void onMovingGrow(uint8_t* prevMemoryBase, const Metadata& metadata, ArrayBufferObject& buffer);
 };
 
 
@@ -517,6 +522,7 @@ class Code
          const Metadata& metadata,
          const ShareableBytes* maybeBytecode);
 
+    CodeSegment& segment() { return *segment_; }
     const CodeSegment& segment() const { return *segment_; }
     const Metadata& metadata() const { return *metadata_; }
 
