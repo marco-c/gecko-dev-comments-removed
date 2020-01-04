@@ -437,12 +437,16 @@ DllBlockSet::Add(const char* name, unsigned long long version)
 void
 DllBlockSet::Write(HANDLE file)
 {
-  AutoCriticalSection lock(&sLock);
-  DWORD nBytes;
+  
+  
+  
+  
+  ::EnterCriticalSection(&sLock);
 
   
   
   MOZ_SEH_TRY {
+    DWORD nBytes;
     for (DllBlockSet* b = gFirst; b; b = b->mNext) {
       
       WriteFile(file, b->mName, strlen(b->mName), &nBytes, nullptr);
@@ -466,6 +470,8 @@ DllBlockSet::Write(HANDLE file)
     }
   }
   MOZ_SEH_EXCEPT (EXCEPTION_EXECUTE_HANDLER) { }
+
+  ::LeaveCriticalSection(&sLock);
 }
 
 static
