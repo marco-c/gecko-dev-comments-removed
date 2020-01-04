@@ -63,19 +63,13 @@ NS_IMPL_ISUPPORTS(TouchCaret,
 
  int32_t TouchCaret::sTouchCaretInflateSize = 0;
  int32_t TouchCaret::sTouchCaretExpirationTime = 0;
- bool TouchCaret::sCaretManagesAndroidActionbar = false;
- bool TouchCaret::sTouchcaretExtendedvisibility = false;
-
- uint32_t TouchCaret::sActionBarViewCount = 0;
 
 TouchCaret::TouchCaret(nsIPresShell* aPresShell)
   : mState(TOUCHCARET_NONE),
     mActiveTouchId(-1),
     mCaretCenterToDownPointOffsetY(0),
     mInAsyncPanZoomGesture(false),
-    mVisible(false),
-    mIsValidTap(false),
-    mActionBarViewID(0)
+    mVisible(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -87,10 +81,6 @@ TouchCaret::TouchCaret(nsIPresShell* aPresShell)
                                 "touchcaret.inflatesize.threshold");
     Preferences::AddIntVarCache(&sTouchCaretExpirationTime,
                                 "touchcaret.expiration.time");
-    Preferences::AddBoolVarCache(&sCaretManagesAndroidActionbar,
-                                 "caret.manages-android-actionbar");
-    Preferences::AddBoolVarCache(&sTouchcaretExtendedvisibility,
-                                 "touchcaret.extendedvisibility");
     addedTouchCaretPref = true;
   }
 
@@ -220,38 +210,6 @@ TouchCaret::SetVisibility(bool aVisible)
 
   
   mVisible ? LaunchExpirationTimer() : CancelExpirationTimer();
-
-  
-  
-  if (!mVisible && sCaretManagesAndroidActionbar) {
-    UpdateAndroidActionBarVisibility(false, mActionBarViewID);
-  }
-}
-
-
-
-
-
-
-
-
-void
-TouchCaret::UpdateAndroidActionBarVisibility(bool aVisibility, uint32_t& aViewID)
-{
-  
-  if (aVisibility) {
-    
-    aViewID = ++sActionBarViewCount;
-  }
-
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    nsString topic = (aVisibility) ?
-      NS_LITERAL_STRING("ActionBar:OpenNew") : NS_LITERAL_STRING("ActionBar:Close");
-    nsAutoString viewCount;
-    viewCount.AppendInt(aViewID);
-    os->NotifyObservers(nullptr, NS_ConvertUTF16toUTF8(topic).get(), viewCount.get());
-  }
 }
 
 nsRect
@@ -440,25 +398,6 @@ TouchCaret::NotifySelectionChanged(nsIDOMDocument* aDoc, nsISelection* aSel,
     SetVisibility(false);
   } else {
     SyncVisibilityWithCaret();
-
-    
-    if (mVisible && sCaretManagesAndroidActionbar) {
-      
-      if (aReason & nsISelectionListener::MOUSEUP_REASON) {
-        UpdateAndroidActionBarVisibility(true, mActionBarViewID);
-      } else {
-        
-        
-        
-        bool isCollapsed;
-        if (NS_SUCCEEDED(aSel->GetIsCollapsed(&isCollapsed)) && isCollapsed) {
-          nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-          if (os) {
-            os->NotifyObservers(nullptr, "ActionBar:UpdateState", nullptr);
-          }
-        }
-      }
-    }
   }
 
   return NS_OK;
@@ -471,11 +410,6 @@ TouchCaret::NotifySelectionChanged(nsIDOMDocument* aDoc, nsISelection* aSel,
 void
 TouchCaret::AsyncPanZoomStarted()
 {
-  if (mVisible) {
-    if (sTouchcaretExtendedvisibility) {
-      mInAsyncPanZoomGesture = true;
-    }
-  }
 }
 
 void
@@ -494,12 +428,6 @@ TouchCaret::AsyncPanZoomStopped()
 void
 TouchCaret::ScrollPositionChanged()
 {
-  if (mVisible) {
-    if (sTouchcaretExtendedvisibility) {
-      
-      LaunchScrollEndDetector();
-    }
-  }
 }
 
 void
@@ -619,11 +547,6 @@ TouchCaret::IsDisplayable()
   if (!editingHost) {
     TOUCHCARET_LOG("Cannot get editing host!");
     return false;
-  }
-
-  
-  if (sTouchcaretExtendedvisibility) {
-    return true;
   }
 
   if (focusRect.IsEmpty()) {
@@ -1011,12 +934,6 @@ TouchCaret::HandleMouseDownEvent(WidgetMouseEvent* aEvent)
           status = nsEventStatus_eConsumeNoDefault;
         } else {
           
-          
-          if (sTouchcaretExtendedvisibility) {
-            UpdatePositionIfNeeded();
-            break;
-          }
-          
           SetVisibility(false);
           status = nsEventStatus_eIgnore;
         }
@@ -1076,14 +993,8 @@ TouchCaret::HandleTouchDownEvent(WidgetTouchEvent* aEvent)
         
         
         if (mActiveTouchId == -1) {
-          
-          if (sTouchcaretExtendedvisibility) {
-            
-            UpdatePositionIfNeeded();
-          } else {
-            SetVisibility(false);
-            status = nsEventStatus_eIgnore;
-          }
+          SetVisibility(false);
+          status = nsEventStatus_eIgnore;
         }
       }
       break;

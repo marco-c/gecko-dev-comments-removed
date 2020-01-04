@@ -310,18 +310,12 @@ private:
   
   static int32_t sTouchCaretInflateSize;
   static int32_t sTouchCaretExpirationTime;
-  static bool sCaretManagesAndroidActionbar;
-  static bool sTouchcaretExtendedvisibility;
 
   
   friend class SelectionCarets;
   static const int32_t sAutoScrollTimerDelay = 30;
   
   static const int32_t sScrollEndTimerDelay = 300;
-
-  
-  static uint32_t sActionBarViewCount;
-  uint32_t mActionBarViewID;
 };
 } 
 #endif 

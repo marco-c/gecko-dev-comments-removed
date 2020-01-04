@@ -66,9 +66,6 @@ NS_IMPL_ISUPPORTS(SelectionCarets,
                   nsISupportsWeakReference)
 
  int32_t SelectionCarets::sSelectionCaretsInflateSize = 0;
- bool SelectionCarets::sSelectionCaretDetectsLongTap = true;
- bool SelectionCarets::sCaretManagesAndroidActionbar = false;
- bool SelectionCarets::sSelectionCaretObservesCompositions = false;
 
 SelectionCarets::SelectionCarets(nsIPresShell* aPresShell)
   : mPresShell(aPresShell)
@@ -81,7 +78,6 @@ SelectionCarets::SelectionCarets(nsIPresShell* aPresShell)
   , mStartCaretVisible(false)
   , mSelectionVisibleInScrollFrames(true)
   , mVisible(false)
-  , mActionBarViewID(0)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -91,12 +87,6 @@ SelectionCarets::SelectionCarets(nsIPresShell* aPresShell)
   if (!addedPref) {
     Preferences::AddIntVarCache(&sSelectionCaretsInflateSize,
                                 "selectioncaret.inflatesize.threshold");
-    Preferences::AddBoolVarCache(&sSelectionCaretDetectsLongTap,
-                                 "selectioncaret.detects.longtap", true);
-    Preferences::AddBoolVarCache(&sCaretManagesAndroidActionbar,
-                                 "caret.manages-android-actionbar");
-    Preferences::AddBoolVarCache(&sSelectionCaretObservesCompositions,
-                                 "selectioncaret.observes.compositions");
     addedPref = true;
   }
 }
@@ -267,7 +257,7 @@ SelectionCarets::HandleEvent(WidgetEvent* aEvent)
     }
 
   } else if (aEvent->mMessage == eMouseLongTap) {
-    if (!mVisible || !sSelectionCaretDetectsLongTap) {
+    if (!mVisible) {
       SELECTIONCARETS_LOG("SelectWord from eMouseLongTap");
 
       mDownPoint = ptInRoot;
@@ -321,11 +311,6 @@ SelectionCarets::SetVisibility(bool aVisible)
 
   dom::Element* endElement = mPresShell->GetSelectionCaretsEndElement();
   SetElementVisibility(endElement, mVisible && mEndCaretVisible);
-
-  
-  if (sCaretManagesAndroidActionbar) {
-    TouchCaret::UpdateAndroidActionBarVisibility(mVisible, mActionBarViewID);
-  }
 }
 
 void
@@ -1133,46 +1118,12 @@ SelectionCarets::NotifySelectionChanged(nsIDOMDocument* aDoc,
     return NS_OK;
   }
 
-  
-  if (sSelectionCaretObservesCompositions) {
-    
-    
-    
-    if (!mVisible) {
-      if (aReason & nsISelectionListener::MOUSEUP_REASON) {
-        UpdateSelectionCarets();
-      }
-    } else {
-      
-      
-      if (aReason & (nsISelectionListener::DRAG_REASON |
-                     nsISelectionListener::KEYPRESS_REASON |
-                     nsISelectionListener::MOUSEDOWN_REASON)) {
-        SetVisibility(false);
-      } else {
-        
-        
-        UpdateSelectionCarets();
-      }
-    }
+  if (!aReason || (aReason & (nsISelectionListener::DRAG_REASON |
+                              nsISelectionListener::KEYPRESS_REASON |
+                              nsISelectionListener::MOUSEDOWN_REASON))) {
+    SetVisibility(false);
   } else {
-    
-    
-    if (!aReason || (aReason & (nsISelectionListener::DRAG_REASON |
-                                nsISelectionListener::KEYPRESS_REASON |
-                                nsISelectionListener::MOUSEDOWN_REASON))) {
-      SetVisibility(false);
-    } else {
-      UpdateSelectionCarets();
-    }
-  }
-
-  
-  if (mVisible && sCaretManagesAndroidActionbar) {
-    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-    if (os) {
-      os->NotifyObservers(nullptr, "ActionBar:UpdateState", nullptr);
-    }
+    UpdateSelectionCarets();
   }
 
   DispatchSelectionStateChangedEvent(static_cast<Selection*>(aSel),
@@ -1204,11 +1155,7 @@ SelectionCarets::AsyncPanZoomStarted()
 {
   if (mVisible) {
     mInAsyncPanZoomGesture = true;
-    
-    if (!sCaretManagesAndroidActionbar) {
-      SetVisibility(false);
-    }
-
+    SetVisibility(false);
     SELECTIONCARETS_LOG("Dispatch scroll started");
     DispatchScrollViewChangeEvent(mPresShell, dom::ScrollState::Started);
   } else {
@@ -1243,11 +1190,7 @@ SelectionCarets::ScrollPositionChanged()
 {
   if (mVisible) {
     if (!mUseAsyncPanZoom) {
-      
-      if (!sCaretManagesAndroidActionbar) {
-        SetVisibility(false);
-      }
-
+      SetVisibility(false);
       
       
       
@@ -1275,7 +1218,7 @@ SelectionCarets::ScrollPositionChanged()
 void
 SelectionCarets::LaunchLongTapDetector()
 {
-  if (!sSelectionCaretDetectsLongTap || mUseAsyncPanZoom) {
+  if (mUseAsyncPanZoom) {
     return;
   }
 

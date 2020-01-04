@@ -260,10 +260,6 @@ protected:
 
 
     bool                  mIgnoreUserModify;
-
-    
-    static bool sSelectionCaretEnabled;
-    static bool sSelectionCaretsAffectCaret;
 };
 
 #endif 
