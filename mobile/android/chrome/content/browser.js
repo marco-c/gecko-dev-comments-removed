@@ -1776,15 +1776,22 @@ var BrowserApp = {
     if (formHelperMode == kFormHelperModeDisabled)
       return;
 
-    let focused = this.getFocusedInput(aBrowser);
-
-    if (focused) {
-      let shouldZoom = Services.prefs.getBoolPref("formhelper.autozoom");
-      if (formHelperMode == kFormHelperModeDynamic && this.isTablet)
-        shouldZoom = false;
+    if (!AppConstants.MOZ_ANDROID_APZ) {
+      let focused = this.getFocusedInput(aBrowser);
+      if (focused) {
+        let shouldZoom = Services.prefs.getBoolPref("formhelper.autozoom");
+        if (formHelperMode == kFormHelperModeDynamic && this.isTablet)
+          shouldZoom = false;
+        
+        ZoomHelper.zoomToElement(focused, -1, false,
+            aAllowZoom && shouldZoom && !ViewportHandler.isViewportSpecified(aBrowser.contentWindow));
+      }
+    } else {
       
-      ZoomHelper.zoomToElement(focused, -1, false,
-          aAllowZoom && shouldZoom && !ViewportHandler.isViewportSpecified(aBrowser.contentWindow));
+      
+      setTimeout(function(e) {
+        aBrowser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils).zoomToFocusedInput();
+      }, 500);
     }
   },
 
@@ -5331,9 +5338,6 @@ var ErrorPageEventHandler = {
             
             
             NativeWindow.doorhanger.show(Strings.browser.GetStringFromName("safeBrowsingDoorhanger"), "safebrowsing-warning", [], BrowserApp.selectedTab.id);
-          } else if (target == errorDoc.getElementById("whyForbiddenButton")) {
-            
-            BrowserApp.selectedBrowser.loadURI("https://support.mozilla.org/kb/controlledaccess");
           }
         }
         break;
