@@ -30,6 +30,7 @@
          */
 
         SimpleTest.waitForExplicitFinish();
+        SimpleTest.requestFlakyTimeout("We may need to wait for window's moving");
 
         function MouseMovementStats() {
           this.screenX = false;
