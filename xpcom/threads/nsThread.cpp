@@ -390,7 +390,7 @@ nsThread::ThreadFunc(void* aArg)
   {
     
     nsAutoPtr<MessageLoop> loop(
-      new MessageLoop(MessageLoop::TYPE_MOZILLA_NONMAINTHREAD));
+      new MessageLoop(MessageLoop::TYPE_MOZILLA_NONMAINTHREAD, self));
 
     
     loop->Run();
