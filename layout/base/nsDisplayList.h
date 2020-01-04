@@ -158,7 +158,8 @@ enum class nsDisplayListBuilderMode : uint8_t {
   PLUGIN_GEOMETRY,
   FRAME_VISIBILITY,
   TRANSFORM_COMPUTATION,
-  GENERATE_GLYPH
+  GENERATE_GLYPH,
+  PAINTING_SELECTION_BACKGROUND
 };
 
 
@@ -290,11 +291,18 @@ public:
 
 
 
-
-
   bool IsForGenerateGlyphMask()
   {
     return mMode == nsDisplayListBuilderMode::GENERATE_GLYPH;
+  }
+
+  
+
+
+
+  bool IsForPaintingSelectionBG()
+  {
+    return mMode == nsDisplayListBuilderMode::PAINTING_SELECTION_BACKGROUND;
   }
 
   bool WillComputePluginGeometry() { return mWillComputePluginGeometry; }

@@ -501,11 +501,27 @@ GenerateAndPushTextMask(nsIFrame* aFrame, nsRenderingContext* aContext,
   
   
   
+  
+  
+  
+  
+  
 
   gfxContext* sourceCtx = aContext->ThebesContext();
   gfxRect bounds =
     nsLayoutUtils::RectToGfxRect(aFillRect,
                                  aFrame->PresContext()->AppUnitsPerDevPixel());
+
+  {
+    
+    gfxContextMatrixAutoSaveRestore save(sourceCtx);
+    sourceCtx->SetMatrix(sourceCtx->CurrentMatrix().Translate(bounds.TopLeft()));
+
+    nsLayoutUtils::PaintFrame(aContext, aFrame,
+                              nsRect(nsPoint(0, 0), aFrame->GetSize()),
+                              NS_RGB(255, 255, 255),
+                              nsDisplayListBuilderMode::PAINTING_SELECTION_BACKGROUND);
+  }
 
   
   IntRect drawRect;
@@ -2435,7 +2451,8 @@ nsDisplayBackgroundImage::AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuil
                                                      nsDisplayList* aList,
                                                      bool aAllowWillPaintBorderOptimization)
 {
-  if (aBuilder->IsForGenerateGlyphPath()) {
+  if (aBuilder->IsForGenerateGlyphMask() ||
+      aBuilder->IsForPaintingSelectionBG()) {
     return true;
   }
 
