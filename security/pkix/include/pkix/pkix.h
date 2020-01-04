@@ -147,6 +147,14 @@ Result VerifyEncodedOCSPResponse(TrustDomain& trustDomain,
                Time* thisUpdate = nullptr,
                Time* validThrough = nullptr);
 
+
+
+
+
+
+Result CheckTLSFeaturesAreSatisfied(Input& cert,
+                                    const Input* stapledOCSPResponse);
+
 } } 
 
 #endif 

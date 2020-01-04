@@ -54,6 +54,8 @@ public:
   static const Flags FLAG_LOCAL_ONLY;
   
   static const Flags FLAG_MUST_BE_EV;
+  
+  static const Flags FLAG_TLS_IGNORE_STATUS_REQUEST;
 
   
   enum OCSPStaplingStatus {

@@ -188,6 +188,11 @@ PathBuildingStep::Check(Input potentialIssuerDER,
     }
   }
 
+  rv = CheckTLSFeatures(subject, potentialIssuer);
+  if (rv != Success) {
+    return RecordResult(rv, keepGoing);
+  }
+
   
   
   
