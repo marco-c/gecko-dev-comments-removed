@@ -49,7 +49,7 @@ public:
                     gfx::IntSize aSize,
                     TextureFlags aFlags,
                     uint32_t aInitialPoolSize,
-                    uint32_t aPoolIncrementSize,
+                    uint32_t aPoolUnusedSize,
                     TextureForwarder* aAllocator);
 
   
@@ -112,10 +112,7 @@ private:
   void ReturnUnlockedClients();
 
   
-  
-  
-  
-  void AllocateTextureClients(size_t aSize);
+  void AllocateTextureClient();
 
   
   LayersBackend mBackend;
@@ -135,7 +132,7 @@ private:
 
   
   
-  uint32_t mPoolIncrementSize;
+  uint32_t mPoolUnusedSize;
 
   
   
