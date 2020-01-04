@@ -1192,6 +1192,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
   }
 
   bool hasListener = false;
+  bool hasListenerForCurrentGroup = false;
   bool usingLegacyMessage = false;
   EventMessage eventMessage = aEvent->mMessage;
 
@@ -1207,6 +1208,8 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
       
       if (ListenerCanHandle(listener, aEvent, eventMessage)) {
         hasListener = true;
+        hasListenerForCurrentGroup = hasListenerForCurrentGroup ||
+          listener->mFlags.mInSystemGroup == aEvent->mFlags.mInSystemGroup;
         if (listener->IsListening(aEvent) &&
             (aEvent->mFlags.mIsTrusted ||
              listener->mFlags.mAllowUntrustedEvents)) {
@@ -1271,7 +1274,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     
     
     
-    if (hasListener || usingLegacyMessage) {
+    if (hasListenerForCurrentGroup || usingLegacyMessage) {
       
       
       break;
