@@ -228,7 +228,7 @@ const API_LEVELS = Object.freeze({
 
 
 function getAPILevelForWindow(window, addonId) {
-  const { NO_PRIVILEGES, CONTENTSCRIPT_PRIVILEGES, FULL_PRIVILEGES } = API_LEVELS;
+  const {NO_PRIVILEGES, CONTENTSCRIPT_PRIVILEGES, FULL_PRIVILEGES} = API_LEVELS;
 
   
   

@@ -149,16 +149,16 @@ class FilteringMessageManager {
 
 
 
-  receiveMessage({ data, target }) {
+  receiveMessage({data, target}) {
     let handlers = Array.from(this.getHandlers(data.messageName, data.recipient));
 
     let result = {};
     if (handlers.length == 0) {
-      result.error = { result: MessageChannel.RESULT_NO_HANDLER,
-                       message: "No matching message handler" };
+      result.error = {result: MessageChannel.RESULT_NO_HANDLER,
+                      message: "No matching message handler"};
     } else if (handlers.length > 1) {
-      result.error = { result: MessageChannel.RESULT_MULTIPLE_HANDLERS,
-                       message: `Multiple matching handlers for ${data.messageName}` };
+      result.error = {result: MessageChannel.RESULT_MULTIPLE_HANDLERS,
+                      message: `Multiple matching handlers for ${data.messageName}`};
     } else {
       result.handler = handlers[0];
     }
@@ -414,7 +414,7 @@ this.MessageChannel = {
 
   sendMessage(target, messageName, data, recipient = {}, sender = {}) {
     let channelId = gChannelId++;
-    let message = { messageName, channelId, sender, recipient, data };
+    let message = {messageName, channelId, sender, recipient, data};
 
     let deferred = PromiseUtils.defer();
     deferred.messageFilter = {};
@@ -446,11 +446,11 @@ this.MessageChannel = {
 
 
 
-  _handleMessage({ handler, error }, data) {
+  _handleMessage({handler, error}, data) {
     
     
     
-    let { target } = data;
+    let {target} = data;
     if (!(target instanceof Ci.nsIMessageSender)) {
       target = target.messageManager;
     }
@@ -513,7 +513,7 @@ this.MessageChannel = {
 
 
 
-  _handleResponse({ handler, error }, data) {
+  _handleResponse({handler, error}, data) {
     if (error) {
       
       

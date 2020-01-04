@@ -153,7 +153,7 @@ MatchPattern.prototype = {
     
     
 
-    let { host, isSecure } = cookie;
+    let {host, isSecure} = cookie;
 
     for (let matcher of this.matchers) {
       let schemes = matcher.schemes;
