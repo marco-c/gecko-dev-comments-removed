@@ -45,7 +45,8 @@ class TestDVCertificate(FirefoxTestCase):
         cert = self.browser.tabbar.selected_tab.certificate
 
         
-        self.assertEqual(self.identity_popup.host.get_attribute('value'), cert['commonName'])
+        self.assertEqual(self.identity_popup.view.main.host.get_attribute('textContent'),
+                         cert['commonName'])
 
         
         secure_label = self.identity_popup.view.main.secure_connection_label
