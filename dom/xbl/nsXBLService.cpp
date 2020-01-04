@@ -858,117 +858,118 @@ nsXBLService::LoadBindingDocumentInfo(nsIContent* aBoundElement,
   nsresult rv = aBindingURI->CloneIgnoringRef(getter_AddRefs(documentURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  nsBindingManager *bindingManager = nullptr;
+
+  
+  
+  
+  if (aBoundDocument) {
+    bindingManager = aBoundDocument->BindingManager();
+    info = bindingManager->GetXBLDocumentInfo(documentURI);
+    if (aBoundDocument->IsStaticDocument() &&
+        IsChromeOrResourceURI(aBindingURI)) {
+      aForceSyncLoad = true;
+    }
+  }
+
+  
+  
+  
+  NodeInfo *ni = nullptr;
+  if (aBoundElement)
+    ni = aBoundElement->NodeInfo();
+
+  if (!info && bindingManager &&
+      (!ni || !(ni->Equals(nsGkAtoms::scrollbar, kNameSpaceID_XUL) ||
+                ni->Equals(nsGkAtoms::thumb, kNameSpaceID_XUL) ||
+                ((ni->Equals(nsGkAtoms::input) ||
+                  ni->Equals(nsGkAtoms::select)) &&
+                 aBoundElement->IsHTMLElement()))) && !aForceSyncLoad) {
+    nsCOMPtr<nsIStreamListener> listener;
+    if (bindingManager)
+      listener = bindingManager->GetLoadingDocListener(documentURI);
+    if (listener) {
+      nsXBLStreamListener* xblListener =
+        static_cast<nsXBLStreamListener*>(listener.get());
+      
+      if (!xblListener->HasRequest(aBindingURI, aBoundElement)) {
+        nsXBLBindingRequest* req = new nsXBLBindingRequest(aBindingURI, aBoundElement);
+        xblListener->AddRequest(req);
+      }
+      return NS_OK;
+    }
+  }
+
 #ifdef MOZ_XUL
+  
   
   nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
   bool useXULCache = cache && cache->IsEnabled();
 
-  if (useXULCache) {
-    
+  if (!info && useXULCache) {
     
     
     info = cache->GetXBLDocumentInfo(documentURI);
+  }
+
+  bool useStartupCache = useXULCache && IsChromeOrResourceURI(documentURI);
+
+  if (!info) {
+    
+    if (!info && useStartupCache) {
+      rv = nsXBLDocumentInfo::ReadPrototypeBindings(documentURI, getter_AddRefs(info));
+      if (NS_SUCCEEDED(rv)) {
+        cache->PutXBLDocumentInfo(info);
+      }
+    }
   }
 #endif
 
   if (!info) {
     
-    nsBindingManager *bindingManager = nullptr;
-
-    if (aBoundDocument) {
-      bindingManager = aBoundDocument->BindingManager();
-      info = bindingManager->GetXBLDocumentInfo(documentURI);
-      if (aBoundDocument->IsStaticDocument() &&
-          IsChromeOrResourceURI(aBindingURI)) {
-        aForceSyncLoad = true;
-      }
-    }
-
-    NodeInfo *ni = nullptr;
-    if (aBoundElement)
-      ni = aBoundElement->NodeInfo();
-
-    if (!info && bindingManager &&
-        (!ni || !(ni->Equals(nsGkAtoms::scrollbar, kNameSpaceID_XUL) ||
-                  ni->Equals(nsGkAtoms::thumb, kNameSpaceID_XUL) ||
-                  ((ni->Equals(nsGkAtoms::input) ||
-                    ni->Equals(nsGkAtoms::select)) &&
-                   aBoundElement->IsHTMLElement()))) && !aForceSyncLoad) {
-      
-      
-      
-      
-      nsCOMPtr<nsIStreamListener> listener;
-      if (bindingManager)
-        listener = bindingManager->GetLoadingDocListener(documentURI);
-      if (listener) {
-        nsXBLStreamListener* xblListener =
-          static_cast<nsXBLStreamListener*>(listener.get());
-        
-        if (!xblListener->HasRequest(aBindingURI, aBoundElement)) {
-          nsXBLBindingRequest* req = new nsXBLBindingRequest(aBindingURI, aBoundElement);
-          xblListener->AddRequest(req);
-        }
-        return NS_OK;
-      }
-    }
-
-#ifdef MOZ_XUL
     
-    bool useStartupCache = useXULCache && IsChromeOrResourceURI(documentURI);
-    if (!info && useStartupCache) {
-      rv = nsXBLDocumentInfo::ReadPrototypeBindings(documentURI, getter_AddRefs(info));
-      if (NS_SUCCEEDED(rv)) {
+
+    
+    bool chrome;
+    if (NS_SUCCEEDED(documentURI->SchemeIs("chrome", &chrome)) && chrome)
+      aForceSyncLoad = true;
+
+    nsCOMPtr<nsIDocument> document;
+    rv = FetchBindingDocument(aBoundElement, aBoundDocument, documentURI,
+                              aBindingURI, aOriginPrincipal, aForceSyncLoad,
+                              getter_AddRefs(document));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (document) {
+      nsBindingManager *xblDocBindingManager = document->BindingManager();
+      info = xblDocBindingManager->GetXBLDocumentInfo(documentURI);
+      if (!info) {
+        NS_ERROR("An XBL file is malformed.  Did you forget the XBL namespace on the bindings tag?");
+        return NS_ERROR_FAILURE;
+      }
+      xblDocBindingManager->RemoveXBLDocumentInfo(info); 
+
+      
+#ifdef MOZ_XUL
+      if (useStartupCache) {
         cache->PutXBLDocumentInfo(info);
 
-        if (bindingManager) {
-          
-          bindingManager->PutXBLDocumentInfo(info);
-        }
-      }
-    }
-#endif
-
-    if (!info) {
-      
-      
-
-      
-      bool chrome;
-      if (NS_SUCCEEDED(documentURI->SchemeIs("chrome", &chrome)) && chrome)
-        aForceSyncLoad = true;
-
-      nsCOMPtr<nsIDocument> document;
-      rv = FetchBindingDocument(aBoundElement, aBoundDocument, documentURI,
-                                aBindingURI, aOriginPrincipal, aForceSyncLoad,
-                                getter_AddRefs(document));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      if (document) {
-        nsBindingManager *xblDocBindingManager = document->BindingManager();
-        info = xblDocBindingManager->GetXBLDocumentInfo(documentURI);
-        if (!info) {
-          NS_ERROR("An XBL file is malformed.  Did you forget the XBL namespace on the bindings tag?");
-          return NS_ERROR_FAILURE;
-        }
-        xblDocBindingManager->RemoveXBLDocumentInfo(info); 
-
         
-#ifdef MOZ_XUL
-        if (useStartupCache) {
-          cache->PutXBLDocumentInfo(info);
-
-          
-          info->WritePrototypeBindings();
-        }
-#endif
-
-        if (bindingManager) {
-          
-          bindingManager->PutXBLDocumentInfo(info);
-        }
+        info->WritePrototypeBindings();
       }
+#endif
     }
+  }
+
+  if (info && bindingManager) {
+    
+    
+    
+    
+    
+    
+    
+    bindingManager->PutXBLDocumentInfo(info);
   }
 
   info.forget(aResult);
