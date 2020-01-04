@@ -21,30 +21,13 @@ class ChildThread : public IPC::Channel::Listener,
   explicit ChildThread(Thread::Options options);
   virtual ~ChildThread();
 
-  
-  void AddRoute(int32_t routing_id, IPC::Channel::Listener* listener);
-  void RemoveRoute(int32_t routing_id);
-
-  MessageLoop* owner_loop() { return owner_loop_; }
-
  protected:
   friend class ChildProcess;
 
   
   bool Run();
 
-  
-  void SetChannelName(const std::wstring& name) { channel_name_ = name; }
-
-  
-  void OnProcessFinalRelease();
-
  protected:
-  
-  static const size_t kV8StackSize;
-
-  virtual void OnControlMessageReceived(const IPC::Message& msg) { }
-
   
   static ChildThread* current();
 
@@ -70,11 +53,6 @@ class ChildThread : public IPC::Channel::Listener,
   mozilla::UniquePtr<IPC::Channel> channel_;
 
   Thread::Options options_;
-
-  
-  
-  
-  bool check_with_browser_before_shutdown_;
 
   DISALLOW_EVIL_CONSTRUCTORS(ChildThread);
 };
