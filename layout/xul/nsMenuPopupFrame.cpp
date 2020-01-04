@@ -475,7 +475,6 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
   }
 
   bool needCallback = false;
-
   if (shouldPosition) {
     SetPopupPosition(aAnchor, false, aSizedToPopup);
     needCallback = true;
@@ -488,6 +487,7 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
   
   
   
+  bool rePosition = shouldPosition && (mPosition == POPUPPOSITION_SELECTION);
   if (!aParentMenu) {
     nsSize newsize = GetSize();
     if (newsize.width > bounds.width || newsize.height > bounds.height) {
@@ -495,10 +495,14 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
       
       mPrefSize = newsize;
       if (isOpen) {
-        SetPopupPosition(aAnchor, false, aSizedToPopup);
+        rePosition = true;
         needCallback = true;
       }
     }
+  }
+
+  if (rePosition) {
+    SetPopupPosition(aAnchor, false, aSizedToPopup);
   }
 
   nsPresContext* pc = PresContext();
@@ -754,6 +758,11 @@ nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
       
       
       mYPos += 21;
+    }
+    else if (position.EqualsLiteral("selection")) {
+      mPopupAnchor = POPUPALIGNMENT_BOTTOMLEFT;
+      mPopupAlignment = POPUPALIGNMENT_TOPLEFT;
+      mPosition = POPUPPOSITION_SELECTION;
     }
     else {
       InitPositionFromAnchorAlign(anchor, align);
@@ -1017,6 +1026,8 @@ nsMenuPopupFrame::AdjustPositionForAnchorAlign(nsRect& anchorRect,
     popupAlign = -popupAlign;
   }
 
+  nsRect originalAnchorRect(anchorRect);
+
   
   nsPoint pnt;
   switch (popupAnchor) {
@@ -1080,6 +1091,19 @@ nsMenuPopupFrame::AdjustPositionForAnchorAlign(nsRect& anchorRect,
   
   
   
+  if (mPosition == POPUPPOSITION_SELECTION) {
+    MOZ_ASSERT(popupAnchor == POPUPALIGNMENT_BOTTOMLEFT);
+    MOZ_ASSERT(popupAlign == POPUPALIGNMENT_TOPLEFT);
+
+    nsIFrame* selectedItemFrame = GetSelectedItemForAlignment();
+    if (selectedItemFrame) {
+      pnt.y -= originalAnchorRect.height + selectedItemFrame->GetRect().y;
+    }
+  }
+
+  
+  
+  
   
   
   
@@ -1116,6 +1140,26 @@ nsMenuPopupFrame::AdjustPositionForAnchorAlign(nsRect& anchorRect,
   }
 
   return pnt;
+}
+
+nsIFrame* nsMenuPopupFrame::GetSelectedItemForAlignment()
+{
+  
+  
+  nsCOMPtr<nsIDOMXULSelectControlElement> select = do_QueryInterface(mAnchorContent);
+  if (!select) {
+    
+    select = do_QueryInterface(mContent->GetParent());
+    if (!select) {
+      return nullptr;
+    }
+  }
+
+  nsCOMPtr<nsIDOMXULSelectControlItemElement> item;
+  select->GetSelectedItem(getter_AddRefs(item));
+
+  nsCOMPtr<nsIContent> selectedElement = do_QueryInterface(item);
+  return selectedElement ? selectedElement->GetPrimaryFrame() : nullptr;
 }
 
 nscoord
@@ -2282,7 +2326,8 @@ nsMenuPopupFrame::GetAlignmentPosition() const
   
   
 
-  if (mPosition == POPUPPOSITION_OVERLAP || mPosition == POPUPPOSITION_AFTERPOINTER)
+  if (mPosition == POPUPPOSITION_OVERLAP || mPosition == POPUPPOSITION_AFTERPOINTER ||
+      mPosition == POPUPPOSITION_SELECTION)
     return mPosition;
 
   int8_t position = mPosition;

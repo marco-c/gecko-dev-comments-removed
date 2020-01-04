@@ -57,7 +57,10 @@ using namespace mozilla;
 
 NS_DECLARE_FRAME_PROPERTY_FRAMELIST(PopupListProperty)
 
-static int32_t gEatMouseMove = false;
+
+
+
+static int32_t gMenuJustOpenedOrClosed = false;
 
 const int32_t kBlinkDelay = 67; 
 
@@ -385,6 +388,17 @@ nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
   if (*aEventStatus == nsEventStatus_eIgnore)
     *aEventStatus = nsEventStatus_eConsumeDoDefault;
 
+  
+  
+  
+  if (gMenuJustOpenedOrClosed) {
+    if (aEvent->mMessage == eMouseDown) {
+      gMenuJustOpenedOrClosed = false;
+    } else if (aEvent->mMessage == eMouseUp) {
+      return NS_OK;
+    }
+  }
+
   bool onmenu = IsOnMenu();
 
   if (aEvent->mMessage == eKeyPress && !IsDisabled()) {
@@ -479,8 +493,8 @@ nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
   }
   else if (aEvent->mMessage == eMouseMove &&
            (onmenu || (menuParent && menuParent->IsMenuBar()))) {
-    if (gEatMouseMove) {
-      gEatMouseMove = false;
+    if (gMenuJustOpenedOrClosed) {
+      gMenuJustOpenedOrClosed = false;
       return NS_OK;
     }
 
@@ -685,7 +699,7 @@ nsMenuFrame::OpenMenu(bool aSelectFirstItem)
   if (!mContent)
     return;
 
-  gEatMouseMove = true;
+  gMenuJustOpenedOrClosed = true;
 
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
@@ -698,7 +712,7 @@ nsMenuFrame::OpenMenu(bool aSelectFirstItem)
 void
 nsMenuFrame::CloseMenu(bool aDeselectMenu)
 {
-  gEatMouseMove = true;
+  gMenuJustOpenedOrClosed = true;
 
   
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();

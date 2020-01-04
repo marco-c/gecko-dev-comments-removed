@@ -120,6 +120,7 @@ enum MenuPopupAnchorType {
 #define POPUPPOSITION_ENDAFTER 7
 #define POPUPPOSITION_OVERLAP 8
 #define POPUPPOSITION_AFTERPOINTER 9
+#define POPUPPOSITION_SELECTION 10
 
 #define POPUPPOSITION_HFLIP(v) (v ^ 1)
 #define POPUPPOSITION_VFLIP(v) (v ^ 2)
@@ -444,6 +445,10 @@ protected:
   
   nsPoint AdjustPositionForAnchorAlign(nsRect& anchorRect,
                                        FlipStyle& aHFlip, FlipStyle& aVFlip);
+
+  
+  
+  nsIFrame* GetSelectedItemForAlignment();
 
   
   
