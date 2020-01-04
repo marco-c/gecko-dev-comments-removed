@@ -188,6 +188,8 @@
 #include "mozilla/layers/InputAPZContext.h"
 #include "InputData.h"
 
+#include "mozilla/Telemetry.h"
+
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
@@ -4007,12 +4009,18 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
     return result;
   }
 
-  if (mTouchWindow && WinUtils::GetIsMouseFromTouch(aEventMessage)) {
-    
-    
-    
-    MOZ_ASSERT(mAPZC);
-    return result;
+  if (WinUtils::GetIsMouseFromTouch(aEventMessage)) {
+    if (aEventMessage == eMouseDown) {
+      Telemetry::Accumulate(Telemetry::FX_TOUCH_USED, 1);
+    }
+
+    if (mTouchWindow) {
+      
+      
+      
+      MOZ_ASSERT(mAPZC);
+      return result;
+    }
   }
 
   
