@@ -82,7 +82,7 @@ class ToolLauncher(object):
             env[e] = extra_env[e]
 
         
-        if not buildconfig.substs['HAVE_64BIT_BUILD']:
+        if not buildconfig.substs.get('HAVE_64BIT_BUILD'):
             for e in ('VS140COMNTOOLS', 'VS120COMNTOOLS'):
                 if e not in env:
                     continue
