@@ -39,14 +39,11 @@ struct nsGlobalNameStruct
   enum nametype {
     eTypeNotInitialized,
     eTypeNewDOMBinding,
-    eTypeInterface,
     eTypeProperty,
     eTypeNavigatorProperty,
     eTypeExternalConstructor,
     eTypeClassConstructor,
     eTypeClassProto,
-    eTypeExternalClassInfoCreator,
-    eTypeExternalClassInfo,
   } mType;
 
   
@@ -58,7 +55,6 @@ struct nsGlobalNameStruct
   union {
     int32_t mDOMClassInfoID; 
     nsIID mIID; 
-    nsExternalDOMClassInfoData* mData; 
     nsCID mCID; 
   };
 
@@ -127,21 +123,6 @@ public:
   nsresult RegisterClassProto(const char *aClassName,
                               const nsIID *aConstructorProtoIID,
                               bool *aFoundOld);
-
-  nsresult RegisterExternalInterfaces(bool aAsProto);
-
-  nsresult RegisterExternalClassName(const char *aClassName,
-                                     nsCID& aCID);
-
-  
-  
-  nsresult RegisterDOMCIData(const char *aName,
-                             nsDOMClassInfoExternalConstructorFnc aConstructorFptr,
-                             const nsIID *aProtoChainInterface,
-                             const nsIID **aInterfaces,
-                             uint32_t aScriptableFlags,
-                             bool aHasClassInterface,
-                             const nsCID *aConstructorCID);
 
   void RegisterDefineDOMInterface(const nsAFlatString& aName,
     mozilla::dom::DefineInterface aDefineDOMInterface,

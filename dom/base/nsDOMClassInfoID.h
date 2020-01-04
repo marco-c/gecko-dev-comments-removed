@@ -60,10 +60,6 @@ NS_GetDOMClassInfoInstance(nsDOMClassInfoID aID);
     }                                                                         \
   } else
 
-#else
-
-
-
 #endif 
 
 #endif 

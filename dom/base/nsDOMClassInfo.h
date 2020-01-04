@@ -8,9 +8,9 @@
 #define nsDOMClassInfo_h___
 
 #include "mozilla/Attributes.h"
+#include "nsDOMClassInfoID.h"
 #include "nsIXPCScriptable.h"
 #include "nsIScriptGlobalObject.h"
-#include "nsIDOMScriptObjectFactory.h"
 #include "js/Id.h"
 #include "nsIXPConnect.h"
 
@@ -32,13 +32,9 @@ struct nsDOMClassInfoData
 {
   const char *mName;
   const char16_t *mNameUTF16;
-  union {
-    nsDOMClassInfoConstructorFnc mConstructorFptr;
-    nsDOMClassInfoExternalConstructorFnc mExternalConstructorFptr;
-  } u;
+  nsDOMClassInfoConstructorFnc mConstructorFptr;
 
-  nsIClassInfo *mCachedClassInfo; 
-                                  
+  nsIClassInfo *mCachedClassInfo;
   const nsIID *mProtoChainInterface;
   const nsIID **mInterfaces;
   uint32_t mScriptableFlags : 31; 
@@ -51,19 +47,6 @@ struct nsDOMClassInfoData
 #endif
 };
 
-struct nsExternalDOMClassInfoData : public nsDOMClassInfoData
-{
-  const nsCID *mConstructorCID;
-};
-
-
-
-
-
-#define GET_CLEAN_CI_PTR(_ptr) (nsIClassInfo*)(uintptr_t(_ptr) & ~0x1)
-#define MARK_EXTERNAL(_ptr) (nsIClassInfo*)(uintptr_t(_ptr) | 0x1)
-#define IS_EXTERNAL(_ptr) (uintptr_t(_ptr) & 0x1)
-
 class nsWindowSH;
 
 class nsDOMClassInfo : public nsXPCClassInfo
@@ -71,7 +54,7 @@ class nsDOMClassInfo : public nsXPCClassInfo
   friend class nsWindowSH;
 
 protected:
-  virtual ~nsDOMClassInfo();
+  virtual ~nsDOMClassInfo() {};
 
 public:
   explicit nsDOMClassInfo(nsDOMClassInfoData* aData);
@@ -81,17 +64,6 @@ public:
   NS_DECL_ISUPPORTS
 
   NS_DECL_NSICLASSINFO
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  static nsIClassInfo* GetClassInfoInstance(nsDOMClassInfoData* aData);
 
   static nsresult Init();
   static void ShutDown();
@@ -134,7 +106,6 @@ protected:
   }
 
   static nsresult RegisterClassProtos(int32_t aDOMClassInfoID);
-  static nsresult RegisterExternalClasses();
 
   static nsIXPConnect *sXPConnect;
 
