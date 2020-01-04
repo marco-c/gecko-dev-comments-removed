@@ -336,7 +336,7 @@ PLDHashTable::Clear()
 
 
 template <PLDHashTable::SearchReason Reason>
-PLDHashEntryHdr* PL_DHASH_FASTCALL
+PLDHashEntryHdr* NS_FASTCALL
 PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash)
 {
   MOZ_ASSERT(mEntryStore.Get());
@@ -405,7 +405,7 @@ PLDHashTable::SearchTable(const void* aKey, PLDHashNumber aKeyHash)
 
 
 
-PLDHashEntryHdr* PL_DHASH_FASTCALL
+MOZ_ALWAYS_INLINE PLDHashEntryHdr*
 PLDHashTable::FindFreeEntry(PLDHashNumber aKeyHash)
 {
   MOZ_ASSERT(mEntryStore.Get());
