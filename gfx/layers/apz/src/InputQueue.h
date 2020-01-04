@@ -177,11 +177,11 @@ private:
 
 
 
-  CancelableBlockState* FindBlockForId(const uint64_t& aInputBlockId,
+  CancelableBlockState* FindBlockForId(uint64_t aInputBlockId,
                                        InputData** aOutFirstInput);
   void ScheduleMainThreadTimeout(const RefPtr<AsyncPanZoomController>& aTarget,
                                  CancelableBlockState* aBlock);
-  void MainThreadTimeout(const uint64_t& aInputBlockId);
+  void MainThreadTimeout(uint64_t aInputBlockId);
   void ProcessQueue();
   bool CanDiscardBlock(CancelableBlockState* aBlock);
   void UpdateActiveApzc(const RefPtr<AsyncPanZoomController>& aNewActive);

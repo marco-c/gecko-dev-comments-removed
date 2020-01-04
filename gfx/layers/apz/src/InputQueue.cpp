@@ -142,18 +142,18 @@ InputQueue::ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
   if (block->IsDuringFastFling()) {
     INPQ_LOG("dropping event due to block %p being in fast motion\n", block);
     result = nsEventStatus_eConsumeNoDefault;
-  } else if (target && target->ArePointerEventsConsumable(block, aEvent.AsMultiTouchInput().mTouches.Length())) {
-    if (block->UpdateSlopState(aEvent.AsMultiTouchInput(), true)) {
+  } else if (target && target->ArePointerEventsConsumable(block, aEvent.mTouches.Length())) {
+    if (block->UpdateSlopState(aEvent, true)) {
       INPQ_LOG("dropping event due to block %p being in slop\n", block);
       result = nsEventStatus_eConsumeNoDefault;
     } else {
       result = nsEventStatus_eConsumeDoDefault;
     }
-  } else if (block->UpdateSlopState(aEvent.AsMultiTouchInput(), false)) {
+  } else if (block->UpdateSlopState(aEvent, false)) {
     INPQ_LOG("dropping event due to block %p being in mini-slop\n", block);
     result = nsEventStatus_eConsumeNoDefault;
   }
-  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent.AsMultiTouchInput(), *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
   ProcessQueue();
   return result;
 }
@@ -205,7 +205,7 @@ InputQueue::ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
     *aOutInputBlockId = block->GetBlockId();
   }
 
-  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent.AsMouseInput(), *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
   ProcessQueue();
 
   if (DragTracker::EndsDrag(aEvent)) {
@@ -252,15 +252,17 @@ InputQueue::ReceiveScrollWheelInput(const RefPtr<AsyncPanZoomController>& aTarge
   }
 
   
-  ScrollWheelInput event(aEvent);
-  block->Update(event);
+  
+  
+  
+  
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
 
   
   
   
-  
-  
-  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event, *block));
+  block->Update(mQueuedInputs.LastElement()->Input()->AsScrollWheelInput());
+
   ProcessQueue();
 
   return nsEventStatus_eConsumeDoDefault;
@@ -340,7 +342,7 @@ InputQueue::ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget
   
   
   
-  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event.AsPanGestureInput(), *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event, *block));
   ProcessQueue();
 
   return result;
@@ -512,15 +514,15 @@ InputQueue::ScheduleMainThreadTimeout(const RefPtr<AsyncPanZoomController>& aTar
 }
 
 CancelableBlockState*
-InputQueue::FindBlockForId(const uint64_t& aInputBlockId,
+InputQueue::FindBlockForId(uint64_t aInputBlockId,
                            InputData** aOutFirstInput)
 {
-  for (size_t i = 0; i < mQueuedInputs.Length(); i++) {
-    if (mQueuedInputs[i]->Block()->GetBlockId() == aInputBlockId) {
+  for (const auto& queuedInput : mQueuedInputs) {
+    if (queuedInput->Block()->GetBlockId() == aInputBlockId) {
       if (aOutFirstInput) {
-        *aOutFirstInput = mQueuedInputs[i]->Input();
+        *aOutFirstInput = queuedInput->Input();
       }
-      return mQueuedInputs[i]->Block();
+      return queuedInput->Block();
     }
   }
 
@@ -543,7 +545,7 @@ InputQueue::FindBlockForId(const uint64_t& aInputBlockId,
 }
 
 void
-InputQueue::MainThreadTimeout(const uint64_t& aInputBlockId) {
+InputQueue::MainThreadTimeout(uint64_t aInputBlockId) {
   APZThreadUtils::AssertOnControllerThread();
 
   INPQ_LOG("got a main thread timeout; block=%" PRIu64 "\n", aInputBlockId);
