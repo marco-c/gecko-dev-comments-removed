@@ -1839,8 +1839,11 @@ DoGetElemFallback(JSContext* cx, BaselineFrame* frame, ICGetElem_Fallback* stub_
         return true;
 
     
-    if (!stub->addMonitorStubForValue(cx, frame->script(), res))
+    if (!stub->addMonitorStubForValue(cx, frame->script(), res,
+        ICStubCompiler::Engine::Baseline))
+    {
         return false;
+    }
 
     if (attached)
         return true;
@@ -4222,7 +4225,7 @@ DoGetNameFallback(JSContext* cx, BaselineFrame* frame, ICGetName_Fallback* stub_
         return true;
 
     
-    if (!stub->addMonitorStubForValue(cx, script, res))
+    if (!stub->addMonitorStubForValue(cx, script, res, ICStubCompiler::Engine::Baseline))
         return false;
     if (attached)
         return true;
@@ -6185,10 +6188,14 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
 
     
     ICTypeMonitor_Fallback* typeMonFbStub = stub->fallbackMonitorStub();
-    if (!typeMonFbStub->addMonitorStubForValue(cx, script, res))
+    if (!typeMonFbStub->addMonitorStubForValue(cx, script, res,
+        ICStubCompiler::Engine::Baseline))
+    {
         return false;
+    }
+
     
-    if (!stub->addMonitorStubForValue(cx, script, res))
+    if (!stub->addMonitorStubForValue(cx, script, res, ICStubCompiler::Engine::Baseline))
         return false;
 
     
@@ -6240,10 +6247,13 @@ DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_
 
     
     ICTypeMonitor_Fallback* typeMonFbStub = stub->fallbackMonitorStub();
-    if (!typeMonFbStub->addMonitorStubForValue(cx, script, res))
+    if (!typeMonFbStub->addMonitorStubForValue(cx, script, res,
+        ICStubCompiler::Engine::Baseline))
+    {
         return false;
+    }
     
-    if (!stub->addMonitorStubForValue(cx, script, res))
+    if (!stub->addMonitorStubForValue(cx, script, res, ICStubCompiler::Engine::Baseline))
         return false;
 
     if (!handled)
