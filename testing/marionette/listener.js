@@ -950,14 +950,26 @@ function singleTap(msg) {
 
 
 
-function checkEnabledStateAccessibility(accesible, enabled) {
+
+function checkEnabledAccessibility(accesible, element, enabled) {
   if (!accesible) {
     return;
   }
-  if (enabled && accessibility.matchState(accesible, 'STATE_UNAVAILABLE')) {
-    accessibility.handleErrorMessage('Element is enabled but disabled via ' +
-      'the accessibility API');
+  let disabledAccessibility = accessibility.matchState(
+    accesible, 'STATE_UNAVAILABLE');
+  let explorable = curFrame.document.defaultView.getComputedStyle(
+    element, null).getPropertyValue('pointer-events') !== 'none';
+  let message;
+
+  if (!explorable && !disabledAccessibility) {
+    message = 'Element is enabled but is not explorable via the ' +
+      'accessibility API';
+  } else if (enabled && disabledAccessibility) {
+    message = 'Element is enabled but disabled via the accessibility API';
+  } else if (!enabled && !disabledAccessibility) {
+    message = 'Element is disabled but enabled via the accessibility API';
   }
+  accessibility.handleErrorMessage(message);
 }
 
 
@@ -998,6 +1010,34 @@ function checkActionableAccessibility(accesible) {
       'and may not be manipulated via the accessibility API';
   } else if (!accessibility.hasValidName(accesible)) {
     message = 'Element is missing an accesible name';
+  } else if (!accessibility.matchState(accesible, 'STATE_FOCUSABLE')) {
+    message = 'Element is not focusable via the accessibility API';
+  }
+  accessibility.handleErrorMessage(message);
+}
+
+
+
+
+
+
+
+function checkSelectedAccessibility(accessible, selected) {
+  if (!accessible) {
+    return;
+  }
+  if (!accessibility.matchState(accessible, 'STATE_SELECTABLE')) {
+    
+    return;
+  }
+
+  let selectedAccessibility = accessibility.matchState(
+    accessible, 'STATE_SELECTED');
+  let message;
+  if (selected && !selectedAccessibility) {
+    message = 'Element is selected but not selected via the accessibility API';
+  } else if (!selected && selectedAccessibility) {
+    message = 'Element is not selected but selected via the accessibility API';
   }
   accessibility.handleErrorMessage(message);
 }
@@ -1415,6 +1455,7 @@ function clickElement(id) {
   }
   checkActionableAccessibility(acc);
   if (utils.isElementEnabled(el)) {
+    checkEnabledAccessibility(acc, el, true);
     utils.synthesizeMouseAtCenter(el, {}, el.ownerDocument.defaultView);
   } else {
     throw new InvalidElementStateError("Element is not Enabled");
@@ -1543,7 +1584,8 @@ function getElementRect(id) {
 function isElementEnabled(id) {
   let el = elementManager.getKnownElement(id, curFrame);
   let enabled = utils.isElementEnabled(el);
-  checkEnabledStateAccessibility(accessibility.getAccessibleObject(el), enabled);
+  checkEnabledAccessibility(
+    accessibility.getAccessibleObject(el), el, enabled);
   return enabled;
 }
 
