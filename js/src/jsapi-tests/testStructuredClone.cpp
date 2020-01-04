@@ -2,9 +2,12 @@
 
 
 
+#include "builtin/TestingFunctions.h"
 #include "js/StructuredClone.h"
 
 #include "jsapi-tests/tests.h"
+
+using namespace js;
 
 BEGIN_TEST(testStructuredClone_object)
 {

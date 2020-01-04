@@ -2,9 +2,14 @@
 
 
 
+#include "jscompartment.h"
 #include "jsfriendapi.h"
 
 #include "jsapi-tests/tests.h"
+
+#include "jscompartmentinlines.h"
+
+using namespace js;
 
 BEGIN_TEST(testArrayBufferView_type)
 {
