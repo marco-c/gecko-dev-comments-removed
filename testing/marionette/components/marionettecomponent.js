@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {Constructor: CC, interfaces: Ci, utils: Cu} = Components;
+const {Constructor: CC, interfaces: Ci, utils: Cu, classes: Cc} = Components;
 
 const MARIONETTE_CONTRACTID = "@mozilla.org/marionette;1";
 const MARIONETTE_CID = Components.ID("{786a1369-dca5-4adc-8486-33d23c88010a}");
@@ -14,6 +14,20 @@ const ENABLED_PREF = "marionette.defaultPrefs.enabled";
 const PORT_PREF = "marionette.defaultPrefs.port";
 const FORCELOCAL_PREF = "marionette.force-local";
 const LOG_PREF = "marionette.logging";
+
+
+
+
+
+
+
+
+
+
+
+
+
+const ENV_PREF_VAR = "MOZ_MARIONETTE_PREF_STATE_ACROSS_RESTARTS";
 
 const ServerSocket = CC("@mozilla.org/network/server-socket;1",
     "nsIServerSocket",
@@ -105,6 +119,7 @@ MarionetteComponent.prototype.handle = function(cmdLine) {
 MarionetteComponent.prototype.observe = function(subj, topic, data) {
   switch (topic) {
     case "profile-after-change":
+      this.maybeReadPrefsFromEnvironment();
       
       
       this.observerService.addObserver(this, "final-ui-startup", false);
@@ -140,6 +155,25 @@ MarionetteComponent.prototype.observe = function(subj, topic, data) {
       break;
   }
 };
+
+MarionetteComponent.prototype.maybeReadPrefsFromEnvironment = function() {
+  let env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
+  if (env.exists(ENV_PREF_VAR)) {
+    let prefStr = env.get(ENV_PREF_VAR);
+    let prefs;
+    try {
+      prefs = JSON.parse(prefStr);
+    } catch (ex) {
+      Cu.reportError("Invalid marionette prefs in environment; prefs won't have been applied.");
+      Cu.reportError(ex);
+    }
+    if (prefs) {
+      for (let prefName of Object.keys(prefs)) {
+        Preferences.set("marionette." + prefName, prefs[prefName]);
+      }
+    }
+  }
+}
 
 MarionetteComponent.prototype.suppressSafeModeDialog_ = function(win) {
   
