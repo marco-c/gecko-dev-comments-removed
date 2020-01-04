@@ -371,23 +371,23 @@ add_task(function* log_message_with_params() {
 
   
   let ob = function() {};
-  ob.toJSON = function() { return {sneaky: "value"} };
+  ob.toJSON = function() {return {sneaky: "value"}};
   do_check_eq(formatMessage("JSON is ${sub}", {sub: ob}),
               'JSON is {"sneaky":"value"}');
 
   
   ob = function() {};
-  ob.toJSON = function() { throw "oh noes JSON" };
+  ob.toJSON = function() {throw "oh noes JSON"};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
               'Fail is (function () {})');
 
   
-  ob.toSource = function() { throw "oh noes SOURCE" };
+  ob.toSource = function() {throw "oh noes SOURCE"};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
               'Fail is function () {}');
 
   
-  ob.toString = function() { throw "oh noes STRING" };
+  ob.toString = function() {throw "oh noes STRING"};
   do_check_eq(formatMessage("Fail is ${sub}", {sub: ob}),
               'Fail is [object]');
 
@@ -446,7 +446,7 @@ add_task(function* log_message_with_params() {
 
   
   
-  let vOf = {a: 1, valueOf: function() { throw "oh noes valueOf" }};
+  let vOf = {a: 1, valueOf: function() {throw "oh noes valueOf"}};
   do_check_eq(formatMessage("Broken valueOf ${}", vOf),
               'Broken valueOf ({a:1, valueOf:(function () {throw "oh noes valueOf"})})');
 
