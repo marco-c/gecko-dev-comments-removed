@@ -139,13 +139,10 @@ public:
   void ReleaseMediaBuffer(MediaBuffer* abuffer);
 
   
-  
-  
-  bool AskMediaCodecAndWait();
+  bool AllocateAudioMediaCodec();
 
   
-  
-  bool AsyncAskMediaCodec();
+  bool AsyncAllocateVideoMediaCodec();
 
   
   void ReleaseMediaCodec();
