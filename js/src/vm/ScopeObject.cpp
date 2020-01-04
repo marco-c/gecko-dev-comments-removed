@@ -1547,11 +1547,12 @@ MissingScopeKey::match(MissingScopeKey sk1, MissingScopeKey sk2)
     return sk1.frame_ == sk2.frame_ && sk1.staticScope_ == sk2.staticScope_;
 }
 
-void
-LiveScopeVal::sweep()
+bool
+LiveScopeVal::needsSweep()
 {
     if (staticScope_)
         MOZ_ALWAYS_FALSE(IsAboutToBeFinalized(&staticScope_));
+    return false;
 }
 
 
@@ -2402,16 +2403,11 @@ DebugScopes::sweep(JSRuntime* rt)
         }
     }
 
-    for (LiveScopeMap::Enum e(liveScopes); !e.empty(); e.popFront()) {
-        e.front().value().sweep();
-
-        
+    
 
 
 
-        if (IsAboutToBeFinalized(&e.front().mutableKey()))
-            e.removeFront();
-    }
+    liveScopes.sweep();
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
