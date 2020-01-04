@@ -123,7 +123,7 @@ Bootstrap.prototype = {
         manifest: metadata,
         metadata: metadata,
         modules: {
-          "@test/options": {}
+          "@test/options": {},
         },
         noQuit: prefs.get(`extensions.${id}.sdk.test.no-quit`, false)
       });
@@ -133,6 +133,9 @@ Bootstrap.prototype = {
       const require = Require(loader, module);
       const main = command === "test" ? "sdk/test/runner" : null;
       const prefsURI = `${baseURI}defaults/preferences/prefs.js`;
+
+      
+      require("sdk/webextension").initFromBootstrapAddonParam(addon);
 
       const { startup } = require("sdk/addon/runner");
       startup(reason, {loader, main, prefsURI});
