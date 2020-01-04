@@ -273,7 +273,7 @@ protected:
     , mMessage(aMessage)
     , mRefPoint(0, 0)
     , mLastRefPoint(0, 0)
-    , userType(nullptr)
+    , mSpecifiedEventType(nullptr)
   {
     MOZ_COUNT_CTOR(WidgetEvent);
     mFlags.Clear();
@@ -295,7 +295,7 @@ public:
     , mMessage(aMessage)
     , mRefPoint(0, 0)
     , mLastRefPoint(0, 0)
-    , userType(nullptr)
+    , mSpecifiedEventType(nullptr)
   {
     MOZ_COUNT_CTOR(WidgetEvent);
     mFlags.Clear();
@@ -336,7 +336,9 @@ public:
   BaseEventFlags mFlags;
 
   
-  nsCOMPtr<nsIAtom> userType;
+  
+  
+  nsCOMPtr<nsIAtom> mSpecifiedEventType;
 
   nsString typeString; 
 
@@ -353,7 +355,7 @@ public:
     
     AssignEventTime(aEvent);
     
-    userType = aEvent.userType;
+    mSpecifiedEventType = aEvent.mSpecifiedEventType;
     
     target = aCopyTargets ? aEvent.target : nullptr;
     currentTarget = aCopyTargets ? aEvent.currentTarget : nullptr;

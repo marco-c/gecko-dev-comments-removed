@@ -343,7 +343,7 @@ public:
     
     if (mNoListenerForEvent == aEvent->mMessage &&
         (mNoListenerForEvent != eUnidentifiedEvent ||
-         mNoListenerForEventAtom == aEvent->userType)) {
+         mNoListenerForEventAtom == aEvent->mSpecifiedEventType)) {
       return;
     }
     HandleEventInternal(aPresContext, aEvent, aDOMEvent, aCurrentTarget,
