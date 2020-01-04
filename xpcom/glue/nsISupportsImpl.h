@@ -39,13 +39,12 @@
 #  define MOZ_CAN_USE_IS_DESTRUCTIBLE_FALLBACK
 #elif defined(__GNUC__)
    
-#  if MOZ_USING_LIBSTDCXX && MOZ_GCC_VERSION_AT_LEAST(4, 8, 0)
+#  if MOZ_USING_LIBSTDCXX
 #    define MOZ_HAVE_STD_IS_DESTRUCTIBLE
-
-
-#  elif MOZ_GCC_VERSION_AT_LEAST(4, 8, 0)
-#    define MOZ_CAN_USE_IS_DESTRUCTIBLE_FALLBACK
 #  endif
+   
+   
+#  define MOZ_CAN_USE_IS_DESTRUCTIBLE_FALLBACK
 #endif
 
 #ifdef MOZ_HAVE_STD_IS_DESTRUCTIBLE
@@ -140,14 +139,6 @@ private:
 #define MOZ_ASSERT_CLASSNAME(_type)                         \
   static_assert(mozilla::IsClass<_type>::value,             \
                 "Token '" #_type "' is not a class type.")
-
-
-#if MOZ_IS_GCC
-# if !MOZ_GCC_VERSION_AT_LEAST(4, 7, 0)
-#  undef MOZ_ASSERT_CLASSNAME
-#  define MOZ_ASSERT_CLASSNAME(_type)
-# endif
-#endif
 
 
 
