@@ -32,8 +32,6 @@ loader.lazyGetter(this, "indexedDBForStorage", () => {
   }
 });
 
-var gTrackedMessageManager = new Map();
-
 
 
 const MAX_STORE_OBJECT_COUNT = 50;
@@ -923,38 +921,12 @@ var cookieHelpers = {
 
 
 
-exports.setupParentProcessForCookies = function ({mm, prefix}) {
+exports.setupParentProcessForCookies = function ({ mm, prefix }) {
   cookieHelpers.onCookieChanged =
     callChildProcess.bind(null, "onCookieChanged");
 
   
-  mm.addMessageListener("debug:storage-cookie-request-parent",
-                        cookieHelpers.handleChildRequest);
-
-  DebuggerServer.once("disconnected-from-child:" + prefix,
-                      handleMessageManagerDisconnected);
-
-  gTrackedMessageManager.set("cookies", mm);
-
-  function handleMessageManagerDisconnected(evt, { mm: disconnectedMm }) {
-    
-    if (disconnectedMm !== mm || !gTrackedMessageManager.has("cookies")) {
-      return;
-    }
-
-    
-    
-    
-    
-    cookieHelpers.removeCookieObservers();
-
-    gTrackedMessageManager.delete("cookies");
-
-    
-    
-    mm.removeMessageListener("debug:storage-cookie-request-parent",
-                             cookieHelpers.handleChildRequest);
-  }
+  setMessageManager(mm);
 
   function callChildProcess(methodName, ...args) {
     if (methodName === "onCookieChanged") {
@@ -971,6 +943,30 @@ exports.setupParentProcessForCookies = function ({mm, prefix}) {
       
     }
   }
+
+  function setMessageManager(newMM) {
+    if (mm) {
+      mm.removeMessageListener("debug:storage-cookie-request-parent",
+                               cookieHelpers.handleChildRequest);
+    }
+    mm = newMM;
+    if (mm) {
+      mm.addMessageListener("debug:storage-cookie-request-parent",
+                            cookieHelpers.handleChildRequest);
+    }
+  }
+
+  return {
+    onBrowserSwap: setMessageManager,
+    onDisconnected: () => {
+      
+      
+      
+      
+      cookieHelpers.removeCookieObservers();
+      setMessageManager(null);
+    }
+  };
 };
 
 
@@ -2141,29 +2137,26 @@ var indexedDBHelpers = {
 
 
 
-exports.setupParentProcessForIndexedDB = function ({mm, prefix}) {
+exports.setupParentProcessForIndexedDB = function ({ mm, prefix }) {
   
-  mm.addMessageListener("debug:storage-indexedDB-request-parent",
-                        indexedDBHelpers.handleChildRequest);
+  setMessageManager(mm);
 
-  DebuggerServer.once("disconnected-from-child:" + prefix,
-                      handleMessageManagerDisconnected);
-
-  gTrackedMessageManager.set("indexedDB", mm);
-
-  function handleMessageManagerDisconnected(evt, { mm: disconnectedMm }) {
-    
-    if (disconnectedMm !== mm || !gTrackedMessageManager.has("indexedDB")) {
-      return;
+  function setMessageManager(newMM) {
+    if (mm) {
+      mm.removeMessageListener("debug:storage-indexedDB-request-parent",
+                               indexedDBHelpers.handleChildRequest);
     }
-
-    gTrackedMessageManager.delete("indexedDB");
-
-    
-    
-    mm.removeMessageListener("debug:storage-indexedDB-request-parent",
-                             indexedDBHelpers.handleChildRequest);
+    mm = newMM;
+    if (mm) {
+      mm.addMessageListener("debug:storage-indexedDB-request-parent",
+                            indexedDBHelpers.handleChildRequest);
+    }
   }
+
+  return {
+    onBrowserSwap: setMessageManager,
+    onDisconnected: () => setMessageManager(null),
+  };
 };
 
 

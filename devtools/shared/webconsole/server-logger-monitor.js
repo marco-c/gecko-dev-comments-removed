@@ -9,7 +9,6 @@
 const {Ci} = require("chrome");
 const Services = require("Services");
 
-const {DebuggerServer} = require("devtools/server/main");
 const {makeInfallible} = require("devtools/shared/DevToolsUtils");
 
 loader.lazyGetter(this, "NetworkHelper", () => require("devtools/shared/webconsole/network-helper"));
@@ -41,11 +40,7 @@ var ServerLoggerMonitor = {
 
   initialize: function () {
     this.onChildMessage = this.onChildMessage.bind(this);
-    this.onDisconnectChild = this.onDisconnectChild.bind(this);
     this.onExamineResponse = this.onExamineResponse.bind(this);
-
-    
-    this.messageManagers = new Set();
 
     
     this.targets = new Set();
@@ -53,49 +48,31 @@ var ServerLoggerMonitor = {
 
   
 
-  attach: makeInfallible(function ({mm, prefix}) {
-    let size = this.messageManagers.size;
+  attach: makeInfallible(function ({ mm, prefix }) {
+    trace.log("ServerLoggerMonitor.attach; ", arguments);
 
-    trace.log("ServerLoggerMonitor.attach; ", size, arguments);
-
-    if (this.messageManagers.has(mm)) {
-      return;
-    }
-
-    this.messageManagers.add(mm);
-
-    
-    
-    mm.addMessageListener("debug:server-logger", this.onChildMessage);
+    let setMessageManager = newMM => {
+      if (mm) {
+        mm.removeMessageListener("debug:server-logger", this.onChildMessage);
+      }
+      mm = newMM;
+      if (mm) {
+        mm.addMessageListener("debug:server-logger", this.onChildMessage);
+      }
+    };
 
     
-    DebuggerServer.once("disconnected-from-child:" + prefix,
-      this.onDisconnectChild);
+    
+    setMessageManager(mm);
+
+    return {
+      onBrowserSwap: setMessageManager,
+      onDisconnected: () => {
+        trace.log("ServerLoggerMonitor.onDisconnectChild; ", arguments);
+        setMessageManager(null);
+      }
+    };
   }),
-
-  detach: function (mm) {
-    let size = this.messageManagers.size;
-
-    trace.log("ServerLoggerMonitor.detach; ", size);
-
-    
-    mm.removeMessageListener("debug:server-logger", this.onChildMessage);
-  },
-
-  onDisconnectChild: function (event, mm) {
-    let size = this.messageManagers.size;
-
-    trace.log("ServerLoggerMonitor.onDisconnectChild; ",
-      size, arguments);
-
-    if (!this.messageManagers.has(mm)) {
-      return;
-    }
-
-    this.detach(mm);
-
-    this.messageManagers.delete(mm);
-  },
 
   
 
@@ -204,7 +181,7 @@ var ServerLoggerMonitor = {
 
 
 function setupParentProcess(event) {
-  ServerLoggerMonitor.attach(event);
+  return ServerLoggerMonitor.attach(event);
 }
 
 

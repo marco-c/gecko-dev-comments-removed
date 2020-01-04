@@ -110,33 +110,11 @@ const DirectorRegistry = exports.DirectorRegistry = {
 
 
 
-var gTrackedMessageManager = new Set();
-
-exports.setupParentProcess = function setupParentProcess({mm, prefix}) {
+exports.setupParentProcess = function setupParentProcess({ mm, prefix }) {
   
-  if (gTrackedMessageManager.has(mm)) {
-    return;
-  }
-  gTrackedMessageManager.add(mm);
+  setMessageManager(mm);
 
   
-  mm.addMessageListener("debug:director-registry-request", handleChildRequest);
-
-  DebuggerServer.once("disconnected-from-child:" + prefix, handleMessageManagerDisconnected);
-
-  
-
-  function handleMessageManagerDisconnected(evt, { mm: disconnected_mm }) {
-    
-    if (disconnected_mm !== mm || !gTrackedMessageManager.has(mm)) {
-      return;
-    }
-
-    gTrackedMessageManager.delete(mm);
-
-    
-    mm.removeMessageListener("debug:director-registry-request", handleChildRequest);
-  }
 
   function handleChildRequest(msg) {
     switch (msg.json.method) {
@@ -149,6 +127,21 @@ exports.setupParentProcess = function setupParentProcess({mm, prefix}) {
         throw new Error(ERR_DIRECTOR_PARENT_UNKNOWN_METHOD);
     }
   }
+
+  function setMessageManager(newMM) {
+    if (mm) {
+      mm.removeMessageListener("debug:director-registry-request", handleChildRequest);
+    }
+    mm = newMM;
+    if (mm) {
+      mm.addMessageListener("debug:director-registry-request", handleChildRequest);
+    }
+  }
+
+  return {
+    onBrowserSwap: setMessageManager,
+    onDisconnected: () => setMessageManager(null),
+  };
 };
 
 

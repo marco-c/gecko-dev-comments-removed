@@ -1031,6 +1031,7 @@ var DebuggerServer = {
 
     
     
+    let parentModules = [];
     let onSetupInParent = function (msg) {
       
       
@@ -1045,11 +1046,11 @@ var DebuggerServer = {
         m = require(module);
 
         if (!setupParent in m) {
-          dumpn(`ERROR: module '${module}' does not export 'setupParent'`);
+          dumpn(`ERROR: module '${module}' does not export '${setupParent}'`);
           return false;
         }
 
-        m[setupParent]({ mm, prefix: connPrefix });
+        parentModules.push(m[setupParent]({ mm, prefix: connPrefix }));
 
         return true;
       } catch (e) {
@@ -1096,6 +1097,14 @@ var DebuggerServer = {
       
       trackMessageManager();
 
+      
+      
+      parentModules.forEach(mod => {
+        if (mod.onBrowserSwap) {
+          mod.onBrowserSwap(mm);
+        }
+      });
+
       if (childTransport) {
         childTransport.swapBrowser(mm);
       }
@@ -1103,6 +1112,12 @@ var DebuggerServer = {
 
     let destroy = DevToolsUtils.makeInfallible(function () {
       
+      
+      parentModules.forEach(mod => {
+        if (mod.onDisconnected) {
+          mod.onDisconnected();
+        }
+      });
       
       DebuggerServer.emit("disconnected-from-child:" + connPrefix,
                           { mm, prefix: connPrefix });
