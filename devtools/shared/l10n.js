@@ -6,6 +6,24 @@
 const parsePropertiesFile = require("devtools/shared/node-properties/node-properties");
 const { sprintf } = require("devtools/shared/sprintfjs/sprintf");
 
+const propertiesMap = {};
+
+
+
+
+
+
+
+
+
+function getProperties(url) {
+  if (!propertiesMap[url]) {
+    propertiesMap[url] = parsePropertiesFile(require(`raw!${url}`));
+  }
+
+  return propertiesMap[url];
+}
+
 
 
 
@@ -17,14 +35,6 @@ function LocalizationHelper(stringBundleName) {
 }
 
 LocalizationHelper.prototype = {
-  get properties() {
-    if (!this._properties) {
-      this._properties = parsePropertiesFile(require(`raw!${this.stringBundleName}`));
-    }
-
-    return this._properties;
-  },
-
   
 
 
@@ -32,8 +42,9 @@ LocalizationHelper.prototype = {
 
 
   getStr: function (name) {
-    if (name in this.properties) {
-      return this.properties[name];
+    let properties = getProperties(this.stringBundleName);
+    if (name in properties) {
+      return properties[name];
     }
 
     throw new Error("No localization found for [" + name + "]");
