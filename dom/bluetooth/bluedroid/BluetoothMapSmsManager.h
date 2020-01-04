@@ -14,6 +14,15 @@
 #include "BluetoothSocketObserver.h"
 #include "mozilla/ipc/SocketBase.h"
 
+class nsIInputStream;
+
+namespace mozilla {
+  namespace dom {
+    class Blob;
+    class BlobParent;
+  }
+}
+
 BEGIN_BLUETOOTH_NAMESPACE
 
 struct Map {
@@ -78,6 +87,104 @@ public:
 
   static BluetoothMapSmsManager* Get();
   bool Listen();
+
+  
+
+
+
+
+
+
+
+
+  bool ReplyToFolderListing(long aMasId, const nsAString& aFolderlists);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool ReplyToMessagesListing(
+    BlobParent* aActor, long aMasId, bool aNewMessage,
+    const nsAString& aTimestamp, int aSize);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool ReplyToMessagesListing(
+    Blob* aBlob, long aMasId, bool aNewMessage, const nsAString& aTimestamp,
+    int aSize);
+
+  
+
+
+
+
+
+
+
+
+  bool ReplyToGetMessage(BlobParent* aActor, long aMasId);
+
+  
+
+
+
+
+
+
+
+
+  bool ReplyToGetMessage(Blob* aBlob, long aMasId);
+
+  
+
+
+
+
+
+
+
+
+  bool ReplyToSetMessageStatus(long aMasId, bool aStatus);
+
+  
+
+
+
+
+
+
+
+
+  bool ReplyToSendMessage(long aMasId, bool aStatus);
+
+  
+
+
+
+
+
+
+
+
+  bool ReplyToMessageUpdate(long aMasId, bool aStatus);
 
 protected:
   virtual ~BluetoothMapSmsManager();
