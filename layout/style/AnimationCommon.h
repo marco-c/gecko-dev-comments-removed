@@ -65,10 +65,6 @@ public:
   
   void WillRefresh(TimeStamp aTime) override;
 
-#ifdef DEBUG
-  static void Initialize();
-#endif
-
   
   nsPresContext* PresContext() const { return mPresContext; }
 
@@ -119,18 +115,6 @@ public:
     nsDisplayItem::Type mLayerType;
     nsChangeHint mChangeHint;
   };
-
-protected:
-  static const size_t kLayerRecords = 2;
-
-public:
-  static const LayerAnimationRecord sLayerAnimationInfo[kLayerRecords];
-
-  
-  
-  
-  static const LayerAnimationRecord*
-    LayerAnimationRecordFor(nsCSSProperty aProperty);
 
 protected:
   virtual ~CommonAnimationManager();
