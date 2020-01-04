@@ -2681,6 +2681,7 @@ nsCSSRendering::PaintGradient(nsPresContext* aPresContext,
     
     
     if (!cellContainsFill &&
+        stopDelta != 0.0 && 
         ((gradientStopStart.y == gradientStopEnd.y && gradientStopStart.x == 0 &&
           gradientStopEnd.x == srcSize.width) ||
           (gradientStopStart.x == gradientStopEnd.x && gradientStopStart.y == 0 &&
