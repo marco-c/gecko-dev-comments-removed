@@ -59,7 +59,7 @@
 
 
 
-#define NS_THEME_RESIZER_PANEL                             25
+#define NS_THEME_RESIZERPANEL                              25
 
 
 #define NS_THEME_RESIZER                                   26
@@ -174,7 +174,7 @@
 #define NS_THEME_TEXTFIELD                                 95
 
 
-#define NS_THEME_TEXTFIELD_CARET                           96
+#define NS_THEME_CARET                                     96
 
 
 #define NS_THEME_TEXTFIELD_MULTILINE                       97
