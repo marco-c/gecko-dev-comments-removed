@@ -291,7 +291,8 @@ this.PlacesDBUtils = {
     
     let deleteObsoleteAnnos = DBConn.createAsyncStatement(
       `DELETE FROM moz_annos
-       WHERE anno_attribute_id IN (
+       WHERE type = 4
+          OR anno_attribute_id IN (
          SELECT id FROM moz_anno_attributes
          WHERE name BETWEEN 'weave/' AND 'weave0'
        )`);
@@ -300,7 +301,8 @@ this.PlacesDBUtils = {
     
     let deleteObsoleteItemsAnnos = DBConn.createAsyncStatement(
       `DELETE FROM moz_items_annos
-       WHERE anno_attribute_id IN (
+       WHERE type = 4
+          OR anno_attribute_id IN (
          SELECT id FROM moz_anno_attributes
          WHERE name = 'sync/children'
             OR name = 'placesInternal/GUID'
