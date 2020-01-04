@@ -25,9 +25,7 @@ add_chat_task(function* testOpenCloseChat() {
   is(chatbar.selectedChat, null);
 
   
-  let promiseClosed = promiseOneEvent(chatbox.content, "unload", true);
   chatbox.close();
-  yield promiseClosed;
 });
 
 
@@ -82,8 +80,9 @@ add_chat_task(function* testOpenTwiceCallbacks() {
 
 add_chat_task(function* testSecondTopLevelWindow() {
   const chatUrl = "http://example.com";
-  let secondWindow = OpenBrowserWindow();
-  yield promiseOneEvent(secondWindow, "load");
+  let winPromise = BrowserTestUtils.waitForNewWindow();
+  OpenBrowserWindow();
+  let secondWindow = yield winPromise;
   yield promiseOpenChat(chatUrl);
   
   Assert.equal(numChatsInWindow(window), 0, "main window has no chats");

@@ -122,6 +122,10 @@ var tests = {
   },
 
   testChatWindow: function(next) {
+    todo(false, "Bug 1245799 is needed to make error pages work again for chat windows.");
+    next();
+    return;
+
     let panelCallbackCount = 0;
     
     
@@ -146,6 +150,10 @@ var tests = {
   },
 
   testChatWindowAfterTearOff: function(next) {
+    todo(false, "Bug 1245799 is needed to make error pages work again for chat windows.");
+    next();
+    return;
+
     
     let url = manifest.sidebarURL; 
     let panelCallbackCount = 0;
