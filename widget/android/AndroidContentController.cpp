@@ -9,7 +9,6 @@
 #include "base/message_loop.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZCTreeManager.h"
-#include "nsIObserverService.h"
 #include "nsLayoutUtils.h"
 #include "nsWindow.h"
 
@@ -96,24 +95,6 @@ AndroidContentController::UpdateOverscrollOffset(const float aX,const  float aY)
 {
   if (mAndroidWindow) {
     mAndroidWindow->UpdateOverscrollOffset(aX, aY);
-  }
-}
-
-void
-AndroidContentController::NotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
-                                               APZStateChange aChange,
-                                               int aArg)
-{
-  
-  
-  
-  
-  ChromeProcessController::NotifyAPZStateChange(aGuid, aChange, aArg);
-  if (NS_IsMainThread() && aChange == layers::GeckoContentController::APZStateChange::TransformEnd) {
-    
-    
-    nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
-    observerService->NotifyObservers(nullptr, "APZ:TransformEnd", nullptr);
   }
 }
 
