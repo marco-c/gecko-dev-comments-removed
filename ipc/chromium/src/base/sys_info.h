@@ -43,18 +43,6 @@ class SysInfo {
   static std::string OperatingSystemName();
 
   
-  static std::string OperatingSystemVersion();
-
-  
-  
-  
-  
-  
-  static void OperatingSystemVersionNumbers(int32_t *major_version,
-                                            int32_t *minor_version,
-                                            int32_t *bugfix_version);
-
-  
   
   static std::string CPUArchitecture();
 
@@ -68,14 +56,6 @@ class SysInfo {
   
   
   static size_t VMAllocationGranularity();
-
-#if defined(OS_MACOSX)
-  
-  
-  
-  
-  static void CacheSysInfo();
-#endif
 };
 
 }  
