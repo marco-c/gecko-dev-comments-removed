@@ -601,10 +601,6 @@ var gDevToolsBrowser = {
     }
 
     
-    let appMgrEnabled = Services.prefs.getBoolPref("devtools.appmanager.enabled");
-    toggleCmd("Tools:DevAppMgr", !webIDEEnabled && appMgrEnabled);
-
-    
     let chromeEnabled = Services.prefs.getBoolPref("devtools.chrome.enabled");
     let devtoolsRemoteEnabled = Services.prefs.getBoolPref("devtools.debugger.remote-enabled");
     let remoteEnabled = chromeEnabled && devtoolsRemoteEnabled;
@@ -684,13 +680,6 @@ var gDevToolsBrowser = {
 
   openConnectScreen: function(gBrowser) {
     gBrowser.selectedTab = gBrowser.addTab("chrome://devtools/content/framework/connect/connect.xhtml");
-  },
-
-  
-
-
-  openAppManager: function(gBrowser) {
-    gBrowser.selectedTab = gBrowser.addTab("about:app-manager");
   },
 
   
