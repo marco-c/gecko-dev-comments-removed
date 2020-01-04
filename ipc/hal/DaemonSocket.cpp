@@ -7,6 +7,7 @@
 #include "DaemonSocket.h"
 #include "mozilla/ipc/DaemonSocketConsumer.h"
 #include "mozilla/ipc/DaemonSocketPDU.h"
+#include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h" 
 
 #ifdef CHROMIUM_LOG
@@ -62,7 +63,7 @@ public:
 private:
   DaemonSocket* mConnection;
   DaemonSocketIOConsumer* mConsumer;
-  nsAutoPtr<DaemonSocketPDU> mPDU;
+  UniquePtr<DaemonSocketPDU> mPDU;
   bool mShuttingDownOnIOThread;
 };
 
@@ -103,7 +104,7 @@ DaemonSocketIO::QueryReceiveBuffer(UnixSocketIOBuffer** aBuffer)
 
   if (!mPDU) {
     
-    mPDU = new DaemonSocketPDU(DaemonSocketPDU::PDU_MAX_PAYLOAD_LENGTH);
+    mPDU = MakeUnique<DaemonSocketPDU>(DaemonSocketPDU::PDU_MAX_PAYLOAD_LENGTH);
   }
   *aBuffer = mPDU.get();
 
