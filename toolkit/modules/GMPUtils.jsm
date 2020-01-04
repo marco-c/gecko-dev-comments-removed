@@ -46,8 +46,8 @@ this.GMPUtils = {
       return false;
     }
 
-    if (!this._isPluginSupported(aPlugin) ||
-        !this._isPluginVisible(aPlugin)) {
+    if (!this._isPluginSupported(aPlugin) &&
+        !this._isPluginForcedVisible(aPlugin)) {
       this.maybeReportTelemetry(aPlugin.id,
                                 "VIDEO_EME_ADOBE_HIDDEN_REASON",
                                 GMPPluginHiddenReason.UNSUPPORTED);
@@ -70,9 +70,6 @@ this.GMPUtils = {
 
 
   _isPluginSupported: function(aPlugin) {
-    if (this._isPluginForceSupported(aPlugin)) {
-      return true;
-    }
     if (aPlugin.id == EME_ADOBE_ID) {
       if (Services.appinfo.OS != "WINNT") {
         
@@ -100,20 +97,8 @@ this.GMPUtils = {
 
 
 
-
-  _isPluginVisible: function(aPlugin) {
-    return GMPPrefs.get(GMPPrefs.KEY_PLUGIN_VISIBLE, false, aPlugin.id);
-  },
-
-  
-
-
-
-
-
-
-  _isPluginForceSupported: function(aPlugin) {
-    return GMPPrefs.get(GMPPrefs.KEY_PLUGIN_FORCE_SUPPORTED, false, aPlugin.id);
+  _isPluginForcedVisible: function(aPlugin) {
+    return GMPPrefs.get(GMPPrefs.KEY_PLUGIN_FORCEVISIBLE, false, aPlugin.id);
   },
 
   
@@ -151,9 +136,8 @@ this.GMPPrefs = {
   KEY_PLUGIN_LAST_UPDATE:       "media.{0}.lastUpdate",
   KEY_PLUGIN_VERSION:           "media.{0}.version",
   KEY_PLUGIN_AUTOUPDATE:        "media.{0}.autoupdate",
-  KEY_PLUGIN_VISIBLE:           "media.{0}.visible",
+  KEY_PLUGIN_FORCEVISIBLE:      "media.{0}.forcevisible",
   KEY_PLUGIN_ABI:               "media.{0}.abi",
-  KEY_PLUGIN_FORCE_SUPPORTED:   "media.{0}.forceSupported",
   KEY_URL:                      "media.gmp-manager.url",
   KEY_URL_OVERRIDE:             "media.gmp-manager.url.override",
   KEY_CERT_CHECKATTRS:          "media.gmp-manager.cert.checkAttributes",
