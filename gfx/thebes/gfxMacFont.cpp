@@ -153,15 +153,14 @@ gfxMacFont::ShapeText(gfxContext     *aContext,
 }
 
 bool
-gfxMacFont::SetupCairoFont(gfxContext *aContext)
+gfxMacFont::SetupCairoFont(DrawTarget* aDrawTarget)
 {
     if (cairo_scaled_font_status(mScaledFont) != CAIRO_STATUS_SUCCESS) {
         
         
         return false;
     }
-    cairo_set_scaled_font(gfxContext::RefCairo(aContext->GetDrawTarget()),
-                          mScaledFont);
+    cairo_set_scaled_font(gfxContext::RefCairo(aDrawTarget), mScaledFont);
     return true;
 }
 

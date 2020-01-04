@@ -1660,7 +1660,7 @@ public:
                                    bool aNeedTight, gfxGlyphExtents *aExtents);
 
     
-    virtual bool SetupCairoFont(gfxContext *aContext) = 0;
+    virtual bool SetupCairoFont(DrawTarget* aDrawTarget) = 0;
 
     virtual bool AllowSubpixelAA() { return true; }
 

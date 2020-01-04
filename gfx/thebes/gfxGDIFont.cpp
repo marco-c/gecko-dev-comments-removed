@@ -98,7 +98,7 @@ gfxGDIFont::ShapeText(gfxContext     *aContext,
     
     
     
-    if (!SetupCairoFont(aContext)) {
+    if (!SetupCairoFont(aContext->GetDrawTarget())) {
         return false;
     }
 
@@ -125,7 +125,7 @@ gfxGDIFont::GetSpaceGlyph()
 }
 
 bool
-gfxGDIFont::SetupCairoFont(gfxContext *aContext)
+gfxGDIFont::SetupCairoFont(DrawTarget* aDrawTarget)
 {
     if (!mMetrics) {
         Initialize();
@@ -136,8 +136,7 @@ gfxGDIFont::SetupCairoFont(gfxContext *aContext)
         
         return false;
     }
-    cairo_set_scaled_font(gfxContext::RefCairo(aContext->GetDrawTarget()),
-                          mScaledFont);
+    cairo_set_scaled_font(gfxContext::RefCairo(aDrawTarget), mScaledFont);
     return true;
 }
 

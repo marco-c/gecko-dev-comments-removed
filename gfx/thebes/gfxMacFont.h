@@ -28,7 +28,7 @@ public:
         return mSpaceGlyph;
     }
 
-    virtual bool SetupCairoFont(gfxContext *aContext) override;
+    virtual bool SetupCairoFont(DrawTarget* aDrawTarget) override;
 
     
     virtual RunMetrics Measure(gfxTextRun *aTextRun,

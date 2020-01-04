@@ -91,7 +91,7 @@ gfxGraphiteShaper::ShapeText(gfxContext      *aContext,
                              gfxShapedText   *aShapedText)
 {
     
-    if (!mFont->SetupCairoFont(aContext)) {
+    if (!mFont->SetupCairoFont(aContext->GetDrawTarget())) {
         return false;
     }
 
