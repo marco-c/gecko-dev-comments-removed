@@ -8,6 +8,7 @@
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/SharedBufferManagerChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Telemetry.h"
@@ -593,6 +594,7 @@ gfxPlatform::Init()
     
     gfxPrefs::GetSingleton();
     MediaPrefs::GetSingleton();
+    gfxVars::Initialize();
 
     gfxConfig::Init();
 
@@ -872,6 +874,7 @@ gfxPlatform::Shutdown()
 
     delete gGfxPlatformPrefsLock;
 
+    gfxVars::Shutdown();
     gfxPrefs::DestroySingleton();
     gfxFont::DestroySingletons();
 
@@ -2504,12 +2507,6 @@ gfxPlatform::InitOpenGLConfig()
   nsCString failureId;
   if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_OPENGL_LAYERS, &message, failureId)) {
     openGLFeature.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
-  }
-
-  
-  
-  if (gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly()) {
-    openGLFeature.UserForceEnable("Force-enabled by pref");
   }
 }
 
