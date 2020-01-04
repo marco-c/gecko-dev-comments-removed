@@ -1787,6 +1787,12 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
 
   ClearInDocument();
 
+#ifdef MOZ_STYLO
+  
+  
+  ServoData().reset();
+#endif
+
   
   
   ResetEditableDescendantCount();

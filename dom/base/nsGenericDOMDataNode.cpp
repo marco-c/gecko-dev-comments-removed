@@ -590,6 +590,12 @@ nsGenericDOMDataNode::UnbindFromTree(bool aDeep, bool aNullParent)
   }
   ClearInDocument();
 
+#ifdef MOZ_STYLO
+  
+  
+  ServoData().reset();
+#endif
+
   if (aNullParent || !mParent->IsInShadowTree()) {
     UnsetFlags(NODE_IS_IN_SHADOW_TREE);
 
