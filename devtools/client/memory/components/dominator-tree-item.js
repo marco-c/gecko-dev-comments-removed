@@ -78,6 +78,12 @@ const DominatorTreeItem = module.exports = createClass({
       } else if (piece === "noFilename") {
         label[i * 2] = dom.span({ key, className: "not-available" },
                                 L10N.getStr("tree-item.nofilename"));
+      } else if (piece === "JS::ubi::RootList") {
+        
+        
+        label.splice(0, label.length);
+        label.push(L10N.getStr("tree-item.rootlist"));
+        break;
       } else {
         label[i * 2] = piece;
       }
