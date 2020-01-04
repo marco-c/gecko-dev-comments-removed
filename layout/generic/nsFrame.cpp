@@ -700,7 +700,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     }
   }
 
-  if (HasCSSAnimations()) {
+  if (HasCSSAnimations() || HasCSSTransitions()) {
     
     
     if (presContext->RestyleManager()->IsGecko()) {
@@ -9349,6 +9349,14 @@ nsFrame::HasCSSAnimations()
 {
   auto collection =
     AnimationCollection<CSSAnimation>::GetAnimationCollection(this);
+  return collection && collection->mAnimations.Length() > 0;
+}
+
+bool
+nsFrame::HasCSSTransitions()
+{
+  auto collection =
+    AnimationCollection<CSSTransition>::GetAnimationCollection(this);
   return collection && collection->mAnimations.Length() > 0;
 }
 
