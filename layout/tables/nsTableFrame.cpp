@@ -2990,7 +2990,6 @@ nsTableFrame::PlaceRepeatedFooter(TableReflowInput& aReflowInput,
 }
 
 
-
 void
 nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
                              nsReflowStatus&     aStatus,
