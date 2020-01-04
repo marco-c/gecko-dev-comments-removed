@@ -478,7 +478,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     uint32_t traceLoggerScriptedCallsLastDrainedSize;
     uint32_t traceLoggerScriptedCallsLastDrainedIteration;
 
-    class FrameRange;
     class ScriptQuery;
     class ObjectQuery;
 
@@ -622,6 +621,18 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
                                                       IsObserving observing);
     static bool updateExecutionObservability(JSContext* cx, ExecutionObservableSet& obs,
                                              IsObserving observing);
+
+    template <typename FrameFn >
+    static void forEachDebuggerFrame(AbstractFramePtr frame, FrameFn fn);
+
+    
+
+
+
+
+    using DebuggerFrameVector = GCVector<NativeObject*>;
+    static bool getDebuggerFrames(AbstractFramePtr frame,
+                                  MutableHandle<DebuggerFrameVector> frames);
 
   public:
     static bool ensureExecutionObservabilityOfOsrFrame(JSContext* cx, InterpreterFrame* frame);

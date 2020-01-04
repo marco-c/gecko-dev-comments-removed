@@ -149,111 +149,6 @@ ValueToIdentifier(JSContext* cx, HandleValue v, MutableHandleId id)
     return true;
 }
 
-
-
-
-
-
-
-
-class Debugger::FrameRange
-{
-    AbstractFramePtr frame;
-
-    
-    GlobalObject::DebuggerVector* debuggers;
-
-    
-
-
-
-    size_t debuggerCount, nextDebugger;
-
-    
-
-
-
-    FrameMap::Ptr entry;
-
-  public:
-    
-
-
-
-
-
-
-
-
-
-
-    explicit FrameRange(AbstractFramePtr frame, GlobalObject* global = nullptr)
-      : frame(frame)
-    {
-        nextDebugger = 0;
-
-        
-        if (!global)
-            global = &frame.script()->global();
-
-        
-        MOZ_ASSERT(&frame.script()->global() == global);
-
-        
-        debuggers = global->getDebuggers();
-        if (debuggers) {
-            debuggerCount = debuggers->length();
-            findNext();
-        } else {
-            debuggerCount = 0;
-        }
-    }
-
-    bool empty() const {
-        return nextDebugger >= debuggerCount;
-    }
-
-    NativeObject* frontFrame() const {
-        MOZ_ASSERT(!empty());
-        return entry->value();
-    }
-
-    Debugger* frontDebugger() const {
-        MOZ_ASSERT(!empty());
-        return (*debuggers)[nextDebugger];
-    }
-
-    
-
-
-
-    void removeFrontFrame() const {
-        MOZ_ASSERT(!empty());
-        frontDebugger()->frames.remove(entry);
-    }
-
-    void popFront() {
-        MOZ_ASSERT(!empty());
-        nextDebugger++;
-        findNext();
-    }
-
-  private:
-    
-
-
-
-    void findNext() {
-        while (!empty()) {
-            Debugger* dbg = (*debuggers)[nextDebugger];
-            entry = dbg->frames.lookup(frame);
-            if (entry)
-                break;
-            nextDebugger++;
-        }
-    }
-};
-
 class AutoRestoreCompartmentDebugMode
 {
     JSCompartment* comp_;
@@ -746,21 +641,21 @@ DebuggerFrame_freeScriptFrameIterData(FreeOp* fop, JSObject* obj);
  bool
 Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode* pc, bool frameOk)
 {
-    Handle<GlobalObject*> global = cx->global();
-
-    
-    
-    
-    FrameRange frameRange(frame, global);
-    if (frameRange.empty())
-        return frameOk;
+    mozilla::DebugOnly<Handle<GlobalObject*>> debuggeeGlobal = cx->global();
 
     auto frameMapsGuard = MakeScopeExit([&] {
         
-        
-        
         removeFromFrameMapsAndClearBreakpointsIn(cx, frame);
     });
+
+    
+    
+    
+    Rooted<DebuggerFrameVector> frames(cx, DebuggerFrameVector(cx));
+    if (!getDebuggerFrames(frame, &frames))
+        return false;
+    if (frames.empty())
+        return frameOk;
 
     
     JSTrapStatus status;
@@ -773,17 +668,8 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
     
     if (!cx->isThrowingOverRecursed() && !cx->isThrowingOutOfMemory()) {
         
-        AutoObjectVector frames(cx);
-        for (; !frameRange.empty(); frameRange.popFront()) {
-            if (!frames.append(frameRange.frontFrame())) {
-                cx->clearPendingException();
-                return false;
-            }
-        }
-
-        
-        for (JSObject** p = frames.begin(); p != frames.end(); p++) {
-            RootedNativeObject frameobj(cx, &(*p)->as<NativeObject>());
+        for (size_t i = 0; i < frames.length(); i++) {
+            HandleNativeObject frameobj = frames[i];
             Debugger* dbg = Debugger::fromChildJSObject(frameobj);
             EnterDebuggeeNoExecute nx(cx, *dbg);
 
@@ -813,7 +699,7 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
 
 
 
-                MOZ_ASSERT(cx->compartment() == global->compartment());
+                MOZ_ASSERT(cx->compartment() == debuggeeGlobal->compartment());
                 MOZ_ASSERT(!cx->isExceptionPending());
 
                 
@@ -1730,15 +1616,9 @@ Debugger::onSingleStep(JSContext* cx, MutableHandleValue vp)
 
 
 
-    AutoObjectVector frames(cx);
-    for (FrameRange r(iter.abstractFramePtr()); !r.empty(); r.popFront()) {
-        NativeObject* frame = r.frontFrame();
-        if (!frame->getReservedSlot(JSSLOT_DEBUGFRAME_ONSTEP_HANDLER).isUndefined() &&
-            !frames.append(frame))
-        {
-            return JSTRAP_ERROR;
-        }
-    }
+    Rooted<DebuggerFrameVector> frames(cx, DebuggerFrameVector(cx));
+    if (!getDebuggerFrames(iter.abstractFramePtr(), &frames))
+        return JSTRAP_ERROR;
 
 #ifdef DEBUG
     
@@ -1773,8 +1653,11 @@ Debugger::onSingleStep(JSContext* cx, MutableHandleValue vp)
 #endif
 
     
-    for (JSObject** p = frames.begin(); p != frames.end(); p++) {
-        RootedNativeObject frame(cx, &(*p)->as<NativeObject>());
+    for (size_t i = 0; i < frames.length(); i++) {
+        HandleNativeObject frame = frames[i];
+        if (frame->getReservedSlot(JSSLOT_DEBUGFRAME_ONSTEP_HANDLER).isUndefined())
+            continue;
+
         Debugger* dbg = Debugger::fromChildJSObject(frame);
         EnterDebuggeeNoExecute nx(cx, *dbg);
 
@@ -2193,8 +2076,7 @@ Debugger::updateExecutionObservabilityOfFrames(JSContext* cx, const ExecutionObs
                 
                 
                 
-                FrameRange r(iter.abstractFramePtr());
-                MOZ_ASSERT(r.empty());
+                MOZ_ASSERT(!inFrameMaps(iter.abstractFramePtr()));
 #endif
                 iter.abstractFramePtr().unsetIsDebuggee();
             }
@@ -2317,6 +2199,31 @@ Debugger::updateExecutionObservabilityOfScripts(JSContext* cx, const ExecutionOb
     }
 
     return true;
+}
+
+template <typename FrameFn>
+ void
+Debugger::forEachDebuggerFrame(AbstractFramePtr frame, FrameFn fn)
+{
+    GlobalObject* global = &frame.script()->global();
+    if (GlobalObject::DebuggerVector* debuggers = global->getDebuggers()) {
+        for (auto p = debuggers->begin(); p != debuggers->end(); p++) {
+            Debugger* dbg = *p;
+            if (FrameMap::Ptr entry = dbg->frames.lookup(frame))
+                fn(entry->value());
+        }
+    }
+}
+
+ bool
+Debugger::getDebuggerFrames(AbstractFramePtr frame, MutableHandle<DebuggerFrameVector> frames)
+{
+    bool hadOOM = false;
+    forEachDebuggerFrame(frame, [&](NativeObject* frameobj) {
+        if (!hadOOM && !frames.append(frameobj))
+            hadOOM = true;
+    });
+    return !hadOOM;
 }
 
  bool
@@ -5789,10 +5696,10 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
     auto removeFromDebuggerFramesOnExit = MakeScopeExit([&] {
         
         
-        for (Debugger::FrameRange r(from); !r.empty(); r.popFront()) {
-            r.frontFrame()->setPrivate(nullptr);
-            r.removeFrontFrame();
-        }
+        Debugger::forEachDebuggerFrame(from, [&](NativeObject* frameobj) {
+            frameobj->setPrivate(nullptr);
+            Debugger::fromChildJSObject(frameobj)->frames.remove(from);
+        });
 
         
         
@@ -5800,10 +5707,13 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
     });
 
     
-    for (Debugger::FrameRange r(from); !r.empty(); r.popFront()) {
-        RootedNativeObject frameobj(cx, r.frontFrame());
-        Debugger* dbg = r.frontDebugger();
-        MOZ_ASSERT(dbg == Debugger::fromChildJSObject(frameobj));
+    Rooted<DebuggerFrameVector> frames(cx, DebuggerFrameVector(cx));
+    if (!getDebuggerFrames(from, &frames))
+        return false;
+
+    for (size_t i = 0; i < frames.length(); i++) {
+        HandleNativeObject frameobj = frames[i];
+        Debugger* dbg = Debugger::fromChildJSObject(frameobj);
 
         
         DebuggerFrame_freeScriptFrameIterData(cx->runtime()->defaultFreeOp(), frameobj);
@@ -5813,7 +5723,7 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
         frameobj->setPrivate(data);
 
         
-        r.removeFrontFrame();
+        dbg->frames.remove(from);
 
         
         if (!dbg->frames.putNew(to, frameobj)) {
@@ -5828,26 +5738,23 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
  bool
 Debugger::inFrameMaps(AbstractFramePtr frame)
 {
-    FrameRange r(frame);
-    return !r.empty();
+    bool foundAny = false;
+    forEachDebuggerFrame(frame, [&](NativeObject* frameobj) { foundAny = true; });
+    return foundAny;
 }
 
  void
 Debugger::removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx, AbstractFramePtr frame)
 {
-    Handle<GlobalObject*> global = cx->global();
-
-    for (FrameRange r(frame, global); !r.empty(); r.popFront()) {
-        RootedNativeObject frameobj(cx, r.frontFrame());
-        Debugger* dbg = r.frontDebugger();
-        MOZ_ASSERT(dbg == Debugger::fromChildJSObject(frameobj));
+    forEachDebuggerFrame(frame, [&](NativeObject* frameobj) {
+        Debugger* dbg = Debugger::fromChildJSObject(frameobj);
 
         FreeOp* fop = cx->runtime()->defaultFreeOp();
         DebuggerFrame_freeScriptFrameIterData(fop, frameobj);
         DebuggerFrame_maybeDecrementFrameScriptStepModeCount(fop, frame, frameobj);
 
         dbg->frames.remove(frame);
-    }
+    });
 
     
 
