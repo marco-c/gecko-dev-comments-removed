@@ -629,6 +629,12 @@ FilterNodeSoftware::GetOutput(const IntRect &aRect)
 void
 FilterNodeSoftware::RequestRect(const IntRect &aRect)
 {
+  if (mRequestedRect.Contains(aRect)) {
+    
+    
+    
+    return;
+  }
   mRequestedRect = mRequestedRect.Union(aRect);
   RequestFromInputsForRect(aRect);
 }
