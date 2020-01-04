@@ -6,10 +6,6 @@
 
 #include "PlatformDecoderModule.h"
 #include "PDMFactory.h"
-#ifdef MOZ_EME
-#include "EMEDecoderModule.h"
-#include "mozilla/CDMProxy.h"
-#endif
 
 PRLogModuleInfo* GetPDMLog() {
   static PRLogModuleInfo* log = nullptr;
@@ -28,32 +24,6 @@ PlatformDecoderModule::Init()
   MOZ_ASSERT(NS_IsMainThread());
   PDMFactory::Init();
 }
-
-#ifdef MOZ_EME
-
-already_AddRefed<PlatformDecoderModule>
-PlatformDecoderModule::CreateCDMWrapper(CDMProxy* aProxy)
-{
-  bool cdmDecodesAudio;
-  bool cdmDecodesVideo;
-  {
-    CDMCaps::AutoLock caps(aProxy->Capabilites());
-    cdmDecodesAudio = caps.CanDecryptAndDecodeAudio();
-    cdmDecodesVideo = caps.CanDecryptAndDecodeVideo();
-  }
-
-  
-  
-  nsRefPtr<PlatformDecoderModule> pdm = Create();
-  if (!pdm) {
-    return nullptr;
-  }
-
-  nsRefPtr<PlatformDecoderModule> emepdm(
-    new EMEDecoderModule(aProxy, pdm, cdmDecodesAudio, cdmDecodesVideo));
-  return emepdm.forget();
-}
-#endif
 
 
 already_AddRefed<PlatformDecoderModule>

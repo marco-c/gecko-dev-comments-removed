@@ -9,6 +9,8 @@
 
 #include "PlatformDecoderModule.h"
 
+class CDMProxy;
+
 namespace mozilla {
 
 class PDMFactory : public PlatformDecoderModule {
@@ -28,6 +30,15 @@ public:
                 layers::ImageContainer* aImageContainer = nullptr) override;
 
   bool SupportsMimeType(const nsACString& aMimeType) override;
+
+#ifdef MOZ_EME
+  
+  
+  
+  
+  
+  void SetCDMProxy(CDMProxy* aProxy);
+#endif
 
   ConversionRequired
   DecoderNeedsConversion(const TrackInfo& aConfig) const override
@@ -77,6 +88,7 @@ private:
   static bool sDontDelayInputExhausted;
 
   nsTArray<nsRefPtr<PlatformDecoderModule>> mCurrentPDMs;
+  nsRefPtr<PlatformDecoderModule> mEMEPDM;
 };
 
 } 
