@@ -67,6 +67,16 @@ public:
     }
   }
 
+  
+  
+  
+  explicit CallbackObject(JS::Handle<JSObject*> aCallback,
+                          JS::Handle<JSObject*> aAsyncStack,
+                          nsIGlobalObject *aIncumbentGlobal)
+  {
+    Init(aCallback, aAsyncStack, aIncumbentGlobal);
+  }
+
   JS::Handle<JSObject*> Callback() const
   {
     JS::ExposeObjectToActiveJS(mCallback);
