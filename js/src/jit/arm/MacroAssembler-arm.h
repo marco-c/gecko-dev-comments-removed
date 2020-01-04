@@ -1314,15 +1314,6 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     void atomicExchangeToTypedIntArray(Scalar::Type arrayType, const T& mem, Register value,
                                        Register temp, AnyRegister output);
 
-    void clampIntToUint8(Register reg) {
-        
-        
-        ScratchRegisterScope scratch(asMasm());
-        as_mov(scratch, asr(reg, 8), SetCC);
-        ma_mov(Imm32(0xff), reg, NotEqual);
-        ma_mov(Imm32(0), reg, Signed);
-    }
-
     inline void incrementInt32Value(const Address& addr);
 
     void cmp32(Register lhs, Imm32 rhs);

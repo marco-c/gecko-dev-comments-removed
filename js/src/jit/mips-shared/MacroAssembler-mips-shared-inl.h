@@ -968,6 +968,22 @@ MacroAssembler::storeFloat32x3(FloatRegister src, const BaseIndex& dest)
 
 
 
+void
+MacroAssembler::clampIntToUint8(Register reg)
+{
+    
+    as_slti(ScratchRegister, reg, 0);
+    as_movn(reg, zero, ScratchRegister);
+
+    
+    ma_li(SecondScratchReg, Imm32(255));
+    as_slti(ScratchRegister, reg, 255);
+    as_movz(reg, SecondScratchReg, ScratchRegister);
+}
+
+
+
+
 } 
 } 
 

@@ -1244,10 +1244,10 @@ MacroAssembler::truncateDoubleToInt64(Address src, Address dest, Register temp)
 
 
 void
-MacroAssemblerX86Shared::clampIntToUint8(Register reg)
+MacroAssembler::clampIntToUint8(Register reg)
 {
     Label inRange;
-    asMasm().branchTest32(Assembler::Zero, reg, Imm32(0xffffff00), &inRange);
+    branchTest32(Assembler::Zero, reg, Imm32(0xffffff00), &inRange);
     {
         sarl(Imm32(31), reg);
         notl(reg);
@@ -1255,6 +1255,9 @@ MacroAssemblerX86Shared::clampIntToUint8(Register reg)
     }
     bind(&inRange);
 }
+
+
+
 
 } 
 } 

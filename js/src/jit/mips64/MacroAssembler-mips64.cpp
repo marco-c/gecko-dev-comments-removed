@@ -1219,19 +1219,6 @@ MacroAssemblerMIPS64Compat::storePtr(Register src, AbsoluteAddress dest)
     storePtr(src, Address(ScratchRegister, 0));
 }
 
-void
-MacroAssemblerMIPS64Compat::clampIntToUint8(Register reg)
-{
-    
-    as_slti(ScratchRegister, reg, 0);
-    as_movn(reg, zero, ScratchRegister);
-
-    
-    ma_li(SecondScratchReg, Imm32(255));
-    as_slti(ScratchRegister, reg, 255);
-    as_movz(reg, SecondScratchReg, ScratchRegister);
-}
-
 
 void
 MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output)

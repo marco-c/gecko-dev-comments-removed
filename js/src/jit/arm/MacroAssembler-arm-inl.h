@@ -1961,6 +1961,20 @@ MacroAssembler::storeFloat32x3(FloatRegister src, const BaseIndex& dest)
 
 
 void
+MacroAssembler::clampIntToUint8(Register reg)
+{
+    
+    
+    ScratchRegisterScope scratch(*this);
+    as_mov(scratch, asr(reg, 8), SetCC);
+    ma_mov(Imm32(0xff), reg, NotEqual);
+    ma_mov(Imm32(0), reg, Signed);
+}
+
+
+
+
+void
 MacroAssemblerARMCompat::incrementInt32Value(const Address& addr)
 {
     asMasm().add32(Imm32(1), ToPayload(addr));
