@@ -85,7 +85,8 @@ nsSVGPatternFrame::AttributeChanged(int32_t         aNameSpaceID,
     nsSVGEffects::InvalidateDirectRenderingObservers(this);
   }
 
-  if (aNameSpaceID == kNameSpaceID_XLink &&
+  if ((aNameSpaceID == kNameSpaceID_XLink ||
+       aNameSpaceID == kNameSpaceID_None) &&
       aAttribute == nsGkAtoms::href) {
     
     Properties().Delete(nsSVGEffects::HrefAsPaintingProperty());
@@ -556,7 +557,14 @@ nsSVGPatternFrame::GetReferencedPattern()
     
     SVGPatternElement *pattern = static_cast<SVGPatternElement *>(mContent);
     nsAutoString href;
-    pattern->mStringAttributes[SVGPatternElement::HREF].GetAnimValue(href, pattern);
+    if (pattern->mStringAttributes[SVGPatternElement::HREF].IsExplicitlySet()) {
+      pattern->mStringAttributes[SVGPatternElement::HREF]
+        .GetAnimValue(href, pattern);
+    } else {
+      pattern->mStringAttributes[SVGPatternElement::XLINK_HREF]
+        .GetAnimValue(href, pattern);
+    }
+
     if (href.IsEmpty()) {
       mNoHRefURI = true;
       return nullptr; 
