@@ -110,7 +110,7 @@ public class Prompt implements OnClickListener, OnCancelListener, OnItemClickLis
         show(title, text, menuitems, choiceMode);
     }
 
-     public void show(String title, String text, PromptListItem[] listItems, int choiceMode) {
+    public void show(String title, String text, PromptListItem[] listItems, int choiceMode) {
         ThreadUtils.assertOnUiThread();
 
         try {
