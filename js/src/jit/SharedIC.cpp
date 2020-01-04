@@ -3108,14 +3108,16 @@ ICGetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     
-    returnOffset_ = masm.currentOffset();
+#ifdef DEBUG
+    EmitRepushTailCallReg(masm);
+    enterStubFrame(masm, R0.scratchReg());
+#else
+    inStubFrame_ = true;
+#endif
 
     
     
-    inStubFrame_ = true;
-#ifdef DEBUG
-    entersStubFrame_ = true;
-#endif
+    returnOffset_ = masm.currentOffset();
 
     leaveStubFrame(masm, true);
 
