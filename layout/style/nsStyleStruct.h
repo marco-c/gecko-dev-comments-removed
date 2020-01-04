@@ -568,6 +568,10 @@ struct nsStyleImageLayers {
 
     bool IsInitialValue(LayerType aType) const;
 
+    static float GetInitialValue(LayerType aType) {
+      return (aType == LayerType::Background) ? 0.0f : 0.5f;
+    }
+
     
     
     void SetInitialPercentValues(float aPercentVal);
@@ -2528,7 +2532,7 @@ class StyleBasicShape final
 public:
   explicit StyleBasicShape(StyleBasicShapeType type)
     : mType(type),
-      mFillRule(StyleFillRule::NonZero)
+      mFillRule(StyleFillRule::Nonzero)
   {
     mPosition.SetInitialPercentValues(0.5f);
   }

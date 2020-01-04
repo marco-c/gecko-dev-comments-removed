@@ -1310,6 +1310,7 @@ public abstract class GeckoApp
                 
                 String restoreMessage = null;
                 if (!mIsRestoringActivity && mShouldRestore) {
+                    final boolean isExternalURL = invokedWithExternalURL(getIntentURI(new SafeIntent(getIntent())));
                     try {
                         
                         
@@ -1317,23 +1318,37 @@ public abstract class GeckoApp
                         
                         
                         
-                        final SafeIntent intent = new SafeIntent(getIntent());
-                        restoreMessage = restoreSessionTabs(invokedWithExternalURL(getIntentURI(intent)));
+                        restoreMessage = restoreSessionTabs(isExternalURL, false);
                     } catch (SessionRestoreException e) {
                         
-                        Log.e(LOGTAG, "An error occurred during restore", e);
                         
                         
                         
                         
-                        if (mShouldRestore && getProfile().sessionFileExistsAndNotEmptyWindow()) {
+                        if (mShouldRestore) {
+                            Log.e(LOGTAG, "An error occurred during restore, switching to backup file", e);
                             
                             
                             
-                            Log.d(LOGTAG, "Suspecting a damaged session store file.");
-                            Telemetry.addToHistogram("FENNEC_SESSIONSTORE_DAMAGED_SESSION_FILE", 1);
+                            
+                            
+                            if (getProfile().sessionFileExists()) {
+                                Telemetry.addToHistogram("FENNEC_SESSIONSTORE_DAMAGED_SESSION_FILE", 1);
+                            }
+                            try {
+                                restoreMessage = restoreSessionTabs(isExternalURL, true);
+                                Telemetry.addToHistogram("FENNEC_SESSIONSTORE_RESTORING_FROM_BACKUP", 1);
+                            } catch (SessionRestoreException ex) {
+                                if (!mShouldRestore) {
+                                    
+                                    Telemetry.addToHistogram("FENNEC_SESSIONSTORE_RESTORING_FROM_BACKUP", 1);
+                                } else {
+                                    
+                                    Log.e(LOGTAG, "An error occurred during restore", ex);
+                                    mShouldRestore = false;
+                                }
+                            }
                         }
-                        mShouldRestore = false;
                     }
                 }
 
@@ -1712,9 +1727,9 @@ public abstract class GeckoApp
     }
 
     @WorkerThread
-    private String restoreSessionTabs(final boolean isExternalURL) throws SessionRestoreException {
+    private String restoreSessionTabs(final boolean isExternalURL, boolean useBackup) throws SessionRestoreException {
         try {
-            String sessionString = getProfile().readSessionFile(false);
+            String sessionString = getProfile().readSessionFile(useBackup);
             if (sessionString == null) {
                 throw new SessionRestoreException("Could not read from session file");
             }
@@ -1725,20 +1740,23 @@ public abstract class GeckoApp
             if (mShouldRestore) {
                 final JSONArray tabs = new JSONArray();
                 final JSONObject windowObject = new JSONObject();
+                final boolean sessionDataValid;
 
                 LastSessionParser parser = new LastSessionParser(tabs, windowObject, isExternalURL);
 
                 if (mPrivateBrowsingSession == null) {
-                    parser.parse(sessionString);
+                    sessionDataValid = parser.parse(sessionString);
                 } else {
-                    parser.parse(sessionString, mPrivateBrowsingSession);
+                    sessionDataValid = parser.parse(sessionString, mPrivateBrowsingSession);
                 }
 
                 if (tabs.length() > 0) {
                     windowObject.put("tabs", tabs);
                     sessionString = new JSONObject().put("windows", new JSONArray().put(windowObject)).toString();
                 } else {
-                    if (parser.allTabsSkipped()) {
+                    if (parser.allTabsSkipped() || sessionDataValid) {
+                        
+                        
                         
                         
                         
