@@ -31,6 +31,10 @@
             worker.onmessage = function(event) {
                 alert_assert(event.data);
             };
+            worker.onerror = function(event) {
+                alert_assert('TEST COMPLETE');
+                event.preventDefault();
+            }
         } catch (e) {
             alert_assert('TEST COMPLETE');
         }
