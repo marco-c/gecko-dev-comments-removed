@@ -538,8 +538,7 @@ public:
 
 
 
-  static bool IsFixedPosFrameInDisplayPort(const nsIFrame* aFrame,
-                                           nsRect* aDisplayPort = nullptr);
+  static bool IsFixedPosFrameInDisplayPort(const nsIFrame* aFrame);
 
   
 

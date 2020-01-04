@@ -1824,7 +1824,7 @@ nsLayoutUtils::ViewportHasDisplayPort(nsPresContext* aPresContext, nsRect* aDisp
 }
 
 bool
-nsLayoutUtils::IsFixedPosFrameInDisplayPort(const nsIFrame* aFrame, nsRect* aDisplayPort)
+nsLayoutUtils::IsFixedPosFrameInDisplayPort(const nsIFrame* aFrame)
 {
   
   
@@ -1834,7 +1834,7 @@ nsLayoutUtils::IsFixedPosFrameInDisplayPort(const nsIFrame* aFrame, nsRect* aDis
       aFrame->StyleDisplay()->mPosition != NS_STYLE_POSITION_FIXED) {
     return false;
   }
-  return ViewportHasDisplayPort(aFrame->PresContext(), aDisplayPort);
+  return ViewportHasDisplayPort(aFrame->PresContext());
 }
 
 NS_DECLARE_FRAME_PROPERTY(ScrollbarThumbLayerized, nullptr)
