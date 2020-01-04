@@ -385,6 +385,13 @@ MediaSourceTrackDemuxer::DoSeek(media::TimeUnit aTime)
   buffered.SetFuzz(MediaSourceDemuxer::EOS_FUZZ / 2);
   TimeUnit seekTime = std::max(aTime - mPreRoll, TimeUnit::FromMicroseconds(0));
 
+  if (mManager->IsEnded() && seekTime >= buffered.GetEnd()) {
+    
+    
+    seekTime =
+      std::max(mManager->HighestStartTime(mType) - mPreRoll,
+               TimeUnit::FromMicroseconds(0));
+  }
   if (!buffered.Contains(seekTime)) {
     if (!buffered.Contains(aTime)) {
       
