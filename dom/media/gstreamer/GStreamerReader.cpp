@@ -258,7 +258,7 @@ GValueArray *GStreamerReader::ElementFilter(GstURIDecodeBin *aBin,
     GValue *value = &aFactories->values[i];
     GstPluginFeature *factory = GST_PLUGIN_FEATURE(g_value_peek_pointer(value));
 
-    if (!GStreamerFormatHelper::IsPluginFeatureBlacklisted(factory)) {
+    if (!GStreamerFormatHelper::IsPluginFeatureBlocked(factory)) {
       g_value_array_append(filtered, value);
     }
   }
