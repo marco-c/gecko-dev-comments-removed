@@ -4,11 +4,10 @@
 
 
 
+#include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 
 #include "jswin.h"
-
-#include "js/Utility.h"
 
 #include "threading/Mutex.h"
 #include "threading/windows/MutexPlatformData.h"
@@ -44,11 +43,6 @@ static MutexNativeImports NativeImports;
 
 js::Mutex::Mutex()
 {
-  AutoEnterOOMUnsafeRegion oom;
-  platformData_ = js_new<PlatformData>();
-  if (!platformData_)
-    oom.crash("js::Mutex::Mutex");
-
   
   const static DWORD LockSpinCount = 1500;
   BOOL r;
@@ -65,11 +59,7 @@ js::Mutex::Mutex()
 
 js::Mutex::~Mutex()
 {
-  if (!platformData_)
-    return;
-
   DeleteCriticalSection(&platformData()->criticalSection);
-  js_delete(platformData());
 }
 
 void
@@ -82,4 +72,12 @@ void
 js::Mutex::unlock()
 {
   LeaveCriticalSection(&platformData()->criticalSection);
+}
+
+js::Mutex::PlatformData*
+js::Mutex::platformData()
+{
+  static_assert(sizeof(platformData_) >= sizeof(PlatformData),
+                "platformData_ is too small");
+  return reinterpret_cast<PlatformData*>(platformData_);
 }
