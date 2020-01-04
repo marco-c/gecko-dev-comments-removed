@@ -1923,6 +1923,12 @@ nsXMLHttpRequest::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   }
 
   
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
+  if (loadInfo && loadInfo->GetTainting() != LoadTainting::Basic) {
+    mState |= XML_HTTP_REQUEST_USE_XSITE_AC;
+  }
+
+  
   if (mState & XML_HTTP_REQUEST_UNSENT)
     return NS_OK;
 
