@@ -27,11 +27,6 @@ void ShutdownLibrary();
 uint32_t MaxNumberOfChannels();
 
 
-
-
-void InitPreferredSampleRate();
-
-
 uint32_t PreferredSampleRate();
 
 void PrefChanged(const char* aPref, void* aClosure);
