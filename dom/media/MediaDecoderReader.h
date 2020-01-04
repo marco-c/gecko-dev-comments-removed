@@ -428,6 +428,8 @@ private:
   
   bool mAudioDiscontinuity;
   bool mVideoDiscontinuity;
+
+  MediaEventListener mDataArrivedListener;
 };
 
 } 

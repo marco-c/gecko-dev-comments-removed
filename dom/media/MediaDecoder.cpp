@@ -1447,9 +1447,12 @@ void
 MediaDecoder::NotifyDataArrived() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (mDecoderStateMachine) {
-    mDecoderStateMachine->DispatchNotifyDataArrived();
+  
+  if (mShuttingDown) {
+    return;
   }
+
+  mDataArrivedEvent.Notify();
 
   
   

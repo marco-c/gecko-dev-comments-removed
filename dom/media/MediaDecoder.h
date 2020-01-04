@@ -820,6 +820,11 @@ protected:
   RefPtr<MediaResource> mResource;
 
 private:
+  MediaEventSource<void>*
+  DataArrivedEvent() override { return &mDataArrivedEvent; }
+
+  MediaEventProducer<void> mDataArrivedEvent;
+
   
   
   

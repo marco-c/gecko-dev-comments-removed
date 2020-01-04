@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/StateMirroring.h"
 
+#include "MediaEventSource.h"
 #include "MediaInfo.h"
 #include "nsISupports.h"
 #include "nsDataHashtable.h"
@@ -67,6 +68,15 @@ public:
                                    uint32_t aDropped) = 0;
 
   virtual AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() { return nullptr; };
+
+  
+  
+  
+  
+  virtual MediaEventSource<void>* DataArrivedEvent()
+  {
+    return nullptr;
+  }
 
 protected:
   virtual void UpdateEstimatedMediaDuration(int64_t aDuration) {};
