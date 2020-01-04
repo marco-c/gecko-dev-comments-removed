@@ -578,8 +578,16 @@ CompileError::throwError(JSContext* cx)
     
     
     
-    if (!ErrorToException(cx, message, &report, nullptr, nullptr))
-        CallErrorReporter(cx, message, &report);
+    if (ErrorToException(cx, message, &report, nullptr, nullptr))
+        return;
+
+    
+    
+    
+    if (cx->options().autoJSAPIOwnsErrorReporting() && !JSREPORT_IS_WARNING(report.flags))
+        return;
+
+    CallErrorReporter(cx, message, &report);
 }
 
 CompileError::~CompileError()
