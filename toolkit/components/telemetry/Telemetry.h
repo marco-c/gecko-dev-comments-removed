@@ -12,10 +12,6 @@
 #include "nsTArray.h"
 #include "nsStringGlue.h"
 
-namespace base {
-  class Histogram;
-} 
-
 namespace mozilla {
 namespace HangMonitor {
   class HangAnnotations;
@@ -93,17 +89,7 @@ void AccumulateTimeDelta(ID id, TimeStamp start, TimeStamp end = TimeStamp::Now(
 
 void SetHistogramRecordingEnabled(ID id, bool enabled);
 
-
-
-
-base::Histogram* GetHistogramById(ID id);
-
 const char* GetHistogramName(ID id);
-
-
-
-
-base::Histogram* GetKeyedHistogramById(ID id, const nsAString&);
 
 
 
