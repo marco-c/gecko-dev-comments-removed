@@ -5,6 +5,7 @@
 "use strict";
 
 const { Cc, Ci, Cu, components } = require("chrome");
+const { openFileStream } = require("devtools/shared/DevToolsUtils");
 const protocol = require("devtools/server/protocol");
 const { method, RetVal, Arg, types } = protocol;
 const { Memory } = require("devtools/shared/shared/memory");
@@ -16,6 +17,7 @@ loader.lazyRequireGetter(this, "FileUtils",
                          "resource://gre/modules/FileUtils.jsm", true);
 loader.lazyRequireGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm", true);
 loader.lazyRequireGetter(this, "Task", "resource://gre/modules/Task.jsm", true);
+loader.lazyRequireGetter(this, "OS", "resource://gre/modules/osfile.jsm", true);
 loader.lazyRequireGetter(this, "HeapSnapshotFileUtils",
                          "devtools/shared/heapsnapshot/HeapSnapshotFileUtils");
 loader.lazyRequireGetter(this, "ThreadSafeChromeUtils");
@@ -113,6 +115,35 @@ var MemoryActor = exports.MemoryActor = protocol.ActorClass({
     }
   }),
 
+  transferHeapSnapshot: method(Task.async(function* (snapshotId) {
+    const snapshotFilePath =
+      HeapSnapshotFileUtils.getHeapSnapshotTempFilePath(snapshotId);
+    if (!snapshotFilePath) {
+      throw new Error(`No heap snapshot with id: ${snapshotId}`);
+    }
+
+    const streamPromise = openFileStream(snapshotFilePath);
+
+    const { size } = yield OS.File.stat(snapshotFilePath);
+    const bulkPromise = this.conn.startBulkSend({
+      actor: this.actorID,
+      type: "heap-snapshot",
+      length: size
+    });
+
+    const [bulk, stream] = yield Promise.all([bulkPromise, streamPromise]);
+
+    try {
+      yield bulk.copyFrom(stream);
+    } finally {
+      stream.close();
+    }
+  }), {
+    request: {
+      snapshotId: Arg(0, "string")
+    }
+  }),
+
   takeCensus: actorBridge("takeCensus", {
     request: {},
     response: RetVal("json")
@@ -182,15 +213,15 @@ var MemoryActor = exports.MemoryActor = protocol.ActorClass({
 });
 
 exports.MemoryFront = protocol.FrontClass(MemoryActor, {
-  initialize: function(client, form, rootForm) {
+  initialize: function(client, form) {
     protocol.Front.prototype.initialize.call(this, client, form);
     this._client = client;
     this.actorID = form.memoryActor;
-    this.heapSnapshotFileActorID = rootForm.heapSnapshotFileActor;
     this.manage(this);
   },
 
   
+
 
 
 
@@ -228,7 +259,7 @@ exports.MemoryFront = protocol.FrontClass(MemoryActor, {
 
   transferHeapSnapshot: protocol.custom(function (snapshotId) {
     const request = this._client.request({
-      to: this.heapSnapshotFileActorID,
+      to: this.actorID,
       type: "transferHeapSnapshot",
       snapshotId
     });

@@ -317,26 +317,8 @@ TabTarget.prototype = {
     return this._form;
   },
 
-  
-  
   get root() {
-    if (!this._root) {
-      this._root = this._getRoot();
-    }
     return this._root;
-  },
-
-  _getRoot: function () {
-    return new Promise((resolve, reject) => {
-      this.client.listTabs(response => {
-        if (response.error) {
-          reject(new Error(response.error + ": " + response.message));
-          return;
-        }
-
-        resolve(response);
-      });
-    });
   },
 
   get client() {
