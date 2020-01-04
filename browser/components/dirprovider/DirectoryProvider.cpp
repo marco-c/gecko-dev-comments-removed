@@ -106,6 +106,24 @@ AppendDistroSearchDirs(nsIProperties* aDirSvc, nsCOMArray<nsIFile> &array)
 
     localePlugins->AppendNative(NS_LITERAL_CSTRING("locale"));
 
+    nsCString defLocale;
+    rv = prefs->GetCharPref("distribution.searchplugins.defaultLocale",
+                            getter_Copies(defLocale));
+    if (NS_SUCCEEDED(rv)) {
+
+      nsCOMPtr<nsIFile> defLocalePlugins;
+      rv = localePlugins->Clone(getter_AddRefs(defLocalePlugins));
+      if (NS_SUCCEEDED(rv)) {
+
+        defLocalePlugins->AppendNative(defLocale);
+        rv = defLocalePlugins->Exists(&exists);
+        if (NS_SUCCEEDED(rv) && exists)
+          array.AppendObject(defLocalePlugins);
+          return; 
+      }
+    }
+
+    
     nsCString locale;
     nsCOMPtr<nsIPrefLocalizedString> prefString;
     rv = prefs->GetComplexValue("general.useragent.locale",
@@ -131,23 +149,6 @@ AppendDistroSearchDirs(nsIProperties* aDirSvc, nsCOMArray<nsIFile> &array)
           array.AppendObject(curLocalePlugins);
           return; 
         }
-      }
-    }
-
-    
-    nsCString defLocale;
-    rv = prefs->GetCharPref("distribution.searchplugins.defaultLocale",
-                            getter_Copies(defLocale));
-    if (NS_SUCCEEDED(rv)) {
-
-      nsCOMPtr<nsIFile> defLocalePlugins;
-      rv = localePlugins->Clone(getter_AddRefs(defLocalePlugins));
-      if (NS_SUCCEEDED(rv)) {
-
-        defLocalePlugins->AppendNative(defLocale);
-        rv = defLocalePlugins->Exists(&exists);
-        if (NS_SUCCEEDED(rv) && exists)
-          array.AppendObject(defLocalePlugins);
       }
     }
   }
