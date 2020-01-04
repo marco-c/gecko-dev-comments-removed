@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 
@@ -64,7 +65,8 @@ var MemoryFlameGraphView = Heritage.extend(DetailsSubview, {
     let data = FlameGraphUtils.createFlameGraphDataFromThread(thread, {
       invertStack: PerformanceController.getOption("invert-flame-graph"),
       flattenRecursion: PerformanceController.getOption("flatten-tree-recursion"),
-      showIdleBlocks: PerformanceController.getOption("show-idle-blocks") && L10N.getStr("table.idle")
+      showIdleBlocks: PerformanceController.getOption("show-idle-blocks")
+                      && L10N.getStr("table.idle")
     });
 
     this.graph.setData({ data,

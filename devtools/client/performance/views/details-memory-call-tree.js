@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 
@@ -14,7 +15,8 @@ var MemoryCallTreeView = Heritage.extend(DetailsSubview, {
     "invert-call-tree"
   ],
 
-  rangeChangeDebounceTime: 100, 
+  
+  rangeChangeDebounceTime: 100,
 
   
 

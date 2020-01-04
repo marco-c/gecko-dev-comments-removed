@@ -3,6 +3,9 @@
 
 "use strict";
 
+
+
+
 var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 var BrowserLoaderModule = {};
 Cu.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderModule);
@@ -11,6 +14,7 @@ var { loader, require } = BrowserLoaderModule.BrowserLoader({
   window: this
 });
 var { Task } = require("devtools/shared/task");
+
 var { Heritage, ViewHelpers, WidgetMethods, setNamedTimeout, clearNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
 var { gDevTools } = require("devtools/client/framework/devtools");
 
@@ -22,6 +26,8 @@ Object.defineProperty(this, "EVENTS", {
   writable: false
 });
 
+
+
 var React = require("devtools/client/shared/vendor/react");
 var ReactDOM = require("devtools/client/shared/vendor/react-dom");
 var JITOptimizationsView = React.createFactory(require("devtools/client/performance/components/jit-optimizations"));
@@ -30,6 +36,8 @@ var promise = require("promise");
 var EventEmitter = require("devtools/shared/event-emitter");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var system = require("devtools/shared/system");
+
+
 
 
 
@@ -50,18 +58,22 @@ var { FrameNode } = require("devtools/client/performance/modules/logic/tree-mode
 
 
 
+
 var { OptionsView } = require("devtools/client/shared/options-view");
 var { FlameGraph, FlameGraphUtils } = require("devtools/client/shared/widgets/FlameGraph");
 var { TreeWidget } = require("devtools/client/shared/widgets/TreeWidget");
-
 var { SideMenuWidget } = require("resource://devtools/client/shared/widgets/SideMenuWidget.jsm");
+
 
 var BRANCH_NAME = "devtools.performance.ui.";
 
 
 
 
+
 var gToolbox, gTarget, gFront;
+
+
 
 
 
@@ -286,6 +298,7 @@ var PerformanceController = {
 
 
 
+
   clearRecordings: Task.async(function* () {
     for (let i = this._recordings.length - 1; i >= 0; i--) {
       let model = this._recordings[i];
@@ -308,8 +321,7 @@ var PerformanceController = {
       if (!this._recordings.includes(this.getCurrentRecording())) {
         this.setCurrentRecording(this._recordings[0]);
       }
-    }
-    else {
+    } else {
       this.setCurrentRecording(null);
     }
   }),
@@ -542,9 +554,8 @@ var PerformanceController = {
     let { enabled, supported } = this.getMultiprocessStatus();
     if (!enabled && supported) {
       $("#performance-view").setAttribute("e10s", "disabled");
-    }
-    
-    else if (!enabled && !supported) {
+    } else if (!enabled && !supported) {
+      
       $("#performance-view").setAttribute("e10s", "unsupported");
     }
   },
@@ -563,6 +574,7 @@ var PerformanceController = {
 
 
 EventEmitter.decorate(PerformanceController);
+
 
 
 

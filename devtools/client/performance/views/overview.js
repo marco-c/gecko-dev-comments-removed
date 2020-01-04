@@ -3,14 +3,17 @@
 
 
 
+
 "use strict";
 
 
 
 
-const OVERVIEW_UPDATE_INTERVAL = 200; 
-const FRAMERATE_GRAPH_LOW_RES_INTERVAL = 100; 
-const FRAMERATE_GRAPH_HIGH_RES_INTERVAL = 16; 
+
+
+const OVERVIEW_UPDATE_INTERVAL = 200;
+const FRAMERATE_GRAPH_LOW_RES_INTERVAL = 100;
+const FRAMERATE_GRAPH_HIGH_RES_INTERVAL = 16;
 const GRAPH_REQUIREMENTS = {
   timeline: {
     features: ["withMarkers"]
@@ -78,7 +81,8 @@ var OverviewView = {
   destroy: Task.async(function* () {
     PerformanceController.off(EVENTS.PREF_CHANGED, this._onPrefChanged);
     PerformanceController.off(EVENTS.THEME_CHANGED, this._onThemeChanged);
-    PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStateChange);
+    PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE,
+                              this._onRecordingStateChange);
     PerformanceController.off(EVENTS.RECORDING_SELECTED, this._onRecordingSelected);
     this.graphs.off("selecting", this._onGraphSelecting);
     this.graphs.off("rendered", this._onGraphRendered);
@@ -206,21 +210,22 @@ var OverviewView = {
   
 
 
-  _onRecordingStateChange: OverviewViewOnStateChange(Task.async(function* (_, state, recording) {
-    if (state !== "recording-stopped") {
-      return;
-    }
-    
-    
-    
-    
-    
-    if (recording !== PerformanceController.getCurrentRecording()) {
-      return;
-    }
-    this.render(FRAMERATE_GRAPH_HIGH_RES_INTERVAL);
-    yield this._checkSelection(recording);
-  })),
+  _onRecordingStateChange: OverviewViewOnStateChange(Task.async(
+    function* (_, state, recording) {
+      if (state !== "recording-stopped") {
+        return;
+      }
+      
+      
+      
+      
+      
+      if (recording !== PerformanceController.getCurrentRecording()) {
+        return;
+      }
+      this.render(FRAMERATE_GRAPH_HIGH_RES_INTERVAL);
+      yield this._checkSelection(recording);
+    })),
 
   
 
@@ -302,8 +307,8 @@ var OverviewView = {
   _onPrefChanged: Task.async(function* (_, prefName, prefValue) {
     switch (prefName) {
       case "hidden-markers": {
-        let graph;
-        if (graph = yield this.graphs.isAvailable("timeline")) {
+        let graph = yield this.graphs.isAvailable("timeline");
+        if (graph) {
           let filter = PerformanceController.getPref("hidden-markers");
           graph.setFilter(filter);
           graph.refresh({ force: true });
@@ -315,7 +320,8 @@ var OverviewView = {
 
   _setGraphVisibilityFromRecordingFeatures: function (recording) {
     for (let [graphName, requirements] of Iterator(GRAPH_REQUIREMENTS)) {
-      this.graphs.enable(graphName, PerformanceController.isFeatureSupported(requirements.features));
+      this.graphs.enable(graphName,
+                         PerformanceController.isFeatureSupported(requirements.features));
     }
   },
 
@@ -398,9 +404,8 @@ function OverviewViewOnStateChange(fn) {
         this._hideGraphsPanel();
         
         return;
-      } else {
-        this._showGraphsPanel(recording);
       }
+      this._showGraphsPanel(recording);
     }
 
     if (this.isRendering() && !currentRecording.isRecording()) {

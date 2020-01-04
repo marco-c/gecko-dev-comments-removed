@@ -6,8 +6,9 @@
 
 "use strict";
 
-const WATERFALL_RESIZE_EVENTS_DRAIN = 100; 
 const MARKER_DETAILS_WIDTH = 200;
+
+const WATERFALL_RESIZE_EVENTS_DRAIN = 100;
 
 
 
@@ -25,7 +26,8 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
     "hidden-markers"
   ],
 
-  rangeChangeDebounceTime: 75, 
+  
+  rangeChangeDebounceTime: 75,
 
   
 
@@ -46,7 +48,8 @@ var WaterfallView = Heritage.extend(DetailsSubview, {
     this.detailsContainer = $("#waterfall-details");
     this.detailsSplitter = $("#waterfall-view > splitter");
 
-    this.details = new MarkerDetails($("#waterfall-details"), $("#waterfall-view > splitter"));
+    this.details = new MarkerDetails($("#waterfall-details"),
+                                     $("#waterfall-view > splitter"));
     this.details.hidden = true;
 
     this.details.on("resize", this._onResize);

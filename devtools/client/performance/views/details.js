@@ -3,6 +3,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -58,8 +60,10 @@ var DetailsView = {
 
     yield this.setAvailableViews();
 
-    PerformanceController.on(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStoppedOrSelected);
-    PerformanceController.on(EVENTS.RECORDING_SELECTED, this._onRecordingStoppedOrSelected);
+    PerformanceController.on(EVENTS.RECORDING_STATE_CHANGE,
+                             this._onRecordingStoppedOrSelected);
+    PerformanceController.on(EVENTS.RECORDING_SELECTED,
+                             this._onRecordingStoppedOrSelected);
     PerformanceController.on(EVENTS.PREF_CHANGED, this.setAvailableViews);
   }),
 
@@ -71,16 +75,19 @@ var DetailsView = {
       button.removeEventListener("command", this._onViewToggle);
     }
 
-    for (let [_, component] of Iterator(this.components)) {
+    for (let [, component] of Iterator(this.components)) {
       component.initialized && (yield component.view.destroy());
     }
 
-    PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE, this._onRecordingStoppedOrSelected);
-    PerformanceController.off(EVENTS.RECORDING_SELECTED, this._onRecordingStoppedOrSelected);
+    PerformanceController.off(EVENTS.RECORDING_STATE_CHANGE,
+                              this._onRecordingStoppedOrSelected);
+    PerformanceController.off(EVENTS.RECORDING_SELECTED,
+                              this._onRecordingStoppedOrSelected);
     PerformanceController.off(EVENTS.PREF_CHANGED, this.setAvailableViews);
   }),
 
   
+
 
 
 
@@ -175,11 +182,10 @@ var DetailsView = {
     
     if (this._isViewSupported("waterfall")) {
       return this.selectView("waterfall");
-    } else {
-      
-      
-      return this.selectView("js-calltree");
     }
+    
+    
+    return this.selectView("js-calltree");
   },
 
   

@@ -3,6 +3,7 @@
 
 
 
+
 "use strict";
 
 
@@ -17,7 +18,8 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
     "show-jit-optimizations",
   ],
 
-  rangeChangeDebounceTime: 75, 
+  
+  rangeChangeDebounceTime: 75,
 
   
 
@@ -81,7 +83,6 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
 
   _onFocus: function (_, treeItem) {
     let showOptimizations = PerformanceController.getOption("show-jit-optimizations");
-    let recording = PerformanceController.getCurrentRecording();
     let frameNode = treeItem.frame;
     let optimizationSites = frameNode && frameNode.hasOptimizations()
                             ? frameNode.getOptimizations().optimizationSites
@@ -136,7 +137,8 @@ var JsCallTreeView = Heritage.extend(DetailsSubview, {
   _prepareCallTree: function (profile, { startTime, endTime }, options) {
     let thread = profile.threads[0];
     let { contentOnly, invertTree, flattenRecursion } = options;
-    let threadNode = new ThreadNode(thread, { startTime, endTime, contentOnly, invertTree, flattenRecursion });
+    let threadNode = new ThreadNode(thread, { startTime, endTime, contentOnly, invertTree,
+                                              flattenRecursion });
 
     
     

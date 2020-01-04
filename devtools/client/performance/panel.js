@@ -5,7 +5,6 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
 const { Task } = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "promise");

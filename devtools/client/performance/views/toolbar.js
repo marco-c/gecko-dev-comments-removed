@@ -35,16 +35,20 @@ var ToolbarView = {
 
     this._buildMarkersFilterPopup();
     this._updateHiddenMarkersPopup();
-    $("#performance-filter-menupopup").addEventListener("popupshowing", this._onFilterPopupShowing);
-    $("#performance-filter-menupopup").addEventListener("popuphiding", this._onFilterPopupHiding);
+    $("#performance-filter-menupopup").addEventListener("popupshowing",
+                                                        this._onFilterPopupShowing);
+    $("#performance-filter-menupopup").addEventListener("popuphiding",
+                                                        this._onFilterPopupHiding);
   }),
 
   
 
 
   destroy: function () {
-    $("#performance-filter-menupopup").removeEventListener("popupshowing", this._onFilterPopupShowing);
-    $("#performance-filter-menupopup").removeEventListener("popuphiding", this._onFilterPopupHiding);
+    $("#performance-filter-menupopup").removeEventListener("popupshowing",
+                                                           this._onFilterPopupShowing);
+    $("#performance-filter-menupopup").removeEventListener("popuphiding",
+                                                           this._onFilterPopupHiding);
     this._popup = null;
 
     this.optionsView.off("pref-changed", this._onPrefChanged);
@@ -61,7 +65,8 @@ var ToolbarView = {
       menuitem.setAttribute("type", "checkbox");
       menuitem.setAttribute("align", "center");
       menuitem.setAttribute("flex", "1");
-      menuitem.setAttribute("label", MarkerBlueprintUtils.getMarkerGenericName(markerName));
+      menuitem.setAttribute("label",
+                            MarkerBlueprintUtils.getMarkerGenericName(markerName));
       menuitem.setAttribute("marker-type", markerName);
       menuitem.className = `marker-color-${markerDetails.colorName}`;
 
@@ -88,6 +93,7 @@ var ToolbarView = {
   },
 
   
+
 
 
 
@@ -128,7 +134,8 @@ var ToolbarView = {
 
 
   _onHiddenMarkersChanged: function () {
-    let checkedMenuItems = $$("#performance-filter-menupopup menuitem[marker-type]:not([checked])");
+    let checkedMenuItems =
+      $$("#performance-filter-menupopup menuitem[marker-type]:not([checked])");
     let hiddenMarkers = Array.map(checkedMenuItems, e => e.getAttribute("marker-type"));
     PerformanceController.setPref("hidden-markers", hiddenMarkers);
   },
