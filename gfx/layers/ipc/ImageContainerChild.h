@@ -29,15 +29,22 @@ class ImageContainerChild final : public PImageContainerChild
 public:
   explicit ImageContainerChild(ImageContainer* aImageContainer);
 
-  void ForgetImageContainer();
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageContainerChild)
+
+  void RegisterWithIPDL();
+  void UnregisterFromIPDL();
+  void SendAsyncDelete();
 
   void NotifyComposite(const ImageCompositeNotification& aNotification);
+  void ForgetImageContainer();
 
-public:
-  
-  
-  
-  bool mImageContainerReleased;
+private:
+  ~ImageContainerChild()
+  {}
+
+private:
+  Mutex mLock;
+  ImageContainer* mImageContainer;
 
   
   
@@ -46,10 +53,6 @@ public:
   
   
   bool mIPCOpen;
-
-private:
-  Mutex mLock;
-  ImageContainer* mImageContainer;
 };
 
 } 
