@@ -1287,7 +1287,7 @@ function waitForMessages(options) {
         let url = location.title;
         
         
-        if (url.indexOf("browser/devtools/webconsole/test/head.js") != -1) {
+        if (url.indexOf("devtools/client/webconsole/test/head.js") != -1) {
           continue;
         }
       }

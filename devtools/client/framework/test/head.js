@@ -2,7 +2,7 @@
 
 
 
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/browser/devtools/framework/test/shared-head.js", this);
+Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js", this);
 
 function toggleAllTools(state) {
   for (let [, tool] of gDevTools._tools) {

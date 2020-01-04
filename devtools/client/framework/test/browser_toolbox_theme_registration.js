@@ -2,7 +2,7 @@
 
 
 
-const CHROME_URL = "chrome://mochitests/content/browser/browser/devtools/framework/test/";
+const CHROME_URL = "chrome://mochitests/content/browser/devtools/client/framework/test/";
 
 var toolbox;
 

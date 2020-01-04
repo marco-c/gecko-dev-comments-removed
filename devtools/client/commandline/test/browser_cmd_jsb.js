@@ -3,7 +3,7 @@
 
 
 
-const TEST_URI = "http://example.com/browser/browser/devtools/commandline/" +
+const TEST_URI = "http://example.com/browser/devtools/client/commandline/" +
                  "test/browser_cmd_jsb_script.jsi";
 
 function test() {

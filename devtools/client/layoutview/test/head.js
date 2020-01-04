@@ -15,7 +15,7 @@ var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 waitForExplicitFinish();
 
-const TEST_URL_ROOT = "http://example.com/browser/browser/devtools/layoutview/test/";
+const TEST_URL_ROOT = "http://example.com/browser/devtools/client/layoutview/test/";
 
 
 

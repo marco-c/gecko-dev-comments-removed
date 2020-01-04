@@ -17,7 +17,7 @@ const CC = Components.Constructor;
 
 
 
-var TEST_URL_ROOT = "http://example.com/browser/browser/devtools/inspector/test/";
+var TEST_URL_ROOT = "http://example.com/browser/devtools/client/inspector/test/";
 var ROOT_TEST_DIR = getRootDirectory(gTestPath);
 
 

@@ -5,7 +5,7 @@
 
 
 
-const CHROME_URL = "chrome://mochitests/content/browser/browser/devtools/debugger/test/mochitest/"
+const CHROME_URL = "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/"
 const ACTORS_URL = CHROME_URL + "testactors.js";
 
 function test() {

@@ -7,7 +7,7 @@
 
 
 
-const TEST_URL = "http://" + TEST_HOST + "/browser/browser/devtools/" +
+const TEST_URL = "http://" + TEST_HOST + "/browser/devtools/client/" +
   "styleeditor/test/test_private.html";
 const {LoadContextInfo} =
   Cu.import("resource://gre/modules/LoadContextInfo.jsm", {});

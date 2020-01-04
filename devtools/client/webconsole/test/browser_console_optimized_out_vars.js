@@ -8,7 +8,7 @@
 
 function test() {
   Task.spawn(function* () {
-    const TEST_URI = "http://example.com/browser/browser/devtools/webconsole/" +
+    const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
                      "test/test-closure-optimized-out.html";
     let {tab} = yield loadTab(TEST_URI);
     let hud = yield openConsole(tab);

@@ -3,7 +3,7 @@
 
 
 
-const TEST_URI = "http://sub1.test2.example.com/browser/browser/devtools/" +
+const TEST_URI = "http://sub1.test2.example.com/browser/devtools/client/" +
                  "commandline/test/browser_cmd_appcache_valid_index.html";
 
 function test() {

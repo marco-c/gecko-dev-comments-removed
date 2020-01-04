@@ -5,9 +5,9 @@
 "use strict";
 
 
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/browser/devtools/framework/test/shared-head.js", this);
+Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js", this);
 
-const BASE_URI = "http://mochi.test:8888/browser/browser/devtools/fontinspector/test/"
+const BASE_URI = "http://mochi.test:8888/browser/devtools/client/fontinspector/test/"
 
 
 

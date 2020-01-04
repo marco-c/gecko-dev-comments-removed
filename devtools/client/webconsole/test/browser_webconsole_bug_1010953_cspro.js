@@ -19,7 +19,7 @@
 
 const TEST_URI = "data:text/html;charset=utf8,Web Console CSP report only " +
                  "test (bug 1010953)";
-const TEST_VIOLATION = "http://example.com/browser/browser/devtools/" +
+const TEST_VIOLATION = "http://example.com/browser/devtools/client/" +
                        "webconsole/test/test_bug_1010953_cspro.html";
 const CSP_VIOLATION_MSG = "Content Security Policy: The page's settings " +
                           "blocked the loading of a resource at " +
