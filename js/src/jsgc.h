@@ -167,7 +167,7 @@ IsBackgroundFinalized(AllocKind kind)
         false,     
         true,      
         false,     
-        false,     
+        true,      
         true,      
         true,      
         true,      
