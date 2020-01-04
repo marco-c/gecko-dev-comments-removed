@@ -58,7 +58,7 @@ public:
 
 
 
-  virtual already_AddRefed<gfxContext>
+  virtual already_AddRefed<gfx::DrawTarget>
       BeginUpdate(const gfx::IntRect& aRect, uint64_t aSequenceNumber) = 0;
   
 
