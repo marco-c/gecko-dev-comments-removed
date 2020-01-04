@@ -6923,18 +6923,38 @@ CSSParserImpl::LookupKeywordPrefixAware(nsAString& aKeywordStr,
   nsCSSKeyword keyword = nsCSSKeywords::LookupKeyword(aKeywordStr);
 
   if (aKeywordTable == nsCSSProps::kDisplayKTable) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if ((keyword == eCSSKeyword__webkit_box ||
-         keyword == eCSSKeyword__webkit_inline_box) &&
-        (sWebkitPrefixedAliasesEnabled || ShouldUseUnprefixingService())) {
-      
-      
-      
-      
-      if (mWebkitBoxUnprefixState == eHaveNotUnprefixed) {
-        mWebkitBoxUnprefixState = eHaveUnprefixed;
+         keyword == eCSSKeyword__webkit_inline_box)) {
+      const bool usingUnprefixingService = ShouldUseUnprefixingService();
+      if (sWebkitPrefixedAliasesEnabled || usingUnprefixingService) {
+        
+        
+        
+        if (mWebkitBoxUnprefixState == eHaveNotUnprefixed) {
+          mWebkitBoxUnprefixState = eHaveUnprefixed;
+        }
+        if (usingUnprefixingService) {
+          
+          
+          
+          return (keyword == eCSSKeyword__webkit_box) ?
+            eCSSKeyword_flex : eCSSKeyword_inline_flex;
+        }
       }
-      return (keyword == eCSSKeyword__webkit_box) ?
-        eCSSKeyword_flex : eCSSKeyword_inline_flex;
     }
 
     
@@ -6952,6 +6972,12 @@ CSSParserImpl::LookupKeywordPrefixAware(nsAString& aKeywordStr,
                  "mDidUnprefixWebkitBoxInEarlierDecl should only be set if "
                  "we're supporting webkit-prefixed aliases, or if we're using "
                  "the css unprefixing service on this site");
+      if (sWebkitPrefixedAliasesEnabled) {
+        return (keyword == eCSSKeyword__moz_box) ?
+          eCSSKeyword__webkit_box : eCSSKeyword__webkit_inline_box;
+      }
+      
+      
       return (keyword == eCSSKeyword__moz_box) ?
         eCSSKeyword_flex : eCSSKeyword_inline_flex;
     }
