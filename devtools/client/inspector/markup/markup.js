@@ -605,17 +605,19 @@ MarkupView.prototype = {
       return;
     }
 
+    
+    
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+      return;
+    }
+
     switch (event.keyCode) {
       case Ci.nsIDOMKeyEvent.DOM_VK_H:
-        if (event.metaKey || event.shiftKey) {
-          handled = false;
+        let node = this._selectedContainer.node;
+        if (node.hidden) {
+          this.walker.unhideNode(node);
         } else {
-          let node = this._selectedContainer.node;
-          if (node.hidden) {
-            this.walker.unhideNode(node);
-          } else {
-            this.walker.hideNode(node);
-          }
+          this.walker.hideNode(node);
         }
         break;
       case Ci.nsIDOMKeyEvent.DOM_VK_DELETE:

@@ -232,6 +232,28 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
+  waitForEventOnNode: protocol.method(function (eventName, selector) {
+    return new Promise(resolve => {
+      let node = selector ? this._querySelector(selector) : this.content;
+      node.addEventListener(eventName, function onEvent() {
+        node.removeEventListener(eventName, onEvent);
+        resolve();
+      });
+    });
+  }, {
+    request: {
+      eventName: Arg(0, "string"),
+      selector: Arg(1, "nullable:string")
+    },
+    response: {}
+  }),
+
+  
+
+
+
+
+
 
   changeZoomLevel: protocol.method(function (level, actorID) {
     dumpn("Zooming page to " + level);
