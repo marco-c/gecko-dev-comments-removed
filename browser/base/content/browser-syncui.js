@@ -12,6 +12,8 @@ if (AppConstants.MOZ_SERVICES_CLOUDSYNC) {
 XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
                                   "resource://gre/modules/FxAccounts.jsm");
 
+const MIN_STATUS_ANIMATION_DURATION = 1600;
+
 
 var gSyncUI = {
   _obs: ["weave:service:sync:start",
@@ -33,7 +35,9 @@ var gSyncUI = {
 
   _unloaded: false,
   
-  _numActiveSyncTasks: 0,
+  
+  _syncStartTime: 0,
+  _syncAnimationTimer: 0,
 
   init: function () {
     Cu.import("resource://services-common/stringbundle.js");
@@ -52,6 +56,7 @@ var gSyncUI = {
     this.updateUI();
 
     Services.obs.addObserver(this, "weave:service:ready", true);
+    Services.obs.addObserver(this, "quit-application", true);
 
     
     
@@ -59,6 +64,7 @@ var gSyncUI = {
       gSyncUI._unloaded = true;
       window.removeEventListener("unload", onUnload, false);
       Services.obs.removeObserver(gSyncUI, "weave:service:ready");
+      Services.obs.removeObserver(gSyncUI, "quit-application");
 
       if (Weave.Status.ready) {
         gSyncUI._obs.forEach(function(topic) {
@@ -154,6 +160,9 @@ var gSyncUI = {
   
   _promiseUpdateUI() {
     return this._needsSetup().then(needsSetup => {
+      if (!gBrowser)
+        return Promise.resolve();
+
       let loginFailed = this._loginFailed();
 
       
@@ -181,36 +190,44 @@ var gSyncUI = {
     if (!gBrowser)
       return;
 
-    this.log.debug("onActivityStart with numActive", this._numActiveSyncTasks);
-    if (++this._numActiveSyncTasks == 1) {
-      let broadcaster = document.getElementById("sync-status");
-      broadcaster.setAttribute("syncstatus", "active");
-      broadcaster.setAttribute("label", this._stringBundle.GetStringFromName("syncing2.label"));
-      broadcaster.setAttribute("disabled", "true");
-    }
+    this.log.debug("onActivityStart");
+
+    clearTimeout(this._syncAnimationTimer);
+    this._syncStartTime = Date.now();
+
+    let broadcaster = document.getElementById("sync-status");
+    broadcaster.setAttribute("syncstatus", "active");
+    broadcaster.setAttribute("label", this._stringBundle.GetStringFromName("syncing2.label"));
+    broadcaster.setAttribute("disabled", "true");
+
+    this.updateUI();
+  },
+
+  _updateSyncStatus() {
+    if (!gBrowser)
+      return;
+    let broadcaster = document.getElementById("sync-status");
+    broadcaster.removeAttribute("syncstatus");
+    broadcaster.removeAttribute("disabled");
+    broadcaster.setAttribute("label", this._stringBundle.GetStringFromName("syncnow.label"));
     this.updateUI();
   },
 
   onActivityStop() {
     if (!gBrowser)
       return;
-    this.log.debug("onActivityStop with numActive", this._numActiveSyncTasks);
-    if (--this._numActiveSyncTasks) {
-      if (this._numActiveSyncTasks < 0) {
-        
-        
-        
-        this.log.error("mismatched onActivityStart/Stop calls",
-                       new Error("active=" + this._numActiveSyncTasks));
-      }
-      return; 
-    }
+    this.log.debug("onActivityStop");
 
-    let broadcaster = document.getElementById("sync-status");
-    broadcaster.removeAttribute("syncstatus");
-    broadcaster.removeAttribute("disabled");
-    broadcaster.setAttribute("label", this._stringBundle.GetStringFromName("syncnow.label"));
-    this.updateUI();
+    let now = Date.now();
+    let syncDuration = now - this._syncStartTime;
+
+    if (syncDuration < MIN_STATUS_ANIMATION_DURATION) {
+      let animationTime = MIN_STATUS_ANIMATION_DURATION - syncDuration;
+      clearTimeout(this._syncAnimationTimer);
+      this._syncAnimationTimer = setTimeout(() => this._updateSyncStatus(), animationTime);
+    } else {
+      this._updateSyncStatus();
+    }
   },
 
   onLoginError: function SUI_onLoginError() {
@@ -487,6 +504,11 @@ var gSyncUI = {
           return;
         }
         this.onClientsSynced();
+        break;
+      case "quit-application":
+        
+        
+        clearTimeout(this._syncAnimationTimer);
         break;
     }
   },
