@@ -1378,6 +1378,9 @@ pref("browser.newtabpage.directory.ping", "https://tiles.services.mozilla.com/v3
 pref("browser.newtabpage.remote", false);
 
 
+pref("browser.newtabpage.remote.mode", "production");
+
+
 pref("full-screen-api.enabled", true);
 
 

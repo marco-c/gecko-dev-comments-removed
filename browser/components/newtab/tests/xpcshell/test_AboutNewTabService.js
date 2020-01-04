@@ -105,13 +105,16 @@ add_task(function* test_updates() {
   Preferences.set("browser.newtabpage.remote", true);
   aboutNewTabService.resetNewTabURL(); 
   let notificationPromise;
-  let expectedHref = "https://newtab.cdn.mozilla.net" +
-                     `/v${aboutNewTabService.remoteVersion}` +
+  let productionModeBaseUrl = "https://content.cdn.mozilla.net";
+  let testModeBaseUrl = "https://example.com";
+  let expectedPath = `/v${aboutNewTabService.remoteVersion}` +
                      `/${aboutNewTabService.remoteReleaseName}` +
                      "/en-GB" +
                      "/index.html";
+  let expectedHref = productionModeBaseUrl + expectedPath;
   Preferences.set("intl.locale.matchOS", true);
   Preferences.set("general.useragent.locale", "en-GB");
+  Preferences.set("browser.newtabpage.remote.mode", "production");
   NewTabPrefsProvider.prefs.init();
 
   
@@ -123,7 +126,19 @@ add_task(function* test_updates() {
   notificationPromise = nextChangeNotificationPromise(
     DEFAULT_HREF, "Remote href changes back to default");
   Preferences.set("general.useragent.locale", "en-US");
+  yield notificationPromise;
 
+  
+  expectedPath = expectedPath.replace("/en-GB/", "/en-US/");
+  notificationPromise = nextChangeNotificationPromise(
+    testModeBaseUrl + expectedPath, "Remote href changes back to origin of test mode");
+  Preferences.set("browser.newtabpage.remote.mode", "test");
+  yield notificationPromise;
+
+  
+  notificationPromise = nextChangeNotificationPromise(
+    DEFAULT_HREF, "Remote href changes back to production default");
+  Preferences.set("browser.newtabpage.remote.mode", "invalid");
   yield notificationPromise;
 
   

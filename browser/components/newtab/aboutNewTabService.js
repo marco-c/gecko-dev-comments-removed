@@ -20,11 +20,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "NewTabPrefsProvider",
                                   "resource:///modules/NewTabPrefsProvider.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "MODE_CHANNEL_MAP",
+                                  "resource:///modules/NewTabRemoteResources.jsm");
 
 const LOCAL_NEWTAB_URL = "chrome://browser/content/newtab/newTab.xhtml";
 
-const REMOTE_NEWTAB_URL = "https://newtab.cdn.mozilla.net/" +
-                              "v%VERSION%/%CHANNEL%/%LOCALE%/index.html";
+const REMOTE_NEWTAB_PATH = "/v%VERSION%/%CHANNEL%/%LOCALE%/index.html";
 
 const ABOUT_URL = "about:newtab";
 
@@ -37,12 +38,17 @@ const PREF_MATCH_OS_LOCALE = "intl.locale.matchOS";
 
 const PREF_SELECTED_LOCALE = "general.useragent.locale";
 
+
+const PREF_REMOTE_MODE = "browser.newtabpage.remote.mode";
+
 const VALID_CHANNELS = new Set(["esr", "release", "beta", "aurora", "nightly"]);
 
 const REMOTE_NEWTAB_VERSION = "0";
 
 function AboutNewTabService() {
   NewTabPrefsProvider.prefs.on(PREF_REMOTE_ENABLED, this._handleToggleEvent.bind(this));
+
+  this._updateRemoteMaybe = this._updateRemoteMaybe.bind(this);
 
   
   this.toggleRemote(Services.prefs.getBoolPref(PREF_REMOTE_ENABLED));
@@ -124,14 +130,18 @@ AboutNewTabService.prototype = {
       this._remoteURL = this.generateRemoteURL();
       NewTabPrefsProvider.prefs.on(
         PREF_SELECTED_LOCALE,
-        this._updateRemoteMaybe.bind(this));
+        this._updateRemoteMaybe);
       NewTabPrefsProvider.prefs.on(
         PREF_MATCH_OS_LOCALE,
-        this._updateRemoteMaybe.bind(this));
+        this._updateRemoteMaybe);
+      NewTabPrefsProvider.prefs.on(
+        PREF_REMOTE_MODE,
+        this._updateRemoteMaybe);
       this._remoteEnabled = true;
     } else {
       NewTabPrefsProvider.prefs.off(PREF_SELECTED_LOCALE, this._updateRemoteMaybe);
       NewTabPrefsProvider.prefs.off(PREF_MATCH_OS_LOCALE, this._updateRemoteMaybe);
+      NewTabPrefsProvider.prefs.off(PREF_REMOTE_MODE, this._updateRemoteMaybe);
       this._remoteEnabled = false;
     }
     this._newTabURL = ABOUT_URL;
@@ -143,11 +153,15 @@ AboutNewTabService.prototype = {
 
   generateRemoteURL() {
     let releaseName = this.releaseFromUpdateChannel(UpdateUtils.UpdateChannel);
-    let url = REMOTE_NEWTAB_URL
+    let path = REMOTE_NEWTAB_PATH
       .replace("%VERSION%", REMOTE_NEWTAB_VERSION)
       .replace("%LOCALE%", Locale.getLocale())
       .replace("%CHANNEL%", releaseName);
-    return url;
+    let mode = Services.prefs.getCharPref(PREF_REMOTE_MODE, "production");
+    if (!(mode in MODE_CHANNEL_MAP)) {
+      mode = "production";
+    }
+    return MODE_CHANNEL_MAP[mode].origin + path;
   },
 
   
