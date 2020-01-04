@@ -244,12 +244,10 @@ class MacroAssemblerARM : public Assembler
     void ma_cmp(Register src1, Operand op, Condition c = Always);
     void ma_cmp(Register src1, Register src2, Condition c = Always);
 
-
     
     void ma_teq(Register src1, Imm32 imm, Condition c = Always);
     void ma_teq(Register src1, Register src2, Condition c = Always);
     void ma_teq(Register src1, Operand op, Condition c = Always);
-
 
     
     void ma_tst(Register src1, Imm32 imm, Condition c = Always);
@@ -301,15 +299,18 @@ class MacroAssemblerARM : public Assembler
     void ma_ldrh(EDtrAddr addr, Register rt, Index mode = Offset, Condition cc = Always);
     void ma_ldrsh(EDtrAddr addr, Register rt, Index mode = Offset, Condition cc = Always);
     void ma_ldrsb(EDtrAddr addr, Register rt, Index mode = Offset, Condition cc = Always);
-    void ma_ldrd(EDtrAddr addr, Register rt, DebugOnly<Register> rt2, Index mode = Offset, Condition cc = Always);
+    void ma_ldrd(EDtrAddr addr, Register rt, DebugOnly<Register> rt2, Index mode = Offset,
+                 Condition cc = Always);
     void ma_strb(Register rt, DTRAddr addr, Index mode = Offset, Condition cc = Always);
     void ma_strh(Register rt, EDtrAddr addr, Index mode = Offset, Condition cc = Always);
-    void ma_strd(Register rt, DebugOnly<Register> rt2, EDtrAddr addr, Index mode = Offset, Condition cc = Always);
+    void ma_strd(Register rt, DebugOnly<Register> rt2, EDtrAddr addr, Index mode = Offset,
+                 Condition cc = Always);
 
     
     BufferOffset ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
                                   Register rn, Register rm, Register rt,
-                                  Index mode = Offset, Condition cc = Always, unsigned scale = TimesOne);
+                                  Index mode = Offset, Condition cc = Always,
+                                  unsigned scale = TimesOne);
 
     BufferOffset ma_dataTransferN(LoadStore ls, int size, bool IsSigned,
                                   Register rn, Imm32 offset, Register rt,
@@ -428,6 +429,20 @@ class MacroAssemblerARM : public Assembler
         }
         MOZ_CRASH("Invalid data transfer addressing mode");
     }
+
+    
+    
+    
+    
+    
+    void emitUnalignedLoad(bool isSigned, unsigned byteSize, Register ptr, Register tmp,
+                           Register dest, unsigned offset = 0);
+
+    
+    
+    
+    
+    void emitUnalignedStore(unsigned byteSize, Register ptr, Register val, unsigned offset = 0);
 
 private:
     
