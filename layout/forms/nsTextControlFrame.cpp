@@ -46,6 +46,7 @@
 #include "nsStyleSet.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/MathAlgorithms.h"
+#include "nsFrameSelection.h"
 
 #define DEFAULT_COLUMN_WIDTH 20
 
@@ -259,6 +260,13 @@ nsTextControlFrame::EnsureEditorInitialized()
   
   
   {
+    nsCOMPtr<nsITextControlElement> txtCtrl = do_QueryInterface(GetContent());
+    MOZ_ASSERT(txtCtrl, "Content not a text control element");
+
+    
+    
+    AutoHideSelectionChanges hideSelectionChanges(txtCtrl->GetConstFrameSelection());
+
     nsAutoScriptBlocker scriptBlocker;
 
     
@@ -288,8 +296,6 @@ nsTextControlFrame::EnsureEditorInitialized()
 #endif
 
     
-    nsCOMPtr<nsITextControlElement> txtCtrl = do_QueryInterface(GetContent());
-    NS_ASSERTION(txtCtrl, "Content not a text control element");
     nsresult rv = txtCtrl->CreateEditor();
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ENSURE_STATE(weakFrame.IsAlive());
