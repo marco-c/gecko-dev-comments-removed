@@ -206,10 +206,6 @@ nsXBLBinding::InstallAnonymousContent(nsIContent* aAnonParent, nsIContent* aElem
   
   
   nsIDocument* doc = aElement->GetUncomposedDoc();
-  ServoStyleSet* servoStyleSet = nullptr;
-  if (nsIPresShell* presShell = aElement->OwnerDoc()->GetShell()) {
-    servoStyleSet = presShell->StyleSet()->GetAsServo();
-  }
   bool allowScripts = AllowScripts();
 
   nsAutoScriptBlocker scriptBlocker;
@@ -240,10 +236,6 @@ nsXBLBinding::InstallAnonymousContent(nsIContent* aAnonParent, nsIContent* aElem
     if (xuldoc)
       xuldoc->AddSubtreeToDocument(child);
 #endif
-
-    if (servoStyleSet) {
-      servoStyleSet->StyleNewSubtree(child);
-    }
   }
 }
 
@@ -427,6 +419,15 @@ nsXBLBinding::GenerateAnonymousContent()
     
     if (mContent)
       mContent->UnsetAttr(namespaceID, name, false);
+  }
+
+  
+  
+  nsIPresShell* presShell = mBoundElement->OwnerDoc()->GetShell();
+  ServoStyleSet* servoSet = presShell->StyleSet()->GetAsServo();
+  if (servoSet) {
+    mBoundElement->SetHasDirtyDescendantsForServo();
+    servoSet->StyleNewChildren(mBoundElement);
   }
 }
 
