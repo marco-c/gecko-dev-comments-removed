@@ -4780,7 +4780,9 @@ pref("browser.safebrowsing.provider.mozilla.gethashURL", "https://shavar.service
 
 
 pref("browser.safebrowsing.provider.mozilla.lists.mozstd.name", "mozstdName");
+pref("browser.safebrowsing.provider.mozilla.lists.mozstd.description", "mozstdDesc");
 pref("browser.safebrowsing.provider.mozilla.lists.mozfull.name", "mozfullName");
+pref("browser.safebrowsing.provider.mozilla.lists.mozfull.description", "mozfullDesc");
 
 
 pref("snav.enabled", false);
