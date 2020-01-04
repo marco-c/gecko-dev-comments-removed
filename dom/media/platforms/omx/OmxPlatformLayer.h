@@ -16,6 +16,7 @@
 namespace mozilla {
 
 class TrackInfo;
+class VideoData;
 
 
 

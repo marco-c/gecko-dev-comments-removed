@@ -14,9 +14,10 @@
 
 namespace mozilla {
 
-class TrackInfo;
 class OmxPlatformLayer;
 class OmxDataDecoder;
+class TrackInfo;
+class MediaData;
 
 
 
@@ -38,7 +39,9 @@ protected:
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OmxPromiseLayer)
 
-  OmxPromiseLayer(TaskQueue* aTaskQueue, OmxDataDecoder* aDataDecoder);
+  OmxPromiseLayer(TaskQueue* aTaskQueue,
+                  OmxDataDecoder* aDataDecoder,
+                  layers::ImageContainer* aImageContainer);
 
   class BufferData;
 
@@ -123,6 +126,15 @@ public:
     virtual BufferID ID()
     {
       return mBuffer;
+    }
+
+    
+    
+    
+    
+    virtual already_AddRefed<MediaData> GetPlatformMediaData()
+    {
+      return nullptr;
     }
 
     

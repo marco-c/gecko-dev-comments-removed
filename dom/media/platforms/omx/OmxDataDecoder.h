@@ -54,7 +54,8 @@ protected:
 
 public:
   OmxDataDecoder(const TrackInfo& aTrackInfo,
-                 MediaDataDecoderCallback* aCallback);
+                 MediaDataDecoderCallback* aCallback,
+                 layers::ImageContainer* aImageContainer);
 
   RefPtr<InitPromise> Init() override;
 
@@ -94,6 +95,7 @@ protected:
   
   
   void ConfigAudioCodec();
+  void ConfigVideoCodec();
 
   
   
@@ -110,10 +112,7 @@ protected:
 
   void OutputAudio(BufferData* aBufferData);
 
-  
-  
-  
-  void CheckIfInputExhausted();
+  void OutputVideo(BufferData* aBufferData);
 
   
   
@@ -181,9 +180,6 @@ protected:
 
   
   nsTArray<RefPtr<MediaRawData>> mMediaRawDatas;
-
-  
-  RefPtr<MediaRawData> mLatestInputRawData;
 
   BUFFERLIST mInPortBuffers;
 

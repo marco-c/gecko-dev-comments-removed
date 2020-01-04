@@ -13,15 +13,26 @@
 #include "OMX_Component.h"
 #include <utils/RefBase.h>
 #include <media/stagefright/OMXClient.h>
+#include "mozilla/layers/TextureClientRecycleAllocator.h"
 
 namespace android {
-class MemoryDealer;
 class IMemory;
+class MemoryDealer;
 }
 
 namespace mozilla {
 
 class GonkOmxObserver;
+class GonkOmxPlatformLayer;
+class GonkTextureClientRecycleHandler;
+
+
+
+
+
+
+
+
 
 
 
@@ -39,19 +50,42 @@ protected:
   virtual ~GonkBufferData() {}
 
 public:
-  
-  
-  GonkBufferData(android::IOMX::buffer_id aId, bool aLiveInLocal, android::IMemory* aMemory);
+  GonkBufferData(bool aLiveInLocal,
+                 GonkOmxPlatformLayer* aLayer);
 
   BufferID ID() override
   {
     return mId;
   }
 
+  already_AddRefed<MediaData> GetPlatformMediaData() override;
+
   bool IsLocalBuffer()
   {
-    return !!mLocalBuffer.get();
+    return !!mMirrorBuffer.get();
   }
+
+  void ReleaseBuffer();
+
+  nsresult SetBufferId(android::IOMX::buffer_id aId)
+  {
+    mId = aId;
+    return NS_OK;
+  }
+
+  
+  
+  nsresult InitLocalBuffer(android::IOMX::buffer_id aId);
+
+  
+  
+  
+  nsresult InitSharedMemory(android::IMemory* aMemory);
+
+  
+  
+  
+  nsresult InitGraphicBuffer(OMX_VIDEO_PORTDEFINITIONTYPE& aDef);
 
   
   
@@ -61,14 +95,20 @@ public:
   
   
   
-  nsAutoPtr<OMX_BUFFERHEADERTYPE> mLocalBuffer;
+  nsAutoPtr<OMX_BUFFERHEADERTYPE> mMirrorBuffer;
+
+  
+  RefPtr<GonkTextureClientRecycleHandler> mTextureClientRecycleHandler;
+
+  GonkOmxPlatformLayer* mGonkPlatformLayer;
 };
 
 class GonkOmxPlatformLayer : public OmxPlatformLayer {
 public:
   GonkOmxPlatformLayer(OmxDataDecoder* aDataDecoder,
                        OmxPromiseLayer* aPromiseLayer,
-                       TaskQueue* aTaskQueue);
+                       TaskQueue* aTaskQueue,
+                       layers::ImageContainer* aImageContainer);
 
   nsresult AllocateOmxBuffer(OMX_DIRTYPE aType, BUFFERLIST* aBufferList) override;
 
@@ -102,11 +142,26 @@ public:
   template<class T> void InitOmxParameter(T* aParam);
 
 protected:
+  friend GonkBufferData;
+
+  layers::ImageContainer* GetImageContainer();
+
+  const TrackInfo* GetTrackInfo();
+
+  TaskQueue* GetTaskQueue()
+  {
+    return mTaskQueue;
+  }
+
+  nsresult EnableOmxGraphicBufferPort(OMX_PARAM_PORTDEFINITIONTYPE& aDef);
+
   bool LoadComponent(const char* aName);
 
   friend class GonkOmxObserver;
 
   RefPtr<TaskQueue> mTaskQueue;
+
+  RefPtr<layers::ImageContainer> mImageContainer;
 
   
   android::sp<android::MemoryDealer> mMemoryDealer[2];
@@ -122,6 +177,8 @@ protected:
   uint32_t mQuirks;
 
   bool mUsingHardwareCodec;
+
+  const TrackInfo* mInfo;
 };
 
 }
