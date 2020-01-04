@@ -1150,11 +1150,10 @@ ScrollFrameHelper::WantAsyncScroll() const
   }
 
   ScrollbarStyles styles = GetScrollbarStylesFromFrame();
-  nscoord oneDevPixel = GetScrolledFrame()->PresContext()->AppUnitsPerDevPixel();
-  nsRect scrollRange = GetScrollRange();
-  bool isVScrollable = (scrollRange.height >= oneDevPixel) &&
+  uint32_t directions = mOuter->GetScrollTargetFrame()->GetPerceivedScrollingDirections();
+  bool isVScrollable = !!(directions & nsIScrollableFrame::VERTICAL) &&
                        (styles.mVertical != NS_STYLE_OVERFLOW_HIDDEN);
-  bool isHScrollable = (scrollRange.width >= oneDevPixel) &&
+  bool isHScrollable = !!(directions & nsIScrollableFrame::HORIZONTAL) &&
                        (styles.mHorizontal != NS_STYLE_OVERFLOW_HIDDEN);
 
 #if defined(MOZ_B2G) || defined(MOZ_WIDGET_ANDROID)
@@ -3535,7 +3534,20 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
                 rootCompBounds = rootCompBounds.RemoveResolution(rootPresShell->GetResolution());
               }
 
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
               nsLayoutUtils::TransformRect(rootFrame, mOuter, rootCompBounds);
+              rootCompBounds += CSSPoint::ToAppUnits(
+                  nsLayoutUtils::GetCumulativeApzCallbackTransform(mOuter));
 
               displayportBase = displayportBase.Intersect(rootCompBounds);
             }

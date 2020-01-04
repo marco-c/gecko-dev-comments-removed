@@ -162,15 +162,7 @@ ScrollFrame(nsIContent* aContent,
   
   
   
-  
-  
-  
-  
-  
-  
-  bool mainThreadScrollChanged =
-    sf && sf->CurrentScrollGeneration() != aMetrics.GetScrollGeneration();
-  if (aContent && !mainThreadScrollChanged) {
+  if (aContent) {
     CSSPoint scrollDelta = apzScrollOffset - actualScrollOffset;
     aContent->SetProperty(nsGkAtoms::apzCallbackTransform, new CSSPoint(scrollDelta),
                           nsINode::DeleteProperty<CSSPoint>);
@@ -419,28 +411,8 @@ APZCCallbackHelper::ApplyCallbackTransform(const CSSPoint& aInput,
     }
     
     
-    
-    
-    
-    
-    
-    
-    nsIFrame* frame = content->GetPrimaryFrame();
-    nsCOMPtr<nsIContent> lastContent;
-    while (frame) {
-        if (content && (content != lastContent)) {
-            void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
-            if (property) {
-                CSSPoint delta = (*static_cast<CSSPoint*>(property));
-                delta = delta * nonRootResolution;
-                input += delta;
-            }
-        }
-        frame = frame->GetParent();
-        lastContent = content;
-        content = frame ? frame->GetContent() : nullptr;
-    }
-    return input;
+    CSSPoint transform = nsLayoutUtils::GetCumulativeApzCallbackTransform(content->GetPrimaryFrame());
+    return input + transform * nonRootResolution;
 }
 
 LayoutDeviceIntPoint

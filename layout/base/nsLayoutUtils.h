@@ -2836,6 +2836,16 @@ public:
 
   static bool IsTransformed(nsIFrame* aForFrame, nsIFrame* aTopFrame = nullptr);
 
+  
+
+
+
+
+
+
+
+  static CSSPoint GetCumulativeApzCallbackTransform(nsIFrame* aFrame);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
