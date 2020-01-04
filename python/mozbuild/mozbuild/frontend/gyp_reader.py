@@ -221,10 +221,10 @@ def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
         
         
         context['LOCAL_INCLUDES'] += [
+            '!/ipc/ipdl/_ipdlheaders',
             '/ipc/chromium/src',
             '/ipc/glue',
         ]
-        context['GENERATED_INCLUDES'] += ['/ipc/ipdl/_ipdlheaders']
         
         if config.substs['OS_TARGET'] == 'WINNT':
             context['DEFINES']['UNICODE'] = True
