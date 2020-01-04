@@ -355,8 +355,7 @@ public:
 
   void Shutdown();
 
-  
-  virtual CompositorWidget* NewCompositorWidget();
+  virtual mozilla::widget::CompositorWidget* NewCompositorWidget() override;
 
 protected:
   

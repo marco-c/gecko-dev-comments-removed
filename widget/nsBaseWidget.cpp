@@ -274,16 +274,13 @@ void nsBaseWidget::DestroyCompositor()
   if (mCompositorSession) {
     ReleaseContentController();
     mAPZC = nullptr;
+    mCompositorWidget = nullptr;
     mCompositorBridgeChild = nullptr;
 
     
     
     RefPtr<CompositorSession> session = mCompositorSession.forget();
     session->Shutdown();
-
-    
-    
-    mCompositorWidget = nullptr;
   }
 
   
@@ -1307,21 +1304,18 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   CreateCompositorVsyncDispatcher();
 
-  if (!mCompositorWidget) {
-    mCompositorWidget = NewCompositorWidget();
-  }
-
   RefPtr<ClientLayerManager> lm = new ClientLayerManager(this);
 
   gfx::GPUProcessManager* gpu = gfx::GPUProcessManager::Get();
   mCompositorSession = gpu->CreateTopLevelCompositor(
-    mCompositorWidget,
+    this,
     lm,
     GetDefaultScale(),
     UseAPZ(),
     UseExternalCompositingSurface(),
     gfx::IntSize(aWidth, aHeight));
   mCompositorBridgeChild = mCompositorSession->GetCompositorBridgeChild();
+  mCompositorWidget = mCompositorSession->GetCompositorWidget();
 
   mAPZC = mCompositorSession->GetAPZCTreeManager();
   if (mAPZC) {

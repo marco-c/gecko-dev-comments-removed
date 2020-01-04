@@ -3622,13 +3622,15 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
 
   if (!mLayerManager) {
     MOZ_ASSERT(!mCompositorSession && !mCompositorBridgeChild);
+    MOZ_ASSERT(!mCompositorWidget);
 
     
     
-    if (!mCompositorWidget) {
-      mCompositorWidget= NewCompositorWidget();
-    }
-
+    mCompositorWidget = new WinCompositorWidget(
+      mWnd,
+      reinterpret_cast<uintptr_t>(this),
+      mTransparencyMode,
+      this);
     mLayerManager = CreateBasicLayerManager();
   }
 
