@@ -1078,16 +1078,6 @@ public:
   friend class MediaStreamGraphImpl;
 
 protected:
-  struct ThreadAndRunnable {
-    void Init(TaskQueue* aTarget, nsIRunnable* aRunnable)
-    {
-      mTarget = aTarget;
-      mRunnable = aRunnable;
-    }
-
-    RefPtr<TaskQueue> mTarget;
-    nsCOMPtr<nsIRunnable> mRunnable;
-  };
   enum TrackCommands {
     TRACK_CREATE = MediaStreamListener::TRACK_EVENT_CREATED,
     TRACK_END = MediaStreamListener::TRACK_EVENT_ENDED
@@ -1451,7 +1441,6 @@ class MediaStreamGraph
 {
 public:
 
-  
   
   
   
