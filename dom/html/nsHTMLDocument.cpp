@@ -2656,7 +2656,7 @@ nsHTMLDocument::TearingDownEditor(nsIEditor *aEditor)
 
     presShell->SetAgentStyleSheets(agentSheets);
 
-    presShell->ReconstructStyleData();
+    presShell->RestyleForCSSRuleChanges();
   }
 }
 
@@ -2820,7 +2820,7 @@ nsHTMLDocument::EditingStateChanged()
     rv = presShell->SetAgentStyleSheets(agentSheets);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    presShell->ReconstructStyleData();
+    presShell->RestyleForCSSRuleChanges();
 
     
     

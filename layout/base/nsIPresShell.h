@@ -367,7 +367,7 @@ public:
 
 
 
-  void ReconstructStyleData();
+  void RestyleForCSSRuleChanges();
 
   
 
