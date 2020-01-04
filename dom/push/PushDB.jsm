@@ -226,8 +226,7 @@ this.PushDB.prototype = {
 
 
 
-
-  reduceByOrigin: function(origin, originAttributes, callback, initialValue) {
+  forEachOrigin: function(origin, originAttributes, callback) {
     console.debug("forEachOrigin()");
 
     return new Promise((resolve, reject) =>
@@ -235,7 +234,7 @@ this.PushDB.prototype = {
         "readwrite",
         this._dbStoreName,
         (aTxn, aStore) => {
-          aTxn.result = initialValue;
+          aTxn.result = undefined;
 
           let index = aStore.index("identifiers");
           let range = IDBKeyRange.bound(
@@ -247,8 +246,7 @@ this.PushDB.prototype = {
             if (!cursor) {
               return;
             }
-            let record = this.toPushRecord(cursor.value);
-            aTxn.result = callback(aTxn.result, record, cursor);
+            callback(this.toPushRecord(cursor.value), cursor);
             cursor.continue();
           };
         },

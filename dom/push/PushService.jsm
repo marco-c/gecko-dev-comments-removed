@@ -657,15 +657,12 @@ this.PushService = {
 
 
   dropUnexpiredRegistrations: function() {
-    let subscriptionChanges = [];
     return this._db.clearIf(record => {
       if (record.isExpired()) {
         return false;
       }
-      subscriptionChanges.push(record);
+      this._notifySubscriptionChangeObservers(record);
       return true;
-    }).then(() => {
-      this.notifySubscriptionChanges(subscriptionChanges);
     });
   },
 
@@ -715,12 +712,6 @@ this.PushService = {
         this._notifySubscriptionChangeObservers(record);
         return record;
       });
-  },
-
-  notifySubscriptionChanges: function(records) {
-    records.forEach(record => {
-      this._notifySubscriptionChangeObservers(record);
-    });
   },
 
   ensureCrypto: function(record) {
@@ -1307,7 +1298,6 @@ this.PushService = {
   _clearPermissions() {
     console.debug("clearPermissions()");
 
-    let subscriptionModifications = [];
     return this._db.clearIf(record => {
       if (!record.quotaApplies()) {
         
@@ -1316,17 +1306,14 @@ this.PushService = {
       if (record.isExpired()) {
         
         
-        subscriptionModifications.push(record);
+        gPushNotifier.notifySubscriptionModified(record.scope,
+                                                 record.principal);
       } else {
         
         this._backgroundUnregister(record,
           Ci.nsIPushErrorReporter.UNSUBSCRIBE_PERMISSION_REVOKED);
       }
       return true;
-    }).then(() => {
-      subscriptionModifications.forEach(record =>
-        gPushNotifier.notifySubscriptionModified(record.scope, record.principal)
-      );
     });
   },
 
@@ -1341,34 +1328,27 @@ this.PushService = {
       
       
       
-      return this._reduceByPrincipal(
+      return this._forEachPrincipal(
         permission.principal,
-        (subscriptionChanges, record, cursor) => {
-          this._permissionAllowed(subscriptionChanges, record, cursor);
-          return subscriptionChanges;
-        },
-        []
-      ).then(subscriptionChanges => {
-        this.notifySubscriptionChanges(subscriptionChanges);
-      });
+        (record, cursor) => this._permissionAllowed(record, cursor)
+      );
     } else if (isChange || (isAllow && type == "deleted")) {
       
       
-      return this._reduceByPrincipal(
+      return this._forEachPrincipal(
         permission.principal,
-        (memo, record, cursor) => this._permissionDenied(record, cursor)
+        (record, cursor) => this._permissionDenied(record, cursor)
       );
     }
 
     return Promise.resolve();
   },
 
-  _reduceByPrincipal: function(principal, callback, initialValue) {
-    return this._db.reduceByOrigin(
+  _forEachPrincipal: function(principal, callback) {
+    return this._db.forEachOrigin(
       principal.URI.prePath,
       ChromeUtils.originAttributesToSuffix(principal.originAttributes),
-      callback,
-      initialValue
+      callback
     );
   },
 
@@ -1404,9 +1384,7 @@ this.PushService = {
 
 
 
-
-
-  _permissionAllowed: function(subscriptionChanges, record, cursor) {
+  _permissionAllowed(record, cursor) {
     console.debug("permissionAllowed()");
 
     if (!record.quotaApplies()) {
@@ -1415,7 +1393,7 @@ this.PushService = {
     if (record.isExpired()) {
       
       
-      subscriptionChanges.push(record);
+      this._notifySubscriptionChangeObservers(record);
       cursor.delete();
       return;
     }
