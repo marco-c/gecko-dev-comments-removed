@@ -8,6 +8,7 @@ config = {
         "dest": "tools",
         "vcs": "hg",
     },
+    "vcs_share_base": "/builds/hg-shared",
     
     "push_dest": "ssh://hg.mozilla.org/users/raliiev_mozilla.com/tools",
     
