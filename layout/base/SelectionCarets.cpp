@@ -40,8 +40,8 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-static PRLogModuleInfo* gSelectionCaretsLog;
 static const char* kSelectionCaretsLogModuleName = "SelectionCarets";
+static mozilla::LazyLogModule gSelectionCaretsLog(kSelectionCaretsLogModuleName);
 
 
 
@@ -84,10 +84,6 @@ SelectionCarets::SelectionCarets(nsIPresShell* aPresShell)
   , mActionBarViewID(0)
 {
   MOZ_ASSERT(NS_IsMainThread());
-
-  if (!gSelectionCaretsLog) {
-    gSelectionCaretsLog = PR_NewLogModule(kSelectionCaretsLogModuleName);
-  }
 
   SELECTIONCARETS_LOG("Constructor, PresShell=%p", mPresShell);
 
