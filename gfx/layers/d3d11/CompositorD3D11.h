@@ -161,6 +161,10 @@ private:
   bool Succeeded(HRESULT hr, Severity aSeverity = DebugAssert);
 
   
+  
+  bool Failed(HRESULT hr, const char* aContext);
+
+  
   void EnsureSize();
   bool VerifyBufferSize();
   void UpdateRenderTarget();
