@@ -16,6 +16,11 @@ class HelpFormatter(object):
 
     def add(self, option):
         assert isinstance(option, Option)
+
+        if option.possible_origins == ('implied',):
+            
+            return
+
         
         target = self.options if option.name else self.env
         opt = option.option
