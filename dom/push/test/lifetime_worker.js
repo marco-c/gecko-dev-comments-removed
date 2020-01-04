@@ -55,6 +55,11 @@ onmessage = function(event) {
 }
 
 onpush = function(event) {
+  var pushResolve;
+  event.waitUntil(new Promise(function(resolve) {
+    pushResolve = resolve;
+  }));
+
   
   
   clients.matchAll().then(function(client) {
@@ -65,11 +70,10 @@ onpush = function(event) {
     client[0].postMessage({type: "push", state: state});
 
     state = "wait";
-    event.waitUntil(new Promise(function(res, rej) {
-      if (resolvePromiseCallback) {
-        dump("ERROR: service worker was already waiting on a promise.\n");
-      }
-      resolvePromiseCallback = res;
-    }));
+    if (resolvePromiseCallback) {
+      dump("ERROR: service worker was already waiting on a promise.\n");
+    } else {
+      resolvePromiseCallback = pushResolve;
+    }
   });
 }
