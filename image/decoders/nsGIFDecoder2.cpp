@@ -868,17 +868,6 @@ nsGIFDecoder2::ReadImageDescriptor(const char* aData)
   }
 
   
-  
-  
-  
-  
-  
-  memset(mImageData, 0, mImageDataLength);
-  if (mColormap) {
-    memset(mColormap, 0, mColormapSize);
-  }
-
-  
   mGIFStruct.pixels_remaining = frameRect.width * frameRect.height;
 
   if (haveLocalColorTable) {
