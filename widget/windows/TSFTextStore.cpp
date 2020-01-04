@@ -1854,6 +1854,12 @@ TSFTextStore::MaybeFlushPendingNotifications()
   
   
   if (!mContentForTSF.IsInitialized()) {
+    if (mPendingTextChangeData.IsValid()) {
+      MOZ_LOG(sTextStoreLog, LogLevel::Info,
+             ("TSF: 0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
+              "calling TSFTextStore::NotifyTSFOfTextChange()...", this));
+      NotifyTSFOfTextChange();
+    }
     if (mPendingSelectionChangeData.IsValid()) {
       MOZ_LOG(sTextStoreLog, LogLevel::Info,
              ("TSF: 0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
@@ -4582,8 +4588,7 @@ TSFTextStore::GetIMEUpdatePreference()
 nsresult
 TSFTextStore::OnTextChangeInternal(const IMENotification& aIMENotification)
 {
-  const IMENotification::TextChangeDataBase& textChangeData =
-    aIMENotification.mTextChangeData;
+  const TextChangeDataBase& textChangeData = aIMENotification.mTextChangeData;
 
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
          ("TSF: 0x%p   TSFTextStore::OnTextChangeInternal(aIMENotification={ "
@@ -4612,51 +4617,17 @@ TSFTextStore::OnTextChangeInternal(const IMENotification& aIMENotification)
     return NS_OK;
   }
 
-  if (textChangeData.mCausedOnlyByComposition) {
-    
-    
-    return NS_OK;
-  }
-
-  if (mComposition.IsComposing() &&
-      !textChangeData.mIncludingChangesDuringComposition) {
-    
-    
-    
-    
-    
-    
-    return NS_OK;
-  }
-
   mDeferNotifyingTSF = false;
 
-  if (IsReadLocked()) {
-    
-    
-    
-    return NS_OK;
-  }
-
-  mSelection.MarkDirty();
-
+  
+  
+  
   if (!mSink || !(mSinkMask & TS_AS_TEXT_CHANGE)) {
     return NS_OK;
   }
 
-  if (aIMENotification.mTextChangeData.IsInInt32Range()) {
-    TS_TEXTCHANGE textChange;
-    textChange.acpStart = static_cast<LONG>(textChangeData.mStartOffset);
-    textChange.acpOldEnd = static_cast<LONG>(textChangeData.mRemovedEndOffset);
-    textChange.acpNewEnd = static_cast<LONG>(textChangeData.mAddedEndOffset);
-    NotifyTSFOfTextChange(textChange);
-  } else {
-    MOZ_LOG(sTextStoreLog, LogLevel::Error,
-           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfTextChange() FAILED due to "
-            "offset is too big for calling "
-            "ITextStoreACPSink::OnTextChange()...",
-            this));
-  }
+  
+  mPendingTextChangeData.MergeWith(textChangeData);
 
   MaybeFlushPendingNotifications();
 
@@ -4664,34 +4635,59 @@ TSFTextStore::OnTextChangeInternal(const IMENotification& aIMENotification)
 }
 
 void
-TSFTextStore::NotifyTSFOfTextChange(const TS_TEXTCHANGE& aTextChange)
+TSFTextStore::NotifyTSFOfTextChange()
 {
   MOZ_ASSERT(!mDestroyed);
+  MOZ_ASSERT(!IsReadLocked());
+  MOZ_ASSERT(!mComposition.IsComposing());
+  MOZ_ASSERT(mPendingTextChangeData.IsValid());
 
   
   
-  if (NS_WARN_IF(IsReadLocked())) {
+  if (mPendingTextChangeData.mCausedOnlyByComposition) {
+    mPendingTextChangeData.Clear();
     return;
   }
 
   
+  mSelection.MarkDirty();
+
   
   
-  if (mComposition.IsComposing()) {
-    MOZ_LOG(sTextStoreLog, LogLevel::Info,
-           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfTextChange(), "
-            "committing the composition for avoiding making TIP confused...",
+  if (NS_WARN_IF(!mSink) || NS_WARN_IF(!(mSinkMask & TS_AS_TEXT_CHANGE))) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Error,
+           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfTextChange() FAILED due to "
+            "mSink is not ready to call ITextStoreACPSink::OnTextChange()...",
             this));
-    CommitCompositionInternal(false);
+    mPendingTextChangeData.Clear();
     return;
   }
+
+  if (NS_WARN_IF(!mPendingTextChangeData.IsInInt32Range())) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Error,
+           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfTextChange() FAILED due to "
+            "offset is too big for calling "
+            "ITextStoreACPSink::OnTextChange()...",
+            this));
+    mPendingTextChangeData.Clear();
+    return;
+   }
+
+  TS_TEXTCHANGE textChange;
+  textChange.acpStart =
+    static_cast<LONG>(mPendingTextChangeData.mStartOffset);
+  textChange.acpOldEnd =
+    static_cast<LONG>(mPendingTextChangeData.mRemovedEndOffset);
+  textChange.acpNewEnd =
+    static_cast<LONG>(mPendingTextChangeData.mAddedEndOffset);
+  mPendingTextChangeData.Clear();
 
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
          ("TSF: 0x%p   TSFTextStore::NotifyTSFOfTextChange(), calling "
           "ITextStoreACPSink::OnTextChange(0, { acpStart=%ld, acpOldEnd=%ld, "
-          "acpNewEnd=%ld })...", this, aTextChange.acpStart,
-          aTextChange.acpOldEnd, aTextChange.acpNewEnd));
-  mSink->OnTextChange(0, &aTextChange);
+          "acpNewEnd=%ld })...", this, textChange.acpStart,
+          textChange.acpOldEnd, textChange.acpNewEnd));
+  mSink->OnTextChange(0, &textChange);
 }
 
 nsresult
@@ -4726,6 +4722,9 @@ TSFTextStore::OnSelectionChangeInternal(const IMENotification& aIMENotification)
 
   mDeferNotifyingTSF = false;
 
+  
+  
+  
   
   
   mPendingSelectionChangeData.Assign(selectionChangeData);

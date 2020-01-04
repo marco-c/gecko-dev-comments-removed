@@ -56,6 +56,8 @@ class TSFTextStore final : public ITextStoreACP
 private:
   typedef IMENotification::SelectionChangeDataBase SelectionChangeDataBase;
   typedef IMENotification::SelectionChangeData SelectionChangeData;
+  typedef IMENotification::TextChangeDataBase TextChangeDataBase;
+  typedef IMENotification::TextChangeData TextChangeData;
 
 public: 
   STDMETHODIMP          QueryInterface(REFIID, void**);
@@ -321,7 +323,12 @@ protected:
   
   SelectionChangeData mPendingSelectionChangeData;
 
-  void     NotifyTSFOfTextChange(const TS_TEXTCHANGE& aTextChange);
+  
+  
+  
+  TextChangeData mPendingTextChangeData;
+
+  void     NotifyTSFOfTextChange();
   void     NotifyTSFOfSelectionChange();
   bool     NotifyTSFOfLayoutChange();
   void     NotifyTSFOfLayoutChangeAgain();
