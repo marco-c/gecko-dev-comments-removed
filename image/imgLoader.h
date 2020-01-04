@@ -327,7 +327,7 @@ public:
 
 
 
-  static NS_EXPORT_(bool)
+  static bool
   SupportImageWithMimeType(const char* aMimeType,
                            AcceptedMimeTypes aAccept =
                              AcceptedMimeTypes::IMAGES);
