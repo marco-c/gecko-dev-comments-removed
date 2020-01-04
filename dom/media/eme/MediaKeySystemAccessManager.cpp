@@ -264,7 +264,30 @@ MediaKeySystemAccessManager::Observe(nsISupports* aSubject,
   EME_LOG("MediaKeySystemAccessManager::Observe %s", aTopic);
 
   if (!strcmp(aTopic, "gmp-changed")) {
-    nsTArray<PendingRequest> requests(Move(mRequests));
+    
+    
+    
+    
+    
+    nsTArray<PendingRequest> requests;
+    for (size_t i = mRequests.Length(); i > 0; i--) {
+      const size_t index = i - i;
+      PendingRequest& request = mRequests[index];
+      nsAutoCString message;
+      nsAutoCString cdmVersion;
+      MediaKeySystemStatus status =
+        MediaKeySystemAccess::GetKeySystemStatus(request.mKeySystem,
+                                                 NO_CDM_VERSION,
+                                                 message,
+                                                 cdmVersion);
+      if (status == MediaKeySystemStatus::Cdm_not_installed) {
+        
+        continue;
+      }
+      
+      requests.AppendElement(Move(request));
+      mRequests.RemoveElementAt(index);
+    }
     
     for (PendingRequest& request : requests) {
       RetryRequest(request);
