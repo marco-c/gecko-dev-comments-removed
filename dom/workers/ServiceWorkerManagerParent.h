@@ -27,19 +27,11 @@ class ServiceWorkerManagerParent final : public PServiceWorkerManagerParent
   friend class mozilla::ipc::BackgroundParentImpl;
 
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ServiceWorkerManagerParent)
-
-  bool ActorDestroyed() const
-  {
-    return mActorDestroyed;
-  }
-
   uint64_t ID() const
   {
     return mID;
   }
 
-  already_AddRefed<ContentParent> GetContentParent() const;
 private:
   ServiceWorkerManagerParent();
   ~ServiceWorkerManagerParent();
@@ -69,8 +61,6 @@ private:
   
   
   uint64_t mID;
-
-  bool mActorDestroyed;
 };
 
 } 
