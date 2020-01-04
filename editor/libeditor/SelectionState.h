@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef SelectionState_h
 #define SelectionState_h
@@ -20,17 +20,17 @@ class RangeUpdater;
 namespace dom {
 class Selection;
 class Text;
-} // namespace dom
+} 
 
-/**
- * A helper struct for saving/setting ranges.
- */
+
+
+
 struct RangeItem final
 {
   RangeItem();
 
 private:
-  // Private destructor, to discourage deletion outside of Release():
+  
   ~RangeItem();
 
 public:
@@ -46,13 +46,13 @@ public:
   int32_t endOffset;
 };
 
-/**
- * mozilla::SelectionState
- *
- * Class for recording selection info.  Stores selection as collection of
- * { {startnode, startoffset} , {endnode, endoffset} } tuples.  Can't store
- * ranges since dom gravity will possibly change the ranges.
- */
+
+
+
+
+
+
+
 
 class SelectionState final
 {
@@ -103,11 +103,11 @@ public:
   nsresult RegisterSelectionState(SelectionState& aSelState);
   nsresult DropSelectionState(SelectionState& aSelState);
 
-  // editor selection gravity routines.  Note that we can't always depend on
-  // DOM Range gravity to do what we want to the "real" selection.  For instance,
-  // if you move a node, that corresponds to deleting it and reinserting it.
-  // DOM Range gravity will promote the selection out of the node on deletion,
-  // which is not what you want if you know you are reinserting it.
+  
+  
+  
+  
+  
   nsresult SelAdjCreateNode(nsINode* aParent, int32_t aPosition);
   nsresult SelAdjCreateNode(nsIDOMNode* aParent, int32_t aPosition);
   nsresult SelAdjInsertNode(nsINode* aParent, int32_t aPosition);
@@ -127,9 +127,9 @@ public:
                             int32_t aLength);
   nsresult SelAdjDeleteText(nsIDOMCharacterData* aTextNode,
                             int32_t aOffset, int32_t aLength);
-  // the following gravity routines need will/did sandwiches, because the other
-  // gravity routines will be called inside of these sandwiches, but should be
-  // ignored.
+  
+  
+  
   nsresult WillReplaceContainer();
   nsresult DidReplaceContainer(dom::Element* aOriginalNode,
                                dom::Element* aNewNode);
@@ -170,16 +170,16 @@ ImplCycleCollectionUnlink(RangeUpdater& aField)
   ImplCycleCollectionUnlink(aField.mArray);
 }
 
-/**
- * Helper class for using SelectionState.  Stack based class for doing
- * preservation of dom points across editor actions.
- */
+
+
+
+
 
 class MOZ_STACK_CLASS AutoTrackDOMPoint final
 {
 private:
   RangeUpdater& mRangeUpdater;
-  // Allow tracking either nsIDOMNode or nsINode until nsIDOMNode is gone
+  
   nsCOMPtr<nsINode>* mNode;
   nsCOMPtr<nsIDOMNode>* mDOMNode;
   int32_t* mOffset;
@@ -228,44 +228,42 @@ public:
   }
 };
 
-/******************************************************************************
- * another helper class for SelectionState.  stack based class for doing
- * Will/DidReplaceContainer()
- */
 
-namespace dom {
-class MOZ_STACK_CLASS AutoReplaceContainerSelNotify
+
+
+
+
+class MOZ_STACK_CLASS AutoReplaceContainerSelNotify final
 {
-  private:
-    RangeUpdater& mRU;
-    Element* mOriginalElement;
-    Element* mNewElement;
+private:
+  RangeUpdater& mRangeUpdater;
+  dom::Element* mOriginalElement;
+  dom::Element* mNewElement;
 
-  public:
-    AutoReplaceContainerSelNotify(RangeUpdater& aRangeUpdater,
-                                  Element* aOriginalElement,
-                                  Element* aNewElement)
-      : mRU(aRangeUpdater)
-      , mOriginalElement(aOriginalElement)
-      , mNewElement(aNewElement)
-    {
-      mRU.WillReplaceContainer();
-    }
+public:
+  AutoReplaceContainerSelNotify(RangeUpdater& aRangeUpdater,
+                                dom::Element* aOriginalElement,
+                                dom::Element* aNewElement)
+    : mRangeUpdater(aRangeUpdater)
+    , mOriginalElement(aOriginalElement)
+    , mNewElement(aNewElement)
+  {
+    mRangeUpdater.WillReplaceContainer();
+  }
 
-    ~AutoReplaceContainerSelNotify()
-    {
-      mRU.DidReplaceContainer(mOriginalElement, mNewElement);
-    }
+  ~AutoReplaceContainerSelNotify()
+  {
+    mRangeUpdater.DidReplaceContainer(mOriginalElement, mNewElement);
+  }
 };
 
-} // namespace dom
-} // namespace mozilla
+} 
 
 
-/***************************************************************************
- * another helper class for SelectionState.  stack based class for doing
- * Will/DidRemoveContainer()
- */
+
+
+
+
 
 class MOZ_STACK_CLASS nsAutoRemoveContainerSelNotify
 {
@@ -297,10 +295,10 @@ class MOZ_STACK_CLASS nsAutoRemoveContainerSelNotify
     }
 };
 
-/***************************************************************************
- * another helper class for SelectionState.  stack based class for doing
- * Will/DidInsertContainer()
- */
+
+
+
+
 
 class MOZ_STACK_CLASS nsAutoInsertContainerSelNotify
 {
@@ -322,10 +320,10 @@ class MOZ_STACK_CLASS nsAutoInsertContainerSelNotify
 };
 
 
-/***************************************************************************
- * another helper class for SelectionState.  stack based class for doing
- * Will/DidMoveNode()
- */
+
+
+
+
 
 class MOZ_STACK_CLASS nsAutoMoveNodeSelNotify
 {
@@ -359,4 +357,4 @@ class MOZ_STACK_CLASS nsAutoMoveNodeSelNotify
     }
 };
 
-#endif // #ifndef SelectionState_h
+#endif 
