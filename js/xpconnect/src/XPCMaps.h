@@ -310,8 +310,6 @@ public:
 
     inline uint32_t Count() { return mTable.EntryCount(); }
 
-    PLDHashTable::Iterator Iter() { return mTable.Iter(); }
-
     
     
     

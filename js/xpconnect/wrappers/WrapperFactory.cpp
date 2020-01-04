@@ -313,12 +313,12 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     
     
     XPCWrappedNative* newwn = XPCWrappedNative::Get(obj);
-    XPCNativeSet* unionSet = XPCNativeSet::GetNewOrUsed(newwn->GetSet(),
-                                                        wn->GetSet(), false);
+    RefPtr<XPCNativeSet> unionSet = XPCNativeSet::GetNewOrUsed(newwn->GetSet(),
+                                                               wn->GetSet(), false);
     if (!unionSet) {
         return;
     }
-    newwn->SetSet(unionSet);
+    newwn->SetSet(unionSet.forget());
 
     retObj.set(waive ? WaiveXray(cx, obj) : obj);
 }
