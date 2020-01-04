@@ -66,6 +66,7 @@ from manifestparser.filters import chunk_by_slice, tags
 from mozlog import commandline
 import mozcrash
 import mozinfo
+from mozrunner.utils import get_stack_fixer_function
 
 
 
@@ -90,39 +91,6 @@ def cleanup_encoding(s):
         s = s.decode('utf-8', 'replace')
     
     return _cleanup_encoding_re.sub(_cleanup_encoding_repl, s)
-
-def find_stack_fixer(mozinfo, utility_dir, symbols_path):
-    
-    
-    
-    
-    if not mozinfo.info.get('debug'):
-        return None
-
-    def import_stack_fixer_module(module_name):
-        sys.path.insert(0, utility_dir)
-        module = importlib.import_module(module_name)
-        sys.path.pop(0)
-        return module
-
-    stack_fixer_function = None
-
-    if symbols_path and os.path.exists(symbols_path):
-        
-        
-        stack_fixer_module = import_stack_fixer_module('fix_stack_using_bpsyms')
-        stack_fixer_function = lambda line: stack_fixer_module.fixSymbols(line, symbols_path)
-    elif mozinfo.isMac:
-        
-        
-        stack_fixer_module = import_stack_fixer_module('fix_macosx_stack')
-        stack_fixer_function = stack_fixer_module.fixSymbols
-    elif mozinfo.isLinux:
-        stack_fixer_module = import_stack_fixer_module('fix_linux_stack')
-        stack_fixer_function = stack_fixer_module.fixSymbols
-
-    return stack_fixer_function
-
 
 """ Control-C handling """
 gotSIGINT = False
@@ -1219,9 +1187,7 @@ class XPCShellTests(object):
 
         self.stack_fixer_function = None
         if utility_path and os.path.exists(utility_path):
-            self.stack_fixer_function = find_stack_fixer(mozinfo,
-                                                         utility_path,
-                                                         self.symbolsPath)
+            self.stack_fixer_function = get_stack_fixer_function(utility_path, self.symbolsPath)
 
         
         self.buildEnvironment()
