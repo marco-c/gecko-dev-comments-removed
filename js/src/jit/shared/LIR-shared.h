@@ -8295,9 +8295,10 @@ class LWasmCallBase : public LInstruction
     }
     bool isCallPreserved(AnyRegister reg) const override {
         
-        if (reg.isFloat() || reg.gpr() != WasmTlsReg)
-            return false;
-        return mir()->preservesTlsReg();
+        
+        
+        
+        return !reg.isFloat() && reg.gpr() == WasmTlsReg;
     }
 
     
