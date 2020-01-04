@@ -82,6 +82,7 @@ SessionStore.prototype = {
     this._sessionFileBackup.append("sessionstore.bak");
 
     this._loadState = STATE_STOPPED;
+    this._startupRestoreFinished = false;
 
     this._interval = Services.prefs.getIntPref("browser.sessionstore.interval");
     this._maxTabsUndo = Services.prefs.getIntPref("browser.sessionstore.max_tabs_undo");
@@ -214,6 +215,10 @@ SessionStore.prototype = {
                   selected: true
                 });
               }
+              
+              
+              this._startupRestoreFinished = true;
+              log("startupRestoreFinished = true (through notification)");
             }.bind(this)
           };
           Services.obs.addObserver(restoreCleanup, "sessionstore-windows-restored", false);
@@ -223,12 +228,20 @@ SessionStore.prototype = {
           this.restoreLastSession(data.sessionString);
         } else {
           
+          this._startupRestoreFinished = true;
+          log("startupRestoreFinished = true");
           Services.obs.notifyObservers(null, "sessionstore-windows-restored", "");
         }
         break;
       }
       case "Session:NotifyLocationChange": {
         let browser = aSubject;
+
+        if (browser.__SS_restoreReloadPending && this._startupRestoreFinished) {
+          delete browser.__SS_restoreReloadPending;
+          log("remove restoreReloadPending");
+        }
+
         if (browser.__SS_restoreDataOnLocationChange) {
           delete browser.__SS_restoreDataOnLocationChange;
           this._restoreZoom(browser.__SS_data.scrolldata, browser);
@@ -536,7 +549,8 @@ SessionStore.prototype = {
 
   onTabLoad: function ss_onTabLoad(aWindow, aBrowser) {
     
-    if (aBrowser.__SS_restore) {
+    
+    if (aBrowser.__SS_restore || !this._startupRestoreFinished || aBrowser.__SS_restoreReloadPending) {
       return;
     }
 
@@ -631,7 +645,8 @@ SessionStore.prototype = {
 
   onTabInput: function ss_onTabInput(aWindow, aBrowser) {
     
-    if (aBrowser.__SS_restore) {
+    
+    if (aBrowser.__SS_restore || !this._startupRestoreFinished || aBrowser.__SS_restoreReloadPending) {
       return;
     }
 
@@ -690,7 +705,8 @@ SessionStore.prototype = {
     }
 
     
-    if (aBrowser.__SS_restore) {
+    
+    if (aBrowser.__SS_restore || !this._startupRestoreFinished || aBrowser.__SS_restoreReloadPending) {
       return;
     }
 
@@ -1471,6 +1487,13 @@ SessionStore.prototype = {
 
       if (window.BrowserApp.selectedTab == tab) {
         this._restoreTab(tabData, tab.browser);
+
+        
+        
+        
+        tab.browser.__SS_restoreReloadPending = true;
+        this._startupRestoreFinished = true;
+        log("startupRestoreFinished = true");
 
         delete tab.browser.__SS_restore;
         tab.browser.removeAttribute("pending");
