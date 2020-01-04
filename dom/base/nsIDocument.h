@@ -2504,7 +2504,7 @@ public:
   nsIURI* GetDocumentURIObject() const;
   
   virtual bool MozFullScreenEnabled() = 0;
-  virtual Element* GetMozFullScreenElement(mozilla::ErrorResult& rv) = 0;
+  virtual Element* GetMozFullScreenElement() = 0;
   bool MozFullScreen()
   {
     return IsFullScreenDoc();
