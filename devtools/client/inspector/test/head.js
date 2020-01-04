@@ -146,6 +146,22 @@ var selectNode = Task.async(function* (selector, inspector, reason = "test") {
 
 
 
+function* focusNode(selector, inspector) {
+  getContainerForNodeFront(inspector.walker.rootNode, inspector).elt.focus();
+  let nodeFront = yield getNodeFront(selector, inspector);
+  let container = getContainerForNodeFront(nodeFront, inspector);
+  yield selectNode(nodeFront, inspector);
+  EventUtils.sendKey("return", inspector.panelWin);
+  return container;
+}
+
+
+
+
+
+
+
+
 function clearCurrentNodeSelection(inspector) {
   info("Clearing the current selection");
   let updated = inspector.once("inspector-updated");
