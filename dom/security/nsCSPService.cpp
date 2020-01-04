@@ -106,8 +106,8 @@ CSPService::ShouldLoad(uint32_t aContentType,
                        int16_t *aDecision)
 {
   MOZ_ASSERT(aContentType ==
-             nsContentUtils::InternalContentPolicyTypeToExternalOrPreload(aContentType),
-             "We should only see external content policy types or preloads here.");
+             nsContentUtils::InternalContentPolicyTypeToExternalOrCSPInternal(aContentType),
+             "We should only see external content policy types or CSP special types (preloads or workers) here.");
 
   if (!aContentLocation) {
     return NS_ERROR_FAILURE;
@@ -254,7 +254,7 @@ CSPService::ShouldProcess(uint32_t         aContentType,
                           int16_t          *aDecision)
 {
   MOZ_ASSERT(aContentType ==
-             nsContentUtils::InternalContentPolicyTypeToExternalOrPreload(aContentType),
+             nsContentUtils::InternalContentPolicyTypeToExternalOrCSPInternal(aContentType),
              "We should only see external content policy types or preloads here.");
 
   if (!aContentLocation)
@@ -314,7 +314,13 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
   nsCOMPtr<nsIURI> originalUri;
   rv = oldChannel->GetOriginalURI(getter_AddRefs(originalUri));
   NS_ENSURE_SUCCESS(rv, rv);
-  nsContentPolicyType policyType = loadInfo->GetExternalContentPolicyType();
+  
+
+
+
+  nsContentPolicyType policyType =
+    nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(
+        loadInfo->InternalContentPolicyType());
 
   int16_t aDecision = nsIContentPolicy::ACCEPT;
   csp->ShouldLoad(policyType,     
