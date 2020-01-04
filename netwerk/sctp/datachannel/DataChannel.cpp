@@ -1849,7 +1849,7 @@ DataChannelConnection::HandleStreamChangeEvent(const struct sctp_stream_change_e
 
       
       
-      size_t num_needed = mPending.GetSize();
+      int32_t num_needed = mPending.GetSize();
       LOG(("%d of %d new streams already needed", num_needed,
            new_len - old_len));
       num_needed -= (new_len - old_len); 
