@@ -112,7 +112,7 @@ private:
       return NS_ERROR_DOM_UNKNOWN_ERR;
     }
 
-    ScopedSECKEYPublicKey publicKey(mKeyPair.mPublicKey.get()->GetPublicKey());
+    ScopedSECKEYPublicKey publicKey(mKeyPair->mPublicKey.get()->GetPublicKey());
     ScopedCERTSubjectPublicKeyInfo spki(
         SECKEY_CreateSubjectPublicKeyInfo(publicKey));
     if (!spki) {
@@ -180,7 +180,7 @@ private:
       return NS_ERROR_DOM_UNKNOWN_ERR;
     }
 
-    ScopedSECKEYPrivateKey privateKey(mKeyPair.mPrivateKey.get()->GetPrivateKey());
+    ScopedSECKEYPrivateKey privateKey(mKeyPair->mPrivateKey.get()->GetPrivateKey());
     rv = SEC_DerSignData(arena, signedCert, innerDER.data, innerDER.len,
                          privateKey, mSignatureAlg);
     if (rv != SECSuccess) {
@@ -232,9 +232,9 @@ private:
   {
     
     
-    SECKEYPrivateKey* key = mKeyPair.mPrivateKey.get()->GetPrivateKey();
+    SECKEYPrivateKey* key = mKeyPair->mPrivateKey.get()->GetPrivateKey();
     CERTCertificate* cert = CERT_DupCertificate(mCertificate);
-    RefPtr<RTCCertificate> result =
+    nsRefPtr<RTCCertificate> result =
         new RTCCertificate(mResultPromise->GetParentObject(),
                            key, cert, mAuthType, mExpires);
     mResultPromise->MaybeResolve(result);
@@ -247,7 +247,7 @@ RTCCertificate::GenerateCertificate(
     ErrorResult& aRv, JSCompartment* aCompartment)
 {
   nsIGlobalObject* global = xpc::NativeGlobal(aGlobal.Get());
-  RefPtr<Promise> p = Promise::Create(global, aRv);
+  nsRefPtr<Promise> p = Promise::Create(global, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -255,7 +255,7 @@ RTCCertificate::GenerateCertificate(
   if (!usages.AppendElement(NS_LITERAL_STRING("sign"), fallible)) {
     return nullptr;
   }
-  RefPtr<WebCryptoTask> task =
+  nsRefPtr<WebCryptoTask> task =
       new GenerateRTCCertificateTask(aGlobal.Context(),
                                      aKeygenAlgorithm, usages);
   task->DispatchWithPromise(p);
