@@ -1237,6 +1237,11 @@ DownloadsPlacesView.prototype = {
   
   doCommand(aCommand) {
     
+    if (!this.isCommandEnabled(aCommand)) {
+      return;
+    }
+
+    
     if (aCommand in this) {
       this[aCommand]();
       return;

@@ -409,7 +409,12 @@ this.DownloadUtils = {
                      getService(Ci.nsIIDNService);
 
     
-    let uri = ioService.newURI(aURIString, null, null);
+    let uri;
+    try {
+      uri = ioService.newURI(aURIString, null, null);
+    } catch (ex) {
+      return ["", ""];
+    }
 
     
     if (uri instanceof Ci.nsINestedURI)

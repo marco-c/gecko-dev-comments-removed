@@ -836,7 +836,9 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
       target: { path: file.path, partFilePath: file.path + ".part" }
     });
     download.tryToKeepPartialData = true;
-    download.start();
+
+    
+    download.start().catch(() => {});
 
     
     let list = yield Downloads.getList(Downloads.ALL);
