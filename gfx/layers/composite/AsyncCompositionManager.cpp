@@ -428,7 +428,6 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
                                                    const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
                                                    const ScreenMargin& aFixedLayerMargins,
-                                                   bool aTransformAffectsLayerClip,
                                                    ClipPartsCache* aClipPartsCache)
 {
   bool needsAsyncTransformUnapplied = false;
@@ -446,7 +445,6 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
       AlignFixedAndStickyLayers(child, aTransformedSubtreeRoot, aTransformScrollId,
                                 aPreviousTransformForRoot,
                                 aCurrentTransformForRoot, aFixedLayerMargins,
-                                true ,
                                 aClipPartsCache);
     }
     return;
@@ -531,7 +529,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   
   TranslateShadowLayer(aLayer, ThebesPoint(translation.ToUnknownPoint()),
-      aTransformAffectsLayerClip, aClipPartsCache);
+      true, aClipPartsCache);
 }
 
 static void
@@ -985,7 +983,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
                               transformWithoutOverscrollOrOmta, fixedLayerMargins,
-                              clipParts.IsSome(), &aClipPartsCache);
+                              &aClipPartsCache);
 
     
     
@@ -1425,7 +1423,7 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
   
   AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
                             aLayer->GetLocalTransformTyped(),
-                            fixedLayerMargins, false, nullptr);
+                            fixedLayerMargins, nullptr);
 
   ExpandRootClipRect(aLayer, fixedLayerMargins);
 }
