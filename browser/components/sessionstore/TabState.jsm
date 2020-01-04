@@ -131,10 +131,15 @@ var TabStateInternal = {
     
     
     
-    
     if (!("userTypedValue" in tabData) && browser.userTypedValue) {
       tabData.userTypedValue = browser.userTypedValue;
-      tabData.userTypedClear = browser.userTypedClear;
+      
+      
+      
+      
+      
+      
+      tabData.userTypedClear = browser.didStartLoadSinceLastUserTyping() ? 1 : 0;
     }
 
     return tabData;
