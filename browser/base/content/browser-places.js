@@ -378,9 +378,9 @@ var PlacesCommandHook = {
       return;
     }
 
-    let pageProxyFavicon = document.getElementById("page-proxy-favicon");
-    if (isElementVisible(pageProxyFavicon)) {
-      StarUI.showEditBookmarkPopup(itemId, pageProxyFavicon,
+    let identityIcon = document.getElementById("identity-icon");
+    if (isElementVisible(identityIcon)) {
+      StarUI.showEditBookmarkPopup(itemId, identityIcon,
                                    "bottomcenter topright");
     } else {
       StarUI.showEditBookmarkPopup(itemId, aBrowser, "overlap");
@@ -454,9 +454,9 @@ var PlacesCommandHook = {
       return;
     }
 
-    let pageProxyFavicon = document.getElementById("page-proxy-favicon");
-    if (isElementVisible(pageProxyFavicon)) {
-      StarUI.showEditBookmarkPopup(node, pageProxyFavicon,
+    let identityIcon = document.getElementById("identity-icon");
+    if (isElementVisible(identityIcon)) {
+      StarUI.showEditBookmarkPopup(node, identityIcon,
                                    "bottomcenter topright");
     } else {
       StarUI.showEditBookmarkPopup(node, aBrowser, "overlap");
