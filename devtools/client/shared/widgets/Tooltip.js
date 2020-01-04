@@ -14,9 +14,6 @@ const {TooltipToggle} = require("devtools/client/shared/widgets/tooltip/TooltipT
 const EventEmitter = require("devtools/shared/event-emitter");
 const {colorUtils} = require("devtools/shared/css-color");
 const Heritage = require("sdk/core/heritage");
-const {Eyedropper} = require("devtools/client/eyedropper/eyedropper");
-const {gDevTools} = require("devtools/client/framework/devtools");
-const Services = require("Services");
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const {HTMLTooltip} = require("devtools/client/shared/widgets/HTMLTooltip");
 const {KeyShortcuts} = require("devtools/client/shared/key-shortcuts");
@@ -747,9 +744,13 @@ SwatchBasedEditorTooltip.prototype = {
 
 
 
-function SwatchColorPickerTooltip(toolbox) {
+
+
+function SwatchColorPickerTooltip(toolbox, inspector) {
   let stylesheet = "chrome://devtools/content/shared/widgets/spectrum.css";
   SwatchBasedEditorTooltip.call(this, toolbox, stylesheet);
+
+  this.inspector = inspector;
 
   
   
@@ -810,8 +811,16 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
       this.spectrum.updateUI();
     }
 
-    let eyeButton = this.tooltip.doc.querySelector("#eyedropper-button");
-    eyeButton.addEventListener("click", this._openEyeDropper);
+    let {target} = this.inspector.toolbox;
+    target.actorHasMethod("inspector", "pickColorFromPage").then(value => {
+      let tooltipDoc = this.tooltip.doc;
+      let eyeButton = tooltipDoc.querySelector("#eyedropper-button");
+      if (value) {
+        eyeButton.addEventListener("click", this._openEyeDropper);
+      } else {
+        eyeButton.style.display = "none";
+      }
+    }, e => console.error(e));
   },
 
   _onSpectrumColorChange: function (event, rgba, cssColor) {
@@ -834,39 +843,25 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
   },
 
   _openEyeDropper: function () {
-    let chromeWindow = this.tooltip.doc.defaultView.top;
-    let windowType = chromeWindow.document.documentElement
-                     .getAttribute("windowtype");
-    let toolboxWindow;
-    if (windowType != gDevTools.chromeWindowType) {
-      
-      
-      toolboxWindow = chromeWindow;
-      chromeWindow = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
-      chromeWindow.focus();
-    }
-    let dropper = new Eyedropper(chromeWindow, { copyOnSelect: false,
-                                                 context: "picker" });
+    let {inspector, toolbox} = this.inspector;
+    inspector.pickColorFromPage({copyOnSelect: false}).catch(e => console.error(e));
 
-    dropper.once("select", (event, color) => {
-      if (toolboxWindow) {
-        toolboxWindow.focus();
-      }
+    inspector.once("color-picked", color => {
+      toolbox.win.focus();
       this._selectColor(color);
     });
 
-    dropper.once("destroy", () => {
+    inspector.once("color-pick-canceled", () => {
       this.eyedropperOpen = false;
       this.activeSwatch = null;
     });
 
-    dropper.open();
     this.eyedropperOpen = true;
 
     
     this.hide();
 
-    this.tooltip.emit("eyedropper-opened", dropper);
+    this.tooltip.emit("eyedropper-opened");
   },
 
   _colorToRgba: function (color) {
@@ -883,6 +878,7 @@ Heritage.extend(SwatchBasedEditorTooltip.prototype, {
 
   destroy: function () {
     SwatchBasedEditorTooltip.prototype.destroy.call(this);
+    this.inspector = null;
     this.currentSwatchColor = null;
     this.spectrum.off("changed", this._onSpectrumColorChange);
     this.spectrum.destroy();
