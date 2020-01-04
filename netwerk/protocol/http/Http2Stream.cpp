@@ -325,7 +325,19 @@ Http2Stream::WriteSegments(nsAHttpSegmentWriter *writer,
     
 
     
-    rv = BufferInput(count, countWritten);
+    
+    bool doBuffer = true;
+    if (mIsTunnel) {
+      nsRefPtr<SpdyConnectTransaction> qiTrans(mTransaction->QuerySpdyConnectTransaction());
+      if (qiTrans) {
+        doBuffer = qiTrans->ConnectedReadyForInput();
+      }
+    }
+    
+    if (doBuffer) {
+      rv = BufferInput(count, countWritten);
+      LOG3(("Http2Stream::WriteSegments %p Buffered %X %d\n", this, rv, *countWritten));
+    }
   }
   mSegmentWriter = nullptr;
   return rv;
