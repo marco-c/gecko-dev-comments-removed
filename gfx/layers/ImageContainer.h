@@ -15,6 +15,7 @@
 #include "mozilla/ReentrantMonitor.h"   
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/layers/GonkNativeHandle.h"
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"                  
@@ -846,6 +847,11 @@ public:
     gfx::IntSize mSize;
   };
 
+  struct SidebandStreamData {
+    GonkNativeHandle mStream;
+    gfx::IntSize mSize;
+  };
+
   OverlayImage() : Image(nullptr, ImageFormat::OVERLAY_IMAGE) { mOverlayId = INVALID_OVERLAY; }
 
   void SetData(const Data& aData)
@@ -854,13 +860,21 @@ public:
     mSize = aData.mSize;
   }
 
+  void SetData(const SidebandStreamData& aData)
+  {
+    mSidebandStream = aData.mStream;
+    mSize = aData.mSize;
+  }
+
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() { return nullptr; } ;
   int32_t GetOverlayId() { return mOverlayId; }
+  const GonkNativeHandle& GetSidebandStream() { return mSidebandStream; }
 
   gfx::IntSize GetSize() { return mSize; }
 
 private:
   int32_t mOverlayId;
+  GonkNativeHandle mSidebandStream;
   gfx::IntSize mSize;
 };
 #endif
