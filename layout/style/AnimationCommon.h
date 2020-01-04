@@ -7,6 +7,7 @@
 #define mozilla_css_AnimationCommon_h
 
 #include <algorithm> 
+#include "nsIStyleRuleProcessor.h"
 #include "nsChangeHint.h"
 #include "nsCSSProperty.h"
 #include "nsDisplayList.h" 
@@ -32,9 +33,28 @@ namespace mozilla {
 
 struct AnimationCollection;
 
-class CommonAnimationManager {
+class CommonAnimationManager : public nsIStyleRuleProcessor {
 public:
   explicit CommonAnimationManager(nsPresContext *aPresContext);
+
+  
+  virtual nsRestyleHint HasStateDependentStyle(StateRuleProcessorData* aData) override;
+  virtual nsRestyleHint HasStateDependentStyle(PseudoElementStateRuleProcessorData* aData) override;
+  virtual bool HasDocumentStateDependentStyle(StateRuleProcessorData* aData) override;
+  virtual nsRestyleHint
+    HasAttributeDependentStyle(AttributeRuleProcessorData* aData,
+                               RestyleHintData& aRestyleHintDataResult) override;
+  virtual bool MediumFeaturesChanged(nsPresContext* aPresContext) override;
+  virtual void RulesMatching(ElementRuleProcessorData* aData) override;
+  virtual void RulesMatching(PseudoElementRuleProcessorData* aData) override;
+  virtual void RulesMatching(AnonBoxRuleProcessorData* aData) override;
+#ifdef MOZ_XUL
+  virtual void RulesMatching(XULTreeRuleProcessorData* aData) override;
+#endif
+  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf)
+    const MOZ_MUST_OVERRIDE override;
+  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf)
+    const MOZ_MUST_OVERRIDE override;
 
   
   nsPresContext* PresContext() const { return mPresContext; }

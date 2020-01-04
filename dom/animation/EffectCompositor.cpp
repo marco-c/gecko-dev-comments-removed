@@ -19,7 +19,6 @@
 #include "nsIPresShell.h"
 #include "nsLayoutUtils.h"
 #include "nsRuleNode.h" 
-#include "nsRuleProcessorData.h" 
 #include "nsTArray.h"
 #include "RestyleManager.h"
 
@@ -237,36 +236,17 @@ EffectCompositor::GetAnimationRule(dom::Element* aElement,
                                    nsCSSPseudoElements::Type aPseudoType,
                                    CascadeLevel aCascadeLevel)
 {
-  
-  
-  
-  
-  
-  
-  
-  
-
   if (!mPresContext || !mPresContext->IsDynamic()) {
-    
-    return nullptr;
-  }
-
-  if (mPresContext->RestyleManager()->SkipAnimationRules()) {
-    
-    
     
     return nullptr;
   }
 
   EffectSet* effectSet = EffectSet::GetEffectSet(aElement, aPseudoType);
   if (!effectSet) {
-    
-    
-    
-    auto& elementsToRestyle = mElementsToRestyle[aCascadeLevel];
-    PseudoElementHashKey key = { aElement, aPseudoType };
-    elementsToRestyle.Remove(key);
+    return nullptr;
+  }
 
+  if (mPresContext->RestyleManager()->SkipAnimationRules()) {
     return nullptr;
   }
 
@@ -698,112 +678,6 @@ EffectCompositor::GetPresContext(Element* aElement)
     return nullptr;
   }
   return shell->GetPresContext();
-}
-
-
-
-
-
-
-
-NS_IMPL_ISUPPORTS(EffectCompositor::AnimationStyleRuleProcessor,
-                  nsIStyleRuleProcessor)
-
-nsRestyleHint
-EffectCompositor::AnimationStyleRuleProcessor::HasStateDependentStyle(
-  StateRuleProcessorData* aData)
-{
-  return nsRestyleHint(0);
-}
-
-nsRestyleHint
-EffectCompositor::AnimationStyleRuleProcessor::HasStateDependentStyle(
-  PseudoElementStateRuleProcessorData* aData)
-{
-  return nsRestyleHint(0);
-}
-
-bool
-EffectCompositor::AnimationStyleRuleProcessor::HasDocumentStateDependentStyle(
-  StateRuleProcessorData* aData)
-{
-  return false;
-}
-
-nsRestyleHint
-EffectCompositor::AnimationStyleRuleProcessor::HasAttributeDependentStyle(
-                        AttributeRuleProcessorData* aData,
-                        RestyleHintData& aRestyleHintDataResult)
-{
-  return nsRestyleHint(0);
-}
-
-bool
-EffectCompositor::AnimationStyleRuleProcessor::MediumFeaturesChanged(
-  nsPresContext* aPresContext)
-{
-  return false;
-}
-
-void
-EffectCompositor::AnimationStyleRuleProcessor::RulesMatching(
-  ElementRuleProcessorData* aData)
-{
-  nsIStyleRule *rule =
-    mCompositor->GetAnimationRule(aData->mElement,
-                                  nsCSSPseudoElements::ePseudo_NotPseudoElement,
-                                  mCascadeLevel);
-  if (rule) {
-    aData->mRuleWalker->Forward(rule);
-    aData->mRuleWalker->CurrentNode()->SetIsAnimationRule();
-  }
-}
-
-void
-EffectCompositor::AnimationStyleRuleProcessor::RulesMatching(
-  PseudoElementRuleProcessorData* aData)
-{
-  if (aData->mPseudoType != nsCSSPseudoElements::ePseudo_before &&
-      aData->mPseudoType != nsCSSPseudoElements::ePseudo_after) {
-    return;
-  }
-
-  nsIStyleRule *rule =
-    mCompositor->GetAnimationRule(aData->mElement,
-                                  aData->mPseudoType,
-                                  mCascadeLevel);
-  if (rule) {
-    aData->mRuleWalker->Forward(rule);
-    aData->mRuleWalker->CurrentNode()->SetIsAnimationRule();
-  }
-}
-
-void
-EffectCompositor::AnimationStyleRuleProcessor::RulesMatching(
-  AnonBoxRuleProcessorData* aData)
-{
-}
-
-#ifdef MOZ_XUL
-void
-EffectCompositor::AnimationStyleRuleProcessor::RulesMatching(
-  XULTreeRuleProcessorData* aData)
-{
-}
-#endif
-
-size_t
-EffectCompositor::AnimationStyleRuleProcessor::SizeOfExcludingThis(
-  MallocSizeOf aMallocSizeOf) const
-{
-  return 0;
-}
-
-size_t
-EffectCompositor::AnimationStyleRuleProcessor::SizeOfIncludingThis(
-  MallocSizeOf aMallocSizeOf) const
-{
-  return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
 } 

@@ -186,14 +186,6 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
         RequestRestyle(mTarget, mPseudoType, restyleType,
                        mAnimation->CascadeLevel());
     }
-
-    
-    
-    
-    
-    if (!isRelevant) {
-      mProgressOnLastCompose.SetNull();
-    }
   }
 }
 
@@ -623,9 +615,6 @@ KeyframeEffectReadOnly::UpdateTargetRegistration()
     EffectSet* effectSet = EffectSet::GetEffectSet(mTarget, mPseudoType);
     if (effectSet) {
       effectSet->RemoveEffect(*this);
-      if (effectSet->IsEmpty()) {
-        EffectSet::DestroyEffectSet(mTarget, mPseudoType);
-      }
     }
   }
 }
