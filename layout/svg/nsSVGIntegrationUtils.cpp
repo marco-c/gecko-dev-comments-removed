@@ -411,6 +411,22 @@ private:
 };
 
 static IntRect
+ComputeClipExtsInDeviceSpace(gfxContext& aCtx)
+{
+  gfxContextMatrixAutoSaveRestore matRestore(&aCtx);
+
+  
+  aCtx.SetMatrix(gfxMatrix());
+  gfxRect clippedFrameSurfaceRect = aCtx.GetClipExtents();
+  clippedFrameSurfaceRect.RoundOut();
+
+  IntRect result;
+  ToRect(clippedFrameSurfaceRect).ToIntRect(&result);
+  return mozilla::gfx::Factory::CheckSurfaceSize(result.Size()) ? result
+                                                                : IntRect();
+}
+
+static IntRect
 ComputeMaskGeometry(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
                     const nsStyleSVGReset *svgReset,
                     const nsPoint& aOffsetToUserSpace,
@@ -463,17 +479,10 @@ ComputeMaskGeometry(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
     ctx.Clip(maskInUserSpace);
   }
 
-  
-  ctx.SetMatrix(gfxMatrix());
-  gfxRect clippedFrameSurfaceRect = ctx.GetClipExtents();
-  clippedFrameSurfaceRect.RoundOut();
-
+  IntRect result = ComputeClipExtsInDeviceSpace(ctx);
   ctx.Restore();
 
-  IntRect result;
-  ToRect(clippedFrameSurfaceRect).ToIntRect(&result);
-  return mozilla::gfx::Factory::CheckSurfaceSize(result.Size()) ? result
-                                                                : IntRect();
+  return result;
 }
 
 static DrawResult
@@ -731,15 +740,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
   if (frame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
     
     
-    gfxRect clipRect;
-    {
-      gfxContextMatrixAutoSaveRestore matRestore(&context);
-
-      context.SetMatrix(gfxMatrix());
-      clipRect = context.GetClipExtents();
-    }
-
-    IntRect drawRect = RoundedOut(ToRect(clipRect));
+    IntRect drawRect = ComputeClipExtsInDeviceSpace(context);
 
     RefPtr<DrawTarget> targetDT = context.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(), SurfaceFormat::B8G8R8A8);
     if (!targetDT || !targetDT->IsValid()) {
