@@ -67,6 +67,12 @@ Object.defineProperty(this, "gCrashReporter", {
 });
 
 
+
+
+
+const isContent = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
+
+
 const DELAY_WARNING_MS = 10 * 1000;
 
 
@@ -979,10 +985,21 @@ Barrier.prototype = Object.freeze({
 
 
 
-this.AsyncShutdown.profileChangeTeardown = getPhase("profile-change-teardown");
-this.AsyncShutdown.profileBeforeChange = getPhase("profile-before-change");
-this.AsyncShutdown.placesClosingInternalConnection = getPhase("places-will-close-connection");
-this.AsyncShutdown.sendTelemetry = getPhase("profile-before-change2");
+
+if (!isContent) {
+  this.AsyncShutdown.profileChangeTeardown = getPhase("profile-change-teardown");
+  this.AsyncShutdown.profileBeforeChange = getPhase("profile-before-change");
+  this.AsyncShutdown.placesClosingInternalConnection = getPhase("places-will-close-connection");
+  this.AsyncShutdown.sendTelemetry = getPhase("profile-before-change2");
+}
+
+
+
+if (isContent) {
+  this.AsyncShutdown.contentChildShutdown = getPhase("content-child-shutdown");
+}
+
+
 this.AsyncShutdown.webWorkersShutdown = getPhase("web-workers-shutdown");
 this.AsyncShutdown.xpcomThreadsShutdown = getPhase("xpcom-threads-shutdown");
 

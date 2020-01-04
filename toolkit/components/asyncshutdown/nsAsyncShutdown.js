@@ -226,17 +226,25 @@ function nsAsyncShutdownService() {
   
 
   for (let _k of
-   ["profileBeforeChange",
+   [
+    "profileBeforeChange",
     "profileChangeTeardown",
     "sendTelemetry",
+
+    
+    "contentChildShutdown",
+
+    
     "webWorkersShutdown",
-    "xpcomThreadsShutdown"]) {
+    "xpcomThreadsShutdown",
+    ]) {
     let k = _k;
     Object.defineProperty(this, k, {
       configurable: true,
       get: function() {
         delete this[k];
-        let result = new nsAsyncShutdownClient(AsyncShutdown[k]);
+        let wrapped = AsyncShutdown[k]; 
+        let result = wrapped ? new nsAsyncShutdownClient(wrapped) : undefined;
         Object.defineProperty(this, k, {
           value: result
         });
@@ -266,4 +274,3 @@ this.NSGetFactory = XPCOMUtils.generateNSGetFactory([
     nsAsyncShutdownBarrier,
     nsAsyncShutdownClient,
 ]);
-
