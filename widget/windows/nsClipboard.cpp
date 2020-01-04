@@ -92,9 +92,8 @@ UINT nsClipboard::GetFormat(const char* aMimeStr)
 {
   UINT format;
 
-  if (strcmp(aMimeStr, kTextMime) == 0)
-    format = CF_TEXT;
-  else if (strcmp(aMimeStr, kUnicodeMime) == 0)
+  if (strcmp(aMimeStr, kTextMime) == 0 ||
+      strcmp(aMimeStr, kUnicodeMime) == 0)
     format = CF_UNICODETEXT;
   else if (strcmp(aMimeStr, kJPEGImageMime) == 0 ||
            strcmp(aMimeStr, kJPGImageMime) == 0 ||
@@ -177,14 +176,7 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
       
       
       
-      if ( strcmp(flavorStr, kUnicodeMime) == 0 ) {
-        
-        
-        FORMATETC textFE;
-        SET_FORMATETC(textFE, CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
-        dObj->AddDataFlavor(kTextMime, &textFE);
-      }
-      else if ( strcmp(flavorStr, kHTMLMime) == 0 ) {      
+      if ( strcmp(flavorStr, kHTMLMime) == 0 ) {
         
         
         FORMATETC htmlFE;
@@ -196,14 +188,10 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
         
         
         FORMATETC shortcutFE;
-        SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-        dObj->AddDataFlavor(kURLMime, &shortcutFE);      
         SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
         dObj->AddDataFlavor(kURLMime, &shortcutFE);      
         SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_FILECONTENTS), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
         dObj->AddDataFlavor(kURLMime, &shortcutFE);  
-        SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLA), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-        dObj->AddDataFlavor(kURLMime, &shortcutFE);      
         SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLW), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
         dObj->AddDataFlavor(kURLMime, &shortcutFE);      
       }
@@ -616,9 +604,7 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
       
       
       if ( !dataFound ) {
-        if ( strcmp(flavorStr, kUnicodeMime) == 0 )
-          dataFound = FindUnicodeFromPlainText ( aDataObject, anIndex, &data, &dataLen );
-        else if ( strcmp(flavorStr, kURLMime) == 0 ) {
+        if ( strcmp(flavorStr, kURLMime) == 0 ) {
           
           
           dataFound = FindURLFromNativeURL ( aDataObject, anIndex, &data, &dataLen );
@@ -746,40 +732,6 @@ nsClipboard :: FindPlatformHTML ( IDataObject* inDataObject, UINT inIndex, void*
 
 
 
-bool
-nsClipboard :: FindUnicodeFromPlainText ( IDataObject* inDataObject, UINT inIndex, void** outData, uint32_t* outDataLen )
-{
-  bool dataFound = false;
-
-  
-  
-  nsresult loadResult = GetNativeDataOffClipboard(inDataObject, inIndex, GetFormat(kTextMime), nullptr, outData, outDataLen);
-  if ( NS_SUCCEEDED(loadResult) && *outData ) {
-    const char* castedText = reinterpret_cast<char*>(*outData);          
-    char16_t* convertedText = nullptr;
-    int32_t convertedTextLen = 0;
-    nsPrimitiveHelpers::ConvertPlatformPlainTextToUnicode ( castedText, *outDataLen, 
-                                                              &convertedText, &convertedTextLen );
-    if ( convertedText ) {
-      
-      free(*outData);
-      *outData = convertedText;
-      *outDataLen = convertedTextLen * sizeof(char16_t);
-      dataFound = true;
-    }
-  } 
-
-  return dataFound;
-
-} 
-
-
-
-
-
-
-
-
 
 
 bool
@@ -860,29 +812,6 @@ nsClipboard :: FindURLFromNativeURL ( IDataObject* inDataObject, UINT inIndex, v
     *outDataLen = NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
     free(tempOutData);
     dataFound = true;
-  }
-  else {
-    loadResult = GetNativeDataOffClipboard(inDataObject, inIndex, ::RegisterClipboardFormat(CFSTR_INETURLA), nullptr, &tempOutData, &tempDataLen);
-    if ( NS_SUCCEEDED(loadResult) && tempOutData ) {
-      
-      
-      nsCString urlUnescapedA;
-      bool unescaped = NS_UnescapeURL(static_cast<char*>(tempOutData), tempDataLen, esc_OnlyNonASCII | esc_SkipControl, urlUnescapedA);
-
-      nsString urlString;
-      if (unescaped)
-        NS_CopyNativeToUnicode(urlUnescapedA, urlString);
-      else
-        NS_CopyNativeToUnicode(nsDependentCString(static_cast<char*>(tempOutData), tempDataLen), urlString);
-
-      
-      
-      
-      *outData = ToNewUnicode(urlString + NS_LITERAL_STRING("\n") + urlString);
-      *outDataLen = NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
-      free(tempOutData);
-      dataFound = true;
-    }
   }
 
   return dataFound;
@@ -979,16 +908,6 @@ NS_IMETHODIMP nsClipboard::HasDataMatchingFlavors(const char** aFlavorList,
     if (IsClipboardFormatAvailable(format)) {
       *_retval = true;
       break;
-    }
-    else {
-      
-      
-      if (strcmp(aFlavorList[i], kUnicodeMime) == 0) {
-        
-        
-        if (IsClipboardFormatAvailable(GetFormat(kTextMime)))
-          *_retval = true;
-      }
     }
   }
 
