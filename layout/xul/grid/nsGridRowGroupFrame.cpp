@@ -48,7 +48,7 @@ nsGridRowGroupFrame::GetXULFlex()
 
   
   nscoord totalFlex = 0;
-  nsIFrame* child = nsBox::GetChildBox(this);
+  nsIFrame* child = nsBox::GetChildXULBox(this);
   while (child)
   {
     totalFlex += child->GetXULFlex();

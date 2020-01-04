@@ -211,7 +211,7 @@ nsDeckFrame::DoLayout(nsBoxLayoutState& aState)
   nsresult rv = nsBoxFrame::DoLayout(aState);
 
   
-  nsIFrame* box = nsBox::GetChildBox(this);
+  nsIFrame* box = nsBox::GetChildXULBox(this);
 
   nscoord count = 0;
   while (box) 

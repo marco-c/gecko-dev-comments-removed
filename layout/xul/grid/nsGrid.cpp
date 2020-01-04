@@ -245,7 +245,7 @@ nsGrid::FindRowsAndColumns(nsIFrame** aRows, nsIFrame** aColumns)
   nsIFrame* child = nullptr;
   
   if (mBox)
-    child = nsBox::GetChildBox(mBox);
+    child = nsBox::GetChildXULBox(mBox);
 
   while(child)
   {
@@ -397,7 +397,7 @@ nsGrid::PopulateCellMap(nsGridRow* aRows, nsGridRow* aColumns, int32_t aRowCount
 
      child = row->mBox;
      if (child) {
-       child = nsBox::GetChildBox(child);
+       child = nsBox::GetChildXULBox(child);
 
        j = 0;
 

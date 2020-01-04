@@ -138,7 +138,7 @@ nsBox::BeginLayout(nsBoxLayoutState& aState)
     
     
     nsIFrame* box;
-    for (box = GetChildBox(this); box; box = GetNextBox(box))
+    for (box = GetChildXULBox(this); box; box = GetNextBox(box))
       box->AddStateBits(NS_FRAME_IS_DIRTY);
   }
 
@@ -922,7 +922,7 @@ nsBox::BoundsCheck(const nsSize& aMinSize, const nsSize& aPrefSize, const nsSize
 }
 
  nsIFrame*
-nsBox::GetChildBox(const nsIFrame* aFrame)
+nsBox::GetChildXULBox(const nsIFrame* aFrame)
 {
   
   
@@ -958,7 +958,7 @@ nsBox::GetDebugBoxAt( const nsPoint& aPoint,
   if (!thisRect.Contains(aPoint))
     return NS_ERROR_FAILURE;
 
-  nsIFrame* child = nsBox::GetChildBox(this);
+  nsIFrame* child = nsBox::GetChildXULBox(this);
   nsIFrame* hit = nullptr;
 
   *aBox = nullptr;

@@ -256,21 +256,21 @@ nsIFrame*
 nsGroupBoxFrame::GetCaptionBox(nsRect& aCaptionRect)
 {
     
-    nsIFrame* box = nsBox::GetChildBox(this);
+    nsIFrame* box = nsBox::GetChildXULBox(this);
 
     
     if (!box)
       return nullptr;
 
     
-    box = nsBox::GetChildBox(box);
+    box = nsBox::GetChildXULBox(box);
 
     
     if (!box)
       return nullptr;
 
     
-    nsIFrame* child = nsBox::GetChildBox(box);
+    nsIFrame* child = nsBox::GetChildXULBox(box);
 
     if (child) {
        
