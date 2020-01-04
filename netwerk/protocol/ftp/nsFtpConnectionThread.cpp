@@ -262,10 +262,10 @@ nsFtpState::EstablishControlConnection()
     LOG(("FTP:(%x) trying cached control\n", this));
         
     
-    nsFtpControlConnection *connection = nullptr;
+    RefPtr<nsFtpControlConnection> connection;
     
     if (!mChannel->HasLoadFlag(nsIRequest::LOAD_ANONYMOUS))
-        gFtpHandler->RemoveConnection(mChannel->URI(), &connection);
+        gFtpHandler->RemoveConnection(mChannel->URI(), getter_AddRefs(connection));
 
     if (connection) {
         mControlConnection.swap(connection);
