@@ -64,7 +64,7 @@ public:
   virtual JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   
-  nsDOMSettableTokenList* HtmlFor();
+  nsDOMTokenList* HtmlFor();
   
   void GetName(nsAString& aName)
   {
@@ -108,7 +108,7 @@ protected:
   ValueModeFlag                     mValueModeFlag;
   bool                              mIsDoneAddingChildren;
   nsString                          mDefaultValue;
-  RefPtr<nsDOMSettableTokenList>  mTokenList;
+  RefPtr<nsDOMTokenList>  mTokenList;
 };
 
 } 
