@@ -20,6 +20,12 @@ class SkMaskFilter;
 class SkPathEffect;
 class SkRasterizer;
 
+enum SkAxisAlignment {
+    kNone_SkAxisAlignment,
+    kX_SkAxisAlignment,
+    kY_SkAxisAlignment
+};
+
 
 
 
@@ -73,7 +79,8 @@ struct SkScalerContextRec {
     }
 
     uint8_t     fMaskFormat;
-    uint8_t     fStrokeJoin;
+    uint8_t     fStrokeJoin : 4;
+    uint8_t     fStrokeCap : 4;
     uint16_t    fFlags;
     
     
@@ -245,6 +252,13 @@ public:
 
     const Rec& getRec() const { return fRec; }
 
+    
+
+
+
+    SkAxisAlignment computeAxisAlignmentForHText();
+
+
 protected:
     Rec         fRec;
 
@@ -337,22 +351,6 @@ private:
 #define kPathEffect_SkDescriptorTag     SkSetFourByteTag('p', 't', 'h', 'e')
 #define kMaskFilter_SkDescriptorTag     SkSetFourByteTag('m', 's', 'k', 'f')
 #define kRasterizer_SkDescriptorTag     SkSetFourByteTag('r', 'a', 's', 't')
-
-
-
-enum SkAxisAlignment {
-    kNone_SkAxisAlignment,
-    kX_SkAxisAlignment,
-    kY_SkAxisAlignment
-};
-
-
-
-
-
-
-
-SkAxisAlignment SkComputeAxisAlignmentForHText(const SkMatrix& matrix);
 
 
 

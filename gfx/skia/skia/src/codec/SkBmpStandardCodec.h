@@ -35,10 +35,12 @@ public:
 
 
 
+
+
     SkBmpStandardCodec(const SkImageInfo& srcInfo, SkStream* stream,
             uint16_t bitsPerPixel, uint32_t numColors, uint32_t bytesPerColor,
-            uint32_t offset, SkCodec::SkScanlineOrder rowOrder,
-            bool isIco);
+            uint32_t offset, SkCodec::SkScanlineOrder rowOrder, bool isOpaque,
+            bool inIco);
 
 protected:
 
@@ -55,7 +57,7 @@ protected:
             int* inputColorCount) override;
 
 
-    uint32_t onGetFillValue(SkColorType colorType, SkAlphaType alphaType) const override;
+    uint32_t onGetFillValue(SkColorType) const override;
 
     SkSampler* getSampler(bool createIfNecessary) override {
         SkASSERT(fSwizzler);
@@ -70,7 +72,7 @@ private:
 
     bool createColorTable(SkAlphaType alphaType, int* colorCount);
 
-    bool initializeSwizzler(const SkImageInfo& dstInfo, const Options& opts);
+    void initializeSwizzler(const SkImageInfo& dstInfo, const Options& opts);
 
     int decodeRows(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes,
             const Options& opts) override;
@@ -88,8 +90,8 @@ private:
     const uint32_t                      fBytesPerColor;
     const uint32_t                      fOffset;
     SkAutoTDelete<SkSwizzler>           fSwizzler;
-    const size_t                        fSrcRowBytes;
     SkAutoTDeleteArray<uint8_t>         fSrcBuffer;
+    const bool                          fIsOpaque;
     const bool                          fInIco;
     const size_t                        fAndMaskRowBytes; 
 

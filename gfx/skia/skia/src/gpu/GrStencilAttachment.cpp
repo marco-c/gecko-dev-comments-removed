@@ -5,7 +5,6 @@
 
 
 
-
 #include "GrStencilAttachment.h"
 #include "GrResourceKey.h"
 

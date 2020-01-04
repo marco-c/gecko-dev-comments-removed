@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGGradient_DEFINED
 #define SkSVGGradient_DEFINED
 

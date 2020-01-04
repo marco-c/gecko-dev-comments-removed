@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGText_DEFINED
 #define SkSVGText_DEFINED
 

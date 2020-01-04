@@ -9,6 +9,8 @@
 #define SkLayerInfo_DEFINED
 
 #include "SkBigPicture.h"
+#include "SkMatrix.h"
+#include "SkPaint.h"
 #include "SkTArray.h"
 
 

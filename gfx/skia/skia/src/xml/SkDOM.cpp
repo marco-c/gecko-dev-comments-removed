@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkDOM.h"
 #include "SkStream.h"
 #include "SkXMLWriter.h"
@@ -374,7 +373,7 @@ SkXMLParser* SkDOM::beginParsing() {
 const SkDOM::Node* SkDOM::finishParsing() {
     SkASSERT(fParser);
     fRoot = fParser->getRoot();
-    fParser.free();
+    fParser.reset();
 
     return fRoot;
 }

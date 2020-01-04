@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkBase64.h"
 
 #define DecodePad -2
@@ -29,7 +28,7 @@ static const signed char decodeData[] = {
 SkBase64::SkBase64() : fLength((size_t) -1), fData(nullptr) {
 }
 
-#if defined _WIN32 && _MSC_VER >= 1300  
+#if defined _WIN32  
 #pragma warning ( push )
 #pragma warning ( disable : 4701 )
 #endif
@@ -105,7 +104,7 @@ goHome:
     return kNoError;
 }
 
-#if defined _WIN32 && _MSC_VER >= 1300
+#if defined _WIN32
 #pragma warning ( pop )
 #endif
 

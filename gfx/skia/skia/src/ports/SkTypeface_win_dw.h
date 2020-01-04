@@ -55,7 +55,7 @@ private:
         if (!SUCCEEDED(fDWriteFontFace->QueryInterface(&fDWriteFontFace1))) {
             
             
-            SK_ALWAYSBREAK(nullptr == fDWriteFontFace1.get());
+            SkASSERT_RELEASE(nullptr == fDWriteFontFace1.get());
         }
 #endif
     }

@@ -80,7 +80,17 @@ public:
     GrTexture* texture(int index) const { return this->textureAccess(index).getTexture(); }
 
     
-    bool willReadFragmentPosition() const { return fWillReadFragmentPosition; }
+
+
+    enum RequiredFeatures {
+        kNone_RequiredFeatures             = 0,
+        kFragmentPosition_RequiredFeature  = 1 << 0,
+        kSampleLocations_RequiredFeature   = 1 << 1
+    };
+
+    GR_DECL_BITFIELD_OPS_FRIENDS(RequiredFeatures);
+
+    RequiredFeatures requiredFeatures() const { return fRequiredFeatures; }
 
     void* operator new(size_t size);
     void operator delete(void* target);
@@ -100,7 +110,7 @@ public:
     uint32_t classID() const { SkASSERT(kIllegalProcessorClassID != fClassID); return fClassID; }
 
 protected:
-    GrProcessor() : fClassID(kIllegalProcessorClassID), fWillReadFragmentPosition(false) {}
+    GrProcessor() : fClassID(kIllegalProcessorClassID), fRequiredFeatures(kNone_RequiredFeatures) {}
 
     
 
@@ -117,7 +127,12 @@ protected:
 
 
 
-    void setWillReadFragmentPosition() { fWillReadFragmentPosition = true; }
+    void setWillReadFragmentPosition() { fRequiredFeatures |= kFragmentPosition_RequiredFeature; }
+    void setWillUseSampleLocations() { fRequiredFeatures |= kSampleLocations_RequiredFeature; }
+
+    void combineRequiredFeatures(const GrProcessor& other) {
+        fRequiredFeatures |= other.fRequiredFeatures;
+    }
 
     template <typename PROC_SUBCLASS> void initClassID() {
          static uint32_t kClassID = GenClassID();
@@ -145,9 +160,11 @@ private:
     };
     static int32_t gCurrProcessorClassID;
 
-    bool                                         fWillReadFragmentPosition;
+    RequiredFeatures fRequiredFeatures;
 
     typedef GrProgramElement INHERITED;
 };
+
+GR_MAKE_BITFIELD_OPS(GrProcessor::RequiredFeatures);
 
 #endif

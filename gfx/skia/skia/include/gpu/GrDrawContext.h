@@ -11,13 +11,16 @@
 #include "GrColor.h"
 #include "GrRenderTarget.h"
 #include "SkRefCnt.h"
+#include "SkRegion.h"
 #include "SkSurfaceProps.h"
 #include "../private/GrSingleOwner.h"
 
+class GrAtlasTextContext;
 class GrAuditTrail;
 class GrClip;
 class GrContext;
 class GrDrawBatch;
+class GrDrawContextPriv;
 class GrDrawPathBatchBase;
 class GrDrawingManager;
 class GrDrawTarget;
@@ -27,7 +30,6 @@ class GrPipelineBuilder;
 class GrRenderTarget;
 class GrStrokeInfo;
 class GrSurface;
-class GrTextContext;
 class SkDrawFilter;
 struct SkIPoint;
 struct SkIRect;
@@ -47,22 +49,22 @@ class SK_API GrDrawContext : public SkRefCnt {
 public:
     ~GrDrawContext() override;
 
-    void copySurface(GrSurface* src, const SkIRect& srcRect, const SkIPoint& dstPoint);
+    bool copySurface(GrSurface* src, const SkIRect& srcRect, const SkIPoint& dstPoint);
 
     
     
     
-    void drawText(const GrClip&,  const GrPaint&, const SkPaint&,
-                  const SkMatrix& viewMatrix, const char text[], size_t byteLength,
-                  SkScalar x, SkScalar y, const SkIRect& clipBounds);
-    void drawPosText(const GrClip&, const GrPaint&, const SkPaint&,
-                     const SkMatrix& viewMatrix, const char text[], size_t byteLength,
-                     const SkScalar pos[], int scalarsPerPosition,
-                     const SkPoint& offset, const SkIRect& clipBounds);
-    void drawTextBlob(const GrClip&, const SkPaint&,
-                      const SkMatrix& viewMatrix, const SkTextBlob*,
-                      SkScalar x, SkScalar y,
-                      SkDrawFilter*, const SkIRect& clipBounds);
+    virtual void drawText(const GrClip&,  const GrPaint&, const SkPaint&,
+                          const SkMatrix& viewMatrix, const char text[], size_t byteLength,
+                          SkScalar x, SkScalar y, const SkIRect& clipBounds);
+    virtual void drawPosText(const GrClip&, const GrPaint&, const SkPaint&,
+                             const SkMatrix& viewMatrix, const char text[], size_t byteLength,
+                             const SkScalar pos[], int scalarsPerPosition,
+                             const SkPoint& offset, const SkIRect& clipBounds);
+    virtual void drawTextBlob(const GrClip&, const SkPaint&,
+                              const SkMatrix& viewMatrix, const SkTextBlob*,
+                              SkScalar x, SkScalar y,
+                              SkDrawFilter*, const SkIRect& clipBounds);
 
     
 
@@ -100,7 +102,7 @@ public:
                   const GrPaint& paint,
                   const SkMatrix& viewMatrix,
                   const SkRect&,
-                  const GrStrokeInfo* strokeInfo = NULL);
+                  const GrStrokeInfo* strokeInfo = nullptr);
 
     
 
@@ -155,7 +157,6 @@ public:
                     const SkMatrix& viewMatrix,
                     const SkRRect& outer,
                     const SkRRect& inner);
-
 
     
 
@@ -275,28 +276,45 @@ public:
     int width() const { return fRenderTarget->width(); }
     int height() const { return fRenderTarget->height(); }
     int numColorSamples() const { return fRenderTarget->numColorSamples(); }
+    bool allowSRGBInputs() const { return fSurfaceProps.allowSRGBInputs(); }
 
     GrRenderTarget* accessRenderTarget() { return fRenderTarget; }
 
     
+    GrDrawContextPriv drawContextPriv();
+    const GrDrawContextPriv drawContextPriv() const;
+
+protected:
+    GrDrawContext(GrContext*, GrDrawingManager*, GrRenderTarget*,
+                  const SkSurfaceProps* surfaceProps, GrAuditTrail*, GrSingleOwner*);
+
+    GrDrawingManager* drawingManager() { return fDrawingManager; }
+    GrAuditTrail* auditTrail() { return fAuditTrail; }
+    const SkSurfaceProps& surfaceProps() const { return fSurfaceProps; }
     
-    void internal_drawBatch(const GrPipelineBuilder& pipelineBuilder, GrDrawBatch* batch);
+    SkDEBUGCODE(GrSingleOwner* singleOwner() { return fSingleOwner; })
+    SkDEBUGCODE(void validate() const;)
 
 private:
     friend class GrAtlasTextBlob; 
     friend class GrDrawingManager; 
+    friend class GrDrawContextPriv;
 
-    SkDEBUGCODE(void validate() const;)
-
-    GrDrawContext(GrDrawingManager*, GrRenderTarget*, const SkSurfaceProps* surfaceProps,
-                  GrAuditTrail*, GrSingleOwner*);
-
-    void internalDrawPath(GrPipelineBuilder*,
+    bool drawFilledDRRect(const GrClip& clip,
+                          const GrPaint& paint,
                           const SkMatrix& viewMatrix,
-                          GrColor,
-                          bool useAA,
-                          const SkPath&,
-                          const GrStrokeInfo&);
+                          const SkRRect& origOuter,
+                          const SkRRect& origInner);
+
+    GrDrawBatch* getFillRectBatch(const GrPaint& paint,
+                                  const SkMatrix& viewMatrix,
+                                  const SkRect& rect);
+
+    void internalDrawPath(const GrClip& clip,
+                          const GrPaint& paint,
+                          const SkMatrix& viewMatrix,
+                          const SkPath& path,
+                          const GrStrokeInfo& strokeInfo);
 
     
     
@@ -304,16 +322,17 @@ private:
 
     GrDrawTarget* getDrawTarget();
 
-    GrDrawingManager* fDrawingManager;
-    GrRenderTarget*   fRenderTarget;
+    GrDrawingManager*                 fDrawingManager;
+    GrRenderTarget*                   fRenderTarget;
 
     
     
-    GrDrawTarget*     fDrawTarget;
-    GrTextContext*    fTextContext; 
+    GrDrawTarget*                     fDrawTarget;
+    SkAutoTDelete<GrAtlasTextContext> fAtlasTextContext;
+    GrContext*                        fContext;
 
-    SkSurfaceProps    fSurfaceProps;
-    GrAuditTrail*     fAuditTrail;
+    SkSurfaceProps                    fSurfaceProps;
+    GrAuditTrail*                     fAuditTrail;
 
     
     SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)

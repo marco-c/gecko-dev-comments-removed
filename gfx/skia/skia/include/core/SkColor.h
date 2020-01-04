@@ -110,8 +110,7 @@ SK_API void SkRGBToHSV(U8CPU red, U8CPU green, U8CPU blue, SkScalar hsv[3]);
 
 
 
-static inline void SkColorToHSV(SkColor color, SkScalar hsv[3])
-{
+static inline void SkColorToHSV(SkColor color, SkScalar hsv[3]) {
     SkRGBToHSV(SkColorGetR(color), SkColorGetG(color), SkColorGetB(color), hsv);
 }
 
@@ -134,8 +133,7 @@ SK_API SkColor SkHSVToColor(U8CPU alpha, const SkScalar hsv[3]);
 
 
 
-static inline SkColor SkHSVToColor(const SkScalar hsv[3])
-{
+static inline SkColor SkHSVToColor(const SkScalar hsv[3]) {
     return SkHSVToColor(0xFF, hsv);
 }
 
@@ -159,5 +157,38 @@ SK_API SkPMColor SkPreMultiplyColor(SkColor c);
 
 
 typedef SkPMColor (*SkXfermodeProc)(SkPMColor src, SkPMColor dst);
+
+
+
+struct SkPM4f;
+
+
+
+
+struct SkColor4f {
+    float fA;
+    float fR;
+    float fG;
+    float fB;
+
+    bool operator==(const SkColor4f& other) const {
+        return fA == other.fA && fR == other.fR && fG == other.fG && fB == other.fB;
+    }
+    bool operator!=(const SkColor4f& other) const {
+        return !(*this == other);
+    }
+
+    const float* vec() const { return &fA; }
+    float* vec() { return &fA; }
+
+    static SkColor4f Pin(float a, float r, float g, float b);
+    static SkColor4f FromColor(SkColor);
+
+    SkColor4f pin() const {
+        return Pin(fA, fR, fG, fB);
+    }
+
+    SkPM4f premul() const;
+};
 
 #endif

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkPDFFormXObject_DEFINED
 #define SkPDFFormXObject_DEFINED
 

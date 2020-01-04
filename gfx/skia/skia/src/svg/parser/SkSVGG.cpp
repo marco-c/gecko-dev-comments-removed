@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGG.h"
 
 DEFINE_SVG_NO_INFO(G)

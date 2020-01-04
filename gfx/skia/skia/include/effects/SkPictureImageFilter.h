@@ -16,32 +16,52 @@ public:
     
 
 
+    static sk_sp<SkImageFilter> Make(sk_sp<SkPicture> picture) {
+        return sk_sp<SkImageFilter>(new SkPictureImageFilter(std::move(picture)));
+    }
+
+    
+
+
+
+    static sk_sp<SkImageFilter> Make(sk_sp<SkPicture> picture, const SkRect& cropRect) {
+        return sk_sp<SkImageFilter>(new SkPictureImageFilter(std::move(picture), 
+                                                             cropRect,
+                                                             kDeviceSpace_PictureResolution,
+                                                             kLow_SkFilterQuality));
+    }
+
+    
+
+
+
+
+
+
+    static sk_sp<SkImageFilter> MakeForLocalSpace(sk_sp<SkPicture> picture,
+                                                  const SkRect& cropRect,
+                                                  SkFilterQuality filterQuality) {
+        return sk_sp<SkImageFilter>(new SkPictureImageFilter(std::move(picture),
+                                                             cropRect,
+                                                             kLocalSpace_PictureResolution,
+                                                             filterQuality));
+    }
+
+#ifdef SK_SUPPORT_LEGACY_IMAGEFILTER_PTR
     static SkImageFilter* Create(const SkPicture* picture) {
-        return new SkPictureImageFilter(picture);
+        return Make(sk_ref_sp(const_cast<SkPicture*>(picture))).release();
     }
-
-    
-
-
-
     static SkImageFilter* Create(const SkPicture* picture, const SkRect& cropRect) {
-        return new SkPictureImageFilter(picture, cropRect, kDeviceSpace_PictureResolution,
-                                        kLow_SkFilterQuality);
+        return Make(sk_ref_sp(const_cast<SkPicture*>(picture)), cropRect).release();
     }
-
-    
-
-
-
-
-
-
     static SkImageFilter* CreateForLocalSpace(const SkPicture* picture,
-                                                     const SkRect& cropRect,
-                                                     SkFilterQuality filterQuality) {
-        return new SkPictureImageFilter(picture, cropRect, kLocalSpace_PictureResolution,
-                                        filterQuality);
+                                              const SkRect& cropRect,
+                                              SkFilterQuality filterQuality) {
+        return MakeForLocalSpace(sk_ref_sp(const_cast<SkPicture*>(picture)),
+                                           cropRect,
+                                           filterQuality).release();
     }
+#endif
 
     SK_TO_STRING_OVERRIDE()
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkPictureImageFilter)
@@ -52,8 +72,6 @@ protected:
         kLocalSpace_PictureResolution
     };
 
-    virtual ~SkPictureImageFilter();
-
     
 
 
@@ -61,12 +79,12 @@ protected:
 
 
     void flatten(SkWriteBuffer&) const override;
-    bool onFilterImage(Proxy*, const SkBitmap& src, const Context&, SkBitmap* result,
-                       SkIPoint* offset) const override;
+    bool onFilterImageDeprecated(Proxy*, const SkBitmap& src, const Context&, SkBitmap* result,
+                                 SkIPoint* offset) const override;
 
 private:
-    explicit SkPictureImageFilter(const SkPicture* picture);
-    SkPictureImageFilter(const SkPicture* picture, const SkRect& cropRect,
+    explicit SkPictureImageFilter(sk_sp<SkPicture> picture);
+    SkPictureImageFilter(sk_sp<SkPicture> picture, const SkRect& cropRect,
                          PictureResolution, SkFilterQuality);
 
     void drawPictureAtDeviceResolution(SkBaseDevice*, const SkIRect& deviceBounds,
@@ -74,7 +92,7 @@ private:
     void drawPictureAtLocalResolution(Proxy*, SkBaseDevice*, const SkIRect& deviceBounds,
                                       const Context&) const;
 
-    const SkPicture*      fPicture;
+    sk_sp<SkPicture>      fPicture;
     SkRect                fCropRect;
     PictureResolution     fPictureResolution;
     SkFilterQuality       fFilterQuality;

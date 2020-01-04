@@ -95,7 +95,7 @@ public:
 
 
 
-    static void ConvertLayersToReplacements(const SkPicture* topLevelPicture, 
+    static void ConvertLayersToReplacements(const SkPicture* topLevelPicture,
                                             const SkTDArray<GrHoistedLayer>& layers,
                                             GrReplacements* replacements);
 

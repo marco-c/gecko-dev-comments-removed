@@ -6,12 +6,10 @@
 
 
 #include "SkData.h"
-#include "SkOncePtr.h"
 #include "SkPDFCanon.h"
 #include "SkPDFFormXObject.h"
 #include "SkPDFGraphicState.h"
 #include "SkPDFUtils.h"
-#include "SkTypes.h"
 
 static const char* as_blend_mode(SkXfermode::Mode mode) {
     switch (mode) {
@@ -126,67 +124,62 @@ SkPDFGraphicState* SkPDFGraphicState::GetGraphicStateForPaint(
     return pdfGraphicState;
 }
 
-static SkPDFObject* create_invert_function() {
+sk_sp<SkPDFStream> SkPDFGraphicState::MakeInvertFunction() {
     
     
-    SkAutoTUnref<SkPDFArray> domainAndRange(new SkPDFArray);
+    auto domainAndRange = sk_make_sp<SkPDFArray>();
     domainAndRange->reserve(2);
     domainAndRange->appendInt(0);
     domainAndRange->appendInt(1);
 
     static const char psInvert[] = "{1 exch sub}";
     
-    SkAutoTUnref<SkData> psInvertStream(
+    sk_sp<SkData> psInvertStream(
             SkData::NewWithoutCopy(psInvert, strlen(psInvert)));
 
-    SkPDFStream* invertFunction = new SkPDFStream(psInvertStream.get());
+    auto invertFunction = sk_make_sp<SkPDFStream>(psInvertStream.get());
     invertFunction->insertInt("FunctionType", 4);
-    invertFunction->insertObject("Domain", SkRef(domainAndRange.get()));
-    invertFunction->insertObject("Range", domainAndRange.detach());
+    invertFunction->insertObject("Domain", domainAndRange);
+    invertFunction->insertObject("Range", std::move(domainAndRange));
     return invertFunction;
 }
 
-SK_DECLARE_STATIC_ONCE_PTR(SkPDFObject, invertFunction);
-
-
-SkPDFDict* SkPDFGraphicState::GetSMaskGraphicState(SkPDFFormXObject* sMask,
-                                                   bool invert,
-                                                   SkPDFSMaskMode sMaskMode) {
+sk_sp<SkPDFDict> SkPDFGraphicState::GetSMaskGraphicState(
+        SkPDFFormXObject* sMask,
+        bool invert,
+        SkPDFSMaskMode sMaskMode,
+        SkPDFCanon* canon) {
     
     
-    SkAutoTUnref<SkPDFDict> sMaskDict(new SkPDFDict("Mask"));
+    auto sMaskDict = sk_make_sp<SkPDFDict>("Mask");
     if (sMaskMode == kAlpha_SMaskMode) {
         sMaskDict->insertName("S", "Alpha");
     } else if (sMaskMode == kLuminosity_SMaskMode) {
         sMaskDict->insertName("S", "Luminosity");
     }
-    sMaskDict->insertObjRef("G", SkRef(sMask));
+    sMaskDict->insertObjRef("G", sk_ref_sp(sMask));
     if (invert) {
-        sMaskDict->insertObjRef("TR", SkRef(invertFunction.get(create_invert_function)));
+        
+        
+        sMaskDict->insertObjRef("TR", canon->makeInvertFunction());
     }
 
-    SkPDFDict* result = new SkPDFDict("ExtGState");
-    result->insertObject("SMask", sMaskDict.detach());
+    auto result = sk_make_sp<SkPDFDict>("ExtGState");
+    result->insertObject("SMask", std::move(sMaskDict));
     return result;
 }
 
-static SkPDFDict* create_no_smask_graphic_state() {
-    SkPDFDict* noSMaskGS = new SkPDFDict("ExtGState");
+sk_sp<SkPDFDict> SkPDFGraphicState::MakeNoSmaskGraphicState() {
+    auto noSMaskGS = sk_make_sp<SkPDFDict>("ExtGState");
     noSMaskGS->insertName("SMask", "None");
     return noSMaskGS;
-}
-SK_DECLARE_STATIC_ONCE_PTR(SkPDFDict, noSMaskGraphicState);
-
-
-SkPDFDict* SkPDFGraphicState::GetNoSMaskGraphicState() {
-    return SkRef(noSMaskGraphicState.get(create_no_smask_graphic_state));
 }
 
 void SkPDFGraphicState::emitObject(
         SkWStream* stream,
         const SkPDFObjNumMap& objNumMap,
         const SkPDFSubstituteMap& substitutes) const {
-    SkAutoTUnref<SkPDFDict> dict(new SkPDFDict("ExtGState"));
+    auto dict = sk_make_sp<SkPDFDict>("ExtGState");
     dict->insertName("Type", "ExtGState");
 
     SkScalar alpha = SkIntToScalar(fAlpha) / 0xFF;

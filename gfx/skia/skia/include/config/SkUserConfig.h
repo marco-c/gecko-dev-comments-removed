@@ -108,23 +108,9 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef SK_DEBUG
 
 #endif
-
-
 
 
 
@@ -167,8 +153,6 @@
 #define SK_IGNORE_ETC1_SUPPORT
 
 #define SK_RASTERIZE_EVEN_ROUNDING
-
-#define GR_GL_PER_GL_FUNC_CALLBACK 1
 
 #define MOZ_SKIA 1
 

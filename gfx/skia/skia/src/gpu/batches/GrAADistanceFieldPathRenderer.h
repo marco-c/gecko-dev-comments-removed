@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrAADistanceFieldPathRenderer_DEFINED
 #define GrAADistanceFieldPathRenderer_DEFINED
 
@@ -37,7 +36,7 @@ private:
         public:
             
             
-            Key() 
+            Key()
                 : fGenID(0)
                 , fDimension(0)
                 , fStroke(SkStrokeRec::kFill_InitStyle) {}
@@ -45,12 +44,12 @@ private:
                 : fGenID(genID)
                 , fDimension(dim)
                 , fStroke(stroke) {}
-           
+
             bool operator==(const Key& other) const {
                 return other.fGenID == fGenID && other.fDimension == fDimension &&
                        fStroke.hasEqualEffect(other.fStroke);
             }
-           
+
         private:
             uint32_t   fGenID;
             
@@ -64,11 +63,11 @@ private:
         SkRect                fBounds;
         SkIPoint16            fAtlasLocation;
         SK_DECLARE_INTERNAL_LLIST_INTERFACE(PathData);
-        
+
         static inline const Key& GetKey(const PathData& data) {
             return data.fKey;
         }
-        
+
         static inline uint32_t Hash(Key key) {
             return SkChecksum::Murmur3(reinterpret_cast<const uint32_t*>(&key), sizeof(key));
         }
@@ -78,11 +77,11 @@ private:
 
     typedef SkTDynamicHash<PathData, PathData::Key> PathCache;
     typedef SkTInternalLList<PathData> PathDataList;
-    
+
     GrBatchAtlas*                      fAtlas;
     PathCache                          fPathCache;
     PathDataList                       fPathList;
-    
+
     typedef GrPathRenderer INHERITED;
 
     friend class AADistanceFieldPathBatch;

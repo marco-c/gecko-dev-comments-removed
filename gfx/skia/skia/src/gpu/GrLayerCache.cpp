@@ -98,7 +98,7 @@ GrLayerCache::~GrLayerCache() {
     SkASSERT(0 == fPictureHash.count());
 
     
-    fAtlas.free();
+    fAtlas.reset();
 }
 
 void GrLayerCache::initAtlas() {
@@ -255,7 +255,7 @@ bool GrLayerCache::lock(GrCachedLayer* layer, const GrSurfaceDesc& desc, bool* n
     
     SkAutoTUnref<GrTexture> tex;
     if (layer->fFilter) {
-        tex.reset(fContext->textureProvider()->createTexture(desc, true));
+        tex.reset(fContext->textureProvider()->createTexture(desc, SkBudgeted::kYes));
     } else {
         tex.reset(fContext->textureProvider()->createApproxTexture(desc));
     }

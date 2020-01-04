@@ -12,7 +12,7 @@
 #include "SkScalar.h"
 #include "SkTypes.h"
 
-class ScaleToSides {
+class SkScaleToSides {
 public:
     
     
@@ -24,8 +24,7 @@ public:
         *a = (float)((double)*a * scale);
         *b = (float)((double)*b * scale);
 
-        
-        if ((double)*a + (double)*b > limit) {
+        if (*a + *b > limit) {
             float* minRadius = a;
             float* maxRadius = b;
 
@@ -34,6 +33,7 @@ public:
                 SkTSwap(minRadius, maxRadius);
             }
 
+            
             
             
             
@@ -48,14 +48,21 @@ public:
             
             
             
-            if ((double)newMaxRadius + (double)newMinRadius > limit) {
-                newMaxRadius = nexttowardf(newMaxRadius, 0.0);
+            if (newMaxRadius + newMinRadius > limit) {
+                newMaxRadius = nextafterf(newMaxRadius, 0.0f);
+                if (newMaxRadius + newMinRadius > limit) {
+                    newMaxRadius = nextafterf(newMaxRadius, 0.0f);
+                }
             }
             *maxRadius = newMaxRadius;
         }
 
-        SkASSERTF(*a >= 0.0f && *b >= 0.0f, "a: %g, b: %g", *a, *b);
-        SkASSERTF((*a + *b) <= limit, "limit: %g, a: %g, b: %g", limit, *a, *b);
+        SkASSERTF(*a >= 0.0f && *b >= 0.0f, "a: %g, b: %g, limit: %g, scale: %g", *a, *b, limit,
+                  scale);
+
+        SkASSERTF(*a + *b <= limit,
+                  "\nlimit: %.17f, sum: %.17f, a: %.10f, b: %.10f, scale: %.20f",
+                  limit, *a + *b, *a, *b, scale);
     }
 };
 #endif 

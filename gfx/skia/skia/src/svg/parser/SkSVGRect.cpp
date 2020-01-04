@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGRect.h"
 #include "SkSVGParser.h"
 

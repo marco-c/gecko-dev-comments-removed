@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGMetadata_DEFINED
 #define SkSVGMetadata_DEFINED
 

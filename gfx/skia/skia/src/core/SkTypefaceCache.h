@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef SkTypefaceCache_DEFINED
 #define SkTypefaceCache_DEFINED
 

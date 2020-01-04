@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGLinearGradient.h"
 #include "SkSVGParser.h"
 

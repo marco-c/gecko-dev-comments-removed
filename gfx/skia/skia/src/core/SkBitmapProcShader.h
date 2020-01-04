@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef SkBitmapProcShader_DEFINED
 #define SkBitmapProcShader_DEFINED
 
@@ -23,8 +21,6 @@ public:
 
     bool isOpaque() const override;
 
-    size_t contextSize() const override { return ContextSize(); }
-
     SK_TO_STRING_OVERRIDE()
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkBitmapProcShader)
 
@@ -34,36 +30,20 @@ public:
 #endif
 
 protected:
-    class BitmapProcShaderContext : public SkShader::Context {
-    public:
-        
-        
-        BitmapProcShaderContext(const SkShader&, const ContextRec&, SkBitmapProcState*);
-        ~BitmapProcShaderContext() override;
-
-        void shadeSpan(int x, int y, SkPMColor dstC[], int count) override;
-        ShadeProc asAShadeProc(void** ctx) override;
-
-        uint32_t getFlags() const override { return fFlags; }
-
-    private:
-        SkBitmapProcState*  fState;
-        uint32_t            fFlags;
-
-        typedef SkShader::Context INHERITED;
-    };
-    
     void flatten(SkWriteBuffer&) const override;
+    size_t onContextSize(const ContextRec& rec) const override {
+        return ContextSize(rec, fRawBitmap.info());
+    }
     Context* onCreateContext(const ContextRec&, void* storage) const override;
     bool onIsABitmap(SkBitmap*, SkMatrix*, TileMode*) const override;
 
-    SkBitmap    fRawBitmap;   
+    SkBitmap    fRawBitmap;
     uint8_t     fTileModeX, fTileModeY;
 
 private:
     friend class SkImageShader;
 
-    static size_t ContextSize();
+    static size_t ContextSize(const ContextRec&, const SkImageInfo& srcInfo);
     static Context* MakeContext(const SkShader&, TileMode tmx, TileMode tmy,
                                 const SkBitmapProvider&, const ContextRec&, void* storage);
 
@@ -75,11 +55,11 @@ private:
 
 
 
-typedef SkSmallAllocator<3, 1160> SkTBlitterAllocator;
+typedef SkSmallAllocator<3, 2100> SkTBlitterAllocator;
 
 
 
-SkShader* SkCreateBitmapShader(const SkBitmap& src, SkShader::TileMode, SkShader::TileMode,
-                               const SkMatrix* localMatrix, SkTBlitterAllocator* alloc);
+sk_sp<SkShader> SkMakeBitmapShader(const SkBitmap& src, SkShader::TileMode, SkShader::TileMode,
+                                   const SkMatrix* localMatrix, SkTBlitterAllocator* alloc);
 
 #endif

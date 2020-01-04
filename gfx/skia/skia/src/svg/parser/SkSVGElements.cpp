@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGElements.h"
 #include "SkSVGParser.h"
 

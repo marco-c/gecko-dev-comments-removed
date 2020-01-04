@@ -26,17 +26,16 @@ public:
 
 
     bool next(SkRect* src, SkRect* dst);
-    
+
 private:
     SkScalar fSrcX[4];
     SkScalar fSrcY[4];
     SkScalar fDstX[4];
     SkScalar fDstY[4];
-    
+
     int fCurrX;
     int fCurrY;
     bool fDone;
 };
 
 #endif
-

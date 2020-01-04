@@ -75,7 +75,7 @@ private:
     
     
     GrTexture* lockTexture(GrContext*, const GrUniqueKey& key, const SkImage* client,
-                           SkImage::CachingHint);
+                           SkImage::CachingHint, bool willBeMipped);
 #endif
 
     class ScopedGenerator {

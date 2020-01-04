@@ -10,7 +10,6 @@
 
 #include "SkColor.h"
 #include "SkFlattenable.h"
-#include "SkTDArray.h"
 #include "SkXfermode.h"
 
 class GrContext;
@@ -68,10 +67,12 @@ public:
 
     virtual void filterSpan(const SkPMColor src[], int count, SkPMColor result[]) const = 0;
 
+    virtual void filterSpan4f(const SkPM4f src[], int count, SkPM4f result[]) const;
+
     enum Flags {
         
 
-        kAlphaUnchanged_Flag = 0x01,
+        kAlphaUnchanged_Flag = 1 << 0,
     };
 
     
@@ -85,7 +86,7 @@ public:
 
 
 
-    virtual SkColorFilter* newComposed(const SkColorFilter* ) const { return NULL; }
+    virtual sk_sp<SkColorFilter> makeComposed(sk_sp<SkColorFilter>) const { return nullptr; }
 
     
 
@@ -98,13 +99,7 @@ public:
     
 
 
-
-
-
-
-
-
-    static SkColorFilter* CreateModeFilter(SkColor c, SkXfermode::Mode mode);
+    SkColor4f filterColor4f(const SkColor4f&) const;
 
     
 
@@ -113,7 +108,39 @@ public:
 
 
 
-    static SkColorFilter* CreateComposeFilter(SkColorFilter* outer, SkColorFilter* inner);
+
+
+    static sk_sp<SkColorFilter> MakeModeFilter(SkColor c, SkXfermode::Mode mode);
+
+    
+
+
+
+
+
+
+    static sk_sp<SkColorFilter> MakeComposeFilter(sk_sp<SkColorFilter> outer,
+                                                  sk_sp<SkColorFilter> inner);
+
+    
+
+
+    static sk_sp<SkColorFilter> MakeMatrixFilterRowMajor255(const SkScalar array[20]);
+
+#ifdef SK_SUPPORT_LEGACY_COLORFILTER_PTR
+    static SkColorFilter* CreateModeFilter(SkColor c, SkXfermode::Mode mode) {
+        return MakeModeFilter(c, mode).release();
+    }
+    static SkColorFilter* CreateComposeFilter(SkColorFilter* outer, SkColorFilter* inner) {
+        return MakeComposeFilter(sk_ref_sp(outer), sk_ref_sp(inner)).release();
+    }
+    static SkColorFilter* CreateMatrixFilterRowMajor255(const SkScalar array[20]) {
+        return MakeMatrixFilterRowMajor255(array).release();
+    }
+    virtual SkColorFilter* newComposed(const SkColorFilter* inner) const {
+        return this->makeComposed(sk_ref_sp(const_cast<SkColorFilter*>(inner))).release();
+    }
+#endif
 
     
 

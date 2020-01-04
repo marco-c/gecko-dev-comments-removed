@@ -10,7 +10,6 @@
 
 #include "SkMatrix.h"
 #include "SkPathRef.h"
-#include "SkTDArray.h"
 #include "SkRefCnt.h"
 
 class SkReader32;
@@ -36,6 +35,27 @@ public:
     friend bool operator!=(const SkPath& a, const SkPath& b) {
         return !(a == b);
     }
+
+    
+
+
+
+
+
+
+
+    bool isInterpolatable(const SkPath& compare) const;
+
+    
+
+
+
+
+
+
+
+
+    bool interpolate(const SkPath& ending, SkScalar weight, SkPath* out) const;
 
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
     
@@ -186,6 +206,10 @@ public:
         SkDEBUGCODE(this->validate();)
         return 0 == fPathRef->countVerbs();
     }
+
+    
+
+    bool isLastContourClosed() const;
 
     
 
@@ -495,10 +519,12 @@ public:
         this->arcTo(p1.fX, p1.fY, p2.fX, p2.fY, radius);
     }
 
-    
-
-
-    void close();
+    enum ArcSize {
+        
+        kSmall_ArcSize,
+        
+        kLarge_ArcSize,
+    };
 
     enum Direction {
         
@@ -506,6 +532,48 @@ public:
         
         kCCW_Direction,
     };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    void arcTo(SkScalar rx, SkScalar ry, SkScalar xAxisRotate, ArcSize largeArc,
+               Direction sweep, SkScalar x, SkScalar y);
+
+    void arcTo(const SkPoint r, SkScalar xAxisRotate, ArcSize largeArc, Direction sweep,
+               const SkPoint xy) {
+        this->arcTo(r.fX, r.fY, xAxisRotate, largeArc, sweep, xy.fX, xy.fY);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    void rArcTo(SkScalar rx, SkScalar ry, SkScalar xAxisRotate, ArcSize largeArc,
+                Direction sweep, SkScalar dx, SkScalar dy);
+
+    
+
+
+    void close();
 
     
 
@@ -1027,8 +1095,8 @@ private:
 
     enum SerializationVersions {
         kPathPrivFirstDirection_Version = 1,
-
-        kCurrent_Version = 1
+        kPathPrivLastMoveToIndex_Version = 2,
+        kCurrent_Version = 2
     };
 
     SkAutoTUnref<SkPathRef>                            fPathRef;
@@ -1074,6 +1142,10 @@ private:
 
     bool isRectContour(bool allowPartial, int* currVerb, const SkPoint** pts,
                        bool* isClosed, Direction* direction) const;
+
+    
+    
+    bool isZeroLength() const;
 
     
 

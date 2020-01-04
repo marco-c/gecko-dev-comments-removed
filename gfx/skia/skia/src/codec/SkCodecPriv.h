@@ -12,7 +12,12 @@
 #include "SkColorTable.h"
 #include "SkImageInfo.h"
 #include "SkTypes.h"
-#include "SkUtils.h"
+
+#ifdef SK_PRINT_CODEC_MESSAGES
+    #define SkCodecPrintf SkDebugf
+#else
+    #define SkCodecPrintf(...)
+#endif
 
 
 inline float get_scale_from_sample_size(int sampleSize) {
@@ -75,11 +80,16 @@ inline bool is_coord_necessary(int srcCoord, int sampleFactor, int scaledDim) {
 }
 
 inline bool valid_alpha(SkAlphaType dstAlpha, SkAlphaType srcAlpha) {
-    
+    if (kUnknown_SkAlphaType == dstAlpha) {
+        return false;
+    }
+
     if (srcAlpha != dstAlpha) {
         if (kOpaque_SkAlphaType == srcAlpha) {
             
-            return false;
+            SkCodecPrintf("Warning: an opaque image should be decoded as opaque "
+                          "- it is being decoded as non-opaque, which will draw slower\n");
+            return true;
         }
 
         
@@ -104,10 +114,12 @@ inline bool valid_alpha(SkAlphaType dstAlpha, SkAlphaType srcAlpha) {
 
 
 
+
 inline bool conversion_possible(const SkImageInfo& dst, const SkImageInfo& src) {
-    if (dst.profileType() != src.profileType()) {
-        return false;
-    }
+    
+    
+    
+    
 
     
     if (!valid_alpha(dst.alphaType(), src.alphaType())) {
@@ -119,7 +131,12 @@ inline bool conversion_possible(const SkImageInfo& dst, const SkImageInfo& src) 
         case kN32_SkColorType:
             return true;
         case kRGB_565_SkColorType:
-            return src.alphaType() == kOpaque_SkAlphaType;
+            return kOpaque_SkAlphaType == dst.alphaType();
+        case kGray_8_SkColorType:
+            if (kOpaque_SkAlphaType != dst.alphaType()) {
+                return false;
+            }
+            
         default:
             return dst.colorType() == src.colorType();
     }
@@ -230,10 +247,28 @@ inline uint32_t get_int(uint8_t* buffer, uint32_t i) {
 #endif
 }
 
-#ifdef SK_PRINT_CODEC_MESSAGES
-    #define SkCodecPrintf SkDebugf
-#else
-    #define SkCodecPrintf(...)
-#endif
+
+
+
+
+
+
+inline bool is_valid_endian_marker(const uint8_t* data, bool* isLittleEndian) {
+    
+    if (('I' != data[0] || 'I' != data[1]) && ('M' != data[0] || 'M' != data[1])) {
+        return false;
+    }
+
+    *isLittleEndian = ('I' == data[0]);
+    return true;
+}
+
+inline uint16_t get_endian_short(const uint8_t* data, bool littleEndian) {
+    if (littleEndian) {
+        return (data[1] << 8) | (data[0]);
+    }
+
+    return (data[0] << 8) | (data[1]);
+}
 
 #endif 

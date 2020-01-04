@@ -5,7 +5,6 @@
 
 
 
-
 #include "GrContext.h"
 #include "GrContextOptions.h"
 #include "GrDrawingManager.h"
@@ -19,6 +18,7 @@
 #include "SkConfig8888.h"
 #include "SkGrPriv.h"
 
+#include "batches/GrCopySurfaceBatch.h"
 #include "effects/GrConfigConversionEffect.h"
 #include "text/GrTextBlobCache.h"
 
@@ -95,6 +95,7 @@ void GrContext::initCommon(const GrContextOptions& options) {
     dtOptions.fClipBatchToBounds = options.fClipBatchToBounds;
     dtOptions.fDrawBatchBounds = options.fDrawBatchBounds;
     dtOptions.fMaxBatchLookback = options.fMaxBatchLookback;
+    dtOptions.fMaxBatchLookahead = options.fMaxBatchLookahead;
     fDrawingManager.reset(new GrDrawingManager(this, dtOptions, &fSingleOwner));
 
     
@@ -127,6 +128,13 @@ GrContext::~GrContext() {
     fCaps->unref();
 }
 
+GrContextThreadSafeProxy* GrContext::threadSafeProxy() {
+    if (!fThreadSafeProxy) {
+        fThreadSafeProxy.reset(new GrContextThreadSafeProxy(fCaps, this->uniqueID()));
+    }
+    return SkRef(fThreadSafeProxy.get());
+}
+
 void GrContext::abandonContext() {
     ASSERT_SINGLE_OWNER
 
@@ -140,7 +148,26 @@ void GrContext::abandonContext() {
     
     fResourceCache->abandonAll();
 
-    fGpu->contextAbandoned();
+    fGpu->disconnect(GrGpu::DisconnectType::kAbandon);
+
+    fBatchFontCache->freeAll();
+    fLayerCache->freeAll();
+    fTextBlobCache->freeAll();
+}
+
+void GrContext::releaseResourcesAndAbandonContext() {
+    ASSERT_SINGLE_OWNER
+
+    fResourceProvider->abandon();
+
+    
+    
+    fDrawingManager->abandon();
+
+    
+    fResourceCache->releaseAll();
+
+    fGpu->disconnect(GrGpu::DisconnectType::kCleanup);
 
     fBatchFontCache->freeAll();
     fLayerCache->freeAll();
@@ -268,7 +295,7 @@ bool GrContext::writeSurfacePixels(GrSurface* surface,
     }
 
     GrGpu::WritePixelTempDrawInfo tempDrawInfo;
-    if (!fGpu->getWritePixelsInfo(surface, width, height, rowBytes, srcConfig, &drawPreference,
+    if (!fGpu->getWritePixelsInfo(surface, width, height, srcConfig, &drawPreference,
                                   &tempDrawInfo)) {
         return false;
     }
@@ -287,18 +314,13 @@ bool GrContext::writeSurfacePixels(GrSurface* surface,
     }
 
     
-#if defined(GOOGLE3)
-    
-    SkAutoSTMalloc<48 * 48, uint32_t> tmpPixels(0);
-#else
     SkAutoSTMalloc<128 * 128, uint32_t> tmpPixels(0);
-#endif
     if (tempTexture) {
         SkAutoTUnref<const GrFragmentProcessor> fp;
         SkMatrix textureMatrix;
         textureMatrix.setIDiv(tempTexture->width(), tempTexture->height());
         if (applyPremulToSrc) {
-            fp.reset(this->createUPMToPMEffect(tempTexture, tempDrawInfo.fSwapRAndB,
+            fp.reset(this->createUPMToPMEffect(tempTexture, tempDrawInfo.fSwizzle,
                                                textureMatrix));
             
             if (!fp) {
@@ -311,7 +333,7 @@ bool GrContext::writeSurfacePixels(GrSurface* surface,
         }
         if (tempTexture) {
             if (!fp) {
-                fp.reset(GrConfigConversionEffect::Create(tempTexture, tempDrawInfo.fSwapRAndB,
+                fp.reset(GrConfigConversionEffect::Create(tempTexture, tempDrawInfo.fSwizzle,
                     GrConfigConversionEffect::kNone_PMConversion, textureMatrix));
                 if (!fp) {
                     return false;
@@ -334,7 +356,7 @@ bool GrContext::writeSurfacePixels(GrSurface* surface,
                 applyPremulToSrc = false;
             }
             if (!fGpu->writePixels(tempTexture, 0, 0, width, height,
-                                   tempDrawInfo.fTempSurfaceDesc.fConfig, buffer,
+                                   tempDrawInfo.fWriteConfig, buffer,
                                    rowBytes)) {
                 return false;
             }
@@ -344,6 +366,8 @@ bool GrContext::writeSurfacePixels(GrSurface* surface,
             if (!drawContext) {
                 return false;
             }
+            
+            
             GrPaint paint;
             paint.addColorFragmentProcessor(fp);
             paint.setPorterDuffXPFactory(SkXfermode::kSrc_Mode);
@@ -428,7 +452,8 @@ bool GrContext::readSurfacePixels(GrSurface* src,
         }
         SkAutoTUnref<GrTexture> temp;
         if (tempDrawInfo.fUseExactScratch) {
-            temp.reset(this->textureProvider()->createTexture(tempDrawInfo.fTempSurfaceDesc, true));
+            temp.reset(this->textureProvider()->createTexture(tempDrawInfo.fTempSurfaceDesc,
+                                                              SkBudgeted::kYes));
         } else {
             temp.reset(this->textureProvider()->createApproxTexture(tempDrawInfo.fTempSurfaceDesc));
         }
@@ -438,7 +463,7 @@ bool GrContext::readSurfacePixels(GrSurface* src,
             textureMatrix.postIDiv(src->width(), src->height());
             SkAutoTUnref<const GrFragmentProcessor> fp;
             if (unpremul) {
-                fp.reset(this->createPMToUPMEffect(src->asTexture(), tempDrawInfo.fSwapRAndB,
+                fp.reset(this->createPMToUPMEffect(src->asTexture(), tempDrawInfo.fSwizzle,
                     textureMatrix));
                 if (fp) {
                     unpremul = false; 
@@ -449,10 +474,12 @@ bool GrContext::readSurfacePixels(GrSurface* src,
                 }
             }
             if (!fp && temp) {
-                fp.reset(GrConfigConversionEffect::Create(src->asTexture(), tempDrawInfo.fSwapRAndB,
+                fp.reset(GrConfigConversionEffect::Create(src->asTexture(), tempDrawInfo.fSwizzle,
                     GrConfigConversionEffect::kNone_PMConversion, textureMatrix));
             }
             if (fp) {
+                
+                
                 GrPaint paint;
                 paint.addColorFragmentProcessor(fp);
                 paint.setPorterDuffXPFactory(SkXfermode::kSrc_Mode);
@@ -473,10 +500,7 @@ bool GrContext::readSurfacePixels(GrSurface* src,
     GrPixelConfig configToRead = dstConfig;
     if (didTempDraw) {
         this->flushSurfaceWrites(surfaceToRead);
-        
-        if (tempDrawInfo.fSwapRAndB) {
-            configToRead = GrPixelConfigSwapRAndB(dstConfig);
-        }
+        configToRead = tempDrawInfo.fReadConfig;
     }
     if (!fGpu->readPixels(surfaceToRead, left, top, width, height, configToRead, buffer,
                            rowBytes)) {
@@ -518,34 +542,42 @@ void GrContext::prepareSurfaceForExternalIO(GrSurface* surface) {
     }
 }
 
-void GrContext::copySurface(GrSurface* dst, GrSurface* src, const SkIRect& srcRect,
-                            const SkIPoint& dstPoint, uint32_t pixelOpsFlags) {
+bool GrContext::copySurface(GrSurface* dst, GrSurface* src, const SkIRect& srcRect,
+                            const SkIPoint& dstPoint) {
     ASSERT_SINGLE_OWNER
-    RETURN_IF_ABANDONED
+    RETURN_FALSE_IF_ABANDONED
     GR_AUDIT_TRAIL_AUTO_FRAME(&fAuditTrail, "GrContext::copySurface");
 
     if (!src || !dst) {
-        return;
+        return false;
     }
     ASSERT_OWNED_RESOURCE(src);
     ASSERT_OWNED_RESOURCE(dst);
 
-    
-    
     if (!dst->asRenderTarget()) {
-        return;
+        SkIRect clippedSrcRect;
+        SkIPoint clippedDstPoint;
+        if (!GrCopySurfaceBatch::ClipSrcRectAndDstPoint(dst, src, srcRect, dstPoint,
+                                                        &clippedSrcRect, &clippedDstPoint)) {
+            return false;
+        }
+        
+        
+        
+        
+        
+        src->flushWrites();
+        return fGpu->copySurface(dst, src, clippedSrcRect, clippedDstPoint);
     }
-
     SkAutoTUnref<GrDrawContext> drawContext(this->drawContext(dst->asRenderTarget()));
     if (!drawContext) {
-        return;
+        return false;
     }
 
-    drawContext->copySurface(src, srcRect, dstPoint);
-
-    if (kFlushWrites_PixelOp & pixelOpsFlags) {
-        this->flush();
+    if (!drawContext->copySurface(src, srcRect, dstPoint)) {
+        return false;
     }
+    return true;
 }
 
 void GrContext::flushSurfaceWrites(GrSurface* surface) {
@@ -572,8 +604,7 @@ int GrContext::getRecommendedSampleCount(GrPixelConfig config,
             chosenSampleCount = 16;
         }
     }
-    return chosenSampleCount <= fGpu->caps()->maxSampleCount() ?
-        chosenSampleCount : 0;
+    return chosenSampleCount <= fGpu->caps()->maxSampleCount() ? chosenSampleCount : 0;
 }
 
 
@@ -609,7 +640,7 @@ void GrContext::testPMConversionsIfNecessary(uint32_t flags) {
 }
 
 const GrFragmentProcessor* GrContext::createPMToUPMEffect(GrTexture* texture,
-                                                          bool swapRAndB,
+                                                          const GrSwizzle& swizzle,
                                                           const SkMatrix& matrix) const {
     ASSERT_SINGLE_OWNER
     
@@ -617,14 +648,14 @@ const GrFragmentProcessor* GrContext::createPMToUPMEffect(GrTexture* texture,
     GrConfigConversionEffect::PMConversion pmToUPM =
         static_cast<GrConfigConversionEffect::PMConversion>(fPMToUPMConversion);
     if (GrConfigConversionEffect::kNone_PMConversion != pmToUPM) {
-        return GrConfigConversionEffect::Create(texture, swapRAndB, pmToUPM, matrix);
+        return GrConfigConversionEffect::Create(texture, swizzle, pmToUPM, matrix);
     } else {
         return nullptr;
     }
 }
 
 const GrFragmentProcessor* GrContext::createUPMToPMEffect(GrTexture* texture,
-                                                          bool swapRAndB,
+                                                          const GrSwizzle& swizzle,
                                                           const SkMatrix& matrix) const {
     ASSERT_SINGLE_OWNER
     
@@ -632,7 +663,7 @@ const GrFragmentProcessor* GrContext::createUPMToPMEffect(GrTexture* texture,
     GrConfigConversionEffect::PMConversion upmToPM =
         static_cast<GrConfigConversionEffect::PMConversion>(fUPMToPMConversion);
     if (GrConfigConversionEffect::kNone_PMConversion != upmToPM) {
-        return GrConfigConversionEffect::Create(texture, swapRAndB, upmToPM, matrix);
+        return GrConfigConversionEffect::Create(texture, swizzle, upmToPM, matrix);
     } else {
         return nullptr;
     }

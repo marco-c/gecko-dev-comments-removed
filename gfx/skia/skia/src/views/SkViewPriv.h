@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef SkViewPriv_DEFINED
 #define SkViewPriv_DEFINED
 

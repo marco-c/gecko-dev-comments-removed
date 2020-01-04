@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef SkAAClip_DEFINED
 #define SkAAClip_DEFINED
 

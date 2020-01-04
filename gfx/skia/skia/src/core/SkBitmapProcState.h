@@ -27,10 +27,42 @@ typedef SkFixed3232    SkFractionalInt;
 
 class SkPaint;
 
-struct SkBitmapProcState {
-    SkBitmapProcState(const SkBitmapProvider&, SkShader::TileMode tmx, SkShader::TileMode tmy);
-    SkBitmapProcState(const SkBitmap&, SkShader::TileMode tmx, SkShader::TileMode tmy);
-    ~SkBitmapProcState();
+struct SkBitmapProcInfo {
+    SkBitmapProcInfo(const SkBitmapProvider&, SkShader::TileMode tmx, SkShader::TileMode tmy);
+    SkBitmapProcInfo(const SkBitmap&, SkShader::TileMode tmx, SkShader::TileMode tmy);
+    ~SkBitmapProcInfo();
+
+    const SkBitmapProvider fProvider;
+
+    SkPixmap            fPixmap;
+    SkMatrix            fInvMatrix;         
+    
+    SkMatrix            fRealInvMatrix;     
+    SkColor             fPaintColor;
+    SkShader::TileMode  fTileModeX;
+    SkShader::TileMode  fTileModeY;
+    SkFilterQuality     fFilterQuality;
+    SkMatrix::TypeMask  fInvType;
+
+    bool init(const SkMatrix& inverse, const SkPaint&);
+
+private:
+    enum {
+        kBMStateSize = 136  
+    };
+    SkAlignedSStorage<kBMStateSize> fBMStateStorage;
+    SkBitmapController::State* fBMState;
+};
+
+struct SkBitmapProcState : public SkBitmapProcInfo {
+    SkBitmapProcState(const SkBitmapProvider& prov, SkShader::TileMode tmx, SkShader::TileMode tmy)
+        : SkBitmapProcInfo(prov, tmx, tmy) {}
+    SkBitmapProcState(const SkBitmap& bitmap, SkShader::TileMode tmx, SkShader::TileMode tmy)
+        : SkBitmapProcInfo(bitmap, tmx, tmy) {}
+
+    bool setup(const SkMatrix& inv, const SkPaint& paint) {
+        return this->init(inv, paint) && this->chooseProcs();
+    }
 
     typedef void (*ShaderProc32)(const void* ctx, int x, int y, SkPMColor[], int count);
 
@@ -50,11 +82,7 @@ struct SkBitmapProcState {
     typedef U16CPU (*FixedTileLowBitsProc)(SkFixed, int);   
     typedef U16CPU (*IntTileProc)(int value, int count);   
 
-    SkPixmap            fPixmap;
-    SkMatrix            fInvMatrix;         
-
     SkMatrix::MapXYProc fInvProc;           
-
     SkFractionalInt     fInvSxFractionalInt;
     SkFractionalInt     fInvKyFractionalInt;
 
@@ -66,14 +94,10 @@ struct SkBitmapProcState {
     SkFixed             fFilterOneX;
     SkFixed             fFilterOneY;
 
-    SkPMColor           fPaintPMColor;      
     SkFixed             fInvSx;             
     SkFixed             fInvKy;             
+    SkPMColor           fPaintPMColor;      
     uint16_t            fAlphaScale;        
-    uint8_t             fInvType;           
-    uint8_t             fTileModeX;         
-    uint8_t             fTileModeY;         
-    uint8_t             fFilterLevel;       
 
     
 
@@ -114,26 +138,15 @@ struct SkBitmapProcState {
     SampleProc32 getSampleProc32() const { return fSampleProc32; }
 
 private:
-    friend class SkBitmapProcShader;
-    friend class SkLightingShaderImpl;
-
     ShaderProc32        fShaderProc32;      
     ShaderProc16        fShaderProc16;      
     
     MatrixProc          fMatrixProc;        
     SampleProc32        fSampleProc32;      
 
-    const SkBitmapProvider fProvider;
-
-    enum {
-        kBMStateSize = 136  
-    };
-    SkAlignedSStorage<kBMStateSize> fBMStateStorage;
-    SkBitmapController::State* fBMState;
-
     MatrixProc chooseMatrixProc(bool trivial_matrix);
-    bool chooseProcs(const SkMatrix& inv, const SkPaint&);
-    bool chooseScanlineProcs(bool trivialMatrix, bool clampClamp, const SkPaint& paint);
+    bool chooseProcs(); 
+    bool chooseScanlineProcs(bool trivialMatrix, bool clampClamp);
     ShaderProc32 chooseShaderProc32();
 
     
@@ -190,26 +203,59 @@ void ClampX_ClampY_nofilter_affine(const SkBitmapProcState& s,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SkBitmapProcStateAutoMapper {
 public:
-    SkBitmapProcStateAutoMapper(const SkBitmapProcState& s, int x, int y) {
+    SkBitmapProcStateAutoMapper(const SkBitmapProcState& s, int x, int y,
+                                SkPoint* scalarPoint = nullptr) {
         SkPoint pt;
         s.fInvProc(s.fInvMatrix,
                    SkIntToScalar(x) + SK_ScalarHalf,
                    SkIntToScalar(y) + SK_ScalarHalf, &pt);
 
-        
-        
-        
-        
-        const SkFixed biasX = (s.fInvMatrix.getScaleX() > 0);
-        const SkFixed biasY = (s.fInvMatrix.getScaleY() > 0);
+        SkFixed biasX, biasY;
+        if (s.fFilterQuality == kNone_SkFilterQuality) {
+            
+            
+            
+            
+            biasX = (s.fInvMatrix.getScaleX() > 0);
+            biasY = (s.fInvMatrix.getScaleY() > 0);
+        } else {
+            biasX = s.fFilterOneX >> 1;
+            biasY = s.fFilterOneY >> 1;
+        }
+
         fX = SkScalarToFractionalInt(pt.x()) - SkFixedToFractionalInt(biasX);
         fY = SkScalarToFractionalInt(pt.y()) - SkFixedToFractionalInt(biasY);
+
+        if (scalarPoint) {
+            scalarPoint->set(pt.x() - SkFixedToScalar(biasX),
+                             pt.y() - SkFixedToScalar(biasY));
+        }
     }
 
-    SkFractionalInt x() const { return fX; }
-    SkFractionalInt y() const { return fY; }
+    SkFractionalInt fractionalIntX() const { return fX; }
+    SkFractionalInt fractionalIntY() const { return fY; }
+
+    SkFixed fixedX() const { return SkFractionalIntToFixed(fX); }
+    SkFixed fixedY() const { return SkFractionalIntToFixed(fY); }
+
+    int intX() const { return SkFractionalIntToInt(fX); }
+    int intY() const { return SkFractionalIntToInt(fY); }
 
 private:
     SkFractionalInt fX, fY;

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGRect_DEFINED
 #define SkSVGRect_DEFINED
 

@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrAAConvexPathRenderer_DEFINED
 #define GrAAConvexPathRenderer_DEFINED
 

@@ -32,7 +32,7 @@ static inline int32_t Sk2sComplimentToSignBit(int32_t x) {
     
     x = (x ^ sign) - sign;
     
-    x |= sign << 31;
+    x |= SkLeftShift(sign, 31);
     return x;
 }
 

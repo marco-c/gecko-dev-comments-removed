@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrAAHairLinePathRenderer_DEFINED
 #define GrAAHairLinePathRenderer_DEFINED
 

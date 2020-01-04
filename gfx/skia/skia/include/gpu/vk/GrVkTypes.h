@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+#ifndef GrVkTypes_DEFINED
+#define GrVkTypes_DEFINED
+
+#include "vk/GrVkDefines.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct GrVkTextureInfo {
+    VkImage        fImage;
+    VkDeviceMemory fAlloc;    
+    VkImageTiling  fImageTiling;
+    VkImageLayout  fImageLayout;
+};
+
+GR_STATIC_ASSERT(sizeof(GrBackendObject) >= sizeof(const GrVkTextureInfo*));
+
+#endif

@@ -380,7 +380,6 @@ void SkMatrix::preScale(SkScalar sx, SkScalar sy) {
     fMat[kMScaleY] *= sy;
     fMat[kMPersp1] *= sy;
 
-#ifndef SK_SUPPORT_LEGACY_PRESCALE_SEMANTICS
     
     
     
@@ -391,9 +390,6 @@ void SkMatrix::preScale(SkScalar sx, SkScalar sy) {
     } else {
         this->orTypeMask(kScale_Mask);
     }
-#else
-    this->orTypeMask(kScale_Mask);
-#endif
 }
 
 void SkMatrix::postScale(SkScalar sx, SkScalar sy, SkScalar px, SkScalar py) {
@@ -1154,30 +1150,19 @@ const SkMatrix::MapXYProc SkMatrix::gMapXYProcs[] = {
 
 #define PerspNearlyZero(x)  SkScalarNearlyZero(x, (1.0f / (1 << 26)))
 
-bool SkMatrix::fixedStepInX(SkScalar y, SkFixed* stepX, SkFixed* stepY) const {
-    if (PerspNearlyZero(fMat[kMPersp0])) {
-        if (stepX || stepY) {
-            if (PerspNearlyZero(fMat[kMPersp1]) &&
-                    PerspNearlyZero(fMat[kMPersp2] - 1)) {
-                if (stepX) {
-                    *stepX = SkScalarToFixed(fMat[kMScaleX]);
-                }
-                if (stepY) {
-                    *stepY = SkScalarToFixed(fMat[kMSkewY]);
-                }
-            } else {
-                SkScalar z = y * fMat[kMPersp1] + fMat[kMPersp2];
-                if (stepX) {
-                    *stepX = SkScalarToFixed(fMat[kMScaleX] / z);
-                }
-                if (stepY) {
-                    *stepY = SkScalarToFixed(fMat[kMSkewY] / z);
-                }
-            }
-        }
-        return true;
+bool SkMatrix::isFixedStepInX() const {
+  return PerspNearlyZero(fMat[kMPersp0]);
+}
+
+SkVector SkMatrix::fixedStepInX(SkScalar y) const {
+    SkASSERT(PerspNearlyZero(fMat[kMPersp0]));
+    if (PerspNearlyZero(fMat[kMPersp1]) &&
+        PerspNearlyZero(fMat[kMPersp2] - 1)) {
+        return SkVector::Make(fMat[kMScaleX], fMat[kMSkewY]);
+    } else {
+        SkScalar z = y * fMat[kMPersp1] + fMat[kMPersp2];
+        return SkVector::Make(fMat[kMScaleX] / z, fMat[kMSkewY] / z);
     }
-    return false;
 }
 
 
@@ -1804,4 +1789,3 @@ void SkRSXform::toQuad(SkScalar width, SkScalar height, SkPoint quad[4]) const {
     quad[3].set(m01 * height + m02, m11 * height + m12);
 #endif
 }
-

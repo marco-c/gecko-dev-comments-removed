@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGSymbol_DEFINED
 #define SkSVGSymbol_DEFINED
 

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGFilter_DEFINED
 #define SkSVGFilter_DEFINED
 

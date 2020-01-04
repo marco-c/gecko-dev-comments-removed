@@ -12,7 +12,7 @@
 
 class SkDeviceProfile : public SkRefCnt {
 public:
-    
+
 
     enum LCDConfig {
         kNone_LCDConfig,   

@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkStrokerPriv.h"
 #include "SkGeometry.h"
 #include "SkPath.h"

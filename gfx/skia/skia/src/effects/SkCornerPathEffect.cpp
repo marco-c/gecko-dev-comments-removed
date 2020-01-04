@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkCornerPathEffect.h"
 #include "SkPath.h"
 #include "SkPoint.h"
@@ -139,8 +138,8 @@ DONE:
     return true;
 }
 
-SkFlattenable* SkCornerPathEffect::CreateProc(SkReadBuffer& buffer) {
-    return SkCornerPathEffect::Create(buffer.readScalar());
+sk_sp<SkFlattenable> SkCornerPathEffect::CreateProc(SkReadBuffer& buffer) {
+    return SkCornerPathEffect::Make(buffer.readScalar());
 }
 
 void SkCornerPathEffect::flatten(SkWriteBuffer& buffer) const {

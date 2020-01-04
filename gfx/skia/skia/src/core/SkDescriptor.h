@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkDescriptor_DEFINED
 #define SkDescriptor_DEFINED
 

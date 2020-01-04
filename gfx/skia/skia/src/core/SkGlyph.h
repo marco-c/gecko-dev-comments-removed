@@ -34,13 +34,29 @@ class SkGlyph {
         kSubShiftY = 0
     };
 
- public:
+    
+    
+    
+    
+    
+    struct Intercept {
+        Intercept* fNext;
+        SkScalar   fBounds[2];    
+        SkScalar   fInterval[2];  
+    };
+
+    struct PathData {
+        Intercept* fIntercept;
+        SkPath*    fPath;
+    };
+
+public:
     static const SkFixed kSubpixelRound = SK_FixedHalf >> SkGlyph::kSubBits;
     
     static const uint32_t kImpossibleID = ~0;
     void*       fImage;
-    SkPath*     fPath;
-    SkFixed     fAdvanceX, fAdvanceY;
+    PathData*   fPathData;
+    float       fAdvanceX, fAdvanceY;
 
     uint16_t    fWidth, fHeight;
     int16_t     fTop, fLeft;
@@ -133,7 +149,7 @@ class SkGlyph {
     void initCommon(uint32_t id) {
         fID             = id;
         fImage          = nullptr;
-        fPath           = nullptr;
+        fPathData       = nullptr;
         fMaskFormat     = MASK_FORMAT_UNKNOWN;
         fForceBW        = 0;
     }
@@ -176,7 +192,7 @@ class SkGlyph {
         return ID;
     }
 
-  
+    
   
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
   public:

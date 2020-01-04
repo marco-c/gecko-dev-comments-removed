@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef SkUtilsArm_DEFINED
 #define SkUtilsArm_DEFINED
 

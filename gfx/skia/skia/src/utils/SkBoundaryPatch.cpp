@@ -4,7 +4,6 @@
 
 
 
-
 #include "SkBoundaryPatch.h"
 
 SkBoundaryPatch::SkBoundaryPatch() : fBoundary(nullptr) {}

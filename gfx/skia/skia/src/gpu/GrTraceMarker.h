@@ -5,7 +5,6 @@
 
 
 
-
 #include "SkTDArray.h"
 
 #ifndef GrTraceMarkerSet_DEFINED

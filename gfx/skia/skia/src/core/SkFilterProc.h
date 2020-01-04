@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkFilter_DEFINED
 #define SkFilter_DEFINED
 

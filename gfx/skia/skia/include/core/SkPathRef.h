@@ -9,12 +9,12 @@
 #ifndef SkPathRef_DEFINED
 #define SkPathRef_DEFINED
 
+#include "../private/SkTDArray.h"
 #include "SkMatrix.h"
 #include "SkPoint.h"
 #include "SkRRect.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
-#include "SkTDArray.h"
 #include <stddef.h> 
 
 class SkRBuffer;
@@ -270,6 +270,8 @@ public:
 
 
     uint32_t writeSize() const;
+
+    void interpolate(const SkPathRef& ending, SkScalar weight, SkPathRef* out) const;
 
     
 

@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrResourceCache_DEFINED
 #define GrResourceCache_DEFINED
 
@@ -131,7 +130,7 @@ public:
     GrGpuResource* findAndRefScratchResource(const GrScratchKey& scratchKey,
                                              size_t resourceSize,
                                              uint32_t flags);
-    
+
 #ifdef SK_DEBUG
     
     int countScratchEntriesForKey(const GrScratchKey& scratchKey) const {
@@ -211,7 +210,7 @@ public:
             if (resource->cacheAccess().isScratch()) {
                 ++fScratch;
             }
-            if (resource->cacheAccess().isExternal()) {
+            if (resource->resourcePriv().isExternal()) {
                 ++fExternal;
             }
             if (resource->cacheAccess().isBorrowed()) {
@@ -220,7 +219,7 @@ public:
             if (resource->cacheAccess().isAdopted()) {
                 ++fAdopted;
             }
-            if (!resource->resourcePriv().isBudgeted()) {
+            if (SkBudgeted::kNo  == resource->resourcePriv().isBudgeted()) {
                 fUnbudgetedSize += resource->gpuMemorySize();
             }
         }
@@ -261,7 +260,7 @@ private:
     bool overBudget() const { return fBudgetedBytes > fMaxBytes || fBudgetedCount > fMaxCount; }
 
     bool wouldFit(size_t bytes) {
-        return fBudgetedBytes+bytes <= fMaxBytes && fBudgetedCount+1 <= fMaxCount;    
+        return fBudgetedBytes+bytes <= fMaxBytes && fBudgetedCount+1 <= fMaxCount;
     }
 
     uint32_t getNextTimestamp();

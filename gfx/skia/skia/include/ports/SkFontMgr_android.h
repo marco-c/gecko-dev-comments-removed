@@ -39,6 +39,11 @@ struct SkFontMgr_Android_CustomFonts {
 
 
     const char* fFallbackFontsXml;
+
+    
+
+
+    bool fIsolated;
 };
 
 

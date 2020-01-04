@@ -9,8 +9,10 @@
 #define SkPDFDevice_DEFINED
 
 #include "SkBitmap.h"
+#include "SkBitmapKey.h"
 #include "SkCanvas.h"
 #include "SkClipStack.h"
+#include "SkData.h"
 #include "SkDevice.h"
 #include "SkPaint.h"
 #include "SkPath.h"
@@ -21,9 +23,12 @@
 #include "SkTDArray.h"
 #include "SkTemplates.h"
 
+#include "SkSinglyLinkedList.h"
+
 class SkPDFArray;
 class SkPDFCanon;
 class SkPDFDevice;
+class SkPDFDocument;
 class SkPDFDict;
 class SkPDFFont;
 class SkPDFFormXObject;
@@ -33,12 +38,6 @@ class SkPDFObject;
 class SkPDFShader;
 class SkPDFStream;
 class SkRRect;
-
-
-struct ContentEntry;
-struct GraphicStateEntry;
-struct NamedDestination;
-struct RectWithData;
 
 
 
@@ -63,17 +62,20 @@ public:
 
 
 
+
+
+
     static SkPDFDevice* Create(SkISize pageSize,
                                SkScalar rasterDpi,
-                               SkPDFCanon* canon) {
-        return new SkPDFDevice(pageSize, rasterDpi, canon, true);
+                               SkPDFDocument* doc) {
+        return new SkPDFDevice(pageSize, rasterDpi, doc, true);
     }
 
     
     static SkPDFDevice* CreateUnflipped(SkISize pageSize,
                                         SkScalar rasterDpi,
-                                        SkPDFCanon* canon) {
-        return new SkPDFDevice(pageSize, rasterDpi, canon, false);
+                                        SkPDFDocument* doc) {
+        return new SkPDFDevice(pageSize, rasterDpi, doc, false);
     }
 
     virtual ~SkPDFDevice();
@@ -127,27 +129,10 @@ public:
     void onDetachFromCanvas() override;
     SkImageInfo imageInfo() const override;
 
-    enum DrawingArea {
-        kContent_DrawingArea,  
-        kMargin_DrawingArea,   
-    };
-
-    
-
-
-
-
-
-
-
-
-    void setDrawingArea(DrawingArea drawingArea);
-
     
 
     
-
-    SkPDFDict* createResourceDict() const;
+    sk_sp<SkPDFDict> makeResourceDict() const;
 
     
 
@@ -166,14 +151,11 @@ public:
     void appendDestinations(SkPDFDict* dict, SkPDFObject* page) const;
 
     
-
-
-    SkPDFArray* copyMediaBox() const;
+    sk_sp<SkPDFArray> copyMediaBox() const;
 
     
 
-
-    SkStreamAsset* content() const;
+    std::unique_ptr<SkStreamAsset> content() const;
 
     
     void writeContent(SkWStream*) const;
@@ -189,16 +171,78 @@ public:
         return *(fFontGlyphUsage.get());
     }
 
-    SkPDFCanon* getCanon() const { return fCanon; }
+    SkPDFCanon* getCanon() const;
+
+    
+    
+    struct GraphicStateEntry {
+        GraphicStateEntry();
+
+        
+        bool compareInitialState(const GraphicStateEntry& b);
+
+        SkMatrix fMatrix;
+        
+        
+        
+        
+        SkClipStack fClipStack;
+        SkRegion fClipRegion;
+
+        
+        
+        SkColor fColor;
+        SkScalar fTextScaleX;  
+        SkPaint::Style fTextFill;  
+        int fShaderIndex;
+        int fGraphicStateIndex;
+
+        
+        
+        SkPDFFont* fFont;
+        
+        
+        SkScalar fTextSize;
+    };
 
 protected:
     const SkBitmap& onAccessBitmap() override {
         return fLegacyBitmap;
     }
 
-    SkSurface* newSurface(const SkImageInfo&, const SkSurfaceProps&) override;
+    sk_sp<SkSurface> makeSurface(const SkImageInfo&, const SkSurfaceProps&) override;
+
+    void drawAnnotation(const SkDraw&, const SkRect&, const char key[], SkData* value) override;
 
 private:
+    struct RectWithData {
+        SkRect rect;
+        sk_sp<SkData> data;
+        RectWithData(const SkRect& rect, SkData* data)
+            : rect(rect), data(SkRef(data)) {}
+        RectWithData(RectWithData&& other)
+            : rect(other.rect), data(std::move(other.data)) {}
+        RectWithData& operator=(RectWithData&& other) {
+            rect = other.rect;
+            data = std::move(other.data);
+            return *this;
+        }
+    };
+
+    struct NamedDestination {
+        sk_sp<SkData> nameData;
+        SkPoint point;
+        NamedDestination(SkData* nameData, const SkPoint& point)
+            : nameData(SkRef(nameData)), point(point) {}
+        NamedDestination(NamedDestination&& other)
+            : nameData(std::move(other.nameData)), point(other.point) {}
+        NamedDestination& operator=(NamedDestination&& other) {
+            nameData = std::move(other.nameData);
+            point = other.point;
+            return *this;
+        }
+    };
+
     
     
     friend class ScopedContentEntry;
@@ -209,43 +253,37 @@ private:
     SkClipStack fExistingClipStack;
     SkRegion fExistingClipRegion;
 
-    SkTDArray<RectWithData*> fLinkToURLs;
-    SkTDArray<RectWithData*> fLinkToDestinations;
-    SkTDArray<NamedDestination*> fNamedDestinations;
+    SkTArray<RectWithData> fLinkToURLs;
+    SkTArray<RectWithData> fLinkToDestinations;
+    SkTArray<NamedDestination> fNamedDestinations;
 
     SkTDArray<SkPDFObject*> fGraphicStateResources;
     SkTDArray<SkPDFObject*> fXObjectResources;
     SkTDArray<SkPDFFont*> fFontResources;
     SkTDArray<SkPDFObject*> fShaderResources;
 
-    SkAutoTDelete<ContentEntry> fContentEntries;
-    ContentEntry* fLastContentEntry;
-    SkAutoTDelete<ContentEntry> fMarginContentEntries;
-    ContentEntry* fLastMarginContentEntry;
-    DrawingArea fDrawingArea;
+    struct ContentEntry {
+        GraphicStateEntry fState;
+        SkDynamicMemoryWStream fContent;
+    };
+    SkSinglyLinkedList<ContentEntry> fContentEntries;
 
     const SkClipStack* fClipStack;
 
     
-    SkAutoTDelete<ContentEntry>* getContentEntries();
-
-    
-    SkAutoTDelete<SkPDFGlyphSetMap> fFontGlyphUsage;
+    std::unique_ptr<SkPDFGlyphSetMap> fFontGlyphUsage;
 
     SkScalar fRasterDpi;
 
     SkBitmap fLegacyBitmap;
 
-    SkPDFCanon* fCanon;  
+    SkPDFDocument* fDocument;
     
 
     SkPDFDevice(SkISize pageSize,
                 SkScalar rasterDpi,
-                SkPDFCanon* canon,
+                SkPDFDocument* doc,
                 bool flip);
-
-    ContentEntry* getLastContentEntry();
-    void setLastContentEntry(ContentEntry* contentEntry);
 
     SkBaseDevice* onCreateDevice(const CreateInfo&, const SkPaint*) override;
 
@@ -288,25 +326,18 @@ private:
     int getFontResourceIndex(SkTypeface* typeface, uint16_t glyphID);
 
     void internalDrawPaint(const SkPaint& paint, ContentEntry* contentEntry);
-    void internalDrawImage(const SkMatrix& matrix,
+
+    void internalDrawImage(const SkMatrix& origMatrix,
                            const SkClipStack* clipStack,
-                           const SkRegion& clipRegion,
-                           const SkImage* image,
-                           const SkIRect* srcRect,
+                           const SkRegion& origClipRegion,
+                           SkImageBitmap imageBitmap,
                            const SkPaint& paint);
-
-    
-
-
-    void copyContentEntriesToData(ContentEntry* entry, SkWStream* data) const;
 
     bool handleInversePath(const SkDraw& d, const SkPath& origPath,
                            const SkPaint& paint, bool pathIsMutable,
                            const SkMatrix* prePathMatrix = nullptr);
-    bool handlePointAnnotation(const SkPoint* points, size_t count,
-                               const SkMatrix& matrix, SkAnnotation* annot);
-    bool handlePathAnnotation(const SkPath& path, const SkDraw& d,
-                              SkAnnotation* annot);
+    void handlePointAnnotation(const SkPoint&, const SkMatrix&, const char key[], SkData* value);
+    void handlePathAnnotation(const SkPath&, const SkDraw& d, const char key[], SkData* value);
 
     typedef SkBaseDevice INHERITED;
 

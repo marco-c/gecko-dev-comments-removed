@@ -10,6 +10,7 @@
 
 #include "SkBitmap.h"
 #include "SkFlattenable.h"
+#include "SkImageInfo.h"
 #include "SkMask.h"
 #include "SkMatrix.h"
 #include "SkPaint.h"
@@ -81,6 +82,10 @@ public:
 
 
         kConstInY32_Flag = 1 << 1,
+
+        
+
+        kPrefers4f_Flag  = 1 << 2,
     };
 
     
@@ -95,14 +100,22 @@ public:
 
 
     struct ContextRec {
-        ContextRec(const SkPaint& paint, const SkMatrix& matrix, const SkMatrix* localM)
+        enum DstType {
+            kPMColor_DstType, 
+            kPM4f_DstType,    
+        };
+
+        ContextRec(const SkPaint& paint, const SkMatrix& matrix, const SkMatrix* localM,
+                   DstType dstType)
             : fPaint(&paint)
             , fMatrix(&matrix)
-            , fLocalMatrix(localM) {}
+            , fLocalMatrix(localM)
+            , fPreferredDstType(dstType) {}
 
-        const SkPaint*  fPaint;         
-        const SkMatrix* fMatrix;        
-        const SkMatrix* fLocalMatrix;   
+        const SkPaint*  fPaint;            
+        const SkMatrix* fMatrix;           
+        const SkMatrix* fLocalMatrix;      
+        const DstType   fPreferredDstType; 
     };
 
     class Context : public ::SkNoncopyable {
@@ -126,6 +139,37 @@ public:
 
 
         virtual void shadeSpan(int x, int y, SkPMColor[], int count) = 0;
+
+        virtual void shadeSpan4f(int x, int y, SkPM4f[], int count);
+
+        struct BlitState;
+        typedef void (*BlitBW)(BlitState*,
+                               int x, int y, const SkPixmap&, int count);
+        typedef void (*BlitAA)(BlitState*,
+                               int x, int y, const SkPixmap&, int count, const SkAlpha[]);
+
+        struct BlitState {
+            
+            Context*    fCtx;
+            SkXfermode* fXfer;
+
+            
+            enum { N = 2 };
+            void*       fStorage[N];
+            BlitBW      fBlitBW;
+            BlitAA      fBlitAA;
+        };
+
+        
+        bool chooseBlitProcs(const SkImageInfo& info, BlitState* state) {
+            state->fBlitBW = nullptr;
+            state->fBlitAA = nullptr;
+            if (this->onChooseBlitProcs(info, state)) {
+                SkASSERT(state->fBlitBW || state->fBlitAA);
+                return true;
+            }
+            return false;
+        }
 
         
 
@@ -160,6 +204,9 @@ public:
         const SkMatrix& getTotalInverse() const { return fTotalInverse; }
         MatrixClass     getInverseClass() const { return (MatrixClass)fTotalInverseClass; }
         const SkMatrix& getCTM() const { return fCTM; }
+
+        virtual bool onChooseBlitProcs(const SkImageInfo&, BlitState*) { return false; }
+
     private:
         SkMatrix    fCTM;
         SkMatrix    fTotalInverse;
@@ -178,10 +225,7 @@ public:
     
 
 
-
-
-
-    virtual size_t contextSize() const;
+    size_t contextSize(const ContextRec&) const;
 
     
 
@@ -309,32 +353,64 @@ public:
 
 
 
-    SkShader* newWithLocalMatrix(const SkMatrix&) const;
+    sk_sp<SkShader> makeWithLocalMatrix(const SkMatrix&) const;
 
     
 
 
 
-    SkShader* newWithColorFilter(SkColorFilter*) const;
-    
+    sk_sp<SkShader> makeWithColorFilter(sk_sp<SkColorFilter>) const;
+
     
     
     
     
 
 
-    static SkShader* CreateEmptyShader();
-
-    
-
-
-
-    static SkShader* CreateColorShader(SkColor);
+    static sk_sp<SkShader> MakeEmptyShader();
 
     
 
 
 
+    static sk_sp<SkShader> MakeColorShader(SkColor);
+
+    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                             SkXfermode::Mode);
+
+#ifdef SK_SUPPORT_LEGACY_CREATESHADER_PTR
+    static SkShader* CreateEmptyShader() { return MakeEmptyShader().release(); }
+    static SkShader* CreateColorShader(SkColor c) { return MakeColorShader(c).release(); }
+    static SkShader* CreateBitmapShader(const SkBitmap& src, TileMode tmx, TileMode tmy,
+                                        const SkMatrix* localMatrix = nullptr) {
+        return MakeBitmapShader(src, tmx, tmy, localMatrix).release();
+    }
+    static SkShader* CreateComposeShader(SkShader* dst, SkShader* src, SkXfermode::Mode mode);
+    static SkShader* CreateComposeShader(SkShader* dst, SkShader* src, SkXfermode* xfer);
+    static SkShader* CreatePictureShader(const SkPicture* src, TileMode tmx, TileMode tmy,
+                                         const SkMatrix* localMatrix, const SkRect* tile);
+
+    SkShader* newWithLocalMatrix(const SkMatrix& matrix) const {
+        return this->makeWithLocalMatrix(matrix).release();
+    }
+    SkShader* newWithColorFilter(SkColorFilter* filter) const;
+#endif
+
+    
+
+
+
+
+
+
+    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                             sk_sp<SkXfermode> xfer);
+#ifdef SK_SUPPORT_LEGACY_XFERMODE_PTR
+    static sk_sp<SkShader> MakeComposeShader(sk_sp<SkShader> dst, sk_sp<SkShader> src,
+                                             SkXfermode* xfer);
+#endif
+
+    
 
 
 
@@ -345,9 +421,11 @@ public:
 
 
 
-    static SkShader* CreateBitmapShader(const SkBitmap& src,
-                                        TileMode tmx, TileMode tmy,
-                                        const SkMatrix* localMatrix = NULL);
+
+
+
+    static sk_sp<SkShader> MakeBitmapShader(const SkBitmap& src, TileMode tmx, TileMode tmy,
+                                            const SkMatrix* localMatrix = nullptr);
 
     
 
@@ -365,10 +443,8 @@ public:
 
 
 
-    static SkShader* CreatePictureShader(const SkPicture* src,
-                                         TileMode tmx, TileMode tmy,
-                                         const SkMatrix* localMatrix,
-                                         const SkRect* tile);
+    static sk_sp<SkShader> MakePictureShader(sk_sp<SkPicture> src, TileMode tmx, TileMode tmy,
+                                             const SkMatrix* localMatrix, const SkRect* tile);
 
     
 
@@ -392,6 +468,12 @@ protected:
 
 
     virtual Context* onCreateContext(const ContextRec&, void* storage) const;
+
+    
+
+
+
+    virtual size_t onContextSize(const ContextRec&) const;
 
     virtual bool onAsLuminanceColor(SkColor*) const {
         return false;

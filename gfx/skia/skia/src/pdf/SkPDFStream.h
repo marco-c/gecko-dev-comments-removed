@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkPDFStream_DEFINED
 #define SkPDFStream_DEFINED
 
@@ -23,7 +22,7 @@ class SkPDFObjNumMap;
 
 
 class SkPDFStream : public SkPDFDict {
-    
+
 public:
     
 
@@ -43,6 +42,7 @@ public:
     void emitObject(SkWStream* stream,
                     const SkPDFObjNumMap& objNumMap,
                     const SkPDFSubstituteMap& substitutes) const override;
+    void drop() override;
 
 protected:
     
@@ -58,7 +58,7 @@ protected:
     }
 
 private:
-    SkAutoTDelete<SkStreamRewindable> fCompressedData;
+    std::unique_ptr<SkStreamRewindable> fCompressedData;
 
     typedef SkPDFDict INHERITED;
 };

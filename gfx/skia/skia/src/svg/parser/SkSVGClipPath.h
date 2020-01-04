@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGClipPath_DEFINED
 #define SkSVGClipPath_DEFINED
 

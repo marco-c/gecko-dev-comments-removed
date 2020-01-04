@@ -1100,7 +1100,7 @@ void SkOpAngle::debugValidateNext() const {
         if (next == first) {
             break;
         }
-        SK_ALWAYSBREAK(!angles.contains(next));
+        SkASSERT_RELEASE(!angles.contains(next));
         if (!next) {
             return;
         }

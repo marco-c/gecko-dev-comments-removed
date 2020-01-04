@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrLayerAtlas_DEFINED
 #define GrLayerAtlas_DEFINED
 
@@ -87,8 +86,8 @@ public:
         }
 
 #ifdef SK_DEBUG
-        bool contains(const Plot* plot) const { 
-            return fPlots.contains(const_cast<Plot*>(plot)); 
+        bool contains(const Plot* plot) const {
+            return fPlots.contains(const_cast<Plot*>(plot));
         }
 #endif
 
@@ -97,7 +96,7 @@ public:
         SkDEBUGCODE(int fMaxPlots;)
     };
 
-    GrLayerAtlas(GrTextureProvider*, GrPixelConfig, GrSurfaceFlags flags, 
+    GrLayerAtlas(GrTextureProvider*, GrPixelConfig, GrSurfaceFlags flags,
                  const SkISize& backingTextureSize,
                  int numPlotsX, int numPlotsY);
     ~GrLayerAtlas();

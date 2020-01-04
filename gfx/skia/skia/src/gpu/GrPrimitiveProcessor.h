@@ -48,6 +48,16 @@ class GrGLSLPrimitiveProcessor;
 struct GrInitInvariantOutput;
 
 
+enum GrPixelLocalStorageState {
+    
+    kDraw_GrPixelLocalStorageState,
+    
+    kFinish_GrPixelLocalStorageState,
+    
+    kDisabled_GrPixelLocalStorageState
+};
+
+
 
 
 
@@ -141,12 +151,6 @@ public:
     
     virtual bool willUseGeoShader() const = 0;
 
-    
-
-
-
-    static const int kMaxVertexAttribs = 6;
-
     struct Attribute {
         Attribute()
             : fName(nullptr)
@@ -164,11 +168,8 @@ public:
         GrSLPrecision fPrecision;
     };
 
-    int numAttribs() const { return fNumAttribs; }
-    const Attribute& getAttrib(int index) const {
-        SkASSERT(index < fNumAttribs);
-        return fAttribs[index];
-    }
+    int numAttribs() const { return fAttribs.count(); }
+    const Attribute& getAttrib(int index) const { return fAttribs[index]; }
 
     
     
@@ -199,7 +200,7 @@ public:
 
     virtual GrGLSLPrimitiveProcessor* createGLSLInstance(const GrGLSLCaps& caps) const = 0;
 
-    bool isPathRendering() const { return fIsPathRendering; }
+    virtual bool isPathRendering() const { return false; }
 
     
 
@@ -207,21 +208,29 @@ public:
 
     virtual bool hasTransformedLocalCoords() const = 0;
 
-protected:
-    GrPrimitiveProcessor(bool isPathRendering)
-        : fNumAttribs(0)
-        , fVertexStride(0)
-        , fIsPathRendering(isPathRendering) {}
+    virtual GrPixelLocalStorageState getPixelLocalStorageState() const {
+        return kDisabled_GrPixelLocalStorageState;
+    }
 
-    Attribute fAttribs[kMaxVertexAttribs];
-    int fNumAttribs;
+    
+
+
+    virtual const char* getDestColorOverride() const { return nullptr; }
+
+    virtual float getSampleShading() const {
+        return 0.0;
+    }
+
+protected:
+    GrPrimitiveProcessor() : fVertexStride(0) {}
+
+    enum { kPreallocAttribCnt = 8 };
+    SkSTArray<kPreallocAttribCnt, Attribute> fAttribs;
     size_t fVertexStride;
 
 private:
     void notifyRefCntIsZero() const final {};
     virtual bool hasExplicitLocalCoords() const = 0;
-
-    bool fIsPathRendering;
 
     typedef GrProcessor INHERITED;
 };

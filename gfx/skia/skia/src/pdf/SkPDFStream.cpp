@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkData.h"
 #include "SkDeflate.h"
 #include "SkPDFStream.h"
@@ -15,13 +14,18 @@
 
 SkPDFStream::~SkPDFStream() {}
 
+void SkPDFStream::drop() {
+    fCompressedData.reset(nullptr);
+    this->SkPDFDict::drop();
+}
+
 void SkPDFStream::emitObject(SkWStream* stream,
                              const SkPDFObjNumMap& objNumMap,
                              const SkPDFSubstituteMap& substitutes) const {
     SkASSERT(fCompressedData);
     this->INHERITED::emitObject(stream, objNumMap, substitutes);
     
-    SkAutoTDelete<SkStreamRewindable> dup(fCompressedData->duplicate());
+    std::unique_ptr<SkStreamRewindable> dup(fCompressedData->duplicate());
     SkASSERT(dup);
     SkASSERT(dup->hasLength());
     stream->writeText(" stream\n");
@@ -29,10 +33,20 @@ void SkPDFStream::emitObject(SkWStream* stream,
     stream->writeText("\nendstream");
 }
 
+
 void SkPDFStream::setData(SkStream* stream) {
     SkASSERT(!fCompressedData);  
     SkASSERT(stream);
     
+
+    #ifdef SK_PDF_LESS_COMPRESSION
+    std::unique_ptr<SkStreamRewindable> duplicate(stream->duplicate());
+    if (duplicate && duplicate->hasLength()) {
+        this->insertInt("Length", duplicate->getLength());
+        fCompressedData.reset(duplicate.release());
+        return;
+    }
+    #endif
 
     SkDynamicMemoryWStream compressedData;
     SkDeflateWStream deflateWStream(&compressedData);
@@ -41,11 +55,11 @@ void SkPDFStream::setData(SkStream* stream) {
     size_t length = compressedData.bytesWritten();
 
     if (stream->hasLength()) {
-        SkAutoTDelete<SkStreamRewindable> dup(stream->duplicate());
+        std::unique_ptr<SkStreamRewindable> dup(stream->duplicate());
         if (dup && dup->hasLength() &&
             dup->getLength() <= length + strlen("/Filter_/FlateDecode_")) {
             this->insertInt("Length", dup->getLength());
-            fCompressedData.reset(dup.detach());
+            fCompressedData.reset(dup.release());
             return;
         }
     }

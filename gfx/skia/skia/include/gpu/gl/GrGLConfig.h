@@ -78,15 +78,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #if !defined(GR_GL_LOG_CALLS)
     #ifdef SK_DEBUG
         #define GR_GL_LOG_CALLS 1
@@ -113,10 +104,6 @@
 
 #if !defined(GR_GL_USE_BUFFER_DATA_NULL_HINT)
     #define GR_GL_USE_BUFFER_DATA_NULL_HINT             1
-#endif
-
-#if !defined(GR_GL_PER_GL_FUNC_CALLBACK)
-    #define GR_GL_PER_GL_FUNC_CALLBACK                  0
 #endif
 
 #if !defined(GR_GL_CHECK_ALLOC_WITH_GET_ERROR)

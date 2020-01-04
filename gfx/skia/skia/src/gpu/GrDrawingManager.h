@@ -18,11 +18,6 @@ class GrContext;
 class GrDrawContext;
 class GrSingleOWner;
 class GrSoftwarePathRenderer;
-class GrTextContext;
-
-
-
-
 
 
 
@@ -36,9 +31,7 @@ public:
     bool abandoned() const { return fAbandoned; }
     void freeGpuResources();
 
-    GrDrawContext* drawContext(GrRenderTarget* rt, const SkSurfaceProps* surfaceProps);
-
-    GrTextContext* textContext(const SkSurfaceProps& props, GrRenderTarget* rt);
+    GrDrawContext* drawContext(GrRenderTarget* rt, const SkSurfaceProps*);
 
     
     
@@ -60,12 +53,10 @@ private:
         , fOptionsForDrawTargets(optionsForDrawTargets)
         , fSingleOwner(singleOwner)
         , fAbandoned(false)
-        , fNVPRTextContext(nullptr)
         , fPathRendererChain(nullptr)
         , fSoftwarePathRenderer(nullptr)
         , fFlushState(context->getGpu(), context->resourceProvider())
         , fFlushing(false) {
-        sk_bzero(fTextContexts, sizeof(fTextContexts));
     }
 
     void abandon();
@@ -86,9 +77,6 @@ private:
 
     bool                        fAbandoned;
     SkTDArray<GrDrawTarget*>    fDrawTargets;
-
-    GrTextContext*              fNVPRTextContext;
-    GrTextContext*              fTextContexts[kNumPixelGeometries][kNumDFTOptions];
 
     GrPathRendererChain*        fPathRendererChain;
     GrSoftwarePathRenderer*     fSoftwarePathRenderer;

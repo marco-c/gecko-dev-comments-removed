@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef SkLineClipper_DEFINED
 #define SkLineClipper_DEFINED
 

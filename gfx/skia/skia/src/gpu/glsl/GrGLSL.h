@@ -39,7 +39,15 @@ enum GrGLSLGeneration {
     
 
 
+    k400_GrGLSLGeneration,
+    
+
+
     k310es_GrGLSLGeneration,
+    
+
+
+    k320es_GrGLSLGeneration,
 };
 
 bool GrGLSLSupportsNamedFragmentShaderOutputs(GrGLSLGeneration);
@@ -90,6 +98,8 @@ static inline const char* GrGLSLTypeString(GrSLType t) {
             return "vec3";
         case kVec4f_GrSLType:
             return "vec4";
+        case kMat22f_GrSLType:
+            return "mat2";
         case kMat33f_GrSLType:
             return "mat3";
         case kMat44f_GrSLType:
@@ -100,6 +110,12 @@ static inline const char* GrGLSLTypeString(GrSLType t) {
             return "samplerExternalOES";
         case kSampler2DRect_GrSLType:
             return "sampler2DRect";
+        case kBool_GrSLType:
+            return "bool";
+        case kInt_GrSLType:
+            return "int";
+        case kUint_GrSLType:
+            return "uint";
         default:
             SkFAIL("Unknown shader var type.");
             return ""; 

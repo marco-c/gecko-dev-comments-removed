@@ -29,39 +29,13 @@ static inline float sk_float_pow(float base, float exp) {
     return powf(base, exp);
 }
 
-static inline float sk_float_copysign(float x, float y) {
-
-
-#if (defined(_MSC_VER) && defined(__clang__))
-#    define SK_BUILD_WITH_CLANG_CL 1
-#else
-#    define SK_BUILD_WITH_CLANG_CL 0
-#endif
-#if (!SK_BUILD_WITH_CLANG_CL && __cplusplus >= 201103L) || (_MSC_VER >= 1800)
-    return copysignf(x, y);
-
-
-#elif defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
-    return copysignf(x, y);
-
-
-#elif defined(_MSC_VER)
-    return (float)_copysign(x, y);
-
-
-#else
-    int32_t xbits = SkFloat2Bits(x);
-    int32_t ybits = SkFloat2Bits(y);
-    return SkBits2Float((xbits & 0x7FFFFFFF) | (ybits & 0x80000000));
-#endif
-}
-
 #define sk_float_sqrt(x)        sqrtf(x)
 #define sk_float_sin(x)         sinf(x)
 #define sk_float_cos(x)         cosf(x)
 #define sk_float_tan(x)         tanf(x)
 #define sk_float_floor(x)       floorf(x)
 #define sk_float_ceil(x)        ceilf(x)
+#define sk_float_trunc(x)       truncf(x)
 #ifdef SK_BUILD_FOR_MAC
 #    define sk_float_acos(x)    static_cast<float>(acos(x))
 #    define sk_float_asin(x)    static_cast<float>(asin(x))
@@ -71,6 +45,7 @@ static inline float sk_float_copysign(float x, float y) {
 #endif
 #define sk_float_atan2(y,x)     atan2f(y,x)
 #define sk_float_abs(x)         fabsf(x)
+#define sk_float_copysign(x, y) copysignf(x, y)
 #define sk_float_mod(x,y)       fmodf(x,y)
 #define sk_float_exp(x)         expf(x)
 #define sk_float_log(x)         logf(x)
@@ -127,13 +102,21 @@ extern const uint32_t gIEEENegativeInfinity;
 #define SK_FloatInfinity            (*SkTCast<const float*>(&gIEEEInfinity))
 #define SK_FloatNegativeInfinity    (*SkTCast<const float*>(&gIEEENegativeInfinity))
 
+static inline float sk_float_rsqrt_portable(float x) {
+    
+    int i = *SkTCast<int*>(&x);
+    i = 0x5F1FFFF9 - (i>>1);
+    float estimate = *SkTCast<float*>(&i);
+
+    
+    const float estimate_sq = estimate*estimate;
+    estimate *= 0.703952253f*(2.38924456f-x*estimate_sq);
+    return estimate;
+}
 
 
-namespace SkOpts { extern float (*rsqrt)(float); }
 
-
-
-static inline float sk_float_rsqrt(const float x) {
+static inline float sk_float_rsqrt(float x) {
 
 
 
@@ -153,8 +136,7 @@ static inline float sk_float_rsqrt(const float x) {
     estimate = vmul_f32(estimate, vrsqrts_f32(xx, estimate_sq));
     return vget_lane_f32(estimate, 0);  
 #else
-    
-    return SkOpts::rsqrt(x);
+    return sk_float_rsqrt_portable(x);
 #endif
 }
 

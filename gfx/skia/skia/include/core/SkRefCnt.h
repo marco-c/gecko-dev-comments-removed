@@ -9,8 +9,13 @@
 #define SkRefCnt_DEFINED
 
 #include "../private/SkAtomics.h"
-#include "../private/SkUniquePtr.h"
+#include "../private/SkTLogic.h"
 #include "SkTypes.h"
+#include <functional>
+#include <memory>
+#include <utility>
+
+#define SK_SUPPORT_TRANSITION_TO_SP_INTERFACES
 
 
 
@@ -183,12 +188,16 @@ template <typename T> struct SkTUnref {
 
 
 
-template <typename T> class SkAutoTUnref : public skstd::unique_ptr<T, SkTUnref<T>> {
+template <typename T> class SkAutoTUnref : public std::unique_ptr<T, SkTUnref<T>> {
 public:
-    explicit SkAutoTUnref(T* obj = nullptr) : skstd::unique_ptr<T, SkTUnref<T>>(obj) {}
+    explicit SkAutoTUnref(T* obj = nullptr) : std::unique_ptr<T, SkTUnref<T>>(obj) {}
 
-    T* detach() { return this->release(); }
     operator T*() const { return this->get(); }
+
+#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
+    
+    T* detach() { return this->release(); }
+#endif
 };
 
 
@@ -224,5 +233,222 @@ public:
 private:
     mutable int32_t fRefCnt;
 };
+
+
+
+
+
+
+
+
+
+
+template <typename T> class sk_sp {
+    
+    using unspecified_bool_type = T* sk_sp::*;
+public:
+    using element_type = T;
+
+    sk_sp() : fPtr(nullptr) {}
+    sk_sp(std::nullptr_t) : fPtr(nullptr) {}
+
+    
+
+
+
+    sk_sp(const sk_sp<T>& that) : fPtr(SkSafeRef(that.get())) {}
+    template <typename U, typename = skstd::enable_if_t<skstd::is_convertible<U*, T*>::value>>
+    sk_sp(const sk_sp<U>& that) : fPtr(SkSafeRef(that.get())) {}
+
+    
+
+
+
+
+    sk_sp(sk_sp<T>&& that) : fPtr(that.release()) {}
+    template <typename U, typename = skstd::enable_if_t<skstd::is_convertible<U*, T*>::value>>
+    sk_sp(sk_sp<U>&& that) : fPtr(that.release()) {}
+
+    
+
+
+
+    explicit sk_sp(T* obj) : fPtr(obj) {}
+
+    
+
+
+    ~sk_sp() {
+        SkSafeUnref(fPtr);
+        SkDEBUGCODE(fPtr = nullptr);
+    }
+
+    sk_sp<T>& operator=(std::nullptr_t) { this->reset(); return *this; }
+
+    
+
+
+
+
+    sk_sp<T>& operator=(const sk_sp<T>& that) {
+        this->reset(SkSafeRef(that.get()));
+        return *this;
+    }
+    template <typename U, typename = skstd::enable_if_t<skstd::is_convertible<U*, T*>::value>>
+    sk_sp<T>& operator=(const sk_sp<U>& that) {
+        this->reset(SkSafeRef(that.get()));
+        return *this;
+    }
+
+    
+
+
+
+
+    sk_sp<T>& operator=(sk_sp<T>&& that) {
+        this->reset(that.release());
+        return *this;
+    }
+    template <typename U, typename = skstd::enable_if_t<skstd::is_convertible<U*, T*>::value>>
+    sk_sp<T>& operator=(sk_sp<U>&& that) {
+        this->reset(that.release());
+        return *this;
+    }
+
+    T& operator*() const {
+        SkASSERT(this->get() != nullptr);
+        return *this->get();
+    }
+
+    
+    
+    
+    
+    operator unspecified_bool_type() const { return this->get() ? &sk_sp::fPtr : nullptr; }
+    bool operator!() const { return this->get() == nullptr; }
+
+    T* get() const { return fPtr; }
+    T* operator->() const { return fPtr; }
+
+    
+
+
+
+    void reset(T* ptr = nullptr) {
+        
+        
+        
+        T* oldPtr = fPtr;
+        fPtr = ptr;
+        SkSafeUnref(oldPtr);
+    }
+
+    
+
+
+
+
+    T* SK_WARN_UNUSED_RESULT release() {
+        T* ptr = fPtr;
+        fPtr = nullptr;
+        return ptr;
+    }
+
+    void swap(sk_sp<T>& that)  {
+        using std::swap;
+        swap(fPtr, that.fPtr);
+    }
+
+private:
+    T*  fPtr;
+};
+
+template <typename T> inline void swap(sk_sp<T>& a, sk_sp<T>& b)  {
+    a.swap(b);
+}
+
+template <typename T, typename U> inline bool operator==(const sk_sp<T>& a, const sk_sp<U>& b) {
+    return a.get() == b.get();
+}
+template <typename T> inline bool operator==(const sk_sp<T>& a, std::nullptr_t)  {
+    return !a;
+}
+template <typename T> inline bool operator==(std::nullptr_t, const sk_sp<T>& b)  {
+    return !b;
+}
+
+template <typename T, typename U> inline bool operator!=(const sk_sp<T>& a, const sk_sp<U>& b) {
+    return a.get() != b.get();
+}
+template <typename T> inline bool operator!=(const sk_sp<T>& a, std::nullptr_t)  {
+    return static_cast<bool>(a);
+}
+template <typename T> inline bool operator!=(std::nullptr_t, const sk_sp<T>& b)  {
+    return static_cast<bool>(b);
+}
+
+template <typename T, typename U> inline bool operator<(const sk_sp<T>& a, const sk_sp<U>& b) {
+    
+    
+    
+    return std::less<void*>()((void*)a.get(), (void*)b.get());
+}
+template <typename T> inline bool operator<(const sk_sp<T>& a, std::nullptr_t) {
+    return std::less<T*>()(a.get(), nullptr);
+}
+template <typename T> inline bool operator<(std::nullptr_t, const sk_sp<T>& b) {
+    return std::less<T*>()(nullptr, b.get());
+}
+
+template <typename T, typename U> inline bool operator<=(const sk_sp<T>& a, const sk_sp<U>& b) {
+    return !(b < a);
+}
+template <typename T> inline bool operator<=(const sk_sp<T>& a, std::nullptr_t) {
+    return !(nullptr < a);
+}
+template <typename T> inline bool operator<=(std::nullptr_t, const sk_sp<T>& b) {
+    return !(b < nullptr);
+}
+
+template <typename T, typename U> inline bool operator>(const sk_sp<T>& a, const sk_sp<U>& b) {
+    return b < a;
+}
+template <typename T> inline bool operator>(const sk_sp<T>& a, std::nullptr_t) {
+    return nullptr < a;
+}
+template <typename T> inline bool operator>(std::nullptr_t, const sk_sp<T>& b) {
+    return b < nullptr;
+}
+
+template <typename T, typename U> inline bool operator>=(const sk_sp<T>& a, const sk_sp<U>& b) {
+    return !(a < b);
+}
+template <typename T> inline bool operator>=(const sk_sp<T>& a, std::nullptr_t) {
+    return !(a < nullptr);
+}
+template <typename T> inline bool operator>=(std::nullptr_t, const sk_sp<T>& b) {
+    return !(nullptr < b);
+}
+
+template <typename T, typename... Args>
+sk_sp<T> sk_make_sp(Args&&... args) {
+    return sk_sp<T>(new T(std::forward<Args>(args)...));
+}
+
+#ifdef SK_SUPPORT_TRANSITION_TO_SP_INTERFACES
+
+
+
+
+
+
+
+
+
+template <typename T> sk_sp<T> sk_ref_sp(T* obj) {
+    return sk_sp<T>(SkSafeRef(obj));
+}
+
+#endif
 
 #endif

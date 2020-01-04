@@ -11,8 +11,9 @@
 #include "SkTArray.h"
 #include "SkTDArray.h"
 #include "SkTypes.h"
+#include "GrTypesPriv.h"
 
-class GrGeometryBuffer;
+class GrBuffer;
 class GrGpu;
 
 
@@ -51,22 +52,12 @@ protected:
 
 
 
-    enum BufferType {
-        kVertex_BufferType,
-        kIndex_BufferType,
-    };
-
-    
-
-
-
-
 
 
 
 
      GrBufferAllocPool(GrGpu* gpu,
-                       BufferType bufferType,
+                       GrBufferType bufferType,
                        size_t   bufferSize = 0);
 
      virtual ~GrBufferAllocPool();
@@ -92,15 +83,15 @@ protected:
 
     void* makeSpace(size_t size,
                     size_t alignment,
-                    const GrGeometryBuffer** buffer,
+                    const GrBuffer** buffer,
                     size_t* offset);
 
-    GrGeometryBuffer* getBuffer(size_t size);
+    GrBuffer* getBuffer(size_t size);
 
 private:
     struct BufferBlock {
-        size_t              fBytesFree;
-        GrGeometryBuffer*   fBuffer;
+        size_t      fBytesFree;
+        GrBuffer*   fBuffer;
     };
 
     bool createBlock(size_t requestSize);
@@ -115,15 +106,13 @@ private:
 
     GrGpu*                          fGpu;
     size_t                          fMinBlockSize;
-    BufferType                      fBufferType;
+    GrBufferType                    fBufferType;
 
     SkTArray<BufferBlock>           fBlocks;
     void*                           fCpuData;
     void*                           fBufferPtr;
-    size_t                          fGeometryBufferMapThreshold;
+    size_t                          fBufferMapThreshold;
 };
-
-class GrVertexBuffer;
 
 
 
@@ -160,14 +149,12 @@ public:
 
     void* makeSpace(size_t vertexSize,
                     int vertexCount,
-                    const GrVertexBuffer** buffer,
+                    const GrBuffer** buffer,
                     int* startVertex);
 
 private:
     typedef GrBufferAllocPool INHERITED;
 };
-
-class GrIndexBuffer;
 
 
 
@@ -200,7 +187,7 @@ public:
 
 
     void* makeSpace(int indexCount,
-                    const GrIndexBuffer** buffer,
+                    const GrBuffer** buffer,
                     int* startIndex);
 
 private:

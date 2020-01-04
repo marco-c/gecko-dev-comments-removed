@@ -11,6 +11,7 @@
 #include "SkTypes.h"
 #include "SkBitmap.h"
 #include "SkDeque.h"
+#include "SkImage.h"
 #include "SkPaint.h"
 #include "SkRefCnt.h"
 #include "SkRegion.h"
@@ -22,10 +23,10 @@ class GrRenderTarget;
 class SkBaseDevice;
 class SkCanvasClipVisitor;
 class SkClipStack;
+class SkData;
 class SkDraw;
 class SkDrawable;
 class SkDrawFilter;
-class SkImage;
 class SkImageFilter;
 class SkMetaData;
 class SkPath;
@@ -36,16 +37,6 @@ struct SkRSXform;
 class SkSurface;
 class SkSurface_Base;
 class SkTextBlob;
-
-
-
-
-
-#ifdef SK_SUPPORT_LEGACY_CLIPTOLAYERFLAG
-#ifndef SK_SUPPORT_LEGACY_SAVEFLAGS
-    #define SK_SUPPORT_LEGACY_SAVEFLAGS
-#endif
-#endif
 
 
 
@@ -64,7 +55,7 @@ class SkTextBlob;
 
 class SK_API SkCanvas : public SkRefCnt {
     enum PrivateSaveLayerFlags {
-        kDontClipToLayer_PrivateSaveLayerFlag   = 1 << 31,
+        kDontClipToLayer_PrivateSaveLayerFlag   = 1U << 31,
     };
     
 public:
@@ -133,7 +124,16 @@ public:
 
     
 
+
+
+
+    bool getProps(SkSurfaceProps*) const;
+
     
+
+    
+
+
 
 
     void flush();
@@ -193,7 +193,10 @@ public:
 
 
 
-    SkSurface* newSurface(const SkImageInfo&, const SkSurfaceProps* = NULL);
+    sk_sp<SkSurface> makeSurface(const SkImageInfo&, const SkSurfaceProps* = nullptr);
+#ifdef SK_SUPPORT_LEGACY_NEW_SURFACE_API
+    SkSurface* newSurface(const SkImageInfo& info, const SkSurfaceProps* props = NULL);
+#endif
 
     
 
@@ -227,8 +230,11 @@ public:
 
 
 
+    bool peekPixels(SkPixmap*);
 
+#ifdef SK_SUPPORT_LEGACY_PEEKPIXELS_PARMS
     const void* peekPixels(SkImageInfo* info, size_t* rowBytes);
+#endif
 
     
 
@@ -295,35 +301,6 @@ public:
 
     
 
-#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
-    enum SaveFlags {
-        
-        
-        kMatrix_SaveFlag            = 0x01,
-        
-        
-        kClip_SaveFlag              = 0x02,
-        
-        kHasAlphaLayer_SaveFlag     = 0x04,
-        
-        kFullColorLayer_SaveFlag    = 0x08,
-        
-
-
-
-
-        kClipToLayer_SaveFlag       = 0x10,
-
-        
-        
-        kMatrixClip_SaveFlag        = 0x03,
-#ifdef SK_SUPPORT_LEGACY_CLIPTOLAYERFLAG
-        kARGB_NoClipLayer_SaveFlag  = 0x0F,
-#endif
-        kARGB_ClipLayer_SaveFlag    = 0x1F
-    };
-#endif
-
     
 
 
@@ -359,26 +336,6 @@ public:
 
     int saveLayerPreserveLCDTextRequests(const SkRect* bounds, const SkPaint* paint);
 
-#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SK_ATTR_EXTERNALLY_DEPRECATED("SaveFlags use is deprecated")
-    int saveLayer(const SkRect* bounds, const SkPaint* paint, SaveFlags flags);
-#endif
-
     
 
 
@@ -391,25 +348,6 @@ public:
 
 
     int saveLayerAlpha(const SkRect* bounds, U8CPU alpha);
-
-#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SK_ATTR_EXTERNALLY_DEPRECATED("SaveFlags use is deprecated")
-    int saveLayerAlpha(const SkRect* bounds, U8CPU alpha, SaveFlags flags);
-#endif
 
     enum {
         kIsOpaque_SaveLayerFlag         = 1 << 0,
@@ -844,6 +782,10 @@ public:
 
 
     void drawImage(const SkImage* image, SkScalar left, SkScalar top, const SkPaint* paint = NULL);
+    void drawImage(const sk_sp<SkImage>& image, SkScalar left, SkScalar top,
+                   const SkPaint* paint = NULL) {
+        this->drawImage(image.get(), left, top, paint);
+    }
 
     
 
@@ -895,6 +837,20 @@ public:
     void drawImageRect(const SkImage* image, const SkRect& dst, const SkPaint* paint,
                        SrcRectConstraint = kStrict_SrcRectConstraint);
 
+    void drawImageRect(const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst,
+                       const SkPaint* paint,
+                       SrcRectConstraint constraint = kStrict_SrcRectConstraint) {
+        this->drawImageRect(image.get(), src, dst, paint, constraint);
+    }
+    void drawImageRect(const sk_sp<SkImage>& image, const SkIRect& isrc, const SkRect& dst,
+                       const SkPaint* paint, SrcRectConstraint cons = kStrict_SrcRectConstraint) {
+        this->drawImageRect(image.get(), isrc, dst, paint, cons);
+    }
+    void drawImageRect(const sk_sp<SkImage>& image, const SkRect& dst, const SkPaint* paint,
+                       SrcRectConstraint cons = kStrict_SrcRectConstraint) {
+        this->drawImageRect(image.get(), dst, paint, cons);
+    }
+
     
 
 
@@ -910,7 +866,11 @@ public:
 
 
     void drawImageNine(const SkImage*, const SkIRect& center, const SkRect& dst,
-                        const SkPaint* paint = NULL);
+                       const SkPaint* paint = nullptr);
+    void drawImageNine(const sk_sp<SkImage>& image, const SkIRect& center, const SkRect& dst,
+                       const SkPaint* paint = nullptr) {
+        this->drawImageNine(image.get(), center, dst, paint);
+    }
 
     
 
@@ -1045,6 +1005,9 @@ public:
     void drawPicture(const SkPicture* picture) {
         this->drawPicture(picture, NULL, NULL);
     }
+    void drawPicture(const sk_sp<SkPicture>& picture) {
+        this->drawPicture(picture.get());
+    }
 
     
 
@@ -1059,6 +1022,9 @@ public:
 
 
     void drawPicture(const SkPicture*, const SkMatrix* matrix, const SkPaint* paint);
+    void drawPicture(const sk_sp<SkPicture>& picture, const SkMatrix* matrix, const SkPaint* paint) {
+        this->drawPicture(picture.get(), matrix, paint);
+    }
 
     enum VertexMode {
         kTriangles_VertexMode,
@@ -1094,6 +1060,14 @@ public:
                       const SkColor colors[], SkXfermode* xmode,
                       const uint16_t indices[], int indexCount,
                       const SkPaint& paint);
+    void drawVertices(VertexMode vmode, int vertexCount,
+                      const SkPoint vertices[], const SkPoint texs[],
+                      const SkColor colors[], const sk_sp<SkXfermode>& xmode,
+                      const uint16_t indices[], int indexCount,
+                      const SkPaint& paint) {
+        this->drawVertices(vmode, vertexCount, vertices, texs, colors, xmode.get(),
+                           indices, indexCount, paint);
+    }
 
     
 
@@ -1110,6 +1084,10 @@ public:
 
     void drawPatch(const SkPoint cubics[12], const SkColor colors[4],
                    const SkPoint texCoords[4], SkXfermode* xmode, const SkPaint& paint);
+    void drawPatch(const SkPoint cubics[12], const SkColor colors[4], const SkPoint texCoords[4],
+                   const sk_sp<SkXfermode>& xmode, const SkPaint& paint) {
+        this->drawPatch(cubics, colors, texCoords, xmode.get(), paint);
+    }
 
     
 
@@ -1137,6 +1115,17 @@ public:
         this->drawAtlas(atlas, xform, tex, NULL, count, SkXfermode::kDst_Mode, cullRect, paint);
     }
 
+    void drawAtlas(const sk_sp<SkImage>& atlas, const SkRSXform xform[], const SkRect tex[],
+                   const SkColor colors[], int count, SkXfermode::Mode mode, const SkRect* cull,
+                   const SkPaint* paint) {
+        this->drawAtlas(atlas.get(), xform, tex, colors, count, mode, cull, paint);
+    }
+    void drawAtlas(const sk_sp<SkImage>& atlas, const SkRSXform xform[], const SkRect tex[],
+                   int count, const SkRect* cullRect, const SkPaint* paint) {
+        this->drawAtlas(atlas.get(), xform, tex, nullptr, count, SkXfermode::kDst_Mode,
+                        cullRect, paint);
+    }
+
     
 
 
@@ -1150,10 +1139,32 @@ public:
 
     
 
+
+
+
+
+
+
+
+
+    void drawAnnotation(const SkRect&, const char key[], SkData* value);
+    void drawAnnotation(const SkRect& rect, const char key[], const sk_sp<SkData>& value) {
+        this->drawAnnotation(rect, key, value.get());
+    }
+
+    
+#ifdef SK_INTERNAL
+#ifndef SK_SUPPORT_LEGACY_DRAWFILTER
+    #define SK_SUPPORT_LEGACY_DRAWFILTER
+#endif
+#endif
+
+#ifdef SK_SUPPORT_LEGACY_DRAWFILTER
     
 
 
 
+    SK_ATTR_EXTERNALLY_DEPRECATED("getDrawFilter use is deprecated")
     SkDrawFilter* getDrawFilter() const;
 
     
@@ -1164,8 +1175,9 @@ public:
 
 
 
+    SK_ATTR_EXTERNALLY_DEPRECATED("setDrawFilter use is deprecated")
     virtual SkDrawFilter* setDrawFilter(SkDrawFilter* filter);
-
+#endif
     
 
     
@@ -1265,7 +1277,7 @@ public:
 
 protected:
     
-    virtual SkSurface* onNewSurface(const SkImageInfo&, const SkSurfaceProps&);
+    virtual sk_sp<SkSurface> onNewSurface(const SkImageInfo&, const SkSurfaceProps&);
 
     
     virtual bool onPeekPixels(SkPixmap*);
@@ -1289,6 +1301,7 @@ protected:
     virtual void didConcat(const SkMatrix&) {}
     virtual void didSetMatrix(const SkMatrix&) {}
 
+    virtual void onDrawAnnotation(const SkRect&, const char key[], SkData* value);
     virtual void onDrawDRRect(const SkRRect&, const SkRRect&, const SkPaint&);
 
     virtual void onDrawText(const void* text, size_t byteLength, SkScalar x,
@@ -1364,16 +1377,8 @@ protected:
     bool clipRectBounds(const SkRect* bounds, SaveLayerFlags, SkIRect* intersection,
                         const SkImageFilter* imageFilter = NULL);
 
-#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
-    
-    
-    static uint32_t SaveLayerFlagsToSaveFlags(SaveLayerFlags);
-#endif
 private:
     static bool BoundsAffectsClip(SaveLayerFlags);
-#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
-    static uint32_t SaveFlagsToSaveLayerFlags(SaveFlags);
-#endif
     static SaveLayerFlags LegacySaveFlagsToSaveLayerFlags(uint32_t legacySaveFlags);
 
     enum ShaderOverrideOpacity {
@@ -1460,8 +1465,7 @@ private:
 
 
 
-    SkISize getTopLayerSize() const;
-    SkIPoint getTopLayerOrigin() const;
+    SkIRect getTopLayerBounds() const;
 
     void internalDrawBitmapRect(const SkBitmap& bitmap, const SkRect* src,
                                 const SkRect& dst, const SkPaint* paint,
@@ -1569,19 +1573,6 @@ private:
     int         fSaveCount;
 };
 #define SkAutoCanvasRestore(...) SK_REQUIRE_LOCAL_VAR(SkAutoCanvasRestore)
-
-#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
-static inline SkCanvas::SaveFlags operator|(const SkCanvas::SaveFlags lhs,
-                                            const SkCanvas::SaveFlags rhs) {
-    return static_cast<SkCanvas::SaveFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
-}
-
-static inline SkCanvas::SaveFlags& operator|=(SkCanvas::SaveFlags& lhs,
-                                              const SkCanvas::SaveFlags rhs) {
-    lhs = lhs | rhs;
-    return lhs;
-}
-#endif
 
 class SkCanvasClipVisitor {
 public:

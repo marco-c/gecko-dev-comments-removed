@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGSymbol.h"
 #include "SkSVGParser.h"
 

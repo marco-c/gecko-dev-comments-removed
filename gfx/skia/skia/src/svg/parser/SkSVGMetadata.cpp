@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGMetadata.h"
 #include "SkSVGParser.h"
 

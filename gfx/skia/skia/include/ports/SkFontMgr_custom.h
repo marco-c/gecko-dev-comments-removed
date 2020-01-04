@@ -15,4 +15,7 @@ class SkFontMgr;
 
 SK_API SkFontMgr* SkFontMgr_New_Custom_Directory(const char* dir);
 
+
+SK_API SkFontMgr* SkFontMgr_New_Custom_Empty();
+
 #endif 

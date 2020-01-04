@@ -13,6 +13,8 @@
 #include "SkSwizzler.h"
 #include "SkUtils.h"
 
+#include "gif_lib.h"
+
 
 
 
@@ -49,7 +51,11 @@ static int32_t read_bytes_callback(GifFileType* fileType, GifByteType* out, int3
 
 
 static GifFileType* open_gif(SkStream* stream) {
+#if GIFLIB_MAJOR < 5
+    return DGifOpen(stream, read_bytes_callback);
+#else
     return DGifOpen(stream, read_bytes_callback, nullptr);
+#endif
 }
 
 
@@ -117,7 +123,11 @@ inline uint32_t get_output_row_interlaced(uint32_t encodedRow, uint32_t height) 
 
 
 void SkGifCodec::CloseGif(GifFileType* gif) {
-    DGifCloseFile(gif, NULL);
+#if GIFLIB_MAJOR < 5 || (GIFLIB_MAJOR == 5 && GIFLIB_MINOR == 0)
+    DGifCloseFile(gif);
+#else
+    DGifCloseFile(gif, nullptr);
+#endif
 }
 
 
@@ -126,7 +136,11 @@ void SkGifCodec::CloseGif(GifFileType* gif) {
 
 void SkGifCodec::FreeExtension(SavedImage* image) {
     if (NULL != image->ExtensionBlocks) {
+#if GIFLIB_MAJOR < 5
+        FreeExtension(image);
+#else
         GifFreeExtensions(&image->ExtensionBlockCount, &image->ExtensionBlocks);
+#endif
     }
 }
 
@@ -202,12 +216,12 @@ bool SkGifCodec::ReadHeader(SkStream* stream, SkCodec** codecOut, GifFileType** 
         
         SkImageInfo imageInfo = SkImageInfo::Make(size.width(), size.height(), kIndex_8_SkColorType,
                 alphaType);
-        *codecOut = new SkGifCodec(imageInfo, streamDeleter.detach(), gif.detach(), transIndex,
+        *codecOut = new SkGifCodec(imageInfo, streamDeleter.release(), gif.release(), transIndex,
                 frameRect, frameIsSubset);
     } else {
         SkASSERT(nullptr != gifOut);
-        streamDeleter.detach();
-        *gifOut = gif.detach();
+        streamDeleter.release();
+        *gifOut = gif.release();
     }
     return true;
 }
@@ -311,10 +325,15 @@ SkCodec::Result SkGifCodec::ReadUpToFirstImage(GifFileType* gif, uint32_t* trans
                 
                 while (nullptr != extData) {
                     
+
+#if GIFLIB_MAJOR < 5
+                    if (AddExtensionBlock(&saveExt, extData[0],
+                                          &extData[1]) == GIF_ERROR) {
+#else
                     if (GIF_ERROR == GifAddExtensionBlock(&saveExt.ExtensionBlockCount,
                                                           &saveExt.ExtensionBlocks,
-                                                          extFunction, extData[0], &extData[1]))
-                    {
+                                                          extFunction, extData[0], &extData[1])) {
+#endif
                         return gif_error("Could not add extension block.\n", kIncompleteInput);
                     }
                     
@@ -401,24 +420,28 @@ void SkGifCodec::initializeColorTable(const SkImageInfo& dstInfo, SkPMColor* inp
 
     
     
-    
-    
-    
-    
-    
-    
-    uint32_t backgroundIndex = fGif->SBackGroundColor;
-    if (fTransIndex < colorCount) {
-        colorPtr[fTransIndex] = SK_ColorTRANSPARENT;
-        fFillIndex = fTransIndex;
-    } else if (backgroundIndex < colorCount) {
-        fFillIndex = backgroundIndex;
-    }
+    if (colorCount > 0) {
+        
+        
+        
+        
+        
+        
+        
+        
+        uint32_t backgroundIndex = fGif->SBackGroundColor;
+        if (fTransIndex < colorCount) {
+            colorPtr[fTransIndex] = SK_ColorTRANSPARENT;
+            fFillIndex = fTransIndex;
+        } else if (backgroundIndex < colorCount) {
+            fFillIndex = backgroundIndex;
+        }
 
-    
-    
-    for (uint32_t i = colorCount; i < maxColors; i++) {
-        colorPtr[i] = colorPtr[fFillIndex];
+        for (uint32_t i = colorCount; i < maxColors; i++) {
+            colorPtr[i] = colorPtr[fFillIndex];
+        }
+    } else {
+        sk_memset32(colorPtr, 0xFF000000, maxColors);
     }
 
     fColorTable.reset(new SkColorTable(colorPtr, maxColors));
@@ -436,19 +459,16 @@ SkCodec::Result SkGifCodec::prepareToDecode(const SkImageInfo& dstInfo, SkPMColo
     
     this->initializeColorTable(dstInfo, inputColorPtr, inputColorCount);
 
-    return this->initializeSwizzler(dstInfo, opts);
+    this->initializeSwizzler(dstInfo, opts);
+    return kSuccess;
 }
 
-SkCodec::Result SkGifCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& opts) {
+void SkGifCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& opts) {
     const SkPMColor* colorPtr = get_color_ptr(fColorTable.get());
     const SkIRect* frameRect = fFrameIsSubset ? &fFrameRect : nullptr;
     fSwizzler.reset(SkSwizzler::CreateSwizzler(SkSwizzler::kIndex, colorPtr, dstInfo, opts,
             frameRect));
-
-    if (nullptr != fSwizzler.get()) {
-        return kSuccess;
-    }
-    return kUnimplemented;
+    SkASSERT(fSwizzler);
 }
 
 bool SkGifCodec::readRow() {
@@ -476,8 +496,7 @@ SkCodec::Result SkGifCodec::onGetPixels(const SkImageInfo& dstInfo,
     
     if (fFrameIsSubset) {
         
-        SkSampler::Fill(dstInfo, dst, dstRowBytes,
-                this->getFillValue(dstInfo.colorType(), dstInfo.alphaType()),
+        SkSampler::Fill(dstInfo, dst, dstRowBytes, this->getFillValue(dstInfo.colorType()),
                 opts.fZeroInitialized);
     }
 
@@ -495,7 +514,7 @@ SkCodec::Result SkGifCodec::onGetPixels(const SkImageInfo& dstInfo,
 
 
 
-uint32_t SkGifCodec::onGetFillValue(SkColorType colorType, SkAlphaType alphaType) const {
+uint32_t SkGifCodec::onGetFillValue(SkColorType colorType) const {
     const SkPMColor* colorPtr = get_color_ptr(fColorTable.get());
     return get_color_table_fill_value(colorType, colorPtr, fFillIndex);
 }
@@ -538,8 +557,7 @@ int SkGifCodec::onGetScanlines(void* dst, int count, size_t rowBytes) {
     if (fFrameIsSubset) {
         
         SkImageInfo fillInfo = this->dstInfo().makeWH(this->dstInfo().width(), count);
-        uint32_t fillValue = this->onGetFillValue(this->dstInfo().colorType(),
-                this->dstInfo().alphaType());
+        uint32_t fillValue = this->onGetFillValue(this->dstInfo().colorType());
         fSwizzler->fill(fillInfo, dst, rowBytes, fillValue, this->options().fZeroInitialized);
 
         

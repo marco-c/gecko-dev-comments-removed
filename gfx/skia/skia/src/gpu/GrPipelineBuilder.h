@@ -108,7 +108,7 @@ public:
 
     class AutoRestoreFragmentProcessorState : public ::SkNoncopyable {
     public:
-        AutoRestoreFragmentProcessorState() 
+        AutoRestoreFragmentProcessorState()
             : fPipelineBuilder(nullptr)
             , fColorEffectCnt(0)
             , fCoverageEffectCnt(0) {}
@@ -158,14 +158,6 @@ public:
 
 
 
-    void setCoverageSetOpXPFactory(SkRegion::Op regionOp, bool invertCoverage = false) {
-        fXPFactory.reset(GrCoverageSetOpXPFactory::Create(regionOp, invertCoverage));
-    }
-
-    
-
-
-
     void setDisableColorXPFactory() {
         fXPFactory.reset(GrDisableColorXPFactory::Create());
     }
@@ -177,7 +169,7 @@ public:
     
 
 
-    bool willXPNeedDstTexture(const GrCaps& caps, 
+    bool willXPNeedDstTexture(const GrCaps& caps,
                               const GrPipelineOptimizations& optimizations) const;
 
     
@@ -291,12 +283,26 @@ public:
 
         kSnapVerticesToPixelCenters_Flag = 0x02,
 
-        kLast_Flag = kSnapVerticesToPixelCenters_Flag,
+        
+
+
+        kDisableOutputConversionToSRGB_Flag = 0x04,
+
+        
+
+
+        kAllowSRGBInputs_Flag = 0x08,
+
+        kLast_Flag = kAllowSRGBInputs_Flag,
     };
 
     bool isHWAntialias() const { return SkToBool(fFlags & kHWAntialias_Flag); }
     bool snapVerticesToPixelCenters() const {
         return SkToBool(fFlags & kSnapVerticesToPixelCenters_Flag); }
+    bool getDisableOutputConversionToSRGB() const {
+        return SkToBool(fFlags & kDisableOutputConversionToSRGB_Flag); }
+    bool getAllowSRGBInputs() const {
+        return SkToBool(fFlags & kAllowSRGBInputs_Flag); }
 
     
 
@@ -304,7 +310,7 @@ public:
 
 
     void enableState(uint32_t flags) { fFlags |= flags; }
-        
+
     
 
 

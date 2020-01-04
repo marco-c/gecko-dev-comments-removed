@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGLinearGradient_DEFINED
 #define SkSVGLinearGradient_DEFINED
 

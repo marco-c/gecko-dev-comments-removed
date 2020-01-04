@@ -27,7 +27,7 @@ public:
     bool drawTextBlob(const SkTextBlob*, SkScalar x, SkScalar y, const SkPaint&);
 
     
-    SkPicture* detachAsPicture(const SkRect& cull);
+    sk_sp<SkPicture> detachAsPicture(const SkRect& cull);
 
     
     

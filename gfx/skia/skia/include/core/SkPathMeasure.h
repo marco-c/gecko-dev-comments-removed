@@ -8,8 +8,8 @@
 #ifndef SkPathMeasure_DEFINED
 #define SkPathMeasure_DEFINED
 
+#include "../private/SkTDArray.h"
 #include "SkPath.h"
-#include "SkTDArray.h"
 
 struct SkConic;
 
@@ -21,7 +21,10 @@ public:
 
 
 
-    SkPathMeasure(const SkPath& path, bool forceClosed);
+
+
+
+    SkPathMeasure(const SkPath& path, bool forceClosed, SkScalar resScale = 1);
     ~SkPathMeasure();
 
     
@@ -82,6 +85,7 @@ public:
 private:
     SkPath::Iter    fIter;
     const SkPath*   fPath;
+    SkScalar        fTolerance;
     SkScalar        fLength;            
     int             fFirstPtIndex;      
     bool            fIsClosed;          
@@ -90,11 +94,7 @@ private:
     struct Segment {
         SkScalar    fDistance;  
         unsigned    fPtIndex; 
-#ifdef SK_SUPPORT_LEGACY_PATH_MEASURE_TVALUE
-        unsigned    fTValue : 15;
-#else
         unsigned    fTValue : 30;
-#endif
         unsigned    fType : 2;
 
         SkScalar getScalarT() const;
@@ -107,10 +107,16 @@ private:
     void     buildSegments();
     SkScalar compute_quad_segs(const SkPoint pts[3], SkScalar distance,
                                 int mint, int maxt, int ptIndex);
-    SkScalar compute_conic_segs(const SkConic&, SkScalar distance, int mint, int maxt, int ptIndex);
+    SkScalar compute_conic_segs(const SkConic&, SkScalar distance,
+                                int mint, const SkPoint& minPt,
+                                int maxt, const SkPoint& maxPt, int ptIndex);
     SkScalar compute_cubic_segs(const SkPoint pts[3], SkScalar distance,
                                 int mint, int maxt, int ptIndex);
     const Segment* distanceToSegment(SkScalar distance, SkScalar* t);
+    bool quad_too_curvy(const SkPoint pts[3]);
+    bool conic_too_curvy(const SkPoint& firstPt, const SkPoint& midTPt,const SkPoint& lastPt);
+    bool cheap_dist_exceeds_limit(const SkPoint& pt, SkScalar x, SkScalar y);
+    bool cubic_too_curvy(const SkPoint pts[4]);
 };
 
 #endif

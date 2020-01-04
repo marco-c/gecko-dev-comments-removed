@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef SkLayerRasterizer_DEFINED
 #define SkLayerRasterizer_DEFINED
 
@@ -44,7 +42,7 @@ public:
 
 
 
-        SkLayerRasterizer* detachRasterizer();
+        sk_sp<SkLayerRasterizer> detach();
 
         
 
@@ -58,7 +56,16 @@ public:
 
 
 
-        SkLayerRasterizer* snapshotRasterizer() const;
+        sk_sp<SkLayerRasterizer> snapshot() const;
+    
+#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
+        SkLayerRasterizer* detachRasterizer() {
+            return this->detach().release();
+        }
+        SkLayerRasterizer* snapshotRasterizer() const {
+            return this->snapshot().release();
+        }
+#endif
 
     private:
         SkDeque* fLayers;

@@ -144,9 +144,13 @@ public:
         
 
 
+
+
         SkCodec::ZeroInitialized fZeroInitialized;
 
         
+
+
 
 
 
@@ -167,6 +171,8 @@ public:
 
 
 
+
+
         SkPMColor* fColorPtr;
         int*       fColorCount;
 
@@ -175,10 +181,13 @@ public:
 
 
 
+
+
         int fSampleSize;
     };
 
     
+
 
 
 
@@ -224,7 +233,12 @@ public:
 
 
 
+
     SkCodec::Result getAndroidPixels(const SkImageInfo& info, void* pixels, size_t rowBytes);
+
+    SkCodec::Result getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes) {
+        return this->getAndroidPixels(info, pixels, rowBytes);
+    }
 
 protected:
 

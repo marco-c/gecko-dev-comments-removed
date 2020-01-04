@@ -5,7 +5,6 @@
 
 
 
-
 #include "SkBitmapHeap.h"
 #include "SkBitmap.h"
 #include "SkTSearch.h"

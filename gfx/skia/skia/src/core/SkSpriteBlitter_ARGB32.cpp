@@ -5,8 +5,6 @@
 
 
 
-
-
 #include "SkSpriteBlitter.h"
 #include "SkBlitRow.h"
 #include "SkColorFilter.h"
@@ -256,8 +254,8 @@ public:
 
 
 
-SkSpriteBlitter* SkSpriteBlitter::ChooseD32(const SkPixmap& source, const SkPaint& paint,
-        SkTBlitterAllocator* allocator) {
+SkSpriteBlitter* SkSpriteBlitter::ChooseL32(const SkPixmap& source, const SkPaint& paint,
+                                            SkTBlitterAllocator* allocator) {
     SkASSERT(allocator != nullptr);
 
     if (paint.getMaskFilter() != nullptr) {

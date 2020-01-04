@@ -60,7 +60,7 @@ void SkRandomScalerContext::generateAdvance(SkGlyph* glyph) {
 void SkRandomScalerContext::generateMetrics(SkGlyph* glyph) {
     
     
-    SkMask::Format format;
+    SkMask::Format format = SkMask::kARGB32_Format; 
     switch (glyph->getGlyphID() % 4) {
         case 0:
             format = SkMask::kLCD16_Format;

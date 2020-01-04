@@ -33,7 +33,7 @@
 
 
 #if !defined(GR_CACHE_STATS)
-  #if defined(SK_DEVELOPER) || defined(SK_DUMP_STATS)
+  #if defined(SK_DEVELOPER) || defined(SK_DEBUG) || defined(SK_DUMP_STATS)
       #define GR_CACHE_STATS  1
   #else
       #define GR_CACHE_STATS  0
@@ -41,7 +41,7 @@
 #endif
 
 #if !defined(GR_GPU_STATS)
-  #if defined(SK_DEVELOPER) || defined(SK_DUMP_STATS)
+  #if defined(SK_DEVELOPER) || defined(SK_DEBUG) || defined(SK_DUMP_STATS)
       #define GR_GPU_STATS    1
   #else
       #define GR_GPU_STATS    0
@@ -106,7 +106,7 @@ typedef unsigned __int64 uint64_t;
 
 
 
-#if defined(_MSC_VER) && _MSC_VER
+#if defined(_MSC_VER)
     #define GR_WARN(MSG) (GR_FILE_AND_LINE_STR "WARNING: " MSG)
 #else
     #define GR_WARN(MSG) ("WARNING: " MSG)
@@ -171,26 +171,13 @@ typedef unsigned __int64 uint64_t;
 
 
 
+#define GR_STATIC_ASSERT(CONDITION) static_assert(CONDITION, "bug")
 
 
-#if !defined(GR_STATIC_ASSERT)
-    #if (defined(_MSC_VER) && _MSC_VER >= 1600) || (defined(__GXX_EXPERIMENTAL_CXX0X__) && __GXX_EXPERIMENTAL_CXX0X__)
-        #define GR_STATIC_ASSERT(CONDITION) static_assert(CONDITION, "bug")
-    #else
-        template <bool> class GR_STATIC_ASSERT_FAILURE;
-        template <> class GR_STATIC_ASSERT_FAILURE<true> {};
-        #define GR_STATIC_ASSERT(CONDITION) \
-            enum {GR_CONCAT(X,__LINE__) = \
-            sizeof(GR_STATIC_ASSERT_FAILURE<CONDITION>)}
-    #endif
+
+
+#if !defined(GR_ENABLE_PLS_PATH_RENDERING)
+    #define GR_ENABLE_PLS_PATH_RENDERING 0
 #endif
 
-
-
-
-
-
-#if !defined(GR_BATCH_DEBUGGING_OUTPUT)
-    #define GR_BATCH_DEBUGGING_OUTPUT 0
-#endif
 #endif

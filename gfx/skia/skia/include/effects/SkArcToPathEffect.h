@@ -15,11 +15,11 @@ public:
     
 
 
-    static SkPathEffect* Create(SkScalar radius) {
+    static sk_sp<SkPathEffect> Make(SkScalar radius) {
         if (radius <= 0) {
             return NULL;
         }
-        return new SkArcToPathEffect(radius);
+        return sk_sp<SkPathEffect>(new SkArcToPathEffect(radius));
     }
 
     bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect*) const override;

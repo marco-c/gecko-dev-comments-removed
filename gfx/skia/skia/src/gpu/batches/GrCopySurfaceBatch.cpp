@@ -9,12 +9,12 @@
 #include "GrCopySurfaceBatch.h"
 
 
-static bool clip_srcrect_and_dstpoint(const GrSurface* dst,
-                                      const GrSurface* src,
-                                      const SkIRect& srcRect,
-                                      const SkIPoint& dstPoint,
-                                      SkIRect* clippedSrcRect,
-                                      SkIPoint* clippedDstPoint) {
+bool GrCopySurfaceBatch::ClipSrcRectAndDstPoint(const GrSurface* dst,
+                                                const GrSurface* src,
+                                                const SkIRect& srcRect,
+                                                const SkIPoint& dstPoint,
+                                                SkIRect* clippedSrcRect,
+                                                SkIPoint* clippedDstPoint) {
     *clippedSrcRect = srcRect;
     *clippedDstPoint = dstPoint;
 
@@ -67,12 +67,7 @@ GrBatch* GrCopySurfaceBatch::Create(GrSurface* dst, GrSurface* src, const SkIRec
     SkIRect clippedSrcRect;
     SkIPoint clippedDstPoint;
     
-    if (!clip_srcrect_and_dstpoint(dst,
-                                    src,
-                                    srcRect,
-                                    dstPoint,
-                                    &clippedSrcRect,
-                                    &clippedDstPoint)) {
+    if (!ClipSrcRectAndDstPoint(dst, src, srcRect, dstPoint, &clippedSrcRect, &clippedDstPoint)) {
         return nullptr;
     }
     return new GrCopySurfaceBatch(dst, src, clippedSrcRect, clippedDstPoint);

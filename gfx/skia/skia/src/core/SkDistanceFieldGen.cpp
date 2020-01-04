@@ -316,14 +316,20 @@ static void B2(DFData* curr, int width) {
 #define DUMP_EDGE 0
 
 #if !DUMP_EDGE
-static unsigned char pack_distance_field_val(float dist, float distanceMagnitude) {
-    if (dist <= -distanceMagnitude) {
-        return 255;
-    } else if (dist > distanceMagnitude) {
-        return 0;
-    } else {
-        return (unsigned char)((distanceMagnitude-dist)*128.0f/distanceMagnitude);
-    }
+template <int distanceMagnitude>
+static unsigned char pack_distance_field_val(float dist) {
+    
+    
+    
+    dist = SkScalarPin(-dist, -distanceMagnitude, distanceMagnitude * 127.0f / 128.0f);
+
+    
+    dist += distanceMagnitude;
+
+    
+    
+    
+    return (unsigned char)SkScalarRoundToInt(dist / (2 * distanceMagnitude) * 256.0f);
 }
 #endif
 
@@ -441,7 +447,7 @@ static bool generate_distance_field_from_image(unsigned char* distanceField,
             } else {
                 dist = SkScalarSqrt(currData->fDistSq);
             }
-            *dfPtr++ = pack_distance_field_val(dist, (float)SK_DistanceFieldMagnitude);
+            *dfPtr++ = pack_distance_field_val<SK_DistanceFieldMagnitude>(dist);
 #endif
             ++currData;
             ++currEdge;

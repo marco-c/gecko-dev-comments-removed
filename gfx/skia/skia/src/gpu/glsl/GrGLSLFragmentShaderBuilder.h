@@ -10,6 +10,7 @@
 
 #include "GrGLSLShaderBuilder.h"
 
+#include "GrProcessor.h"
 #include "glsl/GrGLSLProcessorTypes.h"
 
 class GrRenderTarget;
@@ -18,22 +19,20 @@ class GrGLSLVarying;
 
 
 
+
 class GrGLSLFragmentBuilder : public GrGLSLShaderBuilder {
 public:
-    GrGLSLFragmentBuilder(GrGLSLProgramBuilder* program)
-        : INHERITED(program)
-        , fHasCustomColorOutput(false)
-        , fHasSecondaryOutput(false) {
-        fSubstageIndices.push_back(0);
-    }
+    GrGLSLFragmentBuilder(GrGLSLProgramBuilder* program) : INHERITED(program) {}
     virtual ~GrGLSLFragmentBuilder() {}
+
     
 
 
 
     enum GLSLFeature {
-        kStandardDerivatives_GLSLFeature = 0,
-        kLastGLSLFeature = kStandardDerivatives_GLSLFeature
+        kStandardDerivatives_GLSLFeature = kLastGLSLPrivateFeature + 1,
+        kPixelLocalStorage_GLSLFeature,
+        kMultisampleInterpolation_GLSLFeature
     };
 
     
@@ -55,22 +54,161 @@ public:
     virtual const char* fragmentPosition() = 0;
 
     
-
-
-
-    void onBeforeChildProcEmitCode();
-    void onAfterChildProcEmitCode();
-
-    const SkString& getMangleString() const { return fMangleString; }
-
-    bool hasCustomColorOutput() const { return fHasCustomColorOutput; }
-    bool hasSecondaryOutput() const { return fHasSecondaryOutput; }
-
-protected:
-    bool fHasCustomColorOutput;
-    bool fHasSecondaryOutput;
+    void declAppendf(const char* fmt, ...);
 
 private:
+    typedef GrGLSLShaderBuilder INHERITED;
+};
+
+
+
+
+class GrGLSLFPFragmentBuilder : virtual public GrGLSLFragmentBuilder {
+public:
+    
+    GrGLSLFPFragmentBuilder() : GrGLSLFragmentBuilder(nullptr) {}
+
+    enum Coordinates {
+        kSkiaDevice_Coordinates,
+        kGLSLWindow_Coordinates,
+
+        kLast_Coordinates = kGLSLWindow_Coordinates
+    };
+
+    
+
+
+
+
+
+
+
+    virtual void appendOffsetToSample(const char* sampleIdx, Coordinates) = 0;
+
+    
+
+
+
+
+
+
+
+
+    virtual void maskSampleCoverage(const char* mask, bool invert = false) = 0;
+
+    
+
+
+
+    virtual void onBeforeChildProcEmitCode() = 0;
+    virtual void onAfterChildProcEmitCode() = 0;
+
+    virtual const SkString& getMangleString() const = 0;
+};
+
+
+
+
+class GrGLSLPPFragmentBuilder : public GrGLSLFPFragmentBuilder {
+public:
+    
+    GrGLSLPPFragmentBuilder() : GrGLSLFragmentBuilder(nullptr) {}
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    virtual void overrideSampleCoverage(const char* mask) = 0;
+};
+
+
+
+
+class GrGLSLXPFragmentBuilder : virtual public GrGLSLFragmentBuilder {
+public:
+    
+    GrGLSLXPFragmentBuilder() : GrGLSLFragmentBuilder(nullptr) {}
+
+    virtual bool hasCustomColorOutput() const = 0;
+    virtual bool hasSecondaryOutput() const = 0;
+
+    
+
+    virtual const char* dstColor() = 0;
+
+    
+
+
+    virtual void enableAdvancedBlendEquationIfNeeded(GrBlendEquation) = 0;
+};
+
+
+
+
+class GrGLSLFragmentShaderBuilder : public GrGLSLPPFragmentBuilder, public GrGLSLXPFragmentBuilder {
+public:
+   
+
+    static uint8_t KeyForSurfaceOrigin(GrSurfaceOrigin);
+
+    GrGLSLFragmentShaderBuilder(GrGLSLProgramBuilder* program);
+
+    
+    bool enableFeature(GLSLFeature) override;
+    virtual SkString ensureFSCoords2D(const GrGLSLTransformedCoordsArray& coords,
+                                      int index) override;
+    const char* fragmentPosition() override;
+
+    
+    void appendOffsetToSample(const char* sampleIdx, Coordinates) override;
+    void maskSampleCoverage(const char* mask, bool invert = false) override;
+    void overrideSampleCoverage(const char* mask) override;
+    const SkString& getMangleString() const override { return fMangleString; }
+    void onBeforeChildProcEmitCode() override;
+    void onAfterChildProcEmitCode() override;
+
+    
+    bool hasCustomColorOutput() const override { return fHasCustomColorOutput; }
+    bool hasSecondaryOutput() const override { return fHasSecondaryOutput; }
+    const char* dstColor() override;
+    void enableAdvancedBlendEquationIfNeeded(GrBlendEquation) override;
+
+private:
+    
+    void enableCustomOutput();
+    void enableSecondaryOutput();
+    const char* getPrimaryColorOutputName() const;
+    const char* getSecondaryColorOutputName() const;
+
+#ifdef SK_DEBUG
+    
+    
+    GrProcessor::RequiredFeatures usedProcessorFeatures() const { return fUsedProcessorFeatures; }
+    bool hasReadDstColor() const { return fHasReadDstColor; }
+    void resetVerification() {
+        fUsedProcessorFeatures = GrProcessor::kNone_RequiredFeatures;
+        fHasReadDstColor = false;
+    }
+#endif
+
+    static const char* DeclaredColorOutputName() { return "fsColorOut"; }
+    static const char* DeclaredSecondaryColorOutputName() { return "fsSecondaryColorOut"; }
+
+    GrSurfaceOrigin getSurfaceOrigin() const;
+
+    void onFinalize() override;
+    void defineSampleOffsetArray(const char* name, const SkMatrix&);
+
+    static const char* kDstTextureColorName;
+
     
 
 
@@ -91,113 +229,22 @@ private:
 
     SkString fMangleString;
 
-    friend class GrGLPathProcessor;
+    bool       fSetupFragPosition;
+    bool       fHasCustomColorOutput;
+    int        fCustomColorOutputIndex;
+    bool       fHasSecondaryOutput;
+    uint8_t    fUsedSampleOffsetArrays;
+    bool       fHasInitializedSampleMask;
 
-    typedef GrGLSLShaderBuilder INHERITED;
-};
-
-
-
-
-
-
-class GrGLSLXPFragmentBuilder : public GrGLSLFragmentBuilder {
-public:
-    GrGLSLXPFragmentBuilder(GrGLSLProgramBuilder* program) : INHERITED(program) {}
-
-    
-
-    virtual const char* dstColor() = 0;
-
-    
-
-
-    virtual void enableAdvancedBlendEquationIfNeeded(GrBlendEquation) = 0;
-
-private:
-    typedef GrGLSLFragmentBuilder INHERITED;
-};
-
-
-class GrGLSLFragmentShaderBuilder : public GrGLSLXPFragmentBuilder {
-public:
-    typedef uint8_t FragPosKey;
-
-    
-
-
-    static FragPosKey KeyForFragmentPosition(const GrRenderTarget* dst);
-
-    GrGLSLFragmentShaderBuilder(GrGLSLProgramBuilder* program, uint8_t fragPosKey);
-
-    
-    bool enableFeature(GLSLFeature) override;
-    virtual SkString ensureFSCoords2D(const GrGLSLTransformedCoordsArray& coords,
-                                      int index) override;
-    const char* fragmentPosition() override;
-    const char* dstColor() override;
-
-    void enableAdvancedBlendEquationIfNeeded(GrBlendEquation) override;
-
-private:
-    
-    void enableCustomOutput();
-    void enableSecondaryOutput();
-    const char* getPrimaryColorOutputName() const;
-    const char* getSecondaryColorOutputName() const;
-
+#ifdef SK_DEBUG
     
     
-    bool hasReadDstColor() const { return fHasReadDstColor; }
-    bool hasReadFragmentPosition() const { return fHasReadFragmentPosition; }
-    void reset() {
-        fHasReadDstColor = false;
-        fHasReadFragmentPosition = false;
-    }
-
-    static const char* DeclaredColorOutputName() { return "fsColorOut"; }
-    static const char* DeclaredSecondaryColorOutputName() { return "fsSecondaryColorOut"; }
-
-    
-
-
-    void addVarying(GrGLSLVarying*, GrSLPrecision);
-
-    void onFinalize() override;
-
-    
-
-
-    enum GLSLPrivateFeature {
-        kFragCoordConventions_GLSLPrivateFeature = kLastGLSLFeature + 1,
-        kBlendEquationAdvanced_GLSLPrivateFeature,
-        kBlendFuncExtended_GLSLPrivateFeature,
-        kExternalTexture_GLSLPrivateFeature,
-        kLastGLSLPrivateFeature = kBlendFuncExtended_GLSLPrivateFeature
-    };
-
-    
-    enum {
-        kNoFragPosRead_FragPosKey           = 0,  
-        kTopLeftFragPosRead_FragPosKey      = 0x1,
-        kBottomLeftFragPosRead_FragPosKey   = 0x2,
-    };
-
-    static const char* kDstTextureColorName;
-
-    bool fSetupFragPosition;
-    bool fTopLeftFragPosRead;
-    int  fCustomColorOutputIndex;
-
-    
-    
+    GrProcessor::RequiredFeatures fUsedProcessorFeatures;
     bool fHasReadDstColor;
-    bool fHasReadFragmentPosition;
+#endif
 
     friend class GrGLSLProgramBuilder;
     friend class GrGLProgramBuilder;
-
-    typedef GrGLSLXPFragmentBuilder INHERITED;
 };
 
 #endif

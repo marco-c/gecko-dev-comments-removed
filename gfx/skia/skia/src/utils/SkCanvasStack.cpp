@@ -4,7 +4,6 @@
 
 
 
-
 #include "SkCanvasStack.h"
 
 SkCanvasStack::SkCanvasStack(int width, int height)

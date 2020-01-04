@@ -253,8 +253,7 @@ SkCodec::Result SkSampledCodec::sampledDecode(const SkImageInfo& info, void* pix
 
             
             
-            const uint32_t fillValue = this->codec()->getFillValue(info.colorType(),
-                    info.alphaType());
+            const uint32_t fillValue = this->codec()->getFillValue(info.colorType());
             const SkImageInfo fillInfo = info.makeWH(info.width(), 1);
             for (; y < nativeSize.height(); y++) {
                 int srcY = this->codec()->outputScanline(y);

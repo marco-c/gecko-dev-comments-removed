@@ -16,9 +16,10 @@
 #include "SkString.h"
 #include "SkPDFTypes.h"
 
+#include <cmath>
 
-SkPDFArray* SkPDFUtils::RectToArray(const SkRect& rect) {
-    SkPDFArray* result = new SkPDFArray();
+sk_sp<SkPDFArray> SkPDFUtils::RectToArray(const SkRect& rect) {
+    auto result = sk_make_sp<SkPDFArray>();
     result->reserve(4);
     result->appendScalar(rect.fLeft);
     result->appendScalar(rect.fTop);
@@ -27,14 +28,13 @@ SkPDFArray* SkPDFUtils::RectToArray(const SkRect& rect) {
     return result;
 }
 
-
-SkPDFArray* SkPDFUtils::MatrixToArray(const SkMatrix& matrix) {
+sk_sp<SkPDFArray> SkPDFUtils::MatrixToArray(const SkMatrix& matrix) {
     SkScalar values[6];
     if (!matrix.asAffine(values)) {
         SkMatrix::SetAffineIdentity(values);
     }
 
-    SkPDFArray* result = new SkPDFArray;
+    auto result = sk_make_sp<SkPDFArray>();
     result->reserve(6);
     for (size_t i = 0; i < SK_ARRAY_COUNT(values); i++) {
         result->appendScalar(values[i]);
@@ -254,51 +254,120 @@ void SkPDFUtils::ApplyPattern(int objectIndex, SkWStream* content) {
 }
 
 void SkPDFUtils::AppendScalar(SkScalar value, SkWStream* stream) {
+    char result[kMaximumFloatDecimalLength];
+    size_t len = SkPDFUtils::FloatToDecimal(SkScalarToFloat(value), result);
+    SkASSERT(len < kMaximumFloatDecimalLength);
+    stream->write(result, len);
+}
+
+
+
+
+
+
+
+
+
+
+size_t SkPDFUtils::FloatToDecimal(float value,
+                                  char result[kMaximumFloatDecimalLength]) {
     
+
+
+
     
+
+
+
+
+
+
+
+
+    char* output = &result[0];
+    const char* const end = &result[kMaximumFloatDecimalLength - 1];
+    
+
+    
+
+
+
+    if (value == SK_FloatInfinity) {
+        value = FLT_MAX;  
+    }
+    if (value == SK_FloatNegativeInfinity) {
+        value = -FLT_MAX;  
+    }
+    if (!std::isfinite(value) || value == 0.0f) {
+        
+        
+        *output++ = '0';
+        *output = '\0';
+        return output - result;
+    }
     
     
 
-#if !defined(SK_ALLOW_LARGE_PDF_SCALARS)
-    if (value > 32767 || value < -32767) {
-        stream->writeDecAsText(SkScalarRoundToInt(value));
-        return;
+    if (value < 0.0) {
+        *output++ = '-';
+        value = -value;
     }
+    SkASSERT(value >= 0.0f);
 
-    char buffer[SkStrAppendScalar_MaxSize];
-    char* end = SkStrAppendFixed(buffer, SkScalarToFixed(value));
-    stream->write(buffer, end - buffer);
-    return;
-#endif  
-
-#if defined(SK_ALLOW_LARGE_PDF_SCALARS)
+    
+    double intPart;
+    double fracPart = std::modf(static_cast<double>(value), &intPart);
+    SkASSERT(intPart + fracPart == static_cast<double>(value));
+    size_t significantDigits = 0;
+    const size_t maxSignificantDigits = 9;
     
     
-    
-    if (value > (1 << 24) || value < -(1 << 24)) {
-        stream->writeDecAsText(value);
-        return;
+    SkASSERT(intPart >= 0.0 && fracPart >= 0.0);  
+    SkASSERT(intPart > 0.0 || fracPart > 0.0);  
+    if (intPart > 0.0) {
+        
+        char reversed[1 + FLT_MAX_10_EXP];  
+        
+        size_t reversedIndex = 0;
+        do {
+            SkASSERT(reversedIndex < sizeof(reversed));
+            int digit = static_cast<int>(std::fmod(intPart, 10.0));
+            SkASSERT(digit >= 0 && digit <= 9);
+            reversed[reversedIndex++] = '0' + digit;
+            intPart = std::floor(intPart / 10.0);
+        } while (intPart > 0.0);
+        significantDigits = reversedIndex;
+        SkASSERT(reversedIndex <= sizeof(reversed));
+        SkASSERT(output + reversedIndex <= end);
+        while (reversedIndex-- > 0) {  
+            *output++ = reversed[reversedIndex];
+        }
     }
-    
-    if (value < 1.0f/65536 && value > -1.0f/65536) {
-        stream->writeDecAsText(0);
-        return;
+    if (fracPart > 0 && significantDigits < maxSignificantDigits) {
+        *output++ = '.';
+        SkASSERT(output <= end);
+        do {
+            fracPart = std::modf(fracPart * 10.0, &intPart);
+            int digit = static_cast<int>(intPart);
+            SkASSERT(digit >= 0 && digit <= 9);
+            *output++ = '0' + digit;
+            SkASSERT(output <= end);
+            if (digit > 0 || significantDigits > 0) {
+                
+                ++significantDigits;
+            }
+        } while (fracPart > 0.0
+                 && significantDigits < maxSignificantDigits
+                 && output < end);
+        
+        
+        
+        
+        
     }
-    
-    
-    static const int kFloat_MaxSize = 19;
-    char buffer[kFloat_MaxSize];
-    int len = SNPRINTF(buffer, kFloat_MaxSize, "%#.8f", value);
-    
-    for (; buffer[len - 1] == '0' && len > 0; len--) {
-        buffer[len - 1] = '\0';
-    }
-    if (buffer[len - 1] == '.') {
-        buffer[len - 1] = '\0';
-    }
-    stream->writeText(buffer);
-    return;
-#endif  
+    SkASSERT(output <= end);
+    *output = '\0';
+    return output - result;
 }
 
 SkString SkPDFUtils::FormatString(const char* cin, size_t len) {

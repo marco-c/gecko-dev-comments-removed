@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkDither_DEFINED
 #define SkDither_DEFINED
 

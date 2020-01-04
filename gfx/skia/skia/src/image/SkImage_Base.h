@@ -26,7 +26,7 @@ public:
     SkImage_Base(int width, int height, uint32_t uniqueID);
     virtual ~SkImage_Base();
 
-    virtual const void* onPeekPixels(SkImageInfo*, size_t* ) const { return nullptr; }
+    virtual bool onPeekPixels(SkPixmap*) const { return false; }
 
     
     virtual bool onReadPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
@@ -39,14 +39,14 @@ public:
     
     virtual bool getROPixels(SkBitmap*, CachingHint = kAllow_CachingHint) const = 0;
 
-    virtual SkSurface* onNewSurface(const SkImageInfo& info) const {
-        return SkSurface::NewRaster(info);
+    virtual sk_sp<SkSurface> onNewSurface(const SkImageInfo& info) const {
+        return SkSurface::MakeRaster(info);
     }
 
     
     virtual GrTexture* asTextureRef(GrContext*, const GrTextureParams&) const = 0;
 
-    virtual SkImage* onNewSubset(const SkIRect&) const = 0;
+    virtual sk_sp<SkImage> onMakeSubset(const SkIRect&) const = 0;
 
     
     virtual SkData* onRefEncoded(GrContext*) const { return nullptr; }
@@ -76,6 +76,10 @@ private:
 
 static inline SkImage_Base* as_IB(SkImage* image) {
     return static_cast<SkImage_Base*>(image);
+}
+
+static inline SkImage_Base* as_IB(const sk_sp<SkImage>& image) {
+    return static_cast<SkImage_Base*>(image.get());
 }
 
 static inline const SkImage_Base* as_IB(const SkImage* image) {

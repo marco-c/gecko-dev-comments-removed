@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGCircle.h"
 #include "SkSVGParser.h"
 #include "SkParse.h"

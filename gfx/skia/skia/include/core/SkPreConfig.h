@@ -118,6 +118,10 @@
 #define SK_CPU_SSE_LEVEL_AVX      51
 #define SK_CPU_SSE_LEVEL_AVX2     52
 
+#ifdef SK_BUILD_FOR_IOS
+    #define SK_CPU_SSE_LEVEL 0  // We're tired of fighting with opts/ and iOS simulator.
+#endif
+
 
 #ifndef SK_CPU_SSE_LEVEL
     

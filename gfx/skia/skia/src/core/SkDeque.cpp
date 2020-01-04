@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkDeque.h"
 
 struct SkDeque::Block {

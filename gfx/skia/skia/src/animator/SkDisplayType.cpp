@@ -730,7 +730,7 @@ void SkDisplayType::UnitTest() {
         SkDisplayable* test = CreateInstance(maker, gTypeNames[index].fType);
         if (test == nullptr)
             continue;
-#if defined _WIN32 && _MSC_VER >= 1300  && defined _INC_CRTDBG 
+#if defined _WIN32 && defined _INC_CRTDBG 
     
     
         int* start = (int*) test;

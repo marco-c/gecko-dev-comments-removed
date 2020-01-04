@@ -24,6 +24,7 @@
 struct GrBatchAtlasConfig;
 class GrBatchFontCache;
 struct GrContextOptions;
+class GrContextThreadSafeProxy;
 class GrDrawingManager;
 class GrDrawContext;
 class GrDrawTarget;
@@ -43,6 +44,7 @@ class GrTextContext;
 class GrTextureParams;
 class GrVertexBuffer;
 class GrStrokeInfo;
+class GrSwizzle;
 class SkTraceMemoryDump;
 
 class SK_API GrContext : public SkRefCnt {
@@ -59,6 +61,8 @@ public:
     static GrContext* CreateMockContext();
 
     virtual ~GrContext();
+
+    GrContextThreadSafeProxy* threadSafeProxy();
 
     
 
@@ -99,10 +103,18 @@ public:
 
 
 
-
-
-
     void abandonContext();
+
+    
+
+
+
+
+
+
+
+
+    void releaseResourcesAndAbandonContext();
 
     
     
@@ -278,23 +290,16 @@ public:
 
 
 
-
-    void copySurface(GrSurface* dst,
+    bool copySurface(GrSurface* dst,
                      GrSurface* src,
                      const SkIRect& srcRect,
-                     const SkIPoint& dstPoint,
-                     uint32_t pixelOpsFlags = 0);
+                     const SkIPoint& dstPoint);
 
     
 
     bool copySurface(GrSurface* dst, GrSurface* src) {
-        if (NULL == dst || NULL == src || dst->width() != src->width() ||
-            dst->height() != src->height()) {
-            return false;
-        }
-        this->copySurface(dst, src, SkIRect::MakeWH(dst->width(), dst->height()),
-                          SkIPoint::Make(0,0));
-        return true;
+        return this->copySurface(dst, src, SkIRect::MakeWH(dst->width(), dst->height()),
+                                 SkIPoint::Make(0,0));
     }
 
     
@@ -365,25 +370,27 @@ public:
     SkDEBUGCODE(GrSingleOwner* debugSingleOwner() const { return &fSingleOwner; } )
 
 private:
-    GrGpu*                          fGpu;
-    const GrCaps*                   fCaps;
-    GrResourceCache*                fResourceCache;
+    GrGpu*                                  fGpu;
+    const GrCaps*                           fCaps;
+    GrResourceCache*                        fResourceCache;
     
     
     union {
-        GrResourceProvider*         fResourceProvider;
-        GrTextureProvider*          fTextureProvider;
+        GrResourceProvider*                 fResourceProvider;
+        GrTextureProvider*                  fTextureProvider;
     };
 
-    GrBatchFontCache*               fBatchFontCache;
-    SkAutoTDelete<GrLayerCache>     fLayerCache;
-    SkAutoTDelete<GrTextBlobCache>  fTextBlobCache;
+    SkAutoTUnref<GrContextThreadSafeProxy>  fThreadSafeProxy;
+
+    GrBatchFontCache*                       fBatchFontCache;
+    SkAutoTDelete<GrLayerCache>             fLayerCache;
+    SkAutoTDelete<GrTextBlobCache>          fTextBlobCache;
 
     
-    bool                            fFlushToReduceCacheSize;
-    bool                            fDidTestPMConversions;
-    int                             fPMToUPMConversion;
-    int                             fUPMToPMConversion;
+    bool                                    fFlushToReduceCacheSize;
+    bool                                    fDidTestPMConversions;
+    int                                     fPMToUPMConversion;
+    int                                     fUPMToPMConversion;
     
     
     
@@ -394,26 +401,26 @@ private:
     
     
     
-    SkMutex                         fReadPixelsMutex;
-    SkMutex                         fTestPMConversionsMutex;
+    SkMutex                                 fReadPixelsMutex;
+    SkMutex                                 fTestPMConversionsMutex;
 
     
     
     
-    mutable GrSingleOwner fSingleOwner;
+    mutable GrSingleOwner                   fSingleOwner;
 
     struct CleanUpData {
         PFCleanUpFunc fFunc;
         void*         fInfo;
     };
 
-    SkTDArray<CleanUpData>          fCleanUpData;
+    SkTDArray<CleanUpData>                  fCleanUpData;
 
-    const uint32_t                  fUniqueID;
+    const uint32_t                          fUniqueID;
 
-    SkAutoTDelete<GrDrawingManager> fDrawingManager;
+    SkAutoTDelete<GrDrawingManager>         fDrawingManager;
 
-    GrAuditTrail                    fAuditTrail;
+    GrAuditTrail                            fAuditTrail;
 
     
     friend class GrClipMaskManager; 
@@ -431,9 +438,9 @@ private:
 
 
 
-    const GrFragmentProcessor* createPMToUPMEffect(GrTexture*, bool swapRAndB,
+    const GrFragmentProcessor* createPMToUPMEffect(GrTexture*, const GrSwizzle&,
                                                    const SkMatrix&) const;
-    const GrFragmentProcessor* createUPMToPMEffect(GrTexture*, bool swapRAndB,
+    const GrFragmentProcessor* createUPMToPMEffect(GrTexture*, const GrSwizzle&,
                                                    const SkMatrix&) const;
     
 
@@ -454,6 +461,25 @@ private:
 
 
     static void TextBlobCacheOverBudgetCB(void* data);
+
+    typedef SkRefCnt INHERITED;
+};
+
+
+
+
+
+class GrContextThreadSafeProxy : public SkRefCnt {
+private:
+    GrContextThreadSafeProxy(const GrCaps* caps, uint32_t uniqueID)
+        : fCaps(SkRef(caps))
+        , fContextUniqueID(uniqueID) {}
+
+    SkAutoTUnref<const GrCaps>  fCaps;
+    uint32_t                    fContextUniqueID;
+
+    friend class GrContext;
+    friend class SkImage;
 
     typedef SkRefCnt INHERITED;
 };

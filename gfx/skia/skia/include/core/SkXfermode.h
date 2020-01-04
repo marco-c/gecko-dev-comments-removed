@@ -18,6 +18,9 @@ class GrTexture;
 class GrXPFactory;
 class SkString;
 
+struct SkPM4f;
+typedef SkPM4f (*SkXfermodeProc4f)(const SkPM4f& src, const SkPM4f& dst);
+
 
 
 
@@ -123,6 +126,9 @@ public:
 
 
     static bool AsMode(const SkXfermode*, Mode* mode);
+    static bool AsMode(const sk_sp<SkXfermode>& xfer, Mode* mode) {
+        return AsMode(xfer.get(), mode);
+    }
 
     
 
@@ -135,15 +141,30 @@ public:
 
 
     static bool IsMode(const SkXfermode* xfer, Mode mode);
+    static bool IsMode(const sk_sp<SkXfermode>& xfer, Mode mode) {
+        return IsMode(xfer.get(), mode);
+    }
 
     
 
-    static SkXfermode* Create(Mode mode);
+    static sk_sp<SkXfermode> Make(Mode);
+#ifdef SK_SUPPORT_LEGACY_XFERMODE_PTR
+    static SkXfermode* Create(Mode mode) {
+        return Make(mode).release();
+    }
+    SK_ATTR_DEPRECATED("use AsMode(...)")
+    static bool IsMode(const SkXfermode* xfer, Mode* mode) {
+        return AsMode(xfer, mode);
+    }
+#endif
 
     
 
 
     static SkXfermodeProc GetProc(Mode mode);
+    static SkXfermodeProc4f GetProc4f(Mode);
+
+    virtual SkXfermodeProc4f getProc4f() const;
 
     
 
@@ -152,11 +173,6 @@ public:
 
 
     static bool ModeAsCoeff(Mode mode, Coeff* src, Coeff* dst);
-
-    SK_ATTR_DEPRECATED("use AsMode(...)")
-    static bool IsMode(const SkXfermode* xfer, Mode* mode) {
-        return AsMode(xfer, mode);
-    }
 
     
 
@@ -168,6 +184,9 @@ public:
 
 
     static bool SupportsCoverageAsAlpha(const SkXfermode* xfer);
+    static bool SupportsCoverageAsAlpha(const sk_sp<SkXfermode>& xfer) {
+        return SupportsCoverageAsAlpha(xfer.get());
+    }
 
     enum SrcColorOpacity {
         
@@ -192,42 +211,64 @@ public:
 
 
     static bool IsOpaque(const SkXfermode* xfer, SrcColorOpacity opacityType);
-
-    
-
-
-
-
-
-
-    virtual bool asFragmentProcessor(const GrFragmentProcessor** output,
-                                     const GrFragmentProcessor* dst) const;
-
-    
-
-
-
-
-
-    virtual bool asXPFactory(GrXPFactory** xpf) const;
-
-    
-
-
-
-    static inline bool AsXPFactory(SkXfermode* xfermode, GrXPFactory** xpf) {
-        if (nullptr == xfermode) {
-            if (xpf) {
-                *xpf = nullptr;
-            }
-            return true;
-        }
-        return xfermode->asXPFactory(xpf);
+    static bool IsOpaque(const sk_sp<SkXfermode>& xfer, SrcColorOpacity opacityType) {
+        return IsOpaque(xfer.get(), opacityType);
     }
+
+#if SK_SUPPORT_GPU
+    
+
+
+
+
+
+    virtual const GrFragmentProcessor* getFragmentProcessorForImageFilter(
+                                                            const GrFragmentProcessor* dst) const;
+
+    
+
+
+
+    virtual GrXPFactory* asXPFactory() const;
+#endif
 
     SK_TO_STRING_PUREVIRT()
     SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
     SK_DEFINE_FLATTENABLE_TYPE(SkXfermode)
+
+    enum D32Flags {
+        kSrcIsOpaque_D32Flag  = 1 << 0,
+        kSrcIsSingle_D32Flag  = 1 << 1,
+        kDstIsSRGB_D32Flag    = 1 << 2,
+    };
+    typedef void (*D32Proc)(const SkXfermode*, uint32_t dst[], const SkPM4f src[],
+                            int count, const SkAlpha coverage[]);
+    static D32Proc GetD32Proc(SkXfermode*, uint32_t flags);
+    static D32Proc GetD32Proc(const sk_sp<SkXfermode>& xfer, uint32_t flags) {
+        return GetD32Proc(xfer.get(), flags);
+    }
+
+    enum D64Flags {
+        kSrcIsOpaque_D64Flag  = 1 << 0,
+        kSrcIsSingle_D64Flag  = 1 << 1,
+        kDstIsFloat16_D64Flag = 1 << 2, 
+    };
+    typedef void (*D64Proc)(const SkXfermode*, uint64_t dst[], const SkPM4f src[], int count,
+                            const SkAlpha coverage[]);
+    static D64Proc GetD64Proc(SkXfermode*, uint32_t flags);
+    static D64Proc GetD64Proc(const sk_sp<SkXfermode>& xfer, uint32_t flags) {
+        return GetD64Proc(xfer.get(), flags);
+    }
+
+    enum LCDFlags {
+        kSrcIsOpaque_LCDFlag    = 1 << 0,   
+        kSrcIsSingle_LCDFlag    = 1 << 1,   
+        kDstIsLinearInt_LCDFlag = 1 << 2,   
+    };
+    typedef void (*LCD32Proc)(uint32_t* dst, const SkPM4f* src, int count, const uint16_t lcd[]);
+    typedef void (*LCD64Proc)(uint64_t* dst, const SkPM4f* src, int count, const uint16_t lcd[]);
+    static LCD32Proc GetLCD32Proc(uint32_t flags);
+    static LCD64Proc GetLCD64Proc(uint32_t) { return nullptr; }
 
 protected:
     SkXfermode() {}
@@ -240,6 +281,9 @@ protected:
 
 
     virtual SkPMColor xferColor(SkPMColor src, SkPMColor dst) const;
+
+    virtual D32Proc onGetD32Proc(uint32_t flags) const;
+    virtual D64Proc onGetD64Proc(uint32_t flags) const;
 
 private:
     enum {

@@ -7,7 +7,9 @@
 
 #include "SkSpinlock.h"
 
-void SkPODSpinlock::contendedAcquire() {
+void SkSpinlock::contendedAcquire() {
     
-    while(sk_atomic_exchange(&fLocked, true, sk_memory_order_acquire)) {  }
+    while (fLocked.exchange(true, sk_memory_order_acquire)) {
+        
+    }
 }

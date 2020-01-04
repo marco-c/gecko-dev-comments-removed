@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGCircle_DEFINED
 #define SkSVGCircle_DEFINED
 

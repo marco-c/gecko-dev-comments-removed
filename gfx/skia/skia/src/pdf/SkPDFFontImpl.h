@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkPDFFontImpl_DEFINED
 #define SkPDFFontImpl_DEFINED
 

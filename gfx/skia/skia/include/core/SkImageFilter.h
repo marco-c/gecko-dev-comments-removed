@@ -8,7 +8,9 @@
 #ifndef SkImageFilter_DEFINED
 #define SkImageFilter_DEFINED
 
+#include "../private/SkTArray.h"
 #include "../private/SkTemplates.h"
+#include "../private/SkMutex.h"
 #include "SkFilterQuality.h"
 #include "SkFlattenable.h"
 #include "SkMatrix.h"
@@ -21,6 +23,7 @@ class SkBaseDevice;
 class SkBitmap;
 class SkColorFilter;
 struct SkIPoint;
+class SkSpecialImage;
 
 
 
@@ -40,9 +43,11 @@ public:
         static Cache* Create(size_t maxBytes);
         static Cache* Get();
         virtual bool get(const Key& key, SkBitmap* result, SkIPoint* offset) const = 0;
+        virtual SkSpecialImage* get(const Key& key, SkIPoint* offset) const = 0;
         virtual void set(const Key& key, const SkBitmap& result, const SkIPoint& offset) = 0;
+        virtual void set(const Key& key, SkSpecialImage* image, const SkIPoint& offset) = 0;
         virtual void purge() {}
-        virtual void purgeByImageFilterId(uint32_t) {}
+        virtual void purgeByKeys(const Key[], int) {}
     };
 
     class Context {
@@ -91,7 +96,8 @@ public:
 
 
 
-        bool applyTo(const SkIRect& imageBounds, const Context&, SkIRect* cropped) const;
+        void applyTo(const SkIRect& imageBounds, const SkMatrix&, bool embiggen,
+                     SkIRect* cropped) const;
 
     private:
         SkRect fRect;
@@ -146,14 +152,27 @@ public:
 
 
 
-    bool filterImage(Proxy*, const SkBitmap& src, const Context&,
-                     SkBitmap* result, SkIPoint* offset) const;
 
+
+    sk_sp<SkSpecialImage> filterImage(SkSpecialImage* src, const Context&, SkIPoint* offset) const;
+
+    enum MapDirection {
+        kForward_MapDirection,
+        kReverse_MapDirection
+    };
     
 
 
 
-    bool filterBounds(const SkIRect& src, const SkMatrix& ctm, SkIRect* dst) const;
+
+
+
+
+
+
+
+    SkIRect filterBounds(const SkIRect& src, const SkMatrix& ctm,
+                         MapDirection = kReverse_MapDirection) const;
 
     
 
@@ -174,8 +193,8 @@ public:
 
 
 
-    virtual bool filterImageGPU(Proxy*, const SkBitmap& src, const Context&,
-                                SkBitmap* result, SkIPoint* offset) const;
+    virtual bool filterImageGPUDeprecated(Proxy*, const SkBitmap& src, const Context&,
+                                          SkBitmap* result, SkIPoint* offset) const;
 
     
 
@@ -231,23 +250,42 @@ public:
     CropRect getCropRect() const { return fCropRect; }
 
     
-    virtual void computeFastBounds(const SkRect&, SkRect*) const;
+    virtual SkRect computeFastBounds(const SkRect&) const;
 
     
-    virtual bool canComputeFastBounds() const;
-
-    
-
-
-
-    SkImageFilter* newWithLocalMatrix(const SkMatrix& matrix) const;
+    bool canComputeFastBounds() const;
 
     
 
 
+
+    sk_sp<SkImageFilter> makeWithLocalMatrix(const SkMatrix&) const;
+
+#ifdef SK_SUPPORT_LEGACY_IMAGEFILTER_PTR
+    SkImageFilter* newWithLocalMatrix(const SkMatrix& matrix) const {
+        return this->makeWithLocalMatrix(matrix).release();
+    }
+#endif
+
+    
+
+
+    static sk_sp<SkImageFilter> MakeMatrixFilter(const SkMatrix& matrix,
+                                                 SkFilterQuality,
+                                                 sk_sp<SkImageFilter> input);
+#ifdef SK_SUPPORT_LEGACY_IMAGEFILTER_PTR
     static SkImageFilter* CreateMatrixFilter(const SkMatrix& matrix,
-                                             SkFilterQuality,
-                                             SkImageFilter* input = NULL);
+                                             SkFilterQuality filterQuality,
+                                             SkImageFilter* input = nullptr) {
+        return MakeMatrixFilter(matrix, filterQuality, sk_ref_sp<SkImageFilter>(input)).release();
+    }
+#endif
+
+
+    sk_sp<SkSpecialImage> filterInput(int index,
+                                      SkSpecialImage* src,
+                                      const Context&, 
+                                      SkIPoint* offset) const;
 
 #if SK_SUPPORT_GPU
     
@@ -256,8 +294,9 @@ public:
     
     
     
-    bool filterInputGPU(int index, SkImageFilter::Proxy* proxy, const SkBitmap& src, const Context&,
-                        SkBitmap* result, SkIPoint* offset) const;
+    bool filterInputGPUDeprecated(int index, SkImageFilter::Proxy* proxy,
+                                  const SkBitmap& src, const Context&,
+                                  SkBitmap* result, SkIPoint* offset) const;
 #endif
 
     SK_TO_STRING_PUREVIRT()
@@ -266,9 +305,6 @@ public:
 protected:
     class Common {
     public:
-        Common() {}
-        ~Common();
-
         
 
 
@@ -281,9 +317,9 @@ protected:
 
         const CropRect& cropRect() const { return fCropRect; }
         int             inputCount() const { return fInputs.count(); }
-        SkImageFilter** inputs() const { return fInputs.get(); }
+        sk_sp<SkImageFilter>* inputs() const { return fInputs.get(); }
 
-        SkImageFilter*  getInput(int index) const { return fInputs[index]; }
+        sk_sp<SkImageFilter>  getInput(int index) const { return fInputs[index]; }
 
         
         
@@ -294,12 +330,14 @@ protected:
     private:
         CropRect fCropRect;
         
-        SkAutoSTArray<2, SkImageFilter*> fInputs;
+        SkAutoSTArray<2, sk_sp<SkImageFilter>> fInputs;
 
         void allocInputs(int count);
     };
 
-    SkImageFilter(int inputCount, SkImageFilter** inputs, const CropRect* cropRect = NULL);
+    SkImageFilter(int inputCount, SkImageFilter** inputs, const CropRect* cropRect = nullptr);
+
+    SkImageFilter(sk_sp<SkImageFilter>* inputs, int inputCount, const CropRect* cropRect);
 
     virtual ~SkImageFilter();
 
@@ -330,43 +368,47 @@ protected:
 
 
 
-    virtual bool onFilterImage(Proxy*, const SkBitmap& src, const Context&,
+    virtual bool onFilterImageDeprecated(Proxy*, const SkBitmap& src, const Context&,
+                                         SkBitmap* result, SkIPoint* offset) const;
+
+    virtual sk_sp<SkSpecialImage> onFilterImage(SkSpecialImage* src, const Context&,
+                                                SkIPoint* offset) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    virtual SkIRect onFilterBounds(const SkIRect&, const SkMatrix&, MapDirection) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual SkIRect onFilterNodeBounds(const SkIRect&, const SkMatrix&, MapDirection) const;
+
+    
+    
+    
+    
+    
+    bool filterInputDeprecated(int index, Proxy*, const SkBitmap& src, const Context&,
                                SkBitmap* result, SkIPoint* offset) const;
-    
-    
-    
-    
-    
-    
-    
-    virtual bool onFilterBounds(const SkIRect&, const SkMatrix&, SkIRect*) const;
-    enum MapDirection {
-        kForward_MapDirection,
-        kReverse_MapDirection
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual void onFilterNodeBounds(const SkIRect&, const SkMatrix&, SkIRect*, MapDirection) const;
-
-    
-    
-    
-    
-    
-    bool filterInput(int index, Proxy*, const SkBitmap& src, const Context&,
-                     SkBitmap* result, SkIPoint* offset) const;
 
     
 
@@ -385,9 +427,7 @@ protected:
 
 
 
-
-    bool applyCropRect(const Context&, const SkBitmap& src, const SkIPoint& srcOffset,
-                       SkIRect* dstBounds, SkIRect* srcBounds = nullptr) const;
+    bool applyCropRect(const Context&, const SkIRect& srcBounds, SkIRect* dstBounds) const;
 
     
 
@@ -397,8 +437,12 @@ protected:
 
 
 
-    bool applyCropRect(const Context&, Proxy* proxy, const SkBitmap& src, SkIPoint* srcOffset,
-                       SkIRect* bounds, SkBitmap* result) const;
+
+    bool applyCropRectDeprecated(const Context&, Proxy* proxy, const SkBitmap& src,
+                                 SkIPoint* srcOffset, SkIRect* bounds, SkBitmap* result) const;
+
+    sk_sp<SkSpecialImage> applyCropRect(const Context&, SkSpecialImage* src, SkIPoint* srcOffset,
+                                        SkIRect* bounds) const;
 
     
 
@@ -430,7 +474,11 @@ private:
     friend class SkGraphics;
     static void PurgeCache();
 
+    bool filterImageDeprecated(Proxy*, const SkBitmap& src, const Context&,
+                               SkBitmap* result, SkIPoint* offset) const;
+
     bool usesSrcInput() const { return fUsesSrcInput; }
+    virtual bool affectsTransparentBlack() const { return false; }
 
     typedef SkFlattenable INHERITED;
     int fInputCount;
@@ -438,6 +486,8 @@ private:
     bool fUsesSrcInput;
     CropRect fCropRect;
     uint32_t fUniqueID; 
+    mutable SkTArray<Cache::Key> fCacheKeys;
+    mutable SkMutex fMutex;
 };
 
 

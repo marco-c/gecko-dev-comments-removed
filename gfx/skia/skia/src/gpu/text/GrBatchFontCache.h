@@ -143,14 +143,14 @@ public:
     
     
     void addGlyphToBulkAndSetUseToken(GrBatchAtlas::BulkUseTokenUpdater* updater,
-                                      GrGlyph* glyph, GrBatchToken token) {
+                                      GrGlyph* glyph, GrBatchDrawToken token) {
         SkASSERT(glyph);
         updater->add(glyph->fID);
         this->getAtlas(glyph->fMaskFormat)->setLastUseToken(glyph->fID, token);
     }
 
     void setUseTokenBulk(const GrBatchAtlas::BulkUseTokenUpdater& updater,
-                         GrBatchToken token,
+                         GrBatchDrawToken token,
                          GrMaskFormat format) {
         this->getAtlas(format)->setLastUseTokenBulk(updater, token);
     }
@@ -170,6 +170,9 @@ public:
     uint64_t atlasGeneration(GrMaskFormat format) const {
         return this->getAtlas(format)->atlasGeneration();
     }
+
+    int log2Width(GrMaskFormat format) { return fAtlasConfigs[format].fLog2Width; }
+    int log2Height(GrMaskFormat format) { return fAtlasConfigs[format].fLog2Height; }
 
     
     

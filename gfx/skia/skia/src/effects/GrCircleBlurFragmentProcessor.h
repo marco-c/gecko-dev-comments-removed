@@ -64,7 +64,7 @@ private:
     bool onIsEqual(const GrFragmentProcessor& other) const override {
         const GrCircleBlurFragmentProcessor& cbfp = other.cast<GrCircleBlurFragmentProcessor>();
         
-        return this->circle().width() == cbfp.circle().width() && fSigma == cbfp.fSigma;    
+        return this->circle() == cbfp.circle() && fSigma == cbfp.fSigma;
     }
 
     void onComputeInvariantOutput(GrInvariantOutput* inout) const override;

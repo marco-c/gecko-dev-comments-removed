@@ -5,7 +5,6 @@
 
 
 
-
 #include "SkRefCnt.h"
 
 #ifndef SkWGL_DEFINED

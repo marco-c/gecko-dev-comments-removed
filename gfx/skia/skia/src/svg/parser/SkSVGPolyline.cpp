@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGPolyline.h"
 #include "SkSVGParser.h"
 

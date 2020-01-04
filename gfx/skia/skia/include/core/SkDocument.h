@@ -148,7 +148,8 @@ public:
         SkString fKey, fValue;
         Attribute(const SkString& k, const SkString& v) : fKey(k), fValue(v) {}
     };
-    virtual void setMetadata(const SkTArray<SkDocument::Attribute>&,
+    virtual void setMetadata(const SkDocument::Attribute[],
+                             int ,
                              const SkTime::DateTime* ,
                              const SkTime::DateTime* ) {}
 

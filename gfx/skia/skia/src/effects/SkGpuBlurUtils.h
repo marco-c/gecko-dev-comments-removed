@@ -34,9 +34,11 @@ namespace SkGpuBlurUtils {
 
 
 
+
     GrTexture* GaussianBlur(GrContext* context,
                             GrTexture* srcTexture,
                             bool canClobberSrc,
+                            bool allowSRGBInputs,
                             const SkRect& dstBounds,
                             const SkRect* srcBounds,
                             float sigmaX,

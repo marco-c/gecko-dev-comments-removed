@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGLine_DEFINED
 #define SkSVGLine_DEFINED
 

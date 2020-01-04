@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkBitSet_DEFINED
 #define SkBitSet_DEFINED
 

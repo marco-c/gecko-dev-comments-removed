@@ -355,15 +355,19 @@ private:
                                                    const GrPipelineOptimizations& optimizations,
                                                    bool hasMixedSamples,
                                                    const DstTexture*) const = 0;
+
+    virtual bool onIsEqual(const GrXPFactory&) const = 0;
+
+    bool willReadDstColor(const GrCaps& caps,
+                          const GrPipelineOptimizations& optimizations,
+                          bool hasMixedSamples) const;
     
 
 
 
-    virtual bool willReadDstColor(const GrCaps& caps,
-                                  const GrPipelineOptimizations& optimizations,
-                                  bool hasMixedSamples) const = 0;
-
-    virtual bool onIsEqual(const GrXPFactory&) const = 0;
+    virtual bool onWillReadDstColor(const GrCaps& caps,
+                                    const GrPipelineOptimizations& optimizations,
+                                    bool hasMixedSamples) const = 0;
 
     static uint32_t GenClassID() {
         

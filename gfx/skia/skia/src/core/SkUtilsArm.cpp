@@ -5,7 +5,6 @@
 
 
 
-
 #include "SkUtilsArm.h"
 
 #if SK_ARM_NEON_IS_DYNAMIC

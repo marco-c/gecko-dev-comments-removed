@@ -34,9 +34,9 @@ private:
                                            bool hasMixedSamples,
                                            const DstTexture*) const override;
 
-    bool willReadDstColor(const GrCaps& ,
-                          const GrPipelineOptimizations& ,
-                          bool ) const override {
+    bool onWillReadDstColor(const GrCaps& ,
+                            const GrPipelineOptimizations& ,
+                            bool ) const override {
         return false;
     }
 

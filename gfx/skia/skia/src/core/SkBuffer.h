@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkBuffer_DEFINED
 #define SkBuffer_DEFINED
 

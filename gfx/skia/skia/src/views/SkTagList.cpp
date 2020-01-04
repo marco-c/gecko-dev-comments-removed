@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkTagList.h"
 
 SkTagList::~SkTagList()

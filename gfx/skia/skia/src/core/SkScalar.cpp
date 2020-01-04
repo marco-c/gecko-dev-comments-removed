@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkMath.h"
 #include "SkScalar.h"
 

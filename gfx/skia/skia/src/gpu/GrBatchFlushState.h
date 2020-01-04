@@ -14,70 +14,47 @@
 class GrResourceProvider;
 
 
-class GrBatchUploader::TextureUploader {
-public:
-    TextureUploader(GrGpu* gpu) : fGpu(gpu) { SkASSERT(gpu); }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool writeTexturePixels(GrTexture* texture,
-                            int left, int top, int width, int height,
-                            GrPixelConfig config, const void* buffer,
-                            size_t rowBytes) {
-        return fGpu->writePixels(texture, left, top, width, height, config, buffer, rowBytes);
-    }
-
-private:
-    GrGpu* fGpu;
-};
-
-
 class GrBatchFlushState {
 public:
     GrBatchFlushState(GrGpu*, GrResourceProvider*);
 
     ~GrBatchFlushState() { this->reset(); }
 
-    void advanceToken() { ++fCurrentToken; }
-
-    void advanceLastFlushedToken() { ++fLastFlushedToken; }
-
     
 
-    void addASAPUpload(GrBatchUploader* upload) {
-        fAsapUploads.push_back().reset(SkRef(upload));
+    void addASAPUpload(GrDrawBatch::DeferredUploadFn&& upload) {
+        fAsapUploads.emplace_back(std::move(upload));
     }
 
     const GrCaps& caps() const { return *fGpu->caps(); }
     GrResourceProvider* resourceProvider() const { return fResourceProvider; }
 
     
-    bool hasTokenBeenFlushed(GrBatchToken token) const { return fLastFlushedToken >= token; }
+    bool hasDrawBeenFlushed(GrBatchDrawToken token) const {
+        return token.fSequenceNumber <= fLastFlushedToken.fSequenceNumber;
+    }
 
     
-
-    GrBatchToken currentToken() const { return fCurrentToken; }
-
-    
-    GrBatchToken lastFlushedToken() const { return fLastFlushedToken; }
+    GrBatchDrawToken issueDrawToken() {
+        return GrBatchDrawToken(++fLastIssuedToken.fSequenceNumber);
+    }
 
     
+    void flushToken() { ++fLastFlushedToken.fSequenceNumber; }
 
-    GrBatchToken asapToken() const { return fLastFlushedToken + 1; }
+    
+    GrBatchDrawToken nextDrawToken() const {
+        return GrBatchDrawToken(fLastIssuedToken.fSequenceNumber + 1);
+    }
+
+    
+    GrBatchDrawToken nextTokenToFlush() const {
+        return GrBatchDrawToken(fLastFlushedToken.fSequenceNumber + 1);
+    }
 
     void* makeVertexSpace(size_t vertexSize, int vertexCount,
-                          const GrVertexBuffer** buffer, int* startVertex);
-    uint16_t* makeIndexSpace(int indexCount, const GrIndexBuffer** buffer, int* startIndex);
+                          const GrBuffer** buffer, int* startVertex);
+    uint16_t* makeIndexSpace(int indexCount, const GrBuffer** buffer, int* startIndex);
 
     
 
@@ -85,17 +62,27 @@ public:
         fVertexPool.unmap();
         fIndexPool.unmap();
         int uploadCount = fAsapUploads.count();
+
         for (int i = 0; i < uploadCount; i++) {
-            fAsapUploads[i]->upload(&fUploader);
+            this->doUpload(fAsapUploads[i]);
         }
         fAsapUploads.reset();
+    }
+
+    void doUpload(GrDrawBatch::DeferredUploadFn& upload) {
+        GrDrawBatch::WritePixelsFn wp = [this] (GrSurface* surface,
+                int left, int top, int width, int height,
+                GrPixelConfig config, const void* buffer,
+                size_t rowBytes) -> bool {
+            return this->fGpu->writePixels(surface, left, top, width, height, config, buffer,
+                                           rowBytes);
+        };
+        upload(wp);
     }
 
     void putBackIndices(size_t indices) { fIndexPool.putBack(indices * sizeof(uint16_t)); }
 
     void putBackVertexSpace(size_t sizeInBytes) { fVertexPool.putBack(sizeInBytes); }
-
-    GrBatchUploader::TextureUploader* uploader() { return &fUploader; }
 
     GrGpu* gpu() { return fGpu; }
 
@@ -105,21 +92,43 @@ public:
     }
 
 private:
-    GrGpu*                                          fGpu;
-    GrBatchUploader::TextureUploader                fUploader;
 
-    GrResourceProvider*                             fResourceProvider;
+    GrGpu*                                              fGpu;
 
-    GrVertexBufferAllocPool                         fVertexPool;
-    GrIndexBufferAllocPool                          fIndexPool;
+    GrResourceProvider*                                 fResourceProvider;
 
-    SkTArray<SkAutoTUnref<GrBatchUploader>, true>   fAsapUploads;
+    GrVertexBufferAllocPool                             fVertexPool;
+    GrIndexBufferAllocPool                              fIndexPool;
 
-    GrBatchToken                                    fCurrentToken;
+    SkSTArray<4, GrDrawBatch::DeferredUploadFn>         fAsapUploads;
 
-    GrBatchToken                                    fLastFlushedToken;
+    GrBatchDrawToken                                    fLastIssuedToken;
+
+    GrBatchDrawToken                                    fLastFlushedToken;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 
 
 
@@ -128,19 +137,28 @@ class GrDrawBatch::Target {
 public:
     Target(GrBatchFlushState* state, GrDrawBatch* batch) : fState(state), fBatch(batch) {}
 
-    void upload(GrBatchUploader* upload) {
-        if (this->asapToken() == upload->lastUploadToken()) {
-            fState->addASAPUpload(upload);
-        } else {
-            fBatch->fInlineUploads.push_back().reset(SkRef(upload));
-        }
+    
+    GrBatchDrawToken addInlineUpload(DeferredUploadFn&& upload) {
+        fBatch->fInlineUploads.emplace_back(std::move(upload), fState->nextDrawToken());
+        return fBatch->fInlineUploads.back().fUploadBeforeToken;
     }
 
-    bool hasTokenBeenFlushed(GrBatchToken token) const {
-        return fState->hasTokenBeenFlushed(token);
+    
+
+
+    GrBatchDrawToken addAsapUpload(DeferredUploadFn&& upload) {
+        fState->addASAPUpload(std::move(upload));
+        return fState->nextTokenToFlush();
     }
-    GrBatchToken currentToken() const { return fState->currentToken(); }
-    GrBatchToken asapToken() const { return fState->asapToken(); }
+
+    bool hasDrawBeenFlushed(GrBatchDrawToken token) const {
+        return fState->hasDrawBeenFlushed(token);
+    }
+
+    
+
+
+    GrBatchDrawToken nextDrawToken() const { return fState->nextDrawToken(); }
 
     const GrCaps& caps() const { return fState->caps(); }
 
@@ -161,22 +179,14 @@ class GrVertexBatch::Target : public GrDrawBatch::Target {
 public:
     Target(GrBatchFlushState* state, GrVertexBatch* batch) : INHERITED(state, batch) {}
 
-    void initDraw(const GrPrimitiveProcessor* primProc, const GrPipeline* pipeline) {
-        GrVertexBatch::DrawArray* draws = this->vertexBatch()->fDrawArrays.addToTail();
-        draws->fPrimitiveProcessor.reset(primProc);
-        this->state()->advanceToken();
-    }
-
-    void draw(const GrVertices& vertices) {
-        this->vertexBatch()->fDrawArrays.tail()->fDraws.push_back(vertices);
-    }
+    void draw(const GrGeometryProcessor* gp, const GrMesh& mesh);
 
     void* makeVertexSpace(size_t vertexSize, int vertexCount,
-                          const GrVertexBuffer** buffer, int* startVertex) {
+                          const GrBuffer** buffer, int* startVertex) {
         return this->state()->makeVertexSpace(vertexSize, vertexCount, buffer, startVertex);
     }
 
-    uint16_t* makeIndexSpace(int indexCount, const GrIndexBuffer** buffer, int* startIndex) {
+    uint16_t* makeIndexSpace(int indexCount, const GrBuffer** buffer, int* startIndex) {
         return this->state()->makeIndexSpace(indexCount, buffer, startIndex);
     }
 

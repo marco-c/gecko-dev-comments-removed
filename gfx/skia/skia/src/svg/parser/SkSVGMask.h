@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGMask_DEFINED
 #define SkSVGMask_DEFINED
 

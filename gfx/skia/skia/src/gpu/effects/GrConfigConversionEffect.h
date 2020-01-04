@@ -9,9 +9,9 @@
 #define GrConfigConversionEffect_DEFINED
 
 #include "GrSingleTextureEffect.h"
+#include "GrSwizzle.h"
 
 class GrInvariantOutput;
-
 
 
 
@@ -33,12 +33,12 @@ public:
         kPMConversionCnt
     };
 
-    static const GrFragmentProcessor* Create(GrTexture*, bool swapRedAndBlue, PMConversion,
+    static const GrFragmentProcessor* Create(GrTexture*, const GrSwizzle&, PMConversion,
                                              const SkMatrix&);
 
     const char* name() const override { return "Config Conversion"; }
 
-    bool swapsRedAndBlue() const { return fSwapRedAndBlue; }
+    const GrSwizzle& swizzle() const { return fSwizzle; }
     PMConversion  pmConversion() const { return fPMConversion; }
 
     
@@ -52,7 +52,7 @@ public:
 
 private:
     GrConfigConversionEffect(GrTexture*,
-                             bool swapRedAndBlue,
+                             const GrSwizzle&,
                              PMConversion pmConversion,
                              const SkMatrix& matrix);
 
@@ -64,7 +64,7 @@ private:
 
     void onComputeInvariantOutput(GrInvariantOutput* inout) const override;
 
-    bool            fSwapRedAndBlue;
+    GrSwizzle       fSwizzle;
     PMConversion    fPMConversion;
 
     GR_DECLARE_FRAGMENT_PROCESSOR_TEST;

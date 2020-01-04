@@ -244,7 +244,7 @@ static uint64_t compress_r11eac_block(const uint8_t block[16]) {
 
             
             case 255:
-            
+
                 
                 
                 
@@ -410,7 +410,7 @@ static inline uint64_t interleave6(uint64_t topRows, uint64_t bottomRows) {
     x = swap_shift<36>(x, 0xFC0ULL);
 
     
-    
+
     x = (x & (0xFFFULL << 36)) | ((x & 0xFFFFFFULL) << 12) | ((x >> 24) & 0xFFFULL);
 #endif
 
@@ -498,13 +498,13 @@ static bool compress_a8_to_r11eac_fast(uint8_t* dst, const uint8_t* src,
 
 static inline uint32_t pack_indices_vertical(uint32_t x) {
 #if defined (SK_CPU_BENDIAN)
-    return 
+    return
         (x & 7) |
         ((x >> 5) & (7 << 3)) |
         ((x >> 10) & (7 << 6)) |
         ((x >> 15) & (7 << 9));
 #else
-    return 
+    return
         ((x >> 24) & 7) |
         ((x >> 13) & (7 << 3)) |
         ((x >> 2) & (7 << 6)) |
@@ -664,7 +664,7 @@ void DecompressR11EAC(uint8_t* dst, int dstRowBytes, const uint8_t* src, int wid
             src += 8;
         }
         dst += 4 * dstRowBytes;
-    }    
+    }
 }
 
 }  

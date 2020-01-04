@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGPath_DEFINED
 #define SkSVGPath_DEFINED
 

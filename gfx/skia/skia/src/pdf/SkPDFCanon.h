@@ -7,30 +7,17 @@
 #ifndef SkPDFCanon_DEFINED
 #define SkPDFCanon_DEFINED
 
-#include "SkBitmap.h"
 #include "SkPDFGraphicState.h"
 #include "SkPDFShader.h"
 #include "SkPixelSerializer.h"
 #include "SkTDArray.h"
 #include "SkTHash.h"
+#include "SkBitmapKey.h"
 
 class SkPDFFont;
 class SkPaint;
 class SkImage;
 
-class SkBitmapKey {
-public:
-    SkBitmapKey() : fSubset(SkIRect::MakeEmpty()), fGenID(0) {}
-    explicit SkBitmapKey(const SkBitmap& bm)
-        : fSubset(bm.getSubset()), fGenID(bm.getGenerationID()) {}
-    bool operator==(const SkBitmapKey& rhs) const {
-        return fGenID == rhs.fGenID && fSubset == rhs.fSubset;
-    }
-
-private:
-    SkIRect fSubset;
-    uint32_t fGenID;
-};
 
 
 
@@ -75,13 +62,17 @@ public:
     const SkPDFGraphicState* findGraphicState(const SkPDFGraphicState&) const;
     void addGraphicState(const SkPDFGraphicState*);
 
-    SkPDFObject* findPDFBitmap(const SkImage* image) const;
-    void addPDFBitmap(uint32_t imageUniqueID, SkPDFObject*);
-    const SkImage* bitmapToImage(const SkBitmap&);
+    sk_sp<SkPDFObject> findPDFBitmap(SkBitmapKey key) const;
+    void addPDFBitmap(SkBitmapKey key, sk_sp<SkPDFObject>);
 
     SkTHashMap<uint32_t, bool> fCanEmbedTypeface;
 
-    SkAutoTUnref<SkPixelSerializer> fPixelSerializer;
+    SkPixelSerializer* getPixelSerializer() const { return fPixelSerializer.get(); }
+    void setPixelSerializer(SkPixelSerializer* ps)  { fPixelSerializer.reset(ps); }
+
+    sk_sp<SkPDFStream> makeInvertFunction();
+    sk_sp<SkPDFDict> makeNoSmaskGraphicState();
+    sk_sp<SkPDFArray> makeRangeObject();
 
 private:
     struct FontRec {
@@ -114,7 +105,12 @@ private:
     };
     SkTHashSet<WrapGS, WrapGS::Hash> fGraphicStateRecords;
 
-    SkTHashMap<SkBitmapKey, const SkImage*> fBitmapToImageMap;
-    SkTHashMap<uint32_t , SkPDFObject*> fPDFBitmapMap;
+    
+    SkTHashMap<SkBitmapKey, SkPDFObject*> fPDFBitmapMap;
+
+    sk_sp<SkPixelSerializer> fPixelSerializer;
+    sk_sp<SkPDFStream> fInvertFunction;
+    sk_sp<SkPDFDict> fNoSmaskGraphicState;
+    sk_sp<SkPDFArray> fRangeObject;
 };
 #endif  

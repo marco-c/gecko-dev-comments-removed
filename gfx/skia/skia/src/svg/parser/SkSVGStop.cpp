@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGStop.h"
 #include "SkSVGParser.h"
 

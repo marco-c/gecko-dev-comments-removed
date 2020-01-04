@@ -275,7 +275,7 @@ void GrBlurUtils::drawPathWithMaskFilter(GrContext* context,
                                strokeInfo, pathPtr, pathIsMutable);
 }
 
-void GrBlurUtils::drawPathWithMaskFilter(GrContext* context, 
+void GrBlurUtils::drawPathWithMaskFilter(GrContext* context,
                                          GrDrawContext* drawContext,
                                          const GrClip& clip,
                                          const SkPath& origSrcPath,
@@ -287,6 +287,9 @@ void GrBlurUtils::drawPathWithMaskFilter(GrContext* context,
     SkASSERT(!pathIsMutable || origSrcPath.isVolatile());
 
     GrStrokeInfo strokeInfo(paint);
+    
+    
+    
 
     
     
@@ -332,7 +335,8 @@ void GrBlurUtils::drawPathWithMaskFilter(GrContext* context,
     }
 
     GrPaint grPaint;
-    if (!SkPaintToGrPaint(context, paint, viewMatrix, &grPaint)) {
+    if (!SkPaintToGrPaint(context, paint, viewMatrix, drawContext->allowSRGBInputs(),
+                          &grPaint)) {
         return;
     }
 
@@ -344,4 +348,3 @@ void GrBlurUtils::drawPathWithMaskFilter(GrContext* context,
         drawContext->drawPath(clip, grPaint, viewMatrix, *pathPtr, strokeInfo);
     }
 }
-

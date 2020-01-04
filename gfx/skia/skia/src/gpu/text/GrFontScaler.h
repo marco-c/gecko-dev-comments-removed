@@ -23,17 +23,17 @@ class SkPath;
 class GrFontDescKey : public SkRefCnt {
 public:
     explicit GrFontDescKey(const SkDescriptor& desc) : fDesc(desc), fHash(desc.getChecksum()) {}
-    
+
     uint32_t getHash() const { return fHash; }
 
     bool operator==(const GrFontDescKey& rh) const {
         return fHash == rh.fHash && fDesc.getDesc()->equals(*rh.fDesc.getDesc());
     }
-    
+
 private:
     SkAutoDescriptor fDesc;
     uint32_t fHash;
-    
+
     typedef SkRefCnt INHERITED;
 };
 
@@ -47,7 +47,7 @@ class GrFontScaler : public SkRefCnt {
 public:
     explicit GrFontScaler(SkGlyphCache* strike);
     virtual ~GrFontScaler();
-    
+
     const GrFontDescKey* getKey();
     GrMaskFormat getMaskFormat() const;
     GrMaskFormat getPackedGlyphMaskFormat(const SkGlyph&) const;
@@ -58,11 +58,11 @@ public:
     bool getPackedGlyphDFImage(const SkGlyph&, int width, int height, void* image);
     const SkPath* getGlyphPath(const SkGlyph&);
     const SkGlyph& grToSkGlyph(GrGlyph::PackedID);
-    
+
 private:
     SkGlyphCache*  fStrike;
     GrFontDescKey* fKey;
-    
+
     typedef SkRefCnt INHERITED;
 };
 

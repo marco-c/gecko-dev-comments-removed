@@ -6,10 +6,10 @@
 
 
 
-
 #ifndef SkScan_DEFINED
 #define SkScan_DEFINED
 
+#include "SkFixed.h"
 #include "SkRect.h"
 
 class SkRasterClip;

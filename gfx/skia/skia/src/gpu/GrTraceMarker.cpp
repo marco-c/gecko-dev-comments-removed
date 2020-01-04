@@ -5,7 +5,6 @@
 
 
 
-
 #include "GrTraceMarker.h"
 #include "GrTracing.h"
 #include "SkString.h"
@@ -101,4 +100,3 @@ GrTraceMarkerSet::Iter GrTraceMarkerSet::begin() const {
 GrTraceMarkerSet::Iter GrTraceMarkerSet::end() const {
     return Iter(this, this->fMarkerArray.count());
 }
-

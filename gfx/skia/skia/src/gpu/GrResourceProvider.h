@@ -9,18 +9,16 @@
 #define GrResourceProvider_DEFINED
 
 #include "GrBatchAtlas.h"
-#include "GrIndexBuffer.h"
+#include "GrBuffer.h"
 #include "GrTextureProvider.h"
 #include "GrPathRange.h"
 
 class GrBatchAtlas;
-class GrIndexBuffer;
 class GrPath;
 class GrRenderTarget;
 class GrSingleOwner;
 class GrStencilAttachment;
 class GrStrokeInfo;
-class GrVertexBuffer;
 class SkDescriptor;
 class SkPath;
 class SkTypeface;
@@ -55,12 +53,12 @@ public:
 
 
 
-    const GrIndexBuffer* findOrCreateInstancedIndexBuffer(const uint16_t* pattern,
-                                                          int patternSize,
-                                                          int reps,
-                                                          int vertCount,
-                                                          const GrUniqueKey& key) {
-        if (GrIndexBuffer* buffer = this->findAndRefTByUniqueKey<GrIndexBuffer>(key)) {
+    const GrBuffer* findOrCreateInstancedIndexBuffer(const uint16_t* pattern,
+                                                     int patternSize,
+                                                     int reps,
+                                                     int vertCount,
+                                                     const GrUniqueKey& key) {
+        if (GrBuffer* buffer = this->findAndRefTByUniqueKey<GrBuffer>(key)) {
             return buffer;
         }
         return this->createInstancedIndexBuffer(pattern, patternSize, reps, vertCount, key);
@@ -73,9 +71,9 @@ public:
 
 
 
-    const GrIndexBuffer* refQuadIndexBuffer() {
-        if (GrIndexBuffer* buffer =
-            this->findAndRefTByUniqueKey<GrIndexBuffer>(fQuadIndexBufferKey)) {
+    const GrBuffer* refQuadIndexBuffer() {
+        if (GrBuffer* buffer =
+            this->findAndRefTByUniqueKey<GrBuffer>(fQuadIndexBufferKey)) {
             return buffer;
         }
         return this->createQuadIndexBuffer();
@@ -104,16 +102,17 @@ public:
         kNoPendingIO_Flag = kNoPendingIO_ScratchTextureFlag,
     };
 
-    enum BufferUsage {
-        
+    
 
-        kStatic_BufferUsage,
-        
-        kDynamic_BufferUsage,
-    };
-    GrIndexBuffer* createIndexBuffer(size_t size, BufferUsage, uint32_t flags);
-    GrVertexBuffer* createVertexBuffer(size_t size, BufferUsage, uint32_t flags);
-    GrTransferBuffer* createTransferBuffer(size_t size, TransferType, uint32_t flags);
+
+
+
+
+
+
+
+
+    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern, uint32_t flags);
 
     GrTexture* createApproxTexture(const GrSurfaceDesc& desc, uint32_t flags) {
         SkASSERT(0 == flags || kNoPendingIO_Flag == flags);
@@ -147,14 +146,25 @@ public:
 
     const GrCaps* caps() { return this->gpu()->caps(); }
 
-private:
-    const GrIndexBuffer* createInstancedIndexBuffer(const uint16_t* pattern,
-                                                    int patternSize,
-                                                    int reps,
-                                                    int vertCount,
-                                                    const GrUniqueKey& key);
+     
 
-    const GrIndexBuffer* createQuadIndexBuffer();
+
+
+
+
+
+
+
+     GrRenderTarget* wrapBackendTextureAsRenderTarget(const GrBackendTextureDesc& desc);
+
+private:
+    const GrBuffer* createInstancedIndexBuffer(const uint16_t* pattern,
+                                               int patternSize,
+                                               int reps,
+                                               int vertCount,
+                                               const GrUniqueKey& key);
+
+    const GrBuffer* createQuadIndexBuffer();
 
     GrUniqueKey fQuadIndexBufferKey;
 

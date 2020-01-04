@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrGLPathRange_DEFINED
 #define GrGLPathRange_DEFINED
 

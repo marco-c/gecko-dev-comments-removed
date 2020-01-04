@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkAdvancedTypefaceMetrics.h"
 #include "SkTypes.h"
 
@@ -14,11 +13,9 @@
 #include <dwrite.h>
 #endif
 
-#if defined(SK_BUILD_FOR_UNIX) || defined(SK_BUILD_FOR_ANDROID)
 
 struct FT_FaceRec_;
 typedef struct FT_FaceRec_* FT_Face;
-#endif
 
 #ifdef SK_BUILD_FOR_MAC
 #import <ApplicationServices/ApplicationServices.h>
@@ -68,9 +65,9 @@ void resetRange(SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* range,
     range->fAdvance.setCount(0);
 }
 
-template <typename Data>
+template <typename Data, template<typename> class AutoTDelete>
 SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* appendRange(
-        SkAutoTDelete<SkAdvancedTypefaceMetrics::AdvanceMetric<Data> >* nextSlot,
+        AutoTDelete<SkAdvancedTypefaceMetrics::AdvanceMetric<Data> >* nextSlot,
         int startId) {
     nextSlot->reset(new SkAdvancedTypefaceMetrics::AdvanceMetric<Data>);
     resetRange(nextSlot->get(), startId);
@@ -245,15 +242,22 @@ SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* getAdvanceData(
     if (curRange->fStartId == lastIndex) {
         SkASSERT(prevRange);
         SkASSERT(prevRange->fNext->fStartId == lastIndex);
-        prevRange->fNext.free();
+        prevRange->fNext.reset();
     } else {
         finishRange(curRange, lastIndex - 1,
                     SkAdvancedTypefaceMetrics::WidthRange::kRange);
     }
-    return result.detach();
+    return result.release();
 }
 
 
+
+template SkAdvancedTypefaceMetrics::WidthRange* getAdvanceData(
+        FT_Face face,
+        int num_glyphs,
+        const uint32_t* subsetGlyphIDs,
+        uint32_t subsetGlyphIDsLength,
+        bool (*getAdvance)(FT_Face face, int gId, int16_t* data));
 
 #if defined(SK_BUILD_FOR_WIN)
 template SkAdvancedTypefaceMetrics::WidthRange* getAdvanceData(
@@ -268,13 +272,6 @@ template SkAdvancedTypefaceMetrics::WidthRange* getAdvanceData(
         const uint32_t* subsetGlyphIDs,
         uint32_t subsetGlyphIDsLength,
         bool (*getAdvance)(IDWriteFontFace* fontFace, int gId, int16_t* data));
-#elif defined(SK_BUILD_FOR_UNIX) || defined(SK_BUILD_FOR_ANDROID)
-template SkAdvancedTypefaceMetrics::WidthRange* getAdvanceData(
-        FT_Face face,
-        int num_glyphs,
-        const uint32_t* subsetGlyphIDs,
-        uint32_t subsetGlyphIDsLength,
-        bool (*getAdvance)(FT_Face face, int gId, int16_t* data));
 #elif defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
 template SkAdvancedTypefaceMetrics::WidthRange* getAdvanceData(
         CTFontRef ctFont,

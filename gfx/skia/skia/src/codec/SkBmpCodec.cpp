@@ -286,6 +286,18 @@ bool SkBmpCodec::ReadHeader(SkStream* stream, bool inIco, SkCodec** codecOut) {
     switch (compression) {
         case kNone_BmpCompressionMethod:
             inputFormat = kStandard_BmpInputFormat;
+
+            
+            
+            
+            
+            
+            if (16 == bitsPerPixel) {
+                inputMasks.red = 0x7C00;
+                inputMasks.green = 0x03E0;
+                inputMasks.blue = 0x001F;
+                inputFormat = kBitMask_BmpInputFormat;
+            }
             break;
         case k8BitRLE_BmpCompressionMethod:
             if (bitsPerPixel != 8) {
@@ -331,6 +343,27 @@ bool SkBmpCodec::ReadHeader(SkStream* stream, bool inIco, SkCodec** codecOut) {
                     inputMasks.red = get_int(iBuffer.get(), 36);
                     inputMasks.green = get_int(iBuffer.get(), 40);
                     inputMasks.blue = get_int(iBuffer.get(), 44);
+
+                    if (kInfoV2_BmpHeaderType == headerType ||
+                            (kInfoV3_BmpHeaderType == headerType && !inIco)) {
+                        break;
+                    }
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    SkASSERT(infoBytesRemaining > 52);
+                    inputMasks.alpha = get_int(iBuffer.get(), 48);
                     break;
                 case kOS2VX_BmpHeaderType:
                     
@@ -366,90 +399,7 @@ bool SkBmpCodec::ReadHeader(SkStream* stream, bool inIco, SkCodec** codecOut) {
             SkCodecPrintf("Error: invalid format for bitmap decoding.\n");
             return false;
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SkAlphaType alphaType = kOpaque_SkAlphaType;
-    if ((kInfoV3_BmpHeaderType == headerType && inIco) ||
-            kInfoV4_BmpHeaderType == headerType ||
-            kInfoV5_BmpHeaderType == headerType) {
-        
-        
-        SkASSERT(infoBytesRemaining > 52);
-        inputMasks.alpha = get_int(iBuffer.get(), 48);
-        if (inputMasks.alpha != 0) {
-            alphaType = kUnpremul_SkAlphaType;
-        }
-    }
-    iBuffer.free();
-
-    
-    
-    
-    
-    if ((inIco && 32 == bitsPerPixel) || (kRLE_BmpInputFormat == inputFormat)) {
-        alphaType = kUnpremul_SkAlphaType;
-    }
-
-    
-    
-    
-    SkColorType colorType = kN32_SkColorType;
-    switch (bitsPerPixel) {
-        
-        
-        
-        
-        
-        case 16:
-            if (kBitMask_BmpInputFormat != inputFormat) {
-                inputMasks.red = 0x7C00;
-                inputMasks.green = 0x03E0;
-                inputMasks.blue = 0x001F;
-                inputFormat = kBitMask_BmpInputFormat;
-            }
-            break;
-        
-        
-        case 1:
-        case 2:
-        case 4:
-        case 8:
-            
-            
-            
-            if (kRLE_BmpInputFormat != inputFormat && !inIco) {
-                colorType = kIndex_8_SkColorType;
-            }
-        case 24:
-        case 32:
-            break;
-        default:
-            SkCodecPrintf("Error: invalid input value for bits per pixel.\n");
-            return false;
-    }
-
-    
-    SkAutoTDelete<SkMasks>
-            masks(SkMasks::CreateMasks(inputMasks, bitsPerPixel));
-    if (nullptr == masks) {
-        SkCodecPrintf("Error: invalid input masks.\n");
-        return false;
-    }
-
-    
-    if (totalBytes <= offset && kRLE_BmpInputFormat == inputFormat) {
-        SkCodecPrintf("Error: RLE requires valid input size.\n");
-        return false;
-    }
-    const size_t RLEBytes = totalBytes - offset;
+    iBuffer.reset();
 
     
     const uint32_t bytesRead = kBmpHeaderBytes + infoBytes + maskBytes;
@@ -461,55 +411,133 @@ bool SkBmpCodec::ReadHeader(SkStream* stream, bool inIco, SkCodec** codecOut) {
         return false;
     }
 
-    
-    
-    
-    if (!inIco && kBitMask_BmpInputFormat == inputFormat) {
-        if (stream->skip(offset - bytesRead) != offset - bytesRead) {
-            SkCodecPrintf("Error: unable to skip to image data.\n");
-            return false;
-        }
-    }
 
-    if (codecOut) {
-        
-        const SkImageInfo& imageInfo = SkImageInfo::Make(width, height,
-                colorType, alphaType);
 
-        
-        switch (inputFormat) {
-            case kStandard_BmpInputFormat:
+    switch (inputFormat) {
+        case kStandard_BmpInputFormat: {
+            
+            
+            
+            
+            
+            SkColorType colorType = kN32_SkColorType;
+            SkAlphaType alphaType = inIco ? kUnpremul_SkAlphaType : kOpaque_SkAlphaType;
+            bool isOpaque = true;
+            switch (bitsPerPixel) {
+                
+                case 1:
+                case 2:
+                case 4:
+                case 8:
+                    
+                    
+                    if (!inIco) {
+                        colorType = kIndex_8_SkColorType;
+                    }
+                    break;
+                case 24:
+                case 32:
+                    
+                    
+                    if (inIco) {
+                        isOpaque = false;
+                    }
+                    break;
+                default:
+                    SkCodecPrintf("Error: invalid input value for bits per pixel.\n");
+                    return false;
+            }
+
+            if (codecOut) {
                 
                 SkASSERT(!inIco || nullptr != stream->getMemoryBase());
-                *codecOut = new SkBmpStandardCodec(imageInfo, stream, bitsPerPixel, numColors,
-                        bytesPerColor, offset - bytesRead, rowOrder, inIco);
-                return true;
-            case kBitMask_BmpInputFormat:
+
                 
-                if (inIco) {
-                    SkCodecPrintf("Error: Icos may not use bit mask format.\n");
+                const SkImageInfo imageInfo = SkImageInfo::Make(width, height, colorType,
+                        alphaType);
+                *codecOut = new SkBmpStandardCodec(imageInfo, stream, bitsPerPixel, numColors,
+                        bytesPerColor, offset - bytesRead, rowOrder, isOpaque, inIco);
+
+            }
+            return true;
+        }
+
+        case kBitMask_BmpInputFormat: {
+            
+            if (inIco) {
+                SkCodecPrintf("Error: Icos may not use bit mask format.\n");
+                return false;
+            }
+
+            switch (bitsPerPixel) {
+                case 16:
+                case 24:
+                case 32:
+                    break;
+                default:
+                    SkCodecPrintf("Error: invalid input value for bits per pixel.\n");
+                    return false;
+            }
+
+            
+            
+            
+            if (stream->skip(offset - bytesRead) != offset - bytesRead) {
+                SkCodecPrintf("Error: unable to skip to image data.\n");
+                return false;
+            }
+
+            if (codecOut) {
+                
+                SkAutoTDelete<SkMasks> masks(SkMasks::CreateMasks(inputMasks, bitsPerPixel));
+                if (nullptr == masks) {
+                    SkCodecPrintf("Error: invalid input masks.\n");
                     return false;
                 }
 
-                *codecOut = new SkBmpMaskCodec(imageInfo, stream, bitsPerPixel, masks.detach(),
+                
+                SkAlphaType alphaType = masks->getAlphaMask() ? kUnpremul_SkAlphaType :
+                        kOpaque_SkAlphaType;
+                const SkImageInfo imageInfo = SkImageInfo::Make(width, height, kN32_SkColorType,
+                        alphaType);
+                *codecOut = new SkBmpMaskCodec(imageInfo, stream, bitsPerPixel, masks.release(),
                         rowOrder);
-                return true;
-            case kRLE_BmpInputFormat:
+            }
+            return true;
+        }
+
+        case kRLE_BmpInputFormat: {
+            
+            SkASSERT(4 == bitsPerPixel || 8 == bitsPerPixel || 24 == bitsPerPixel);
+
+            
+            if (totalBytes <= offset) {
+                SkCodecPrintf("Error: RLE requires valid input size.\n");
+                return false;
+            }
+            const size_t RLEBytes = totalBytes - offset;
+
+            
+            
+            
+            
+            SkASSERT(!inIco);
+
+            if (codecOut) {
                 
                 
                 
-                
-                SkASSERT(!inIco);
+                const SkImageInfo imageInfo = SkImageInfo::Make(width, height, kN32_SkColorType,
+                        kUnpremul_SkAlphaType);
                 *codecOut = new SkBmpRLECodec(imageInfo, stream, bitsPerPixel, numColors,
                         bytesPerColor, offset - bytesRead, rowOrder, RLEBytes);
-                return true;
-            default:
-                SkASSERT(false);
-                return false;
+            }
+            return true;
         }
+        default:
+            SkASSERT(false);
+            return false;
     }
-
-    return true;
 }
 
 
@@ -523,7 +551,7 @@ SkCodec* SkBmpCodec::NewFromStream(SkStream* stream, bool inIco) {
         
         
         SkASSERT(codec);
-        streamDeleter.detach();
+        streamDeleter.release();
         return codec;
     }
     return nullptr;
@@ -534,6 +562,7 @@ SkBmpCodec::SkBmpCodec(const SkImageInfo& info, SkStream* stream,
     : INHERITED(info, stream)
     , fBitsPerPixel(bitsPerPixel)
     , fRowOrder(rowOrder)
+    , fSrcRowBytes(SkAlign4(compute_row_bytes(info.width(), fBitsPerPixel)))
 {}
 
 bool SkBmpCodec::onRewind() {
@@ -564,4 +593,13 @@ int SkBmpCodec::onGetScanlines(void* dst, int count, size_t rowBytes) {
 
     
     return this->decodeRows(rowInfo, dst, rowBytes, this->options());
+}
+
+bool SkBmpCodec::skipRows(int count) {
+    const size_t bytesToSkip = count * fSrcRowBytes;
+    return this->stream()->skip(bytesToSkip) == bytesToSkip;
+}
+
+bool SkBmpCodec::onSkipScanlines(int count) {
+    return this->skipRows(count);
 }

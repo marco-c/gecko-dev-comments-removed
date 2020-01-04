@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGClipPath.h"
 #include "SkSVGParser.h"
 #include "SkSVGUse.h"

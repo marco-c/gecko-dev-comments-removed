@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef SkCanvasStack_DEFINED
 #define SkCanvasStack_DEFINED
 

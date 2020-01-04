@@ -346,7 +346,7 @@ static inline uint32_t convert_index(uint32_t x) {
     
     
     x &= 0x07070707;
-    
+
     return pack_index(x);
 }
 

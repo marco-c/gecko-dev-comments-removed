@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkNinePatch.h"
 #include "SkCanvas.h"
 #include "SkShader.h"
@@ -236,14 +235,13 @@ void SkNinePatch::DrawMesh(SkCanvas* canvas, const SkRect& bounds,
     fillRow(verts, texs, bounds.fBottom, SkIntToScalar(bitmap.height()),
             bounds, xDivs, numXDivs, stretchX, bitmap.width());
 
-    SkShader* shader = SkShader::CreateBitmapShader(bitmap,
-                                                    SkShader::kClamp_TileMode,
-                                                    SkShader::kClamp_TileMode);
     SkPaint p;
     if (paint) {
         p = *paint;
     }
-    p.setShader(shader)->unref();
+    p.setShader(SkShader::MakeBitmapShader(bitmap,
+                                           SkShader::kClamp_TileMode,
+                                           SkShader::kClamp_TileMode));
     canvas->drawVertices(SkCanvas::kTriangles_VertexMode, vCount,
                          mesh.fVerts, mesh.fTexs, mesh.fColors, nullptr,
                          mesh.fIndices, indexCount, p);

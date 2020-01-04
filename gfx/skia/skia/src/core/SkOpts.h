@@ -24,13 +24,6 @@ namespace SkOpts {
     
 
     
-    extern float (*rsqrt)(float);
-
-    
-    extern void (*memset16)(uint16_t[], uint16_t, int);
-    extern void (*memset32)(uint32_t[], uint32_t, int);
-
-    
     extern SkXfermode* (*create_xfermode)(const ProcCoeff&, SkXfermode::Mode);
 
     typedef void (*BoxBlur)(const SkPMColor*, int, const SkIRect& srcBounds, SkPMColor*, int, int, int, int, int);
@@ -46,6 +39,7 @@ namespace SkOpts {
 
     extern void (*blit_mask_d32_a8)(SkPMColor*, size_t, const SkAlpha*, size_t, SkColor, int, int);
     extern void (*blit_row_color32)(SkPMColor*, const SkPMColor*, int, SkPMColor);
+    extern void (*blit_row_s32a_opaque)(SkPMColor*, const SkPMColor*, int, U8CPU);
 
     
     extern void (*color_cube_filter_span)(const SkPMColor[],
@@ -58,10 +52,21 @@ namespace SkOpts {
 
     extern SkMatrix::MapPtsProc matrix_translate, matrix_scale_translate, matrix_affine;
 
-    typedef void (*Swizzle_8888_8888)(uint32_t[], const uint32_t[], int);
-    extern Swizzle_8888_8888 premul_xxxa,  
-                             swaprb_xxxa,  
-                      premul_swaprb_xxxa;  
+    
+    typedef void (*Swizzle_8888)(uint32_t*, const void*, int);
+    extern Swizzle_8888 RGBA_to_BGRA,          
+                        RGBA_to_rgbA,          
+                        RGBA_to_bgrA,          
+                        RGB_to_RGB1,           
+                        RGB_to_BGR1,           
+                        gray_to_RGB1,          
+                        grayA_to_RGBA,         
+                        grayA_to_rgbA,         
+                        inverted_CMYK_to_RGB1, 
+                        inverted_CMYK_to_BGR1; 
+
+    extern void (*half_to_float)(float[], const uint16_t[], int);
+    extern void (*float_to_half)(uint16_t[], const float[], int);
 }
 
 #endif

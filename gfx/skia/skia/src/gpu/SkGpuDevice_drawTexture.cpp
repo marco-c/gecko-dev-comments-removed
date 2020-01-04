@@ -95,6 +95,9 @@ void SkGpuDevice::drawTextureProducer(GrTextureProducer* producer,
                                       const GrClip& clip,
                                       const SkPaint& paint) {
     
+    SK_HISTOGRAM_BOOLEAN("DrawTiled", false);
+
+    
     
     
     SkRect clippedSrcRect;
@@ -168,7 +171,7 @@ void SkGpuDevice::drawTextureProducerImpl(GrTextureProducer* producer,
     } else {
         constraintMode = GrTextureAdjuster::kYes_FilterConstraint;
     }
-    
+
     
     
     
@@ -203,7 +206,7 @@ void SkGpuDevice::drawTextureProducerImpl(GrTextureProducer* producer,
 
     GrPaint grPaint;
     if (!SkPaintToGrPaintWithTexture(fContext, paint, viewMatrix, fp, producer->isAlphaOnly(),
-                                     &grPaint)) {
+                                     this->surfaceProps().allowSRGBInputs(), &grPaint)) {
         return;
     }
 

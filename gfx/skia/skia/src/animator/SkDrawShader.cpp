@@ -71,8 +71,8 @@ SkShader* SkDrawBitmapShader::getShader() {
     
     
     
-    return SkShader::CreateBitmapShader(image->fBitmap,
+    return SkShader::MakeBitmapShader(image->fBitmap,
                                         (SkShader::TileMode) tileMode,
                                         (SkShader::TileMode) tileMode,
-                                        getMatrix());
+                                        getMatrix()).release();
 }

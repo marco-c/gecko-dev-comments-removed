@@ -6,12 +6,23 @@
 
 
 
-
 #include "SkDiscretePathEffect.h"
-#include "SkReadBuffer.h"
-#include "SkWriteBuffer.h"
+#include "SkFixed.h"
 #include "SkPathMeasure.h"
+#include "SkReadBuffer.h"
 #include "SkStrokeRec.h"
+#include "SkWriteBuffer.h"
+
+sk_sp<SkPathEffect> SkDiscretePathEffect::Make(SkScalar segLength, SkScalar deviation,
+                                               uint32_t seedAssist) {
+    if (!SkScalarIsFinite(segLength) || !SkScalarIsFinite(deviation)) {
+        return nullptr;
+    }
+    if (segLength <= SK_ScalarNearlyZero) {
+        return nullptr;
+    }
+    return sk_sp<SkPathEffect>(new SkDiscretePathEffect(segLength, deviation, seedAssist));
+}
 
 static void Perterb(SkPoint* p, const SkVector& tangent, SkScalar scale) {
     SkVector normal = tangent;
@@ -117,11 +128,11 @@ bool SkDiscretePathEffect::filterPath(SkPath* dst, const SkPath& src,
     return true;
 }
 
-SkFlattenable* SkDiscretePathEffect::CreateProc(SkReadBuffer& buffer) {
+sk_sp<SkFlattenable> SkDiscretePathEffect::CreateProc(SkReadBuffer& buffer) {
     SkScalar segLength = buffer.readScalar();
     SkScalar perterb = buffer.readScalar();
     uint32_t seed = buffer.readUInt();
-    return Create(segLength, perterb, seed);
+    return Make(segLength, perterb, seed);
 }
 
 void SkDiscretePathEffect::flatten(SkWriteBuffer& buffer) const {

@@ -67,7 +67,7 @@ SK_API extern void sk_out_of_memory(void);
 
 
 
-SK_API extern void sk_throw(void);
+SK_API extern void sk_abort_no_print(void);
 
 enum {
     SK_MALLOC_TEMP  = 0x01, 
@@ -128,8 +128,10 @@ inline void operator delete(void* p) {
     SK_API void SkDebugf(const char format[], ...);
 #endif
 
+#define SkASSERT_RELEASE(cond)          if(!(cond)) { SK_ABORT(#cond); }
+
 #ifdef SK_DEBUG
-    #define SkASSERT(cond)              SK_ALWAYSBREAK(cond)
+    #define SkASSERT(cond)              SkASSERT_RELEASE(cond)
     #define SkDEBUGFAIL(message)        SkASSERT(false && message)
     #define SkDEBUGFAILF(fmt, ...)      SkASSERTF(false, fmt, ##__VA_ARGS__)
     #define SkDEBUGCODE(code)           code
@@ -150,7 +152,9 @@ inline void operator delete(void* p) {
     #define SkAssertResult(cond)        cond
 #endif
 
-#define SkFAIL(message)                 SK_ALWAYSBREAK(false && message)
+
+#define SkFAIL(message)                 SK_ABORT(message)
+#define sk_throw()                      SK_ABORT("sk_throw")
 
 
 
@@ -252,27 +256,20 @@ typedef unsigned U16CPU;
 
 typedef uint8_t SkBool8;
 
-#ifdef SK_DEBUG
-    SK_API int8_t      SkToS8(intmax_t);
-    SK_API uint8_t     SkToU8(uintmax_t);
-    SK_API int16_t     SkToS16(intmax_t);
-    SK_API uint16_t    SkToU16(uintmax_t);
-    SK_API int32_t     SkToS32(intmax_t);
-    SK_API uint32_t    SkToU32(uintmax_t);
-    SK_API int         SkToInt(intmax_t);
-    SK_API unsigned    SkToUInt(uintmax_t);
-    SK_API size_t      SkToSizeT(uintmax_t);
-#else
-    #define SkToS8(x)   ((int8_t)(x))
-    #define SkToU8(x)   ((uint8_t)(x))
-    #define SkToS16(x)  ((int16_t)(x))
-    #define SkToU16(x)  ((uint16_t)(x))
-    #define SkToS32(x)  ((int32_t)(x))
-    #define SkToU32(x)  ((uint32_t)(x))
-    #define SkToInt(x)  ((int)(x))
-    #define SkToUInt(x) ((unsigned)(x))
-    #define SkToSizeT(x) ((size_t)(x))
-#endif
+#include "../private/SkTFitsIn.h"
+template <typename D, typename S> D SkTo(S s) {
+    SkASSERT(SkTFitsIn<D>(s));
+    return static_cast<D>(s);
+}
+#define SkToS8(x)    SkTo<int8_t>(x)
+#define SkToU8(x)    SkTo<uint8_t>(x)
+#define SkToS16(x)   SkTo<int16_t>(x)
+#define SkToU16(x)   SkTo<uint16_t>(x)
+#define SkToS32(x)   SkTo<int32_t>(x)
+#define SkToU32(x)   SkTo<uint32_t>(x)
+#define SkToInt(x)   SkTo<int>(x)
+#define SkToUInt(x)  SkTo<unsigned>(x)
+#define SkToSizeT(x) SkTo<size_t>(x)
 
 
 
@@ -286,7 +283,7 @@ typedef uint8_t SkBool8;
 #define SK_MinS32   -SK_MaxS32
 #define SK_MaxU32   0xFFFFFFFF
 #define SK_MinU32   0
-#define SK_NaN32    (1 << 31)
+#define SK_NaN32    ((int) (1U << 31))
 
 
 
@@ -333,6 +330,9 @@ template <typename T, size_t N> char (&SkArrayCountHelper(T (&array)[N]))[N];
 #define SkAlign8(x)     (((x) + 7) >> 3 << 3)
 #define SkIsAlign8(x)   (0 == ((x) & 7))
 
+#define SkAlign16(x)     (((x) + 15) >> 4 << 4)
+#define SkIsAlign16(x)   (0 == ((x) & 15))
+
 #define SkAlignPtr(x)   (sizeof(void*) == 8 ?   SkAlign8(x) :   SkAlign4(x))
 #define SkIsAlignPtr(x) (sizeof(void*) == 8 ? SkIsAlign8(x) : SkIsAlign4(x))
 
@@ -342,6 +342,8 @@ typedef uint32_t SkFourByteTag;
 
 
 typedef int32_t SkUnichar;
+
+
 
 
 typedef uint32_t SkMSec;
@@ -439,6 +441,17 @@ template <typename T> static inline const T& SkTPin(const T& value, const T& min
 
 
 
+
+
+enum class SkBudgeted : bool {
+    kNo  = false,
+    kYes = true
+};
+
+
+
+
+
 template <typename T>
 T SkTBitOr(T a, T b) {
     return (T)(a | b);
@@ -496,12 +509,12 @@ public:
 
 
 
-    void* detach() { return this->set(NULL); }
+    void* release() { return this->set(NULL); }
 
     
 
 
-    void free() {
+    void reset() {
         sk_free(fPtr);
         fPtr = NULL;
     }
@@ -553,7 +566,7 @@ public:
     
 
 
-    void* reset(size_t size, OnShrink shrink = kAlloc_OnShrink,  bool* didChangeAlloc = NULL) {
+    void* reset(size_t size = 0, OnShrink shrink = kAlloc_OnShrink,  bool* didChangeAlloc = NULL) {
         if (size == fSize || (kReuse_OnShrink == shrink && size < fSize)) {
             if (didChangeAlloc) {
                 *didChangeAlloc = false;
@@ -574,13 +587,6 @@ public:
     
 
 
-    void free() {
-        this->reset(0);
-    }
-
-    
-
-
     void* get() { return fPtr; }
     const void* get() const { return fPtr; }
 
@@ -588,7 +594,7 @@ public:
 
 
 
-    void* detach() {
+    void* release() {
         void* ptr = fPtr;
         fPtr = NULL;
         fSize = 0;
@@ -607,10 +613,9 @@ private:
 
 
 
-template <size_t kSize> class SkAutoSMalloc : SkNoncopyable {
+template <size_t kSizeRequested> class SkAutoSMalloc : SkNoncopyable {
 public:
     
-
 
 
 
@@ -620,7 +625,6 @@ public:
     }
 
     
-
 
 
 
@@ -645,11 +649,9 @@ public:
 
 
 
-
     void* get() const { return fPtr; }
 
     
-
 
 
 
@@ -682,9 +684,20 @@ public:
     }
 
 private:
+    
+    static const size_t kSizeAlign4 = SkAlign4(kSizeRequested);
+#if defined(GOOGLE3)
+    
+    
+    static const size_t kMaxBytes = 4 * 1024;
+    static const size_t kSize = kSizeRequested > kMaxBytes ? kMaxBytes : kSizeAlign4;
+#else
+    static const size_t kSize = kSizeAlign4;
+#endif
+
     void*       fPtr;
     size_t      fSize;  
-    uint32_t    fStorage[(kSize + 3) >> 2];
+    uint32_t    fStorage[kSize >> 2];
 };
 
 

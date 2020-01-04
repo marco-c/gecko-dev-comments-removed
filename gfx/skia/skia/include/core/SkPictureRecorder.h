@@ -72,7 +72,7 @@ public:
 
 
 
-    SkPicture* SK_WARN_UNUSED_RESULT endRecordingAsPicture();
+    sk_sp<SkPicture> finishRecordingAsPicture();
 
     
 
@@ -83,7 +83,7 @@ public:
 
 
 
-    SkPicture* SK_WARN_UNUSED_RESULT endRecordingAsPicture(const SkRect& cullRect);
+    sk_sp<SkPicture> finishRecordingAsPictureWithCull(const SkRect& cullRect);
 
     
 
@@ -95,10 +95,20 @@ public:
 
 
 
-    SkDrawable* SK_WARN_UNUSED_RESULT endRecordingAsDrawable();
+    sk_sp<SkDrawable> finishRecordingAsDrawable();
 
-    
+#ifdef SK_SUPPORT_LEGACY_PICTURE_PTR
+    SkPicture* SK_WARN_UNUSED_RESULT endRecordingAsPicture() {
+        return this->finishRecordingAsPicture().release();
+    }
+    SkPicture* SK_WARN_UNUSED_RESULT endRecordingAsPicture(const SkRect& cullRect) {
+        return this->finishRecordingAsPictureWithCull(cullRect).release();
+    }
+    SkDrawable* SK_WARN_UNUSED_RESULT endRecordingAsDrawable() {
+        return this->finishRecordingAsDrawable().release();
+    }
     SkPicture* SK_WARN_UNUSED_RESULT endRecording() { return this->endRecordingAsPicture(); }
+#endif
 
 private:
     void reset();

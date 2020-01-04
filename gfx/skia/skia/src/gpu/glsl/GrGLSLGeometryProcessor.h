@@ -30,6 +30,7 @@ public:
         this->setTransformDataMatrix(SkMatrix::I(), pdman, index, transforms);
     }
 
+protected:
     
     template <class GeometryProcessor>
     void setTransformDataHelper(const GrPrimitiveProcessor& primProc,
@@ -40,7 +41,6 @@ public:
         this->setTransformDataMatrix(gp.localMatrix(), pdman, index, transforms);
     }
 
-protected:
     
     void emitTransforms(GrGLSLVertexBuilder* vb,
                         GrGLSLVaryingHandler* varyingHandler,

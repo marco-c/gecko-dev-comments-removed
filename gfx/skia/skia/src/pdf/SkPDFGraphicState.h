@@ -6,12 +6,11 @@
 
 
 
-
 #ifndef SkPDFGraphicState_DEFINED
 #define SkPDFGraphicState_DEFINED
 
 #include "SkPaint.h"
-#include "SkPDFTypes.h"
+#include "SkPDFStream.h"
 #include "SkChecksum.h"
 
 class SkPDFCanon;
@@ -23,7 +22,7 @@ class SkPDFFormXObject;
 
 
 class SkPDFGraphicState final : public SkPDFObject {
-    
+
 public:
     enum SkPDFSMaskMode {
         kAlpha_SMaskMode,
@@ -53,21 +52,14 @@ public:
 
 
 
-
-
-    static SkPDFDict* GetSMaskGraphicState(SkPDFFormXObject* sMask,
-                                           bool invert,
-                                           SkPDFSMaskMode sMaskMode);
+    static sk_sp<SkPDFDict> GetSMaskGraphicState(SkPDFFormXObject* sMask,
+                                                 bool invert,
+                                                 SkPDFSMaskMode sMaskMode,
+                                                 SkPDFCanon* canon);
 
     
-
-
-
-
-
-
-
-    static SkPDFDict* GetNoSMaskGraphicState();
+    static sk_sp<SkPDFDict> MakeNoSmaskGraphicState();
+    static sk_sp<SkPDFStream> MakeInvertFunction();
 
     bool operator==(const SkPDFGraphicState& rhs) const {
         return 0 == memcmp(&fStrokeWidth, &rhs.fStrokeWidth, 12);

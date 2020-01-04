@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkQuadClipper_DEFINED
 #define SkQuadClipper_DEFINED
 

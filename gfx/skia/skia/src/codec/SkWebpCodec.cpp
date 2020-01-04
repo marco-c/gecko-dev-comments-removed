@@ -77,7 +77,7 @@ SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
     SkAutoTDelete<SkStream> streamDeleter(stream);
     SkImageInfo info;
     if (webp_parse_header(stream, &info)) {
-        return new SkWebpCodec(info, streamDeleter.detach());
+        return new SkWebpCodec(info, streamDeleter.release());
     }
     return nullptr;
 }
@@ -85,9 +85,10 @@ SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
 
 
 static bool webp_conversion_possible(const SkImageInfo& dst, const SkImageInfo& src) {
-    if (dst.profileType() != src.profileType()) {
-        return false;
-    }
+    
+    
+    
+    
 
     if (!valid_alpha(dst.alphaType(), src.alphaType())) {
         return false;
@@ -252,4 +253,6 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
 }
 
 SkWebpCodec::SkWebpCodec(const SkImageInfo& info, SkStream* stream)
-    : INHERITED(info, stream) {}
+    
+    
+    : INHERITED(info, stream, SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named)) {}

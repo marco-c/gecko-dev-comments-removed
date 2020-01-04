@@ -71,16 +71,25 @@ static const int kVaryingsPerBlock = 8;
 class GrGLSLVaryingHandler {
 public:
     explicit GrGLSLVaryingHandler(GrGLSLProgramBuilder* program)
-        : fVertexInputs(kVaryingsPerBlock)
+        : fVaryings(kVaryingsPerBlock)
+        , fVertexInputs(kVaryingsPerBlock)
         , fVertexOutputs(kVaryingsPerBlock)
         , fGeomInputs(kVaryingsPerBlock)
         , fGeomOutputs(kVaryingsPerBlock)
         , fFragInputs(kVaryingsPerBlock)
         , fFragOutputs(kVaryingsPerBlock)
-        , fProgramBuilder(program) {}
+        , fProgramBuilder(program)
+        , fDefaultInterpolationModifier(nullptr) {}
 
-    typedef GrTAllocator<GrGLSLShaderVar> VarArray;
-    typedef GrGLSLProgramDataManager::VaryingHandle VaryingHandle;
+    virtual ~GrGLSLVaryingHandler() {}
+
+    
+
+
+
+
+
+    void setNoPerspective();
 
     
 
@@ -91,8 +100,23 @@ public:
 
 
     void addVarying(const char* name,
-                    GrGLSLVarying*,
-                    GrSLPrecision precision = kDefault_GrSLPrecision);
+                    GrGLSLVarying* varying,
+                    GrSLPrecision precision = kDefault_GrSLPrecision) {
+        SkASSERT(GrSLTypeIsFloatType(varying->type())); 
+        this->internalAddVarying(name, varying, precision, false );
+    }
+
+    
+
+
+
+
+
+    void addFlatVarying(const char* name,
+                        GrGLSLVarying* varying,
+                        GrSLPrecision precision = kDefault_GrSLPrecision) {
+        this->internalAddVarying(name, varying, precision, true );
+    }
 
     
 
@@ -102,33 +126,59 @@ public:
 
 
 
-    void addPassThroughAttribute(const GrGeometryProcessor::Attribute*, const char* output);
+    void addPassThroughAttribute(const GrGeometryProcessor::Attribute*, const char* output,
+                                 GrSLPrecision = kDefault_GrSLPrecision);
+    void addFlatPassThroughAttribute(const GrGeometryProcessor::Attribute*, const char* output,
+                                     GrSLPrecision = kDefault_GrSLPrecision);
 
     void emitAttributes(const GrGeometryProcessor& gp);
+
+    
+    
+    void finalize();
 
     void getVertexDecls(SkString* inputDecls, SkString* outputDecls) const;
     void getGeomDecls(SkString* inputDecls, SkString* outputDecls) const;
     void getFragDecls(SkString* inputDecls, SkString* outputDecls) const;
+
 protected:
-    VarArray fVertexInputs;
-    VarArray fVertexOutputs;
-    VarArray fGeomInputs;
-    VarArray fGeomOutputs;
-    VarArray fFragInputs;
-    VarArray fFragOutputs;
+    struct VaryingInfo {
+        GrSLType         fType;
+        GrSLPrecision    fPrecision;
+        bool             fIsFlat;
+        SkString         fVsOut;
+        SkString         fGsOut;
+        GrShaderFlags    fVisibility;
+    };
+
+    typedef GrTAllocator<VaryingInfo> VaryingList;
+    typedef GrTAllocator<GrGLSLShaderVar> VarArray;
+    typedef GrGLSLProgramDataManager::VaryingHandle VaryingHandle;
+
+    VaryingList    fVaryings;
+    VarArray       fVertexInputs;
+    VarArray       fVertexOutputs;
+    VarArray       fGeomInputs;
+    VarArray       fGeomOutputs;
+    VarArray       fFragInputs;
+    VarArray       fFragOutputs;
 
     
     GrGLSLProgramBuilder* fProgramBuilder;
 
 private:
-    void addVertexVarying(const char* name, GrSLPrecision precision, GrGLSLVarying* v);
-    void addGeomVarying(const char* name, GrSLPrecision precision, GrGLSLVarying* v);
-    void addFragVarying(GrSLPrecision precision, GrGLSLVarying* v);
+    void internalAddVarying(const char* name, GrGLSLVarying*, GrSLPrecision, bool flat);
+    void writePassThroughAttribute(const GrGeometryProcessor::Attribute*, const char* output,
+                                   const GrGLSLVarying&);
 
     void addAttribute(const GrShaderVar& var);
 
+    virtual void onFinalize() = 0;
+
     
     void appendDecls(const VarArray& vars, SkString* out) const;
+
+    const char* fDefaultInterpolationModifier;
 
     friend class GrGLSLProgramBuilder;
 };

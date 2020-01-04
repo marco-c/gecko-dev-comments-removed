@@ -17,12 +17,13 @@ struct GrContextOptions {
         , fMaxTextureSizeOverride(SK_MaxS32)
         , fMaxTileSizeOverride(0)
         , fSuppressDualSourceBlending(false)
-        , fGeometryBufferMapThreshold(-1)
+        , fBufferMapThreshold(-1)
         , fUseDrawInsteadOfPartialRenderTargetWrite(false)
         , fImmediateMode(false)
         , fClipBatchToBounds(false)
         , fDrawBatchBounds(false)
         , fMaxBatchLookback(-1)
+        , fMaxBatchLookahead(-1)
         , fUseShaderSwizzling(false) {}
 
     
@@ -46,7 +47,7 @@ struct GrContextOptions {
     
 
 
-    int  fGeometryBufferMapThreshold;
+    int  fBufferMapThreshold;
 
     
     bool fUseDrawInsteadOfPartialRenderTargetWrite;
@@ -65,7 +66,9 @@ struct GrContextOptions {
     bool fDrawBatchBounds;
 
     
+
     int fMaxBatchLookback;
+    int fMaxBatchLookahead;
 
     
 

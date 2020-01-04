@@ -10,8 +10,6 @@
 
 #include "GrGeometryProcessor.h"
 
-class GrDrawState;
-
 
 
 

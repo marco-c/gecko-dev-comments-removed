@@ -12,9 +12,9 @@
 #include "SkSurface.h"
 
 
-extern SkImage* SkNewImageFromPixelRef(const SkImageInfo&, SkPixelRef*,
-                                       const SkIPoint& pixelRefOrigin,
-                                       size_t rowBytes);
+extern sk_sp<SkImage> SkMakeImageFromPixelRef(const SkImageInfo&, SkPixelRef*,
+                                              const SkIPoint& pixelRefOrigin,
+                                              size_t rowBytes);
 
 
 
@@ -38,7 +38,8 @@ enum ForceCopyMode {
     kNo_ForceCopyMode,
     kYes_ForceCopyMode, 
 };
-extern SkImage* SkNewImageFromRasterBitmap(const SkBitmap&, ForceCopyMode = kNo_ForceCopyMode);
+extern sk_sp<SkImage> SkMakeImageFromRasterBitmap(const SkBitmap&,
+                                                  ForceCopyMode = kNo_ForceCopyMode);
 
 
 
@@ -56,6 +57,6 @@ extern void SkTextureImageApplyBudgetedDecision(SkImage* textureImage);
 
 extern void SkTextureImageSetTexture(SkImage* image, GrTexture* texture);
 
-GrTexture* GrDeepCopyTexture(GrTexture* src, bool isBudgeted);
+GrTexture* GrDeepCopyTexture(GrTexture* src, SkBudgeted);
 
 #endif

@@ -9,9 +9,9 @@
 #define GrVertexBatch_DEFINED
 
 #include "GrDrawBatch.h"
-#include "GrPrimitiveProcessor.h"
+#include "GrGeometryProcessor.h"
+#include "GrMesh.h"
 #include "GrPendingProgramElement.h"
-#include "GrVertices.h"
 
 #include "SkTLList.h"
 
@@ -35,13 +35,13 @@ protected:
         
 
         void* init(Target*, GrPrimitiveType, size_t vertexStride,
-                   const GrIndexBuffer*, int verticesPerInstance, int indicesPerInstance,
+                   const GrBuffer*, int verticesPerInstance, int indicesPerInstance,
                    int instancesToDraw);
 
         
-        void recordDraw(Target* target);
+        void recordDraw(Target*, const GrGeometryProcessor*);
     private:
-        GrVertices  fVertices;
+        GrMesh fMesh;
     };
 
     static const int kVerticesPerQuad = 4;
@@ -54,7 +54,7 @@ protected:
         
 
 
-        void* init(Target* batchTarget, size_t vertexStride, int quadsToDraw);
+        void* init(Target*, size_t vertexStride, int quadsToDraw);
 
         using InstancedHelper::recordDraw;
     private:
@@ -70,15 +70,20 @@ private:
     
     
     
-    struct DrawArray {
-        SkSTArray<1, GrVertices, true>                      fDraws;
-        GrPendingProgramElement<const GrPrimitiveProcessor> fPrimitiveProcessor;
+    
+    
+    struct QueuedDraw {
+        int fMeshCnt = 0;
+        GrPendingProgramElement<const GrGeometryProcessor> fGeometryProcessor;
     };
 
     
     
-    typedef SkTLList<DrawArray, 4> DrawArrayList;
-    DrawArrayList fDrawArrays;
+    
+    GrBatchDrawToken fBaseDrawToken;
+
+    SkSTArray<4, GrMesh>           fMeshes;
+    SkSTArray<4, QueuedDraw, true> fQueuedDraws;
 
     typedef GrDrawBatch INHERITED;
 };

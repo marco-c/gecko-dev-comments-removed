@@ -36,7 +36,8 @@ SkFontMgr* SkFontMgr::Factory() {
             SkFontMgr_Android_CustomFonts::kOnlyCustom,
             gTestBasePath,
             gTestFontsXml,
-            gTestFallbackFontsXml
+            gTestFallbackFontsXml,
+            false 
         };
         return SkFontMgr_New_Android(&custom);
     }

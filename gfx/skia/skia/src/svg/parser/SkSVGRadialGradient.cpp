@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGRadialGradient.h"
 #include "SkSVGParser.h"
 

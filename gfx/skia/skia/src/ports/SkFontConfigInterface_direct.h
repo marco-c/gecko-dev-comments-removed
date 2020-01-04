@@ -26,9 +26,6 @@ public:
 
     
     SkDataTable* getFamilyNames() override;
-    bool matchFamilySet(const char inFamilyName[],
-                        SkString* outFamilyName,
-                        SkTArray<FontIdentity>*) override;
 
 protected:
     virtual bool isAccessible(const char* filename);

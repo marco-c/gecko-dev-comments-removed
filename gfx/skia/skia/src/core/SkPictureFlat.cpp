@@ -4,7 +4,6 @@
 
 
 
-
 #include "SkPictureFlat.h"
 
 #include "SkChecksum.h"

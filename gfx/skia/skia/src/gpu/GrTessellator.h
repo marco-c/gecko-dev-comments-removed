@@ -8,8 +8,10 @@
 #ifndef GrTessellator_DEFINED
 #define GrTessellator_DEFINED
 
-#include "SkPath.h"
-#include "GrResourceProvider.h"
+#include "SkPoint.h"
+
+class SkPath;
+struct SkRect;
 
 
 
@@ -18,6 +20,13 @@
 #define TESSELLATOR_WIREFRAME 0
 
 namespace GrTessellator {
+
+class VertexAllocator {
+public:
+    virtual ~VertexAllocator() {}
+    virtual SkPoint* lock(int vertexCount) = 0;
+    virtual void unlock(int actualCount) = 0;
+};
 
 struct WindingVertex {
     SkPoint fPos;
@@ -28,13 +37,11 @@ struct WindingVertex {
 
 
 
-int PathToVertices(const SkPath& path, SkScalar tolerance, const SkRect& clipBounds, 
+int PathToVertices(const SkPath& path, SkScalar tolerance, const SkRect& clipBounds,
                    WindingVertex** verts);
 
-int PathToTriangles(const SkPath& path, SkScalar tolerance, const SkRect& clipBounds, 
-                    GrResourceProvider* resourceProvider, 
-                    SkAutoTUnref<GrVertexBuffer>& vertexBuffer, bool canMapVB, bool* isLinear);
-
+int PathToTriangles(const SkPath& path, SkScalar tolerance, const SkRect& clipBounds,
+                    VertexAllocator*, bool *isLinear);
 }
 
 #endif

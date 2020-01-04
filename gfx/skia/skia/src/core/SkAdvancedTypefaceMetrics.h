@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkAdvancedTypefaceMetrics_DEFINED
 #define SkAdvancedTypefaceMetrics_DEFINED
 
@@ -15,6 +14,34 @@
 #include "SkString.h"
 #include "SkTDArray.h"
 #include "SkTemplates.h"
+
+
+
+
+template <typename T>
+class SkHackyAutoTDelete : SkNoncopyable {
+public:
+    explicit SkHackyAutoTDelete(T* ptr = nullptr) : fPtr(ptr) {}
+    ~SkHackyAutoTDelete() { delete fPtr; }
+
+    T*        get() const { return fPtr; }
+    T* operator->() const { return fPtr; }
+
+    void reset(T* ptr = nullptr) {
+        if (ptr != fPtr) {
+            delete fPtr;
+            fPtr = ptr;
+        }
+    }
+    T* release() {
+        T* ptr = fPtr;
+        fPtr = nullptr;
+        return ptr;
+    }
+
+private:
+    T* fPtr;
+};
 
 
 
@@ -97,7 +124,7 @@ public:
         uint16_t fStartId;
         uint16_t fEndId;
         SkTDArray<Data> fAdvance;
-        SkAutoTDelete<AdvanceMetric<Data> > fNext;
+        SkHackyAutoTDelete<AdvanceMetric<Data> > fNext;
     };
 
     struct VerticalMetric {
@@ -130,9 +157,9 @@ template <typename Data>
 void resetRange(SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* range,
                        int startId);
 
-template <typename Data>
+template <typename Data, template<typename> class AutoTDelete>
 SkAdvancedTypefaceMetrics::AdvanceMetric<Data>* appendRange(
-        SkAutoTDelete<SkAdvancedTypefaceMetrics::AdvanceMetric<Data> >* nextSlot,
+        AutoTDelete<SkAdvancedTypefaceMetrics::AdvanceMetric<Data> >* nextSlot,
         int startId);
 
 template <typename Data>

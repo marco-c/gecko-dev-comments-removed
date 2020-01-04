@@ -465,7 +465,6 @@ struct SK_API SkRect {
 
 
 
-
     bool isFinite() const {
         float accum = 0;
         accum *= fLeft;

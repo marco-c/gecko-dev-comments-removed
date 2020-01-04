@@ -21,6 +21,7 @@
 
 
 
+
 #define SK_DistanceFieldMultiplier   "7.96875"
 #define SK_DistanceFieldThreshold    "0.50196078431"
 

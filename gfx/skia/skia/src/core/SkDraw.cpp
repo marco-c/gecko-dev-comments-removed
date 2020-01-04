@@ -32,6 +32,7 @@
 #include "SkTLazy.h"
 #include "SkUtils.h"
 #include "SkVertState.h"
+#include "SkXfermode.h"
 
 #include "SkBitmapProcShader.h"
 #include "SkDrawProcs.h"
@@ -81,10 +82,10 @@ public:
     SkAutoBitmapShaderInstall(const SkBitmap& src, const SkPaint& paint,
                               const SkMatrix* localMatrix = nullptr)
             : fPaint(paint)  {
-        fPaint.setShader(SkCreateBitmapShader(src, SkShader::kClamp_TileMode,
-                                              SkShader::kClamp_TileMode,
-                                              localMatrix, &fAllocator));
+        fPaint.setShader(SkMakeBitmapShader(src, SkShader::kClamp_TileMode,
+                                            SkShader::kClamp_TileMode, localMatrix, &fAllocator));
         
+        fPaint.getShader()->ref();
         SkASSERT(2 == fPaint.getShader()->getRefCnt());
     }
 
@@ -1005,7 +1006,7 @@ DRAW_PATH:
     this->drawPath(path, paint, nullptr, true);
 }
 
-static SkScalar compute_res_scale_for_stroking(const SkMatrix& matrix) {
+SkScalar SkDraw::ComputeResScaleForStroking(const SkMatrix& matrix) {
     if (!matrix.hasPerspective()) {
         SkScalar sx = SkPoint::Length(matrix[SkMatrix::kMScaleX], matrix[SkMatrix::kMSkewY]);
         SkScalar sy = SkPoint::Length(matrix[SkMatrix::kMSkewX],  matrix[SkMatrix::kMScaleY]);
@@ -1085,7 +1086,7 @@ void SkDraw::drawPath(const SkPath& origSrcPath, const SkPaint& origPaint,
             cullRectPtr = &cullRect;
         }
         doFill = paint->getFillPath(*pathPtr, &tmpPath, cullRectPtr,
-                                    compute_res_scale_for_stroking(*fMatrix));
+                                    ComputeResScaleForStroking(*fMatrix));
         pathPtr = &tmpPath;
     }
 
@@ -1146,9 +1147,6 @@ void SkDraw::drawPath(const SkPath& origSrcPath, const SkPaint& origPaint,
                     proc SK_INIT_TO_AVOID_WARNING;
                     SkDEBUGFAIL("unknown paint cap type");
             }
-#ifdef SK_SUPPORT_LEGACY_HAIR_IGNORES_CAPS
-            proc = SkScan::AntiHairPath;
-#endif
         } else {
             switch (paint->getStrokeCap()) {
                 case SkPaint::kButt_Cap:
@@ -1164,9 +1162,6 @@ void SkDraw::drawPath(const SkPath& origSrcPath, const SkPaint& origPaint,
                     proc SK_INIT_TO_AVOID_WARNING;
                     SkDEBUGFAIL("unknown paint cap type");
             }
-#ifdef SK_SUPPORT_LEGACY_HAIR_IGNORES_CAPS
-            proc = SkScan::HairPath;
-#endif
         }
     }
     proc(*devPathPtr, *fRC, blitter);
@@ -1441,7 +1436,7 @@ void SkDraw::drawText_asPaths(const char text[], size_t byteLength,
 }
 
 
-#if defined _WIN32 && _MSC_VER >= 1300
+#if defined _WIN32
 #pragma warning ( push )
 #pragma warning ( disable : 4701 )
 #endif
@@ -1461,18 +1456,16 @@ public:
 
     void operator()(const SkGlyph& glyph, SkPoint position, SkPoint rounding) {
         position += rounding;
-        Sk48Dot16 fx = SkScalarTo48Dot16(position.fX);
-        Sk48Dot16 fy = SkScalarTo48Dot16(position.fY);
         
-        if ((fx >> 16) > INT_MAX - (INT16_MAX + UINT16_MAX) ||
-            (fx >> 16) < INT_MIN - (INT16_MIN + 0 ) ||
-            (fy >> 16) > INT_MAX - (INT16_MAX + UINT16_MAX) ||
-            (fy >> 16) < INT_MIN - (INT16_MIN + 0 )) {
+        if (position.fX > INT_MAX - (INT16_MAX + UINT16_MAX) ||
+            position.fX < INT_MIN - (INT16_MIN + 0 ) ||
+            position.fY > INT_MAX - (INT16_MAX + UINT16_MAX) ||
+            position.fY < INT_MIN - (INT16_MIN + 0 )) {
             return;
         }
 
-        int left = Sk48Dot16FloorToInt(fx);
-        int top  = Sk48Dot16FloorToInt(fy);
+        int left = SkScalarFloorToInt(position.fX);
+        int top  = SkScalarFloorToInt(position.fY);
         SkASSERT(glyph.fWidth > 0 && glyph.fHeight > 0);
 
         left += glyph.fLeft;
@@ -1562,6 +1555,10 @@ private:
 
 
 
+SkPaint::FakeGamma SkDraw::fakeGamma() const {
+    return fDevice->imageInfo().isLinear() ? SkPaint::FakeGamma::On : SkPaint::FakeGamma::Off;
+}
+
 void SkDraw::drawText(const char text[], size_t byteLength,
                       SkScalar x, SkScalar y, const SkPaint& paint) const {
     SkASSERT(byteLength == 0 || text != nullptr);
@@ -1580,17 +1577,16 @@ void SkDraw::drawText(const char text[], size_t byteLength,
         return;
     }
 
-    SkAutoGlyphCache       autoCache(paint, &fDevice->surfaceProps(), fMatrix);
-    SkGlyphCache*          cache = autoCache.getCache();
+    SkAutoGlyphCache cache(paint, &fDevice->surfaceProps(), this->fakeGamma(), fMatrix);
 
     
     SkAutoBlitterChoose    blitterChooser(fDst, *fMatrix, paint);
     SkAAClipBlitterWrapper wrapper(*fRC, blitterChooser.get());
-    DrawOneGlyph           drawOneGlyph(*this, paint, cache, wrapper.getBlitter());
+    DrawOneGlyph           drawOneGlyph(*this, paint, cache.get(), wrapper.getBlitter());
 
     SkFindAndPlaceGlyph::ProcessText(
         paint.getTextEncoding(), text, byteLength,
-        {x, y}, *fMatrix, paint.getTextAlign(), cache, drawOneGlyph);
+        {x, y}, *fMatrix, paint.getTextAlign(), cache.get(), drawOneGlyph);
 }
 
 
@@ -1609,9 +1605,8 @@ void SkDraw::drawPosText_asPaths(const char text[], size_t byteLength,
     paint.setStyle(SkPaint::kFill_Style);
     paint.setPathEffect(nullptr);
 
-    SkDrawCacheProc     glyphCacheProc = paint.getDrawCacheProc();
-    SkAutoGlyphCache    autoCache(paint, &fDevice->surfaceProps(), nullptr);
-    SkGlyphCache*       cache = autoCache.getCache();
+    SkPaint::GlyphCacheProc glyphCacheProc = paint.getGlyphCacheProc(true);
+    SkAutoGlyphCache        cache(paint, &fDevice->surfaceProps(), this->fakeGamma(), nullptr);
 
     const char*        stop = text + byteLength;
     SkTextAlignProc    alignProc(paint.getTextAlign());
@@ -1619,10 +1614,10 @@ void SkDraw::drawPosText_asPaths(const char text[], size_t byteLength,
 
     
     paint.setStyle(origPaint.getStyle());
-    paint.setPathEffect(origPaint.getPathEffect());
+    paint.setPathEffect(sk_ref_sp(origPaint.getPathEffect()));
 
     while (text < stop) {
-        const SkGlyph& glyph = glyphCacheProc(cache, &text, 0, 0);
+        const SkGlyph& glyph = glyphCacheProc(cache.get(), &text);
         if (glyph.fWidth) {
             const SkPath* path = cache->findPath(glyph);
             if (path) {
@@ -1662,21 +1657,20 @@ void SkDraw::drawPosText(const char text[], size_t byteLength,
         return;
     }
 
-    SkAutoGlyphCache       autoCache(paint, &fDevice->surfaceProps(), fMatrix);
-    SkGlyphCache*          cache = autoCache.getCache();
+    SkAutoGlyphCache cache(paint, &fDevice->surfaceProps(), this->fakeGamma(), fMatrix);
 
     
     SkAutoBlitterChoose    blitterChooser(fDst, *fMatrix, paint);
     SkAAClipBlitterWrapper wrapper(*fRC, blitterChooser.get());
-    DrawOneGlyph           drawOneGlyph(*this, paint, cache, wrapper.getBlitter());
+    DrawOneGlyph           drawOneGlyph(*this, paint, cache.get(), wrapper.getBlitter());
     SkPaint::Align         textAlignment = paint.getTextAlign();
 
     SkFindAndPlaceGlyph::ProcessPosText(
         paint.getTextEncoding(), text, byteLength,
-        offset, *fMatrix, pos, scalarsPerPosition, textAlignment, cache, drawOneGlyph);
+        offset, *fMatrix, pos, scalarsPerPosition, textAlignment, cache.get(), drawOneGlyph);
 }
 
-#if defined _WIN32 && _MSC_VER >= 1300
+#if defined _WIN32
 #pragma warning ( pop )
 #endif
 
@@ -1701,24 +1695,28 @@ static bool texture_to_matrix(const VertState& state, const SkPoint verts[],
 
 class SkTriColorShader : public SkShader {
 public:
-    SkTriColorShader() {}
-
-    size_t contextSize() const override;
+    SkTriColorShader();
 
     class TriColorShaderContext : public SkShader::Context {
     public:
         TriColorShaderContext(const SkTriColorShader& shader, const ContextRec&);
         virtual ~TriColorShaderContext();
-
-        bool setup(const SkPoint pts[], const SkColor colors[], int, int, int);
-
         void shadeSpan(int x, int y, SkPMColor dstC[], int count) override;
 
     private:
+        bool setup(const SkPoint pts[], const SkColor colors[], int, int, int);
+
         SkMatrix    fDstToUnit;
         SkPMColor   fColors[3];
+        bool fSetup;
 
         typedef SkShader::Context INHERITED;
+    };
+
+    struct TriColorShaderData {
+        const SkPoint* pts;
+        const SkColor* colors;
+        const VertState *state;
     };
 
     SK_TO_STRING_OVERRIDE()
@@ -1726,12 +1724,25 @@ public:
     
     Factory getFactory() const override { sk_throw(); return nullptr; }
 
+    
+    void bindSetupData(TriColorShaderData* setupData) { fSetupData = setupData; }
+
+    
+    TriColorShaderData* takeSetupData() {
+        TriColorShaderData *data = fSetupData;
+        fSetupData = NULL;
+        return data;
+    }
+
 protected:
+    size_t onContextSize(const ContextRec&) const override;
     Context* onCreateContext(const ContextRec& rec, void* storage) const override {
         return new (storage) TriColorShaderContext(*this, rec);
     }
 
 private:
+    TriColorShaderData *fSetupData;
+
     typedef SkShader INHERITED;
 };
 
@@ -1759,6 +1770,7 @@ bool SkTriColorShader::TriColorShaderContext::setup(const SkPoint pts[], const S
     if (!this->getCTM().invert(&ctmInv)) {
         return false;
     }
+    
     fDstToUnit.setConcat(im, ctmInv);
     return true;
 }
@@ -1767,27 +1779,36 @@ bool SkTriColorShader::TriColorShaderContext::setup(const SkPoint pts[], const S
 #include "SkComposeShader.h"
 
 static int ScalarTo256(SkScalar v) {
-    int scale = SkScalarToFixed(v) >> 8;
-    if (scale < 0) {
-        scale = 0;
-    }
-    if (scale > 255) {
-        scale = 255;
-    }
-    return SkAlpha255To256(scale);
+    return static_cast<int>(SkScalarPin(v, 0, 1) * 256 + 0.5);
 }
 
+SkTriColorShader::SkTriColorShader()
+    : INHERITED(NULL)
+    , fSetupData(NULL) {}
 
 SkTriColorShader::TriColorShaderContext::TriColorShaderContext(const SkTriColorShader& shader,
                                                                const ContextRec& rec)
-    : INHERITED(shader, rec) {}
+    : INHERITED(shader, rec)
+    , fSetup(false) {}
 
 SkTriColorShader::TriColorShaderContext::~TriColorShaderContext() {}
 
-size_t SkTriColorShader::contextSize() const {
+size_t SkTriColorShader::onContextSize(const ContextRec&) const {
     return sizeof(TriColorShaderContext);
 }
+
 void SkTriColorShader::TriColorShaderContext::shadeSpan(int x, int y, SkPMColor dstC[], int count) {
+    SkTriColorShader* parent = static_cast<SkTriColorShader*>(const_cast<SkShader*>(&fShader));
+    TriColorShaderData* set = parent->takeSetupData();
+    if (set) {
+        fSetup = setup(set->pts, set->colors, set->state->f0, set->state->f1, set->state->f2);
+    }
+
+    if (!fSetup) {
+        
+        return;
+    }
+
     const int alphaScale = Sk255To256(this->getPaintAlpha());
 
     SkPoint src;
@@ -1858,7 +1879,7 @@ void SkDraw::drawVertices(SkCanvas::VertexMode vmode, int count,
 
 
 
-    SkTriColorShader triShader; 
+    auto triShader = sk_make_sp<SkTriColorShader>();
     SkPaint p(paint);
 
     SkShader* shader = p.getShader();
@@ -1872,24 +1893,17 @@ void SkDraw::drawVertices(SkCanvas::VertexMode vmode, int count,
     }
 
     
-    SkAutoTUnref<SkComposeShader> composeShader;
     if (colors) {
         if (nullptr == textures) {
             
-            shader = p.setShader(&triShader);
+            p.setShader(triShader);
+            shader = p.getShader();
         } else {
             
             SkASSERT(shader);
-            bool releaseMode = false;
-            if (nullptr == xmode) {
-                xmode = SkXfermode::Create(SkXfermode::kModulate_Mode);
-                releaseMode = true;
-            }
-            composeShader.reset(new SkComposeShader(&triShader, shader, xmode));
-            p.setShader(composeShader);
-            if (releaseMode) {
-                xmode->unref();
-            }
+            sk_sp<SkXfermode> xfer = xmode ? sk_ref_sp(xmode)
+                                           : SkXfermode::Make(SkXfermode::kModulate_Mode);
+            p.setShader(SkShader::MakeComposeShader(triShader, sk_ref_sp(shader), std::move(xfer)));
         }
     }
 
@@ -1904,46 +1918,28 @@ void SkDraw::drawVertices(SkCanvas::VertexMode vmode, int count,
     VertState::Proc vertProc = state.chooseProc(vmode);
 
     if (textures || colors) {
+        SkTriColorShader::TriColorShaderData verticesSetup = { vertices, colors, &state };
+
         while (vertProc(&state)) {
             if (textures) {
                 SkMatrix tempM;
                 if (texture_to_matrix(state, vertices, textures, &tempM)) {
-                    SkShader::ContextRec rec(p, *fMatrix, &tempM);
+                    SkShader::ContextRec rec(p, *fMatrix, &tempM,
+                                             SkBlitter::PreferredShaderDest(fDst.info()));
                     if (!blitter->resetShaderContext(rec)) {
                         continue;
                     }
                 }
             }
             if (colors) {
-                
-                SkTriColorShader::TriColorShaderContext* triColorShaderContext;
-
-                SkShader::Context* shaderContext = blitter->getShaderContext();
-                SkASSERT(shaderContext);
-                if (p.getShader() == &triShader) {
-                    triColorShaderContext =
-                            static_cast<SkTriColorShader::TriColorShaderContext*>(shaderContext);
-                } else {
-                    
-                    SkASSERT(p.getShader() == composeShader);
-                    SkASSERT(composeShader->getShaderA() == &triShader);
-                    SkComposeShader::ComposeShaderContext* composeShaderContext =
-                            static_cast<SkComposeShader::ComposeShaderContext*>(shaderContext);
-                    SkShader::Context* shaderContextA = composeShaderContext->getShaderContextA();
-                    triColorShaderContext =
-                            static_cast<SkTriColorShader::TriColorShaderContext*>(shaderContextA);
-                }
-
-                if (!triColorShaderContext->setup(vertices, colors,
-                                                  state.f0, state.f1, state.f2)) {
-                    continue;
-                }
+                triShader->bindSetupData(&verticesSetup);
             }
 
             SkPoint tmp[] = {
                 devVerts[state.f0], devVerts[state.f1], devVerts[state.f2]
             };
             SkScan::FillTriangle(tmp, *fRC, blitter.get());
+            triShader->bindSetupData(NULL);
         }
     } else {
         

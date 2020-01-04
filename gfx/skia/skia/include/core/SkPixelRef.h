@@ -9,15 +9,16 @@
 #define SkPixelRef_DEFINED
 
 #include "../private/SkAtomics.h"
+#include "../private/SkMutex.h"
+#include "../private/SkTDArray.h"
 #include "SkBitmap.h"
 #include "SkFilterQuality.h"
 #include "SkImageInfo.h"
-#include "../private/SkMutex.h"
 #include "SkPixmap.h"
 #include "SkRefCnt.h"
 #include "SkSize.h"
 #include "SkString.h"
-#include "SkTDArray.h"
+#include "SkYUVSizeInfo.h"
 
 class SkColorTable;
 class SkData;
@@ -217,12 +218,21 @@ public:
 
 
 
+    bool queryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const {
+        return this->onQueryYUV8(sizeInfo, colorSpace);
+    }
+
+    
 
 
 
-    bool getYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3],
-                       SkYUVColorSpace* colorSpace) {
-        return this->onGetYUV8Planes(sizes, planes, rowBytes, colorSpace);
+
+
+
+
+
+    bool getYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) {
+        return this->onGetYUV8Planes(sizeInfo, planes);
     }
 
     
@@ -308,9 +318,12 @@ protected:
     
     virtual void onNotifyPixelsChanged();
 
-    
-    virtual bool onGetYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3],
-                                 SkYUVColorSpace* colorSpace);
+    virtual bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const {
+        return false;
+    }
+    virtual bool onGetYUV8Planes(const SkYUVSizeInfo&, void*[3] ) {
+        return false;
+    }
 
     
 
@@ -381,6 +394,7 @@ private:
 
     bool isPreLocked() const { return fPreLocked; }
     friend class SkImage_Raster;
+    friend class SkSpecialImage_Raster;
 
     
     

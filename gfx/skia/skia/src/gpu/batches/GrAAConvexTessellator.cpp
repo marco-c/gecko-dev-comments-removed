@@ -142,7 +142,7 @@ void GrAAConvexTessellator::computeBisectors() {
             SkVector other;
             other.setOrthog(fNorms[prev], fSide);
             fBisectors[cur] += other;
-            SkAssertResult(fBisectors[cur].normalize());        
+            SkAssertResult(fBisectors[cur].normalize());
         } else {
             fBisectors[cur].negate();      
         }
@@ -154,7 +154,7 @@ void GrAAConvexTessellator::computeBisectors() {
 
 
 bool GrAAConvexTessellator::createInsetRings(Ring& previousRing, SkScalar initialDepth,
-                                             SkScalar initialCoverage, SkScalar targetDepth, 
+                                             SkScalar initialCoverage, SkScalar targetDepth,
                                              SkScalar targetCoverage, Ring** finalRing) {
     static const int kMaxNumRings = 8;
 
@@ -167,7 +167,7 @@ bool GrAAConvexTessellator::createInsetRings(Ring& previousRing, SkScalar initia
         Ring* nextRing = this->getNextRing(currentRing);
         SkASSERT(nextRing != currentRing);
 
-        bool done = this->createInsetRing(*currentRing, nextRing, initialDepth, initialCoverage, 
+        bool done = this->createInsetRing(*currentRing, nextRing, initialDepth, initialCoverage,
                                           targetDepth, targetCoverage, i == 0);
         currentRing = nextRing;
         if (done) {
@@ -203,11 +203,11 @@ bool GrAAConvexTessellator::tessellate(const SkMatrix& m, const SkPath& path) {
     SkScalar coverage = 1.0f;
     SkScalar scaleFactor = 0.0f;
     if (fStrokeWidth >= 0.0f) {
-        SkASSERT(m.isSimilarity()); 
+        SkASSERT(m.isSimilarity());
         scaleFactor = m.getMaxScale(); 
         SkScalar effectiveStrokeWidth = scaleFactor * fStrokeWidth;
         Ring outerStrokeRing;
-        this->createOuterRing(fInitialRing, effectiveStrokeWidth / 2 - kAntialiasingRadius, 
+        this->createOuterRing(fInitialRing, effectiveStrokeWidth / 2 - kAntialiasingRadius,
                               coverage, &outerStrokeRing);
         outerStrokeRing.init(*this);
         Ring outerAARing;
@@ -223,10 +223,10 @@ bool GrAAConvexTessellator::tessellate(const SkMatrix& m, const SkPath& path) {
         SkScalar effectiveStrokeWidth = scaleFactor * fStrokeWidth;
         Ring* insetStrokeRing;
         SkScalar strokeDepth = effectiveStrokeWidth / 2 - kAntialiasingRadius;
-        if (this->createInsetRings(fInitialRing, 0.0f, coverage, strokeDepth, coverage, 
+        if (this->createInsetRings(fInitialRing, 0.0f, coverage, strokeDepth, coverage,
                              &insetStrokeRing)) {
             Ring* insetAARing;
-            this->createInsetRings(*insetStrokeRing, strokeDepth, coverage, strokeDepth + 
+            this->createInsetRings(*insetStrokeRing, strokeDepth, coverage, strokeDepth +
                              kAntialiasingRadius * 2, 0.0f, &insetAARing);
         }
     } else {
@@ -429,7 +429,7 @@ void GrAAConvexTessellator::fanRing(const Ring& ring) {
     }
 }
 
-void GrAAConvexTessellator::createOuterRing(const Ring& previousRing, SkScalar outset, 
+void GrAAConvexTessellator::createOuterRing(const Ring& previousRing, SkScalar outset,
                                             SkScalar coverage, Ring* nextRing) {
     const int numPts = previousRing.numPts();
     if (numPts == 0) {
@@ -574,20 +574,20 @@ void GrAAConvexTessellator::terminate(const Ring& ring) {
     }
 }
 
-static SkScalar compute_coverage(SkScalar depth, SkScalar initialDepth, SkScalar initialCoverage, 
+static SkScalar compute_coverage(SkScalar depth, SkScalar initialDepth, SkScalar initialCoverage,
                                 SkScalar targetDepth, SkScalar targetCoverage) {
     if (SkScalarNearlyEqual(initialDepth, targetDepth)) {
         return targetCoverage;
     }
-    SkScalar result = (depth - initialDepth) / (targetDepth - initialDepth) * 
+    SkScalar result = (depth - initialDepth) / (targetDepth - initialDepth) *
             (targetCoverage - initialCoverage) + initialCoverage;
     return SkScalarClampMax(result, 1.0f);
 }
 
 
-bool GrAAConvexTessellator::createInsetRing(const Ring& lastRing, Ring* nextRing, 
-                                            SkScalar initialDepth, SkScalar initialCoverage, 
-                                            SkScalar targetDepth, SkScalar targetCoverage, 
+bool GrAAConvexTessellator::createInsetRing(const Ring& lastRing, Ring* nextRing,
+                                            SkScalar initialDepth, SkScalar initialCoverage,
+                                            SkScalar targetDepth, SkScalar targetCoverage,
                                             bool forceNew) {
     bool done = false;
 
@@ -701,7 +701,7 @@ bool GrAAConvexTessellator::createInsetRing(const Ring& lastRing, Ring* nextRing
         if (fCandidateVerts.needsToBeNew(i) || forceNew) {
             
             
-            SkScalar coverage = compute_coverage(depth, initialDepth, initialCoverage, 
+            SkScalar coverage = compute_coverage(depth, initialDepth, initialCoverage,
                                                  targetDepth, targetCoverage);
             newIdx = this->addPt(fCandidateVerts.point(i), depth, coverage,
                                  fCandidateVerts.originatingIdx(i) != -1, false);
@@ -829,7 +829,7 @@ void GrAAConvexTessellator::lineTo(SkPoint p, bool isCurve) {
     }
 
     SkASSERT(fPts.count() <= 1 || fPts.count() == fNorms.count()+1);
-    if (this->numPts() >= 2 && 
+    if (this->numPts() >= 2 &&
         abs_dist_from_line(fPts.top(), fNorms.top(), p) < kClose) {
         
         this->popLastPt();
@@ -862,7 +862,7 @@ void GrAAConvexTessellator::quadTo(SkPoint pts[3]) {
     int maxCount = GrPathUtils::quadraticPointCount(pts, kQuadTolerance);
     fPointBuffer.setReserve(maxCount);
     SkPoint* target = fPointBuffer.begin();
-    int count = GrPathUtils::generateQuadraticPoints(pts[0], pts[1], pts[2], 
+    int count = GrPathUtils::generateQuadraticPoints(pts[0], pts[1], pts[2],
             kQuadTolerance, &target, maxCount);
     fPointBuffer.setCount(count);
     for (int i = 0; i < count; i++) {
@@ -884,7 +884,7 @@ void GrAAConvexTessellator::cubicTo(const SkMatrix& m, SkPoint pts[4]) {
     int maxCount = GrPathUtils::cubicPointCount(pts, kCubicTolerance);
     fPointBuffer.setReserve(maxCount);
     SkPoint* target = fPointBuffer.begin();
-    int count = GrPathUtils::generateCubicPoints(pts[0], pts[1], pts[2], pts[3], 
+    int count = GrPathUtils::generateCubicPoints(pts[0], pts[1], pts[2], pts[3],
             kCubicTolerance, &target, maxCount);
     fPointBuffer.setCount(count);
     for (int i = 0; i < count; i++) {
@@ -933,7 +933,7 @@ static void draw_point(SkCanvas* canvas, const SkPoint& p, SkScalar paramValue, 
         stroke.setColor(SK_ColorYELLOW);
         stroke.setStyle(SkPaint::kStroke_Style);
         stroke.setStrokeWidth(kPointRadius/3.0f);
-        canvas->drawCircle(p.fX, p.fY, kPointRadius, stroke); 
+        canvas->drawCircle(p.fX, p.fY, kPointRadius, stroke);
     }
 }
 
@@ -985,7 +985,7 @@ void GrAAConvexTessellator::Ring::draw(SkCanvas* canvas, const GrAAConvexTessell
             draw_arrow(canvas, tess.point(fPts[cur].fIndex), fPts[cur].fBisector,
                        kArrowLength, SK_ColorBLUE);
         }
-    }    
+    }
 }
 
 void GrAAConvexTessellator::draw(SkCanvas* canvas) const {
@@ -1012,7 +1012,7 @@ void GrAAConvexTessellator::draw(SkCanvas* canvas) const {
 
     for (int i = 0; i < this->numPts(); ++i) {
         draw_point(canvas,
-                   this->point(i), 0.5f + (this->depth(i)/(2 * kAntialiasingRadius)), 
+                   this->point(i), 0.5f + (this->depth(i)/(2 * kAntialiasingRadius)),
                    !this->movable(i));
 
         SkPaint paint;
@@ -1024,11 +1024,10 @@ void GrAAConvexTessellator::draw(SkCanvas* canvas) const {
 
         SkString num;
         num.printf("%d", i);
-        canvas->drawText(num.c_str(), num.size(), 
-                         this->point(i).fX, this->point(i).fY+(kPointRadius/2.0f), 
+        canvas->drawText(num.c_str(), num.size(),
+                         this->point(i).fX, this->point(i).fY+(kPointRadius/2.0f),
                          paint);
     }
 }
 
 #endif
-

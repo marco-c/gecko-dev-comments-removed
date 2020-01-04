@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkXMLParser.h"
 
 static char const* const gErrorStrings[] = {

@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrGpuResourcePriv_DEFINED
 #define GrGpuResourcePriv_DEFINED
 
@@ -44,11 +43,16 @@ public:
     
 
 
-    bool isBudgeted() const {
+    SkBudgeted isBudgeted() const {
         bool ret = GrGpuResource::kCached_LifeCycle == fResource->fLifeCycle;
         SkASSERT(ret || !fResource->getUniqueKey().isValid());
-        return ret;
+        return SkBudgeted(ret);
     }
+
+    
+
+
+    bool isExternal() const { return fResource->isExternal(); }
 
     
 

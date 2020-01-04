@@ -6,7 +6,6 @@
 
 
 
-
 #import <Cocoa/Cocoa.h>
 
 @interface SkTextFieldCell : NSTextFieldCell {

@@ -24,6 +24,10 @@
 
 
 
+
+
+
+
 template<uint32_t kMaxObjects, size_t kTotalBytes>
 class SkSmallAllocator : SkNoncopyable {
 public:
@@ -73,8 +77,7 @@ public:
         if (kMaxObjects == fNumObjects) {
             return nullptr;
         }
-        const size_t storageRemaining = SkAlign4(kTotalBytes) - fStorageUsed;
-        storageRequired = SkAlign4(storageRequired);
+        const size_t storageRemaining = sizeof(fStorage) - fStorageUsed;
         Rec* rec = &fRecs[fNumObjects];
         if (storageRequired > storageRemaining) {
             
@@ -88,8 +91,7 @@ public:
             
             rec->fStorageSize = storageRequired;
             rec->fHeapStorage = nullptr;
-            SkASSERT(SkIsAlign4(fStorageUsed));
-            rec->fObj = static_cast<void*>(fStorage + (fStorageUsed / 4));
+            rec->fObj = static_cast<void*>(fStorage.fBytes + fStorageUsed);
             fStorageUsed += storageRequired;
         }
         rec->fKillProc = DestroyT<T>;
@@ -125,12 +127,17 @@ private:
         static_cast<T*>(ptr)->~T();
     }
 
+    struct SK_STRUCT_ALIGN(16) Storage {
+        
+        
+        char    fBytes[kTotalBytes + kMaxObjects * 15];
+    };
+
+    Storage     fStorage;
     
-    size_t              fStorageUsed;
-    
-    uint32_t            fStorage[SkAlign4(kTotalBytes) >> 2];
-    uint32_t            fNumObjects;
-    Rec                 fRecs[kMaxObjects];
+    size_t      fStorageUsed;
+    uint32_t    fNumObjects;
+    Rec         fRecs[kMaxObjects];
 };
 
 #endif 

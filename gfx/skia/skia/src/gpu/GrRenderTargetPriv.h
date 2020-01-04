@@ -9,6 +9,9 @@
 #define GrRenderTargetPriv_DEFINED
 
 #include "GrRenderTarget.h"
+#include "GrGpu.h"
+
+class GrStencilSettings;
 
 
 
@@ -27,6 +30,8 @@ public:
 
     bool attachStencilAttachment(GrStencilAttachment* stencil);
 
+    const GrGpu::MultisampleSpecs& getMultisampleSpecs(const GrStencilSettings& stencil) const;
+
 private:
     explicit GrRenderTargetPriv(GrRenderTarget* renderTarget) : fRenderTarget(renderTarget) {}
     GrRenderTargetPriv(const GrRenderTargetPriv&) {} 
@@ -37,7 +42,7 @@ private:
     GrRenderTargetPriv* operator&();
 
     GrRenderTarget* fRenderTarget;
-        
+
     friend class GrRenderTarget; 
 };
 

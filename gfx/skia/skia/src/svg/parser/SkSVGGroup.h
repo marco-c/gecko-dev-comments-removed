@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGGroup_DEFINED
 #define SkSVGGroup_DEFINED
 

@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrSoftwarePathRenderer_DEFINED
 #define GrSoftwarePathRenderer_DEFINED
 
@@ -26,7 +25,7 @@ private:
     StencilSupport onGetStencilSupport(const SkPath&, const GrStrokeInfo&) const override {
         return GrPathRenderer::kNoSupport_StencilSupport;
     }
-    
+
     bool onCanDrawPath(const CanDrawPathArgs&) const override;
 
     bool onDrawPath(const DrawPathArgs&) override;

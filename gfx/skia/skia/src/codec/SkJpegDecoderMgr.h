@@ -10,11 +10,8 @@
 
 #include "SkCodec.h"
 #include "SkCodecPriv.h"
-#include "SkJpegUtility_codec.h"
-#include "SkSwizzler.h"
-
-
 #include <stdio.h>
+#include "SkJpegUtility.h"
 
 extern "C" {
     #include "jpeglib.h"

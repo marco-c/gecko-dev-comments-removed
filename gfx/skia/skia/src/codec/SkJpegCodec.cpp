@@ -6,9 +6,9 @@
 
 
 #include "SkCodec.h"
+#include "SkMSAN.h"
 #include "SkJpegCodec.h"
 #include "SkJpegDecoderMgr.h"
-#include "SkJpegUtility_codec.h"
 #include "SkCodecPriv.h"
 #include "SkColorPriv.h"
 #include "SkStream.h"
@@ -17,6 +17,7 @@
 
 
 #include <stdio.h>
+#include "SkJpegUtility.h"
 
 extern "C" {
     #include "jerror.h"
@@ -26,6 +27,160 @@ extern "C" {
 bool SkJpegCodec::IsJpeg(const void* buffer, size_t bytesRead) {
     static const uint8_t jpegSig[] = { 0xFF, 0xD8, 0xFF };
     return bytesRead >= 3 && !memcmp(buffer, jpegSig, sizeof(jpegSig));
+}
+
+static uint32_t get_endian_int(const uint8_t* data, bool littleEndian) {
+    if (littleEndian) {
+        return (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | (data[0]);
+    }
+
+    return (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3]);
+}
+
+const uint32_t kExifHeaderSize = 14;
+const uint32_t kICCHeaderSize = 14;
+const uint32_t kExifMarker = JPEG_APP0 + 1;
+const uint32_t kICCMarker = JPEG_APP0 + 2;
+
+static bool is_orientation_marker(jpeg_marker_struct* marker, SkCodec::Origin* orientation) {
+    if (kExifMarker != marker->marker || marker->data_length < kExifHeaderSize) {
+        return false;
+    }
+
+    const uint8_t* data = marker->data;
+    static const uint8_t kExifSig[] { 'E', 'x', 'i', 'f', '\0' };
+    if (memcmp(data, kExifSig, sizeof(kExifSig))) {
+        return false;
+    }
+
+    bool littleEndian;
+    if (!is_valid_endian_marker(data + 6, &littleEndian)) {
+        return false;
+    }
+
+    
+    
+    uint32_t offset = get_endian_int(data + 10, littleEndian);
+    offset += sizeof(kExifSig) + 1;
+
+    
+    if (marker->data_length < offset + 2) {
+        return false;
+    }
+    uint32_t numEntries = get_endian_short(data + offset, littleEndian);
+
+    
+    const uint32_t kEntrySize = 12;
+    numEntries = SkTMin(numEntries, (marker->data_length - offset - 2) / kEntrySize);
+
+    
+    data += offset + 2;
+
+    const uint16_t kOriginTag = 0x112;
+    const uint16_t kOriginType = 3;
+    for (uint32_t i = 0; i < numEntries; i++, data += kEntrySize) {
+        uint16_t tag = get_endian_short(data, littleEndian);
+        uint16_t type = get_endian_short(data + 2, littleEndian);
+        uint32_t count = get_endian_int(data + 4, littleEndian);
+        if (kOriginTag == tag && kOriginType == type && 1 == count) {
+            uint16_t val = get_endian_short(data + 8, littleEndian);
+            if (0 < val && val <= SkCodec::kLast_Origin) {
+                *orientation = (SkCodec::Origin) val;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static SkCodec::Origin get_exif_orientation(jpeg_decompress_struct* dinfo) {
+    SkCodec::Origin orientation;
+    for (jpeg_marker_struct* marker = dinfo->marker_list; marker; marker = marker->next) {
+        if (is_orientation_marker(marker, &orientation)) {
+            return orientation;
+        }
+    }
+
+    return SkCodec::kDefault_Origin;
+}
+
+static bool is_icc_marker(jpeg_marker_struct* marker) {
+    if (kICCMarker != marker->marker || marker->data_length < kICCHeaderSize) {
+        return false;
+    }
+
+    static const uint8_t kICCSig[] { 'I', 'C', 'C', '_', 'P', 'R', 'O', 'F', 'I', 'L', 'E', '\0' };
+    return !memcmp(marker->data, kICCSig, sizeof(kICCSig));
+}
+
+
+
+
+
+
+
+static sk_sp<SkColorSpace> get_icc_profile(jpeg_decompress_struct* dinfo) {
+    
+    jpeg_marker_struct* markerSequence[256];
+    memset(markerSequence, 0, sizeof(markerSequence));
+    uint8_t numMarkers = 0;
+    size_t totalBytes = 0;
+
+    
+    for (jpeg_marker_struct* marker = dinfo->marker_list; marker; marker = marker->next) {
+        if (is_icc_marker(marker)) {
+            
+            if (0 == numMarkers) {
+                numMarkers = marker->data[13];
+                if (0 == numMarkers) {
+                    SkCodecPrintf("ICC Profile Error: numMarkers must be greater than zero.\n");
+                    return nullptr;
+                }
+            } else if (numMarkers != marker->data[13]) {
+                SkCodecPrintf("ICC Profile Error: numMarkers must be consistent.\n");
+                return nullptr;
+            }
+
+            
+            
+            uint8_t markerIndex = marker->data[12];
+            if (markerIndex == 0 || markerIndex > numMarkers) {
+                SkCodecPrintf("ICC Profile Error: markerIndex is invalid.\n");
+                return nullptr;
+            }
+            if (markerSequence[markerIndex]) {
+                SkCodecPrintf("ICC Profile Error: Duplicate value of markerIndex.\n");
+                return nullptr;
+            }
+            markerSequence[markerIndex] = marker;
+            SkASSERT(marker->data_length >= kICCHeaderSize);
+            totalBytes += marker->data_length - kICCHeaderSize;
+        }
+    }
+
+    if (0 == totalBytes) {
+        
+        return nullptr;
+    }
+
+    
+    SkAutoMalloc iccData(totalBytes);
+    void* dst = iccData.get();
+    for (uint32_t i = 1; i <= numMarkers; i++) {
+        jpeg_marker_struct* marker = markerSequence[i];
+        if (!marker) {
+            SkCodecPrintf("ICC Profile Error: Missing marker %d of %d.\n", i, numMarkers);
+            return nullptr;
+        }
+
+        void* src = SkTAddOffset<void>(marker->data, kICCHeaderSize);
+        size_t bytes = marker->data_length - kICCHeaderSize;
+        memcpy(dst, src, bytes);
+        dst = SkTAddOffset<void>(dst, bytes);
+    }
+
+    return SkColorSpace::NewICC(iccData.get(), totalBytes);
 }
 
 bool SkJpegCodec::ReadHeader(SkStream* stream, SkCodec** codecOut,
@@ -43,21 +198,34 @@ bool SkJpegCodec::ReadHeader(SkStream* stream, SkCodec** codecOut,
     decoderMgr->init();
 
     
+    
+    
+    if (codecOut) {
+        jpeg_save_markers(decoderMgr->dinfo(), kExifMarker, 0xFFFF);
+        jpeg_save_markers(decoderMgr->dinfo(), kICCMarker, 0xFFFF);
+    }
+
+    
     if (JPEG_HEADER_OK != jpeg_read_header(decoderMgr->dinfo(), true)) {
         return decoderMgr->returnFalse("read_header");
     }
 
-    if (nullptr != codecOut) {
+    if (codecOut) {
         
         const SkColorType colorType = decoderMgr->getColorType();
 
         
         const SkImageInfo& imageInfo = SkImageInfo::Make(decoderMgr->dinfo()->image_width,
                 decoderMgr->dinfo()->image_height, colorType, kOpaque_SkAlphaType);
-        *codecOut = new SkJpegCodec(imageInfo, stream, decoderMgr.detach());
+
+        Origin orientation = get_exif_orientation(decoderMgr->dinfo());
+        sk_sp<SkColorSpace> colorSpace = get_icc_profile(decoderMgr->dinfo());
+
+        *codecOut = new SkJpegCodec(imageInfo, stream, decoderMgr.release(), colorSpace,
+                orientation);
     } else {
         SkASSERT(nullptr != decoderMgrOut);
-        *decoderMgrOut = decoderMgr.detach();
+        *decoderMgrOut = decoderMgr.release();
     }
     return true;
 }
@@ -68,24 +236,30 @@ SkCodec* SkJpegCodec::NewFromStream(SkStream* stream) {
     if (ReadHeader(stream,  &codec, nullptr)) {
         
         SkASSERT(codec);
-        streamDeleter.detach();
+        streamDeleter.release();
         return codec;
     }
     return nullptr;
 }
 
 SkJpegCodec::SkJpegCodec(const SkImageInfo& srcInfo, SkStream* stream,
-        JpegDecoderMgr* decoderMgr)
-    : INHERITED(srcInfo, stream)
+        JpegDecoderMgr* decoderMgr, sk_sp<SkColorSpace> colorSpace, Origin origin)
+    : INHERITED(srcInfo, stream, colorSpace, origin)
     , fDecoderMgr(decoderMgr)
     , fReadyState(decoderMgr->dinfo()->global_state)
+    , fSwizzlerSubset(SkIRect::MakeEmpty())
 {}
 
 
 
 
-static int get_row_bytes(const j_decompress_ptr dinfo) {
-    int colorBytes = (dinfo->out_color_space == JCS_RGB565) ? 2 : dinfo->out_color_components;
+static size_t get_row_bytes(const j_decompress_ptr dinfo) {
+#ifdef TURBO_HAS_565
+    const size_t colorBytes = (dinfo->out_color_space == JCS_RGB565) ? 2 :
+            dinfo->out_color_components;
+#else
+    const size_t colorBytes = dinfo->out_color_components;
+#endif
     return dinfo->output_width * colorBytes;
 
 }
@@ -157,16 +331,13 @@ bool SkJpegCodec::onRewind() {
 
 
 bool SkJpegCodec::setOutputColorSpace(const SkImageInfo& dst) {
-    const SkImageInfo& src = this->getInfo();
-
-    
-    if (dst.profileType() != src.profileType()) {
+    if (kUnknown_SkAlphaType == dst.alphaType()) {
         return false;
     }
 
-    
     if (kOpaque_SkAlphaType != dst.alphaType()) {
-        return false;
+        SkCodecPrintf("Warning: an opaque image should be decoded as opaque "
+                      "- it is being decoded as non-opaque, which will draw slower\n");
     }
 
     
@@ -179,12 +350,16 @@ bool SkJpegCodec::setOutputColorSpace(const SkImageInfo& dst) {
             if (isCMYK) {
                 fDecoderMgr->dinfo()->out_color_space = JCS_CMYK;
             } else {
-                
-                
-#if defined(SK_PMCOLOR_IS_RGBA)
-                fDecoderMgr->dinfo()->out_color_space = JCS_EXT_RGBA;
+#ifdef LIBJPEG_TURBO_VERSION
+            
+            
+    #ifdef SK_PMCOLOR_IS_RGBA
+            fDecoderMgr->dinfo()->out_color_space = JCS_EXT_RGBA;
+    #else
+            fDecoderMgr->dinfo()->out_color_space = JCS_EXT_BGRA;
+    #endif
 #else
-                fDecoderMgr->dinfo()->out_color_space = JCS_EXT_BGRA;
+            fDecoderMgr->dinfo()->out_color_space = JCS_RGB;
 #endif
             }
             return true;
@@ -192,8 +367,12 @@ bool SkJpegCodec::setOutputColorSpace(const SkImageInfo& dst) {
             if (isCMYK) {
                 fDecoderMgr->dinfo()->out_color_space = JCS_CMYK;
             } else {
+#ifdef TURBO_HAS_565
                 fDecoderMgr->dinfo()->dither_mode = JDITHER_NONE;
                 fDecoderMgr->dinfo()->out_color_space = JCS_RGB565;
+#else
+                fDecoderMgr->dinfo()->out_color_space = JCS_RGB;
+#endif
             }
             return true;
         case kGray_8_SkColorType:
@@ -285,7 +464,8 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     
     SkASSERT(1 == dinfo->rec_outbuf_height);
 
-    if (JCS_CMYK == dinfo->out_color_space) {
+    J_COLOR_SPACE colorSpace = dinfo->out_color_space;
+    if (JCS_CMYK == colorSpace || JCS_RGB == colorSpace) {
         this->initializeSwizzler(dstInfo, options);
     }
 
@@ -304,6 +484,7 @@ SkCodec::Result SkJpegCodec::onGetPixels(const SkImageInfo& dstInfo,
     for (uint32_t y = 0; y < dstHeight; y++) {
         
         uint32_t lines = jpeg_read_scanlines(dinfo, &dstRow, 1);
+        sk_msan_mark_initialized(dstRow, dstRow + dstRowBytes, "skbug.com/4550");
 
         
         if (lines != 1) {
@@ -329,18 +510,17 @@ void SkJpegCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& 
     if (JCS_CMYK == fDecoderMgr->dinfo()->out_color_space) {
         srcConfig = SkSwizzler::kCMYK;
     } else {
+        
+        
         switch (dstInfo.colorType()) {
             case kGray_8_SkColorType:
-                srcConfig = SkSwizzler::kGray;
+                srcConfig = SkSwizzler::kNoOp8;
                 break;
-            case kRGBA_8888_SkColorType:
-                srcConfig = SkSwizzler::kRGBX;
-                break;
-            case kBGRA_8888_SkColorType:
-                srcConfig = SkSwizzler::kBGRX;
+            case kN32_SkColorType:
+                srcConfig = SkSwizzler::kNoOp32;
                 break;
             case kRGB_565_SkColorType:
-                srcConfig = SkSwizzler::kRGB_565;
+                srcConfig = SkSwizzler::kNoOp16;
                 break;
             default:
                 
@@ -348,7 +528,21 @@ void SkJpegCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& 
         }
     }
 
-    fSwizzler.reset(SkSwizzler::CreateSwizzler(srcConfig, nullptr, dstInfo, options));
+    if (JCS_RGB == fDecoderMgr->dinfo()->out_color_space) {
+        srcConfig = SkSwizzler::kRGB;
+    }
+
+    Options swizzlerOptions = options;
+    if (options.fSubset) {
+        
+        
+        
+        SkASSERT(!fSwizzlerSubset.isEmpty() && fSwizzlerSubset.x() <= options.fSubset->x() &&
+                fSwizzlerSubset.width() == options.fSubset->width());
+        swizzlerOptions.fSubset = &fSwizzlerSubset;
+    }
+    fSwizzler.reset(SkSwizzler::CreateSwizzler(srcConfig, nullptr, dstInfo, swizzlerOptions));
+    SkASSERT(fSwizzler);
     fStorage.reset(get_row_bytes(fDecoderMgr->dinfo()));
     fSrcRow = fStorage.get();
 }
@@ -379,7 +573,7 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
     
     fSwizzler.reset(nullptr);
     fSrcRow = nullptr;
-    fStorage.free();
+    fStorage.reset();
 
     
     if (!jpeg_start_decompress(fDecoderMgr->dinfo())) {
@@ -387,33 +581,85 @@ SkCodec::Result SkJpegCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         return kInvalidInput;
     }
 
+    if (options.fSubset) {
+        fSwizzlerSubset = *options.fSubset;
+    }
+
+#ifdef TURBO_HAS_CROP
+    if (options.fSubset) {
+        uint32_t startX = options.fSubset->x();
+        uint32_t width = options.fSubset->width();
+
+        
+        
+        
+        
+        
+        jpeg_crop_scanline(fDecoderMgr->dinfo(), &startX, &width);
+
+        SkASSERT(startX <= (uint32_t) options.fSubset->x());
+        SkASSERT(width >= (uint32_t) options.fSubset->width());
+        SkASSERT(startX + width >= (uint32_t) options.fSubset->right());
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        fSwizzlerSubset.setXYWH(options.fSubset->x() - startX, 0,
+                options.fSubset->width(), options.fSubset->height());
+
+        
+        
+        if (startX != (uint32_t) options.fSubset->x() ||
+                width != (uint32_t) options.fSubset->width()) {
+            this->initializeSwizzler(dstInfo, options);
+        }
+    }
+
     
-    
-    if (options.fSubset || JCS_CMYK == fDecoderMgr->dinfo()->out_color_space) {
+    if (!fSwizzler && JCS_CMYK == fDecoderMgr->dinfo()->out_color_space) {
         this->initializeSwizzler(dstInfo, options);
     }
+#else
+    
+    
+    J_COLOR_SPACE colorSpace = fDecoderMgr->dinfo()->out_color_space;
+    if (options.fSubset || JCS_CMYK == colorSpace || JCS_RGB == colorSpace) {
+        this->initializeSwizzler(dstInfo, options);
+    }
+#endif
 
     return kSuccess;
 }
 
-int SkJpegCodec::onGetScanlines(void* dst, int count, size_t rowBytes) {
+int SkJpegCodec::onGetScanlines(void* dst, int count, size_t dstRowBytes) {
     
     if (setjmp(fDecoderMgr->getJmpBuf())) {
         return fDecoderMgr->returnFailure("setjmp", kInvalidInput);
     }
     
     JSAMPLE* dstRow;
+    size_t srcRowBytes = get_row_bytes(fDecoderMgr->dinfo());
     if (fSwizzler) {
         
         dstRow = fSrcRow;
     } else {
         
+        SkASSERT(count == 1 || dstRowBytes >= srcRowBytes);
         dstRow = (JSAMPLE*) dst;
     }
 
     for (int y = 0; y < count; y++) {
         
         uint32_t rowsDecoded = jpeg_read_scanlines(fDecoderMgr->dinfo(), &dstRow, 1);
+        sk_msan_mark_initialized(dstRow, dstRow + srcRowBytes, "skbug.com/4550");
         if (rowsDecoded != 1) {
             fDecoderMgr->dinfo()->output_scanline = this->dstInfo().height();
             return y;
@@ -422,27 +668,13 @@ int SkJpegCodec::onGetScanlines(void* dst, int count, size_t rowBytes) {
         if (fSwizzler) {
             
             fSwizzler->swizzle(dst, dstRow);
-            dst = SkTAddOffset<JSAMPLE>(dst, rowBytes);
+            dst = SkTAddOffset<JSAMPLE>(dst, dstRowBytes);
         } else {
-            dstRow = SkTAddOffset<JSAMPLE>(dstRow, rowBytes);
+            dstRow = SkTAddOffset<JSAMPLE>(dstRow, dstRowBytes);
         }
     }
     return count;
 }
-
-#ifndef TURBO_HAS_SKIP
-
-static uint32_t jpeg_skip_scanlines(jpeg_decompress_struct* dinfo, int count) {
-    SkAutoTMalloc<uint8_t> storage(get_row_bytes(dinfo));
-    uint8_t* storagePtr = storage.get();
-    for (int y = 0; y < count; y++) {
-        if (1 != jpeg_read_scanlines(dinfo, &storagePtr, 1)) {
-            return y;
-        }
-    }
-    return count;
-}
-#endif
 
 bool SkJpegCodec::onSkipScanlines(int count) {
     
@@ -450,5 +682,217 @@ bool SkJpegCodec::onSkipScanlines(int count) {
         return fDecoderMgr->returnFalse("setjmp");
     }
 
+#ifdef TURBO_HAS_SKIP
     return (uint32_t) count == jpeg_skip_scanlines(fDecoderMgr->dinfo(), count);
+#else
+    if (!fSrcRow) {
+        fStorage.reset(get_row_bytes(fDecoderMgr->dinfo()));
+        fSrcRow = fStorage.get();
+    }
+
+    for (int y = 0; y < count; y++) {
+        if (1 != jpeg_read_scanlines(fDecoderMgr->dinfo(), &fSrcRow, 1)) {
+            return false;
+        }
+    }
+    return true;
+#endif
+}
+
+static bool is_yuv_supported(jpeg_decompress_struct* dinfo) {
+    
+    SkASSERT(dinfo->scale_num == dinfo->scale_denom);
+
+    
+    static_assert(8 == DCTSIZE, "DCTSIZE (defined in jpeg library) should always be 8.");
+
+    if (JCS_YCbCr != dinfo->jpeg_color_space) {
+        return false;
+    }
+
+    SkASSERT(3 == dinfo->num_components);
+    SkASSERT(dinfo->comp_info);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if  ((1 != dinfo->comp_info[1].h_samp_factor) ||
+         (1 != dinfo->comp_info[1].v_samp_factor) ||
+         (1 != dinfo->comp_info[2].h_samp_factor) ||
+         (1 != dinfo->comp_info[2].v_samp_factor))
+    {
+        return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    int hSampY = dinfo->comp_info[0].h_samp_factor;
+    int vSampY = dinfo->comp_info[0].v_samp_factor;
+    return (1 == hSampY && 1 == vSampY) ||
+           (2 == hSampY && 1 == vSampY) ||
+           (2 == hSampY && 2 == vSampY) ||
+           (1 == hSampY && 2 == vSampY) ||
+           (4 == hSampY && 1 == vSampY) ||
+           (4 == hSampY && 2 == vSampY);
+}
+
+bool SkJpegCodec::onQueryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const {
+    jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
+    if (!is_yuv_supported(dinfo)) {
+        return false;
+    }
+
+    sizeInfo->fSizes[SkYUVSizeInfo::kY].set(dinfo->comp_info[0].downsampled_width,
+                                           dinfo->comp_info[0].downsampled_height);
+    sizeInfo->fSizes[SkYUVSizeInfo::kU].set(dinfo->comp_info[1].downsampled_width,
+                                           dinfo->comp_info[1].downsampled_height);
+    sizeInfo->fSizes[SkYUVSizeInfo::kV].set(dinfo->comp_info[2].downsampled_width,
+                                           dinfo->comp_info[2].downsampled_height);
+    sizeInfo->fWidthBytes[SkYUVSizeInfo::kY] = dinfo->comp_info[0].width_in_blocks * DCTSIZE;
+    sizeInfo->fWidthBytes[SkYUVSizeInfo::kU] = dinfo->comp_info[1].width_in_blocks * DCTSIZE;
+    sizeInfo->fWidthBytes[SkYUVSizeInfo::kV] = dinfo->comp_info[2].width_in_blocks * DCTSIZE;
+
+    if (colorSpace) {
+        *colorSpace = kJPEG_SkYUVColorSpace;
+    }
+
+    return true;
+}
+
+SkCodec::Result SkJpegCodec::onGetYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) {
+    SkYUVSizeInfo defaultInfo;
+
+    
+    bool supportsYUV = this->onQueryYUV8(&defaultInfo, nullptr);
+    if (!supportsYUV ||
+            sizeInfo.fSizes[SkYUVSizeInfo::kY] != defaultInfo.fSizes[SkYUVSizeInfo::kY] ||
+            sizeInfo.fSizes[SkYUVSizeInfo::kU] != defaultInfo.fSizes[SkYUVSizeInfo::kU] ||
+            sizeInfo.fSizes[SkYUVSizeInfo::kV] != defaultInfo.fSizes[SkYUVSizeInfo::kV] ||
+            sizeInfo.fWidthBytes[SkYUVSizeInfo::kY] < defaultInfo.fWidthBytes[SkYUVSizeInfo::kY] ||
+            sizeInfo.fWidthBytes[SkYUVSizeInfo::kU] < defaultInfo.fWidthBytes[SkYUVSizeInfo::kU] ||
+            sizeInfo.fWidthBytes[SkYUVSizeInfo::kV] < defaultInfo.fWidthBytes[SkYUVSizeInfo::kV]) {
+        return fDecoderMgr->returnFailure("onGetYUV8Planes", kInvalidInput);
+    }
+
+    
+    if (setjmp(fDecoderMgr->getJmpBuf())) {
+        return fDecoderMgr->returnFailure("setjmp", kInvalidInput);
+    }
+
+    
+    jpeg_decompress_struct* dinfo = fDecoderMgr->dinfo();
+
+    dinfo->raw_data_out = TRUE;
+    if (!jpeg_start_decompress(dinfo)) {
+        return fDecoderMgr->returnFailure("startDecompress", kInvalidInput);
+    }
+
+    
+    
+    
+    SkASSERT(is_yuv_supported(dinfo));
+
+    
+    
+    SkASSERT(sizeInfo.fSizes[SkYUVSizeInfo::kU] == sizeInfo.fSizes[SkYUVSizeInfo::kV]);
+    SkASSERT((uint32_t) sizeInfo.fSizes[SkYUVSizeInfo::kY].width() == dinfo->output_width &&
+            (uint32_t) sizeInfo.fSizes[SkYUVSizeInfo::kY].height() == dinfo->output_height);
+
+    
+    
+    
+    
+    JSAMPARRAY yuv[3];
+
+    
+    JSAMPROW rowptrs[2 * DCTSIZE + DCTSIZE + DCTSIZE];
+    yuv[0] = &rowptrs[0];           
+    yuv[1] = &rowptrs[2 * DCTSIZE]; 
+    yuv[2] = &rowptrs[3 * DCTSIZE]; 
+
+    
+    int numYRowsPerBlock = DCTSIZE * dinfo->comp_info[0].v_samp_factor;
+    for (int i = 0; i < numYRowsPerBlock; i++) {
+        rowptrs[i] = SkTAddOffset<JSAMPLE>(planes[SkYUVSizeInfo::kY],
+                i * sizeInfo.fWidthBytes[SkYUVSizeInfo::kY]);
+    }
+    for (int i = 0; i < DCTSIZE; i++) {
+        rowptrs[i + 2 * DCTSIZE] = SkTAddOffset<JSAMPLE>(planes[SkYUVSizeInfo::kU],
+                i * sizeInfo.fWidthBytes[SkYUVSizeInfo::kU]);
+        rowptrs[i + 3 * DCTSIZE] = SkTAddOffset<JSAMPLE>(planes[SkYUVSizeInfo::kV],
+                i * sizeInfo.fWidthBytes[SkYUVSizeInfo::kV]);
+    }
+
+    
+    size_t blockIncrementY = numYRowsPerBlock * sizeInfo.fWidthBytes[SkYUVSizeInfo::kY];
+    size_t blockIncrementU = DCTSIZE * sizeInfo.fWidthBytes[SkYUVSizeInfo::kU];
+    size_t blockIncrementV = DCTSIZE * sizeInfo.fWidthBytes[SkYUVSizeInfo::kV];
+
+    uint32_t numRowsPerBlock = numYRowsPerBlock;
+
+    
+    
+    
+    const int numIters = dinfo->output_height / numRowsPerBlock;
+    for (int i = 0; i < numIters; i++) {
+        JDIMENSION linesRead = jpeg_read_raw_data(dinfo, yuv, numRowsPerBlock);
+        if (linesRead < numRowsPerBlock) {
+            
+            return kInvalidInput;
+        }
+
+        
+        for (int i = 0; i < numYRowsPerBlock; i++) {
+            rowptrs[i] += blockIncrementY;
+        }
+        for (int i = 0; i < DCTSIZE; i++) {
+            rowptrs[i + 2 * DCTSIZE] += blockIncrementU;
+            rowptrs[i + 3 * DCTSIZE] += blockIncrementV;
+        }
+    }
+
+    uint32_t remainingRows = dinfo->output_height - dinfo->output_scanline;
+    SkASSERT(remainingRows == dinfo->output_height % numRowsPerBlock);
+    SkASSERT(dinfo->output_scanline == numIters * numRowsPerBlock);
+    if (remainingRows > 0) {
+        
+        
+        
+        
+        SkAutoTMalloc<JSAMPLE> dummyRow(sizeInfo.fWidthBytes[SkYUVSizeInfo::kY]);
+        for (int i = remainingRows; i < numYRowsPerBlock; i++) {
+            rowptrs[i] = dummyRow.get();
+        }
+        int remainingUVRows = dinfo->comp_info[1].downsampled_height - DCTSIZE * numIters;
+        for (int i = remainingUVRows; i < DCTSIZE; i++) {
+            rowptrs[i + 2 * DCTSIZE] = dummyRow.get();
+            rowptrs[i + 3 * DCTSIZE] = dummyRow.get();
+        }
+
+        JDIMENSION linesRead = jpeg_read_raw_data(dinfo, yuv, numRowsPerBlock);
+        if (linesRead < remainingRows) {
+            
+            return kInvalidInput;
+        }
+    }
+
+    return kSuccess;
 }

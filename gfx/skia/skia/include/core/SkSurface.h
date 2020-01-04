@@ -35,30 +35,18 @@ public:
 
 
 
-    enum Budgeted {
-        
-        kNo_Budgeted,
-        
-        kYes_Budgeted
-    };
+
+
+    static sk_sp<SkSurface> MakeRasterDirect(const SkImageInfo&, void* pixels, size_t rowBytes,
+                                             const SkSurfaceProps* = nullptr);
 
     
 
 
 
-
-
-
-    static SkSurface* NewRasterDirect(const SkImageInfo&, void* pixels, size_t rowBytes,
-                                      const SkSurfaceProps* = NULL);
-
-    
-
-
-
-    static SkSurface* NewRasterDirectReleaseProc(const SkImageInfo&, void* pixels, size_t rowBytes,
+    static sk_sp<SkSurface> MakeRasterDirectReleaseProc(const SkImageInfo&, void* pixels, size_t rowBytes,
                                                  void (*releaseProc)(void* pixels, void* context),
-                                                 void* context, const SkSurfaceProps* = NULL);
+                                                 void* context, const SkSurfaceProps* = nullptr);
 
     
 
@@ -67,59 +55,132 @@ public:
 
 
 
-    static SkSurface* NewRaster(const SkImageInfo&, const SkSurfaceProps* = NULL);
+
+
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo&, size_t rowBytes, const SkSurfaceProps*);
+
+    
+
+
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo&, const SkSurfaceProps* = nullptr);
 
     
 
 
 
 
-    static SkSurface* NewRasterN32Premul(int width, int height, const SkSurfaceProps* props = NULL) {
-        return NewRaster(SkImageInfo::MakeN32Premul(width, height), props);
+    static sk_sp<SkSurface> MakeRasterN32Premul(int width, int height,
+                                                const SkSurfaceProps* props = nullptr) {
+        return MakeRaster(SkImageInfo::MakeN32Premul(width, height), props);
     }
 
     
 
 
-    static SkSurface* NewRenderTargetDirect(GrRenderTarget*, const SkSurfaceProps*);
+    static sk_sp<SkSurface> MakeRenderTargetDirect(GrRenderTarget*,
+                                                   const SkSurfaceProps* = nullptr);
 
+    
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext*, const GrBackendTextureDesc&,
+                                                   const SkSurfaceProps*);
+
+    
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext*,
+                                                        const GrBackendRenderTargetDesc&,
+                                                        const SkSurfaceProps*);
+
+    
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(
+            GrContext*, const GrBackendTextureDesc&, const SkSurfaceProps*);
+
+    
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRenderTarget(
+            GrContext*, SkBudgeted, const SkImageInfo&, int sampleCount, const SkSurfaceProps*,
+            GrTextureStorageAllocator = GrTextureStorageAllocator());
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrContext* gr, SkBudgeted b, const SkImageInfo& info) {
+        return MakeRenderTarget(gr, b, info, 0, nullptr);
+    }
+
+#ifdef SK_SUPPORT_LEGACY_NEW_SURFACE_API
+    static SkSurface* NewRasterDirect(const SkImageInfo& info, void* pixels, size_t rowBytes,
+                                      const SkSurfaceProps* props = NULL) {
+        return MakeRasterDirect(info, pixels, rowBytes, props).release();
+    }
+    static SkSurface* NewRasterDirectReleaseProc(const SkImageInfo& info, void* pixels,
+                                                 size_t rowBytes,
+                                                 void (*releaseProc)(void* pixels, void* context),
+                                                 void* context, const SkSurfaceProps* props = NULL){
+        return MakeRasterDirectReleaseProc(info, pixels, rowBytes, releaseProc, context,
+                                           props).release();
+    }
+    static SkSurface* NewRaster(const SkImageInfo& info, size_t rowBytes,
+                                const SkSurfaceProps* props) {
+        return MakeRaster(info, rowBytes, props).release();
+    }
+    static SkSurface* NewRaster(const SkImageInfo& info, const SkSurfaceProps* props = NULL) {
+        return MakeRaster(info, props).release();
+    }
+    static SkSurface* NewRasterN32Premul(int width, int height,
+                                         const SkSurfaceProps* props = NULL) {
+        return NewRaster(SkImageInfo::MakeN32Premul(width, height), props);
+    }
+    static SkSurface* NewRenderTargetDirect(GrRenderTarget* rt, const SkSurfaceProps* props) {
+        return MakeRenderTargetDirect(rt, props).release();
+    }
     static SkSurface* NewRenderTargetDirect(GrRenderTarget* target) {
         return NewRenderTargetDirect(target, NULL);
     }
-
-    
-
-
-
-
-
-    static SkSurface* NewFromBackendTexture(GrContext*, const GrBackendTextureDesc&,
-                                            const SkSurfaceProps*);
+    static SkSurface* NewFromBackendTexture(GrContext* ctx, const GrBackendTextureDesc& desc,
+                                            const SkSurfaceProps* props) {
+        return MakeFromBackendTexture(ctx, desc, props).release();
+    }
     
     static SkSurface* NewWrappedRenderTarget(GrContext* ctx, const GrBackendTextureDesc& desc,
                                              const SkSurfaceProps* props) {
         return NewFromBackendTexture(ctx, desc, props);
     }
-
-
-    
-
-
-
-
-    static SkSurface* NewFromBackendRenderTarget(GrContext*, const GrBackendRenderTargetDesc&,
-                                                 const SkSurfaceProps*);
-
-    
-
-
-
-    static SkSurface* NewRenderTarget(GrContext*, Budgeted, const SkImageInfo&, int sampleCount,
-                                      const SkSurfaceProps* = NULL);
-
-    static SkSurface* NewRenderTarget(GrContext* gr, Budgeted b, const SkImageInfo& info) {
-        return NewRenderTarget(gr, b, info, 0, NULL);
+    static SkSurface* NewFromBackendRenderTarget(GrContext* ctx, const GrBackendRenderTargetDesc& d,
+                                                 const SkSurfaceProps* props) {
+        return MakeFromBackendRenderTarget(ctx, d, props).release();
     }
+    static SkSurface* NewFromBackendTextureAsRenderTarget(GrContext* ctx,
+                                                          const GrBackendTextureDesc& desc,
+                                                          const SkSurfaceProps* props) {
+        return MakeFromBackendTextureAsRenderTarget(ctx, desc, props).release();
+    }
+    static SkSurface* NewRenderTarget(GrContext* ctx, SkBudgeted b, const SkImageInfo& info,
+                                      int sampleCount, const SkSurfaceProps* props = NULL,
+                                      GrTextureStorageAllocator a = GrTextureStorageAllocator()) {
+        return MakeRenderTarget(ctx, b, info, sampleCount, props, a).release();
+    }
+    static SkSurface* NewRenderTarget(GrContext* gr, SkBudgeted b, const SkImageInfo& info) {
+        return NewRenderTarget(gr, b, info, 0);
+    }
+    SkSurface* newSurface(const SkImageInfo& info) { return this->makeSurface(info).release(); }
+#endif
 
     int width() const { return fWidth; }
     int height() const { return fHeight; }
@@ -214,7 +275,7 @@ public:
 
 
 
-    SkSurface* newSurface(const SkImageInfo&);
+    sk_sp<SkSurface> makeSurface(const SkImageInfo&);
 
     
 
@@ -223,7 +284,28 @@ public:
 
 
 
-    SkImage* newImageSnapshot(Budgeted = kYes_Budgeted);
+    sk_sp<SkImage> makeImageSnapshot(SkBudgeted = SkBudgeted::kYes);
+
+    
+
+
+
+
+
+    enum ForceUnique {
+        kNo_ForceUnique,
+        kYes_ForceUnique
+    };
+    sk_sp<SkImage> makeImageSnapshot(SkBudgeted, ForceUnique);
+
+#ifdef SK_SUPPORT_LEGACY_IMAGEFACTORY
+    SkImage* newImageSnapshot(SkBudgeted budgeted = SkBudgeted::kYes) {
+        return this->makeImageSnapshot(budgeted).release();
+    }
+    SkImage* newImageSnapshot(SkBudgeted budgeted, ForceUnique force) {
+        return this->makeImageSnapshot(budgeted, force).release();
+    }
+#endif
 
     
 
@@ -243,8 +325,11 @@ public:
 
 
 
+    bool peekPixels(SkPixmap*);
 
+#ifdef SK_SUPPORT_LEGACY_PEEKPIXELS_PARMS
     const void* peekPixels(SkImageInfo* info, size_t* rowBytes);
+#endif
 
     
 
@@ -268,6 +353,11 @@ public:
                     int srcX, int srcY);
 
     const SkSurfaceProps& props() const { return fProps; }
+
+    
+
+
+    void prepareForExternalIO();
 
 protected:
     SkSurface(int width, int height, const SkSurfaceProps*);

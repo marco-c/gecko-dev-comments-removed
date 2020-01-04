@@ -10,6 +10,7 @@
 
 #include "GrTypes.h"
 #include "SkImageInfo.h"
+#include "SkYUVSizeInfo.h"
 
 class GrContext;
 class GrTexture;
@@ -38,14 +39,6 @@ public:
 
     virtual uint32_t onGetID() = 0;
 
-    enum {
-        kY_Index = 0,
-        kU_Index = 1,
-        kV_Index = 2,
-
-        kPlaneCount = 3
-    };
-
     
 
     
@@ -53,7 +46,10 @@ public:
 
 
 
-    virtual bool onGetYUVSizes(SkISize sizes[kPlaneCount]) = 0;
+
+
+
+    virtual bool onQueryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const = 0;
 
     
 
@@ -62,8 +58,10 @@ public:
 
 
 
-    virtual bool onGetYUVPlanes(SkISize sizes[kPlaneCount], void* planes[kPlaneCount],
-                                size_t rowBytes[kPlaneCount], SkYUVColorSpace*) = 0;
+
+
+
+    virtual bool onGetYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) = 0;
 };
 
 #endif

@@ -5,7 +5,6 @@
 
 
 
-
 #include "SkImageEncoder.h"
 
 template SkImageEncoder_EncodeReg* SkImageEncoder_EncodeReg::gHead;

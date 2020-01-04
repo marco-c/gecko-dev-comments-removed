@@ -10,6 +10,7 @@
 
 #include "SkCachedData.h"
 #include "SkImageInfo.h"
+#include "SkYUVSizeInfo.h"
 
 class SkResourceCache;
 
@@ -22,14 +23,8 @@ public:
 
 
 
-
-
-
-
     struct Info {
-        SkISize fSize[3];
-        size_t  fSizeInMemory[3];
-        size_t  fRowBytes[3];
+        SkYUVSizeInfo   fSizeInfo;
         SkYUVColorSpace fColorSpace;
     };
     

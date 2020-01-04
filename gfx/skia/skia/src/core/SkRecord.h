@@ -46,23 +46,19 @@ public:
     
     
     
-    template <typename R, typename F>
-    R visit(int i, F& f) const {
-        SkASSERT(i < this->count());
-        return fRecords[i].visit<R>(f);
+    template <typename F>
+    auto visit(int i, F&& f) const -> decltype(f(SkRecords::NoOp())) {
+        return fRecords[i].visit(f);
     }
 
     
     
     
     
-    template <typename R, typename F>
-    R mutate(int i, F& f) {
-        SkASSERT(i < this->count());
-        return fRecords[i].mutate<R>(f);
+    template <typename F>
+    auto mutate(int i, F&& f) -> decltype(f((SkRecords::NoOp*)nullptr)) {
+        return fRecords[i].mutate(f);
     }
-
-    
 
     
     
@@ -89,7 +85,7 @@ public:
         SkASSERT(i < this->count());
 
         Destroyer destroyer;
-        this->mutate<void>(i, destroyer);
+        this->mutate(i, destroyer);
 
         return fRecords[i].set(this->allocCommand<T>());
     }
@@ -168,23 +164,23 @@ private:
         void* ptr() const { return (void*)(fTypeAndPtr & ((1ull<<kTypeShift)-1)); }
 
         
-        template <typename R, typename F>
-        R visit(F& f) const {
+        template <typename F>
+        auto visit(F&& f) const -> decltype(f(SkRecords::NoOp())) {
         #define CASE(T) case SkRecords::T##_Type: return f(*(const SkRecords::T*)this->ptr());
             switch(this->type()) { SK_RECORD_TYPES(CASE) }
         #undef CASE
             SkDEBUGFAIL("Unreachable");
-            return R();
+            return f(SkRecords::NoOp());
         }
 
         
-        template <typename R, typename F>
-        R mutate(F& f) {
+        template <typename F>
+        auto mutate(F&& f) -> decltype(f((SkRecords::NoOp*)nullptr)) {
         #define CASE(T) case SkRecords::T##_Type: return f((SkRecords::T*)this->ptr());
             switch(this->type()) { SK_RECORD_TYPES(CASE) }
         #undef CASE
             SkDEBUGFAIL("Unreachable");
-            return R();
+            return f((SkRecords::NoOp*)nullptr);
         }
     };
 

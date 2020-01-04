@@ -54,6 +54,17 @@ public:
         kDisallowAntiAlias_Flag         = 1 << 0,
         kDisallowDither_Flag            = 1 << 1,
         kUseDeviceIndependentFonts_Flag = 1 << 2,
+
+        
+
+
+
+
+
+
+
+
+        kAllowSRGBInputs_Flag           = 1 << 3,
     };
     
     static const Flags kUseDistanceFieldFonts_Flag = kUseDeviceIndependentFonts_Flag;
@@ -75,6 +86,7 @@ public:
     bool isUseDeviceIndependentFonts() const {
         return SkToBool(fFlags & kUseDeviceIndependentFonts_Flag);
     }
+    bool allowSRGBInputs() const { return SkToBool(fFlags & kAllowSRGBInputs_Flag); }
 
 private:
     SkSurfaceProps();

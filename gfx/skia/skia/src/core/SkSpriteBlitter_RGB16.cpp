@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSpriteBlitter.h"
 #include "SkBlitRow.h"
 #include "SkTemplates.h"

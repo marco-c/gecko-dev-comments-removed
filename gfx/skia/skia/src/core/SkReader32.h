@@ -6,10 +6,10 @@
 
 
 
-
 #ifndef SkReader32_DEFINED
 #define SkReader32_DEFINED
 
+#include "SkData.h"
 #include "SkMatrix.h"
 #include "SkPath.h"
 #include "SkRegion.h"
@@ -134,6 +134,14 @@ public:
 
 
     size_t readIntoString(SkString* copy);
+
+    sk_sp<SkData> readData() {
+        uint32_t byteLength = this->readU32();
+        if (0 == byteLength) {
+            return SkData::MakeEmpty();
+        }
+        return SkData::MakeWithCopy(this->skip(byteLength), byteLength);
+    }
 
 private:
     template <typename T> bool readObjectFromMemory(T* obj) {

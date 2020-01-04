@@ -43,6 +43,13 @@ public:
     
 
 
+    const SkSurfaceProps& surfaceProps() const {
+        return fSurfaceProps;
+    }
+
+    
+
+
 
 
     void getGlobalBounds(SkIRect* bounds) const {
@@ -252,6 +259,8 @@ protected:
     virtual void drawAtlas(const SkDraw&, const SkImage* atlas, const SkRSXform[], const SkRect[],
                            const SkColor[], int count, SkXfermode::Mode, const SkPaint&);
 
+    virtual void drawAnnotation(const SkDraw&, const SkRect&, const char[], SkData*) {}
+
     
 
 
@@ -294,7 +303,7 @@ protected:
     }
 
 protected:
-    virtual SkSurface* newSurface(const SkImageInfo&, const SkSurfaceProps&) { return NULL; }
+    virtual sk_sp<SkSurface> makeSurface(const SkImageInfo&, const SkSurfaceProps&);
     virtual bool onPeekPixels(SkPixmap*) { return false; }
 
     
@@ -314,10 +323,6 @@ protected:
     virtual bool onWritePixels(const SkImageInfo&, const void*, size_t, int x, int y);
 
     virtual bool onAccessPixels(SkPixmap*) { return false; }
-
-    const SkSurfaceProps& surfaceProps() const {
-        return fSurfaceProps;
-    }
 
     
 
@@ -376,6 +381,12 @@ protected:
         return NULL;
     }
 
+    
+
+
+    virtual void drawSpriteWithFilter(const SkDraw&, const SkBitmap&,
+                                      int x, int y, const SkPaint&);
+
 private:
     friend class SkCanvas;
     friend struct DeviceCM; 
@@ -385,11 +396,6 @@ private:
     friend class SkImageFilter::DeviceProxy;
     friend class SkNoPixelsBitmapDevice;
     friend class SkSurface_Raster;
-
-    
-
-
-    void drawBitmapAsSprite(const SkDraw&, const SkBitmap&, int x, int y, const SkPaint&);
 
     
     

@@ -6,12 +6,13 @@
 
 
 
-
 #ifndef GrStencil_DEFINED
 #define GrStencil_DEFINED
 
 #include "GrTypes.h"
 #include "SkRegion.h"
+
+class GrProcessorKeyBuilder;
 
 
 
@@ -277,9 +278,15 @@ public:
 
     void invalidate()  {
         
-        fPassOps[0] = (GrStencilOp)(uint8_t)-1;
+        fPassOps[0] = kStencilOpCount;
         fFlags = 0;
     }
+
+    bool isValid() const {
+        return fPassOps[0] < kStencilOpCount;
+    }
+
+    void genKey(GrProcessorKeyBuilder* b) const;
 
     bool operator == (const GrStencilSettings& s) const {
         static const size_t gCompareSize = sizeof(GrStencilSettings) -

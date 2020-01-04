@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkColorTable.h"
 #include "SkReadBuffer.h"
 #include "SkWriteBuffer.h"
@@ -107,6 +106,5 @@ SkColorTable* SkColorTable::Create(SkReadBuffer& buffer) {
         return nullptr;
     }
 
-    return new SkColorTable(colors.detach(), count, kAllocatedWithMalloc);
+    return new SkColorTable(colors.release(), count, kAllocatedWithMalloc);
 }
-

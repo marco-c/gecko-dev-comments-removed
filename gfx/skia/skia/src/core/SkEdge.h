@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkEdge_DEFINED
 #define SkEdge_DEFINED
 

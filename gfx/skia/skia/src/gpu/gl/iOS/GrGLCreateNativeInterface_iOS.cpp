@@ -5,7 +5,6 @@
 
 
 
-
 #include "gl/GrGLInterface.h"
 #include "gl/GrGLAssembleInterface.h"
 #include <dlfcn.h>
@@ -39,7 +38,7 @@ public:
     GrGLFuncPtr getProc(const char name[]) const {
         return (GrGLFuncPtr) dlsym(fLoader.handle(), name);
     }
-    
+
 private:
     GLLoader fLoader;
 };

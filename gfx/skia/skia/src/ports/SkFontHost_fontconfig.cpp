@@ -9,8 +9,10 @@
 #include "SkFontConfigTypeface.h"
 #include "SkFontDescriptor.h"
 #include "SkStream.h"
+#include "SkTemplates.h"
 #include "SkTypeface.h"
 #include "SkTypefaceCache.h"
+#include "SkResourceCache.h"
 
 
 
@@ -56,36 +58,115 @@ SkFontConfigInterface* SkFontHost_fontconfig_ref_global() {
 
 
 
-struct NameStyle {
-    NameStyle(const char* name, const SkFontStyle& style)
-        : fFamilyName(name)  
-        , fStyle(style) {}
-
-    const char* fFamilyName;
-    SkFontStyle fStyle;
-};
-
-static bool find_by_NameStyle(SkTypeface* cachedTypeface,
-                              const SkFontStyle& cachedStyle,
-                              void* ctx)
-{
-    FontConfigTypeface* cachedFCTypeface = static_cast<FontConfigTypeface*>(cachedTypeface);
-    const NameStyle* nameStyle = static_cast<const NameStyle*>(ctx);
-
-    return nameStyle->fStyle == cachedStyle &&
-           cachedFCTypeface->isFamilyName(nameStyle->fFamilyName);
-}
-
 static bool find_by_FontIdentity(SkTypeface* cachedTypeface, const SkFontStyle&, void* ctx) {
     typedef SkFontConfigInterface::FontIdentity FontIdentity;
     FontConfigTypeface* cachedFCTypeface = static_cast<FontConfigTypeface*>(cachedTypeface);
-    FontIdentity* indentity = static_cast<FontIdentity*>(ctx);
+    FontIdentity* identity = static_cast<FontIdentity*>(ctx);
 
-    return cachedFCTypeface->getIdentity() == *indentity;
+    return cachedFCTypeface->getIdentity() == *identity;
 }
 
-SkTypeface* FontConfigTypeface::LegacyCreateTypeface(const char familyName[],
-                                                     SkTypeface::Style style)
+SK_DECLARE_STATIC_MUTEX(gSkFontHostRequestCacheMutex);
+class SkFontHostRequestCache {
+
+    
+    static const size_t gMaxSize = 1 << 12;
+
+    static SkFontHostRequestCache& Get() {
+        gSkFontHostRequestCacheMutex.assertHeld();
+        static SkFontHostRequestCache gCache(gMaxSize);
+        return gCache;
+    }
+
+public:
+    struct Request : public SkResourceCache::Key {
+    private:
+        Request(const char* name, size_t nameLen, const SkFontStyle& style) : fStyle(style) {
+            
+            char* content = const_cast<char*>(SkTAfter<const char>(&this->fStyle));
+
+            
+            SkASSERT(SkTAddOffset<char>(this, sizeof(SkResourceCache::Key) + keySize) == content);
+
+            
+            SkASSERT((content - reinterpret_cast<char*>(this)) % sizeof(uint32_t) == 0);
+
+            size_t contentLen = SkAlign4(nameLen);
+            sk_careful_memcpy(content, name, nameLen);
+            sk_bzero(content + nameLen, contentLen - nameLen);
+            this->init(&gSkFontHostRequestCacheMutex, 0, keySize + contentLen);
+        }
+        const SkFontStyle fStyle;
+        
+        static const size_t keySize = sizeof(fStyle);
+
+    public:
+        static Request* Create(const char* name, const SkFontStyle& style) {
+            size_t nameLen = name ? strlen(name) : 0;
+            size_t contentLen = SkAlign4(nameLen);
+            char* storage = new char[sizeof(Request) + contentLen];
+            return new (storage) Request(name, nameLen, style);
+        }
+        void operator delete(void* storage) {
+            delete[] reinterpret_cast<char*>(storage);
+        }
+    };
+
+
+private:
+    struct Result : public SkResourceCache::Rec {
+        Result(Request* request, SkTypeface* typeface)
+            : fRequest(request)
+            , fFace(SkSafeRef(typeface)) {}
+        Result(Result&&) = default;
+        Result& operator=(Result&&) = default;
+
+        const Key& getKey() const override { return *fRequest; }
+        size_t bytesUsed() const override { return fRequest->size() + sizeof(fFace); }
+        const char* getCategory() const override { return "request_cache"; }
+        SkDiscardableMemory* diagnostic_only_getDiscardable() const override { return nullptr; }
+
+        SkAutoTDelete<Request> fRequest;
+        SkAutoTUnref<SkTypeface> fFace;
+    };
+
+    SkResourceCache fCachedResults;
+
+public:
+    SkFontHostRequestCache(size_t maxSize) : fCachedResults(maxSize) {}
+
+    
+    void add(SkTypeface* face, Request* request) {
+        fCachedResults.add(new Result(request, face));
+    }
+    
+    SkTypeface* findAndRef(Request* request) {
+        SkTypeface* face = nullptr;
+        fCachedResults.find(*request, [](const SkResourceCache::Rec& rec, void* context) -> bool {
+            const Result& result = static_cast<const Result&>(rec);
+            SkTypeface** face = static_cast<SkTypeface**>(context);
+
+            *face = result.fFace;
+            return true;
+        }, &face);
+        return SkSafeRef(face);
+    }
+
+    
+    static void Add(SkTypeface* face, Request* request) {
+        SkAutoMutexAcquire ama(gSkFontHostRequestCacheMutex);
+        Get().add(face, request);
+    }
+
+    
+    static SkTypeface* FindAndRef(Request* request) {
+        SkAutoMutexAcquire ama(gSkFontHostRequestCacheMutex);
+        return Get().findAndRef(request);
+    }
+};
+
+SkTypeface* FontConfigTypeface::LegacyCreateTypeface(const char requestedFamilyName[],
+                                                     SkTypeface::Style requestedOldStyle)
 {
     SkAutoTUnref<SkFontConfigInterface> fci(RefFCI());
     if (nullptr == fci.get()) {
@@ -93,35 +174,33 @@ SkTypeface* FontConfigTypeface::LegacyCreateTypeface(const char familyName[],
     }
 
     
-    SkFontStyle requestedStyle(style);
-    NameStyle nameStyle(familyName, requestedStyle);
-    SkTypeface* face = SkTypefaceCache::FindByProcAndRef(find_by_NameStyle, &nameStyle);
+    using Request = SkFontHostRequestCache::Request;
+    SkFontStyle requestedStyle(requestedOldStyle);
+    SkAutoTDelete<Request> request(Request::Create(requestedFamilyName, requestedStyle));
+    SkTypeface* face = SkFontHostRequestCache::FindAndRef(request);
     if (face) {
-        
-        
-        
         return face;
     }
 
-    SkFontConfigInterface::FontIdentity indentity;
+    SkFontConfigInterface::FontIdentity identity;
     SkString outFamilyName;
-    SkTypeface::Style outStyle;
-    if (!fci->matchFamilyName(familyName, style, &indentity, &outFamilyName, &outStyle)) {
+    SkTypeface::Style outOldStyle;
+    if (!fci->matchFamilyName(requestedFamilyName, requestedOldStyle,
+                              &identity, &outFamilyName, &outOldStyle))
+    {
         return nullptr;
     }
 
     
-    face = SkTypefaceCache::FindByProcAndRef(find_by_FontIdentity, &indentity);
+    face = SkTypefaceCache::FindByProcAndRef(find_by_FontIdentity, &identity);
     if (!face) {
-        face = FontConfigTypeface::Create(SkFontStyle(outStyle), indentity, outFamilyName);
+        face = FontConfigTypeface::Create(SkFontStyle(outOldStyle), identity, outFamilyName);
         
-        SkTypefaceCache::Add(face, requestedStyle);
+        SkTypefaceCache::Add(face, SkFontStyle(outOldStyle));
     }
     
+    SkFontHostRequestCache::Add(face, request.release());
 
-    
-    
-    
     return face;
 }
 

@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrPathRenderer_DEFINED
 #define GrPathRenderer_DEFINED
 
@@ -157,7 +156,7 @@ public:
         canArgs.fAntiAlias = args.fAntiAlias;
 
         canArgs.fIsStencilDisabled = args.fPipelineBuilder->getStencil().isDisabled();
-        canArgs.fIsStencilBufferMSAA = 
+        canArgs.fIsStencilBufferMSAA =
                           args.fPipelineBuilder->getRenderTarget()->isStencilBufferMultisampled();
         SkASSERT(this->canDrawPath(canArgs));
         SkASSERT(args.fPipelineBuilder->getStencil().isDisabled() ||

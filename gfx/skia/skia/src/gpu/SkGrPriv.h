@@ -48,11 +48,13 @@ void GrInstallBitmapUniqueKeyInvalidator(const GrUniqueKey& key, SkPixelRef* pix
 bool SkPaintToGrPaint(GrContext*,
                       const SkPaint& skPaint,
                       const SkMatrix& viewM,
+                      bool allowSRGBInputs,
                       GrPaint* grPaint);
 
 
 bool SkPaintToGrPaintNoShader(GrContext* context,
                               const SkPaint& skPaint,
+                              bool allowSRGBInputs,
                               GrPaint* grPaint);
 
 
@@ -61,6 +63,7 @@ bool SkPaintToGrPaintNoShader(GrContext* context,
 bool SkPaintToGrPaintReplaceShader(GrContext*,
                                    const SkPaint& skPaint,
                                    const GrFragmentProcessor* shaderFP,
+                                   bool allowSRGBInputs,
                                    GrPaint* grPaint);
 
 
@@ -72,6 +75,7 @@ bool SkPaintToGrPaintWithXfermode(GrContext* context,
                                   const SkMatrix& viewM,
                                   SkXfermode::Mode primColorMode,
                                   bool primitiveIsSrc,
+                                  bool allowSRGBInputs,
                                   GrPaint* grPaint);
 
 
@@ -79,9 +83,9 @@ bool SkPaintToGrPaintWithXfermode(GrContext* context,
 
 
 inline bool SkPaintToGrPaintWithPrimitiveColor(GrContext* context, const SkPaint& skPaint,
-                                               GrPaint* grPaint) {
+                                               bool allowSRGBInputs, GrPaint* grPaint) {
     return SkPaintToGrPaintWithXfermode(context, skPaint, SkMatrix::I(), SkXfermode::kDst_Mode,
-                                        false, grPaint);
+                                        false, allowSRGBInputs, grPaint);
 }
 
 
@@ -91,11 +95,12 @@ bool SkPaintToGrPaintWithTexture(GrContext* context,
                                  const SkMatrix& viewM,
                                  const GrFragmentProcessor* fp,
                                  bool textureIsAlphaOnly,
+                                 bool allowSRGBInputs,
                                  GrPaint* grPaint);
 
 
 
-GrSurfaceDesc GrImageInfoToSurfaceDesc(const SkImageInfo&);
+GrSurfaceDesc GrImageInfoToSurfaceDesc(const SkImageInfo&, const GrCaps&);
 
 bool GrPixelConfig2ColorAndProfileType(GrPixelConfig, SkColorType*, SkColorProfileType*);
 
@@ -118,6 +123,13 @@ GrPixelConfig GrIsCompressedTextureDataSupported(GrContext* ctx, SkData* data,
 
 
 GrTexture* GrUploadBitmapToTexture(GrContext*, const SkBitmap&);
+
+GrTexture* GrGenerateMipMapsAndUploadToTexture(GrContext*, const SkBitmap&);
+
+
+
+
+GrTexture* GrUploadPixmapToTexture(GrContext*, const SkPixmap&, SkBudgeted budgeted);
 
 
 

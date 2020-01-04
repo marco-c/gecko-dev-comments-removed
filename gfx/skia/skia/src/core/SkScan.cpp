@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkScan.h"
 #include "SkBlitter.h"
 #include "SkRasterClip.h"

@@ -9,6 +9,8 @@
 #ifndef GrGLCaps_DEFINED
 #define GrGLCaps_DEFINED
 
+#include <functional>
+
 #include "glsl/GrGLSL.h"
 #include "GrCaps.h"
 #include "GrGLStencilAttachment.h"
@@ -19,6 +21,7 @@
 
 class GrGLContextInfo;
 class GrGLSLCaps;
+class GrGLRenderTarget;
 
 
 
@@ -74,10 +77,20 @@ public:
         kLast_MSFBOType = kMixedSamples_MSFBOType
     };
 
+    enum BlitFramebufferSupport {
+        kNone_BlitFramebufferSupport,
+        
+
+
+
+        kNoScalingNoMirroring_BlitFramebufferSupport,
+        kFull_BlitFramebufferSupport
+    };
+
     enum InvalidateFBType {
         kNone_InvalidateFBType,
         kDiscard_InvalidateFBType,       
-        kInvalidate_InvalidateFBType,     
+        kInvalidate_InvalidateFBType,    
 
         kLast_InvalidateFBType = kInvalidate_InvalidateFBType
     };
@@ -107,17 +120,19 @@ public:
              const GrGLInterface* glInterface);
 
     bool isConfigTexturable(GrPixelConfig config) const override {
-        SkASSERT(kGrPixelConfigCnt > config);
         return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kTextureable_Flag);
     }
 
     bool isConfigRenderable(GrPixelConfig config, bool withMSAA) const override {
-        SkASSERT(kGrPixelConfigCnt > config);
         if (withMSAA) {
             return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kRenderableWithMSAA_Flag);
         } else {
             return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kRenderable_Flag);
         }
+    }
+
+    bool isConfigTexSupportEnabled(GrPixelConfig config) const {
+        return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kCanUseTexStorage_Flag);
     }
 
     
@@ -211,6 +226,11 @@ public:
     
 
 
+    BlitFramebufferSupport blitFramebufferSupport() const { return fBlitFramebufferSupport; }
+
+    
+
+
 
     bool usesImplicitMSAAResolve() const {
         return kES_IMG_MsToTexture_MSFBOType == fMSFBOType ||
@@ -227,12 +247,6 @@ public:
 
     
     int maxFragmentUniformVectors() const { return fMaxFragmentUniformVectors; }
-
-    
-    int maxVertexAttributes() const { return fMaxVertexAttributes; }
-
-    
-    int maxFragmentTextureUnits() const { return fMaxFragmentTextureUnits; }
 
     
 
@@ -257,9 +271,6 @@ public:
     bool textureUsageSupport() const { return fTextureUsageSupport; }
 
     
-    bool texStorageSupport() const { return fTexStorageSupport; }
-
-    
     bool textureRedSupport() const { return fTextureRedSupport; }
 
     
@@ -281,12 +292,24 @@ public:
     bool multisampleDisableSupport() const { return fMultisampleDisableSupport; }
 
     
+    
+    bool drawIndirectSupport() const { return fDrawIndirectSupport; }
+
+    
+    
+    bool multiDrawIndirectSupport() const { return fMultiDrawIndirectSupport; }
+
+    
+    bool baseInstanceSupport() const { return fBaseInstanceSupport; }
+
+    
     bool useNonVBOVertexAndIndexDynamicData() const { return fUseNonVBOVertexAndIndexDynamicData; }
 
     
-    bool readPixelsSupported(const GrGLInterface* intf,
+    bool readPixelsSupported(GrPixelConfig renderTargetConfig,
                              GrPixelConfig readConfig,
-                             GrPixelConfig currFBOConfig) const;
+                             std::function<void (GrGLenum, GrGLint*)> getIntegerv,
+                             std::function<bool ()> bindRenderTarget) const;
 
     bool isCoreProfile() const { return fIsCoreProfile; }
 
@@ -295,20 +318,12 @@ public:
     bool bindUniformLocationSupport() const { return fBindUniformLocationSupport; }
 
     
-    bool externalTextureSupport() const { return fExternalTextureSupport; }
-
-    
     bool rectangleTextureSupport() const { return fRectangleTextureSupport; }
 
     
     bool textureSwizzleSupport() const { return fTextureSwizzleSupport; }
 
-    
-
-
-
-
-    bool srgbWriteControl() const { return fSRGBWriteControl; }
+    bool mipMapLevelAndLodControlSupport() const { return fMipMapLevelAndLodControlSupport; }
 
     
 
@@ -317,6 +332,9 @@ public:
 
     bool rgba8888PixelsOpsAreSlow() const { return fRGBA8888PixelsOpsAreSlow; }
     bool partialFBOReadIsSlow() const { return fPartialFBOReadIsSlow; }
+    bool rgbaToBgraReadbackConversionsAreSlow() const {
+        return fRGBAToBGRAReadbackConversionsAreSlow;
+    }
 
     const GrGLSLCaps* glslCaps() const { return reinterpret_cast<GrGLSLCaps*>(fShaderCaps.get()); }
 
@@ -348,11 +366,11 @@ private:
                                   const GrGLInterface* intf,
                                   GrGLSLCaps* glslCaps);
 
+    GrGLStandard fStandard;
+
     SkTArray<StencilFormat, true> fStencilFormats;
 
     int fMaxFragmentUniformVectors;
-    int fMaxVertexAttributes;
-    int fMaxFragmentTextureUnits;
 
     MSFBOType           fMSFBOType;
     InvalidateFBType    fInvalidateFBType;
@@ -364,7 +382,6 @@ private:
     bool fPackRowLengthSupport : 1;
     bool fPackFlipYSupport : 1;
     bool fTextureUsageSupport : 1;
-    bool fTexStorageSupport : 1;
     bool fTextureRedSupport : 1;
     bool fImagingSupport  : 1;
     bool fVertexArrayObjectSupport : 1;
@@ -372,16 +389,21 @@ private:
     bool fDebugSupport : 1;
     bool fES2CompatibilitySupport : 1;
     bool fMultisampleDisableSupport : 1;
+    bool fDrawIndirectSupport : 1;
+    bool fMultiDrawIndirectSupport : 1;
+    bool fBaseInstanceSupport : 1;
     bool fUseNonVBOVertexAndIndexDynamicData : 1;
     bool fIsCoreProfile : 1;
     bool fBindFragDataLocationSupport : 1;
-    bool fSRGBWriteControl : 1;
     bool fRGBA8888PixelsOpsAreSlow : 1;
     bool fPartialFBOReadIsSlow : 1;
     bool fBindUniformLocationSupport : 1;
-    bool fExternalTextureSupport : 1;
     bool fRectangleTextureSupport : 1;
     bool fTextureSwizzleSupport : 1;
+    bool fMipMapLevelAndLodControlSupport : 1;
+    bool fRGBAToBGRAReadbackConversionsAreSlow : 1;
+
+    BlitFramebufferSupport fBlitFramebufferSupport;
 
     
     enum FormatType {
@@ -445,6 +467,7 @@ private:
             kTextureable_Flag             = 0x2,
             kRenderable_Flag              = 0x4,
             kRenderableWithMSAA_Flag      = 0x8,
+            kCanUseTexStorage_Flag        = 0x10,
         };
         uint32_t fFlags;
 

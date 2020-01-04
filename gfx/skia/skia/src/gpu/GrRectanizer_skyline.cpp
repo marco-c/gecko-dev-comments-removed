@@ -5,7 +5,6 @@
 
 
 
-
 #include "GrRectanizer_skyline.h"
 #include "SkPoint.h"
 

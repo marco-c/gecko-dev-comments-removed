@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGUse_DEFINED
 #define SkSVGUse_DEFINED
 

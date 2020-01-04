@@ -4,7 +4,6 @@
 
 
 
-
 #include "SkUnPreMultiply.h"
 #include "SkColorPriv.h"
 

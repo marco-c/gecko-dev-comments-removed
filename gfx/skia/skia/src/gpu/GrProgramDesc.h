@@ -71,8 +71,10 @@ public:
 
     struct KeyHeader {
         
+        uint8_t                     fSurfaceOriginKey;
         
-        uint8_t                     fFragPosKey;
+        
+        uint8_t                     fSamplePatternKey;
         
         uint8_t                     fOutputSwizzle;
         uint8_t                     fSnapVerticesToPixelCenters;

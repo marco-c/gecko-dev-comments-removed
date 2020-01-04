@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkTextFormatParams_DEFINES
 #define SkTextFormatParams_DEFINES
 

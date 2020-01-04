@@ -594,8 +594,13 @@ public:
     
 
 
+    bool isFixedStepInX() const;
 
-    bool fixedStepInX(SkScalar y, SkFixed* stepX, SkFixed* stepY) const;
+    
+
+
+
+    SkVector fixedStepInX(SkScalar y) const;
 
     
 

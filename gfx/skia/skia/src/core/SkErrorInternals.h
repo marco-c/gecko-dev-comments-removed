@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef SkErrorInternals_DEFINED
 #define SkErrorInternals_DEFINED
 

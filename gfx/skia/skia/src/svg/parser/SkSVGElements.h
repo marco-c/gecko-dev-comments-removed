@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGElements_DEFINED
 #define SkSVGElements_DEFINED
 

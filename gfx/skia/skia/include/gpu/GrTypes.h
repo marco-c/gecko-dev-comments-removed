@@ -8,9 +8,9 @@
 #ifndef GrTypes_DEFINED
 #define GrTypes_DEFINED
 
+#include "SkMath.h"
 #include "SkTypes.h"
 #include "GrConfig.h"
-#include "SkMath.h"
 
 
 
@@ -220,6 +220,10 @@ enum GrPixelConfig {
     
 
 
+    kSBGRA_8888_GrPixelConfig,
+    
+
+
     kETC1_GrPixelConfig,
     
 
@@ -268,8 +272,10 @@ static const int kGrPixelConfigCnt = kLast_GrPixelConfig + 1;
 #endif
 #if SK_PMCOLOR_BYTE_ORDER(B,G,R,A)
     static const GrPixelConfig kSkia8888_GrPixelConfig = kBGRA_8888_GrPixelConfig;
+    static const GrPixelConfig kSkiaGamma8888_GrPixelConfig = kSBGRA_8888_GrPixelConfig;
 #elif SK_PMCOLOR_BYTE_ORDER(R,G,B,A)
     static const GrPixelConfig kSkia8888_GrPixelConfig = kRGBA_8888_GrPixelConfig;
+    static const GrPixelConfig kSkiaGamma8888_GrPixelConfig = kSRGBA_8888_GrPixelConfig;
 #else
     #error "SK_*32_SHIFT values must correspond to GL_BGRA or GL_RGBA format."
 #endif
@@ -311,6 +317,7 @@ static inline bool GrPixelConfigIs8888(GrPixelConfig config) {
         case kRGBA_8888_GrPixelConfig:
         case kBGRA_8888_GrPixelConfig:
         case kSRGBA_8888_GrPixelConfig:
+        case kSBGRA_8888_GrPixelConfig:
             return true;
         default:
             return false;
@@ -322,6 +329,7 @@ static inline bool GrPixelConfigIs8888(GrPixelConfig config) {
 static inline bool GrPixelConfigIsSRGB(GrPixelConfig config) {
     switch (config) {
         case kSRGBA_8888_GrPixelConfig:
+        case kSBGRA_8888_GrPixelConfig:
             return true;
         default:
             return false;
@@ -336,6 +344,10 @@ static inline GrPixelConfig GrPixelConfigSwapRAndB(GrPixelConfig config) {
             return kRGBA_8888_GrPixelConfig;
         case kRGBA_8888_GrPixelConfig:
             return kBGRA_8888_GrPixelConfig;
+        case kSBGRA_8888_GrPixelConfig:
+            return kSRGBA_8888_GrPixelConfig;
+        case kSRGBA_8888_GrPixelConfig:
+            return kSBGRA_8888_GrPixelConfig;
         default:
             return kUnknown_GrPixelConfig;
     }
@@ -353,6 +365,7 @@ static inline size_t GrBytesPerPixel(GrPixelConfig config) {
         case kRGBA_8888_GrPixelConfig:
         case kBGRA_8888_GrPixelConfig:
         case kSRGBA_8888_GrPixelConfig:
+        case kSBGRA_8888_GrPixelConfig:
             return 4;
         case kRGBA_half_GrPixelConfig:
             return 8;
@@ -410,6 +423,9 @@ enum GrSurfaceFlags {
 GR_MAKE_BITFIELD_OPS(GrSurfaceFlags)
 
 
+typedef intptr_t GrBackendObject;
+
+
 
 
 
@@ -422,6 +438,63 @@ enum GrSurfaceOrigin {
     kBottomLeft_GrSurfaceOrigin,
 };
 
+struct GrMipLevel {
+    const void* fPixels;
+    size_t fRowBytes;
+};
+
+
+
+
+
+
+
+struct GrTextureStorageAllocator {
+    GrTextureStorageAllocator()
+    : fAllocateTextureStorage(nullptr)
+    , fDeallocateTextureStorage(nullptr) {
+    }
+
+    enum class Result {
+        kSucceededAndUploaded,
+        kSucceededWithoutUpload,
+        kFailed
+    };
+    typedef Result (*AllocateTextureStorageProc)(
+            void* ctx, GrBackendObject texture, unsigned width,
+            unsigned height, GrPixelConfig config, const void* srcData, GrSurfaceOrigin);
+    typedef void (*DeallocateTextureStorageProc)(void* ctx, GrBackendObject texture);
+
+    
+
+
+
+
+
+
+
+
+
+
+    AllocateTextureStorageProc fAllocateTextureStorage;
+
+    
+
+
+
+
+
+
+
+    DeallocateTextureStorageProc fDeallocateTextureStorage;
+
+    
+
+
+
+    void* fCtx;
+};
+
 
 
 
@@ -432,7 +505,8 @@ struct GrSurfaceDesc {
     , fWidth(0)
     , fHeight(0)
     , fConfig(kUnknown_GrPixelConfig)
-    , fSampleCnt(0) {
+    , fSampleCnt(0)
+    , fIsMipMapped(false) {
     }
 
     GrSurfaceFlags         fFlags;  
@@ -454,6 +528,14 @@ struct GrSurfaceDesc {
 
 
     int                    fSampleCnt;
+
+    
+
+
+
+    GrTextureStorageAllocator fTextureStorageAllocator;
+
+    bool                   fIsMipMapped; 
 };
 
 
@@ -468,9 +550,6 @@ enum GrClipType {
 };
 
 
-
-
-typedef intptr_t GrBackendObject;
 
 
 

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkEmbossMask_DEFINED
 #define SkEmbossMask_DEFINED
 

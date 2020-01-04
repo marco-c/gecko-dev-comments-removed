@@ -378,7 +378,7 @@ template <typename TBase, typename TAlign, typename TItem>
 void operator delete(void*, GrTRecorder<TBase, TAlign>&, const GrTRecorderAllocWrapper<TItem>&) {
     
     
-    SK_CRASH();
+    SK_ABORT("Invalid Operation");
 }
 
 #define GrNEW_APPEND_TO_RECORDER(recorder, type_name, args) \

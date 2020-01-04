@@ -8,211 +8,14 @@
 #include "GrAtlasTextBatch.h"
 
 #include "GrBatchFlushState.h"
-#include "GrBatchTest.h"
 #include "GrResourceProvider.h"
 
-#include "SkDistanceFieldGen.h"
 #include "SkGlyphCache.h"
 
 #include "effects/GrBitmapTextGeoProc.h"
 #include "effects/GrDistanceFieldGeoProc.h"
 #include "text/GrBatchFontCache.h"
 
-
-
-
-template <bool regenPos, bool regenCol, bool regenTexCoords>
-inline void regen_vertices(intptr_t vertex, const GrGlyph* glyph, size_t vertexStride,
-                           bool useDistanceFields, SkScalar transX, SkScalar transY,
-                           GrColor color) {
-    int u0, v0, u1, v1;
-    if (regenTexCoords) {
-        SkASSERT(glyph);
-        int width = glyph->fBounds.width();
-        int height = glyph->fBounds.height();
-
-        if (useDistanceFields) {
-            u0 = glyph->fAtlasLocation.fX + SK_DistanceFieldInset;
-            v0 = glyph->fAtlasLocation.fY + SK_DistanceFieldInset;
-            u1 = u0 + width - 2 * SK_DistanceFieldInset;
-            v1 = v0 + height - 2 * SK_DistanceFieldInset;
-        } else {
-            u0 = glyph->fAtlasLocation.fX;
-            v0 = glyph->fAtlasLocation.fY;
-            u1 = u0 + width;
-            v1 = v0 + height;
-        }
-    }
-
-    
-    
-    intptr_t colorOffset = sizeof(SkPoint);
-    intptr_t texCoordOffset = vertexStride - sizeof(SkIPoint16);
-
-    
-    if (regenPos) {
-        SkPoint* point = reinterpret_cast<SkPoint*>(vertex);
-        point->fX += transX;
-        point->fY += transY;
-    }
-
-    if (regenCol) {
-        SkColor* vcolor = reinterpret_cast<SkColor*>(vertex + colorOffset);
-        *vcolor = color;
-    }
-
-    if (regenTexCoords) {
-        SkIPoint16* textureCoords = reinterpret_cast<SkIPoint16*>(vertex + texCoordOffset);
-        textureCoords->set(u0, v0);
-    }
-    vertex += vertexStride;
-
-    
-    if (regenPos) {
-        SkPoint* point = reinterpret_cast<SkPoint*>(vertex);
-        point->fX += transX;
-        point->fY += transY;
-    }
-
-    if (regenCol) {
-        SkColor* vcolor = reinterpret_cast<SkColor*>(vertex + colorOffset);
-        *vcolor = color;
-    }
-
-    if (regenTexCoords) {
-        SkIPoint16* textureCoords = reinterpret_cast<SkIPoint16*>(vertex + texCoordOffset);
-        textureCoords->set(u0, v1);
-    }
-    vertex += vertexStride;
-
-    
-    if (regenPos) {
-        SkPoint* point = reinterpret_cast<SkPoint*>(vertex);
-        point->fX += transX;
-        point->fY += transY;
-    }
-
-    if (regenCol) {
-        SkColor* vcolor = reinterpret_cast<SkColor*>(vertex + colorOffset);
-        *vcolor = color;
-    }
-
-    if (regenTexCoords) {
-        SkIPoint16* textureCoords = reinterpret_cast<SkIPoint16*>(vertex + texCoordOffset);
-        textureCoords->set(u1, v1);
-    }
-    vertex += vertexStride;
-
-    
-    if (regenPos) {
-        SkPoint* point = reinterpret_cast<SkPoint*>(vertex);
-        point->fX += transX;
-        point->fY += transY;
-    }
-
-    if (regenCol) {
-        SkColor* vcolor = reinterpret_cast<SkColor*>(vertex + colorOffset);
-        *vcolor = color;
-    }
-
-    if (regenTexCoords) {
-        SkIPoint16* textureCoords = reinterpret_cast<SkIPoint16*>(vertex + texCoordOffset);
-        textureCoords->set(u1, v0);
-    }
-}
-
-typedef GrAtlasTextBlob Blob;
-typedef Blob::Run Run;
-typedef Run::SubRunInfo TextInfo;
-
-template <bool regenPos, bool regenCol, bool regenTexCoords, bool regenGlyphs>
-inline void GrAtlasTextBatch::regenBlob(Target* target, FlushInfo* flushInfo, Blob* blob, Run* run,
-                                        TextInfo* info, SkGlyphCache** cache,
-                                        SkTypeface** typeface, GrFontScaler** scaler,
-                                        const SkDescriptor** desc, const GrGeometryProcessor* gp,
-                                        int glyphCount, size_t vertexStride,
-                                        GrColor color, SkScalar transX, SkScalar transY) const {
-    static_assert(!regenGlyphs || regenTexCoords, "must regenTexCoords along regenGlyphs");
-    GrBatchTextStrike* strike = nullptr;
-    if (regenTexCoords) {
-        info->resetBulkUseToken();
-
-        
-        
-        
-        const SkDescriptor* newDesc = (run->fOverrideDescriptor && !this->usesDistanceFields()) ?
-                                      run->fOverrideDescriptor->getDesc() :
-                                      run->fDescriptor.getDesc();
-        if (!*cache || !SkTypeface::Equal(*typeface, run->fTypeface) ||
-                       !((*desc)->equals(*newDesc))) {
-            if (*cache) {
-                SkGlyphCache::AttachCache(*cache);
-            }
-            *desc = newDesc;
-            *cache = SkGlyphCache::DetachCache(run->fTypeface, *desc);
-            *scaler = GrTextContext::GetGrFontScaler(*cache);
-            strike = info->strike();
-            *typeface = run->fTypeface;
-        }
-
-        if (regenGlyphs) {
-            strike = fFontCache->getStrike(*scaler);
-        } else {
-            strike = info->strike();
-        }
-    }
-
-    bool brokenRun = false;
-    for (int glyphIdx = 0; glyphIdx < glyphCount; glyphIdx++) {
-        GrGlyph* glyph = nullptr;
-        if (regenTexCoords) {
-            size_t glyphOffset = glyphIdx + info->glyphStartIndex();
-
-            if (regenGlyphs) {
-                
-                
-                GrGlyph::PackedID id = blob->fGlyphs[glyphOffset]->fPackedID;
-                blob->fGlyphs[glyphOffset] = strike->getGlyph(id, this->maskFormat(), *scaler);
-                SkASSERT(id == blob->fGlyphs[glyphOffset]->fPackedID);
-            }
-            glyph = blob->fGlyphs[glyphOffset];
-            SkASSERT(glyph && glyph->fMaskFormat == this->maskFormat());
-
-            if (!fFontCache->hasGlyph(glyph) &&
-                !strike->addGlyphToAtlas(target, glyph, *scaler, this->maskFormat())) {
-                this->flush(target, flushInfo);
-                target->initDraw(gp, this->pipeline());
-                brokenRun = glyphIdx > 0;
-
-                SkDEBUGCODE(bool success =) strike->addGlyphToAtlas(target,
-                                                                    glyph,
-                                                                    *scaler,
-                                                                    this->maskFormat());
-                SkASSERT(success);
-            }
-            fFontCache->addGlyphToBulkAndSetUseToken(info->bulkUseToken(), glyph,
-                                                     target->currentToken());
-        }
-
-        intptr_t vertex = reinterpret_cast<intptr_t>(blob->fVertices);
-        vertex += info->vertexStartIndex();
-        vertex += vertexStride * glyphIdx * GrAtlasTextBatch::kVerticesPerGlyph;
-        regen_vertices<regenPos, regenCol, regenTexCoords>(vertex, glyph, vertexStride,
-                                                           this->usesDistanceFields(), transX,
-                                                           transY, color);
-        flushInfo->fGlyphsToFlush++;
-    }
-
-    
-    info->setColor(color);
-    if (regenTexCoords) {
-        if (regenGlyphs) {
-            info->setStrike(strike);
-        }
-        info->setAtlasGeneration(brokenRun ? GrBatchAtlas::kInvalidAtlasGeneration :
-                                             fFontCache->atlasGeneration(this->maskFormat()));
-    }
-}
 
 
 static inline GrColor skcolor_to_grcolor_nopremultiply(SkColor c) {
@@ -231,16 +34,16 @@ SkString GrAtlasTextBatch::dumpInfo() const {
         str.appendf("%d: Color: 0x%08x Trans: %.2f,%.2f Runs: %d\n",
                     i,
                     fGeoData[i].fColor,
-                    fGeoData[i].fTransX,
-                    fGeoData[i].fTransY,
-                    fGeoData[i].fBlob->fRunCount);
+                    fGeoData[i].fX,
+                    fGeoData[i].fY,
+                    fGeoData[i].fBlob->runCount());
     }
 
     str.append(INHERITED::dumpInfo());
     return str;
 }
 
-void GrAtlasTextBatch::computePipelineOptimizations(GrInitInvariantOutput* color, 
+void GrAtlasTextBatch::computePipelineOptimizations(GrInitInvariantOutput* color,
                                                     GrInitInvariantOutput* coverage,
                                                     GrBatchToXPOverrides* overrides) const {
     if (kColorBitmapMask_MaskType == fMaskType) {
@@ -277,26 +80,6 @@ void GrAtlasTextBatch::initBatchTracker(const GrXPOverridesForBatch& overrides) 
     fBatch.fCoverageIgnored = !overrides.readsCoverage();
 }
 
-enum RegenMask {
-    kNoRegen    = 0x0,
-    kRegenPos   = 0x1,
-    kRegenCol   = 0x2,
-    kRegenTex   = 0x4,
-    kRegenGlyph = 0x8 | kRegenTex, 
-
-    
-    kRegenPosCol = kRegenPos | kRegenCol,
-    kRegenPosTex = kRegenPos | kRegenTex,
-    kRegenPosTexGlyph = kRegenPos | kRegenGlyph,
-    kRegenPosColTex = kRegenPos | kRegenCol | kRegenTex,
-    kRegenPosColTexGlyph = kRegenPos | kRegenCol | kRegenGlyph,
-    kRegenColTex = kRegenCol | kRegenTex,
-    kRegenColTexGlyph = kRegenCol | kRegenGlyph,
-};
-
-#define REGEN_ARGS target, &flushInfo, blob, &run, &info, &cache, &typeface, &scaler, &desc, gp, \
-                   glyphCount, vertexStride, args.fColor, args.fTransX, args.fTransY
-
 void GrAtlasTextBatch::onPrepareDraws(Target* target) const {
     
     
@@ -314,29 +97,27 @@ void GrAtlasTextBatch::onPrepareDraws(Target* target) const {
 
     GrMaskFormat maskFormat = this->maskFormat();
 
-    SkAutoTUnref<const GrGeometryProcessor> gp;
+    FlushInfo flushInfo;
     if (this->usesDistanceFields()) {
-        gp.reset(this->setupDfProcessor(this->viewMatrix(), fFilteredColor, this->color(),
-                                        texture));
+        flushInfo.fGeometryProcessor.reset(
+            this->setupDfProcessor(this->viewMatrix(), fFilteredColor, this->color(), texture));
     } else {
         GrTextureParams params(SkShader::kClamp_TileMode, GrTextureParams::kNone_FilterMode);
-        gp.reset(GrBitmapTextGeoProc::Create(this->color(),
-                                             texture,
-                                             params,
-                                             maskFormat,
-                                             localMatrix,
-                                             this->usesLocalCoords()));
+        flushInfo.fGeometryProcessor.reset(
+            GrBitmapTextGeoProc::Create(this->color(),
+                                        texture,
+                                        params,
+                                        maskFormat,
+                                        localMatrix,
+                                        this->usesLocalCoords()));
     }
 
-    FlushInfo flushInfo;
     flushInfo.fGlyphsToFlush = 0;
-    size_t vertexStride = gp->getVertexStride();
+    size_t vertexStride = flushInfo.fGeometryProcessor->getVertexStride();
     SkASSERT(vertexStride == GrAtlasTextBlob::GetVertexStride(maskFormat));
 
-    target->initDraw(gp, this->pipeline());
-
     int glyphCount = this->numGlyphs();
-    const GrVertexBuffer* vertexBuffer;
+    const GrBuffer* vertexBuffer;
 
     void* vertices = target->makeVertexSpace(vertexStride,
                                              glyphCount * kVerticesPerGlyph,
@@ -358,64 +139,33 @@ void GrAtlasTextBatch::onPrepareDraws(Target* target) const {
     GrFontScaler* scaler = nullptr;
     SkTypeface* typeface = nullptr;
 
+    GrBlobRegenHelper helper(this, target, &flushInfo);
+
     for (int i = 0; i < fGeoCount; i++) {
         const Geometry& args = fGeoData[i];
         Blob* blob = args.fBlob;
-        Run& run = blob->fRuns[args.fRun];
-        TextInfo& info = run.fSubRunInfo[args.fSubRun];
+        size_t byteCount;
+        void* blobVertices;
+        int subRunGlyphCount;
+        blob->regenInBatch(target, fFontCache, &helper, args.fRun, args.fSubRun, &cache,
+                           &typeface, &scaler, &desc, vertexStride, args.fViewMatrix, args.fX,
+                           args.fY, args.fColor, &blobVertices, &byteCount, &subRunGlyphCount);
 
-        uint64_t currentAtlasGen = fFontCache->atlasGeneration(maskFormat);
+        
+        memcpy(currVertex, blobVertices, byteCount);
 
+#ifdef SK_DEBUG
         
-        
-        
-        
-        
-        
-        
-        
-        bool regenerateGlyphs = info.strike()->isAbandoned();
-        bool regenerateTextureCoords = info.atlasGeneration() != currentAtlasGen ||
-                                       regenerateGlyphs;
-        bool regenerateColors = kARGB_GrMaskFormat != maskFormat &&
-                                info.color() != args.fColor;
-        bool regeneratePositions = args.fTransX != 0.f || args.fTransY != 0.f;
-        int glyphCount = info.glyphCount();
+        SkRect rect;
+        rect.setLargestInverted();
+        SkPoint* vertex = (SkPoint*) ((char*)blobVertices);
+        rect.growToInclude(vertex, vertexStride, kVerticesPerGlyph * subRunGlyphCount);
 
-        uint32_t regenMaskBits = kNoRegen;
-        regenMaskBits |= regeneratePositions ? kRegenPos : 0;
-        regenMaskBits |= regenerateColors ? kRegenCol : 0;
-        regenMaskBits |= regenerateTextureCoords ? kRegenTex : 0;
-        regenMaskBits |= regenerateGlyphs ? kRegenGlyph : 0;
-        RegenMask regenMask = (RegenMask)regenMaskBits;
-
-        switch (regenMask) {
-            case kRegenPos: this->regenBlob<true, false, false, false>(REGEN_ARGS); break;
-            case kRegenCol: this->regenBlob<false, true, false, false>(REGEN_ARGS); break;
-            case kRegenTex: this->regenBlob<false, false, true, false>(REGEN_ARGS); break;
-            case kRegenGlyph: this->regenBlob<false, false, true, true>(REGEN_ARGS); break;
-
-            
-            case kRegenPosCol: this->regenBlob<true, true, false, false>(REGEN_ARGS); break;
-            case kRegenPosTex: this->regenBlob<true, false, true, false>(REGEN_ARGS); break;
-            case kRegenPosTexGlyph: this->regenBlob<true, false, true, true>(REGEN_ARGS); break;
-            case kRegenPosColTex: this->regenBlob<true, true, true, false>(REGEN_ARGS); break;
-            case kRegenPosColTexGlyph: this->regenBlob<true, true, true, true>(REGEN_ARGS); break;
-            case kRegenColTex: this->regenBlob<false, true, true, false>(REGEN_ARGS); break;
-            case kRegenColTexGlyph: this->regenBlob<false, true, true, true>(REGEN_ARGS); break;
-            case kNoRegen:
-                flushInfo.fGlyphsToFlush += glyphCount;
-
-                
-                
-                fFontCache->setUseTokenBulk(*info.bulkUseToken(), target->currentToken(),
-                                            maskFormat);
-                break;
+        if (this->usesDistanceFields()) {
+            args.fViewMatrix.mapRect(&rect);
         }
-
-        
-        size_t byteCount = info.byteCount();
-        memcpy(currVertex, blob->fVertices + info.vertexStartIndex(), byteCount);
+        SkASSERT(fBounds.contains(rect));
+#endif
 
         currVertex += byteCount;
     }
@@ -428,13 +178,14 @@ void GrAtlasTextBatch::onPrepareDraws(Target* target) const {
 }
 
 void GrAtlasTextBatch::flush(GrVertexBatch::Target* target, FlushInfo* flushInfo) const {
-    GrVertices vertices;
-    int maxGlyphsPerDraw = flushInfo->fIndexBuffer->maxQuads();
-    vertices.initInstanced(kTriangles_GrPrimitiveType, flushInfo->fVertexBuffer,
-                           flushInfo->fIndexBuffer, flushInfo->fVertexOffset,
-                           kVerticesPerGlyph, kIndicesPerGlyph, flushInfo->fGlyphsToFlush,
-                           maxGlyphsPerDraw);
-    target->draw(vertices);
+    GrMesh mesh;
+    int maxGlyphsPerDraw =
+        static_cast<int>(flushInfo->fIndexBuffer->gpuMemorySize() / sizeof(uint16_t) / 6);
+    mesh.initInstanced(kTriangles_GrPrimitiveType, flushInfo->fVertexBuffer,
+                       flushInfo->fIndexBuffer, flushInfo->fVertexOffset,
+                       kVerticesPerGlyph, kIndicesPerGlyph, flushInfo->fGlyphsToFlush,
+                       maxGlyphsPerDraw);
+    target->draw(flushInfo->fGeometryProcessor, mesh);
     flushInfo->fVertexOffset += kVerticesPerGlyph * flushInfo->fGlyphsToFlush;
     flushInfo->fGlyphsToFlush = 0;
 }
@@ -509,11 +260,11 @@ GrGeometryProcessor* GrAtlasTextBatch::setupDfProcessor(const SkMatrix& viewMatr
     bool isLCD = this->isLCD();
     
     uint32_t flags = viewMatrix.isSimilarity() ? kSimilarity_DistanceFieldEffectFlag : 0;
+    flags |= viewMatrix.isScaleTranslate() ? kScaleOnly_DistanceFieldEffectFlag : 0;
 
     
     if (isLCD) {
         flags |= kUseLCD_DistanceFieldEffectFlag;
-        flags |= viewMatrix.rectStaysRect() ? kRectToRect_DistanceFieldEffectFlag : 0;
         flags |= fUseBGR ? kBGR_DistanceFieldEffectFlag : 0;
 
         GrColor colorNoPreMul = skcolor_to_grcolor_nopremultiply(filteredColor);
@@ -557,4 +308,8 @@ GrGeometryProcessor* GrAtlasTextBatch::setupDfProcessor(const SkMatrix& viewMatr
 #endif
     }
 
+}
+
+void GrBlobRegenHelper::flush() {
+    fBatch->flush(fTarget, fFlushInfo);
 }

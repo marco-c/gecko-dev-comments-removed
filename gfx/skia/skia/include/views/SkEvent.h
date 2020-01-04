@@ -214,6 +214,13 @@ public:
     void postTime(SkMSec time);
 
     
+
+
+
+
+    static SkMSec GetMSecsSinceStartup();
+
+    
     
     
 

@@ -61,13 +61,12 @@ public:
     void set4fv(UniformHandle, int arrayCount, const float v[]) const override;
     
     
+    void setMatrix2f(UniformHandle, const float matrix[]) const override;
     void setMatrix3f(UniformHandle, const float matrix[]) const override;
     void setMatrix4f(UniformHandle, const float matrix[]) const override;
+    void setMatrix2fv(UniformHandle, int arrayCount, const float matrices[]) const override;
     void setMatrix3fv(UniformHandle, int arrayCount, const float matrices[]) const override;
     void setMatrix4fv(UniformHandle, int arrayCount, const float matrices[]) const override;
-
-    
-    void setSkMatrix(UniformHandle, const SkMatrix&) const override;
 
     
     void setPathFragmentInputTransform(VaryingHandle u, int components,
@@ -99,6 +98,9 @@ private:
     };
 
     SkDEBUGCODE(void printUnused(const Uniform&) const;)
+
+    template<int N> inline void setMatrices(UniformHandle, int arrayCount,
+                                            const float matrices[]) const;
 
     SkTArray<Uniform, true> fUniforms;
     SkTArray<PathProcVarying, true> fPathProcVaryings;

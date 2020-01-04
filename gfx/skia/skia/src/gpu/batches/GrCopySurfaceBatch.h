@@ -17,6 +17,16 @@ class GrCopySurfaceBatch final : public GrBatch {
 public:
     DEFINE_BATCH_CLASS_ID
 
+    
+
+
+    static bool ClipSrcRectAndDstPoint(const GrSurface* dst,
+                                       const GrSurface* src,
+                                       const SkIRect& srcRect,
+                                       const SkIPoint& dstPoint,
+                                       SkIRect* clippedSrcRect,
+                                       SkIPoint* clippedDstPoint);
+
     static GrBatch* Create(GrSurface* dst, GrSurface* src, const SkIRect& srcRect,
                            const SkIPoint& dstPoint);
 

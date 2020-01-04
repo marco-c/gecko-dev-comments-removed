@@ -28,7 +28,7 @@ public:
 #endif 
     };
 
-    void detach();
+    void release();
     bool attach(SkBackEndTypes attachType, int msaaSampleCount, AttachmentInfo*);
     void present();
     bool makeFullscreen();

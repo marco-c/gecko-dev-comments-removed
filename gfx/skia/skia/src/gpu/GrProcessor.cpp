@@ -48,9 +48,9 @@ GrProcessorTestFactory<GrGeometryProcessor>::GetFactories() {
 
 
 
-static const int kFPFactoryCount = 38;
+static const int kFPFactoryCount = 39;
 static const int kGPFactoryCount = 14;
-static const int kXPFactoryCount = 5;
+static const int kXPFactoryCount = 6;
 
 template<>
 void GrProcessorTestFactory<GrFragmentProcessor>::VerifyFactoryCount() {
@@ -81,7 +81,7 @@ void GrProcessorTestFactory<GrXPFactory>::VerifyFactoryCount() {
 
 
 namespace {
-SK_DECLARE_STATIC_SPINLOCK(gProcessorSpinlock);
+static SkSpinlock gProcessorSpinlock;
 class MemoryPoolAccessor {
 public:
     MemoryPoolAccessor() { gProcessorSpinlock.acquire(); }

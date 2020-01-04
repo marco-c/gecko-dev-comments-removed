@@ -144,85 +144,46 @@ void SkResizeFilter::computeFilters(int srcSize,
   
   
   
-#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
-  int destLimit = SkScalarTruncToInt(SkScalarCeilToScalar(destSubsetHi)
-        - SkScalarFloorToScalar(destSubsetLo));
-#else
   destSubsetLo = SkScalarFloorToScalar(destSubsetLo);
   destSubsetHi = SkScalarCeilToScalar(destSubsetHi);
   float srcPixel = (destSubsetLo + 0.5f) * invScale;
   int destLimit = SkScalarTruncToInt(destSubsetHi - destSubsetLo);
-#endif
   output->reserveAdditional(destLimit, SkScalarCeilToInt(destLimit * srcSupport * 2));
-#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
-  for (int destSubsetI = SkScalarFloorToInt(destSubsetLo); destSubsetI < SkScalarCeilToInt(destSubsetHi);
-       destSubsetI++)
-#else
   for (int destI = 0; destI < destLimit; srcPixel += invScale, destI++)
-#endif
   {
     
-#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
-    float srcPixel = (static_cast<float>(destSubsetI) + 0.5f) * invScale;
-    int srcBegin = SkTMax(0, SkScalarFloorToInt(srcPixel - srcSupport));
-    int srcEnd = SkTMin(srcSize - 1, SkScalarCeilToInt(srcPixel + srcSupport));
-#else
     float srcBegin = SkTMax(0.f, SkScalarFloorToScalar(srcPixel - srcSupport));
     float srcEnd = SkTMin(srcSize - 1.f, SkScalarCeilToScalar(srcPixel + srcSupport));
-#endif
 
     
     
-#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
-    float filterSum = 0.0f;  
-    int filterCount = srcEnd - srcBegin + 1;
-    filterValuesArray.reset(filterCount);
-    for (int curFilterPixel = srcBegin; curFilterPixel <= srcEnd;
-         curFilterPixel++) {
-#endif
 
-
-
-
-
-
-
-#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
-      float srcFilterDist =
-          ((static_cast<float>(curFilterPixel) + 0.5f) - srcPixel);
-
-      
-      float destFilterDist = srcFilterDist * clampedScale;
-
-      
-      float filterValue = fBitmapFilter->evaluate(destFilterDist);
-      filterValuesArray[curFilterPixel - srcBegin] = filterValue;
-
-      filterSum += filterValue;
-    }
-#else
+    
+    
+    
+    
+    
+    
+    
     float destFilterDist = (srcBegin + 0.5f - srcPixel) * clampedScale;
     int filterCount = SkScalarTruncToInt(srcEnd - srcBegin) + 1;
-    SkASSERT(filterCount > 0);
+    if (filterCount <= 0) {
+        
+        return;
+    }
     filterValuesArray.reset(filterCount);
     float filterSum = fBitmapFilter->evaluate_n(destFilterDist, clampedScale, filterCount,
                                                 filterValuesArray.begin());
-#endif
+
     
     
     int fixedSum = 0;
     fixedFilterValuesArray.reset(filterCount);
     const float* filterValues = filterValuesArray.begin();
     SkConvolutionFilter1D::ConvolutionFixed* fixedFilterValues = fixedFilterValuesArray.begin();
-#ifndef SK_SUPPORT_LEGACY_BITMAP_FILTER
     float invFilterSum = 1 / filterSum;
-#endif
     for (int fixedI = 0; fixedI < filterCount; fixedI++) {
-#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
-      int curFixed = SkConvolutionFilter1D::FloatToFixed(filterValues[fixedI] / filterSum);
-#else
       int curFixed = SkConvolutionFilter1D::FloatToFixed(filterValues[fixedI] * invFilterSum);
-#endif
       fixedSum += curFixed;
       fixedFilterValues[fixedI] = SkToS16(curFixed);
     }
@@ -237,11 +198,7 @@ void SkResizeFilter::computeFilters(int srcSize,
     fixedFilterValues[filterCount / 2] += leftovers;
 
     
-#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
-    output->AddFilter(srcBegin, fixedFilterValues, filterCount);
-#else
     output->AddFilter(SkScalarFloorToInt(srcBegin), fixedFilterValues, filterCount);
-#endif
   }
 
   if (convolveProcs.fApplySIMDPadding) {
@@ -306,4 +263,3 @@ bool SkBitmapScaler::Resize(SkBitmap* resultPtr, const SkPixmap& source, ResizeM
     SkASSERT(resultPtr->getPixels());
     return true;
 }
-

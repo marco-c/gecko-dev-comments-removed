@@ -5,8 +5,8 @@
 
 
 
+#include "SkImageEncoder.h"
 #include "SkForceLinking.h"
-#include "SkImageDecoder.h"
 
 
 
@@ -14,26 +14,22 @@
 int SkForceLinking(bool doNotPassTrue) {
     if (doNotPassTrue) {
         SkASSERT(false);
-        CreateJPEGImageDecoder();
-        CreateWEBPImageDecoder();
-        CreateBMPImageDecoder();
-        CreateICOImageDecoder();
-        CreateWBMPImageDecoder();
+        CreateJPEGImageEncoder();
+        CreateWEBPImageEncoder();
+
         
 #ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
-        CreatePKMImageDecoder();
-        CreateKTXImageDecoder();
-        CreateASTCImageDecoder();
+        CreateKTXImageEncoder();
 #endif
-        
+
 #if !defined(SK_BUILD_FOR_MAC) && !defined(SK_BUILD_FOR_WIN) && !defined(SK_BUILD_FOR_IOS)
-        CreateGIFImageDecoder();
+        CreatePNGImageEncoder();
 #endif
-#if !defined(SK_BUILD_FOR_MAC) && !defined(SK_BUILD_FOR_WIN) && !defined(SK_BUILD_FOR_IOS)
-        CreatePNGImageDecoder();
+#if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
+        CreatePNGImageEncoder_CG();
 #endif
-#if defined(SK_BUILD_FOR_IOS)
-        CreatePNGImageEncoder_IOS();
+#if defined(SK_BUILD_FOR_WIN)
+        CreateImageEncoder_WIC();
 #endif
         return -1;
     }

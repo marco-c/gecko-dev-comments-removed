@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkFlate_DEFINED
 #define SkFlate_DEFINED
 
@@ -20,11 +19,22 @@
 
 
 
-
 class SkDeflateWStream final : public SkWStream {
 public:
     
-    SkDeflateWStream(SkWStream*);
+
+
+
+
+
+
+
+
+
+
+    SkDeflateWStream(SkWStream*,
+                     int compressionLevel = -1,
+                     bool gzip = false);
 
     
     ~SkDeflateWStream();
@@ -39,7 +49,7 @@ public:
 
 private:
     struct Impl;
-    SkAutoTDelete<Impl> fImpl;
+    std::unique_ptr<Impl> fImpl;
 };
 
 #endif  

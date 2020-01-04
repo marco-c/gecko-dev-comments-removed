@@ -15,15 +15,18 @@
 
 
 
-class GrNonAtomicRef : public SkNoncopyable {
+template<typename TSubclass> class GrNonAtomicRef : public SkNoncopyable {
 public:
     GrNonAtomicRef() : fRefCnt(1) {}
-    virtual ~GrNonAtomicRef() {
+
+#ifdef SK_DEBUG
+    ~GrNonAtomicRef() {
         
         SkASSERT((0 == fRefCnt || 1 == fRefCnt));
         
-        SkDEBUGCODE(fRefCnt = -10;)
+        fRefCnt = -10;
     }
+#endif
 
     void ref() const {
         
@@ -35,7 +38,7 @@ public:
         SkASSERT(fRefCnt > 0);
         --fRefCnt;
         if (0 == fRefCnt) {
-            delete this;
+            GrTDeleteNonAtomicRef(static_cast<const TSubclass*>(this));
             return;
         }
     }
@@ -45,5 +48,9 @@ private:
 
     typedef SkNoncopyable INHERITED;
 };
+
+template<typename T> inline void GrTDeleteNonAtomicRef(const T* ref) {
+    delete ref;
+}
 
 #endif

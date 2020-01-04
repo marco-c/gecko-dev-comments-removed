@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkCubicClipper.h"
 #include "SkGeometry.h"
 

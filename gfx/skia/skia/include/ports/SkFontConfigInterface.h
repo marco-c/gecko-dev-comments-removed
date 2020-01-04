@@ -11,7 +11,6 @@
 #include "SkDataTable.h"
 #include "SkFontStyle.h"
 #include "SkRefCnt.h"
-#include "SkTArray.h"
 #include "SkTypeface.h"
 
 struct SkBaseMutex;
@@ -116,11 +115,6 @@ public:
     
 
     virtual SkDataTable* getFamilyNames() { return SkDataTable::NewEmpty(); }
-    virtual bool matchFamilySet(const char[] ,
-                                SkString* ,
-                                SkTArray<FontIdentity>*) {
-        return false;
-    }
     typedef SkRefCnt INHERITED;
 };
 

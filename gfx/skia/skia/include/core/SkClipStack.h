@@ -13,7 +13,6 @@
 #include "SkRect.h"
 #include "SkRRect.h"
 #include "SkRegion.h"
-#include "SkTDArray.h"
 #include "SkTLazy.h"
 
 class SkCanvasClipVisitor;
@@ -98,6 +97,9 @@ public:
 
         
         void asPath(SkPath* path) const;
+
+        
+        const SkRRect& asRRect() const { SkASSERT(kPath_Type != fType); return fRRect; }
 
         
 

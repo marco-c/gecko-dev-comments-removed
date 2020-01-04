@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkCubicClipper_DEFINED
 #define SkCubicClipper_DEFINED
 

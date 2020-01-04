@@ -8,7 +8,7 @@
 #include "GrClipMaskManager.h"
 #include "GrCaps.h"
 #include "GrDrawingManager.h"
-#include "GrDrawContext.h"
+#include "GrDrawContextPriv.h"
 #include "GrDrawTarget.h"
 #include "GrGpuResourcePriv.h"
 #include "GrPaint.h"
@@ -86,9 +86,9 @@ bool GrClipMaskManager::PathNeedsSWRenderer(GrContext* context,
             path.toggleInverseFillType();
         }
         GrStrokeInfo stroke(SkStrokeRec::kFill_InitStyle);
-    
+
         GrPathRendererChain::DrawType type;
-        
+
         if (needsStencil) {
             type = element->isAA()
                             ? GrPathRendererChain::kStencilAndColorAntiAlias_DrawType
@@ -96,9 +96,9 @@ bool GrClipMaskManager::PathNeedsSWRenderer(GrContext* context,
         } else {
             type = element->isAA()
                             ? GrPathRendererChain::kColorAntiAlias_DrawType
-                            : GrPathRendererChain::kColor_DrawType;    
+                            : GrPathRendererChain::kColor_DrawType;
         }
-    
+
         GrPathRenderer::CanDrawPathArgs canDrawArgs;
         canDrawArgs.fShaderCaps = context->caps()->shaderCaps();
         canDrawArgs.fViewMatrix = &viewMatrix;
@@ -159,7 +159,8 @@ GrResourceProvider* GrClipMaskManager::resourceProvider() {
 
 
 
-bool GrClipMaskManager::useSWOnlyPath(const GrPipelineBuilder& pipelineBuilder,
+bool GrClipMaskManager::UseSWOnlyPath(GrContext* context,
+                                      const GrPipelineBuilder& pipelineBuilder,
                                       const GrRenderTarget* rt,
                                       const SkVector& clipToMaskOffset,
                                       const GrReducedClip::ElementList& elements) {
@@ -176,10 +177,10 @@ bool GrClipMaskManager::useSWOnlyPath(const GrPipelineBuilder& pipelineBuilder,
 
         SkRegion::Op op = element->getOp();
         bool invert = element->isInverseFilled();
-        bool needsStencil = invert || 
+        bool needsStencil = invert ||
                             SkRegion::kIntersect_Op == op || SkRegion::kReverseDifference_Op == op;
 
-        if (PathNeedsSWRenderer(this->getContext(), pipelineBuilder.getStencil().isDisabled(),
+        if (PathNeedsSWRenderer(context, pipelineBuilder.getStencil().isDisabled(),
                                 rt, translate, element, nullptr, needsStencil)) {
             return true;
         }
@@ -316,6 +317,42 @@ static void add_rect_to_clip(const GrClip& clip, const SkRect& devRect, GrClip* 
     }
 }
 
+bool GrClipMaskManager::setupScissorClip(const GrPipelineBuilder& pipelineBuilder,
+                                         GrPipelineBuilder::AutoRestoreStencil* ars,
+                                         const SkIRect& clipScissor,
+                                         const SkRect* devBounds,
+                                         GrAppliedClip* out) {
+    if (kRespectClip_StencilClipMode == fClipMode) {
+        fClipMode = kIgnoreClip_StencilClipMode;
+    }
+
+    GrRenderTarget* rt = pipelineBuilder.getRenderTarget();
+
+    SkIRect clipSpaceRTIBounds = SkIRect::MakeWH(rt->width(), rt->height());
+    SkIRect devBoundsScissor;
+    const SkIRect* scissor = &clipScissor;
+    bool doDevBoundsClip = fDebugClipBatchToBounds && devBounds;
+    if (doDevBoundsClip) {
+        devBounds->roundOut(&devBoundsScissor);
+        if (devBoundsScissor.intersect(clipScissor)) {
+            scissor = &devBoundsScissor;
+        }
+    }
+
+    if (scissor->contains(clipSpaceRTIBounds)) {
+        
+        this->setPipelineBuilderStencil(pipelineBuilder, ars);
+        return true;
+    }
+
+    if (clipSpaceRTIBounds.intersect(*scissor)) {
+        out->fScissorState.set(clipSpaceRTIBounds);
+        this->setPipelineBuilderStencil(pipelineBuilder, ars);
+        return true;
+    }
+    return false;
+}
+
 
 
 
@@ -368,7 +405,7 @@ bool GrClipMaskManager::setupClipping(const GrPipelineBuilder& pipelineBuilder,
         case GrClip::kClipStack_ClipType: {
             clipSpaceRTIBounds.offset(clip.origin());
             SkIRect clipSpaceReduceQueryBounds;
-#define DISABLE_DEV_BOUNDS_FOR_CLIP_REDUCTION 1
+#define DISABLE_DEV_BOUNDS_FOR_CLIP_REDUCTION 0
             if (devBounds && !DISABLE_DEV_BOUNDS_FOR_CLIP_REDUCTION) {
                 SkIRect devIBounds = devBounds->roundOut();
                 devIBounds.offset(clip.origin());
@@ -439,20 +476,22 @@ bool GrClipMaskManager::setupClipping(const GrPipelineBuilder& pipelineBuilder,
             SkIntToScalar(-clipSpaceIBounds.fTop)
         };
 
-        if (this->useSWOnlyPath(pipelineBuilder, rt, clipToMaskOffset, elements)) {
+        if (UseSWOnlyPath(this->getContext(), pipelineBuilder, rt, clipToMaskOffset, elements)) {
             
             
-            result.reset(this->createSoftwareClipMask(genID,
-                                                      initialState,
-                                                      elements,
-                                                      clipToMaskOffset,
-                                                      clipSpaceIBounds));
+            result.reset(CreateSoftwareClipMask(this->getContext(),
+                                                genID,
+                                                initialState,
+                                                elements,
+                                                clipToMaskOffset,
+                                                clipSpaceIBounds));
         } else {
-            result.reset(this->createAlphaClipMask(genID,
-                                                   initialState,
-                                                   elements,
-                                                   clipToMaskOffset,
-                                                   clipSpaceIBounds));
+            result.reset(CreateAlphaClipMask(this->getContext(),
+                                             genID,
+                                             initialState,
+                                             elements,
+                                             clipToMaskOffset,
+                                             clipSpaceIBounds));
             
             SkASSERT(result);
         }
@@ -488,93 +527,67 @@ bool GrClipMaskManager::setupClipping(const GrPipelineBuilder& pipelineBuilder,
     return true;
 }
 
-namespace {
-
-
-void set_coverage_drawing_xpf(SkRegion::Op op, bool invertCoverage,
-                              GrPipelineBuilder* pipelineBuilder) {
-    SkASSERT(op <= SkRegion::kLastOp);
-    pipelineBuilder->setCoverageSetOpXPFactory(op, invertCoverage);
-}
-}
-
-
-bool GrClipMaskManager::drawElement(GrPipelineBuilder* pipelineBuilder,
-                                    const SkMatrix& viewMatrix,
-                                    GrTexture* target,
-                                    const SkClipStack::Element* element,
-                                    GrPathRenderer* pr) {
-
-    GrRenderTarget* rt = target->asRenderTarget();
-    pipelineBuilder->setRenderTarget(rt);
-
-    
-    
-    GrColor color = GrColor_WHITE;
+static bool stencil_element(GrDrawContext* dc,
+                            const SkIRect* scissorRect,
+                            const GrStencilSettings& ss,
+                            const SkMatrix& viewMatrix,
+                            const SkClipStack::Element* element) {
 
     
     switch (element->getType()) {
         case Element::kEmpty_Type:
             SkDEBUGFAIL("Should never get here with an empty element.");
             break;
-        case Element::kRect_Type: {
-            
-            
-            if (element->isAA()) {
-                SkRect devRect = element->getRect();
-                viewMatrix.mapRect(&devRect);
-
-                SkAutoTUnref<GrDrawBatch> batch(
-                        GrRectBatchFactory::CreateAAFill(color, viewMatrix, element->getRect(),
-                                                         devRect));
-
-                fDrawTarget->drawBatch(*pipelineBuilder, batch);
-            } else {
-                draw_non_aa_rect(fDrawTarget, *pipelineBuilder, color, viewMatrix,
-                                 element->getRect());
-            }
-            return true;
-        }
+        case Element::kRect_Type:
+            return dc->drawContextPriv().drawAndStencilRect(scissorRect, ss,
+                                                            element->getOp(),
+                                                            element->isInverseFilled(),
+                                                            element->isAA(),
+                                                            viewMatrix, element->getRect());
+            break;
         default: {
             SkPath path;
             element->asPath(&path);
             if (path.isInverseFillType()) {
                 path.toggleInverseFillType();
             }
-            GrStrokeInfo stroke(SkStrokeRec::kFill_InitStyle);
-            if (nullptr == pr) {
-                GrPathRendererChain::DrawType type;
-                type = element->isAA() ? GrPathRendererChain::kColorAntiAlias_DrawType :
-                                         GrPathRendererChain::kColor_DrawType;
 
-                GrPathRenderer::CanDrawPathArgs canDrawArgs;
-                canDrawArgs.fShaderCaps = this->getContext()->caps()->shaderCaps();
-                canDrawArgs.fViewMatrix = &viewMatrix;
-                canDrawArgs.fPath = &path;
-                canDrawArgs.fStroke = &stroke;
-                canDrawArgs.fAntiAlias = element->isAA();;
-                canDrawArgs.fIsStencilDisabled = pipelineBuilder->getStencil().isDisabled();
-                canDrawArgs.fIsStencilBufferMSAA = rt->isStencilBufferMultisampled();
-
-                pr = this->getContext()->drawingManager()->getPathRenderer(canDrawArgs, false, type);
-            }
-            if (nullptr == pr) {
-                return false;
-            }
-            GrPathRenderer::DrawPathArgs args;
-            args.fTarget = fDrawTarget;
-            args.fResourceProvider = this->getContext()->resourceProvider();
-            args.fPipelineBuilder = pipelineBuilder;
-            args.fColor = color;
-            args.fViewMatrix = &viewMatrix;
-            args.fPath = &path;
-            args.fStroke = &stroke;
-            args.fAntiAlias = element->isAA();
-            pr->drawPath(args);
+            return dc->drawContextPriv().drawAndStencilPath(scissorRect, ss,
+                                                            element->getOp(),
+                                                            element->isInverseFilled(),
+                                                            element->isAA(), viewMatrix, path);
             break;
         }
     }
-    return true;
+
+    return false;
+}
+
+static void draw_element(GrDrawContext* dc,
+                         const GrClip& clip, 
+                         const GrPaint &paint,
+                         const SkMatrix& viewMatrix,
+                         const SkClipStack::Element* element) {
+
+    
+    switch (element->getType()) {
+        case Element::kEmpty_Type:
+            SkDEBUGFAIL("Should never get here with an empty element.");
+            break;
+        case Element::kRect_Type:
+            dc->drawRect(clip, paint, viewMatrix, element->getRect());
+            break;
+        default: {
+            SkPath path;
+            element->asPath(&path);
+            if (path.isInverseFillType()) {
+                path.toggleInverseFillType();
+            }
+
+            dc->drawPath(clip, paint, viewMatrix, path, GrStrokeInfo::FillInfo());
+            break;
+        }
+    }
 }
 
 
@@ -588,32 +601,13 @@ static void GetClipMaskKey(int32_t clipGenID, const SkIRect& bounds, GrUniqueKey
     builder[2] = SkToU16(bounds.fTop) | (SkToU16(bounds.fBottom) << 16);
 }
 
-GrTexture* GrClipMaskManager::createCachedMask(int width, int height, const GrUniqueKey& key,
-                                               bool renderTarget) {
-    GrSurfaceDesc desc;
-    desc.fWidth = width;
-    desc.fHeight = height;
-    desc.fFlags = renderTarget ? kRenderTarget_GrSurfaceFlag : kNone_GrSurfaceFlags;
-    if (!renderTarget || this->caps()->isConfigRenderable(kAlpha_8_GrPixelConfig, false)) {
-        desc.fConfig = kAlpha_8_GrPixelConfig;
-    } else {
-        desc.fConfig = kRGBA_8888_GrPixelConfig;
-    }
-
-    GrTexture* texture = this->resourceProvider()->createApproxTexture(desc, 0);
-    if (!texture) {
-        return nullptr;
-    }
-    texture->resourcePriv().setUniqueKey(key);
-    return texture;
-}
-
-GrTexture* GrClipMaskManager::createAlphaClipMask(int32_t elementsGenID,
+GrTexture* GrClipMaskManager::CreateAlphaClipMask(GrContext* context,
+                                                  int32_t elementsGenID,
                                                   GrReducedClip::InitialState initialState,
                                                   const GrReducedClip::ElementList& elements,
                                                   const SkVector& clipToMaskOffset,
                                                   const SkIRect& clipSpaceIBounds) {
-    GrResourceProvider* resourceProvider = this->resourceProvider();
+    GrResourceProvider* resourceProvider = context->resourceProvider();
     GrUniqueKey key;
     GetClipMaskKey(elementsGenID, clipSpaceIBounds, &key);
     if (GrTexture* texture = resourceProvider->findAndRefTextureByUniqueKey(key)) {
@@ -621,15 +615,27 @@ GrTexture* GrClipMaskManager::createAlphaClipMask(int32_t elementsGenID,
     }
 
     
-    SkAutoTUnref<GrTexture> texture(this->createCachedMask(
-        clipSpaceIBounds.width(), clipSpaceIBounds.height(), key, true));
+    GrSurfaceDesc desc;
+    desc.fWidth = clipSpaceIBounds.width();
+    desc.fHeight = clipSpaceIBounds.height();
+    desc.fFlags = kRenderTarget_GrSurfaceFlag;
+    if (context->caps()->isConfigRenderable(kAlpha_8_GrPixelConfig, false)) {
+        desc.fConfig = kAlpha_8_GrPixelConfig;
+    } else {
+        desc.fConfig = kRGBA_8888_GrPixelConfig;
+    }
+
+    SkAutoTUnref<GrTexture> texture(resourceProvider->createApproxTexture(desc, 0));
     if (!texture) {
         return nullptr;
     }
 
-    
-    
-    const SkMatrix translate = SkMatrix::MakeTrans(clipToMaskOffset.fX, clipToMaskOffset.fY);
+    texture->resourcePriv().setUniqueKey(key);
+
+    SkAutoTUnref<GrDrawContext> dc(context->drawContext(texture->asRenderTarget()));
+    if (!dc) {
+        return nullptr;
+    }
 
     
     
@@ -637,16 +643,18 @@ GrTexture* GrClipMaskManager::createAlphaClipMask(int32_t elementsGenID,
 
     
     
-    fDrawTarget->clear(&maskSpaceIBounds,
-                       GrReducedClip::kAllIn_InitialState == initialState ? 0xffffffff : 0x00000000,
-                       true,
-                       texture->asRenderTarget());
+    dc->clear(&maskSpaceIBounds,
+              GrReducedClip::kAllIn_InitialState == initialState ? 0xffffffff : 0x00000000,
+              true);
+
+    
+    
+    const SkMatrix translate = SkMatrix::MakeTrans(clipToMaskOffset.fX, clipToMaskOffset.fY);
 
     
     
     
     
-    const GrClip clip(maskSpaceIBounds);
 
     
     for (GrReducedClip::ElementList::Iter iter = elements.headIter(); iter.get(); iter.next()) {
@@ -654,72 +662,58 @@ GrTexture* GrClipMaskManager::createAlphaClipMask(int32_t elementsGenID,
         SkRegion::Op op = element->getOp();
         bool invert = element->isInverseFilled();
         if (invert || SkRegion::kIntersect_Op == op || SkRegion::kReverseDifference_Op == op) {
-
-            GrPathRenderer* pr = GetPathRenderer(this->getContext(),
+#ifdef SK_DEBUG
+            GrPathRenderer* pr = GetPathRenderer(context,
                                                  texture, translate, element);
             if (Element::kRect_Type != element->getType() && !pr) {
                 
                 
                 
                 SkASSERT(0);
-                continue;
+            }
+#endif
+
+            
+            
+            GR_STATIC_CONST_SAME_STENCIL(kStencilInElement,
+                                         kReplace_StencilOp,
+                                         kReplace_StencilOp,
+                                         kAlways_StencilFunc,
+                                         0xffff,
+                                         0xffff,
+                                         0xffff)
+            if (!stencil_element(dc, &maskSpaceIBounds, kStencilInElement,
+                                 translate, element)) {
+                texture->resourcePriv().removeUniqueKey();
+                return nullptr;
             }
 
-            {
-                GrPipelineBuilder pipelineBuilder;
-
-                pipelineBuilder.setClip(clip);
-                pipelineBuilder.setRenderTarget(texture->asRenderTarget());
-                SkASSERT(pipelineBuilder.getStencil().isDisabled());
-
-                
-                
-                GR_STATIC_CONST_SAME_STENCIL(kStencilInElement,
-                                             kReplace_StencilOp,
-                                             kReplace_StencilOp,
-                                             kAlways_StencilFunc,
-                                             0xffff,
-                                             0xffff,
-                                             0xffff);
-                pipelineBuilder.setStencil(kStencilInElement);
-                set_coverage_drawing_xpf(op, invert, &pipelineBuilder);
-
-                if (!this->drawElement(&pipelineBuilder, translate, texture, element, pr)) {
-                    texture->resourcePriv().removeUniqueKey();
-                    return nullptr;
-                }
-            }
-
-            {
-                GrPipelineBuilder backgroundPipelineBuilder;
-                backgroundPipelineBuilder.setRenderTarget(texture->asRenderTarget());
-
-                set_coverage_drawing_xpf(op, !invert, &backgroundPipelineBuilder);
-                
-                GR_STATIC_CONST_SAME_STENCIL(kDrawOutsideElement,
-                                             kZero_StencilOp,
-                                             kZero_StencilOp,
-                                             kEqual_StencilFunc,
-                                             0xffff,
-                                             0x0000,
-                                             0xffff);
-                backgroundPipelineBuilder.setStencil(kDrawOutsideElement);
-
-                
-                draw_non_aa_rect(fDrawTarget, backgroundPipelineBuilder, GrColor_WHITE, translate,
-                                 SkRect::Make(clipSpaceIBounds));
+            
+            GR_STATIC_CONST_SAME_STENCIL(kDrawOutsideElement,
+                                         kZero_StencilOp,
+                                         kZero_StencilOp,
+                                         kEqual_StencilFunc,
+                                         0xffff,
+                                         0x0000,
+                                         0xffff);
+            if (!dc->drawContextPriv().drawAndStencilRect(&maskSpaceIBounds, kDrawOutsideElement,
+                                                          op, !invert, false,
+                                                          translate,
+                                                          SkRect::Make(clipSpaceIBounds))) {
+                texture->resourcePriv().removeUniqueKey();
+                return nullptr;
             }
         } else {
-            GrPipelineBuilder pipelineBuilder;
+            
+            GrPaint paint;
+            paint.setAntiAlias(element->isAA());
+            paint.setCoverageSetOpXPFactory(op, false);
 
-            
-            set_coverage_drawing_xpf(op, false, &pipelineBuilder);
-            
-            this->drawElement(&pipelineBuilder, translate, texture, element);
+            draw_element(dc, GrClip::WideOpen(), paint, translate, element);
         }
     }
 
-    return texture.detach();
+    return texture.release();
 }
 
 
@@ -1081,14 +1075,15 @@ void GrClipMaskManager::adjustStencilParams(GrStencilSettings* settings,
 }
 
 
-GrTexture* GrClipMaskManager::createSoftwareClipMask(int32_t elementsGenID,
+GrTexture* GrClipMaskManager::CreateSoftwareClipMask(GrContext* context,
+                                                     int32_t elementsGenID,
                                                      GrReducedClip::InitialState initialState,
                                                      const GrReducedClip::ElementList& elements,
                                                      const SkVector& clipToMaskOffset,
                                                      const SkIRect& clipSpaceIBounds) {
     GrUniqueKey key;
     GetClipMaskKey(elementsGenID, clipSpaceIBounds, &key);
-    GrResourceProvider* resourceProvider = this->resourceProvider();
+    GrResourceProvider* resourceProvider = context->resourceProvider();
     if (GrTexture* texture = resourceProvider->findAndRefTextureByUniqueKey(key)) {
         return texture;
     }
@@ -1097,7 +1092,7 @@ GrTexture* GrClipMaskManager::createSoftwareClipMask(int32_t elementsGenID,
     
     SkIRect maskSpaceIBounds = SkIRect::MakeWH(clipSpaceIBounds.width(), clipSpaceIBounds.height());
 
-    GrSWMaskHelper helper(this->getContext());
+    GrSWMaskHelper helper(context);
 
     
     
@@ -1141,11 +1136,17 @@ GrTexture* GrClipMaskManager::createSoftwareClipMask(int32_t elementsGenID,
     }
 
     
-    GrTexture* result = this->createCachedMask(clipSpaceIBounds.width(), clipSpaceIBounds.height(),
-                                               key, false);
-    if (nullptr == result) {
+    GrSurfaceDesc desc;
+    desc.fWidth = clipSpaceIBounds.width();
+    desc.fHeight = clipSpaceIBounds.height();
+    desc.fConfig = kAlpha_8_GrPixelConfig;
+
+    GrTexture* result = context->resourceProvider()->createApproxTexture(desc, 0);
+    if (!result) {
         return nullptr;
     }
+    result->resourcePriv().setUniqueKey(key);
+
     helper.toTexture(result);
 
     return result;

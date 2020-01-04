@@ -6,7 +6,8 @@
 
 
 #include "SkJpegDecoderMgr.h"
-#include "SkJpegUtility_codec.h"
+
+#include "SkJpegUtility.h"
 
 
 

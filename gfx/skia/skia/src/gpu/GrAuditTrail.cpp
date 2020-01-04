@@ -6,14 +6,154 @@
 
 
 #include "GrAuditTrail.h"
+#include "batches/GrBatch.h"
 
-void GrAuditTrail::JsonifyTArray(SkString* json, const char* name, const FrameArray& array) {
+const int GrAuditTrail::kGrAuditTrailInvalidID = -1;
+
+void GrAuditTrail::addBatch(const GrBatch* batch) {
+    SkASSERT(fEnabled);
+    Batch* auditBatch = new Batch;
+    fBatchPool.emplace_back(auditBatch);
+    auditBatch->fName = batch->name();
+    auditBatch->fBounds = batch->bounds();
+    auditBatch->fClientID = kGrAuditTrailInvalidID;
+    auditBatch->fBatchListID = kGrAuditTrailInvalidID;
+    auditBatch->fChildID = kGrAuditTrailInvalidID;
+
+    
+    auditBatch->fStackTrace = fCurrentStackTrace;
+    fCurrentStackTrace.reset();
+
+    if (fClientID != kGrAuditTrailInvalidID) {
+        auditBatch->fClientID = fClientID;
+        Batches** batchesLookup = fClientIDLookup.find(fClientID);
+        Batches* batches = nullptr;
+        if (!batchesLookup) {
+            batches = new Batches;
+            fClientIDLookup.set(fClientID, batches);
+        } else {
+            batches = *batchesLookup;
+        }
+
+        batches->push_back(auditBatch);
+    }
+
+    
+    
+    auditBatch->fBatchListID = fBatchList.count();
+    auditBatch->fChildID = 0;
+
+    
+    fIDLookup.set(batch->uniqueID(), auditBatch->fBatchListID);
+    BatchNode* batchNode = new BatchNode;
+    batchNode->fBounds = batch->bounds();
+    batchNode->fRenderTargetUniqueID = batch->renderTargetUniqueID();
+    batchNode->fChildren.push_back(auditBatch);
+    fBatchList.emplace_back(batchNode);
+}
+
+void GrAuditTrail::batchingResultCombined(const GrBatch* consumer, const GrBatch* consumed) {
+    
+    int* indexPtr = fIDLookup.find(consumer->uniqueID());
+    SkASSERT(indexPtr);
+    int index = *indexPtr;
+    SkASSERT(index < fBatchList.count() && fBatchList[index]);
+    BatchNode& consumerBatch = *fBatchList[index];
+
+    
+    int* consumedPtr = fIDLookup.find(consumed->uniqueID());
+    SkASSERT(consumedPtr);
+    int consumedIndex = *consumedPtr;
+    SkASSERT(consumedIndex < fBatchList.count() && fBatchList[consumedIndex]);
+    BatchNode& consumedBatch = *fBatchList[consumedIndex];
+
+    
+    for (int i = 0; i < consumedBatch.fChildren.count(); i++) {
+        Batch* childBatch = consumedBatch.fChildren[i];
+
+        
+        childBatch->fBatchListID = index;
+        childBatch->fChildID = consumerBatch.fChildren.count();
+        consumerBatch.fChildren.push_back(childBatch);
+    }
+
+    
+    consumerBatch.fBounds = consumer->bounds();
+
+    
+    
+    fBatchList[consumedIndex].reset(nullptr);
+    fIDLookup.remove(consumed->uniqueID());
+}
+
+void GrAuditTrail::copyOutFromBatchList(BatchInfo* outBatchInfo, int batchListID) {
+    SkASSERT(batchListID < fBatchList.count());
+    const BatchNode* bn = fBatchList[batchListID];
+    SkASSERT(bn);
+    outBatchInfo->fBounds = bn->fBounds;
+    outBatchInfo->fRenderTargetUniqueID = bn->fRenderTargetUniqueID;
+    for (int j = 0; j < bn->fChildren.count(); j++) {
+        BatchInfo::Batch& outBatch = outBatchInfo->fBatches.push_back();
+        const Batch* currentBatch = bn->fChildren[j];
+        outBatch.fBounds = currentBatch->fBounds;
+        outBatch.fClientID = currentBatch->fClientID;
+    }
+}
+
+void GrAuditTrail::getBoundsByClientID(SkTArray<BatchInfo>* outInfo, int clientID) {
+    Batches** batchesLookup = fClientIDLookup.find(clientID);
+    if (batchesLookup) {
+        
+        
+        
+        int currentBatchListID = kGrAuditTrailInvalidID;
+        for (int i = 0; i < (*batchesLookup)->count(); i++) {
+            const Batch* batch = (**batchesLookup)[i];
+
+            
+            
+            
+            if (kGrAuditTrailInvalidID == currentBatchListID ||
+                batch->fBatchListID != currentBatchListID) {
+                BatchInfo& outBatchInfo = outInfo->push_back();
+
+                
+                
+                this->copyOutFromBatchList(&outBatchInfo, batch->fBatchListID);
+            }
+        }
+    }
+}
+
+void GrAuditTrail::getBoundsByBatchListID(BatchInfo* outInfo, int batchListID) {
+    this->copyOutFromBatchList(outInfo, batchListID);
+}
+
+void GrAuditTrail::fullReset() {
+    SkASSERT(fEnabled);
+    fBatchList.reset();
+    fIDLookup.reset();
+    
+    fClientIDLookup.foreach([](const int&, Batches** batches) { delete *batches; });
+    fClientIDLookup.reset();
+    fBatchPool.reset(); 
+}
+
+template <typename T>
+void GrAuditTrail::JsonifyTArray(SkString* json, const char* name, const T& array,
+                                 bool addComma) {
     if (array.count()) {
+        if (addComma) {
+            json->appendf(",");
+        }
         json->appendf("\"%s\": [", name);
+        const char* separator = "";
         for (int i = 0; i < array.count(); i++) {
-            json->append(array[i]->toJson());
-            if (i < array.count() - 1) {
-                json->append(",");
+            
+            if (array[i]) {
+                json->appendf("%s", separator);
+                json->append(array[i]->toJson());
+                separator = ",";
             }
         }
         json->append("]");
@@ -87,35 +227,72 @@ static SkString pretty_print_json(SkString json) {
     return prettyPrintJson.prettify(json);
 }
 
-SkString GrAuditTrail::toJson() const {
+SkString GrAuditTrail::toJson(bool prettyPrint) const {
     SkString json;
     json.append("{");
-    JsonifyTArray(&json, "Stacks", fFrames);
+    JsonifyTArray(&json, "Batches", fBatchList, false);
     json.append("}");
 
-    
-    return pretty_print_json(json);
+    if (prettyPrint) {
+        return pretty_print_json(json);
+    } else {
+        return json;
+    }
 }
 
-SkString GrAuditTrail::Frame::toJson() const {
+SkString GrAuditTrail::toJson(int clientID, bool prettyPrint) const {
     SkString json;
     json.append("{");
-    json.appendf("\"Name\": \"%s\",", fName);
-    JsonifyTArray(&json, "Frames", fChildren);
-    json.append("}");
-    return json;
+    Batches** batches = fClientIDLookup.find(clientID);
+    if (batches) {
+        JsonifyTArray(&json, "Batches", **batches, false);
+    }
+    json.appendf("}");
+
+    if (prettyPrint) {
+        return pretty_print_json(json);
+    } else {
+        return json;
+    }
+}
+
+static void skrect_to_json(SkString* json, const char* name, const SkRect& rect) {
+    json->appendf("\"%s\": {", name);
+    json->appendf("\"Left\": %f,", rect.fLeft);
+    json->appendf("\"Right\": %f,", rect.fRight);
+    json->appendf("\"Top\": %f,", rect.fTop);
+    json->appendf("\"Bottom\": %f", rect.fBottom);
+    json->append("}");
 }
 
 SkString GrAuditTrail::Batch::toJson() const {
     SkString json;
     json.append("{");
-    json.appendf("\"Name\": \"%s\",", fName);
-    json.append("\"Bounds\": {");
-    json.appendf("\"Left\": %f,", fBounds.fLeft);
-    json.appendf("\"Right\": %f,", fBounds.fRight);
-    json.appendf("\"Top\": %f,", fBounds.fTop);
-    json.appendf("\"Bottom\": %f", fBounds.fBottom);
+    json.appendf("\"Name\": \"%s\",", fName.c_str());
+    json.appendf("\"ClientID\": \"%d\",", fClientID);
+    json.appendf("\"BatchListID\": \"%d\",", fBatchListID);
+    json.appendf("\"ChildID\": \"%d\",", fChildID);
+    skrect_to_json(&json, "Bounds", fBounds);
+    if (fStackTrace.count()) {
+        json.append(",\"Stack\": [");
+        for (int i = 0; i < fStackTrace.count(); i++) {
+            json.appendf("\"%s\"", fStackTrace[i].c_str());
+            if (i < fStackTrace.count() - 1) {
+                json.append(",");
+            }
+        }
+        json.append("]");
+    }
     json.append("}");
+    return json;
+}
+
+SkString GrAuditTrail::BatchNode::toJson() const {
+    SkString json;
+    json.append("{");
+    json.appendf("\"RenderTarget\": \"%u\",", fRenderTargetUniqueID);
+    skrect_to_json(&json, "Bounds", fBounds);
+    JsonifyTArray(&json, "Batches", fChildren, true);
     json.append("}");
     return json;
 }

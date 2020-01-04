@@ -13,7 +13,6 @@
 #include "SkMatrix.h"
 #include "SkXfermode.h"
 
-class SkAnnotation;
 class SkAutoDescriptor;
 class SkAutoGlyphCache;
 class SkColorFilter;
@@ -35,13 +34,7 @@ class SkShader;
 class SkSurfaceProps;
 class SkTypeface;
 
-typedef const SkGlyph& (*SkDrawCacheProc)(SkGlyphCache*, const char**,
-                                           SkFixed x, SkFixed y);
-
-typedef const SkGlyph& (*SkMeasureCacheProc)(SkGlyphCache*, const char**);
-
 #define kBicubicFilterBitmap_Flag kHighQualityFilterBitmap_Flag
-
 
 
 
@@ -52,9 +45,11 @@ class SK_API SkPaint {
 public:
     SkPaint();
     SkPaint(const SkPaint& paint);
+    SkPaint(SkPaint&& paint);
     ~SkPaint();
 
     SkPaint& operator=(const SkPaint&);
+    SkPaint& operator=(SkPaint&&);
 
     
 
@@ -480,7 +475,7 @@ public:
 
 
 
-    SkShader* getShader() const { return fShader; }
+    SkShader* getShader() const { return fShader.get(); }
 
     
 
@@ -503,13 +498,16 @@ public:
 
 
 
+    void setShader(sk_sp<SkShader>);
+#ifdef SK_SUPPORT_LEGACY_CREATESHADER_PTR
     SkShader* setShader(SkShader* shader);
+#endif
 
     
 
 
 
-    SkColorFilter* getColorFilter() const { return fColorFilter; }
+    SkColorFilter* getColorFilter() const { return fColorFilter.get(); }
 
     
 
@@ -518,14 +516,17 @@ public:
 
 
 
+#ifdef SK_SUPPORT_LEGACY_COLORFILTER_PTR
     SkColorFilter* setColorFilter(SkColorFilter* filter);
+#endif
+    void setColorFilter(sk_sp<SkColorFilter>);
 
     
 
 
 
 
-    SkXfermode* getXfermode() const { return fXfermode; }
+    SkXfermode* getXfermode() const { return fXfermode.get(); }
 
     
 
@@ -537,7 +538,10 @@ public:
 
 
 
+    void setXfermode(sk_sp<SkXfermode>);
+#ifdef SK_SUPPORT_LEGACY_XFERMODE_PTR
     SkXfermode* setXfermode(SkXfermode* xfermode);
+#endif
 
     
 
@@ -550,7 +554,7 @@ public:
 
 
 
-    SkPathEffect* getPathEffect() const { return fPathEffect; }
+    SkPathEffect* getPathEffect() const { return fPathEffect.get(); }
 
     
 
@@ -562,14 +566,17 @@ public:
 
 
 
+    void setPathEffect(sk_sp<SkPathEffect>);
+#ifdef SK_SUPPORT_LEGACY_PATHEFFECT_PTR
     SkPathEffect* setPathEffect(SkPathEffect* effect);
+#endif
 
     
 
 
 
 
-    SkMaskFilter* getMaskFilter() const { return fMaskFilter; }
+    SkMaskFilter* getMaskFilter() const { return fMaskFilter.get(); }
 
     
 
@@ -581,7 +588,10 @@ public:
 
 
 
+#ifdef SK_SUPPORT_LEGACY_MASKFILTER_PTR
     SkMaskFilter* setMaskFilter(SkMaskFilter* maskfilter);
+#endif
+    void setMaskFilter(sk_sp<SkMaskFilter>);
 
     
 
@@ -591,7 +601,7 @@ public:
 
 
 
-    SkTypeface* getTypeface() const { return fTypeface; }
+    SkTypeface* getTypeface() const { return fTypeface.get(); }
 
     
 
@@ -604,13 +614,14 @@ public:
 
 
     SkTypeface* setTypeface(SkTypeface* typeface);
+    void setTypeface(sk_sp<SkTypeface>);
 
     
 
 
 
 
-    SkRasterizer* getRasterizer() const { return fRasterizer; }
+    SkRasterizer* getRasterizer() const { return fRasterizer.get(); }
 
     
 
@@ -623,19 +634,20 @@ public:
 
 
 
+#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
     SkRasterizer* setRasterizer(SkRasterizer* rasterizer);
+#endif
+    void setRasterizer(sk_sp<SkRasterizer>);
 
-    SkImageFilter* getImageFilter() const { return fImageFilter; }
+    SkImageFilter* getImageFilter() const { return fImageFilter.get(); }
     SkImageFilter* setImageFilter(SkImageFilter*);
-
-    SkAnnotation* getAnnotation() const { return fAnnotation; }
-    SkAnnotation* setAnnotation(SkAnnotation*);
+    void setImageFilter(sk_sp<SkImageFilter>);
 
     
 
 
 
-    SkDrawLooper* getLooper() const { return fLooper; }
+    SkDrawLooper* getLooper() const { return fLooper.get(); }
 
     
 
@@ -648,7 +660,10 @@ public:
 
 
 
+#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
     SkDrawLooper* setLooper(SkDrawLooper* looper);
+#endif
+    void setLooper(sk_sp<SkDrawLooper>);
 
     enum Align {
         kLeft_Align,
@@ -886,11 +901,63 @@ public:
 
 
 
+
+
+
+
+
+
     void getTextPath(const void* text, size_t length, SkScalar x, SkScalar y,
                      SkPath* path) const;
 
+    
+
+
+
+
+
+
+
+
     void getPosTextPath(const void* text, size_t length,
                         const SkPoint pos[], SkPath* path) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int getTextIntercepts(const void* text, size_t length, SkScalar x, SkScalar y,
+                          const SkScalar bounds[2], SkScalar* intervals) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int getPosTextIntercepts(const void* text, size_t length, const SkPoint pos[],
+                             const SkScalar bounds[2], SkScalar* intervals) const;
 
     
 
@@ -976,19 +1043,20 @@ public:
         return SetTextMatrix(matrix, fTextSize, fTextScaleX, fTextSkewX);
     }
 
+    typedef const SkGlyph& (*GlyphCacheProc)(SkGlyphCache*, const char**);
+
     SK_TO_STRING_NONVIRT()
 
 private:
-    SkTypeface*     fTypeface;
-    SkPathEffect*   fPathEffect;
-    SkShader*       fShader;
-    SkXfermode*     fXfermode;
-    SkMaskFilter*   fMaskFilter;
-    SkColorFilter*  fColorFilter;
-    SkRasterizer*   fRasterizer;
-    SkDrawLooper*   fLooper;
-    SkImageFilter*  fImageFilter;
-    SkAnnotation*   fAnnotation;
+    sk_sp<SkTypeface>     fTypeface;
+    sk_sp<SkPathEffect>   fPathEffect;
+    sk_sp<SkShader>       fShader;
+    sk_sp<SkXfermode>     fXfermode;
+    sk_sp<SkMaskFilter>   fMaskFilter;
+    sk_sp<SkColorFilter>  fColorFilter;
+    sk_sp<SkRasterizer>   fRasterizer;
+    sk_sp<SkDrawLooper>   fLooper;
+    sk_sp<SkImageFilter>  fImageFilter;
 
     SkScalar        fTextSize;
     SkScalar        fTextScaleX;
@@ -1012,25 +1080,29 @@ private:
         uint32_t fBitfieldsUInt;
     };
 
-    SkDrawCacheProc    getDrawCacheProc() const;
-    SkMeasureCacheProc getMeasureCacheProc(bool needFullMetrics) const;
+    GlyphCacheProc getGlyphCacheProc(bool needFullMetrics) const;
 
     SkScalar measure_text(SkGlyphCache*, const char* text, size_t length,
                           int* count, SkRect* bounds) const;
+
+    enum class FakeGamma {
+        Off = 0, On
+    };
 
     
 
 
 
     void getScalerContextDescriptor(SkAutoDescriptor*, const SkSurfaceProps& surfaceProps,
-                                    const SkMatrix*, bool ignoreGamma) const;
+                                    FakeGamma fakeGamma, const SkMatrix*) const;
 
-    SkGlyphCache* detachCache(const SkSurfaceProps* surfaceProps, const SkMatrix*,
-                              bool ignoreGamma) const;
+    SkGlyphCache* detachCache(const SkSurfaceProps* surfaceProps, FakeGamma fakeGamma,
+                              const SkMatrix*) const;
 
-    void descriptorProc(const SkSurfaceProps* surfaceProps, const SkMatrix* deviceMatrix,
+    void descriptorProc(const SkSurfaceProps* surfaceProps, FakeGamma fakeGamma,
+                        const SkMatrix* deviceMatrix,
                         void (*proc)(SkTypeface*, const SkDescriptor*, void*),
-                        void* context, bool ignoreGamma) const;
+                        void* context) const;
 
     
 
@@ -1089,7 +1161,7 @@ private:
     friend class GrTextUtils;
     friend class GrGLPathRendering;
     friend class SkScalerContext;
-    friend class SkTextToPathIter;
+    friend class SkTextBaseIter;
     friend class SkCanonicalizePaint;
 };
 

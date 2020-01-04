@@ -5,7 +5,6 @@
 
 
 
-
 #include "SkTypes.h"
 #if defined(SK_BUILD_FOR_MAC) || defined(SK_BUILD_FOR_IOS)
 

@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrGpuResourceCacheAccess_DEFINED
 #define GrGpuResourceCacheAccess_DEFINED
 
@@ -27,13 +26,8 @@ private:
 
     bool isScratch() const {
         return !fResource->getUniqueKey().isValid() && fResource->fScratchKey.isValid() &&
-                fResource->resourcePriv().isBudgeted();
+                SkBudgeted::kYes == fResource->resourcePriv().isBudgeted();
     }
-
-    
-
-
-    bool isExternal() const { return fResource->isExternal(); }
 
     
 
@@ -46,7 +40,7 @@ private:
 
 
     bool isAdopted() const { return GrGpuResource::kAdopted_LifeCycle == fResource->fLifeCycle; }
- 
+
     
 
 

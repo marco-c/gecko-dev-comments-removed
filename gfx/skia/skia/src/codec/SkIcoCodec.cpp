@@ -6,51 +6,14 @@
 
 
 #include "SkBmpCodec.h"
-#include "SkCodec_libpng.h"
 #include "SkCodecPriv.h"
 #include "SkColorPriv.h"
 #include "SkData.h"
 #include "SkIcoCodec.h"
+#include "SkPngCodec.h"
 #include "SkStream.h"
 #include "SkTDArray.h"
 #include "SkTSort.h"
-
-static bool ico_conversion_possible(const SkImageInfo& dstInfo) {
-    
-    
-    
-    
-    
-    
-    if (kN32_SkColorType != dstInfo.colorType()) {
-        return false;
-    }
-
-    
-    
-    
-    return kPremul_SkAlphaType == dstInfo.alphaType() ||
-            kUnpremul_SkAlphaType == dstInfo.alphaType();
-}
-
-static SkImageInfo fix_embedded_alpha(const SkImageInfo& dstInfo, SkAlphaType embeddedAlpha) {
-    
-    
-    switch (embeddedAlpha) {
-        case kPremul_SkAlphaType:
-        case kUnpremul_SkAlphaType:
-            
-            embeddedAlpha = dstInfo.alphaType();
-            break;
-        case kOpaque_SkAlphaType:
-            
-            break;
-        default:
-            SkASSERT(false);
-            break;
-    }
-    return dstInfo.makeAlphaType(embeddedAlpha);
-}
 
 
 
@@ -177,9 +140,9 @@ SkCodec* SkIcoCodec::NewFromStream(SkStream* stream) {
         
         SkCodec* codec = nullptr;
         if (SkPngCodec::IsPng((const char*) data->bytes(), data->size())) {
-            codec = SkPngCodec::NewFromStream(embeddedStream.detach());
+            codec = SkPngCodec::NewFromStream(embeddedStream.release());
         } else {
-            codec = SkBmpCodec::NewFromIco(embeddedStream.detach());
+            codec = SkBmpCodec::NewFromIco(embeddedStream.release());
         }
 
         
@@ -209,18 +172,7 @@ SkCodec* SkIcoCodec::NewFromStream(SkStream* stream) {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    info = info.makeAlphaType(kUnpremul_SkAlphaType);
-
-    
-    
-    return new SkIcoCodec(info, codecs.detach());
+    return new SkIcoCodec(info, codecs.release());
 }
 
 
@@ -290,10 +242,6 @@ SkCodec::Result SkIcoCodec::onGetPixels(const SkImageInfo& dstInfo,
         return kUnimplemented;
     }
 
-    if (!ico_conversion_possible(dstInfo)) {
-        return kInvalidConversion;
-    }
-
     int index = 0;
     SkCodec::Result result = kInvalidScale;
     while (true) {
@@ -303,9 +251,7 @@ SkCodec::Result SkIcoCodec::onGetPixels(const SkImageInfo& dstInfo,
         }
 
         SkCodec* embeddedCodec = fEmbeddedCodecs->operator[](index);
-        SkImageInfo decodeInfo = fix_embedded_alpha(dstInfo, embeddedCodec->getInfo().alphaType());
-        SkASSERT(decodeInfo.colorType() == kN32_SkColorType);
-        result = embeddedCodec->getPixels(decodeInfo, dst, dstRowBytes, &opts, colorTable,
+        result = embeddedCodec->getPixels(dstInfo, dst, dstRowBytes, &opts, colorTable,
                 colorCount);
 
         switch (result) {
@@ -313,7 +259,7 @@ SkCodec::Result SkIcoCodec::onGetPixels(const SkImageInfo& dstInfo,
             case kIncompleteInput:
                 
                 
-                *rowsDecoded = decodeInfo.height();
+                *rowsDecoded = dstInfo.height();
                 return result;
             default:
                 
@@ -329,10 +275,6 @@ SkCodec::Result SkIcoCodec::onGetPixels(const SkImageInfo& dstInfo,
 
 SkCodec::Result SkIcoCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         const SkCodec::Options& options, SkPMColor colorTable[], int* colorCount) {
-    if (!ico_conversion_possible(dstInfo)) {
-        return kInvalidConversion;
-    }
-
     int index = 0;
     SkCodec::Result result = kInvalidScale;
     while (true) {
@@ -342,8 +284,7 @@ SkCodec::Result SkIcoCodec::onStartScanlineDecode(const SkImageInfo& dstInfo,
         }
 
         SkCodec* embeddedCodec = fEmbeddedCodecs->operator[](index);
-        SkImageInfo decodeInfo = fix_embedded_alpha(dstInfo, embeddedCodec->getInfo().alphaType());
-        result = embeddedCodec->startScanlineDecode(decodeInfo, &options, colorTable, colorCount);
+        result = embeddedCodec->startScanlineDecode(dstInfo, &options, colorTable, colorCount);
         if (kSuccess == result) {
             fCurrScanlineCodec = embeddedCodec;
             return result;

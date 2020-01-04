@@ -326,6 +326,7 @@ private:
 
     void computeType();
     bool checkCornerContainment(SkScalar x, SkScalar y) const;
+    void scaleRadii();
 
     
     friend class SkPath;

@@ -59,13 +59,12 @@ public:
         return str;
     }
 
-    void computePipelineOptimizations(GrInitInvariantOutput* color, 
+    void computePipelineOptimizations(GrInitInvariantOutput* color,
                                       GrInitInvariantOutput* coverage,
                                       GrBatchToXPOverrides* overrides) const override {
         
         color->setKnownFourComponents(fGeoData[0].fColor);
         Impl::InitInvariantOutputCoverage(coverage);
-        overrides->fUsePLSDstRead = false;
     }
 
     void initBatchTracker(const GrXPOverridesForBatch& overrides) override {
@@ -90,19 +89,17 @@ private:
     GrTInstanceBatch() : INHERITED(ClassID()) {}
 
     void onPrepareDraws(Target* target) const override {
-        SkAutoTUnref<const GrGeometryProcessor> gp(Impl::CreateGP(this->seedGeometry(), 
+        SkAutoTUnref<const GrGeometryProcessor> gp(Impl::CreateGP(this->seedGeometry(),
                                                                   fOverrides));
         if (!gp) {
             SkDebugf("Couldn't create GrGeometryProcessor\n");
             return;
         }
 
-        target->initDraw(gp, this->pipeline());
-
         size_t vertexStride = gp->getVertexStride();
         int instanceCount = fGeoData.count();
 
-        SkAutoTUnref<const GrIndexBuffer> indexBuffer(
+        SkAutoTUnref<const GrBuffer> indexBuffer(
                 Impl::GetIndexBuffer(target->resourceProvider()));
         InstancedHelper helper;
         void* vertices = helper.init(target, kTriangles_GrPrimitiveType, vertexStride,
@@ -118,7 +115,7 @@ private:
                              i * Impl::kVertsPerInstance * vertexStride;
             Impl::Tesselate(verts, vertexStride, fGeoData[i], fOverrides);
         }
-        helper.recordDraw(target);
+        helper.recordDraw(target, gp);
     }
 
     const Geometry& seedGeometry() const { return fGeoData[0]; }

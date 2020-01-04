@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGPolygon_DEFINED
 #define SkSVGPolygon_DEFINED
 

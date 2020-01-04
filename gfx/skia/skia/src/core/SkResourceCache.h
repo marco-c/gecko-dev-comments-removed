@@ -30,13 +30,17 @@ class SkResourceCache {
 public:
     struct Key {
         
-        void* writableContents() { return this + 1; }
+
+
+
+
+
+        void init(void* nameSpace, uint64_t sharedID, size_t dataSize);
 
         
-        
-        
-        
-        void init(void* nameSpace, uint64_t sharedID, size_t length);
+        size_t size() const {
+            return fCount32 << 2;
+        }
 
         void* getNamespace() const { return fNamespace; }
         uint64_t getSharedID() const { return ((uint64_t)fSharedID_hi << 32) | fSharedID_lo; }
@@ -272,7 +276,7 @@ private:
     
     void moveToHead(Rec*);
     void addToHead(Rec*);
-    void detach(Rec*);
+    void release(Rec*);
     void remove(Rec*);
 
     void init();    

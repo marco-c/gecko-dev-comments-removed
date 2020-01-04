@@ -56,6 +56,20 @@ public:
     void setAntiAlias(bool aa) { fAntiAlias = aa; }
     bool isAntiAlias() const { return fAntiAlias; }
 
+    
+
+
+
+    void setDisableOutputConversionToSRGB(bool srgb) { fDisableOutputConversionToSRGB = srgb; }
+    bool getDisableOutputConversionToSRGB() const { return fDisableOutputConversionToSRGB; }
+
+    
+
+
+
+    void setAllowSRGBInputs(bool allowSRGBInputs) { fAllowSRGBInputs = allowSRGBInputs; }
+    bool getAllowSRGBInputs() const { return fAllowSRGBInputs; }
+
     const GrXPFactory* setXPFactory(const GrXPFactory* xpFactory) {
         fXPFactory.reset(SkSafeRef(xpFactory));
         return xpFactory;
@@ -112,6 +126,8 @@ public:
 
     GrPaint& operator=(const GrPaint& paint) {
         fAntiAlias = paint.fAntiAlias;
+        fDisableOutputConversionToSRGB = paint.fDisableOutputConversionToSRGB;
+        fAllowSRGBInputs = paint.fAllowSRGBInputs;
 
         fColor = paint.fColor;
         this->resetFragmentProcessors();
@@ -154,6 +170,8 @@ private:
     SkSTArray<2, const GrFragmentProcessor*, true>  fCoverageFragmentProcessors;
 
     bool                                            fAntiAlias;
+    bool                                            fDisableOutputConversionToSRGB;
+    bool                                            fAllowSRGBInputs;
 
     GrColor                                         fColor;
 };

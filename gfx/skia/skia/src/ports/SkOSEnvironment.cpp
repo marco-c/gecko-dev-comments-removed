@@ -5,8 +5,8 @@
 
 
 
-
 #include "SkOSEnvironment.h"
+#include "SkTypes.h"
 #include <stdlib.h>
 
 void sk_setenv(const char* key, const char* value) {
@@ -16,4 +16,3 @@ void sk_setenv(const char* key, const char* value) {
     setenv(key, value, 1);
 #endif
 }
-

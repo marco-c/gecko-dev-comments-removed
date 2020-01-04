@@ -14,6 +14,8 @@
 
 class SkStream;
 
+#define SK_SUPPORT_LEGACY_DATA_FACTORIES
+
 
 
 
@@ -67,6 +69,7 @@ public:
 
 
     bool equals(const SkData* other) const;
+    bool equals(sk_sp<const SkData>& other) const { return this->equals(other.get()); }
 
     
 
@@ -77,56 +80,48 @@ public:
     
 
 
-    static SkData* NewWithCopy(const void* data, size_t length);
+    static sk_sp<SkData> MakeWithCopy(const void* data, size_t length);
+
+    
+    
+
+
+
+    static sk_sp<SkData> MakeUninitialized(size_t length);
 
     
 
 
 
-    static SkData* NewUninitialized(size_t length);
+
+
+    static sk_sp<SkData> MakeWithCString(const char cstr[]);
 
     
 
 
 
-
-
-    static SkData* NewWithCString(const char cstr[]);
+    static sk_sp<SkData> MakeWithProc(const void* ptr, size_t length, ReleaseProc proc, void* ctx);
 
     
 
 
 
-    static SkData* NewWithProc(const void* ptr, size_t length, ReleaseProc proc, void* context);
-
-    
-
-
-
-    static SkData* NewWithoutCopy(const void* data, size_t length) {
-        return NewWithProc(data, length, DummyReleaseProc, NULL);
+    static sk_sp<SkData> MakeWithoutCopy(const void* data, size_t length) {
+        return MakeWithProc(data, length, DummyReleaseProc, nullptr);
     }
 
     
 
 
 
-    static SkData* NewFromMalloc(const void* data, size_t length);
+    static sk_sp<SkData> MakeFromMalloc(const void* data, size_t length);
 
     
 
 
 
-    static SkData* NewFromFileName(const char path[]);
-
-    
-
-
-
-
-
-
-    static SkData* NewFromFILE(FILE* f);
+    static sk_sp<SkData> MakeFromFileName(const char path[]);
 
     
 
@@ -135,26 +130,66 @@ public:
 
 
 
-    static SkData* NewFromFD(int fd);
+    static sk_sp<SkData> MakeFromFILE(FILE* f);
 
     
 
 
 
 
-    static SkData* NewFromStream(SkStream*, size_t size);
+
+
+    static sk_sp<SkData> MakeFromFD(int fd);
 
     
 
 
 
-    static SkData* NewSubset(const SkData* src, size_t offset, size_t length);
+
+    static sk_sp<SkData> MakeFromStream(SkStream*, size_t size);
 
     
 
 
 
-    static SkData* NewEmpty();
+    static sk_sp<SkData> MakeSubset(const SkData* src, size_t offset, size_t length);
+
+    
+
+
+
+    static sk_sp<SkData> MakeEmpty();
+
+#ifdef SK_SUPPORT_LEGACY_DATA_FACTORIES
+    static SkData* NewWithCopy(const void* data, size_t length) {
+        return MakeWithCopy(data, length).release();
+    }
+    static SkData* NewUninitialized(size_t length) {
+        return MakeUninitialized(length).release();
+    }
+    static SkData* NewWithCString(const char cstr[]) {
+        return MakeWithCString(cstr).release();
+    }
+    static SkData* NewWithProc(const void* ptr, size_t length, ReleaseProc proc, void* context) {
+        return MakeWithProc(ptr, length, proc, context).release();
+    }
+    static SkData* NewWithoutCopy(const void* data, size_t length) {
+        return MakeWithoutCopy(data, length).release();
+    }
+    static SkData* NewFromMalloc(const void* data, size_t length) {
+        return MakeFromMalloc(data, length).release();
+    }
+    static SkData* NewFromFileName(const char path[]) { return MakeFromFileName(path).release(); }
+    static SkData* NewFromFILE(FILE* f) { return MakeFromFILE(f).release(); }
+    static SkData* NewFromFD(int fd) { return MakeFromFD(fd).release(); }
+    static SkData* NewFromStream(SkStream* stream, size_t size) {
+        return MakeFromStream(stream, size).release();
+    }
+    static SkData* NewSubset(const SkData* src, size_t offset, size_t length) {
+        return MakeSubset(src, offset, length).release();
+    }
+    static SkData* NewEmpty() { return MakeEmpty().release(); }
+#endif
 
 private:
     ReleaseProc fReleaseProc;
@@ -179,14 +214,16 @@ private:
     friend SkData* sk_new_empty_data();
 
     
-    static SkData* PrivateNewWithCopy(const void* srcOrNull, size_t length);
+    static sk_sp<SkData> PrivateNewWithCopy(const void* srcOrNull, size_t length);
 
     static void DummyReleaseProc(const void*, void*) {}
 
     typedef SkRefCnt INHERITED;
 };
 
+#ifdef SK_SUPPORT_LEGACY_DATA_FACTORIES
 
 typedef SkAutoTUnref<SkData> SkAutoDataUnref;
+#endif
 
 #endif

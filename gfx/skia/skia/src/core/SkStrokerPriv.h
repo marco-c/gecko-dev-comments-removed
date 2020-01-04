@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkStrokerPriv_DEFINED
 #define SkStrokerPriv_DEFINED
 

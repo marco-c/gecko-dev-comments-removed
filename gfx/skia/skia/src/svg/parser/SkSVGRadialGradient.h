@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGRadialGradient_DEFINED
 #define SkSVGRadialGradient_DEFINED
 

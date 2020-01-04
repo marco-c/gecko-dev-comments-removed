@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef GrGLPath_DEFINED
 #define GrGLPath_DEFINED
 

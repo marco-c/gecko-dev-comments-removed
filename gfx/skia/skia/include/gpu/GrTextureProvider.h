@@ -9,6 +9,7 @@
 #define GrTextureProvider_DEFINED
 
 #include "GrTexture.h"
+#include "GrTypes.h"
 #include "SkImageFilter.h"
 
 class GrSingleOwner;
@@ -27,14 +28,24 @@ public:
 
 
 
+    GrTexture* createMipMappedTexture(const GrSurfaceDesc& desc, SkBudgeted budgeted,
+                                      const GrMipLevel* texels, int mipLevelCount);
+
+    
 
 
-    GrTexture* createTexture(const GrSurfaceDesc& desc, bool budgeted, const void* srcData,
+
+
+
+
+
+
+    GrTexture* createTexture(const GrSurfaceDesc& desc, SkBudgeted budgeted, const void* srcData,
                              size_t rowBytes);
 
     
-    GrTexture* createTexture(const GrSurfaceDesc& desc, bool budgeted) {
-        return this->createTexture(desc, budgeted, NULL, 0);
+    GrTexture* createTexture(const GrSurfaceDesc& desc, SkBudgeted budgeted) {
+        return this->createTexture(desc, budgeted, nullptr, 0);
     }
 
     
@@ -73,7 +84,7 @@ public:
         if (kApprox_ScratchTexMatch == match) {
             return this->createApproxTexture(desc);
         } else {
-            return this->createTexture(desc, true);
+            return this->createTexture(desc, SkBudgeted::kYes);
         }
     }
 

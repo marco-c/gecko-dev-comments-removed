@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkTypes.h"
 
 static const uint16_t gInvSqrtTable[128 * 128] = {

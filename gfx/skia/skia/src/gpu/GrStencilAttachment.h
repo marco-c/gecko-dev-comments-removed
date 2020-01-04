@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef GrStencilAttachment_DEFINED
 #define GrStencilAttachment_DEFINED
 
@@ -18,7 +17,7 @@ class GrResourceKey;
 
 class GrStencilAttachment : public GrGpuResource {
 public:
-    
+
 
     virtual ~GrStencilAttachment() {
         

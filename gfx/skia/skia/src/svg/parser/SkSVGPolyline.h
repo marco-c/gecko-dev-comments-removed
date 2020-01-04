@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGPolyline_DEFINED
 #define SkSVGPolyline_DEFINED
 

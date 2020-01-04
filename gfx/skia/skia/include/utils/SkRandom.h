@@ -8,6 +8,7 @@
 #ifndef SkRandom_DEFINED
 #define SkRandom_DEFINED
 
+#include "../private/SkFixed.h"
 #include "SkScalar.h"
 
 
@@ -100,16 +101,6 @@ public:
     
 
 
-    SkFixed nextUFixed1() { return this->nextU() >> 16; }
-
-    
-
-
-    SkFixed nextSFixed1() { return this->nextS() >> 15; }
-
-    
-
-
     SkScalar nextUScalar1() { return SkFixedToScalar(this->nextUFixed1()); }
 
     
@@ -163,6 +154,16 @@ private:
         SkASSERT(0 != fK && 0 != fJ);
     }
     static uint32_t NextLCG(uint32_t seed) { return kMul*seed + kAdd; }
+
+    
+
+
+    SkFixed nextUFixed1() { return this->nextU() >> 16; }
+
+    
+
+
+    SkFixed nextSFixed1() { return this->nextS() >> 15; }
 
     
     

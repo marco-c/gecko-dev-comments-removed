@@ -153,6 +153,8 @@ private:
     SkTLazy<SkIRect>    fContentArea;
     GrTexture*          fOriginal;
 
+    GrTexture* refCopy(const CopyParams &copyParams);
+
     typedef GrTextureProducer INHERITED;
 };
 
@@ -183,7 +185,7 @@ protected:
 
 
 
-    virtual GrTexture* refOriginalTexture() = 0;
+    virtual GrTexture* refOriginalTexture(bool willBeMipped) = 0;
 
     
 
@@ -195,7 +197,7 @@ protected:
 
 
 
-    virtual GrTexture* generateTextureForParams(const CopyParams&);
+    virtual GrTexture* generateTextureForParams(const CopyParams&, bool willBeMipped);
 
     GrContext* context() const { return fContext; }
 

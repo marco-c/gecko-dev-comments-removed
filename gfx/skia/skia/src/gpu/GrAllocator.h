@@ -389,7 +389,7 @@ template <typename T> void* operator new(size_t size, GrTAllocator<T>* allocator
 
 
 template <typename T> void operator delete(void*, GrTAllocator<T>*) {
-    SK_CRASH();
+    SK_ABORT("Invalid Operation");
 }
 
 #define GrNEW_APPEND_TO_ALLOCATOR(allocator_ptr, type_name, args) \

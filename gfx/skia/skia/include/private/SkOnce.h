@@ -59,7 +59,7 @@ public:
 
 private:
     bool fDone;
-    SkPODSpinlock fSpinlock;
+    SkSpinlock fSpinlock;
 };
 
 

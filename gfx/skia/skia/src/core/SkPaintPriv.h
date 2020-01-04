@@ -21,7 +21,7 @@ public:
         kOpaque_ShaderOverrideOpacity,      
         kNotOpaque_ShaderOverrideOpacity,   
     };
-    
+
     
 
 

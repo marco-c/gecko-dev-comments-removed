@@ -139,7 +139,7 @@ public:
             this->flushRuns();
         }
     }
-    
+
     
     void blitV(int x, int y, int height, SkAlpha alpha) override {
         
@@ -171,7 +171,7 @@ public:
 
         
         SkASSERT((0 == y) || (!fCalledOnceWithNonzeroY && (fCalledOnceWithNonzeroY = true)));
-        
+
 #if !(PEDANTIC_BLIT_RECT)
         for (int i = 0; i < height; ++i) {
             const SkAlpha kFullAlpha = 0xFF;
@@ -194,7 +194,7 @@ public:
 
             const int yoff = y - startBlockY;
             SkASSERT((yoff + height) <= BlockDim);
-            
+
             for (int j = 0; j < height; ++j) {
                 memset(mask + (j + yoff)*BlockDim + xoff, 0xFF, width);
             }

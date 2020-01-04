@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGPolygon.h"
 #include "SkSVGParser.h"
 

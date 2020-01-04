@@ -206,6 +206,18 @@ public:
 
     static size_t WriteStringSize(const char* str, size_t len = (size_t)-1);
 
+    void writeData(const SkData* data) {
+        uint32_t len = data ? SkToU32(data->size()) : 0;
+        this->write32(len);
+        if (data) {
+            this->writePad(data->data(), len);
+        }
+    }
+
+    static size_t WriteDataSize(const SkData* data) {
+        return 4 + SkAlign4(data ? data->size() : 0);
+    }
+
     
 
 
@@ -234,7 +246,7 @@ public:
     
 
 
-    SkData* snapshotAsData() const;
+    sk_sp<SkData> snapshotAsData() const;
 private:
     void growToAtLeast(size_t size);
 

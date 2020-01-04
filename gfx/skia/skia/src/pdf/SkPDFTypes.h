@@ -39,7 +39,6 @@ public:
 
 
 
-    
     virtual void emitObject(SkWStream* stream,
                             const SkPDFObjNumMap& objNumMap,
                             const SkPDFSubstituteMap& substitutes) const = 0;
@@ -52,6 +51,14 @@ public:
     virtual void addResources(SkPDFObjNumMap* catalog,
                               const SkPDFSubstituteMap& substitutes) const {}
 
+    
+
+
+
+
+    virtual void drop() {}
+
+    virtual ~SkPDFObject() {}
 private:
     typedef SkRefCnt INHERITED;
 };
@@ -65,8 +72,6 @@ private:
 
 class SkPDFUnion {
 public:
-    
-    SkPDFUnion move() { return static_cast<SkPDFUnion&&>(*this); }
     
     
     SkPDFUnion(SkPDFUnion&& other);
@@ -108,17 +113,8 @@ public:
     
     static SkPDFUnion String(const SkString&);
 
-    
-
-
-
-    static SkPDFUnion Object(SkPDFObject*);
-
-    
-
-
-
-    static SkPDFUnion ObjRef(SkPDFObject*);
+    static SkPDFUnion Object(sk_sp<SkPDFObject>);
+    static SkPDFUnion ObjRef(sk_sp<SkPDFObject>);
 
     
 
@@ -174,7 +170,7 @@ public:
                     const SkPDFObjNumMap& objNumMap,
                     const SkPDFSubstituteMap& substitutes) final;
     void addResources(SkPDFObjNumMap*, const SkPDFSubstituteMap&) const final;
-    SkPDFAtom(SkPDFUnion&& v) : fValue(v.move()) {}
+    SkPDFAtom(SkPDFUnion&& v) : fValue(std::move(v) {}
 
 private:
     const SkPDFUnion fValue;
@@ -190,8 +186,6 @@ private:
 
 class SkPDFArray final : public SkPDFObject {
 public:
-    static const int kMaxLen = 8191;
-
     
 
     SkPDFArray();
@@ -203,6 +197,7 @@ public:
                     const SkPDFSubstituteMap& substitutes) const override;
     void addResources(SkPDFObjNumMap*,
                       const SkPDFSubstituteMap&) const override;
+    void drop() override;
 
     
 
@@ -223,14 +218,13 @@ public:
     void appendName(const SkString&);
     void appendString(const char[]);
     void appendString(const SkString&);
-    
-    void appendObject(SkPDFObject*);
-    void appendObjRef(SkPDFObject*);
+    void appendObject(sk_sp<SkPDFObject>);
+    void appendObjRef(sk_sp<SkPDFObject>);
 
 private:
-    SkTDArray<SkPDFUnion> fValues;
+    SkTArray<SkPDFUnion> fValues;
     void append(SkPDFUnion&& value);
-    typedef SkPDFObject INHERITED;
+    SkDEBUGCODE(bool fDumped;)
 };
 
 
@@ -241,12 +235,8 @@ class SkPDFDict : public SkPDFObject {
 public:
     
 
-    SkPDFDict();
 
-    
-
-
-    explicit SkPDFDict(const char type[]);
+    explicit SkPDFDict(const char type[] = nullptr);
 
     virtual ~SkPDFDict();
 
@@ -256,6 +246,7 @@ public:
                     const SkPDFSubstituteMap& substitutes) const override;
     void addResources(SkPDFObjNumMap*,
                       const SkPDFSubstituteMap&) const override;
+    void drop() override;
 
     
 
@@ -265,11 +256,10 @@ public:
 
 
 
-
-    void insertObject(const char key[], SkPDFObject* value);
-    void insertObject(const SkString& key, SkPDFObject* value);
-    void insertObjRef(const char key[], SkPDFObject* value);
-    void insertObjRef(const SkString& key, SkPDFObject* value);
+    void insertObject(const char key[], sk_sp<SkPDFObject>);
+    void insertObject(const SkString& key, sk_sp<SkPDFObject>);
+    void insertObjRef(const char key[], sk_sp<SkPDFObject>);
+    void insertObjRef(const SkString& key, sk_sp<SkPDFObject>);
 
     
 
@@ -286,10 +276,6 @@ public:
 
     
 
-    void clear();
-
-    
-
     void emitAll(SkWStream* stream,
                  const SkPDFObjNumMap& objNumMap,
                  const SkPDFSubstituteMap& substitutes) const;
@@ -298,13 +284,14 @@ private:
     struct Record {
         SkPDFUnion fKey;
         SkPDFUnion fValue;
+        Record(SkPDFUnion&&, SkPDFUnion&&);
+        Record(Record&&);
+        Record& operator=(Record&&);
+        Record(const Record&) = delete;
+        Record& operator=(const Record&) = delete;
     };
-    SkTDArray<Record> fRecords;
-    static const int kMaxLen = 4095;
-
-    void set(SkPDFUnion&& name, SkPDFUnion&& value);
-
-    typedef SkPDFObject INHERITED;
+    SkTArray<Record> fRecords;
+    SkDEBUGCODE(bool fDumped;)
 };
 
 
@@ -317,17 +304,20 @@ private:
 class SkPDFSharedStream final : public SkPDFObject {
 public:
     
-    SkPDFSharedStream(SkStreamAsset* data) : fAsset(data), fDict(new SkPDFDict) { SkASSERT(data); }
-    SkPDFDict* dict() { return fDict; }
+    SkPDFSharedStream(SkStreamAsset* data);
+    ~SkPDFSharedStream();
+    SkPDFDict* dict() { return fDict.get(); }
     void emitObject(SkWStream*,
                     const SkPDFObjNumMap&,
                     const SkPDFSubstituteMap&) const override;
     void addResources(SkPDFObjNumMap*,
                       const SkPDFSubstituteMap&) const override;
+    void drop() override;
 
 private:
-    SkAutoTDelete<SkStreamAsset> fAsset;
-    SkAutoTUnref<SkPDFDict> fDict;
+    std::unique_ptr<SkStreamAsset> fAsset;
+    sk_sp<SkPDFDict> fDict;
+    SkDEBUGCODE(bool fDumped;)
     typedef SkPDFObject INHERITED;
 };
 
@@ -357,10 +347,10 @@ public:
 
     int32_t getObjectNumber(SkPDFObject* obj) const;
 
-    const SkTDArray<SkPDFObject*>& objects() const { return fObjects; }
+    const SkTArray<sk_sp<SkPDFObject>>& objects() const { return fObjects; }
 
 private:
-    SkTDArray<SkPDFObject*> fObjects;
+    SkTArray<sk_sp<SkPDFObject>> fObjects;
     SkTHashMap<SkPDFObject*, int32_t> fObjectNumbers;
 };
 

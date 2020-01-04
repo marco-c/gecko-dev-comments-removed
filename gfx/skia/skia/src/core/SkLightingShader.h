@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef SkLightingShader_DEFINED
 #define SkLightingShader_DEFINED
 
@@ -38,7 +36,7 @@ public:
             }
 
             const Lights* finish() {
-                return fLights.detach();
+                return fLights.release();
             }
 
         private:
@@ -90,9 +88,9 @@ public:
 
 
 
-    static SkShader* Create(const SkBitmap& diffuse, const SkBitmap& normal,
-                            const Lights* lights, const SkVector& invNormRotation,
-                            const SkMatrix* diffLocalMatrix, const SkMatrix* normLocalMatrix);
+    static sk_sp<SkShader> Make(const SkBitmap& diffuse, const SkBitmap& normal,
+                                const Lights* lights, const SkVector& invNormRotation,
+                                const SkMatrix* diffLocalMatrix, const SkMatrix* normLocalMatrix);
 
     SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
 };

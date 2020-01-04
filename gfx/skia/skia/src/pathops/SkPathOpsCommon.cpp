@@ -425,11 +425,14 @@ static bool missingCoincidence(SkOpContourHead* contourList,
     return result;
 }
 
-static void moveMultiples(SkOpContourHead* contourList) {
+static bool moveMultiples(SkOpContourHead* contourList) {
     SkOpContour* contour = contourList;
     do {
-        contour->moveMultiples();
+        if (!contour->moveMultiples()) {
+            return false;
+        }
     } while ((contour = contour->next()));
+    return true;
 }
 
 static void moveNearby(SkOpContourHead* contourList) {
@@ -451,7 +454,9 @@ bool HandleCoincidence(SkOpContourHead* contourList, SkOpCoincidence* coincidenc
     SkOpGlobalState* globalState = contourList->globalState();
     
     DEBUG_COINCIDENCE_HEALTH(contourList, "start");
-    moveMultiples(contourList);
+    if (!moveMultiples(contourList)) {
+        return false;
+    }
     DEBUG_COINCIDENCE_HEALTH(contourList, "moveMultiples");
     findCollapsed(contourList);
     DEBUG_COINCIDENCE_HEALTH(contourList, "findCollapsed");
@@ -489,7 +494,9 @@ bool HandleCoincidence(SkOpContourHead* contourList, SkOpCoincidence* coincidenc
     }
     DEBUG_COINCIDENCE_HEALTH(contourList, "expand2");
     
-    coincidence->mark();  
+    if (!coincidence->mark()) {  
+        return false;
+    }
     DEBUG_COINCIDENCE_HEALTH(contourList, "mark1");
     
     if (missingCoincidence(contourList, coincidence, allocator)) {

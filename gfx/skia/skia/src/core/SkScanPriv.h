@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkScanPriv_DEFINED
 #define SkScanPriv_DEFINED
 

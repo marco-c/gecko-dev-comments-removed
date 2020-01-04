@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkPtrSet_DEFINED
 #define SkPtrSet_DEFINED
 
@@ -22,7 +21,7 @@
 
 class SkPtrSet : public SkRefCnt {
 public:
-    
+
 
     
 
@@ -144,7 +143,7 @@ class SkFactorySet : public SkTPtrSet<SkFlattenable::Factory> {};
 
 class SkNamedFactorySet : public SkRefCnt {
 public:
-    
+
 
     SkNamedFactorySet();
 

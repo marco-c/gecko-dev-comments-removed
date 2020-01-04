@@ -34,7 +34,7 @@ public:
     
     const T& peek() const { return fArray[0]; }
     T& peek() { return fArray[0]; }
-    
+
     
     void pop() {
         this->validate();
@@ -134,7 +134,7 @@ private:
         SkASSERT(index >= 0);
         do {
             int child = LeftOf(index);
-            
+
             if (child >= fArray.count()) {
                 
                 this->setIndex(index);
@@ -188,7 +188,7 @@ private:
     }
 
     SkTDArray<T> fArray;
-    
+
     typedef SkNoncopyable INHERITED;
 };
 

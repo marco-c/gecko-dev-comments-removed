@@ -125,6 +125,14 @@ public:
 
 
 
+    static void PurgeAllCaches();
+
+    
+
+
+
+
+
 
 
     static void SetFlags(const char* flags);

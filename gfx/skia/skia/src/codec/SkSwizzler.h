@@ -22,18 +22,20 @@ public:
         kUnknown,  
         kBit,      
         kGray,
+        kGrayAlpha,
         kIndex1,
         kIndex2,
         kIndex4,
         kIndex,
         kRGB,
         kBGR,
-        kRGBX,
-        kBGRX,
+        kBGRX,     
         kRGBA,
         kBGRA,
-        kRGB_565,
         kCMYK,
+        kNoOp8,    
+        kNoOp16,   
+        kNoOp32,
     };
 
     
@@ -52,17 +54,19 @@ public:
                 return 4;
             case kGray:
             case kIndex:
+            case kNoOp8:
                 return 8;
-            case kRGB_565:
+            case kGrayAlpha:
+            case kNoOp16:
                 return 16;
             case kRGB:
             case kBGR:
                 return 24;
-            case kRGBX:
             case kRGBA:
             case kBGRX:
             case kBGRA:
             case kCMYK:
+            case kNoOp32:
                 return 32;
             default:
                 SkASSERT(false);
@@ -160,10 +164,18 @@ private:
                                          int dstWidth, int bpp, int deltaSrc, int offset,
                                          const SkPMColor ctable[]);
 
+    template <RowProc Proc>
+    static void SkipLeadingGrayAlphaZerosThen(void* dst, const uint8_t* src, int width, int bpp,
+                                              int deltaSrc, int offset, const SkPMColor ctable[]);
+
     
-    RowProc             fFastProc;
+    const RowProc       fFastProc;
     
-    const RowProc       fProc;
+    const RowProc       fSlowProc;
+    
+    
+    RowProc             fActualProc;
+
     const SkPMColor*    fColorTable;      
 
     

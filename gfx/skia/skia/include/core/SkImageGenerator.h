@@ -11,6 +11,7 @@
 #include "SkBitmap.h"
 #include "SkColor.h"
 #include "SkImageInfo.h"
+#include "SkYUVSizeInfo.h"
 
 class GrContext;
 class GrTexture;
@@ -136,11 +137,19 @@ public:
 
 
 
+    bool queryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const;
+
+    
 
 
 
-    bool getYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3],
-                       SkYUVColorSpace* colorSpace);
+
+
+
+
+
+
+    bool getYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]);
 
     
 
@@ -248,9 +257,13 @@ protected:
 
     virtual bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
                              SkPMColor ctable[], int* ctableCount);
-    virtual bool onGetYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3]);
-    virtual bool onGetYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3],
-                                 SkYUVColorSpace* colorSpace);
+
+    virtual bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const {
+        return false;
+    }
+    virtual bool onGetYUV8Planes(const SkYUVSizeInfo&, void*[3] ) {
+        return false;
+    }
 
     virtual GrTexture* onGenerateTexture(GrContext*, const SkIRect*) {
         return nullptr;

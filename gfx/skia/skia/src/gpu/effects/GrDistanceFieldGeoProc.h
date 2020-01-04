@@ -18,20 +18,21 @@ class GrInvariantOutput;
 
 enum GrDistanceFieldEffectFlags {
     kSimilarity_DistanceFieldEffectFlag = 0x01,   
-    kRectToRect_DistanceFieldEffectFlag = 0x02,   
+    kScaleOnly_DistanceFieldEffectFlag  = 0x02,   
     kUseLCD_DistanceFieldEffectFlag     = 0x04,   
     kBGR_DistanceFieldEffectFlag        = 0x08,   
     kPortrait_DistanceFieldEffectFlag   = 0x10,   
 
     kInvalid_DistanceFieldEffectFlag    = 0x80,   
-    
+
     kUniformScale_DistanceFieldEffectMask = kSimilarity_DistanceFieldEffectFlag |
-                                            kRectToRect_DistanceFieldEffectFlag,
+                                            kScaleOnly_DistanceFieldEffectFlag,
     
-    kNonLCD_DistanceFieldEffectMask       = kSimilarity_DistanceFieldEffectFlag,
+    kNonLCD_DistanceFieldEffectMask       = kSimilarity_DistanceFieldEffectFlag |
+                                            kScaleOnly_DistanceFieldEffectFlag,
     
     kLCD_DistanceFieldEffectMask          = kSimilarity_DistanceFieldEffectFlag |
-                                            kRectToRect_DistanceFieldEffectFlag |
+                                            kScaleOnly_DistanceFieldEffectFlag |
                                             kUseLCD_DistanceFieldEffectFlag |
                                             kBGR_DistanceFieldEffectFlag,
 };

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGEllipse_DEFINED
 #define SkSVGEllipse_DEFINED
 

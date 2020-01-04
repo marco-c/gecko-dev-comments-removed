@@ -5,21 +5,17 @@
 
 
 
-
-
 #ifndef SkSpinlock_DEFINED
 #define SkSpinlock_DEFINED
 
-#include "../private/SkAtomics.h"
+#include "SkTypes.h"
+#include "SkAtomics.h"
 
-#define SK_DECLARE_STATIC_SPINLOCK(name) namespace {} static SkPODSpinlock name
-
-
-class SK_API SkPODSpinlock {
+class SkSpinlock {
 public:
     void acquire() {
         
-        if (sk_atomic_exchange(&fLocked, true, sk_memory_order_acquire)) {
+        if (fLocked.exchange(true, sk_memory_order_acquire)) {
             
             this->contendedAcquire();
         }
@@ -27,18 +23,13 @@ public:
 
     void release() {
         
-        sk_atomic_store(&fLocked, false, sk_memory_order_release);
+        fLocked.store(false, sk_memory_order_release);
     }
 
 private:
-    void contendedAcquire();
-    bool fLocked;
-};
+    SK_API void contendedAcquire();
 
-
-class SkSpinlock : public SkPODSpinlock {
-public:
-    SkSpinlock() { this->release(); }
+    SkAtomic<bool> fLocked{false};
 };
 
 #endif

@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkEdgeClipper_DEFINED
 #define SkEdgeClipper_DEFINED
 

@@ -7,7 +7,6 @@
 
 
 
-
 #include "SkTypefaceCache.h"
 #include "SkAtomics.h"
 #include "SkMutex.h"

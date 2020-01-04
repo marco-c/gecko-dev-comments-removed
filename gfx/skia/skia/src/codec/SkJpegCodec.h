@@ -9,15 +9,13 @@
 #define SkJpegCodec_DEFINED
 
 #include "SkCodec.h"
+#include "SkColorSpace.h"
 #include "SkImageInfo.h"
-#include "SkJpegDecoderMgr.h"
-#include "SkJpegUtility_codec.h"
+#include "SkSwizzler.h"
 #include "SkStream.h"
 #include "SkTemplates.h"
 
-extern "C" {
-    #include "jpeglib.h"
-}
+class JpegDecoderMgr;
 
 
 
@@ -47,6 +45,10 @@ protected:
 
     Result onGetPixels(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes, const Options&,
             SkPMColor*, int*, int*) override;
+
+    bool onQueryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const override;
+
+    Result onGetYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) override;
 
     SkEncodedFormat onGetEncodedFormat() const override {
         return kJPEG_SkEncodedFormat;
@@ -89,7 +91,8 @@ private:
 
 
 
-    SkJpegCodec(const SkImageInfo& srcInfo, SkStream* stream, JpegDecoderMgr* decoderMgr);
+    SkJpegCodec(const SkImageInfo& srcInfo, SkStream* stream, JpegDecoderMgr* decoderMgr,
+            sk_sp<SkColorSpace> colorSpace, Origin origin);
 
     
 
@@ -114,6 +117,10 @@ private:
     
     SkAutoTMalloc<uint8_t>     fStorage;    
     uint8_t*                   fSrcRow;     
+    
+    
+    
+    SkIRect                    fSwizzlerSubset;
     SkAutoTDelete<SkSwizzler>  fSwizzler;
     
     typedef SkCodec INHERITED;

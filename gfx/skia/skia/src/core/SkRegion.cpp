@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkAtomics.h"
 #include "SkRegionPriv.h"
 #include "SkTemplates.h"
@@ -599,7 +598,7 @@ bool SkRegion::setRects(const SkIRect rects[], int count) {
 
 
 
-#if defined _WIN32 && _MSC_VER >= 1300  
+#if defined _WIN32  
 #pragma warning ( push )
 #pragma warning ( disable : 4701 )
 #endif
@@ -737,7 +736,7 @@ static SkRegion::RunType* operate_on_span(const SkRegion::RunType a_runs[],
     return dst;
 }
 
-#if defined _WIN32 && _MSC_VER >= 1300
+#if defined _WIN32
 #pragma warning ( pop )
 #endif
 

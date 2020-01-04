@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGPaintState.h"
 #include "SkSVGElements.h"
 #include "SkSVGParser.h"

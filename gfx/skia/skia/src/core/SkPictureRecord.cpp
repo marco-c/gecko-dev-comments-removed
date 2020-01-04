@@ -777,9 +777,21 @@ void SkPictureRecord::onDrawAtlas(const SkImage* atlas, const SkRSXform xform[],
     this->validate(initialOffset, size);
 }
 
+void SkPictureRecord::onDrawAnnotation(const SkRect& rect, const char key[], SkData* value) {
+    size_t keyLen = fWriter.WriteStringSize(key);
+    size_t valueLen = fWriter.WriteDataSize(value);
+    size_t size = 4 + sizeof(SkRect) + keyLen + valueLen;
+
+    size_t initialOffset = this->addDraw(DRAW_ANNOTATION, &size);
+    this->addRect(rect);
+    fWriter.writeString(key);
+    fWriter.writeData(value);
+    this->validate(initialOffset, size);
+}
 
 
-SkSurface* SkPictureRecord::onNewSurface(const SkImageInfo& info, const SkSurfaceProps&) {
+
+sk_sp<SkSurface> SkPictureRecord::onNewSurface(const SkImageInfo& info, const SkSurfaceProps&) {
     return nullptr;
 }
 
@@ -961,6 +973,5 @@ void SkPictureRecord::addTextBlob(const SkTextBlob *blob) {
     
     this->addInt(index + 1);
 }
-
 
 

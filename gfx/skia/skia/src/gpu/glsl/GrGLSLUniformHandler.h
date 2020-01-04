@@ -15,12 +15,6 @@ class GrGLSLProgramBuilder;
 
 class GrGLSLUniformHandler {
 public:
-    enum ShaderVisibility {
-        kVertex_Visibility   = 1 << kVertex_GrShaderType,
-        kGeometry_Visibility = 1 << kGeometry_GrShaderType,
-        kFragment_Visibility = 1 << kFragment_GrShaderType,
-    };
-
     virtual ~GrGLSLUniformHandler() {}
 
     typedef GrGLSLProgramDataManager::UniformHandle UniformHandle;
@@ -70,10 +64,9 @@ private:
                                                   int arrayCount,
                                                   const char** outName) = 0;
 
-    virtual void appendUniformDecls(ShaderVisibility, SkString*) const = 0;
+    virtual void appendUniformDecls(GrShaderFlags visibility, SkString*) const = 0;
 
     friend class GrGLSLProgramBuilder;
 };
 
 #endif
-

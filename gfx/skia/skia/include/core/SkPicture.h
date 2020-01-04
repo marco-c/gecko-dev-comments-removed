@@ -8,20 +8,23 @@
 #ifndef SkPicture_DEFINED
 #define SkPicture_DEFINED
 
-#include "SkImageDecoder.h"
 #include "SkRefCnt.h"
+#include "SkRect.h"
 #include "SkTypes.h"
 
 class GrContext;
 class SkBigPicture;
 class SkBitmap;
 class SkCanvas;
+class SkPath;
 class SkPictureData;
 class SkPixelSerializer;
+class SkReadBuffer;
 class SkRefCntSet;
 class SkStream;
 class SkTypefacePlayback;
 class SkWStream;
+class SkWriteBuffer;
 struct SkPictInfo;
 
 
@@ -54,8 +57,7 @@ public:
 
 
 
-    static SkPicture* CreateFromStream(SkStream*,
-                                       InstallPixelRefProc proc = &SkImageDecoder::DecodeMemory);
+    static sk_sp<SkPicture> MakeFromStream(SkStream*, InstallPixelRefProc proc);
 
     
 
@@ -65,7 +67,19 @@ public:
 
 
 
-    static SkPicture* CreateFromBuffer(SkReadBuffer&);
+
+
+    static sk_sp<SkPicture> MakeFromStream(SkStream*);
+
+    
+
+
+
+
+
+
+
+    static sk_sp<SkPicture> MakeFromBuffer(SkReadBuffer&);
 
     
 
@@ -156,6 +170,18 @@ public:
     static void SetPictureIOSecurityPrecautionsEnabled_Dangerous(bool set);
     static bool PictureIOSecurityPrecautionsEnabled();
 
+#ifdef SK_SUPPORT_LEGACY_PICTURE_PTR
+    static SkPicture* CreateFromStream(SkStream* stream, InstallPixelRefProc proc) {
+        return MakeFromStream(stream, proc).release();
+    }
+    static SkPicture* CreateFromStream(SkStream* stream) {
+        return MakeFromStream(stream).release();
+    }
+    static SkPicture* CreateFromBuffer(SkReadBuffer& rbuf) {
+        return MakeFromBuffer(rbuf).release();
+    }
+#endif
+
 private:
     
     SkPicture();
@@ -164,9 +190,7 @@ private:
     template <typename> friend class SkMiniPicture;
 
     void serialize(SkWStream*, SkPixelSerializer*, SkRefCntSet* typefaces) const;
-    static SkPicture* CreateFromStream(SkStream*,
-                                       InstallPixelRefProc proc,
-                                       SkTypefacePlayback*);
+    static sk_sp<SkPicture> MakeFromStream(SkStream*, InstallPixelRefProc, SkTypefacePlayback*);
     friend class SkPictureData;
 
     virtual int numSlowPaths() const = 0;
@@ -181,10 +205,11 @@ private:
     
     
     
+    
 
     
     static const uint32_t     MIN_PICTURE_VERSION = 35;     
-    static const uint32_t CURRENT_PICTURE_VERSION = 43;
+    static const uint32_t CURRENT_PICTURE_VERSION = 44;
 
     static_assert(MIN_PICTURE_VERSION <= 41,
                   "Remove kFontFileName and related code from SkFontDescriptor.cpp.");
@@ -194,9 +219,9 @@ private:
 
     static_assert(MIN_PICTURE_VERSION <= 43,
                   "Remove SkBitmapSourceDeserializer.");
-
+    
     static bool IsValidPictInfo(const SkPictInfo& info);
-    static SkPicture* Forwardport(const SkPictInfo&, const SkPictureData*);
+    static sk_sp<SkPicture> Forwardport(const SkPictInfo&, const SkPictureData*);
 
     SkPictInfo createHeader() const;
     SkPictureData* backport() const;

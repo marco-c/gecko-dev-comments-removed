@@ -77,21 +77,21 @@
 
 
 class SkPatchGrid {
-    
+
 public:
-    
+
     enum VertexType {
         kNone_VertexType = 0X00,
         kColors_VertexType = 0x01,
         kTexs_VertexType = 0x02,
         kColorsAndTexs_VertexType = 0x03
     };
-    
+
     SkPatchGrid(int rows = 0, int cols = 0, VertexType flags = kNone_VertexType,
                 SkXfermode* xfer = nullptr);
-    
+
     ~SkPatchGrid();
-    
+
     
 
 
@@ -101,7 +101,7 @@ public:
 
     bool setPatch(int x, int y, const SkPoint cubics[12], const SkColor colors[4],
                   const SkPoint texCoords[4]);
-    
+
     
 
 
@@ -109,26 +109,26 @@ public:
 
 
     bool getPatch(int x, int y, SkPoint cubics[12], SkColor colors[4], SkPoint texCoords[4]) const;
-    
+
     
 
 
     void reset(int rows, int cols, VertexType flags, SkXfermode* xMode);
-    
+
     
 
 
 
 
     void draw(SkCanvas* canvas, SkPaint& paint);
-    
+
     
 
 
     SkISize getDimensions() const {
         return SkISize::Make(fCols, fRows);
     }
-    
+
 private:
     int fRows, fCols;
     VertexType fModeFlags;

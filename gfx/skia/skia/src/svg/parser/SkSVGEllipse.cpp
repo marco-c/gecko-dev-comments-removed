@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkSVGEllipse.h"
 #include "SkSVGParser.h"
 #include "SkParse.h"

@@ -84,8 +84,13 @@ private:
                      const SkImageInfo& dstInfo, uint32_t x, uint32_t y,
                      uint8_t red, uint8_t green, uint8_t blue);
 
+    
+
+
     int decodeRows(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes,
             const Options& opts) override;
+
+    bool skipRows(int count) override;
 
     SkSampler* getSampler(bool createIfNecessary) override;
 
@@ -96,9 +101,16 @@ private:
     const uint32_t                      fOffset;
     SkAutoTDeleteArray<uint8_t>         fStreamBuffer;
     size_t                              fRLEBytes;
+    const size_t                        fOrigRLEBytes;
     uint32_t                            fCurrRLEByte;
     int                                 fSampleX;
     SkAutoTDelete<SkSampler>            fSampler;
+
+    
+    
+    
+    
+    int                                 fLinesToSkip;
 
     typedef SkBmpCodec INHERITED;
 };

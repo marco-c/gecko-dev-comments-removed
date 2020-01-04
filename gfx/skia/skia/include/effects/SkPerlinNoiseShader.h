@@ -55,24 +55,30 @@ public:
 
 
 
+    static sk_sp<SkShader> MakeFractalNoise(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
+                                            int numOctaves, SkScalar seed,
+                                            const SkISize* tileSize = nullptr);
+    static sk_sp<SkShader> MakeTurbulence(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
+                                          int numOctaves, SkScalar seed,
+                                          const SkISize* tileSize = nullptr);
+
+#ifdef SK_SUPPORT_LEGACY_CREATESHADER_PTR
     static SkShader* CreateFractalNoise(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
                                         int numOctaves, SkScalar seed,
-                                        const SkISize* tileSize = NULL);
+                                        const SkISize* tileSize = NULL) {
+        return MakeFractalNoise(baseFrequencyX, baseFrequencyY, numOctaves, seed, tileSize).release();
+    }
     static SkShader* CreateTurbulence(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
-                                     int numOctaves, SkScalar seed,
-                                     const SkISize* tileSize = NULL);
-    
-
-
-
+                                      int numOctaves, SkScalar seed,
+                                      const SkISize* tileSize = NULL) {
+        return MakeTurbulence(baseFrequencyX, baseFrequencyY, numOctaves, seed, tileSize).release();
+    }
     static SkShader* CreateTubulence(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
                                      int numOctaves, SkScalar seed,
                                      const SkISize* tileSize = NULL) {
-    return CreateTurbulence(baseFrequencyX, baseFrequencyY, numOctaves, seed, tileSize);
+        return CreateTurbulence(baseFrequencyX, baseFrequencyY, numOctaves, seed, tileSize);
     }
-
-
-    size_t contextSize() const override;
+#endif
 
     class PerlinNoiseShaderContext : public SkShader::Context {
     public:
@@ -106,6 +112,7 @@ public:
 protected:
     void flatten(SkWriteBuffer&) const override;
     Context* onCreateContext(const ContextRec&, void* storage) const override;
+    size_t onContextSize(const ContextRec&) const override;
 
 private:
     SkPerlinNoiseShader(SkPerlinNoiseShader::Type type, SkScalar baseFrequencyX,

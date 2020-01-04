@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGG_DEFINED
 #define SkSVGG_DEFINED
 

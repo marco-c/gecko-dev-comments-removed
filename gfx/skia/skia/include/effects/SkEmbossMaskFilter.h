@@ -23,7 +23,13 @@ public:
         uint8_t     fSpecular;      
     };
 
-    static SkMaskFilter* Create(SkScalar blurSigma, const Light& light);
+    static sk_sp<SkMaskFilter> Make(SkScalar blurSigma, const Light& light);
+    
+#ifdef SK_SUPPORT_LEGACY_MASKFILTER_PTR
+    static SkMaskFilter* Create(SkScalar blurSigma, const Light& light) {
+        return Make(blurSigma, light).release();
+    }
+#endif
 
     
     

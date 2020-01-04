@@ -15,7 +15,9 @@
 #include "SkSize.h"
 #include "SkStream.h"
 #include "SkTypes.h"
+#include "SkYUVSizeInfo.h"
 
+class SkColorSpace;
 class SkData;
 class SkPngChunkReader;
 class SkSampler;
@@ -97,6 +99,32 @@ public:
 
 
     const SkImageInfo& getInfo() const { return fSrcInfo; }
+
+    
+
+
+
+
+    SkColorSpace* getColorSpace() const { return fColorSpace.get(); }
+
+    enum Origin {
+        kTopLeft_Origin     = 1, 
+        kTopRight_Origin    = 2, 
+        kBottomRight_Origin = 3, 
+        kBottomLeft_Origin  = 4, 
+        kLeftTop_Origin     = 5, 
+        kRightTop_Origin    = 6, 
+        kRightBottom_Origin = 7, 
+        kLeftBottom_Origin  = 8, 
+        kDefault_Origin     = kTopLeft_Origin,
+        kLast_Origin        = kLeftBottom_Origin,
+    };
+
+    
+
+
+
+    Origin getOrigin() const { return fOrigin; }
 
     
 
@@ -281,6 +309,46 @@ public:
 
 
 
+
+
+
+
+
+    bool queryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const {
+        if (nullptr == sizeInfo) {
+            return false;
+        }
+
+        return this->onQueryYUV8(sizeInfo, colorSpace);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    Result getYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) {
+        if (nullptr == planes || nullptr == planes[0] || nullptr == planes[1] ||
+                nullptr == planes[2]) {
+            return kInvalidInput;
+        }
+
+        if (!this->rewindIfNeeded()) {
+            return kCouldNotRewind;
+        }
+
+        return this->onGetYUV8Planes(sizeInfo, planes);
+    }
+
+    
+
+
+
     
 
 
@@ -440,7 +508,13 @@ public:
     int outputScanline(int inputScanline) const;
 
 protected:
-    SkCodec(const SkImageInfo&, SkStream*);
+    
+
+
+    SkCodec(const SkImageInfo&,
+            SkStream*,
+            sk_sp<SkColorSpace> = nullptr,
+            Origin = kTopLeft_Origin);
 
     virtual SkISize onGetScaledDimensions(float ) const {
         
@@ -468,6 +542,14 @@ protected:
                                void* pixels, size_t rowBytes, const Options&,
                                SkPMColor ctable[], int* ctableCount,
                                int* rowsDecoded) = 0;
+
+    virtual bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const {
+        return false;
+    }
+
+    virtual Result onGetYUV8Planes(const SkYUVSizeInfo&, void*[3] ) {
+        return kUnimplemented;
+    }
 
     virtual bool onGetValidSubset(SkIRect* ) const {
         
@@ -506,9 +588,8 @@ protected:
 
 
 
-
-    uint32_t getFillValue(SkColorType colorType, SkAlphaType alphaType) const {
-        return this->onGetFillValue(colorType, alphaType);
+    uint32_t getFillValue(SkColorType colorType) const {
+        return this->onGetFillValue(colorType);
     }
 
     
@@ -521,8 +602,8 @@ protected:
 
 
 
-    virtual uint32_t onGetFillValue(SkColorType , SkAlphaType alphaType) const {
-        return kOpaque_SkAlphaType == alphaType ? SK_ColorBLACK : SK_ColorTRANSPARENT;
+    virtual uint32_t onGetFillValue(SkColorType ) const {
+        return kOpaque_SkAlphaType == fSrcInfo.alphaType() ? SK_ColorBLACK : SK_ColorTRANSPARENT;
     }
 
     
@@ -561,13 +642,16 @@ protected:
     virtual int onOutputScanline(int inputScanline) const;
 
 private:
-    const SkImageInfo       fSrcInfo;
-    SkAutoTDelete<SkStream> fStream;
-    bool                    fNeedsRewind;
+    const SkImageInfo           fSrcInfo;
+    SkAutoTDelete<SkStream>     fStream;
+    bool                        fNeedsRewind;
+    sk_sp<SkColorSpace>         fColorSpace;
+    const Origin                fOrigin;
+
     
-    SkImageInfo             fDstInfo;
-    SkCodec::Options        fOptions;
-    int                     fCurrScanline;
+    SkImageInfo                 fDstInfo;
+    SkCodec::Options            fOptions;
+    int                         fCurrScanline;
 
     
 
@@ -588,18 +672,7 @@ private:
         return kUnimplemented;
     }
 
-    
-    virtual bool onSkipScanlines(int countLines) {
-        
-        SkAutoMalloc storage(fDstInfo.minRowBytes());
-
-        
-        
-        
-        
-        
-        return countLines == this->onGetScanlines(storage.get(), countLines, 0);
-    }
+    virtual bool onSkipScanlines(int ) { return false; }
 
     virtual int onGetScanlines(void* , int , size_t ) { return 0; }
 

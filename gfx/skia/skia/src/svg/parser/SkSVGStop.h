@@ -6,7 +6,6 @@
 
 
 
-
 #ifndef SkSVGStop_DEFINED
 #define SkSVGStop_DEFINED
 

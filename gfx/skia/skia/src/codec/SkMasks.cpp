@@ -47,7 +47,7 @@ const static uint8_t n_bit_to_8_bit_lookup_table[] = {
 
 
 
-static uint8_t convert_to_8(uint32_t component, uint32_t n) {
+static uint8_t convert_to_8(uint8_t component, uint32_t n) {
     if (0 == n) {
         return 0;
     } else if (8 > n) {
@@ -88,11 +88,6 @@ uint8_t SkMasks::getAlpha(uint32_t pixel) const {
 
 const SkMasks::MaskInfo process_mask(uint32_t mask, uint32_t bpp) {
     
-    if (bpp < 32) {
-        mask &= (1 << bpp) - 1;
-    }
-
-    
     uint32_t tempMask = mask;
     uint32_t shift = 0;
     uint32_t size = 0;
@@ -106,13 +101,18 @@ const SkMasks::MaskInfo process_mask(uint32_t mask, uint32_t bpp) {
             size++;
         }
         
-        if (tempMask != 0) {
-            SkCodecPrintf("Warning: Bit masks is not continuous.\n");
+        if (tempMask) {
+            SkCodecPrintf("Warning: Bit mask is not continuous.\n");
+            
+            for (; tempMask; tempMask >>= 1) {
+                size++;
+            }
         }
         
         if (size > 8) {
             shift += size - 8;
             size = 8;
+            mask &= 0xFF << shift;
         }
     }
 

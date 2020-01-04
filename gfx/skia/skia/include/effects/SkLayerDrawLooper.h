@@ -80,7 +80,7 @@ public:
     SK_TO_STRING_OVERRIDE()
 
     Factory getFactory() const override { return CreateProc; }
-    static SkFlattenable* CreateProc(SkReadBuffer& buffer);
+    static sk_sp<SkFlattenable> CreateProc(SkReadBuffer& buffer);
 
 protected:
     SkLayerDrawLooper();
@@ -142,7 +142,12 @@ public:
 
 
 
-        SkLayerDrawLooper* detachLooper();
+        sk_sp<SkDrawLooper> detach();
+#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
+        SkLayerDrawLooper* detachLooper() {
+            return (SkLayerDrawLooper*)this->detach().release();
+        }
+#endif
 
     private:
         Rec* fRecs;

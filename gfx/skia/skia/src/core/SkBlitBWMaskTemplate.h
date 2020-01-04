@@ -6,7 +6,6 @@
 
 
 
-
 #include "SkBitmap.h"
 #include "SkMask.h"
 

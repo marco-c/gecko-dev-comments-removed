@@ -13,8 +13,8 @@
 #include "SkMath.h"
 #include "SkTLogic.h"
 #include "SkTypes.h"
-#include "SkUniquePtr.h"
 #include <limits.h>
+#include <memory>
 #include <new>
 
 
@@ -58,12 +58,11 @@ template <typename R, typename T, R (*P)(T*)> struct SkFunctionWrapper {
 
 
 template <typename T, void (*P)(T*)> class SkAutoTCallVProc
-    : public skstd::unique_ptr<T, SkFunctionWrapper<void, T, P>> {
+    : public std::unique_ptr<T, SkFunctionWrapper<void, T, P>> {
 public:
-    SkAutoTCallVProc(T* obj): skstd::unique_ptr<T, SkFunctionWrapper<void, T, P>>(obj) {}
+    SkAutoTCallVProc(T* obj): std::unique_ptr<T, SkFunctionWrapper<void, T, P>>(obj) {}
 
     operator T*() const { return this->get(); }
-    T* detach() { return this->release(); }
 };
 
 
@@ -75,12 +74,11 @@ public:
 
 
 template <typename T, int (*P)(T*)> class SkAutoTCallIProc
-    : public skstd::unique_ptr<T, SkFunctionWrapper<int, T, P>> {
+    : public std::unique_ptr<T, SkFunctionWrapper<int, T, P>> {
 public:
-    SkAutoTCallIProc(T* obj): skstd::unique_ptr<T, SkFunctionWrapper<int, T, P>>(obj) {}
+    SkAutoTCallIProc(T* obj): std::unique_ptr<T, SkFunctionWrapper<int, T, P>>(obj) {}
 
     operator T*() const { return this->get(); }
-    T* detach() { return this->release(); }
 };
 
 
@@ -93,21 +91,21 @@ public:
 
 
 
-template <typename T> class SkAutoTDelete : public skstd::unique_ptr<T> {
+template <typename T> class SkAutoTDelete : public std::unique_ptr<T> {
 public:
-    SkAutoTDelete(T* obj = NULL) : skstd::unique_ptr<T>(obj) {}
+    SkAutoTDelete(T* obj = NULL) : std::unique_ptr<T>(obj) {}
 
     operator T*() const { return this->get(); }
-    void free() { this->reset(nullptr); }
+
+#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
+    
     T* detach() { return this->release(); }
+#endif
 };
 
-template <typename T> class SkAutoTDeleteArray : public skstd::unique_ptr<T[]> {
+template <typename T> class SkAutoTDeleteArray : public std::unique_ptr<T[]> {
 public:
-    SkAutoTDeleteArray(T array[]) : skstd::unique_ptr<T[]>(array) {}
-
-    void free() { this->reset(nullptr); }
-    T* detach() { return this->release(); }
+    SkAutoTDeleteArray(T array[]) : std::unique_ptr<T[]>(array) {}
 };
 
 
@@ -166,7 +164,7 @@ private:
 
 
 
-template <int N, typename T> class SkAutoSTArray : SkNoncopyable {
+template <int kCountRequested, typename T> class SkAutoSTArray : SkNoncopyable {
 public:
     
     SkAutoSTArray() {
@@ -195,13 +193,13 @@ public:
         }
 
         if (fCount != count) {
-            if (fCount > N) {
+            if (fCount > kCount) {
                 
                 SkASSERT((T*) fStorage != fArray);
                 sk_free(fArray);
             }
 
-            if (count > N) {
+            if (count > kCount) {
                 const uint64_t size64 = sk_64_mul(count, sizeof(T));
                 const size_t size = static_cast<size_t>(size64);
                 if (size != size64) {
@@ -240,10 +238,21 @@ public:
     }
 
 private:
+#if defined(GOOGLE3)
+    
+    
+    static const int kMaxBytes = 4 * 1024;
+    static const int kCount = kCountRequested * sizeof(T) > kMaxBytes
+        ? kMaxBytes / sizeof(T)
+        : kCountRequested;
+#else
+    static const int kCount = kCountRequested;
+#endif
+
     int     fCount;
     T*      fArray;
     
-    char    fStorage[N * sizeof(T)];
+    char    fStorage[kCount * sizeof(T)];
 };
 
 
@@ -271,9 +280,9 @@ public:
     }
 
     
-    T* reset(size_t count) {
+    T* reset(size_t count = 0) {
         sk_free(fPtr);
-        fPtr = (T*)sk_malloc_flags(count * sizeof(T), SK_MALLOC_THROW);
+        fPtr = count ? (T*)sk_malloc_flags(count * sizeof(T), SK_MALLOC_THROW) : nullptr;
         return fPtr;
     }
 
@@ -298,16 +307,9 @@ public:
     
 
 
-    void free() {
-        this->reset(0);
-    }
-
-    
 
 
-
-
-    T* detach() {
+    T* release() {
         T* ptr = fPtr;
         fPtr = NULL;
         return ptr;
@@ -317,12 +319,12 @@ private:
     T* fPtr;
 };
 
-template <size_t N, typename T> class SkAutoSTMalloc : SkNoncopyable {
+template <size_t kCountRequested, typename T> class SkAutoSTMalloc : SkNoncopyable {
 public:
     SkAutoSTMalloc() : fPtr(fTStorage) {}
 
     SkAutoSTMalloc(size_t count) {
-        if (count > N) {
+        if (count > kCount) {
             fPtr = (T*)sk_malloc_flags(count * sizeof(T), SK_MALLOC_THROW | SK_MALLOC_TEMP);
         } else {
             fPtr = fTStorage;
@@ -340,7 +342,7 @@ public:
         if (fPtr != fTStorage) {
             sk_free(fPtr);
         }
-        if (count > N) {
+        if (count > kCount) {
             fPtr = (T*)sk_malloc_throw(count * sizeof(T));
         } else {
             fPtr = fTStorage;
@@ -368,10 +370,10 @@ public:
 
     
     void realloc(size_t count) {
-        if (count > N) {
+        if (count > kCount) {
             if (fPtr == fTStorage) {
                 fPtr = (T*)sk_malloc_throw(count * sizeof(T));
-                memcpy(fPtr, fTStorage, N * sizeof(T));
+                memcpy(fPtr, fTStorage, kCount * sizeof(T));
             } else {
                 fPtr = (T*)sk_realloc_throw(fPtr, count * sizeof(T));
             }
@@ -381,9 +383,22 @@ public:
     }
 
 private:
+    
+    static const size_t kCountWithPadding = SkAlign4(kCountRequested*sizeof(T)) / sizeof(T);
+#if defined(GOOGLE3)
+    
+    
+    static const size_t kMaxBytes = 4 * 1024;
+    static const size_t kCount = kCountRequested * sizeof(T) > kMaxBytes
+        ? kMaxBytes / sizeof(T)
+        : kCountWithPadding;
+#else
+    static const size_t kCount = kCountWithPadding;
+#endif
+
     T*          fPtr;
     union {
-        uint32_t    fStorage32[(N*sizeof(T) + 3) >> 2];
+        uint32_t    fStorage32[SkAlign4(kCount*sizeof(T)) >> 2];
         T           fTStorage[1];   
     };
 };

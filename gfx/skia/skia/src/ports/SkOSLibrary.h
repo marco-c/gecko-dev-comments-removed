@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef SkOSLibrary_DEFINED
 #define SkOSLibrary_DEFINED
 
@@ -13,4 +12,3 @@ void* DynamicLoadLibrary(const char* libraryName);
 void* GetProcedureAddress(void* library, const char* functionName);
 
 #endif
-
