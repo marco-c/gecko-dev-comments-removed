@@ -48,6 +48,8 @@ public:
     return nullptr;
   }
 
+  bool IsNull() const { return mBits == 0; }
+
   
   uintptr_t Bits() const { return mBits; }
   void SetBits(uintptr_t aBits) { mBits = aBits; }
