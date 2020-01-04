@@ -127,7 +127,7 @@ nsBMPEncoder::StartImageEncode(uint32_t aWidth,
   
   Version version;
   uint32_t bpp;
-  nsresult rv = ParseOptions(aOutputOptions, &version, &bpp);
+  nsresult rv = ParseOptions(aOutputOptions, version, bpp);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -256,15 +256,11 @@ nsBMPEncoder::EndImageEncode()
 
 
 nsresult
-nsBMPEncoder::ParseOptions(const nsAString& aOptions, Version* version,
-                           uint32_t* bpp)
+nsBMPEncoder::ParseOptions(const nsAString& aOptions, Version& aVersionOut,
+                           uint32_t& aBppOut)
 {
-  if (version) {
-    *version = VERSION_3;
-  }
-  if (bpp) {
-    *bpp = 24;
-  }
+  aVersionOut = VERSION_3;
+  aBppOut = 24;
 
   
   
@@ -291,9 +287,9 @@ nsBMPEncoder::ParseOptions(const nsAString& aOptions, Version* version,
     if (nameValuePair[0].Equals("version",
                                 nsCaseInsensitiveCStringComparator())) {
       if (nameValuePair[1].EqualsLiteral("3")) {
-        *version = VERSION_3;
+        aVersionOut = VERSION_3;
       } else if (nameValuePair[1].EqualsLiteral("5")) {
-        *version = VERSION_5;
+        aVersionOut = VERSION_5;
       } else {
         return NS_ERROR_INVALID_ARG;
       }
@@ -302,9 +298,9 @@ nsBMPEncoder::ParseOptions(const nsAString& aOptions, Version* version,
     
     if (nameValuePair[0].Equals("bpp", nsCaseInsensitiveCStringComparator())) {
       if (nameValuePair[1].EqualsLiteral("24")) {
-        *bpp = 24;
+        aBppOut = 24;
       } else if (nameValuePair[1].EqualsLiteral("32")) {
-        *bpp = 32;
+        aBppOut = 32;
       } else {
         return NS_ERROR_INVALID_ARG;
       }

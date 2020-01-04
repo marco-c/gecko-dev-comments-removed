@@ -103,8 +103,8 @@ protected:
   };
 
   
-  nsresult ParseOptions(const nsAString& aOptions, Version* version,
-                        uint32_t* bpp);
+  nsresult ParseOptions(const nsAString& aOptions, Version& aVersionOut,
+                        uint32_t& aBppOut);
   
   void ConvertHostARGBRow(const uint8_t* aSrc,
                           const mozilla::UniquePtr<uint8_t[]>& aDest,

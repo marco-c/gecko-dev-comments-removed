@@ -231,7 +231,7 @@ nsICOEncoder::StartImageEncode(uint32_t aWidth,
   
   uint32_t bpp = 24;
   bool usePNG = true;
-  nsresult rv = ParseOptions(aOutputOptions, &bpp, &usePNG);
+  nsresult rv = ParseOptions(aOutputOptions, bpp, usePNG);
   NS_ENSURE_SUCCESS(rv, rv);
 
   mUsePNG = usePNG;
@@ -266,17 +266,13 @@ nsICOEncoder::EndImageEncode()
 
 
 nsresult
-nsICOEncoder::ParseOptions(const nsAString& aOptions, uint32_t* bpp,
-                           bool* usePNG)
+nsICOEncoder::ParseOptions(const nsAString& aOptions, uint32_t& aBppOut,
+                           bool& aUsePNGOut)
 {
   
   if (aOptions.Length() == 0) {
-    if (usePNG) {
-      *usePNG = true;
-    }
-    if (bpp) {
-      *bpp = 24;
-    }
+    aUsePNGOut = true;
+    aBppOut = 24;
   }
 
   
@@ -304,11 +300,11 @@ nsICOEncoder::ParseOptions(const nsAString& aOptions, uint32_t* bpp,
                                 nsCaseInsensitiveCStringComparator())) {
       if (nameValuePair[1].Equals("png",
                                   nsCaseInsensitiveCStringComparator())) {
-        *usePNG = true;
+        aUsePNGOut = true;
       }
       else if (nameValuePair[1].Equals("bmp",
                                        nsCaseInsensitiveCStringComparator())) {
-        *usePNG = false;
+        aUsePNGOut = false;
       }
       else {
         return NS_ERROR_INVALID_ARG;
@@ -318,10 +314,10 @@ nsICOEncoder::ParseOptions(const nsAString& aOptions, uint32_t* bpp,
     
     if (nameValuePair[0].Equals("bpp", nsCaseInsensitiveCStringComparator())) {
       if (nameValuePair[1].EqualsLiteral("24")) {
-        *bpp = 24;
+        aBppOut = 24;
       }
       else if (nameValuePair[1].EqualsLiteral("32")) {
-        *bpp = 32;
+        aBppOut = 32;
       }
       else {
         return NS_ERROR_INVALID_ARG;
