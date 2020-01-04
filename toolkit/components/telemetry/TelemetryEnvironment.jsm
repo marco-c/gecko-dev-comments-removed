@@ -261,7 +261,7 @@ function getGfxField(aPropertyName, aDefault) {
 
 
 function limitStringToLength(aString, aMaxLength) {
-  if (aString === null) {
+  if (aString === null || aString === undefined) {
     return null;
   }
   return aString.substring(0, aMaxLength);
