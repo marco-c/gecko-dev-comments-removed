@@ -1661,7 +1661,7 @@ void
 Debugger::slowPathOnNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global)
 {
     MOZ_ASSERT(!JS_CLIST_IS_EMPTY(&cx->runtime()->onNewGlobalObjectWatchers));
-    if (global->compartment()->options().invisibleToDebugger())
+    if (global->compartment()->creationOptions().invisibleToDebugger())
         return;
 
     
@@ -3144,7 +3144,7 @@ Debugger::addAllGlobalsAsDebuggees(JSContext* cx, unsigned argc, Value* vp)
     THIS_DEBUGGER(cx, argc, vp, "addAllGlobalsAsDebuggees", args, dbg);
     for (ZonesIter zone(cx->runtime(), SkipAtoms); !zone.done(); zone.next()) {
         for (CompartmentsInZoneIter c(zone); !c.done(); c.next()) {
-            if (c == dbg->object->compartment() || c->options().invisibleToDebugger())
+            if (c == dbg->object->compartment() || c->creationOptions().invisibleToDebugger())
                 continue;
             c->scheduledForDestruction = false;
             GlobalObject* global = c->maybeGlobal();
@@ -3365,7 +3365,7 @@ Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global)
     
     
     JSCompartment* debuggeeCompartment = global->compartment();
-    if (debuggeeCompartment->options().invisibleToDebugger()) {
+    if (debuggeeCompartment->creationOptions().invisibleToDebugger()) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
                              JSMSG_DEBUG_CANT_DEBUG_GLOBAL);
         return false;
@@ -4247,7 +4247,7 @@ Debugger::findAllGlobals(JSContext* cx, unsigned argc, Value* vp)
         JS::AutoCheckCannotGC nogc;
 
         for (CompartmentsIter c(cx->runtime(), SkipAtoms); !c.done(); c.next()) {
-            if (c->options().invisibleToDebugger())
+            if (c->creationOptions().invisibleToDebugger())
                 continue;
 
             c->scheduledForDestruction = false;
@@ -4301,7 +4301,7 @@ Debugger::makeGlobalObjectReference(JSContext* cx, unsigned argc, Value* vp)
     
     
     JSCompartment* globalCompartment = global->compartment();
-    if (globalCompartment->options().invisibleToDebugger()) {
+    if (globalCompartment->creationOptions().invisibleToDebugger()) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
                              JSMSG_DEBUG_INVISIBLE_COMPARTMENT);
         return false;
@@ -7802,7 +7802,7 @@ DebuggerObject_unwrap(JSContext* cx, unsigned argc, Value* vp)
     
     
     JSCompartment* unwrappedCompartment = unwrapped->compartment();
-    if (unwrappedCompartment->options().invisibleToDebugger()) {
+    if (unwrappedCompartment->creationOptions().invisibleToDebugger()) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
                              JSMSG_DEBUG_INVISIBLE_COMPARTMENT);
         return false;

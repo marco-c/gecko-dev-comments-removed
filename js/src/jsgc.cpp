@@ -6784,9 +6784,11 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
 {
     
     
-    MOZ_ASSERT(source->options_.mergeable());
+    MOZ_ASSERT(source->creationOptions_.mergeable());
+    MOZ_ASSERT(source->creationOptions_.invisibleToDebugger());
 
-    MOZ_ASSERT(source->addonId == target->addonId);
+    MOZ_ASSERT(source->creationOptions().addonIdOrNull() ==
+               target->creationOptions().addonIdOrNull());
 
     JSRuntime* rt = source->runtimeFromMainThread();
 

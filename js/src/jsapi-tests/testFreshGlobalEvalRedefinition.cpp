@@ -31,7 +31,6 @@ BEGIN_TEST(testRedefineGlobalEval)
 
     
     JS::CompartmentOptions options;
-    options.setVersion(JSVERSION_LATEST);
     JS::Rooted<JSObject*> g(cx, JS_NewGlobalObject(cx, &cls, nullptr, JS::FireOnNewGlobalHook, options));
     if (!g)
         return false;

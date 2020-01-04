@@ -223,7 +223,8 @@ class WeakMapBase;
 
 struct JSCompartment
 {
-    JS::CompartmentOptions       options_;
+    const JS::CompartmentCreationOptions creationOptions_;
+    JS::CompartmentBehaviors behaviors_;
 
   private:
     JS::Zone*                    zone_;
@@ -280,10 +281,6 @@ struct JSCompartment
     bool                         warnedAboutExprClosure;
     bool                         warnedAboutRegExpMultiline;
 
-    
-    
-    JSAddonId*                   const addonId;
-
 #ifdef DEBUG
     bool                         firedOnNewGlobalObject;
 #endif
@@ -312,8 +309,10 @@ struct JSCompartment
 
     JS::Zone* zone() { return zone_; }
     const JS::Zone* zone() const { return zone_; }
-    JS::CompartmentOptions& options() { return options_; }
-    const JS::CompartmentOptions& options() const { return options_; }
+
+    const JS::CompartmentCreationOptions& creationOptions() const { return creationOptions_; }
+    JS::CompartmentBehaviors& behaviors() { return behaviors_; }
+    const JS::CompartmentBehaviors& behaviors() const { return behaviors_; }
 
     JSRuntime* runtimeFromMainThread() {
         MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
@@ -473,9 +472,6 @@ struct JSCompartment
     JSObject*                    gcIncomingGrayPointers;
 
   private:
-    
-    bool                         gcPreserveJitCode;
-
     enum {
         IsDebuggee = 1 << 0,
         DebuggerObservesAllExecution = 1 << 1,
@@ -553,7 +549,8 @@ struct JSCompartment
     void traceOutgoingCrossCompartmentWrappers(JSTracer* trc);
     static void traceIncomingCrossCompartmentEdgesForZoneGC(JSTracer* trc);
 
-    bool preserveJitCode() { return gcPreserveJitCode; }
+    
+    bool preserveJitCode() { return creationOptions_.preserveJitCode(); }
 
     void sweepAfterMinorGC();
 

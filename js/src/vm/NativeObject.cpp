@@ -1822,7 +1822,7 @@ GetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     
     
     
-    if (!cx->compartment()->options().extraWarnings(cx))
+    if (!cx->compartment()->behaviors().extraWarnings(cx))
         return true;
 
     jsbytecode* pc;
@@ -2001,7 +2001,7 @@ MaybeReportUndeclaredVarAssignment(JSContext* cx, JSString* propname)
         
         if (IsStrictSetPC(pc))
             flags = JSREPORT_ERROR;
-        else if (cx->compartment()->options().extraWarnings(cx))
+        else if (cx->compartment()->behaviors().extraWarnings(cx))
             flags = JSREPORT_WARNING | JSREPORT_STRICT;
         else
             return true;

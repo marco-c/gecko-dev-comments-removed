@@ -230,12 +230,14 @@ JSObject* newDelegate()
 
     
     JS::CompartmentOptions options;
-    options.setVersion(JSVERSION_LATEST);
-    JS::RootedObject global(cx);
-    global = JS_NewGlobalObject(cx, Jsvalify(&delegateClass), nullptr, JS::FireOnNewGlobalHook,
-                                options);
-    JS_SetReservedSlot(global, 0, JS::Int32Value(42));
+    options.behaviors().setVersion(JSVERSION_LATEST);
 
+    JS::RootedObject global(cx, JS_NewGlobalObject(cx, Jsvalify(&delegateClass), nullptr,
+                                                   JS::FireOnNewGlobalHook, options));
+    if (!global)
+        return nullptr;
+
+    JS_SetReservedSlot(global, 0, JS::Int32Value(42));
     return global;
 }
 

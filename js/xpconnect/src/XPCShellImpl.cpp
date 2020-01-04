@@ -1478,8 +1478,8 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
         
         
         JS::CompartmentOptions options;
-        options.setZone(JS::FreshZone)
-               .setVersion(JSVERSION_LATEST);
+        options.creationOptions().setZone(JS::FreshZone);
+        options.behaviors().setVersion(JSVERSION_LATEST);
         nsCOMPtr<nsIXPConnectJSObjectHolder> holder;
         rv = xpc->InitClassesWithNewWrappedGlobal(cx,
                                                   static_cast<nsIGlobalObject*>(backstagePass),
@@ -1504,7 +1504,7 @@ XRE_XPCShellMain(int argc, char** argv, char** envp)
             
             
             
-            JS::CompartmentOptionsRef(glob).setDiscardSource(false);
+            JS::CompartmentBehaviorsRef(glob).setDiscardSource(false);
 
             backstagePass->SetGlobalObject(glob);
 

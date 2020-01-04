@@ -2163,7 +2163,104 @@ enum ZoneSpecifier {
     SystemZone = 1
 };
 
-class JS_PUBLIC_API(CompartmentOptions)
+
+
+
+
+
+
+
+
+class JS_PUBLIC_API(CompartmentCreationOptions)
+{
+  public:
+    CompartmentCreationOptions()
+      : addonId_(nullptr),
+        traceGlobal_(nullptr),
+        invisibleToDebugger_(false),
+        mergeable_(false),
+        preserveJitCode_(false),
+        cloneSingletons_(false)
+    {
+        zone_.spec = JS::FreshZone;
+    }
+
+    
+    
+    JSAddonId* addonIdOrNull() const { return addonId_; }
+    CompartmentCreationOptions& setAddonId(JSAddonId* id) {
+        addonId_ = id;
+        return *this;
+    }
+
+    JSTraceOp getTrace() const {
+        return traceGlobal_;
+    }
+    CompartmentCreationOptions& setTrace(JSTraceOp op) {
+        traceGlobal_ = op;
+        return *this;
+    }
+
+    void* zonePointer() const {
+        MOZ_ASSERT(uintptr_t(zone_.pointer) > uintptr_t(JS::SystemZone));
+        return zone_.pointer;
+    }
+    ZoneSpecifier zoneSpecifier() const { return zone_.spec; }
+    CompartmentCreationOptions& setZone(ZoneSpecifier spec);
+    CompartmentCreationOptions& setSameZoneAs(JSObject* obj);
+
+    
+    
+    
+    
+    bool invisibleToDebugger() const { return invisibleToDebugger_; }
+    CompartmentCreationOptions& setInvisibleToDebugger(bool flag) {
+        invisibleToDebugger_ = flag;
+        return *this;
+    }
+
+    
+    
+    
+    
+    bool mergeable() const { return mergeable_; }
+    CompartmentCreationOptions& setMergeable(bool flag) {
+        mergeable_ = flag;
+        return *this;
+    }
+
+    
+    
+    bool preserveJitCode() const { return preserveJitCode_; }
+    CompartmentCreationOptions& setPreserveJitCode(bool flag) {
+        preserveJitCode_ = flag;
+        return *this;
+    }
+
+    bool cloneSingletons() const { return cloneSingletons_; }
+    CompartmentCreationOptions& setCloneSingletons(bool flag) {
+        cloneSingletons_ = flag;
+        return *this;
+    }
+
+  private:
+    JSAddonId* addonId_;
+    JSTraceOp traceGlobal_;
+    union {
+        ZoneSpecifier spec;
+        void* pointer; 
+    } zone_;
+    bool invisibleToDebugger_;
+    bool mergeable_;
+    bool preserveJitCode_;
+    bool cloneSingletons_;
+};
+
+
+
+
+
+class JS_PUBLIC_API(CompartmentBehaviors)
 {
   public:
     class Override {
@@ -2194,23 +2291,16 @@ class JS_PUBLIC_API(CompartmentOptions)
         Mode mode_;
     };
 
-    explicit CompartmentOptions()
+    CompartmentBehaviors()
       : version_(JSVERSION_UNKNOWN)
-      , invisibleToDebugger_(false)
-      , mergeable_(false)
       , discardSource_(false)
       , disableLazyParsing_(false)
-      , cloneSingletons_(false)
-      , traceGlobal_(nullptr)
       , singletonsAsTemplates_(true)
-      , addonId_(nullptr)
-      , preserveJitCode_(false)
     {
-        zone_.spec = JS::FreshZone;
     }
 
     JSVersion version() const { return version_; }
-    CompartmentOptions& setVersion(JSVersion aVersion) {
+    CompartmentBehaviors& setVersion(JSVersion aVersion) {
         MOZ_ASSERT(aVersion != JSVERSION_UNKNOWN);
         version_ = aVersion;
         return *this;
@@ -2218,41 +2308,15 @@ class JS_PUBLIC_API(CompartmentOptions)
 
     
     
-    
-    
-    bool invisibleToDebugger() const { return invisibleToDebugger_; }
-    CompartmentOptions& setInvisibleToDebugger(bool flag) {
-        invisibleToDebugger_ = flag;
-        return *this;
-    }
-
-    
-    
-    
-    
-    bool mergeable() const { return mergeable_; }
-    CompartmentOptions& setMergeable(bool flag) {
-        mergeable_ = flag;
-        return *this;
-    }
-
-    
-    
     bool discardSource() const { return discardSource_; }
-    CompartmentOptions& setDiscardSource(bool flag) {
+    CompartmentBehaviors& setDiscardSource(bool flag) {
         discardSource_ = flag;
         return *this;
     }
 
     bool disableLazyParsing() const { return disableLazyParsing_; }
-    CompartmentOptions& setDisableLazyParsing(bool flag) {
+    CompartmentBehaviors& setDisableLazyParsing(bool flag) {
         disableLazyParsing_ = flag;
-        return *this;
-    }
-
-    bool cloneSingletons() const { return cloneSingletons_; }
-    CompartmentOptions& setCloneSingletons(bool flag) {
-        cloneSingletons_ = flag;
         return *this;
     }
 
@@ -2260,74 +2324,87 @@ class JS_PUBLIC_API(CompartmentOptions)
     bool extraWarnings(JSContext* cx) const;
     Override& extraWarningsOverride() { return extraWarningsOverride_; }
 
-    void* zonePointer() const {
-        MOZ_ASSERT(uintptr_t(zone_.pointer) > uintptr_t(JS::SystemZone));
-        return zone_.pointer;
-    }
-    ZoneSpecifier zoneSpecifier() const { return zone_.spec; }
-    CompartmentOptions& setZone(ZoneSpecifier spec);
-    CompartmentOptions& setSameZoneAs(JSObject* obj);
-
-    void setSingletonsAsValues() {
-        singletonsAsTemplates_ = false;
-    }
     bool getSingletonsAsTemplates() const {
         return singletonsAsTemplates_;
     }
-
-    
-    
-    JSAddonId* addonIdOrNull() const { return addonId_; }
-    CompartmentOptions& setAddonId(JSAddonId* id) {
-        addonId_ = id;
-        return *this;
-    }
-
-    CompartmentOptions& setTrace(JSTraceOp op) {
-        traceGlobal_ = op;
-        return *this;
-    }
-    JSTraceOp getTrace() const {
-        return traceGlobal_;
-    }
-
-    bool preserveJitCode() const { return preserveJitCode_; }
-    CompartmentOptions& setPreserveJitCode(bool flag) {
-        preserveJitCode_ = flag;
+    CompartmentBehaviors& setSingletonsAsValues() {
+        singletonsAsTemplates_ = false;
         return *this;
     }
 
   private:
     JSVersion version_;
-    bool invisibleToDebugger_;
-    bool mergeable_;
     bool discardSource_;
     bool disableLazyParsing_;
-    bool cloneSingletons_;
     Override extraWarningsOverride_;
-    union {
-        ZoneSpecifier spec;
-        void* pointer; 
-    } zone_;
-    JSTraceOp traceGlobal_;
 
     
     
     
     bool singletonsAsTemplates_;
-
-    JSAddonId* addonId_;
-    bool preserveJitCode_;
 };
 
-JS_PUBLIC_API(CompartmentOptions&)
-CompartmentOptionsRef(JSCompartment* compartment);
 
-JS_PUBLIC_API(CompartmentOptions&)
-CompartmentOptionsRef(JSObject* obj);
 
-JS_PUBLIC_API(CompartmentOptions&)
-CompartmentOptionsRef(JSContext* cx);
+
+
+
+
+class JS_PUBLIC_API(CompartmentOptions)
+{
+  public:
+    explicit CompartmentOptions()
+      : creationOptions_(),
+        behaviors_()
+    {}
+
+    CompartmentOptions(const CompartmentCreationOptions& compartmentCreation,
+                       const CompartmentBehaviors& compartmentBehaviors)
+      : creationOptions_(compartmentCreation),
+        behaviors_(compartmentBehaviors)
+    {}
+
+    
+    
+    
+    CompartmentCreationOptions& creationOptions() {
+        return creationOptions_;
+    }
+    const CompartmentCreationOptions& creationOptions() const {
+        return creationOptions_;
+    }
+
+    
+    
+    CompartmentBehaviors& behaviors() {
+        return behaviors_;
+    }
+    const CompartmentBehaviors& behaviors() const {
+        return behaviors_;
+    }
+
+  private:
+    CompartmentCreationOptions creationOptions_;
+    CompartmentBehaviors behaviors_;
+};
+
+JS_PUBLIC_API(const CompartmentCreationOptions&)
+CompartmentCreationOptionsRef(JSCompartment* compartment);
+
+JS_PUBLIC_API(const CompartmentCreationOptions&)
+CompartmentCreationOptionsRef(JSObject* obj);
+
+JS_PUBLIC_API(const CompartmentCreationOptions&)
+CompartmentCreationOptionsRef(JSContext* cx);
+
+JS_PUBLIC_API(CompartmentBehaviors&)
+CompartmentBehaviorsRef(JSCompartment* compartment);
+
+JS_PUBLIC_API(CompartmentBehaviors&)
+CompartmentBehaviorsRef(JSObject* obj);
+
+JS_PUBLIC_API(CompartmentBehaviors&)
+CompartmentBehaviorsRef(JSContext* cx);
 
 
 
