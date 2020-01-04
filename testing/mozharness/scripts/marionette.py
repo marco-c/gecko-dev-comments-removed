@@ -26,6 +26,8 @@ from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_opt
 from mozharness.mozilla.testing.unittest import TestSummaryOutputParserHelper
 from mozharness.mozilla.structuredlog import StructuredOutputParser
 
+
+
 class MarionetteTest(TestingMixin, MercurialScript, BlobUploadMixin, TransferMixin, GaiaMixin):
     config_options = [[
         ["--application"],
