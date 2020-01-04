@@ -2174,22 +2174,6 @@ IMMHandler::GetCharacterRectOfSelectedTextAt(nsWindow* aWindow,
 
   
   
-  uint32_t baseOffset =
-    mIsComposing ? mCompositionStart : selection.mOffset;
-
-  CheckedInt<uint32_t> checkingOffset =
-    CheckedInt<uint32_t>(baseOffset) + aOffset;
-  if (NS_WARN_IF(!checkingOffset.isValid()) ||
-      checkingOffset.value() == UINT32_MAX) {
-    MOZ_LOG(gIMMLog, LogLevel::Error,
-      ("IMM: GetCharacterRectOfSelectedTextAt, FAILED, due to "
-       "aOffset is too large (aOffset=%u, baseOffset=%u, mIsComposing=%s)",
-       aOffset, baseOffset, GetBoolName(mIsComposing)));
-    return false;
-  }
-
-  
-  
   
   
   uint32_t targetLength =
@@ -2202,8 +2186,6 @@ IMMHandler::GetCharacterRectOfSelectedTextAt(nsWindow* aWindow,
     return false;
   }
 
-  uint32_t offset = checkingOffset.value();
-
   
   uint32_t caretOffset = UINT32_MAX;
   
@@ -2213,24 +2195,26 @@ IMMHandler::GetCharacterRectOfSelectedTextAt(nsWindow* aWindow,
       
       if (mCursorPosition != NO_IME_CARET) {
         MOZ_ASSERT(mCursorPosition >= 0);
-        caretOffset = mCompositionStart + mCursorPosition;
+        caretOffset = mCursorPosition;
       } else if (!ShouldDrawCompositionStringOurselves() ||
                  mCompositionString.IsEmpty()) {
         
         
-        caretOffset = mCompositionStart;
+        caretOffset = 0;
       }
     } else {
       
-      caretOffset = selection.mOffset;
+      caretOffset = 0;
     }
   }
 
   
   
-  if (offset != caretOffset) {
+  if (aOffset != caretOffset) {
     WidgetQueryContentEvent charRect(true, eQueryTextRect, aWindow);
-    charRect.InitForQueryTextRect(offset, 1);
+    WidgetQueryContentEvent::Options options;
+    options.mRelativeToInsertionPoint = true;
+    charRect.InitForQueryTextRect(aOffset, 1, options);
     aWindow->InitEvent(charRect, &point);
     DispatchEvent(aWindow, charRect);
     if (charRect.mSucceeded) {
@@ -2258,16 +2242,10 @@ IMMHandler::GetCaretRect(nsWindow* aWindow,
 {
   LayoutDeviceIntPoint point(0, 0);
 
-  Selection& selection = GetSelection();
-  if (!selection.EnsureValidSelection(aWindow)) {
-    MOZ_LOG(gIMMLog, LogLevel::Error,
-      ("IMM: GetCaretRect, FAILED, due to "
-       "Selection::EnsureValidSelection() failure"));
-    return false;
-  }
-
   WidgetQueryContentEvent caretRect(true, eQueryCaretRect, aWindow);
-  caretRect.InitForQueryCaretRect(selection.mOffset);
+  WidgetQueryContentEvent::Options options;
+  options.mRelativeToInsertionPoint = true;
+  caretRect.InitForQueryCaretRect(0, options);
   aWindow->InitEvent(caretRect, &point);
   DispatchEvent(aWindow, caretRect);
   if (!caretRect.mSucceeded) {
