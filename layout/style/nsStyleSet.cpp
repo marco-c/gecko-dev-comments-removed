@@ -248,11 +248,11 @@ nsStyleSet::Init(nsPresContext *aPresContext)
   
   
   
-  
-  
+  GatherRuleProcessors(SheetType::PresHint);
+  GatherRuleProcessors(SheetType::SVGAttrAnimation);
+  GatherRuleProcessors(SheetType::StyleAttr);
   GatherRuleProcessors(SheetType::Animation);
   GatherRuleProcessors(SheetType::Transition);
-  GatherRuleProcessors(SheetType::SVGAttrAnimation);
 }
 
 nsresult

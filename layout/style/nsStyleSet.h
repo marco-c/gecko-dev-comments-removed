@@ -317,8 +317,6 @@ class nsStyleSet final
                                   nsIStyleSheet *aNewSheet,
                                   nsIStyleSheet *aReferenceSheet);
 
-  nsresult DirtyRuleProcessors(mozilla::SheetType aType);
-
   
   bool GetAuthorStyleDisabled();
   nsresult SetAuthorStyleDisabled(bool aStyleDisabled);
@@ -393,12 +391,14 @@ class nsStyleSet final
   
   void ClearSelectors();
 
- private:
+private:
   nsStyleSet(const nsStyleSet& aCopy) = delete;
   nsStyleSet& operator=(const nsStyleSet& aCopy) = delete;
 
   
   void GCRuleTrees();
+
+  nsresult DirtyRuleProcessors(mozilla::SheetType aType);
 
   
   nsresult GatherRuleProcessors(mozilla::SheetType aType);
