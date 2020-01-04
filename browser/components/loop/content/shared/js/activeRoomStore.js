@@ -37,6 +37,7 @@ loop.store.ActiveRoomStore = (function() {
 
   var sharedActions = loop.shared.actions;
   var crypto = loop.crypto;
+  var CHAT_CONTENT_TYPES = loop.shared.utils.CHAT_CONTENT_TYPES;
   var FAILURE_DETAILS = loop.shared.utils.FAILURE_DETAILS;
   var SCREEN_SHARE_STATES = loop.shared.utils.SCREEN_SHARE_STATES;
 
@@ -107,6 +108,7 @@ loop.store.ActiveRoomStore = (function() {
 
     _statesToResetOnLeave: [
       "audioMuted",
+      "chatMessageExchanged",
       "localSrcMediaElement",
       "localVideoDimensions",
       "mediaConnected",
@@ -155,7 +157,10 @@ loop.store.ActiveRoomStore = (function() {
         
         socialShareProviders: null,
         
-        mediaConnected: false
+        mediaConnected: false,
+        
+        
+        chatMessageExchanged: false
       };
     },
 
@@ -236,7 +241,7 @@ loop.store.ActiveRoomStore = (function() {
 
       this._registeredActions = true;
 
-      this.dispatcher.register(this, [
+      var actions = [
         "roomFailure",
         "retryAfterRoomFailure",
         "updateRoomInfo",
@@ -263,7 +268,14 @@ loop.store.ActiveRoomStore = (function() {
         "updateSocialShareInfo",
         "connectionStatus",
         "mediaConnected"
-      ]);
+      ];
+      
+      if (this._isDesktop) {
+        
+        
+        actions.push("receivedTextChatMessage", "sendTextChatMessage");
+      }
+      this.dispatcher.register(this, actions);
 
       this._onUpdateListener = this._handleRoomUpdate.bind(this);
       this._onDeleteListener = this._handleRoomDelete.bind(this);
@@ -1123,6 +1135,50 @@ loop.store.ActiveRoomStore = (function() {
       nextState[storeProp] = this.getStoreState()[storeProp];
       nextState[storeProp][actionData.videoType] = actionData.dimensions;
       this.setStoreState(nextState);
+    },
+
+    
+
+
+
+
+
+
+
+
+
+    _handleTextChatMessage: function(actionData) {
+      if (!this._isDesktop || this.getStoreState().chatMessageExchanged ||
+          actionData.contentType !== CHAT_CONTENT_TYPES.TEXT) {
+        return;
+      }
+
+      this.setStoreState({ chatMessageExchanged: true });
+      
+      this.dispatcher.unregister(this, [
+        "receivedTextChatMessage",
+        "sendTextChatMessage"
+      ]);
+      
+      this._mozLoop.telemetryAddValue("LOOP_ROOM_SESSION_WITHCHAT", 1);
+    },
+
+    
+
+
+
+
+    receivedTextChatMessage: function(actionData) {
+      this._handleTextChatMessage(actionData);
+    },
+
+    
+
+
+
+
+    sendTextChatMessage: function(actionData) {
+      this._handleTextChatMessage(actionData);
     }
   });
 

@@ -41,6 +41,28 @@ loop.Dispatcher = (function() {
     
 
 
+
+
+
+    unregister: function(store, eventTypes) {
+      eventTypes.forEach(function(type) {
+        if (!this._eventData.hasOwnProperty(type)) {
+          return;
+        }
+        var idx = this._eventData[type].indexOf(store);
+        if (idx === -1) {
+          return;
+        }
+        this._eventData[type].splice(idx, 1);
+        if (!this._eventData[type].length) {
+          delete this._eventData[type];
+        }
+      }.bind(this));
+    },
+
+    
+
+
     dispatch: function(action) {
       
       this._actionQueue.push(action);
