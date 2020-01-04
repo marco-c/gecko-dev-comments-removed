@@ -89,6 +89,20 @@ public:
   bool IsWaitForDataSupported() override { return true; }
   RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) override;
 
+  
+  bool IsDemuxOnlySupported() const override { return true; }
+
+  void SetDemuxOnly(bool aDemuxedOnly) override
+  {
+    if (OnTaskQueue()) {
+      mDemuxOnly = aDemuxedOnly;
+      return;
+    }
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethodWithArg<bool>(
+      this, &MediaDecoderReader::SetDemuxOnly, aDemuxedOnly);
+    OwnerThread()->Dispatch(r.forget());
+  }
+
   bool UseBufferingHeuristics() override
   {
     return mTrackDemuxersMayBlock;
@@ -124,8 +138,11 @@ private:
   
   void RequestDemuxSamples(TrackType aTrack);
   
-  void DecodeDemuxedSamples(TrackType aTrack,
+  void HandleDemuxedSamples(TrackType aTrack,
                             AbstractMediaDecoder::AutoNotifyDecoded& aA);
+  
+  bool DecodeDemuxedSamples(TrackType aTrack,
+                            MediaRawData* aSample);
   
   void DrainDecoder(TrackType aTrack);
   void NotifyNewOutput(TrackType aTrack, MediaData* aSample);
@@ -406,6 +423,9 @@ private:
   bool mTrackDemuxersMayBlock;
 
   bool mHardwareAccelerationDisabled;
+
+  
+  Atomic<bool> mDemuxOnly;
 
   
   bool IsSeeking() const { return mPendingSeekTime.isSome(); }

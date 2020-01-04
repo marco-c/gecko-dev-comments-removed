@@ -153,6 +153,14 @@ public:
   virtual bool IsWaitForDataSupported() { return false; }
   virtual RefPtr<WaitForDataPromise> WaitForData(MediaData::Type aType) { MOZ_CRASH(); }
 
+  
+  
+  virtual bool IsDemuxOnlySupported() const { return false; }
+
+  
+  
+  virtual void SetDemuxOnly(bool ) {}
+
   virtual bool HasAudio() = 0;
   virtual bool HasVideo() = 0;
 

@@ -354,6 +354,8 @@ private:
   
   bool IsPlaying() const;
 
+  
+  
   void OnAudioDecoded(MediaData* aAudioSample);
   void OnVideoDecoded(MediaData* aVideoSample);
   void OnNotDecoded(MediaData::Type aType, MediaDecoderReader::NotDecodedReason aReason);
