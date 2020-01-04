@@ -136,7 +136,10 @@ JS_FOR_EACH_TRACEKIND(FINISH_ROOT_LIST)
 #undef FINISH_ROOT_LIST
     FinishPersistentRootedChain<jsid>(heapRoots_[JS::RootKind::Id]);
     FinishPersistentRootedChain<Value>(heapRoots_[JS::RootKind::Value]);
-    FinishPersistentRootedChain<ConcreteTraceable>(heapRoots_[JS::RootKind::Traceable]);
+
+    
+    
+    
 }
 
 inline void

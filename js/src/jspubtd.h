@@ -125,9 +125,6 @@ typedef void
 (* JSTraceDataOp)(JSTracer* trc, void* data);
 
 namespace js {
-
-void FinishGC(JSRuntime* rt);
-
 namespace gc {
 class AutoTraceSession;
 class StoreBuffer;
@@ -290,6 +287,29 @@ class RootLists
         for (auto& stackRootPtr : stackRoots_) {
             stackRootPtr = nullptr;
         }
+    }
+
+    ~RootLists() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(heapRoots_[JS::RootKind::Traceable].isEmpty());
     }
 
     void traceStackRoots(JSTracer* trc);

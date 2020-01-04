@@ -95,7 +95,7 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented)
         bool same;
 
         
-        JS::PersistentRooted<MyContainer> heap(cx, container);
+        JS::PersistentRooted<MyContainer> heap(rt, container);
 
         
         container.obj() = nullptr;
@@ -124,6 +124,42 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented)
     return true;
 }
 END_TEST(testGCRootedStaticStructInternalStackStorageAugmented)
+
+static JS::PersistentRooted<JSObject*> sLongLived;
+BEGIN_TEST(testGCPersistentRootedOutlivesRuntime)
+{
+    JSContext* cx2 = JS_NewContext(rt, 8192);
+    CHECK(cx2);
+
+    sLongLived.init(cx2, JS_NewObject(cx, nullptr));
+    CHECK(sLongLived);
+
+    JS_DestroyContext(cx2);
+    CHECK(!sLongLived);
+
+    return true;
+}
+END_TEST(testGCPersistentRootedOutlivesRuntime)
+
+
+
+
+
+static JS::PersistentRooted<MyContainer> sContainer;
+BEGIN_TEST(testGCPersistentRootedTraceableCannotOutliveRuntime)
+{
+    JS::Rooted<MyContainer> container(cx);
+    container.obj() = JS_NewObject(cx, nullptr);
+    container.str() = JS_NewStringCopyZ(cx, "Hello");
+    sContainer.init(rt, container);
+
+    
+    
+    sContainer.reset();
+
+    return true;
+}
+END_TEST(testGCPersistentRootedTraceableCannotOutliveRuntime)
 
 using MyHashMap = js::GCHashMap<js::Shape*, JSObject*>;
 
