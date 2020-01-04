@@ -946,6 +946,7 @@ CanvasRenderingContext2D::CanvasRenderingContext2D()
   , mZero(false), mOpaque(false)
   , mResetLayer(true)
   , mIPC(false)
+  , mIsSkiaGL(false)
   , mDrawObserver(nullptr)
   , mIsEntireFrameInvalid(false)
   , mPredictManyRedrawCalls(false)
@@ -1376,6 +1377,8 @@ CanvasRenderingContext2D::EnsureTarget(RenderingMode aRenderingMode)
     }
   }
 
+  mIsSkiaGL = false;
+
    
   IntSize size(mWidth, mHeight);
   if (size.width <= gfxPrefs::MaxCanvasSize() &&
@@ -1409,6 +1412,7 @@ CanvasRenderingContext2D::EnsureTarget(RenderingMode aRenderingMode)
           if (mTarget) {
             AddDemotableContext(this);
             mBufferProvider = new PersistentBufferProviderBasic(mTarget);
+            mIsSkiaGL = true;
           } else {
             printf_stderr("Failed to create a SkiaGL DrawTarget, falling back to software\n");
             mode = RenderingMode::SoftwareBackendMode;
@@ -5560,7 +5564,9 @@ CanvasRenderingContext2D::GetCanvasLayer(nsDisplayListBuilder* aBuilder,
                                          CanvasLayer *aOldLayer,
                                          LayerManager *aManager)
 {
-  if (mOpaque) {
+  if (mOpaque || mIsSkiaGL) {
+    
+    
     
     
     EnsureTarget();

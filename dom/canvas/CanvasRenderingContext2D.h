@@ -718,6 +718,9 @@ protected:
   bool mResetLayer;
   
   bool mIPC;
+  
+  
+  bool mIsSkiaGL;
 
   nsTArray<CanvasRenderingContext2DUserData*> mUserDatas;
 
