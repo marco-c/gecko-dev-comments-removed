@@ -9,6 +9,25 @@
 
 namespace mozilla {
 
+struct FrameStatisticsData
+{
+  
+  
+  uint32_t mParsedFrames = 0;
+
+  
+  
+  uint32_t mDecodedFrames = 0;
+
+  
+  
+  uint32_t mPresentedFrames = 0;
+
+  
+  
+  uint32_t mDroppedFrames = 0;
+};
+
 
 
 class FrameStatistics
@@ -18,18 +37,22 @@ public:
 
   FrameStatistics()
     : mReentrantMonitor("FrameStats")
-    , mParsedFrames(0)
-    , mDecodedFrames(0)
-    , mPresentedFrames(0)
-    , mDroppedFrames(0)
   {}
+
+  
+  
+  FrameStatisticsData GetFrameStatisticsData() const
+  {
+    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    return mFrameStatisticsData;
+  }
 
   
   
   uint32_t GetParsedFrames() const
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    return mParsedFrames;
+    return mFrameStatisticsData.mParsedFrames;
   }
 
   
@@ -37,7 +60,7 @@ public:
   uint32_t GetDecodedFrames() const
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    return mDecodedFrames;
+    return mFrameStatisticsData.mDecodedFrames;
   }
 
   
@@ -46,7 +69,7 @@ public:
   uint32_t GetPresentedFrames() const
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    return mPresentedFrames;
+    return mFrameStatisticsData.mPresentedFrames;
   }
 
   
@@ -54,7 +77,7 @@ public:
   uint32_t GetDroppedFrames() const
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    return mDroppedFrames;
+    return mFrameStatisticsData.mDroppedFrames;
   }
 
   
@@ -66,9 +89,9 @@ public:
       return;
     }
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    mParsedFrames += aParsed;
-    mDecodedFrames += aDecoded;
-    mDroppedFrames += aDropped;
+    mFrameStatisticsData.mParsedFrames += aParsed;
+    mFrameStatisticsData.mDecodedFrames += aDecoded;
+    mFrameStatisticsData.mDroppedFrames += aDropped;
   }
 
   
@@ -76,7 +99,7 @@ public:
   void NotifyPresentedFrame()
   {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    ++mPresentedFrames;
+    ++mFrameStatisticsData.mPresentedFrames;
   }
 
 private:
@@ -85,21 +108,7 @@ private:
   
   mutable ReentrantMonitor mReentrantMonitor;
 
-  
-  
-  uint32_t mParsedFrames;
-
-  
-  
-  uint32_t mDecodedFrames;
-
-  
-  
-  uint32_t mPresentedFrames;
-
-  
-  
-  uint32_t mDroppedFrames;
+  FrameStatisticsData mFrameStatisticsData;
 };
 
 } 
