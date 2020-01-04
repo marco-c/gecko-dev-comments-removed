@@ -194,9 +194,8 @@ PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
 #endif 
 #if defined(OS_WIN)
     InitPopupMenuHook();
-    if (GetQuirks() & QUIRK_UNITY_FIXUP_MOUSE_CAPTURE) {
-        SetUnityHooks();
-    }
+    InitSetCursorHook();
+    SetUnityHooks();
 #endif 
 }
 
@@ -1757,6 +1756,8 @@ PluginInstanceChild::HookSetWindowLongPtr()
 #endif
 }
 
+
+
 class SetCaptureHookData
 {
 public:
@@ -1991,6 +1992,38 @@ PluginInstanceChild::DestroyWinlessPopupSurrogate()
     mWinlessPopupSurrogateHWND = nullptr;
 }
 
+
+
+typedef HCURSOR
+(WINAPI *User32SetCursor)(HCURSOR hCursor);
+static User32SetCursor sUser32SetCursorHookStub = nullptr;
+static bool sFlashChangedCursor;
+
+HCURSOR
+WINAPI
+PluginInstanceChild::SetCursorHookProc(HCURSOR hCursor)
+{
+    if (!sUser32SetCursorHookStub) {
+        NS_ERROR("SetCursor stub isn't set! Badness!");
+        return nullptr;
+    }
+    sFlashChangedCursor = true;
+    return sUser32SetCursorHookStub(hCursor);
+}
+
+
+void
+PluginInstanceChild::InitSetCursorHook()
+{
+  if (!(GetQuirks() & QUIRK_FLASH_FIXUP_MOUSE_CURSOR) ||
+      sUser32SetCursorHookStub) {
+      return;
+  }
+
+  sUser32Intercept.AddHook("SetCursor", reinterpret_cast<intptr_t>(SetCursorHookProc),
+                            (void**) &sUser32SetCursorHookStub);
+}
+
 int16_t
 PluginInstanceChild::WinlessHandleEvent(NPEvent& event)
 {
@@ -2175,9 +2208,22 @@ PluginInstanceChild::FlashThrottleAsyncMsg::Run()
     
     if (!GetProc())
         return;
-  
+
+    
+    sFlashChangedCursor = false;
+
     
     CallWindowProc(GetProc(), GetWnd(), GetMsg(), GetWParam(), GetLParam());
+
+    
+    
+    
+    
+    
+    if (!mWindowed && sFlashChangedCursor && mInstance) {
+        sFlashChangedCursor = false;
+        mInstance->SendPluginDidSetCursor();
+    }
 }
 
 void

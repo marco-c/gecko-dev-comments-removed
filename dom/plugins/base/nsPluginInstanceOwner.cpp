@@ -3026,6 +3026,22 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void)
   return NS_OK;
 }
 
+#if defined(XP_WIN)
+
+void
+nsPluginInstanceOwner::ResetWidgetCursorCaching()
+{
+  if (!mPluginFrame || !XRE_IsContentProcess()) {
+    return;
+  }
+  nsIWidget* aWidget = mPluginFrame->GetNearestWidget();
+  if (!aWidget) {
+    return;
+  }
+  aWidget->ClearCachedCursor();
+}
+#endif
+
 
 #ifdef XP_MACOSX
 
