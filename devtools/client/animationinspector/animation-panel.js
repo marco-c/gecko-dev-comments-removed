@@ -258,8 +258,6 @@ var AnimationsPanel = {
 
 
   refreshAnimationsUI: Task.async(function*() {
-    let done = gInspector.updating("animationspanel");
-
     
     this.togglePlayers(true);
 
@@ -278,12 +276,10 @@ var AnimationsPanel = {
     if (!AnimationsController.animationPlayers.length) {
       this.togglePlayers(false);
       this.emit(this.UI_UPDATED_EVENT);
-      done();
       return;
     }
 
     this.emit(this.UI_UPDATED_EVENT);
-    done();
   })
 };
 
