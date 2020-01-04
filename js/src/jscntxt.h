@@ -305,7 +305,7 @@ struct JSContext : public js::ExclusiveContext,
   private:
     
     bool                throwing;            
-    js::Value           unwrappedException_; 
+    JS::PersistentRooted<JS::Value> unwrappedException_; 
 
     
     JS::ContextOptions  options_;
