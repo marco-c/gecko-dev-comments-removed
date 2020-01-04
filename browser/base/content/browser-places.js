@@ -318,8 +318,10 @@ var PlacesCommandHook = {
 
 
   bookmarkPage: Task.async(function* (aBrowser, aParent, aShowEditUI) {
-    if (PlacesUIUtils.useAsyncTransactions)
-      return (yield this._bookmarkPagePT(aBrowser, aParent, aShowEditUI));
+    if (PlacesUIUtils.useAsyncTransactions) {
+      yield this._bookmarkPagePT(aBrowser, aParent, aShowEditUI);
+      return;
+    }
 
     var uri = aBrowser.currentURI;
     var itemId = PlacesUtils.getMostRecentBookmarkForURI(uri);
