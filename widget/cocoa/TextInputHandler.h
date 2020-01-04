@@ -847,12 +847,6 @@ public:
 
   bool IsFocused();
 
-  
-
-
-
-  bool IsOrWouldBeFocused();
-
   static CFArrayRef CreateAllIMEModeList();
   static void DebugPrintAllIMEModes();
 
