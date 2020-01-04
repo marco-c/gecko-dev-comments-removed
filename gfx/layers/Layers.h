@@ -137,11 +137,6 @@ public:
 
 
 
-static void LayerManagerUserDataDestroy(void *data)
-{
-  delete static_cast<LayerUserData*>(data);
-}
-
 
 
 
@@ -509,7 +504,7 @@ public:
 
   void SetUserData(void* aKey, LayerUserData* aData)
   {
-    mUserData.Add(static_cast<gfx::UserDataKey*>(aKey), aData, LayerManagerUserDataDestroy);
+    mUserData.Add(static_cast<gfx::UserDataKey*>(aKey), aData, LayerUserDataDestroy);
   }
   
 
@@ -675,6 +670,8 @@ public:
   virtual bool AsyncPanZoomEnabled() const {
     return false;
   }
+
+  static void LayerUserDataDestroy(void* data);
 
 protected:
   RefPtr<Layer> mRoot;
@@ -1389,7 +1386,7 @@ public:
 
   void SetUserData(void* aKey, LayerUserData* aData)
   {
-    mUserData.Add(static_cast<gfx::UserDataKey*>(aKey), aData, LayerManagerUserDataDestroy);
+    mUserData.Add(static_cast<gfx::UserDataKey*>(aKey), aData, LayerManager::LayerUserDataDestroy);
   }
   
 
