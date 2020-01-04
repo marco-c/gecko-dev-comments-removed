@@ -20,28 +20,28 @@ var test = asyncTest(function*() {
   jsterm.clearOutput();
   jsterm.execute("console.log('foo', 'bar');");
 
-  let [functionCall, result, consoleMessage] = yield waitForMessages({
+  let [functionCall, consoleMessage, result] = yield waitForMessages({
     webconsole: hud,
     messages: [{
       text: "console.log('foo', 'bar');",
       category: CATEGORY_INPUT,
     },
     {
-      text: "undefined",
-      category: CATEGORY_OUTPUT,
-    },
-    {
       text: "foo bar",
       category: CATEGORY_WEBDEV,
       severity: SEVERITY_LOG,
-    }],
+    },
+    {
+      text: "undefined",
+      category: CATEGORY_OUTPUT,
+    }]
   });
 
   let fncallNode = [...functionCall.matched][0];
-  let resultNode = [...result.matched][0];
   let consoleMessageNode = [...consoleMessage.matched][0];
-  is(fncallNode.nextElementSibling, resultNode,
-     "console.log() is followed by undefined");
-  is(resultNode.nextElementSibling, consoleMessageNode,
-     "undefined is followed by 'foo' 'bar'");
+  let resultNode = [...result.matched][0];
+  is(fncallNode.nextElementSibling, consoleMessageNode,
+     "console.log() is followed by 'foo' 'bar'");
+  is(consoleMessageNode.nextElementSibling, resultNode,
+     "'foo' 'bar' is followed by undefined");
 });
