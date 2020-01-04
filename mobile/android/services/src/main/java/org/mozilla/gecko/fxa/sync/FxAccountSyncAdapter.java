@@ -541,7 +541,7 @@ public class FxAccountSyncAdapter extends AbstractThreadedSyncAdapter {
             
             if (fxAccount.getDeviceRegistrationVersion() != FxAccountDeviceRegistrator.DEVICE_REGISTRATION_VERSION
                 || TextUtils.isEmpty(fxAccount.getDeviceId())) {
-              FxAccountDeviceRegistrator.register(context);
+              FxAccountDeviceRegistrator.register(fxAccount, context);
             }
 
             

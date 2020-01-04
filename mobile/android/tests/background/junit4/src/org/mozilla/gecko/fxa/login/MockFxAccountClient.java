@@ -178,23 +178,20 @@ public class MockFxAccountClient implements FxAccountClient {
       String deviceId = deviceToRegister.id;
       if (TextUtils.isEmpty(deviceId)) { 
         deviceId = UUID.randomUUID().toString();
-        FxAccountDevice device = new FxAccountDevice(deviceToRegister.name, deviceId, deviceToRegister.type, null, null, null, null);
-        requestDelegate.handleSuccess(device);
+        FxAccountDevice device = new FxAccountDevice(deviceToRegister.name, deviceId, deviceToRegister.type, null);
+        deviceToRegister.id = deviceId;
       } else { 
         FxAccountDevice existingDevice = user.devices.get(deviceId);
         if (existingDevice != null) {
-          String deviceName = existingDevice.name;
           if (!TextUtils.isEmpty(deviceToRegister.name)) {
-            deviceName = deviceToRegister.name;
+            existingDevice.name = deviceToRegister.name;
           } 
-          FxAccountDevice device = new FxAccountDevice(deviceName, existingDevice.id, existingDevice.type,
-                  existingDevice.isCurrentDevice, existingDevice.pushCallback, existingDevice.pushPublicKey,existingDevice.pushAuthKey);
-          requestDelegate.handleSuccess(device);
         } else { 
           handleFailure(requestDelegate, HttpStatus.SC_BAD_REQUEST, FxAccountRemoteError.UNKNOWN_DEVICE, "device is unknown");
           return;
         }
       }
+      requestDelegate.handleSuccess(deviceToRegister);
     } catch (Exception e) {
       requestDelegate.handleError(e);
     }

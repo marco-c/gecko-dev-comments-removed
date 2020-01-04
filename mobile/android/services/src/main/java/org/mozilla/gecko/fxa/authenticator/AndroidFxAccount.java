@@ -146,15 +146,6 @@ public class AndroidFxAccount {
     this.accountManager = AccountManager.get(this.context);
   }
 
-  public static AndroidFxAccount fromContext(Context context) {
-    context = context.getApplicationContext();
-    Account account = FirefoxAccounts.getFirefoxAccount(context);
-    if (account == null) {
-      return null;
-    }
-    return new AndroidFxAccount(context, account);
-  }
-
   
 
 
@@ -657,7 +648,6 @@ public class AndroidFxAccount {
     intent.putExtra(FxAccountConstants.ACCOUNT_DELETED_INTENT_VERSION_KEY,
         Long.valueOf(FxAccountConstants.ACCOUNT_DELETED_INTENT_VERSION));
     intent.putExtra(FxAccountConstants.ACCOUNT_DELETED_INTENT_ACCOUNT_KEY, account.name);
-    intent.putExtra(FxAccountConstants.ACCOUNT_DELETED_INTENT_ACCOUNT_PROFILE, getProfile());
 
     
     
