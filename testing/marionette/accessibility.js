@@ -266,7 +266,7 @@ accessibility.Checks = class {
 
 
 
-  checkVisible(accessible, element, visible) {
+  assertVisible(accessible, element, visible) {
     if (!accessible) {
       return;
     }
@@ -298,7 +298,7 @@ accessibility.Checks = class {
 
 
 
-  checkEnabled(accessible, element, enabled) {
+  assertEnabled(accessible, element, enabled) {
     if (!accessible) {
       return;
     }
@@ -333,7 +333,7 @@ accessibility.Checks = class {
 
 
 
-  checkActionable(accessible, element) {
+  assertActionable(accessible, element) {
     if (!accessible) {
       return;
     }
@@ -368,7 +368,7 @@ accessibility.Checks = class {
 
 
 
-  checkSelected(accessible, element, selected) {
+  assertSelected(accessible, element, selected) {
     if (!accessible) {
       return;
     }
