@@ -1972,11 +1972,6 @@ MediaFormatReader::UpdateBufferedWithPromise() {
 
 void MediaFormatReader::ReleaseResources()
 {
-  
-  
-  if (mVideoFrameContainer) {
-    mVideoFrameContainer->ClearCurrentFrame();
-  }
   mVideo.ShutdownDecoder();
   mAudio.ShutdownDecoder();
 }
