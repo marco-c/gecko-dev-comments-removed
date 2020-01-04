@@ -1647,7 +1647,7 @@ nsHttpConnection::OnSocketWritable()
             again = false;
         }
         
-    } while (again);
+    } while (again && gHttpHandler->Active());
 
     return rv;
 }
@@ -1790,7 +1790,7 @@ nsHttpConnection::OnSocketReadable()
             }
         }
         
-    } while (again);
+    } while (again && gHttpHandler->Active());
 
     return rv;
 }
