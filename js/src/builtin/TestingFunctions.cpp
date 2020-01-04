@@ -1166,7 +1166,6 @@ OOMTest(JSContext* cx, unsigned argc, Value* vp)
             OOM_maxAllocations = UINT32_MAX;
 
             MOZ_ASSERT_IF(ok, !cx->isExceptionPending());
-            MOZ_ASSERT_IF(!ok, cx->isExceptionPending());
 
             
             
