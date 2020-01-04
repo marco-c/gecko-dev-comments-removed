@@ -713,6 +713,14 @@ public:
     }
   }
 
+  bool GetHasUserInteraction()
+  {
+    return mHasUserInteraction;
+  }
+
+  
+  bool IsCurrentlyPlaying() const;
+
   
 
 
@@ -1137,9 +1145,6 @@ protected:
 
   
   bool IsPlayingThroughTheAudioChannel() const;
-
-  
-  bool IsCurrentlyPlaying() const;
 
   
   void UpdateAudioChannelPlayingState();
