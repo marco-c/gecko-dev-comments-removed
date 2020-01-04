@@ -958,6 +958,30 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
   return kMediaConduitNoError;
 }
 
+struct ResolutionAndBitrateLimits {
+  uint32_t resolution_in_mb;
+  uint16_t min_bitrate;
+  uint16_t max_bitrate;
+};
+
+#define MB_OF(w,h) ((unsigned int)((((w)>>4))*((unsigned int)((h)>>4))))
+
+
+
+
+
+
+
+
+static ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
+  {MB_OF(1920, 1200), 1500, 10000}, 
+  {MB_OF(1280, 720), 1200, 5000}, 
+  {MB_OF(800, 480), 600, 2500}, 
+  {std::max(MB_OF(400, 240), MB_OF(352, 288)), 200, 1300}, 
+  {MB_OF(176, 144), 100, 500}, 
+  {0 , 40, 250} 
+};
+
 static void
 SelectBandwidth(webrtc::VideoCodec& vie_codec,
                 unsigned short width,
@@ -972,42 +996,12 @@ SelectBandwidth(webrtc::VideoCodec& vie_codec,
   mb_height = (height + 15) >> 4;
   fs = mb_width * mb_height;
 
-  
-  
-  
-  
-#define MB_OF(w,h) ((unsigned int)((((w)>>4))*((unsigned int)((h)>>4))))
-
-  
-  
-  
-  
-  if (fs > MB_OF(1920, 1200)) {
-    
-    vie_codec.minBitrate = 1500;
-    vie_codec.maxBitrate = 10000;
-  } else if (fs > MB_OF(1280, 720)) {
-    
-    vie_codec.minBitrate = 1200;
-    vie_codec.maxBitrate = 5000;
-  } else if (fs > MB_OF(800, 480)) {
-    
-    vie_codec.minBitrate = 600;
-    vie_codec.maxBitrate = 2500;
-  } else if (fs > std::max(MB_OF(400, 240), MB_OF(352, 288))) {
-    
-    
-    vie_codec.minBitrate = 200;
-    vie_codec.maxBitrate = 1300;
-  } else if (fs > MB_OF(176, 144)) {
-    
-    
-    vie_codec.minBitrate = 100;
-    vie_codec.maxBitrate = 500;
-  } else {
-    
-    vie_codec.minBitrate = 40;
-    vie_codec.maxBitrate = 250;
+  for (ResolutionAndBitrateLimits resAndLimits : kResolutionAndBitrateLimits) {
+    if (fs > resAndLimits.resolution_in_mb) {
+      vie_codec.minBitrate = resAndLimits.min_bitrate;
+      vie_codec.maxBitrate = resAndLimits.max_bitrate;
+      break;
+    }
   }
 
   
@@ -1027,6 +1021,31 @@ SelectBandwidth(webrtc::VideoCodec& vie_codec,
   
   vie_codec.minBitrate = std::max((unsigned int) webrtc::kViEMinCodecBitrate,
                                   vie_codec.minBitrate);
+}
+
+static void ConstrainPreservingAspectRatioExact(uint32_t max_fs,
+                                                unsigned short* width,
+                                                unsigned short* height)
+{
+  unsigned int mb_width = (*width + 15) >> 4;
+  unsigned int mb_height = (*height + 15) >> 4;
+
+  
+  
+  for (size_t d = 1; d < std::min(mb_width, mb_height); ++d) {
+    if ((mb_width % d) || (mb_height % d)) {
+      continue; 
+    }
+
+    if ((mb_width*mb_height)/(d*d) <= max_fs) {
+      *width = 16 * mb_width / d;
+      *height = 16 * mb_height / d;
+      return;
+    }
+  }
+
+  *width = 0;
+  *height = 0;
 }
 
 static void ConstrainPreservingAspectRatio(uint16_t max_width,
@@ -1210,6 +1229,47 @@ WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
     vie_codec.height = height;
     vie_codec.maxFramerate = mSendingFramerate;
     SelectBandwidth(vie_codec, width, height, mLastFramerateTenths);
+
+    
+    
+    
+    
+    for (size_t i = vie_codec.numberOfSimulcastStreams; i > 0; --i) {
+      webrtc::SimulcastStream& stream(vie_codec.simulcastStream[i - 1]);
+      if (stream.maxBitrate && (stream.maxBitrate < vie_codec.minBitrate)) {
+        
+        
+        stream.width = 0;
+        stream.height = 0;
+        uint32_t max_fs_in_mb = kResolutionAndBitrateLimits[0].resolution_in_mb;
+        for (ResolutionAndBitrateLimits resAndLimits :
+             kResolutionAndBitrateLimits) {
+          if (resAndLimits.min_bitrate < stream.maxBitrate) {
+            
+            unsigned short adjusted_width = width;
+            unsigned short adjusted_height = height;
+            
+            
+            ConstrainPreservingAspectRatioExact(max_fs_in_mb,
+                                                &adjusted_width,
+                                                &adjusted_height);
+            stream.width = adjusted_width;
+            stream.height = adjusted_height;
+            break;
+          }
+          max_fs_in_mb = resAndLimits.resolution_in_mb;
+        }
+      } else {
+        stream.width = width;
+        stream.height = height;
+      }
+      
+      
+      if (i == vie_codec.numberOfSimulcastStreams) {
+        vie_codec.width = stream.width;
+        vie_codec.height = stream.height;
+      }
+    }
 
     if ((err = mPtrViECodec->SetSendCodec(mChannel, vie_codec)) != 0)
     {
@@ -1660,6 +1720,18 @@ WebrtcVideoConduit::DeliverI420Frame(const webrtc::I420VideoFrame& webrtc_frame)
   return -1;
 }
 
+template<typename T>
+T MinIgnoreZero(const T& a, const T& b)
+{
+  if (!a) {
+    return b;
+  } else if (!b) {
+    return a;
+  } else {
+    return std::min(a, b);
+  }
+}
+
 
 
 
@@ -1712,8 +1784,10 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
     cinst.codecSpecific.H264.level = codecInfo->mLevel;
     cinst.codecSpecific.H264.packetizationMode = codecInfo->mPacketizationMode;
     if (codecInfo->mEncodingConstraints.maxBr > 0) {
-      cinst.maxBitrate = std::min(cinst.maxBitrate,
-                                  codecInfo->mEncodingConstraints.maxBr);
+      
+      cinst.maxBitrate =
+        MinIgnoreZero(cinst.maxBitrate,
+                      codecInfo->mEncodingConstraints.maxBr)/1000;
     }
     if (codecInfo->mEncodingConstraints.maxMbps > 0) {
       
@@ -1725,6 +1799,46 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
     cinst.codecSpecific.H264.spsLen = 0;
     cinst.codecSpecific.H264.ppsData = nullptr;
     cinst.codecSpecific.H264.ppsLen = 0;
+  } else {
+    
+    for (size_t i = 0; i < codecInfo->mSimulcastEncodings.size(); ++i) {
+      const VideoCodecConfig::SimulcastEncoding& encoding =
+        codecInfo->mSimulcastEncodings[i];
+      
+      webrtc::SimulcastStream stream;
+      memset(&stream, 0, sizeof(stream));
+      stream.width = cinst.width;
+      stream.height = cinst.height;
+      stream.numberOfTemporalLayers = 1;
+      stream.maxBitrate = cinst.maxBitrate;
+      stream.targetBitrate = cinst.targetBitrate;
+      stream.minBitrate = cinst.minBitrate;
+      stream.qpMax = cinst.qpMax;
+      strncpy(stream.rid, encoding.rid.c_str(), sizeof(stream.rid)-1);
+      stream.rid[sizeof(stream.rid) - 1] = 0;
+
+      
+      stream.width = MinIgnoreZero(
+          stream.width,
+          (unsigned short)encoding.constraints.maxWidth);
+      stream.height = MinIgnoreZero(
+          stream.height,
+          (unsigned short)encoding.constraints.maxHeight);
+
+      if (encoding.constraints.maxBr) {
+        
+        stream.maxBitrate = encoding.constraints.maxBr/1000;
+        stream.minBitrate = MinIgnoreZero(stream.minBitrate, stream.maxBitrate);
+        stream.targetBitrate = MinIgnoreZero(stream.targetBitrate,
+                                             stream.maxBitrate);
+      }
+
+      
+      
+      cinst.simulcastStream[codecInfo->mSimulcastEncodings.size()-i-1] = stream;
+    }
+
+    cinst.numberOfSimulcastStreams = codecInfo->mSimulcastEncodings.size();
   }
 }
 
