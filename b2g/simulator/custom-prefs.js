@@ -1,6 +1,7 @@
 user_pref("devtools.debugger.prompt-connection", false);
 user_pref("devtools.debugger.forbid-certified-apps", false);
 user_pref("devtools.apps.forbidden-permissions", "");
+user_pref("b2g.software-buttons", true);
 
 
 user_pref("devtools.debugger.remote-enabled", true);
