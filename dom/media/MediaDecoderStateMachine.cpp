@@ -341,6 +341,9 @@ MediaDecoderStateMachine::InitializationTask()
   mWatchManager.Watch(mPlayState, &MediaDecoderStateMachine::PlayStateChanged);
   mWatchManager.Watch(mLogicallySeeking, &MediaDecoderStateMachine::LogicallySeekingChanged);
   mWatchManager.Watch(mSameOriginMedia, &MediaDecoderStateMachine::SameOriginMediaChanged);
+
+  
+  SameOriginMediaChanged();
 }
 
 bool MediaDecoderStateMachine::HasFutureAudio()
