@@ -52,7 +52,6 @@ function makeCancelListener() {
 
 var httpReceived = Promise.defer();
 function dataHandler(aRequest, aResponse) {
-  asyncResponse = aResponse;
   aResponse.processAsync();
   httpReceived.resolve([aRequest, aResponse]);
 }

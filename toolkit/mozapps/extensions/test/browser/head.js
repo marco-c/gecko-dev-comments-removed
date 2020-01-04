@@ -2,6 +2,7 @@
 
 
 
+
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 var tmp = {};
@@ -1343,7 +1344,7 @@ MockInstall.prototype = {
         break;
       case AddonManager.STATE_DOWNLOADING:
       case AddonManager.STATE_CHECKING:
-      case AddonManger.STATE_INSTALLING:
+      case AddonManager.STATE_INSTALLING:
         
         return;
       default:

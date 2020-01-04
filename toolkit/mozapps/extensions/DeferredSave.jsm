@@ -9,6 +9,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 
 Cu.import("resource://gre/modules/osfile.jsm");
+
 Cu.import("resource://gre/modules/Promise.jsm");
 
 

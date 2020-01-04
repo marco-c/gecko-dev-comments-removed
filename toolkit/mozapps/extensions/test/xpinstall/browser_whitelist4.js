@@ -1,7 +1,7 @@
 
 
 
-var URL = TESTROOT2 + "navigate.html?" + encodeURIComponent(TESTROOT + "unsigned.xpi");
+var url = TESTROOT2 + "navigate.html?" + encodeURIComponent(TESTROOT + "unsigned.xpi");
 
 function test() {
   Harness.installBlockedCallback = allow_blocked;
@@ -12,7 +12,7 @@ function test() {
   pm.add(makeURI("http://example.com/"), "install", pm.ALLOW_ACTION);
 
   gBrowser.selectedTab = gBrowser.addTab();
-  gBrowser.loadURI(URL);
+  gBrowser.loadURI(url);
 }
 
 function allow_blocked(installInfo) {
