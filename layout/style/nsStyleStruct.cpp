@@ -98,11 +98,21 @@ static bool AreShadowArraysEqual(nsCSSShadowArray* lhs,
 
 nsStyleFont::nsStyleFont(const nsFont& aFont, nsPresContext *aPresContext)
   : mFont(aFont)
+  , mSize(nsStyleFont::ZoomText(aPresContext, mFont.size))
   , mGenericID(kGenericFont_NONE)
+  , mScriptLevel(0)
+  , mMathVariant(NS_MATHML_MATHVARIANT_NONE)
+  , mMathDisplay(NS_MATHML_DISPLAYSTYLE_INLINE)
   , mExplicitLanguage(false)
+  , mAllowZoom(true)
+  , mScriptUnconstrainedSize(mSize)
+  , mScriptMinSize(aPresContext->CSSTwipsToAppUnits(
+      NS_POINTS_TO_TWIPS(NS_MATHML_DEFAULT_SCRIPT_MIN_SIZE_PT)))
+  , mScriptSizeMultiplier(NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER)
+  , mLanguage(GetLanguage(aPresContext))
 {
   MOZ_COUNT_CTOR(nsStyleFont);
-  Init(aPresContext);
+  mFont.size = mSize;
 }
 
 nsStyleFont::nsStyleFont(const nsStyleFont& aSrc)
@@ -123,45 +133,9 @@ nsStyleFont::nsStyleFont(const nsStyleFont& aSrc)
 }
 
 nsStyleFont::nsStyleFont(nsPresContext* aPresContext)
-  
-  : mFont(*(aPresContext->GetDefaultFont(kPresContext_DefaultVariableFont_ID,
-                                         nullptr)))
-  , mGenericID(kGenericFont_NONE)
-  , mExplicitLanguage(false)
+  : nsStyleFont(*(aPresContext->GetDefaultFont(
+      kPresContext_DefaultVariableFont_ID, nullptr)), aPresContext)
 {
-  MOZ_COUNT_CTOR(nsStyleFont);
-  Init(aPresContext);
-}
-
-void
-nsStyleFont::Init(nsPresContext* aPresContext)
-{
-  mSize = mFont.size = nsStyleFont::ZoomText(aPresContext, mFont.size);
-  mScriptUnconstrainedSize = mSize;
-  mScriptMinSize = aPresContext->CSSTwipsToAppUnits(
-      NS_POINTS_TO_TWIPS(NS_MATHML_DEFAULT_SCRIPT_MIN_SIZE_PT));
-  mScriptLevel = 0;
-  mScriptSizeMultiplier = NS_MATHML_DEFAULT_SCRIPT_SIZE_MULTIPLIER;
-  mMathVariant = NS_MATHML_MATHVARIANT_NONE;
-  mMathDisplay = NS_MATHML_DISPLAYSTYLE_INLINE;
-  mAllowZoom = true;
-
-  nsAutoString language;
-  aPresContext->Document()->GetContentLanguage(language);
-  language.StripWhitespace();
-
-  
-  
-  if (!language.IsEmpty() &&
-      !language.Contains(char16_t(','))) {
-    mLanguage = do_GetAtom(language);
-    
-    
-  } else {
-    
-    
-    mLanguage = aPresContext->GetLanguageFromCharset();
-  }
 }
 
 void 
@@ -230,6 +204,27 @@ nsStyleFont::ZoomText(nsPresContext *aPresContext, nscoord aSize)
 nsStyleFont::UnZoomText(nsPresContext *aPresContext, nscoord aSize)
 {
   return nscoord(float(aSize) / aPresContext->TextZoom());
+}
+
+ already_AddRefed<nsIAtom>
+nsStyleFont::GetLanguage(nsPresContext* aPresContext)
+{
+  nsAutoString language;
+  aPresContext->Document()->GetContentLanguage(language);
+  language.StripWhitespace();
+
+  
+  
+  if (!language.IsEmpty() &&
+      !language.Contains(char16_t(','))) {
+    return do_GetAtom(language);
+    
+    
+  } else {
+    
+    
+    return do_AddRef(aPresContext->GetLanguageFromCharset());
+  }
 }
 
 nsChangeHint nsStyleFont::CalcFontDifference(const nsFont& aFont1, const nsFont& aFont2)
