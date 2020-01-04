@@ -45,6 +45,11 @@ add_task(function* testGetAllByURI() {
   SitePermissions.remove(uri, "camera");
   SitePermissions.remove(uri, "desktop-notification");
   Assert.deepEqual(SitePermissions.getAllByURI(uri), []);
+
+  
+  SitePermissions.set(uri, "addon", SitePermissions.BLOCK);
+  Assert.deepEqual(SitePermissions.getAllByURI(uri), []);
+  SitePermissions.remove(uri, "addon");
 });
 
 add_task(function* testGetPermissionDetailsByURI() {

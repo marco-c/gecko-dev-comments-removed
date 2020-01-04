@@ -25,6 +25,8 @@ this.SitePermissions = {
 
 
 
+
+
   getAllByURI: function (aURI) {
     let result = [];
     if (!this.isSupportedURI(aURI)) {
@@ -37,6 +39,10 @@ this.SitePermissions = {
 
       
       if (gPermissionObject[permission.type]) {
+        
+        if (permission.type == "install") {
+          continue;
+        }
         result.push({
           id: permission.type,
           state: permission.capability,
