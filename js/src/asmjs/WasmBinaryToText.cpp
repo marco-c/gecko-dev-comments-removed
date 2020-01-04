@@ -913,6 +913,14 @@ RenderBrTable(WasmRenderContext& c)
     if (!c.buffer.append(" "))
         return false;
 
+    
+    if (!RenderExpr(c))
+        return false;
+
+    if (!c.buffer.append(" "))
+        return false;
+
+    
     if (!RenderExpr(c))
         return false;
 

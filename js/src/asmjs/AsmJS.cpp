@@ -6407,6 +6407,10 @@ CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
     uint32_t defaultDepth = numCases;
 
     
+    if (!f.encoder().writeExpr(Expr::Nop))
+        return false;
+
+    
     if (low) {
         if (!CheckSwitchExpr(f, switchExpr))
             return false;
