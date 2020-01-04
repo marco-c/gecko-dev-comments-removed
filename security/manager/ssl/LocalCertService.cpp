@@ -37,7 +37,7 @@ protected:
     nsresult rv;
 
     for (;;) {
-      ScopedCERTCertificate cert(
+      UniqueCERTCertificate cert(
         PK11_FindCertFromNickname(mNickname.get(), nullptr));
       if (!cert) {
         return NS_OK; 
@@ -57,7 +57,7 @@ protected:
         return NS_ERROR_UNEXPECTED; 
       }
 
-      rv = MapSECStatus(PK11_DeleteTokenCertAndKey(cert, nullptr));
+      rv = MapSECStatus(PK11_DeleteTokenCertAndKey(cert.get(), nullptr));
       if (NS_FAILED(rv)) {
         return rv; 
       }
@@ -124,7 +124,7 @@ private:
     
     NS_NAMED_LITERAL_CSTRING(commonNamePrefix, "CN=");
     nsAutoCString subjectNameStr(commonNamePrefix + mNickname);
-    ScopedCERTName subjectName(CERT_AsciiToName(subjectNameStr.get()));
+    UniqueCERTName subjectName(CERT_AsciiToName(subjectNameStr.get()));
     if (!subjectName) {
       return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
     }
@@ -142,25 +142,25 @@ private:
     memcpy(keyParams.data + 2, curveOidData->oid.data, curveOidData->oid.len);
 
     
-    ScopedSECKEYPublicKey publicKey;
     SECKEYPublicKey* tempPublicKey;
     UniqueSECKEYPrivateKey privateKey(
       PK11_GenerateKeyPair(slot.get(), CKM_EC_KEY_PAIR_GEN, &keyParams,
                            &tempPublicKey, true ,
                            true , nullptr));
-    if (!privateKey) {
+    UniqueSECKEYPublicKey publicKey(tempPublicKey);
+    tempPublicKey = nullptr;
+    if (!privateKey || !publicKey) {
       return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
     }
-    publicKey = tempPublicKey;
 
     
-    ScopedCERTSubjectPublicKeyInfo spki(
-      SECKEY_CreateSubjectPublicKeyInfo(publicKey));
+    UniqueCERTSubjectPublicKeyInfo spki(
+      SECKEY_CreateSubjectPublicKeyInfo(publicKey.get()));
     if (!spki) {
       return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
     }
-    ScopedCERTCertificateRequest certRequest(
-      CERT_CreateCertificateRequest(subjectName, spki, nullptr));
+    UniqueCERTCertificateRequest certRequest(
+      CERT_CreateCertificateRequest(subjectName.get(), spki.get(), nullptr));
     if (!certRequest) {
       return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
     }
@@ -174,7 +174,7 @@ private:
     PRTime now = PR_Now();
     PRTime notBefore = now - oneDay;
     PRTime notAfter = now + (PRTime(365) * oneDay);
-    ScopedCERTValidity validity(CERT_CreateValidity(notBefore, notAfter));
+    UniqueCERTValidity validity(CERT_CreateValidity(notBefore, notAfter));
     if (!validity) {
       return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
     }
@@ -190,8 +190,9 @@ private:
     }
 
     
-    ScopedCERTCertificate cert(
-      CERT_CreateCertificate(serial, subjectName, validity, certRequest));
+    UniqueCERTCertificate cert(
+      CERT_CreateCertificate(serial, subjectName.get(), validity.get(),
+                             certRequest.get()));
     if (!cert) {
       return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
     }
@@ -216,8 +217,8 @@ private:
     }
 
     
-    ScopedSECItem certDER(
-      SEC_ASN1EncodeItem(nullptr, nullptr, cert,
+    UniqueSECItem certDER(
+      SEC_ASN1EncodeItem(nullptr, nullptr, cert.get(),
                          SEC_ASN1_GET(CERT_CertificateTemplate)));
     if (!certDER) {
       return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
@@ -231,7 +232,7 @@ private:
     }
 
     
-    ScopedCERTCertificate certFromDER(
+    UniqueCERTCertificate certFromDER(
       CERT_NewTempCertificate(CERT_GetDefaultCertDB(), &cert->derCert, nullptr,
                               true , true ));
     if (!certFromDER) {
@@ -239,8 +240,9 @@ private:
     }
 
     
-    rv = MapSECStatus(PK11_ImportCert(slot.get(), certFromDER, CK_INVALID_HANDLE,
-                                      mNickname.get(), false ));
+    rv = MapSECStatus(PK11_ImportCert(slot.get(), certFromDER.get(),
+                                      CK_INVALID_HANDLE, mNickname.get(),
+                                      false ));
     if (NS_FAILED(rv)) {
       return rv;
     }
