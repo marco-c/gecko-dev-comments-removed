@@ -375,6 +375,8 @@ pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevine
 
 pref("media.decoder-doctor.verbose", false);
 
+pref("media.decoder-doctor.wmf-disabled-is-failure", false);
+
 
 #ifdef NIGHTLY_BUILD
 pref("media.suspend-bkgnd-video.enabled", true);
