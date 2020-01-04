@@ -58,16 +58,10 @@ element.Strategy = {
   Anon: "anon",
   AnonAttribute: "anon attribute",
 };
-element.Strategies = new Set(Object.values(element.Strategy));
 
-this.ElementManager = function ElementManager(unsupportedStrategies = []) {
+this.ElementManager = function ElementManager() {
   this.seenItems = {};
   this.timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-
-  this.supportedStrategies = new Set(element.Strategies);
-  for (let s of unsupportedStrategies) {
-    this.supportedStrategies.delete(s);
-  }
 };
 
 ElementManager.prototype = {
@@ -87,12 +81,31 @@ ElementManager.prototype = {
 
 
 
-  addToKnownElements: function EM_addToKnownElements(el) {
+
+
+
+
+  addAll: function(els) {
+    let add = this.add.bind(this);
+    return [...els].map(add);
+  },
+
+  
+
+
+
+
+
+
+
+
+  add: function(el) {
     for (let i in this.seenItems) {
-      let foundEl = null;
+      let foundEl;
       try {
         foundEl = this.seenItems[i].get();
       } catch (e) {}
+
       if (foundEl) {
         if (XPCNativeWrapper(foundEl) == XPCNativeWrapper(el)) {
           return i;
@@ -102,6 +115,7 @@ ElementManager.prototype = {
         delete this.seenItems[i];
       }
     }
+
     let id = element.generateUUID();
     this.seenItems[id] = Cu.getWeakReference(el);
     return id;
@@ -221,7 +235,7 @@ ElementManager.prototype = {
           result = null;
         }
         else if (val.nodeType == 1) {
-          let elementId = this.addToKnownElements(val);
+          let elementId = this.add(val);
           result = {[element.LegacyKey]: elementId, [element.Key]: elementId};
         }
         else {
@@ -289,8 +303,8 @@ ElementManager.prototype = {
     }
     return converted;
   },
+};
 
-  
 
 
 
@@ -337,210 +351,191 @@ ElementManager.prototype = {
 
 
 
-  find: function(container, strategy, selector, opts = {}) {
-    opts.all = !!opts.all;
-    opts.timeout = opts.timeout || 0;
 
-    let searchFn;
-    if (opts.all) {
-      searchFn = this.findElements.bind(this);
-    } else {
-      searchFn = this.findElement.bind(this);
-    }
+element.find = function(container, strategy, selector, opts = {}) {
+  opts.all = !!opts.all;
+  opts.timeout = opts.timeout || 0;
 
-    return new Promise((resolve, reject) => {
-      let findElements = implicitlyWaitFor(
-          () => this.find_(container, strategy, selector, searchFn, opts),
-          opts.timeout);
+  let searchFn;
+  if (opts.all) {
+    searchFn = findElements.bind(this);
+  } else {
+    searchFn = findElement.bind(this);
+  }
 
-      findElements.then(foundEls => {
-        
-        
-        if (!opts.all && (!foundEls || foundEls.length == 0)) {
-          let msg;
-          switch (strategy) {
-            case element.Strategy.AnonAttribute:
-              msg = "Unable to locate anonymous element: " + JSON.stringify(selector);
-              break;
+  return new Promise((resolve, reject) => {
+    let findElements = implicitlyWaitFor(
+        () => find_(container, strategy, selector, searchFn, opts),
+        opts.timeout);
 
-            default:
-              msg = "Unable to locate element: " + selector;
-          }
-
-          reject(new NoSuchElementError(msg));
-        }
-
-        
-        let rv = [];
-        for (let el of foundEls) {
-          let ref = this.addToKnownElements(el);
-          let we = element.makeWebElement(ref);
-          rv.push(we);
-        }
-
-        if (opts.all) {
-          resolve(rv);
-        }
-        resolve(rv[0]);
-      }, reject);
-    });
-  },
-
-  find_: function(container, strategy, selector, searchFn, opts) {
-    let rootNode = container.shadowRoot || container.frame.document;
-    let startNode;
-    if (opts.startNode) {
-      startNode = this.getKnownElement(opts.startNode, container);
-    } else {
-      startNode = rootNode;
-    }
-
-    if (!this.supportedStrategies.has(strategy)) {
-      throw new InvalidSelectorError("Strategy not supported: " + strategy);
-    }
-
-    let res;
-    try {
-      res = searchFn(strategy, selector, rootNode, startNode);
-    } catch (e) {
-      throw new InvalidSelectorError(
-          `Given ${strategy} expression "${selector}" is invalid`);
-    }
-
-    if (element.isElementCollection(res)) {
-      return res;
-    } else if (res) {
-      return [res];
-    }
-    return [];
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  findByXPath: function EM_findByXPath(root, value, node) {
-    return root.evaluate(value, node, null,
-            Ci.nsIDOMXPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  findByXPathAll: function EM_findByXPathAll(root, value, node) {
-    let values = root.evaluate(value, node, null,
-                      Ci.nsIDOMXPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
-    let elements = [];
-    let element = values.iterateNext();
-    while (element) {
-      elements.push(element);
-      element = values.iterateNext();
-    }
-    return elements;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  findElement: function(using, value, rootNode, startNode) {
-    switch (using) {
-      case element.Strategy.ID:
-        if (startNode.getElementById) {
-          return startNode.getElementById(value);
-        }
-        return this.findByXPath(rootNode, `.//*[@id="${value}"]`, startNode);
-
-      case element.Strategy.Name:
-        if (startNode.getElementsByName) {
-          return startNode.getElementsByName(value)[0];
-        }
-        return this.findByXPath(rootNode, `.//*[@name="${value}"]`, startNode);
-
-      case element.Strategy.ClassName:
-        
-        return  startNode.getElementsByClassName(value)[0];
-
-      case element.Strategy.TagName:
-        
-        return startNode.getElementsByTagName(value)[0];
-
-      case element.Strategy.XPath:
-        return  this.findByXPath(rootNode, value, startNode);
-
+    findElements.then(foundEls => {
       
-      case element.Strategy.LinkText:
-      case element.Strategy.PartialLinkText:
-        let el;
-        let allLinks = startNode.getElementsByTagName("A");
-        for (let i = 0; i < allLinks.length && !el; i++) {
-          let text = allLinks[i].text;
-          if (using == element.Strategy.PartialLinkText) {
-            if (text.indexOf(value) != -1) {
-              el = allLinks[i];
-            }
-          } else if (text == value) {
+      
+      if (!opts.all && (!foundEls || foundEls.length == 0)) {
+        let msg;
+        switch (strategy) {
+          case element.Strategy.AnonAttribute:
+            msg = "Unable to locate anonymous element: " + JSON.stringify(selector);
+            break;
+
+          default:
+            msg = "Unable to locate element: " + selector;
+        }
+
+        reject(new NoSuchElementError(msg));
+      }
+
+      if (opts.all) {
+        resolve(foundEls);
+      }
+      resolve(foundEls[0]);
+    }, reject);
+  });
+};
+
+function find_(container, strategy, selector, searchFn, opts) {
+  let rootNode = container.shadowRoot || container.frame.document;
+  let startNode = opts.startNode || rootNode;
+
+  let res;
+  try {
+    res = searchFn(strategy, selector, rootNode, startNode);
+  } catch (e) {
+    throw new InvalidSelectorError(
+        `Given ${strategy} expression "${selector}" is invalid: ${e}`);
+  }
+
+  if (element.isElementCollection(res)) {
+    return res;
+  } else if (res) {
+    return [res];
+  }
+  return [];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function findByXPath(root, value, node) {
+  return root.evaluate(value, node, null,
+          Ci.nsIDOMXPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function findByXPathAll(root, value, node) {
+  let values = root.evaluate(value, node, null,
+                    Ci.nsIDOMXPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+  let elements = [];
+  let element = values.iterateNext();
+  while (element) {
+    elements.push(element);
+    element = values.iterateNext();
+  }
+  return elements;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function findElement(using, value, rootNode, startNode) {
+  switch (using) {
+    case element.Strategy.ID:
+      if (startNode.getElementById) {
+        return startNode.getElementById(value);
+      }
+      return findByXPath(rootNode, `.//*[@id="${value}"]`, startNode);
+
+    case element.Strategy.Name:
+      if (startNode.getElementsByName) {
+        return startNode.getElementsByName(value)[0];
+      }
+      return findByXPath(rootNode, `.//*[@name="${value}"]`, startNode);
+
+    case element.Strategy.ClassName:
+      
+      return  startNode.getElementsByClassName(value)[0];
+
+    case element.Strategy.TagName:
+      
+      return startNode.getElementsByTagName(value)[0];
+
+    case element.Strategy.XPath:
+      return  findByXPath(rootNode, value, startNode);
+
+    
+    case element.Strategy.LinkText:
+    case element.Strategy.PartialLinkText:
+      let el;
+      let allLinks = startNode.getElementsByTagName("A");
+      for (let i = 0; i < allLinks.length && !el; i++) {
+        let text = allLinks[i].text;
+        if (using == element.Strategy.PartialLinkText) {
+          if (text.indexOf(value) != -1) {
             el = allLinks[i];
           }
+        } else if (text == value) {
+          el = allLinks[i];
         }
-        return el;
+      }
+      return el;
 
-      case element.Strategy.Selector:
-        try {
-          return startNode.querySelector(value);
-        } catch (e) {
-          throw new InvalidSelectorError(`${e.message}: "${value}"`);
-        }
+    case element.Strategy.Selector:
+      try {
+        return startNode.querySelector(value);
+      } catch (e) {
+        throw new InvalidSelectorError(`${e.message}: "${value}"`);
+      }
 
-      case element.Strategy.Anon:
-        return rootNode.getAnonymousNodes(startNode);
+    case element.Strategy.Anon:
+      return rootNode.getAnonymousNodes(startNode);
 
-      case element.Strategy.AnonAttribute:
-        let attr = Object.keys(value)[0];
-        return rootNode.getAnonymousElementByAttribute(startNode, attr, value[attr]);
+    case element.Strategy.AnonAttribute:
+      let attr = Object.keys(value)[0];
+      return rootNode.getAnonymousElementByAttribute(startNode, attr, value[attr]);
 
-      default:
-        throw new InvalidSelectorError(`No such strategy: ${using}`);
-    }
-},
-
-  
-
+    default:
+      throw new InvalidSelectorError(`No such strategy: ${using}`);
+  }
+};
 
 
 
@@ -559,62 +554,64 @@ ElementManager.prototype = {
 
 
 
-  findElements: function(using, value, rootNode, startNode) {
-    switch (using) {
-      case element.Strategy.ID:
-        value = `.//*[@id="${value}"]`;
 
-      
-      case element.Strategy.XPath:
-        return this.findByXPathAll(rootNode, value, startNode);
 
-      case element.Strategy.Name:
-        if (startNode.getElementsByName) {
-          return startNode.getElementsByName(value);
-        }
-        return this.findByXPathAll(rootNode, `.//*[@name="${value}"]`, startNode);
 
-      case element.Strategy.ClassName:
-        return startNode.getElementsByClassName(value);
+function findElements(using, value, rootNode, startNode) {
+  switch (using) {
+    case element.Strategy.ID:
+      value = `.//*[@id="${value}"]`;
 
-      case element.Strategy.TagName:
-        return startNode.getElementsByTagName(value);
+    
+    case element.Strategy.XPath:
+      return findByXPathAll(rootNode, value, startNode);
 
-      case element.Strategy.LinkText:
-      case element.Strategy.PartialLinkText:
-        let els = [];
-        let allLinks = startNode.getElementsByTagName("A");
-        for (let i = 0; i < allLinks.length; i++) {
-          let text = allLinks[i].text;
-          if (using == element.Strategy.PartialLinkText) {
-            if (text.indexOf(value) != -1) {
-              els.push(allLinks[i]);
-            }
-          } else if (text == value) {
+    case element.Strategy.Name:
+      if (startNode.getElementsByName) {
+        return startNode.getElementsByName(value);
+      }
+      return findByXPathAll(rootNode, `.//*[@name="${value}"]`, startNode);
+
+    case element.Strategy.ClassName:
+      return startNode.getElementsByClassName(value);
+
+    case element.Strategy.TagName:
+      return startNode.getElementsByTagName(value);
+
+    case element.Strategy.LinkText:
+    case element.Strategy.PartialLinkText:
+      let els = [];
+      let allLinks = startNode.getElementsByTagName("A");
+      for (let i = 0; i < allLinks.length; i++) {
+        let text = allLinks[i].text;
+        if (using == element.Strategy.PartialLinkText) {
+          if (text.indexOf(value) != -1) {
             els.push(allLinks[i]);
           }
+        } else if (text == value) {
+          els.push(allLinks[i]);
         }
-        return els;
+      }
+      return els;
 
-      case element.Strategy.Selector:
-        return Array.slice(startNode.querySelectorAll(value));
+    case element.Strategy.Selector:
+      return startNode.querySelectorAll(value);
 
-      case element.Strategy.Anon:
-        return rootNode.getAnonymousNodes(startNode);
+    case element.Strategy.Anon:
+      return rootNode.getAnonymousNodes(startNode);
 
-      case element.Strategy.AnonAttribute:
-        let attr = Object.keys(value)[0];
-        let el = rootNode.getAnonymousElementByAttribute(startNode, attr, value[attr]);
-        if (el) {
-          return [el];
-        }
-        return [];
+    case element.Strategy.AnonAttribute:
+      let attr = Object.keys(value)[0];
+      let el = rootNode.getAnonymousElementByAttribute(startNode, attr, value[attr]);
+      if (el) {
+        return [el];
+      }
+      return [];
 
-      default:
-        throw new InvalidSelectorError(`No such strategy: ${using}`);
-    }
-  },
-};
+    default:
+      throw new InvalidSelectorError(`No such strategy: ${using}`);
+  }
+}
 
 
 
