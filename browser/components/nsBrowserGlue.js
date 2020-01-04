@@ -755,6 +755,9 @@ BrowserGlue.prototype = {
           let count = ids.length;
           if (count) {
             let win = RecentWindow.getMostRecentBrowserWindow();
+            if (!win) {
+              return;
+            }
             let nb =  win.document.getElementById("global-notificationbox");
             let notification = nb.getNotificationWithValue("pending-crash-reports");
             if (notification) {
@@ -845,7 +848,7 @@ BrowserGlue.prototype = {
 
     if (samples >= Services.prefs.getIntPref("browser.slowStartup.maxSamples")) {
       if (averageTime > Services.prefs.getIntPref("browser.slowStartup.timeThreshold"))
-        this._calculateProfileAgeInDays().then(this._showSlowStartupNotification, null);
+        this._showSlowStartupNotification();
       averageTime = 0;
       samples = 0;
     }
@@ -854,25 +857,7 @@ BrowserGlue.prototype = {
     Services.prefs.setIntPref("browser.slowStartup.samples", samples);
   },
 
-  _calculateProfileAgeInDays: Task.async(function* () {
-    let ProfileAge = Cu.import("resource://gre/modules/ProfileAge.jsm", {}).ProfileAge;
-    let profileAge = new ProfileAge(null, null);
-
-    let creationDate = yield profileAge.created;
-    let resetDate = yield profileAge.reset;
-
-    
-    
-    let profileDate = resetDate || creationDate;
-
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-    return (Date.now() - profileDate) / ONE_DAY;
-  }),
-
-  _showSlowStartupNotification: function (profileAge) {
-    if (profileAge < 90) 
-      return;
-
+  _showSlowStartupNotification: function () {
     let win = RecentWindow.getMostRecentBrowserWindow();
     if (!win)
       return;
