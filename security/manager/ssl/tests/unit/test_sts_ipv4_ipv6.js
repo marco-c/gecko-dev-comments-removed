@@ -1,6 +1,6 @@
 function check_ip(s, v, ip) {
   let sslStatus = new FakeSSLStatus();
-  do_check_false(s.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS, ip, 0));
+  ok(!s.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS, ip, 0));
 
   let str = "https://";
   if (v == 6) {
@@ -25,8 +25,8 @@ function check_ip(s, v, ip) {
 
 
 
-  do_check_neq(parsedMaxAge.value, 1000);
-  do_check_neq(parsedIncludeSubdomains.value, true);
+  notEqual(parsedMaxAge.value, 1000);
+  notEqual(parsedIncludeSubdomains.value, true);
 }
 
 function run_test() {
