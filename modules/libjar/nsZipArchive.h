@@ -416,11 +416,19 @@ private:
   nsZipHandle();
   ~nsZipHandle();
 
+  void findDataStart();
+
   PRFileMap *                       mMap;    
   mozilla::AutoFDClose              mNSPRFileDesc;
   nsAutoPtr<nsZipItemPtr<uint8_t> > mBuf;
   mozilla::ThreadSafeAutoRefCnt     mRefCnt; 
   NS_DECL_OWNINGTHREAD
+
+  const uint8_t * mFileStart; 
+  uint32_t        mTotalLen;  
+
+  
+  static const uint32_t kCRXMagic = 0x34327243;
 };
 
 nsresult gZlibInit(z_stream *zs);

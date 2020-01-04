@@ -165,6 +165,8 @@ nsZipHandle::nsZipHandle()
   , mLen(0)
   , mMap(nullptr)
   , mRefCnt(0)
+  , mFileStart(nullptr)
+  , mTotalLen(0)
 {
   MOZ_COUNT_CTOR(nsZipHandle);
 }
@@ -215,8 +217,9 @@ nsresult nsZipHandle::Init(nsIFile *file, nsZipHandle **ret,
 #endif
   handle->mMap = map;
   handle->mFile.Init(file);
-  handle->mLen = (uint32_t) size;
-  handle->mFileData = buf;
+  handle->mTotalLen = (uint32_t) size;
+  handle->mFileStart = buf;
+  handle->findDataStart();
   handle.forget(ret);
   return NS_OK;
 }
@@ -237,8 +240,9 @@ nsresult nsZipHandle::Init(nsZipArchive *zip, const char *entry,
 
   handle->mMap = nullptr;
   handle->mFile.Init(zip, entry);
-  handle->mLen = handle->mBuf->Length();
-  handle->mFileData = handle->mBuf->Buffer();
+  handle->mTotalLen = handle->mBuf->Length();
+  handle->mFileStart = handle->mBuf->Buffer();
+  handle->findDataStart();
   handle.forget(ret);
   return NS_OK;
 }
@@ -248,15 +252,56 @@ nsresult nsZipHandle::Init(const uint8_t* aData, uint32_t aLen,
 {
   RefPtr<nsZipHandle> handle = new nsZipHandle();
 
-  handle->mFileData = aData;
-  handle->mLen = aLen;
+  handle->mFileStart = aData;
+  handle->mTotalLen = aLen;
+  handle->findDataStart();
   handle.forget(aRet);
   return NS_OK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void nsZipHandle::findDataStart()
+{
+  
+  
+  const uint32_t CRXIntSize = 4;
+
+  if (mTotalLen > CRXIntSize * 4 && xtolong(mFileStart) == kCRXMagic) {
+    const uint8_t* headerData = mFileStart;
+    headerData += CRXIntSize * 2; 
+    uint32_t pubKeyLength = xtolong(headerData);
+    headerData += CRXIntSize;
+    uint32_t sigLength = xtolong(headerData);
+    uint32_t headerSize = CRXIntSize * 4 + pubKeyLength + sigLength;
+    if (mTotalLen > headerSize) {
+      mLen = mTotalLen - headerSize;
+      mFileData = mFileStart + headerSize;
+      return;
+    }
+  }
+  mLen = mTotalLen;
+  mFileData = mFileStart;
+}
+
 int64_t nsZipHandle::SizeOfMapping()
 {
-    return mLen;
+  return mTotalLen;
 }
 
 nsresult nsZipHandle::GetNSPRFileDesc(PRFileDesc** aNSPRFileDesc)
@@ -276,9 +321,10 @@ nsresult nsZipHandle::GetNSPRFileDesc(PRFileDesc** aNSPRFileDesc)
 nsZipHandle::~nsZipHandle()
 {
   if (mMap) {
-    PR_MemUnmap((void *)mFileData, mLen);
+    PR_MemUnmap((void *)mFileStart, mTotalLen);
     PR_CloseFileMap(mMap);
   }
+  mFileStart = nullptr;
   mFileData = nullptr;
   mMap = nullptr;
   mBuf = nullptr;
