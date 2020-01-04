@@ -41,7 +41,7 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
 
     
     
-    if (startPayload->GetMetaData() == TRACING_TIMESTAMP) {
+    if (startPayload->GetTracingType() == MarkerTracingType::TIMESTAMP) {
       dom::ProfileTimelineMarker* marker = aStore.AppendElement();
       marker->mName = NS_ConvertUTF8toUTF16(startPayload->GetName());
       marker->mStart = startPayload->GetTime();
@@ -53,7 +53,7 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
 
     
     
-    if (startPayload->GetMetaData() == TRACING_INTERVAL_START) {
+    if (startPayload->GetTracingType() == MarkerTracingType::START) {
       bool hasSeenEnd = false;
 
       
@@ -88,11 +88,11 @@ ObservedDocShell::PopMarkers(JSContext* aCx,
         if (!startPayload->Equals(*endPayload)) {
           continue;
         }
-        if (endPayload->GetMetaData() == TRACING_INTERVAL_START) {
+        if (endPayload->GetTracingType() == MarkerTracingType::START) {
           ++markerDepth;
           continue;
         }
-        if (endPayload->GetMetaData() == TRACING_INTERVAL_END) {
+        if (endPayload->GetTracingType() == MarkerTracingType::END) {
           if (markerDepth > 0) {
             --markerDepth;
             continue;

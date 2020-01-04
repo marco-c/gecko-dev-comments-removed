@@ -275,14 +275,14 @@ private:
   
   
   
-  friend void mozilla::TimelineConsumers::AddConsumer(nsDocShell* aDocShell);
-  friend void mozilla::TimelineConsumers::RemoveConsumer(nsDocShell* aDocShell);
+  friend void mozilla::TimelineConsumers::AddConsumer(nsDocShell*);
+  friend void mozilla::TimelineConsumers::RemoveConsumer(nsDocShell*);
   friend void mozilla::TimelineConsumers::AddMarkerForDocShell(
-    nsDocShell* aDocShell, const char* aName, TracingMetadata aMetaData);
+    nsDocShell*, const char*, MarkerTracingType);
   friend void mozilla::TimelineConsumers::AddMarkerForDocShell(
-    nsDocShell* aDocShell, const char* aName, const TimeStamp& aTime, TracingMetadata aMetaData);
+    nsDocShell*, const char*, const TimeStamp&, MarkerTracingType);
   friend void mozilla::TimelineConsumers::AddMarkerForDocShell(
-    nsDocShell* aDocShell, UniquePtr<TimelineMarker>&& aMarker);
+    nsDocShell*, UniquePtr<TimelineMarker>&&);
 
 public:
   

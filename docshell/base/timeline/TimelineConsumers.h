@@ -10,7 +10,9 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Vector.h"
-#include "GeckoProfiler.h"
+#include "mozilla/TimeStamp.h"
+
+#include "TimelineMarkerEnums.h"
 
 class nsDocShell;
 class nsIDocShell;
@@ -46,19 +48,19 @@ public:
   
   static void AddMarkerForDocShell(nsDocShell* aDocShell,
                                    const char* aName,
-                                   TracingMetadata aMetaData);
+                                   MarkerTracingType aTracingType);
   static void AddMarkerForDocShell(nsIDocShell* aDocShell,
                                    const char* aName,
-                                   TracingMetadata aMetaData);
+                                   MarkerTracingType aTracingType);
 
   static void AddMarkerForDocShell(nsDocShell* aDocShell,
                                    const char* aName,
                                    const TimeStamp& aTime,
-                                   TracingMetadata aMetaData);
+                                   MarkerTracingType aTracingType);
   static void AddMarkerForDocShell(nsIDocShell* aDocShell,
                                    const char* aName,
                                    const TimeStamp& aTime,
-                                   TracingMetadata aMetaData);
+                                   MarkerTracingType aTracingType);
 
   
   
@@ -70,12 +72,12 @@ public:
   
   static void AddMarkerForDocShellsList(Vector<nsRefPtr<nsDocShell>>& aDocShells,
                                         const char* aName,
-                                        TracingMetadata aMetaData);
+                                        MarkerTracingType aTracingType);
 
   
   
   static void AddMarkerForAllObservedDocShells(const char* aName,
-                                               TracingMetadata aMetaData);
+                                               MarkerTracingType aTracingType);
 };
 
 } 
