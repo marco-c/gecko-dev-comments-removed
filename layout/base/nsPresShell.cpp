@@ -1769,8 +1769,6 @@ PresShell::Initialize(nscoord aWidth, nscoord aHeight)
       mPaintSuppressionTimer->InitWithNamedFuncCallback(
         sPaintSuppressionCallback, this, delay, nsITimer::TYPE_ONE_SHOT,
         "PresShell::sPaintSuppressionCallback");
-
-      mPaintSuppressionExpectTime = TimeStamp::Now() + TimeDuration::FromMilliseconds(delay);
     }
   }
 
@@ -6516,8 +6514,6 @@ PresShell::Paint(nsView*        aViewToPaint,
 
   nsAutoNotifyDidPaint notifyDidPaint(this, aFlags);
   AutoUpdateHitRegion updateHitRegion(this, frame);
-
-  CheckIfTimeToUnsuppressPainting();
 
   
   
@@ -11535,16 +11531,4 @@ nsIPresShell::HasRuleProcessorUsedByMultipleStyleSets(uint32_t aSheetType,
     *aRetVal = styleSet->HasRuleProcessorUsedByMultipleStyleSets(type);
   }
   return NS_OK;
-}
-
-void
-PresShell::CheckIfTimeToUnsuppressPainting()
-{
-  if (!mPaintingSuppressed) {
-    return;
-  }
-
-  if (TimeStamp::Now() >= mPaintSuppressionExpectTime) {
-    UnsuppressPainting();
-  }
 }

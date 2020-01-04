@@ -908,11 +908,6 @@ public:
   
 
 
-  virtual void CheckIfTimeToUnsuppressPainting() = 0;
-
-  
-
-
 
 
   virtual void PausePainting() = 0;

@@ -422,8 +422,6 @@ public:
 
   void SetNextPaintCompressed() { mNextPaintCompressed = true; }
 
-  virtual void CheckIfTimeToUnsuppressPainting() override;
-
 protected:
   virtual ~PresShell();
 
@@ -951,7 +949,6 @@ protected:
   
   
   nsCOMPtr<nsITimer>        mPaintSuppressionTimer;
-  mozilla::TimeStamp        mPaintSuppressionExpectTime;
 
   nsCOMPtr<nsITimer>        mDelayedPaintTimer;
 
