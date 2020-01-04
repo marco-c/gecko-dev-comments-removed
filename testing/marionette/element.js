@@ -30,10 +30,7 @@ const logger = Log.repository.getLogger("Marionette");
 
 
 
-this.EXPORTED_SYMBOLS = [
-  "element",
-  "ElementManager",
-];
+this.EXPORTED_SYMBOLS = ["element"];
 
 const DOCUMENT_POSITION_DISCONNECTED = 1;
 const XMLNS = "http://www.w3.org/1999/xhtml";
@@ -43,8 +40,8 @@ const uuidGen = Cc["@mozilla.org/uuid-generator;1"]
 
 this.element = {};
 
-element.LegacyKey = "ELEMENT";
 element.Key = "element-6066-11e4-a52e-4f735466cecf";
+element.LegacyKey = "ELEMENT";
 
 element.Strategy = {
   ClassName: "class name",
