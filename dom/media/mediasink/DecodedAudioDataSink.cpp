@@ -143,8 +143,12 @@ DecodedAudioDataSink::GetPosition()
   int64_t pos;
   if (mAudioStream &&
       (pos = mAudioStream->GetPosition()) >= 0) {
+    NS_ASSERTION(pos >= mLastGoodPosition,
+                 "AudioStream position shouldn't go backward");
     
-    mLastGoodPosition = pos;
+    if (pos >= mLastGoodPosition) {
+      mLastGoodPosition = pos;
+    }
   }
 
   return mStartTime + mLastGoodPosition;
