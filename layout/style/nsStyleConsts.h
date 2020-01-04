@@ -10,6 +10,7 @@
 
 #include "gfxRect.h"
 #include "nsFont.h"
+#include "mozilla/MacroArgs.h" 
 #include "X11UndefineNone.h"
 
 
@@ -19,7 +20,17 @@ namespace css {
 typedef mozilla::Side Side;
 } 
 
-#define NS_FOR_CSS_SIDES(var_) for (mozilla::css::Side var_ = NS_SIDE_TOP; var_ <= NS_SIDE_LEFT; var_++)
+
+
+
+
+#define NS_FOR_CSS_SIDES(var_)                                           \
+  int32_t MOZ_CONCAT(var_,__LINE__) = NS_SIDE_TOP;                       \
+  for (mozilla::css::Side var_;                                          \
+       MOZ_CONCAT(var_,__LINE__) <= NS_SIDE_LEFT &&                      \
+         ((var_ = mozilla::css::Side(MOZ_CONCAT(var_,__LINE__))), true); \
+       MOZ_CONCAT(var_,__LINE__)++)
+
 static inline css::Side operator++(css::Side& side, int) {
     NS_PRECONDITION(side >= NS_SIDE_TOP &&
                     side <= NS_SIDE_LEFT, "Out of range side");
