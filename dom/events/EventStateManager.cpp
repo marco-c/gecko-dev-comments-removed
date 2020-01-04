@@ -542,6 +542,11 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 
   *aStatus = nsEventStatus_eIgnore;
 
+  if (aEvent->mClass == eQueryContentEventClass) {
+    HandleQueryContentEvent(aEvent->AsQueryContentEvent());
+    return NS_OK;
+  }
+
   switch (aEvent->mMessage) {
   case eContextMenu:
     if (sIsPointerLocked) {
@@ -738,73 +743,6 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         InitLineOrPageDelta(aTargetFrame, this, wheelEvent);
     }
     break;
-  case NS_QUERY_SELECTED_TEXT:
-    DoQuerySelectedText(aEvent->AsQueryContentEvent());
-    break;
-  case NS_QUERY_TEXT_CONTENT:
-    {
-      if (RemoteQueryContentEvent(aEvent)) {
-        break;
-      }
-      ContentEventHandler handler(mPresContext);
-      handler.OnQueryTextContent(aEvent->AsQueryContentEvent());
-    }
-    break;
-  case NS_QUERY_CARET_RECT:
-    {
-      if (RemoteQueryContentEvent(aEvent)) {
-        break;
-      }
-      ContentEventHandler handler(mPresContext);
-      handler.OnQueryCaretRect(aEvent->AsQueryContentEvent());
-    }
-    break;
-  case NS_QUERY_TEXT_RECT:
-    {
-      if (RemoteQueryContentEvent(aEvent)) {
-        break;
-      }
-      ContentEventHandler handler(mPresContext);
-      handler.OnQueryTextRect(aEvent->AsQueryContentEvent());
-    }
-    break;
-  case NS_QUERY_EDITOR_RECT:
-    {
-      if (RemoteQueryContentEvent(aEvent)) {
-        break;
-      }
-      ContentEventHandler handler(mPresContext);
-      handler.OnQueryEditorRect(aEvent->AsQueryContentEvent());
-    }
-    break;
-  case NS_QUERY_CONTENT_STATE:
-    {
-      
-      ContentEventHandler handler(mPresContext);
-      handler.OnQueryContentState(aEvent->AsQueryContentEvent());
-    }
-    break;
-  case NS_QUERY_SELECTION_AS_TRANSFERABLE:
-    {
-      
-      ContentEventHandler handler(mPresContext);
-      handler.OnQuerySelectionAsTransferable(aEvent->AsQueryContentEvent());
-    }
-    break;
-  case NS_QUERY_CHARACTER_AT_POINT:
-    {
-      
-      ContentEventHandler handler(mPresContext);
-      handler.OnQueryCharacterAtPoint(aEvent->AsQueryContentEvent());
-    }
-    break;
-  case NS_QUERY_DOM_WIDGET_HITTEST:
-    {
-      
-      ContentEventHandler handler(mPresContext);
-      handler.OnQueryDOMWidgetHittest(aEvent->AsQueryContentEvent());
-    }
-    break;
   case NS_SELECTION_SET:
     IMEStateManager::HandleSelectionEvent(aPresContext, GetFocusedContent(),
                                           aEvent->AsSelectionEvent());
@@ -832,7 +770,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       WidgetCompositionEvent* compositionEvent = aEvent->AsCompositionEvent();
       WidgetQueryContentEvent selectedText(true, NS_QUERY_SELECTED_TEXT,
                                            compositionEvent->widget);
-      DoQuerySelectedText(&selectedText);
+      HandleQueryContentEvent(&selectedText);
       NS_ASSERTION(selectedText.mSucceeded, "Failed to get selected text");
       compositionEvent->mData = selectedText.mReply.mString;
     }
@@ -841,6 +779,42 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     break;
   }
   return NS_OK;
+}
+
+void
+EventStateManager::HandleQueryContentEvent(WidgetQueryContentEvent* aEvent)
+{
+  switch (aEvent->mMessage) {
+    case NS_QUERY_SELECTED_TEXT:
+    case NS_QUERY_TEXT_CONTENT:
+    case NS_QUERY_CARET_RECT:
+    case NS_QUERY_TEXT_RECT:
+    case NS_QUERY_EDITOR_RECT:
+      if (!IsTargetCrossProcess(aEvent)) {
+        break;
+      }
+      
+      GetCrossProcessTarget()->HandleQueryContentEvent(*aEvent);
+      return;
+    
+    case NS_QUERY_CONTENT_STATE:
+    case NS_QUERY_SELECTION_AS_TRANSFERABLE:
+    case NS_QUERY_CHARACTER_AT_POINT:
+    case NS_QUERY_DOM_WIDGET_HITTEST:
+      break;
+    default:
+      return;
+  }
+
+  
+  
+  if (mIMEContentObserver) {
+    mIMEContentObserver->HandleQueryContentEvent(aEvent);
+    return;
+  }
+
+  ContentEventHandler handler(mPresContext);
+  handler.HandleQueryContentEvent(aEvent);
 }
 
 
@@ -3368,18 +3342,6 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
   return ret;
 }
 
-bool
-EventStateManager::RemoteQueryContentEvent(WidgetEvent* aEvent)
-{
-  WidgetQueryContentEvent* queryEvent = aEvent->AsQueryContentEvent();
-  if (!IsTargetCrossProcess(queryEvent)) {
-    return false;
-  }
-  
-  GetCrossProcessTarget()->HandleQueryContentEvent(*queryEvent);
-  return true;
-}
-
 TabParent*
 EventStateManager::GetCrossProcessTarget()
 {
@@ -5187,16 +5149,6 @@ EventStateManager::DoContentCommandScrollEvent(
   
   sf->ScrollBy(pt, scrollUnit, nsIScrollableFrame::INSTANT);
   return NS_OK;
-}
-
-void
-EventStateManager::DoQuerySelectedText(WidgetQueryContentEvent* aEvent)
-{
-  if (RemoteQueryContentEvent(aEvent)) {
-    return;
-  }
-  ContentEventHandler handler(mPresContext);
-  handler.OnQuerySelectedText(aEvent);
 }
 
 void

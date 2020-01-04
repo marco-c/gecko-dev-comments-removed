@@ -40,6 +40,9 @@ public:
   explicit ContentEventHandler(nsPresContext* aPresContext);
 
   
+  nsresult HandleQueryContentEvent(WidgetQueryContentEvent* aEvent);
+
+  
   nsresult OnQuerySelectedText(WidgetQueryContentEvent* aEvent);
   
   nsresult OnQueryTextContent(WidgetQueryContentEvent* aEvent);
