@@ -376,7 +376,7 @@ APZEventState::ProcessAPZStateChange(const nsCOMPtr<nsIDocument>& aDocument,
 {
   switch (aChange)
   {
-  case APZStateChange::TransformBegin:
+  case APZStateChange::eTransformBegin:
   {
     nsIScrollableFrame* sf = nsLayoutUtils::FindScrollableFrameFor(aViewId);
     if (sf) {
@@ -397,7 +397,7 @@ APZEventState::ProcessAPZStateChange(const nsCOMPtr<nsIDocument>& aDocument,
     mActiveAPZTransforms++;
     break;
   }
-  case APZStateChange::TransformEnd:
+  case APZStateChange::eTransformEnd:
   {
     mActiveAPZTransforms--;
     nsIScrollableFrame* sf = nsLayoutUtils::FindScrollableFrameFor(aViewId);
@@ -418,26 +418,27 @@ APZEventState::ProcessAPZStateChange(const nsCOMPtr<nsIDocument>& aDocument,
     }
     break;
   }
-  case APZStateChange::StartTouch:
+  case APZStateChange::eStartTouch:
   {
     mActiveElementManager->HandleTouchStart(aArg);
     break;
   }
-  case APZStateChange::StartPanning:
+  case APZStateChange::eStartPanning:
   {
     
     mActiveElementManager->ClearActivation();
     break;
   }
-  case APZStateChange::EndTouch:
+  case APZStateChange::eEndTouch:
   {
     mEndTouchIsClick = aArg;
     mActiveElementManager->HandleTouchEnd();
     break;
   }
-  default:
+  case APZStateChange::eSentinel:
     
     
+    MOZ_ASSERT(false);
     break;
   }
 }

@@ -89,30 +89,33 @@ public:
     return false;
   }
 
-  enum APZStateChange {
+  enum class APZStateChange {
     
 
 
-    TransformBegin,
+    eTransformBegin,
     
 
 
-    TransformEnd,
-    
-
-
-
-    StartTouch,
-    
-
-
-    StartPanning,
+    eTransformEnd,
     
 
 
 
-    EndTouch,
-    APZStateChangeSentinel
+    eStartTouch,
+    
+
+
+    eStartPanning,
+    
+
+
+
+    eEndTouch,
+
+    
+    
+    eSentinel
   };
   
 

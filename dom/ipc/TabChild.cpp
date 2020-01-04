@@ -1814,7 +1814,7 @@ TabChild::NotifyAPZStateChange(const ViewID& aViewId,
                                const int& aArg)
 {
   mAPZEventState->ProcessAPZStateChange(GetDocument(), aViewId, aChange, aArg);
-  if (aChange == layers::GeckoContentController::APZStateChange::TransformEnd) {
+  if (aChange == layers::GeckoContentController::APZStateChange::eTransformEnd) {
     
     
     nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
