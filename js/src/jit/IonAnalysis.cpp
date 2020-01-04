@@ -16,6 +16,8 @@
 #include "jit/LIR.h"
 #include "jit/Lowering.h"
 #include "jit/MIRGraph.h"
+#include "vm/RegExpObject.h"
+#include "vm/SelfHosting.h"
 
 #include "jsobjinlines.h"
 #include "jsopcodeinlines.h"
@@ -1827,9 +1829,207 @@ jit::ApplyTypeInformation(MIRGenerator* mir, MIRGraph& graph)
     return true;
 }
 
+
+static inline size_t
+IsExclusiveNthOperand(MDefinition* useDef, size_t n, MDefinition* def)
+{
+    uint32_t num = useDef->numOperands();
+    if (n >= num || useDef->getOperand(n) != def)
+        return false;
+
+    for (uint32_t i = 0; i < num; i++) {
+        if (i == n)
+            continue;
+        if (useDef->getOperand(i) == def)
+            return false;
+    }
+
+    return true;
+}
+
+static size_t
+IsExclusiveThisArg(MCall* call, MDefinition* def)
+{
+    return IsExclusiveNthOperand(call, MCall::IndexOfThis(), def);
+}
+
+static size_t
+IsExclusiveFirstArg(MCall* call, MDefinition* def)
+{
+    return IsExclusiveNthOperand(call, MCall::IndexOfArgument(0), def);
+}
+
+static bool
+IsRegExpHoistableCall(MCall* call, MDefinition* def)
+{
+    if (call->isConstructing())
+        return false;
+
+    JSAtom* name;
+    JSFunction* fun = call->getSingleTarget();
+    if (fun) {
+        if (!fun->isSelfHostedBuiltin())
+            return false;
+        name = GetSelfHostedFunctionName(fun);
+    } else {
+        MDefinition* funDef = call->getFunction();
+        if (funDef->isDebugCheckSelfHosted())
+            funDef = funDef->toDebugCheckSelfHosted()->input();
+        if (funDef->isTypeBarrier())
+            funDef = funDef->toTypeBarrier()->input();
+
+        if (!funDef->isCallGetIntrinsicValue())
+            return false;
+        name = funDef->toCallGetIntrinsicValue()->name();
+    }
+
+    
+    CompileRuntime* runtime = GetJitContext()->runtime;
+    if (name == runtime->names().RegExpBuiltinExec ||
+        name == runtime->names().UnwrapAndCallRegExpBuiltinExec ||
+        name == runtime->names().RegExpMatcher ||
+        name == runtime->names().RegExpTester ||
+        name == runtime->names().RegExpSearcher)
+    {
+        return IsExclusiveFirstArg(call, def);
+    }
+
+    if (name == runtime->names().RegExp_prototype_Exec)
+        return IsExclusiveThisArg(call, def);
+
+    return false;
+}
+
+static bool
+CanCompareWithoutToPrimitive(MCompare* compare, MDefinition* def)
+{
+    JSOp op = compare->jsop();
+    
+    if (op == JSOP_STRICTEQ || op == JSOP_STRICTNE)
+        return true;
+
+    if (op != JSOP_EQ && op != JSOP_NE) {
+        
+        MOZ_ASSERT(op == JSOP_GT || op == JSOP_GE || op == JSOP_LT || op == JSOP_LE);
+        return false;
+    }
+
+    
+    MDefinition* value;
+    if (compare->lhs() == def) {
+        value = compare->rhs();
+    } else {
+        MOZ_ASSERT(compare->rhs() == def);
+        value = compare->lhs();
+    }
+
+    if (value->mightBeType(MIRType::Boolean) || value->mightBeType(MIRType::String) ||
+        value->mightBeType(MIRType::Int32) ||
+        value->mightBeType(MIRType::Double) || value->mightBeType(MIRType::Float32) ||
+        value->mightBeType(MIRType::Symbol))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static inline void
+SetNotInWorklist(MDefinitionVector& worklist)
+{
+    for (size_t i = 0; i < worklist.length(); i++)
+        worklist[i]->setNotInWorklist();
+}
+
+static bool
+IsRegExpHoistable(MDefinition* regexp, MDefinitionVector& worklist, bool* hoistable)
+{
+    MOZ_ASSERT(worklist.length() == 0);
+
+    if (!worklist.append(regexp))
+        return false;
+    regexp->setInWorklist();
+
+    for (size_t i = 0; i < worklist.length(); i++) {
+        MDefinition* def = worklist[i];
+        for (MUseIterator use = def->usesBegin(); use != def->usesEnd(); use++) {
+            
+            
+            if (use->consumer()->isResumePoint())
+                continue;
+
+            MDefinition* useDef = use->consumer()->toDefinition();
+
+            
+            if (useDef->isPhi() || useDef->isFilterTypeSet() || useDef->isGuardShape()) {
+                if (useDef->isInWorklist())
+                    continue;
+
+                if (!worklist.append(useDef))
+                    return false;
+                useDef->setInWorklist();
+                continue;
+            }
+
+            
+            
+            if (useDef->isRegExpMatcher() || useDef->isRegExpTester() ||
+                useDef->isRegExpSearcher())
+            {
+                if (IsExclusiveNthOperand(useDef, 0, def))
+                    continue;
+            } else if (useDef->isLoadFixedSlot() || useDef->isTypeOf()) {
+                continue;
+            } else if (useDef->isCompare()) {
+                if (CanCompareWithoutToPrimitive(useDef->toCompare(), def))
+                    continue;
+            }
+            
+            else if (useDef->isStoreFixedSlot()) {
+                if (IsExclusiveNthOperand(useDef, 0, def)) {
+                    MStoreFixedSlot* store = useDef->toStoreFixedSlot();
+                    if (store->slot() == RegExpObject::lastIndexSlot())
+                        continue;
+                }
+            } else if (useDef->isSetPropertyCache()) {
+                if (IsExclusiveNthOperand(useDef, 0, def)) {
+                    MSetPropertyCache* setProp = useDef->toSetPropertyCache();
+                    if (setProp->idval()->isConstant()) {
+                        Value propIdVal = setProp->idval()->toConstant()->toJSValue();
+                        if (propIdVal.isString()) {
+                            CompileRuntime* runtime = GetJitContext()->runtime;
+                            if (propIdVal.toString() == runtime->names().lastIndex)
+                                continue;
+                        }
+                    }
+                }
+            }
+            
+            else if (useDef->isCall()) {
+                if (IsRegExpHoistableCall(useDef->toCall(), def))
+                    continue;
+            }
+
+            
+            SetNotInWorklist(worklist);
+            worklist.clear();
+            *hoistable = false;
+
+            return true;
+        }
+    }
+
+    SetNotInWorklist(worklist);
+    worklist.clear();
+    *hoistable = true;
+    return true;
+}
+
 bool
 jit::MakeMRegExpHoistable(MIRGraph& graph)
 {
+    MDefinitionVector worklist(graph.alloc());
+
     for (ReversePostorderIterator block(graph.rpoBegin()); block != graph.rpoEnd(); block++) {
         for (MDefinitionIterator iter(*block); iter; iter++) {
             if (!*iter)
@@ -1840,24 +2040,9 @@ jit::MakeMRegExpHoistable(MIRGraph& graph)
 
             MRegExp* regexp = iter->toRegExp();
 
-            
-            bool hoistable = true;
-            for (MUseIterator i = regexp->usesBegin(); i != regexp->usesEnd(); i++) {
-                
-                
-                if (i->consumer()->isResumePoint())
-                    continue;
-
-                MOZ_ASSERT(i->consumer()->isDefinition());
-
-                
-                MDefinition* use = i->consumer()->toDefinition();
-                if (use->isRegExpMatcher() || use->isRegExpTester() || use->isRegExpSearcher())
-                    continue;
-
-                hoistable = false;
-                break;
-            }
+            bool hoistable = false;
+            if (!IsRegExpHoistable(regexp, worklist, &hoistable))
+                return false;
 
             if (!hoistable)
                 continue;
@@ -1865,6 +2050,7 @@ jit::MakeMRegExpHoistable(MIRGraph& graph)
             
             regexp->setMovable();
 
+            
             
             
             RegExpObject* source = regexp->source();
