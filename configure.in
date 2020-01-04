@@ -3746,7 +3746,7 @@ if test -n "$MOZ_FMP4"; then
 else
   MOZ_FMP4=
 fi
-MOZ_FFMPEG=1
+MOZ_FFMPEG=
 MOZ_WEBRTC=1
 MOZ_PEERCONNECTION=
 MOZ_SRTP=
@@ -3805,6 +3805,7 @@ MOZ_ANDROID_HISTORY=
 MOZ_WEBSMS_BACKEND=
 MOZ_ANDROID_BEAM=
 MOZ_LOCALE_SWITCHER=
+MOZ_ANDROID_READING_LIST_SERVICE=
 MOZ_ANDROID_SEARCH_ACTIVITY=
 MOZ_ANDROID_DOWNLOADS_INTEGRATION=
 MOZ_ANDROID_GCM=
@@ -4883,6 +4884,13 @@ if test -n "$MOZ_ANDROID_SEARCH_ACTIVITY"; then
 fi
 
 dnl ========================================================
+dnl = Include Reading List service on Android
+dnl ========================================================
+if test -n "$MOZ_ANDROID_READING_LIST_SERVICE"; then
+    AC_DEFINE(MOZ_ANDROID_READING_LIST_SERVICE)
+fi
+
+dnl ========================================================
 dnl = Include Mozilla Location Service Stumbler on Android
 dnl ========================================================
 if test -n "$MOZ_ANDROID_MLS_STUMBLER"; then
@@ -5226,6 +5234,14 @@ fi;
 dnl ========================================================
 dnl FFmpeg H264/AAC Decoding Support
 dnl ========================================================
+case "$OS_TARGET" in
+WINNT|Android)
+    ;;
+*)
+    MOZ_FFMPEG=1
+    ;;
+esac
+
 MOZ_ARG_DISABLE_BOOL(ffmpeg,
 [  --disable-ffmpeg         Disable FFmpeg for fragmented H264/AAC decoding],
     MOZ_FFMPEG=,
@@ -8539,6 +8555,7 @@ AC_SUBST(MOZ_LOCALE_SWITCHER)
 AC_SUBST(MOZ_DISABLE_GECKOVIEW)
 AC_SUBST(MOZ_ANDROID_GCM)
 AC_SUBST(MOZ_ANDROID_GECKOLIBS_AAR)
+AC_SUBST(MOZ_ANDROID_READING_LIST_SERVICE)
 AC_SUBST(MOZ_ANDROID_SEARCH_ACTIVITY)
 AC_SUBST(MOZ_ANDROID_MLS_STUMBLER)
 AC_SUBST(MOZ_ANDROID_DOWNLOADS_INTEGRATION)
