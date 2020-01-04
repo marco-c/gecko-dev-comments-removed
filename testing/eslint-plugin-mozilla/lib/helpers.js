@@ -26,6 +26,7 @@ var definitions = [
   /^Object\.defineProperty\(this, "(\w+)"/,
   /^Reflect\.defineProperty\(this, "(\w+)"/,
   /^this\.__defineGetter__\("(\w+)"/,
+  /^this\.(\w+) =/
 ];
 
 var imports = [
@@ -83,12 +84,76 @@ module.exports = {
         return "function() {}";
       case "ArrowFunctionExpression":
         return "() => {}";
+      case "AssignmentExpression":
+        return this.getASTSource(node.left) + " = " + this.getASTSource(node.right);
       default:
         throw new Error("getASTSource unsupported node type: " + node.type);
     }
   },
 
   
+
+
+
+
+
+
+
+
+
+
+  walkAST(ast, listener) {
+    let parents = [];
+
+    let seenComments = new Set();
+    function sendCommentEvents(comments) {
+      if (!comments) {
+        return;
+      }
+
+      for (let comment of comments) {
+        if (seenComments.has(comment)) {
+          return;
+        }
+        seenComments.add(comment);
+
+        listener(comment.type + "Comment", comment, parents);
+      }
+    }
+
+    estraverse.traverse(ast, {
+      enter(node, parent) {
+        
+        let leadingComments = node.leadingComments;
+        if (node.type === "Program" && node.body.length == 0) {
+          leadingComments = node.comments;
+        }
+
+        sendCommentEvents(leadingComments);
+        listener(node.type, node, parents);
+        sendCommentEvents(node.trailingComments);
+
+        parents.push(node);
+      },
+
+      leave(node, parent) {
+        
+        listener(node.type + ":exit", node, parents);
+
+        if (parents.length == 0) {
+          throw new Error("Left more nodes than entered.");
+        }
+        parents.pop();
+      }
+    });
+    if (parents.length) {
+      throw new Error("Entered more nodes than left.");
+    }
+  },
+
+  
+
+
 
 
 
@@ -142,81 +207,20 @@ module.exports = {
 
 
 
-  expressionTraverse: function(ast, callback) {
-    var helpers = this;
-    var parents = new Map();
 
+
+  addVarToScope: function(name, scope, writable) {
     
-    function isGlobal(node) {
-      var parent = parents.get(node);
-      while (parent) {
-        if (parent.type == "FunctionExpression" ||
-            parent.type == "FunctionDeclaration") {
-          return false;
-        }
-        parent = parents.get(parent);
-      }
-      return true;
+    if (scope.set && scope.set.has(name)) {
+      return;
     }
 
-    estraverse.traverse(ast, {
-      enter: function(node, parent) {
-        parents.set(node, parent);
-
-        if (node.type == "ExpressionStatement") {
-          callback(node, isGlobal(node));
-        }
-      }
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-  getGlobals: function(ast) {
-    var scopeManager = escope.analyze(ast);
-    var globalScope = scopeManager.acquire(ast);
-    var result = [];
-
-    for (var variable in globalScope.variables) {
-      var name = globalScope.variables[variable].name;
-      result.push(name);
-    }
-
-    var helpers = this;
-    this.expressionTraverse(ast, function(node, isGlobal) {
-      var name = helpers.convertExpressionToGlobal(node, isGlobal);
-
-      if (name) {
-        result.push(name);
-      }
-    });
-
-    return result;
-  },
-
-  
-
-
-
-
-
-
-
-
-  addVarToScope: function(name, context) {
-    var scope = context.getScope();
+    writable = writable === undefined ? true : writable;
     var variables = scope.variables;
     var variable = new escope.Variable(name, scope);
 
     variable.eslintExplicitGlobal = false;
-    variable.writeable = true;
+    variable.writeable = writable;
     variables.push(variable);
 
     
@@ -228,32 +232,6 @@ module.exports = {
   },
 
   
-  globalCache: new Map(),
-
-  
-
-
-
-
-
-  getGlobalsForFile: function(fileName) {
-    
-    
-    var content = fs.readFileSync(fileName, "utf8");
-
-    if (this.globalCache.has(fileName)) {
-      return this.globalCache.get(fileName);
-    }
-
-    
-    var ast = this.getAST(content);
-    var globalVars = this.getGlobals(ast);
-    this.globalCache.set(fileName, globalVars);
-
-    return globalVars;
-  },
-
-  
 
 
 
@@ -261,54 +239,8 @@ module.exports = {
 
 
 
-  addGlobals: function(globalVars, context) {
-    for (var i = 0; i < globalVars.length; i++) {
-      var varName = globalVars[i];
-      this.addVarToScope(varName, context);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  addGlobalsFromComments: function(currentFilePath, comments, node, context) {
-    comments.forEach(comment => {
-      var value = comment.value.trim();
-      var match = /^import-globals-from\s+(.*)$/.exec(value);
-
-      if (match) {
-        var filePath = match[1];
-
-        if (!path.isAbsolute(filePath)) {
-          var dirName = path.dirname(currentFilePath);
-          filePath = path.resolve(dirName, filePath);
-        }
-
-        try {
-          let globals = this.getGlobalsForFile(filePath);
-          this.addGlobals(globals, context);
-        } catch (e) {
-          context.report(
-            node,
-            "Could not load globals from file {{filePath}}: {{error}}",
-            {
-              filePath: filePath,
-              error: e
-            }
-          );
-        }
-      }
-    });
+  addGlobals: function(globalVars, scope) {
+    globalVars.forEach(v => this.addVarToScope(v.name, scope, v.writable));
   },
 
   
@@ -321,6 +253,7 @@ module.exports = {
   getPermissiveConfig: function() {
     return {
       comment: true,
+      attachComment: true,
       range: true,
       loc: true,
       tolerant: true,
@@ -360,15 +293,14 @@ module.exports = {
 
 
 
-  getIsGlobalScope: function(context) {
-    var ancestors = context.getAncestors();
-    var parent = ancestors.pop();
-
-    if (parent.type == "ExpressionStatement") {
-      parent = ancestors.pop();
+  getIsGlobalScope: function(ancestors) {
+    for (let parent of ancestors) {
+      if (parent.type == "FunctionExpression" ||
+          parent.type == "FunctionDeclaration") {
+        return false;
+      }
     }
-
-    return parent.type == "Program";
+    return true;
   },
 
   
