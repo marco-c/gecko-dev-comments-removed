@@ -115,8 +115,6 @@ public:
 
   void CancelFromStyle() override
   {
-    mOwningElement = OwningElementRef();
-
     
     
     
@@ -127,6 +125,13 @@ public:
     mNeedsNewAnimationIndexWhenRun = true;
 
     Animation::CancelFromStyle();
+
+    
+    
+    
+    
+    
+    mOwningElement = OwningElementRef();
   }
 
   void Tick() override;
