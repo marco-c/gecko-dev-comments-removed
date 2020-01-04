@@ -446,6 +446,13 @@ public:
 
 
   virtual void NotifyImageVisibilityUpdate() = 0;
+
+  
+
+
+
+
+  virtual bool GetDisplayPortAtLastImageVisibilityUpdate(nsRect* aDisplayPort) = 0;
 };
 
 #endif
