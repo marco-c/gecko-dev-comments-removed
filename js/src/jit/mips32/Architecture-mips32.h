@@ -59,7 +59,7 @@ static const uint32_t BAILOUT_TABLE_ENTRY_SIZE = 2 * sizeof(void*);
 
 
 
-class FloatRegisters : public BaseFloatRegisters
+class FloatRegisters : public FloatRegistersMIPSShared
 {
   public:
     static const char* GetName(uint32_t i) {
@@ -128,7 +128,7 @@ class FloatRegisters : public BaseFloatRegisters
     static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 };
 
-class FloatRegister : public BaseFloatRegister
+class FloatRegister : public FloatRegisterMIPSShared
 {
   public:
     enum RegType {
