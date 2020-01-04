@@ -1673,26 +1673,6 @@ public:
   
 
 
-
-
-
-
-
-  bool IsReflowOnZoomPending() {
-    return mReflowOnZoomPending;
-  }
-
-  
-
-
-
-  void ClearReflowOnZoomPending() {
-    mReflowOnZoomPending = false;
-  }
-
-  
-
-
   bool IsNeverPainting() {
     return mIsNeverPainting;
   }
@@ -1827,10 +1807,6 @@ protected:
 
   
   bool mFontSizeInflationEnabledIsDirty;
-
-  
-  
-  bool mReflowOnZoomPending;
 
   
   

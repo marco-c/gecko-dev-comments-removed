@@ -437,9 +437,7 @@ protected:
 
 
 
-
-
-  void     DidDoReflow(bool aInterruptible, bool aWasInterrupted);
+  void     DidDoReflow(bool aInterruptible);
   
   
   bool     ProcessReflowCommands(bool aInterruptible);
