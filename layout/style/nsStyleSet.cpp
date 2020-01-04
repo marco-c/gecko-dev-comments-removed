@@ -62,6 +62,14 @@ nsEmptyStyleRule::MightMapInheritedStyleData()
   return false;
 }
 
+ bool
+nsEmptyStyleRule::GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                                nsCSSValue* aValue)
+{
+  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
+  return false;
+}
+
 #ifdef DEBUG
  void
 nsEmptyStyleRule::List(FILE* out, int32_t aIndent) const
@@ -121,6 +129,14 @@ nsInitialStyleRule::MightMapInheritedStyleData()
   return true;
 }
 
+ bool
+nsInitialStyleRule::GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                                  nsCSSValue* aValue)
+{
+  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
+  return false;
+}
+
 #ifdef DEBUG
  void
 nsInitialStyleRule::List(FILE* out, int32_t aIndent) const
@@ -150,6 +166,14 @@ nsDisableTextZoomStyleRule::MapRuleInfoInto(nsRuleData* aRuleData)
 nsDisableTextZoomStyleRule::MightMapInheritedStyleData()
 {
   return true;
+}
+
+ bool
+nsDisableTextZoomStyleRule::
+GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty, nsCSSValue* aValue)
+{
+  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
+  return false;
 }
 
 #ifdef DEBUG

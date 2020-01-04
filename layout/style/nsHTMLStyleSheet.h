@@ -84,6 +84,8 @@ private:
     
     virtual void MapRuleInfoInto(nsRuleData* aRuleData) override;
     virtual bool MightMapInheritedStyleData() override;
+    virtual bool GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                               nsCSSValue* aValue) override;
   #ifdef DEBUG
     virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
   #endif
@@ -107,6 +109,8 @@ private:
     
     virtual void MapRuleInfoInto(nsRuleData* aRuleData) override = 0;
     virtual bool MightMapInheritedStyleData() override = 0;
+    virtual bool GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                               nsCSSValue* aValue) override = 0;
   #ifdef DEBUG
     virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
   #endif
@@ -121,6 +125,8 @@ private:
 
     virtual void MapRuleInfoInto(nsRuleData* aRuleData) override;
     virtual bool MightMapInheritedStyleData() override;
+    virtual bool GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                               nsCSSValue* aValue) override;
   };
 
   
@@ -130,6 +136,8 @@ private:
 
     virtual void MapRuleInfoInto(nsRuleData* aRuleData) override;
     virtual bool MightMapInheritedStyleData() override;
+    virtual bool GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                               nsCSSValue* aValue) override;
   };
 
 public: 
@@ -149,6 +157,8 @@ public:
     
     virtual void MapRuleInfoInto(nsRuleData* aRuleData) override;
     virtual bool MightMapInheritedStyleData() override;
+    virtual bool GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                               nsCSSValue* aValue) override;
   #ifdef DEBUG
     virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
   #endif

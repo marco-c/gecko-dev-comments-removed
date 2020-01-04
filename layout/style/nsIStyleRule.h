@@ -13,8 +13,10 @@
 
 #include <stdio.h>
 
+#include "nsCSSProperty.h"
 #include "nsISupports.h"
 
+class nsCSSValue;
 struct nsRuleData;
 
 
@@ -76,6 +78,13 @@ public:
 
 
   virtual bool MightMapInheritedStyleData() = 0;
+
+  
+
+
+
+  virtual bool GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                             nsCSSValue* aValue) = 0;
 
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const = 0;

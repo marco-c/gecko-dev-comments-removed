@@ -174,6 +174,14 @@ BodyRule::MightMapInheritedStyleData()
   return false;
 }
 
+ bool
+BodyRule::GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+                                        nsCSSValue* aValue)
+{
+  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
+  return false;
+}
+
 #ifdef DEBUG
  void
 BodyRule::List(FILE* out, int32_t aIndent) const

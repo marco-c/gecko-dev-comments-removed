@@ -327,6 +327,9 @@ enum nsStyleAnimType {
   eStyleAnimType_Shadow,
 
   
+  eStyleAnimType_Discrete,
+
+  
   eStyleAnimType_None
 };
 
