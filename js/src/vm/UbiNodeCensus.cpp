@@ -278,16 +278,7 @@ static int compareEntries(const void* lhsVoid, const void* rhsVoid) {
 }
 
 
-struct CStringHashPolicy {
-    using Lookup = const char*;
-    static js::HashNumber hash(Lookup l) { return mozilla::HashString(l); }
-    static bool match(const char* key, Lookup lookup) {
-        return strcmp(key, lookup) == 0;
-    }
-};
-
-
-using CStringCountMap = HashMap<const char*, CountBasePtr, CStringHashPolicy, SystemAllocPolicy>;
+using CStringCountMap = HashMap<const char*, CountBasePtr, CStringHasher, SystemAllocPolicy>;
 
 
 
