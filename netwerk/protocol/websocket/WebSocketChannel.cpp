@@ -1758,6 +1758,7 @@ WebSocketChannel::ProcessInput(uint8_t *buffer, uint32_t count)
           
           
           mService->FrameReceived(mSerial, mInnerWindowID, frame.forget());
+          frame = nullptr;
         }
 
         if (mListenerMT) {
