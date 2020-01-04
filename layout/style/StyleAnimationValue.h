@@ -154,9 +154,11 @@ public:
 
 
 
+
+
   static bool ComputeValue(nsCSSProperty aProperty,
                            mozilla::dom::Element* aTargetElement,
-                           CSSPseudoElementType aPseudoType,
+                           nsStyleContext* aStyleContext,
                            const nsAString& aSpecifiedValue,
                            bool aUseSVGMode,
                            StyleAnimationValue& aComputedValue,
@@ -175,7 +177,7 @@ public:
   static bool ComputeValues(nsCSSProperty aProperty,
                             nsCSSProps::EnabledState aEnabledState,
                             mozilla::dom::Element* aTargetElement,
-                            CSSPseudoElementType aPseudoType,
+                            nsStyleContext* aStyleContext,
                             const nsAString& aSpecifiedValue,
                             bool aUseSVGMode,
                             nsTArray<PropertyStyleAnimationValuePair>& aResult);
@@ -403,7 +405,7 @@ private:
   static bool ComputeValues(nsCSSProperty aProperty,
                             nsCSSProps::EnabledState aEnabledState,
                             mozilla::dom::Element* aTargetElement,
-                            CSSPseudoElementType aPseudoType,
+                            nsStyleContext* aStyleContext,
                             mozilla::css::StyleRule* aStyleRule,
                             nsTArray<PropertyStyleAnimationValuePair>& aValues,
                             bool* aIsContextSensitive);
