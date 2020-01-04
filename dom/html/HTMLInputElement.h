@@ -1023,11 +1023,7 @@ protected:
   
 
 
-  bool DoesStepApply() const
-  {
-    
-    return DoesMinMaxApply() && mType != NS_FORM_INPUT_MONTH;
-  }
+  bool DoesStepApply() const { return DoesMinMaxApply(); }
 
   
 
@@ -1428,6 +1424,7 @@ protected:
   static const Decimal kStepScaleFactorDate;
   static const Decimal kStepScaleFactorNumberRange;
   static const Decimal kStepScaleFactorTime;
+  static const Decimal kStepScaleFactorMonth;
 
   
   static const Decimal kDefaultStepBase;
