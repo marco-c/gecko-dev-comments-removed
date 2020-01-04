@@ -41,7 +41,7 @@ public:
   
   
   
-  void GetAsString(nsAString& aString) const;
+  MOZ_MUST_USE bool GetAsString(nsAString& aString) const;
 
   size_t SizeOfThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -118,7 +118,7 @@ public:
     return !mLength;
   }
 
-  void GetAsString(nsAString& aString) const;
+  MOZ_MUST_USE bool GetAsString(nsAString& aString) const;
 
 private:
   XMLHttpRequestStringSnapshot(const XMLHttpRequestStringSnapshot&) = delete;
