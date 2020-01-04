@@ -8,9 +8,10 @@
 #ifndef _nsStyleContext_h_
 #define _nsStyleContext_h_
 
-#include "mozilla/RestyleLogging.h"
 #include "mozilla/Assertions.h"
-#include "nsRuleNode.h"
+#include "mozilla/RestyleLogging.h"
+#include "mozilla/StyleContextSource.h"
+#include "nsStyleSet.h"
 
 class nsIAtom;
 class nsPresContext;
@@ -68,7 +69,16 @@ public:
 
   nsStyleContext(nsStyleContext* aParent, nsIAtom* aPseudoTag,
                  mozilla::CSSPseudoElementType aPseudoType,
-                 nsRuleNode* aRuleNode,
+                 already_AddRefed<nsRuleNode> aRuleNode,
+                 bool aSkipParentDisplayBasedStyleFixup);
+
+  
+  
+  nsStyleContext(nsStyleContext* aParent,
+                 nsPresContext* aPresContext,
+                 nsIAtom* aPseudoTag,
+                 mozilla::CSSPseudoElementType aPseudoType,
+                 already_AddRefed<ServoComputedValues> aComputedValues,
                  bool aSkipParentDisplayBasedStyleFixup);
 
   void* operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW;
@@ -133,7 +143,13 @@ public:
     return mRefCnt == 1;
   }
 
-  nsPresContext* PresContext() const { return mRuleNode->PresContext(); }
+  nsPresContext* PresContext() const {
+#ifdef MOZ_STYLO
+    return mPresContext;
+#else
+    return mSource.AsGeckoRuleNode()->PresContext();
+#endif
+  }
 
   nsStyleContext* GetParent() const { return mParent; }
 
@@ -151,8 +167,9 @@ public:
   
   
   already_AddRefed<nsStyleContext>
-  FindChildWithRules(const nsIAtom* aPseudoTag, nsRuleNode* aRules,
-                     nsRuleNode* aRulesIfVisited,
+  FindChildWithRules(const nsIAtom* aPseudoTag,
+                     mozilla::NonOwningStyleContextSource aSource,
+                     mozilla::NonOwningStyleContextSource aSourceIfVisited,
                      bool aRelevantLinkVisited);
 
   
@@ -273,7 +290,11 @@ public:
     return mBits & nsCachedStyleData::GetBitForSID(aSID);
   }
 
-  nsRuleNode* RuleNode() { return mRuleNode; }
+  nsRuleNode* RuleNode() {
+    MOZ_RELEASE_ASSERT(mSource.IsGeckoRuleNode());
+    return mSource.AsGeckoRuleNode();
+  }
+
   void AddStyleBit(const uint64_t& aBit) { mBits |= aBit; }
 
   
@@ -458,6 +479,15 @@ private:
   
   ~nsStyleContext();
 
+  
+  nsStyleContext(nsStyleContext* aParent,
+                 mozilla::OwningStyleContextSource&& aSource,
+                 nsIAtom* aPseudoTag,
+                 mozilla::CSSPseudoElementType aPseudoType);
+
+  
+  void FinishConstruction(bool aSkipParentDisplayBasedStyleFixup);
+
   void AddChild(nsStyleContext* aChild);
   void RemoveChild(nsStyleContext* aChild);
 
@@ -465,6 +495,10 @@ private:
   void* CreateEmptyStyleData(const nsStyleStructID& aSID);
 
   void ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup);
+
+  const void* StyleStructFromServoComputedValues(nsStyleStructID aSID) {
+    MOZ_CRASH("stylo: not implemented");
+  }
 
 #ifdef DEBUG
   struct AutoCheckDependency {
@@ -512,7 +546,7 @@ private:
       /* Have the rulenode deal */                                      \
       AUTO_CHECK_DEPENDENCY(eStyleStruct_##name_);                      \
       const nsStyle##name_ * newData =                                  \
-        mRuleNode->GetStyle##name_<aComputeData>(this, mBits);          \
+        mSource.AsGeckoRuleNode()->GetStyle##name_<aComputeData>(this, mBits); \
       /* always cache inherited data on the style context; the rule */  \
       /* node set the bit in mBits for us if needed. */                 \
       mCachedInheritedData.mStyleStructs[eStyleStruct_##name_] =        \
@@ -531,7 +565,7 @@ private:
       }                                                                 \
       /* Have the rulenode deal */                                      \
       AUTO_CHECK_DEPENDENCY(eStyleStruct_##name_);                      \
-      return mRuleNode->GetStyle##name_<aComputeData>(this);            \
+      return mSource.AsGeckoRuleNode()->GetStyle##name_<aComputeData>(this); \
     }
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT_RESET
@@ -579,10 +613,13 @@ private:
   
   
   
+  const mozilla::OwningStyleContextSource mSource;
+
+#ifdef MOZ_STYLO
   
   
-  
-  const RefPtr<nsRuleNode> mRuleNode;
+  nsPresContext* mPresContext;
+#endif
 
   
   
@@ -629,4 +666,13 @@ NS_NewStyleContext(nsStyleContext* aParentContext,
                    mozilla::CSSPseudoElementType aPseudoType,
                    nsRuleNode* aRuleNode,
                    bool aSkipParentDisplayBasedStyleFixup);
+
+already_AddRefed<nsStyleContext>
+NS_NewStyleContext(nsStyleContext* aParentContext,
+                   nsPresContext* aPresContext,
+                   nsIAtom* aPseudoTag,
+                   mozilla::CSSPseudoElementType aPseudoType,
+                   already_AddRefed<ServoComputedValues> aComputedValues,
+                   bool aSkipParentDisplayBasedStyleFixup);
+
 #endif

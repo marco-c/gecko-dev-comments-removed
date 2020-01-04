@@ -72,15 +72,17 @@ static bool sExpensiveStyleStructAssertionsEnabled;
 #endif
 
 nsStyleContext::nsStyleContext(nsStyleContext* aParent,
+                               OwningStyleContextSource&& aSource,
                                nsIAtom* aPseudoTag,
-                               CSSPseudoElementType aPseudoType,
-                               nsRuleNode* aRuleNode,
-                               bool aSkipParentDisplayBasedStyleFixup)
+                               CSSPseudoElementType aPseudoType)
   : mParent(aParent)
   , mChild(nullptr)
   , mEmptyChild(nullptr)
   , mPseudoTag(aPseudoTag)
-  , mRuleNode(aRuleNode)
+  , mSource(Move(aSource))
+#ifdef MOZ_STYLO
+  , mPresContext(nullptr)
+#endif
   , mCachedResetData(nullptr)
   , mBits(((uint64_t)aPseudoType) << NS_STYLE_CONTEXT_TYPE_SHIFT)
   , mRefCnt(0)
@@ -88,6 +90,55 @@ nsStyleContext::nsStyleContext(nsStyleContext* aParent,
   , mFrameRefCnt(0)
   , mComputingStruct(nsStyleStructID_None)
 #endif
+{}
+
+nsStyleContext::nsStyleContext(nsStyleContext* aParent,
+                               nsIAtom* aPseudoTag,
+                               CSSPseudoElementType aPseudoType,
+                               already_AddRefed<nsRuleNode> aRuleNode,
+                               bool aSkipParentDisplayBasedStyleFixup)
+  : nsStyleContext(aParent, OwningStyleContextSource(Move(aRuleNode)),
+                   aPseudoTag, aPseudoType)
+{
+#ifdef MOZ_STYLO
+  mPresContext = mSource.AsGeckoRuleNode()->PresContext();
+#endif
+
+  if (aParent) {
+#ifdef DEBUG
+    nsRuleNode *r1 = mParent->RuleNode(), *r2 = mSource.AsGeckoRuleNode();
+    while (r1->GetParent())
+      r1 = r1->GetParent();
+    while (r2->GetParent())
+      r2 = r2->GetParent();
+    NS_ASSERTION(r1 == r2, "must be in the same rule tree as parent");
+#endif
+  } else {
+    PresContext()->PresShell()->StyleSet()->RootStyleContextAdded();
+  }
+
+  mSource.AsGeckoRuleNode()->SetUsedDirectly(); 
+  FinishConstruction(aSkipParentDisplayBasedStyleFixup);
+}
+
+nsStyleContext::nsStyleContext(nsStyleContext* aParent,
+                               nsPresContext* aPresContext,
+                               nsIAtom* aPseudoTag,
+                               CSSPseudoElementType aPseudoType,
+                               already_AddRefed<ServoComputedValues> aComputedValues,
+                               bool aSkipParentDisplayBasedStyleFixup)
+  : nsStyleContext(aParent, OwningStyleContextSource(Move(aComputedValues)),
+                   aPseudoTag, aPseudoType)
+{
+#ifdef MOZ_STYLO
+  mPresContext = aPresContext;
+#endif
+
+  FinishConstruction(aSkipParentDisplayBasedStyleFixup);
+}
+
+void
+nsStyleContext::FinishConstruction(bool aSkipParentDisplayBasedStyleFixup)
 {
   
   
@@ -95,7 +146,7 @@ nsStyleContext::nsStyleContext(nsStyleContext* aParent,
                  static_cast<CSSPseudoElementTypeBase>(
                    CSSPseudoElementType::MAX),
                 "pseudo element bits no longer fit in a uint64_t");
-  MOZ_ASSERT(aRuleNode);
+  MOZ_ASSERT(!mSource.IsNull());
 
 #ifdef DEBUG
   static_assert(MOZ_ARRAY_LENGTH(nsStyleContext::sDependencyTable)
@@ -107,19 +158,8 @@ nsStyleContext::nsStyleContext(nsStyleContext* aParent,
   mPrevSibling = this;
   if (mParent) {
     mParent->AddChild(this);
-#ifdef DEBUG
-    nsRuleNode *r1 = mParent->RuleNode(), *r2 = aRuleNode;
-    while (r1->GetParent())
-      r1 = r1->GetParent();
-    while (r2->GetParent())
-      r2 = r2->GetParent();
-    NS_ASSERTION(r1 == r2, "must be in the same rule tree as parent");
-#endif
-  } else {
-    mRuleNode->PresContext()->PresShell()->StyleSet()->RootStyleContextAdded();
   }
 
-  mRuleNode->SetUsedDirectly(); 
   ApplyStyleFixups(aSkipParentDisplayBasedStyleFixup);
 
   #define eStyleStruct_LastItem (nsStyleStructID_Length - 1)
@@ -131,13 +171,6 @@ nsStyleContext::nsStyleContext(nsStyleContext* aParent,
 nsStyleContext::~nsStyleContext()
 {
   NS_ASSERTION((nullptr == mChild) && (nullptr == mEmptyChild), "destructing context with children");
-
-  nsPresContext *presContext = mRuleNode->PresContext();
-  StyleSetHandle styleSet = presContext->PresShell()->StyleSet();
-  NS_ASSERTION(!styleSet->IsGecko() ||
-               styleSet->AsGecko()->GetRuleTree() == mRuleNode->RuleTree() ||
-               styleSet->AsGecko()->IsInRuleTreeReconstruct(),
-               "destroying style context from old rule tree too late");
 
 #ifdef DEBUG
   if (sExpensiveStyleStructAssertionsEnabled) {
@@ -157,10 +190,17 @@ nsStyleContext::~nsStyleContext()
   }
 #endif
 
+  nsPresContext *presContext = PresContext();
+  DebugOnly<nsStyleSet*> geckoStyleSet = presContext->PresShell()->StyleSet()->GetAsGecko();
+  MOZ_ASSERT(!geckoStyleSet ||
+             geckoStyleSet->GetRuleTree() == mSource.AsGeckoRuleNode()->RuleTree() ||
+             geckoStyleSet->IsInRuleTreeReconstruct(),
+             "destroying style context from old rule tree too late");
+
   if (mParent) {
     mParent->RemoveChild(this);
   } else {
-    styleSet->RootStyleContextRemoved();
+    presContext->StyleSet()->RootStyleContextRemoved();
   }
 
   
@@ -262,7 +302,7 @@ void nsStyleContext::AddChild(nsStyleContext* aChild)
                aChild->mNextSibling == aChild,
                "child already in a child list");
 
-  nsStyleContext **listPtr = aChild->mRuleNode->IsRoot() ? &mEmptyChild : &mChild;
+  nsStyleContext **listPtr = aChild->mSource.MatchesNoRules() ? &mEmptyChild : &mChild;
   
   
   nsStyleContext *list = *listPtr;
@@ -282,7 +322,7 @@ void nsStyleContext::RemoveChild(nsStyleContext* aChild)
 {
   NS_PRECONDITION(nullptr != aChild && this == aChild->mParent, "bad argument");
 
-  nsStyleContext **list = aChild->mRuleNode->IsRoot() ? &mEmptyChild : &mChild;
+  nsStyleContext **list = aChild->mSource.MatchesNoRules() ? &mEmptyChild : &mChild;
 
   if (aChild->mPrevSibling != aChild) { 
     if ((*list) == aChild) {
@@ -341,28 +381,28 @@ nsStyleContext::MoveTo(nsStyleContext* aNewParent)
 }
 
 already_AddRefed<nsStyleContext>
-nsStyleContext::FindChildWithRules(const nsIAtom* aPseudoTag, 
-                                   nsRuleNode* aRuleNode,
-                                   nsRuleNode* aRulesIfVisited,
+nsStyleContext::FindChildWithRules(const nsIAtom* aPseudoTag,
+                                   NonOwningStyleContextSource aSource,
+                                   NonOwningStyleContextSource aSourceIfVisited,
                                    bool aRelevantLinkVisited)
 {
   uint32_t threshold = 10; 
                            
 
   RefPtr<nsStyleContext> result;
-  nsStyleContext *list = aRuleNode->IsRoot() ? mEmptyChild : mChild;
+  nsStyleContext *list = aSource.MatchesNoRules() ? mEmptyChild : mChild;
 
   if (list) {
     nsStyleContext *child = list;
     do {
-      if (child->mRuleNode == aRuleNode &&
+      if (child->mSource.AsRaw() == aSource &&
           child->mPseudoTag == aPseudoTag &&
           !child->IsStyleIfVisited() &&
           child->RelevantLinkVisited() == aRelevantLinkVisited) {
         bool match = false;
-        if (aRulesIfVisited) {
+        if (!aSourceIfVisited.IsNull()) {
           match = child->GetStyleIfVisited() &&
-                  child->GetStyleIfVisited()->mRuleNode == aRulesIfVisited;
+                  child->GetStyleIfVisited()->mSource.AsRaw() == aSourceIfVisited;
         } else {
           match = !child->GetStyleIfVisited();
         }
@@ -396,7 +436,9 @@ const void* nsStyleContext::StyleData(nsStyleStructID aSID)
   if (cachedData)
     return cachedData; 
   
-  const void* newData = mRuleNode->GetStyleData(aSID, this, true);
+  const void* newData = mSource.IsGeckoRuleNode()
+                          ? mSource.AsGeckoRuleNode()->GetStyleData(aSID, this, true)
+                          : StyleStructFromServoComputedValues(aSID);
   if (!nsCachedStyleData::IsReset(aSID)) {
     
     
@@ -500,7 +542,7 @@ nsStyleContext::SetStyle(nsStyleStructID aSID, void* aStruct)
   void** dataSlot;
   if (nsCachedStyleData::IsReset(aSID)) {
     if (!mCachedResetData) {
-      mCachedResetData = new (mRuleNode->PresContext()) nsResetStyleData;
+      mCachedResetData = new (PresContext()) nsResetStyleData;
     }
     dataSlot = &mCachedResetData->mStyleStructs[aSID];
   } else {
@@ -834,7 +876,7 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aOther,
   
   
   
-  bool compare = mRuleNode != aOther->mRuleNode;
+  bool compare = mSource != aOther->mSource;
 
   DebugOnly<uint32_t> structsFound = 0;
 
@@ -1130,10 +1172,12 @@ void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
     str.Append(' ');
   }
 
-  if (mRuleNode) {
+  if (mSource.IsServoComputedValues()) {
+    fprintf_stderr(out, "%s{ServoComputedValues}\n", str.get());
+  } else if (mSource.IsGeckoRuleNode()) {
     fprintf_stderr(out, "%s{\n", str.get());
     str.Truncate();
-    nsRuleNode* ruleNode = mRuleNode;
+    nsRuleNode* ruleNode = mSource.AsGeckoRuleNode();
     while (ruleNode) {
       nsIStyleRule *styleRule = ruleNode->GetRule();
       if (styleRule) {
@@ -1185,7 +1229,7 @@ void
 nsStyleContext::Destroy()
 {
   
-  RefPtr<nsPresContext> presContext = mRuleNode->PresContext();
+  RefPtr<nsPresContext> presContext = PresContext();
 
   
   this->~nsStyleContext();
@@ -1203,17 +1247,33 @@ NS_NewStyleContext(nsStyleContext* aParentContext,
                    nsRuleNode* aRuleNode,
                    bool aSkipParentDisplayBasedStyleFixup)
 {
+  RefPtr<nsRuleNode> node = aRuleNode;
   RefPtr<nsStyleContext> context =
     new (aRuleNode->PresContext())
-    nsStyleContext(aParentContext, aPseudoTag, aPseudoType, aRuleNode,
+    nsStyleContext(aParentContext, aPseudoTag, aPseudoType, node.forget(),
                    aSkipParentDisplayBasedStyleFixup);
+  return context.forget();
+}
+
+already_AddRefed<nsStyleContext>
+NS_NewStyleContext(nsStyleContext* aParentContext,
+                   nsPresContext* aPresContext,
+                   nsIAtom* aPseudoTag,
+                   CSSPseudoElementType aPseudoType,
+                   already_AddRefed<ServoComputedValues> aComputedValues,
+                   bool aSkipParentDisplayBasedStyleFixup)
+{
+  RefPtr<nsStyleContext> context =
+    new (aPresContext)
+    nsStyleContext(aParentContext, aPresContext, aPseudoTag, aPseudoType,
+                   Move(aComputedValues), aSkipParentDisplayBasedStyleFixup);
   return context.forget();
 }
 
 nsIPresShell*
 nsStyleContext::Arena()
 {
-  return mRuleNode->PresContext()->PresShell();
+  return PresContext()->PresShell();
 }
 
 static inline void
@@ -1386,11 +1446,10 @@ nsStyleContext::SwapStyleData(nsStyleContext* aNewContext, uint32_t aStructs)
       continue;
     }
     if (!mCachedResetData) {
-      mCachedResetData = new (mRuleNode->PresContext()) nsResetStyleData;
+      mCachedResetData = new (PresContext()) nsResetStyleData;
     }
     if (!aNewContext->mCachedResetData) {
-      aNewContext->mCachedResetData =
-        new (mRuleNode->PresContext()) nsResetStyleData;
+      aNewContext->mCachedResetData = new (PresContext()) nsResetStyleData;
     }
     void*& thisData = mCachedResetData->mStyleStructs[i];
     void*& otherData = aNewContext->mCachedResetData->mStyleStructs[i];
