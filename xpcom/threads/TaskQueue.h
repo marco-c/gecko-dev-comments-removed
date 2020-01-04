@@ -90,6 +90,7 @@ public:
   void AwaitShutdownAndIdle();
 
   bool IsEmpty();
+  uint32_t ImpreciseLengthForHeuristics();
 
   
   
