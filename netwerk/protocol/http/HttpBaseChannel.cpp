@@ -2402,13 +2402,13 @@ HttpBaseChannel::BypassServiceWorker() const
 }
 
 bool
-HttpBaseChannel::ShouldIntercept(nsIURI* aURI)
+HttpBaseChannel::ShouldIntercept()
 {
   nsCOMPtr<nsINetworkInterceptController> controller;
   GetCallback(controller);
   bool shouldIntercept = false;
   if (controller && !BypassServiceWorker() && mLoadInfo) {
-    nsresult rv = controller->ShouldPrepareForIntercept(aURI ? aURI : mURI.get(),
+    nsresult rv = controller->ShouldPrepareForIntercept(mURI,
                                                         nsContentUtils::IsNonSubresourceRequest(this),
                                                         &shouldIntercept);
     if (NS_FAILED(rv)) {
@@ -3122,35 +3122,6 @@ HttpBaseChannel::SetCorsPreflightParameters(const nsTArray<nsCString>& aUnsafeHe
   mUnsafeHeaders = aUnsafeHeaders;
   mWithCredentials = aWithCredentials;
   mPreflightPrincipal = aPrincipal;
-  return NS_OK;
-}
-
-
-nsresult
-HttpBaseChannel::GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI)
-{
-  nsCOMPtr<nsIURI> upgradedURI;
-
-  nsresult rv = aURI->Clone(getter_AddRefs(upgradedURI));
-  NS_ENSURE_SUCCESS(rv,rv);
-
-  upgradedURI->SetScheme(NS_LITERAL_CSTRING("https"));
-
-  int32_t oldPort = -1;
-  rv = aURI->GetPort(&oldPort);
-  if (NS_FAILED(rv)) return rv;
-
-  
-  
-  
-  
-
-  if (oldPort == 80 || oldPort == -1)
-      upgradedURI->SetPort(-1);
-  else
-      upgradedURI->SetPort(oldPort);
-
-  upgradedURI.forget(aUpgradedURI);
   return NS_OK;
 }
 

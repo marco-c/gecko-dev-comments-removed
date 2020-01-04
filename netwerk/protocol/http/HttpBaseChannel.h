@@ -300,10 +300,6 @@ public:
     
     void EnsureUploadStreamIsCloneableComplete(nsresult aStatus);
 
-    
-    
-    static nsresult GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI);
-
 protected:
   nsCOMArray<nsISecurityConsoleMessage> mSecurityConsoleMessages;
 
@@ -348,7 +344,7 @@ protected:
 
   
   
-  bool ShouldIntercept(nsIURI* aURI = nullptr);
+  bool ShouldIntercept();
 
   friend class PrivateBrowsingChannel<HttpBaseChannel>;
   friend class InterceptFailedOnStop;
