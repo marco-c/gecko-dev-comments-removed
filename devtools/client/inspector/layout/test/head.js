@@ -81,28 +81,3 @@ function openLayoutView() {
 function waitForUpdate(inspector) {
   return inspector.once("layoutview-updated");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-var TESTS = [];
-
-function addTest(message, func) {
-  TESTS.push([message, Task.async(func)]);
-}
-
-var runTests = Task.async(function*(...args) {
-  for (let [message, test] of TESTS) {
-    info("Running new test case: " + message);
-    yield test.apply(null, args);
-  }
-});
