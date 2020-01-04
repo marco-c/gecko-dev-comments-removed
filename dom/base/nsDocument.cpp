@@ -13439,6 +13439,10 @@ nsIDocument::UpdateStyleBackendType()
 {
   MOZ_ASSERT(mStyleBackendType == StyleBackendType(0),
              "no need to call UpdateStyleBackendType now");
+
+  
+  mStyleBackendType = StyleBackendType::Gecko;
+
 #ifdef MOZ_STYLO
   
   
@@ -13447,15 +13451,11 @@ nsIDocument::UpdateStyleBackendType()
   
   
   
-  NS_ASSERTION(mDocumentContainer, "stylo: calling UpdateStyleBackendType "
-                                   "before we have a docshell");
-  mStyleBackendType =
-    nsLayoutUtils::SupportsServoStyleBackend(this) &&
-    mDocumentContainer ?
-      StyleBackendType::Servo :
-      StyleBackendType::Gecko;
-#else
-  mStyleBackendType = StyleBackendType::Gecko;
+  if (!mDocumentContainer) {
+    NS_WARNING("stylo: No docshell yet, assuming Gecko style system");
+  } else if (nsLayoutUtils::SupportsServoStyleBackend(this)) {
+    mStyleBackendType = StyleBackendType::Servo;
+  }
 #endif
 }
 
