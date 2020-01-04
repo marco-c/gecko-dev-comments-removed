@@ -818,10 +818,13 @@ function RegExpBuiltinExec(R, S, forTest) {
     var lastIndex = ToLength(R.lastIndex);
 
     
-    var global = !!R.global;
+    var flags = UnsafeGetInt32FromReservedSlot(R, REGEXP_FLAGS_SLOT);
 
     
-    var sticky = !!R.sticky;
+    var global = !!(flags & REGEXP_GLOBAL_FLAG);
+
+    
+    var sticky = !!(flags & REGEXP_STICKY_FLAG);
 
     
     if (!global && !sticky) {
