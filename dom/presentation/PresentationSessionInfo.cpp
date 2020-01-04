@@ -256,7 +256,7 @@ PresentationSessionInfo::SetListener(nsIPresentationSessionListener* aListener)
 
     
     
-    return mListener->NotifyStateChange(mSessionId, mState);
+    return mListener->NotifyStateChange(mSessionId, mState, mReason);
   }
 
   return NS_OK;
@@ -284,7 +284,7 @@ PresentationSessionInfo::Close(nsresult aReason,
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
-  SetState(aState);
+  SetStateWithReason(aState, aReason);
 
   Shutdown(aReason);
   return NS_OK;
@@ -293,7 +293,7 @@ PresentationSessionInfo::Close(nsresult aReason,
 nsresult
 PresentationSessionInfo::ReplySuccess()
 {
-  SetState(nsIPresentationSessionListener::STATE_CONNECTED);
+  SetStateWithReason(nsIPresentationSessionListener::STATE_CONNECTED, NS_OK);
   return NS_OK;
 }
 
@@ -380,7 +380,7 @@ PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
 
   if (mState == nsIPresentationSessionListener::STATE_CONNECTED) {
     
-    SetState(nsIPresentationSessionListener::STATE_CLOSED);
+    SetStateWithReason(nsIPresentationSessionListener::STATE_CLOSED, aReason);
   }
 
   Shutdown(aReason);
@@ -668,7 +668,7 @@ PresentationControllingInfo::NotifyClosed(nsresult aReason)
   if (NS_WARN_IF(NS_FAILED(aReason) || !mIsResponderReady)) {
     
     
-    SetState(nsIPresentationSessionListener::STATE_TERMINATED);
+    SetStateWithReason(nsIPresentationSessionListener::STATE_TERMINATED, aReason);
 
     
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
@@ -719,7 +719,7 @@ PresentationControllingInfo::OnStopListening(nsIServerSocket* aServerSocket,
   }
 
   
-  SetState(nsIPresentationSessionListener::STATE_CLOSED);
+  SetStateWithReason(nsIPresentationSessionListener::STATE_CLOSED, aStatus);
 
   return NS_OK;
 }
@@ -994,7 +994,7 @@ PresentationPresentingInfo::NotifyClosed(nsresult aReason)
   if (NS_WARN_IF(NS_FAILED(aReason))) {
     
     
-    SetState(nsIPresentationSessionListener::STATE_TERMINATED);
+    SetStateWithReason(nsIPresentationSessionListener::STATE_TERMINATED, aReason);
 
     
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
