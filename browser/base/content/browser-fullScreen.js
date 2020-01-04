@@ -307,11 +307,8 @@ var FullScreen = {
         aEvent.target.localName != "tooltip" && aEvent.target.localName != "window")
       FullScreen._isPopupOpen = true;
     else if (aEvent.type == "popuphidden" && aEvent.target.localName != "tooltip" &&
-             aEvent.target.localName != "window") {
+             aEvent.target.localName != "window")
       FullScreen._isPopupOpen = false;
-      
-      FullScreen.hideNavToolbox(true);
-    }
   },
 
   
@@ -322,8 +319,6 @@ var FullScreen = {
   setAutohide: function()
   {
     gPrefService.setBoolPref("browser.fullscreen.autohide", !gPrefService.getBoolPref("browser.fullscreen.autohide"));
-    
-    FullScreen.hideNavToolbox(true);
   },
 
   _WarningBox: {
