@@ -129,17 +129,6 @@ public:
   nsPerformanceStatsService();
   nsresult Init();
 
-  
-
-
-
-
-
-
-
-
-  static bool IsJankCritical();
-
 private:
   nsresult InitInternal();
   void Dispose();
@@ -285,12 +274,7 @@ protected:
   uint64_t mUserTimeStart;
   uint64_t mSystemTimeStart;
 
-  
-
-
-
-
-  bool mIsJankCritical;
+  bool mIsHandlingUserInput;
 
   
 
@@ -415,19 +399,7 @@ protected:
 
 
 
-
-  static bool IsAnimating();
-
-  
-
-
-
-
-
-
-
-
-  static bool IsHandlingUserInput();
+  bool IsHandlingUserInput();
 
 
 public:
@@ -449,7 +421,7 @@ public:
 
 
 
-  void NotifyJankObservers();
+  void NotifyJankObservers(const mozilla::Vector<uint64_t>& previousJankLevels);
 
 private:
   
@@ -500,6 +472,27 @@ private:
 
 
   uint32_t mJankAlertBufferingDelay;
+
+  
+
+
+
+
+
+
+  short mJankLevelVisibilityThreshold;
+
+  
+
+
+
+
+
+
+
+
+
+  uint64_t mMaxExpectedDurationOfInteractionUS;
 };
 
 
@@ -771,13 +764,15 @@ public:
 
 
 
-  void RecordJankVisibility();
-  bool RecentJankVisibility();
+
+  void RecordUserInput();
+  bool HasRecentUserInput();
 
   
 
 
-  void ResetHighest();
+
+  void ResetRecent();
 private:
   
 
@@ -804,7 +799,10 @@ private:
 
 
 
-  bool mIsJankVisible;
+
+
+
+  bool mHasRecentUserInput;
 
   
 
@@ -818,18 +816,4 @@ private:
   bool mHasPendingAlert;
 };
 
-
-namespace {
-  
-
-
-
-
-
-
-
-
-
-  const uint64_t MAX_DURATION_OF_INTERACTION_MS = 150;
-}
 #endif

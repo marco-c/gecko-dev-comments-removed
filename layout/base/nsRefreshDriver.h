@@ -13,6 +13,8 @@
 #define nsRefreshDriver_h_
 
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Vector.h"
+
 #include "mozFlushType.h"
 #include "nsTObserverArray.h"
 #include "nsTArray.h"
@@ -295,6 +297,20 @@ public:
   static int32_t DefaultInterval();
 
   bool IsInRefresh() { return mInRefresh; }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static bool GetJankLevels(mozilla::Vector<uint64_t>& aJank);
 
   
   virtual uint64_t GetTransactionId() override;

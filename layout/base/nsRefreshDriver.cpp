@@ -95,6 +95,13 @@ namespace {
   
   
   static uint64_t sActiveVsyncTimers = 0;
+
+  
+  
+  
+  
+  
+  uint64_t sJankLevels[12];
 }
 
 namespace mozilla {
@@ -446,6 +453,7 @@ private:
                               sample);
         Telemetry::Accumulate(Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS,
                               sample);
+        RecordJank(sample);
       } else if (mVsyncRate != TimeDuration::Forever()) {
         TimeDuration contentDelay = (TimeStamp::Now() - mLastChildTick) - mVsyncRate;
         if (contentDelay.ToMilliseconds() < 0 ){
@@ -458,12 +466,23 @@ private:
                               sample);
         Telemetry::Accumulate(Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS,
                               sample);
+        RecordJank(sample);
       } else {
         
         
         mVsyncRate = mVsyncRefreshDriverTimer->mVsyncChild->GetVsyncRate();
       }
     #endif
+    }
+
+    void RecordJank(uint32_t aJankMS)
+    {
+      uint32_t duration = 1 ;
+      for (size_t i = 0;
+           i < mozilla::ArrayLength(sJankLevels) && duration < aJankMS;
+           ++i, duration *= 2) {
+        sJankLevels[i]++;
+      }
     }
 
     void TickRefreshDriver(TimeStamp aVsyncTimestamp)
@@ -821,6 +840,7 @@ CreateVsyncRefreshTimer()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  PodArrayZero(sJankLevels);
   
   
   gfxPrefs::GetSingleton();
@@ -2159,6 +2179,12 @@ nsRefreshDriver::IsJankCritical()
 {
   MOZ_ASSERT(NS_IsMainThread());
   return sActiveVsyncTimers > 0;
+}
+
+ bool
+nsRefreshDriver::GetJankLevels(Vector<uint64_t>& aJank) {
+  aJank.clear();
+  return aJank.append(sJankLevels, ArrayLength(sJankLevels));
 }
 
 #undef LOG
