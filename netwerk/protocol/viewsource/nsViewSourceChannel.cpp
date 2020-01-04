@@ -716,6 +716,20 @@ nsViewSourceChannel::OnDataAvailable(nsIRequest *aRequest, nsISupports* aContext
 
 
 NS_IMETHODIMP
+nsViewSourceChannel::GetChannelId(nsACString& aChannelId)
+{
+  return !mHttpChannel ? NS_ERROR_NULL_POINTER :
+      mHttpChannel->GetChannelId(aChannelId);
+}
+
+NS_IMETHODIMP
+nsViewSourceChannel::SetChannelId(const nsACString& aChannelId)
+{
+  return !mHttpChannel ? NS_ERROR_NULL_POINTER :
+      mHttpChannel->SetChannelId(aChannelId);
+}
+
+NS_IMETHODIMP
 nsViewSourceChannel::GetRequestMethod(nsACString & aRequestMethod)
 {
     return !mHttpChannel ? NS_ERROR_NULL_POINTER :
