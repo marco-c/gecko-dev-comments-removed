@@ -3034,6 +3034,19 @@ TextPropertyEditor.prototype = {
 
     
     
+    this.filterProperty = createChild(this.container, "div", {
+      class: "ruleview-overridden-rule-filter",
+      hidden: "",
+      title: CssLogic.l10n("rule.filterProperty.title"),
+    });
+
+    this.filterProperty.addEventListener("click", event => {
+      this.ruleEditor.ruleView.setFilterStyles("`" + this.prop.name + "`");
+      event.stopPropagation();
+    }, false);
+
+    
+    
     this.computed = createChild(this.element, "ul", {
       class: "ruleview-computedlist",
     });
@@ -3159,6 +3172,9 @@ TextPropertyEditor.prototype = {
     }
 
     this.warning.hidden = this.editing || this.isValid();
+    this.filterProperty.hidden = this.editing ||
+                                 !this.isValid() ||
+                                 !this.prop.overridden;
 
     if (this.prop.overridden || !this.prop.enabled) {
       this.element.classList.add("ruleview-overridden");
