@@ -248,8 +248,8 @@ SessionStore.prototype = {
         
         
         let browser = aEvent.currentTarget;
-        if (browser.__SS_restore_data) {
-          this._restoreTextData(browser.__SS_restore_data, browser);
+        if (browser.__SS_restore_text_data) {
+          this._restoreTextData(browser.__SS_data.formdata, browser);
         }
         break;
       }
@@ -412,8 +412,20 @@ SessionStore.prototype = {
     }
     let data = { entries: entries, index: index };
 
+    let formdata;
+    if (aBrowser.__SS_data) {
+      formdata = aBrowser.__SS_data.formdata;
+    }
     delete aBrowser.__SS_data;
+
     this._collectTabData(aWindow, aBrowser, data);
+    if (aBrowser.__SS_restore_text_data) {
+      
+      
+      
+      aBrowser.__SS_data.formdata = formdata;
+    }
+
     this.saveStateDelayed();
 
     this._updateCrashReportURL(aWindow);
@@ -1017,8 +1029,7 @@ SessionStore.prototype = {
 
     
     
-    
-    aBrowser.__SS_restore_data = aTabData;
+    aBrowser.__SS_restore_text_data = true;
   },
 
   
@@ -1058,12 +1069,11 @@ SessionStore.prototype = {
   
 
 
-  _restoreTextData: function ss_restoreTextData(aTabData, aBrowser) {
-    let formdata = aTabData.formdata;
-    if (formdata) {
-      FormData.restoreTree(aBrowser.contentWindow, formdata);
+  _restoreTextData: function ss_restoreTextData(aFormData, aBrowser) {
+    if (aFormData) {
+      FormData.restoreTree(aBrowser.contentWindow, aFormData);
     }
-    delete aBrowser.__SS_restore_data;
+    delete aBrowser.__SS_restore_text_data;
   },
 
   getBrowserState: function ss_getBrowserState() {
