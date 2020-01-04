@@ -38,6 +38,12 @@ namespace dom {
 namespace {
 
 bool
+TokenizerIgnoreNothing(char16_t )
+{
+  return false;
+}
+
+bool
 IsValidRelativeDOMPath(const nsString& aPath, nsTArray<nsString>& aParts)
 {
   
@@ -55,7 +61,9 @@ IsValidRelativeDOMPath(const nsString& aPath, nsTArray<nsString>& aParts)
   NS_NAMED_LITERAL_STRING(kParentDir, "..");
 
   
-  nsCharSeparatedTokenizer tokenizer(aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR);
+  nsCharSeparatedTokenizerTemplate<TokenizerIgnoreNothing>
+    tokenizer(aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR);
+
   while (tokenizer.hasMoreTokens()) {
     nsDependentSubstring pathComponent = tokenizer.nextToken();
     

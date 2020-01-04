@@ -30,6 +30,7 @@
 
 #include "nsArrayUtils.h"
 #include "nsAutoPtr.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsGlobalWindow.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIFile.h"
@@ -76,8 +77,33 @@ using namespace mozilla::dom;
 using namespace mozilla::dom::devicestorage;
 using namespace mozilla::ipc;
 
-namespace mozilla {
+namespace mozilla
+{
   MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedPRFileDesc, PRFileDesc, PR_Close);
+} 
+
+namespace {
+
+void
+NormalizeFilePath(nsAString& aPath)
+{
+#if defined(XP_WIN)
+  char16_t* cur = aPath.BeginWriting();
+  char16_t* end = aPath.EndWriting();
+  for (; cur < end; ++cur) {
+    if (char16_t('\\') == *cur) {
+      *cur = FILESYSTEM_DOM_PATH_SEPARATOR_CHAR;
+    }
+  }
+#endif
+}
+
+bool
+TokenizerIgnoreNothing(char16_t )
+{
+  return false;
+}
+
 } 
 
 StaticAutoPtr<DeviceStorageUsedSpaceCache>
@@ -510,7 +536,8 @@ DeviceStorageFile::DeviceStorageFile(const nsAString& aStorageType,
   if (!mPath.EqualsLiteral("")) {
     AppendRelativePath(mPath);
   }
-  NormalizeFilePath();
+
+  NormalizeFilePath(mPath);
 }
 
 DeviceStorageFile::DeviceStorageFile(const nsAString& aStorageType,
@@ -525,7 +552,7 @@ DeviceStorageFile::DeviceStorageFile(const nsAString& aStorageType,
 {
   Init();
   AppendRelativePath(aPath);
-  NormalizeFilePath();
+  NormalizeFilePath(mPath);
 }
 
 DeviceStorageFile::DeviceStorageFile(const nsAString& aStorageType,
@@ -734,7 +761,7 @@ DeviceStorageFile::CreateUnique(const nsAString& aStorageType,
 void
 DeviceStorageFile::SetPath(const nsAString& aPath) {
   mPath.Assign(aPath);
-  NormalizeFilePath();
+  NormalizeFilePath(mPath);
 }
 
 void
@@ -745,13 +772,14 @@ DeviceStorageFile::SetEditable(bool aEditable) {
 
 
 bool
-DeviceStorageFile::IsSafePath()
+DeviceStorageFile::IsSafePath() const
 {
-  return IsSafePath(mRootDir) && IsSafePath(mPath);
+  return ValidateAndSplitPath(mRootDir) && ValidateAndSplitPath(mPath);
 }
 
 bool
-DeviceStorageFile::IsSafePath(const nsAString& aPath)
+DeviceStorageFile::ValidateAndSplitPath(const nsAString& aPath,
+                                        nsTArray<nsString>* aParts) const
 {
   nsAString::const_iterator start, end;
   aPath.BeginReading(start);
@@ -764,33 +792,43 @@ DeviceStorageFile::IsSafePath(const nsAString& aPath)
       StringBeginsWith(aPath, tildeSlash)) {
     NS_WARNING("Path name starts with tilde!");
     return false;
-   }
-  
-  NS_ConvertUTF16toUTF8 cname(aPath);
-  char* buffer = cname.BeginWriting();
-  const char* token;
+  }
 
-  while ((token = nsCRT::strtok(buffer, "/", &buffer))) {
-    if (PL_strcmp(token, "") == 0 ||
-        PL_strcmp(token, ".") == 0 ||
-        PL_strcmp(token, "..") == 0 ) {
+  NS_NAMED_LITERAL_STRING(kCurrentDir, ".");
+  NS_NAMED_LITERAL_STRING(kParentDir, "..");
+
+  
+  nsCharSeparatedTokenizerTemplate<TokenizerIgnoreNothing>
+    tokenizer(aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR);
+
+  while (tokenizer.hasMoreTokens()) {
+    nsDependentSubstring pathComponent = tokenizer.nextToken();
+    
+    
+    
+    if (pathComponent.IsEmpty() ||
+        pathComponent.Equals(kCurrentDir) ||
+        pathComponent.Equals(kParentDir)) {
       return false;
+    }
+
+    if (aParts) {
+      aParts->AppendElement(pathComponent);
     }
   }
   return true;
 }
 
 void
-DeviceStorageFile::NormalizeFilePath() {
-  FileSystemUtils::LocalPathToNormalizedPath(mPath, mPath);
-}
-
-void
-DeviceStorageFile::AppendRelativePath(const nsAString& aPath) {
+DeviceStorageFile::AppendRelativePath(const nsAString& aPath)
+{
   if (!mFile) {
     return;
   }
-  if (!IsSafePath(aPath)) {
+
+  nsTArray<nsString> parts;
+
+  if (!ValidateAndSplitPath(aPath, &parts)) {
     
     
     
@@ -800,9 +838,13 @@ DeviceStorageFile::AppendRelativePath(const nsAString& aPath) {
     NS_WARNING(NS_LossyConvertUTF16toASCII(aPath).get());
     return;
   }
-  nsString localPath;
-  FileSystemUtils::NormalizedPathToLocalPath(aPath, localPath);
-  mFile->AppendRelativePath(localPath);
+
+  for (uint32_t i = 0; i < parts.Length(); ++i) {
+    nsresult rv = mFile->AppendRelativePath(parts[i]);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
+  }
 }
 
 nsresult

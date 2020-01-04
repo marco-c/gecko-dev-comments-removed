@@ -101,8 +101,9 @@ public:
 
   
   
-  bool IsSafePath();
-  bool IsSafePath(const nsAString& aPath);
+  bool IsSafePath() const;
+  bool ValidateAndSplitPath(const nsAString& aPath,
+                            nsTArray<nsString>* aParts = nullptr) const;
 
   void Dump(const char* label);
 
@@ -137,7 +138,6 @@ public:
 private:
   ~DeviceStorageFile() {}
   void Init();
-  void NormalizeFilePath();
   void AppendRelativePath(const nsAString& aPath);
   void AccumDirectoryUsage(nsIFile* aFile,
                            uint64_t* aPicturesSoFar,
