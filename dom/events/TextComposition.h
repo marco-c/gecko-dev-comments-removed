@@ -64,10 +64,6 @@ public:
   
   
   
-  TextRangeArray* GetLastRanges() const { return mLastRanges; }
-  
-  
-  
   
   
   TextRangeArray* GetRanges() const { return mRanges; }
@@ -195,9 +191,6 @@ private:
   
   
   RefPtr<TextRangeArray> mRanges;
-  
-  
-  RefPtr<TextRangeArray> mLastRanges;
 
   
   
@@ -299,15 +292,6 @@ private:
                                 nsEventStatus* aStatus,
                                 EventDispatchingCallback* aCallBack,
                                 bool aIsSynthesized);
-
-  
-
-
-
-  void DispatchEvent(WidgetCompositionEvent* aDispatchEvent,
-                     nsEventStatus* aStatus,
-                     EventDispatchingCallback* aCallback,
-                     const WidgetCompositionEvent *aOriginalEvent = nullptr);
 
   
 

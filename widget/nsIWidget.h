@@ -133,8 +133,8 @@ typedef void* nsNativeWidget;
 #endif
 
 #define NS_IWIDGET_IID \
-{ 0x73c0a475, 0x450f, 0x4202, \
-  { 0xab, 0xb4, 0x62, 0xf8, 0x9d, 0xbe, 0xf7, 0x9a } }
+{ 0xaaa79c8d, 0xc99d, 0x4fe1, \
+  { 0xa5, 0x11, 0xd3, 0xeb, 0xb1, 0x61, 0x9e, 0x26 } }
 
 
 
@@ -1790,25 +1790,6 @@ public:
 
 
     NS_IMETHOD SetPluginFocused(bool& aFocused) = 0;
-
-    
-
-
-    bool PluginHasFocus() 
-    {
-      return GetInputContext().mIMEState.mEnabled == IMEState::PLUGIN;
-    }
-
-    
-
-
-    virtual void SetCandidateWindowForPlugin(int32_t aX, int32_t aY) = 0;
-
-    
-
-
-    virtual void DefaultProcOfPluginEvent(
-                   const mozilla::WidgetPluginEvent& aEvent) = 0;
 
     
 

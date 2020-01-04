@@ -8,7 +8,6 @@
 
 #include "nscore.h"
 #include "nsIWidget.h"
-#include "npapi.h"
 #include <windows.h>
 #include <inputscope.h>
 
@@ -103,17 +102,6 @@ public:
 
 
   static void InitInputContext(nsWindow* aWindow, InputContext& aInputContext);
-
-  
-
-
-  static void SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm);
-
-  
-
-
-  static void DefaultProcOfPluginEvent(nsWindow* aWindow,
-                                       const NPEvent* aPluginEvent);
 
 #ifdef DEBUG
   
