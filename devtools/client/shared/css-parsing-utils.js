@@ -569,12 +569,17 @@ RuleRewriter.prototype = {
 
 
 
+
+
+
+
   sanitizePropertyValue: function(text) {
     let lexer = DOMUtils.getCSSLexer(text);
 
     let result = "";
     let previousOffset = 0;
     let braceDepth = 0;
+    let anySanitized = false;
     while (true) {
       let token = lexer.nextToken();
       if (!token) {
@@ -605,6 +610,7 @@ RuleRewriter.prototype = {
               
               result += "\\" + token.text;
               previousOffset = token.endOffset;
+              anySanitized = true;
             }
             break;
         }
@@ -612,9 +618,13 @@ RuleRewriter.prototype = {
     }
 
     
-    result += text.substring(previousOffset, text.length) +
-      lexer.performEOFFixup("", true);
-    return result;
+    result += text.substring(previousOffset, text.length);
+    let eofFixup = lexer.performEOFFixup("", true);
+    if (eofFixup) {
+      anySanitized = true;
+      result += eofFixup;
+    }
+    return [anySanitized, result];
   },
 
   
@@ -664,8 +674,14 @@ RuleRewriter.prototype = {
         trailingText;
       
       
-      this.changedDeclarations[index] =
-        termDecl.value + termDecl.terminator.slice(0, -1);
+      
+      
+      
+      
+      if (termDecl.terminator !== ";" && termDecl.terminator !== "*/;") {
+        this.changedDeclarations[index] =
+          termDecl.value + termDecl.terminator.slice(0, -1);
+      }
     }
     
     
@@ -685,8 +701,8 @@ RuleRewriter.prototype = {
 
 
   sanitizeText: function(text, index) {
-    let sanitizedText = this.sanitizePropertyValue(text);
-    if (sanitizedText !== text) {
+    let [anySanitized, sanitizedText] = this.sanitizePropertyValue(text);
+    if (anySanitized) {
       this.changedDeclarations[index] = sanitizedText;
     }
     return sanitizedText;
