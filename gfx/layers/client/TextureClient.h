@@ -363,6 +363,13 @@ public:
 
 
 
+  void SetInUse(bool aInUse) { mInUse = aInUse; }
+  bool IsInUse() { return mInUse; }
+
+  
+
+
+
 
 
 
@@ -639,6 +646,7 @@ protected:
   uint32_t mExpectedDtRefs;
 #endif
   bool mIsLocked;
+  bool mInUse;
 
   bool mAddedToCompositableClient;
   bool mWorkaroundAnnoyingSharedSurfaceLifetimeIssues;
