@@ -1582,9 +1582,9 @@ nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI,
   
   
   if (!replaceQuery) {
-    msgName = "RewriteYoutubeEmbed";
+    msgName = "RewriteYouTubeEmbed";
   } else {
-    msgName = "RewriteYoutubeEmbedInvalidQuery";
+    msgName = "RewriteYouTubeEmbedPathParams";
   }
   nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                   NS_LITERAL_CSTRING("Plugins"),
