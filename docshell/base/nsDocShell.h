@@ -33,9 +33,9 @@
 #include "nsAutoPtr.h"
 #include "nsThreadUtils.h"
 #include "nsContentUtils.h"
-#include "timeline/TimelineMarker.h"
-#include "timeline/TimelineConsumers.h"
 #include "timeline/ObservedDocShell.h"
+#include "timeline/TimelineConsumers.h"
+#include "timeline/TimelineMarker.h"
 
 
 #define REFRESH_REDIRECT_TIMER 15000

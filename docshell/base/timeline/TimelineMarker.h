@@ -4,14 +4,19 @@
 
 
 
-#ifndef TimelineMarker_h_
-#define TimelineMarker_h_
+#ifndef mozilla_TimelineMarker_h_
+#define mozilla_TimelineMarker_h_
 
 #include "nsString.h"
 #include "nsContentUtils.h"
 #include "GeckoProfiler.h"
 
 class nsDocShell;
+
+namespace mozilla {
+namespace dom {
+struct ProfileTimelineMarker;
+}
 
 
 
@@ -26,7 +31,7 @@ public:
                  TimelineStackRequest aStackRequest = STACK);
 
   TimelineMarker(const char* aName,
-                 const mozilla::TimeStamp& aTime,
+                 const TimeStamp& aTime,
                  TracingMetadata aMetaData,
                  TimelineStackRequest aStackRequest = STACK);
 
@@ -37,7 +42,7 @@ public:
 
   TimelineMarker(const char* aName,
                  const nsAString& aCause,
-                 const mozilla::TimeStamp& aTime,
+                 const TimeStamp& aTime,
                  TracingMetadata aMetaData,
                  TimelineStackRequest aStackRequest = STACK);
 
@@ -54,18 +59,13 @@ public:
   
   
   
-  virtual void AddDetails(JSContext* aCx, mozilla::dom::ProfileTimelineMarker& aMarker)
+  virtual void AddDetails(JSContext* aCx, dom::ProfileTimelineMarker& aMarker)
   {}
 
-  virtual void AddLayerRectangles(mozilla::dom::Sequence<mozilla::dom::ProfileTimelineLayerRect>&)
-  {
-    MOZ_ASSERT_UNREACHABLE("can only be called on layer markers");
-  }
-
   const char* GetName() const { return mName; }
-  TracingMetadata GetMetaData() const { return mMetaData; }
-  DOMHighResTimeStamp GetTime() const { return mTime; }
   const nsString& GetCause() const { return mCause; }
+  DOMHighResTimeStamp GetTime() const { return mTime; }
+  TracingMetadata GetMetaData() const { return mMetaData; }
 
   JSObject* GetStack()
   {
@@ -102,9 +102,11 @@ private:
   JS::PersistentRooted<JSObject*> mStackTrace;
 
   void SetCurrentTime();
-  void SetCustomTime(const mozilla::TimeStamp& aTime);
+  void SetCustomTime(const TimeStamp& aTime);
   void CaptureStackIfNecessary(TracingMetadata aMetaData,
                                TimelineStackRequest aStackRequest);
 };
+
+} 
 
 #endif 
