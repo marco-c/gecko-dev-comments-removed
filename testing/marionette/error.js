@@ -4,7 +4,7 @@
 
 "use strict";
 
-var {results: Cr, utils: Cu} = Components;
+var {interfaces: Ci, utils: Cu} = Components;
 
 const errors = [
   "ElementNotAccessibleError",
@@ -31,26 +31,6 @@ const errors = [
 
 this.EXPORTED_SYMBOLS = ["error"].concat(errors);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-const XPCOM_EXCEPTIONS = [];
-{
-  for (let prop in Cr) {
-    XPCOM_EXCEPTIONS.push(Cr[prop]);
-  }
-}
-
 this.error = {};
 
 
@@ -67,7 +47,7 @@ this.error = {};
 error.isError = function(val) {
   if (val === null || typeof val != "object") {
     return false;
-  } else if ("result" in val && val.result in XPCOM_EXCEPTIONS) {
+  } else if (val instanceof Ci.nsIException) {
     return true;
   } else {
     return Object.getPrototypeOf(val) == "Error";
