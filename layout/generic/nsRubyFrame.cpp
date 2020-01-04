@@ -142,7 +142,8 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
 
   ContinuationTraversingState pullState(this);
   while (aStatus == NS_FRAME_COMPLETE) {
-    nsRubyBaseContainerFrame* baseContainer = PullOneSegment(pullState);
+    nsRubyBaseContainerFrame* baseContainer =
+      PullOneSegment(aReflowState.mLineLayout, pullState);
     if (!baseContainer) {
       
       break;
@@ -349,20 +350,33 @@ nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
 }
 
 nsRubyBaseContainerFrame*
-nsRubyFrame::PullOneSegment(ContinuationTraversingState& aState)
+nsRubyFrame::PullOneSegment(const nsLineLayout* aLineLayout,
+                            ContinuationTraversingState& aState)
 {
   
-  nsIFrame* baseFrame = PullNextInFlowChild(aState);
+  nsIFrame* baseFrame = GetNextInFlowChild(aState);
   if (!baseFrame) {
     return nullptr;
   }
   MOZ_ASSERT(baseFrame->GetType() == nsGkAtoms::rubyBaseContainerFrame);
 
   
+  nsBlockFrame* oldFloatCB =
+    nsLayoutUtils::GetFloatContainingBlock(baseFrame);
+  PullNextInFlowChild(aState);
+
+  
   nsIFrame* nextFrame;
   while ((nextFrame = GetNextInFlowChild(aState)) != nullptr &&
          nextFrame->GetType() == nsGkAtoms::rubyTextContainerFrame) {
     PullNextInFlowChild(aState);
+  }
+
+  if (nsBlockFrame* newFloatCB =
+      nsLayoutUtils::GetAsBlock(aLineLayout->LineContainerFrame())) {
+    if (oldFloatCB && oldFloatCB != newFloatCB) {
+      newFloatCB->ReparentFloats(baseFrame, oldFloatCB, true);
+    }
   }
 
   return static_cast<nsRubyBaseContainerFrame*>(baseFrame);
