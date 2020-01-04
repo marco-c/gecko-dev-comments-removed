@@ -105,12 +105,6 @@ BluetoothHfpManager::IsScoConnected()
   return false;
 }
 
-bool
-BluetoothHfpManager::IsNrecEnabled()
-{
-  return false;
-}
-
 
 
 

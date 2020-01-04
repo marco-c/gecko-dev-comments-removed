@@ -92,6 +92,7 @@ public:
 
   bool ConnectSco();
   bool DisconnectSco();
+  bool IsNrecEnabled();
 
   
 
