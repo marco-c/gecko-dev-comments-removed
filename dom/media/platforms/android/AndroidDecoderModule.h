@@ -12,11 +12,11 @@
 #include "TimeUnits.h"
 #include "mozilla/Monitor.h"
 
-#include <queue>
+#include <deque>
 
 namespace mozilla {
 
-typedef std::queue<RefPtr<MediaRawData>> SampleQueue;
+typedef std::deque<RefPtr<MediaRawData>> SampleQueue;
 
 class AndroidDecoderModule : public PlatformDecoderModule {
 public:
@@ -134,7 +134,7 @@ protected:
 
   SampleQueue mQueue;
   
-  std::queue<media::TimeUnit> mDurations;
+  std::deque<media::TimeUnit> mDurations;
 };
 
 } 
