@@ -22,6 +22,9 @@ enum class FeatureStatus
   Unavailable,
 
   
+  Crashed,
+
+  
   
   Blocked,
 
