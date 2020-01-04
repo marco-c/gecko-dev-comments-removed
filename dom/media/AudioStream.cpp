@@ -329,10 +329,6 @@ AudioStream::Init(uint32_t aNumChannels, uint32_t aRate,
   auto startTime = TimeStamp::Now();
   mIsFirst = CubebUtils::GetFirstStream();
 
-  if (!CubebUtils::GetCubebContext()) {
-    return NS_ERROR_FAILURE;
-  }
-
   LOG("%s channels: %d, rate: %d", __FUNCTION__, aNumChannels, aRate);
   mInRate = mOutRate = aRate;
   mChannels = aNumChannels;
@@ -361,41 +357,25 @@ AudioStream::Init(uint32_t aNumChannels, uint32_t aRate,
   return OpenCubeb(params, startTime);
 }
 
-
-
 nsresult
 AudioStream::OpenCubeb(cubeb_stream_params &aParams, TimeStamp aStartTime)
 {
   cubeb* cubebContext = CubebUtils::GetCubebContext();
   if (!cubebContext) {
     NS_WARNING("Can't get cubeb context!");
-    MonitorAutoLock mon(mMonitor);
-    mState = AudioStream::ERRORED;
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  uint32_t latency = CubebUtils::GetCubebLatency();
-
-  {
-    cubeb_stream* stream;
-    if (cubeb_stream_init(cubebContext, &stream, "AudioStream",
-                          nullptr, nullptr, nullptr, &aParams,
-                          latency, DataCallback_S, StateCallback_S, this) == CUBEB_OK) {
-      MonitorAutoLock mon(mMonitor);
-      MOZ_ASSERT(mState != SHUTDOWN);
-      mCubebStream.reset(stream);
-    } else {
-      MonitorAutoLock mon(mMonitor);
-      mState = ERRORED;
-      NS_WARNING(nsPrintfCString("AudioStream::OpenCubeb() %p failed to init cubeb", this).get());
-      return NS_ERROR_FAILURE;
-    }
+  cubeb_stream* stream = nullptr;
+  if (cubeb_stream_init(cubebContext, &stream, "AudioStream",
+                        nullptr, nullptr, nullptr, &aParams,
+                        CubebUtils::GetCubebLatency(),
+                        DataCallback_S, StateCallback_S, this) == CUBEB_OK) {
+    mCubebStream.reset(stream);
+  } else {
+    NS_WARNING(nsPrintfCString("AudioStream::OpenCubeb() %p failed to init cubeb", this).get());
+    return NS_ERROR_FAILURE;
   }
-
-  mState = INITIALIZED;
 
   TimeDuration timeDelta = TimeStamp::Now() - aStartTime;
   LOG("creation time %sfirst: %u ms", mIsFirst ? "" : "not ",
