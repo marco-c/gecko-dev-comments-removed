@@ -394,7 +394,7 @@ void NotifyScreenConfigurationChange(const hal::ScreenConfiguration& aScreenConf
 
 
 
-bool LockScreenOrientation(const dom::ScreenOrientationInternal& aOrientation);
+MOZ_MUST_USE bool LockScreenOrientation(const dom::ScreenOrientationInternal& aOrientation);
 
 
 
@@ -438,7 +438,7 @@ void NotifySwitchStateFromInputDevice(hal::SwitchDevice aDevice,
 
 
 
-bool RegisterTheOneAlarmObserver(hal::AlarmObserver* aObserver);
+MOZ_MUST_USE bool RegisterTheOneAlarmObserver(hal::AlarmObserver* aObserver);
 
 
 
@@ -465,7 +465,7 @@ void NotifyAlarmFired();
 
 
 
-bool SetAlarm(int32_t aSeconds, int32_t aNanoseconds);
+MOZ_MUST_USE bool SetAlarm(int32_t aSeconds, int32_t aNanoseconds);
 
 
 
@@ -585,7 +585,7 @@ hal::FMRadioSettings GetFMBandSettings(hal::FMRadioCountry aCountry);
 
 
 
-bool EnableRDS(uint32_t aMask);
+MOZ_MUST_USE bool EnableRDS(uint32_t aMask);
 
 
 
