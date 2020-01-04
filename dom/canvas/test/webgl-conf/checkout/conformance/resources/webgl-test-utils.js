@@ -1147,6 +1147,9 @@ var loadTexture = function(gl, url, callback) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
         callback(image);
     };
+    image.onerror = function() {
+      throw new Error('Failed to load image at: ' + image.src);
+    };
     image.src = url;
     return texture;
 };
@@ -2358,7 +2361,7 @@ var _requestAnimFrame;
 
 var requestAnimFrame = function(callback) {
   if (!_requestAnimFrame) {
-    _requestAnimFrame = getPrefixedProperty(window, "requestAnimationFrame") || 
+    _requestAnimFrame = getPrefixedProperty(window, "requestAnimationFrame") ||
       function(callback, element) {
         return window.setTimeout(callback, 1000 / 70);
       };
