@@ -87,6 +87,13 @@ public:
   static Maybe<Pair<dom::Element*, nsCSSPseudoElements::Type>>
   GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame);
 
+  
+  
+  static void ComposeAnimationRule(dom::Element* aElement,
+                                   nsCSSPseudoElements::Type aPseudoType,
+                                   CascadeLevel aCascadeLevel,
+                                   bool& aStyleChanging);
+
 private:
   
   

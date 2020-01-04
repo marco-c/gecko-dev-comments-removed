@@ -444,30 +444,16 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
                                               PseudoElementType(),
                                               styleContext);
 
-  EffectSet* effectSet = EffectSet::GetEffectSet(mElement,
-                                                 PseudoElementType());
-  if (!effectSet) {
-    return;
-  }
-
   mStyleRuleRefreshTime = aRefreshTime;
-  RefPtr<AnimValuesStyleRule>& styleRule =
-      IsForAnimations() ?
-      effectSet->AnimationRule(EffectCompositor::CascadeLevel::Animations) :
-      effectSet->AnimationRule(EffectCompositor::CascadeLevel::Transitions);
-  styleRule = nullptr;
-  
-  mStyleChanging = false;
 
-  
-  
-  
-  
-  nsCSSPropertySet properties;
-
-  for (size_t animIdx = mAnimations.Length(); animIdx-- != 0; ) {
-    mAnimations[animIdx]->ComposeStyle(styleRule, properties, mStyleChanging);
-  }
+  EffectCompositor::CascadeLevel cascadeLevel =
+    IsForAnimations() ?
+    EffectCompositor::CascadeLevel::Animations :
+    EffectCompositor::CascadeLevel::Transitions;
+  EffectCompositor::ComposeAnimationRule(mElement,
+                                         PseudoElementType(),
+                                         cascadeLevel,
+                                         mStyleChanging);
 }
 
 void
