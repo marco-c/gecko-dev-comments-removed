@@ -133,21 +133,14 @@ private:
                             MediaRawData* aSample);
 
   struct InternalSeekTarget {
-    InternalSeekTarget(const media::TimeInterval& aTime, bool aDropTarget)
+    InternalSeekTarget(const media::TimeUnit& aTime, bool aDropTarget)
       : mTime(aTime)
       , mDropTarget(aDropTarget)
       , mWaiting(false)
       , mHasSeeked(false)
     {}
 
-    media::TimeUnit Time() const { return mTime.mStart; }
-    media::TimeUnit EndTime() const { return mTime.mEnd; }
-    bool Contains(const media::TimeUnit& aTime) const
-    {
-      return mTime.Contains(aTime);
-    }
-
-    media::TimeInterval mTime;
+    media::TimeUnit mTime;
     bool mDropTarget;
     bool mWaiting;
     bool mHasSeeked;
@@ -315,7 +308,7 @@ private:
     
     Maybe<InternalSeekTarget> mTimeThreshold;
     
-    Maybe<media::TimeInterval> mLastSampleTime;
+    Maybe<media::TimeUnit> mLastSampleTime;
 
     
     
