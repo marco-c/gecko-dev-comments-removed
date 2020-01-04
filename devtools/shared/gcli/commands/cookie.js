@@ -22,6 +22,7 @@
 
 const { Ci, Cc } = require("chrome");
 const l10n = require("gcli/l10n");
+const URL = require("sdk/url").URL;
 
 XPCOMUtils.defineLazyGetter(this, "cookieMgr", function() {
   return Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager2);
@@ -85,8 +86,11 @@ exports.items = [
                         "see bug 1221488");
       }
       let host = new URL(context.environment.target.url).host;
+      let contentWindow  = context.environment.window;
       host = sanitizeHost(host);
-      let enm = cookieMgr.getCookiesFromHost(host);
+      let enm = cookieMgr.getCookiesFromHost(host, contentWindow.document.
+                                                   nodePrincipal.
+                                                   originAttributes);
 
       let cookies = [];
       while (enm.hasMoreElements()) {
@@ -127,8 +131,11 @@ exports.items = [
                         "see bug 1221488");
       }
       let host = new URL(context.environment.target.url).host;
+      let contentWindow  = context.environment.window;
       host = sanitizeHost(host);
-      let enm = cookieMgr.getCookiesFromHost(host);
+      let enm = cookieMgr.getCookiesFromHost(host, contentWindow.document.
+                                                   nodePrincipal.
+                                                   originAttributes);
 
       while (enm.hasMoreElements()) {
         let cookie = enm.getNext().QueryInterface(Ci.nsICookie);
@@ -270,7 +277,7 @@ exports.items = [
       let host = new URL(context.environment.target.url).host;
       host = sanitizeHost(host);
       let time = Date.parse(args.expires) / 1000;
-
+      let contentWindow  = context.environment.window;
       cookieMgr.add(args.domain ? "." + args.domain : host,
                     args.path ? args.path : "/",
                     args.name,
@@ -278,7 +285,10 @@ exports.items = [
                     args.secure,
                     args.httpOnly,
                     args.session,
-                    time);
+                    time,
+                    contentWindow.document.
+                                  nodePrincipal.
+                                  originAttributes);
     }
   }
 ];
