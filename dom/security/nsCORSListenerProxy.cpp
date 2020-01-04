@@ -412,7 +412,8 @@ nsPreflightCache::GetCacheKey(nsIURI* aURI,
 
 NS_IMPL_ISUPPORTS(nsCORSListenerProxy, nsIStreamListener,
                   nsIRequestObserver, nsIChannelEventSink,
-                  nsIInterfaceRequestor, nsIAsyncVerifyRedirectCallback)
+                  nsIInterfaceRequestor, nsIAsyncVerifyRedirectCallback,
+                  nsIThreadRetargetableStreamListener)
 
 
 void
@@ -675,11 +676,15 @@ nsCORSListenerProxy::OnStopRequest(nsIRequest* aRequest,
 
 NS_IMETHODIMP
 nsCORSListenerProxy::OnDataAvailable(nsIRequest* aRequest,
-                                     nsISupports* aContext, 
+                                     nsISupports* aContext,
                                      nsIInputStream* aInputStream,
                                      uint64_t aOffset,
                                      uint32_t aCount)
 {
+  
+  
+  
+
   MOZ_ASSERT(mInited, "nsCORSListenerProxy has not been initialized properly");
   if (!mRequestApproved) {
     return NS_ERROR_DOM_BAD_URI;
@@ -824,6 +829,19 @@ nsCORSListenerProxy::OnRedirectVerifyCallback(nsresult result)
   mRedirectCallback->OnRedirectVerifyCallback(result);
   mRedirectCallback   = nullptr;
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsCORSListenerProxy::CheckListenerChain()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (nsCOMPtr<nsIThreadRetargetableStreamListener> retargetableListener =
+        do_QueryInterface(mOuterListener)) {
+    return retargetableListener->CheckListenerChain();
+  }
+
+  return NS_ERROR_NO_INTERFACE;
 }
 
 
@@ -1262,7 +1280,6 @@ nsCORSPreflightListener::GetInterface(const nsIID & aIID, void **aResult)
 {
   return QueryInterface(aIID, aResult);
 }
-
 
 nsresult
 NS_StartCORSPreflight(nsIChannel* aRequestChannel,
