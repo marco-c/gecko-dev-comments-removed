@@ -376,7 +376,11 @@ dump_buffer (working_state * state)
   } \
 }
 
-#if __WORDSIZE==64 || defined(_WIN64)
+#if !defined(_WIN32) && !defined(SIZEOF_SIZE_T)
+#error Cannot determine word size
+#endif
+
+#if SIZEOF_SIZE_T==8 || defined(_WIN64)
 
 #define EMIT_BITS(code, size) { \
   CHECKBUF47() \
@@ -513,16 +517,14 @@ encode_one_block (working_state * state, JCOEFPTR block, int last_dc_val,
   
   code = dctbl->ehufco[nbits];
   size = dctbl->ehufsi[nbits];
-  PUT_BITS(code, size)
-  CHECKBUF15()
+  EMIT_BITS(code, size)
 
   
   temp2 &= (((INT32) 1)<<nbits) - 1;
 
   
   
-  PUT_BITS(temp2, nbits)
-  CHECKBUF15()
+  EMIT_BITS(temp2, nbits)
 
   
 

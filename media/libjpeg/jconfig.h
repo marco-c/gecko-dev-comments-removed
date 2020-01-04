@@ -66,3 +66,10 @@
 
 
 
+
+
+#ifdef HAVE_64BIT_BUILD
+#define SIZEOF_SIZE_T 8
+#else
+#define SIZEOF_SIZE_T 4
+#endif

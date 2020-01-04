@@ -45,6 +45,18 @@ typedef enum {
 
 
 
+
+
+#ifdef __INT32_IS_ACTUALLY_LONG
+#define LEFT_SHIFT(a, b) ((INT32)((unsigned long)(a) << (b)))
+#else
+#define LEFT_SHIFT(a, b) ((INT32)((unsigned int)(a) << (b)))
+#endif
+
+
+
+
+
 struct jpeg_comp_master {
   void (*prepare_for_pass) (j_compress_ptr cinfo);
   void (*pass_startup) (j_compress_ptr cinfo);

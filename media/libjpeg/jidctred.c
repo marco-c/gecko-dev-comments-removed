@@ -20,6 +20,8 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -143,7 +145,8 @@ jpeg_idct_4x4 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
         inptr[DCTSIZE*3] == 0 && inptr[DCTSIZE*5] == 0 &&
         inptr[DCTSIZE*6] == 0 && inptr[DCTSIZE*7] == 0) {
       
-      int dcval = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]) << PASS1_BITS;
+      int dcval = LEFT_SHIFT(DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]),
+                             PASS1_BITS);
 
       wsptr[DCTSIZE*0] = dcval;
       wsptr[DCTSIZE*1] = dcval;
@@ -156,7 +159,7 @@ jpeg_idct_4x4 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    tmp0 <<= (CONST_BITS+1);
+    tmp0 = LEFT_SHIFT(tmp0, CONST_BITS+1);
 
     z2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
     z3 = DEQUANTIZE(inptr[DCTSIZE*6], quantptr[DCTSIZE*6]);
@@ -217,7 +220,7 @@ jpeg_idct_4x4 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 
     
 
-    tmp0 = ((INT32) wsptr[0]) << (CONST_BITS+1);
+    tmp0 = LEFT_SHIFT((INT32) wsptr[0], CONST_BITS+1);
 
     tmp2 = MULTIPLY((INT32) wsptr[2], FIX_1_847759065)
          + MULTIPLY((INT32) wsptr[6], - FIX_0_765366865);
@@ -294,7 +297,8 @@ jpeg_idct_2x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     if (inptr[DCTSIZE*1] == 0 && inptr[DCTSIZE*3] == 0 &&
         inptr[DCTSIZE*5] == 0 && inptr[DCTSIZE*7] == 0) {
       
-      int dcval = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]) << PASS1_BITS;
+      int dcval = LEFT_SHIFT(DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]),
+                             PASS1_BITS);
 
       wsptr[DCTSIZE*0] = dcval;
       wsptr[DCTSIZE*1] = dcval;
@@ -305,7 +309,7 @@ jpeg_idct_2x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     
 
     z1 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    tmp10 = z1 << (CONST_BITS+2);
+    tmp10 = LEFT_SHIFT(z1, CONST_BITS+2);
 
     
 
@@ -347,7 +351,7 @@ jpeg_idct_2x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 
     
 
-    tmp10 = ((INT32) wsptr[0]) << (CONST_BITS+2);
+    tmp10 = LEFT_SHIFT((INT32) wsptr[0], CONST_BITS+2);
 
     
 

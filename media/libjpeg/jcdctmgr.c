@@ -175,6 +175,19 @@ compute_reciprocal (UINT16 divisor, DCTELEM * dtbl)
   UDCTELEM c;
   int b, r;
 
+  if (divisor == 1) {
+    
+
+
+
+
+    dtbl[DCTSIZE2 * 0] = (DCTELEM) 1;                       
+    dtbl[DCTSIZE2 * 1] = (DCTELEM) 0;                       
+    dtbl[DCTSIZE2 * 2] = (DCTELEM) 1;                       
+    dtbl[DCTSIZE2 * 3] = (DCTELEM) (-sizeof(DCTELEM) * 8);  
+    return 0;
+  }
+
   b = flss(divisor) - 1;
   r  = sizeof(DCTELEM) * 8 + b;
 
@@ -395,7 +408,8 @@ quantize (JCOEFPTR coef_block, DCTELEM * divisors, DCTELEM * workspace)
 
 #if BITS_IN_JSAMPLE == 8
 
-  UDCTELEM recip, corr, shift;
+  UDCTELEM recip, corr;
+  int shift;
   UDCTELEM2 product;
 
   for (i = 0; i < DCTSIZE2; i++) {
