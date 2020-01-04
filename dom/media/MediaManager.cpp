@@ -75,9 +75,6 @@
 #include "MediaPermissionGonk.h"
 #endif
 
-#if defined(XP_MACOSX)
-#include "nsCocoaFeatures.h"
-#endif
 #if defined (XP_WIN)
 #include "mozilla/WindowsVersion.h"
 #include <winsock2.h>
@@ -2133,19 +2130,12 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
                                    "media.getusermedia.browser.enabled" :
                                    "media.getusermedia.screensharing.enabled"),
                                   false) ||
-#if defined(XP_MACOSX) || defined(XP_WIN)
+#if defined(XP_WIN)
             (
               
               (videoType != MediaSourceEnum::Browser) &&
               !Preferences::GetBool("media.getusermedia.screensharing.allow_on_old_platforms",
-                                    false) &&
-#if defined(XP_MACOSX)
-              !nsCocoaFeatures::OnLionOrLater()
-#endif
-#if defined (XP_WIN)
-              !IsVistaOrLater()
-#endif
-              ) ||
+                                    false) && !IsVistaOrLater()) ||
 #endif
             (!privileged && !HostIsHttps(*docURI)) ||
             !(loop || HostHasPermission(*docURI))) {
