@@ -4,7 +4,18 @@
 
 
 
+var {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm");
 var {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm");
+
+
+
+
+
+function forceGC() {
+  if (AppConstants.DEBUG) {
+    Cu.forceGC();
+  }
+}
 
 function makeWidgetId(id) {
   id = id.toLowerCase();

@@ -110,3 +110,5 @@ add_task(function* testBadPermissions() {
 
 
 
+
+add_task(forceGC);
