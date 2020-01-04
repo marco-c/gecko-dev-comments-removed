@@ -399,9 +399,6 @@ class Build(MachCommandBase):
                     line_handler=output.on_line, log=False,
                     print_directory=False)
 
-                if self.substs.get('MOZ_ARTIFACT_BUILDS', False):
-                    self._run_mach_artifact_install()
-
                 
                 for make_dir, make_target in target_pairs:
                     
@@ -416,19 +413,6 @@ class Build(MachCommandBase):
                     if status != 0:
                         break
             else:
-                try:
-                    if self.substs.get('MOZ_ARTIFACT_BUILDS', False):
-                        self._run_mach_artifact_install()
-                except BuildEnvironmentNotFoundException:
-                    
-                    
-                    
-                    
-                    
-                    
-                    self.log(logging.DEBUG, 'artifact',
-                             {}, "Not running |mach artifact install| -- it will be run by client.mk.")
-
                 status = self._run_make(srcdir=True, filename='client.mk',
                     line_handler=output.on_line, log=False, print_directory=False,
                     allow_parallel=False, ensure_exit_code=False, num_jobs=jobs,
@@ -659,18 +643,6 @@ class Build(MachCommandBase):
 
         return self._run_command_in_objdir(args=args, pass_thru=True,
             ensure_exit_code=False)
-
-    def _run_mach_artifact_install(self):
-        
-        
-        
-        
-        
-        self.log(logging.INFO, 'artifact',
-                 {}, "Running |mach artifact install|.")
-        args = [os.path.join(self.topsrcdir, 'mach'), 'artifact', 'install']
-        self._run_command_in_srcdir(args=args, require_unix_environment=True,
-            pass_thru=True, ensure_exit_code=True)
 
 @CommandProvider
 class Doctor(MachCommandBase):
