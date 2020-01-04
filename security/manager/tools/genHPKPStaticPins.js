@@ -366,6 +366,11 @@ function downloadAndParseChromePins(filename,
     if (!pinsetName) {
       pinsetName = entry.pins;
     }
+
+    
+    
+    entry.name = entry.name.trim();
+
     let isProductionDomain =
       (cData.production_domains.indexOf(entry.name) != -1);
     let isProductionPinset =

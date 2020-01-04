@@ -97,9 +97,12 @@ function getHosts(rawdata) {
                     "not found");
   }
 
-  for (entry of rawdata.entries) {
+  for (let entry of rawdata.entries) {
     if (entry.mode && entry.mode == "force-https") {
       if (entry.name) {
+        
+        
+        entry.name = entry.name.trim();
         entry.retries = MAX_RETRIES;
         entry.originalIncludeSubdomains = entry.include_subdomains;
         hosts.push(entry);
