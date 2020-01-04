@@ -1156,11 +1156,6 @@ notification[value="translation"] menulist > .menulist-dropmarker {
   max-width : 36px;
 }
 
-#PopupAutoCompleteRichResult {
-  
-  margin-top: 1px;
-}
-
 .autocomplete-richlistbox {
   padding: 4px;
 }
