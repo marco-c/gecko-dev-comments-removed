@@ -1008,7 +1008,7 @@ class nsIWidget : public nsISupports {
         nsCOMPtr<nsIWidget> mChild;
         uintptr_t mWindowID; 
         bool mVisible; 
-        nsIntRect mBounds;
+        mozilla::LayoutDeviceIntRect mBounds;
         nsTArray<nsIntRect> mClipRegion;
     };
 
