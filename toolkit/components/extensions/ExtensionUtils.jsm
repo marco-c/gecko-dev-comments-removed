@@ -954,7 +954,7 @@ function promiseDocumentReady(doc) {
 
 
 
-var nextPortId = 1;
+let gNextPortId = 1;
 
 
 function Port(context, messageManager, name, id, sender) {
@@ -1164,7 +1164,8 @@ Messenger.prototype = {
   },
 
   connect(messageManager, name, recipient) {
-    let portId = nextPortId++;
+    
+    let portId = `${gNextPortId++}-${Services.appinfo.processType}`;
     let port = new Port(this.context, messageManager, name, portId, null);
     let msg = {name, portId};
     
