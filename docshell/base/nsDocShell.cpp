@@ -5025,8 +5025,6 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       case NS_ERROR_INTERCEPTION_CANCELED:
       case NS_ERROR_REJECTED_RESPONSE_INTERCEPTION:
         
-        nsContentUtils::MaybeReportInterceptionErrorToConsole(GetDocument(),
-                                                              aError);
         error.AssignLiteral("corruptedContentError");
         break;
       default:
