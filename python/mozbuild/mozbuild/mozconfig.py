@@ -358,7 +358,8 @@ class MozconfigLoader(object):
             
             
             
-            line = line.decode('utf-8', 'ignore')
+            line = line.decode('mbcs' if sys.platform == 'win32' else 'utf-8',
+                               'ignore')
 
             if not line:
                 continue
