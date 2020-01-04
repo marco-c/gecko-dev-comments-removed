@@ -3254,7 +3254,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
         
         frame->InvalidateFrame();
       }
-    } else if (aVisitor.mEvent->mMessage == NS_KEY_UP) {
+    } else if (aVisitor.mEvent->mMessage == eKeyUp) {
       WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
       if ((keyEvent->keyCode == NS_VK_UP || keyEvent->keyCode == NS_VK_DOWN) &&
           !(keyEvent->IsShift() || keyEvent->IsControl() ||
@@ -3775,14 +3775,14 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
         }
 
         case eKeyPress:
-        case NS_KEY_UP:
+        case eKeyUp:
         {
           
           
           WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
           if ((aVisitor.mEvent->mMessage == eKeyPress &&
                keyEvent->keyCode == NS_VK_RETURN) ||
-              (aVisitor.mEvent->mMessage == NS_KEY_UP &&
+              (aVisitor.mEvent->mMessage == eKeyUp &&
                keyEvent->keyCode == NS_VK_SPACE)) {
             switch(mType) {
               case NS_FORM_INPUT_CHECKBOX:

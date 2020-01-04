@@ -1244,7 +1244,7 @@ nsWindow::keyReleaseEvent(QKeyEvent* aEvent)
     }
 
     
-    WidgetKeyboardEvent event(true, NS_KEY_UP, this);
+    WidgetKeyboardEvent event(true, eKeyUp, this);
     InitKeyEvent(event, aEvent);
 
     if (aEvent->key() == Qt::Key_AltGr) {

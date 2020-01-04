@@ -1150,7 +1150,7 @@ NativeKey::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
       sUniqueKeyEventId++;
       aKeyEvent.mUniqueId = sUniqueKeyEventId;
       break;
-    case NS_KEY_UP:
+    case eKeyUp:
       aKeyEvent.keyCode = mDOMKeyCode;
       
       
@@ -1385,7 +1385,7 @@ NativeKey::HandleAppCommandMessage() const
   
   
   if (dispatchKeyEvent && !mVirtualKeyCode) {
-    WidgetKeyboardEvent keyupEvent(true, NS_KEY_UP, mWidget);
+    WidgetKeyboardEvent keyupEvent(true, eKeyUp, mWidget);
     InitKeyEvent(keyupEvent, mModKeyState);
     
     
@@ -1663,7 +1663,7 @@ NativeKey::HandleKeyUpMessage(bool* aEventDispatched) const
     return false;
   }
 
-  WidgetKeyboardEvent keyupEvent(true, NS_KEY_UP, mWidget);
+  WidgetKeyboardEvent keyupEvent(true, eKeyUp, mWidget);
   InitKeyEvent(keyupEvent, mModKeyState);
   if (aEventDispatched) {
     *aEventDispatched = true;
