@@ -263,6 +263,13 @@ protected:
     
     
     bool mSetCursorPositionOnKeyEvent;
+    
+    
+    
+    
+    
+    
+    bool mPendingResettingIMContext;
 
     
     
