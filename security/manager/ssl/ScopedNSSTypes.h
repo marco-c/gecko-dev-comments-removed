@@ -7,8 +7,8 @@
 
 
 
-#ifndef mozilla_ScopedNSSTypes_h
-#define mozilla_ScopedNSSTypes_h
+#ifndef ScopedNSSTypes_h
+#define ScopedNSSTypes_h
 
 #include <limits>
 
@@ -107,12 +107,21 @@ PK11_DestroyContext_true(PK11Context * ctx) {
 } 
 
 
-MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedPK11Context,
-                                          PK11Context,
-                                          mozilla::psm::PK11_DestroyContext_true)
 MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedSGNDigestInfo,
                                           SGNDigestInfo,
                                           SGN_DestroyDigestInfo)
+
+
+#define MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(name, Type, Deleter) \
+struct name##DeletePolicy \
+{ \
+  void operator()(Type* aValue) { Deleter(aValue); } \
+}; \
+typedef UniquePtr<Type, name##DeletePolicy> name;
+
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11Context,
+                                      PK11Context,
+                                      mozilla::psm::PK11_DestroyContext_true)
 
 
 
@@ -162,12 +171,13 @@ public:
                                      static_cast<int32_t>(len)));
   }
 
-  nsresult End(SECOidTag hashAlg, ScopedPK11Context & context)
+  nsresult End(SECOidTag hashAlg, UniquePK11Context& context)
   {
     nsresult rv = SetLength(hashAlg);
     NS_ENSURE_SUCCESS(rv, rv);
     uint32_t len;
-    rv = MapSECStatus(PK11_DigestFinal(context, mItem.data, &len, mItem.len));
+    rv = MapSECStatus(PK11_DigestFinal(context.get(), mItem.data, &len,
+                                       mItem.len));
     NS_ENSURE_SUCCESS(rv, rv);
     context = nullptr;
     NS_ENSURE_TRUE(len == mItem.len, NS_ERROR_UNEXPECTED);
@@ -314,14 +324,6 @@ MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedSECKEYPublicKey,
 MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedSECAlgorithmID,
                                           SECAlgorithmID,
                                           internal::SECOID_DestroyAlgorithmID_true)
-
-
-#define MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(name, Type, Deleter) \
-struct name##DeletePolicy \
-{ \
-  void operator()(Type* aValue) { Deleter(aValue); } \
-}; \
-typedef UniquePtr<Type, name##DeletePolicy> name;
 
 MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniqueCERTCertificate,
                                       CERTCertificate,

@@ -242,7 +242,7 @@ private:
 
 
 
-  ScopedPK11Context mDigestContext;
+  UniquePK11Context mDigestContext;
 
   
   
