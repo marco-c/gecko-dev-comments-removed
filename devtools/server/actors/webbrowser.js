@@ -28,6 +28,7 @@ loader.lazyRequireGetter(this, "WorkerActorList", "devtools/server/actors/worker
 loader.lazyRequireGetter(this, "ServiceWorkerRegistrationActorList", "devtools/server/actors/worker", true);
 loader.lazyRequireGetter(this, "ProcessActorList", "devtools/server/actors/process", true);
 loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
+loader.lazyImporter(this, "ExtensionContent", "resource://gre/modules/ExtensionContent.jsm");
 
 
 
@@ -718,7 +719,9 @@ function TabActor(aConnection)
   this._shouldAddNewGlobalAsDebuggee = this._shouldAddNewGlobalAsDebuggee.bind(this);
 
   this.makeDebugger = makeDebugger.bind(null, {
-    findDebuggees: () => this.windows,
+    findDebuggees: () => {
+      return this.windows.concat(this.webextensionsContentScriptGlobals);
+    },
     shouldAddNewGlobalAsDebuggee: this._shouldAddNewGlobalAsDebuggee
   });
 
@@ -803,6 +806,19 @@ TabActor.prototype = {
         .getInterface(Ci.nsIDOMWindow);
     }
     return null;
+  },
+
+  
+
+
+
+  get webextensionsContentScriptGlobals() {
+    
+    if (this.window) {
+      return ExtensionContent.getContentScriptGlobalsForWindow(this.window);
+    }
+
+    return [];
   },
 
   
