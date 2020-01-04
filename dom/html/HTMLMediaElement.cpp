@@ -4737,6 +4737,12 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
   }
 
   
+  
+  if (mPausedForInactiveDocumentOrChannel) {
+    return false;
+  }
+
+  
   if (HasAttr(kNameSpaceID_None, nsGkAtoms::loop)) {
     return true;
   }
