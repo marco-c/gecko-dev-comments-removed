@@ -8,6 +8,7 @@ module.metadata = {
 };
 
 var { emit, on, once, off, EVENT_TYPE_PATTERN } = require("./core");
+const { Cu } = require("chrome");
 
 
 
@@ -26,7 +27,7 @@ var refs = (function() {
 })();
 
 function transform(input, f) {
-  let output = {};
+  let output = new Output();
 
   
   
@@ -64,7 +65,7 @@ exports.map = map;
 
 
 function merge(inputs) {
-  let output = {};
+  let output = new Output();
   let open = 1;
   let state = [];
   output.state = state;
@@ -107,13 +108,18 @@ exports.pipe = pipe;
 
 
 
-
 const receive = (input, message) => {
   if (input[receive])
     input[receive](input, message);
   else
     emit(input, "data", message);
 
+  
+  
+  
+  if (!("value" in input)) {
+    Object.defineProperty(input, "value", WeakValueGetterSetter);
+  }
   input.value = message;
 };
 receive.toString = () => "@@receive";
@@ -151,7 +157,7 @@ const lift = (step, ...inputs) => {
   let args = null;
   let opened = inputs.length;
   let started = false;
-  const output = {};
+  const output = new Output();
   const init = () => {
     args = [...inputs.map(input => input.value)];
     output.value = step(...args);
@@ -182,7 +188,8 @@ exports.lift = lift;
 
 const merges = inputs => {
   let opened = inputs.length;
-  let output = { value: inputs[0].value };
+  let output = new Output();
+  output.value = inputs[0].value;
   inputs.forEach((input, index) => {
     on(input, "data", data => receive(output, data));
     on(input, "end", () => {
@@ -225,11 +232,45 @@ Input.end = input => {
 };
 Input.prototype[end] = Input.end;
 
+
+
+
+
+
+
+const WeakValueGetterSetter = {
+  get: function() {
+    return this._weakValue ? this._weakValue.get() : this._simpleValue
+  },
+  set: function(v) {
+    if (v && typeof v === "object") {
+      this._weakValue = Cu.getWeakReference(v)
+      this._simpleValue = undefined;
+      return;
+    }
+    this._simpleValue = v;
+    this._weakValue = undefined;
+  },
+}
+Object.defineProperty(Input.prototype, "value", WeakValueGetterSetter);
+
 exports.Input = Input;
+
+
+
+function Output() { }
+Object.defineProperty(Output.prototype, "value", WeakValueGetterSetter);
+exports.Output = Output;
 
 const $source = "@@source";
 const $outputs = "@@outputs";
 exports.outputs = $outputs;
+
+
+
+
+
+
 
 function Reactor(options={}) {
   const {onStep, onStart, onEnd} = options;
