@@ -89,7 +89,7 @@ public:
 
 
 
-    cairo_t *GetCairo();
+    static cairo_t* RefCairo(mozilla::gfx::DrawTarget* aDT);
 
     mozilla::gfx::DrawTarget *GetDrawTarget() { return mDT; }
 

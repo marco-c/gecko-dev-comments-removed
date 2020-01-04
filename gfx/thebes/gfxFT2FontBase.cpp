@@ -210,6 +210,7 @@ gfxFT2FontBase::SetupCairoFont(gfxContext *aContext)
     
     
     
-    cairo_set_scaled_font(aContext->GetCairo(), cairoFont);
+    cairo_set_scaled_font(gfxContext::RefCairo(aContext->GetDrawTarget()),
+                          cairoFont);
     return true;
 }

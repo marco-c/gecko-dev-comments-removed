@@ -160,7 +160,8 @@ gfxMacFont::SetupCairoFont(gfxContext *aContext)
         
         return false;
     }
-    cairo_set_scaled_font(aContext->GetCairo(), mScaledFont);
+    cairo_set_scaled_font(gfxContext::RefCairo(aContext->GetDrawTarget()),
+                          mScaledFont);
     return true;
 }
 
