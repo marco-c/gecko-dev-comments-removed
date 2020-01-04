@@ -3,6 +3,7 @@
 
 
 
+#include "gfxPrefs.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/InternalMutationEvent.h"
@@ -412,35 +413,15 @@ WidgetInputEvent::AccelModifier()
 
 
 
-bool WidgetWheelEvent::sInitialized = false;
-bool WidgetWheelEvent::sIsSystemScrollSpeedOverrideEnabled = false;
-int32_t WidgetWheelEvent::sOverrideFactorX = 0;
-int32_t WidgetWheelEvent::sOverrideFactorY = 0;
-
- void
-WidgetWheelEvent::Initialize()
-{
-  if (sInitialized) {
-    return;
-  }
-
-  Preferences::AddBoolVarCache(&sIsSystemScrollSpeedOverrideEnabled,
-    "mousewheel.system_scroll_override_on_root_content.enabled", false);
-  Preferences::AddIntVarCache(&sOverrideFactorX,
-    "mousewheel.system_scroll_override_on_root_content.horizontal.factor", 0);
-  Preferences::AddIntVarCache(&sOverrideFactorY,
-    "mousewheel.system_scroll_override_on_root_content.vertical.factor", 0);
-  sInitialized = true;
-}
-
  double
 WidgetWheelEvent::ComputeOverriddenDelta(double aDelta, bool aIsForVertical)
 {
-  Initialize();
-  if (!sIsSystemScrollSpeedOverrideEnabled) {
+  if (!gfxPrefs::MouseWheelHasRootScrollDeltaOverride()) {
     return aDelta;
   }
-  int32_t intFactor = aIsForVertical ? sOverrideFactorY : sOverrideFactorX;
+  int32_t intFactor = aIsForVertical
+                      ? gfxPrefs::MouseWheelRootScrollVerticalFactor()
+                      : gfxPrefs::MouseWheelRootScrollHorizontalFactor();
   
   
   if (intFactor <= 100) {
