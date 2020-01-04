@@ -131,5 +131,18 @@ let Accounts = Object.freeze({
       delete data.exists;
       return data;
     });
+  },
+
+  
+
+
+
+
+
+
+  deleteFirefoxAccount: function () {
+    return Messaging.sendRequestForResult({
+      type: "Accounts:DeleteFirefoxAccount",
+    });
   }
 });

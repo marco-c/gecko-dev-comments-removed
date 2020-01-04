@@ -28,6 +28,7 @@ const COMMAND_LOADED               = "fxaccounts:loaded";
 const COMMAND_CAN_LINK_ACCOUNT     = "fxaccounts:can_link_account";
 const COMMAND_LOGIN                = "fxaccounts:login";
 const COMMAND_CHANGE_PASSWORD      = "fxaccounts:change_password";
+const COMMAND_DELETE_ACCOUNT       = "fxaccounts:delete_account";
 
 const PREF_LAST_FXA_USER           = "identity.fxaccounts.lastSignedInUserHash";
 
@@ -311,6 +312,26 @@ this.FxAccountsWebChannel.prototype = {
               log.i("Changed Firefox Account password.");
             })
             .catch(e => {
+              log.e(e.toString());
+            });
+            break;
+
+          case COMMAND_DELETE_ACCOUNT:
+            
+            
+            
+            
+            Accounts.getFirefoxAccount().then(account => {
+              if (!account) {
+                throw new Error("Can't delete non-existent Firefox Account!");
+              }
+              return Accounts.deleteFirefoxAccount().then(success => {
+                if (!success) {
+                  throw new Error("Could not delete Firefox Account!");
+                }
+                log.i("Firefox Account deleted.");
+              });
+            }).catch(e => {
               log.e(e.toString());
             });
             break;
