@@ -2179,6 +2179,7 @@ ContainerState::RecyclePaintedLayer(PaintedLayer* aLayer,
   
   
   aLayer->SetMaskLayer(nullptr);
+  aLayer->SetAncestorMaskLayers({});
   aLayer->ClearExtraDumpInfo();
 
   PaintedDisplayItemLayerUserData* data =
@@ -4627,7 +4628,10 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
   }
 
   
-  nsTArray<RefPtr<Layer>> maskLayers;
+  
+  
+  
+  nsTArray<RefPtr<Layer>> maskLayers(aEntry->mLayer->GetAllAncestorMaskLayers());
 
   for (const DisplayItemScrollClip* scrollClip = aEntry->mScrollClip;
        scrollClip && scrollClip != mContainerScrollClip;
@@ -5097,6 +5101,7 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
                      "Wrong layer type");
         containerLayer = static_cast<ContainerLayer*>(oldLayer);
         containerLayer->SetMaskLayer(nullptr);
+        containerLayer->SetAncestorMaskLayers({});
       }
     }
   }
