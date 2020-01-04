@@ -91,8 +91,7 @@ class TTest(object):
         if test_config['shutdown']:
             global_counters['shutdown'] = []
         if test_config.get('responsiveness') and \
-                platform.system() != "Linux":
-            
+           platform.system() != "Darwin":
             
             setup.env['MOZ_INSTRUMENT_EVENT_LOOP'] = '1'
             setup.env['MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD'] = '20'

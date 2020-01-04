@@ -191,7 +191,6 @@ DEFAULTS = dict(
 
 GLOBAL_OVERRIDES = (
     'cycles',
-    'responsiveness',
     'sps_profile',
     'sps_profile_interval',
     'sps_profile_entries',
