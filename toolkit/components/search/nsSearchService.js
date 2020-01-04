@@ -4102,7 +4102,8 @@ SearchService.prototype = {
 
   get currentEngine() {
     this._ensureInitialized();
-    if (!this._currentEngine) {
+    let currentEngine = this._currentEngine;
+    if (!currentEngine) {
       let name = this.getGlobalAttr("current");
       let engine = this.getEngineByName(name);
       if (engine && (this.getGlobalAttr("hash") == getVerificationHash(name) ||
@@ -4110,23 +4111,32 @@ SearchService.prototype = {
         
         
         
-        this._currentEngine = engine;
+        currentEngine = engine;
       }
     }
 
-    if (!this._currentEngine || this._currentEngine.hidden)
-      this._currentEngine = this._originalDefaultEngine;
-    if (!this._currentEngine || this._currentEngine.hidden)
-      this._currentEngine = this._getSortedEngines(false)[0];
+    if (!currentEngine || currentEngine.hidden)
+      currentEngine = this._originalDefaultEngine;
+    if (!currentEngine || currentEngine.hidden)
+      currentEngine = this._getSortedEngines(false)[0];
 
-    if (!this._currentEngine) {
+    if (!currentEngine) {
       
-      this._currentEngine = this._originalDefaultEngine;
-      if (this._currentEngine)
-        this._currentEngine.hidden = false;
+      currentEngine = this._originalDefaultEngine;
+      if (currentEngine)
+        currentEngine.hidden = false;
     }
 
-    return this._currentEngine;
+    if (currentEngine) {
+      
+      
+      
+      
+      
+      this.currentEngine = currentEngine;
+    }
+
+    return currentEngine;
   },
 
   set currentEngine(val) {

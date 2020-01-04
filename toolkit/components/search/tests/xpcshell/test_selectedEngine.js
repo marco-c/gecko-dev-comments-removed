@@ -93,6 +93,57 @@ add_task(function* test_settingToDefault() {
   do_check_eq(metadata.current, "");
 });
 
+add_task(function* test_resetToOriginalDefaultEngine() {
+  let defaultName = getDefaultEngineName();
+  do_check_eq(Services.search.currentEngine.name, defaultName);
+
+  Services.search.currentEngine =
+    Services.search.getEngineByName(kTestEngineName);
+  do_check_eq(Services.search.currentEngine.name, kTestEngineName);
+  yield promiseAfterCache();
+
+  Services.search.resetToOriginalDefaultEngine();
+  do_check_eq(Services.search.currentEngine.name, defaultName);
+  yield promiseAfterCache();
+});
+
+add_task(function* test_fallback_kept_after_restart() {
+  
+  let builtInEngines = Services.search.getDefaultEngines();
+  let defaultName = getDefaultEngineName();
+  let nonDefaultBuiltInEngine;
+  for (let engine of builtInEngines) {
+    if (engine.name != defaultName) {
+      nonDefaultBuiltInEngine = engine;
+      break;
+    }
+  }
+  Services.search.currentEngine = nonDefaultBuiltInEngine;
+  do_check_eq(Services.search.currentEngine.name, nonDefaultBuiltInEngine.name);
+  yield promiseAfterCache();
+
+  
+  Services.search.removeEngine(nonDefaultBuiltInEngine);
+  
+  
+  do_check_true(nonDefaultBuiltInEngine.hidden);
+
+  
+  
+  do_check_eq(Services.search.currentEngine.name, defaultName);
+
+  
+  
+  Services.search.restoreDefaultEngines();
+  do_check_false(nonDefaultBuiltInEngine.hidden);
+  do_check_eq(Services.search.currentEngine.name, defaultName);
+  yield promiseAfterCache();
+
+  
+  yield asyncReInit();
+  do_check_eq(Services.search.currentEngine.name, defaultName);
+});
+
 
 function run_test() {
   removeMetadata();
