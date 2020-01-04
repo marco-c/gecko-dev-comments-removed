@@ -695,7 +695,10 @@ StackFrames.prototype = {
       
       
       case "interrupted":
-        return;
+        if (!aPacket.why.onNext) {
+          return;
+        }
+        break;
     }
 
     this.activeThread.fillFrames(CALL_STACK_PAGE_SIZE);

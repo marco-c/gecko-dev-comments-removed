@@ -1376,6 +1376,18 @@ ThreadActor.prototype = {
 
     try {
       
+      
+      if (aRequest.when == "onNext") {
+        let onEnterFrame = (aFrame) => {
+          return this._pauseAndRespond(aFrame, { type: "interrupted", onNext: true });
+        };
+        this.dbg.onEnterFrame = onEnterFrame;
+
+        return { type: "willInterrupt" };
+      }
+
+      
+      
       let packet = this._paused();
       if (!packet) {
         return { error: "notInterrupted" };

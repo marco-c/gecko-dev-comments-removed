@@ -883,13 +883,13 @@ let gDevToolsBrowser = {
         switch (threadClient.state) {
           case "paused":
             
-            threadClient.breakOnNext();
+            threadClient.resumeThenPause();
             aCallback();
             break;
           case "attached":
             
             threadClient.interrupt(() => {
-              threadClient.breakOnNext();
+              threadClient.resumeThenPause();
               aCallback();
             });
             break;
@@ -897,7 +897,7 @@ let gDevToolsBrowser = {
             
             threadClient.addOneTimeListener("resumed", () => {
               threadClient.interrupt(() => {
-                threadClient.breakOnNext();
+                threadClient.resumeThenPause();
                 aCallback();
               });
             });

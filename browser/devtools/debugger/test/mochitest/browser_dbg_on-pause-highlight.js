@@ -48,6 +48,11 @@ function testPause() {
   EventUtils.sendMouseEvent({ type: "mousedown" },
     gDebugger.document.getElementById("resume"),
     gDebugger);
+
+  
+  once(gDebugger.gClient, "willInterrupt").then(() => {
+    evalInTab(gTab, "1+1;");
+  })
 }
 
 function testResume() {

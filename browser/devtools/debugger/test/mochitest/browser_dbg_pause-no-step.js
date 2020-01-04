@@ -5,14 +5,16 @@
 
 
 
+
 const TAB_URL = EXAMPLE_URL + "doc_pause-exceptions.html";
 
-let gPanel, gDebugger;
+let gTab, gPanel, gDebugger;
 let gResumeButton, gStepOverButton, gStepOutButton, gStepInButton;
 let gResumeKey, gFrames;
 
 function test() {
   initDebugger(TAB_URL).then(([aTab,, aPanel]) => {
+    gTab = aTab;
     gPanel = aPanel;
     gDebugger = gPanel.panelWin;
     gResumeButton = gDebugger.document.getElementById("resume");
@@ -33,24 +35,33 @@ function testPause() {
   ok(gStepOverButton.disabled, "Stepping over button should be disabled");
 
   gDebugger.gThreadClient.addOneTimeListener("paused", () => {
-    
-    
-    EventUtils.sendMouseEvent({ type: "mousedown" }, gStepOverButton, gDebugger);
-
     ok(gDebugger.gThreadClient.paused,
        "Should be paused after an interrupt request.");
 
-    ok(gStepOutButton.disabled, "Stepping out button should still be disabled");
-    ok(gStepInButton.disabled, "Stepping in button should still be disabled");
-    ok(gStepOverButton.disabled, "Stepping over button should still be disabled");
+    ok(!gStepOutButton.disabled, "Stepping out button should be enabled");
+    ok(!gStepInButton.disabled, "Stepping in button should be enabled");
+    ok(!gStepOverButton.disabled, "Stepping over button should be enabled");
 
-    is(gFrames.itemCount, 0,
-       "Should have no frames when paused in the main loop.");
+    waitForDebuggerEvents(gPanel, gDebugger.EVENTS.AFTER_FRAMES_REFILLED).then(() => {
+      is(gFrames.itemCount, 1,
+         "Should have 1 frame from the evalInTab call.");
+      gDebugger.gThreadClient.resume(testBreakAtLocation);
+    });
 
-    gDebugger.gThreadClient.resume(testBreakAtLocation);
   });
 
   EventUtils.sendMouseEvent({ type: "mousedown" }, gResumeButton, gDebugger);
+
+  ok(!gDebugger.gThreadClient.paused,
+    "Shouldn't be paused until the next script is executed.");
+  ok(gStepOutButton.disabled, "Stepping out button should be disabled");
+  ok(gStepInButton.disabled, "Stepping in button should be disabled");
+  ok(gStepOverButton.disabled, "Stepping over button should be disabled");
+
+  
+  once(gDebugger.gClient, "willInterrupt").then(() => {
+    evalInTab(gTab, "1+1;");
+  });
 }
 
 function testBreakAtLocation() {

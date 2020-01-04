@@ -51,6 +51,7 @@ ToolbarView.prototype = {
     let stepOutKey = ShortcutUtils.prettifyShortcut(document.getElementById("stepOutKey"));
     this._resumeTooltip = L10N.getFormatStr("resumeButtonTooltip", resumeKey);
     this._pauseTooltip = L10N.getFormatStr("pauseButtonTooltip", resumeKey);
+    this._pausePendingTooltip = L10N.getStr("pausePendingButtonTooltip");
     this._stepOverTooltip = L10N.getFormatStr("stepOverTooltip", stepOverKey);
     this._stepInTooltip = L10N.getFormatStr("stepInTooltip", stepInKey);
     this._stepOutTooltip = L10N.getFormatStr("stepOutTooltip", stepOutKey);
@@ -118,6 +119,18 @@ ToolbarView.prototype = {
 
   toggleResumeButtonState: function(aState, hasLocation) {
     
+    
+    if (aState == "breakOnNext") {
+      this._resumeButton.setAttribute("break-on-next", "true");
+      this._resumeButton.disabled = true;
+      this._resumeButton.setAttribute("tooltiptext", this._pausePendingTooltip);
+      return;
+    }
+
+    this._resumeButton.removeAttribute("break-on-next");
+    this._resumeButton.disabled = false;
+
+    
     if (aState == "paused") {
       this._resumeButton.setAttribute("checked", "true");
       this._resumeButton.setAttribute("tooltiptext", this._resumeTooltip);
@@ -135,7 +148,7 @@ ToolbarView.prototype = {
       this._resumeButton.removeAttribute("checked");
       this._resumeButton.setAttribute("tooltiptext", this._pauseTooltip);
       this._toggleButtonsState({ enabled: false });
-   }
+    }
   },
 
   _toggleButtonsState: function({ enabled }) {
@@ -146,7 +159,7 @@ ToolbarView.prototype = {
     ];
     for (let button of buttons) {
       button.disabled = !enabled;
-    };
+    }
   },
 
   
@@ -164,7 +177,8 @@ ToolbarView.prototype = {
 
 
   _onResumePressed: function() {
-    if (this.StackFrames._currentFrameDescription != FRAME_TYPE.NORMAL) {
+    if (this.StackFrames._currentFrameDescription != FRAME_TYPE.NORMAL ||
+        this._resumeButton.disabled) {
       return;
     }
 
@@ -173,7 +187,8 @@ ToolbarView.prototype = {
       this.activeThread.resume(this.resumptionWarnFunc);
     } else {
       this.ThreadState.interruptedByResumeButton = true;
-      this.activeThread.interrupt();
+      this.toggleResumeButtonState("breakOnNext");
+      this.activeThread.breakOnNext();
     }
   },
 

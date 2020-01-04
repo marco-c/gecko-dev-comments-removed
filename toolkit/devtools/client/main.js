@@ -1661,7 +1661,7 @@ ThreadClient.prototype = {
 
 
 
-  breakOnNext: function (aOnResponse) {
+  resumeThenPause: function (aOnResponse) {
     this._doResume({ type: "break" }, aOnResponse);
   },
 
@@ -1701,8 +1701,29 @@ ThreadClient.prototype = {
 
 
 
-  interrupt: DebuggerClient.requester({
-    type: "interrupt"
+  interrupt: function(aOnResponse) {
+    this._doInterrupt(null, aOnResponse);
+  },
+
+  
+
+
+
+
+
+  breakOnNext: function(aOnResponse) {
+    this._doInterrupt("onNext", aOnResponse);
+  },
+
+  
+
+
+
+
+
+  _doInterrupt: DebuggerClient.requester({
+    type: "interrupt",
+    when: args(0)
   }, {
     telemetry: "INTERRUPT"
   }),
