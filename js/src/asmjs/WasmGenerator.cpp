@@ -522,20 +522,6 @@ ModuleGenerator::finishStaticLinkData(uint8_t* code, uint32_t codeBytes, StaticL
     }
 #endif
 
-#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    
-    
-    
-    for (size_t i = 0; i < masm_.numLongJumps(); i++) {
-        size_t off = masm_.longJump(i);
-        StaticLinkData::InternalLink inLink(StaticLinkData::InternalLink::InstructionImmediate);
-        inLink.patchAtOffset = off;
-        inLink.targetOffset = Assembler::ExtractInstructionImmediate(code + off) - uintptr_t(code);
-        if (!link->internalLinks.append(inLink))
-            return false;
-    }
-#endif
-
 #if defined(JS_CODEGEN_X64)
     
     
