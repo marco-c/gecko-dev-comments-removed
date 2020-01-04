@@ -12,7 +12,6 @@
 #include "nsCOMPtr.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/SHA1.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
 #include "nsString.h"
@@ -442,8 +441,7 @@ private:
   
   size_t SizeOfExcludingThisInternal(mozilla::MallocSizeOf mallocSizeOf) const;
 
-  static StaticRefPtr<CacheFileIOManager> gInstance;
-
+  static CacheFileIOManager           *gInstance;
   TimeStamp                            mStartTime;
   
   
