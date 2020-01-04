@@ -123,7 +123,7 @@ ParamTraits<MagicGrallocBufferHandle>::Read(const Message* aMsg,
   if (!aMsg->ReadInt(aIter, &owner) ||
       !aMsg->ReadInt64(aIter, &index) ||
       !aMsg->ReadSize(aIter, &nbytes) ||
-      !aMsg->ReadBytesInto(aIter, &data, nbytes)) {
+      !aMsg->ReadBytes(aIter, &data, nbytes)) {
     printf_stderr("ParamTraits<MagicGrallocBufferHandle>::Read() failed to read a message\n");
     return false;
   }
