@@ -4797,7 +4797,7 @@ MultiprocessBlockPolicy() {
 
 
 #if defined(XP_MACOSX)
-  if (!nsCocoaFeatures::OnMountainLionOrLater()) {
+  if (!nsCocoaFeatures::OnMavericksOrLater()) {
     gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
     return gMultiprocessBlockPolicy;
   }
