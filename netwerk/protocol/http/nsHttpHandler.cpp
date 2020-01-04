@@ -491,14 +491,6 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpRequestHead *request, bool isSecu
     if (NS_FAILED(rv)) return rv;
 
     
-    if (mDoNotTrackEnabled) {
-      rv = request->SetHeader(nsHttp::DoNotTrack, NS_LITERAL_CSTRING("1"),
-                              false,
-                              nsHttpHeaderArray::eVarietyRequestDefault);
-      if (NS_FAILED(rv)) return rv;
-    }
-
-    
     if (mSafeHintEnabled || mParentalControlEnabled) {
       rv = request->SetHeader(nsHttp::Prefer, NS_LITERAL_CSTRING("safe"),
                               false,

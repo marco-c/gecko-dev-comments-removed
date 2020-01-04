@@ -5437,6 +5437,8 @@ nsHttpChannel::BeginConnect()
     mRequestHead.SetHTTPS(isHttps);
     mRequestHead.SetOrigin(scheme, host, port);
 
+    SetDoNotTrack();
+
     RefPtr<AltSvcMapping> mapping;
     if (mAllowAltSvc && 
         (scheme.Equals(NS_LITERAL_CSTRING("http")) ||
@@ -7631,6 +7633,24 @@ nsHttpChannel::SetLoadGroupUserAgentOverride()
             }
         }
     }
+}
+
+void
+nsHttpChannel::SetDoNotTrack()
+{
+  
+
+
+
+  nsCOMPtr<nsILoadContext> loadContext;
+  NS_QueryNotificationCallbacks(this, loadContext);
+
+  if ((loadContext && loadContext->UseTrackingProtection()) ||
+      nsContentUtils::DoNotTrackEnabled()) {
+    mRequestHead.SetHeader(nsHttp::DoNotTrack,
+                           NS_LITERAL_CSTRING("1"),
+                           false);
+  }
 }
 
 } 
