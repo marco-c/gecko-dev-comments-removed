@@ -536,7 +536,8 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
   nsresult rv = NS_OK;
   while (NS_SUCCEEDED(rv) && length > 0) {
     if (input && length) {
-      if (mStreamBufferSize < mStreamBufferByteCount + length && mIsSuspended) {
+      if (mStreamBufferSize < mStreamBufferByteCount + length) {
+        
         
         
         
@@ -550,10 +551,11 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
         
         mStreamBuffer = buf;
       }
-      
+
       uint32_t bytesToRead =
       std::min(length, mStreamBufferSize - mStreamBufferByteCount);
-      
+      MOZ_ASSERT(bytesToRead > 0);
+
       uint32_t amountRead = 0;
       rv = input->Read(mStreamBuffer + mStreamBufferByteCount, bytesToRead,
                        &amountRead);
