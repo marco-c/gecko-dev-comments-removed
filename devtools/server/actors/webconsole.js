@@ -1296,7 +1296,19 @@ WebConsoleActor.prototype =
       evalOptions = { url: aOptions.url };
     }
 
+    
+    
+    
+    
+    if (this._lastConsoleInputEvaluation &&
+        this._lastConsoleInputEvaluation.global !== dbgWindow) {
+      this._lastConsoleInputEvaluation = dbg.adoptDebuggeeValue(
+        this._lastConsoleInputEvaluation
+      );
+    }
+
     let result;
+
     if (frame) {
       result = frame.evalWithBindings(aString, bindings, evalOptions);
     }
