@@ -91,7 +91,6 @@ function InspectorPanel(iframeWindow, toolbox) {
 
   this.nodeMenuTriggerInfo = null;
 
-  this._handleRejectionIfNotDestroyed = this._handleRejectionIfNotDestroyed.bind(this);
   this._onBeforeNavigate = this._onBeforeNavigate.bind(this);
   this.onNewRoot = this.onNewRoot.bind(this);
   this._onContextMenu = this._onContextMenu.bind(this);
@@ -165,18 +164,6 @@ InspectorPanel.prototype = {
 
   get canPasteInnerOrAdjacentHTML() {
     return this._target.client.traits.pasteHTML;
-  },
-
-  
-
-
-
-
-
-  _handleRejectionIfNotDestroyed: function (e) {
-    if (!this._panelDestroyer) {
-      console.error(e);
-    }
   },
 
   
@@ -271,7 +258,7 @@ InspectorPanel.prototype = {
   _getPageStyle: function () {
     return this._toolbox.inspector.getPageStyle().then(pageStyle => {
       this.pageStyle = pageStyle;
-    }, this._handleRejectionIfNotDestroyed);
+    });
   },
 
   
@@ -464,7 +451,7 @@ InspectorPanel.prototype = {
     }
 
     this.setupSidebarToggle();
-    this.setupSidebarWidth();
+    this.setupSidebarSize();
 
     this.sidebar.show(defaultTab);
   },
@@ -478,7 +465,7 @@ InspectorPanel.prototype = {
 
 
 
-  setupSidebarWidth: function () {
+  setupSidebarSize: function () {
     let sidePaneContainer = this.panelDoc.querySelector(
       "#inspector-sidebar-container");
 
@@ -486,21 +473,31 @@ InspectorPanel.prototype = {
       try {
         sidePaneContainer.width = Services.prefs.getIntPref(
           "devtools.toolsidebar-width.inspector");
+        sidePaneContainer.height = Services.prefs.getIntPref(
+          "devtools.toolsidebar-height.inspector");
       } catch (e) {
         
         
+        
+        
+        
         sidePaneContainer.width = 450;
+        sidePaneContainer.height = 450;
       }
     });
 
     this.sidebar.on("hide", () => {
       Services.prefs.setIntPref("devtools.toolsidebar-width.inspector",
         sidePaneContainer.width);
+      Services.prefs.setIntPref("devtools.toolsidebar-height.inspector",
+        sidePaneContainer.height);
     });
 
     this.sidebar.on("destroy", () => {
       Services.prefs.setIntPref("devtools.toolsidebar-width.inspector",
         sidePaneContainer.width);
+      Services.prefs.setIntPref("devtools.toolsidebar-height.inspector",
+        sidePaneContainer.height);
     });
   },
 
@@ -551,8 +548,7 @@ InspectorPanel.prototype = {
       });
     };
     this._pendingSelection = onNodeSelected;
-    this._getDefaultNodeForSelection()
-        .then(onNodeSelected, this._handleRejectionIfNotDestroyed);
+    this._getDefaultNodeForSelection().then(onNodeSelected, console.error);
   },
 
   _selectionCssSelector: null,
@@ -631,7 +627,16 @@ InspectorPanel.prototype = {
         this.selection.isElementNode()) {
       selection.getUniqueSelector().then(selector => {
         this.selectionCssSelector = selector;
-      }, this._handleRejectionIfNotDestroyed);
+      }).then(null, e => {
+        
+        
+        if (!this._panelDestroyer) {
+          console.error(e);
+        } else {
+          console.warn("Could not set the unique selector for the newly " +
+            "selected node, the inspector was destroyed.");
+        }
+      });
     }
 
     let selfUpdate = this.updating("inspector-panel");
@@ -1344,7 +1349,7 @@ InspectorPanel.prototype = {
     if (!this.walker) {
       return promise.resolve();
     }
-    return this.walker.clearPseudoClassLocks().catch(this._handleRejectionIfNotDestroyed);
+    return this.walker.clearPseudoClassLocks().then(null, console.error);
   },
 
   
