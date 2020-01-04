@@ -44,6 +44,10 @@
   --theme-highlight-pink: #b82ee5;
 
   
+
+  --theme-focus-outline-color: #000000;
+
+  
   --theme-graphs-green: #85d175;
   --theme-graphs-blue: #83b7f6;
   --theme-graphs-bluegrey: #0072ab;
@@ -88,6 +92,10 @@
   --theme-highlight-orange: #d96629;
   --theme-highlight-red: #eb5368;
   --theme-highlight-pink: #df80ff;
+
+  
+
+  --theme-focus-outline-color: #ced3d9;
 
   
   --theme-graphs-green: #70bf53;
@@ -157,4 +165,16 @@
   --theme-header-background: #F0F0F0 linear-gradient(to top,
                                                      rgba(0, 0, 0, 0.1),
                                                      transparent) repeat-x;
+}
+
+:root {
+  --theme-focus-border-color-textbox: #0675d3;
+  --theme-textbox-box-shadow: rgba(97,181,255,.75);
+
+  
+
+  --theme-focus-outline: 1px dotted var(--theme-focus-outline-color);
+  --theme-focus-box-shadow-textbox: 0 0 0 1px var(--theme-textbox-box-shadow);
+  --theme-focus-box-shadow-inset-bottom: 0 -2px 1px var(--theme-textbox-box-shadow) inset,
+    0px -2px var(--theme-highlight-blue) inset;
 }
