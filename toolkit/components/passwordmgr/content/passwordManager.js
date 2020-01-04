@@ -16,6 +16,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 let kSignonBundle;
 
+
+let lastSignonSortColumn = "hostname";
+let lastSignonSortAscending = true;
+
 let showingPasswords = false;
 
 
@@ -210,14 +214,11 @@ let signonsTreeView = {
   },
 };
 
-function SortTree(tree, view, table, column, lastSortColumn, lastSortAscending, updateSelection) {
-
+function SortTree(tree, column, ascending) {
+  let table = signonsTreeView._filterSet.length ? signonsTreeView._filterSet : signons;
   
   let selections = GetTreeSelections(tree);
   let selectedNumber = selections.length ? table[selections[0]].number : -1;
-
-  
-  let ascending = (column == lastSortColumn) ? !lastSortAscending : true;
 
   function compareFunc(a, b) {
     let valA, valB;
@@ -251,13 +252,14 @@ function SortTree(tree, view, table, column, lastSortColumn, lastSortAscending, 
 
   
   table.sort(compareFunc);
-  if (!ascending)
+  if (!ascending) {
     table.reverse();
+  }
 
   
   let selectedRow = -1;
-  if (selectedNumber>=0 && updateSelection) {
-    for (let s=0; s<table.length; s++) {
+  if (selectedNumber >= 0 && false) {
+    for (let s = 0; s < table.length; s++) {
       if (table[s].number == selectedNumber) {
         
         
@@ -272,10 +274,8 @@ function SortTree(tree, view, table, column, lastSortColumn, lastSortAscending, 
   
   tree.treeBoxObject.invalidate();
   if (selectedRow >= 0) {
-    tree.treeBoxObject.ensureRowIsVisible(selectedRow)
+    tree.treeBoxObject.ensureRowIsVisible(selectedRow);
   }
-
-  return ascending;
 }
 
 function LoadSignons() {
@@ -502,24 +502,22 @@ function getColumnByName(column) {
   return undefined;
 }
 
-let lastSignonSortColumn = "hostname";
-let lastSignonSortAscending = true;
-
 function SignonColumnSort(column) {
-  
+  let sortedCol = getColumnByName(column);
   let lastSortedCol = getColumnByName(lastSignonSortColumn);
+
+  
   lastSortedCol.removeAttribute("sortDirection");
 
   
-  lastSignonSortAscending =
-    SortTree(signonsTree, signonsTreeView,
-                 signonsTreeView._filterSet.length ? signonsTreeView._filterSet : signons,
-                 column, lastSignonSortColumn, lastSignonSortAscending);
+  lastSignonSortAscending = (column == lastSignonSortColumn) ? !lastSignonSortAscending : true;
+
+  
   lastSignonSortColumn = column;
+  SortTree(signonsTree, lastSignonSortColumn, lastSignonSortAscending);
 
   
   
-  let sortedCol = getColumnByName(column);
   sortedCol.setAttribute("sortDirection", lastSignonSortAscending ?
                                           "ascending" : "descending");
 }
