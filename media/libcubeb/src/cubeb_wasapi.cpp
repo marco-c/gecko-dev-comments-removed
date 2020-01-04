@@ -4,15 +4,14 @@
 
 
 
+
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
-#include <initguid.h>
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <windef.h>
 #include <audioclient.h>
-#include <devicetopology.h>
 #include <process.h>
 #include <avrt.h>
 #include "cubeb/cubeb.h"
@@ -24,20 +23,8 @@
 #include <cmath>
 
 
-#ifndef __devicetopology_h__
-#include "cubeb_devicetopology.h"
-#endif
-
-
 #ifndef STACK_SIZE_PARAM_IS_A_RESERVATION
 #define STACK_SIZE_PARAM_IS_A_RESERVATION   0x00010000    // Threads only
-#endif
-
-#ifndef PKEY_Device_FriendlyName
-DEFINE_PROPERTYKEY(PKEY_Device_FriendlyName,    0xa45c254e, 0xdf1c, 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0, 14);    
-#endif
-#ifndef PKEY_Device_InstanceId
-DEFINE_PROPERTYKEY(PKEY_Device_InstanceId,      0x78c34fc8, 0x104a, 0x4aca, 0x9e, 0xa4, 0x52, 0x4d, 0x52, 0x99, 0x6e, 0x57, 0x00000100); 
 #endif
 
 
@@ -61,13 +48,13 @@ ms_to_hns(uint32_t ms)
 }
 
 uint32_t
-hns_to_ms(REFERENCE_TIME hns)
+hns_to_ms(uint32_t hns)
 {
   return hns / 10000;
 }
 
 double
-hns_to_s(REFERENCE_TIME hns)
+hns_to_s(uint32_t hns)
 {
   return static_cast<double>(hns) / 10000000;
 }
@@ -163,12 +150,12 @@ struct auto_com {
     if (result == RPC_E_CHANGED_MODE) {
       
       
-      LOG("COM was already initialized in STA.\n");
+      LOG("COM already initialized in STA.\n");
     } else if (result == S_FALSE) {
       
       
       
-      LOG("COM was already initialized in MTA\n");
+      LOG("COM already initialized in MTA\n");
     }
     if (SUCCEEDED(result)) {
       CoUninitialize();
@@ -320,14 +307,9 @@ public:
     , reconfigure_event(event)
   { }
 
-  virtual ~wasapi_endpoint_notification_client()
-  { }
-
   HRESULT STDMETHODCALLTYPE
   OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR device_id)
   {
-    LOG("Audio device default changed.\n");
-
     
     if (flow != eRender && role != eMultimedia) {
       return S_OK;
@@ -335,7 +317,7 @@ public:
 
     BOOL ok = SetEvent(reconfigure_event);
     if (!ok) {
-      LOG("SetEvent on reconfigure_event failed: %x\n", GetLastError());
+      LOG("SetEvent on reconfigure_event failed: %x", GetLastError());
     }
 
     return S_OK;
@@ -483,7 +465,7 @@ refill(cubeb_stream * stm, float * data, long frames_needed)
 
   
   if (out_frames < frames_needed) {
-    LOG("start draining.\n");
+    LOG("draining.\n");
     stm->draining = true;
   }
 
@@ -511,11 +493,11 @@ wasapi_stream_render_loop(LPVOID stream)
   HANDLE wait_array[3] = {stm->shutdown_event, stm->reconfigure_event, stm->refill_event};
   HANDLE mmcss_handle = NULL;
   HRESULT hr = 0;
+  bool first = true;
   DWORD mmcss_task_index = 0;
   auto_com com;
   if (!com.ok()) {
     LOG("COM initialization failed on render_loop thread.\n");
-    stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_ERROR);
     return 0;
   }
 
@@ -566,7 +548,7 @@ wasapi_stream_render_loop(LPVOID stream)
           
 
           is_playing = false;
-          hr = E_FAIL;
+          hr = -1;
           continue;
         }
       }
@@ -578,11 +560,13 @@ wasapi_stream_render_loop(LPVOID stream)
 
       hr = stm->client->GetCurrentPadding(&padding);
       if (FAILED(hr)) {
-        LOG("Failed to get padding: %x\n", hr);
+        LOG("Failed to get padding\n");
         is_playing = false;
         continue;
       }
       XASSERT(padding <= stm->buffer_frame_count);
+
+      long available = stm->buffer_frame_count - padding;
 
       if (stm->draining) {
         if (padding == 0) {
@@ -591,8 +575,6 @@ wasapi_stream_render_loop(LPVOID stream)
         }
         continue;
       }
-
-      long available = stm->buffer_frame_count - padding;
 
       if (available == 0) {
         continue;
@@ -606,11 +588,11 @@ wasapi_stream_render_loop(LPVOID stream)
 
         hr = stm->render_client->ReleaseBuffer(wrote, 0);
         if (FAILED(hr)) {
-          LOG("failed to release buffer: %x\n", hr);
+          LOG("failed to release buffer.\n");
           is_playing = false;
         }
       } else {
-        LOG("failed to get buffer: %x\n", hr);
+        LOG("failed to get buffer.\n");
         is_playing = false;
       }
     }
@@ -619,7 +601,7 @@ wasapi_stream_render_loop(LPVOID stream)
       XASSERT(stm->shutdown_event == wait_array[0]);
       if (++timeout_count >= timeout_limit) {
         is_playing = false;
-        hr = E_FAIL;
+        hr = -1;
       }
       break;
     default:
@@ -654,6 +636,7 @@ HRESULT register_notification_client(cubeb_stream * stm)
   HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator),
                                 NULL, CLSCTX_INPROC_SERVER,
                                 IID_PPV_ARGS(&stm->device_enumerator));
+
   if (FAILED(hr)) {
     LOG("Could not get device enumerator: %x\n", hr);
     return hr;
@@ -662,6 +645,7 @@ HRESULT register_notification_client(cubeb_stream * stm)
   stm->notification_client = new wasapi_endpoint_notification_client(stm->reconfigure_event);
 
   hr = stm->device_enumerator->RegisterEndpointNotificationCallback(stm->notification_client);
+
   if (FAILED(hr)) {
     LOG("Could not register endpoint notification callback: %x\n", hr);
     return hr;
@@ -693,7 +677,7 @@ HRESULT get_default_endpoint(IMMDevice ** device)
                                 NULL, CLSCTX_INPROC_SERVER,
                                 IID_PPV_ARGS(&enumerator));
   if (FAILED(hr)) {
-    LOG("Could not get device enumerator: %x\n", hr);
+    LOG("Could not get device enumerator.\n");
     return hr;
   }
   
@@ -702,7 +686,7 @@ HRESULT get_default_endpoint(IMMDevice ** device)
 
   hr = enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, device);
   if (FAILED(hr)) {
-    LOG("Could not get default audio endpoint: %x\n", hr);
+    LOG("Could not get default audio endpoint. %d\n", __LINE__);
     SafeRelease(enumerator);
     return hr;
   }
@@ -797,15 +781,12 @@ int wasapi_init(cubeb ** context, char const * context_name)
   IMMDevice * device;
   hr = get_default_endpoint(&device);
   if (FAILED(hr)) {
-    LOG("Could not get device: %x\n", hr);
+    LOG("Could not get device.\n");
     return CUBEB_ERROR;
   }
   SafeRelease(device);
 
   cubeb * ctx = (cubeb *)calloc(1, sizeof(cubeb));
-  if (!ctx) {
-    return CUBEB_ERROR;
-  }
 
   ctx->ops = &wasapi_ops;
 
@@ -925,14 +906,10 @@ wasapi_get_min_latency(cubeb * ctx, cubeb_stream_params params, uint32_t * laten
     return CUBEB_ERROR;
   }
 
-  if (params.format != CUBEB_SAMPLE_FLOAT32NE) {
-    return CUBEB_ERROR_INVALID_FORMAT;
-  }
-
   IMMDevice * device;
   hr = get_default_endpoint(&device);
   if (FAILED(hr)) {
-    LOG("Could not get default endpoint: %x\n", hr);
+    LOG("Could not get default endpoint:%x.\n", hr);
     return CUBEB_ERROR;
   }
 
@@ -941,7 +918,7 @@ wasapi_get_min_latency(cubeb * ctx, cubeb_stream_params params, uint32_t * laten
                         NULL, (void **)&client);
   SafeRelease(device);
   if (FAILED(hr)) {
-    LOG("Could not activate device for latency: %x\n", hr);
+    LOG("Could not activate device for latency: %x.\n", hr);
     return CUBEB_ERROR;
   }
 
@@ -949,7 +926,7 @@ wasapi_get_min_latency(cubeb * ctx, cubeb_stream_params params, uint32_t * laten
   hr = client->GetDevicePeriod(&default_period, NULL);
   if (FAILED(hr)) {
     SafeRelease(client);
-    LOG("Could not get device period: %x\n", hr);
+    LOG("Could not get device period: %x.\n", hr);
     return CUBEB_ERROR;
   }
 
@@ -1072,8 +1049,6 @@ handle_channel_layout(cubeb_stream * stm,  WAVEFORMATEX ** mix_format, const cub
     *reinterpret_cast<WAVEFORMATEXTENSIBLE *>(*mix_format) = hw_mix_format;
   } else if (hr == S_OK) {
     LOG("Requested format accepted by WASAPI.\n");
-  } else {
-    LOG("IsFormatSupported unhandled error: %x\n", hr);
   }
 }
 
@@ -1132,15 +1107,17 @@ int setup_wasapi_stream(cubeb_stream * stm)
                                0,
                                mix_format,
                                NULL);
+
   CoTaskMemFree(mix_format);
+
   if (FAILED(hr)) {
-    LOG("Unable to initialize audio client: %x\n", hr);
+    LOG("Unable to initialize audio client: %x.\n", hr);
     return CUBEB_ERROR;
   }
 
   hr = stm->client->GetBufferSize(&stm->buffer_frame_count);
   if (FAILED(hr)) {
-    LOG("Could not get the buffer size from the client: %x\n", hr);
+    LOG("Could not get the buffer size from the client %x.\n", hr);
     return CUBEB_ERROR;
   }
 
@@ -1150,21 +1127,21 @@ int setup_wasapi_stream(cubeb_stream * stm)
 
   hr = stm->client->SetEventHandle(stm->refill_event);
   if (FAILED(hr)) {
-    LOG("Could set the event handle for the client: %x\n", hr);
+    LOG("Could set the event handle for the client %x.\n", hr);
     return CUBEB_ERROR;
   }
 
   hr = stm->client->GetService(__uuidof(IAudioRenderClient),
                                (void **)&stm->render_client);
   if (FAILED(hr)) {
-    LOG("Could not get the render client: %x\n", hr);
+    LOG("Could not get the render client %x.\n", hr);
     return CUBEB_ERROR;
   }
 
   hr = stm->client->GetService(__uuidof(IAudioStreamVolume),
                                (void **)&stm->audio_stream_volume);
   if (FAILED(hr)) {
-    LOG("Could not get the IAudioStreamVolume: %x\n", hr);
+    LOG("Could not get the IAudioStreamVolume %x.\n", hr);
     return CUBEB_ERROR;
   }
 
@@ -1172,7 +1149,7 @@ int setup_wasapi_stream(cubeb_stream * stm)
   hr = stm->client->GetService(__uuidof(IAudioClock),
                                (void **)&stm->audio_clock);
   if (FAILED(hr)) {
-    LOG("Could not get the IAudioClock: %x\n", hr);
+    LOG("Could not get the IAudioClock %x.\n", hr);
     return CUBEB_ERROR;
   }
 
@@ -1213,10 +1190,6 @@ wasapi_stream_init(cubeb * context, cubeb_stream ** stream,
   }
 
   XASSERT(context && stream);
-
-  if (stream_params.format != CUBEB_SAMPLE_FLOAT32NE) {
-    return CUBEB_ERROR_INVALID_FORMAT;
-  }
 
   cubeb_stream * stm = (cubeb_stream *)calloc(1, sizeof(cubeb_stream));
 
@@ -1352,7 +1325,7 @@ int wasapi_stream_start(cubeb_stream * stm)
       LOG("could not start the stream after reconfig: %x\n", hr);
       return CUBEB_ERROR;
     }
-  } else if (FAILED(hr)) {
+ } else if (FAILED(hr)) {
     LOG("could not start the stream.\n");
     return CUBEB_ERROR;
   }
@@ -1435,10 +1408,7 @@ int wasapi_stream_get_latency(cubeb_stream * stm, uint32_t * latency)
   }
 
   REFERENCE_TIME latency_hns;
-  HRESULT hr = stm->client->GetStreamLatency(&latency_hns);
-  if (FAILED(hr)) {
-    return CUBEB_ERROR;
-  }
+  stm->client->GetStreamLatency(&latency_hns);
   double latency_s = hns_to_s(latency_hns);
   *latency = static_cast<uint32_t>(latency_s * stm->stream_params.rate);
 
@@ -1458,245 +1428,12 @@ int wasapi_stream_set_volume(cubeb_stream * stm, float volume)
   return CUBEB_OK;
 }
 
-static char *
-wstr_to_utf8(LPCWSTR str)
-{
-  char * ret = NULL;
-  int size;
-
-  size = ::WideCharToMultiByte(CP_UTF8, 0, str, -1, ret, 0, NULL, NULL);
-  if (size > 0) {
-    ret = (char *) malloc(size);
-    ::WideCharToMultiByte(CP_UTF8, 0, str, -1, ret, size, NULL, NULL);
-  }
-
-  return ret;
-}
-
-static IMMDevice *
-wasapi_get_device_node(IMMDeviceEnumerator * enumerator, IMMDevice * dev)
-{
-  IMMDevice * ret = NULL;
-  IDeviceTopology * devtopo = NULL;
-  IConnector * connector = NULL;
-
-  if (SUCCEEDED(dev->Activate(__uuidof(IDeviceTopology), CLSCTX_ALL, NULL, (void**)&devtopo)) &&
-      SUCCEEDED(devtopo->GetConnector(0, &connector))) {
-    LPWSTR filterid;
-    if (SUCCEEDED(connector->GetDeviceIdConnectedTo(&filterid))) {
-      if (FAILED(enumerator->GetDevice(filterid, &ret)))
-        ret = NULL;
-      CoTaskMemFree(filterid);
-    }
-  }
-
-  SafeRelease(connector);
-  SafeRelease(devtopo);
-  return ret;
-}
-
-static BOOL
-wasapi_is_default_device(EDataFlow flow, ERole role, LPCWSTR device_id,
-    IMMDeviceEnumerator * enumerator)
-{
-  BOOL ret = FALSE;
-  IMMDevice * dev;
-  HRESULT hr;
-
-  hr = enumerator->GetDefaultAudioEndpoint(flow, role, &dev);
-  if (SUCCEEDED(hr)) {
-    LPWSTR defdevid = NULL;
-    if (SUCCEEDED(dev->GetId(&defdevid)))
-      ret = (wcscmp(defdevid, device_id) == 0);
-    if (defdevid != NULL)
-      CoTaskMemFree(defdevid);
-    SafeRelease(dev);
-  }
-
-  return ret;
-}
-
-static cubeb_device_info *
-wasapi_create_device(IMMDeviceEnumerator * enumerator, IMMDevice * dev)
-{
-  IMMEndpoint * endpoint = NULL;
-  IMMDevice * devnode;
-  IAudioClient * client = NULL;
-  cubeb_device_info * ret = NULL;
-  EDataFlow flow;
-  LPWSTR device_id = NULL;
-  DWORD state = DEVICE_STATE_NOTPRESENT;
-  IPropertyStore * propstore = NULL;
-  PROPVARIANT propvar;
-  REFERENCE_TIME def_period, min_period;
-  HRESULT hr;
-
-  PropVariantInit(&propvar);
-
-  hr = dev->QueryInterface(IID_PPV_ARGS(&endpoint));
-  if (FAILED(hr)) goto done;
-
-  hr = endpoint->GetDataFlow(&flow);
-  if (FAILED(hr)) goto done;
-
-  hr = dev->GetId(&device_id);
-  if (FAILED(hr)) goto done;
-
-  hr = dev->OpenPropertyStore(STGM_READ, &propstore);
-  if (FAILED(hr)) goto done;
-
-  hr = dev->GetState(&state);
-  if (FAILED(hr)) goto done;
-
-  ret = (cubeb_device_info *)calloc(1, sizeof(cubeb_device_info));
-
-  ret->devid = ret->device_id = wstr_to_utf8(device_id);
-  hr = propstore->GetValue(PKEY_Device_FriendlyName, &propvar);
-  if (SUCCEEDED(hr))
-    ret->friendly_name = wstr_to_utf8(propvar.pwszVal);
-
-  devnode = wasapi_get_device_node(enumerator, dev);
-  if (devnode != NULL) {
-    IPropertyStore * ps = NULL;
-    hr = devnode->OpenPropertyStore(STGM_READ, &ps);
-    if (FAILED(hr)) goto done;
-
-    PropVariantClear(&propvar);
-    hr = ps->GetValue(PKEY_Device_InstanceId, &propvar);
-    if (SUCCEEDED(hr)) {
-      ret->group_id = wstr_to_utf8(propvar.pwszVal);
-    }
-    SafeRelease(ps);
-  }
-
-  ret->preferred = CUBEB_DEVICE_PREF_NONE;
-  if (wasapi_is_default_device(flow, eMultimedia, device_id, enumerator))
-    ret->preferred = (cubeb_device_pref)(ret->preferred | CUBEB_DEVICE_PREF_MULTIMEDIA);
-  if (wasapi_is_default_device(flow, eCommunications, device_id, enumerator))
-    ret->preferred = (cubeb_device_pref)(ret->preferred | CUBEB_DEVICE_PREF_VOICE);
-  if (wasapi_is_default_device(flow, eConsole, device_id, enumerator))
-    ret->preferred = (cubeb_device_pref)(ret->preferred | CUBEB_DEVICE_PREF_NOTIFICATION);
-
-  if (flow == eRender) ret->type = CUBEB_DEVICE_TYPE_OUTPUT;
-  else if (flow == eCapture) ret->type = CUBEB_DEVICE_TYPE_INPUT;
-  switch (state) {
-    case DEVICE_STATE_ACTIVE:
-      ret->state = CUBEB_DEVICE_STATE_ENABLED;
-      break;
-    case DEVICE_STATE_UNPLUGGED:
-      ret->state = CUBEB_DEVICE_STATE_UNPLUGGED;
-      break;
-    default:
-      ret->state = CUBEB_DEVICE_STATE_DISABLED;
-      break;
-  };
-
-  ret->format = CUBEB_DEVICE_FMT_F32NE; 
-  ret->default_format = CUBEB_DEVICE_FMT_F32NE;
-  PropVariantClear(&propvar);
-  hr = propstore->GetValue(PKEY_AudioEngine_DeviceFormat, &propvar);
-  if (SUCCEEDED(hr) && propvar.vt == VT_BLOB) {
-    if (propvar.blob.cbSize == sizeof(PCMWAVEFORMAT)) {
-      const PCMWAVEFORMAT * pcm = reinterpret_cast<const PCMWAVEFORMAT *>(propvar.blob.pBlobData);
-
-      ret->max_rate = ret->min_rate = ret->default_rate = pcm->wf.nSamplesPerSec;
-      ret->max_channels = pcm->wf.nChannels;
-    } else if (propvar.blob.cbSize >= sizeof(WAVEFORMATEX)) {
-      WAVEFORMATEX* wfx = reinterpret_cast<WAVEFORMATEX*>(propvar.blob.pBlobData);
-
-      if (propvar.blob.cbSize >= sizeof(WAVEFORMATEX) + wfx->cbSize ||
-          wfx->wFormatTag == WAVE_FORMAT_PCM) {
-        ret->max_rate = ret->min_rate = ret->default_rate = wfx->nSamplesPerSec;
-        ret->max_channels = wfx->nChannels;
-      }
-    }
-  }
-
-  if (SUCCEEDED(dev->Activate(__uuidof(IAudioClient), CLSCTX_INPROC_SERVER, NULL, (void**)&client)) &&
-      SUCCEEDED(client->GetDevicePeriod(&def_period, &min_period))) {
-    ret->latency_lo_ms = hns_to_ms(min_period);
-    ret->latency_hi_ms = hns_to_ms(def_period);
-  } else {
-    ret->latency_lo_ms = 0;
-    ret->latency_hi_ms = 0;
-  }
-  SafeRelease(client);
-
-done:
-  SafeRelease(devnode);
-  SafeRelease(endpoint);
-  SafeRelease(propstore);
-  if (device_id != NULL)
-    CoTaskMemFree(device_id);
-  PropVariantClear(&propvar);
-  return ret;
-}
-
-static int
-wasapi_enumerate_devices(cubeb * context, cubeb_device_type type,
-                         cubeb_device_collection ** out)
-{
-  auto_com com;
-  IMMDeviceEnumerator * enumerator;
-  IMMDeviceCollection * collection;
-  IMMDevice * dev;
-  cubeb_device_info * cur;
-  HRESULT hr;
-  UINT cc, i;
-  EDataFlow flow;
-
-  *out = NULL;
-
-  if (!com.ok())
-    return CUBEB_ERROR;
-
-  hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
-      CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&enumerator));
-  if (FAILED(hr)) {
-    LOG("Could not get device enumerator: %x\n", hr);
-    return CUBEB_ERROR;
-  }
-
-  if (type == CUBEB_DEVICE_TYPE_OUTPUT) flow = eRender;
-  else if (type == CUBEB_DEVICE_TYPE_INPUT)  flow = eCapture;
-  else if (type & (CUBEB_DEVICE_TYPE_INPUT | CUBEB_DEVICE_TYPE_INPUT)) flow = eAll;
-  else return CUBEB_ERROR;
-
-  hr = enumerator->EnumAudioEndpoints(flow, DEVICE_STATEMASK_ALL, &collection);
-  if (FAILED(hr)) {
-    LOG("Could not enumerate audio endpoints: %x\n", hr);
-    return CUBEB_ERROR;
-  }
-
-  hr = collection->GetCount(&cc);
-  if (FAILED(hr)) {
-    LOG("IMMDeviceCollection::GetCount() failed: %x\n", hr);
-    return CUBEB_ERROR;
-  }
-  *out = (cubeb_device_collection *) malloc(sizeof(cubeb_device_collection) +
-      sizeof(cubeb_device_info*) * (cc > 0 ? cc - 1 : 0));
-  (*out)->count = 0;
-  for (i = 0; i < cc; i++) {
-    hr = collection->Item(i, &dev);
-    if (FAILED(hr)) {
-      LOG("IMMDeviceCollection::Item(%u) failed: %x\n", i-1, hr);
-    } else if ((cur = wasapi_create_device(enumerator, dev)) != NULL) {
-      (*out)->device[(*out)->count++] = cur;
-    }
-  }
-
-  SafeRelease(collection);
-  SafeRelease(enumerator);
-  return CUBEB_OK;
-}
-
 cubeb_ops const wasapi_ops = {
    wasapi_init,
    wasapi_get_backend_id,
    wasapi_get_max_channel_count,
    wasapi_get_min_latency,
    wasapi_get_preferred_sample_rate,
-   wasapi_enumerate_devices,
    wasapi_destroy,
    wasapi_stream_init,
    wasapi_stream_destroy,
