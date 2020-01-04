@@ -2925,7 +2925,8 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mFirstFrameLoaded(false),
     mDefaultPlaybackStartPosition(0.0),
     mIsAudioTrackAudible(false),
-    mAudible(IsAudible())
+    mAudible(IsAudible()),
+    mVisibilityState(Visibility::APPROXIMATELY_NONVISIBLE)
 {
   ErrorResult rv;
 
@@ -4341,7 +4342,7 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
   }
   if (mIsEncrypted) {
     if (!mMediaSource && Preferences::GetBool("media.eme.mse-only", true)) {
-      DecodeError(NS_ERROR_DOM_MEDIA_FATAL_ERR);
+      DecodeError();
       return;
     }
 
@@ -4416,7 +4417,7 @@ void HTMLMediaElement::NetworkError()
   Error(nsIDOMMediaError::MEDIA_ERR_NETWORK);
 }
 
-void HTMLMediaElement::DecodeError(const MediaResult& aError)
+void HTMLMediaElement::DecodeError()
 {
   nsAutoString src;
   GetCurrentSrc(src);
@@ -4440,7 +4441,7 @@ void HTMLMediaElement::DecodeError(const MediaResult& aError)
       NS_WARNING("Should know the source we were loading from!");
     }
   } else {
-    Error(nsIDOMMediaError::MEDIA_ERR_DECODE, aError);
+    Error(nsIDOMMediaError::MEDIA_ERR_DECODE);
   }
 }
 
@@ -4454,8 +4455,7 @@ void HTMLMediaElement::LoadAborted()
   Error(nsIDOMMediaError::MEDIA_ERR_ABORTED);
 }
 
-void HTMLMediaElement::Error(uint16_t aErrorCode,
-                             const MediaResult& aErrorDetails)
+void HTMLMediaElement::Error(uint16_t aErrorCode)
 {
   NS_ASSERTION(aErrorCode == nsIDOMMediaError::MEDIA_ERR_DECODE ||
                aErrorCode == nsIDOMMediaError::MEDIA_ERR_NETWORK ||
@@ -4468,12 +4468,8 @@ void HTMLMediaElement::Error(uint16_t aErrorCode,
   if (mError) {
     return;
   }
-  nsCString message;
-  if (NS_FAILED(aErrorDetails)) {
-    message = aErrorDetails.Description();
-  }
-  mError = new MediaError(this, aErrorCode, message);
 
+  mError = new MediaError(this, aErrorCode);
   DispatchAsyncEvent(NS_LITERAL_STRING("error"));
   if (mReadyState == nsIDOMHTMLMediaElement::HAVE_NOTHING) {
     ChangeNetworkState(nsIDOMHTMLMediaElement::NETWORK_EMPTY);
@@ -6044,6 +6040,8 @@ HTMLMediaElement::OnVisibilityChange(Visibility aNewVisibility)
   LOG(LogLevel::Debug, ("OnVisibilityChange(): %s\n",
       VisibilityString(aNewVisibility)));
 
+  mVisibilityState = aNewVisibility;
+
   if (!mDecoder) {
     return;
   }
@@ -6592,6 +6590,67 @@ HTMLMediaElement::NotifyCueDisplayStatesChanged()
   }
 
   mTextTrackManager->DispatchUpdateCueDisplay();
+}
+
+void
+HTMLMediaElement::MarkAsContentSource(CallerAPI aAPI)
+{
+  const bool isVisible = mVisibilityState != Visibility::APPROXIMATELY_NONVISIBLE;
+
+  if (isVisible) {
+    
+    Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 0);
+  } else {
+    
+    Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 1);
+  }
+
+  switch (aAPI) {
+    case CallerAPI::DRAW_IMAGE: {
+      if (isVisible) {
+        
+        Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 2);
+      } else {
+        
+        Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 3);
+      }
+      break;
+    }
+    case CallerAPI::CREATE_PATTERN: {
+      if (isVisible) {
+        
+        Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 4);
+      } else {
+        
+        Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 5);
+      }
+      break;
+    }
+    case CallerAPI::CREATE_IMAGEBITMAP: {
+      if (isVisible) {
+        
+        Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 6);
+      } else {
+        
+        Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 7);
+      }
+      break;
+    }
+    case CallerAPI::CAPTURE_STREAM: {
+      if (isVisible) {
+        
+        Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 8);
+      } else {
+        
+        Telemetry::Accumulate(Telemetry::VIDEO_AS_CONTENT_SOURCE, 9);
+      }
+      break;
+    }
+  }
+
+  LOG(LogLevel::Debug,
+      ("%p Log VIDEO_AS_CONTENT_SOURCE: visibility = %u, API: '%d' and 'All'",
+       this, isVisible, aAPI));
 }
 
 } 

@@ -179,7 +179,7 @@ public:
 
   
   
-  virtual void DecodeError(const MediaResult& aError) final override;
+  virtual void DecodeError() final override;
 
   
   virtual bool HasError() const final override;
@@ -739,6 +739,17 @@ public:
 
   void SetMediaInfo(const MediaInfo& aInfo);
 
+  
+  
+  
+  enum class CallerAPI {
+    DRAW_IMAGE,
+    CREATE_PATTERN,
+    CREATE_IMAGEBITMAP,
+    CAPTURE_STREAM,
+  };
+  void MarkAsContentSource(CallerAPI aAPI);
+
 protected:
   virtual ~HTMLMediaElement();
 
@@ -1116,7 +1127,7 @@ protected:
 
 
 
-  void Error(uint16_t aErrorCode, const MediaResult& aErrorDetails = NS_OK);
+  void Error(uint16_t aErrorCode);
 
   
 
@@ -1715,6 +1726,8 @@ private:
 
   
   bool mAudible;
+
+  Visibility mVisibilityState;
 };
 
 } 
