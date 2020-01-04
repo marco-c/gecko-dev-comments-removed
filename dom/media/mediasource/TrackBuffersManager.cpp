@@ -1389,9 +1389,13 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
 
   
   
-  TimeInterval targetWindow{
-    TimeInterval(mAppendWindow.mStart, mAppendWindow.mEnd,
-                 trackBuffer.mLongestFrameDuration.refOr(TimeUnit::FromMicroseconds(aSamples[0]->mDuration)))};
+  
+  
+  
+  TimeInterval targetWindow = mAppendWindow.mStart != TimeUnit::FromSeconds(0)
+    ? mAppendWindow
+    : TimeInterval(mAppendWindow.mStart, mAppendWindow.mEnd,
+                   trackBuffer.mLongestFrameDuration.refOr(TimeUnit::FromMicroseconds(aSamples[0]->mDuration)));
 
   TimeIntervals samplesRange;
   uint32_t sizeNewSamples = 0;
@@ -1520,7 +1524,7 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
 
     
     
-    if (!targetWindow.Contains(sampleInterval)) {
+    if (!targetWindow.ContainsWithStrictEnd(sampleInterval)) {
       if (samples.Length()) {
         
         
