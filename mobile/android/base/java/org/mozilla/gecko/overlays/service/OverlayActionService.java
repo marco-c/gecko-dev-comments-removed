@@ -12,7 +12,6 @@ import android.os.IBinder;
 import android.util.Log;
 
 import org.mozilla.gecko.overlays.service.sharemethods.AddBookmark;
-import org.mozilla.gecko.overlays.service.sharemethods.AddToReadingList;
 import org.mozilla.gecko.overlays.service.sharemethods.SendTab;
 import org.mozilla.gecko.overlays.service.sharemethods.ShareMethod;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -22,7 +21,6 @@ import java.util.Map;
 
 import static org.mozilla.gecko.overlays.OverlayConstants.ACTION_PREPARE_SHARE;
 import static org.mozilla.gecko.overlays.OverlayConstants.ACTION_SHARE;
-
 
 
 
@@ -89,7 +87,6 @@ public class OverlayActionService extends Service {
                 shareTypes.clear();
 
                 shareTypes.put(ShareMethod.Type.ADD_BOOKMARK, new AddBookmark(context));
-                shareTypes.put(ShareMethod.Type.ADD_TO_READING_LIST, new AddToReadingList(context));
                 shareTypes.put(ShareMethod.Type.SEND_TAB, new SendTab(context));
             }
         });
