@@ -312,19 +312,23 @@ WorkerRunnable::Run()
   
   
   
-  Maybe<mozilla::dom::AutoJSAPI> jsapi;
+  Maybe<mozilla::dom::AutoJSAPI> maybeJSAPI;
   Maybe<mozilla::dom::AutoEntryScript> aes;
   JSContext* cx;
+  AutoJSAPI* jsapi;
   if (globalObject) {
     aes.emplace(globalObject, "Worker runnable",
                 isMainThread,
                 isMainThread ? nullptr : GetCurrentThreadJSContext());
+    jsapi = aes.ptr();
     cx = aes->cx();
   } else {
-    jsapi.emplace();
-    jsapi->Init();
+    maybeJSAPI.emplace();
+    maybeJSAPI->Init();
+    jsapi = maybeJSAPI.ptr();
     cx = jsapi->cx();
   }
+  jsapi->TakeOwnershipOfErrorReporting();
 
   
   
@@ -368,8 +372,8 @@ WorkerRunnable::Run()
   }
 
   result = WorkerRun(cx, mWorkerPrivate);
-  MOZ_ASSERT_IF(result, !JS_IsExceptionPending(cx));
-  JS_ReportPendingException(cx);
+  MOZ_ASSERT_IF(result, !jsapi->HasException());
+  jsapi->ReportException();
 
   
   
@@ -393,7 +397,7 @@ WorkerRunnable::Run()
   
   
   PostRun(cx, mWorkerPrivate, result);
-  MOZ_ASSERT(!JS_IsExceptionPending(cx));
+  MOZ_ASSERT(!jsapi->HasException());
 
   return result ? NS_OK : NS_ERROR_FAILURE;
 }
