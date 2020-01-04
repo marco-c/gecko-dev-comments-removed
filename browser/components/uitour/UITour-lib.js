@@ -234,8 +234,21 @@ if (typeof Mozilla == 'undefined') {
     });
   };
 
-  Mozilla.UITour.showFirefoxAccounts = function() {
-    _sendEvent('showFirefoxAccounts');
+  
+
+
+
+
+
+
+
+
+
+
+  Mozilla.UITour.showFirefoxAccounts = function(extraURLCampaignParams) {
+    _sendEvent('showFirefoxAccounts', {
+      extraURLCampaignParams: JSON.stringify(extraURLCampaignParams),
+    });
   };
 
   Mozilla.UITour.resetFirefox = function() {

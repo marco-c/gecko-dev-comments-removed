@@ -22,8 +22,50 @@ add_UITour_task(function* test_checkSyncSetup_enabled() {
 });
 
 
-add_UITour_task(function* test_firefoxAccounts() {
+add_UITour_task(function* test_firefoxAccountsNoParams() {
   yield gContentAPI.showFirefoxAccounts();
   yield BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
                                        "about:accounts?action=signup&entrypoint=uitour");
+});
+
+add_UITour_task(function* test_firefoxAccountsValidParams() {
+  yield gContentAPI.showFirefoxAccounts({ utm_foo: "foo", utm_bar: "bar" });
+  yield BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
+                                       "about:accounts?action=signup&entrypoint=uitour&utm_foo=foo&utm_bar=bar");
+});
+
+
+function* checkAboutAccountsNotLoaded() {
+  try {
+    yield waitForConditionPromise(() => {
+      return gBrowser.selectedBrowser.currentURI.spec.startsWith("about:accounts");
+    }, "Check if about:accounts opened");
+    ok(false, "No about:accounts tab should have opened");
+  } catch (ex) {
+    ok(true, "No about:accounts tab opened");
+  }
+}
+
+add_UITour_task(function* test_firefoxAccountsNonObject() {
+  
+  yield gContentAPI.showFirefoxAccounts(99);
+  yield checkAboutAccountsNotLoaded();
+});
+
+add_UITour_task(function* test_firefoxAccountsNonUtmPrefix() {
+  
+  yield gContentAPI.showFirefoxAccounts({ utm_foo: "foo", bar: "bar" });
+  yield checkAboutAccountsNotLoaded();
+});
+
+add_UITour_task(function* test_firefoxAccountsNonAlphaName() {
+  
+  yield gContentAPI.showFirefoxAccounts({ utm_foo: "foo", "utm_bar=": "bar" });
+  yield checkAboutAccountsNotLoaded();
+});
+
+add_UITour_task(function* test_firefoxAccountsNonAlphaValue() {
+  
+  yield gContentAPI.showFirefoxAccounts({ utm_foo: "foo&" });
+  yield checkAboutAccountsNotLoaded();
 });

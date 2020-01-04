@@ -610,8 +610,15 @@ this.UITour = {
       case "showFirefoxAccounts": {
         
         
+        let p = new URLSearchParams("action=signup&entrypoint=uitour");
         
-        browser.loadURI("about:accounts?action=signup&entrypoint=uitour");
+        if (!this._populateCampaignParams(p, data.extraURLCampaignParams)) {
+          log.warn("showFirefoxAccounts: invalid campaign args specified");
+          return false;
+        }
+
+        
+        browser.loadURI("about:accounts?" + p.toString());
         break;
       }
 
@@ -803,6 +810,52 @@ this.UITour = {
         break;
       }
     }
+  },
+
+  
+  
+  
+  
+  _populateCampaignParams: function(urlSearchParams, extraURLCampaignParams) {
+    
+    if (typeof extraURLCampaignParams == "undefined") {
+      
+      return true;
+    }
+    if (typeof extraURLCampaignParams != "string") {
+      log.warn("_populateCampaignParams: extraURLCampaignParams is not a string");
+      return false;
+    }
+    let campaignParams;
+    try {
+      if (extraURLCampaignParams) {
+        campaignParams = JSON.parse(extraURLCampaignParams);
+        if (typeof campaignParams != "object") {
+          log.warn("_populateCampaignParams: extraURLCampaignParams is not a stringified object");
+          return false;
+        }
+      }
+    } catch (ex) {
+      log.warn("_populateCampaignParams: extraURLCampaignParams is not a JSON object");
+      return false;
+    }
+    if (campaignParams) {
+      
+      let reSimpleString = /^[-_a-zA-Z0-9]*$/;
+      for (let name in campaignParams) {
+        let value = campaignParams[name];
+        if (typeof name != "string" || typeof value != "string" ||
+            !name.startsWith("utm_") ||
+            value.length == 0 ||
+            !reSimpleString.test(name) ||
+            !reSimpleString.test(value)) {
+          log.warn("_populateCampaignParams: invalid campaign param specified");
+          return false;
+        }
+        urlSearchParams.append(name, value);
+      }
+    }
+    return true;
   },
 
   setTelemetryBucket: function(aPageID) {
