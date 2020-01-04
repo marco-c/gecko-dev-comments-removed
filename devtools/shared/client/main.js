@@ -159,6 +159,7 @@ const UnsolicitedNotifications = {
   "tabListChanged": "tabListChanged",
   "reflowActivity": "reflowActivity",
   "addonListChanged": "addonListChanged",
+  "workerListChanged": "workerListChanged",
   "tabNavigated": "tabNavigated",
   "frameUpdate": "frameUpdate",
   "pageError": "pageError",
@@ -1483,8 +1484,17 @@ RootClient.prototype = {
 
 
 
+  listWorkers: DebuggerClient.requester({ type: "listWorkers" },
+                                        { telemetry: "LISTWORKERS" }),
+
+  
+
+
+
+
+
   listProcesses: DebuggerClient.requester({ type: "listProcesses" },
-                                       { telemetry: "LISTPROCESSES" }),
+                                          { telemetry: "LISTPROCESSES" }),
 
   
 
