@@ -113,10 +113,7 @@ AsyncLog(nsIInterceptedChannel *aInterceptedChannel,
          const nsACString& aMessageName, const nsTArray<nsString>& aParams)
 {
   MOZ_ASSERT(aInterceptedChannel);
-  
-  
-  
-  nsIConsoleReportCollector* reporter =
+  nsCOMPtr<nsIConsoleReportCollector> reporter =
     aInterceptedChannel->GetConsoleReportCollector();
   if (reporter) {
     reporter->AddConsoleReport(nsIScriptError::errorFlag,
