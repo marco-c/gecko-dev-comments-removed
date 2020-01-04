@@ -1573,14 +1573,19 @@ nsBidiPresUtils::RepositionFrame(nsIFrame* aFrame,
   
   
   
+  
+  
+  
   if (aFrame->StyleBorder()->mBoxDecorationBreak ==
         NS_STYLE_BOX_DECORATION_BREAK_SLICE) {
+    
     if (!aFrame->GetPrevContinuation()) {
       frameISize -= borderPadding.IStart(frameWM);
     }
     if (!aFrame->GetNextContinuation()) {
       frameISize -= borderPadding.IEnd(frameWM);
     }
+    
     if (!isFirst) {
       frameMargin.IStart(frameWM) = 0;
       borderPadding.IStart(frameWM) = 0;
@@ -1589,8 +1594,9 @@ nsBidiPresUtils::RepositionFrame(nsIFrame* aFrame,
       frameMargin.IEnd(frameWM) = 0;
       borderPadding.IEnd(frameWM) = 0;
     }
+    
+    frameISize += borderPadding.IStartEnd(frameWM);
   }
-  frameISize += borderPadding.IStartEnd(frameWM);
 
   nscoord icoord = 0;
   if (!IsBidiLeaf(aFrame)) {
