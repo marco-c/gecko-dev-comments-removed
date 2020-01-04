@@ -203,7 +203,7 @@ public:
 
 
   virtual void NotifyInputData(MediaStreamGraph* aGraph,
-                               const AudioDataValue* aBuffer, size_t aFrames,
+                               AudioDataValue* aBuffer, size_t aFrames,
                                uint32_t aChannels) = 0;
 };
 

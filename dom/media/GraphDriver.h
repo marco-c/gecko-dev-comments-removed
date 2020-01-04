@@ -392,9 +392,7 @@ public:
 
   
   static long DataCallback_s(cubeb_stream * aStream,
-                             void * aUser,
-                             const void * aInputBuffer,
-                             void * aOutputBuffer,
+                             void * aUser, void * aInputBuffer, void * aOutputBuffer,
                              long aFrames);
   static void StateCallback_s(cubeb_stream* aStream, void * aUser,
                               cubeb_state aState);
@@ -404,7 +402,7 @@ public:
 
 
 
-  long DataCallback(const AudioDataValue* aInputBuffer, AudioDataValue* aOutputBuffer, long aFrames);
+  long DataCallback(AudioDataValue* aInputBuffer, AudioDataValue* aOutputBuffer, long aFrames);
   
 
   void StateCallback(cubeb_state aState);

@@ -456,7 +456,7 @@ MediaEngineWebRTCMicrophoneSource::NotifyOutputData(MediaStreamGraph* aGraph,
 
 void
 MediaEngineWebRTCMicrophoneSource::NotifyInputData(MediaStreamGraph* aGraph,
-                                                   const AudioDataValue* aBuffer,
+                                                   AudioDataValue* aBuffer,
                                                    size_t aFrames,
                                                    uint32_t aChannels)
 {
