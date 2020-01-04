@@ -1205,25 +1205,6 @@ nsUrlClassifierDBService::Init()
   ReadTablesFromPrefs();
 
   
-  Preferences::AddStrongObserver(this, CHECK_MALWARE_PREF);
-  Preferences::AddStrongObserver(this, CHECK_PHISHING_PREF);
-  Preferences::AddStrongObserver(this, CHECK_TRACKING_PREF);
-  Preferences::AddStrongObserver(this, CHECK_TRACKING_PB_PREF);
-  Preferences::AddStrongObserver(this, CHECK_FORBIDDEN_PREF);
-  Preferences::AddStrongObserver(this, CHECK_BLOCKED_PREF);
-  Preferences::AddStrongObserver(this, GETHASH_NOISE_PREF);
-  Preferences::AddStrongObserver(this, CONFIRM_AGE_PREF);
-  Preferences::AddStrongObserver(this, PHISH_TABLE_PREF);
-  Preferences::AddStrongObserver(this, MALWARE_TABLE_PREF);
-  Preferences::AddStrongObserver(this, TRACKING_TABLE_PREF);
-  Preferences::AddStrongObserver(this, TRACKING_WHITELIST_TABLE_PREF);
-  Preferences::AddStrongObserver(this, FORBIDDEN_TABLE_PREF);
-  Preferences::AddStrongObserver(this, BLOCKED_TABLE_PREF);
-  Preferences::AddStrongObserver(this, DOWNLOAD_BLOCK_TABLE_PREF);
-  Preferences::AddStrongObserver(this, DOWNLOAD_ALLOW_TABLE_PREF);
-  Preferences::AddStrongObserver(this, DISALLOW_COMPLETION_TABLE_PREF);
-
-  
   nsresult rv;
   nsCOMPtr<nsICryptoHash> dummy = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1270,6 +1251,28 @@ nsUrlClassifierDBService::Init()
 
   observerService->AddObserver(this, "profile-before-change", false);
   observerService->AddObserver(this, "xpcom-shutdown-threads", false);
+
+  
+  
+  
+  
+  Preferences::AddStrongObserver(this, CHECK_MALWARE_PREF);
+  Preferences::AddStrongObserver(this, CHECK_PHISHING_PREF);
+  Preferences::AddStrongObserver(this, CHECK_TRACKING_PREF);
+  Preferences::AddStrongObserver(this, CHECK_TRACKING_PB_PREF);
+  Preferences::AddStrongObserver(this, CHECK_FORBIDDEN_PREF);
+  Preferences::AddStrongObserver(this, CHECK_BLOCKED_PREF);
+  Preferences::AddStrongObserver(this, GETHASH_NOISE_PREF);
+  Preferences::AddStrongObserver(this, CONFIRM_AGE_PREF);
+  Preferences::AddStrongObserver(this, PHISH_TABLE_PREF);
+  Preferences::AddStrongObserver(this, MALWARE_TABLE_PREF);
+  Preferences::AddStrongObserver(this, TRACKING_TABLE_PREF);
+  Preferences::AddStrongObserver(this, TRACKING_WHITELIST_TABLE_PREF);
+  Preferences::AddStrongObserver(this, FORBIDDEN_TABLE_PREF);
+  Preferences::AddStrongObserver(this, BLOCKED_TABLE_PREF);
+  Preferences::AddStrongObserver(this, DOWNLOAD_BLOCK_TABLE_PREF);
+  Preferences::AddStrongObserver(this, DOWNLOAD_ALLOW_TABLE_PREF);
+  Preferences::AddStrongObserver(this, DISALLOW_COMPLETION_TABLE_PREF);
 
   return NS_OK;
 }
