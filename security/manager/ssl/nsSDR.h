@@ -47,15 +47,6 @@ public:
 
 protected:
   virtual ~nsSecretDecoderRing();
-
-private:
-
-  
-
-
-
-  nsresult encode(const unsigned char *data, uint32_t dataLen, char **_retval);
-  nsresult decode(const char *data, unsigned char **result, uint32_t * _retval);
 };
 
 #endif 
