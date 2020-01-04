@@ -811,7 +811,7 @@ protected:
 
 
 
-class CairoImage final : public Image {
+class SourceSurfaceImage final : public Image {
 public:
   virtual already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override
   {
@@ -823,8 +823,8 @@ public:
 
   virtual gfx::IntSize GetSize() override { return mSize; }
 
-  CairoImage(const gfx::IntSize& aSize, gfx::SourceSurface* aSourceSurface);
-  ~CairoImage();
+  SourceSurfaceImage(const gfx::IntSize& aSize, gfx::SourceSurface* aSourceSurface);
+  ~SourceSurfaceImage();
 
 private:
   gfx::IntSize mSize;
