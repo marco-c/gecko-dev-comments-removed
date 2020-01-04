@@ -239,7 +239,7 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
 
     char *fwdPtr = path;
     char *urlPtr = path;
-    char *endPath = path;
+    char *lastslash = path;
     uint32_t traversal = 0;
     uint32_t special_ftp_len = 0;
 
@@ -257,17 +257,33 @@ net_CoalesceDirs(netCoalesceFlags flags, char* path)
     }
 
     
-    for(; (*fwdPtr != '\0') &&
-            (*fwdPtr != '?') &&
+    for(; (*fwdPtr != '\0') && 
+            (*fwdPtr != '?') && 
             (*fwdPtr != '#'); ++fwdPtr)
     {
     }
 
-    endPath = fwdPtr;
+    
+    
+    if (fwdPtr != path && *fwdPtr == '\0')
+    {
+        --fwdPtr;
+    }
+
+    
+    for(; (fwdPtr != path) && 
+            (*fwdPtr != '/'); --fwdPtr)
+    {
+    }
+    lastslash = fwdPtr;
     fwdPtr = path;
 
     
-    for(; fwdPtr != endPath; ++fwdPtr)
+    
+    for(; (*fwdPtr != '\0') && 
+            (*fwdPtr != '?') && 
+            (*fwdPtr != '#') &&
+            (*lastslash == '\0' || fwdPtr != lastslash); ++fwdPtr)
     {
         if (*fwdPtr == '%' && *(fwdPtr+1) == '2' && 
             (*(fwdPtr+2) == 'E' || *(fwdPtr+2) == 'e'))
