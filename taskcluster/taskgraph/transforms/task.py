@@ -8,6 +8,8 @@ transformations is generic to any kind of task, but abstracts away some of the
 complexities of worker implementations, scopes, and treeherder annotations.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from taskgraph.util.treeherder import split_symbol
 from taskgraph.transforms.base import (
     validate_schema,
@@ -23,38 +25,40 @@ taskref_or_string = Any(
 
 task_description_schema = Schema({
     
-    'label': basestring,
+    Required('label'): basestring,
 
     
-    'description': basestring,
+    Required('description'): basestring,
 
     
-    'attributes': {basestring: object},
-
-    
-    
-    
-    'dependencies': {basestring: object},
+    Optional('attributes'): {basestring: object},
 
     
     
-    'expires-after': basestring,
-    'deadline-after': basestring,
+    
+    Optional('dependencies'): {basestring: object},
 
     
     
-    'routes': [basestring],
+    Optional('expires-after'): basestring,
+    Optional('deadline-after'): basestring,
 
     
     
-    'scopes': [basestring],
-
-    
-    'extra': {basestring: object},
+    Optional('routes'): [basestring],
 
     
     
-    'treeherder': {
+    Optional('scopes'): [basestring],
+
+    
+    Optional('extra'): {basestring: object},
+
+    
+    
+    
+    
+    Optional('treeherder'): {
         
         'symbol': basestring,
 
@@ -78,7 +82,7 @@ task_description_schema = Schema({
 
     
     'worker': Any({
-        'implementation': Any('docker-worker', 'docker-engine'),
+        Required('implementation'): Any('docker-worker', 'docker-engine'),
 
         
         
@@ -88,12 +92,14 @@ task_description_schema = Schema({
 
         
         Required('relengapi-proxy', default=False): bool,
+        Required('taskcluster-proxy', default=False): bool,
         Required('allow-ptrace', default=False): bool,
         Required('loopback-video', default=False): bool,
         Required('loopback-audio', default=False): bool,
+        Optional('superseder-url'): basestring,
 
         
-        'caches': [{
+        Optional('caches'): [{
             
             'type': 'persistent',
 
@@ -106,7 +112,7 @@ task_description_schema = Schema({
         }],
 
         
-        'artifacts': [{
+        Optional('artifacts'): [{
             
             'type': Any('file', 'directory'),
 
@@ -119,7 +125,7 @@ task_description_schema = Schema({
         }],
 
         
-        'env': {basestring: taskref_or_string},
+        Required('env', default={}): {basestring: taskref_or_string},
 
         
         'command': [taskref_or_string],
@@ -127,14 +133,14 @@ task_description_schema = Schema({
         
         'max-run-time': int,
     }, {
-        'implementation': 'generic-worker',
+        Required('implementation'): 'generic-worker',
 
         
         'command': [basestring],
 
         
         
-        'artifacts': [{
+        Optional('artifacts'): [{
             
             'type': Any('file', 'directory'),
 
@@ -143,13 +149,14 @@ task_description_schema = Schema({
         }],
 
         
-        'env': {basestring: taskref_or_string},
+        Required('env', default={}): {basestring: taskref_or_string},
 
         
         'max-run-time': int,
     }, {
-        'implementation': 'buildbot-bridge',
+        Required('implementation'): 'buildbot-bridge',
 
+        
         
         'buildername': basestring,
         'sourcestamp': {
@@ -298,37 +305,37 @@ def validate(config, tasks):
 def build_task(config, tasks):
     for task in tasks:
         provisioner_id, worker_type = task['worker-type'].split('/', 1)
-        routes = task['routes']
-        scopes = task['scopes']
+        routes = task.get('routes', [])
+        scopes = task.get('scopes', [])
 
         
-        extra = task['extra']
-        extra['treeherderEnv'] = task['treeherder']['environments']
+        extra = task.get('extra', {})
+        task_th = task.get('treeherder')
+        if task_th:
+            extra['treeherderEnv'] = task_th['environments']
 
-        task_th = task['treeherder']
-        treeherder = extra.setdefault('treeherder', {})
+            treeherder = extra.setdefault('treeherder', {})
 
-        machine_platform, collection = task_th['platform'].split('/', 1)
-        treeherder['machine'] = {'platform': machine_platform}
-        treeherder['collection'] = {collection: True}
+            machine_platform, collection = task_th['platform'].split('/', 1)
+            treeherder['machine'] = {'platform': machine_platform}
+            treeherder['collection'] = {collection: True}
 
-        groupSymbol, symbol = split_symbol(task_th['symbol'])
-        if groupSymbol != '?':
+            groupSymbol, symbol = split_symbol(task_th['symbol'])
             treeherder['groupSymbol'] = groupSymbol
             if groupSymbol not in GROUP_NAMES:
                 raise Exception(UNKNOWN_GROUP_NAME.format(groupSymbol))
             treeherder['groupName'] = GROUP_NAMES[groupSymbol]
-        treeherder['symbol'] = symbol
-        treeherder['jobKind'] = task_th['kind']
-        treeherder['tier'] = task_th['tier']
+            treeherder['symbol'] = symbol
+            treeherder['jobKind'] = task_th['kind']
+            treeherder['tier'] = task_th['tier']
 
-        routes.extend([
-            '{}.v2.{}.{}.{}'.format(root,
-                                    config.params['project'],
-                                    config.params['head_rev'],
-                                    config.params['pushlog_id'])
-            for root in 'tc-treeherder', 'tc-treeherder-stage'
-        ])
+            routes.extend([
+                '{}.v2.{}.{}.{}'.format(root,
+                                        config.params['project'],
+                                        config.params['head_rev'],
+                                        config.params['pushlog_id'])
+                for root in 'tc-treeherder', 'tc-treeherder-stage'
+            ])
 
         task_def = {
             'provisionerId': provisioner_id,
