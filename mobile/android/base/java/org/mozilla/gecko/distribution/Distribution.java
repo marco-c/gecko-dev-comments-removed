@@ -643,7 +643,7 @@ public class Distribution {
     private boolean copyAndCheckAPKDistribution() {
         try {
             
-            if (copyFiles()) {
+            if (copyFilesFromPackagedAssets()) {
                 
                 
                 return checkDataDistribution();
@@ -721,9 +721,12 @@ public class Distribution {
 
 
 
-    private boolean copyFiles() throws IOException {
+    private boolean copyFilesFromPackagedAssets() throws IOException {
         final File applicationPackage = new File(packagePath);
         final ZipFile zip = new ZipFile(applicationPackage);
+
+        final String assetsPrefix = "assets/";
+        final String fullPrefix = assetsPrefix + DISTRIBUTION_PATH;
 
         boolean distributionSet = false;
         try {
@@ -739,11 +742,14 @@ public class Distribution {
                     continue;
                 }
 
-                if (!name.startsWith(DISTRIBUTION_PATH)) {
+                
+                if (!name.startsWith(fullPrefix)) {
                     continue;
                 }
 
-                final File outFile = getDataFile(name);
+                
+                final String nameWithoutPrefix = name.substring(assetsPrefix.length());
+                final File outFile = getDataFile(nameWithoutPrefix);
                 if (outFile == null) {
                     continue;
                 }
