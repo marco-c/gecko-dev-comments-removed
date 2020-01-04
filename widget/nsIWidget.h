@@ -335,7 +335,6 @@ class nsIWidget : public nsISupports {
     typedef mozilla::LayoutDeviceIntMargin LayoutDeviceIntMargin;
     typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
     typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
-    typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
     typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
 
     
@@ -1259,8 +1258,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual void DrawWindowOverlay(LayerManagerComposite* aManager,
-                                   LayoutDeviceIntRect aRect) = 0;
+    virtual void DrawWindowOverlay(LayerManagerComposite* aManager, nsIntRect aRect) = 0;
 
     
 
@@ -1502,7 +1500,7 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual bool ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) = 0;
+    virtual bool ShowsResizeIndicator(nsIntRect* aResizerRect) = 0;
 
     
 

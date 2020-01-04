@@ -129,8 +129,6 @@ struct KeyBindingsCommand
 class nsCocoaUtils
 {
   typedef mozilla::gfx::SourceSurface SourceSurface;
-  typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
-  typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
 
 public:
 
@@ -154,20 +152,20 @@ public:
     return NSToIntRound(aPts * aBackingScale);
   }
 
-  static LayoutDeviceIntPoint
+  static nsIntPoint
   CocoaPointsToDevPixels(const NSPoint& aPt, CGFloat aBackingScale)
   {
-    return LayoutDeviceIntPoint(NSToIntRound(aPt.x * aBackingScale),
-                                NSToIntRound(aPt.y * aBackingScale));
+    return nsIntPoint(NSToIntRound(aPt.x * aBackingScale),
+                      NSToIntRound(aPt.y * aBackingScale));
   }
 
-  static LayoutDeviceIntRect
+  static nsIntRect
   CocoaPointsToDevPixels(const NSRect& aRect, CGFloat aBackingScale)
   {
-    return LayoutDeviceIntRect(NSToIntRound(aRect.origin.x * aBackingScale),
-                               NSToIntRound(aRect.origin.y * aBackingScale),
-                               NSToIntRound(aRect.size.width * aBackingScale),
-                               NSToIntRound(aRect.size.height * aBackingScale));
+    return nsIntRect(NSToIntRound(aRect.origin.x * aBackingScale),
+                     NSToIntRound(aRect.origin.y * aBackingScale),
+                     NSToIntRound(aRect.size.width * aBackingScale),
+                     NSToIntRound(aRect.size.height * aBackingScale));
   }
 
   static CGFloat
@@ -184,20 +182,8 @@ public:
                        (CGFloat)aPt.y / aBackingScale);
   }
 
-  
-  
   static NSRect
-  UntypedDevPixelsToCocoaPoints(const nsIntRect& aRect, CGFloat aBackingScale)
-  {
-    return NSMakeRect((CGFloat)aRect.x / aBackingScale,
-                      (CGFloat)aRect.y / aBackingScale,
-                      (CGFloat)aRect.width / aBackingScale,
-                      (CGFloat)aRect.height / aBackingScale);
-  }
-
-  static NSRect
-  DevPixelsToCocoaPoints(const LayoutDeviceIntRect& aRect,
-                         CGFloat aBackingScale)
+  DevPixelsToCocoaPoints(const nsIntRect& aRect, CGFloat aBackingScale)
   {
     return NSMakeRect((CGFloat)aRect.x / aBackingScale,
                       (CGFloat)aRect.y / aBackingScale,
@@ -231,8 +217,8 @@ public:
   
   static nsIntRect CocoaRectToGeckoRect(const NSRect &cocoaRect);
 
-  static mozilla::LayoutDeviceIntRect CocoaRectToGeckoRectDevPix(
-    const NSRect& aCocoaRect, CGFloat aBackingScale);
+  static nsIntRect CocoaRectToGeckoRectDevPix(const NSRect &aCocoaRect,
+                                              CGFloat aBackingScale);
 
   
   
