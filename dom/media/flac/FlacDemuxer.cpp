@@ -448,6 +448,9 @@ public:
 
   AudioInfo Info() const { return mParser.mInfo; }
 
+  
+  MetadataTags* GetTags() const { return mParser.GetTags(); }
+
 private:
   bool GetNextFrame(MediaResourceIndex& aResource)
   {
@@ -693,7 +696,14 @@ FlacTrackDemuxer::GetInfo() const
 {
   if (mParser->Info().IsValid()) {
     
-    return mParser->Info().Clone();
+    UniquePtr<TrackInfo> info = mParser->Info().Clone();
+    nsAutoPtr<MetadataTags> tags(mParser->GetTags());
+    if (tags) {
+      for (auto iter = tags->Iter(); !iter.Done(); iter.Next()) {
+        info->mTags.AppendElement(MetadataTag(iter.Key(), iter.Data()));
+      }
+    }
+    return info;
   } else if (mParser->FirstFrame().Info().IsValid()) {
     
     UniquePtr<TrackInfo> info = mParser->FirstFrame().Info().Clone();
