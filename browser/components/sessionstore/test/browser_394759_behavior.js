@@ -2,62 +2,63 @@
 
 
 
-function test() {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function testWindows(windowsToOpen, expectedResults) {
+  return Task.spawn(function*() {
+    for (let winData of windowsToOpen) {
+      let features = "chrome,dialog=no," +
+                     (winData.isPopup ? "all=no" : "all");
+      let url = "http://example.com/?window=" + windowsToOpen.length;
+
+      let openWindowPromise = BrowserTestUtils.waitForNewWindow();
+      openDialog(getBrowserURL(), "", features, url);
+      let win = yield openWindowPromise;
+      yield BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
+
+      if (win.gMultiProcessBrowser) {
+        let tab = win.gBrowser.selectedTab;
+        yield promiseTabRestored(tab);
+      }
+
+      yield BrowserTestUtils.closeWindow(win);
+    }
+
+    let closedWindowData = JSON.parse(ss.getClosedWindowData());
+    let numPopups = closedWindowData.filter(function(el, i, arr) {
+      return el.isPopup;
+    }).length;
+    let numNormal = ss.getClosedWindowCount() - numPopups;
+    
+    let oResults = navigator.platform.match(/Mac/) ? expectedResults.mac
+                                                   : expectedResults.other;
+    is(numPopups, oResults.popup,
+       "There were " + oResults.popup + " popup windows to reopen");
+    is(numNormal, oResults.normal,
+       "There were " + oResults.normal + " normal windows to repoen");
+  });
+}
+
+add_task(function* test_closed_window_states() {
   
   
   
   requestLongerTimeout(2);
-
-  waitForExplicitFinish();
-
-  
-  function openWindowRec(windowsToOpen, expectedResults, recCallback) {
-    
-    if (!windowsToOpen.length) {
-      let closedWindowData = JSON.parse(ss.getClosedWindowData());
-      let numPopups = closedWindowData.filter(function(el, i, arr) {
-        return el.isPopup;
-      }).length;
-      let numNormal = ss.getClosedWindowCount() - numPopups;
-      
-      let oResults = navigator.platform.match(/Mac/) ? expectedResults.mac
-                                                     : expectedResults.other;
-      is(numPopups, oResults.popup,
-         "There were " + oResults.popup + " popup windows to repoen");
-      is(numNormal, oResults.normal,
-         "There were " + oResults.normal + " normal windows to repoen");
-
-      
-      executeSoon(recCallback);
-      return;
-    }
-
-    
-    let winData = windowsToOpen.shift();
-    let settings = "chrome,dialog=no," +
-                   (winData.isPopup ? "all=no" : "all");
-    let url = "http://example.com/?window=" + windowsToOpen.length;
-
-    provideWindow(function onTestURLLoaded(win) {
-      let tabReady = () => {
-        win.close();
-        
-        executeSoon(function() {
-          openWindowRec(windowsToOpen, expectedResults, recCallback);
-        });
-      };
-
-      if (win.gMultiProcessBrowser) {
-        let tab = win.gBrowser.selectedTab;
-        tab.addEventListener("SSTabRestored", function onTabRestored() {
-          tab.removeEventListener("SSTabRestored", onTabRestored);
-          tabReady();
-        });
-      } else {
-        tabReady();
-      }
-    }, url, settings);
-  }
 
   let windowsToOpen = [{isPopup: false},
                        {isPopup: false},
@@ -66,6 +67,10 @@ function test() {
                        {isPopup: true}];
   let expectedResults = {mac: {popup: 3, normal: 0},
                          other: {popup: 3, normal: 1}};
+
+  yield testWindows(windowsToOpen, expectedResults);
+
+
   let windowsToOpen2 = [{isPopup: false},
                         {isPopup: false},
                         {isPopup: false},
@@ -73,7 +78,6 @@ function test() {
                         {isPopup: false}];
   let expectedResults2 = {mac: {popup: 0, normal: 3},
                           other: {popup: 0, normal: 3}};
-  openWindowRec(windowsToOpen, expectedResults, function() {
-    openWindowRec(windowsToOpen2, expectedResults2, finish);
-  });
-}
+
+  yield testWindows(windowsToOpen2, expectedResults2);
+});

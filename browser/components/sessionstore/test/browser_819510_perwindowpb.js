@@ -82,7 +82,7 @@ add_task(function* test_3() {
   is(curState.windows[2].isPrivate, true, "Window 2 is private");
   is(curState.selectedWindow, 4, "Last window opened is the one selected");
 
-  yield promiseWindowClosed(normalWindow);
+  yield BrowserTestUtils.closeWindow(normalWindow);
 
   
   

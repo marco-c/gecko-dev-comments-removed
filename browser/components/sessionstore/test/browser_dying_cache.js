@@ -31,7 +31,7 @@ add_task(function* test() {
   let closedTabData = ss.getClosedTabData(win);
 
   
-  yield promiseWindowClosed(win);
+  yield BrowserTestUtils.closeWindow(win);
 
   
   
