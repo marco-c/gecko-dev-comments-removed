@@ -58,10 +58,6 @@ class TransportLayer : public sigslot::has_slots<> {
   TransportLayer *downward() { return downward_; }
 
   
-  
-  nsresult RunOnThread(nsIRunnable *event);
-
-  
   State state() const { return state_; }
   
   virtual TransportResult SendPacket(const unsigned char *data, size_t len) = 0;
