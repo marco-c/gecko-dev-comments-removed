@@ -317,37 +317,6 @@ function getLocale() {
 
 
 
-function ensurePrincipal(principalOrURI) {
-  if (principalOrURI instanceof Ci.nsIPrincipal)
-    return principalOrURI;
-
-  logger.warn("Deprecated API call, please pass a non-null nsIPrincipal instead of an nsIURI");
-
-  
-  if (!principalOrURI) {
-    return Services.scriptSecurityManager.getSystemPrincipal();
-  }
-
-  if (principalOrURI instanceof Ci.nsIURI) {
-    return Services.scriptSecurityManager.createCodebasePrincipal(principalOrURI, {
-      inBrowser: true
-    });
-  }
-
-  
-  return principalOrURI;
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3215,14 +3184,13 @@ this.AddonManager = {
   },
 
   isInstallAllowed: function(aType, aInstallingPrincipal) {
-    return AddonManagerInternal.isInstallAllowed(aType, ensurePrincipal(aInstallingPrincipal));
+    return AddonManagerInternal.isInstallAllowed(aType, aInstallingPrincipal);
   },
 
-  installAddonsFromWebpage: function(aType, aBrowser,
-                                                                 aInstallingPrincipal,
-                                                                 aInstalls) {
+  installAddonsFromWebpage: function(aType, aBrowser, aInstallingPrincipal,
+                                     aInstalls) {
     AddonManagerInternal.installAddonsFromWebpage(aType, aBrowser,
-                                                  ensurePrincipal(aInstallingPrincipal),
+                                                  aInstallingPrincipal,
                                                   aInstalls);
   },
 
