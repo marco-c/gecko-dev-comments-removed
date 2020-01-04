@@ -19,6 +19,7 @@
 class nsPerformanceGroup;
 class nsPerformanceGroupDetails;
 
+typedef mozilla::Vector<RefPtr<js::PerformanceGroup>> JSGroupVector;
 typedef mozilla::Vector<RefPtr<nsPerformanceGroup>> GroupVector;
 
 
@@ -191,8 +192,8 @@ protected:
 
 
 
-  bool GetPerformanceGroups(JSContext* cx, js::PerformanceGroupVector&);
-  static bool GetPerformanceGroupsCallback(JSContext* cx, js::PerformanceGroupVector&, void* closure);
+  bool GetPerformanceGroups(JSContext* cx, JSGroupVector&);
+  static bool GetPerformanceGroupsCallback(JSContext* cx, JSGroupVector&, void* closure);
 
 
 
@@ -328,10 +329,8 @@ protected:
 
 
 
-  static bool StopwatchCommitCallback(uint64_t iteration,
-                                      js::PerformanceGroupVector& recentGroups,
-                                      void* closure);
-  bool StopwatchCommit(uint64_t iteration, js::PerformanceGroupVector& recentGroups);
+  static bool StopwatchCommitCallback(uint64_t iteration, JSGroupVector& recentGroups, void* closure);
+  bool StopwatchCommit(uint64_t iteration, JSGroupVector& recentGroups);
 
   
 
