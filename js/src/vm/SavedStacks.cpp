@@ -1068,7 +1068,8 @@ SavedStacks::init()
 }
 
 bool
-SavedStacks::saveCurrentStack(JSContext* cx, MutableHandleSavedFrame frame, unsigned maxFrameCount)
+SavedStacks::saveCurrentStack(JSContext* cx, MutableHandleSavedFrame frame,
+                              JS::StackCapture&& capture )
 {
     MOZ_ASSERT(initialized());
     MOZ_RELEASE_ASSERT(cx->compartment());
@@ -1085,7 +1086,7 @@ SavedStacks::saveCurrentStack(JSContext* cx, MutableHandleSavedFrame frame, unsi
 
     AutoSPSEntry psuedoFrame(cx->runtime(), "js::SavedStacks::saveCurrentStack");
     FrameIter iter(cx);
-    return insertFrames(cx, iter, frame, maxFrameCount);
+    return insertFrames(cx, iter, frame, mozilla::Move(capture));
 }
 
 bool
@@ -1137,9 +1138,49 @@ SavedStacks::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
            pcLocationMap.sizeOfExcludingThis(mallocSizeOf);
 }
 
+
+
+
+
+static inline bool
+captureIsSatisfied(JSContext* cx, JSPrincipals* principals, const JSAtom* source,
+                   JS::StackCapture& capture)
+{
+    class Matcher
+    {
+        JSContext* cx_;
+        JSPrincipals* framePrincipals_;
+        const JSAtom* frameSource_;
+
+      public:
+        Matcher(JSContext* cx, JSPrincipals* principals, const JSAtom* source)
+          : cx_(cx)
+          , framePrincipals_(principals)
+          , frameSource_(source)
+        { }
+
+        bool match(JS::FirstSubsumedFrame& target) {
+            auto subsumes = cx_->runtime()->securityCallbacks->subsumes;
+            return (!subsumes || subsumes(target.principals, framePrincipals_)) &&
+                   (!target.ignoreSelfHosted || frameSource_ != cx_->names().selfHosted);
+        }
+
+        bool match(JS::MaxFrames& target) {
+            return target.maxFrames == 1;
+        }
+
+        bool match(JS::AllFrames&) {
+            return false;
+        }
+    };
+
+    Matcher m(cx, principals, source);
+    return capture.match(m);
+}
+
 bool
 SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFrame frame,
-                          unsigned maxFrameCount)
+                          JS::StackCapture&& capture)
 {
     
     
@@ -1216,9 +1257,10 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
 
         
         
-        if (maxFrameCount == 0)
+        if (capture.is<JS::AllFrames>())
             parentIsInCache = iter.hasCachedSavedFrame();
 
+        auto principals = iter.compartment()->principals();
         auto displayAtom = iter.isFunctionFrame() ? iter.functionDisplayAtom() : nullptr;
         if (!stackChain->emplaceBack(location.source(),
                                      location.line(),
@@ -1226,7 +1268,7 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
                                      displayAtom,
                                      nullptr,
                                      nullptr,
-                                     iter.compartment()->principals(),
+                                     principals,
                                      LiveSavedFrameCache::getFramePtr(iter),
                                      iter.pc(),
                                      &activation))
@@ -1235,14 +1277,14 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
             return false;
         }
 
-        ++iter;
-
-        if (maxFrameCount == 1) {
+        if (captureIsSatisfied(cx, principals, location.source(), capture)) {
             
             
             asyncStack.set(nullptr);
             break;
         }
+
+        ++iter;
 
         if (parentIsInCache &&
             !iter.done() &&
@@ -1256,19 +1298,21 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
                 break;
         }
 
-        
-        if (maxFrameCount == 0)
-            continue;
-
-        maxFrameCount--;
+        if (capture.is<JS::MaxFrames>())
+            capture.as<JS::MaxFrames>().maxFrames--;
     }
 
     
     
     
     RootedSavedFrame parentFrame(cx, cachedFrame);
-    if (asyncStack && !adoptAsyncStack(cx, asyncStack, asyncCause, &parentFrame, maxFrameCount))
-        return false;
+    if (asyncStack && !capture.is<JS::FirstSubsumedFrame>()) {
+        unsigned maxAsyncFrames = capture.is<JS::MaxFrames>()
+            ? capture.as<JS::MaxFrames>().maxFrames
+            : ASYNC_STACK_MAX_FRAME_COUNT;
+        if (!adoptAsyncStack(cx, asyncStack, asyncCause, &parentFrame, maxAsyncFrames))
+            return false;
+    }
 
     
     
@@ -1279,7 +1323,7 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
         if (!parentFrame)
             return false;
 
-        if (maxFrameCount == 0 && lookup->framePtr && parentFrame != cachedFrame) {
+        if (capture.is<JS::AllFrames>() && lookup->framePtr && parentFrame != cachedFrame) {
             auto* cache = lookup->activation->getLiveSavedFrameCache(cx);
             if (!cache || !cache->insert(cx, *lookup->framePtr, lookup->pc, parentFrame))
                 return false;
