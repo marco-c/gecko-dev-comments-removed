@@ -69,13 +69,7 @@ struct ArgumentsData
 
     uint32_t    numArgs;
 
-    
-    uint32_t    dataBytes;
-
     RareArgumentsData* rareData;
-
-    
-    JSScript*   script;
 
     
 
@@ -95,6 +89,10 @@ struct ArgumentsData
     const GCPtrValue* begin() const { return args; }
     GCPtrValue* end() { return args + numArgs; }
     const GCPtrValue* end() const { return args + numArgs; }
+
+    static size_t bytesRequired(size_t numArgs) {
+        return offsetof(ArgumentsData, args) + numArgs * sizeof(Value);
+    }
 };
 
 
@@ -220,11 +218,6 @@ class ArgumentsObject : public NativeObject
     }
 
     
-    JSScript* containingScript() const {
-        return data()->script;
-    }
-
-    
     bool hasOverriddenLength() const {
         const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
         return v.toInt32() & LENGTH_OVERRIDDEN_BIT;
@@ -342,10 +335,13 @@ class ArgumentsObject : public NativeObject
 
 
     size_t sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const {
-        return mallocSizeOf(data());
+        if (!data()) 
+            return 0;
+        return mallocSizeOf(data()) + mallocSizeOf(maybeRareData());
     }
     size_t sizeOfData() const {
-        return data()->dataBytes;
+        return ArgumentsData::bytesRequired(data()->numArgs) +
+               (maybeRareData() ? RareArgumentsData::bytesRequired(initialLength()) : 0);
     }
 
     static void finalize(FreeOp* fop, JSObject* obj);
@@ -392,8 +388,8 @@ class MappedArgumentsObject : public ArgumentsObject
   public:
     static const Class class_;
 
-    const js::Value& callee() const {
-        return getFixedSlot(CALLEE_SLOT);
+    JSFunction& callee() const {
+        return getFixedSlot(CALLEE_SLOT).toObject().as<JSFunction>();
     }
 
     bool hasOverriddenCallee() const {
