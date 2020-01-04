@@ -16,7 +16,6 @@ Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://services-common/utils.js");
 
 
-
 const MAX_SESSION_AGE_MS = 7 * 24 * 60 * 60 * 1000; 
 const STARTUP_RETRY_INTERVAL_MS = 5000;
 
@@ -344,8 +343,7 @@ SessionRecorder.prototype = Object.freeze({
       this._log.debug("Recording last sessions as #" + count + ".");
       this._prefs.set("previous." + count, JSON.stringify(obj));
     } catch (ex) {
-      this._log.warn("Exception when migrating last session: " +
-                     CommonUtils.exceptionStr(ex));
+      this._log.warn("Exception when migrating last session", ex);
     } finally {
       this._log.debug("Resetting prefs from last session.");
       for (let pref of this._CURRENT_PREFS) {
