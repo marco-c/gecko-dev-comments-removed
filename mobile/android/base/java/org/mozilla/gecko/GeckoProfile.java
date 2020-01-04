@@ -76,6 +76,7 @@ public final class GeckoProfile {
     
     private static final String SESSION_FILE = "sessionstore.js";
     private static final String SESSION_FILE_BACKUP = "sessionstore.bak";
+    private static final long MAX_BACKUP_FILE_AGE = 1000 * 3600 * 24; 
 
     private static final HashMap<String, GeckoProfile> sProfileCache = new HashMap<String, GeckoProfile>();
     private static String sDefaultProfileName;
@@ -770,11 +771,20 @@ public final class GeckoProfile {
 
 
 
-    public void moveSessionFile() {
-        File sessionFile = getFile(SESSION_FILE);
-        if (sessionFile != null && sessionFile.exists()) {
-            File sessionFileBackup = getFile(SESSION_FILE_BACKUP);
-            sessionFile.renameTo(sessionFileBackup);
+
+
+    public void updateSessionFile(boolean shouldRestore) {
+        File sessionFileBackup = getFile(SESSION_FILE_BACKUP);
+        if (!shouldRestore) {
+            File sessionFile = getFile(SESSION_FILE);
+            if (sessionFile != null && sessionFile.exists()) {
+                sessionFile.renameTo(sessionFileBackup);
+            }
+        } else {
+            if (sessionFileBackup != null && sessionFileBackup.exists() &&
+                    System.currentTimeMillis() - sessionFileBackup.lastModified() > MAX_BACKUP_FILE_AGE) {
+                sessionFileBackup.delete();
+            }
         }
     }
 

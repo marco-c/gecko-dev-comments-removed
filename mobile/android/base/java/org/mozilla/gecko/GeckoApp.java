@@ -1537,10 +1537,7 @@ public abstract class GeckoApp
         }
 
         
-        
-        if (!mShouldRestore) {
-            getProfile().moveSessionFile();
-        }
+        getProfile().updateSessionFile(mShouldRestore);
 
         recordStartupActionTelemetry(passedUri, action);
 
