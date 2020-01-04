@@ -393,7 +393,11 @@ protected:
 
   
   virtual AsyncPanZoomController* MakeAPZCInstance(uint64_t aLayersId,
-                                                   GeckoContentController* aController);
+                                                   GeckoContentController* aController,
+                                                   TaskThrottler& aPaintThrottler);
+public:
+  
+  virtual TimeStamp GetFrameTime();
 
 public:
   

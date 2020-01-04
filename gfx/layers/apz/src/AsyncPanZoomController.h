@@ -385,13 +385,10 @@ public:
 
 protected:
   
-
-  
-  virtual TimeStamp GetFrameTime() const;
-
-protected:
-  
   virtual ~AsyncPanZoomController();
+
+  
+  TimeStamp GetFrameTime() const;
 
   
 
@@ -659,6 +656,13 @@ protected:
   nsRefPtr<GeckoContentController> mGeckoContentController;
   nsRefPtr<GestureEventListener> mGestureEventListener;
   mutable Monitor mRefPtrMonitor;
+
+  
+  
+  
+  
+  
+  Atomic<APZCTreeManager*> mTreeManager;
 
   
   already_AddRefed<GeckoContentController> GetGeckoContentController() const;
@@ -930,10 +934,6 @@ public:
 private:
   
   
-  
-  
-  
-  Atomic<APZCTreeManager*> mTreeManager;
 
   nsRefPtr<AsyncPanZoomController> mParent;
 
