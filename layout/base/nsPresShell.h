@@ -68,7 +68,7 @@ typedef nsClassHashtable<nsUint64HashKey, mozilla::CSSIntRegion> VisibleRegions;
 
 
 
-#define PAINTLOCK_EVENT_DELAY 250
+#define PAINTLOCK_EVENT_DELAY 5
 
 class PresShell final : public nsIPresShell,
                         public nsStubDocumentObserver,
