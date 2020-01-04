@@ -1764,22 +1764,16 @@ DocAccessible::UpdateTreeOnInsertion(Accessible* aContainer)
 
   
   
-  if (!(updateFlags & eAlertAccessible)) {
-    
-    
+  if (!(updateFlags & eAlertAccessible) &&
+      (aContainer->IsAlert() || aContainer->IsInsideAlert())) {
     Accessible* ancestor = aContainer;
-    while (ancestor) {
-      if (ancestor->ARIARole() == roles::ALERT) {
+    do {
+      if (ancestor->IsAlert()) {
         FireDelayedEvent(nsIAccessibleEvent::EVENT_ALERT, ancestor);
         break;
       }
-
-      
-      if (ancestor == this)
-        break;
-
-      ancestor = ancestor->Parent();
     }
+    while ((ancestor = ancestor->Parent()));
   }
 
   MaybeNotifyOfValueChange(aContainer);
