@@ -21,6 +21,16 @@
 #include "nsTraceRefcnt.h"
 #endif
 
+
+
+
+
+
+#if defined(MOZ_CRASHREPORTER) && defined(MOZILLA_INTERNAL_API) && \
+    !defined(MOZILLA_EXTERNAL_LINKAGE)
+#  define MOZ_CRASH_CRASHREPORT
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,6 +132,15 @@ __declspec(dllimport) void* __stdcall GetCurrentProcess(void);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef MOZ_CRASH_CRASHREPORT
+
+
+
+
+
+void MOZ_ReportMozCrashToCrashReporter(const char* aStr);
+#endif 
 
 
 
@@ -249,7 +268,15 @@ __declspec(noreturn) __inline void MOZ_NoReturn() {}
 
 
 #ifndef DEBUG
-#  define MOZ_CRASH(...) MOZ_REALLY_CRASH()
+#  ifdef MOZ_CRASH_CRASHREPORT
+#    define MOZ_CRASH(...) \
+       do { \
+         MOZ_ReportMozCrashToCrashReporter("" __VA_ARGS__); \
+         MOZ_REALLY_CRASH(); \
+       } while (0)
+#  else
+#    define MOZ_CRASH(...) MOZ_REALLY_CRASH()
+#  endif
 #else
 #  define MOZ_CRASH(...) \
      do { \
@@ -509,5 +536,6 @@ struct AssertionConditionType
 #endif
 
 #undef MOZ_DUMP_ASSERTION_STACK
+#undef MOZ_CRASH_CRASHREPORT
 
 #endif
