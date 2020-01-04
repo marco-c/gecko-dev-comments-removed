@@ -2169,11 +2169,19 @@ IMENotification::TextChangeDataBase::MergeWith(
   
   mCausedOnlyByComposition =
     newData.mCausedOnlyByComposition && oldData.mCausedOnlyByComposition;
-  
-  
 
+  
+  
+  mIncludingChangesWithoutComposition =
+    newData.mIncludingChangesWithoutComposition ||
+      oldData.mIncludingChangesWithoutComposition;
+
+  
+  
   if (!newData.mCausedOnlyByComposition &&
       !newData.mIncludingChangesDuringComposition) {
+    MOZ_ASSERT(newData.mIncludingChangesWithoutComposition);
+    MOZ_ASSERT(mIncludingChangesWithoutComposition);
     
     
     

@@ -736,6 +736,9 @@ struct IMENotification final
     
     
     bool mIncludingChangesDuringComposition;
+    
+    
+    bool mIncludingChangesWithoutComposition;
 
     uint32_t OldLength() const
     {
@@ -809,6 +812,8 @@ struct IMENotification final
       mCausedOnlyByComposition = aCausedByComposition;
       mIncludingChangesDuringComposition =
         !aCausedByComposition && aOccurredDuringComposition;
+      mIncludingChangesWithoutComposition =
+        !aCausedByComposition && !aOccurredDuringComposition;
     }
   };
 
