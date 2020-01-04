@@ -322,6 +322,17 @@ const isInteractive = window =>
   isXULDocumentWindow(window) && window.document.readyState === "interactive";
 exports.isInteractive = isInteractive;
 
+
+
+
+
+const isStartupFinished = (window) =>
+  isBrowser(window) &&
+  window.gBrowserInit &&
+  window.gBrowserInit.delayedStartupFinished;
+
+exports.isStartupFinished = isStartupFinished;
+
 const isXULDocumentWindow = ({document}) =>
   document.documentElement &&
   document.documentElement.namespaceURI === XUL_NS;
