@@ -1617,12 +1617,12 @@ gfxHarfBuzzShaper::SetGlyphsFromRun(gfxContext     *aContext,
     int32_t glyphStart = 0; 
     int32_t charStart = 0; 
 
-    bool roundI;
-    bool roundB;
+    bool roundI, roundB;
+    DrawTarget* drawTarget = aContext->GetDrawTarget();
     if (aVertical) {
-        aContext->GetRoundOffsetsToPixels(&roundB, &roundI);
+        GetRoundOffsetsToPixels(drawTarget, &roundB, &roundI);
     } else {
-        aContext->GetRoundOffsetsToPixels(&roundI, &roundB);
+        GetRoundOffsetsToPixels(drawTarget, &roundI, &roundB);
     }
 
     int32_t appUnitsPerDevUnit = aShapedText->GetAppUnitsPerDevUnit();

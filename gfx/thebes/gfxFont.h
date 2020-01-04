@@ -612,6 +612,8 @@ protected:
 
 class gfxFontShaper {
 public:
+    typedef mozilla::gfx::DrawTarget DrawTarget;
+
     explicit gfxFontShaper(gfxFont *aFont)
         : mFont(aFont)
     {
@@ -644,6 +646,10 @@ public:
                       void* aHandleFeatureData);
 
 protected:
+    
+    static void GetRoundOffsetsToPixels(DrawTarget* aDrawTarget,
+                                        bool* aRoundX, bool* aRoundY);
+
     
     
     

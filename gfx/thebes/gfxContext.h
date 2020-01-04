@@ -445,9 +445,6 @@ public:
 
     mozilla::gfx::Point GetDeviceOffset() const;
 
-    
-    void GetRoundOffsetsToPixels(bool *aRoundX, bool *aRoundY);
-
 #ifdef MOZ_DUMP_PAINTING
     
 
