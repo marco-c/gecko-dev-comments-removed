@@ -260,6 +260,11 @@ namespace mozilla {
 
 class CurrentWindowsTimeGetter {
 public:
+  CurrentWindowsTimeGetter(HWND aWnd)
+    : mWnd(aWnd)
+  {
+  }
+
   DWORD GetCurrentTime() const
   {
     return ::GetTickCount();
@@ -267,11 +272,39 @@ public:
 
   void GetTimeAsyncForPossibleBackwardsSkew(const TimeStamp& aNow)
   {
-    NS_DispatchToMainThread(NS_NewRunnableFunction([aNow]() {
-      TimeConverter().CompensateForBackwardsSkew(::GetMessageTime(), aNow);
-    }));
+    DWORD currentTime = GetCurrentTime();
+    if (sBackwardsSkewStamp && currentTime == sLastPostTime) {
+      
+      
+      return;
+    }
+    sBackwardsSkewStamp = Some(aNow);
+    sLastPostTime = currentTime;
+    static_assert(sizeof(WPARAM) >= sizeof(DWORD), "Can't fit a DWORD in a WPARAM");
+    ::PostMessage(mWnd, MOZ_WM_SKEWFIX, sLastPostTime, 0);
   }
+
+  static bool GetAndClearBackwardsSkewStamp(DWORD aPostTime, TimeStamp* aOutSkewStamp)
+  {
+    if (aPostTime != sLastPostTime) {
+      
+      
+      return false;
+    }
+    MOZ_ASSERT(sBackwardsSkewStamp);
+    *aOutSkewStamp = sBackwardsSkewStamp.value();
+    sBackwardsSkewStamp = Nothing();
+    return true;
+  }
+
+private:
+  static Maybe<TimeStamp> sBackwardsSkewStamp;
+  static DWORD sLastPostTime;
+  HWND mWnd;
 };
+
+Maybe<TimeStamp> CurrentWindowsTimeGetter::sBackwardsSkewStamp;
+DWORD CurrentWindowsTimeGetter::sLastPostTime = 0;
 
 } 
 
@@ -5704,6 +5737,15 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     }
     break;
 
+    case MOZ_WM_SKEWFIX:
+    {
+      TimeStamp skewStamp;
+      if (CurrentWindowsTimeGetter::GetAndClearBackwardsSkewStamp(wParam, &skewStamp)) {
+        TimeConverter().CompensateForBackwardsSkew(::GetMessageTime(), skewStamp);
+      }
+    }
+    break;
+
     default:
     {
       if (msg == nsAppShell::GetTaskbarButtonCreatedMessage()) {
@@ -5906,7 +5948,7 @@ nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my)
 TimeStamp
 nsWindow::GetMessageTimeStamp(LONG aEventTime)
 {
-  CurrentWindowsTimeGetter getCurrentTime;
+  CurrentWindowsTimeGetter getCurrentTime(mWnd);
   return TimeConverter().GetTimeStampFromSystemTime(aEventTime,
                                                     getCurrentTime);
 }

@@ -40,6 +40,9 @@
 
 #define MOZ_WM_NOTIY_TSF_OF_LAYOUT_CHANGE (WM_APP+0x0315)
 
+#define MOZ_WM_SKEWFIX                    (WM_APP+0x0316)
+
+
 
 #define MOZ_WM_ENSUREVISIBLE              (WM_APP+0x374F)
 
