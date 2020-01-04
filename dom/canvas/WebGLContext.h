@@ -356,6 +356,11 @@ public:
     bool PresentScreenBuffer();
 
     
+    void BeginComposition();
+    
+    void EndComposition();
+
+    
     
     uint32_t Generation() { return mGeneration.value(); }
 
@@ -1517,7 +1522,6 @@ protected:
     bool mNeedsFakeNoDepth;
     bool mNeedsFakeNoStencil;
     bool mNeedsEmulatedLoneDepthStencil;
-    bool mVRPresentationActive;
 
     bool HasTimestampBits() const;
 
