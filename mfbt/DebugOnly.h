@@ -72,6 +72,9 @@ public:
   void operator--(int) { }
   DebugOnly& operator+=(const T&) { return *this; }
   DebugOnly& operator-=(const T&) { return *this; }
+  DebugOnly& operator&=(const T&) { return *this; }
+  DebugOnly& operator|=(const T&) { return *this; }
+  DebugOnly& operator^=(const T&) { return *this; }
 #endif
 
   
