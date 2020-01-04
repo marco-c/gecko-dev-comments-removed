@@ -96,6 +96,8 @@ class GeneratedSourceMap
     void setTotalLines(uint32_t val) { totalLines_ = val; }
 };
 
+typedef UniquePtr<GeneratedSourceMap> UniqueGeneratedSourceMap;
+
 
 
 

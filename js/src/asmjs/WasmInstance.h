@@ -30,8 +30,6 @@ class WasmInstanceObject;
 
 namespace wasm {
 
-class GeneratedSourceMap;
-
 
 
 
@@ -41,17 +39,9 @@ class GeneratedSourceMap;
 
 class Instance
 {
-    const UniqueCodeSegment              codeSegment_;
-    const SharedMetadata                 metadata_;
-    const SharedBytes                    maybeBytecode_;
+    const UniqueCode                     code_;
     GCPtrWasmMemoryObject                memory_;
     SharedTableVector                    tables_;
-
-    bool                                 profilingEnabled_;
-    CacheableCharsVector                 funcLabels_;
-
-
-    UniquePtr<GeneratedSourceMap>        maybeSourceMap_;
 
     
     
@@ -81,9 +71,7 @@ class Instance
 
   public:
     Instance(JSContext* cx,
-             UniqueCodeSegment codeSegment,
-             const Metadata& metadata,
-             const ShareableBytes* maybeBytecode,
+             UniqueCode code,
              HandleWasmMemoryObject memory,
              SharedTableVector&& tables,
              Handle<FunctionVector> funcImports,
@@ -93,8 +81,11 @@ class Instance
     void trace(JSTracer* trc);
 
     JSContext* cx() const { return *addressOfContextPtr(); }
-    const CodeSegment& codeSegment() const { return *codeSegment_; }
-    const Metadata& metadata() const { return *metadata_; }
+    Code& code() { return *code_; }
+    const Code& code() const { return *code_; }
+    const CodeSegment& codeSegment() const { return code_->segment(); }
+    uint8_t* codeBase() const { return code_->segment().base(); }
+    const Metadata& metadata() const { return code_->metadata(); }
     const SharedTableVector& tables() const { return tables_; }
     SharedMem<uint8_t*> memoryBase() const;
     size_t memoryLength() const;
@@ -109,42 +100,12 @@ class Instance
     
     
     
-    
-
-    MOZ_MUST_USE bool ensureProfilingState(JSContext* cx, bool enabled);
-    bool profilingEnabled() const { return profilingEnabled_; }
-    const char* profilingLabel(uint32_t funcIndex) const { return funcLabels_[funcIndex].get(); }
-
-    
-    
-    
-
-    
-
-    JSString* createText(JSContext* cx);
-    bool getLineOffsets(size_t lineno, Vector<uint32_t>& offsets);
-
-    
-    
-
-    bool getFuncName(JSContext* cx, uint32_t funcIndex, TwoByteName* name) const;
-    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
-
-    
-    
-    
-    
-    
 
     void deoptimizeImportExit(uint32_t funcImportIndex);
 
     
 
-    const CallSite* lookupCallSite(void* returnAddress) const;
-    const CodeRange* lookupCodeRange(void* pc) const;
-#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS
-    const MemoryAccess* lookupMemoryAccess(void* pc) const;
-#endif
+    MOZ_MUST_USE bool ensureProfilingState(JSContext* cx, bool enabled);
 
     
     void updateStackLimit(JSContext*);

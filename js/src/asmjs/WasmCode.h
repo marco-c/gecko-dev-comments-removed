@@ -19,6 +19,7 @@
 #ifndef wasm_code_h
 #define wasm_code_h
 
+#include "asmjs/WasmBinaryToExperimentalText.h"
 #include "asmjs/WasmTypes.h"
 
 namespace js {
@@ -29,6 +30,9 @@ namespace wasm {
 
 struct LinkData;
 struct Metadata;
+
+
+
 
 
 
@@ -73,7 +77,7 @@ class CodeSegment
                                     HandleWasmMemoryObject memory);
     ~CodeSegment();
 
-    uint8_t* code() const { return bytes_; }
+    uint8_t* base() const { return bytes_; }
     uint8_t* globalData() const { return bytes_ + codeLength_; }
     uint32_t codeLength() const { return codeLength_; }
     uint32_t globalDataLength() const { return globalDataLength_; }
@@ -91,10 +95,10 @@ class CodeSegment
     
 
     bool containsFunctionPC(void* pc) const {
-        return pc >= code() && pc < (code() + functionCodeLength_);
+        return pc >= base() && pc < (base() + functionCodeLength_);
     }
     bool containsCodePC(void* pc) const {
-        return pc >= code() && pc < (code() + codeLength_);
+        return pc >= base() && pc < (base() + codeLength_);
     }
 };
 
@@ -511,6 +515,72 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
 
 typedef RefPtr<Metadata> MutableMetadata;
 typedef RefPtr<const Metadata> SharedMetadata;
+
+
+
+
+
+
+class Code
+{
+    const UniqueCodeSegment  segment_;
+    const SharedMetadata     metadata_;
+    const SharedBytes        maybeBytecode_;
+    UniqueGeneratedSourceMap maybeSourceMap_;
+    CacheableCharsVector     funcLabels_;
+    bool                     profilingEnabled_;
+
+  public:
+    Code(UniqueCodeSegment segment,
+         const Metadata& metadata,
+         const ShareableBytes* maybeBytecode);
+
+    const CodeSegment& segment() const { return *segment_; }
+    const Metadata& metadata() const { return *metadata_; }
+
+    
+
+    const CallSite* lookupCallSite(void* returnAddress) const;
+    const CodeRange* lookupRange(void* pc) const;
+#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS
+    const MemoryAccess* lookupMemoryAccess(void* pc) const;
+#endif
+
+    
+    
+
+    bool getFuncName(JSContext* cx, uint32_t funcIndex, TwoByteName* name) const;
+    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
+
+    
+    
+    
+
+    JSString* createText(JSContext* cx);
+    bool getLineOffsets(size_t lineno, Vector<uint32_t>& offsets) const;
+
+    
+    
+    
+    
+    
+
+    MOZ_MUST_USE bool ensureProfilingState(JSContext* cx, bool enabled);
+    bool profilingEnabled() const { return profilingEnabled_; }
+    const char* profilingLabel(uint32_t funcIndex) const { return funcLabels_[funcIndex].get(); }
+
+    
+
+    void addSizeOfMisc(MallocSizeOf mallocSizeOf,
+                       Metadata::SeenSet* seenMetadata,
+                       ShareableBytes::SeenSet* seenBytes,
+                       size_t* code,
+                       size_t* data) const;
+
+    WASM_DECLARE_SERIALIZABLE(Code);
+};
+
+typedef UniquePtr<Code> UniqueCode;
 
 } 
 } 
