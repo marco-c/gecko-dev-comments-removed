@@ -1667,7 +1667,15 @@ function switchToShadowRoot(id) {
     
     
     if (curContainer.shadowRoot) {
-      let parent = curContainer.shadowRoot.host;
+      let parent;
+      try {
+        parent = curContainer.shadowRoot.host;
+      } catch (e) {
+        
+        
+        curContainer.shadowRoot = null;
+        return;
+      }
       while (parent && !(parent instanceof curContainer.frame.ShadowRoot)) {
         parent = parent.parentNode;
       }
