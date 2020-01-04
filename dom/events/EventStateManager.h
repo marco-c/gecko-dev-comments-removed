@@ -243,8 +243,9 @@ public:
   static bool WheelEventIsScrollAction(WidgetWheelEvent* aEvent);
 
   
-  
-  static bool WheelEventNeedsDeltaMultipliers(WidgetWheelEvent* aEvent);
+  static void GetUserPrefsForWheelEvent(WidgetWheelEvent* aEvent,
+                                        double* aOutMultiplierX,
+                                        double* aOutMultiplierY);
 
   
   
@@ -449,7 +450,9 @@ protected:
 
 
 
-    bool HasUserPrefsForDelta(WidgetWheelEvent* aEvent);
+    void GetUserPrefsForEvent(WidgetWheelEvent* aEvent,
+                              double* aOutMultiplierX,
+                              double* aOutMultiplierY);
 
     
 

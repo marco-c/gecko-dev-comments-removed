@@ -1604,7 +1604,18 @@ AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent) cons
       MOZ_ASSERT_UNREACHABLE("unexpected scroll delta type");
   }
 
-  if (isRootContent && gfxPrefs::MouseWheelHasRootScrollDeltaOverride()) {
+  
+  delta.x *= aEvent.mUserDeltaMultiplierX;
+  delta.y *= aEvent.mUserDeltaMultiplierY;
+
+  
+  
+  
+  if (isRootContent &&
+      gfxPrefs::MouseWheelHasRootScrollDeltaOverride() &&
+      !aEvent.IsCustomizedByUserPrefs() &&
+      aEvent.mDeltaType == ScrollWheelInput::SCROLLDELTA_LINE)
+  {
     
     double hfactor = double(gfxPrefs::MouseWheelRootHScrollDeltaFactor()) / 100;
     double vfactor = double(gfxPrefs::MouseWheelRootVScrollDeltaFactor()) / 100;

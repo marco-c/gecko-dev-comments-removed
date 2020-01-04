@@ -626,8 +626,7 @@ WillHandleWheelEvent(WidgetWheelEvent* aEvent)
 {
   return EventStateManager::WheelEventIsScrollAction(aEvent) &&
          (aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE ||
-          aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL) &&
-         !EventStateManager::WheelEventNeedsDeltaMultipliers(aEvent);
+          aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL);
 }
 
 static bool
@@ -1090,8 +1089,17 @@ APZCTreeManager::ProcessWheelEvent(WidgetWheelEvent& aEvent,
                          scrollMode,
                          ScrollWheelInput::DeltaTypeForDeltaMode(aEvent.deltaMode),
                          origin,
-                         aEvent.deltaX,
-                         aEvent.deltaY);
+                         aEvent.deltaX, aEvent.deltaY);
+
+  
+  
+  
+  
+  
+  
+  EventStateManager::GetUserPrefsForWheelEvent(&aEvent,
+    &input.mUserDeltaMultiplierX,
+    &input.mUserDeltaMultiplierY);
 
   nsEventStatus status = ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
   aEvent.refPoint.x = input.mOrigin.x;

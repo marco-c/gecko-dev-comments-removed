@@ -583,6 +583,8 @@ public:
      mLineOrPageDeltaX(0),
      mLineOrPageDeltaY(0),
      mScrollSeriesNumber(0),
+     mUserDeltaMultiplierX(1.0),
+     mUserDeltaMultiplierY(1.0),
      mIsMomentum(false)
   {}
 
@@ -590,6 +592,8 @@ public:
 
   WidgetWheelEvent ToWidgetWheelEvent(nsIWidget* aWidget) const;
   bool TransformToLocal(const gfx::Matrix4x4& aTransform);
+
+  bool IsCustomizedByUserPrefs() const;
 
   ScrollDeltaType mDeltaType;
   ScrollMode mScrollMode;
@@ -619,6 +623,10 @@ public:
   
   
   uint32_t mScrollSeriesNumber;
+
+  
+  double mUserDeltaMultiplierX;
+  double mUserDeltaMultiplierY;
 
   bool mIsMomentum;
 };
