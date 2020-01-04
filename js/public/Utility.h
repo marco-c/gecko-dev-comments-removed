@@ -235,6 +235,11 @@ static inline void* js_calloc(size_t nmemb, size_t size)
 
 static inline void* js_realloc(void* p, size_t bytes)
 {
+    
+    
+    
+    MOZ_ASSERT(bytes != 0);
+
     JS_OOM_POSSIBLY_FAIL();
     return realloc(p, bytes);
 }
