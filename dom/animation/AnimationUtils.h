@@ -12,6 +12,8 @@
 #include "nsStringFwd.h"
 
 class nsIContent;
+class nsIDocument;
+struct JSContext;
 
 namespace mozilla {
 
@@ -58,6 +60,12 @@ public:
 
   static Maybe<ComputedTimingFunction>
   ParseEasing(const dom::Element* aTarget, const nsAString& aEasing);
+
+  
+
+
+  static nsIDocument*
+  GetCurrentRealmDocument(JSContext* aCx);
 };
 
 } 
