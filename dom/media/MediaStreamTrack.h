@@ -23,6 +23,7 @@ class MediaStream;
 class MediaStreamGraph;
 class MediaStreamTrackListener;
 class PeerConnectionImpl;
+class PeerIdentity;
 class ProcessedMediaStream;
 class RemoteSourceStreamInfo;
 
@@ -74,6 +75,17 @@ public:
 
 
   virtual CORSMode GetCORSMode() const { return CORS_NONE; }
+
+  
+
+
+
+
+
+
+
+
+  virtual const PeerIdentity* GetPeerIdentity() const { return nullptr; }
 
   
 
@@ -239,6 +251,11 @@ public:
 
 
   CORSMode GetCORSMode() const { return GetSource().GetCORSMode(); }
+
+  
+
+
+  const PeerIdentity* GetPeerIdentity() const { return GetSource().GetPeerIdentity(); }
 
   MediaStreamGraph* Graph();
 
