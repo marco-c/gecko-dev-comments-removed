@@ -478,61 +478,61 @@ StorageUI.prototype = {
 
 
 
-  displayObjectSidebar: function() {
+  displayObjectSidebar: Task.async(function* () {
     let item = this.table.selectedRow;
     if (!item) {
       
       this.sidebar.hidden = true;
       return;
     }
+
+    
+    let value;
+    if (item.name && item.valueActor) {
+      value = yield item.valueActor.string();
+    }
+
+    
     this.sidebar.hidden = false;
     this.view.empty();
     let mainScope = this.view.addScope(L10N.getStr("storage.data.label"));
     mainScope.expanded = true;
 
-    if (item.name && item.valueActor) {
+    if (value) {
       let itemVar = mainScope.addItem(item.name + "", {}, {relaxed: true});
 
-      item.valueActor.string().then(value => {
-        
-        itemVar.setGrip(value);
+      
+      itemVar.setGrip(value);
 
-        
-        this.parseItemValue(item.name, value);
+      
+      this.parseItemValue(item.name, value);
 
-        
-        
-        let itemProps = Object.keys(item);
-        if (itemProps.length == 3) {
-          this.emit("sidebar-updated");
-          return;
-        }
-
+      
+      
+      let itemProps = Object.keys(item);
+      if (itemProps.length > 3) {
         
         
         let rawObject = Object.create(null);
-        let otherProps =
-          itemProps.filter(e => e != "name" &&
-                                e != "value" &&
-                                e != "valueActor");
+        let otherProps = itemProps.filter(
+          e => !["name", "value", "valueActor"].includes(e));
         for (let prop of otherProps) {
           rawObject[prop] = item[prop];
         }
         itemVar.populate(rawObject, {sorted: true});
         itemVar.twisty = true;
         itemVar.expanded = true;
-        this.emit("sidebar-updated");
-      });
-      return;
+      }
+    } else {
+      
+      for (let key in item) {
+        mainScope.addItem(key, {}, true).setGrip(item[key]);
+        this.parseItemValue(key, item[key]);
+      }
     }
 
-    
-    for (let key in item) {
-      mainScope.addItem(key, {}, true).setGrip(item[key]);
-      this.parseItemValue(key, item[key]);
-    }
     this.emit("sidebar-updated");
-  },
+  }),
 
   
 
