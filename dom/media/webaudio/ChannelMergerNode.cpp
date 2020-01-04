@@ -40,7 +40,7 @@ public:
       return;
     }
     channelCount = std::min(channelCount, WebAudioUtils::MaxChannelCount);
-    AllocateAudioBlock(channelCount, &aOutput[0]);
+    aOutput[0].AllocateChannels(channelCount);
 
     
     size_t channelIndex = 0;

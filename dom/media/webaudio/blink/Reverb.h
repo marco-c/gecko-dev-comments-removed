@@ -32,7 +32,7 @@
 #include "ReverbConvolver.h"
 #include "nsAutoPtr.h"
 #include "nsTArray.h"
-#include "AudioSegment.h"
+#include "AudioBlock.h"
 #include "mozilla/MemoryReporting.h"
 
 namespace mozilla {
@@ -50,7 +50,7 @@ public:
     
     Reverb(mozilla::ThreadSharedFloatArrayBufferList* impulseResponseBuffer, size_t impulseResponseBufferLength, size_t renderSliceSize, size_t maxFFTSize, size_t numberOfChannels, bool useBackgroundThreads, bool normalize, float sampleRate);
 
-    void process(const mozilla::AudioChunk* sourceBus, mozilla::AudioChunk* destinationBus, size_t framesToProcess);
+    void process(const mozilla::AudioBlock* sourceBus, mozilla::AudioBlock* destinationBus, size_t framesToProcess);
     void reset();
 
     size_t impulseResponseLength() const { return m_impulseResponseLength; }
@@ -66,7 +66,7 @@ private:
     nsTArray<nsAutoPtr<ReverbConvolver> > m_convolvers;
 
     
-    mozilla::AudioChunk m_tempBuffer;
+    mozilla::AudioBlock m_tempBuffer;
 };
 
 } 

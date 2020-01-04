@@ -19,6 +19,7 @@ class AudioParamTimeline;
 class DelayNodeEngine;
 } 
 
+class AudioBlock;
 class AudioNodeStream;
 
 
@@ -132,7 +133,8 @@ private:
 
 
 
-void WriteZeroesToAudioBlock(AudioChunk* aChunk, uint32_t aStart, uint32_t aLength);
+void WriteZeroesToAudioBlock(AudioBlock* aChunk, uint32_t aStart,
+                             uint32_t aLength);
 
 
 
@@ -250,7 +252,7 @@ class AudioNodeEngine
 {
 public:
   
-  typedef nsAutoTArray<AudioChunk, 1> OutputChunks;
+  typedef nsAutoTArray<AudioBlock, 1> OutputChunks;
 
   explicit AudioNodeEngine(dom::AudioNode* aNode)
     : mNode(aNode)
@@ -311,19 +313,15 @@ public:
 
 
   virtual void ProcessBlock(AudioNodeStream* aStream,
-                            const AudioChunk& aInput,
-                            AudioChunk* aOutput,
-                            bool* aFinished)
-  {
-    MOZ_ASSERT(mInputCount <= 1 && mOutputCount <= 1);
-    *aOutput = aInput;
-  }
+                            const AudioBlock& aInput,
+                            AudioBlock* aOutput,
+                            bool* aFinished);
   
 
 
 
 
-  virtual void ProduceBlockBeforeInput(AudioChunk* aOutput)
+  virtual void ProduceBlockBeforeInput(AudioBlock* aOutput)
   {
     NS_NOTREACHED("ProduceBlockBeforeInput called on wrong engine\n");
   }
@@ -346,12 +344,7 @@ public:
   virtual void ProcessBlocksOnPorts(AudioNodeStream* aStream,
                                     const OutputChunks& aInput,
                                     OutputChunks& aOutput,
-                                    bool* aFinished)
-  {
-    MOZ_ASSERT(mInputCount > 1 || mOutputCount > 1);
-    
-    aOutput[0] = aInput[0];
-  }
+                                    bool* aFinished);
 
   bool HasNode() const
   {

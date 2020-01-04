@@ -39,16 +39,16 @@ public:
   }
 
   
-  void Write(const AudioChunk& aInputChunk);
+  void Write(const AudioBlock& aInputChunk);
 
   
   
   void Read(const double aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
-            AudioChunk* aOutputChunk,
+            AudioBlock* aOutputChunk,
             ChannelInterpretation aChannelInterpretation);
   
   
-  void Read(double aDelayTicks, AudioChunk* aOutputChunk,
+  void Read(double aDelayTicks, AudioBlock* aOutputChunk,
             ChannelInterpretation aChannelInterpretation);
 
   
@@ -56,7 +56,7 @@ public:
   
   
   void ReadChannel(const double aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
-                   AudioChunk* aOutputChunk, uint32_t aChannel,
+                   AudioBlock* aOutputChunk, uint32_t aChannel,
                    ChannelInterpretation aChannelInterpretation);
 
   
@@ -80,7 +80,7 @@ public:
 
 private:
   void ReadChannels(const double aPerFrameDelays[WEBAUDIO_BLOCK_SIZE],
-                    AudioChunk* aOutputChunk,
+                    AudioBlock* aOutputChunk,
                     uint32_t aFirstChannel, uint32_t aNumChannelsToRead,
                     ChannelInterpretation aChannelInterpretation);
   bool EnsureBuffer();

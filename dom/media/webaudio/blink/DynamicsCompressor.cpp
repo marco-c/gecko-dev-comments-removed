@@ -27,7 +27,7 @@
 
 
 #include "DynamicsCompressor.h"
-#include "AudioSegment.h"
+#include "AudioBlock.h"
 
 #include <cmath>
 #include "AudioNodeEngine.h"
@@ -148,7 +148,7 @@ void DynamicsCompressor::setEmphasisParameters(float gain, float anchorFreq, flo
     setEmphasisStageParameters(3, gain, anchorFreq / (filterStageRatio * filterStageRatio * filterStageRatio));
 }
 
-void DynamicsCompressor::process(const AudioChunk* sourceChunk, AudioChunk* destinationChunk, unsigned framesToProcess)
+void DynamicsCompressor::process(const AudioBlock* sourceChunk, AudioBlock* destinationChunk, unsigned framesToProcess)
 {
     
     

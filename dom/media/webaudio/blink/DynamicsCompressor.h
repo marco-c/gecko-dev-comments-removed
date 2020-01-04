@@ -37,12 +37,12 @@
 #include "mozilla/MemoryReporting.h"
 
 namespace mozilla {
-struct AudioChunk;
+class AudioBlock;
 } 
 
 namespace WebCore {
 
-using mozilla::AudioChunk;
+using mozilla::AudioBlock;
 
 
 
@@ -73,7 +73,7 @@ public:
 
     DynamicsCompressor(float sampleRate, unsigned numberOfChannels);
 
-    void process(const AudioChunk* sourceChunk, AudioChunk* destinationChunk, unsigned framesToProcess);
+    void process(const AudioBlock* sourceChunk, AudioBlock* destinationChunk, unsigned framesToProcess);
     void reset();
     void setNumberOfChannels(unsigned);
     unsigned numberOfChannels() const { return m_numberOfChannels; }
