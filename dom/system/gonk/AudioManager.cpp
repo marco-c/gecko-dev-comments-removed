@@ -77,7 +77,9 @@ static const uint32_t sMaxStreamVolumeTbl[AUDIO_STREAM_CNT] = {
   15,  
   15,  
   15,  
+#if ANDROID_VERSION < 19
   15,  
+#endif
 };
 
 
@@ -795,11 +797,15 @@ AudioManager::SetFmRadioAudioEnabled(bool aFmRadioAudioEnabled)
     AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE, "");
   UpdateHeadsetConnectionState(GetCurrentSwitchState(SWITCH_HEADPHONES));
   
+  
+#if ANDROID_VERSION < 19
+  
   if (aFmRadioAudioEnabled) {
     uint32_t volIndex = mCurrentStreamVolumeTbl[AUDIO_STREAM_MUSIC];
     SetStreamVolumeIndex(AUDIO_STREAM_FM, volIndex);
     mCurrentStreamVolumeTbl[AUDIO_STREAM_FM] = volIndex;
   }
+#endif
   return NS_OK;
 }
 
@@ -820,12 +826,16 @@ AudioManager::SetVolumeByCategory(uint32_t aCategory, uint32_t aIndex)
   switch (static_cast<AudioVolumeCategories>(aCategory)) {
     case VOLUME_MEDIA:
       
+      
+#if ANDROID_VERSION < 19
+      
       if (IsDeviceOn(AUDIO_DEVICE_OUT_FM)) {
         status = SetStreamVolumeIndex(AUDIO_STREAM_FM, aIndex);
         if (NS_WARN_IF(NS_FAILED(status))) {
           return status;
         }
       }
+#endif
       status = SetStreamVolumeIndex(AUDIO_STREAM_MUSIC, aIndex);
       break;
     case VOLUME_NOTIFICATION:
@@ -1005,6 +1015,7 @@ AudioManager::SetStreamVolumeIndex(int32_t aStream, uint32_t aIndex) {
               aIndex);
    return status ? NS_ERROR_FAILURE : NS_OK;
 #else
+#if ANDROID_VERSION < 19
   if (aStream == AUDIO_STREAM_FM) {
     status = AudioSystem::setStreamVolumeIndex(
                static_cast<audio_stream_type_t>(aStream),
@@ -1012,7 +1023,7 @@ AudioManager::SetStreamVolumeIndex(int32_t aStream, uint32_t aIndex) {
                AUDIO_DEVICE_OUT_FM);
     return status ? NS_ERROR_FAILURE : NS_OK;
   }
-
+#endif
   if (mPresentProfile == DEVICE_PRIMARY) {
     status = AudioSystem::setStreamVolumeIndex(
             static_cast<audio_stream_type_t>(aStream),
