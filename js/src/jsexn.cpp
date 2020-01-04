@@ -811,10 +811,17 @@ ErrorReport::init(JSContext* cx, HandleValue exn)
     
     
     
-    if (reportp)
+    if (reportp) {
         str = ErrorReportToString(cx, reportp);
-    else
+    } else if (exn.isSymbol()) {
+        RootedValue strVal(cx);
+        if (js::SymbolDescriptiveString(cx, exn.toSymbol(), &strVal))
+            str = strVal.toString();
+        else
+            str = nullptr;
+    } else {
         str = ToString<CanGC>(cx, exn);
+    }
 
     if (!str)
         cx->clearPendingException();
