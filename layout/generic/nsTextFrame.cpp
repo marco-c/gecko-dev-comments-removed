@@ -6658,10 +6658,33 @@ nsTextFrame::GetCharacterOffsetAtFramePointInternal(nsPoint aPoint,
     
     gfxSkipCharsIterator extraCluster(provider.GetStart());
     extraCluster.AdvanceSkipped(charsFit);
+
+    bool allowSplitLigature = true; 
+
+    
+    
+    uint32_t offs = extraCluster.GetOriginalOffset();
+    const nsTextFragment* frag = GetContent()->GetText();
+    if (offs + 1 < frag->GetLength() &&
+        NS_IS_HIGH_SURROGATE(frag->CharAt(offs)) &&
+        NS_IS_LOW_SURROGATE(frag->CharAt(offs + 1)) &&
+        gfxFontUtils::IsRegionalIndicator
+          (SURROGATE_TO_UCS4(frag->CharAt(offs), frag->CharAt(offs + 1)))) {
+      allowSplitLigature = false;
+      if (extraCluster.GetSkippedOffset() > 1 &&
+          !mTextRun->IsLigatureGroupStart(extraCluster.GetSkippedOffset())) {
+        
+        
+        extraCluster.AdvanceSkipped(-2); 
+        fitWidth -= mTextRun->GetAdvanceWidth(extraCluster.GetSkippedOffset(),
+                                              2, &provider);
+      }
+    }
+
     gfxSkipCharsIterator extraClusterLastChar(extraCluster);
     FindClusterEnd(mTextRun,
                    provider.GetStart().GetOriginalOffset() + provider.GetOriginalLength(),
-                   &extraClusterLastChar);
+                   &extraClusterLastChar, allowSplitLigature);
     PropertyProvider::Spacing spacing;
     gfxFloat charWidth =
         mTextRun->GetAdvanceWidth(extraCluster.GetSkippedOffset(),
