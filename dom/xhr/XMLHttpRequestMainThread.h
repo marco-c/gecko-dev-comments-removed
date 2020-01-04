@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_XMLHttpRequestMainThread_h
 #define mozilla_dom_XMLHttpRequestMainThread_h
 
-#include <bitset>
 #include "nsAutoPtr.h"
 #include "nsIXMLHttpRequest.h"
 #include "nsISupportsUtils.h"
@@ -128,17 +127,6 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   friend class nsXMLHttpRequestXPCOMifier;
 
 public:
-  enum class ProgressEventType : uint8_t {
-    loadstart,
-    progress,
-    error,
-    abort,
-    timeout,
-    load,
-    loadend,
-    ENUM_MAX
-  };
-
   XMLHttpRequestMainThread();
 
   void Construct(nsIPrincipal* aPrincipal,
@@ -522,9 +510,9 @@ public:
 
   
   
-  nsresult FireReadystatechangeEvent();
+  nsresult CreateReadystatechangeEvent(nsIDOMEvent** aDOMEvent);
   void DispatchProgressEvent(DOMEventTargetHelper* aTarget,
-                             const ProgressEventType aType,
+                             const nsAString& aType,
                              bool aLengthComputable,
                              int64_t aLoaded, int64_t aTotal);
 
@@ -559,16 +547,6 @@ public:
     return sDontWarnAboutSyncXHR;
   }
 protected:
-  
-  
-  enum class State : uint8_t {
-    unsent,           
-    opened,           
-    headers_received, 
-    loading,          
-    done,             
-  };
-
   nsresult DetectCharset();
   nsresult AppendToResponseText(const char * aBuffer, uint32_t aBufferLen);
   static NS_METHOD StreamReaderFunc(nsIInputStream* in,
@@ -582,7 +560,7 @@ protected:
   bool CreateDOMBlob(nsIRequest *request);
   
   
-  nsresult ChangeState(State aState, bool aBroadcast = true);
+  nsresult ChangeState(uint32_t aState, bool aBroadcast = true);
   already_AddRefed<nsILoadGroup> GetLoadGroup() const;
   nsIURI *GetBaseURI();
 
@@ -686,23 +664,7 @@ protected:
   nsCOMPtr<nsIURI> mBaseURI;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
 
-  State mState;
-
-  bool mFlagSynchronous;
-  bool mFlagAborted;
-  bool mFlagParseBody;
-  bool mFlagSyncLooping;
-  bool mFlagBackgroundRequest;
-  bool mFlagHadUploadListenersOnSend;
-  bool mFlagACwithCredentials;
-  bool mFlagTimedOut;
-  bool mFlagDeleted;
-
-  
-  
-  
-  
-  bool mFlagSend;
+  uint32_t mState;
 
   RefPtr<XMLHttpRequestUpload> mUpload;
   int64_t mUploadTransferred;
@@ -753,7 +715,9 @@ protected:
 
 
 
-  void CloseRequestWithError(const ProgressEventType aType);
+
+
+  void CloseRequestWithError(const nsAString& aType, const uint32_t aFlag);
 
   bool mFirstStartRequestSeen;
   bool mInLoadProgressEvent;
