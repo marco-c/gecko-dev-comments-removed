@@ -125,15 +125,6 @@ this.AddonWatcher = {
         return;
       }
 
-      let jankThreshold = Preferences.get("browser.addon-watch.jank-threshold-micros",  128000);
-      let occurrencesBetweenAlerts = Preferences.get("browser.addon-watch.occurrences-between-alerts", 3);
-      let delayBetweenAlerts = Preferences.get("browser.addon-watch.delay-between-alerts-ms", .5 * 3600 * 1000 );
-      let prescriptionDelay = Preferences.get("browser.addon-watch.prescription-delay", 2 * 3600 * 1000 );
-      let highestNumberOfAddonsToReport = Preferences.get("browser.addon-watch.max-simultaneous-reports", 1);
-
-      addons = addons.filter(x => x.details.highestJank >= jankThreshold).
-        sort((a, b) => a.details.highestJank - b.details.highestJank);
-
       
       
       for (let {source: {addonId}, details} of addons) {
@@ -142,6 +133,26 @@ this.AddonWatcher = {
         Telemetry.getKeyedHistogramById("PERF_MONITORING_SLOW_ADDON_CPOW_US").
           add(addonId, details.highestCPOW);
       }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let freezeThreshold = Preferences.get("browser.addon-watch.freeze-threshold-micros",  5000000);
+      let jankThreshold = Preferences.get("browser.addon-watch.jank-threshold-micros",  256000);
+      let occurrencesBetweenAlerts = Preferences.get("browser.addon-watch.occurrences-between-alerts", 3);
+      let delayBetweenAlerts = Preferences.get("browser.addon-watch.delay-between-alerts-ms", 6 * 3600 * 1000 );
+      let delayBetweenFreeeAlerts = Preferences.get("browser.addon-watch.delay-between-freeze-alerts-ms", 2 * 60 * 1000 );
+      let prescriptionDelay = Preferences.get("browser.addon-watch.prescription-delay", 5 * 60 * 1000 );
+      let highestNumberOfAddonsToReport = Preferences.get("browser.addon-watch.max-simultaneous-reports", 1);
+
+      addons = addons.filter(x => x.details.highestJank >= jankThreshold).
+        sort((a, b) => a.details.highestJank - b.details.highestJank);
 
       for (let {source: {addonId}, details} of addons) {
         if (highestNumberOfAddonsToReport <= 0) {
@@ -161,15 +172,25 @@ this.AddonWatcher = {
 
         alerts.occurrencesSinceLastNotification++;
         alerts.occurrences++;
-        if (alerts.occurrencesSinceLastNotification <= occurrencesBetweenAlerts) {
+
+        if (details.highestJank < freezeThreshold) {
+          if (alerts.occurrencesSinceLastNotification <= occurrencesBetweenAlerts) {
+            
+            
+            continue;
+          }
+          if (now - alerts.latestNotificationTimeStamp <= delayBetweenAlerts) {
+            
+            
+            continue;
+          }
+        } else {
           
-          
-          continue;
-        }
-        if (now - alerts.latestNotificationTimeStamp <= delayBetweenAlerts) {
-          
-          
-          continue;
+          if (now - alerts.latestNotificationTimeStamp <= delayBetweenFreezeAlerts) {
+            
+            
+            continue;
+          }
         }
 
         
