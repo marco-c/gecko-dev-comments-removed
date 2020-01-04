@@ -305,18 +305,6 @@ MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rh
 }
 
 void
-MacroAssembler::branchTruncateFloat32(FloatRegister src, Register dest, Label* fail)
-{
-    vcvttss2si(src, dest);
-
-    
-    
-    
-    cmp32(dest, Imm32(1));
-    j(Assembler::Overflow, fail);
-}
-
-void
 MacroAssembler::branchTest32(Condition cond, const AbsoluteAddress& lhs, Imm32 rhs, Label* label)
 {
     test32(Operand(lhs), rhs);

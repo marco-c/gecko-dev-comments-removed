@@ -299,18 +299,6 @@ MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rh
 }
 
 void
-MacroAssembler::branchTruncateFloat32(FloatRegister src, Register dest, Label* fail)
-{
-    vcvttss2sq(src, dest);
-
-    
-    cmpPtr(dest, Imm32(1));
-    j(Assembler::Overflow, fail);
-
-    movl(dest, dest); 
-}
-
-void
 MacroAssembler::branchTest32(Condition cond, const AbsoluteAddress& lhs, Imm32 rhs, Label* label)
 {
     if (X86Encoding::IsAddressImmediate(lhs.addr)) {
