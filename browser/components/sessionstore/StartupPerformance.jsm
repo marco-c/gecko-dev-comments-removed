@@ -199,9 +199,16 @@ this.StartupPerformance = {
           
           let win = subject;
 
-          let observer = () => {
-            this._latestRestoredTimeStamp = Date.now();
-            this._totalNumberOfEagerTabs += 1;
+          let observer = (event) => {
+            
+            
+            
+            
+            
+            if (!event.detail.isRemotenessUpdate) {
+              this._latestRestoredTimeStamp = Date.now();
+              this._totalNumberOfEagerTabs += 1;
+            }
           };
           win.gBrowser.tabContainer.addEventListener("SSTabRestored", observer);
           this._totalNumberOfTabs += win.gBrowser.tabContainer.itemCount;

@@ -167,21 +167,21 @@ var MessageListener = {
     sendSyncMessage("SessionStore:restoreHistoryComplete", {epoch});
   },
 
-  restoreTabContent({loadArguments}) {
+  restoreTabContent({loadArguments, isRemotenessUpdate}) {
     let epoch = gCurrentEpoch;
 
     
     let didStartLoad = gContentRestore.restoreTabContent(loadArguments, () => {
       
       
-      sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch});
+      sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch, isRemotenessUpdate});
     });
 
     sendAsyncMessage("SessionStore:restoreTabContentStarted", {epoch});
 
     if (!didStartLoad) {
       
-      sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch});
+      sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch, isRemotenessUpdate});
     }
   },
 

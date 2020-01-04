@@ -838,7 +838,7 @@ var SessionStoreInternal = {
         SessionStoreInternal._resetLocalTabRestoringState(tab);
         SessionStoreInternal.restoreNextTab();
 
-        this._sendTabRestoredNotification(tab);
+        this._sendTabRestoredNotification(tab, data.isRemotenessUpdate);
         break;
       case "SessionStore:crashedTabRevived":
         
@@ -3287,6 +3287,9 @@ var SessionStoreInternal = {
 
 
 
+
+
+
   restoreTabContent: function (aTab, aLoadArguments = null) {
     if (aTab.hasAttribute("customizemode")) {
       return;
@@ -3309,7 +3312,8 @@ var SessionStoreInternal = {
     
     this.markTabAsRestoring(aTab);
 
-    if (tabbrowser.updateBrowserRemotenessByURL(browser, uri)) {
+    let isRemotenessUpdate = tabbrowser.updateBrowserRemotenessByURL(browser, uri);
+    if (isRemotenessUpdate) {
       
       
       
@@ -3332,7 +3336,7 @@ var SessionStoreInternal = {
     }
 
     browser.messageManager.sendAsyncMessage("SessionStore:restoreTabContent",
-      {loadArguments: aLoadArguments});
+      {loadArguments: aLoadArguments, isRemotenessUpdate});
   },
 
   
@@ -3979,9 +3983,15 @@ var SessionStoreInternal = {
 
 
 
-  _sendTabRestoredNotification: function ssi_sendTabRestoredNotification(aTab) {
-    let event = aTab.ownerDocument.createEvent("Events");
-    event.initEvent("SSTabRestored", true, false);
+
+
+
+
+  _sendTabRestoredNotification(aTab, aIsRemotenessUpdate) {
+    let event = aTab.ownerDocument.createEvent("CustomEvent");
+    event.initCustomEvent("SSTabRestored", true, false, {
+      isRemotenessUpdate: aIsRemotenessUpdate,
+    });
     aTab.dispatchEvent(event);
   },
 
