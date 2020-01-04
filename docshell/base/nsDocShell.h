@@ -1005,6 +1005,10 @@ protected:
 
   nsString GetInheritedPaymentRequestId();
 
+  
+  
+  nsString mSignedPkg;
+
 private:
   nsCString mForcedCharset;
   nsCString mParentCharset;

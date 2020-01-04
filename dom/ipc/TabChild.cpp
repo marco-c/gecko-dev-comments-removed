@@ -693,9 +693,6 @@ TabChild::Observe(nsISupports *aSubject,
     
     
     if (window->WindowID() != windowID) {
-      MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
-              ("TabChild, Observe, different windowID, owner ID = %lld, "
-               "ID from wrapper = %lld", window->WindowID(), windowID));
       return NS_OK;
     }
 
@@ -833,6 +830,7 @@ TabChild::NotifyTabContextUpdated()
         } else {
           docShell->SetIsApp(OwnAppId());
         }
+        docShell->SetIsSignedPackage(OriginAttributesRef().mSignedPkg);
     }
 }
 

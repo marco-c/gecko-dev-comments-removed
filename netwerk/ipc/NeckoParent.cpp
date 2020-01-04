@@ -144,7 +144,12 @@ NeckoParent::GetValidatedAppInfo(const SerializedLoadContext& aSerialized,
         continue;
       }
     }
+    if (!aSerialized.mOriginAttributes.mSignedPkg.IsEmpty() &&
+        aSerialized.mOriginAttributes.mSignedPkg != tabContext.OriginAttributesRef().mSignedPkg) {
+      continue;
+    }
     aAttrs = OriginAttributes(appId, inBrowserElement);
+    aAttrs.mSignedPkg = tabContext.OriginAttributesRef().mSignedPkg;
     return nullptr;
   }
 
@@ -295,7 +300,7 @@ NeckoParent::AllocPCookieServiceParent()
   return new CookieServiceParent();
 }
 
-bool 
+bool
 NeckoParent::DeallocPCookieServiceParent(PCookieServiceParent* cs)
 {
   delete cs;
