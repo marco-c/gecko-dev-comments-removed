@@ -238,24 +238,6 @@ function waitForTime(aDelay) {
   return deferred.promise;
 }
 
-function waitForSourceLoaded(aPanel, aUrl) {
-  let { Sources } = aPanel.panelWin.DebuggerView;
-  let isLoaded = Sources.items.some(item =>
-    item.attachment.source.url === aUrl);
-  if (isLoaded) {
-    info("The correct source has been loaded.");
-    return promise.resolve(null);
-  } else {
-    return waitForDebuggerEvents(aPanel, aPanel.panelWin.EVENTS.NEW_SOURCE).then(() => {
-      
-      return waitForTick();
-    }).then(() => {
-      return waitForSourceLoaded(aPanel, aUrl);
-    });
-  }
-
-}
-
 function waitForSourceShown(aPanel, aUrl) {
   return waitForDebuggerEvents(aPanel, aPanel.panelWin.EVENTS.SOURCE_SHOWN).then(aSource => {
     let sourceUrl = aSource.url || aSource.introductionUrl;
@@ -577,7 +559,6 @@ let initDebugger = Task.async(function*(urlOrTab, options) {
 
   let debuggerPanel = toolbox.getCurrentPanel();
   let panelWin = debuggerPanel.panelWin;
-  let { Sources } = panelWin.DebuggerView;
 
   prepareDebugger(debuggerPanel);
 
@@ -596,15 +577,7 @@ let initDebugger = Task.async(function*(urlOrTab, options) {
                                 panelWin.EVENTS.SOURCE_SHOWN);
     }
     if (source) {
-      let isSelected = Sources.selectedItem.attachment.source.url === source;
-      if (!isSelected) {
-        
-        yield waitForSourceLoaded(debuggerPanel, source);
-        
-        let onSource = waitForSourceAndCaret(debuggerPanel, source, line ? line : 1);
-        Sources.selectedValue = getSourceActor(Sources, source);
-        yield onSource;
-      }
+      ensureSourceIs(debuggerPanel, source);
     }
     yield onCaretUpdated;
   }

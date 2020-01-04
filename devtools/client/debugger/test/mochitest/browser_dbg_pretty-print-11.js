@@ -15,7 +15,7 @@ var gEditor, gSources;
 function test() {
   
   let options = {
-    source: EXAMPLE_URL + "code_ugly.js",
+    source: "code_ugly.js",
     line: 2
   };
   initDebugger(TAB_URL, options).then(([aTab,, aPanel]) => {
