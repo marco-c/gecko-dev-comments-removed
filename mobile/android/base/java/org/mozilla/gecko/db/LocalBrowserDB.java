@@ -1631,7 +1631,7 @@ public class LocalBrowserDB implements BrowserDB {
         
         final int blanksRequired = suggestedRangeLimit - topSitesCursor.getCount();
 
-        if (blanksRequired < 0) {
+        if (blanksRequired <= 0) {
             return topSitesCursor;
         }
 
