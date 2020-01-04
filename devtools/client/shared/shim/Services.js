@@ -591,7 +591,7 @@ function pref(name, value) {
   thePref.setDefault(value);
 }
 
-exports.Services = Services;
+module.exports = Services;
 
 
 
