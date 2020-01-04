@@ -214,6 +214,8 @@ public:
   
   
   
+  
+  
   virtual nsresult ConfigurationChanged(const TrackInfo& aConfig)
   {
     return NS_OK;
