@@ -51,6 +51,10 @@ filefield + button {
   padding-bottom: 0; 
 }
 
+#fxaProfileImage {
+  -moz-user-focus: normal;
+}
+
 
 
 
