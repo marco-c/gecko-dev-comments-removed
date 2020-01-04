@@ -52,6 +52,12 @@ class CallOnServerClose;
 class CallAcknowledge;
 class WebSocketEventService;
 
+extern nsresult
+CalculateWebSocketHashedSecret(const nsACString& aKey, nsACString& aHash);
+extern void
+ProcessServerWebSocketExtensions(const nsACString& aExtensions,
+                                 nsACString& aNegotiatedExtensions);
+
 
 enum wsConnectingState {
   NOT_CONNECTING = 0,     

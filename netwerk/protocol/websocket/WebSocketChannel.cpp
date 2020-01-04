@@ -40,6 +40,8 @@
 #include "nsThreadUtils.h"
 #include "nsINetworkLinkService.h"
 #include "nsIObserverService.h"
+#include "nsITransportProvider.h"
+#include "nsCharSeparatedTokenizer.h"
 
 #include "nsAutoPtr.h"
 #include "nsNetCID.h"
@@ -761,8 +763,8 @@ class PMCECompression
 {
 public:
   PMCECompression(bool aNoContextTakeover,
-                  int32_t aClientMaxWindowBits,
-                  int32_t aServerMaxWindowBits)
+                  int32_t aLocalMaxWindowBits,
+                  int32_t aRemoteMaxWindowBits)
     : mActive(false)
     , mNoContextTakeover(aNoContextTakeover)
     , mResetDeflater(false)
@@ -775,8 +777,8 @@ public:
     mDeflater.opaque = mInflater.opaque = Z_NULL;
 
     if (deflateInit2(&mDeflater, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
-                     -aClientMaxWindowBits, 8, Z_DEFAULT_STRATEGY) == Z_OK) {
-      if (inflateInit2(&mInflater, -aServerMaxWindowBits) == Z_OK) {
+                     -aLocalMaxWindowBits, 8, Z_DEFAULT_STRATEGY) == Z_OK) {
+      if (inflateInit2(&mInflater, -aRemoteMaxWindowBits) == Z_OK) {
         mActive = true;
       } else {
         deflateEnd(&mDeflater);
@@ -1574,14 +1576,31 @@ WebSocketChannel::ProcessInput(uint8_t *buffer, uint32_t count)
     LOG(("WebSocketChannel::ProcessInput: Frame accumulated - opcode %d\n",
          opcode));
 
+    if (!maskBit && mIsServerSide) {
+      LOG(("WebSocketChannel::ProcessInput: unmasked frame received "
+           "from client\n"));
+      return NS_ERROR_ILLEGAL_VALUE;
+    }
+
     if (maskBit) {
-      
-      
-      LOG(("WebSocketChannel:: Client RECEIVING masked frame."));
+      if (!mIsServerSide) {
+        
+        
+        
+        LOG(("WebSocketChannel:: Client RECEIVING masked frame."));
+      }
 
       mask = NetworkEndian::readUint32(payload - 4);
-      ApplyMask(mask, payload, payloadLength);
     }
+
+    if (mask) {
+      ApplyMask(mask, payload, payloadLength);
+    } else if (mIsServerSide) {
+      LOG(("WebSocketChannel::ProcessInput: masked frame with mask 0 received"
+           "from client\n"));
+      return NS_ERROR_ILLEGAL_VALUE;
+    }
+
 
     
     if (!finBit && (opcode & kControlFrameMask)) {
@@ -2021,6 +2040,9 @@ WebSocketChannel::PrimeNewOutgoingMessage()
   mCurrentOutSent = 0;
   mHdrOut = mOutHeader;
 
+  uint8_t maskBit = mIsServerSide ? 0 : kMaskBit;
+  uint8_t maskSize = mIsServerSide ? 0 : 4;
+
   uint8_t *payload = nullptr;
 
   if (msgType == kMsgTypeFin) {
@@ -2033,10 +2055,10 @@ WebSocketChannel::PrimeNewOutgoingMessage()
 
     mClientClosed = 1;
     mOutHeader[0] = kFinalFragBit | nsIWebSocketFrame::OPCODE_CLOSE;
-    mOutHeader[1] = kMaskBit;
+    mOutHeader[1] = maskBit;
 
     
-    payload = mOutHeader + 6;
+    payload = mOutHeader + 2 + maskSize;
 
     
     
@@ -2045,7 +2067,7 @@ WebSocketChannel::PrimeNewOutgoingMessage()
       if (mScriptCloseCode) {
         NetworkEndian::writeUint16(payload, mScriptCloseCode);
         mOutHeader[1] += 2;
-        mHdrOutToSend = 8;
+        mHdrOutToSend = 4 + maskSize;
         if (!mScriptCloseReason.IsEmpty()) {
           MOZ_ASSERT(mScriptCloseReason.Length() <= 123,
                      "Close Reason Too Long");
@@ -2059,12 +2081,12 @@ WebSocketChannel::PrimeNewOutgoingMessage()
         
         
         
-        mHdrOutToSend = 6;
+        mHdrOutToSend = 2 + maskSize;
       }
     } else {
       NetworkEndian::writeUint16(payload, ResultToCloseCode(mStopOnClose));
       mOutHeader[1] += 2;
-      mHdrOutToSend = 8;
+      mHdrOutToSend = 4 + maskSize;
     }
 
     if (mServerClosed) {
@@ -2131,38 +2153,40 @@ WebSocketChannel::PrimeNewOutgoingMessage()
     }
 
     if (mCurrentOut->Length() < 126) {
-      mOutHeader[1] = mCurrentOut->Length() | kMaskBit;
-      mHdrOutToSend = 6;
+      mOutHeader[1] = mCurrentOut->Length() | maskBit;
+      mHdrOutToSend = 2 + maskSize;
     } else if (mCurrentOut->Length() <= 0xffff) {
-      mOutHeader[1] = 126 | kMaskBit;
+      mOutHeader[1] = 126 | maskBit;
       NetworkEndian::writeUint16(mOutHeader + sizeof(uint16_t),
                                  mCurrentOut->Length());
-      mHdrOutToSend = 8;
+      mHdrOutToSend = 4 + maskSize;
     } else {
-      mOutHeader[1] = 127 | kMaskBit;
+      mOutHeader[1] = 127 | maskBit;
       NetworkEndian::writeUint64(mOutHeader + 2, mCurrentOut->Length());
-      mHdrOutToSend = 14;
+      mHdrOutToSend = 10 + maskSize;
     }
     payload = mOutHeader + mHdrOutToSend;
   }
 
   MOZ_ASSERT(payload, "payload offset not found");
 
-  
-  uint32_t mask;
-  do {
-    uint8_t *buffer;
-    nsresult rv = mRandomGenerator->GenerateRandomBytes(4, &buffer);
-    if (NS_FAILED(rv)) {
-      LOG(("WebSocketChannel::PrimeNewOutgoingMessage(): "
-           "GenerateRandomBytes failure %x\n", rv));
-      StopSession(rv);
-      return;
-    }
-    mask = * reinterpret_cast<uint32_t *>(buffer);
-    free(buffer);
-  } while (!mask);
-  NetworkEndian::writeUint32(payload - sizeof(uint32_t), mask);
+  uint32_t mask = 0;
+  if (!mIsServerSide) {
+    
+    do {
+      uint8_t *buffer;
+      nsresult rv = mRandomGenerator->GenerateRandomBytes(4, &buffer);
+      if (NS_FAILED(rv)) {
+        LOG(("WebSocketChannel::PrimeNewOutgoingMessage(): "
+             "GenerateRandomBytes failure %x\n", rv));
+        StopSession(rv);
+        return;
+      }
+      mask = * reinterpret_cast<uint32_t *>(buffer);
+      free(buffer);
+    } while (!mask);
+    NetworkEndian::writeUint32(payload - sizeof(uint32_t), mask);
+  }
 
   LOG(("WebSocketChannel::PrimeNewOutgoingMessage() using mask %08x\n", mask));
 
@@ -2189,15 +2213,16 @@ WebSocketChannel::PrimeNewOutgoingMessage()
     mService->FrameSent(mSerial, mInnerWindowID, frame.forget());
   }
 
-  while (payload < (mOutHeader + mHdrOutToSend)) {
-    *payload ^= mask >> 24;
-    mask = RotateLeft(mask, 8);
-    payload++;
+  if (mask) {
+    while (payload < (mOutHeader + mHdrOutToSend)) {
+      *payload ^= mask >> 24;
+      mask = RotateLeft(mask, 8);
+      payload++;
+    }
+
+    
+    ApplyMask(mask, mCurrentOut->BeginWriting(), mCurrentOut->Length());
   }
-
-  
-
-  ApplyMask(mask, mCurrentOut->BeginWriting(), mCurrentOut->Length());
 
   int32_t len = mCurrentOut->Length();
 
@@ -2313,10 +2338,10 @@ WebSocketChannel::StopSession(nsresult reason)
 
   if (!mOpenedHttpChannel) {
     
-    mChannel = nullptr;
-    mHttpChannel = nullptr;
-    mLoadGroup = nullptr;
-    mCallbacks = nullptr;
+    NS_ReleaseOnMainThread(mChannel.forget());
+    NS_ReleaseOnMainThread(mHttpChannel.forget());
+    NS_ReleaseOnMainThread(mLoadGroup.forget());
+    NS_ReleaseOnMainThread(mCallbacks.forget());
   }
 
   if (mCloseTimer) {
@@ -2477,6 +2502,128 @@ WebSocketChannel::DecrementSessionCount()
   }
 }
 
+namespace {
+enum ExtensionParseMode { eParseServerSide, eParseClientSide };
+}
+
+static nsresult
+ParseWebSocketExtension(const nsACString& aExtension,
+                        ExtensionParseMode aMode,
+                        bool& aClientNoContextTakeover,
+                        bool& aServerNoContextTakeover,
+                        int32_t& aClientMaxWindowBits,
+                        int32_t& aServerMaxWindowBits)
+{
+  nsCCharSeparatedTokenizer tokens(aExtension, ';');
+
+  if (!tokens.hasMoreTokens() ||
+      !tokens.nextToken().Equals(NS_LITERAL_CSTRING("permessage-deflate"))) {
+    LOG(("WebSocketChannel::ParseWebSocketExtension: "
+         "HTTP Sec-WebSocket-Extensions negotiated unknown value %s\n",
+         PromiseFlatCString(aExtension).get()));
+    return NS_ERROR_ILLEGAL_VALUE;
+  }
+
+  aClientNoContextTakeover = aServerNoContextTakeover = false;
+  aClientMaxWindowBits = aServerMaxWindowBits = -1;
+
+  while (tokens.hasMoreTokens()) {
+    auto token = tokens.nextToken();
+
+    int32_t nameEnd, valueStart;
+    int32_t delimPos = token.FindChar('=');
+    if (delimPos == kNotFound) {
+      nameEnd = token.Length();
+      valueStart = token.Length();
+    } else {
+      nameEnd = delimPos;
+      valueStart = delimPos + 1;
+    }
+
+    auto paramName = Substring(token, 0, nameEnd);
+    auto paramValue = Substring(token, valueStart);
+
+    if (paramName.EqualsLiteral("client_no_context_takeover")) {
+      if (!paramValue.IsEmpty()) {
+        LOG(("WebSocketChannel::ParseWebSocketExtension: parameter "
+             "client_no_context_takeover must not have value, found %s\n",
+             PromiseFlatCString(paramValue).get()));
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+      if (aClientNoContextTakeover) {
+        LOG(("WebSocketChannel::ParseWebSocketExtension: found multiple "
+             "parameters client_no_context_takeover\n"));
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+      aClientNoContextTakeover = true;
+    } else if (paramName.EqualsLiteral("server_no_context_takeover")) {
+      if (!paramValue.IsEmpty()) {
+        LOG(("WebSocketChannel::ParseWebSocketExtension: parameter "
+             "server_no_context_takeover must not have value, found %s\n",
+             PromiseFlatCString(paramValue).get()));
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+      if (aServerNoContextTakeover) {
+        LOG(("WebSocketChannel::ParseWebSocketExtension: found multiple "
+             "parameters server_no_context_takeover\n"));
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+      aServerNoContextTakeover = true;
+    } else if (paramName.EqualsLiteral("client_max_window_bits")) {
+      if (aClientMaxWindowBits != -1) {
+        LOG(("WebSocketChannel::ParseWebSocketExtension: found multiple "
+             "parameters client_max_window_bits\n"));
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+
+      if (aMode == eParseServerSide && paramValue.IsEmpty()) {
+        
+        
+        aClientMaxWindowBits = -2;
+      }
+      else {
+        nsresult errcode;
+        aClientMaxWindowBits =
+          PromiseFlatCString(paramValue).ToInteger(&errcode);
+        if (NS_FAILED(errcode) || aClientMaxWindowBits < 8 ||
+            aClientMaxWindowBits > 15) {
+          LOG(("WebSocketChannel::ParseWebSocketExtension: found invalid "
+               "parameter client_max_window_bits %s\n",
+               PromiseFlatCString(paramValue).get()));
+          return NS_ERROR_ILLEGAL_VALUE;
+        }
+      }
+    } else if (paramName.EqualsLiteral("server_max_window_bits")) {
+      if (aServerMaxWindowBits != -1) {
+        LOG(("WebSocketChannel::ParseWebSocketExtension: found multiple "
+             "parameters server_max_window_bits\n"));
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+
+      nsresult errcode;
+      aServerMaxWindowBits =
+        PromiseFlatCString(paramValue).ToInteger(&errcode);
+      if (NS_FAILED(errcode) || aServerMaxWindowBits < 8 ||
+          aServerMaxWindowBits > 15) {
+        LOG(("WebSocketChannel::ParseWebSocketExtension: found invalid "
+             "parameter server_max_window_bits %s\n",
+             PromiseFlatCString(paramValue).get()));
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+    } else {
+      LOG(("WebSocketChannel::ParseWebSocketExtension: found unknown "
+           "parameter %s\n", PromiseFlatCString(paramName).get()));
+      return NS_ERROR_ILLEGAL_VALUE;
+    }
+  }
+
+  if (aClientMaxWindowBits == -2) {
+    aClientMaxWindowBits = -1;
+  }
+
+  return NS_OK;
+}
+
 nsresult
 WebSocketChannel::HandleExtensions()
 {
@@ -2489,166 +2636,135 @@ WebSocketChannel::HandleExtensions()
 
   rv = mHttpChannel->GetResponseHeader(
     NS_LITERAL_CSTRING("Sec-WebSocket-Extensions"), extensions);
-  if (NS_SUCCEEDED(rv)) {
-    LOG(("WebSocketChannel::HandleExtensions: received "
-         "Sec-WebSocket-Extensions header: %s\n", extensions.get()));
+  extensions.CompressWhitespace();
+  if (extensions.IsEmpty()) {
+    return NS_OK;
+  }
 
-    extensions.CompressWhitespace();
+  LOG(("WebSocketChannel::HandleExtensions: received "
+       "Sec-WebSocket-Extensions header: %s\n", extensions.get()));
 
-    if (!extensions.IsEmpty()) {
-      if (StringBeginsWith(extensions,
-                           NS_LITERAL_CSTRING("permessage-deflate"))) {
-        if (!mAllowPMCE) {
-          LOG(("WebSocketChannel::HandleExtensions: "
-               "Recvd permessage-deflate which wasn't offered\n"));
-          AbortSession(NS_ERROR_ILLEGAL_VALUE);
-          return NS_ERROR_ILLEGAL_VALUE;
-        }
+  bool clientNoContextTakeover;
+  bool serverNoContextTakeover;
+  int32_t clientMaxWindowBits;
+  int32_t serverMaxWindowBits;
 
-        bool skipExtensionName = false;
-        bool clientNoContextTakeover = false;
-        bool serverNoContextTakeover = false;
-        int32_t clientMaxWindowBits = -1;
-        int32_t serverMaxWindowBits = -1;
+  rv = ParseWebSocketExtension(extensions,
+                               eParseClientSide,
+                               clientNoContextTakeover,
+                               serverNoContextTakeover,
+                               clientMaxWindowBits,
+                               serverMaxWindowBits);
+  if (NS_FAILED(rv)) {
+    AbortSession(rv);
+    return rv;
+  }
 
-        while (!extensions.IsEmpty()) {
-          nsAutoCString paramName;
-          nsAutoCString paramValue;
+  if (!mAllowPMCE) {
+    LOG(("WebSocketChannel::HandleExtensions: "
+         "Recvd permessage-deflate which wasn't offered\n"));
+    AbortSession(NS_ERROR_ILLEGAL_VALUE);
+    return NS_ERROR_ILLEGAL_VALUE;
+  }
 
-          int32_t delimPos = extensions.FindChar(';');
-          if (delimPos != kNotFound) {
-            paramName = Substring(extensions, 0, delimPos);
-            extensions = Substring(extensions, delimPos + 1);
-          } else {
-            paramName = extensions;
-            extensions.Truncate();
-          }
-          paramName.CompressWhitespace();
-          extensions.CompressWhitespace();
+  if (clientMaxWindowBits == -1) {
+    clientMaxWindowBits = 15;
+  }
+  if (serverMaxWindowBits == -1) {
+    serverMaxWindowBits = 15;
+  }
 
-          delimPos = paramName.FindChar('=');
-          if (delimPos != kNotFound) {
-            paramValue = Substring(paramName, delimPos + 1);
-            paramName.Truncate(delimPos);
-          }
+  mPMCECompressor = new PMCECompression(clientNoContextTakeover,
+                                        clientMaxWindowBits,
+                                        serverMaxWindowBits);
+  if (mPMCECompressor->Active()) {
+    LOG(("WebSocketChannel::HandleExtensions: PMCE negotiated, %susing "
+         "context takeover, clientMaxWindowBits=%d, "
+         "serverMaxWindowBits=%d\n",
+         clientNoContextTakeover ? "NOT " : "", clientMaxWindowBits,
+         serverMaxWindowBits));
 
-          if (!skipExtensionName) {
-            skipExtensionName = true;
-            if (!paramName.EqualsLiteral("permessage-deflate") ||
-                !paramValue.IsEmpty()) {
-              LOG(("WebSocketChannel::HandleExtensions: HTTP "
-                   "Sec-WebSocket-Extensions negotiated unknown extension\n"));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-          } else if (paramName.EqualsLiteral("client_no_context_takeover")) {
-            if (!paramValue.IsEmpty()) {
-              LOG(("WebSocketChannel::HandleExtensions: parameter "
-                   "client_no_context_takeover must not have value, found %s\n",
-                   paramValue.get()));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-            if (clientNoContextTakeover) {
-              LOG(("WebSocketChannel::HandleExtensions: found multiple "
-                   "parameters client_no_context_takeover\n"));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-            clientNoContextTakeover = true;
-          } else if (paramName.EqualsLiteral("server_no_context_takeover")) {
-            if (!paramValue.IsEmpty()) {
-              LOG(("WebSocketChannel::HandleExtensions: parameter "
-                   "server_no_context_takeover must not have value, found %s\n",
-                   paramValue.get()));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-            if (serverNoContextTakeover) {
-              LOG(("WebSocketChannel::HandleExtensions: found multiple "
-                   "parameters server_no_context_takeover\n"));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-            serverNoContextTakeover = true;
-          } else if (paramName.EqualsLiteral("client_max_window_bits")) {
-            if (clientMaxWindowBits != -1) {
-              LOG(("WebSocketChannel::HandleExtensions: found multiple "
-                   "parameters client_max_window_bits\n"));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-
-            nsresult errcode;
-            clientMaxWindowBits = paramValue.ToInteger(&errcode);
-            if (NS_FAILED(errcode) || clientMaxWindowBits < 8 ||
-                clientMaxWindowBits > 15) {
-              LOG(("WebSocketChannel::HandleExtensions: found invalid "
-                   "parameter client_max_window_bits %s\n", paramValue.get()));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-          } else if (paramName.EqualsLiteral("server_max_window_bits")) {
-            if (serverMaxWindowBits != -1) {
-              LOG(("WebSocketChannel::HandleExtensions: found multiple "
-                   "parameters server_max_window_bits\n"));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-
-            nsresult errcode;
-            serverMaxWindowBits = paramValue.ToInteger(&errcode);
-            if (NS_FAILED(errcode) || serverMaxWindowBits < 8 ||
-                serverMaxWindowBits > 15) {
-              LOG(("WebSocketChannel::HandleExtensions: found invalid "
-                   "parameter server_max_window_bits %s\n", paramValue.get()));
-              AbortSession(NS_ERROR_ILLEGAL_VALUE);
-              return NS_ERROR_ILLEGAL_VALUE;
-            }
-          } else {
-            LOG(("WebSocketChannel::HandleExtensions: found unknown "
-                 "parameter %s\n", paramName.get()));
-            AbortSession(NS_ERROR_ILLEGAL_VALUE);
-            return NS_ERROR_ILLEGAL_VALUE;
-          }
-        }
-
-        if (clientMaxWindowBits == -1) {
-          clientMaxWindowBits = 15;
-        }
-        if (serverMaxWindowBits == -1) {
-          serverMaxWindowBits = 15;
-        }
-
-        mPMCECompressor = new PMCECompression(clientNoContextTakeover,
-                                              clientMaxWindowBits,
-                                              serverMaxWindowBits);
-        if (mPMCECompressor->Active()) {
-          LOG(("WebSocketChannel::HandleExtensions: PMCE negotiated, %susing "
-               "context takeover, clientMaxWindowBits=%d, "
-               "serverMaxWindowBits=%d\n",
-               clientNoContextTakeover ? "NOT " : "", clientMaxWindowBits,
-               serverMaxWindowBits));
-
-          mNegotiatedExtensions = "permessage-deflate";
-        } else {
-          LOG(("WebSocketChannel::HandleExtensions: Cannot init PMCE "
-               "compression object\n"));
-          mPMCECompressor = nullptr;
-          AbortSession(NS_ERROR_UNEXPECTED);
-          return NS_ERROR_UNEXPECTED;
-        }
-      } else {
-        LOG(("WebSocketChannel::HandleExtensions: "
-             "HTTP Sec-WebSocket-Extensions negotiated unknown value %s\n",
-             extensions.get()));
-        AbortSession(NS_ERROR_ILLEGAL_VALUE);
-        return NS_ERROR_ILLEGAL_VALUE;
-      }
-    }
+    mNegotiatedExtensions = "permessage-deflate";
+  } else {
+    LOG(("WebSocketChannel::HandleExtensions: Cannot init PMCE "
+         "compression object\n"));
+    mPMCECompressor = nullptr;
+    AbortSession(NS_ERROR_UNEXPECTED);
+    return NS_ERROR_UNEXPECTED;
   }
 
   return NS_OK;
+}
+
+void
+ProcessServerWebSocketExtensions(const nsACString& aExtensions,
+                                 nsACString& aNegotiatedExtensions)
+{
+  aNegotiatedExtensions.Truncate();
+
+  nsCOMPtr<nsIPrefBranch> prefService =
+    do_GetService(NS_PREFSERVICE_CONTRACTID);
+  if (prefService) {
+    bool boolpref;
+    nsresult rv = prefService->
+      GetBoolPref("network.websocket.extensions.permessage-deflate", &boolpref);
+    if (NS_SUCCEEDED(rv) && !boolpref) {
+      return;
+    }
+  }
+
+  nsCCharSeparatedTokenizer extList(aExtensions, ',');
+  while (extList.hasMoreTokens()) {
+    bool clientNoContextTakeover;
+    bool serverNoContextTakeover;
+    int32_t clientMaxWindowBits;
+    int32_t serverMaxWindowBits;
+
+    nsresult rv = ParseWebSocketExtension(extList.nextToken(),
+                                          eParseServerSide,
+                                          clientNoContextTakeover,
+                                          serverNoContextTakeover,
+                                          clientMaxWindowBits,
+                                          serverMaxWindowBits);
+    if (NS_FAILED(rv)) {
+      
+      continue;
+    }
+
+    aNegotiatedExtensions.AssignLiteral("permessage-deflate");
+    if (clientNoContextTakeover) {
+      aNegotiatedExtensions.AppendLiteral(";client_no_context_takeover");
+    }
+    if (serverNoContextTakeover) {
+      aNegotiatedExtensions.AppendLiteral(";server_no_context_takeover");
+    }
+    if (clientMaxWindowBits != -1) {
+      aNegotiatedExtensions.AppendLiteral(";client_max_window_bits=");
+      aNegotiatedExtensions.AppendInt(clientMaxWindowBits);
+    }
+    if (serverMaxWindowBits != -1) {
+      aNegotiatedExtensions.AppendLiteral(";server_max_window_bits=");
+      aNegotiatedExtensions.AppendInt(serverMaxWindowBits);
+    }
+
+    return;
+  }
+}
+
+nsresult
+CalculateWebSocketHashedSecret(const nsACString& aKey, nsACString& aHash)
+{
+  nsresult rv;
+  nsCString key =
+    aKey + NS_LITERAL_CSTRING("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+  nsCOMPtr<nsICryptoHash> hasher =
+    do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = hasher->Init(nsICryptoHash::SHA1);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = hasher->Update((const uint8_t *)key.BeginWriting(), key.Length());
+  NS_ENSURE_SUCCESS(rv, rv);
+  return hasher->Finish(true, aHash);
 }
 
 nsresult
@@ -2716,16 +2832,7 @@ WebSocketChannel::SetupRequest()
 
   
   
-  secKeyString.AppendLiteral("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-  nsCOMPtr<nsICryptoHash> hasher =
-    do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = hasher->Init(nsICryptoHash::SHA1);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = hasher->Update((const uint8_t *) secKeyString.BeginWriting(),
-                      secKeyString.Length());
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = hasher->Finish(true, mHashedSecret);
+  rv = CalculateWebSocketHashedSecret(secKeyString, mHashedSecret);
   NS_ENSURE_SUCCESS(rv, rv);
   LOG(("WebSocketChannel::SetupRequest: expected server key %s\n",
        mHashedSecret.get()));
@@ -3182,7 +3289,7 @@ WebSocketChannel::AsyncOpen(nsIURI *aURI,
     return NS_ERROR_UNEXPECTED;
   }
 
-  if (!aURI || !aListener) {
+  if ((!aURI && !mIsServerSide) || !aListener) {
     LOG(("WebSocketChannel::AsyncOpen() Uri or Listener null"));
     return NS_ERROR_UNEXPECTED;
   }
@@ -3200,13 +3307,6 @@ WebSocketChannel::AsyncOpen(nsIURI *aURI,
   mSocketThread = do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
   if (NS_FAILED(rv)) {
     NS_WARNING("unable to continue without socket transport service");
-    return rv;
-  }
-
-  mRandomGenerator =
-    do_GetService("@mozilla.org/security/random-generator;1", &rv);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("unable to continue without random number generator");
     return rv;
   }
 
@@ -3273,11 +3373,29 @@ WebSocketChannel::AsyncOpen(nsIURI *aURI,
     return NS_ERROR_SOCKET_CREATE_FAILED;
   }
 
+  mInnerWindowID = aInnerWindowID;
   mOriginalURI = aURI;
   mURI = mOriginalURI;
-  mURI->GetHostPort(mHost);
   mOrigin = aOrigin;
-  mInnerWindowID = aInnerWindowID;
+
+  if (mIsServerSide) {
+    
+    mWasOpened = 1;
+    mListenerMT = new ListenerAndContextContainer(aListener, aContext);
+    mServerTransportProvider->SetListener(this);
+    mServerTransportProvider = nullptr;
+
+    return NS_OK;
+  }
+
+  mURI->GetHostPort(mHost);
+
+  mRandomGenerator =
+    do_GetService("@mozilla.org/security/random-generator;1", &rv);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("unable to continue without random number generator");
+    return rv;
+  }
 
   nsCOMPtr<nsIURI> localURI;
   nsCOMPtr<nsIChannel> localChannel;
@@ -3536,6 +3654,51 @@ WebSocketChannel::OnTransportAvailable(nsISocketTransport *aTransport,
     
     
     nsWSAdmissionManager::OnConnected(this);
+
+    return StartWebsocketData();
+  }
+
+  if (mIsServerSide) {
+    if (!mNegotiatedExtensions.IsEmpty()) {
+      bool clientNoContextTakeover;
+      bool serverNoContextTakeover;
+      int32_t clientMaxWindowBits;
+      int32_t serverMaxWindowBits;
+
+      rv = ParseWebSocketExtension(mNegotiatedExtensions,
+                                   eParseServerSide,
+                                   clientNoContextTakeover,
+                                   serverNoContextTakeover,
+                                   clientMaxWindowBits,
+                                   serverMaxWindowBits);
+      MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv), "illegal value provided by server");
+
+      if (clientMaxWindowBits == -1) {
+        clientMaxWindowBits = 15;
+      }
+      if (serverMaxWindowBits == -1) {
+        serverMaxWindowBits = 15;
+      }
+
+      mPMCECompressor = new PMCECompression(serverNoContextTakeover,
+                                            serverMaxWindowBits,
+                                            clientMaxWindowBits);
+      if (mPMCECompressor->Active()) {
+        LOG(("WebSocketChannel::OnTransportAvailable: PMCE negotiated, %susing "
+             "context takeover, serverMaxWindowBits=%d, "
+             "clientMaxWindowBits=%d\n",
+             serverNoContextTakeover ? "NOT " : "", serverMaxWindowBits,
+             clientMaxWindowBits));
+
+        mNegotiatedExtensions = "permessage-deflate";
+      } else {
+        LOG(("WebSocketChannel::OnTransportAvailable: Cannot init PMCE "
+             "compression object\n"));
+        mPMCECompressor = nullptr;
+        AbortSession(NS_ERROR_UNEXPECTED);
+        return NS_ERROR_UNEXPECTED;
+      }
+    }
 
     return StartWebsocketData();
   }

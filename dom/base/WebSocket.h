@@ -24,6 +24,7 @@
 #define DEFAULT_WSS_SCHEME_PORT 443
 
 class nsIInputStream;
+class nsITransportProvider;
 
 namespace mozilla {
 namespace dom {
@@ -81,6 +82,13 @@ public:
                                                  const nsAString& aUrl,
                                                  const Sequence<nsString>& aProtocols,
                                                  ErrorResult& rv);
+
+  static already_AddRefed<WebSocket> ConstructorCommon(const GlobalObject& aGlobal,
+                                                       const nsAString& aUrl,
+                                                       const Sequence<nsString>& aProtocols,
+                                                       nsITransportProvider* aTransportProvider,
+                                                       const nsACString& aNegotiatedExtensions,
+                                                       ErrorResult& rv);
 
   
   void GetUrl(nsAString& aResult);
