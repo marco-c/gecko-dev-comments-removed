@@ -7,14 +7,13 @@
 #include "mozilla/TaskQueue.h"
 
 #include "nsThreadUtils.h"
-#include "mozilla/SharedThreadPool.h"
 
 namespace mozilla {
 
-TaskQueue::TaskQueue(already_AddRefed<SharedThreadPool> aPool,
-                               bool aRequireTailDispatch)
+TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
+                     bool aRequireTailDispatch)
   : AbstractThread(aRequireTailDispatch)
-  , mPool(aPool)
+  , mTarget(aTarget)
   , mQueueMonitor("TaskQueue::Queue")
   , mTailDispatcher(nullptr)
   , mIsRunning(false)
@@ -64,7 +63,7 @@ TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
     return NS_OK;
   }
   RefPtr<nsIRunnable> runner(new Runner(this));
-  nsresult rv = mPool->Dispatch(runner.forget(), NS_DISPATCH_NORMAL);
+  nsresult rv = mTarget->Dispatch(runner.forget(), NS_DISPATCH_NORMAL);
   if (NS_FAILED(rv)) {
     NS_WARNING("Failed to dispatch runnable to run TaskQueue");
     return rv;
@@ -195,7 +194,7 @@ TaskQueue::Runner::Run()
   
   
   
-  nsresult rv = mQueue->mPool->DispatchFromEndOfTaskInThisPool(this);
+  nsresult rv = mQueue->mTarget->Dispatch(this, NS_DISPATCH_AT_END);
   if (NS_FAILED(rv)) {
     
     MonitorAutoLock mon(mQueue->mQueueMonitor);
