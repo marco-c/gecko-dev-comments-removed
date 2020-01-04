@@ -151,6 +151,8 @@ PRBool
 DoInterfaceDirectoryEntry(XPTArena *arena, XPTCursor *cursor,
                           XPTInterfaceDirectoryEntry *ide)
 {
+    char* dummy_name_space;
+
     
     if (!XPT_DoIID(cursor, &(ide->iid)) ||
         
@@ -160,8 +162,8 @@ DoInterfaceDirectoryEntry(XPTArena *arena, XPTCursor *cursor,
         
         
 
-        !XPT_DoCString(arena, cursor, &(ide->name_space)) ||
-        
+        !XPT_DoCString(arena, cursor, &dummy_name_space,  true) ||
+
         
         !DoInterfaceDescriptor(arena, cursor, &ide->interface_descriptor)) {
         return PR_FALSE;

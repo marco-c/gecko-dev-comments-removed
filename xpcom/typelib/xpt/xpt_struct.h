@@ -92,7 +92,11 @@ struct XPTHeader {
 struct XPTInterfaceDirectoryEntry {
     nsID                   iid;
     char                   *name;
-    char                   *name_space;
+
+    
+    
+    
+
     XPTInterfaceDescriptor *interface_descriptor;
 };
 
