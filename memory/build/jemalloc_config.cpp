@@ -6,8 +6,20 @@
 
 #define MOZ_JEMALLOC_IMPL
 
+
 #include "mozmemory_wrap.h"
+#include <mozilla/Assertions.h>
 #include "mozilla/Types.h"
+
+#define DLLEXPORT
+#include "jemalloc/jemalloc.h"
+
+#ifdef XP_WIN
+#include <windows.h>
+#endif
+#ifdef XP_DARWIN
+#include <sys/mman.h>
+#endif
 
 
 #ifdef MOZ_WIDGET_GONK
@@ -41,10 +53,116 @@ _je_malloc_message(void* cbopaque, const char* s)
 void (*je_(malloc_message))(void*, const char* s) = _je_malloc_message;
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(XP_WIN) || defined(XP_DARWIN)
+class JemallocInit {
+public:
+  JemallocInit()
+  {
+    chunk_hooks_t hooks;
+    size_t hooks_len;
+    unsigned narenas;
+    size_t mib[3];
+    size_t size;
+
+    size = sizeof(narenas);
+    je_(mallctl)("arenas.narenas", &narenas, &size, nullptr, 0);
+
+    size = sizeof(mib) / sizeof(mib[0]);
+    je_(mallctlnametomib)("arena.0.chunk_hooks", mib, &size);
+
+    
+    for (unsigned arena = 0; arena < narenas; arena++) {
+      mib[1] = arena;
+      hooks_len = sizeof(hooks);
+      je_(mallctlbymib)(mib, size, &hooks, &hooks_len, nullptr, 0);
+
+#ifdef XP_WIN
+      hooks.commit = CommitHook;
+      hooks.decommit = DecommitHook;
+#endif
+#ifdef XP_DARWIN
+      hooks.purge = PurgeHook;
+#endif
+
+      je_(mallctlbymib)(mib, size, nullptr, nullptr, &hooks, hooks_len);
+    }
+  }
+
+private:
+#ifdef XP_WIN
+  static bool
+  CommitHook(void* chunk, size_t size, size_t offset, size_t length,
+             unsigned arena_ind)
+  {
+    void* addr = reinterpret_cast<void*>(
+      reinterpret_cast<uintptr_t>(chunk) + static_cast<uintptr_t>(offset));
+
+    if (!VirtualAlloc(addr, length, MEM_COMMIT, PAGE_READWRITE))
+      MOZ_CRASH();
+
+    return false;
+  }
+
+  static bool
+  DecommitHook(void* chunk, size_t size, size_t offset, size_t length,
+               unsigned arena_ind)
+  {
+    void* addr = reinterpret_cast<void*>(
+      reinterpret_cast<uintptr_t>(chunk) + static_cast<uintptr_t>(offset));
+
+    if (!VirtualFree(addr, length, MEM_DECOMMIT))
+      MOZ_CRASH();
+
+    return false;
+  }
+#endif
+
+#ifdef XP_DARWIN
+  static bool
+  PurgeHook(void* chunk, size_t size, size_t offset, size_t length,
+            unsigned arena_ind)
+  {
+    void* addr = reinterpret_cast<void*>(
+      reinterpret_cast<uintptr_t>(chunk) + static_cast<uintptr_t>(offset));
+
+    void* new_addr = mmap(addr, length, PROT_READ | PROT_WRITE,
+                          MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0);
+    return (new_addr != addr);
+  }
+#endif
+};
+
+
+JemallocInit gJemallocInit;
+#endif
+
+#else
+#include <mozilla/Assertions.h>
 #endif 
 
-
-#include <mozilla/Assertions.h>
 
 extern "C" void moz_abort() {
   MOZ_CRASH();
