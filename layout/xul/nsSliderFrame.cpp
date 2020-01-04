@@ -93,7 +93,6 @@ nsSliderFrame::nsSliderFrame(nsStyleContext* aContext):
 
 nsSliderFrame::~nsSliderFrame()
 {
-  MOZ_ASSERT(!mSuppressionActive, "Should have un-suppress via StopDrag() first.");
   if (mSuppressionActive) {
     APZCCallbackHelper::SuppressDisplayport(false, PresContext() ?
                                                    PresContext()->PresShell() :
