@@ -6,9 +6,7 @@
 
 #include "TaskThrottler.h"
 
-#include "mozilla/layers/APZThreadUtils.h"  
-#include "nsComponentManagerUtils.h"        
-#include "nsITimer.h"
+#include "base/message_loop.h"
 
 #define TASK_LOG(...)
 
@@ -23,17 +21,14 @@ TaskThrottler::TaskThrottler(const TimeStamp& aTimeStamp, const TimeDuration& aM
   , mStartTime(aTimeStamp)
   , mMaxWait(aMaxWait)
   , mMean(1)
-  , mTimer(do_CreateInstance(NS_TIMER_CONTRACTID))
+  , mTimeoutTask(nullptr)
 {
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
 }
 
 TaskThrottler::~TaskThrottler()
 {
-  mTimer->Cancel();
+  
+  
 }
 
 void
@@ -53,17 +48,9 @@ TaskThrottler::PostTask(const tracked_objects::Location& aLocation,
       
       
       TimeDuration timeout = mMaxWait - TimeSinceLastRequest(aTimeStamp, lock);
-      TimeStamp timeoutTime = mStartTime + mMaxWait;
-      RefPtr<TaskThrottler> refPtrThis = this;
-      mTimer->InitWithCallback(NewTimerCallback(
-          [refPtrThis, timeoutTime]()
-          {
-            MonitorAutoLock lock(refPtrThis->mMonitor);
-            if (refPtrThis->mQueuedTask) {
-              refPtrThis->RunQueuedTask(timeoutTime, lock);
-            }
-          }),
-          timeout.ToMilliseconds(), nsITimer::TYPE_ONE_SHOT);
+      mTimeoutTask = NewRunnableMethod(this, &TaskThrottler::OnTimeout);
+      MessageLoop::current()->PostDelayedTask(FROM_HERE, mTimeoutTask,
+          timeout.ToMilliseconds());
       return;
     }
     
@@ -73,6 +60,18 @@ TaskThrottler::PostTask(const tracked_objects::Location& aLocation,
   mStartTime = aTimeStamp;
   aTask->Run();
   mOutstanding = true;
+}
+
+void
+TaskThrottler::OnTimeout()
+{
+  MonitorAutoLock lock(mMonitor);
+  if (mQueuedTask) {
+    RunQueuedTask(TimeStamp::Now(), lock);
+  }
+  
+  
+  mTimeoutTask = nullptr;
 }
 
 void
@@ -88,7 +87,7 @@ TaskThrottler::TaskComplete(const TimeStamp& aTimeStamp)
 
   if (mQueuedTask) {
     RunQueuedTask(aTimeStamp, lock);
-    mTimer->Cancel();
+    CancelTimeoutTask(lock);
   } else {
     mOutstanding = false;
   }
@@ -126,7 +125,16 @@ TaskThrottler::CancelPendingTask(const MonitorAutoLock& aProofOfLock)
     TASK_LOG("%p cancelling task %p\n", this, mQueuedTask.get());
     mQueuedTask->Cancel();
     mQueuedTask = nullptr;
-    mTimer->Cancel();
+    CancelTimeoutTask(aProofOfLock);
+  }
+}
+
+void
+TaskThrottler::CancelTimeoutTask(const MonitorAutoLock& aProofOfLock)
+{
+  if (mTimeoutTask) {
+    mTimeoutTask->Cancel();
+    mTimeoutTask = nullptr;  
   }
 }
 
