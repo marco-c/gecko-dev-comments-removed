@@ -170,6 +170,9 @@ class Nursery
     
     void freeBuffer(void* buffer);
 
+    
+    static const size_t MaxNurseryBufferSize = 1024;
+
     typedef Vector<ObjectGroup*, 0, SystemAllocPolicy> ObjectGroupList;
 
     
@@ -345,9 +348,6 @@ class Nursery
     struct Canary;
     Canary* lastCanary_;
 #endif
-
-    
-    static const size_t MaxNurseryBufferSize = 1024;
 
     
     static const size_t NurseryChunkUsableSize = gc::ChunkSize - sizeof(gc::ChunkTrailer);

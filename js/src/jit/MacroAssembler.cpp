@@ -1053,17 +1053,36 @@ JS_FOR_EACH_TYPED_ARRAY(CREATE_TYPED_ARRAY)
         MOZ_CRASH("Unsupported TypedArray type");
     }
 
-    void* buf = AllocateObjectBuffer<char>(cx, obj, nbytes);
+    nbytes = JS_ROUNDUP(nbytes, sizeof(Value));
+
+    
+    
+    
+    
+    if (nbytes > Nursery::MaxNurseryBufferSize)
+        return;
+
+    Nursery& nursery = cx->runtime()->gc.nursery;
+    void* buf = nursery.allocateBuffer(obj->zone(), nbytes);
     if (buf) {
-        obj->initPrivate(buf);
-        memset(buf, 0, nbytes);
+        if (nursery.isInside(buf) || obj->isTenured()) {
+            obj->initPrivate(buf);
+            memset(buf, 0, nbytes);
+        } else {
+            
+            
+            
+            
+            nursery.removeMallocedBuffer(buf);
+            js_free(buf);
+        }
     }
 }
 
 void
 MacroAssembler::initTypedArraySlots(Register obj, Register temp, Register lengthReg,
                                     LiveRegisterSet liveRegs, Label* fail,
-                                    TypedArrayObject* templateObj)
+                                    TypedArrayObject* templateObj, TypedArrayLength lengthKind)
 {
     MOZ_ASSERT(templateObj->hasPrivate());
     MOZ_ASSERT(!templateObj->hasBuffer());
@@ -1078,7 +1097,7 @@ MacroAssembler::initTypedArraySlots(Register obj, Register temp, Register length
     int32_t length = templateObj->length();
     size_t nbytes = length * templateObj->bytesPerElement();
 
-    if (dataOffset + nbytes <= JSObject::MAX_BYTE_SIZE) {
+    if (lengthKind == TypedArrayLength::Fixed && dataOffset + nbytes <= JSObject::MAX_BYTE_SIZE) {
         MOZ_ASSERT(dataOffset + nbytes <= templateObj->tenuredSizeOfThis());
 
         
@@ -1097,7 +1116,8 @@ MacroAssembler::initTypedArraySlots(Register obj, Register temp, Register length
         for (size_t i = 0; i < numZeroPointers; i++)
             storePtr(ImmWord(0), Address(obj, dataOffset + i * sizeof(char *)));
     } else {
-        move32(Imm32(length), lengthReg);
+        if (lengthKind == TypedArrayLength::Fixed)
+            move32(Imm32(length), lengthReg);
 
         
         liveRegs.addUnchecked(temp);
