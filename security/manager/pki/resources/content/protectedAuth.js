@@ -2,9 +2,10 @@
 
 
 
+
 function onLoad()
 {
-  protectedAuthThread =
+  let protectedAuthThread =
     window.arguments[0].QueryInterface(Components.interfaces.nsIProtectedAuthThread);
 
   if (!protectedAuthThread) {
@@ -18,7 +19,7 @@ function onLoad()
     let tag = document.getElementById("tokenName");
     tag.setAttribute("value", tokenName);
 
-    setCursor("wait");
+    window.setCursor("wait");
 
     let obs = {
       observe: function protectedAuthListenerObserve(subject, topic, data) {
@@ -36,5 +37,5 @@ function onLoad()
 
 function onClose()
 {
-  setCursor("default");
+  window.setCursor("auto");
 }

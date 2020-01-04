@@ -2,6 +2,7 @@
 
 
 
+
 const nsPK11TokenDB = "@mozilla.org/security/pk11tokendb;1";
 const nsIPK11TokenDB = Components.interfaces.nsIPK11TokenDB;
 const nsIDialogParamBlock = Components.interfaces.nsIDialogParamBlock;

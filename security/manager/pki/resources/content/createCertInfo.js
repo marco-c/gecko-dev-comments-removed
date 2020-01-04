@@ -4,6 +4,7 @@
 
 
 
+
 var keygenThread;
 
 function onLoad()
@@ -15,7 +16,7 @@ function onLoad()
     return;
   }
 
-  setCursor("wait");
+  window.setCursor("wait");
 
   var obs = {
     observe : function keygenListenerObserve(subject, topic, data) {
@@ -30,7 +31,7 @@ function onLoad()
 
 function onClose()
 {
-  setCursor("default");
+  window.setCursor("auto");
 
   var alreadyClosed = {};
   keygenThread.userCanceled(alreadyClosed);

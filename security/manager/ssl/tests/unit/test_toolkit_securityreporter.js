@@ -18,6 +18,7 @@ const CC = Components.Constructor;
 const Cm = Components.manager;
 
 Cu.import("resource://testing-common/AppInfo.jsm");
+ 
 updateAppInfo();
 
 

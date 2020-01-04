@@ -17,6 +17,7 @@ var appName = "XPCShell";
 var version = "1";
 var platformVersion = "1.9.2";
 Cu.import("resource://testing-common/AppInfo.jsm", this);
+ 
 updateAppInfo({
   name: appName,
   ID: id,

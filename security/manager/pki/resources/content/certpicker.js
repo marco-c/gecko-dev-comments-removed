@@ -3,6 +3,7 @@
 
 
 
+
 const nsIDialogParamBlock = Components.interfaces.nsIDialogParamBlock;
 
 var dialogParams;
