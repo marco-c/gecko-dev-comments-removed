@@ -29,6 +29,8 @@ struct CubebDestroyPolicy
 
 class AudioStream;
 class FrameHistory;
+class AudioConfig;
+class AudioConverter;
 
 class AudioClock
 {
@@ -371,6 +373,8 @@ private:
   bool mIsMonoAudioEnabled;
 
   DataSource& mDataSource;
+
+  UniquePtr<AudioConverter> mAudioConverter;
 };
 
 } 
