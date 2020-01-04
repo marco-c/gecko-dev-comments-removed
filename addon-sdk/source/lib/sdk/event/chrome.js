@@ -57,7 +57,7 @@ function observe(topic) {
   
   
   
-  unload(() => removeObserver(observerChannel, topic));
+  unload(() => removeObserver(observerChannel, topic), { weak: true });
 
   return observerChannel;
 }
