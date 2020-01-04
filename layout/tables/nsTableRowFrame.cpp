@@ -662,30 +662,17 @@ nsTableRowFrame::CalculateCellActualBSize(nsTableCellFrame* aCellFrame,
       MOZ_FALLTHROUGH;
     }
     case eStyleUnit_Coord: {
-      nscoord outsideBoxSizing = 0;
       
       
       
       
       
-      if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks) {
-        switch (position->mBoxSizing) {
-          case StyleBoxSizing::Content:
-            outsideBoxSizing =
-              aCellFrame->GetLogicalUsedBorderAndPadding(aWM).BStartEnd(aWM);
-            break;
-          case StyleBoxSizing::Padding:
-            outsideBoxSizing =
-              aCellFrame->GetLogicalUsedBorder(aWM).BStartEnd(aWM);
-            break;
-          case StyleBoxSizing::Border:
-            break;
-        }
+      specifiedBSize = nsRuleNode::ComputeCoordPercentCalc(bsizeStyleCoord, 0);
+      if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks &&
+          position->mBoxSizing == StyleBoxSizing::Content) {
+        specifiedBSize +=
+          aCellFrame->GetLogicalUsedBorderAndPadding(aWM).BStartEnd(aWM);
       }
-
-      specifiedBSize =
-        nsRuleNode::ComputeCoordPercentCalc(bsizeStyleCoord, 0) +
-        outsideBoxSizing;
 
       if (1 == rowSpan) {
         SetFixedBSize(specifiedBSize);

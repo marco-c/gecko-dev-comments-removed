@@ -81,16 +81,8 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
           
           
           nsRect rect = frameToResize->GetScreenRectInAppUnits();
-          switch (frameToResize->StylePosition()->mBoxSizing) {
-            case StyleBoxSizing::Content:
-              rect.Deflate(frameToResize->GetUsedPadding());
-              MOZ_FALLTHROUGH;
-            case StyleBoxSizing::Padding:
-              rect.Deflate(frameToResize->GetUsedBorder());
-              MOZ_FALLTHROUGH;
-            case StyleBoxSizing::Border:
-              
-              break;
+          if (frameToResize->StylePosition()->mBoxSizing == StyleBoxSizing::Content) {
+            rect.Deflate(frameToResize->GetUsedBorderAndPadding());
           }
 
           mMouseDownRect =

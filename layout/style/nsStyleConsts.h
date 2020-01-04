@@ -58,7 +58,6 @@ static inline css::Side operator++(css::Side& side, int) {
 
 enum class StyleBoxSizing : uint8_t {
   Content,
-  Padding,
   Border
 };
 
