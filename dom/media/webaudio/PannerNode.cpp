@@ -62,10 +62,18 @@ public:
     , mListenerSpeedOfSound(0.)
     , mLeftOverData(INT_MIN)
   {
+  }
+
+  void CreateHRTFPanner()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (mHRTFPanner) {
+      return;
+    }
     
     already_AddRefed<HRTFDatabaseLoader> loader =
-      HRTFDatabaseLoader::createAndLoadAsynchronouslyIfNecessary(aNode->Context()->SampleRate());
-    mHRTFPanner = new HRTFPanner(aNode->Context()->SampleRate(), Move(loader));
+      HRTFDatabaseLoader::createAndLoadAsynchronouslyIfNecessary(NodeMainThread()->Context()->SampleRate());
+    mHRTFPanner = new HRTFPanner(NodeMainThread()->Context()->SampleRate(), Move(loader));
   }
 
   void SetInt32Parameter(uint32_t aIndex, int32_t aParam) override
@@ -206,6 +214,9 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
+  
+  
+  
   nsAutoPtr<HRTFPanner> mHRTFPanner;
   typedef void (PannerNodeEngine::*PanningModelFunction)(const AudioBlock& aInput, AudioBlock* aOutput);
   PanningModelFunction mPanningModelFunction;
@@ -259,6 +270,18 @@ PannerNode::~PannerNode()
   if (Context()) {
     Context()->UnregisterPannerNode(this);
   }
+}
+
+void PannerNode::SetPanningModel(PanningModelType aPanningModel)
+{
+  mPanningModel = aPanningModel;
+  if (mPanningModel == PanningModelType::HRTF) {
+    
+    
+    
+    static_cast<PannerNodeEngine*>(mStream->Engine())->CreateHRTFPanner();
+  }
+  SendInt32ParameterToStream(PANNING_MODEL, int32_t(mPanningModel));
 }
 
 size_t
