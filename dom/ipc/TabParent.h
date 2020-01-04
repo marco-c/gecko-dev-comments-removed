@@ -39,9 +39,9 @@ class nsIDocShell;
 
 namespace mozilla {
 
-  namespace a11y {
+namespace a11y {
 class DocAccessibleParent;
-  }
+}
 
 namespace jsipc {
 class CpowHolder;
@@ -266,7 +266,7 @@ public:
     
 
 
-     a11y::DocAccessibleParent* GetTopLevelDocAccessible() const;
+    a11y::DocAccessibleParent* GetTopLevelDocAccessible() const;
 
     void LoadURL(nsIURI* aURI);
     
