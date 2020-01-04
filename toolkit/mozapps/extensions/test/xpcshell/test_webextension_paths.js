@@ -37,7 +37,7 @@ add_task(function* test_bad_unpacked_path() {
 
   for (let dir of directories) {
     try {
-      writeWebManifestForExtension(manifest, profileDir, dir);
+      yield promiseWriteWebManifestForExtension(manifest, profileDir, dir);
     } catch (ex) {
       
       

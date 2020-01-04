@@ -124,7 +124,7 @@ add_task(function*() {
 
 
 add_task(function*() {
-  writeWebManifestForExtension({
+  yield promiseWriteWebManifestForExtension({
     name: "Web Extension Name",
     version: "1.0",
     manifest_version: 2,
@@ -190,7 +190,7 @@ add_task(function* test_manifest_localization() {
 
 
 add_task(function*() {
-  writeWebManifestForExtension({
+  yield promiseWriteWebManifestForExtension({
     name: "Web Extension Name",
     manifest_version: 2,
     applications: {
@@ -213,7 +213,7 @@ add_task(function*() {
 
 
 add_task(function*() {
-  writeWebManifestForExtension({
+  yield promiseWriteWebManifestForExtension({
     name: "Web Extension Name",
     version: "1.0",
     manifest_version: 1,
