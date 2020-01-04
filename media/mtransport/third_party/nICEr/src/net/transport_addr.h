@@ -44,11 +44,8 @@
 #include <netinet/in.h>
 #endif
 
-#ifdef WIN32
-#define MAXIFNAME IFNAMSIZ
-#else
-#define MAXIFNAME 16
-#endif
+
+#define MAXIFNAME 33
 
 
 
