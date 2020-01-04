@@ -168,15 +168,33 @@ nsSVGOuterSVGFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
   DISPLAY_PREF_WIDTH(this, result);
 
   SVGSVGElement *svg = static_cast<SVGSVGElement*>(mContent);
-  nsSVGLength2 &width = svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
+  WritingMode wm = GetWritingMode();
+  const nsSVGLength2& isize = wm.IsVertical()
+    ? svg->mLengthAttributes[SVGSVGElement::ATTR_HEIGHT]
+    : svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
 
-  if (width.IsPercentage()) {
+  if (isize.IsPercentage()) {
     
     
     
     result = nscoord(0);
+
+    
+    
+    
+    
+    
+    nsIFrame *parent = GetParent();
+    while (parent) {
+      nscoord parentISize = parent->GetLogicalSize(wm).ISize(wm);
+      if (parentISize > 0 && parentISize != NS_UNCONSTRAINEDSIZE) {
+        result = parentISize;
+        break;
+      }
+      parent = parent->GetParent();
+    }
   } else {
-    result = nsPresContext::CSSPixelsToAppUnits(width.GetAnimValue(svg));
+    result = nsPresContext::CSSPixelsToAppUnits(isize.GetAnimValue(svg));
     if (result < 0) {
       result = nscoord(0);
     }
