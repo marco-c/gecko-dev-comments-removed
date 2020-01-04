@@ -274,6 +274,8 @@ pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.prop
 
 pref("browser.search.defaultenginename", "chrome://browser/locale/region.properties");
 
+pref("browser.search.param.maxSuggestions", "4");
+
 pref("browser.ssl_override_behavior", 2);
 pref("browser.xul.error_pages.expert_bad_cert", false);
 
@@ -866,6 +868,30 @@ pref("browser.snippets.syncPromo.enabled", true);
 pref("browser.snippets.firstrunHomepage.enabled", true);
 
 
+pref("browser.webapps.apkFactoryUrl", "https://controller.apk.firefox.com/application.apk");
+
+
+pref("browser.webapps.updateInterval", 86400);
+
+
+
+
+
+
+
+
+
+
+
+
+pref("browser.webapps.checkForUpdates", 1);
+
+
+
+
+pref("browser.webapps.updateCheckUrl", "https://controller.apk.firefox.com/app_updates");
+
+
 
 
 pref("home.sync.updateMode", 0);
@@ -920,6 +946,9 @@ pref("layout.accessiblecaret.use_long_tap_injector", false);
 
 
 pref("layout.accessiblecaret.extendedvisibility", true);
+
+
+pref("layout.accessiblecaret.always_tilt", true);
 
 
 

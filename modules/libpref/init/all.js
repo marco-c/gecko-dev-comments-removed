@@ -4981,6 +4981,9 @@ pref("layout.accessiblecaret.use_long_tap_injector", true);
 pref("layout.accessiblecaret.extendedvisibility", false);
 
 
+pref("layout.accessiblecaret.always_tilt", false);
+
+
 
 pref("layout.accessiblecaret.allow_script_change_updates", false);
 

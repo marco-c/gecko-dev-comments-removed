@@ -204,7 +204,11 @@ protected:
                                    nsIFrame* aEndFrame) const;
 
   
-  virtual void UpdateCaretsForTilt();
+  virtual void UpdateCaretsForOverlappingTilt();
+
+  
+  virtual void UpdateCaretsForAlwaysTilt(nsIFrame* aStartFrame,
+                                         nsIFrame* aEndFrame);
 
   
   
@@ -276,6 +280,10 @@ protected:
   
   
   static bool sCaretsExtendedVisibility;
+
+  
+  
+  static bool sCaretsAlwaysTilt;
 
   
   
