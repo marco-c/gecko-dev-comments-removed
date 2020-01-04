@@ -120,4 +120,11 @@ extern GeckoProcessType sChildProcessType;
 
 void SetupErrorHandling(const char* progname);
 
+
+
+
+
+
+uint32_t MultiprocessBlockPolicy();
+
 #endif 
