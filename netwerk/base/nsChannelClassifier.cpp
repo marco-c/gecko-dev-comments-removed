@@ -499,8 +499,12 @@ nsChannelClassifier::SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel)
   if (!channelLoadInfo || !docURI) {
     return false;
   }
+
   nsCOMPtr<nsIPrincipal> channelLoadingPrincipal = channelLoadInfo->LoadingPrincipal();
   if (!channelLoadingPrincipal) {
+    
+    
+    
     return false;
   }
   nsCOMPtr<nsIURI> channelLoadingURI;
