@@ -16,10 +16,10 @@ import android.view.View;
 public interface PanZoomController {
     
     
-    public static final float PAN_THRESHOLD = 1/16f * GeckoAppShell.getDpi();
+    public static final float PAN_THRESHOLD = 1 / 16f * GeckoAppShell.getDpi();
 
     
-    public static final float CLICK_THRESHOLD = 1/50f * GeckoAppShell.getDpi();
+    public static final float CLICK_THRESHOLD = 1 / 50f * GeckoAppShell.getDpi();
 
     static class Factory {
         static PanZoomController create(PanZoomTarget target, View view, EventDispatcher dispatcher) {

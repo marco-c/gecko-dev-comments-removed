@@ -57,7 +57,7 @@ class JavaPanZoomController
     private static final double AXIS_BREAKOUT_ANGLE = Math.PI / 8.0;
 
     
-    public static final float AXIS_BREAKOUT_THRESHOLD = 1/32f * GeckoAppShell.getDpi();
+    public static final float AXIS_BREAKOUT_THRESHOLD = 1 / 32f * GeckoAppShell.getDpi();
 
     
     private static final float MAX_ZOOM = 4.0f;
@@ -266,9 +266,9 @@ class JavaPanZoomController
                 float newHeight = viewableRect.height() * cssPageRect.width() / viewableRect.width();
                 float dh = viewableRect.height() - newHeight; 
                 final RectF r = new RectF(0.0f,
-                                    y + dh/2,
+                                    y + dh / 2,
                                     cssPageRect.width(),
-                                    y + dh/2 + newHeight);
+                                    y + dh / 2 + newHeight);
                 if (message.optBoolean("animate", true)) {
                     mTarget.post(new Runnable() {
                         @Override

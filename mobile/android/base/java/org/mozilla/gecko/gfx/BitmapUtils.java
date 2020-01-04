@@ -334,9 +334,9 @@ public final class BitmapUtils {
         return Color.argb(255, 255, 255, 255);
 
       
-      hsv[0] = sumHue[maxBin]/colorBins[maxBin];
-      hsv[1] = sumSat[maxBin]/colorBins[maxBin];
-      hsv[2] = sumVal[maxBin]/colorBins[maxBin];
+      hsv[0] = sumHue[maxBin] / colorBins[maxBin];
+      hsv[1] = sumSat[maxBin] / colorBins[maxBin];
+      hsv[2] = sumVal[maxBin] / colorBins[maxBin];
       return Color.HSVToColor(hsv);
     }
 

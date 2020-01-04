@@ -72,7 +72,7 @@ public class MenuPopup extends PopupWindow {
 
         
         
-        final int xOffset = anchor.getWidth()/2 - mPopupWidth/2;
+        final int xOffset = anchor.getWidth() / 2 - mPopupWidth / 2;
         showAsDropDown(anchor, xOffset, -mYOffset);
     }
 }
