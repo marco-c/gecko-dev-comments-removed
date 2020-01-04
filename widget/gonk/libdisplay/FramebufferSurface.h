@@ -43,9 +43,6 @@ public:
     virtual void onFrameCommitted();
     
     
-    virtual void dump(String8& result) const;
-    
-    
     virtual void resizeBuffers(const uint32_t , const uint32_t ) { };
 
     
