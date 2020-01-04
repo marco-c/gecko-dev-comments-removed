@@ -5363,7 +5363,6 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
                                 const bool& aCalledFromJS,
                                 const bool& aPositionSpecified,
                                 const bool& aSizeSpecified,
-                                const nsCString& aURI,
                                 const nsString& aName,
                                 const nsCString& aFeatures,
                                 const nsCString& aBaseURI,
@@ -5496,44 +5495,13 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
     return true;
   }
 
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> baseURI;
-  *aResult = NS_NewURI(getter_AddRefs(baseURI), aBaseURI);
-
-  if (NS_WARN_IF(NS_FAILED(*aResult))) {
-    return true;
-  }
-
-  nsAutoCString finalURIString;
-  if (!aURI.IsEmpty()) {
-    nsCOMPtr<nsIURI> finalURI;
-    *aResult = NS_NewURI(getter_AddRefs(finalURI), aURI.get(), baseURI);
-
-    if (NS_WARN_IF(NS_FAILED(*aResult))) {
-      return true;
-    }
-
-    finalURI->GetSpec(finalURIString);
-  }
-
   nsCOMPtr<mozIDOMWindowProxy> window;
-
   TabParent::AutoUseNewTab aunt(newTab, aWindowIsNew, aURLToLoad);
 
-  
-  
-  
-  
-  const char* uri = aURI.IsVoid() ? nullptr : finalURIString.get();
   const char* name = aName.IsVoid() ? nullptr : NS_ConvertUTF16toUTF8(aName).get();
   const char* features = aFeatures.IsVoid() ? nullptr : aFeatures.get();
 
-  *aResult = pwwatch->OpenWindow2(parent, uri, name, features, aCalledFromJS,
+  *aResult = pwwatch->OpenWindow2(parent, nullptr, name, features, aCalledFromJS,
                                   false, false, thisTabParent, nullptr,
                                   aFullZoom, 1, getter_AddRefs(window));
 

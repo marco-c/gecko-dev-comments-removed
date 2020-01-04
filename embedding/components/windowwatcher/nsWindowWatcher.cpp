@@ -518,8 +518,10 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   nsCOMPtr<nsPIDOMWindowOuter> parent =
     aParent ? nsPIDOMWindowOuter::From(aParent) : nullptr;
 
-  MOZ_ASSERT_IF(openedFromRemoteTab,
-                XRE_IsParentProcess());
+  
+  
+  MOZ_ASSERT_IF(openedFromRemoteTab, !aUrl);
+  MOZ_ASSERT_IF(openedFromRemoteTab, XRE_IsParentProcess());
   NS_ENSURE_ARG_POINTER(aResult);
   *aResult = 0;
 
