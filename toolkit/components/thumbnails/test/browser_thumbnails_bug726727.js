@@ -5,7 +5,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   
   let tab = gBrowser.addTab("http://127.0.0.1:1/");
   let browser = tab.linkedBrowser;

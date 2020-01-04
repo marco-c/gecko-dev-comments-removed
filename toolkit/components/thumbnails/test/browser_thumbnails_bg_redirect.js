@@ -1,7 +1,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let finalURL = "http://example.com/redirected";
   let originalURL = bgTestPageURL({ redirect: finalURL });
 

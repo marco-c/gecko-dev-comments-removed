@@ -5,7 +5,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   
   let tests = [
     simpleCaptureTest,
@@ -41,7 +41,7 @@ function getThumbnailModifiedTime(url) {
 
 
 
-function simpleCaptureTest() {
+function* simpleCaptureTest() {
   let numNotifications = 0;
   const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?simple";
 
@@ -83,7 +83,7 @@ function simpleCaptureTest() {
 
 
 
-function capIfStaleErrorResponseUpdateTest() {
+function* capIfStaleErrorResponseUpdateTest() {
   const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?fail";
   yield addTab(URL);
 
@@ -113,7 +113,7 @@ function capIfStaleErrorResponseUpdateTest() {
 
 
 
-function capIfStaleGoodResponseUpdateTest() {
+function* capIfStaleGoodResponseUpdateTest() {
   const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?ok";
   yield addTab(URL);
   let browser = gBrowser.selectedBrowser;
@@ -143,7 +143,7 @@ function capIfStaleGoodResponseUpdateTest() {
 
 
 
-function regularCapErrorResponseUpdateTest() {
+function* regularCapErrorResponseUpdateTest() {
   const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?fail";
   yield addTab(URL);
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
@@ -157,7 +157,7 @@ function regularCapErrorResponseUpdateTest() {
 
 
 
-function regularCapGoodResponseUpdateTest() {
+function* regularCapGoodResponseUpdateTest() {
   const URL = "http://mochi.test:8888/browser/toolkit/components/thumbnails/test/thumbnails_update.sjs?ok";
   yield addTab(URL);
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");

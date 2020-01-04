@@ -1,7 +1,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let crashObserver = bgAddCrashObserver();
 
   

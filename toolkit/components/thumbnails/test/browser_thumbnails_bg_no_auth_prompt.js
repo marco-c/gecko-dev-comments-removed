@@ -9,7 +9,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let url = "http://mochi.test:8888/browser/browser/base/content/test/general/authenticate.sjs?user=anyone";
   ok(!thumbnailExists(url), "Thumbnail file should not already exist.");
 

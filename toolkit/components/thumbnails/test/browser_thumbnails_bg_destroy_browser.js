@@ -1,7 +1,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let url1 = "http://example.com/1";
   ok(!thumbnailExists(url1), "First file should not exist yet.");
 

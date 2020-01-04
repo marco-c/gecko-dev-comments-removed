@@ -10,7 +10,7 @@ const FINAL_URL = "http://mochi.test:8888/browser/toolkit/components/" +
 
 
 
-function runTests() {
+function* runTests() {
   dontExpireThumbnailURLs([URL, FINAL_URL]);
 
   

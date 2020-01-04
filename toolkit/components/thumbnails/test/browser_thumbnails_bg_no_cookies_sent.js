@@ -1,7 +1,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   
   let url = bgTestPageURL({ setGreenCookie: true });
   let tab = gBrowser.loadOneTab(url, { inBackground: false });

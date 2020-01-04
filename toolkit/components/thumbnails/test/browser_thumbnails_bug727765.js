@@ -12,7 +12,7 @@ function isRedThumbnailFuzz(r, g, b, expectedR, expectedB, expectedG, aFuzz)
 }
 
 
-function runTests() {
+function* runTests() {
   
   yield addTab(URL);
   yield captureAndCheckColor(255, 0, 0, "we have a red thumbnail");

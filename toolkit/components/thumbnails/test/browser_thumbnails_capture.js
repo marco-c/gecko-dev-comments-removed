@@ -5,7 +5,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   
   yield addTab("data:text/html,<body bgcolor=ff0000></body>");
   yield captureAndCheckColor(255, 0, 0, "we have a red thumbnail");

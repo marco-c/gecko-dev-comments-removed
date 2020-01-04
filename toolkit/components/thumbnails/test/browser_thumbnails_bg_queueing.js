@@ -1,7 +1,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let urls = [
     "http://www.example.com/0",
     "http://www.example.com/1",

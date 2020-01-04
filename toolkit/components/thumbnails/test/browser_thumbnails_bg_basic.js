@@ -1,7 +1,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let url = "http://www.example.com/";
   ok(!thumbnailExists(url), "Thumbnail should not be cached yet.");
 

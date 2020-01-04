@@ -1,7 +1,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let url = "http://example.com/1";
   ok(!thumbnailExists(url), "Thumbnail file should not already exist.");
   let numCallbacks = 0;

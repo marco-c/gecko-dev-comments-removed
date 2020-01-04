@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "gDirSvc",
 
 
 
-function runTests() {
+function* runTests() {
   let dirSvc = Cc["@mozilla.org/file/directory_service;1"]
                  .getService(Ci.nsIProperties);
 

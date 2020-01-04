@@ -3,7 +3,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let url = bgTestPageURL({ setRedCookie: true });
   ok(!thumbnailExists(url), "Thumbnail file should not exist before capture.");
   yield bgCapture(url);

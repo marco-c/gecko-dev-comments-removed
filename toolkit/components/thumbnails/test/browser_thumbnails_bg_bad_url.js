@@ -1,7 +1,7 @@
 
 
 
-function runTests() {
+function* runTests() {
   let url = "invalid-protocol://ffggfsdfsdf/";
   ok(!thumbnailExists(url), "Thumbnail should not be cached already.");
   let numCalls = 0;

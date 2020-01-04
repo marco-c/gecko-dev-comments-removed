@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyGetter(this, "Sanitizer", function () {
 
 
 
-function runTests() {
+function* runTests() {
   yield Task.spawn(function*() {
     dontExpireThumbnailURLs([URL, URL_COPY]);
 
