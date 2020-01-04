@@ -407,14 +407,23 @@ private:
         MOZ_ASSERT(aRunnable);
       }
 
+      
+      
+      NS_IMETHOD
+      Cancel() override
+      {
+        mRunnable->ReleaseData();
+        mRunnable->mConsole = nullptr;
+        return NS_OK;
+      }
+
       virtual bool
       WorkerRun(JSContext* aCx, workers::WorkerPrivate* aWorkerPrivate) override
       {
         MOZ_ASSERT(aWorkerPrivate);
         aWorkerPrivate->AssertIsOnWorkerThread();
 
-        mRunnable->ReleaseData();
-        mRunnable->mConsole = nullptr;
+        Cancel();
 
         aWorkerPrivate->RemoveFeature(mRunnable);
         return true;
