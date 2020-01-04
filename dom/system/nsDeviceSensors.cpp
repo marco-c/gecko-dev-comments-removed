@@ -390,16 +390,34 @@ nsDeviceSensors::FireDOMOrientationEvent(EventTarget* aTarget,
   init.mGamma.SetValue(aGamma);
   init.mAbsolute = aIsAbsolute;
 
-  RefPtr<DeviceOrientationEvent> event =
-    DeviceOrientationEvent::Constructor(aTarget,
-                                        NS_LITERAL_STRING("deviceorientation"),
-                                        init);
-  event->SetTrusted(true);
+  auto Dispatch = [&](EventTarget* aEventTarget, const nsAString& aType)
+  {
+    RefPtr<DeviceOrientationEvent> event =
+      DeviceOrientationEvent::Constructor(aEventTarget, aType, init);
+    event->SetTrusted(true);
+    bool dummy;
+    aEventTarget->DispatchEvent(event, &dummy);
+  };
 
-  bool dummy;
-  aTarget->DispatchEvent(event, &dummy);
+  Dispatch(aTarget, aIsAbsolute ? NS_LITERAL_STRING("absolutedeviceorientation") :
+                                  NS_LITERAL_STRING("deviceorientation"));
+
+  
+  
+  
+  static bool sIsDispatchingRelativeEvents = false;
+  sIsDispatchingRelativeEvents = sIsDispatchingRelativeEvents || !aIsAbsolute;
+
+  
+  
+  
+  if (aIsAbsolute && !sIsDispatchingRelativeEvents) {
+    
+    
+    
+    Dispatch(aTarget, NS_LITERAL_STRING("deviceorientation"));
+  }
 }
-
 
 void
 nsDeviceSensors::FireDOMMotionEvent(nsIDOMDocument *domdoc,
