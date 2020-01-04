@@ -307,7 +307,9 @@ struct InputContextAction final
     
     CAUSE_KEY,
     
-    CAUSE_MOUSE
+    CAUSE_MOUSE,
+    
+    CAUSE_TOUCH
   };
   Cause mCause;
 
