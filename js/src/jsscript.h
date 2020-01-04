@@ -2071,7 +2071,7 @@ class LazyScript : public gc::TenuredCell
     
     
     
-    ReadBarrieredScript script_;
+    WeakRef<JSScript*> script_;
 
     
     HeapPtrFunction function_;
@@ -2174,12 +2174,13 @@ class LazyScript : public gc::TenuredCell
     void resetScript();
 
     JSScript* maybeScript() {
-        if (script_.unbarrieredGet() && gc::IsAboutToBeFinalized(&script_))
-            script_.set(nullptr);
         return script_;
     }
-    JSScript* maybeScriptUnbarriered() const {
+    const JSScript* maybeScriptUnbarriered() const {
         return script_.unbarrieredGet();
+    }
+    bool hasScript() const {
+        return bool(script_);
     }
 
     JSObject* enclosingScope() const {

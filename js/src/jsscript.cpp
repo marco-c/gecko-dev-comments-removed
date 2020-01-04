@@ -2964,14 +2964,12 @@ JSScript::finalize(FreeOp* fop)
 
     fop->runtime()->lazyScriptCache.remove(this);
 
-    if (lazyScript && lazyScript->maybeScriptUnbarriered() == this) {
-        
-        
-        
-        
-        
-        lazyScript->resetScript();
-    }
+    
+    
+    
+    
+    MOZ_ASSERT_IF(lazyScript && !IsAboutToBeFinalizedUnbarriered(&lazyScript),
+                  !lazyScript->hasScript() || lazyScript->maybeScriptUnbarriered() != this);
 }
 
 static const uint32_t GSN_CACHE_THRESHOLD = 100;
@@ -4172,7 +4170,7 @@ LazyScript::Create(ExclusiveContext* cx, HandleFunction fun,
     MOZ_ASSERT(!res->sourceObject());
     res->setParent(enclosingScope, &sourceObjectScript->scriptSourceUnwrap());
 
-    MOZ_ASSERT(!res->maybeScriptUnbarriered());
+    MOZ_ASSERT(!res->hasScript());
     if (script)
         res->initScript(script);
 

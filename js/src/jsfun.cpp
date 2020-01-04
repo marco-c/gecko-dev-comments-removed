@@ -1408,7 +1408,7 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
             
             
             fun->initLazyScript(lazy);
-            if (lazy->maybeScriptUnbarriered())
+            if (lazy->hasScript())
                 lazy->resetScript();
             return false;
         }
