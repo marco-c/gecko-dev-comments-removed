@@ -866,7 +866,7 @@ Messenger.prototype = {
           
           
           let result = callback(message, sender, sendResponse);
-          if (result instanceof Promise) {
+          if (result instanceof this.context.cloneScope.Promise) {
             return result;
           } else if (result === true) {
             return promise;
