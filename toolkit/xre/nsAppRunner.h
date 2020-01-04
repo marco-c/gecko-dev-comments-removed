@@ -97,6 +97,13 @@ WriteConsoleLog();
 void
 OverrideDefaultLocaleIfNeeded();
 
+
+
+
+
+void
+MozExpectedExit();
+
 #ifdef XP_WIN
 void
 UseParentConsole();
