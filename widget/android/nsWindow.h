@@ -57,6 +57,11 @@ private:
     
     mozilla::UniquePtr<GLControllerSupport> mGLControllerSupport;
 
+    class NPZCSupport;
+    
+    
+    NPZCSupport* mNPZCSupport;
+
 public:
     static void OnGlobalAndroidEvent(mozilla::AndroidGeckoEvent *ae);
     static mozilla::gfx::IntSize GetAndroidScreenBounds();
