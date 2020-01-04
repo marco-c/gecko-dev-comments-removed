@@ -200,7 +200,10 @@ class TabsGridLayout extends GridView
         switch (msg) {
             case ADDED:
                 
-                refreshTabsData();
+                if (tabsPanel.isShown()) {
+                    
+                    refreshTabsData();
+                }
                 break;
 
             case CLOSED:
@@ -337,6 +340,10 @@ class TabsGridLayout extends GridView
     }
 
     void closeTab(View v) {
+        if (tabsAdapter.getCount() == 1) {
+            autoHidePanel();
+        }
+
         TabsLayoutItemView itemView = (TabsLayoutItemView) v.getTag();
         Tab tab = Tabs.getInstance().getTab(itemView.getTabId());
 
