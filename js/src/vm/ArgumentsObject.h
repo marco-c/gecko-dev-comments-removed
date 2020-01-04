@@ -159,7 +159,8 @@ class ArgumentsObject : public NativeObject
     static const uint32_t LENGTH_OVERRIDDEN_BIT = 0x1;
     static const uint32_t ITERATOR_OVERRIDDEN_BIT = 0x2;
     static const uint32_t ELEMENT_OVERRIDDEN_BIT = 0x4;
-    static const uint32_t PACKED_BITS_COUNT = 3;
+    static const uint32_t CALLEE_OVERRIDDEN_BIT = 0x8;
+    static const uint32_t PACKED_BITS_COUNT = 4;
 
     static_assert(ARGS_LENGTH_MAX <= (UINT32_MAX >> PACKED_BITS_COUNT),
                   "Max arguments length must fit in available bits");
@@ -391,17 +392,18 @@ class MappedArgumentsObject : public ArgumentsObject
   public:
     static const Class class_;
 
-    
-
-
-
     const js::Value& callee() const {
         return getFixedSlot(CALLEE_SLOT);
     }
 
-    
-    void clearCallee() {
-        setFixedSlot(CALLEE_SLOT, MagicValue(JS_OVERWRITTEN_CALLEE));
+    bool hasOverriddenCallee() const {
+        const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
+        return v.toInt32() & CALLEE_OVERRIDDEN_BIT;
+    }
+
+    void markCalleeOverridden() {
+        uint32_t v = getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | CALLEE_OVERRIDDEN_BIT;
+        setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
     }
 
   private:

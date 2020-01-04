@@ -214,9 +214,6 @@ typedef enum JSWhyMagic
     JS_IS_CONSTRUCTING,
 
     
-    JS_OVERWRITTEN_CALLEE,
-
-    
     JS_BLOCK_NEEDS_CLONE,
 
     
