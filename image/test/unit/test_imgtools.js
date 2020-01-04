@@ -693,6 +693,8 @@ try {
 
   
   
+  
+  
   try {
       istream = imgTools.encodeImage(container, "image/png");
   } catch (e) {
@@ -704,7 +706,7 @@ try {
   errsrc = "decode";
 }
 
-do_check_eq(errsrc, "decode");
+do_check_eq(errsrc, "encode");
 checkExpectedError(/NS_ERROR_FAILURE/, err);
 
 

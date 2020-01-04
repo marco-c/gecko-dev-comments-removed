@@ -43,6 +43,8 @@ class nsICODecoder : public Decoder
 public:
   virtual ~nsICODecoder() { }
 
+  nsresult SetTargetSize(const nsIntSize& aSize) override;
+
   
   static uint32_t GetRealWidth(const IconDirEntry& aEntry)
   {
@@ -61,9 +63,10 @@ public:
   
   uint32_t GetRealHeight() const { return GetRealHeight(mDirEntry); }
 
-  virtual void SetResolution(const gfx::IntSize& aResolution) override
+  
+  gfx::IntSize GetRealSize() const
   {
-    mResolution = aResolution;
+    return gfx::IntSize(GetRealWidth(), GetRealHeight());
   }
 
   
@@ -86,8 +89,6 @@ private:
   
   void GetFinalStateFromContainedDecoder();
 
-  
-  void SetHotSpotIfCursor();
   
   bool FillBitmapFileHeaderBuffer(int8_t* bfh);
   
@@ -118,10 +119,13 @@ private:
   LexerTransition<ICOState> FinishResource();
 
   StreamingLexer<ICOState, 32> mLexer; 
+  Maybe<Downscaler> mDownscaler;       
   nsRefPtr<Decoder> mContainedDecoder; 
-  gfx::IntSize mResolution;            
   char mBIHraw[40];                    
   IconDirEntry mDirEntry;              
+  IntSize mBiggestResourceSize;        
+  IntSize mBiggestResourceHotSpot;     
+  uint16_t mBiggestResourceColorDepth; 
   int32_t mBestResourceDelta;          
   uint16_t mBestResourceColorDepth;    
   uint16_t mNumIcons; 
