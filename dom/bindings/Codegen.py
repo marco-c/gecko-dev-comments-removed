@@ -4410,10 +4410,12 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
 
         
         
+        
+        
         if not isinstance(descriptorProvider, Descriptor) or descriptorProvider.interface.isJSImplemented():
             templateBody = fill(
                 """
-                if ($${passedToJSImpl} && !CallerSubsumes($${val})) {
+                if (($${passedToJSImpl}) && !CallerSubsumes($${val})) {
                   ThrowErrorMessage(cx, MSG_PERMISSION_DENIED_TO_PASS_ARG, "${sourceDescription}");
                   $*{exceptionCode}
                 }
@@ -5457,10 +5459,12 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
 
         
         
+        
+        
         if not isinstance(descriptorProvider, Descriptor) or descriptorProvider.interface.isJSImplemented():
             templateBody = fill(
                 """
-                if ($${passedToJSImpl} && !CallerSubsumes($${val})) {
+                if (($${passedToJSImpl}) && !CallerSubsumes($${val})) {
                   ThrowErrorMessage(cx, MSG_PERMISSION_DENIED_TO_PASS_ARG, "${sourceDescription}");
                   $*{exceptionCode}
                 }
@@ -7319,7 +7323,7 @@ class CGCase(CGList):
         self.append(CGGeneric("case " + expression + ": {\n"))
         bodyList = CGList([body])
         if fallThrough:
-            bodyList.append(CGGeneric("/* Fall through */\n"))
+            bodyList.append(CGGeneric("MOZ_FALLTHROUGH;\n"))
         else:
             bodyList.append(CGGeneric("break;\n"))
         self.append(CGIndenter(bodyList))

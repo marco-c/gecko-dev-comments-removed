@@ -2177,8 +2177,7 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
     
     
     QuickExit();
-#endif
-
+#else
     if (sFirstIdleTask) {
         sFirstIdleTask->Cancel();
     }
@@ -2203,6 +2202,7 @@ ContentChild::ActorDestroy(ActorDestroyReason why)
 #endif
 
     XRE_ShutdownChildProcess();
+#endif 
 }
 
 void
