@@ -33,6 +33,8 @@ const {
   SOURCE_IMPORT_REPLACE,
 } = Ci.nsINavBookmarksService;
 
+const SQLITE_MAX_VARIABLE_NUMBER = 999;
+
 
 const RECORD_PROPS_TO_BOOKMARK_PROPS = {
   title: "title",
@@ -426,7 +428,93 @@ BookmarksEngine.prototype = {
     
     
     return mapped ? mapped.toString() : mapped;
-  }
+  },
+
+  pullAllChanges() {
+    let changeset = new BookmarksChangeset();
+    for (let id in this._store.getAllIDs()) {
+      changeset.set(id, { modified: 0, deleted: false });
+    }
+    return changeset;
+  },
+
+  pullNewChanges() {
+    let modifiedGUIDs = this._getModifiedGUIDs();
+    if (!modifiedGUIDs.length) {
+      return new BookmarksChangeset(this._tracker.changedIDs);
+    }
+
+    
+    
+    
+    
+    let db = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase)
+                        .DBConnection;
+
+    
+    
+    
+    for (let startIndex = 0;
+         startIndex < modifiedGUIDs.length;
+         startIndex += SQLITE_MAX_VARIABLE_NUMBER) {
+
+      let chunkLength = Math.min(startIndex + SQLITE_MAX_VARIABLE_NUMBER,
+                                 modifiedGUIDs.length);
+
+      let query = `
+        WITH RECURSIVE
+        modifiedGuids(guid) AS (
+          VALUES ${new Array(chunkLength).fill("(?)").join(", ")}
+        ),
+        syncedItems(id) AS (
+          SELECT b.id
+          FROM moz_bookmarks b
+          WHERE b.id IN (${getChangeRootIds().join(", ")})
+          UNION ALL
+          SELECT b.id
+          FROM moz_bookmarks b
+          JOIN syncedItems s ON b.parent = s.id
+        )
+        SELECT b.guid, b.id
+        FROM modifiedGuids m
+        JOIN moz_bookmarks b ON b.guid = m.guid
+        LEFT JOIN syncedItems s ON b.id = s.id
+        WHERE s.id IS NULL
+      `;
+
+      let statement = db.createAsyncStatement(query);
+      try {
+        for (let i = 0; i < chunkLength; i++) {
+          statement.bindByIndex(i, modifiedGUIDs[startIndex + i]);
+        }
+        let results = Async.querySpinningly(statement, ["id", "guid"]);
+        for (let { id, guid } of results) {
+          let syncID = BookmarkSpecialIds.specialGUIDForId(id) || guid;
+          this._tracker.removeChangedID(syncID);
+        }
+      } finally {
+        statement.finalize();
+      }
+    }
+
+    return new BookmarksChangeset(this._tracker.changedIDs);
+  },
+
+  
+  
+  _getModifiedGUIDs() {
+    let guids = [];
+    for (let syncID in this._tracker.changedIDs) {
+      if (this._tracker.changedIDs[syncID].deleted === true) {
+        
+        
+        continue;
+      }
+      let guid = BookmarkSpecialIds.syncIDToPlacesGUID(syncID);
+      guids.push(guid);
+    }
+    return guids;
+  },
 };
 
 function BookmarksStore(name, engine) {
@@ -964,16 +1052,50 @@ BookmarksTracker.prototype = {
     Ci.nsISupportsWeakReference
   ]),
 
+  addChangedID(id, change) {
+    if (!id) {
+      this._log.warn("Attempted to add undefined ID to tracker");
+      return false;
+    }
+    if (this._ignored.includes(id)) {
+      return false;
+    }
+    let shouldSaveChange = false;
+    let currentChange = this.changedIDs[id];
+    if (currentChange) {
+      if (typeof currentChange == "number") {
+        
+        
+        shouldSaveChange = currentChange < change.modified;
+      } else {
+        shouldSaveChange = currentChange.modified < change.modified ||
+                           currentChange.deleted != change.deleted;
+      }
+    } else {
+      shouldSaveChange = true;
+    }
+    if (shouldSaveChange) {
+      this._saveChangedID(id, change);
+    }
+    return true;
+  },
+
   
 
 
 
 
 
-  _add: function BMT__add(itemId, guid) {
+
+
+
+
+  _add: function BMT__add(itemId, guid, isTombstone = false) {
     guid = BookmarkSpecialIds.specialGUIDForId(itemId) || guid;
-    if (this.addChangedID(guid))
+    let info = { modified: Date.now() / 1000, deleted: isTombstone };
+    if (this.addChangedID(guid, info)) {
       this._upScore();
+    }
   },
 
   
@@ -986,59 +1108,10 @@ BookmarksTracker.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  _ignore: function BMT__ignore(itemId, folder, guid, source) {
-    if (IGNORED_SOURCES.includes(source)) {
-      return true;
-    }
-
-    
-    if (folder == null) {
-      try {
-        folder = PlacesUtils.bookmarks.getFolderIdForItem(itemId);
-      } catch (ex) {
-        this._log.debug("getFolderIdForItem(" + itemId +
-                        ") threw; calling _ensureMobileQuery.");
-        
-        
-        this._ensureMobileQuery();
-        folder = PlacesUtils.bookmarks.getFolderIdForItem(itemId);
-      }
-    }
-
-    
-    let tags = BookmarkSpecialIds.tags;
-    if (folder == tags)
-      return true;
-
-    
-    if (PlacesUtils.bookmarks.getFolderIdForItem(folder) == tags)
-      return true;
-
-    
-    if (PlacesUtils.annotations.itemHasAnnotation(itemId, BookmarkAnnos.EXCLUDEBACKUP_ANNO)) {
-      this.removeChangedID(guid);
-      return true;
-    }
-
-    return false;
-  },
-
   onItemAdded: function BMT_onItemAdded(itemId, folder, index,
                                         itemType, uri, title, dateAdded,
                                         guid, parentGuid, source) {
-    if (this._ignore(itemId, folder, guid, source)) {
+    if (IGNORED_SOURCES.includes(source)) {
       return;
     }
 
@@ -1049,12 +1122,50 @@ BookmarksTracker.prototype = {
 
   onItemRemoved: function (itemId, parentId, index, type, uri,
                            guid, parentGuid, source) {
-    if (this._ignore(itemId, parentId, guid, source)) {
+    if (IGNORED_SOURCES.includes(source)) {
       return;
     }
 
+    
+    if (parentId == PlacesUtils.tagsFolderId) {
+      return;
+    }
+
+    let grandParentId = -1;
+    try {
+      grandParentId = PlacesUtils.bookmarks.getFolderIdForItem(parentId);
+    } catch (ex) {
+      
+      
+      return;
+    }
+
+    
+    if (grandParentId == PlacesUtils.tagsFolderId) {
+      return;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     this._log.trace("onItemRemoved: " + itemId);
-    this._add(itemId, guid);
+    this._add(itemId, guid,  true);
     this._add(parentId, parentGuid);
   },
 
@@ -1098,6 +1209,10 @@ BookmarksTracker.prototype = {
   onItemChanged: function BMT_onItemChanged(itemId, property, isAnno, value,
                                             lastModified, itemType, parentId,
                                             guid, parentGuid, source) {
+    if (IGNORED_SOURCES.includes(source)) {
+      return;
+    }
+
     if (isAnno && (ANNOS_TO_TRACK.indexOf(property) == -1))
       
       return;
@@ -1105,10 +1220,6 @@ BookmarksTracker.prototype = {
     
     if (property == "favicon")
       return;
-
-    if (this._ignore(itemId, parentId, guid, source)) {
-      return;
-    }
 
     this._log.trace("onItemChanged: " + itemId +
                     (", " + property + (isAnno? " (anno)" : "")) +
@@ -1120,7 +1231,7 @@ BookmarksTracker.prototype = {
                                         newParent, newIndex, itemType,
                                         guid, oldParentGuid, newParentGuid,
                                         source) {
-    if (this._ignore(itemId, newParent, guid, source)) {
+    if (IGNORED_SOURCES.includes(source)) {
       return;
     }
 
@@ -1146,3 +1257,26 @@ BookmarksTracker.prototype = {
   },
   onItemVisited: function () {}
 };
+
+
+
+
+function getChangeRootIds() {
+  let rootIds = [
+    PlacesUtils.bookmarksMenuFolderId,
+    PlacesUtils.toolbarFolderId,
+    PlacesUtils.unfiledBookmarksFolderId,
+  ];
+  let mobileRootId = BookmarkSpecialIds.findMobileRoot(false);
+  if (mobileRootId) {
+    rootIds.push(mobileRootId);
+  }
+  return rootIds;
+}
+
+class BookmarksChangeset extends Changeset {
+  getModifiedTimestamp(id) {
+    let change = this.changes[id];
+    return change ? change.modified : Number.NaN;
+  }
+}

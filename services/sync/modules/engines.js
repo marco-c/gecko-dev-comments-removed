@@ -7,7 +7,8 @@ this.EXPORTED_SYMBOLS = [
   "Engine",
   "SyncEngine",
   "Tracker",
-  "Store"
+  "Store",
+  "Changeset"
 ];
 
 var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
@@ -131,26 +132,30 @@ Tracker.prototype = {
       this._ignored.splice(index, 1);
   },
 
+  _saveChangedID(id, when) {
+    this._log.trace(`Adding changed ID: ${id}, ${JSON.stringify(when)}`);
+    this.changedIDs[id] = when;
+    this.saveChangedIDs(this.onSavedChangedIDs);
+  },
+
   addChangedID: function (id, when) {
     if (!id) {
       this._log.warn("Attempted to add undefined ID to tracker");
       return false;
     }
 
-    if (this.ignoreAll || (id in this._ignored)) {
+    if (this.ignoreAll || this._ignored.includes(id)) {
       return false;
     }
 
     
     if (when == null) {
-      when = Math.floor(Date.now() / 1000);
+      when = Date.now() / 1000;
     }
 
     
     if ((this.changedIDs[id] || -Infinity) < when) {
-      this._log.trace("Adding changed ID: " + id + ", " + when);
-      this.changedIDs[id] = when;
-      this.saveChangedIDs(this.onSavedChangedIDs);
+      this._saveChangedID(id, when);
     }
 
     return true;
@@ -161,8 +166,9 @@ Tracker.prototype = {
       this._log.warn("Attempted to remove undefined ID to tracker");
       return false;
     }
-    if (this.ignoreAll || (id in this._ignored))
+    if (this.ignoreAll || this._ignored.includes(id)) {
       return false;
+    }
     if (this.changedIDs[id] != null) {
       this._log.trace("Removing changed ID " + id);
       delete this.changedIDs[id];
@@ -865,7 +871,6 @@ SyncEngine.prototype = {
 
 
 
-
   getChangedIDs: function () {
     return this._tracker.changedIDs;
   },
@@ -932,20 +937,16 @@ SyncEngine.prototype = {
     
     this.lastSyncLocal = Date.now();
     if (this.lastSync) {
-      this._modified = this.getChangedIDs();
+      this._modified = this.pullNewChanges();
     } else {
-      
       this._log.debug("First sync, uploading all items");
-      this._modified = {};
-      for (let id in this._store.getAllIDs()) {
-        this._modified[id] = 0;
-      }
+      this._modified = this.pullAllChanges();
     }
     
     
     this._tracker.clearChangedIDs();
 
-    this._log.info(Object.keys(this._modified).length +
+    this._log.info(this._modified.count() +
                    " outgoing items pre-reconciliation");
 
     
@@ -1293,12 +1294,12 @@ SyncEngine.prototype = {
     
     
     let existsLocally   = this._store.itemExists(item.id);
-    let locallyModified = item.id in this._modified;
+    let locallyModified = this._modified.has(item.id);
 
     
     let remoteAge = AsyncResource.serverTime - item.modified;
     let localAge  = locallyModified ?
-      (Date.now() / 1000 - this._modified[item.id]) : null;
+      (Date.now() / 1000 - this._modified.getModifiedTimestamp(item.id)) : null;
     let remoteIsNewer = remoteAge < localAge;
 
     this._log.trace("Reconciling " + item.id + ". exists=" +
@@ -1369,13 +1370,13 @@ SyncEngine.prototype = {
 
         
         
-        if (dupeID in this._modified) {
+        if (this._modified.has(dupeID)) {
           locallyModified = true;
-          localAge = Date.now() / 1000 - this._modified[dupeID];
+          localAge = Date.now() / 1000 -
+            this._modified.getModifiedTimestamp(dupeID);
           remoteIsNewer = remoteAge < localAge;
 
-          this._modified[item.id] = this._modified[dupeID];
-          delete this._modified[dupeID];
+          this._modified.swap(dupeID, item.id);
         } else {
           locallyModified = false;
           localAge = null;
@@ -1409,7 +1410,7 @@ SyncEngine.prototype = {
       if (remoteIsNewer) {
         this._log.trace("Applying incoming because local item was deleted " +
                         "before the incoming item was changed.");
-        delete this._modified[item.id];
+        this._modified.delete(item.id);
         return true;
       }
 
@@ -1435,7 +1436,7 @@ SyncEngine.prototype = {
       this._log.trace("Ignoring incoming item because the local item is " +
                       "identical.");
 
-      delete this._modified[item.id];
+      this._modified.delete(item.id);
       return false;
     }
 
@@ -1460,7 +1461,7 @@ SyncEngine.prototype = {
   _uploadOutgoing: function () {
     this._log.trace("Uploading local changes to server.");
 
-    let modifiedIDs = Object.keys(this._modified);
+    let modifiedIDs = this._modified.ids();
     if (modifiedIDs.length) {
       this._log.trace("Preparing " + modifiedIDs.length +
                       " outgoing records");
@@ -1504,7 +1505,7 @@ SyncEngine.prototype = {
         counts.failed += failed.length;
 
         for (let id of successful) {
-          delete this._modified[id];
+          this._modified.delete(id);
         }
 
         this._onRecordsWritten(successful, failed);
@@ -1588,10 +1589,8 @@ SyncEngine.prototype = {
     }
 
     
-    for (let [id, when] of Object.entries(this._modified)) {
-      this._tracker.addChangedID(id, when);
-    }
-    this._modified = {};
+    this.trackRemainingChanges();
+    this._modified.clear();
   },
 
   _sync: function () {
@@ -1677,5 +1676,108 @@ SyncEngine.prototype = {
     return (this.service.handleHMACEvent() && mayRetry) ?
            SyncEngine.kRecoveryStrategy.retry :
            SyncEngine.kRecoveryStrategy.error;
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  pullAllChanges() {
+    let changeset = new Changeset();
+    for (let id in this._store.getAllIDs()) {
+      changeset.set(id, 0);
+    }
+    return changeset;
+  },
+
+  
+
+
+
+
+
+
+  pullNewChanges() {
+    return new Changeset(this.getChangedIDs());
+  },
+
+  
+
+
+
+
+  trackRemainingChanges() {
+    for (let [id, change] of this._modified.entries()) {
+      this._tracker.addChangedID(id, change);
+    }
+  },
 };
+
+
+
+
+
+
+
+class Changeset {
+  
+  constructor(changes = {}) {
+    this.changes = changes;
+  }
+
+  
+  
+  getModifiedTimestamp(id) {
+    return this.changes[id];
+  }
+
+  
+  set(id, change) {
+    this.changes[id] = change;
+  }
+
+  
+  has(id) {
+    return id in this.changes;
+  }
+
+  
+  
+  delete(id) {
+    delete this.changes[id];
+  }
+
+  
+  
+  swap(oldID, newID) {
+    this.changes[newID] = this.changes[oldID];
+    delete this.changes[oldID];
+  }
+
+  
+  ids() {
+    return Object.keys(this.changes);
+  }
+
+  
+  
+  entries() {
+    return Object.entries(this.changes);
+  }
+
+  
+  count() {
+    return this.ids().length;
+  }
+
+  
+  clear() {
+    this.changes = {};
+  }
+}
