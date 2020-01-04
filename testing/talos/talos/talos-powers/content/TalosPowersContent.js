@@ -1,0 +1,20 @@
+
+
+
+
+var TalosPowersContent;
+
+(function() {
+  TalosPowersContent = {
+    
+
+
+
+    forceCCAndGC() {
+      var event = new CustomEvent("TalosPowersContentForceCCAndGC", {
+        bubbles: true,
+      });
+      document.dispatchEvent(event);
+    },
+  };
+})();
