@@ -1,7 +1,7 @@
 
 
 
-MARIONETTE_TIMEOUT = 10000;
+MARIONETTE_TIMEOUT = 60000;
 MARIONETTE_HEAD_JS = 'head.js';
 
 function testReceiving_MultiSIM() {
