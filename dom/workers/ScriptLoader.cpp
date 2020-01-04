@@ -1047,7 +1047,7 @@ private:
     
     
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(request);
-    nsAutoCString tCspHeaderValue, tCspROHeaderValue;
+    nsAutoCString tCspHeaderValue, tCspROHeaderValue, tRPHeaderCValue;
 
     if (httpChannel) {
       bool requestSucceeded;
@@ -1065,6 +1065,10 @@ private:
       httpChannel->GetResponseHeader(
         NS_LITERAL_CSTRING("content-security-policy-report-only"),
         tCspROHeaderValue);
+
+      httpChannel->GetResponseHeader(
+        NS_LITERAL_CSTRING("referrer-policy"),
+        tRPHeaderCValue);
     }
 
     
@@ -1219,6 +1223,16 @@ private:
       if (parent) {
         
         mWorkerPrivate->SetXHRParamsAllowed(parent->XHRParamsAllowed());
+      }
+    }
+
+    NS_ConvertUTF8toUTF16 tRPHeaderValue(tRPHeaderCValue);
+    
+    if (!tRPHeaderValue.IsEmpty()) {
+      net::ReferrerPolicy policy =
+        nsContentUtils::GetReferrerPolicyFromHeader(tRPHeaderValue);
+      if (policy != net::RP_Unset) {
+        mWorkerPrivate->SetReferrerPolicy(policy);
       }
     }
 
