@@ -42,7 +42,7 @@ NewObjectOutputWrappedStorageStream(nsIObjectOutputStream **wrapperStream,
 
 NS_IMPORT nsresult
 NewBufferFromStorageStream(nsIStorageStream *storageStream, 
-                           char** buffer, uint32_t* len);
+                           UniquePtr<char[]>* buffer, uint32_t* len);
 } 
 } 
 
@@ -197,13 +197,13 @@ TestWriteObject() {
     return rv;
   }
 
-  nsAutoArrayPtr<char> buf;
+  UniquePtr<char[]> buf;
   uint32_t len;
-  NewBufferFromStorageStream(storageStream, getter_Transfers(buf), &len);
+  NewBufferFromStorageStream(storageStream, &buf, &len);
 
   
   
-  rv = sc->PutBuffer(id, buf, len);
+  rv = sc->PutBuffer(id, buf.get(), len);
   if (NS_FAILED(rv)) {
     fail("failed to insert input stream");
     return rv;

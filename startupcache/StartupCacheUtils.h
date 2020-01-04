@@ -33,7 +33,7 @@ NewObjectOutputWrappedStorageStream(nsIObjectOutputStream **wrapperStream,
 
 NS_EXPORT nsresult
 NewBufferFromStorageStream(nsIStorageStream *storageStream, 
-                           char** buffer, uint32_t* len);
+                           UniquePtr<char[]>* buffer, uint32_t* len);
 
 NS_EXPORT nsresult
 PathifyURI(nsIURI *in, nsACString &out);
