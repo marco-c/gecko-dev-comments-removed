@@ -195,6 +195,55 @@ protected:
 
 
 
+    void AdjustForRemovedTracks(uint32_t aFirstRemovedTrack,
+                                uint32_t aNumRemovedTracks)
+    {
+      MOZ_ASSERT(mStart != kAutoLine, "invalid resolved line for a grid item");
+      MOZ_ASSERT(mEnd != kAutoLine, "invalid resolved line for a grid item");
+      if (mStart >= aFirstRemovedTrack) {
+        MOZ_ASSERT(mStart >= aFirstRemovedTrack + aNumRemovedTracks,
+                   "can't start in a removed range of tracks - those tracks "
+                   "are supposed to be empty");
+        mStart -= aNumRemovedTracks;
+        mEnd -= aNumRemovedTracks;
+      } else {
+        MOZ_ASSERT(mEnd <= aFirstRemovedTrack, "can't span into a removed "
+                   "range of tracks - those tracks are supposed to be empty");
+      }
+    }
+    
+
+
+
+
+
+    void AdjustAbsPosForRemovedTracks(uint32_t aFirstRemovedTrack,
+                                      uint32_t aNumRemovedTracks)
+    {
+      if (mStart != nsGridContainerFrame::kAutoLine &&
+          mStart > aFirstRemovedTrack) {
+        if (mStart < aFirstRemovedTrack + aNumRemovedTracks) {
+          mStart = aFirstRemovedTrack;
+        } else {
+          mStart -= aNumRemovedTracks;
+        }
+      }
+      if (mEnd != nsGridContainerFrame::kAutoLine &&
+          mEnd > aFirstRemovedTrack) {
+        if (mEnd < aFirstRemovedTrack + aNumRemovedTracks) {
+          mEnd = aFirstRemovedTrack;
+        } else {
+          mEnd -= aNumRemovedTracks;
+        }
+      }
+      if (mStart == mEnd) {
+        mEnd = nsGridContainerFrame::kAutoLine;
+      }
+    }
+    
+
+
+
     uint32_t HypotheticalEnd() const { return mEnd; }
     
 
@@ -292,6 +341,27 @@ protected:
     };
     void Fill(const GridArea& aGridArea);
     void ClearOccupied();
+    uint32_t IsEmptyCol(uint32_t aCol) const
+    {
+      for (auto& row : mCells) {
+        if (aCol < row.Length() && row[aCol].mIsOccupied) {
+          return false;
+        }
+      }
+      return true;
+    }
+    uint32_t IsEmptyRow(uint32_t aRow) const
+    {
+      if (aRow >= mCells.Length()) {
+        return true;
+      }
+      for (const Cell& cell : mCells[aRow]) {
+        if (cell.mIsOccupied) {
+          return false;
+        }
+      }
+      return true;
+    }
 #if DEBUG
     void Dump() const;
 #endif
