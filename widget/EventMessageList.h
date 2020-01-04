@@ -22,447 +22,385 @@
 
 
 
-
-
-
-
 #ifndef NS_EVENT_MESSAGE_FIRST_LAST
 #define UNDEF_NS_EVENT_MESSAGE_FIRST_LAST 1
 #define NS_EVENT_MESSAGE_FIRST_LAST(aMessage, aFirst, aLast)
 #endif
 
-NS_EVENT_MESSAGE(eVoidEvent,            0)
+NS_EVENT_MESSAGE(eVoidEvent)
 
 
 
-NS_EVENT_MESSAGE(eAllEvents,            1)
+NS_EVENT_MESSAGE(eAllEvents)
 
-NS_EVENT_MESSAGE(eWindowEventFirst,     100)
 
-NS_EVENT_MESSAGE(eWindowClose,          eWindowEventFirst + 1)
+NS_EVENT_MESSAGE(eWindowClose)
 
-NS_EVENT_MESSAGE(eKeyPress,             eWindowEventFirst + 31)
-NS_EVENT_MESSAGE(eKeyUp,                eWindowEventFirst + 32)
-NS_EVENT_MESSAGE(eKeyDown,              eWindowEventFirst + 33)
+NS_EVENT_MESSAGE(eKeyPress)
+NS_EVENT_MESSAGE(eKeyUp)
+NS_EVENT_MESSAGE(eKeyDown)
 
-NS_EVENT_MESSAGE(eBeforeKeyDown,        eWindowEventFirst + 34)
-NS_EVENT_MESSAGE(eAfterKeyDown,         eWindowEventFirst + 35)
-NS_EVENT_MESSAGE(eBeforeKeyUp,          eWindowEventFirst + 36)
-NS_EVENT_MESSAGE(eAfterKeyUp,           eWindowEventFirst + 37)
+NS_EVENT_MESSAGE(eBeforeKeyDown)
+NS_EVENT_MESSAGE(eAfterKeyDown)
+NS_EVENT_MESSAGE(eBeforeKeyUp)
+NS_EVENT_MESSAGE(eAfterKeyUp)
 
-NS_EVENT_MESSAGE(eResize,               eWindowEventFirst + 60)
-NS_EVENT_MESSAGE(eScroll,               eWindowEventFirst + 61)
-
+NS_EVENT_MESSAGE(eResize)
+NS_EVENT_MESSAGE(eScroll)
 
 
 
 
-NS_EVENT_MESSAGE(ePluginActivate,       eWindowEventFirst + 62)
-NS_EVENT_MESSAGE(ePluginFocus,          eWindowEventFirst + 63)
 
-NS_EVENT_MESSAGE(eOffline,              eWindowEventFirst + 64)
-NS_EVENT_MESSAGE(eOnline,               eWindowEventFirst + 65)
+NS_EVENT_MESSAGE(ePluginActivate)
+NS_EVENT_MESSAGE(ePluginFocus)
 
+NS_EVENT_MESSAGE(eOffline)
+NS_EVENT_MESSAGE(eOnline)
 
+NS_EVENT_MESSAGE(eLanguageChange)
 
-NS_EVENT_MESSAGE(eLanguageChange,       eWindowEventFirst + 70)
+NS_EVENT_MESSAGE(eMouseMove)
+NS_EVENT_MESSAGE(eMouseUp)
+NS_EVENT_MESSAGE(eMouseDown)
+NS_EVENT_MESSAGE(eMouseEnterIntoWidget)
+NS_EVENT_MESSAGE(eMouseExitFromWidget)
+NS_EVENT_MESSAGE(eMouseDoubleClick)
+NS_EVENT_MESSAGE(eMouseClick)
 
-NS_EVENT_MESSAGE(eMouseEventFirst,      300)
-NS_EVENT_MESSAGE(eMouseMove,            eMouseEventFirst)
-NS_EVENT_MESSAGE(eMouseUp,              eMouseEventFirst + 1)
-NS_EVENT_MESSAGE(eMouseDown,            eMouseEventFirst + 2)
-NS_EVENT_MESSAGE(eMouseEnterIntoWidget, eMouseEventFirst + 22)
-NS_EVENT_MESSAGE(eMouseExitFromWidget,  eMouseEventFirst + 23)
-NS_EVENT_MESSAGE(eMouseDoubleClick,     eMouseEventFirst + 24)
-NS_EVENT_MESSAGE(eMouseClick,           eMouseEventFirst + 27)
-
-NS_EVENT_MESSAGE(eMouseActivate,        eMouseEventFirst + 30)
-NS_EVENT_MESSAGE(eMouseOver,            eMouseEventFirst + 31)
-NS_EVENT_MESSAGE(eMouseOut,             eMouseEventFirst + 32)
-NS_EVENT_MESSAGE(eMouseHitTest,         eMouseEventFirst + 33)
-NS_EVENT_MESSAGE(eMouseEnter,           eMouseEventFirst + 34)
-NS_EVENT_MESSAGE(eMouseLeave,           eMouseEventFirst + 35)
-NS_EVENT_MESSAGE(eMouseLongTap,         eMouseEventFirst + 36)
-
+NS_EVENT_MESSAGE(eMouseActivate)
+NS_EVENT_MESSAGE(eMouseOver)
+NS_EVENT_MESSAGE(eMouseOut)
+NS_EVENT_MESSAGE(eMouseHitTest)
+NS_EVENT_MESSAGE(eMouseEnter)
+NS_EVENT_MESSAGE(eMouseLeave)
+NS_EVENT_MESSAGE(eMouseLongTap)
 NS_EVENT_MESSAGE_FIRST_LAST(eMouseEvent, eMouseMove, eMouseLongTap)
 
 
-NS_EVENT_MESSAGE(ePointerEventFirst,    4400)
-NS_EVENT_MESSAGE(ePointerMove,          ePointerEventFirst)
-NS_EVENT_MESSAGE(ePointerUp,            ePointerEventFirst + 1)
-NS_EVENT_MESSAGE(ePointerDown,          ePointerEventFirst + 2)
-NS_EVENT_MESSAGE(ePointerOver,          ePointerEventFirst + 22)
-NS_EVENT_MESSAGE(ePointerOut,           ePointerEventFirst + 23)
-NS_EVENT_MESSAGE(ePointerEnter,         ePointerEventFirst + 24)
-NS_EVENT_MESSAGE(ePointerLeave,         ePointerEventFirst + 25)
-NS_EVENT_MESSAGE(ePointerCancel,        ePointerEventFirst + 26)
-NS_EVENT_MESSAGE(ePointerGotCapture,    ePointerEventFirst + 27)
-NS_EVENT_MESSAGE(ePointerLostCapture,   ePointerEventFirst + 28)
-NS_EVENT_MESSAGE(ePointerEventLast,     ePointerLostCapture)
-
+NS_EVENT_MESSAGE(ePointerMove)
+NS_EVENT_MESSAGE(ePointerUp)
+NS_EVENT_MESSAGE(ePointerDown)
+NS_EVENT_MESSAGE(ePointerOver)
+NS_EVENT_MESSAGE(ePointerOut)
+NS_EVENT_MESSAGE(ePointerEnter)
+NS_EVENT_MESSAGE(ePointerLeave)
+NS_EVENT_MESSAGE(ePointerCancel)
+NS_EVENT_MESSAGE(ePointerGotCapture)
+NS_EVENT_MESSAGE(ePointerLostCapture)
 NS_EVENT_MESSAGE_FIRST_LAST(ePointerEvent, ePointerMove, ePointerLostCapture)
 
-NS_EVENT_MESSAGE(eContextMenuFirst,     500)
-NS_EVENT_MESSAGE(eContextMenu,          eContextMenuFirst)
+NS_EVENT_MESSAGE(eContextMenu)
 
-NS_EVENT_MESSAGE(eStreamEventFirst,     1100)
-NS_EVENT_MESSAGE(eLoad,                 eStreamEventFirst)
-NS_EVENT_MESSAGE(eUnload,               eStreamEventFirst + 1)
-NS_EVENT_MESSAGE(eHashChange,           eStreamEventFirst + 2)
-NS_EVENT_MESSAGE(eImageAbort,           eStreamEventFirst + 3)
-NS_EVENT_MESSAGE(eLoadError,            eStreamEventFirst + 4)
-NS_EVENT_MESSAGE(ePopState,             eStreamEventFirst + 5)
-NS_EVENT_MESSAGE(eBeforeUnload,         eStreamEventFirst + 6)
-NS_EVENT_MESSAGE(eReadyStateChange,     eStreamEventFirst + 8)
+NS_EVENT_MESSAGE(eLoad)
+NS_EVENT_MESSAGE(eUnload)
+NS_EVENT_MESSAGE(eHashChange)
+NS_EVENT_MESSAGE(eImageAbort)
+NS_EVENT_MESSAGE(eLoadError)
+NS_EVENT_MESSAGE(ePopState)
+NS_EVENT_MESSAGE(eBeforeUnload)
+NS_EVENT_MESSAGE(eReadyStateChange)
  
-NS_EVENT_MESSAGE(eFormEventFirst,       1200)
-NS_EVENT_MESSAGE(eFormSubmit,           eFormEventFirst)
-NS_EVENT_MESSAGE(eFormReset,            eFormEventFirst + 1)
-NS_EVENT_MESSAGE(eFormChange,           eFormEventFirst + 2)
-NS_EVENT_MESSAGE(eFormSelect,           eFormEventFirst + 3)
-NS_EVENT_MESSAGE(eFormInvalid,          eFormEventFirst + 4)
+NS_EVENT_MESSAGE(eFormSubmit)
+NS_EVENT_MESSAGE(eFormReset)
+NS_EVENT_MESSAGE(eFormChange)
+NS_EVENT_MESSAGE(eFormSelect)
+NS_EVENT_MESSAGE(eFormInvalid)
 
 
-NS_EVENT_MESSAGE(eFocusEventFirst,      1300)
-NS_EVENT_MESSAGE(eFocus,                eFocusEventFirst)
-NS_EVENT_MESSAGE(eBlur,                 eFocusEventFirst + 1)
+NS_EVENT_MESSAGE(eFocus)
+NS_EVENT_MESSAGE(eBlur)
 
-NS_EVENT_MESSAGE(eDragDropEventFirst,   1400)
-NS_EVENT_MESSAGE(eDragEnter,            eDragDropEventFirst)
-NS_EVENT_MESSAGE(eDragOver,             eDragDropEventFirst + 1)
-NS_EVENT_MESSAGE(eDragExit,             eDragDropEventFirst + 2)
-NS_EVENT_MESSAGE(eLegacyDragDrop,       eDragDropEventFirst + 3)
-NS_EVENT_MESSAGE(eLegacyDragGesture,    eDragDropEventFirst + 4)
-NS_EVENT_MESSAGE(eDrag,                 eDragDropEventFirst + 5)
-NS_EVENT_MESSAGE(eDragEnd,              eDragDropEventFirst + 6)
-NS_EVENT_MESSAGE(eDragStart,            eDragDropEventFirst + 7)
-NS_EVENT_MESSAGE(eDrop,                 eDragDropEventFirst + 8)
-NS_EVENT_MESSAGE(eDragLeave,            eDragDropEventFirst + 9)
-NS_EVENT_MESSAGE(eDragDropEventLast,    eDragLeave)
-
+NS_EVENT_MESSAGE(eDragEnter)
+NS_EVENT_MESSAGE(eDragOver)
+NS_EVENT_MESSAGE(eDragExit)
+NS_EVENT_MESSAGE(eLegacyDragDrop)
+NS_EVENT_MESSAGE(eLegacyDragGesture)
+NS_EVENT_MESSAGE(eDrag)
+NS_EVENT_MESSAGE(eDragEnd)
+NS_EVENT_MESSAGE(eDragStart)
+NS_EVENT_MESSAGE(eDrop)
+NS_EVENT_MESSAGE(eDragLeave)
 NS_EVENT_MESSAGE_FIRST_LAST(eDragDropEvent, eDragEnter, eDragLeave)
 
 
-NS_EVENT_MESSAGE(eXULEventFirst,        1500)
-NS_EVENT_MESSAGE(eXULPopupShowing,      eXULEventFirst)
-NS_EVENT_MESSAGE(eXULPopupShown,        eXULEventFirst + 1)
-NS_EVENT_MESSAGE(eXULPopupHiding,       eXULEventFirst + 2)
-NS_EVENT_MESSAGE(eXULPopupHidden,       eXULEventFirst + 3)
-NS_EVENT_MESSAGE(eXULBroadcast,         eXULEventFirst + 5)
-NS_EVENT_MESSAGE(eXULCommandUpdate,     eXULEventFirst + 6)
+NS_EVENT_MESSAGE(eXULPopupShowing)
+NS_EVENT_MESSAGE(eXULPopupShown)
+NS_EVENT_MESSAGE(eXULPopupHiding)
+NS_EVENT_MESSAGE(eXULPopupHidden)
+NS_EVENT_MESSAGE(eXULBroadcast)
+NS_EVENT_MESSAGE(eXULCommandUpdate)
 
 
-NS_EVENT_MESSAGE(eLegacyMouseScrollEventFirst, 1600)
-NS_EVENT_MESSAGE(eLegacyMouseLineOrPageScroll, eLegacyMouseScrollEventFirst)
-NS_EVENT_MESSAGE(eLegacyMousePixelScroll,      eLegacyMouseScrollEventFirst + 1)
+NS_EVENT_MESSAGE(eLegacyMouseLineOrPageScroll)
+NS_EVENT_MESSAGE(eLegacyMousePixelScroll)
 
-NS_EVENT_MESSAGE(eScrollPortEventFirst, 1700)
-NS_EVENT_MESSAGE(eScrollPortUnderflow,  eScrollPortEventFirst)
-NS_EVENT_MESSAGE(eScrollPortOverflow,   eScrollPortEventFirst + 1)
+NS_EVENT_MESSAGE(eScrollPortUnderflow)
+NS_EVENT_MESSAGE(eScrollPortOverflow)
 
-NS_EVENT_MESSAGE(eLegacyMutationEventFirst,       1800)
-NS_EVENT_MESSAGE(eLegacySubtreeModified,          eLegacyMutationEventFirst)
-NS_EVENT_MESSAGE(eLegacyNodeInserted,             eLegacyMutationEventFirst + 1)
-NS_EVENT_MESSAGE(eLegacyNodeRemoved,              eLegacyMutationEventFirst + 2)
-NS_EVENT_MESSAGE(eLegacyNodeRemovedFromDocument,  eLegacyMutationEventFirst + 3)
-NS_EVENT_MESSAGE(eLegacyNodeInsertedIntoDocument, eLegacyMutationEventFirst + 4)
-NS_EVENT_MESSAGE(eLegacyAttrModified,             eLegacyMutationEventFirst + 5)
-NS_EVENT_MESSAGE(eLegacyCharacterDataModified,    eLegacyMutationEventFirst + 6)
-NS_EVENT_MESSAGE(eLegacyMutationEventLast,        eLegacyCharacterDataModified)
-
+NS_EVENT_MESSAGE(eLegacySubtreeModified)
+NS_EVENT_MESSAGE(eLegacyNodeInserted)
+NS_EVENT_MESSAGE(eLegacyNodeRemoved)
+NS_EVENT_MESSAGE(eLegacyNodeRemovedFromDocument)
+NS_EVENT_MESSAGE(eLegacyNodeInsertedIntoDocument)
+NS_EVENT_MESSAGE(eLegacyAttrModified)
+NS_EVENT_MESSAGE(eLegacyCharacterDataModified)
 NS_EVENT_MESSAGE_FIRST_LAST(eLegacyMutationEvent,
   eLegacySubtreeModified, eLegacyCharacterDataModified)
 
-NS_EVENT_MESSAGE(eUnidentifiedEvent,    2000)
+NS_EVENT_MESSAGE(eUnidentifiedEvent)
  
 
-NS_EVENT_MESSAGE(eCompositionEventFirst, 2200)
-NS_EVENT_MESSAGE(eCompositionStart,      eCompositionEventFirst)
+NS_EVENT_MESSAGE(eCompositionStart)
 
 
 
-NS_EVENT_MESSAGE(eCompositionEnd,        eCompositionEventFirst + 1)
+NS_EVENT_MESSAGE(eCompositionEnd)
 
 
 
 
-NS_EVENT_MESSAGE(eCompositionUpdate,     eCompositionEventFirst + 2)
+NS_EVENT_MESSAGE(eCompositionUpdate)
 
 
 
 
-NS_EVENT_MESSAGE(eCompositionChange,     eCompositionEventFirst + 3)
+NS_EVENT_MESSAGE(eCompositionChange)
 
 
 
 
 
 
-NS_EVENT_MESSAGE(eCompositionCommitAsIs, eCompositionEventFirst + 4)
+NS_EVENT_MESSAGE(eCompositionCommitAsIs)
 
 
 
 
 
-NS_EVENT_MESSAGE(eCompositionCommit,     eCompositionEventFirst + 5)
+NS_EVENT_MESSAGE(eCompositionCommit)
 
 
 
-NS_EVENT_MESSAGE(eLegacyUIEventFirst,   2500)
 
-NS_EVENT_MESSAGE(eLegacyDOMActivate,    eLegacyUIEventFirst)
+NS_EVENT_MESSAGE(eLegacyDOMActivate)
 
-NS_EVENT_MESSAGE(eLegacyDOMFocusIn,     eLegacyUIEventFirst + 1)
+NS_EVENT_MESSAGE(eLegacyDOMFocusIn)
 
-NS_EVENT_MESSAGE(eLegacyDOMFocusOut,    eLegacyUIEventFirst + 2)
+NS_EVENT_MESSAGE(eLegacyDOMFocusOut)
 
 
-NS_EVENT_MESSAGE(ePageTransitionEventFirst, 2700)
-NS_EVENT_MESSAGE(ePageShow,                 ePageTransitionEventFirst + 1)
-NS_EVENT_MESSAGE(ePageHide,                 ePageTransitionEventFirst + 2)
+NS_EVENT_MESSAGE(ePageShow)
+NS_EVENT_MESSAGE(ePageHide)
 
 
-NS_EVENT_MESSAGE(eSVGEventFirst,        2800)
-NS_EVENT_MESSAGE(eSVGLoad,              eSVGEventFirst)
-NS_EVENT_MESSAGE(eSVGUnload,            eSVGEventFirst + 1)
-NS_EVENT_MESSAGE(eSVGResize,            eSVGEventFirst + 4)
-NS_EVENT_MESSAGE(eSVGScroll,            eSVGEventFirst + 5)
+NS_EVENT_MESSAGE(eSVGLoad)
+NS_EVENT_MESSAGE(eSVGUnload)
+NS_EVENT_MESSAGE(eSVGResize)
+NS_EVENT_MESSAGE(eSVGScroll)
 
 
-NS_EVENT_MESSAGE(eSVGZoomEventFirst,    2900)
-NS_EVENT_MESSAGE(eSVGZoom,              eSVGZoomEventFirst)
+NS_EVENT_MESSAGE(eSVGZoom)
 
 
-NS_EVENT_MESSAGE(eXULCommandEventFirst, 3000)
-NS_EVENT_MESSAGE(eXULCommand,           eXULCommandEventFirst)
+NS_EVENT_MESSAGE(eXULCommand)
 
 
-NS_EVENT_MESSAGE(eClipboardEventFirst,  3100)
-NS_EVENT_MESSAGE(eCopy,                 eClipboardEventFirst)
-NS_EVENT_MESSAGE(eCut,                  eClipboardEventFirst + 1)
-NS_EVENT_MESSAGE(ePaste,                eClipboardEventFirst + 2)
+NS_EVENT_MESSAGE(eCopy)
+NS_EVENT_MESSAGE(eCut)
+NS_EVENT_MESSAGE(ePaste)
 
 
-NS_EVENT_MESSAGE(eQueryContentEventFirst,       3200)
 
+NS_EVENT_MESSAGE(eQuerySelectedText)
 
-NS_EVENT_MESSAGE(eQuerySelectedText,            eQueryContentEventFirst)
 
 
+NS_EVENT_MESSAGE(eQueryTextContent)
 
-NS_EVENT_MESSAGE(eQueryTextContent,             eQueryContentEventFirst + 1)
 
+NS_EVENT_MESSAGE(eQueryCaretRect)
 
-NS_EVENT_MESSAGE(eQueryCaretRect,               eQueryContentEventFirst + 3)
 
 
+NS_EVENT_MESSAGE(eQueryTextRect)
 
-NS_EVENT_MESSAGE(eQueryTextRect,                eQueryContentEventFirst + 4)
 
+NS_EVENT_MESSAGE(eQueryEditorRect)
 
-NS_EVENT_MESSAGE(eQueryEditorRect,              eQueryContentEventFirst + 5)
 
+NS_EVENT_MESSAGE(eQueryContentState)
 
-NS_EVENT_MESSAGE(eQueryContentState,            eQueryContentEventFirst + 6)
+NS_EVENT_MESSAGE(eQuerySelectionAsTransferable)
 
-NS_EVENT_MESSAGE(eQuerySelectionAsTransferable, eQueryContentEventFirst + 7)
 
 
+NS_EVENT_MESSAGE(eQueryCharacterAtPoint)
 
-NS_EVENT_MESSAGE(eQueryCharacterAtPoint,        eQueryContentEventFirst + 8)
 
+NS_EVENT_MESSAGE(eQueryDOMWidgetHittest)
 
-NS_EVENT_MESSAGE(eQueryDOMWidgetHittest,        eQueryContentEventFirst + 9)
 
+NS_EVENT_MESSAGE(eLoadStart)
+NS_EVENT_MESSAGE(eProgress)
+NS_EVENT_MESSAGE(eSuspend)
+NS_EVENT_MESSAGE(eEmptied)
+NS_EVENT_MESSAGE(eStalled)
+NS_EVENT_MESSAGE(ePlay)
+NS_EVENT_MESSAGE(ePause)
+NS_EVENT_MESSAGE(eLoadedMetaData)
+NS_EVENT_MESSAGE(eLoadedData)
+NS_EVENT_MESSAGE(eWaiting)
+NS_EVENT_MESSAGE(ePlaying)
+NS_EVENT_MESSAGE(eCanPlay)
+NS_EVENT_MESSAGE(eCanPlayThrough)
+NS_EVENT_MESSAGE(eSeeking)
+NS_EVENT_MESSAGE(eSeeked)
+NS_EVENT_MESSAGE(eTimeUpdate)
+NS_EVENT_MESSAGE(eEnded)
+NS_EVENT_MESSAGE(eRateChange)
+NS_EVENT_MESSAGE(eDurationChange)
+NS_EVENT_MESSAGE(eVolumeChange)
 
-NS_EVENT_MESSAGE(eMediaEventFirst,      3300)
-NS_EVENT_MESSAGE(eLoadStart,            eMediaEventFirst)
-NS_EVENT_MESSAGE(eProgress,             eMediaEventFirst + 1)
-NS_EVENT_MESSAGE(eSuspend,              eMediaEventFirst + 2)
-NS_EVENT_MESSAGE(eEmptied,              eMediaEventFirst + 3)
-NS_EVENT_MESSAGE(eStalled,              eMediaEventFirst + 4)
-NS_EVENT_MESSAGE(ePlay,                 eMediaEventFirst + 5)
-NS_EVENT_MESSAGE(ePause,                eMediaEventFirst + 6)
-NS_EVENT_MESSAGE(eLoadedMetaData,       eMediaEventFirst + 7)
-NS_EVENT_MESSAGE(eLoadedData,           eMediaEventFirst + 8)
-NS_EVENT_MESSAGE(eWaiting,              eMediaEventFirst + 9)
-NS_EVENT_MESSAGE(ePlaying,              eMediaEventFirst + 10)
-NS_EVENT_MESSAGE(eCanPlay,              eMediaEventFirst + 11)
-NS_EVENT_MESSAGE(eCanPlayThrough,       eMediaEventFirst + 12)
-NS_EVENT_MESSAGE(eSeeking,              eMediaEventFirst + 13)
-NS_EVENT_MESSAGE(eSeeked,               eMediaEventFirst + 14)
-NS_EVENT_MESSAGE(eTimeUpdate,           eMediaEventFirst + 15)
-NS_EVENT_MESSAGE(eEnded,                eMediaEventFirst + 16)
-NS_EVENT_MESSAGE(eRateChange,           eMediaEventFirst + 17)
-NS_EVENT_MESSAGE(eDurationChange,       eMediaEventFirst + 18)
-NS_EVENT_MESSAGE(eVolumeChange,         eMediaEventFirst + 19)
 
+NS_EVENT_MESSAGE(eAfterPaint)
 
-NS_EVENT_MESSAGE(ePaintEventFirst,      3400)
-NS_EVENT_MESSAGE(eAfterPaint,           ePaintEventFirst)
 
+NS_EVENT_MESSAGE(eSwipeGestureMayStart)
+NS_EVENT_MESSAGE(eSwipeGestureStart)
+NS_EVENT_MESSAGE(eSwipeGestureUpdate)
+NS_EVENT_MESSAGE(eSwipeGestureEnd)
+NS_EVENT_MESSAGE(eSwipeGesture)
+NS_EVENT_MESSAGE(eMagnifyGestureStart)
+NS_EVENT_MESSAGE(eMagnifyGestureUpdate)
+NS_EVENT_MESSAGE(eMagnifyGesture)
+NS_EVENT_MESSAGE(eRotateGestureStart)
+NS_EVENT_MESSAGE(eRotateGestureUpdate)
+NS_EVENT_MESSAGE(eRotateGesture)
+NS_EVENT_MESSAGE(eTapGesture)
+NS_EVENT_MESSAGE(ePressTapGesture)
+NS_EVENT_MESSAGE(eEdgeUIStarted)
+NS_EVENT_MESSAGE(eEdgeUICanceled)
+NS_EVENT_MESSAGE(eEdgeUICompleted)
 
-NS_EVENT_MESSAGE(eSimpleGestureEventFirst, 3500)
-NS_EVENT_MESSAGE(eSwipeGestureMayStart,    eSimpleGestureEventFirst)
-NS_EVENT_MESSAGE(eSwipeGestureStart,       eSimpleGestureEventFirst + 1)
-NS_EVENT_MESSAGE(eSwipeGestureUpdate,      eSimpleGestureEventFirst + 2)
-NS_EVENT_MESSAGE(eSwipeGestureEnd,         eSimpleGestureEventFirst + 3)
-NS_EVENT_MESSAGE(eSwipeGesture,            eSimpleGestureEventFirst + 4)
-NS_EVENT_MESSAGE(eMagnifyGestureStart,     eSimpleGestureEventFirst + 5)
-NS_EVENT_MESSAGE(eMagnifyGestureUpdate,    eSimpleGestureEventFirst + 6)
-NS_EVENT_MESSAGE(eMagnifyGesture,          eSimpleGestureEventFirst + 7)
-NS_EVENT_MESSAGE(eRotateGestureStart,      eSimpleGestureEventFirst + 8)
-NS_EVENT_MESSAGE(eRotateGestureUpdate,     eSimpleGestureEventFirst + 9)
-NS_EVENT_MESSAGE(eRotateGesture,           eSimpleGestureEventFirst + 10)
-NS_EVENT_MESSAGE(eTapGesture,              eSimpleGestureEventFirst + 11)
-NS_EVENT_MESSAGE(ePressTapGesture,         eSimpleGestureEventFirst + 12)
-NS_EVENT_MESSAGE(eEdgeUIStarted,           eSimpleGestureEventFirst + 13)
-NS_EVENT_MESSAGE(eEdgeUICanceled,          eSimpleGestureEventFirst + 14)
-NS_EVENT_MESSAGE(eEdgeUICompleted,         eSimpleGestureEventFirst + 15)
 
+NS_EVENT_MESSAGE(ePluginInputEvent)
 
-NS_EVENT_MESSAGE(ePluginEventFirst,     3600)
-NS_EVENT_MESSAGE(ePluginInputEvent,     ePluginEventFirst)
 
 
-NS_EVENT_MESSAGE(eSelectionEventFirst,  3700)
+NS_EVENT_MESSAGE(eSetSelection)
 
-NS_EVENT_MESSAGE(eSetSelection,         eSelectionEventFirst)
 
+NS_EVENT_MESSAGE(eContentCommandCut)
+NS_EVENT_MESSAGE(eContentCommandCopy)
+NS_EVENT_MESSAGE(eContentCommandPaste)
+NS_EVENT_MESSAGE(eContentCommandDelete)
+NS_EVENT_MESSAGE(eContentCommandUndo)
+NS_EVENT_MESSAGE(eContentCommandRedo)
+NS_EVENT_MESSAGE(eContentCommandPasteTransferable)
 
-NS_EVENT_MESSAGE(eContentCommandEventFirst,        3800)
-NS_EVENT_MESSAGE(eContentCommandCut,               eContentCommandEventFirst)
-NS_EVENT_MESSAGE(eContentCommandCopy,              eContentCommandEventFirst + 1)
-NS_EVENT_MESSAGE(eContentCommandPaste,             eContentCommandEventFirst + 2)
-NS_EVENT_MESSAGE(eContentCommandDelete,            eContentCommandEventFirst + 3)
-NS_EVENT_MESSAGE(eContentCommandUndo,              eContentCommandEventFirst + 4)
-NS_EVENT_MESSAGE(eContentCommandRedo,              eContentCommandEventFirst + 5)
-NS_EVENT_MESSAGE(eContentCommandPasteTransferable, eContentCommandEventFirst + 6)
 
 
 
 
 
+NS_EVENT_MESSAGE(eContentCommandScroll)
 
-NS_EVENT_MESSAGE(eContentCommandScroll,            eContentCommandEventFirst + 7)
 
+NS_EVENT_MESSAGE(eGestureNotify)
 
-NS_EVENT_MESSAGE(eGestureNotify,        3900)
+NS_EVENT_MESSAGE(eScrolledAreaChanged)
 
-NS_EVENT_MESSAGE(eScrolledAreaEventFirst, 4100)
-NS_EVENT_MESSAGE(eScrolledAreaChanged,    eScrolledAreaEventFirst)
+NS_EVENT_MESSAGE(eTransitionEnd)
 
-NS_EVENT_MESSAGE(eTransitionEventFirst, 4200)
-NS_EVENT_MESSAGE(eTransitionEnd,        eTransitionEventFirst)
+NS_EVENT_MESSAGE(eAnimationStart)
+NS_EVENT_MESSAGE(eAnimationEnd)
+NS_EVENT_MESSAGE(eAnimationIteration)
 
-NS_EVENT_MESSAGE(eAnimationEventFirst,  4250)
-NS_EVENT_MESSAGE(eAnimationStart,       eAnimationEventFirst)
-NS_EVENT_MESSAGE(eAnimationEnd,         eAnimationEventFirst + 1)
-NS_EVENT_MESSAGE(eAnimationIteration,   eAnimationEventFirst + 2)
+NS_EVENT_MESSAGE(eSMILBeginEvent)
+NS_EVENT_MESSAGE(eSMILEndEvent)
+NS_EVENT_MESSAGE(eSMILRepeatEvent)
 
-NS_EVENT_MESSAGE(eSMILEventFirst,       4300)
-NS_EVENT_MESSAGE(eSMILBeginEvent,       eSMILEventFirst)
-NS_EVENT_MESSAGE(eSMILEndEvent,         eSMILEventFirst + 1)
-NS_EVENT_MESSAGE(eSMILRepeatEvent,      eSMILEventFirst + 2)
+NS_EVENT_MESSAGE(eAudioProcess)
+NS_EVENT_MESSAGE(eAudioComplete)
 
-NS_EVENT_MESSAGE(eAudioEventFirst,      4350)
-NS_EVENT_MESSAGE(eAudioProcess,         eAudioEventFirst)
-NS_EVENT_MESSAGE(eAudioComplete,        eAudioEventFirst + 1)
 
+NS_EVENT_MESSAGE(eBeforeScriptExecute)
+NS_EVENT_MESSAGE(eAfterScriptExecute)
 
-NS_EVENT_MESSAGE(eScriptEventFirst,     4500)
-NS_EVENT_MESSAGE(eBeforeScriptExecute,  eScriptEventFirst)
-NS_EVENT_MESSAGE(eAfterScriptExecute,   eScriptEventFirst + 1)
+NS_EVENT_MESSAGE(eBeforePrint)
+NS_EVENT_MESSAGE(eAfterPrint)
 
-NS_EVENT_MESSAGE(ePrintEventFirst,      4600)
-NS_EVENT_MESSAGE(eBeforePrint,          ePrintEventFirst)
-NS_EVENT_MESSAGE(eAfterPrint,           ePrintEventFirst + 1)
+NS_EVENT_MESSAGE(eMessage)
 
-NS_EVENT_MESSAGE(eMessageEventFirst,    4700)
-NS_EVENT_MESSAGE(eMessage,              eMessageEventFirst)
 
+NS_EVENT_MESSAGE(eOpen)
 
-NS_EVENT_MESSAGE(eOpenCloseEventFirst,  4800)
-NS_EVENT_MESSAGE(eOpen,                 eOpenCloseEventFirst)
 
+NS_EVENT_MESSAGE(eDeviceOrientation)
+NS_EVENT_MESSAGE(eDeviceMotion)
+NS_EVENT_MESSAGE(eDeviceProximity)
+NS_EVENT_MESSAGE(eUserProximity)
+NS_EVENT_MESSAGE(eDeviceLight)
 
-NS_EVENT_MESSAGE(eDeviceEventFirst,      4900)
-NS_EVENT_MESSAGE(eDeviceOrientation,     eDeviceEventFirst)
-NS_EVENT_MESSAGE(eDeviceMotion,          eDeviceEventFirst + 1)
-NS_EVENT_MESSAGE(eDeviceProximity,       eDeviceEventFirst + 2)
-NS_EVENT_MESSAGE(eUserProximity,         eDeviceEventFirst + 3)
-NS_EVENT_MESSAGE(eDeviceLight,           eDeviceEventFirst + 4)
+NS_EVENT_MESSAGE(eShow)
 
-NS_EVENT_MESSAGE(eShow,                  5000)
 
+NS_EVENT_MESSAGE(eFullscreenChange)
+NS_EVENT_MESSAGE(eFullscreenError)
 
-NS_EVENT_MESSAGE(eFullscreenEventFirst,  5100)
-NS_EVENT_MESSAGE(eFullscreenChange,      eFullscreenEventFirst)
-NS_EVENT_MESSAGE(eFullscreenError,       eFullscreenEventFirst + 1)
+NS_EVENT_MESSAGE(eTouchStart)
+NS_EVENT_MESSAGE(eTouchMove)
+NS_EVENT_MESSAGE(eTouchEnd)
+NS_EVENT_MESSAGE(eTouchCancel)
 
-NS_EVENT_MESSAGE(eTouchEventFirst,       5200)
-NS_EVENT_MESSAGE(eTouchStart,            eTouchEventFirst)
-NS_EVENT_MESSAGE(eTouchMove,             eTouchEventFirst + 1)
-NS_EVENT_MESSAGE(eTouchEnd,              eTouchEventFirst + 2)
-NS_EVENT_MESSAGE(eTouchCancel,           eTouchEventFirst + 3)
 
+NS_EVENT_MESSAGE(ePointerLockChange)
+NS_EVENT_MESSAGE(ePointerLockError)
 
-NS_EVENT_MESSAGE(ePointerLockEventFirst, 5300)
-NS_EVENT_MESSAGE(ePointerLockChange,     ePointerLockEventFirst)
-NS_EVENT_MESSAGE(ePointerLockError,      ePointerLockEventFirst + 1)
 
-NS_EVENT_MESSAGE(eWheelEventFirst,       5400)
+NS_EVENT_MESSAGE(eWheel)
 
-NS_EVENT_MESSAGE(eWheel,                 eWheelEventFirst)
 
 
+NS_EVENT_MESSAGE(eWheelOperationStart)
 
-NS_EVENT_MESSAGE(eWheelOperationStart,   eWheelEventFirst + 1)
 
 
+NS_EVENT_MESSAGE(eWheelOperationEnd)
 
-NS_EVENT_MESSAGE(eWheelOperationEnd,     eWheelEventFirst + 2)
 
+NS_EVENT_MESSAGE(eTimeChange)
 
-NS_EVENT_MESSAGE(eTimeChange,            5500)
 
+NS_EVENT_MESSAGE(eNetworkUpload)
+NS_EVENT_MESSAGE(eNetworkDownload)
 
-NS_EVENT_MESSAGE(eNetworkEventFirst,     5600)
-NS_EVENT_MESSAGE(eNetworkUpload,         eNetworkEventFirst + 1)
-NS_EVENT_MESSAGE(eNetworkDownload,       eNetworkEventFirst + 2)
 
+NS_EVENT_MESSAGE(eMediaRecorderDataAvailable)
+NS_EVENT_MESSAGE(eMediaRecorderWarning)
+NS_EVENT_MESSAGE(eMediaRecorderStop)
 
-NS_EVENT_MESSAGE(eMediaRecorderEventFirst,    5700)
-NS_EVENT_MESSAGE(eMediaRecorderDataAvailable, eMediaRecorderEventFirst + 1)
-NS_EVENT_MESSAGE(eMediaRecorderWarning,       eMediaRecorderEventFirst + 2)
-NS_EVENT_MESSAGE(eMediaRecorderStop,          eMediaRecorderEventFirst + 3)
 
-
-NS_EVENT_MESSAGE(eSpeakerManagerEventFirst, 5800)
-NS_EVENT_MESSAGE(eSpeakerForcedChange,      eSpeakerManagerEventFirst + 1)
+NS_EVENT_MESSAGE(eSpeakerForcedChange)
 
 #ifdef MOZ_GAMEPAD
 
-NS_EVENT_MESSAGE(eGamepadEventFirst,     6000)
-NS_EVENT_MESSAGE(eGamepadButtonDown,     eGamepadEventFirst)
-NS_EVENT_MESSAGE(eGamepadButtonUp,       eGamepadEventFirst + 1)
-NS_EVENT_MESSAGE(eGamepadAxisMove,       eGamepadEventFirst + 2)
-NS_EVENT_MESSAGE(eGamepadConnected,      eGamepadEventFirst + 3)
-NS_EVENT_MESSAGE(eGamepadDisconnected,   eGamepadEventFirst + 4)
-NS_EVENT_MESSAGE(eGamepadEventLast,      eGamepadDisconnected)
-
+NS_EVENT_MESSAGE(eGamepadButtonDown)
+NS_EVENT_MESSAGE(eGamepadButtonUp)
+NS_EVENT_MESSAGE(eGamepadAxisMove)
+NS_EVENT_MESSAGE(eGamepadConnected)
+NS_EVENT_MESSAGE(eGamepadDisconnected)
 NS_EVENT_MESSAGE_FIRST_LAST(eGamepadEvent,
                             eGamepadButtonDown, eGamepadDisconnected)
 #endif
 
 
-NS_EVENT_MESSAGE(eEditorEventFirst,      6100)
-NS_EVENT_MESSAGE(eEditorInput,           eEditorEventFirst)
+NS_EVENT_MESSAGE(eEditorInput)
 
 
-NS_EVENT_MESSAGE(eSelectEventFirst,      6200)
-NS_EVENT_MESSAGE(eSelectStart,           eSelectEventFirst)
-NS_EVENT_MESSAGE(eSelectionChange,       eSelectEventFirst + 1)
+NS_EVENT_MESSAGE(eSelectStart)
+NS_EVENT_MESSAGE(eSelectionChange)
 
 #ifdef UNDEF_NS_EVENT_MESSAGE_FIRST_LAST
 #undef UNDEF_NS_EVENT_MESSAGE_FIRST_LAST
