@@ -140,6 +140,15 @@ SharedSurface_EGLImage::ProducerReleaseImpl()
     mGL->fFinish();
 }
 
+void
+SharedSurface_EGLImage::ProducerReadAcquireImpl()
+{
+    
+    if (mSync) {
+        mEGL->fClientWaitSync(Display(), mSync, 0, LOCAL_EGL_FOREVER);
+    }
+}
+
 EGLDisplay
 SharedSurface_EGLImage::Display() const
 {
