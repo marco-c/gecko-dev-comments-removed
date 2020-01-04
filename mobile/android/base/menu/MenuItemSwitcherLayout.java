@@ -20,6 +20,13 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
+
+
+
+
+
+
+
 public class MenuItemSwitcherLayout extends LinearLayout
                                     implements GeckoMenuItem.Layout,
                                                View.OnClickListener {
