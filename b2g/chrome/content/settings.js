@@ -313,30 +313,48 @@ setUpdateTrackingId();
   
   let defaultBranch = Services.prefs.getDefaultBranch(null);
 
-  function syncCharPref(prefName) {
-    SettingsListener.observe(prefName, null, function(value) {
+  function syncPrefDefault(prefName) {
+    
+    let defaultValue = defaultBranch.getCharPref(prefName);
+    let defaultSetting = {};
+    defaultSetting[prefName] = defaultValue;
+
+    
+    
+    
+    let backupName = prefName + '.old';
+    try {
       
-      if (value) {
-        defaultBranch.setCharPref(prefName, value);
+      
+      
+      let backupValue = Services.prefs.getCharPref(backupName);
+      if (defaultValue !== backupValue) {
+        
+        navigator.mozSettings.createLock().set(defaultSetting);
+      }
+    } catch(e) {
+      
+      navigator.mozSettings.createLock().set(defaultSetting);
+    }
+
+    
+    Services.prefs.setCharPref(backupName, defaultValue);
+
+    
+    SettingsListener.observe(prefName, defaultValue, value => {
+      if (!value) {
+        
+        navigator.mozSettings.createLock().set(defaultSetting);
         return;
       }
       
-      try {
-        let value = defaultBranch.getCharPref(prefName);
-        if (value) {
-          let setting = {};
-          setting[prefName] = value;
-          window.navigator.mozSettings.createLock().set(setting);
-        }
-      } catch(e) {
-        console.log('Unable to read pref ' + prefName + ': ' + e);
-      }
+      defaultBranch.setCharPref(prefName, value);
     });
   }
 
-  syncCharPref(AppConstants.MOZ_B2GDROID ? 'app.update.url.android'
-                                         : 'app.update.url');
-  syncCharPref('app.update.channel');
+  syncPrefDefault(AppConstants.MOZ_B2GDROID ? 'app.update.url.android'
+                                            : 'app.update.url');
+  syncPrefDefault('app.update.channel');
 })();
 
 
