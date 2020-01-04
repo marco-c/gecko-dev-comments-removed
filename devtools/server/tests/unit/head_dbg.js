@@ -49,6 +49,21 @@ var loadSubScript = Cc[
 
 
 
+function startupAddonsManager() {
+  
+  const profileDir = do_get_profile().clone();
+  profileDir.append("extensions");
+
+  const internalManager = Cc["@mozilla.org/addons/integration;1"]
+    .getService(Ci.nsIObserver)
+    .QueryInterface(Ci.nsITimerCallback);
+
+  internalManager.observe(null, "addons-startup", null);
+}
+
+
+
+
 
 
 
