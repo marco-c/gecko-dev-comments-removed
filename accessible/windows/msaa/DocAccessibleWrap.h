@@ -22,10 +22,14 @@ public:
 
   
 
-    
-    virtual  HRESULT STDMETHODCALLTYPE get_accValue( 
-         VARIANT varChild,
-         BSTR __RPC_FAR *pszValue);
+  
+  virtual  HRESULT STDMETHODCALLTYPE get_accParent(
+       IDispatch __RPC_FAR *__RPC_FAR *ppdispParent) override;
+
+  
+  virtual  HRESULT STDMETHODCALLTYPE get_accValue(
+       VARIANT varChild,
+       BSTR __RPC_FAR *pszValue) override;
 
   
   virtual void Shutdown();
