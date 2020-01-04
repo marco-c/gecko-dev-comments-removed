@@ -159,14 +159,12 @@ public:
 
   
   void AppendStyleRule(css::Rule* aRule);
-  void ReplaceStyleRule(css::Rule* aOld, css::Rule* aNew);
 
   int32_t StyleRuleCount() const;
   css::Rule* GetStyleRuleAt(int32_t aIndex) const;
 
   nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
   nsresult InsertRuleIntoGroup(const nsAString& aRule, css::GroupRule* aGroup, uint32_t aIndex, uint32_t* _retval);
-  nsresult ReplaceRuleInGroup(css::GroupRule* aGroup, css::Rule* aOld, css::Rule* aNew);
 
   
 
