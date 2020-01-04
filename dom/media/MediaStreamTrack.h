@@ -18,6 +18,7 @@ namespace mozilla {
 
 class DOMMediaStream;
 class MediaEnginePhotoCallback;
+class MediaInputPort;
 class MediaStream;
 class MediaStreamGraph;
 class MediaStreamTrackListener;
@@ -282,6 +283,12 @@ public:
 
 
   void RemoveListener(MediaStreamTrackListener* aListener);
+
+  
+
+
+
+  already_AddRefed<MediaInputPort> ForwardTrackContentsTo(ProcessedMediaStream* aStream);
 
 protected:
   virtual ~MediaStreamTrack();
