@@ -25,6 +25,9 @@
 
 static const char* gQuitApplicationMessage = "quit-application";
 
+
+const uint32_t MAX_FILE_SIZE = (32 * 1024 * 1024);
+
 #undef LOG
 
 
@@ -643,6 +646,11 @@ nsUrlClassifierStreamUpdater::OnDataAvailable(nsIRequest *request,
     return NS_ERROR_NOT_INITIALIZED;
 
   LOG(("OnDataAvailable (%d bytes)", aLength));
+
+  if (aSourceOffset > MAX_FILE_SIZE) {
+    LOG(("OnDataAvailable::Abort because exceeded the maximum file size(%lld)", aSourceOffset));
+    return NS_ERROR_FILE_TOO_BIG;
+  }
 
   nsresult rv;
 
