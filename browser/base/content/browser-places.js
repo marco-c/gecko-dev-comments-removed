@@ -1605,6 +1605,10 @@ var BookmarkingUI = {
   },
 
   onMainMenuPopupShowing: function BUI_onMainMenuPopupShowing(event) {
+    
+    if (event.target != event.currentTarget)
+      return;
+
     this._updateBookmarkPageMenuItem();
     PlacesCommandHook.updateBookmarkAllTabsCommand();
     this._updateRecentBookmarks(document.getElementById("menu_recentBookmarks"));
