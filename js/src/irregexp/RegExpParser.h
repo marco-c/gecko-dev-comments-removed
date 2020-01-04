@@ -193,6 +193,10 @@ class RegExpParser
     
     bool ParseHexEscape(int length, size_t* value);
 
+    bool ParseBracedHexEscape(size_t* value);
+    bool ParseTrailSurrogate(size_t* value);
+    bool ParseRawSurrogatePair(char16_t* lead, char16_t* trail);
+
     size_t ParseOctalLiteral();
 
     
