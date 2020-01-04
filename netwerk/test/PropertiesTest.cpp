@@ -4,7 +4,7 @@
 
 
 #include "TestCommon.h"
-#include "mozilla/Snprintf.h"
+#include "mozilla/Sprintf.h"
 #include "nsXPCOM.h"
 #include "nsStringAPI.h"
 #include "nsIPersistentProperties2.h"

@@ -3,7 +3,7 @@
 
 
 
-#include "mozilla/Snprintf.h"
+#include "mozilla/Sprintf.h"
 #include "nsILocaleService.h"
 #include "nsDateTimeFormatCID.h"
 #include "nsIDateTimeFormat.h"

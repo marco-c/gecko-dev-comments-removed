@@ -18,7 +18,7 @@
 #include "nsRect.h"                     
 #include "nsIFile.h"                    
 #include "nsDirectoryServiceDefs.h"     
-#include "mozilla/Snprintf.h"
+#include "mozilla/Sprintf.h"
 #include "FPSCounter.h"
 
 namespace mozilla {

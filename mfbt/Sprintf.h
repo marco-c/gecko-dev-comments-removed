@@ -6,15 +6,11 @@
 
 
 
-
-#ifndef mozilla_Snprintf_h_
-#define mozilla_Snprintf_h_
+#ifndef mozilla_Sprintf_h_
+#define mozilla_Sprintf_h_
 
 #include <stdio.h>
 #include <stdarg.h>
-
-
-
 
 #ifdef __cplusplus
 template <size_t N>

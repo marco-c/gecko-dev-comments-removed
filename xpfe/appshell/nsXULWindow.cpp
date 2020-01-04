@@ -17,7 +17,7 @@
 #include "nsThreadUtils.h"
 #include "nsNetCID.h"
 #include "nsQueryObject.h"
-#include "mozilla/Snprintf.h"
+#include "mozilla/Sprintf.h"
 
 
 #include "nsIAppShell.h"

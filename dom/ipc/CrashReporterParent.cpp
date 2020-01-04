@@ -4,7 +4,7 @@
 
 
 #include "CrashReporterParent.h"
-#include "mozilla/Snprintf.h"
+#include "mozilla/Sprintf.h"
 #include "mozilla/dom/ContentParent.h"
 #include "nsAutoPtr.h"
 #include "nsXULAppAPI.h"

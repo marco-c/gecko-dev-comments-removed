@@ -21,7 +21,7 @@
 #include "NesteggPacketHolder.h"
 #include "XiphExtradata.h"
 #include "prprf.h"           
-#include "mozilla/Snprintf.h"
+#include "mozilla/Sprintf.h"
 
 #include <algorithm>
 #include <stdint.h>

@@ -7,7 +7,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/Snprintf.h"
+#include "mozilla/Sprintf.h"
 #include "XRemoteClient.h"
 #include "prmem.h"
 #include "plstr.h"
