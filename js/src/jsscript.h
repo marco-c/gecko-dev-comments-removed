@@ -1631,6 +1631,10 @@ class JSScript : public js::gc::TenuredCell
         return !function_ && !module_;
     }
 
+    
+    
+    bool mayReadFrameArgsDirectly();
+
     JSFlatString* sourceData(JSContext* cx);
 
     static bool loadSource(JSContext* cx, js::ScriptSource* ss, bool* worked);
