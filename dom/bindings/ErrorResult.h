@@ -8,6 +8,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #ifndef mozilla_ErrorResult_h
 #define mozilla_ErrorResult_h
 
@@ -87,8 +98,9 @@ public:
 
 #ifdef DEBUG
   ~ErrorResult() {
-    MOZ_ASSERT_IF(IsErrorWithMessage(), !mMessage);
-    MOZ_ASSERT_IF(IsDOMException(), !mDOMExceptionInfo);
+    
+    
+    MOZ_ASSERT(!Failed());
     MOZ_ASSERT(!mMightHaveUnreportedJSException);
     MOZ_ASSERT(mUnionState == HasNothing);
   }
@@ -134,6 +146,9 @@ public:
     return rv;
   }
 
+  
+  
+  
   
   
   

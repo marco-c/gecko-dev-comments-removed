@@ -209,6 +209,7 @@ ErrorResult::SetPendingExceptionWithMessage(JSContext* aCx)
                               argCount > 0 ? args : nullptr);
 
   ClearMessage();
+  mResult = NS_OK;
 }
 
 void
@@ -263,9 +264,7 @@ ErrorResult::SetPendingJSException(JSContext* cx)
   
   js::RemoveRawValueRoot(cx, &mJSException);
 
-  
-  
-  mResult = NS_ERROR_FAILURE;
+  mResult = NS_OK;
 #ifdef DEBUG
   mUnionState = HasNothing;
 #endif 
@@ -333,6 +332,7 @@ ErrorResult::SetPendingDOMException(JSContext* cx)
   dom::Throw(cx, mDOMExceptionInfo->mRv, mDOMExceptionInfo->mMessage);
 
   ClearDOMExceptionInfo();
+  mResult = NS_OK;
 }
 
 void
@@ -372,6 +372,7 @@ ErrorResult::SetPendingGenericErrorException(JSContext* cx)
   MOZ_ASSERT(!IsJSException());
   MOZ_ASSERT(!IsDOMException());
   dom::Throw(cx, ErrorCode());
+  mResult = NS_OK;
 }
 
 ErrorResult&
@@ -468,12 +469,14 @@ ErrorResult::SetPendingException(JSContext* cx)
     JS_ClearPendingException(cx);
     
     
+    mResult = NS_OK;
     return;
   }
   if (IsJSContextException()) {
     
     
     
+    mResult = NS_OK;
     return;
   }
   if (IsErrorWithMessage()) {
