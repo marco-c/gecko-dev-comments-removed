@@ -179,7 +179,17 @@ var SessionFileInternal = {
 
   
   
-  _hasWriteEverSucceeded: false,
+  
+  
+  _attempts: 0,
+
+  
+  
+  _successes: 0,
+
+  
+  
+  _failures: 0,
 
   
   
@@ -288,6 +298,7 @@ var SessionFileInternal = {
     let performShutdownCleanup = isFinalWrite &&
       !sessionStartup.isAutomaticRestoreEnabled();
 
+    this._attempts++;
     let options = {isFinalWrite, performShutdownCleanup};
     let promise = this._deferredInitialized.promise.then(() => SessionWorker.post("write", [aData, options]));
 
@@ -295,7 +306,7 @@ var SessionFileInternal = {
     promise = promise.then(msg => {
       
       this._recordTelemetry(msg.telemetry);
-      this._hasWriteEverSucceeded = true;
+      this._successes++;
       if (msg.result.upgradeBackup) {
         
         
@@ -305,6 +316,7 @@ var SessionFileInternal = {
     }, err => {
       
       console.error("Could not write session state file ", err, err.stack);
+      this._failures++;
       
       
       
@@ -318,7 +330,9 @@ var SessionFileInternal = {
       {
         fetchState: () => ({
           options,
-          hasEverSucceeded: this._hasWriteEverSucceeded
+          attempts: this._attempts,
+          successes: this._successes,
+          failures: this._failures,
         })
       });
 
