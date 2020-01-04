@@ -91,15 +91,11 @@ public class GeckoAccessibility {
 
                 @Override
                 public void onPostExecute(Void args) {
-                    boolean isGeckoApp = false;
-                    try {
-                        isGeckoApp = context instanceof GeckoApp;
-                    } catch (NoClassDefFoundError ex) {}
-                    if (isGeckoApp) {
-                        
-                        
-                        ((GeckoApp) context).setAccessibilityEnabled(sEnabled);
+                    final GeckoAppShell.GeckoInterface geckoInterface = GeckoAppShell.getGeckoInterface();
+                    if (geckoInterface == null) {
+                        return;
                     }
+                    geckoInterface.setAccessibilityEnabled(sEnabled);
                 }
             }.execute();
     }
