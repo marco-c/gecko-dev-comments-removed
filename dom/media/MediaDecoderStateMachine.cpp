@@ -262,6 +262,8 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mAudioOffloading(false),
   mBuffered(mTaskQueue, TimeIntervals(),
             "MediaDecoderStateMachine::mBuffered (Mirror)"),
+  mIsReaderSuspended(mTaskQueue, true,
+               "MediaDecoderStateMachine::mIsReaderSuspended (Mirror)"),
   mEstimatedDuration(mTaskQueue, NullableTimeUnit(),
                     "MediaDecoderStateMachine::mEstimatedDuration (Mirror)"),
   mExplicitDuration(mTaskQueue, Maybe<double>(),
@@ -339,6 +341,7 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
 
   
   mBuffered.Connect(mReader->CanonicalBuffered());
+  mIsReaderSuspended.Connect(mReader->CanonicalIsSuspended());
   mEstimatedDuration.Connect(aDecoder->CanonicalEstimatedDuration());
   mExplicitDuration.Connect(aDecoder->CanonicalExplicitDuration());
   mPlayState.Connect(aDecoder->CanonicalPlayState());
@@ -357,6 +360,7 @@ MediaDecoderStateMachine::InitializationTask(MediaDecoder* aDecoder)
 
   
   mWatchManager.Watch(mBuffered, &MediaDecoderStateMachine::BufferedRangeUpdated);
+  mWatchManager.Watch(mIsReaderSuspended, &MediaDecoderStateMachine::ReaderSuspendedChanged);
   mWatchManager.Watch(mState, &MediaDecoderStateMachine::UpdateNextFrameStatus);
   mWatchManager.Watch(mAudioCompleted, &MediaDecoderStateMachine::UpdateNextFrameStatus);
   mWatchManager.Watch(mVideoCompleted, &MediaDecoderStateMachine::UpdateNextFrameStatus);
@@ -1350,7 +1354,7 @@ void MediaDecoderStateMachine::VisibilityChanged()
     return;
   }
 
-  if (!HasVideo()) {
+  if (!HasVideo() || mIsReaderSuspended) {
     return;
   }
 
@@ -1385,7 +1389,7 @@ void MediaDecoderStateMachine::VisibilityChanged()
     }
 
     
-    InitiateVideoDecodeRecoverySeek();
+    InitiateDecodeRecoverySeek(MediaDecoderReader::VIDEO_ONLY);
   }
 }
 
@@ -1395,13 +1399,22 @@ void MediaDecoderStateMachine::VisibilityChanged()
 
 
 
-void MediaDecoderStateMachine::InitiateVideoDecodeRecoverySeek()
+
+
+
+
+void MediaDecoderStateMachine::InitiateDecodeRecoverySeek(
+    MediaDecoderReader::TargetQueues aQueues)
 {
   MOZ_ASSERT(OnTaskQueue());
 
+  DECODER_LOG("InitiateDecodeRecoverySeek(%d)", aQueues);
+
   SeekJob seekJob;
-  seekJob.mTarget = SeekTarget(GetMediaTime(),
-                               SeekTarget::Type::AccurateVideoOnly,
+  SeekTarget::Type seekTargetType = aQueues == MediaDecoderReader::VIDEO_ONLY
+                                    ? SeekTarget::Type::AccurateVideoOnly
+                                    : SeekTarget::Type::Accurate;
+  seekJob.mTarget = SeekTarget(GetMediaTime(), seekTargetType,
                                MediaDecoderEventVisibility::Suppressed);
 
   SetState(DECODER_STATE_SEEKING);
@@ -1423,7 +1436,7 @@ void MediaDecoderStateMachine::InitiateVideoDecodeRecoverySeek()
 
   
   if (mSeekTask->NeedToResetMDSM()) {
-    Reset(TrackInfo::kVideoTrack);
+    Reset(aQueues);
   }
 
   
@@ -1454,6 +1467,22 @@ void MediaDecoderStateMachine::BufferedRangeUpdated()
       mObservedDuration = std::max(mObservedDuration.Ref(), end);
     }
   }
+}
+
+void MediaDecoderStateMachine::ReaderSuspendedChanged()
+{
+  MOZ_ASSERT(OnTaskQueue());
+  DECODER_LOG("ReaderSuspendedChanged: suspended = %d", mIsReaderSuspended.Ref());
+
+  if (!HasVideo() || mIsReaderSuspended || IsDecodingFirstFrame()) {
+    return;
+  }
+
+  if (mSeekTask || mQueuedSeek.Exists()) {
+    return;
+  }
+
+  InitiateDecodeRecoverySeek(MediaDecoderReader::AUDIO_VIDEO);
 }
 
 void
@@ -2222,6 +2251,7 @@ MediaDecoderStateMachine::FinishShutdown()
 
   
   mBuffered.DisconnectIfConnected();
+  mIsReaderSuspended.DisconnectIfConnected();
   mEstimatedDuration.DisconnectIfConnected();
   mExplicitDuration.DisconnectIfConnected();
   mPlayState.DisconnectIfConnected();
@@ -2636,7 +2666,8 @@ bool MediaDecoderStateMachine::IsStateMachineScheduled() const
 bool MediaDecoderStateMachine::IsVideoDecodeSuspended() const
 {
   MOZ_ASSERT(OnTaskQueue());
-  return MediaPrefs::MDSMSuspendBackgroundVideoEnabled() && mVideoDecodeSuspended;
+  return (MediaPrefs::MDSMSuspendBackgroundVideoEnabled() && mVideoDecodeSuspended) ||
+         mIsReaderSuspended;
 }
 
 void
