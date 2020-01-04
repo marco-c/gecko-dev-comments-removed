@@ -725,7 +725,12 @@ struct IMENotification final
     
     uint32_t mAddedEndOffset;
 
-    bool mCausedByComposition;
+    
+    
+
+    
+    
+    bool mCausedOnlyByComposition;
     bool mOccurredDuringComposition;
 
     uint32_t OldLength() const
@@ -797,7 +802,7 @@ struct IMENotification final
       mStartOffset = aStartOffset;
       mRemovedEndOffset = aRemovedEndOffset;
       mAddedEndOffset = aAddedEndOffset;
-      mCausedByComposition = aCausedByComposition;
+      mCausedOnlyByComposition = aCausedByComposition;
       mOccurredDuringComposition = aOccurredDuringComposition;
     }
   };

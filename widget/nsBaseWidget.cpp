@@ -2167,8 +2167,8 @@ IMENotification::TextChangeDataBase::MergeWith(
 
   
   
-  mCausedByComposition =
-    newData.mCausedByComposition && oldData.mCausedByComposition;
+  mCausedOnlyByComposition =
+    newData.mCausedOnlyByComposition && oldData.mCausedOnlyByComposition;
   
   
   mOccurredDuringComposition =
