@@ -625,7 +625,7 @@ public final class GeckoProfile {
         } catch (final IOException e) {
             
             Log.d(LOGTAG, "Could not migrate client ID from FHR – creating a new one: " + e.getLocalizedMessage());
-            clientIdToWrite = UUID.randomUUID().toString();
+            clientIdToWrite = generateNewClientId();
         }
 
         
@@ -641,6 +641,10 @@ public final class GeckoProfile {
         return getValidClientIdFromDisk(CLIENT_ID_FILE_PATH);
     }
 
+    protected static String generateNewClientId() {
+        return UUID.randomUUID().toString();
+    }
+
     
 
 
@@ -654,6 +658,9 @@ public final class GeckoProfile {
         }
         throw new IOException("Received client ID is invalid: " + clientId);
     }
+
+    
+
 
     @WorkerThread
     private void persistClientId(final String clientId) throws IOException {
@@ -983,6 +990,7 @@ public final class GeckoProfile {
         return GeckoProfileDirectories.findProfileDir(mMozillaDir, mName);
     }
 
+    @WorkerThread
     private File createProfileDir() throws IOException {
         if (isCustomProfile()) {
             
@@ -1057,6 +1065,11 @@ public final class GeckoProfile {
             
             Log.w(LOGTAG, "Couldn't write " + TIMES_PATH, e);
         }
+
+        
+        
+        
+        persistClientId(generateNewClientId());
 
         
         final SharedPreferences prefs = GeckoSharedPrefs.forProfile(mApplicationContext);
