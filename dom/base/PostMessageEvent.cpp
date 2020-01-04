@@ -60,6 +60,9 @@ PostMessageEvent::Run()
   MOZ_ASSERT(!mSource || mSource->IsOuterWindow(),
              "should have been passed an outer window!");
 
+  
+  
+  
   AutoJSAPI jsapi;
   jsapi.Init();
   JSContext* cx = jsapi.cx();
