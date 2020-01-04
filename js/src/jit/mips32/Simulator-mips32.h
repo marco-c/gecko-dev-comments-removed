@@ -35,7 +35,6 @@
 
 #include "jit/IonTypes.h"
 #include "threading/Mutex.h"
-#include "threading/Thread.h"
 
 namespace js {
 namespace jit {
@@ -384,7 +383,7 @@ class Simulator {
     
     Mutex cacheLock_;
 #ifdef DEBUG
-    mozilla::Maybe<Thread::Id> cacheLockHolder_;
+    PRThread* cacheLockHolder_;
 #endif
 
     Redirection* redirection_;
@@ -395,17 +394,17 @@ class Simulator {
         
         
         
-        MOZ_ASSERT(cacheLockHolder_.isSome());
+        MOZ_ASSERT(cacheLockHolder_);
         return icache_;
     }
 
     Redirection* redirection() const {
-        MOZ_ASSERT(cacheLockHolder_.isSome());
+        MOZ_ASSERT(cacheLockHolder_);
         return redirection_;
     }
 
     void setRedirection(js::jit::Redirection* redirection) {
-        MOZ_ASSERT(cacheLockHolder_.isSome());
+        MOZ_ASSERT(cacheLockHolder_);
         redirection_ = redirection;
     }
 };
