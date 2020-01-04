@@ -60,18 +60,33 @@ protected:
 
     nsCOMPtr<nsIThread> mThread;
 
-    HANDLE        mShutdownEvent;
-
 private:
+    
+    DWORD nextCoalesceWaitTime();
+
+    
+    nsresult NetworkChanged();
+
+    HANDLE mCheckEvent;
+
+    
+    bool mShutdown;
+
     
     
     ULONG mIPInterfaceChecksum;
 
     
-    mozilla::TimeStamp mChangedTime;
+    mozilla::TimeStamp mStartTime;
 
     
     bool mAllowChangedEvent;
+
+    
+    bool mCoalescingActive;
+
+    
+    mozilla::TimeStamp mChangeTime;
 };
 
 #endif 
