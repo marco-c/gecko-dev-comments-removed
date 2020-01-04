@@ -280,39 +280,6 @@ public class GeckoAppShell
 
 
 
-
-
-
-
-
-    @RobocopTarget
-    public static void sendEventToGecko(GeckoEvent e) {
-        if (e == null) {
-            throw new IllegalArgumentException("e cannot be null.");
-        }
-
-        if (GeckoThread.isRunning()) {
-            notifyGeckoOfEvent(e);
-            
-            
-            e.recycle();
-            return;
-        }
-
-        GeckoThread.addPendingEvent(e);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
     @RobocopTarget
     public static void sendRequestToGecko(final GeckoRequest request) {
         final String responseMessage = "Gecko:Request" + request.getId();
@@ -331,9 +298,6 @@ public class GeckoAppShell
 
         notifyObservers(request.getName(), request.getData());
     }
-
-    
-    public static native void notifyGeckoOfEvent(GeckoEvent event);
 
     
     @WrapForJNI(calledFrom = "gecko")

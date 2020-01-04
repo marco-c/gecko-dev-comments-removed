@@ -6,7 +6,6 @@
 package org.mozilla.gecko.gfx;
 
 import org.mozilla.gecko.GeckoAppShell;
-import org.mozilla.gecko.GeckoEvent;
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.PrefsHelper;
 import org.mozilla.gecko.annotation.WrapForJNI;
@@ -254,22 +253,6 @@ class NativePanZoomController extends JNIObject implements PanZoomController {
 
     @Override @WrapForJNI(calledFrom = "ui") 
     protected native void disposeNative();
-
-    @Override
-    public void setOverScrollMode(int overscrollMode) {
-        
-    }
-
-    @Override
-    public int getOverScrollMode() {
-        
-        return 0;
-    }
-
-    @WrapForJNI(calledFrom = "ui")
-    private void requestContentRepaint(float x, float y, float width, float height, float resolution) {
-        mTarget.forceRedraw(new DisplayPortMetrics(x, y, x + width, y + height, resolution));
-    }
 
     @Override
     public void setOverscrollHandler(final Overscroll handler) {

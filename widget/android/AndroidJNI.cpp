@@ -49,14 +49,6 @@ extern "C" {
 
 
 
-
-NS_EXPORT void JNICALL
-Java_org_mozilla_gecko_GeckoAppShell_notifyGeckoOfEvent(JNIEnv *jenv, jclass jc, jobject event)
-{
-    
-    nsAppShell::PostEvent(AndroidGeckoEvent::MakeFromJavaObject(jenv, event));
-}
-
 NS_EXPORT jlong JNICALL
 Java_org_mozilla_gecko_GeckoAppShell_runUiThreadCallback(JNIEnv* env, jclass)
 {
