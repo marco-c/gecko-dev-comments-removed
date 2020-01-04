@@ -89,15 +89,6 @@ struct ANPPaint;
 struct ANPPath;
 struct ANPTypeface;
 
-enum ANPMatrixFlags {
-    kIdentity_ANPMatrixFlag     = 0,
-    kTranslate_ANPMatrixFlag    = 0x01,
-    kScale_ANPMatrixFlag        = 0x02,
-    kAffine_ANPMatrixFlag       = 0x04,
-    kPerspective_ANPMatrixFlag  = 0x08,
-};
-typedef uint32_t ANPMatrixFlag;
-
 
 
 
@@ -250,113 +241,6 @@ struct ANPLogInterfaceV0 : ANPInterface {
 
 
     void (*log)(ANPLogType, const char format[], ...);
-};
-
-struct ANPBitmapInterfaceV0 : ANPInterface {
-    
-
-
-    bool (*getPixelPacking)(ANPBitmapFormat, ANPPixelPacking* packing);
-};
-
-struct ANPMatrixInterfaceV0 : ANPInterface {
-    
-
-    ANPMatrix*  (*newMatrix)();
-    
-
-    void        (*deleteMatrix)(ANPMatrix*);
-
-    ANPMatrixFlag (*getFlags)(const ANPMatrix*);
-
-    void        (*copy)(ANPMatrix* dst, const ANPMatrix* src);
-
-    
-
-
-
-
-
-    void        (*get3x3)(const ANPMatrix*, float[9]);
-    
-
-
-
-
-
-    void        (*set3x3)(ANPMatrix*, const float[9]);
-
-    void        (*setIdentity)(ANPMatrix*);
-    void        (*preTranslate)(ANPMatrix*, float tx, float ty);
-    void        (*postTranslate)(ANPMatrix*, float tx, float ty);
-    void        (*preScale)(ANPMatrix*, float sx, float sy);
-    void        (*postScale)(ANPMatrix*, float sx, float sy);
-    void        (*preSkew)(ANPMatrix*, float kx, float ky);
-    void        (*postSkew)(ANPMatrix*, float kx, float ky);
-    void        (*preRotate)(ANPMatrix*, float degrees);
-    void        (*postRotate)(ANPMatrix*, float degrees);
-    void        (*preConcat)(ANPMatrix*, const ANPMatrix*);
-    void        (*postConcat)(ANPMatrix*, const ANPMatrix*);
-
-    
-
-
-    bool        (*invert)(ANPMatrix* dst, const ANPMatrix* src);
-
-    
-
-
-
-
-    void        (*mapPoints)(ANPMatrix*, float dst[], const float src[],
-                             int32_t count);
-};
-
-struct ANPPathInterfaceV0 : ANPInterface {
-    
-    ANPPath* (*newPath)();
-
-    
-    void (*deletePath)(ANPPath*);
-
-    
-
-
-    void (*copy)(ANPPath* dst, const ANPPath* src);
-
-    
-
-    bool (*equal)(const ANPPath* path0, const ANPPath* path1);
-
-    
-    void (*reset)(ANPPath*);
-
-    
-    bool (*isEmpty)(const ANPPath*);
-
-    
-    void (*getBounds)(const ANPPath*, ANPRectF* bounds);
-
-    void (*moveTo)(ANPPath*, float x, float y);
-    void (*lineTo)(ANPPath*, float x, float y);
-    void (*quadTo)(ANPPath*, float x0, float y0, float x1, float y1);
-    void (*cubicTo)(ANPPath*, float x0, float y0, float x1, float y1,
-                    float x2, float y2);
-    void (*close)(ANPPath*);
-
-    
-
-
-
-
-    void (*offset)(ANPPath* src, float dx, float dy, ANPPath* dst);
-
-    
-
-
-
-
-    void (*transform)(ANPPath* src, const ANPMatrix*, ANPPath* dst);
 };
 
 
@@ -689,14 +573,6 @@ struct ANPWindowInterfaceV0 : ANPInterface {
     void    (*requestCenterFitZoom)(NPP instance);
 };
 
-struct ANPWindowInterfaceV1 : ANPWindowInterfaceV0 {
-    
-
-
-
-    ANPRectI (*visibleRect)(NPP instance);
-};
-
 enum ANPScreenOrientations {
     
 
@@ -721,7 +597,13 @@ enum ANPScreenOrientations {
 
 typedef int32_t ANPScreenOrientation;
 
-struct ANPWindowInterfaceV2 : ANPWindowInterfaceV1 {
+struct ANPWindowInterfaceV2 : ANPWindowInterfaceV0 {
+    
+
+
+
+    ANPRectI (*visibleRect)(NPP instance);
+
     
 
 
@@ -999,24 +881,6 @@ struct ANPEventInterfaceV0 : ANPInterface {
     void (*postEvent)(NPP inst, const ANPEvent* event);
 };
 
-struct ANPSystemInterfaceV0 : ANPInterface {
-    
-
-
-    const char* (*getApplicationDataDirectory)();
-
-    
-
-
-
-
-
-
-
-
-    jclass (*loadJavaClass)(NPP instance, const char* className);
-};
-
 struct ANPSurfaceInterfaceV0 : ANPInterface {
   
 
@@ -1065,7 +929,23 @@ enum ANPPowerStates {
 };
 typedef int32_t ANPPowerState;
 
-struct ANPSystemInterfaceV1 : ANPSystemInterfaceV0 {
+struct ANPSystemInterfaceV1 : ANPInterface {
+    
+
+
+    const char* (*getApplicationDataDirectory)();
+
+    
+
+
+
+
+
+
+
+
+    jclass (*loadJavaClass)(NPP instance, const char* className);
+
     void (*setPowerState)(NPP instance, ANPPowerState powerState);
 };
 
@@ -1083,7 +963,15 @@ struct ANPSystemInterfaceV2 : ANPInterface {
 
 typedef void* ANPNativeWindow;
 
-struct ANPVideoInterfaceV0 : ANPInterface {
+
+
+
+
+
+
+typedef void (*ANPVideoFrameCallbackProc)(ANPNativeWindow* window, int64_t timestamp);
+
+struct ANPVideoInterfaceV1 : ANPInterface {
 
     
 
@@ -1110,17 +998,7 @@ struct ANPVideoInterfaceV0 : ANPInterface {
     
 
     void (*releaseNativeWindow)(NPP instance, ANPNativeWindow window);
-};
 
-
-
-
-
-
-
-typedef void (*ANPVideoFrameCallbackProc)(ANPNativeWindow* window, int64_t timestamp);
-
-struct ANPVideoInterfaceV1 : ANPVideoInterfaceV0 {
     
 
 
