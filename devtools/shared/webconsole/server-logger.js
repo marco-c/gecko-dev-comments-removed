@@ -408,7 +408,15 @@ function format(msg) {
   msg.styles = [];
 
   
-  let firstString = msg.logs.shift();
+  
+  
+  
+  
+  let firstString = "";
+  if (typeof msg.logs[0] == "string") {
+    firstString = msg.logs.shift();
+  }
+
   
   let splitLogRegExp = /(.*?)(%[oOcsdif]|$)/g;
   let splitLogRegExpRes;
