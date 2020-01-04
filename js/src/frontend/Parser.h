@@ -82,10 +82,6 @@ struct GenericParseContext
     {}
 };
 
-template <typename ParseHandler>
-bool
-GenerateBlockId(TokenStream& ts, ParseContext<ParseHandler>* pc, uint32_t& blockid);
-
 
 
 
