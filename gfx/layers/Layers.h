@@ -170,6 +170,7 @@ public:
     , mSnapEffectiveTransforms(true)
     , mId(0)
     , mInTransaction(false)
+    , mPaintedPixelCount(0)
   {}
 
   
@@ -655,6 +656,16 @@ public:
 
   static void LayerUserDataDestroy(void* data);
 
+  void AddPaintedPixelCount(int32_t aCount) {
+    mPaintedPixelCount += aCount;
+  }
+
+  uint32_t GetAndClearPaintedPixelCount() {
+    uint32_t count = mPaintedPixelCount;
+    mPaintedPixelCount = 0;
+    return count;
+  }
+
 protected:
   RefPtr<Layer> mRoot;
   gfx::UserData mUserData;
@@ -679,6 +690,8 @@ protected:
   
   
   TimeStamp mAnimationReadyTime;
+  
+  uint32_t mPaintedPixelCount;
 private:
   struct FramesTimingRecording
   {
