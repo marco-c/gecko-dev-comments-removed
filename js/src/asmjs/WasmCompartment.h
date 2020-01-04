@@ -27,6 +27,8 @@ class WasmActivation;
 
 namespace wasm {
 
+class Code;
+
 
 
 
@@ -38,12 +40,27 @@ class Compartment
                                         MovableCellHasher<ReadBarriered<WasmInstanceObject*>>,
                                         SystemAllocPolicy>;
     using WeakInstanceObjectSet = JS::WeakCache<InstanceObjectSet>;
+    using InstanceVector = Vector<Instance*, 0, SystemAllocPolicy>;
 
-    WeakInstanceObjectSet instances_;
+    InstanceVector        instances_;
+    volatile bool         mutatingInstances_;
+    WeakInstanceObjectSet instanceObjects_;
     size_t                activationCount_;
     bool                  profilingEnabled_;
 
     friend class js::WasmActivation;
+
+    struct AutoMutateInstances {
+        Compartment &c;
+        explicit AutoMutateInstances(Compartment& c) : c(c) {
+            MOZ_ASSERT(!c.mutatingInstances_);
+            c.mutatingInstances_ = true;
+        }
+        ~AutoMutateInstances() {
+            MOZ_ASSERT(c.mutatingInstances_);
+            c.mutatingInstances_ = false;
+        }
+    };
 
   public:
     explicit Compartment(Zone* zone);
@@ -53,18 +70,36 @@ class Compartment
     
     
     
-
-    bool registerInstance(JSContext* cx, HandleWasmInstanceObject instanceObj);
-
+    
     
 
-    const WeakInstanceObjectSet& instances() const { return instances_; }
+    bool registerInstance(JSContext* cx, HandleWasmInstanceObject instanceObj);
+    void unregisterInstance(Instance& instance);
+
+    
+    
+    
+
+    const WeakInstanceObjectSet& instanceObjects() const { return instanceObjects_; }
+
+    
+    
+
+    Code* lookupCode(const void* pc) const;
+
+    
+    
+    
+    
+
+    Instance* lookupInstanceDeprecated(const void* pc) const;
 
     
     
     
 
     bool ensureProfilingState(JSContext* cx);
+    bool profilingEnabled() const;
 
     
 

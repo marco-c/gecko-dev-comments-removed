@@ -94,10 +94,10 @@ class CodeSegment
     
     
 
-    bool containsFunctionPC(void* pc) const {
+    bool containsFunctionPC(const void* pc) const {
         return pc >= base() && pc < (base() + functionCodeLength_);
     }
-    bool containsCodePC(void* pc) const {
+    bool containsCodePC(const void* pc) const {
         return pc >= base() && pc < (base() + codeLength_);
     }
 };

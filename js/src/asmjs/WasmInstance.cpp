@@ -291,7 +291,8 @@ Instance::Instance(JSContext* cx,
                    SharedTableVector&& tables,
                    Handle<FunctionVector> funcImports,
                    const ValVector& globalImports)
-  : code_(Move(code)),
+  : compartment_(cx->compartment()),
+    code_(Move(code)),
     memory_(memory),
     tables_(Move(tables))
 {
@@ -375,6 +376,8 @@ Instance::init(JSContext* cx)
 
 Instance::~Instance()
 {
+    compartment_->wasm.unregisterInstance(*this);
+
     for (unsigned i = 0; i < metadata().funcImports.length(); i++) {
         FuncImportExit& exit = funcImportToExit(metadata().funcImports[i]);
         if (exit.baselineScript)
@@ -524,7 +527,7 @@ Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args)
         
         
         
-        WasmActivation activation(cx, *this);
+        WasmActivation activation(cx);
         JitActivation jitActivation(cx,  false);
 
         
