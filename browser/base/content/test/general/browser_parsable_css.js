@@ -22,13 +22,8 @@ const kWhitelist = [
   
   {sourceName: /loop\/.*\.css/i,
    errorMessage: /Unknown pseudo-class.*placeholder/i},
-  
-  {sourceName: /loop\/.*shared\/css\/conversation.css/i,
-   errorMessage: /Error in parsing value for 'display'/i},
   {sourceName: /loop\/.*shared\/css\/common.css/i,
    errorMessage: /Unknown property 'user-select'/i},
-  {sourceName: /loop\/.*css\/panel.css/i,
-   errorMessage: /Expected color but found 'none'/i},
   
   {sourceName: /highlighter\.css/i,
    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i},
