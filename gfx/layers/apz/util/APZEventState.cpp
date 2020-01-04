@@ -254,7 +254,7 @@ APZEventState::ProcessLongTap(const nsCOMPtr<nsIPresShell>& aPresShell,
     
     
     WidgetTouchEvent cancelTouchEvent(true, eTouchCancel, widget.get());
-    cancelTouchEvent.mModifiers = WidgetModifiersToDOMModifiers(aModifiers);
+    cancelTouchEvent.mModifiers = aModifiers;
     auto ldPoint = LayoutDeviceIntPoint::Round(aPoint * aScale);
     cancelTouchEvent.mTouches.AppendElement(new mozilla::dom::Touch(mLastTouchIdentifier,
         ldPoint, LayoutDeviceIntPoint(), 0, 0));
