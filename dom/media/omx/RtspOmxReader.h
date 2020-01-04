@@ -66,12 +66,12 @@ public:
 
   virtual void SetIdle() override;
 
+  virtual RefPtr<MediaDecoderReader::MetadataPromise> AsyncReadMetadata()
+    override;
+
   virtual void HandleResourceAllocated() override;
 
 private:
-  virtual RefPtr<MediaDecoderReader::MetadataPromise>
-  AsyncReadMetadataInternal() override;
-
   
   
   

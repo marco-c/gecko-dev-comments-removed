@@ -94,14 +94,6 @@ public:
   
   virtual nsresult Init() { return NS_OK; }
 
-  RefPtr<MetadataPromise> AsyncReadMetadata()
-  {
-    return OnTaskQueue() ?
-           AsyncReadMetadataInternal() :
-           InvokeAsync(OwnerThread(), this, __func__,
-                       &MediaDecoderReader::AsyncReadMetadataInternal);
-  }
-
   
   
   void ReleaseMediaResources()
@@ -187,6 +179,18 @@ public:
 
   
   
+  
+  virtual RefPtr<MetadataPromise> AsyncReadMetadata();
+
+  
+  
+  
+  
+  virtual nsresult ReadMetadata(MediaInfo* aInfo,
+                                MetadataTags** aTags) { MOZ_CRASH(); }
+
+  
+  
   virtual void ReadUpdatedMetadata(MediaInfo* aInfo) { };
 
   
@@ -263,18 +267,6 @@ public:
 private:
   virtual void ReleaseMediaResourcesInternal() {}
   virtual void DisableHardwareAccelerationInternal() {}
-
-  
-  
-  
-  
-  virtual nsresult ReadMetadata(MediaInfo*, MetadataTags**) { MOZ_CRASH(); }
-
-  
-  
-  
-  
-  virtual RefPtr<MetadataPromise> AsyncReadMetadataInternal();
 
 protected:
   friend class TrackBuffer;
