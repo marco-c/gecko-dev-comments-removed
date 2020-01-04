@@ -571,7 +571,9 @@ protected:
   nsPIDOMWindowInner* GetInnerWindowForTarget();
   already_AddRefed<nsPIDOMWindowInner> GetTargetAsInnerWindow() const;
 
-  bool ListenerCanHandle(Listener* aListener, WidgetEvent* aEvent);
+  bool ListenerCanHandle(const Listener* aListener,
+                         const WidgetEvent* aEvent,
+                         EventMessage aEventMessage) const;
 
   
   
