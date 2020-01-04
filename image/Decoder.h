@@ -28,6 +28,39 @@ namespace Telemetry {
 
 namespace image {
 
+struct DecoderFinalStatus final
+{
+  DecoderFinalStatus(bool aWasMetadataDecode,
+                     bool aFinished,
+                     bool aWasAborted,
+                     bool aHadError,
+                     bool aShouldReportError)
+    : mWasMetadataDecode(aWasMetadataDecode)
+    , mFinished(aFinished)
+    , mWasAborted(aWasAborted)
+    , mHadError(aHadError)
+    , mShouldReportError(aShouldReportError)
+  { }
+
+  
+  const bool mWasMetadataDecode : 1;
+
+  
+  const bool mFinished : 1;
+
+  
+  
+  
+  const bool mWasAborted : 1;
+
+  
+  const bool mHadError : 1;
+
+  
+  
+  const bool mShouldReportError : 1;
+};
+
 struct DecoderTelemetry final
 {
   DecoderTelemetry(Maybe<Telemetry::ID> aSpeedHistogram,
@@ -336,6 +369,10 @@ public:
   {
     return gfx::IntRect(gfx::IntPoint(), OutputSize());
   }
+
+  
+  
+  DecoderFinalStatus FinalStatus() const;
 
   
   const ImageMetadata& GetImageMetadata() { return mImageMetadata; }

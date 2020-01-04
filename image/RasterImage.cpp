@@ -1563,6 +1563,7 @@ RasterImage::NotifyProgress(Progress aProgress,
 
 void
 RasterImage::FinalizeDecoder(Decoder* aDecoder,
+                             const DecoderFinalStatus& aStatus,
                              const ImageMetadata& aMetadata,
                              const DecoderTelemetry& aTelemetry,
                              Progress aProgress,
@@ -1573,16 +1574,13 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aDecoder);
 
-  bool wasMetadata = aDecoder->IsMetadataDecode();
-  bool done = aDecoder->GetDecodeDone();
-
   
-  if (aDecoder->ShouldReportError() && !aDecoder->WasAborted()) {
+  if (aStatus.mShouldReportError && !aStatus.mWasAborted) {
     ReportDecoderError(aDecoder);
   }
 
   
-  bool metadataOK = SetMetadata(aMetadata, wasMetadata);
+  bool metadataOK = SetMetadata(aMetadata, aStatus.mWasMetadataDecode);
   if (!metadataOK) {
     
     
@@ -1595,7 +1593,7 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder,
   MOZ_ASSERT(mError || mHasSize || !aMetadata.HasSize(),
              "SetMetadata should've gotten a size");
 
-  if (!wasMetadata && aDecoder->GetDecodeDone() && !aDecoder->WasAborted()) {
+  if (!aStatus.mWasMetadataDecode && aStatus.mFinished && !aStatus.mWasAborted) {
     
     mHasBeenDecoded = true;
   }
@@ -1609,13 +1607,13 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder,
     mAnimationState->SetDoneDecoding(true);
   }
 
-  if (!wasMetadata && aTelemetry.mChunkCount) {
+  if (!aStatus.mWasMetadataDecode && aTelemetry.mChunkCount) {
     Telemetry::Accumulate(Telemetry::IMAGE_DECODE_CHUNKS, aTelemetry.mChunkCount);
   }
 
-  if (done) {
+  if (aStatus.mFinished) {
     
-    if (!wasMetadata) {
+    if (!aStatus.mWasMetadataDecode) {
       Telemetry::Accumulate(Telemetry::IMAGE_DECODE_TIME,
                             int32_t(aTelemetry.mDecodeTime.ToMicroseconds()));
 
@@ -1625,14 +1623,14 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder,
     }
 
     
-    if (aDecoder->HasError() && !aDecoder->WasAborted()) {
+    if (aStatus.mHadError && !aStatus.mWasAborted) {
       DoError();
-    } else if (wasMetadata && !mHasSize) {
+    } else if (aStatus.mWasMetadataDecode && !mHasSize) {
       DoError();
     }
 
     
-    if (mLoadProgress && wasMetadata) {
+    if (mLoadProgress && aStatus.mWasMetadataDecode) {
       NotifyForLoadEvent(*mLoadProgress);
       mLoadProgress = Nothing();
       NotifyProgress(FLAG_ONLOAD_UNBLOCKED);
@@ -1640,7 +1638,7 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder,
   }
 
   
-  if (done && wasMetadata && mWantFullDecode) {
+  if (aStatus.mFinished && aStatus.mWasMetadataDecode && mWantFullDecode) {
     mWantFullDecode = false;
     RequestDecodeForSize(mSize, DECODE_FLAGS_DEFAULT);
   }
