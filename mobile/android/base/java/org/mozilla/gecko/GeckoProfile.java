@@ -39,6 +39,7 @@ import org.mozilla.gecko.util.INISection;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
@@ -683,12 +684,35 @@ public final class GeckoProfile {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     @WorkerThread
-    public long getProfileCreationDate() {
+    public long getAndPersistProfileCreationDate(final Context context) {
         try {
             return getProfileCreationDateFromTimesFile();
         } catch (final IOException e) {
-            return getAndPersistProfileCreationDateFromFilesystem();
+            Log.d(LOGTAG, "Unable to retrieve profile creation date from times.json. Getting from system...");
+            final long packageInstallMillis = org.mozilla.gecko.util.ContextUtils.getPackageInstallTime(context);
+            try {
+                persistProfileCreationDateToTimesFile(packageInstallMillis);
+            } catch (final IOException ioEx) {
+                
+                
+                Log.w(LOGTAG, "Unable to persist profile creation date - returning -1");
+                return -1;
+            }
+
+            return packageInstallMillis;
         }
     }
 
@@ -703,14 +727,17 @@ public final class GeckoProfile {
         }
     }
 
-    
-
-
-
-
     @WorkerThread
-    private long getAndPersistProfileCreationDateFromFilesystem() {
-        return -1;
+    private void persistProfileCreationDateToTimesFile(final long profileCreationMillis) throws IOException {
+        final JSONObject obj = new JSONObject();
+        try {
+            obj.put(PROFILE_CREATION_DATE_JSON_ATTR, profileCreationMillis);
+        } catch (final JSONException e) {
+            
+            throw new IOException("Unable to persist profile creation date to times file");
+        }
+        Log.d(LOGTAG, "Attempting to write new profile creation date");
+        writeFile(TIMES_PATH, obj.toString()); 
     }
 
     

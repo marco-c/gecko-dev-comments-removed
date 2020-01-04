@@ -214,7 +214,7 @@ public class TelemetryUploadService extends BackgroundService {
 
     @WorkerThread
     private long getProfileCreationDate(final GeckoProfile profile) {
-        final long profileMillis = profile.getProfileCreationDate();
+        final long profileMillis = profile.getAndPersistProfileCreationDate(this);
         
         
         if (profileMillis < 0) {

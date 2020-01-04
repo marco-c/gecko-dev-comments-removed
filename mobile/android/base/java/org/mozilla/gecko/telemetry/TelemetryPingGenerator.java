@@ -92,12 +92,10 @@ public class TelemetryPingGenerator {
         ping.put(CorePing.OS_VERSION, Integer.toString(Build.VERSION.SDK_INT)); 
         ping.put(CorePing.SEQ, seq);
         ping.putArray(CorePing.EXPERIMENTS, Experiments.getActiveExperiments(context));
+
         
-        
-        
-        if (profileCreationDate >= 0) {
-            ping.put(CorePing.PROFILE_CREATION_DATE, profileCreationDate);
-        }
+        final Long finalProfileCreationDate = (profileCreationDate < 0) ? null : profileCreationDate;
+        ping.put(CorePing.PROFILE_CREATION_DATE, finalProfileCreationDate);
         return ping;
     }
 }
