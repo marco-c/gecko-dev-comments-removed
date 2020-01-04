@@ -58,8 +58,6 @@ const MAX_VISIBLE_STRING_SIZE = 100;
 
 
 
-
-
 function TableWidget(node, options = {}) {
   EventEmitter.decorate(this);
 
@@ -68,13 +66,12 @@ function TableWidget(node, options = {}) {
   this._parent = node;
 
   let {initialColumns, emptyText, uniqueId, highlightUpdated, removableColumns,
-       firstColumn, cellContextMenuId} = options;
+       firstColumn} = options;
   this.emptyText = emptyText || "";
   this.uniqueId = uniqueId || "name";
   this.firstColumn = firstColumn || "";
   this.highlightUpdated = highlightUpdated || false;
   this.removableColumns = removableColumns !== false;
-  this.cellContextMenuId = cellContextMenuId;
 
   this.tbody = this.document.createElementNS(XUL_NS, "hbox");
   this.tbody.className = "table-widget-body theme-body";
@@ -810,7 +807,6 @@ TableWidget.prototype = {
     }
     for (let column of this.columns.values()) {
       column.remove(item);
-      column.updateZebra();
     }
     if (this.items.size == 0) {
       this.tbody.setAttribute("empty", "empty");
@@ -1451,15 +1447,6 @@ function Cell(column, item, nextCell) {
     column.column.insertBefore(this.label, nextCell.label);
   } else {
     column.column.appendChild(this.label);
-  }
-
-  if (column.table.cellContextMenuId) {
-    this.label.setAttribute("context", column.table.cellContextMenuId);
-    this.label.addEventListener("contextmenu", (event) => {
-      
-      
-      column.table.contextMenuRowId = this.id;
-    }, false);
   }
 
   this.value = item[column.id];
