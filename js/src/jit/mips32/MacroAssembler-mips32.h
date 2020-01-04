@@ -415,8 +415,6 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
 
     void branchTestStringTruthy(bool b, const ValueOperand& value, Label* label);
 
-    void branchTestBooleanTruthy(bool b, const ValueOperand& operand, Label* label);
-
     
     Operand ToPayload(Operand base);
     Address ToPayload(Address base) {
