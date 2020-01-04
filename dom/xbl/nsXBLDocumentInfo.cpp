@@ -206,9 +206,9 @@ nsXBLDocumentInfo::ReadPrototypeBindings(nsIURI* aURI, nsXBLDocumentInfo** aDocI
     return rv;
 
   nsCOMPtr<nsIObjectInputStream> stream;
-  rv = NewObjectInputStreamFromBuffer(buf, len, getter_AddRefs(stream));
+  rv = NewObjectInputStreamFromBuffer(UniquePtr<char[]>(buf.forget()),
+                                      len, getter_AddRefs(stream));
   NS_ENSURE_SUCCESS(rv, rv);
-  buf.forget();
 
   
   
