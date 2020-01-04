@@ -25,8 +25,13 @@ def _run_linters(queue, paths, **lintargs):
 
     while True:
         try:
+            
+            
+            
+            
+            
             linter_path = queue.get(False)
-        except Empty:
+        except (Empty, IOError):
             return results
 
         
@@ -47,7 +52,9 @@ def _run_linters(queue, paths, **lintargs):
 def _run_worker(*args, **lintargs):
     try:
         return _run_linters(*args, **lintargs)
-    except:
+    except Exception:
+        
+        
         traceback.print_exc()
         raise
 
@@ -96,21 +103,21 @@ class LintRoller(object):
 
         num_procs = num_procs or cpu_count()
         num_procs = min(num_procs, len(self.linters))
-
-        
-        orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
         pool = Pool(num_procs)
-        signal.signal(signal.SIGINT, orig)
 
         all_results = defaultdict(list)
-        results = []
+        workers = []
         for i in range(num_procs):
-            results.append(
+            workers.append(
                 pool.apply_async(_run_worker, args=(queue, paths), kwds=self.lintargs))
+        pool.close()
 
-        for res in results:
+        
+        
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        for worker in workers:
             
-            for k, v in res.get().iteritems():
+            for k, v in worker.get().iteritems():
                 all_results[k].extend(v)
 
         return all_results
