@@ -301,8 +301,7 @@ nsDiskCacheBindery::RemoveBinding(nsDiskCacheBinding * binding)
     if (binding == hashEntry->mBinding) {
         if (PR_CLIST_IS_EMPTY(binding)) {
             
-            PL_DHashTableRemove(&table,
-                                (void*)(uintptr_t) binding->mRecord.HashNumber());
+            table.Remove((void*)(uintptr_t) binding->mRecord.HashNumber());
             return;
             
         } else {

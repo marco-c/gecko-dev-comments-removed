@@ -131,7 +131,7 @@ TEST(PLDHashTableTest, LazyStorage)
   ASSERT_TRUE(!t.Search((const void*)1));
 
   
-  PL_DHashTableRemove(&t, (const void*)2);
+  t.Remove((const void*)2);
 
   for (auto iter = t.Iter(); !iter.Done(); iter.Next()) {
     ASSERT_TRUE(false); 

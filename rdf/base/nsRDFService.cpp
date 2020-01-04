@@ -1186,7 +1186,7 @@ RDFServiceImpl::UnregisterResource(nsIRDFResource* aResource)
         NS_WARNING("resource was never registered");
 #endif
 
-    PL_DHashTableRemove(&mResources, uri);
+    mResources.Remove(uri);
     return NS_OK;
 }
 
@@ -1405,7 +1405,7 @@ RDFServiceImpl::UnregisterLiteral(nsIRDFLiteral* aLiteral)
 
     NS_ASSERTION(mLiterals.Search(value), "literal was never registered");
 
-    PL_DHashTableRemove(&mLiterals, value);
+    mLiterals.Remove(value);
 
     
     
@@ -1455,7 +1455,7 @@ RDFServiceImpl::UnregisterInt(nsIRDFInt* aInt)
 
     NS_ASSERTION(mInts.Search(&value), "int was never registered");
 
-    PL_DHashTableRemove(&mInts, &value);
+    mInts.Remove(&value);
 
     
     
@@ -1505,7 +1505,7 @@ RDFServiceImpl::UnregisterDate(nsIRDFDate* aDate)
 
     NS_ASSERTION(mDates.Search(&value), "date was never registered");
 
-    PL_DHashTableRemove(&mDates, &value);
+    mDates.Remove(&value);
 
     
     
@@ -1545,7 +1545,7 @@ RDFServiceImpl::UnregisterBlob(BlobImpl *aBlob)
 {
     NS_ASSERTION(mBlobs.Search(&aBlob->mData), "blob was never registered");
 
-    PL_DHashTableRemove(&mBlobs, &aBlob->mData);
+    mBlobs.Remove(&aBlob->mData);
 
      
      

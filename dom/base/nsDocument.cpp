@@ -3948,7 +3948,7 @@ nsDocument::SetSubDocumentFor(Element* aElement, nsIDocument* aSubDoc)
     
 
     if (mSubDocuments) {
-      PL_DHashTableRemove(mSubDocuments, aElement);
+      mSubDocuments->Remove(aElement);
     }
   } else {
     if (!mSubDocuments) {
