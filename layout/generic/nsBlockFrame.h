@@ -68,14 +68,12 @@ class nsBulletFrame;
 
 
 
-typedef nsContainerFrame nsBlockFrameSuper;
 
 
 
 
 
- 
-class nsBlockFrame : public nsBlockFrameSuper
+class nsBlockFrame : public nsContainerFrame
 {
 public:
   NS_DECL_QUERYFRAME_TARGET(nsBlockFrame)
