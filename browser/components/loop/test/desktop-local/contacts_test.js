@@ -174,7 +174,9 @@ describe("loop.contacts", function() {
     };
 
     fakeWindow = {
-      close: sandbox.stub()
+      close: sandbox.stub(),
+      addEventListener: function() {},
+      removeEventListener: function() {}
     };
     loop.shared.mixins.setRootObject(fakeWindow);
 
@@ -676,7 +678,8 @@ describe("loop.contacts", function() {
 
           
           var menuButton = node.querySelector(".icon-contact-menu-button");
-          TestUtils.Simulate.click(menuButton);
+          var eventStub = {"pageY": 20};
+          TestUtils.Simulate.click(menuButton, eventStub);
 
           
           contactMenu = node.querySelector(".contact > .dropdown-menu");

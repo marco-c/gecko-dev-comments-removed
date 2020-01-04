@@ -157,54 +157,55 @@ loop.contacts = (function(_, mozL10n) {
       
       blocked: React.PropTypes.bool,
       canEdit: React.PropTypes.bool,
+      
+      eventPosY: React.PropTypes.number.isRequired,
+      
+      getContainerCoordinates: React.PropTypes.func.isRequired,
       handleAction: React.PropTypes.func.isRequired
     },
 
-    getInitialState: function () {
+    getInitialState: function() {
       return {
         openDirUp: false
       };
-    },
-
-    componentDidMount: function () {
-      
-      
-      
-
-      let menuNode = this.getDOMNode();
-      let menuNodeRect = menuNode.getBoundingClientRect();
-
-      let listNode = document.getElementsByClassName("contact-list")[0];
-      
-      
-      
-      
-      if (!listNode) {
-        return;
-      }
-      let listNodeRect = listNode.getBoundingClientRect();
-
-      if (menuNodeRect.top + menuNodeRect.height >=
-          listNodeRect.top + listNodeRect.height) {
-        this.setState({
-          openDirUp: true
-        });
-      }
     },
 
     onItemClick: function(event) {
       this.props.handleAction(event.currentTarget.dataset.action);
     },
 
+    componentDidMount: function() {
+      var menuNode = this.getDOMNode();
+      var menuNodeRect = menuNode.getBoundingClientRect();
+      var listNodeCoords = this.props.getContainerCoordinates();
+
+      
+      var offset = 10;
+
+      if (this.props.eventPosY + menuNodeRect.height >=
+        listNodeCoords.top + listNodeCoords.height) {
+
+        
+        menuNode.style.top = this.props.eventPosY - menuNodeRect.height
+          - offset + "px";
+      } else {
+        
+        menuNode.style.top = this.props.eventPosY + offset + "px";
+      }
+    },
+
     render: function() {
       var cx = React.addons.classSet;
+      var dropdownClasses = cx({
+        "dropdown-menu": true,
+        "dropdown-menu-up": this.state.openDirUp
+      });
       let blockAction = this.props.blocked ? "unblock" : "block";
       let blockLabel = this.props.blocked ? "unblock_contact_menu_button"
                                           : "block_contact_menu_button";
 
       return (
-        React.createElement("ul", {className: cx({ "dropdown-menu": true,
-                            "dropdown-menu-up": this.state.openDirUp })}, 
+        React.createElement("ul", {className: dropdownClasses}, 
           React.createElement("li", {className: cx({ "dropdown-menu-item": true,
                               "disabled": this.props.blocked,
                               "video-call-item": true }), 
@@ -244,38 +245,39 @@ loop.contacts = (function(_, mozL10n) {
   });
 
   const ContactDetail = React.createClass({displayName: "ContactDetail",
-    getInitialState: function() {
-      return {
-        showMenu: false
-      };
-    },
-
     propTypes: {
       contact: React.PropTypes.object.isRequired,
+      getContainerCoordinates: React.PropTypes.func.isRequired,
       handleContactAction: React.PropTypes.func
     },
 
-    _onBodyClick: function() {
-      
-      setTimeout(this.hideDropdownMenu, 10);
+    mixins: [
+      sharedMixins.DropdownMenuMixin()
+    ],
+
+    getInitialState: function() {
+      return {
+        eventPosY: 0
+      };
     },
 
-    showDropdownMenu: function() {
-      document.body.addEventListener("click", this._onBodyClick);
-      this.setState({showMenu: true});
+    handleShowDropdownClick: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      this.setState({
+        eventPosY: e.pageY
+      });
+
+      this.toggleDropdownMenu();
     },
 
-    hideDropdownMenu: function() {
-      document.body.removeEventListener("click", this._onBodyClick);
+    hideDropdownMenuHandler: function() {
       
       
       if (this.isMounted()) {
-        this.setState({showMenu: false});
+        this.hideDropdownMenu();
       }
-    },
-
-    componentWillUnmount: function() {
-      document.body.removeEventListener("click", this._onBodyClick);
     },
 
     shouldComponentUpdate: function(nextProps, nextState) {
@@ -294,6 +296,7 @@ loop.contacts = (function(_, mozL10n) {
     handleAction: function(actionName) {
       if (this.props.handleContactAction) {
         this.props.handleContactAction(this.props.contact, actionName);
+        this.hideDropdownMenuHandler();
       }
     },
 
@@ -301,6 +304,16 @@ loop.contacts = (function(_, mozL10n) {
       
       
       return this.props.contact.category[0] !== "google";
+    },
+
+    
+
+
+
+    _handleMouseOut: function() {
+      if (this.state.showMenu) {
+        this.toggleDropdownMenu();
+      }
     },
 
     render: function() {
@@ -316,9 +329,9 @@ loop.contacts = (function(_, mozL10n) {
         avatar: true,
         defaultAvatar: !avatarSrc
       });
-
       return (
-        React.createElement("li", {className: contactCSSClass, onMouseLeave: this.hideDropdownMenu}, 
+        React.createElement("li", {className: contactCSSClass, 
+            onMouseLeave: this._handleMouseOut}, 
           React.createElement("div", {className: avatarCSSClass}, 
             avatarSrc ? React.createElement("img", {src: avatarSrc}) : null
           ), 
@@ -332,11 +345,13 @@ loop.contacts = (function(_, mozL10n) {
             React.createElement("i", {className: "icon icon-contact-video-call", 
                onClick: this.handleAction.bind(null, "video-call")}), 
             React.createElement("i", {className: "icon icon-vertical-ellipsis icon-contact-menu-button", 
-               onClick: this.showDropdownMenu})
+               onClick: this.handleShowDropdownClick})
           ), 
           this.state.showMenu
             ? React.createElement(ContactDropdown, {blocked: this.props.contact.blocked, 
                                canEdit: this.canEdit(), 
+                               eventPosY: this.state.eventPosY, 
+                               getContainerCoordinates: this.props.getContainerCoordinates, 
                                handleAction: this.handleAction})
             : null
           
@@ -636,6 +651,17 @@ loop.contacts = (function(_, mozL10n) {
       return contact1._guid - contact2._guid;
     },
 
+    getCoordinates: function() {
+      
+      var domNode = this.getDOMNode();
+      var domNodeRect = domNode.getBoundingClientRect();
+
+      return {
+        "top": domNodeRect.top,
+        "height": domNodeRect.height
+      };
+    },
+
     _renderFilterClearButton: function() {
       if (this.state.filter) {
         return (
@@ -668,6 +694,7 @@ loop.contacts = (function(_, mozL10n) {
       let viewForItem = item => {
         return (
           React.createElement(ContactDetail, {contact: item, 
+                         getContainerCoordinates: this.getCoordinates, 
                          handleContactAction: this.handleContactAction, 
                          key: item._guid})
         );
