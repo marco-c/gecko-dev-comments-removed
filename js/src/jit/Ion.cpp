@@ -1264,9 +1264,7 @@ void
 IonScript::Destroy(FreeOp* fop, IonScript* script)
 {
     script->unlinkFromRuntime(fop);
-    
-    script->traceLoggerScriptEvent_ = TraceLoggerEvent();
-    fop->free_(script);
+    fop->delete_(script);
 }
 
 void
