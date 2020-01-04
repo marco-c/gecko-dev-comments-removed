@@ -165,7 +165,7 @@ XULButtonAccessible::ContainerWidget() const
 }
 
 bool
-XULButtonAccessible::IsAcceptableChild(Accessible* aPossibleChild) const
+XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const
 {
   
   
@@ -173,17 +173,21 @@ XULButtonAccessible::IsAcceptableChild(Accessible* aPossibleChild) const
 
   
   
-  roles::Role role = aPossibleChild->Role();
+  nsAutoString role;
+  nsCoreUtils::XBLBindingRole(aEl, role);
 
   
-  if (role == roles::MENUPOPUP)
+  if (role.EqualsLiteral("xul:menupopup")) {
     return true;
+  }
 
   
   
-  if (role != roles::PUSHBUTTON ||
-      aPossibleChild->GetContent()->IsXULElement(nsGkAtoms::dropMarker))
+  if ((!role.EqualsLiteral("xul:button") &&
+       !role.EqualsLiteral("xul:toolbarbutton")) ||
+      aEl->IsXULElement(nsGkAtoms::dropMarker)) {
     return false;
+  }
 
   return mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
                                nsGkAtoms::menuButton, eCaseMatters);
