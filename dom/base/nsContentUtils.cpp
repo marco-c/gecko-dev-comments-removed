@@ -8161,6 +8161,26 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIURI> uri;
   nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
   if (NS_SUCCEEDED(rv) && uri) {
