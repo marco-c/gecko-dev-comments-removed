@@ -216,13 +216,11 @@ private:
     return static_cast<Derived*>(const_cast<WorkerPrivateParent*>(this));
   }
 
-  
   bool
   NotifyPrivate(Status aStatus);
 
-  
   bool
-  TerminatePrivate(JSContext* aCx)
+  TerminatePrivate()
   {
     return NotifyPrivate(Terminating);
   }
@@ -318,10 +316,10 @@ public:
   Resume();
 
   bool
-  Terminate(JSContext* aCx)
+  Terminate()
   {
     AssertIsOnParentThread();
-    return TerminatePrivate(aCx);
+    return TerminatePrivate();
   }
 
   bool
