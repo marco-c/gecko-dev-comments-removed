@@ -924,7 +924,7 @@ protected:
   
 
 
-  nsresult UpdateFileList();
+  void UpdateFileList();
 
   
 
