@@ -1144,6 +1144,7 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
         
         if (mCurrentSeek.mTarget.IsVideoOnly()) {
           mCurrentSeek.mTarget.SetType(SeekTarget::Accurate);
+          mCurrentSeek.mTarget.SetVideoOnly(false);
         }
         mQueuedSeek = Move(mCurrentSeek);
         mSeekTaskRequest.DisconnectIfExists();
@@ -1370,8 +1371,9 @@ void MediaDecoderStateMachine::VisibilityChanged()
     
     SeekJob seekJob;
     seekJob.mTarget = SeekTarget(GetMediaTime(),
-                                 SeekTarget::Type::AccurateVideoOnly,
-                                 MediaDecoderEventVisibility::Suppressed);
+                                 SeekTarget::Type::Accurate,
+                                 MediaDecoderEventVisibility::Suppressed,
+                                 true );
     InitiateSeek(Move(seekJob));
   }
 }
@@ -1559,8 +1561,7 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
 
   
   if (aSeekJob.mTarget.IsAccurate() ||
-      aSeekJob.mTarget.IsFast() ||
-      aSeekJob.mTarget.IsVideoOnly()) {
+      aSeekJob.mTarget.IsFast()) {
     mSeekTask = new AccurateSeekTask(mDecoderID, OwnerThread(),
                                      mReader.get(), aSeekJob.mTarget,
                                      mInfo, Duration(), GetMediaTime());
