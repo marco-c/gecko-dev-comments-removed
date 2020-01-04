@@ -29,7 +29,7 @@ assertEq(gcstate(), "none");
 
 
 
-gczeal(8);
+gczeal(8, 0);
 gcslice(1);
 assertEq(gcstate(), "mark");
 gcslice(1);
@@ -40,7 +40,7 @@ assertEq(gcstate(), "none");
 
 
 
-gczeal(9);
+gczeal(9, 0);
 gcslice(1);
 assertEq(gcstate(), "mark");
 gcslice(1);
@@ -50,7 +50,7 @@ assertEq(gcstate(), "none");
 
 
 
-gczeal(10);
+gczeal(10, 0);
 gcslice(1000000);
 assertEq(gcstate(), "sweep");
 gcslice(1000000);
