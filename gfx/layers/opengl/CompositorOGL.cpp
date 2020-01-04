@@ -707,15 +707,9 @@ CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   mGLContext->fEnable(LOCAL_GL_SCISSOR_TEST);
 
-  
-  IntSize viewportSize =
-    mGLContext->GetTargetSize().valueOr(mWidgetSize.ToUnknownSize());
-  if (viewportSize != mWidgetSize.ToUnknownSize()) {
-    mGLContext->fScissor(0, 0, viewportSize.width, viewportSize.height);
-  }
-
   RefPtr<CompositingRenderTargetOGL> rt =
-    CompositingRenderTargetOGL::RenderTargetForWindow(this, viewportSize);
+    CompositingRenderTargetOGL::RenderTargetForWindow(this,
+                                                      IntSize(width, height));
   SetRenderTarget(rt);
 
 #ifdef DEBUG
@@ -1501,21 +1495,13 @@ CompositorOGL::EndFrame()
     return;
   }
 
+  mCurrentRenderTarget = nullptr;
+
   if (mTexturePool) {
     mTexturePool->EndFrame();
   }
 
-  
-  
-  
-  
-  IntSize targetSize = mGLContext->GetTargetSize().valueOr(mViewportSize);
-  if (!(mCurrentRenderTarget->IsWindow() && targetSize != mViewportSize)) {
-    mGLContext->SwapBuffers();
-  }
-
-  mCurrentRenderTarget = nullptr;
-
+  mGLContext->SwapBuffers();
   mGLContext->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, 0);
 
   

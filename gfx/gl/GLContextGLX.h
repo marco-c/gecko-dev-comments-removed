@@ -66,8 +66,6 @@ public:
     
     bool RestoreDrawable();
 
-    virtual Maybe<gfx::IntSize> GetTargetSize() override;
-
 private:
     friend class GLContextProviderGLX;
 
