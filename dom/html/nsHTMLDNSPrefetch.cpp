@@ -140,7 +140,10 @@ nsHTMLDNSPrefetch::Prefetch(const nsAString &hostname, uint16_t flags)
     
     if (!hostname.IsEmpty() &&
         net_IsValidHostName(NS_ConvertUTF16toUTF8(hostname))) {
-      gNeckoChild->SendHTMLDNSPrefetch(nsAutoString(hostname), flags);
+      
+      if (gNeckoChild) {
+        gNeckoChild->SendHTMLDNSPrefetch(nsAutoString(hostname), flags);
+      }
     }
     return NS_OK;
   }
@@ -197,8 +200,11 @@ nsHTMLDNSPrefetch::CancelPrefetch(const nsAString &hostname,
     
     if (!hostname.IsEmpty() &&
         net_IsValidHostName(NS_ConvertUTF16toUTF8(hostname))) {
-      gNeckoChild->SendCancelHTMLDNSPrefetch(nsString(hostname), flags,
-                                             aReason);
+      
+      if (gNeckoChild) {
+        gNeckoChild->SendCancelHTMLDNSPrefetch(nsString(hostname), flags,
+                                               aReason);
+      }
     }
     return NS_OK;
   }
@@ -326,8 +332,11 @@ nsHTMLDNSPrefetch::nsDeferrals::SubmitQueue()
 
         if (!hostName.IsEmpty() && NS_SUCCEEDED(rv) && !isLocalResource) {
           if (IsNeckoChild()) {
-            gNeckoChild->SendHTMLDNSPrefetch(NS_ConvertUTF8toUTF16(hostName),
-                                           mEntries[mTail].mFlags);
+            
+            if (gNeckoChild) {
+              gNeckoChild->SendHTMLDNSPrefetch(NS_ConvertUTF8toUTF16(hostName),
+                                               mEntries[mTail].mFlags);
+            }
           } else {
             nsCOMPtr<nsICancelable> tmpOutstanding;
 
