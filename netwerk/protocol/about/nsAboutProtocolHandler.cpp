@@ -38,7 +38,7 @@ static bool IsSafeToLinkForUntrustedContent(nsIAboutModule *aModule, nsIURI *aUR
 }
 
 
-NS_IMPL_ISUPPORTS(nsAboutProtocolHandler, nsIProtocolHandler)
+NS_IMPL_ISUPPORTS(nsAboutProtocolHandler, nsIProtocolHandler, nsISupportsWeakReference)
 
 
 
@@ -213,7 +213,7 @@ nsAboutProtocolHandler::AllowPort(int32_t port, const char *scheme, bool *_retva
 
 
 
-NS_IMPL_ISUPPORTS(nsSafeAboutProtocolHandler, nsIProtocolHandler)
+NS_IMPL_ISUPPORTS(nsSafeAboutProtocolHandler, nsIProtocolHandler, nsISupportsWeakReference)
 
 
 
