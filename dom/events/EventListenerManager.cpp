@@ -26,6 +26,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventTargetBinding.h"
+#include "mozilla/dom/TouchEvent.h"
 #include "mozilla/TimelineConsumers.h"
 #include "mozilla/EventTimelineMarker.h"
 
@@ -1714,12 +1715,25 @@ EventListenerManager::IsApzAwareListener(Listener* aListener)
 bool
 EventListenerManager::IsApzAwareEvent(nsIAtom* aEvent)
 {
-  return aEvent == nsGkAtoms::ontouchstart ||
-         aEvent == nsGkAtoms::ontouchmove ||
-         aEvent == nsGkAtoms::onwheel ||
-         aEvent == nsGkAtoms::onDOMMouseScroll ||
-         aEvent == nsHtml5Atoms::onmousewheel ||
-         aEvent == nsGkAtoms::onMozMousePixelScroll;
+  if (aEvent == nsGkAtoms::onwheel ||
+      aEvent == nsGkAtoms::onDOMMouseScroll ||
+      aEvent == nsHtml5Atoms::onmousewheel ||
+      aEvent == nsGkAtoms::onMozMousePixelScroll) {
+    return true;
+  }
+  
+  
+  
+  
+  
+  
+  if (TouchEvent::PrefEnabled()) {
+    if (aEvent == nsGkAtoms::ontouchstart ||
+        aEvent == nsGkAtoms::ontouchmove) {
+      return true;
+    }
+  }
+  return false;
 }
 
 already_AddRefed<nsIScriptGlobalObject>
