@@ -1610,11 +1610,7 @@ OutlineTypedObject::obj_trace(JSTracer* trc, JSObject* object)
     if (!typedObj.owner_)
         return;
 
-    
-    
-    
-    
-    TypeDescr& descr = *MaybeForwarded(&typedObj.typeDescr());
+    TypeDescr& descr = typedObj.typeDescr();
 
     
     JSObject* oldOwner = typedObj.owner_;
@@ -2130,11 +2126,7 @@ InlineTypedObject::obj_trace(JSTracer* trc, JSObject* object)
     if (typedObj.is<InlineTransparentTypedObject>())
         return;
 
-    
-    
-    TypeDescr& descr = *MaybeForwarded(&typedObj.typeDescr());
-
-    descr.traceInstances(trc, typedObj.inlineTypedMem(), 1);
+    typedObj.typeDescr().traceInstances(trc, typedObj.inlineTypedMem(), 1);
 }
 
  void
