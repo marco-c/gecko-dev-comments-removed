@@ -3335,6 +3335,7 @@ ContentParent::RecvGetXPCOMProcessAttributes(bool* aIsOffline,
     ErrorResult rv;
     aInitialData->Write(jsapi.cx(), init, rv);
     if (NS_WARN_IF(rv.Failed())) {
+      rv.SuppressException();
       return false;
     }
   }
@@ -5282,6 +5283,7 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
                                 const bool& aCalledFromJS,
                                 const bool& aPositionSpecified,
                                 const bool& aSizeSpecified,
+                                const nsString& aName,
                                 const nsCString& aFeatures,
                                 const nsCString& aBaseURI,
                                 const DocShellOriginAttributes& aOpenerOriginAttributes,
@@ -5295,7 +5297,6 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
 {
   
   *aWindowIsNew = true;
-  *aResult = NS_OK;
 
   
   
@@ -5315,6 +5316,13 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
 
   if (NS_WARN_IF(thisTabParent && thisTabParent->IsMozBrowserOrApp())) {
     return false;
+  }
+
+  nsCOMPtr<nsPIWindowWatcher> pwwatch =
+    do_GetService(NS_WINDOWWATCHER_CONTRACTID, aResult);
+
+  if (NS_WARN_IF(NS_FAILED(*aResult))) {
+    return true;
   }
 
   TabParent* newTab = TabParent::GetFrom(aNewTab);
@@ -5410,22 +5418,43 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
   nsCOMPtr<mozIDOMWindowProxy> window;
   TabParent::AutoUseNewTab aunt(newTab, aWindowIsNew, aURLToLoad);
 
-  nsCOMPtr<nsPIWindowWatcher> pwwatch =
-    do_GetService(NS_WINDOWWATCHER_CONTRACTID, aResult);
+  const char* features = aFeatures.IsVoid() ? nullptr : aFeatures.get();
 
-  if (NS_WARN_IF(NS_FAILED(*aResult))) {
+  *aResult = pwwatch->OpenWindow2(parent, nullptr,
+                                  aName.IsVoid() ?
+                                    nullptr :
+                                    NS_ConvertUTF16toUTF8(aName).get(),
+                                  features, aCalledFromJS,
+                                  false, false, thisTabParent, nullptr,
+                                  aFullZoom, 1, getter_AddRefs(window));
+
+  if (NS_WARN_IF(!window)) {
+    return true;
+  }
+
+  *aResult = NS_ERROR_FAILURE;
+  auto* pwindow = nsPIDOMWindowOuter::From(window);
+  nsCOMPtr<nsIDocShell> windowDocShell = pwindow->GetDocShell();
+  if (NS_WARN_IF(!windowDocShell)) {
+    return true;
+  }
+
+  nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
+  windowDocShell->GetTreeOwner(getter_AddRefs(treeOwner));
+
+  nsCOMPtr<nsIXULWindow> xulWin = do_GetInterface(treeOwner);
+  if (NS_WARN_IF(!xulWin)) {
+    return true;
+  }
+
+  nsCOMPtr<nsIXULBrowserWindow> xulBrowserWin;
+  xulWin->GetXULBrowserWindow(getter_AddRefs(xulBrowserWin));
+  if (NS_WARN_IF(!xulBrowserWin)) {
     return true;
   }
 
   nsCOMPtr<nsITabParent> newRemoteTab;
-  if (!thisTabParent) {
-    
-    
-    *aResult = pwwatch->OpenWindowWithoutParent(getter_AddRefs(newRemoteTab));
-  } else {
-    *aResult = pwwatch->OpenWindowWithTabParent(thisTabParent, aFeatures, aCalledFromJS,
-                                                aFullZoom, getter_AddRefs(newRemoteTab));
-  }
+  *aResult = xulBrowserWin->ForceInitialBrowserRemote(getter_AddRefs(newRemoteTab));
 
   if (NS_WARN_IF(NS_FAILED(*aResult))) {
     return true;
