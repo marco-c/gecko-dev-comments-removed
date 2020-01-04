@@ -207,11 +207,13 @@ GonkDecoderManager::ProcessToDo(bool aEndOfStream)
       mWaitOutput.RemoveElementAt(0);
       mDecodeCallback->Output(output);
     } else if (rv == NS_ERROR_ABORT) {
-      GMDD_LOG("eos output");
-      mWaitOutput.RemoveElementAt(0);
-      MOZ_ASSERT(mQueuedSamples.IsEmpty());
-      MOZ_ASSERT(mWaitOutput.IsEmpty());
       
+      MOZ_ASSERT(mQueuedSamples.IsEmpty());
+      mWaitOutput.RemoveElementAt(0);
+      
+      
+      MOZ_ASSERT(mWaitOutput.IsEmpty() ||
+                 (mWaitOutput.Length() == 1 && output.get()));
       if (output) {
         mDecodeCallback->Output(output);
       }
