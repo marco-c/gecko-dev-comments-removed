@@ -34,6 +34,7 @@ var MigrationWizard = {
     let args = window.arguments;
     let entryPointId = args[0] || MigrationUtils.MIGRATION_ENTRYPOINT_UNKNOWN;
     Services.telemetry.getHistogramById("FX_MIGRATION_ENTRY_POINT").add(entryPointId);
+    this.isInitialMigration = entryPointId == MigrationUtils.MIGRATION_ENTRYPOINT_FIRSTRUN;
 
     if (args.length > 1) {
       this._source = args[1];
@@ -85,6 +86,7 @@ var MigrationWizard = {
 
     
     var group = document.getElementById("importSourceGroup");
+    var availableMigratorCount = 0;
     for (var i = 0; i < group.childNodes.length; ++i) {
       var migratorKey = group.childNodes[i].id;
       if (migratorKey != "nothing") {
@@ -94,11 +96,21 @@ var MigrationWizard = {
           
           if (!selectedMigrator || this._source == migratorKey)
             selectedMigrator = group.childNodes[i];
+          availableMigratorCount++;
         } else {
           
           group.childNodes[i].hidden = true;
         }
       }
+    }
+    if (this.isInitialMigration) {
+      Services.telemetry.getHistogramById("FX_STARTUP_MIGRATION_BROWSER_COUNT")
+        .add(availableMigratorCount);
+      let defaultBrowser = MigrationUtils.getMigratorKeyForDefaultBrowser();
+      
+      defaultBrowser = MigrationUtils.getSourceIdForTelemetry(defaultBrowser);
+      Services.telemetry.getHistogramById("FX_STARTUP_MIGRATION_EXISTING_DEFAULT_BROWSER")
+        .add(defaultBrowser);
     }
 
     group.addEventListener("command", toggleCloseBrowserWarning);

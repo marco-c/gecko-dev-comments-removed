@@ -57,40 +57,6 @@ function getMigrationBundle() {
 
 
 
-function getMigratorKeyForDefaultBrowser() {
-  
-  const APP_DESC_TO_KEY = {
-    "Internet Explorer":                 "ie",
-    "Safari":                            "safari",
-    "Firefox":                           "firefox",
-    "Google Chrome":                     "chrome",  
-    "Chrome":                            "chrome",  
-    "Chromium":                          "chromium", 
-    "Chromium Web Browser":              "chromium", 
-    "360\u5b89\u5168\u6d4f\u89c8\u5668": "360se",
-  };
-
-  let browserDesc = "";
-  try {
-    let browserDesc =
-      Cc["@mozilla.org/uriloader/external-protocol-service;1"].
-      getService(Ci.nsIExternalProtocolService).
-      getApplicationDescription("http");
-    return APP_DESC_TO_KEY[browserDesc] || "";
-  }
-  catch(ex) {
-    Cu.reportError("Could not detect default browser: " + ex);
-  }
-  return "";
-}
-
-
-
-
-
-
-
-
 
 
 
@@ -537,6 +503,40 @@ this.MigrationUtils = Object.freeze({
   },
 
   
+
+
+
+
+
+
+  getMigratorKeyForDefaultBrowser() {
+    
+    const APP_DESC_TO_KEY = {
+      "Internet Explorer":                 "ie",
+      "Safari":                            "safari",
+      "Firefox":                           "firefox",
+      "Google Chrome":                     "chrome",  
+      "Chrome":                            "chrome",  
+      "Chromium":                          "chromium", 
+      "Chromium Web Browser":              "chromium", 
+      "360\u5b89\u5168\u6d4f\u89c8\u5668": "360se",
+    };
+
+    let browserDesc = "";
+    try {
+      let browserDesc =
+        Cc["@mozilla.org/uriloader/external-protocol-service;1"].
+        getService(Ci.nsIExternalProtocolService).
+        getApplicationDescription("http");
+      return APP_DESC_TO_KEY[browserDesc] || "";
+    }
+    catch(ex) {
+      Cu.reportError("Could not detect default browser: " + ex);
+    }
+    return "";
+  },
+
+  
   get isStartupMigration() {
     return gProfileStartup != null;
   },
@@ -676,7 +676,7 @@ this.MigrationUtils = Object.freeze({
       skipSourcePage = true;
     }
     else {
-      let defaultBrowserKey = getMigratorKeyForDefaultBrowser();
+      let defaultBrowserKey = this.getMigratorKeyForDefaultBrowser();
       if (defaultBrowserKey) {
         migrator = this.getMigrator(defaultBrowserKey);
         if (migrator)
