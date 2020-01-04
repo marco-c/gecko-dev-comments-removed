@@ -5,6 +5,7 @@
 
 #include "DisplayListClipState.h"
 
+#include "DisplayItemScrollClip.h"
 #include "nsDisplayList.h"
 
 namespace mozilla {
@@ -105,6 +106,99 @@ DisplayListClipState::ClipContainingBlockDescendantsToContentBox(nsDisplayListBu
   
   ClipContainingBlockDescendants(clipRect, hasBorderRadius ? radii : nullptr,
                                  aClipOnStack);
+}
+
+const DisplayItemScrollClip*
+DisplayListClipState::GetCurrentInnermostScrollClip()
+{
+  return DisplayItemScrollClip::PickInnermost(
+    mScrollClipContentDescendants, mScrollClipContainingBlockDescendants);
+}
+
+void
+DisplayListClipState::TurnClipIntoScrollClipForContentDescendants(
+    nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
+{
+  const DisplayItemScrollClip* parent = GetCurrentInnermostScrollClip();
+  const DisplayItemScrollClip* crossStackingContextParent = parent;
+  if (!crossStackingContextParent) {
+    crossStackingContextParent = mCrossStackingContextParentScrollClip;
+  }
+  mScrollClipContentDescendants =
+    aBuilder->AllocateDisplayItemScrollClip(parent, crossStackingContextParent,
+                                      aScrollableFrame,
+                                      GetCurrentCombinedClip(aBuilder), true);
+  Clear();
+}
+
+void
+DisplayListClipState::TurnClipIntoScrollClipForContainingBlockDescendants(
+    nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
+{
+  const DisplayItemScrollClip* parent = GetCurrentInnermostScrollClip();
+  const DisplayItemScrollClip* crossStackingContextParent = parent;
+  if (!crossStackingContextParent) {
+    crossStackingContextParent = mCrossStackingContextParentScrollClip;
+  }
+  mScrollClipContainingBlockDescendants =
+    aBuilder->AllocateDisplayItemScrollClip(parent, crossStackingContextParent,
+                                      aScrollableFrame,
+                                      GetCurrentCombinedClip(aBuilder), true);
+  Clear();
+}
+
+const DisplayItemClip*
+WithoutRoundedCorners(nsDisplayListBuilder* aBuilder, const DisplayItemClip* aClip)
+{
+  if (!aClip) {
+    return nullptr;
+  }
+  DisplayItemClip rectClip(*aClip);
+  rectClip.RemoveRoundedCorners();
+  return aBuilder->AllocateDisplayItemClip(rectClip);
+}
+
+DisplayItemScrollClip*
+DisplayListClipState::CreateInactiveScrollClip(
+    nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
+{
+  
+  
+  
+  
+  const DisplayItemClip* rectClip =
+    WithoutRoundedCorners(aBuilder, GetCurrentCombinedClip(aBuilder));
+
+  const DisplayItemScrollClip* parent = GetCurrentInnermostScrollClip();
+  const DisplayItemScrollClip* crossStackingContextParent = parent;
+  if (!crossStackingContextParent) {
+    crossStackingContextParent = mCrossStackingContextParentScrollClip;
+  }
+  DisplayItemScrollClip* scrollClip =
+    aBuilder->AllocateDisplayItemScrollClip(parent, crossStackingContextParent,
+                                            aScrollableFrame,
+                                            rectClip, false);
+  return scrollClip;
+}
+
+DisplayItemScrollClip*
+DisplayListClipState::InsertInactiveScrollClipForContentDescendants(
+    nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
+{
+  DisplayItemScrollClip* scrollClip =
+    CreateInactiveScrollClip(aBuilder, aScrollableFrame);
+  mScrollClipContentDescendants = scrollClip;
+  return scrollClip;
+}
+
+DisplayItemScrollClip*
+DisplayListClipState::InsertInactiveScrollClipForContainingBlockDescendants(
+    nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
+{
+  DisplayItemScrollClip* scrollClip =
+    CreateInactiveScrollClip(aBuilder, aScrollableFrame);
+  mScrollClipContainingBlockDescendants = scrollClip;
+  return scrollClip;
 }
 
 DisplayListClipState::AutoSaveRestore::AutoSaveRestore(nsDisplayListBuilder* aBuilder)
