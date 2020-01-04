@@ -794,9 +794,9 @@ protected:
 
     
     
-    bool IsLayoutChangedAfter(uint32_t aOffset) const
+    bool IsLayoutChangedAt(uint32_t aOffset) const
     {
-      return mInitialized && (mMinTextModifiedOffset < aOffset);
+      return IsLayoutChanged() && (mMinTextModifiedOffset <= aOffset);
     }
     
     
