@@ -1777,6 +1777,13 @@ Engine.prototype = {
         + this.name + "\".");
     
     switch (uri.scheme) {
+      case "resource":
+      case "chrome":
+        
+        if (!this._isDefault) {
+          return;
+        }
+        
       case "data":
         if (!this._hasPreferredIcon || aIsPreferred) {
           this._iconURI = uri;
