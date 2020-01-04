@@ -123,6 +123,11 @@ body {
 
 .tabsFilter {
   flex: 1;
+  
+
+
+
+  min-width: 0px;
 }
 
 .sync-state > p {
