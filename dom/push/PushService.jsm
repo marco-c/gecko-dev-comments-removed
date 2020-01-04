@@ -98,6 +98,17 @@ const UNINIT_EVENT = 3;
 
 
 
+function errorWithResult(message, result = Cr.NS_ERROR_FAILURE) {
+  let error = new Error(message);
+  error.result = result;
+  return error;
+}
+
+
+
+
+
+
 this.PushService = {
   _service: null,
   _state: PUSH_SERVICE_UNINIT,
@@ -1094,23 +1105,45 @@ this.PushService = {
   register: function(aPageRecord) {
     console.debug("register()", aPageRecord);
 
-    return this._getByPageRecord(aPageRecord)
-      .then(record => {
-        if (!record) {
-          return this._lookupOrPutPendingRequest(aPageRecord);
-        }
-        if (record.isExpired()) {
-          return record.quotaChanged().then(isChanged => {
-            if (isChanged) {
-              
-              
-              return this.dropRegistrationAndNotifyApp(record.keyID);
-            }
-            throw new Error("Push subscription expired");
-          }).then(_ => this._lookupOrPutPendingRequest(aPageRecord));
-        }
-        return record.toSubscription();
-      });
+    let keyPromise;
+    if (aPageRecord.appServerKey) {
+      let keyView = new Uint8Array(aPageRecord.appServerKey);
+      keyPromise = PushCrypto.validateAppServerKey(keyView)
+        .catch(error => {
+          
+          
+          
+          throw errorWithResult("Invalid app server key",
+                                Cr.NS_ERROR_DOM_PUSH_INVALID_KEY_ERR);
+        });
+    } else {
+      keyPromise = Promise.resolve(null);
+    }
+
+    return Promise.all([
+      keyPromise,
+      this._getByPageRecord(aPageRecord),
+    ]).then(([appServerKey, record]) => {
+      aPageRecord.appServerKey = appServerKey;
+      if (!record) {
+        return this._lookupOrPutPendingRequest(aPageRecord);
+      }
+      if (!record.matchesAppServerKey(appServerKey)) {
+        throw errorWithResult("Mismatched app server key",
+                              Cr.NS_ERROR_DOM_PUSH_MISMATCHED_KEY_ERR);
+      }
+      if (record.isExpired()) {
+        return record.quotaChanged().then(isChanged => {
+          if (isChanged) {
+            
+            
+            return this.dropRegistrationAndNotifyApp(record.keyID);
+          }
+          throw new Error("Push subscription expired");
+        }).then(_ => this._lookupOrPutPendingRequest(aPageRecord));
+      }
+      return record.toSubscription();
+    });
   },
 
   
