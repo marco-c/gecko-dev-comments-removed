@@ -3764,6 +3764,7 @@ CSS_PROP_FONT(
     
     
     CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_ENABLED_IN_UA_SHEETS |
         CSS_PROPERTY_PARSE_VALUE,
     "",
     
@@ -3777,7 +3778,6 @@ CSS_PROP_FONT(
     -moz-script-size-multiplier,
     script_size_multiplier,
     ScriptSizeMultiplier,
-    
     CSS_PROPERTY_INTERNAL |
         CSS_PROPERTY_PARSE_INACCESSIBLE,
     "",
@@ -3789,7 +3789,6 @@ CSS_PROP_FONT(
     -moz-script-min-size,
     script_min_size,
     ScriptMinSize,
-    
     CSS_PROPERTY_INTERNAL |
         CSS_PROPERTY_PARSE_INACCESSIBLE,
     "",
@@ -3812,9 +3811,8 @@ CSS_PROP_FONT(
     -moz-math-display,
     math_display,
     MathDisplay,
-    
-    
     CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_ENABLED_IN_UA_SHEETS |
         CSS_PROPERTY_PARSE_VALUE,
     "",
     VARIANT_HK,
