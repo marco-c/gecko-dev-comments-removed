@@ -117,6 +117,14 @@ public:
 
 
   void ProduceOutputBeforeInput(GraphTime aFrom);
+  
+
+
+
+
+
+  void ReleaseSharedBuffers();
+
   StreamTime GetCurrentPosition();
   bool IsAudioParamStream() const
   {

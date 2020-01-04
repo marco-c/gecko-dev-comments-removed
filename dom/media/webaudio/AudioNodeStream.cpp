@@ -536,12 +536,6 @@ AudioNodeStream::ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags)
         mEngine->ProcessBlocksOnPorts(this, mInputChunks, mLastChunks, &finished);
       }
     }
-    for (auto& chunk : mInputChunks) {
-      
-      
-      
-      chunk.ReleaseBufferIfShared();
-    }
     for (uint16_t i = 0; i < outputCount; ++i) {
       NS_ASSERTION(mLastChunks[i].GetDuration() == WEBAUDIO_BLOCK_SIZE,
                    "Invalid WebAudio chunk size");
@@ -616,6 +610,22 @@ AudioNodeStream::AdvanceOutputSegment()
                                 segment->GetDuration(), 0, tmpSegment);
   }
 }
+
+void
+AudioNodeStream::ReleaseSharedBuffers()
+{
+  
+  
+  
+  
+  for (auto& chunk : mLastChunks) {
+    chunk.ReleaseBufferIfShared();
+  }
+  for (auto& chunk : mInputChunks) {
+    chunk.ReleaseBufferIfShared();
+  }
+}
+
 
 StreamTime
 AudioNodeStream::GetCurrentPosition()
