@@ -448,10 +448,7 @@ private:
 
 
 
-
-
-
-  bool GetFollowingCharMessage(MSG& aCharMsg, bool aRemove = true) const;
+  bool GetFollowingCharMessage(MSG& aCharMsg) const;
 
   
 
