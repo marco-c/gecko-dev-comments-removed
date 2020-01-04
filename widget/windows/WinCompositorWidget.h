@@ -6,7 +6,7 @@
 #ifndef _widget_windows_WinCompositorWidget_h__
 #define _widget_windows_WinCompositorWidget_h__
 
-#include "CompositorWidgetProxy.h"
+#include "CompositorWidget.h"
 #include "mozilla/gfx/CriticalSection.h"
 
 class nsWindow;
@@ -18,13 +18,13 @@ namespace widget {
 
 
 
-class WinCompositorWidgetProxy : public CompositorWidgetProxy
+class WinCompositorWidget: public CompositorWidget
 {
 public:
-  WinCompositorWidgetProxy(HWND aWnd,
-                           uintptr_t aWidgetKey,
-                           nsTransparencyMode aMode,
-                           nsWindow* aWindow = nullptr);
+  WinCompositorWidget(HWND aWnd,
+                      uintptr_t aWidgetKey,
+                      nsTransparencyMode aMode,
+                      nsWindow* aWindow = nullptr);
 
   bool PreRender(layers::LayerManagerComposite*) override;
   void PostRender(layers::LayerManagerComposite*) override;
@@ -38,7 +38,7 @@ public:
   already_AddRefed<CompositorVsyncDispatcher> GetCompositorVsyncDispatcher() override;
   uintptr_t GetWidgetKey() override;
   nsIWidget* RealWidget() override;
-  WinCompositorWidgetProxy* AsWindowsProxy() override {
+  WinCompositorWidget* AsWindows() override {
     return this;
   }
 

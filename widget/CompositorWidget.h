@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_widget_CompositorWidgetProxy_h__
-#define mozilla_widget_CompositorWidgetProxy_h__
+#ifndef mozilla_widget_CompositorWidget_h__
+#define mozilla_widget_CompositorWidget_h__
 
 #include "nsISupports.h"
 #include "mozilla/RefPtr.h"
@@ -28,15 +28,15 @@ class SourceSurface;
 } 
 namespace widget {
 
-class WinCompositorWidgetProxy;
+class WinCompositorWidget;
 
 
 
 
-class CompositorWidgetProxy
+class CompositorWidget
 {
 public:
-  NS_INLINE_DECL_REFCOUNTING(mozilla::widget::CompositorWidgetProxy)
+  NS_INLINE_DECL_REFCOUNTING(mozilla::widget::CompositorWidget)
 
   
 
@@ -200,12 +200,12 @@ public:
 
   virtual already_AddRefed<CompositorVsyncDispatcher> GetCompositorVsyncDispatcher() = 0;
 
-  virtual WinCompositorWidgetProxy* AsWindowsProxy() {
+  virtual WinCompositorWidget* AsWindows() {
     return nullptr;
   }
 
 protected:
-  virtual ~CompositorWidgetProxy();
+  virtual ~CompositorWidget();
 
   
   RefPtr<gfx::DrawTarget> mLastBackBuffer;
@@ -213,10 +213,10 @@ protected:
 
 
 
-class CompositorWidgetProxyWrapper : public CompositorWidgetProxy
+class InProcessCompositorWidget : public CompositorWidget
 {
 public:
-  explicit CompositorWidgetProxyWrapper(nsBaseWidget* aWidget);
+  explicit InProcessCompositorWidget(nsBaseWidget* aWidget);
 
   virtual bool PreRender(layers::LayerManagerComposite* aManager) override;
   virtual void PostRender(layers::LayerManagerComposite* aManager) override;
