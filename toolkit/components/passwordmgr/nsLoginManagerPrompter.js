@@ -742,8 +742,7 @@ LoginManagerPrompter.prototype = {
 
     this.log("Adding new " + aName + " notification bar");
     var newBar = aNotifyBox.appendNotification(
-                            aText, aName,
-                            "chrome://mozapps/skin/passwordmgr/key.png",
+                            aText, aName, "",
                             priority, aButtons);
 
     
