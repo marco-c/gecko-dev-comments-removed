@@ -63,13 +63,16 @@ let FunctionCallActor = protocol.ActorClass({
 
 
 
-  initialize: function(conn, [window, global, caller, type, name, stack, args, result], holdWeak) {
+
+
+  initialize: function(conn, [window, global, caller, type, name, stack, timestamp, args, result], holdWeak) {
     protocol.Actor.prototype.initialize.call(this, conn);
 
     this.details = {
       type: type,
       name: name,
       stack: stack,
+      timestamp: timestamp
     };
 
     
@@ -87,7 +90,8 @@ let FunctionCallActor = protocol.ActorClass({
         window: { get: () => weakRefs.window.get() },
         caller: { get: () => weakRefs.caller.get() },
         result: { get: () => weakRefs.result.get() },
-        args: { get: () => weakRefs.args.get() }
+        args: { get: () => weakRefs.args.get() },
+        timestamp: { get: () => weakRefs.timestamp.get() },
       });
     }
     
@@ -96,6 +100,7 @@ let FunctionCallActor = protocol.ActorClass({
       this.details.caller = caller;
       this.details.result = result;
       this.details.args = args;
+      this.details.timestamp = timestamp;
     }
 
     this.meta = {
@@ -128,6 +133,7 @@ let FunctionCallActor = protocol.ActorClass({
       name: this.details.name,
       file: this.details.stack[0].file,
       line: this.details.stack[0].line,
+      timestamp: this.details.timestamp,
       callerPreview: this.meta.previews.caller,
       argsPreview: this.meta.previews.args
     };
@@ -138,7 +144,7 @@ let FunctionCallActor = protocol.ActorClass({
 
 
   getDetails: method(function() {
-    let { type, name, stack } = this.details;
+    let { type, name, stack, timestamp } = this.details;
 
     
     
@@ -156,7 +162,8 @@ let FunctionCallActor = protocol.ActorClass({
     return {
       type: type,
       name: name,
-      stack: stack
+      stack: stack,
+      timestamp: timestamp
     };
   }, {
     response: { info: RetVal("call-details") }
@@ -243,6 +250,7 @@ let FunctionCallFront = protocol.FrontClass(FunctionCallActor, {
     this.name = form.name;
     this.file = form.file;
     this.line = form.line;
+    this.timestamp = form.timestamp;
     this.callerPreview = form.callerPreview;
     this.argsPreview = form.argsPreview;
   }
@@ -336,6 +344,13 @@ let CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
   
 
 
+  initFrameStartTimestamp: method(function() {
+    this._frameStartTimestamp = this.tabActor.window.performance.now();
+  }),
+
+  
+
+
   resumeRecording: method(function() {
     this._recording = true;
   }),
@@ -424,9 +439,10 @@ let CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
         }
 
         if (self._recording) {
+          let timestamp = self.tabActor.window.performance.now() - self._frameStartTimestamp;
           let stack = getStack(name);
           let type = CallWatcherFront.METHOD_FUNCTION;
-          callback(unwrappedWindow, global, this, type, name, stack, args, result);
+          callback(unwrappedWindow, global, this, type, name, stack, timestamp, args, result);
         }
         return result;
       }, target, { defineAs: name });
@@ -453,9 +469,10 @@ let CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
           let result = Cu.waiveXrays(originalGetter.apply(this, args));
 
           if (self._recording) {
+            let timestamp = self.tabActor.window.performance.now() - self._frameStartTimestamp;
             let stack = getStack(name);
             let type = CallWatcherFront.GETTER_FUNCTION;
-            callback(unwrappedWindow, global, this, type, name, stack, args, result);
+            callback(unwrappedWindow, global, this, type, name, stack, timestamp, args, result);
           }
           return result;
         },
@@ -464,9 +481,10 @@ let CallWatcherActor = exports.CallWatcherActor = protocol.ActorClass({
           originalSetter.apply(this, args);
 
           if (self._recording) {
+            let timestamp = self.tabActor.window.performance.now() - self._frameStartTimestamp;
             let stack = getStack(name);
             let type = CallWatcherFront.SETTER_FUNCTION;
-            callback(unwrappedWindow, global, this, type, name, stack, args, undefined);
+            callback(unwrappedWindow, global, this, type, name, stack, timestamp, args, undefined);
           }
         },
         configurable: descriptor.configurable,
