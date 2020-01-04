@@ -2,36 +2,208 @@
 
 "use strict";
 
+Cu.import("resource://devtools/shared/event-emitter.js");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 
 var {
-   PlatformInfo,
+  EventManager,
+  PlatformInfo,
 } = ExtensionUtils;
+
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 var commandsMap = new WeakMap();
 
-function Command(description, shortcut) {
-  this.description = description;
-  this.shortcut = shortcut;
+function CommandList(commandsObj, extensionID) {
+  this.commands = this.loadCommandsFromManifest(commandsObj);
+  this.keysetID = `ext-keyset-id-${makeWidgetId(extensionID)}`;
+  this.windowOpenListener = null;
+  this.register();
+  EventEmitter.decorate(this);
 }
+
+CommandList.prototype = {
+  
+
+
+
+  register() {
+    for (let window of WindowListManager.browserWindows()) {
+      this.registerKeysToDocument(window.document);
+    }
+
+    this.windowOpenListener = (window) => {
+      this.registerKeysToDocument(window.document);
+    };
+
+    WindowListManager.addOpenListener(this.windowOpenListener);
+  },
+
+  
+
+
+
+  unregister() {
+    for (let window of WindowListManager.browserWindows()) {
+      let keyset = window.document.getElementById(this.keysetID);
+      if (keyset) {
+        keyset.remove();
+      }
+    }
+
+    WindowListManager.removeOpenListener(this.windowOpenListener);
+  },
+
+  
+
+
+
+  loadCommandsFromManifest(commandsObj) {
+    let commands = new Map();
+    
+    
+    let os = PlatformInfo.os == "win" ? "windows" : PlatformInfo.os;
+    for (let name of Object.keys(commandsObj)) {
+      let command = commandsObj[name];
+      commands.set(name, {
+        description: command.description,
+        shortcut: command.suggested_key[os] || command.suggested_key.default,
+      });
+    }
+    return commands;
+  },
+
+  
+
+
+
+  registerKeysToDocument(doc) {
+    let keyset = doc.createElementNS(XUL_NS, "keyset");
+    keyset.id = this.keysetID;
+    this.commands.forEach((command, name) => {
+      let keyElement = this.buildKey(doc, name, command.shortcut);
+      keyset.appendChild(keyElement);
+    });
+    doc.documentElement.appendChild(keyset);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  buildKey(doc, name, shortcut) {
+    let keyElement = this.buildKeyFromShortcut(doc, shortcut);
+
+    
+    
+    keyElement.setAttribute("oncommand", "//");
+
+    
+    
+    
+    keyElement.addEventListener("command", (event) => {
+      this.emit("command", name);
+    });
+    
+
+    return keyElement;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  buildKeyFromShortcut(doc, shortcut) {
+    let keyElement = doc.createElementNS(XUL_NS, "key");
+
+    let parts = shortcut.split("+");
+
+    
+    let chromeKey = parts.pop();
+
+    
+    keyElement.setAttribute("modifiers", this.getModifiersAttribute(parts));
+
+    if (/^[A-Z0-9]$/.test(chromeKey)) {
+      
+      keyElement.setAttribute("key", chromeKey);
+    } else {
+      keyElement.setAttribute("keycode", this.getKeycodeAttribute(chromeKey));
+    }
+
+    return keyElement;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getKeycodeAttribute(chromeKey) {
+    return `VK${chromeKey.replace(/([A-Z])/g, "_$&").toUpperCase()}`;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getModifiersAttribute(chromeModifiers) {
+    let modifiersMap = {
+      "Alt"     : "alt",
+      "Command" : "accel",
+      "Ctrl"    : "accel",
+      "MacCtrl" : "control",
+      "Shift"   : "shift",
+    };
+    return Array.from(chromeModifiers, modifier => {
+      return modifiersMap[modifier];
+    }).join(" ");
+  },
+};
+
 
 
 extensions.on("manifest_commands", (type, directive, extension, manifest) => {
-  let commands = new Map();
-  for (let name of Object.keys(manifest.commands)) {
-    let os = PlatformInfo.os == "win" ? "windows" : PlatformInfo.os;
-    let manifestCommand = manifest.commands[name];
-    let description = manifestCommand.description;
-    let shortcut = manifestCommand.suggested_key[os] || manifestCommand.suggested_key.default;
-    let command = new Command(description, shortcut);
-    commands.set(name, command);
-  }
-  commandsMap.set(extension, commands);
+  commandsMap.set(extension, new CommandList(manifest.commands, extension.id));
 });
 
 extensions.on("shutdown", (type, extension) => {
-  commandsMap.delete(extension);
+  let commandsList = commandsMap.get(extension);
+  if (commandsList) {
+    commandsList.unregister();
+    commandsMap.delete(extension);
+  }
 });
 
 
@@ -39,15 +211,24 @@ extensions.registerSchemaAPI("commands", null, (extension, context) => {
   return {
     commands: {
       getAll() {
-        let commands = Array.from(commandsMap.get(extension), ([name, command]) => {
+        let commands = commandsMap.get(extension).commands;
+        return Promise.resolve(Array.from(commands, ([name, command]) => {
           return ({
             name,
             description: command.description,
             shortcut: command.shortcut,
           });
-        });
-        return Promise.resolve(commands);
+        }));
       },
+      onCommand: new EventManager(context, "commands.onCommand", fire => {
+        let listener = (event, name) => {
+          fire(name);
+        };
+        commandsMap.get(extension).on("command", listener);
+        return () => {
+          commandsMap.get(extension).off("command", listener);
+        };
+      }).api(),
     },
   };
 });
