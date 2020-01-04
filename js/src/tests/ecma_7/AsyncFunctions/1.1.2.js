@@ -2,12 +2,19 @@
 
 
 
+var test = `
+
 async function test() { }
 
 var anon = async function() { }
 
 assertEq(test.name, "test");
 assertEq(anon.name, "");
+
+`;
+
+if (asyncFunctionsEnabled())
+    eval(test);
 
 if (typeof reportCompare === "function")
     reportCompare(true, true);

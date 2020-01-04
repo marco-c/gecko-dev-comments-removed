@@ -2,6 +2,8 @@
 
 
 
+var test = `
+
 var Promise = ShellPromise;
 
 async function empty() {
@@ -80,12 +82,12 @@ async function embedded() {
   return await inner();
 }
 
-
+// recursion, it works!
 async function fib(n) {
     return (n == 0 || n == 1) ? n : await fib(n - 1) + await fib(n - 2);
 }
 
-
+// mutual recursion
 async function isOdd(n) {
   async function isEven(n) {
       return n === 0 || await isOdd(n - 1);
@@ -93,7 +95,7 @@ async function isOdd(n) {
   return n !== 0 && await isEven(n - 1);
 }
 
-
+// recursion, take three!
 var hardcoreFib = async function fib2(n) {
   return (n == 0 || n == 1) ? n : await fib2(n - 1) + await fib2(n - 2);
 }
@@ -134,7 +136,7 @@ async function defaultArgs(arg = thrower()) {
 
 }
 
-
+// Async functions are not constructible
 assertThrows(() => {
   async function Person() {
 
@@ -166,3 +168,10 @@ Promise.all([
   if (typeof reportCompare === "function")
       reportCompare(true, true);
 });
+
+`;
+
+if (asyncFunctionsEnabled())
+    eval(test);
+else if (typeof reportCompare === 'function')
+    reportCompare(0,0,"OK");
