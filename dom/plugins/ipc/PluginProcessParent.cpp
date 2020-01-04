@@ -74,7 +74,8 @@ AddSandboxAllowedFile(vector<std::wstring>& aAllowedFiles, nsIProperties* aDirSv
 static void
 AddSandboxAllowedFiles(int32_t aSandboxLevel,
                        vector<std::wstring>& aAllowedFilesRead,
-                       vector<std::wstring>& aAllowedFilesReadWrite)
+                       vector<std::wstring>& aAllowedFilesReadWrite,
+                       vector<std::wstring>& aAllowedDirectories)
 {
     if (aSandboxLevel < 2) {
         return;
@@ -97,10 +98,19 @@ AddSandboxAllowedFiles(int32_t aSandboxLevel,
     
     
     
+    
     AddSandboxAllowedFile(aAllowedFilesReadWrite, dirSvc, NS_WIN_APPDATA_DIR,
                           NS_LITERAL_STRING("\\Macromedia\\Flash Player\\*"));
+    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Macromedia\\Flash Player"));
+    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Macromedia"));
     AddSandboxAllowedFile(aAllowedFilesReadWrite, dirSvc, NS_WIN_APPDATA_DIR,
                           NS_LITERAL_STRING("\\Adobe\\Flash Player\\*"));
+    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Adobe\\Flash Player"));
+    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Adobe"));
 
     
     
@@ -117,7 +127,7 @@ PluginProcessParent::Launch(mozilla::UniquePtr<LaunchCompleteTask> aLaunchComple
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
     mSandboxLevel = aSandboxLevel;
     AddSandboxAllowedFiles(mSandboxLevel, mAllowedFilesRead,
-                           mAllowedFilesReadWrite);
+                           mAllowedFilesReadWrite, mAllowedDirectories);
 #else
     if (aSandboxLevel != 0) {
         MOZ_ASSERT(false,
