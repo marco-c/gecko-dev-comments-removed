@@ -238,6 +238,11 @@ public class DynamicToolbarAnimator {
         float layerViewTranslationNeeded = desiredTranslation - mLayerViewTranslation;
         mLayerViewTranslation = desiredTranslation;
         synchronized (mTarget.getLock()) {
+            if (layerViewTranslationNeeded == 0 && isResizing()) {
+                
+                
+                return;
+            }
             mHeightDuringResize = new Integer(mTarget.getViewportMetrics().viewportRectHeight);
             mSnapRequired = mTarget.setViewportSize(
                 mTarget.getView().getWidth(),
