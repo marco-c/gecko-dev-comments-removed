@@ -504,7 +504,11 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     
     
     
-    collection->PostRestyleForAnimation(mPresContext);
+    EffectCompositor::CascadeLevel cascadeLevel =
+      EffectCompositor::CascadeLevel::Transitions;
+    mPresContext->EffectCompositor()->PostRestyleForAnimation(aElement,
+                                                              pseudoType,
+                                                              cascadeLevel);
   }
 }
 

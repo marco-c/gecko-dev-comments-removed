@@ -501,13 +501,16 @@ AnimationCollection::RequestRestyle(EffectCompositor::RestyleType aRestyleType)
 
   
 
+  
+  
+  
+  
   if (mHasPendingAnimationRestyle) {
     return;
   }
 
   if (aRestyleType >= EffectCompositor::RestyleType::Standard) {
     mHasPendingAnimationRestyle = true;
-    PostRestyleForAnimation(presContext);
   }
 }
 

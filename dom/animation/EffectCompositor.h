@@ -92,6 +92,14 @@ public:
   
   
   
+  void PostRestyleForAnimation(dom::Element* aElement,
+                               nsCSSPseudoElements::Type aPseudoType,
+                               CascadeLevel aCascadeLevel);
+
+  
+  
+  
+  
   void MaybeUpdateAnimationRule(dom::Element* aElement,
                                 nsCSSPseudoElements::Type aPseudoType,
                                 CascadeLevel aCascadeLevel,
@@ -150,6 +158,10 @@ private:
                                    CascadeLevel aCascadeLevel,
                                    TimeStamp aRefreshTime,
                                    bool& aStyleChanging);
+
+  static dom::Element* GetElementToRestyle(dom::Element* aElement,
+                                           nsCSSPseudoElements::Type
+                                             aPseudoType);
 
   
   
