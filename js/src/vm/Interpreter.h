@@ -26,11 +26,6 @@ class ScopeIter;
 
 
 
-
-
-extern bool
-BoxNonStrictThis(JSContext* cx, const CallReceiver& call);
-
 extern bool
 BoxNonStrictThis(JSContext* cx, HandleValue thisv, MutableHandleValue vp);
 

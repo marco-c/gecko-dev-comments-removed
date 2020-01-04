@@ -42,18 +42,6 @@
 typedef bool
 (* JSNative)(JSContext* cx, unsigned argc, JS::Value* vp);
 
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(JS::Value)
-JS_ComputeThis(JSContext* cx, JS::Value* vp);
-
 namespace JS {
 
 extern JS_PUBLIC_DATA(const HandleValue) UndefinedHandleValue;
@@ -93,7 +81,16 @@ extern JS_PUBLIC_DATA(const HandleValue) UndefinedHandleValue;
 
 
 
+
+
 namespace detail {
+
+
+
+
+
+extern JS_PUBLIC_API(Value)
+ComputeThis(JSContext* cx, JS::Value* vp);
 
 #ifdef JS_DEBUG
 extern JS_PUBLIC_API(void)
@@ -170,7 +167,7 @@ class MOZ_STACK_CLASS CallReceiverBase : public UsedRvalBase<
         if (thisv().isObject())
             return thisv();
 
-        return JS_ComputeThis(cx, base());
+        return ComputeThis(cx, base());
     }
 
     bool isConstructing() const {
@@ -388,7 +385,7 @@ CallArgsFromSp(unsigned stackSlots, Value* sp, bool constructing = false)
 MOZ_ALWAYS_INLINE JS::Value
 JS_THIS(JSContext* cx, JS::Value* vp)
 {
-    return vp[1].isPrimitive() ? JS_ComputeThis(cx, vp) : vp[1];
+    return vp[1].isPrimitive() ? JS::detail::ComputeThis(cx, vp) : vp[1];
 }
 
 
