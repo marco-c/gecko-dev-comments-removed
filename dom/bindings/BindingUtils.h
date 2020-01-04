@@ -3285,6 +3285,13 @@ GetErrorPrototype(JSContext* aCx, JS::Handle<JSObject*> aForObj)
   return JS_GetErrorPrototype(aCx);
 }
 
+inline
+JSObject*
+GetIteratorPrototype(JSContext* aCx, JS::Handle<JSObject*> aForObj)
+{
+  return JS_GetIteratorPrototype(aCx);
+}
+
 
 
 
