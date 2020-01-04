@@ -573,14 +573,6 @@ public:
     }
 
     
-    nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
-    if (loadInfo) {
-      NeckoOriginAttributes originAttrs;
-      NS_GetOriginAttributes(channel, originAttrs);
-      loadInfo->SetOriginAttributes(originAttrs);
-    }
-
-    
     
     
     
@@ -1212,7 +1204,7 @@ void HTMLMediaElement::SelectResource()
       mMediaSource = mSrcMediaSource;
       UpdatePreloadAction();
       if (mPreloadAction == HTMLMediaElement::PRELOAD_NONE &&
-          !IsMediaStreamURI(mLoadingSrc) && !mMediaSource) {
+          !IsMediaStreamURI(mLoadingSrc)) {
         
         
         SuspendLoad();
@@ -1367,7 +1359,7 @@ void HTMLMediaElement::LoadFromSourceChildren()
                  "Network state should be loading");
 
     if (mPreloadAction == HTMLMediaElement::PRELOAD_NONE &&
-        !IsMediaStreamURI(mLoadingSrc) && !mMediaSource) {
+        !IsMediaStreamURI(mLoadingSrc)) {
       
       
       SuspendLoad();
