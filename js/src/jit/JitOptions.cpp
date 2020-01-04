@@ -111,6 +111,14 @@ JitOptions::JitOptions()
     SET_DEFAULT(disableSharedStubs, true);
 
     
+    
+    #if defined(XP_MACOSX)
+        SET_DEFAULT(disableSincos, false);
+    #else
+        SET_DEFAULT(disableSincos, true);
+    #endif
+
+    
     SET_DEFAULT(disableSink, true);
 
     

@@ -379,6 +379,7 @@ enum MIRType
     MIRType_MagicIsConstructing,       
     MIRType_MagicUninitializedLexical, 
     MIRType_Value,
+    MIRType_SinCosDouble,              
     MIRType_ObjectOrNull,
     MIRType_None,                      
     MIRType_Slots,                     
@@ -492,6 +493,8 @@ StringFromMIRType(MIRType type)
       return "MagicUninitializedLexical";
     case MIRType_Value:
       return "Value";
+    case MIRType_SinCosDouble:
+      return "SinCosDouble";
     case MIRType_ObjectOrNull:
       return "ObjectOrNull";
     case MIRType_None:

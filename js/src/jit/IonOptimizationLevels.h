@@ -86,6 +86,9 @@ class OptimizationInfo
     bool autoTruncate_;
 
     
+    bool sincos_;
+
+    
     bool sink_;
 
     
@@ -184,6 +187,10 @@ class OptimizationInfo
 
     bool autoTruncateEnabled() const {
         return autoTruncate_ && rangeAnalysisEnabled();
+    }
+
+    bool sincosEnabled() const {
+        return sincos_ && !js_JitOptions.disableSincos;
     }
 
     bool sinkEnabled() const {
