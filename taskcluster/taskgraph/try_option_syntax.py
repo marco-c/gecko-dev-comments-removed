@@ -126,6 +126,9 @@ UNITTEST_PLATFORM_PRETTY_NAMES = {
 
 
 RIDEALONG_BUILDS = {
+    'android-api-15': [
+        'android-api-15-l10n',
+    ],
     'linux': [
         'linux-l10n',
     ],
