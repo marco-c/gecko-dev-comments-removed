@@ -2119,7 +2119,9 @@ this.XPIDatabaseReconcile = {
     }
 
     
-    if (!sawActiveTheme) {
+    
+    if (XPIProvider.selectedSkin != XPIProvider.defaultSkin && !sawActiveTheme) {
+      logger.info("Didn't see selected skin " + XPIProvider.selectedSkin);
       XPIProvider.enableDefaultTheme();
     }
 
