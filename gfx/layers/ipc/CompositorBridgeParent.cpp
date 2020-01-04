@@ -669,11 +669,16 @@ CompositorBridgeParent::ForceIsFirstPaint()
   mCompositionManager->ForceIsFirstPaint();
 }
 
-bool
-CompositorBridgeParent::RecvWillClose()
+void
+CompositorBridgeParent::StopAndClearResources()
 {
+  CancelCurrentCompositeTask();
+  if (mForceCompositionTask) {
+    mForceCompositionTask->Cancel();
+    mForceCompositionTask = nullptr;
+  }
+
   mPaused = true;
-  RemoveCompositor(mCompositorID);
 
   
   if (mLayerManager) {
@@ -693,7 +698,12 @@ CompositorBridgeParent::RecvWillClose()
     mCompositor->Destroy();
     mCompositor = nullptr;
   }
+}
 
+bool
+CompositorBridgeParent::RecvWillClose()
+{
+  StopAndClearResources();
   return true;
 }
 
@@ -848,28 +858,9 @@ CompositorBridgeParent::UpdateVisibleRegion(const VisibilityCounter& aCounter,
 void
 CompositorBridgeParent::ActorDestroy(ActorDestroyReason why)
 {
-  CancelCurrentCompositeTask();
-  if (mForceCompositionTask) {
-    mForceCompositionTask->Cancel();
-    mForceCompositionTask = nullptr;
-  }
-  mPaused = true;
+  StopAndClearResources();
+
   RemoveCompositor(mCompositorID);
-
-  if (mLayerManager) {
-    mLayerManager->Destroy();
-    mLayerManager = nullptr;
-  }
-
-  { 
-    MonitorAutoLock lock(*sIndirectLayerTreesLock);
-    sIndirectLayerTrees.erase(mRootLayerTreeID);
-  }
-
-  if (mCompositor) {
-    mCompositor->Destroy();
-    mCompositor = nullptr;
-  }
 
   mCompositionManager = nullptr;
 
@@ -879,6 +870,11 @@ CompositorBridgeParent::ActorDestroy(ActorDestroyReason why)
   }
 
   mCompositorScheduler->Destroy();
+
+  { 
+    MonitorAutoLock lock(*sIndirectLayerTreesLock);
+    sIndirectLayerTrees.erase(mRootLayerTreeID);
+  }
 
   
   

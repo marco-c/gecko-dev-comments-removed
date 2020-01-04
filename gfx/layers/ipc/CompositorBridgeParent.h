@@ -477,6 +477,11 @@ private:
   
 
 
+  void StopAndClearResources();
+
+  
+
+
 
   static already_AddRefed<APZCTreeManager> GetAPZCTreeManager(uint64_t aLayersId);
 
