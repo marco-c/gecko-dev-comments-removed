@@ -349,9 +349,13 @@ TypeUtils::ToInternalRequest(const CacheRequest& aIn)
   RefPtr<InternalHeaders> internalHeaders =
     ToInternalHeaders(aIn.headers(), aIn.headersGuard());
   ErrorResult result;
-  internalRequest->Headers()->SetGuard(aIn.headersGuard(), result);
-  MOZ_ASSERT(!result.Failed());
+
+  
+  
   internalRequest->Headers()->Fill(*internalHeaders, result);
+  MOZ_ASSERT(!result.Failed());
+
+  internalRequest->Headers()->SetGuard(aIn.headersGuard(), result);
   MOZ_ASSERT(!result.Failed());
 
   nsCOMPtr<nsIInputStream> stream = ReadStream::Create(aIn.body());
