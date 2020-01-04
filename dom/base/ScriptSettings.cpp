@@ -782,7 +782,9 @@ danger::AutoCxPusher::~AutoCxPusher()
   
   MOZ_ASSERT_IF(mPushedContext, mCompartmentDepthOnEntry ==
                                 js::GetEnterCompartmentDepth(mPushedContext));
-  MOZ_ASSERT(mPushedContext == nsXPConnect::XPConnect()->GetCurrentJSContext());
+  
+  
+  
   XPCJSRuntime::Get()->GetJSContextStack()->Pop();
 }
 
