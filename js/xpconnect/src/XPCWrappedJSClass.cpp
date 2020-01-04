@@ -775,12 +775,14 @@ nsXPCWrappedJSClass::CleanupOutparams(JSContext* cx, uint16_t methodIndex,
 
 nsresult
 nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
+                                       AutoEntryScript& aes,
                                        const char * aPropertyName,
                                        const char * anInterfaceName,
                                        bool aForceReport)
 {
     XPCContext * xpcc = ccx.GetXPCContext();
     JSContext * cx = ccx.GetJSContext();
+    MOZ_ASSERT(cx == aes.cx());
     nsCOMPtr<nsIException> xpc_exception;
     
 
@@ -811,7 +813,7 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
     
     
     
-    JS_ClearPendingException(cx);
+    aes.ClearException();
 
     if (xpc_exception) {
         nsresult e_result;
@@ -860,7 +862,8 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
                 
                 
                 JS_SetPendingException(cx, js_exception);
-                reportable = !JS_ReportPendingException(cx);
+                aes.ReportException();
+                reportable = false;
             }
 
             if (reportable) {
@@ -979,6 +982,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
       NativeGlobal(js::GetGlobalForObjectCrossCompartment(wrapper->GetJSObject()));
     AutoEntryScript aes(nativeGlobal, "XPCWrappedJS method call",
                          true);
+    aes.TakeOwnershipOfErrorReporting();
     XPCCallContext ccx(NATIVE_CALLER, aes.cx());
     if (!ccx.IsValid())
         return retval;
@@ -997,7 +1001,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
         
         JS_ReportError(cx, str);
         NS_WARNING(str);
-        return NS_ERROR_FAILURE;
+        return CheckForException(ccx, aes, name, GetInterfaceName(), false);
     }
 
     RootedValue fval(cx);
@@ -1221,7 +1225,7 @@ pre_call_clean_up:
 
     
 
-    JS_ClearPendingException(cx);
+    MOZ_ASSERT(!aes.HasException());
 
     RootedValue rval(cx);
     if (XPT_MD_IS_GETTER(info->flags)) {
@@ -1267,7 +1271,8 @@ pre_call_clean_up:
         
         
 
-        return CheckForException(ccx, name, GetInterfaceName(), forceReport);
+        return CheckForException(ccx, aes, name, GetInterfaceName(),
+                                 forceReport);
     }
 
     XPCJSRuntime::Get()->SetPendingException(nullptr); 
