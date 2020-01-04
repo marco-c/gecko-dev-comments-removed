@@ -1112,10 +1112,6 @@ public:
         MOZ_CRASH("NYI");
     }
 
-    
-    
-    void buildFakeExitFrame(Register scratch, uint32_t* offset);
-
     void add32(Register src, Register dest);
     void add32(Imm32 imm, Register dest);
     void add32(Imm32 imm, const Address& dest);

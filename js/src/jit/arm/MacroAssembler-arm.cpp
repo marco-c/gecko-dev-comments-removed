@@ -1865,31 +1865,6 @@ MacroAssemblerARM::ma_vstr(VFPRegister src, Register base, Register index, int32
     return ma_vstr(src, Address(scratch, offset), cc);
 }
 
-void
-MacroAssemblerARMCompat::buildFakeExitFrame(Register scratch, uint32_t* offset)
-{
-    DebugOnly<uint32_t> initialDepth = asMasm().framePushed();
-    uint32_t descriptor = MakeFrameDescriptor(asMasm().framePushed(), JitFrame_IonJS);
-
-    asMasm().Push(Imm32(descriptor)); 
-
-    enterNoPool(2);
-    DebugOnly<uint32_t> offsetBeforePush = currentOffset();
-    asMasm().Push(pc); 
-
-    
-    
-    
-    ma_nop();
-    uint32_t pseudoReturnOffset = currentOffset();
-    leaveNoPool();
-
-    MOZ_ASSERT(asMasm().framePushed() == initialDepth + ExitFrameLayout::Size());
-    MOZ_ASSERT(pseudoReturnOffset - offsetBeforePush == 8);
-
-    *offset = pseudoReturnOffset;
-}
-
 bool
 MacroAssemblerARMCompat::buildOOLFakeExitFrame(void* fakeReturnAddr)
 {
@@ -5264,6 +5239,27 @@ MacroAssembler::callJitNoProfiler(Register callee)
     
     call(callee);
     return currentOffset();
+}
+
+uint32_t
+MacroAssembler::pushFakeReturnAddress(Register scratch)
+{
+    
+    
+    
+    
+    
+    
+    
+    enterNoPool(2);
+    DebugOnly<uint32_t> offsetBeforePush = currentOffset();
+    Push(pc); 
+    ma_nop();
+    uint32_t pseudoReturnOffset = currentOffset();
+    leaveNoPool();
+
+    MOZ_ASSERT(pseudoReturnOffset - offsetBeforePush == 8);
+    return pseudoReturnOffset;
 }
 
 

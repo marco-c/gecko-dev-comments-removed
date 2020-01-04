@@ -1358,8 +1358,7 @@ CodeGeneratorShared::callVM(const VMFunction& fun, LInstruction* ins, const Regi
         masm.makeFrameDescriptor(*dynStack, JitFrame_IonJS);
         masm.Push(*dynStack); 
     } else {
-        uint32_t descriptor = MakeFrameDescriptor(framePushed(), JitFrame_IonJS);
-        masm.Push(Imm32(descriptor));
+        masm.pushStaticFrameDescriptor(JitFrame_IonJS);
     }
 
     

@@ -1473,10 +1473,6 @@ class MacroAssemblerX86Shared : public Assembler
         lea(Operand(address), dest);
     }
 
-    
-    
-    void buildFakeExitFrame(Register scratch, uint32_t* offset);
-
     void callAndPushReturnAddress(Label* label);
 
     void checkStackAlignment() {

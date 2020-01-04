@@ -578,6 +578,29 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void makeFrameDescriptor(Register frameSizeReg, FrameType type);
 
     
+    inline void pushStaticFrameDescriptor(FrameType type);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    inline uint32_t buildFakeExitFrame(Register scratch);
+
+  private:
+    
+    
+    
+    
+    uint32_t pushFakeReturnAddress(Register scratch) PER_SHARED_ARCH;
+
+    
   public:
 
     
