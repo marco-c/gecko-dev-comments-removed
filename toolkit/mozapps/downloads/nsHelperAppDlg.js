@@ -729,9 +729,9 @@ nsUnknownContentTypeDialog.prototype = {
       otherHandler.hidden = false;
     }
 
-    var useDefault = this.dialogElement("useSystemDefault");
     var openHandler = this.dialogElement("openHandler");
     openHandler.selectedIndex = 0;
+    var defaultOpenHandler = this.dialogElement("defaultHandler");
 
     if (this.mLauncher.MIMEInfo.preferredAction == this.nsIMIMEInfo.useSystemDefault) {
       
@@ -739,7 +739,8 @@ nsUnknownContentTypeDialog.prototype = {
     } else if (this.mLauncher.MIMEInfo.preferredAction == this.nsIMIMEInfo.useHelperApp) {
       
       modeGroup.selectedItem = this.dialogElement("open");
-      openHandler.selectedIndex = 1;
+      openHandler.selectedItem = (otherHandler && !otherHandler.hidden) ?
+                                 otherHandler : defaultOpenHandler;
     } else {
       
       modeGroup.selectedItem = this.dialogElement("save");
@@ -747,11 +748,10 @@ nsUnknownContentTypeDialog.prototype = {
 
     
     if (!openWithDefaultOK) {
-      var useDefault = this.dialogElement("defaultHandler");
-      var isSelected = useDefault.selected;
+      var isSelected = defaultOpenHandler.selected;
 
       
-      useDefault.hidden = true;
+      defaultOpenHandler.hidden = true;
       
       if (isSelected) {
         openHandler.selectedIndex = 1;
