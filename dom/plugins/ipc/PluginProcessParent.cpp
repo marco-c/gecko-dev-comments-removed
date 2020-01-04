@@ -98,19 +98,27 @@ AddSandboxAllowedFiles(int32_t aSandboxLevel,
     
     
     
-    
     AddSandboxAllowedFile(aAllowedFilesReadWrite, dirSvc, NS_WIN_APPDATA_DIR,
                           NS_LITERAL_STRING("\\Macromedia\\Flash Player\\*"));
-    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
-                          NS_LITERAL_STRING("\\Macromedia\\Flash Player"));
-    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
-                          NS_LITERAL_STRING("\\Macromedia"));
+    AddSandboxAllowedFile(aAllowedFilesReadWrite, dirSvc, NS_WIN_LOCAL_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Macromedia\\Flash Player\\*"));
     AddSandboxAllowedFile(aAllowedFilesReadWrite, dirSvc, NS_WIN_APPDATA_DIR,
                           NS_LITERAL_STRING("\\Adobe\\Flash Player\\*"));
+
+    
+    
     AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
-                          NS_LITERAL_STRING("\\Adobe\\Flash Player"));
+                          NS_LITERAL_STRING("\\Macromedia"));
+    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Macromedia\\Flash Player"));
+    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_LOCAL_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Macromedia"));
+    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_LOCAL_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Macromedia\\Flash Player"));
     AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
                           NS_LITERAL_STRING("\\Adobe"));
+    AddSandboxAllowedFile(aAllowedDirectories, dirSvc, NS_WIN_APPDATA_DIR,
+                          NS_LITERAL_STRING("\\Adobe\\Flash Player"));
 
     
     
