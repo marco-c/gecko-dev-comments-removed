@@ -679,6 +679,9 @@ public class Tabs implements GeckoEventListener {
 
     private void onTabChanged(Tab tab, Tabs.TabEvents msg, Object data) {
         switch (msg) {
+            
+            
+            case FAVICON:
             case LOCATION_CHANGE:
                 queuePersistAllTabs();
                 break;
