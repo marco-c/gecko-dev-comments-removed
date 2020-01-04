@@ -27,6 +27,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
 
+
+const PERMISSION_SAVE_LOGINS = "login-saving";
+
 this.LoginManagerStorage_json = function () {};
 
 this.LoginManagerStorage_json.prototype = {
@@ -84,7 +87,24 @@ this.LoginManagerStorage_json.prototype = {
 
         
         Services.prefs.setBoolPref("signon.importedFromSqlite", true);
-      }.bind(this)).catch(Cu.reportError);
+      }.bind(this)).catch(Cu.reportError)
+      .then(Task.spawn(function () {
+        
+        
+        if (!this._store.data || !this._store.data.disabledHosts) {
+          return; 
+        }
+        for (let host of this._store.data.disabledHosts) {
+          try {
+            let uri = Services.io.newURI(host, null, null);
+            Services.perms.add(uri, PERMISSION_SAVE_LOGINS, Services.perms.DENY_ACTION);
+          } catch (e) {
+            Cu.reportError(e);
+          }
+        }
+        delete this._store.data.disabledHosts;
+        this._store.saveSoon();
+      }.bind(this))).catch(Cu.reportError);
     } catch (e) {
       this.log("Initialization failed:", e);
       throw new Error("Initialization failed");
@@ -365,8 +385,6 @@ this.LoginManagerStorage_json.prototype = {
   },
 
   
-
-
 
 
   removeAllLogins() {

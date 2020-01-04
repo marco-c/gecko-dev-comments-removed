@@ -268,6 +268,8 @@ LoginStore.prototype = {
     if (!this.data.logins) {
       this.data.logins = [];
     }
+
+    
     if (!this.data.disabledHosts) {
       this.data.disabledHosts = [];
     }
