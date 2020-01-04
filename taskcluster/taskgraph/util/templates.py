@@ -1,4 +1,3 @@
-import codecs
 import os
 
 import pystache
@@ -129,11 +128,5 @@ class Templates():
         if not os.path.isfile(path):
             raise TemplatesException('"{}" is not a file'.format(path))
 
-        
-        
-        
-        
-        
-        with codecs.open(path, 'rb', 'utf-8') as fh:
-            content = fh.read()
+        content = open(path).read()
         return self.render(path, content, parameters, seen)
