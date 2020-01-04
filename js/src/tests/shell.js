@@ -26,6 +26,15 @@
   var ReflectApply = global.Reflect.apply;
   var StringPrototypeEndsWith = global.String.prototype.endsWith;
 
+  var runningInBrowser = typeof global.window !== "undefined";
+  if (runningInBrowser) {
+    
+    
+
+    var SpecialPowersSetGCZeal =
+      global.SpecialPowers ? global.SpecialPowers.setGCZeal : undefined;
+  }
+
   
 
 
@@ -148,6 +157,28 @@
            "print function is pre-existing, either provided by the shell or " +
            "the already-executed top-level browser.js");
 
+  var quit = global.quit;
+  if (typeof quit !== "function") {
+    
+    
+    
+    quit = function quit() {};
+    global.quit = quit;
+  }
+
+  var gczeal = global.gczeal;
+  if (typeof gczeal !== "function") {
+    if (typeof SpecialPowersSetGCZeal === "function") {
+      gczeal = function gczeal(z) {
+        SpecialPowersSetGCZeal(z);
+      };
+    } else {
+      gczeal = function() {}; 
+    }
+
+    global.gczeal = gczeal;
+  }
+
   
 
 
@@ -242,8 +273,6 @@
 
 
 var STATUS = "STATUS: ";
-var SECT_PREFIX = 'Section ';
-var SECT_SUFFIX = ' of test - ';
 
 var gDelayTestDriverEnd = false;
 
@@ -349,7 +378,7 @@ function expectExitCode(n)
 
 function inSection(x)
 {
-  return SECT_PREFIX + x + SECT_SUFFIX;
+  return "Section " + x + " of test - ";
 }
 
 
