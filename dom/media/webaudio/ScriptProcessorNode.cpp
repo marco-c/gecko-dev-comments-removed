@@ -448,9 +448,7 @@ private:
         
         nsRefPtr<AudioProcessingEvent> event =
           new AudioProcessingEvent(aNode, nullptr, nullptr);
-        event->InitEvent(inputBuffer,
-                         inputChannelCount,
-                         context->StreamTimeToDOMTime(mPlaybackTime));
+        event->InitEvent(inputBuffer, inputChannelCount, mPlaybackTime);
         aNode->DispatchTrustedEvent(event);
 
         
