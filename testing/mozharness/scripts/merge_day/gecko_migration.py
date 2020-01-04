@@ -156,6 +156,11 @@ class GeckoMigration(MercurialScript, BalrogMixin, VirtualenvMixin,
                     "branch": self.config.get("%s_repo_branch" % (k,), "default"),
                     "dest": dirs['abs_%s_dir' % k],
                     "vcs": "hg",
+                    
+                    
+                    
+                    
+                    "use_vcs_unique_share": True,
                 })
             else:
                 self.warning("Skipping %s" % repo_key)
