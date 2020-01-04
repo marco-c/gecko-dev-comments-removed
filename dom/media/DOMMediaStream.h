@@ -173,7 +173,6 @@ class MediaStreamDirectListener;
 
 class DOMMediaStream : public DOMEventTargetHelper
 {
-  class TrackPort;
   friend class DOMLocalMediaStream;
   typedef dom::MediaStreamTrack MediaStreamTrack;
   typedef dom::AudioStreamTrack AudioStreamTrack;
@@ -208,7 +207,83 @@ public:
     virtual ~TrackListener() {}
   };
 
-  DOMMediaStream();
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class TrackPort
+  {
+  public:
+    NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(TrackPort)
+    NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(TrackPort)
+
+    
+
+
+
+
+
+
+
+    enum class InputPortOwnership {
+      OWNED = 1,
+      EXTERNAL
+    };
+
+    TrackPort(MediaInputPort* aInputPort,
+              MediaStreamTrack* aTrack,
+              const InputPortOwnership aOwnership);
+
+  protected:
+    virtual ~TrackPort();
+
+  public:
+    void DestroyInputPort();
+
+    
+
+
+    MediaStream* GetSource() const;
+
+    
+
+
+
+    TrackID GetSourceTrackId() const;
+
+    MediaInputPort* GetInputPort() const { return mInputPort; }
+    MediaStreamTrack* GetTrack() const { return mTrack; }
+
+    
+
+
+
+    void BlockTrackId(TrackID aTrackId);
+
+  private:
+    RefPtr<MediaInputPort> mInputPort;
+    RefPtr<MediaStreamTrack> mTrack;
+
+    
+    
+    const InputPortOwnership mOwnership;
+  };
+
+ DOMMediaStream();
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_REALLY_FORWARD_NSIDOMEVENTTARGET(DOMEventTargetHelper)

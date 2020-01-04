@@ -37,106 +37,62 @@ using namespace mozilla::layers;
 const TrackID TRACK_VIDEO_PRIMARY = 1;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class DOMMediaStream::TrackPort
+DOMMediaStream::TrackPort::TrackPort(MediaInputPort* aInputPort,
+                                     MediaStreamTrack* aTrack,
+                                     const InputPortOwnership aOwnership)
+  : mInputPort(aInputPort)
+  , mTrack(aTrack)
+  , mOwnership(aOwnership)
 {
-public:
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(TrackPort)
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(TrackPort)
+  MOZ_ASSERT(mInputPort);
+  MOZ_ASSERT(mTrack);
 
-  enum class InputPortOwnership {
-    OWNED = 1,
-    EXTERNAL
-  };
+  MOZ_COUNT_CTOR(TrackPort);
+}
 
-  TrackPort(MediaInputPort* aInputPort,
-            MediaStreamTrack* aTrack,
-            const InputPortOwnership aOwnership)
-    : mInputPort(aInputPort)
-    , mTrack(aTrack)
-    , mOwnership(aOwnership)
-  {
-    MOZ_ASSERT(mInputPort);
-    MOZ_ASSERT(mTrack);
+DOMMediaStream::TrackPort::~TrackPort()
+{
+  MOZ_COUNT_DTOR(TrackPort);
 
-    MOZ_COUNT_CTOR(TrackPort);
+  if (mOwnership == InputPortOwnership::OWNED && mInputPort) {
+    mInputPort->Destroy();
+    mInputPort = nullptr;
   }
+}
 
-protected:
-  virtual ~TrackPort()
-  {
-    MOZ_COUNT_DTOR(TrackPort);
-
-    if (mOwnership == InputPortOwnership::OWNED && mInputPort) {
-      mInputPort->Destroy();
-      mInputPort = nullptr;
-    }
+void
+DOMMediaStream::TrackPort::DestroyInputPort()
+{
+  if (mInputPort) {
+    mInputPort->Destroy();
+    mInputPort = nullptr;
   }
+}
 
-public:
-  void DestroyInputPort()
-  {
-    if (mInputPort) {
-      mInputPort->Destroy();
-      mInputPort = nullptr;
-    }
+MediaStream*
+DOMMediaStream::TrackPort::GetSource() const
+{
+  return mInputPort ? mInputPort->GetSource() : nullptr;
+}
+
+TrackID
+DOMMediaStream::TrackPort::GetSourceTrackId() const
+{
+  return mInputPort ? mInputPort->GetSourceTrackId() : TRACK_INVALID;
+}
+
+void
+DOMMediaStream::TrackPort::BlockTrackId(TrackID aTrackId)
+{
+  if (mInputPort) {
+    mInputPort->BlockTrackId(aTrackId);
   }
-
-  
-
-
-  MediaStream* GetSource() const { return mInputPort ? mInputPort->GetSource()
-                                                     : nullptr; }
-
-  
-
-
-
-  TrackID GetSourceTrackId() const { return mInputPort ? mInputPort->GetSourceTrackId()
-                                                       : TRACK_INVALID; }
-
-  MediaInputPort* GetInputPort() const { return mInputPort; }
-  MediaStreamTrack* GetTrack() const { return mTrack; }
-
-  
-
-
-
-  void BlockTrackId(TrackID aTrackId)
-  {
-    if (mInputPort) {
-      mInputPort->BlockTrackId(aTrackId);
-    }
-  }
-
-private:
-  RefPtr<MediaInputPort> mInputPort;
-  RefPtr<MediaStreamTrack> mTrack;
-
-  
-  
-  const InputPortOwnership mOwnership;
-};
+}
 
 NS_IMPL_CYCLE_COLLECTION(DOMMediaStream::TrackPort, mTrack)
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(DOMMediaStream::TrackPort, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(DOMMediaStream::TrackPort, Release)
+
 
 
 
