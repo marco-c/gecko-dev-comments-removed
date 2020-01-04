@@ -4,11 +4,10 @@
 
 
 
-Components.utils.import("resource://gre/modules/AppConstants.jsm");
-Components.utils.import("resource://gre/modules/Services.jsm");
+const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
-const C = Components.classes;
-const I = Components.interfaces;
+Cu.import("resource://gre/modules/AppConstants.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 const ToolkitProfileService = "@mozilla.org/toolkit/profile-service;1";
 
@@ -19,9 +18,9 @@ var gProfileService;
 
 function startup()
 {
-  gDialogParams = window.arguments[0].QueryInterface(I.nsIDialogParamBlock);
+  gDialogParams = window.arguments[0].QueryInterface(Ci.nsIDialogParamBlock);
 
-  gProfileService = C[ToolkitProfileService].getService(I.nsIToolkitProfileService);
+  gProfileService = Cc[ToolkitProfileService].getService(Ci.nsIToolkitProfileService);
 
   gProfileManagerBundle = document.getElementById("bundle_profileManager");
   gBrandBundle = document.getElementById("bundle_brand");
