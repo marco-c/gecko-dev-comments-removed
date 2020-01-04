@@ -3,6 +3,8 @@
 
 "use strict";
 
+const {classes: Cc, interfaces: Ci} = Components;
+
 
 
 
@@ -38,6 +40,13 @@ add_task(function test_label_and_icon() {
   
   ok(gBrowser.getIcon(tab).startsWith("data:image/png;"), "icon is set");
   is(tab.label, "Gort! Klaatu barada nikto!", "label is set");
+
+  let serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
+                    .getService(Ci.nsISerializationHelper);
+  let serializedPrincipal = tab.getAttribute("iconLoadingPrincipal");
+  let iconLoadingPrincipal = serhelper.deserializeObject(serializedPrincipal)
+                                      .QueryInterface(Ci.nsIPrincipal);
+  is(iconLoadingPrincipal.origin, "about:robots", "correct loadingPrincipal used");
 
   
   yield promiseRemoveTab(tab);

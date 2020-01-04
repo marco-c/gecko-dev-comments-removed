@@ -19,6 +19,7 @@ add_task(function* test() {
 
   
   ok(tab.hasAttribute("image"), "tab.image exists");
+  ok(tab.hasAttribute("iconLoadingPrincipal"), "tab.iconLoadingPrincipal exists");
 
   tab.toggleMuteAudio();
   
@@ -27,8 +28,10 @@ add_task(function* test() {
   
   ss.persistTabAttribute("image");
   ss.persistTabAttribute("muted");
+  ss.persistTabAttribute("iconLoadingPrincipal");
   let {attributes} = JSON.parse(ss.getTabState(tab));
   ok(!("image" in attributes), "'image' attribute not saved");
+  ok(!("iconLoadingPrincipal" in attributes), "'iconLoadingPrincipal' attribute not saved");
   ok(!("muted" in attributes), "'muted' attribute not saved");
   ok(!("custom" in attributes), "'custom' attribute not saved");
 
