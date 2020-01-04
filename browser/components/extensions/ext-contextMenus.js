@@ -15,8 +15,10 @@ var {
 
 
 
-
 var contextMenuMap = new Map();
+
+
+var rootItems = new Map();
 
 
 var onClickedCallbacksMap = new WeakMap();
@@ -28,100 +30,111 @@ var nextID = 0;
 
 
 
-
-
-
-
 var menuBuilder = {
   build: function(contextData) {
-    
     let xulMenu = contextData.menu;
     xulMenu.addEventListener("popuphidden", this);
-    let doc = xulMenu.ownerDocument;
-    for (let [ext, menuItemMap] of contextMenuMap) {
-      let parentMap = new Map();
-      let topLevelItems = new Set();
-      for (let entry of menuItemMap) {
+    this.xulMenu = xulMenu;
+    for (let [extension, root] of rootItems) {
+      let rootElement = this.buildElementWithChildren(root, contextData);
+      if (!rootElement.childNodes.length) {
         
         
-        let [id, item] = entry;
-
-        if (item.enabledForContext(contextData)) {
-          let element;
-          if (item.isMenu) {
-            element = doc.createElement("menu");
-            
-            
-            let menupopup = doc.createElement("menupopup");
-            element.appendChild(menupopup);
-            
-            
-            parentMap.set(id, menupopup);
-          } else {
-            element =
-             (item.type == "separator") ? doc.createElement("menuseparator")
-                                        : doc.createElement("menuitem");
-          }
-
-          
-          element.setAttribute("label", item.title);
-
-          if (!item.enabled) {
-            element.setAttribute("disabled", true);
-          }
-
-          let parentId = item.parentId;
-          if (parentId && parentMap.has(parentId)) {
-            
-            
-            let parentElement = parentMap.get(parentId);
-            parentElement.appendChild(element);
-          } else {
-            topLevelItems.add(element);
-          }
-
-          element.addEventListener("command", event => { 
-            item.tabManager.addActiveTabPermission();
-            if (item.onclick) {
-              let clickData = item.getClickData(contextData, event);
-              runSafe(item.extContext, item.onclick, clickData);
-            }
-          });
-        }
+        continue;
       }
-      if (topLevelItems.size > 1) {
+      rootElement.setAttribute("ext-type", "top-level-menu");
+      rootElement = this.removeTopLevelMenuIfNeeded(rootElement);
+      xulMenu.appendChild(rootElement);
+      this.itemsToCleanUp.add(rootElement);
+    }
+  },
+
+  buildElementWithChildren(item, contextData) {
+    let doc = contextData.menu.ownerDocument;
+    let element = this.buildSingleElement(item, contextData);
+    for (let child of item.children) {
+      if (child.enabledForContext(contextData)) {
+        let childElement = this.buildElementWithChildren(child, contextData);
         
-        let top = doc.createElement("menu");
-        top.setAttribute("label", ext.name);
-        top.setAttribute("ext-type", "top-level-menu");
-        let menupopup = doc.createElement("menupopup");
-        top.appendChild(menupopup);
-        for (let i of topLevelItems) {
-          menupopup.appendChild(i);
-        }
-        xulMenu.appendChild(top);
-        this._itemsToCleanUp.add(top);
-      } else if (topLevelItems.size == 1) {
         
-        let singleItem = topLevelItems.values().next().value;
-        xulMenu.appendChild(singleItem);
-        this._itemsToCleanUp.add(singleItem);
+        
+        element.firstChild.appendChild(childElement);
       }
     }
+
+    return element;
+  },
+
+  removeTopLevelMenuIfNeeded(element) {
+    
+    
+    let menuPopup = element.firstChild;
+    if (menuPopup && menuPopup.childNodes.length == 1) {
+      let onlyChild = menuPopup.firstChild;
+      onlyChild.remove();
+      return onlyChild;
+    }
+
+    return element;
+  },
+
+  buildSingleElement(item, contextData) {
+    let doc = contextData.menu.ownerDocument;
+    let element;
+    if (item.children.length > 0) {
+      element = this.createMenuElement(doc, item);
+    } else if (item.type == "separator") {
+      element = doc.createElement("menuseparator");
+    } else {
+      element = doc.createElement("menuitem");
+    }
+
+    return this.customizeElement(element, item, contextData);
+  },
+
+  createMenuElement(doc, item) {
+    let element = doc.createElement("menu");
+    
+    
+    let menupopup = doc.createElement("menupopup");
+    element.appendChild(menupopup);
+    return element;
+  },
+
+  customizeElement(element, item, contextData) {
+    
+    element.setAttribute("label", item.title);
+
+    if (!item.enabled) {
+      element.setAttribute("disabled", true);
+    }
+
+    element.addEventListener("command", event => {
+      item.tabManager.addActiveTabPermission();
+      if (item.onclick) {
+        let clickData = item.getClickData(contextData, event);
+        runSafe(item.extContext, item.onclick, clickData);
+       }
+    });
+
+    return element;
   },
 
   handleEvent: function(event) {
-    let target = event.target;
-
-    target.removeEventListener("popuphidden", this);
-    for (let item of this._itemsToCleanUp) {
-      target.removeChild(item);
+    if (this.xulMenu != event.target || event.type != "popuphidden") {
+      return;
     }
-    
-    this._itemsToCleanUp.clear();
+
+    delete this.xulMenu;
+    let target = event.target;
+    target.removeEventListener("popuphidden", this);
+    for (let item of this.itemsToCleanUp) {
+      item.remove();
+    }
+    this.itemsToCleanUp.clear();
   },
 
-  _itemsToCleanUp: new Set(),
+  itemsToCleanUp: new Set(),
 };
 
 function contextMenuObserver(subject, topic, data) {
@@ -165,111 +178,131 @@ function getContexts(contextData) {
   return contexts;
 }
 
-function MenuItem(extension, extContext, createProperties) {
+function MenuItem(extension, extContext, createProperties, isRoot = false) {
   this.extension = extension;
   this.extContext = extContext;
-
+  this.children = [];
+  this.parent = null;
   this.tabManager = TabManager.for(extension);
 
-  this.init(createProperties);
+  this.setDefaults();
+  this.setProps(createProperties);
+  if (!this.hasOwnProperty("_id")) {
+    this.id = nextID++;
+  }
+  
+  
+  if (!isRoot && !this.parent) {
+    this.root.addChild(this);
+  }
 }
 
 MenuItem.prototype = {
-  
-  
-  init(createProperties, update = false) {
-    let item = this;
-    
-    function parseProp(propName, defaultValue = null) {
-      if (createProperties[propName] !== null) {
-        item[propName] = createProperties[propName];
-        return true;
-      } else if (!update && defaultValue !== null) {
-        item[propName] = defaultValue;
-        return true;
+  setProps(createProperties) {
+    for (let propName in createProperties) {
+      if (createProperties[propName] === null) {
+        
+        continue;
       }
-      return false;
+      this[propName] = createProperties[propName];
     }
 
-    if (!update) {
-      let isIdUsed = contextMenuMap.get(this.extension).has(createProperties.id);
-      if (createProperties.id && isIdUsed) {
-        throw new Error("Id already exists");
-      }
-      this.id = createProperties.id ? createProperties.id : nextID++;
-    }
-
-    parseProp("type", "normal");
-    parseProp("title");
-    parseProp("checked", false);
-    parseProp("contexts", ["all"]);
-
-    if (createProperties.onclick !== null) {
-      this.onclick = createProperties.onclick;
-    }
-
-    if (parseProp("parentId")) {
-      let found = false;
-      let menuMap = contextMenuMap.get(this.extension);
-      if (menuMap.has(this.parentId)) {
-        found = true;
-        menuMap.get(this.parentId).isMenu = true;
-      }
-      if (!found) {
-        throw new Error("MenuItem with this parentId not found");
-      }
-    } else {
-      this.parentId = undefined;
-    }
-
-    if (parseProp("documentUrlPatterns")) {
+    if (createProperties.documentUrlPatterns != null) {
       this.documentUrlMatchPattern = new MatchPattern(this.documentUrlPatterns);
     }
 
-    if (parseProp("targetUrlPatterns")) {
-      this.targetUrlPatterns = new MatchPattern(this.targetUrlPatterns);
+    if (createProperties.targetUrlPatterns != null) {
+      this.targetUrlMatchPattern = new MatchPattern(this.targetUrlPatterns);
+    }
+  },
+
+  setDefaults() {
+    this.setProps({
+      type: "normal",
+      checked: "false",
+      contexts: ["all"],
+      enabled: "true"
+    });
+  },
+
+  set id(id) {
+    if (this.hasOwnProperty("_id")) {
+      throw new Error("Id of a MenuItem cannot be changed");
+    }
+    let isIdUsed = contextMenuMap.get(this.extension).has(id);
+    if (isIdUsed) {
+      throw new Error("Id already exists");
+    }
+    this._id = id;
+  },
+
+  get id() {
+    return this._id;
+  },
+
+  set parentId(parentId) {
+    
+    if (this.parent) {
+      this.parent.detachChild(this);
     }
 
-    parseProp("enabled", true);
+    let menuMap = contextMenuMap.get(this.extension);
+    if (menuMap.has(parentId)) {
+      menuMap.get(parentId).addChild(this);
+    } else if (parentId !== undefined) {
+      
+      
+      let e = new Error("Could not find any MenuItem with id: " + parentId);
+      throw e;
+    }
+  },
+
+  get parentId() {
+    return this.parent ? this.parent.id : undefined;
+  },
+
+  addChild(child) {
+    if (child.parent) {
+      throw new Error("Child MenuItem already has a parent.");
+    }
+    this.children.push(child);
+    child.parent = this;
+  },
+
+  detachChild(child) {
+    let idx = this.children.indexOf(child);
+    if (idx < 0) {
+      throw new Error("Child MenuItem not found, it cannot be removed.");
+    }
+    this.children.splice(idx, 1);
+    child.parent = null;
+  },
+
+  get root() {
+    let extension = this.extension;
+    if (!rootItems.has(extension)) {
+      let root = new MenuItem(extension, this.context,
+                              { title: extension.name },
+                               true);
+      rootItems.set(extension, root);
+    }
+
+    return rootItems.get(extension);
   },
 
   remove() {
-    let menuMap = contextMenuMap.get(this.extension);
-    
-    
-    
-    let checked = new Map();
-    function hasAncestorWithId(item, id) {
-      if (checked.has(item)) {
-        return checked.get(item);
-      }
-      if (item.parentId === undefined) {
-        checked.set(item, false);
-        return false;
-      }
-      let parent = menuMap.get(item.parentId);
-      if (!parent) {
-        checked.set(item, false);
-        return false;
-      }
-      if (parent.id === id) {
-        checked.set(item, true);
-        return true;
-      }
-      let rv = hasAncestorWithId(parent, id);
-      checked.set(item, rv);
-      return rv;
+    if (this.parent) {
+      this.parent.detachChild(this);
+    }
+    let children = this.children.slice(0);
+    for (let child of children) {
+      child.remove();
     }
 
-    let toRemove = new Set();
-    toRemove.add(this.id);
-    for (let [, item] of menuMap) {
-      if (hasAncestorWithId(item, this.id)) {
-        toRemove.add(item.id);
-      }
-    }
-    for (let id of toRemove) {
-      menuMap.delete(id);
+    let menuMap = contextMenuMap.get(this.extension);
+    menuMap.delete(this.id);
+    if (this.root == this) {
+      rootItems.delete(this.extension);
     }
   },
 
@@ -295,7 +328,8 @@ MenuItem.prototype = {
       }
     }
 
-    let tab = contextData.tab ? TabManager.convert(this.extension, contextData.tab) : undefined;
+    let tab = contextData.tab ? TabManager.convert(this.extension, contextData.tab)
+                              : undefined;
 
     setIfDefined("parentMenuItemId", this.parentId);
     setIfDefined("mediaType", mediaType);
@@ -311,38 +345,32 @@ MenuItem.prototype = {
   },
 
   enabledForContext(contextData) {
-    let enabled = false;
     let contexts = getContexts(contextData);
-    for (let c of this.contexts) {
-      if (contexts.has(c)) {
-        enabled = true;
-        break;
-      }
-    }
-    if (!enabled) {
+    if (!this.contexts.some(n => contexts.has(n))) {
       return false;
     }
 
-    if (this.documentUrlMatchPattern &&
-        !this.documentUrlMatchPattern.matches(contextData.documentURIObject)) {
+    let docPattern = this.documentUrlMatchPattern;
+    if (docPattern && !docPattern.matches(contextData.pageUrl)) {
       return false;
     }
 
-    if (this.targetUrlPatterns &&
-        (contextData.onImage || contextData.onAudio || contextData.onVideo) &&
-        !this.targetUrlPatterns.matches(contextData.mediaURL)) {
+    let isMedia = contextData.onImage || contextData.onAudio || contextData.onVideo;
+    let targetPattern = this.targetUrlMatchPattern;
+    if (isMedia && targetPattern && !targetPattern.matches(contextData.srcURL)) {
       
       return false;
     }
 
     return true;
-  },
+  }
 };
 
 var extCount = 0;
 
 extensions.on("startup", (type, extension) => {
   contextMenuMap.set(extension, new Map());
+  rootItems.delete(extension);
   if (++extCount == 1) {
     Services.obs.addObserver(contextMenuObserver,
                              "on-build-contextmenu",
@@ -374,7 +402,7 @@ extensions.registerSchemaAPI("contextMenus", "contextMenus", (extension, context
       update: function(id, updateProperties, callback) {
         let menuItem = contextMenuMap.get(extension).get(id);
         if (menuItem) {
-          menuItem.init(updateProperties, true);
+          menuItem.setProps(updateProperties);
         }
         if (callback) {
           runSafe(context, callback);
@@ -392,8 +420,9 @@ extensions.registerSchemaAPI("contextMenus", "contextMenus", (extension, context
       },
 
       removeAll: function(callback) {
-        for (let [, menuItem] of contextMenuMap.get(extension)) {
-          menuItem.remove();
+        let root = rootItems.get(extension);
+        if (root) {
+          root.remove();
         }
         if (callback) {
           runSafe(context, callback);
