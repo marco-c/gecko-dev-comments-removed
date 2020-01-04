@@ -126,6 +126,11 @@ public class DownloadAction extends BaseAction {
                 }
             } catch (RecoverableDownloadContentException e) {
                 Log.w(LOGTAG, "Downloading content failed (Recoverable): " + content , e);
+
+                if (e.shouldBeCountedAsFailure()) {
+                    catalog.rememberFailure(content, e.getErrorType());
+                }
+
                 
             } catch (UnrecoverableDownloadContentException e) {
                 Log.w(LOGTAG, "Downloading content failed (Unrecoverable): " + content, e);
@@ -161,7 +166,8 @@ public class DownloadAction extends BaseAction {
                 
                 if (status >= 500) {
                     
-                    throw new RecoverableDownloadContentException("(Recoverable) Download failed. Status code: " + status);
+                    throw new RecoverableDownloadContentException(RecoverableDownloadContentException.SERVER,
+                                                                  "(Recoverable) Download failed. Status code: " + status);
                 } else if (status >= 400) {
                     
                     throw new UnrecoverableDownloadContentException("(Unrecoverable) Download failed. Status code: " + status);
@@ -176,7 +182,7 @@ public class DownloadAction extends BaseAction {
             final HttpEntity entity = response.getEntity();
             if (entity == null) {
                 
-                throw new RecoverableDownloadContentException("Null entity");
+                throw new RecoverableDownloadContentException(RecoverableDownloadContentException.SERVER, "Null entity");
             }
 
             inputStream = new BufferedInputStream(entity.getContent());
@@ -188,7 +194,7 @@ public class DownloadAction extends BaseAction {
             outputStream.close();
         } catch (IOException e) {
             
-            throw new RecoverableDownloadContentException(e);
+            throw new RecoverableDownloadContentException(RecoverableDownloadContentException.NETWORK, e);
         } finally {
             IOUtils.safeStreamClose(inputStream);
             IOUtils.safeStreamClose(outputStream);
@@ -229,7 +235,7 @@ public class DownloadAction extends BaseAction {
             move(temporaryFile, destinationFile);
         } catch (IOException e) {
             
-            throw new RecoverableDownloadContentException(e);
+            throw new RecoverableDownloadContentException(RecoverableDownloadContentException.DISK_IO, e);
         } finally {
             IOUtils.safeStreamClose(inputStream);
             IOUtils.safeStreamClose(outputStream);
@@ -272,7 +278,8 @@ public class DownloadAction extends BaseAction {
 
         if (!cacheDirectory.exists() && !cacheDirectory.mkdirs()) {
             
-            throw new RecoverableDownloadContentException("Could not create cache directory: " + cacheDirectory);
+            throw new RecoverableDownloadContentException(RecoverableDownloadContentException.DISK_IO,
+                                                          "Could not create cache directory: " + cacheDirectory);
         }
 
         return new File(cacheDirectory, content.getDownloadChecksum() + "-" + content.getId());
@@ -308,7 +315,7 @@ public class DownloadAction extends BaseAction {
         } catch (IOException e) {
             
             
-            throw new RecoverableDownloadContentException(e);
+            throw new RecoverableDownloadContentException(RecoverableDownloadContentException.DISK_IO, e);
         } finally {
             IOUtils.safeStreamClose(inputStream);
             IOUtils.safeStreamClose(outputStream);

@@ -206,4 +206,56 @@ public class TestDownloadContentCatalog {
         Assert.assertTrue(catalog.getScheduledDownloads().contains(content4));
         Assert.assertTrue(catalog.getScheduledDownloads().contains(content5));
     }
+
+    
+
+
+    @Test
+    public void testRememberingFailures() {
+        DownloadContentCatalog catalog = new DownloadContentCatalog(mock(AtomicFile.class));
+        Assert.assertFalse(catalog.hasCatalogChanged());
+
+        DownloadContent content = new DownloadContent.Builder().build();
+        Assert.assertEquals(0, content.getFailures());
+
+        catalog.rememberFailure(content, 42);
+        Assert.assertEquals(1, content.getFailures());
+        Assert.assertTrue(catalog.hasCatalogChanged());
+
+        catalog.rememberFailure(content, 42);
+        Assert.assertEquals(2, content.getFailures());
+
+        
+        catalog.rememberFailure(content, 23);
+        Assert.assertEquals(1, content.getFailures());
+
+        
+        catalog.markAsDownloaded(content);
+        Assert.assertEquals(0, content.getFailures());
+    }
+
+    
+
+
+
+
+
+    @Test
+    public void testContentWillBeMarkedAsPermanentlyFailedAfterMultipleFailures() {
+        DownloadContentCatalog catalog = new DownloadContentCatalog(mock(AtomicFile.class));
+
+        DownloadContent content = new DownloadContent.Builder().build();
+        Assert.assertEquals(DownloadContent.STATE_NONE, content.getState());
+
+        for (int i = 0; i < 10; i++) {
+            catalog.rememberFailure(content, 42);
+
+            Assert.assertEquals(i + 1, content.getFailures());
+            Assert.assertEquals(DownloadContent.STATE_NONE, content.getState());
+        }
+
+        catalog.rememberFailure(content, 42);
+        Assert.assertEquals(10, content.getFailures());
+        Assert.assertEquals(DownloadContent.STATE_FAILED, content.getState());
+    }
 }
