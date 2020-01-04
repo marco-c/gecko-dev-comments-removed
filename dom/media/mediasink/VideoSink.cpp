@@ -4,6 +4,7 @@
 
 
 
+#include "MediaQueue.h"
 #include "VideoSink.h"
 
 namespace mozilla {
