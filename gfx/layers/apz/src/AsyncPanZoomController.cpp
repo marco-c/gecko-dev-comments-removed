@@ -1673,6 +1673,9 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(const PanGestureInput& aEvent) 
     SetState(PANNING);
   }
 
+  
+  OnPan(aEvent, true);
+
   return nsEventStatus_eConsumeNoDefault;
 }
 
@@ -1680,17 +1683,29 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent, bool 
   APZC_LOG("%p got a pan-pan in state %d\n", this, mState);
 
   if (mState == SMOOTH_SCROLL) {
-    if (aEvent.mType == PanGestureInput::PANGESTURE_MOMENTUMPAN) {
+    if (!aFingersOnTouchpad) {
       
       
       
       
       
       return nsEventStatus_eConsumeNoDefault;
-    } else {
-      
-      CancelAnimation();
     }
+
+    
+    CancelAnimation();
+  }
+
+  if (mState == NOTHING) {
+    
+    
+    
+    if (!aFingersOnTouchpad) {
+      return nsEventStatus_eConsumeNoDefault;
+    }
+    
+    
+    return OnPanBegin(aEvent);
   }
 
   
@@ -1717,6 +1732,9 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent, bool 
 nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   APZC_LOG("%p got a pan-end in state %d\n", this, mState);
 
+  
+  OnPan(aEvent, true);
+
   mX.EndTouch(aEvent.mTime);
   mY.EndTouch(aEvent.mTime);
   SetState(NOTHING);
@@ -1735,12 +1753,17 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumStart(const PanGestureInput& 
 
   SetState(PAN_MOMENTUM);
 
+  
+  OnPan(aEvent, false);
+
   return nsEventStatus_eConsumeNoDefault;
 }
 
 nsEventStatus AsyncPanZoomController::OnPanMomentumEnd(const PanGestureInput& aEvent) {
   APZC_LOG("%p got a pan-momentumend in state %d\n", this, mState);
 
+  
+  OnPan(aEvent, false);
 
   
   
