@@ -561,11 +561,9 @@ public:
 protected:
   
   
-  
   enum class State : uint8_t {
     unsent,           
     opened,           
-    sent,             
     headers_received, 
     loading,          
     done,             
@@ -699,6 +697,12 @@ protected:
   bool mFlagACwithCredentials;
   bool mFlagTimedOut;
   bool mFlagDeleted;
+
+  
+  
+  
+  
+  bool mFlagSend;
 
   RefPtr<XMLHttpRequestUpload> mUpload;
   int64_t mUploadTransferred;
