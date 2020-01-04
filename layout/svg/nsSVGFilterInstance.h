@@ -81,6 +81,7 @@ public:
 
 
   nsSVGFilterInstance(const nsStyleFilter& aFilter,
+                      nsIFrame* aTargetFrame,
                       nsIContent* aTargetContent,
                       const UserSpaceMetrics& aMetrics,
                       const gfxRect& aTargetBBox,
@@ -140,7 +141,7 @@ private:
   
 
 
-  nsSVGFilterFrame* GetFilterFrame();
+  nsSVGFilterFrame* GetFilterFrame(nsIFrame* aTargetFrame);
 
   
 

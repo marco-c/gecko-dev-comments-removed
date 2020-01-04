@@ -238,14 +238,16 @@ private:
 
 
 
-  nsresult BuildPrimitives(const nsTArray<nsStyleFilter>& aFilterChain);
+  nsresult BuildPrimitives(const nsTArray<nsStyleFilter>& aFilterChain,
+                           nsIFrame* aTargetFrame);
 
   
 
 
 
 
-  nsresult BuildPrimitivesForFilter(const nsStyleFilter& aFilter);
+  nsresult BuildPrimitivesForFilter(const nsStyleFilter& aFilter,
+                                    nsIFrame* aTargetFrame);
 
   
 

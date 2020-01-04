@@ -6066,7 +6066,9 @@ nsComputedDOMStyle::CreatePrimitiveValueForStyleFilter(
   RefPtr<nsROCSSPrimitiveValue> value = new nsROCSSPrimitiveValue;
   
   if (aStyleFilter.GetType() == NS_STYLE_FILTER_URL) {
-    value->SetURI(aStyleFilter.GetURL());
+    
+    nsCOMPtr<nsIURI> filterURI = aStyleFilter.GetURL()->GetSourceURL();
+    value->SetURI(filterURI);
     return value.forget();
   }
 
