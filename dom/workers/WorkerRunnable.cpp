@@ -59,7 +59,7 @@ WorkerRunnable::DefaultGlobalObject() const
 }
 
 bool
-WorkerRunnable::PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
+WorkerRunnable::PreDispatch(WorkerPrivate* aWorkerPrivate)
 {
 #ifdef DEBUG
   MOZ_ASSERT(aWorkerPrivate);
@@ -71,7 +71,6 @@ WorkerRunnable::PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
 
     case WorkerThreadModifyBusyCount:
       aWorkerPrivate->AssertIsOnParentThread();
-      MOZ_ASSERT(aCx);
       break;
 
     case WorkerThreadUnchangedBusyCount:
@@ -96,7 +95,7 @@ WorkerRunnable::Dispatch(JSContext* aCx)
   bool ok;
 
   if (!aCx) {
-    ok = PreDispatch(nullptr, mWorkerPrivate);
+    ok = PreDispatch(mWorkerPrivate);
     if (ok) {
       ok = DispatchInternal();
     }
@@ -113,7 +112,8 @@ WorkerRunnable::Dispatch(JSContext* aCx)
     ac.emplace(aCx, global);
   }
 
-  ok = PreDispatch(aCx, mWorkerPrivate);
+  ok = PreDispatch(mWorkerPrivate);
+  MOZ_ASSERT(!JS_IsExceptionPending(aCx));
 
   if (ok && !DispatchInternal()) {
     ok = false;
@@ -655,8 +655,7 @@ WorkerCheckAPIExposureOnMainThreadRunnable::Dispatch()
 }
 
 bool
-WorkerSameThreadRunnable::PreDispatch(JSContext* aCx,
-                                      WorkerPrivate* aWorkerPrivate)
+WorkerSameThreadRunnable::PreDispatch(WorkerPrivate* aWorkerPrivate)
 {
   
   
