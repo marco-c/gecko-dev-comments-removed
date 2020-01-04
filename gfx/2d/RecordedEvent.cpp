@@ -4,8 +4,9 @@
 
 
 #include "RecordedEvent.h"
-#include "PathRecording.h"
 
+#include "PathRecording.h"
+#include "RecordingTypes.h"
 #include "Tools.h"
 #include "Filters.h"
 #include "Logging.h"

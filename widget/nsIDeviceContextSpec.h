@@ -12,6 +12,12 @@ class nsIWidget;
 class nsIPrintSettings;
 class gfxASurface;
 
+namespace mozilla {
+namespace gfx{
+class DrawEventRecorder;
+}
+}
+
 #define NS_IDEVICE_CONTEXT_SPEC_IID   \
 { 0xf407cfba, 0xbe28, 0x46c9, \
   { 0x8a, 0xba, 0x04, 0x2d, 0xae, 0xbb, 0x4f, 0x23 } }
@@ -39,6 +45,19 @@ public:
 
 
 
+
+   NS_IMETHOD GetDrawEventRecorder(mozilla::gfx::DrawEventRecorder** aDrawEventRecorder)
+   {
+     MOZ_ASSERT(aDrawEventRecorder);
+     *aDrawEventRecorder = nullptr;
+     return NS_OK;
+   }
+
+   
+
+
+
+
    virtual float GetDPI() { return 72.0f; }
 
    
@@ -49,11 +68,12 @@ public:
    virtual float GetPrintingScale() { return 1.0f;  }
 
    NS_IMETHOD BeginDocument(const nsAString& aTitle,
-                            char16_t*       aPrintToFileName,
+                            const nsAString& aPrintToFileName,
                             int32_t          aStartPage,
                             int32_t          aEndPage) = 0;
 
    NS_IMETHOD EndDocument() = 0;
+   NS_IMETHOD AbortDocument() { return EndDocument(); }
    NS_IMETHOD BeginPage() = 0;
    NS_IMETHOD EndPage() = 0;
 };
