@@ -530,12 +530,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   
   
-  
-  
-  
-  bool adjustClipRect = aTransformAffectsLayerClip && aLayer->IsClipFixed();
   TranslateShadowLayer(aLayer, ThebesPoint(translation.ToUnknownPoint()),
-      adjustClipRect, aClipPartsCache);
+      aTransformAffectsLayerClip, aClipPartsCache);
 }
 
 static void
