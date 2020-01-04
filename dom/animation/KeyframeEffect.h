@@ -23,6 +23,12 @@
 #include "mozilla/dom/KeyframeBinding.h"
 #include "mozilla/dom/Nullable.h"
 
+
+#ifdef None
+#undef None
+#endif
+#include "mozilla/dom/AnimationEffectReadOnlyBinding.h"
+
 struct JSContext;
 class nsCSSPropertySet;
 class nsIContent;
@@ -36,7 +42,6 @@ struct AnimationCollection;
 class AnimValuesStyleRule;
 
 namespace dom {
-struct ComputedTimingProperties;
 class UnrestrictedDoubleOrKeyframeEffectOptions;
 enum class IterationCompositeOperation : uint32_t;
 enum class CompositeOperation : uint32_t;
@@ -55,16 +60,14 @@ struct AnimationTiming
   TimeDuration mDelay;
   double mIterations; 
   dom::PlaybackDirection mDirection;
-  dom::FillMode mFillMode;
+  dom::FillMode mFill;
 
-  bool FillsForwards() const;
-  bool FillsBackwards() const;
   bool operator==(const AnimationTiming& aOther) const {
     return mIterationDuration == aOther.mIterationDuration &&
            mDelay == aOther.mDelay &&
            mIterations == aOther.mIterations &&
            mDirection == aOther.mDirection &&
-           mFillMode == aOther.mFillMode;
+           mFill == aOther.mFill;
   }
   bool operator!=(const AnimationTiming& aOther) const {
     return !(*this == aOther);
@@ -91,6 +94,21 @@ struct ComputedTiming
   
   
   double              mIterations = 1.0;
+
+  
+  dom::FillMode       mFill = dom::FillMode::None;
+  bool FillsForwards() const {
+    MOZ_ASSERT(mFill != dom::FillMode::Auto,
+               "mFill should not be Auto in ComputedTiming.");
+    return mFill == dom::FillMode::Both ||
+           mFill == dom::FillMode::Forwards;
+  }
+  bool FillsBackwards() const {
+    MOZ_ASSERT(mFill != dom::FillMode::Auto,
+               "mFill should not be Auto in ComputedTiming.");
+    return mFill == dom::FillMode::Both ||
+           mFill == dom::FillMode::Backwards;
+  }
 
   enum class AnimationPhase {
     Null,   

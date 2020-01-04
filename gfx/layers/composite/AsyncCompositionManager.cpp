@@ -592,7 +592,7 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
     
     
     
-    timing.mFillMode = dom::FillMode::Both;
+    timing.mFill = dom::FillMode::Both;
 
     ComputedTiming computedTiming =
       dom::KeyframeEffectReadOnly::GetComputedTimingAt(
