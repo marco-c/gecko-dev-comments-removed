@@ -1252,12 +1252,6 @@ DocAccessible::GetAccessibleOrContainer(nsINode* aNode) const
     if (!(currNode = parent)) break;
   }
 
-  
-  
-  if (accessible && accessible->IsHTMLCombobox()) {
-    return accessible->FirstChild();
-  }
-
   return accessible;
 }
 
@@ -1704,6 +1698,12 @@ DocAccessible::ProcessContentInserted(Accessible* aContainer,
       
       
       
+    }
+
+    
+    
+    if (container && container->IsHTMLCombobox()) {
+      container = container->FirstChild();
     }
 
     
