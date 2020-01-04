@@ -810,10 +810,9 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion)
   }
 
   
-  mCompositor->GetWidget()->DrawWindowOverlay(this, IntRect(actualBounds.x,
-                                                              actualBounds.y,
-                                                              actualBounds.width,
-                                                              actualBounds.height));
+  mCompositor->GetWidget()->DrawWindowOverlay(
+    this, LayoutDeviceIntRect(actualBounds.x, actualBounds.y,
+                              actualBounds.width, actualBounds.height));
 
   
   RenderDebugOverlay(actualBounds);

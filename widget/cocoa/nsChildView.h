@@ -403,7 +403,7 @@ public:
   virtual void*           GetNativeData(uint32_t aDataType) override;
   virtual nsresult        ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override;
   virtual LayoutDeviceIntPoint WidgetToScreenOffset() override;
-  virtual bool            ShowsResizeIndicator(nsIntRect* aResizerRect) override;
+  virtual bool            ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) override;
 
   static  bool            ConvertStatus(nsEventStatus aStatus)
                           { return aStatus == nsEventStatus_eConsumeNoDefault; }
@@ -487,12 +487,13 @@ public:
   virtual void CleanupWindowEffects() override;
   virtual bool PreRender(LayerManagerComposite* aManager) override;
   virtual void PostRender(LayerManagerComposite* aManager) override;
-  virtual void DrawWindowOverlay(LayerManagerComposite* aManager, nsIntRect aRect) override;
+  virtual void DrawWindowOverlay(LayerManagerComposite* aManager,
+                                 LayoutDeviceIntRect aRect) override;
 
   virtual void UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries) override;
 
   virtual void UpdateWindowDraggingRegion(const nsIntRegion& aRegion) override;
-  const nsIntRegion& GetDraggableRegion() { return mDraggableRegion; }
+  const LayoutDeviceIntRegion& GetDraggableRegion() { return mDraggableRegion; }
 
   virtual void ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe) override;
 
@@ -524,13 +525,18 @@ public:
   nsIntPoint        CocoaPointsToDevPixels(const NSPoint& aPt) const {
     return nsCocoaUtils::CocoaPointsToDevPixels(aPt, BackingScaleFactor());
   }
-  nsIntRect         CocoaPointsToDevPixels(const NSRect& aRect) const {
+  LayoutDeviceIntRect CocoaPointsToDevPixels(const NSRect& aRect) const {
     return nsCocoaUtils::CocoaPointsToDevPixels(aRect, BackingScaleFactor());
   }
   CGFloat           DevPixelsToCocoaPoints(int32_t aPixels) const {
     return nsCocoaUtils::DevPixelsToCocoaPoints(aPixels, BackingScaleFactor());
   }
-  NSRect            DevPixelsToCocoaPoints(const nsIntRect& aRect) const {
+  
+  
+  NSRect            UntypedDevPixelsToCocoaPoints(const nsIntRect& aRect) const {
+    return nsCocoaUtils::UntypedDevPixelsToCocoaPoints(aRect, BackingScaleFactor());
+  }
+  NSRect            DevPixelsToCocoaPoints(const LayoutDeviceIntRect& aRect) const {
     return nsCocoaUtils::DevPixelsToCocoaPoints(aRect, BackingScaleFactor());
   }
 
@@ -577,19 +583,19 @@ protected:
   void ConfigureAPZCTreeManager() override;
   void ConfigureAPZControllerThread() override;
 
-  void DoRemoteComposition(const nsIntRect& aRenderRect);
+  void DoRemoteComposition(const LayoutDeviceIntRect& aRenderRect);
 
   
-  void DrawWindowOverlay(mozilla::layers::GLManager* aManager, nsIntRect aRect);
-  void MaybeDrawResizeIndicator(mozilla::layers::GLManager* aManager, const nsIntRect& aRect);
-  void MaybeDrawRoundedCorners(mozilla::layers::GLManager* aManager, const nsIntRect& aRect);
-  void MaybeDrawTitlebar(mozilla::layers::GLManager* aManager, const nsIntRect& aRect);
+  void DrawWindowOverlay(mozilla::layers::GLManager* aManager, LayoutDeviceIntRect aRect);
+  void MaybeDrawResizeIndicator(mozilla::layers::GLManager* aManager);
+  void MaybeDrawRoundedCorners(mozilla::layers::GLManager* aManager, const LayoutDeviceIntRect& aRect);
+  void MaybeDrawTitlebar(mozilla::layers::GLManager* aManager);
 
   
   
   void UpdateTitlebarCGContext();
 
-  nsIntRect RectContainingTitlebarControls();
+  LayoutDeviceIntRect RectContainingTitlebarControls();
   void UpdateVibrancy(const nsTArray<ThemeGeometry>& aThemeGeometries);
   mozilla::VibrancyManager& EnsureVibrancyManager();
 
@@ -631,16 +637,16 @@ protected:
   
   
   bool mShowsResizeIndicator;
-  nsIntRect mResizeIndicatorRect;
+  LayoutDeviceIntRect mResizeIndicatorRect;
   bool mHasRoundedBottomCorners;
   int mDevPixelCornerRadius;
   bool mIsCoveringTitlebar;
   bool mIsFullscreen;
-  nsIntRect mTitlebarRect;
+  LayoutDeviceIntRect mTitlebarRect;
 
   
   
-  nsIntRegion mUpdatedTitlebarRegion;
+  LayoutDeviceIntRegion mUpdatedTitlebarRegion;
   CGContextRef mTitlebarCGContext;
 
   
@@ -653,7 +659,7 @@ protected:
   
   nsIntRegion           mDirtyTitlebarRegion;
 
-  nsIntRegion           mDraggableRegion;
+  LayoutDeviceIntRegion mDraggableRegion;
 
   
   
