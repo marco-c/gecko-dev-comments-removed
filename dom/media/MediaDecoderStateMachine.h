@@ -268,11 +268,6 @@ private:
   
   
   
-  void ClearPositionChangeFlag();
-
-  
-  
-  
   
   
   void UpdatePlaybackPosition(int64_t aTime);
@@ -321,10 +316,6 @@ private:
 
   
   TaskQueue* OwnerThread() const { return mTaskQueue; }
-
-  
-  
-  void ScheduleStateMachineWithLockAndWakeDecoder();
 
   
   
@@ -1146,13 +1137,6 @@ private:
   
   
   bool mAudioCaptured;
-
-  
-  
-  
-  
-  
-  bool mPositionChangeQueued;
 
   
   
