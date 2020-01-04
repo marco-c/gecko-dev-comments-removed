@@ -2315,30 +2315,6 @@ nsPermissionManager::RemovePermissionsForApp(uint32_t aAppId, bool aBrowserOnly)
   ENSURE_NOT_CHILD_PROCESS;
   NS_ENSURE_ARG(aAppId != nsIScriptSecurityManager::NO_APP_ID);
 
-  
-  
-  
-  
-  
-  
-  
-
-  nsAutoCString sql;
-  sql.AppendLiteral("DELETE FROM moz_perms WHERE appId=");
-  sql.AppendInt(aAppId);
-
-  if (aBrowserOnly) {
-    sql.AppendLiteral(" AND isInBrowserElement=1");
-  }
-
-  nsCOMPtr<mozIStorageAsyncStatement> removeStmt;
-  nsresult rv = mDBConn->CreateAsyncStatement(sql, getter_AddRefs(removeStmt));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<mozIStoragePendingStatement> pending;
-  rv = removeStmt->ExecuteAsync(nullptr, getter_AddRefs(pending));
-  NS_ENSURE_SUCCESS(rv, rv);
-
   nsCOMArray<nsIPermission> permissions;
   for (auto iter = mPermissionTable.Iter(); !iter.Done(); iter.Next()) {
     PermissionHashKey* entry = iter.Get();
