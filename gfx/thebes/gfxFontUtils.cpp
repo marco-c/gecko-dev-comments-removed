@@ -1503,7 +1503,7 @@ gfxFontUtils::ReadNames(const char *aNameData, uint32_t aDataLen,
         
         platformID = nameRecord->platformID;
         if (aPlatformID != PLATFORM_ALL
-            && uint32_t(nameRecord->platformID) != PLATFORM_ID)
+            && platformID != uint32_t(aPlatformID))
             continue;
 
         
