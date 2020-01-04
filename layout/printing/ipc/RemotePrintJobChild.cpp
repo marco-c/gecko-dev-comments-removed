@@ -18,6 +18,40 @@ RemotePrintJobChild::RemotePrintJobChild()
   MOZ_COUNT_CTOR(RemotePrintJobChild);
 }
 
+nsresult
+RemotePrintJobChild::InitializePrint(const nsString& aDocumentTitle,
+                                     const nsString& aPrintToFile,
+                                     const int32_t& aStartPage,
+                                     const int32_t& aEndPage)
+{
+  
+  
+  Unused << SendInitializePrint(aDocumentTitle, aPrintToFile, aStartPage,
+                                aEndPage);
+  while (!mPrintInitialized) {
+    Unused << NS_ProcessNextEvent();
+  }
+
+  return mInitializationResult;
+}
+
+bool
+RemotePrintJobChild::RecvPrintInitializationResult(const nsresult& aRv)
+{
+  mPrintInitialized = true;
+  mInitializationResult = aRv;
+  return true;
+}
+
+void
+RemotePrintJobChild::ProcessPage(Shmem& aStoredPage)
+{
+  MOZ_ASSERT(mPagePrintTimer);
+
+  mPagePrintTimer->WaitForRemotePrint();
+  Unused << SendProcessPage(aStoredPage);
+}
+
 bool
 RemotePrintJobChild::RecvPageProcessed()
 {
@@ -34,15 +68,6 @@ RemotePrintJobChild::RecvAbortPrint(const nsresult& aRv)
 
   mPrintEngine->CleanupOnFailure(aRv, true);
   return true;
-}
-
-void
-RemotePrintJobChild::ProcessPage(Shmem& aStoredPage)
-{
-  MOZ_ASSERT(mPagePrintTimer);
-
-  mPagePrintTimer->WaitForRemotePrint();
-  Unused << SendProcessPage(aStoredPage);
 }
 
 void
