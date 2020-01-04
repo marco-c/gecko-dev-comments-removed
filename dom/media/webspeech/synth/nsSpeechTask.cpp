@@ -29,8 +29,10 @@ namespace dom {
 class SynthStreamListener : public MediaStreamListener
 {
 public:
-  explicit SynthStreamListener(nsSpeechTask* aSpeechTask) :
+  explicit SynthStreamListener(nsSpeechTask* aSpeechTask,
+                               MediaStream* aStream) :
     mSpeechTask(aSpeechTask),
+    mStream(aStream),
     mStarted(false)
   {
   }
@@ -63,6 +65,8 @@ public:
         break;
       case EVENT_REMOVED:
         mSpeechTask = nullptr;
+        
+        mStream = nullptr;
         break;
       default:
         break;
@@ -83,6 +87,8 @@ private:
   
   
   nsSpeechTask* mSpeechTask;
+  
+  RefPtr<MediaStream> mStream;
 
   bool mStarted;
 };
@@ -132,6 +138,8 @@ nsSpeechTask::~nsSpeechTask()
       mStream->Destroy();
     }
 
+    
+    
     mStream = nullptr;
   }
 
@@ -185,7 +193,7 @@ nsSpeechTask::Setup(nsISpeechTaskCallback* aCallback,
   
   MOZ_ASSERT(mStream);
 
-  mStream->AddListener(new SynthStreamListener(this));
+  mStream->AddListener(new SynthStreamListener(this, mStream));
 
   
   if(NS_WARN_IF(!(aChannels == 1))) {
