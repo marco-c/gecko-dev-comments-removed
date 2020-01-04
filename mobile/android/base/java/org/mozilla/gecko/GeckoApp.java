@@ -178,6 +178,7 @@ public abstract class GeckoApp
     
     protected boolean mIsAbortingAppLaunch;
 
+    private ContactService mContactService;
     private PromptService mPromptService;
     protected TextSelection mTextSelection;
 
@@ -1157,6 +1158,9 @@ public abstract class GeckoApp
         GeckoAppShell.setContextGetter(this);
         GeckoAppShell.setApplicationContext(getApplicationContext());
         GeckoAppShell.setGeckoInterface(this);
+        
+        
+        GeckoAppShell.setNotificationClient(makeNotificationClient());
 
         Tabs.getInstance().attachToContext(this);
         try {
@@ -1430,7 +1434,6 @@ public abstract class GeckoApp
             }
         });
 
-        GeckoAppShell.setNotificationClient(makeNotificationClient());
         IntentHelper.init(this);
     }
 
@@ -1640,6 +1643,8 @@ public abstract class GeckoApp
         if (SmsManager.isEnabled()) {
             SmsManager.getInstance().start();
         }
+
+        mContactService = new ContactService(EventDispatcher.getInstance(), this);
 
         mPromptService = new PromptService(this);
 
@@ -2245,6 +2250,8 @@ public abstract class GeckoApp
             mDoorHangerPopup.destroy();
         if (mFormAssistPopup != null)
             mFormAssistPopup.destroy();
+        if (mContactService != null)
+            mContactService.destroy();
         if (mPromptService != null)
             mPromptService.destroy();
         if (mTextSelection != null)
