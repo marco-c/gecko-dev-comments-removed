@@ -215,6 +215,9 @@ HeapAnalysesClient.prototype.getDominatorTree = function (opts) {
 
 
 
+
+
+
 HeapAnalysesClient.prototype.getImmediatelyDominated = function (opts) {
   return this._worker.performTask("getImmediatelyDominated", opts);
 };
