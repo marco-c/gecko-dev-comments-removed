@@ -764,8 +764,6 @@ DllBlocklist_Initialize()
   if (GetModuleHandleA("user32.dll")) {
     sUser32BeforeBlocklist = true;
   }
-  
-  MOZ_ASSERT(!sUser32BeforeBlocklist);
 
   NtDllIntercept.Init("ntdll.dll");
 
