@@ -68,6 +68,9 @@ private:
 
   static StaticMutex sMonitor;
   const RefPtr<FlushableTaskQueue> mTaskQueue;
+  
+  
+  Atomic<bool> mIsFlushing;
 };
 
 } 
