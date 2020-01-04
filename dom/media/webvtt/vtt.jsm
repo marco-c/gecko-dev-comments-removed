@@ -1366,13 +1366,10 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
       }
 
       
-      
-      function parseSignatureMayThrow(input) {
+      function parseSignature(input) {
         let signature = collectNextLine();
         if (!/^WEBVTT([ \t].*)?$/.test(signature)) {
           throw new ParsingError(ParsingError.Errors.BadSignature);
-        } else {
-          self.state = "HEADER";
         }
       }
 
@@ -1425,7 +1422,8 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
       
       try {
         if (self.state === "INITIAL") {
-          parseSignatureMayThrow();
+          parseSignature();
+          self.state = "HEADER";
         }
 
         var line;
