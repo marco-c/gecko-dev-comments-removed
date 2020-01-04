@@ -146,7 +146,7 @@ protected:
 
 
 
-  static PRLogModuleInfo* mLog;
+  static mozilla::LazyLogModule mLog;
 
   
   friend class nsExternalAppHandler;
