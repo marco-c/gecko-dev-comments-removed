@@ -310,6 +310,7 @@ class FloatRegisterMIPSShared
 
 uint32_t GetMIPSFlags();
 bool hasFPU();
+bool isLoongson();
 
 
 inline bool
