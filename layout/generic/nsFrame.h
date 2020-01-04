@@ -84,6 +84,9 @@
 
 
 
+
+
+
 #define NS_DECL_FRAMEARENA_HELPERS                                \
   void* operator new(size_t, nsIPresShell*) MOZ_MUST_OVERRIDE;    \
   virtual nsQueryFrame::FrameIID GetFrameId() override MOZ_MUST_OVERRIDE;
@@ -93,6 +96,10 @@
   { return aShell->AllocateFrame(nsQueryFrame::class##_id, sz); } \
   nsQueryFrame::FrameIID class::GetFrameId()                      \
   { return nsQueryFrame::class##_id; }
+
+#define NS_DECL_ABSTRACT_FRAME(class)                                   \
+  void* operator new(size_t, nsIPresShell*) MOZ_MUST_OVERRIDE = delete; \
+  virtual nsQueryFrame::FrameIID GetFrameId() override MOZ_MUST_OVERRIDE = 0;
 
 
 
