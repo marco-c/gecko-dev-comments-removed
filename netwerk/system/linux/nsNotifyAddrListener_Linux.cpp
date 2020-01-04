@@ -149,7 +149,6 @@ void nsNotifyAddrListener::checkLink(void)
 void nsNotifyAddrListener::OnNetlinkMessage(int aNetlinkSocket)
 {
     struct  nlmsghdr *nlh;
-    struct  rtmsg *route_entry;
 
     
     
@@ -158,7 +157,6 @@ void nsNotifyAddrListener::OnNetlinkMessage(int aNetlinkSocket)
     struct rtattr *attr;
     int attr_len;
     const struct ifaddrmsg* newifam;
-    bool link_local;
 
     
     nsAutoPtr<char> addr;
