@@ -794,7 +794,7 @@ MediaFormatReader::UpdateReceivedNewData(TrackType aTrack)
   bool hasLastEnd;
   media::TimeUnit lastEnd = decoder.mTimeRanges.GetEnd(&hasLastEnd);
   if (hasLastEnd) {
-    if (decoder.mLastTimeRangesEnd && decoder.mLastTimeRangesEnd.ref() > lastEnd) {
+    if (decoder.mLastTimeRangesEnd && decoder.mLastTimeRangesEnd.ref() < lastEnd) {
       
       decoder.mDemuxEOS = false;
     }
