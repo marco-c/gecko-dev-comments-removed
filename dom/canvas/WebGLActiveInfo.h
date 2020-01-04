@@ -30,11 +30,10 @@ public:
         return mWebGL;
     }
 
-
     WebGLContext* const mWebGL;
 
     
-    const GLint mElemCount; 
+    const uint32_t mElemCount; 
     const GLenum mElemType; 
     const nsCString mBaseUserName; 
 
