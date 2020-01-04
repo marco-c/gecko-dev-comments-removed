@@ -2364,7 +2364,11 @@ RangeAnalysis::addRangeAssertions()
             
             
             
-            MInstruction* insertAt = block->safeInsertTop(ins);
+            MInstruction* insertAt = nullptr;
+            if (block->graph().osrBlock() == block)
+                insertAt = ins->toInstruction();
+            else
+                insertAt = block->safeInsertTop(ins);
 
             if (insertAt == *iter)
                 block->insertAfter(insertAt,  guard);
