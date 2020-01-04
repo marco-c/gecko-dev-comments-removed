@@ -46,7 +46,7 @@ var gVisitStmt = gPlacesDatabase.createAsyncStatement(
 
 
 
-var TEST_EXACT_PERM_TYPES = ["geo", "camera", "microphone"];
+var TEST_EXACT_PERM_TYPES = ["geo", "camera", "microphone", "desktop-notification"];
 
 
 
@@ -321,15 +321,8 @@ var PermissionDefaults = {
     Services.prefs.setBoolPref("dom.disable_open_during_load", value);
   },
 
-  get push() {
-    if (!Services.prefs.getBoolPref("dom.push.enabled")) {
-      return this.DENY;
-    }
+  get ["desktop-notification"]() {
     return this.UNKNOWN;
-  },
-  set push(aValue) {
-    let value = (aValue != this.DENY);
-    Services.prefs.setBoolPref("dom.push.enabled", value);
   },
   get camera() {
     return this.UNKNOWN;
@@ -384,17 +377,18 @@ var AboutPermissions = {
 
 
   _supportedPermissions: ["password", "cookie", "geo", "indexedDB", "popup",
-                          "camera", "microphone", "push"],
+                          "camera", "microphone", "desktop-notification"],
 
   
 
 
-  _noGlobalAllow: ["geo", "indexedDB", "camera", "microphone", "push"],
+  _noGlobalAllow: ["geo", "indexedDB", "camera", "microphone",
+                   "desktop-notification"],
 
   
 
 
-  _noGlobalDeny: ["camera", "microphone"],
+  _noGlobalDeny: ["camera", "microphone", "desktop-notification"],
 
   _stringBundle: Services.strings.
                  createBundle("chrome://browser/locale/preferences/aboutPermissions.properties"),

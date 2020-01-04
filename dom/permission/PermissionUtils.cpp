@@ -12,7 +12,8 @@ namespace dom {
 const char* kPermissionTypes[] = {
   "geo",
   "desktop-notification",
-  "push",
+  
+  "desktop-notification",
   "midi"
 };
 

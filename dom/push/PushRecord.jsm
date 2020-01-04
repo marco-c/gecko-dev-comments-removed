@@ -164,17 +164,9 @@ PushRecord.prototype = {
 
 
 
-  pushPermission() {
-    return Services.perms.testExactPermissionFromPrincipal(
-           this.principal, "push");
-  },
-
-  
-
-
-
   hasPermission() {
-    let permission = this.pushPermission();
+    let permission = Services.perms.testExactPermissionFromPrincipal(
+      this.principal, "desktop-notification");
     return permission == Ci.nsIPermissionManager.ALLOW_ACTION;
   },
 
