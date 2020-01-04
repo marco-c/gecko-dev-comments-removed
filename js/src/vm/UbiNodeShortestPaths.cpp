@@ -77,6 +77,9 @@ dumpPaths(JSRuntime* rt, Node node, uint32_t maxNumPaths )
         return true;
     });
     MOZ_ASSERT(ok);
+
+    if (i == 0)
+        fprintf(stderr, "No retaining paths found.\n");
 }
 #endif
 
