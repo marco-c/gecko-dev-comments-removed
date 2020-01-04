@@ -10,7 +10,9 @@
 
 "use strict";
 
+importScripts("resource://gre/modules/workers/require.js");
 importScripts("resource://gre/modules/devtools/shared/worker/helper.js");
+const { CensusTreeNode } = require("resource://gre/modules/devtools/shared/heapsnapshot/census-tree-node.js");
 
 
 
@@ -28,10 +30,11 @@ workerHelper.createTask(self, "readHeapSnapshot", ({ snapshotFilePath }) => {
 
 
 
-workerHelper.createTask(self, "takeCensus", ({ snapshotFilePath, censusOptions }) => {
+workerHelper.createTask(self, "takeCensus", ({ snapshotFilePath, censusOptions, requestOptions }) => {
   if (!snapshots[snapshotFilePath]) {
     throw new Error(`No known heap snapshot for '${snapshotFilePath}'`);
   }
 
-  return snapshots[snapshotFilePath].takeCensus(censusOptions);
+  let report = snapshots[snapshotFilePath].takeCensus(censusOptions);
+  return requestOptions.asTreeNode ? new CensusTreeNode(censusOptions.breakdown, report) : report;
 });

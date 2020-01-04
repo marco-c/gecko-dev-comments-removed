@@ -66,10 +66,21 @@ HeapAnalysesClient.prototype.readHeapSnapshot = function (snapshotFilePath) {
 
 
 
+
+
+
+
+
+
+
+
+
 HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
-                                                    censusOptions) {
+                                                    censusOptions={},
+                                                    requestOptions={}) {
   return this._worker.performTask("takeCensus", {
     snapshotFilePath,
-    censusOptions
+    censusOptions,
+    requestOptions,
   });
 };
