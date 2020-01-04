@@ -199,6 +199,9 @@ struct FunctionDeclaration
 
 using FunctionDeclarationVector = GCVector<FunctionDeclaration, 0, ZoneAllocPolicy>;
 
+
+using ModuleState = int32_t;
+
 class ModuleObject : public NativeObject
 {
   public:
@@ -209,7 +212,7 @@ class ModuleObject : public NativeObject
         InitialEnvironmentSlot,
         EnvironmentSlot,
         NamespaceSlot,
-        EvaluatedSlot,
+        StateSlot,
         HostDefinedSlot,
         RequestedModulesSlot,
         ImportEntriesSlot,
@@ -249,7 +252,7 @@ class ModuleObject : public NativeObject
     ModuleEnvironmentObject& initialEnvironment() const;
     ModuleEnvironmentObject* environment() const;
     ModuleNamespaceObject* namespace_();
-    bool evaluated() const;
+    ModuleState state() const;
     Value hostDefinedField() const;
     ArrayObject& requestedModules() const;
     ArrayObject& importEntries() const;
@@ -274,8 +277,7 @@ class ModuleObject : public NativeObject
     
     static bool instantiateFunctionDeclarations(JSContext* cx, HandleModuleObject self);
 
-    
-    void setEvaluated();
+    void setState(ModuleState newState);
 
     
     static bool evaluate(JSContext* cx, HandleModuleObject self, MutableHandleValue rval);
