@@ -48,7 +48,7 @@ public:
   NS_IMETHOD GetIsChannelPrivate(bool *aResult)
   {
       NS_ENSURE_ARG_POINTER(aResult);
-      *aResult = NS_UsePrivateBrowsing(static_cast<Channel*>(this));
+      *aResult = mPrivateBrowsing;
       return NS_OK;
   }
 
@@ -61,6 +61,21 @@ public:
           *aValue = mPrivateBrowsing;
       }
       return NS_OK;
+  }
+
+  
+  void UpdatePrivateBrowsing()
+  {
+      
+      if (mPrivateBrowsing) {
+          return;
+      }
+
+      nsCOMPtr<nsILoadContext> loadContext;
+      NS_QueryNotificationCallbacks(static_cast<Channel*>(this), loadContext);
+      if (loadContext) {
+          mPrivateBrowsing = loadContext->UsePrivateBrowsing();
+      }
   }
 
   bool CanSetCallbacks(nsIInterfaceRequestor* aCallbacks) const

@@ -424,6 +424,7 @@ nsBaseChannel::SetLoadGroup(nsILoadGroup *aLoadGroup)
 
   mLoadGroup = aLoadGroup;
   CallbacksChanged();
+  UpdatePrivateBrowsing();
   return NS_OK;
 }
 
@@ -497,6 +498,7 @@ nsBaseChannel::SetNotificationCallbacks(nsIInterfaceRequestor *aCallbacks)
 
   mCallbacks = aCallbacks;
   CallbacksChanged();
+  UpdatePrivateBrowsing();
   return NS_OK;
 }
 
