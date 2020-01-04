@@ -2161,9 +2161,9 @@ public abstract class GeckoApp
             return;
         }
 
-        if (GeckoThread.isRunning()) {
-            
-            GeckoAppShell.sendEventToGeckoSync(GeckoEvent.createAppBackgroundingEvent());
+        
+        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+            GeckoThread.waitOnGecko();
         }
 
         if (mRestartIntent != null) {
