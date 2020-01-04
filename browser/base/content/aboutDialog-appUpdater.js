@@ -211,6 +211,8 @@ appUpdater.prototype =
       return;
     }
 
+    gAppUpdater.selectPanel("restarting");
+
     
     let cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"].
                      createInstance(Components.interfaces.nsISupportsPRBool);
@@ -218,6 +220,7 @@ appUpdater.prototype =
 
     
     if (cancelQuit.data) {
+      gAppUpdater.selectPanel("apply");
       return;
     }
 
