@@ -2788,7 +2788,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
     for (RequestHeader& header : mAuthorRequestHeaders) {
       bool safe = false;
       for (uint32_t i = 0; i < ArrayLength(kCrossOriginSafeHeaders); ++i) {
-        if (header.name.EqualsASCII(kCrossOriginSafeHeaders[i])) {
+        if (header.name.LowerCaseEqualsASCII(kCrossOriginSafeHeaders[i])) {
           safe = true;
           break;
         }
@@ -2963,13 +2963,14 @@ XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
   }
 
   
-  nsAutoCString lowercaseName;
-  nsContentUtils::ASCIIToLower(aName, lowercaseName);
+  
+  
 
   
   bool notAlreadySet = true;
+  const nsCaseInsensitiveCStringComparator ignoreCase;
   for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.name.Equals(lowercaseName)) {
+    if (header.name.Equals(aName, ignoreCase)) {
       
       
       if (isPrivilegedCaller && isForbiddenHeader) {
@@ -2986,7 +2987,7 @@ XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
   
   if (notAlreadySet) {
     RequestHeader newHeader = {
-      nsCString(lowercaseName), nsCString(value)
+      nsCString(aName), nsCString(value)
     };
     mAuthorRequestHeaders.AppendElement(newHeader);
   }
@@ -3234,7 +3235,7 @@ XMLHttpRequestMainThread::GetAuthorRequestHeaderValue(const char* aName,
                                                       nsACString& outValue)
 {
   for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.name.Equals(aName)) {
+    if (header.name.EqualsIgnoreCase(aName)) {
       outValue.Assign(header.value);
       return;
     }
