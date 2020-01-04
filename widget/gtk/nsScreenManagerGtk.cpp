@@ -4,10 +4,11 @@
 
 
 #include "nsScreenManagerGtk.h"
+
+#include "mozilla/RefPtr.h"
 #include "nsScreenGtk.h"
 #include "nsIComponentManager.h"
 #include "nsRect.h"
-#include "nsAutoPtr.h"
 #include "nsGtkUtils.h"
 
 #define SCREEN_MANAGER_LIBRARY_LOAD_FAILED ((PRLibrary*)1)

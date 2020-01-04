@@ -4,6 +4,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/RefPtr.h"
 
 #include "nsDeviceContextSpecWin.h"
 #include "prmem.h"
@@ -12,7 +13,6 @@
 
 #include <tchar.h>
 
-#include "nsAutoPtr.h"
 #include "nsIWidget.h"
 
 #include "nsTArray.h"
