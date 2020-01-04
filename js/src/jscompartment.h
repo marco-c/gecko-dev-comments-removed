@@ -14,6 +14,7 @@
 #include "mozilla/Variant.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
+#include "asmjs/WasmJS.h"
 #include "builtin/RegExp.h"
 #include "gc/Barrier.h"
 #include "gc/Zone.h"
@@ -30,10 +31,6 @@ class JitCompartment;
 
 namespace gc {
 template <typename Node, typename Derived> class ComponentFinder;
-} 
-
-namespace wasm {
-class Instance;
 } 
 
 class ClonedBlockObject;
@@ -518,9 +515,10 @@ struct JSCompartment
     mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
 
     
-    
-    
-    mozilla::LinkedList<js::wasm::Instance> wasmInstanceWeakList;
+    using WasmInstanceObjectSet = js::GCHashSet<js::HeapPtr<js::WasmInstanceObject*>,
+                                                js::MovableCellHasher<js::HeapPtr<js::WasmInstanceObject*>>,
+                                                js::SystemAllocPolicy>;
+    JS::WeakCache<WasmInstanceObjectSet> wasmInstances;
 
   private:
     

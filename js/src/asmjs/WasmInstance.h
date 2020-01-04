@@ -19,8 +19,6 @@
 #ifndef wasm_instance_h
 #define wasm_instance_h
 
-#include "mozilla/LinkedList.h"
-
 #include "asmjs/WasmCode.h"
 #include "gc/Barrier.h"
 
@@ -56,15 +54,13 @@ typedef Vector<TypedFuncTable, 0, SystemAllocPolicy> TypedFuncTableVector;
 
 
 
-class Instance : public mozilla::LinkedListElement<Instance>
+class Instance
 {
     const UniqueCodeSegment              codeSegment_;
     const SharedMetadata                 metadata_;
     const SharedBytes                    maybeBytecode_;
     const TypedFuncTableVector           typedFuncTables_;
-
     GCPtr<ArrayBufferObjectMaybeShared*> heap_;
-    GCPtr<WasmInstanceObject*>           object_;
 
     bool                                 profilingEnabled_;
     CacheableCharsVector                 funcLabels_;
@@ -93,8 +89,7 @@ class Instance : public mozilla::LinkedListElement<Instance>
              const Metadata& metadata,
              const ShareableBytes* maybeBytecode,
              TypedFuncTableVector&& typedFuncTables,
-             HandleArrayBufferObjectMaybeShared heap,
-             Handle<WasmInstanceObject*> object);
+             HandleArrayBufferObjectMaybeShared heap);
 
   public:
     static bool create(JSContext* cx,
@@ -142,15 +137,6 @@ class Instance : public mozilla::LinkedListElement<Instance>
     
 
     void deoptimizeImportExit(uint32_t importIndex);
-
-    
-    
-    
-    
-    
-
-    WasmInstanceObject& object() const { return *object_; }
-    void readBarrier();
 
     
 

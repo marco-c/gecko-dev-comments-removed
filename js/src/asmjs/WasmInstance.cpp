@@ -449,14 +449,12 @@ Instance::Instance(UniqueCodeSegment codeSegment,
                    const Metadata& metadata,
                    const ShareableBytes* maybeBytecode,
                    TypedFuncTableVector&& typedFuncTables,
-                   HandleArrayBufferObjectMaybeShared heap,
-                   Handle<WasmInstanceObject*> object)
+                   HandleArrayBufferObjectMaybeShared heap)
   : codeSegment_(Move(codeSegment)),
     metadata_(&metadata),
     maybeBytecode_(maybeBytecode),
     typedFuncTables_(Move(typedFuncTables)),
     heap_(heap),
-    object_(object),
     profilingEnabled_(false)
 {}
 
@@ -482,7 +480,7 @@ Instance::create(JSContext* cx,
 
     {
         auto instance = cx->make_unique<Instance>(Move(codeSegment), metadata, maybeBytecode,
-                                                  Move(typedFuncTables), heap, instanceObj);
+                                                  Move(typedFuncTables), heap);
         if (!instance)
             return false;
 
@@ -524,10 +522,7 @@ Instance::create(JSContext* cx,
         return false;
 
     
-    
-    
-    
-    cx->compartment()->wasmInstanceWeakList.insertBack(&instance);
+
     Debugger::onNewWasmInstance(cx, instanceObj);
 
     return true;
@@ -545,12 +540,9 @@ Instance::~Instance()
 void
 Instance::trace(JSTracer* trc)
 {
-    
-
     for (const Import& import : metadata_->imports)
         TraceNullableEdge(trc, &importToExit(import).fun, "wasm function import");
     TraceNullableEdge(trc, &heap_, "wasm buffer");
-    TraceEdge(trc, &object_, "wasm owner object");
 }
 
 SharedMem<uint8_t*>
@@ -803,18 +795,6 @@ Instance::deoptimizeImportExit(uint32_t importIndex)
     ImportExit& exit = importToExit(import);
     exit.code = codeSegment_->code() + import.interpExitCodeOffset();
     exit.baselineScript = nullptr;
-}
-
-void
-Instance::readBarrier()
-{
-    
-
-    for (const Import& import : metadata_->imports)
-        InternalBarrierMethods<JSObject*>::readBarrier(importToExit(import).fun);
-    if (heap_)
-        InternalBarrierMethods<JSObject*>::readBarrier(heap_);
-    InternalBarrierMethods<JSObject*>::readBarrier(object_);
 }
 
 struct CallSiteRetAddrOffset

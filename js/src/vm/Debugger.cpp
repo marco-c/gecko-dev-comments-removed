@@ -1775,10 +1775,8 @@ Debugger::slowPathOnNewScript(JSContext* cx, HandleScript script)
             return JSTRAP_CONTINUE;
         });
 
-    if (status == JSTRAP_ERROR) {
-        ReportOutOfMemory(cx);
+    if (status == JSTRAP_ERROR)
         return;
-    }
 
     MOZ_ASSERT(status == JSTRAP_CONTINUE);
 }
@@ -1797,10 +1795,8 @@ Debugger::slowPathOnNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> w
             return JSTRAP_CONTINUE;
         });
 
-    if (status == JSTRAP_ERROR) {
-        ReportOutOfMemory(cx);
+    if (status == JSTRAP_ERROR)
         return;
-    }
 
     MOZ_ASSERT(status == JSTRAP_CONTINUE);
 }
@@ -3959,7 +3955,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         source(cx, AsVariant(static_cast<ScriptSourceObject*>(nullptr))),
         innermostForCompartment(cx->runtime()),
         vector(cx, ScriptVector(cx)),
-        instanceObjectVector(cx, WasmInstanceObjectVector(cx))
+        wasmInstanceVector(cx, WasmInstanceObjectVector(cx))
     {}
 
     
@@ -4150,8 +4146,11 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         
         
         for (WeakGlobalObjectSet::Range r = debugger->allDebuggees(); !r.empty(); r.popFront()) {
-            for (wasm::Instance* instance : r.front()->compartment()->wasmInstanceWeakList)
-                consider(instance);
+            auto& wasmInstances = r.front()->compartment()->wasmInstances;
+            if (!wasmInstances.initialized())
+                continue;
+            for (auto i = wasmInstances.all(); !i.empty(); i.popFront())
+                consider(i.front());
         }
 
         return true;
@@ -4162,7 +4161,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     }
 
     Handle<WasmInstanceObjectVector> foundWasmInstances() const {
-        return instanceObjectVector;
+        return wasmInstanceVector;
     }
 
   private:
@@ -4228,7 +4227,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     
 
 
-    Rooted<WasmInstanceObjectVector> instanceObjectVector;
+    Rooted<WasmInstanceObjectVector> wasmInstanceVector;
 
     
     bool oom;
@@ -4388,18 +4387,14 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
 
-    void consider(wasm::Instance* wasmInstance) {
+    void consider(WasmInstanceObject* instanceObject) {
         if (oom)
             return;
 
-        WasmInstanceObject* instanceObject = &wasmInstance->object();
         if (hasSource && source != AsVariant(instanceObject))
             return;
 
-        
-        wasmInstance->readBarrier();
-
-        if (!instanceObjectVector.append(instanceObject))
+        if (!wasmInstanceVector.append(instanceObject))
             oom = true;
     }
 };
