@@ -64,6 +64,8 @@ public class Tab {
     private SiteLogins mSiteLogins;
     private BitmapDrawable mThumbnail;
     private final int mParentId;
+    
+    
     private final boolean mExternal;
     private boolean mBookmark;
     private int mFaviconLoadId;
