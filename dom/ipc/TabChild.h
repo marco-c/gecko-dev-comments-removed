@@ -243,6 +243,16 @@ public:
     
 
 
+    TabChild(nsIContentChild* aManager,
+             const TabId& aTabId,
+             const TabContext& aContext,
+             uint32_t aChromeFlags);
+
+    nsresult Init();
+
+    
+
+
 
 
     static void PreloadSlowThings();
@@ -510,6 +520,11 @@ public:
 
     virtual ScreenIntSize GetInnerSize() override;
 
+    
+    void DoFakeShow(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
+                    const uint64_t& aLayersId,
+                    PRenderFrameChild* aRenderFrame);
+
 protected:
     virtual ~TabChild();
 
@@ -535,16 +550,6 @@ protected:
 #endif
 
 private:
-    
-
-
-    TabChild(nsIContentChild* aManager,
-             const TabId& aTabId,
-             const TabContext& aContext,
-             uint32_t aChromeFlags);
-
-    nsresult Init();
-
     class DelayedFireContextMenuEvent;
 
     
@@ -564,11 +569,6 @@ private:
     void DestroyWindow();
     void SetProcessNameToAppName();
 
-    
-    void DoFakeShow(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
-                    const uint64_t& aLayersId,
-                    PRenderFrameChild* aRenderFrame);
-
     void ApplyShowInfo(const ShowInfo& aInfo);
 
     
@@ -580,19 +580,6 @@ private:
     void FireContextMenuEvent();
     void CancelTapTracking();
     void UpdateTapState(const WidgetTouchEvent& aEvent, nsEventStatus aStatus);
-
-    nsresult
-    ProvideWindowCommon(nsIDOMWindow* aOpener,
-                        bool aIframeMoz,
-                        uint32_t aChromeFlags,
-                        bool aCalledFromJS,
-                        bool aPositionSpecified,
-                        bool aSizeSpecified,
-                        nsIURI* aURI,
-                        const nsAString& aName,
-                        const nsACString& aFeatures,
-                        bool* aWindowIsNew,
-                        nsIDOMWindow** aReturn);
 
     bool HasValidInnerSize();
 
