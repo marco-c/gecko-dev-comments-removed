@@ -77,14 +77,9 @@ class MOZ_STACK_CLASS BytecodeCompiler
     bool isEvalCompilationUnit();
     bool isNonGlobalEvalCompilationUnit();
     bool isNonSyntacticCompilationUnit();
-    bool createParseContext(Maybe<ParseContext<FullParseHandler>>& parseContext,
-                            SharedContext& globalsc, uint32_t blockScopeDepth = 0);
-    bool saveCallerFun(HandleScript evalCaller, ParseContext<FullParseHandler>& parseContext);
-    bool handleStatementParseFailure(HandleObject scopeChain, HandleScript evalCaller,
-                                     Maybe<ParseContext<FullParseHandler>>& parseContext,
-                                     SharedContext& globalsc);
+    bool saveCallerFun(HandleScript evalCaller);
     bool handleParseFailure(const Directives& newDirectives);
-    bool prepareAndEmitTree(ParseNode** pn, ParseContext<FullParseHandler>& pc);
+    bool prepareAndEmitTree(ParseNode** pn);
     bool checkArgumentsWithinEval(JSContext* cx, HandleFunction fun);
     bool maybeCheckEvalFreeVariables(HandleScript evalCaller, HandleObject scopeChain,
                                      ParseContext<FullParseHandler>& pc);
@@ -301,17 +296,7 @@ BytecodeCompiler::isNonSyntacticCompilationUnit()
 }
 
 bool
-BytecodeCompiler::createParseContext(Maybe<ParseContext<FullParseHandler>>& parseContext,
-                                     SharedContext& globalsc, uint32_t blockScopeDepth)
-{
-    parseContext.emplace(parser.ptr(), (GenericParseContext*) nullptr, (ParseNode*) nullptr,
-                         &globalsc, (Directives*) nullptr, blockScopeDepth);
-    return parseContext->init(*parser);
-}
-
-bool
-BytecodeCompiler::saveCallerFun(HandleScript evalCaller,
-                                ParseContext<FullParseHandler>& parseContext)
+BytecodeCompiler::saveCallerFun(HandleScript evalCaller)
 {
     
 
@@ -323,42 +308,13 @@ BytecodeCompiler::saveCallerFun(HandleScript evalCaller,
     RootedFunction fun(cx, evalCaller->functionOrCallerFunction());
     MOZ_ASSERT_IF(fun->strict(), options.strictOption);
     Directives directives( options.strictOption);
-    ObjectBox* funbox = parser->newFunctionBox( nullptr, fun, &parseContext,
-                                              directives, fun->generatorKind());
+    ObjectBox* funbox = parser->newFunctionBox( nullptr, fun,
+                                               directives, fun->generatorKind(),
+                                               enclosingStaticScope);
     if (!funbox)
         return false;
 
     emitter->objectList.add(funbox);
-    return true;
-}
-
-bool
-BytecodeCompiler::handleStatementParseFailure(HandleObject scopeChain, HandleScript evalCaller,
-                                              Maybe<ParseContext<FullParseHandler>>& parseContext,
-                                              SharedContext& globalsc)
-{
-    if (!parser->hadAbortedSyntaxParse())
-        return false;
-
-    
-    
-    
-    
-    
-    parser->clearAbortedSyntaxParse();
-    parser->tokenStream.seek(startPosition);
-    parser->blockScopes.clear();
-
-    
-    
-    if (!maybeCheckEvalFreeVariables(evalCaller, scopeChain, parseContext.ref()))
-        return false;
-
-    parseContext.reset();
-    if (!createParseContext(parseContext, globalsc, script->bindings.numBlockScoped()))
-        return false;
-
-    MOZ_ASSERT(parser->pc == parseContext.ptr());
     return true;
 }
 
@@ -384,13 +340,8 @@ BytecodeCompiler::handleParseFailure(const Directives& newDirectives)
 }
 
 bool
-BytecodeCompiler::prepareAndEmitTree(ParseNode** ppn, ParseContext<FullParseHandler>& pc)
+BytecodeCompiler::prepareAndEmitTree(ParseNode** ppn)
 {
-    
-    
-    
-    script->bindings.updateNumBlockScoped(pc.blockScopeDepth);
-
     if (!FoldConstants(cx, ppn, parser.ptr()) ||
         !NameFunctions(cx, *ppn) ||
         !emitter->updateLocalsToFrameSlots() ||
@@ -551,39 +502,43 @@ BytecodeCompiler::compileScript(HandleObject scopeChain, HandleScript evalCaller
     if (!createEmitter(&globalsc, evalCaller, isNonGlobalEvalCompilationUnit()))
         return nullptr;
 
-    
-    
-    
-    
-    
-    
-    
-    Maybe<ParseContext<FullParseHandler>> pc;
-    if (!createParseContext(pc, globalsc))
+    if (savedCallerFun && !saveCallerFun(evalCaller))
         return nullptr;
 
-    if (savedCallerFun && !saveCallerFun(evalCaller, pc.ref()))
-        return nullptr;
+    for (;;) {
+        ParseContext<FullParseHandler> pc(parser.ptr(),
+                                           nullptr,
+                                           nullptr,
+                                          &globalsc,
+                                           nullptr);
+        if (!pc.init(*parser))
+            return nullptr;
 
-    {
         ParseNode* pn;
-        do {
-            pn = isEvalCompilationUnit() ? parser->evalBody() : parser->globalBody();
-            if (!pn && !handleStatementParseFailure(scopeChain, evalCaller, pc, globalsc))
+        if (isEvalCompilationUnit())
+            pn = parser->evalBody();
+        else
+            pn = parser->globalBody();
+
+        
+        if (pn) {
+            if (!initGlobalOrEvalBindings(pc))
                 return nullptr;
-        } while (!pn);
+            if (!maybeCheckEvalFreeVariables(evalCaller, scopeChain, pc))
+                return nullptr;
+            if (!prepareAndEmitTree(&pn))
+                return nullptr;
+            parser->handler.freeTree(pn);
 
-        if (!prepareAndEmitTree(&pn, *pc))
+            break;
+        }
+
+        
+        if (!handleParseFailure(directives))
             return nullptr;
-
-        if (!initGlobalOrEvalBindings(*pc))
-            return nullptr;
-
-        parser->handler.freeTree(pn);
     }
 
-    if (!maybeCheckEvalFreeVariables(evalCaller, scopeChain, *pc) ||
-        !maybeSetDisplayURL(parser->tokenStream) ||
+    if (!maybeSetDisplayURL(parser->tokenStream) ||
         !maybeSetSourceMap(parser->tokenStream) ||
         !maybeSetSourceMapFromOptions() ||
         !emitFinalReturn() ||
