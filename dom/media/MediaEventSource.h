@@ -496,8 +496,9 @@ public:
 protected:
   MediaEventSourceImpl() : mMutex("MediaEventSourceImpl::mMutex") {}
 
-  template <typename... Ts>
-  void NotifyInternal(Ts&&... aEvents) {
+  template <DispatchPolicy P, typename... Ts>
+  typename EnableIf<P == DispatchPolicy::Async, void>::Type
+  NotifyInternal(IntegralConstant<DispatchPolicy, P>, Ts&&... aEvents) {
     MutexAutoLock lock(mMutex);
     int32_t last = static_cast<int32_t>(mListeners.Length()) - 1;
     for (int32_t i = last; i >= 0; --i) {
@@ -510,6 +511,34 @@ protected:
       }
       l->Dispatch(Forward<Ts>(aEvents)...);
     }
+  }
+
+  template <DispatchPolicy P, typename... Ts>
+  typename EnableIf<P == DispatchPolicy::Sync, void>::Type
+  NotifyInternal(IntegralConstant<DispatchPolicy, P>, Ts&&... aEvents) {
+    
+    
+    
+    nsTArray<UniquePtr<Listener>> listeners;
+    listeners.SwapElements(mListeners);
+    for (auto&& l : listeners) {
+      l->Dispatch(Forward<Ts>(aEvents)...);
+    }
+    PruneListeners();
+    
+    for (auto&& l : listeners) {
+      if (!l->Token()->IsRevoked()) {
+        mListeners.AppendElement(Move(l));
+      }
+    }
+    
+    MOZ_ASSERT(Lp == ListenerPolicy::NonExclusive || mListeners.Length() <= 1);
+  }
+
+  template <typename... Ts>
+  void Notify(Ts&&... aEvents) {
+    NotifyInternal(IntegralConstant<DispatchPolicy, Dp>(),
+                   Forward<Ts>(aEvents)...);
   }
 
 private:
@@ -534,10 +563,7 @@ using MediaEventSourceExc =
 template <typename... Es>
 class MediaEventProducer : public MediaEventSource<Es...> {
 public:
-  template <typename... Ts>
-  void Notify(Ts&&... aEvents) {
-    this->NotifyInternal(Forward<Ts>(aEvents)...);
-  }
+  using MediaEventSource<Es...>::Notify;
 };
 
 
@@ -548,7 +574,7 @@ template <>
 class MediaEventProducer<void> : public MediaEventSource<void> {
 public:
   void Notify() {
-    this->NotifyInternal(true );
+    MediaEventSource<void>::Notify(false );
   }
 };
 
@@ -558,10 +584,7 @@ public:
 template <typename... Es>
 class MediaEventProducerExc : public MediaEventSourceExc<Es...> {
 public:
-  template <typename... Ts>
-  void Notify(Ts&&... aEvents) {
-    this->NotifyInternal(Forward<Ts>(aEvents)...);
-  }
+  using MediaEventSourceExc<Es...>::Notify;
 };
 
 
@@ -574,10 +597,8 @@ class MediaCallback
   : public MediaEventSourceImpl<DispatchPolicy::Sync,
                                 ListenerPolicy::NonExclusive, Es...> {
 public:
-  template <typename... Ts>
-  void Notify(Ts&&... aEvents) {
-    this->NotifyInternal(Forward<Ts>(aEvents)...);
-  }
+  using MediaEventSourceImpl<DispatchPolicy::Sync,
+                             ListenerPolicy::NonExclusive, Es...>::Notify;
 };
 
 
@@ -588,10 +609,8 @@ class MediaCallbackExc
   : public MediaEventSourceImpl<DispatchPolicy::Sync,
                                 ListenerPolicy::Exclusive, Es...> {
 public:
-  template <typename... Ts>
-  void Notify(Ts&&... aEvents) {
-    this->NotifyInternal(Forward<Ts>(aEvents)...);
-  }
+  using MediaEventSourceImpl<DispatchPolicy::Sync,
+                             ListenerPolicy::Exclusive, Es...>::Notify;
 };
 
 } 
