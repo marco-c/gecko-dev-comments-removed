@@ -25,6 +25,7 @@
 #include <nsTArray.h>
 #include <nsClassHashtable.h>
 #include "VideoUtils.h"
+#include "FlacFrameParser.h"
 
 #include <stdint.h>
 
@@ -85,10 +86,11 @@ public:
   enum CodecType
   {
     TYPE_VORBIS=0,
-    TYPE_THEORA=1,
-    TYPE_OPUS=2,
-    TYPE_SKELETON=3,
-    TYPE_UNKNOWN=4
+    TYPE_THEORA,
+    TYPE_OPUS,
+    TYPE_SKELETON,
+    TYPE_FLAC,
+    TYPE_UNKNOWN
   };
 
   virtual ~OggCodecState();
@@ -141,7 +143,7 @@ public:
   }
 
   
-  virtual bool Init();
+  virtual bool Init() { return true; }
 
   
   
@@ -226,6 +228,16 @@ public:
   
   bool mDoneReadingHeaders;
 
+  
+  static bool IsValidVorbisTagName(nsCString& aName);
+
+  
+  
+  
+  static bool AddVorbisComment(MetadataTags* aTags,
+                        const char* aComment,
+                        uint32_t aLength);
+
 protected:
   
   
@@ -248,15 +260,8 @@ protected:
   
   nsTArray<ogg_packet*> mUnstamped;
 
-  
-  static bool IsValidVorbisTagName(nsCString& aName);
-
-  
-  
-  
-  static bool AddVorbisComment(MetadataTags* aTags,
-                        const char* aComment,
-                        uint32_t aLength);
+private:
+  bool InternalInit();
 };
 
 class VorbisState : public OggCodecState
@@ -470,7 +475,6 @@ public:
   CodecType GetType() override { return TYPE_SKELETON; }
   bool DecodeHeader(ogg_packet* aPacket) override;
   int64_t Time(int64_t granulepos) override { return -1; }
-  bool Init() override { return true; }
   bool IsHeader(ogg_packet* aPacket) override { return true; }
 
   
@@ -601,6 +605,29 @@ private:
 
   
   nsClassHashtable<nsUint32HashKey, nsKeyFrameIndex> mIndex;
+};
+
+class FlacState : public OggCodecState
+{
+public:
+  explicit FlacState(ogg_page* aBosPage);
+
+  CodecType GetType() override { return TYPE_FLAC; }
+  bool DecodeHeader(ogg_packet* aPacket) override;
+  int64_t Time(int64_t granulepos) override;
+  int64_t PacketDuration(ogg_packet* aPacket) override;
+  bool IsHeader(ogg_packet* aPacket) override;
+  nsresult PageIn(ogg_page* aPage) override;
+
+  
+  MetadataTags* GetTags() override;
+
+  const AudioInfo& Info();
+
+private:
+  bool ReconstructFlacGranulepos(void);
+
+  FlacFrameParser mParser;
 };
 
 } 
