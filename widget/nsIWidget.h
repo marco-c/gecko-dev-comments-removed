@@ -1756,7 +1756,7 @@ public:
 
 
 
-    NS_IMETHOD SetPluginFocused(bool& aFocused) = 0;
+    virtual void SetPluginFocused(bool& aFocused) = 0;
 
     
 
