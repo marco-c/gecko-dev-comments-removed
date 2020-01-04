@@ -24,7 +24,10 @@ const { CensusTreeNode } = require("devtools/shared/heapsnapshot/census-tree-nod
 
 
 
-Services.prefs.setBoolPref("devtools.debugger.log", true);
+if (Services.appInfo &&
+    Services.appInfo.processType == Services.appInfo.PROCESS_TYPE_DEFAULT) {
+  Services.prefs.setBoolPref("devtools.debugger.log", true);
+}
 DevToolsUtils.dumpn.wantLogging = true;
 
 const SYSTEM_PRINCIPAL = Cc["@mozilla.org/systemprincipal;1"]

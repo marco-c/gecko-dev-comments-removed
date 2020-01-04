@@ -33,6 +33,7 @@ var loaderModules = {
   "toolkit/loader": Loader,
   PromiseDebugging,
   ThreadSafeChromeUtils,
+  HeapSnapshot,
 };
 XPCOMUtils.defineLazyGetter(loaderModules, "Debugger", () => {
   
