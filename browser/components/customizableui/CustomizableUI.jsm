@@ -2255,7 +2255,7 @@ var CustomizableUIInternal = {
     }
 
     delete widget.implementation.currentArea;
-    widget.implementation.__defineGetter__("currentArea", function() widget.currentArea);
+    widget.implementation.__defineGetter__("currentArea", () => widget.currentArea);
 
     const kReqStringProps = ["id"];
     for (let prop of kReqStringProps) {
@@ -2737,79 +2737,79 @@ this.CustomizableUI = {
   
 
 
-  get AREA_PANEL() "PanelUI-contents",
+  AREA_PANEL: "PanelUI-contents",
   
 
 
-  get AREA_NAVBAR() "nav-bar",
+  AREA_NAVBAR: "nav-bar",
   
 
 
-  get AREA_MENUBAR() "toolbar-menubar",
+  AREA_MENUBAR: "toolbar-menubar",
   
 
 
-  get AREA_TABSTRIP() "TabsToolbar",
+  AREA_TABSTRIP: "TabsToolbar",
   
 
 
-  get AREA_BOOKMARKS() "PersonalToolbar",
-  
-
-
-
-
-  get AREA_ADDONBAR() "addon-bar",
-  
-
-
-  get TYPE_MENU_PANEL() "menu-panel",
-  
-
-
-  get TYPE_TOOLBAR() "toolbar",
-
-  
-
-
-  get PROVIDER_XUL() "xul",
-  
-
-
-  get PROVIDER_API() "api",
-  
-
-
-  get PROVIDER_SPECIAL() "special",
-
-  
-
-
-  get SOURCE_BUILTIN() "builtin",
+  AREA_BOOKMARKS: "PersonalToolbar",
   
 
 
 
-  get SOURCE_EXTERNAL() "external",
+
+  AREA_ADDONBAR: "addon-bar",
+  
+
+
+  TYPE_MENU_PANEL: "menu-panel",
+  
+
+
+  TYPE_TOOLBAR: "toolbar",
 
   
 
 
-  get WIDE_PANEL_CLASS() "panel-wide-item",
+  PROVIDER_XUL: "xul",
   
 
 
-  get PANEL_COLUMN_COUNT() 3,
+  PROVIDER_API: "api",
+  
+
+
+  PROVIDER_SPECIAL: "special",
 
   
 
 
-  get REASON_WINDOW_CLOSED() "window-closed",
+  SOURCE_BUILTIN: "builtin",
   
 
 
 
-  get REASON_AREA_UNREGISTERED() "area-unregistered",
+  SOURCE_EXTERNAL: "external",
+
+  
+
+
+  WIDE_PANEL_CLASS: "panel-wide-item",
+  
+
+
+  PANEL_COLUMN_COUNT: 3,
+
+  
+
+
+  REASON_WINDOW_CLOSED: "window-closed",
+  
+
+
+
+  REASON_AREA_UNREGISTERED: "area-unregistered",
 
 
   
@@ -3677,10 +3677,10 @@ function WidgetGroupWrapper(aWidget) {
                       "showInPrivateBrowsing", "viewId"];
   for (let prop of kBareProps) {
     let propertyName = prop;
-    this.__defineGetter__(propertyName, function() aWidget[propertyName]);
+    this.__defineGetter__(propertyName, () => aWidget[propertyName]);
   }
 
-  this.__defineGetter__("provider", function() CustomizableUI.PROVIDER_API);
+  this.__defineGetter__("provider", () => CustomizableUI.PROVIDER_API);
 
   this.__defineSetter__("disabled", function(aValue) {
     aValue = !!aValue;
@@ -3757,10 +3757,10 @@ function WidgetSingleWrapper(aWidget, aNode) {
     
     
     this.__defineGetter__(propertyName,
-                          function() aNode.getAttribute(propertyName));
+                          () => aNode.getAttribute(propertyName));
   }
 
-  this.__defineGetter__("disabled", function() aNode.disabled);
+  this.__defineGetter__("disabled", () => aNode.disabled);
   this.__defineSetter__("disabled", function(aValue) {
     aNode.disabled = !!aValue;
   });
