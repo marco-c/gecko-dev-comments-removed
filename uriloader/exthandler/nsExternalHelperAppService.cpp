@@ -100,7 +100,7 @@
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-#include "AndroidBridge.h"
+#include "GeneratedJNIWrappers.h"
 #endif
 
 #include "mozilla/Preferences.h"
@@ -382,7 +382,7 @@ static nsresult GetDownloadDirectory(nsIFile **_directory,
   
   
   
-  auto downloadDir = widget::DownloadsIntegration::GetTemporaryDownloadDirectory();
+  auto downloadDir = java::DownloadsIntegration::GetTemporaryDownloadDirectory();
 
   nsresult rv;
   if (downloadDir) {

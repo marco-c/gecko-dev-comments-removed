@@ -97,7 +97,6 @@
 #include <math.h>
 #include "cairo/cairo-features.h"
 #include "mozilla/WindowsVersion.h"
-#include "mozilla/mscom/MainThreadRuntime.h"
 #include "mozilla/widget/AudioSession.h"
 
 #ifndef PROCESS_DEP_ENABLE
@@ -200,7 +199,7 @@
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-#include "AndroidBridge.h"
+#include "GeneratedJNIWrappers.h"
 #endif
 
 #if defined(MOZ_SANDBOX)
@@ -1721,7 +1720,7 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   SaveToEnv("MOZ_LAUNCHED_CHILD=1");
 
 #if defined(MOZ_WIDGET_ANDROID)
-  mozilla::widget::GeckoAppShell::ScheduleRestart();
+  java::GeckoAppShell::ScheduleRestart();
 #else
 #if defined(XP_MACOSX)
   CommandLineServiceMac::SetupMacCommandLine(gRestartArgc, gRestartArgv, true);
@@ -1859,7 +1858,7 @@ ProfileLockedDialog(nsIFile* aProfileDir, nsIFile* aProfileLocalDir,
     if (aUnlocker) {
       int32_t button;
 #ifdef MOZ_WIDGET_ANDROID
-      mozilla::widget::GeckoAppShell::KillAnyZombies();
+      java::GeckoAppShell::KillAnyZombies();
       button = 0;
 #else
       const uint32_t flags =
@@ -1888,7 +1887,7 @@ ProfileLockedDialog(nsIFile* aProfileDir, nsIFile* aProfileLocalDir,
       }
     } else {
 #ifdef MOZ_WIDGET_ANDROID
-      if (mozilla::widget::GeckoAppShell::UnlockProfile()) {
+      if (java::GeckoAppShell::UnlockProfile()) {
         return NS_LockProfilePath(aProfileDir, aProfileLocalDir,
                                   nullptr, aResult);
       }
@@ -4303,14 +4302,6 @@ XREMain::XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
   NS_ENSURE_SUCCESS(rv, 1);
 
   mozilla::IOInterposerInit ioInterposerGuard;
-
-#if defined(XP_WIN)
-  
-  
-  
-  
-  mozilla::mscom::MainThreadRuntime msCOMRuntime;
-#endif
 
 #if MOZ_WIDGET_GTK == 2
   XRE_GlibInit();
