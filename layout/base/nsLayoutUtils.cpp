@@ -4195,6 +4195,12 @@ static bool GetAbsoluteCoord(const nsStyleCoord& aStyle, nscoord& aResult)
   return true;
 }
 
+static nscoord
+GetBSizeTakenByBoxSizing(StyleBoxSizing aBoxSizing,
+                         nsIFrame* aFrame,
+                         bool aHorizontalAxis,
+                         bool aIgnorePadding);
+
 
 static bool
 GetPercentBSize(const nsStyleCoord& aStyle,
@@ -4284,6 +4290,59 @@ GetPercentBSize(const nsStyleCoord& aStyle,
 
   aResult = NSToCoordRound(aStyle.GetPercentValue() * h);
   return true;
+}
+
+
+
+
+
+
+
+static nscoord
+GetBSizeTakenByBoxSizing(StyleBoxSizing aBoxSizing,
+                         nsIFrame* aFrame,
+                         bool aHorizontalAxis,
+                         bool aIgnorePadding)
+{
+  nscoord bSizeTakenByBoxSizing = 0;
+  switch (aBoxSizing) {
+  case StyleBoxSizing::Border: {
+    const nsStyleBorder* styleBorder = aFrame->StyleBorder();
+    bSizeTakenByBoxSizing +=
+      aHorizontalAxis ? styleBorder->GetComputedBorder().TopBottom()
+                      : styleBorder->GetComputedBorder().LeftRight();
+    
+  }
+  case StyleBoxSizing::Padding: {
+    if (!aIgnorePadding) {
+      const nsStyleSides& stylePadding =
+        aFrame->StylePadding()->mPadding;
+      const nsStyleCoord& paddingStart =
+        stylePadding.Get(aHorizontalAxis ? NS_SIDE_TOP : NS_SIDE_LEFT);
+      const nsStyleCoord& paddingEnd =
+        stylePadding.Get(aHorizontalAxis ? NS_SIDE_BOTTOM : NS_SIDE_RIGHT);
+      nscoord pad;
+      
+      
+      
+      
+      
+      if (GetAbsoluteCoord(paddingStart, pad) ||
+          GetPercentBSize(paddingStart, aFrame, pad)) {
+        bSizeTakenByBoxSizing += pad;
+      }
+      if (GetAbsoluteCoord(paddingEnd, pad) ||
+          GetPercentBSize(paddingEnd, aFrame, pad)) {
+        bSizeTakenByBoxSizing += pad;
+      }
+    }
+    
+  }
+  case StyleBoxSizing::Content:
+  default:
+    break;
+  }
+  return bSizeTakenByBoxSizing;
 }
 
 
@@ -4646,39 +4705,9 @@ nsLayoutUtils::IntrinsicForAxis(PhysicalAxis        aAxis,
         AddStateBitToAncestors(aFrame,
             NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE);
 
-        nscoord bSizeTakenByBoxSizing = 0;
-        switch (boxSizing) {
-        case StyleBoxSizing::Border: {
-          const nsStyleBorder* styleBorder = aFrame->StyleBorder();
-          bSizeTakenByBoxSizing +=
-            horizontalAxis ? styleBorder->GetComputedBorder().TopBottom()
-                           : styleBorder->GetComputedBorder().LeftRight();
-          
-        }
-        case StyleBoxSizing::Padding: {
-          if (!(aFlags & IGNORE_PADDING)) {
-            const nsStyleSides& stylePadding =
-              aFrame->StylePadding()->mPadding;
-            const nsStyleCoord& paddingStart =
-              stylePadding.Get(horizontalAxis ? NS_SIDE_TOP : NS_SIDE_LEFT);
-            const nsStyleCoord& paddingEnd =
-              stylePadding.Get(horizontalAxis ? NS_SIDE_BOTTOM : NS_SIDE_RIGHT);
-            nscoord pad;
-            if (GetAbsoluteCoord(paddingStart, pad) ||
-                GetPercentBSize(paddingStart, aFrame, pad)) {
-              bSizeTakenByBoxSizing += pad;
-            }
-            if (GetAbsoluteCoord(paddingEnd, pad) ||
-                GetPercentBSize(paddingEnd, aFrame, pad)) {
-              bSizeTakenByBoxSizing += pad;
-            }
-          }
-          
-        }
-        case StyleBoxSizing::Content:
-        default:
-          break;
-        }
+        nscoord bSizeTakenByBoxSizing =
+          GetBSizeTakenByBoxSizing(boxSizing, aFrame, horizontalAxis,
+                                   aFlags & IGNORE_PADDING);
 
         nscoord h;
         if (GetAbsoluteCoord(styleBSize, h) ||
