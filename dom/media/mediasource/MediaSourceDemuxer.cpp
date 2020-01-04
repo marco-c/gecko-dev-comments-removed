@@ -387,8 +387,9 @@ MediaSourceTrackDemuxer::DoSeek(media::TimeUnit aTime)
   if (!buffered.Contains(seekTime)) {
     if (!buffered.Contains(aTime)) {
       
-      return SeekPromise::CreateAndReject(DemuxerFailureReason::WAITING_FOR_DATA,
-                                          __func__);
+      return SeekPromise::CreateAndReject(
+        mManager->IsEnded() ? DemuxerFailureReason::END_OF_STREAM :
+                              DemuxerFailureReason::WAITING_FOR_DATA, __func__);
     }
     
     
