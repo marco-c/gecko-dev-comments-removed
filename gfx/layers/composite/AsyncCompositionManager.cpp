@@ -586,7 +586,7 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
     
     
     timing.mDelay = TimeDuration(0);
-    timing.mIterationCount = animation.iterationCount();
+    timing.mIterations = animation.iterationCount();
     timing.mDirection = static_cast<dom::PlaybackDirection>(animation.direction());
     
     

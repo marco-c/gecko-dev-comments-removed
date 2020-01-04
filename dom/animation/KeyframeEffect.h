@@ -53,7 +53,7 @@ struct AnimationTiming
 {
   TimeDuration mIterationDuration;
   TimeDuration mDelay;
-  float mIterationCount; 
+  double mIterations; 
   dom::PlaybackDirection mDirection;
   dom::FillMode mFillMode;
 
@@ -62,7 +62,7 @@ struct AnimationTiming
   bool operator==(const AnimationTiming& aOther) const {
     return mIterationDuration == aOther.mIterationDuration &&
            mDelay == aOther.mDelay &&
-           mIterationCount == aOther.mIterationCount &&
+           mIterations == aOther.mIterations &&
            mDirection == aOther.mDirection &&
            mFillMode == aOther.mFillMode;
   }
@@ -88,6 +88,9 @@ struct ComputedTiming
   Nullable<double>    mProgress;
   
   uint64_t            mCurrentIteration = 0;
+  
+  
+  double              mIterations = 1.0;
 
   enum class AnimationPhase {
     Null,   
@@ -261,7 +264,8 @@ public:
 
   
   static StickyTimeDuration
-  ActiveDuration(const AnimationTiming& aTiming);
+  ActiveDuration(const AnimationTiming& aTiming,
+                 double aComputedIterations);
 
   bool IsInPlay() const;
   bool IsCurrent() const;

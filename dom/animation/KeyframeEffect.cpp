@@ -48,7 +48,7 @@ GetComputedTimingDictionary(const ComputedTiming& aComputedTiming,
   
   aRetVal.mDelay = aTiming.mDelay.ToMilliseconds();
   aRetVal.mFill = aTiming.mFillMode;
-  aRetVal.mIterations = aTiming.mIterationCount;
+  aRetVal.mIterations = aComputedTiming.mIterations;
   aRetVal.mDuration.SetAsUnrestrictedDouble() = aTiming.mIterationDuration.ToMilliseconds();
   aRetVal.mDirection = aTiming.mDirection;
 
@@ -229,7 +229,10 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
   
   ComputedTiming result;
 
-  result.mActiveDuration = ActiveDuration(aTiming);
+  result.mIterations = IsNaN(aTiming.mIterations) || aTiming.mIterations < 0.0f ?
+                       1.0f :
+                       aTiming.mIterations;
+  result.mActiveDuration = ActiveDuration(aTiming, result.mIterations);
 
   
   
@@ -255,9 +258,8 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
     activeTime = result.mActiveDuration;
     
     
-    isEndOfFinalIteration =
-      aTiming.mIterationCount != 0.0 &&
-      aTiming.mIterationCount == floor(aTiming.mIterationCount);
+    isEndOfFinalIteration = result.mIterations != 0.0 &&
+                            result.mIterations == floor(result.mIterations);
   } else if (localTime < aTiming.mDelay) {
     result.mPhase = ComputedTiming::AnimationPhase::Before;
     if (!aTiming.FillsBackwards()) {
@@ -284,10 +286,10 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
   
   if (isEndOfFinalIteration) {
     result.mCurrentIteration =
-      aTiming.mIterationCount == NS_IEEEPositiveInfinity()
+      IsInfinite(result.mIterations) 
       ? UINT64_MAX 
                    
-      : static_cast<uint64_t>(aTiming.mIterationCount) - 1;
+      : static_cast<uint64_t>(result.mIterations) - 1;
   } else if (activeTime == zeroDuration) {
     
     
@@ -295,7 +297,7 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
     
     result.mCurrentIteration =
       result.mPhase == ComputedTiming::AnimationPhase::After
-      ? static_cast<uint64_t>(aTiming.mIterationCount) 
+      ? static_cast<uint64_t>(result.mIterations) 
       : 0;
   } else {
     result.mCurrentIteration =
@@ -308,7 +310,7 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
   } else if (result.mPhase == ComputedTiming::AnimationPhase::After) {
     double progress = isEndOfFinalIteration
                       ? 1.0
-                      : fmod(aTiming.mIterationCount, 1.0f);
+                      : fmod(result.mIterations, 1.0);
     result.mProgress.SetValue(progress);
   } else {
     
@@ -345,9 +347,10 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
 }
 
 StickyTimeDuration
-KeyframeEffectReadOnly::ActiveDuration(const AnimationTiming& aTiming)
+KeyframeEffectReadOnly::ActiveDuration(const AnimationTiming& aTiming,
+                                       double aComputedIterations)
 {
-  if (aTiming.mIterationCount == mozilla::PositiveInfinity<float>()) {
+  if (IsInfinite(aComputedIterations)) {
     
     
     
@@ -357,7 +360,7 @@ KeyframeEffectReadOnly::ActiveDuration(const AnimationTiming& aTiming)
            : StickyTimeDuration::Forever();
   }
   return StickyTimeDuration(
-    aTiming.mIterationDuration.MultDouble(aTiming.mIterationCount));
+    aTiming.mIterationDuration.MultDouble(aComputedIterations));
 }
 
 
@@ -668,13 +671,7 @@ KeyframeEffectReadOnly::ConvertKeyframeEffectOptions(
 
     animationTiming.mIterationDuration = GetIterationDuration(opt.mDuration);
     animationTiming.mDelay = TimeDuration::FromMilliseconds(opt.mDelay);
-    
-    
-    
-    animationTiming.mIterationCount = (IsNaN(opt.mIterations) ||
-                                      opt.mIterations < 0.0f) ?
-                                        1.0f :
-                                        opt.mIterations;
+    animationTiming.mIterations = opt.mIterations;
     animationTiming.mDirection = opt.mDirection;
     
     animationTiming.mFillMode = (opt.mFill == FillMode::Auto) ?
@@ -683,7 +680,7 @@ KeyframeEffectReadOnly::ConvertKeyframeEffectOptions(
   } else {
     animationTiming.mIterationDuration = GetIterationDuration(aOptions);
     animationTiming.mDelay = TimeDuration(0);
-    animationTiming.mIterationCount = 1.0f;
+    animationTiming.mIterations = 1.0f;
     animationTiming.mDirection = PlaybackDirection::Normal;
     animationTiming.mFillMode = FillMode::None;
   }
