@@ -2,15 +2,7 @@
 
 
 
-
-
-Components.utils.import("resource://gre/modules/Services.jsm");
-
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-
-var windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"]
-                       .getService(Ci.nsIWindowMediator);
+const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 
 const NS_ALERT_HORIZONTAL = 1;
@@ -18,6 +10,8 @@ const NS_ALERT_LEFT = 2;
 const NS_ALERT_TOP = 4;
 
 const WINDOW_MARGIN = 10;
+
+Cu.import("resource://gre/modules/Services.jsm");
 
 var gOrigin = 0; 
 var gReplacedWindow = null;
@@ -119,7 +113,7 @@ function moveWindowToReplace(aReplacedAlert) {
 
   
   if (heightDelta != 0) {
-    let windows = windowMediator.getEnumerator('alert:alert');
+    let windows = Services.wm.getEnumerator('alert:alert');
     while (windows.hasMoreElements()) {
       let alertWindow = windows.getNext();
       
@@ -149,7 +143,7 @@ function moveWindowToEnd() {
           screen.availTop + screen.availHeight - window.outerHeight;
 
   
-  let windows = windowMediator.getEnumerator('alert:alert');
+  let windows = Services.wm.getEnumerator('alert:alert');
   while (windows.hasMoreElements()) {
     let alertWindow = windows.getNext();
     if (alertWindow != window) {
@@ -172,7 +166,7 @@ function onAlertBeforeUnload() {
   if (!gIsReplaced) {
     
     let heightDelta = window.outerHeight + WINDOW_MARGIN;
-    let windows = windowMediator.getEnumerator('alert:alert');
+    let windows = Services.wm.getEnumerator('alert:alert');
     while (windows.hasMoreElements()) {
       let alertWindow = windows.getNext();
       if (alertWindow != window) {
