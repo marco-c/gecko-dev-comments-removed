@@ -64,11 +64,6 @@ var gEMEHandler = {
         params = [this.getLearnMoreLink(notificationId)];
         break;
 
-      case "cdm-not-supported":
-        notificationId = "drmContentCDMNotSupported";
-        params = [this._brandShortName, this.getLearnMoreLink(notificationId)];
-        break;
-
       case "cdm-insufficient-version":
         notificationId = "drmContentCDMInsufficientVersion";
         params = [this._brandShortName];
@@ -79,6 +74,9 @@ var gEMEHandler = {
         params = [this._brandShortName];
         break;
 
+      case "cdm-not-supported":
+        
+        
       case "error":
         
       default:
@@ -97,16 +95,6 @@ var gEMEHandler = {
 
     let msgPrefix = "emeNotifications." + notificationId + ".";
     let msgId = msgPrefix + "message";
-
-    
-    if (notificationId == "drmContentCDMNotSupported" &&
-        keySystem.startsWith("com.adobe")) {
-      let os = Services.appinfo.OS.toLowerCase();
-      if (os.startsWith("linux") || os.startsWith("darwin")) {
-        msgId = msgPrefix + "unsupportedOS.message";
-        labelParams.splice(1, 0, os.startsWith("linux") ? "Linux" : "Mac OS X");
-      }
-    }
 
     let message = labelParams.length ?
                   gNavigatorBundle.getFormattedString(msgId, labelParams) :
@@ -140,7 +128,6 @@ var gEMEHandler = {
     
     var box = gBrowser.getNotificationBox(browser);
     ["drmContentDisabled",
-     "drmContentCDMNotSupported",
      "drmContentCDMInsufficientVersion",
      "drmContentCDMInstalling"
      ].forEach(function (value) {
