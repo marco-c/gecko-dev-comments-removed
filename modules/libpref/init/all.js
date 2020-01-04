@@ -4520,6 +4520,8 @@ pref("dom.webnotifications.serviceworker.enabled", true);
 
 pref("alerts.disableSlidingEffect", false);
 
+pref("alerts.showFavicons", false);
+
 
 pref("full-screen-api.enabled", false);
 pref("full-screen-api.allow-trusted-requests-only", true);
