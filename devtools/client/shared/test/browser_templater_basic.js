@@ -9,7 +9,7 @@
 
 
 
-const template = Cu.import("resource://devtools/shared/gcli/Templater.jsm", {}).template;
+const {template} = require("devtools/shared/gcli/templater");
 
 const TEST_URI = TEST_URI_ROOT + "browser_templater_basic.html";
 
