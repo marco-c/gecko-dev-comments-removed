@@ -49,6 +49,7 @@ public:
   
   
   
+  
   virtual nsRefPtr<InitPromise> Init() = 0;
 
   
