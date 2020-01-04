@@ -57,7 +57,7 @@ function Object_toLocaleString() {
     var O = this;
 
     
-    return O.toString();
+    return callFunction(O.toString, O);
 }
 
 function ObjectDefineSetter(name, setter) {
