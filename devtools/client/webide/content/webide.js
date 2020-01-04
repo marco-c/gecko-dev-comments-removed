@@ -73,9 +73,6 @@ var UI = {
 
     AppManager.init();
 
-    this.onMessage = this.onMessage.bind(this);
-    window.addEventListener("message", this.onMessage);
-
     this.appManagerUpdate = this.appManagerUpdate.bind(this);
     AppManager.on("app-manager-update", this.appManagerUpdate);
 
@@ -136,7 +133,6 @@ var UI = {
     AppManager.off("app-manager-update", this.appManagerUpdate);
     AppManager.destroy();
     Simulators.off("configure", this.configureSimulator);
-    window.removeEventListener("message", this.onMessage);
     this.updateConnectionTelemetry();
     this._telemetry.toolClosed("webide");
     this._telemetry.toolClosed("webideProjectEditor");
@@ -925,28 +921,36 @@ var UI = {
 
   
 
-  onMessage: function(event) {
+  
+
+
+
+
+
+
+
+
+
+
+  _onToolboxClosed: function(promise, iframe) {
     
     
-    try {
-      let json = JSON.parse(event.data);
-      switch (json.name) {
-        case "toolbox-close":
-          
-          
-          
-          
-          
-          
-          
-          
-          if (this.toolboxIframe && this.toolboxIframe.uid == json.uid) {
-            this.toolboxPromise = null;
-            this._closeToolboxUI();
-          }
-          break;
-      }
-    } catch(e) { console.error(e); }
+    
+    
+    
+    
+    if (!this.toolboxPromise || this.toolboxPromise === promise) {
+      this.toolboxPromise = null;
+      this.resetFocus();
+      Services.prefs.setIntPref("devtools.toolbox.footer.height", iframe.height);
+
+      let splitter = document.querySelector(".devtools-horizontal-splitter");
+      splitter.setAttribute("hidden", "true");
+      document.querySelector("#action-button-debug").removeAttribute("active");
+    }
+    
+    
+    iframe.remove();
   },
 
   destroyToolbox: function() {
@@ -954,11 +958,7 @@ var UI = {
     if (this.toolboxPromise) {
       let toolboxPromise = this.toolboxPromise;
       this.toolboxPromise = null;
-      return toolboxPromise.then(toolbox => {
-        return toolbox.destroy();
-      }).then(null, console.error)
-        .then(() => this._closeToolboxUI())
-        .then(null, console.error);
+      return toolboxPromise.then(toolbox => toolbox.destroy());
     }
     return promise.resolve();
   },
@@ -968,15 +968,6 @@ var UI = {
     if (this.toolboxPromise) {
       return this.toolboxPromise;
     }
-    this.toolboxPromise = AppManager.getTarget().then((target) => {
-      return this._showToolbox(target);
-    }, console.error);
-    return this.busyUntil(this.toolboxPromise, "opening toolbox");
-  },
-
-  _showToolbox: function(target) {
-    let splitter = document.querySelector(".devtools-horizontal-splitter");
-    splitter.removeAttribute("hidden");
 
     let iframe = document.createElement("iframe");
     iframe.id = "toolbox";
@@ -985,35 +976,32 @@ var UI = {
     
     iframe.uid = new Date().getTime();
 
+    let height = Services.prefs.getIntPref("devtools.toolbox.footer.height");
+    iframe.height = height;
+
+    let promise = this.toolboxPromise = AppManager.getTarget().then(target => {
+      return this._showToolbox(target, iframe);
+    }).then(toolbox => {
+      
+      
+      toolbox.once("destroyed", this._onToolboxClosed.bind(this, promise, iframe));
+      return toolbox;
+    }, console.error);
+
+    return this.busyUntil(this.toolboxPromise, "opening toolbox");
+  },
+
+  _showToolbox: function(target, iframe) {
+    let splitter = document.querySelector(".devtools-horizontal-splitter");
+    splitter.removeAttribute("hidden");
+
     document.querySelector("notificationbox").insertBefore(iframe, splitter.nextSibling);
     let host = Toolbox.HostType.CUSTOM;
     let options = { customIframe: iframe, zoom: false, uid: iframe.uid };
-    this.toolboxIframe = iframe;
-
-    let height = Services.prefs.getIntPref("devtools.toolbox.footer.height");
-    iframe.height = height;
 
     document.querySelector("#action-button-debug").setAttribute("active", "true");
 
     return gDevTools.showToolbox(target, null, host, options);
-  },
-
-  _closeToolboxUI: function() {
-    if (!this.toolboxIframe) {
-      return;
-    }
-
-    this.resetFocus();
-    Services.prefs.setIntPref("devtools.toolbox.footer.height", this.toolboxIframe.height);
-
-    
-    
-    this.toolboxIframe.remove();
-    this.toolboxIframe = null;
-
-    let splitter = document.querySelector(".devtools-horizontal-splitter");
-    splitter.setAttribute("hidden", "true");
-    document.querySelector("#action-button-debug").removeAttribute("active");
   },
 
   prePackageLog: function (msg) {
@@ -1106,7 +1094,7 @@ var Cmds = {
 
   toggleToolbox: function() {
     UI.onAction("debug");
-    if (UI.toolboxIframe) {
+    if (UI.toolboxPromise) {
       UI.destroyToolbox();
       return promise.resolve();
     } else {
