@@ -535,25 +535,21 @@ nsHttpConnectionMgr::UpdateRequestTokenBucket(EventTokenBucket *aBucket)
                      0, aBucket);
 }
 
-PLDHashOperator
-nsHttpConnectionMgr::RemoveDeadConnections(const nsACString &key,
-                nsAutoPtr<nsConnectionEntry> &ent,
-                void *aArg)
-{
-    if (ent->mIdleConns.Length()   == 0 &&
-        ent->mActiveConns.Length() == 0 &&
-        ent->mHalfOpens.Length()   == 0 &&
-        ent->mPendingQ.Length()    == 0) {
-        return PL_DHASH_REMOVE;
-    }
-    return PL_DHASH_NEXT;
-}
-
 nsresult
 nsHttpConnectionMgr::ClearConnectionHistory()
 {
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-    mCT.Enumerate(RemoveDeadConnections, nullptr);
+
+    for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
+        nsAutoPtr<nsConnectionEntry>& ent = iter.Data();
+        if (ent->mIdleConns.Length()   == 0 &&
+            ent->mActiveConns.Length() == 0 &&
+            ent->mHalfOpens.Length()   == 0 &&
+            ent->mPendingQ.Length()    == 0) {
+            iter.Remove();
+        }
+    }
+
     return NS_OK;
 }
 
@@ -2736,67 +2732,65 @@ nsHttpConnectionMgr::TimeoutTick()
     
     
     mTimeoutTickNext = 3600; 
-    mCT.Enumerate(TimeoutTickCB, this);
+
+    for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
+        nsAutoPtr<nsConnectionEntry>& ent = iter.Data();
+
+        LOG(("nsHttpConnectionMgr::TimeoutTickCB() this=%p host=%s "
+             "idle=%d active=%d half-len=%d pending=%d\n",
+             this, ent->mConnInfo->Origin(), ent->mIdleConns.Length(),
+             ent->mActiveConns.Length(), ent->mHalfOpens.Length(),
+             ent->mPendingQ.Length()));
+
+        
+        PRIntervalTime now = PR_IntervalNow();
+        for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
+            uint32_t connNextTimeout =
+                ent->mActiveConns[index]->ReadTimeoutTick(now);
+            mTimeoutTickNext = std::min(mTimeoutTickNext, connNextTimeout);
+        }
+
+        
+        if (ent->mHalfOpens.Length()) {
+            TimeStamp now = TimeStamp::Now();
+            double maxConnectTime_ms = gHttpHandler->ConnectTimeout();
+
+            for (uint32_t index = ent->mHalfOpens.Length(); index > 0; ) {
+                index--;
+
+                nsHalfOpenSocket *half = ent->mHalfOpens[index];
+                double delta = half->Duration(now);
+                
+                
+                if (delta > maxConnectTime_ms) {
+                    LOG(("Force timeout of half open to %s after %.2fms.\n",
+                         ent->mConnInfo->HashKey().get(), delta));
+                    if (half->SocketTransport()) {
+                        half->SocketTransport()->Close(NS_ERROR_ABORT);
+                    }
+                    if (half->BackupTransport()) {
+                        half->BackupTransport()->Close(NS_ERROR_ABORT);
+                    }
+                }
+
+                
+                
+                if (delta > maxConnectTime_ms + 5000) {
+                    LOG(("Abandon half open to %s after %.2fms.\n",
+                         ent->mConnInfo->HashKey().get(), delta));
+                    half->Abandon();
+                }
+            }
+        }
+        if (ent->mHalfOpens.Length()) {
+            mTimeoutTickNext = 1;
+        }
+    }
+
     if (mTimeoutTick) {
         mTimeoutTickNext = std::max(mTimeoutTickNext, 1U);
         mTimeoutTick->SetDelay(mTimeoutTickNext * 1000);
     }
-}
-
-PLDHashOperator
-nsHttpConnectionMgr::TimeoutTickCB(const nsACString &key,
-                                       nsAutoPtr<nsConnectionEntry> &ent,
-                                       void *closure)
-{
-    nsHttpConnectionMgr *self = (nsHttpConnectionMgr *) closure;
-
-    LOG(("nsHttpConnectionMgr::TimeoutTickCB() this=%p host=%s "
-         "idle=%d active=%d half-len=%d pending=%d\n",
-         self, ent->mConnInfo->Origin(), ent->mIdleConns.Length(),
-         ent->mActiveConns.Length(), ent->mHalfOpens.Length(),
-         ent->mPendingQ.Length()));
-
-    
-    PRIntervalTime now = PR_IntervalNow();
-    for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
-        uint32_t connNextTimeout =  ent->mActiveConns[index]->ReadTimeoutTick(now);
-        self->mTimeoutTickNext = std::min(self->mTimeoutTickNext, connNextTimeout);
-    }
-
-    
-    if (ent->mHalfOpens.Length()) {
-        TimeStamp now = TimeStamp::Now();
-        double maxConnectTime = gHttpHandler->ConnectTimeout();  
-
-        for (uint32_t index = ent->mHalfOpens.Length(); index > 0; ) {
-            index--;
-
-            nsHalfOpenSocket *half = ent->mHalfOpens[index];
-            double delta = half->Duration(now);
-            
-            
-            if (delta > maxConnectTime) {
-                LOG(("Force timeout of half open to %s after %.2fms.\n",
-                     ent->mConnInfo->HashKey().get(), delta));
-                if (half->SocketTransport())
-                    half->SocketTransport()->Close(NS_ERROR_ABORT);
-                if (half->BackupTransport())
-                    half->BackupTransport()->Close(NS_ERROR_ABORT);
-            }
-
-            
-            
-            if (delta > maxConnectTime + 5000) {
-                LOG(("Abandon half open to %s after %.2fms.\n",
-                     ent->mConnInfo->HashKey().get(), delta));
-                half->Abandon();
-            }
-        }
-    }
-    if (ent->mHalfOpens.Length()) {
-        self->mTimeoutTickNext = 1;
-    }
-    return PL_DHASH_NEXT;
 }
 
 
