@@ -2919,7 +2919,7 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
 
   
   if (drawBackgroundColor && !isCanvasFrame)
-    ctx->SetColor(gfxRGBA(bgColor));
+    ctx->SetColor(Color::FromABGR(bgColor));
 
   
   
@@ -3847,7 +3847,7 @@ nsCSSRendering::DrawTableBorderSegment(nsRenderingContext&     aContext,
   AntialiasMode oldMode = ctx->CurrentAntialiasMode();
   ctx->SetAntialiasMode(AntialiasMode::NONE);
 
-  ctx->SetColor(aBorderColor);
+  ctx->SetColor(Color::FromABGR(aBorderColor));
 
   switch (aBorderStyle) {
   case NS_STYLE_BORDER_STYLE_NONE:
@@ -3927,7 +3927,7 @@ nsCSSRendering::DrawTableBorderSegment(nsRenderingContext&     aContext,
                                           aBGColor->mBackgroundColor,
                                           aBorderColor);
       
-      ctx->SetColor(bevelColor);
+      ctx->SetColor(Color::FromABGR(bevelColor));
       nsRect rect(aBorder);
       nscoord half;
       if (horizontal) { 
@@ -3964,7 +3964,7 @@ nsCSSRendering::DrawTableBorderSegment(nsRenderingContext&     aContext,
       bevelColor = MakeBevelColor(ridgeGrooveSide, ridgeGroove,
                                   aBGColor->mBackgroundColor, aBorderColor);
       
-      ctx->SetColor(bevelColor);
+      ctx->SetColor(Color::FromABGR(bevelColor));
       if (horizontal) {
         rect.y = rect.y + half;
         rect.height = aBorder.height - half;

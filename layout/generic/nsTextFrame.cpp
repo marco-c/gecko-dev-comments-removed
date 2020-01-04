@@ -5691,7 +5691,7 @@ nsTextFrame::PaintOneShadow(uint32_t aOffset, uint32_t aLength,
 
   aCtx->Save();
   aCtx->NewPath();
-  aCtx->SetColor(gfxRGBA(shadowColor));
+  aCtx->SetColor(Color::FromABGR(shadowColor));
 
   
   
@@ -6337,7 +6337,7 @@ DrawTextRun(gfxTextRun* aTextRun,
                    aProvider, aAdvanceWidth, aContextPaint, aCallbacks);
     aCallbacks->NotifyAfterText();
   } else {
-    aCtx->SetColor(gfxRGBA(aTextColor));
+    aCtx->SetColor(Color::FromABGR(aTextColor));
     aTextRun->Draw(aCtx, aTextBaselinePt, drawMode, aOffset, aLength,
                    aProvider, aAdvanceWidth, aContextPaint);
   }
