@@ -15,6 +15,9 @@ const CM_TERN_SCRIPTS = [
 const autocompleteMap = new WeakMap();
 
 
+var autocompleteCounter = 0;
+
+
 
 
 function initializeAutoCompletion(ctx, options = {}) {
@@ -120,12 +123,17 @@ function initializeAutoCompletion(ctx, options = {}) {
     return true;
   }
 
+  
+  let panelId = "devtools_sourceEditorCompletePopup" + autocompleteCounter;
+  ++autocompleteCounter;
+
   let popup = new AutocompletePopup(win.parent.document, {
     position: "after_start",
     fixedWidth: true,
     theme: "auto",
     autoSelect: true,
-    onClick: insertSelectedPopupItem
+    onClick: insertSelectedPopupItem,
+    panelId: panelId
   });
 
   let cycle = (reverse) => {
