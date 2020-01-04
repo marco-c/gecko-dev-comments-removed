@@ -169,11 +169,11 @@ var interfaceNamesInGlobalScope =
 
     "Promise",
 
-    { name: "PushManager", b2g: false, nightlyAndroid: true, android: false },
+    { name: "PushManager", b2g: false },
 
-    { name: "PushSubscription", b2g: false, nightlyAndroid: true, android: false },
+    { name: "PushSubscription", b2g: false },
 
-    { name: "PushSubscriptionOptions", b2g: false, nightlyAndroid: true, android: false },
+    { name: "PushSubscriptionOptions", b2g: false },
 
     "Request",
 
