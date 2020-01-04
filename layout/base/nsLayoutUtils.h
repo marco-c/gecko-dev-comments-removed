@@ -2719,6 +2719,26 @@ public:
   static bool ShouldUseNoScriptSheet(nsIDocument* aDocument);
   static bool ShouldUseNoFramesSheet(nsIDocument* aDocument);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static void GetFrameTextContent(nsIFrame* aFrame, nsAString& aResult);
+
+  
+
+
+  static void AppendFrameTextContent(nsIFrame* aFrame, nsAString& aResult);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;

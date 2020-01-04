@@ -1318,6 +1318,8 @@ public:
 
 
 
+
+
   MOZ_WARN_UNUSED_RESULT
   static bool GetNodeTextContent(nsINode* aNode, bool aDeep,
                                  nsAString& aResult, const mozilla::fallible_t&);
