@@ -31,6 +31,10 @@
 #define ATTR_NONWRITABLE        0x20
 
 
+
+#define LAZY_FUNCTION_NAME_SLOT 0
+
+
 #define WEAKSET_MAP_SLOT 0
 
 #define ITERATOR_SLOT_TARGET 0
