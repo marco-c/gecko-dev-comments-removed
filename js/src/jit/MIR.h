@@ -1019,6 +1019,17 @@ class MInstruction
 {
     MResumePoint* resumePoint_;
 
+  protected:
+    
+    
+    
+    
+    
+    template <typename... Args>
+    inline void* operator new(size_t nbytes, Args&&... args) {
+        return TempObject::operator new(nbytes, mozilla::Forward<Args>(args)...);
+    }
+
   public:
     MInstruction()
       : resumePoint_(nullptr)
@@ -1447,6 +1458,9 @@ class MConstant : public MNullaryInstruction
     static MConstant* NewInt64(TempAllocator& alloc, int64_t i);
     static MConstant* NewAsmJS(TempAllocator& alloc, const Value& v, MIRType type);
     static MConstant* NewConstraintlessObject(TempAllocator& alloc, JSObject* v);
+    static MConstant* Copy(TempAllocator& alloc, MConstant* src) {
+        return new(alloc) MConstant(*src);
+    }
 
     
     
