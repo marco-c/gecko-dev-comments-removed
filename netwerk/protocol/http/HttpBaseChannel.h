@@ -305,10 +305,6 @@ public:
     
     void EnsureUploadStreamIsCloneableComplete(nsresult aStatus);
 
-    
-    
-    static nsresult GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI);
-
 protected:
   nsCOMArray<nsISecurityConsoleMessage> mSecurityConsoleMessages;
 
