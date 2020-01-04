@@ -128,6 +128,12 @@ Animation::SetTimeline(AnimationTimeline* aTimeline)
 void
 Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime)
 {
+  if (aNewStartTime == mStartTime) {
+    return;
+  }
+
+  AutoMutationBatchForAnimation mb(*this);
+
   Nullable<TimeDuration> timelineTime;
   if (mTimeline) {
     
@@ -157,6 +163,9 @@ Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime)
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
+  if (IsRelevant()) {
+    nsNodeUtils::AnimationChanged(this);
+  }
   PostUpdate();
 }
 
