@@ -40,8 +40,6 @@
 #include "nsIMemoryReporter.h"
 #include "nsISeekableStream.h"
 #include "Telemetry.h"
-#include "TelemetryCommon.h"
-#include "WebrtcTelemetry.h"
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
 #include "nsBaseHashtable.h"
@@ -103,6 +101,39 @@ HistogramGet(const char *name, const char *expiration, uint32_t histogramType,
 
 enum reflectStatus
 ReflectHistogramSnapshot(JSContext *cx, JS::Handle<JSObject*> obj, Histogram *h);
+
+template<class EntryType>
+class AutoHashtable : public nsTHashtable<EntryType>
+{
+public:
+  explicit AutoHashtable(uint32_t initLength =
+                         PLDHashTable::kDefaultInitialLength);
+  typedef bool (*ReflectEntryFunc)(EntryType *entry, JSContext *cx, JS::Handle<JSObject*> obj);
+  bool ReflectIntoJS(ReflectEntryFunc entryFunc, JSContext *cx, JS::Handle<JSObject*> obj);
+};
+
+template<class EntryType>
+AutoHashtable<EntryType>::AutoHashtable(uint32_t initLength)
+  : nsTHashtable<EntryType>(initLength)
+{
+}
+
+
+
+
+
+template<typename EntryType>
+bool
+AutoHashtable<EntryType>::ReflectIntoJS(ReflectEntryFunc entryFunc,
+                                        JSContext *cx, JS::Handle<JSObject*> obj)
+{
+  for (auto iter = this->Iter(); !iter.Done(); iter.Next()) {
+    if (!entryFunc(iter.Get(), cx, obj)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 
 
@@ -671,9 +702,6 @@ public:
 
   static KeyedHistogram* GetKeyedHistogramById(const nsACString &id);
 
-  static void RecordIceCandidates(const uint32_t iceCandidateBitmask,
-                                  const bool success,
-                                  const bool loop);
 private:
   TelemetryImpl();
   ~TelemetryImpl();
@@ -748,8 +776,6 @@ private:
   uint32_t mFailedLockCount;
   nsCOMArray<nsIFetchTelemetryDataCallback> mCallbacks;
   friend class nsFetchTelemetryData;
-
-  WebrtcTelemetry mWebrtcTelemetry;
 
   typedef nsClassHashtable<nsCStringHashKey, KeyedHistogram> KeyedHistogramMapType;
   KeyedHistogramMapType mKeyedHistograms;
@@ -2489,14 +2515,6 @@ TelemetryImpl::GetDebugSlowSQL(JSContext *cx, JS::MutableHandle<JS::Value> ret)
 }
 
 NS_IMETHODIMP
-TelemetryImpl::GetWebrtcStats(JSContext *cx, JS::MutableHandle<JS::Value> ret)
-{
-  if (mWebrtcTelemetry.GetWebrtcStats(cx, ret))
-    return NS_OK;
-  return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
 TelemetryImpl::GetMaximalNumberOfConcurrentThreads(uint32_t *ret)
 {
   *ret = nsThreadManager::get()->GetHighestNumberOfThreads();
@@ -2885,13 +2903,18 @@ CreateJSHangStack(JSContext* cx, const Telemetry::HangStack& stack)
   return ret;
 }
 
-static JSObject*
-CreateJSHangAnnotations(JSContext* cx, const HangAnnotationsVector& annotations)
+static void
+CreateJSHangAnnotations(JSContext* cx, const HangAnnotationsVector& annotations,
+                        JS::MutableHandleObject returnedObject)
 {
   JS::RootedObject annotationsArray(cx, JS_NewArrayObject(cx, 0));
   if (!annotationsArray) {
-    return nullptr;
+    returnedObject.set(nullptr);
+    return;
   }
+  
+  
+  nsTHashtable<nsStringHashKey> reportedAnnotations;
   size_t annotationIndex = 0;
   for (const HangAnnotationsPtr *i = annotations.begin(), *e = annotations.end();
        i != e; ++i) {
@@ -2900,6 +2923,18 @@ CreateJSHangAnnotations(JSContext* cx, const HangAnnotationsVector& annotations)
       continue;
     }
     const HangAnnotationsPtr& curAnnotations = *i;
+    
+    nsAutoString annotationsKey;
+    nsresult rv = ComputeAnnotationsKey(curAnnotations, annotationsKey);
+    if (NS_FAILED(rv)) {
+      continue;
+    }
+    
+    if (reportedAnnotations.GetEntry(annotationsKey)) {
+      continue;
+    }
+    
+    reportedAnnotations.PutEntry(annotationsKey);
     UniquePtr<HangAnnotations::Enumerator> annotationsEnum =
       curAnnotations->GetEnumerator();
     if (!annotationsEnum) {
@@ -2912,7 +2947,8 @@ CreateJSHangAnnotations(JSContext* cx, const HangAnnotationsVector& annotations)
       jsValue.setString(JS_NewUCStringCopyN(cx, value.get(), value.Length()));
       if (!JS_DefineUCProperty(cx, jsAnnotation, key.get(), key.Length(),
                                jsValue, JSPROP_ENUMERATE)) {
-        return nullptr;
+        returnedObject.set(nullptr);
+        return;
       }
     }
     if (!JS_SetElement(cx, annotationsArray, annotationIndex, jsAnnotation)) {
@@ -2920,7 +2956,9 @@ CreateJSHangAnnotations(JSContext* cx, const HangAnnotationsVector& annotations)
     }
     ++annotationIndex;
   }
-  return annotationsArray;
+  
+  
+  returnedObject.set(annotationsArray);
 }
 
 static JSObject*
@@ -2934,7 +2972,8 @@ CreateJSHangHistogram(JSContext* cx, const Telemetry::HangHistogram& hang)
   JS::RootedObject stack(cx, CreateJSHangStack(cx, hang.GetStack()));
   JS::RootedObject time(cx, CreateJSTimeHistogram(cx, hang));
   auto& hangAnnotations = hang.GetAnnotations();
-  JS::RootedObject annotations(cx, CreateJSHangAnnotations(cx, hangAnnotations));
+  JS::RootedObject annotations(cx);
+  CreateJSHangAnnotations(cx, hangAnnotations, &annotations);
 
   if (!stack ||
       !time ||
@@ -3525,16 +3564,6 @@ TelemetryImpl::RecordSlowStatement(const nsACString &sql,
   StoreSlowSQL(fullSQL, delay, Unsanitized);
 }
 
-void
-TelemetryImpl::RecordIceCandidates(const uint32_t iceCandidateBitmask,
-                                   const bool success, const bool loop)
-{
-  if (!sTelemetry)
-    return;
-
-  sTelemetry->mWebrtcTelemetry.RecordIceCandidateMask(iceCandidateBitmask, success, loop);
-}
-
 #if defined(MOZ_ENABLE_PROFILER_SPS)
 void
 TelemetryImpl::RecordChromeHang(uint32_t aDuration,
@@ -3637,7 +3666,6 @@ TelemetryImpl::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
   
   n += mAddonMap.ShallowSizeOfExcludingThis(aMallocSizeOf);
   n += mHistogramMap.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  n += mWebrtcTelemetry.SizeOfExcludingThis(aMallocSizeOf);
   { 
     MutexAutoLock lock(mHashMutex);
     n += mPrivateSQL.SizeOfExcludingThis(aMallocSizeOf);
@@ -3834,13 +3862,6 @@ RecordSlowSQLStatement(const nsACString &statement,
                        uint32_t delay)
 {
   TelemetryImpl::RecordSlowStatement(statement, dbName, delay);
-}
-
-void
-RecordWebrtcIceCandidates(const uint32_t iceCandidateBitmask,
-                          const bool success, const bool loop)
-{
-  TelemetryImpl::RecordIceCandidates(iceCandidateBitmask, success, loop);
 }
 
 void Init()
