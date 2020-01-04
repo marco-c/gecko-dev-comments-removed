@@ -77,12 +77,16 @@ class MachCommands(MachCommandBase):
         default=False,
         action='store_true',
         help='Stop running tests after the first error or failure.')
-    @CommandArgument('tests', nargs='+',
+    @CommandArgument('tests', nargs='*',
         metavar='TEST',
         help='Tests to run. Each test can be a single file or a directory.')
-    def python_test(self, tests, verbose=False, stop=False):
+    def python_test(self,
+                    tests=[],
+                    test_objects=None,
+                    subsuite=None,
+                    verbose=False,
+                    stop=False):
         self._activate_virtualenv()
-        import glob
 
         
         
@@ -90,35 +94,21 @@ class MachCommands(MachCommandBase):
         
         
         return_code = 0
-        files = []
-        
-        
-        
-        
-        
-        search_dirs = ['.', self.topsrcdir]
-        last_search_dir = search_dirs[-1]
-        for t in tests:
-            for d in search_dirs:
-                test = mozpath.join(d, t)
-                if test.endswith('.py') and os.path.isfile(test):
-                    files.append(test)
-                    break
-                elif os.path.isfile(test + '.py'):
-                    files.append(test + '.py')
-                    break
-                elif os.path.isdir(test):
-                    files += glob.glob(mozpath.join(test, 'test*.py'))
-                    files += glob.glob(mozpath.join(test, 'unit*.py'))
-                    break
-                elif d == last_search_dir:
-                    self.log(logging.WARN, 'python-test',
-                             {'test': t},
-                             'TEST-UNEXPECTED-FAIL | Invalid test: {test}')
-                    if stop:
-                        return 1
+        if test_objects is None:
+            
+            
+            from mozbuild.testing import TestResolver
+            resolver = self._spawn(TestResolver)
+            if tests:
+                
+                test_objects = resolver.resolve_tests(paths=tests,
+                                                      flavor='python')
+            else:
+                
+                test_objects = resolver.resolve_tests(flavor='python')
 
-        for f in files:
+        for test in test_objects:
+            f = test['path']
             file_displayed_test = []  
 
             def _line_handler(line):
