@@ -17,6 +17,7 @@
 #include "nsIRunnable.h"
 #include "VideoSegment.h"
 #include "StreamTracks.h"
+#include "MediaStreamVideoSink.h"
 #include "MainThreadUtils.h"
 #include "StreamTracks.h"
 #include "nsAutoPtr.h"
@@ -166,10 +167,8 @@ class MediaInputPort;
 class MediaStreamGraphImpl;
 class MediaStreamListener;
 class MediaStreamTrackListener;
-class MediaStreamVideoSink;
 class ProcessedMediaStream;
 class SourceMediaStream;
-class TrackUnionStream;
 
 enum MediaStreamGraphEvent : uint32_t;
 enum TrackEventCommand : uint32_t;
@@ -295,10 +294,8 @@ public:
   
   
   
-  virtual void AddVideoOutput(MediaStreamVideoSink* aSink,
-                              TrackID aID = TRACK_ANY);
-  virtual void RemoveVideoOutput(MediaStreamVideoSink* aSink,
-                                 TrackID aID = TRACK_ANY);
+  virtual void AddVideoOutput(MediaStreamVideoSink* aSink);
+  virtual void RemoveVideoOutput(MediaStreamVideoSink* aSink);
   
   
   
@@ -407,7 +404,6 @@ public:
   virtual SourceMediaStream* AsSourceStream() { return nullptr; }
   virtual ProcessedMediaStream* AsProcessedStream() { return nullptr; }
   virtual AudioNodeStream* AsAudioNodeStream() { return nullptr; }
-  virtual TrackUnionStream* AsTrackUnionStream() { return nullptr; }
 
   
   
@@ -428,9 +424,8 @@ public:
     return !mAudioOutputs.IsEmpty();
   }
   void RemoveAudioOutputImpl(void* aKey);
-  void AddVideoOutputImpl(already_AddRefed<MediaStreamVideoSink> aSink,
-                          TrackID aID);
-  void RemoveVideoOutputImpl(MediaStreamVideoSink* aSink, TrackID aID);
+  void AddVideoOutputImpl(already_AddRefed<MediaStreamVideoSink> aSink);
+  void RemoveVideoOutputImpl(MediaStreamVideoSink* aSink);
   void AddListenerImpl(already_AddRefed<MediaStreamListener> aListener);
   void RemoveListenerImpl(MediaStreamListener* aListener);
   void RemoveAllListenersImpl();
@@ -589,7 +584,7 @@ protected:
     float mVolume;
   };
   nsTArray<AudioOutput> mAudioOutputs;
-  nsTArray<TrackBound<MediaStreamVideoSink>> mVideoOutputs;
+  nsTArray<RefPtr<MediaStreamVideoSink>> mVideoOutputs;
   
   
   VideoFrame mLastPlayedVideoFrame;
