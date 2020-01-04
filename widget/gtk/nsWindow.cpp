@@ -2322,7 +2322,7 @@ nsWindow::OnExposeEvent(cairo_t *cr)
 }
 
 void
-nsWindow::UpdateAlpha(gfxPattern* aPattern, nsIntRect aBoundsRect)
+nsWindow::UpdateAlpha(SourceSurface* aSourceSurface, nsIntRect aBoundsRect)
 {
     
     
