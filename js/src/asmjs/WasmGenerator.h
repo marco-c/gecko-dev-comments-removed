@@ -207,7 +207,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     
     
-    UniqueModule finish(ImportVector&& imports, const ShareableBytes& bytecode);
+    SharedModule finish(ImportVector&& imports, const ShareableBytes& bytecode);
 };
 
 
