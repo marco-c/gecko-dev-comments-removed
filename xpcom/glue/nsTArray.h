@@ -104,7 +104,6 @@ struct TileClient;
 
 
 
-
 struct nsTArrayFallibleResult
 {
   
@@ -2241,11 +2240,12 @@ private:
     static_assert(MOZ_ALIGNOF(elem_type) <= 8,
                   "can't handle alignments greater than 8, "
                   "see nsTArray_base::UsesAutoArrayBuffer()");
-
-    *base_type::PtrToHdr() = reinterpret_cast<Header*>(&mAutoBuf);
-    base_type::Hdr()->mLength = 0;
-    base_type::Hdr()->mCapacity = N;
-    base_type::Hdr()->mIsAutoArray = 1;
+    
+    Header** phdr = base_type::PtrToHdr();
+    *phdr = reinterpret_cast<Header*>(&mAutoBuf);
+    (*phdr)->mLength = 0;
+    (*phdr)->mCapacity = N;
+    (*phdr)->mIsAutoArray = 1;
 
     MOZ_ASSERT(base_type::GetAutoArrayBuffer(MOZ_ALIGNOF(elem_type)) ==
                reinterpret_cast<Header*>(&mAutoBuf),
