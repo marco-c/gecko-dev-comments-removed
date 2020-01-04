@@ -172,8 +172,7 @@ public class TelemetryUploadService extends BackgroundService {
         try {
             clientId = profile.getClientId();
         } catch (final IOException e) {
-            
-            Log.w(LOGTAG, "Unable to get client ID to generate core ping: returning.");
+            Log.w(LOGTAG, "Unable to get client ID to generate core ping: returning.", e);
             return;
         }
 

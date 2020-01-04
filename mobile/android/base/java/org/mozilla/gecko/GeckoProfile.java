@@ -619,31 +619,22 @@ public final class GeckoProfile {
 
 
 
-    @WorkerThread
-    public String getClientId() throws IOException {
-        final JSONObject obj = getClientIdJSONObject();
-        try {
-            return obj.getString(CLIENT_ID_JSON_ATTR);
-        } catch (final JSONException e) {
-            
-            throw new IOException("Client ID does not exist in JSONObject");
-        }
-    }
-
     
     @WorkerThread
-    private JSONObject getClientIdJSONObject() throws IOException {
+    public String getClientId() throws IOException {
         try {
-            return readJSONObjectFromFile(CLIENT_ID_FILE_PATH);
-        } catch (final IOException e) {  }
+            return getValidClientIdFromDisk(CLIENT_ID_FILE_PATH);
+        } catch (final IOException e) {
+            
+            Log.d(LOGTAG, "Could not get client ID - attempting to migrate ID from FHR: " + e.getLocalizedMessage());
+        }
 
-        Log.d(LOGTAG, "Could not get client ID – attempting to migrate ID from FHR");
         String clientIdToWrite;
         try {
-            final JSONObject fhrClientIdObj = readJSONObjectFromFile(FHR_CLIENT_ID_FILE_PATH);
-            clientIdToWrite = fhrClientIdObj.getString(CLIENT_ID_JSON_ATTR);
-        } catch (final IOException|JSONException e) {
-            Log.d(LOGTAG, "Could not migrate client ID from FHR – creating a new one");
+            clientIdToWrite = getValidClientIdFromDisk(FHR_CLIENT_ID_FILE_PATH);
+        } catch (final IOException e) {
+            
+            Log.d(LOGTAG, "Could not migrate client ID from FHR – creating a new one: " + e.getLocalizedMessage());
             clientIdToWrite = UUID.randomUUID().toString();
         }
 
@@ -657,7 +648,21 @@ public final class GeckoProfile {
         
         
         persistClientId(clientIdToWrite);
-        return readJSONObjectFromFile(CLIENT_ID_FILE_PATH);
+        return getValidClientIdFromDisk(CLIENT_ID_FILE_PATH);
+    }
+
+    
+
+
+
+    @WorkerThread
+    private String getValidClientIdFromDisk(final String filePath) throws IOException {
+        final JSONObject obj = readJSONObjectFromFile(filePath);
+        final String clientId = obj.optString(CLIENT_ID_JSON_ATTR);
+        if (isClientIdValid(clientId)) {
+            return clientId;
+        }
+        throw new IOException("Received client ID is invalid: " + clientId);
     }
 
     @WorkerThread
@@ -676,6 +681,15 @@ public final class GeckoProfile {
         
         Log.d(LOGTAG, "Attempting to write new client ID");
         writeFile(CLIENT_ID_FILE_PATH, obj.toString()); 
+    }
+
+    
+    public static boolean isClientIdValid(final String clientId) {
+        
+        if (TextUtils.isEmpty(clientId)) {
+            return false;
+        }
+        return clientId.matches("(?i:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})");
     }
 
     
