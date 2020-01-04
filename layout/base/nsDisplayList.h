@@ -4022,10 +4022,14 @@ public:
 
 
 
+
+
+
   enum {
     OFFSET_BY_ORIGIN = 1 << 0,
-    INCLUDE_PRESERVE3D_ANCESTORS = 1 << 1,
-    INCLUDE_PERSPECTIVE = 1 << 2,
+    BASIS_AT_ORIGIN = 1 << 1,
+    INCLUDE_PRESERVE3D_ANCESTORS = 1 << 2,
+    INCLUDE_PERSPECTIVE = 1 << 3,
   };
   static Matrix4x4 GetResultingTransformMatrix(const nsIFrame* aFrame,
                                                const nsPoint& aOrigin,
