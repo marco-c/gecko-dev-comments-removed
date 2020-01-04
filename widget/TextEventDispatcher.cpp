@@ -399,7 +399,13 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
                        void* aData,
                        uint32_t aIndexOfKeypress)
 {
-  MOZ_ASSERT(aMessage == eKeyDown || aMessage == eKeyUp ||
+  
+  
+  
+  
+  
+  MOZ_ASSERT(WidgetKeyboardEvent::IsKeyDownOrKeyDownOnPlugin(aMessage) ||
+             WidgetKeyboardEvent::IsKeyUpOrKeyUpOnPlugin(aMessage) ||
              aMessage == eKeyPress, "Invalid aMessage value");
   nsresult rv = GetState();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -412,7 +418,10 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
   }
 
   
-  if (IsComposing()) {
+  
+  
+  
+  if (IsComposing() && !WidgetKeyboardEvent::IsKeyEventOnPlugin(aMessage)) {
     
     
     
@@ -443,7 +452,8 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
     
     keyEvent.SetCharCode(0);
   } else {
-    if (aMessage == eKeyDown || aMessage == eKeyUp) {
+    if (WidgetKeyboardEvent::IsKeyDownOrKeyDownOnPlugin(aMessage) ||
+        WidgetKeyboardEvent::IsKeyUpOrKeyUpOnPlugin(aMessage)) {
       MOZ_RELEASE_ASSERT(!aIndexOfKeypress,
         "aIndexOfKeypress must be 0 for either eKeyDown or eKeyUp");
     } else {
@@ -466,7 +476,7 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
       }
     }
   }
-  if (aMessage == eKeyUp) {
+  if (WidgetKeyboardEvent::IsKeyUpOrKeyUpOnPlugin(aMessage)) {
     
     keyEvent.mIsRepeat = false;
   }
@@ -489,7 +499,8 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
   
   
   keyEvent.alternativeCharCodes.Clear();
-  if ((aMessage == eKeyDown || aMessage == eKeyPress) &&
+  if ((WidgetKeyboardEvent::IsKeyDownOrKeyDownOnPlugin(aMessage) ||
+       aMessage == eKeyPress) &&
       (keyEvent.IsControl() || keyEvent.IsAlt() ||
        keyEvent.IsMeta() || keyEvent.IsOS())) {
     nsCOMPtr<TextEventDispatcherListener> listener =

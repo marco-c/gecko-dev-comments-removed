@@ -7161,8 +7161,8 @@ PresShell::HandleKeyboardEvent(nsINode* aTarget,
 
   
   
-  
   if (aEvent.mMessage == eKeyPress ||
+      aEvent.IsKeyEventOnPlugin() ||
       !BeforeAfterKeyboardEventEnabled()) {
     ForwardKeyToInputMethodAppOrDispatch(targetIsIframe, aTarget, aEvent,
                                          aStatus, aEventCB);
@@ -7229,7 +7229,8 @@ PresShell::ForwardKeyToInputMethodApp(nsINode* aTarget,
                                       WidgetKeyboardEvent& aEvent,
                                       nsEventStatus* aStatus)
 {
-  if (!XRE_IsParentProcess() || aEvent.mIsSynthesizedByTIP) {
+  if (!XRE_IsParentProcess() || aEvent.mIsSynthesizedByTIP ||
+      aEvent.IsKeyEventOnPlugin()) {
     return false;
   }
 
