@@ -246,66 +246,70 @@ function performOnCell(aIndex, aFn) {
 
 
 
-function setLinks(aLinks, aCallback = TestRunner.next) {
-  let links = aLinks;
+function setLinks(aLinks) {
+  return new Promise(resolve => {
+    let links = aLinks;
 
-  if (typeof links == "string") {
-    links = aLinks.split(/\s*,\s*/).map(function (id) {
-      return {url: "http://example" + (id != "-1" ? id : "") + ".com/",
-              title: "site#" + id};
-    });
-  }
+    if (typeof links == "string") {
+      links = aLinks.split(/\s*,\s*/).map(function (id) {
+        return {url: "http://example" + (id != "-1" ? id : "") + ".com/",
+                title: "site#" + id};
+      });
+    }
 
-  
-  
-  
-  
-  NewTabUtils.links.populateCache(function () {
-    PlacesTestUtils.clearHistory().then(() => {
-      fillHistory(links, function () {
-        NewTabUtils.links.populateCache(function () {
-          NewTabUtils.allPages.update();
-          aCallback();
-        }, true);
+    
+    
+    
+    
+    NewTabUtils.links.populateCache(function () {
+      PlacesTestUtils.clearHistory().then(() => {
+        fillHistory(links).then(() => {
+          NewTabUtils.links.populateCache(function () {
+            NewTabUtils.allPages.update();
+            resolve();
+          }, true);
+        });
       });
     });
   });
 }
 
-function fillHistory(aLinks, aCallback = TestRunner.next) {
-  let numLinks = aLinks.length;
-  if (!numLinks) {
-    if (aCallback)
-      executeSoon(aCallback);
-    return;
-  }
+function fillHistory(aLinks) {
+  return new Promise(resolve => {
+    let numLinks = aLinks.length;
+    if (!numLinks) {
+      executeSoon(resolve);
+      return;
+    }
 
-  let transitionLink = Ci.nsINavHistoryService.TRANSITION_LINK;
+    let transitionLink = Ci.nsINavHistoryService.TRANSITION_LINK;
 
-  
-  
-  let now = Date.now() * 1000;
+    
+    
+    let now = Date.now() * 1000;
 
-  for (let i = 0; i < aLinks.length; i++) {
-    let link = aLinks[i];
-    let place = {
-      uri: makeURI(link.url),
-      title: link.title,
-      
-      
-      
-      visits: [{visitDate: now - i, transitionType: transitionLink}]
-    };
+    for (let i = 0; i < aLinks.length; i++) {
+      let link = aLinks[i];
+      let place = {
+        uri: makeURI(link.url),
+        title: link.title,
+        
+        
+        
+        visits: [{visitDate: now - i, transitionType: transitionLink}]
+      };
 
-    PlacesUtils.asyncHistory.updatePlaces(place, {
-      handleError: () => ok(false, "couldn't add visit to history"),
-      handleResult: function () {},
-      handleCompletion: function () {
-        if (--numLinks == 0 && aCallback)
-          aCallback();
-      }
-    });
-  }
+      PlacesUtils.asyncHistory.updatePlaces(place, {
+        handleError: () => ok(false, "couldn't add visit to history"),
+        handleResult: function () {},
+        handleCompletion: function () {
+          if (--numLinks == 0) {
+            resolve();
+          }
+        }
+      });
+    }
+  });
 }
 
 
@@ -343,8 +347,10 @@ function setPinnedLinks(aLinks) {
 
 
 function restore() {
-  whenPagesUpdated();
-  NewTabUtils.restore();
+  return new Promise(resolve => {
+    whenPagesUpdated().then(resolve);
+    NewTabUtils.restore();
+  });
 }
 
 
@@ -451,8 +457,12 @@ function* checkGrid(aSitesPattern, aSites) {
 
 
 function blockCell(aIndex) {
-  whenPagesUpdated();
-  getCell(aIndex).site.block();
+  return new Promise(resolve => {
+    whenPagesUpdated().then(resolve);
+    performOnCell(aIndex, cell => {
+      return cell.site.block();
+    });
+  });
 }
 
 
@@ -782,7 +792,7 @@ function whenSearchInitDone() {
 
 
 function customizeNewTabPage(aTheme) {
-  let promise = ContentTask.spawn(gBrowser.selectedBrowser, aTheme, function*(aTheme) {
+  return ContentTask.spawn(gBrowser.selectedBrowser, aTheme, function*(aTheme) {
 
     let document = content.document;
     let panel = document.getElementById("newtab-customize-panel");
@@ -812,8 +822,6 @@ function customizeNewTabPage(aTheme) {
     customizeButton.click();
     yield closed;
   });
-
-  promise.then(TestRunner.next);
 }
 
 
