@@ -64,12 +64,7 @@ def run_firefox_ui_test(testtype=None, topsrcdir=None, **kwargs):
     kwargs['logger'] = commandline.setup_logging('Firefox UI - {} Tests'.format(testtype),
                                                  {"mach": sys.stdout})
 
-    
-    args = argparse.Namespace()
-    for k, v in kwargs.iteritems():
-        setattr(args, k, v)
-
-    failed = test_types[testtype]['cli_module'].cli(args=args)
+    failed = test_types[testtype]['cli_module'].cli(args=kwargs)
     if failed > 0:
         return 1
     else:
