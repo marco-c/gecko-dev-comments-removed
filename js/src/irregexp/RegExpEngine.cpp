@@ -287,13 +287,6 @@ GetCaseIndependentLetters(char16_t character,
         char16_t c = choices[i];
 
         
-        
-        
-        static const unsigned kMaxAsciiCharCode = 127;
-        if (!unicode && character > kMaxAsciiCharCode && c <= kMaxAsciiCharCode)
-            continue;
-
-        
         if (!unicode && ascii_subject && c > kMaxOneByteCharCode)
             continue;
 
@@ -332,10 +325,40 @@ GetCaseIndependentLetters(char16_t character,
                                          choices, ArrayLength(choices), letters);
     }
 
+    char16_t upper = unicode::ToUpperCase(character);
+    unicode::CodepointsWithSameUpperCase others(character);
+    char16_t other1 = others.other1();
+    char16_t other2 = others.other2();
+    char16_t other3 = others.other3();
+
+    
+    
+    
+    
+    
+    static const unsigned kMaxAsciiCharCode = 127;
+    if (upper <= kMaxAsciiCharCode) {
+        if (character > kMaxAsciiCharCode) {
+            
+            
+            return GetCaseIndependentLetters(character, ascii_subject, unicode,
+                                             &character, 1, letters);
+        }
+
+        if (other1 > kMaxAsciiCharCode)
+            other1 = character;
+        if (other2 > kMaxAsciiCharCode)
+            other2 = character;
+        if (other3 > kMaxAsciiCharCode)
+            other3 = character;
+    }
+
     const char16_t choices[] = {
         character,
-        unicode::ToLowerCase(character),
-        unicode::ToUpperCase(character)
+        upper,
+        other1,
+        other2,
+        other3
     };
     return GetCaseIndependentLetters(character, ascii_subject, unicode,
                                      choices, ArrayLength(choices), letters);
