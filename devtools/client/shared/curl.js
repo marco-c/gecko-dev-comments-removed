@@ -57,7 +57,7 @@ const Curl = {
 
 
 
-  generateCommand: function (aData) {
+  generateCommand: function (data) {
     let utils = CurlUtils;
 
     let command = ["curl"];
@@ -69,49 +69,49 @@ const Curl = {
                        utils.escapeStringWin : utils.escapeStringPosix;
 
     
-    command.push(escapeString(aData.url));
+    command.push(escapeString(data.url));
 
     let postDataText = null;
-    let multipartRequest = utils.isMultipartRequest(aData);
+    let multipartRequest = utils.isMultipartRequest(data);
 
     
-    let data = [];
-    if (utils.isUrlEncodedRequest(aData) || aData.method == "PUT") {
-      postDataText = aData.postDataText;
-      data.push("--data");
-      data.push(escapeString(utils.writePostDataTextParams(postDataText)));
+    let postData = [];
+    if (utils.isUrlEncodedRequest(data) || data.method == "PUT") {
+      postDataText = data.postDataText;
+      postData.push("--data");
+      postData.push(escapeString(utils.writePostDataTextParams(postDataText)));
       ignoredHeaders.add("Content-Length");
     } else if (multipartRequest) {
-      postDataText = aData.postDataText;
-      data.push("--data-binary");
-      let boundary = utils.getMultipartBoundary(aData);
+      postDataText = data.postDataText;
+      postData.push("--data-binary");
+      let boundary = utils.getMultipartBoundary(data);
       let text = utils.removeBinaryDataFromMultipartText(postDataText, boundary);
-      data.push(escapeString(text));
+      postData.push(escapeString(text));
       ignoredHeaders.add("Content-Length");
     }
 
     
     
     
-    if (!(aData.method == "GET" || aData.method == "POST")) {
+    if (!(data.method == "GET" || data.method == "POST")) {
       command.push("-X");
-      command.push(aData.method);
+      command.push(data.method);
     }
 
     
     
     
-    if (aData.method == "HEAD") {
+    if (data.method == "HEAD") {
       command.push("-I");
     }
 
     
-    if (aData.httpVersion && aData.httpVersion != DEFAULT_HTTP_VERSION) {
-      command.push("--" + aData.httpVersion.split("/")[1]);
+    if (data.httpVersion && data.httpVersion != DEFAULT_HTTP_VERSION) {
+      command.push("--" + data.httpVersion.split("/")[1]);
     }
 
     
-    let headers = aData.headers;
+    let headers = data.headers;
     if (multipartRequest) {
       let multipartHeaders = utils.getHeadersFromMultipartText(postDataText);
       headers = headers.concat(multipartHeaders);
@@ -130,7 +130,7 @@ const Curl = {
     }
 
     
-    command = command.concat(data);
+    command = command.concat(postData);
 
     return command.join(" ");
   }
@@ -150,8 +150,8 @@ const CurlUtils = {
 
 
 
-  isUrlEncodedRequest: function (aData) {
-    let postDataText = aData.postDataText;
+  isUrlEncodedRequest: function (data) {
+    let postDataText = data.postDataText;
     if (!postDataText) {
       return false;
     }
@@ -161,7 +161,7 @@ const CurlUtils = {
       return true;
     }
 
-    let contentType = this.findHeader(aData.headers, "content-type");
+    let contentType = this.findHeader(data.headers, "content-type");
 
     return (contentType &&
       contentType.toLowerCase().includes("application/x-www-form-urlencoded"));
@@ -175,8 +175,8 @@ const CurlUtils = {
 
 
 
-  isMultipartRequest: function (aData) {
-    let postDataText = aData.postDataText;
+  isMultipartRequest: function (data) {
+    let postDataText = data.postDataText;
     if (!postDataText) {
       return false;
     }
@@ -186,7 +186,7 @@ const CurlUtils = {
       return true;
     }
 
-    let contentType = this.findHeader(aData.headers, "content-type");
+    let contentType = this.findHeader(data.headers, "content-type");
 
     return (contentType &&
       contentType.toLowerCase().includes("multipart/form-data;"));
@@ -200,8 +200,8 @@ const CurlUtils = {
 
 
 
-  writePostDataTextParams: function (aPostDataText) {
-    let lines = aPostDataText.split("\r\n");
+  writePostDataTextParams: function (postDataText) {
+    let lines = postDataText.split("\r\n");
     return lines[lines.length - 1];
   },
 
@@ -215,13 +215,13 @@ const CurlUtils = {
 
 
 
-  findHeader: function (aHeaders, aName) {
-    if (!aHeaders) {
+  findHeader: function (headers, name) {
+    if (!headers) {
       return null;
     }
 
-    let name = aName.toLowerCase();
-    for (let header of aHeaders) {
+    name = name.toLowerCase();
+    for (let header of headers) {
       if (name == header.name.toLowerCase()) {
         return header.value;
       }
@@ -238,18 +238,18 @@ const CurlUtils = {
 
 
 
-  getMultipartBoundary: function (aData) {
+  getMultipartBoundary: function (data) {
     let boundaryRe = /\bboundary=(-{3,}\w+)/i;
 
     
-    let contentType = this.findHeader(aData.headers, "Content-Type");
+    let contentType = this.findHeader(data.headers, "Content-Type");
     if (boundaryRe.test(contentType)) {
       return contentType.match(boundaryRe)[1];
     }
     
     
     
-    let boundaryString = aData.postDataText.match(boundaryRe)[1];
+    let boundaryString = data.postDataText.match(boundaryRe)[1];
     if (boundaryString) {
       return boundaryString;
     }
@@ -267,10 +267,10 @@ const CurlUtils = {
 
 
 
-  removeBinaryDataFromMultipartText: function (aMultipartText, aBoundary) {
+  removeBinaryDataFromMultipartText: function (multipartText, boundary) {
     let result = "";
-    let boundary = "--" + aBoundary;
-    let parts = aMultipartText.split(boundary);
+    boundary = "--" + boundary;
+    let parts = multipartText.split(boundary);
     for (let part of parts) {
       
       let contentDispositionLine = part.trimLeft().split("\r\n")[0];
@@ -284,8 +284,7 @@ const CurlUtils = {
           
           let headers = part.split("\r\n\r\n")[0];
           result += boundary + "\r\n" + headers + "\r\n\r\n";
-        }
-        else {
+        } else {
           result += boundary + "\r\n" + part;
         }
       }
@@ -303,20 +302,20 @@ const CurlUtils = {
 
 
 
-  getHeadersFromMultipartText: function (aMultipartText) {
+  getHeadersFromMultipartText: function (multipartText) {
     let headers = [];
-    if (!aMultipartText || aMultipartText.startsWith("---")) {
+    if (!multipartText || multipartText.startsWith("---")) {
       return headers;
     }
 
     
-    let index = aMultipartText.indexOf("\r\n\r\n");
+    let index = multipartText.indexOf("\r\n\r\n");
     if (index == -1) {
       return headers;
     }
 
     
-    let headersText = aMultipartText.substring(0, index);
+    let headersText = multipartText.substring(0, index);
     let headerLines = headersText.split("\r\n");
     let lastHeaderName = null;
 
@@ -367,10 +366,10 @@ const CurlUtils = {
                         .replace(/\n/g, "\\n")
                         .replace(/\r/g, "\\r")
                         .replace(/[^\x20-\x7E]/g, escapeCharacter) + "'";
-    } else {
-      
-      return "'" + str + "'";
     }
+
+    
+    return "'" + str + "'";
   },
 
   
