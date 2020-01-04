@@ -25,6 +25,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
 XPCOMUtils.defineLazyServiceGetter(this, "gContentSecurityManager",
                                    "@mozilla.org/contentsecuritymanager;1",
                                    "nsIContentSecurityManager");
+XPCOMUtils.defineLazyServiceGetter(this, "gNetUtil",
+                                   "@mozilla.org/network/util;1",
+                                   "nsINetUtil");
 
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let logger = LoginHelper.createLogger("LoginManagerContent");
@@ -416,9 +419,7 @@ var LoginManagerContent = {
     
     let hasInsecureLoginForms = (thisWindow, parentIsInsecure) => {
       let doc = thisWindow.document;
-      let isInsecure =
-          parentIsInsecure ||
-          !this.checkIfURIisSecure(doc.documentURIObject);
+      let isInsecure = parentIsInsecure || !this.isDocumentSecure(doc);
       let hasLoginForm = !!this.stateForDocument(doc).loginForm;
       return (hasLoginForm && isInsecure) ||
              Array.some(thisWindow.frames,
@@ -1115,36 +1116,23 @@ var LoginManagerContent = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  checkIfURIisSecure : function(uri) {
-    let isSafe = false;
-    let netutil = Cc["@mozilla.org/network/util;1"].getService(Ci.nsINetUtil);
-    let ph = Ci.nsIProtocolHandler;
-
-    
-    if (gContentSecurityManager.isURIPotentiallyTrustworthy(uri) ||
-        netutil.URIChainHasFlags(uri, ph.URI_IS_LOCAL_RESOURCE) ||
-        netutil.URIChainHasFlags(uri, ph.URI_DOES_NOT_RETURN_DATA) ||
-        netutil.URIChainHasFlags(uri, ph.URI_INHERITS_SECURITY_CONTEXT) ||
-        netutil.URIChainHasFlags(uri, ph.URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT)) {
-
-      isSafe = true;
+  isDocumentSecure(document) {
+    let docPrincipal = document.nodePrincipal;
+    if (docPrincipal.isSystemPrincipal) {
+      return true;
     }
 
-    return isSafe;
+    
+    
+    
+    
+    
+    
+    let uri = docPrincipal.isCodebasePrincipal ? docPrincipal.URI
+                                               : document.documentURIObject;
+
+    
+    return gContentSecurityManager.isURIPotentiallyTrustworthy(uri);
   },
 };
 

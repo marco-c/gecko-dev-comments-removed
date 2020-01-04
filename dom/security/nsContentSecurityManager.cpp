@@ -518,8 +518,14 @@ nsContentSecurityManager::IsURIPotentiallyTrustworthy(nsIURI* aURI, bool* aIsTru
     return NS_OK;
   }
 
+  
+  
+  
+  
+  
   if (scheme.EqualsLiteral("https") ||
       scheme.EqualsLiteral("file") ||
+      scheme.EqualsLiteral("resource") ||
       scheme.EqualsLiteral("app") ||
       scheme.EqualsLiteral("wss")) {
     *aIsTrustWorthy = true;
