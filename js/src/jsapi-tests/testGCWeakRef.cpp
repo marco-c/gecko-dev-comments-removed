@@ -46,7 +46,7 @@ BEGIN_TEST(testGCWeakRef)
 
     
     CHECK(obj == heap.get().weak);
-    JS_GC(rt);
+    JS_GC(cx);
     CHECK(obj == heap.get().weak);
     v = JS::UndefinedValue();
     CHECK(JS_GetProperty(cx, obj, "x", &v));
@@ -56,7 +56,7 @@ BEGIN_TEST(testGCWeakRef)
     
     
     obj = nullptr;
-    JS_GC(rt);
+    JS_GC(cx);
     CHECK(heap.get().weak == nullptr);
 
     return true;

@@ -74,7 +74,7 @@ GCFinalizesNBarkers(JSContext* cx, int n)
     int preGCTrace = BarkWhenTracedClass::traceCount;
     int preGCFinalize = BarkWhenTracedClass::finalizeCount;
 
-    JS_GC(JS_GetRuntime(cx));
+    JS_GC(cx);
 
     return (BarkWhenTracedClass::finalizeCount == preGCFinalize + n &&
             BarkWhenTracedClass::traceCount > preGCTrace);
@@ -94,7 +94,7 @@ BEGIN_TEST(test_PersistentRooted)
     kennel = nullptr;
 
     
-    JS_GC(JS_GetRuntime(cx));
+    JS_GC(cx);
     CHECK(BarkWhenTracedClass::finalizeCount == 1);
 
     return true;
@@ -109,7 +109,7 @@ BEGIN_TEST(test_PersistentRootedNull)
     Kennel kennel(cx);
     CHECK(!kennel.obj);
 
-    JS_GC(JS_GetRuntime(cx));
+    JS_GC(cx);
     CHECK(BarkWhenTracedClass::finalizeCount == 0);
 
     return true;
@@ -139,7 +139,7 @@ BEGIN_TEST(test_PersistentRootedCopy)
 
     
     
-    JS_GC(JS_GetRuntime(cx));
+    JS_GC(cx);
     CHECK(BarkWhenTracedClass::finalizeCount == 1);
 
     return true;
@@ -184,7 +184,7 @@ BEGIN_TEST(test_PersistentRootedAssign)
 
     
     
-    JS_GC(JS_GetRuntime(cx));
+    JS_GC(cx);
     CHECK(BarkWhenTracedClass::finalizeCount == 2);
 
     return true;
@@ -216,7 +216,7 @@ BEGIN_TEST(test_GlobalPersistentRooted)
     CHECK(!gGlobalRoot.initialized());
 
     
-    JS_GC(JS_GetRuntime(cx));
+    JS_GC(cx);
     CHECK(BarkWhenTracedClass::finalizeCount == 1);
 
     return true;

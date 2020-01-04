@@ -2583,7 +2583,7 @@ WorkerThreadPrimaryRunnable::Run()
 
     
     
-    JS_GC(JS_GetRuntime(cx));
+    JS_GC(cx);
 
     
     

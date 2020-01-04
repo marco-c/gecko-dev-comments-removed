@@ -32,7 +32,7 @@ BEGIN_TEST(testGCOutOfMemory)
     CHECK(match);
     JS_ClearPendingException(cx);
 
-    JS_GC(rt);
+    JS_GC(cx);
 
     
     

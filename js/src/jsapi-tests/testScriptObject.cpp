@@ -22,7 +22,7 @@ struct ScriptObjectFixture : public JSAPITest {
     {
         CHECK(script);
 
-        JS_GC(rt);
+        JS_GC(cx);
 
         
         JS::RootedValue result(cx);

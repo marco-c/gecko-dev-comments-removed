@@ -17,10 +17,10 @@ BEGIN_TEST(testGCHeapPostBarriers)
 #endif 
 
     
-    JS_GC(cx->runtime());
+    JS_GC(cx);
     JS::RootedObject obj(cx, NurseryObject());
     CHECK(js::gc::IsInsideNursery(obj.get()));
-    JS_GC(cx->runtime());
+    JS_GC(cx);
     CHECK(!js::gc::IsInsideNursery(obj.get()));
     JS::RootedObject tenuredObject(cx, obj);
 

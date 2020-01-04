@@ -14,7 +14,7 @@ BEGIN_TEST(testNullRoot)
     script.init(cx, nullptr);
 
     
-    JS_GC(cx->runtime());
+    JS_GC(cx);
 
     return true;
 }

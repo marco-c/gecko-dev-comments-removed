@@ -13,14 +13,14 @@ BEGIN_TEST(testIsInsideNursery)
     CHECK(!rt->gc.nursery.isInside(rt));
     CHECK(!rt->gc.nursery.isInside((void*)nullptr));
 
-    JS_GC(rt);
+    JS_GC(cx);
 
     JS::RootedObject object(cx, JS_NewPlainObject(cx));
 
     
     CHECK(js::gc::IsInsideNursery(object));
 
-    JS_GC(rt);
+    JS_GC(cx);
 
     
     CHECK(!js::gc::IsInsideNursery(object));

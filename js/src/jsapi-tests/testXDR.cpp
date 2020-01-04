@@ -70,7 +70,7 @@ BEGIN_TEST(testXDR_bug506491)
     CHECK(JS_ExecuteScript(cx, script, &v2));
 
     
-    JS_GC(rt);
+    JS_GC(cx);
 
     
     EVAL("f() === 'ok';\n", &v2);

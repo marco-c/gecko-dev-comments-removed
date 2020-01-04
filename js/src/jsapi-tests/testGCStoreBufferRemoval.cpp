@@ -22,10 +22,10 @@ volatile int AutoIgnoreRootingHazards::depth = 0;
 BEGIN_TEST(testGCStoreBufferRemoval)
 {
     
-    JS_GC(cx->runtime());
+    JS_GC(cx);
     JS::RootedObject obj(cx, NurseryObject());
     CHECK(js::gc::IsInsideNursery(obj.get()));
-    JS_GC(cx->runtime());
+    JS_GC(cx);
     CHECK(!js::gc::IsInsideNursery(obj.get()));
     JS::RootedObject tenuredObject(cx, obj);
 
@@ -42,21 +42,21 @@ BEGIN_TEST(testGCStoreBufferRemoval)
         *relocPtr = NurseryObject();
         relocPtr->~HeapPtr<JSObject*>();
         punnedPtr = badObject;
-        JS_GC(cx->runtime());
+        JS_GC(cx);
 
         new (relocPtr) HeapPtr<JSObject*>;
         *relocPtr = NurseryObject();
         *relocPtr = tenuredObject;
         relocPtr->~HeapPtr<JSObject*>();
         punnedPtr = badObject;
-        JS_GC(cx->runtime());
+        JS_GC(cx);
 
         new (relocPtr) HeapPtr<JSObject*>;
         *relocPtr = NurseryObject();
         *relocPtr = nullptr;
         relocPtr->~HeapPtr<JSObject*>();
         punnedPtr = badObject;
-        JS_GC(cx->runtime());
+        JS_GC(cx);
     }
 
     
@@ -67,21 +67,21 @@ BEGIN_TEST(testGCStoreBufferRemoval)
         *relocValue = ObjectValue(*NurseryObject());
         relocValue->~HeapPtr<Value>();
         punnedValue = ObjectValueCrashOnTouch();
-        JS_GC(cx->runtime());
+        JS_GC(cx);
 
         new (relocValue) HeapPtr<Value>;
         *relocValue = ObjectValue(*NurseryObject());
         *relocValue = ObjectValue(*tenuredObject);
         relocValue->~HeapPtr<Value>();
         punnedValue = ObjectValueCrashOnTouch();
-        JS_GC(cx->runtime());
+        JS_GC(cx);
 
         new (relocValue) HeapPtr<Value>;
         *relocValue = ObjectValue(*NurseryObject());
         *relocValue = NullValue();
         relocValue->~HeapPtr<Value>();
         punnedValue = ObjectValueCrashOnTouch();
-        JS_GC(cx->runtime());
+        JS_GC(cx);
     }
 
     
@@ -94,21 +94,21 @@ BEGIN_TEST(testGCStoreBufferRemoval)
         *heapPtr = NurseryObject();
         heapPtr->~Heap<JSObject*>();
         punnedPtr = badObject;
-        JS_GC(cx->runtime());
+        JS_GC(cx);
 
         new (heapPtr) Heap<JSObject*>;
         *heapPtr = NurseryObject();
         *heapPtr = tenuredObject;
         heapPtr->~Heap<JSObject*>();
         punnedPtr = badObject;
-        JS_GC(cx->runtime());
+        JS_GC(cx);
 
         new (heapPtr) Heap<JSObject*>;
         *heapPtr = NurseryObject();
         *heapPtr = nullptr;
         heapPtr->~Heap<JSObject*>();
         punnedPtr = badObject;
-        JS_GC(cx->runtime());
+        JS_GC(cx);
     }
 
     return true;

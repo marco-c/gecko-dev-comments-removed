@@ -48,7 +48,7 @@ BEGIN_TEST(testExternalStrings)
     
     JS_NewUCStringCopyN(cx, arr, arrlen);
 
-    JS_GC(rt);
+    JS_GC(cx);
 
     
     const unsigned epsilon = 10;

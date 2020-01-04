@@ -16,8 +16,8 @@ MinimizeHeap(JSRuntime* rt)
 {
     
     
-    JS_GC(rt);
-    JS_GC(rt);
+    JS_GC(JS_GetContext(rt));
+    JS_GC(JS_GetContext(rt));
     js::gc::FinishGC(rt);
 }
 
