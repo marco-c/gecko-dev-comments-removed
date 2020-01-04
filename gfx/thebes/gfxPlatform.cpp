@@ -888,6 +888,7 @@ gfxPlatform::InitLayersIPC()
 #ifdef MOZ_WIDGET_GONK
         SharedBufferManagerChild::StartUp();
 #endif
+        mozilla::layers::ImageBridgeChild::StartUp();
         gfx::VRManagerChild::StartUpSameProcess();
     }
 }
@@ -901,13 +902,16 @@ gfxPlatform::ShutdownLayersIPC()
     sLayersIPCIsUp = false;
 
     if (XRE_IsContentProcess()) {
+
         gfx::VRManagerChild::ShutDown();
         
         if (gfxPrefs::ChildProcessShutdown()) {
           layers::CompositorBridgeChild::ShutDown();
           layers::ImageBridgeChild::ShutDown();
         }
+
     } else if (XRE_IsParentProcess()) {
+
         gfx::VRManagerChild::ShutDown();
         layers::CompositorBridgeChild::ShutDown();
         layers::ImageBridgeChild::ShutDown();
@@ -990,6 +994,21 @@ struct DependentSourceSurfaceUserData
 void SourceSurfaceDestroyed(void *aData)
 {
   delete static_cast<DependentSourceSurfaceUserData*>(aData);
+}
+
+
+
+
+
+static void
+UpdateHWDecBasedOnPref(const char* aPref, void* aClosure)
+{
+  FeatureState& hwVideoDecFeature = gfxConfig::GetFeature(Feature::HW_VIDEO_DECODING);
+
+  if (!Preferences::GetBool("media.hardware-video-decoding.failed", false))
+  {
+    hwVideoDecFeature.UserDisable("Hardware video decoding disabled by user preference.", NS_LITERAL_CSTRING("FEATURE_FAILURE_HW_VIDEO_DEC_DISABLED_BY_PREF"));
+  }
 }
 
 void
@@ -2070,8 +2089,6 @@ gfxPlatform::OptimalFormatForContent(gfxContentType aContent)
 
 
 
-static mozilla::Atomic<bool> sLayersSupportsHardwareVideoDecoding(false);
-static bool sLayersHardwareVideoDecodingFailed = false;
 static bool sBufferRotationCheckPref = true;
 static bool sPrefBrowserTabsRemoteAutostart = false;
 
@@ -2097,22 +2114,37 @@ gfxPlatform::InitAcceleration()
 
   nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
   nsCString discardFailureId;
-  int32_t status;
 
-  if (Preferences::GetBool("media.hardware-video-decoding.enabled", false) &&
+  FeatureState& hwVideoDecFeature = gfxConfig::GetFeature(Feature::HW_VIDEO_DECODING);
+
+  
+  if (Preferences::GetBool("media.hardware-video-decoding.enabled", false)
 #ifdef XP_WIN
-    Preferences::GetBool("media.windows-media-foundation.use-dxva", true) &&
+    && Preferences::GetBool("media.windows-media-foundation.use-dxva", true)
 #endif
-      NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING,
-                                               discardFailureId, &status))) {
-      if (status == nsIGfxInfo::FEATURE_STATUS_OK || gfxPrefs::HardwareVideoDecodingForceEnabled()) {
-         sLayersSupportsHardwareVideoDecoding = true;
-    }
+  ) {
+    hwVideoDecFeature.EnableByDefault();
+  }
+  
+  else {
+    hwVideoDecFeature.DisableByDefault(FeatureStatus::Disabled, "HW video decode pref not set.", NS_LITERAL_CSTRING("FEATURE_FAILURE_HW_VIDEO_DEC_DISABLED"));
   }
 
-  Preferences::AddBoolVarCache(&sLayersHardwareVideoDecodingFailed,
-                               "media.hardware-video-decoding.failed",
-                               false);
+  
+  if (gfxPrefs::HardwareVideoDecodingForceEnabled()) {
+    hwVideoDecFeature.UserForceEnable("User force-enabled video decoding.");
+  }
+
+  gPlatform->InitHWVideoDecodingConfig(hwVideoDecFeature);
+
+  
+  nsCString message;
+  nsCString failureId;
+  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING, &message, failureId)) {
+    hwVideoDecFeature.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
+  }
+
+  Preferences::RegisterCallback(UpdateHWDecBasedOnPref, "media.hardware-video-decoding.failed", NULL, Preferences::ExactMatch);
 
   if (XRE_IsParentProcess()) {
     if (gfxPrefs::GPUProcessDevEnabled()) {
@@ -2169,15 +2201,6 @@ gfxPlatform::InitCompositorAccelerationPrefs()
     feature.ForceDisable(FeatureStatus::Blocked, "Acceleration blocked by safe-mode",
                          NS_LITERAL_CSTRING("FEATURE_FAILURE_COMP_SAFEMODE"));
   }
-}
-
-bool
-gfxPlatform::CanUseHardwareVideoDecoding()
-{
-  
-  
-  MOZ_ASSERT(sLayersAccelerationPrefsInitialized);
-  return sLayersSupportsHardwareVideoDecoding && !sLayersHardwareVideoDecodingFailed;
 }
 
 bool
