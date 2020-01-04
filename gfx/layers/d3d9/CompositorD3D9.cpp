@@ -17,13 +17,14 @@
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "gfxPrefs.h"
 #include "gfxCrashReporterUtils.h"
+#include "mozilla/layers/CompositorParent.h"
 
 namespace mozilla {
 namespace layers {
 
 using namespace mozilla::gfx;
 
-CompositorD3D9::CompositorD3D9(PCompositorParent* aParent, nsIWidget *aWidget)
+CompositorD3D9::CompositorD3D9(CompositorParent* aParent, nsIWidget *aWidget)
   : Compositor(aParent)
   , mWidget(aWidget)
   , mDeviceResetCount(0)
@@ -609,7 +610,7 @@ CompositorD3D9::EnsureSwapChain()
       if (state == DeviceMustRecreate) {
         mDeviceManager = nullptr;
       }
-      mParent->SendInvalidateAll();
+      mParent->InvalidateRemoteLayers();
       return false;
     }
   }
@@ -625,7 +626,7 @@ CompositorD3D9::EnsureSwapChain()
     mDeviceManager = nullptr;
     mSwapChain = nullptr;
   }
-  mParent->SendInvalidateAll();
+  mParent->InvalidateRemoteLayers();
   return false;
 }
 
@@ -633,7 +634,7 @@ void
 CompositorD3D9::CheckResetCount()
 {
   if (mDeviceResetCount != mDeviceManager->GetDeviceResetCount()) {
-    mParent->SendInvalidateAll();
+    mParent->InvalidateRemoteLayers();
   }
   mDeviceResetCount = mDeviceManager->GetDeviceResetCount();
 }
@@ -658,7 +659,7 @@ CompositorD3D9::Ready()
   mDeviceManager = gfxWindowsPlatform::GetPlatform()->GetD3D9DeviceManager();
   if (!mDeviceManager) {
     FailedToResetDevice();
-    mParent->SendInvalidateAll();
+    mParent->InvalidateRemoteLayers();
     return false;
   }
   if (EnsureSwapChain()) {

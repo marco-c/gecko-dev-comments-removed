@@ -321,6 +321,15 @@ public:
   
 
 
+
+
+
+
+  void InvalidateRemoteLayers();
+
+  
+
+
   static CompositorParent* GetCompositor(uint64_t id);
 
   
