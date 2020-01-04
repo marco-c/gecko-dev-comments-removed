@@ -66,7 +66,7 @@
 #endif
 #include "GeckoProfiler.h"
 #include "mozilla/ipc/ProtocolTypes.h"
-#include "mozilla/Unused.h"
+#include "mozilla/unused.h"
 #include "mozilla/Hal.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/StaticPtr.h"
@@ -478,14 +478,6 @@ CompositorVsyncScheduler::Composite(TimeStamp aVsyncTimestamp)
     
     
     
-    return;
-  }
-
-  MOZ_ASSERT(mCompositorBridgeParent);
-  if (!mAsapScheduling && mCompositorBridgeParent->IsPendingComposite()) {
-    
-    
-    mCompositorBridgeParent->FinishPendingComposite();
     return;
   }
 
@@ -1168,6 +1160,7 @@ CompositorBridgeParent::SetShadowProperties(Layer* aLayer)
         layerComposite->SetShadowVisibleRegion(layer->GetVisibleRegion());
         layerComposite->SetShadowClipRect(layer->GetClipRect());
         layerComposite->SetShadowOpacity(layer->GetOpacity());
+        layerComposite->SetShadowOpacitySetByAnimation(false);
       }
     );
 }
@@ -1962,26 +1955,6 @@ CompositorBridgeParent::DeallocPCompositorWidgetParent(PCompositorWidgetParent* 
 #else
   return false;
 #endif
-}
-
-bool
-CompositorBridgeParent::IsPendingComposite()
-{
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  if (!mCompositor) {
-    return false;
-  }
-  return mCompositor->IsPendingComposite();
-}
-
-void
-CompositorBridgeParent::FinishPendingComposite()
-{
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  if (!mCompositor) {
-    return;
-  }
-  return mCompositor->FinishPendingComposite();
 }
 
 
