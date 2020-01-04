@@ -449,6 +449,12 @@ Decoder::PostFrameStop(Opacity aFrameOpacity
     mInvalidRect.UnionRect(mInvalidRect,
                            gfx::IntRect(gfx::IntPoint(0, 0), GetSize()));
   }
+
+  
+  if (mFrameCount == 1 && HasAnimation()) {
+    MOZ_ASSERT(HasProgress());
+    DecodePool::Singleton()->NotifyProgress(this);
+  }
 }
 
 void
