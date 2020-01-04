@@ -39,7 +39,8 @@ namespace layers {
 
 
 class ImageBridgeParent final : public PImageBridgeParent,
-                                public CompositableParentManager
+                                public CompositableParentManager,
+                                public ShmemAllocator
 {
 public:
   typedef InfallibleTArray<CompositableOperation> EditArray;
@@ -49,6 +50,8 @@ public:
 
   ImageBridgeParent(MessageLoop* aLoop, Transport* aTransport, ProcessId aChildProcessId);
   ~ImageBridgeParent();
+
+  virtual ShmemAllocator* AsShmemAllocator() override { return this; }
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -70,8 +73,6 @@ public:
   virtual bool RecvUpdate(EditArray&& aEdits, OpDestroyArray&& aToDestroy,
                           EditReplyArray* aReply) override;
   virtual bool RecvUpdateNoSwap(EditArray&& aEdits, OpDestroyArray&& aToDestroy) override;
-
-  virtual bool IsAsync() const override { return true; }
 
   PCompositableParent* AllocPCompositableParent(const TextureInfo& aInfo,
                                                 PImageContainerParent* aImageContainer,
@@ -96,8 +97,7 @@ public:
   
   virtual bool RecvStop() override;
 
-  virtual MessageLoop* GetMessageLoop() const override;
-
+  MessageLoop* GetMessageLoop() const { return mMessageLoop; }
 
   
 
@@ -139,6 +139,10 @@ public:
   CloneToplevel(const InfallibleTArray<ProtocolFdMapping>& aFds,
                 base::ProcessHandle aPeerProcess,
                 mozilla::ipc::ProtocolCloneContext* aCtx) override;
+
+  virtual bool UsesImageBridge() const override { return true; }
+
+  virtual bool IPCOpen() const override { return !mStopped; }
 
 protected:
   void OnChannelConnected(int32_t pid) override;
