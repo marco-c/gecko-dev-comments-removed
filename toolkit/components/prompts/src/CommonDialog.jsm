@@ -10,9 +10,6 @@ const Cc = Components.classes;
 const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "EnableDelayHelper",
-                                  "resource://gre/modules/SharedPromptUtils.jsm");
 
 
 this.CommonDialog = function CommonDialog(args, ui) {
@@ -164,11 +161,13 @@ CommonDialog.prototype = {
         this.setDefaultFocus(true);
 
         if (this.args.enableDelay) {
-            this.delayHelper = new EnableDelayHelper({
-                disableDialog: () => this.setButtonsEnabledState(false),
-                enableDialog: () => this.setButtonsEnabledState(true),
-                focusTarget: this.ui.focusTarget
-            });
+            this.setButtonsEnabledState(false);
+            
+            let delayTime = Services.prefs.getIntPref("security.dialog_enable_delay");
+            this.startOnFocusDelay(delayTime);
+            let self = this;
+            this.ui.focusTarget.addEventListener("blur",  function(e) { self.onBlur(e);  }, false);
+            this.ui.focusTarget.addEventListener("focus", function(e) { self.onFocus(e); }, false);
         }
 
         
@@ -229,6 +228,44 @@ CommonDialog.prototype = {
         
         this.ui.button2.disabled = !enabled;
         this.ui.button3.disabled = !enabled;
+    },
+
+    onBlur : function (aEvent) {
+        if (aEvent.target != this.ui.focusTarget)
+            return;
+        this.setButtonsEnabledState(false);
+
+        
+        
+        if (this.focusTimer) {
+            this.focusTimer.cancel();
+            this.focusTimer = null;
+        }
+    },
+
+    onFocus : function (aEvent) {
+        if (aEvent.target != this.ui.focusTarget)
+            return;
+        this.startOnFocusDelay();
+    },
+
+    startOnFocusDelay : function(delayTime) {
+        
+        if (this.focusTimer)
+            return;
+        
+        
+        if (!delayTime)
+            delayTime = 250;
+        let self = this;
+        this.focusTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+        this.focusTimer.initWithCallback(function() { self.onFocusTimeout(); },
+                                         delayTime, Ci.nsITimer.TYPE_ONE_SHOT);
+    },
+
+    onFocusTimeout : function() {
+        this.focusTimer = null;
+        this.setButtonsEnabledState(true);
     },
 
     setDefaultFocus : function(isInitialLoad) {
