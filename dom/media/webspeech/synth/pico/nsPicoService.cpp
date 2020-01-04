@@ -501,39 +501,7 @@ nsPicoService::GetServiceType(SpeechServiceType* aServiceType)
   return NS_OK;
 }
 
-struct VoiceTraverserData
-{
-  nsPicoService* mService;
-  nsSynthVoiceRegistry* mRegistry;
-};
 
-
-
-static PLDHashOperator
-PicoAddVoiceTraverser(const nsAString& aUri,
-                      nsRefPtr<PicoVoice>& aVoice,
-                      void* aUserArg)
-{
-  
-  if (aVoice->mTaFile.IsEmpty() || aVoice->mSgFile.IsEmpty()) {
-    return PL_DHASH_REMOVE;
-  }
-
-  VoiceTraverserData* data = static_cast<VoiceTraverserData*>(aUserArg);
-
-  nsAutoString name;
-  name.AssignLiteral("Pico ");
-  name.Append(aVoice->mLanguage);
-
-  
-  
-  DebugOnly<nsresult> rv =
-    data->mRegistry->AddVoice(
-      data->mService, aUri, name, aVoice->mLanguage, true, false);
-  NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to add voice");
-
-  return PL_DHASH_NEXT;
-}
 
 void
 nsPicoService::Init()
@@ -617,8 +585,28 @@ nsPicoService::Init()
 void
 nsPicoService::RegisterVoices()
 {
-  VoiceTraverserData data = { this, nsSynthVoiceRegistry::GetInstance() };
-  mVoices.Enumerate(PicoAddVoiceTraverser, &data);
+  nsSynthVoiceRegistry* registry = nsSynthVoiceRegistry::GetInstance();
+
+  for (auto iter = mVoices.Iter(); !iter.Done(); iter.Next()) {
+    const nsAString& uri = iter.Key();
+    nsRefPtr<PicoVoice>& voice = iter.Data();
+
+    
+    if (voice->mTaFile.IsEmpty() || voice->mSgFile.IsEmpty()) {
+      iter.Remove();
+      continue;
+    }
+
+    nsAutoString name;
+    name.AssignLiteral("Pico ");
+    name.Append(voice->mLanguage);
+
+    
+    
+    DebugOnly<nsresult> rv =
+      registry->AddVoice(this, uri, name, voice->mLanguage, true, false);
+    NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to add voice");
+  }
 
   mInitialized = true;
 }
