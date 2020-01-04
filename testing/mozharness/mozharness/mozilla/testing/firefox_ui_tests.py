@@ -23,8 +23,8 @@ from mozharness.mozilla.testing.testbase import (
 )
 from mozharness.mozilla.vcstools import VCSToolsScript
 
-
-firefox_ui_tests_harness_config_options = [
+deprecated_options = [
+    
     [["--e10s"], {
         'dest': 'e10s',
         'action': 'store_true',
@@ -54,7 +54,7 @@ firefox_ui_tests_config_options = [
         'help': 'absolute path to directory containing breakpad '
                 'symbols, or the url of a zip file containing symbols.',
     }],
-] + firefox_ui_tests_harness_config_options \
+] + deprecated_options \
     + copy.deepcopy(testing_config_options)
 
 
@@ -228,8 +228,7 @@ class FirefoxUITests(TestingMixin, VCSToolsScript):
 
         Sub classes should override this method for their own specific arguments.
         """
-        extra_harness_config_options = extra_harness_config_options or []
-        config_options = firefox_ui_tests_harness_config_options + extra_harness_config_options
+        config_options = extra_harness_config_options or []
 
         args = []
         for option in config_options:
