@@ -624,10 +624,21 @@ private:
     eRestyleResult_Stop = 1,
 
     
+    
+    eRestyleResult_StopWithStyleChange,
+
+    
     eRestyleResult_Continue,
 
     
     eRestyleResult_ContinueAndForceDescendants
+  };
+
+  struct SwapInstruction
+  {
+    nsRefPtr<nsStyleContext> mOldContext;
+    nsRefPtr<nsStyleContext> mNewContext;
+    uint32_t mStructsToSwap;
   };
 
   
@@ -635,7 +646,8 @@ private:
 
   RestyleResult RestyleSelf(nsIFrame* aSelf,
                             nsRestyleHint aRestyleHint,
-                            uint32_t* aSwappedStructs);
+                            uint32_t* aSwappedStructs,
+                            nsTArray<SwapInstruction>& aSwaps);
 
   
 
@@ -674,6 +686,11 @@ private:
 
   void AddLayerChangesForAnimation();
 
+  bool MoveStyleContextsForContentChildren(nsIFrame* aParent,
+                                           nsStyleContext* aOldContext,
+                                           nsTArray<nsStyleContext*>& aContextsToMove);
+  bool MoveStyleContextsForChildren(nsStyleContext* aOldContext);
+
   
 
 
@@ -682,9 +699,13 @@ private:
                      nsChangeHint aChangeToAssume,
                      uint32_t* aEqualStructs,
                      uint32_t* aSamePointerStructs);
-  RestyleResult ComputeRestyleResultFromFrame(nsIFrame* aSelf);
-  RestyleResult ComputeRestyleResultFromNewContext(nsIFrame* aSelf,
-                                                   nsStyleContext* aNewContext);
+  void ComputeRestyleResultFromFrame(nsIFrame* aSelf,
+                                     RestyleResult& aRestyleResult,
+                                     bool& aCanStopWithStyleChange);
+  void ComputeRestyleResultFromNewContext(nsIFrame* aSelf,
+                                          nsStyleContext* aNewContext,
+                                          RestyleResult& aRestyleResult,
+                                          bool& aCanStopWithStyleChange);
 
   
   void RestyleUndisplayedDescendants(nsRestyleHint aChildRestyleHint);

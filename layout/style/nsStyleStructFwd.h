@@ -65,4 +65,6 @@ eStyleStruct_BackendOnly = nsStyleStructID_Length
 
 #define NS_STYLE_INHERIT_BIT(sid_)        (1 << uint64_t(eStyleStruct_##sid_))
 
+typedef decltype(nsStyleStructID(0) + nsStyleStructID(0)) nsStyleStructID_size_t;
+
 #endif 
