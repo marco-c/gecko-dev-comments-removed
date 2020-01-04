@@ -113,6 +113,24 @@
     AppendChild(printOutputContainer, msgDiv);
   }
   global.AddPrintOutput = AddPrintOutput;
+
+  
+
+
+
+  
+  function writeHeaderToLog(string) {
+    string = String(string);
+
+    
+    dump(string + "\n");
+
+    
+    var h2 = CreateElement("h2");
+    SetTextContent(h2, string);
+    AppendChild(printOutputContainer, h2);
+  }
+  global.writeHeaderToLog = writeHeaderToLog;
 })(this);
 
 
@@ -177,19 +195,6 @@ function print() {
 
   
   AddPrintOutput(s);
-}
-
-function writeHeaderToLog( string ) {
-  string = String(string);
-
-  if (typeof dump == 'function')
-  {
-    dump( string + '\n');
-  }
-
-  string = string.replace(/[<>&]/g, htmlesc);
-
-  DocumentWrite( "<h2>" + string + "</h2>" );
 }
 
 function writeFormattedResult( expect, actual, string, passed ) {

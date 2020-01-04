@@ -778,7 +778,6 @@ function test() {
 
 
 
-
 function writeTestCaseResult( expect, actual, string ) {
   var passed = getTestCaseResult( expect, actual );
   
