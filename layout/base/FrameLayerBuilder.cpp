@@ -446,13 +446,8 @@ public:
 
   already_AddRefed<ImageContainer> GetContainerForImageLayer(nsDisplayListBuilder* aBuilder);
 
-  bool VisibleAboveRegionIntersects(const nsIntRect& aRect) const
-  { return mVisibleAboveRegion.Intersects(aRect); }
   bool VisibleAboveRegionIntersects(const nsIntRegion& aRegion) const
   { return !mVisibleAboveRegion.Intersect(aRegion).IsEmpty(); }
-
-  bool VisibleRegionIntersects(const nsIntRect& aRect) const
-  { return mVisibleRegion.Intersects(aRect); }
   bool VisibleRegionIntersects(const nsIntRegion& aRegion) const
   { return !mVisibleRegion.Intersect(aRegion).IsEmpty(); }
 
@@ -1087,6 +1082,13 @@ public:
 
   nsIFrame* GetContainerFrame() const { return mContainerFrame; }
   nsDisplayListBuilder* Builder() const { return mBuilder; }
+
+  
+
+
+  bool IsInInactiveLayer() const {
+    return mLayerBuilder->GetContainingPaintedLayerData();
+  }
 
   
 
@@ -2584,12 +2586,22 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
     } else {
       PaintedLayerData* lowestUsableLayer = nullptr;
       for (auto& data : Reversed(mPaintedLayerDataStack)) {
-        if (data.VisibleAboveRegionIntersects(aVisibleRect)) {
+        if (data.mVisibleAboveRegion.Intersects(aVisibleRect)) {
           break;
         }
         MOZ_ASSERT(!data.mExclusiveToOneItem);
         lowestUsableLayer = &data;
-        if (data.VisibleRegionIntersects(aVisibleRect)) {
+        nsIntRegion visibleRegion = data.mVisibleRegion;
+        
+        
+        
+        
+        ContainerState& contState = mTree.ContState();
+        if (!contState.IsInInactiveLayer()) {
+          visibleRegion.OrWith(contState.ScaleRegionToOutsidePixels(data.mHitRegion));
+          visibleRegion.OrWith(contState.ScaleRegionToOutsidePixels(data.mMaybeHitRegion));
+        }
+        if (visibleRegion.Intersects(aVisibleRect)) {
           break;
         }
       }
