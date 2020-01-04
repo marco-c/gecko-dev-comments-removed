@@ -7,7 +7,6 @@ package org.mozilla.gecko.tabqueue;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.GeckoAppShell;
-import org.mozilla.gecko.GeckoEvent;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.R;
@@ -20,11 +19,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.provider.Settings;
+import android.graphics.PixelFormat;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -65,7 +67,29 @@ public class TabQueueHelper {
             return true; 
         }
 
-        return Settings.canDrawOverlays(context);
+        
+        
+        
+        
+
+        View view = new View(context);
+        view.setVisibility(View.INVISIBLE);
+
+        WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(
+                1, 1,
+                WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSLUCENT);
+
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+
+        try {
+            windowManager.addView(view, layoutParams);
+            windowManager.removeView(view);
+            return true;
+        } catch (final SecurityException | WindowManager.BadTokenException e) {
+            return false;
+        }
     }
 
     
