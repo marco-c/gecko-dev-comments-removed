@@ -115,8 +115,9 @@ OuterDocAccessible::Shutdown()
 bool
 OuterDocAccessible::InsertChildAt(uint32_t aIdx, Accessible* aAccessible)
 {
-  NS_ASSERTION(aAccessible->IsDoc(),
-               "OuterDocAccessible should only have document child!");
+  MOZ_RELEASE_ASSERT(aAccessible->IsDoc(),
+                     "OuterDocAccessible can have a document child only!");
+
   
   
   
@@ -162,6 +163,14 @@ OuterDocAccessible::RemoveChild(Accessible* aAccessible)
                "This child document of outerdoc accessible wasn't removed!");
 
   return wasRemoved;
+}
+
+bool
+OuterDocAccessible::IsAcceptableChild(nsIContent* aEl) const
+{
+  
+  
+  return false;
 }
 
 ProxyAccessible*
