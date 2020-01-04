@@ -27,11 +27,6 @@ public:
   
 
 
-  Accessible* GetAccessibleAt(uint32_t aIndex);
-
-  
-
-
   virtual int32_t GetIndexAt(Accessible* aAccessible);
 
 protected:
@@ -78,6 +73,11 @@ public:
 
 
   uint32_t Count();
+
+  
+
+
+  Accessible* GetAccessibleAt(uint32_t aIndex);
 
 protected:
   
