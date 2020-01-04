@@ -113,6 +113,7 @@ enum GMPVideoCodecType
   
   
   kGMPVideoCodecH264,
+  kGMPVideoCodecVP9,
   kGMPVideoCodecInvalid 
 };
 

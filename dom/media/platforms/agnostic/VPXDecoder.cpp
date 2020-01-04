@@ -232,5 +232,19 @@ VPXDecoder::IsVPX(const nsACString& aMimeType, uint8_t aCodecMask)
           aMimeType.EqualsLiteral("video/webm; codecs=vp9"));
 }
 
+
+bool
+VPXDecoder::IsVP8(const nsACString& aMimeType)
+{
+  return IsVPX(aMimeType, VPXDecoder::VP8);
+}
+
+
+bool
+VPXDecoder::IsVP9(const nsACString& aMimeType)
+{
+  return IsVPX(aMimeType, VPXDecoder::VP9);
+}
+
 } 
 #undef LOG
