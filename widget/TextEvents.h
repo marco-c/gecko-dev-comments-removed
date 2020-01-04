@@ -209,7 +209,7 @@ public:
   uint32_t location;
   
   
-  nsTArray<AlternativeCharCode> alternativeCharCodes;
+  nsTArray<AlternativeCharCode> mAlternativeCharCodes;
   
   bool isChar;
   
@@ -376,7 +376,7 @@ public:
     mCharCode = aEvent.mCharCode;
     mPseudoCharCode = aEvent.mPseudoCharCode;
     location = aEvent.location;
-    alternativeCharCodes = aEvent.alternativeCharCodes;
+    mAlternativeCharCodes = aEvent.mAlternativeCharCodes;
     isChar = aEvent.isChar;
     mIsRepeat = aEvent.mIsRepeat;
     mIsComposing = aEvent.mIsComposing;

@@ -498,7 +498,7 @@ TextEventDispatcher::DispatchKeyboardEventInternal(
   
   
   
-  keyEvent.alternativeCharCodes.Clear();
+  keyEvent.mAlternativeCharCodes.Clear();
   if ((WidgetKeyboardEvent::IsKeyDownOrKeyDownOnPlugin(aMessage) ||
        aMessage == eKeyPress) &&
       (keyEvent.IsControl() || keyEvent.IsAlt() ||

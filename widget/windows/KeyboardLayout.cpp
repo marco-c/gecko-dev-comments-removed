@@ -2314,7 +2314,8 @@ NativeKey::WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyboardEvent,
     return;
   }
 
-  nsTArray<AlternativeCharCode>& altArray = aKeyboardEvent.alternativeCharCodes;
+  nsTArray<AlternativeCharCode>& altArray =
+    aKeyboardEvent.mAlternativeCharCodes;
 
   uint16_t shiftedChar = 0, unshiftedChar = 0;
   if (skipUniChars <= aIndex) {
