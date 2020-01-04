@@ -942,9 +942,6 @@ private:
   
   bool mAudioOffloading;
 
-  
-  uint32_t mSilentDataDuration;
-
 #ifdef MOZ_EME
   void OnCDMProxyReady(RefPtr<CDMProxy> aProxy);
   void OnCDMProxyNotReady();

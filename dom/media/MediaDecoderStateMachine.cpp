@@ -122,11 +122,6 @@ static const int AUDIO_DURATION_USECS = 40000;
 
 static const int THRESHOLD_FACTOR = 2;
 
-
-
-
-static const uint32_t SILENT_DATA_THRESHOLD_USECS = 10000000;
-
 namespace detail {
 
 
@@ -247,7 +242,6 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mOutputStreamManager(new OutputStreamManager()),
   mResource(aDecoder->GetResource()),
   mAudioOffloading(false),
-  mSilentDataDuration(0),
   mBuffered(mTaskQueue, TimeIntervals(),
             "MediaDecoderStateMachine::mBuffered (Mirror)"),
   mEstimatedDuration(mTaskQueue, NullableTimeUnit(),
@@ -633,13 +627,8 @@ MediaDecoderStateMachine::CheckIsAudible(const MediaData* aSample)
   bool isAudible = data->IsAudible();
   if (isAudible && !mIsAudioDataAudible) {
     mIsAudioDataAudible = true;
-    mSilentDataDuration = 0;
-  } else if (isAudible && mIsAudioDataAudible) {
-    mSilentDataDuration += data->mDuration;
-    if (mSilentDataDuration > SILENT_DATA_THRESHOLD_USECS) {
-      mIsAudioDataAudible = false;
-      mSilentDataDuration = 0;
-    }
+  } else if (!isAudible && mIsAudioDataAudible) {
+    mIsAudioDataAudible = false;
   }
 }
 
