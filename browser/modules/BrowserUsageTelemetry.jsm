@@ -20,6 +20,7 @@ const MAX_UNIQUE_VISITED_DOMAINS = 100;
 
 
 const WINDOWS_RESTORED_TOPIC = "sessionstore-windows-restored";
+const TAB_RESTORING_TOPIC = "SSTabRestoring";
 const TELEMETRY_SUBSESSIONSPLIT_TOPIC = "internal-telemetry-after-subsession-split";
 const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
 
@@ -48,6 +49,21 @@ function getOpenTabsAndWinsCounts() {
 let URICountListener = {
   
   _domainSet: new Set(),
+  
+  _restoredURIsMap: new WeakMap(),
+
+  isValidURI(uri) {
+    
+    return uri.schemeIs("http") || uri.schemeIs("https");
+  },
+
+  addRestoredURI(browser, uri) {
+    if (!this.isValidURI(uri)) {
+      return;
+    }
+
+    this._restoredURIsMap.set(browser, uri.spec);
+  },
 
   onLocationChange(browser, webProgress, request, uri, flags) {
     
@@ -60,8 +76,25 @@ let URICountListener = {
       return;
     }
 
+    if (!this.isValidURI(uri)) {
+      return;
+    }
+
     
-    if (!uri.schemeIs("http") && !uri.schemeIs("https")) {
+    
+    
+    
+    
+    if (!request &&
+        !(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT)) {
+      return;
+    }
+
+    
+    
+    
+    if (this._restoredURIsMap.get(browser) === uri.spec) {
+      this._restoredURIsMap.delete(browser);
       return;
     }
 
@@ -146,6 +179,13 @@ let BrowserUsageTelemetry = {
       case "unload":
         this._unregisterWindow(event.target);
         break;
+      case TAB_RESTORING_TOPIC:
+        
+        
+        
+        let browser = event.target.linkedBrowser;
+        URICountListener.addRestoredURI(browser, browser.currentURI);
+        break;
     }
   },
 
@@ -182,6 +222,7 @@ let BrowserUsageTelemetry = {
     if (PrivateBrowsingUtils.isWindowPrivate(win)) {
       return;
     }
+    win.gBrowser.tabContainer.addEventListener(TAB_RESTORING_TOPIC, this);
     win.gBrowser.addTabsProgressListener(URICountListener);
   },
 
@@ -196,6 +237,7 @@ let BrowserUsageTelemetry = {
     if (PrivateBrowsingUtils.isWindowPrivate(win.defaultView)) {
       return;
     }
+    win.defaultView.gBrowser.tabContainer.removeEventListener(TAB_RESTORING_TOPIC, this);
     win.defaultView.gBrowser.removeTabsProgressListener(URICountListener);
   },
 
