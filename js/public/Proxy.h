@@ -150,7 +150,6 @@ class JS_FRIEND_API(Wrapper);
 
 
 
-
 class JS_FRIEND_API(BaseProxyHandler)
 {
     
@@ -267,14 +266,6 @@ class JS_FRIEND_API(BaseProxyHandler)
 
 
 
-    virtual bool enumerate(JSContext* cx, HandleObject proxy, MutableHandleObject objp) const = 0;
-
-    
-
-
-
-
-
     virtual bool getPrototype(JSContext* cx, HandleObject proxy, MutableHandleObject protop) const;
     virtual bool setPrototype(JSContext* cx, HandleObject proxy, HandleObject proto,
                               ObjectOpResult& result) const;
@@ -315,6 +306,7 @@ class JS_FRIEND_API(BaseProxyHandler)
     virtual bool construct(JSContext* cx, HandleObject proxy, const CallArgs& args) const;
 
     
+    virtual bool enumerate(JSContext* cx, HandleObject proxy, MutableHandleObject objp) const;
     virtual bool getPropertyDescriptor(JSContext* cx, HandleObject proxy, HandleId id,
                                        MutableHandle<PropertyDescriptor> desc) const;
     virtual bool hasOwn(JSContext* cx, HandleObject proxy, HandleId id, bool* bp) const;
