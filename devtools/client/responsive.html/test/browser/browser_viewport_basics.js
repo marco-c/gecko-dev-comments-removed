@@ -24,7 +24,7 @@ addRDMTask(TEST_URL, function* ({ ui }) {
   
   yield waitForFrameLoad(ui, TEST_URL);
   let location = yield spawnViewportTask(ui, {}, function* () {
-    return content.location.href;
+    return content.location.href; 
   });
   is(location, TEST_URL, "Viewport location matches");
 });
