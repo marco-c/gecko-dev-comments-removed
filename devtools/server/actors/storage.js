@@ -30,6 +30,10 @@ const BATCH_DELAY = 200;
 
 
 
+const MAX_COOKIE_EXPIRY = Math.pow(2, 62);
+
+
+
 
 var illegalFileNameCharacters = [
   "[",
@@ -632,6 +636,44 @@ StorageActors.createActor({
     return null;
   },
 
+  
+
+
+
+
+
+  getEditableFields: method(Task.async(function*() {
+    return [
+      "name",
+      "path",
+      "host",
+      "expires",
+      "value",
+      "isSecure",
+      "isHttpOnly"
+    ];
+  }), {
+    request: {},
+    response: {
+      value: RetVal("json")
+    }
+  }),
+
+  
+
+
+
+
+
+  editItem: method(Task.async(function*(data) {
+    this.editCookie(data);
+  }), {
+    request: {
+      data: Arg(0, "json"),
+    },
+    response: {}
+  }),
+
   maybeSetupChildProcess: function() {
     cookieHelpers.onCookieChanged = this.onCookieChanged.bind(this);
 
@@ -639,6 +681,7 @@ StorageActors.createActor({
       this.getCookiesFromHost = cookieHelpers.getCookiesFromHost;
       this.addCookieObservers = cookieHelpers.addCookieObservers;
       this.removeCookieObservers = cookieHelpers.removeCookieObservers;
+      this.editCookie = cookieHelpers.editCookie;
       return;
     }
 
@@ -656,6 +699,8 @@ StorageActors.createActor({
       callParentProcess.bind(null, "addCookieObservers");
     this.removeCookieObservers =
       callParentProcess.bind(null, "removeCookieObservers");
+    this.editCookie =
+      callParentProcess.bind(null, "editCookie");
 
     addMessageListener("storage:storage-cookie-request-child",
                        cookieHelpers.handleParentRequest);
@@ -695,10 +740,117 @@ var cookieHelpers = {
 
     while (cookies.hasMoreElements()) {
       let cookie = cookies.getNext().QueryInterface(Ci.nsICookie2);
+
       store.push(cookie);
     }
 
     return store;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  editCookie: function(data) {
+    let {field, oldValue, newValue} = data;
+    let origName = field === "name" ? oldValue : data.items.name;
+    let origHost = field === "host" ? oldValue : data.items.host;
+    let origPath = field === "path" ? oldValue : data.items.path;
+    let cookie = null;
+
+    let enumerator = Services.cookies.getCookiesFromHost(origHost);
+    while (enumerator.hasMoreElements()) {
+      let nsiCookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
+      if (nsiCookie.name === origName && nsiCookie.host === origHost) {
+        cookie = {
+          host: nsiCookie.host,
+          path: nsiCookie.path,
+          name: nsiCookie.name,
+          value: nsiCookie.value,
+          isSecure: nsiCookie.isSecure,
+          isHttpOnly: nsiCookie.isHttpOnly,
+          isSession: nsiCookie.isSession,
+          expires: nsiCookie.expires,
+          originAttributes: nsiCookie.originAttributes
+        };
+        break;
+      }
+    }
+
+    if (!cookie) {
+      return;
+    }
+
+    
+    let now = new Date();
+    if (!cookie.isSession && (cookie.expires * 1000) <= now) {
+      let tenSecondsFromNow = (now.getTime() + 10 * 1000) / 1000;
+
+      cookie.expires = tenSecondsFromNow;
+    }
+
+    switch (field) {
+      case "isSecure":
+      case "isHttpOnly":
+      case "isSession":
+        newValue = newValue === "true";
+        break;
+
+      case "expires":
+        newValue = Date.parse(newValue) / 1000;
+
+        if (isNaN(newValue)) {
+          newValue = MAX_COOKIE_EXPIRY;
+        }
+        break;
+
+      case "host":
+      case "name":
+      case "path":
+        
+        Services.cookies.remove(origHost, origName, origPath,
+                                cookie.originAttributes, false);
+        break;
+    }
+
+    
+    cookie[field] = newValue;
+
+    
+    
+    cookie.isSession = !cookie.expires;
+
+    
+    Services.cookies.add(
+      cookie.host,
+      cookie.path,
+      cookie.name,
+      cookie.value,
+      cookie.isSecure,
+      cookie.isHttpOnly,
+      cookie.isSession,
+      cookie.isSession ? MAX_COOKIE_EXPIRY : cookie.expires
+    );
   },
 
   addCookieObservers: function() {
@@ -712,8 +864,25 @@ var cookieHelpers = {
   },
 
   observe: function(subject, topic, data) {
+    if (!subject) {
+      return;
+    }
+
     switch (topic) {
       case "cookie-changed":
+        if (data === "batch-deleted") {
+          let cookiesNoInterface = subject.QueryInterface(Ci.nsIArray);
+          let cookies = [];
+
+          for (let i = 0; i < cookiesNoInterface.length; i++) {
+            let cookie = cookiesNoInterface.queryElementAt(i, Ci.nsICookie2);
+            cookies.push(cookie);
+          }
+          cookieHelpers.onCookieChanged(cookies, topic, data);
+
+          return;
+        }
+
         let cookie = subject.QueryInterface(Ci.nsICookie2);
         cookieHelpers.onCookieChanged(cookie, topic, data);
         break;
@@ -740,6 +909,9 @@ var cookieHelpers = {
         return cookieHelpers.addCookieObservers();
       case "removeCookieObservers":
         return cookieHelpers.removeCookieObservers();
+      case "editCookie":
+        let rowdata = msg.data.args[0];
+        return cookieHelpers.editCookie(rowdata);
       default:
         console.error("ERR_DIRECTOR_PARENT_UNKNOWN_METHOD", msg.json.method);
         throw new Error("ERR_DIRECTOR_PARENT_UNKNOWN_METHOD");
