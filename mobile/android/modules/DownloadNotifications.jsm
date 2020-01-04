@@ -255,8 +255,8 @@ DownloadNotification.prototype = {
 var ConfirmCancelPrompt = {
   show: function (download) {
     
-    let title = strings.GetStringFromName("downloadCancelPromptTitle");
-    let message = strings.GetStringFromName("downloadCancelPromptMessage");
+    let title = strings.GetStringFromName("downloadCancelPromptTitle1");
+    let message = strings.GetStringFromName("downloadCancelPromptMessage1");
 
     if (Services.prompt.confirm(null, title, message)) {
       download.cancel().catch(Cu.reportError);
