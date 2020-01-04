@@ -1611,4 +1611,18 @@ AnalyzeEntrainedVariables(JSContext* cx, HandleScript script);
 
 } 
 
+namespace JS {
+
+template <>
+struct DeletePolicy<js::DebugScopeObject>
+{
+    explicit DeletePolicy(JSRuntime* rt) : rt_(rt) {}
+    void operator()(const js::DebugScopeObject* ptr);
+
+  private:
+    JSRuntime* rt_;
+};
+
+} 
+
 #endif 

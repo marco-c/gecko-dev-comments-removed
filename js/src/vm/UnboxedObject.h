@@ -10,6 +10,7 @@
 #include "jsgc.h"
 #include "jsobj.h"
 
+#include "vm/Runtime.h"
 #include "vm/TypeInference.h"
 
 namespace js {
@@ -320,7 +321,7 @@ class UnboxedPlainObject : public JSObject
 
 
 bool
-TryConvertToUnboxedLayout(ExclusiveContext* cx, Shape* templateShape,
+TryConvertToUnboxedLayout(ExclusiveContext* cx, AutoEnterAnalysis& enter, Shape* templateShape,
                           ObjectGroup* group, PreliminaryObjectArray* objects);
 
 inline gc::AllocKind
@@ -516,6 +517,14 @@ class UnboxedArrayObject : public JSObject
             (index << CapacityShift) | initializedLength();
     }
 };
+
+} 
+
+namespace JS {
+
+template <>
+struct DeletePolicy<js::UnboxedLayout> : public js::GCManagedDeletePolicy<js::UnboxedLayout>
+{};
 
 } 
 

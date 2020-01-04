@@ -277,6 +277,10 @@ TypeIdString(jsid id)
 struct AutoEnterAnalysis
 {
     
+    
+    UniquePtr<UnboxedLayout> unboxedLayoutToCleanUp;
+
+    
     gc::AutoSuppressGC suppressGC;
 
     
