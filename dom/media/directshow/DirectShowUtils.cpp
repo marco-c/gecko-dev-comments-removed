@@ -287,7 +287,7 @@ CanDecodeMP3UsingDirectShow()
   }
 
   
-  if (FAILED(CoCreateInstance(CLSID_MPEG_LAYER_3_DECODER_FILTER,
+  if (FAILED(CoCreateInstance(DirectShowReader::CLSID_MPEG_LAYER_3_DECODER_FILTER,
                               nullptr,
                               CLSCTX_INPROC_SERVER,
                               IID_IBaseFilter,
