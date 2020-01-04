@@ -2109,11 +2109,6 @@ enum DetachDataDisposition {
 
 
 
-
-
-
-
-
 extern JS_FRIEND_API(bool)
 JS_DetachArrayBuffer(JSContext* cx, JS::HandleObject obj,
                      DetachDataDisposition changeData);

@@ -213,9 +213,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     static bool fun_slice(JSContext* cx, unsigned argc, Value* vp);
 
     static bool fun_isView(JSContext* cx, unsigned argc, Value* vp);
-#ifdef NIGHTLY_BUILD
-    static bool fun_transfer(JSContext* cx, unsigned argc, Value* vp);
-#endif
 
     static bool fun_species(JSContext* cx, unsigned argc, Value* vp);
 
@@ -246,21 +243,19 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     static void trace(JSTracer* trc, JSObject* obj);
     static void objectMoved(JSObject* obj, const JSObject* old);
 
+    
+    
+    
     static BufferContents stealContents(JSContext* cx,
                                         Handle<ArrayBufferObject*> buffer,
-                                        bool hasStealableContents);
+                                        bool forceCopy);
 
-    bool hasStealableContents() const {
-        
-        if (!ownsData())
+    
+    
+    bool hasDetachableContents() const {
+        if (isDetached())
             return false;
-
-        
-        
-        
-        
-        
-        return !isDetached();
+        return isPlain() || isMapped();
     }
 
     
@@ -286,8 +281,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
 
     
     
-    static MOZ_MUST_USE bool
-    detach(JSContext* cx, Handle<ArrayBufferObject*> buffer, BufferContents newContents);
+    static void detach(JSContext* cx, Handle<ArrayBufferObject*> buffer,
+                       BufferContents newContents);
 
   private:
     void changeViewContents(JSContext* cx, ArrayBufferViewObject* view,
@@ -325,6 +320,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     bool isMapped() const { return bufferKind() == MAPPED; }
     bool isDetached() const { return flags() & DETACHED; }
 
+    bool ownsData() const { return flags() & OWNS_DATA; }
+
     static ArrayBufferObject* createForWasm(JSContext* cx, uint32_t numBytes, bool signalsForOOB);
     static bool prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buffer, bool signalsForOOB);
 
@@ -355,7 +352,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     uint32_t flags() const;
     void setFlags(uint32_t flags);
 
-    bool ownsData() const { return flags() & OWNS_DATA; }
     void setOwnsData(OwnsState owns) {
         setFlags(owns ? (flags() | OWNS_DATA) : (flags() & ~OWNS_DATA));
     }
