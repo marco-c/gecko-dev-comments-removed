@@ -384,8 +384,8 @@ class Encoder
         MOZ_ASSERT(empty());
     }
 
-    size_t bytecodeOffset() const { return bytecode_.length(); }
-    bool empty() const { return bytecodeOffset() == 0; }
+    size_t currentOffset() const { return bytecode_.length(); }
+    bool empty() const { return currentOffset() == 0; }
 
     
     
@@ -425,6 +425,32 @@ class Encoder
     }
 
     
+
+    MOZ_WARN_UNUSED_RESULT bool writePatchableVarU32(size_t* offset) {
+        *offset = bytecode_.length();
+        return writeVarU32(UINT32_MAX);
+    }
+    void patchVarU32(size_t offset, uint32_t patchBits) {
+        return patchVarU32(offset, patchBits, UINT32_MAX);
+    }
+
+    MOZ_WARN_UNUSED_RESULT bool writePatchableVarU8(size_t* offset) {
+        *offset = bytecode_.length();
+        return writeU8(UINT8_MAX);
+    }
+    void patchVarU8(size_t offset, uint8_t patchBits) {
+        MOZ_ASSERT(patchBits < 0x80);
+        return patchU8(offset, patchBits);
+    }
+
+    MOZ_WARN_UNUSED_RESULT bool writePatchableExpr(size_t* offset) {
+        return writePatchableEnum<Expr>(offset);
+    }
+    void patchExpr(size_t offset, Expr expr) {
+        patchEnum(offset, expr);
+    }
+
+    
     
 
     MOZ_WARN_UNUSED_RESULT bool writeCString(const char* cstr) {
@@ -454,34 +480,6 @@ class Encoder
 
     
     
-    
-
-    MOZ_WARN_UNUSED_RESULT bool writePatchableVarU32(size_t* offset) {
-        *offset = bytecode_.length();
-        return writeVarU32(UINT32_MAX);
-    }
-    void patchVarU32(size_t offset, uint32_t patchBits) {
-        return patchVarU32(offset, patchBits, UINT32_MAX);
-    }
-
-    MOZ_WARN_UNUSED_RESULT bool writePatchableVarU8(size_t* offset) {
-        *offset = bytecode_.length();
-        return writeU8(UINT8_MAX);
-    }
-    void patchVarU8(size_t offset, uint8_t patchBits) {
-        MOZ_ASSERT(patchBits < 0x80);
-        return patchU8(offset, patchBits);
-    }
-
-    MOZ_WARN_UNUSED_RESULT bool writePatchableExpr(size_t* offset) {
-        return writePatchableEnum<Expr>(offset);
-    }
-    void patchExpr(size_t offset, Expr expr) {
-        patchEnum(offset, expr);
-    }
-
-    
-    
 
     MOZ_WARN_UNUSED_RESULT bool writeU8(uint8_t i) {
         return write<uint8_t>(i);
@@ -501,11 +499,6 @@ class Decoder
     const uint8_t* const beg_;
     const uint8_t* const end_;
     const uint8_t* cur_;
-
-    uintptr_t bytesRemain() const {
-        MOZ_ASSERT(end_ >= cur_);
-        return uintptr_t(end_ - cur_);
-    }
 
     template <class T>
     MOZ_WARN_UNUSED_RESULT bool read(T* out) {
@@ -588,6 +581,10 @@ class Decoder
         return cur_ == end_;
     }
 
+    uintptr_t bytesRemain() const {
+        MOZ_ASSERT(end_ >= cur_);
+        return uintptr_t(end_ - cur_);
+    }
     const uint8_t* currentPosition() const {
         return cur_;
     }
