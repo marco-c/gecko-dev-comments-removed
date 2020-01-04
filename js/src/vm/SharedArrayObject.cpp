@@ -101,34 +101,41 @@ SharedArrayRawBuffer::New(JSContext* cx, uint32_t length)
     if (allocSize <= length)
         return nullptr;
 #if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
-    
-    
-    if (++numLive >= maxLive) {
-        JSRuntime* rt = cx->runtime();
-        if (rt->largeAllocationFailureCallback)
-            rt->largeAllocationFailureCallback(rt->largeAllocationFailureCallbackData);
-        if (numLive >= maxLive) {
+    void* p = nullptr;
+    if (!IsValidAsmJSHeapLength(length)) {
+        p = MapMemory(allocSize, true);
+        if (!p)
+            return nullptr;
+    } else {
+        
+        
+        if (++numLive >= maxLive) {
+            JSRuntime* rt = cx->runtime();
+            if (rt->largeAllocationFailureCallback)
+                rt->largeAllocationFailureCallback(rt->largeAllocationFailureCallbackData);
+            if (numLive >= maxLive) {
+                numLive--;
+                return nullptr;
+            }
+        }
+        
+        p = MapMemory(SharedArrayMappedSize, false);
+        if (!p) {
             numLive--;
             return nullptr;
         }
-    }
-    
-    void* p = MapMemory(SharedArrayMappedSize, false);
-    if (!p) {
-        numLive--;
-        return nullptr;
-    }
 
-    if (!MarkValidRegion(p, allocSize)) {
-        UnmapMemory(p, SharedArrayMappedSize);
-        numLive--;
-        return nullptr;
-    }
+        if (!MarkValidRegion(p, allocSize)) {
+            UnmapMemory(p, SharedArrayMappedSize);
+            numLive--;
+            return nullptr;
+        }
 #   if defined(MOZ_VALGRIND) && defined(VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE)
-    
-    VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)p + allocSize,
-                                                   SharedArrayMappedSize - allocSize);
+        
+        VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)p + allocSize,
+                                                       SharedArrayMappedSize - allocSize);
 #   endif
+    }
 #else
     void* p = MapMemory(allocSize, true);
     if (!p)
@@ -136,7 +143,9 @@ SharedArrayRawBuffer::New(JSContext* cx, uint32_t length)
 #endif
     uint8_t* buffer = reinterpret_cast<uint8_t*>(p) + AsmJSPageSize;
     uint8_t* base = buffer - sizeof(SharedArrayRawBuffer);
-    return new (base) SharedArrayRawBuffer(buffer, length);
+    SharedArrayRawBuffer* rawbuf = new (base) SharedArrayRawBuffer(buffer, length);
+    MOZ_ASSERT(rawbuf->length == length); 
+    return rawbuf;
 }
 
 void
@@ -159,18 +168,23 @@ SharedArrayRawBuffer::dropReference()
         MOZ_ASSERT(p.asValue() % AsmJSPageSize == 0);
 
         uint8_t* address = p.unwrap();
+        uint32_t allocSize = (this->length + 2*AsmJSPageSize - 1) & ~(AsmJSPageSize - 1);
 #if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
-        numLive--;
-        UnmapMemory(address, SharedArrayMappedSize);
+        if (!IsValidAsmJSHeapLength(allocSize)) {
+            UnmapMemory(address, allocSize);
+        } else {
+            numLive--;
+            UnmapMemory(address, SharedArrayMappedSize);
 #       if defined(MOZ_VALGRIND) \
            && defined(VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE)
-        
-        
-        VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE(address,
-                                                      SharedArrayMappedSize);
+            
+            
+            VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE(address,
+                                                          SharedArrayMappedSize);
 #       endif
+        }
 #else
-        UnmapMemory(address, this->length + AsmJSPageSize);
+        UnmapMemory(address, allocSize);
 #endif
     }
 }
