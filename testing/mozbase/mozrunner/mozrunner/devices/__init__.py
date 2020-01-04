@@ -2,7 +2,7 @@
 
 
 
-from emulator import Emulator
+from emulator import BaseEmulator, Emulator, EmulatorAVD
 from base import Device
 
 import emulator_battery
