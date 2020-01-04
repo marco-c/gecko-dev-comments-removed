@@ -161,7 +161,6 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
                 "list-locales",
                 "setup",
                 "repack",
-                "create-virtualenv",
                 "taskcluster-upload",
                 "funsize-props",
                 "submit-to-balrog",
@@ -976,6 +975,14 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
             self.warning('Skipping S3 file upload: No taskcluster credentials.')
             return
 
+        
+        
+        
+        
+        
+        self.disable_mock()
+        self.create_virtualenv()
+        self.enable_mock()
         self.activate_virtualenv()
 
         
