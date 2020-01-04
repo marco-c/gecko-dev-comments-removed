@@ -66,11 +66,12 @@ public:
     MediaDataDecoderCallback* aCallback,
     layers::ImageContainer* aImageContainer);
 
-  AppleVDADecoder(const VideoInfo& aConfig,
-                  FlushableTaskQueue* aVideoTaskQueue,
-                  MediaDataDecoderCallback* aCallback,
-                  layers::ImageContainer* aImageContainer);
-  virtual ~AppleVDADecoder();
+  
+  
+  nsresult OutputFrame(CVPixelBufferRef aImage,
+                       AppleFrameRef aFrameRef);
+
+private:
   RefPtr<InitPromise> Init() override;
   nsresult Input(MediaRawData* aSample) override;
   nsresult Flush() override;
@@ -86,48 +87,51 @@ public:
     return "apple VDA decoder";
   }
 
-  
-  
-  nsresult OutputFrame(CVPixelBufferRef aImage,
-                       AppleFrameRef aFrameRef);
-
 protected:
+  AppleVDADecoder(const VideoInfo& aConfig,
+                  FlushableTaskQueue* aVideoTaskQueue,
+                  MediaDataDecoderCallback* aCallback,
+                  layers::ImageContainer* aImageContainer);
+  virtual ~AppleVDADecoder();
+
   void AssertOnTaskQueueThread()
   {
     MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
   }
-
-  
-  virtual void ProcessFlush();
-  virtual void ProcessDrain();
-  virtual void ProcessShutdown();
 
   AppleFrameRef* CreateAppleFrameRef(const MediaRawData* aSample);
   void DrainReorderedFrames();
   void ClearReorderedFrames();
   CFDictionaryRef CreateOutputConfiguration();
 
-  RefPtr<MediaByteBuffer> mExtraData;
+  const RefPtr<MediaByteBuffer> mExtraData;
   MediaDataDecoderCallback* mCallback;
-  RefPtr<layers::ImageContainer> mImageContainer;
-  uint32_t mPictureWidth;
-  uint32_t mPictureHeight;
-  uint32_t mDisplayWidth;
-  uint32_t mDisplayHeight;
-  
-  uint32_t mMaxRefFrames;
-  
-  
-  Atomic<uint32_t> mInputIncoming;
-  Atomic<bool> mIsShutDown;
-
-  const bool mUseSoftwareImages;
-  const bool mIs106;
+  const uint32_t mPictureWidth;
+  const uint32_t mPictureHeight;
+  const uint32_t mDisplayWidth;
+  const uint32_t mDisplayHeight;
 
   
   
   
   Atomic<uint32_t> mQueuedSamples;
+
+private:
+  
+  virtual void ProcessFlush();
+  virtual void ProcessDrain();
+  virtual void ProcessShutdown();
+
+  const RefPtr<FlushableTaskQueue> mTaskQueue;
+  VDADecoder mDecoder;
+  const uint32_t mMaxRefFrames;
+  const RefPtr<layers::ImageContainer> mImageContainer;
+  
+  
+  Atomic<uint32_t> mInputIncoming;
+  Atomic<bool> mIsShutDown;
+  const bool mUseSoftwareImages;
+  const bool mIs106;
 
   
   Monitor mMonitor;
@@ -136,10 +140,6 @@ protected:
   
   Atomic<bool> mIsFlushing;
   ReorderQueue mReorderQueue;
-
-private:
-  const RefPtr<FlushableTaskQueue> mTaskQueue;
-  VDADecoder mDecoder;
 
   
   nsresult InitializeSession();
