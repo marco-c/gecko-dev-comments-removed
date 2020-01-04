@@ -40,6 +40,11 @@ PersistentBufferProviderBasic::ReturnDrawTarget(already_AddRefed<gfx::DrawTarget
 {
   RefPtr<gfx::DrawTarget> dt(aDT);
   MOZ_ASSERT(mDrawTarget == dt);
+  if (dt) {
+    
+    
+    dt->Flush();
+  }
   return true;
 }
 

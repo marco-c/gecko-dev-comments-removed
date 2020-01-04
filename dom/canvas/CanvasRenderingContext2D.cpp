@@ -904,9 +904,6 @@ public:
     if (!context || !context->mTarget)
       return;
 
-    
-    
-    context->mTarget->Flush();
     context->ReturnTarget();
   }
 
