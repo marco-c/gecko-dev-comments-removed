@@ -119,7 +119,7 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
 
     
     
-    private final LinkedList<FolderInfo> mParentStack;
+    private LinkedList<FolderInfo> mParentStack;
 
     
     private OnRefreshFolderListener mListener;
@@ -135,6 +135,11 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
         } else {
             mParentStack = new LinkedList<FolderInfo>(parentStack);
         }
+    }
+
+    public void restoreData(List<FolderInfo> parentStack) {
+        mParentStack = new LinkedList<FolderInfo>(parentStack);
+        notifyDataSetChanged();
     }
 
     public List<FolderInfo> getParentStack() {

@@ -2643,7 +2643,7 @@ public class BrowserApp extends GeckoApp
             });
 
             
-            mHomePager.setPanelStateChangelistener(new HomeFragment.PanelStateChangeListener() {
+            mHomePager.setPanelStateChangeListener(new HomeFragment.PanelStateChangeListener() {
                 @Override
                 public void onStateChanged(Bundle bundle) {
                     final Tab currentTab = Tabs.getInstance().getSelectedTab();
