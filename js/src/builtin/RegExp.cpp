@@ -157,13 +157,14 @@ js::ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res, RegExpObject& reobj,
 
 
 static bool
-RegExpInitialize(JSContext* cx, Handle<RegExpObject*> obj, HandleValue patternValue,
-                 HandleValue flagsValue, RegExpStaticsUse staticsUse)
+RegExpInitializeIgnoringLastIndex(JSContext* cx, Handle<RegExpObject*> obj,
+                                  HandleValue patternValue, HandleValue flagsValue,
+                                  RegExpStaticsUse staticsUse)
 {
     RootedAtom pattern(cx);
     if (patternValue.isUndefined()) {
         
-        pattern = cx->runtime()->emptyString;
+        pattern = cx->names().empty;
     } else {
         
         pattern = ToAtom<CanGC>(cx, patternValue);
@@ -178,6 +179,7 @@ RegExpInitialize(JSContext* cx, Handle<RegExpObject*> obj, HandleValue patternVa
         RootedString flagStr(cx, ToString<CanGC>(cx, flagsValue));
         if (!flagStr)
             return false;
+
         
         if (!ParseRegExpFlags(cx, flagStr, &flags))
             return false;
@@ -200,10 +202,7 @@ RegExpInitialize(JSContext* cx, Handle<RegExpObject*> obj, HandleValue patternVa
     }
 
     
-    if (!RegExpObject::initFromAtom(cx, obj, pattern, flags))
-        return false;
-
-    
+    obj->initIgnoringLastIndex(pattern, flags);
     return true;
 }
 
@@ -283,20 +282,24 @@ regexp_compile_impl(JSContext* cx, const CallArgs& args)
         }
 
         
-        if (!RegExpObject::initFromAtom(cx, regexp, sourceAtom, flags))
-            return false;
+        regexp->initIgnoringLastIndex(sourceAtom, flags);
+    } else {
+        
+        RootedValue P(cx, patternValue);
+        RootedValue F(cx, args.get(1));
 
-        args.rval().setObject(*regexp);
-        return true;
+        
+        if (!RegExpInitializeIgnoringLastIndex(cx, regexp, P, F, UseRegExpStatics))
+            return false;
     }
 
-    
-    RootedValue P(cx, patternValue);
-    RootedValue F(cx, args.get(1));
-
-    
-    if (!RegExpInitialize(cx, regexp, P, F, UseRegExpStatics))
-        return false;
+    if (regexp->lookupPure(cx->names().lastIndex)->writable()) {
+        regexp->zeroLastIndex(cx);
+    } else {
+        RootedValue zero(cx, Int32Value(0));
+        if (!SetProperty(cx, regexp, cx->names().lastIndex, zero))
+            return false;
+    }
 
     args.rval().setObject(*regexp);
     return true;
@@ -392,8 +395,7 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
                 return false;
         }
 
-        if (!RegExpObject::initFromAtom(cx, regexp, sourceAtom, flags))
-            return false;
+        regexp->initAndZeroLastIndex(sourceAtom, flags, cx);
 
         args.rval().setObject(*regexp);
         return true;
@@ -432,8 +434,9 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    if (!RegExpInitialize(cx, regexp, P, F, UseRegExpStatics))
+    if (!RegExpInitializeIgnoringLastIndex(cx, regexp, P, F, UseRegExpStatics))
         return false;
+    regexp->zeroLastIndex(cx);
 
     args.rval().setObject(*regexp);
     return true;
@@ -456,8 +459,9 @@ js::regexp_construct_no_statics(JSContext* cx, unsigned argc, Value* vp)
     if (!regexp)
         return false;
 
-    if (!RegExpInitialize(cx, regexp, args[0], args.get(1), DontUseRegExpStatics))
+    if (!RegExpInitializeIgnoringLastIndex(cx, regexp, args[0], args.get(1), DontUseRegExpStatics))
         return false;
+    regexp->zeroLastIndex(cx);
 
     args.rval().setObject(*regexp);
     return true;
@@ -771,9 +775,12 @@ js::CreateRegExpPrototype(JSContext* cx, JSProtoKey key)
         return nullptr;
     proto->NativeObject::setPrivate(nullptr);
 
-    RootedAtom source(cx, cx->names().empty);
-    if (!RegExpObject::initFromAtom(cx, proto, source, RegExpFlag(0)))
+    if (!RegExpObject::assignInitialShape(cx, proto))
         return nullptr;
+
+    RootedAtom source(cx, cx->names().empty);
+    proto->initAndZeroLastIndex(source, RegExpFlag(0), cx);
+
     return proto;
 }
 
