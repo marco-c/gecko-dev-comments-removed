@@ -11,6 +11,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "CloudSync",
 var CloudSync = null;
 #endif
 
+XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
+                                  "resource://gre/modules/FxAccounts.jsm");
+
 
 var gSyncUI = {
   _obs: ["weave:service:sync:start",
@@ -38,10 +41,7 @@ var gSyncUI = {
 
     
     
-    let xps = Components.classes["@mozilla.org/weave/service;1"]
-                                .getService(Components.interfaces.nsISupports)
-                                .wrappedJSObject;
-    if (xps.ready) {
+    if (this.weaveService.ready) {
       this.initUI();
       return;
     }
@@ -99,45 +99,44 @@ var gSyncUI = {
     }
   },
 
+  
+  
   _needsSetup() {
     
-    
-    
-    
-    
-    
-    
-    
-    if (Weave.Status._authManager._signedInUser !== undefined) {
-      
-      
-      return !Weave.Status._authManager._signedInUser ||
-             !Weave.Status._authManager._signedInUser.verified;
+    if (this.weaveService.fxAccountsEnabled) {
+      return fxAccounts.getSignedInUser().then(user => {
+        
+        return !(user && user.verified);
+      });
     }
-
     
     let firstSync = "";
     try {
       firstSync = Services.prefs.getCharPref("services.sync.firstSync");
     } catch (e) { }
 
-    return Weave.Status.checkSetup() == Weave.CLIENT_NOT_CONFIGURED ||
-           firstSync == "notReady";
+    return Promise.resolve(Weave.Status.checkSetup() == Weave.CLIENT_NOT_CONFIGURED ||
+                           firstSync == "notReady");
   },
 
+  
+  
   _needsVerification() {
     
     
+    if (this.weaveService.fxAccountsEnabled) {
+      return fxAccounts.getSignedInUser().then(user => {
+        
+        if (!user) {
+          return false;
+        }
+        return !user.verified;
+      });
+    }
+
     
-    if (Weave.Status._authManager._signedInUser === undefined) {
-      
-      return false;
-    }
-    if (!Weave.Status._authManager._signedInUser) {
-      
-      return false;
-    }
-    return !Weave.Status._authManager._signedInUser.verified;
+    
+    return Promise.resolve(false);
   },
 
   
@@ -149,27 +148,36 @@ var gSyncUI = {
     return Weave.Status.login == Weave.LOGIN_FAILED_LOGIN_REJECTED;
   },
 
-  updateUI: function SUI_updateUI() {
-    let needsSetup = this._needsSetup();
-    let loginFailed = this._loginFailed();
+  
+  updateUI() {
+    this._promiseUpdateUI().catch(err => {
+      this.log.error("updateUI failed", err);
+    })
+  },
 
-    
-    document.getElementById("sync-reauth-state").hidden = true;
-    document.getElementById("sync-setup-state").hidden = true;
-    document.getElementById("sync-syncnow-state").hidden = true;
+  
+  _promiseUpdateUI() {
+    return this._needsSetup().then(needsSetup => {
+      let loginFailed = this._loginFailed();
 
-    if (CloudSync && CloudSync.ready && CloudSync().adapters.count) {
-      document.getElementById("sync-syncnow-state").hidden = false;
-    } else if (loginFailed) {
       
-      document.getElementById("sync-reauth-state").hidden = false;
-    } else if (needsSetup) {
-      document.getElementById("sync-setup-state").hidden = false;
-    } else {
-      document.getElementById("sync-syncnow-state").hidden = false;
-    }
+      document.getElementById("sync-reauth-state").hidden = true;
+      document.getElementById("sync-setup-state").hidden = true;
+      document.getElementById("sync-syncnow-state").hidden = true;
 
-    this._updateSyncButtonsTooltip();
+      if (CloudSync && CloudSync.ready && CloudSync().adapters.count) {
+        document.getElementById("sync-syncnow-state").hidden = false;
+      } else if (loginFailed) {
+        
+        document.getElementById("sync-reauth-state").hidden = false;
+      } else if (needsSetup) {
+        document.getElementById("sync-setup-state").hidden = false;
+      } else {
+        document.getElementById("sync-syncnow-state").hidden = false;
+      }
+
+      return this._updateSyncButtonsTooltip();
+    });
   },
 
   
@@ -240,21 +248,32 @@ var gSyncUI = {
   },
 
   
-  doSync: function SUI_doSync() {
-    let needsSetup = this._needsSetup();
-
-    if (!needsSetup) {
-      setTimeout(function () Weave.Service.errorHandler.syncAndReportErrors(), 0);
-    }
-
-    Services.obs.notifyObservers(null, "cloudsync:user-sync", null);
+  
+  
+  doSync() {
+    this._needsSetup().then(needsSetup => {
+      if (!needsSetup) {
+        setTimeout(function () Weave.Service.errorHandler.syncAndReportErrors(), 0);
+      }
+      Services.obs.notifyObservers(null, "cloudsync:user-sync", null);
+    }).catch(err => {
+      this.log.error("Failed to force a sync", err);
+    });
   },
 
-  handleToolbarButton: function SUI_handleStatusbarButton() {
-    if (this._needsSetup() || this._loginFailed())
-      this.openSetup();
-    else
-      this.doSync();
+  
+  
+  
+  handleToolbarButton() {
+    this._needsSetup().then(needsSetup => {
+      if (needsSetup || this._loginFailed()) {
+        this.openSetup();
+      } else {
+        return this.doSync();
+      }
+    }).catch(err => {
+      this.log.error("Failed to handle toolbar button command", err);
+    });
   },
 
   
@@ -270,10 +289,7 @@ var gSyncUI = {
 
 
   openSetup: function SUI_openSetup(wizardType, entryPoint = "syncbutton") {
-    let xps = Components.classes["@mozilla.org/weave/service;1"]
-                                .getService(Components.interfaces.nsISupports)
-                                .wrappedJSObject;
-    if (xps.fxAccountsEnabled) {
+    if (this.weaveService.fxAccountsEnabled) {
       
       if (UITour.tourBrowsersByWindow.get(window) &&
           UITour.tourBrowsersByWindow.get(window).has(gBrowser.selectedBrowser)) {
@@ -292,6 +308,7 @@ var gSyncUI = {
     }
   },
 
+  
   openAddDevice: function () {
     if (!Weave.Utils.ensureMPUnlocked())
       return;
@@ -318,29 +335,29 @@ var gSyncUI = {
 
 
 
-  _updateSyncButtonsTooltip: function() {
+  _updateSyncButtonsTooltip: Task.async(function* () {
     if (!gBrowser)
       return;
-
-    let syncButton = document.getElementById("sync-button");
-    let statusButton = document.getElementById("PanelUI-fxa-icon");
 
     let email;
     try {
       email = Services.prefs.getCharPref("services.sync.username");
     } catch (ex) {}
 
+    let needsSetup = yield this._needsSetup();
+    let needsVerification = yield this._needsVerification();
+    let loginFailed = this._loginFailed();
     
     
     
     let tooltiptext;
-    if (this._needsVerification()) {
+    if (needsVerification) {
       
       tooltiptext = gFxAccounts.strings.formatStringFromName("verifyDescription", [email], 1);
-    } else if (this._needsSetup()) {
+    } else if (needsSetup) {
       
       tooltiptext = this._stringBundle.GetStringFromName("signInToSync.description");
-    } else if (this._loginFailed()) {
+    } else if (loginFailed) {
       
       tooltiptext = gFxAccounts.strings.formatStringFromName("reconnectDescription", [email], 1);
     } else {
@@ -358,6 +375,14 @@ var gSyncUI = {
         
       }
     }
+
+    
+    
+    if (!gBrowser)
+      return;
+    let syncButton = document.getElementById("sync-button");
+    let statusButton = document.getElementById("PanelUI-fxa-icon");
+
     for (let button of [syncButton, statusButton]) {
       if (button) {
         if (tooltiptext) {
@@ -367,7 +392,7 @@ var gSyncUI = {
         }
       }
     }
-  },
+  }),
 
   clearError: function SUI_clearError(errorString) {
     Weave.Notifications.removeAll(errorString);
@@ -458,4 +483,10 @@ XPCOMUtils.defineLazyGetter(gSyncUI, "_stringBundle", function() {
 
 XPCOMUtils.defineLazyGetter(gSyncUI, "log", function() {
   return Log.repository.getLogger("browserwindow.syncui");
+});
+
+XPCOMUtils.defineLazyGetter(gSyncUI, "weaveService", function() {
+  return Components.classes["@mozilla.org/weave/service;1"]
+                   .getService(Components.interfaces.nsISupports)
+                   .wrappedJSObject;
 });

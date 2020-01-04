@@ -14,6 +14,25 @@ Log.repository.getLogger("browserwindow.syncui").addAppender(new Log.DumpAppende
 
 
 
+function notifyAndPromiseUIUpdated(topic) {
+  return new Promise(resolve => {
+    
+    let oldPromiseUpdateUI = gSyncUI._promiseUpdateUI.bind(gSyncUI);
+    gSyncUI._promiseUpdateUI = function() {
+      return oldPromiseUpdateUI().then(() => {
+        
+        gSyncUI._promiseUpdateUI = oldPromiseUpdateUI;
+        
+        resolve();
+      });
+    };
+    
+    Services.obs.notifyObservers(null, topic, null);
+  });
+}
+
+
+
 
 function checkBroadcasterVisible(broadcasterId) {
   let all = ["sync-reauth-state", "sync-setup-state", "sync-syncnow-state"];
@@ -55,13 +74,13 @@ add_task(function* prepare() {
   yield xps.whenLoaded();
   
   Weave.Status.login = Weave.LOGIN_FAILED_NO_USERNAME;
-  Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
+  yield notifyAndPromiseUIUpdated("weave:ui:clear-error");
 
   checkBroadcasterVisible("sync-setup-state");
   checkButtonTooltips("Sign In To Sync");
   
   let oldNeedsSetup = window.gSyncUI._needsSetup;
-  window.gSyncUI._needsSetup = () => false;
+  window.gSyncUI._needsSetup = () => Promise.resolve(false);
   registerCleanupFunction(() => {
     window.gSyncUI._needsSetup = oldNeedsSetup;
     
@@ -69,7 +88,7 @@ add_task(function* prepare() {
     Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
   });
   
-  Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
+  yield notifyAndPromiseUIUpdated("weave:ui:clear-error");
   checkBroadcasterVisible("sync-syncnow-state");
 });
 
@@ -80,7 +99,7 @@ add_task(function* testSyncNeedsVerification() {
   window.gSyncUI._needsVerification = () => true;
   try {
     
-    Services.obs.notifyObservers(null, "weave:ui:clear-error", null);
+    yield notifyAndPromiseUIUpdated("weave:ui:clear-error");
     checkButtonTooltips("Verify");
   } finally {
     window.gSyncUI._needsVerification = oldNeedsVerification;
@@ -95,7 +114,7 @@ add_task(function* testSyncLoginError() {
   
   Weave.Status.sync = Weave.LOGIN_FAILED;
   Weave.Status.login = Weave.LOGIN_FAILED_LOGIN_REJECTED;
-  Services.obs.notifyObservers(null, "weave:ui:sync:error", null);
+  yield notifyAndPromiseUIUpdated("weave:ui:sync:error");
 
   Assert.equal(Notifications.notifications.length, 0, "no notifications shown on login error");
   
@@ -106,8 +125,8 @@ add_task(function* testSyncLoginError() {
   
   Weave.Status.sync = Weave.STATUS_OK;
   Weave.Status.login = Weave.LOGIN_SUCCEEDED;
-  Services.obs.notifyObservers(null, "weave:service:login:start", null);
-  Services.obs.notifyObservers(null, "weave:service:login:finish", null);
+  yield notifyAndPromiseUIUpdated("weave:service:login:start");
+  yield notifyAndPromiseUIUpdated("weave:service:login:finish");
   Assert.equal(Notifications.notifications.length, 0, "no notifications left");
   
   checkBroadcasterVisible("sync-syncnow-state");
@@ -125,28 +144,28 @@ function checkButtonsStatus(shouldBeActive) {
   }
 }
 
-function testButtonActions(startNotification, endNotification) {
+function* testButtonActions(startNotification, endNotification) {
   checkButtonsStatus(false);
   
-  Services.obs.notifyObservers(null, startNotification, null);
+  yield notifyAndPromiseUIUpdated(startNotification);
   checkButtonsStatus(true);
   
-  Services.obs.notifyObservers(null, endNotification, null);
+  yield notifyAndPromiseUIUpdated(endNotification);
   checkButtonsStatus(false);
 }
 
-function doTestButtonActivities() {
-  testButtonActions("weave:service:login:start", "weave:service:login:finish");
-  testButtonActions("weave:service:login:start", "weave:service:login:error");
+function *doTestButtonActivities() {
+  yield testButtonActions("weave:service:login:start", "weave:service:login:finish");
+  yield testButtonActions("weave:service:login:start", "weave:service:login:error");
 
-  testButtonActions("weave:service:sync:start", "weave:service:sync:finish");
-  testButtonActions("weave:service:sync:start", "weave:service:sync:error");
+  yield testButtonActions("weave:service:sync:start", "weave:service:sync:finish");
+  yield testButtonActions("weave:service:sync:start", "weave:service:sync:error");
 
   
-  Services.obs.notifyObservers(null, "weave:service:sync:start", null);
+  yield notifyAndPromiseUIUpdated("weave:service:sync:start");
   checkButtonsStatus(true);
   
-  Services.obs.notifyObservers(null, "weave:service:sync:finish", null);
+  yield notifyAndPromiseUIUpdated("weave:service:sync:finish");
   
   checkButtonsStatus(false);
 }
@@ -154,7 +173,7 @@ function doTestButtonActivities() {
 add_task(function* testButtonActivitiesInNavBar() {
   
   
-  doTestButtonActivities();
+  yield doTestButtonActivities();
 });
 
 add_task(function* testButtonActivitiesInPanel() {
@@ -163,7 +182,7 @@ add_task(function* testButtonActivitiesInPanel() {
   CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
   yield PanelUI.show();
   try {
-    doTestButtonActivities();
+    yield doTestButtonActivities();
   } finally {
     PanelUI.hide();
   }
