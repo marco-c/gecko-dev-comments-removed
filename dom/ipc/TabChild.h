@@ -188,11 +188,12 @@ public:
 
     virtual ScreenIntSize GetInnerSize() = 0;
 
+    
+    already_AddRefed<nsIDocument> GetDocument() const;
+
 protected:
     virtual ~TabChildBase();
 
-    
-    already_AddRefed<nsIDocument> GetDocument() const;
     
     already_AddRefed<nsIPresShell> GetPresShell() const;
 
@@ -502,11 +503,6 @@ public:
     bool AsyncPanZoomEnabled() { return mAsyncPanZoomEnabled; }
 
     virtual ScreenIntSize GetInnerSize() override;
-
-    virtual PWebBrowserPersistDocumentChild* AllocPWebBrowserPersistDocumentChild(const uint64_t& aOuterWindowID) override;
-    virtual bool RecvPWebBrowserPersistDocumentConstructor(PWebBrowserPersistDocumentChild *aActor,
-                                                           const uint64_t& aOuterWindowID) override;
-    virtual bool DeallocPWebBrowserPersistDocumentChild(PWebBrowserPersistDocumentChild* aActor) override;
 
 protected:
     virtual ~TabChild();

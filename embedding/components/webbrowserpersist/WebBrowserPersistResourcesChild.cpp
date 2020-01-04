@@ -7,7 +7,7 @@
 #include "WebBrowserPersistResourcesChild.h"
 
 #include "WebBrowserPersistDocumentChild.h"
-#include "mozilla/dom/PBrowserChild.h"
+#include "mozilla/dom/ContentChild.h"
 
 namespace mozilla {
 
@@ -36,12 +36,14 @@ WebBrowserPersistResourcesChild::VisitDocument(nsIWebBrowserPersistDocument* aDo
                                                nsIWebBrowserPersistDocument* aSubDocument)
 {
     auto* subActor = new WebBrowserPersistDocumentChild();
-    dom::PBrowserChild* grandManager = Manager()->Manager();
     
     
     
     
-    if (!grandManager->SendPWebBrowserPersistDocumentConstructor(subActor, 0)) {
+    
+    
+    if (!Manager()->Manager()
+        ->SendPWebBrowserPersistDocumentConstructor(subActor, nullptr, 0)) {
         
         return NS_ERROR_FAILURE;
     }
