@@ -2133,12 +2133,6 @@ public:
     mSelfRef = this;
   }
 
-  
-  virtual IToplevelProtocol*
-  CloneToplevel(const InfallibleTArray<mozilla::ipc::ProtocolFdMapping>& aFds,
-                base::ProcessHandle aPeerProcess,
-                mozilla::ipc::ProtocolCloneContext* aCtx) override;
-
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   
@@ -3092,16 +3086,6 @@ CrossProcessCompositorBridgeParent::~CrossProcessCompositorBridgeParent()
 {
   MOZ_ASSERT(XRE_GetIOMessageLoop());
   MOZ_ASSERT(IToplevelProtocol::GetTransport());
-}
-
-IToplevelProtocol*
-CrossProcessCompositorBridgeParent::CloneToplevel(
-  const InfallibleTArray<mozilla::ipc::ProtocolFdMapping>& aFds,
-  base::ProcessHandle aPeerProcess,
-  mozilla::ipc::ProtocolCloneContext* aCtx)
-{
-  MOZ_ASSERT_UNREACHABLE("Not supported");
-  return nullptr;
 }
 
 PTextureParent*

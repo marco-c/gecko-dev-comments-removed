@@ -185,10 +185,6 @@ public:
     virtual ProcessId OtherPid() const = 0;
     virtual MessageChannel* GetIPCChannel() = 0;
 
-    
-    virtual void CloneManagees(ListenerT* aSource,
-                               ProtocolCloneContext* aCtx) = 0;
-
     Maybe<ListenerT*> ReadActor(const IPC::Message* aMessage, PickleIterator* aIter, bool aNullable,
                                 const char* aActorDescription, int32_t aProtocolTypeId);
 };
@@ -256,16 +252,6 @@ public:
     
     
     size_t GetOpenedActorsUnsafe(IToplevelProtocol** aActors, size_t aActorsMax);
-
-    virtual IToplevelProtocol*
-    CloneToplevel(const InfallibleTArray<ProtocolFdMapping>& aFds,
-                  base::ProcessHandle aPeerProcess,
-                  ProtocolCloneContext* aCtx);
-
-    void CloneOpenedToplevels(IToplevelProtocol* aTemplate,
-                              const InfallibleTArray<ProtocolFdMapping>& aFds,
-                              base::ProcessHandle aPeerProcess,
-                              ProtocolCloneContext* aCtx);
 
 private:
     void AddOpenedActorLocked(IToplevelProtocol* aActor);
