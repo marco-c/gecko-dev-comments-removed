@@ -182,6 +182,10 @@ ClearKeyDecryptor::Decrypt(uint8_t* aBuffer, uint32_t aBufferSize,
     for (size_t i = 0; i < aMetadata.NumSubsamples(); i++) {
       data += aMetadata.mClearBytes[i];
       uint32_t cipherBytes = aMetadata.mCipherBytes[i];
+      if (data + cipherBytes > aBuffer + aBufferSize) {
+        
+        return GMPCryptoErr;
+      }
 
       memcpy(iter, data, cipherBytes);
 
