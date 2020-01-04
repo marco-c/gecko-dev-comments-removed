@@ -18,6 +18,7 @@
     int32_t                                mHandlesUsed;
     nsTArray<nsAutoArrayPtr<nsIContent*> > mOldHandles;
     nsHtml5TreeOpStage*                    mSpeculativeLoadStage;
+    nsresult                               mBroken;
     bool                                   mCurrentHtmlScriptIsAsyncOrDefer;
     bool                                   mPreventScriptExecution;
 #ifdef DEBUG
@@ -127,6 +128,16 @@
       return mBuilder;
     }
 
+    
+
+
+
+
+
+
+
+    bool EnsureBufferSpace(size_t aLength);
+
     void EnableViewSource(nsHtml5Highlighter* aHighlighter);
 
     void errStrayStartTag(nsIAtom* aName);
@@ -224,3 +235,12 @@
     void errEndWithUnclosedElements(nsIAtom* aName);
 
     void MarkAsBroken(nsresult aRv);
+
+    
+
+
+
+    nsresult IsBroken()
+    {
+      return mBroken;
+    }

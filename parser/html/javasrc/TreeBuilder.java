@@ -602,7 +602,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         
         start(fragment);
         charBufferLen = 0;
-        charBuffer = new char[1024];
+        charBuffer = null;
         framesetOk = true;
         if (fragment) {
             T elt;
@@ -5594,14 +5594,30 @@ public abstract class TreeBuilder<T> implements TokenHandler,
 
     private final void accumulateCharactersForced(@Const @NoLength char[] buf,
             int start, int length) throws SAXException {
-        int newLen = charBufferLen + length;
-        if (newLen > charBuffer.length) {
-            char[] newBuf = new char[newLen];
+        System.arraycopy(buf, start, charBuffer, charBufferLen, length);
+        charBufferLen += length;
+    }
+
+    @Override public void ensureBufferSpace(int inputLength)
+            throws SAXException {
+        
+        
+        int worstCase = charBufferLen + inputLength;
+        if (charBuffer == null) {
+            
+            
+            charBuffer = new char[worstCase + 128];
+        } else if (worstCase > charBuffer.length) {
+            
+            
+            
+            
+            
+            
+            char[] newBuf = new char[worstCase];
             System.arraycopy(charBuffer, 0, newBuf, 0, charBufferLen);
             charBuffer = newBuf;
         }
-        System.arraycopy(buf, start, charBuffer, charBufferLen, length);
-        charBufferLen = newLen;
     }
 
     

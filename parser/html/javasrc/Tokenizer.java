@@ -265,11 +265,6 @@ public class Tokenizer implements Locator {
     
 
 
-    private static final int BUFFER_GROW_BY = 1024;
-
-    
-
-
     private static final @NoLength char[] CDATA_LSQB = { 'C', 'D', 'A', 'T',
             'A', '[' };
 
@@ -848,11 +843,6 @@ public class Tokenizer implements Locator {
 
 
     private void appendStrBuf(char c) {
-        if (strBufLen == strBuf.length) {
-            char[] newBuf = new char[strBuf.length + Tokenizer.BUFFER_GROW_BY];
-            System.arraycopy(strBuf, 0, newBuf, 0, strBuf.length);
-            strBuf = newBuf;
-        }
         strBuf[strBufLen++] = c;
     }
 
@@ -1260,6 +1250,13 @@ public class Tokenizer implements Locator {
         lastCR = false;
 
         int start = buffer.getStart();
+        int end = buffer.getEnd();
+
+        
+        
+        ensureBufferSpace(end - start);
+        
+
         
 
 
@@ -1310,9 +1307,9 @@ public class Tokenizer implements Locator {
         
         
         pos = stateLoop(state, c, pos, buffer.getBuffer(), false, returnState,
-                buffer.getEnd());
+                end);
         
-        if (pos == buffer.getEnd()) {
+        if (pos == end) {
             
             buffer.setStart(pos);
         } else {
@@ -1320,6 +1317,32 @@ public class Tokenizer implements Locator {
         }
         return lastCR;
     }
+
+    
+    private void ensureBufferSpace(int inputLength) throws SAXException {
+        
+        
+        
+        
+        int worstCase = strBufLen + inputLength + charRefBufLen + 2;
+        tokenHandler.ensureBufferSpace(worstCase);
+        if (strBuf == null) {
+            
+            
+            strBuf = new char[worstCase + 128];
+        } else if (worstCase > strBuf.length) {
+            
+            
+            
+            
+            
+            
+            char[] newBuf = new char[worstCase];
+            System.arraycopy(strBuf, 0, newBuf, 0, strBufLen);
+            strBuf = newBuf;
+        }
+    }
+    
 
     @SuppressWarnings("unused") private int stateLoop(int state, char c,
             int pos, @NoLength char[] buf, boolean reconsume, int returnState,
@@ -6710,7 +6733,7 @@ public class Tokenizer implements Locator {
 
     public void initializeWithoutStarting() throws SAXException {
         confident = false;
-        strBuf = new char[1024];
+        strBuf = null;
         line = 1;
         
         html4 = false;

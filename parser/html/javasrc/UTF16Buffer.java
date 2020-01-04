@@ -122,6 +122,15 @@ public final class UTF16Buffer {
 
 
 
+    public int getLength() {
+        return end - start;
+    }
+
+    
+
+
+
+
 
 
     public void adjust(boolean lastWasCR) {
