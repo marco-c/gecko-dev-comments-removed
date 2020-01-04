@@ -29,6 +29,7 @@ ManagerId::Create(nsIPrincipal* aPrincipal, ManagerId** aManagerIdOut)
   nsCString quotaOrigin;
   nsresult rv = QuotaManager::GetInfoFromPrincipal(aPrincipal,
                                                    nullptr,   
+                                                   nullptr,   
                                                    &quotaOrigin,
                                                    nullptr);  
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
