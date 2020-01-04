@@ -50,8 +50,6 @@ public:
            nsSecurityFlags aSecurityFlags,
            nsContentPolicyType aContentPolicyType);
 
-  already_AddRefed<nsILoadInfo> Clone() const;
-
 private:
   
   
@@ -68,7 +66,6 @@ private:
            bool aEnforceSecurity,
            bool aInitialSecurityCheckDone,
            nsTArray<nsCOMPtr<nsIPrincipal>>& aRedirectChain);
-  LoadInfo(const LoadInfo& rhs) = default;
 
   friend nsresult
   mozilla::ipc::LoadInfoArgsToLoadInfo(
