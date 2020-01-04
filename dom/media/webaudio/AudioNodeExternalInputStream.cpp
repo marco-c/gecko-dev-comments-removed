@@ -3,6 +3,8 @@
 
 
 
+#include "AlignedTArray.h"
+#include "AlignmentUtils.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeExternalInputStream.h"
 #include "AudioChannelFormat.h"
@@ -90,9 +92,20 @@ static void ConvertSegmentToAudioBlock(AudioSegment* aSegment,
     NS_ASSERTION(!ci.IsEnded(), "Should be at least one chunk!");
     if (ci->GetDuration() == WEBAUDIO_BLOCK_SIZE &&
         (ci->IsNull() || ci->mBufferFormat == AUDIO_FORMAT_FLOAT32)) {
+
+      bool aligned = true;
+      for (size_t i = 0; i < ci->mChannelData.Length(); ++i) {
+        if (!IS_ALIGNED16(ci->mChannelData[i])) {
+            aligned = false;
+            break;
+        }
+      }
+
       
-      *aBlock = *ci;
-      return;
+      if (aligned) {
+        *aBlock = *ci;
+        return;
+      }
     }
   }
 
@@ -192,7 +205,10 @@ AudioNodeExternalInputStream::ProcessInput(GraphTime aFrom, GraphTime aTo,
 
   uint32_t accumulateIndex = 0;
   if (inputChannels) {
-    AutoTArray<float,GUESS_AUDIO_CHANNELS*WEBAUDIO_BLOCK_SIZE> downmixBuffer;
+    
+    
+    AlignedTArray<float,16> downmixBuffer;
+    downmixBuffer.SetLength(GUESS_AUDIO_CHANNELS*WEBAUDIO_BLOCK_SIZE);
     for (uint32_t i = 0; i < audioSegments.Length(); ++i) {
       AudioBlock tmpChunk;
       ConvertSegmentToAudioBlock(&audioSegments[i], &tmpChunk, inputChannels);
