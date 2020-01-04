@@ -1386,22 +1386,8 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod, const nsACString& aUrl
                                bool aAsync, const nsAString& aUsername,
                                const nsAString& aPassword, uint8_t optional_argc)
 {
-  Optional<bool> async;
-  if (!optional_argc) {
-    
-    async.Construct() = true;
-  } else {
-    async.Construct() = aAsync;
-  }
-  Optional<nsAString> username;
-  if (optional_argc > 1) {
-    username = &aUsername;
-  }
-  Optional<nsAString> password;
-  if (optional_argc > 2) {
-    password = &aPassword;
-  }
-  return Open(aMethod, aUrl, async, username, password);
+  return Open(aMethod, aUrl, optional_argc > 0 ? aAsync : true,
+              aUsername, aPassword);
 }
 
 
@@ -1410,8 +1396,7 @@ void
 XMLHttpRequestMainThread::Open(const nsACString& aMethod, const nsAString& aUrl,
                                ErrorResult& aRv)
 {
-  aRv = Open(aMethod, NS_ConvertUTF16toUTF8(aUrl), Optional<bool>(true),
-             Optional<nsAString>(), Optional<nsAString>());
+  Open(aMethod, aUrl, true, NullString(), NullString(), aRv);
 }
 
 
@@ -1425,30 +1410,25 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
                                const nsAString& aPassword,
                                ErrorResult& aRv)
 {
-  Optional<nsAString> username;
-  username = &aUsername;
-  Optional<nsAString> password;
-  password = &aPassword;
-  aRv = Open(aMethod, NS_ConvertUTF16toUTF8(aUrl),
-             Optional<bool>(aAsync), username, password);
+  nsresult rv = Open(aMethod, NS_ConvertUTF16toUTF8(aUrl), aAsync, aUsername, aPassword);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+  }
 }
 
 nsresult
 XMLHttpRequestMainThread::Open(const nsACString& aMethod,
                                const nsACString& aUrl,
-                               const Optional<bool>& aAsync,
-                               const Optional<nsAString>& aUsername,
-                               const Optional<nsAString>& aPassword)
-{
-  bool async = aAsync.WasPassed() ? aAsync.Value() : true;
-
+                               bool aAsync,
+                               const nsAString& aUsername,
+                               const nsAString& aPassword) {
   
-  if (!async && !DontWarnAboutSyncXHR() && GetOwner() &&
+  if (!aAsync && !DontWarnAboutSyncXHR() && GetOwner() &&
       GetOwner()->GetExtantDoc()) {
     GetOwner()->GetExtantDoc()->WarnOnceAbout(nsIDocument::eSyncXMLHttpRequest);
   }
 
-  Telemetry::Accumulate(Telemetry::XMLHTTPREQUEST_ASYNC_OR_SYNC, async ? 0 : 1);
+  Telemetry::Accumulate(Telemetry::XMLHTTPREQUEST_ASYNC_OR_SYNC, aAsync ? 0 : 1);
 
   
   nsCOMPtr<nsIDocument> responsibleDocument = GetDocumentIfCurrent();
@@ -1493,24 +1473,22 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   
 
   
-  if (aAsync.WasPassed()) {
-    nsAutoCString host;
-    parsedURL->GetHost(host);
-    if (!host.IsEmpty()) {
-      nsAutoCString userpass;
-      if (aUsername.WasPassed()) {
-        CopyUTF16toUTF8(aUsername.Value(), userpass);
-      }
-      userpass.AppendLiteral(":");
-      if (aPassword.WasPassed()) {
-        AppendUTF16toUTF8(aPassword.Value(), userpass);
-      }
-      parsedURL->SetUserPass(userpass);
+  nsAutoCString host;
+  parsedURL->GetHost(host);
+  if (!host.IsEmpty()) {
+    nsAutoCString userpass;
+    if (!aUsername.IsVoid()) {
+      CopyUTF16toUTF8(aUsername, userpass);
     }
+    userpass.AppendLiteral(":");
+    if (!aPassword.IsVoid()) {
+      AppendUTF16toUTF8(aPassword, userpass);
+    }
+    parsedURL->SetUserPass(userpass);
   }
 
   
-  if (!async && HasOrHasHadOwner() && (mTimeoutMilliseconds ||
+  if (!aAsync && HasOrHasHadOwner() && (mTimeoutMilliseconds ||
        mResponseType != XMLHttpRequestResponseType::_empty)) {
     if (mTimeoutMilliseconds) {
       LogMessage("TimeoutSyncXHRWarning", GetOwner());
@@ -1529,7 +1507,7 @@ XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   mFlagSend = false;
   mRequestMethod.Assign(method);
   mRequestURL = parsedURL;
-  mFlagSynchronous = !async;
+  mFlagSynchronous = !aAsync;
   mAuthorRequestHeaders.Clear();
   ResetResponse();
 
