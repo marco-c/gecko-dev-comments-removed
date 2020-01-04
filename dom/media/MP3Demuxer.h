@@ -65,6 +65,9 @@ public:
     uint32_t Size() const;
 
     
+    uint8_t FooterSize() const;
+
+    
     
     bool IsValid(int aPos) const;
 
@@ -282,6 +285,8 @@ public:
   
   void EndFrameSession();
 
+  
+  
   
   
   const uint8_t* Parse(const uint8_t* aBeg, const uint8_t* aEnd);
