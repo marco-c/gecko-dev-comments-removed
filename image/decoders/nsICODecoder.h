@@ -70,7 +70,7 @@ public:
   
   size_t FirstResourceOffset() const;
 
-  virtual void WriteInternal(const char* aBuffer, uint32_t aCount) override;
+  void DoDecode(const char* aBuffer, size_t aLength) override;
   virtual void FinishInternal() override;
   virtual void FinishWithErrorInternal() override;
 
