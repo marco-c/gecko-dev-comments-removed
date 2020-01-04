@@ -911,7 +911,7 @@ DataStoreChangeEventProxy::DataStoreChangeEventProxy(
 
   
   
-  if (!mWorkerPrivate->AddFeature(mWorkerPrivate->GetJSContext(), this)) {
+  if (!mWorkerPrivate->AddFeature(this)) {
     MOZ_ASSERT(false, "cannot add the worker feature!");
     return;
   }
@@ -980,7 +980,7 @@ DataStoreChangeEventProxy::Notify(JSContext* aCx, Status aStatus)
   
   if (aStatus >= Canceling) {
     mWorkerStore = nullptr;
-    mWorkerPrivate->RemoveFeature(aCx, this);
+    mWorkerPrivate->RemoveFeature(this);
     mCleanedUp = true;
   }
 
