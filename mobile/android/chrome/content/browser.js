@@ -859,7 +859,7 @@ var BrowserApp = {
 
     NativeWindow.contextmenus.add({
       label: stringGetter("contextmenu.shareImage"),
-      selector: NativeWindow.contextmenus._disableRestricted("SHARE", NativeWindow.contextmenus.imageSaveableContext),
+      selector: NativeWindow.contextmenus._disableRestricted("SHARE", NativeWindow.contextmenus.imageShareableContext),
       order: NativeWindow.contextmenus.DEFAULT_HTML5_ORDER - 1, 
       showAsActions: function(aTarget) {
         let doc = aTarget.ownerDocument;
@@ -2437,6 +2437,30 @@ var NativeWindow = {
         }
         return false;
       }
+    },
+
+    imageShareableContext: {
+      matches: function imageShareableContextMatches(aElement) {
+        let imgSrc = '';
+        if (aElement instanceof Ci.nsIDOMHTMLImageElement) {
+          imgSrc = aElement.src;
+        } else if (aElement instanceof Ci.nsIImageLoadingContent &&
+            aElement.currentURI &&
+            aElement.currentURI.spec) {
+          imgSrc = aElement.currentURI.spec;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        let MAX_IMG_SRC_LEN = 62500;
+        let isTooLong = imgSrc.length >= MAX_IMG_SRC_LEN;
+        return !isTooLong && this.NativeWindow.contextmenus.imageSaveableContext.matches(aElement);
+      }.bind(this)
     },
 
     mediaSaveableContext: {
