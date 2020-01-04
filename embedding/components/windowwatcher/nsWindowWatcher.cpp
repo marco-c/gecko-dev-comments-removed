@@ -942,6 +942,18 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
                                             nullptr;
 
   if (windowIsNew) {
+    auto* docShell = static_cast<nsDocShell*>(newDocShell.get());
+
+    
+    
+    if (subjectPrincipal &&
+        docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+      DocShellOriginAttributes attrs;
+      attrs.InheritFromDocToChildDocShell(BasePrincipal::Cast(subjectPrincipal)->OriginAttributesRef());
+
+      docShell->SetOriginAttributes(attrs);
+    }
+
     
     
     
@@ -1024,20 +1036,6 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
       loadInfo->SetReferrer(doc->GetDocumentURI());
       loadInfo->SetReferrerPolicy(doc->GetReferrerPolicy());
     }
-  }
-
-  
-  
-  if (windowIsNew && subjectPrincipal) {
-    uint32_t userContextId;
-    rv = subjectPrincipal->GetUserContextId(&userContextId);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    auto* docShell = static_cast<nsDocShell*>(newDocShell.get());
-
-    DocShellOriginAttributes attr = docShell->GetOriginAttributes();
-    attr.mUserContextId = userContextId;
-    docShell->SetOriginAttributes(attr);
   }
 
   if (isNewToplevelWindow) {
