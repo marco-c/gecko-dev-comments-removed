@@ -4217,7 +4217,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
         
         LayoutDeviceIntPoint center =
           GetWindowClientRectCenter(aMouseEvent->mWidget);
-        aMouseEvent->lastRefPoint = center;
+        aMouseEvent->mLastRefPoint = center;
         if (aMouseEvent->mRefPoint != center) {
           
           
@@ -4240,9 +4240,9 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
         
         
         
-        aMouseEvent->lastRefPoint = aMouseEvent->mRefPoint;
+        aMouseEvent->mLastRefPoint = aMouseEvent->mRefPoint;
       } else {
-        aMouseEvent->lastRefPoint = sLastRefPoint;
+        aMouseEvent->mLastRefPoint = sLastRefPoint;
       }
 
       

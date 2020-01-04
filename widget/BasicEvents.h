@@ -272,7 +272,7 @@ protected:
     , mClass(aEventClassID)
     , mMessage(aMessage)
     , mRefPoint(0, 0)
-    , lastRefPoint(0, 0)
+    , mLastRefPoint(0, 0)
     , userType(nullptr)
   {
     MOZ_COUNT_CTOR(WidgetEvent);
@@ -294,7 +294,7 @@ public:
     , mClass(eBasicEventClass)
     , mMessage(aMessage)
     , mRefPoint(0, 0)
-    , lastRefPoint(0, 0)
+    , mLastRefPoint(0, 0)
     , userType(nullptr)
   {
     MOZ_COUNT_CTOR(WidgetEvent);
@@ -331,7 +331,7 @@ public:
   
   LayoutDeviceIntPoint mRefPoint;
   
-  LayoutDeviceIntPoint lastRefPoint;
+  LayoutDeviceIntPoint mLastRefPoint;
   
   BaseEventFlags mFlags;
 
