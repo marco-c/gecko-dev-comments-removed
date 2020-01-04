@@ -959,6 +959,7 @@ abstract class BaseTest extends BaseRobocopTest {
 
 
     public void setPreferenceAndWaitForChange(final JSONObject jsonPref) {
+        blockForGeckoReady();
         mActions.sendGeckoEvent("Preferences:Set", jsonPref.toString());
 
         
