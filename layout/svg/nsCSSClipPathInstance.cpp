@@ -67,7 +67,7 @@ nsCSSClipPathInstance::CreateClipPath(DrawTarget* aDrawTarget)
 {
   nsRect r;
   
-  switch (mClipPathStyle.GetSizingBox()) {
+  switch (mClipPathStyle.GetReferenceBox()) {
     case StyleClipShapeSizing::Content:
       r = mTargetFrame->GetContentRectRelativeToSelf();
       break;
