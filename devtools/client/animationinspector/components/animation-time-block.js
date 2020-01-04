@@ -54,7 +54,7 @@ AnimationTimeBlock.prototype = {
     
     
     
-    let {x, iterationW, delayX, delayW, negativeDelayW} =
+    let {x, iterationW, delayX, delayW, negativeDelayW, endDelayX, endDelayW} =
       TimeScale.getAnimationDimensions(animation);
 
     
@@ -106,6 +106,18 @@ AnimationTimeBlock.prototype = {
         }
       });
     }
+
+    
+    if (state.endDelay) {
+      createNode({
+        parent: this.containerEl,
+        attributes: {
+          "class": "end-delay" + (state.endDelay < 0 ? " negative" : ""),
+          "style": `left:${endDelayX}%;
+                    width:${endDelayW}%;`
+        }
+      });
+    }
   },
 
   getTooltipText: function(state) {
@@ -119,14 +131,23 @@ AnimationTimeBlock.prototype = {
     text += "\n";
 
     
-    text += L10N.getStr("player.animationDelayLabel") + " ";
-    text += getTime(state.delay);
-    text += "\n";
+    if (state.delay) {
+      text += L10N.getStr("player.animationDelayLabel") + " ";
+      text += getTime(state.delay);
+      text += "\n";
+    }
 
     
     text += L10N.getStr("player.animationDurationLabel") + " ";
     text += getTime(state.duration);
     text += "\n";
+
+    
+    if (state.endDelay) {
+      text += L10N.getStr("player.animationEndDelayLabel") + " ";
+      text += getTime(state.endDelay);
+      text += "\n";
+    }
 
     
     if (state.iterationCount !== 1) {
