@@ -1250,24 +1250,319 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION(AllResolveElementFunction, mCountdownHolder)
 
- already_AddRefed<Promise>
-Promise::All(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-             const Sequence<JS::Value>& aIterable, ErrorResult& aRv)
+static const JSClass PromiseAllDataHolderClass = {
+  "PromiseAllDataHolder", JSCLASS_HAS_RESERVED_SLOTS(3)
+};
+
+
+#define DATA_HOLDER_REMAINING_ELEMENTS_SLOT 0
+#define DATA_HOLDER_VALUES_ARRAY_SLOT 1
+#define DATA_HOLDER_RESOLVE_FUNCTION_SLOT 2
+
+
+
+
+#define RESOLVE_ELEMENT_INDEX_SLOT 0
+
+
+#define RESOLVE_ELEMENT_DATA_HOLDER_SLOT 1
+
+static bool
+PromiseAllResolveElement(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
 {
-  JSContext* cx = aGlobal.Context();
+  
+  
+  
+  
+  
+  JS::CallArgs args = CallArgsFromVp(aArgc, aVp);
 
-  nsTArray<RefPtr<Promise>> promiseList;
-
-  for (uint32_t i = 0; i < aIterable.Length(); ++i) {
-    JS::Rooted<JS::Value> value(cx, aIterable.ElementAt(i));
-    RefPtr<Promise> nextPromise = Promise::Resolve(aGlobal, aThisv, value, aRv);
-
-    MOZ_ASSERT(!aRv.Failed());
-
-    promiseList.AppendElement(Move(nextPromise));
+  
+  int32_t index =
+    js::GetFunctionNativeReserved(&args.callee(),
+                                  RESOLVE_ELEMENT_INDEX_SLOT).toInt32();
+  
+  if (index == INT32_MIN) {
+    args.rval().setUndefined();
+    return true;
   }
 
-  return Promise::All(aGlobal, promiseList, aRv);
+  
+  js::SetFunctionNativeReserved(&args.callee(),
+                                RESOLVE_ELEMENT_INDEX_SLOT,
+                                JS::Int32Value(INT32_MIN));
+
+  
+
+  
+  JS::Rooted<JSObject*> dataHolder(aCx,
+    &js::GetFunctionNativeReserved(&args.callee(),
+                                   RESOLVE_ELEMENT_DATA_HOLDER_SLOT).toObject());
+
+  JS::Rooted<JS::Value> values(aCx,
+    js::GetReservedSlot(dataHolder, DATA_HOLDER_VALUES_ARRAY_SLOT));
+
+  
+  JS::Rooted<JS::Value> resolveFunc(aCx,
+    js::GetReservedSlot(dataHolder, DATA_HOLDER_RESOLVE_FUNCTION_SLOT));
+
+  
+  int32_t remainingElements =
+    js::GetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT).toInt32();
+
+  
+  JS::Rooted<JSObject*> valuesObj(aCx, &values.toObject());
+  if (!JS_DefineElement(aCx, valuesObj, index, args.get(0), JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  
+  remainingElements -= 1;
+  js::SetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT,
+                      JS::Int32Value(remainingElements));
+
+  
+  if (remainingElements == 0) {
+    return JS::Call(aCx, JS::UndefinedHandleValue, resolveFunc,
+                    JS::HandleValueArray(values), args.rval());
+  }
+
+  
+  args.rval().setUndefined();
+  return true;
+}
+
+
+ void
+Promise::All(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
+             JS::Handle<JS::Value> aIterable,
+             JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv)
+{
+  
+  nsCOMPtr<nsIGlobalObject> global =
+    do_QueryInterface(aGlobal.GetAsSupports());
+  if (!global) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
+
+  JSContext* cx = aGlobal.Context();
+
+  
+  
+
+  
+  PromiseCapability capability(cx);
+  NewPromiseCapability(cx, global, aThisv, true, capability, aRv);
+  
+  if (aRv.Failed()) {
+    return;
+  }
+
+  MOZ_ASSERT(aThisv.isObject(), "How did NewPromiseCapability succeed?");
+  JS::Rooted<JSObject*> constructorObj(cx, &aThisv.toObject());
+
+  
+  
+  
+  aRetval.set(capability.PromiseValue());
+  if (!MaybeWrapValue(cx, aRetval)) {
+    aRv.NoteJSContextException();
+    return;
+  }
+
+  
+  
+  
+  JS::AutoValueArray<2> callbackFunctions(cx);
+  callbackFunctions[1].set(capability.mReject);
+
+  
+  JS::ForOfIterator iter(cx);
+  if (!iter.init(aIterable, JS::ForOfIterator::AllowNonIterable)) {
+    capability.RejectWithException(cx, aRv);
+    return;
+  }
+
+  if (!iter.valueIsIterable()) {
+    ThrowErrorMessage(cx, MSG_PROMISE_ARG_NOT_ITERABLE,
+                      "Argument of Promise.all");
+    capability.RejectWithException(cx, aRv);
+    return;
+  }
+
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::Rooted<JSObject*> dataHolder(cx);
+  dataHolder = JS_NewObjectWithGivenProto(cx, &PromiseAllDataHolderClass,
+                                          nullptr);
+  if (!dataHolder) {
+    capability.RejectWithException(cx, aRv);
+    return;
+  }
+
+  JS::Rooted<JSObject*> reflectorGlobal(cx, global->GetGlobalJSObject());
+  JS::Rooted<JSObject*> valuesArray(cx);
+  { 
+    JSAutoCompartment ac(cx, reflectorGlobal);
+    valuesArray = JS_NewArrayObject(cx, 0);
+  }
+  if (!valuesArray) {
+    
+    
+    capability.RejectWithException(cx, aRv);
+    return;
+  }
+
+  
+  
+  JS::Rooted<JS::Value> valuesArrayVal(cx, JS::ObjectValue(*valuesArray));
+  if (!MaybeWrapObjectValue(cx, &valuesArrayVal)) {
+    capability.RejectWithException(cx, aRv);
+    return;
+  }
+
+  js::SetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT,
+                      JS::Int32Value(1));
+  js::SetReservedSlot(dataHolder, DATA_HOLDER_VALUES_ARRAY_SLOT,
+                      valuesArrayVal);
+  js::SetReservedSlot(dataHolder, DATA_HOLDER_RESOLVE_FUNCTION_SLOT,
+                      capability.mResolve);
+
+  
+  CheckedInt32 index = 0;
+
+  
+  JS::Rooted<JS::Value> nextValue(cx);
+  while (true) {
+    bool done;
+    
+    if (!iter.next(&nextValue, &done)) {
+      capability.RejectWithException(cx, aRv);
+      return;
+    }
+
+    
+    if (done) {
+      int32_t remainingCount =
+        js::GetReservedSlot(dataHolder,
+                            DATA_HOLDER_REMAINING_ELEMENTS_SLOT).toInt32();
+      remainingCount -= 1;
+      if (remainingCount == 0) {
+        JS::Rooted<JS::Value> ignored(cx);
+        if (!JS::Call(cx, JS::UndefinedHandleValue, capability.mResolve,
+                      JS::HandleValueArray(valuesArrayVal), &ignored)) {
+          capability.RejectWithException(cx, aRv);
+        }
+        return;
+      }
+      js::SetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT,
+                          JS::Int32Value(remainingCount));
+      
+      return;
+    }
+
+    
+    { 
+      
+      
+      JSAutoCompartment ac(cx, valuesArray);
+      if (!JS_DefineElement(cx, valuesArray, index.value(),
+                            JS::UndefinedHandleValue, JSPROP_ENUMERATE)) {
+        
+        
+        
+        JSAutoCompartment ac2(cx, &capability.mReject.toObject());
+        capability.RejectWithException(cx, aRv);
+        return;
+      }
+    }
+
+    
+    
+    
+    JS::Rooted<JS::Value> nextPromise(cx);
+    if (!JS_CallFunctionName(cx, constructorObj, "resolve",
+                             JS::HandleValueArray(nextValue),
+                             &nextPromise)) {
+      
+      capability.RejectWithException(cx, aRv);
+      return;
+    }
+
+    
+    JS::Rooted<JSObject*> resolveElement(cx);
+    JSFunction* resolveFunc =
+      js::NewFunctionWithReserved(cx, PromiseAllResolveElement,
+                                  1 , 0 , nullptr);
+    if (!resolveFunc) {
+      capability.RejectWithException(cx, aRv);
+      return;
+    }
+
+    resolveElement = JS_GetFunctionObject(resolveFunc);
+    
+    js::SetFunctionNativeReserved(resolveElement,
+                                  RESOLVE_ELEMENT_INDEX_SLOT,
+                                  JS::Int32Value(index.value()));
+    js::SetFunctionNativeReserved(resolveElement,
+                                  RESOLVE_ELEMENT_DATA_HOLDER_SLOT,
+                                  JS::ObjectValue(*dataHolder));
+
+    
+    int32_t remainingElements =
+      js::GetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT).toInt32();
+    js::SetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT,
+                        JS::Int32Value(remainingElements + 1));
+
+    
+    
+    callbackFunctions[0].setObject(*resolveElement);
+    JS::Rooted<JSObject*> nextPromiseObj(cx);
+    JS::Rooted<JS::Value> ignored(cx);
+    if (!JS_ValueToObject(cx, nextPromise, &nextPromiseObj) ||
+        !JS_CallFunctionName(cx, nextPromiseObj, "then", callbackFunctions,
+                             &ignored)) {
+      
+      capability.RejectWithException(cx, aRv);
+    }
+
+    
+    index += 1;
+    if (!index.isValid()) {
+      
+      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+      capability.RejectWithException(cx, aRv);
+    }
+  }
 }
 
  already_AddRefed<Promise>
