@@ -3023,7 +3023,8 @@ var imageToImageData = Task.async(function* (node, maxDim) {
   let imageData;
   
   
-  if (isImg && node.src.startsWith("data:")) {
+  
+  if (isImg && node.src.startsWith("data:") && resizeRatio === 1) {
     imageData = node.src;
   } else {
     
