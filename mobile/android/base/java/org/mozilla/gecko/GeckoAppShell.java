@@ -1935,7 +1935,8 @@ public class GeckoAppShell
 
         
         boolean isTegra = (new File("/system/lib/hw/gralloc.tegra.so")).exists() ||
-                          (new File("/system/lib/hw/gralloc.tegra3.so")).exists();
+                          (new File("/system/lib/hw/gralloc.tegra3.so")).exists() ||
+                          (new File("/sys/class/nvidia-gpu")).exists();
         if (isTegra) {
             
             if (Versions.feature19Plus) {
