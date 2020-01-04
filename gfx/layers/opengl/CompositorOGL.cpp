@@ -46,10 +46,6 @@
 #include "TexturePoolOGL.h"
 #endif
 
-#ifdef XP_MACOSX
-#include "nsCocoaFeatures.h"
-#endif
-
 #include "GeckoProfiler.h"
 
 namespace mozilla {
@@ -1439,21 +1435,6 @@ CompositorOGL::DrawQuad(const Rect& aRect,
       
       gl()->fBlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ONE,
                                LOCAL_GL_ONE, LOCAL_GL_ONE);
-
-#ifdef XP_MACOSX
-      if (gl()->WorkAroundDriverBugs() &&
-          gl()->Vendor() == GLVendor::NVIDIA &&
-          !nsCocoaFeatures::OnMavericksOrLater()) {
-        
-        
-        
-        
-        GLint program;
-        mGLContext->fGetIntegerv(LOCAL_GL_CURRENT_PROGRAM, &program);
-        mGLContext->fUseProgram(program);
-      }
-#endif
-
       program->SetTexturePass2(true);
       BindAndDrawQuadWithTextureRect(program,
                                      aRect,

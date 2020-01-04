@@ -6,10 +6,6 @@
 #include "GLContext.h"
 #include "nsPrintfCString.h"
 
-#ifdef XP_MACOSX
-#include "nsCocoaFeatures.h"
-#endif
-
 namespace mozilla {
 namespace gl {
 
@@ -884,16 +880,6 @@ GLContext::InitFeatures()
                           IsSupported(feature) ? "enabled" : "disabled",
                           GetFeatureName(feature));
         }
-    }
-
-    if (WorkAroundDriverBugs()) {
-#ifdef XP_MACOSX
-        
-        
-        
-        if (!nsCocoaFeatures::OnLionOrLater())
-            MarkUnsupported(GLFeature::sRGB_framebuffer);
-#endif 
     }
 }
 

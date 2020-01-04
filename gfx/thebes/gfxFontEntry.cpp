@@ -38,10 +38,6 @@
 #include "gfxMathTable.h"
 #include "gfx2DGlue.h"
 
-#if defined(XP_MACOSX)
-#include "nsCocoaFeatures.h"
-#endif
-
 #include "cairo.h"
 
 #include "harfbuzz/hb.h"
@@ -1774,13 +1770,6 @@ gfxFontFamily::ReadFaceNames(gfxPlatformFontList *aPlatformFontList,
         return;
 
     bool asyncFontLoaderDisabled = false;
-
-#if defined(XP_MACOSX)
-    
-    if (!nsCocoaFeatures::OnLionOrLater()) {
-        asyncFontLoaderDisabled = true;
-    }
-#endif
 
     if (!mOtherFamilyNamesInitialized &&
         aFontInfoData &&

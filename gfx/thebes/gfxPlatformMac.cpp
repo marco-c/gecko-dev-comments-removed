@@ -24,7 +24,6 @@
 #include <dlfcn.h>
 #include <CoreVideo/CoreVideo.h>
 
-#include "nsCocoaFeatures.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "VsyncSource.h"
 
@@ -367,14 +366,6 @@ gfxPlatformMac::ReadAntiAliasingThreshold()
     }
 
     return threshold;
-}
-
-bool
-gfxPlatformMac::UseProgressivePaint()
-{
-  
-  
-  return nsCocoaFeatures::OnLionOrLater() && gfxPlatform::UseProgressivePaint();
 }
 
 bool
