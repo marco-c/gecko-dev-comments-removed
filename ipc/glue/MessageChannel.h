@@ -485,14 +485,20 @@ class MessageChannel : HasResultCodes
 
     
     
-    class DequeueTask : public Runnable
+    class DequeueTask : public CancelableRunnable
     {
       public:
         explicit DequeueTask(RefCountedTask* aTask)
           : mTask(aTask)
         { }
         NS_IMETHOD Run() override {
-          mTask->Run();
+          if (mTask) {
+            mTask->Run();
+          }
+          return NS_OK;
+        }
+        nsresult Cancel() override {
+          mTask = nullptr;
           return NS_OK;
         }
 
