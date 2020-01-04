@@ -8709,7 +8709,7 @@ nsFrame::GetXULPrefSize(nsBoxLayoutState& aState)
 
   
   bool widthSet, heightSet;
-  bool completelyRedefined = nsIFrame::AddCSSPrefSize(this, size, widthSet, heightSet);
+  bool completelyRedefined = nsIFrame::AddXULPrefSize(this, size, widthSet, heightSet);
 
   
   if (!completelyRedefined) {
@@ -8746,7 +8746,7 @@ nsFrame::GetXULMinSize(nsBoxLayoutState& aState)
   
   bool widthSet, heightSet;
   bool completelyRedefined =
-    nsIFrame::AddCSSMinSize(aState, this, size, widthSet, heightSet);
+    nsIFrame::AddXULMinSize(aState, this, size, widthSet, heightSet);
 
   
   if (!completelyRedefined) {
