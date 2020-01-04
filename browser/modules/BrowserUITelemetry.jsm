@@ -713,18 +713,24 @@ this.BrowserUITelemetry = {
   
 
 
-  get BUCKET_DEFAULT() BUCKET_DEFAULT,
+  get BUCKET_DEFAULT() {
+    return BUCKET_DEFAULT;
+  },
 
   
 
 
-  get BUCKET_PREFIX() BUCKET_PREFIX,
+  get BUCKET_PREFIX() {
+    return BUCKET_PREFIX;
+  },
 
   
 
 
 
-  get BUCKET_SEPARATOR() BUCKET_SEPARATOR,
+  get BUCKET_SEPARATOR() {
+    return BUCKET_SEPARATOR;
+  },
 
   get currentBucket() {
     return this._bucket;
