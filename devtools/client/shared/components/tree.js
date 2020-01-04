@@ -705,7 +705,7 @@ const TreeNode = createFactory(createClass({
       
       
       
-      MozMarginStart: "-1000px !important",
+      marginInlineStart: "-1000px !important",
     }
   }
 }));
