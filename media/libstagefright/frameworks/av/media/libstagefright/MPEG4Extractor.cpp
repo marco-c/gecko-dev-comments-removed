@@ -478,14 +478,14 @@ status_t MPEG4Extractor::readMetaData() {
     }
 
     off64_t offset = 0;
-    status_t err;
+    status_t err = NO_INIT;
     while (!mFirstTrack) {
         err = parseChunk(&offset, 0);
         
         
         
         if (err != OK && err != (status_t) UNKNOWN_ERROR) {
-          ALOGW("Error %d parsing chuck at offset %lld looking for first track",
+          ALOGW("Error %d parsing chunck at offset %lld looking for first track",
               err, (long long)offset);
           break;
         }
