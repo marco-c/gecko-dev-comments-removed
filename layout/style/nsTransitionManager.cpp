@@ -55,7 +55,7 @@ ElementPropertyTransition::CurrentValuePortion() const
   
   
   
-  AnimationTiming timingToUse = mTiming;
+  AnimationTiming timingToUse = Timing();
   timingToUse.mFill = dom::FillMode::Both;
   ComputedTiming computedTiming = GetComputedTiming(&timingToUse);
 
