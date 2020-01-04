@@ -160,13 +160,6 @@ richlistitem.download button {
 
 
 
-#downloadsPanel,
-#downloadsPanel .panel-viewstack[viewtype=main]:not([transitioning]) #downloadsPanel-mainView {
-  
-
-  max-height: 0;
-}
-
 
 #downloadsPanel-mainView .download-state[state="8"] .downloadCancel,
 #downloadsPanel-mainView .download-state[state="8"] .downloadConfirmBlock,
@@ -182,6 +175,7 @@ richlistitem.download button {
 #downloadsPanel-multiView > .panel-viewcontainer,
 #downloadsPanel-multiView > .panel-viewcontainer > .panel-viewstack,
 #downloadsPanel-multiView > .panel-viewcontainer > .panel-viewstack > .panel-mainview {
+  overflow: visible;
   max-width: unset;
 }
 

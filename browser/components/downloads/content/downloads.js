@@ -709,6 +709,8 @@ const DownloadsView = {
       DownloadsPanel.panel.removeAttribute("hasdownloads");
     }
 
+    DownloadsBlockedSubview.view.setHeightToFit();
+
     
     
     
