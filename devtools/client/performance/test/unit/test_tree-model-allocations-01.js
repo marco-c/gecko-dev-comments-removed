@@ -1,6 +1,6 @@
 
 
-
+"use strict";
 
 
 
@@ -17,6 +17,7 @@ add_task(function () {
   let thread = new ThreadNode(allocationData, { startTime: 0, endTime: 1000 });
 
   
+  
 
 
 
@@ -25,6 +26,7 @@ add_task(function () {
 
 
 
+   
   [
     [100, 10, 1, 33, 1000, 100, 3, 100, "x (A:1:2)", [
       [200, 20, 1, 33, 900, 90, 2, 66, "y (B:3:4)", [

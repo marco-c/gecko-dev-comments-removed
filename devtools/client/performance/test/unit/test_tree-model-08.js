@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -65,8 +66,10 @@ add_task(function test() {
     }), false),
   ];
 
-  let fields = ["nodeType", "functionName", "fileName", "host", "url", "line", "column", "categoryData.abbrev", "isContent", "port"];
+  let fields = ["nodeType", "functionName", "fileName", "host", "url", "line", "column",
+                "categoryData.abbrev", "isContent", "port"];
   let expected = [
+    
     
     ["Frame", "hello/<.world", "bar.js", "foo", "http://foo/bar.js", 123, 987, void 0, true],
     ["Frame", "hello/<.world", "bar.js", "foo", "http://foo/bar.js#baz", 123, 987, void 0, true],
@@ -87,7 +90,9 @@ add_task(function test() {
 
     for (let j = 0; j < fields.length; j++) {
       let field = fields[j];
-      let value = field === "categoryData.abbrev" ? info.categoryData.abbrev : info[field];
+      let value = field === "categoryData.abbrev"
+        ? info.categoryData.abbrev
+        : info[field];
       equal(value, expect[j], `${field} for frame #${i} is correct: ${expect[j]}`);
     }
   }

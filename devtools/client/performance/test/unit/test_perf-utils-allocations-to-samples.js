@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -43,6 +44,7 @@ var TEST_DATA = {
     }
   ]
 };
+
 
 var EXPECTED_OUTPUT = {
   name: "allocations",
@@ -91,3 +93,4 @@ var EXPECTED_OUTPUT = {
     "C:5:6"
   ],
 };
+

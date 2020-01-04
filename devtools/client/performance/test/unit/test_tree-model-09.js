@@ -1,11 +1,10 @@
 
 
+"use strict";
 
 
 
 
-
-var { CATEGORY_MASK } = require("devtools/client/performance/modules/categories");
 
 function run_test() {
   run_next_test();
@@ -17,7 +16,8 @@ add_task(function test() {
 
   
 
-  let root = getFrameNodePath(new ThreadNode(gThread, { startTime: 5, endTime: 25, contentOnly: true }), "(root)");
+  let root = getFrameNodePath(new ThreadNode(gThread, { startTime: 5, endTime: 25,
+                                                        contentOnly: true }), "(root)");
 
   
 
@@ -36,8 +36,10 @@ add_task(function test() {
 
   equal(root.calls.length, 2, "root has 2 children");
   ok(getFrameNodePath(root, url("A")), "root has content child");
-  ok(getFrameNodePath(root, "9000"), "root has platform generalized child from Chrome JS");
-  equal(getFrameNodePath(root, "9000").calls.length, 0, "platform generalized child is a leaf.");
+  ok(getFrameNodePath(root, "9000"),
+    "root has platform generalized child from Chrome JS");
+  equal(getFrameNodePath(root, "9000").calls.length, 0,
+    "platform generalized child is a leaf.");
 
   ok(getFrameNodePath(root, `${url("A")} > ${url("E")} > ${url("F")} > 9000`),
      "a second leaf of the generalized Chrome JS exists.");

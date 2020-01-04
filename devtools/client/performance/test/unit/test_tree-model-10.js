@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -37,7 +38,8 @@ add_task(function () {
 
 
 
-  [ 
+  [
+    
     [ 50, 50, "C", [
       [ 40, 0, "B", [
         [ 30, 0, "A"]
@@ -61,8 +63,10 @@ function compareFrameInfo(root, parent) {
     let [total, self, name, children] = def;
     let node = getFrameNodePath(parent, name);
     let data = node.getInfo({ root });
-    equal(total, data.totalPercentage, `${name} has correct total percentage: ${data.totalPercentage}`);
-    equal(self, data.selfPercentage, `${name} has correct self percentage: ${data.selfPercentage}`);
+    equal(total, data.totalPercentage,
+          `${name} has correct total percentage: ${data.totalPercentage}`);
+    equal(self, data.selfPercentage,
+          `${name} has correct self percentage: ${data.selfPercentage}`);
     if (children) {
       children.forEach(compareFrameInfo(root, node));
     }

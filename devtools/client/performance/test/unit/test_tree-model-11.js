@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -12,7 +13,8 @@ function run_test() {
 
 add_task(function () {
   let { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
-  let thread = new ThreadNode(gThread, { startTime: 0, endTime: 50, flattenRecursion: true });
+  let thread = new ThreadNode(gThread, { startTime: 0, endTime: 50,
+                                         flattenRecursion: true });
 
   
 
@@ -23,7 +25,8 @@ add_task(function () {
 
 
 
-  [ 
+  [
+    
     [ 100, 0, "(root)", [
       [ 100, 0, "A", [
         [ 100, 50, "B", [
@@ -40,8 +43,10 @@ function compareFrameInfo(root, parent) {
     let [total, self, name, children] = def;
     let node = getFrameNodePath(parent, name);
     let data = node.getInfo({ root });
-    equal(total, data.totalPercentage, `${name} has correct total percentage: ${data.totalPercentage}`);
-    equal(self, data.selfPercentage, `${name} has correct self percentage: ${data.selfPercentage}`);
+    equal(total, data.totalPercentage,
+          `${name} has correct total percentage: ${data.totalPercentage}`);
+    equal(self, data.selfPercentage,
+          `${name} has correct self percentage: ${data.selfPercentage}`);
     if (children) {
       children.forEach(compareFrameInfo(root, node));
     }

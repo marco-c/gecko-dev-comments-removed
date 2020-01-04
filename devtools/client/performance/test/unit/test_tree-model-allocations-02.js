@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -14,8 +15,10 @@ add_task(function () {
   let { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
   const { getProfileThreadFromAllocations } = require("devtools/shared/performance/recording-utils");
   let allocationData = getProfileThreadFromAllocations(TEST_DATA);
-  let thread = new ThreadNode(allocationData, { invertTree: true, startTime: 0, endTime: 1000 });
+  let thread = new ThreadNode(allocationData, { invertTree: true, startTime: 0,
+                                                endTime: 1000 });
 
+  
   
 
 
@@ -25,6 +28,7 @@ add_task(function () {
 
 
 
+  
   [
     [700, 70, 1, 33, 700, 70, 1, 33, "z (C:5:6)", [
       [0, 0, 0, 0, 700, 70, 1, 33, "y (B:3:4)", [
