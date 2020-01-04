@@ -317,6 +317,12 @@ struct JSContext : public js::ExclusiveContext,
     
     bool                throwing;            
     JS::PersistentRooted<JS::Value> unwrappedException_; 
+    
+
+
+
+    JS::PersistentRooted<js::SavedFrame*> unwrappedPendingExceptionStack_;
+
 
     
     JS::ContextOptions  options_;
@@ -438,17 +444,22 @@ struct JSContext : public js::ExclusiveContext,
 
     MOZ_MUST_USE
     bool getPendingException(JS::MutableHandleValue rval);
+    MOZ_MUST_USE
+    bool getPendingExceptionStack(JS::MutableHandleObject stackp);
 
     bool isThrowingOutOfMemory();
     bool isThrowingDebuggeeWouldRun();
     bool isClosingGenerator();
 
-    void setPendingException(js::Value v);
+    void setPendingException(
+        js::HandleValue v,
+        JS::ExceptionStackBehavior behavior = JS::ExceptionStackBehavior::Capture);
 
     void clearPendingException() {
         throwing = false;
         overRecursed_ = false;
         unwrappedException_.setUndefined();
+        unwrappedPendingExceptionStack_ = nullptr;
     }
 
     bool isThrowingOverRecursed() const { return throwing && overRecursed_; }
