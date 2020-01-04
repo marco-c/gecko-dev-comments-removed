@@ -35,7 +35,7 @@ namespace ots {
 
 
 bool ValidateType2CharStringIndex(
-    OpenTypeFile *file,
+    Font *font,
     const CFFIndex &char_strings_index,
     const CFFIndex &global_subrs_index,
     const std::map<uint16_t, uint8_t> &fd_select,
