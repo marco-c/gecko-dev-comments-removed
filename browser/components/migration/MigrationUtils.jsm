@@ -98,7 +98,9 @@ this.MigratorPrototype = {
 
 
 
-  get sourceProfiles() null,
+  get sourceProfiles() {
+    return null;
+  },
 
   
 
@@ -159,19 +161,25 @@ this.MigratorPrototype = {
 
 
 
-  get startupOnlyMigrator() false,
+  get startupOnlyMigrator() {
+    return false;
+  },
 
   
 
 
 
-  get sourceHomePageURL() "",
+  get sourceHomePageURL() {
+    return "";
+  },
 
   
 
 
 
-  get sourceLocked() false,
+  get sourceLocked() {
+    return false;
+  },
 
   
 
@@ -181,7 +189,7 @@ this.MigratorPrototype = {
 
   getMigrateData: function MP_getMigrateData(aProfile) {
     let types = [r.type for each (r in this._getMaybeCachedResources(aProfile))];
-    return types.reduce(function(a, b) a |= b, 0);
+    return types.reduce((a, b) => a |= b, 0);
   },
 
   
@@ -266,7 +274,7 @@ this.MigratorPrototype = {
       
       
       const BOOKMARKS = MigrationUtils.resourceTypes.BOOKMARKS;
-      let migratingBookmarks = resources.some(function(r) r.type == BOOKMARKS);
+      let migratingBookmarks = resources.some(r => r.type == BOOKMARKS);
       if (migratingBookmarks) {
         let browserGlue = Cc["@mozilla.org/browser/browserglue;1"].
                           getService(Ci.nsIObserver);
@@ -509,7 +517,7 @@ this.MigrationUtils = Object.freeze({
     
     let defaultBrowserKey = getMigratorKeyForDefaultBrowser();
     if (defaultBrowserKey)
-      migratorKeysOrdered.sort(function (a, b) b == defaultBrowserKey ? 1 : 0);
+      migratorKeysOrdered.sort((a, b) => b == defaultBrowserKey ? 1 : 0);
 
     for (let migratorKey of migratorKeysOrdered) {
       let migrator = this.getMigrator(migratorKey);
@@ -519,7 +527,9 @@ this.MigrationUtils = Object.freeze({
   },
 
   
-  get isStartupMigration() gProfileStartup != null,
+  get isStartupMigration() {
+    return gProfileStartup != null;
+  },
 
   
 
@@ -527,7 +537,9 @@ this.MigrationUtils = Object.freeze({
 
 
 
-  get profileStartup() gProfileStartup,
+  get profileStartup() {
+    return gProfileStartup;
+  },
 
   
 

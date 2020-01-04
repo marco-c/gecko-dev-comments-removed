@@ -325,9 +325,13 @@ function Bookmarks(migrationType) {
 Bookmarks.prototype = {
   type: MigrationUtils.resourceTypes.BOOKMARKS,
 
-  get exists() !!this._favoritesFolder,
+  get exists() {
+    return !!this._favoritesFolder;
+  },
 
-  get importedAppLabel() this._migrationType == MSMigrationUtils.MIGRATION_TYPE_IE ? "IE" : "Edge",
+  get importedAppLabel() {
+    return this._migrationType == MSMigrationUtils.MIGRATION_TYPE_IE ? "IE" : "Edge";
+  },
 
   __favoritesFolder: null,
   get _favoritesFolder() {
@@ -687,8 +691,7 @@ Cookies.prototype = {
       }
 
       
-      
-      let expireTime = Math.floor(Date.now() / 1000) + 3600;
+      let expireTime = (Date.now() + 3600 * 1000) * 1000;
       try {
         expireTime = this.ctypesKernelHelpers.fileTimeToSecondsSinceEpoch(Number(expireTimeHi),
                                                                           Number(expireTimeLo));
@@ -752,14 +755,10 @@ function getTypedURLs(registryKeyPath) {
           try {
             let hi = parseInt(urlTimeHex.slice(0, 4).join(''), 16);
             let lo = parseInt(urlTimeHex.slice(4, 8).join(''), 16);
-            
             timeTyped = cTypes.fileTimeToSecondsSinceEpoch(hi, lo);
             
             timeTyped *= 1000 * 1000;
-          } catch (ex) {
-            
-            
-          }
+          } catch (ex) {}
         }
       }
       typedURLs.set(url, timeTyped);
@@ -867,16 +866,9 @@ WindowsVaultFormPasswords.prototype = {
           }
 
           let password = credential.contents.pAuthenticatorElement.contents.itemValue.readString();
-          let creation = Date.now();
-          try {
-            
-            
-            creation = ctypesKernelHelpers.
+          let creation = ctypesKernelHelpers.
                          fileTimeToSecondsSinceEpoch(item.contents.highLastModified,
                                                      item.contents.lowLastModified) * 1000;
-          } catch (ex) {
-            
-          }
           
           let login = {
             username, password,
