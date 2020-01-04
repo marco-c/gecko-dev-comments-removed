@@ -184,16 +184,17 @@ var TelemetryReportingPolicyImpl = {
 
 
   get dataSubmissionPolicyNotifiedDate() {
-    if (!Preferences.has(PREF_ACCEPTED_POLICY_DATE)) {
+    let prefString = Preferences.get(PREF_ACCEPTED_POLICY_DATE, "0");
+    let valueInteger = parseInt(prefString, 10);
+
+    
+    if (valueInteger == 0) {
       this._log.info("get dataSubmissionPolicyNotifiedDate - No date stored yet.");
       return null;
     }
 
-    let prefString = Preferences.get(PREF_ACCEPTED_POLICY_DATE, 0);
-    let valueInteger = parseInt(prefString, 10);
-
     
-    if (Number.isNaN(valueInteger) || valueInteger == 0) {
+    if (Number.isNaN(valueInteger)) {
       this._log.error("get dataSubmissionPolicyNotifiedDate - Invalid date stored.");
       return null;
     }
