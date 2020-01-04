@@ -49,7 +49,6 @@ ComputeStackString(JSContext* cx);
 
 
 
-
 extern bool
 ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
                  JSErrorCallback callback, void* userRef);

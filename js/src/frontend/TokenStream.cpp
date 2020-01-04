@@ -567,22 +567,23 @@ TokenStream::reportStrictModeErrorNumberVA(uint32_t offset, bool strictMode, uns
 void
 CompileError::throwError(JSContext* cx)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (ErrorToException(cx, message, &report, nullptr, nullptr))
-        return;
-
-    if (JSREPORT_IS_WARNING(report.flags))
+    if (JSREPORT_IS_WARNING(report.flags)) {
         CallWarningReporter(cx, message, &report);
+        return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ErrorToException(cx, message, &report, nullptr, nullptr);
 }
 
 CompileError::~CompileError()

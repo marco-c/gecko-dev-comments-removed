@@ -529,10 +529,8 @@ bool
 js::ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
                      JSErrorCallback callback, void* userRef)
 {
-    
     MOZ_ASSERT(reportp);
-    if (JSREPORT_IS_WARNING(reportp->flags))
-        return false;
+    MOZ_ASSERT(!JSREPORT_IS_WARNING(reportp->flags));
 
     
     
