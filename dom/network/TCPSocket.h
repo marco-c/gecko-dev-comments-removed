@@ -239,8 +239,6 @@ private:
   
   nsTArray<nsCOMPtr<nsIInputStream>> mPendingDataAfterStartTLS;
 
-  bool mObserversActive;
-
 #ifdef MOZ_WIDGET_GONK
   
   uint32_t mTxBytes;
