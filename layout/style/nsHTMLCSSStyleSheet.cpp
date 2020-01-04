@@ -38,12 +38,24 @@ nsHTMLCSSStyleSheet::~nsHTMLCSSStyleSheet()
 
     
     
-    MOZ_ASSERT(value->mType == nsAttrValue::eGeckoCSSDeclaration);
+    switch (value->mType) {
+      case nsAttrValue::eGeckoCSSDeclaration: {
+        css::Declaration* declaration = value->mValue.mGeckoCSSDeclaration;
+        declaration->SetHTMLCSSStyleSheet(nullptr);
+        break;
+      }
+      case nsAttrValue::eServoCSSDeclaration: {
+        ServoDeclarationBlock* declarations =
+          value->mValue.mServoCSSDeclaration;
+        Servo_ClearDeclarationBlockCachePointer(declarations);
+        break;
+      }
+      default:
+        MOZ_ASSERT_UNREACHABLE("unexpected cached nsAttrValue type");
+        break;
+    }
 
-    css::Declaration* declaration = value->mValue.mGeckoCSSDeclaration;
-    declaration->SetHTMLCSSStyleSheet(nullptr);
     value->mValue.mCached = 0;
-
     iter.Remove();
   }
 }
