@@ -382,6 +382,11 @@ public:
 
   void NotifyMozMouseScrollEvent(const nsString& aString) const;
 
+  
+  
+  
+  void RequestSnap();
+
 protected:
   
   virtual ~AsyncPanZoomController();
@@ -633,11 +638,6 @@ protected:
   
   void OnTouchEndOrCancel();
 
-  
-  
-  
-  void RequestSnap();
-
   uint64_t mLayersId;
   RefPtr<CompositorParent> mCompositorParent;
   RefPtr<TaskThrottler> mPaintThrottler;
@@ -750,6 +750,12 @@ protected:
     OVERSCROLL_ANIMATION,     
 
     SMOOTH_SCROLL,            
+
+
+    PANNING_LOCKED_X_SMOOTH_SCROLL, 
+
+
+    PANNING_LOCKED_Y_SMOOTH_SCROLL, 
 
     WHEEL_SCROLL              
   };
