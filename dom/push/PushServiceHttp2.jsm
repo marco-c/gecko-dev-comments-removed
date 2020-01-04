@@ -553,9 +553,7 @@ this.PushServiceHttp2 = {
 
   _ackMsgRecv: function(aAckUri) {
     console.debug("ackMsgRecv()", aAckUri);
-    
-    
-    this._deleteResource(aAckUri);
+    return this._deleteResource(aAckUri);
   },
 
   init: function(aOptions, aMainPushService, aServerURL) {
