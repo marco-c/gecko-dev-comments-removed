@@ -400,7 +400,8 @@ GonkVideoDecoderManager::CreateVideoDataFromGraphicBuffer(MediaBuffer* aSource,
   if (mNeedsCopyBuffer) {
     
     if (!mCopyAllocator) {
-      mCopyAllocator = new TextureClientRecycleAllocator(ImageBridgeChild::GetSingleton());
+      RefPtr<layers::ImageBridgeChild> bridge = layers::ImageBridgeChild::GetSingleton();
+      mCopyAllocator = new TextureClientRecycleAllocator(bridge);
     }
     if (!mCopyAllocator) {
       GVDM_LOG("Create buffer allocator failed!");
