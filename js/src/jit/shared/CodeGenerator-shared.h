@@ -468,13 +468,17 @@ class CodeGeneratorShared : public LElementVisitor
     void addOutOfLineCode(OutOfLineCode* code, const BytecodeSite* site);
     bool generateOutOfLineCode();
 
-    Label* labelForBackedgeWithImplicitCheck(MBasicBlock* mir);
+    Label* getJumpLabelForBranch(MBasicBlock* block);
 
     
     
     
     
     void jumpToBlock(MBasicBlock* mir);
+
+    
+    
+    Label* labelForBackedgeWithImplicitCheck(MBasicBlock* mir);
 
 
 #if !defined(JS_CODEGEN_MIPS32) && !defined(JS_CODEGEN_MIPS64)

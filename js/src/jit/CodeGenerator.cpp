@@ -651,29 +651,6 @@ CodeGenerator::testValueTruthy(const ValueOperand& value,
     masm.jump(ifTruthy);
 }
 
-Label*
-CodeGenerator::getJumpLabelForBranch(MBasicBlock* block)
-{
-    
-    block = skipTrivialBlocks(block);
-
-    if (!labelForBackedgeWithImplicitCheck(block))
-        return block->lir()->label();
-
-    
-    
-    
-    
-    
-    Label* res = alloc().lifoAlloc()->newInfallible<Label>();
-    Label after;
-    masm.jump(&after);
-    masm.bind(res);
-    jumpToBlock(block);
-    masm.bind(&after);
-    return res;
-}
-
 void
 CodeGenerator::visitTestOAndBranch(LTestOAndBranch* lir)
 {

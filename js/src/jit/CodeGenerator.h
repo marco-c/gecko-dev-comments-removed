@@ -509,10 +509,6 @@ class CodeGenerator final : public CodeGeneratorSpecific
     
     void branchIfNotEmptyObjectElements(Register obj, Label* target);
 
-    
-    
-    Label* getJumpLabelForBranch(MBasicBlock* block);
-
     void emitStoreElementTyped(const LAllocation* value, MIRType valueType, MIRType elementType,
                                Register elements, const LAllocation* index,
                                int32_t offsetAdjustment);

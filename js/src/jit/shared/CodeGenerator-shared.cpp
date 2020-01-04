@@ -1607,6 +1607,29 @@ CodeGeneratorShared::jumpToBlock(MBasicBlock* mir)
     }
 }
 
+Label*
+CodeGeneratorShared::getJumpLabelForBranch(MBasicBlock* block)
+{
+    
+    block = skipTrivialBlocks(block);
+
+    if (!labelForBackedgeWithImplicitCheck(block))
+        return block->lir()->label();
+
+    
+    
+    
+    
+    
+    Label* res = alloc().lifoAlloc()->newInfallible<Label>();
+    Label after;
+    masm.jump(&after);
+    masm.bind(res);
+    jumpToBlock(block);
+    masm.bind(&after);
+    return res;
+}
+
 
 #if !defined(JS_CODEGEN_MIPS32) && !defined(JS_CODEGEN_MIPS64)
 void
