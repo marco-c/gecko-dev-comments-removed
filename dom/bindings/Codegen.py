@@ -4479,9 +4479,6 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
 
     assert not (isEnforceRange and isClamp)  
 
-    if type.isArray():
-        raise TypeError("Can't handle array arguments yet")
-
     if type.isSequence():
         assert not isEnforceRange and not isClamp
 
@@ -4754,16 +4751,16 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         else:
             interfaceObject = None
 
-        arrayObjectMemberTypes = filter(lambda t: t.isArray() or t.isSequence(), memberTypes)
-        if len(arrayObjectMemberTypes) > 0:
-            assert len(arrayObjectMemberTypes) == 1
-            name = getUnionMemberName(arrayObjectMemberTypes[0])
-            arrayObject = CGGeneric(
+        sequenceObjectMemberTypes = filter(lambda t: t.isSequence(), memberTypes)
+        if len(sequenceObjectMemberTypes) > 0:
+            assert len(sequenceObjectMemberTypes) == 1
+            name = getUnionMemberName(sequenceObjectMemberTypes[0])
+            sequenceObject = CGGeneric(
                 "done = (failed = !%s.TrySetTo%s(cx, ${val}, tryNext, ${passedToJSImpl})) || !tryNext;\n" %
                 (unionArgumentObj, name))
             names.append(name)
         else:
-            arrayObject = None
+            sequenceObject = None
 
         dateObjectMemberTypes = filter(lambda t: t.isDate(), memberTypes)
         if len(dateObjectMemberTypes) > 0:
@@ -4825,16 +4822,16 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         else:
             object = None
 
-        hasObjectTypes = interfaceObject or arrayObject or dateObject or callbackObject or object or mozMapObject
+        hasObjectTypes = interfaceObject or sequenceObject or dateObject or callbackObject or object or mozMapObject
         if hasObjectTypes:
             
-            assert not object or not (interfaceObject or arrayObject or dateObject or callbackObject or mozMapObject)
-            if arrayObject or dateObject or callbackObject:
+            assert not object or not (interfaceObject or sequenceObject or dateObject or callbackObject or mozMapObject)
+            if sequenceObject or dateObject or callbackObject:
                 
                 
                 
-                assert not (arrayObject and callbackObject)
-                templateBody = CGElseChain([arrayObject, dateObject, callbackObject])
+                assert not (sequenceObject and callbackObject)
+                templateBody = CGElseChain([sequenceObject, dateObject, callbackObject])
             else:
                 templateBody = None
             if interfaceObject:
@@ -6240,9 +6237,6 @@ def getWrapTemplateForType(type, descriptorProvider, result, successCode,
     if type is None or type.isVoid():
         return (setUndefined(), True)
 
-    if type.isArray():
-        raise TypeError("Can't handle array return values yet")
-
     if (type.isSequence() or type.isMozMap()) and type.nullable():
         
         recTemplate, recInfall = getWrapTemplateForType(type.inner, descriptorProvider,
@@ -6652,7 +6646,7 @@ def typeMatchesLambda(type, func):
         return False
     if type.nullable():
         return typeMatchesLambda(type.inner, func)
-    if type.isSequence() or type.isMozMap() or type.isArray():
+    if type.isSequence() or type.isMozMap():
         return typeMatchesLambda(type.inner, func)
     if type.isUnion():
         return any(typeMatchesLambda(t, func) for t in
@@ -7842,8 +7836,7 @@ class CGMethodCall(CGThing):
             
             genericObjectSigs = [
                 s for s in possibleSignatures
-                if (distinguishingType(s).isArray() or
-                    distinguishingType(s).isDictionary() or
+                if (distinguishingType(s).isDictionary() or
                     distinguishingType(s).isMozMap() or
                     distinguishingType(s).isCallbackInterface())]
             assert len(genericObjectSigs) <= 1
@@ -9086,9 +9079,6 @@ class CGMemberJITInfo(CGThing):
         if t.isVoid():
             
             return "JSVAL_TYPE_UNDEFINED"
-        if t.isArray():
-            
-            assert False
         if t.isSequence():
             return "JSVAL_TYPE_OBJECT"
         if t.isMozMap():
@@ -9164,9 +9154,6 @@ class CGMemberJITInfo(CGThing):
         if t.nullable():
             
             return "JSJitInfo::ArgType(JSJitInfo::Null | %s)" % CGMemberJITInfo.getJSArgType(t.inner)
-        if t.isArray():
-            
-            assert False
         if t.isSequence():
             return "JSJitInfo::Object"
         if t.isGeckoInterface():
@@ -9354,9 +9341,6 @@ def getUnionAccessorSignatureType(type, descriptorProvider):
     """
     
     assert not type.nullable()
-
-    if type.isArray():
-        raise TypeError("Can't handle array arguments yet")
 
     if type.isSequence() or type.isMozMap():
         if type.isSequence():
@@ -13417,7 +13401,7 @@ class CGBindingRoot(CGThing):
         def getDependenciesFromType(type):
             if type.isDictionary():
                 return set([type.unroll().inner])
-            if type.isSequence() or type.isArray():
+            if type.isSequence():
                 return getDependenciesFromType(type.unroll())
             if type.isUnion():
                 return set([type.unroll()])
@@ -13796,9 +13780,6 @@ class CGNativeMember(ClassMethod):
         isMember can be false or one of the strings "Sequence", "Variadic",
                  "MozMap"
         """
-        if type.isArray():
-            raise TypeError("Can't handle array arguments yet")
-
         if type.isSequence():
             nullable = type.nullable()
             if nullable:
