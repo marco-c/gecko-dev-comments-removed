@@ -10,8 +10,10 @@
 #include "mozilla/dom/AnimationPlaybackEvent.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/AsyncEventDispatcher.h" 
+#include "mozilla/Maybe.h" 
 #include "AnimationCommon.h" 
                              
+#include "nsDOMMutationObserver.h" 
 #include "nsIDocument.h" 
 #include "nsIPresShell.h" 
 #include "nsLayoutUtils.h" 
@@ -40,6 +42,40 @@ JSObject*
 Animation::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
   return dom::AnimationBinding::Wrap(aCx, this, aGivenProto);
+}
+
+
+
+
+
+
+
+namespace {
+  
+  
+  class MOZ_RAII AutoMutationBatchForAnimation {
+  public:
+    explicit AutoMutationBatchForAnimation(const Animation& aAnimation
+                                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
+      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+      Element* targetElement = nsNodeUtils::GetTargetForAnimation(&aAnimation);
+      if (!targetElement) {
+        return;
+      }
+
+      
+      nsIDocument* doc = targetElement->OwnerDoc();
+      if (!doc) {
+        return;
+      }
+
+      mAutoBatch.emplace(doc);
+    }
+
+  private:
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+    Maybe<nsAutoAnimationMutationBatch> mAutoBatch;
+  };
 }
 
 
