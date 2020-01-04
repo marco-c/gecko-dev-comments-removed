@@ -28,6 +28,7 @@
 #include "nsIDNSRecord.h"
 #include "nsIDNSService.h"
 #include "nsICancelable.h"
+#include "ClosingService.h"
 
 #ifdef MOZ_WIDGET_GONK
 #include "NetStatistics.h"
@@ -36,7 +37,6 @@
 using namespace mozilla::net;
 using namespace mozilla;
 
-static NS_DEFINE_CID(kSocketTransportServiceCID, NS_SOCKETTRANSPORTSERVICE_CID);
 static const uint32_t UDP_PACKET_CHUNK_SIZE = 1400;
 
 
@@ -90,191 +90,6 @@ private:
   nsRefPtr<nsUDPSocket> mSocket;
   PRSocketOptionData    mOpt;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-class nsUDPSocketCloseThread : public nsIObserver
-{
-public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIOBSERVER
-
-  static bool Close(PRFileDesc *aFd);
-
-private:
-  explicit nsUDPSocketCloseThread(PRFileDesc *aFd);
-  virtual ~nsUDPSocketCloseThread() { }
-
-  bool Begin();
-  void ThreadFunc();
-  void AddObserver();
-  void JoinAndRemove();
-
-  static void ThreadFunc(void *aClosure)
-    { static_cast<nsUDPSocketCloseThread*>(aClosure)->ThreadFunc(); }
-
-  
-  PRFileDesc *mFd;
-  PRThread *mThread;
-
-  
-  
-  
-  
-  nsRefPtr<nsUDPSocketCloseThread> mSelf;
-
-  
-  TimeStamp mBeforeClose;
-  TimeStamp mAfterClose;
-
-  
-  
-  static uint32_t sActiveThreadsCount;
-
-  
-  
-  static bool sPastShutdown;
-};
-
-uint32_t nsUDPSocketCloseThread::sActiveThreadsCount = 0;
-bool nsUDPSocketCloseThread::sPastShutdown = false;
-
-NS_IMPL_ISUPPORTS(nsUDPSocketCloseThread, nsIObserver);
-
-bool
-nsUDPSocketCloseThread::Close(PRFileDesc *aFd)
-{
-  if (sPastShutdown) {
-    return false;
-  }
-
-  nsRefPtr<nsUDPSocketCloseThread> t = new nsUDPSocketCloseThread(aFd);
-  return t->Begin();
-}
-
-nsUDPSocketCloseThread::nsUDPSocketCloseThread(PRFileDesc *aFd)
-  : mFd(aFd)
-  , mThread(nullptr)
-{
-}
-
-bool
-nsUDPSocketCloseThread::Begin()
-{
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIRunnable> event = NS_NewRunnableMethod(
-    this, &nsUDPSocketCloseThread::AddObserver);
-  if (event) {
-    NS_DispatchToMainThread(event);
-  }
-
-  
-  
-  mSelf = this;
-  mThread = PR_CreateThread(PR_USER_THREAD, ThreadFunc, this,
-                            PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                            PR_JOINABLE_THREAD, 4 * 4096);
-  if (!mThread) {
-    
-    
-    JoinAndRemove();
-    mSelf = nullptr;
-    return false;
-  }
-
-  return true;
-}
-
-void
-nsUDPSocketCloseThread::AddObserver()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  ++sActiveThreadsCount;
-
-  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-  if (obs) {
-    obs->AddObserver(this, "xpcom-shutdown-threads", false);
-  }
-}
-
-void
-nsUDPSocketCloseThread::JoinAndRemove()
-{
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (mThread) {
-    PR_JoinThread(mThread);
-    mThread = nullptr;
-
-    Telemetry::Accumulate(Telemetry::UDP_SOCKET_PARALLEL_CLOSE_COUNT, sActiveThreadsCount);
-    Telemetry::AccumulateTimeDelta(Telemetry::UDP_SOCKET_CLOSE_TIME, mBeforeClose, mAfterClose);
-
-    MOZ_ASSERT(sActiveThreadsCount > 0);
-    --sActiveThreadsCount;
-  }
-
-  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-  if (obs) {
-    obs->RemoveObserver(this, "xpcom-shutdown-threads");
-  }
-}
-
-NS_IMETHODIMP
-nsUDPSocketCloseThread::Observe(nsISupports *aSubject,
-                                const char *aTopic,
-                                const char16_t *aData)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (!strcmp(aTopic, "xpcom-shutdown-threads")) {
-    sPastShutdown = true;
-    JoinAndRemove();
-    return NS_OK;
-  }
-
-  MOZ_CRASH("Unexpected observer topic");
-  return NS_OK;
-}
-
-void
-nsUDPSocketCloseThread::ThreadFunc()
-{
-  PR_SetCurrentThreadName("UDP socket close");
-
-  mBeforeClose = TimeStamp::Now();
-
-  PR_Close(mFd);
-  mFd = nullptr;
-
-  mAfterClose = TimeStamp::Now();
-
-  
-  nsCOMPtr<nsIRunnable> event = NS_NewRunnableMethod(
-    this, &nsUDPSocketCloseThread::JoinAndRemove);
-  if (event) {
-    NS_DispatchToMainThread(event);
-  }
-
-  
-  mSelf = nullptr;
-}
 
 
 
@@ -457,9 +272,7 @@ nsUDPSocket::nsUDPSocket()
 nsUDPSocket::~nsUDPSocket()
 {
   if (mFD) {
-    if (!nsUDPSocketCloseThread::Close(mFD)) {
-      PR_Close(mFD);
-    }
+    PR_Close(mFD);
     mFD = nullptr;
   }
 
@@ -701,9 +514,7 @@ nsUDPSocket::OnSocketDetached(PRFileDesc *fd)
   if (mFD)
   {
     NS_ASSERTION(mFD == fd, "wrong file descriptor");
-    if (!nsUDPSocketCloseThread::Close(mFD)) {
-      PR_Close(mFD);
-    }
+    PR_Close(mFD);
     mFD = nullptr;
   }
   SaveNetworkStats(true);
@@ -844,6 +655,7 @@ nsUDPSocket::InitWithAddress(const NetAddr *aAddr, nsIPrincipal *aPrincipal,
 
   
   NetworkActivityMonitor::AttachIOLayer(mFD);
+  ClosingService::AttachIOLayer(mFD);
 
   
   
