@@ -55,7 +55,7 @@ public:
   NS_DECL_NSIRUNNABLE
 
   CacheEntry(const nsACString& aStorageID, nsIURI* aURI, const nsACString& aEnhanceID,
-             bool aUseDisk);
+             bool aUseDisk, bool aSkipSizeCheck);
 
   void AsyncOpen(nsICacheEntryOpenCallback* aCallback, uint32_t aFlags);
 
@@ -275,6 +275,9 @@ private:
 
   
   bool const mUseDisk;
+
+  
+  bool const mSkipSizeCheck;
 
   
   
