@@ -574,3 +574,9 @@ LIRGeneratorMIPSShared::visitAtomicTypedArrayElementBinop(MAtomicTypedArrayEleme
                                                     temp());
     define(lir, ins);
 }
+
+void
+LIRGeneratorMIPSShared::visitTruncateToInt64(MTruncateToInt64* ins)
+{
+    MOZ_CRASH("NY");
+}
