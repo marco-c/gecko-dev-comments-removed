@@ -78,26 +78,29 @@ public:
 
 
 
-struct TempBitmap
+static void
+ReleaseTemporarySurface(void* aPixels, void* aContext)
 {
-  SkBitmap mBitmap;
-  RefPtr<SourceSurface> mTmpSurface;
-};
+  DataSourceSurface* surf = static_cast<DataSourceSurface*>(aContext);
+  if (surf) {
+    surf->Release();
+  }
+}
 
-static TempBitmap
+static SkBitmap
 GetBitmapForSurface(SourceSurface* aSurface)
 {
-  TempBitmap result;
+  SkBitmap bitmap;
 
   if (aSurface->GetType() == SurfaceType::SKIA) {
-    result.mBitmap = static_cast<SourceSurfaceSkia*>(aSurface)->GetBitmap();
-    return result;
+    bitmap = static_cast<SourceSurfaceSkia*>(aSurface)->GetBitmap();
+    return bitmap;
   }
 
-  RefPtr<DataSourceSurface> surf = aSurface->GetDataSurface();
+  DataSourceSurface* surf = aSurface->GetDataSurface().take();
   if (!surf) {
-    gfxDevCrash(LogReason::SourceSurfaceIncompatible) << "Non-skia SourceSurfaces need to be DataSourceSurfaces";
-    return result;
+    gfxDevCrash(LogReason::SourceSurfaceIncompatible) << "Non-Skia SourceSurfaces need to be DataSourceSurfaces";
+    return bitmap;
   }
 
   SkAlphaType alphaType = (surf->GetFormat() == SurfaceFormat::B8G8R8X8) ?
@@ -107,11 +110,12 @@ GetBitmapForSurface(SourceSurface* aSurface)
                                        surf->GetSize().height,
                                        GfxFormatToSkiaColorType(surf->GetFormat()),
                                        alphaType);
-  result.mBitmap.setInfo(info, surf->Stride());
+  if (!bitmap.installPixels(info, surf->GetData(), surf->Stride(), nullptr,
+                            ReleaseTemporarySurface, surf)) {
+    gfxDebug() << "Failed installing pixels on Skia bitmap for temporary surface";
+  }
 
-  result.mBitmap.setPixels(surf->GetData());
-  result.mTmpSurface = surf.forget();
-  return result;
+  return bitmap;
 }
 
 DrawTargetSkia::DrawTargetSkia()
@@ -174,8 +178,7 @@ DrawTargetSkia::ReleaseBits(uint8_t* aData)
 }
 
 static void
-SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, TempBitmap& aTmpBitmap,
-                Float aAlpha = 1.0)
+SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, Float aAlpha = 1.0)
 {
   switch (aPattern.GetType()) {
     case PatternType::COLOR: {
@@ -245,8 +248,7 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, TempBitmap& aTmpBitmap
     }
     case PatternType::SURFACE: {
       const SurfacePattern& pat = static_cast<const SurfacePattern&>(aPattern);
-      aTmpBitmap = GetBitmapForSurface(pat.mSurface);
-      SkBitmap& bitmap = aTmpBitmap.mBitmap;
+      SkBitmap bitmap = GetBitmapForSurface(pat.mSurface);
 
       SkMatrix mat;
       GfxMatrixToSkiaMatrix(pat.mMatrix, mat);
@@ -285,7 +287,7 @@ struct AutoPaintSetup {
     : mNeedsRestore(false), mAlpha(1.0)
   {
     Init(aCanvas, aOptions, aMaskBounds);
-    SetPaintPattern(mPaint, aPattern, mTmpBitmap, mAlpha);
+    SetPaintPattern(mPaint, aPattern, mAlpha);
   }
 
   AutoPaintSetup(SkCanvas *aCanvas, const DrawOptions& aOptions, const Rect* aMaskBounds = nullptr)
@@ -337,7 +339,6 @@ struct AutoPaintSetup {
 
   
   SkPaint mPaint;
-  TempBitmap mTmpBitmap;
   bool mNeedsRestore;
   SkCanvas* mCanvas;
   Float mAlpha;
@@ -376,14 +377,14 @@ DrawTargetSkia::DrawSurface(SourceSurface *aSurface,
   SkRect destRect = RectToSkRect(aDest);
   SkRect sourceRect = RectToSkRect(aSource);
 
-  TempBitmap bitmap = GetBitmapForSurface(aSurface);
+  SkBitmap bitmap = GetBitmapForSurface(aSurface);
 
   AutoPaintSetup paint(mCanvas.get(), aOptions, &aDest);
   if (aSurfOptions.mFilter == Filter::POINT) {
     paint.mPaint.setFilterQuality(kNone_SkFilterQuality);
   }
 
-  mCanvas->drawBitmapRect(bitmap.mBitmap, sourceRect, destRect, &paint.mPaint);
+  mCanvas->drawBitmapRect(bitmap, sourceRect, destRect, &paint.mPaint);
 }
 
 DrawTargetType
@@ -424,7 +425,7 @@ DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface *aSurface,
   mCanvas->save();
   mCanvas->resetMatrix();
 
-  TempBitmap bitmap = GetBitmapForSurface(aSurface);
+  SkBitmap bitmap = GetBitmapForSurface(aSurface);
 
   SkPaint paint;
   paint.setXfermodeMode(GfxOpToSkiaOp(aOperator));
@@ -452,11 +453,11 @@ DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface *aSurface,
   
   
   IntPoint shadowDest = RoundedToInt(aDest + aOffset);
-  mCanvas->drawSprite(bitmap.mBitmap, shadowDest.x, shadowDest.y, &shadowPaint);
+  mCanvas->drawSprite(bitmap, shadowDest.x, shadowDest.y, &shadowPaint);
 
   
   IntPoint dest = RoundedToInt(aDest);
-  mCanvas->drawSprite(bitmap.mBitmap, dest.x, dest.y, &paint);
+  mCanvas->drawSprite(bitmap, dest.x, dest.y, &paint);
 
   mCanvas->restore();
 }
@@ -644,8 +645,7 @@ DrawTargetSkia::Mask(const Pattern &aSource,
   AutoPaintSetup paint(mCanvas.get(), aOptions, aSource);
 
   SkPaint maskPaint;
-  TempBitmap tmpBitmap;
-  SetPaintPattern(maskPaint, aMask, tmpBitmap);
+  SetPaintPattern(maskPaint, aMask);
 
   SkLayerRasterizer::Builder builder;
   builder.addLayer(maskPaint);
@@ -664,8 +664,8 @@ DrawTargetSkia::MaskSurface(const Pattern &aSource,
   MarkChanged();
   AutoPaintSetup paint(mCanvas.get(), aOptions, aSource);
 
-  TempBitmap bitmap = GetBitmapForSurface(aMask);
-  if (bitmap.mBitmap.colorType() == kAlpha_8_SkColorType) {
+  SkBitmap bitmap = GetBitmapForSurface(aMask);
+  if (bitmap.colorType() == kAlpha_8_SkColorType) {
     if (aOffset != Point(0, 0)) {
       SkMatrix transform;
       transform.setTranslate(SkFloatToScalar(-aOffset.x), SkFloatToScalar(-aOffset.y));
@@ -673,13 +673,11 @@ DrawTargetSkia::MaskSurface(const Pattern &aSource,
       SkSafeUnref(paint.mPaint.setShader(matrixShader));
     }
 
-    mCanvas->drawBitmap(bitmap.mBitmap, aOffset.x, aOffset.y, &paint.mPaint);
+    mCanvas->drawBitmap(bitmap, aOffset.x, aOffset.y, &paint.mPaint);
   } else {
     SkPaint maskPaint;
-    TempBitmap tmpBitmap;
     SetPaintPattern(maskPaint,
-                    SurfacePattern(aMask, ExtendMode::CLAMP, Matrix::Translation(aOffset)),
-                    tmpBitmap);
+                    SurfacePattern(aMask, ExtendMode::CLAMP, Matrix::Translation(aOffset)));
 
     SkLayerRasterizer::Builder builder;
     builder.addLayer(maskPaint);
@@ -798,11 +796,11 @@ DrawTargetSkia::CopySurface(SourceSurface *aSurface,
 
   MarkChanged();
 
-  TempBitmap bitmap = GetBitmapForSurface(aSurface);
+  SkBitmap bitmap = GetBitmapForSurface(aSurface);
 
   
-  if (false && !bitmap.mBitmap.getTexture() && mCanvas->imageInfo() == bitmap.mBitmap.info()) {
-    SkBitmap bm(bitmap.mBitmap);
+  if (false && !bitmap.getTexture() && mCanvas->imageInfo() == bitmap.info()) {
+    SkBitmap bm(bitmap);
     bm.lockPixels();
     if (bm.getPixels()) {
       SkImageInfo info = bm.info().makeWH(aSourceRect.width, aSourceRect.height);
@@ -831,13 +829,13 @@ DrawTargetSkia::CopySurface(SourceSurface *aSurface,
   }
   
   
-  if (bitmap.mBitmap.colorType() == kAlpha_8_SkColorType) {
+  if (bitmap.colorType() == kAlpha_8_SkColorType) {
     SkPaint clearPaint;
     clearPaint.setColor(SkColorSetARGB(0, 0, 0, 0));
     clearPaint.setXfermodeMode(SkXfermode::kSrc_Mode);
     mCanvas->drawPaint(clearPaint);
   }
-  mCanvas->drawBitmapRect(bitmap.mBitmap, source, dest, &paint);
+  mCanvas->drawBitmapRect(bitmap, source, dest, &paint);
   mCanvas->restore();
 }
 
