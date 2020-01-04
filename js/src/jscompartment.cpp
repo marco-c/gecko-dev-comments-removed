@@ -574,7 +574,23 @@ JSCompartment::traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime t
     if (objectMetadataTable)
         objectMetadataTable->trace(trc);
 
-    if (scriptCountsMap && !trc->runtime()->isHeapMinorCollecting()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (scriptCountsMap &&
+        trc->runtime()->profilingScripts &&
+        !trc->runtime()->isHeapMinorCollecting())
+    {
         MOZ_ASSERT_IF(!trc->runtime()->isBeingDestroyed(), collectCoverage());
         for (ScriptCountsMap::Range r = scriptCountsMap->all(); !r.empty(); r.popFront()) {
             JSScript* script = const_cast<JSScript*>(r.front().key());
@@ -754,6 +770,18 @@ JSCompartment::fixupAfterMovingGC()
     fixupGlobal();
     fixupInitialShapeTable();
     objectGroups.fixupTablesAfterMovingGC();
+
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    if (scriptCountsMap) {
+        for (ScriptCountsMap::Range r = scriptCountsMap->all(); !r.empty(); r.popFront())
+            MOZ_ASSERT(!IsForwarded(r.front().key()));
+    }
+#endif
 }
 
 void
@@ -979,8 +1007,7 @@ JSCompartment::updateDebuggerObservesCoverage()
     }
 
     
-    
-    if (runtimeFromMainThread()->profilingScripts)
+    if (collectCoverage())
         return;
 
     clearScriptCounts();

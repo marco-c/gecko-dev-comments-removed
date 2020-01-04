@@ -489,6 +489,11 @@ class ScriptCounts
     jit::IonScriptCounts* ionCounts_;
 };
 
+
+
+
+
+
 typedef HashMap<JSScript*,
                 ScriptCounts,
                 DefaultHasher<JSScript*>,
