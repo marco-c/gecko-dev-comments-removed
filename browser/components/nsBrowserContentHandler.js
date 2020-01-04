@@ -787,11 +787,14 @@ nsDefaultCommandLineHandler.prototype = {
             
             
             
+            
+            
+            var allowedParams = ["WNSGPH", "WNSBOX", "WNSFC2", "WNSHCO", "WNSSSV"];
             var formParam = params.get("form");
             if (!formParam) {
               formParam = params.get("FORM");
             }
-            if (formParam == "WNSGPH" || formParam == "WNSBOX" || formParam == "WNSFC2") {
+            if (allowedParams.indexOf(formParam) != -1) {
               var term = params.get("q");
               var ss = Components.classes["@mozilla.org/browser/search-service;1"]
                                  .getService(nsIBrowserSearchService);
