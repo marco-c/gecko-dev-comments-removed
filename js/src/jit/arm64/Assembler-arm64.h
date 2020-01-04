@@ -342,11 +342,6 @@ class Assembler : public vixl::Assembler
     static void FixupNurseryObjects(JSContext* cx, JitCode* code, CompactBufferReader& reader,
                                     const ObjectVector& nurseryObjects);
 
-    
-    size_t toFinalOffset(BufferOffset offset) {
-        return size_t(offset.getOffset());
-    }
-
   public:
     
     static const size_t SizeOfJumpTableEntry = 16;
@@ -401,13 +396,6 @@ class Assembler : public vixl::Assembler
           : jump(jump), extendedTableIndex(extendedTableIndex)
         { }
     };
-
-    
-    
-    
-    js::Vector<BufferOffset, 0, SystemAllocPolicy> tmpDataRelocations_;
-    js::Vector<BufferOffset, 0, SystemAllocPolicy> tmpPreBarriers_;
-    js::Vector<JumpRelocation, 0, SystemAllocPolicy> tmpJumpRelocations_;
 
     
     
