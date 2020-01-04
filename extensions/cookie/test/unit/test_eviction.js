@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 var test_generator = do_run_test();
 
 function run_test()
@@ -231,7 +233,7 @@ function get_creationTime(i)
 function check_remaining_cookies(aNumberTotal, aNumberOld, aNumberToExpect) {
   var enumerator = Services.cookiemgr.enumerator;
 
-  i = 0;
+  let i = 0;
   while (enumerator.hasMoreElements()) {
     var cookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
     ++i;
