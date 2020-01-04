@@ -1734,6 +1734,12 @@ NativeKey::NeedsToHandleWithoutFollowingCharMessages() const
 
   
   
+  if (mCommittedCharsAndModifiers.mLength > 1) {
+    return true;
+  }
+
+  
+  
   if (!mModKeyState.IsControl() && !mModKeyState.IsAlt() &&
       !mModKeyState.IsWin()) {
     return false;
@@ -1827,17 +1833,20 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg) const
   aCharMsg.message = WM_NULL;
 
   if (mFakeCharMsgs) {
-    FakeCharMsg& fakeCharMsg = mFakeCharMsgs->ElementAt(0);
-    if (fakeCharMsg.mConsumed) {
-      return false;
+    for (size_t i = 0; i < mFakeCharMsgs->Length(); i++) {
+      FakeCharMsg& fakeCharMsg = mFakeCharMsgs->ElementAt(i);
+      if (fakeCharMsg.mConsumed) {
+        continue;
+      }
+      MSG charMsg = fakeCharMsg.GetCharMsg(mMsg.hwnd);
+      fakeCharMsg.mConsumed = true;
+      if (!IsCharMessage(charMsg)) {
+        return false;
+      }
+      aCharMsg = charMsg;
+      return true;
     }
-    MSG charMsg = fakeCharMsg.GetCharMsg(mMsg.hwnd);
-    fakeCharMsg.mConsumed = true;
-    if (!IsCharMessage(charMsg)) {
-      return false;
-    }
-    aCharMsg = charMsg;
-    return true;
+    return false;
   }
 
   
@@ -2162,7 +2171,7 @@ bool
 NativeKey::DispatchKeyPressEventsWithoutCharMessage() const
 {
   MOZ_ASSERT(IsKeyDownMessage());
-  MOZ_ASSERT(!mIsDeadKey);
+  MOZ_ASSERT(!mIsDeadKey || !mCommittedCharsAndModifiers.IsEmpty());
 
   nsresult rv = mDispatcher->BeginNativeInputTransaction();
   if (NS_WARN_IF(NS_FAILED(rv))) {
