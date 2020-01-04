@@ -249,7 +249,7 @@ APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
     
     
     
-    if (presShellResolution != aMetrics.GetPresShellResolution()) {
+    if (!FuzzyEqualsMultiplicative(presShellResolution, aMetrics.GetPresShellResolution())) {
       return;
     }
 
