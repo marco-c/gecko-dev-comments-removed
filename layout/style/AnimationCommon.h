@@ -275,8 +275,6 @@ private:
   bool CanThrottleTransformChanges(TimeStamp aTime);
 
 public:
-  static bool IsCompositorAnimationDisabledForFrame(nsIFrame* aFrame);
-
   
   
   

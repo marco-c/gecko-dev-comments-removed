@@ -898,7 +898,7 @@ public:
 
   NS_DECLARE_FRAME_PROPERTY(InvalidationRect, DeleteValue<nsRect>)
 
-  NS_DECLARE_FRAME_PROPERTY(RefusedAsyncAnimation, nullptr)
+  NS_DECLARE_FRAME_PROPERTY(RefusedAsyncAnimationProperty, nullptr)
 
   NS_DECLARE_FRAME_PROPERTY(GenConProperty, DestroyContentArray)
 
@@ -1202,6 +1202,12 @@ public:
 
 
   virtual bool NeedsView() { return false; }
+
+  bool RefusedAsyncAnimation() const
+  {
+    void* prop = Properties().Get(nsIFrame::RefusedAsyncAnimationProperty());
+    return bool(reinterpret_cast<intptr_t>(prop));
+  }
 
   
 
