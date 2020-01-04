@@ -625,7 +625,7 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
         uintptr_t base;
         StoreValueFromGPReg(SharedMem<void*>::unshared(&base), sizeof(uintptr_t),
                             AddressOfGPRegisterSlot(context, address.base()));
-        MOZ_RELEASE_ASSERT(reinterpret_cast<uint8_t*>(base) == instance.heap());
+        MOZ_RELEASE_ASSERT(reinterpret_cast<uint8_t*>(base) == instance.memoryBase());
     }
     if (address.hasIndex()) {
         uintptr_t index;
@@ -643,11 +643,11 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
     MOZ_RELEASE_ASSERT(size_t(faultingAddress - accessAddress) < access.size(),
                        "Given faulting address does not appear to be within computed "
                        "faulting address range");
-    MOZ_RELEASE_ASSERT(accessAddress >= instance.heap(),
+    MOZ_RELEASE_ASSERT(accessAddress >= instance.memoryBase(),
                        "Access begins outside the asm.js heap");
-    MOZ_RELEASE_ASSERT(accessAddress + access.size() <= instance.heap() + MappedSize,
+    MOZ_RELEASE_ASSERT(accessAddress + access.size() <= instance.memoryBase() + MappedSize,
                        "Access extends beyond the asm.js heap guard region");
-    MOZ_RELEASE_ASSERT(accessAddress + access.size() > instance.heap() + instance.heapLength(),
+    MOZ_RELEASE_ASSERT(accessAddress + access.size() > instance.memoryBase() + instance.memoryLength(),
                        "Computed access address is not actually out of bounds");
 
     
@@ -664,27 +664,27 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
     
     
     
-    intptr_t unwrappedOffset = accessAddress - instance.heap().unwrap();
+    intptr_t unwrappedOffset = accessAddress - instance.memoryBase().unwrap();
     uint32_t wrappedOffset = uint32_t(unwrappedOffset);
     size_t size = access.size();
     MOZ_RELEASE_ASSERT(wrappedOffset + size > wrappedOffset);
-    bool inBounds = wrappedOffset + size < instance.heapLength();
+    bool inBounds = wrappedOffset + size < instance.memoryLength();
 
     
     
     MOZ_RELEASE_ASSERT(unwrappedOffset > memoryAccess->offsetWithinWholeSimdVector());
     uint32_t wrappedBaseOffset = uint32_t(unwrappedOffset - memoryAccess->offsetWithinWholeSimdVector());
-    if (wrappedBaseOffset >= instance.heapLength())
+    if (wrappedBaseOffset >= instance.memoryLength())
         inBounds = false;
 
     if (inBounds) {
         
         
         
-        SharedMem<uint8_t*> wrappedAddress = instance.heap() + wrappedOffset;
-        MOZ_RELEASE_ASSERT(wrappedAddress >= instance.heap());
+        SharedMem<uint8_t*> wrappedAddress = instance.memoryBase() + wrappedOffset;
+        MOZ_RELEASE_ASSERT(wrappedAddress >= instance.memoryBase());
         MOZ_RELEASE_ASSERT(wrappedAddress + size > wrappedAddress);
-        MOZ_RELEASE_ASSERT(wrappedAddress + size <= instance.heap() + instance.heapLength());
+        MOZ_RELEASE_ASSERT(wrappedAddress + size <= instance.memoryBase() + instance.memoryLength());
         switch (access.kind()) {
           case Disassembler::HeapAccess::Load:
             SetRegisterToLoadedValue(context, wrappedAddress.cast<void*>(), size, access.otherOperand());
@@ -747,11 +747,11 @@ IsHeapAccessAddress(const Instance &instance, uint8_t* faultingAddress)
 #if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
     size_t accessLimit = MappedSize;
 #elif defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_UNALIGNED)
-    size_t accessLimit = instance.heapLength();
+    size_t accessLimit = instance.memoryLength();
 #endif
-    return instance.metadata().usesHeap() &&
-           faultingAddress >= instance.heap() &&
-           faultingAddress < instance.heap() + accessLimit;
+    return instance.metadata().usesMemory() &&
+           faultingAddress >= instance.memoryBase() &&
+           faultingAddress < instance.memoryBase() + accessLimit;
 }
 
 #if defined(XP_WIN)
