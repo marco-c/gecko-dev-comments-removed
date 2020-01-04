@@ -4,7 +4,8 @@
 
 
 
-const MenuItem = require("./menu-item");
+"use strict";
+
 const EventEmitter = require("devtools/shared/event-emitter");
 
 
@@ -17,7 +18,7 @@ const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
-function Menu({id=null} = {}) {
+function Menu({ id = null } = {}) {
   this.menuitems = [];
   this.id = id;
 
@@ -35,7 +36,7 @@ function Menu({id=null} = {}) {
 
 
 
-Menu.prototype.append = function(menuItem) {
+Menu.prototype.append = function (menuItem) {
   this.menuitems.push(menuItem);
 };
 
@@ -45,8 +46,8 @@ Menu.prototype.append = function(menuItem) {
 
 
 
-Menu.prototype.insert = function(pos, menuItem) {
-  throw "Not implemented";
+Menu.prototype.insert = function (pos, menuItem) {
+  throw Error("Not implemented");
 };
 
 
@@ -61,7 +62,7 @@ Menu.prototype.insert = function(pos, menuItem) {
 
 
 
-Menu.prototype.popup = function(screenX, screenY, toolbox) {
+Menu.prototype.popup = function (screenX, screenY, toolbox) {
   let doc = toolbox.doc;
   let popup = doc.createElement("menupopup");
   popup.setAttribute("menu-api", "true");
@@ -89,7 +90,7 @@ Menu.prototype.popup = function(screenX, screenY, toolbox) {
   popup.openPopupAtScreen(screenX, screenY, true);
 };
 
-Menu.prototype._createMenuItems = function(parent) {
+Menu.prototype._createMenuItems = function (parent) {
   let doc = parent.ownerDocument;
   this.menuitems.forEach(item => {
     if (!item.visible) {
@@ -139,15 +140,15 @@ Menu.prototype._createMenuItems = function(parent) {
 };
 
 Menu.setApplicationMenu = () => {
-  throw "Not implemented";
+  throw Error("Not implemented");
 };
 
 Menu.sendActionToFirstResponder = () => {
-  throw "Not implemented";
+  throw Error("Not implemented");
 };
 
 Menu.buildFromTemplate = () => {
-  throw "Not implemented";
+  throw Error("Not implemented");
 };
 
 module.exports = Menu;
