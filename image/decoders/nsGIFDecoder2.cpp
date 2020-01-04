@@ -185,7 +185,7 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
                                               : SurfaceFormat::B8G8R8X8;
 
   
-  MOZ_ASSERT_IF(mDownscaler, !GetImageMetadata().HasAnimation());
+  MOZ_ASSERT_IF(Size() != OutputSize(), !GetImageMetadata().HasAnimation());
 
   SurfacePipeFlags pipeFlags = aIsInterlaced
                              ? SurfacePipeFlags::DEINTERLACE
@@ -204,7 +204,7 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
   } else {
     
     
-    MOZ_ASSERT(!mDownscaler);
+    MOZ_ASSERT(Size() == OutputSize());
     pipe =
       SurfacePipeFactory::CreatePalettedSurfacePipe(this, mGIFStruct.images_decoded,
                                                     Size(), aFrameRect, format,
@@ -775,11 +775,7 @@ nsGIFDecoder2::ReadImageDescriptor(const char* aData)
     return Transition::TerminateSuccess();
   }
 
-  if (mDownscaler) {
-    MOZ_ASSERT_UNREACHABLE("Doing downscale-during-decode for an animated "
-                           "image?");
-    mDownscaler.reset();
-  }
+  MOZ_ASSERT(Size() == OutputSize(), "Downscaling an animated image?");
 
   
   return Transition::ToAfterYield(State::FINISH_IMAGE_DESCRIPTOR);
