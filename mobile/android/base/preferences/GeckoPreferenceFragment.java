@@ -106,6 +106,11 @@ public class GeckoPreferenceFragment extends PreferenceFragment {
             return getString(R.string.pref_category_vendor);
         }
 
+        
+        if (res == R.xml.preferences_search) {
+            return getString(R.string.pref_category_search);
+        }
+
         return null;
     }
 
