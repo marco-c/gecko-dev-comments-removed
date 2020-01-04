@@ -476,6 +476,20 @@ class HeapPtr : public WriteBarrieredBase<T>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class T>
 class RelocatablePtr : public WriteBarrieredBase<T>
 {
