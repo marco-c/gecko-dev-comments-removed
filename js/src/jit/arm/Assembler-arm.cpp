@@ -2777,8 +2777,12 @@ Assembler::bind(Label* label, BufferOffset boff)
         BufferOffset b(label);
         do {
             
-            if (oom())
+            if (oom()) {
+                
+                
+                label->bind(0);
                 return;
+            }
             BufferOffset next;
             more = nextLink(b, &next);
             Instruction branch = *editSrc(b);
