@@ -349,7 +349,17 @@ nsWebShellWindow::SizeModeChanged(nsSizeMode sizeMode)
       ourWindow->SetFullScreen(true);
     }
     else if (sizeMode != nsSizeMode_Minimized) {
-      ourWindow->SetFullScreen(false);
+      if (ourWindow->GetFullScreen()) {
+        
+        
+        
+        
+        
+        
+        ourWindow->SetFullscreenInternal(
+          nsPIDOMWindow::eForForceExitFullscreen, false);
+        ourWindow->SetFullScreen(false);
+      }
     }
 
     
