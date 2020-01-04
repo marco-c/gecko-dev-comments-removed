@@ -24,6 +24,14 @@
 #undef compress
 
 
+#ifdef MOZ_B2G
+#define IPC_LOG(...)
+#else
+static LazyLogModule sLogModule("ipc");
+#define IPC_LOG(...) MOZ_LOG(sLogModule, LogLevel::Debug, (__VA_ARGS__))
+#endif
+
+
 
 
 
@@ -666,8 +674,11 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
     
     
     if (aMsg.is_sync() && aMsg.is_reply()) {
+        IPC_LOG("Received reply seqno=%d xid=%d", aMsg.seqno(), aMsg.transaction_id());
+
         if (aMsg.seqno() == mTimedOutMessageSeqno) {
             
+            IPC_LOG("Received reply to timedout message; igoring; xid=%d", mTimedOutMessageSeqno);
             mTimedOutMessageSeqno = 0;
             return;
         }
@@ -675,6 +686,7 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
         MOZ_ASSERT(aMsg.transaction_id() == mCurrentTransaction);
         MOZ_ASSERT(AwaitingSyncReply());
         MOZ_ASSERT(!mRecvd);
+        MOZ_ASSERT(!mTimedOutMessageSeqno);
 
         
         
@@ -730,6 +742,9 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
     bool shouldWakeUp = AwaitingInterruptReply() ||
                         (AwaitingSyncReply() && !ShouldDeferMessage(aMsg)) ||
                         AwaitingIncomingMessage();
+
+    IPC_LOG("Receive on link thread; seqno=%d, xid=%d, shouldWakeUp=%d",
+            aMsg.seqno(), aMsg.transaction_id(), shouldWakeUp);
 
     
     
@@ -863,6 +878,7 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         
         
         
+        IPC_LOG("Send() failed due to previous timeout");
         return false;
     }
 
@@ -949,6 +965,7 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         }
 
         if (WasTransactionCanceled(transaction, prio)) {
+            IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
             return false;
         }
 
@@ -956,6 +973,8 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         
         bool canTimeOut = transaction == seqno;
         if (maybeTimedOut && canTimeOut && !ShouldContinueFromTimeout()) {
+            IPC_LOG("Timing out Send: xid=%d", transaction);
+
             
             
             
@@ -1215,6 +1234,8 @@ MessageChannel::ProcessPendingRequest(const Message &aUrgent)
     
     nsAutoPtr<Message> savedReply(mRecvd.forget());
 
+    IPC_LOG("Process pending: seqno=%d, xid=%d", aUrgent.seqno(), aUrgent.transaction_id());
+
     DispatchMessage(aUrgent);
     if (!Connected()) {
         ReportConnectionError("MessageChannel::ProcessPendingRequest");
@@ -1287,6 +1308,8 @@ MessageChannel::DispatchMessage(const Message &aMsg)
         nojsapi.emplace();
 
     nsAutoPtr<Message> reply;
+
+    IPC_LOG("DispatchMessage: seqno=%d, xid=%d", aMsg.seqno(), aMsg.transaction_id());
 
     {
         AutoEnterTransaction transaction(this, aMsg);
@@ -2020,6 +2043,8 @@ MessageChannel::GetTopmostMessageRoutingId() const
 void
 MessageChannel::CancelCurrentTransactionInternal()
 {
+    mMonitor->AssertCurrentThreadOwns();
+
     
     
     
