@@ -2,15 +2,16 @@
 
 
 
-#ifndef _INC_NSSShutDown_H
-#define _INC_NSSShutDown_H
+#ifndef nsNSSShutDown_h
+#define nsNSSShutDown_h
 
-#include "nscore.h"
-#include "nspr.h"
 #include "PLDHashTable.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
+#include "nscore.h"
+#include "nspr.h"
 
 class nsNSSShutDownObject;
 class nsOnPK11LogoutCancelObject;
@@ -29,7 +30,7 @@ public:
   
   
   PRStatus restrictActivityToCurrentThread();
-  
+
   
   void releaseCurrentThreadActivityRestriction();
 
@@ -192,35 +193,41 @@ protected:
 class nsNSSShutDownObject
 {
 public:
-
-  enum CalledFromType {calledFromList, calledFromObject};
+  enum class ShutdownCalledFrom {
+    List,
+    Object,
+  };
 
   nsNSSShutDownObject()
   {
     mAlreadyShutDown = false;
     nsNSSShutDownList::remember(this);
   }
-  
+
   virtual ~nsNSSShutDownObject()
   {
     
     
     
   }
-  
-  void shutdown(CalledFromType calledFrom)
+
+  void shutdown(ShutdownCalledFrom calledFrom)
   {
     if (!mAlreadyShutDown) {
-      if (calledFromObject == calledFrom) {
-        nsNSSShutDownList::forget(this);
-      }
-      if (calledFromList == calledFrom) {
-        virtualDestroyNSSReference();
+      switch (calledFrom) {
+        case ShutdownCalledFrom::Object:
+          nsNSSShutDownList::forget(this);
+          break;
+        case ShutdownCalledFrom::List:
+          virtualDestroyNSSReference();
+          break;
+        default:
+          MOZ_CRASH("shutdown() called from an unknown source");
       }
       mAlreadyShutDown = true;
     }
   }
-  
+
   bool isAlreadyShutDown() const { return mAlreadyShutDown; }
 
 protected:
@@ -233,26 +240,25 @@ class nsOnPK11LogoutCancelObject
 {
 public:
   nsOnPK11LogoutCancelObject()
-  :mIsLoggedOut(false)
+    : mIsLoggedOut(false)
   {
     nsNSSShutDownList::remember(this);
   }
-  
+
   virtual ~nsOnPK11LogoutCancelObject()
   {
     nsNSSShutDownList::forget(this);
   }
-  
+
   void logout()
   {
     
     
     
     
-    
     mIsLoggedOut = true;
   }
-  
+
   bool isPK11LoggedOut()
   {
     return mIsLoggedOut;
@@ -262,4 +268,4 @@ private:
   volatile bool mIsLoggedOut;
 };
 
-#endif
+#endif 

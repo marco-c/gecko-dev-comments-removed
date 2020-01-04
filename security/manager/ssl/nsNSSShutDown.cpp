@@ -2,8 +2,9 @@
 
 
 
-#include "mozilla/Casting.h"
 #include "nsNSSShutDown.h"
+
+#include "mozilla/Casting.h"
 #include "nsCOMPtr.h"
 
 using namespace mozilla;
@@ -172,7 +173,7 @@ nsresult nsNSSShutDownList::evaporateAllNSSResources()
     auto entry = static_cast<ObjectHashEntry*>(iter.Get());
     {
       StaticMutexAutoUnlock unlock(sListLock);
-      entry->obj->shutdown(nsNSSShutDownObject::calledFromList);
+      entry->obj->shutdown(nsNSSShutDownObject::ShutdownCalledFrom::List);
     }
     iter.Remove();
   }

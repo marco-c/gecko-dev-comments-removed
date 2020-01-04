@@ -299,7 +299,7 @@ RTCCertificate::~RTCCertificate()
     return;
   }
   destructorSafeDestroyNSSReference();
-  shutdown(calledFromObject);
+  shutdown(ShutdownCalledFrom::Object);
 }
 
 

@@ -30,7 +30,7 @@ nsPkcs11::~nsPkcs11()
   if (isAlreadyShutDown()) {
     return;
   }
-  shutdown(calledFromObject);
+  shutdown(ShutdownCalledFrom::Object);
 }
 
 
