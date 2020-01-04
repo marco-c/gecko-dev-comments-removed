@@ -45,14 +45,17 @@ int MOZ_XMLCheckQName(const char* ptr, const char* end, int ns_aware,
       nmstrt = ns_aware; 
       break;
     case BT_NONASCII:
-      if (!IS_NAME_CHAR_MINBPC(ptr) ||
-          (nmstrt && !*colon && !IS_NMSTRT_CHAR_MINBPC(ptr))) {
-        return MOZ_EXPAT_INVALID_CHARACTER;
-      }
-      if (nmstrt && *colon && !IS_NMSTRT_CHAR_MINBPC(ptr)) {
+      if (nmstrt && !IS_NMSTRT_CHAR_MINBPC(ptr)) {
         
 
-        return MOZ_EXPAT_MALFORMED;
+
+
+        return (IS_NAME_CHAR_MINBPC(ptr) && ns_aware) ?
+               MOZ_EXPAT_MALFORMED :
+               MOZ_EXPAT_INVALID_CHARACTER;
+      }
+      if (!IS_NAME_CHAR_MINBPC(ptr)) {
+        return MOZ_EXPAT_INVALID_CHARACTER;
       }
       nmstrt = 0;
       break;
