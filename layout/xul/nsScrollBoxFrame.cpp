@@ -88,7 +88,7 @@ nsAutoRepeatBoxFrame::HandleEvent(nsPresContext* aPresContext,
     
     
     case eMouseEnterIntoWidget:
-    case NS_MOUSE_OVER:
+    case eMouseOver:
       if (IsActivatedOnHover()) {
         StartRepeat();
         mTrustedEvent = aEvent->mFlags.mIsTrusted;
