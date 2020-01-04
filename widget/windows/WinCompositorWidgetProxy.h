@@ -34,13 +34,42 @@ public:
     return this;
   }
 
+  
   void EnterPresentLock();
   void LeavePresentLock();
+  void OnDestroyWindow();
+
+  
+  void UpdateTransparency(nsTransparencyMode aMode);
+  void ClearTransparentWindow();
+  bool RedrawTransparentWindow();
+
+  
+  void ResizeTransparentWindow(int32_t aNewWidth, int32_t aNewHeight);
+
+  
+  RefPtr<gfxASurface> EnsureTransparentSurface();
+
+  HDC GetTransparentDC() const {
+    return mMemoryDC;
+  }
+
+private:
+  HDC GetWindowSurface();
+  void FreeWindowSurface(HDC dc);
+
+  void CreateTransparentSurface(int32_t aWidth, int32_t aHeight);
 
 private:
   nsWindow* mWindow;
   HWND mWnd;
   gfx::CriticalSection mPresentLock;
+
+  
+  nsTransparencyMode mTransparencyMode;
+  RefPtr<gfxASurface> mTransparentSurface;
+  HDC mMemoryDC;
+  HDC mCompositeDC;
 };
 
 } 

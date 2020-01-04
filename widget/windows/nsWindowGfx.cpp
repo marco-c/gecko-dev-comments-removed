@@ -240,7 +240,8 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     ::BeginPaint(mWnd, &ps);
     ::EndPaint(mWnd, &ps);
 
-    aDC = mMemoryDC;
+    
+    aDC = GetCompositorWidgetProxy()->GetTransparentDC();
   }
 #endif
 
@@ -312,10 +313,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
 #if defined(MOZ_XUL)
           
           if (eTransparencyTransparent == mTransparencyMode) {
-            if (mTransparentSurface == nullptr) {
-              SetupTranslucentWindowMemoryBitmap(mTransparencyMode);
-            }
-            targetSurface = mTransparentSurface;
+            targetSurface = GetCompositorWidgetProxy()->EnsureTransparentSurface();
           }
 #endif
 
@@ -380,7 +378,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
             
             
             
-            UpdateTranslucentWindow();
+            GetCompositorWidgetProxy()->RedrawTransparentWindow();
           }
 #endif
         }

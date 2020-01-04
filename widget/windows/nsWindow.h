@@ -314,8 +314,6 @@ public:
                      nsIKeyEventInPluginCallback* aCallback) override;
 
   mozilla::widget::CompositorWidgetProxy* NewCompositorWidgetProxy() override;
-  already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawing();
-  void EndRemoteDrawing();
 
 protected:
   virtual ~nsWindow();
@@ -470,16 +468,9 @@ protected:
 private:
   void                    SetWindowTranslucencyInner(nsTransparencyMode aMode);
   nsTransparencyMode      GetWindowTranslucencyInner() const { return mTransparencyMode; }
-  void                    ResizeTranslucentWindow(int32_t aNewWidth, int32_t aNewHeight, bool force = false);
-  nsresult                UpdateTranslucentWindow();
-  void                    ClearTranslucentWindow();
-  void                    SetupTranslucentWindowMemoryBitmap(nsTransparencyMode aMode);
   void                    UpdateGlass();
 protected:
 #endif 
-
-  HDC GetWindowSurface();
-  void FreeWindowSurface(HDC dc);
 
   static bool             IsAsyncResponseEvent(UINT aMsg, LRESULT& aResult);
   void                    IPCWindowProcHandler(UINT& msg, WPARAM& wParam, LPARAM& lParam);
@@ -594,7 +585,6 @@ protected:
 
   
   HDC                   mPaintDC; 
-  HDC                   mCompositeDC; 
 
   LayoutDeviceIntRect   mLastPaintBounds;
 
@@ -602,9 +592,6 @@ protected:
 
   
 #ifdef MOZ_XUL
-  
-  RefPtr<gfxASurface> mTransparentSurface;
-  HDC                   mMemoryDC;
   nsTransparencyMode    mTransparencyMode;
   nsIntRegion           mPossiblyTransparentRegion;
   MARGINS               mGlassMargins;
