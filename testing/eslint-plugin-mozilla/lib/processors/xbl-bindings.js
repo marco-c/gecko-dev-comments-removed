@@ -57,7 +57,7 @@ XMLParser.prototype = {
       attributes: {},
       children: [],
       textContent: "",
-      textStart: this.parser.line,
+      textStart: { line: this.parser.line, column: this.parser.column },
     }
 
     for (let attr of Object.keys(tag.attributes)) {
@@ -74,27 +74,51 @@ XMLParser.prototype = {
     this._currentNode = this._currentNode.parentNode;
   },
 
+  addText: function(text) {
+    this._currentNode.textContent += text;
+  },
+
   onText: function(text) {
     
-    this.onCDATA(text.replace(entityRegex, "null"));
+    this.addText(text.replace(entityRegex, "null"));
   },
 
   onCDATA: function(text) {
-    this._currentNode.textContent += text;
+    
+    this.addText(" ".repeat("<![CDATA[".length));
+    this.addText(text);
   }
 }
 
 
-function reindent(text) {
+function buildCodeBlock(tag, prefix, suffix, indent) {
+  prefix = prefix === undefined ? "" : prefix;
+  suffix = suffix === undefined ? "\n}" : suffix;
+  indent = indent === undefined ? 2 : indent;
+
+  let text = tag.textContent;
+  let line = tag.textStart.line;
+  let column = tag.textStart.column;
+
   let lines = text.split("\n");
 
   
-  if (lines[lines.length - 1].trim() == "") {
+  
+  while (lines.length && lines[0].trim() == "") {
+    column = 0;
+    line++;
+    lines.shift();
+  }
+
+  
+  
+  while (lines.length && lines[lines.length - 1].trim() == "") {
     lines.pop();
   }
 
-  if (!lines.length) {
-    return "";
+  
+  if (lines.length && column) {
+    lines[0] = " ".repeat(column) + lines[0];
   }
 
   
@@ -105,8 +129,15 @@ function reindent(text) {
 
   
   
-  lines = lines.map(s => s.length > 0 ? "  " + s.substring(minIndent) : s);
-  return lines.join("\n") + "\n";
+  let indentstr = " ".repeat(indent);
+  lines = lines.map(s => s.length ? indentstr + s.substring(minIndent) : s);
+
+  let block = {
+    script: prefix + lines.join("\n") + suffix + "\n",
+    line: line - prefix.split("\n").length,
+    indent: minIndent - indent
+  };
+  return block;
 }
 
 
@@ -117,12 +148,12 @@ function reindent(text) {
 let xmlParseError = null;
 
 
-let blockLines = [];
+let blocks = [];
 
 module.exports = {
   preprocess: function(text, filename) {
     xmlParseError = null;
-    blockLines = [];
+    blocks = [];
 
     
     
@@ -174,21 +205,18 @@ module.exports = {
           switch (item.local) {
             case "field": {
               
-              let def = item.textContent.trimRight();
+
               
-              if (def.trim().length == 0) {
+              if (item.textContent.trim().length == 0) {
                 continue;
               }
-              blockLines.push(item.textStart);
-              scripts.push(`${def}\n`);
+              blocks.push(buildCodeBlock(item, "", "", 0));
               break;
             }
             case "constructor":
             case "destructor": {
               
-              blockLines.push(item.textStart);
-              let content = reindent(item.textContent);
-              scripts.push(`function ${item.local}() {${content}}\n`);
+              blocks.push(buildCodeBlock(item, `function ${item.local}() {\n`));
               break;
             }
             case "method": {
@@ -197,9 +225,7 @@ module.exports = {
                                         .map(n => n.attributes.name)
                                         .join(", ");
               let body = item.children.filter(n => n.local == "body" && n.namespace == NS_XBL)[0];
-              blockLines.push(body.textStart);
-              body = reindent(body.textContent);
-              scripts.push(`function ${item.attributes.name}(${params}) {${body}}\n`)
+              blocks.push(buildCodeBlock(body, `function ${item.attributes.name}(${params}) {\n`));
               break;
             }
             case "property": {
@@ -209,18 +235,14 @@ module.exports = {
                   continue;
                 }
 
-                blockLines.push(propdef.textStart);
-                let content = reindent(propdef.textContent);
                 let params = propdef.local == "setter" ? "val" : "";
-                scripts.push(`function ${item.attributes.name}_${propdef.local}(${params}) {${content}}\n`);
+                blocks.push(buildCodeBlock(propdef, `function ${item.attributes.name}_${propdef.local}(${params}) {\n`));
               }
               break;
             }
             case "handler": {
               
-              blockLines.push(item.textStart);
-              let content = reindent(item.textContent);
-              scripts.push(`function onevent(event) {${content}}\n`);
+              blocks.push(buildCodeBlock(item, `function onevent(event) {\n`));
               break;
             }
             default:
@@ -230,7 +252,7 @@ module.exports = {
       }
     }
 
-    return scripts;
+    return blocks.map(b => b.script);
   },
 
   postprocess: function(messages, filename) {
@@ -243,10 +265,11 @@ module.exports = {
     
     let errors = [];
     for (let i = 0; i < messages.length; i++) {
-      let line = blockLines[i];
+      let block = blocks[i];
 
       for (let message of messages[i]) {
-        message.line += line;
+        message.line += block.line + 1;
+        message.column += block.indent;
         errors.push(message);
       }
     }
