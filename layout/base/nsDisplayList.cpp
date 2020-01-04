@@ -2799,10 +2799,20 @@ nsDisplayBackgroundImage::ConfigureLayer(ImageLayer* aLayer,
   
   MOZ_ASSERT(aParameters.Offset() == LayerIntPoint(0,0));
 
+  
+  
+  
+  
+  
+  
+  
+  
+  IntSize containerSize = aLayer->GetContainer()->GetCurrentSize();
+
   const LayoutDevicePoint p = mImageLayerDestRect.TopLeft();
   Matrix transform = Matrix::Translation(p.x, p.y);
-  transform.PreScale(mImageLayerDestRect.width / imageWidth,
-                     mImageLayerDestRect.height / imageHeight);
+  transform.PreScale(mImageLayerDestRect.width / containerSize.width,
+                     mImageLayerDestRect.height / containerSize.height);
   aLayer->SetBaseTransform(gfx::Matrix4x4::From2D(transform));
 }
 

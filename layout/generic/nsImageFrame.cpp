@@ -1703,10 +1703,20 @@ nsDisplayImage::ConfigureLayer(ImageLayer* aLayer,
   
   MOZ_ASSERT(aParameters.Offset() == LayerIntPoint(0,0));
 
+  
+  
+  
+  
+  
+  
+  
+  
+  IntSize containerSize = aLayer->GetContainer()->GetCurrentSize();
+
   const LayoutDevicePoint p = destRect.TopLeft();
   Matrix transform = Matrix::Translation(p.x, p.y);
-  transform.PreScale(destRect.Width() / imageWidth,
-                     destRect.Height() / imageHeight);
+  transform.PreScale(destRect.Width() / containerSize.width,
+                     destRect.Height() / containerSize.height);
   aLayer->SetBaseTransform(gfx::Matrix4x4::From2D(transform));
 }
 
