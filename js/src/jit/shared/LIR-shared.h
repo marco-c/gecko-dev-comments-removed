@@ -511,6 +511,22 @@ public:
 };
 
 
+class LSimdBinaryCompIx16 : public LSimdBinaryComp
+{
+  public:
+    LIR_HEADER(SimdBinaryCompIx16);
+    LSimdBinaryCompIx16() : LSimdBinaryComp() {}
+};
+
+
+class LSimdBinaryCompIx8 : public LSimdBinaryComp
+{
+  public:
+    LIR_HEADER(SimdBinaryCompIx8);
+    LSimdBinaryCompIx8() : LSimdBinaryComp() {}
+};
+
+
 class LSimdBinaryCompIx4 : public LSimdBinaryComp
 {
   public:

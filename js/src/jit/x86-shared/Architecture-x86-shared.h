@@ -24,6 +24,8 @@ namespace jit {
 static MOZ_CONSTEXPR_VAR bool SupportsUint32x4FloatConversions = false;
 
 
+static MOZ_CONSTEXPR_VAR bool SupportsUint8x16Compares = false;
+static MOZ_CONSTEXPR_VAR bool SupportsUint16x8Compares = false;
 static MOZ_CONSTEXPR_VAR bool SupportsUint32x4Compares = false;
 
 #if defined(JS_CODEGEN_X86)

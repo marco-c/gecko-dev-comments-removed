@@ -219,7 +219,7 @@ void
 MacroAssembler::negateFloat(FloatRegister reg)
 {
     ScratchFloat32Scope scratch(*this);
-    vpcmpeqw(scratch, scratch, scratch);
+    vpcmpeqw(Operand(scratch), scratch, scratch);
     vpsllq(Imm32(31), scratch, scratch);
 
     
@@ -231,7 +231,7 @@ MacroAssembler::negateDouble(FloatRegister reg)
 {
     
     ScratchDoubleScope scratch(*this);
-    vpcmpeqw(scratch, scratch, scratch);
+    vpcmpeqw(Operand(scratch), scratch, scratch);
     vpsllq(Imm32(63), scratch, scratch);
 
     

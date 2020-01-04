@@ -1338,28 +1338,42 @@ MSimdBinaryComp::AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinit
     MOZ_ASSERT(IsSimdType(opType));
     bool IsEquality = op == equal || op == notEqual;
 
-    if (!SupportsUint32x4Compares && sign == SimdSign::Unsigned && !IsEquality) {
-        MOZ_ASSERT(opType == MIRType::Int32x4);
-        
-        
-        MInstruction* bias =
-          MSimdConstant::New(alloc, SimdConstant::SplatX4(int32_t(0x80000000)), opType);
-        addTo->add(bias);
+    
+    
+    if (sign == SimdSign::Unsigned && !IsEquality) {
+        MInstruction* bias = nullptr;
 
         
-        MInstruction* bleft =
-          MSimdBinaryArith::AddLegalized(alloc, addTo, left, bias, MSimdBinaryArith::Op_add);
-        MInstruction* bright =
-          MSimdBinaryArith::AddLegalized(alloc, addTo, right, bias, MSimdBinaryArith::Op_add);
-
         
-        MInstruction* result = MSimdBinaryComp::New(alloc, bleft, bright, op, SimdSign::Signed);
-        addTo->add(result);
+        if (!SupportsUint32x4Compares && opType == MIRType::Int32x4)
+            bias = MSimdConstant::New(alloc, SimdConstant::SplatX4(int32_t(0x80000000)), opType);
+        else if (!SupportsUint16x8Compares && opType == MIRType::Int16x8)
+            bias = MSimdConstant::New(alloc, SimdConstant::SplatX8(int16_t(0x8000)), opType);
+        if (!SupportsUint8x16Compares && opType == MIRType::Int8x16)
+            bias = MSimdConstant::New(alloc, SimdConstant::SplatX16(int8_t(0x80)), opType);
 
-        return result;
+        if (bias) {
+            addTo->add(bias);
+
+            
+            MInstruction* bleft =
+              MSimdBinaryArith::AddLegalized(alloc, addTo, left, bias, MSimdBinaryArith::Op_add);
+            MInstruction* bright =
+              MSimdBinaryArith::AddLegalized(alloc, addTo, right, bias, MSimdBinaryArith::Op_add);
+
+            
+            MInstruction* result =
+              MSimdBinaryComp::New(alloc, bleft, bright, op, SimdSign::Signed);
+            addTo->add(result);
+
+            return result;
+        }
     }
 
-    if (!SupportsUint32x4Compares && sign == SimdSign::Unsigned && opType == MIRType::Int32x4) {
+    if (sign == SimdSign::Unsigned &&
+        ((!SupportsUint32x4Compares && opType == MIRType::Int32x4) ||
+         (!SupportsUint16x8Compares && opType == MIRType::Int16x8) ||
+         (!SupportsUint8x16Compares && opType == MIRType::Int8x16))) {
         
         
         MOZ_ASSERT(IsEquality);
