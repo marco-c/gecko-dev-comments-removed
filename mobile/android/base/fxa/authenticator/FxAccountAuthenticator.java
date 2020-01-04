@@ -32,6 +32,7 @@ import org.mozilla.gecko.fxa.login.State.StateLabel;
 import org.mozilla.gecko.fxa.login.StateFactory;
 import org.mozilla.gecko.fxa.sync.FxAccountNotificationManager;
 import org.mozilla.gecko.fxa.sync.FxAccountSyncAdapter;
+import org.mozilla.gecko.util.ThreadUtils;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.Executor;
@@ -351,11 +352,31 @@ public class FxAccountAuthenticator extends AbstractAccountAuthenticator {
     
     
     final AndroidFxAccount androidFxAccount = new AndroidFxAccount(context, account);
+
+    
+    
+    
+    
+    ThreadUtils.assertNotOnUiThread();
+
+    Logger.info(LOG_TAG, "Firefox account named " + account.name + " being removed; " +
+            "deleting saved pickle file '" + FxAccountConstants.ACCOUNT_PICKLE_FILENAME + "'.");
+    deletePickle();
+
     final Intent intent = androidFxAccount.makeDeletedAccountIntent();
     Logger.info(LOG_TAG, "Account named " + account.name + " being removed; " +
         "broadcasting secure intent " + intent.getAction() + ".");
     context.sendBroadcast(intent, FxAccountConstants.PER_ACCOUNT_TYPE_PERMISSION);
 
     return result;
+  }
+
+  private void deletePickle() {
+    try {
+      AccountPickler.deletePickle(context, FxAccountConstants.ACCOUNT_PICKLE_FILENAME);
+    } catch (Exception e) {
+      
+      Logger.warn(LOG_TAG, "Got exception deleting saved pickle file; ignoring.", e);
+    }
   }
 }
