@@ -1316,7 +1316,16 @@ nsListControlFrame::UpdateSelection()
     
     nsWeakFrame weakFrame(this);
     if (mComboboxFrame) {
+#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
+      
+      
+      
+      if (!mComboboxFrame->IsDroppedDown()) {
+        mComboboxFrame->RedisplaySelectedText();
+      }
+#else
       mComboboxFrame->RedisplaySelectedText();
+#endif
 
       
       
