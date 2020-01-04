@@ -771,14 +771,21 @@ var Modem = Modems[0];
       .then(() => {
         ok(outCall instanceof TelephonyCall, "check instance");
         is(outCall.id.number, number);
-        is(outCall.state, "dialing");
         is(outCall.serviceId, serviceId);
-      })
-      .then(() => {
+
         
         
         
         let state = Modems[serviceId].isGSM() ? "alerting" : "connected";
+
+        
+        if (outCall.state === state) {
+          log("got " + state + " state, dialing is missing");
+          return;
+        }
+
+        is(outCall.state, "dialing", "check state");
+
         return waitForNamedStateEvent(outCall, state);
       });
   }
@@ -801,13 +808,20 @@ var Modem = Modems[0];
         ok(outCall instanceof TelephonyCall, "check instance");
         ok(outCall);
         is(outCall.id.number, number);
-        is(outCall.state, "dialing");
-      })
-      .then(() => {
+
         
         
         let state = Modems[outCall.serviceId].isGSM() ? "alerting"
                                                       : "connected";
+
+        
+        if (outCall.state === state) {
+          log("got " + state + " state, dialing is missing");
+          return;
+        }
+
+        is(outCall.state, "dialing", "check state");
+
         return waitForNamedStateEvent(outCall, state);
       })
       .then(() => {
@@ -835,6 +849,13 @@ var Modem = Modems[0];
 
         ok(call instanceof TelephonyCall, "check instance");
         is(call.id.number, number, "check number");
+
+        
+        if (call.state === "alerting") {
+          log("got alerting state, dialing is missing");
+          return;
+        }
+
         is(call.state, "dialing", "check call state");
 
         return waitForNamedStateEvent(call, "alerting");
