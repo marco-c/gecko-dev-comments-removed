@@ -15,6 +15,7 @@
 class nsIContent;
 class nsIDocument;
 class nsIPresShell;
+class nsIScrollableFrame;
 class nsIWidget;
 template<class T> struct already_AddRefed;
 template<class T> class nsCOMPtr;
@@ -173,6 +174,17 @@ public:
                                     const nsCOMPtr<nsIPresShell>& aShell);
     static bool IsDisplayportSuppressed();
 
+    static void
+    AdjustDisplayPortForScrollDelta(mozilla::layers::FrameMetrics& aFrameMetrics,
+                                    const CSSPoint& aActualScrollOffset);
+
+    
+
+
+
+
+    static bool
+    IsScrollInProgress(nsIScrollableFrame* aFrame);
 private:
   static uint64_t sLastTargetAPZCNotificationInputBlock;
 };

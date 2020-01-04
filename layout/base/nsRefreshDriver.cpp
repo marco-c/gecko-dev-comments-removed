@@ -1679,6 +1679,13 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
   gfxPlatform::GetPlatform()->SchedulePaintIfDeviceReset();
 
   
+  
+  
+  if (gfxPrefs::APZPeekMessages()) {
+    nsLayoutUtils::UpdateDisplayPortMarginsFromPendingMessages();
+  }
+
+  
 
 
 

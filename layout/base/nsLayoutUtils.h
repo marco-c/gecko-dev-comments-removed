@@ -185,6 +185,16 @@ public:
 
   static bool HasDisplayPort(nsIContent* aContent);
 
+
+  
+
+
+
+
+
+
+  static void UpdateDisplayPortMarginsFromPendingMessages();
+
   
 
 
