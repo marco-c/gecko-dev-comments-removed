@@ -519,13 +519,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         return mTextureView.getSurfaceTexture();
     }
 
-    public Object getSurface() {
-      if (mSurfaceView != null) {
-        return mSurfaceView.getHolder().getSurface();
-      }
-      return null;
-    }
-
     
     @WrapForJNI(allowMultithread = true, stubName = "updateZoomedView")
     public static void updateZoomedView(ByteBuffer data) {

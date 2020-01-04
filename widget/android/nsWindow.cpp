@@ -865,7 +865,6 @@ class nsWindow::GLControllerSupport final
     GLController::GlobalRef mGLController;
     GeckoLayerClient::GlobalRef mLayerClient;
     Atomic<bool, ReleaseAcquire> mCompositorPaused;
-    mozilla::jni::GlobalRef<mozilla::jni::Object> mSurface;
 
     
     
@@ -972,10 +971,31 @@ public:
         return mCompositorPaused;
     }
 
-    void* GetSurface()
+    EGLSurface CreateEGLSurface()
     {
-        mSurface = mGLController->GetSurface();
-        return mSurface.Get();
+        static jfieldID eglSurfacePointerField;
+
+        JNIEnv* const env = jni::GetEnvForThread();
+
+        if (!eglSurfacePointerField) {
+            AutoJNIClass egl(env, "com/google/android/gles_jni/EGLSurfaceImpl");
+            
+            eglSurfacePointerField = egl.getField("mEGLSurface",
+                    AndroidBridge::Bridge()->GetAPIVersion() >= 20 ? "J" : "I");
+        }
+
+        
+        auto eglSurface = mGLController->CreateEGLSurface();
+        if (!eglSurface) {
+            
+            
+            
+            return nullptr;
+        }
+        return reinterpret_cast<EGLSurface>(
+                AndroidBridge::Bridge()->GetAPIVersion() >= 20 ?
+                env->GetLongField(eglSurface.Get(), eglSurfacePointerField) :
+                env->GetIntField(eglSurface.Get(), eglSurfacePointerField));
     }
 
 private:
@@ -1933,11 +1953,11 @@ nsWindow::GetNativeData(uint32_t aDataType)
             return NS_ONLY_ONE_NATIVE_IME_CONTEXT;
         }
 
-        case NS_NATIVE_WINDOW:
+        case NS_NATIVE_NEW_EGL_SURFACE:
             if (!mGLControllerSupport) {
                 return nullptr;
             }
-            return mGLControllerSupport->GetSurface();
+            return static_cast<void*>(mGLControllerSupport->CreateEGLSurface());
     }
 
     return nullptr;
