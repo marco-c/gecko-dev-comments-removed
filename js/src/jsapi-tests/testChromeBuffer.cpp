@@ -37,16 +37,12 @@ CallTrusted(JSContext* cx, unsigned argc, JS::Value* vp)
 {
     JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
 
-    if (!JS_SaveFrameChain(cx))
-        return false;
-
     bool ok = false;
     {
         JSAutoCompartment ac(cx, trusted_glob);
         JS::RootedValue funVal(cx, JS::ObjectValue(*trusted_fun));
         ok = JS_CallFunctionValue(cx, nullptr, funVal, JS::HandleValueArray::empty(), args.rval());
     }
-    JS_RestoreFrameChain(cx);
     return ok;
 }
 
@@ -158,10 +154,6 @@ BEGIN_TEST(testChromeBuffer)
         CHECK(JS_StringEqualsAscii(cx, rval.toString(), "From trusted: InternalError: too much recursion", &match));
         CHECK(match);
     }
-
-    
-
-
 
     {
         {
