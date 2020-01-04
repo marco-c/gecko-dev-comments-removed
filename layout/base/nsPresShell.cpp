@@ -1795,6 +1795,12 @@ PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
     return NS_OK;
   }
 
+  if (mZoomConstraintsClient) {
+    
+    
+    
+    mZoomConstraintsClient->ScreenSizeChanged();
+  }
   if (mMobileViewportManager) {
     
     
