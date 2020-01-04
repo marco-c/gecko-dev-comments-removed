@@ -9629,6 +9629,15 @@ static bool IsLink(nsIContent* aContent)
                                             nsGkAtoms::simple, eCaseMatters));
 }
 
+static bool ShouldShowFocusRingIfFocusedByMouse(nsIContent* aNode)
+{
+  if (!aNode) {
+    return true;
+  }
+  return !IsLink(aNode) &&
+         !aNode->IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio);
+}
+
 void
 nsGlobalWindow::SetFocusedNode(nsIContent* aNode,
                                uint32_t aFocusMethod,
@@ -9664,7 +9673,8 @@ nsGlobalWindow::SetFocusedNode(nsIContent* aNode,
       
       
 #ifndef XP_WIN
-      !(mFocusMethod & nsIFocusManager::FLAG_BYMOUSE) || !IsLink(aNode) ||
+      !(mFocusMethod & nsIFocusManager::FLAG_BYMOUSE) ||
+      ShouldShowFocusRingIfFocusedByMouse(aNode) ||
 #endif
       aFocusMethod & nsIFocusManager::FLAG_SHOWRING) {
         mShowFocusRingForContent = true;

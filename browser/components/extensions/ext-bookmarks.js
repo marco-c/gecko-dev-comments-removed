@@ -55,7 +55,7 @@ function getTree(rootGuid, onlyChildren) {
       
       return [convert(root, null)];
     }
-  });
+  }).catch(e => Promise.reject({message: e.message}));
 }
 
 function convert(result) {
@@ -95,7 +95,7 @@ extensions.registerSchemaAPI("bookmarks", "bookmarks", (extension, context) => {
             bookmarks.push(convert(bookmark));
           }
           return bookmarks;
-        });
+        }).catch(error => Promise.reject({message: error.message}));
       },
 
       getChildren: function(id) {
@@ -143,7 +143,8 @@ extensions.registerSchemaAPI("bookmarks", "bookmarks", (extension, context) => {
         }
 
         try {
-          return Bookmarks.insert(info).then(convert);
+          return Bookmarks.insert(info).then(convert)
+                          .catch(error => Promise.reject({message: error.message}));
         } catch (e) {
           return Promise.reject({message: `Invalid bookmark: ${JSON.stringify(info)}`});
         }
@@ -161,7 +162,8 @@ extensions.registerSchemaAPI("bookmarks", "bookmarks", (extension, context) => {
           Bookmarks.DEFAULT_INDEX : destination.index;
 
         try {
-          return Bookmarks.update(info).then(convert);
+          return Bookmarks.update(info).then(convert)
+                          .catch(error => Promise.reject({message: error.message}));
         } catch (e) {
           return Promise.reject({message: `Invalid bookmark: ${JSON.stringify(info)}`});
         }
@@ -180,7 +182,8 @@ extensions.registerSchemaAPI("bookmarks", "bookmarks", (extension, context) => {
         }
 
         try {
-          return Bookmarks.update(info).then(convert);
+          return Bookmarks.update(info).then(convert)
+                          .catch(error => Promise.reject({message: error.message}));
         } catch (e) {
           return Promise.reject({message: `Invalid bookmark: ${JSON.stringify(info)}`});
         }
@@ -193,7 +196,8 @@ extensions.registerSchemaAPI("bookmarks", "bookmarks", (extension, context) => {
 
         
         try {
-          return Bookmarks.remove(info, {preventRemovalOfNonEmptyFolders: true}).then(result => {});
+          return Bookmarks.remove(info, {preventRemovalOfNonEmptyFolders: true}).then(result => {})
+                          .catch(error => Promise.reject({message: error.message}));
         } catch (e) {
           return Promise.reject({message: `Invalid bookmark: ${JSON.stringify(info)}`});
         }
@@ -205,7 +209,8 @@ extensions.registerSchemaAPI("bookmarks", "bookmarks", (extension, context) => {
         };
 
         try {
-          return Bookmarks.remove(info).then(result => {});
+          return Bookmarks.remove(info).then(result => {})
+                          .catch(error => Promise.reject({message: error.message}));
         } catch (e) {
           return Promise.reject({message: `Invalid bookmark: ${JSON.stringify(info)}`});
         }
