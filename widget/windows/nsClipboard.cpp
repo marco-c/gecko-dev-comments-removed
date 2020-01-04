@@ -836,7 +836,7 @@ nsClipboard :: FindURLFromLocalFile ( IDataObject* inDataObject, UINT inIndex, v
       ResolveShortcut( file, url );
       if ( !url.IsEmpty() ) {
         
-        nsDependentString urlString(UTF8ToNewUnicode(url));
+        NS_ConvertUTF8toUTF16 urlString(url);
         
         
         nsAutoString title;
