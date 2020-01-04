@@ -123,7 +123,7 @@ struct ShareableBase : RefCounted<T>
 struct ShareableBytes : ShareableBase<ShareableBytes>
 {
     ShareableBytes() = default;
-    ShareableBytes(Bytes&& bytes) : bytes(Move(bytes)) {}
+    explicit ShareableBytes(Bytes&& bytes) : bytes(Move(bytes)) {}
 
     
     Bytes bytes;
