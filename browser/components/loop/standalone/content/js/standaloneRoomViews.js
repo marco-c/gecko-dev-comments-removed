@@ -148,7 +148,7 @@ loop.standaloneRoomViews = (function(mozL10n) {
 
 
     getFailureString: function() {
-      switch(this.props.failureReason) {
+      switch (this.props.failureReason) {
         case FAILURE_DETAILS.MEDIA_DENIED:
         
         case FAILURE_DETAILS.NO_MEDIA:
@@ -302,7 +302,7 @@ loop.standaloneRoomViews = (function(mozL10n) {
     },
 
     render: function() {
-      switch(this.props.roomState) {
+      switch (this.props.roomState) {
         case ROOM_STATES.ENDED:
         case ROOM_STATES.READY: {
           return (
@@ -518,7 +518,7 @@ loop.standaloneRoomViews = (function(mozL10n) {
 
 
     shouldRenderRemoteVideo: function() {
-      switch(this.state.roomState) {
+      switch (this.state.roomState) {
         case ROOM_STATES.HAS_PARTICIPANTS:
           if (this.state.remoteVideoEnabled) {
             return true;
