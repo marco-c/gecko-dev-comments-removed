@@ -3,7 +3,6 @@
 
 "use strict";
 
-require("devtools/client/fronts/stylesheets");
 const {
   Front,
   FrontClassWithSpec,
