@@ -20,7 +20,6 @@ import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.Locales;
 import org.mozilla.gecko.search.SearchEngine;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
-import org.mozilla.gecko.telemetry.TelemetryConstants;
 import org.mozilla.gecko.telemetry.TelemetryPing;
 import org.mozilla.gecko.util.DateUtil;
 import org.mozilla.gecko.util.Experiments;
@@ -40,6 +39,9 @@ import java.util.concurrent.TimeUnit;
 
 public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
     private static final String LOGTAG = StringUtils.safeSubstring(TelemetryCorePingBuilder.class.getSimpleName(), 0, 23);
+
+    
+    private static final String PREF_SEQ_COUNT = "telemetry-seqCount";
 
     private static final String NAME = "core";
     private static final int VERSION_VALUE = 7; 
@@ -203,9 +205,9 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
 
     @WorkerThread 
     public static int getAndIncrementSequenceNumber(final SharedPreferences sharedPrefsForProfile) {
-        final int seq = sharedPrefsForProfile.getInt(TelemetryConstants.PREF_SEQ_COUNT, 1);
+        final int seq = sharedPrefsForProfile.getInt(PREF_SEQ_COUNT, 1);
 
-        sharedPrefsForProfile.edit().putInt(TelemetryConstants.PREF_SEQ_COUNT, seq + 1).apply();
+        sharedPrefsForProfile.edit().putInt(PREF_SEQ_COUNT, seq + 1).apply();
         return seq;
     }
 
