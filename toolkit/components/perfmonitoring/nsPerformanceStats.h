@@ -145,11 +145,6 @@ protected:
   
 
 
-  bool mDisposed;
-
-  
-
-
 
 
   const uint64_t mProcessId;
