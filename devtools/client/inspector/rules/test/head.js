@@ -19,6 +19,8 @@ var {getInplaceEditorForSpan: inplaceEditor} =
 
 const ROOT_TEST_DIR = getRootDirectory(gTestPath);
 const FRAME_SCRIPT_URL = ROOT_TEST_DIR + "doc_frame_script.js";
+const _STRINGS = Services.strings.createBundle(
+  "chrome://devtools-shared/locale/styleinspector.properties");
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.defaultColorUnit");
@@ -781,4 +783,24 @@ function* sendKeysAndWaitForFocus(view, element, keys) {
     EventUtils.sendKey(key, view.styleWindow);
   }
   yield onFocus;
+}
+
+
+
+
+
+
+
+function openStyleContextMenuAndGetAllItems(view, target) {
+  let menu = view._contextmenu._openMenu({target: target});
+
+  
+  let allItems = [].concat.apply([], menu.items.map(function addItem(item) {
+    if (item.submenu) {
+      return addItem(item.submenu.items);
+    }
+    return item;
+  }));
+
+  return allItems;
 }

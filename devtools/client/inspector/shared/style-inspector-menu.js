@@ -11,6 +11,9 @@ const {PREF_ORIG_SOURCES} = require("devtools/client/styleeditor/utils");
 const Services = require("Services");
 const {Task} = require("devtools/shared/task");
 
+const Menu = require("devtools/client/framework/menu");
+const MenuItem = require("devtools/client/framework/menu-item");
+
 loader.lazyRequireGetter(this, "overlays",
   "devtools/client/inspector/shared/style-inspector-overlays");
 loader.lazyServiceGetter(this, "clipboardHelper",
@@ -20,7 +23,6 @@ loader.lazyGetter(this, "_strings", () => {
   .createBundle("chrome://devtools-shared/locale/styleinspector.properties");
 });
 
-const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const PREF_ENABLE_MDN_DOCS_TOOLTIP =
   "devtools.inspector.mdnDocsTooltip.enabled";
 
@@ -54,9 +56,6 @@ function StyleInspectorMenu(view, options) {
   this._onSelectAll = this._onSelectAll.bind(this);
   this._onShowMdnDocs = this._onShowMdnDocs.bind(this);
   this._onToggleOrigSources = this._onToggleOrigSources.bind(this);
-  this._updateMenuItems = this._updateMenuItems.bind(this);
-
-  this._createContextMenu();
 }
 
 module.exports = StyleInspectorMenu;
@@ -67,209 +66,195 @@ StyleInspectorMenu.prototype = {
 
   show: function (event) {
     try {
-      
-      
-      this.styleDocument.popupNode = event.explicitOriginalTarget;
-      this.styleWindow.focus();
-      this._menupopup.openPopupAtScreen(event.screenX, event.screenY, true);
+      this._openMenu({
+        target: event.explicitOriginalTarget,
+        screenX: event.screenX,
+        screenY: event.screenY,
+      });
     } catch (e) {
       console.error(e);
     }
   },
 
-  _createContextMenu: function () {
-    this._menupopup = this.styleDocument.createElementNS(XUL_NS, "menupopup");
-    this._menupopup.addEventListener("popupshowing", this._updateMenuItems);
-    this._menupopup.id = "computed-view-context-menu";
-
-    let parentDocument = this.styleWindow.parent.document;
-    let popupset = parentDocument.documentElement.querySelector("popupset");
-    if (!popupset) {
-      popupset = parentDocument.createElementNS(XUL_NS, "popupset");
-      parentDocument.documentElement.appendChild(popupset);
-    }
-    popupset.appendChild(this._menupopup);
-
-    this._createContextMenuItems();
-  },
-  
-
-
-  _createContextMenuItems: function () {
-    this.menuitemCopy = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copy",
-      accesskey: "styleinspector.contextmenu.copy.accessKey",
-      command: this._onCopy
-    });
-
-    this.menuitemCopyLocation = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copyLocation",
-      command: this._onCopyLocation
-    });
-
-    this.menuitemCopyRule = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copyRule",
-      command: this._onCopyRule
-    });
-
-    this.menuitemCopyColor = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copyColor",
-      accesskey: "styleinspector.contextmenu.copyColor.accessKey",
-      command: this._onCopyColor
-    });
-
-    this.menuitemCopyUrl = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copyUrl",
-      accesskey: "styleinspector.contextmenu.copyUrl.accessKey",
-      command: this._onCopyUrl
-    });
-
-    this.menuitemCopyImageDataUrl = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copyImageDataUrl",
-      accesskey: "styleinspector.contextmenu.copyImageDataUrl.accessKey",
-      command: this._onCopyImageDataUrl
-    });
-
-    this.menuitemCopyPropertyDeclaration = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copyPropertyDeclaration",
-      command: this._onCopyPropertyDeclaration
-    });
-
-    this.menuitemCopyPropertyName = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copyPropertyName",
-      command: this._onCopyPropertyName
-    });
-
-    this.menuitemCopyPropertyValue = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copyPropertyValue",
-      command: this._onCopyPropertyValue
-    });
-
-    this.menuitemCopySelector = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.copySelector",
-      command: this._onCopySelector
-    });
-
-    this._createMenuSeparator();
-
+  _openMenu: function ({ target, screenX = 0, screenY = 0 } = { }) {
     
-    this.menuitemSelectAll = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.selectAll",
-      accesskey: "styleinspector.contextmenu.selectAll.accessKey",
-      command: this._onSelectAll
-    });
-
-    this._createMenuSeparator();
-
     
-    this.menuitemAddRule = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.addNewRule",
-      accesskey: "styleinspector.contextmenu.addNewRule.accessKey",
-      command: this._onAddNewRule
+    this.styleDocument.popupNode = target;
+    this.styleWindow.focus();
+
+    let menu = new Menu();
+
+    let menuitemCopy = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copy"),
+      accesskey: _strings.GetStringFromName("styleinspector.contextmenu.copy.accessKey"),
+      click: () => {
+        this._onCopy();
+      },
+      disabled: !this._hasTextSelected(),
     });
-
-    
-    this.menuitemShowMdnDocs = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.showMdnDocs",
-      accesskey: "styleinspector.contextmenu.showMdnDocs.accessKey",
-      command: this._onShowMdnDocs
+    let menuitemCopyLocation = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copyLocation"),
+      click: () => {
+        this._onCopyLocation();
+      },
+      visible: false,
     });
-
-    
-    this.menuitemSources = this._createContextMenuItem({
-      label: "styleinspector.contextmenu.toggleOrigSources",
-      accesskey: "styleinspector.contextmenu.toggleOrigSources.accessKey",
-      command: this._onToggleOrigSources,
-      type: "checkbox"
+    let menuitemCopyRule = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copyRule"),
+      click: () => {
+        this._onCopyRule();
+      },
+      visible: this.isRuleView,
     });
-  },
-
-  
-
-
-
-  _createContextMenuItem: function (attributes) {
-    let ownerDocument = this._menupopup.ownerDocument;
-    let item = ownerDocument.createElementNS(XUL_NS, "menuitem");
-
-    item.setAttribute("label", _strings.GetStringFromName(attributes.label));
-    if (attributes.accesskey) {
-      item.setAttribute("accesskey",
-        _strings.GetStringFromName(attributes.accesskey));
-    }
-    item.addEventListener("command", attributes.command);
-
-    if (attributes.type) {
-      item.setAttribute("type", attributes.type);
-    }
-
-    this._menupopup.appendChild(item);
-    return item;
-  },
-
-  _createMenuSeparator: function () {
-    let ownerDocument = this._menupopup.ownerDocument;
-    let separator = ownerDocument.createElementNS(XUL_NS, "menuseparator");
-    this._menupopup.appendChild(separator);
-  },
-
-  
-
-
-
-  _updateMenuItems: function () {
-    this._updateCopyMenuItems();
-
-    let showOrig = Services.prefs.getBoolPref(PREF_ORIG_SOURCES);
-    this.menuitemSources.setAttribute("checked", showOrig);
-
-    let enableMdnDocsTooltip =
-      Services.prefs.getBoolPref(PREF_ENABLE_MDN_DOCS_TOOLTIP);
-    this.menuitemShowMdnDocs.hidden = !(enableMdnDocsTooltip &&
-                                        this._isPropertyName());
-
-    this.menuitemAddRule.hidden = !this.isRuleView;
-    this.menuitemAddRule.disabled = !this.isRuleView ||
-                                    this.inspector.selection.isAnonymousNode();
-  },
-
-  
-
-
-
-  _updateCopyMenuItems: function () {
-    this.menuitemCopy.disabled = !this._hasTextSelected();
-
-    this.menuitemCopyColor.hidden = !this._isColorPopup();
-    this.menuitemCopyImageDataUrl.hidden = !this._isImageUrl();
-    this.menuitemCopyUrl.hidden = !this._isImageUrl();
-    this.menuitemCopyRule.hidden = !this.isRuleView;
-
-    this.menuitemCopyLocation.hidden = true;
-    this.menuitemCopyPropertyDeclaration.hidden = true;
-    this.menuitemCopyPropertyName.hidden = true;
-    this.menuitemCopyPropertyValue.hidden = true;
-    this.menuitemCopySelector.hidden = true;
+    let copyColorAccessKey = "styleinspector.contextmenu.copyColor.accessKey";
+    let menuitemCopyColor = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copyColor"),
+      accesskey: _strings.GetStringFromName(copyColorAccessKey),
+      click: () => {
+        this._onCopyColor();
+      },
+      visible: this._isColorPopup(),
+    });
+    let copyUrlAccessKey = "styleinspector.contextmenu.copyUrl.accessKey";
+    let menuitemCopyUrl = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copyUrl"),
+      accesskey: _strings.GetStringFromName(copyUrlAccessKey),
+      click: () => {
+        this._onCopyUrl();
+      },
+      visible: this._isImageUrl(),
+    });
+    let copyImageAccessKey = "styleinspector.contextmenu.copyImageDataUrl.accessKey";
+    let menuitemCopyImageDataUrl = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copyImageDataUrl"),
+      accesskey: _strings.GetStringFromName(copyImageAccessKey),
+      click: () => {
+        this._onCopyImageDataUrl();
+      },
+      visible: this._isImageUrl(),
+    });
+    let copyPropDeclarationLabel = "styleinspector.contextmenu.copyPropertyDeclaration";
+    let menuitemCopyPropertyDeclaration = new MenuItem({
+      label: _strings.GetStringFromName(copyPropDeclarationLabel),
+      click: () => {
+        this._onCopyPropertyDeclaration();
+      },
+      visible: false,
+    });
+    let menuitemCopyPropertyName = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copyPropertyName"),
+      click: () => {
+        this._onCopyPropertyName();
+      },
+      visible: false,
+    });
+    let menuitemCopyPropertyValue = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copyPropertyValue"),
+      click: () => {
+        this._onCopyPropertyValue();
+      },
+      visible: false,
+    });
+    let menuitemCopySelector = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.copySelector"),
+      click: () => {
+        this._onCopySelector();
+      },
+      visible: false,
+    });
 
     this._clickedNodeInfo = this._getClickedNodeInfo();
     if (this.isRuleView && this._clickedNodeInfo) {
       switch (this._clickedNodeInfo.type) {
         case overlays.VIEW_NODE_PROPERTY_TYPE :
-          this.menuitemCopyPropertyDeclaration.hidden = false;
-          this.menuitemCopyPropertyName.hidden = false;
+          menuitemCopyPropertyDeclaration.visible = true;
+          menuitemCopyPropertyName.visible = true;
           break;
         case overlays.VIEW_NODE_VALUE_TYPE :
-          this.menuitemCopyPropertyDeclaration.hidden = false;
-          this.menuitemCopyPropertyValue.hidden = false;
+          menuitemCopyPropertyDeclaration.visible = true;
+          menuitemCopyPropertyValue.visible = true;
           break;
         case overlays.VIEW_NODE_SELECTOR_TYPE :
-          this.menuitemCopySelector.hidden = false;
+          menuitemCopySelector.visible = true;
           break;
         case overlays.VIEW_NODE_LOCATION_TYPE :
-          this.menuitemCopyLocation.hidden = false;
+          menuitemCopyLocation.visible = true;
           break;
       }
     }
+
+    menu.append(menuitemCopy);
+    menu.append(menuitemCopyLocation);
+    menu.append(menuitemCopyRule);
+    menu.append(menuitemCopyColor);
+    menu.append(menuitemCopyUrl);
+    menu.append(menuitemCopyImageDataUrl);
+    menu.append(menuitemCopyPropertyDeclaration);
+    menu.append(menuitemCopyPropertyName);
+    menu.append(menuitemCopyPropertyValue);
+    menu.append(menuitemCopySelector);
+
+    menu.append(new MenuItem({
+      type: "separator",
+    }));
+
+    
+    let selectAllAccessKey = "styleinspector.contextmenu.selectAll.accessKey";
+    let menuitemSelectAll = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.selectAll"),
+      accesskey: _strings.GetStringFromName(selectAllAccessKey),
+      click: () => {
+        this._onSelectAll();
+      },
+    });
+    menu.append(menuitemSelectAll);
+
+    menu.append(new MenuItem({
+      type: "separator",
+    }));
+
+    
+    let addRuleAccessKey = "styleinspector.contextmenu.addNewRule.accessKey";
+    let menuitemAddRule = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.addNewRule"),
+      accesskey: _strings.GetStringFromName(addRuleAccessKey),
+      click: () => {
+        this._onAddNewRule();
+      },
+      visible: this.isRuleView,
+      disabled: !this.isRuleView ||
+                this.inspector.selection.isAnonymousNode(),
+    });
+    menu.append(menuitemAddRule);
+
+    
+    let mdnDocsAccessKey = "styleinspector.contextmenu.showMdnDocs.accessKey";
+    let menuitemShowMdnDocs = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.showMdnDocs"),
+      accesskey: _strings.GetStringFromName(mdnDocsAccessKey),
+      click: () => {
+        this._onShowMdnDocs();
+      },
+      visible: (Services.prefs.getBoolPref(PREF_ENABLE_MDN_DOCS_TOOLTIP) &&
+                                                    this._isPropertyName()),
+    });
+    menu.append(menuitemShowMdnDocs);
+
+    
+    let sourcesAccessKey = "styleinspector.contextmenu.toggleOrigSources.accessKey";
+    let menuitemSources = new MenuItem({
+      label: _strings.GetStringFromName("styleinspector.contextmenu.toggleOrigSources"),
+      accesskey: _strings.GetStringFromName(sourcesAccessKey),
+      click: () => {
+        this._onToggleOrigSources();
+      },
+      type: "checkbox",
+      checked: Services.prefs.getBoolPref(PREF_ORIG_SOURCES),
+    });
+    menu.append(menuitemSources);
+
+    menu.popup(screenX, screenY, this.inspector._toolbox);
+    return menu;
   },
 
   _hasTextSelected: function () {
@@ -512,46 +497,11 @@ StyleInspectorMenu.prototype = {
   },
 
   destroy: function () {
-    this._removeContextMenuItems();
-
-    
-    this._menupopup.removeEventListener("popupshowing", this._updateMenuItems);
-    this._menupopup.parentNode.removeChild(this._menupopup);
-    this._menupopup = null;
-
     this.popupNode = null;
     this.styleDocument.popupNode = null;
     this.view = null;
     this.inspector = null;
     this.styleDocument = null;
     this.styleWindow = null;
-  },
-
-  _removeContextMenuItems: function () {
-    this._removeContextMenuItem("menuitemAddRule", this._onAddNewRule);
-    this._removeContextMenuItem("menuitemCopy", this._onCopy);
-    this._removeContextMenuItem("menuitemCopyColor", this._onCopyColor);
-    this._removeContextMenuItem("menuitemCopyImageDataUrl",
-      this._onCopyImageDataUrl);
-    this._removeContextMenuItem("menuitemCopyLocation", this._onCopyLocation);
-    this._removeContextMenuItem("menuitemCopyPropertyDeclaration",
-      this._onCopyPropertyDeclaration);
-    this._removeContextMenuItem("menuitemCopyPropertyName",
-      this._onCopyPropertyName);
-    this._removeContextMenuItem("menuitemCopyPropertyValue",
-      this._onCopyPropertyValue);
-    this._removeContextMenuItem("menuitemCopyRule", this._onCopyRule);
-    this._removeContextMenuItem("menuitemCopySelector", this._onCopySelector);
-    this._removeContextMenuItem("menuitemCopyUrl", this._onCopyUrl);
-    this._removeContextMenuItem("menuitemSelectAll", this._onSelectAll);
-    this._removeContextMenuItem("menuitemShowMdnDocs", this._onShowMdnDocs);
-    this._removeContextMenuItem("menuitemSources", this._onToggleOrigSources);
-  },
-
-  _removeContextMenuItem: function (itemName, callback) {
-    if (this[itemName]) {
-      this[itemName].removeEventListener("command", callback);
-      this[itemName] = null;
-    }
   }
 };
