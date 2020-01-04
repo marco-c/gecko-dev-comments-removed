@@ -34,6 +34,10 @@
 #include "nscore.h"                     
 #include "gfxVR.h"
 
+#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 21
+#include "nsTHashtable.h"               
+#endif
+
 class nsIWidget;
 
 namespace mozilla {
@@ -48,6 +52,11 @@ class TextureSource;
 struct Effect;
 struct EffectChain;
 class GLBlitTextureImageHelper;
+
+#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 21
+class ImageHostOverlay;
+#endif
+
 
 
 
@@ -268,6 +277,29 @@ public:
 
   virtual nsIWidget* GetWidget() const override { return mWidget; }
 
+  virtual bool HasImageHostOverlays() override
+  {
+#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 21
+    return mImageHostOverlays.Count() > 0;
+#else
+    return false;
+#endif
+  }
+
+  virtual void AddImageHostOverlay(ImageHostOverlay* aOverlay) override
+  {
+#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 21
+    mImageHostOverlays.PutEntry(aOverlay);
+#endif
+  }
+
+  virtual void RemoveImageHostOverlay(ImageHostOverlay* aOverlay) override
+  {
+#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 21
+    mImageHostOverlays.RemoveEntry(aOverlay);
+#endif
+  }
+
   GLContext* gl() const { return mGLContext; }
   
 
@@ -447,6 +479,11 @@ private:
   gfx::Rect mRenderBound;
 
   CompositorOGLVRObjects mVR;
+
+#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 21
+  nsTHashtable<nsPtrHashKey<ImageHostOverlay> > mImageHostOverlays;
+#endif
+
 };
 
 } 

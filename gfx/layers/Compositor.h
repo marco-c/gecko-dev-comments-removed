@@ -119,6 +119,7 @@ namespace layers {
 struct Effect;
 struct EffectChain;
 class Image;
+class ImageHostOverlay;
 class Layer;
 class TextureSource;
 class DataTextureSource;
@@ -452,6 +453,12 @@ public:
   
   
   virtual nsIWidget* GetWidget() const { return nullptr; }
+
+  virtual bool HasImageHostOverlays() { return false; }
+
+  virtual void AddImageHostOverlay(ImageHostOverlay* aOverlay) {}
+
+  virtual void RemoveImageHostOverlay(ImageHostOverlay* aOverlay) {}
 
   
 

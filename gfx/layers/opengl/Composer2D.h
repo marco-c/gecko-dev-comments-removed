@@ -49,8 +49,10 @@ public:
 
 
 
-  virtual bool TryRenderWithHwc(Layer* aRoot, nsIWidget* aWidget,
-                                bool aGeometryChanged) = 0;
+  virtual bool TryRenderWithHwc(Layer* aRoot,
+                                nsIWidget* aWidget,
+                                bool aGeometryChanged,
+                                bool aHasImageHostOverlays) = 0;
 
   
 
