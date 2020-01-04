@@ -21,6 +21,8 @@ public:
   
   
   virtual void Updated() = 0;
+
+  virtual const char* Name() const override { return "X11TextureSource"; }
 };
 
 
