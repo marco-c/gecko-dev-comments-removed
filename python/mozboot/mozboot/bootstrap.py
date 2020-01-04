@@ -223,7 +223,7 @@ class Bootstrapper(object):
         
         
         
-        state_dir = get_state_dir()
+        state_dir, _ = get_state_dir()
 
         if not os.path.exists(state_dir):
             if not self.instance.no_interactive:
