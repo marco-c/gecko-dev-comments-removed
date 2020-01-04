@@ -7405,11 +7405,8 @@ CClosure::ClosureStub(ffi_cif* cif, void* result, void** args, void* userData)
   JSRuntime* rt = argClosure.cinfo->rt;
   RootedObject fun(rt, argClosure.cinfo->jsfnObj);
 
-  
-  
-  
-  js::PrepareScriptEnvironmentAndInvoke(rt->contextList.getFirst(), fun,
-                                        argClosure);
+  JSContext* cx = JS_GetContext(rt);
+  js::PrepareScriptEnvironmentAndInvoke(cx, fun, argClosure);
 }
 
 bool CClosure::ArgClosure::operator()(JSContext* cx)

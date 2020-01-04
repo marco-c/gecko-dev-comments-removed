@@ -748,7 +748,7 @@ private:
 };
 
 JSContext*
-CreateJSContextForWorker(WorkerPrivate* aWorkerPrivate, JSRuntime* aRuntime)
+InitJSContextForWorker(WorkerPrivate* aWorkerPrivate, JSRuntime* aRuntime)
 {
   aWorkerPrivate->AssertIsOnWorkerThread();
   NS_ASSERTION(!aWorkerPrivate->GetJSContext(), "Already has a context!");
@@ -786,9 +786,9 @@ CreateJSContextForWorker(WorkerPrivate* aWorkerPrivate, JSRuntime* aRuntime)
   };
   JS::SetAsmJSCacheOps(aRuntime, &asmJSCacheOps);
 
-  JSContext* workerCx = JS_NewContext(aRuntime, 0);
-  if (!workerCx) {
-    NS_WARNING("Could not create new context!");
+  JSContext* workerCx = JS_GetContext(aRuntime);
+  if (!JS::InitSelfHostedCode(workerCx)) {
+    NS_WARNING("Could not init self-hosted code!");
     return nullptr;
   }
 
@@ -2573,7 +2573,7 @@ WorkerThreadPrimaryRunnable::Run()
 
     JSRuntime* rt = runtime.Runtime();
 
-    JSContext* cx = CreateJSContextForWorker(mWorkerPrivate, rt);
+    JSContext* cx = InitJSContextForWorker(mWorkerPrivate, rt);
     if (!cx) {
       
       NS_ERROR("Failed to create runtime and context!");
@@ -2616,7 +2616,7 @@ WorkerThreadPrimaryRunnable::Run()
 
     
     
-    JS_DestroyContext(cx);
+    JS_GC(JS_GetRuntime(cx));
 
     
     
