@@ -121,6 +121,8 @@ struct URLValueData
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
+  bool GetLocalURLFlag() const { return mLocalURLFlag; }
+
 private:
   
   
@@ -132,6 +134,9 @@ public:
   PtrHandle<nsIPrincipal> mOriginPrincipal;
 private:
   mutable bool mURIResolved;
+  
+  
+  bool mLocalURLFlag;
 
   URLValueData(const URLValueData& aOther) = delete;
   URLValueData& operator=(const URLValueData& aOther) = delete;
