@@ -1375,43 +1375,70 @@ ContentEventHandler::OnQueryTextContent(WidgetQueryContentEvent* aEvent)
   return NS_OK;
 }
 
-
-
-static nsINode* AdjustTextRectNode(nsINode* aNode,
-                                   int32_t& aNodeOffset)
+ContentEventHandler::NodePosition
+ContentEventHandler::GetNodePositionHavingFlatText(
+                       const NodePosition& aNodePosition)
 {
-  int32_t childCount = int32_t(aNode->GetChildCount());
-  nsINode* node = aNode;
-  if (childCount) {
-    if (aNodeOffset < childCount) {
-      node = aNode->GetChildAt(aNodeOffset);
-      aNodeOffset = 0;
-    } else if (aNodeOffset == childCount) {
-      node = aNode->GetChildAt(childCount - 1);
-      aNodeOffset = node->IsNodeOfType(nsINode::eTEXT) ?
-        static_cast<int32_t>(static_cast<nsIContent*>(node)->TextLength()) : 1;
-    }
-  }
-  return node;
+  return GetNodePositionHavingFlatText(aNodePosition.mNode,
+                                       aNodePosition.mOffset);
 }
 
-static
-nsIFrame*
-GetFirstFrameInRange(nsRange* aRange, int32_t& aNodeOffset)
+ContentEventHandler::NodePosition
+ContentEventHandler::GetNodePositionHavingFlatText(nsINode* aNode,
+                                                   int32_t aNodeOffset)
+{
+  if (aNode->IsNodeOfType(nsINode::eTEXT)) {
+    return NodePosition(aNode, aNodeOffset);
+  }
+
+  int32_t childCount = static_cast<int32_t>(aNode->GetChildCount());
+
+  
+  if (!childCount) {
+    MOZ_ASSERT(!aNodeOffset || aNodeOffset == 1);
+    return NodePosition(aNode, aNodeOffset);
+  }
+
+  
+  if (aNodeOffset < childCount) {
+    return NodePosition(aNode->GetChildAt(aNodeOffset), 0);
+  }
+
+  
+  
+  
+  if (aNodeOffset == childCount) {
+    NodePosition result;
+    result.mNode = aNode->GetChildAt(childCount - 1);
+    result.mOffset = result.mNode->IsNodeOfType(nsINode::eTEXT) ?
+      static_cast<int32_t>(result.mNode->AsContent()->TextLength()) : 1;
+  }
+
+  NS_WARNING("aNodeOffset is invalid value");
+  return NodePosition();
+}
+
+ContentEventHandler::FrameAndNodeOffset
+ContentEventHandler::GetFirstFrameHavingFlatTextInRange(nsRange* aRange)
 {
   
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentIterator();
   iter->Init(aRange);
 
   
-  aNodeOffset = aRange->StartOffset();
-  nsINode* node = iter->GetCurrentNode();
-  if (!node) {
-    node = AdjustTextRectNode(aRange->GetStartParent(), aNodeOffset);
+  NodePosition nodePosition(iter->GetCurrentNode(), aRange->StartOffset());
+  if (!nodePosition.mNode) {
+    nodePosition =
+      GetNodePositionHavingFlatText(aRange->GetStartParent(),
+                                    nodePosition.mOffset);
+    if (NS_WARN_IF(!nodePosition.IsValid())) {
+      return FrameAndNodeOffset();
+    }
   }
   nsIFrame* firstFrame = nullptr;
-  GetFrameForTextRect(node, aNodeOffset, true, &firstFrame);
-  return firstFrame;
+  GetFrameForTextRect(nodePosition.mNode, nodePosition.mOffset,
+                      true, &firstFrame);
+  return FrameAndNodeOffset(firstFrame, nodePosition.mOffset);
 }
 
 nsresult
@@ -1436,9 +1463,8 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
     }
 
     
-    int32_t nodeOffset = -1;
-    nsIFrame* firstFrame = GetFirstFrameInRange(range, nodeOffset);
-    if (NS_WARN_IF(!firstFrame)) {
+    FrameAndNodeOffset firstFrame = GetFirstFrameHavingFlatTextInRange(range);
+    if (NS_WARN_IF(!firstFrame.IsValid())) {
       return NS_ERROR_FAILURE;
     }
 
@@ -1450,8 +1476,8 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
     }
 
     AutoTArray<nsRect, 16> charRects;
-    rv = firstFrame->GetCharacterRectsInRange(nodeOffset, kEndOffset - offset,
-                                              charRects);
+    rv = firstFrame->GetCharacterRectsInRange(firstFrame.mStartOffsetInNode,
+                                              kEndOffset - offset, charRects);
     if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(charRects.IsEmpty())) {
       return rv;
     }
@@ -1498,13 +1524,18 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   iter->Init(range);
 
   
-  int32_t nodeOffset = range->StartOffset();
-  nsINode* node = iter->GetCurrentNode();
-  if (!node) {
-    node = AdjustTextRectNode(range->GetStartParent(), nodeOffset);
+  NodePosition startNodePosition(iter->GetCurrentNode(), range->StartOffset());
+  if (!startNodePosition.mNode) {
+    startNodePosition =
+      GetNodePositionHavingFlatText(range->GetStartParent(),
+                                    startNodePosition.mOffset);
+    if (NS_WARN_IF(!startNodePosition.IsValid())) {
+      return NS_ERROR_FAILURE;
+    }
   }
   nsIFrame* firstFrame = nullptr;
-  rv = GetFrameForTextRect(node, nodeOffset, true, &firstFrame);
+  rv = GetFrameForTextRect(startNodePosition.mNode, startNodePosition.mOffset,
+                           true, &firstFrame);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1513,7 +1544,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   NS_ENSURE_SUCCESS(rv, rv);
   nsRect frameRect = rect;
   nsPoint ptOffset;
-  firstFrame->GetPointFromOffset(nodeOffset, &ptOffset);
+  firstFrame->GetPointFromOffset(startNodePosition.mOffset, &ptOffset);
   
   if (firstFrame->GetWritingMode().IsVertical()) {
     rect.y += ptOffset.y - 1;
@@ -1524,10 +1555,14 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   }
 
   
-  nodeOffset = range->EndOffset();
-  node = AdjustTextRectNode(range->GetEndParent(), nodeOffset);
+  NodePosition endNodePosition =
+    GetNodePositionHavingFlatText(range->GetEndParent(), range->EndOffset());
+  if (NS_WARN_IF(!endNodePosition.IsValid())) {
+    return NS_ERROR_FAILURE;
+  }
   nsIFrame* lastFrame = nullptr;
-  rv = GetFrameForTextRect(node, nodeOffset, range->Collapsed(), &lastFrame);
+  rv = GetFrameForTextRect(endNodePosition.mNode, endNodePosition.mOffset,
+                           range->Collapsed(), &lastFrame);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1536,14 +1571,14 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
     if (!frame) {
       do {
         iter->Next();
-        node = iter->GetCurrentNode();
+        nsINode* node = iter->GetCurrentNode();
         if (!node) {
           break;
         }
         if (!node->IsNodeOfType(nsINode::eCONTENT)) {
           continue;
         }
-        frame = static_cast<nsIContent*>(node)->GetPrimaryFrame();
+        frame = node->AsContent()->GetPrimaryFrame();
       } while (!frame && !iter->IsDone());
       if (!frame) {
         
@@ -1560,7 +1595,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   }
 
   
-  lastFrame->GetPointFromOffset(nodeOffset, &ptOffset);
+  lastFrame->GetPointFromOffset(endNodePosition.mOffset, &ptOffset);
   
   if (lastFrame->GetWritingMode().IsVertical()) {
     frameRect.height -= lastFrame->GetRect().height - ptOffset.y - 1;
