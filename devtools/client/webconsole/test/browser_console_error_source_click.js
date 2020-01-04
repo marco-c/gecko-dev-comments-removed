@@ -22,12 +22,15 @@ function test() {
     hud = hudConsole;
     ok(hud, "browser console opened");
 
-    let button = content.document.querySelector("button");
-    ok(button, "button element found");
+    
+    
+    if (!Services.appinfo.browserTabsRemoteAutostart) {
+      expectUncaughtException();
+    }
 
     info("generate exception and wait for the message");
-    executeSoon(() => {
-      expectUncaughtException();
+    ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
+      let button = content.document.querySelector("button");
       button.click();
     });
 
