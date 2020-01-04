@@ -24,7 +24,7 @@ class MediaStream;
 class MediaStreamGraph;
 class MediaStreamGraphImpl;
 class MediaStreamTrackListener;
-class MediaStreamTrackDirectListener;
+class DirectMediaStreamTrackListener;
 class PeerConnectionImpl;
 class PeerConnectionMedia;
 class PeerIdentity;
@@ -363,8 +363,8 @@ public:
 
 
 
-  void AddDirectListener(MediaStreamTrackDirectListener *aListener);
-  void RemoveDirectListener(MediaStreamTrackDirectListener  *aListener);
+  void AddDirectListener(DirectMediaStreamTrackListener *aListener);
+  void RemoveDirectListener(DirectMediaStreamTrackListener  *aListener);
 
   
 

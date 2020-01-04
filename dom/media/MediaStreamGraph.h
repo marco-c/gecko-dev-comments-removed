@@ -282,10 +282,10 @@ protected:
 
 
 
-class MediaStreamDirectListener : public MediaStreamListener
+class DirectMediaStreamListener : public MediaStreamListener
 {
 public:
-  virtual ~MediaStreamDirectListener() {}
+  virtual ~DirectMediaStreamListener() {}
 
   
 
@@ -315,7 +315,7 @@ public:
 
 
 
-class MediaStreamTrackDirectListener : public MediaStreamTrackListener
+class DirectMediaStreamTrackListener : public MediaStreamTrackListener
 {
   friend class SourceMediaStream;
   friend class TrackUnionStream;
@@ -362,7 +362,7 @@ public:
   virtual void NotifyDirectListenerUninstalled() {}
 
 protected:
-  virtual ~MediaStreamTrackDirectListener() {}
+  virtual ~DirectMediaStreamTrackListener() {}
 
   void MirrorAndDisableSegment(AudioSegment& aFrom, AudioSegment& aTo)
   {
@@ -612,7 +612,7 @@ public:
 
 
 
-  virtual void AddDirectTrackListener(MediaStreamTrackDirectListener* aListener,
+  virtual void AddDirectTrackListener(DirectMediaStreamTrackListener* aListener,
                                       TrackID aTrackID);
 
   
@@ -623,7 +623,7 @@ public:
 
 
 
-  virtual void RemoveDirectTrackListener(MediaStreamTrackDirectListener* aListener,
+  virtual void RemoveDirectTrackListener(DirectMediaStreamTrackListener* aListener,
                                          TrackID aTrackID);
 
   
@@ -726,9 +726,9 @@ public:
                                     TrackID aTrackID);
   virtual void RemoveTrackListenerImpl(MediaStreamTrackListener* aListener,
                                        TrackID aTrackID);
-  virtual void AddDirectTrackListenerImpl(already_AddRefed<MediaStreamTrackDirectListener> aListener,
+  virtual void AddDirectTrackListenerImpl(already_AddRefed<DirectMediaStreamTrackListener> aListener,
                                           TrackID aTrackID);
-  virtual void RemoveDirectTrackListenerImpl(MediaStreamTrackDirectListener* aListener,
+  virtual void RemoveDirectTrackListenerImpl(DirectMediaStreamTrackListener* aListener,
                                              TrackID aTrackID);
   virtual void SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled);
 
@@ -1015,8 +1015,8 @@ public:
 
   void NotifyListenersEventImpl(MediaStreamListener::MediaStreamGraphEvent aEvent);
   void NotifyListenersEvent(MediaStreamListener::MediaStreamGraphEvent aEvent);
-  void AddDirectListener(MediaStreamDirectListener* aListener);
-  void RemoveDirectListener(MediaStreamDirectListener* aListener);
+  void AddDirectListener(DirectMediaStreamListener* aListener);
+  void RemoveDirectListener(DirectMediaStreamListener* aListener);
 
   enum {
     ADDTRACK_QUEUED    = 0x01 
@@ -1140,9 +1140,9 @@ protected:
 
   void ResampleAudioToGraphSampleRate(TrackData* aTrackData, MediaSegment* aSegment);
 
-  void AddDirectTrackListenerImpl(already_AddRefed<MediaStreamTrackDirectListener> aListener,
+  void AddDirectTrackListenerImpl(already_AddRefed<DirectMediaStreamTrackListener> aListener,
                                   TrackID aTrackID) override;
-  void RemoveDirectTrackListenerImpl(MediaStreamTrackDirectListener* aListener,
+  void RemoveDirectTrackListenerImpl(DirectMediaStreamTrackListener* aListener,
                                      TrackID aTrackID) override;
 
   void AddTrackInternal(TrackID aID, TrackRate aRate,
@@ -1182,8 +1182,8 @@ protected:
   StreamTime mUpdateKnownTracksTime;
   nsTArray<TrackData> mUpdateTracks;
   nsTArray<TrackData> mPendingTracks;
-  nsTArray<RefPtr<MediaStreamDirectListener> > mDirectListeners;
-  nsTArray<TrackBound<MediaStreamTrackDirectListener>> mDirectTrackListeners;
+  nsTArray<RefPtr<DirectMediaStreamListener>> mDirectListeners;
+  nsTArray<TrackBound<DirectMediaStreamTrackListener>> mDirectTrackListeners;
   bool mPullEnabled;
   bool mUpdateFinished;
   bool mNeedsMixing;

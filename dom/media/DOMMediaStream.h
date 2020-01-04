@@ -30,7 +30,7 @@ class DOMLocalMediaStream;
 class DOMMediaStream;
 class MediaStream;
 class MediaInputPort;
-class MediaStreamDirectListener;
+class DirectMediaStreamListener;
 class MediaStreamGraph;
 class ProcessedMediaStream;
 
@@ -439,8 +439,8 @@ public:
 
 
 
-  bool AddDirectListener(MediaStreamDirectListener *aListener);
-  void RemoveDirectListener(MediaStreamDirectListener *aListener);
+  bool AddDirectListener(DirectMediaStreamListener *aListener);
+  void RemoveDirectListener(DirectMediaStreamListener *aListener);
 
   virtual DOMLocalMediaStream* AsDOMLocalMediaStream() { return nullptr; }
   virtual DOMHwMediaStream* AsDOMHwMediaStream() { return nullptr; }
