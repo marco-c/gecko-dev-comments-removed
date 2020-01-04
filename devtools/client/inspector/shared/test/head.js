@@ -75,6 +75,7 @@ registerCleanupFunction(() => {
 
 
 
+
 var _addTab = addTab;
 addTab = function(url) {
   return _addTab(url).then(tab => {
@@ -84,104 +85,6 @@ addTab = function(url) {
     return tab;
   });
 };
-
-
-
-
-
-
-var openInspector = Task.async(function*() {
-  info("Opening the inspector");
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
-
-  let inspector, toolbox;
-
-  
-  
-  
-  toolbox = gDevTools.getToolbox(target);
-  if (toolbox) {
-    inspector = toolbox.getPanel("inspector");
-    if (inspector) {
-      info("Toolbox and inspector already open");
-      return {
-        toolbox: toolbox,
-        inspector: inspector
-      };
-    }
-  }
-
-  info("Opening the toolbox");
-  toolbox = yield gDevTools.showToolbox(target, "inspector");
-  yield waitForToolboxFrameFocus(toolbox);
-  inspector = toolbox.getPanel("inspector");
-
-  info("Waiting for the inspector to update");
-  if (inspector._updateProgress) {
-    yield inspector.once("inspector-updated");
-  }
-
-  return {
-    toolbox: toolbox,
-    inspector: inspector
-  };
-});
-
-
-
-
-
-
-
-function waitForToolboxFrameFocus(toolbox) {
-  info("Making sure that the toolbox's frame is focused");
-  let def = promise.defer();
-  let win = toolbox.frame.contentWindow;
-  waitForFocus(def.resolve, win);
-  return def.promise;
-}
-
-
-
-
-
-
-
-
-var openInspectorSideBar = Task.async(function*(id) {
-  let {toolbox, inspector} = yield openInspector();
-
-  info("Selecting the " + id + " sidebar");
-  inspector.sidebar.select(id);
-
-  return {
-    toolbox: toolbox,
-    inspector: inspector,
-    view: inspector[id].view
-  };
-});
-
-
-
-
-
-
-
-
-function openComputedView() {
-  return openInspectorSideBar("computedview");
-}
-
-
-
-
-
-
-
-
-function openRuleView() {
-  return openInspectorSideBar("ruleview");
-}
 
 
 

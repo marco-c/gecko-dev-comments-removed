@@ -48,24 +48,6 @@ addTab = function(url) {
 
 
 
-function openRuleView() {
-  return openInspectorSidebarTab("ruleview").then(data => {
-    return {
-      toolbox: data.toolbox,
-      inspector: data.inspector,
-      testActor: data.testActor,
-      view: data.inspector.ruleview.view
-    };
-  });
-}
-
-
-
-
-
-
-
-
 
 
 function waitForContentMessage(name) {

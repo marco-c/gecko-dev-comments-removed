@@ -229,7 +229,8 @@ var clickOnInspectMenuItem = Task.async(function*(testActor, selector) {
 
 
 
-var openInspectorSidebarTab = Task.async(function*(id, hostType) {
+
+var openInspectorSidebarTab = Task.async(function* (id) {
   let {toolbox, inspector, testActor} = yield openInspector();
 
   info("Selecting the " + id + " sidebar");
@@ -241,6 +242,66 @@ var openInspectorSidebarTab = Task.async(function*(id, hostType) {
     testActor
   };
 });
+
+
+
+
+
+
+
+
+function openRuleView() {
+  return openInspectorSidebarTab("ruleview").then(data => {
+    return {
+      toolbox: data.toolbox,
+      inspector: data.inspector,
+      testActor: data.testActor,
+      view: data.inspector.ruleview.view
+    };
+  });
+}
+
+
+
+
+
+
+
+
+function openComputedView() {
+  return openInspectorSidebarTab("computedview").then(data => {
+    return {
+      toolbox: data.toolbox,
+      inspector: data.inspector,
+      testActor: data.testActor,
+      view: data.inspector.computedview.view
+    };
+  });
+}
+
+
+
+
+
+
+
+
+function selectRuleView(inspector) {
+  inspector.sidebar.select("ruleview");
+  return inspector.ruleview.view;
+}
+
+
+
+
+
+
+
+
+function selectComputedView(inspector) {
+  inspector.sidebar.select("computedview");
+  return inspector.computedview.view;
+}
 
 
 

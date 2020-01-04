@@ -15,22 +15,6 @@ registerCleanupFunction(() => {
 
 
 
-
-
-
-function openComputedView() {
-  return openInspectorSidebarTab("computedview").then(({toolbox, inspector}) => {
-    return {
-      toolbox,
-      inspector,
-      view: inspector.computedview.view
-    };
-  });
-}
-
-
-
-
 function fireCopyEvent(element) {
   let evt = element.ownerDocument.createEvent("Event");
   evt.initEvent("copy", true, true);
