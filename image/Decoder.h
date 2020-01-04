@@ -123,7 +123,10 @@ public:
 
 
 
-  nsresult SetTargetSize(const gfx::IntSize& aSize);
+
+
+
+  void SetOutputSize(const gfx::IntSize& aSize);
 
   
 
@@ -132,9 +135,13 @@ public:
 
 
 
+  gfx::IntSize OutputSize() const { MOZ_ASSERT(HasSize()); return *mOutputSize; }
+
+  
 
 
-  Maybe<gfx::IntSize> GetTargetSize();
+
+  Maybe<gfx::IntSize> ExplicitOutputSize() const;
 
   
 
@@ -291,19 +298,6 @@ public:
 
 
 
-  gfx::IntSize OutputSize() const
-  {
-    return mDownscaler ? mDownscaler->TargetSize()
-                       : Size();
-  }
-
-  
-
-
-
-
-
-
 
 
 
@@ -410,8 +404,8 @@ protected:
 
 
 
-  void PostInvalidation(const nsIntRect& aRect,
-                        const Maybe<nsIntRect>& aRectAtTargetSize = Nothing());
+  void PostInvalidation(const gfx::IntRect& aRect,
+                        const Maybe<gfx::IntRect>& aRectAtOutputSize = Nothing());
 
   
   
@@ -432,8 +426,8 @@ protected:
 
 
   nsresult AllocateFrame(uint32_t aFrameNum,
-                         const nsIntSize& aTargetSize,
-                         const nsIntRect& aFrameRect,
+                         const gfx::IntSize& aOutputSize,
+                         const gfx::IntRect& aFrameRect,
                          gfx::SurfaceFormat aFormat,
                          uint8_t aPaletteDepth = 0);
 
@@ -460,8 +454,8 @@ private:
   }
 
   RawAccessFrameRef AllocateFrameInternal(uint32_t aFrameNum,
-                                          const nsIntSize& aTargetSize,
-                                          const nsIntRect& aFrameRect,
+                                          const gfx::IntSize& aOutputSize,
+                                          const gfx::IntRect& aFrameRect,
                                           gfx::SurfaceFormat aFormat,
                                           uint8_t aPaletteDepth,
                                           imgFrame* aPreviousFrame);
@@ -479,7 +473,8 @@ private:
   Maybe<SourceBufferIterator> mIterator;
   RawAccessFrameRef mCurrentFrame;
   ImageMetadata mImageMetadata;
-  nsIntRect mInvalidRect; 
+  gfx::IntRect mInvalidRect; 
+  Maybe<gfx::IntSize> mOutputSize;  
   Progress mProgress;
 
   uint32_t mFrameCount; 
@@ -495,6 +490,7 @@ private:
 
   bool mInitialized : 1;
   bool mMetadataDecode : 1;
+  bool mHaveExplicitOutputSize : 1;
   bool mInFrame : 1;
   bool mFinishedNewFrame : 1;  
                                
