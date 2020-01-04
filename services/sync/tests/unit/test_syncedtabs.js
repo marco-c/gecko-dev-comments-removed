@@ -39,6 +39,9 @@ let MockClientsEngine = {
     }
     return guid.endsWith("mobile");
   },
+  remoteClientExists(id) {
+    return !id.startsWith("guid_stale");
+  },
 }
 
 
@@ -98,6 +101,41 @@ add_task(function* test_clientWithTabs() {
   equal(clients[0].tabs[0].url, "http://foo.com/");
   equal(clients[0].tabs[0].icon, "http://foo.com/favicon");
   
+  equal(clients[1].tabs.length, 0);
+});
+
+add_task(function* test_staleClientWithTabs() {
+  yield configureClients({
+    guid_desktop: {
+      clientName: "My Desktop",
+      tabs: [
+      {
+        urlHistory: ["http://foo.com/"],
+        icon: "http://foo.com/favicon",
+      }],
+    },
+    guid_mobile: {
+      clientName: "My Phone",
+      tabs: [],
+    },
+    guid_stale_mobile: {
+      clientName: "My Deleted Phone",
+      tabs: [],
+    },
+    guid_stale_desktop: {
+      clientName: "My Deleted Laptop",
+      tabs: [
+      {
+        urlHistory: ["https://bar.com/"],
+        icon: "https://bar.com/favicon",
+      }],
+    },
+  });
+  let clients = yield SyncedTabs.getTabClients();
+  clients.sort((a, b) => { return a.name.localeCompare(b.name);});
+  equal(clients.length, 2);
+  equal(clients[0].tabs.length, 1);
+  equal(clients[0].tabs[0].url, "http://foo.com/");
   equal(clients[1].tabs.length, 0);
 });
 
