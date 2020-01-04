@@ -178,7 +178,7 @@ private:
   GetAttrNodeInfo(const nsAString& aNamespaceURI,
                   const nsAString& aLocalName);
 
-  Attr* GetAttribute(mozilla::dom::NodeInfo* aNodeInfo, bool aNsAware);
+  Attr* GetAttribute(mozilla::dom::NodeInfo* aNodeInfo);
 };
 
 
