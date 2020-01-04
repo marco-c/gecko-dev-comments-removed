@@ -1102,16 +1102,16 @@ function enumWeakSetEntries(objectActor) {
 
 
 DebuggerServer.ObjectActorPreviewers = {
-  String: [function (objectActor, grip) {
-    return wrappedPrimitivePreviewer("String", String, objectActor, grip);
+  String: [function (objectActor, grip, rawObj) {
+    return wrappedPrimitivePreviewer("String", String, objectActor, grip, rawObj);
   }],
 
-  Boolean: [function (objectActor, grip) {
-    return wrappedPrimitivePreviewer("Boolean", Boolean, objectActor, grip);
+  Boolean: [function (objectActor, grip, rawObj) {
+    return wrappedPrimitivePreviewer("Boolean", Boolean, objectActor, grip, rawObj);
   }],
 
-  Number: [function (objectActor, grip) {
-    return wrappedPrimitivePreviewer("Number", Number, objectActor, grip);
+  Number: [function (objectActor, grip, rawObj) {
+    return wrappedPrimitivePreviewer("Number", Number, objectActor, grip, rawObj);
   }],
 
   Function: [function ({obj, hooks}, grip) {
@@ -1379,17 +1379,16 @@ DebuggerServer.ObjectActorPreviewers = {
 
 
 
-function wrappedPrimitivePreviewer(className, classObj, objectActor, grip) {
+function wrappedPrimitivePreviewer(className, classObj, objectActor, grip, rawObj) {
   let {obj, hooks} = objectActor;
 
   if (!obj.proto || obj.proto.class != className) {
     return false;
   }
 
-  let raw = obj.unsafeDereference();
   let v = null;
   try {
-    v = classObj.prototype.valueOf.call(raw);
+    v = classObj.prototype.valueOf.call(rawObj);
   } catch (ex) {
     
     return false;
@@ -1399,7 +1398,7 @@ function wrappedPrimitivePreviewer(className, classObj, objectActor, grip) {
     return false;
   }
 
-  let canHandle = GenericObject(objectActor, grip, className === "String");
+  let canHandle = GenericObject(objectActor, grip, rawObj, className === "String");
   if (!canHandle) {
     return false;
   }
@@ -1409,7 +1408,7 @@ function wrappedPrimitivePreviewer(className, classObj, objectActor, grip) {
   return true;
 }
 
-function GenericObject(objectActor, grip, specialStringBehavior = false) {
+function GenericObject(objectActor, grip, rawObj, specialStringBehavior = false) {
   let {obj, hooks} = objectActor;
   if (grip.preview || grip.displayString || hooks.getGripDepth() > 1) {
     return false;
@@ -1859,7 +1858,9 @@ DebuggerServer.ObjectActorPreviewers.Object = [
     return true;
   },
 
-  GenericObject,
+  function Object(objectActor, grip, rawObj) {
+    return GenericObject(objectActor, grip, rawObj,  false);
+  },
 ];
 
 
