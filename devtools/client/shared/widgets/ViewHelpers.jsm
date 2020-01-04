@@ -1147,6 +1147,21 @@ this.WidgetMethods = {
     return null;
   },
 
+  _selectItem: function(aItem) {
+    
+    let targetElement = aItem ? aItem._target : null;
+    let prevElement = this._widget.selectedItem;
+
+    
+    if (this.autoFocusOnSelection && targetElement) {
+      targetElement.focus();
+    }
+
+    if (targetElement != prevElement) {
+      this._widget.selectedItem = targetElement;
+    }
+  },
+
   
 
 
@@ -1158,14 +1173,9 @@ this.WidgetMethods = {
       aItem = this.getItemForPredicate(aItem);
     }
 
-    
     let targetElement = aItem ? aItem._target : null;
     let prevElement = this._widget.selectedItem;
 
-    
-    if (this.autoFocusOnSelection && targetElement) {
-      targetElement.focus();
-    }
     if (this.maintainSelectionVisible && targetElement) {
       
       
@@ -1174,10 +1184,11 @@ this.WidgetMethods = {
       }
     }
 
+    this._selectItem(aItem);
+
     
     
     if (targetElement != prevElement) {
-      this._widget.selectedItem = targetElement;
       let dispTarget = targetElement || prevElement;
       let dispName = this.suppressSelectionEvents ? "suppressed-select" : "select";
       ViewHelpers.dispatchEvent(dispTarget, dispName, aItem);

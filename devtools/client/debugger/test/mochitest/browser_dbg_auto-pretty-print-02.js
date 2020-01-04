@@ -40,7 +40,7 @@ function test(){
       .then(testPrettyPrintButtonOn)
       .then(() => {
         
-        let finished = waitForDebuggerEvents(gPanel, gDebugger.EVENTS.SOURCE_SHOWN);
+        let finished = waitForDebuggerEvents(gPanel, gDebugger.EVENTS.SOURCE_SHOWN, 2);
         gSources.selectedIndex = 1;
         return finished;
       })
@@ -96,8 +96,6 @@ function disableAutoPrettyPrint(){
   gOptions._toggleAutoPrettyPrint();
   gOptions._onPopupHidden();
   info("Disabled auto pretty printing.");
-  
-  return waitForDebuggerEvents(gPanel, gDebugger.EVENTS.SOURCE_SHOWN);
 }
 
 function testSourceIsPretty() {
