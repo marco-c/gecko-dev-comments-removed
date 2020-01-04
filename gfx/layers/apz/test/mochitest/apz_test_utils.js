@@ -177,6 +177,10 @@ function waitForApzFlushedRepaints(aCallback) {
 
 
 
+
+
+
+
 function runSubtestsSeriallyInFreshWindows(aSubtests) {
   return new Promise(function(resolve, reject) {
     var testIndex = -1;
@@ -225,6 +229,9 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
         w.SimpleTest = SimpleTest;
         w.is = function(a, b, msg) { return is(a, b, aFile + " | " + msg); };
         w.ok = function(cond, name, diag) { return ok(cond, aFile + " | " + name, diag); };
+        if (test.onload) {
+          w.addEventListener('load', function(e) { test.onload(w); }, { once: true });
+        }
         w.location = location.href.substring(0, location.href.lastIndexOf('/') + 1) + aFile;
         return w;
       }
@@ -366,4 +373,31 @@ function getQueryArgs() {
     }
   }
   return args;
+}
+
+
+
+
+
+
+
+
+
+
+function injectScript(aScript, aWindow = window) {
+  return function() {
+    return new Promise(function(resolve, reject) {
+      var e = aWindow.document.createElement('script');
+      e.type = 'text/javascript';
+      e.onload = function() {
+        resolve();
+      };
+      e.onerror = function() {
+        dump('Script [' + aScript + '] errored out\n');
+        reject();
+      };
+      e.src = aScript;
+      aWindow.document.getElementsByTagName('head')[0].appendChild(e);
+    });
+  };
 }
