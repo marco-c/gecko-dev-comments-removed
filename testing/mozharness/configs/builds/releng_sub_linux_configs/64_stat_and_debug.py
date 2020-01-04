@@ -11,7 +11,6 @@ config = {
         'build',
         'upload-files',
         'sendchange',
-        'check-test',
         
         'update',  
     ],
