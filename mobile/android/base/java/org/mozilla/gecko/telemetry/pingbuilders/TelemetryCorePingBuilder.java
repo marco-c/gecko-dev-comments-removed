@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
 
     private static final String NAME = "core";
-    private static final int VERSION_VALUE = 5; 
+    private static final int VERSION_VALUE = 6; 
     private static final String OS_VALUE = "Android";
 
     private static final String ARCHITECTURE = "arch";
