@@ -1145,3 +1145,8 @@ pref("dom.presentation.device.name", "Firefox OS");
 
 
 pref("dom.performance.enable_notify_performance_timing", true);
+
+
+pref("b2g.multiscreen.chrome_remote_url", "chrome://b2g/content/shell_remote.html");
+pref("b2g.multiscreen.system_remote_url", "index_remote.html");
+
