@@ -1,5 +1,10 @@
 
 
+
+
+
+
+
 var test = `
 class Foo { constructor() { } }
 assertEq(typeof Foo, \"function\");
@@ -13,8 +18,6 @@ assertEq(Foo, 5);
     assertEq(foo, 4);
 }
 
-var ieval = eval;
-
 {
     class PermanentBinding { constructor() { } }
     delete PermanentBinding;
@@ -24,10 +27,10 @@ var ieval = eval;
 
 {
     try {
-        ieval(\`class x { constructor () { } }
-                throw new Error("FAIL");
-                class y { constructor () { } }
-              \`);
+        evaluate(\`class x { constructor () { } }
+                   throw new Error("FAIL");
+                   class y { constructor () { } }
+                 \`);
     } catch (e if e instanceof Error) { }
     assertEq(typeof x, "function");
     assertEq(y, undefined, "Congrats, you fixed top-level lexical scoping! " +
