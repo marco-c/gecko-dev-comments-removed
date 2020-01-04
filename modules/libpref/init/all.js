@@ -2422,7 +2422,11 @@ pref("layout.css.scope-pseudo.enabled", true);
 pref("layout.css.background-blend-mode.enabled", true);
 
 
+#ifdef RELEASE_BUILD
 pref("layout.css.background-clip-text.enabled", false);
+#else
+pref("layout.css.background-clip-text.enabled", true);
+#endif
 
 
 pref("layout.css.vertical-text.enabled", true);
