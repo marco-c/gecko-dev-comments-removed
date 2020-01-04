@@ -418,11 +418,18 @@
 
 .stack-frame-source-name {
   flex: 1 1;
+  
   direction: rtl;
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+
+.stack-frame-source-name-inner {
+  direction: ltr;
+  unicode-bidi: embed;
 }
 
 .stack-frame-line {
