@@ -109,12 +109,8 @@ Crash()
 #endif
 
 #ifdef MOZ_CRASHREPORTER
-  
-  
-  if (GeckoProcessType_Default == XRE_GetProcessType()) {
-    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("Hang"),
-                                       NS_LITERAL_CSTRING("1"));
-  }
+  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("Hang"),
+                                     NS_LITERAL_CSTRING("1"));
 #endif
 
   NS_RUNTIMEABORT("HangMonitor triggered");
@@ -260,8 +256,10 @@ ThreadMain(void*)
 void
 Startup()
 {
-  if (GeckoProcessType_Default != XRE_GetProcessType() &&
-      GeckoProcessType_Content != XRE_GetProcessType()) {
+  
+  
+  
+  if (GeckoProcessType_Default != XRE_GetProcessType()) {
     return;
   }
 
@@ -295,8 +293,7 @@ Startup()
 void
 Shutdown()
 {
-  if (GeckoProcessType_Default != XRE_GetProcessType() &&
-      GeckoProcessType_Content != XRE_GetProcessType()) {
+  if (GeckoProcessType_Default != XRE_GetProcessType()) {
     return;
   }
 
