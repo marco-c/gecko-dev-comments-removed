@@ -185,27 +185,8 @@ typedef struct SSLChannelInfoStr {
 
 
 
-
-
-
-
-
-
-
-    
-
-
-
-    PRBool UseMacroToAccess_extendedMasterSecretUsed;
+    PRBool extendedMasterSecretUsed;
 } SSLChannelInfo;
-
-
-
-#define SSL_CHANNEL_INFO_FIELD_EXISTS(info, field) \
-   ((info).length >= (offsetof(SSLChannelInfo, UseMacroToAccess_##field) + sizeof((info).UseMacroToAccess_##field)))
-
-#define SSL_CHANNEL_INFO_FIELD_GET(info,field) \
-   (SSL_CHANNEL_INFO_FIELD_EXISTS(info,field) ? info.UseMacroToAccess_##field : -1)
 
 
 #define ssl_preinfo_version (1U << 0)
