@@ -9,14 +9,12 @@
 
 #include "Decoder.h"
 #include "StreamingLexer.h"
-#include "nsCOMPtr.h"
+#include "SurfacePipe.h"
 
 namespace mozilla {
 namespace image {
+
 class RasterImage;
-
-
-
 
 
 
@@ -58,11 +56,8 @@ private:
   LexerTransition<State> Finish();
 
   StreamingLexer<State> mLexer;
-  uint8_t mWidth;
-  uint8_t mHeight;
+  SurfacePipe mPipe;
   uint32_t mBytesPerRow;
-  uint32_t mBytesTotal;
-  uint32_t mCurrentRow;
 };
 
 } 
