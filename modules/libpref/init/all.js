@@ -4647,7 +4647,7 @@ pref("full-screen-api.pointer-lock.enabled", true);
 pref("full-screen-api.transition-duration.enter", "200 200");
 pref("full-screen-api.transition-duration.leave", "200 200");
 
-pref("full-screen-api.transition.timeout", 500);
+pref("full-screen-api.transition.timeout", 1000);
 
 pref("full-screen-api.warning.timeout", 3000);
 
