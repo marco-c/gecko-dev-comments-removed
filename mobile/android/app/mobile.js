@@ -898,7 +898,11 @@ pref("browser.readinglist.enabled", true);
 pref("toolkit.telemetry.unified", false);
 
 
+#ifdef NIGHTLY_BUILD
+pref("layout.accessiblecaret.enabled", true);
+#else
 pref("layout.accessiblecaret.enabled", false);
+#endif
 
 pref("layout.accessiblecaret.use_long_tap_injector", false);
 
