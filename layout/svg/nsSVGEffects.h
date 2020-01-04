@@ -43,7 +43,8 @@ class nsSVGFilterChainObserver;
 
 
 
-class nsSVGRenderingObserver : public nsStubMutationObserver {
+class nsSVGRenderingObserver : public nsStubMutationObserver
+{
 
 protected:
   virtual ~nsSVGRenderingObserver()
@@ -108,7 +109,8 @@ protected:
 
 
 
-class nsSVGIDRenderingObserver : public nsSVGRenderingObserver {
+class nsSVGIDRenderingObserver : public nsSVGRenderingObserver
+{
 public:
   typedef mozilla::dom::Element Element;
   nsSVGIDRenderingObserver(nsIURI* aURI, nsIContent* aObservingContent,
@@ -121,7 +123,8 @@ protected:
   
   virtual void DoUpdate() override;
 
-  class SourceReference : public nsReferencedElement {
+  class SourceReference : public nsReferencedElement
+  {
   public:
     explicit SourceReference(nsSVGIDRenderingObserver* aContainer) : mContainer(aContainer) {}
   protected:
@@ -169,7 +172,8 @@ private:
   nsIPresShell *mFramePresShell;
 };
 
-class nsSVGRenderingObserverProperty : public nsSVGIDRenderingObserver {
+class nsSVGRenderingObserverProperty : public nsSVGIDRenderingObserver
+{
 public:
   NS_DECL_ISUPPORTS
 
@@ -200,7 +204,8 @@ protected:
 
 
 class nsSVGFilterReference final : public nsSVGIDRenderingObserver
-                                 , public nsISVGFilterReference {
+                                 , public nsISVGFilterReference
+{
 public:
   nsSVGFilterReference(nsIURI* aURI,
                        nsIContent* aObservingContent,
@@ -246,7 +251,8 @@ private:
 
 
 
-class nsSVGFilterChainObserver : public nsISupports {
+class nsSVGFilterChainObserver : public nsISupports
+{
 public:
   nsSVGFilterChainObserver(const nsTArray<nsStyleFilter>& aFilters,
                            nsIContent* aFilteredElement);
@@ -268,7 +274,8 @@ private:
   nsTArray<RefPtr<nsSVGFilterReference>> mReferences;
 };
 
-class nsSVGFilterProperty : public nsSVGFilterChainObserver {
+class nsSVGFilterProperty : public nsSVGFilterChainObserver
+{
 public:
   nsSVGFilterProperty(const nsTArray<nsStyleFilter> &aFilters,
                       nsIFrame *aFilteredFrame)
@@ -284,7 +291,8 @@ protected:
   nsSVGFrameReferenceFromProperty mFrameReference;
 };
 
-class nsSVGMarkerProperty final : public nsSVGRenderingObserverProperty {
+class nsSVGMarkerProperty final: public nsSVGRenderingObserverProperty
+{
 public:
   nsSVGMarkerProperty(nsIURI *aURI, nsIFrame *aFrame, bool aReferenceImage)
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage) {}
@@ -293,7 +301,8 @@ protected:
   virtual void DoUpdate() override;
 };
 
-class nsSVGTextPathProperty final : public nsSVGRenderingObserverProperty {
+class nsSVGTextPathProperty final : public nsSVGRenderingObserverProperty
+{
 public:
   nsSVGTextPathProperty(nsIURI *aURI, nsIFrame *aFrame, bool aReferenceImage)
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage)
@@ -313,7 +322,8 @@ private:
   bool mValid;
 };
 
-class nsSVGPaintingProperty final : public nsSVGRenderingObserverProperty {
+class nsSVGPaintingProperty final : public nsSVGRenderingObserverProperty
+{
 public:
   nsSVGPaintingProperty(nsIURI *aURI, nsIFrame *aFrame, bool aReferenceImage)
     : nsSVGRenderingObserverProperty(aURI, aFrame, aReferenceImage) {}
@@ -356,7 +366,8 @@ private:
 
 
 
-class nsSVGRenderingObserverList {
+class nsSVGRenderingObserverList
+{
 public:
   nsSVGRenderingObserverList()
     : mObservers(4)
@@ -402,7 +413,8 @@ private:
   nsTHashtable<nsPtrHashKey<nsSVGRenderingObserver> > mObservers;
 };
 
-class nsSVGEffects {
+class nsSVGEffects
+{
 public:
   typedef mozilla::dom::Element Element;
   typedef nsInterfaceHashtable<nsURIHashKey, nsIMutationObserver>
