@@ -619,40 +619,43 @@ AudioCallbackDriver::Init()
   CubebUtils::AudioDeviceID input_id = nullptr, output_id = nullptr;
   
   
-  if ((!mGraphImpl->mInputWanted
+  {
+    StaticMutexAutoLock lock(AudioInputCubeb::Mutex());
+    if ((!mGraphImpl->mInputWanted
 #ifdef MOZ_WEBRTC
-       || AudioInputCubeb::GetDeviceID(mGraphImpl->mInputDeviceID, input_id)
+         || AudioInputCubeb::GetDeviceID(mGraphImpl->mInputDeviceID, input_id)
 #endif
-       ) &&
-      (mGraphImpl->mOutputDeviceID == -1 
+         ) &&
+        (mGraphImpl->mOutputDeviceID == -1 
 #ifdef MOZ_WEBRTC
-       
-       
-       || AudioInputCubeb::GetDeviceID(mGraphImpl->mOutputDeviceID, output_id)
+         
+         
+         || AudioInputCubeb::GetDeviceID(mGraphImpl->mOutputDeviceID, output_id)
 #endif
-       ) &&
+         ) &&
+        
+        
+        
+        cubeb_stream_init(CubebUtils::GetCubebContext(), &stream,
+                          "AudioCallbackDriver",
+                          input_id,
+                          mGraphImpl->mInputWanted ? &input : nullptr,
+                          output_id,
+                          mGraphImpl->mOutputWanted ? &output : nullptr, latency,
+                          DataCallback_s, StateCallback_s, this) == CUBEB_OK) {
+      mAudioStream.own(stream);
+    } else {
+      StaticMutexAutoUnlock unlock(AudioInputCubeb::Mutex());
+      NS_WARNING("Could not create a cubeb stream for MediaStreamGraph, falling back to a SystemClockDriver");
       
-      
-      
-      cubeb_stream_init(CubebUtils::GetCubebContext(), &stream,
-                        "AudioCallbackDriver",
-                        input_id,
-                        mGraphImpl->mInputWanted ? &input : nullptr,
-                        output_id,
-                        mGraphImpl->mOutputWanted ? &output : nullptr, latency,
-                        DataCallback_s, StateCallback_s, this) == CUBEB_OK) {
-    mAudioStream.own(stream);
-  } else {
-    NS_WARNING("Could not create a cubeb stream for MediaStreamGraph, falling back to a SystemClockDriver");
-    
-    MonitorAutoLock lock(GraphImpl()->GetMonitor());
-    SetNextDriver(new SystemClockDriver(GraphImpl()));
-    NextDriver()->SetGraphTime(this, mIterationStart, mIterationEnd);
-    mGraphImpl->SetCurrentDriver(NextDriver());
-    NextDriver()->Start();
-    return;
+      MonitorAutoLock lock(GraphImpl()->GetMonitor());
+      SetNextDriver(new SystemClockDriver(GraphImpl()));
+      NextDriver()->SetGraphTime(this, mIterationStart, mIterationEnd);
+      mGraphImpl->SetCurrentDriver(NextDriver());
+      NextDriver()->Start();
+      return;
+    }
   }
-
   cubeb_stream_register_device_changed_callback(mAudioStream,
                                                 AudioCallbackDriver::DeviceChangedCallback_s);
 

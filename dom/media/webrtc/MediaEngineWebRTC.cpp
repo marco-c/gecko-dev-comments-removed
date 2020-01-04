@@ -49,6 +49,7 @@ nsTArray<int>* AudioInputCubeb::mDeviceIndexes;
 nsTArray<nsCString>* AudioInputCubeb::mDeviceNames;
 cubeb_device_collection* AudioInputCubeb::mDevices = nullptr;
 bool AudioInputCubeb::mAnyInUse = false;
+StaticMutex AudioInputCubeb::sMutex;
 
 
 
@@ -91,6 +92,7 @@ void AudioInputCubeb::UpdateDeviceList()
       }
     }
   }
+  StaticMutexAutoLock lock(sMutex);
   
   if (mDevices) {
     cubeb_device_collection_destroy(mDevices);
