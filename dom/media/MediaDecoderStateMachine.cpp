@@ -833,7 +833,6 @@ MediaDecoderStateMachine::CheckIfDecodeComplete()
     
     
     SetState(DECODER_STATE_COMPLETED);
-    DispatchDecodeTasksIfNeeded();
     ScheduleStateMachine();
   }
   DECODER_LOG("CheckIfDecodeComplete %scompleted",
