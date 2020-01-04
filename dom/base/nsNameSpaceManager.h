@@ -42,9 +42,19 @@ public:
 
   virtual nsresult GetNameSpaceURI(int32_t aNameSpaceID, nsAString& aURI);
 
+  
+  
   nsIAtom* NameSpaceURIAtom(int32_t aNameSpaceID) {
-    MOZ_ASSERT(aNameSpaceID > 0 && (int64_t) aNameSpaceID <= (int64_t) mURIArray.Length());
-    return mURIArray.ElementAt(aNameSpaceID - 1); 
+    MOZ_ASSERT(aNameSpaceID > 0);
+    return NameSpaceURIAtomForServo(aNameSpaceID);
+  }
+
+  
+  
+  nsIAtom* NameSpaceURIAtomForServo(int32_t aNameSpaceID) {
+    MOZ_ASSERT(aNameSpaceID >= 0);
+    MOZ_ASSERT((int64_t) aNameSpaceID < (int64_t) mURIArray.Length());
+    return mURIArray.ElementAt(aNameSpaceID);
   }
 
   int32_t GetNameSpaceID(const nsAString& aURI,
