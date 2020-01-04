@@ -129,6 +129,7 @@ private:
   
   Monitor mMonitor;
   media::TimeUnit mNextRandomAccessPoint;
+  Maybe<media::TimeUnit> mLastSeek;
 };
 
 } 
