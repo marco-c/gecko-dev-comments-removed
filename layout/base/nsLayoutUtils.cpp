@@ -1067,12 +1067,6 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
     }
   }
 
-  
-  
-  
-  
-  screenRect.Inflate(1);
-
   ScreenPoint scrollPosScreen = LayoutDevicePoint::FromAppUnits(scrollPos, auPerDevPixel)
                               * res;
 
