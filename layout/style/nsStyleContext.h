@@ -398,7 +398,6 @@ public:
                                    uint32_t* aEqualStructs,
                                    uint32_t* aSamePointerStructs);
 
-#ifdef MOZ_STYLO
   
 
 
@@ -407,7 +406,6 @@ public:
                                    nsChangeHint aParentHintsNotHandledForDescendants,
                                    uint32_t* aEqualStructs,
                                    uint32_t* aSamePointerStructs);
-#endif
 
 private:
   template<class StyleContextLike>
@@ -415,8 +413,8 @@ private:
                                            nsChangeHint aParentHintsNotHandledForDescendants,
                                            uint32_t* aEqualStructs,
                                            uint32_t* aSamePointerStructs);
-public:
 
+public:
   
 
 
@@ -528,25 +526,41 @@ public:
   mozilla::NonOwningStyleContextSource StyleSource() const { return mSource.AsRaw(); }
 
 #ifdef MOZ_STYLO
+  
+  
+  
+  
+  
   void StoreChangeHint(nsChangeHint aHint)
   {
-    MOZ_ASSERT(!mHasStoredChangeHint);
+    MOZ_ASSERT(!mConsumedChangeHint);
     MOZ_ASSERT(!IsShared());
     mStoredChangeHint = aHint;
 #ifdef DEBUG
-    mHasStoredChangeHint = true;
+    mConsumedChangeHint = false;
 #endif
   }
 
   nsChangeHint ConsumeStoredChangeHint()
   {
-    MOZ_ASSERT(mHasStoredChangeHint);
     nsChangeHint result = mStoredChangeHint;
     mStoredChangeHint = nsChangeHint(0);
 #ifdef DEBUG
-    mHasStoredChangeHint = false;
+    mConsumedChangeHint = true;
 #endif
     return result;
+  }
+#else
+  void StoreChangeHint(nsChangeHint aHint)
+  {
+    MOZ_CRASH("stylo: Called nsStyleContext::StoreChangeHint in a non MOZ_STYLO "
+              "build.");
+  }
+
+  nsChangeHint ConsumeStoredChangeHint()
+  {
+    MOZ_CRASH("stylo: Called nsStyleContext::ComsumeStoredChangeHint in a non "
+               "MOZ_STYLO build.");
   }
 #endif
 
@@ -765,7 +779,7 @@ private:
 #ifdef MOZ_STYLO
   nsChangeHint            mStoredChangeHint;
 #ifdef DEBUG
-  bool                    mHasStoredChangeHint;
+  bool                    mConsumedChangeHint;
 #endif
 #endif
 

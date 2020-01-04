@@ -36,6 +36,8 @@ class ServoRestyleManager : public RestyleManagerBase
 {
   friend class ServoStyleSet;
 public:
+  typedef RestyleManagerBase base_type;
+
   NS_INLINE_DECL_REFCOUNTING(ServoRestyleManager)
 
   explicit ServoRestyleManager(nsPresContext* aPresContext);
@@ -91,13 +93,10 @@ private:
 
 
 
-
-
-
-
-  static void RecreateStyleContexts(nsIContent* aContent,
-                                    nsStyleContext* aParentContext,
-                                    ServoStyleSet* aStyleSet);
+  void RecreateStyleContexts(nsIContent* aContent,
+                             nsStyleContext* aParentContext,
+                             ServoStyleSet* aStyleSet,
+                             nsStyleChangeList& aChangeList);
 
   
 

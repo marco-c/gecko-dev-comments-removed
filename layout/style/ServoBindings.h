@@ -187,8 +187,16 @@ void Gecko_SetNodeFlags(RawGeckoNode* node, uint32_t flags);
 void Gecko_UnsetNodeFlags(RawGeckoNode* node, uint32_t flags);
 
 
-nsChangeHint Gecko_CalcAndStoreStyleDifference(RawGeckoElement* element,
-                                               ServoComputedValues* newstyle);
+
+
+
+
+
+
+nsStyleContext* Gecko_GetStyleContext(RawGeckoNode* node);
+nsChangeHint Gecko_CalcStyleDifference(nsStyleContext* oldstyle,
+                                       ServoComputedValues* newstyle);
+void Gecko_StoreStyleDifference(RawGeckoNode* node, nsChangeHint change);
 
 
 
