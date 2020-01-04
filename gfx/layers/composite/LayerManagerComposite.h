@@ -560,6 +560,12 @@ public:
 
   virtual nsIntRegion GetFullyRenderedRegion();
 
+  
+
+
+
+  bool NeedToDrawCheckerboarding(gfx::Color* aOutCheckerboardingColor = nullptr);
+
 protected:
   gfx::Matrix4x4 mShadowTransform;
   LayerIntRegion mShadowVisibleRegion;
