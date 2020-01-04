@@ -16,10 +16,13 @@ var Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/Timer.jsm", this);
 
-XPCOMUtils.defineLazyModuleGetter(this, "DocShellCapabilities",
-  "resource:///modules/sessionstore/DocShellCapabilities.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FormData",
   "resource://gre/modules/FormData.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
+  "resource://gre/modules/Preferences.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "DocShellCapabilities",
+  "resource:///modules/sessionstore/DocShellCapabilities.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PageStyle",
   "resource:///modules/sessionstore/PageStyle.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ScrollPosition",
@@ -38,6 +41,9 @@ XPCOMUtils.defineLazyGetter(this, 'gContentRestore',
 
 
 var gCurrentEpoch = 0;
+
+
+const DOM_STORAGE_MAX_CHARS = 10000000; 
 
 
 
@@ -523,9 +529,58 @@ var SessionStorageListener = {
     setTimeout(() => this.collect(), 0);
   },
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  estimateStorageSize: function(collected) {
+    if (!collected) {
+      return 0;
+    }
+
+    let size = 0;
+    for (let host of Object.keys(collected)) {
+      size += host.length;
+      let perHost = collected[host];
+      for (let key of Object.keys(perHost)) {
+        size += key.length;
+        let perKey = perHost[key];
+        size += perKey.length;
+      }
+    }
+
+    return size;
+  },
+
   collect: function () {
     if (docShell) {
-      MessageQueue.push("storage", () => SessionStorage.collect(docShell, gFrameTree));
+      MessageQueue.push("storage", () => {
+        let collected = SessionStorage.collect(docShell, gFrameTree);
+
+        if (collected == null) {
+          return collected;
+        }
+
+        let size = this.estimateStorageSize(collected);
+
+        MessageQueue.push("telemetry", () => ({ FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS: size }));
+        if (size > Preferences.get("browser.sessionstore.dom_storage_limit", DOM_STORAGE_MAX_CHARS)) {
+          
+          
+          
+          return {};
+        }
+
+        return collected;
+      });
     }
   },
 
@@ -665,6 +720,7 @@ var MessageQueue = {
     let durationMs = Date.now();
 
     let data = {};
+    let telemetry = {};
     for (let [key, id] of this._lastUpdated) {
       
       
@@ -680,13 +736,18 @@ var MessageQueue = {
         continue;
       }
 
-      data[key] = this._data.get(key)();
+      let value = this._data.get(key)();
+      if (key == "telemetry") {
+        for (let histogramId of Object.keys(value)) {
+          telemetry[histogramId] = value[histogramId];
+        }
+      } else {
+        data[key] = value;
+      }
     }
 
     durationMs = Date.now() - durationMs;
-    let telemetry = {
-      FX_SESSION_RESTORE_CONTENT_COLLECT_DATA_LONGEST_OP_MS: durationMs
-    }
+    telemetry.FX_SESSION_RESTORE_CONTENT_COLLECT_DATA_LONGEST_OP_MS = durationMs;
 
     try {
       

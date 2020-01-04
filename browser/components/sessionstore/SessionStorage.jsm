@@ -48,7 +48,7 @@ this.SessionStorage = Object.freeze({
 
   restore: function (aDocShell, aStorageData) {
     SessionStorageInternal.restore(aDocShell, aStorageData);
-  }
+  },
 });
 
 var SessionStorageInternal = {
