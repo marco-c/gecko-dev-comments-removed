@@ -284,11 +284,6 @@ public:
 
 
   static nsBidiLevel GetFrameEmbeddingLevel(nsIFrame* aFrame);
-    
-  
-
-
-  static uint8_t GetParagraphDepth(nsIFrame* aFrame);
 
   
 
