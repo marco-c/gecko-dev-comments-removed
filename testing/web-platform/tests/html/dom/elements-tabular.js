@@ -74,6 +74,8 @@ var tabularElements = {
     colSpan: {type: "unsigned long", defaultVal: 1},
     rowSpan: {type: "unsigned long", defaultVal: 1},
     headers: "settable tokenlist",
+    scope: {type: "enum", keywords: ["row", "col", "rowgroup", "colgroup"]},
+    abbr: "string",
 
     
     align: "string",
@@ -85,15 +87,14 @@ var tabularElements = {
     noWrap: "boolean",
     vAlign: "string",
     bgColor: {type: "string", treatNullAsEmptyString: true},
-
-    
-    abbr: "string",
   },
   th: {
     
     colSpan: {type: "unsigned long", defaultVal: 1},
     rowSpan: {type: "unsigned long", defaultVal: 1},
     headers: "settable tokenlist",
+    scope: {type: "enum", keywords: ["row", "col", "rowgroup", "colgroup"]},
+    abbr: "string",
 
     
     align: "string",
@@ -105,15 +106,6 @@ var tabularElements = {
     noWrap: "boolean",
     vAlign: "string",
     bgColor: {type: "string", treatNullAsEmptyString: true},
-
-    
-    
-    
-    
-    
-    scope: {type: "enum", keywords: ["row", "col", "rowgroup", "colgroup"]},
-    abbr: "string",
-    sorted: "string",
   },
 };
 
