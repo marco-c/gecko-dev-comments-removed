@@ -632,9 +632,11 @@ var DOMFullscreenHandler = {
   },
 
   receiveMessage: function(aMessage) {
+    let windowUtils = this._windowUtils;
     switch(aMessage.name) {
       case "DOMFullscreen:Entered": {
-        if (!this._windowUtils.handleFullscreenRequests() &&
+        this._lastTransactionId = windowUtils.lastTransactionId;
+        if (!windowUtils.handleFullscreenRequests() &&
             !content.document.fullscreenElement) {
           
           
@@ -644,8 +646,9 @@ var DOMFullscreenHandler = {
         break;
       }
       case "DOMFullscreen:CleanUp": {
-        if (this._windowUtils) {
-          this._windowUtils.exitFullscreen();
+        if (windowUtils) {
+          this._lastTransactionId = windowUtils.lastTransactionId;
+          windowUtils.exitFullscreen();
         }
         this._fullscreenDoc = null;
         break;
@@ -682,8 +685,12 @@ var DOMFullscreenHandler = {
         break;
       }
       case "MozAfterPaint": {
-        removeEventListener("MozAfterPaint", this);
-        sendAsyncMessage("DOMFullscreen:Painted");
+        
+        
+        if (aEvent.transactionId > this._lastTransactionId) {
+          removeEventListener("MozAfterPaint", this);
+          sendAsyncMessage("DOMFullscreen:Painted");
+        }
         break;
       }
     }
