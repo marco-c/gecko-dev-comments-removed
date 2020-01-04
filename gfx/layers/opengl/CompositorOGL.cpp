@@ -703,19 +703,9 @@ CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
                                  LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
   mGLContext->fEnable(LOCAL_GL_BLEND);
 
-  
-  
-  mGLContext->fEnable(LOCAL_GL_SCISSOR_TEST);
-
-  
-  IntSize viewportSize =
-    mGLContext->GetTargetSize().valueOr(mWidgetSize.ToUnknownSize());
-  if (viewportSize != mWidgetSize.ToUnknownSize()) {
-    mGLContext->fScissor(0, 0, viewportSize.width, viewportSize.height);
-  }
-
   RefPtr<CompositingRenderTargetOGL> rt =
-    CompositingRenderTargetOGL::RenderTargetForWindow(this, viewportSize);
+    CompositingRenderTargetOGL::RenderTargetForWindow(this,
+                                                      IntSize(width, height));
   SetRenderTarget(rt);
 
 #ifdef DEBUG
@@ -1060,8 +1050,9 @@ CompositorOGL::DrawQuad(const Rect& aRect,
     clipRect.MoveBy(mRenderOffset.x, mRenderOffset.y);
   }
 
-  gl()->fScissor(clipRect.x, FlipY(clipRect.y + clipRect.height),
-                 clipRect.width, clipRect.height);
+  ScopedGLState scopedScissorTestState(mGLContext, LOCAL_GL_SCISSOR_TEST, true);
+  ScopedScissorRect autoScissorRect(mGLContext, clipRect.x, FlipY(clipRect.y + clipRect.height),
+                                    clipRect.width, clipRect.height);
 
   MaskType maskType;
   EffectMask* effectMask;
@@ -1501,21 +1492,13 @@ CompositorOGL::EndFrame()
     return;
   }
 
+  mCurrentRenderTarget = nullptr;
+
   if (mTexturePool) {
     mTexturePool->EndFrame();
   }
 
-  
-  
-  
-  
-  IntSize targetSize = mGLContext->GetTargetSize().valueOr(mViewportSize);
-  if (!(mCurrentRenderTarget->IsWindow() && targetSize != mViewportSize)) {
-    mGLContext->SwapBuffers();
-  }
-
-  mCurrentRenderTarget = nullptr;
-
+  mGLContext->SwapBuffers();
   mGLContext->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, 0);
 
   
