@@ -1730,6 +1730,18 @@ public:
 
 
 
+    NS_IMETHOD
+    GetSelectionAsPlaintext(nsAString& aResult)
+    {
+      return NS_ERROR_NOT_IMPLEMENTED;
+    }
+
+    
+
+
+
+
+
     NS_IMETHOD NotifyIME(const IMENotification& aIMENotification) = 0;
 
     

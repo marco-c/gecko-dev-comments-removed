@@ -4791,6 +4791,12 @@ pref("dom.w3c_pointer_events.enabled", false);
 pref("dom.imagecapture.enabled", false);
 
 
+pref("media.ondevicechange.enabled", false);
+
+
+pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
+
+
 
 
 
