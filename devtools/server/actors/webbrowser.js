@@ -1402,6 +1402,16 @@ TabActor.prototype = {
   
 
 
+  onFocus: function() {
+    if (this.window) {
+      this.window.focus();
+    }
+    return {};
+  },
+
+  
+
+
   onReload: function(aRequest) {
     let force = aRequest && aRequest.options && aRequest.options.force;
     
@@ -1900,6 +1910,7 @@ TabActor.prototype = {
 TabActor.prototype.requestTypes = {
   "attach": TabActor.prototype.onAttach,
   "detach": TabActor.prototype.onDetach,
+  "focus": TabActor.prototype.onFocus,
   "reload": TabActor.prototype.onReload,
   "navigateTo": TabActor.prototype.onNavigateTo,
   "reconfigure": TabActor.prototype.onReconfigure,

@@ -1318,6 +1318,13 @@ TabClient.prototype = {
   
 
 
+  focus: DebuggerClient.requester({
+    type: "focus"
+  }, {}),
+
+  
+
+
 
 
 
