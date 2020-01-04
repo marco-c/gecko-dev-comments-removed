@@ -22,6 +22,7 @@ XPCOMUtils.defineLazyGetter(this, "l10n", () => {
 });
 
 this.InsecurePasswordUtils = {
+  _formRootsWarned: new WeakMap(),
   _sendWebConsoleMessage(messageTag, domDoc) {
     let windowId = WebConsoleUtils.getInnerWindowId(domDoc.defaultView);
     let category = "Insecure Password Field";
@@ -69,30 +70,40 @@ this.InsecurePasswordUtils = {
 
 
   checkForInsecurePasswords(aForm) {
+    if (this._formRootsWarned.has(aForm.rootElement) ||
+        this._formRootsWarned.get(aForm.rootElement)) {
+      return;
+    }
+
     let domDoc = aForm.ownerDocument;
     let topDocument = domDoc.defaultView.top.document;
     let isSafePage = LoginManagerContent.isDocumentSecure(topDocument);
 
     if (!isSafePage) {
       this._sendWebConsoleMessage("InsecurePasswordsPresentOnPage", domDoc);
+      this._formRootsWarned.set(aForm.rootElement, true);
     }
 
     
     
     if (this._checkForInsecureNestedDocuments(domDoc)) {
       this._sendWebConsoleMessage("InsecurePasswordsPresentOnIframe", domDoc);
+      this._formRootsWarned.set(aForm.rootElement, true);
       isSafePage = false;
     }
 
     let isFormSubmitHTTP = false, isFormSubmitHTTPS = false;
-    
-    
-    
-    if (aForm.action.match(/^http:\/\//)) {
-      this._sendWebConsoleMessage("InsecureFormActionPasswordsPresent", domDoc);
-      isFormSubmitHTTP = true;
-    } else if (aForm.action.match(/^https:\/\//)) {
-      isFormSubmitHTTPS = true;
+    if (aForm.rootElement instanceof Ci.nsIDOMHTMLFormElement) {
+      
+      
+      
+      if (aForm.action.match(/^http:\/\//)) {
+        this._sendWebConsoleMessage("InsecureFormActionPasswordsPresent", domDoc);
+        this._formRootsWarned.set(aForm.rootElement, true);
+        isFormSubmitHTTP = true;
+      } else if (aForm.action.match(/^https:\/\//)) {
+        isFormSubmitHTTPS = true;
+      }
     }
 
     
