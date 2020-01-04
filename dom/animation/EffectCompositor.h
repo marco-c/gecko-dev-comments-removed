@@ -105,6 +105,11 @@ public:
                                 CascadeLevel aCascadeLevel,
                                 bool& aStyleChanging);
 
+  
+  bool HasThrottledAnimations(dom::Element* aElement,
+                              nsCSSPseudoElements::Type aPseudoType,
+                              CascadeLevel aCascadeLevel) const;
+
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSProperty aProperty);
 

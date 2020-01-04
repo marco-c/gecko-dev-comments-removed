@@ -171,7 +171,7 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
 
   void Tick();
 
-  void EnsureStyleRuleFor(TimeStamp aRefreshTime);
+  void EnsureStyleRuleFor();
 
   void RequestRestyle(EffectCompositor::RestyleType aRestyleType);
 
@@ -252,9 +252,6 @@ public:
   uint64_t mCheckGeneration;
   
   void UpdateCheckGeneration(nsPresContext* aPresContext);
-
-  
-  TimeStamp mStyleRuleRefreshTime;
 
   
   

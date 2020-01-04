@@ -488,13 +488,9 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     EffectCompositor::UpdateCascadeResults(aElement, pseudoType,
                                            newStyleContext);
 
-    
-    
-    collection->mStyleRuleRefreshTime = TimeStamp();
     collection->UpdateCheckGeneration(mPresContext);
     collection->mStyleChanging = true;
-    TimeStamp now = mPresContext->RefreshDriver()->MostRecentRefresh();
-    collection->EnsureStyleRuleFor(now);
+    collection->EnsureStyleRuleFor();
   }
 
   
