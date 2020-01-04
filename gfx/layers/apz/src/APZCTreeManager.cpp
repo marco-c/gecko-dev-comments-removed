@@ -554,6 +554,33 @@ APZCTreeManager::UpdateHitTestingTree(TreeBuildingState& aState,
   return node;
 }
 
+
+
+
+
+
+
+static bool
+WillHandleWheelEvent(WidgetWheelEvent* aEvent)
+{
+  return EventStateManager::WheelEventIsScrollAction(aEvent) &&
+         (aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE
+            || aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL) &&
+         !EventStateManager::WheelEventNeedsDeltaMultipliers(aEvent);
+}
+
+template<typename PanGestureOrScrollWheelInput>
+static bool
+WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput)
+{
+  if (!NS_IsMainThread()) {
+    return true;
+  }
+
+  WidgetWheelEvent wheelEvent = aPanInput.ToWidgetWheelEvent(nullptr);
+  return WillHandleWheelEvent(&wheelEvent);
+}
+
 void
 APZCTreeManager::FlushApzRepaints(uint64_t aLayersId)
 {
@@ -591,6 +618,12 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       FlushRepaintsToClearScreenToGeckoTransform();
 
       ScrollWheelInput& wheelInput = aEvent.AsScrollWheelInput();
+
+      wheelInput.mHandledByAPZ = WillHandleInput(wheelInput);
+      if (!wheelInput.mHandledByAPZ) {
+        return result;
+      }
+
       nsRefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(wheelInput.mOrigin,
                                                             &hitResult);
       if (apzc) {
@@ -623,6 +656,11 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       FlushRepaintsToClearScreenToGeckoTransform();
 
       PanGestureInput& panInput = aEvent.AsPanGestureInput();
+      panInput.mHandledByAPZ = WillHandleInput(panInput);
+      if (!panInput.mHandledByAPZ) {
+        return result;
+      }
+
       nsRefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(panInput.mPanStartPoint,
                                                             &hitResult);
       if (apzc) {
@@ -914,23 +952,8 @@ APZCTreeManager::ProcessWheelEvent(WidgetWheelEvent& aEvent,
   nsEventStatus status = ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
   aEvent.refPoint.x = input.mOrigin.x;
   aEvent.refPoint.y = input.mOrigin.y;
-  aEvent.mFlags.mHandledByAPZ = true;
+  aEvent.mFlags.mHandledByAPZ = input.mHandledByAPZ;
   return status;
-}
-
-
-
-
-
-
-
-static bool
-WillHandleWheelEvent(WidgetWheelEvent* aEvent)
-{
-  return EventStateManager::WheelEventIsScrollAction(aEvent) &&
-         (aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_LINE
-            || aEvent->deltaMode == nsIDOMWheelEvent::DOM_DELTA_PIXEL) &&
-         !EventStateManager::WheelEventNeedsDeltaMultipliers(aEvent);
 }
 
 nsEventStatus
@@ -970,12 +993,10 @@ APZCTreeManager::ReceiveInputEvent(WidgetInputEvent& aEvent,
     }
     case eWheelEventClass: {
       WidgetWheelEvent& wheelEvent = *aEvent.AsWheelEvent();
-      if (!WillHandleWheelEvent(&wheelEvent)) {
-        
-        
-        return ProcessEvent(aEvent, aOutTargetGuid, aOutInputBlockId);
+      if (WillHandleWheelEvent(&wheelEvent)) {
+        return ProcessWheelEvent(wheelEvent, aOutTargetGuid, aOutInputBlockId);
       }
-      return ProcessWheelEvent(wheelEvent, aOutTargetGuid, aOutInputBlockId);
+      return ProcessEvent(aEvent, aOutTargetGuid, aOutInputBlockId);
     }
     default: {
       return ProcessEvent(aEvent, aOutTargetGuid, aOutInputBlockId);
