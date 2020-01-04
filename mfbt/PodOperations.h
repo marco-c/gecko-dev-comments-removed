@@ -180,6 +180,17 @@ PodEqual(const T* one, const T* two, size_t len)
   return !memcmp(one, two, len * sizeof(T));
 }
 
+
+
+
+
+template <class T, size_t N>
+static MOZ_ALWAYS_INLINE bool
+PodEqual(const T (&one)[N], const T (&two)[N])
+{
+  return PodEqual(one, two, N);
+}
+
 } 
 
 #endif 
