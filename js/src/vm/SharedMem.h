@@ -33,6 +33,7 @@ class SharedMem
     {}
 
   public:
+    
     SharedMem()
       : ptr_(nullptr)
 #ifdef DEBUG
@@ -48,30 +49,6 @@ class SharedMem
       , sharedness_(forSharedness.sharedness_)
 #endif
     {}
-
-    SharedMem(const SharedMem& that)
-      : ptr_(that.ptr_)
-#ifdef DEBUG
-      , sharedness_(that.sharedness_)
-#endif
-    {}
-
-    
-    template<typename U>
-    explicit SharedMem(const SharedMem<U>& that)
-      : ptr_(static_cast<T>(that.unwrap()))
-#ifdef DEBUG
-      , sharedness_((SharedMem::Sharedness)that.sharedness())
-#endif
-    {}
-
-#ifdef DEBUG
-    
-    
-    Sharedness sharedness() const {
-        return sharedness_;
-    }
-#endif
 
     
     static SharedMem shared(void* p) {
@@ -89,6 +66,19 @@ class SharedMem
         sharedness_ = that.sharedness_;
 #endif
         return *this;
+    }
+
+    
+    template<typename U>
+    inline SharedMem<U> cast() const {
+#ifdef DEBUG
+        MOZ_ASSERT(asValue() % sizeof(mozilla::Conditional<mozilla::IsVoid<typename mozilla::RemovePointer<U>::Type>::value,
+                                                           char,
+                                                           typename mozilla::RemovePointer<U>::Type>) == 0);
+        if (sharedness_ == IsUnshared)
+            return SharedMem<U>::unshared(unwrap());
+#endif
+        return SharedMem<U>::shared(unwrap());
     }
 
     explicit operator bool() { return ptr_ != nullptr; }
