@@ -270,13 +270,6 @@ public:
                         DrawTarget* aDrawTargetForTightBoundingBox,
                         PropertyProvider* aProvider);
 
-    Metrics MeasureText(gfxFont::BoundingBoxType aBoundingBoxType,
-                        DrawTarget* aDrawTargetForTightBoundingBox,
-                        PropertyProvider* aProvider = nullptr) {
-        return MeasureText(0, GetLength(), aBoundingBoxType,
-                           aDrawTargetForTightBoundingBox, aProvider);
-    }
-
     
 
 
@@ -287,10 +280,6 @@ public:
     gfxFloat GetAdvanceWidth(uint32_t aStart, uint32_t aLength,
                              PropertyProvider *aProvider,
                              PropertyProvider::Spacing* aSpacing = nullptr);
-
-    gfxFloat GetAdvanceWidth() {
-        return GetAdvanceWidth(0, GetLength(), nullptr);
-    }
 
     
 
