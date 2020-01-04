@@ -52,16 +52,24 @@ const CATEGORIES = [{
 
 
 const CATEGORY_MAPPINGS = {
-  "16": CATEGORIES[0],    
-  "32": CATEGORIES[1],    
-  "64": CATEGORIES[2],    
-  "128": CATEGORIES[3],   
-  "256": CATEGORIES[3],   
-  "512": CATEGORIES[4],   
-  "1024": CATEGORIES[5],  
-  "2048": CATEGORIES[6],  
-  "4096": CATEGORIES[7],  
-
+  
+  "16": CATEGORIES[0],
+  
+  "32": CATEGORIES[1],
+  
+  "64": CATEGORIES[2],
+  
+  "128": CATEGORIES[3],
+  
+  "256": CATEGORIES[3],
+  
+  "512": CATEGORIES[4],
+  
+  "1024": CATEGORIES[5],
+  
+  "2048": CATEGORIES[6],
+  
+  "4096": CATEGORIES[7],
   
   "9000": CATEGORIES[8],
 };
@@ -100,9 +108,8 @@ const [CATEGORY_MASK, CATEGORY_MASK_LIST] = (() => {
       } else {
         if (index > bitmasksForCategory[name].length) {
           throw new Error(`Index "${index}" too high for category "${name}".`);
-        } else {
-          return bitmasksForCategory[name][index - 1];
         }
+        return bitmasksForCategory[name][index - 1];
       }
     },
 

@@ -67,7 +67,8 @@ exports.MarkerDOMUtils = {
     let label = L10N.getStr("marker.field.duration");
     let start = L10N.getFormatStrWithNumbers("timeline.tick", marker.start);
     let end = L10N.getFormatStrWithNumbers("timeline.tick", marker.end);
-    let duration = L10N.getFormatStrWithNumbers("timeline.tick", marker.end - marker.start);
+    let duration = L10N.getFormatStrWithNumbers("timeline.tick",
+                                                marker.end - marker.start);
 
     let el = this.buildNameValueLabel(doc, label, duration);
     el.classList.add("marker-details-duration");
@@ -103,6 +104,7 @@ exports.MarkerDOMUtils = {
   },
 
   
+
 
 
 
