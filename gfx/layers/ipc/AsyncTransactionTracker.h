@@ -131,7 +131,9 @@ protected:
 
   uint64_t mSerial;
   RefPtr<AsyncTransactionWaiter> mWaiter;
-  DebugOnly<bool> mCompleted;
+#ifdef DEBUG
+  bool mCompleted;
+#endif
 
   
 
