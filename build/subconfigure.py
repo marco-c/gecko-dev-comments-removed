@@ -303,7 +303,22 @@ def run(objdir):
     relobjdir = os.path.relpath(objdir, os.getcwd())
 
     if not skip_configure:
-        command = [data['shell'], configure]
+        if mozpath.normsep(relobjdir) == 'js/src':
+            
+            
+            
+            
+            
+            
+            
+            command = [
+                sys.executable,
+                os.path.join(os.path.dirname(__file__), '..', 'configure.py'),
+            ]
+            data['env']['OLD_CONFIGURE'] = os.path.join(
+                os.path.dirname(configure), 'old-configure')
+        else:
+            command = [data['shell'], configure]
         for kind in ('target', 'build', 'host'):
             if data.get(kind) is not None:
                 command += ['--%s=%s' % (kind, data[kind])]
