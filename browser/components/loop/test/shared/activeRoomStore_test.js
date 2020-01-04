@@ -1,7 +1,7 @@
 
 
 
-describe("loop.store.ActiveRoomStore", function () {
+describe("loop.store.ActiveRoomStore", function() {
   "use strict";
 
   var expect = chai.expect;

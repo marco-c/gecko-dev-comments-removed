@@ -1,7 +1,7 @@
 
 
 
-describe("loop.shared.views.TextChatView", function () {
+describe("loop.shared.views.TextChatView", function() {
   "use strict";
 
   var expect = chai.expect;
@@ -376,7 +376,7 @@ describe("loop.shared.views.TextChatView", function () {
 
     
     
-    it("should linkify a URL starting with http", function () {
+    it("should linkify a URL starting with http", function() {
       view = mountTestComponent({
         showTimestamp: true,
         timestamp: "2015-06-23T22:48:39.738Z",

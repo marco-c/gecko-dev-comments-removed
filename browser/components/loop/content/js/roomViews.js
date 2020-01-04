@@ -716,7 +716,7 @@ loop.roomViews = (function(mozL10n) {
 
 
 
-    _isLocalLoading: function () {
+    _isLocalLoading: function() {
       return this.state.roomState === ROOM_STATES.MEDIA_WAIT &&
              !this.state.localSrcMediaElement;
     },

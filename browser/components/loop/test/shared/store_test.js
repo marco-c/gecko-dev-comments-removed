@@ -2,7 +2,7 @@
 
 
 
-describe("loop.store", function () {
+describe("loop.store", function() {
   "use strict";
 
   var expect = chai.expect;

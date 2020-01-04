@@ -7,7 +7,7 @@
 
 
 
-(function (window) {
+(function(window) {
   "use strict";
 
   if (!window.OT) {

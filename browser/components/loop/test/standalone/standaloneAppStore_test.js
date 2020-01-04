@@ -1,7 +1,7 @@
 
 
 
-describe("loop.store.StandaloneAppStore", function () {
+describe("loop.store.StandaloneAppStore", function() {
   "use strict";
 
   var expect = chai.expect;

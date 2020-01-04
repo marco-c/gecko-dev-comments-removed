@@ -1,7 +1,7 @@
 
 
 
-describe("loop.store.ConversationAppStore", function () {
+describe("loop.store.ConversationAppStore", function() {
   "use strict";
 
   var expect = chai.expect;

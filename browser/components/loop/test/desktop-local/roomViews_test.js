@@ -1,7 +1,7 @@
 
 
 
-describe("loop.roomViews", function () {
+describe("loop.roomViews", function() {
   "use strict";
 
   var expect = chai.expect;
