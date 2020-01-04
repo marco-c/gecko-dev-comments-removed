@@ -116,19 +116,19 @@ public:
 
 private:
 
-  virtual gfx::IntSize GetWidgetSize() const override { return mWidgetSize; }
+  virtual LayoutDeviceIntSize GetWidgetSize() const override { return mWidgetSize; }
 
   
   nsIWidget *mWidget;
-  gfx::IntSize mWidgetSize;
+  LayoutDeviceIntSize mWidgetSize;
 
   
   RefPtr<gfx::DrawTarget> mDrawTarget;
   
   RefPtr<BasicCompositingRenderTarget> mRenderTarget;
 
-  gfx::IntRect mInvalidRect;
-  nsIntRegion mInvalidRegion;
+  LayoutDeviceIntRect mInvalidRect;
+  LayoutDeviceIntRegion mInvalidRegion;
   bool mDidExternalComposition;
 
   uint32_t mMaxTextureSize;
