@@ -2584,7 +2584,7 @@ CrossProcessCompositorBridgeParent::AllocPAPZParent(const uint64_t& aLayersId)
     return nullptr;
   }
 
-  RemoteContentController* controller = new RemoteContentController(aLayersId);
+  RemoteContentController* controller = new RemoteContentController();
 
   
   
