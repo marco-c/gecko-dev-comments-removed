@@ -811,8 +811,6 @@ class IonBuilder
 
     
     InliningStatus inlineStringObject(CallInfo& callInfo);
-    InliningStatus inlineConstantStringSplit(CallInfo& callInfo);
-    InliningStatus inlineStringSplit(CallInfo& callInfo);
     InliningStatus inlineStrCharCodeAt(CallInfo& callInfo);
     InliningStatus inlineConstantCharCodeAt(CallInfo& callInfo);
     InliningStatus inlineStrFromCharCode(CallInfo& callInfo);
@@ -820,6 +818,8 @@ class IonBuilder
 
     
     InliningStatus inlineStringReplaceString(CallInfo& callInfo);
+    InliningStatus inlineConstantStringSplitString(CallInfo& callInfo);
+    InliningStatus inlineStringSplitString(CallInfo& callInfo);
 
     
     InliningStatus inlineRegExpMatcher(CallInfo& callInfo);
