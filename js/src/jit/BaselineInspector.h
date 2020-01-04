@@ -117,6 +117,7 @@ class BaselineInspector
     JSObject* getTemplateObject(jsbytecode* pc);
     JSObject* getTemplateObjectForNative(jsbytecode* pc, Native native);
     JSObject* getTemplateObjectForClassHook(jsbytecode* pc, const Class* clasp);
+    JSObject* getTemplateObjectForSimdCtor(jsbytecode* pc, SimdType simdType);
 
     
     
