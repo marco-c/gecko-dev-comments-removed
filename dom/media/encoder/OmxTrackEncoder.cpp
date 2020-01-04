@@ -134,11 +134,8 @@ OmxVideoTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
     layers::Image* img = (!mLastFrame.GetImage() || mLastFrame.GetForceBlack())
                          ? nullptr : mLastFrame.GetImage();
     rv = mEncoder->Encode(img, mFrameWidth, mFrameHeight, totalDurationUs,
-                          OMXCodecWrapper::BUFFER_EOS);
+                          OMXCodecWrapper::BUFFER_EOS, &mEosSetInEncoder);
     NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    mEosSetInEncoder = true;
   }
 
   
@@ -219,6 +216,7 @@ OmxAudioTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
   PROFILER_LABEL("OmxAACAudioTrackEncoder", "GetEncodedTrack",
     js::ProfileEntry::Category::OTHER);
   AudioSegment segment;
+  bool EOS;
   
   
   {
@@ -234,14 +232,15 @@ OmxAudioTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
     }
 
     segment.AppendFrom(&mRawSegment);
+    EOS = mEndOfStream;
   }
 
   nsresult rv;
   if (segment.GetDuration() == 0) {
     
-    if (mEndOfStream && !mEosSetInEncoder) {
-      mEosSetInEncoder = true;
-      rv = mEncoder->Encode(segment, OMXCodecWrapper::BUFFER_EOS);
+    if (EOS && !mEosSetInEncoder) {
+      rv = mEncoder->Encode(segment, OMXCodecWrapper::BUFFER_EOS,
+                            &mEosSetInEncoder);
       NS_ENSURE_SUCCESS(rv, rv);
     }
     
@@ -252,8 +251,7 @@ OmxAudioTrackEncoder::GetEncodedTrack(EncodedFrameContainer& aData)
   
   
   while (segment.GetDuration() > 0) {
-    rv = mEncoder->Encode(segment,
-                          mEndOfStream ? OMXCodecWrapper::BUFFER_EOS : 0);
+    rv = mEncoder->Encode(segment, 0);
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = AppendEncodedFrames(aData);

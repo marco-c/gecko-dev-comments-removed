@@ -225,7 +225,12 @@ public:
 
 
 
-  nsresult Encode(mozilla::AudioSegment& aSegment, int aInputFlags = 0);
+
+
+
+
+  nsresult Encode(mozilla::AudioSegment& aSegment, int aInputFlags = 0,
+                  bool* aSendEOS = nullptr);
 
   ~OMXAudioEncoder();
 protected:
@@ -299,8 +304,13 @@ public:
 
 
 
+
+
+
+
   nsresult Encode(const mozilla::layers::Image* aImage, int aWidth, int aHeight,
-                  int64_t aTimestamp, int aInputFlags = 0);
+                  int64_t aTimestamp, int aInputFlags = 0,
+                  bool* aSendEOS = nullptr);
 
 #if ANDROID_VERSION >= 18
   
