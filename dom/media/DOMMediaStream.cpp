@@ -88,6 +88,14 @@ protected:
   }
 
 public:
+  void DestroyInputPort()
+  {
+    if (mInputPort) {
+      mInputPort->Destroy();
+      mInputPort = nullptr;
+    }
+  }
+
   
 
 
@@ -225,12 +233,26 @@ public:
 
     nsRefPtr<MediaStreamTrack> track =
       mStream->FindPlaybackDOMTrack(aInputStream, aInputTrackID);
-    if (track) {
-      LOG(LogLevel::Debug, ("DOMMediaStream %p Playback track; notifying stream listeners.",
-                             mStream));
-      mStream->NotifyTrackRemoved(track);
-    } else {
+    if (!track) {
       LOG(LogLevel::Debug, ("DOMMediaStream %p Not a playback track.", mStream));
+      return;
+    }
+
+    LOG(LogLevel::Debug, ("DOMMediaStream %p Playback track; notifying stream listeners.",
+                           mStream));
+    mStream->NotifyTrackRemoved(track);
+
+    nsRefPtr<TrackPort> endedPort = mStream->FindPlaybackTrackPort(*track);
+    NS_ASSERTION(endedPort, "Playback track should have a TrackPort");
+    if (endedPort &&
+        endedPort->GetSourceTrackId() != TRACK_ANY &&
+        endedPort->GetSourceTrackId() != TRACK_INVALID &&
+        endedPort->GetSourceTrackId() != TRACK_NONE) {
+      
+      
+      
+      
+      endedPort->DestroyInputPort();
     }
   }
 
