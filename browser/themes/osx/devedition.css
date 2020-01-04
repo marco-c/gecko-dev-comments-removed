@@ -41,6 +41,18 @@
 
 #forward-button {
   -moz-border-start: none !important;
+  
+
+
+
+
+
+
+
+
+
+  margin-left: -1px;
+  padding-left: 1px;
 }
 
 #forward-button > .toolbarbutton-icon {
