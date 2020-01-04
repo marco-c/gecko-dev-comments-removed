@@ -440,6 +440,8 @@ private:
   
   ~ChildImpl()
   {
+    XRE_GetIOMessageLoop()->PostTask(FROM_HERE,
+                                     new DeleteTask<Transport>(GetTransport()));
     AssertActorDestroyed();
   }
 
