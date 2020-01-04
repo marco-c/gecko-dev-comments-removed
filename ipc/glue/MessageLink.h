@@ -76,11 +76,6 @@ class MessageListener
         return false;
     }
 
-    
-    virtual void IntentionalCrash() {
-        MOZ_CRASH("Intentional IPDL crash");
-    }
-
     virtual void OnEnteredCxxStack() {
         NS_RUNTIMEABORT("default impl shouldn't be invoked");
     }

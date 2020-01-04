@@ -316,7 +316,6 @@ MessageChannel::MessageChannel(MessageListener *aListener)
     mTimeoutMs(kNoTimeout),
     mInTimeoutSecondHalf(false),
     mNextSeqno(0),
-    mLastSendError(SyncSendError::SendSuccess),
     mAwaitingSyncReply(false),
     mAwaitingSyncReplyPriority(0),
     mDispatchingSyncMessage(false),
@@ -324,7 +323,6 @@ MessageChannel::MessageChannel(MessageListener *aListener)
     mDispatchingAsyncMessage(false),
     mDispatchingAsyncMessagePriority(0),
     mCurrentTransaction(0),
-    mPendingSendPriorities(0),
     mTimedOutMessageSeqno(0),
     mTimedOutMessagePriority(0),
     mRecvdErrors(0),
@@ -572,10 +570,9 @@ MessageChannel::Send(Message* aMsg)
 class CancelMessage : public IPC::Message
 {
 public:
-    CancelMessage(int transaction) :
+    CancelMessage() :
         IPC::Message(MSG_ROUTING_NONE, CANCEL_MESSAGE_TYPE, PRIORITY_NORMAL)
     {
-        set_transaction_id(transaction);
     }
     static bool Read(const Message* msg) {
         return true;
@@ -603,9 +600,20 @@ MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg)
             return true;
         } else if (CANCEL_MESSAGE_TYPE == aMsg.type()) {
             IPC_LOG("Cancel from message");
-            CancelTransaction(aMsg.transaction_id());
-            NotifyWorkerThread();
-            return true;
+
+            if (aMsg.transaction_id() == mTimedOutMessageSeqno) {
+                
+                
+                
+                mTimedOutMessageSeqno = 0;
+                return true;
+            } else {
+                MOZ_RELEASE_ASSERT(mCurrentTransaction == aMsg.transaction_id());
+                CancelCurrentTransactionInternal();
+                NotifyWorkerThread();
+                IPC_LOG("Notified");
+                return true;
+            }
         }
     }
     return false;
@@ -680,7 +688,7 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
         if (aMsg.seqno() == mTimedOutMessageSeqno) {
             
             IPC_LOG("Received reply to timedout message; igoring; xid=%d", mTimedOutMessageSeqno);
-            EndTimeout();
+            mTimedOutMessageSeqno = 0;
             return;
         }
 
@@ -773,23 +781,22 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
 
     if (shouldWakeUp) {
         NotifyWorkerThread();
-    }
-
-    
-    
-    
-    
-    if (!compress) {
+    } else {
         
         
-        mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
+        
+        if (!compress) {
+            
+            
+            mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
+        }
     }
 }
 
 void
-MessageChannel::ProcessPendingRequests(int seqno, int transaction)
+MessageChannel::ProcessPendingRequests(int transaction, int prio)
 {
-    IPC_LOG("ProcessPendingRequests for seqno=%d, xid=%d", seqno, transaction);
+    IPC_LOG("ProcessPendingRequests");
 
     
     for (;;) {
@@ -828,31 +835,50 @@ MessageChannel::ProcessPendingRequests(int seqno, int transaction)
         
         
         
-        if (WasTransactionCanceled(transaction)) {
+        if (WasTransactionCanceled(transaction, prio)) {
             return;
         }
     }
 }
 
 bool
-MessageChannel::WasTransactionCanceled(int transaction)
+MessageChannel::WasTransactionCanceled(int transaction, int prio)
 {
-    if (transaction != mCurrentTransaction) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        mRecvd = nullptr;
-        return true;
+    if (transaction == mCurrentTransaction) {
+        return false;
     }
-    return false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    IPC_ASSERT(prio != IPC::Message::PRIORITY_NORMAL,
+               "Intentional crash: We canceled a CPOW that was racing with a sync message.");
+
+    return true;
 }
 
 bool
@@ -882,7 +908,6 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         
         
         IPC_LOG("Send() failed due to previous timeout");
-        mLastSendError = SyncSendError::PreviousTimeout;
         return false;
     }
 
@@ -893,7 +918,6 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         
         
         IPC_LOG("Prio forbids send");
-        mLastSendError = SyncSendError::SendingCPOWWhileDispatchingSync;
         return false;
     }
 
@@ -905,8 +929,6 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         
         
         MOZ_ASSERT(msg->priority() == IPC::Message::PRIORITY_HIGH);
-        IPC_LOG("Sending while dispatching urgent message");
-        mLastSendError = SyncSendError::SendingCPOWWhileDispatchingUrgent;
         return false;
     }
 
@@ -916,9 +938,10 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     {
         MOZ_ASSERT(DispatchingSyncMessage() || DispatchingAsyncMessage());
         IPC_LOG("Cancel from Send");
-        CancelMessage *cancel = new CancelMessage(mCurrentTransaction);
-        CancelTransaction(mCurrentTransaction);
+        CancelMessage *cancel = new CancelMessage();
+        cancel->set_transaction_id(mCurrentTransaction);
         mLink->SendMessage(cancel);
+        CancelCurrentTransactionInternal();
     }
 
     IPC_ASSERT(msg->is_sync(), "can only Send() sync messages here");
@@ -937,7 +960,6 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
 
     if (!Connected()) {
         ReportConnectionError("MessageChannel::SendAndWait", msg);
-        mLastSendError = SyncSendError::NotConnectedBeforeSend;
         return false;
     }
 
@@ -951,27 +973,24 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
     AutoSetValue<int> prioSet(mAwaitingSyncReplyPriority, prio);
     AutoEnterTransaction transact(this, seqno);
 
-    int prios = mPendingSendPriorities | (1 << prio);
-    AutoSetValue<int> priosSet(mPendingSendPriorities, prios);
-
     int32_t transaction = mCurrentTransaction;
     msg->set_transaction_id(transaction);
 
-    IPC_LOG("Send seqno=%d, xid=%d, pending=%d", seqno, transaction, prios);
+    IPC_LOG("Send seqno=%d, xid=%d", seqno, transaction);
+
+    ProcessPendingRequests(transaction, prio);
+    if (WasTransactionCanceled(transaction, prio)) {
+        IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
+        return false;
+    }
 
     bool handleWindowsMessages = mListener->HandleWindowsMessages(*aMsg);
     mLink->SendMessage(msg.forget());
 
     while (true) {
-        ProcessPendingRequests(seqno, transaction);
-        if (WasTransactionCanceled(transaction)) {
+        ProcessPendingRequests(transaction, prio);
+        if (WasTransactionCanceled(transaction, prio)) {
             IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
-            mLastSendError = SyncSendError::CancelledAfterSend;
-            return false;
-        }
-        if (!Connected()) {
-            ReportConnectionError("MessageChannel::Send");
-            mLastSendError = SyncSendError::DisconnectedDuringSend;
             return false;
         }
 
@@ -979,7 +998,6 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         if (mRecvdErrors) {
             IPC_LOG("Error: seqno=%d, xid=%d", seqno, transaction);
             mRecvdErrors--;
-            mLastSendError = SyncSendError::ReplyError;
             return false;
         }
 
@@ -995,13 +1013,11 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
 
         if (!Connected()) {
             ReportConnectionError("MessageChannel::SendAndWait");
-            mLastSendError = SyncSendError::DisconnectedDuringSend;
             return false;
         }
 
-        if (WasTransactionCanceled(transaction)) {
+        if (WasTransactionCanceled(transaction, prio)) {
             IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
-            mLastSendError = SyncSendError::CancelledAfterSend;
             return false;
         }
 
@@ -1009,29 +1025,22 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         
         bool canTimeOut = transaction == seqno;
         if (maybeTimedOut && canTimeOut && !ShouldContinueFromTimeout()) {
+            IPC_LOG("Timing out Send: xid=%d", transaction);
+
             
             
             
             
-            if (WasTransactionCanceled(transaction)) {
-                IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
-                mLastSendError = SyncSendError::CancelledAfterSend;
-                return false;
-            }
             if (mRecvdErrors) {
                 mRecvdErrors--;
-                mLastSendError = SyncSendError::ReplyError;
                 return false;
             }
             if (mRecvd) {
                 break;
             }
 
-            IPC_LOG("Timing out Send: xid=%d", transaction);
-
             mTimedOutMessageSeqno = seqno;
             mTimedOutMessagePriority = prio;
-            mLastSendError = SyncSendError::TimedOut;
             return false;
         }
     }
@@ -1045,7 +1054,6 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
 
     *aReply = Move(*mRecvd);
     mRecvd = nullptr;
-    mLastSendError = SyncSendError::SendSuccess;
     return true;
 }
 
@@ -1310,37 +1318,6 @@ MessageChannel::DequeueOne(Message *recvd)
     if (!mDeferred.empty())
         MaybeUndeferIncall();
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mTimedOutMessageSeqno) {
-        for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); it++) {
-            Message &msg = *it;
-            if (msg.priority() > mTimedOutMessagePriority ||
-                (msg.priority() == mTimedOutMessagePriority
-                 && msg.transaction_id() == mTimedOutMessageSeqno))
-            {
-                *recvd = Move(msg);
-                mPending.erase(it);
-                return true;
-            }
-        }
-        return false;
-    }
-
     if (mPending.empty())
         return false;
 
@@ -1433,7 +1410,22 @@ MessageChannel::DispatchSyncMessage(const Message& aMsg, Message*& aReply)
     MessageChannel*& blockingVar = ShouldBlockScripts() ? gParentProcessBlocker : dummy;
 
     Result rv;
-    {
+    if (mTimedOutMessageSeqno && mTimedOutMessagePriority >= prio) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        rv = MsgNotAllowed;
+    } else {
         AutoSetValue<MessageChannel*> blocked(blockingVar, this);
         AutoSetValue<bool> sync(mDispatchingSyncMessage, true);
         AutoSetValue<int> prioSet(mDispatchingSyncMessagePriority, prio);
@@ -1836,8 +1828,6 @@ MessageChannel::OnChannelErrorFromLink()
     AssertLinkThread();
     mMonitor->AssertCurrentThreadOwns();
 
-    IPC_LOG("OnChannelErrorFromLink");
-
     if (InterruptStackDepth() > 0)
         NotifyWorkerThread();
 
@@ -2103,13 +2093,27 @@ MessageChannel::GetTopmostMessageRoutingId() const
 }
 
 void
-MessageChannel::EndTimeout()
+MessageChannel::CancelCurrentTransactionInternal()
 {
     mMonitor->AssertCurrentThreadOwns();
 
-    IPC_LOG("Ending timeout of seqno=%d", mTimedOutMessageSeqno);
-    mTimedOutMessageSeqno = 0;
-    mTimedOutMessagePriority = 0;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    IPC_LOG("CancelInternal: current xid=%d", mCurrentTransaction);
+
+    MOZ_ASSERT(mCurrentTransaction);
+    mCurrentTransaction = 0;
+
+    mAwaitingSyncReply = false;
+    mAwaitingSyncReplyPriority = 0;
 
     for (size_t i = 0; i < mPending.size(); i++) {
         
@@ -2117,109 +2121,6 @@ MessageChannel::EndTimeout()
         
         
         mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
-    }
-}
-
-void
-MessageChannel::CancelTransaction(int transaction)
-{
-    mMonitor->AssertCurrentThreadOwns();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    IPC_LOG("CancelTransaction: xid=%d prios=%d", transaction, mPendingSendPriorities);
-
-    if (mPendingSendPriorities & (1 << IPC::Message::PRIORITY_NORMAL)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        mListener->IntentionalCrash();
-    }
-
-    
-    
-    
-    if (transaction == mTimedOutMessageSeqno) {
-        IPC_LOG("Cancelled timed out message %d", mTimedOutMessageSeqno);
-        EndTimeout();
-
-        
-        
-        
-        
-        
-        MOZ_ASSERT_IF(mCurrentTransaction, mCurrentTransaction == transaction);
-        mCurrentTransaction = 0;
-
-        
-        MOZ_ASSERT(!mAwaitingSyncReply);
-    } else {
-        MOZ_ASSERT(mCurrentTransaction == transaction);
-        mCurrentTransaction = 0;
-
-        mAwaitingSyncReply = false;
-        mAwaitingSyncReplyPriority = 0;
-    }
-
-    DebugOnly<bool> foundSync = false;
-    for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); ) {
-        Message &msg = *it;
-
-        
-        
-        
-        
-        
-        
-        
-        if (msg.is_sync() && msg.priority() != IPC::Message::PRIORITY_NORMAL) {
-            MOZ_ASSERT(!foundSync);
-            MOZ_ASSERT(msg.transaction_id() != transaction);
-            IPC_LOG("Removing msg from queue seqno=%d xid=%d", msg.seqno(), msg.transaction_id());
-            foundSync = true;
-            it = mPending.erase(it);
-            continue;
-        }
-
-        
-        
-        
-        
-        mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
-
-        it++;
     }
 
     
@@ -2233,17 +2134,10 @@ MessageChannel::CancelCurrentTransaction()
 {
     MonitorAutoLock lock(*mMonitor);
     if (mCurrentTransaction) {
-        if (DispatchingSyncMessagePriority() == IPC::Message::PRIORITY_URGENT ||
-            DispatchingAsyncMessagePriority() == IPC::Message::PRIORITY_URGENT)
-        {
-            mListener->IntentionalCrash();
-        }
-
-        IPC_LOG("Cancel requested: current xid=%d", mCurrentTransaction);
-        MOZ_ASSERT(DispatchingSyncMessage());
-        CancelMessage *cancel = new CancelMessage(mCurrentTransaction);
-        CancelTransaction(mCurrentTransaction);
+        CancelMessage *cancel = new CancelMessage();
+        cancel->set_transaction_id(mCurrentTransaction);
         mLink->SendMessage(cancel);
+        CancelCurrentTransactionInternal();
     }
 }
 
