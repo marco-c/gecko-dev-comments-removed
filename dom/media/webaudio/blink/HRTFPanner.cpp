@@ -266,13 +266,13 @@ void HRTFPanner::pan(double desiredAzimuth, double elevation, const AudioBlock* 
     
 
     if (m_crossfadeSelection == CrossfadeSelection1 || needsCrossfading) {
-        m_convolverL1.process(kernelL1->fftFrame(), destinationL, convolutionDestinationL1, WEBAUDIO_BLOCK_SIZE);
-        m_convolverR1.process(kernelR1->fftFrame(), destinationR, convolutionDestinationR1, WEBAUDIO_BLOCK_SIZE);
+        m_convolverL1.process(kernelL1->fftFrame(), destinationL, convolutionDestinationL1);
+        m_convolverR1.process(kernelR1->fftFrame(), destinationR, convolutionDestinationR1);
     }
 
     if (m_crossfadeSelection == CrossfadeSelection2 || needsCrossfading) {
-        m_convolverL2.process(kernelL2->fftFrame(), destinationL, convolutionDestinationL2, WEBAUDIO_BLOCK_SIZE);
-        m_convolverR2.process(kernelR2->fftFrame(), destinationR, convolutionDestinationR2, WEBAUDIO_BLOCK_SIZE);
+        m_convolverL2.process(kernelL2->fftFrame(), destinationL, convolutionDestinationL2);
+        m_convolverR2.process(kernelR2->fftFrame(), destinationR, convolutionDestinationR2);
     }
 
     if (needsCrossfading) {

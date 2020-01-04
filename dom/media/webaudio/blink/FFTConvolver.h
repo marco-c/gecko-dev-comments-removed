@@ -56,7 +56,7 @@ public:
     
     
     
-    void process(FFTBlock* fftKernel, const float* sourceP, float* destP, size_t framesToProcess);
+    void process(FFTBlock* fftKernel, const float* sourceP, float* destP);
 
     void reset();
 
