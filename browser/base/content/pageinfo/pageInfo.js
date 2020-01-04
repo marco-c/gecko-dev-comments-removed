@@ -2,9 +2,8 @@
 
 
 
-var Cu = Components.utils;
-Cu.import("resource://gre/modules/LoadContextInfo.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/LoadContextInfo.jsm");
+Components.utils.import("resource://gre/modules/Services.jsm");
 
 
 function pageInfoTreeView(treeid, copycol)
