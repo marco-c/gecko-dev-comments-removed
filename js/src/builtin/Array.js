@@ -15,7 +15,7 @@ function ArrayIndexOf(searchElement) {
         return -1;
 
     
-    var n = arguments.length > 1 ? ToInteger(arguments[1]) : 0;
+    var n = arguments.length > 1 ? ToInteger(arguments[1]) + 0 : 0;
 
     
     if (n >= len)
@@ -71,7 +71,7 @@ function ArrayLastIndexOf(searchElement) {
         return -1;
 
     
-    var n = arguments.length > 1 ? ToInteger(arguments[1]) : len - 1;
+    var n = arguments.length > 1 ? ToInteger(arguments[1]) + 0 : len - 1;
 
     
     var k;

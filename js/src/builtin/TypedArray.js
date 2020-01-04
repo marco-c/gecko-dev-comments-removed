@@ -415,7 +415,7 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
         return -1;
 
     
-    var n = ToInteger(fromIndex);
+    var n = ToInteger(fromIndex) + 0;
 
     
     if (n >= len)
@@ -532,7 +532,7 @@ function TypedArrayLastIndexOf(searchElement, fromIndex = undefined) {
         return -1;
 
     
-    var n = fromIndex === undefined ? len - 1 : ToInteger(fromIndex);
+    var n = fromIndex === undefined ? len - 1 : ToInteger(fromIndex) + 0;
 
     
     var k = n >= 0 ? std_Math_min(n, len - 1) : len + n;
