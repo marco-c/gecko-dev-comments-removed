@@ -188,7 +188,7 @@ var PendingErrors = {
           stack = error.location;
         } else {
           
-          stack  = Components.stack;
+          stack = Components_.stack;
           
           while (stack) {
             if (!stack.filename.endsWith("/Promise.jsm")) {
