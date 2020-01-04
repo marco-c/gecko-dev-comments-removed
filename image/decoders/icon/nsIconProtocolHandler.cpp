@@ -4,9 +4,10 @@
 
 
 
+#include "nsIconProtocolHandler.h"
+
 #include "nsIconChannel.h"
 #include "nsIconURI.h"
-#include "nsIconProtocolHandler.h"
 #include "nsIURL.h"
 #include "nsCRT.h"
 #include "nsCOMPtr.h"

@@ -3,6 +3,8 @@
 
 
 
+#include "ClippedImage.h"
+
 #include <new>      
 #include <cmath>
 #include <utility>
@@ -19,8 +21,6 @@
 #include "ImageRegion.h"
 #include "Orientation.h"
 #include "SVGImageContext.h"
-
-#include "ClippedImage.h"
 
 namespace mozilla {
 

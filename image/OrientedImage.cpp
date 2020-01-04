@@ -3,6 +3,8 @@
 
 
 
+#include "OrientedImage.h"
+
 #include <algorithm>
 
 #include "gfx2DGlue.h"
@@ -11,8 +13,6 @@
 #include "gfxUtils.h"
 #include "ImageRegion.h"
 #include "SVGImageContext.h"
-
-#include "OrientedImage.h"
 
 using std::swap;
 

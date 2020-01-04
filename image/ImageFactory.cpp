@@ -4,6 +4,8 @@
 
 
 
+#include "ImageFactory.h"
+
 #include <algorithm>
 
 #include "mozilla/Likely.h"
@@ -22,7 +24,6 @@
 #include "nsContentUtils.h"
 #include "nsIScriptSecurityManager.h"
 
-#include "ImageFactory.h"
 #include "gfxPrefs.h"
 
 namespace mozilla {

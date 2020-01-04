@@ -4,15 +4,16 @@
 
 
 
+#include "ImageLogging.h"
+#include "imgLoader.h"
+
 #include "mozilla/Attributes.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Move.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ChaosMode.h"
 
-#include "ImageLogging.h"
 #include "nsImageModule.h"
-#include "imgLoader.h"
 #include "imgRequestProxy.h"
 
 #include "nsCOMPtr.h"

@@ -82,13 +82,14 @@
 
 
 
+#include "ImageLogging.h"
+#include "nsBMPDecoder.h"
+
 #include <stdlib.h>
 
-#include "ImageLogging.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Likely.h"
-#include "nsBMPDecoder.h"
 
 #include "nsIInputStream.h"
 #include "RasterImage.h"

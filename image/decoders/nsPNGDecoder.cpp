@@ -5,6 +5,7 @@
 
 
 #include "ImageLogging.h" 
+#include "nsPNGDecoder.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -15,7 +16,6 @@
 #include "nsColor.h"
 #include "nsIInputStream.h"
 #include "nsMemory.h"
-#include "nsPNGDecoder.h"
 #include "nsRect.h"
 #include "nspr.h"
 #include "png.h"

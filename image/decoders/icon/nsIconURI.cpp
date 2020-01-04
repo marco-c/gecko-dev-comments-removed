@@ -5,11 +5,11 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
+#include "nsIconURI.h"
 
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/ipc/URIUtils.h"
 
-#include "nsIconURI.h"
 #include "nsIIOService.h"
 #include "nsIURL.h"
 #include "nsNetUtil.h"

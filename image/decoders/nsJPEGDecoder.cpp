@@ -5,8 +5,9 @@
 
 
 #include "ImageLogging.h"
-#include "imgFrame.h"
 #include "nsJPEGDecoder.h"
+
+#include "imgFrame.h"
 #include "Orientation.h"
 #include "EXIF.h"
 

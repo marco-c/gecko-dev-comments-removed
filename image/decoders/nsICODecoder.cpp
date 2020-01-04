@@ -6,11 +6,12 @@
 
 
 
+#include "nsICODecoder.h"
+
 #include <stdlib.h>
 
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Move.h"
-#include "nsICODecoder.h"
 
 #include "RasterImage.h"
 

@@ -3,6 +3,8 @@
 
 
 
+#include "nsIconChannel.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -28,8 +30,6 @@
 #include "nsNullPrincipal.h"
 #include "nsIURL.h"
 #include "prlink.h"
-
-#include "nsIconChannel.h"
 
 NS_IMPL_ISUPPORTS(nsIconChannel,
                   nsIRequest,
