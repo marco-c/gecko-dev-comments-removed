@@ -86,13 +86,15 @@ private:
   void GetFinalStateFromContainedDecoder();
 
   
-  
-  
-  
-  bool FixBitmapHeight(int8_t* bih);
-  
-  
-  bool FixBitmapWidth(int8_t* bih);
+
+
+
+
+
+
+
+  bool CheckAndFixBitmapSize(int8_t* aBIH);
+
   
   uint16_t GetNumColors();
 
