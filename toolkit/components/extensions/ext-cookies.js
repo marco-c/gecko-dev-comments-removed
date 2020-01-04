@@ -71,10 +71,19 @@ function checkSetCookiePermissions(extension, uri, cookie) {
     return false;
   }
 
+  if (!cookie.host) {
+    
+    cookie.host = uri.host;
+    return true;
+  }
+
   
   
   
-  cookie.host = cookie.host.replace(/^\./, "");
+  if (cookie.host.length > 1) {
+    cookie.host = cookie.host.replace(/^\./, "");
+  }
+  cookie.host = cookie.host.toLowerCase();
 
   if (cookie.host != uri.host) {
     
@@ -104,10 +113,11 @@ function checkSetCookiePermissions(extension, uri, cookie) {
 
     
     
-
-    
-    cookie.host = "." + cookie.host;
   }
+
+  
+  
+  cookie.host = "." + cookie.host;
 
   
   
@@ -252,13 +262,6 @@ extensions.registerSchemaAPI("cookies", "cookies", (extension, context) => {
       set: function(details, callback) {
         let uri = NetUtil.newURI(details.url).QueryInterface(Ci.nsIURL);
 
-        let domain;
-        if (details.domain !== null) {
-          domain = details.domain.toLowerCase();
-        } else {
-          domain = uri.host; 
-        }
-
         let path;
         if (details.path !== null) {
           path = details.path;
@@ -278,7 +281,7 @@ extensions.registerSchemaAPI("cookies", "cookies", (extension, context) => {
         let expiry = isSession ? 0 : details.expirationDate;
         
 
-        let cookieAttrs = { host: domain, path: path, isSecure: secure };
+        let cookieAttrs = { host: details.domain, path: path, isSecure: secure };
         if (checkSetCookiePermissions(extension, uri, cookieAttrs)) {
           
           
