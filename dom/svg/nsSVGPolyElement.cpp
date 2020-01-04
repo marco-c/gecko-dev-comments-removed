@@ -122,10 +122,8 @@ nsSVGPolyElement::GetMarkPoints(nsTArray<nsSVGMark> *aMarks)
 }
 
 bool
-nsSVGPolyElement::GetGeometryBounds(Rect* aBounds,
-                                    const StrokeOptions& aStrokeOptions,
-                                    const Matrix& aToBoundsSpace,
-                                    const Matrix* aToNonScalingStrokeSpace)
+nsSVGPolyElement::GetGeometryBounds(
+  Rect* aBounds, const StrokeOptions& aStrokeOptions, const Matrix& aTransform)
 {
   const SVGPointList &points = mPoints.GetAnimValue();
 
@@ -135,23 +133,23 @@ nsSVGPolyElement::GetGeometryBounds(Rect* aBounds,
     return true;
   }
 
-  if (aStrokeOptions.mLineWidth > 0 || aToNonScalingStrokeSpace) {
+  if (aStrokeOptions.mLineWidth > 0) {
     
     return false;
   }
 
-  if (aToBoundsSpace.IsRectilinear()) {
+  if (aTransform.IsRectilinear()) {
     
     
     Rect bounds(points[0], Size());
     for (uint32_t i = 1; i < points.Length(); ++i) {
       bounds.ExpandToEnclose(points[i]);
     }
-    *aBounds = aToBoundsSpace.TransformBounds(bounds);
+    *aBounds = aTransform.TransformBounds(bounds);
   } else {
-    *aBounds = Rect(aToBoundsSpace * points[0], Size());
+    *aBounds = Rect(aTransform * points[0], Size());
     for (uint32_t i = 1; i < points.Length(); ++i) {
-      aBounds->ExpandToEnclose(aToBoundsSpace * points[i]);
+      aBounds->ExpandToEnclose(aTransform * points[i]);
     }
   }
   return true;

@@ -63,8 +63,6 @@ class SVGContentUtils
 {
 public:
   typedef mozilla::gfx::Float Float;
-  typedef mozilla::gfx::Matrix Matrix;
-  typedef mozilla::gfx::Rect Rect;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
   typedef mozilla::SVGAnimatedPreserveAspectRatio SVGAnimatedPreserveAspectRatio;
   typedef mozilla::SVGPreserveAspectRatio SVGPreserveAspectRatio;
@@ -182,23 +180,7 @@ public:
                                   const char16_t **aParams,
                                   uint32_t aParamsLength);
 
-  static Matrix GetCTM(nsSVGElement *aElement, bool aScreenCTM);
-
-  
-
-
-
-
-
-
-
-
-  static void
-  RectilinearGetStrokeBounds(const Rect& aRect,
-                             const Matrix& aToBoundsSpace,
-                             const Matrix& aToNonScalingStrokeSpace,
-                             float aStrokeWidth,
-                             Rect* aBounds);
+  static mozilla::gfx::Matrix GetCTM(nsSVGElement *aElement, bool aScreenCTM);
 
   
 
@@ -223,13 +205,13 @@ public:
 
   
 
-  static Matrix
+  static mozilla::gfx::Matrix
   GetViewBoxTransform(float aViewportWidth, float aViewportHeight,
                       float aViewboxX, float aViewboxY,
                       float aViewboxWidth, float aViewboxHeight,
                       const SVGAnimatedPreserveAspectRatio &aPreserveAspectRatio);
 
-  static Matrix
+  static mozilla::gfx::Matrix
   GetViewBoxTransform(float aViewportWidth, float aViewportHeight,
                       float aViewboxX, float aViewboxY,
                       float aViewboxWidth, float aViewboxHeight,

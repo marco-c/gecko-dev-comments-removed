@@ -32,8 +32,7 @@ public:
 
   
   virtual bool GetGeometryBounds(Rect* aBounds, const StrokeOptions& aStrokeOptions,
-                                 const Matrix& aToBoundsSpace,
-                                 const Matrix* aToNonScalingStrokeSpace = nullptr) override;
+                                 const Matrix& aTransform) override;
   virtual void GetAsSimplePath(SimplePath* aSimplePath) override;
   virtual already_AddRefed<Path> BuildPath(PathBuilder* aBuilder = nullptr) override;
 

@@ -112,10 +112,8 @@ SVGRectElement::GetLengthInfo()
 
 
 bool
-SVGRectElement::GetGeometryBounds(Rect* aBounds,
-                                  const StrokeOptions& aStrokeOptions,
-                                  const Matrix& aToBoundsSpace,
-                                  const Matrix* aToNonScalingStrokeSpace)
+SVGRectElement::GetGeometryBounds(
+  Rect* aBounds, const StrokeOptions& aStrokeOptions, const Matrix& aTransform)
 {
   Rect rect;
   Float rx, ry;
@@ -126,11 +124,11 @@ SVGRectElement::GetGeometryBounds(Rect* aBounds,
     
     rect.SetEmpty(); 
     
-    *aBounds = aToBoundsSpace.TransformBounds(rect);
+    *aBounds = aTransform.TransformBounds(rect);
     return true;
   }
 
-  if (!aToBoundsSpace.IsRectilinear()) {
+  if (!aTransform.IsRectilinear()) {
     
     rx = std::max(rx, 0.0f);
     ry = std::max(ry, 0.0f);
@@ -141,28 +139,10 @@ SVGRectElement::GetGeometryBounds(Rect* aBounds,
   }
 
   if (aStrokeOptions.mLineWidth > 0.f) {
-    if (aToNonScalingStrokeSpace) {
-      if (aToNonScalingStrokeSpace->IsRectilinear()) {
-        rect = aToNonScalingStrokeSpace->TransformBounds(rect);
-        
-        
-        
-        
-        
-        
-        rect.Inflate(aStrokeOptions.mLineWidth / 2.f);
-        Matrix nonScalingToBounds =
-          aToNonScalingStrokeSpace->Inverse() * aToBoundsSpace;
-        *aBounds = nonScalingToBounds.TransformBounds(rect);
-        return true;
-      }
-      return false;
-    }
-    
     rect.Inflate(aStrokeOptions.mLineWidth / 2.f);
   }
 
-  *aBounds = aToBoundsSpace.TransformBounds(rect);
+  *aBounds = aTransform.TransformBounds(rect);
   return true;
 }
 

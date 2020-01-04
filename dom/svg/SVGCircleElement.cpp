@@ -83,38 +83,26 @@ SVGCircleElement::GetLengthInfo()
 
 
 bool
-SVGCircleElement::GetGeometryBounds(Rect* aBounds,
-                                    const StrokeOptions& aStrokeOptions,
-                                    const Matrix& aToBoundsSpace,
-                                    const Matrix* aToNonScalingStrokeSpace)
+SVGCircleElement::GetGeometryBounds(
+  Rect* aBounds, const StrokeOptions& aStrokeOptions, const Matrix& aTransform)
 {
   float x, y, r;
   GetAnimatedLengthValues(&x, &y, &r, nullptr);
 
   if (r <= 0.f) {
     
-    *aBounds = Rect(aToBoundsSpace * Point(x, y), Size());
+    *aBounds = Rect(aTransform * Point(x, y), Size());
     return true;
   }
 
-  if (aToBoundsSpace.IsRectilinear()) {
+  if (aTransform.IsRectilinear()) {
     
     
     if (aStrokeOptions.mLineWidth > 0.f) {
-      if (aToNonScalingStrokeSpace) {
-        if (aToNonScalingStrokeSpace->IsRectilinear()) {
-          Rect userBounds(x - r, y - r, 2 * r, 2 * r);
-          SVGContentUtils::RectilinearGetStrokeBounds(
-            userBounds, aToBoundsSpace, *aToNonScalingStrokeSpace,
-            aStrokeOptions.mLineWidth, aBounds);
-          return true;
-        }
-        return false;
-      }
       r += aStrokeOptions.mLineWidth / 2.f;
     }
     Rect rect(x - r, y - r, 2 * r, 2 * r);
-    *aBounds = aToBoundsSpace.TransformBounds(rect);
+    *aBounds = aTransform.TransformBounds(rect);
     return true;
   }
 
