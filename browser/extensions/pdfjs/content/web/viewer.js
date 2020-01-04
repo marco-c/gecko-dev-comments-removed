@@ -951,7 +951,8 @@ exports.PDFRenderingQueue = PDFRenderingQueue;
   "disableFontFace": false,
   "disableTextLayer": false,
   "useOnlyCssZoom": false,
-  "externalLinkTarget": 0
+  "externalLinkTarget": 0,
+  "renderInteractiveForms": false
 }
 
   );
@@ -6190,7 +6191,8 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
           annotations: annotations,
           page: self.pdfPage,
           linkService: self.linkService,
-          downloadManager: self.downloadManager
+          downloadManager: self.downloadManager,
+          renderInteractiveForms: pdfjsLib.PDFJS.renderInteractiveForms,
         };
 
         if (self.div) {
@@ -7402,6 +7404,9 @@ var PDFViewerApplication = {
           return;
         }
         PDFJS.externalLinkTarget = value;
+      }),
+      Preferences.get('renderInteractiveForms').then(function resolved(value) {
+        PDFJS.renderInteractiveForms = value;
       }),
       
     ]).catch(function (reason) { });
