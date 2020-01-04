@@ -1,13 +1,7 @@
 
 
 load(libdir + "asserts.js");
-
-let moduleRepo = new Map();
-setModuleResolveHook(function(module, specifier) {
-    if (specifier in moduleRepo)
-        return moduleRepo[specifier];
-    throw "Module " + specifier + " not found";
-});
+load(libdir + "dummyModuleResolveHook.js");
 
 function parseAndEvaluate(source) {
     let m = parseModule(source);

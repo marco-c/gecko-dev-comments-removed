@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+let moduleRepo = {};
+setModuleResolveHook(function(module, specifier) {
+    if (specifier in moduleRepo)
+        return moduleRepo[specifier];
+    throw "Module '" + specifier + "' not found";
+});
