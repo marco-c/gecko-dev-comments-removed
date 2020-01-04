@@ -665,7 +665,7 @@ class IntegerType extends Type {
     }
 
     
-    if ((value | 0) !== value) {
+    if (!Number.isSafeInteger(value)) {
       return context.error("Integer is out of range");
     }
 

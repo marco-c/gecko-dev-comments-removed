@@ -86,10 +86,32 @@ function* iterateDocShellTree(docShell) {
 
 
 
-function findFrame(windowId, rootDocShell) {
+function getFrameId(window) {
+  let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDocShell);
+
+  if (!docShell.sameTypeParent) {
+    return 0;
+  }
+
+  let utils = window.getInterface(Ci.nsIDOMWindowUtils);
+  return utils.outerWindowID;
+}
+
+
+
+
+
+
+
+
+
+
+
+function findDocShell(frameId, rootDocShell) {
   for (let docShell of iterateDocShellTree(rootDocShell)) {
-    if (windowId == getWindowId(docShellToWindow(docShell))) {
-      return convertDocShellToFrameDetail(docShell);
+    if (frameId == getFrameId(docShellToWindow(docShell))) {
+      return docShell;
     }
   }
 
@@ -99,13 +121,17 @@ function findFrame(windowId, rootDocShell) {
 var WebNavigationFrames = {
   iterateDocShellTree,
 
-  getFrame(docShell, frameId) {
-    if (frameId == 0) {
-      return convertDocShellToFrameDetail(docShell);
-    }
+  findDocShell,
 
-    return findFrame(frameId, docShell);
+  getFrame(docShell, frameId) {
+    let result = findDocShell(frameId, docShell);
+    if (result) {
+      return convertDocShellToFrameDetail(result);
+    }
+    return null;
   },
+
+  getFrameId,
 
   getAllFrames(docShell) {
     return Array.from(iterateDocShellTree(docShell), convertDocShellToFrameDetail);
