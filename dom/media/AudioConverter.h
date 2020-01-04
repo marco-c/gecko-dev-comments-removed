@@ -9,6 +9,9 @@
 
 #include "MediaInfo.h"
 
+
+typedef struct SpeexResamplerState_ SpeexResamplerState;
+
 namespace mozilla {
 
 template <AudioConfig::SampleFormat T> struct AudioDataBufferTypeChooser;
@@ -115,23 +118,77 @@ typedef AudioDataBuffer<AudioConfig::FORMAT_DEFAULT> AudioSampleBuffer;
 class AudioConverter {
 public:
   AudioConverter(const AudioConfig& aIn, const AudioConfig& aOut);
+  ~AudioConverter();
 
   
   
   
-  
-  template <AudioConfig::SampleFormat Type, typename Value>
-  size_t Process(AudioDataBuffer<Type, Value>& aBuffer)
+  template <AudioConfig::SampleFormat Format, typename Value>
+  AudioDataBuffer<Format, Value> Process(AudioDataBuffer<Format, Value>&& aBuffer)
   {
-    MOZ_DIAGNOSTIC_ASSERT(mIn.Format() == mOut.Format() && mIn.Format() == Type);
-    return Process(aBuffer.Data(), aBuffer.Data(), aBuffer.Size());
+    MOZ_DIAGNOSTIC_ASSERT(mIn.Format() == mOut.Format() && mIn.Format() == Format);
+    AudioDataBuffer<Format, Value> buffer = Move(aBuffer);
+    if (CanWorkInPlace()) {
+      size_t bytes = ProcessInternal(buffer.Data(), buffer.Data(), buffer.Size());
+      if (bytes && mIn.Rate() != mOut.Rate()) {
+        bytes = ResampleAudio(buffer.Data(), buffer.Data(), bytes);
+      }
+      AlignedBuffer<Value> temp = buffer.Forget();
+      temp.SetLength(bytes / AudioConfig::SampleSize(mOut.Format()));
+      return AudioDataBuffer<Format, Value>(Move(temp));;
+    }
+    return Process(buffer);
   }
+
+  template <AudioConfig::SampleFormat Format, typename Value>
+  AudioDataBuffer<Format, Value> Process(const AudioDataBuffer<Format, Value>& aBuffer)
+  {
+    MOZ_DIAGNOSTIC_ASSERT(mIn.Format() == mOut.Format() && mIn.Format() == Format);
+    
+    uint32_t frames = aBuffer.Length() / mIn.Channels();
+    AlignedBuffer<Value> temp1;
+    if (!temp1.SetLength(frames * mOut.Channels())) {
+      return AudioDataBuffer<Format, Value>(Move(temp1));
+    }
+    size_t bytes = ProcessInternal(temp1.Data(), aBuffer.Data(), aBuffer.Size());
+    if (!bytes || mIn.Rate() == mOut.Rate()) {
+      temp1.SetLength(bytes / AudioConfig::SampleSize(mOut.Format()));
+      return AudioDataBuffer<Format, Value>(Move(temp1));
+    }
+
+    
+    
+    AlignedBuffer<Value>* outputBuffer = &temp1;
+    AlignedBuffer<Value> temp2;
+    if (mOut.Rate() > mIn.Rate()) {
+      
+      
+      temp2.SetLength(ResampleRecipientFrames(frames) * mOut.Channels());
+      outputBuffer = &temp2;
+    }
+    bytes = ResampleAudio(outputBuffer->Data(), temp1.Data(), bytes);
+    outputBuffer->SetLength(bytes / AudioConfig::SampleSize(mOut.Format()));
+    return AudioDataBuffer<Format, Value>(Move(*outputBuffer));
+  }
+
+  
+  
   template <typename Value>
   size_t Process(Value* aBuffer, size_t aSamples)
   {
     MOZ_DIAGNOSTIC_ASSERT(mIn.Format() == mOut.Format());
-    return Process(aBuffer, aBuffer, aSamples * AudioConfig::SampleSize(mIn.Format()));
+    if (!CanWorkInPlace()) {
+      return 0;
+    }
+    size_t bytes =
+      ProcessInternal(aBuffer, aBuffer,
+                      aSamples * AudioConfig::SampleSize(mIn.Format()));
+    if (bytes && mIn.Rate() != mOut.Rate()) {
+      bytes = ResampleAudio(aBuffer, aBuffer, bytes);
+    }
+    return bytes;
   }
+
   bool CanWorkInPlace() const;
   bool CanReorderAudio() const
   {
@@ -154,9 +211,14 @@ private:
 
 
 
-  size_t Process(void* aOut, const void* aIn, size_t aBytes);
+  size_t ProcessInternal(void* aOut, const void* aIn, size_t aBytes);
   void ReOrderInterleavedChannels(void* aOut, const void* aIn, size_t aDataSize) const;
   size_t DownmixAudio(void* aOut, const void* aIn, size_t aDataSize) const;
+
+  
+  SpeexResamplerState* mResampler;
+  size_t ResampleAudio(void* aOut, const void* aIn, size_t aDataSize);
+  size_t ResampleRecipientFrames(size_t aFrames) const;
 };
 
 } 
