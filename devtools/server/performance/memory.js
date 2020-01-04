@@ -17,6 +17,10 @@ loader.lazyRequireGetter(this, "StackFrameCache",
 loader.lazyRequireGetter(this, "ThreadSafeChromeUtils");
 loader.lazyRequireGetter(this, "HeapSnapshotFileUtils",
   "devtools/shared/heapsnapshot/HeapSnapshotFileUtils");
+loader.lazyRequireGetter(this, "ChromeActor", "devtools/server/actors/chrome",
+                         true);
+loader.lazyRequireGetter(this, "ChildProcessActor",
+                         "devtools/server/actors/child-process", true);
 
 
 
@@ -139,7 +143,12 @@ var Memory = exports.Memory = Class({
 
 
   saveHeapSnapshot: expectState("attached", function () {
-    const path = ThreadSafeChromeUtils.saveHeapSnapshot({ debugger: this.dbg });
+    
+    
+    const opts = this.parent instanceof ChromeActor || this.parent instanceof ChildProcessActor
+      ? { runtime: true }
+      : { debugger: this.dbg };
+    const path = ThreadSafeChromeUtils.saveHeapSnapshot(opts);
     return HeapSnapshotFileUtils.getSnapshotIdFromPath(path);
   }, "saveHeapSnapshot"),
 
