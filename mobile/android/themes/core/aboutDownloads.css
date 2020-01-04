@@ -2,8 +2,7 @@
 
 
 
-%filter substitution
-%include defines.inc
+include "defines.css"
 
 .list-item > a {
   color: inherit;
