@@ -229,6 +229,10 @@ typedef JSObject Env;
 
 typedef mozilla::Variant<JSScript*, WasmModuleObject*> DebuggerScriptReferent;
 
+
+
+typedef mozilla::Variant<ScriptSourceObject*, WasmModuleObject*> DebuggerSourceReferent;
+
 class Debugger : private mozilla::LinkedListElement<Debugger>
 {
     friend class Breakpoint;
@@ -460,6 +464,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     WasmModuleWeakMap wasmModuleScripts;
 
     
+    WasmModuleWeakMap wasmModuleSources;
+
+    
 
 
 
@@ -675,6 +682,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     JSObject* newVariantWrapper(JSContext* cx, Handle<DebuggerScriptReferent> referent) {
         return newDebuggerScript(cx, referent);
     }
+    JSObject* newVariantWrapper(JSContext* cx, Handle<DebuggerSourceReferent> referent) {
+        return newDebuggerSource(cx, referent);
+    }
 
     
 
@@ -688,6 +698,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     JSObject* wrapVariantReferent(JSContext* cx, Map& map, CrossCompartmentKey::Kind keyKind,
                                   Handle<ReferentVariant> referent);
     JSObject* wrapVariantReferent(JSContext* cx, Handle<DebuggerScriptReferent> referent);
+    JSObject* wrapVariantReferent(JSContext* cx, Handle<DebuggerSourceReferent> referent);
 
     
 
@@ -699,7 +710,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSObject* newDebuggerSource(JSContext* cx, js::HandleScriptSource source);
+    JSObject* newDebuggerSource(JSContext* cx, Handle<DebuggerSourceReferent> referent);
 
     
 
@@ -1001,6 +1012,14 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     JSObject* wrapSource(JSContext* cx, js::HandleScriptSource source);
+
+    
+
+
+
+
+
+    JSObject* wrapWasmSource(JSContext* cx, Handle<WasmModuleObject*> wasmModule);
 
   private:
     Debugger(const Debugger&) = delete;
