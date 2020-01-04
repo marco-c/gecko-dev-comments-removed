@@ -490,6 +490,8 @@ protected:
 
   void ProcessContentInserted(Accessible* aContainer,
                               const nsTArray<nsCOMPtr<nsIContent> >* aInsertedContent);
+  void ProcessContentInserted(Accessible* aContainer,
+                              nsIContent* aInsertedContent);
 
   
 
