@@ -50,6 +50,12 @@ pref("ui.scrollbarsCanOverlapContent", 1);
 pref("ui.caretBlinkCount", 10);
 
 
+pref("layout.accessiblecaret.enabled", true);
+
+
+pref("layout.accessiblecaret.use_long_tap_injector", false);
+
+
 pref("browser.cache.disk.enable", true);
 pref("browser.cache.disk.capacity", 20480); 
 pref("browser.cache.disk.max_entry_size", 4096); 
@@ -604,7 +610,6 @@ pref("browser.safebrowsing.malware.enabled", true);
 pref("browser.safebrowsing.downloads.enabled", false);
 pref("browser.safebrowsing.downloads.remote.enabled", false);
 pref("browser.safebrowsing.downloads.remote.timeout_ms", 10000);
-pref("browser.safebrowsing.downloads.remote.url", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_API_KEY%");
 pref("browser.safebrowsing.debug", false);
 
 pref("browser.safebrowsing.provider.google.lists", "goog-badbinurl-shavar,goog-downloadwhite-digest256,goog-phish-shavar,goog-malware-shavar,goog-unwanted-shavar");
@@ -615,6 +620,7 @@ pref("browser.safebrowsing.provider.google.reportURL", "https://safebrowsing.goo
 pref("browser.safebrowsing.reportPhishMistakeURL", "https://%LOCALE%.phish-error.mozilla.com/?hl=%LOCALE%&url=");
 pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozilla.com/?hl=%LOCALE%&url=");
 pref("browser.safebrowsing.reportMalwareMistakeURL", "https://%LOCALE%.malware-error.mozilla.com/?hl=%LOCALE%&url=");
+pref("browser.safebrowsing.appRepURL", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_API_KEY%");
 
 pref("browser.safebrowsing.id", @MOZ_APP_UA_NAME@);
 
