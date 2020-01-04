@@ -96,12 +96,12 @@ public:
 
     gboolean ScheduleMotionEvent(nsWindow *aWindow,
                                  GdkDragContext *aDragContext,
-                                 mozilla::LayoutDeviceIntPoint aWindowPoint,
+                                 nsIntPoint aWindowPoint,
                                  guint aTime);
     void ScheduleLeaveEvent();
     gboolean ScheduleDropEvent(nsWindow *aWindow,
                                GdkDragContext *aDragContext,
-                               mozilla::LayoutDeviceIntPoint aWindowPoint,
+                               nsIntPoint aWindowPoint,
                                guint aTime);
 
     nsWindow* GetMostRecentDestWindow()
@@ -154,7 +154,7 @@ private:
     
     
     RefPtr<nsWindow> mPendingWindow;
-    mozilla::LayoutDeviceIntPoint mPendingWindowPoint;
+    nsIntPoint mPendingWindowPoint;
     nsCountedRef<GdkDragContext> mPendingDragContext;
     guint mPendingTime;
 
@@ -162,7 +162,7 @@ private:
     
     
     RefPtr<nsWindow> mTargetWindow;
-    mozilla::LayoutDeviceIntPoint mTargetWindowPoint;
+    nsIntPoint mTargetWindowPoint;
     
     
     nsCountedRef<GtkWidget> mTargetWidget;
@@ -210,7 +210,7 @@ private:
 
     gboolean Schedule(DragTask aTask, nsWindow *aWindow,
                       GdkDragContext *aDragContext,
-                      mozilla::LayoutDeviceIntPoint aWindowPoint, guint aTime);
+                      nsIntPoint aWindowPoint, guint aTime);
 
     
     static gboolean TaskDispatchCallback(gpointer data);

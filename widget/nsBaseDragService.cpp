@@ -217,7 +217,7 @@ nsBaseDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
   
   aDOMNode->GetOwnerDocument(getter_AddRefs(mSourceDocument));
   mSourceNode = aDOMNode;
-  mEndDragPoint = LayoutDeviceIntPoint(0, 0);
+  mEndDragPoint = nsIntPoint(0, 0);
 
   
   
@@ -413,7 +413,7 @@ nsBaseDragService::EndDragSession(bool aDoneDrag)
   mImageOffset = CSSIntPoint();
   mScreenX = -1;
   mScreenY = -1;
-  mEndDragPoint = LayoutDeviceIntPoint(0, 0);
+  mEndDragPoint = nsIntPoint(0, 0);
   mInputSource = nsIDOMMouseEvent::MOZ_SOURCE_MOUSE;
 
   return NS_OK;
