@@ -3,8 +3,8 @@
 
 
 
-#ifndef TypeInState_h__
-#define TypeInState_h__
+#ifndef TypeInState_h
+#define TypeInState_h
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
@@ -19,36 +19,37 @@
 #undef SetProp
 #endif
 
+class nsHTMLEditRules;
 class nsIAtom;
 class nsIDOMNode;
+
 namespace mozilla {
+
 namespace dom {
 class Selection;
-} 
 } 
 
 struct PropItem
 {
-  nsIAtom *tag;
+  nsIAtom* tag;
   nsString attr;
   nsString value;
 
   PropItem();
-  PropItem(nsIAtom *aTag, const nsAString &aAttr, const nsAString &aValue);
+  PropItem(nsIAtom* aTag, const nsAString& aAttr, const nsAString& aValue);
   ~PropItem();
 };
 
-class TypeInState : public nsISelectionListener
+class TypeInState final : public nsISelectionListener
 {
 public:
-
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(TypeInState)
 
   TypeInState();
   void Reset();
 
-  nsresult UpdateSelState(mozilla::dom::Selection* aSelection);
+  nsresult UpdateSelState(dom::Selection* aSelection);
 
   
   NS_DECL_NSISELECTIONLISTENER
@@ -59,25 +60,30 @@ public:
   void ClearProp(nsIAtom* aProp, const nsAString& aAttr);
 
   
-  
-  
+
+
+
   PropItem* TakeClearProperty();
 
   
-  
-  
+
+
+
   PropItem* TakeSetProperty();
 
   
-  
-  
+
+
+
   int32_t TakeRelativeFontSize();
 
-  void GetTypingState(bool &isSet, bool &theSetting, nsIAtom *aProp);
-  void GetTypingState(bool &isSet, bool &theSetting, nsIAtom *aProp,
-                      const nsString &aAttr, nsString* outValue);
+  void GetTypingState(bool& isSet, bool& theSetting, nsIAtom* aProp);
+  void GetTypingState(bool& isSet, bool& theSetting, nsIAtom* aProp,
+                      const nsString& aAttr, nsString* outValue);
 
-  static   bool FindPropInList(nsIAtom *aProp, const nsAString &aAttr, nsAString *outValue, nsTArray<PropItem*> &aList, int32_t &outIndex);
+  static bool FindPropInList(nsIAtom* aProp, const nsAString& aAttr,
+                             nsAString* outValue, nsTArray<PropItem*>& aList,
+                             int32_t& outIndex);
 
 protected:
   virtual ~TypeInState();
@@ -85,7 +91,8 @@ protected:
   void RemovePropFromSetList(nsIAtom* aProp, const nsAString& aAttr);
   void RemovePropFromClearedList(nsIAtom* aProp, const nsAString& aAttr);
   bool IsPropSet(nsIAtom* aProp, const nsAString& aAttr, nsAString* outValue);
-  bool IsPropSet(nsIAtom* aProp, const nsAString& aAttr, nsAString* outValue, int32_t& outIndex);
+  bool IsPropSet(nsIAtom* aProp, const nsAString& aAttr, nsAString* outValue,
+                 int32_t& outIndex);
   bool IsPropCleared(nsIAtom* aProp, const nsAString& aAttr);
   bool IsPropCleared(nsIAtom* aProp, const nsAString& aAttr, int32_t& outIndex);
 
@@ -98,7 +105,7 @@ protected:
   friend class nsHTMLEditRules;
 };
 
-
+} 
 
 #endif  
 
