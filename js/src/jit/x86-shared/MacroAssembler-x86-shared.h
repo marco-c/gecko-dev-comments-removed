@@ -104,8 +104,8 @@ class MacroAssemblerX86Shared : public Assembler
 
     
     
-    void minMaxDouble(FloatRegister first, FloatRegister second, bool handleNaN, bool isMax);
-    void minMaxFloat32(FloatRegister first, FloatRegister second, bool handleNaN, bool isMax);
+    void minMaxDouble(FloatRegister srcDest, FloatRegister second, bool handleNaN, bool isMax);
+    void minMaxFloat32(FloatRegister srcDest, FloatRegister second, bool handleNaN, bool isMax);
 
     void outOfLineWasmTruncateCheck(FloatRegister input, MIRType fromType, MIRType toType,
                                     bool isUnsigned, Label* rejoin);

@@ -213,47 +213,13 @@ CodeGeneratorARM::visitMinMaxD(LMinMaxD* ins)
 {
     FloatRegister first = ToFloatRegister(ins->first());
     FloatRegister second = ToFloatRegister(ins->second());
-    FloatRegister output = ToFloatRegister(ins->output());
 
-    MOZ_ASSERT(first == output);
+    MOZ_ASSERT(first == ToFloatRegister(ins->output()));
 
-    Assembler::Condition cond = ins->mir()->isMax()
-        ? Assembler::VFP_LessThanOrEqual
-        : Assembler::VFP_GreaterThanOrEqual;
-    Label nan, equal, returnSecond, done;
-
-    masm.compareDouble(first, second);
-    
-    masm.ma_b(&nan, Assembler::VFP_Unordered);
-    
-    masm.ma_b(&equal, Assembler::VFP_Equal);
-    masm.ma_b(&returnSecond, cond);
-    masm.ma_b(&done);
-
-    
-    masm.bind(&equal);
-    masm.compareDouble(first, NoVFPRegister);
-    
-    masm.ma_b(&done, Assembler::VFP_NotEqualOrUnordered);
-    
-    if (ins->mir()->isMax()) {
-        
-        masm.ma_vadd(second, first, first);
-    } else {
-        masm.ma_vneg(first, first);
-        masm.ma_vsub(first, second, first);
-        masm.ma_vneg(first, first);
-    }
-    masm.ma_b(&done);
-
-    masm.bind(&nan);
-    masm.loadConstantDouble(GenericNaN(), output);
-    masm.ma_b(&done);
-
-    masm.bind(&returnSecond);
-    masm.ma_vmov(second, output);
-
-    masm.bind(&done);
+    if (ins->mir()->isMax())
+        masm.maxDouble(second, first, true);
+    else
+        masm.minDouble(second, first, true);
 }
 
 void
@@ -261,47 +227,13 @@ CodeGeneratorARM::visitMinMaxF(LMinMaxF* ins)
 {
     FloatRegister first = ToFloatRegister(ins->first());
     FloatRegister second = ToFloatRegister(ins->second());
-    FloatRegister output = ToFloatRegister(ins->output());
 
-    MOZ_ASSERT(first == output);
+    MOZ_ASSERT(first == ToFloatRegister(ins->output()));
 
-    Assembler::Condition cond = ins->mir()->isMax()
-        ? Assembler::VFP_LessThanOrEqual
-        : Assembler::VFP_GreaterThanOrEqual;
-    Label nan, equal, returnSecond, done;
-
-    masm.compareFloat(first, second);
-    
-    masm.ma_b(&nan, Assembler::VFP_Unordered);
-    
-    masm.ma_b(&equal, Assembler::VFP_Equal);
-    masm.ma_b(&returnSecond, cond);
-    masm.ma_b(&done);
-
-    
-    masm.bind(&equal);
-    masm.compareFloat(first, NoVFPRegister);
-    
-    masm.ma_b(&done, Assembler::VFP_NotEqualOrUnordered);
-    
-    if (ins->mir()->isMax()) {
-        
-        masm.ma_vadd_f32(second, first, first);
-    } else {
-        masm.ma_vneg_f32(first, first);
-        masm.ma_vsub_f32(first, second, first);
-        masm.ma_vneg_f32(first, first);
-    }
-    masm.ma_b(&done);
-
-    masm.bind(&nan);
-    masm.loadConstantFloat32(GenericNaN(), output);
-    masm.ma_b(&done);
-
-    masm.bind(&returnSecond);
-    masm.ma_vmov_f32(second, output);
-
-    masm.bind(&done);
+    if (ins->mir()->isMax())
+        masm.maxFloat32(second, first, true);
+    else
+        masm.minFloat32(second, first, true);
 }
 
 void

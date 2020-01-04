@@ -819,6 +819,15 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
+    inline void minFloat32(FloatRegister other, FloatRegister srcDest, bool handleNaN) DEFINED_ON(arm, arm64, x86_shared);
+    inline void minDouble(FloatRegister other, FloatRegister srcDest, bool handleNaN) DEFINED_ON(arm, arm64, x86_shared);
+
+    inline void maxFloat32(FloatRegister other, FloatRegister srcDest, bool handleNaN) DEFINED_ON(arm, arm64, x86_shared);
+    inline void maxDouble(FloatRegister other, FloatRegister srcDest, bool handleNaN) DEFINED_ON(arm, arm64, x86_shared);
+
+    
+    
+
     
     
     
