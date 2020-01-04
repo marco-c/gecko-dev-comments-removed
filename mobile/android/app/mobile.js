@@ -927,6 +927,10 @@ pref("layout.accessiblecaret.enabled", true);
 pref("layout.accessiblecaret.enabled", false);
 #endif
 
+
+pref("layout.accessiblecaret.timeout_ms", 0);
+
+
 pref("layout.accessiblecaret.use_long_tap_injector", false);
 
 
