@@ -37,6 +37,7 @@ class DOMLocalMediaStream;
 class DOMMediaStream;
 class MediaStream;
 class MediaInputPort;
+class MediaStreamDirectListener;
 class MediaStreamGraph;
 class ProcessedMediaStream;
 
@@ -59,8 +60,6 @@ namespace layers {
 class ImageContainer;
 class OverlayImage;
 } 
-
-class MediaStreamDirectListener;
 
 #define NS_DOMMEDIASTREAM_IID \
 { 0x8cb65468, 0x66c0, 0x444e, \
@@ -399,7 +398,7 @@ public:
 
 
 
-  MediaStreamTrack* FindOwnedDOMTrack(MediaStream* aOwningStream,
+  MediaStreamTrack* FindOwnedDOMTrack(MediaStream* aInputStream,
                                       TrackID aInputTrackID) const;
 
   
@@ -412,7 +411,7 @@ public:
 
 
 
-  MediaStreamTrack* FindPlaybackDOMTrack(MediaStream* aOwningStream,
+  MediaStreamTrack* FindPlaybackDOMTrack(MediaStream* aInputStream,
                                          TrackID aInputTrackID) const;
 
   
