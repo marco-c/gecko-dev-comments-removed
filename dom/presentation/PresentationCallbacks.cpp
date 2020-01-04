@@ -177,7 +177,7 @@ PresentationResponderLoadingCallback::Init(nsIDocShell* aDocShell)
       (busyFlags & nsIDocShell::BUSY_FLAGS_PAGE_LOADING)) {
     
     
-    return NotifyReceiverReady();
+    return NotifyReceiverReady( true);
   }
 
   
@@ -185,7 +185,7 @@ PresentationResponderLoadingCallback::Init(nsIDocShell* aDocShell)
 }
 
 nsresult
-PresentationResponderLoadingCallback::NotifyReceiverReady()
+PresentationResponderLoadingCallback::NotifyReceiverReady(bool aIsLoading)
 {
   nsCOMPtr<nsPIDOMWindowOuter> window = do_GetInterface(mProgress);
   if (NS_WARN_IF(!window || !window->GetCurrentInnerWindow())) {
@@ -199,7 +199,7 @@ PresentationResponderLoadingCallback::NotifyReceiverReady()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  return service->NotifyReceiverReady(mSessionId, windowId);
+  return service->NotifyReceiverReady(mSessionId, windowId, aIsLoading);
 }
 
 
@@ -211,10 +211,12 @@ PresentationResponderLoadingCallback::OnStateChange(nsIWebProgress* aWebProgress
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (aStateFlags & nsIWebProgressListener::STATE_TRANSFERRING) {
+  if (aStateFlags & (nsIWebProgressListener::STATE_TRANSFERRING |
+                     nsIWebProgressListener::STATE_STOP)) {
     mProgress->RemoveProgressListener(this);
 
-    return NotifyReceiverReady();
+    bool isLoading = aStateFlags & nsIWebProgressListener::STATE_TRANSFERRING;
+    return NotifyReceiverReady(isLoading);
   }
 
   return NS_OK;
