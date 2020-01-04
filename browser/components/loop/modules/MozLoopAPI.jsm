@@ -553,6 +553,17 @@ function injectLoopAPI(targetWindow) {
     
 
 
+    hangupAllChatWindows: {
+      enumerable: true,
+      writable: true,
+      value() {
+        MozLoopService.hangupAllChatWindows();
+      }
+    },
+
+    
+
+
     startAlerting: {
       enumerable: true,
       writable: true,

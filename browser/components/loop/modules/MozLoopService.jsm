@@ -877,6 +877,17 @@ var MozLoopServiceInternal = {
   
 
 
+  hangupAllChatWindows() {
+    let isLoopURL = ({ src }) => /^about:loopconversation#/.test(src);
+    [...Chat.chatboxes].filter(isLoopURL).forEach(chatbox => {
+      let window = chatbox.content.contentWindow;
+      window.dispatchEvent(new window.CustomEvent("LoopHangupNow"));
+    });
+  },
+
+  
+
+
 
 
 
@@ -898,7 +909,9 @@ var MozLoopServiceInternal = {
 
 
 
-  openChatWindow: function(conversationWindowData) {
+
+
+  openChatWindow: function(conversationWindowData, windowCloseCallback) {
     
     let origin = this.loopServerUri;
     let windowId = this.getChatWindowID(conversationWindowData);
@@ -937,6 +950,8 @@ var MozLoopServiceInternal = {
             
             let ref = chatbar.chatboxForURL.get(chatbox.src);
             chatbox = ref && ref.get() || chatbox;
+          } else if (eventName == "Loop:ChatWindowClosed") {
+            windowCloseCallback();
           }
         }
 
@@ -1389,12 +1404,21 @@ this.MozLoopService = {
   
 
 
+  hangupAllChatWindows() {
+    return MozLoopServiceInternal.hangupAllChatWindows();
+  },
+
+  
 
 
 
 
-  openChatWindow: function(conversationWindowData) {
-    return MozLoopServiceInternal.openChatWindow(conversationWindowData);
+
+
+
+  openChatWindow: function(conversationWindowData, windowCloseCallback) {
+    return MozLoopServiceInternal.openChatWindow(conversationWindowData,
+      windowCloseCallback);
   },
 
   
