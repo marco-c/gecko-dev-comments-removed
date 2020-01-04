@@ -1957,8 +1957,6 @@ pref("network.cookie.lifetime.days",        90);
 
 pref("network.proxy.autoconfig_url", "");
 
-pref("network.proxy.autoconfig_url.include_path", false);
-
 
 
 pref("network.proxy.autoconfig_retry_interval_min", 5);    
