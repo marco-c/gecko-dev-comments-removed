@@ -102,6 +102,15 @@ public:
 
 
 
+  static void NativeAnonymousChildListChange(nsIContent* aContent,
+                                             bool aIsRemove);
+
+  
+
+
+
+
+
 
   static void ContentInserted(nsINode* aContainer,
                               nsIContent* aChild,
