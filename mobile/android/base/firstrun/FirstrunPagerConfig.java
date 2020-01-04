@@ -20,9 +20,9 @@ public class FirstrunPagerConfig {
 
     public static List<FirstrunPanelConfig> getDefault(Context context) {
         final List<FirstrunPanelConfig> panels = new LinkedList<>();
-        if (isBucket(ONBOARDING_A, context)) {
+        if (isInExperimentLocal(context, ONBOARDING_A)) {
             panels.add(new FirstrunPanelConfig(WelcomePanel.class.getName(), WelcomePanel.TITLE_RES));
-        } else if (isBucket(ONBOARDING_B, context)) {
+        } else if (isInExperimentLocal(context, ONBOARDING_B)) {
             
             panels.add(new FirstrunPanelConfig(ImportPanel.class.getName(), ImportPanel.TITLE_RES));
             panels.add(new FirstrunPanelConfig(SyncPanel.class.getName(), SyncPanel.TITLE_RES));
@@ -37,12 +37,13 @@ public class FirstrunPagerConfig {
     
 
 
-    private static boolean isBucket(String name, Context context) {
+
+    private static boolean isInExperimentLocal(Context context, String name) {
         if (AppConstants.MOZ_SWITCHBOARD) {
-            if (ONBOARDING_A.equals(name)) {
-                return SwitchBoard.isInExperiment(context, name);
-            } else if (ONBOARDING_B.equals(name)) {
-                return SwitchBoard.isInExperiment(context, name);
+            if (SwitchBoard.isInBucket(context, 0, 50)) {
+                return ONBOARDING_A.equals(name);
+            } else if (SwitchBoard.isInBucket(context, 50, 100)) {
+                return ONBOARDING_B.equals(name);
             }
         }
         return false;

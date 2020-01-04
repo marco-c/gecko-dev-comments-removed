@@ -741,17 +741,12 @@ public class BrowserApp extends GeckoApp
 
             
             Log.d(LOGTAG, "update server urls from remote");
-            SwitchBoard.updateConfigServerUrl(this);
             new AsyncConfigLoader(this, AsyncConfigLoader.UPDATE_SERVER).execute();
 
             
             
             Log.d(LOGTAG, "update app config");
-            
-            SwitchBoard.loadConfig(this);
-            final AsyncConfigLoader loader = new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER);
-            loader.execute();
-
+            new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER).execute();
         }
 
         mBrowserChrome = (ViewGroup) findViewById(R.id.browser_chrome);
