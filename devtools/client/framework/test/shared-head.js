@@ -421,3 +421,21 @@ function waitForContextMenu(popup, button, onShown, onHidden) {
                              button.ownerDocument.defaultView);
   return deferred.promise;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function pushPref(preferenceName, value) {
+  return new Promise(resolve => {
+    let options = {"set": [[preferenceName, value]]};
+    SpecialPowers.pushPrefEnv(options, resolve);
+  });
+}
