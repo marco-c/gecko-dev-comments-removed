@@ -17,22 +17,6 @@ extern bool gBluetoothDebugFlag;
 
 #define SWITCH_BT_DEBUG(V) (gBluetoothDebugFlag = V)
 
-#if MOZ_IS_GCC
-# if MOZ_GCC_VERSION_AT_LEAST(4, 7, 0)
-
-# define INIT_ARRAY_AT(in_, out_) \
-    [in_] = out_
-# else
-
-# define INIT_ARRAY_AT(in_, out_) \
-    out_
-# endif
-#else
-
-#define INIT_ARRAY_AT(in_, out_) \
-  out_
-#endif
-
 #undef BT_LOG
 #if defined(MOZ_WIDGET_GONK)
 #include <android/log.h>
