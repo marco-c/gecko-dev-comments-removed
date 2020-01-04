@@ -563,28 +563,6 @@ struct GCMethods<JSFunction*>
     }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct JS_PUBLIC_API(MovableCellHasher)
-{
-    using Key = T;
-    using Lookup = T;
-
-    static HashNumber hash(const Lookup& l);
-    static bool match(const Key& k, const Lookup& l);
-    static void rekey(Key& k, const Key& newKey) { k = newKey; }
-};
-
 } 
 
 namespace JS {
