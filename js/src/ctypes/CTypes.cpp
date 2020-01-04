@@ -7422,7 +7422,7 @@ bool CClosure::ArgClosure::operator()(JSContext* cx)
   AssertSameCompartment(cx, cinfo->jsfnObj);
 
 
-  JS_AbortIfWrongThread(JS_GetRuntime(cx));
+  JS_AbortIfWrongThread(cx);
 
   
   FunctionInfo* fninfo = FunctionType::GetFunctionInfo(typeObj);

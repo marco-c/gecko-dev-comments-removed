@@ -5512,7 +5512,7 @@ JS_GetCurrentThread();
 
 
 extern JS_PUBLIC_API(void)
-JS_AbortIfWrongThread(JSRuntime* rt);
+JS_AbortIfWrongThread(JSContext* cx);
 
 
 
