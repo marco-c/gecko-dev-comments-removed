@@ -326,7 +326,7 @@ class MediaRecorder::Session: public nsIObserver
     {
       LOG(LogLevel::Debug, ("Session.DestroyRunnable session refcnt = (%d) stopIssued %d s=(%p)",
                          (int)mSession->mRefCnt, mSession->mStopIssued, mSession.get()));
-      MOZ_ASSERT(NS_IsMainThread() && mSession.get());
+      MOZ_ASSERT(NS_IsMainThread() && mSession);
       RefPtr<MediaRecorder> recorder = mSession->mRecorder;
       if (!recorder) {
         return NS_OK;
@@ -636,6 +636,16 @@ private:
     }
     mTrackUnionStream->AddListener(mEncoder);
     
+    DOMMediaStream* domStream = mRecorder->Stream();
+    if (domStream) {
+      mInputStream = domStream->GetInputStream()->AsSourceStream();
+      if (mInputStream) {
+        mInputStream->AddDirectListener(mEncoder);
+        mEncoder->SetDirectConnect(true);
+      }
+    }
+
+    
     if (!mReadThread) {
       nsresult rv = NS_NewNamedThread("Media_Encoder", getter_AddRefs(mReadThread));
       if (NS_FAILED(rv)) {
@@ -687,12 +697,21 @@ private:
   }
   void CleanupStreams()
   {
-    if (mInputPort.get()) {
+    if (mInputStream) {
+      if (mEncoder) {
+        mInputStream->RemoveDirectListener(mEncoder);
+      }
+      mInputStream = nullptr;
+    }
+    if (mInputPort) {
       mInputPort->Destroy();
       mInputPort = nullptr;
     }
 
-    if (mTrackUnionStream.get()) {
+    if (mTrackUnionStream) {
+      if (mEncoder) {
+        mTrackUnionStream->RemoveListener(mEncoder);
+      }
       mTrackUnionStream->Destroy();
       mTrackUnionStream = nullptr;
     }
@@ -734,6 +753,7 @@ private:
   
   
   RefPtr<ProcessedMediaStream> mTrackUnionStream;
+  RefPtr<SourceMediaStream> mInputStream;
   RefPtr<MediaInputPort> mInputPort;
 
   

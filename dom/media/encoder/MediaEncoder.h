@@ -49,7 +49,7 @@ namespace mozilla {
 
 
 
-class MediaEncoder : public MediaStreamListener
+class MediaEncoder : public MediaStreamDirectListener
 {
 public :
   enum {
@@ -74,9 +74,24 @@ public :
     , mSizeOfBuffer(0)
     , mState(MediaEncoder::ENCODE_METADDATA)
     , mShutdown(false)
+    , mDirectConnected(false)
   {}
 
   ~MediaEncoder() {};
+
+  
+
+
+  void SetDirectConnect(bool aConnected);
+
+  
+
+
+
+  void NotifyRealtimeData(MediaStreamGraph* aGraph, TrackID aID,
+                          StreamTime aTrackOffset,
+                          uint32_t aTrackEvents,
+                          const MediaSegment& aRealtimeMedia) override;
 
   
 
@@ -169,6 +184,7 @@ private:
   int64_t mSizeOfBuffer;
   int mState;
   bool mShutdown;
+  bool mDirectConnected;
   
   double GetEncodeTimeStamp()
   {
