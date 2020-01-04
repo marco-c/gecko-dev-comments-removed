@@ -13,6 +13,7 @@
 #include "PresentationCallbacks.h"
 #include "PresentationRequest.h"
 #include "PresentationConnection.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -28,6 +29,7 @@ PresentationRequesterCallback::PresentationRequesterCallback(PresentationRequest
                                                              const nsAString& aSessionId,
                                                              Promise* aPromise)
   : mRequest(aRequest)
+  , mUrl(aUrl)
   , mSessionId(aSessionId)
   , mPromise(aPromise)
 {
@@ -46,10 +48,8 @@ PresentationRequesterCallback::NotifySuccess()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
   RefPtr<PresentationConnection> connection =
-    PresentationConnection::Create(mRequest->GetOwner(), mSessionId,
+    PresentationConnection::Create(mRequest->GetOwner(), mSessionId, mUrl,
                                    nsIPresentationService::ROLE_CONTROLLER);
   if (NS_WARN_IF(!connection)) {
     mPromise->MaybeReject(NS_ERROR_DOM_OPERATION_ERR);
@@ -73,6 +73,74 @@ PresentationRequesterCallback::NotifyError(nsresult aError)
 
 
 
+
+NS_IMPL_ISUPPORTS_INHERITED0(PresentationReconnectCallback,
+                             PresentationRequesterCallback)
+
+PresentationReconnectCallback::PresentationReconnectCallback(
+                                           PresentationRequest* aRequest,
+                                           const nsAString& aUrl,
+                                           const nsAString& aSessionId,
+                                           Promise* aPromise,
+                                           PresentationConnection* aConnection)
+  : PresentationRequesterCallback(aRequest, aUrl, aSessionId, aPromise)
+  , mConnection(aConnection)
+{
+}
+
+PresentationReconnectCallback::~PresentationReconnectCallback()
+{
+}
+
+NS_IMETHODIMP
+PresentationReconnectCallback::NotifySuccess()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIPresentationService> service =
+    do_GetService(PRESENTATION_SERVICE_CONTRACTID);
+  if (NS_WARN_IF(!service)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsresult rv = NS_OK;
+  
+  
+  
+  if (mConnection) {
+    mPromise->MaybeResolve(mConnection);
+    rv = mRequest->DispatchConnectionAvailableEvent(mConnection);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  } else {
+    
+    
+    rv = PresentationRequesterCallback::NotifySuccess();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    rv = service->UpdateWindowIdBySessionId(mSessionId,
+                                            mRequest->GetOwner()->WindowID());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  nsString sessionId = nsString(mSessionId);
+  return NS_DispatchToMainThread(
+           NS_NewRunnableFunction([sessionId, service]() -> void {
+             service->BuildTransport(sessionId,
+                                     nsIPresentationService::ROLE_CONTROLLER);
+           }));
+}
+
+NS_IMETHODIMP
+PresentationReconnectCallback::NotifyError(nsresult aError)
+{
+  return PresentationRequesterCallback::NotifyError(aError);
+}
 
 NS_IMPL_ISUPPORTS(PresentationResponderLoadingCallback,
                   nsIWebProgressListener,

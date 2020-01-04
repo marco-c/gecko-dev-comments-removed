@@ -62,14 +62,6 @@ private:
   nsRefPtrHashtable<nsUint64HashKey,
                     nsIPresentationRespondingListener> mRespondingListeners;
   RefPtr<PresentationResponderLoadingCallback> mCallback;
-
-  
-  
-  
-  
-  
-  nsClassHashtable<nsUint64HashKey, nsString> mRespondingSessionIds;
-  nsDataHashtable<nsStringHashKey, uint64_t> mRespondingWindowIds;
   nsRefPtrHashtable<nsStringHashKey,
                     PresentationContentSessionInfo> mSessionInfos;
 };

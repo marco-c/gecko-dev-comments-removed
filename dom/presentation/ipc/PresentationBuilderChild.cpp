@@ -5,8 +5,11 @@
 
 
 #include "DCPresentationChannelDescription.h"
+#include "nsComponentManagerUtils.h"
+#include "nsGlobalWindow.h"
 #include "PresentationBuilderChild.h"
 #include "PresentationIPCService.h"
+#include "nsServiceManagerUtils.h"
 
 namespace mozilla {
 namespace dom {
