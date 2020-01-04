@@ -140,7 +140,7 @@ private:
   nsresult InitializeSession();
 
   
-  nsresult ProcessDecode(MediaRawData* aSample);
+  virtual nsresult ProcessDecode(MediaRawData* aSample);
   CFDictionaryRef CreateDecoderSpecification();
 };
 
