@@ -153,6 +153,34 @@ GetAndInitDisplay(GLLibraryEGL& egl, void* displayType)
     return display;
 }
 
+static EGLDisplay
+GetAndInitDisplayForAccelANGLE(GLLibraryEGL& egl)
+{
+    EGLDisplay ret = 0;
+
+    
+    
+    
+    if (gfxPrefs::LayersOffMainThreadCompositionEnabled() &&
+        !gfxPrefs::LayersPreferD3D9())
+    {
+        if (gfxPrefs::WebGLANGLEForceD3D11())
+            return GetAndInitDisplay(egl, LOCAL_EGL_D3D11_ONLY_DISPLAY_ANGLE);
+
+        if (gfxPrefs::WebGLANGLETryD3D11() &&
+            gfxPlatform::CanUseDirect3D11ANGLE())
+        {
+            ret = GetAndInitDisplay(egl, LOCAL_EGL_D3D11_ELSE_D3D9_DISPLAY_ANGLE);
+        }
+    }
+
+    if (!ret) {
+        ret = GetAndInitDisplay(egl, EGL_DEFAULT_DISPLAY);
+    }
+
+    return ret;
+}
+
 bool
 GLLibraryEGL::ReadbackEGLImage(EGLImage image, gfx::DataSourceSurface* out_surface)
 {
@@ -374,23 +402,7 @@ GLLibraryEGL::EnsureInitialized(bool forceAccel)
             }
 
             
-
-            
-            
-            
-            if (gfxPrefs::LayersOffMainThreadCompositionEnabled() &&
-                !gfxPrefs::LayersPreferD3D9())
-            {
-                if (gfxPrefs::WebGLANGLEForceD3D11()) {
-                    chosenDisplay = GetAndInitDisplay(*this,
-                                                      LOCAL_EGL_D3D11_ONLY_DISPLAY_ANGLE);
-                } else if (gfxPrefs::WebGLANGLETryD3D11() &&
-                           gfxPlatform::CanUseDirect3D11ANGLE())
-                {
-                    chosenDisplay = GetAndInitDisplay(*this,
-                                                      LOCAL_EGL_D3D11_ELSE_D3D9_DISPLAY_ANGLE);
-                }
-            }
+            chosenDisplay = GetAndInitDisplayForAccelANGLE(*this);
         }
     } else {
         chosenDisplay = GetAndInitDisplay(*this, EGL_DEFAULT_DISPLAY);
