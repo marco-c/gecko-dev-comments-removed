@@ -14,7 +14,7 @@
 
 #include "mozilla/media/MediaSystemResourceClient.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 
 namespace android {
 
@@ -129,7 +129,7 @@ public:
 
   
   status_t Input(const uint8_t* aData, uint32_t aDataSize,
-                 int64_t aTimestampUsecs, uint64_t flags);
+                 int64_t aTimestampUsecs, uint64_t flags, int64_t aTimeoutUs = 0);
   status_t Output(MediaBuffer** aBuffer, int64_t aTimeoutUs);
   bool Prepare();
   void ReleaseMediaResources();
@@ -183,7 +183,7 @@ private:
   wp<CodecResourceListener> mListener;
 
   
-  RefPtr<mozilla::MediaSystemResourceClient> mResourceClient;
+  nsRefPtr<mozilla::MediaSystemResourceClient> mResourceClient;
 
   
   mutable RWLock mCodecLock;
