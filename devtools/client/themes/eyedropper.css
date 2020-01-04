@@ -30,6 +30,8 @@
 }
 
 #color-value {
+  
+  direction: ltr;
   padding: 0.3em;
   text-shadow: 1px 1px 1px #fff;
 }
