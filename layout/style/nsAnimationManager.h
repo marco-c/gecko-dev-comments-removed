@@ -165,6 +165,17 @@ protected:
   void UpdateTiming(SeekFlag aSeekFlag,
                     SyncNotifyFlag aSyncNotifyFlag) override;
 
+  
+  
+  
+  
+  
+  TimeDuration InitialAdvance() const {
+    return mEffect ?
+           std::max(TimeDuration(), mEffect->Timing().mDelay * -1) :
+           TimeDuration();
+  }
+
   nsString mAnimationName;
 
   

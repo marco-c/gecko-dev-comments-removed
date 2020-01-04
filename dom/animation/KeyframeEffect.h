@@ -253,14 +253,6 @@ public:
   
   void SetTiming(const AnimationTiming& aTiming, Animation& aOwningAnimtion);
 
-  
-  
-  
-  
-  TimeDuration InitialAdvance() const {
-    return std::max(TimeDuration(), mTiming.mDelay * -1);
-  }
-
   Nullable<TimeDuration> GetLocalTime() const {
     
     
