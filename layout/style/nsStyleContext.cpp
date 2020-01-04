@@ -512,19 +512,21 @@ nsStyleContext::SetStyle(nsStyleStructID aSID, void* aStruct)
 
 static bool
 ShouldSuppressLineBreak(const nsStyleDisplay* aStyleDisplay,
-                        const nsStyleContext* aContainerContext,
-                        const nsStyleDisplay* aContainerDisplay)
+                        const nsStyleContext* aParentContext,
+                        const nsStyleDisplay* aParentDisplay)
 {
   
   if (aStyleDisplay->IsOutOfFlowStyle()) {
     return false;
   }
-  if (aContainerContext->ShouldSuppressLineBreak()) {
+  if (aParentContext->ShouldSuppressLineBreak()) {
     
     
-    if (aContainerDisplay->mDisplay == NS_STYLE_DISPLAY_INLINE ||
-        aContainerDisplay->mDisplay == NS_STYLE_DISPLAY_RUBY ||
-        aContainerDisplay->mDisplay == NS_STYLE_DISPLAY_RUBY_BASE_CONTAINER) {
+    
+    if (aParentDisplay->mDisplay == NS_STYLE_DISPLAY_INLINE ||
+        aParentDisplay->mDisplay == NS_STYLE_DISPLAY_CONTENTS ||
+        aParentDisplay->mDisplay == NS_STYLE_DISPLAY_RUBY ||
+        aParentDisplay->mDisplay == NS_STYLE_DISPLAY_RUBY_BASE_CONTAINER) {
       return true;
     }
   }
@@ -547,7 +549,7 @@ ShouldSuppressLineBreak(const nsStyleDisplay* aStyleDisplay,
   
   
   
-  if ((aContainerDisplay->IsRubyDisplayType() &&
+  if ((aParentDisplay->IsRubyDisplayType() &&
        aStyleDisplay->mDisplay != NS_STYLE_DISPLAY_RUBY_BASE_CONTAINER &&
        aStyleDisplay->mDisplay != NS_STYLE_DISPLAY_RUBY_TEXT_CONTAINER) ||
       
@@ -704,18 +706,6 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
         }
       }
     }
-
-    if (::ShouldSuppressLineBreak(disp, containerContext, containerDisp)) {
-      mBits |= NS_STYLE_SUPPRESS_LINEBREAK;
-      uint8_t displayVal = disp->mDisplay;
-      nsRuleNode::EnsureInlineDisplay(displayVal);
-      if (displayVal != disp->mDisplay) {
-        nsStyleDisplay* mutable_display =
-          static_cast<nsStyleDisplay*>(GetUniqueStyleData(eStyleStruct_Display));
-        disp = mutable_display;
-        mutable_display->mDisplay = displayVal;
-      }
-    }
   }
 
   
@@ -724,6 +714,18 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
     mBits |= NS_STYLE_IN_DISPLAY_NONE_SUBTREE;
   }
 
+  if (mParent && ::ShouldSuppressLineBreak(disp, mParent,
+                                           mParent->StyleDisplay())) {
+    mBits |= NS_STYLE_SUPPRESS_LINEBREAK;
+    uint8_t displayVal = disp->mDisplay;
+    nsRuleNode::EnsureInlineDisplay(displayVal);
+    if (displayVal != disp->mDisplay) {
+      nsStyleDisplay* mutable_display =
+        static_cast<nsStyleDisplay*>(GetUniqueStyleData(eStyleStruct_Display));
+      disp = mutable_display;
+      mutable_display->mDisplay = displayVal;
+    }
+  }
   
   if (disp->mDisplay == NS_STYLE_DISPLAY_RUBY_BASE_CONTAINER ||
       disp->mDisplay == NS_STYLE_DISPLAY_RUBY_TEXT_CONTAINER) {
