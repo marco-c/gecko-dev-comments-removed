@@ -134,6 +134,30 @@ BluetoothMapSmsManager::Init()
 }
 
 
+void
+BluetoothMapSmsManager::InitMapSmsInterface(BluetoothProfileResultHandler* aRes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (aRes) {
+    aRes->Init();
+  }
+}
+
+
+void
+BluetoothMapSmsManager::DeinitMapSmsInterface(BluetoothProfileResultHandler* aRes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  sMapSmsManager = nullptr;
+
+  if (aRes) {
+    aRes->Deinit();
+  }
+}
+
+
 BluetoothMapSmsManager*
 BluetoothMapSmsManager::Get()
 {

@@ -176,6 +176,8 @@ BluetoothHfpManager::DeinitHfpInterface(BluetoothProfileResultHandler* aRes)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  sBluetoothHfpManager = nullptr;
+
   
 
 

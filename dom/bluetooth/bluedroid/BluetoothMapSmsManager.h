@@ -86,7 +86,10 @@ public:
   
   static const int SDP_SMS_MMS_INSTANCE_ID = 0;
 
+  static void InitMapSmsInterface(BluetoothProfileResultHandler* aRes);
+  static void DeinitMapSmsInterface(BluetoothProfileResultHandler* aRes);
   static BluetoothMapSmsManager* Get();
+
   bool Listen();
 
   

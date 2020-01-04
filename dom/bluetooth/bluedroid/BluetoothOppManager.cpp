@@ -254,6 +254,30 @@ BluetoothOppManager::Init()
 }
 
 
+void
+BluetoothOppManager::InitOppInterface(BluetoothProfileResultHandler* aRes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (aRes) {
+    aRes->Init();
+  }
+}
+
+
+void
+BluetoothOppManager::DeinitOppInterface(BluetoothProfileResultHandler* aRes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  sBluetoothOppManager = nullptr;
+
+  if (aRes) {
+    aRes->Deinit();
+  }
+}
+
+
 BluetoothOppManager*
 BluetoothOppManager::Get()
 {

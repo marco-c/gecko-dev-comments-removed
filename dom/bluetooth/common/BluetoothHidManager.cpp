@@ -79,6 +79,30 @@ BluetoothHidManager::~BluetoothHidManager()
 }
 
 
+void
+BluetoothHidManager::InitHidInterface(BluetoothProfileResultHandler* aRes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (aRes) {
+    aRes->Init();
+  }
+}
+
+
+void
+BluetoothHidManager::DeinitHidInterface(BluetoothProfileResultHandler* aRes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  sBluetoothHidManager = nullptr;
+
+  if (aRes) {
+    aRes->Deinit();
+  }
+}
+
+
 BluetoothHidManager*
 BluetoothHidManager::Get()
 {

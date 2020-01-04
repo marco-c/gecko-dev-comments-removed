@@ -141,6 +141,30 @@ BluetoothPbapManager::Init()
 }
 
 
+void
+BluetoothPbapManager::InitPbapInterface(BluetoothProfileResultHandler* aRes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (aRes) {
+    aRes->Init();
+  }
+}
+
+
+void
+BluetoothPbapManager::DeinitPbapInterface(BluetoothProfileResultHandler* aRes)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  sPbapManager = nullptr;
+
+  if (aRes) {
+    aRes->Deinit();
+  }
+}
+
+
 BluetoothPbapManager*
 BluetoothPbapManager::Get()
 {
