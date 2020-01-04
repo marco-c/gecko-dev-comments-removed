@@ -624,7 +624,7 @@ this.AddonRepository = {
       AddonManager.getAllAddons(resolve));
 
     
-    allAddons = [a for (a of allAddons) if (a.id != AddonManager.hotfixID)];
+    allAddons = allAddons.filter(a => a.id != AddonManager.hotfixID);
 
     
     if (!this.cacheEnabled) {
@@ -632,7 +632,7 @@ this.AddonRepository = {
       return this._clearCache();
     }
 
-    let ids = [a.id for (a of allAddons)];
+    let ids = allAddons.map(a => a.id);
     logger.debug("Repopulate add-on cache with " + ids.toSource());
 
     let addonsToCache = yield new Promise((resolve, reject) =>

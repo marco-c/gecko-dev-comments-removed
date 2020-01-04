@@ -414,7 +414,7 @@ function _findAddon(addonDB, aFilter) {
 
 
 function _filterDB(addonDB, aFilter) {
-  return [for (addon of addonDB.values()) if (aFilter(addon)) addon];
+  return Array.from(addonDB.values()).filter(aFilter);
 }
 
 this.XPIDatabase = {
