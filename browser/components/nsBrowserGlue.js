@@ -424,14 +424,37 @@ BrowserGlue.prototype = {
       case "keyword-search":
         
         
+        
+        
+        let win = RecentWindow.getMostRecentBrowserWindow();
+        BrowserUITelemetry.countSearchEvent("urlbar", win.gURLBar.value);
+
         let engine = null;
         try {
           engine = subject.QueryInterface(Ci.nsISearchEngine);
         } catch (ex) {
           Cu.reportError(ex);
         }
-        let win = RecentWindow.getMostRecentBrowserWindow();
-        win.BrowserSearch.recordSearchInHealthReport(engine, "urlbar");
+
+        win.BrowserSearch.recordSearchInTelemetry(engine, "urlbar");
+#ifdef MOZ_SERVICES_HEALTHREPORT
+        let reporter = Cc["@mozilla.org/datareporting/service;1"]
+                         .getService()
+                         .wrappedJSObject
+                         .healthReporter;
+
+        if (!reporter) {
+          return;
+        }
+
+        reporter.onInit().then(function record() {
+          try {
+            reporter.getProvider("org.mozilla.searches").recordSearch(engine, "urlbar");
+          } catch (ex) {
+            Cu.reportError(ex);
+          }
+        });
+#endif
         break;
       case "browser-search-engine-modified":
         
@@ -622,6 +645,8 @@ BrowserGlue.prototype = {
     ExtensionManagement.registerScript("chrome://browser/content/ext-tabs.js");
     ExtensionManagement.registerScript("chrome://browser/content/ext-windows.js");
     ExtensionManagement.registerScript("chrome://browser/content/ext-bookmarks.js");
+
+    ExtensionManagement.registerSchema("chrome://browser/content/schemas/windows.json");
 
     this._flashHangCount = 0;
     this._firstWindowReady = new Promise(resolve => this._firstWindowLoaded = resolve);
