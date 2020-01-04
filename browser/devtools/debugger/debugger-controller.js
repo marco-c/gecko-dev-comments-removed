@@ -11,7 +11,6 @@ const DBG_STRINGS_URI = "chrome://browser/locale/devtools/debugger.properties";
 const NEW_SOURCE_IGNORED_URLS = ["debugger eval code", "XStringBundle"];
 const NEW_SOURCE_DISPLAY_DELAY = 200; 
 const FETCH_SOURCE_RESPONSE_DELAY = 200; 
-const FETCH_EVENT_LISTENERS_DELAY = 200; 
 const FRAME_STEP_CLEAR_DELAY = 100; 
 const CALL_STACK_PAGE_SIZE = 25; 
 
@@ -103,9 +102,11 @@ Cu.import("resource:///modules/devtools/VariablesView.jsm");
 Cu.import("resource:///modules/devtools/VariablesViewController.jsm");
 Cu.import("resource:///modules/devtools/ViewHelpers.jsm");
 
-const {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+Cu.import("resource:///modules/devtools/shared/browser-loader.js");
+const require = BrowserLoader("resource:///modules/devtools/debugger/", this).require;
+
 const {TargetFactory} = require("devtools/framework/target");
-const {Toolbox} = require("devtools/framework/toolbox")
+const {Toolbox} = require("devtools/framework/toolbox");
 const DevToolsUtils = require("devtools/toolkit/DevToolsUtils");
 const promise = require("devtools/toolkit/deprecated-sync-thenables");
 const Editor = require("devtools/sourceeditor/editor");
@@ -320,7 +321,9 @@ let DebuggerController = {
       this.SourceScripts.connect();
 
       if (aThreadClient.paused) {
-        aThreadClient.resume(this._ensureResumptionOrder);
+        aThreadClient.resume(res => {
+          this._ensureResumptionOrder(res)
+        });
       }
 
       deferred.resolve();
@@ -1274,7 +1277,7 @@ SourceScripts.prototype = {
 
     
     if (DebuggerView.instrumentsPaneTab == "events-tab") {
-      DebuggerController.Breakpoints.DOM.scheduleEventListenersFetch();
+      dispatcher.dispatch(actions.fetchEventListeners());
     }
 
     
@@ -1529,151 +1532,6 @@ SourceScripts.prototype = {
         deferred.resolve(fetched.sort(([aFirst], [aSecond]) => aFirst > aSecond));
       }
     }
-
-    return deferred.promise;
-  }
-};
-
-
-
-
-function EventListeners() {
-}
-
-EventListeners.prototype = {
-  
-
-
-
-  activeEventNames: [],
-
-  
-
-
-
-
-  scheduleEventBreakpointsUpdate: function() {
-    
-    
-    setNamedTimeout("event-breakpoints-update", 0, () => {
-      this.activeEventNames = DebuggerView.EventListeners.getCheckedEvents();
-      gThreadClient.pauseOnDOMEvents(this.activeEventNames);
-
-      
-      window.emit(EVENTS.EVENT_BREAKPOINTS_UPDATED);
-    });
-  },
-
-  
-
-
-  scheduleEventListenersFetch: function() {
-    
-    
-    setNamedTimeout("event-listeners-fetch", FETCH_EVENT_LISTENERS_DELAY, () => {
-      if (gThreadClient.state != "paused") {
-        gThreadClient.interrupt(() => this._getListeners(() => gThreadClient.resume()));
-      } else {
-        this._getListeners();
-      }
-    });
-  },
-
-  
-
-
-
-  _parsingListeners: false,
-
-  
-
-
-
-  _eventListenersUpdateNeeded: false,
-
-  
-
-
-
-
-
-
-  _getListeners: function(aCallback) {
-    
-    
-    if (this._parsingListeners) {
-      this._eventListenersUpdateNeeded = true;
-      return;
-    }
-    this._parsingListeners = true;
-    gThreadClient.eventListeners(Task.async(function*(aResponse) {
-      if (aResponse.error) {
-        throw "Error getting event listeners: " + aResponse.message;
-      }
-
-      
-      
-      aResponse.listeners.sort((a, b) => a.type > b.type ? 1 : -1);
-
-      
-      let fetchedDefinitions = new Map();
-      for (let listener of aResponse.listeners) {
-        let definitionSite;
-        if (fetchedDefinitions.has(listener.function.actor)) {
-          definitionSite = fetchedDefinitions.get(listener.function.actor);
-        } else if (listener.function.class == "Function") {
-          definitionSite = yield this._getDefinitionSite(listener.function);
-          if (!definitionSite) {
-            
-            
-            continue;
-          }
-
-          fetchedDefinitions.set(listener.function.actor, definitionSite);
-        }
-        listener.function.url = definitionSite;
-        DebuggerView.EventListeners.addListener(listener, { staged: true });
-      }
-      fetchedDefinitions.clear();
-
-      
-      DebuggerView.EventListeners.commit();
-
-      
-      this._parsingListeners = false;
-      if (this._eventListenersUpdateNeeded) {
-        this._eventListenersUpdateNeeded = false;
-        this.scheduleEventListenersFetch();
-      }
-
-      
-      
-      window.emit(EVENTS.EVENT_LISTENERS_FETCHED);
-      aCallback && aCallback();
-    }.bind(this)));
-  },
-
-  
-
-
-
-
-
-
-
-  _getDefinitionSite: function(aFunction) {
-    let deferred = promise.defer();
-
-    gThreadClient.pauseGrip(aFunction).getDefinitionSite(aResponse => {
-      if (aResponse.error) {
-        
-        const msg = "Error getting function definition site: " + aResponse.message;
-        DevToolsUtils.reportException("_getDefinitionSite", msg);
-        deferred.resolve(null);
-      } else {
-        deferred.resolve(aResponse.source.url);
-      }
-    });
 
     return deferred.promise;
   }
@@ -2205,7 +2063,6 @@ DebuggerController.ThreadState = new ThreadState();
 DebuggerController.StackFrames = new StackFrames();
 DebuggerController.SourceScripts = new SourceScripts();
 DebuggerController.Breakpoints = new Breakpoints();
-DebuggerController.Breakpoints.DOM = new EventListeners();
 
 
 

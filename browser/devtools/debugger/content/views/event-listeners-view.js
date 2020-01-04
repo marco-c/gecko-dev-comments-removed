@@ -3,13 +3,23 @@
 
 "use strict";
 
+const actions = require('../stores/event-listeners').actions;
+const bindActionCreators = require('devtools/shared/fluxify/bindActionCreators');
 
 
 
-function EventListenersView(DebuggerController) {
+
+function EventListenersView(dispatcher, DebuggerController) {
   dumpn("EventListenersView was instantiated");
 
+  this.actions = bindActionCreators(actions, dispatcher.dispatch);
+  this.getState = () => dispatcher.getState().eventListeners;
+
   this.Breakpoints = DebuggerController.Breakpoints;
+
+  dispatcher.onChange({
+    "eventListeners": { "listeners": this.renderListeners }
+  }, this);
 
   this._onCheck = this._onCheck.bind(this);
   this._onClick = this._onClick.bind(this);
@@ -45,6 +55,15 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
 
     this.widget.removeEventListener("check", this._onCheck, false);
     this.widget.removeEventListener("click", this._onClick, false);
+  },
+
+  renderListeners: function(listeners) {
+    listeners.forEach(listener => {
+      this.addListener(listener, { staged: true });
+    });
+
+    
+    this.commit();
   },
 
   
@@ -142,12 +161,12 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
     }
 
     
-    let itemView = this._createItemView(type, selector, url);
+    const itemView = this._createItemView(type, selector, url);
 
     
     
-    let checkboxState =
-      this.Breakpoints.DOM.activeEventNames.indexOf(type) != -1;
+    const activeEventNames = this.getState().activeEventNames;
+    const checkboxState = activeEventNames.indexOf(type) != -1;
 
     
     this.push([itemView.container], {
@@ -241,7 +260,8 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
   _onCheck: function({ detail: { description, checked }, target }) {
     if (description == "item") {
       this.getItemForElement(target).attachment.checkboxState = checked;
-      this.Breakpoints.DOM.scheduleEventBreakpointsUpdate();
+
+      this.actions.updateEventBreakpoints(this.getCheckedEvents());
       return;
     }
 
@@ -271,4 +291,4 @@ EventListenersView.prototype = Heritage.extend(WidgetMethods, {
   _inNativeCodeString: ""
 });
 
-DebuggerView.EventListeners = new EventListenersView(DebuggerController);
+module.exports = EventListenersView;

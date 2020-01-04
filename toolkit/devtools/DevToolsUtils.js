@@ -119,6 +119,38 @@ exports.zip = function zip(a, b) {
 
 
 
+
+
+
+
+
+
+exports.entries = function entries(obj) {
+  return Object.keys(obj).map(k => [k, obj[k]]);
+}
+
+
+
+
+
+
+
+
+
+
+exports.compose = function compose(...funcs) {
+  return (...args) => {
+    const initialValue = funcs[funcs.length - 1].apply(null, args);
+    const leftFuncs = funcs.slice(0, -1);
+    return leftFuncs.reduceRight((composed, f) => f(composed),
+                                 initialValue);
+  };
+}
+
+
+
+
+
 exports.executeSoon = function executeSoon(aFn) {
   if (isWorker) {
     setImmediate(aFn);

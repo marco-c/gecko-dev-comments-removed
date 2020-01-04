@@ -1,0 +1,17 @@
+
+
+
+"use strict";
+
+
+
+
+
+function logMiddleware({ dispatch, getState }) {
+  return next => action => {
+    console.log('[DISPATCH]', JSON.stringify(action));
+    next(action);
+  }
+}
+
+module.exports = logMiddleware;
