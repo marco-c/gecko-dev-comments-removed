@@ -4,25 +4,21 @@
 
 "use strict";
 
-window.addEventListener("load", () => {
-  
-  let videoElement = document.getElementsByTagName("video")[0];
-  if (!videoElement)
+
+let videoElement = document.getElementsByTagName("video")[0];
+
+
+
+document.addEventListener("keypress", ev => {
+  if (ev.synthetic) 
     return;
 
   
   
-  document.addEventListener("keypress", ev => {
-    if (ev.synthetic) 
-      return;
+  if (document.activeElement == videoElement)
+    return;
 
-    
-    
-    if (document.activeElement == videoElement)
-      return;
-
-    let newEvent = new KeyboardEvent("keypress", ev);
-    newEvent.synthetic = true;
-    videoElement.dispatchEvent(newEvent);
-  });
+  let newEvent = new KeyboardEvent("keypress", ev);
+  newEvent.synthetic = true;
+  videoElement.dispatchEvent(newEvent);
 });
