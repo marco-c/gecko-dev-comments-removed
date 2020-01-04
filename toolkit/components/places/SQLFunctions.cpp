@@ -17,7 +17,6 @@
 #include "nsNavHistory.h"
 #include "mozilla/Likely.h"
 #include "nsVariant.h"
-#include "mozilla/HashFunctions.h"
 
 
 
@@ -185,6 +184,13 @@ namespace places {
 
 
   
+  
+
+  MatchAutoCompleteFunction::~MatchAutoCompleteFunction()
+  {
+  }
+
+  
   nsresult
   MatchAutoCompleteFunction::create(mozIStorageConnection *aDBConn)
   {
@@ -322,6 +328,9 @@ namespace places {
     mozIStorageFunction
   )
 
+  
+  
+
   NS_IMETHODIMP
   MatchAutoCompleteFunction::OnFunctionCall(mozIStorageValueArray *aArguments,
                                             nsIVariant **_result)
@@ -430,6 +439,13 @@ namespace places {
 
 
   
+  
+
+  CalculateFrecencyFunction::~CalculateFrecencyFunction()
+  {
+  }
+
+  
   nsresult
   CalculateFrecencyFunction::create(mozIStorageConnection *aDBConn)
   {
@@ -448,6 +464,9 @@ namespace places {
     CalculateFrecencyFunction,
     mozIStorageFunction
   )
+
+  
+  
 
   NS_IMETHODIMP
   CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray *aArguments,
@@ -609,6 +628,13 @@ namespace places {
 
 
 
+  GenerateGUIDFunction::~GenerateGUIDFunction()
+  {
+  }
+
+  
+  
+
   
   nsresult
   GenerateGUIDFunction::create(mozIStorageConnection *aDBConn)
@@ -627,6 +653,9 @@ namespace places {
     mozIStorageFunction
   )
 
+  
+  
+
   NS_IMETHODIMP
   GenerateGUIDFunction::OnFunctionCall(mozIStorageValueArray *aArguments,
                                        nsIVariant **_result)
@@ -641,6 +670,13 @@ namespace places {
 
 
 
+
+  GetUnreversedHostFunction::~GetUnreversedHostFunction()
+  {
+  }
+
+  
+  
 
   
   nsresult
@@ -659,6 +695,9 @@ namespace places {
     GetUnreversedHostFunction,
     mozIStorageFunction
   )
+
+  
+  
 
   NS_IMETHODIMP
   GetUnreversedHostFunction::OnFunctionCall(mozIStorageValueArray *aArguments,
@@ -688,6 +727,13 @@ namespace places {
 
 
 
+  FixupURLFunction::~FixupURLFunction()
+  {
+  }
+
+  
+  
+
   
   nsresult
   FixupURLFunction::create(mozIStorageConnection *aDBConn)
@@ -705,6 +751,9 @@ namespace places {
     FixupURLFunction,
     mozIStorageFunction
   )
+
+  
+  
 
   NS_IMETHODIMP
   FixupURLFunction::OnFunctionCall(mozIStorageValueArray *aArguments,
@@ -737,6 +786,10 @@ namespace places {
 
 
 
+
+  FrecencyNotificationFunction::~FrecencyNotificationFunction()
+  {
+  }
 
   
   nsresult
@@ -794,6 +847,10 @@ namespace places {
 
 
 
+  StoreLastInsertedIdFunction::~StoreLastInsertedIdFunction()
+  {
+  }
+
   
   nsresult
   StoreLastInsertedIdFunction::create(mozIStorageConnection *aDBConn)
@@ -833,84 +890,6 @@ namespace places {
     RefPtr<nsVariant> result = new nsVariant();
     rv = result->SetAsInt64(lastInsertedId);
     NS_ENSURE_SUCCESS(rv, rv);
-    result.forget(_result);
-    return NS_OK;
-  }
-
-
-
-
-  
-  nsresult
-  HashFunction::create(mozIStorageConnection *aDBConn)
-  {
-    RefPtr<HashFunction> function = new HashFunction();
-    return aDBConn->CreateFunction(
-      NS_LITERAL_CSTRING("hash"), -1, function
-    );
-  }
-
-  NS_IMPL_ISUPPORTS(
-    HashFunction,
-    mozIStorageFunction
-  )
-
-  NS_IMETHODIMP
-  HashFunction::OnFunctionCall(mozIStorageValueArray *aArguments,
-                               nsIVariant **_result)
-  {
-    
-    MOZ_ASSERT(aArguments);
-
-    
-    uint32_t numEntries;
-    nsresult rv = aArguments->GetNumEntries(&numEntries);
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ENSURE_TRUE(numEntries >= 1  && numEntries <= 2, NS_ERROR_FAILURE);
-
-    nsString str;
-    aArguments->GetString(0, str);
-    nsAutoCString mode;
-    if (numEntries > 1) {
-      aArguments->GetUTF8String(1, mode);
-    }
-
-    RefPtr<nsVariant> result = new nsVariant();
-    if (mode.IsEmpty()) {
-      
-      
-      
-      
-      
-      nsAString::const_iterator start, tip, end;
-      str.BeginReading(tip);
-      start = tip;
-      str.EndReading(end);
-      if (FindInReadable(NS_LITERAL_STRING(":"), tip, end)) {
-        const nsDependentSubstring& prefix = Substring(start, tip);
-        uint64_t prefixHash = static_cast<uint64_t>(HashString(prefix) & 0x0000FFFF);
-        
-        uint32_t srcHash = HashString(str);
-        uint64_t hash = (prefixHash << 32) + srcHash;
-        result->SetAsInt64(hash);
-      } else {
-        uint32_t hash = HashString(str);
-        result->SetAsInt64(hash);
-      }
-    } else if (mode.Equals(NS_LITERAL_CSTRING("prefix_lo"))) {
-      
-      uint64_t hash = static_cast<uint64_t>(HashString(str) & 0x0000FFFF) << 32;
-      result->SetAsInt64(hash);
-    } else if (mode.Equals(NS_LITERAL_CSTRING("prefix_hi"))) {
-      
-      uint64_t hash = static_cast<uint64_t>(HashString(str) & 0x0000FFFF) << 32;
-      
-      hash +=  0xFFFFFFFF;
-      result->SetAsInt64(hash);
-    } else {
-      return NS_ERROR_FAILURE;
-    }
-
     result.forget(_result);
     return NS_OK;
   }

@@ -88,7 +88,7 @@ add_task(function* test_pref_maxpages() {
     }
 
     
-    let historyObserver = {
+    historyObserver = {
       onBeginUpdateBatch: function PEX_onBeginUpdateBatch() {},
       onEndUpdateBatch: function PEX_onEndUpdateBatch() {},
       onClearHistory: function() {},

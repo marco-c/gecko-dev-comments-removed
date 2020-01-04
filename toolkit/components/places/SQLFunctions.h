@@ -71,7 +71,7 @@ public:
   static nsresult create(mozIStorageConnection *aDBConn);
 
 private:
-  ~MatchAutoCompleteFunction() {}
+  ~MatchAutoCompleteFunction();
 
   
 
@@ -194,8 +194,10 @@ private:
 
 
 
+
 class CalculateFrecencyFunction final : public mozIStorageFunction
 {
+  ~CalculateFrecencyFunction();
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGEFUNCTION
@@ -207,8 +209,6 @@ public:
 
 
   static nsresult create(mozIStorageConnection *aDBConn);
-private:
-  ~CalculateFrecencyFunction() {}
 };
 
 
@@ -219,6 +219,7 @@ private:
 
 class GenerateGUIDFunction final : public mozIStorageFunction
 {
+  ~GenerateGUIDFunction();
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGEFUNCTION
@@ -230,8 +231,6 @@ public:
 
 
   static nsresult create(mozIStorageConnection *aDBConn);
-private:
-  ~GenerateGUIDFunction() {}
 };
 
 
@@ -244,6 +243,7 @@ private:
 
 class GetUnreversedHostFunction final : public mozIStorageFunction
 {
+  ~GetUnreversedHostFunction();
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGEFUNCTION
@@ -255,8 +255,6 @@ public:
 
 
   static nsresult create(mozIStorageConnection *aDBConn);
-private:
-  ~GetUnreversedHostFunction() {}
 };
 
 
@@ -274,6 +272,7 @@ private:
 
 class FixupURLFunction final : public mozIStorageFunction
 {
+  ~FixupURLFunction();
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGEFUNCTION
@@ -285,8 +284,6 @@ public:
 
 
   static nsresult create(mozIStorageConnection *aDBConn);
-private:
-  ~FixupURLFunction() {}
 };
 
 
@@ -312,6 +309,7 @@ private:
 
 class FrecencyNotificationFunction final : public mozIStorageFunction
 {
+  ~FrecencyNotificationFunction();
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGEFUNCTION
@@ -323,8 +321,6 @@ public:
 
 
   static nsresult create(mozIStorageConnection *aDBConn);
-private:
-  ~FrecencyNotificationFunction() {}
 };
 
 
@@ -342,6 +338,7 @@ private:
 
 class StoreLastInsertedIdFunction final : public mozIStorageFunction
 {
+  ~StoreLastInsertedIdFunction();
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGEFUNCTION
@@ -353,37 +350,6 @@ public:
 
 
   static nsresult create(mozIStorageConnection *aDBConn);
-private:
-  ~StoreLastInsertedIdFunction() {}
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-class HashFunction final : public mozIStorageFunction
-{
-public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_MOZISTORAGEFUNCTION
-
-  
-
-
-
-
-
-  static nsresult create(mozIStorageConnection *aDBConn);
-private:
-  ~HashFunction() {}
 };
 
 } 

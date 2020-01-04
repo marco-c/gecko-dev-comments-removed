@@ -60,7 +60,7 @@ function* task_populateDB(aArray)
           
           
           let stmt = DBConn().createAsyncStatement(
-            "UPDATE moz_places SET visit_count = :vc WHERE url_hash = hash(:url) AND url = :url");
+            "UPDATE moz_places SET visit_count = :vc WHERE url = :url");
           stmt.params.vc = qdata.visitCount;
           stmt.params.url = qdata.uri;
           try {
@@ -79,7 +79,7 @@ function* task_populateDB(aArray)
         
         
         let stmt = DBConn().createAsyncStatement(
-          "UPDATE moz_places SET hidden = 1 WHERE url_hash = hash(:url) AND url = :url");
+          "UPDATE moz_places SET hidden = 1 WHERE url = :url");
         stmt.params.url = qdata.uri;
         try {
           stmt.executeAsync();
