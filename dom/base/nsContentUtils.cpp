@@ -5560,18 +5560,6 @@ nsContentUtils::GetSafeJSContext()
 
 
 JSContext *
-nsContentUtils::GetDefaultJSContextForThread()
-{
-  MOZ_ASSERT(IsInitialized());
-  if (MOZ_LIKELY(NS_IsMainThread())) {
-    return GetSafeJSContext();
-  } else {
-    return workers::GetCurrentThreadJSContext();
-  }
-}
-
-
-JSContext *
 nsContentUtils::GetCurrentJSContextForThread()
 {
   MOZ_ASSERT(IsInitialized());
