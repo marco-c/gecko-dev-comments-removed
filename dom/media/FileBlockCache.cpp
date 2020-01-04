@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/SharedThreadPool.h"
 #include "FileBlockCache.h"
 #include "VideoUtils.h"
 #include "prio.h"

@@ -255,7 +255,7 @@ private:
     RefPtr<MediaTrackDemuxer> mTrackDemuxer;
     
     
-    RefPtr<FlushableTaskQueue> mTaskQueue;
+    RefPtr<TaskQueue> mTaskQueue;
     
     nsAutoPtr<DecoderCallback> mCallback;
 
