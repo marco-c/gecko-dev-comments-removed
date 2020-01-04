@@ -35,10 +35,6 @@
 
 
 
-class nsIChannel;
-class nsIHttpChannel;
-class nsILoadGroup;
-
 typedef uint16_t nsMediaNetworkState;
 typedef uint16_t nsMediaReadyState;
 
@@ -56,9 +52,13 @@ class MediaTrack;
 } 
 } 
 
+class AutoNotifyAudioChannelAgent;
+class nsIChannel;
+class nsIHttpChannel;
+class nsILoadGroup;
+class nsIRunnable;
 class nsITimer;
 class nsRange;
-class nsIRunnable;
 
 namespace mozilla {
 namespace dom {
@@ -78,6 +78,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
                          public MediaDecoderOwner,
                          public nsIAudioChannelAgentCallback
 {
+  friend class AutoNotifyAudioChannelAgent;
+
 public:
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::layers::ImageContainer ImageContainer;
@@ -1049,6 +1051,10 @@ protected:
 
   
   void NotifyAudioChannelAgent(bool aPlaying);
+
+  
+  
+  bool MaybeCreateAudioChannelAgent();
 
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;
