@@ -1,0 +1,3 @@
+
+some invalid js syntax;
+wasRun = true;
