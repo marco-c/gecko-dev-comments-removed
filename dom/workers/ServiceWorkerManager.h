@@ -168,7 +168,7 @@ public:
 
 
 
-class ServiceWorkerInfo final
+class ServiceWorkerInfo final : public nsIServiceWorkerInfo
 {
 private:
   const ServiceWorkerRegistrationInfo* mRegistration;
@@ -197,7 +197,8 @@ private:
   GetNextID() const;
 
 public:
-  NS_INLINE_DECL_REFCOUNTING(ServiceWorkerInfo)
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISERVICEWORKERINFO
 
   class ServiceWorkerPrivate*
   WorkerPrivate() const
