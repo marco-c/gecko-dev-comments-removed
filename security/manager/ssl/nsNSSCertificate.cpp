@@ -1634,7 +1634,7 @@ nsNSSCertList::DupCertList(const UniqueCERTCertList& certList,
   return newList;
 }
 
-void*
+CERTCertList*
 nsNSSCertList::GetRawCertList()
 {
   

@@ -634,7 +634,7 @@ nsCertTree::GetCertsByTypeFromCache(nsIX509CertList   *aCache,
   
   
   nsNSSShutDownPreventionLock locker;
-  CERTCertList *certList = reinterpret_cast<CERTCertList*>(aCache->GetRawCertList());
+  CERTCertList* certList = aCache->GetRawCertList();
   if (!certList)
     return NS_ERROR_FAILURE;
   return GetCertsByTypeFromCertList(certList, aType, aCertCmpFn, aCertCmpFnArg);
