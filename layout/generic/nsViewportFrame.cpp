@@ -18,6 +18,7 @@
 #include "nsIMozBrowserFrame.h"
 
 using namespace mozilla;
+typedef nsAbsoluteContainingBlock::AbsPosReflowFlags AbsPosReflowFlags;
 
 ViewportFrame*
 NS_NewViewportFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
@@ -350,10 +351,10 @@ ViewportFrame::Reflow(nsPresContext*           aPresContext,
     if (rootScrollFrame && !rootScrollFrame->IsIgnoringViewportClipping()) {
       overflowAreas = nullptr;
     }
+    AbsPosReflowFlags flags =
+      AbsPosReflowFlags::eCBWidthAndHeightChanged; 
     GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowState, aStatus,
-                                         rect,
-                                         false, true, true, 
-                                         overflowAreas);
+                                         rect, flags, overflowAreas);
   }
 
   if (mFrames.NotEmpty()) {

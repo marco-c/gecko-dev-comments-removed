@@ -13,6 +13,7 @@
 
 #include "nsFrameList.h"
 #include "nsIFrame.h"
+#include "mozilla/TypedEnumBits.h"
 
 class nsContainerFrame;
 struct nsHTMLReflowState;
@@ -68,7 +69,16 @@ public:
                    ChildListID    aListID,
                    nsIFrame*      aOldFrame);
 
+  enum class AbsPosReflowFlags {
+    eConstrainHeight = 0x1,
+    eCBWidthChanged  = 0x2,
+    eCBHeightChanged = 0x4,
+    eCBWidthAndHeightChanged = eCBWidthChanged | eCBHeightChanged,
+  };
+
   
+
+
 
 
 
@@ -87,9 +97,7 @@ public:
               const nsHTMLReflowState& aReflowState,
               nsReflowStatus&          aReflowStatus,
               const nsRect&            aContainingBlock,
-              bool                     aConstrainHeight,
-              bool                     aCBWidthChanged,
-              bool                     aCBHeightChanged,
+              AbsPosReflowFlags        aFlags,
               nsOverflowAreas*         aOverflowAreas);
 
   void DestroyFrames(nsIFrame* aDelegatingFrame,
@@ -121,7 +129,7 @@ protected:
                            nsPresContext*           aPresContext,
                            const nsHTMLReflowState& aReflowState,
                            const nsRect&            aContainingBlockRect,
-                           bool                     aConstrainHeight,
+                           AbsPosReflowFlags        aFlags,
                            nsIFrame*                aKidFrame,
                            nsReflowStatus&          aStatus,
                            nsOverflowAreas*         aOverflowAreas);
@@ -142,4 +150,7 @@ protected:
 #endif
 };
 
+namespace mozilla {
+  MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsAbsoluteContainingBlock::AbsPosReflowFlags)
+}
 #endif 
