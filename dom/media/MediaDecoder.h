@@ -36,6 +36,7 @@
 #include "MediaStatistics.h"
 #include "MediaStreamGraph.h"
 #include "TimeUnits.h"
+#include "SeekTarget.h"
 
 class nsIStreamListener;
 class nsIPrincipal;
@@ -52,51 +53,6 @@ enum class MediaEventType : int8_t;
 #ifdef GetCurrentTime
 #undef GetCurrentTime
 #endif
-
-
-
-struct SeekTarget {
-  enum Type {
-    Invalid,
-    PrevSyncPoint,
-    Accurate
-  };
-  SeekTarget()
-    : mTime(-1.0)
-    , mType(SeekTarget::Invalid)
-    , mEventVisibility(MediaDecoderEventVisibility::Observable)
-  {
-  }
-  SeekTarget(int64_t aTimeUsecs,
-             Type aType,
-             MediaDecoderEventVisibility aEventVisibility =
-               MediaDecoderEventVisibility::Observable)
-    : mTime(aTimeUsecs)
-    , mType(aType)
-    , mEventVisibility(aEventVisibility)
-  {
-  }
-  SeekTarget(const SeekTarget& aOther)
-    : mTime(aOther.mTime)
-    , mType(aOther.mType)
-    , mEventVisibility(aOther.mEventVisibility)
-  {
-  }
-  bool IsValid() const {
-    return mType != SeekTarget::Invalid;
-  }
-  void Reset() {
-    mTime = -1;
-    mType = SeekTarget::Invalid;
-  }
-  
-  int64_t mTime;
-  
-  
-  
-  Type mType;
-  MediaDecoderEventVisibility mEventVisibility;
-};
 
 class MediaDecoder : public AbstractMediaDecoder
 {

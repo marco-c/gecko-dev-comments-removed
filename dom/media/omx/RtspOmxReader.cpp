@@ -33,14 +33,14 @@ nsresult RtspOmxReader::InitOmxDecoder()
 }
 
 RefPtr<MediaDecoderReader::SeekPromise>
-RtspOmxReader::Seek(int64_t aTime, int64_t aEndTime)
+RtspOmxReader::Seek(SeekTarget aTarget, int64_t aEndTime)
 {
   
   
   
   
   if (mRtspResource) {
-    mRtspResource->SeekTime(aTime);
+    mRtspResource->SeekTime(aTarget.mTime);
     mRtspResource->EnablePlayoutDelay();
   }
 
@@ -49,7 +49,7 @@ RtspOmxReader::Seek(int64_t aTime, int64_t aEndTime)
   
   
   mEnsureActiveFromSeek = true;
-  return MediaOmxReader::Seek(aTime, aEndTime);
+  return MediaOmxReader::Seek(aTarget, aEndTime);
 }
 
 void RtspOmxReader::SetIdle() {

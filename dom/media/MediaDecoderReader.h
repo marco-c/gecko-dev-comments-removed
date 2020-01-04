@@ -17,6 +17,7 @@
 #include "AudioCompactor.h"
 #include "Intervals.h"
 #include "TimeUnits.h"
+#include "SeekTarget.h"
 
 namespace mozilla {
 
@@ -177,7 +178,7 @@ public:
   
   
   
-  virtual RefPtr<SeekPromise> Seek(int64_t aTime, int64_t aEndTime) = 0;
+  virtual RefPtr<SeekPromise> Seek(SeekTarget aTarget, int64_t aEndTime) = 0;
 
   
   

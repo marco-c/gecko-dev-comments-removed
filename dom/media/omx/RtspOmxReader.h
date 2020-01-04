@@ -48,7 +48,7 @@ public:
   }
 
   
-  RefPtr<SeekPromise> Seek(int64_t aTime, int64_t aEndTime) final override;
+  RefPtr<SeekPromise> Seek(SeekTarget aTarget, int64_t aEndTime) final override;
 
   
   

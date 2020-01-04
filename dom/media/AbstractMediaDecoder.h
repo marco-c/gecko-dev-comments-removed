@@ -37,11 +37,6 @@ static inline bool IsCurrentThread(nsIThread* aThread) {
   return NS_GetCurrentThread() == aThread;
 }
 
-enum class MediaDecoderEventVisibility : int8_t {
-  Observable,
-  Suppressed
-};
-
 
 
 

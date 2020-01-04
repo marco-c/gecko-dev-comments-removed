@@ -48,7 +48,7 @@ public:
   void ReadUpdatedMetadata(MediaInfo* aInfo) override;
 
   RefPtr<SeekPromise>
-  Seek(int64_t aTime, int64_t aUnused) override;
+  Seek(SeekTarget aTarget, int64_t aUnused) override;
 
 protected:
   void NotifyDataArrivedInternal() override;
@@ -133,8 +133,8 @@ private:
   bool DecodeDemuxedSamples(TrackType aTrack,
                             MediaRawData* aSample);
 
-  struct SeekTarget {
-    SeekTarget(const media::TimeUnit& aTime, bool aDropTarget)
+  struct InternalSeekTarget {
+    InternalSeekTarget(const media::TimeUnit& aTime, bool aDropTarget)
       : mTime(aTime)
       , mDropTarget(aDropTarget)
       , mWaiting(false)
@@ -146,7 +146,7 @@ private:
   };
   
   
-  void InternalSeek(TrackType aTrack, const SeekTarget& aTarget);
+  void InternalSeek(TrackType aTrack, const InternalSeekTarget& aTarget);
 
   
   void DrainDecoder(TrackType aTrack);
@@ -300,7 +300,7 @@ private:
     
     
     
-    Maybe<SeekTarget> mTimeThreshold;
+    Maybe<InternalSeekTarget> mTimeThreshold;
     
     Maybe<media::TimeUnit> mLastSampleTime;
 

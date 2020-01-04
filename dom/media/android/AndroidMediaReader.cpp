@@ -314,7 +314,7 @@ bool AndroidMediaReader::DecodeAudioData()
 }
 
 RefPtr<MediaDecoderReader::SeekPromise>
-AndroidMediaReader::Seek(int64_t aTarget, int64_t aEndTime)
+AndroidMediaReader::Seek(SeekTarget aTarget, int64_t aEndTime)
 {
   MOZ_ASSERT(OnTaskQueue());
 
@@ -328,7 +328,7 @@ AndroidMediaReader::Seek(int64_t aTarget, int64_t aEndTime)
     
     
     
-    mVideoSeekTimeUs = aTarget;
+    mVideoSeekTimeUs = aTarget.mTime;
 
     RefPtr<AndroidMediaReader> self = this;
     mSeekRequest.Begin(DecodeToFirstVideoData()->Then(OwnerThread(), __func__, [self] (MediaData* v) {
@@ -337,12 +337,12 @@ AndroidMediaReader::Seek(int64_t aTarget, int64_t aEndTime)
       self->mSeekPromise.Resolve(self->mAudioSeekTimeUs, __func__);
     }, [self, aTarget] () {
       self->mSeekRequest.Complete();
-      self->mAudioSeekTimeUs = aTarget;
-      self->mSeekPromise.Resolve(aTarget, __func__);
+      self->mAudioSeekTimeUs = aTarget.mTime;
+      self->mSeekPromise.Resolve(aTarget.mTime, __func__);
     }));
   } else {
-    mAudioSeekTimeUs = mVideoSeekTimeUs = aTarget;
-    mSeekPromise.Resolve(aTarget, __func__);
+    mAudioSeekTimeUs = mVideoSeekTimeUs = aTarget.mTime;
+    mSeekPromise.Resolve(aTarget.mTime, __func__);
   }
 
   return p;
