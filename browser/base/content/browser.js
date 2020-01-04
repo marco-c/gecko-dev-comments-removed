@@ -2982,14 +2982,20 @@ var BrowserOnClick = {
         }
         break;
 
-      case "returnButton":
+      case "getMeOutOfHereButton":
         if (isTopFrame) {
           secHistogram.add(Ci.nsISecurityUITelemetry.WARNING_BAD_CERT_TOP_GET_ME_OUT_OF_HERE);
         }
-        goBackFromErrorPage();
+        getMeOutOfHere();
         break;
 
-      case "advancedButton":
+      case "technicalContent":
+        if (isTopFrame) {
+          secHistogram.add(Ci.nsISecurityUITelemetry.WARNING_BAD_CERT_TOP_TECHNICAL_DETAILS);
+        }
+        break;
+
+      case "expertContent":
         if (isTopFrame) {
           secHistogram.add(Ci.nsISecurityUITelemetry.WARNING_BAD_CERT_TOP_UNDERSTAND_RISKS);
         }
@@ -3128,35 +3134,6 @@ var BrowserOnClick = {
 
 
 function getMeOutOfHere() {
-  gBrowser.loadURI(getDefaultHomePage());
-}
-
-
-
-
-
-
-
-
-
-function goBackFromErrorPage() {
-  const ss = Cc["@mozilla.org/browser/sessionstore;1"].
-             getService(Ci.nsISessionStore);
-  let state = JSON.parse(ss.getTabState(gBrowser.selectedTab));
-  if (state.index == 1) {
-    
-    
-    gBrowser.loadURI(getDefaultHomePage());
-  } else {
-    BrowserBack();
-  }
-}
-
-
-
-
-
-function getDefaultHomePage() {
   
   var prefs = Services.prefs.getDefaultBranch(null);
   var url = BROWSER_NEW_TAB_URL;
@@ -3169,7 +3146,7 @@ function getDefaultHomePage() {
   } catch(e) {
     Components.utils.reportError("Couldn't get homepage pref: " + e);
   }
-  return url;
+  gBrowser.loadURI(url);
 }
 
 function BrowserFullScreen()
