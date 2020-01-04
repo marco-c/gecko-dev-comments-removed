@@ -5917,18 +5917,13 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
   CSSPseudoElementType pseudoElementType =
     nsCSSPseudoElements::GetPseudoType(pseudo);
   CSSPseudoClassType pseudoClassType =
-    nsCSSPseudoClasses::GetPseudoType(pseudo);
+    nsCSSPseudoClasses::GetPseudoType(pseudo, AgentRulesEnabled(),
+                                      ChromeRulesEnabled());
   bool pseudoClassIsUserAction =
     nsCSSPseudoClasses::IsUserActionPseudoClass(pseudoClassType);
 
-  if (!AgentRulesEnabled() &&
-      ((pseudoElementType < CSSPseudoElementType::Count &&
-        nsCSSPseudoElements::PseudoElementIsUASheetOnly(pseudoElementType)) ||
-       (pseudoClassType != CSSPseudoClassType::NotPseudo &&
-        nsCSSPseudoClasses::PseudoClassIsUASheetOnly(pseudoClassType)) ||
-       (!ChromeRulesEnabled() &&
-        (pseudoClassType != CSSPseudoClassType::NotPseudo &&
-         nsCSSPseudoClasses::PseudoClassIsUASheetAndChromeOnly(pseudoClassType))))) {
+  if (pseudoElementType < CSSPseudoElementType::Count && !AgentRulesEnabled() &&
+      nsCSSPseudoElements::PseudoElementIsUASheetOnly(pseudoElementType)) {
     
     REPORT_UNEXPECTED_TOKEN(PEPseudoSelUnknown);
     UngetToken();

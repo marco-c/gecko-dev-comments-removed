@@ -11,9 +11,19 @@
 #include "nsStringFwd.h"
 
 
-#define CSS_PSEUDO_CLASS_UA_SHEET_ONLY                 (1<<0)
 
-#define CSS_PSEUDO_CLASS_UA_SHEET_AND_CHROME           (1<<1)
+
+
+
+
+
+
+
+#define CSS_PSEUDO_CLASS_ENABLED_MASK                  (3<<0)
+#define CSS_PSEUDO_CLASS_ENABLED_IN_UA_SHEETS          (1<<0)
+#define CSS_PSEUDO_CLASS_ENABLED_IN_CHROME             (1<<1)
+#define CSS_PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME \
+  (CSS_PSEUDO_CLASS_ENABLED_IN_UA_SHEETS | CSS_PSEUDO_CLASS_ENABLED_IN_CHROME)
 
 class nsIAtom;
 
@@ -42,7 +52,8 @@ class nsCSSPseudoClasses
 public:
   static void AddRefAtoms();
 
-  static Type GetPseudoType(nsIAtom* aAtom);
+  static Type GetPseudoType(nsIAtom* aAtom,
+                            bool aAgentEnabled, bool aChromeEnabled);
   static bool HasStringArg(Type aType);
   static bool HasNthPairArg(Type aType);
   static bool HasSelectorListArg(Type aType) {
@@ -50,24 +61,11 @@ public:
   }
   static bool IsUserActionPseudoClass(Type aType);
 
-  static bool PseudoClassIsUASheetOnly(Type aType) {
-    return PseudoClassHasFlags(aType, CSS_PSEUDO_CLASS_UA_SHEET_ONLY);
-  }
-  static bool PseudoClassIsUASheetAndChromeOnly(Type aType) {
-    return PseudoClassHasFlags(aType, CSS_PSEUDO_CLASS_UA_SHEET_AND_CHROME);
-  }
-
   
   static void PseudoTypeToString(Type aType, nsAString& aString);
 
 private:
   static uint32_t FlagsForPseudoClass(const Type aType);
-
-  
-  static bool PseudoClassHasFlags(const Type aType, uint32_t aFlags)
-  {
-    return (FlagsForPseudoClass(aType) & aFlags) == aFlags;
-  }
 };
 
 #endif 
