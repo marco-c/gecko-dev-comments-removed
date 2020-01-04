@@ -413,8 +413,19 @@ RestyleTracker::GetRestyleData(Element* aElement, nsAutoPtr<RestyleData>& aData)
     
     
     
-    NS_ASSERTION(aData->mDescendants.IsEmpty(),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    NS_ASSERTION(mRestyleManager->InRebuildAllStyleData() ||
+                 aData->mDescendants.IsEmpty(),
                  "expected descendants to be handled by now");
+
     RestyleData* newData = new RestyleData;
     newData->mChangeHint = nsChangeHint(0);
     newData->mRestyleHint = eRestyle_LaterSiblings;
