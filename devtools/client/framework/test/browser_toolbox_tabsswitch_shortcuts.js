@@ -1,6 +1,8 @@
 
 
 
+requestLongerTimeout(2);
+
 var {Toolbox} = require("devtools/client/framework/toolbox");
 
 var toolbox, toolIDs, idIndex, secondTime = false,
