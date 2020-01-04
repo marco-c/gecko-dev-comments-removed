@@ -72,6 +72,7 @@ class GlobalHelperThreadState
 
     
     IonBuilderList ionLazyLinkList_;
+    size_t ionLazyLinkListSize_;
 
     
     wasm::IonCompileTaskVector wasmWorklist_, wasmFinishedList_;
@@ -156,6 +157,11 @@ class GlobalHelperThreadState
                    "Should only be mutated by the main thread.");
         return ionLazyLinkList_;
     }
+    size_t ionLazyLinkListSize() {
+        return ionLazyLinkListSize_;
+    }
+    void ionLazyLinkListRemove(jit::IonBuilder* builder);
+    void ionLazyLinkListAdd(jit::IonBuilder* builder);
 
     wasm::IonCompileTaskVector& wasmWorklist() {
         MOZ_ASSERT(isLocked());

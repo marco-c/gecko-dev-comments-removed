@@ -465,7 +465,7 @@ jit::FinishOffThreadBuilder(JSContext* cx, IonBuilder* builder)
 
     
     if (builder->isInList())
-        builder->removeFrom(HelperThreadState().ionLazyLinkList());
+        HelperThreadState().ionLazyLinkListRemove(builder);
 
     
     
@@ -548,7 +548,7 @@ jit::LazyLink(JSContext* cx, HandleScript calleeScript)
         calleeScript->baselineScript()->removePendingIonBuilder(calleeScript);
 
         
-        builder->removeFrom(HelperThreadState().ionLazyLinkList());
+        HelperThreadState().ionLazyLinkListRemove(builder);
     }
 
     {
@@ -2019,7 +2019,15 @@ AttachFinishedCompilations(JSContext* cx)
             JSScript* script = builder->script();
             MOZ_ASSERT(script->hasBaselineScript());
             script->baselineScript()->setPendingIonBuilder(cx, script, builder);
-            HelperThreadState().ionLazyLinkList().insertFront(builder);
+            HelperThreadState().ionLazyLinkListAdd(builder);
+
+            
+            
+            while (HelperThreadState().ionLazyLinkListSize() > 100) {
+                jit::IonBuilder* builder = HelperThreadState().ionLazyLinkList().getLast();
+                jit::FinishOffThreadBuilder(nullptr, builder);
+            }
+
             continue;
         }
     }
