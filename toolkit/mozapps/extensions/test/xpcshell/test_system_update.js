@@ -343,11 +343,15 @@ add_task(function* setup() {
 })
 
 function* setup_conditions(setup) {
+  do_print("Clearing existing database.");
+  Services.prefs.clearUserPref(PREF_SYSTEM_ADDON_SET);
+  distroDir.leafName = "empty";
+  startupManager(false);
+  yield promiseShutdownManager();
+
   do_print("Setting up conditions.");
   yield setup.setup();
 
-  
-  Services.prefs.clearUserPref(PREF_XPI_STATE);
   startupManager(false);
 
   
@@ -437,6 +441,21 @@ add_task(function* test_app_update_disabled() {
 
 
 add_task(function* test_match_default() {
+  yield setup_conditions(TEST_CONDITIONS.withAppSet);
+
+  yield install_system_addons(yield build_xml([
+    { id: "system2@tests.mozilla.org", version: "2.0", path: "system2_2.xpi" },
+    { id: "system3@tests.mozilla.org", version: "2.0", path: "system3_2.xpi" }
+  ]));
+
+  
+  yield verify_state(TEST_CONDITIONS.withAppSet.initialState);
+
+  yield promiseShutdownManager();
+});
+
+
+add_task(function* test_match_default_revert() {
   yield setup_conditions(TEST_CONDITIONS.withBothSets);
 
   yield install_system_addons(yield build_xml([
@@ -446,8 +465,7 @@ add_task(function* test_match_default() {
 
   
   
-  
-  yield verify_state([true, "1.0", "1.0", null, null, null]);
+  yield verify_state([false, "1.0", "1.0", null, null, null]);
 
   yield promiseShutdownManager();
 });
@@ -462,11 +480,10 @@ add_task(function* test_match_current() {
   ]));
 
   
-  
-  
-  
+  let set = JSON.parse(Services.prefs.getCharPref(PREF_SYSTEM_ADDON_SET));
+  do_check_eq(set.directory, "prefilled");
 
-  yield verify_state([true, null, "2.0", "2.0", null, null]);
+  yield verify_state(TEST_CONDITIONS.withBothSets.initialState);
 
   yield promiseShutdownManager();
 });

@@ -350,6 +350,12 @@ function findMatchingStaticBlocklistItem(aAddon) {
 
 
 
+function addonMap(addons) {
+  return new Map([for (a of addons) [a.id, a]]);
+}
+
+
+
 
 
 
@@ -2802,12 +2808,47 @@ this.XPIProvider = {
       return;
     }
 
-    addonList = [for (spec of addonList) { spec, path: null, addon: null }];
+    addonList = new Map([for (spec of addonList) [spec.id, { spec, path: null, addon: null }]]);
 
-    
-    
+    let getAddonsInLocation = (location) => {
+      return new Promise(resolve => {
+        XPIDatabase.getAddonsInLocation(location, resolve);
+      });
+    };
+
+    let setMatches = (wanted, existing) => {
+      if (wanted.size != existing.size)
+        return false;
+
+      for (let [id, addon] of existing) {
+        let wantedInfo = wanted.get(id);
+
+        if (!wantedInfo)
+          return false;
+        if (wantedInfo.spec.version != addon.version)
+          return false;
+      }
+
+      return true;
+    };
 
     let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
+
+    
+    let updatedAddons = addonMap(yield getAddonsInLocation(KEY_APP_SYSTEM_ADDONS));
+    if (setMatches(addonList, updatedAddons)) {
+      logger.info("Retaining existing updated system add-ons.");
+      return;
+    }
+
+    
+    
+    let defaultAddons = addonMap(yield getAddonsInLocation(KEY_APP_SYSTEM_DEFAULTS));
+    if (setMatches(addonList, defaultAddons)) {
+      logger.info("Resetting system add-ons.");
+      systemAddonLocation.resetAddonSet();
+      return;
+    }
 
     
     
@@ -2820,7 +2861,7 @@ this.XPIProvider = {
         logger.error(`Failed to download system add-on ${item.spec.id}`, e);
       }
     });
-    yield Promise.all([for (item of addonList) downloadAddon(item)]);
+    yield Promise.all([for (item of addonList.values()) downloadAddon(item)]);
 
     
     
@@ -2842,21 +2883,21 @@ this.XPIProvider = {
     }
 
     try {
-      if (!addonList.every(item => item.path && item.addon && validateAddon(item))) {
+      if (!Array.from(addonList.values()).every(item => item.path && item.addon && validateAddon(item))) {
         throw new Error("Rejecting updated system add-on set that either could not " +
                         "be downloaded or contained unusable add-ons.");
       }
 
       
       logger.info("Installing new system add-on set");
-      yield systemAddonLocation.installAddonSet([for (item of addonList) item.addon]);
+      yield systemAddonLocation.installAddonSet([for (item of addonList.values()) item.addon]);
 
       
     }
     finally {
       
       logger.info("Deleting temporary files");
-      for (let item of addonList) {
+      for (let item of addonList.values()) {
         
         if (item.path) {
           try {
@@ -7414,13 +7455,10 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 function SystemAddonInstallLocation(aName, aDirectory, aScope, aResetSet) {
   this._baseDir = aDirectory;
 
-  if (aResetSet) {
-    this._addonSet = { schema: 1, addons: {} };
-    this._saveAddonSet(this._addonSet);
-  }
-  else {
-    this._addonSet = this._loadAddonSet();
-  }
+  if (aResetSet)
+    this.resetAddonSet();
+
+  this._addonSet = this._loadAddonSet();
 
   this._directory = null;
   if (this._addonSet.directory) {
@@ -7523,6 +7561,13 @@ Object.assign(SystemAddonInstallLocation.prototype, {
     }
 
     return true;
+  },
+
+  
+
+
+  resetAddonSet: function() {
+    this._saveAddonSet({ schema: 1, addons: {} });
   },
 
   

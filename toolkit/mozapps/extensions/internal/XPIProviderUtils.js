@@ -1133,6 +1133,18 @@ this.XPIDatabase = {
 
 
 
+  getAddonsInLocation: function XPIDB_getAddonsInLocation(aLocation, aCallback) {
+    this.getAddonList(aAddon => aAddon._installLocation.name == aLocation, aCallback);
+  },
+
+  
+
+
+
+
+
+
+
   getVisibleAddonForID: function XPIDB_getVisibleAddonForID(aId, aCallback) {
     this.getAddon(aAddon => ((aAddon.id == aId) && aAddon.visible),
                   aCallback);
