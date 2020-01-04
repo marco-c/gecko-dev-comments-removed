@@ -10073,6 +10073,11 @@ nsDocShell::InternalLoad(nsIURI* aURI,
       }
 
       
+      if (aSHEntry) {
+        aSHEntry->GetScrollRestorationIsManual(&scrollRestorationIsManual);
+      }
+
+      
 
 
       if (mLSHE) {
