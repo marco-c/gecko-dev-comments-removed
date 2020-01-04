@@ -368,14 +368,9 @@ class RegExpObject : public NativeObject
     
     static const size_t MaxPairCount = 14;
 
-    
-
-
-
-
     static RegExpObject*
-    create(ExclusiveContext* cx, RegExpStatics* res, const char16_t* chars, size_t length,
-           RegExpFlag flags, frontend::TokenStream* ts, LifoAlloc& alloc);
+    create(ExclusiveContext* cx, const char16_t* chars, size_t length, RegExpFlag flags,
+           frontend::TokenStream* ts, LifoAlloc& alloc);
 
     static RegExpObject*
     createNoStatics(ExclusiveContext* cx, const char16_t* chars, size_t length, RegExpFlag flags,
