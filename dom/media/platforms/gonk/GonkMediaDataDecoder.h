@@ -88,6 +88,7 @@ protected:
   
   
   android::sp<android::ALooper> mTaskLooper;
+  
   enum {
     
     
@@ -96,6 +97,9 @@ protected:
     kNotifyProcessFlush = 'npf ',
     
     kNotifyProcessInput = 'npi ',
+#ifdef DEBUG
+    kNotifyFindLooperId = 'nfli',
+#endif
   };
 
   MozPromiseHolder<InitPromise> mInitPromise;
@@ -106,10 +110,11 @@ protected:
   
   nsTArray<RefPtr<MediaRawData>> mQueuedSamples;
 
-  int64_t mLastTime;  
+  
+  int64_t mLastTime;
 
   Monitor mFlushMonitor; 
-  bool mIsFlushing;
+  bool mIsFlushing; 
 
   
   
@@ -134,6 +139,13 @@ protected:
 
 private:
   void UpdateWaitingList(int64_t aForgetUpTo);
+
+#ifdef DEBUG
+  typedef void* LooperId;
+
+  bool OnTaskLooper();
+  LooperId mTaskLooperId;
+#endif
 };
 
 class AutoReleaseMediaBuffer
