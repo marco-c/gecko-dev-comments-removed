@@ -134,7 +134,17 @@ mozInlineSpellStatus::InitForEditorChange(
                                 getter_AddRefs(mAnchorRange));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (aAction == EditAction::deleteSelection) {
+  nsCOMPtr<nsINode> prevNode = do_QueryInterface(aPreviousNode);
+  NS_ENSURE_STATE(prevNode);
+
+  bool deleted = aAction == EditAction::deleteSelection;
+  if (aAction == EditAction::insertIMEText) {
+    
+    
+    deleted = !prevNode->IsInComposedDoc();
+  }
+
+  if (deleted) {
     
     
     
@@ -146,9 +156,6 @@ mozInlineSpellStatus::InitForEditorChange(
   mOp = eOpChange;
 
   
-  nsCOMPtr<nsINode> prevNode = do_QueryInterface(aPreviousNode);
-  NS_ENSURE_STATE(prevNode);
-
   mRange = new nsRange(prevNode);
 
   
