@@ -36,12 +36,10 @@ enum JSTrapStatus {
     JSTRAP_LIMIT
 };
 
-
 namespace js {
 
 class Breakpoint;
 class DebuggerMemory;
-class ScriptedOnStepHandler;
 class WasmInstanceObject;
 
 typedef HashSet<ReadBarrieredGlobalObject,
@@ -252,7 +250,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 {
     friend class Breakpoint;
     friend class DebuggerMemory;
-    friend class ScriptedOnStepHandler;
     friend class SavedStacks;
     friend class mozilla::LinkedListElement<Debugger>;
     friend class mozilla::LinkedList<Debugger>;
@@ -1157,75 +1154,8 @@ enum class DebuggerFrameImplementation {
     Ion
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-struct Handler {
-    virtual ~Handler() {}
-
-    
-
-
-
-
-    virtual JSObject* object() const = 0;
-
-    
-
-
-
-
-    virtual void drop() = 0;
-
-    
-
-
-
-
-    virtual void trace(JSTracer* tracer) = 0;
-};
-
-
-
-
-
-struct OnStepHandler : Handler {
-    
-
-
-
-
-
-    virtual bool onStep(JSContext* cx, HandleDebuggerFrame frame, JSTrapStatus& statusp,
-                        MutableHandleValue vp) = 0;
-};
-
-class ScriptedOnStepHandler final : public OnStepHandler {
-  public:
-    explicit ScriptedOnStepHandler(JSObject* object);
-    virtual JSObject* object() const override;
-    virtual void drop() override;
-    virtual void trace(JSTracer* tracer) override;
-    virtual bool onStep(JSContext* cx, HandleDebuggerFrame frame, JSTrapStatus& statusp,
-                        MutableHandleValue vp) override;
-
-  private:
-    HeapPtr<JSObject*> object_;
-};
-
 class DebuggerFrame : public NativeObject
 {
-    friend class ScriptedOnStepHandler;
-
   public:
     enum {
         OWNER_SLOT
@@ -1255,8 +1185,6 @@ class DebuggerFrame : public NativeObject
                                      MutableHandleValue result);
     static DebuggerFrameType getType(HandleDebuggerFrame frame);
     static DebuggerFrameImplementation getImplementation(HandleDebuggerFrame frame);
-    static MOZ_MUST_USE bool setOnStepHandler(JSContext* cx, HandleDebuggerFrame frame,
-                                              OnStepHandler* handler);
 
     static MOZ_MUST_USE bool eval(JSContext* cx, HandleDebuggerFrame frame,
                                   mozilla::Range<const char16_t> chars, HandleObject bindings,
@@ -1264,7 +1192,6 @@ class DebuggerFrame : public NativeObject
                                   MutableHandleValue value);
 
     bool isLive() const;
-    OnStepHandler* onStepHandler() const;
 
   private:
     static const ClassOps classOps_;
@@ -1289,8 +1216,6 @@ class DebuggerFrame : public NativeObject
     static MOZ_MUST_USE bool thisGetter(JSContext* cx, unsigned argc, Value* vp);
     static MOZ_MUST_USE bool typeGetter(JSContext* cx, unsigned argc, Value* vp);
     static MOZ_MUST_USE bool implementationGetter(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool onStepGetter(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool onStepSetter(JSContext* cx, unsigned argc, Value* vp);
 
     static MOZ_MUST_USE bool evalMethod(JSContext* cx, unsigned argc, Value* vp);
     static MOZ_MUST_USE bool evalWithBindingsMethod(JSContext* cx, unsigned argc, Value* vp);
