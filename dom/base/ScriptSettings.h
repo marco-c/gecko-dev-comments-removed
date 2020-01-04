@@ -313,7 +313,7 @@ private:
 
   
   bool mIsMainThread;
-  Maybe<JSErrorReporter> mOldErrorReporter;
+  Maybe<JS::WarningReporter> mOldWarningReporter;
 
   void InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
                     JSContext* aCx, bool aIsMainThread);

@@ -595,7 +595,7 @@ PrintError(JSContext* cx, FILE* file, const char* message, JSErrorReport* report
 
 
 void
-CallErrorReporter(JSContext* cx, const char* message, JSErrorReport* report);
+CallWarningReporter(JSContext* cx, const char* message, JSErrorReport* report);
 
 extern bool
 ReportIsNotDefined(JSContext* cx, HandlePropertyName name);

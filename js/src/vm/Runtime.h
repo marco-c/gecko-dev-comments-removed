@@ -1281,7 +1281,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     JSReadPrincipalsOp readPrincipals;
 
     
-    JSErrorReporter     errorReporter;
+    JS::WarningReporter warningReporter;
 
     JS::BuildIdOp buildIdOp;
 

@@ -228,18 +228,8 @@ ReportError(JSContext* cx, const char* message, JSErrorReport* reportp,
     if (ErrorToException(cx, message, reportp, callback, userRef))
         return;
 
-    
-
-
-
-    if (!JSREPORT_IS_WARNING(reportp->flags))
-        return;
-
-    
-
-
-    if (message)
-        CallErrorReporter(cx, message, reportp);
+    if (JSREPORT_IS_WARNING(reportp->flags))
+        CallWarningReporter(cx, message, reportp);
 }
 
 
@@ -795,13 +785,14 @@ js::ReportErrorNumberUCArray(JSContext* cx, unsigned flags, JSErrorCallback call
 }
 
 void
-js::CallErrorReporter(JSContext* cx, const char* message, JSErrorReport* reportp)
+js::CallWarningReporter(JSContext* cx, const char* message, JSErrorReport* reportp)
 {
     MOZ_ASSERT(message);
     MOZ_ASSERT(reportp);
+    MOZ_ASSERT(JSREPORT_IS_WARNING(reportp->flags));
 
-    if (JSErrorReporter onError = cx->runtime()->errorReporter)
-        onError(cx, message, reportp);
+    if (JS::WarningReporter warningReporter = cx->runtime()->warningReporter)
+        warningReporter(cx, message, reportp);
 }
 
 bool

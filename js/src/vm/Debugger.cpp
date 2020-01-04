@@ -4930,12 +4930,12 @@ Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp)
                                                         options, chars.twoByteChars(),
                                                         length,  true,
                                                         nullptr, nullptr);
-    JSErrorReporter older = JS_SetErrorReporter(cx->runtime(), nullptr);
+    JS::WarningReporter older = JS::SetWarningReporter(cx->runtime(), nullptr);
     if (!parser.checkOptions() || !parser.parse()) {
         
         
         if (cx->isThrowingOutOfMemory()) {
-            JS_SetErrorReporter(cx->runtime(), older);
+            JS::SetWarningReporter(cx->runtime(), older);
             return false;
         }
 
@@ -4946,7 +4946,7 @@ Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp)
 
         cx->clearPendingException();
     }
-    JS_SetErrorReporter(cx->runtime(), older);
+    JS::SetWarningReporter(cx->runtime(), older);
     args.rval().setBoolean(result);
     return true;
 }

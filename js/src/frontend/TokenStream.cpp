@@ -581,13 +581,8 @@ CompileError::throwError(JSContext* cx)
     if (ErrorToException(cx, message, &report, nullptr, nullptr))
         return;
 
-    
-    
-    
-    if (!JSREPORT_IS_WARNING(report.flags))
-        return;
-
-    CallErrorReporter(cx, message, &report);
+    if (JSREPORT_IS_WARNING(report.flags))
+        CallWarningReporter(cx, message, &report);
 }
 
 CompileError::~CompileError()

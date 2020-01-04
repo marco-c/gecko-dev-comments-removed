@@ -619,9 +619,6 @@ typedef void
 typedef void
 (* JSProcessPromiseCallback)(JSContext* cx, JS::HandleObject promise);
 
-typedef void
-(* JSErrorReporter)(JSContext* cx, const char* message, JSErrorReport* report);
-
 
 
 
@@ -5097,7 +5094,6 @@ const uint16_t MaxNumErrorArguments = 10;
 
 
 
-
 extern JS_PUBLIC_API(void)
 JS_ReportError(JSContext* cx, const char* format, ...);
 
@@ -5227,13 +5223,16 @@ class JSErrorReport
 #define JSREPORT_IS_STRICT(flags)       (((flags) & JSREPORT_STRICT) != 0)
 #define JSREPORT_IS_STRICT_MODE_ERROR(flags) (((flags) &                      \
                                               JSREPORT_STRICT_MODE_ERROR) != 0)
-extern JS_PUBLIC_API(JSErrorReporter)
-JS_GetErrorReporter(JSRuntime* rt);
-
-extern JS_PUBLIC_API(JSErrorReporter)
-JS_SetErrorReporter(JSRuntime* rt, JSErrorReporter er);
-
 namespace JS {
+
+typedef void
+(* WarningReporter)(JSContext* cx, const char* message, JSErrorReport* report);
+
+extern JS_PUBLIC_API(WarningReporter)
+SetWarningReporter(JSRuntime* rt, WarningReporter reporter);
+
+extern JS_PUBLIC_API(WarningReporter)
+GetWarningReporter(JSRuntime* rt);
 
 extern JS_PUBLIC_API(bool)
 CreateError(JSContext* cx, JSExnType type, HandleObject stack,

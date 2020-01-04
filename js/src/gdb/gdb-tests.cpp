@@ -43,7 +43,7 @@ checkBool(bool success)
 }
 
 
-void reportError(JSContext* cx, const char* message, JSErrorReport* report)
+void reportWarning(JSContext* cx, const char* message, JSErrorReport* report)
 {
     fprintf(stderr, "%s:%u: %s\n",
             report->filename ? report->filename : "<no filename>",
@@ -72,7 +72,7 @@ main(int argc, const char** argv)
     JS_SetNativeStackQuota(runtime, 5000000);
 
     JSContext* cx = checkPtr(JS_NewContext(runtime, 8192));
-    JS_SetErrorReporter(runtime, reportError);
+    JS::SetWarningReporter(runtime, reportWarning);
 
     JSAutoRequest ar(cx);
 
