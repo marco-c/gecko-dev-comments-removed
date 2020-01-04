@@ -41,17 +41,21 @@ namespace workers {
 class WorkerStructuredCloneClosure;
 }
 
+class ArrayBufferViewOrArrayBuffer;
 class CanvasRenderingContext2D;
+class CreateImageBitmapFromBlob;
+class CreateImageBitmapFromBlobTask;
+class CreateImageBitmapFromBlobWorkerTask;
 class File;
 class HTMLCanvasElement;
 class HTMLImageElement;
 class HTMLVideoElement;
+enum class ImageBitmapFormat : uint32_t;
 class ImageData;
+class ImageUtils;
+template<typename T> class MapDataIntoBufferSource;
 class Promise;
 class PostMessageEvent; 
-class CreateImageBitmapFromBlob;
-class CreateImageBitmapFromBlobTask;
-class CreateImageBitmapFromBlobWorkerTask;
 
 struct ImageBitmapCloneData final
 {
@@ -143,6 +147,23 @@ public:
   friend CreateImageBitmapFromBlobTask;
   friend CreateImageBitmapFromBlobWorkerTask;
 
+  template<typename T>
+  friend class MapDataIntoBufferSource;
+
+  
+  ImageBitmapFormat
+  FindOptimalFormat(const Optional<Sequence<ImageBitmapFormat>>& aPossibleFormats,
+                    ErrorResult& aRv);
+
+  int32_t
+  MappedDataLength(ImageBitmapFormat aFormat, ErrorResult& aRv);
+
+  already_AddRefed<Promise>
+  MapDataInto(JSContext* aCx,
+              ImageBitmapFormat aFormat,
+              const ArrayBufferViewOrArrayBuffer& aBuffer,
+              int32_t aOffset, ErrorResult& aRv);
+
 protected:
 
   
@@ -213,6 +234,13 @@ protected:
 
   RefPtr<layers::Image> mData;
   RefPtr<gfx::SourceSurface> mSurface;
+
+  
+
+
+
+
+  UniquePtr<ImageUtils> mDataWrapper;
 
   
 
