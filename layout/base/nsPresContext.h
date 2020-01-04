@@ -1102,8 +1102,17 @@ protected:
   friend class nsRunnableMethod<nsPresContext>;
   void ThemeChangedInternal();
   void SysColorChangedInternal();
+
+  
   void UIResolutionChangedInternal();
 
+  
+  
+  void UIResolutionChangedInternalScale(double aScale);
+
+  
+  
+  
   static bool
   UIResolutionChangedSubdocumentCallback(nsIDocument* aDocument, void* aData);
 

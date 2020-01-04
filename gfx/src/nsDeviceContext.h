@@ -224,7 +224,13 @@ public:
 
 
 
-    bool CheckDPIChange();
+
+
+
+
+
+
+    bool CheckDPIChange(double* aScale = nullptr);
 
     
 
@@ -249,7 +255,7 @@ private:
     
     ~nsDeviceContext();
 
-    void SetDPI();
+    void SetDPI(double* aScale = nullptr);
     void ComputeClientRectUsingScreen(nsRect *outRect);
     void ComputeFullAreaUsingScreen(nsRect *outRect);
     void FindScreen(nsIScreen **outScreen);
