@@ -2007,14 +2007,16 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
     
     mRedirectChannel = newChannel;
 
-    
-    
-    nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
-    rv = mRedirectChannel->GetLoadFlags(&loadFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
-    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-    rv = mRedirectChannel->SetLoadFlags(loadFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (!(flags & nsIChannelEventSink::REDIRECT_STS_UPGRADE)) {
+        
+        
+        nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
+        rv = mRedirectChannel->GetLoadFlags(&loadFlags);
+        NS_ENSURE_SUCCESS(rv, rv);
+        loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+        rv = mRedirectChannel->SetLoadFlags(loadFlags);
+        NS_ENSURE_SUCCESS(rv, rv);
+    }
 
     PushRedirectAsyncFunc(
         &nsHttpChannel::ContinueAsyncRedirectChannelToURI);
