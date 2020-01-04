@@ -439,6 +439,7 @@ public:
 
 
 
+
   static nsIntRegion
   ComputeResultChangeRegion(const FilterDescription& aFilter,
                             const nsIntRegion& aSourceGraphicChange,
