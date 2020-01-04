@@ -41,7 +41,6 @@
 #undef Status
 #endif
 
-class nsFormData;
 class nsIJARChannel;
 class nsILoadGroup;
 class nsIUnicodeDecoder;
@@ -52,6 +51,7 @@ namespace mozilla {
 namespace dom {
 class Blob;
 class BlobSet;
+class FormData;
 } 
 
 
@@ -363,7 +363,7 @@ private:
     {
       mValue.mString = &aString;
     }
-    explicit RequestBody(nsFormData& aFormData) : mType(FormData)
+    explicit RequestBody(mozilla::dom::FormData& aFormData) : mType(FormData)
     {
       mValue.mFormData = &aFormData;
     }
@@ -388,7 +388,7 @@ private:
       mozilla::dom::Blob* mBlob;
       nsIDocument* mDocument;
       const nsAString* mString;
-      nsFormData* mFormData;
+      mozilla::dom::FormData* mFormData;
       nsIInputStream* mStream;
     };
 
@@ -467,7 +467,8 @@ public:
       aRv = Send(RequestBody(aString));
     }
   }
-  void Send(JSContext* , nsFormData& aFormData, ErrorResult& aRv)
+  void Send(JSContext* , mozilla::dom::FormData& aFormData,
+            ErrorResult& aRv)
   {
     aRv = Send(RequestBody(aFormData));
   }
