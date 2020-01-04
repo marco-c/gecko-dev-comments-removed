@@ -5893,7 +5893,8 @@ ScrollFrameHelper::SaveState() const
 
   
   
-  if (!mHasBeenScrolled && !mDidHistoryRestore) {
+  bool isInSmoothScroll = IsProcessingAsyncScroll() || mLastSmoothScrollOrigin;
+  if (!mHasBeenScrolled && !mDidHistoryRestore && !isInSmoothScroll) {
     return nullptr;
   }
 
@@ -5903,7 +5904,14 @@ ScrollFrameHelper::SaveState() const
   
   
   
+  
+  
+  
+  
   nsPoint pt = GetLogicalScrollPosition();
+  if (isInSmoothScroll) {
+    pt = mDestination;
+  }
   if (mRestorePos.y != -1 && pt == mLastPos) {
     pt = mRestorePos;
   }
