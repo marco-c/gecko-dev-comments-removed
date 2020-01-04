@@ -53,14 +53,16 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 4;
+var kVersion = 5;
 
 
 
 
 
 
-var ObsoleteBuiltinButtons = {};
+var ObsoleteBuiltinButtons = {
+  "loop-button": 5
+};
 
 
 
