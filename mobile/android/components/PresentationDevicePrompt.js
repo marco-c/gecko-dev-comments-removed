@@ -46,12 +46,17 @@ PresentationDevicePrompt.prototype = {
     return this.bundle.GetStringFromName(aName);
   },
 
-  _loadDevices: function() {
+  _loadDevices: function(requestURL) {
     debug("_loadDevices");
+
+    let presentationUrls = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+    let url = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
+    url.data = requestURL;
+    presentationUrls.appendElement(url, false);
 
     let deviceManager = Cc["@mozilla.org/presentation-device/manager;1"]
                           .getService(Ci.nsIPresentationDeviceManager);
-    let devices = deviceManager.getAvailableDevices().QueryInterface(Ci.nsIArray);
+    let devices = deviceManager.getAvailableDevices(presentationUrls).QueryInterface(Ci.nsIArray);
 
     
     this._devices = [];
@@ -113,7 +118,7 @@ PresentationDevicePrompt.prototype = {
     debug("promptDeviceSelection");
 
     
-    this._loadDevices();
+    this._loadDevices(aRequest.requestURL);
 
     if (!this._devices.length) { 
       aRequest.cancel(Cr.NS_ERROR_DOM_NOT_FOUND_ERR);
