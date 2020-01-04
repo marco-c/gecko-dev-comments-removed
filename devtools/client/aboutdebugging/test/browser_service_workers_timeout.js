@@ -67,7 +67,8 @@ add_task(function* () {
   let names = [...document.querySelectorAll("#service-workers .target-name")];
   let name = names.filter(element => element.textContent === SERVICE_WORKER)[0];
   ok(name, "Found the service worker in the list");
-  let debugBtn = name.parentNode.parentNode.querySelector("button");
+  let targetElement = name.parentNode.parentNode;
+  let debugBtn = targetElement.querySelector(".debug-button");
   ok(debugBtn, "Found its debug button");
 
   
@@ -88,6 +89,8 @@ add_task(function* () {
   });
 
   assertHasWorker(true, document, "service-workers", SERVICE_WORKER);
+  ok(targetElement.querySelector(".debug-button"),
+    "The debug button is still there");
 
   yield toolbox.destroy();
   toolbox = null;
@@ -95,9 +98,9 @@ add_task(function* () {
   
   
   
-  yield waitForMutation(serviceWorkersElement, { childList: true });
-
-  assertHasWorker(false, document, "service-workers", SERVICE_WORKER);
+  yield waitForMutation(targetElement, { childList: true });
+  ok(!targetElement.querySelector(".debug-button"),
+    "The debug button was removed when the worker was killed");
 
   
   
@@ -123,6 +126,11 @@ add_task(function* () {
     });
   });
   ok(true, "Service worker registration unregistered");
+
+  
+  
+  yield waitForMutation(serviceWorkersElement, { childList: true });
+  assertHasWorker(false, document, "service-workers", SERVICE_WORKER);
 
   yield removeTab(swTab);
   yield closeAboutDebugging(tab);
