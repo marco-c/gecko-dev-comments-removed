@@ -27,9 +27,6 @@ actions.TOGGLE_RECORD_ALLOCATION_STACKS_END = "toggle-record-allocation-stacks-e
 actions.SELECT_SNAPSHOT = "select-snapshot";
 
 
-actions.TOGGLE_INVERTED = "toggle-inverted";
-
-
 exports.ALLOCATION_RECORDING_OPTIONS = {
   probability: 1,
   maxLogLength: 1

@@ -2,7 +2,6 @@
 
 
 
-const { assert } = require("devtools/shared/DevToolsUtils");
 const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 const CUSTOM_BREAKDOWN_PREF = "devtools.memory.custom-breakdowns";
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
@@ -10,6 +9,16 @@ const { snapshotState: states, breakdowns } = require("./constants");
 const SAVING_SNAPSHOT_TEXT = "Saving snapshot...";
 const READING_SNAPSHOT_TEXT = "Reading snapshot...";
 const SAVING_CENSUS_TEXT = "Taking heap census...";
+
+
+
+exports.assert = function (condition, message) {
+  if (!condition) {
+    const err = new Error("Assertion failure: " + message);
+    DevToolsUtils.reportException("DevToolsUtils.assert", err);
+    throw err;
+  }
+};
 
 
 
@@ -90,7 +99,7 @@ exports.breakdownNameToSpec = function (name) {
 
 
 exports.getSnapshotStatusText = function (snapshot) {
-  assert((snapshot || {}).state,
+  exports.assert((snapshot || {}).state,
     `Snapshot must have expected state, found ${(snapshot || {}).state}.`);
 
   switch (snapshot.state) {

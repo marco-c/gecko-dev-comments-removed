@@ -2,12 +2,8 @@
 
 
 
-const { isSavedFrame } = require("devtools/shared/DevToolsUtils");
 const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
-
 const INDENT = 10;
-const MAX_SOURCE_LENGTH = 200;
-
 
 
 
@@ -21,36 +17,11 @@ const TreeItem = module.exports = createClass({
 
     return dom.div({ className: "heap-tree-item", style: { marginLeft: depth * INDENT }},
       arrow,
-      dom.span({ className: "heap-tree-item-name" }, this.toLabel(item.name)),
+      dom.span({ className: "heap-tree-item-name" }, item.name),
       dom.span({ className: "heap-tree-item-bytes" }, item.bytes),
       dom.span({ className: "heap-tree-item-count" }, item.count),
       dom.span({ className: "heap-tree-item-total-bytes" }, item.totalBytes),
       dom.span({ className: "heap-tree-item-total-count" }, item.totalCount)
     );
-  },
-
-  
-
-
-  toLabel(name) {
-    return isSavedFrame(name)
-      ? this.savedFrameToLabel(name)
-      : String(name);
-  },
-
-  
-
-
-  savedFrameToLabel(frame) {
-    return [
-      dom.span({ className: "heap-tree-item-function-display-name" },
-               frame.functionDisplayFrame || ""),
-      dom.span({ className: "heap-tree-item-at" }, "@"),
-      dom.span({ className: "heap-tree-item-source" }, frame.source.slice(0, MAX_SOURCE_LENGTH)),
-      dom.span({ className: "heap-tree-item-colon" }, ":"),
-      dom.span({ className: "heap-tree-item-line" }, frame.line),
-      dom.span({ className: "heap-tree-item-colon" }, ":"),
-      dom.span({ className: "heap-tree-item-column" }, frame.column)
-    ];
   }
 });
