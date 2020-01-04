@@ -7,9 +7,7 @@
 
 
 add_task(function* () {
-  
-  
-  let [ , debuggee, monitor ] = yield initNetMonitor(SIMPLE_URL);
+  let [tab, , monitor ] = yield initNetMonitor(SIMPLE_URL);
 
   info("Starting test... ");
 
@@ -18,9 +16,10 @@ add_task(function* () {
 
   RequestsMenu.lazyUpdate = false;
 
-  debuggee.location.reload();
+  let wait = waitForNetworkEvents(monitor, 1);
+  tab.linkedBrowser.reload();
+  yield wait;
 
-  yield waitForNetworkEvents(monitor, 1);
   yield RequestsMenu.copyAllAsHar();
 
   let jsonString = SpecialPowers.getClipboardData("text/unicode");
@@ -46,5 +45,5 @@ add_task(function* () {
     "Check response body");
   isnot(entry.timings, undefined, "Check timings");
 
-  teardown(monitor).then(finish);
+  return teardown(monitor);
 });

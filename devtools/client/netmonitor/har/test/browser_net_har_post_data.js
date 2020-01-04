@@ -7,9 +7,7 @@
 
 
 add_task(function* () {
-  
-  
-  let [ , debuggee, monitor ] = yield initNetMonitor(
+  let [tab, , monitor ] = yield initNetMonitor(
     HAR_EXAMPLE_URL + "html_har_post-data-test-page.html");
 
   info("Starting test... ");
@@ -20,8 +18,11 @@ add_task(function* () {
   RequestsMenu.lazyUpdate = false;
 
   
-  debuggee.executeTest();
-  yield waitForNetworkEvents(monitor, 0, 1);
+  let wait = waitForNetworkEvents(monitor, 0, 1);
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+    content.wrappedJSObject.executeTest();
+  });
+  yield wait;
 
   
   let jsonString = yield RequestsMenu.copyAllAsHar();
@@ -39,5 +40,5 @@ add_task(function* () {
     "Check post data payload");
 
   
-  teardown(monitor).then(finish);
+  return teardown(monitor);
 });
