@@ -24,7 +24,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/TimelineConsumers.h"
-#include "mozilla/EventTimelineMarker.h"
 
 #include "EventListenerService.h"
 #include "nsCOMArray.h"
@@ -353,8 +352,8 @@ EventListenerManager::AddEventListenerInternal(
     if (window && !aFlags.mInSystemGroup) {
       window->SetHasTouchEventListeners();
     }
-  } else if (aEventMessage >= NS_POINTER_EVENT_START &&
-             aEventMessage <= NS_POINTER_LOST_CAPTURE) {
+  } else if (aEventMessage >= ePointerEventFirst &&
+             aEventMessage <= ePointerEventLast) {
     nsPIDOMWindow* window = GetInnerWindowForTarget();
     if (aTypeAtom == nsGkAtoms::onpointerenter ||
         aTypeAtom == nsGkAtoms::onpointerleave) {
@@ -1057,6 +1056,29 @@ EventListenerManager::GetDocShellForTarget()
   return docShell;
 }
 
+class EventTimelineMarker : public TimelineMarker
+{
+public:
+  EventTimelineMarker(nsDocShell* aDocShell, TracingMetadata aMetaData,
+                      uint16_t aPhase, const nsAString& aCause)
+    : TimelineMarker(aDocShell, "DOMEvent", aMetaData, aCause)
+    , mPhase(aPhase)
+  {
+  }
+
+  virtual void AddDetails(JSContext* aCx,
+                          mozilla::dom::ProfileTimelineMarker& aMarker) override
+  {
+    if (GetMetaData() == TRACING_INTERVAL_START) {
+      aMarker.mType.Construct(GetCause());
+      aMarker.mEventPhase.Construct(mPhase);
+    }
+  }
+
+private:
+  uint16_t mPhase;
+};
+
 
 
 
@@ -1127,8 +1149,9 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
               (*aDOMEvent)->GetType(typeStr);
               uint16_t phase;
               (*aDOMEvent)->GetEventPhase(&phase);
-              UniquePtr<TimelineMarker> marker = MakeUnique<EventTimelineMarker>(
-                typeStr, phase, MarkerTracingType::START);
+              mozilla::UniquePtr<TimelineMarker> marker =
+                MakeUnique<EventTimelineMarker>(ds, TRACING_INTERVAL_START,
+                                                phase, typeStr);
               TimelineConsumers::AddMarkerForDocShell(ds, Move(marker));
             }
           }
@@ -1140,7 +1163,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
 
           if (isTimelineRecording) {
             nsDocShell* ds = static_cast<nsDocShell*>(docShell.get());
-            TimelineConsumers::AddMarkerForDocShell(ds, "DOMEvent", MarkerTracingType::END);
+            TimelineConsumers::AddMarkerForDocShell(ds, "DOMEvent", TRACING_INTERVAL_END);
           }
         }
       }
