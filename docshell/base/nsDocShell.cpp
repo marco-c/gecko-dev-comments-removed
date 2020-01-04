@@ -7761,6 +7761,16 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
               doCreateAlternate = false;
             }
           }
+
+          if (doCreateAlternate) {
+            
+            
+            nsLoadFlags loadFlags = 0;
+            if (NS_FAILED(aChannel->GetLoadFlags(&loadFlags)) ||
+                (loadFlags & nsIChannel::LOAD_REPLACE)) {
+              doCreateAlternate = false;
+            }
+          }
         }
         if (doCreateAlternate) {
           newURI = nullptr;
