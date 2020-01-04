@@ -80,14 +80,6 @@ public:
   
 
 
-  virtual bool PluginHasFocus() const final
-  {
-    return (mInputContext.mIMEState.mEnabled == IMEState::PLUGIN);
-  }
-
-  
-
-
   virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
                                               TouchPointerState aPointerState,
                                               ScreenIntPoint aPointerScreenPoint,
