@@ -217,6 +217,15 @@ function addXULBrowserDecorations(browser) {
       enumerable: true,
     });
   }
+  if (browser.outerWindowID == undefined) {
+    Object.defineProperty(browser, "outerWindowID", {
+      get() {
+        return browser._outerWindowID;
+      },
+      configurable: true,
+      enumerable: true,
+    });
+  }
 
   
   
