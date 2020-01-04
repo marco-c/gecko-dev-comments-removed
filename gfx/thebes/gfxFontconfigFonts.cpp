@@ -652,7 +652,7 @@ gfxDownloadedFcFontEntry::GetFontTable(uint32_t aTableTag)
     
     
     
-    return GetTableFromFontData(mFontData, aTableTag);
+    return gfxFontUtils::GetTableFromFontData(mFontData, aTableTag);
 }
 
 
@@ -1470,8 +1470,10 @@ gfxPangoFontGroup::UpdateUserFonts()
 
     mFonts[0] = FamilyFace();
     mFontSets.Clear();
-    ClearCachedData();
+    mCachedEllipsisTextRun = nullptr;
+    mUnderlineOffset = UNDERLINE_OFFSET_NOT_SET;
     mCurrGeneration = newGeneration;
+    mSkipDrawing = false;
 }
 
 already_AddRefed<gfxFcFontSet>

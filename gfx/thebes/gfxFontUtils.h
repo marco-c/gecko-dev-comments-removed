@@ -860,6 +860,20 @@ public:
 
     
     
+    static mozilla::TableDirEntry*
+    FindTableDirEntry(const void* aFontData, uint32_t aTableTag);
+
+    
+    
+    
+    
+    
+    
+    static hb_blob_t*
+    GetTableFromFontData(const void* aFontData, uint32_t aTableTag);
+
+    
+    
     static nsresult
     RenameFont(const nsAString& aName, const uint8_t *aFontData, 
                uint32_t aFontDataLength, FallibleTArray<uint8_t> *aNewFont);

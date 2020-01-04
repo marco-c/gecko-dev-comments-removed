@@ -485,14 +485,6 @@ protected:
     }
 
     
-    
-    
-    
-    
-    
-    hb_blob_t* GetTableFromFontData(const void* aFontData, uint32_t aTableTag);
-
-    
     virtual already_AddRefed<gfxCharacterMap>
     GetCMAPFromFontInfo(FontInfoData *aFontInfoData,
                         uint32_t& aUVSOffset,
