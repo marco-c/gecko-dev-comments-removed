@@ -41,7 +41,6 @@ public class CombinedHistoryRecyclerView extends RecyclerView
 
     @Override
     public boolean onItemLongClicked(RecyclerView recyclerView, int position, View v) {
-        
         return showContextMenuForChild(this);
     }
 }
