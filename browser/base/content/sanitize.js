@@ -113,7 +113,6 @@ Sanitizer.prototype = {
     
     Preferences.set(Sanitizer.PREF_SANITIZE_IN_PROGRESS,
                     JSON.stringify(itemsToClear));
-    }
 
     
     for (let k of itemsToClear) {
