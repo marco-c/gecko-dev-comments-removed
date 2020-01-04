@@ -5,8 +5,6 @@
 
 #include <MediaStreamGraphImpl.h>
 #include "mozilla/dom/AudioContext.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/ClearOnShutdown.h"
 #include "CubebUtils.h"
 
 #ifdef XP_MACOSX
@@ -31,8 +29,6 @@ extern mozilla::LazyLogModule gMediaStreamGraphLog;
 #endif
 
 namespace mozilla {
-
-StaticRefPtr<nsIThreadPool> AsyncCubebTask::sThreadPool;
 
 struct AutoProfilerUnregisterThread
 {
@@ -473,39 +469,20 @@ AsyncCubebTask::~AsyncCubebTask()
 {
 }
 
-
-nsresult
-AsyncCubebTask::EnsureThread()
-{
-  if (!sThreadPool) {
-    nsCOMPtr<nsIThreadPool> threadPool =
-      SharedThreadPool::Get(NS_LITERAL_CSTRING("CubebOperation"), 1);
-    sThreadPool = threadPool;
-    
-    
-    
-    if (!NS_IsMainThread()) {
-      NS_DispatchToMainThread(NS_NewRunnableFunction([]() -> void {
-            ClearOnShutdown(&sThreadPool, ShutdownPhase::ShutdownThreads);
-      }));
-    } else {
-      ClearOnShutdown(&sThreadPool, ShutdownPhase::ShutdownThreads);
-    }
-
-    const uint32_t kIdleThreadTimeoutMs = 2000;
-
-    nsresult rv = sThreadPool->SetIdleThreadTimeout(PR_MillisecondsToInterval(kIdleThreadTimeoutMs));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  }
-
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 AsyncCubebTask::Run()
 {
+  MOZ_ASSERT(mThread);
+  if (NS_IsMainThread()) {
+    mThread->Shutdown(); 
+    
+    
+    
+    
+    
+    return NS_OK;
+  }
+
   MOZ_ASSERT(mDriver);
 
   switch(mOperation) {
@@ -530,6 +507,8 @@ AsyncCubebTask::Run()
   }
 
   
+  NS_DispatchToMainThread(this);
+
   return NS_OK;
 }
 

@@ -13,8 +13,6 @@
 #include "AudioSegment.h"
 #include "SelfRef.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/StaticPtr.h"
 
 struct cubeb_stream;
 
@@ -551,9 +549,11 @@ public:
 
   nsresult Dispatch()
   {
-    nsresult rv = EnsureThread();
-    if (!NS_FAILED(rv)) {
-      rv = sThreadPool->Dispatch(this, NS_DISPATCH_NORMAL);
+    
+    nsresult rv = NS_NewNamedThread("CubebOperation", getter_AddRefs(mThread));
+    if (NS_SUCCEEDED(rv)) {
+      
+      rv = mThread->Dispatch(this, NS_DISPATCH_NORMAL);
     }
     return rv;
   }
@@ -562,10 +562,8 @@ protected:
   virtual ~AsyncCubebTask();
 
 private:
-  static nsresult EnsureThread();
-
   NS_IMETHOD Run() override final;
-  static StaticRefPtr<nsIThreadPool> sThreadPool;
+  nsCOMPtr<nsIThread> mThread;
   RefPtr<AudioCallbackDriver> mDriver;
   AsyncCubebOperation mOperation;
   RefPtr<MediaStreamGraphImpl> mShutdownGrip;
