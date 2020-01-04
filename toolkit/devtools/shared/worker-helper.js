@@ -49,7 +49,7 @@
 
 
 
-  function createTask (self, name, fn) {
+  function createTask(self, name, fn) {
     
     if (!self._tasks) {
       self._tasks = {};
@@ -70,7 +70,7 @@
 
 
 
-  function createHandler (self) {
+  function createHandler(self) {
     return function (e) {
       let { id, task, data } = e.data;
       let taskFn = self._tasks[task];
@@ -87,7 +87,7 @@
         handleError(e);
       }
 
-      function handleResponse (response) {
+      function handleResponse(response) {
         
         if (response && typeof response.then === "function") {
           response.then(val => self.postMessage({ id, response: val }), handleError);
@@ -102,10 +102,10 @@
         }
       }
 
-      function handleError (e="Error") {
+      function handleError(e="Error") {
         self.postMessage({ id, error: e.message || e });
       }
-    }
+    };
   }
 
   return { createTask: createTask };

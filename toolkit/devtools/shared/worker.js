@@ -38,7 +38,7 @@ let MESSAGE_COUNTER = 0;
 
 
 
-function DevToolsWorker (url, opts) {
+function DevToolsWorker(url, opts) {
   opts = opts || {};
   this._worker = new ChromeWorker(url);
   this._verbose = opts.verbose;
@@ -97,7 +97,7 @@ DevToolsWorker.prototype.performTask = function (task, data) {
 
     worker.addEventListener("message", listener);
   });
-}
+};
 
 
 
@@ -110,7 +110,7 @@ DevToolsWorker.prototype.destroy = function () {
 
 DevToolsWorker.prototype.onError = function({ message, filename, lineno }) {
   dump(new Error(message + " @ " + filename + ":" + lineno) + "\n");
-}
+};
 
 
 
