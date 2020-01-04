@@ -744,6 +744,9 @@ public:
     
     LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION
   };
+  
+
+
   LifecycleState mLifecycleState;
   
 
