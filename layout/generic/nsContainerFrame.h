@@ -419,11 +419,7 @@ public:
 
 
 
-
-
-
-  virtual nsresult StealFrame(nsIFrame* aChild,
-                              bool      aForceNormal = false);
+  virtual nsresult StealFrame(nsIFrame* aChild);
 
   
 
@@ -493,6 +489,11 @@ protected:
 
 
   void DestroyAbsoluteFrames(nsIFrame* aDestructRoot);
+
+  
+
+
+  bool MaybeStealOverflowContainerFrame(nsIFrame* aChild);
 
   
 

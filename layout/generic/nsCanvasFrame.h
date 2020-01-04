@@ -25,6 +25,8 @@ class nsRenderingContext;
 
 
 
+
+
 class nsCanvasFrame final : public nsContainerFrame,
                             public nsIScrollPositionListener,
                             public nsIAnonymousContentCreator
@@ -120,19 +122,6 @@ public:
 
 
   virtual nsIAtom* GetType() const override;
-
-  virtual nsresult StealFrame(nsIFrame* aChild, bool aForceNormal) override
-  {
-    NS_ASSERTION(!aForceNormal, "No-one should be passing this in here");
-
-    
-    
-    nsresult rv = nsContainerFrame::StealFrame(aChild, true);
-    if (NS_FAILED(rv)) {
-      rv = nsContainerFrame::StealFrame(aChild);
-    }
-    return rv;
-  }
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;

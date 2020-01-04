@@ -12,7 +12,13 @@
 #include "nsContainerFrame.h"
 #include "nsIFrameInlines.h" 
 
-class nsColumnSetFrame final : public nsContainerFrame {
+
+
+
+
+
+class nsColumnSetFrame final : public nsContainerFrame
+{
 public:
   NS_DECL_FRAMEARENA_HELPERS
 
@@ -52,14 +58,6 @@ public:
       return nullptr;
 
     return frame->GetContentInsertionFrame();
-  }
-
-  virtual nsresult StealFrame(nsIFrame* aChild, bool aForceNormal) override
-  {
-    
-    
-    return nsContainerFrame::StealFrame(aChild,
-                                        IS_TRUE_OVERFLOW_CONTAINER(aChild));
   }
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override

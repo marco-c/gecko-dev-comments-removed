@@ -164,7 +164,7 @@ nsContainerFrame::RemoveFrame(ChildListID aListID,
     
     
     
-    parent->StealFrame(aOldFrame, true);
+    parent->StealFrame(aOldFrame);
     aOldFrame->Destroy();
     aOldFrame = oldFrameNextContinuation;
     if (parent != lastParent && generateReflowCommand) {
@@ -1349,9 +1349,27 @@ TryRemoveFrame(nsIFrame* aFrame, FramePropertyTable* aPropTable,
   return false;
 }
 
+bool
+nsContainerFrame::MaybeStealOverflowContainerFrame(nsIFrame* aChild)
+{
+  bool removed = false;
+  if (MOZ_UNLIKELY(aChild->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+    FramePropertyTable* propTable = PresContext()->PropertyTable();
+    
+    removed = ::TryRemoveFrame(this, propTable, OverflowContainersProperty(),
+                               aChild);
+    if (!removed) {
+      
+      removed = ::TryRemoveFrame(this, propTable,
+                                 ExcessOverflowContainersProperty(),
+                                 aChild);
+    }
+  }
+  return removed;
+}
+
 nsresult
-nsContainerFrame::StealFrame(nsIFrame* aChild,
-                             bool      aForceNormal)
+nsContainerFrame::StealFrame(nsIFrame* aChild)
 {
 #ifdef DEBUG
   if (!mFrames.ContainsFrame(aChild)) {
@@ -1368,20 +1386,11 @@ nsContainerFrame::StealFrame(nsIFrame* aChild,
   }
 #endif
 
-  bool removed;
-  if ((aChild->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)
-      && !aForceNormal) {
-    FramePropertyTable* propTable = PresContext()->PropertyTable();
+  bool removed = MaybeStealOverflowContainerFrame(aChild);
+  if (!removed) {
     
-    removed = ::TryRemoveFrame(this, propTable, OverflowContainersProperty(),
-                               aChild);
-    if (!removed) {
-      
-      removed = ::TryRemoveFrame(this, propTable,
-                                 ExcessOverflowContainersProperty(),
-                                 aChild);
-    }
-  } else {
+    
+    
     removed = mFrames.StartRemoveFrame(aChild);
     if (!removed) {
       
