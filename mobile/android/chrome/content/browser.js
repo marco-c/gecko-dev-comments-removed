@@ -2708,9 +2708,7 @@ var NativeWindow = {
         }
         return node.currentURI.spec;
       } else if (node instanceof Ci.nsIDOMHTMLMediaElement) {
-        let srcUrl = node.currentSrc || node.src;
-        
-        return srcUrl.replace(/^(?:blob|mediasource):/, '');
+        return (node.currentSrc || node.src);
       }
 
       return "";
@@ -5325,14 +5323,14 @@ var FormAssistant = {
       return;
 
     
+    let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     if (BrowserApp.selectedBrowser.contentDocument !=
-        aFormElement.ownerDocument.defaultView.top.document)
+        currentElement.ownerDocument.defaultView.top.document)
       return;
 
     this._invalidSubmit = true;
 
     
-    let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     currentElement.focus();
   },
 

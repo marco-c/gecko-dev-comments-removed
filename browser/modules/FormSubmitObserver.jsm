@@ -106,11 +106,11 @@ FormSubmitObserver.prototype =
 
     
     
-    if (this._content != aFormElement.ownerDocument.defaultView.top.document.defaultView) {
+    let element = aInvalidElements.queryElementAt(0, Ci.nsISupports);
+    if (this._content != element.ownerDocument.defaultView.top.document.defaultView) {
       return;
     }
 
-    let element = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     if (!(element instanceof HTMLInputElement ||
           element instanceof HTMLTextAreaElement ||
           element instanceof HTMLSelectElement ||

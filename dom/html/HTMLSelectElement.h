@@ -267,6 +267,7 @@ public:
   
   
   using nsIConstraintValidation::CheckValidity;
+  using nsIConstraintValidation::ReportValidity;
   
 
   using nsINode::Remove;
