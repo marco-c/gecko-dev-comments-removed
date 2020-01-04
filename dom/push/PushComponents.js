@@ -19,6 +19,12 @@ var isParent = Services.appinfo.processType === Ci.nsIXULRuntime.PROCESS_TYPE_DE
 
 
 
+const OBSERVER_TOPIC_PUSH = "push-message";
+const OBSERVER_TOPIC_SUBSCRIPTION_CHANGE = "push-subscription-change";
+
+
+
+
 
 
 
@@ -42,6 +48,9 @@ PushServiceBase.prototype = {
     Ci.nsIPushService,
     Ci.nsIPushQuotaManager,
   ]),
+
+  pushTopic: OBSERVER_TOPIC_PUSH,
+  subscriptionChangeTopic: OBSERVER_TOPIC_SUBSCRIPTION_CHANGE,
 
   _handleReady() {},
 

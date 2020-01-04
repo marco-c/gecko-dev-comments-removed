@@ -16,7 +16,11 @@ add_task(function* test_service_parent() {
   yield setUpServiceInParent(PushService, db);
 
   
-  Cc['@mozilla.org/push/Service;1'].getService(Ci.nsIPushService);
+  
+  equal(PushServiceComponent.pushTopic, "push-message",
+    "Wrong push message observer topic");
+  equal(PushServiceComponent.subscriptionChangeTopic,
+    "push-subscription-change", "Wrong subscription change observer topic");
 
   yield run_test_in_child('./test_service_child.js');
 

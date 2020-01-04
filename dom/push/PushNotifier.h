@@ -17,6 +17,10 @@
 #define PUSHNOTIFIER_CONTRACTID \
   "@mozilla.org/push/Notifier;1"
 
+
+#define OBSERVER_TOPIC_PUSH "push-message"
+#define OBSERVER_TOPIC_SUBSCRIPTION_CHANGE "push-subscription-change"
+
 namespace mozilla {
 namespace dom {
 
