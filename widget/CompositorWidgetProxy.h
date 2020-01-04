@@ -168,6 +168,19 @@ public:
   
 
 
+
+
+
+
+
+
+  virtual uintptr_t GetWidgetKey() {
+    return 0;
+  }
+
+  
+
+
   virtual already_AddRefed<gfx::DrawTarget>
   CreateBackBufferDrawTarget(gfx::DrawTarget* aScreenTarget,
                              const LayoutDeviceIntRect& aRect,
@@ -217,6 +230,7 @@ public:
   virtual uint32_t GetGLFrameBufferFormat() override;
   virtual layers::Composer2D* GetComposer2D() override;
   virtual already_AddRefed<CompositorVsyncDispatcher> GetCompositorVsyncDispatcher() override;
+  virtual uintptr_t GetWidgetKey() override;
 
   
   nsIWidget* RealWidget() override;
