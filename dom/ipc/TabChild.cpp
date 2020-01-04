@@ -460,24 +460,6 @@ PreloadSlowThingsPostFork(void* aUnused)
     nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
     observerService->NotifyObservers(nullptr, "preload-postfork", nullptr);
-
-    MOZ_ASSERT(sPreallocatedTab);
-    
-    
-    
-    nsCOMPtr<nsIDocShell> docShell =
-      do_GetInterface(sPreallocatedTab->WebNavigation());
-    if (nsIPresShell* presShell = docShell->GetPresShell()) {
-        
-        
-        presShell->Initialize(0, 0);
-        nsIDocument* doc = presShell->GetDocument();
-        doc->FlushPendingNotifications(Flush_Layout);
-        
-        
-        presShell->MakeZombie();
-    }
-
 }
 
 #ifdef MOZ_NUWA_PROCESS
@@ -567,6 +549,18 @@ TabChild::PreloadSlowThings()
 #else
     PreloadSlowThingsPostFork(nullptr);
 #endif
+
+    nsCOMPtr<nsIDocShell> docShell = do_GetInterface(tab->WebNavigation());
+    if (nsIPresShell* presShell = docShell->GetPresShell()) {
+        
+        
+        presShell->Initialize(0, 0);
+        nsIDocument* doc = presShell->GetDocument();
+        doc->FlushPendingNotifications(Flush_Layout);
+        
+        
+        presShell->MakeZombie();
+    }
 
     sPreallocatedTab = tab;
     ClearOnShutdown(&sPreallocatedTab);
