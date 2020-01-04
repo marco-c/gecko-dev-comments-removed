@@ -5,7 +5,6 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.favicons.Favicons;
@@ -92,11 +91,6 @@ class MemoryMonitor extends BroadcastReceiver {
 
     public void onTrimMemory(int level) {
         Log.d(LOGTAG, "onTrimMemory() notification received with level " + level);
-        if (Versions.preICS) {
-            
-            return;
-        }
-
         if (level == ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
             
             

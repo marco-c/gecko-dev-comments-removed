@@ -328,11 +328,6 @@ public class DoorHangerPopup extends AnchoredPopup
         }
 
         show();
-
-        if (Versions.preICS) {
-            
-            setFocusable(true);
-        }
     }
 
     

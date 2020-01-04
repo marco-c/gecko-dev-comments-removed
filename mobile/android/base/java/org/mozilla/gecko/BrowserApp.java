@@ -3212,8 +3212,7 @@ public class BrowserApp extends GeckoApp
         
         
         
-        final boolean visible = Versions.preICS ||
-                                HardwareUtils.isTelevision() ||
+        final boolean visible = HardwareUtils.isTelevision() ||
                                 !PrefUtils.getStringSet(GeckoSharedPrefs.forProfile(this),
                                                         ClearOnShutdownPref.PREF,
                                                         new HashSet<String>()).isEmpty();
