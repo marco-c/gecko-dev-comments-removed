@@ -148,12 +148,6 @@ public:
                                 TextureFlags aTextureFlags,
                                 TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT);
 
-  already_AddRefed<TextureClient>
-  CreateTextureClientFromSurface(gfx::SourceSurface* aSurface,
-                                 BackendSelector aSelector,
-                                 TextureFlags aTextureFlags,
-                                 TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT);
-
   
 
 
