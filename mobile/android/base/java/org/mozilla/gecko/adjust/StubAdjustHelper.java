@@ -16,12 +16,4 @@ public class StubAdjustHelper implements AdjustHelperInterface {
     public void onReceive(final Context context, final Intent intent) {
         
     }
-
-    public void onResume(final Context context) {
-        
-    }
-
-    public void onPause(final Context context) {
-        
-    }
 }

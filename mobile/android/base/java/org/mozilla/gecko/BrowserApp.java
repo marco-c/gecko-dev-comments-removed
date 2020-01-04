@@ -699,7 +699,10 @@ public class BrowserApp extends GeckoApp
         mAccountsHelper = new AccountsHelper(appContext, getProfile());
 
         if (AppConstants.MOZ_INSTALL_TRACKING) {
-            AdjustConstants.getAdjustHelper().onCreate(this, AdjustConstants.MOZ_INSTALL_TRACKING_ADJUST_SDK_APP_TOKEN);
+            final SharedPreferences prefs = GeckoSharedPrefs.forApp(this);
+            if (prefs.getBoolean(GeckoPreferences.PREFS_HEALTHREPORT_UPLOAD_ENABLED, true)) {
+                AdjustConstants.getAdjustHelper().onCreate(this, AdjustConstants.MOZ_INSTALL_TRACKING_ADJUST_SDK_APP_TOKEN);
+            }
         }
 
         if (AppConstants.MOZ_ANDROID_BEAM) {
@@ -900,9 +903,6 @@ public class BrowserApp extends GeckoApp
     public void onResume() {
         super.onResume();
 
-        
-        AdjustConstants.getAdjustHelper().onResume(this);
-
         final String args = ContextUtils.getStringExtra(getIntent(), "args");
         
         
@@ -925,10 +925,6 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onPause() {
         super.onPause();
-
-        
-        AdjustConstants.getAdjustHelper().onPause(this);
-
         
         EventDispatcher.getInstance().registerGeckoThreadListener((GeckoEventListener) this,
             "Prompt:ShowTop");
