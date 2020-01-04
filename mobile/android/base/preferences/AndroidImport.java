@@ -23,7 +23,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
-class AndroidImport implements Runnable {
+public class AndroidImport implements Runnable {
     
 
 
