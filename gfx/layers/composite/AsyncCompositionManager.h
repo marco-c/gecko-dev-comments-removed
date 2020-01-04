@@ -133,7 +133,10 @@ private:
   
   
   
-  bool ApplyAsyncContentTransformToTree(Layer* aLayer, bool* aOutFoundRoot);
+  
+  bool ApplyAsyncContentTransformToTree(Layer* aLayer,
+                                        bool* aOutFoundRoot,
+                                        Maybe<ParentLayerIntRect>& aClipDeferredToParent);
   
 
 

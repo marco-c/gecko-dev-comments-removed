@@ -787,13 +787,16 @@ IntersectMaybeRects(const Maybe<IntRectTyped<Units>>& a,
 
 bool
 AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
-                                                          bool* aOutFoundRoot)
+                                                          bool* aOutFoundRoot,
+                                                          Maybe<ParentLayerIntRect>& aClipDeferredToParent)
 {
+  Maybe<ParentLayerIntRect> clipDeferredFromChildren;
   bool appliedTransform = false;
   for (Layer* child = aLayer->GetFirstChild();
       child; child = child->GetNextSibling()) {
     appliedTransform |=
-      ApplyAsyncContentTransformToTree(child, aOutFoundRoot);
+      ApplyAsyncContentTransformToTree(child, aOutFoundRoot,
+          clipDeferredFromChildren);
   }
 
   Matrix4x4 oldTransform = aLayer->GetTransform();
@@ -900,7 +903,16 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     if (metrics.HasClipRect()) {
       ParentLayerIntRect clip = metrics.ClipRect();
-      asyncClip = IntersectMaybeRects(Some(clip), asyncClip);
+      if (aLayer->GetParent() && aLayer->GetParent()->GetTransformIsPerspective()) {
+        
+        
+        
+        
+        MOZ_ASSERT(!aClipDeferredToParent);
+        aClipDeferredToParent = Some(clip);
+      } else {
+        asyncClip = IntersectMaybeRects(Some(clip), asyncClip);
+      }
     }
 
     
@@ -936,11 +948,12 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
                               transformWithoutOverscrollOrOmta, fixedLayerMargins);
   }
 
-  if (hasAsyncTransform) {
-    if (asyncClip) {
-      aLayer->AsLayerComposite()->SetShadowClipRect(asyncClip);
-    }
+  if (hasAsyncTransform || clipDeferredFromChildren) {
+    aLayer->AsLayerComposite()->SetShadowClipRect(
+        IntersectMaybeRects(asyncClip, clipDeferredFromChildren));
+  }
 
+  if (hasAsyncTransform) {
     
     
     
@@ -1358,7 +1371,8 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     
     wantNextFrame |= SampleAPZAnimations(LayerMetricsWrapper(root), aCurrentFrame);
     bool foundRoot = false;
-    if (ApplyAsyncContentTransformToTree(root, &foundRoot)) {
+    Maybe<ParentLayerIntRect> clipDeferredFromChildren;
+    if (ApplyAsyncContentTransformToTree(root, &foundRoot, clipDeferredFromChildren)) {
 #if defined(MOZ_ANDROID_APZ)
       MOZ_ASSERT(foundRoot);
       if (foundRoot && mFixedLayerMargins != ScreenMargin()) {
