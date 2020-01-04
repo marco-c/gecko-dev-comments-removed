@@ -10,7 +10,6 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 
 import org.mozilla.gecko.AndroidGamepadManager;
-import org.mozilla.gecko.animation.ViewHelper;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.AppConstants.Versions;
@@ -45,12 +44,13 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.InputDevice;
-import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 
 
 
 
-public class LayerView extends FrameLayout implements Tabs.OnTabsChangedListener {
+public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener {
     private static final String LOGTAG = "GeckoLayerView";
 
     private GeckoLayerClient mLayerClient;
@@ -66,11 +66,14 @@ public class LayerView extends FrameLayout implements Tabs.OnTabsChangedListener
 
     private SurfaceView mSurfaceView;
     private TextureView mTextureView;
+    private View mFillerView;
 
     private Listener mListener;
 
     private PointF mInitialTouchPoint;
     private boolean mGeckoIsReady;
+
+    private float mSurfaceTranslation;
 
     
     private final Overscroll mOverscroll;
@@ -233,6 +236,7 @@ public class LayerView extends FrameLayout implements Tabs.OnTabsChangedListener
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             requestFocus();
         }
+        event.offsetLocation(0, -mSurfaceTranslation);
 
         if (mToolbarAnimator != null && mToolbarAnimator.onInterceptTouchEvent(event)) {
             return true;
@@ -289,7 +293,25 @@ public class LayerView extends FrameLayout implements Tabs.OnTabsChangedListener
 
             mSurfaceView = new LayerSurfaceView(getContext(), this);
             mSurfaceView.setBackgroundColor(Color.WHITE);
-            addView(mSurfaceView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+
+            
+            
+            
+            
+            
+            
+            mFillerView = new View(getContext()) {
+                @Override protected void onMeasure(int aWidthSpec, int aHeightSpec) {
+                    setMeasuredDimension(0, Math.round(mToolbarAnimator.getMaxTranslation()));
+                }
+            };
+            mFillerView.setBackgroundColor(Color.RED);
+
+            LinearLayout container = new LinearLayout(getContext());
+            container.setOrientation(LinearLayout.VERTICAL);
+            container.addView(mFillerView);
+            container.addView(mSurfaceView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            addView(container, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
             SurfaceHolder holder = mSurfaceView.getHolder();
             holder.addCallback(new SurfaceListener());
@@ -570,19 +592,48 @@ public class LayerView extends FrameLayout implements Tabs.OnTabsChangedListener
         }
     }
 
+    @Override
+    protected void onMeasure(int aWidthSpec, int aHeightSpec) {
+        super.onMeasure(aWidthSpec, aHeightSpec);
+        if (mSurfaceView != null) {
+            
+            
+            
+            
+            
+            ((LayerSurfaceView)mSurfaceView).overrideSize(getMeasuredWidth(), getMeasuredHeight());
+        }
+    }
+
     
 
 
     private class LayerSurfaceView extends SurfaceView {
-        LayerView mParent;
+        private LayerView mParent;
+        private int mForcedWidth;
+        private int mForcedHeight;
 
         public LayerSurfaceView(Context aContext, LayerView aParent) {
             super(aContext);
             mParent = aParent;
         }
 
+        void overrideSize(int aWidth, int aHeight) {
+            if (mForcedWidth != aWidth || mForcedHeight != aHeight) {
+                mForcedWidth = aWidth;
+                mForcedHeight = aHeight;
+                requestLayout();
+            }
+        }
+
+        @Override
+        protected void onMeasure(int aWidthSpec, int aHeightSpec) {
+            setMeasuredDimension(mForcedWidth, mForcedHeight);
+        }
+
         @Override
         protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+            super.onLayout(changed, left, top, right, bottom);
             if (changed) {
                 mParent.surfaceChanged(right - left, bottom - top);
             }
@@ -664,12 +715,24 @@ public class LayerView extends FrameLayout implements Tabs.OnTabsChangedListener
         return mFullScreenState;
     }
 
+    public void setMaxTranslation(float aMaxTranslation) {
+        mToolbarAnimator.setMaxTranslation(aMaxTranslation);
+        if (mFillerView != null) {
+            mFillerView.requestLayout();
+        }
+    }
+
     public void setSurfaceTranslation(float translation) {
-        ViewHelper.setTranslationY(this, translation);
+        
+        
+        if (mSurfaceTranslation != translation) {
+            mSurfaceTranslation = translation;
+            scrollTo(0, Math.round(mToolbarAnimator.getMaxTranslation() - translation));
+        }
     }
 
     public float getSurfaceTranslation() {
-        return ViewHelper.getTranslationY(this);
+        return mSurfaceTranslation;
     }
 
     @Override

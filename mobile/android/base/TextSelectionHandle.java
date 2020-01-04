@@ -125,6 +125,8 @@ class TextSelectionHandle extends ImageView implements View.OnTouchListener {
     }
 
     private void move(float newX, float newY) {
+        LayerView layerView = GeckoAppShell.getLayerView();
+
         
         
         
@@ -132,21 +134,15 @@ class TextSelectionHandle extends ImageView implements View.OnTouchListener {
         
         
         
-        float layerViewTranslation = GeckoAppShell.getLayerView().getSurfaceTranslation();
         int[] layerViewPosition = new int[2];
-        GeckoAppShell.getLayerView().getLocationOnScreen(layerViewPosition);
-        float ancestorOrigin = layerViewPosition[1] - layerViewTranslation;
+        layerView.getLocationOnScreen(layerViewPosition);
+        float ancestorOrigin = layerViewPosition[1];
 
         mLeft = newX - mTouchStart.x;
         mTop = newY - mTouchStart.y - ancestorOrigin;
 
-        LayerView layerView = GeckoAppShell.getLayerView();
-        if (layerView == null) {
-            Log.e(LOGTAG, "Can't move selection because layerView is null");
-            return;
-        }
-
         
+        float layerViewTranslation = layerView.getSurfaceTranslation();
         PointF geckoPoint = new PointF(mLeft + adjustLeftForHandle(),
                                        mTop - layerViewTranslation);
         geckoPoint = layerView.convertViewPointToLayerPoint(geckoPoint);
