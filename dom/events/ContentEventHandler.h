@@ -342,12 +342,14 @@ protected:
   
   
   
-  FrameAndNodeOffset GetFirstFrameHavingFlatTextInRange(nsRange* aRange);
+  
+  FrameAndNodeOffset GetFirstFrameInRangeForTextRect(nsRange* aRange);
 
   
   
   
-  FrameAndNodeOffset GetLastFrameHavingFlatTextInRange(nsRange* aRange);
+  
+  FrameAndNodeOffset GetLastFrameInRangeForTextRect(nsRange* aRange);
 
   struct MOZ_STACK_CLASS FrameRelativeRect final
   {

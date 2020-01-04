@@ -420,6 +420,11 @@ static bool IsContentBR(nsIContent* aContent)
                                 eIgnoreCase);
 }
 
+static bool IsMozBR(nsIContent* aContent)
+{
+  return aContent->IsHTMLElement(nsGkAtoms::br) && !IsContentBR(aContent);
+}
+
 static void ConvertToNativeNewlines(nsAFlatString& aString)
 {
 #if defined(XP_WIN)
@@ -1450,7 +1455,7 @@ ContentEventHandler::GetNodePositionHavingFlatText(nsINode* aNode,
 }
 
 ContentEventHandler::FrameAndNodeOffset
-ContentEventHandler::GetFirstFrameHavingFlatTextInRange(nsRange* aRange)
+ContentEventHandler::GetFirstFrameInRangeForTextRect(nsRange* aRange)
 {
   NodePosition nodePosition;
   nsCOMPtr<nsIContentIterator> iter = NS_NewPreContentIterator();
@@ -1479,7 +1484,8 @@ ContentEventHandler::GetFirstFrameHavingFlatTextInRange(nsRange* aRange)
 
     
     
-    if (ShouldBreakLineBefore(node->AsContent(), mRootContent)) {
+    if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
+        IsMozBR(node->AsContent())) {
       nodePosition.mNode = node;
       nodePosition.mOffset = 0;
     }
@@ -1496,7 +1502,7 @@ ContentEventHandler::GetFirstFrameHavingFlatTextInRange(nsRange* aRange)
 }
 
 ContentEventHandler::FrameAndNodeOffset
-ContentEventHandler::GetLastFrameHavingFlatTextInRange(nsRange* aRange)
+ContentEventHandler::GetLastFrameInRangeForTextRect(nsRange* aRange)
 {
   NodePosition nodePosition;
   nsCOMPtr<nsIContentIterator> iter = NS_NewPreContentIterator();
@@ -1549,7 +1555,8 @@ ContentEventHandler::GetLastFrameHavingFlatTextInRange(nsRange* aRange)
       break;
     }
 
-    if (ShouldBreakLineBefore(node->AsContent(), mRootContent)) {
+    if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
+        IsMozBR(node->AsContent())) {
       nodePosition.mNode = node;
       nodePosition.mOffset = 0;
       break;
@@ -1599,7 +1606,9 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame)
 {
   
   
-  MOZ_ASSERT(ShouldBreakLineBefore(aFrame->GetContent(), mRootContent));
+  
+  MOZ_ASSERT(ShouldBreakLineBefore(aFrame->GetContent(), mRootContent) ||
+             IsMozBR(aFrame->GetContent()));
 
   nsIFrame* frameForFontMetrics = aFrame;
 
@@ -1703,7 +1712,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
     }
 
     
-    FrameAndNodeOffset firstFrame = GetFirstFrameHavingFlatTextInRange(range);
+    FrameAndNodeOffset firstFrame = GetFirstFrameInRangeForTextRect(range);
 
     
     
@@ -1731,7 +1740,8 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
     AutoTArray<nsRect, 16> charRects;
 
-    if (ShouldBreakLineBefore(firstContent, mRootContent)) {
+    if (ShouldBreakLineBefore(firstContent, mRootContent) ||
+        IsMozBR(firstContent)) {
       nsRect brRect;
       
       
@@ -1772,7 +1782,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
           return NS_ERROR_UNEXPECTED;
         }
         FrameAndNodeOffset frameForPrevious =
-          GetFirstFrameHavingFlatTextInRange(range);
+          GetFirstFrameInRangeForTextRect(range);
         startsBetweenLineBreaker = frameForPrevious.mFrame == firstFrame.mFrame;
       }
     } else {
@@ -1932,7 +1942,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   iter->Init(range);
 
   
-  FrameAndNodeOffset firstFrame = GetFirstFrameHavingFlatTextInRange(range);
+  FrameAndNodeOffset firstFrame = GetFirstFrameInRangeForTextRect(range);
 
   
   
@@ -1985,7 +1995,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   EnsureNonEmptyRect(rect);
 
   
-  FrameAndNodeOffset lastFrame = GetLastFrameHavingFlatTextInRange(range);
+  FrameAndNodeOffset lastFrame = GetLastFrameInRangeForTextRect(range);
   if (NS_WARN_IF(!lastFrame.IsValid())) {
     return NS_ERROR_FAILURE;
   }
@@ -2080,6 +2090,7 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
       rect.UnionRect(rect, frameRect);
     }
   }
+
   aEvent->mReply.mRect = LayoutDeviceIntRect::FromUnknownRect(
       rect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
   
