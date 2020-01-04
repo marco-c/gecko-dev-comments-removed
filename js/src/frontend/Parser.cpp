@@ -845,7 +845,11 @@ Parser<ParseHandler>::checkStrictBinding(PropertyName* name, TokenPos pos)
     if (!pc->sc()->needStrictChecks())
         return true;
 
-    if (name == context->names().eval || name == context->names().arguments || IsKeyword(name)) {
+    if (name == context->names().eval ||
+        name == context->names().arguments ||
+        name == context->names().let ||
+        IsKeyword(name))
+    {
         JSAutoByteString bytes;
         if (!AtomToPrintableString(context, name, &bytes))
             return false;
@@ -4859,14 +4863,27 @@ Parser<FullParseHandler>::exportDeclaration()
         return node;
       }
 
-      case TOK_LET:
       case TOK_CONST:
-        kid = lexicalDeclaration(YieldIsName, tt == TOK_CONST);
+        kid = lexicalDeclaration(YieldIsName,  true);
         if (!kid)
             return null();
         if (!checkExportedNamesForDeclaration(kid))
             return null();
         break;
+
+      case TOK_NAME:
+        if (tokenStream.currentName() == context->names().let) {
+            if (!checkUnescapedName())
+                return null();
+
+            kid = lexicalDeclaration(YieldIsName,  false);
+            if (!kid)
+                return null();
+            if (!checkExportedNamesForDeclaration(kid))
+                return null();
+            break;
+        }
+        MOZ_FALLTHROUGH;
 
       default:
         report(ParseError, false, null(), JSMSG_DECLARATION_AFTER_EXPORT);
@@ -5113,16 +5130,15 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
     
     
     
-    
     bool parsingLexicalDeclaration = false;
     bool letIsIdentifier = false;
-    if (tt == TOK_LET || tt == TOK_CONST) {
+    if (tt == TOK_CONST) {
         parsingLexicalDeclaration = true;
         tokenStream.consumeKnownToken(tt, TokenStream::Operand);
-    } else if (tt == TOK_NAME && tokenStream.nextName() == context->names().let) {
-        MOZ_ASSERT(!pc->sc()->strict(),
-                   "should parse |let| as TOK_LET in strict mode code");
-
+    } else if (tt == TOK_NAME &&
+               tokenStream.nextName() == context->names().let &&
+               !tokenStream.nextNameContainsEscape())
+    {
         
         
         
@@ -6420,10 +6436,9 @@ template <class ParseHandler>
 bool
 Parser<ParseHandler>::nextTokenContinuesLetDeclaration(TokenKind next, YieldHandling yieldHandling)
 {
-    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_NAME),
-               "TOK_LET should have been summarily considered a "
-               "LexicalDeclaration");
+    MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_NAME));
     MOZ_ASSERT(tokenStream.currentName() == context->names().let);
+    MOZ_ASSERT(!tokenStream.currentToken().nameContainsEscape());
 
 #ifdef DEBUG
     TokenKind verify;
@@ -6531,25 +6546,21 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling)
         if (!tokenStream.peekToken(&next))
             return null();
 
-#ifdef DEBUG
-        if (tokenStream.currentName() == context->names().let) {
-            MOZ_ASSERT(!pc->sc()->strict(),
-                       "observing |let| as TOK_NAME and not TOK_LET implies "
-                       "non-strict code (and the edge case of 'use strict' "
-                       "immediately followed by |let| on a new line only "
-                       "applies to StatementListItems, not to Statements)");
-        }
-#endif
-
         
-        if ((next == TOK_LB || next == TOK_LC || next == TOK_NAME) &&
+        
+        if (!tokenStream.currentToken().nameContainsEscape() &&
             tokenStream.currentName() == context->names().let)
         {
             bool forbiddenLetDeclaration = false;
-            if (next == TOK_LB) {
+
+            if (pc->sc()->strict() || versionNumber() >= JSVERSION_1_7) {
+                
                 
                 forbiddenLetDeclaration = true;
-            } else {
+            } else if (next == TOK_LB) {
+                
+                forbiddenLetDeclaration = true;
+            } else if (next == TOK_LC || next == TOK_NAME) {
                 
                 
                 
@@ -6678,14 +6689,6 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling)
         return null();
 
       
-      
-      
-      
-      case TOK_LET:
-        report(ParseError, false, null(), JSMSG_FORBIDDEN_AS_STATEMENT, "let declarations");
-        return null();
-
-      
     }
 }
 
@@ -6752,23 +6755,11 @@ Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling,
         if (!tokenStream.peekToken(&next))
             return null();
 
-        if (tokenStream.currentName() == context->names().let) {
-            if (nextTokenContinuesLetDeclaration(next, yieldHandling))
-                return lexicalDeclaration(yieldHandling,  false);
-
-            
-            
-            
-            
-            
-            
-            
-            
-            if (pc->sc()->strict()) {
-                report(ParseError, false, null(), JSMSG_UNEXPECTED_TOKEN,
-                       "declaration pattern", TokenKindToDesc(next));
-                return null();
-            }
+        if (!tokenStream.currentToken().nameContainsEscape() &&
+            tokenStream.currentName() == context->names().let &&
+            nextTokenContinuesLetDeclaration(next, yieldHandling))
+        {
+            return lexicalDeclaration(yieldHandling,  false);
         }
 
         if (next == TOK_COLON)
@@ -6854,11 +6845,10 @@ Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling,
 
       
       
-      case TOK_LET:
       case TOK_CONST:
         
         
-        return lexicalDeclaration(yieldHandling,  tt == TOK_CONST);
+        return lexicalDeclaration(yieldHandling,  true);
 
       
       case TOK_IMPORT:
@@ -8254,6 +8244,16 @@ Parser<ParseHandler>::labelOrIdentifierReference(YieldHandling yieldHandling)
         ident = tok.name();
         MOZ_ASSERT(ident != context->names().yield,
                    "tokenizer should have treated 'yield' as TOK_YIELD");
+
+        if (pc->sc()->strict()) {
+            const char* badName = ident == context->names().let
+                                  ? "let"
+                                  : nullptr;
+            if (badName) {
+                report(ParseError, false, null(), JSMSG_RESERVED_ID, badName);
+                return nullptr;
+            }
+        }
     } else {
         MOZ_ASSERT(tok.type == TOK_YIELD);
 
@@ -8291,6 +8291,14 @@ Parser<ParseHandler>::bindingIdentifier(YieldHandling yieldHandling)
                                   : nullptr;
             if (badName) {
                 report(ParseError, false, null(), JSMSG_BAD_STRICT_ASSIGN, badName);
+                return nullptr;
+            }
+
+            badName = ident == context->names().let
+                      ? "let"
+                      : nullptr;
+            if (badName) {
+                report(ParseError, false, null(), JSMSG_RESERVED_ID, badName);
                 return nullptr;
             }
         }
