@@ -190,7 +190,7 @@ function RegExpReplace(string, replaceValue) {
         
         
         if (replaceValue.length > 1)
-            firstDollarIndex = callFunction(std_String_indexOf, replaceValue, "$");
+            firstDollarIndex = GetFirstDollarIndex(replaceValue);
     }
 
     
