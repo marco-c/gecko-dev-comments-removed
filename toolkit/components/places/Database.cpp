@@ -854,6 +854,13 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
       
 
+      if (currentSchemaVersion < 34) {
+        rv = MigrateV34Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
 
       rv = UpdateBookmarkRootTitles();
@@ -1808,6 +1815,21 @@ Database::MigrateV33Up() {
 
   
   rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_PLACES_URL_HASH);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+nsresult
+Database::MigrateV34Up() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "DELETE FROM moz_keywords WHERE id IN ( "
+      "SELECT id FROM moz_keywords k "
+      "WHERE NOT EXISTS (SELECT 1 FROM moz_places h WHERE k.place_id = h.id) "
+    ")"
+  ));
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
