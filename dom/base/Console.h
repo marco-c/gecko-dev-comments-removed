@@ -181,13 +181,67 @@ private:
   ComposeGroupName(JSContext* aCx, const Sequence<JS::Value>& aData,
                    nsAString& aName) const;
 
-  JS::Value
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool
   StartTimer(JSContext* aCx, const JS::Value& aName,
-             DOMHighResTimeStamp aTimestamp);
+             DOMHighResTimeStamp aTimestamp,
+             nsAString& aTimerLabel,
+             DOMHighResTimeStamp* aTimerValue);
 
+  
+  
+  
+  
+  
+  
+  
+  
   JS::Value
+  CreateStartTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
+                        DOMHighResTimeStamp aTimerValue,
+                        bool aTimerStatus) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool
   StopTimer(JSContext* aCx, const JS::Value& aName,
-            DOMHighResTimeStamp aTimestamp);
+            DOMHighResTimeStamp aTimestamp,
+            nsAString& aTimerLabel,
+            double* aTimerDuration);
+
+  
+  
+  
+  
+  
+  
+  
+  JS::Value
+  CreateStopTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
+                       double aTimerDuration,
+                       bool aTimerStatus) const;
 
   
   bool
@@ -198,9 +252,29 @@ private:
   ProfileMethod(JSContext* aCx, const nsAString& aAction,
                 const Sequence<JS::Value>& aData);
 
-  JS::Value
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t
   IncreaseCounter(JSContext* aCx, const ConsoleStackEntry& aFrame,
-                  const Sequence<JS::Value>& aArguments);
+                  const Sequence<JS::Value>& aData,
+                  nsAString& aCountLabel);
+
+  
+  
+  
+  
+  
+  
+  
+  JS::Value
+  CreateCounterValue(JSContext* aCx, const nsAString& aCountLabel,
+                     uint32_t aCountValue) const;
 
   bool
   ShouldIncludeStackTrace(MethodName aMethodName) const;
@@ -221,8 +295,6 @@ private:
 
   
   nsDataHashtable<nsStringHashKey, DOMHighResTimeStamp> mTimerRegistry;
-
-  
   nsDataHashtable<nsStringHashKey, uint32_t> mCounterRegistry;
 
   
