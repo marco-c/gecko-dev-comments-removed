@@ -1752,9 +1752,8 @@ TabChild::NotifyAPZStateChange(const ViewID& aViewId,
   if (aChange == layers::GeckoContentController::APZStateChange::TransformEnd) {
     
     
-    DispatchMessageManagerMessage(
-      NS_LITERAL_STRING("APZ:TransformEnd"),
-      NS_LITERAL_STRING("{}"));
+    nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
+    observerService->NotifyObservers(nullptr, "APZ:TransformEnd", nullptr);
   }
   return true;
 }
