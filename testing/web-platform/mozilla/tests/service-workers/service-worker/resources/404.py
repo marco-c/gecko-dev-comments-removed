@@ -1,0 +1,5 @@
+
+
+
+def main(req, res):
+    return 404, [('Content-Type', 'text/plain')], "Page not found"
