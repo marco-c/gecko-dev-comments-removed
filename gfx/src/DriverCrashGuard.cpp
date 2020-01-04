@@ -23,11 +23,24 @@ namespace mozilla {
 namespace gfx {
 
 static const size_t NUM_CRASH_GUARD_TYPES = size_t(CrashGuardType::NUM_TYPES);
-static const char* sCrashGuardNames[NUM_CRASH_GUARD_TYPES] = {
+static const char* sCrashGuardNames[] = {
   "d3d11layers",
   "d3d9video",
   "glcontext",
+  "d3d11video",
 };
+static_assert(MOZ_ARRAY_LENGTH(sCrashGuardNames) == NUM_CRASH_GUARD_TYPES,
+              "CrashGuardType updated without a name string");
+
+static inline void
+BuildCrashGuardPrefName(CrashGuardType aType, nsCString& aOutPrefName)
+{
+  MOZ_ASSERT(aType < CrashGuardType::NUM_TYPES);
+  MOZ_ASSERT(sCrashGuardNames[size_t(aType)]);
+
+  aOutPrefName.Assign("gfx.crash-guard.status.");
+  aOutPrefName.Append(sCrashGuardNames[size_t(aType)]);
+}
 
 DriverCrashGuard::DriverCrashGuard(CrashGuardType aType, dom::ContentParent* aContentParent)
  : mType(aType)
@@ -36,10 +49,7 @@ DriverCrashGuard::DriverCrashGuard(CrashGuardType aType, dom::ContentParent* aCo
  , mGuardActivated(false)
  , mCrashDetected(false)
 {
-  MOZ_ASSERT(mType < CrashGuardType::NUM_TYPES);
-
-  mStatusPref.Assign("gfx.crash-guard.status.");
-  mStatusPref.Append(sCrashGuardNames[size_t(mType)]);
+  BuildCrashGuardPrefName(aType, mStatusPref);
 }
 
 void
@@ -53,26 +63,35 @@ DriverCrashGuard::InitializeIfNeeded()
   Initialize();
 }
 
-void
-DriverCrashGuard::Initialize()
+static inline bool
+AreCrashGuardsEnabled()
 {
 #ifdef NIGHTLY_BUILD
   
   
   
-  return;
+  return false;
+#else
+  
+  if (gfxEnv::DisableCrashGuard()) {
+    return false;
+  }
+  return true;
 #endif
+}
+
+void
+DriverCrashGuard::Initialize()
+{
+  if (!AreCrashGuardsEnabled()) {
+    return;
+  }
 
   
   
   
   
   if (!NS_IsMainThread()) {
-    return;
-  }
-
-  
-  if (gfxEnv::DisableCrashGuard()) {
     return;
   }
 
@@ -363,6 +382,31 @@ DriverCrashGuard::FlushPreferences()
 
   if (nsIPrefService* prefService = Preferences::GetService()) {
     prefService->SavePrefFile(nullptr);
+  }
+}
+
+void
+DriverCrashGuard::ForEachActiveCrashGuard(const CrashGuardCallback& aCallback)
+{
+  if (!AreCrashGuardsEnabled()) {
+    
+    
+    return;
+  }
+
+  for (size_t i = 0; i < NUM_CRASH_GUARD_TYPES; i++) {
+    CrashGuardType type = static_cast<CrashGuardType>(i);
+
+    nsCString prefName;
+    BuildCrashGuardPrefName(type, prefName);
+
+    auto status =
+      static_cast<DriverInitStatus>(Preferences::GetInt(prefName.get(), 0));
+    if (status != DriverInitStatus::Crashed) {
+      continue;
+    }
+
+    aCallback(sCrashGuardNames[i], prefName.get());
   }
 }
 
