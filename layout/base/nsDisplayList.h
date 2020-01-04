@@ -2621,6 +2621,16 @@ protected:
 
   
   
+  enum ImageLayerization {
+    WHENEVER_POSSIBLE,
+    ONLY_FOR_SCALING,
+    NO_LAYER_NEEDED
+  };
+  ImageLayerization ShouldCreateOwnLayer(nsDisplayListBuilder* aBuilder,
+                                         LayerManager* aManager);
+
+  
+  
   const nsStyleBackground* mBackgroundStyle;
   nsCOMPtr<imgIContainer> mImage;
   RefPtr<ImageContainer> mImageContainer;
