@@ -22,6 +22,9 @@ class LIRGeneratorX64 : public LIRGeneratorX86Shared
   protected:
     void lowerUntypedPhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block, size_t lirIndex);
     void defineUntypedPhi(MPhi* phi, size_t lirIndex);
+    void lowerInt64PhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block, size_t lirIndex);
+    void defineInt64Phi(MPhi* phi, size_t lirIndex);
+
 
     
     LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register, bool useAtStart = false);
