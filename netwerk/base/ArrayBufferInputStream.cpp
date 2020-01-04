@@ -92,6 +92,8 @@ ArrayBufferInputStream::ReadSegments(nsWriteSegmentFun writer, void *closure,
       return NS_BASE_STREAM_CLOSED;
     }
 
+    
+    
     char buffer[8192];
     uint32_t count = std::min(std::min(aCount, remaining), uint32_t(mozilla::ArrayLength(buffer)));
     if (count == 0) {
@@ -111,7 +113,7 @@ ArrayBufferInputStream::ReadSegments(nsWriteSegmentFun writer, void *closure,
       memcpy(buffer, src, count);
     }
     uint32_t written;
-    nsresult rv = writer(this, closure, buffer, 0, count, &written);
+    nsresult rv = writer(this, closure, buffer, *result, count, &written);
     if (NS_FAILED(rv)) {
       
       return NS_OK;
