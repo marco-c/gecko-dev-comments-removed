@@ -40,7 +40,7 @@ public class MenuItemSwitcherLayout extends LinearLayout
     }
 
     public MenuItemSwitcherLayout(Context context, AttributeSet attrs) {
-        this(context, attrs, R.attr.menuItemActionViewStyle);
+        this(context, attrs, R.attr.menuItemSwitcherLayoutStyle);
     }
 
     @TargetApi(14)
