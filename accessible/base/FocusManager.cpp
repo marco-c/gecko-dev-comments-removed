@@ -299,33 +299,18 @@ FocusManager::ProcessFocusEvent(AccEvent* aEvent)
   
   if (target->IsARIARole(nsGkAtoms::menuitem)) {
     
-    bool tryOwnsParent = true;
     Accessible* ARIAMenubar = nullptr;
-    Accessible* child = target;
-    Accessible* parent = child->Parent();
-    while (parent) {
-      nsRoleMapEntry* roleMap = parent->ARIARoleMap();
-      if (roleMap) {
-        if (roleMap->Is(nsGkAtoms::menubar)) {
-          ARIAMenubar = parent;
-          break;
-        }
-
-        
-        if (roleMap->Is(nsGkAtoms::menuitem) || roleMap->Is(nsGkAtoms::menu)) {
-          child = parent;
-          parent = child->Parent();
-          tryOwnsParent = true;
-          continue;
-        }
+    for (Accessible* parent = target->Parent(); parent; parent = parent->Parent()) {
+      if (parent->IsARIARole(nsGkAtoms::menubar)) {
+        ARIAMenubar = parent;
+        break;
       }
 
       
-      if (!tryOwnsParent)
+      if (!parent->IsARIARole(nsGkAtoms::menuitem) &&
+          !parent->IsARIARole(nsGkAtoms::menu)) {
         break;
-
-      parent = ARIAOwnedByIterator(child).Next();
-      tryOwnsParent = false;
+      }
     }
 
     if (ARIAMenubar != mActiveARIAMenubar) {
