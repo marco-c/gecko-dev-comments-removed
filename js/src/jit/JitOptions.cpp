@@ -118,6 +118,9 @@ DefaultJitOptions::DefaultJitOptions()
     SET_DEFAULT(disableScalarReplacement, false);
 
     
+    SET_DEFAULT(disableCacheIR, false);
+
+    
     SET_DEFAULT(disableSharedStubs, false);
 
     
