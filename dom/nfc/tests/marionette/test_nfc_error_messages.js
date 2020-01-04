@@ -140,8 +140,7 @@ function setAndFireTechLostHandler() {
 
 var tests = [
   testNfcNotEnabledError,
-
-
+  testNfcBadSessionIdError,
   testNoErrorInTechMsg
 ];
 
