@@ -82,6 +82,7 @@
 #include "nsViewSourceHandler.h"
 #include "nsWhitespaceTokenizer.h"
 #include "nsICookieService.h"
+#include "nsIConsoleReportCollector.h"
 
 
 
@@ -7355,6 +7356,11 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
 {
   if (!aChannel) {
     return NS_ERROR_NULL_POINTER;
+  }
+
+  nsCOMPtr<nsIConsoleReportCollector> reporter = do_QueryInterface(aChannel);
+  if (reporter) {
+    reporter->FlushConsoleReports(GetDocument());
   }
 
   nsCOMPtr<nsIURI> url;
