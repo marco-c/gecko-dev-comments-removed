@@ -38,6 +38,8 @@ const RECENT_PINGS = 4;
 
 const TOTAL_EXPECTED_PINGS = OVERDUE_PINGS + RECENT_PINGS + OLD_FORMAT_PINGS;
 
+const PREF_FHR_UPLOAD = "datareporting.healthreport.uploadEnabled";
+
 let gCreatedPings = 0;
 let gSeenPings = 0;
 
@@ -59,7 +61,7 @@ let createSavedPings = Task.async(function* (aPingInfos) {
 
   for (let type in aPingInfos) {
     let num = aPingInfos[type].num;
-    let age = now - aPingInfos[type].age;
+    let age = now - (aPingInfos[type].age || 0);
     for (let i = 0; i < num; ++i) {
       let pingId = yield TelemetryController.addPendingPing("test-ping", {}, { overwrite: true });
       if (aPingInfos[type].age) {
@@ -179,6 +181,9 @@ function run_test() {
 
 
 add_task(function* setupEnvironment() {
+  
+  Services.prefs.setBoolPref(PREF_FHR_UPLOAD, true);
+
   yield TelemetryController.setup();
 
   let directory = TelemetryStorage.pingDirectoryPath;
@@ -400,7 +405,6 @@ add_task(function* test_overdue_old_format() {
 
 add_task(function* test_pendingPingsQuota() {
   const PING_TYPE = "foo";
-  const PREF_FHR_UPLOAD = "datareporting.healthreport.uploadEnabled";
 
   
   Services.prefs.setBoolPref(PREF_FHR_UPLOAD, false);
