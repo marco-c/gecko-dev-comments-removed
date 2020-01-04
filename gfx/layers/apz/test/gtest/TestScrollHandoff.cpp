@@ -96,7 +96,7 @@ protected:
 
     
     
-    Pan(manager, mcc, 70, 40);
+    Pan(manager, 70, 40);
 
     
     SampleAnimationsOnce();
@@ -104,7 +104,7 @@ protected:
     float childVelocityAfterFling1 = childApzc->GetVelocityVector().y;
 
     
-    Pan(manager, mcc, 70, 40);
+    Pan(manager, 70, 40);
 
     
     
@@ -139,7 +139,7 @@ TEST_F(APZScrollHandoffTester, DeferredInputEventProcessing) {
 
   
   uint64_t blockId = 0;
-  ApzcPanNoFling(childApzc, mcc, 90, 30, &blockId);
+  ApzcPanNoFling(childApzc, 90, 30, &blockId);
 
   
   childApzc->ContentReceivedInputBlock(blockId, false);
@@ -167,7 +167,7 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
 
   
   uint64_t blockId = 0;
-  ApzcPanNoFling(childApzc, mcc, 90, 30, &blockId);
+  ApzcPanNoFling(childApzc, 90, 30, &blockId);
 
   
   
@@ -178,7 +178,7 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
 
   
   uint64_t secondBlockId = 0;
-  ApzcPanNoFling(childApzc, mcc, 30, 90, &secondBlockId);
+  ApzcPanNoFling(childApzc, 30, 90, &secondBlockId);
 
   
   childApzc->ContentReceivedInputBlock(blockId, false);
@@ -212,7 +212,7 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1073250) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   
-  Pan(manager, mcc, 10, 40, true );
+  Pan(manager, 10, 40, true );
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
 
@@ -249,7 +249,7 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1231228) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   
-  Pan(manager, mcc, 60, 90, true );
+  Pan(manager, 60, 90, true );
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
 
@@ -283,7 +283,7 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202a) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   
-  Pan(manager, mcc, 60, 90, true );
+  Pan(manager, 60, 90, true );
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
 
@@ -316,7 +316,7 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202b) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   
-  Pan(manager, mcc, 60, 90, true );
+  Pan(manager, 60, 90, true );
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
 
@@ -362,7 +362,7 @@ TEST_F(APZScrollHandoffTester, PartialFlingHandoff) {
   
   
   
-  Pan(manager, mcc, ScreenIntPoint(90, 90), ScreenIntPoint(55, 55));
+  Pan(manager, ScreenIntPoint(90, 90), ScreenIntPoint(55, 55));
 
   RefPtr<TestAsyncPanZoomController> parent = ApzcOf(root);
   RefPtr<TestAsyncPanZoomController> child = ApzcOf(layers[1]);
@@ -389,10 +389,10 @@ TEST_F(APZScrollHandoffTester, SimultaneousFlings) {
   RefPtr<TestAsyncPanZoomController> child2 = ApzcOf(layers[4]);
 
   
-  Pan(child2, mcc, 45, 5);
+  Pan(child2, 45, 5);
 
   
-  Pan(child1, mcc, 95, 55);
+  Pan(child1, 95, 55);
 
   
   child1->AssertStateIsFling();
@@ -417,7 +417,7 @@ TEST_F(APZScrollHandoffTester, Scrollgrab) {
 
   
   
-  Pan(childApzc, mcc, 80, 45);
+  Pan(childApzc, 80, 45);
 
   
   EXPECT_EQ(20, rootApzc->GetFrameMetrics().GetScrollOffset().y);
@@ -431,7 +431,7 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFling) {
   RefPtr<TestAsyncPanZoomController> childApzc = ApzcOf(layers[1]);
 
   
-  Pan(childApzc, mcc, 80, 70);
+  Pan(childApzc, 80, 70);
 
   
   rootApzc->AssertStateIsFling();
@@ -459,7 +459,7 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Pan) {
   
   
   
-  Pan(childApzc, mcc, 60, 5);
+  Pan(childApzc, 60, 5);
 
   
   EXPECT_EQ(50, childApzc->GetFrameMetrics().GetScrollOffset().y);
@@ -467,7 +467,7 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Pan) {
 
   
   
-  Pan(childApzc, mcc, 60, 50);
+  Pan(childApzc, 60, 50);
 
   
   EXPECT_EQ(10, parentApzc->GetFrameMetrics().GetScrollOffset().y);
@@ -483,7 +483,7 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
 
   
   
-  Pan(childApzc, mcc, 60, 12);
+  Pan(childApzc, 60, 12);
 
   
   childApzc->AdvanceAnimationsUntilEnd();
@@ -498,7 +498,7 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
 
   
   
-  Pan(childApzc, mcc, 60, 50);
+  Pan(childApzc, 60, 50);
 
   
   childApzc->AdvanceAnimationsUntilEnd();

@@ -234,7 +234,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   
   
-  ApzcPanNoFling(apzcroot, mcc, 100, 50);
+  ApzcPanNoFling(apzcroot, 100, 50);
 
   
   hit = GetTargetAPZC(ScreenPoint(75, 75));
@@ -258,7 +258,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
 
   
   EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
-  ApzcPanNoFling(apzcroot, mcc, 100, 50);
+  ApzcPanNoFling(apzcroot, 100, 50);
 
   
   hit = GetTargetAPZC(ScreenPoint(75, 75));
@@ -390,7 +390,7 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   }
 
   
-  ApzcPanNoFling(apzcroot, mcc, 100, 50);
+  ApzcPanNoFling(apzcroot, 100, 50);
 
   
   ScreenIntPoint touchPoint(50, 50);
@@ -413,9 +413,9 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   
   
   
-  ApzcPanNoFling(apzcroot, mcc, 100, 50);
+  ApzcPanNoFling(apzcroot, 100, 50);
   check.Call("post-second-fling");
-  ApzcPanNoFling(apzcroot, mcc, 100, 50);
+  ApzcPanNoFling(apzcroot, 100, 50);
 
   
   
@@ -515,7 +515,7 @@ TEST_F(APZHitTestingTester, Bug1148350) {
     EXPECT_CALL(check, Call("Tapped with interleaved transform"));
   }
 
-  Tap(manager, ScreenIntPoint(100, 100), mcc, TimeDuration::FromMilliseconds(100));
+  Tap(manager, ScreenIntPoint(100, 100), TimeDuration::FromMilliseconds(100));
   mcc->RunThroughDelayedTasks();
   check.Call("Tapped without transform");
 
@@ -571,7 +571,7 @@ TEST_F(APZHitTestingTester, HitTestingRespectsScrollClip_Bug1257288) {
 
   
   
-  Pan(manager, mcc, 120, 110);
+  Pan(manager, 120, 110);
 
   
   EXPECT_EQ(CSSPoint(0,0), ApzcOf(layers[2], 0)->GetFrameMetrics().GetScrollOffset());

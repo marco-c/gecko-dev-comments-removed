@@ -28,7 +28,7 @@ protected:
     allowedTouchBehaviors.AppendElement(aBehavior);
 
     
-    PanAndCheckStatus(apzc, mcc, touchStart, touchEnd, aShouldBeConsumed, &allowedTouchBehaviors);
+    PanAndCheckStatus(apzc, touchStart, touchEnd, aShouldBeConsumed, &allowedTouchBehaviors);
     apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
 
     if (aShouldTriggerScroll) {
@@ -44,7 +44,7 @@ protected:
     apzc->CancelAnimation();
 
     
-    PanAndCheckStatus(apzc, mcc, touchEnd, touchStart, aShouldBeConsumed, &allowedTouchBehaviors);
+    PanAndCheckStatus(apzc, touchEnd, touchStart, aShouldBeConsumed, &allowedTouchBehaviors);
     apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
 
     EXPECT_EQ(ParentLayerPoint(), pointOut);
@@ -64,7 +64,7 @@ protected:
     
     nsTArray<uint32_t> allowedTouchBehaviors;
     allowedTouchBehaviors.AppendElement(mozilla::layers::AllowedTouchBehavior::VERTICAL_PAN);
-    PanAndCheckStatus(apzc, mcc, touchStart, touchEnd, true, &allowedTouchBehaviors, &blockId);
+    PanAndCheckStatus(apzc, touchStart, touchEnd, true, &allowedTouchBehaviors, &blockId);
 
     
     
@@ -126,4 +126,3 @@ TEST_F(APZCPanningTester, PanWithPreventDefault) {
   SCOPED_GFX_PREF(TouchActionEnabled, bool, false);
   DoPanWithPreventDefaultTest();
 }
-
