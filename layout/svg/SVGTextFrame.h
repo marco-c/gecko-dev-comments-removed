@@ -608,12 +608,6 @@ private:
   gfxFloat GetOffsetScale(nsIFrame* aTextPathFrame);
   gfxFloat GetStartOffset(nsIFrame* aTextPathFrame);
 
-  DrawMode SetupContextPaint(const DrawTarget* aDrawTarget,
-                             const gfxMatrix& aContextMatrix,
-                             nsIFrame* aFrame,
-                             gfxTextContextPaint* aOuterContextPaint,
-                             SVGTextContextPaint* aThisContextPaint);
-
   
 
 
