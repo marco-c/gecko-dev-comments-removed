@@ -1227,11 +1227,9 @@ MediaDecoderStateMachine::Shutdown()
 {
   MOZ_ASSERT(OnTaskQueue());
 
-  
-  
-  
-  ScheduleStateMachine();
   SetState(DECODER_STATE_SHUTDOWN);
+
+  mDelayedScheduler.Reset();
 
   mBufferedUpdateRequest.DisconnectIfExists();
 
