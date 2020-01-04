@@ -13,6 +13,14 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
+                                  "resource:///modules/RecentWindow.jsm");
+
+
+
+
+const RECENT_DATA_THRESHOLD = 5 * 1000000;
+
 
 
 
@@ -20,6 +28,11 @@ var Manager = {
   listeners: new Map(),
 
   init() {
+    
+    
+    this.recentTabTransitionData = new WeakMap();
+    Services.obs.addObserver(this, "autocomplete-did-enter-text", true);
+
     Services.mm.addMessageListener("Extension:DOMContentLoaded", this);
     Services.mm.addMessageListener("Extension:StateChange", this);
     Services.mm.addMessageListener("Extension:DocumentChange", this);
@@ -28,6 +41,10 @@ var Manager = {
   },
 
   uninit() {
+    
+    Services.obs.removeObserver(this, "autocomplete-did-enter-text", true);
+    this.recentTabTransitionData = new WeakMap();
+
     Services.mm.removeMessageListener("Extension:StateChange", this);
     Services.mm.removeMessageListener("Extension:DocumentChange", this);
     Services.mm.removeMessageListener("Extension:HistoryChange", this);
@@ -62,6 +79,143 @@ var Manager = {
       this.uninit();
     }
   },
+
+  
+
+
+
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver, Ci.nsISupportsWeakReference]),
+
+  
+
+
+
+  observe: function(subject, topic, data) {
+    if (topic == "autocomplete-did-enter-text") {
+      this.onURLBarAutoCompletion(subject, topic, data);
+    }
+  },
+
+  
+
+
+
+
+  onURLBarAutoCompletion(subject, topic, data) {
+    if (subject && subject instanceof Ci.nsIAutoCompleteInput) {
+      
+      if (subject.id !== "urlbar") {
+        return;
+      }
+
+      let controller = subject.popup.view.QueryInterface(Ci.nsIAutoCompleteController);
+      let idx = subject.popup.selectedIndex;
+
+      let tabTransistionData = {
+        from_address_bar: true,
+      };
+
+      if (idx < 0 || idx >= controller.matchCount) {
+        
+        tabTransistionData.typed = true;
+      } else {
+        let value = controller.getValueAt(idx);
+        let action = subject._parseActionUrl(value);
+
+        if (action) {
+          
+          switch (action.type) {
+            case "keyword":
+              tabTransistionData.keyword = true;
+              break;
+            case "searchengine":
+            case "searchsuggestion":
+              tabTransistionData.generated = true;
+              break;
+            case "visiturl":
+              
+              
+              tabTransistionData.typed = true;
+              break;
+            case "remotetab":
+              
+              
+              tabTransistionData.typed = true;
+              break;
+            case "switchtab":
+              
+              
+              return;
+            default:
+              
+              tabTransistionData.typed = true;
+          }
+        } else {
+          
+          
+          let styles = new Set(controller.getStyleAt(idx).split(/\s+/));
+
+          if (styles.has("bookmark")) {
+            tabTransistionData.auto_bookmark = true;
+          } else {
+            
+            
+            tabTransistionData.typed = true;
+          }
+        }
+      }
+
+      this.setRecentTabTransitionData(tabTransistionData);
+    }
+  },
+
+  
+
+
+
+  setRecentTabTransitionData(tabTransitionData) {
+    let window = RecentWindow.getMostRecentBrowserWindow();
+    if (window && window.gBrowser && window.gBrowser.selectedTab &&
+        window.gBrowser.selectedTab.linkedBrowser) {
+      let browser = window.gBrowser.selectedTab.linkedBrowser;
+
+      
+      let prevData = this.getAndForgetRecentTabTransitionData(browser);
+
+      let newData = Object.assign(
+        {time: Date.now()},
+        prevData,
+        tabTransitionData
+      );
+      this.recentTabTransitionData.set(browser, newData);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  getAndForgetRecentTabTransitionData(browser) {
+    let data = this.recentTabTransitionData.get(browser);
+    this.recentTabTransitionData.delete(browser);
+
+    
+    
+    if (!data || (data.time - Date.now()) > RECENT_DATA_THRESHOLD) {
+      return {};
+    }
+
+    return data;
+  },
+
+  
+
+
 
   receiveMessage({name, data, target}) {
     switch (name) {
@@ -105,6 +259,7 @@ var Manager = {
       url: data.location,
       
       frameTransitionData: data.frameTransitionData,
+      tabTransitionData: this.getAndForgetRecentTabTransitionData(browser),
     };
 
     this.fire("onCommitted", browser, data, extra);
@@ -115,6 +270,7 @@ var Manager = {
       url: data.location,
       
       frameTransitionData: data.frameTransitionData,
+      tabTransitionData: this.getAndForgetRecentTabTransitionData(browser),
     };
 
     if (data.isReferenceFragmentUpdated) {

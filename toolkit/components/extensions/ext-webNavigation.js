@@ -32,6 +32,16 @@ const frameTransitions = {
   },
 };
 
+const tabTransitions = {
+  topFrame: {
+    qualifiers: ["from_address_bar"],
+    types: ["auto_bookmark", "typed", "keyword", "generated", "link"],
+  },
+  subFrame: {
+    types: ["manual_subframe"],
+  },
+};
+
 function isTopLevelFrame({frameId, parentFrameId}) {
   return frameId == 0 && parentFrameId == -1;
 }
@@ -39,6 +49,7 @@ function isTopLevelFrame({frameId, parentFrameId}) {
 function fillTransitionProperties(eventName, src, dst) {
   if (eventName == "onCommitted" || eventName == "onHistoryStateUpdated") {
     let frameTransitionData = src.frameTransitionData || {};
+    let tabTransitionData = src.tabTransitionData || {};
 
     let transitionType, transitionQualifiers = [];
 
@@ -56,6 +67,18 @@ function fillTransitionProperties(eventName, src, dst) {
         }
       }
 
+      for (let qualifier of tabTransitions.topFrame.qualifiers) {
+        if (tabTransitionData[qualifier]) {
+          transitionQualifiers.push(qualifier);
+        }
+      }
+
+      for (let type of tabTransitions.topFrame.types) {
+        if (tabTransitionData[type]) {
+          transitionType = type;
+        }
+      }
+
       
       if (!transitionType) {
         transitionType = defaultTransitionTypes.topFrame;
@@ -63,7 +86,8 @@ function fillTransitionProperties(eventName, src, dst) {
     } else {
       
       
-      transitionType = defaultTransitionTypes.subFrame;
+      transitionType = tabTransitionData.link ?
+        "manual_subframe" : defaultTransitionTypes.subFrame;
     }
 
     
