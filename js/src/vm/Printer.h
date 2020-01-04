@@ -133,7 +133,7 @@ class Fprinter final : public GenericPrinter
     
     bool init(const char* path);
     void init(FILE* fp);
-    bool isInitialized() {
+    bool isInitialized() const {
         return file_ != nullptr;
     }
     void flush();

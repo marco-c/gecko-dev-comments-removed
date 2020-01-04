@@ -2936,6 +2936,11 @@ JSScript::finalize(FreeOp* fop)
     
     
 
+    
+    
+    if (isTopLevel() && fop->runtime()->lcovOutput.isEnabled())
+        compartment()->lcovOutput.collectCodeCoverageInfo(compartment(), this);
+
     fop->runtime()->spsProfiler.onScriptFinalized(this);
 
     if (types_)

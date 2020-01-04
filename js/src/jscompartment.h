@@ -662,7 +662,8 @@ struct JSCompartment
     
     bool collectCoverage() const {
         return debuggerObservesCoverage() ||
-               runtimeFromAnyThread()->profilingScripts;
+               runtimeFromAnyThread()->profilingScripts ||
+               runtimeFromAnyThread()->lcovOutput.isEnabled();
     }
     void clearScriptCounts();
 
@@ -746,6 +747,11 @@ struct JSCompartment
 
   public:
     void addTelemetry(const char* filename, DeprecatedLanguageExtension e);
+
+  public:
+    
+    
+    js::coverage::LCovCompartment lcovOutput;
 };
 
 inline bool

@@ -101,6 +101,43 @@ class LCovCompartment
     LCovSourceVector* sources_;
 };
 
+class LCovRuntime
+{
+  public:
+    LCovRuntime();
+    ~LCovRuntime();
+
+    
+    
+    
+    
+    
+    
+    
+    void init();
+
+    
+    bool isEnabled() const { return out_.isInitialized(); }
+
+    
+    
+    void writeLCovResult(LCovCompartment& comp);
+
+  private:
+    
+    
+    
+    void maybeReopenAfterFork();
+
+  private:
+    
+    Fprinter out_;
+
+    
+    
+    size_t pid_;
+};
+
 } 
 } 
 

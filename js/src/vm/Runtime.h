@@ -39,6 +39,7 @@
 #endif
 #include "js/TraceableVector.h"
 #include "js/Vector.h"
+#include "vm/CodeCoverage.h"
 #include "vm/CommonPropertyNames.h"
 #include "vm/DateTime.h"
 #include "vm/MallocProvider.h"
@@ -1055,6 +1056,9 @@ struct JSRuntime : public JS::shadow::Runtime,
 
     
     JS::PersistentRooted<js::ScriptAndCountsVector>* scriptAndCountsVector;
+
+    
+    js::coverage::LCovRuntime lcovOutput;
 
     
     const js::Value     NaNValue;
