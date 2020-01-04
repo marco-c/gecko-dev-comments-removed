@@ -14,7 +14,10 @@ print(BUGNUMBER + ": " + summary);
 
 
 
-const HALF_COUNT = 5e4;
+
+
+
+const HALF_COUNT = 7500;
 
 var configurables = [];
 for (var i = 0; i < HALF_COUNT; i++)
