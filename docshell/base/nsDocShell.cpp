@@ -790,7 +790,6 @@ nsDocShell::nsDocShell()
   , mIsPrerendered(false)
   , mIsAppTab(false)
   , mUseGlobalHistory(false)
-  , mInPrivateBrowsing(false)
   , mUseRemoteTabs(false)
   , mDeviceSizeIsPageSize(false)
   , mWindowDraggingAllowed(false)
@@ -812,6 +811,7 @@ nsDocShell::nsDocShell()
   , mDefaultLoadFlags(nsIRequest::LOAD_NORMAL)
   , mBlankTiming(false)
   , mFrameType(FRAME_TYPE_REGULAR)
+  , mPrivateBrowsingId(0)
   , mParentCharsetSource(0)
   , mJSRunToCompletionDepth(0)
 {
@@ -2182,7 +2182,7 @@ nsDocShell::GetUsePrivateBrowsing(bool* aUsePrivateBrowsing)
 {
   NS_ENSURE_ARG_POINTER(aUsePrivateBrowsing);
   AssertOriginAttributesMatchPrivateBrowsing();
-  *aUsePrivateBrowsing = mInPrivateBrowsing;
+  *aUsePrivateBrowsing = mPrivateBrowsingId > 0;
   return NS_OK;
 }
 
@@ -2201,11 +2201,13 @@ nsDocShell::SetUsePrivateBrowsing(bool aUsePrivateBrowsing)
 NS_IMETHODIMP
 nsDocShell::SetPrivateBrowsing(bool aUsePrivateBrowsing)
 {
-  bool changed = aUsePrivateBrowsing != mInPrivateBrowsing;
+  bool changed = aUsePrivateBrowsing != (mPrivateBrowsingId > 0);
   if (changed) {
-    mInPrivateBrowsing = aUsePrivateBrowsing;
+    mPrivateBrowsingId = aUsePrivateBrowsing ? 1 : 0;
 
-    mOriginAttributes.SyncAttributesWithPrivateBrowsing(mInPrivateBrowsing);
+    if (mItemType != typeChrome) {
+      mOriginAttributes.SyncAttributesWithPrivateBrowsing(aUsePrivateBrowsing);
+    }
 
     if (mAffectPrivateSessionLifetime) {
       if (aUsePrivateBrowsing) {
@@ -2236,6 +2238,8 @@ nsDocShell::SetPrivateBrowsing(bool aUsePrivateBrowsing)
       }
     }
   }
+
+  AssertOriginAttributesMatchPrivateBrowsing();
   return NS_OK;
 }
 
@@ -2275,7 +2279,7 @@ NS_IMETHODIMP
 nsDocShell::SetAffectPrivateSessionLifetime(bool aAffectLifetime)
 {
   bool change = aAffectLifetime != mAffectPrivateSessionLifetime;
-  if (change && mInPrivateBrowsing) {
+  if (change && UsePrivateBrowsing()) {
     AssertOriginAttributesMatchPrivateBrowsing();
     if (aAffectLifetime) {
       IncreasePrivateDocShellCount();
@@ -2972,11 +2976,11 @@ nsDocShell::GetSessionStorageForPrincipal(nsIPrincipal* aPrincipal,
   AssertOriginAttributesMatchPrivateBrowsing();
   if (aCreate) {
     return manager->CreateStorage(domWin->GetCurrentInnerWindow(), aPrincipal,
-                                  aDocumentURI, mInPrivateBrowsing, aStorage);
+                                  aDocumentURI, UsePrivateBrowsing(), aStorage);
   }
 
   return manager->GetStorage(domWin->GetCurrentInnerWindow(), aPrincipal,
-                             mInPrivateBrowsing, aStorage);
+                             UsePrivateBrowsing(), aStorage);
 }
 
 nsresult
@@ -3666,7 +3670,14 @@ nsDocShell::FindItemWithName(const char16_t* aName,
 
 void
 nsDocShell::AssertOriginAttributesMatchPrivateBrowsing() {
-  MOZ_ASSERT((mOriginAttributes.mPrivateBrowsingId != 0) == mInPrivateBrowsing);
+  
+  
+  
+  if (mItemType == typeChrome) {
+    MOZ_ASSERT(mOriginAttributes.mPrivateBrowsingId == 0);
+  } else {
+    MOZ_ASSERT(mOriginAttributes.mPrivateBrowsingId == mPrivateBrowsingId);
+  }
 }
 
 nsresult
@@ -4896,7 +4907,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         
         
         uint32_t flags =
-          mInPrivateBrowsing ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
+          UsePrivateBrowsing() ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
         bool isStsHost = false;
         bool isPinnedHost = false;
         if (XRE_IsParentProcess()) {
@@ -5765,9 +5776,9 @@ nsDocShell::Destroy()
   
   CancelRefreshURITimers();
 
-  if (mInPrivateBrowsing) {
-    mInPrivateBrowsing = false;
-    mOriginAttributes.SyncAttributesWithPrivateBrowsing(mInPrivateBrowsing);
+  if (UsePrivateBrowsing()) {
+    mPrivateBrowsingId = 0;
+    mOriginAttributes.SyncAttributesWithPrivateBrowsing(false);
     if (mAffectPrivateSessionLifetime) {
       DecreasePrivateDocShellCount();
     }
@@ -6427,7 +6438,7 @@ nsDocShell::SetTitle(const char16_t* aTitle)
 
   AssertOriginAttributesMatchPrivateBrowsing();
   if (mCurrentURI && mLoadType != LOAD_ERROR_PAGE && mUseGlobalHistory &&
-      !mInPrivateBrowsing) {
+      !UsePrivateBrowsing()) {
     nsCOMPtr<IHistory> history = services::GetHistoryService();
     if (history) {
       history->SetURITitle(mCurrentURI, mTitle);
@@ -7456,7 +7467,7 @@ nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
         secMan->GetDocShellCodebasePrincipal(newURI, this,
                                              getter_AddRefs(principal));
         appCacheChannel->SetChooseApplicationCache(
-          NS_ShouldCheckAppCache(principal, mInPrivateBrowsing));
+          NS_ShouldCheckAppCache(principal, UsePrivateBrowsing()));
       }
     }
   }
@@ -10244,7 +10255,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
       
 
-      if (mUseGlobalHistory && !mInPrivateBrowsing) {
+      if (mUseGlobalHistory && !UsePrivateBrowsing()) {
         nsCOMPtr<IHistory> history = services::GetHistoryService();
         if (history) {
           history->SetURITitle(aURI, mTitle);
@@ -10257,7 +10268,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
       
       
-      CopyFavicon(currentURI, aURI, doc->NodePrincipal(), mInPrivateBrowsing);
+      CopyFavicon(currentURI, aURI, doc->NodePrincipal(), UsePrivateBrowsing());
 
       RefPtr<nsGlobalWindow> win = mScriptGlobal ?
         mScriptGlobal->GetCurrentInnerWindowInternal() : nullptr;
@@ -10744,7 +10755,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     securityFlags |= nsILoadInfo::SEC_SANDBOXED;
   }
 
-  if (mInPrivateBrowsing) {
+  if (UsePrivateBrowsing()) {
     securityFlags |= nsILoadInfo::SEC_FORCE_PRIVATE_BROWSING;
   }
 
@@ -10842,7 +10853,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
         secMan->GetDocShellCodebasePrincipal(aURI, this,
                                              getter_AddRefs(principal));
         appCacheChannel->SetChooseApplicationCache(
-          NS_ShouldCheckAppCache(principal, mInPrivateBrowsing));
+          NS_ShouldCheckAppCache(principal, UsePrivateBrowsing()));
       }
     }
   }
@@ -11925,7 +11936,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 
     
     
-    if (mUseGlobalHistory && !mInPrivateBrowsing) {
+    if (mUseGlobalHistory && !UsePrivateBrowsing()) {
       nsCOMPtr<IHistory> history = services::GetHistoryService();
       if (history) {
         history->SetURITitle(newURI, mTitle);
@@ -11936,7 +11947,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 
     
     
-    CopyFavicon(oldURI, newURI, document->NodePrincipal(), mInPrivateBrowsing);
+    CopyFavicon(oldURI, newURI, document->NodePrincipal(), UsePrivateBrowsing());
   } else {
     FireDummyOnLocationChange();
   }
@@ -12837,7 +12848,7 @@ nsDocShell::AddURIVisit(nsIURI* aURI,
 
   
   
-  if (mItemType != typeContent || !mUseGlobalHistory || mInPrivateBrowsing) {
+  if (mItemType != typeContent || !mUseGlobalHistory || UsePrivateBrowsing()) {
     return;
   }
 
@@ -13374,7 +13385,7 @@ nsDocShell::IsTrackingProtectionOn(bool* aIsTrackingProtectionOn)
 {
   if (Preferences::GetBool("privacy.trackingprotection.enabled", false)) {
     *aIsTrackingProtectionOn = true;
-  } else if (mInPrivateBrowsing &&
+  } else if (UsePrivateBrowsing() &&
              Preferences::GetBool("privacy.trackingprotection.pbmode.enabled", false)) {
     *aIsTrackingProtectionOn = true;
   } else {
@@ -14163,8 +14174,17 @@ nsDocShell::SetOriginAttributes(const DocShellOriginAttributes& aAttrs)
     }
   }
 
+  AssertOriginAttributesMatchPrivateBrowsing();
   mOriginAttributes = aAttrs;
-  SetPrivateBrowsing(mOriginAttributes.mPrivateBrowsingId > 0);
+
+  bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
+  
+  if (mItemType == typeChrome && isPrivate) {
+    mOriginAttributes.mPrivateBrowsingId = 0;
+  }
+
+  SetPrivateBrowsing(isPrivate);
+
   return NS_OK;
 }
 
@@ -14350,7 +14370,7 @@ nsDocShell::ShouldPrepareForIntercept(nsIURI* aURI, bool aIsNonSubresourceReques
 {
   *aShouldIntercept = false;
   
-  if (mInPrivateBrowsing) {
+  if (UsePrivateBrowsing()) {
     return NS_OK;
   }
 

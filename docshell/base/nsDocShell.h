@@ -942,7 +942,6 @@ protected:
   bool mIsPrerendered;
   bool mIsAppTab;
   bool mUseGlobalHistory;
-  bool mInPrivateBrowsing;
   bool mUseRemoteTabs;
   bool mDeviceSizeIsPageSize;
   bool mWindowDraggingAllowed;
@@ -1000,6 +999,13 @@ protected:
 
   
   uint32_t mFrameType;
+
+  
+  
+  
+  
+  
+  uint32_t mPrivateBrowsingId;
 
   nsString mPaymentRequestId;
 
