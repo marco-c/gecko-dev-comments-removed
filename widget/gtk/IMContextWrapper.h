@@ -284,6 +284,9 @@ protected:
     
     
     bool mPendingResettingIMContext;
+    
+    
+    bool mRetrieveSurroundingSignalReceived;
 
     
     
