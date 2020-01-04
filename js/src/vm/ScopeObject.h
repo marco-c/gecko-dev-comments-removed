@@ -141,8 +141,10 @@ class StaticBlockScope : public NestedStaticScope
 
     
     uint32_t numVariables() const {
-        
-        return propertyCount();
+        uint32_t num = 0;
+        if (!lastProperty()->isEmptyShape())
+            num = lastProperty()->slot() + 1 - RESERVED_SLOTS;
+        return num;
     }
 
   private:
