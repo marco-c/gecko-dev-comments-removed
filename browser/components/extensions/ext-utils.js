@@ -36,7 +36,7 @@ global.IconDetails = {
   
   
   
-  normalize(details, extension, context = null, localize = false) {
+  normalize(details, extension, context = null) {
     let result = {};
 
     try {
@@ -73,12 +73,7 @@ global.IconDetails = {
             throw new Error(`Invalid icon size ${size}, must be an integer`);
           }
 
-          let url = path[size];
-          if (localize) {
-            url = extension.localize(url);
-          }
-
-          url = baseURI.resolve(path[size]);
+          let url = baseURI.resolve(path[size]);
 
           
           
