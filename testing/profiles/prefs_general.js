@@ -202,9 +202,6 @@ user_pref("browser.download.panel.shown", true);
 user_pref("browser.newtabpage.introShown", true);
 
 
-user_pref("pbackground.testing", true);
-
-
 user_pref("browser.webapps.testing", true);
 
 

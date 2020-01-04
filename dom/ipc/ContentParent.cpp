@@ -243,13 +243,6 @@ using namespace mozilla::system;
 #include "mozilla/dom/SpeechSynthesisParent.h"
 #endif
 
-#ifdef ENABLE_TESTS
-#include "BackgroundChildImpl.h"
-#include "mozilla/ipc/PBackgroundChild.h"
-#include "nsIIPCBackgroundChildCreateCallback.h"
-#endif
-
-
 #if defined(MOZ_CONTENT_SANDBOX) && defined(XP_LINUX)
 #include "mozilla/SandboxInfo.h"
 #include "mozilla/SandboxBroker.h"
@@ -306,130 +299,6 @@ using namespace mozilla::net;
 using namespace mozilla::jsipc;
 using namespace mozilla::psm;
 using namespace mozilla::widget;
-
-#ifdef ENABLE_TESTS
-
-class BackgroundTester final : public nsIIPCBackgroundChildCreateCallback,
-                               public nsIObserver
-{
-  static uint32_t sCallbackCount;
-
-private:
-  ~BackgroundTester()
-  { }
-
-  virtual void
-  ActorCreated(PBackgroundChild* aActor) override
-  {
-    MOZ_RELEASE_ASSERT(aActor,
-                       "Failed to create a PBackgroundChild actor!");
-
-    NS_NAMED_LITERAL_CSTRING(testStr, "0123456789");
-
-    PBackgroundTestChild* testActor =
-      aActor->SendPBackgroundTestConstructor(testStr);
-    MOZ_RELEASE_ASSERT(testActor);
-
-    if (!sCallbackCount) {
-      PBackgroundChild* existingBackgroundChild =
-        BackgroundChild::GetForCurrentThread();
-
-      MOZ_RELEASE_ASSERT(existingBackgroundChild);
-      MOZ_RELEASE_ASSERT(existingBackgroundChild == aActor);
-
-      bool ok =
-        existingBackgroundChild->
-          SendPBackgroundTestConstructor(testStr);
-      MOZ_RELEASE_ASSERT(ok);
-
-      
-      ok = BackgroundChild::GetOrCreateForCurrentThread(this);
-      MOZ_RELEASE_ASSERT(ok);
-    }
-
-    sCallbackCount++;
-  }
-
-  virtual void
-  ActorFailed() override
-  {
-    MOZ_CRASH("Failed to create a PBackgroundChild actor!");
-  }
-
-  NS_IMETHOD
-  Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData)
-      override
-  {
-    nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-    MOZ_RELEASE_ASSERT(observerService);
-
-    nsresult rv = observerService->RemoveObserver(this, aTopic);
-    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
-
-    if (!strcmp(aTopic, "profile-after-change")) {
-      if (mozilla::Preferences::GetBool("pbackground.testing", false)) {
-        rv = observerService->AddObserver(this, "xpcom-shutdown", false);
-        MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
-
-        
-        bool ok = BackgroundChild::GetOrCreateForCurrentThread(this);
-        MOZ_RELEASE_ASSERT(ok);
-
-        BackgroundChildImpl::ThreadLocal* threadLocal =
-          BackgroundChildImpl::GetThreadLocalForCurrentThread();
-        MOZ_RELEASE_ASSERT(threadLocal);
-
-        
-        ok = BackgroundChild::GetOrCreateForCurrentThread(this);
-        MOZ_RELEASE_ASSERT(ok);
-      }
-
-      return NS_OK;
-    }
-
-    if (!strcmp(aTopic, "xpcom-shutdown")) {
-      MOZ_RELEASE_ASSERT(sCallbackCount == 3);
-
-      return NS_OK;
-    }
-
-    MOZ_CRASH("Unknown observer topic!");
-  }
-
-public:
-  NS_DECL_ISUPPORTS
-};
-
-uint32_t BackgroundTester::sCallbackCount = 0;
-
-NS_IMPL_ISUPPORTS(BackgroundTester, nsIIPCBackgroundChildCreateCallback,
-                  nsIObserver)
-
-#endif 
-
-void
-MaybeTestPBackground()
-{
-#ifdef ENABLE_TESTS
-  
-  
-  if (PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR")) {
-    return;
-  }
-
-  
-  
-  nsCOMPtr<nsIObserverService> observerService =
-    mozilla::services::GetObserverService();
-  MOZ_RELEASE_ASSERT(observerService);
-
-  nsCOMPtr<nsIObserver> observer = new BackgroundTester();
-  nsresult rv = observerService->AddObserver(observer, "profile-after-change",
-                                             false);
-  MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
-#endif
-}
 
 
 template<>
@@ -863,10 +732,6 @@ ContentParent::StartUp()
 
   
   PreallocatedProcessManager::AllocateAfterDelay();
-
-  
-  
-  MaybeTestPBackground();
 
   sDisableUnsafeCPOWWarnings = PR_GetEnv("DISABLE_UNSAFE_CPOW_WARNINGS");
 
@@ -3676,13 +3541,11 @@ ContentParent::DeallocPRemoteSpellcheckEngineParent(PRemoteSpellcheckEngineParen
  void
 ContentParent::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure)
 {
-#ifdef ENABLE_TESTS
   
   
   if (PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR")) {
     return;
   }
-#endif
 
   auto self = static_cast<ContentParent*>(aClosure);
   self->KillHard("ShutDownKill");
