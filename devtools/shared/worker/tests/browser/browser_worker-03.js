@@ -6,7 +6,7 @@
 
 
 
-const { DevToolsWorker, workerify } = require("devtools/shared/shared/worker");
+const { DevToolsWorker, workerify } = require("devtools/shared/worker/worker");
 function square (x) {
   return x * x;
 }
