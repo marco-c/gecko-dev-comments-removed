@@ -1534,15 +1534,12 @@ nsGridContainerFrame::FindAutoCol(uint32_t aStartCol, uint32_t aLockedRow,
     
     
     for (uint32_t j = candidate, gap = 0; j < len && gap < extent; ++j) {
-      ++gap; 
-      if (cellsInRow[j].mIsOccupied) {
-        
-        do {
-          ++j;
-        } while (j < len && cellsInRow[j].mIsOccupied);
-        candidate = j;
-        gap = 0;
+      if (!cellsInRow[j].mIsOccupied) {
+        ++gap;
+        continue;
       }
+      candidate = j + 1;
+      gap = 0;
     }
     if (lastCandidate < candidate && i != iStart) {
       
