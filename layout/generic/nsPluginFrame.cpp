@@ -642,7 +642,7 @@ nsPluginFrame::CallSetWindow(bool aCheckIsHidden)
 
   
   double scaleFactor = 1.0;
-  if (NS_FAILED(mInstanceOwner->GetContentsScaleFactor(&scaleFactor))) {
+  if (NS_FAILED(instanceOwnerRef->GetContentsScaleFactor(&scaleFactor))) {
     scaleFactor = 1.0;
   }
   size_t intScaleFactor = ceil(scaleFactor);
@@ -651,12 +651,15 @@ nsPluginFrame::CallSetWindow(bool aCheckIsHidden)
   window->width = intBounds.width / intScaleFactor;
   window->height = intBounds.height / intScaleFactor;
 
-  mInstanceOwner->ResolutionMayHaveChanged();
+  
+  
+  
+  instanceOwnerRef->ResolutionMayHaveChanged();
 
   
   
   
-  if (mInstanceOwner->UseAsyncRendering()) {
+  if (instanceOwnerRef->UseAsyncRendering()) {
     rv = pi->AsyncSetWindow(window);
   }
   else {
