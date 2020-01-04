@@ -12,6 +12,7 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
+import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
@@ -26,13 +27,13 @@ import java.lang.ref.WeakReference;
 
 
 
-public class SnackbarHelper {
+public class SnackbarBuilder {
     
 
 
 
     public static abstract class SnackbarCallback extends Snackbar.Callback implements View.OnClickListener {}
-    public static final String LOGTAG = "GeckoSnackbarHelper";
+    public static final String LOGTAG = "GeckoSnackbarBuilder";
 
     
 
@@ -68,25 +69,112 @@ public class SnackbarHelper {
     private static final Object currentSnackbarLock = new Object();
     private static WeakReference<Snackbar> currentSnackbar = new WeakReference<>(null); 
 
+    private final Activity activity;
+    private String message;
+    private int duration;
+    private String action;
+    private SnackbarCallback callback;
+    private Drawable icon;
+    private Integer backgroundColor;
+    private Integer actionColor;
+
     
 
 
+    private SnackbarBuilder(final Activity activity) {
+        this.activity = activity;
+    }
 
-
-
-
-    public static void showSnackbar(Activity activity, String message, int duration) {
-        showSnackbarWithAction(activity, message, duration, null, null);
+    public static SnackbarBuilder builder(final Activity activity) {
+        return new SnackbarBuilder(activity);
     }
 
     
 
 
-    public static void showSnackbar(Activity activity, final NativeJSObject object, final EventCallback callback) {
-        final String message = object.getString("message");
-        final int duration = object.getInt("duration");
+    public SnackbarBuilder message(final String message) {
+        this.message = message;
+        return this;
+    }
 
-        Integer backgroundColor = null;
+    
+
+
+    public SnackbarBuilder message(@StringRes final int id) {
+        message = activity.getResources().getString(id);
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder duration(final int duration) {
+        this.duration = duration;
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder action(final String action) {
+        this.action = action;
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder action(@StringRes final int id) {
+        action = activity.getResources().getString(id);
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder callback(final SnackbarCallback callback) {
+        this.callback = callback;
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder callback(final EventCallback callback) {
+        this.callback = new SnackbarEventCallback(callback);
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder icon(final Drawable icon) {
+        this.icon = icon;
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder backgroundColor(final Integer backgroundColor) {
+        this.backgroundColor = backgroundColor;
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder actionColor(final Integer actionColor) {
+        this.actionColor = actionColor;
+        return this;
+    }
+
+    
+
+
+    public SnackbarBuilder fromEvent(final NativeJSObject object) {
+        message = object.getString("message");
+        duration = object.getInt("duration");
 
         if (object.has("backgroundColor")) {
             final String providedColor = object.getString("backgroundColor");
@@ -97,48 +185,21 @@ public class SnackbarHelper {
             }
         }
 
-        NativeJSObject action = object.optObject("action", null);
-
-        showSnackbarWithActionAndColors(activity,
-                message,
-                duration,
-                action != null ? action.optString("label", null) : null,
-                new SnackbarHelper.SnackbarEventCallback(callback),
-                null,
-                backgroundColor,
-                null
-        );
+        NativeJSObject actionObject = object.optObject("action", null);
+        if (actionObject != null) {
+            action = actionObject.optString("label", null);
+        }
+        return this;
     }
 
-    
-
-
-
-
-
-
-
-
-    public static void showSnackbarWithAction(Activity activity, String message, int duration, String action, SnackbarCallback callback) {
-        showSnackbarWithActionAndColors(activity, message, duration, action, callback, null, null, null);
-    }
-
-
-    public static void showSnackbarWithActionAndColors(Activity activity,
-                                                       String message,
-                                                       int duration,
-                                                       String action,
-                                                       SnackbarCallback callback,
-                                                       Drawable icon,
-                                                       Integer backgroundColor,
-                                                       Integer actionColor) {
+    public void buildAndShow() {
         final View parentView = findBestParentView(activity);
         final Snackbar snackbar = Snackbar.make(parentView, message, duration);
 
         if (callback != null && !TextUtils.isEmpty(action)) {
             snackbar.setAction(action, callback);
             if (actionColor == null) {
-                ContextCompat.getColor(activity, R.color.fennec_ui_orange);
+                snackbar.setActionTextColor(ContextCompat.getColor(activity, R.color.fennec_ui_orange));
             } else {
                 snackbar.setActionTextColor(actionColor);
             }
