@@ -2865,6 +2865,9 @@ this.XPIProvider = {
             let unique = yield OS.File.openUnique(path);
             unique.file.close();
             yield OS.File.copy(sourceAddon._sourceBundle.path, unique.path);
+            
+            
+            yield OS.File.setDates(unique.path);
             item.path = unique.path;
           }
           catch (e) {
