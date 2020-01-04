@@ -284,7 +284,13 @@ FinderHighlighter.prototype = {
 
 
 
-  hide(window = null, skipRange = null) {
+
+
+  hide(window = null, skipRange = null, event = null) {
+    
+    if (event && event.type == "click" && event.button !== 0)
+      return;
+
     window = window || this.finder._getWindow();
 
     let doc = window.document;
@@ -836,12 +842,11 @@ FinderHighlighter.prototype = {
 
     this._highlightListeners = [
       this._scheduleRepaintOfMask.bind(this, window),
-      this.hide.bind(this, window)
+      this.hide.bind(this, window, null)
     ];
     window.addEventListener("DOMContentLoaded", this._highlightListeners[0]);
-    window.addEventListener("mousedown", this._highlightListeners[1]);
+    window.addEventListener("click", this._highlightListeners[1]);
     window.addEventListener("resize", this._highlightListeners[1]);
-    window.addEventListener("touchstart", this._highlightListeners[1]);
   },
 
   
@@ -854,9 +859,8 @@ FinderHighlighter.prototype = {
       return;
 
     window.removeEventListener("DOMContentLoaded", this._highlightListeners[0]);
-    window.removeEventListener("mousedown", this._highlightListeners[1]);
+    window.removeEventListener("click", this._highlightListeners[1]);
     window.removeEventListener("resize", this._highlightListeners[1]);
-    window.removeEventListener("touchstart", this._highlightListeners[1]);
 
     this._highlightListeners = null;
   },
