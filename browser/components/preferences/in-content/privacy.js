@@ -133,13 +133,14 @@ var gPrivacyPane = {
 
 
 
-  prefsForDefault: [
-    "places.history.enabled",
-    "browser.formfill.enable",
-    "network.cookie.cookieBehavior",
-    "network.cookie.lifetimePolicy",
-    "privacy.sanitize.sanitizeOnShutdown"
-  ],
+
+  prefsForKeepingHistory: {
+    "places.history.enabled": true, 
+    "browser.formfill.enable": true, 
+    "network.cookie.cookieBehavior": 0, 
+    "network.cookie.lifetimePolicy": 0, 
+    "privacy.sanitize.sanitizeOnShutdown": false, 
+  },
 
   
 
@@ -164,10 +165,9 @@ var gPrivacyPane = {
 
 
 
-  _checkDefaultValues: function(aPrefs) {
-    for (let i = 0; i < aPrefs.length; ++i) {
-      let pref = document.getElementById(aPrefs[i]);
-      if (pref.value != pref.defaultValue)
+  _checkHistoryValues: function(aPrefs) {
+    for (let pref of Object.keys(aPrefs)) {
+      if (document.getElementById(pref).value != aPrefs[pref])
         return false;
     }
     return true;
@@ -181,7 +181,7 @@ var gPrivacyPane = {
     let mode;
     let getVal = aPref => document.getElementById(aPref).value;
 
-    if (this._checkDefaultValues(this.prefsForDefault)) {
+    if (this._checkHistoryValues(this.prefsForKeepingHistory)) {
       if (getVal("browser.privatebrowsing.autostart"))
         mode = "dontremember";
       else
