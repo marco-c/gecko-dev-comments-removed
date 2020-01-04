@@ -2670,10 +2670,14 @@ public:
 
   
   
+  
+  
+  
   static bool AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuilder,
                                          nsIFrame* aFrame,
                                          const nsRect& aBackgroundRect,
-                                         nsDisplayList* aList);
+                                         nsDisplayList* aList,
+                                         bool aAllowWillPaintBorderOptimization = true);
 
   virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                                    LayerManager* aManager,
