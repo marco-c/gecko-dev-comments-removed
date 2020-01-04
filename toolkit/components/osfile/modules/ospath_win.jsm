@@ -310,7 +310,10 @@ var toFileURIExtraEncodings = {';': '%3b', '?': '%3F', '#': '%23'};
 var toFileURI = function toFileURI(path) {
   
   path = this.normalize(path).replace(/[\\\/]/g, m => (m=='\\')? '/' : '%2F');
-  let uri = encodeURI(path);
+  
+  let dontNeedEscaping = {'%5B': '[', '%5D': ']'};
+  let uri = encodeURI(path).replace(/%(5B|5D)/gi,
+    match => dontNeedEscaping[match]);
 
   
   

@@ -165,7 +165,10 @@ exports.split = split;
 
 var toFileURIExtraEncodings = {';': '%3b', '?': '%3F', '#': '%23'};
 var toFileURI = function toFileURI(path) {
-  let uri = encodeURI(this.normalize(path));
+  
+  let dontNeedEscaping = {'%5B': '[', '%5D': ']'};
+  let uri = encodeURI(this.normalize(path)).replace(/%(5B|5D)/gi,
+    match => dontNeedEscaping[match]);
 
   
   
