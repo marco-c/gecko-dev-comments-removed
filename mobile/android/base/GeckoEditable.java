@@ -16,6 +16,7 @@ import java.util.concurrent.Semaphore;
 
 import org.json.JSONObject;
 import org.mozilla.gecko.AppConstants.Versions;
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.util.GeckoEventListener;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -347,7 +348,12 @@ final class GeckoEditable
         }
     }
 
+    @WrapForJNI
     GeckoEditable() {
+        if (DEBUG) {
+            
+            ThreadUtils.assertOnGeckoThread();
+        }
         mActionQueue = new ActionQueue();
         mSavedSelectionStart = -1;
         mUpdateGecko = true;
@@ -768,7 +774,7 @@ final class GeckoEditable
         }
     }
 
-    @Override
+    @WrapForJNI @Override
     public void notifyIME(final int type) {
         if (DEBUG) {
             
@@ -844,12 +850,12 @@ final class GeckoEditable
         }
     }
 
-    @Override
+    @WrapForJNI @Override
     public void notifyIMEContext(final int state, final String typeHint,
-                          final String modeHint, final String actionHint) {
-        
-        
+                                 final String modeHint, final String actionHint) {
         if (DEBUG) {
+            
+            ThreadUtils.assertOnGeckoThread();
             Log.d(LOGTAG, "notifyIMEContext(" +
                           getConstantName(GeckoEditableListener.class, "IME_STATE_", state) +
                           ", \"" + typeHint + "\", \"" + modeHint + "\", \"" + actionHint + "\")");
@@ -872,7 +878,7 @@ final class GeckoEditable
         });
     }
 
-    @Override
+    @WrapForJNI @Override
     public void onSelectionChange(final int start, final int end) {
         if (DEBUG) {
             
@@ -928,9 +934,9 @@ final class GeckoEditable
                TextUtils.regionMatches(mText, start, newText, 0, oldEnd - start);
     }
 
-    @Override
+    @WrapForJNI @Override
     public void onTextChange(final CharSequence text, final int start,
-                      final int unboundedOldEnd, final int unboundedNewEnd) {
+                             final int unboundedOldEnd, final int unboundedNewEnd) {
         if (DEBUG) {
             
             ThreadUtils.assertOnGeckoThread();
