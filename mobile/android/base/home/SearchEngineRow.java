@@ -7,12 +7,14 @@ package org.mozilla.gecko.home;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.db.BrowserContract.SearchHistory;
+import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.home.BrowserSearch.OnEditSuggestionListener;
 import org.mozilla.gecko.home.BrowserSearch.OnSearchListener;
 import org.mozilla.gecko.home.HomePager.OnUrlOpenListener;
+import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.util.StringUtils;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.widget.AnimatedHeightLayout;
@@ -22,6 +24,7 @@ import org.mozilla.gecko.widget.FlowLayout;
 import android.database.Cursor;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -218,6 +221,14 @@ class SearchEngineRow extends AnimatedHeightLayout {
         }
     }
 
+    
+
+
+
+
+
+
+
     private void updateFromSavedSearches(Cursor c, boolean animate, int suggestionCounter, int recycledSuggestionCount) {
         if (c == null) {
             return;
@@ -241,7 +252,13 @@ class SearchEngineRow extends AnimatedHeightLayout {
         hideRecycledSuggestions(suggestionCounter, recycledSuggestionCount);
     }
 
-    private Cursor getSavedSearches(String searchTerm, boolean isTablet) {
+    
+
+
+
+
+
+    private Cursor getSavedSearches(String searchTerm) {
         if (!AppConstants.NIGHTLY_BUILD) {
             return null;
         }
@@ -250,20 +267,28 @@ class SearchEngineRow extends AnimatedHeightLayout {
         String[] columns = new String[] { SearchHistory.QUERY };
         String actualQuery = SearchHistory.QUERY + " LIKE ?";
         String[] queryArgs = new String[] { '%' + searchTerm + '%' };
-        final int limit = isTablet ? TABLET_MAX : PHONE_MAX;
+        final int limit = HardwareUtils.isTablet() ? TABLET_MAX : PHONE_MAX;
 
         String sortOrderAndLimit = SearchHistory.DATE +" DESC LIMIT "+limit;
         return cr.query(SearchHistory.CONTENT_URI, columns, actualQuery, queryArgs, sortOrderAndLimit);
     }
 
-    private int updateFromSearchEngine(boolean animate, int recycledSuggestionCount, boolean isTablet, int savedCount) {
+    
+
+
+
+
+
+
+
+    private int updateFromSearchEngine(boolean animate, int recycledSuggestionCount, int savedCount) {
 
         
         int limit = TABLET_MAX;
         if (AppConstants.NIGHTLY_BUILD) {
-            limit = isTablet ? TABLET_MAX : PHONE_MAX;
+            limit = HardwareUtils.isTablet() ? TABLET_MAX : PHONE_MAX;
             
-            if (!isTablet && savedCount < PHONE_MAX) {
+            if (!HardwareUtils.isTablet() && savedCount < PHONE_MAX) {
                     limit += PHONE_MAX - savedCount;
             }
         }
@@ -288,32 +313,58 @@ class SearchEngineRow extends AnimatedHeightLayout {
         return suggestionCounter;
     }
 
-    public void updateSuggestions(boolean suggestionsEnabled, SearchEngine searchEngine, String searchTerm, boolean animate) {
-        
+    
+
+
+
+
+
+
+
+
+
+
+
+    public void updateSuggestions(boolean searchSuggestionsEnabled, SearchEngine searchEngine, String searchTerm, boolean animate) {
         mSearchEngine = searchEngine;
         
         mIconView.updateAndScaleImage(mSearchEngine.getIcon(), mSearchEngine.getEngineIdentifier());
         
         setDescriptionOnSuggestion(mUserEnteredTextView, mUserEnteredTextView.getText().toString());
-        
-        if (suggestionsEnabled) {
-            final int recycledSuggestionCount = mSuggestionView.getChildCount();
-            if (AppConstants.NIGHTLY_BUILD) {
 
-                final boolean isTablet = HardwareUtils.isTablet();
-                final Cursor c = getSavedSearches(searchTerm, isTablet);
-                try {
-                    final int savedSearchCount = (c != null) ? c.getCount(): 0;
-                    final int suggestionViewCount = updateFromSearchEngine(animate, recycledSuggestionCount, isTablet, savedSearchCount);
-                    updateFromSavedSearches(c, animate, suggestionViewCount, recycledSuggestionCount);
-                } finally {
-                    if (c != null) {
-                        c.close();
-                    }
-                }
-            } else {
-                updateFromSearchEngine(animate, recycledSuggestionCount, true, 0);
+        if (!AppConstants.NIGHTLY_BUILD) {
+            if (searchSuggestionsEnabled) {
+                updateFromSearchEngine(animate, mSuggestionView.getChildCount(), 0);
             }
+            return;
+        }
+
+        final int recycledSuggestionCount = mSuggestionView.getChildCount();
+        final SharedPreferences prefs = GeckoSharedPrefs.forApp(getContext());
+        final boolean savedSearchesEnabled = prefs.getBoolean(GeckoPreferences.PREFS_HISTORY_SAVED_SEARCH, true);
+
+        if (searchSuggestionsEnabled && savedSearchesEnabled) {
+            final Cursor c = getSavedSearches(searchTerm);
+            try {
+                final int savedSearchCount = (c != null) ? c.getCount() : 0;
+                final int suggestionViewCount = updateFromSearchEngine(animate, recycledSuggestionCount, savedSearchCount);
+                updateFromSavedSearches(c, animate, suggestionViewCount, recycledSuggestionCount);
+            } finally {
+                if (c != null) {
+                    c.close();
+                }
+            }
+        } else if (savedSearchesEnabled) {
+            final Cursor c = getSavedSearches(searchTerm);
+            try {
+                updateFromSavedSearches(c, animate, 0, recycledSuggestionCount);
+            } finally {
+                if (c != null) {
+                    c.close();
+                }
+            }
+        } else if (searchSuggestionsEnabled) {
+            updateFromSearchEngine(animate, recycledSuggestionCount, 0);
         }
     }
 
