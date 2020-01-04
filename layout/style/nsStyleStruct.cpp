@@ -207,7 +207,7 @@ nsStyleFont::CalcDifference(const nsStyleFont& aNewData) const
     return nsChangeHint_NeutralChange;
   }
 
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
  nscoord
@@ -283,7 +283,7 @@ nsChangeHint
 nsStyleMargin::CalcDifference(const nsStyleMargin& aNewData) const
 {
   if (mMargin == aNewData.mMargin) {
-    return nsChangeHint(0);
+    return NS_STYLE_HINT_NONE;
   }
   
   
@@ -318,7 +318,7 @@ nsChangeHint
 nsStylePadding::CalcDifference(const nsStylePadding& aNewData) const
 {
   if (mPadding == aNewData.mPadding) {
-    return nsChangeHint(0);
+    return NS_STYLE_HINT_NONE;
   }
   
   
@@ -527,7 +527,7 @@ nsStyleBorder::CalcDifference(const nsStyleBorder& aNewData) const
     return nsChangeHint_NeutralChange;
   }
 
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
 nsStyleOutline::nsStyleOutline(StyleStructContext aContext)
@@ -602,7 +602,7 @@ nsStyleOutline::CalcDifference(const nsStyleOutline& aNewData) const
     return nsChangeHint_NeutralChange;
   }
 
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
 
@@ -698,7 +698,7 @@ nsStyleList::CalcDifference(const nsStyleList& aNewData) const
   if (EqualImages(mListStyleImage, aNewData.mListStyleImage) &&
       mCounterStyle == aNewData.mCounterStyle) {
     if (mImageRegion.IsEqualInterior(aNewData.mImageRegion)) {
-      return nsChangeHint(0);
+      return NS_STYLE_HINT_NONE;
     }
     if (mImageRegion.width == aNewData.mImageRegion.width &&
         mImageRegion.height == aNewData.mImageRegion.height) {
@@ -757,7 +757,7 @@ nsStyleXUL::CalcDifference(const nsStyleXUL& aNewData) const
       mBoxPack == aNewData.mBoxPack &&
       mBoxOrdinal == aNewData.mBoxOrdinal &&
       mStretchStack == aNewData.mStretchStack) {
-    return nsChangeHint(0);
+    return NS_STYLE_HINT_NONE;
   }
   if (mBoxOrdinal != aNewData.mBoxOrdinal) {
     return nsChangeHint_ReconstructFrame;
@@ -836,7 +836,7 @@ nsStyleColumn::CalcDifference(const nsStyleColumn& aNewData) const
     return nsChangeHint_NeutralChange;
   }
 
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
 
@@ -1756,7 +1756,7 @@ nsStyleTable::CalcDifference(const nsStyleTable& aNewData) const
       mLayoutStrategy != aNewData.mLayoutStrategy) {
     return nsChangeHint_ReconstructFrame;
   }
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
 
@@ -1802,7 +1802,7 @@ nsStyleTableBorder::CalcDifference(const nsStyleTableBorder& aNewData) const
       (mBorderSpacingCol == aNewData.mBorderSpacingCol) &&
       (mBorderSpacingRow == aNewData.mBorderSpacingRow)) {
     if (mEmptyCells == aNewData.mEmptyCells) {
-      return nsChangeHint(0);
+      return NS_STYLE_HINT_NONE;
     }
     return NS_STYLE_HINT_VISUAL;
   } else {
@@ -1830,7 +1830,7 @@ nsChangeHint
 nsStyleColor::CalcDifference(const nsStyleColor& aNewData) const
 {
   if (mColor == aNewData.mColor) {
-    return nsChangeHint(0);
+    return NS_STYLE_HINT_NONE;
   }
   return nsChangeHint_RepaintFrame;
 }
@@ -2037,7 +2037,7 @@ nsStyleImage::UntrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->RemoveImage(mImage, nsIDocument::REQUEST_DISCARD);
+    doc->RemoveImage(mImage);
   }
 
   
@@ -3389,7 +3389,7 @@ nsStyleContentData::UntrackImage(nsPresContext* aContext)
   
   nsIDocument* doc = aContext->Document();
   if (doc) {
-    doc->RemoveImage(mContent.mImage, nsIDocument::REQUEST_DISCARD);
+    doc->RemoveImage(mContent.mImage);
   }
 
   
@@ -3522,7 +3522,7 @@ nsStyleContent::CalcDifference(const nsStyleContent& aNewData) const
   if (mMarkerOffset != aNewData.mMarkerOffset) {
     return NS_STYLE_HINT_REFLOW;
   }
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
 nsresult
@@ -3602,7 +3602,7 @@ nsStyleTextReset::CalcDifference(const nsStyleTextReset& aNewData) const
     return nsChangeHint_RepaintFrame;
   }
 
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
 
@@ -3797,7 +3797,7 @@ nsStyleText::CalcDifference(const nsStyleText& aNewData) const
     return nsChangeHint_NeutralChange;
   }
 
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
 LogicalSide
@@ -3992,7 +3992,7 @@ nsStyleUIReset::CalcDifference(const nsStyleUIReset& aNewData) const
     return nsChangeHint_SchedulePaint;
   }
 
-  return nsChangeHint(0);
+  return NS_STYLE_HINT_NONE;
 }
 
 
