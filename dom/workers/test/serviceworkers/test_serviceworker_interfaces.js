@@ -145,6 +145,8 @@ var interfaceNamesInGlobalScope =
 
     "ImageBitmap",
 
+    "ImageBitmapRenderingContext",
+
     "ImageData",
 
     "MessageChannel",
