@@ -32,7 +32,7 @@ nsTArray_base<Alloc, Copy>::GetAutoArrayBufferUnsafe(size_t aElemAlign) const
   
 
   const void* autoBuf =
-    &reinterpret_cast<const nsAutoArrayBase<nsTArray<uint32_t>, 1>*>(this)->mAutoBuf;
+    &reinterpret_cast<const AutoTArray<nsTArray<uint32_t>, 1>*>(this)->mAutoBuf;
 
   
   
@@ -403,7 +403,7 @@ nsTArray_base<Alloc, Copy>::SwapArrayElements(nsTArray_base<Allocator,
   
   
   
-  nsAutoArrayBase<nsTArray_Impl<uint8_t, ActualAlloc>, 64> temp;
+  AutoTArray<nsTArray_Impl<uint8_t, ActualAlloc>, 64> temp;
   if (!ActualAlloc::Successful(temp.template EnsureCapacity<ActualAlloc>(smallerLength,
                                                                          aElemSize))) {
     return ActualAlloc::FailureResult();
