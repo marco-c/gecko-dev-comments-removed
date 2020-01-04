@@ -65,6 +65,7 @@ var CastingApps = {
   mirrorStopMenuId: -1,
   _blocked: null,
   _bound: null,
+  _interval: 120 * 1000, 
 
   init: function ca_init() {
     if (!this.isCastingEnabled()) {
@@ -79,7 +80,7 @@ var CastingApps = {
     SimpleServiceDiscovery.registerDevice(mediaPlayerDevice);
 
     
-    SimpleServiceDiscovery.search(120 * 1000);
+    SimpleServiceDiscovery.search(this._interval);
 
     this._castMenuId = NativeWindow.contextmenus.add(
       Strings.browser.GetStringFromName("contextmenu.sendToDevice"),
@@ -93,6 +94,8 @@ var CastingApps = {
     Services.obs.addObserver(this, "Casting:Mirror", false);
     Services.obs.addObserver(this, "ssdp-service-found", false);
     Services.obs.addObserver(this, "ssdp-service-lost", false);
+    Services.obs.addObserver(this, "application-background", false);
+    Services.obs.addObserver(this, "application-foreground", false);
 
     BrowserApp.deck.addEventListener("TabSelect", this, true);
     BrowserApp.deck.addEventListener("pageshow", this, true);
@@ -195,15 +198,20 @@ var CastingApps = {
         }
         break;
       case "ssdp-service-found":
-        {
-          this.serviceAdded(SimpleServiceDiscovery.findServiceForID(aData));
-          break;
-        }
+        this.serviceAdded(SimpleServiceDiscovery.findServiceForID(aData));
+        break;
       case "ssdp-service-lost":
-        {
-          this.serviceLost(SimpleServiceDiscovery.findServiceForID(aData));
-          break;
-        }
+        this.serviceLost(SimpleServiceDiscovery.findServiceForID(aData));
+        break;
+      case "application-background":
+        
+        this._interval = SimpleServiceDiscovery.search(0);
+        SimpleServiceDiscovery.stopSearch();
+        break;
+      case "application-foreground":
+        
+        SimpleServiceDiscovery.search(this._interval);
+        break;
     }
   },
 
