@@ -128,6 +128,11 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       gBrowser.swapBrowsersAndCloseOther(tab, contentTab);
       gBrowser = null;
+
+      
+      
+      
+      tab.linkedBrowser.frameLoader.activateRemoteFrame();
     },
 
   };
