@@ -529,6 +529,9 @@ pref("layout.frame_rate.precise", true);
 pref("b2g.keys.menu.enabled", true);
 
 
+pref("b2g.software-buttons", false);
+
+
 pref("power.screen.timeout", 60);
 
 pref("full-screen-api.enabled", true);
