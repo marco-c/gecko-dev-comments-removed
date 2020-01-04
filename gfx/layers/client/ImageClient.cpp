@@ -4,7 +4,10 @@
 
 
 #include "ImageClient.h"
+
 #include <stdint.h>                     
+
+#include "ClientLayerManager.h"         
 #include "ImageContainer.h"             
 #include "ImageTypes.h"                 
 #include "GLImages.h"                   
@@ -12,6 +15,7 @@
 #include "gfxPlatform.h"                
 #include "mozilla/Assertions.h"         
 #include "mozilla/RefPtr.h"             
+#include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
@@ -29,7 +33,7 @@
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsRect.h"                     
-#include "mozilla/gfx/2D.h"
+
 #ifdef MOZ_WIDGET_GONK
 #include "GrallocImages.h"
 #endif
