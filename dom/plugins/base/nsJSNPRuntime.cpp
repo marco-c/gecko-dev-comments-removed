@@ -1165,8 +1165,7 @@ nsJSObjWrapper::GetNewOrUsed(NPP npp, JSContext *cx, JS::Handle<JSObject*> obj)
 
   
   
-  nsJSObjWrapperKey key(obj, npp);
-  if (!sJSObjWrappers.putNew(key, wrapper)) {
+  if (!sJSObjWrappers.putNew(nsJSObjWrapperKey(obj, npp), wrapper)) {
     
     _releaseobject(wrapper);
     return nullptr;
