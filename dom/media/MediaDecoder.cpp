@@ -647,6 +647,7 @@ MediaDecoder::Shutdown()
              &MediaDecoder::FinishShutdown);
   } else {
     
+    
     RefPtr<MediaDecoder> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
       MediaShutdownManager::Instance().Unregister(self);
