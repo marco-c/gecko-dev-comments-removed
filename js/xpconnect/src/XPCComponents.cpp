@@ -3501,9 +3501,7 @@ public:
     
     NS_DECL_ISUPPORTS_INHERITED
     NS_DECL_NSIXPCSCRIPTABLE
-    
-    
-    static NS_METHOD Get(nsIXPCScriptable** helper)
+    static nsresult Get(nsIXPCScriptable** helper)
     {
         *helper = &singleton;
         return NS_OK;

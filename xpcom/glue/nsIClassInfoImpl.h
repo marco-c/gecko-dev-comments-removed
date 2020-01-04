@@ -89,12 +89,16 @@ class GenericClassInfo : public nsIClassInfo
 public:
   struct ClassInfoData
   {
-    typedef NS_CALLBACK(GetInterfacesProc)(uint32_t* aCountP,
-                                           nsIID*** aArray);
-    typedef NS_CALLBACK(GetScriptableHelperProc)(nsIXPCScriptable** aHelper);
-
+    
+    
+    typedef NS_CALLBACK(GetInterfacesProc)(uint32_t* aCountP, nsIID*** aArray);
     GetInterfacesProc getinterfaces;
+
+    
+    
+    typedef nsresult (*GetScriptableHelperProc)(nsIXPCScriptable** aHelper);
     GetScriptableHelperProc getscriptablehelper;
+
     uint32_t flags;
     nsCID cid;
   };
