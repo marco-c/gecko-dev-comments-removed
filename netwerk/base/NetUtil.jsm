@@ -269,34 +269,10 @@ this.NetUtil = {
 
 
 
-
-
-
-
-
-
-
-
-    newChannel: function NetUtil_newChannel(aWhatToLoad, aOriginCharset,
-                                            aBaseURI)
+    newChannel: function NetUtil_newChannel(aWhatToLoad)
     {
         
-        if (typeof aWhatToLoad == "string" ||
-            (aWhatToLoad instanceof Ci.nsIFile) ||
-            (aWhatToLoad instanceof Ci.nsIURI)) {
-
-            let uri = (aWhatToLoad instanceof Ci.nsIURI)
-                      ? aWhatToLoad
-                      : this.newURI(aWhatToLoad, aOriginCharset, aBaseURI);
-
-            return this.ioService.newChannelFromURI(uri);
-        }
-
-        
-        if (typeof aWhatToLoad != "object" ||
-            aOriginCharset !== undefined ||
-            aBaseURI !== undefined) {
-
+        if (typeof aWhatToLoad != "object" || arguments.length != 1) {
             throw new Components.Exception(
                 "newChannel requires a single object argument",
                 Cr.NS_ERROR_INVALID_ARG,
@@ -320,7 +296,7 @@ this.NetUtil = {
             );
         }
 
-        if (typeof uri == "string") {
+        if (typeof uri == "string" || uri instanceof Ci.nsIFile) {
             uri = this.newURI(uri);
         }
 
