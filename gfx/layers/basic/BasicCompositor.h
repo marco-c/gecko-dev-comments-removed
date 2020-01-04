@@ -116,11 +116,8 @@ public:
 
 private:
 
-  virtual LayoutDeviceIntSize GetWidgetSize() const override { return mWidgetSize; }
-
   
   nsIWidget *mWidget;
-  LayoutDeviceIntSize mWidgetSize;
 
   
   RefPtr<gfx::DrawTarget> mDrawTarget;
