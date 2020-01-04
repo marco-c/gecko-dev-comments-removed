@@ -1311,9 +1311,6 @@ inline void InferSpew(SpewChannel which, const char* fmt, ...) {}
 #endif
 
 
-MOZ_NORETURN MOZ_COLD void TypeFailure(JSContext* cx, const char* fmt, ...);
-
-
 void
 PrintTypes(JSContext* cx, JSCompartment* comp, bool force);
 
