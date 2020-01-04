@@ -46,4 +46,6 @@ public interface UrlAnnotations {
 
 
     void insertHomeScreenShortcut(ContentResolver cr, String url, boolean hasCreatedShortCut);
+
+    int getAnnotationCount(ContentResolver cr, BrowserContract.UrlAnnotations.Key key);
 }

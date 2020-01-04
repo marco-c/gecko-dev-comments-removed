@@ -122,6 +122,8 @@ public interface BrowserDB {
 
     public abstract Cursor getBookmarksInFolder(ContentResolver cr, long folderId);
 
+    public abstract int getBookmarkCountForFolder(ContentResolver cr, long folderId);
+
     
 
 
