@@ -60,6 +60,13 @@ public class RemoteClientsDialogFragment extends DialogFragment {
         
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        GeckoApplication.watchReference(getActivity(), this);
+    }
+
     protected void notifyListener(List<RemoteClient> clients) {
         RemoteClientsListener listener;
         try {
