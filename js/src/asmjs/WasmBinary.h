@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- *
- * Copyright 2015 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef wasm_binary_h
 #define wasm_binary_h
@@ -29,7 +29,7 @@ namespace wasm {
 
 enum class Expr : uint8_t
 {
-    // Control opcodes
+    
     Nop,
     Block,
     Loop,
@@ -42,12 +42,12 @@ enum class Expr : uint8_t
     Return,
     Unreachable,
 
-    // Calls
+    
     CallInternal,
     CallIndirect,
     CallImport,
 
-    // Constants and calls
+    
     I8Const,
     I32Const,
     I64Const,
@@ -58,7 +58,7 @@ enum class Expr : uint8_t
     LoadGlobal,
     StoreGlobal,
 
-    // I32 opcodes
+    
     I32Add,
     I32Sub,
     I32Mul,
@@ -86,7 +86,7 @@ enum class Expr : uint8_t
     I32Ctz,
     I32Popcnt,
 
-    // F32 opcodes
+    
     F32Add,
     F32Sub,
     F32Mul,
@@ -108,7 +108,7 @@ enum class Expr : uint8_t
     F32Gt,
     F32Ge,
 
-    // F64 opcodes
+    
     F64Add,
     F64Sub,
     F64Mul,
@@ -130,7 +130,7 @@ enum class Expr : uint8_t
     F64Gt,
     F64Ge,
 
-    // Conversions
+    
     I32SConvertF32,
     I32SConvertF64,
     I32UConvertF32,
@@ -143,7 +143,7 @@ enum class Expr : uint8_t
     I64SConvertI32,
     I64UConvertI32,
 
-    // Load/store operations
+    
     I32LoadMem8S,
     I32LoadMem8U,
     I32LoadMem16S,
@@ -169,10 +169,10 @@ enum class Expr : uint8_t
     F32StoreMem,
     F64StoreMem,
 
-    // asm.js specific
-    Ternary,        // to be merged with IfElse
+    
+    Ternary,        
 
-    While,          // all CFG ops to be deleted in favor of Loop/Br/BrIf
+    While,          
     DoWhile,
 
     ForInitInc,
@@ -186,7 +186,7 @@ enum class Expr : uint8_t
     Break,
     BreakLabel,
 
-    I32Expr,        // to be removed
+    I32Expr,        
     F32Expr,
     F64Expr,
 
@@ -200,7 +200,7 @@ enum class Expr : uint8_t
     I32Min,
     I32Max,
 
-    // Atomics
+    
     AtomicsFence,
     I32AtomicsCompareExchange,
     I32AtomicsExchange,
@@ -208,7 +208,7 @@ enum class Expr : uint8_t
     I32AtomicsStore,
     I32AtomicsBinOp,
 
-    // SIMD
+    
     I32X4Const,
     B32X4Const,
     F32X4Const,
@@ -261,20 +261,20 @@ enum class Expr : uint8_t
     B32X4ReplaceLane,
     B32X4Splat,
 
-    // I32 asm.js opcodes
+    
     I32Not,
     I32Neg,
     I32BitNot,
     I32Abs,
 
-    // F32 asm.js opcodes
+    
     F32FromF64,
     F32FromS32,
     F32FromU32,
 
     F32StoreMemF64,
 
-    // F64 asm.js opcodes
+    
     F64Mod,
 
     F64Sin,
@@ -304,19 +304,39 @@ enum NeedsBoundsCheck : uint8_t
 typedef Vector<uint8_t, 0, SystemAllocPolicy> Bytecode;
 typedef UniquePtr<Bytecode> UniqueBytecode;
 
-// The Encoder class recycles (through its constructor) or creates a new Bytecode (through its
-// init() method). Its Bytecode is released when it's done building the wasm IR in finish().
+
+
 class Encoder
 {
     UniqueBytecode bytecode_;
     DebugOnly<bool> done_;
 
-    template<class T>
+    template <class T>
     MOZ_WARN_UNUSED_RESULT
     bool write(T v, size_t* offset) {
         if (offset)
             *offset = bytecode_->length();
         return bytecode_->append(reinterpret_cast<uint8_t*>(&v), sizeof(T));
+    }
+
+    template <class T>
+    MOZ_WARN_UNUSED_RESULT
+    bool writeEnum(T v, size_t* offset) {
+        
+        
+        
+        
+        static_assert(mozilla::IsEnum<T>::value, "is an enum");
+        MOZ_ASSERT(uint64_t(v) < UINT8_MAX);
+        return writeU8(uint8_t(v), offset);
+    }
+
+    template <class T>
+    void patchEnum(size_t pc, T v) {
+        
+        static_assert(mozilla::IsEnum<T>::value, "is an enum");
+        MOZ_ASSERT(uint64_t(v) < UINT8_MAX);
+        (*bytecode_)[pc] = uint8_t(v);
     }
 
   public:
@@ -355,6 +375,11 @@ class Encoder
                 return false;
         } while(i != 0);
         return true;
+    }
+
+    MOZ_WARN_UNUSED_RESULT bool
+    writeExpr(Expr expr, size_t* offset = nullptr) {
+        return writeEnum(expr, offset);
     }
 
     MOZ_WARN_UNUSED_RESULT bool
@@ -397,12 +422,14 @@ class Encoder
         return patchable;
     }
 #endif
-
     void patchU8(size_t pc, uint8_t i) {
         MOZ_ASSERT(pcIsPatchable(pc, sizeof(uint8_t)));
         (*bytecode_)[pc] = i;
     }
-
+    void patchExpr(size_t pc, Expr expr) {
+        MOZ_ASSERT(pcIsPatchable(pc, sizeof(uint8_t)));
+        patchEnum(pc, expr);
+    }
     template<class T>
     void patch32(size_t pc, T i) {
         static_assert(sizeof(T) == sizeof(uint32_t),
@@ -418,7 +445,7 @@ class Decoder
     const uint8_t* const end_;
     const uint8_t* cur_;
 
-    template<class T>
+    template <class T>
     MOZ_WARN_UNUSED_RESULT bool
     read(T* out) {
         if (uintptr_t(end_ - cur_) < sizeof(T))
@@ -428,13 +455,32 @@ class Decoder
         return true;
     }
 
-    template<class T>
+    template <class T>
+    MOZ_WARN_UNUSED_RESULT bool
+    readEnum(T* out) {
+        static_assert(mozilla::IsEnum<T>::value, "is an enum");
+        
+        uint8_t u8;
+        if (!read(&u8))
+            return false;
+        *out = T(u8);
+        return true;
+    }
+
+    template <class T>
     T uncheckedRead() {
         MOZ_ASSERT(uintptr_t(end_ - cur_) >= sizeof(T));
         T ret;
         memcpy(&ret, cur_, sizeof(T));
         cur_ += sizeof(T);
         return ret;
+    }
+
+    template <class T>
+    T uncheckedReadEnum() {
+        
+        static_assert(mozilla::IsEnum<T>::value, "is an enum");
+        return (T)uncheckedReadU8();
     }
 
   public:
@@ -453,8 +499,8 @@ class Decoder
         MOZ_ASSERT(size_t(cur_ - beg_) == offset);
     }
 
-    // The fallible unpacking API should be used when we're not assuming
-    // anything about the bytecode, in particular if it is well-formed.
+    
+    
     MOZ_WARN_UNUSED_RESULT bool readU8 (uint8_t* i)         { return read(i); }
     MOZ_WARN_UNUSED_RESULT bool readI32(int32_t* i)         { return read(i); }
     MOZ_WARN_UNUSED_RESULT bool readF32(float* f)           { return read(f); }
@@ -499,9 +545,12 @@ class Decoder
         *decoded |= uint32_t(byte) << 28;
         return true;
     }
+    MOZ_WARN_UNUSED_RESULT bool readExpr(Expr* expr) {
+        return readEnum(expr);
+    }
 
-    // The infallible unpacking API should be used when we are sure that the
-    // bytecode is well-formed.
+    
+    
     uint8_t        uncheckedReadU8 () { return uncheckedRead<uint8_t>(); }
     int32_t        uncheckedReadI32() { return uncheckedRead<int32_t>(); }
     float          uncheckedReadF32() { return uncheckedRead<float>(); }
@@ -539,26 +588,29 @@ class Decoder
         decoded |= uint32_t(byte) << 28;
         return decoded;
     }
+    Expr uncheckedReadExpr() {
+        return uncheckedReadEnum<Expr>();
+    }
 };
 
-// Source coordinates for a call site. As they're read sequentially, we
-// don't need to store the call's bytecode offset, unless we want to
-// check its correctness in debug mode.
+
+
+
 struct SourceCoords {
-    DebugOnly<size_t> offset; // after call opcode
+    DebugOnly<size_t> offset; 
     uint32_t line;
     uint32_t column;
 };
 
 typedef Vector<SourceCoords, 0, SystemAllocPolicy> SourceCoordsVector;
 
-// The FuncBytecode class contains the intermediate representation of a
-// parsed/decoded and validated asm.js/WebAssembly function. The FuncBytecode
-// lives only until it is fully compiled.
+
+
+
 class FuncBytecode
 {
-    // Note: this unrooted field assumes AutoKeepAtoms via TokenStream via
-    // asm.js compilation.
+    
+    
     PropertyName* name_;
     unsigned line_;
     unsigned column_;
@@ -612,7 +664,7 @@ class FuncBytecode
 
 typedef UniquePtr<FuncBytecode> UniqueFuncBytecode;
 
-} // namespace wasm
-} // namespace js
+} 
+} 
 
-#endif // wasm_binary_h
+#endif 

@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- *
- * Copyright 2015 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "asmjs/WasmIonCompile.h"
 
@@ -29,9 +29,9 @@ using mozilla::DebugOnly;
 typedef Vector<size_t, 1, SystemAllocPolicy> LabelVector;
 typedef Vector<MBasicBlock*, 8, SystemAllocPolicy> BlockVector;
 
-// Encapsulates the compilation of a single function in an asm.js module. The
-// function compiler handles the creation and final backend compilation of the
-// MIR graph.
+
+
+
 class FunctionCompiler
 {
   private:
@@ -92,14 +92,14 @@ class FunctionCompiler
             return false;
         }
 
-        // Prepare the entry block for MIR generation:
+        
 
         const ValTypeVector& args = func_.sig().args();
         unsigned firstVarSlot = args.length();
 
         if (!mirGen_.ensureBallast())
             return false;
-        if (!newBlock(/* pred = */ nullptr, &curBlock_))
+        if (!newBlock( nullptr, &curBlock_))
             return false;
 
         for (ABIArgValTypeIter i(args); !i.done(); i++) {
@@ -131,7 +131,7 @@ class FunctionCompiler
                 ins = MSimdConstant::New(alloc(), SimdConstant::SplatX4(0.f), MIRType_Float32x4);
                 break;
               case ValType::B32x4:
-                // Bool32x4 uses the same data layout as Int32x4.
+                
                 ins = MSimdConstant::New(alloc(), SimdConstant::SplatX4(0), MIRType_Bool32x4);
                 break;
             }
@@ -156,7 +156,7 @@ class FunctionCompiler
         MOZ_ASSERT(decoder_.done(), "all bytecode must be consumed");
     }
 
-    /************************* Read-only interface (after local scope setup) */
+    
 
     MIRGenerator&       mirGen() const     { return mirGen_; }
     MIRGraph&           mirGraph() const   { return graph_; }
@@ -169,7 +169,7 @@ class FunctionCompiler
         return curBlock_->getSlot(info().localSlot(slot));
     }
 
-    /***************************** Code generation (after local scope setup) */
+    
 
     MDefinition* constant(const SimdConstant& v, MIRType type)
     {
@@ -504,7 +504,7 @@ class FunctionCompiler
 
         bool needsBoundsCheck = chk == NEEDS_BOUNDS_CHECK;
         MAsmJSLoadHeap* load = MAsmJSLoadHeap::New(alloc(), accessType, ptr, needsBoundsCheck,
-                                                   /* numElems */ 0,
+                                                    0,
                                                    MembarBeforeLoad, MembarAfterLoad);
         curBlock_->add(load);
         return load;
@@ -517,7 +517,7 @@ class FunctionCompiler
 
         bool needsBoundsCheck = chk == NEEDS_BOUNDS_CHECK;
         MAsmJSStoreHeap* store = MAsmJSStoreHeap::New(alloc(), accessType, ptr, v, needsBoundsCheck,
-                                                      /* numElems = */ 0,
+                                                       0,
                                                       MembarBeforeStore, MembarAfterStore);
         curBlock_->add(store);
     }
@@ -612,24 +612,24 @@ class FunctionCompiler
         return ins;
     }
 
-    /***************************************************************** Calls */
+    
 
-    // The IonMonkey backend maintains a single stack offset (from the stack
-    // pointer to the base of the frame) by adding the total amount of spill
-    // space required plus the maximum stack required for argument passing.
-    // Since we do not use IonMonkey's MPrepareCall/MPassArg/MCall, we must
-    // manually accumulate, for the entire function, the maximum required stack
-    // space for argument passing. (This is passed to the CodeGenerator via
-    // MIRGenerator::maxAsmJSStackArgBytes.) Naively, this would just be the
-    // maximum of the stack space required for each individual call (as
-    // determined by the call ABI). However, as an optimization, arguments are
-    // stored to the stack immediately after evaluation (to decrease live
-    // ranges and reduce spilling). This introduces the complexity that,
-    // between evaluating an argument and making the call, another argument
-    // evaluation could perform a call that also needs to store to the stack.
-    // When this occurs childClobbers_ = true and the parent expression's
-    // arguments are stored above the maximum depth clobbered by a child
-    // expression.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     class Call
     {
@@ -774,7 +774,7 @@ class FunctionCompiler
         return callPrivate(MAsmJSCall::Callee(builtin), call, ToExprType(type), def);
     }
 
-    /*********************************************** Control flow generation */
+    
 
     inline bool inDeadCode() const {
         return curBlock_ == nullptr;
@@ -813,7 +813,7 @@ class FunctionCompiler
 
         curBlock_->end(MTest::New(alloc(), cond, *thenBlock, *elseBlock));
 
-        // Only add as a predecessor if newBlock hasn't been called (as it does it for us)
+        
         if (hasThenBlock && !(*thenBlock)->addPredecessor(alloc(), curBlock_))
             return false;
         if (hasElseBlock && !(*elseBlock)->addPredecessor(alloc(), curBlock_))
@@ -974,14 +974,14 @@ class FunctionCompiler
         if (!loopEntry->setBackedgeAsmJS(backedge))
             return false;
 
-        // Flag all redundant phis as unused.
+        
         for (MPhiIterator phi = loopEntry->phisBegin(); phi != loopEntry->phisEnd(); phi++) {
             MOZ_ASSERT(phi->numOperands() == 2);
             if (phi->getOperand(0) == phi->getOperand(1))
                 phi->setUnused();
         }
 
-        // Fix up phis stored in the slots Vector of pending blocks.
+        
         if (afterLoop)
             fixupRedundantPhis(afterLoop);
         fixupRedundantPhis(loopEntry, labeledContinues_);
@@ -989,7 +989,7 @@ class FunctionCompiler
         fixupRedundantPhis(loopEntry, unlabeledContinues_);
         fixupRedundantPhis(loopEntry, unlabeledBreaks_);
 
-        // Discard redundant phis and add to the free list.
+        
         for (MPhiIterator phi = loopEntry->phisBegin(); phi != loopEntry->phisEnd(); ) {
             MPhi* entryDef = *phi++;
             if (!entryDef->isUnused())
@@ -1166,11 +1166,11 @@ class FunctionCompiler
         return bindUnlabeledBreaks(id);
     }
 
-    // Provides unique identifiers for internal uses in the control flow stacks;
-    // these ids have to grow monotonically.
+    
+    
     unsigned nextId() { return nextId_++; }
 
-    /************************************************************ DECODING ***/
+    
 
     uint8_t        readU8()     { return decoder_.uncheckedReadU8(); }
     uint32_t       readU32()    { return decoder_.uncheckedReadU32(); }
@@ -1180,8 +1180,7 @@ class FunctionCompiler
     double         readF64()    { return decoder_.uncheckedReadF64(); }
     SimdConstant   readI32X4()  { return decoder_.uncheckedReadI32X4(); }
     SimdConstant   readF32X4()  { return decoder_.uncheckedReadF32X4(); }
-
-    Expr           readOpcode() { return Expr(readU8()); }
+    Expr           readOpcode() { return decoder_.uncheckedReadExpr(); }
 
     void readCallLineCol(uint32_t* line, uint32_t* column) {
         const SourceCoords& sc = func_.sourceCoords(lastReadCallSite_++);
@@ -1196,7 +1195,7 @@ class FunctionCompiler
 
     bool done() const { return decoder_.done(); }
 
-    /*************************************************************************/
+    
   private:
     bool newBlockWithDepth(MBasicBlock* pred, unsigned loopDepth, MBasicBlock** block)
     {
@@ -1322,7 +1321,7 @@ EmitLiteral(FunctionCompiler& f, ExprType type, MDefinition**def)
         return true;
       }
       case ExprType::B32x4: {
-        // Boolean vectors are stored as an Int vector with -1 / 0 lanes.
+        
         SimdConstant lit(f.readI32X4());
         *def = f.constant(lit, MIRType_Bool32x4);
         return true;
@@ -1768,7 +1767,7 @@ SimdToLaneType(ExprType type)
     switch (type) {
       case ExprType::I32x4:  return ExprType::I32;
       case ExprType::F32x4:  return ExprType::F32;
-      case ExprType::B32x4:  return ExprType::I32; // Boolean lanes are Int32 in asm.
+      case ExprType::B32x4:  return ExprType::I32; 
       case ExprType::I32:
       case ExprType::I64:
       case ExprType::F32:
@@ -1921,7 +1920,7 @@ EmitSimdSelect(FunctionCompiler& f, ExprType type, MDefinition** def)
     MDefinition* mask;
     MDefinition* defs[2];
 
-    // The mask is a boolean vector for elementwise select.
+    
     if (!EmitExpr(f, ExprType::B32x4, &mask))
         return false;
 
@@ -2245,14 +2244,14 @@ EmitBitwise<MBitNot>(FunctionCompiler& f, MDefinition** def)
     return true;
 }
 
-// Emit an I32 expression and then convert it to a boolean SIMD lane value, i.e. -1 or 0.
+
 static bool
 EmitSimdBooleanLaneExpr(FunctionCompiler& f, MDefinition** def)
 {
     MDefinition* i32;
     if (!EmitExpr(f, ExprType::I32, &i32))
         return false;
-    // Now compute !i32 - 1 to force the value range into {0, -1}.
+    
     MDefinition* noti32 = f.unary<MNot>(i32);
     *def = f.binary<MSub>(noti32, f.constant(Int32Value(1), MIRType_Int32), MIRType_Int32);
     return true;
@@ -2397,10 +2396,10 @@ typedef bool HasElseBlock;
 static bool
 EmitIfElse(FunctionCompiler& f, bool hasElse)
 {
-    // Handle if/else-if chains using iteration instead of recursion. This
-    // avoids blowing the C stack quota for long if/else-if chains and also
-    // creates fewer MBasicBlocks at join points (by creating one join block
-    // for the entire if/else-if chain).
+    
+    
+    
+    
     BlockVector thenBlocks;
 
   recurse:
@@ -2455,7 +2454,7 @@ EmitTableSwitch(FunctionCompiler& f)
     if (!EmitExpr(f, ExprType::I32, &exprDef))
         return false;
 
-    // Switch with no cases
+    
     if (!hasDefault && numCases == 0)
         return true;
 
@@ -2511,7 +2510,7 @@ EmitBlock(FunctionCompiler& f, ExprType type, MDefinition** def)
 {
     size_t numStmt = f.readU32();
     for (size_t i = 0; i < numStmt; i++) {
-        // Fine to clobber def, we only want the last use.
+        
         if (!EmitExpr(f, type, def))
             return false;
     }
@@ -2603,7 +2602,7 @@ EmitExpr(FunctionCompiler& f, ExprType type, Expr op, MDefinition** def, LabelVe
         return EmitInterruptCheck(f);
       case Expr::InterruptCheckLoop:
         return EmitInterruptCheckLoop(f);
-      // Common
+      
       case Expr::GetLocal:
         return EmitGetLocal(f, type, def);
       case Expr::SetLocal:
@@ -2614,7 +2613,7 @@ EmitExpr(FunctionCompiler& f, ExprType type, Expr op, MDefinition** def, LabelVe
         return EmitStoreGlobal(f, type, def);
       case Expr::Id:
         return EmitExpr(f, type, def);
-      // I32
+      
       case Expr::I32Const:
         return EmitLiteral(f, ExprType::I32, def);
       case Expr::I32Add:
@@ -2716,7 +2715,7 @@ EmitExpr(FunctionCompiler& f, ExprType type, Expr op, MDefinition** def, LabelVe
         return EmitSimdAllTrue(f, ExprType::B32x4, def);
       case Expr::I32B32X4AnyTrue:
         return EmitSimdAnyTrue(f, ExprType::B32x4, def);
-      // F32
+      
       case Expr::F32Const:
         return EmitLiteral(f, ExprType::F32, def);
       case Expr::F32Add:
@@ -2754,7 +2753,7 @@ EmitExpr(FunctionCompiler& f, ExprType type, Expr op, MDefinition** def, LabelVe
         return EmitStoreWithCoercion(f, Scalar::Float32, Scalar::Float64, def);
       case Expr::F32F32X4ExtractLane:
         return EmitExtractLane(f, ExprType::F32x4, def);
-      // F64
+      
       case Expr::F64Const:
         return EmitLiteral(f, ExprType::F64, def);
       case Expr::F64Add:
@@ -2802,7 +2801,7 @@ EmitExpr(FunctionCompiler& f, ExprType type, Expr op, MDefinition** def, LabelVe
         return EmitStore(f, Scalar::Float64, def);
       case Expr::F64StoreMemF32:
         return EmitStoreWithCoercion(f, Scalar::Float64, Scalar::Float32, def);
-      // I32x4
+      
       case Expr::I32X4Const:
         return EmitLiteral(f, ExprType::I32x4, def);
       case Expr::I32X4Ctor:
@@ -2833,7 +2832,7 @@ EmitExpr(FunctionCompiler& f, ExprType type, Expr op, MDefinition** def, LabelVe
         return EmitSimdLoad(f, def);
       case Expr::I32X4Store:
         return EmitSimdStore(f, ExprType::I32x4, def);
-      // F32x4
+      
       case Expr::F32X4Const:
         return EmitLiteral(f, ExprType::F32x4, def);
       case Expr::F32X4Ctor:
@@ -2860,7 +2859,7 @@ EmitExpr(FunctionCompiler& f, ExprType type, Expr op, MDefinition** def, LabelVe
         return EmitSimdLoad(f, def);
       case Expr::F32X4Store:
         return EmitSimdStore(f, ExprType::F32x4, def);
-      // B32x4
+      
       case Expr::B32X4Const:
         return EmitLiteral(f, ExprType::B32x4, def);
       case Expr::B32X4Ctor:
@@ -2945,7 +2944,7 @@ wasm::IonCompileFunction(IonCompileTask* task)
                      IonOptimizations.get(OptimizationLevel::AsmJS),
                      task->args().useSignalHandlersForOOB);
 
-    // Build MIR graph
+    
     {
         FunctionCompiler f(task->mg(), func, mir, results);
         if (!f.init())
@@ -2960,7 +2959,7 @@ wasm::IonCompileFunction(IonCompileTask* task)
         f.checkPostconditions();
     }
 
-    // Compile MIR graph
+    
     {
         jit::SpewBeginFunction(&mir, nullptr);
         jit::AutoSpewEndFunction spewEndFunction(&mir);
