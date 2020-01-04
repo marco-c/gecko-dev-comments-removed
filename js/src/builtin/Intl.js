@@ -2712,8 +2712,9 @@ function dateTimeFormatFormatToBind() {
     var x = (date === undefined) ? std_Date_now() : ToNumber(date);
 
     
-    return intl_FormatDateTime(this, x, false);
+    return intl_FormatDateTime(this, x);
 }
+
 
 
 
@@ -2738,35 +2739,6 @@ function Intl_DateTimeFormat_format_get() {
 
     
     return internals.boundFormat;
-}
-
-
-function dateTimeFormatFormatToPartsToBind() {
-    
-    var date = arguments.length > 0 ? arguments[0] : undefined;
-    var x = (date === undefined) ? std_Date_now() : ToNumber(date);
-
-    
-    return intl_FormatDateTime(this, x, true);
-}
-
-
-function Intl_DateTimeFormat_formatToParts_get() {
-    
-    var internals = getDateTimeFormatInternals(this, "formatToParts");
-
-    
-    if (internals.boundFormatToParts === undefined) {
-        
-        var F = dateTimeFormatFormatToPartsToBind;
-
-        
-        var bf = callFunction(std_Function_bind, F, this);
-        internals.boundFormatToParts = bf;
-    }
-
-    
-    return internals.boundFormatToParts;
 }
 
 
