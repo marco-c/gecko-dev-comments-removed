@@ -920,6 +920,7 @@ pref("devtools.debugger.log.verbose", false);
 pref("devtools.debugger.remote-enabled", false);
 
 pref("devtools.debugger.remote-port", 6000);
+pref("devtools.debugger.remote-websocket", false);
 
 pref("devtools.debugger.force-local", true);
 
@@ -4589,11 +4590,7 @@ pref("layers.d3d11.disable-warp", true);
 #endif
 
 
-#ifdef XP_WIN
-pref("layers.shared-buffer-provider.enabled", false);
-#else
 pref("layers.shared-buffer-provider.enabled", true);
-#endif
 
 
 pref("layers.force-active", false);
@@ -5503,9 +5500,4 @@ pref("osfile.reset_worker_delay", 30000);
 #if !defined(MOZ_WIDGET_GONK) && !defined(MOZ_WIDGET_ANDROID)
 pref("dom.webkitBlink.dirPicker.enabled", true);
 pref("dom.webkitBlink.filesystem.enabled", true);
-#endif
-
-#ifdef MOZ_STYLO
-
-pref("layout.css.servo.enabled", true);
 #endif
