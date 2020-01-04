@@ -14,11 +14,9 @@ Cu.import("resource://devtools/client/shared/browser-loader.js");
 
 
 
-const rootUrl = "resource://devtools/client/webconsole/new-console-output/";
-const require = BrowserLoader({
-  baseURI: rootUrl,
-  window: this}).require;
-const NewConsoleOutputWrapper = require("./new-console-output-wrapper");
+const NewConsoleOutputWrapper = BrowserLoader({
+  baseURI: "resource://devtools/client/webconsole/new-console-output/",
+  window: this}).require("./new-console-output-wrapper");
 
 this.NewConsoleOutput = function(parentNode, jsterm) {
   console.log("Creating NewConsoleOutput", parentNode, NewConsoleOutputWrapper);
