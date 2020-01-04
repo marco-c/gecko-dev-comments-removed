@@ -424,6 +424,12 @@ SessionStore.prototype = {
       
       
       aBrowser.__SS_data.formdata = formdata;
+    } else {
+      
+      
+      
+      
+      this.onTabInput(aWindow, aBrowser);
     }
 
     this.saveStateDelayed();
