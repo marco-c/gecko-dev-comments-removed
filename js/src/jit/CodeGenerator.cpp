@@ -6874,7 +6874,7 @@ JitRuntime::generateLazyLinkStub(JSContext* cx)
 #ifdef JS_USE_LINK_REGISTER
     
     
-    masm.pop(lr);
+    masm.popReturnAddress();
 #endif
     masm.jump(ReturnReg);
 

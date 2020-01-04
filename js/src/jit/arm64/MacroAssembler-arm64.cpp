@@ -563,6 +563,12 @@ MacroAssembler::pushReturnAddress()
     push(lr);
 }
 
+void
+MacroAssembler::popReturnAddress()
+{
+    pop(lr);
+}
+
 
 
 
