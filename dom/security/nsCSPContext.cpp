@@ -591,6 +591,7 @@ nsCSPContext::SetRequestContext(nsIDOMDocument* aDOMDocument,
     nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDOMDocument);
     mLoadingContext = do_GetWeakReference(doc);
     mSelfURI = doc->GetDocumentURI();
+    mLoadingPrincipal = doc->NodePrincipal();
     doc->GetReferrer(mReferrer);
     mInnerWindowID = doc->InnerWindowID();
     
@@ -679,6 +680,51 @@ nsCSPContext::logToConsole(const char16_t* aName,
 
 
 
+void
+StripURIForReporting(nsIURI* aURI,
+                     nsIPrincipal* aProtectedResourcePrincipal,
+                     nsACString& outStrippedURI)
+{
+  
+  
+  
+  bool isHttp =
+    (NS_SUCCEEDED(aURI->SchemeIs("http", &isHttp)) && isHttp) ||
+    (NS_SUCCEEDED(aURI->SchemeIs("https", &isHttp)) && isHttp);
+  if (!isHttp) {
+    
+    
+    
+    aURI->GetScheme(outStrippedURI);
+    return;
+  }
+
+  
+  
+  bool sameOrigin =
+    NS_SUCCEEDED(aProtectedResourcePrincipal->CheckMayLoad(aURI, false, false));
+  if (!sameOrigin) {
+    
+    
+    aURI->GetPrePath(outStrippedURI);
+    return;
+  }
+
+  
+  aURI->GetSpecIgnoringRef(outStrippedURI);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -714,15 +760,7 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
     nsCOMPtr<nsIURI> uri = do_QueryInterface(aBlockedContentSource);
     
     if (uri) {
-      
-      
-      if (aOriginalURI) {
-        
-        
-        uri->GetPrePath(reportBlockedURI);
-      } else {
-        uri->GetSpecIgnoringRef(reportBlockedURI);
-      }
+      StripURIForReporting(uri, mLoadingPrincipal, reportBlockedURI);
     } else {
       nsCOMPtr<nsISupportsCString> cstr = do_QueryInterface(aBlockedContentSource);
       if (cstr) {
@@ -739,7 +777,7 @@ nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
 
   
   nsAutoCString reportDocumentURI;
-  mSelfURI->GetSpecIgnoringRef(reportDocumentURI);
+  StripURIForReporting(mSelfURI, mLoadingPrincipal, reportDocumentURI);
   report.mCsp_report.mDocument_uri = NS_ConvertUTF8toUTF16(reportDocumentURI);
 
   
