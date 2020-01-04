@@ -228,6 +228,12 @@ this.ReaderMode = {
             }
           }
         }
+        if (xhr.responseURL != url) {
+          
+          
+          reject({newURL: xhr.responseURL});
+          return;
+        }
         resolve(doc);
         histogram.add(DOWNLOAD_SUCCESS);
       }
