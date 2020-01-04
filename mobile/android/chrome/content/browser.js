@@ -1727,6 +1727,11 @@ var BrowserApp = {
         
         if (aData) {
           let data = JSON.parse(aData);
+
+          if (data.bypassCache) {
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
+          }
+
           if (data.contentType === "tracking") {
             
             
