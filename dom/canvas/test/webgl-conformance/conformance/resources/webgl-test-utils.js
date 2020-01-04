@@ -640,31 +640,6 @@ function create3DContextWithWrapperThatThrowsOnGLError(canvas) {
 
 
 
-var shouldGenerateGLError = function(gl, glError, evalStr) {
-  var exception;
-  try {
-    eval(evalStr);
-  } catch (e) {
-    exception = e;
-  }
-  if (exception) {
-    testFailed(evalStr + " threw exception " + exception);
-  } else {
-    var err = gl.getError();
-    if (err != glError) {
-      testFailed(evalStr + " expected: " + getGLErrorAsString(gl, glError) + ". Was " + getGLErrorAsString(gl, err) + ".");
-    } else {
-      testPassed(evalStr + " was expected value: " + getGLErrorAsString(gl, glError) + ".");
-    }
-  }
-};
-
-
-
-
-
-
-
 var glErrorShouldBe = function(gl, glError, opt_msg) {
   opt_msg = opt_msg || "";
   var err = gl.getError();
@@ -674,6 +649,84 @@ var glErrorShouldBe = function(gl, glError, opt_msg) {
   } else {
     testPassed("getError was expected value: " +
                 getGLErrorAsString(gl, glError) + " : " + opt_msg);
+  }
+};
+
+
+
+
+
+
+
+var glErrorShouldBeIn = function(gl, expectedErrorList, opt_msg) {
+  opt_msg = opt_msg || "";
+
+  var expectedErrorStrList = [];
+  var expectedErrorSet = {};
+
+  for (var i in expectedErrorList) {
+    var cur = expectedErrorList[i];
+
+    expectedErrorStrList.push(getGLErrorAsString(gl, cur));
+    expectedErrorSet[cur] = true;
+  }
+
+  var expectedErrorStr = "[" + expectedErrorStrList.join(", ") + "]";
+
+  var actualError = gl.getError();
+  if (actualError in expectedErrorSet) {
+    testPassed("getError was in expected values: " + expectedErrorStr + " : " + opt_msg);
+  } else {
+    testFailed("getError expected: " + expectedErrorStr +
+               ". Was " + getGLErrorAsString(gl, actualError) + " : " + opt_msg);
+  }
+};
+
+
+
+
+
+
+
+var shouldGenerateGLError = function(gl, glError, evalStr) {
+  glErrorShouldBe(gl, 0,
+                  "Should not be pre-existing errors during call to"
+                  + " shouldGenerateGLError().");
+
+  var exception;
+  try {
+    eval(evalStr);
+  } catch (e) {
+    exception = e;
+  }
+  if (exception) {
+    testFailed(evalStr + " threw exception " + exception);
+  } else {
+    glErrorShouldBe(gl, glError, evalStr);
+  }
+};
+
+
+
+
+
+
+
+var shouldGenerateGLErrorIn = function(gl, expectedErrorList, evalStr) {
+  glErrorShouldBe(gl, 0,
+                  "Should not be pre-existing errors during call to"
+                  + " shouldGenerateGLErrorIn().");
+
+  var exception;
+  try {
+    eval(evalStr);
+  } catch (e) {
+    exception = e;
+  }
+  if (exception) {
+    testFailed(evalStr + " threw exception " + exception);
+  } else {
+    glErrorShouldBeIn(gl, expectedErrorList, evalStr);
   }
 };
 
@@ -1365,6 +1418,7 @@ return {
   getUrlArguments: getUrlArguments,
   glEnumToString: glEnumToString,
   glErrorShouldBe: glErrorShouldBe,
+  glErrorShouldBeIn: glErrorShouldBeIn,
   fillTexture: fillTexture,
   insertImage: insertImage,
   loadImageAsync: loadImageAsync,

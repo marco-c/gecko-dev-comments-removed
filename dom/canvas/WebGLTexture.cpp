@@ -11,12 +11,114 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Scoped.h"
+#include "mozilla/unused.h"
 #include "ScopedGLHelpers.h"
 #include "WebGLContext.h"
 #include "WebGLContextUtils.h"
+#include "WebGLFramebuffer.h"
 #include "WebGLTexelConversions.h"
 
 namespace mozilla {
+
+ const WebGLTexture::ImageInfo WebGLTexture::ImageInfo::kUndefined;
+
+
+
+template <typename T>
+static inline T&
+Mutable(const T& x)
+{
+    return const_cast<T&>(x);
+}
+
+void
+WebGLTexture::ImageInfo::Clear()
+{
+    if (!IsDefined())
+        return;
+
+    OnRespecify();
+
+    Mutable(mFormat) = LOCAL_GL_NONE;
+    Mutable(mWidth) = 0;
+    Mutable(mHeight) = 0;
+    Mutable(mDepth) = 0;
+
+    MOZ_ASSERT(!IsDefined());
+}
+
+WebGLTexture::ImageInfo&
+WebGLTexture::ImageInfo::operator =(const ImageInfo& a)
+{
+    MOZ_ASSERT(a.IsDefined());
+
+    Mutable(mFormat) = a.mFormat;
+    Mutable(mWidth) = a.mWidth;
+    Mutable(mHeight) = a.mHeight;
+    Mutable(mDepth) = a.mDepth;
+
+    mIsDataInitialized = a.mIsDataInitialized;
+
+    
+    MOZ_ASSERT(a.mAttachPoints.empty());
+    OnRespecify();
+
+    return *this;
+}
+
+bool
+WebGLTexture::ImageInfo::IsPowerOfTwo() const
+{
+    return mozilla::IsPowerOfTwo(mWidth) &&
+           mozilla::IsPowerOfTwo(mHeight) &&
+           mozilla::IsPowerOfTwo(mDepth);
+}
+
+void
+WebGLTexture::ImageInfo::AddAttachPoint(WebGLFBAttachPoint* attachPoint)
+{
+    const auto pair = mAttachPoints.insert(attachPoint);
+    DebugOnly<bool> didInsert = pair.second;
+    MOZ_ASSERT(didInsert);
+}
+
+void
+WebGLTexture::ImageInfo::RemoveAttachPoint(WebGLFBAttachPoint* attachPoint)
+{
+    DebugOnly<size_t> numElemsErased = mAttachPoints.erase(attachPoint);
+    MOZ_ASSERT_IF(IsDefined(), numElemsErased == 1);
+}
+
+void
+WebGLTexture::ImageInfo::OnRespecify() const
+{
+    for (auto cur : mAttachPoints) {
+        cur->OnBackingStoreRespecified();
+    }
+}
+
+size_t
+WebGLTexture::ImageInfo::MemoryUsage() const
+{
+    if (!IsDefined())
+        return 0;
+
+    const auto bytesPerTexel = mFormat->format->estimatedBytesPerPixel;
+    return size_t(mWidth) * size_t(mHeight) * size_t(mDepth) * bytesPerTexel;
+}
+
+void
+WebGLTexture::ImageInfo::SetIsDataInitialized(bool isDataInitialized, WebGLTexture* tex)
+{
+    MOZ_ASSERT(tex);
+    MOZ_ASSERT(this >= &tex->mImageInfoArr[0]);
+    MOZ_ASSERT(this < &tex->mImageInfoArr[kMaxLevelCount * kMaxFaceCount]);
+
+    mIsDataInitialized = isDataInitialized;
+    tex->InvalidateResolveCache();
+}
+
+
 
 JSObject*
 WebGLTexture::WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto) {
@@ -27,17 +129,18 @@ WebGLTexture::WebGLTexture(WebGLContext* webgl, GLuint tex)
     : WebGLContextBoundObject(webgl)
     , mGLName(tex)
     , mTarget(LOCAL_GL_NONE)
+    , mFaceCount(0)
     , mMinFilter(LOCAL_GL_NEAREST_MIPMAP_LINEAR)
     , mMagFilter(LOCAL_GL_LINEAR)
     , mWrapS(LOCAL_GL_REPEAT)
     , mWrapT(LOCAL_GL_REPEAT)
-    , mFacesCount(0)
-    , mMaxLevelWithCustomImages(0)
-    , mHaveGeneratedMipmap(false)
     , mImmutable(false)
+    , mImmutableLevelCount(0)
     , mBaseMipmapLevel(0)
     , mMaxMipmapLevel(1000)
-    , mFakeBlackStatus(WebGLTextureFakeBlackStatus::IncompleteTexture)
+    , mTexCompareMode(LOCAL_GL_NONE)
+    , mIsResolved(false)
+    , mResolved_Swizzle(nullptr)
 {
     mContext->mTextures.insertBack(this);
 }
@@ -45,20 +148,14 @@ WebGLTexture::WebGLTexture(WebGLContext* webgl, GLuint tex)
 void
 WebGLTexture::Delete()
 {
-    mImageInfos.Clear();
+    for (auto& cur : mImageInfoArr) {
+        cur.Clear();
+    }
+
     mContext->MakeContextCurrent();
     mContext->gl->fDeleteTextures(1, &mGLName);
+
     LinkedListElement<WebGLTexture>::removeFrom(mContext->mTextures);
-}
-
-size_t
-WebGLTexture::ImageInfo::MemoryUsage() const
-{
-    if (mImageDataStatus == WebGLImageDataStatus::NoImageData)
-        return 0;
-
-    size_t bitsPerTexel = GetBitsPerTexel(mEffectiveInternalFormat);
-    return size_t(mWidth) * size_t(mHeight) * size_t(mDepth) * bitsPerTexel / 8;
 }
 
 size_t
@@ -68,665 +165,489 @@ WebGLTexture::MemoryUsage() const
         return 0;
 
     size_t result = 0;
-    for(size_t face = 0; face < mFacesCount; face++) {
-        for(size_t level = 0; level <= mMaxLevelWithCustomImages; level++) {
-            result += ImageInfoAtFace(face, level).MemoryUsage();
-        }
-    }
+    MOZ_CRASH("todo");
     return result;
 }
 
-static inline size_t
-MipmapLevelsForSize(const WebGLTexture::ImageInfo& info)
+void
+WebGLTexture::SetImageInfo(ImageInfo* target, const ImageInfo& newInfo)
 {
-    GLsizei size = std::max(std::max(info.Width(), info.Height()), info.Depth());
+    *target = newInfo;
 
-    
-    return mozilla::FloorLog2(size);
-}
-
-bool
-WebGLTexture::DoesMipmapHaveAllLevelsConsistentlyDefined(TexImageTarget texImageTarget) const
-{
-    
-    if (mHaveGeneratedMipmap)
-        return true;
-
-    if (!IsMipmapRangeValid())
-        return false;
-
-    
-    ImageInfo expected = ImageInfoAt(texImageTarget,
-                                     EffectiveBaseMipmapLevel());
-    if (!expected.IsPositive())
-        return false;
-
-    
-    
-    if (mMaxMipmapLevel > mMaxLevelWithCustomImages) {
-        if (MipmapLevelsForSize(expected) > mMaxLevelWithCustomImages)
-            return false;
-    }
-
-    
-    
-    for (size_t level = EffectiveBaseMipmapLevel();
-         level <= EffectiveMaxMipmapLevel(); ++level)
-    {
-        const ImageInfo& actual = ImageInfoAt(texImageTarget, level);
-        if (actual != expected)
-            return false;
-
-        expected.mWidth = std::max(1, expected.mWidth / 2);
-        expected.mHeight = std::max(1, expected.mHeight / 2);
-        expected.mDepth = std::max(1, expected.mDepth / 2);
-
-        
-        
-        if (actual.mWidth == 1 &&
-            actual.mHeight == 1 &&
-            actual.mDepth == 1)
-        {
-            return true;
-        }
-    }
-
-    return true;
+    InvalidateResolveCache();
 }
 
 void
-WebGLTexture::Bind(TexTarget texTarget)
+WebGLTexture::SetImageInfosAtLevel(uint32_t level, const ImageInfo& newInfo)
 {
-    
-    
-
-    bool firstTimeThisTextureIsBound = !HasEverBeenBound();
-
-    if (firstTimeThisTextureIsBound) {
-        mTarget = texTarget.get();
-    } else if (texTarget != Target()) {
-        mContext->ErrorInvalidOperation("bindTexture: This texture has already"
-                                        " been bound to a different target.");
-        
-        
-        
-        return;
+    for (uint8_t i = 0; i < mFaceCount; i++) {
+        ImageInfoAtFace(i, level) = newInfo;
     }
 
-    mContext->gl->fBindTexture(texTarget.get(), mGLName);
-
-    if (firstTimeThisTextureIsBound) {
-        mFacesCount = (texTarget == LOCAL_GL_TEXTURE_CUBE_MAP) ? 6 : 1;
-        EnsureMaxLevelWithCustomImagesAtLeast(0);
-        SetFakeBlackStatus(WebGLTextureFakeBlackStatus::Unknown);
-
-        
-        
-        
-        
-        if (mTarget == LOCAL_GL_TEXTURE_CUBE_MAP && !mContext->gl->IsGLES()) {
-            mContext->gl->fTexParameteri(texTarget.get(),
-                                         LOCAL_GL_TEXTURE_WRAP_R,
-                                         LOCAL_GL_CLAMP_TO_EDGE);
-        }
-    }
-}
-
-void
-WebGLTexture::SetImageInfo(TexImageTarget texImageTarget, GLint level,
-                           GLsizei width, GLsizei height, GLsizei depth,
-                           TexInternalFormat effectiveInternalFormat,
-                           WebGLImageDataStatus status)
-{
-    MOZ_ASSERT(depth == 1 || texImageTarget == LOCAL_GL_TEXTURE_3D);
-    MOZ_ASSERT(TexImageTargetToTexTarget(texImageTarget) == mTarget);
-
-    InvalidateStatusOfAttachedFBs();
-
-    EnsureMaxLevelWithCustomImagesAtLeast(level);
-
-    ImageInfoAt(texImageTarget, level) = ImageInfo(width, height, depth,
-                                                   effectiveInternalFormat,
-                                                   status);
-
-    if (level > 0)
-        SetCustomMipmap();
-
-    SetFakeBlackStatus(WebGLTextureFakeBlackStatus::Unknown);
-}
-
-void
-WebGLTexture::SetGeneratedMipmap()
-{
-    if (!mHaveGeneratedMipmap) {
-        mHaveGeneratedMipmap = true;
-        SetFakeBlackStatus(WebGLTextureFakeBlackStatus::Unknown);
-    }
-}
-
-void
-WebGLTexture::SetCustomMipmap()
-{
-    if (mHaveGeneratedMipmap) {
-        if (!IsMipmapRangeValid())
-            return;
-
-        
-        
-        ImageInfo imageInfo = ImageInfoAtFace(0, EffectiveBaseMipmapLevel());
-        MOZ_ASSERT(mContext->IsWebGL2() || imageInfo.IsPowerOfTwo(),
-                   "This texture is NPOT, so how could GenerateMipmap() ever"
-                   " accept it?");
-
-        size_t maxRelativeLevel = MipmapLevelsForSize(imageInfo);
-        size_t maxLevel = EffectiveBaseMipmapLevel() + maxRelativeLevel;
-        EnsureMaxLevelWithCustomImagesAtLeast(maxLevel);
-
-        for (size_t level = EffectiveBaseMipmapLevel() + 1;
-             level <= EffectiveMaxMipmapLevel(); ++level)
-        {
-            imageInfo.mWidth = std::max(imageInfo.mWidth / 2, 1);
-            imageInfo.mHeight = std::max(imageInfo.mHeight / 2, 1);
-            imageInfo.mDepth = std::max(imageInfo.mDepth / 2, 1);
-            for (size_t face = 0; face < mFacesCount; ++face) {
-                ImageInfoAtFace(face, level) = imageInfo;
-            }
-        }
-    }
-    mHaveGeneratedMipmap = false;
-}
-
-bool
-WebGLTexture::AreAllLevel0ImageInfosEqual() const
-{
-    for (size_t face = 1; face < mFacesCount; ++face) {
-        if (ImageInfoAtFace(face, 0) != ImageInfoAtFace(0, 0))
-            return false;
-    }
-    return true;
+    InvalidateResolveCache();
 }
 
 bool
 WebGLTexture::IsMipmapComplete() const
 {
-    MOZ_ASSERT(mTarget == LOCAL_GL_TEXTURE_2D ||
-               mTarget == LOCAL_GL_TEXTURE_3D);
-    return DoesMipmapHaveAllLevelsConsistentlyDefined(LOCAL_GL_TEXTURE_2D);
+    MOZ_ASSERT(DoesMinFilterRequireMipmap());
+    
+
+    const uint32_t maxLevel = MaxEffectiveMipmapLevel();
+
+    
+    if (mBaseMipmapLevel > maxLevel)
+        return false;
+
+    
+    const ImageInfo& baseImageInfo = BaseImageInfo();
+    if (!baseImageInfo.IsDefined())
+        return false;
+
+    
+    uint32_t refWidth = baseImageInfo.mWidth;
+    uint32_t refHeight = baseImageInfo.mHeight;
+    uint32_t refDepth = baseImageInfo.mDepth;
+    MOZ_ASSERT(refWidth && refHeight && refDepth);
+
+    for (uint32_t level = mBaseMipmapLevel; level <= maxLevel; level++) {
+        
+        
+
+        for (uint8_t face = 0; face < mFaceCount; face++) {
+            const ImageInfo& cur = ImageInfoAtFace(face, level);
+
+            
+            
+            
+
+            
+            
+
+            if (cur.mWidth != refWidth ||
+                cur.mHeight != refHeight ||
+                cur.mDepth != refDepth ||
+                cur.mFormat != baseImageInfo.mFormat)
+            {
+                return false;
+            }
+        }
+
+        
+        
+        if (refWidth == 1 &&
+            refHeight == 1 &&
+            refDepth == 1)
+        {
+            break;
+        }
+
+        refWidth  = std::max(uint32_t(1), refWidth  / 2);
+        refHeight = std::max(uint32_t(1), refHeight / 2);
+        refDepth  = std::max(uint32_t(1), refDepth  / 2);
+    }
+
+    return true;
 }
 
 bool
 WebGLTexture::IsCubeComplete() const
 {
-    MOZ_ASSERT(mTarget == LOCAL_GL_TEXTURE_CUBE_MAP);
-
-    const ImageInfo& first = ImageInfoAt(LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-                                         0);
-    if (!first.IsPositive() || !first.IsSquare())
-        return false;
-
-    return AreAllLevel0ImageInfosEqual();
-}
-
-bool
-WebGLTexture::IsMipmapCubeComplete() const
-{
     
-    if (!IsCubeComplete())
+    
+    
+    
+    
+    
+    
+
+    
+
+    const ImageInfo& reference = BaseImageInfo();
+    if (!reference.IsDefined())
         return false;
 
-    for (int i = 0; i < 6; i++) {
-        const TexImageTarget face =
-            TexImageTargetForTargetAndFace(LOCAL_GL_TEXTURE_CUBE_MAP, i);
-        if (!DoesMipmapHaveAllLevelsConsistentlyDefined(face))
+    auto refWidth = reference.mWidth;
+    auto refFormat = reference.mFormat;
+
+    for (uint8_t face = 0; face < mFaceCount; face++) {
+        const ImageInfo& cur = ImageInfoAtFace(face, mBaseMipmapLevel);
+        if (!cur.IsDefined())
             return false;
+
+        MOZ_ASSERT(cur.mDepth == 1);
+        if (cur.mFormat != refFormat || 
+            cur.mWidth != refWidth ||   
+            cur.mHeight != refWidth)    
+        {
+            return false;
+        }
     }
+
     return true;
 }
 
 bool
-WebGLTexture::IsMipmapRangeValid() const
+WebGLTexture::IsComplete(const char** const out_reason) const
 {
     
-    if (IsImmutable())
-        return true;
-    if (mBaseMipmapLevel > std::min(mMaxLevelWithCustomImages, mMaxMipmapLevel))
-        return false;
-    return true;
-}
-
-WebGLTextureFakeBlackStatus
-WebGLTexture::ResolvedFakeBlackStatus()
-{
-    if (MOZ_LIKELY(mFakeBlackStatus != WebGLTextureFakeBlackStatus::Unknown))
-        return mFakeBlackStatus;
+    
 
     
-    
-    
-    if (!IsMipmapRangeValid()) {
-        mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-        return mFakeBlackStatus;
-    }
-
-    for (size_t face = 0; face < mFacesCount; ++face) {
-        WebGLImageDataStatus status = ImageInfoAtFace(face, EffectiveBaseMipmapLevel()).mImageDataStatus;
-        if (status == WebGLImageDataStatus::NoImageData) {
-            
-            
-            
-            mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            return mFakeBlackStatus;
-        }
-    }
-
-    const char preamble[] = "A texture is going to be rendered as if it were"
-                            " black, as per the OpenGL ES 2.0.24 spec section"
-                            " 3.8.2, because it";
-
-    if (mTarget == LOCAL_GL_TEXTURE_2D ||
-        mTarget == LOCAL_GL_TEXTURE_3D)
-    {
-        int dim = mTarget == LOCAL_GL_TEXTURE_2D ? 2 : 3;
-        if (DoesMinFilterRequireMipmap()) {
-            if (!IsMipmapComplete()) {
-                mContext->GenerateWarning("%s is a %dD texture, with a"
-                                          " minification filter requiring a"
-                                          " mipmap, and is not mipmap complete"
-                                          " (as defined in section 3.7.10).",
-                                          preamble, dim);
-                mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            } else if (!mContext->IsWebGL2() &&
-                       !ImageInfoBase().IsPowerOfTwo())
-            {
-                mContext->GenerateWarning("%s is a %dD texture, with a"
-                                          " minification filter requiring a"
-                                          " mipmap, and either its width or"
-                                          " height is not a power of two.",
-                                          preamble, dim);
-                mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            }
-        } else {
-            
-            if (!ImageInfoBase().IsPositive()) {
-                mContext->GenerateWarning("%s is a %dD texture and its width or"
-                                          " height is equal to zero.",
-                                          preamble, dim);
-                mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            } else if (!AreBothWrapModesClampToEdge() &&
-                       !mContext->IsWebGL2() &&
-                       !ImageInfoBase().IsPowerOfTwo())
-            {
-                mContext->GenerateWarning("%s is a %dD texture, with a"
-                                          " minification filter not requiring a"
-                                          " mipmap, with its width or height"
-                                          " not a power of two, and with a wrap"
-                                          " mode different from CLAMP_TO_EDGE.",
-                                          preamble, dim);
-                mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            }
-        }
-    } else  {
+    const ImageInfo& baseImageInfo = BaseImageInfo();
+    if (!baseImageInfo.IsDefined()) {
         
-        bool legalImageSize = true;
-        if (!mContext->IsWebGL2()) {
-            for (size_t face = 0; face < mFacesCount; ++face)
-                legalImageSize &= ImageInfoAtFace(face, 0).IsPowerOfTwo();
-        }
-
-        if (DoesMinFilterRequireMipmap()) {
-            if (!IsMipmapCubeComplete()) {
-                mContext->GenerateWarning("%s is a cube map texture, with a"
-                                          " minification filter requiring a"
-                                          " mipmap, and is not mipmap cube"
-                                          " complete (as defined in section"
-                                          " 3.7.10).", preamble);
-                mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            } else if (!legalImageSize) {
-                mContext->GenerateWarning("%s is a cube map texture, with a"
-                                          " minification filter requiring a"
-                                          " mipmap, and either the width or the"
-                                          " height of some level 0 image is not"
-                                          " a power of two.", preamble);
-                mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            }
-        }
-        else 
-        {
-            if (!IsCubeComplete()) {
-                mContext->GenerateWarning("%s is a cube map texture, with a"
-                                          " minification filter not requiring a"
-                                          " mipmap, and is not cube complete"
-                                          " (as defined in section 3.7.10).",
-                                          preamble);
-                mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            } else if (!AreBothWrapModesClampToEdge() && !legalImageSize) {
-                mContext->GenerateWarning("%s is a cube map texture, with a"
-                                          " minification filter not requiring a"
-                                          " mipmap, with some level 0 image"
-                                          " having width or height not a power"
-                                          " of two, and with a wrap mode"
-                                          " different from CLAMP_TO_EDGE.",
-                                          preamble);
-                mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-            }
-        }
-    }
-
-    TexType type = TypeFromInternalFormat(ImageInfoBase().mEffectiveInternalFormat);
-
-    const char* badFormatText = nullptr;
-    const char* extText = nullptr;
-
-    if (type == LOCAL_GL_FLOAT &&
-        !Context()->IsExtensionEnabled(WebGLExtensionID::OES_texture_float_linear))
-    {
-        badFormatText = "FLOAT";
-        extText = "OES_texture_float_linear";
-    } else if (type == LOCAL_GL_HALF_FLOAT &&
-               !Context()->IsExtensionEnabled(WebGLExtensionID::OES_texture_half_float_linear))
-    {
-        badFormatText = "HALF_FLOAT";
-        extText = "OES_texture_half_float_linear";
-    }
-
-    const char* badFilterText = nullptr;
-    if (badFormatText) {
-        if (mMinFilter == LOCAL_GL_LINEAR ||
-            mMinFilter == LOCAL_GL_LINEAR_MIPMAP_LINEAR ||
-            mMinFilter == LOCAL_GL_LINEAR_MIPMAP_NEAREST ||
-            mMinFilter == LOCAL_GL_NEAREST_MIPMAP_LINEAR)
-        {
-            badFilterText = "minification";
-        } else if (mMagFilter == LOCAL_GL_LINEAR) {
-            badFilterText = "magnification";
-        }
-    }
-
-    if (badFilterText) {
-        mContext->GenerateWarning("%s is a texture with a linear %s filter,"
-                                  " which is not compatible with format %s by"
-                                  " default. Try enabling the %s extension, if"
-                                  " supported.", preamble, badFilterText,
-                                  badFormatText, extText);
-        mFakeBlackStatus = WebGLTextureFakeBlackStatus::IncompleteTexture;
-    }
-
-    
-    
-    bool hasUninitializedImageData = false;
-    for (size_t level = 0; level <= mMaxLevelWithCustomImages; ++level) {
-        for (size_t face = 0; face < mFacesCount; ++face) {
-            bool cur = (ImageInfoAtFace(face, level).mImageDataStatus == WebGLImageDataStatus::UninitializedImageData);
-            hasUninitializedImageData |= cur;
-        }
-    }
-
-    if (hasUninitializedImageData) {
-        bool hasAnyInitializedImageData = false;
-        for (size_t level = 0; level <= mMaxLevelWithCustomImages; ++level) {
-            for (size_t face = 0; face < mFacesCount; ++face) {
-                if (ImageInfoAtFace(face, level).mImageDataStatus == WebGLImageDataStatus::InitializedImageData) {
-                    hasAnyInitializedImageData = true;
-                    break;
-                }
-            }
-            if (hasAnyInitializedImageData) {
-                break;
-            }
-        }
-
-        if (hasAnyInitializedImageData) {
-            
-
-
-
-
-
-
-
-            for (size_t level = 0; level <= mMaxLevelWithCustomImages; ++level)
-            {
-                for (size_t face = 0; face < mFacesCount; ++face) {
-                    TexImageTarget imageTarget = TexImageTargetForTargetAndFace(mTarget,
-                                                                                face);
-                    const ImageInfo& imageInfo = ImageInfoAt(imageTarget, level);
-                    if (imageInfo.mImageDataStatus == WebGLImageDataStatus::UninitializedImageData)
-                    {
-                        EnsureInitializedImageData(imageTarget, level);
-                    }
-                }
-            }
-            mFakeBlackStatus = WebGLTextureFakeBlackStatus::NotNeeded;
-        } else {
-            
-            
-            mFakeBlackStatus = WebGLTextureFakeBlackStatus::UninitializedImageData;
-        }
-    }
-
-    
-    
-    if (mFakeBlackStatus == WebGLTextureFakeBlackStatus::Unknown) {
-        mFakeBlackStatus = WebGLTextureFakeBlackStatus::NotNeeded;
-    }
-
-    MOZ_ASSERT(mFakeBlackStatus != WebGLTextureFakeBlackStatus::Unknown);
-    return mFakeBlackStatus;
-}
-
-static bool
-ClearByMask(WebGLContext* webgl, GLbitfield mask)
-{
-    gl::GLContext* gl = webgl->GL();
-    MOZ_ASSERT(gl->IsCurrent());
-
-    GLenum status = gl->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER);
-    if (status != LOCAL_GL_FRAMEBUFFER_COMPLETE)
+        
+        *out_reason = nullptr;
         return false;
-
-    bool colorAttachmentsMask[WebGLContext::kMaxColorAttachments] = {false};
-    if (mask & LOCAL_GL_COLOR_BUFFER_BIT) {
-        colorAttachmentsMask[0] = true;
     }
 
-    webgl->ForceClearFramebufferWithDefaultValues(false, mask, colorAttachmentsMask);
+    if (!baseImageInfo.mWidth || !baseImageInfo.mHeight || !baseImageInfo.mDepth) {
+        *out_reason = "The dimensions of `level_base` are not all positive.";
+        return false;
+    }
+
+    
+    if (IsCubeMap() && !IsCubeComplete()) {
+        *out_reason = "Cubemaps must be \"cube complete\".";
+        return false;
+    }
+
+    
+    
+    const bool requiresMipmap = (mMinFilter != LOCAL_GL_NEAREST &&
+                                 mMinFilter != LOCAL_GL_LINEAR);
+    if (requiresMipmap && !IsMipmapComplete()) {
+        *out_reason = "Because the minification filter requires mipmapping, the texture"
+                      " must be \"mipmap complete\".";
+        return false;
+    }
+
+    const bool isMinFilteringNearest = (mMinFilter == LOCAL_GL_NEAREST ||
+                                        mMinFilter == LOCAL_GL_NEAREST_MIPMAP_NEAREST);
+    const bool isMagFilteringNearest = (mMagFilter == LOCAL_GL_NEAREST);
+    const bool isFilteringNearestOnly = (isMinFilteringNearest && isMagFilteringNearest);
+    if (!isFilteringNearestOnly) {
+        auto formatUsage = baseImageInfo.mFormat;
+        auto format = formatUsage->format;
+
+        
+        
+        
+        
+        
+        
+        if (format->isColorFormat && !formatUsage->isFilterable) {
+            *out_reason = "Because minification or magnification filtering is not NEAREST"
+                          " or NEAREST_MIPMAP_NEAREST, and the texture's format is a"
+                          " color format, its format must be \"texture-filterable\".";
+            return false;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!mContext->IsExtensionEnabled(WebGLExtensionID::WEBGL_depth_texture)) {
+            if (format->hasDepth && mTexCompareMode != LOCAL_GL_NONE) {
+                *out_reason = "A depth or depth-stencil format with TEXTURE_COMPARE_MODE"
+                              " of NONE must have minification or magnification filtering"
+                              " of NEAREST or NEAREST_MIPMAP_NEAREST.";
+                return false;
+            }
+        }
+    }
+
+    
+    
+    
+    if (!mContext->IsWebGL2()) {
+        
+        
+        
+
+        
+        
+        
+        
+
+        
+        
+        
+        
+
+        
+        
+        
+
+        
+        
+        
+        if (!baseImageInfo.IsPowerOfTwo()) {
+            
+            if (mWrapS != LOCAL_GL_CLAMP_TO_EDGE ||
+                mWrapT != LOCAL_GL_CLAMP_TO_EDGE)
+            {
+                *out_reason = "Non-power-of-two textures must have a wrap mode of"
+                              " CLAMP_TO_EDGE.";
+                return false;
+            }
+
+            
+            if (requiresMipmap) {
+                *out_reason = "Mipmapping requires power-of-two textures.";
+                return false;
+            }
+        }
+
+        
+        
+        
+        
+    }
+
     return true;
 }
 
 
-static bool
-ClearWithTempFB(WebGLContext* webgl, GLuint tex,
-                TexImageTarget texImageTarget, GLint level,
-                TexInternalFormat baseInternalFormat,
-                GLsizei width, GLsizei height)
+uint32_t
+WebGLTexture::MaxEffectiveMipmapLevel() const
 {
-    MOZ_ASSERT(texImageTarget == LOCAL_GL_TEXTURE_2D);
-
-    gl::GLContext* gl = webgl->GL();
-    MOZ_ASSERT(gl->IsCurrent());
-
-    gl::ScopedFramebuffer fb(gl);
-    gl::ScopedBindFramebuffer autoFB(gl, fb.FB());
-    GLbitfield mask = 0;
-
-    switch (baseInternalFormat.get()) {
-    case LOCAL_GL_LUMINANCE:
-    case LOCAL_GL_LUMINANCE_ALPHA:
-    case LOCAL_GL_ALPHA:
-    case LOCAL_GL_RGB:
-    case LOCAL_GL_RGBA:
-    case LOCAL_GL_BGR:
-    case LOCAL_GL_BGRA:
-        mask = LOCAL_GL_COLOR_BUFFER_BIT;
-        gl->fFramebufferTexture2D(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
-                                  texImageTarget.get(), tex, level);
-        break;
-    case LOCAL_GL_DEPTH_COMPONENT32_OES:
-    case LOCAL_GL_DEPTH_COMPONENT24_OES:
-    case LOCAL_GL_DEPTH_COMPONENT16:
-    case LOCAL_GL_DEPTH_COMPONENT:
-        mask = LOCAL_GL_DEPTH_BUFFER_BIT;
-        gl->fFramebufferTexture2D(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_DEPTH_ATTACHMENT,
-                                  texImageTarget.get(), tex, level);
-        break;
-
-    case LOCAL_GL_DEPTH24_STENCIL8:
-    case LOCAL_GL_DEPTH_STENCIL:
-        mask = LOCAL_GL_DEPTH_BUFFER_BIT |
-               LOCAL_GL_STENCIL_BUFFER_BIT;
-        gl->fFramebufferTexture2D(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_DEPTH_ATTACHMENT,
-                                  texImageTarget.get(), tex, level);
-        gl->fFramebufferTexture2D(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_STENCIL_ATTACHMENT,
-                                  texImageTarget.get(), tex, level);
-        break;
-
-    default:
-        return false;
-    }
-    MOZ_ASSERT(mask);
-
-    if (ClearByMask(webgl, mask))
-        return true;
-
-    
-    
-
-    if (mask & LOCAL_GL_COLOR_BUFFER_BIT) {
-        
-        return false;
-    }
-
-    gl::ScopedRenderbuffer rb(gl);
+    if (mMinFilter == LOCAL_GL_NEAREST ||
+        mMinFilter == LOCAL_GL_LINEAR)
     {
         
-        GLenum format = gl->IsGLES() ? LOCAL_GL_RGBA4 : LOCAL_GL_RGBA8;
-        gl::ScopedBindRenderbuffer rbBinding(gl, rb.RB());
-        gl->fRenderbufferStorage(LOCAL_GL_RENDERBUFFER, format, width, height);
+        return mBaseMipmapLevel;
     }
 
-    gl->fFramebufferRenderbuffer(LOCAL_GL_FRAMEBUFFER, LOCAL_GL_COLOR_ATTACHMENT0,
-                                 LOCAL_GL_RENDERBUFFER, rb.RB());
-    mask |= LOCAL_GL_COLOR_BUFFER_BIT;
+    const auto& imageInfo = BaseImageInfo();
+    MOZ_ASSERT(imageInfo.IsDefined());
 
-    
-    return ClearByMask(webgl, mask);
+    uint32_t maxLevelBySize = mBaseMipmapLevel + imageInfo.MaxMipmapLevels() - 1;
+    return std::min<uint32_t>(maxLevelBySize, mMaxMipmapLevel);
 }
-
 
 bool
-WebGLTexture::EnsureInitializedImageData(TexImageTarget imageTarget,
-                                         GLint level)
+WebGLTexture::GetFakeBlackType(const char* funcName, uint32_t texUnit,
+                               FakeBlackType* const out_fakeBlack)
 {
-    const ImageInfo& imageInfo = ImageInfoAt(imageTarget, level);
-    if (!imageInfo.HasUninitializedImageData())
+    const char* incompleteReason;
+    if (!IsComplete(&incompleteReason)) {
+        if (incompleteReason) {
+            mContext->GenerateWarning("%s: Active texture %u for target 0x%04x is"
+                                      " 'incomplete', and will be rendered as"
+                                      " RGBA(0,0,0,1), as per the GLES 2.0.24 $3.8.2: %s",
+                                      funcName, texUnit, mTarget.get(),
+                                      incompleteReason);
+        }
+        *out_fakeBlack = FakeBlackType::RGBA0001;
         return true;
-
-    mContext->MakeContextCurrent();
+    }
 
     
-    if (imageTarget == LOCAL_GL_TEXTURE_2D) {
-        bool cleared = ClearWithTempFB(mContext, mGLName, imageTarget, level,
-                                       imageInfo.mEffectiveInternalFormat,
-                                       imageInfo.mHeight, imageInfo.mWidth);
-        if (cleared) {
-            SetImageDataStatus(imageTarget, level,
-                               WebGLImageDataStatus::InitializedImageData);
+    bool hasUninitializedData = false;
+    bool hasInitializedData = false;
+
+    const auto maxLevel = MaxEffectiveMipmapLevel();
+    MOZ_ASSERT(mBaseMipmapLevel <= maxLevel);
+    for (uint32_t level = mBaseMipmapLevel; level <= maxLevel; level++) {
+        for (uint8_t face = 0; face < mFaceCount; face++) {
+            const auto& cur = ImageInfoAtFace(face, level);
+            if (cur.IsDataInitialized())
+                hasInitializedData = true;
+            else
+                hasUninitializedData = true;
+        }
+    }
+    MOZ_ASSERT(hasUninitializedData || hasInitializedData);
+
+    if (!hasUninitializedData) {
+        *out_fakeBlack = FakeBlackType::None;
+        return true;
+    }
+
+    if (!hasInitializedData) {
+        const auto format = ImageInfoAtFace(0, mBaseMipmapLevel).mFormat->format;
+        if (format->isColorFormat) {
+            *out_fakeBlack = (format->hasAlpha ? FakeBlackType::RGBA0000
+                                               : FakeBlackType::RGBA0001);
             return true;
         }
-    }
 
-    
-    size_t bitspertexel = GetBitsPerTexel(imageInfo.mEffectiveInternalFormat);
-    MOZ_ASSERT((bitspertexel % 8) == 0); 
-                                         
-                                         
-    size_t bytespertexel = bitspertexel / 8;
-    CheckedUint32 checked_byteLength
-        = WebGLContext::GetImageSize(
-                        imageInfo.mHeight,
-                        imageInfo.mWidth,
-                        imageInfo.mDepth,
-                        bytespertexel,
-                        mContext->mPixelStoreUnpackAlignment);
-    MOZ_RELEASE_ASSERT(checked_byteLength.isValid()); 
-
-    size_t byteCount = checked_byteLength.value();
-
-    UniquePtr<uint8_t> zeros((uint8_t*)calloc(1, byteCount));
-    if (zeros == nullptr) {
-        
-        mContext->ForceLoseContext(true);
-        mContext->ErrorOutOfMemory("EnsureInitializedImageData: Failed to alloc %u "
-                                   "bytes to clear image target `%s` level `%d`.",
-                                   byteCount, mContext->EnumName(imageTarget.get()),
-                                   level);
-         return false;
-    }
-
-    gl::GLContext* gl = mContext->gl;
-    gl::ScopedBindTexture autoBindTex(gl, mGLName, mTarget);
-
-    GLenum driverInternalFormat = LOCAL_GL_NONE;
-    GLenum driverFormat = LOCAL_GL_NONE;
-    GLenum driverType = LOCAL_GL_NONE;
-    DriverFormatsFromEffectiveInternalFormat(gl,
-                                             imageInfo.mEffectiveInternalFormat,
-                                             &driverInternalFormat,
-                                             &driverFormat, &driverType);
-
-    mContext->GetAndFlushUnderlyingGLErrors();
-    if (imageTarget == LOCAL_GL_TEXTURE_3D) {
-        MOZ_ASSERT(mImmutable,
-                   "Shouldn't be possible to have non-immutable-format 3D"
-                   " textures in WebGL");
-        gl->fTexSubImage3D(imageTarget.get(), level, 0, 0, 0, imageInfo.mWidth,
-                           imageInfo.mHeight, imageInfo.mDepth, driverFormat,
-                           driverType, zeros.get());
+        mContext->GenerateWarning("%s: Active texture %u for target 0x%04x is"
+                                  " uninitialized, and will be (perhaps slowly) cleared"
+                                  " by the implementation.",
+                                  funcName, texUnit, mTarget.get());
     } else {
-        if (mImmutable) {
-            gl->fTexSubImage2D(imageTarget.get(), level, 0, 0, imageInfo.mWidth,
-                               imageInfo.mHeight, driverFormat, driverType,
-                               zeros.get());
-        } else {
-            gl->fTexImage2D(imageTarget.get(), level, driverInternalFormat,
-                            imageInfo.mWidth, imageInfo.mHeight, 0,
-                            driverFormat, driverType, zeros.get());
+        mContext->GenerateWarning("%s: Active texture %u for target 0x%04x contains"
+                                  " TexImages with uninitialized data along with"
+                                  " TexImages with initialized data, forcing the"
+                                  " implementation to (slowly) initialize the"
+                                  " uninitialized TexImages.",
+                                  funcName, texUnit, mTarget.get());
+    }
+
+    GLenum baseImageTarget = mTarget.get();
+    if (baseImageTarget == LOCAL_GL_TEXTURE_CUBE_MAP)
+        baseImageTarget = LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+
+    for (uint32_t level = mBaseMipmapLevel; level <= maxLevel; level++) {
+        for (uint8_t face = 0; face < mFaceCount; face++) {
+            TexImageTarget imageTarget = baseImageTarget + face;
+            if (!EnsureImageDataInitialized(funcName, imageTarget, level))
+                return false; 
         }
     }
-    GLenum error = mContext->GetAndFlushUnderlyingGLErrors();
-    if (error) {
-        
-        
-        gfxCriticalError() << "GL context GetAndFlushUnderlyingGLErrors " << gfx::hexa(error);
-        printf_stderr("Error: 0x%4x\n", error);
-        if (error != LOCAL_GL_OUT_OF_MEMORY) {
-            
-            
-            
-            mContext->ForceLoseContext(true);
+
+    *out_fakeBlack = FakeBlackType::None;
+    return true;
+}
+
+static void
+SetSwizzle(gl::GLContext* gl, TexTarget target, const GLint* swizzle)
+{
+    static const GLint kNoSwizzle[4] = { LOCAL_GL_RED, LOCAL_GL_GREEN, LOCAL_GL_BLUE,
+                                         LOCAL_GL_ALPHA };
+    if (!swizzle) {
+        swizzle = kNoSwizzle;
+    } else if (!gl->IsSupported(gl::GLFeature::texture_swizzle)) {
+        MOZ_CRASH("Needs swizzle feature to swizzle!");
+    }
+
+    gl->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_SWIZZLE_R, swizzle[0]);
+    gl->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_SWIZZLE_G, swizzle[1]);
+    gl->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_SWIZZLE_B, swizzle[2]);
+    gl->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_SWIZZLE_A, swizzle[3]);
+}
+
+bool
+WebGLTexture::ResolveForDraw(const char* funcName, uint32_t texUnit,
+                             FakeBlackType* const out_fakeBlack)
+{
+    if (!mIsResolved) {
+        if (!GetFakeBlackType(funcName, texUnit, &mResolved_FakeBlack))
             return false;
+
+        
+        
+        const GLint* newSwizzle = nullptr;
+        if (mResolved_FakeBlack == FakeBlackType::None) {
+            const auto& cur = ImageInfoAtFace(0, mBaseMipmapLevel);
+            newSwizzle = cur.mFormat->textureSwizzleRGBA;
         }
 
         
-        mContext->ForceLoseContext(true);
-        mContext->ErrorOutOfMemory("EnsureNoUninitializedImageData: Failed to "
-                                   "upload texture of width: %u, height: %u, "
-                                   "depth: %u to target %s level %d.",
-                                   imageInfo.mWidth, imageInfo.mHeight, imageInfo.mDepth,
-                                   mContext->EnumName(imageTarget.get()), level);
+        if (newSwizzle != mResolved_Swizzle) {
+            mResolved_Swizzle = newSwizzle;
+
+            
+            mContext->gl->fActiveTexture(LOCAL_GL_TEXTURE0 + texUnit);
+            SetSwizzle(mContext->gl, mTarget, mResolved_Swizzle);
+            mContext->gl->fActiveTexture(LOCAL_GL_TEXTURE0 + mContext->mActiveTexture);
+        }
+
+        mIsResolved = true;
+    }
+
+    *out_fakeBlack = mResolved_FakeBlack;
+    return true;
+}
+
+bool
+WebGLTexture::EnsureImageDataInitialized(const char* funcName, TexImageTarget target,
+                                         uint32_t level)
+{
+    auto& imageInfo = ImageInfoAt(target, level);
+    MOZ_ASSERT(imageInfo.IsDefined());
+
+    if (imageInfo.IsDataInitialized())
+        return true;
+
+    return InitializeImageData(funcName, target, level);
+}
+
+bool
+WebGLTexture::InitializeImageData(const char* funcName, TexImageTarget target,
+                                  uint32_t level)
+{
+    auto& imageInfo = ImageInfoAt(target, level);
+    MOZ_ASSERT(imageInfo.IsDefined());
+    MOZ_ASSERT(!imageInfo.IsDataInitialized());
+
+    const bool respecifyTexture = false;
+    const auto& usage = imageInfo.mFormat;
+    const auto& width = imageInfo.mWidth;
+    const auto& height = imageInfo.mHeight;
+    const auto& depth = imageInfo.mDepth;
+
+    if (!ZeroTextureData(mContext, funcName, respecifyTexture, target, level, usage, 0, 0,
+                         0, width, height, depth))
+    {
         return false;
     }
 
-    SetImageDataStatus(imageTarget, level, WebGLImageDataStatus::InitializedImageData);
-
+    imageInfo.SetIsDataInitialized(true, this);
     return true;
 }
 
 void
-WebGLTexture::SetFakeBlackStatus(WebGLTextureFakeBlackStatus x)
+WebGLTexture::ClampLevelBaseAndMax()
 {
-    mFakeBlackStatus = x;
-    mContext->SetFakeBlackStatus(WebGLContextFakeBlackStatus::Unknown);
+    if (!mImmutable)
+        return;
+
+    
+    
+    
+    
+    
+    mBaseMipmapLevel = Clamp<uint32_t>(mBaseMipmapLevel, 0, mImmutableLevelCount - 1);
+    mMaxMipmapLevel = Clamp<uint32_t>(mMaxMipmapLevel, mBaseMipmapLevel,
+                                      mImmutableLevelCount - 1);
+}
+
+void
+WebGLTexture::PopulateMipChain(uint32_t firstLevel, uint32_t lastLevel)
+{
+    const ImageInfo& baseImageInfo = ImageInfoAtFace(0, firstLevel);
+    MOZ_ASSERT(baseImageInfo.IsDefined());
+
+    uint32_t refWidth = baseImageInfo.mWidth;
+    uint32_t refHeight = baseImageInfo.mHeight;
+    uint32_t refDepth = baseImageInfo.mDepth;
+    if (!refWidth || !refHeight || !refDepth)
+        return;
+
+    for (uint32_t level = firstLevel + 1; level <= lastLevel; level++) {
+        bool isMinimal = (refWidth == 1 &&
+                          refHeight == 1);
+        if (mTarget == LOCAL_GL_TEXTURE_3D) {
+            isMinimal &= (refDepth == 1);
+        }
+
+        
+        if (isMinimal)
+            break;
+
+        refWidth = std::max(uint32_t(1), refWidth / 2);
+        refHeight = std::max(uint32_t(1), refHeight / 2);
+        if (mTarget == LOCAL_GL_TEXTURE_3D) { 
+            refDepth = std::max(uint32_t(1), refDepth / 2);
+        }
+
+        const ImageInfo cur(baseImageInfo.mFormat, refWidth, refHeight, refDepth,
+                            baseImageInfo.IsDataInitialized());
+
+        SetImageInfosAtLevel(level, cur);
+    }
 }
 
 
@@ -739,50 +660,79 @@ WebGLTexture::BindTexture(TexTarget texTarget)
     if (IsDeleted())
         return false;
 
-    if (HasEverBeenBound() && mTarget != texTarget) {
-        mContext->ErrorInvalidOperation("bindTexture: this texture has already been bound to a different target");
+    const bool isFirstBinding = !HasEverBeenBound();
+    if (!isFirstBinding && mTarget != texTarget) {
+        mContext->ErrorInvalidOperation("bindTexture: This texture has already been bound"
+                                        " to a different target.");
         return false;
     }
 
-    mContext->SetFakeBlackStatus(WebGLContextFakeBlackStatus::Unknown);
-    Bind(texTarget);
+    mTarget = texTarget;
+
+    mContext->gl->fBindTexture(mTarget.get(), mGLName);
+
+    if (isFirstBinding) {
+        mFaceCount = IsCubeMap() ? 6 : 1;
+
+        gl::GLContext* gl = mContext->gl;
+
+        
+        
+        
+        
+        
+        const bool hasWrapR = gl->IsSupported(gl::GLFeature::texture_3D);
+        if (IsCubeMap() && hasWrapR && !mContext->IsWebGL2()) {
+            gl->fTexParameteri(texTarget.get(), LOCAL_GL_TEXTURE_WRAP_R,
+                               LOCAL_GL_CLAMP_TO_EDGE);
+        }
+    }
+
     return true;
 }
+
 
 void
 WebGLTexture::GenerateMipmap(TexTarget texTarget)
 {
-    const TexImageTarget imageTarget = (texTarget == LOCAL_GL_TEXTURE_2D)
-                                                  ? LOCAL_GL_TEXTURE_2D
-                                                  : LOCAL_GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-    if (!IsMipmapRangeValid())
-    {
-        return mContext->ErrorInvalidOperation("generateMipmap: Texture does not have a valid mipmap range.");
-    }
-    if (!HasImageInfoAt(imageTarget, EffectiveBaseMipmapLevel()))
-    {
-        return mContext->ErrorInvalidOperation("generateMipmap: Level zero of texture is not defined.");
-    }
-
-    if (!mContext->IsWebGL2() && !IsFirstImagePowerOfTwo())
-        return mContext->ErrorInvalidOperation("generateMipmap: Level zero of texture does not have power-of-two width and height.");
-
-    TexInternalFormat internalformat = ImageInfoAt(imageTarget, 0).EffectiveInternalFormat();
-    if (IsTextureFormatCompressed(internalformat))
-        return mContext->ErrorInvalidOperation("generateMipmap: Texture data at level zero is compressed.");
-
-    if (mContext->IsExtensionEnabled(WebGLExtensionID::WEBGL_depth_texture) &&
-        (IsGLDepthFormat(internalformat) || IsGLDepthStencilFormat(internalformat)))
-    {
-        return mContext->ErrorInvalidOperation("generateMipmap: "
-                                     "A texture that has a base internal format of "
-                                     "DEPTH_COMPONENT or DEPTH_STENCIL isn't supported");
+    
+    
+    
+    
+    
+    const ImageInfo& baseImageInfo = BaseImageInfo();
+    if (!baseImageInfo.IsDefined()) {
+        mContext->ErrorInvalidOperation("generateMipmap: The base level of the texture is"
+                                        " not defined.");
+        return;
     }
 
-    if (!AreAllLevel0ImageInfosEqual())
-        return mContext->ErrorInvalidOperation("generateMipmap: The six faces of this cube map have different dimensions, format, or type.");
+    if (IsCubeMap() && !IsCubeComplete()) {
+      mContext->ErrorInvalidOperation("generateMipmap: Cube maps must be \"cube"
+                                      " complete\".");
+      return;
+    }
 
-    SetGeneratedMipmap();
+    if (!mContext->IsWebGL2() && !baseImageInfo.IsPowerOfTwo()) {
+        mContext->ErrorInvalidOperation("generateMipmap: The base level of the texture"
+                                        " does not have power-of-two dimensions.");
+        return;
+    }
+
+    auto format = baseImageInfo.mFormat->format;
+    if (format->compression) {
+        mContext->ErrorInvalidOperation("generateMipmap: Texture data at base level is"
+                                        " compressed.");
+        return;
+    }
+
+    if (format->hasDepth) {
+        mContext->ErrorInvalidOperation("generateMipmap: Depth textures are not"
+                                        " supported.");
+        return;
+    }
+
+    
 
     mContext->MakeContextCurrent();
     gl::GLContext* gl = mContext->gl;
@@ -793,12 +743,20 @@ WebGLTexture::GenerateMipmap(TexTarget texTarget)
         
         
         
-        gl->fTexParameteri(texTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_NEAREST_MIPMAP_NEAREST);
+        gl->fTexParameteri(texTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
+                           LOCAL_GL_NEAREST_MIPMAP_NEAREST);
         gl->fGenerateMipmap(texTarget.get());
-        gl->fTexParameteri(texTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER, MinFilter().get());
+        gl->fTexParameteri(texTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
+                           mMinFilter.get());
     } else {
         gl->fGenerateMipmap(texTarget.get());
     }
+
+    
+    
+    
+    const uint32_t lastLevel = mBaseMipmapLevel + baseImageInfo.MaxMipmapLevels() - 1;
+    PopulateMipChain(mBaseMipmapLevel, lastLevel);
 }
 
 JS::Value
@@ -817,7 +775,6 @@ WebGLTexture::GetTexParameter(TexTarget texTarget, GLenum pname)
     case LOCAL_GL_TEXTURE_BASE_LEVEL:
     case LOCAL_GL_TEXTURE_COMPARE_FUNC:
     case LOCAL_GL_TEXTURE_COMPARE_MODE:
-    case LOCAL_GL_TEXTURE_IMMUTABLE_FORMAT:
     case LOCAL_GL_TEXTURE_IMMUTABLE_LEVELS:
     case LOCAL_GL_TEXTURE_MAX_LEVEL:
     case LOCAL_GL_TEXTURE_SWIZZLE_A:
@@ -827,6 +784,10 @@ WebGLTexture::GetTexParameter(TexTarget texTarget, GLenum pname)
     case LOCAL_GL_TEXTURE_WRAP_R:
         mContext->gl->fGetTexParameteriv(texTarget.get(), pname, &i);
         return JS::NumberValue(uint32_t(i));
+
+    case LOCAL_GL_TEXTURE_IMMUTABLE_FORMAT:
+        mContext->gl->fGetTexParameteriv(texTarget.get(), pname, &i);
+        return JS::BooleanValue(bool(i));
 
     case LOCAL_GL_TEXTURE_MAX_ANISOTROPY_EXT:
     case LOCAL_GL_TEXTURE_MAX_LOD:
@@ -857,41 +818,57 @@ WebGLTexture::TexParameter(TexTarget texTarget, GLenum pname, GLint* maybeIntPar
     GLint   intParam   = maybeIntParam   ? *maybeIntParam   : GLint(*maybeFloatParam);
     GLfloat floatParam = maybeFloatParam ? *maybeFloatParam : GLfloat(*maybeIntParam);
 
+    bool isPNameValid = false;
+    switch (pname) {
+    
+    case LOCAL_GL_TEXTURE_WRAP_S:
+    case LOCAL_GL_TEXTURE_WRAP_T:
+    case LOCAL_GL_TEXTURE_MIN_FILTER:
+    case LOCAL_GL_TEXTURE_MAG_FILTER:
+        isPNameValid = true;
+        break;
+
+    
+    case LOCAL_GL_TEXTURE_BASE_LEVEL:
+    case LOCAL_GL_TEXTURE_COMPARE_MODE:
+    case LOCAL_GL_TEXTURE_COMPARE_FUNC:
+    case LOCAL_GL_TEXTURE_MAX_LEVEL:
+    case LOCAL_GL_TEXTURE_MAX_LOD:
+    case LOCAL_GL_TEXTURE_MIN_LOD:
+    case LOCAL_GL_TEXTURE_WRAP_R:
+        if (mContext->IsWebGL2())
+            isPNameValid = true;
+        break;
+
+    case LOCAL_GL_TEXTURE_MAX_ANISOTROPY_EXT:
+        if (mContext->IsExtensionEnabled(WebGLExtensionID::EXT_texture_filter_anisotropic))
+            isPNameValid = true;
+        break;
+    }
+
+    if (!isPNameValid) {
+        mContext->ErrorInvalidEnumInfo("texParameter: pname", pname);
+        return;
+    }
+
+    
+    
+
     bool paramBadEnum = false;
     bool paramBadValue = false;
 
     switch (pname) {
     case LOCAL_GL_TEXTURE_BASE_LEVEL:
     case LOCAL_GL_TEXTURE_MAX_LEVEL:
-        if (!mContext->IsWebGL2())
-            return mContext->ErrorInvalidEnumInfo("texParameter: pname", pname);
-
-        if (intParam < 0) {
-            paramBadValue = true;
-            break;
-        }
-
-        SetFakeBlackStatus(WebGLTextureFakeBlackStatus::Unknown);
-
-        if (pname == LOCAL_GL_TEXTURE_BASE_LEVEL)
-            mBaseMipmapLevel = intParam;
-        else
-            mMaxMipmapLevel = intParam;
-
+        paramBadValue = (intParam < 0);
         break;
 
     case LOCAL_GL_TEXTURE_COMPARE_MODE:
-        if (!mContext->IsWebGL2())
-            return mContext->ErrorInvalidEnumInfo("texParameter: pname", pname);
-
         paramBadValue = (intParam != LOCAL_GL_NONE &&
                          intParam != LOCAL_GL_COMPARE_REF_TO_TEXTURE);
         break;
 
     case LOCAL_GL_TEXTURE_COMPARE_FUNC:
-        if (!mContext->IsWebGL2())
-            return mContext->ErrorInvalidEnumInfo("texParameter: pname", pname);
-
         switch (intParam) {
         case LOCAL_GL_LEQUAL:
         case LOCAL_GL_GEQUAL:
@@ -905,6 +882,7 @@ WebGLTexture::TexParameter(TexTarget texTarget, GLenum pname, GLint* maybeIntPar
 
         default:
             paramBadValue = true;
+            break;
         }
         break;
 
@@ -916,12 +894,11 @@ WebGLTexture::TexParameter(TexTarget texTarget, GLenum pname, GLint* maybeIntPar
         case LOCAL_GL_LINEAR_MIPMAP_NEAREST:
         case LOCAL_GL_NEAREST_MIPMAP_LINEAR:
         case LOCAL_GL_LINEAR_MIPMAP_LINEAR:
-            SetFakeBlackStatus(WebGLTextureFakeBlackStatus::Unknown);
-            mMinFilter = intParam;
             break;
 
         default:
             paramBadEnum = true;
+            break;
         }
         break;
 
@@ -929,56 +906,36 @@ WebGLTexture::TexParameter(TexTarget texTarget, GLenum pname, GLint* maybeIntPar
         switch (intParam) {
         case LOCAL_GL_NEAREST:
         case LOCAL_GL_LINEAR:
-            SetFakeBlackStatus(WebGLTextureFakeBlackStatus::Unknown);
-            mMagFilter = intParam;
             break;
 
         default:
             paramBadEnum = true;
+            break;
         }
         break;
 
     case LOCAL_GL_TEXTURE_WRAP_S:
-        switch (intParam) {
-        case LOCAL_GL_CLAMP_TO_EDGE:
-        case LOCAL_GL_MIRRORED_REPEAT:
-        case LOCAL_GL_REPEAT:
-            SetFakeBlackStatus(WebGLTextureFakeBlackStatus::Unknown);
-            mWrapS = intParam;
-            break;
-
-        default:
-            paramBadEnum = true;
-        }
-        break;
-
     case LOCAL_GL_TEXTURE_WRAP_T:
+    case LOCAL_GL_TEXTURE_WRAP_R:
         switch (intParam) {
         case LOCAL_GL_CLAMP_TO_EDGE:
         case LOCAL_GL_MIRRORED_REPEAT:
         case LOCAL_GL_REPEAT:
-            SetFakeBlackStatus(WebGLTextureFakeBlackStatus::Unknown);
-            mWrapT = intParam;
             break;
 
         default:
             paramBadEnum = true;
+            break;
         }
         break;
 
     case LOCAL_GL_TEXTURE_MAX_ANISOTROPY_EXT:
-        if (!mContext->IsExtensionEnabled(WebGLExtensionID::EXT_texture_filter_anisotropic))
-            return mContext->ErrorInvalidEnumInfo("texParameter: pname", pname);
-
         if (maybeFloatParam && floatParam < 1.0f)
             paramBadValue = true;
         else if (maybeIntParam && intParam < 1)
             paramBadValue = true;
 
         break;
-
-    default:
-        return mContext->ErrorInvalidEnumInfo("texParameter: pname", pname);
     }
 
     if (paramBadEnum) {
@@ -1005,12 +962,61 @@ WebGLTexture::TexParameter(TexTarget texTarget, GLenum pname, GLint* maybeIntPar
         return;
     }
 
+    
+    
+
+    switch (pname) {
+    case LOCAL_GL_TEXTURE_BASE_LEVEL:
+        mBaseMipmapLevel = intParam;
+        ClampLevelBaseAndMax();
+        break;
+
+    case LOCAL_GL_TEXTURE_MAX_LEVEL:
+        mMaxMipmapLevel = intParam;
+        ClampLevelBaseAndMax();
+        break;
+
+    case LOCAL_GL_TEXTURE_MIN_FILTER:
+        mMinFilter = intParam;
+        break;
+
+    case LOCAL_GL_TEXTURE_MAG_FILTER:
+        mMagFilter = intParam;
+        break;
+
+    case LOCAL_GL_TEXTURE_WRAP_S:
+        mWrapS = intParam;
+        break;
+
+    case LOCAL_GL_TEXTURE_WRAP_T:
+        mWrapT = intParam;
+        break;
+
+    
+    
+    }
+
+    
+    switch (pname) {
+    case LOCAL_GL_TEXTURE_MAX_ANISOTROPY_EXT:
+    case LOCAL_GL_TEXTURE_WRAP_R:
+        break;
+
+    default:
+        InvalidateResolveCache();
+        break;
+    }
+
+    
+
     mContext->MakeContextCurrent();
     if (maybeIntParam)
         mContext->gl->fTexParameteri(texTarget.get(), pname, intParam);
     else
         mContext->gl->fTexParameterf(texTarget.get(), pname, floatParam);
 }
+
+
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(WebGLTexture)
 

@@ -94,9 +94,6 @@ enum class EffectiveFormat : EffectiveFormatValueT {
     STENCIL_INDEX8,
 
     
-    Luminance8Alpha8,
-    Luminance8,
-    Alpha8,
 
     
     
@@ -117,10 +114,10 @@ enum class EffectiveFormat : EffectiveFormatValueT {
     ATC_RGBA_INTERPOLATED_ALPHA_AMD,
 
     
-    COMPRESSED_RGB_S3TC_DXT1,
-    COMPRESSED_RGBA_S3TC_DXT1,
-    COMPRESSED_RGBA_S3TC_DXT3,
-    COMPRESSED_RGBA_S3TC_DXT5,
+    COMPRESSED_RGB_S3TC_DXT1_EXT,
+    COMPRESSED_RGBA_S3TC_DXT1_EXT,
+    COMPRESSED_RGBA_S3TC_DXT3_EXT,
+    COMPRESSED_RGBA_S3TC_DXT5_EXT,
 
     
     COMPRESSED_RGB_PVRTC_4BPPV1,
@@ -129,7 +126,14 @@ enum class EffectiveFormat : EffectiveFormatValueT {
     COMPRESSED_RGBA_PVRTC_2BPPV1,
 
     
-    ETC1_RGB8,
+    ETC1_RGB8_OES,
+
+    
+
+    
+    Luminance8Alpha8,
+    Luminance8,
+    Alpha8,
 
     
     Luminance32FAlpha32F,
@@ -159,113 +163,148 @@ enum class UnsizedFormat : uint8_t {
 
 
 enum class ComponentType : uint8_t {
-    None,         
+    None,
     Int,          
     UInt,         
     NormInt,      
     NormUInt,     
-    NormUIntSRGB, 
     Float,        
-    SharedExp,    
+    Special,      
 };
 
-enum class SubImageUpdateBehavior : uint8_t {
-    Forbidden,
-    FullOnly,
-    BlockAligned,
+enum class CompressionFamily : uint8_t {
+    ETC1,
+    ES3, 
+    ATC,
+    S3TC,
+    PVRTC,
 };
 
 
 
-struct CompressedFormatInfo {
+struct CompressedFormatInfo
+{
     const EffectiveFormat effectiveFormat;
     const uint8_t bytesPerBlock;
     const uint8_t blockWidth;
     const uint8_t blockHeight;
-    const bool requirePOT;
-    const SubImageUpdateBehavior subImageUpdateBehavior;
+    const CompressionFamily family;
 };
 
-struct FormatInfo {
+struct FormatInfo
+{
     const EffectiveFormat effectiveFormat;
     const char* const name;
+    const GLenum sizedFormat;
     const UnsizedFormat unsizedFormat;
-    const ComponentType colorComponentType;
-    const uint8_t bytesPerPixel; 
-    const bool hasColor;
-    const bool hasAlpha;
+    const ComponentType componentType;
+    const uint8_t estimatedBytesPerPixel; 
+    const bool isColorFormat;             
+    const bool isSRGB;                    
+    const bool hasAlpha;                  
     const bool hasDepth;
     const bool hasStencil;
 
     const CompressedFormatInfo* const compression;
 };
 
+struct PackingInfo
+{
+    GLenum format;
+    GLenum type;
 
-
-const FormatInfo* GetFormatInfo(EffectiveFormat format);
-const FormatInfo* GetInfoByUnpackTuple(GLenum unpackFormat, GLenum unpackType);
-const FormatInfo* GetInfoBySizedFormat(GLenum sizedFormat);
-
-
-
-struct UnpackTuple {
-    const GLenum format;
-    const GLenum type;
-
-    bool operator <(const UnpackTuple& x) const
+    bool operator <(const PackingInfo& x) const
     {
-        if (format == x.format) {
-            return type < x.type;
-        }
+        if (format != x.format)
+            return format < x.format;
 
-        return format < x.format;
+        return type < x.type;
     }
 };
 
-struct FormatUsageInfo {
-    const FormatInfo* const formatInfo;
-    bool asRenderbuffer;
-    bool isRenderable;
-    bool asTexture;
-    bool isFilterable;
-    std::set<UnpackTuple> validUnpacks;
+struct DriverUnpackInfo
+{
+    GLenum internalFormat;
+    GLenum unpackFormat;
+    GLenum unpackType;
 
-    bool CanUnpackWith(GLenum unpackFormat, GLenum unpackType) const;
+    PackingInfo ToPacking() const {
+        return {unpackFormat, unpackType};
+    }
+};
+
+
+
+const FormatInfo* GetFormat(EffectiveFormat format);
+uint8_t BytesPerPixel(const PackingInfo& packing);
+
+
+
+
+
+
+struct FormatUsageInfo
+{
+    const FormatInfo* const format;
+    bool isRenderable;
+    bool isFilterable;
+    std::map<PackingInfo, DriverUnpackInfo> validUnpacks;
+    const DriverUnpackInfo* idealUnpack;
+    const GLint* textureSwizzleRGBA;
+
+    static const GLint kLuminanceSwizzleRGBA[4];
+    static const GLint kAlphaSwizzleRGBA[4];
+    static const GLint kLumAlphaSwizzleRGBA[4];
+
+    explicit FormatUsageInfo(const FormatInfo* _format)
+        : format(_format)
+        , isRenderable(false)
+        , isFilterable(false)
+        , idealUnpack(nullptr)
+        , textureSwizzleRGBA(nullptr)
+    { }
+
+    bool IsUnpackValid(const PackingInfo& key,
+                       const DriverUnpackInfo** const out_value) const;
 };
 
 class FormatUsageAuthority
 {
-    std::map<EffectiveFormat, FormatUsageInfo> mInfoMap;
+    std::map<EffectiveFormat, FormatUsageInfo> mUsageMap;
+
+    std::map<GLenum, const FormatUsageInfo*> mRBFormatMap;
+    std::map<GLenum, const FormatUsageInfo*> mSizedTexFormatMap;
+    std::map<PackingInfo, const FormatUsageInfo*> mUnsizedTexFormatMap;
+
+    std::set<GLenum> mValidTexInternalFormats;
+    std::set<GLenum> mValidTexUnpackFormats;
+    std::set<GLenum> mValidTexUnpackTypes;
 
 public:
-    static UniquePtr<FormatUsageAuthority> CreateForWebGL1();
-    static UniquePtr<FormatUsageAuthority> CreateForWebGL2();
+    static UniquePtr<FormatUsageAuthority> CreateForWebGL1(gl::GLContext* gl);
+    static UniquePtr<FormatUsageAuthority> CreateForWebGL2(gl::GLContext* gl);
 
 private:
     FormatUsageAuthority() { }
 
 public:
-    void AddFormat(EffectiveFormat format, bool asRenderbuffer, bool isRenderable,
-                   bool asTexture, bool isFilterable);
+    FormatUsageInfo* EditUsage(EffectiveFormat format);
+    const FormatUsageInfo* GetUsage(EffectiveFormat format) const;
 
-    void AddUnpackOption(GLenum unpackFormat, GLenum unpackType,
-                         EffectiveFormat effectiveFormat);
+    void AddTexUnpack(FormatUsageInfo* usage, const PackingInfo& pi,
+                      const DriverUnpackInfo& dui);
 
-    FormatUsageInfo* GetUsage(EffectiveFormat format);
-    FormatUsageInfo* GetUsage(const FormatInfo* format)
-    {
-        if (!format)
-            return nullptr;
+    bool IsInternalFormatEnumValid(GLenum internalFormat) const;
+    bool AreUnpackEnumsValid(GLenum unpackFormat, GLenum unpackType) const;
 
-        return GetUsage(format->effectiveFormat);
-    }
+    void AllowRBFormat(GLenum sizedFormat, const FormatUsageInfo* usage);
+    void AllowSizedTexFormat(GLenum sizedFormat, const FormatUsageInfo* usage);
+    void AllowUnsizedTexFormat(const PackingInfo& pi, const FormatUsageInfo* usage);
+
+    const FormatUsageInfo* GetRBUsage(GLenum sizedFormat) const;
+    const FormatUsageInfo* GetSizedTexUsage(GLenum sizedFormat) const;
+    const FormatUsageInfo* GetUnsizedTexUsage(const PackingInfo& pi) const;
 };
-
-
-
-GLint GetComponentSize(EffectiveFormat format, GLenum component);
-GLenum GetComponentType(EffectiveFormat format);
-GLenum GetColorEncoding(EffectiveFormat format);
 
 } 
 } 

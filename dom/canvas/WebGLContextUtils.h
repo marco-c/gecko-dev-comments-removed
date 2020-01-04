@@ -15,35 +15,6 @@
 
 namespace mozilla {
 
-bool IsGLDepthFormat(TexInternalFormat webGLFormat);
-bool IsGLDepthStencilFormat(TexInternalFormat webGLFormat);
-bool FormatHasAlpha(TexInternalFormat webGLFormat);
-
-void
-DriverFormatsFromEffectiveInternalFormat(gl::GLContext* gl,
-                                         TexInternalFormat internalformat,
-                                         GLenum* const out_driverInternalFormat,
-                                         GLenum* const out_driverFormat,
-                                         GLenum* const out_driverType);
-TexInternalFormat
-EffectiveInternalFormatFromInternalFormatAndType(TexInternalFormat internalformat,
-                                                 TexType type);
-TexInternalFormat
-EffectiveInternalFormatFromUnsizedInternalFormatAndType(TexInternalFormat internalformat,
-                                                        TexType type);
-void
-UnsizedInternalFormatAndTypeFromEffectiveInternalFormat(TexInternalFormat effectiveinternalformat,
-                                                        TexInternalFormat* const out_internalformat,
-                                                        TexType* const out_type);
-TexType TypeFromInternalFormat(TexInternalFormat internalformat);
-
-TexInternalFormat
-UnsizedInternalFormatFromInternalFormat(TexInternalFormat internalformat);
-
-void SetLegacyTextureSwizzle(gl::GLContext* gl, GLenum target, GLenum internalformat);
-
-size_t GetBitsPerTexel(TexInternalFormat effectiveinternalformat);
-
 
 
 
@@ -60,9 +31,6 @@ TexTarget TexImageTargetToTexTarget(TexImageTarget texImageTarget);
 
 
 JS::Value StringValue(JSContext* cx, const char* str, ErrorResult& rv);
-
-bool IsCompressedTextureFormat(GLenum format);
-bool IsTextureFormatCompressed(TexInternalFormat format);
 
 struct GLComponents
 {
@@ -96,7 +64,7 @@ WebGLContext::WebGLObjectAsJSValue(JSContext* cx, const WebGLObjectType* object,
     if (!object)
         return JS::NullValue();
 
-    MOZ_ASSERT(this == object->Context());
+    MOZ_ASSERT(this == object->mContext);
     JS::Rooted<JS::Value> v(cx);
     JS::Rooted<JSObject*> wrapper(cx, GetWrapper());
     JSAutoCompartment ac(cx, wrapper);

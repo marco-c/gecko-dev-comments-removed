@@ -59,8 +59,6 @@ WebGL2Context::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
       
 
     
-    case LOCAL_GL_MAX_3D_TEXTURE_SIZE:
-    case LOCAL_GL_MAX_ARRAY_TEXTURE_LAYERS:
     case LOCAL_GL_MAX_COMBINED_UNIFORM_BLOCKS:
     case LOCAL_GL_MAX_ELEMENTS_INDICES:
     case LOCAL_GL_MAX_ELEMENTS_VERTICES:
@@ -88,6 +86,12 @@ WebGL2Context::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
       gl->fGetIntegerv(pname, &val);
       return JS::Int32Value(val);
     }
+
+    case LOCAL_GL_MAX_3D_TEXTURE_SIZE:
+      return JS::Int32Value(mImplMax3DTextureSize);
+
+    case LOCAL_GL_MAX_ARRAY_TEXTURE_LAYERS:
+      return JS::Int32Value(mImplMaxArrayTextureLayers);
 
     case LOCAL_GL_MAX_VARYING_COMPONENTS: {
       
@@ -151,9 +155,7 @@ WebGL2Context::GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv)
       return WebGLObjectAsJSValue(cx, mBoundSamplers[mActiveTexture].get(), rv);
 
     case LOCAL_GL_TEXTURE_BINDING_2D_ARRAY:
-      
-      
-      return JS::NullValue();
+      return WebGLObjectAsJSValue(cx, mBound2DArrayTextures[mActiveTexture].get(), rv);
 
     case LOCAL_GL_TEXTURE_BINDING_3D:
       return WebGLObjectAsJSValue(cx, mBound3DTextures[mActiveTexture].get(), rv);

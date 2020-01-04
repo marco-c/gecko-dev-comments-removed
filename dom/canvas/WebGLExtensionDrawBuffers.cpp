@@ -20,26 +20,12 @@ WebGLExtensionDrawBuffers::WebGLExtensionDrawBuffers(WebGLContext* webgl)
 {
     MOZ_ASSERT(IsSupported(webgl), "Don't construct extension if unsupported.");
 
-    GLint maxColorAttachments = 0;
-    GLint maxDrawBuffers = 0;
-
-    webgl->MakeContextCurrent();
-    gl::GLContext* gl = webgl->GL();
-
-    gl->fGetIntegerv(LOCAL_GL_MAX_COLOR_ATTACHMENTS, &maxColorAttachments);
-    gl->fGetIntegerv(LOCAL_GL_MAX_DRAW_BUFFERS, &maxDrawBuffers);
-
     
-    maxColorAttachments = std::min(maxColorAttachments, GLint(WebGLContext::kMaxColorAttachments));
-
-    if (webgl->MinCapabilityMode())
-        maxColorAttachments = std::min(maxColorAttachments, GLint(kMinColorAttachments));
-
     
-    maxDrawBuffers = std::min(maxDrawBuffers, GLint(maxColorAttachments));
-
-    webgl->mGLMaxColorAttachments = maxColorAttachments;
-    webgl->mGLMaxDrawBuffers = maxDrawBuffers;
+    
+    webgl->mImplMaxColorAttachments = webgl->mGLMaxColorAttachments;
+    webgl->mImplMaxDrawBuffers = std::min(webgl->mGLMaxDrawBuffers,
+                                          webgl->mImplMaxColorAttachments);
 }
 
 WebGLExtensionDrawBuffers::~WebGLExtensionDrawBuffers()
@@ -65,20 +51,12 @@ WebGLExtensionDrawBuffers::IsSupported(const WebGLContext* webgl)
     if (!gl->IsSupported(gl::GLFeature::draw_buffers))
         return false;
 
-    GLint supportedColorAttachments = 0;
-    GLint supportedDrawBuffers = 0;
-
-    webgl->MakeContextCurrent();
-
-    gl->fGetIntegerv(LOCAL_GL_MAX_COLOR_ATTACHMENTS, &supportedColorAttachments);
-    gl->fGetIntegerv(LOCAL_GL_MAX_COLOR_ATTACHMENTS, &supportedDrawBuffers);
-
     
-    if (size_t(supportedColorAttachments) < kMinColorAttachments)
+    if (webgl->mGLMaxDrawBuffers < webgl->kMinMaxDrawBuffers ||
+        webgl->mGLMaxColorAttachments < webgl->kMinMaxColorAttachments)
+    {
         return false;
-
-    if (size_t(supportedDrawBuffers) < kMinDrawBuffers)
-        return false;
+    }
 
     return true;
 }
