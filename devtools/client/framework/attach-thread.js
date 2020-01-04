@@ -48,9 +48,7 @@ function attachThread(toolbox) {
   let { form: { chromeDebugger, actor } } = target;
   let threadOptions = {
     useSourceMaps: Services.prefs.getBoolPref("devtools.debugger.source-maps-enabled"),
-    autoBlackBox: Services.prefs.getBoolPref("devtools.debugger.auto-black-box"),
-    pauseOnExceptions: Services.prefs.getBoolPref("devtools.debugger.pause-on-exceptions"),
-    ignoreCaughtExceptions: Services.prefs.getBoolPref("devtools.debugger.ignore-caught-exceptions")
+    autoBlackBox: Services.prefs.getBoolPref("devtools.debugger.auto-black-box")
   };
 
   let handleResponse = (res, threadClient) => {
@@ -66,6 +64,15 @@ function attachThread(toolbox) {
         new Error("Thread in wrong state when starting up, should be paused")
       );
     }
+
+    
+    
+    
+    
+    threadClient.pauseOnExceptions(
+      Services.prefs.getBoolPref("devtools.debugger.pause-on-exceptions"),
+      Services.prefs.getBoolPref("devtools.debugger.ignore-caught-exceptions")
+    );
 
     threadClient.resume(res => {
       if (res.error === "wrongOrder") {

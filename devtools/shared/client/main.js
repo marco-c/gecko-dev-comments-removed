@@ -1865,22 +1865,19 @@ ThreadClient.prototype = {
     this._ignoreCaughtExceptions = aIgnoreCaughtExceptions;
 
     
-    
-    if (this.paused) {
-      return this.reconfigure({
-        pauseOnExceptions: aPauseOnExceptions,
-        ignoreCaughtExceptions: aIgnoreCaughtExceptions
-      }, aOnResponse);
+    if(!this.paused) {
+      return this.interrupt(aResponse => {
+        if (aResponse.error) {
+          
+          aOnResponse(aResponse);
+          return aResponse;
+        }
+        return this.resume(aOnResponse);
+      });
     }
-    
-    return this.interrupt(aResponse => {
-      if (aResponse.error) {
-        
-        aOnResponse(aResponse);
-        return aResponse;
-      }
-      return this.resume(aOnResponse);
-    });
+
+    aOnResponse();
+    return promise.resolve();
   },
 
   
