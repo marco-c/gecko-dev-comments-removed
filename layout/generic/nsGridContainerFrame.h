@@ -154,12 +154,6 @@ private:
 
   nscoord mCachedMinISize;
   nscoord mCachedPrefISize;
-
-  
-
-
-
-  bool mIsNormalFlowInCSSOrder : 1;
 };
 
 #endif 
