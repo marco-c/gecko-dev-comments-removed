@@ -21,16 +21,16 @@
 
 
 
-class nsHostObjectURI : public nsSimpleURI,
+class nsHostObjectURI : public mozilla::net::nsSimpleURI,
                         public nsIURIWithPrincipal
 {
 public:
   explicit nsHostObjectURI(nsIPrincipal* aPrincipal) :
-      nsSimpleURI(), mPrincipal(aPrincipal)
+      mozilla::net::nsSimpleURI(), mPrincipal(aPrincipal)
   {}
 
   
-  nsHostObjectURI() : nsSimpleURI() {}
+  nsHostObjectURI() : mozilla::net::nsSimpleURI() {}
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIURIWITHPRINCIPAL
@@ -48,7 +48,7 @@ public:
                                   bool* aResult) override;
 
   
-  virtual nsSimpleURI* StartClone(RefHandlingEnum ) override
+  virtual mozilla::net::nsSimpleURI* StartClone(RefHandlingEnum ) override
   { return new nsHostObjectURI(); }
 
   nsCOMPtr<nsIPrincipal> mPrincipal;

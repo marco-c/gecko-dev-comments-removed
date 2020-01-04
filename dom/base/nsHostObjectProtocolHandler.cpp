@@ -24,7 +24,7 @@
 
 using mozilla::dom::BlobImpl;
 using mozilla::ErrorResult;
-using mozilla::LoadInfo;
+using mozilla::net::LoadInfo;
 
 
 
@@ -720,7 +720,7 @@ nsFontTableProtocolHandler::NewURI(const nsACString& aSpec,
     
     
     
-    uri = new nsSimpleURI();
+    uri = new mozilla::net::nsSimpleURI();
     uri->SetSpec(aSpec);
   }
 

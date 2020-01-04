@@ -34,7 +34,6 @@
 static const char gScheme[][sizeof("moz-safe-about")] =
     {"chrome", "file", "http", "https", "jar", "data", "about", "moz-safe-about", "resource"};
 
-class nsAsyncRedirectVerifyHelper;
 class nsINetworkLinkService;
 class nsIPrefBranch;
 class nsIProtocolProxyService2;
@@ -44,9 +43,8 @@ class nsPISocketTransportService;
 
 namespace mozilla {
 namespace net {
-    class NeckoChild;
-} 
-} 
+class NeckoChild;
+class nsAsyncRedirectVerifyHelper;
 
 class nsIOService final : public nsIIOService2
                         , public nsIObserver
@@ -241,5 +239,8 @@ private:
 
 
 extern nsIOService* gIOService;
+
+} 
+} 
 
 #endif 

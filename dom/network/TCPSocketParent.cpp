@@ -21,13 +21,6 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsNetUtil.h"
 
-
-
-
-extern mozilla::LazyLogModule gTCPSocketLog;
-#define TCPSOCKET_LOG(args)     MOZ_LOG(gTCPSocketLog, mozilla::LogLevel::Debug, args)
-#define TCPSOCKET_LOG_ENABLED() MOZ_LOG_TEST(gTCPSocketLog, mozilla::LogLevel::Debug)
-
 namespace IPC {
 
 
@@ -39,6 +32,16 @@ DeserializeArrayBuffer(JSContext* aCx,
 } 
 
 namespace mozilla {
+
+namespace net {
+
+
+
+extern LazyLogModule gTCPSocketLog;
+#define TCPSOCKET_LOG(args)     MOZ_LOG(gTCPSocketLog, LogLevel::Debug, args)
+#define TCPSOCKET_LOG_ENABLED() MOZ_LOG_TEST(gTCPSocketLog, LogLevel::Debug)
+} 
+
 namespace dom {
 
 static void

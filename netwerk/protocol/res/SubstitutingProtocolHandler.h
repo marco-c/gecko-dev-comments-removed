@@ -18,6 +18,7 @@
 class nsIIOService;
 
 namespace mozilla {
+namespace net {
 
 
 
@@ -97,6 +98,7 @@ public:
   NS_IMETHOD GetClassIDNoAlloc(nsCID *aCID);
 };
 
+} 
 } 
 
 #endif 

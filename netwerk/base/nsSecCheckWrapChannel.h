@@ -14,6 +14,9 @@
 #include "nsIWyciwygChannel.h"
 #include "mozilla/LoadInfo.h"
 
+namespace mozilla {
+namespace net {
+
 
 
 
@@ -96,5 +99,8 @@ protected:
 
   nsCOMPtr<nsILoadInfo> mLoadInfo;
 };
+
+} 
+} 
 
 #endif 

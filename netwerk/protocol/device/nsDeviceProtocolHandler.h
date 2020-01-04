@@ -9,6 +9,9 @@
 #include "nsIProtocolHandler.h"
 #include "mozilla/Attributes.h"
 
+namespace mozilla {
+namespace net {
+
 
 #define NS_DEVICEPROTOCOLHANDLER_CID                      \
 { 0x60ffe9e, 0xd114, 0x486b,                              \
@@ -26,4 +29,6 @@ public:
   nsresult Init();
 };
 
+} 
+} 
 #endif

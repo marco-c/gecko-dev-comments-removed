@@ -2,6 +2,9 @@
 
 
 
+#ifndef nsStreamTransportService_h__
+#define nsStreamTransportService_h__
+
 #include "nsIStreamTransportService.h"
 #include "nsIEventTarget.h"
 #include "nsIObserver.h"
@@ -11,6 +14,9 @@
 #include "mozilla/Mutex.h"
 
 class nsIThreadPool;
+
+namespace mozilla {
+namespace net {
 
 class nsStreamTransportService final : public nsIStreamTransportService
                                      , public nsIEventTarget
@@ -36,3 +42,7 @@ private:
     mozilla::Mutex mShutdownLock;
     bool mIsShutdown;
 };
+
+} 
+} 
+#endif

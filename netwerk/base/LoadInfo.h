@@ -33,6 +33,8 @@ LoadInfoArgsToLoadInfo(const mozilla::net::OptionalLoadInfoArgs& aLoadInfoArgs,
                        nsILoadInfo** outLoadInfo);
 } 
 
+namespace net {
+
 
 
 
@@ -135,6 +137,7 @@ private:
   bool                             mIsPreflight;
 };
 
+} 
 } 
 
 #endif 

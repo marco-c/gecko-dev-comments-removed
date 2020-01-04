@@ -16,8 +16,6 @@
 class nsIEventTarget;
 namespace mozilla { namespace net {
 union NetAddr;
-} 
-} 
 
 class nsServerSocket : public nsASocketHandler
                      , public nsIServerSocket
@@ -60,6 +58,9 @@ private:
   bool                              mAttached;
   bool                              mKeepWhenOffline;
 };
+
+} 
+} 
 
 
 

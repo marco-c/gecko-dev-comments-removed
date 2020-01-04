@@ -27,10 +27,9 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsISpeculativeConnect.h"
 
-class nsProxyInfo;
-
 namespace mozilla { namespace net {
 
+class nsProxyInfo;
 class nsHttpConnectionInfo;
 
 class AltSvcMapping

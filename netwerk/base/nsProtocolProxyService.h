@@ -19,13 +19,17 @@
 #include "prio.h"
 #include "mozilla/Attributes.h"
 
-typedef nsDataHashtable<nsCStringHashKey, uint32_t> nsFailedProxyTable;
-
-class nsProxyInfo;
-struct nsProtocolInfo;
 class nsIPrefBranch;
 class nsISystemProxySettings;
+
+namespace mozilla {
+namespace net {
+
+typedef nsDataHashtable<nsCStringHashKey, uint32_t> nsFailedProxyTable;
+
 class nsPACMan;
+class nsProxyInfo;
+struct nsProtocolInfo;
 
 
 
@@ -405,5 +409,8 @@ private:
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsProtocolProxyService, NS_PROTOCOL_PROXY_SERVICE_IMPL_CID)
+
+} 
+} 
 
 #endif 

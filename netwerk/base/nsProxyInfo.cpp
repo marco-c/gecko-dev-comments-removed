@@ -7,10 +7,11 @@
 #include "nsProxyInfo.h"
 #include "nsCOMPtr.h"
 
+namespace mozilla {
+namespace net {
+
 
 NS_IMPL_ISUPPORTS(nsProxyInfo, nsProxyInfo, nsIProxyInfo) 
-
-using namespace mozilla;
 
 NS_IMETHODIMP
 nsProxyInfo::GetHost(nsACString &result)
@@ -87,14 +88,12 @@ nsProxyInfo::SetFailoverProxy(nsIProxyInfo *proxy)
 
 
 
-namespace mozilla {
   extern const char kProxyType_HTTP[];
   extern const char kProxyType_HTTPS[];
   extern const char kProxyType_SOCKS[];
   extern const char kProxyType_SOCKS4[];
   extern const char kProxyType_SOCKS5[];
   extern const char kProxyType_DIRECT[];
-} 
 
 bool
 nsProxyInfo::IsDirect()
@@ -123,3 +122,5 @@ nsProxyInfo::IsSOCKS()
     mType == kProxyType_SOCKS4 || mType == kProxyType_SOCKS5;
 }
 
+} 
+} 

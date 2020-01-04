@@ -18,6 +18,9 @@
 
 class nsIChannel;
 
+namespace mozilla {
+namespace net {
+
 
 
 
@@ -121,4 +124,6 @@ private:
     nsresult mResult;
 };
 
+} 
+} 
 #endif

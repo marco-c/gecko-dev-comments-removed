@@ -11,6 +11,9 @@
 #include "nsIThreadRetargetableStreamListener.h"
 #include "mozilla/Attributes.h"
 
+namespace mozilla {
+namespace net {
+
 
 
 class nsStreamListenerWrapper final : public nsIStreamListener
@@ -46,6 +49,9 @@ private:
   ~nsStreamListenerWrapper() {}
   nsCOMPtr<nsIStreamListener> mListener;
 };
+
+} 
+} 
 
 #endif 
 

@@ -3,9 +3,15 @@
 
 
 
+#ifndef nsSimpleStreamListener_h__
+#define nsSimpleStreamListener_h__
+
 #include "nsISimpleStreamListener.h"
 #include "nsIOutputStream.h"
 #include "nsCOMPtr.h"
+
+namespace mozilla {
+namespace net {
 
 class nsSimpleStreamListener : public nsISimpleStreamListener
 {
@@ -23,3 +29,8 @@ protected:
     nsCOMPtr<nsIOutputStream>    mSink;
     nsCOMPtr<nsIRequestObserver> mObserver;
 };
+
+} 
+} 
+
+#endif

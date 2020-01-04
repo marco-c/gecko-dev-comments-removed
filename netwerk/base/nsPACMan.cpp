@@ -22,17 +22,14 @@
 #endif
 
 
-using namespace mozilla;
-using namespace mozilla::net;
 
 namespace mozilla {
 namespace net {
+
 LazyLogModule gProxyLog("proxy");
-} 
-} 
 
 #undef LOG
-#define LOG(args) MOZ_LOG(mozilla::net::gProxyLog, mozilla::LogLevel::Debug, args)
+#define LOG(args) MOZ_LOG(gProxyLog, LogLevel::Debug, args)
 
 
 
@@ -788,3 +785,6 @@ nsPACMan::Init(nsISystemProxySettings *systemProxySettings)
 
   return NS_OK;
 }
+
+} 
+} 

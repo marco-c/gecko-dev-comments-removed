@@ -20,6 +20,7 @@
 using mozilla::dom::ContentParent;
 
 namespace mozilla {
+namespace net {
 
 
 
@@ -396,4 +397,5 @@ SubstitutingProtocolHandler::ResolveURI(nsIURI *uri, nsACString &result)
   return rv;
 }
 
+} 
 } 
