@@ -972,6 +972,8 @@ SessionStore.prototype = {
       };
 
       let tab = window.BrowserApp.addTab(tabData.entries[tabData.index - 1].url, params);
+      tab.browser.__SS_data = tabData;
+      tab.browser.__SS_extdata = tabData.extData;
       this._restoreTab(tabData, tab.browser);
     }
   },
@@ -1094,6 +1096,9 @@ SessionStore.prototype = {
         }
       }
 
+      tab.browser.__SS_data = tabData;
+      tab.browser.__SS_extdata = tabData.extData;
+
       if (window.BrowserApp.selectedTab == tab) {
         this._restoreTab(tabData, tab.browser);
 
@@ -1101,12 +1106,9 @@ SessionStore.prototype = {
         tab.browser.removeAttribute("pending");
       } else {
         
-        tab.browser.__SS_data = tabData;
         tab.browser.__SS_restore = true;
         tab.browser.setAttribute("pending", "true");
       }
-
-      tab.browser.__SS_extdata = tabData.extData;
     }
 
     
@@ -1153,12 +1155,11 @@ SessionStore.prototype = {
       tabIndex: this._lastClosedTabIndex
     };
     let tab = aWindow.BrowserApp.addTab(aCloseTabData.entries[aCloseTabData.index - 1].url, params);
+    tab.browser.__SS_data = aCloseTabData;
+    tab.browser.__SS_extdata = aCloseTabData.extData;
     this._restoreTab(aCloseTabData, tab.browser);
 
     this._lastClosedTabIndex = -1;
-
-    
-    tab.browser.__SS_extdata = aCloseTabData.extData;
 
     if (this._notifyClosedTabs) {
       this._sendClosedTabsToJava(aWindow);
