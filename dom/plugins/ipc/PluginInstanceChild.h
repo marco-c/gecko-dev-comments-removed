@@ -415,6 +415,7 @@ private:
 #endif
     double mCSSZoomFactor;
     uint32_t mPostingKeyEvents;
+    uint32_t mPostingKeyEventsOutdated;
     int16_t               mDrawingModel;
 
     NPAsyncSurface* mCurrentDirectSurface;
@@ -669,6 +670,10 @@ private:
 
     
     bool mDestroyed;
+
+    
+    
+    static bool sIsIMEComposing;
 
     
     

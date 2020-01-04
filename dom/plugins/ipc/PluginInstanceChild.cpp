@@ -140,6 +140,8 @@ CreateDrawTargetForSurface(gfxASurface *aSurface)
   return drawTarget;
 }
 
+bool PluginInstanceChild::sIsIMEComposing = false;
+
 PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
                                          const nsCString& aMimeType,
                                          const uint16_t& aMode,
@@ -154,6 +156,7 @@ PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
     , mContentsScaleFactor(1.0)
 #endif
     , mPostingKeyEvents(0)
+    , mPostingKeyEventsOutdated(0)
     , mDrawingModel(kDefaultDrawingModel)
     , mCurrentDirectSurface(nullptr)
     , mAsyncInvalidateMutex("PluginInstanceChild::mAsyncInvalidateMutex")
@@ -1443,12 +1446,24 @@ PluginInstanceChild::RecvHandledWindowedPluginKeyEvent(
     
     
     
-    if (NS_WARN_IF(!mPostingKeyEvents)) {
+    if (NS_WARN_IF(!mPostingKeyEvents && !mPostingKeyEventsOutdated)) {
+        return true;
+    }
+
+    
+    
+    if (mPostingKeyEventsOutdated) {
+        mPostingKeyEventsOutdated--;
         return true;
     }
 
     mPostingKeyEvents--;
-    if (aIsConsumed) {
+
+    
+    
+    
+    
+    if (aIsConsumed || sIsIMEComposing) {
         return true;
     }
 
@@ -1624,6 +1639,7 @@ PluginInstanceChild::PluginWindowProcInternal(HWND hWnd,
     NS_ASSERTION(self->mPluginWindowHWND == hWnd, "Wrong window!");
     NS_ASSERTION(self->mPluginWndProc != PluginWindowProc, "Self-referential windowproc. Infinite recursion will happen soon.");
 
+    bool isIMECompositionMessage = false;
     switch (message) {
         
         
@@ -1693,11 +1709,36 @@ PluginInstanceChild::PluginWindowProcInternal(HWND hWnd,
             message = WM_SYSDEADCHAR;
             break;
 
+        case WM_IME_STARTCOMPOSITION:
+            isIMECompositionMessage = true;
+            sIsIMEComposing = true;
+            break;
+        case WM_IME_ENDCOMPOSITION:
+            isIMECompositionMessage = true;
+            sIsIMEComposing = false;
+            break;
+        case WM_IME_COMPOSITION:
+            isIMECompositionMessage = true;
+            
+            
+            
+            sIsIMEComposing = !(lParam & GCS_RESULTSTR);
+            break;
+
         
         
         case WM_MOUSEACTIVATE:
             self->CallPluginFocusChange(true);
             break;
+    }
+
+    
+    
+    
+    
+    if (isIMECompositionMessage && !sIsIMEComposing) {
+        self->mPostingKeyEventsOutdated += self->mPostingKeyEvents;
+        self->mPostingKeyEvents = 0;
     }
 
     
@@ -1761,6 +1802,14 @@ PluginInstanceChild::ShouldPostKeyMessage(UINT message,
                                           WPARAM wParam,
                                           LPARAM lParam)
 {
+    
+    
+    
+    
+    if (sIsIMEComposing) {
+      return false;
+    }
+
     
     
     
