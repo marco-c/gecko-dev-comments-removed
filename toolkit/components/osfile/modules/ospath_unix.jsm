@@ -25,7 +25,7 @@ if (typeof Components != "undefined") {
   
   
   this.exports = {};
-} else if (typeof "module" == "undefined" || typeof "exports" == "undefined") {
+} else if (typeof module == "undefined" || typeof exports == "undefined") {
   throw new Error("Please load this module using require()");
 }
 
