@@ -18,9 +18,11 @@
 #include "jsweakmap.h"
 #include "jswrapper.h"
 
+#include "asmjs/WasmModule.h"
 #include "ds/TraceableFifo.h"
 #include "gc/Barrier.h"
 #include "js/Debug.h"
+#include "js/GCVariant.h"
 #include "js/HashTable.h"
 #include "vm/GlobalObject.h"
 #include "vm/SavedStacks.h"
@@ -216,6 +218,16 @@ class AutoSuppressDebuggeeNoExecuteChecks
 
 
 typedef JSObject Env;
+
+
+
+
+
+
+
+
+
+typedef mozilla::Variant<JSScript*, WasmModuleObject*> DebuggerScriptReferent;
 
 class Debugger : private mozilla::LinkedListElement<Debugger>
 {
@@ -444,6 +456,10 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     ObjectWeakMap environments;
 
     
+    typedef DebuggerWeakMap<WasmModuleObject*> WasmModuleWeakMap;
+    WasmModuleWeakMap wasmModuleScripts;
+
+    
 
 
 
@@ -656,11 +672,28 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     JSTrapStatus fireNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global, MutableHandleValue vp);
     JSTrapStatus firePromiseHook(JSContext* cx, Hook hook, HandleObject promise, MutableHandleValue vp);
 
+    JSObject* newVariantWrapper(JSContext* cx, Handle<DebuggerScriptReferent> referent) {
+        return newDebuggerScript(cx, referent);
+    }
+
     
 
 
 
-    JSObject* newDebuggerScript(JSContext* cx, HandleScript script);
+
+
+
+
+    template <typename ReferentVariant, typename Referent, typename Map>
+    JSObject* wrapVariantReferent(JSContext* cx, Map& map, CrossCompartmentKey::Kind keyKind,
+                                  Handle<ReferentVariant> referent);
+    JSObject* wrapVariantReferent(JSContext* cx, Handle<DebuggerScriptReferent> referent);
+
+    
+
+
+
+    JSObject* newDebuggerScript(JSContext* cx, Handle<DebuggerScriptReferent> referent);
 
     
 
@@ -953,6 +986,14 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     JSObject* wrapScript(JSContext* cx, HandleScript script);
+
+    
+
+
+
+
+
+    JSObject* wrapWasmScript(JSContext* cx, Handle<WasmModuleObject*> wasmModule);
 
     
 
