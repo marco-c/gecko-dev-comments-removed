@@ -13,6 +13,9 @@ Components.utils.import("resource:///modules/RecentWindow.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ShellService",
                                   "resource:///modules/ShellService.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "ContextualIdentityService",
+                                  "resource:///modules/ContextualIdentityService.jsm");
+
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
@@ -401,6 +404,36 @@ function checkForMiddleClick(node, event) {
     
     closeMenus(event.target);
   }
+}
+
+
+
+
+function createUserContextMenu(event, addCommandAttribute = true) {
+  while (event.target.hasChildNodes()) {
+    event.target.removeChild(event.target.firstChild);
+  }
+
+  let bundle = document.getElementById("bundle_browser");
+  let docfrag = document.createDocumentFragment();
+
+  ContextualIdentityService.getIdentities().forEach(identity => {
+    let menuitem = document.createElement("menuitem");
+    menuitem.setAttribute("usercontextid", identity.userContextId);
+    menuitem.setAttribute("label", bundle.getString(identity.label));
+    menuitem.setAttribute("accesskey", bundle.getString(identity.accessKey));
+
+    if (addCommandAttribute) {
+      menuitem.setAttribute("command", "Browser:NewUserContextTab");
+    }
+
+    menuitem.style.listStyleImage = "url(" + identity.icon + ")";
+
+    docfrag.appendChild(menuitem);
+  });
+
+  event.target.appendChild(docfrag);
+  return true;
 }
 
 
