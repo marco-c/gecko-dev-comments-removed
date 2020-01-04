@@ -489,7 +489,6 @@ SocialShare = {
     iframe.setAttribute("class", "social-share-frame");
     iframe.setAttribute("context", "contentAreaContextMenu");
     iframe.setAttribute("tooltip", "aHTMLTooltip");
-    iframe.setAttribute("disablehistory", "true");
     iframe.setAttribute("disableglobalhistory", "true");
     iframe.setAttribute("flex", "1");
     iframe.setAttribute("message", "true");
@@ -575,6 +574,7 @@ SocialShare = {
   onHidden: function() {
     (this._currentAnchor || this.anchor).removeAttribute("open");
     this._currentAnchor = null;
+    this.iframe.docShellIsActive = false;
     this.iframe.removeEventListener("click", this._onclick, true);
     this.iframe.setAttribute("src", "data:text/plain;charset=utf8,");
     
@@ -680,6 +680,9 @@ SocialShare = {
         
         
         iframe.contentWindow.opener = iframe.contentWindow;
+        
+        let mm = iframe.QueryInterface(Components.interfaces.nsIFrameLoaderOwner).frameLoader.messageManager;
+        mm.sendAsyncMessage("Social:DisableDialogs", {});
 
         SocialShare._dynamicResizer.start(iframe.parentNode, iframe, size);
 
