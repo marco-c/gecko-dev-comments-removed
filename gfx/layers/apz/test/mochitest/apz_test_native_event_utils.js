@@ -80,7 +80,7 @@ function nativeMouseUpEventMsg() {
 
 
 
-function coordinatesRelativeToWindow(aX, aY, aElement) {
+function coordinatesRelativeToScreen(aX, aY, aElement) {
   var targetWindow = aElement.ownerDocument.defaultView;
   var scale = targetWindow.devicePixelRatio;
   var rect = aElement.getBoundingClientRect();
@@ -97,7 +97,7 @@ function coordinatesRelativeToWindow(aX, aY, aElement) {
 
 
 function synthesizeNativeWheel(aElement, aX, aY, aDeltaX, aDeltaY, aObserver) {
-  var pt = coordinatesRelativeToWindow(aX, aY, aElement);
+  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
   if (aDeltaX && aDeltaY) {
     throw "Simultaneous wheeling of horizontal and vertical is not supported on all platforms.";
   }
@@ -155,7 +155,7 @@ function synthesizeNativeWheelAndWaitForScrollEvent(aElement, aX, aY, aDeltaX, a
 
 
 function synthesizeNativeMouseMove(aElement, aX, aY) {
-  var pt = coordinatesRelativeToWindow(aX, aY, aElement);
+  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
   var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
   utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseMoveEventMsg(), 0, aElement);
   return true;
@@ -178,7 +178,7 @@ function synthesizeNativeMouseMoveAndWaitForMoveEvent(aElement, aX, aY, aCallbac
 
 
 function synthesizeNativeTouch(aElement, aX, aY, aType, aObserver = null, aTouchId = 0) {
-  var pt = coordinatesRelativeToWindow(aX, aY, aElement);
+  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
   var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
   utils.sendNativeTouchPoint(aTouchId, aType, pt.x, pt.y, 1, 90, aObserver);
   return true;
@@ -206,21 +206,21 @@ function synthesizeNativeTouchDrag(aElement, aX, aY, aDeltaX, aDeltaY, aObserver
 }
 
 function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
-  var pt = coordinatesRelativeToWindow(aX, aY, aElement);
+  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
   var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
   utils.sendNativeTouchTap(pt.x, pt.y, false, aObserver);
   return true;
 }
 
 function synthesizeNativeMouseEvent(aElement, aX, aY, aType, aObserver = null) {
-  var pt = coordinatesRelativeToWindow(aX, aY, aElement);
+  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
   var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
   utils.sendNativeMouseEvent(pt.x, pt.y, aType, 0, aElement, aObserver);
   return true;
 }
 
 function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
-  var pt = coordinatesRelativeToWindow(aX, aY, aElement);
+  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
   var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
   utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseDownEventMsg(), 0, aElement, function() {
     utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseUpEventMsg(), 0, aElement, aObserver);
