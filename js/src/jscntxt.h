@@ -288,6 +288,8 @@ class ExclusiveContext : public ContextFriendFields,
     void addPendingOutOfMemory();
 };
 
+void ReportOverRecursed(JSContext* cx, unsigned errorNumber);
+
 } 
 
 struct JSContext : public js::ExclusiveContext,
@@ -309,7 +311,7 @@ struct JSContext : public js::ExclusiveContext,
     friend class js::ExclusiveContext;
     friend class JS::AutoSaveExceptionState;
     friend class js::jit::DebugModeOSRVolatileJitFrameIterator;
-    friend void js::ReportOverRecursed(JSContext*);
+    friend void js::ReportOverRecursed(JSContext*, unsigned errorNumber);
 
   private:
     
