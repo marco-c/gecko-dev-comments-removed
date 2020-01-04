@@ -501,6 +501,7 @@ public:
   
   
   
+  
   bool mIsNoLineOrPageDelta;
 
   
