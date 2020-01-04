@@ -5,10 +5,14 @@
 
 "use strict";
 
-const {Prefs} = require("devtools/client/webconsole/new-console-output/store");
+const Immutable = require("devtools/client/shared/vendor/immutable");
+const PrefState = Immutable.Record({
+  logLimit: 1000
+});
 
-function prefs(state = new Prefs(), action) {
+function prefs(state = new PrefState(), action) {
   return state;
 }
 
+exports.PrefState = PrefState;
 exports.prefs = prefs;
