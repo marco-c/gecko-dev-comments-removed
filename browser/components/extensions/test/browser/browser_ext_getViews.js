@@ -116,20 +116,24 @@ add_task(function* () {
   yield checkViews("background", 2, 0);
 
   function* triggerPopup(win, callback) {
-    yield clickBrowserAction(extension, win);
+    let widgetId = makeWidgetId(extension.id) + "-browser-action";
+    let node = CustomizableUI.getWidget(widgetId).forWindow(win).node;
+
+    let evt = new CustomEvent("command", {
+      bubbles: true,
+      cancelable: true,
+    });
+    node.dispatchEvent(evt);
 
     yield extension.awaitMessage("popup-ready");
 
     yield callback();
 
-    closeBrowserAction(extension, win);
+    let panel = node.querySelector("panel");
+    if (panel) {
+      panel.hidePopup();
+    }
   }
-
-  
-  
-  
-  
-  yield new Promise(resolve => win1.setTimeout(resolve, 10));
 
   yield triggerPopup(win1, function*() {
     yield checkViews("background", 2, 1);

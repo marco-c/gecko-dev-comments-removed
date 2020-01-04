@@ -1342,9 +1342,7 @@ var CustomizableUIInternal = {
       }
 
       let tooltip = this.getLocalizedProperty(aWidget, "tooltiptext", additionalTooltipArguments);
-      if (tooltip) {
-        node.setAttribute("tooltiptext", tooltip);
-      }
+      node.setAttribute("tooltiptext", tooltip);
       node.setAttribute("class", "toolbarbutton-1 chromeclass-toolbar-additional");
 
       let commandHandler = this.handleWidgetCommand.bind(this, aWidget, node);
@@ -1387,8 +1385,6 @@ var CustomizableUIInternal = {
   },
 
   getLocalizedProperty: function(aWidget, aProp, aFormatArgs, aDef) {
-    const kReqStringProps = ["label"];
-
     if (typeof aWidget == "string") {
       aWidget = gPalette.get(aWidget);
     }
@@ -1399,7 +1395,7 @@ var CustomizableUIInternal = {
     
     
     
-    if (aWidget[aProp] != null) {
+    if (aWidget[aProp]) {
       name = aWidget[aProp];
       
       
@@ -1416,9 +1412,7 @@ var CustomizableUIInternal = {
       }
       return gWidgetsBundle.GetStringFromName(name) || def;
     } catch(ex) {
-      
-      
-      if (!def && (name != "" || kReqStringProps.includes(aProp))) {
+      if (!def) {
         ERROR("Could not localize property '" + name + "'.");
       }
     }
@@ -2342,7 +2336,6 @@ var CustomizableUIInternal = {
     this.wrapWidgetEventHandler("onBeforeCreated", widget);
     this.wrapWidgetEventHandler("onClick", widget);
     this.wrapWidgetEventHandler("onCreated", widget);
-    this.wrapWidgetEventHandler("onDestroyed", widget);
 
     if (widget.type == "button") {
       widget.onCommand = typeof aData.onCommand == "function" ?
@@ -2445,9 +2438,6 @@ var CustomizableUIInternal = {
             }
           }
         }
-      }
-      if (widgetNode && widget.onDestroyed) {
-        widget.onDestroyed(window.document);
       }
     }
 
@@ -3154,11 +3144,6 @@ this.CustomizableUI = {
     CustomizableUIInternal.endBatchUpdate(aForceDirty);
   },
   
-
-
-
-
-
 
 
 

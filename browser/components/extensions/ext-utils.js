@@ -2,15 +2,11 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "CustomizableUI",
-                                  "resource:///modules/CustomizableUI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/AddonManager.jsm");
-
-const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 const INTEGER = /^[1-9]\d*$/;
 
@@ -130,203 +126,103 @@ global.makeWidgetId = id => {
   return id.replace(/[^a-z0-9_-]/g, "_");
 };
 
-class BasePopup {
-  constructor(extension, viewNode, popupURL) {
-    let popupURI = Services.io.newURI(popupURL, null, extension.baseURI);
 
-    Services.scriptSecurityManager.checkLoadURIWithPrincipal(
-      extension.principal, popupURI,
-      Services.scriptSecurityManager.DISALLOW_SCRIPT);
 
-    this.extension = extension;
-    this.popupURI = popupURI;
-    this.viewNode = viewNode;
-    this.window = viewNode.ownerDocument.defaultView;
 
-    this.contentReady = new Promise(resolve => {
-      this._resolveContentReady = resolve;
-    });
 
-    this.viewNode.addEventListener(this.DESTROY_EVENT, this);
+global.openPanel = (node, popupURL, extension) => {
+  let document = node.ownerDocument;
 
-    this.browser = null;
-    this.browserReady = this.createBrowser(viewNode, popupURI);
-  }
+  let popupURI = Services.io.newURI(popupURL, null, extension.baseURI);
 
-  destroy() {
-    this.browserReady.then(() => {
-      this.browser.removeEventListener("load", this, true);
-      this.browser.removeEventListener("DOMTitleChanged", this, true);
-      this.browser.removeEventListener("DOMWindowClose", this, true);
+  Services.scriptSecurityManager.checkLoadURIWithPrincipal(
+    extension.principal, popupURI,
+    Services.scriptSecurityManager.DISALLOW_SCRIPT);
 
-      this.viewNode.removeEventListener(this.DESTROY_EVENT, this);
+  let panel = document.createElement("panel");
+  panel.setAttribute("id", makeWidgetId(extension.id) + "-panel");
+  panel.setAttribute("class", "browser-extension-panel");
+  panel.setAttribute("type", "arrow");
+  panel.setAttribute("role", "group");
 
-      this.context.unload();
-      this.browser.remove();
-
-      this.browser = null;
-      this.viewNode = null;
-      this.context = null;
-    });
-  }
-
-  
-  
-  get DESTROY_EVENT() {
-    throw new Error("Not implemented");
-  }
-
-  handleEvent(event) {
-    switch (event.type) {
-      case this.DESTROY_EVENT:
-        this.destroy();
-        break;
-
-      case "DOMWindowClose":
-        if (event.target === this.browser.contentWindow) {
-          event.preventDefault();
-          this.closePopup();
-        }
-        break;
-
-      case "DOMTitleChanged":
-        this.viewNode.setAttribute("aria-label", this.browser.contentTitle);
-        break;
-
-      case "load":
-        
-        
-        
-        
-        
-        
-        
-        
-        this.window.setTimeout(() => this.resizeBrowser(), 0);
-        break;
-    }
-  }
-
-  createBrowser(viewNode, popupURI) {
-    let document = viewNode.ownerDocument;
-
-    this.browser = document.createElementNS(XUL_NS, "browser");
-    this.browser.setAttribute("type", "content");
-    this.browser.setAttribute("disableglobalhistory", "true");
-
+  let anchor;
+  if (node.localName == "toolbarbutton") {
     
     
+    node.appendChild(panel);
+    anchor = document.getAnonymousElementByAttribute(node, "class", "toolbarbutton-icon");
+  } else {
     
     
-
-    
-    
-    this.browser.setAttribute("flex", "1");
-
-    viewNode.appendChild(this.browser);
-
-    return new Promise(resolve => {
-      
-      
-      
-      let loadListener = event => {
-        this.browser.removeEventListener("load", loadListener, true);
-        resolve();
-      };
-      this.browser.addEventListener("load", loadListener, true);
-    }).then(() => {
-      let { contentWindow } = this.browser;
-
-      contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindowUtils)
-                   .allowScriptsToClose();
-
-      this.context = new ExtensionPage(this.extension, {
-        type: "popup",
-        contentWindow,
-        uri: popupURI,
-        docShell: this.browser.docShell,
-      });
-
-      GlobalManager.injectInDocShell(this.browser.docShell, this.extension, this.context);
-      this.browser.setAttribute("src", this.context.uri.spec);
-
-      this.browser.addEventListener("load", this, true);
-      this.browser.addEventListener("DOMTitleChanged", this, true);
-      this.browser.addEventListener("DOMWindowClose", this, true);
-    });
-  }
-
-  
-  resizeBrowser() {
-    let width, height;
-    try {
-      let w = {}, h = {};
-      this.browser.docShell.contentViewer.getContentSize(w, h);
-
-      width = w.value / this.window.devicePixelRatio;
-      height = h.value / this.window.devicePixelRatio;
-
-      
-      
-      
-      width += 1;
-    } catch (e) {
-      
-      [width, height] = [400, 400];
-    }
-
-    width = Math.ceil(Math.min(width, 800));
-    height = Math.ceil(Math.min(height, 600));
-
-    this.browser.style.width = `${width}px`;
-    this.browser.style.height = `${height}px`;
-
-    this._resolveContentReady();
-  }
-}
-
-global.PanelPopup = class PanelPopup extends BasePopup {
-  constructor(extension, imageNode, popupURL) {
-    let document = imageNode.ownerDocument;
-
-    let panel = document.createElement("panel");
-    panel.setAttribute("id", makeWidgetId(extension.id) + "-panel");
-    panel.setAttribute("class", "browser-extension-panel");
-    panel.setAttribute("type", "arrow");
-    panel.setAttribute("role", "group");
-
     document.getElementById("mainPopupSet").appendChild(panel);
+    anchor = node;
+  }
 
-    super(extension, panel, popupURL);
+  const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+  let browser = document.createElementNS(XUL_NS, "browser");
+  browser.setAttribute("type", "content");
+  browser.setAttribute("disableglobalhistory", "true");
+  panel.appendChild(browser);
 
-    this.contentReady.then(() => {
-      panel.openPopup(imageNode, "bottomcenter topright", 0, 0, false, false);
+  let titleChangedListener = () => {
+    panel.setAttribute("aria-label", browser.contentTitle);
+  };
+
+  let context;
+  let popuphidden = () => {
+    panel.removeEventListener("popuphidden", popuphidden);
+    browser.removeEventListener("DOMTitleChanged", titleChangedListener, true);
+    context.unload();
+    panel.remove();
+  };
+  panel.addEventListener("popuphidden", popuphidden);
+
+  let loadListener = () => {
+    panel.removeEventListener("load", loadListener);
+
+    context = new ExtensionPage(extension, {
+      type: "popup",
+      contentWindow: browser.contentWindow,
+      uri: popupURI,
+      docShell: browser.docShell,
     });
-  }
+    GlobalManager.injectInDocShell(browser.docShell, extension, context);
+    browser.setAttribute("src", context.uri.spec);
 
-  get DESTROY_EVENT() {
-    return "popuphidden";
-  }
+    let contentLoadListener = event => {
+      if (event.target != browser.contentDocument) {
+        return;
+      }
+      browser.removeEventListener("load", contentLoadListener, true);
 
-  destroy() {
-    super.destroy();
-    this.viewNode.remove();
-  }
+      let contentViewer = browser.docShell.contentViewer;
+      let width = {}, height = {};
+      try {
+        contentViewer.getContentSize(width, height);
+        [width, height] = [width.value, height.value];
+      } catch (e) {
+        
+        [width, height] = [400, 400];
+      }
 
-  closePopup() {
-    this.viewNode.hidePopup();
-  }
-};
+      let window = document.defaultView;
+      width /= window.devicePixelRatio;
+      height /= window.devicePixelRatio;
+      width = Math.min(width, 800);
+      height = Math.min(height, 800);
 
-global.ViewPopup = class ViewPopup extends BasePopup {
-  get DESTROY_EVENT() {
-    return "ViewHiding";
-  }
+      browser.setAttribute("width", width);
+      browser.setAttribute("height", height);
 
-  closePopup() {
-    CustomizableUI.hidePanelForNode(this.viewNode);
-  }
+      panel.openPopup(anchor, "bottomcenter topright", 0, 0, false, false);
+    };
+    browser.addEventListener("load", contentLoadListener, true);
+
+    browser.addEventListener("DOMTitleChanged", titleChangedListener, true);
+  };
+  panel.addEventListener("load", loadListener);
+
+  return panel;
 };
 
 
