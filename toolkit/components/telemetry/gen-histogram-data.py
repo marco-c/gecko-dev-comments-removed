@@ -6,6 +6,7 @@
 
 
 from __future__ import print_function
+from shared_telemetry_utils import StringTable, static_assert
 
 import sys
 import histogram_tools
@@ -13,48 +14,6 @@ import itertools
 
 banner = """/* This file is auto-generated, see gen-histogram-data.py.  */
 """
-
-
-
-class StringTable:
-    def __init__(self):
-        self.current_index = 0;
-        self.table = {}
-
-    def c_strlen(self, string):
-        return len(string) + 1
-
-    def stringIndex(self, string):
-        if string in self.table:
-            return self.table[string]
-        else:
-            result = self.current_index
-            self.table[string] = result
-            self.current_index += self.c_strlen(string)
-            return result
-
-    def writeDefinition(self, f, name):
-        entries = self.table.items()
-        entries.sort(key=lambda x:x[1])
-        
-        
-        def explodeToCharArray(string):
-            def toCChar(s):
-                if s == "'":
-                    return "'\\''"
-                else:
-                    return "'%s'" % s
-            return ", ".join(map(toCChar, string))
-        f.write("const char %s[] = {\n" % name)
-        for (string, offset) in entries[:-1]:
-            e = explodeToCharArray(string)
-            if e:
-                f.write("  /* %5d */ %s, '\\0',\n"
-                        % (offset, explodeToCharArray(string)))
-            else:
-                f.write("  /* %5d */ '\\0',\n" % offset)
-        f.write("  /* %5d */ %s, '\\0' };\n\n"
-                % (entries[-1][1], explodeToCharArray(entries[-1][0])))
 
 def print_array_entry(output, histogram, name_index, exp_index):
     cpp_guard = histogram.cpp_guard()
@@ -82,14 +41,11 @@ def write_histogram_table(output, histograms):
     table.writeDefinition(output, strtab_name)
     static_assert(output, "sizeof(%s) <= UINT32_MAX" % strtab_name,
                   "index overflow")
-
 
 
 
 
 
-def static_assert(output, expression, message):
-    print("static_assert(%s, \"%s\");" % (expression, message), file=output)
 
 def static_asserts_for_boolean(output, histogram):
     pass
