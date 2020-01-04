@@ -353,6 +353,9 @@ private:
   
   Atomic<bool> mAppendRunning;
   
+  
+  bool mSegmentParserLoopRunning;
+  
   media::TimeIntervals mVideoBufferedRanges;
   media::TimeIntervals mAudioBufferedRanges;
   media::TimeUnit mOfficialGroupEndTimestamp;
