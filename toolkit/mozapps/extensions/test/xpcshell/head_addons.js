@@ -2015,7 +2015,7 @@ function callback_soon(aFunction) {
 
 
 function promiseAddonsByIDs(list) {
-  return new Promise((resolve, reject) => AddonManager.getAddonsByIDs(list, resolve));
+  return new Promise(resolve => AddonManager.getAddonsByIDs(list, resolve));
 }
 
 
@@ -2026,7 +2026,20 @@ function promiseAddonsByIDs(list) {
 
 
 function promiseAddonByID(aId) {
-  return new Promise((resolve, reject) => AddonManager.getAddonByID(aId, resolve));
+  return new Promise(resolve => AddonManager.getAddonByID(aId, resolve));
+}
+
+
+
+
+
+
+
+
+
+
+function promiseAddonsWithOperationsByTypes(aTypes) {
+  return new Promise(resolve => AddonManager.getAddonsWithOperationsByTypes(aTypes, resolve));
 }
 
 

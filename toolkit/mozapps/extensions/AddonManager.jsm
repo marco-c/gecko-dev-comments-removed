@@ -3046,11 +3046,19 @@ this.AddonManager = {
   
   VIEW_TYPE_LIST: "list",
 
+  
+
+  
+  
   TYPE_UI_HIDE_EMPTY: 16,
   
   
   
   TYPE_SUPPORTS_ASK_TO_ACTIVATE: 32,
+  
+  
+  
+  TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL: 64,
 
   
   

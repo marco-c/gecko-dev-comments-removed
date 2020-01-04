@@ -3187,6 +3187,19 @@ this.XPIProvider = {
           
           if (!manifest) {
             logger.debug("Processing uninstall of " + id + " in " + location.name);
+
+            try {
+              let addonFile = location.getLocationForID(id);
+              let addonToUninstall = syncLoadManifestFromFile(addonFile, location);
+              if (addonToUninstall.bootstrap) {
+                this.callBootstrapMethod(addonToUninstall, addonToUninstall._sourceBundle,
+                                         "uninstall", BOOTSTRAP_REASONS.ADDON_UNINSTALL);
+              }
+            }
+            catch (e) {
+              logger.warn("Failed to call uninstall for " + id, e);
+            }
+
             try {
               location.uninstallAddon(id);
               seenFiles.push(stageDirEntry.leafName);
@@ -4767,13 +4780,27 @@ this.XPIProvider = {
 
 
 
-  uninstallAddon: function(aAddon) {
+
+
+
+
+  uninstallAddon: function(aAddon, aForcePending) {
     if (!(aAddon.inDatabase))
       throw new Error("Cannot uninstall addon " + aAddon.id + " because it is not installed");
 
     if (aAddon._installLocation.locked)
       throw new Error("Cannot uninstall addon " + aAddon.id
           + " from locked install location " + aAddon._installLocation.name);
+
+    
+    let requiresRestart = this.uninstallRequiresRestart(aAddon);
+
+    
+    
+    let makePending = aForcePending || requiresRestart;
+
+    if (makePending && aAddon.pendingUninstall)
+      throw new Error("Add-on is already marked to be uninstalled");
 
     aAddon._hasResourceCache.clear();
 
@@ -4782,16 +4809,19 @@ this.XPIProvider = {
       aAddon._updateCheck.cancel();
     }
 
-    
-    let requiresRestart = this.uninstallRequiresRestart(aAddon);
+    let wasPending = aAddon.pendingUninstall;
 
-    if (requiresRestart) {
+    if (makePending) {
       
       
-      let stage = aAddon._installLocation.getStagingDir();
-      stage.append(aAddon.id);
-      if (!stage.exists())
-        stage.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+      
+      
+      if (aAddon._installLocation.name != KEY_APP_TEMPORARY) {
+        let stage = aAddon._installLocation.getStagingDir();
+        stage.append(aAddon.id);
+        if (!stage.exists())
+          stage.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+      }
 
       XPIDatabase.setAddonProperties(aAddon, {
         pendingUninstall: true
@@ -4811,8 +4841,16 @@ this.XPIProvider = {
       return;
 
     let wrapper = aAddon.wrapper;
-    AddonManagerPrivate.callAddonListeners("onUninstalling", wrapper,
-                                           requiresRestart);
+
+    
+    if (!wasPending) {
+      
+      
+      
+      
+      AddonManagerPrivate.callAddonListeners("onUninstalling", wrapper,
+                                             makePending);
+    }
 
     
     function revealAddon(aAddon) {
@@ -4850,7 +4888,7 @@ this.XPIProvider = {
       }
     }
 
-    if (!requiresRestart) {
+    if (!makePending) {
       if (aAddon.bootstrap) {
         if (aAddon.active) {
           this.callBootstrapMethod(aAddon, aAddon._sourceBundle, "shutdown",
@@ -4869,6 +4907,12 @@ this.XPIProvider = {
 
       findAddonAndReveal(aAddon.id);
     }
+    else if (aAddon.bootstrap && aAddon.active && !this.disableRequiresRestart(aAddon)) {
+      this.callBootstrapMethod(aAddon, aAddon._sourceBundle, "shutdown",
+                               BOOTSTRAP_REASONS.ADDON_UNINSTALL);
+      this.unloadBootstrapScope(aAddon.id);
+      XPIDatabase.updateAddonActive(aAddon, false);
+    }
 
     
     if (aAddon.type == "theme" && aAddon.active)
@@ -4884,8 +4928,11 @@ this.XPIProvider = {
   cancelUninstallAddon: function(aAddon) {
     if (!(aAddon.inDatabase))
       throw new Error("Can only cancel uninstall for installed addons.");
+    if (!aAddon.pendingUninstall)
+      throw new Error("Add-on is not marked to be uninstalled");
 
-    aAddon._installLocation.cleanStagingDir([aAddon.id]);
+    if (aAddon._installLocation.name != KEY_APP_TEMPORARY)
+      aAddon._installLocation.cleanStagingDir([aAddon.id]);
 
     XPIDatabase.setAddonProperties(aAddon, {
       pendingUninstall: false
@@ -4899,6 +4946,12 @@ this.XPIProvider = {
     
     let wrapper = aAddon.wrapper;
     AddonManagerPrivate.callAddonListeners("onOperationCancelled", wrapper);
+
+    if (aAddon.bootstrap && !aAddon.disabled && !this.enableRequiresRestart(aAddon)) {
+      this.callBootstrapMethod(aAddon, aAddon._sourceBundle, "startup",
+                               BOOTSTRAP_REASONS.ADDON_INSTALL);
+      XPIDatabase.updateAddonActive(aAddon, true);
+    }
 
     
     if (aAddon.type == "theme" && aAddon.active)
@@ -5861,11 +5914,16 @@ AddonInstall.prototype = {
       yield this.installLocation.requestStagingDir();
 
       
+      stagedAddon.append(this.addon.id);
+      yield removeAsync(stagedAddon);
+      stagedAddon.leafName = this.addon.id + ".xpi";
+      yield removeAsync(stagedAddon);
+
+      
       if (this.addon.unpack || Preferences.get(PREF_XPI_UNPACK, false)) {
         logger.debug("Addon " + this.addon.id + " will be installed as " +
             "an unpacked directory");
-        stagedAddon.append(this.addon.id);
-        yield removeAsync(stagedAddon);
+        stagedAddon.leafName = this.addon.id;
         yield OS.File.makeDir(stagedAddon.path);
         yield ZipUtils.extractFilesAsync(this.file, stagedAddon);
         installedUnpacked = 1;
@@ -5873,8 +5931,7 @@ AddonInstall.prototype = {
       else {
         logger.debug("Addon " + this.addon.id + " will be installed as " +
             "a packed xpi");
-        stagedAddon.append(this.addon.id + ".xpi");
-        yield removeAsync(stagedAddon);
+        stagedAddon.leafName = this.addon.id + ".xpi";
         yield OS.File.copy(this.file.path, stagedAddon.path);
       }
 
@@ -7054,21 +7111,13 @@ AddonWrapper.prototype = {
     return addonFor(this).isCompatibleWith(aAppVersion, aPlatformVersion);
   },
 
-  uninstall: function() {
+  uninstall: function(alwaysAllowUndo) {
     let addon = addonFor(this);
-    if (!(addon.inDatabase))
-      throw new Error("Cannot uninstall an add-on that isn't installed");
-    if (addon.pendingUninstall)
-      throw new Error("Add-on is already marked to be uninstalled");
-    XPIProvider.uninstallAddon(addon);
+    XPIProvider.uninstallAddon(addon, alwaysAllowUndo);
   },
 
   cancelUninstall: function() {
     let addon = addonFor(this);
-    if (!(addon.inDatabase))
-      throw new Error("Cannot cancel uninstall for an add-on that isn't installed");
-    if (!addon.pendingUninstall)
-      throw new Error("Add-on is not marked to be uninstalled");
     XPIProvider.cancelUninstallAddon(addon);
   },
 
@@ -8137,18 +8186,19 @@ WinRegInstallLocation.prototype = {
 var addonTypes = [
   new AddonManagerPrivate.AddonType("extension", URI_EXTENSION_STRINGS,
                                     STRING_TYPE_NAME,
-                                    AddonManager.VIEW_TYPE_LIST, 4000),
+                                    AddonManager.VIEW_TYPE_LIST, 4000,
+                                    AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL),
   new AddonManagerPrivate.AddonType("theme", URI_EXTENSION_STRINGS,
                                     STRING_TYPE_NAME,
                                     AddonManager.VIEW_TYPE_LIST, 5000),
   new AddonManagerPrivate.AddonType("dictionary", URI_EXTENSION_STRINGS,
                                     STRING_TYPE_NAME,
                                     AddonManager.VIEW_TYPE_LIST, 7000,
-                                    AddonManager.TYPE_UI_HIDE_EMPTY),
+                                    AddonManager.TYPE_UI_HIDE_EMPTY | AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL),
   new AddonManagerPrivate.AddonType("locale", URI_EXTENSION_STRINGS,
                                     STRING_TYPE_NAME,
                                     AddonManager.VIEW_TYPE_LIST, 8000,
-                                    AddonManager.TYPE_UI_HIDE_EMPTY),
+                                    AddonManager.TYPE_UI_HIDE_EMPTY | AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL),
 ];
 
 
@@ -8161,7 +8211,7 @@ if (Preferences.get("experiments.supported", false)) {
                                       URI_EXTENSION_STRINGS,
                                       STRING_TYPE_NAME,
                                       AddonManager.VIEW_TYPE_LIST, 11000,
-                                      AddonManager.TYPE_UI_HIDE_EMPTY));
+                                      AddonManager.TYPE_UI_HIDE_EMPTY | AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL));
 }
 
 AddonManagerPrivate.registerProvider(XPIProvider, addonTypes);
