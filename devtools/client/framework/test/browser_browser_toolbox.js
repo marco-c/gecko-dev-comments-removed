@@ -30,27 +30,29 @@ add_task(function* runTest() {
     }, "browser-toolbox-console-works", false);
   });
 
+  
+  
+  let env = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment);
+  let testScript = function () {
+    toolbox.selectTool("webconsole")
+      .then(console => {
+        let { jsterm } = console.hud;
+        let js = "Services.obs.notifyObservers(null, 'browser-toolbox-console-works', null);";
+        return jsterm.execute(js);
+      })
+      .then(() => toolbox.destroy());
+  };
+  env.set("MOZ_TOOLBOX_TEST_SCRIPT", "new " + testScript);
+  registerCleanupFunction(() => {
+    env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
+  });
+
   let { BrowserToolboxProcess } = Cu.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
   let closePromise;
   yield new Promise(onRun => {
-    let options = {
-      
-      
-      
-      testScript: "new " + function () {
-        toolbox.selectTool("webconsole")
-          .then(() => toolbox.getPanel("webconsole"))
-          .then(() => {
-            let { jsterm } = toolbox.getPanel("webconsole").hud;
-            let js = "Services.obs.notifyObservers(null, 'browser-toolbox-console-works', null);";
-            return jsterm.execute(js);
-          })
-          .then(() => toolbox.destroy());
-      }
-    };
     closePromise = new Promise(onClose => {
       info("Opening the browser toolbox\n");
-      BrowserToolboxProcess.init(onClose, onRun, options);
+      BrowserToolboxProcess.init(onClose, onRun);
     });
   });
   ok(true, "Browser toolbox started\n");
