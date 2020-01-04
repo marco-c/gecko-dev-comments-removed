@@ -4921,6 +4921,63 @@ IsCacheableNameCallGetter(HandleObject scopeChain, HandleObject obj, HandleObjec
 }
 
 bool
+NameIC::attachTypeOfNoProperty(JSContext* cx, HandleScript outerScript, IonScript* ion,
+                               HandleObject scopeChain)
+{
+    MacroAssembler masm(cx, ion, outerScript, profilerLeavePc_);
+    Label failures;
+    StubAttacher attacher(*this);
+
+    Register scratchReg = outputReg().valueReg().scratchReg();
+
+    masm.movePtr(scopeChainReg(), scratchReg);
+
+    
+    
+    JSObject* tobj = scopeChain;
+    while (true) {
+        GenerateScopeChainGuard(masm, tobj, scratchReg, nullptr, &failures);
+
+        if (tobj->is<GlobalObject>())
+            break;
+
+        
+        tobj = &tobj->as<ScopeObject>().enclosingScope();
+        masm.extractObject(Address(scratchReg, ScopeObject::offsetOfEnclosingScope()), scratchReg);
+    }
+
+    masm.moveValue(UndefinedValue(), outputReg().valueReg());
+    attacher.jumpRejoin(masm);
+
+    masm.bind(&failures);
+    attacher.jumpNextStub(masm);
+
+    
+    return linkAndAttachStub(cx, masm, attacher, ion, "generic",
+                             JS::TrackedOutcome::ICNameStub_ReadSlot);
+}
+
+static bool
+IsCacheableNameNoProperty(HandleObject scopeChain, HandleObject obj,
+                          HandleObject holder, HandleShape shape, jsbytecode* pc,
+                          NameIC& cache)
+{
+    if (cache.isTypeOf() && !shape) {
+        MOZ_ASSERT(!obj);
+        MOZ_ASSERT(!holder);
+        MOZ_ASSERT(scopeChain);
+
+        
+        MOZ_ASSERT(cache.outputReg().hasValue());
+        MOZ_ASSERT(pc != nullptr);
+
+        return true;
+    }
+
+    return false;
+}
+
+bool
 NameIC::update(JSContext* cx, HandleScript outerScript, size_t cacheIndex, HandleObject scopeChain,
                MutableHandleValue vp)
 {
@@ -4962,6 +5019,9 @@ NameIC::update(JSContext* cx, HandleScript outerScript, size_t cacheIndex, Handl
             {
                 return false;
             }
+        } else if (IsCacheableNameNoProperty(scopeChain, obj, holder, shape, pc, cache)) {
+            if (!cache.attachTypeOfNoProperty(cx, outerScript, ion, scopeChain))
+                return false;
         }
     }
 
