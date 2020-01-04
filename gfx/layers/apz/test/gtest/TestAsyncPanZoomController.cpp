@@ -3131,7 +3131,10 @@ TEST_F(APZOverscrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
   parentApzc->AdvanceAnimationsUntilEnd();
 
   
-  EXPECT_EQ(50, childApzc->GetFrameMetrics().GetScrollOffset().y);
+  
+  
+  
+  ASSERT_NEAR(50, childApzc->GetFrameMetrics().GetScrollOffset().y, COORDINATE_EPSILON);
   EXPECT_EQ(0, parentApzc->GetFrameMetrics().GetScrollOffset().y);
 
   
