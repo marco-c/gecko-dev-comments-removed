@@ -250,13 +250,6 @@ class BaseMarionetteArguments(ArgumentParser):
 
     def __init__(self, **kwargs):
         ArgumentParser.__init__(self, **kwargs)
-
-        def dir_path(path):
-            path = os.path.abspath(os.path.expanduser(path))
-            if not os.access(path, os.F_OK):
-                os.makedirs(path)
-            return path
-
         self.argument_containers = []
         self.add_argument('tests',
                           nargs='*',
@@ -283,8 +276,7 @@ class BaseMarionetteArguments(ArgumentParser):
                         help='when Marionette launches an emulator, start it with the -no-window argument')
         self.add_argument('--logcat-dir',
                         dest='logdir',
-                        help='directory to store logcat dump files',
-                        type=dir_path)
+                        help='directory to store logcat dump files')
         self.add_argument('--logcat-stdout',
                         action='store_true',
                         default=False,
@@ -317,8 +309,7 @@ class BaseMarionetteArguments(ArgumentParser):
                         help='gecko executable to launch before running the test')
         self.add_argument('--profile',
                         help='profile to use when launching the gecko process. if not passed, then a profile will be '
-                             'constructed and used',
-                        type=dir_path)
+                             'constructed and used')
         self.add_argument('--pref',
                         action='append',
                         dest='prefs_args',
@@ -403,12 +394,6 @@ class BaseMarionetteArguments(ArgumentParser):
                         help="Filter out tests that don't have the given tag. Can be "
                              "used multiple times in which case the test must contain "
                              "at least one of the given tags.")
-        self.add_argument('--workspace',
-                          action='store',
-                          default=None,
-                          help="Path to directory for Marionette output. "
-                               "(Default: .) (Default profile dest: TMP)",
-                          type=dir_path)
 
     def register_argument_container(self, container):
         group = self.add_argument_group(container.name)
@@ -462,6 +447,10 @@ class BaseMarionetteArguments(ArgumentParser):
         if args.emulator and args.binary:
             print 'can\'t specify both --emulator and --binary'
             sys.exit(1)
+
+        
+        if args.emulator and not args.logdir:
+            args.logdir = 'logcat'
 
         
         try:
@@ -521,7 +510,7 @@ class BaseMarionetteTestRunner(object):
                  server_root=None, gecko_log=None, result_callbacks=None,
                  adb_host=None, adb_port=None, prefs=None, test_tags=None,
                  socket_timeout=BaseMarionetteArguments.socket_timeout_default,
-                 startup_timeout=None, addons=None, workspace=None, **kwargs):
+                 startup_timeout=None, addons=None, **kwargs):
         self.address = address
         self.emulator = emulator
         self.emulator_binary = emulator_binary
@@ -558,6 +547,7 @@ class BaseMarionetteTestRunner(object):
         self.server_root = server_root
         self.this_chunk = this_chunk
         self.total_chunks = total_chunks
+        self.gecko_log = gecko_log
         self.mixin_run_tests = []
         self.manifest_skipped_tests = []
         self.tests = []
@@ -567,10 +557,6 @@ class BaseMarionetteTestRunner(object):
         self.prefs = prefs or {}
         self.test_tags = test_tags
         self.startup_timeout = startup_timeout
-        self.workspace = workspace
-        
-        
-        self.workspace_path = workspace or os.getcwd()
 
         def gather_debug(test, status):
             rv = {}
@@ -619,20 +605,9 @@ class BaseMarionetteTestRunner(object):
 
         self.reset_test_stats()
 
-        self.logger.info('Using workspace for temporary data: '
-                         '"{}"'.format(self.workspace_path))
-        if not self.workspace:
-            self.logger.info('Profile destination is TMP')
-
-        if self.emulator and not self.logdir:
-            self.logdir = os.path.join(self.workspace_path or '', 'logcat')
-        if self.logdir and not os.access(self.logdir, os.F_OK):
+        if self.logdir:
+            if not os.access(self.logdir, os.F_OK):
                 os.mkdir(self.logdir)
-
-        if not gecko_log:
-            self.gecko_log = os.path.join(self.workspace_path or '', 'gecko.log')
-        else:
-            self.gecko_log = gecko_log
 
         
         self.testvars['xml_output'] = self.xml_output
@@ -746,8 +721,6 @@ class BaseMarionetteTestRunner(object):
                 'no_window': self.no_window,
                 'sdcard': self.sdcard,
             })
-        if self.workspace:
-            kwargs['workspace'] = self.workspace_path
         return kwargs
 
     def start_marionette(self):
@@ -807,8 +780,6 @@ setReq.onerror = function() {
         need_external_ip = True
         if not self.marionette:
             self.start_marionette()
-            if self.emulator:
-                self.marionette.emulator.wait_for_homescreen(self.marionette)
             
             if not self._capabilities:
                 self.capabilities
