@@ -74,6 +74,12 @@ public:
     mBufferFormat = AUDIO_FORMAT_SILENCE;
   }
 
+  AudioBlock& operator=(const AudioBlock& aBlock) {
+    
+    
+    
+    return *this = aBlock.AsAudioChunk();
+  }
   AudioBlock& operator=(const AudioChunk& aChunk) {
     MOZ_ASSERT(aChunk.mDuration == WEBAUDIO_BLOCK_SIZE);
     SetBuffer(aChunk.mBuffer);
