@@ -94,6 +94,10 @@ public:
 #endif
 
   ErrorResult(ErrorResult&& aRHS)
+    
+    
+    
+    : ErrorResult()
   {
     *this = Move(aRHS);
   }
@@ -229,13 +233,8 @@ private:
                   "Pass in the right number of arguments");
 #endif
 
-    if (IsJSException()) {
-      
-      
-      MOZ_ASSERT(false,
-                 "Ignoring ThrowErrorWithMessage call because we have a JS exception");
-      return;
-    }
+    ClearUnionData();
+
     nsTArray<nsString>& messageArgsArray = CreateErrorMessageHelper(errorNumber, errorType);
     uint16_t argCount = dom::GetErrorArgCount(errorNumber);
     dom::StringArrayAppender::Append(messageArgsArray, argCount, messageArgs...);
@@ -255,6 +254,13 @@ private:
   }
 
   void ClearMessage();
+
+  
+  
+  
+  
+  
+  void ClearUnionData();
 
   nsresult mResult;
   struct Message;
