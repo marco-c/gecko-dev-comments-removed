@@ -18,7 +18,6 @@ from mozboot.freebsd import FreeBSDBootstrapper
 from mozboot.gentoo import GentooBootstrapper
 from mozboot.osx import OSXBootstrapper
 from mozboot.openbsd import OpenBSDBootstrapper
-from mozboot.ubuntu import UbuntuBootstrapper
 from mozboot.archlinux import ArchlinuxBootstrapper
 
 APPLICATION_CHOICE = '''
@@ -50,6 +49,21 @@ Or, if you prefer Git:
     git clone https://git.mozilla.org/integration/gecko-dev.git
 '''
 
+DEBIAN_DISTROS = (
+    'Debian',
+    'debian',
+    'Ubuntu',
+    
+    
+    
+    
+    'Mint',
+    'LinuxMint',
+    'Elementary OS',
+    'Elementary',
+    '"elementary OS"',
+)
+
 
 class Bootstrapper(object):
     """Main class that performs system bootstrap."""
@@ -66,23 +80,12 @@ class Bootstrapper(object):
 
             if distro in ('CentOS', 'CentOS Linux'):
                 cls = CentOSBootstrapper
-            elif distro in ('Debian', 'debian'):
+            elif distro in DEBIAN_DISTROS:
                 cls = DebianBootstrapper
             elif distro == 'Fedora':
                 cls = FedoraBootstrapper
             elif distro == 'Gentoo Base System':
                 cls = GentooBootstrapper
-            elif distro in ('Mint', 'LinuxMint'):
-                
-                
-                if dist_id == 'debian':
-                    cls = DebianBootstrapper
-                else:
-                    cls = UbuntuBootstrapper
-            elif distro == 'Ubuntu':
-                cls = UbuntuBootstrapper
-            elif distro in ('Elementary OS', 'Elementary', '"elementary OS"'):
-                cls = UbuntuBootstrapper
             elif os.path.exists('/etc/arch-release'):
                 
                 cls = ArchlinuxBootstrapper
