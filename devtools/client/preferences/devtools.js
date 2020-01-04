@@ -18,6 +18,9 @@ pref("devtools.devedition.promo.url", "https://www.mozilla.org/firefox/developer
 pref("devtools.errorconsole.enabled", false);
 
 
+pref("devtools.loader.hotreload", false);
+
+
 pref("devtools.toolbar.enabled", true);
 pref("devtools.toolbar.visible", false);
 
