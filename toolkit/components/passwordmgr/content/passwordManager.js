@@ -60,12 +60,12 @@ let dateAndTimeFormatter = new Intl.DateTimeFormat(undefined,
 
 function Startup() {
   
-  passwordmanager = Components.classes["@mozilla.org/login-manager;1"]
-                        .getService(Components.interfaces.nsILoginManager);
+  passwordmanager = Cc["@mozilla.org/login-manager;1"]
+                        .getService(Ci.nsILoginManager);
 
   
-  kObserverService = Components.classes["@mozilla.org/observer-service;1"]
-                               .getService(Components.interfaces.nsIObserverService);
+  kObserverService = Cc["@mozilla.org/observer-service;1"]
+                               .getService(Ci.nsIObserverService);
   kObserverService.addObserver(signonReloadDisplay, "passwordmgr-storage-changed", false);
 
   signonsTree = document.getElementById("signonsTree");
@@ -306,7 +306,7 @@ function LoadSignons() {
   } catch (e) {
     signons = [];
   }
-  signons.forEach(login => login.QueryInterface(Components.interfaces.nsILoginMetaInfo));
+  signons.forEach(login => login.QueryInterface(Ci.nsILoginMetaInfo));
   signonsTreeView.rowCount = signons.length;
 
   
@@ -433,8 +433,8 @@ function DeleteAllFromTree(tree, view, table, deletedTable, removeButton, remove
 }
 
 function DeleteAllSignons() {
-  let prompter = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
-                           .getService(Components.interfaces.nsIPromptService);
+  let prompter = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+                           .getService(Ci.nsIPromptService);
 
   
   let dummy = { value: false };
@@ -469,7 +469,7 @@ function TogglePasswordVisible() {
 }
 
 function AskUserShowPasswords() {
-  let prompter = Components.classes["@mozilla.org/embedcomp/prompt-service;1"].getService(Components.interfaces.nsIPromptService);
+  let prompter = Cc["@mozilla.org/embedcomp/prompt-service;1"].getService(Ci.nsIPromptService);
   let dummy = { value: false };
 
   
@@ -652,8 +652,8 @@ function CopyPassword() {
   if (!showingPasswords && !masterPasswordLogin())
     return;
   
-  let clipboard = Components.classes["@mozilla.org/widget/clipboardhelper;1"].
-                  getService(Components.interfaces.nsIClipboardHelper);
+  let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].
+                  getService(Ci.nsIClipboardHelper);
   let row = document.getElementById("signonsTree").currentIndex;
   let password = signonsTreeView.getCellText(row, {id : "passwordCol" });
   clipboard.copyString(password);
@@ -662,8 +662,8 @@ function CopyPassword() {
 
 function CopyUsername() {
   
-  let clipboard = Components.classes["@mozilla.org/widget/clipboardhelper;1"].
-                  getService(Components.interfaces.nsIClipboardHelper);
+  let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].
+                  getService(Ci.nsIClipboardHelper);
   let row = document.getElementById("signonsTree").currentIndex;
   let username = signonsTreeView.getCellText(row, {id : "userCol" });
   clipboard.copyString(username);
@@ -713,8 +713,8 @@ function UpdateContextMenu() {
 
 function masterPasswordLogin(noPasswordCallback) {
   
-  let tokendb = Components.classes["@mozilla.org/security/pk11tokendb;1"]
-                    .createInstance(Components.interfaces.nsIPK11TokenDB);
+  let tokendb = Cc["@mozilla.org/security/pk11tokendb;1"]
+                    .createInstance(Ci.nsIPK11TokenDB);
   let token = tokendb.getInternalKeyToken();
 
   
