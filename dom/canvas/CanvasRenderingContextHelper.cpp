@@ -173,9 +173,11 @@ CanvasRenderingContextHelper::GetContext(JSContext* aCx,
     mCurrentContext = context.forget();
     mCurrentContextType = contextType;
 
-    aRv = UpdateContext(aCx, aContextOptions);
-    if (aRv.Failed()) {
-      aRv = NS_OK; 
+    nsresult rv = UpdateContext(aCx, aContextOptions, aRv);
+    if (NS_FAILED(rv)) {
+      
+      
+      
       return nullptr;
     }
   } else {
@@ -190,7 +192,8 @@ CanvasRenderingContextHelper::GetContext(JSContext* aCx,
 
 nsresult
 CanvasRenderingContextHelper::UpdateContext(JSContext* aCx,
-                                            JS::Handle<JS::Value> aNewContextOptions)
+                                            JS::Handle<JS::Value> aNewContextOptions,
+                                            ErrorResult& aRvForDictionaryInit)
 {
   if (!mCurrentContext)
     return NS_OK;
@@ -205,7 +208,8 @@ CanvasRenderingContextHelper::UpdateContext(JSContext* aCx,
     return rv;
   }
 
-  rv = currentContext->SetContextOptions(aCx, aNewContextOptions);
+  rv = currentContext->SetContextOptions(aCx, aNewContextOptions,
+                                         aRvForDictionaryInit);
   if (NS_FAILED(rv)) {
     mCurrentContext = nullptr;
     return rv;
