@@ -12,7 +12,7 @@ config = {
         'upload-files',
         'sendchange',
         'check-test',
-        
+        'generate-build-stats',
         'update',  
     ],
     'stage_platform': 'win64-debug',
