@@ -31,7 +31,7 @@ function test() {
       yield actions.addBreakpoint(location);
 
       const bp = queries.getBreakpoint(getState(), location);
-      is(bp.condition, undefined, "The conditional expression is correct.");
+      is(bp.condition, "", "The conditional expression is correct.");
 
       resumeDebuggerThenCloseAndFinish(gPanel);
     });

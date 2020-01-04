@@ -115,6 +115,13 @@ function test() {
                                 gDebugger);
     }
 
+    function waitForConditionUpdate() {
+      
+      
+      gSources._hideConditionalPopup();
+      return waitForDispatch(gPanel, constants.SET_BREAKPOINT_CONDITION);
+    }
+
     Task.spawn(function*() {
       yield waitForSourceAndCaretAndScopes(gPanel, ".html", 17);
 
@@ -137,8 +144,10 @@ function test() {
       testBreakpoint(19, false, undefined);
       yield modBreakpoint2();
       testBreakpoint(19, true, undefined);
+      yield waitForConditionUpdate();
       yield addBreakpoint3();
-      testBreakpoint(20, false, undefined);
+      testBreakpoint(20, true, "");
+      yield waitForConditionUpdate();
       yield modBreakpoint3();
       testBreakpoint(20, false, "bamboocha");
       yield addBreakpoint4();

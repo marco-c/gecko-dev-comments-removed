@@ -12,6 +12,17 @@ const initialState = Immutable({
   breakpoints: {}
 });
 
+
+
+function firstString(...args) {
+  for (var arg of args) {
+    if (typeof arg === "string") {
+      return arg;
+    }
+  }
+  return null;
+}
+
 function update(state = initialState, action, emitChange) {
   switch(action.type) {
   case constants.ADD_BREAKPOINT: {
@@ -24,7 +35,10 @@ function update(state = initialState, action, emitChange) {
       state = setIn(state, ['breakpoints', id], bp.merge({
         disabled: false,
         loading: true,
-        condition: action.condition || bp.condition || undefined
+        
+        
+        
+        condition: firstString(action.condition, bp.condition)
       }));
 
       emitChange(existingBp ? "breakpoint-enabled" : "breakpoint-added",
