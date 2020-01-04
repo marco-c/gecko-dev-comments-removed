@@ -114,7 +114,7 @@ private:
   void NotifyDemuxer();
   void ReturnOutput(MediaData* aData, TrackType aTrack);
 
-  bool EnsureDecodersCreated();
+  bool EnsureDecoderCreated(TrackType aTrack);
   bool EnsureDecoderInitialized(TrackType aTrack);
 
   
