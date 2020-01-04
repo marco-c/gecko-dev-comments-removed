@@ -989,15 +989,10 @@ nsJARChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *ctx)
 NS_IMETHODIMP
 nsJARChannel::AsyncOpen2(nsIStreamListener *aListener)
 {
-  if (!mLoadInfo) {
-    MOZ_ASSERT(mLoadInfo, "can not enforce security without loadInfo");
-    return NS_ERROR_UNEXPECTED;
-  }
-  
-  
-  
-  mLoadInfo->SetEnforceSecurity(true);
-  return AsyncOpen(aListener, nullptr);
+  nsCOMPtr<nsIStreamListener> listener = aListener;
+  nsresult rv = nsContentSecurityManager::doContentSecurityCheck(this, listener);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return AsyncOpen(listener, nullptr);
 }
 
 nsresult
