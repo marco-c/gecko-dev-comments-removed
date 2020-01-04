@@ -211,10 +211,6 @@ this.DOMApplicationRegistry = {
 
   init: function() {
     
-    AppsUtils.allowUnsignedAddons = true;
-    
-
-    
     this.messages = ["Webapps:Install",
                      "Webapps:Uninstall",
                      "Webapps:GetSelf",

@@ -1160,12 +1160,6 @@ pref("extensions.blocklist.url", "https://blocklist.addons.mozilla.org/blocklist
 pref("extensions.blocklist.detailsURL", "https://www.mozilla.com/%LOCALE%/blocklist/");
 
 
-pref("extensions.blocklist.url", "https://people.mozilla.org/~fdesre/blocklist.xml");
-pref("extensions.logging.enabled", true);
-pref("extensions.blocklist.interval", 10);
-
-
-
 #ifdef MOZ_GRAPHENE
 #include ../graphene/graphene.js
 #endif
