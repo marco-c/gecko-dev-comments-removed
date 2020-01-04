@@ -8729,7 +8729,7 @@ ICCPDUHelperObject.prototype = {
       GsmPDUHelper.writeHexOctet(0xff);
     }
 
-    return (str) ? str.substring(0, i) : null;
+    return (str) ? str.substring(0, i) : "";
   },
 
   
@@ -9090,7 +9090,7 @@ ICCPDUHelperObject.prototype = {
 
   writeAlphaIdentifier: function(numOctets, alphaId) {
     if (numOctets === 0) {
-      return null;
+      return "";
     }
 
     
@@ -9222,7 +9222,7 @@ ICCPDUHelperObject.prototype = {
       for (let i = 0; i < ADN_MAX_BCD_NUMBER_BYTES + 1; i++) {
         GsmPDUHelper.writeHexOctet(0xff);
       }
-      return null;
+      return "";
     }
   }
 };
