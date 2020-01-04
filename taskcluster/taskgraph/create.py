@@ -30,6 +30,14 @@ def create_tasks(taskgraph, label_to_taskid):
 
     session = requests.Session()
 
+    
+    
+    
+    http_adapter = requests.adapters.HTTPAdapter(pool_connections=CONCURRENCY,
+                                                 pool_maxsize=CONCURRENCY)
+    session.mount('https://', http_adapter)
+    session.mount('http://', http_adapter)
+
     decision_task_id = os.environ.get('TASK_ID')
 
     with futures.ThreadPoolExecutor(CONCURRENCY) as e:
