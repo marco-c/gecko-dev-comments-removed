@@ -98,7 +98,7 @@ namespace mozilla {
 
 
 
-struct nsCSSOffsetState {
+struct SizeComputationInput {
 public:
   typedef mozilla::WritingMode WritingMode;
   typedef mozilla::LogicalMargin LogicalMargin;
@@ -164,14 +164,14 @@ protected:
 
 public:
   
-  nsCSSOffsetState(nsIFrame *aFrame, nsRenderingContext *aRenderingContext)
+  SizeComputationInput(nsIFrame *aFrame, nsRenderingContext *aRenderingContext)
     : frame(aFrame)
     , rendContext(aRenderingContext)
     , mWritingMode(aFrame->GetWritingMode())
   {
   }
 
-  nsCSSOffsetState(nsIFrame *aFrame, nsRenderingContext *aRenderingContext,
+  SizeComputationInput(nsIFrame *aFrame, nsRenderingContext *aRenderingContext,
                    mozilla::WritingMode aContainingBlockWritingMode,
                    nscoord aContainingBlockISize);
 
@@ -225,12 +225,12 @@ public:
   
   static void* DisplayInitOffsetsEnter(
                                      nsIFrame* aFrame,
-                                     nsCSSOffsetState* aState,
+                                     SizeComputationInput* aState,
                                      const mozilla::LogicalSize& aPercentBasis,
                                      const nsMargin* aBorder,
                                      const nsMargin* aPadding);
   static void DisplayInitOffsetsExit(nsIFrame* aFrame,
-                                     nsCSSOffsetState* aState,
+                                     SizeComputationInput* aState,
                                      void* aValue);
 #endif
 
@@ -314,7 +314,7 @@ protected:
 
 
 
-struct ReflowInput : public nsCSSOffsetState {
+struct ReflowInput : public SizeComputationInput {
   
   
   const ReflowInput* mParentReflowState;

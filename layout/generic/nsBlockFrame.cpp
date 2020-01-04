@@ -7398,7 +7398,7 @@ nsBlockFrame::ISizeToClearPastFloats(const nsBlockReflowState& aState,
 {
   nscoord inlineStartOffset, inlineEndOffset;
   WritingMode wm = aState.mReflowState.GetWritingMode();
-  nsCSSOffsetState offsetState(aFrame, aState.mReflowState.rendContext,
+  SizeComputationInput offsetState(aFrame, aState.mReflowState.rendContext,
                                wm, aState.mContentArea.ISize(wm));
 
   ReplacedElementISizeToClear result;

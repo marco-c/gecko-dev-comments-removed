@@ -374,7 +374,7 @@ ChildShrinkWrapISize(nsRenderingContext *aRenderingContext,
   
   WritingMode childWM = aChildFrame->GetWritingMode();
 
-  nsCSSOffsetState offsets(aChildFrame, aRenderingContext, aWM,
+  SizeComputationInput offsets(aChildFrame, aRenderingContext, aWM,
                            aCBSize.ISize(aWM));
   LogicalSize marginSize =
     offsets.ComputedLogicalMargin().Size(childWM).ConvertTo(aWM, childWM);
