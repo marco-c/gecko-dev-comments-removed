@@ -25,6 +25,14 @@ class nsIStatefulFrame
 
   
   NS_IMETHOD RestoreState(nsPresState* aState) = 0;
+
+  
+  NS_IMETHOD GenerateStateKey(nsIContent* aContent,
+                              nsIDocument* aDocument,
+                              nsACString& aKey)
+  {
+    return nsContentUtils::GenerateStateKey(aContent, aDocument, aKey);
+  };
 };
 
 #endif 
