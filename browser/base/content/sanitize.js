@@ -635,8 +635,9 @@ Sanitizer.prototype = {
         let newWindow = existingWindow.openDialog("chrome://browser/content/", "_blank",
                                                   features, defaultArgs);
 
+        let onFullScreen = null;
         if (AppConstants.platform == "macosx") {
-          let onFullScreen = function(e) {
+          onFullScreen = function(e) {
             newWindow.removeEventListener("fullscreen", onFullScreen);
             let docEl = newWindow.document.documentElement;
             let sizemode = docEl.getAttribute("sizemode");
@@ -658,7 +659,7 @@ Sanitizer.prototype = {
           
           
           let newWindowOpened = false;
-          function onWindowOpened(subject, topic, data) {
+          let onWindowOpened = function(subject, topic, data) {
             if (subject != newWindow)
               return;
 
@@ -675,7 +676,7 @@ Sanitizer.prototype = {
           }
 
           let numWindowsClosing = windowList.length;
-          function onWindowClosed() {
+          let onWindowClosed = function() {
             numWindowsClosing--;
             if (numWindowsClosing == 0) {
               Services.obs.removeObserver(onWindowClosed, "xul-window-destroyed");
@@ -686,9 +687,9 @@ Sanitizer.prototype = {
               }
             }
           }
+          Services.obs.addObserver(onWindowOpened, "browser-delayed-startup-finished", false);
+          Services.obs.addObserver(onWindowClosed, "xul-window-destroyed", false);
         });
-        Services.obs.addObserver(onWindowOpened, "browser-delayed-startup-finished", false);
-        Services.obs.addObserver(onWindowClosed, "xul-window-destroyed", false);
 
         
         while (windowList.length) {
