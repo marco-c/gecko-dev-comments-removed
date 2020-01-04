@@ -3879,7 +3879,7 @@ GCRuntime::checkForCompartmentMismatches()
         }
     }
 }
-#endif 
+#endif
 
 static void
 RelazifyFunctions(Zone* zone, AllocKind kind)
@@ -6213,10 +6213,6 @@ class AutoScheduleZonesForGC
 MOZ_NEVER_INLINE bool
 GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::Reason reason)
 {
-    AutoTraceLog logGC(TraceLoggerForMainThread(rt), TraceLogger_GC);
-    AutoStopVerifyingBarriers av(rt, IsShutdownGC(reason));
-    AutoScheduleZonesForGC asz(rt);
-    gcstats::AutoGCSlice agc(stats, scanZonesBeforeGC(), invocationKind, budget, reason);
     AutoNotifyGCActivity notify(*this);
 
     evictNursery(reason);
@@ -6371,13 +6367,12 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
     if (!checkIfGCAllowedInCurrentState(reason))
         return;
 
+    AutoTraceLog logGC(TraceLoggerForMainThread(rt), TraceLogger_GC);
+    AutoStopVerifyingBarriers av(rt, IsShutdownGC(reason));
     AutoEnqueuePendingParseTasksAfterGC aept(*this);
+    AutoScheduleZonesForGC asz(rt);
+    gcstats::AutoGCSlice agc(stats, scanZonesBeforeGC(), invocationKind, budget, reason);
 
-    
-    
-    
-    
-    
     bool repeat = false;
     do {
         poked = false;
