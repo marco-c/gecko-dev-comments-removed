@@ -548,6 +548,18 @@ nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest)
     return NS_ERROR_DOM_BAD_URI;
   }
 
+  nsCOMPtr<nsIHttpChannelInternal> internal = do_QueryInterface(aRequest);
+  NS_ENSURE_STATE(internal);
+  bool responseSynthesized = false;
+  if (NS_SUCCEEDED(internal->GetResponseSynthesized(&responseSynthesized)) &&
+      responseSynthesized) {
+    
+    
+    
+    MOZ_ASSERT(!mIsPreflight);
+    return NS_OK;
+  }
+
   
   nsAutoCString allowedOriginHeader;
   rv = http->GetResponseHeader(
@@ -1325,6 +1337,11 @@ NS_StartCORSPreflight(nsIChannel* aRequestChannel,
   
   nsCOMPtr<nsIHttpChannelInternal> preInternal = do_QueryInterface(preflightChannel);
   if (preInternal) {
+    
+    
+    
+    
+    
     preInternal->ForceNoIntercept();
   }
   
