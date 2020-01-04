@@ -117,7 +117,14 @@ function update(state = initialState, action, emitChange) {
     const bp = state.breakpoints[id];
     emitChange("breakpoint-condition-updated", bp);
 
-    if (action.status === 'start') {
+    if (!action.status) {
+      
+      
+      return mergeIn(state, ['breakpoints', id], {
+        condition: action.condition
+      });
+    }
+    else if (action.status === 'start') {
       return mergeIn(state, ['breakpoints', id], {
         loading: true,
         condition: action.condition
@@ -126,6 +133,7 @@ function update(state = initialState, action, emitChange) {
     else if (action.status === 'done') {
       return mergeIn(state, ['breakpoints', id], {
         loading: false,
+        condition: action.condition,
         
         
         actor: action.value.actor

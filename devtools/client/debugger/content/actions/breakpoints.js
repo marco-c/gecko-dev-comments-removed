@@ -116,8 +116,7 @@ function _removeOrDisableBreakpoint(location, isDisabled) {
       return dispatch(Object.assign({}, action, {
         [PROMISE]: bpClient.remove()
       }));
-    }
-    else {
+    } else {
       return dispatch(Object.assign({}, action, { status: "done" }));
     }
   }
@@ -154,21 +153,30 @@ function setBreakpointCondition(location, condition) {
     }
 
     const bpClient = getBreakpointClient(bp.actor);
-
-    return dispatch({
+    const action = {
       type: constants.SET_BREAKPOINT_CONDITION,
       breakpoint: bp,
-      condition: condition,
-      [PROMISE]: Task.spawn(function*() {
-        const newClient = yield bpClient.setCondition(gThreadClient, condition);
+      condition: condition
+    };
 
-        
-        setBreakpointClient(bpClient.actor, null);
-        setBreakpointClient(newClient.actor, newClient);
+    
+    
+    
+    if(!bp.disabled) {
+      return dispatch(Object.assign({}, action, {
+        [PROMISE]: Task.spawn(function*() {
+          const newClient = yield bpClient.setCondition(gThreadClient, condition);
 
-        return { actor: newClient.actor };
-      })
-    });
+          
+          setBreakpointClient(bpClient.actor, null);
+          setBreakpointClient(newClient.actor, newClient);
+
+          return { actor: newClient.actor };
+        })
+      }));
+    } else {
+      return dispatch(action);
+    }
   };
 }
 
