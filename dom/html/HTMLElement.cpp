@@ -17,8 +17,6 @@ public:
   explicit HTMLElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
   virtual ~HTMLElement();
 
-  NS_IMETHOD GetInnerHTML(nsAString& aInnerHTML) override;
-
   virtual nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo,
                          nsINode** aResult) const override;
 
@@ -36,27 +34,6 @@ HTMLElement::~HTMLElement()
 }
 
 NS_IMPL_ELEMENT_CLONE(HTMLElement)
-
-NS_IMETHODIMP
-HTMLElement::GetInnerHTML(nsAString& aInnerHTML)
-{
-  
-
-
-
-
-
-
-  if (mNodeInfo->Equals(nsGkAtoms::xmp) ||
-      mNodeInfo->Equals(nsGkAtoms::plaintext)) {
-    if (!nsContentUtils::GetNodeTextContent(this, false, aInnerHTML, fallible)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-    return NS_OK;
-  }
-
-  return nsGenericHTMLElement::GetInnerHTML(aInnerHTML);
-}
 
 JSObject*
 HTMLElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
