@@ -833,7 +833,7 @@ public:
       
       nsCOMPtr<nsIPrincipal> principal = window->GetExtantDoc()->NodePrincipal();
       domStream =
-        DOMMediaStream::CreateAudioCaptureStream(window, principal, msg);
+        DOMMediaStream::CreateAudioCaptureStreamAsInput(window, principal, msg);
 
       stream = msg->CreateSourceStream(nullptr); 
       msg->RegisterCaptureStreamForWindow(
@@ -919,8 +919,8 @@ public:
       
       
       domStream =
-        DOMLocalMediaStream::CreateSourceStream(window, msg,
-                                                new FakeTrackSourceGetter(principal));
+        DOMLocalMediaStream::CreateSourceStreamAsInput(window, msg,
+                                                       new FakeTrackSourceGetter(principal));
 
       if (mAudioDevice) {
         nsString audioDeviceName;
