@@ -969,9 +969,11 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow)
   
   
   
-  bool beingDestroyed;
   nsCOMPtr<nsIDocShell> docShellBeingHidden = window->GetDocShell();
-  docShellBeingHidden->IsBeingDestroyed(&beingDestroyed);
+  bool beingDestroyed = !docShellBeingHidden;
+  if (docShellBeingHidden) {
+    docShellBeingHidden->IsBeingDestroyed(&beingDestroyed);
+  }
   if (beingDestroyed) {
     
     
