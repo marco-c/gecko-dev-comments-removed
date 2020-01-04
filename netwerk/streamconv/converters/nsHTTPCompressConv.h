@@ -3,6 +3,7 @@
 
 
 
+
 #if !defined (__nsHTTPCompressConv__h__)
 #define	__nsHTTPCompressConv__h__	1
 
@@ -13,14 +14,14 @@
 
 class nsIStringInputStream;
 
-#define NS_HTTPCOMPRESSCONVERTER_CID                \
-{                                                   \
-    /* 66230b2b-17fa-4bd3-abf4-07986151022d */      \
-    0x66230b2b,                                     \
-    0x17fa,                                         \
-    0x4bd3,                                         \
-    {0xab, 0xf4, 0x07, 0x98, 0x61, 0x51, 0x02, 0x2d}\
-}
+#define NS_HTTPCOMPRESSCONVERTER_CID                    \
+  {                                                     \
+    /* 66230b2b-17fa-4bd3-abf4-07986151022d */          \
+    0x66230b2b,                                         \
+      0x17fa,                                           \
+      0x4bd3,                                           \
+      {0xab, 0xf4, 0x07, 0x98, 0x61, 0x51, 0x02, 0x2d}  \
+  }
 
 
 #define	HTTP_DEFLATE_TYPE		"deflate"
@@ -32,27 +33,25 @@ class nsIStringInputStream;
 #define	HTTP_UNCOMPRESSED_TYPE	"uncompressed"
 
 typedef enum    {
-        HTTP_COMPRESS_GZIP,
-        HTTP_COMPRESS_DEFLATE,
-        HTTP_COMPRESS_COMPRESS,
-        HTTP_COMPRESS_IDENTITY
-    }   CompressMode;
+  HTTP_COMPRESS_GZIP,
+  HTTP_COMPRESS_DEFLATE,
+  HTTP_COMPRESS_COMPRESS,
+  HTTP_COMPRESS_IDENTITY
+} CompressMode;
 
-class nsHTTPCompressConv	: public nsIStreamConverter	{
-public:
-    
+class nsHTTPCompressConv : public nsIStreamConverter	{
+  public:
+  
     NS_DECL_THREADSAFE_ISUPPORTS
-
     NS_DECL_NSIREQUESTOBSERVER
     NS_DECL_NSISTREAMLISTENER
 
-    
+  
     NS_DECL_NSISTREAMCONVERTER
 
     nsHTTPCompressConv ();
 
 private:
-
     virtual ~nsHTTPCompressConv ();
 
     nsCOMPtr<nsIStreamListener> mListener; 
@@ -82,6 +81,5 @@ private:
 
     uint32_t check_header (nsIInputStream *iStr, uint32_t streamLen, nsresult *rv);
 };
-
 
 #endif
