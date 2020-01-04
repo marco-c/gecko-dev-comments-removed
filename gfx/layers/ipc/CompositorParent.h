@@ -126,7 +126,9 @@ public:
   void ScheduleComposition();
   void CancelCurrentCompositeTask();
   bool NeedsComposite();
-  void Composite(TimeStamp aVsyncTimestamp);
+  void Composite(TimeStamp aVsyncTimestamp,
+                 gfx::DrawTarget* aTarget = nullptr,
+                 const gfx::IntRect* aRect = nullptr);
   void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect);
 
   const TimeStamp& GetLastComposeTime()
@@ -445,6 +447,8 @@ public:
 
   nsIWidget* GetWidget() { return mWidget; }
 
+  void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect = nullptr);
+
 protected:
   
   virtual ~CompositorParent();
@@ -459,7 +463,6 @@ protected:
   virtual bool DeallocPLayerTransactionParent(PLayerTransactionParent* aLayers) override;
   virtual void ScheduleTask(CancelableTask*, int);
   void CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect = nullptr);
-  void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect = nullptr);
 
   void SetEGLSurfaceSize(int width, int height);
 
