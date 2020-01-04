@@ -2073,10 +2073,13 @@ MessageChannel::NotifyMaybeChannelError()
         return;
     }
 
+    Clear();
+
     
     mChannelState = ChannelError;
+
+    
     mListener->OnChannelError();
-    Clear();
 }
 
 void
@@ -2228,11 +2231,12 @@ MessageChannel::NotifyChannelClosed()
     if (ChannelClosed != mChannelState)
         NS_RUNTIMEABORT("channel should have been closed!");
 
+    Clear();
+
+    
     
     
     mListener->OnChannelClose();
-
-    Clear();
 }
 
 void
