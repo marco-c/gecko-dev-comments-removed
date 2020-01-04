@@ -22,9 +22,6 @@
 #include "mozilla/gfx/Point.h"          
 #include "gfx2DGlue.h"
 #include "YCbCrUtils.h"                 
-#ifdef XP_MACOSX
-#include "gfxQuartzImageSurface.h"
-#endif
 
 namespace mozilla {
 namespace layers {
