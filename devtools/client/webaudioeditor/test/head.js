@@ -420,8 +420,12 @@ function countGraphObjects(win) {
 
 
 
-function forceCC() {
+function forceNodeCollection() {
   ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
+    
+    content.wrappedJSObject.keepAlive = null;
+
+    
     Cu.forceGC();
     Cu.forceCC();
     Cu.forceGC();

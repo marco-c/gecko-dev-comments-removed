@@ -8,20 +8,18 @@
 add_task(function* () {
   let { target, front } = yield initBackend(DESTROY_NODES_URL);
 
-  let waitUntilDestroyed = getN(front, "destroy-node", 10);
   let [, , created] = yield Promise.all([
     front.setup({ reload: true }),
     once(front, "start-context"),
     
+    
     getN(front, "create-node", 13)
   ]);
 
-  
-  
-  yield DevToolsUtils.waitForTick();
+  let waitUntilDestroyed = getN(front, "destroy-node", 10);
 
   
-  forceCC();
+  forceNodeCollection();
 
   let destroyed = yield waitUntilDestroyed;
 

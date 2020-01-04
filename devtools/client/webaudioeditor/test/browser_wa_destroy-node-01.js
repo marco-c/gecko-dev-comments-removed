@@ -18,8 +18,6 @@ add_task(function* () {
 
   reload(target);
 
-  let destroyed = getN(gAudioNodes, "remove", 10);
-
   let [created] = yield Promise.all([
     getNSpread(gAudioNodes, "add", 13),
     waitForGraphRendered(panelWin, 13, 2)
@@ -32,8 +30,10 @@ add_task(function* () {
   
   yield clickGraphNode(panelWin, actorIDs[5]);
 
+  let destroyed = getN(gAudioNodes, "remove", 10);
+
   
-  forceCC();
+  forceNodeCollection();
 
   
   yield Promise.all([destroyed, waitForGraphRendered(panelWin, 3, 2)]);
