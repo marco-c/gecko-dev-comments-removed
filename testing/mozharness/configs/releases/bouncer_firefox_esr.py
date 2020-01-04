@@ -59,6 +59,21 @@ config = {
                 },
             },
         },
+        "sha1-installer": {
+            "product-name": "Firefox-%(version)s-sha1",
+            
+            "check_uptake": False,
+            
+            
+            "ssl-only": True,
+            "add-locales": True,
+            "paths": {
+                "win32": {
+                    "path": "/firefox/releases/%(version)s/win32-sha1/:lang/Firefox%%20Setup%%20%(version)s.exe",
+                    "bouncer-platform": "win",
+                },
+            },
+        },
         "complete-mar": {
             "product-name": "Firefox-%(version)s-Complete",
             "check_uptake": True,
