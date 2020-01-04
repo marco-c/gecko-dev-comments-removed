@@ -6,10 +6,11 @@
 
 const ENCTYPE_BASE64 = 0;
 const ENCTYPE_SDR = 1;
+const PERMISSION_SAVE_LOGINS = "login-saving";
 
 
 
-const CURRENT_SCHEMA = 5;
+const CURRENT_SCHEMA = 6;
 
 function* copyFile(aLeafName)
 {
@@ -61,8 +62,32 @@ function reloadStorage(aInputPathName, aInputFileName)
 function checkStorageData(storage, ref_disabledHosts, ref_logins)
 {
   LoginTestUtils.assertLoginListsEqual(storage.getAllLogins(), ref_logins);
-  LoginTestUtils.assertDisabledHostsEqual(storage.getAllDisabledHosts(),
+  LoginTestUtils.assertDisabledHostsEqual(getAllDisabledHostsFromPermissionManager(),
                                           ref_disabledHosts);
+}
+
+function getAllDisabledHostsFromPermissionManager() {
+  let disabledHosts = [];
+  let enumerator = Services.perms.enumerator;
+
+  while (enumerator.hasMoreElements()) {
+    let perm = enumerator.getNext();
+    if (perm.type == PERMISSION_SAVE_LOGINS && perm.capability == Services.perms.DENY_ACTION) {
+      disabledHosts.push(perm.principal.URI.prePath);
+    }
+  }
+
+  return disabledHosts;
+}
+
+function setLoginSavingEnabled(origin, enabled) {
+  let uri = Services.io.newURI(origin, null, null);
+
+  if (enabled) {
+    Services.perms.remove(uri, PERMISSION_SAVE_LOGINS);
+  } else {
+    Services.perms.add(uri, PERMISSION_SAVE_LOGINS, Services.perms.DENY_ACTION);
+  }
 }
 
 add_task(function* test_execute()
@@ -87,6 +112,17 @@ function getEncTypeForID(conn, id) {
     var encType = stmt.row.encType;
     stmt.finalize();
     return encType;
+}
+
+function getAllDisabledHostsFromMozStorage(conn) {
+    let disabledHosts = [];
+    let stmt = conn.createStatement("SELECT hostname from moz_disabledHosts");
+
+    while (stmt.executeStep()) {
+      disabledHosts.push(stmt.row.hostname);
+    }
+
+    return disabledHosts;
 }
 
 var storage;
@@ -129,6 +165,7 @@ do_check_eq(999, dbConnection.schemaVersion);
 dbConnection.close();
 
 storage = reloadStorage(OUTDIR, "signons-v999.sqlite");
+setLoginSavingEnabled("https://disabled.net", false);
 checkStorageData(storage, ["https://disabled.net"], [testuser1]);
 
 
@@ -291,6 +328,9 @@ storage = reloadStorage(OUTDIR, "signons-v3.sqlite");
 do_check_eq(CURRENT_SCHEMA, dbConnection.schemaVersion);
 
 
+setLoginSavingEnabled("https://disabled.net", true);
+
+
 checkStorageData(storage, [], [testuser1, testuser2]);
 
 var logins = storage.getAllLogins();
@@ -371,6 +411,43 @@ storage = reloadStorage(OUTDIR, "signons-v4v5.sqlite");
 do_check_eq(CURRENT_SCHEMA, dbConnection.schemaVersion);
 do_check_true(dbConnection.tableExists("moz_deleted_logins"));
 
+
+testnum++;
+testdesc = "Test upgrade from v5->v6 storage";
+
+yield* copyFile("signons-v5v6.sqlite");
+
+
+dbConnection = openDB("signons-v5v6.sqlite");
+do_check_eq(5, dbConnection.schemaVersion);
+do_check_true(dbConnection.tableExists("moz_disabledHosts"));
+
+
+var disabledHosts = [
+  "http://disabled1.example.com",
+  "http://大.net",
+  "http://xn--19g.com"
+];
+
+LoginTestUtils.assertDisabledHostsEqual(disabledHosts, getAllDisabledHostsFromMozStorage(dbConnection));
+
+
+storage = reloadStorage(OUTDIR, "signons-v5v6.sqlite");
+do_check_eq(CURRENT_SCHEMA, dbConnection.schemaVersion);
+
+
+LoginTestUtils.assertDisabledHostsEqual([], getAllDisabledHostsFromMozStorage(dbConnection));
+
+
+let hostsInPermissionManager = getAllDisabledHostsFromPermissionManager();
+
+
+LoginTestUtils.assertDisabledHostsEqual(disabledHosts, hostsInPermissionManager);
+
+
+for (let host of disabledHosts) {
+  setLoginSavingEnabled(host, true);
+}
 
 
 testnum++;
