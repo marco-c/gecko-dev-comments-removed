@@ -4,14 +4,15 @@
 
 
 
-"use strict";
 
-const Services = require("Services");
+"use strict";
 
 const { createFactory, createClass, DOM: dom } =
   require("devtools/client/shared/vendor/react");
+const Services = require("Services");
 
 const TabMenu = createFactory(require("./tab-menu"));
+
 loader.lazyGetter(this, "AddonsTab",
   () => createFactory(require("./addons-tab")));
 loader.lazyGetter(this, "WorkersTab",
@@ -65,8 +66,9 @@ module.exports = createClass({
     return dom.div({ className: "app" },
       TabMenu({ tabs, selectedTabId, selectTab }),
       dom.div({ className: "main-content" },
-        selectedTab.component({ client }))
-      );
+        selectedTab.component({ client })
+      )
+    );
   },
 
   onHashChange() {

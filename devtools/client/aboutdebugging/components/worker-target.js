@@ -1,0 +1,111 @@
+
+
+
+
+
+
+
+"use strict";
+
+loader.lazyRequireGetter(this, "gDevTools",
+  "devtools/client/framework/devtools", true);
+loader.lazyRequireGetter(this, "TargetFactory",
+  "devtools/client/framework/target", true);
+loader.lazyRequireGetter(this, "Toolbox",
+  "devtools/client/framework/toolbox", true);
+
+const { createClass, DOM: dom } =
+  require("devtools/client/shared/vendor/react");
+const Services = require("Services");
+
+const Strings = Services.strings.createBundle(
+  "chrome://devtools/locale/aboutdebugging.properties");
+
+module.exports = createClass({
+  displayName: "WorkerTarget",
+
+  render() {
+    let { target, debugDisabled } = this.props;
+    let isRunning = this.isRunning();
+    let isServiceWorker = this.isServiceWorker();
+
+    return dom.div({ className: "target" },
+      dom.img({
+        className: "target-icon",
+        role: "presentation",
+        src: target.icon
+      }),
+      dom.div({ className: "target-details" },
+        dom.div({ className: "target-name" }, target.name)
+      ),
+      (isRunning && isServiceWorker ?
+        dom.button({
+          className: "push-button",
+          onClick: this.push
+        }, Strings.GetStringFromName("push")) :
+        null
+      ),
+      (isRunning ?
+        dom.button({
+          className: "debug-button",
+          onClick: this.debug,
+          disabled: debugDisabled
+        }, Strings.GetStringFromName("debug")) :
+        dom.button({
+          className: "start-button",
+          onClick: this.start
+        }, Strings.GetStringFromName("start"))
+      )
+    );
+  },
+
+  debug() {
+    let { client, target } = this.props;
+    if (!this.isRunning()) {
+      
+      return;
+    }
+    client.attachWorker(target.workerActor, (response, workerClient) => {
+      let workerTarget = TargetFactory.forWorker(workerClient);
+      gDevTools.showToolbox(workerTarget, "jsdebugger", Toolbox.HostType.WINDOW)
+        .then(toolbox => {
+          toolbox.once("destroy", () => workerClient.detach());
+        });
+    });
+  },
+
+  push() {
+    let { client, target } = this.props;
+    if (!this.isRunning()) {
+      
+      return;
+    }
+    client.request({
+      to: target.workerActor,
+      type: "push"
+    });
+  },
+
+  start() {
+    let { client, target } = this.props;
+    if (!this.isServiceWorker() || this.isRunning()) {
+      
+      
+      return;
+    }
+    client.request({
+      to: target.registrationActor,
+      type: "start"
+    });
+  },
+
+  isRunning() {
+    
+    return !!this.props.target.workerActor;
+  },
+
+  isServiceWorker() {
+    
+    return !!this.props.target.registrationActor;
+  },
+});
