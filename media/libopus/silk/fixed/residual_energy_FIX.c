@@ -42,7 +42,8 @@ void silk_residual_energy_FIX(
     const opus_int32                gains[ MAX_NB_SUBFR ],                  
     const opus_int                  subfr_length,                           
     const opus_int                  nb_subfr,                               
-    const opus_int                  LPC_order                               
+    const opus_int                  LPC_order,                              
+          int                       arch                                    
 )
 {
     opus_int         offset, i, j, rshift, lz1, lz2;
@@ -60,7 +61,7 @@ void silk_residual_energy_FIX(
     silk_assert( ( nb_subfr >> 1 ) * ( MAX_NB_SUBFR >> 1 ) == nb_subfr );
     for( i = 0; i < nb_subfr >> 1; i++ ) {
         
-        silk_LPC_analysis_filter( LPC_res, x_ptr, a_Q12[ i ], ( MAX_NB_SUBFR >> 1 ) * offset, LPC_order );
+        silk_LPC_analysis_filter( LPC_res, x_ptr, a_Q12[ i ], ( MAX_NB_SUBFR >> 1 ) * offset, LPC_order, arch );
 
         
         LPC_res_ptr = LPC_res + LPC_order;

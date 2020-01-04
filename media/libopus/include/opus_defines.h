@@ -284,7 +284,6 @@ extern "C" {
 
 
 
-
 #define OPUS_SET_VBR(x) OPUS_SET_VBR_REQUEST, __opus_check_int(x)
 
 
@@ -460,14 +459,6 @@ extern "C" {
 
 
 
-#define OPUS_GET_SAMPLE_RATE(x) OPUS_GET_SAMPLE_RATE_REQUEST, __opus_check_int_ptr(x)
-
-
-
-
-
-
-
 
 
 
@@ -537,6 +528,9 @@ extern "C" {
 
 
 
+
+
+
 #define OPUS_SET_LSB_DEPTH(x) OPUS_SET_LSB_DEPTH_REQUEST, __opus_check_int(x)
 
 
@@ -544,11 +538,6 @@ extern "C" {
 
 
 #define OPUS_GET_LSB_DEPTH(x) OPUS_GET_LSB_DEPTH_REQUEST, __opus_check_int_ptr(x)
-
-
-
-
-#define OPUS_GET_LAST_PACKET_DURATION(x) OPUS_GET_LAST_PACKET_DURATION_REQUEST, __opus_check_int_ptr(x)
 
 
 
@@ -591,7 +580,19 @@ extern "C" {
 
 
 
+
+
+
+
+
+
 #define OPUS_SET_PREDICTION_DISABLED(x) OPUS_SET_PREDICTION_DISABLED_REQUEST, __opus_check_int(x)
+
+
+
+
+
+
 
 
 #define OPUS_GET_PREDICTION_DISABLED(x) OPUS_GET_PREDICTION_DISABLED_REQUEST, __opus_check_int_ptr(x)
@@ -659,21 +660,17 @@ extern "C" {
 
 
 
-#define OPUS_GET_PITCH(x) OPUS_GET_PITCH_REQUEST, __opus_check_int_ptr(x)
-
-
-
-
-
-
-
-
-
-
-
 
 
 #define OPUS_GET_BANDWIDTH(x) OPUS_GET_BANDWIDTH_REQUEST, __opus_check_int_ptr(x)
+
+
+
+
+
+
+
+#define OPUS_GET_SAMPLE_RATE(x) OPUS_GET_SAMPLE_RATE_REQUEST, __opus_check_int_ptr(x)
 
 
 
@@ -702,6 +699,23 @@ extern "C" {
 
 
 
+#define OPUS_GET_LAST_PACKET_DURATION(x) OPUS_GET_LAST_PACKET_DURATION_REQUEST, __opus_check_int_ptr(x)
+
+
+
+
+
+
+
+
+
+
+
+#define OPUS_GET_PITCH(x) OPUS_GET_PITCH_REQUEST, __opus_check_int_ptr(x)
+
+
+
+
 
 
 
@@ -711,6 +725,10 @@ extern "C" {
 
 
 OPUS_EXPORT const char *opus_strerror(int error);
+
+
+
+
 
 
 

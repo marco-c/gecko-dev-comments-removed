@@ -46,6 +46,7 @@ static OPUS_INLINE void silk_nsq_scale_states(
     const opus_int      signal_type             
 );
 
+#if !defined(OPUS_X86_MAY_HAVE_SSE4_1)
 static OPUS_INLINE void silk_noise_shape_quantizer(
     silk_nsq_state      *NSQ,                   
     opus_int            signalType,             
@@ -67,8 +68,10 @@ static OPUS_INLINE void silk_noise_shape_quantizer(
     opus_int            shapingLPCOrder,        
     opus_int            predictLPCOrder         
 );
+#endif
 
-void silk_NSQ(
+void silk_NSQ_c
+(
     const silk_encoder_state    *psEncC,                                    
     silk_nsq_state              *NSQ,                                       
     SideInfoIndices             *psIndices,                                 
@@ -141,7 +144,7 @@ void silk_NSQ(
                 silk_assert( start_idx > 0 );
 
                 silk_LPC_analysis_filter( &sLTP[ start_idx ], &NSQ->xq[ start_idx + k * psEncC->subfr_length ],
-                    A_Q12, psEncC->ltp_mem_length - start_idx, psEncC->predictLPCOrder );
+                    A_Q12, psEncC->ltp_mem_length - start_idx, psEncC->predictLPCOrder, psEncC->arch );
 
                 NSQ->rewhite_flag = 1;
                 NSQ->sLTP_buf_idx = psEncC->ltp_mem_length;
@@ -172,7 +175,11 @@ void silk_NSQ(
 
 
 
-static OPUS_INLINE void silk_noise_shape_quantizer(
+
+#if !defined(OPUS_X86_MAY_HAVE_SSE4_1)
+static OPUS_INLINE
+#endif
+void silk_noise_shape_quantizer(
     silk_nsq_state      *NSQ,                   
     opus_int            signalType,             
     const opus_int32    x_sc_Q10[],             

@@ -42,18 +42,16 @@ opus_int silk_decode_frame(
     opus_int16                  pOut[],                         
     opus_int32                  *pN,                            
     opus_int                    lostFlag,                       
-    opus_int                    condCoding                      
+    opus_int                    condCoding,                     
+    int                         arch                            
 )
 {
     VARDECL( silk_decoder_control, psDecCtrl );
     opus_int         L, mv_len, ret = 0;
-    VARDECL( opus_int, pulses );
     SAVE_STACK;
 
     L = psDec->frame_length;
     ALLOC( psDecCtrl, 1, silk_decoder_control );
-    ALLOC( pulses, (L + SHELL_CODEC_FRAME_LENGTH - 1) &
-                   ~(SHELL_CODEC_FRAME_LENGTH - 1), opus_int );
     psDecCtrl->LTP_scale_Q14 = 0;
 
     
@@ -62,6 +60,9 @@ opus_int silk_decode_frame(
     if(   lostFlag == FLAG_DECODE_NORMAL ||
         ( lostFlag == FLAG_DECODE_LBRR && psDec->LBRR_flags[ psDec->nFramesDecoded ] == 1 ) )
     {
+        VARDECL( opus_int16, pulses );
+        ALLOC( pulses, (L + SHELL_CODEC_FRAME_LENGTH - 1) &
+                       ~(SHELL_CODEC_FRAME_LENGTH - 1), opus_int16 );
         
         
         
@@ -81,12 +82,12 @@ opus_int silk_decode_frame(
         
         
         
-        silk_decode_core( psDec, psDecCtrl, pOut, pulses );
+        silk_decode_core( psDec, psDecCtrl, pOut, pulses, arch );
 
         
         
         
-        silk_PLC( psDec, psDecCtrl, pOut, 0 );
+        silk_PLC( psDec, psDecCtrl, pOut, 0, arch );
 
         psDec->lossCnt = 0;
         psDec->prevSignalType = psDec->indices.signalType;
@@ -96,7 +97,7 @@ opus_int silk_decode_frame(
         psDec->first_frame_after_reset = 0;
     } else {
         
-        silk_PLC( psDec, psDecCtrl, pOut, 1 );
+        silk_PLC( psDec, psDecCtrl, pOut, 1, arch );
     }
 
     
@@ -110,12 +111,12 @@ opus_int silk_decode_frame(
     
     
     
-    silk_PLC_glue_frames( psDec, pOut, L );
+    silk_CNG( psDec, psDecCtrl, pOut, L );
 
     
     
     
-    silk_CNG( psDec, psDecCtrl, pOut, L );
+    silk_PLC_glue_frames( psDec, pOut, L );
 
     
     psDec->lagPrev = psDecCtrl->pitchL[ psDec->nb_subfr - 1 ];

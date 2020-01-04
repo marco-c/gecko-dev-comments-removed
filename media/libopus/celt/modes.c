@@ -37,6 +37,7 @@
 #include "os_support.h"
 #include "stack_alloc.h"
 #include "quant_bands.h"
+#include "cpu_support.h"
 
 static const opus_int16 eband5ms[] = {
 
@@ -229,6 +230,7 @@ CELTMode *opus_custom_mode_create(opus_int32 Fs, int frame_size, int *error)
    opus_val16 *window;
    opus_int16 *logN;
    int LM;
+   int arch = opus_select_arch();
    ALLOC_STACK;
 #if !defined(VAR_ARRAYS) && !defined(USE_ALLOCA)
    if (global_stack==NULL)
@@ -389,7 +391,7 @@ CELTMode *opus_custom_mode_create(opus_int32 Fs, int frame_size, int *error)
    compute_pulse_cache(mode, mode->maxLM);
 
    if (clt_mdct_init(&mode->mdct, 2*mode->shortMdctSize*mode->nbShortMdcts,
-           mode->maxLM) == 0)
+           mode->maxLM, arch) == 0)
       goto failure;
 
    if (error)
@@ -408,6 +410,8 @@ failure:
 #ifdef CUSTOM_MODES
 void opus_custom_mode_destroy(CELTMode *mode)
 {
+   int arch = opus_select_arch();
+
    if (mode == NULL)
       return;
 #ifndef CUSTOM_MODES_ONLY
@@ -431,7 +435,7 @@ void opus_custom_mode_destroy(CELTMode *mode)
    opus_free((opus_int16*)mode->cache.index);
    opus_free((unsigned char*)mode->cache.bits);
    opus_free((unsigned char*)mode->cache.caps);
-   clt_mdct_clear(&mode->mdct);
+   clt_mdct_clear(&mode->mdct, arch);
 
    opus_free((CELTMode *)mode);
 }

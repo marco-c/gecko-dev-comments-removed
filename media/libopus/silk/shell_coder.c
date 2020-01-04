@@ -58,8 +58,8 @@ static OPUS_INLINE void encode_split(
 }
 
 static OPUS_INLINE void decode_split(
-    opus_int                    *p_child1,      
-    opus_int                    *p_child2,      
+    opus_int16                  *p_child1,      
+    opus_int16                  *p_child2,      
     ec_dec                      *psRangeDec,    
     const opus_int              p,              
     const opus_uint8            *shell_table    
@@ -117,12 +117,12 @@ void silk_shell_encoder(
 
 
 void silk_shell_decoder(
-    opus_int                    *pulses0,                       
+    opus_int16                  *pulses0,                       
     ec_dec                      *psRangeDec,                    
     const opus_int              pulses4                         
 )
 {
-    opus_int pulses3[ 2 ], pulses2[ 4 ], pulses1[ 8 ];
+    opus_int16 pulses3[ 2 ], pulses2[ 4 ], pulses1[ 8 ];
 
     
     silk_assert( SHELL_CODEC_FRAME_LENGTH == 16 );

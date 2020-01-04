@@ -36,11 +36,12 @@ void silk_quant_LTP_gains(
     opus_int16                  B_Q14[ MAX_NB_SUBFR * LTP_ORDER ],          
     opus_int8                   cbk_index[ MAX_NB_SUBFR ],                  
     opus_int8                   *periodicity_index,                         
-	opus_int32					*sum_log_gain_Q7,							
+    opus_int32                  *sum_log_gain_Q7,                           
     const opus_int32            W_Q18[ MAX_NB_SUBFR*LTP_ORDER*LTP_ORDER ],  
     opus_int                    mu_Q9,                                      
     opus_int                    lowComplexity,                              
-    const opus_int              nb_subfr                                    
+    const opus_int              nb_subfr,                                   
+    int                         arch                                        
 )
 {
     opus_int             j, k, cbk_size;
@@ -51,7 +52,7 @@ void silk_quant_LTP_gains(
     const opus_int16     *b_Q14_ptr;
     const opus_int32     *W_Q18_ptr;
     opus_int32           rate_dist_Q14_subfr, rate_dist_Q14, min_rate_dist_Q14;
-	opus_int32           sum_log_gain_tmp_Q7, best_sum_log_gain_Q7, max_gain_Q7, gain_Q7;
+    opus_int32           sum_log_gain_tmp_Q7, best_sum_log_gain_Q7, max_gain_Q7, gain_Q7;
 
     
     
@@ -74,23 +75,24 @@ void silk_quant_LTP_gains(
         b_Q14_ptr = B_Q14;
 
         rate_dist_Q14 = 0;
-		sum_log_gain_tmp_Q7 = *sum_log_gain_Q7;
+        sum_log_gain_tmp_Q7 = *sum_log_gain_Q7;
         for( j = 0; j < nb_subfr; j++ ) {
-			max_gain_Q7 = silk_log2lin( ( SILK_FIX_CONST( MAX_SUM_LOG_GAIN_DB / 6.0, 7 ) - sum_log_gain_tmp_Q7 ) 
-										+ SILK_FIX_CONST( 7, 7 ) ) - gain_safety;
+            max_gain_Q7 = silk_log2lin( ( SILK_FIX_CONST( MAX_SUM_LOG_GAIN_DB / 6.0, 7 ) - sum_log_gain_tmp_Q7 )
+                                        + SILK_FIX_CONST( 7, 7 ) ) - gain_safety;
 
             silk_VQ_WMat_EC(
                 &temp_idx[ j ],         
                 &rate_dist_Q14_subfr,   
-				&gain_Q7,               
+                &gain_Q7,               
                 b_Q14_ptr,              
                 W_Q18_ptr,              
                 cbk_ptr_Q7,             
                 cbk_gain_ptr_Q7,        
                 cl_ptr_Q5,              
                 mu_Q9,                  
-				max_gain_Q7,            
-                cbk_size                
+                max_gain_Q7,            
+                cbk_size,               
+                arch                    
             );
 
             rate_dist_Q14 = silk_ADD_POS_SAT32( rate_dist_Q14, rate_dist_Q14_subfr );
@@ -108,7 +110,7 @@ void silk_quant_LTP_gains(
             min_rate_dist_Q14 = rate_dist_Q14;
             *periodicity_index = (opus_int8)k;
             silk_memcpy( cbk_index, temp_idx, nb_subfr * sizeof( opus_int8 ) );
-			best_sum_log_gain_Q7 = sum_log_gain_tmp_Q7;
+            best_sum_log_gain_Q7 = sum_log_gain_tmp_Q7;
         }
 
         
@@ -123,6 +125,5 @@ void silk_quant_LTP_gains(
             B_Q14[ j * LTP_ORDER + k ] = silk_LSHIFT( cbk_ptr_Q7[ cbk_index[ j ] * LTP_ORDER + k ], 7 );
         }
     }
-	*sum_log_gain_Q7 = best_sum_log_gain_Q7;
+    *sum_log_gain_Q7 = best_sum_log_gain_Q7;
 }
-

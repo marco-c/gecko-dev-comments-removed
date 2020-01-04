@@ -42,7 +42,8 @@ void silk_corrVector_FIX(
     const opus_int                  L,                                      
     const opus_int                  order,                                  
     opus_int32                      *Xt,                                    
-    const opus_int                  rshifts                                 
+    const opus_int                  rshifts,                                
+    int                             arch                                    
 )
 {
     opus_int         lag, i;
@@ -65,7 +66,7 @@ void silk_corrVector_FIX(
     } else {
         silk_assert( rshifts == 0 );
         for( lag = 0; lag < order; lag++ ) {
-            Xt[ lag ] = silk_inner_prod_aligned( ptr1, ptr2, L ); 
+            Xt[ lag ] = silk_inner_prod_aligned( ptr1, ptr2, L, arch ); 
             ptr1--; 
         }
     }
@@ -78,7 +79,8 @@ void silk_corrMatrix_FIX(
     const opus_int                  order,                                  
     const opus_int                  head_room,                              
     opus_int32                      *XX,                                    
-    opus_int                        *rshifts                                
+    opus_int                        *rshifts,                               
+    int                             arch                                    
 )
 {
     opus_int         i, j, lag, rshifts_local, head_room_rshifts;
@@ -138,7 +140,7 @@ void silk_corrMatrix_FIX(
     } else {
         for( lag = 1; lag < order; lag++ ) {
             
-            energy = silk_inner_prod_aligned( ptr1, ptr2, L );
+            energy = silk_inner_prod_aligned( ptr1, ptr2, L, arch );
             matrix_ptr( XX, lag, 0, order ) = energy;
             matrix_ptr( XX, 0, lag, order ) = energy;
             

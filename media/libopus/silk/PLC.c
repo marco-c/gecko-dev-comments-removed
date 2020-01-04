@@ -46,7 +46,8 @@ static OPUS_INLINE void silk_PLC_update(
 static OPUS_INLINE void silk_PLC_conceal(
     silk_decoder_state                  *psDec,             
     silk_decoder_control                *psDecCtrl,         
-    opus_int16                          frame[]             
+    opus_int16                          frame[],            
+    int                                 arch                
 );
 
 
@@ -65,7 +66,8 @@ void silk_PLC(
     silk_decoder_state                  *psDec,             
     silk_decoder_control                *psDecCtrl,         
     opus_int16                          frame[],            
-    opus_int                            lost                
+    opus_int                            lost,               
+    int                                 arch                
 )
 {
     
@@ -78,7 +80,7 @@ void silk_PLC(
         
         
         
-        silk_PLC_conceal( psDec, psDecCtrl, frame );
+        silk_PLC_conceal( psDec, psDecCtrl, frame, arch );
 
         psDec->lossCnt++;
     } else {
@@ -165,10 +167,35 @@ static OPUS_INLINE void silk_PLC_update(
     psPLC->nb_subfr = psDec->nb_subfr;
 }
 
+static OPUS_INLINE void silk_PLC_energy(opus_int32 *energy1, opus_int *shift1, opus_int32 *energy2, opus_int *shift2,
+      const opus_int32 *exc_Q14, const opus_int32 *prevGain_Q10, int subfr_length, int nb_subfr)
+{
+    int i, k;
+    VARDECL( opus_int16, exc_buf );
+    opus_int16 *exc_buf_ptr;
+    SAVE_STACK;
+    ALLOC( exc_buf, 2*subfr_length, opus_int16 );
+    
+    
+    exc_buf_ptr = exc_buf;
+    for( k = 0; k < 2; k++ ) {
+        for( i = 0; i < subfr_length; i++ ) {
+            exc_buf_ptr[ i ] = (opus_int16)silk_SAT16( silk_RSHIFT(
+                silk_SMULWW( exc_Q14[ i + ( k + nb_subfr - 2 ) * subfr_length ], prevGain_Q10[ k ] ), 8 ) );
+        }
+        exc_buf_ptr += subfr_length;
+    }
+    
+    silk_sum_sqr_shift( energy1, shift1, exc_buf,                  subfr_length );
+    silk_sum_sqr_shift( energy2, shift2, &exc_buf[ subfr_length ], subfr_length );
+    RESTORE_STACK;
+}
+
 static OPUS_INLINE void silk_PLC_conceal(
     silk_decoder_state                  *psDec,             
     silk_decoder_control                *psDecCtrl,         
-    opus_int16                          frame[]             
+    opus_int16                          frame[],            
+    int                                 arch                
 )
 {
     opus_int   i, j, k;
@@ -177,19 +204,26 @@ static OPUS_INLINE void silk_PLC_conceal(
     opus_int32 energy1, energy2, *rand_ptr, *pred_lag_ptr;
     opus_int32 LPC_pred_Q10, LTP_pred_Q12;
     opus_int16 rand_scale_Q14;
-    opus_int16 *B_Q14, *exc_buf_ptr;
+    opus_int16 *B_Q14;
     opus_int32 *sLPC_Q14_ptr;
-    VARDECL( opus_int16, exc_buf );
     opus_int16 A_Q12[ MAX_LPC_ORDER ];
+#ifdef SMALL_FOOTPRINT
+    opus_int16 *sLTP;
+#else
     VARDECL( opus_int16, sLTP );
+#endif
     VARDECL( opus_int32, sLTP_Q14 );
     silk_PLC_struct *psPLC = &psDec->sPLC;
     opus_int32 prevGain_Q10[2];
     SAVE_STACK;
 
-    ALLOC( exc_buf, 2*psPLC->subfr_length, opus_int16 );
-    ALLOC( sLTP, psDec->ltp_mem_length, opus_int16 );
     ALLOC( sLTP_Q14, psDec->ltp_mem_length + psDec->frame_length, opus_int32 );
+#ifdef SMALL_FOOTPRINT
+    
+    sLTP = ((opus_int16*)&sLTP_Q14[psDec->ltp_mem_length + psDec->frame_length])-psDec->ltp_mem_length;
+#else
+    ALLOC( sLTP, psDec->ltp_mem_length, opus_int16 );
+#endif
 
     prevGain_Q10[0] = silk_RSHIFT( psPLC->prevGain_Q16[ 0 ], 6);
     prevGain_Q10[1] = silk_RSHIFT( psPLC->prevGain_Q16[ 1 ], 6);
@@ -198,19 +232,7 @@ static OPUS_INLINE void silk_PLC_conceal(
        silk_memset( psPLC->prevLPC_Q12, 0, sizeof( psPLC->prevLPC_Q12 ) );
     }
 
-    
-    
-    exc_buf_ptr = exc_buf;
-    for( k = 0; k < 2; k++ ) {
-        for( i = 0; i < psPLC->subfr_length; i++ ) {
-            exc_buf_ptr[ i ] = (opus_int16)silk_SAT16( silk_RSHIFT(
-                silk_SMULWW( psDec->exc_Q14[ i + ( k + psPLC->nb_subfr - 2 ) * psPLC->subfr_length ], prevGain_Q10[ k ] ), 8 ) );
-        }
-        exc_buf_ptr += psPLC->subfr_length;
-    }
-    
-    silk_sum_sqr_shift( &energy1, &shift1, exc_buf,                         psPLC->subfr_length );
-    silk_sum_sqr_shift( &energy2, &shift2, &exc_buf[ psPLC->subfr_length ], psPLC->subfr_length );
+    silk_PLC_energy(&energy1, &shift1, &energy2, &shift2, psDec->exc_Q14, prevGain_Q10, psDec->subfr_length, psDec->nb_subfr);
 
     if( silk_RSHIFT( energy1, shift2 ) < silk_RSHIFT( energy2, shift1 ) ) {
         
@@ -270,7 +292,7 @@ static OPUS_INLINE void silk_PLC_conceal(
     
     idx = psDec->ltp_mem_length - lag - psDec->LPC_order - LTP_ORDER / 2;
     silk_assert( idx > 0 );
-    silk_LPC_analysis_filter( &sLTP[ idx ], &psDec->outBuf[ idx ], A_Q12, psDec->ltp_mem_length - idx, psDec->LPC_order );
+    silk_LPC_analysis_filter( &sLTP[ idx ], &psDec->outBuf[ idx ], A_Q12, psDec->ltp_mem_length - idx, psDec->LPC_order, arch );
     
     inv_gain_Q30 = silk_INVERSE32_varQ( psPLC->prevGain_Q16[ 1 ], 46 );
     inv_gain_Q30 = silk_min( inv_gain_Q30, silk_int32_MAX >> 1 );

@@ -74,7 +74,7 @@ void silk_encode_signs(
 
 void silk_decode_signs(
     ec_dec                      *psRangeDec,                        
-    opus_int                    pulses[],                           
+    opus_int16                  pulses[],                           
     opus_int                    length,                             
     const opus_int              signalType,                         
     const opus_int              quantOffsetType,                    
@@ -83,7 +83,7 @@ void silk_decode_signs(
 {
     opus_int         i, j, p;
     opus_uint8       icdf[ 2 ];
-    opus_int         *q_ptr;
+    opus_int16       *q_ptr;
     const opus_uint8 *icdf_ptr;
 
     icdf[ 1 ] = 0;

@@ -33,10 +33,12 @@
 #include "stack_alloc.h"
 
 
+# if !defined(OPUS_X86_MAY_HAVE_SSE4_1)
 static OPUS_INLINE void silk_VAD_GetNoiseLevels(
     const opus_int32             pX[ VAD_N_BANDS ], 
     silk_VAD_state              *psSilk_VAD         
 );
+#endif
 
 
 
@@ -77,7 +79,7 @@ static const opus_int32 tiltWeights[ VAD_N_BANDS ] = { 30000, 6000, -12000, -120
 
 
 
-opus_int silk_VAD_GetSA_Q8(                                     
+opus_int silk_VAD_GetSA_Q8_c(                                   
     silk_encoder_state          *psEncC,                        
     const opus_int16            pIn[]                           
 )
@@ -296,7 +298,10 @@ opus_int silk_VAD_GetSA_Q8(
 
 
 
-static OPUS_INLINE void silk_VAD_GetNoiseLevels(
+# if  !defined(OPUS_X86_MAY_HAVE_SSE4_1)
+static OPUS_INLINE
+#endif
+void silk_VAD_GetNoiseLevels(
     const opus_int32            pX[ VAD_N_BANDS ],  
     silk_VAD_state              *psSilk_VAD         
 )

@@ -64,7 +64,7 @@ extern "C"
 #define MU_LTP_QUANT_WB                                 0.02f
 
 
-#define MAX_SUM_LOG_GAIN_DB								250.0f
+#define MAX_SUM_LOG_GAIN_DB                             250.0f
 
 
 

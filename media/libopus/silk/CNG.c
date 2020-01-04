@@ -34,7 +34,7 @@
 
 
 static OPUS_INLINE void silk_CNG_exc(
-    opus_int32                       residual_Q10[],     
+    opus_int32                       exc_Q10[],          
     opus_int32                       exc_buf_Q14[],      
     opus_int32                       Gain_Q16,           
     opus_int                         length,             
@@ -55,7 +55,7 @@ static OPUS_INLINE void silk_CNG_exc(
         idx = (opus_int)( silk_RSHIFT( seed, 24 ) & exc_mask );
         silk_assert( idx >= 0 );
         silk_assert( idx <= CNG_BUF_MASK_MAX );
-        residual_Q10[ i ] = (opus_int16)silk_SAT16( silk_SMULWW( exc_buf_Q14[ idx ], Gain_Q16 >> 4 ) );
+        exc_Q10[ i ] = (opus_int16)silk_SAT16( silk_SMULWW( exc_buf_Q14[ idx ], Gain_Q16 >> 4 ) );
     }
     *rand_seed = seed;
 }
@@ -85,7 +85,7 @@ void silk_CNG(
 )
 {
     opus_int   i, subfr;
-    opus_int32 sum_Q6, max_Gain_Q16;
+    opus_int32 sum_Q6, max_Gain_Q16, gain_Q16;
     opus_int16 A_Q12[ MAX_LPC_ORDER ];
     silk_CNG_struct *psCNG = &psDec->sCNG;
     SAVE_STACK;
@@ -125,11 +125,20 @@ void silk_CNG(
     
     if( psDec->lossCnt ) {
         VARDECL( opus_int32, CNG_sig_Q10 );
-
         ALLOC( CNG_sig_Q10, length + MAX_LPC_ORDER, opus_int32 );
 
         
-        silk_CNG_exc( CNG_sig_Q10 + MAX_LPC_ORDER, psCNG->CNG_exc_buf_Q14, psCNG->CNG_smth_Gain_Q16, length, &psCNG->rand_seed );
+        gain_Q16 = silk_SMULWW( psDec->sPLC.randScale_Q14, psDec->sPLC.prevGain_Q16[1] );
+        if( gain_Q16 >= (1 << 21) || psCNG->CNG_smth_Gain_Q16 > (1 << 23) ) {
+            gain_Q16 = silk_SMULTT( gain_Q16, gain_Q16 );
+            gain_Q16 = silk_SUB_LSHIFT32(silk_SMULTT( psCNG->CNG_smth_Gain_Q16, psCNG->CNG_smth_Gain_Q16 ), gain_Q16, 5 );
+            gain_Q16 = silk_LSHIFT32( silk_SQRT_APPROX( gain_Q16 ), 16 );
+        } else {
+            gain_Q16 = silk_SMULWW( gain_Q16, gain_Q16 );
+            gain_Q16 = silk_SUB_LSHIFT32(silk_SMULWW( psCNG->CNG_smth_Gain_Q16, psCNG->CNG_smth_Gain_Q16 ), gain_Q16, 5 );
+            gain_Q16 = silk_LSHIFT32( silk_SQRT_APPROX( gain_Q16 ), 8 );
+        }
+        silk_CNG_exc( CNG_sig_Q10 + MAX_LPC_ORDER, psCNG->CNG_exc_buf_Q14, gain_Q16, length, &psCNG->rand_seed );
 
         
         silk_NLSF2A( A_Q12, psCNG->CNG_smth_NLSF_Q15, psDec->LPC_order );
@@ -162,7 +171,7 @@ void silk_CNG(
             
             CNG_sig_Q10[ MAX_LPC_ORDER + i ] = silk_ADD_LSHIFT( CNG_sig_Q10[ MAX_LPC_ORDER + i ], sum_Q6, 4 );
 
-            frame[ i ] = silk_ADD_SAT16( frame[ i ], silk_RSHIFT_ROUND( sum_Q6, 6 ) );
+            frame[ i ] = silk_ADD_SAT16( frame[ i ], silk_RSHIFT_ROUND( CNG_sig_Q10[ MAX_LPC_ORDER + i ], 10 ) );
         }
         silk_memcpy( psCNG->CNG_synth_state, &CNG_sig_Q10[ length ], MAX_LPC_ORDER * sizeof( opus_int32 ) );
     } else {

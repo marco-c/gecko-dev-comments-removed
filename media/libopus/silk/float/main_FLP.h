@@ -205,7 +205,8 @@ void silk_quant_LTP_gains_FLP(
     const silk_float                W[ MAX_NB_SUBFR * LTP_ORDER * LTP_ORDER ], 
     const opus_int                  mu_Q10,                             
     const opus_int                  lowComplexity,                      
-    const opus_int                  nb_subfr                            
+    const opus_int                  nb_subfr,                           
+    int                             arch                                
 );
 
 

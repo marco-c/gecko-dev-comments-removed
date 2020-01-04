@@ -70,6 +70,10 @@ static OPUS_INLINE opus_val32 MULT16_32_Q15_armv4(opus_val16 a, opus_val32 b)
 
 
 
+#undef MAC16_32_Q16
+#define MAC16_32_Q16(c, a, b) ADD32(c, MULT16_32_Q16(a, b))
+
+
 #undef MULT32_32_Q31
 #define MULT32_32_Q31(a,b) (opus_val32)((((opus_int64)(a)) * ((opus_int64)(b)))>>31)
 

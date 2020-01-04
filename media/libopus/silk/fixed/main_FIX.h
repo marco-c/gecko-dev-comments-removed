@@ -97,6 +97,17 @@ void silk_prefilter_FIX(
     const opus_int16                x[]                                     
 );
 
+void silk_warped_LPC_analysis_filter_FIX_c(
+          opus_int32            state[],                    
+          opus_int32            res_Q2[],                   
+    const opus_int16            coef_Q13[],                 
+    const opus_int16            input[],                    
+    const opus_int16            lambda_Q16,                 
+    const opus_int              length,                     
+    const opus_int              order                       
+);
+
+
 
 
 
@@ -166,7 +177,8 @@ void silk_find_LTP_FIX(
     const opus_int                  subfr_length,                           
     const opus_int                  nb_subfr,                               
     const opus_int                  mem_offset,                             
-    opus_int                        corr_rshifts[ MAX_NB_SUBFR ]            
+    opus_int                        corr_rshifts[ MAX_NB_SUBFR ],           
+    int                             arch                                    
 );
 
 void silk_LTP_analysis_filter_FIX(
@@ -190,7 +202,8 @@ void silk_residual_energy_FIX(
     const opus_int32                gains[ MAX_NB_SUBFR ],                  
     const opus_int                  subfr_length,                           
     const opus_int                  nb_subfr,                               
-    const opus_int                  LPC_order                               
+    const opus_int                  LPC_order,                              
+    int                             arch                                    
 );
 
 
@@ -220,7 +233,8 @@ void silk_corrMatrix_FIX(
     const opus_int                  order,                                  
     const opus_int                  head_room,                              
     opus_int32                      *XX,                                    
-    opus_int                        *rshifts                                
+    opus_int                        *rshifts,                               
+    int                              arch                                   
 );
 
 
@@ -230,7 +244,8 @@ void silk_corrVector_FIX(
     const opus_int                  L,                                      
     const opus_int                  order,                                  
     opus_int32                      *Xt,                                    
-    const opus_int                  rshifts                                 
+    const opus_int                  rshifts,                                
+    int                             arch                                    
 );
 
 

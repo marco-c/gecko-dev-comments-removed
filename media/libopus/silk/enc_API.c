@@ -165,7 +165,7 @@ opus_int silk_Encode(
     psEnc->state_Fxx[ 0 ].sCmn.nFramesEncoded = psEnc->state_Fxx[ 1 ].sCmn.nFramesEncoded = 0;
 
     
-    if( ( ret = check_control_input( encControl ) != 0 ) ) {
+    if( ( ret = check_control_input( encControl ) ) != 0 ) {
         silk_assert( 0 );
         RESTORE_STACK;
         return ret;
@@ -376,6 +376,8 @@ opus_int silk_Encode(
                 for( n = 0; n < encControl->nChannelsInternal; n++ ) {
                     silk_memset( psEnc->state_Fxx[ n ].sCmn.LBRR_flags, 0, sizeof( psEnc->state_Fxx[ n ].sCmn.LBRR_flags ) );
                 }
+
+                psEnc->nBitsUsedLBRR = ec_tell( psRangeEnc );
             }
 
             silk_HP_variable_cutoff( psEnc->state_Fxx );
@@ -384,10 +386,10 @@ opus_int silk_Encode(
             nBits = silk_DIV32_16( silk_MUL( encControl->bitRate, encControl->payloadSize_ms ), 1000 );
             
             if( !prefillFlag ) {
-                nBits -= ec_tell( psRangeEnc ) >> 1;
+                nBits -= psEnc->nBitsUsedLBRR;
             }
             
-            nBits = silk_DIV32_16( nBits, psEnc->state_Fxx[ 0 ].sCmn.nFramesPerPacket - psEnc->state_Fxx[ 0 ].sCmn.nFramesEncoded );
+            nBits = silk_DIV32_16( nBits, psEnc->state_Fxx[ 0 ].sCmn.nFramesPerPacket );
             
             if( encControl->payloadSize_ms == 10 ) {
                 TargetRate_bps = silk_SMULBB( nBits, 100 );
@@ -396,6 +398,11 @@ opus_int silk_Encode(
             }
             
             TargetRate_bps -= silk_DIV32_16( silk_MUL( psEnc->nBitsExceeded, 1000 ), BITRESERVOIR_DECAY_TIME_MS );
+            if( !prefillFlag && psEnc->state_Fxx[ 0 ].sCmn.nFramesEncoded > 0 ) {
+                
+                opus_int32 bitsBalance = ec_tell( psRangeEnc ) - psEnc->nBitsUsedLBRR - nBits * psEnc->state_Fxx[ 0 ].sCmn.nFramesEncoded;
+                TargetRate_bps -= silk_DIV32_16( silk_MUL( bitsBalance, 1000 ), BITRESERVOIR_DECAY_TIME_MS );
+            }
             
             TargetRate_bps = silk_LIMIT( TargetRate_bps, encControl->bitRate, 5000 );
 

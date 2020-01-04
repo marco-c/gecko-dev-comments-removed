@@ -111,7 +111,8 @@ opus_int silk_Decode(
     opus_int                        newPacketFlag,      
     ec_dec                          *psRangeDec,        
     opus_int16                      *samplesOut,        
-    opus_int32                      *nSamplesOut        
+    opus_int32                      *nSamplesOut,       
+    int                             arch                
 );
 
 #if 0

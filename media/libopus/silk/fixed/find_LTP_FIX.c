@@ -50,7 +50,8 @@ void silk_find_LTP_FIX(
     const opus_int                  subfr_length,                           
     const opus_int                  nb_subfr,                               
     const opus_int                  mem_offset,                             
-    opus_int                        corr_rshifts[ MAX_NB_SUBFR ]            
+    opus_int                        corr_rshifts[ MAX_NB_SUBFR ],           
+    int                             arch                                    
 )
 {
     opus_int   i, k, lshift;
@@ -84,10 +85,10 @@ void silk_find_LTP_FIX(
             rr_shifts += ( LTP_CORRS_HEAD_ROOM - LZs );
         }
         corr_rshifts[ k ] = rr_shifts;
-        silk_corrMatrix_FIX( lag_ptr, subfr_length, LTP_ORDER, LTP_CORRS_HEAD_ROOM, WLTP_ptr, &corr_rshifts[ k ] );  
+        silk_corrMatrix_FIX( lag_ptr, subfr_length, LTP_ORDER, LTP_CORRS_HEAD_ROOM, WLTP_ptr, &corr_rshifts[ k ], arch );  
 
         
-        silk_corrVector_FIX( lag_ptr, r_ptr, subfr_length, LTP_ORDER, Rr, corr_rshifts[ k ] );  
+        silk_corrVector_FIX( lag_ptr, r_ptr, subfr_length, LTP_ORDER, Rr, corr_rshifts[ k ], arch );  
         if( corr_rshifts[ k ] > rr_shifts ) {
             rr[ k ] = silk_RSHIFT( rr[ k ], corr_rshifts[ k ] - rr_shifts ); 
         }

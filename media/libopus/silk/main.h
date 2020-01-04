@@ -38,6 +38,10 @@
 #include "entenc.h"
 #include "entdec.h"
 
+#if defined(OPUS_X86_MAY_HAVE_SSE4_1)
+#include "x86/main_sse.h"
+#endif
+
 
 void silk_stereo_LR_to_MS(
     stereo_enc_state            *state,                         
@@ -116,7 +120,7 @@ void silk_encode_signs(
 
 void silk_decode_signs(
     ec_dec                      *psRangeDec,                        
-    opus_int                    pulses[],                           
+    opus_int16                  pulses[],                           
     opus_int                    length,                             
     const opus_int              signalType,                         
     const opus_int              quantOffsetType,                    
@@ -161,7 +165,7 @@ void silk_shell_encoder(
 
 
 void silk_shell_decoder(
-    opus_int                    *pulses0,                       
+    opus_int16                  *pulses0,                       
     ec_dec                      *psRangeDec,                    
     const opus_int              pulses4                         
 );
@@ -204,15 +208,16 @@ void silk_quant_LTP_gains(
     opus_int16                  B_Q14[ MAX_NB_SUBFR * LTP_ORDER ],          
     opus_int8                   cbk_index[ MAX_NB_SUBFR ],                  
     opus_int8                   *periodicity_index,                         
-	opus_int32					*sum_gain_dB_Q7,							
+    opus_int32                  *sum_gain_dB_Q7,                            
     const opus_int32            W_Q18[ MAX_NB_SUBFR*LTP_ORDER*LTP_ORDER ],  
     opus_int                    mu_Q9,                                      
     opus_int                    lowComplexity,                              
-    const opus_int              nb_subfr                                    
+    const opus_int              nb_subfr,                                   
+    int                         arch                                        
 );
 
 
-void silk_VQ_WMat_EC(
+void silk_VQ_WMat_EC_c(
     opus_int8                   *ind,                           
     opus_int32                  *rate_dist_Q14,                 
     opus_int                    *gain_Q7,                       
@@ -226,10 +231,18 @@ void silk_VQ_WMat_EC(
     opus_int                    L                               
 );
 
+#if !defined(OVERRIDE_silk_VQ_WMat_EC)
+#define silk_VQ_WMat_EC(ind, rate_dist_Q14, gain_Q7, in_Q14, W_Q18, cb_Q7, cb_gain_Q7, cl_Q5, \
+                          mu_Q9, max_gain_Q7, L, arch) \
+    ((void)(arch),silk_VQ_WMat_EC_c(ind, rate_dist_Q14, gain_Q7, in_Q14, W_Q18, cb_Q7, cb_gain_Q7, cl_Q5, \
+                          mu_Q9, max_gain_Q7, L))
+#endif
 
 
 
-void silk_NSQ(
+
+
+void silk_NSQ_c(
     const silk_encoder_state    *psEncC,                                    
     silk_nsq_state              *NSQ,                                       
     SideInfoIndices             *psIndices,                                 
@@ -247,8 +260,15 @@ void silk_NSQ(
     const opus_int              LTP_scale_Q14                               
 );
 
+#if !defined(OVERRIDE_silk_NSQ)
+#define silk_NSQ(psEncC, NSQ, psIndices, x_Q3, pulses, PredCoef_Q12, LTPCoef_Q14, AR2_Q13, \
+                   HarmShapeGain_Q14, Tilt_Q14, LF_shp_Q14, Gains_Q16, pitchL, Lambda_Q10, LTP_scale_Q14, arch) \
+    ((void)(arch),silk_NSQ_c(psEncC, NSQ, psIndices, x_Q3, pulses, PredCoef_Q12, LTPCoef_Q14, AR2_Q13, \
+                   HarmShapeGain_Q14, Tilt_Q14, LF_shp_Q14, Gains_Q16, pitchL, Lambda_Q10, LTP_scale_Q14))
+#endif
 
-void silk_NSQ_del_dec(
+
+void silk_NSQ_del_dec_c(
     const silk_encoder_state    *psEncC,                                    
     silk_nsq_state              *NSQ,                                       
     SideInfoIndices             *psIndices,                                 
@@ -265,6 +285,13 @@ void silk_NSQ_del_dec(
     const opus_int              Lambda_Q10,                                 
     const opus_int              LTP_scale_Q14                               
 );
+
+#if !defined(OVERRIDE_silk_NSQ_del_dec)
+#define silk_NSQ_del_dec(psEncC, NSQ, psIndices, x_Q3, pulses, PredCoef_Q12, LTPCoef_Q14, AR2_Q13, \
+                           HarmShapeGain_Q14, Tilt_Q14, LF_shp_Q14, Gains_Q16, pitchL, Lambda_Q10, LTP_scale_Q14, arch) \
+    ((void)(arch),silk_NSQ_del_dec_c(psEncC, NSQ, psIndices, x_Q3, pulses, PredCoef_Q12, LTPCoef_Q14, AR2_Q13, \
+                           HarmShapeGain_Q14, Tilt_Q14, LF_shp_Q14, Gains_Q16, pitchL, Lambda_Q10, LTP_scale_Q14))
+#endif
 
 
 
@@ -275,10 +302,14 @@ opus_int silk_VAD_Init(
 );
 
 
-opus_int silk_VAD_GetSA_Q8(                                     
+opus_int silk_VAD_GetSA_Q8_c(                                   
     silk_encoder_state          *psEncC,                        
     const opus_int16            pIn[]                           
 );
+
+#if !defined(OVERRIDE_silk_VAD_GetSA_Q8)
+#define silk_VAD_GetSA_Q8(psEnC, pIn, arch) ((void)(arch),silk_VAD_GetSA_Q8_c(psEnC, pIn))
+#endif
 
 
 
@@ -373,7 +404,8 @@ opus_int silk_decode_frame(
     opus_int16                  pOut[],                         
     opus_int32                  *pN,                            
     opus_int                    lostFlag,                       
-    opus_int                    condCoding                      
+    opus_int                    condCoding,                     
+    int                         arch                            
 );
 
 
@@ -397,13 +429,14 @@ void silk_decode_core(
     silk_decoder_state          *psDec,                         
     silk_decoder_control        *psDecCtrl,                     
     opus_int16                  xq[],                           
-    const opus_int              pulses[ MAX_FRAME_LENGTH ]      
+    const opus_int16            pulses[ MAX_FRAME_LENGTH ],     
+    int                         arch                            
 );
 
 
 void silk_decode_pulses(
     ec_dec                      *psRangeDec,                    
-    opus_int                    pulses[],                       
+    opus_int16                  pulses[],                       
     const opus_int              signalType,                     
     const opus_int              quantOffsetType,                
     const opus_int              frame_length                    

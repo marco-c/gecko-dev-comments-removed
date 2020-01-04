@@ -33,7 +33,7 @@
 
 
 
-opus_int32 silk_log2lin( 
+opus_int32 silk_log2lin(
     const opus_int32            inLog_Q7            
 )
 {
@@ -42,8 +42,8 @@ opus_int32 silk_log2lin(
     if( inLog_Q7 < 0 ) {
         return 0;
     } else if ( inLog_Q7 >= 3967 ) {
-		return silk_int32_MAX;
-	}
+        return silk_int32_MAX;
+    }
 
     out = silk_LSHIFT( 1, silk_RSHIFT( inLog_Q7, 7 ) );
     frac_Q7 = inLog_Q7 & 0x7F;

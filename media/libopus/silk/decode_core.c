@@ -39,7 +39,8 @@ void silk_decode_core(
     silk_decoder_state          *psDec,                         
     silk_decoder_control        *psDecCtrl,                     
     opus_int16                  xq[],                           
-    const opus_int              pulses[ MAX_FRAME_LENGTH ]      
+    const opus_int16            pulses[ MAX_FRAME_LENGTH ],     
+    int                         arch                            
 )
 {
     opus_int   i, k, lag = 0, start_idx, sLTP_buf_idx, NLSF_interpolation_flag, signalType;
@@ -147,7 +148,7 @@ void silk_decode_core(
                 }
 
                 silk_LPC_analysis_filter( &sLTP[ start_idx ], &psDec->outBuf[ start_idx + k * psDec->subfr_length ],
-                    A_Q12, psDec->ltp_mem_length - start_idx, psDec->LPC_order );
+                    A_Q12, psDec->ltp_mem_length - start_idx, psDec->LPC_order, arch );
 
                 
                 if( k == 0 ) {
