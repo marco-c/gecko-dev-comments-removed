@@ -185,6 +185,8 @@ class NameResolver
 
 
 
+
+
     bool resolveFun(ParseNode* pn, HandleAtom prefix, MutableHandleAtom retAtom) {
         MOZ_ASSERT(pn != nullptr);
         MOZ_ASSERT(pn->isKind(PNK_FUNCTION));
