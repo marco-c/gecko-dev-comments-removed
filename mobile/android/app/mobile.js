@@ -574,6 +574,7 @@ pref("layers.async-video.enabled", true);
 pref("layers.async-pan-zoom.enabled", true);
 
 pref("apz.allow_immediate_handoff", false);
+pref("apz.touch_start_tolerance", "0.06");
 
 pref("apz.axis_lock.mode", 2); 
 
