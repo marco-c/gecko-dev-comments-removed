@@ -407,6 +407,18 @@ public:
   
 
 
+
+
+
+
+
+
+
+  static bool ResolveMovedUsersFolder(std::wstring& aPath);
+
+  
+
+
   typedef HRESULT (WINAPI*DwmExtendFrameIntoClientAreaProc)(HWND hWnd, const MARGINS *pMarInset);
   typedef HRESULT (WINAPI*DwmIsCompositionEnabledProc)(BOOL *pfEnabled);
   typedef HRESULT (WINAPI*DwmSetIconicThumbnailProc)(HWND hWnd, HBITMAP hBitmap, DWORD dwSITFlags);

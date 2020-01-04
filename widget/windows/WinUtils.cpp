@@ -6,17 +6,22 @@
 
 #include "WinUtils.h"
 
+#include <knownfolders.h>
+#include <winioctl.h>
+
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
 #include "nsWindow.h"
 #include "nsWindowDefs.h"
 #include "KeyboardLayout.h"
 #include "nsIDOMMouseEvent.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WindowsVersion.h"
+#include "mozilla/unused.h"
 #include "nsIContentPolicy.h"
 #include "nsContentUtils.h"
 
@@ -43,6 +48,7 @@
 #include "nsIThread.h"
 #include "MainThreadUtils.h"
 #include "nsLookAndFeel.h"
+#include "nsWindowsHelpers.h"
 
 #ifdef NS_ENABLE_TSF
 #include <textstor.h>
@@ -428,6 +434,18 @@ WinUtils::DwmInvalidateIconicBitmapsProc WinUtils::dwmInvalidateIconicBitmapsPtr
 WinUtils::DwmDefWindowProcProc WinUtils::dwmDwmDefWindowProcPtr = nullptr;
 WinUtils::DwmGetCompositionTimingInfoProc WinUtils::dwmGetCompositionTimingInfoPtr = nullptr;
 WinUtils::DwmFlushProc WinUtils::dwmFlushProcPtr = nullptr;
+
+
+const wchar_t kNTPrefix[] = L"\\??\\";
+const size_t kNTPrefixLen = ArrayLength(kNTPrefix) - 1;
+
+struct CoTaskMemFreePolicy
+{
+  void operator()(void* aPtr) {
+    ::CoTaskMemFree(aPtr);
+  }
+};
+
 
 
 void
@@ -1774,6 +1792,119 @@ WinUtils::GetMaxTouchPoints()
     return GetSystemMetrics(SM_MAXIMUMTOUCHES);
   }
   return 0;
+}
+
+#pragma pack(push, 1)
+typedef struct REPARSE_DATA_BUFFER {
+  ULONG  ReparseTag;
+  USHORT ReparseDataLength;
+  USHORT Reserved;
+  union {
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      ULONG  Flags;
+      WCHAR  PathBuffer[1];
+    } SymbolicLinkReparseBuffer;
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      WCHAR  PathBuffer[1];
+    } MountPointReparseBuffer;
+    struct {
+      UCHAR DataBuffer[1];
+    } GenericReparseBuffer;
+  };
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+#pragma pack(pop)
+
+
+bool
+WinUtils::ResolveMovedUsersFolder(std::wstring& aPath)
+{
+  
+  if (!IsVistaOrLater()) {
+    return true;
+  }
+
+  wchar_t* usersPath;
+  if (FAILED(WinUtils::SHGetKnownFolderPath(FOLDERID_UserProfiles, 0, nullptr,
+                                            &usersPath))) {
+    return false;
+  }
+
+  
+  UniquePtr<wchar_t, CoTaskMemFreePolicy> autoFreePath(usersPath);
+
+  
+  size_t usersLen = wcslen(usersPath);
+  if (_wcsnicmp(aPath.c_str(), usersPath, usersLen) != 0 ||
+      aPath[usersLen] != L'\\') {
+    return true;
+  }
+
+  DWORD attributes = ::GetFileAttributesW(usersPath);
+  if (attributes == INVALID_FILE_ATTRIBUTES) {
+    return false;
+  }
+
+  
+  if (!(attributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+    return true;
+  }
+
+  
+  nsAutoHandle usersHandle(
+    ::CreateFileW(usersPath, 0,
+                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                  nullptr, OPEN_EXISTING,
+                  FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+                  nullptr));
+
+  char maxReparseBuf[MAXIMUM_REPARSE_DATA_BUFFER_SIZE] = {0};
+  REPARSE_DATA_BUFFER* reparseBuf = (REPARSE_DATA_BUFFER*)maxReparseBuf;
+  DWORD bytesReturned = 0;
+  if (!::DeviceIoControl(usersHandle, FSCTL_GET_REPARSE_POINT, nullptr, 0,
+                         reparseBuf, MAXIMUM_REPARSE_DATA_BUFFER_SIZE,
+                         &bytesReturned, nullptr)) {
+    return false;
+  }
+
+  
+  if (reparseBuf->ReparseTag != IO_REPARSE_TAG_MOUNT_POINT) {
+    return true;
+  }
+
+  
+  wchar_t* substituteName = reparseBuf->MountPointReparseBuffer.PathBuffer +
+    reparseBuf->MountPointReparseBuffer.SubstituteNameOffset / sizeof(wchar_t);
+  std::wstring::size_type substituteLen =
+    reparseBuf->MountPointReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
+
+  
+  if (wcsncmp(substituteName, kNTPrefix, kNTPrefixLen) == 0) {
+    substituteName += kNTPrefixLen;
+    substituteLen -= kNTPrefixLen;
+  }
+
+  
+  if (substituteName[1] != L':' || substituteName[2] != L'\\') {
+    return false;
+  }
+
+  
+  
+  
+  if (substituteName[substituteLen - 1] == L'\\') {
+    --substituteLen;
+  }
+
+  aPath.replace(0, usersLen, substituteName, substituteLen);
+  return true;
 }
 
 } 
