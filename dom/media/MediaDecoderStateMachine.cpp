@@ -1256,10 +1256,6 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     return;
   }
 
-  if (!mReader) {
-    return;
-  }
-
   if (mMetadataRequest.Exists()) {
     if (mPendingDormant && mPendingDormant.ref() != aDormant && !aDormant) {
       
