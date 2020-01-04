@@ -117,57 +117,17 @@ function watchLinksChangeOnce() {
 
 
 
-
-
-
-
-function isTestPortedToAddTask() {
-  return gTestPath.endsWith("browser_newtab_bug722273.js");
-}
-if (!isTestPortedToAddTask()) {
-  this.test = function() {
-    waitForExplicitFinish();
+function test() {
+  waitForExplicitFinish();
+  
+  watchLinksChangeOnce().then(() => {
     
-    watchLinksChangeOnce().then(() => {
-      
-      whenPagesUpdated(() => TestRunner.run(), true);
-    });
-
-    
-    gOrigDirectorySource = Services.prefs.getCharPref(PREF_NEWTAB_DIRECTORYSOURCE);
-    Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gDirectorySource);
-  }
-} else {
-  add_task(function* setup() {
-    registerCleanupFunction(function() {
-      return new Promise(resolve => {
-        function cleanupAndFinish() {
-          PlacesTestUtils.clearHistory().then(() => {
-            whenPagesUpdated(resolve);
-            NewTabUtils.restore();
-          });
-        }
-
-        let callbacks = NewTabUtils.links._populateCallbacks;
-        let numCallbacks = callbacks.length;
-
-        if (numCallbacks)
-          callbacks.splice(0, numCallbacks, cleanupAndFinish);
-        else
-          cleanupAndFinish();
-      });
-    });
-
-    let promiseReady = Task.spawn(function*() {
-      yield watchLinksChangeOnce();
-      yield new Promise(resolve => whenPagesUpdated(resolve, true));
-    });
-
-    
-    gOrigDirectorySource = Services.prefs.getCharPref(PREF_NEWTAB_DIRECTORYSOURCE);
-    Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gDirectorySource);
-    yield promiseReady;
+    whenPagesUpdated(() => TestRunner.run(), true);
   });
+
+  
+  gOrigDirectorySource = Services.prefs.getCharPref(PREF_NEWTAB_DIRECTORYSOURCE);
+  Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, gDirectorySource);
 }
 
 
@@ -310,7 +270,7 @@ function fillHistory(aLinks, aCallback = TestRunner.next) {
     };
 
     PlacesUtils.asyncHistory.updatePlaces(place, {
-      handleError: function () ok(false, "couldn't add visit to history"),
+      handleError: () => ok(false, "couldn't add visit to history"),
       handleResult: function () {},
       handleCompletion: function () {
         if (--numLinks == 0 && aCallback)
