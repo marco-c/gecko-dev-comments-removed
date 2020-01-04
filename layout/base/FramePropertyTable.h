@@ -63,7 +63,7 @@ protected:
 
 
 
-template<typename T=void>
+template<typename T>
 struct FramePropertyDescriptor : public FramePropertyDescriptorUntyped
 {
   typedef void Destructor(T* aPropertyValue);

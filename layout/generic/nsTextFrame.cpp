@@ -186,10 +186,10 @@ TabWidthStore::ApplySpacing(gfxTextRun::PropertyProvider::Spacing *aSpacing,
 
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(TabWidthProperty, TabWidthStore)
 
-NS_DECLARE_FRAME_PROPERTY(OffsetToFrameProperty, nullptr)
+NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(OffsetToFrameProperty, nsTextFrame)
 
 
-NS_DECLARE_FRAME_PROPERTY(UninflatedTextRunProperty, nullptr)
+NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(UninflatedTextRunProperty, gfxTextRun)
 
 NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(FontSizeInflationProperty, float)
 
@@ -4483,8 +4483,7 @@ nsTextFrame::InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemK
 gfxTextRun*
 nsTextFrame::GetUninflatedTextRun()
 {
-  return static_cast<gfxTextRun*>(
-           Properties().Get(UninflatedTextRunProperty()));
+  return Properties().Get(UninflatedTextRunProperty());
 }
 
 void
@@ -7194,8 +7193,7 @@ nsTextFrame::GetChildFrameContainingOffset(int32_t   aContentOffset,
   int32_t offset = mContentOffset;
 
   
-  nsTextFrame* cachedFrame = static_cast<nsTextFrame*>
-    (Properties().Get(OffsetToFrameProperty()));
+  nsTextFrame* cachedFrame = Properties().Get(OffsetToFrameProperty());
 
   if (cachedFrame) {
     f = cachedFrame;

@@ -152,10 +152,6 @@ public:
 
   NS_DECL_QUERYFRAME
 
-  
-  
-  NS_DECLARE_FRAME_PROPERTY(TextControlInitializer, nullptr)
-
 protected:
   
 
@@ -201,6 +197,11 @@ protected:
   class EditorInitializer;
   friend class EditorInitializer;
   friend class nsTextEditorState; 
+
+  
+  
+  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(TextControlInitializer,
+                                         EditorInitializer)
 
   class EditorInitializer : public nsRunnable {
   public:
