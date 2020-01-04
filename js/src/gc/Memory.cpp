@@ -435,7 +435,7 @@ static inline void*
 MapMemoryAt(void* desired, size_t length, int prot = PROT_READ | PROT_WRITE,
             int flags = MAP_PRIVATE | MAP_ANON, int fd = -1, off_t offset = 0)
 {
-#if defined(__ia64__) || (defined(__sparc64__) && defined(__NetBSD__))
+#if defined(__ia64__) || (defined(__sparc64__) && defined(__NetBSD__)) || defined(__aarch64__)
     MOZ_ASSERT(0xffff800000000000ULL & (uintptr_t(desired) + length - 1) == 0);
 #endif
     void* region = mmap(desired, length, prot, flags, fd, offset);
@@ -485,6 +485,41 @@ MapMemory(size_t length, int prot = PROT_READ | PROT_WRITE,
         return nullptr;
     }
     return region;
+#elif defined(__aarch64__)
+   
+
+
+
+
+
+
+
+    const uintptr_t start = UINT64_C(0x0000070000000000);
+    const uintptr_t end   = UINT64_C(0x0000800000000000);
+    const uintptr_t step  = ChunkSize;
+   
+
+
+
+
+
+
+
+
+    uintptr_t hint;
+    void* region = MAP_FAILED;
+    for (hint = start; region == MAP_FAILED && hint + length <= end; hint += step) {
+        region = mmap((void*)hint, length, prot, flags, fd, offset);
+        if (region != MAP_FAILED) {
+            if ((uintptr_t(region) + (length - 1)) & 0xffff800000000000) {
+                if (munmap(region, length)) {
+                    MOZ_ASSERT(errno == ENOMEM);
+                }
+                region = MAP_FAILED;
+            }
+        }
+    }
+    return region == MAP_FAILED ? nullptr : region;
 #else
     void* region = MozTaggedAnonymousMmap(nullptr, length, prot, flags, fd, offset, "js-gc-heap");
     if (region == MAP_FAILED)
