@@ -22,8 +22,7 @@ public:
   void SetVideoConfig(uint32_t aWidth, uint32_t aHeight, uint32_t aDisplayWidth,
                       uint32_t aDisplayHeight, float aFrameRate);
 
-  void SetAudioConfig(uint32_t aSampleFreq, uint32_t aChannels,
-                      uint32_t bitDepth);
+  void SetAudioConfig(uint32_t aSampleFreq, uint32_t aChannels);
   
 
 
@@ -68,6 +67,8 @@ private:
   uint64_t mClusterLengthLoc;
   
   nsTArray<uint8_t> mCodecPrivateData;
+  
+  uint64_t mCodecDelay;
 
   
   uint64_t mClusterTimecode;
@@ -80,7 +81,6 @@ private:
   float mFrameRate;
   
   float mSampleFreq;
-  int mBitDepth;
   int mChannels;
 };
 

@@ -22,7 +22,8 @@ public:
   nsTArray<uint8_t> mIdHeader;
   
   nsTArray<uint8_t> mCommentHeader;
-
+  int32_t mChannels;
+  float mSamplingFrequency;
   MetadataKind GetKind() const override { return METADATA_OPUS; }
 };
 
@@ -80,6 +81,9 @@ private:
 
 
   nsTArray<AudioDataValue> mResampledLeftover;
+
+  
+  uint64_t mOutputTimeStamp;
 };
 
 } 
