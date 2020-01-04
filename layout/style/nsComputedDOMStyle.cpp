@@ -2145,12 +2145,10 @@ nsComputedDOMStyle::DoGetImageLayerImage(const nsStyleImageLayers& aLayers)
     
     
     
-    bool isLocalURI = image.GetType() == eStyleImageType_Null &&
-                      aLayers.mLayers[i].mSourceURI;
-    if (isLocalURI) {
+    if (aLayers.mLayers[i].mSourceURI.IsLocalRef()) {
       
       
-      val->SetURI(aLayers.mLayers[i].mSourceURI);
+      val->SetURI(aLayers.mLayers[i].mSourceURI.GetSourceURL());
     } else {
       SetValueToStyleImage(image, val);
     }
@@ -6147,8 +6145,8 @@ nsComputedDOMStyle::DoGetMask()
 
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
-  if (firstLayer.mSourceURI) {
-    val->SetURI(firstLayer.mSourceURI);
+  if (firstLayer.mSourceURI.GetSourceURL()) {
+    val->SetURI(firstLayer.mSourceURI.GetSourceURL());
   } else {
     val->SetIdent(eCSSKeyword_none);
   }
