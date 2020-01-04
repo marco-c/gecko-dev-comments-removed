@@ -50,6 +50,7 @@ public:
   
   
   void AddCue(TextTrackCue& aCue);
+  void RemoveCue(TextTrackCue& aCue);
   void RemoveCue(TextTrackCue& aCue, ErrorResult& aRv);
   void RemoveCueAt(uint32_t aIndex);
   void RemoveAll();
