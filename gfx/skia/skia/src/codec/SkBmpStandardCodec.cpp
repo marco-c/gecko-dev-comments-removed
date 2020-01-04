@@ -20,13 +20,14 @@ SkBmpStandardCodec::SkBmpStandardCodec(const SkImageInfo& info, SkStream* stream
                                        SkCodec::SkScanlineOrder rowOrder, bool inIco)
     : INHERITED(info, stream, bitsPerPixel, rowOrder)
     , fColorTable(nullptr)
-    , fNumColors(this->computeNumColors(numColors))
+    , fNumColors(numColors)
     , fBytesPerColor(bytesPerColor)
     , fOffset(offset)
     , fSwizzler(nullptr)
     , fSrcRowBytes(SkAlign4(compute_row_bytes(this->getInfo().width(), this->bitsPerPixel())))
     , fSrcBuffer(new uint8_t [fSrcRowBytes])
     , fInIco(inIco)
+    , fAndMaskRowBytes(fInIco ? SkAlign4(compute_row_bytes(this->getInfo().width(), 1)) : 0)
 {}
 
 
@@ -60,9 +61,6 @@ SkCodec::Result SkBmpStandardCodec::onGetPixels(const SkImageInfo& dstInfo,
         *rowsDecoded = rows;
         return kIncompleteInput;
     }
-    if (fInIco) {
-        return this->decodeIcoMask(dstInfo, dst, dstRowBytes);
-    }
     return kSuccess;
 }
 
@@ -82,9 +80,12 @@ SkCodec::Result SkBmpStandardCodec::onGetPixels(const SkImageInfo& dstInfo,
             
             *numColors = maxColors;
         }
+        
+        const uint32_t numColorsToRead =
+            fNumColors == 0 ? maxColors : SkTMin(fNumColors, maxColors);
 
         
-        colorBytes = fNumColors * fBytesPerColor;
+        colorBytes = numColorsToRead * fBytesPerColor;
         SkAutoTDeleteArray<uint8_t> cBuffer(new uint8_t[colorBytes]);
         if (stream()->read(cBuffer.get(), colorBytes) != colorBytes) {
             SkCodecPrintf("Error: unable to read color table.\n");
@@ -112,7 +113,7 @@ SkCodec::Result SkBmpStandardCodec::onGetPixels(const SkImageInfo& dstInfo,
 
         
         uint32_t i = 0;
-        for (; i < fNumColors; i++) {
+        for (; i < numColorsToRead; i++) {
             uint8_t blue = get_byte(cBuffer.get(), i*fBytesPerColor);
             uint8_t green = get_byte(cBuffer.get(), i*fBytesPerColor + 1);
             uint8_t red = get_byte(cBuffer.get(), i*fBytesPerColor + 2);
@@ -227,9 +228,8 @@ SkCodec::Result SkBmpStandardCodec::prepareToDecode(const SkImageInfo& dstInfo,
 
 
 
-int SkBmpStandardCodec::decodeRows(const SkImageInfo& dstInfo,
-                                               void* dst, size_t dstRowBytes,
-                                               const Options& opts) {
+int SkBmpStandardCodec::decodeRows(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes,
+        const Options& opts) {
     
     const int height = dstInfo.height();
     for (int y = 0; y < height; y++) {
@@ -246,13 +246,57 @@ int SkBmpStandardCodec::decodeRows(const SkImageInfo& dstInfo,
         fSwizzler->swizzle(dstRow, fSrcBuffer.get());
     }
 
-    
+    if (fInIco) {
+        const int startScanline = this->currScanline();
+        if (startScanline < 0) {
+            
+            
+            decodeIcoMask(this->stream(), dstInfo, dst, dstRowBytes);
+            return height;
+        }
+
+        
+        
+        
+        
+        
+        
+        const void* memoryBase = this->stream()->getMemoryBase();
+        SkASSERT(nullptr != memoryBase);
+        SkASSERT(this->stream()->hasLength());
+        SkASSERT(this->stream()->hasPosition());
+
+        const size_t length = this->stream()->getLength();
+        const size_t currPosition = this->stream()->getPosition();
+
+        
+        const int remainingScanlines = this->getInfo().height() - startScanline - height;
+        const size_t bytesToSkip = remainingScanlines * fSrcRowBytes +
+                startScanline * fAndMaskRowBytes;
+        const size_t subStreamStartPosition = currPosition + bytesToSkip;
+        if (subStreamStartPosition >= length) {
+            
+            return height;
+        }
+
+        
+        
+        
+        const void* subStreamMemoryBase = SkTAddOffset<const void>(memoryBase,
+                subStreamStartPosition);
+        const size_t subStreamLength = length - subStreamStartPosition;
+        
+        SkMemoryStream subStream(subStreamMemoryBase, subStreamLength, false);
+
+        
+        
+        decodeIcoMask(&subStream, dstInfo, dst, dstRowBytes);
+    }
+
     return height;
 }
 
-
-
-SkCodec::Result SkBmpStandardCodec::decodeIcoMask(const SkImageInfo& dstInfo,
+void SkBmpStandardCodec::decodeIcoMask(SkStream* stream, const SkImageInfo& dstInfo,
         void* dst, size_t dstRowBytes) {
     
     
@@ -260,15 +304,19 @@ SkCodec::Result SkBmpStandardCodec::decodeIcoMask(const SkImageInfo& dstInfo,
     SkASSERT(dstInfo.colorType() == kN32_SkColorType);
 
     
-    const int width = this->getInfo().width();
-    const size_t rowBytes = SkAlign4(compute_row_bytes(width, 1));
+    
+    
+    const int sampleX = fSwizzler->sampleX();
+    const int sampledWidth = get_scaled_dimension(this->getInfo().width(), sampleX);
+    const int srcStartX = get_start_coord(sampleX);
+
 
     SkPMColor* dstPtr = (SkPMColor*) dst;
     for (int y = 0; y < dstInfo.height(); y++) {
         
-        if (stream()->read(fSrcBuffer.get(), rowBytes) != rowBytes) {
+        if (stream->read(fSrcBuffer.get(), fAndMaskRowBytes) != fAndMaskRowBytes) {
             SkCodecPrintf("Warning: incomplete AND mask for bmp-in-ico.\n");
-            return kIncompleteInput;
+            return;
         }
 
         int row = this->getDstRow(y, dstInfo.height());
@@ -276,17 +324,17 @@ SkCodec::Result SkBmpStandardCodec::decodeIcoMask(const SkImageInfo& dstInfo,
         SkPMColor* dstRow =
                 SkTAddOffset<SkPMColor>(dstPtr, row * dstRowBytes);
 
-        for (int x = 0; x < width; x++) {
+        int srcX = srcStartX;
+        for (int dstX = 0; dstX < sampledWidth; dstX++) {
             int quotient;
             int modulus;
-            SkTDivMod(x, 8, &quotient, &modulus);
+            SkTDivMod(srcX, 8, &quotient, &modulus);
             uint32_t shift = 7 - modulus;
-            uint32_t alphaBit =
-                    (fSrcBuffer.get()[quotient] >> shift) & 0x1;
-            dstRow[x] &= alphaBit - 1;
+            uint32_t alphaBit = (fSrcBuffer.get()[quotient] >> shift) & 0x1;
+            dstRow[dstX] &= alphaBit - 1;
+            srcX += sampleX;
         }
     }
-    return kSuccess;
 }
 
 uint32_t SkBmpStandardCodec::onGetFillValue(SkColorType colorType, SkAlphaType alphaType) const {

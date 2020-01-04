@@ -15,6 +15,7 @@
 #include <new>
 
 class GrTextureParams;
+class SkImageCacherator;
 
 enum {
     kNeedNewImageUniqueID = 0
@@ -32,13 +33,11 @@ public:
                               int srcX, int srcY, CachingHint) const;
 
     virtual GrTexture* peekTexture() const { return nullptr; }
+    virtual SkImageCacherator* peekCacherator() const { return nullptr; }
 
     
     
     virtual bool getROPixels(SkBitmap*, CachingHint = kAllow_CachingHint) const = 0;
-
-    virtual SkImage* onApplyFilter(SkImageFilter*, SkIPoint* offset,
-                                   bool forceResultToOriginalSize) const;
 
     virtual SkSurface* onNewSurface(const SkImageInfo& info) const {
         return SkSurface::NewRaster(info);
@@ -49,11 +48,18 @@ public:
 
     virtual SkImage* onNewSubset(const SkIRect&) const = 0;
 
-    virtual SkData* onRefEncoded() const { return nullptr; }
+    
+    virtual SkData* onRefEncoded(GrContext*) const { return nullptr; }
 
     virtual bool onAsLegacyBitmap(SkBitmap*, LegacyBitmapMode) const;
 
     virtual bool onIsLazyGenerated() const { return false; }
+
+    
+    
+    virtual bool asBitmapForImageFilters(SkBitmap* bitmap) const {
+        return this->getROPixels(bitmap, kAllow_CachingHint);
+    }
 
     
     

@@ -15,14 +15,14 @@
 
 class SkBlurMask {
 public:
-    static bool BlurRect(SkScalar sigma, SkMask *dst, const SkRect &src, SkBlurStyle,
-                         SkIPoint *margin = nullptr,
-                         SkMask::CreateMode createMode =
-                                                SkMask::kComputeBoundsAndRenderImage_CreateMode);
-    static bool BlurRRect(SkScalar sigma, SkMask *dst, const SkRRect &src, SkBlurStyle,
-                         SkIPoint *margin = nullptr,
-                         SkMask::CreateMode createMode =
-                                                SkMask::kComputeBoundsAndRenderImage_CreateMode);
+    static bool SK_WARN_UNUSED_RESULT BlurRect(SkScalar sigma, SkMask *dst, const SkRect &src,
+                                               SkBlurStyle, SkIPoint *margin = nullptr,
+                                               SkMask::CreateMode createMode =
+                                                  SkMask::kComputeBoundsAndRenderImage_CreateMode);
+    static bool SK_WARN_UNUSED_RESULT BlurRRect(SkScalar sigma, SkMask *dst, const SkRRect &src,
+                                                SkBlurStyle, SkIPoint *margin = nullptr,
+                                                SkMask::CreateMode createMode =
+                                                  SkMask::kComputeBoundsAndRenderImage_CreateMode);
 
     
     
@@ -30,14 +30,16 @@ public:
     
     
 
-    static bool BoxBlur(SkMask* dst, const SkMask& src,
-                        SkScalar sigma, SkBlurStyle style, SkBlurQuality quality,
-                        SkIPoint* margin = nullptr, bool force_quality=false);
+    static bool SK_WARN_UNUSED_RESULT BoxBlur(SkMask* dst, const SkMask& src,
+                                              SkScalar sigma, SkBlurStyle style, SkBlurQuality,
+                                              SkIPoint* margin = nullptr,
+                                              bool forceQuality = false);
 
     
     
-    static bool BlurGroundTruth(SkScalar sigma, SkMask* dst, const SkMask& src, SkBlurStyle,
-                                SkIPoint* margin = nullptr);
+    static bool SK_WARN_UNUSED_RESULT BlurGroundTruth(SkScalar sigma, SkMask* dst,
+                                                      const SkMask& src,
+                                                      SkBlurStyle, SkIPoint* margin = nullptr);
 
     
     static SkScalar ConvertRadiusToSigma(SkScalar radius);

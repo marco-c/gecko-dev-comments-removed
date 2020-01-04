@@ -10,6 +10,7 @@
 #include "glsl/GrGLSL.h"
 #include "glsl/GrGLSLCaps.h"
 #include "glsl/GrGLSLProgramBuilder.h"
+#include "glsl/GrGLSLUniformHandler.h"
 #include "glsl/GrGLSLVarying.h"
 
 const char* GrGLSLFragmentShaderBuilder::kDstTextureColorName = "_dstColor";
@@ -136,24 +137,19 @@ const char* GrGLSLFragmentShaderBuilder::fragmentPosition() {
         static const char* kTempName = "tmpXYFragCoord";
         static const char* kCoordName = "fragCoordYDown";
         if (!fSetupFragPosition) {
-            SkASSERT(!fProgramBuilder->fUniformHandles.fRTHeightUni.isValid());
             const char* rtHeightName;
 
-            fProgramBuilder->fUniformHandles.fRTHeightUni =
-                    fProgramBuilder->addFragPosUniform(GrGLSLProgramBuilder::kFragment_Visibility,
-                                                       kFloat_GrSLType,
-                                                       kDefault_GrSLPrecision,
-                                                       "RTHeight",
-                                                       &rtHeightName);
+            fProgramBuilder->addRTHeightUniform("RTHeight", &rtHeightName);
 
             
             
             
             
             
-            this->codePrependf("\tvec4 %s = vec4(%s.x, %s - %s.y, 1.0, 1.0);\n",
-                               kCoordName, kTempName, rtHeightName, kTempName);
-            this->codePrependf("vec2 %s = gl_FragCoord.xy;", kTempName);
+            const char* precision = glslCaps->usesPrecisionModifiers() ? "highp " : "";
+            this->codePrependf("\t%svec4 %s = vec4(%s.x, %s - %s.y, 1.0, 1.0);\n",
+                               precision, kCoordName, kTempName, rtHeightName, kTempName);
+            this->codePrependf("%svec2 %s = gl_FragCoord.xy;", precision, kTempName);
             fSetupFragPosition = true;
         }
         SkASSERT(fProgramBuilder->fUniformHandles.fRTHeightUni.isValid());

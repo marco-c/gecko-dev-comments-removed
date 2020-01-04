@@ -9,9 +9,10 @@
 #ifndef GrGLCaps_DEFINED
 #define GrGLCaps_DEFINED
 
-#include "GrCaps.h"
 #include "glsl/GrGLSL.h"
+#include "GrCaps.h"
 #include "GrGLStencilAttachment.h"
+#include "GrSwizzle.h"
 #include "SkChecksum.h"
 #include "SkTHash.h"
 #include "SkTArray.h"
@@ -90,6 +91,14 @@ public:
         kLast_MapBufferType = kChromium_MapBufferType,
     };
 
+    enum TransferBufferType {
+        kNone_TransferBufferType,
+        kPBO_TransferBufferType,          
+        kChromium_TransferBufferType,     
+
+        kLast_TransferBufferType = kChromium_TransferBufferType,
+    };
+
     
 
 
@@ -97,13 +106,83 @@ public:
     GrGLCaps(const GrContextOptions& contextOptions, const GrGLContextInfo& ctxInfo,
              const GrGLInterface* glInterface);
 
+    bool isConfigTexturable(GrPixelConfig config) const override {
+        SkASSERT(kGrPixelConfigCnt > config);
+        return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kTextureable_Flag);
+    }
+
+    bool isConfigRenderable(GrPixelConfig config, bool withMSAA) const override {
+        SkASSERT(kGrPixelConfigCnt > config);
+        if (withMSAA) {
+            return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kRenderableWithMSAA_Flag);
+        } else {
+            return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kRenderable_Flag);
+        }
+    }
+
+    
+    const GrSwizzle& configSwizzle(GrPixelConfig config) const {
+        return fConfigTable[config].fSwizzle;
+    }
+
+    bool getTexImageFormats(GrPixelConfig surfaceConfig, GrPixelConfig externalConfig,
+                            GrGLenum* internalFormat, GrGLenum* externalFormat,
+                            GrGLenum* externalType) const;
+
+    bool getCompressedTexImageFormats(GrPixelConfig surfaceConfig, GrGLenum* internalFormat) const;
+
+    bool getReadPixelsFormat(GrPixelConfig surfaceConfig, GrPixelConfig externalConfig,
+                             GrGLenum* externalFormat, GrGLenum* externalType) const;
+
+    bool getRenderbufferFormat(GrPixelConfig config, GrGLenum* internalFormat) const;
+
+    
+
+
+
+
+    const SkTArray<StencilFormat, true>& stencilFormats() const {
+        return fStencilFormats;
+    }
+
+    
+
+
+    bool hasStencilFormatBeenDeterminedForConfig(GrPixelConfig config) const {
+        return fConfigTable[config].fStencilFormatIndex != ConfigInfo::kUnknown_StencilIndex;
+    }
+
+    
+
+
+
+
+
+    int getStencilFormatIndexForConfig(GrPixelConfig config) const {
+        SkASSERT(this->hasStencilFormatBeenDeterminedForConfig(config));
+        return fConfigTable[config].fStencilFormatIndex;
+    }
+
+    
+
+
+
+    void setStencilFormatIndexForConfig(GrPixelConfig config, int index) {
+        SkASSERT(!this->hasStencilFormatBeenDeterminedForConfig(config));
+        if (index < 0) {
+            fConfigTable[config].fStencilFormatIndex = ConfigInfo::kUnsupported_StencilFormatIndex;
+        } else {
+            fConfigTable[config].fStencilFormatIndex = index;
+        }
+    }
+
     
 
 
 
 
     void markConfigAsValidColorAttachment(GrPixelConfig config) {
-        fVerifiedColorConfigs.markVerified(config);
+        fConfigTable[config].fFlags |= ConfigInfo::kVerifiedColorAttachment_Flag;
     }
 
     
@@ -111,7 +190,7 @@ public:
 
 
     bool isConfigVerifiedColorAttachment(GrPixelConfig config) const {
-        return fVerifiedColorConfigs.isVerified(config);
+        return SkToBool(fConfigTable[config].fFlags & ConfigInfo::kVerifiedColorAttachment_Flag);
     }
 
     
@@ -144,13 +223,7 @@ public:
     MapBufferType mapBufferType() const { return fMapBufferType; }
 
     
-
-
-
-
-    const SkTArray<StencilFormat, true>& stencilFormats() const {
-        return fStencilFormats;
-    }
+    TransferBufferType transferBufferType() const { return fTransferBufferType; }
 
     
     int maxFragmentUniformVectors() const { return fMaxFragmentUniformVectors; }
@@ -162,14 +235,11 @@ public:
     int maxFragmentTextureUnits() const { return fMaxFragmentTextureUnits; }
 
     
-    bool rgba8RenderbufferSupport() const { return fRGBA8RenderbufferSupport; }
-
-    
 
 
 
 
-    bool bgraIsInternalFormat() const { return fBGRAIsInternalFormat; }
+    bool bgraIsInternalFormat() const;
 
     
     bool unpackRowLengthSupport() const { return fUnpackRowLengthSupport; }
@@ -199,9 +269,6 @@ public:
     bool vertexArrayObjectSupport() const { return fVertexArrayObjectSupport; }
 
     
-    bool instancedDrawingSupport() const { return fInstancedDrawingSupport; }
-
-    
     bool directStateAccessSupport() const { return fDirectStateAccessSupport; }
 
     
@@ -211,20 +278,15 @@ public:
     bool ES2CompatibilitySupport() const { return fES2CompatibilitySupport; }
 
     
-    bool multisampleDisableSupport() const {
-        return fMultisampleDisableSupport;
-    }
+    bool multisampleDisableSupport() const { return fMultisampleDisableSupport; }
 
     
-    bool useNonVBOVertexAndIndexDynamicData() const {
-        return fUseNonVBOVertexAndIndexDynamicData;
-    }
+    bool useNonVBOVertexAndIndexDynamicData() const { return fUseNonVBOVertexAndIndexDynamicData; }
 
     
     bool readPixelsSupported(const GrGLInterface* intf,
-                             GrGLenum format,
-                             GrGLenum type,
-                             GrGLenum currFboFormat) const;
+                             GrPixelConfig readConfig,
+                             GrPixelConfig currFBOConfig) const;
 
     bool isCoreProfile() const { return fIsCoreProfile; }
 
@@ -234,6 +296,12 @@ public:
 
     
     bool externalTextureSupport() const { return fExternalTextureSupport; }
+
+    
+    bool rectangleTextureSupport() const { return fRectangleTextureSupport; }
+
+    
+    bool textureSwizzleSupport() const { return fTextureSwizzleSupport; }
 
     
 
@@ -247,86 +315,38 @@ public:
 
     SkString dump() const override;
 
-    
-
-
-
-
-    enum LATCAlias {
-        kLATC_LATCAlias,
-        kRGTC_LATCAlias,
-        k3DC_LATCAlias
-    };
-
-    LATCAlias latcAlias() const { return fLATCAlias; }
-
     bool rgba8888PixelsOpsAreSlow() const { return fRGBA8888PixelsOpsAreSlow; }
     bool partialFBOReadIsSlow() const { return fPartialFBOReadIsSlow; }
 
     const GrGLSLCaps* glslCaps() const { return reinterpret_cast<GrGLSLCaps*>(fShaderCaps.get()); }
 
 private:
+    enum ExternalFormatUsage {
+        kTexImage_ExternalFormatUsage,
+        kOther_ExternalFormatUsage,
+
+        kLast_ExternalFormatUsage = kOther_ExternalFormatUsage
+    };
+    static const int kExternalFormatUsageCnt = kLast_ExternalFormatUsage + 1;
+    bool getExternalFormat(GrPixelConfig surfaceConfig, GrPixelConfig memoryConfig,
+                           ExternalFormatUsage usage, GrGLenum* externalFormat,
+                           GrGLenum* externalType) const;
+
     void init(const GrContextOptions&, const GrGLContextInfo&, const GrGLInterface*);
     void initGLSL(const GrGLContextInfo&);
     bool hasPathRenderingSupport(const GrGLContextInfo&, const GrGLInterface*);
 
     void onApplyOptionsOverrides(const GrContextOptions& options) override;
 
-    
-
-
-
-    struct VerifiedColorConfigs {
-        VerifiedColorConfigs() {
-            this->reset();
-        }
-
-        void reset() {
-            for (int i = 0; i < kNumUints; ++i) {
-                fVerifiedColorConfigs[i] = 0;
-            }
-        }
-
-        static const int kNumUints = (kGrPixelConfigCnt  + 31) / 32;
-        uint32_t fVerifiedColorConfigs[kNumUints];
-
-        void markVerified(GrPixelConfig config) {
-#if !GR_GL_CHECK_FBO_STATUS_ONCE_PER_FORMAT
-                return;
-#endif
-            int u32Idx = config / 32;
-            int bitIdx = config % 32;
-            fVerifiedColorConfigs[u32Idx] |= 1 << bitIdx;
-        }
-
-        bool isVerified(GrPixelConfig config) const {
-#if !GR_GL_CHECK_FBO_STATUS_ONCE_PER_FORMAT
-            return false;
-#endif
-            int u32Idx = config / 32;
-            int bitIdx = config % 32;
-            return SkToBool(fVerifiedColorConfigs[u32Idx] & (1 << bitIdx));
-        }
-    };
-
     void initFSAASupport(const GrGLContextInfo&, const GrGLInterface*);
     void initBlendEqationSupport(const GrGLContextInfo&);
     void initStencilFormats(const GrGLContextInfo&);
     
-    void initConfigRenderableTable(const GrGLContextInfo&, bool srgbSupport);
-    void initConfigTexturableTable(const GrGLContextInfo&, const GrGLInterface*, bool srgbSupport);
-
-    bool doReadPixelsSupported(const GrGLInterface* intf, GrGLenum format, GrGLenum type) const;
+    void initConfigTable(const GrGLContextInfo&, const GrGLInterface* gli, GrGLSLCaps* glslCaps);
 
     void initShaderPrecisionTable(const GrGLContextInfo& ctxInfo,
                                   const GrGLInterface* intf,
                                   GrGLSLCaps* glslCaps);
-
-    void initConfigSwizzleTable(const GrGLContextInfo& ctxInfo, GrGLSLCaps* glslCaps);
-
-    
-    
-    VerifiedColorConfigs fVerifiedColorConfigs;
 
     SkTArray<StencilFormat, true> fStencilFormats;
 
@@ -337,10 +357,8 @@ private:
     MSFBOType           fMSFBOType;
     InvalidateFBType    fInvalidateFBType;
     MapBufferType       fMapBufferType;
-    LATCAlias           fLATCAlias;
+    TransferBufferType  fTransferBufferType;
 
-    bool fRGBA8RenderbufferSupport : 1;
-    bool fBGRAIsInternalFormat : 1;
     bool fUnpackRowLengthSupport : 1;
     bool fUnpackFlipYSupport : 1;
     bool fPackRowLengthSupport : 1;
@@ -349,9 +367,7 @@ private:
     bool fTexStorageSupport : 1;
     bool fTextureRedSupport : 1;
     bool fImagingSupport  : 1;
-    bool fTwoFormatLimit : 1;
     bool fVertexArrayObjectSupport : 1;
-    bool fInstancedDrawingSupport : 1;
     bool fDirectStateAccessSupport : 1;
     bool fDebugSupport : 1;
     bool fES2CompatibilitySupport : 1;
@@ -364,19 +380,78 @@ private:
     bool fPartialFBOReadIsSlow : 1;
     bool fBindUniformLocationSupport : 1;
     bool fExternalTextureSupport : 1;
+    bool fRectangleTextureSupport : 1;
+    bool fTextureSwizzleSupport : 1;
 
-    struct ReadPixelsSupportedFormat {
+    
+    enum FormatType {
+        kNormalizedFixedPoint_FormatType,
+        kFloat_FormatType,
+    };
+
+    struct ReadPixelsFormat {
+        ReadPixelsFormat() : fFormat(0), fType(0) {}
         GrGLenum fFormat;
         GrGLenum fType;
-        GrGLenum fFboFormat;
-
-        bool operator==(const ReadPixelsSupportedFormat& rhs) const {
-            return fFormat    == rhs.fFormat
-                && fType      == rhs.fType
-                && fFboFormat == rhs.fFboFormat;
-        }
     };
-    mutable SkTHashMap<ReadPixelsSupportedFormat, bool> fReadPixelsSupportedCache;
+
+    struct ConfigFormats {
+        ConfigFormats() {
+            
+            memset(this, 0xAB, sizeof(ConfigFormats));
+        }
+        GrGLenum fBaseInternalFormat;
+        GrGLenum fSizedInternalFormat;
+
+        
+
+
+
+
+
+        GrGLenum fExternalFormat[kExternalFormatUsageCnt];
+        GrGLenum fExternalType;
+
+
+        
+        GrGLenum fInternalFormatTexImage;
+        GrGLenum fInternalFormatRenderbuffer;
+    };
+
+    struct ConfigInfo {
+        ConfigInfo() : fStencilFormatIndex(kUnknown_StencilIndex), fFlags(0) {}
+
+        ConfigFormats fFormats;
+
+        FormatType fFormatType;
+
+        
+        
+        
+        ReadPixelsFormat fSecondReadPixelsFormat;
+
+        enum {
+            
+            kUnknown_StencilIndex = -1,
+            
+            kUnsupported_StencilFormatIndex = -2
+        };
+
+        
+        int      fStencilFormatIndex;
+
+        enum {
+            kVerifiedColorAttachment_Flag = 0x1,
+            kTextureable_Flag             = 0x2,
+            kRenderable_Flag              = 0x4,
+            kRenderableWithMSAA_Flag      = 0x8,
+        };
+        uint32_t fFlags;
+
+        GrSwizzle fSwizzle;
+    };
+
+    ConfigInfo fConfigTable[kGrPixelConfigCnt];
 
     typedef GrCaps INHERITED;
 };

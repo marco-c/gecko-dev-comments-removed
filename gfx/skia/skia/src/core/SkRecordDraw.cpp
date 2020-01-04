@@ -78,7 +78,7 @@ template <> void Draw::draw(const NoOp&) {}
 #define DRAW(T, call) template <> void Draw::draw(const T& r) { fCanvas->call; }
 DRAW(Restore, restore());
 DRAW(Save, save());
-DRAW(SaveLayer, saveLayer(r.bounds, r.paint, r.flags));
+DRAW(SaveLayer, saveLayer(SkCanvas::SaveLayerRec(r.bounds, r.paint, r.backdrop, r.saveLayerFlags)));
 DRAW(SetMatrix, setMatrix(SkMatrix::Concat(fInitialCTM, r.matrix)));
 DRAW(Concat, concat(r.matrix));
 
@@ -111,7 +111,6 @@ DRAW(DrawPosText, drawPosText(r.text, r.byteLength, r.pos, r.paint));
 DRAW(DrawPosTextH, drawPosTextH(r.text, r.byteLength, r.xpos, r.y, r.paint));
 DRAW(DrawRRect, drawRRect(r.rrect, r.paint));
 DRAW(DrawRect, drawRect(r.rect, r.paint));
-DRAW(DrawSprite, drawSprite(r.bitmap.shallowCopy(), r.left, r.top, r.paint));
 DRAW(DrawText, drawText(r.text, r.byteLength, r.x, r.y, r.paint));
 DRAW(DrawTextBlob, drawTextBlob(r.blob, r.x, r.y, r.paint));
 DRAW(DrawTextOnPath, drawTextOnPath(r.text, r.byteLength, r.path, &r.matrix, r.paint));
@@ -221,6 +220,7 @@ private:
         int controlOps;        
         Bounds bounds;         
         const SkPaint* paint;  
+        SkMatrix ctm;
     };
 
     
@@ -301,6 +301,7 @@ private:
         sb.bounds =
             PaintMayAffectTransparentBlack(paint) ? fCurrentClipBounds : Bounds::MakeEmpty();
         sb.paint = paint;
+        sb.ctm = this->fCTM;
 
         fSaveStack.push(sb);
         this->pushControl();
@@ -386,14 +387,6 @@ private:
 
     Bounds bounds(const DrawPaint&) const { return fCurrentClipBounds; }
     Bounds bounds(const NoOp&)  const { return Bounds::MakeEmpty(); }    
-
-    Bounds bounds(const DrawSprite& op) const {  
-        SkRect rect = Bounds::MakeXYWH(op.left, op.top, op.bitmap.width(), op.bitmap.height());
-        if (!rect.intersect(fCurrentClipBounds)) {
-            return Bounds::MakeEmpty();
-        }
-        return rect;
-    }
 
     Bounds bounds(const DrawRect& op) const { return this->adjustAndMap(op.rect, &op.paint); }
     Bounds bounds(const DrawOval& op) const { return this->adjustAndMap(op.oval, &op.paint); }
@@ -563,9 +556,15 @@ private:
 
     bool adjustForSaveLayerPaints(SkRect* rect, int savesToIgnore = 0) const {
         for (int i = fSaveStack.count() - 1 - savesToIgnore; i >= 0; i--) {
+            SkMatrix inverse;
+            if (!fSaveStack[i].ctm.invert(&inverse)) {
+                return false;
+            }
+            inverse.mapRect(rect);
             if (!AdjustForPaint(fSaveStack[i].paint, rect)) {
                 return false;
             }
+            fSaveStack[i].ctm.mapRect(rect);
         }
         return true;
     }
@@ -693,7 +692,8 @@ private:
             
             dst.fKeySize = fSaveLayerOpStack.count() + src.fKeySize + 1;
             dst.fKey = new int[dst.fKeySize];
-            memcpy(dst.fKey, fSaveLayerOpStack.begin(), fSaveLayerOpStack.count() * sizeof(int));
+            sk_careful_memcpy(dst.fKey, fSaveLayerOpStack.begin(),
+                              fSaveLayerOpStack.count() * sizeof(int));
             dst.fKey[fSaveLayerOpStack.count()] = fFillBounds.currentOp();
             memcpy(&dst.fKey[fSaveLayerOpStack.count()+1], src.fKey, src.fKeySize * sizeof(int));
         }

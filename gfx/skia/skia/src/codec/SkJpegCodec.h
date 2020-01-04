@@ -13,6 +13,7 @@
 #include "SkJpegDecoderMgr.h"
 #include "SkJpegUtility_codec.h"
 #include "SkStream.h"
+#include "SkTemplates.h"
 
 extern "C" {
     #include "jpeglib.h"
@@ -25,12 +26,7 @@ extern "C" {
 
 class SkJpegCodec : public SkCodec {
 public:
-
-    
-
-
-
-    static bool IsJpeg(SkStream*);
+    static bool IsJpeg(const void*, size_t);
 
     
 
@@ -116,7 +112,7 @@ private:
     const int                     fReadyState;
 
     
-    SkAutoMalloc               fStorage;    
+    SkAutoTMalloc<uint8_t>     fStorage;    
     uint8_t*                   fSrcRow;     
     SkAutoTDelete<SkSwizzler>  fSwizzler;
     

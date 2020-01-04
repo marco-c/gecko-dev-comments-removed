@@ -225,7 +225,8 @@ public:
         return this->onGetYUV8Planes(sizes, planes, rowBytes, colorSpace);
     }
 
-    bool readPixels(SkBitmap* dst, const SkIRect* subset = NULL);
+    
+    bool readPixels(SkBitmap* dst, SkColorType colorType, const SkIRect* subset = NULL);
 
     
 
@@ -299,7 +300,7 @@ protected:
 
 
 
-    virtual bool onReadPixels(SkBitmap* dst, const SkIRect* subsetOrNull);
+    virtual bool onReadPixels(SkBitmap* dst, SkColorType colorType, const SkIRect* subsetOrNull);
 
     
     virtual SkData* onRefEncodedData();

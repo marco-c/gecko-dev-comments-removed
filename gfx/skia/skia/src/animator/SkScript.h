@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef SkScript_DEFINED
 #define SkScript_DEFINED
 

@@ -19,7 +19,6 @@
 class GrGLGpu;
 class SkMatrix;
 class GrGLProgram;
-class GrGLProgramBuilder;
 
 
 

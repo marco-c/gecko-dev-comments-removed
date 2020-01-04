@@ -42,20 +42,21 @@ public:
 
 protected:
     
-    void emitTransforms(GrGLSLGPBuilder* gp,
-                        GrGLSLVertexBuilder* vb,
+    void emitTransforms(GrGLSLVertexBuilder* vb,
                         GrGLSLVaryingHandler* varyingHandler,
+                        GrGLSLUniformHandler* uniformHandler,
                         const GrShaderVar& posVar,
                         const char* localCoords,
                         const TransformsIn& tin,
                         TransformsOut* tout) {
-        this->emitTransforms(gp, vb, varyingHandler, posVar, localCoords, SkMatrix::I(), tin, tout);
+        this->emitTransforms(vb, varyingHandler, uniformHandler,
+                             posVar, localCoords, SkMatrix::I(), tin, tout);
     }
 
     
-    void emitTransforms(GrGLSLGPBuilder*,
-                        GrGLSLVertexBuilder*,
+    void emitTransforms(GrGLSLVertexBuilder*,
                         GrGLSLVaryingHandler*,
+                        GrGLSLUniformHandler*,
                         const GrShaderVar& posVar,
                         const char* localCoords,
                         const SkMatrix& localMatrix,
@@ -63,8 +64,7 @@ protected:
                         TransformsOut*);
 
     
-    void emitTransforms(GrGLSLGPBuilder*,
-                        GrGLSLVertexBuilder*,
+    void emitTransforms(GrGLSLVertexBuilder*,
                         GrGLSLVaryingHandler*,
                         const char* localCoords,
                         const TransformsIn& tin,
@@ -77,9 +77,9 @@ protected:
     };
 
     
-    void setupPosition(GrGLSLGPBuilder*, GrGLSLVertexBuilder*, GrGPArgs*, const char* posName);
-    void setupPosition(GrGLSLGPBuilder*,
-                       GrGLSLVertexBuilder*,
+    void setupPosition(GrGLSLVertexBuilder*, GrGPArgs*, const char* posName);
+    void setupPosition(GrGLSLVertexBuilder*,
+                       GrGLSLUniformHandler* uniformHandler,
                        GrGPArgs*,
                        const char* posName,
                        const SkMatrix& mat,

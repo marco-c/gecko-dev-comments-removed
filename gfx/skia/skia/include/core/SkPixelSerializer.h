@@ -9,9 +9,9 @@
 #define SkPixelSerializer_DEFINED
 
 #include "SkRefCnt.h"
+#include "SkPixmap.h"
 
 class SkData;
-struct SkImageInfo;
 
 
 
@@ -32,9 +32,7 @@ public:
 
 
 
-    SkData* encodePixels(const SkImageInfo& info, const void* pixels, size_t rowBytes) {
-        return this->onEncodePixels(info, pixels, rowBytes);
-    }
+    SkData* encode(const SkPixmap& pixmap) { return this->onEncode(pixmap); }
 
 protected:
     
@@ -47,6 +45,6 @@ protected:
 
 
 
-    virtual SkData* onEncodePixels(const SkImageInfo&, const void* pixels, size_t rowBytes) = 0;
+    virtual SkData* onEncode(const SkPixmap&) = 0;
 };
 #endif 

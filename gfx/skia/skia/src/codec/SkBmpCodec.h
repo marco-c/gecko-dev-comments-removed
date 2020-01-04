@@ -20,11 +20,7 @@
 
 class SkBmpCodec : public SkCodec {
 public:
-
-    
-
-
-    static bool IsBmp(SkStream*);
+    static bool IsBmp(const void*, size_t);
 
     
 
@@ -79,11 +75,6 @@ protected:
 
 
     int32_t getDstRow(int32_t y, int32_t height) const;
-
-    
-
-
-    uint32_t computeNumColors(uint32_t numColors);
 
     
 

@@ -639,9 +639,11 @@ public:
 
 
 
+
     SkScalar getMinScale() const;
 
     
+
 
 
 
@@ -654,7 +656,7 @@ public:
 
 
 
-    bool getMinMaxScales(SkScalar scaleFactors[2]) const;
+    bool SK_WARN_UNUSED_RESULT getMinMaxScales(SkScalar scaleFactors[2]) const;
 
     
 

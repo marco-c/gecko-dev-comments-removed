@@ -10,6 +10,7 @@
 #include "GrAutoLocaleSetter.h"
 #include "GrCoordTransform.h"
 #include "GrGLProgramBuilder.h"
+#include "GrSwizzle.h"
 #include "GrTexture.h"
 #include "SkRTConf.h"
 #include "SkTraceEvent.h"
@@ -41,7 +42,10 @@ GrGLProgram* GrGLProgramBuilder::CreateProgram(const DrawArgs& args, GrGLGpu* gp
     GrGLSLExpr4 inputColor;
     GrGLSLExpr4 inputCoverage;
 
-    if (!pb->emitAndInstallProcs(&inputColor, &inputCoverage)) {
+    if (!pb->emitAndInstallProcs(&inputColor,
+                                 &inputCoverage,
+                                 gpu->glCaps().maxFragmentTextureUnits())) {
+        pb->cleanupFragmentProcessors();
         return nullptr;
     }
 
@@ -52,299 +56,44 @@ GrGLProgram* GrGLProgramBuilder::CreateProgram(const DrawArgs& args, GrGLGpu* gp
 
 GrGLProgramBuilder::GrGLProgramBuilder(GrGLGpu* gpu, const DrawArgs& args)
     : INHERITED(args)
-    , fGeometryProcessor(nullptr)
-    , fXferProcessor(nullptr)
     , fGpu(gpu)
-    , fUniforms(kVarsPerBlock)
     , fSamplerUniforms(4)
-    , fVaryingHandler(this) {
+    , fVaryingHandler(this)
+    , fUniformHandler(this) {
 }
 
-GrGLSLProgramDataManager::UniformHandle GrGLProgramBuilder::internalAddUniformArray(
-                                                                uint32_t visibility,
-                                                                GrSLType type,
-                                                                GrSLPrecision precision,
-                                                                const char* name,
-                                                                bool mangleName,
-                                                                int count,
-                                                                const char** outName) {
-    SkASSERT(name && strlen(name));
-    SkDEBUGCODE(static const uint32_t kVisibilityMask = kVertex_Visibility | kFragment_Visibility);
-    SkASSERT(0 == (~kVisibilityMask & visibility));
-    SkASSERT(0 != visibility);
-    SkASSERT(kDefault_GrSLPrecision == precision || GrSLTypeIsFloatType(type));
-
-    UniformInfo& uni = fUniforms.push_back();
-    uni.fVariable.setType(type);
-    uni.fVariable.setTypeModifier(GrGLSLShaderVar::kUniform_TypeModifier);
-    
-    
-    
-    
-    
-    
-    char prefix = 'u';
-    if ('u' == name[0]) {
-        prefix = '\0';
-    }
-    this->nameVariable(uni.fVariable.accessName(), prefix, name, mangleName);
-    uni.fVariable.setArrayCount(count);
-    uni.fVisibility = visibility;
-    uni.fVariable.setPrecision(precision);
-
-    if (outName) {
-        *outName = uni.fVariable.c_str();
-    }
-    return GrGLSLProgramDataManager::UniformHandle(fUniforms.count() - 1);
-}
-
-void GrGLProgramBuilder::onAppendUniformDecls(ShaderVisibility visibility, SkString* out) const {
-    for (int i = 0; i < fUniforms.count(); ++i) {
-        if (fUniforms[i].fVisibility & visibility) {
-            fUniforms[i].fVariable.appendDecl(this->glslCaps(), out);
-            out->append(";\n");
-        }
-    }
+const GrCaps* GrGLProgramBuilder::caps() const {
+    return fGpu->caps();
 }
 
 const GrGLSLCaps* GrGLProgramBuilder::glslCaps() const {
-    return this->fGpu->ctxInfo().caps()->glslCaps();
-}
-
-bool GrGLProgramBuilder::emitAndInstallProcs(GrGLSLExpr4* inputColor, GrGLSLExpr4* inputCoverage) {
-    
-    
-    const GrPrimitiveProcessor& primProc = this->primitiveProcessor();
-    int totalTextures = primProc.numTextures();
-    const int maxTextureUnits = fGpu->glCaps().maxFragmentTextureUnits();
-
-    for (int i = 0; i < this->pipeline().numFragmentProcessors(); i++) {
-        const GrFragmentProcessor& processor = this->pipeline().getFragmentProcessor(i);
-
-        if (!primProc.hasTransformedLocalCoords()) {
-            SkTArray<const GrCoordTransform*, true>& procCoords = fCoordTransforms.push_back();
-            processor.gatherCoordTransforms(&procCoords);
-        }
-
-        totalTextures += processor.numTextures();
-        if (totalTextures >= maxTextureUnits) {
-            GrCapsDebugf(fGpu->caps(), "Program would use too many texture units\n");
-            return false;
-        }
-    }
-
-    this->emitAndInstallProc(primProc, inputColor, inputCoverage);
-
-    fFragmentProcessors.reset(new GrGLInstalledFragProcs);
-    int numProcs = this->pipeline().numFragmentProcessors();
-    this->emitAndInstallFragProcs(0, this->pipeline().numColorFragmentProcessors(), inputColor);
-    this->emitAndInstallFragProcs(this->pipeline().numColorFragmentProcessors(), numProcs,
-                                  inputCoverage);
-    this->emitAndInstallXferProc(*this->pipeline().getXferProcessor(), *inputColor, *inputCoverage,
-                                 this->pipeline().ignoresCoverage());
-    return true;
-}
-
-void GrGLProgramBuilder::emitAndInstallFragProcs(int procOffset,
-                                                 int numProcs,
-                                                 GrGLSLExpr4* inOut) {
-    for (int i = procOffset; i < numProcs; ++i) {
-        GrGLSLExpr4 output;
-        const GrFragmentProcessor& fp = this->pipeline().getFragmentProcessor(i);
-        this->emitAndInstallProc(fp, i, *inOut, &output);
-        *inOut = output;
-    }
-}
-
-void GrGLProgramBuilder::nameExpression(GrGLSLExpr4* output, const char* baseName) {
-    
-    
-    
-    SkString outName;
-    if (output->isValid()) {
-        outName = output->c_str();
-    } else {
-        this->nameVariable(&outName, '\0', baseName);
-    }
-    fFS.codeAppendf("vec4 %s;", outName.c_str());
-    *output = outName;
-}
-
-
-
-void GrGLProgramBuilder::emitAndInstallProc(const GrFragmentProcessor& fp,
-                                            int index,
-                                            const GrGLSLExpr4& input,
-                                            GrGLSLExpr4* output) {
-    
-    AutoStageAdvance adv(this);
-    this->nameExpression(output, "output");
-
-    
-    SkString openBrace;
-    openBrace.printf("{ // Stage %d, %s\n", fStageIndex, fp.name());
-    fFS.codeAppend(openBrace.c_str());
-
-    this->emitAndInstallProc(fp, index, output->c_str(), input.isOnes() ? nullptr : input.c_str());
-
-    fFS.codeAppend("}");
-}
-
-void GrGLProgramBuilder::emitAndInstallProc(const GrPrimitiveProcessor& proc,
-                                            GrGLSLExpr4* outputColor,
-                                            GrGLSLExpr4* outputCoverage) {
-    
-    AutoStageAdvance adv(this);
-    this->nameExpression(outputColor, "outputColor");
-    this->nameExpression(outputCoverage, "outputCoverage");
-
-    
-    SkString openBrace;
-    openBrace.printf("{ // Stage %d, %s\n", fStageIndex, proc.name());
-    fFS.codeAppend(openBrace.c_str());
-    fVS.codeAppendf("// Primitive Processor %s\n", proc.name());
-
-    this->emitAndInstallProc(proc, outputColor->c_str(), outputCoverage->c_str());
-
-    fFS.codeAppend("}");
-}
-
-void GrGLProgramBuilder::emitAndInstallProc(const GrFragmentProcessor& fp,
-                                            int index,
-                                            const char* outColor,
-                                            const char* inColor) {
-    GrGLInstalledFragProc* ifp = new GrGLInstalledFragProc;
-
-    ifp->fGLProc.reset(fp.createGLSLInstance());
-
-    SkSTArray<4, GrGLSLTextureSampler> samplers(fp.numTextures());
-    this->emitSamplers(fp, &samplers, ifp);
-
-    GrGLSLFragmentProcessor::EmitArgs args(this,
-                                           &fFS,
-                                           this->glslCaps(),
-                                           fp,
-                                           outColor,
-                                           inColor,
-                                           fOutCoords[index],
-                                           samplers);
-    ifp->fGLProc->emitCode(args);
-
-    
-    
-    verify(fp);
-    fFragmentProcessors->fProcs.push_back(ifp);
-}
-
-void GrGLProgramBuilder::emitAndInstallProc(const GrPrimitiveProcessor& gp,
-                                            const char* outColor,
-                                            const char* outCoverage) {
-    SkASSERT(!fGeometryProcessor);
-    fGeometryProcessor = new GrGLInstalledGeoProc;
-
-    fGeometryProcessor->fGLProc.reset(gp.createGLSLInstance(*fGpu->glCaps().glslCaps()));
-
-    SkSTArray<4, GrGLSLTextureSampler> samplers(gp.numTextures());
-    this->emitSamplers(gp, &samplers, fGeometryProcessor);
-
-    GrGLSLGeometryProcessor::EmitArgs args(this,
-                                           &fVS,
-                                           &fFS,
-                                           &fVaryingHandler,
-                                           this->glslCaps(),
-                                           gp,
-                                           outColor,
-                                           outCoverage,
-                                           samplers,
-                                           fCoordTransforms,
-                                           &fOutCoords);
-    fGeometryProcessor->fGLProc->emitCode(args);
-
-    
-    
-    verify(gp);
-}
-
-void GrGLProgramBuilder::emitAndInstallXferProc(const GrXferProcessor& xp,
-                                                const GrGLSLExpr4& colorIn,
-                                                const GrGLSLExpr4& coverageIn,
-                                                bool ignoresCoverage) {
-    
-    AutoStageAdvance adv(this);
-
-    SkASSERT(!fXferProcessor);
-    fXferProcessor = new GrGLInstalledXferProc;
-
-    fXferProcessor->fGLProc.reset(xp.createGLSLInstance());
-
-    
-    if (xp.hasSecondaryOutput()) {
-        fFS.enableSecondaryOutput();
-    }
-
-    if (this->glslCaps()->mustDeclareFragmentShaderOutput()) {
-        fFS.enableCustomOutput();
-    }
-
-    SkString openBrace;
-    openBrace.printf("{ // Xfer Processor: %s\n", xp.name());
-    fFS.codeAppend(openBrace.c_str());
-
-    SkSTArray<4, GrGLSLTextureSampler> samplers(xp.numTextures());
-    this->emitSamplers(xp, &samplers, fXferProcessor);
-
-    GrGLSLXferProcessor::EmitArgs args(this,
-                                       &fFS,
-                                       this->glslCaps(),
-                                       xp, colorIn.c_str(),
-                                       ignoresCoverage ? nullptr : coverageIn.c_str(),
-                                       fFS.getPrimaryColorOutputName(),
-                                       fFS.getSecondaryColorOutputName(),
-                                       samplers);
-    fXferProcessor->fGLProc->emitCode(args);
-
-    
-    
-    verify(xp);
-    fFS.codeAppend("}");
-}
-
-void GrGLProgramBuilder::verify(const GrPrimitiveProcessor& gp) {
-    SkASSERT(fFS.hasReadFragmentPosition() == gp.willReadFragmentPosition());
-}
-
-void GrGLProgramBuilder::verify(const GrXferProcessor& xp) {
-    SkASSERT(fFS.hasReadDstColor() == xp.willReadDstColor());
-}
-
-void GrGLProgramBuilder::verify(const GrFragmentProcessor& fp) {
-    SkASSERT(fFS.hasReadFragmentPosition() == fp.willReadFragmentPosition());
+    return fGpu->ctxInfo().caps()->glslCaps();
 }
 
 static GrSLType get_sampler_type(const GrTextureAccess& access) {
     GrGLTexture* glTexture = static_cast<GrGLTexture*>(access.getTexture());
     if (glTexture->target() == GR_GL_TEXTURE_EXTERNAL) {
         return kSamplerExternal_GrSLType;
+    } else if (glTexture->target() == GR_GL_TEXTURE_RECTANGLE) {
+        return kSampler2DRect_GrSLType;
     } else {
         SkASSERT(glTexture->target() == GR_GL_TEXTURE_2D);
         return kSampler2D_GrSLType;
     }
 }
 
-template <class Proc>
 void GrGLProgramBuilder::emitSamplers(const GrProcessor& processor,
-                                      GrGLSLTextureSampler::TextureSamplerArray* outSamplers,
-                                      GrGLInstalledProc<Proc>* ip) {
-    SkDEBUGCODE(ip->fSamplersIdx = fSamplerUniforms.count();)
+                                      GrGLSLTextureSampler::TextureSamplerArray* outSamplers) {
     int numTextures = processor.numTextures();
     UniformHandle* localSamplerUniforms = fSamplerUniforms.push_back_n(numTextures);
     SkString name;
     for (int t = 0; t < numTextures; ++t) {
         name.printf("Sampler%d", t);
         GrSLType samplerType = get_sampler_type(processor.textureAccess(t));
-        localSamplerUniforms[t] = this->addUniform(GrGLProgramBuilder::kFragment_Visibility,
-                                                   samplerType, kDefault_GrSLPrecision,
-                                                   name.c_str());
+        localSamplerUniforms[t] =
+            fUniformHandler.addUniform(GrGLSLUniformHandler::kFragment_Visibility,
+                                       samplerType, kDefault_GrSLPrecision,
+                                       name.c_str());
         SkNEW_APPEND_TO_TARRAY(outSamplers, GrGLSLTextureSampler,
                                (localSamplerUniforms[t], processor.textureAccess(t)));
         if (kSamplerExternal_GrSLType == samplerType) {
@@ -384,12 +133,13 @@ GrGLProgram* GrGLProgramBuilder::finalize() {
     GrGLuint programID;
     GL_CALL_RET(programID, CreateProgram());
     if (0 == programID) {
+        this->cleanupFragmentProcessors();
         return nullptr;
     }
 
     
     SkTDArray<GrGLuint> shadersToDelete;
-    fVS.finalize(kVertex_Visibility);
+    fVS.finalize(GrGLSLUniformHandler::kVertex_Visibility);
     if (!this->compileAndAttachShaders(fVS, programID, GR_GL_VERTEX_SHADER, &shadersToDelete)) {
         this->cleanupProgram(programID, shadersToDelete);
         return nullptr;
@@ -406,7 +156,7 @@ GrGLProgram* GrGLProgramBuilder::finalize() {
         }
     }
 
-    fFS.finalize(kFragment_Visibility);
+    fFS.finalize(GrGLSLUniformHandler::kFragment_Visibility);
     if (!this->compileAndAttachShaders(fFS, programID, GR_GL_FRAGMENT_SHADER, &shadersToDelete)) {
         this->cleanupProgram(programID, shadersToDelete);
         return nullptr;
@@ -432,13 +182,7 @@ GrGLProgram* GrGLProgramBuilder::finalize() {
 }
 
 void GrGLProgramBuilder::bindProgramResourceLocations(GrGLuint programID) {
-    if (fGpu->glCaps().bindUniformLocationSupport()) {
-        int count = fUniforms.count();
-        for (int i = 0; i < count; ++i) {
-            GL_CALL(BindUniformLocation(programID, i, fUniforms[i].fVariable.c_str()));
-            fUniforms[i].fLocation = i;
-        }
-    }
+    fUniformHandler.bindUniformLocations(programID, fGpu->glCaps());
 
     const GrGLCaps& caps = this->gpu()->glCaps();
     if (fFS.hasCustomColorOutput() && caps.bindFragDataLocationSupport()) {
@@ -488,14 +232,7 @@ bool GrGLProgramBuilder::checkLinkStatus(GrGLuint programID) {
 }
 
 void GrGLProgramBuilder::resolveProgramResourceLocations(GrGLuint programID) {
-    if (!fGpu->glCaps().bindUniformLocationSupport()) {
-        int count = fUniforms.count();
-        for (int i = 0; i < count; ++i) {
-            GrGLint location;
-            GL_CALL_RET(location, GetUniformLocation(programID, fUniforms[i].fVariable.c_str()));
-            fUniforms[i].fLocation = location;
-        }
-    }
+    fUniformHandler.getUniformLocations(programID, fGpu->glCaps());
 
     
     if (!fGpu->glCaps().shaderCaps()->pathRenderingSupport() ||
@@ -515,7 +252,8 @@ void GrGLProgramBuilder::resolveProgramResourceLocations(GrGLuint programID) {
 
 void GrGLProgramBuilder::cleanupProgram(GrGLuint programID, const SkTDArray<GrGLuint>& shaderIDs) {
     GL_CALL(DeleteProgram(programID));
-    cleanupShaders(shaderIDs);
+    this->cleanupShaders(shaderIDs);
+    this->cleanupFragmentProcessors();
 }
 void GrGLProgramBuilder::cleanupShaders(const SkTDArray<GrGLuint>& shaderIDs) {
     for (int i = 0; i < shaderIDs.count(); ++i) {
@@ -524,17 +262,15 @@ void GrGLProgramBuilder::cleanupShaders(const SkTDArray<GrGLuint>& shaderIDs) {
 }
 
 GrGLProgram* GrGLProgramBuilder::createProgram(GrGLuint programID) {
-    return new GrGLProgram(fGpu, this->desc(), fUniformHandles, programID, fUniforms,
+    return new GrGLProgram(fGpu,
+                           this->desc(),
+                           fUniformHandles,
+                           programID,
+                           fUniformHandler.fUniforms,
                            fVaryingHandler.fPathProcVaryingInfos,
-                           fGeometryProcessor, fXferProcessor, fFragmentProcessors.get(),
+                           fGeometryProcessor,
+                           fXferProcessor,
+                           fFragmentProcessors,
                            &fSamplerUniforms);
 }
 
-
-
-GrGLInstalledFragProcs::~GrGLInstalledFragProcs() {
-    int numProcs = fProcs.count();
-    for (int i = 0; i < numProcs; ++i) {
-        delete fProcs[i];
-    }
-}

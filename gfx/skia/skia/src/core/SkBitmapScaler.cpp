@@ -11,7 +11,6 @@
 #include "SkImageInfo.h"
 #include "SkPixmap.h"
 #include "SkRect.h"
-#include "SkScalar.h"
 #include "SkTArray.h"
 
 
@@ -74,7 +73,7 @@ SkResizeFilter::SkResizeFilter(SkBitmapScaler::ResizeMethod method,
             fBitmapFilter = new SkTriangleFilter;
             break;
         case SkBitmapScaler::RESIZE_MITCHELL:
-            fBitmapFilter = new SkMitchellFilter(1.f / 3.f, 1.f / 3.f);
+            fBitmapFilter = new SkMitchellFilter;
             break;
         case SkBitmapScaler::RESIZE_HAMMING:
             fBitmapFilter = new SkHammingFilter;
@@ -130,45 +129,65 @@ void SkResizeFilter::computeFilters(int srcSize,
   
   float srcSupport = fBitmapFilter->width() / clampedScale;
 
-  
   float invScale = 1.0f / scale;
 
-  SkTArray<float> filterValues(64);
-  SkTArray<short> fixedFilterValues(64);
+  SkSTArray<64, float, true> filterValuesArray;
+  SkSTArray<64, SkConvolutionFilter1D::ConvolutionFixed, true> fixedFilterValuesArray;
 
   
   
   
+
+  
+  
+  
+  
+  
+  
+#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
+  int destLimit = SkScalarTruncToInt(SkScalarCeilToScalar(destSubsetHi)
+        - SkScalarFloorToScalar(destSubsetLo));
+#else
+  destSubsetLo = SkScalarFloorToScalar(destSubsetLo);
+  destSubsetHi = SkScalarCeilToScalar(destSubsetHi);
+  float srcPixel = (destSubsetLo + 0.5f) * invScale;
+  int destLimit = SkScalarTruncToInt(destSubsetHi - destSubsetLo);
+#endif
+  output->reserveAdditional(destLimit, SkScalarCeilToInt(destLimit * srcSupport * 2));
+#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
   for (int destSubsetI = SkScalarFloorToInt(destSubsetLo); destSubsetI < SkScalarCeilToInt(destSubsetHi);
-       destSubsetI++) {
+       destSubsetI++)
+#else
+  for (int destI = 0; destI < destLimit; srcPixel += invScale, destI++)
+#endif
+  {
     
-    
-    filterValues.reset();
-    fixedFilterValues.reset();
-
-    
-    
-    
-    
-    
-    
+#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
     float srcPixel = (static_cast<float>(destSubsetI) + 0.5f) * invScale;
-
-    
     int srcBegin = SkTMax(0, SkScalarFloorToInt(srcPixel - srcSupport));
     int srcEnd = SkTMin(srcSize - 1, SkScalarCeilToInt(srcPixel + srcSupport));
+#else
+    float srcBegin = SkTMax(0.f, SkScalarFloorToScalar(srcPixel - srcSupport));
+    float srcEnd = SkTMin(srcSize - 1.f, SkScalarCeilToScalar(srcPixel + srcSupport));
+#endif
 
     
     
+#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
     float filterSum = 0.0f;  
+    int filterCount = srcEnd - srcBegin + 1;
+    filterValuesArray.reset(filterCount);
     for (int curFilterPixel = srcBegin; curFilterPixel <= srcEnd;
          curFilterPixel++) {
-      
-      
-      
-      
-      
-      
+#endif
+
+
+
+
+
+
+
+#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
       float srcFilterDist =
           ((static_cast<float>(curFilterPixel) + 0.5f) - srcPixel);
 
@@ -177,79 +196,108 @@ void SkResizeFilter::computeFilters(int srcSize,
 
       
       float filterValue = fBitmapFilter->evaluate(destFilterDist);
-      filterValues.push_back(filterValue);
+      filterValuesArray[curFilterPixel - srcBegin] = filterValue;
 
       filterSum += filterValue;
     }
-    SkASSERT(!filterValues.empty());
-
+#else
+    float destFilterDist = (srcBegin + 0.5f - srcPixel) * clampedScale;
+    int filterCount = SkScalarTruncToInt(srcEnd - srcBegin) + 1;
+    SkASSERT(filterCount > 0);
+    filterValuesArray.reset(filterCount);
+    float filterSum = fBitmapFilter->evaluate_n(destFilterDist, clampedScale, filterCount,
+                                                filterValuesArray.begin());
+#endif
     
     
-    short fixedSum = 0;
-    for (int i = 0; i < filterValues.count(); i++) {
-      short curFixed = output->FloatToFixed(filterValues[i] / filterSum);
+    int fixedSum = 0;
+    fixedFilterValuesArray.reset(filterCount);
+    const float* filterValues = filterValuesArray.begin();
+    SkConvolutionFilter1D::ConvolutionFixed* fixedFilterValues = fixedFilterValuesArray.begin();
+#ifndef SK_SUPPORT_LEGACY_BITMAP_FILTER
+    float invFilterSum = 1 / filterSum;
+#endif
+    for (int fixedI = 0; fixedI < filterCount; fixedI++) {
+#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
+      int curFixed = SkConvolutionFilter1D::FloatToFixed(filterValues[fixedI] / filterSum);
+#else
+      int curFixed = SkConvolutionFilter1D::FloatToFixed(filterValues[fixedI] * invFilterSum);
+#endif
       fixedSum += curFixed;
-      fixedFilterValues.push_back(curFixed);
+      fixedFilterValues[fixedI] = SkToS16(curFixed);
     }
+    SkASSERT(fixedSum <= 0x7FFF);
 
     
     
     
     
     
-    short leftovers = output->FloatToFixed(1.0f) - fixedSum;
-    fixedFilterValues[fixedFilterValues.count() / 2] += leftovers;
+    int leftovers = SkConvolutionFilter1D::FloatToFixed(1) - fixedSum;
+    fixedFilterValues[filterCount / 2] += leftovers;
 
     
-    output->AddFilter(srcBegin, &fixedFilterValues[0],
-                      static_cast<int>(fixedFilterValues.count()));
+#ifdef SK_SUPPORT_LEGACY_BITMAP_FILTER
+    output->AddFilter(srcBegin, fixedFilterValues, filterCount);
+#else
+    output->AddFilter(SkScalarFloorToInt(srcBegin), fixedFilterValues, filterCount);
+#endif
   }
 
   if (convolveProcs.fApplySIMDPadding) {
-      convolveProcs.fApplySIMDPadding( output );
+      convolveProcs.fApplySIMDPadding(output);
   }
 }
 
-bool SkBitmapScaler::Resize(SkBitmap* resultPtr, const SkPixmap& source, ResizeMethod method,
-                            int destWidth, int destHeight, SkBitmap::Allocator* allocator) {
-    if (nullptr == source.addr() || source.colorType() != kN32_SkColorType ||
-        source.width() < 1 || source.height() < 1)
-    {
+
+
+static bool valid_for_resize(const SkPixmap& source, int dstW, int dstH) {
+    
+    return source.addr() && source.colorType() == kN32_SkColorType &&
+           source.width() >= 1 && source.height() >= 1 && dstW >= 1 && dstH >= 1;
+}
+
+bool SkBitmapScaler::Resize(const SkPixmap& result, const SkPixmap& source, ResizeMethod method) {
+    if (!valid_for_resize(source, result.width(), result.height())) {
         return false;
     }
-
-    if (destWidth < 1 || destHeight < 1) {
+    if (!result.addr() || result.colorType() != source.colorType()) {
         return false;
     }
 
     SkConvolutionProcs convolveProcs= { 0, nullptr, nullptr, nullptr, nullptr };
     PlatformConvolutionProcs(&convolveProcs);
 
-    SkRect destSubset = SkRect::MakeIWH(destWidth, destHeight);
+    SkRect destSubset = SkRect::MakeIWH(result.width(), result.height());
 
     SkResizeFilter filter(method, source.width(), source.height(),
-                        destWidth, destHeight, destSubset, convolveProcs);
+                          result.width(), result.height(), destSubset, convolveProcs);
 
     
     
     
     const uint8_t* sourceSubset = reinterpret_cast<const uint8_t*>(source.addr());
 
+    return BGRAConvolve2D(sourceSubset, static_cast<int>(source.rowBytes()),
+                          !source.isOpaque(), filter.xFilter(), filter.yFilter(),
+                          static_cast<int>(result.rowBytes()),
+                          static_cast<unsigned char*>(result.writable_addr()),
+                          convolveProcs, true);
+}
+
+bool SkBitmapScaler::Resize(SkBitmap* resultPtr, const SkPixmap& source, ResizeMethod method,
+                            int destWidth, int destHeight, SkBitmap::Allocator* allocator) {
     
-    SkBitmap result;
-    result.setInfo(SkImageInfo::MakeN32(SkScalarCeilToInt(destSubset.width()),
-                                      SkScalarCeilToInt(destSubset.height()),
-                                      source.alphaType()));
-    result.allocPixels(allocator, nullptr);
-    if (!result.readyToDraw()) {
-      return false;
+    if (!valid_for_resize(source, destWidth, destHeight)) {
+        return false;
     }
 
-    if (!BGRAConvolve2D(sourceSubset, static_cast<int>(source.rowBytes()),
-                        !source.isOpaque(), filter.xFilter(), filter.yFilter(),
-                        static_cast<int>(result.rowBytes()),
-                        static_cast<unsigned char*>(result.getPixels()),
-                        convolveProcs, true)) {
+    SkBitmap result;
+    result.setInfo(SkImageInfo::MakeN32(destWidth, destHeight, source.alphaType()));
+    result.allocPixels(allocator, nullptr);
+
+    SkPixmap resultPM;
+    if (!result.peekPixels(&resultPM) || !Resize(resultPM, source, method)) {
         return false;
     }
 

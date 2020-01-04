@@ -5,13 +5,13 @@
 
 
 
-
-
 #ifndef SkDisplayType_DEFINED
 #define SkDisplayType_DEFINED
 
 #include "SkMath.h"
 #include "SkScalar.h"
+
+typedef int SkBool;
 
 #ifdef SK_DEBUG
     #define SK_DUMP_ENABLED

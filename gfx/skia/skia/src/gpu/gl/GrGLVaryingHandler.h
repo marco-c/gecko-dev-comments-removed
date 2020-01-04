@@ -21,7 +21,7 @@ public:
     
     
     VaryingHandle addPathProcessingVarying(const char* name, GrGLSLVertToFrag*,
-                                       GrSLPrecision fsPrecision = kDefault_GrSLPrecision);
+                                           GrSLPrecision fsPrecision = kDefault_GrSLPrecision);
 
 private:
     typedef GrGLProgramDataManager::VaryingInfo VaryingInfo;

@@ -15,7 +15,7 @@
 #include "SkMath.h"
 
 
-#define SkEdge_Compute_DY(top, y0)  ((top << 6) + 32 - (y0))
+#define SkEdge_Compute_DY(top, y0)  (SkLeftShift(top, 6) + 32 - (y0))
 
 struct SkEdge {
     enum Type {

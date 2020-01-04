@@ -34,22 +34,24 @@
 
 
 
+class GrAuditTrail;
 class GrBatch;
 class GrClip;
 class GrCaps;
 class GrPath;
 class GrDrawPathBatchBase;
-class GrPathRangeDraw;
 
 class GrDrawTarget final : public SkRefCnt {
 public:
     
     struct Options {
-        Options () : fClipBatchToBounds(false) {}
+        Options () : fClipBatchToBounds(false), fDrawBatchBounds(false), fMaxBatchLookback(-1) {}
         bool fClipBatchToBounds;
+        bool fDrawBatchBounds;
+        int  fMaxBatchLookback;
     };
 
-    GrDrawTarget(GrRenderTarget*, GrGpu*, GrResourceProvider*, const Options&);
+    GrDrawTarget(GrRenderTarget*, GrGpu*, GrResourceProvider*, GrAuditTrail*, const Options&);
 
     ~GrDrawTarget() override;
 
@@ -116,71 +118,8 @@ public:
 
 
 
-    void drawPath(const GrPipelineBuilder&, const SkMatrix& viewMatrix, GrColor color,
-                  const GrPath*, GrPathRendering::FillType);
 
-    
-
-
-
-
-
-
-
-
-
-
-
-    void drawPathsFromRange(const GrPipelineBuilder&,
-                            const SkMatrix& viewMatrix,
-                            const SkMatrix& localMatrix,
-                            GrColor color,
-                            GrPathRange* range,
-                            GrPathRangeDraw* draw,
-                            GrPathRendering::FillType fill,
-                            const SkRect& bounds);
-
-    
-
-
-
-
-
-
-
-
-
-
-    void drawNonAARect(const GrPipelineBuilder& pipelineBuilder,
-                       GrColor color,
-                       const SkMatrix& viewMatrix,
-                       const SkRect& rect);
-
-    void drawNonAARect(const GrPipelineBuilder& pipelineBuilder,
-                       GrColor color,
-                       const SkMatrix& viewMatrix,
-                       const SkRect& rect,
-                       const SkMatrix& localMatrix);
-
-    void drawNonAARect(const GrPipelineBuilder& pipelineBuilder,
-                       GrColor color,
-                       const SkMatrix& viewMatrix,
-                       const SkRect& rect,
-                       const SkRect& localRect);
-
-    void drawNonAARect(const GrPipelineBuilder& ds,
-                       GrColor color,
-                       const SkMatrix& viewM,
-                       const SkIRect& irect) {
-        SkRect rect = SkRect::Make(irect);
-        this->drawNonAARect(ds, color, viewM, rect);
-    }
-
-    void drawAARect(const GrPipelineBuilder& pipelineBuilder,
-                    GrColor color,
-                    const SkMatrix& viewMatrix,
-                    const SkRect& rect,
-                    const SkRect& devRect);
+    void drawPathBatch(const GrPipelineBuilder& pipelineBuilder, GrDrawPathBatchBase* batch);
 
     
 
@@ -227,6 +166,8 @@ public:
     };
 
     const CMMAccess cmmAccess() { return CMMAccess(this); }
+
+    GrAuditTrail* getAuditTrail() const { return fAuditTrail; }
 
 private:
     friend class GrDrawingManager; 
@@ -287,8 +228,6 @@ private:
         GrXferProcessor::DstTexture*,
         const SkRect& batchBounds);
 
-    void drawPathBatch(const GrPipelineBuilder& pipelineBuilder, GrDrawPathBatchBase* batch,
-                       GrPathRendering::FillType fill);
     
     void getPathStencilSettingsForFilltype(GrPathRendering::FillType,
                                            const GrStencilAttachment*,
@@ -310,7 +249,7 @@ private:
     GrContext*                                  fContext;
     GrGpu*                                      fGpu;
     GrResourceProvider*                         fResourceProvider;
-    bool                                        fFlushing;
+    GrAuditTrail*                               fAuditTrail;
 
     SkDEBUGCODE(int                             fDebugID;)
     uint32_t                                    fFlags;
@@ -318,6 +257,9 @@ private:
     
     SkTDArray<GrDrawTarget*>                    fDependencies;
     GrRenderTarget*                             fRenderTarget;
+
+    bool                                        fDrawBatchBounds;
+    int                                         fMaxBatchLookback;
 
     typedef SkRefCnt INHERITED;
 };

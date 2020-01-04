@@ -29,6 +29,16 @@ public:
         RESIZE_LastMethod = RESIZE_MITCHELL,
     };
 
+    
+
+
+
+    static bool Resize(const SkPixmap& dst, const SkPixmap& src, ResizeMethod method);
+
+    
+
+
+
     static bool Resize(SkBitmap* result, const SkPixmap& src, ResizeMethod method,
                        int dest_width, int dest_height, SkBitmap::Allocator* = nullptr);
 

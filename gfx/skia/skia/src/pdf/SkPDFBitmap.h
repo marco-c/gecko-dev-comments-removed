@@ -16,6 +16,6 @@ class SkImage;
 
 
 
-SkPDFObject* SkPDFCreateBitmapObject(const SkImage*);
+SkPDFObject* SkPDFCreateBitmapObject(const SkImage*, SkPixelSerializer*);
 
 #endif  

@@ -42,33 +42,25 @@ public:
         virtual bool get(const Key& key, SkBitmap* result, SkIPoint* offset) const = 0;
         virtual void set(const Key& key, const SkBitmap& result, const SkIPoint& offset) = 0;
         virtual void purge() {}
-    };
-
-    enum SizeConstraint {
-        kExact_SizeConstraint,
-        kApprox_SizeConstraint,
+        virtual void purgeByImageFilterId(uint32_t) {}
     };
 
     class Context {
     public:
-        Context(const SkMatrix& ctm, const SkIRect& clipBounds, Cache* cache,
-                SizeConstraint constraint)
+        Context(const SkMatrix& ctm, const SkIRect& clipBounds, Cache* cache)
             : fCTM(ctm)
             , fClipBounds(clipBounds)
             , fCache(cache)
-            , fSizeConstraint(constraint)
         {}
 
         const SkMatrix& ctm() const { return fCTM; }
         const SkIRect& clipBounds() const { return fClipBounds; }
         Cache* cache() const { return fCache; }
-        SizeConstraint sizeConstraint() const { return fSizeConstraint; }
 
     private:
         SkMatrix        fCTM;
         SkIRect         fClipBounds;
         Cache*          fCache;
-        SizeConstraint  fSizeConstraint;
     };
 
     class CropRect {
@@ -106,11 +98,17 @@ public:
         uint32_t fFlags;
     };
 
+    enum TileUsage {
+        kPossible_TileUsage,    
+        kNever_TileUsage,       
+    };
+
     class Proxy {
     public:
         virtual ~Proxy() {}
 
-        virtual SkBaseDevice* createDevice(int width, int height) = 0;
+        virtual SkBaseDevice* createDevice(int width, int height,
+                                           TileUsage usage = kNever_TileUsage) = 0;
 
         
         
@@ -123,7 +121,8 @@ public:
     public:
         DeviceProxy(SkBaseDevice* device) : fDevice(device) {}
 
-        SkBaseDevice* createDevice(int width, int height) override;
+        SkBaseDevice* createDevice(int width, int height,
+                                   TileUsage usage = kNever_TileUsage) override;
 
         
         
@@ -199,12 +198,7 @@ public:
 
 
 
-    bool asAColorFilter(SkColorFilter** filterPtr) const {
-        return this->countInputs() > 0 &&
-               NULL == this->getInput(0) &&
-               !this->affectsTransparentBlack() &&
-               this->isColorFilterNode(filterPtr);
-    }
+    bool asAColorFilter(SkColorFilter** filterPtr) const;
 
     
 
@@ -240,7 +234,7 @@ public:
     virtual void computeFastBounds(const SkRect&, SkRect*) const;
 
     
-    bool canComputeFastBounds() const;
+    virtual bool canComputeFastBounds() const;
 
     
 
@@ -257,18 +251,13 @@ public:
 
 #if SK_SUPPORT_GPU
     
-
-
-    static void WrapTexture(GrTexture* texture, int width, int height, SkBitmap* result);
-
-    
     
     
     
     
     
     bool filterInputGPU(int index, SkImageFilter::Proxy* proxy, const SkBitmap& src, const Context&,
-                        SkBitmap* result, SkIPoint* offset, bool relaxSizeConstraint = true) const;
+                        SkBitmap* result, SkIPoint* offset) const;
 #endif
 
     SK_TO_STRING_PUREVIRT()
@@ -351,6 +340,25 @@ protected:
     
     
     virtual bool onFilterBounds(const SkIRect&, const SkMatrix&, SkIRect*) const;
+    enum MapDirection {
+        kForward_MapDirection,
+        kReverse_MapDirection
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual void onFilterNodeBounds(const SkIRect&, const SkMatrix&, SkIRect*, MapDirection) const;
 
     
     
@@ -358,7 +366,7 @@ protected:
     
     
     bool filterInput(int index, Proxy*, const SkBitmap& src, const Context&,
-                     SkBitmap* result, SkIPoint* offset, bool relaxSizeConstraint = true) const;
+                     SkBitmap* result, SkIPoint* offset) const;
 
     
 
@@ -416,7 +424,7 @@ protected:
 
 
 
-    virtual bool affectsTransparentBlack() const;
+    Context mapContext(const Context& ctx) const;
 
 private:
     friend class SkGraphics;

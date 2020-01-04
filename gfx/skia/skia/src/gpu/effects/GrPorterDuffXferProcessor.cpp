@@ -16,9 +16,10 @@
 #include "GrXferProcessor.h"
 #include "glsl/GrGLSLBlend.h"
 #include "glsl/GrGLSLFragmentShaderBuilder.h"
-#include "glsl/GrGLSLProgramBuilder.h"
 #include "glsl/GrGLSLProgramDataManager.h"
+#include "glsl/GrGLSLUniformHandler.h"
 #include "glsl/GrGLSLXferProcessor.h"
+#include <utility>
 
 
 
@@ -71,7 +72,7 @@ public:
 
     template<OutputType PrimaryOut, OutputType SecondaryOut,
              GrBlendEquation BlendEquation, GrBlendCoeff SrcCoeff, GrBlendCoeff DstCoeff>
-    struct get_properties : skstd::integral_constant<Properties, static_cast<Properties>(
+    struct get_properties : std::integral_constant<Properties, static_cast<Properties>(
 
         (GR_BLEND_MODIFIES_DST(BlendEquation, SrcCoeff, DstCoeff) ?
             kModifiesDst_Property : 0) |
@@ -545,8 +546,8 @@ public:
     }
 
 private:
-    void emitBlendCodeForDstRead(GrGLSLXPBuilder* pb,
-                                 GrGLSLXPFragmentBuilder* fragBuilder,
+    void emitBlendCodeForDstRead(GrGLSLXPFragmentBuilder* fragBuilder,
+                                 GrGLSLUniformHandler* uniformHandler,
                                  const char* srcColor,
                                  const char* srcCoverage,
                                  const char* dstColor,
@@ -850,6 +851,12 @@ void GrPorterDuffXPFactory::TestGetXPOutputTypes(const GrXferProcessor* xp,
 
 
 
+const GrXferProcessor& GrPorterDuffXPFactory::SimpleSrcOverXP() {
+    static BlendFormula gSrcOverBlendFormula = COEFF_FORMULA(kOne_GrBlendCoeff,
+                                                             kISA_GrBlendCoeff);
+    static PorterDuffXferProcessor gSrcOverXP(gSrcOverBlendFormula);
+    return gSrcOverXP;
+}
 
 GrXferProcessor* GrPorterDuffXPFactory::CreateSrcOverXferProcessor(
         const GrCaps& caps,
@@ -860,12 +867,11 @@ GrXferProcessor* GrPorterDuffXPFactory::CreateSrcOverXferProcessor(
         !(optimizations.fCoveragePOI.isSolidWhite() &&
           !hasMixedSamples &&
           optimizations.fColorPOI.isOpaque())) {
-        static BlendFormula gSrcOverBlendFormula = COEFF_FORMULA(kOne_GrBlendCoeff,
-                                                                 kISA_GrBlendCoeff);
-        static PorterDuffXferProcessor gSrcOverXP(gSrcOverBlendFormula);
-        SkASSERT(!dstTexture || !dstTexture->texture());
-        gSrcOverXP.ref();
-        return &gSrcOverXP;
+        
+        
+        
+        
+        return nullptr;
     }
 
     BlendFormula blendFormula;

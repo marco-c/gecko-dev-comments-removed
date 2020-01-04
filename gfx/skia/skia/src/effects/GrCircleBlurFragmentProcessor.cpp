@@ -11,12 +11,13 @@
 #if SK_SUPPORT_GPU
 
 #include "GrContext.h"
+#include "GrInvariantOutput.h"
 #include "GrTextureProvider.h"
 
 #include "glsl/GrGLSLFragmentProcessor.h"
 #include "glsl/GrGLSLFragmentShaderBuilder.h"
-#include "glsl/GrGLSLProgramBuilder.h"
 #include "glsl/GrGLSLProgramDataManager.h"
+#include "glsl/GrGLSLUniformHandler.h"
 
 class GrGLCircleBlurFragmentProcessor : public GrGLSLFragmentProcessor {
 public:
@@ -40,11 +41,11 @@ void GrGLCircleBlurFragmentProcessor::emitCode(EmitArgs& args) {
     
     
     
-    fDataUniform = args.fBuilder->addUniform(GrGLSLProgramBuilder::kFragment_Visibility,
-                                             kVec4f_GrSLType,
-                                             kDefault_GrSLPrecision,
-                                             "data",
-                                             &dataName);
+    fDataUniform = args.fUniformHandler->addUniform(GrGLSLUniformHandler::kFragment_Visibility,
+                                                    kVec4f_GrSLType,
+                                                    kDefault_GrSLPrecision,
+                                                    "data",
+                                                    &dataName);
 
     GrGLSLFragmentBuilder* fragBuilder = args.fFragBuilder;
     const char *fragmentPos = fragBuilder->fragmentPosition();
@@ -55,8 +56,13 @@ void GrGLCircleBlurFragmentProcessor::emitCode(EmitArgs& args) {
         fragBuilder->codeAppendf("vec4 src=vec4(1);");
     }
 
-    fragBuilder->codeAppendf("vec2 vec = %s.xy - %s.xy;", fragmentPos, dataName);
-    fragBuilder->codeAppendf("float dist = (length(vec) - %s.z + 0.5) / %s.w;", dataName, dataName);
+    
+    
+    fragBuilder->codeAppendf("vec2 vec = vec2( (%s.x - %s.x) * %s.w , (%s.y - %s.y) * %s.w );", 
+                             fragmentPos, dataName, dataName,
+                             fragmentPos, dataName, dataName);
+    fragBuilder->codeAppendf("float dist = length(vec) + ( 0.5 - %s.z ) * %s.w;",
+                             dataName, dataName);
 
     fragBuilder->codeAppendf("float intensity = ");
     fragBuilder->appendTextureLookup(args.fSamplers[0], "vec2(dist, 0.5)");
@@ -75,7 +81,7 @@ void GrGLCircleBlurFragmentProcessor::onSetData(const GrGLSLProgramDataManager& 
     
     
     pdman.set4f(fDataUniform, circle.centerX(), circle.centerY(), cbfp.offset(),
-                SkIntToScalar(cbfp.profileSize()));
+                1.0f / cbfp.profileSize());
 }
 
 
@@ -180,7 +186,7 @@ static inline void compute_profile_offset_and_size(float halfWH, float sigma,
         
         
         *offset = halfWH - 3 * sigma; 
-                                     
+                                      
         *size = SkScalarCeilToInt(6*sigma);
     } else {
         

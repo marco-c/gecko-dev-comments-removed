@@ -8,16 +8,10 @@
 #ifndef SkMatrixUtils_DEFINED
 #define SkMatrixUtils_DEFINED
 
-#include "SkMatrix.h"
+#include "SkSize.h"
 
-
-
-
-
-#define kSkSubPixelBitsForBilerp   4
-
-
-
+class SkMatrix;
+class SkPaint;
 
 
 
@@ -27,18 +21,7 @@
 
 
 
-
-bool SkTreatAsSprite(const SkMatrix&, int width, int height,
-                     unsigned subpixelBits);
-
-
-
-
-
-static inline bool SkTreatAsSpriteFilter(const SkMatrix& matrix,
-                                         int width, int height) {
-    return SkTreatAsSprite(matrix, width, height, kSkSubPixelBitsForBilerp);
-}
+bool SkTreatAsSprite(const SkMatrix&, const SkISize& size, const SkPaint& paint);
 
 
 

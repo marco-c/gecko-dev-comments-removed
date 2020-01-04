@@ -153,6 +153,12 @@ public:
         return rr;
     }
 
+    static SkRRect MakeRectXY(const SkRect& rect, SkScalar xRad, SkScalar yRad) {
+        SkRRect rr;
+        rr.setRectXY(rect, xRad, yRad);
+        return rr;
+    }
+
     
 
 

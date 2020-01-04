@@ -16,8 +16,6 @@
 #include "SkTRegistry.h"
 #include "SkTypes.h"
 
-
-
 class SkStream;
 class SkStreamRewindable;
 
@@ -129,18 +127,6 @@ public:
 
     bool getRequireUnpremultipliedColors() const { return fRequireUnpremultipliedColors; }
 
-#ifdef SK_LEGACY_PEEKER
-    
-    
-    
-    class Peeker : public SkPngChunkReader {
-    public:
-        bool readChunk(const char tag[], const void* data, size_t length) final {
-            return this->peek(tag, data, length);
-        }
-        virtual bool peek(const char tag[], const void* data, size_t length) = 0;
-    };
-#endif
     SkPngChunkReader* getPeeker() const { return fPeeker; }
     SkPngChunkReader* setPeeker(SkPngChunkReader*);
 

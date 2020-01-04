@@ -20,8 +20,7 @@ public:
     
 
 
-    static SkCornerPathEffect* Create(SkScalar radius) { return new SkCornerPathEffect(radius); }
-    virtual ~SkCornerPathEffect();
+    static SkPathEffect* Create(SkScalar radius) { return new SkCornerPathEffect(radius); }
 
     virtual bool filterPath(SkPath* dst, const SkPath& src,
                             SkStrokeRec*, const SkRect*) const override;
@@ -34,6 +33,8 @@ public:
 #endif
 
 protected:
+    virtual ~SkCornerPathEffect();
+
     explicit SkCornerPathEffect(SkScalar radius);
     void flatten(SkWriteBuffer&) const override;
 

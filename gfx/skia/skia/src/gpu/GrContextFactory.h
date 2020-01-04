@@ -23,34 +23,37 @@
 
 class GrContextFactory : SkNoncopyable {
 public:
+    enum GLContextType {
+        kNative_GLContextType,  
+        kGL_GLContextType,      
+        kGLES_GLContextType,    
+#if SK_ANGLE
+#ifdef SK_BUILD_FOR_WIN
+        kANGLE_GLContextType,    
+#endif
+        kANGLE_GL_GLContextType, 
+#endif
+#if SK_COMMAND_BUFFER
+        kCommandBuffer_GLContextType, 
+#endif
+#if SK_MESA
+        kMESA_GLContextType,  
+#endif
+        kNull_GLContextType,  
+        kDebug_GLContextType, 
+        kLastGLContextType = kDebug_GLContextType
+    };
+
+    static const int kGLContextTypeCnt = kLastGLContextType + 1;
+
     
 
 
 
-
-
-    enum GLContextType {
-      kNative_GLContextType,
-#if SK_ANGLE
-      kANGLE_GLContextType,
-      kANGLE_GL_GLContextType,
-#endif
-#if SK_COMMAND_BUFFER
-      kCommandBuffer_GLContextType,
-#endif
-#if SK_MESA
-      kMESA_GLContextType,
-#endif
-      
-
-      kNVPR_GLContextType,
-      kNull_GLContextType,
-      kDebug_GLContextType,
-
-      kLastGLContextType = kDebug_GLContextType
+    enum GLContextOptions {
+        kNone_GLContextOptions = 0,
+        kEnableNVPR_GLContextOptions = 0x1,
     };
-
-    static const int kGLContextTypeCnt = kLastGLContextType + 1;
 
     static bool IsRenderingGLContext(GLContextType type) {
         switch (type) {
@@ -66,11 +69,15 @@ public:
         switch (type) {
             case kNative_GLContextType:
                 return "native";
-            case kNull_GLContextType:
-                return "null";
+            case kGL_GLContextType:
+                return "gl";
+            case kGLES_GLContextType:
+                return "gles";
 #if SK_ANGLE
+#ifdef SK_BUILD_FOR_WIN
             case kANGLE_GLContextType:
                 return "angle";
+#endif
             case kANGLE_GL_GLContextType:
                 return "angle-gl";
 #endif
@@ -82,8 +89,8 @@ public:
             case kMESA_GLContextType:
                 return "mesa";
 #endif
-            case kNVPR_GLContextType:
-                return "nvpr";
+            case kNull_GLContextType:
+                return "null";
             case kDebug_GLContextType:
                 return "debug";
             default:
@@ -91,57 +98,47 @@ public:
         }
     }
 
-    explicit GrContextFactory(const GrContextOptions& opts) : fGlobalOptions(opts) { }
-    GrContextFactory() { }
+    explicit GrContextFactory(const GrContextOptions& opts);
+    GrContextFactory();
 
-    ~GrContextFactory() { this->destroyContexts(); }
+    ~GrContextFactory();
 
-    void destroyContexts() {
-        for (int i = 0; i < fContexts.count(); ++i) {
-            if (fContexts[i]->fGLContext) {  
-                fContexts[i]->fGLContext->makeCurrent();
-            }
-            fContexts[i]->fGrContext->unref();
-            SkSafeUnref(fContexts[i]->fGLContext);
-        }
-        fContexts.reset();
-    }
-
-    void abandonContexts() {
-        for (int i = 0; i < fContexts.count(); ++i) {
-            if (fContexts[i]->fGLContext) {
-                fContexts[i]->fGLContext->testAbandon();
-                SkSafeSetNull(fContexts[i]->fGLContext);
-            }
-            fContexts[i]->fGrContext->abandonContext();
-        }
-    }
+    void destroyContexts();
+    void abandonContexts();
 
     struct ContextInfo {
-        GLContextType             fType;
-        SkGLContext*              fGLContext;
-        GrContext*                fGrContext;
+        ContextInfo()
+            : fGrContext(nullptr), fGLContext(nullptr) { }
+        ContextInfo(GrContext* grContext, SkGLContext* glContext)
+            : fGrContext(grContext), fGLContext(glContext) { }
+        GrContext* fGrContext;
+        SkGLContext* fGLContext; 
+                                 
     };
-    
-
-
-
-    ContextInfo* getContextInfo(GLContextType type, GrGLStandard forcedGpuAPI = kNone_GrGLStandard);
 
     
 
 
-    GrContext* get(GLContextType type, GrGLStandard forcedGpuAPI = kNone_GrGLStandard) {
-        if (ContextInfo* info = this->getContextInfo(type, forcedGpuAPI)) {
-            return info->fGrContext;
-        }
-        return nullptr;
+    ContextInfo getContextInfo(GLContextType type,
+                               GLContextOptions options = kNone_GLContextOptions);
+    
+
+
+    GrContext* get(GLContextType type,
+                   GLContextOptions options = kNone_GLContextOptions) {
+        return this->getContextInfo(type, options).fGrContext;
     }
     const GrContextOptions& getGlobalOptions() const { return fGlobalOptions; }
 
 private:
-    SkTArray<SkAutoTDelete<ContextInfo>, true> fContexts;
-    const GrContextOptions        fGlobalOptions;
+    struct Context {
+        GLContextType fType;
+        GLContextOptions fOptions;
+        SkGLContext*  fGLContext;
+        GrContext*    fGrContext;
+    };
+    SkTArray<Context, true> fContexts;
+    const GrContextOptions  fGlobalOptions;
 };
 
 #endif

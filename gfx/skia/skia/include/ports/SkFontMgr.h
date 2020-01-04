@@ -46,6 +46,8 @@ public:
 
 
 
+
+
     SkFontStyleSet* matchFamily(const char familyName[]) const;
 
     
@@ -58,9 +60,15 @@ public:
 
 
 
+
+
+
     SkTypeface* matchFamilyStyle(const char familyName[], const SkFontStyle&) const;
 
     
+
+
+
 
 
 

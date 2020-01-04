@@ -189,8 +189,8 @@ typedef unsigned __int64 uint64_t;
 
 
 
-#if !defined(GR_FORCE_GPU_TRACE_DEBUGGING)
-    #define GR_FORCE_GPU_TRACE_DEBUGGING 0
-#endif
 
+#if !defined(GR_BATCH_DEBUGGING_OUTPUT)
+    #define GR_BATCH_DEBUGGING_OUTPUT 0
+#endif
 #endif

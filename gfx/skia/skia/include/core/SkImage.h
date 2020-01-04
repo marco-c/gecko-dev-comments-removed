@@ -324,28 +324,6 @@ public:
 
     bool isLazyGenerated() const;
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SkImage* applyFilter(SkImageFilter* filter, SkIPoint* offset,
-                         bool forceResultToOriginalSize) const;
-
 protected:
     SkImage(int width, int height, uint32_t uniqueID);
 

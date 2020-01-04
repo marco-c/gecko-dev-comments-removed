@@ -55,11 +55,10 @@ public:
 
 
 
-
     static bool Build(GrProgramDesc*,
                       const GrPrimitiveProcessor&,
                       const GrPipeline&,
-                      const GrGLGpu*);
+                      const GrGLSLCaps&);
 };
 
 #endif

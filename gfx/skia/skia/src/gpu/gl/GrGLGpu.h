@@ -16,6 +16,7 @@
 #include "GrGLRenderTarget.h"
 #include "GrGLStencilAttachment.h"
 #include "GrGLTexture.h"
+#include "GrGLTransferBuffer.h"
 #include "GrGLVertexArray.h"
 #include "GrGLVertexBuffer.h"
 #include "GrGpu.h"
@@ -25,6 +26,7 @@
 
 class GrPipeline;
 class GrNonInstancedVertices;
+class GrSwizzle;
 
 #ifdef SK_DEVELOPER
 #define PROGRAM_CACHE_STATS
@@ -101,12 +103,12 @@ public:
     void releaseBuffer(GrGLuint id, GrGLenum type);
 
     
-    void* mapBuffer(GrGLuint id, GrGLenum type, bool dynamic, size_t currentSize,
+    void* mapBuffer(GrGLuint id, GrGLenum type, GrGLBufferImpl::Usage usage, size_t currentSize,
                     size_t requestedSize);
 
     void unmapBuffer(GrGLuint id, GrGLenum type, void* mapPtr);
 
-    void bufferData(GrGLuint id, GrGLenum type, bool dynamic, size_t currentSize,
+    void bufferData(GrGLuint id, GrGLenum type, GrGLBufferImpl::Usage usage, size_t currentSize,
                     const void* src, size_t srcSizeInBytes);
 
     const GrGLContext* glContextForTesting() const override {
@@ -130,6 +132,8 @@ public:
 
     void resetShaderCacheForTesting() const override;
 
+    void drawDebugWireRect(GrRenderTarget*, const SkIRect&, GrColor) override;
+
 private:
     GrGLGpu(GrGLContext* ctx, GrContext* context);
 
@@ -145,6 +149,7 @@ private:
                                          const void* srcData) override;
     GrVertexBuffer* onCreateVertexBuffer(size_t size, bool dynamic) override;
     GrIndexBuffer* onCreateIndexBuffer(size_t size, bool dynamic) override;
+    GrTransferBuffer* onCreateTransferBuffer(size_t size, TransferType type) override;
     GrTexture* onWrapBackendTexture(const GrBackendTextureDesc&, GrWrapOwnership) override;
     GrRenderTarget* onWrapBackendRenderTarget(const GrBackendRenderTargetDesc&,
                                               GrWrapOwnership) override;
@@ -168,6 +173,11 @@ private:
                        GrPixelConfig config, const void* buffer,
                        size_t rowBytes) override;
 
+    bool onTransferPixels(GrSurface*,
+                          int left, int top, int width, int height,
+                          GrPixelConfig config, GrTransferBuffer* buffer,
+                          size_t offset, size_t rowBytes) override;
+
     void onResolveRenderTarget(GrRenderTarget* target) override;
 
     void onDraw(const DrawArgs&, const GrNonInstancedVertices&) override;
@@ -190,8 +200,7 @@ private:
                        const GrNonInstancedVertices& vertices,
                        size_t* indexOffsetInBytes);
 
-    
-    void flushBlend(const GrXferProcessor::BlendInfo& blendInfo);
+    void flushBlend(const GrXferProcessor::BlendInfo& blendInfo, const GrSwizzle&);
 
     bool hasExtension(const char* ext) const { return fGLContext->hasExtension(ext); }
 
@@ -279,15 +288,15 @@ private:
     void flushStencil(const GrStencilSettings&);
     void flushHWAAState(GrRenderTarget* rt, bool useHWAA);
 
-    bool configToGLFormats(GrPixelConfig config,
-                           bool getSizedInternal,
-                           GrGLenum* internalFormat,
-                           GrGLenum* externalFormat,
-                           GrGLenum* externalType) const;
     
+    enum UploadType {
+        kNewTexture_UploadType,    
+        kWrite_UploadType,         
+        kTransfer_UploadType,      
+    };
     bool uploadTexData(const GrSurfaceDesc& desc,
                        GrGLenum target,
-                       bool isNewTexture,
+                       UploadType uploadType,
                        int left, int top, int width, int height,
                        GrPixelConfig dataConfig,
                        const void* data,
@@ -302,7 +311,7 @@ private:
     bool uploadCompressedTexData(const GrSurfaceDesc& desc,
                                  GrGLenum target,
                                  const void* data,
-                                 bool isNewTexture = true,
+                                 UploadType uploadType = kNewTexture_UploadType,
                                  int left = 0, int top = 0,
                                  int width = -1, int height = -1);
 
@@ -326,6 +335,8 @@ private:
     SkAutoTUnref<GrGLContext>  fGLContext;
 
     void createCopyPrograms();
+    void createWireRectProgram();
+    void createUnitRectBuffer();
 
     
     ProgramCache*               fProgramCache;
@@ -494,24 +505,6 @@ private:
         }
     } fHWBlendState;
 
-    
-    struct {
-        GrGLuint    fProgram;
-        GrGLint     fTextureUniform;
-        GrGLint     fTexCoordXformUniform;
-        GrGLint     fPosXformUniform;
-    }                           fCopyPrograms[2];
-    GrGLuint                    fCopyProgramArrayBuffer;
-
-    static int TextureTargetToCopyProgramIdx(GrGLenum target) {
-        if (target == GR_GL_TEXTURE_2D) {
-            return 0;
-        } else {
-            SkASSERT(target == GR_GL_TEXTURE_EXTERNAL);
-            return 1;
-        }
-    }
-
     TriState fMSAAEnabled;
 
     GrStencilSettings           fHWStencilSettings;
@@ -523,12 +516,37 @@ private:
     uint32_t                    fHWBoundRenderTargetUniqueID;
     TriState                    fHWSRGBFramebuffer;
     SkTArray<uint32_t, true>    fHWBoundTextureUniqueIDs;
-
     
 
     
-    
-    int fPixelConfigToStencilIndex[kGrPixelConfigCnt];
+    struct {
+        GrGLuint    fProgram;
+        GrGLint     fTextureUniform;
+        GrGLint     fTexCoordXformUniform;
+        GrGLint     fPosXformUniform;
+    }                           fCopyPrograms[3];
+    GrGLuint                    fCopyProgramArrayBuffer;
+
+    struct {
+        GrGLuint fProgram;
+        GrGLint  fColorUniform;
+        GrGLint  fRectUniform;
+    }                           fWireRectProgram;
+    GrGLuint                    fWireRectArrayBuffer;
+
+    static int TextureTargetToCopyProgramIdx(GrGLenum target) {
+        switch (target) {
+            case GR_GL_TEXTURE_2D:
+                return 0;
+            case GR_GL_TEXTURE_EXTERNAL:
+                return 1;
+            case GR_GL_TEXTURE_RECTANGLE:
+                return 2;
+            default:
+                SkFAIL("Unexpected texture target type.");
+                return 0;
+        }
+    }
 
     typedef GrGpu INHERITED;
     friend class GrGLPathRendering; 

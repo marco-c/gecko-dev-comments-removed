@@ -635,13 +635,6 @@ public:
 
 
 
-    SK_ATTR_DEPRECATED("use getAnnotation and check for non-null")
-    bool isNoDrawAnnotation() const { return this->getAnnotation() != NULL; }
-
-    
-
-
-
     SkDrawLooper* getLooper() const { return fLooper; }
 
     
@@ -1089,12 +1082,11 @@ private:
     friend class SkCanvas;
     friend class SkDraw;
     friend class SkPDFDevice;
-    friend class GrBitmapTextContext;
+    friend class GrAtlasTextBlob;
     friend class GrAtlasTextContext;
-    friend class GrDistanceFieldTextContext;
     friend class GrStencilAndCoverTextContext;
     friend class GrPathRendering;
-    friend class GrTextContext;
+    friend class GrTextUtils;
     friend class GrGLPathRendering;
     friend class SkScalerContext;
     friend class SkTextToPathIter;

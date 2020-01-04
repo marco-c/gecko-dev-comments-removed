@@ -16,6 +16,14 @@
 
 
 
+
+
+
+
+
+
+
+
 class SkBitmapRegionCanvas : public SkBitmapRegionDecoder {
 public:
 

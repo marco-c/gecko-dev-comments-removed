@@ -18,56 +18,29 @@
 
 
 
-
-
 class GrTextureAccess : public SkNoncopyable {
 public:
     
 
 
-
     GrTextureAccess();
 
-    
-
-
     GrTextureAccess(GrTexture*, const GrTextureParams&);
+
     explicit GrTextureAccess(GrTexture*,
                              GrTextureParams::FilterMode = GrTextureParams::kNone_FilterMode,
                              SkShader::TileMode tileXAndY = SkShader::kClamp_TileMode);
-
-    
-
-
-
-    GrTextureAccess(GrTexture*, const char* swizzle, const GrTextureParams&);
-    GrTextureAccess(GrTexture*,
-                    const char* swizzle,
-                    GrTextureParams::FilterMode = GrTextureParams::kNone_FilterMode,
-                    SkShader::TileMode tileXAndY = SkShader::kClamp_TileMode);
 
     void reset(GrTexture*, const GrTextureParams&);
     void reset(GrTexture*,
                GrTextureParams::FilterMode = GrTextureParams::kNone_FilterMode,
                SkShader::TileMode tileXAndY = SkShader::kClamp_TileMode);
-    void reset(GrTexture*, const char* swizzle, const GrTextureParams&);
-    void reset(GrTexture*,
-               const char* swizzle,
-               GrTextureParams::FilterMode = GrTextureParams::kNone_FilterMode,
-               SkShader::TileMode tileXAndY = SkShader::kClamp_TileMode);
 
-    bool operator== (const GrTextureAccess& other) const {
-#ifdef SK_DEBUG
-        
-        SkASSERT(memcmp(fSwizzle, other.fSwizzle, sizeof(fSwizzle)-1) ==
-                 strcmp(fSwizzle, other.fSwizzle));
-#endif
-        return fParams == other.fParams &&
-               (this->getTexture() == other.getTexture()) &&
-               (0 == memcmp(fSwizzle, other.fSwizzle, sizeof(fSwizzle)-1));
+    bool operator==(const GrTextureAccess& that) const {
+        return this->getTexture() == that.getTexture() && fParams == that.fParams;
     }
 
-    bool operator!= (const GrTextureAccess& other) const { return !(*this == other); }
+    bool operator!=(const GrTextureAccess& other) const { return !(*this == other); }
 
     GrTexture* getTexture() const { return fTexture.get(); }
 
@@ -76,26 +49,14 @@ public:
 
     const GrGpuResourceRef* getProgramTexture() const { return &fTexture; }
 
-    
-
-
-    const char* getSwizzle() const { return fSwizzle; }
-
-    
-
-    uint32_t swizzleMask() const { return fSwizzleMask; }
-
     const GrTextureParams& getParams() const { return fParams; }
 
 private:
-    void setSwizzle(const char*);
 
     typedef GrTGpuResourceRef<GrTexture> ProgramTexture;
 
     ProgramTexture                  fTexture;
     GrTextureParams                 fParams;
-    uint32_t                        fSwizzleMask;
-    char                            fSwizzle[5];
 
     typedef SkNoncopyable INHERITED;
 };

@@ -6,8 +6,7 @@
 #define SK_CONVOLVER_H
 
 #include "SkSize.h"
-#include "SkTypes.h"
-#include "SkTArray.h"
+#include "SkTDArray.h"
 
 
 #if defined(__APPLE__)
@@ -58,22 +57,20 @@ public:
     
     int numValues() const { return static_cast<int>(fFilters.count()); }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SK_API void AddFilter(int filterOffset,
-                          const float* filterValues,
-                          int filterLength);
+    void reserveAdditional(int filterCount, int filterValueCount) {
+        fFilters.setReserve(fFilters.count() + filterCount);
+        fFilterValues.setReserve(fFilterValues.count() + filterValueCount);
+    }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     void AddFilter(int filterOffset,
                    const ConvolutionFixed* filterValues,
@@ -112,7 +109,7 @@ public:
     
 
     void addFilterValue( ConvolutionFixed val ) {
-        fFilterValues.push_back( val );
+        fFilterValues.push( val );
     }
 private:
     struct FilterInstance {
@@ -132,12 +129,12 @@ private:
     };
 
     
-    SkTArray<FilterInstance> fFilters;
+    SkTDArray<FilterInstance> fFilters;
 
     
     
     
-    SkTArray<ConvolutionFixed> fFilterValues;
+    SkTDArray<ConvolutionFixed> fFilterValues;
 
     
     int fMaxFilter;

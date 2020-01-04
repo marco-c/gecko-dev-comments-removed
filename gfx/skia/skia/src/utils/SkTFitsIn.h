@@ -31,7 +31,7 @@ template<typename A, typename B> struct SkTHasMoreDigits
 
 
 template <typename S> struct SkTOutOfRange_False {
-    typedef skstd::false_type can_be_true;
+    typedef std::false_type can_be_true;
     typedef S source_type;
     static bool apply(S s) {
         return false;
@@ -42,7 +42,7 @@ template <typename S> struct SkTOutOfRange_False {
 
 
 template <typename D, typename S> struct SkTOutOfRange_LT_MinD {
-    typedef skstd::true_type can_be_true;
+    typedef std::true_type can_be_true;
     typedef S source_type;
     static bool apply(S s) {
         typedef SkTHasMoreDigits<S, D> precondition;
@@ -54,7 +54,7 @@ template <typename D, typename S> struct SkTOutOfRange_LT_MinD {
 
 
 template <typename D, typename S> struct SkTOutOfRange_LT_Zero {
-    typedef skstd::true_type can_be_true;
+    typedef std::true_type can_be_true;
     typedef S source_type;
     static bool apply(S s) {
         return s < static_cast<S>(0);
@@ -65,7 +65,7 @@ template <typename D, typename S> struct SkTOutOfRange_LT_Zero {
 
 
 template <typename D, typename S> struct SkTOutOfRange_GT_MaxD {
-    typedef skstd::true_type can_be_true;
+    typedef std::true_type can_be_true;
     typedef S source_type;
     static bool apply(S s) {
         typedef SkTHasMoreDigits<S, D> precondition;
@@ -79,7 +79,7 @@ template <typename D, typename S> struct SkTOutOfRange_GT_MaxD {
 
 
 template<class OutOfRange_Low, class OutOfRange_High> struct SkTOutOfRange_Either {
-    typedef skstd::true_type can_be_true;
+    typedef std::true_type can_be_true;
     typedef typename OutOfRange_Low::source_type source_type;
     static bool apply(source_type s) {
         bool outOfRange = OutOfRange_Low::apply(s);

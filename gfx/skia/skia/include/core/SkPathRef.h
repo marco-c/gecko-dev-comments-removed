@@ -124,6 +124,7 @@ public:
 
 
         uint8_t next(SkPoint pts[4]);
+        uint8_t peek() const;
 
         SkScalar conicWeight() const { return *fConicWeights; }
 

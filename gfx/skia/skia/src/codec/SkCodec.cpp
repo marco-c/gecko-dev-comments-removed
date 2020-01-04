@@ -7,20 +7,20 @@
 
 #include "SkBmpCodec.h"
 #include "SkCodec.h"
-#include "SkData.h"
-#include "SkCodec_libgif.h"
-#include "SkCodec_libico.h"
 #include "SkCodec_libpng.h"
-#include "SkCodec_wbmp.h"
 #include "SkCodecPriv.h"
+#include "SkData.h"
+#include "SkGifCodec.h"
+#include "SkIcoCodec.h"
 #if !defined(GOOGLE3)
 #include "SkJpegCodec.h"
 #endif
 #include "SkStream.h"
+#include "SkWbmpCodec.h"
 #include "SkWebpCodec.h"
 
 struct DecoderProc {
-    bool (*IsFormat)(SkStream*);
+    bool (*IsFormat)(const void*, size_t);
     SkCodec* (*NewFromStream)(SkStream*);
 };
 
@@ -35,6 +35,10 @@ static const DecoderProc gDecoderProcs[] = {
     { SkWbmpCodec::IsWbmp, SkWbmpCodec::NewFromStream }
 };
 
+size_t SkCodec::MinBufferedBytesNeeded() {
+    return WEBP_VP8_HEADER_SIZE;
+}
+
 SkCodec* SkCodec::NewFromStream(SkStream* stream,
                                 SkPngChunkReader* chunkReader) {
     if (!stream) {
@@ -42,39 +46,49 @@ SkCodec* SkCodec::NewFromStream(SkStream* stream,
     }
 
     SkAutoTDelete<SkStream> streamDeleter(stream);
+
     
-    SkAutoTDelete<SkCodec> codec(nullptr);
+    const size_t bytesToRead = 14;
+    SkASSERT(bytesToRead <= MinBufferedBytesNeeded());
+
+    char buffer[bytesToRead];
+    size_t bytesRead = stream->peek(buffer, bytesToRead);
+
     
     
-    const bool isPng = SkPngCodec::IsPng(stream);
-    if (!stream->rewind()) {
-        return NULL;
-    }
-    if (isPng) {
-        codec.reset(SkPngCodec::NewFromStream(streamDeleter.detach(), chunkReader));
-    } else {
-        for (DecoderProc proc : gDecoderProcs) {
-            const bool correctFormat = proc.IsFormat(stream);
-            if (!stream->rewind()) {
-                return nullptr;
-            }
-            if (correctFormat) {
-                codec.reset(proc.NewFromStream(streamDeleter.detach()));
-                break;
-            }
+    
+    
+    
+    
+
+    if (0 == bytesRead) {
+        
+        
+        
+
+        
+        
+        
+        bytesRead = stream->read(buffer, bytesToRead);
+        if (!stream->rewind()) {
+            SkCodecPrintf("Encoded image data could not peek or rewind to determine format!\n");
+            return nullptr;
         }
     }
 
     
     
-    
-    const int32_t maxSize = 1 << 27;
-    if (codec && codec->getInfo().width() * codec->getInfo().height() > maxSize) {
-        SkCodecPrintf("Error: Image size too large, cannot decode.\n");
-        return nullptr;
+    if (SkPngCodec::IsPng(buffer, bytesRead)) {
+        return SkPngCodec::NewFromStream(streamDeleter.detach(), chunkReader);
     } else {
-        return codec.detach();
+        for (DecoderProc proc : gDecoderProcs) {
+            if (proc.IsFormat(buffer, bytesRead)) {
+                return proc.NewFromStream(streamDeleter.detach());
+            }
+        }
     }
+
+    return nullptr;
 }
 
 SkCodec* SkCodec::NewFromData(SkData* data, SkPngChunkReader* reader) {

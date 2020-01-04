@@ -11,6 +11,8 @@
 #include "GrTexture.h"
 #include "SkImageFilter.h"
 
+class GrSingleOwner;
+
 class SK_API GrTextureProvider {
 public:
     
@@ -42,15 +44,7 @@ public:
     }
 
     
-    GrTexture* findAndRefTextureByUniqueKey(const GrUniqueKey& key) {
-        GrGpuResource* resource = this->findAndRefResourceByUniqueKey(key);
-        if (resource) {
-            GrTexture* texture = static_cast<GrSurface*>(resource)->asTexture();
-            SkASSERT(texture);
-            return texture;
-        }
-        return NULL;
-    }
+    GrTexture* findAndRefTextureByUniqueKey(const GrUniqueKey& key);
 
     
 
@@ -69,31 +63,6 @@ public:
 
 
     GrTexture* createApproxTexture(const GrSurfaceDesc&);
-
-    enum SizeConstraint {
-        kExact_SizeConstraint,
-        kApprox_SizeConstraint,
-    };
-
-    GrTexture* createTexture(const GrSurfaceDesc& desc, SizeConstraint constraint) {
-        switch (constraint) {
-            case kExact_SizeConstraint:
-                return this->createTexture(desc, true);
-            case kApprox_SizeConstraint:
-                return this->createApproxTexture(desc);
-        }
-        sk_throw();
-        return nullptr;
-    }
-
-    static SizeConstraint FromImageFilter(SkImageFilter::SizeConstraint constraint) {
-        if (SkImageFilter::kExact_SizeConstraint == constraint) {
-            return kExact_SizeConstraint;
-        } else {
-            SkASSERT(SkImageFilter::kApprox_SizeConstraint == constraint);
-            return kApprox_SizeConstraint;
-        }
-    }
 
     
     enum ScratchTexMatch {
@@ -134,7 +103,7 @@ public:
      GrRenderTarget* wrapBackendRenderTarget(const GrBackendRenderTargetDesc& desc);
 
 protected:
-    GrTextureProvider(GrGpu* gpu, GrResourceCache* cache) : fCache(cache), fGpu(gpu) {}
+    GrTextureProvider(GrGpu* gpu, GrResourceCache* cache, GrSingleOwner* singleOwner);
 
     
 
@@ -186,6 +155,9 @@ protected:
 private:
     GrResourceCache* fCache;
     GrGpu* fGpu;
+
+    
+    SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)
 };
 
 #endif

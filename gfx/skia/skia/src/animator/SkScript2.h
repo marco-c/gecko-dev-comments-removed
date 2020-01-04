@@ -8,6 +8,7 @@
 #ifndef SkScript2_DEFINED
 #define SkScript2_DEFINED
 
+#include "SkDisplayType.h"
 #include "SkOperand2.h"
 #include "SkStream.h"
 #include "SkTDArray.h"

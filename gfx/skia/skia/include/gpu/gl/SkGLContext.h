@@ -17,9 +17,9 @@
 
 
 
-class SK_API SkGLContext : public SkRefCnt {
+class SK_API SkGLContext : public SkNoncopyable {
 public:
-    ~SkGLContext() override;
+    virtual ~SkGLContext();
 
     bool isValid() const { return NULL != gl(); }
 
@@ -40,6 +40,11 @@ public:
     
     virtual GrEGLImage texture2DToEGLImage(GrGLuint ) const { return 0; }
     virtual void destroyEGLImage(GrEGLImage) const {}
+
+    
+    GrGLint createTextureRectangle(int width, int height, GrGLenum internalFormat,
+                                   GrGLenum externalFormat, GrGLenum externalType,
+                                   GrGLvoid* data);
 
     
 
@@ -106,8 +111,6 @@ private:
     SkAutoTUnref<const GrGLInterface> fGL;
 
     friend class GLFenceSync;  
-
-    typedef SkRefCnt INHERITED;
 };
 
 

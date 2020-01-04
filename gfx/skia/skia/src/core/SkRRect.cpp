@@ -5,8 +5,10 @@
 
 
 
+#include <cmath>
 #include "SkRRect.h"
 #include "SkMatrix.h"
+#include "SkScaleToSides.h"
 
 
 
@@ -112,28 +114,6 @@ void SkRRect::setNinePatch(const SkRect& rect, SkScalar leftRad, SkScalar topRad
 
 
 
-static inline SkScalar SkScalarDecULP(SkScalar value) {
-#if SK_SCALAR_IS_FLOAT
-        return SkBits2Float(SkFloat2Bits(value) - 1);
-#else
-    #error "need impl for doubles"
-#endif
-}
-
- 
-
-
-static SkScalar clamp_radius_check_predicates(SkScalar rad, SkScalar min, SkScalar max) {
-    SkASSERT(min < max);
-    if (rad > max - min || min + rad > max || max - rad < min) {
-        rad = SkScalarDecULP(rad);
-    }
-    return rad;
-}
-
-
-
-
 static double compute_min_scale(double rad1, double rad2, double limit, double curMin) {
     if ((rad1 + rad2) > limit) {
         return SkTMin(curMin, limit / (rad1 + rad2));
@@ -190,29 +170,21 @@ void SkRRect::setRectRadii(const SkRect& rect, const SkVector radii[4]) {
     
     double scale = 1.0;
 
-    scale = compute_min_scale(fRadii[0].fX, fRadii[1].fX, fRect.width(),  scale);
-    scale = compute_min_scale(fRadii[1].fY, fRadii[2].fY, fRect.height(), scale);
-    scale = compute_min_scale(fRadii[2].fX, fRadii[3].fX, fRect.width(),  scale);
-    scale = compute_min_scale(fRadii[3].fY, fRadii[0].fY, fRect.height(), scale);
+    
+    double width = (double)fRect.fRight - (double)fRect.fLeft;
+    double height = (double)fRect.fBottom - (double)fRect.fTop;
+    scale = compute_min_scale(fRadii[0].fX, fRadii[1].fX, width,  scale);
+    scale = compute_min_scale(fRadii[1].fY, fRadii[2].fY, height, scale);
+    scale = compute_min_scale(fRadii[2].fX, fRadii[3].fX, width,  scale);
+    scale = compute_min_scale(fRadii[3].fY, fRadii[0].fY, height, scale);
 
     if (scale < 1.0) {
-        for (int i = 0; i < 4; ++i) {
-            fRadii[i].fX *= scale;
-            fRadii[i].fY *= scale;
-        }
+        ScaleToSides::AdjustRadii(width,  scale, &fRadii[0].fX, &fRadii[1].fX);
+        ScaleToSides::AdjustRadii(height, scale, &fRadii[1].fY, &fRadii[2].fY);
+        ScaleToSides::AdjustRadii(width,  scale, &fRadii[2].fX, &fRadii[3].fX);
+        ScaleToSides::AdjustRadii(height, scale, &fRadii[3].fY, &fRadii[0].fY);
     }
 
-    
-    
-    
-    
-    
-    
-    
-    for (int i = 0; i < 4; ++i) {
-        fRadii[i].fX = clamp_radius_check_predicates(fRadii[i].fX, fRect.fLeft, fRect.fRight);
-        fRadii[i].fY = clamp_radius_check_predicates(fRadii[i].fY, fRect.fTop, fRect.fBottom);
-    }
     
     this->computeType();
 

@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef SkDisplayTypes_DEFINED
 #define SkDisplayTypes_DEFINED
 

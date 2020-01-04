@@ -75,7 +75,8 @@ public:
 
 
 
-    virtual bool peek(void* , size_t ) const { return false; }
+
+    virtual size_t peek(void* , size_t ) const { return 0; }
 
     
 
@@ -325,7 +326,7 @@ public:
     size_t read(void* buffer, size_t size) override;
     bool isAtEnd() const override;
 
-    bool peek(void* buffer, size_t size) const override;
+    size_t peek(void* buffer, size_t size) const override;
 
     bool rewind() override;
     SkMemoryStream* duplicate() const override;
@@ -359,6 +360,7 @@ public:
 
     bool write(const void* buffer, size_t size) override;
     void flush() override;
+    void fsync();
     size_t bytesWritten() const override;
 
 private:

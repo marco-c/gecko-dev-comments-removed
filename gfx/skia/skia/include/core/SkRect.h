@@ -828,24 +828,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-    void dround(SkIRect* dst) const {
-        SkASSERT(dst);
-        dst->set(SkDScalarRoundToInt(fLeft), SkDScalarRoundToInt(fTop),
-                 SkDScalarRoundToInt(fRight), SkDScalarRoundToInt(fBottom));
-    }
-
-    
-
-
-
     void roundOut(SkIRect* dst) const {
         SkASSERT(dst);
         dst->set(SkScalarFloorToInt(fLeft), SkScalarFloorToInt(fTop),

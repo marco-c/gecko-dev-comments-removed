@@ -12,16 +12,17 @@
 #include "GrRenderTarget.h"
 #include "SkRefCnt.h"
 #include "SkSurfaceProps.h"
+#include "../private/GrSingleOwner.h"
 
+class GrAuditTrail;
 class GrClip;
 class GrContext;
 class GrDrawBatch;
+class GrDrawPathBatchBase;
 class GrDrawingManager;
 class GrDrawTarget;
 class GrPaint;
 class GrPathProcessor;
-class GrPathRange;
-class GrPathRangeDraw;
 class GrPipelineBuilder;
 class GrRenderTarget;
 class GrStrokeInfo;
@@ -62,17 +63,6 @@ public:
                       const SkMatrix& viewMatrix, const SkTextBlob*,
                       SkScalar x, SkScalar y,
                       SkDrawFilter*, const SkIRect& clipBounds);
-
-    
-    
-    void drawPathsFromRange(const GrPipelineBuilder*,
-                            const SkMatrix& viewMatrix,
-                            const SkMatrix& localMatrix,
-                            GrColor color,
-                            GrPathRange* range,
-                            GrPathRangeDraw* draw,
-                            int  fill,
-                            const SkRect& bounds);
 
     
 
@@ -274,17 +264,32 @@ public:
 
     void drawBatch(const GrClip&, const GrPaint&, GrDrawBatch*);
 
+    
+
+
+
+
+
+    void drawPathBatch(const GrPipelineBuilder&, GrDrawPathBatchBase*);
+
     int width() const { return fRenderTarget->width(); }
     int height() const { return fRenderTarget->height(); }
     int numColorSamples() const { return fRenderTarget->numColorSamples(); }
 
+    GrRenderTarget* accessRenderTarget() { return fRenderTarget; }
+
+    
+    
+    void internal_drawBatch(const GrPipelineBuilder& pipelineBuilder, GrDrawBatch* batch);
+
 private:
-    friend class GrAtlasTextContext; 
+    friend class GrAtlasTextBlob; 
     friend class GrDrawingManager; 
 
     SkDEBUGCODE(void validate() const;)
 
-    GrDrawContext(GrDrawingManager*, GrRenderTarget*, const SkSurfaceProps* surfaceProps);
+    GrDrawContext(GrDrawingManager*, GrRenderTarget*, const SkSurfaceProps* surfaceProps,
+                  GrAuditTrail*, GrSingleOwner*);
 
     void internalDrawPath(GrPipelineBuilder*,
                           const SkMatrix& viewMatrix,
@@ -308,6 +313,10 @@ private:
     GrTextContext*    fTextContext; 
 
     SkSurfaceProps    fSurfaceProps;
+    GrAuditTrail*     fAuditTrail;
+
+    
+    SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)
 };
 
 #endif

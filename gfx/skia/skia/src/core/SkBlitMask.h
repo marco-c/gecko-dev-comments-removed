@@ -44,7 +44,7 @@ public:
 
 
 
-    typedef void (*RowProc)(void* dst, const void* mask,
+    typedef void (*RowProc)(SkPMColor* dst, const void* mask,
                             const SkPMColor* src, int width);
 
     

@@ -22,15 +22,13 @@ enum GrDistanceFieldEffectFlags {
     kUseLCD_DistanceFieldEffectFlag     = 0x04,   
     kBGR_DistanceFieldEffectFlag        = 0x08,   
     kPortrait_DistanceFieldEffectFlag   = 0x10,   
-    kColorAttr_DistanceFieldEffectFlag  = 0x20,   
 
     kInvalid_DistanceFieldEffectFlag    = 0x80,   
     
     kUniformScale_DistanceFieldEffectMask = kSimilarity_DistanceFieldEffectFlag |
                                             kRectToRect_DistanceFieldEffectFlag,
     
-    kNonLCD_DistanceFieldEffectMask       = kSimilarity_DistanceFieldEffectFlag |
-                                            kColorAttr_DistanceFieldEffectFlag,
+    kNonLCD_DistanceFieldEffectMask       = kSimilarity_DistanceFieldEffectFlag,
     
     kLCD_DistanceFieldEffectMask          = kSimilarity_DistanceFieldEffectFlag |
                                             kRectToRect_DistanceFieldEffectFlag |
@@ -71,7 +69,6 @@ public:
     const Attribute* inTextureCoords() const { return fInTextureCoords; }
     GrColor color() const { return fColor; }
     bool colorIgnored() const { return GrColor_ILLEGAL == fColor; }
-    bool hasVertexColor() const { return SkToBool(fInColor); }
     const SkMatrix& viewMatrix() const { return fViewMatrix; }
     bool usesLocalCoords() const { return fUsesLocalCoords; }
 #ifdef SK_GAMMA_APPLY_TO_A8
@@ -133,7 +130,6 @@ public:
     const Attribute* inTextureCoords() const { return fInTextureCoords; }
     GrColor color() const { return fColor; }
     bool colorIgnored() const { return GrColor_ILLEGAL == fColor; }
-    bool hasVertexColor() const { return SkToBool(fInColor); }
     const SkMatrix& viewMatrix() const { return fViewMatrix; }
     uint32_t getFlags() const { return fFlags; }
     bool usesLocalCoords() const { return fUsesLocalCoords; }
@@ -197,6 +193,7 @@ public:
     const char* name() const override { return "DistanceFieldLCDTexture"; }
 
     const Attribute* inPosition() const { return fInPosition; }
+    const Attribute* inColor() const { return fInColor; }
     const Attribute* inTextureCoords() const { return fInTextureCoords; }
     DistanceAdjust getDistanceAdjust() const { return fDistanceAdjust; }
     GrColor color() const { return fColor; }
@@ -221,6 +218,7 @@ private:
     DistanceAdjust   fDistanceAdjust;
     uint32_t         fFlags;
     const Attribute* fInPosition;
+    const Attribute* fInColor;
     const Attribute* fInTextureCoords;
     bool             fUsesLocalCoords;
 

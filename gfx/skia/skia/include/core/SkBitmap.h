@@ -54,12 +54,24 @@ public:
 
     SkBitmap(const SkBitmap& src);
 
+    
+
+
+
+    SkBitmap(SkBitmap&& src);
+
     ~SkBitmap();
 
     
 
 
     SkBitmap& operator=(const SkBitmap& src);
+
+    
+
+
+    SkBitmap& operator=(SkBitmap&& src);
+
     
 
     
@@ -293,6 +305,14 @@ public:
     bool installPixels(const SkImageInfo& info, void* pixels, size_t rowBytes) {
         return this->installPixels(info, pixels, rowBytes, NULL, NULL, NULL);
     }
+
+    
+
+
+
+
+
+    bool installPixels(const SkPixmap&);
 
     
 

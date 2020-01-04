@@ -16,6 +16,7 @@
 
 class GrCaps;
 class GrBatchFlushState;
+class GrRenderTarget;
 
 
 
@@ -112,6 +113,9 @@ public:
 
     
     virtual SkString dumpInfo() const = 0;
+
+    
+    virtual GrRenderTarget* renderTarget() const = 0;
 
 protected:
     

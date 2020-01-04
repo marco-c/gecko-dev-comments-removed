@@ -165,7 +165,7 @@ public:
 
     void write(const void* values, size_t size) {
         SkASSERT(SkAlign4(size) == size);
-        memcpy(this->reserve(size), values, size);
+        sk_careful_memcpy(this->reserve(size), values, size);
     }
 
     
@@ -186,7 +186,7 @@ public:
 
 
     void writePad(const void* src, size_t size) {
-        memcpy(this->reservePad(size), src, size);
+        sk_careful_memcpy(this->reservePad(size), src, size);
     }
 
     

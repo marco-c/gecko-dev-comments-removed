@@ -14,6 +14,7 @@
 #include "GrGLTexture.h"
 #include "GrGLProgramDataManager.h"
 #include "glsl/GrGLSLProgramDataManager.h"
+#include "glsl/GrGLSLUniformHandler.h"
 
 #include "SkString.h"
 #include "SkXfermode.h"
@@ -35,7 +36,7 @@ class GrPipeline;
 
 class GrGLProgram : public SkRefCnt {
 public:
-    typedef GrGLProgramBuilder::BuiltinUniformHandles BuiltinUniformHandles;
+    typedef GrGLSLProgramBuilder::BuiltinUniformHandles BuiltinUniformHandles;
 
     ~GrGLProgram();
 
@@ -107,9 +108,9 @@ protected:
                 GrGLuint programID,
                 const UniformInfoArray&,
                 const VaryingInfoArray&, 
-                GrGLInstalledGeoProc* geometryProcessor,
-                GrGLInstalledXferProc* xferProcessor,
-                GrGLInstalledFragProcs* fragmentProcessors,
+                GrGLSLPrimitiveProcessor* geometryProcessor,
+                GrGLSLXferProcessor* xferProcessor,
+                const GrGLSLFragProcs& fragmentProcessors,
                 SkTArray<UniformHandle>* passSamplerUniforms);
 
     
@@ -117,8 +118,7 @@ protected:
                          SkTArray<const GrTextureAccess*>* textureBindings);
     void setTransformData(const GrPrimitiveProcessor&,
                           const GrFragmentProcessor&,
-                          int index,
-                          GrGLInstalledFragProc*);
+                          int index);
 
     
     void setRenderTargetState(const GrPrimitiveProcessor&, const GrPipeline&);
@@ -129,9 +129,9 @@ protected:
     GrGLuint fProgramID;
 
     
-    SkAutoTDelete<GrGLInstalledGeoProc> fGeometryProcessor;
-    SkAutoTDelete<GrGLInstalledXferProc> fXferProcessor;
-    SkAutoTUnref<GrGLInstalledFragProcs> fFragmentProcessors;
+    SkAutoTDelete<GrGLSLPrimitiveProcessor> fGeometryProcessor;
+    SkAutoTDelete<GrGLSLXferProcessor> fXferProcessor;
+    GrGLSLFragProcs fFragmentProcessors;
 
     GrProgramDesc fDesc;
     GrGLGpu* fGpu;

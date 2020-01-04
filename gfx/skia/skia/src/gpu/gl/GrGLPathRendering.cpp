@@ -6,7 +6,6 @@
 
 
 #include "gl/GrGLPathRendering.h"
-#include "gl/GrGLNameAllocator.h"
 #include "gl/GrGLUtil.h"
 #include "gl/GrGLGpu.h"
 
@@ -20,6 +19,9 @@
 #define GL_CALL(X) GR_GL_CALL(this->gpu()->glInterface(), X)
 #define GL_CALL_RET(RET, X) GR_GL_CALL_RET(this->gpu()->glInterface(), RET, X)
 
+
+
+static const GrGLsizei kPathIDPreallocationAmount = 65536;
 
 static const GrGLenum gIndexType2GLType[] = {
     GR_GL_UNSIGNED_BYTE,
@@ -60,17 +62,21 @@ static GrGLenum gr_stencil_op_to_gl_path_rendering_fill_mode(GrStencilOp op) {
 }
 
 GrGLPathRendering::GrGLPathRendering(GrGLGpu* gpu)
-    : GrPathRendering(gpu) {
+    : GrPathRendering(gpu)
+    , fPreallocatedPathCount(0) {
     const GrGLInterface* glInterface = gpu->glInterface();
     fCaps.bindFragmentInputSupport =
         nullptr != glInterface->fFunctions.fBindFragmentInputLocation;
 }
 
 GrGLPathRendering::~GrGLPathRendering() {
+    if (fPreallocatedPathCount > 0) {
+        this->deletePaths(fFirstPreallocatedPathID, fPreallocatedPathCount);
+    }
 }
 
 void GrGLPathRendering::abandonGpuResources() {
-    fPathNameAllocator.reset(nullptr);
+    fPreallocatedPathCount = 0;
 }
 
 void GrGLPathRendering::resetContext() {
@@ -230,54 +236,57 @@ void GrGLPathRendering::setProjectionMatrix(const SkMatrix& matrix,
 }
 
 GrGLuint GrGLPathRendering::genPaths(GrGLsizei range) {
-    if (range > 1) {
-        GrGLuint name;
-        GL_CALL_RET(name, GenPaths(range));
-        return name;
+    SkASSERT(range > 0);
+    GrGLuint firstID;
+    if (fPreallocatedPathCount >= range) {
+        firstID = fFirstPreallocatedPathID;
+        fPreallocatedPathCount -= range;
+        fFirstPreallocatedPathID += range;
+        return firstID;
     }
-
-    if (nullptr == fPathNameAllocator.get()) {
-        static const int range = 65536;
-        GrGLuint firstName;
-        GL_CALL_RET(firstName, GenPaths(range));
-        fPathNameAllocator.reset(new GrGLNameAllocator(firstName, firstName + range));
-    }
-
     
     
-    GrGLuint name = fPathNameAllocator->allocateName();
+    
+    GrGLsizei allocAmount = range + (kPathIDPreallocationAmount - fPreallocatedPathCount);
+    if (allocAmount >= range) {
+        GL_CALL_RET(firstID, GenPaths(allocAmount));
 
-    if (0 == name) {
-        
-        GL_CALL_RET(name, GenPaths(1));
+        if (firstID != 0) {
+            if (fPreallocatedPathCount > 0 &&
+                firstID == fFirstPreallocatedPathID + fPreallocatedPathCount) {
+                firstID = fFirstPreallocatedPathID;
+                fPreallocatedPathCount += allocAmount - range;
+                fFirstPreallocatedPathID += range;
+                return firstID;
+            }
+
+            if (allocAmount > range) {
+                if (fPreallocatedPathCount > 0) {
+                    this->deletePaths(fFirstPreallocatedPathID, fPreallocatedPathCount);
+                }
+                fFirstPreallocatedPathID = firstID + range;
+                fPreallocatedPathCount = allocAmount - range;
+            }
+            
+            return firstID;
+        }
+    }
+    
+    
+    if (fPreallocatedPathCount > 0) {
+        this->deletePaths(fFirstPreallocatedPathID, fPreallocatedPathCount);
+        fPreallocatedPathCount = 0;
     }
 
-    return name;
+    GL_CALL_RET(firstID, GenPaths(range));
+    if (firstID == 0) {
+        SkDebugf("Warning: Failed to allocate path\n");
+    }
+    return firstID;
 }
 
 void GrGLPathRendering::deletePaths(GrGLuint path, GrGLsizei range) {
-    if (range > 1) {
-        
-        
-        SkASSERT(nullptr == fPathNameAllocator.get() ||
-                 path + range <= fPathNameAllocator->firstName() ||
-                 path >= fPathNameAllocator->endName());
-        GL_CALL(DeletePaths(path, range));
-        return;
-    }
-
-    if (nullptr == fPathNameAllocator.get() ||
-        path < fPathNameAllocator->firstName() ||
-        path >= fPathNameAllocator->endName()) {
-        
-        
-        GL_CALL(DeletePaths(path, 1));
-        return;
-    }
-
-    
-    GL_CALL(PathCommands(path, 0, nullptr, 0, GR_GL_FLOAT, nullptr));
-    fPathNameAllocator->free(path);
+    GL_CALL(DeletePaths(path, range));
 }
 
 void GrGLPathRendering::flushPathStencilSettings(const GrStencilSettings& stencilSettings) {

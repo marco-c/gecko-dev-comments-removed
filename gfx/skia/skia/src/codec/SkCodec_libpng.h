@@ -19,7 +19,7 @@ class SkStream;
 
 class SkPngCodec : public SkCodec {
 public:
-    static bool IsPng(SkStream*);
+    static bool IsPng(const char*, size_t);
 
     
     static SkCodec* NewFromStream(SkStream*, SkPngChunkReader* = NULL);
@@ -32,7 +32,6 @@ protected:
     SkEncodedFormat onGetEncodedFormat() const override { return kPNG_SkEncodedFormat; }
     bool onRewind() override;
     uint32_t onGetFillValue(SkColorType colorType, SkAlphaType alphaType) const override;
-    bool onReallyHasAlpha() const final;
 
     
     Result initializeSwizzler(const SkImageInfo& requestedInfo, const Options&,
@@ -49,19 +48,6 @@ protected:
     SkSwizzler::SrcConfig srcConfig() const { return fSrcConfig; }
     int numberPasses() const { return fNumberPasses; }
 
-    enum AlphaState {
-        
-        
-        kUnknown_AlphaState,
-        
-        
-        kOpaque_AlphaState,
-        
-        kHasAlpha_AlphaState,
-    };
-
-    virtual AlphaState alphaInScanlineDecode() const = 0;
-
 private:
     SkAutoTUnref<SkPngChunkReader>  fPngChunkReader;
     png_structp                     fPng_ptr;
@@ -74,7 +60,6 @@ private:
     SkSwizzler::SrcConfig           fSrcConfig;
     const int                       fNumberPasses;
     int                             fBitDepth;
-    AlphaState                      fAlphaState;
 
     bool decodePalette(bool premultiply, int* ctableCount);
     void destroyReadStruct();

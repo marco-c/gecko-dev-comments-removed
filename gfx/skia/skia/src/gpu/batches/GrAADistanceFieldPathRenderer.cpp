@@ -142,13 +142,13 @@ public:
         
         uint32_t fGenID;
         SkStrokeRec fStroke;
+        GrColor fColor;
         bool fAntiAlias;
     };
 
-    static GrDrawBatch* Create(const Geometry& geometry, GrColor color, const SkMatrix& viewMatrix,
+    static GrDrawBatch* Create(const Geometry& geometry, const SkMatrix& viewMatrix,
                                GrBatchAtlas* atlas, PathCache* pathCache, PathDataList* pathList) {
-        return new AADistanceFieldPathBatch(geometry, color, viewMatrix, atlas, pathCache,
-                                            pathList);
+        return new AADistanceFieldPathBatch(geometry, viewMatrix, atlas, pathCache, pathList);
     }
 
     const char* name() const override { return "AADistanceFieldPathBatch"; }
@@ -156,7 +156,7 @@ public:
     void computePipelineOptimizations(GrInitInvariantOutput* color, 
                                       GrInitInvariantOutput* coverage,
                                       GrBatchToXPOverrides* overrides) const override {
-        color->setKnownFourComponents(fBatch.fColor);
+        color->setKnownFourComponents(fGeoData[0].fColor);
         coverage->setUnknownSingleComponent();
         overrides->fUsePLSDstRead = false;
     }
@@ -165,9 +165,9 @@ private:
     void initBatchTracker(const GrXPOverridesForBatch& overrides) override {
         
         if (!overrides.readsColor()) {
-            fBatch.fColor = GrColor_ILLEGAL;
+            fGeoData[0].fColor = GrColor_ILLEGAL;
         }
-        overrides.getOverrideColorIfSet(&fBatch.fColor);
+        overrides.getOverrideColorIfSet(&fGeoData[0].fColor);
 
         
         fBatch.fColorIgnored = !overrides.readsColor();
@@ -212,7 +212,7 @@ private:
 
         
         size_t vertexStride = dfProcessor->getVertexStride();
-        SkASSERT(vertexStride == 2 * sizeof(SkPoint));
+        SkASSERT(vertexStride == 2 * sizeof(SkPoint) + sizeof(GrColor));
 
         const GrVertexBuffer* vertexBuffer;
         void* vertices = target->makeVertexSpace(vertexStride,
@@ -278,12 +278,12 @@ private:
             
             intptr_t offset = reinterpret_cast<intptr_t>(vertices);
             offset += i * kVerticesPerQuad * vertexStride;
-            SkPoint* positions = reinterpret_cast<SkPoint*>(offset);
             this->writePathVertices(target,
                                     atlas,
                                     this->pipeline(),
                                     dfProcessor,
-                                    positions,
+                                    offset,
+                                    args.fColor,
                                     vertexStride,
                                     this->viewMatrix(),
                                     args.fPath,
@@ -296,11 +296,11 @@ private:
 
     SkSTArray<1, Geometry, true>* geoData() { return &fGeoData; }
 
-    AADistanceFieldPathBatch(const Geometry& geometry, GrColor color, const SkMatrix& viewMatrix,
+    AADistanceFieldPathBatch(const Geometry& geometry,
+                             const SkMatrix& viewMatrix,
                              GrBatchAtlas* atlas,
                              PathCache* pathCache, PathDataList* pathList)
         : INHERITED(ClassID()) {
-        fBatch.fColor = color;
         fBatch.fViewMatrix = viewMatrix;
         fGeoData.push_back(geometry);
 
@@ -342,9 +342,15 @@ private:
         SkIRect devPathBounds;
         scaledBounds.roundOut(&devPathBounds);
         
-        devPathBounds.outset(SkScalarCeilToInt(kAntiAliasPad), SkScalarCeilToInt(kAntiAliasPad));
+        const int intPad = SkScalarCeilToInt(kAntiAliasPad);
         
-        devPathBounds.offsetTo(0,0);
+        int width = devPathBounds.width();
+        int height = devPathBounds.height();
+        devPathBounds.fLeft = intPad;
+        devPathBounds.fTop = intPad;
+        devPathBounds.fRight = intPad + width;
+        devPathBounds.fBottom = intPad + height;
+        devPathBounds.outset(intPad, intPad);
 
         
         SkMatrix drawMatrix;
@@ -381,8 +387,8 @@ private:
 
         
         devPathBounds.outset(SK_DistanceFieldPad, SK_DistanceFieldPad);
-        int width = devPathBounds.width();
-        int height = devPathBounds.height();
+        width = devPathBounds.width();
+        height = devPathBounds.height();
         
         SkAutoSMalloc<1024> dfStorage(width * height * sizeof(unsigned char));
 
@@ -437,7 +443,8 @@ private:
                            GrBatchAtlas* atlas,
                            const GrPipeline* pipeline,
                            const GrGeometryProcessor* gp,
-                           SkPoint* positions,
+                           intptr_t offset,
+                           GrColor color,
                            size_t vertexStride,
                            const SkMatrix& viewMatrix,
                            const SkPath& path,
@@ -460,13 +467,21 @@ private:
         SkFixed tw = SkScalarToFixed(pathData->fBounds.width());
         SkFixed th = SkScalarToFixed(pathData->fBounds.height());
 
+        SkPoint* positions = reinterpret_cast<SkPoint*>(offset);
+
         
         
         SkRect r = SkRect::MakeXYWH(dx, dy, width, height);
         positions->setRectFan(r.left(), r.top(), r.right(), r.bottom(), vertexStride);
 
         
-        SkPoint* textureCoords = positions + 1;
+        for (int i = 0; i < kVerticesPerQuad; i++) {
+            GrColor* colorPtr = (GrColor*)(offset + sizeof(SkPoint) + i * vertexStride);
+            *colorPtr = color;
+        }
+
+        
+        SkPoint* textureCoords = (SkPoint*)(offset + sizeof(SkPoint) + sizeof(GrColor));
         textureCoords->setRectFan(SkFixedToFloat(texture->texturePriv().normalizeFixedX(tx)),
                                   SkFixedToFloat(texture->texturePriv().normalizeFixedY(ty)),
                                   SkFixedToFloat(texture->texturePriv().normalizeFixedX(tx + tw)),
@@ -485,7 +500,7 @@ private:
         flushInfo->fInstancesToFlush = 0;
     }
 
-    GrColor color() const { return fBatch.fColor; }
+    GrColor color() const { return fGeoData[0].fColor; }
     const SkMatrix& viewMatrix() const { return fBatch.fViewMatrix; }
     bool usesLocalCoords() const { return fBatch.fUsesLocalCoords; }
 
@@ -497,11 +512,6 @@ private:
         }
 
         
-        
-        if (this->color() != that->color()) {
-            return false;
-        }
-
         if (!this->viewMatrix().cheapEqualTo(that->viewMatrix())) {
             return false;
         }
@@ -512,7 +522,6 @@ private:
     }
 
     struct BatchTracker {
-        GrColor fColor;
         SkMatrix fViewMatrix;
         bool fUsesLocalCoords;
         bool fColorIgnored;
@@ -529,6 +538,8 @@ private:
 };
 
 bool GrAADistanceFieldPathRenderer::onDrawPath(const DrawPathArgs& args) {
+    GR_AUDIT_TRAIL_AUTO_FRAME(args.fTarget->getAuditTrail(),
+                              "GrAADistanceFieldPathRenderer::onDrawPath");
     
     if (args.fPath->isEmpty()) {
         return true;
@@ -551,13 +562,14 @@ bool GrAADistanceFieldPathRenderer::onDrawPath(const DrawPathArgs& args) {
     } else {
         args.fStroke->applyToPath(&geometry.fPath, *args.fPath);
     }
+    geometry.fColor = args.fColor;
     geometry.fAntiAlias = args.fAntiAlias;
     
     
     
     geometry.fGenID = args.fPath->getGenerationID();
  
-    SkAutoTUnref<GrDrawBatch> batch(AADistanceFieldPathBatch::Create(geometry, args.fColor,
+    SkAutoTUnref<GrDrawBatch> batch(AADistanceFieldPathBatch::Create(geometry,
                                                                      *args.fViewMatrix, fAtlas,
                                                                      &fPathCache, &fPathList));
     args.fTarget->drawBatch(*args.fPipelineBuilder, batch);
@@ -629,11 +641,12 @@ DRAW_BATCH_TEST_DEFINE(AADistanceFieldPathBatch) {
     GrColor color = GrRandomColor(random);
 
     AADistanceFieldPathBatch::Geometry geometry(GrTest::TestStrokeRec(random));
+    geometry.fColor = color;
     geometry.fPath = GrTest::TestPath(random);
     geometry.fAntiAlias = random->nextBool();
     geometry.fGenID = random->nextU();
 
-    return AADistanceFieldPathBatch::Create(geometry, color, viewMatrix,
+    return AADistanceFieldPathBatch::Create(geometry, viewMatrix,
                                             gTestStruct.fAtlas,
                                             &gTestStruct.fPathCache,
                                             &gTestStruct.fPathList);

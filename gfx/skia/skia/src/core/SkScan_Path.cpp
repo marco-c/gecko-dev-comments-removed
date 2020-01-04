@@ -450,8 +450,8 @@ void sk_fill_path(const SkPath& path, const SkIRect* clipRect, SkBlitter* blitte
 
     
 
-    start_y <<= shiftEdgesUp;
-    stop_y <<= shiftEdgesUp;
+    start_y = SkLeftShift(start_y, shiftEdgesUp);
+    stop_y = SkLeftShift(stop_y, shiftEdgesUp);
     if (clipRect && start_y < clipRect->fTop) {
         start_y = clipRect->fTop;
     }
@@ -559,6 +559,42 @@ static bool clip_to_limit(const SkRegion& orig, SkRegion* reduced) {
     return true;
 }
 
+
+
+
+
+
+static inline int round_down_to_int(SkScalar x) {
+    double xx = x;
+    xx += 0.5;
+    double floorXX = floor(xx);
+    return (int)floorXX - (xx == floorXX);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void round_asymmetric_to_int(const SkRect& src, SkIRect* dst) {
+    SkASSERT(dst);
+    dst->set(round_down_to_int(src.fLeft), round_down_to_int(src.fTop),
+             SkDScalarRoundToInt(src.fRight), SkDScalarRoundToInt(src.fBottom));
+}
+
 void SkScan::FillPath(const SkPath& path, const SkRegion& origClip,
                       SkBlitter* blitter) {
     if (origClip.isEmpty()) {
@@ -582,7 +618,7 @@ void SkScan::FillPath(const SkPath& path, const SkRegion& origClip,
     
     
     
-    path.getBounds().dround(&ir);
+    round_asymmetric_to_int(path.getBounds(), &ir);
     if (ir.isEmpty()) {
         if (path.isInverseFillType()) {
             blitter->blitRegion(*clipPtr);

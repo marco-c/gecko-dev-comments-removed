@@ -21,6 +21,8 @@ class SkPaint;
 
 
 
+
+
 class SK_API SkDrawFilter : public SkRefCnt {
 public:
     enum Type {

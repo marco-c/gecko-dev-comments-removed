@@ -5,18 +5,16 @@
 
 
 
-
 #include "SkMathPriv.h"
 
 #define SCALE_FILTER_NAME       MAKENAME(_filter_DX_shaderproc)
 
 
 
-void SCALE_FILTER_NAME(const SkBitmapProcState& s, int x, int y,
-                       DSTTYPE* SK_RESTRICT colors, int count);
+void SCALE_FILTER_NAME(const void* sIn, int x, int y, SkPMColor* SK_RESTRICT colors, int count);
 
-void SCALE_FILTER_NAME(const SkBitmapProcState& s, int x, int y,
-                       DSTTYPE* SK_RESTRICT colors, int count) {
+void SCALE_FILTER_NAME(const void* sIn, int x, int y, SkPMColor* SK_RESTRICT colors, int count) {
+    const SkBitmapProcState& s = *static_cast<const SkBitmapProcState*>(sIn);
     SkASSERT((s.fInvType & ~(SkMatrix::kTranslate_Mask |
                              SkMatrix::kScale_Mask)) == 0);
     SkASSERT(s.fInvKy == 0);
@@ -84,7 +82,6 @@ void SCALE_FILTER_NAME(const SkBitmapProcState& s, int x, int y,
 #undef TILEY_LOW_BITS
 #undef MAKENAME
 #undef SRCTYPE
-#undef DSTTYPE
 #undef CHECKSTATE
 #undef SRC_TO_FILTER
 #undef FILTER_TO_DST

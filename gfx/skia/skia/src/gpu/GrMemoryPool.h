@@ -58,6 +58,9 @@ private:
     void validate();
 
     struct BlockHeader {
+#ifdef SK_DEBUG
+        uint32_t     fBlockSentinal;  
+#endif
         BlockHeader* fNext;      
         BlockHeader* fPrev;
         int          fLiveCount; 
@@ -68,11 +71,21 @@ private:
         size_t       fSize;      
     };
 
+    static const uint32_t kAssignedMarker = 0xCDCDCDCD;
+    static const uint32_t kFreedMarker    = 0xEFEFEFEF;
+
+    struct AllocHeader {
+#ifdef SK_DEBUG
+        uint32_t fSentinal;      
+#endif
+        BlockHeader* fHeader;    
+    };
+
     enum {
         
         kAlignment    = 8,
         kHeaderSize   = GR_CT_ALIGN_UP(sizeof(BlockHeader), kAlignment),
-        kPerAllocPad  = GR_CT_ALIGN_UP(sizeof(BlockHeader*), kAlignment),
+        kPerAllocPad  = GR_CT_ALIGN_UP(sizeof(AllocHeader), kAlignment),
     };
     size_t                            fSize;
     size_t                            fPreallocSize;

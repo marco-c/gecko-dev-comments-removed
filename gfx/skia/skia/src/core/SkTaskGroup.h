@@ -29,70 +29,20 @@ public:
     
     void add(SkRunnable*);
 
-    template <typename T>
-    void add(void (*fn)(T*), T* arg) { this->add((void_fn)fn, (void*)arg); }
+    void add(std::function<void(void)> fn);
 
     
-    
-    template <typename T>
-    void batch(void (*fn)(T*), T* args, int N) { this->batch((void_fn)fn, args, N, sizeof(T)); }
+    void batch(int N, std::function<void(int)> fn);
 
     
     
     void wait();
 
 private:
-    typedef void(*void_fn)(void*);
-
-    void add  (void_fn, void* arg);
-    void batch(void_fn, void* args, int N, size_t stride);
-
     SkAtomic<int32_t> fPending;
 };
 
 
 int sk_num_cores();
-
-int sk_parallel_for_thread_count();
-
-
-template <typename Func>
-void sk_parallel_for(int end, const Func& f) {
-    if (end <= 0) { return; }
-
-    struct Chunk {
-        const Func* f;
-        int start, end;
-    };
-
-    
-    int max_chunks  = sk_num_cores() * 2,
-        stride      = (end + max_chunks - 1 ) / max_chunks,
-        nchunks     = (end + stride - 1 ) / stride;
-    SkASSERT(nchunks <= max_chunks);
-
-#if defined(GOOGLE3)
-    
-    SkAutoSTMalloc<512, Chunk> chunks(nchunks);
-#else
-    
-    SkAutoSTMalloc<1024, Chunk> chunks(nchunks);
-#endif
-
-    for (int i = 0; i < nchunks; i++) {
-        Chunk& c = chunks[i];
-        c.f     = &f;
-        c.start = i * stride;
-        c.end   = SkTMin(c.start + stride, end);
-        SkASSERT(c.start < c.end);  
-    }
-
-    void(*run_chunk)(Chunk*) = [](Chunk* c) {
-        for (int i = c->start; i < c->end; i++) {
-            (*c->f)(i);
-        }
-    };
-    SkTaskGroup().batch(run_chunk, chunks.get(), nchunks);
-}
 
 #endif

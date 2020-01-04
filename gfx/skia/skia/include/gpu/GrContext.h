@@ -15,9 +15,11 @@
 #include "GrRenderTarget.h"
 #include "GrTextureProvider.h"
 #include "SkMatrix.h"
-#include "../private/SkMutex.h"
 #include "SkPathEffect.h"
 #include "SkTypes.h"
+#include "../private/GrAuditTrail.h"
+#include "../private/GrSingleOwner.h"
+#include "../private/SkMutex.h"
 
 struct GrBatchAtlasConfig;
 class GrBatchFontCache;
@@ -355,8 +357,12 @@ public:
     void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
 
     
-    void drawFontCache(const SkRect& rect, GrMaskFormat format, const SkPaint& paint,
-                       GrRenderTarget* target);
+    GrTexture* getFontAtlasTexture(GrMaskFormat format);
+
+    GrAuditTrail* getAuditTrail() { return &fAuditTrail; }
+
+    
+    SkDEBUGCODE(GrSingleOwner* debugSingleOwner() const { return &fSingleOwner; } )
 
 private:
     GrGpu*                          fGpu;
@@ -391,6 +397,11 @@ private:
     SkMutex                         fReadPixelsMutex;
     SkMutex                         fTestPMConversionsMutex;
 
+    
+    
+    
+    mutable GrSingleOwner fSingleOwner;
+
     struct CleanUpData {
         PFCleanUpFunc fFunc;
         void*         fInfo;
@@ -401,6 +412,8 @@ private:
     const uint32_t                  fUniqueID;
 
     SkAutoTDelete<GrDrawingManager> fDrawingManager;
+
+    GrAuditTrail                    fAuditTrail;
 
     
     friend class GrClipMaskManager; 

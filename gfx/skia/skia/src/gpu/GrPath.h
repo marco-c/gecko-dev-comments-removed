@@ -10,6 +10,7 @@
 
 #include "GrGpuResource.h"
 #include "GrStrokeInfo.h"
+#include "GrPathRendering.h"
 #include "SkPath.h"
 #include "SkRect.h"
 
@@ -17,12 +18,11 @@ class GrPath : public GrGpuResource {
 public:
     
 
-    
-
 
     GrPath(GrGpu* gpu, const SkPath& skPath, const GrStrokeInfo& stroke)
         : INHERITED(gpu, kCached_LifeCycle)
-        , fBounds(skPath.getBounds())
+        , fBounds(SkRect::MakeEmpty())
+        , fFillType(GrPathRendering::kWinding_FillType)
 #ifdef SK_DEBUG
         , fSkPath(skPath)
         , fStroke(stroke)
@@ -35,12 +35,15 @@ public:
 
     const SkRect& getBounds() const { return fBounds; }
 
+    GrPathRendering::FillType getFillType() const { return fFillType; }
 #ifdef SK_DEBUG
     bool isEqualTo(const SkPath& path, const GrStrokeInfo& stroke) const;
 #endif
 
 protected:
+    
     SkRect fBounds;
+    GrPathRendering::FillType fFillType;
 #ifdef SK_DEBUG
     SkPath fSkPath;
     GrStrokeInfo fStroke;

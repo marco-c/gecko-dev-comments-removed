@@ -5,8 +5,6 @@
 
 
 
-
-
 #include "SkOperandInterpolator.h"
 #include "SkScript.h"
 
@@ -60,7 +58,7 @@ SkInterpolatorBase::Result SkOperandInterpolator::timeToValues(SkMSec time, SkOp
 {
     SkScalar T;
     int index;
-    SkBool exact;
+    bool exact;
     Result result = timeToT(time, &T, &index, &exact);
     if (values)
     {

@@ -108,7 +108,7 @@ int SkIntersections::intersect(const SkDLine& a, const SkDLine& b) {
     double ayBxLen = ayLen * bxLen;
     
     
-    bool unparallel = fAllowNear ? NotAlmostEqualUlps(axByLen, ayBxLen)
+    bool unparallel = fAllowNear ? NotAlmostEqualUlps_Pin(axByLen, ayBxLen)
             : NotAlmostDequalUlps(axByLen, ayBxLen);
     if (unparallel && fUsed == 0) {
         double ab0y = a[0].fY - b[0].fY;

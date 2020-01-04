@@ -177,6 +177,11 @@ struct SaveLayerDrawRestoreNooper {
     typedef Pattern<Is<SaveLayer>, IsDraw, Is<Restore>> Match;
 
     bool onMatch(SkRecord* record, Match* match, int begin, int end) {
+        if (match->first<SaveLayer>()->backdrop) {
+            
+            return false;
+        }
+
         
         SkPaint* layerPaint = match->first<SaveLayer>()->paint;
         if (nullptr == layerPaint) {
@@ -224,6 +229,11 @@ struct SvgOpacityAndFilterLayerMergePass {
                     Is<Restore>, Is<Restore>, Is<Restore>> Match;
 
     bool onMatch(SkRecord* record, Match* match, int begin, int end) {
+        if (match->first<SaveLayer>()->backdrop) {
+            
+            return false;
+        }
+
         SkPaint* opacityPaint = match->first<SaveLayer>()->paint;
         if (nullptr == opacityPaint) {
             

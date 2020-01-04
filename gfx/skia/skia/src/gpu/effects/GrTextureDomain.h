@@ -16,6 +16,7 @@ class GrGLProgramBuilder;
 class GrGLSLShaderBuilder;
 class GrInvariantOutput;
 class GrGLSLTextureSampler;
+class GrGLSLUniformHandler;
 struct SkRect;
 
 
@@ -114,6 +115,7 @@ public:
 
 
         void sampleTexture(GrGLSLShaderBuilder* builder,
+                           GrGLSLUniformHandler* uniformHandler,
                            const GrGLSLCaps* glslCaps,
                            const GrTextureDomain& textureDomain,
                            const char* outColor,

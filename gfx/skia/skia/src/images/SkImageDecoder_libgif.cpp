@@ -378,8 +378,8 @@ SkImageDecoder::Result SkGIFImageDecoder::onDecode(SkStream* sk_stream, SkBitmap
 
             SkAutoLockPixels alp(*bm);
 
-            SkAutoMalloc storage(innerWidth);
-            uint8_t* scanline = (uint8_t*) storage.get();
+            SkAutoTMalloc<uint8_t> storage(innerWidth);
+            uint8_t* scanline = storage.get();
 
             
             

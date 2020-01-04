@@ -41,42 +41,6 @@ public:
 
 
 
-    typedef uint16_t ResultAlpha;
-    static const ResultAlpha kOpaque_ResultAlpha = 0xFFFF;
-    static const ResultAlpha kTransparent_ResultAlpha = 0x0000;
-
-    
-
-
-
-
-
-    static bool IsTransparent(ResultAlpha r) {
-        return kTransparent_ResultAlpha == r;
-    }
-
-    
-
-
-
-
-
-    static bool IsOpaque(ResultAlpha r) {
-        return kOpaque_ResultAlpha == r;
-    }
-
-    
-
-
-
-
-    static ResultAlpha GetResult(uint8_t zeroAlpha, uint8_t maxAlpha);
-
-    
-
-
-
-
     static int BitsPerPixel(SrcConfig sc) {
         switch (sc) {
             case kBit:
@@ -150,9 +114,7 @@ public:
 
 
 
-
-
-    ResultAlpha swizzle(void* dst, const uint8_t* SK_RESTRICT src);
+    void swizzle(void* dst, const uint8_t* SK_RESTRICT src);
 
     
 
@@ -162,6 +124,16 @@ public:
         const SkImageInfo fillInfo = info.makeWH(fAllocatedWidth, info.height());
         SkSampler::Fill(fillInfo, dst, rowBytes, colorOrIndex, zeroInit);
     }
+
+    
+
+
+
+
+
+
+
+    int sampleX() const { return fSampleX; }
 
 private:
 
@@ -177,12 +149,21 @@ private:
 
 
 
-    typedef ResultAlpha (*RowProc)(void* SK_RESTRICT dstRow,
-                                   const uint8_t* SK_RESTRICT src,
-                                   int dstWidth, int bpp, int deltaSrc, int offset,
-                                   const SkPMColor ctable[]);
+    typedef void (*RowProc)(void* SK_RESTRICT dstRow,
+                            const uint8_t* SK_RESTRICT src,
+                            int dstWidth, int bpp, int deltaSrc, int offset,
+                            const SkPMColor ctable[]);
 
-    const RowProc       fRowProc;
+    template <RowProc Proc>
+    static void SkipLeading8888ZerosThen(void* SK_RESTRICT dstRow,
+                                         const uint8_t* SK_RESTRICT src,
+                                         int dstWidth, int bpp, int deltaSrc, int offset,
+                                         const SkPMColor ctable[]);
+
+    
+    RowProc             fFastProc;
+    
+    const RowProc       fProc;
     const SkPMColor*    fColorTable;      
 
     
@@ -269,8 +250,8 @@ private:
                                           
     const int           fDstBPP;          
 
-    SkSwizzler(RowProc proc, const SkPMColor* ctable, int srcOffset, int srcWidth, int dstOffset,
-            int dstWidth, int srcBPP, int dstBPP);
+    SkSwizzler(RowProc fastProc, RowProc proc, const SkPMColor* ctable, int srcOffset,
+            int srcWidth, int dstOffset, int dstWidth, int srcBPP, int dstBPP);
 
     int onSetSampleX(int) override;
 

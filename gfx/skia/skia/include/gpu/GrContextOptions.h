@@ -21,6 +21,8 @@ struct GrContextOptions {
         , fUseDrawInsteadOfPartialRenderTargetWrite(false)
         , fImmediateMode(false)
         , fClipBatchToBounds(false)
+        , fDrawBatchBounds(false)
+        , fMaxBatchLookback(-1)
         , fUseShaderSwizzling(false) {}
 
     
@@ -56,6 +58,14 @@ struct GrContextOptions {
     
 
     bool fClipBatchToBounds;
+
+    
+
+
+    bool fDrawBatchBounds;
+
+    
+    int fMaxBatchLookback;
 
     
 

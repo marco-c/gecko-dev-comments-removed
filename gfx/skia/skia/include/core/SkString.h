@@ -267,7 +267,22 @@ template <> inline void SkTSwap(SkString& a, SkString& b) {
     a.swap(b);
 }
 
+enum SkStrSplitMode {
+    
+    
+    kStrict_SkStrSplitMode,
 
-void SkStrSplit(const char* str, const char* delimiters, SkTArray<SkString>* out);
+    
+    
+    
+    kCoalesce_SkStrSplitMode
+};
+
+
+void SkStrSplit(const char* str, const char* delimiters, SkStrSplitMode splitMode,
+                SkTArray<SkString>* out);
+inline void SkStrSplit(const char* str, const char* delimiters, SkTArray<SkString>* out) {
+    SkStrSplit(str, delimiters, kCoalesce_SkStrSplitMode, out);
+}
 
 #endif

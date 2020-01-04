@@ -18,6 +18,7 @@ SkBitmapRegionCanvas::SkBitmapRegionCanvas(SkCodec* decoder)
 bool SkBitmapRegionCanvas::decodeRegion(SkBitmap* bitmap, SkBRDAllocator* allocator,
         const SkIRect& desiredSubset, int sampleSize, SkColorType dstColorType,
         bool requireUnpremul) {
+
     
     if (kIndex_8_SkColorType == dstColorType || kGray_8_SkColorType == dstColorType) {
         SkCodecPrintf("Error: Color type not supported.\n");
@@ -33,8 +34,6 @@ bool SkBitmapRegionCanvas::decodeRegion(SkBitmap* bitmap, SkBRDAllocator* alloca
     if (kUnpremul_SkAlphaType == dstAlphaType) {
         dstAlphaType = kPremul_SkAlphaType;
     }
-
-    
 
     
     if (sampleSize < 1) {

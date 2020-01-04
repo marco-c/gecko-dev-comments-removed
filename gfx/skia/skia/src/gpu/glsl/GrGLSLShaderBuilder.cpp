@@ -5,69 +5,12 @@
 
 
 
+#include "GrSwizzle.h"
 #include "glsl/GrGLSLShaderBuilder.h"
 #include "glsl/GrGLSLCaps.h"
 #include "glsl/GrGLSLShaderVar.h"
 #include "glsl/GrGLSLTextureSampler.h"
 #include "glsl/GrGLSLProgramBuilder.h"
-
-static void map_swizzle(const char* swizzleMap, const char* swizzle, char* mangledSwizzle) {
-    int i;
-    for (i = 0; '\0' != swizzle[i]; ++i) {
-        switch (swizzle[i]) {
-            case 'r':
-                mangledSwizzle[i] = swizzleMap[0];
-                break;
-            case 'g':
-                mangledSwizzle[i] = swizzleMap[1];
-                break;
-            case 'b':
-                mangledSwizzle[i] = swizzleMap[2];
-                break;
-            case 'a':
-                mangledSwizzle[i] = swizzleMap[3];
-                break;
-            default:
-                SkFAIL("Unsupported swizzle");
-        }
-    }
-    mangledSwizzle[i] ='\0';
-}
-
-static void append_texture_lookup(SkString* out,
-                                  const GrGLSLCaps* glslCaps,
-                                  const char* samplerName,
-                                  const char* coordName,
-                                  GrPixelConfig config,
-                                  const char* swizzle,
-                                  GrSLType varyingType = kVec2f_GrSLType) {
-    SkASSERT(coordName);
-
-    out->appendf("%s(%s, %s)",
-                 GrGLSLTexture2DFunctionName(varyingType, glslCaps->generation()),
-                 samplerName,
-                 coordName);
-
-    char mangledSwizzle[5];
-
-    
-    
-    if (glslCaps->mustSwizzleInShader()) {
-        const char* swizzleMap = glslCaps->getSwizzleMap(config);
-        
-        
-        if (memcmp(swizzleMap, "rgba", 4)) {
-            
-            map_swizzle(swizzleMap, swizzle, mangledSwizzle);
-            swizzle = mangledSwizzle;
-        }
-    }
-
-    
-    if (memcmp(swizzle, "rgba", 4)) {
-        out->appendf(".%s", swizzle);
-    }
-}
 
 GrGLSLShaderBuilder::GrGLSLShaderBuilder(GrGLSLProgramBuilder* program)
     : fProgramBuilder(program)
@@ -117,13 +60,22 @@ void GrGLSLShaderBuilder::appendTextureLookup(SkString* out,
                                               const GrGLSLTextureSampler& sampler,
                                               const char* coordName,
                                               GrSLType varyingType) const {
-    append_texture_lookup(out,
-                          fProgramBuilder->glslCaps(),
-                          fProgramBuilder->getUniformCStr(sampler.fSamplerUniform),
-                          coordName,
-                          sampler.config(),
-                          sampler.swizzle(),
-                          varyingType);
+    const GrGLSLCaps* glslCaps = fProgramBuilder->glslCaps();
+    GrGLSLUniformHandler* uniformHandler = fProgramBuilder->uniformHandler();
+    GrSLType samplerType = uniformHandler->getUniformVariable(sampler.fSamplerUniform).getType();
+    out->appendf("%s(%s, %s)",
+                 GrGLSLTexture2DFunctionName(varyingType, samplerType, glslCaps->generation()),
+                 uniformHandler->getUniformCStr(sampler.fSamplerUniform),
+                 coordName);
+
+    
+    
+    
+    const GrSwizzle& configSwizzle = glslCaps->configTextureSwizzle(sampler.config());
+
+    if (configSwizzle != GrSwizzle::RGBA()) {
+        out->appendf(".%s", configSwizzle.c_str());
+    }
 }
 
 void GrGLSLShaderBuilder::appendTextureLookup(const GrGLSLTextureSampler& sampler,
@@ -187,7 +139,7 @@ void GrGLSLShaderBuilder::finalize(uint32_t visibility) {
     this->versionDecl() = fProgramBuilder->glslCaps()->versionDeclString();
     this->compileAndAppendLayoutQualifiers();
     SkASSERT(visibility);
-    fProgramBuilder->appendUniformDecls((GrGLSLProgramBuilder::ShaderVisibility) visibility,
+    fProgramBuilder->appendUniformDecls((GrGLSLUniformHandler::ShaderVisibility) visibility,
                                         &this->uniforms());
     this->appendDecls(fInputs, &this->inputs());
     this->appendDecls(fOutputs, &this->outputs());

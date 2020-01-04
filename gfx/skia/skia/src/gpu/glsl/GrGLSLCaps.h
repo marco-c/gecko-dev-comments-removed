@@ -11,6 +11,7 @@
 
 #include "GrCaps.h"
 #include "GrGLSL.h"
+#include "GrSwizzle.h"
 
 class GrGLSLCaps : public GrShaderCaps {
 public:
@@ -72,8 +73,6 @@ public:
     
     bool canUseAnyFunctionInShader() const { return fCanUseAnyFunctionInShader; }
 
-    bool forceHighPrecisionNDSTransform() const { return fForceHighPrecisionNDSTransform; }
-
     bool canUseMinAndAbsTogether() const { return fCanUseMinAndAbsTogether; }
 
     bool mustForceNegatedAtanParamToFloat() const { return fMustForceNegatedAtanParamToFloat; }
@@ -106,14 +105,19 @@ public:
         return fExternalTextureExtensionString;
     }
 
-    bool mustSwizzleInShader() const { return fMustSwizzleInShader; }
-
     
 
 
 
 
-    const char* getSwizzleMap(GrPixelConfig config) const { return fConfigSwizzle[config]; }
+    const GrSwizzle& configTextureSwizzle(GrPixelConfig config) const {
+        return fConfigTextureSwizzle[config];
+    }
+
+    
+    const GrSwizzle& configOutputSwizzle(GrPixelConfig config) const {
+        return fConfigOutputSwizzle[config];
+    }
 
     GrGLSLGeneration generation() const { return fGLSLGeneration; }
 
@@ -133,7 +137,6 @@ private:
     bool fBindlessTextureSupport : 1;
     bool fUsesPrecisionModifiers : 1;
     bool fCanUseAnyFunctionInShader : 1;
-    bool fForceHighPrecisionNDSTransform : 1;
 
     
     bool fCanUseMinAndAbsTogether : 1;
@@ -151,13 +154,13 @@ private:
 
     AdvBlendEqInteraction fAdvBlendEqInteraction;
 
-    bool        fMustSwizzleInShader;
-    const char* fConfigSwizzle[kGrPixelConfigCnt];
+    GrSwizzle fConfigTextureSwizzle[kGrPixelConfigCnt];
+    GrSwizzle fConfigOutputSwizzle[kGrPixelConfigCnt];
 
     friend class GrGLCaps;  
+    friend class GrVkCaps;
 
     typedef GrShaderCaps INHERITED;
 };
-
 
 #endif

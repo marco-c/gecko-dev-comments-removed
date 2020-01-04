@@ -16,6 +16,7 @@
 #include "SkTime.h"
 
 class SkCanvas;
+class SkPixelSerializer;
 class SkWStream;
 
 
@@ -56,6 +57,24 @@ public:
 
     static SkDocument* CreatePDF(SkWStream*,
                                  SkScalar dpi = SK_ScalarDefaultRasterDPI);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static SkDocument* CreatePDF(SkWStream*,
+                                 SkScalar dpi,
+                                 SkPixelSerializer* jpegEncoder);
 
     
 

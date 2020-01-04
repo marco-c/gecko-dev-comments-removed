@@ -75,9 +75,15 @@ private:
     int decodeRows(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes,
             const Options& opts) override;
 
-    Result decodeIcoMask(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes);
+    
+
+
+
+
+    void decodeIcoMask(SkStream* stream, const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes);
 
     SkAutoTUnref<SkColorTable>          fColorTable;     
+    
     const uint32_t                      fNumColors;
     const uint32_t                      fBytesPerColor;
     const uint32_t                      fOffset;
@@ -85,6 +91,7 @@ private:
     const size_t                        fSrcRowBytes;
     SkAutoTDeleteArray<uint8_t>         fSrcBuffer;
     const bool                          fInIco;
+    const size_t                        fAndMaskRowBytes; 
 
     typedef SkBmpCodec INHERITED;
 };

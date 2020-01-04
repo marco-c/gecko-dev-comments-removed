@@ -36,6 +36,31 @@ public:
 
 
 
+    static size_t MinBufferedBytesNeeded();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -256,18 +281,6 @@ public:
 
 
 
-
-
-
-
-    bool reallyHasAlpha() const {
-        return this->onReallyHasAlpha();
-    }
-
-    
-
-
-
     
 
 
@@ -401,6 +414,8 @@ public:
 
 
 
+
+
     SkScanlineOrder getScanlineOrder() const { return this->onGetScanlineOrder(); }
 
     
@@ -458,8 +473,6 @@ protected:
         
         return false;
     }
-
-    virtual bool onReallyHasAlpha() const { return false; }
 
     
 
@@ -531,11 +544,19 @@ protected:
     
 
 
-    void updateNextScanline(int newY) { fCurrScanline = newY; }
+    void updateCurrScanline(int newY) { fCurrScanline = newY; }
 
     const SkImageInfo& dstInfo() const { return fDstInfo; }
 
     const SkCodec::Options& options() const { return fOptions; }
+
+    
+
+
+
+
+
+    int currScanline() const { return fCurrScanline; }
 
     virtual int onOutputScanline(int inputScanline) const;
 
@@ -610,5 +631,6 @@ private:
     virtual SkSampler* getSampler(bool ) { return nullptr; }
 
     friend class SkSampledCodec;
+    friend class SkIcoCodec;
 };
 #endif 

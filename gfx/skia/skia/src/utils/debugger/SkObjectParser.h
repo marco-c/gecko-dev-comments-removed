@@ -113,7 +113,7 @@ public:
 
 
 
-    static SkString* SaveFlagsToString(SkCanvas::SaveFlags flags);
+    static SkString* SaveLayerFlagsToString(uint32_t saveLayerFlags);
 
     
 

@@ -15,6 +15,7 @@
 #include "SkPaint.h"
 #include "../gpu/GrColor.h"
 
+class SkColorFilter;
 class SkPath;
 class SkPicture;
 class SkXfermode;
@@ -72,31 +73,14 @@ public:
 
     enum Flags {
         
-        kOpaqueAlpha_Flag  = 0x01,
-
-        
-        kHasSpan16_Flag = 0x02,
+        kOpaqueAlpha_Flag = 1 << 0,
 
         
 
 
 
 
-        kIntrinsicly16_Flag = 0x04,
-
-        
-
-
-
-
-        kConstInY32_Flag = 0x08,
-
-        
-
-
-
-
-        kConstInY16_Flag = 0x10
+        kConstInY32_Flag = 1 << 1,
     };
 
     
@@ -140,23 +124,15 @@ public:
 
 
 
-        virtual uint8_t getSpan16Alpha() const { return fPaintAlpha; }
-
-        
-
-
-
 
         virtual void shadeSpan(int x, int y, SkPMColor[], int count) = 0;
 
-        typedef void (*ShadeProc)(void* ctx, int x, int y, SkPMColor[], int count);
-        virtual ShadeProc asAShadeProc(void** ctx);
-
         
 
 
 
-        virtual void shadeSpan16(int x, int y, uint16_t[], int count);
+        typedef void (*ShadeProc)(const void* ctx, int x, int y, SkPMColor[], int count);
+        virtual ShadeProc asAShadeProc(void** ctx);
 
         
 
@@ -164,14 +140,6 @@ public:
 
 
         virtual void shadeSpanAlpha(int x, int y, uint8_t alpha[], int count);
-
-        
-
-
-
-        bool canCallShadeSpan16() {
-            return SkShader::CanCallShadeSpan16(this->getFlags());
-        }
 
         
         virtual void set3DMask(const SkMask*) {}
@@ -214,13 +182,6 @@ public:
 
 
     virtual size_t contextSize() const;
-
-    
-
-
-    static bool CanCallShadeSpan16(uint32_t flags) {
-        return (flags & kHasSpan16_Flag) != 0;
-    }
 
     
 
@@ -347,6 +308,21 @@ public:
     
 
 
+
+    SkShader* newWithLocalMatrix(const SkMatrix&) const;
+
+    
+
+
+
+    SkShader* newWithColorFilter(SkColorFilter*) const;
+    
+    
+    
+    
+    
+
+
     static SkShader* CreateEmptyShader();
 
     
@@ -393,14 +369,6 @@ public:
                                          TileMode tmx, TileMode tmy,
                                          const SkMatrix* localMatrix,
                                          const SkRect* tile);
-
-    
-
-
-
-
-
-    static SkShader* CreateLocalMatrixShader(SkShader* proxy, const SkMatrix& localMatrix);
 
     
 

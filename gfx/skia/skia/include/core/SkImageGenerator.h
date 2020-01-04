@@ -22,6 +22,12 @@ class SkMatrix;
 class SkPaint;
 class SkPicture;
 
+#ifdef SK_SUPPORT_LEGACY_REFENCODEDDATA_NOCTX
+    #define SK_REFENCODEDDATA_CTXPARAM
+#else
+    #define SK_REFENCODEDDATA_CTXPARAM  GrContext* ctx
+#endif
+
 
 
 
@@ -69,7 +75,15 @@ public:
 
 
 
-    SkData* refEncodedData() { return this->onRefEncodedData(); }
+
+
+    SkData* refEncodedData(GrContext* ctx = nullptr) {
+#ifdef SK_SUPPORT_LEGACY_REFENCODEDDATA_NOCTX
+        return this->onRefEncodedData();
+#else
+        return this->onRefEncodedData(ctx);
+#endif
+    }
 
     
 
@@ -230,7 +244,7 @@ public:
 protected:
     SkImageGenerator(const SkImageInfo& info);
 
-    virtual SkData* onRefEncodedData();
+    virtual SkData* onRefEncodedData(SK_REFENCODEDDATA_CTXPARAM);
 
     virtual bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
                              SkPMColor ctable[], int* ctableCount);

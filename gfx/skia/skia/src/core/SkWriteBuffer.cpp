@@ -200,11 +200,8 @@ void SkWriteBuffer::writeBitmap(const SkBitmap& bitmap) {
         
         SkAutoPixmapUnlock result;
         if (fPixelSerializer && bitmap.requestLock(&result)) {
-            const SkPixmap& pmap = result.pixmap();
             SkASSERT(nullptr == fBitmapHeap);
-            SkAutoDataUnref data(fPixelSerializer->encodePixels(pmap.info(),
-                                                                pmap.addr(),
-                                                                pmap.rowBytes()));
+            SkAutoDataUnref data(fPixelSerializer->encode(result.pixmap()));
             if (data.get() != nullptr) {
                 
                 

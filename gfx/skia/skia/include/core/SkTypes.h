@@ -29,6 +29,28 @@
 
 
 
+
+
+
+
+
+
+
+
+static inline void* sk_careful_memcpy(void* dst, const void* src, size_t len) {
+    
+    
+    if (len) {
+        memcpy(dst,src,len);
+    }
+    return dst;
+}
+
+
+
+
+
+
 #define SKIA_VERSION_MAJOR  1
 #define SKIA_VERSION_MINOR  0
 #define SKIA_VERSION_PATCH  0
@@ -78,7 +100,10 @@ SK_API extern void* sk_calloc_throw(size_t size);
 
 
 static inline void sk_bzero(void* buffer, size_t size) {
-    memset(buffer, 0, size);
+    
+    if (size) {
+        memset(buffer, 0, size);
+    }
 }
 
 
@@ -225,12 +250,6 @@ typedef unsigned U16CPU;
 
 
 
-
-typedef int SkBool;
-
-
-
-
 typedef uint8_t SkBool8;
 
 #ifdef SK_DEBUG
@@ -257,7 +276,7 @@ typedef uint8_t SkBool8;
 
 
 
-#define SkToBool(cond)  ((cond) != 0)
+#define SkToBool(cond)  (!!(cond))
 
 #define SK_MaxS16   32767
 #define SK_MinS16   -32767
@@ -279,6 +298,14 @@ static inline bool SkIsS16(long x) {
 
 static inline bool SkIsU16(long x) {
     return (uint16_t)x == x;
+}
+
+static inline int32_t SkLeftShift(int32_t value, int32_t shift) {
+    return (int32_t) ((uint32_t) value << shift);
+}
+
+static inline int64_t SkLeftShift(int64_t value, int32_t shift) {
+    return (int64_t) ((uint64_t) value << shift);
 }
 
 
@@ -406,17 +433,6 @@ static inline int32_t SkFastMin32(int32_t value, int32_t max) {
 
 template <typename T> static inline const T& SkTPin(const T& value, const T& min, const T& max) {
     return SkTMax(SkTMin(value, max), min);
-}
-
-static inline uint32_t SkSetClearShift(uint32_t bits, bool cond,
-                                       unsigned shift) {
-    SkASSERT((int)cond == 0 || (int)cond == 1);
-    return (bits & ~(1 << shift)) | ((int)cond << shift);
-}
-
-static inline uint32_t SkSetClearMask(uint32_t bits, bool cond,
-                                      uint32_t mask) {
-    return cond ? bits | mask : bits & ~mask;
 }
 
 

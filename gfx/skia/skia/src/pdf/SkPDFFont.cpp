@@ -24,14 +24,13 @@
 #include "SkTypes.h"
 #include "SkUtils.h"
 
-#if defined (GOOGLE3)
-    #if !defined (SK_BUILD_FOR_ANDROID)
+#if defined (SK_SFNTLY_SUBSETTER)
+    #if defined (GOOGLE3)
         
         #include "typography/font/sfntly/src/sample/chromium/font_subsetter.h"
-        #define SK_SFNTLY_SUBSETTER
+    #else
+        #include SK_SFNTLY_SUBSETTER
     #endif
-#elif defined (SK_SFNTLY_SUBSETTER)
-    #include SK_SFNTLY_SUBSETTER
 #endif
 
 

@@ -50,7 +50,25 @@ public:
     
 
 
-    SkEncodedFormat getEncodedFormat() const { return this->onGetEncodedFormat(); }
+    SkEncodedFormat getEncodedFormat() const { return fCodec->getEncodedFormat(); }
+
+    
+
+
+
+
+
+
+    SkColorType computeOutputColorType(SkColorType requestedColorType);
+
+    
+
+
+
+
+
+
+    SkAlphaType computeOutputAlphaType(bool requestedUnpremul);
 
     
 
@@ -210,9 +228,9 @@ public:
 
 protected:
 
-    SkAndroidCodec(const SkImageInfo&);
+    SkAndroidCodec(SkCodec*);
 
-    virtual SkEncodedFormat onGetEncodedFormat() const = 0;
+    SkCodec* codec() const { return fCodec.get(); }
 
     virtual SkISize onGetSampledDimensions(int sampleSize) const = 0;
 
@@ -226,5 +244,7 @@ private:
     
     
     const SkImageInfo& fInfo;
+
+    SkAutoTDelete<SkCodec> fCodec;
 };
 #endif 

@@ -90,6 +90,7 @@ private:
     SkSampler* getSampler(bool createIfNecessary) override;
 
     SkAutoTUnref<SkColorTable>          fColorTable;    
+    
     const uint32_t                      fNumColors;
     const uint32_t                      fBytesPerColor;
     const uint32_t                      fOffset;

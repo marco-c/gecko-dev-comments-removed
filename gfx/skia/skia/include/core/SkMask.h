@@ -17,6 +17,8 @@
 
 
 struct SkMask {
+    SkMask() : fImage(nullptr) {}
+
     enum Format {
         kBW_Format, 
         kA8_Format, 

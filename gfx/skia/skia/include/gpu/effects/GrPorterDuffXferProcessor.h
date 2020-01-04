@@ -21,10 +21,16 @@ public:
     void getInvariantBlendedColor(const GrProcOptInfo& colorPOI,
                                   GrXPFactory::InvariantBlendedColor*) const override;
 
+
+    
+
     static GrXferProcessor* CreateSrcOverXferProcessor(const GrCaps& caps,
                                                        const GrPipelineOptimizations& optimizations,
                                                        bool hasMixedSamples,
                                                        const GrXferProcessor::DstTexture*);
+    
+
+    static const GrXferProcessor& SimpleSrcOverXP();
 
     static inline void SrcOverInvariantBlendedColor(
                                                 GrColor inputColor,

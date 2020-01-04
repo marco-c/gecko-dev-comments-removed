@@ -48,12 +48,23 @@ bool GrGLSLSupportsNamedFragmentShaderOutputs(GrGLSLGeneration);
 
 
 
-inline const char* GrGLSLTexture2DFunctionName(GrSLType coordType, GrGLSLGeneration glslGen) {
+inline const char* GrGLSLTexture2DFunctionName(GrSLType coordType, GrSLType samplerType,
+                                               GrGLSLGeneration glslGen) {
+    SkASSERT(GrSLTypeIsSamplerType(samplerType));
+    SkASSERT(kVec2f_GrSLType == coordType || kVec3f_GrSLType == coordType);
+    
+    
+    
+    
+    
+    
+    if (glslGen >= k130_GrGLSLGeneration) {
+        return (kVec2f_GrSLType == coordType) ? "texture" : "textureProj";
+    }
     if (kVec2f_GrSLType == coordType) {
-        return glslGen >= k130_GrGLSLGeneration ? "texture" : "texture2D";
+        return (samplerType == kSampler2DRect_GrSLType) ? "texture2DRect" : "texture2D";
     } else {
-        SkASSERT(kVec3f_GrSLType == coordType);
-        return glslGen >= k130_GrGLSLGeneration ? "textureProj" : "texture2DProj";
+        return (samplerType == kSampler2DRect_GrSLType) ? "texture2DRectProj" : "texture2DProj";
     }
 }
 
@@ -87,6 +98,8 @@ static inline const char* GrGLSLTypeString(GrSLType t) {
             return "sampler2D";
         case kSamplerExternal_GrSLType:
             return "samplerExternalOES";
+        case kSampler2DRect_GrSLType:
+            return "sampler2DRect";
         default:
             SkFAIL("Unknown shader var type.");
             return ""; 

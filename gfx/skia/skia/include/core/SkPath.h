@@ -956,6 +956,14 @@ public:
             return (Verb) fRawIter.next(pts);
         }
 
+        
+
+
+
+        Verb peek() const {
+            return (Verb) fRawIter.peek();
+        }
+
         SkScalar conicWeight() const {
             return fRawIter.conicWeight();
         }

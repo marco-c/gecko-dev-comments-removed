@@ -60,7 +60,7 @@ public:
     
     
     
-    static const int    kDefaultMaxUnusedFlushes    = 1024;
+    static const int    kDefaultMaxUnusedFlushes    = 64;
 
     
     class ResourceAccess;

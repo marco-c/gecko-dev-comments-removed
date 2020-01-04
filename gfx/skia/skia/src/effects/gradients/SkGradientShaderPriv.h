@@ -58,7 +58,7 @@ static inline SkFixed repeat_tileproc(SkFixed x) {
 #endif
 
 static inline SkFixed mirror_tileproc(SkFixed x) {
-    int s = x << 15 >> 31;
+    int s = SkLeftShift(x, 15) >> 31;
     return (x ^ s) & 0xFFFF;
 }
 
@@ -419,14 +419,14 @@ protected:
 
     
     
-    void emitUniforms(GrGLSLFPBuilder* builder, const GrGradientEffect&);
+    void emitUniforms(GrGLSLUniformHandler*, const GrGradientEffect&);
 
 
     
     
     
-    void emitColor(GrGLSLFPBuilder* builder,
-                   GrGLSLFragmentBuilder* fragBuilder,
+    void emitColor(GrGLSLFragmentBuilder* fragBuilder,
+                   GrGLSLUniformHandler* uniformHandler,
                    const GrGLSLCaps* caps,
                    const GrGradientEffect&,
                    const char* gradientTValue,

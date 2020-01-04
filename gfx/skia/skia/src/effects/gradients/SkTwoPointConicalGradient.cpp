@@ -225,9 +225,6 @@ SkTwoPointConicalGradient::TwoPointConicalGradientContext::TwoPointConicalGradie
     : INHERITED(shader, rec)
 {
     
-    fFlags &= ~kHasSpan16_Flag;
-
-    
     
     fFlags &= ~kOpaqueAlpha_Flag;
 }

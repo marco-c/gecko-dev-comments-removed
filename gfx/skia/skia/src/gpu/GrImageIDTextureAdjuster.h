@@ -9,9 +9,11 @@
 #define GrImageIDTextureAdjuster_DEFINED
 
 #include "GrTextureParamsAdjuster.h"
+#include "SkImage.h"
 
 class SkBitmap;
 class SkImage_Base;
+class SkImageCacherator;
 
 
 
@@ -62,6 +64,31 @@ protected:
 private:
     const SkBitmap  fBitmap;
     GrUniqueKey     fOriginalKey;
+
+    typedef GrTextureMaker INHERITED;
+};
+
+
+
+class GrImageTextureMaker : public GrTextureMaker {
+public:
+    GrImageTextureMaker(GrContext* context, SkImageCacherator* cacher, const SkImage* client,
+                        SkImage::CachingHint chint);
+
+protected:
+    
+    
+    
+
+    GrTexture* refOriginalTexture() override;
+    void makeCopyKey(const CopyParams& stretch, GrUniqueKey* paramsCopyKey) override;
+    void didCacheCopy(const GrUniqueKey& copyKey) override;
+
+private:
+    SkImageCacherator*      fCacher;
+    const SkImage*          fClient;
+    GrUniqueKey             fOriginalKey;
+    SkImage::CachingHint    fCachingHint;
 
     typedef GrTextureMaker INHERITED;
 };

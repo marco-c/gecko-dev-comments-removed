@@ -10,7 +10,7 @@
 
 #include "SkTInternalLList.h"
 #include "SkTypes.h"
-#include "SkUtility.h"
+#include <utility>
 
 
 
@@ -72,7 +72,7 @@ public:
         Node* node = this->createNode();
         fList.addToHead(node);
         this->validate();
-        return new (node->fObj)  T(skstd::forward<Args>(args)...);
+        return new (node->fObj)  T(std::forward<Args>(args)...);
     }
 
     
@@ -81,7 +81,7 @@ public:
         Node* node = this->createNode();
         fList.addToTail(node);
         this->validate();
-        return new (node->fObj) T(skstd::forward<Args>(args)...);
+        return new (node->fObj) T(std::forward<Args>(args)...);
     }
 
     
@@ -91,7 +91,7 @@ public:
         Node* node = this->createNode();
         fList.addBefore(node, location.getNode());
         this->validate();
-        return new (node->fObj) T(skstd::forward<Args>(args)...);
+        return new (node->fObj) T(std::forward<Args>(args)...);
     }
 
     
@@ -101,7 +101,7 @@ public:
         Node* node = this->createNode();
         fList.addAfter(node, location.getNode());
         this->validate();
-        return new (node->fObj) T(skstd::forward<Args>(args)...);
+        return new (node->fObj) T(std::forward<Args>(args)...);
     }
 
     

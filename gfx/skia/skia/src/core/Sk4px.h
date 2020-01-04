@@ -49,14 +49,6 @@ public:
     void store1(SkPMColor[1]) const;
 
     
-    static Sk4px Load4(const SkPMColor16 src[4]);
-    static Sk4px Load2(const SkPMColor16 src[2]);
-    static Sk4px Load1(const SkPMColor16 src[1]);
-    void store4(SkPMColor16 dst[4]) const;
-    void store2(SkPMColor16 dst[2]) const;
-    void store1(SkPMColor16 dst[1]) const;
-
-    
     
     class Wide : public Sk16h {
     public:
@@ -105,8 +97,8 @@ public:
 
     
     
-    template <typename Fn, typename Dst>
-    static void MapSrc(int n, Dst* dst, const SkPMColor* src, const Fn& fn) {
+    template <typename Fn>
+    static void MapSrc(int n, SkPMColor* dst, const SkPMColor* src, const Fn& fn) {
         SkASSERT(dst);
         SkASSERT(src);
         
@@ -137,8 +129,8 @@ public:
     }
 
     
-    template <typename Fn, typename Dst>
-    static void MapDstSrc(int n, Dst* dst, const SkPMColor* src, const Fn& fn) {
+    template <typename Fn>
+    static void MapDstSrc(int n, SkPMColor* dst, const SkPMColor* src, const Fn& fn) {
         SkASSERT(dst);
         SkASSERT(src);
         while (n > 0) {
@@ -167,8 +159,8 @@ public:
     }
 
     
-    template <typename Fn, typename Dst>
-    static void MapDstAlpha(int n, Dst* dst, const SkAlpha* a, const Fn& fn) {
+    template <typename Fn>
+    static void MapDstAlpha(int n, SkPMColor* dst, const SkAlpha* a, const Fn& fn) {
         SkASSERT(dst);
         SkASSERT(a);
         while (n > 0) {
@@ -197,8 +189,8 @@ public:
     }
 
     
-    template <typename Fn, typename Dst>
-    static void MapDstSrcAlpha(int n, Dst* dst, const SkPMColor* src, const SkAlpha* a,
+    template <typename Fn>
+    static void MapDstSrcAlpha(int n, SkPMColor* dst, const SkPMColor* src, const SkAlpha* a,
                                const Fn& fn) {
         SkASSERT(dst);
         SkASSERT(src);

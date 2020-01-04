@@ -111,13 +111,6 @@ public:
 
 
 
-    static SkColorFilter* CreateLightingFilter(SkColor mul, SkColor add);
-
-    
-
-
-
-
 
 
     static SkColorFilter* CreateComposeFilter(SkColorFilter* outer, SkColorFilter* inner);

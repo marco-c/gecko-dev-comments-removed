@@ -41,6 +41,16 @@ class SkTextBlob;
 
 
 
+#ifdef SK_SUPPORT_LEGACY_CLIPTOLAYERFLAG
+#ifndef SK_SUPPORT_LEGACY_SAVEFLAGS
+    #define SK_SUPPORT_LEGACY_SAVEFLAGS
+#endif
+#endif
+
+
+
+
+
 
 
 
@@ -53,6 +63,10 @@ class SkTextBlob;
 
 
 class SK_API SkCanvas : public SkRefCnt {
+    enum PrivateSaveLayerFlags {
+        kDontClipToLayer_PrivateSaveLayerFlag   = 1 << 31,
+    };
+    
 public:
     
 
@@ -281,6 +295,7 @@ public:
 
     
 
+#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
     enum SaveFlags {
         
         
@@ -307,6 +322,7 @@ public:
 #endif
         kARGB_ClipLayer_SaveFlag    = 0x1F
     };
+#endif
 
     
 
@@ -341,6 +357,14 @@ public:
 
 
 
+    int saveLayerPreserveLCDTextRequests(const SkRect* bounds, const SkPaint* paint);
+
+#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
+    
+
+
+
+
 
 
 
@@ -353,6 +377,7 @@ public:
 
     SK_ATTR_EXTERNALLY_DEPRECATED("SaveFlags use is deprecated")
     int saveLayer(const SkRect* bounds, const SkPaint* paint, SaveFlags flags);
+#endif
 
     
 
@@ -367,6 +392,7 @@ public:
 
     int saveLayerAlpha(const SkRect* bounds, U8CPU alpha);
 
+#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
     
 
 
@@ -383,6 +409,43 @@ public:
 
     SK_ATTR_EXTERNALLY_DEPRECATED("SaveFlags use is deprecated")
     int saveLayerAlpha(const SkRect* bounds, U8CPU alpha, SaveFlags flags);
+#endif
+
+    enum {
+        kIsOpaque_SaveLayerFlag         = 1 << 0,
+        kPreserveLCDText_SaveLayerFlag  = 1 << 1,
+
+#ifdef SK_SUPPORT_LEGACY_CLIPTOLAYERFLAG
+        kDontClipToLayer_Legacy_SaveLayerFlag = kDontClipToLayer_PrivateSaveLayerFlag,
+#endif
+    };
+    typedef uint32_t SaveLayerFlags;
+
+    struct SaveLayerRec {
+        SaveLayerRec()
+            : fBounds(nullptr), fPaint(nullptr), fBackdrop(nullptr), fSaveLayerFlags(0)
+        {}
+        SaveLayerRec(const SkRect* bounds, const SkPaint* paint, SaveLayerFlags saveLayerFlags = 0)
+            : fBounds(bounds)
+            , fPaint(paint)
+            , fBackdrop(nullptr)
+            , fSaveLayerFlags(saveLayerFlags)
+        {}
+        SaveLayerRec(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
+                     SaveLayerFlags saveLayerFlags)
+            : fBounds(bounds)
+            , fPaint(paint)
+            , fBackdrop(backdrop)
+            , fSaveLayerFlags(saveLayerFlags)
+        {}
+
+        const SkRect*           fBounds;    
+        const SkPaint*          fPaint;     
+        const SkImageFilter*    fBackdrop;  
+        SaveLayerFlags          fSaveLayerFlags;
+    };
+
+    int saveLayer(const SaveLayerRec&);
 
     
 
@@ -912,19 +975,6 @@ public:
 
 
 
-
-
-
-    void drawSprite(const SkBitmap& bitmap, int left, int top, const SkPaint* paint = NULL);
-
-    
-
-
-
-
-
-
-
     void drawText(const void* text, size_t byteLength, SkScalar x, SkScalar y,
                   const SkPaint& paint);
 
@@ -1226,11 +1276,12 @@ protected:
     
     enum SaveLayerStrategy {
         kFullLayer_SaveLayerStrategy,
-        kNoLayer_SaveLayerStrategy
+        kNoLayer_SaveLayerStrategy,
     };
 
     virtual void willSave() {}
-    virtual SaveLayerStrategy willSaveLayer(const SkRect*, const SkPaint*, SaveFlags) {
+    
+    virtual SaveLayerStrategy getSaveLayerStrategy(const SaveLayerRec&) {
         return kFullLayer_SaveLayerStrategy;
     }
     virtual void willRestore() {}
@@ -1285,7 +1336,6 @@ protected:
                                   SrcRectConstraint);
     virtual void onDrawBitmapNine(const SkBitmap&, const SkIRect& center, const SkRect& dst,
                                   const SkPaint*);
-    virtual void onDrawSprite(const SkBitmap&, int left, int top, const SkPaint*);
 
     enum ClipEdgeStyle {
         kHard_ClipEdgeStyle,
@@ -1311,11 +1361,21 @@ protected:
     
     
     
-    bool clipRectBounds(const SkRect* bounds, SaveFlags flags,
-                        SkIRect* intersection,
+    bool clipRectBounds(const SkRect* bounds, SaveLayerFlags, SkIRect* intersection,
                         const SkImageFilter* imageFilter = NULL);
 
+#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
+    
+    
+    static uint32_t SaveLayerFlagsToSaveFlags(SaveLayerFlags);
+#endif
 private:
+    static bool BoundsAffectsClip(SaveLayerFlags);
+#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
+    static uint32_t SaveFlagsToSaveLayerFlags(SaveFlags);
+#endif
+    static SaveLayerFlags LegacySaveFlagsToSaveLayerFlags(uint32_t legacySaveFlags);
+
     enum ShaderOverrideOpacity {
         kNone_ShaderOverrideOpacity,        
         kOpaque_ShaderOverrideOpacity,      
@@ -1375,6 +1435,7 @@ private:
     friend class SkNoSaveLayerCanvas;   
     friend class SkPictureImageFilter;  
     friend class SkPictureRecord;   
+    friend class SkPicturePlayback; 
 
     enum InitFlags {
         kDefault_InitFlags                  = 0,
@@ -1406,7 +1467,7 @@ private:
                                 const SkRect& dst, const SkPaint* paint,
                                 SrcRectConstraint);
     void internalDrawPaint(const SkPaint& paint);
-    void internalSaveLayer(const SkRect* bounds, const SkPaint*, SaveFlags, SaveLayerStrategy);
+    void internalSaveLayer(const SaveLayerRec&, SaveLayerStrategy);
     void internalDrawDevice(SkBaseDevice*, int x, int y, const SkPaint*, bool isBitmapDevice);
 
     
@@ -1428,6 +1489,10 @@ private:
 
     bool wouldOverwriteEntireSurface(const SkRect*, const SkPaint*, ShaderOverrideOpacity) const;
 
+    
+
+
+    bool canDrawBitmapAsSprite(SkScalar x, SkScalar y, int w, int h, const SkPaint&);
 
     
 
@@ -1505,49 +1570,7 @@ private:
 };
 #define SkAutoCanvasRestore(...) SK_REQUIRE_LOCAL_VAR(SkAutoCanvasRestore)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SkAutoROCanvasPixels : SkNoncopyable {
-public:
-    SkAutoROCanvasPixels(SkCanvas* canvas);
-
-    
-    const void* addr() const { return fAddr; }
-
-    
-    size_t rowBytes() const { return fRowBytes; }
-
-    
-    const SkImageInfo& info() const { return fInfo; }
-
-    
-    
-    
-    bool asROBitmap(SkBitmap*) const;
-
-private:
-    SkBitmap    fBitmap;    
-    const void* fAddr;      
-    SkImageInfo fInfo;
-    size_t      fRowBytes;
-};
-
+#ifdef SK_SUPPORT_LEGACY_SAVEFLAGS
 static inline SkCanvas::SaveFlags operator|(const SkCanvas::SaveFlags lhs,
                                             const SkCanvas::SaveFlags rhs) {
     return static_cast<SkCanvas::SaveFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
@@ -1558,6 +1581,7 @@ static inline SkCanvas::SaveFlags& operator|=(SkCanvas::SaveFlags& lhs,
     lhs = lhs | rhs;
     return lhs;
 }
+#endif
 
 class SkCanvasClipVisitor {
 public:
