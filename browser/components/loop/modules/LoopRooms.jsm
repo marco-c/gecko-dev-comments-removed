@@ -15,6 +15,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils",
                                   "resource://services-common/utils.js");
+XPCOMUtils.defineLazyModuleGetter(this, "WebChannel",
+                                  "resource://gre/modules/WebChannel.jsm");
+
 XPCOMUtils.defineLazyGetter(this, "eventEmitter", function() {
   const {EventEmitter} = Cu.import("resource://gre/modules/devtools/event-emitter.js", {});
   return new EventEmitter();
@@ -45,6 +48,9 @@ const MAX_TIME_BEFORE_ENCRYPTION = 30 * 60 * 1000;
 
 const TIME_BETWEEN_ENCRYPTIONS = 1000;
 
+
+const LINKCLICKER_URL_PREFNAME = "loop.linkClicker.url";
+
 const roomsPushNotification = function(version, channelID) {
   return LoopRoomsInternal.onNotification(version, channelID);
 };
@@ -58,6 +64,8 @@ var gDirty = true;
 var gCurrentUser = null;
 
 var gRoomsCache = null;
+
+var gLinkClickerChannel = null;
 
 
 
@@ -175,6 +183,40 @@ var LoopRoomsInternal = {
       this.queue = [];
       this.timer = null;
     }
+  },
+
+  
+
+
+  init: function() {
+    Services.prefs.addObserver(LINKCLICKER_URL_PREFNAME,
+      this.setupLinkClickerListener.bind(this), false);
+
+    this.setupLinkClickerListener();
+  },
+
+  
+
+
+
+  setupLinkClickerListener: function() {
+    
+    if (gLinkClickerChannel) {
+      gLinkClickerChannel.stopListening();
+      gLinkClickerChannel = null;
+    }
+
+    let linkClickerUrl = Services.prefs.getCharPref(LINKCLICKER_URL_PREFNAME);
+
+    
+    if (!linkClickerUrl) {
+      return;
+    }
+
+    let uri = Services.io.newURI(linkClickerUrl, null, null);
+
+    gLinkClickerChannel = new WebChannel("loop-link-clicker", uri);
+    gLinkClickerChannel.listen(this._handleLinkClickerMessage.bind(this));
   },
 
   
@@ -905,6 +947,42 @@ var LoopRoomsInternal = {
       eventEmitter.emit("refresh");
       this.getAll(null, () => {});
     }
+  },
+
+  
+
+
+
+
+
+
+  _handleLinkClickerMessage: function(id, message, sendingContext) {
+    if (!message) {
+      return;
+    }
+
+    let sendResponse = response => {
+      gLinkClickerChannel.send({
+        response: response
+      }, sendingContext);
+    };
+
+    let hasRoom = this.rooms.has(message.roomToken);
+
+    switch (message.command) {
+      case "checkWillOpenRoom":
+        sendResponse(hasRoom);
+        break;
+      case "openRoom":
+        if (hasRoom) {
+          this.open(message.roomToken);
+        }
+        sendResponse(hasRoom);
+        break;
+      default:
+        sendResponse(false);
+        break;
+    }
   }
 };
 Object.freeze(LoopRoomsInternal);
@@ -926,6 +1004,10 @@ Object.freeze(LoopRoomsInternal);
 
 
 this.LoopRooms = {
+  init: function() {
+    LoopRoomsInternal.init();
+  },
+
   get participantsCount() {
     return LoopRoomsInternal.participantsCount;
   },
@@ -1016,6 +1098,24 @@ this.LoopRooms = {
 
   once: (...params) => eventEmitter.once(...params),
 
-  off: (...params) => eventEmitter.off(...params)
+  off: (...params) => eventEmitter.off(...params),
+
+  
+
+
+
+
+
+
+  _setRoomsCache: function(roomsCache) {
+    LoopRoomsInternal.rooms.clear();
+
+    if (roomsCache) {
+      
+      for (let [key, value] of roomsCache) {
+        LoopRoomsInternal.rooms.set(key, value);
+      }
+    }
+  }
 };
 Object.freeze(this.LoopRooms);

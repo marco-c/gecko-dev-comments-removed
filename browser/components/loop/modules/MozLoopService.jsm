@@ -1212,6 +1212,9 @@ this.MozLoopService = {
     Object.freeze(this);
 
     
+    LoopRooms.init();
+
+    
     if (!Services.prefs.getBoolPref("loop.enabled")) {
       return Promise.reject(new Error("loop is not enabled"));
     }
