@@ -66,6 +66,24 @@ ThrowExceptionObject(JSContext* aCx, Exception* aException)
   
   if (NS_IsMainThread() && !nsContentUtils::IsCallerChrome() &&
       aException->StealJSVal(thrown.address())) {
+    
+    
+    
+    
+    
+    
+    if (thrown.isNumber()) {
+      nsresult exceptionResult;
+      if (NS_SUCCEEDED(aException->GetResult(&exceptionResult)) &&
+          double(exceptionResult) == thrown.toNumber()) {
+        
+        
+        
+        
+        Throw(aCx, exceptionResult);
+        return true;
+      }
+    }
     if (!JS_WrapValue(aCx, &thrown)) {
       return false;
     }
