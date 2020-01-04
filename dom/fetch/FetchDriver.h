@@ -99,6 +99,8 @@ private:
   
   
   nsresult FailWithNetworkError();
+
+  void SetRequestHeaders(nsIHttpChannel* aChannel) const;
 };
 
 } 
