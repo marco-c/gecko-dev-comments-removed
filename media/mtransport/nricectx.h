@@ -215,6 +215,10 @@ class NrIceCtx {
                 ICE_POLICY_ALL
   };
 
+  static void Init(bool allow_loopback = false,
+                   bool tcp_enabled = true,
+                   bool allow_link_local = false);
+
   
   static RefPtr<NrIceCtx> Create(const std::string& name,
                                  bool offerer,
