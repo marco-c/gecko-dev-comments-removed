@@ -28,6 +28,7 @@ PostMessageEvent::PostMessageEvent(nsGlobalWindow* aSource,
                                    const nsAString& aCallerOrigin,
                                    nsGlobalWindow* aTargetWindow,
                                    nsIPrincipal* aProvidedPrincipal,
+                                   nsIDocument* aSourceDocument,
                                    bool aTrustedCaller)
 : StructuredCloneHolder(CloningSupported, TransferringSupported,
                         SameProcessSameThread),
@@ -35,6 +36,7 @@ PostMessageEvent::PostMessageEvent(nsGlobalWindow* aSource,
   mCallerOrigin(aCallerOrigin),
   mTargetWindow(aTargetWindow),
   mProvidedPrincipal(aProvidedPrincipal),
+  mSourceDocument(aSourceDocument),
   mTrustedCaller(aTrustedCaller)
 {
   MOZ_COUNT_CTOR(PostMessageEvent);
@@ -56,6 +58,12 @@ PostMessageEvent::Run()
   AutoJSAPI jsapi;
   jsapi.Init();
   JSContext* cx = jsapi.cx();
+
+  
+  
+  
+  nsCOMPtr<nsIDocument> sourceDocument;
+  sourceDocument.swap(mSourceDocument);
 
   
   
@@ -92,6 +100,20 @@ PostMessageEvent::Run()
     
     
     if (!targetPrin->Equals(mProvidedPrincipal)) {
+      nsAutoString providedOrigin, targetOrigin;
+      nsresult rv = nsContentUtils::GetUTFOrigin(targetPrin, targetOrigin);
+      NS_ENSURE_SUCCESS(rv, rv);
+      rv = nsContentUtils::GetUTFOrigin(mProvidedPrincipal, providedOrigin);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      const char16_t* params[] = { providedOrigin.get(), targetOrigin.get() };
+
+      nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
+        NS_LITERAL_CSTRING("DOM Window"), sourceDocument,
+        nsContentUtils::eDOM_PROPERTIES,
+        "TargetPrincipalDoesNotMatch",
+        params, ArrayLength(params));
+
       return NS_OK;
     }
   }
