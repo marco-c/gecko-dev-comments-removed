@@ -293,6 +293,10 @@ public:
   mozilla::a11y::Accessible* GetRootAccessible();
 #endif
 
+  
+  
+  bool IsSmallPopup() const;
+
   nsPopupLevel PopupLevel() { return mPopupLevel; }
 
   virtual LayoutDeviceIntSize
