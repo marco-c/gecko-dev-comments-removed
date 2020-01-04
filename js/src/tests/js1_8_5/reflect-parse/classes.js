@@ -25,9 +25,9 @@ function testClasses() {
                            methodFun(id, kind, generator, args),
                            kind, isStatic);
     }
-    function ctorWithName(id) {
+    function ctorWithName(id, body = []) {
         return classMethod(ident("constructor"),
-                           methodFun(id, "method", false, []),
+                           methodFun(id, "method", false, [], body),
                            "method", false);
     }
     function emptyCPNMethod(id, isStatic) {
@@ -40,14 +40,15 @@ function testClasses() {
         let template = classExpr(name, heritage, methods);
         assertExpr("(" + str + ")", template);
     }
+
     
     
     let ctorPlaceholder = {};
-    function assertClass(str, methods, heritage=null) {
+    function assertClass(str, methods, heritage=null, constructorBody=[]) {
         let namelessStr = str.replace("NAME", "");
         let namedStr = str.replace("NAME", "Foo");
-        let namedCtor = ctorWithName("Foo");
-        let namelessCtor = ctorWithName(null);
+        let namedCtor = ctorWithName("Foo", constructorBody);
+        let namelessCtor = ctorWithName(null, constructorBody);
         let namelessMethods = methods.map(x => x == ctorPlaceholder ? namelessCtor : x);
         let namedMethods = methods.map(x => x == ctorPlaceholder ? namedCtor : x);
         assertClassExpr(namelessStr, namelessMethods, heritage);
@@ -444,22 +445,34 @@ function testClasses() {
     assertError("(function() { super(); })", SyntaxError);
 
     
+    
+    assertError("(super() for (x in y))", SyntaxError);
+    assertClassError("class NAME { constructor() { (super() for (x in y))", SyntaxError);
+
+
+    
     assertClassError("class NAME { constructor() { super(); } }", SyntaxError);
 
     function superConstructor(args) {
         return classMethod(ident("constructor"),
-                           methodFun("constructor", "method", false,
+                           methodFun("NAME", "method", false,
                                      [], [exprStmt(superCallExpr(args))]),
                            "method", false);
     }
 
+    function superCallBody(args) {
+        return [exprStmt(superCallExpr(args))];
+    }
+
     
     assertClass("class NAME extends null { constructor() { super() } }",
-                [superConstructor([])], lit(null));
+                [ctorPlaceholder], lit(null), superCallBody([]));
     assertClass("class NAME extends null { constructor() { super(1) } }",
-                [superConstructor([lit(1)])], lit(null));
+                [ctorPlaceholder], lit(null), superCallBody([lit(1)]));
+    assertClass("class NAME extends null { constructor() { super(1, a) } }",
+                [ctorPlaceholder], lit(null), superCallBody([lit(1), ident("a")]));
     assertClass("class NAME extends null { constructor() { super(...[]) } }",
-                [superConstructor([spread(arrExpr([]))])], lit(null));
+                [ctorPlaceholder], lit(null), superCallBody([spread(arrExpr([]))]));
 
     
     
