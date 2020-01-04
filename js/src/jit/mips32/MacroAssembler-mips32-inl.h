@@ -240,6 +240,15 @@ MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 
 
 void
+MacroAssembler::branchPrivatePtr(Condition cond, const Address& lhs, Register rhs, Label* label)
+{
+    branchPtr(cond, lhs, rhs, label);
+}
+
+
+
+
+void
 MacroAssemblerMIPSCompat::incrementInt32Value(const Address& addr)
 {
     asMasm().add32(Imm32(1), ToPayload(addr));
