@@ -13,6 +13,7 @@
 #include "nsHashKeys.h"
 #include "nsICryptoHash.h"
 #include "nsIPackagedAppVerifier.h"
+#include "mozilla/LinkedList.h"
 
 namespace mozilla {
 namespace net {
@@ -33,6 +34,11 @@ public:
 
     
     
+    
+    STATE_MANIFEST_VERIFYING,
+
+    
+    
     STATE_MANIFEST_VERIFIED_OK,
 
     
@@ -45,6 +51,7 @@ public:
   
   
   class ResourceCacheInfo : public nsISupports
+                          , public mozilla::LinkedListElement<ResourceCacheInfo>
   {
   public:
     NS_DECL_ISUPPORTS
@@ -60,6 +67,16 @@ public:
     {
     }
 
+    ResourceCacheInfo(const ResourceCacheInfo& aCopyFrom)
+      : mURI(aCopyFrom.mURI)
+      , mCacheEntry(aCopyFrom.mCacheEntry)
+      , mStatusCode(aCopyFrom.mStatusCode)
+      , mIsLastPart(aCopyFrom.mIsLastPart)
+    {
+    }
+
+    
+    
     nsCOMPtr<nsIURI> mURI;
     nsCOMPtr<nsICacheEntry> mCacheEntry;
     nsresult mStatusCode;
@@ -77,10 +94,17 @@ public:
                       const nsACString& aSignature,
                       nsICacheEntry* aPackageCacheEntry);
 
+  
+  
+  void SetHasBrokenLastPart(nsresult aStatusCode);
+
+  
+  void ClearListener() { mListener = nullptr; }
+
   static const char* kSignedPakOriginMetadataKey;
 
 private:
-  virtual ~PackagedAppVerifier() { }
+  virtual ~PackagedAppVerifier();
 
   
   
@@ -100,8 +124,11 @@ private:
   void VerifyManifest(const ResourceCacheInfo* aInfo);
   void VerifyResource(const ResourceCacheInfo* aInfo);
 
-  void OnManifestVerified(const ResourceCacheInfo* aInfo, bool aSuccess);
-  void OnResourceVerified(const ResourceCacheInfo* aInfo, bool aSuccess);
+  void OnManifestVerified(bool aSuccess);
+  void OnResourceVerified(bool aSuccess);
+
+  
+  void FireVerifiedEvent(bool aForManifest, bool aSuccess);
 
   
   nsCOMPtr<nsIPackagedAppVerifierListener> mListener;
@@ -131,6 +158,12 @@ private:
   
   
   nsCString mLastComputedResourceHash;
+
+  
+  mozilla::LinkedList<ResourceCacheInfo> mPendingResourceCacheInfoList;
+
+  
+  nsClassHashtable<nsCStringHashKey, nsCString> mResourceHashStore;
 }; 
 
 } 

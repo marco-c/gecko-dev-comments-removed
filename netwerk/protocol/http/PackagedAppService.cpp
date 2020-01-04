@@ -585,7 +585,12 @@ PackagedAppService::PackagedAppDownloader::FinalizeDownload(nsresult aStatusCode
   }
   ClearCallbacks(aStatusCode);
 
-  mVerifier = nullptr;
+  
+  
+  
+  if (mVerifier) {
+    mVerifier->ClearListener();
+  }
 }
 
 nsCString
@@ -634,7 +639,15 @@ PackagedAppService::PackagedAppDownloader::OnStopRequest(nsIRequest *aRequest,
       
       
       
-      FinalizeDownload(aStatusCode);
+      if (!mVerifier) {
+        FinalizeDownload(aStatusCode);
+      } else {
+        
+        
+        
+        
+        mVerifier->SetHasBrokenLastPart(aStatusCode);
+      }
     }
     return NS_OK;
   }
@@ -863,6 +876,12 @@ PackagedAppService::PackagedAppDownloader::OnVerified(bool aIsManifest,
                                                       bool aIsLastPart,
                                                       bool aVerificationSuccess)
 {
+  if (!aUri) {
+    NS_WARNING("We've got a broken last part.");
+    FinalizeDownload(aStatusCode);
+    return NS_OK;
+  }
+
   RefPtr<ResourceCacheInfo> info =
     new ResourceCacheInfo(aUri, aCacheEntry, aStatusCode, aIsLastPart);
 
@@ -883,6 +902,12 @@ PackagedAppService::PackagedAppDownloader::OnManifestVerified(const ResourceCach
 
   
   CallCallbacks(aInfo->mURI, aInfo->mCacheEntry, aInfo->mStatusCode);
+
+  if (aInfo->mIsLastPart) {
+    NS_WARNING("This package has manifest only.");
+    FinalizeDownload(aInfo->mStatusCode);
+    return;
+  }
 
   bool isPackagedSigned;
   mVerifier->GetIsPackageSigned(&isPackagedSigned);

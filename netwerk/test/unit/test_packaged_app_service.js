@@ -31,6 +31,11 @@
 
 
 
+
+
+
+
+
 Cu.import('resource://gre/modules/LoadContextInfo.jsm');
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -124,6 +129,13 @@ function run_test()
   httpserver.registerPathHandler("/package", packagedAppContentHandler);
   httpserver.registerPathHandler("/304Package", packagedAppContentHandler);
   httpserver.registerPathHandler("/badPackage", packagedAppBadContentHandler);
+
+  let worsePackageNum = 6;
+  for (let i = 0; i < worsePackageNum; i++) {
+    httpserver.registerPathHandler("/worsePackage_" + i,
+                                   packagedAppWorseContentHandler.bind(null, i));
+  }
+
   httpserver.start(-1);
 
   paservice = Cc["@mozilla.org/network/packaged-app-service;1"]
@@ -151,6 +163,13 @@ function run_test()
                 .isDebugBuild == false) {
     add_test(test_channel_no_loadinfo);
   }
+
+  add_test(test_worse_package_0);
+  add_test(test_worse_package_1);
+  add_test(test_worse_package_2);
+  add_test(test_worse_package_3);
+  add_test(test_worse_package_4);
+  add_test(test_worse_package_5);
 
   
   run_next_test();
@@ -328,4 +347,130 @@ function test_channel_no_loadinfo() {
   let channel = getChannelForURL(url);
   channel.loadInfo = null;
   paservice.getResource(channel, cacheListener);
+}
+
+
+
+
+
+function getData(aTestingData) {
+  var str = "";
+  for (var i in aTestingData.content) {
+    str += "--" + aTestingData.token + "\r\n";
+    for (var j in aTestingData.content[i].headers) {
+      str += aTestingData.content[i].headers[j] + "\r\n";
+    }
+    str += "\r\n";
+    str += aTestingData.content[i].data + "\r\n";
+  }
+
+  str += "--" + aTestingData.token + "--";
+  return str;
+}
+
+var worseTestData = [
+  
+  { content: [
+     { headers: ["Content-Type: text/javascript"], data: "module Math from '/scripts/helpers/math.js';\r\n...\r\n", type: "text/javascript" },
+    ],
+    token : "gc0pJq0M:08jU534c0p",
+  },
+
+  
+  { content: [
+     { headers: ["Content-Location: /index.html", "Content-Type: text/html"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+    ],
+    token : "gc0pJq0M:08jU534c0p",
+  },
+
+  
+  { content: [
+     { headers: ["Content-Type: text/javascript"], data: "module Math from '/scripts/helpers/math.js';\r\n...\r\n", type: "text/javascript" },
+     { headers: ["Content-Type: text/javascript"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+     { headers: ["Content-Type: text/javascript"], data: "export function sum(nums) { ... }\r\n...\r\n", type: "text/javascript" }
+    ],
+    token : "gc0pJq0M:08jU534c0p",
+  },
+
+  
+  { content: [
+     { headers: ["Content-Location: /index.html", "Content-Type: text/html"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+     { headers: ["Content-Type: text/javascript"], data: "module Math from '/scripts/helpers/math.js';\r\n...\r\n", type: "text/javascript" },
+     { headers: ["Content-Type: text/javascript"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+     { headers: ["Content-Type: text/javascript"], data: "export function sum(nums) { ... }\r\n...\r\n", type: "text/javascript" }
+    ],
+    token : "gc0pJq0M:08jU534c0p",
+  },
+
+  
+  { content: [
+     { headers: ["Content-Type: text/javascript"], data: "module Math from '/scripts/helpers/math.js';\r\n...\r\n", type: "text/javascript" },
+     { headers: ["Content-Type: text/javascript"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+     { headers: ["Content-Type: text/javascript"], data: "export function sum(nums) { ... }\r\n...\r\n", type: "text/javascript" },
+     { headers: ["Content-Location: /index.html", "Content-Type: text/html"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+    ],
+    token : "gc0pJq0M:08jU534c0p",
+  },
+
+  
+  { content: [
+     { headers: ["Content-Location: /whatever.html", "Content-Type: text/html"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+     { headers: ["Content-Type: text/javascript"], data: "module Math from '/scripts/helpers/math.js';\r\n...\r\n", type: "text/javascript" },
+     { headers: ["Content-Type: text/javascript"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+     { headers: ["Content-Type: text/javascript"], data: "export function sum(nums) { ... }\r\n...\r\n", type: "text/javascript" },
+     { headers: ["Content-Location: /index.html", "Content-Type: text/html"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
+    ],
+    token : "gc0pJq0M:08jU534c0p",
+  },
+];
+
+function packagedAppWorseContentHandler(index, metadata, response)
+{
+  response.setHeader("Content-Type", 'application/package');
+  var body = getData(worseTestData[index]);
+  response.bodyOutputStream.write(body, body.length);
+}
+
+function test_worse_package(index, success) {
+  packagePath = "/worsePackage_" + index;
+  let url = uri + packagePath + "!//index.html";
+  let channel = getChannelForURL(url);
+  paservice.getResource(channel, {
+    QueryInterface: function (iid) {
+      if (iid.equals(Ci.nsICacheEntryOpenCallback) ||
+          iid.equals(Ci.nsISupports))
+        return this;
+      throw Cr.NS_ERROR_NO_INTERFACE;
+    },
+    onCacheEntryCheck: function() { return Ci.nsICacheEntryOpenCallback.ENTRY_WANTED; },
+    onCacheEntryAvailable: function (entry, isnew, appcache, status) {
+      let cacheSuccess = (status === Cr.NS_OK);
+      equal(success, status === Cr.NS_OK, "Check status");
+      run_next_test();
+    }
+  });
+}
+
+function test_worse_package_0() {
+  test_worse_package(0, false);
+}
+
+function test_worse_package_1() {
+  test_worse_package(1, true);
+}
+
+function test_worse_package_2() {
+  test_worse_package(2, false);
+}
+
+function test_worse_package_3() {
+  test_worse_package(3, true);
+}
+
+function test_worse_package_4() {
+  test_worse_package(4, true);
+}
+
+function test_worse_package_5() {
+  test_worse_package(5, true);
 }
