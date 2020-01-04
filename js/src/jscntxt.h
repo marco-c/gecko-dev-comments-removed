@@ -343,10 +343,6 @@ struct JSContext : public js::ExclusiveContext
     
     js::AutoCycleDetector::Set cycleDetectorSet;
 
-    
-    void*               data;
-    void*               data2;
-
   public:
 
     
