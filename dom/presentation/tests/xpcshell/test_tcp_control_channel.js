@@ -183,17 +183,17 @@ function testPresentationServer() {
 }
 
 function setOffline() {
-  let expectedReason;
   tps.listener = {
-    onClose: function(aReason) {
-      Assert.equal(aReason, Cr.NS_ERROR_ABORT, 'TCPPresentationServer close as expected');
-      Services.io.offline = false;
+    onPortChange: function(aPort) {
+      Assert.notEqual(aPort, 0, 'TCPPresentationServer port changed and the port should be valid');
+      tps.close();
       run_next_test();
     },
-  }
+  };
 
   
   Services.io.offline = true;
+  Services.io.offline = false;
 }
 
 function oneMoreLoop() {
@@ -210,12 +210,13 @@ function oneMoreLoop() {
 function shutdown()
 {
   tps.listener = {
-    onClose: function(aReason) {
-      Assert.equal(aReason, Cr.NS_OK, 'TCPPresentationServer close success');
-      run_next_test();
+    onPortChange: function(aPort) {
+      Assert.ok(false, 'TCPPresentationServer port changed');
     },
-  }
+  };
   tps.close();
+  Assert.equal(tps.port, 0, "TCPPresentationServer closed");
+  run_next_test();
 }
 
 
