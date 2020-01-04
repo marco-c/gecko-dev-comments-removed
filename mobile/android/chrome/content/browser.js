@@ -7501,6 +7501,7 @@ var Tabs = {
           
           let targetURI = targetDoc.documentURI;
           if (isTopLevel && !targetURI.startsWith("about:")) {
+            UITelemetry.addEvent("neterror.1", "toast", null, "usecache");
             Snackbars.show(Strings.browser.GetStringFromName("networkOffline.message"), Snackbars.LENGTH_INDEFINITE);
           }
         }
