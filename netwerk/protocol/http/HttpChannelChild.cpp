@@ -2435,13 +2435,13 @@ HttpChannelChild::DivertToParent(ChannelDiverterChild **aChild)
     return mStatus;
   }
 
+  
+  mDivertingToParent = true;
+
   rv = Suspend();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-
-  
-  mDivertingToParent = true;
 
   HttpChannelDiverterArgs args;
   args.mChannelChild() = this;

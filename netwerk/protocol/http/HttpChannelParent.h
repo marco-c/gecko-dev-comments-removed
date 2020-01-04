@@ -177,6 +177,7 @@ private:
                              const uint32_t& count);
   void DivertOnStopRequest(const nsresult& statusCode);
   void DivertComplete();
+  void MaybeFlushPendingDiversion();
 
   void SynthesizeResponse(nsIInterceptedChannel* aChannel);
 
@@ -216,9 +217,13 @@ private:
 
   RefPtr<HttpChannelParentListener> mParentListener;
   
+  
   nsCOMPtr<nsIStreamListener> mDivertListener;
   
   nsresult mStatus;
+  
+  
+  bool mPendingDiversion;
   
   
   
