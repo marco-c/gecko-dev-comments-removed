@@ -204,6 +204,9 @@ pref("geo.cell.scan", true);
 pref("geo.wifi.uri", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
 
 
+pref("geo.stumbler.url", "https://location.services.mozilla.com/v1/geosubmit?key=%MOZILLA_API_KEY%");
+
+
 pref("geo.enabled", true);
 
 
