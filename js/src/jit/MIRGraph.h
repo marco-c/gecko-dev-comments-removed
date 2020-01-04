@@ -255,7 +255,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     
     
     
-    MOZ_MUST_USE AbortReason setBackedge(MBasicBlock* block);
+    MOZ_MUST_USE AbortReason setBackedge(TempAllocator& alloc, MBasicBlock* block);
     MOZ_MUST_USE bool setBackedgeAsmJS(MBasicBlock* block);
 
     
@@ -271,10 +271,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     void inheritPhis(MBasicBlock* header);
 
     
-    MOZ_MUST_USE bool inheritPhisFromBackedge(MBasicBlock* backedge, bool* hadTypeChange);
+    MOZ_MUST_USE bool inheritPhisFromBackedge(TempAllocator& alloc, MBasicBlock* backedge,
+                                              bool* hadTypeChange);
 
     
-    MOZ_MUST_USE bool specializePhis();
+    MOZ_MUST_USE bool specializePhis(TempAllocator& alloc);
 
     void insertBefore(MInstruction* at, MInstruction* ins);
     void insertAfter(MInstruction* at, MInstruction* ins);

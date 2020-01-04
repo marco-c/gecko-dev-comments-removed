@@ -3099,7 +3099,7 @@ TemporaryTypeSet*
 MakeSingletonTypeSet(CompilerConstraintList* constraints, ObjectGroup* obj);
 
 MOZ_MUST_USE bool
-MergeTypes(MIRType* ptype, TemporaryTypeSet** ptypeSet,
+MergeTypes(TempAllocator& alloc, MIRType* ptype, TemporaryTypeSet** ptypeSet,
            MIRType newType, TemporaryTypeSet* newTypeSet);
 
 bool
@@ -7380,7 +7380,7 @@ class MPhi final
         triedToSpecialize_ = true;
         setResultType(type);
     }
-    bool specializeType();
+    bool specializeType(TempAllocator& alloc);
 
 #ifdef DEBUG
     
@@ -7409,7 +7409,8 @@ class MPhi final
 
     
     
-    MOZ_MUST_USE bool addBackedgeType(MIRType type, TemporaryTypeSet* typeSet);
+    MOZ_MUST_USE bool addBackedgeType(TempAllocator& alloc, MIRType type,
+                                      TemporaryTypeSet* typeSet);
 
     
     
@@ -7437,7 +7438,7 @@ class MPhi final
 
     
     
-    bool checkForTypeChange(MDefinition* ins, bool* ptypeChange);
+    bool checkForTypeChange(TempAllocator& alloc, MDefinition* ins, bool* ptypeChange);
 
     MDefinition* foldsTo(TempAllocator& alloc) override;
     MDefinition* foldsTernary();
