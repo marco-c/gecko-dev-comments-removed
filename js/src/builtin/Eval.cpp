@@ -214,8 +214,7 @@ TryEvalJSON(JSContext* cx, JSLinearString* str, MutableHandleValue rval)
            : ParseEvalStringAsJSON(cx, linearChars.twoByteRange(), rval);
 }
 
-
-enum EvalType { DIRECT_EVAL = EXECUTE_DIRECT_EVAL, INDIRECT_EVAL = EXECUTE_INDIRECT_EVAL };
+enum EvalType { DIRECT_EVAL, INDIRECT_EVAL };
 
 
 
@@ -330,7 +329,7 @@ EvalKernel(JSContext* cx, const CallArgs& args, EvalType evalType, AbstractFrame
 
     
     Value newTargetVal = NullValue();
-    return ExecuteKernel(cx, esg.script(), *scopeobj, newTargetVal, ExecuteType(evalType),
+    return ExecuteKernel(cx, esg.script(), *scopeobj, newTargetVal,
                          NullFramePtr() , args.rval().address());
 }
 
@@ -411,7 +410,7 @@ js::DirectEvalStringFromIon(JSContext* cx,
     }
 
     return ExecuteKernel(cx, esg.script(), *scopeobj, newTargetValue,
-                         ExecuteType(DIRECT_EVAL), NullFramePtr() , vp.address());
+                         NullFramePtr() , vp.address());
 }
 
 bool
@@ -483,7 +482,7 @@ js::ExecuteInGlobalAndReturnScope(JSContext* cx, HandleObject global, HandleScri
         return false;
 
     RootedValue rval(cx);
-    if (!ExecuteKernel(cx, script, *scope, UndefinedValue(), EXECUTE_GLOBAL_OR_MODULE,
+    if (!ExecuteKernel(cx, script, *scope, UndefinedValue(),
                        NullFramePtr() , rval.address()))
     {
         return false;

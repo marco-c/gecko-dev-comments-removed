@@ -268,44 +268,14 @@ class NullFramePtr : public AbstractFramePtr
     { }
 };
 
-
-
-
-enum InitialFrameFlags {
-    INITIAL_NONE           =          0,
-    INITIAL_CONSTRUCT      =       0x20, 
-};
-
-enum ExecuteType {
-    EXECUTE_GLOBAL_OR_MODULE =      0x1, 
-    EXECUTE_DIRECT_EVAL    =        0x8, 
-    EXECUTE_INDIRECT_EVAL  =        0x9, 
-    EXECUTE_DEBUG          =       0x18, 
-};
+enum MaybeConstruct { NO_CONSTRUCT = false, CONSTRUCT = true };
 
 
 
 class InterpreterFrame
 {
-  public:
     enum Flags : uint32_t {
         
-        GLOBAL_OR_MODULE       =        0x1,  
-        
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        DEBUGGER_EVAL          =       0x10,
 
         CONSTRUCTING           =       0x20,  
 
@@ -351,7 +321,6 @@ class InterpreterFrame
         HAS_CACHED_SAVED_FRAME =    0x80000,
     };
 
-  private:
     mutable uint32_t    flags_;         
     JSScript*           script_;        
     unsigned            nactual_;       
@@ -406,11 +375,11 @@ class InterpreterFrame
     
     void initCallFrame(JSContext* cx, InterpreterFrame* prev, jsbytecode* prevpc, Value* prevsp,
                        JSFunction& callee, JSScript* script, Value* argv, uint32_t nactual,
-                       InterpreterFrame::Flags flags);
+                       MaybeConstruct constructing);
 
     
     void initExecuteFrame(JSContext* cx, HandleScript script, AbstractFramePtr prev,
-                          const Value& newTargetValue, HandleObject scopeChain, ExecuteType type);
+                          const Value& newTargetValue, HandleObject scopeChain);
 
   public:
     
@@ -735,18 +704,6 @@ class InterpreterFrame
 
 
 
-    InitialFrameFlags initialFlags() const {
-        JS_STATIC_ASSERT((int)INITIAL_NONE == 0);
-        JS_STATIC_ASSERT((int)INITIAL_CONSTRUCT == (int)CONSTRUCTING);
-        uint32_t mask = CONSTRUCTING;
-        MOZ_ASSERT((flags_ & mask) != mask);
-        return InitialFrameFlags(flags_ & mask);
-    }
-
-    void setConstructing() {
-        flags_ |= CONSTRUCTING;
-    }
-
     bool isConstructing() const {
         return !!(flags_ & CONSTRUCTING);
     }
@@ -786,8 +743,22 @@ class InterpreterFrame
         return flags_ & CREATE_SINGLETON;
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
     bool isDebuggerEvalFrame() const {
-        return !!(flags_ & DEBUGGER_EVAL);
+        return isEvalFrame() && !!evalInFramePrev_;
     }
 
     bool prevUpToDate() const {
@@ -835,26 +806,6 @@ class InterpreterFrame
         flags_ &= ~RUNNING_IN_JIT;
     }
 };
-
-static const size_t VALUES_PER_STACK_FRAME = sizeof(InterpreterFrame) / sizeof(Value);
-
-static inline InterpreterFrame::Flags
-ToFrameFlags(InitialFrameFlags initial)
-{
-    return InterpreterFrame::Flags(initial);
-}
-
-static inline InitialFrameFlags
-InitialFrameFlagsFromConstructing(bool b)
-{
-    return b ? INITIAL_CONSTRUCT : INITIAL_NONE;
-}
-
-static inline bool
-InitialFrameFlagsAreConstructing(InitialFrameFlags initial)
-{
-    return !!(initial & INITIAL_CONSTRUCT);
-}
 
 
 
@@ -931,7 +882,7 @@ class InterpreterStack
 
     inline InterpreterFrame*
     getCallFrame(JSContext* cx, const CallArgs& args, HandleScript script,
-                 InterpreterFrame::Flags* pflags, Value** pargv);
+                 MaybeConstruct constructing, Value** pargv);
 
     void releaseFrame(InterpreterFrame* fp) {
         frameCount_--;
@@ -951,16 +902,16 @@ class InterpreterStack
     
     InterpreterFrame* pushExecuteFrame(JSContext* cx, HandleScript script,
                                        const Value& newTargetValue, HandleObject scopeChain,
-                                       ExecuteType type, AbstractFramePtr evalInFrame);
+                                       AbstractFramePtr evalInFrame);
 
     
     InterpreterFrame* pushInvokeFrame(JSContext* cx, const CallArgs& args,
-                                      InitialFrameFlags initial);
+                                      MaybeConstruct constructing);
 
     
     
     bool pushInlineFrame(JSContext* cx, InterpreterRegs& regs, const CallArgs& args,
-                         HandleScript script, InitialFrameFlags initial);
+                         HandleScript script, MaybeConstruct constructing);
 
     void popInlineFrame(InterpreterRegs& regs);
 
@@ -1364,7 +1315,7 @@ class InterpreterActivation : public Activation
     inline ~InterpreterActivation();
 
     inline bool pushInlineFrame(const CallArgs& args, HandleScript script,
-                                InitialFrameFlags initial);
+                                MaybeConstruct constructing);
     inline void popInlineFrame(InterpreterFrame* frame);
 
     inline bool resumeGeneratorFrame(HandleFunction callee, HandleValue newTarget,
