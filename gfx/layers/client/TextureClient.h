@@ -24,6 +24,7 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/mozalloc.h"           
+#include "mozilla/gfx/CriticalSection.h"
 #include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsISupportsImpl.h"            
@@ -181,25 +182,32 @@ class D3D11TextureData;
 
 class TextureData {
 public:
+  struct Info {
+    gfx::IntSize size;
+    gfx::SurfaceFormat format;
+    bool hasIntermediateBuffer;
+    bool hasSynchronization;
+    bool supportsMoz2D;
+    bool canExposeMappedData;
+
+    Info()
+    : format(gfx::SurfaceFormat::UNKNOWN)
+    , hasIntermediateBuffer(false)
+    , hasSynchronization(false)
+    , supportsMoz2D(false)
+    , canExposeMappedData(false)
+    {}
+  };
+
   TextureData() { MOZ_COUNT_CTOR(TextureData); }
 
   virtual ~TextureData() { MOZ_COUNT_DTOR(TextureData); }
 
-  virtual gfx::IntSize GetSize() const = 0;
-
-  virtual gfx::SurfaceFormat GetFormat() const = 0;
+  virtual void FillInfo(TextureData::Info& aInfo) const = 0;
 
   virtual bool Lock(OpenMode aMode, FenceHandle* aFence) = 0;
 
   virtual void Unlock() = 0;
-
-  virtual bool SupportsMoz2D() const { return false; }
-
-  virtual bool CanExposeMappedData() const { return false; }
-
-  virtual bool HasIntermediateBuffer() const = 0;
-
-  virtual bool HasSynchronization() const { return false; }
 
   virtual already_AddRefed<gfx::DrawTarget> BorrowDrawTarget() { return nullptr; }
 
@@ -327,9 +335,29 @@ public:
 
   bool IsLocked() const { return mIsLocked; }
 
-  bool CanExposeDrawTarget() const { return mData->SupportsMoz2D(); }
+  gfx::IntSize GetSize() const { return mInfo.size; }
 
-  bool CanExposeMappedData() const { return mData->CanExposeMappedData(); }
+  gfx::SurfaceFormat GetFormat() const { return mInfo.format; }
+
+  
+
+
+
+
+
+
+  bool HasSynchronization() const { return mInfo.hasSynchronization; }
+
+  
+
+
+
+
+  bool HasIntermediateBuffer() const { return mInfo.hasIntermediateBuffer; }
+
+  bool CanExposeDrawTarget() const { return mInfo.supportsMoz2D; }
+
+  bool CanExposeMappedData() const { return mInfo.canExposeMappedData; }
 
   
 
@@ -372,25 +400,11 @@ public:
 
   void UpdateFromSurface(gfx::SourceSurface* aSurface);
 
-  virtual gfx::SurfaceFormat GetFormat() const;
-
   
 
 
 
-  already_AddRefed<gfx::DataSourceSurface> GetAsSurface() {
-    Lock(OpenMode::OPEN_READ);
-    RefPtr<gfx::DataSourceSurface> data;
-    RefPtr<gfx::DrawTarget> dt = BorrowDrawTarget();
-    if (dt) {
-      RefPtr<gfx::SourceSurface> surf = dt->Snapshot();
-      if (surf) {
-        data = surf->GetDataSurface();
-      }
-    }
-    Unlock();
-    return data.forget();
-  }
+  already_AddRefed<gfx::DataSourceSurface> GetAsSurface();
 
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix);
 
@@ -410,22 +424,6 @@ public:
 
 
 
-  bool HasSynchronization() const { return false; }
-
-  
-
-
-
-
-  bool HasIntermediateBuffer() const;
-
-  
-
-
-
-
-
-
 
   static PTextureChild* CreateIPDLActor();
   static bool DestroyIPDLActor(PTextureChild* actor);
@@ -435,9 +433,7 @@ public:
   
 
 
-  static TextureClient* AsTextureClient(PTextureChild* actor);
-
-  gfx::IntSize GetSize() const;
+  static already_AddRefed<TextureClient> AsTextureClient(PTextureChild* actor);
 
   
 
@@ -456,6 +452,7 @@ public:
 
   void RemoveFlags(TextureFlags aFlags);
 
+  
   void RecycleTexture(TextureFlags aFlags);
 
   
@@ -502,6 +499,7 @@ public:
   bool IsAddedToCompositableClient() const { return mAddedToCompositableClient; }
 
   
+
 
 
 
@@ -618,6 +616,10 @@ protected:
 
   bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor);
 
+  void LockActor() const;
+  void UnlockActor() const;
+
+  TextureData::Info mInfo;
 
   RefPtr<ClientIPCAllocator> mAllocator;
   RefPtr<TextureChild> mActor;
