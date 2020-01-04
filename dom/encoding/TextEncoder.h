@@ -24,14 +24,10 @@ public:
 
   static TextEncoder*
   Constructor(const GlobalObject& aGlobal,
-              const nsAString& aEncoding,
               ErrorResult& aRv)
   {
     nsAutoPtr<TextEncoder> txtEncoder(new TextEncoder());
-    txtEncoder->Init(aEncoding, aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
+    txtEncoder->Init();
     return txtEncoder.forget();
   }
 
@@ -50,16 +46,7 @@ public:
 
 protected:
 
-  
-
-
-
-
-
-
-
-
-  void Init(const nsAString& aEncoding, ErrorResult& aRv);
+  void Init();
 
 public:
   
@@ -84,7 +71,6 @@ public:
               JS::MutableHandle<JSObject*> aRetval,
               ErrorResult& aRv);
 private:
-  nsCString mEncoding;
   nsCOMPtr<nsIUnicodeEncoder> mEncoder;
 };
 
