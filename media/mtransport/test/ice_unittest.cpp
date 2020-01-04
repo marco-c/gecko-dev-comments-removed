@@ -1355,6 +1355,10 @@ class IceTestPeer : public sigslot::has_slots<> {
     ASSERT_TRUE(NS_SUCCEEDED(res));
   }
 
+  NrIceCtx::Controlling GetControlling() {
+    return ice_ctx_->ctx()->GetControlling();
+  }
+
   void SetTiebreaker(uint64_t tiebreaker) {
     test_utils_->sts_target()->Dispatch(
         WrapRunnable(this,
@@ -2489,6 +2493,28 @@ TEST_F(WebRtcIceGatherTest, TestStunTcpAndUdpServerTrickle) {
   ASSERT_TRUE(StreamHasMatchingCandidate(0, " 192.0.3.1 ", " tcptype "));
 }
 
+TEST_F(WebRtcIceGatherTest, TestSetIceControlling) {
+  EnsurePeer();
+  peer_->SetControlling(NrIceCtx::ICE_CONTROLLING);
+  NrIceCtx::Controlling controlling = peer_->GetControlling();
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLING, controlling);
+  
+  peer_->SetControlling(NrIceCtx::ICE_CONTROLLED);
+  controlling = peer_->GetControlling();
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLING, controlling);
+}
+
+TEST_F(WebRtcIceGatherTest, TestSetIceControlled) {
+  EnsurePeer();
+  peer_->SetControlling(NrIceCtx::ICE_CONTROLLED);
+  NrIceCtx::Controlling controlling = peer_->GetControlling();
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLED, controlling);
+  
+  peer_->SetControlling(NrIceCtx::ICE_CONTROLLING);
+  controlling = peer_->GetControlling();
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLED, controlling);
+}
+
 TEST_F(WebRtcIceConnectTest, TestGather) {
   AddStream(1);
   ASSERT_TRUE(Gather());
@@ -2547,7 +2573,6 @@ TEST_F(WebRtcIceConnectTest, TestConnectRestartIce) {
   p3_ = nullptr;
 }
 
-
 TEST_F(WebRtcIceConnectTest, TestConnectRestartIceThenAbort) {
   AddStream(1);
   ASSERT_TRUE(Gather());
@@ -2581,6 +2606,53 @@ TEST_F(WebRtcIceConnectTest, TestConnectRestartIceThenAbort) {
   p3_ = nullptr;
 }
 
+TEST_F(WebRtcIceConnectTest, TestConnectSetControllingAfterIceRestart) {
+  AddStream(1);
+  ASSERT_TRUE(Gather());
+  
+  p1_->SetControlling(NrIceCtx::ICE_CONTROLLED);
+  p2_->SetControlling(NrIceCtx::ICE_CONTROLLING);
+  Connect();
+  SendReceive(p1_.get(), p2_.get());
+  
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLED, p1_->GetControlling());
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLING, p2_->GetControlling());
+
+  p2_->RestartIce();
+  ASSERT_FALSE(p2_->gathering_complete());
+  
+  p2_->SetControlling(NrIceCtx::ICE_CONTROLLED);
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLED, p2_->GetControlling());
+  
+  p2_->SetControlling(NrIceCtx::ICE_CONTROLLING);
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLED, p2_->GetControlling());
+
+  mozilla::UniquePtr<IceTestPeer> p3_;
+  p3_ = MakeUnique<IceTestPeer>("P3", test_utils_, true, false,
+                                false, false, false);
+  InitPeer(p3_.get());
+  p3_->AddStream(1);
+  
+  p3_->SetControlling(NrIceCtx::ICE_CONTROLLING);
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLING, p3_->GetControlling());
+
+  p2_->AddStream(1);
+  ASSERT_TRUE(GatherCallerAndCallee(p2_.get(), p3_.get()));
+  std::cout << "-------------------------------------------------" << std::endl;
+  ConnectCallerAndCallee(p3_.get(), p2_.get());
+  
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLED, p2_->GetControlling());
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLING, p3_->GetControlling());
+
+  p2_->FinalizeIceRestart();
+  
+  p2_->SetControlling(NrIceCtx::ICE_CONTROLLING);
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLED, p2_->GetControlling());
+  p3_->SetControlling(NrIceCtx::ICE_CONTROLLED);
+  ASSERT_EQ(NrIceCtx::ICE_CONTROLLING, p3_->GetControlling());
+
+  p3_ = nullptr;
+}
 
 TEST_F(WebRtcIceConnectTest, TestConnectTcp) {
   Init(false, true);
