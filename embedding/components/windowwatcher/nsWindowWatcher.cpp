@@ -2237,7 +2237,29 @@ nsWindowWatcher::SizeOpenedDocShellItem(nsIDocShellTreeItem* aDocShellItem,
   
 
   if (positionSpecified) {
-    treeOwnerAsWin->SetPosition(left * scale, top * scale);
+    
+    
+    nsCOMPtr<nsIScreen> screen;
+    nsCOMPtr<nsIScreenManager> screenMgr(
+      do_GetService("@mozilla.org/gfx/screenmanager;1"));
+    if (screenMgr) {
+      screenMgr->ScreenForRect(left, top, 1, 1, getter_AddRefs(screen));
+    }
+    if (screen) {
+      screen->GetDefaultCSSScaleFactor(&scale);
+      int32_t screenLeft, screenTop, screenWd, screenHt;
+      screen->GetRectDisplayPix(&screenLeft, &screenTop, &screenWd, &screenHt);
+      
+      
+      treeOwnerAsWin->SetPosition((left - screenLeft) * scale + screenLeft,
+                                  (top - screenTop) * scale + screenTop);
+    } else {
+      
+      treeOwnerAsWin->SetPosition(left * scale, top * scale);
+    }
+    
+    
+    
     
     treeOwnerAsWin->GetUnscaledDevicePixelsPerCSSPixel(&scale);
   }

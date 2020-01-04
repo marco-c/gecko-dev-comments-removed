@@ -3447,22 +3447,30 @@ var SessionStoreInternal = {
       let screenLeft = {}, screenTop = {}, screenWidth = {}, screenHeight = {};
       screen.GetAvailRectDisplayPix(screenLeft, screenTop, screenWidth, screenHeight);
       
-      if (aWidth > screenWidth.value) {
-        aWidth = screenWidth.value;
+      let screenLeftCss = screenLeft.value;
+      let screenTopCss = screenTop.value;
+      
+      screen.GetAvailRect(screenLeft, screenTop, screenWidth, screenHeight);
+      let cssToDevScale = screen.defaultCSSScaleFactor;
+      let screenWidthCss = screenWidth.value / cssToDevScale;
+      let screenHeightCss = screenHeight.value / cssToDevScale;
+      
+      if (aWidth > screenWidthCss) {
+        aWidth = screenWidthCss;
       }
-      if (aHeight > screenHeight.value) {
-        aHeight = screenHeight.value;
+      if (aHeight > screenHeightCss) {
+        aHeight = screenHeightCss;
       }
       
-      if (aLeft < screenLeft.value) {
-        aLeft = screenLeft.value;
-      } else if (aLeft + aWidth > screenLeft.value + screenWidth.value) {
-        aLeft = screenLeft.value + screenWidth.value - aWidth;
+      if (aLeft < screenLeftCss) {
+        aLeft = screenLeftCss;
+      } else if (aLeft + aWidth > screenLeftCss + screenWidthCss) {
+        aLeft = screenLeftCss + screenWidthCss - aWidth;
       }
-      if (aTop < screenTop.value) {
-        aTop = screenTop.value;
-      } else if (aTop + aHeight > screenTop.value + screenHeight.value) {
-        aTop = screenTop.value + screenHeight.value - aHeight;
+      if (aTop < screenTopCss) {
+        aTop = screenTopCss;
+      } else if (aTop + aHeight > screenTopCss + screenHeightCss) {
+        aTop = screenTopCss + screenHeightCss - aHeight;
       }
     }
 
