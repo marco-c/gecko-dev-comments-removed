@@ -196,21 +196,13 @@ private:
 #endif
 
   std::vector<Task*> mWaitingTasks;
-  Mutex mMutex; 
+  CriticalSection mWaitingTasksSection; 
   Atomic<uint32_t> mSignals;
 
   friend class Task;
   friend class TaskScheduler;
 };
 
-
-
-struct MutexAutoLock {
-    MutexAutoLock(Mutex* aMutex) : mMutex(aMutex) { mMutex->Lock(); }
-    ~MutexAutoLock() { mMutex->Unlock(); }
-protected:
-    Mutex* mMutex;
-};
 
 
 class WorkerThread
