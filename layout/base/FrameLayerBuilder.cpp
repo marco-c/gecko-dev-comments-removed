@@ -4894,11 +4894,10 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
         
         
         clippedOpaque.SetEmpty();
-      }
-      data->mOpaqueRegion.Or(data->mOpaqueRegion, clippedOpaque);
-      if (e->mHideAllLayersBelow) {
+      } else if (e->mHideAllLayersBelow) {
         hideAll = true;
       }
+      data->mOpaqueRegion.Or(data->mOpaqueRegion, clippedOpaque);
     }
 
     if (e->mLayer->GetType() == Layer::TYPE_READBACK) {
