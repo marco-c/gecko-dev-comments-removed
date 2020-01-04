@@ -84,6 +84,7 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
     size_t totalResponseLength = impulseResponseLength;
 
     
+    
     size_t reverbTotalLatency = 0;
 
     size_t stageOffset = 0;
@@ -100,7 +101,7 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
         
         int renderPhase = convolverRenderPhase + stagePhase;
 
-        bool useDirectConvolver = !stageOffset;
+        bool useDirectConvolver = false;
 
         nsAutoPtr<ReverbConvolverStage> stage
           (new ReverbConvolverStage(response, totalResponseLength,
@@ -116,12 +117,12 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
         } else
             m_stages.AppendElement(stage.forget());
 
-        stageOffset += stageSize;
-
-        if (!useDirectConvolver) {
+        if (stageOffset != 0) {
             
             fftSize *= 2;
         }
+
+        stageOffset += stageSize;
 
         if (hasRealtimeConstraint && !isBackgroundStage
             && fftSize > m_maxRealtimeFFTSize) {
