@@ -355,8 +355,9 @@ class ExecutableAllocator
 
         if (m_smallPools.length() < maxSmallPools) {
             
-            m_smallPools.append(pool);
-            pool->addRef();
+            
+            if (m_smallPools.append(pool))
+                pool->addRef();
         } else {
             
             int iMin = 0;
