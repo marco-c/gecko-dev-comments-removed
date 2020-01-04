@@ -1517,10 +1517,6 @@ protected:
   bool mEventDeliveryPaused;
 
   
-  
-  bool mWaitingFired;
-
-  
   bool mIsRunningLoadMethod;
 
   
