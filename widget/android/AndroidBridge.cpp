@@ -48,6 +48,8 @@
 #include "SurfaceTexture.h"
 #include "GLContextProvider.h"
 
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ContentChild.h"
 
 using namespace mozilla;
@@ -184,9 +186,10 @@ AndroidBridge::~AndroidBridge()
 }
 
 AndroidBridge::AndroidBridge()
-  : mLayerClient(nullptr),
-    mPresentationWindow(nullptr),
-    mPresentationSurface(nullptr)
+  : mLayerClient(nullptr)
+  , mUiTaskQueueLock("UiTaskQueue")
+  , mPresentationWindow(nullptr)
+  , mPresentationSurface(nullptr)
 {
     ALOG_BRIDGE("AndroidBridge::Init");
 
@@ -2047,24 +2050,76 @@ AndroidBridge::ProgressiveUpdateCallback(bool aHasPendingNewThebesContent,
     return progressiveUpdateData->Abort();
 }
 
+class AndroidBridge::DelayedTask
+{
+    using TimeStamp = mozilla::TimeStamp;
+    using TimeDuration = mozilla::TimeDuration;
+
+public:
+    DelayedTask(Task* aTask)
+        : mTask(aTask)
+        , mRunTime() 
+    {}
+
+    DelayedTask(Task* aTask, int aDelayMs)
+        : mTask(aTask)
+        , mRunTime(TimeStamp::Now() + TimeDuration::FromMilliseconds(aDelayMs))
+    {}
+
+    bool IsEarlierThan(const DelayedTask& aOther) const
+    {
+        if (mRunTime) {
+            return aOther.mRunTime ? mRunTime < aOther.mRunTime : false;
+        }
+        
+        
+        return !!aOther.mRunTime;
+    }
+
+    int64_t MillisecondsToRunTime() const
+    {
+        if (mRunTime) {
+            return int64_t((mRunTime - TimeStamp::Now()).ToMilliseconds());
+        }
+        return 0;
+    }
+
+    UniquePtr<Task>&& GetTask()
+    {
+        return static_cast<UniquePtr<Task>&&>(mTask);
+    }
+
+private:
+    UniquePtr<Task> mTask;
+    const TimeStamp mRunTime;
+};
+
+
 void
 AndroidBridge::PostTaskToUiThread(Task* aTask, int aDelayMs)
 {
     
     
-    DelayedTask* newTask = new DelayedTask(aTask, aDelayMs);
-    uint32_t i = 0;
-    while (i < mDelayedTaskQueue.Length()) {
-        if (newTask->IsEarlierThan(mDelayedTaskQueue[i])) {
-            mDelayedTaskQueue.InsertElementAt(i, newTask);
-            break;
+    size_t i;
+    DelayedTask newTask(aDelayMs ? DelayedTask(aTask, aDelayMs)
+                                 : DelayedTask(aTask));
+
+    {
+        MutexAutoLock lock(mUiTaskQueueLock);
+
+        for (i = 0; i < mUiTaskQueue.Length(); i++) {
+            if (newTask.IsEarlierThan(mUiTaskQueue[i])) {
+                mUiTaskQueue.InsertElementAt(i, mozilla::Move(newTask));
+                break;
+            }
         }
-        i++;
+
+        if (i == mUiTaskQueue.Length()) {
+            
+            mUiTaskQueue.AppendElement(mozilla::Move(newTask));
+        }
     }
-    if (i == mDelayedTaskQueue.Length()) {
-        
-        mDelayedTaskQueue.AppendElement(newTask);
-    }
+
     if (i == 0) {
         
         
@@ -2076,9 +2131,10 @@ AndroidBridge::PostTaskToUiThread(Task* aTask, int aDelayMs)
 int64_t
 AndroidBridge::RunDelayedUiThreadTasks()
 {
-    while (mDelayedTaskQueue.Length() > 0) {
-        DelayedTask* nextTask = mDelayedTaskQueue[0];
-        int64_t timeLeft = nextTask->MillisecondsToRunTime();
+    MutexAutoLock lock(mUiTaskQueueLock);
+
+    while (!mUiTaskQueue.IsEmpty()) {
+        const int64_t timeLeft = mUiTaskQueue[0].MillisecondsToRunTime();
         if (timeLeft > 0) {
             
             
@@ -2087,13 +2143,12 @@ AndroidBridge::RunDelayedUiThreadTasks()
         }
 
         
+        const UniquePtr<Task> nextTask(mUiTaskQueue[0].GetTask());
+        mUiTaskQueue.RemoveElementAt(0);
+
         
-
-        mDelayedTaskQueue.RemoveElementAt(0);
-        Task* task = nextTask->GetTask();
-        delete nextTask;
-
-        task->Run();
+        MutexAutoUnlock unlock(mUiTaskQueueLock);
+        nextTask->Run();
     }
     return -1;
 }
