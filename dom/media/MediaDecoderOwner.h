@@ -63,6 +63,8 @@ public:
 
   
   
+  
+  
   virtual void DecodeError() = 0;
 
   
