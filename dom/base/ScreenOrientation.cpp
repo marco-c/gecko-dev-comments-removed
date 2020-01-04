@@ -348,6 +348,11 @@ bool
 ScreenOrientation::LockDeviceOrientation(ScreenOrientationInternal aOrientation,
                                          bool aIsFullScreen, ErrorResult& aRv)
 {
+  if (!GetOwner()) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return false;
+  }
+
   nsCOMPtr<EventTarget> target = do_QueryInterface(GetOwner()->GetDoc());
   
   
@@ -385,7 +390,8 @@ ScreenOrientation::UnlockDeviceOrientation()
 {
   hal::UnlockScreenOrientation();
 
-  if (!mFullScreenListener) {
+  if (!mFullScreenListener || !GetOwner()) {
+    mFullScreenListener = nullptr;
     return;
   }
 
