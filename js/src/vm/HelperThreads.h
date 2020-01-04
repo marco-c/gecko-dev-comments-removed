@@ -15,6 +15,7 @@
 
 #include "mozilla/GuardObjects.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/Variant.h"
 
 #include "jscntxt.h"
 #include "jslock.h"
@@ -300,33 +301,60 @@ struct HelperThread
     mozilla::Atomic<bool, mozilla::Relaxed> pause;
 
     
-    jit::IonBuilder* ionBuilder;
-
-    
-    AsmJSParallelTask* asmData;
-
-    
-    ParseTask* parseTask;
-
-    
-    SourceCompressionTask* compressionTask;
-
-    
-    GCHelperState* gcHelperState;
-
-    
-    GCParallelTask* gcParallelTask;
+    mozilla::Maybe<mozilla::Variant<jit::IonBuilder*,
+                                    AsmJSParallelTask*,
+                                    ParseTask*,
+                                    SourceCompressionTask*,
+                                    GCHelperState*,
+                                    GCParallelTask*>> currentTask;
 
     bool idle() const {
-        return !ionBuilder &&
-               !asmData &&
-               !parseTask &&
-               !compressionTask &&
-               !gcHelperState &&
-               !gcParallelTask;
+        return currentTask.isNothing();
+    }
+
+    
+    jit::IonBuilder* ionBuilder() {
+        return maybeCurrentTaskAs<jit::IonBuilder*>();
+    }
+
+    
+    AsmJSParallelTask* asmJSTask() {
+        return maybeCurrentTaskAs<AsmJSParallelTask*>();
+    }
+
+    
+    ParseTask* parseTask() {
+        return maybeCurrentTaskAs<ParseTask*>();
+    }
+
+    
+    SourceCompressionTask* compressionTask() {
+        return maybeCurrentTaskAs<SourceCompressionTask*>();
+    }
+
+    
+    GCHelperState* gcHelperTask() {
+        return maybeCurrentTaskAs<GCHelperState*>();
+    }
+
+    
+    GCParallelTask* gcParallelTask() {
+        return maybeCurrentTaskAs<GCParallelTask*>();
     }
 
     void destroy();
+
+    static void ThreadMain(void* arg);
+    void threadLoop();
+
+  private:
+    template <typename T>
+    T maybeCurrentTaskAs() {
+        if (currentTask.isSome() && currentTask->is<T>())
+            return currentTask->as<T>();
+
+        return nullptr;
+    }
 
     void handleAsmJSWorkload();
     void handleIonWorkload();
@@ -334,9 +362,6 @@ struct HelperThread
     void handleCompressionWorkload();
     void handleGCHelperWorkload();
     void handleGCParallelWorkload();
-
-    static void ThreadMain(void* arg);
-    void threadLoop();
 };
 
 
