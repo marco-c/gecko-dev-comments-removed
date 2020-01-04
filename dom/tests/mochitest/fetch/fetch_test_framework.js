@@ -141,7 +141,9 @@ function testScript(script) {
       return workerTest();
     })
     .then(function() {
-      return nestedWorkerTest();
+      
+      let isWin = navigator.platform.indexOf("Win") == 0;
+      return isWin ? undefined : nestedWorkerTest();
     })
     .then(function() {
       return serviceWorkerTest();
