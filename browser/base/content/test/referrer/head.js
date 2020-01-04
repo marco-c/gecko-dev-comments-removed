@@ -45,7 +45,7 @@ var _referrerTests = [
     fromScheme: "https://",
     toScheme: "http://",
     policy: "origin",
-    result: "https://test1.example.com/"  
+    result: "https://test1.example.com"  
   },
   {
     fromScheme: "https://",
