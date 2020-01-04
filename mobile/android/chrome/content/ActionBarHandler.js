@@ -63,8 +63,8 @@ var ActionBarHandler = {
 
     
     if (this._selectionID) {
-      let [element, win] = this._getSelectionTargets();
-      if (this._targetElement === element && this._contentWindow === win) {
+      if (!this._selectionHasChanged()) {
+        
         if (e.reason == 'visibilitychange' || e.reason == 'presscaret' ||
             e.reason == 'scroll' ) {
           this._updateVisibility();
@@ -176,6 +176,17 @@ var ActionBarHandler = {
 
     
     return [null, win];
+  },
+
+  
+
+
+
+  _selectionHasChanged: function() {
+    let [element, win] = this._getSelectionTargets();
+    return (this._targetElement !== element ||
+            this._contentWindow !== win ||
+            this._isInDesignMode(this._contentWindow) !== this._isInDesignMode(win));
   },
 
   
@@ -350,7 +361,7 @@ var ActionBarHandler = {
       selector: {
         matches: function(element, win) {
           
-          if (!element) {
+          if (!element && !ActionBarHandler._isInDesignMode(win)) {
             return false;
           }
           
@@ -359,7 +370,7 @@ var ActionBarHandler = {
             return false;
           }
           
-          if (element.disabled || element.readOnly) {
+          if (element && (element.disabled || element.readOnly)) {
             return false;
           }
           
@@ -428,11 +439,11 @@ var ActionBarHandler = {
       selector: {
         matches: function(element, win) {
           
-          if (!element) {
+          if (!element && !ActionBarHandler._isInDesignMode(win)) {
             return false;
           }
           
-          if (element.disabled || element.readOnly) {
+          if (element && (element.disabled || element.readOnly)) {
             return false;
           }
           
@@ -600,6 +611,13 @@ var ActionBarHandler = {
 
   set _contentWindow(aContentWindow) {
     this._contentWindowRef = Cu.getWeakReference(aContentWindow);
+  },
+
+  
+
+
+  _isInDesignMode: function(win) {
+    return this._selectionID && (win.document.designMode === "on");
   },
 
   
