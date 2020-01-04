@@ -324,10 +324,10 @@ DataTransfer::GetTypes(ErrorResult& aRv) const
       continue;
     }
 
-    if (item->Kind() == DataTransferItem::KIND_STRING) {
+    nsAutoString type;
+    item->GetType(type);
+    if (item->Kind() == DataTransferItem::KIND_STRING || type.EqualsASCII(kFileMime)) {
       
-      nsAutoString type;
-      item->GetType(type);
       if (NS_WARN_IF(!types->Add(type))) {
         aRv.Throw(NS_ERROR_FAILURE);
         return nullptr;
