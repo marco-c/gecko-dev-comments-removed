@@ -459,10 +459,7 @@ private:
   void NotifyEffectiveVisibilityChanged(bool aEffectivelyVisible);
 
   
-  
-  
-  
-  void InvalidateHierarchy(nsViewManager *aViewManagerParent);
+  void InvalidateHierarchy();
 
   nsViewManager    *mViewManager;
   nsView           *mParent;
