@@ -2086,8 +2086,10 @@ TrackBuffersManager::SkipToNextRandomAccessPoint(TrackInfo::TrackType aTrack,
   
   
   if (aFound) {
-    trackData.mNextSampleTimecode = nextSampleTimecode;
-    trackData.mNextSampleTime = nextSampleTime;
+    trackData.mNextSampleTimecode =
+       TimeUnit::FromMicroseconds(track[i]->mTimecode);
+    trackData.mNextSampleTime =
+       TimeUnit::FromMicroseconds(track[i]->mTime);
     trackData.mNextGetSampleIndex = Some(i);
   } else if (i > 0) {
     
@@ -2182,10 +2184,27 @@ TrackBuffersManager::GetSample(TrackInfo::TrackType aTrack,
     }
     trackData.mNextGetSampleIndex.ref()++;
     
-    trackData.mNextSampleTimecode =
+    TimeUnit nextSampleTimecode =
       TimeUnit::FromMicroseconds(sample->mTimecode + sample->mDuration);
-    trackData.mNextSampleTime =
+    TimeUnit nextSampleTime =
       TimeUnit::FromMicroseconds(sample->GetEndTime());
+    const MediaRawData* nextSample =
+      GetSample(aTrack,
+                trackData.mNextGetSampleIndex.ref(),
+                nextSampleTimecode,
+                nextSampleTime,
+                aFuzz);
+    if (nextSample) {
+      
+      trackData.mNextSampleTimecode =
+        TimeUnit::FromMicroseconds(nextSample->mTimecode);
+      trackData.mNextSampleTime =
+        TimeUnit::FromMicroseconds(nextSample->mTime);
+    } else {
+      
+      trackData.mNextSampleTimecode = nextSampleTimecode;
+      trackData.mNextSampleTime = nextSampleTime;
+    }
     aResult = GetSampleResult::NO_ERROR;
     return p.forget();
   }
