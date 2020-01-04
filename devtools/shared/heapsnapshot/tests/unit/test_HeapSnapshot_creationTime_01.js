@@ -3,9 +3,9 @@
 
 
 
-function waitForTenMilliseconds() {
+function waitForThirtyMilliseconds() {
   const start = Date.now();
-  while (Date.now() - start < 10) ;
+  while (Date.now() - start < 30) ;
 }
 
 function run_test() {
@@ -14,9 +14,10 @@ function run_test() {
 
   
   
-  waitForTenMilliseconds();
+  
+  waitForThirtyMilliseconds();
   const path = ChromeUtils.saveHeapSnapshot({ runtime: true });
-  waitForTenMilliseconds();
+  waitForThirtyMilliseconds();
 
   const end = Date.now() * 1000;
   do_print("end                   = " + end);

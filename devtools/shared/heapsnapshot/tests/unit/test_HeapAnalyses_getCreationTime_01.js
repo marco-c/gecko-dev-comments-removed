@@ -4,9 +4,9 @@
 
 
 
-function waitForTenMilliseconds() {
+function waitForThirtyMilliseconds() {
   const start = Date.now();
-  while (Date.now() - start < 10) ;
+  while (Date.now() - start < 30) ;
 }
 
 function run_test() {
@@ -24,9 +24,10 @@ add_task(function* () {
 
   
   
-  waitForTenMilliseconds();
+  
+  waitForThirtyMilliseconds();
   const snapshotFilePath = saveNewHeapSnapshot();
-  waitForTenMilliseconds();
+  waitForThirtyMilliseconds();
   const end = Date.now() * 1000;
 
   yield client.readHeapSnapshot(snapshotFilePath);
@@ -45,6 +46,11 @@ add_task(function* () {
   let time = yield client.getCreationTime(snapshotFilePath, {
     breakdown: BREAKDOWN
   });
+
+  dumpn("Start = " + start);
+  dumpn("End   = " + end);
+  dumpn("Time  = " + time);
+
   ok(time >= start, "creation time occurred after start");
   ok(time <= end, "creation time occurred before end");
 
