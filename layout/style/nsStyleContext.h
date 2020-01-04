@@ -173,6 +173,16 @@ public:
                      bool aRelevantLinkVisited);
 
   
+
+
+
+  nscolor GetTextFillColor() {
+    const nsStyleText* textStyle = StyleText();
+    return textStyle->mWebkitTextFillColorForeground
+           ? StyleColor()->mColor : textStyle->mWebkitTextFillColor;
+  }
+
+  
   
   
   
