@@ -3635,7 +3635,16 @@ nsTreeBodyFrame::PaintImage(int32_t              aRowIndex,
     } else {
       
       
-      wholeImageDest = destRect;
+      
+      
+      
+      
+      
+      
+      
+      if (image->GetType() == imgIContainer::TYPE_VECTOR) {
+        wholeImageDest = destRect;
+      }
     }
 
     gfxContext* ctx = aRenderingContext.ThebesContext();
