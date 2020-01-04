@@ -305,6 +305,11 @@ protected:
   AutoJSAPI(nsIGlobalObject* aGlobalObject, bool aIsMainThread, JSContext* aCx);
 
 private:
+  
+  
+  
+  
+  RefPtr<nsIGlobalObject> mGlobalObject;
   mozilla::Maybe<danger::AutoCxPusher> mCxPusher;
   mozilla::Maybe<JSAutoNullableCompartment> mAutoNullableCompartment;
   JSContext *mCx;
@@ -315,7 +320,8 @@ private:
   bool mIsMainThread;
   Maybe<JSErrorReporter> mOldErrorReporter;
 
-  void InitInternal(JSObject* aGlobal, JSContext* aCx, bool aIsMainThread);
+  void InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
+                    JSContext* aCx, bool aIsMainThread);
 
   AutoJSAPI(const AutoJSAPI&) = delete;
   AutoJSAPI& operator= (const AutoJSAPI&) = delete;
