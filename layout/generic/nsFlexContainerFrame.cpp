@@ -1899,6 +1899,13 @@ FlexItem::CanMainSizeInfluenceCrossSize(
     return false;
   }
 
+  if (HasIntrinsicRatio()) {
+    
+    
+    
+    return true;
+  }
+
   if (aAxisTracker.IsCrossAxisHorizontal()) {
     
     
@@ -3687,14 +3694,15 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
   FlexItem& aItem)
 {
   if (aAxisTracker.IsCrossAxisHorizontal()) {
+    MOZ_ASSERT(aItem.HasIntrinsicRatio(),
+               "For now, caller's CanMainSizeInfluenceCrossSize check should "
+               "only allow us to get here for items with intrinsic ratio");
     
     
     
     
     
     
-    MOZ_ASSERT_UNREACHABLE("Caller should use tentative cross size instead "
-                           "of calling SizeItemInCrossAxis");
     
     
     aItem.SetCrossSize(aChildReflowState.ComputedWidth());
@@ -3950,10 +3958,6 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
         if (aAxisTracker.IsMainAxisHorizontal()) {
           childReflowState.SetComputedWidth(item->GetMainSize());
         } else {
-          
-          
-          
-          
           childReflowState.SetComputedHeight(item->GetMainSize());
         }
         
