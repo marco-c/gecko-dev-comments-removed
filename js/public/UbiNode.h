@@ -1025,6 +1025,23 @@ class TracerConcrete : public Base {
 };
 
 
+
+
+template<> const char16_t TracerConcrete<JS::Symbol>::concreteTypeName[];
+template<> const char16_t TracerConcrete<JSScript>::concreteTypeName[];
+template<> const char16_t TracerConcrete<js::LazyScript>::concreteTypeName[];
+template<> const char16_t TracerConcrete<js::jit::JitCode>::concreteTypeName[];
+template<> const char16_t TracerConcrete<js::Shape>::concreteTypeName[];
+template<> const char16_t TracerConcrete<js::BaseShape>::concreteTypeName[];
+template<> const char16_t TracerConcrete<js::ObjectGroup>::concreteTypeName[];
+
+
+template<> const char16_t TracerConcrete<JSString>::concreteTypeName[];
+
+
+template<> const char16_t TracerConcrete<JSObject>::concreteTypeName[];
+
+
 template<typename Referent>
 class TracerConcreteWithCompartment : public TracerConcrete<Referent> {
     typedef TracerConcrete<Referent> TracerBase;
