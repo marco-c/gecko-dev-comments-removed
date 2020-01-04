@@ -330,6 +330,19 @@ struct JS_PUBLIC_API(ShortestPaths)
     }
 };
 
+#ifdef DEBUG
+
+
+
+
+
+
+
+
+JS_PUBLIC_API(void)
+dumpPaths(JSRuntime* rt, Node node, uint32_t maxNumPaths = 10);
+#endif
+
 } 
 } 
 
