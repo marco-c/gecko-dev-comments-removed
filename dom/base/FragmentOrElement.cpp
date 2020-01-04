@@ -1186,10 +1186,6 @@ FragmentOrElement::DestroyContent()
                                                   nsBindingManager::eRunDtor);
   document->ClearBoxObjectFor(this);
 
-  
-  
-  ReleaseWrapper(this);
-
   uint32_t i, count = mAttrsAndChildren.ChildCount();
   for (i = 0; i < count; ++i) {
     

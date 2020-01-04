@@ -865,7 +865,9 @@ public:
 
 
 
-  virtual void DestroyContent() = 0;
+  virtual void DestroyContent()
+  {
+  }
 
   
 
