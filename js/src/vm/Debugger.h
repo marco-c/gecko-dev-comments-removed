@@ -345,6 +345,12 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
         }
     };
 
+    
+    static void readBarrier(Debugger* dbg) {
+        InternalBarrierMethods<JSObject*>::readBarrier(dbg->object);
+    }
+    static void writeBarrierPost(Debugger** vp, Debugger* prev, Debugger* next) {}
+
   private:
     HeapPtrNativeObject object;         
     WeakGlobalObjectSet debuggees;      

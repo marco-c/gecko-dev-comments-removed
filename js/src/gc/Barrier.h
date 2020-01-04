@@ -175,6 +175,11 @@
 
 
 
+
+
+
+
+
 class JSAtom;
 struct JSCompartment;
 class JSFlatString;
@@ -322,11 +327,7 @@ class BarrieredBase : public BarrieredBaseMixins<T>
 {
   protected:
     
-    explicit BarrieredBase(T v) : value(v) {
-#ifdef DEBUG
-        assertTypeConstraints();
-#endif
-    }
+    explicit BarrieredBase(T v) : value(v) {}
 
     
     
@@ -339,13 +340,6 @@ class BarrieredBase : public BarrieredBaseMixins<T>
     
     
     T* unsafeUnbarrieredForTracing() { return &value; }
-
-  private:
-#ifdef DEBUG
-    
-    
-    void assertTypeConstraints() const;
-#endif
 };
 
 
