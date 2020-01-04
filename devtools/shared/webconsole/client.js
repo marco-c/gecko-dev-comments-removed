@@ -299,6 +299,13 @@ WebConsoleClient.prototype = {
     
     
     
+    if (aPacket.from !== this._actor) {
+      return;
+    }
+
+    
+    
+    
     let onResponse = this.pendingEvaluationResults.get(aPacket.resultID);
     if (onResponse) {
       onResponse(aPacket);

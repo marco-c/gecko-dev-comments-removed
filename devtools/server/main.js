@@ -843,19 +843,12 @@ var DebuggerServer = {
 
         onMessage: (message) => {
           let packet = JSON.parse(message);
-          if (packet.type !== "message" || packet.id !== aId) {
+          if (packet.type !== "connected" || packet.id !== aId) {
             return;
           }
 
-          message = packet.message;
-          if (message.error) {
-            reject(error);
-          }
-
-          if (message.type !== "paused") {
-            return;
-          }
-
+          
+          
           aDbg.removeListener(listener);
 
           
@@ -887,7 +880,8 @@ var DebuggerServer = {
           aConnection.setForwarding(aId, transport);
 
           resolve({
-            threadActor: message.from,
+            threadActor: packet.threadActor,
+            consoleActor: packet.consoleActor,
             transport: transport
           });
         }

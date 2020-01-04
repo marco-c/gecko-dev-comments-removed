@@ -6,35 +6,18 @@
 
 "use strict";
 
+const Services = require("Services");
 const { Cc, Ci, Cu } = require("chrome");
 const { DebuggerServer, ActorPool } = require("devtools/server/main");
 const { EnvironmentActor, ThreadActor } = require("devtools/server/actors/script");
 const { ObjectActor, LongStringActor, createValueGrip, stringIsLong } = require("devtools/server/actors/object");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "Services",
-                                  "resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyGetter(this, "NetworkMonitor", () => {
-  return require("devtools/shared/webconsole/network-monitor")
-         .NetworkMonitor;
-});
-XPCOMUtils.defineLazyGetter(this, "NetworkMonitorChild", () => {
-  return require("devtools/shared/webconsole/network-monitor")
-         .NetworkMonitorChild;
-});
-XPCOMUtils.defineLazyGetter(this, "ConsoleProgressListener", () => {
-  return require("devtools/shared/webconsole/network-monitor")
-         .ConsoleProgressListener;
-});
-XPCOMUtils.defineLazyGetter(this, "events", () => {
-  return require("sdk/event/core");
-});
-XPCOMUtils.defineLazyGetter(this, "ServerLoggingListener", () => {
-  return require("devtools/shared/webconsole/server-logger")
-         .ServerLoggingListener;
-});
+loader.lazyRequireGetter(this, "NetworkMonitor", "devtools/shared/webconsole/network-monitor", true);
+loader.lazyRequireGetter(this, "NetworkMonitorChild", "devtools/shared/webconsole/network-monitor", true);
+loader.lazyRequireGetter(this, "ConsoleProgressListener", "devtools/shared/webconsole/network-monitor", true);
+loader.lazyRequireGetter(this, "events", "sdk/event/core");
+loader.lazyRequireGetter(this, "ServerLoggingListener", "devtools/shared/webconsole/server-logger", true);
 
 for (let name of ["WebConsoleUtils", "ConsoleServiceListener",
     "ConsoleAPIListener", "addWebConsoleCommands", "JSPropertyProvider",
@@ -44,7 +27,11 @@ for (let name of ["WebConsoleUtils", "ConsoleServiceListener",
       if (prop == "WebConsoleUtils") {
         prop = "Utils";
       }
-      return require("devtools/shared/webconsole/utils")[prop];
+      if (isWorker) {
+        return require("devtools/shared/webconsole/worker-utils")[prop];
+      } else {
+        return require("devtools/shared/webconsole/utils")[prop];
+      }
     }.bind(null, name),
     configurable: true,
     enumerable: true
@@ -556,6 +543,11 @@ WebConsoleActor.prototype =
 
   onStartListeners: function WCA_onStartListeners(aRequest)
   {
+    
+    if (isWorker) {
+       aRequest.listeners = [];
+    }
+
     let startedListeners = [];
     let window = !this.parentActor.isRootActor ? this.window : null;
     let appId = null;
@@ -849,8 +841,12 @@ WebConsoleActor.prototype =
       } else if ("throw" in evalResult) {
         let error = evalResult.throw;
         errorGrip = this.createValueGrip(error);
-        errorMessage = error && (typeof error === "object")
-          ? error.unsafeDereference().toString()
+        
+        
+        let unsafeDereference = error && (typeof error === "object") &&
+                                error.unsafeDereference();
+        errorMessage = unsafeDereference && unsafeDereference.toString
+          ? unsafeDereference.toString()
           : "" + error;
       }
     }
@@ -899,8 +895,8 @@ WebConsoleActor.prototype =
         environment = frame.environment;
       }
       else {
-        Cu.reportError("Web Console Actor: the frame actor was not found: " +
-                       frameActorId);
+        DevToolsUtils.reportException("onAutocomplete",
+          Error("The frame actor was not found: " + frameActorId));
       }
     }
     
@@ -1043,9 +1039,13 @@ WebConsoleActor.prototype =
     }
     for (let name in helpers.sandbox) {
       let desc = Object.getOwnPropertyDescriptor(helpers.sandbox, name);
-      maybeExport(desc, 'get');
-      maybeExport(desc, 'set');
-      maybeExport(desc, 'value');
+
+      
+      if (!isWorker) {
+        maybeExport(desc, 'get');
+        maybeExport(desc, 'set');
+        maybeExport(desc, 'value');
+      }
       if (desc.value) {
         
         desc.value = aDebuggerGlobal.makeDebuggeeValue(desc.value);
@@ -1138,8 +1138,8 @@ WebConsoleActor.prototype =
         frame = frameActor.frame;
       }
       else {
-        Cu.reportError("Web Console Actor: the frame actor was not found: " +
-                       aOptions.frameActor);
+        DevToolsUtils.reportException("evalWithDebugger",
+          Error("The frame actor was not found: " + aOptions.frameActor));
       }
     }
 

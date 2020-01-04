@@ -24,6 +24,7 @@ loadSubScript("resource://devtools/shared/worker/loader.js");
 var Promise = worker.require("promise");
 var { ActorPool } = worker.require("devtools/server/actors/common");
 var { ThreadActor } = worker.require("devtools/server/actors/script");
+var { WebConsoleActor } = worker.require("devtools/server/actors/webconsole");
 var { TabSources } = worker.require("devtools/server/actors/utils/TabSources");
 var makeDebugger = worker.require("devtools/server/actors/utils/make-debugger");
 var { DebuggerServer } = worker.require("devtools/server/main");
@@ -54,7 +55,7 @@ this.addEventListener("message",  function (event) {
 
     let sources = null;
 
-    let actor = new ThreadActor({
+    let parent = {
       makeDebugger: makeDebugger.bind(null, {
         findDebuggees: () => {
           return [this.global];
@@ -67,21 +68,28 @@ this.addEventListener("message",  function (event) {
 
       get sources() {
         if (sources === null) {
-          sources = new TabSources(actor);
+          sources = new TabSources(threadActor);
         }
         return sources;
-      }
-    }, global);
+      },
 
-    pool.addActor(actor);
+      window: global
+    };
+
+    let threadActor = new ThreadActor(parent, global);
+    pool.addActor(threadActor);
+
+    let consoleActor = new WebConsoleActor(connection, parent);
+    pool.addActor(consoleActor);
 
     
     
-    
-    
-    
-    
-    actor.onAttach({});
+    postMessage(JSON.stringify({
+      type: "connected",
+      id: packet.id,
+      threadActor: threadActor.actorID,
+      consoleActor: consoleActor.actorID,
+    }));
     break;
 
   case "disconnect":
