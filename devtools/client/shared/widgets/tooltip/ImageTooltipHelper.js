@@ -63,8 +63,6 @@ function getImageDimensions(doc, imageUrl) {
 
 
 
-
-
 function setImageTooltip(tooltip, doc, imageUrl, options) {
   let {naturalWidth, naturalHeight, hideDimensionLabel, maxDim} = options;
   maxDim = maxDim || MAX_DIMENSION;
@@ -113,10 +111,8 @@ function setImageTooltip(tooltip, doc, imageUrl, options) {
   }
   let width = Math.max(CONTAINER_MIN_WIDTH, imgWidth + 2 * IMAGE_PADDING);
 
-  return tooltip.setContent(div, width, height);
+  tooltip.setContent(div, width, height);
 }
-
-
 
 
 
@@ -137,7 +133,7 @@ function setBrokenImageTooltip(tooltip, doc) {
 
   let message = GetStringFromName("previewTooltip.image.brokenImage");
   div.textContent = message;
-  return tooltip.setContent(div, 150, 30);
+  tooltip.setContent(div, 150, 30);
 }
 
 module.exports.getImageDimensions = getImageDimensions;
