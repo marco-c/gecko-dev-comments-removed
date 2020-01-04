@@ -279,7 +279,7 @@ public:
 
 
   nsEventStatus HandleInputEvent(const InputData& aEvent,
-                                 const Matrix4x4& aTransformToApzc);
+                                 const ScreenToParentLayerMatrix4x4& aTransformToApzc);
 
   
 
@@ -355,7 +355,7 @@ public:
 
 
 
-  Matrix4x4 GetTransformToThis() const;
+  ScreenToParentLayerMatrix4x4 GetTransformToThis() const;
 
   
 

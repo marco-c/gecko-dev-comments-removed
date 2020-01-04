@@ -2183,8 +2183,8 @@ protected:
 
 class APZHitTestingTester : public APZCTreeManagerTester {
 protected:
-  Matrix4x4 transformToApzc;
-  Matrix4x4 transformToGecko;
+  ScreenToParentLayerMatrix4x4 transformToApzc;
+  ParentLayerToScreenMatrix4x4 transformToGecko;
 
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const ScreenPoint& aPoint) {
     RefPtr<AsyncPanZoomController> hit = manager->GetTargetAPZC(aPoint, nullptr);
@@ -2277,8 +2277,8 @@ TEST_F(APZHitTestingTester, HitTesting1) {
   RefPtr<AsyncPanZoomController> hit = GetTargetAPZC(ScreenPoint(20, 20));
   TestAsyncPanZoomController* nullAPZC = nullptr;
   EXPECT_EQ(nullAPZC, hit.get());
-  EXPECT_EQ(Matrix4x4(), transformToApzc);
-  EXPECT_EQ(Matrix4x4(), transformToGecko);
+  EXPECT_EQ(ScreenToParentLayerMatrix4x4(), transformToApzc);
+  EXPECT_EQ(ParentLayerToScreenMatrix4x4(), transformToGecko);
 
   uint32_t paintSequenceNumber = 0;
 
@@ -2288,8 +2288,8 @@ TEST_F(APZHitTestingTester, HitTesting1) {
   hit = GetTargetAPZC(ScreenPoint(15, 15));
   EXPECT_EQ(ApzcOf(root), hit.get());
   
-  EXPECT_EQ(Point(15, 15), transformToApzc * Point(15, 15));
-  EXPECT_EQ(Point(15, 15), transformToGecko * Point(15, 15));
+  EXPECT_EQ(ParentLayerPoint(15, 15), transformToApzc * ScreenPoint(15, 15));
+  EXPECT_EQ(ScreenPoint(15, 15), transformToGecko * ParentLayerPoint(15, 15));
 
   
   SetScrollableFrameMetrics(layers[3], FrameMetrics::START_SCROLL_ID + 1);
@@ -2298,8 +2298,8 @@ TEST_F(APZHitTestingTester, HitTesting1) {
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(ApzcOf(layers[3]), hit.get());
   
-  EXPECT_EQ(Point(25, 25), transformToApzc * Point(25, 25));
-  EXPECT_EQ(Point(25, 25), transformToGecko * Point(25, 25));
+  EXPECT_EQ(ParentLayerPoint(25, 25), transformToApzc * ScreenPoint(25, 25));
+  EXPECT_EQ(ScreenPoint(25, 25), transformToGecko * ParentLayerPoint(25, 25));
 
   
   
@@ -2312,25 +2312,25 @@ TEST_F(APZHitTestingTester, HitTesting1) {
   hit = GetTargetAPZC(ScreenPoint(15, 15));
   EXPECT_EQ(ApzcOf(layers[4]), hit.get());
   
-  EXPECT_EQ(Point(15, 15), transformToApzc * Point(15, 15));
-  EXPECT_EQ(Point(15, 15), transformToGecko * Point(15, 15));
+  EXPECT_EQ(ParentLayerPoint(15, 15), transformToApzc * ScreenPoint(15, 15));
+  EXPECT_EQ(ScreenPoint(15, 15), transformToGecko * ParentLayerPoint(15, 15));
 
   
   hit = GetTargetAPZC(ScreenPoint(90, 90));
   EXPECT_EQ(ApzcOf(root), hit.get());
   
-  EXPECT_EQ(Point(90, 90), transformToApzc * Point(90, 90));
-  EXPECT_EQ(Point(90, 90), transformToGecko * Point(90, 90));
+  EXPECT_EQ(ParentLayerPoint(90, 90), transformToApzc * ScreenPoint(90, 90));
+  EXPECT_EQ(ScreenPoint(90, 90), transformToGecko * ParentLayerPoint(90, 90));
 
   
   hit = GetTargetAPZC(ScreenPoint(1000, 10));
   EXPECT_EQ(nullAPZC, hit.get());
-  EXPECT_EQ(Matrix4x4(), transformToApzc);
-  EXPECT_EQ(Matrix4x4(), transformToGecko);
+  EXPECT_EQ(ScreenToParentLayerMatrix4x4(), transformToApzc);
+  EXPECT_EQ(ParentLayerToScreenMatrix4x4(), transformToGecko);
   hit = GetTargetAPZC(ScreenPoint(-1000, 10));
   EXPECT_EQ(nullAPZC, hit.get());
-  EXPECT_EQ(Matrix4x4(), transformToApzc);
-  EXPECT_EQ(Matrix4x4(), transformToGecko);
+  EXPECT_EQ(ScreenToParentLayerMatrix4x4(), transformToApzc);
+  EXPECT_EQ(ParentLayerToScreenMatrix4x4(), transformToGecko);
 }
 
 
@@ -2353,8 +2353,8 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   RefPtr<AsyncPanZoomController> hit = GetTargetAPZC(ScreenPoint(75, 25));
   EXPECT_EQ(apzcroot, hit.get());
-  EXPECT_EQ(Point(75, 25), transformToApzc * Point(75, 25));
-  EXPECT_EQ(Point(75, 25), transformToGecko * Point(75, 25));
+  EXPECT_EQ(ParentLayerPoint(75, 25), transformToApzc * ScreenPoint(75, 25));
+  EXPECT_EQ(ScreenPoint(75, 25), transformToGecko * ParentLayerPoint(75, 25));
 
   
   
@@ -2365,31 +2365,31 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   hit = GetTargetAPZC(ScreenPoint(15, 75));
   EXPECT_EQ(apzcroot, hit.get());
-  EXPECT_EQ(Point(15, 75), transformToApzc * Point(15, 75));
-  EXPECT_EQ(Point(15, 75), transformToGecko * Point(15, 75));
+  EXPECT_EQ(ParentLayerPoint(15, 75), transformToApzc * ScreenPoint(15, 75));
+  EXPECT_EQ(ScreenPoint(15, 75), transformToGecko * ParentLayerPoint(15, 75));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(apzc1, hit.get());
-  EXPECT_EQ(Point(25, 25), transformToApzc * Point(25, 25));
-  EXPECT_EQ(Point(25, 25), transformToGecko * Point(25, 25));
+  EXPECT_EQ(ParentLayerPoint(25, 25), transformToApzc * ScreenPoint(25, 25));
+  EXPECT_EQ(ScreenPoint(25, 25), transformToGecko * ParentLayerPoint(25, 25));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 75));
   EXPECT_EQ(apzc3, hit.get());
   
-  EXPECT_EQ(Point(12.5, 75), transformToApzc * Point(25, 75));
+  EXPECT_EQ(ParentLayerPoint(12.5, 75), transformToApzc * ScreenPoint(25, 75));
   
-  EXPECT_EQ(Point(25, 75), transformToGecko * Point(12.5, 75));
+  EXPECT_EQ(ScreenPoint(25, 75), transformToGecko * ParentLayerPoint(12.5, 75));
 
   
   
   hit = GetTargetAPZC(ScreenPoint(75, 75));
   EXPECT_EQ(apzc3, hit.get());
   
-  EXPECT_EQ(Point(37.5, 75), transformToApzc * Point(75, 75));
+  EXPECT_EQ(ParentLayerPoint(37.5, 75), transformToApzc * ScreenPoint(75, 75));
   
-  EXPECT_EQ(Point(75, 75), transformToGecko * Point(37.5, 75));
+  EXPECT_EQ(ScreenPoint(75, 75), transformToGecko * ParentLayerPoint(37.5, 75));
 
   
   
@@ -2405,21 +2405,21 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   hit = GetTargetAPZC(ScreenPoint(75, 75));
   EXPECT_EQ(apzcroot, hit.get());
   
-  EXPECT_EQ(Point(75, 75), transformToApzc * Point(75, 75));
+  EXPECT_EQ(ParentLayerPoint(75, 75), transformToApzc * ScreenPoint(75, 75));
   
   
   
-  EXPECT_EQ(Point(75, 75), transformToGecko * Point(75, 75));
+  EXPECT_EQ(ScreenPoint(75, 75), transformToGecko * ParentLayerPoint(75, 75));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(apzc3, hit.get());
   
   
-  EXPECT_EQ(Point(12.5, 75), transformToApzc * Point(25, 25));
+  EXPECT_EQ(ParentLayerPoint(12.5, 75), transformToApzc * ScreenPoint(25, 25));
   
   
-  EXPECT_EQ(Point(25, 25), transformToGecko * Point(12.5, 75));
+  EXPECT_EQ(ScreenPoint(25, 25), transformToGecko * ParentLayerPoint(12.5, 75));
 
   
   
@@ -2431,19 +2431,19 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   hit = GetTargetAPZC(ScreenPoint(75, 75));
   EXPECT_EQ(apzcroot, hit.get());
   
-  EXPECT_EQ(Point(75, 75), transformToApzc * Point(75, 75));
+  EXPECT_EQ(ParentLayerPoint(75, 75), transformToApzc * ScreenPoint(75, 75));
   
   
-  EXPECT_EQ(Point(75, 125), transformToGecko * Point(75, 75));
+  EXPECT_EQ(ScreenPoint(75, 125), transformToGecko * ParentLayerPoint(75, 75));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(apzcroot, hit.get());
   
-  EXPECT_EQ(Point(25, 25), transformToApzc * Point(25, 25));
+  EXPECT_EQ(ParentLayerPoint(25, 25), transformToApzc * ScreenPoint(25, 25));
   
   
-  EXPECT_EQ(Point(25, 75), transformToGecko * Point(25, 25));
+  EXPECT_EQ(ScreenPoint(25, 75), transformToGecko * ParentLayerPoint(25, 25));
 }
 
 TEST_F(APZCTreeManagerTester, ScrollablePaintedLayers) {

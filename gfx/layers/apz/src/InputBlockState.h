@@ -61,7 +61,7 @@ protected:
   
   
   
-  gfx::Matrix4x4 mTransformToApzc;
+  ScreenToParentLayerMatrix4x4 mTransformToApzc;
 };
 
 

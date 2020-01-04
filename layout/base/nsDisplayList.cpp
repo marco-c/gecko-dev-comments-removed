@@ -1197,7 +1197,7 @@ nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame)
     return;
   }
 
-  Matrix4x4 referenceFrameToRootReferenceFrame;
+  LayoutDeviceToLayoutDeviceMatrix4x4 referenceFrameToRootReferenceFrame;
 
   
   nsIFrame* referenceFrame = const_cast<nsIFrame*>(FindReferenceFrameFor(aFrame));
@@ -1207,7 +1207,8 @@ nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame)
     
     
     referenceFrameToRootReferenceFrame =
-      nsLayoutUtils::GetTransformToAncestor(referenceFrame, mReferenceFrame);
+      ViewAs<LayoutDeviceToLayoutDeviceMatrix4x4>(
+          nsLayoutUtils::GetTransformToAncestor(referenceFrame, mReferenceFrame));
     Matrix referenceFrameToRootReferenceFrame2d;
     if (!referenceFrameToRootReferenceFrame.Is2D(&referenceFrameToRootReferenceFrame2d) ||
         !referenceFrameToRootReferenceFrame2d.IsRectilinear()) {

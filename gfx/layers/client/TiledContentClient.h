@@ -313,7 +313,7 @@ struct BasicTiledLayerPaintData {
 
 
 
-  gfx::Matrix4x4 mTransformToCompBounds;
+  LayerToParentLayerMatrix4x4 mTransformToCompBounds;
 
   
 

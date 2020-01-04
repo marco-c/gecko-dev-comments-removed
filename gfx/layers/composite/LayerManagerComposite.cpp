@@ -308,8 +308,8 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
   
   
   
-  ParentLayerIntRegion visibleParentSpace =
-    TransformTo<ParentLayerPixel>(transform, visible);
+  ParentLayerIntRegion visibleParentSpace = TransformTo<ParentLayerPixel>(
+      ViewAs<LayerToParentLayerMatrix4x4>(transform), visible);
   if (const Maybe<ParentLayerIntRect>& clipRect = composite->GetShadowClipRect()) {
     visibleParentSpace.AndWith(*clipRect);
   }

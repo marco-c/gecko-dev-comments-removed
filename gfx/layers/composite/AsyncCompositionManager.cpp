@@ -202,7 +202,7 @@ GetBaseTransform(Layer* aLayer, Matrix4x4* aTransform)
 
 static void
 TransformClipRect(Layer* aLayer,
-                  const Matrix4x4& aTransform)
+                  const ParentLayerToParentLayerMatrix4x4& aTransform)
 {
   MOZ_ASSERT(aTransform.Is2D());
   const Maybe<ParentLayerIntRect>& clipRect = aLayer->AsLayerComposite()->GetShadowClipRect();
@@ -254,7 +254,8 @@ TranslateShadowLayer(Layer* aLayer,
   aLayer->AsLayerComposite()->SetShadowTransformSetByAnimation(false);
 
   if (aAdjustClipRect) {
-    TransformClipRect(aLayer, Matrix4x4::Translation(aTranslation.x, aTranslation.y, 0));
+    TransformClipRect(aLayer,
+        ParentLayerToParentLayerMatrix4x4::Translation(aTranslation.x, aTranslation.y, 0));
 
     
     
@@ -467,8 +468,9 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   
   
-  ParentLayerPoint translation = TransformTo<ParentLayerPixel>(localTransform, transformedAnchor)
-                               - TransformTo<ParentLayerPixel>(localTransform, anchor);
+  auto localTransformTyped = ViewAs<LayerToParentLayerMatrix4x4>(localTransform);
+  ParentLayerPoint translation = TransformTo<ParentLayerPixel>(localTransformTyped, transformedAnchor)
+                               - TransformTo<ParentLayerPixel>(localTransformTyped, anchor);
 
   if (aLayer->GetIsStickyPosition()) {
     
@@ -895,7 +897,8 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     if (asyncClip && !metrics.UsesContainerScrolling()) {
       MOZ_ASSERT(asyncTransform.Is2D());
-      asyncClip = Some(TransformTo<ParentLayerPixel>(asyncTransform, *asyncClip));
+      asyncClip = Some(TransformTo<ParentLayerPixel>(
+          ViewAs<ParentLayerToParentLayerMatrix4x4>(asyncTransform), *asyncClip));
     }
 
     
@@ -1137,7 +1140,7 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
     
     
     for (Layer* ancestor = aScrollbar; ancestor != aContent.GetLayer(); ancestor = ancestor->GetParent()) {
-      TransformClipRect(ancestor, asyncCompensation);
+      TransformClipRect(ancestor, ViewAs<ParentLayerToParentLayerMatrix4x4>(asyncCompensation));
     }
   }
   transform = transform * compensation;
