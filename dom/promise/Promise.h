@@ -154,8 +154,6 @@ public:
 
   void MaybeReject(const RefPtr<MediaStreamError>& aArg);
 
-  void MaybeRejectWithNull();
-
   void MaybeRejectWithUndefined();
 
   
