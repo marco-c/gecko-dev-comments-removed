@@ -635,10 +635,15 @@ DrawTargetSkia::FillGlyphs(ScaledFont *aFont,
     }
   } else {
     
+    
     paint.mPaint.setSubpixelText(true);
 
     if (aFont->GetType() == FontType::MAC &&
-       (shouldLCDRenderText || aOptions.mAntialiasMode == AntialiasMode::GRAY)) {
+       aOptions.mAntialiasMode == AntialiasMode::GRAY) {
+      
+      
+      
+      
       
       
       
