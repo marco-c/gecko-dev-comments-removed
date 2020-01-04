@@ -30,6 +30,9 @@ var { attachThread, detachThread } = require("./attach-thread");
 Cu.import("resource://devtools/client/scratchpad/scratchpad-manager.jsm");
 Cu.import("resource://devtools/client/shared/DOMHelpers.jsm");
 
+const { BrowserLoader } =
+  Cu.import("resource://devtools/client/shared/browser-loader.js", {});
+
 loader.lazyGetter(this, "toolboxStrings", () => {
   const properties = "chrome://devtools/locale/toolbox.properties";
   const bundle = Services.strings.createBundle(properties);
@@ -373,9 +376,25 @@ Toolbox.prototype = {
         
         this._URL = location;
       }
+
+      this.browserRequire = BrowserLoader({
+        window: this.doc.defaultView,
+        useOnlyShared: true
+      }).require;
+
+      this.React = this.browserRequire(
+        "devtools/client/shared/vendor/react");
+      this.ReactDOM = this.browserRequire(
+        "devtools/client/shared/vendor/react-dom");
+
       iframe.setAttribute("aria-label", toolboxStrings("toolbox.label"));
       let domHelper = new DOMHelpers(iframe.contentWindow);
-      domHelper.onceDOMReady(() => domReady.resolve(), this._URL);
+      domHelper.onceDOMReady(() => {
+        
+        this._buildNotificationBox();
+        domReady.resolve();
+      }, this._URL);
+
       
       
 
@@ -790,6 +809,22 @@ Toolbox.prototype = {
           (toolId == "webconsole" && this.splitConsole))) {
       toolDefinition.onkey(this.getCurrentPanel(), this);
     }
+  },
+
+  
+
+
+  _buildNotificationBox: function() {
+    let { NotificationBox, PriorityLevels } =
+      this.browserRequire("devtools/client/shared/components/notification-box");
+
+    NotificationBox = this.React.createFactory(NotificationBox);
+
+    
+    let box = this.doc.getElementById("toolbox-notificationbox");
+    this.notificationBox = Object.assign(
+      this.ReactDOM.render(NotificationBox({}), box),
+      PriorityLevels);
   },
 
   
@@ -1998,7 +2033,7 @@ Toolbox.prototype = {
 
 
   getNotificationBox: function() {
-    return this.doc.getElementById("toolbox-notificationbox");
+    return this.notificationBox;
   },
 
   
@@ -2062,6 +2097,8 @@ Toolbox.prototype = {
         console.error("Panel " + id + ":", e);
       }
     }
+
+    this.React = this.ReactDOM = this.browserRequire = null;
 
     
     
