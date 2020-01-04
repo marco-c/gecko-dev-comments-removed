@@ -1786,7 +1786,7 @@ pref("network.generic-ntlm-auth.workstation", "WORKSTATION");
 
 
 
-pref("network.auth.allow-subresource-auth", 2);
+pref("network.auth.subresource-http-auth-allow", 2);
 
 pref("permissions.default.image",           1); 
 
