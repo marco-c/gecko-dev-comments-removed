@@ -14,13 +14,11 @@ namespace mozilla {
 
 NS_IMPL_ISUPPORTS0(ProfileGatherer)
 
-ProfileGatherer::ProfileGatherer(GeckoSampler* aTicker,
-                                 double aSinceTime,
-                                 Promise* aPromise)
-  : mPromise(aPromise)
-  , mTicker(aTicker)
-  , mSinceTime(aSinceTime)
+ProfileGatherer::ProfileGatherer(GeckoSampler* aTicker)
+  : mTicker(aTicker)
+  , mSinceTime(0)
   , mPendingProfiles(0)
+  , mGathering(false)
 {
 }
 
@@ -50,9 +48,23 @@ ProfileGatherer::WillGatherOOPProfile()
 }
 
 void
-ProfileGatherer::Start()
+ProfileGatherer::Start(double aSinceTime,
+                       Promise* aPromise)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  if (mGathering) {
+    
+    
+    if (aPromise) {
+      aPromise->MaybeReject(NS_ERROR_NOT_AVAILABLE);
+    }
+    return;
+  }
+
+  mSinceTime = aSinceTime;
+  mPromise = aPromise;
+  mGathering = true;
+  mPendingProfiles = 0;
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
@@ -69,15 +81,19 @@ void
 ProfileGatherer::Finish()
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mTicker) {
+    
+    
+    return;
+  }
+
   UniquePtr<char[]> buf = mTicker->ToJSON(mSinceTime);
 
   AutoJSAPI jsapi;
   if (NS_WARN_IF(!jsapi.Init(mPromise->GlobalJSObject()))) {
     
-    
-    
-    
-    mTicker->ProfileGathered();
+    Reset();
     return;
   }
 
@@ -104,7 +120,29 @@ ProfileGatherer::Finish()
     }
   }
 
-  mTicker->ProfileGathered();
+  Reset();
+}
+
+void
+ProfileGatherer::Reset()
+{
+  mSinceTime = 0;
+  mPromise = nullptr;
+  mPendingProfiles = 0;
+  mGathering = false;
+}
+
+void
+ProfileGatherer::Cancel()
+{
+  
+  
+  if (mPromise) {
+    mPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
+  }
+
+  
+  mTicker = nullptr;
 }
 
 } 
