@@ -362,13 +362,16 @@ Animation::Tick()
 {
   
   
-  
-  
   if (mPendingState != PendingState::NotPending &&
       !mPendingReadyTime.IsNull() &&
       mTimeline &&
-      !mTimeline->GetCurrentTime().IsNull() &&
-      mPendingReadyTime.Value() <= mTimeline->GetCurrentTime().Value()) {
+      !mTimeline->GetCurrentTime().IsNull()) {
+    
+    
+    
+    
+    mPendingReadyTime.SetValue(std::min(mTimeline->GetCurrentTime().Value(),
+                                        mPendingReadyTime.Value()));
     FinishPendingAt(mPendingReadyTime.Value());
     mPendingReadyTime.SetNull();
   }
