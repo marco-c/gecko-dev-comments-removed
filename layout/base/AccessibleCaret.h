@@ -138,8 +138,8 @@ public:
 
 protected:
   
-  void SetCaretElementStyle(const nsRect& aRect);
-  void SetSelectionBarElementStyle(const nsRect& aRect);
+  void SetCaretElementStyle(const nsRect& aRect, float aZoomLevel);
+  void SetSelectionBarElementStyle(const nsRect& aRect, float aZoomLevel);
 
   
   float GetZoomLevel();
@@ -209,6 +209,9 @@ protected:
 
   
   nsRect mImaginaryCaretRect;
+
+  
+  float mZoomLevel = 0.0f;
 
   
   
