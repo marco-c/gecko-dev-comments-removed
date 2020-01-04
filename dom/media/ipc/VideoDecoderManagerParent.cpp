@@ -4,7 +4,6 @@
 
 
 #include "VideoDecoderManagerParent.h"
-#include "VideoDecoderParent.h"
 #include "base/thread.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtr.h"
@@ -161,12 +160,6 @@ VideoDecoderManagerParent::ShutdownThreads()
 }
 
 bool
-VideoDecoderManagerParent::OnManagerThread()
-{
-  return NS_GetCurrentThread() == sVideoDecoderManagerThread;
-}
-
-bool
 VideoDecoderManagerParent::CreateForContent(Endpoint<PVideoDecoderManagerParent>&& aEndpoint)
 {
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_GPU);
@@ -195,21 +188,6 @@ VideoDecoderManagerParent::~VideoDecoderManagerParent()
   MOZ_COUNT_DTOR(VideoDecoderManagerParent);
 
   ClearAllOwnedImages();
-}
-
-PVideoDecoderParent*
-VideoDecoderManagerParent::AllocPVideoDecoderParent()
-{
-  RefPtr<nsIEventTarget> target = sVideoDecoderTaskThread;;
-  return new VideoDecoderParent(this, sManagerTaskQueue, new TaskQueue(target.forget()));
-}
-
-bool
-VideoDecoderManagerParent::DeallocPVideoDecoderParent(PVideoDecoderParent* actor)
-{
-  VideoDecoderParent* parent = static_cast<VideoDecoderParent*>(actor);
-  parent->Destroy();
-  return true;
 }
 
 void

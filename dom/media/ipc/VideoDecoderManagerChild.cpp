@@ -4,7 +4,6 @@
 
 
 #include "VideoDecoderManagerChild.h"
-#include "VideoDecoderChild.h"
 #include "mozilla/dom/ContentChild.h"
 #include "MediaPrefs.h"
 #include "nsThreadUtils.h"
@@ -86,26 +85,6 @@ VideoDecoderManagerChild::Shutdown()
 VideoDecoderManagerChild::GetSingleton()
 {
   return sDecoderManager;
-}
-
- nsIThread*
-VideoDecoderManagerChild::GetManagerThread()
-{
-  return sVideoDecoderChildThread;
-}
-
-PVideoDecoderChild*
-VideoDecoderManagerChild::AllocPVideoDecoderChild()
-{
-  return new VideoDecoderChild();
-}
-
-bool
-VideoDecoderManagerChild::DeallocPVideoDecoderChild(PVideoDecoderChild* actor)
-{
-  VideoDecoderChild* child = static_cast<VideoDecoderChild*>(actor);
-  child->IPDLActorDestroyed();
-  return true;
 }
 
 void
