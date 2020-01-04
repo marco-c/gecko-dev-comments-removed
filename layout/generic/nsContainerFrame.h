@@ -455,6 +455,14 @@ public:
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OverflowContainersProperty)
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(ExcessOverflowContainersProperty)
 
+#ifdef DEBUG
+  
+  NS_DECLARE_FRAME_PROPERTY(DebugReflowingWithInfiniteISize, nullptr)
+  bool IsCrazySizeAssertSuppressed() const {
+    return Properties().Get(DebugReflowingWithInfiniteISize()) != nullptr;
+  }
+#endif
+
 protected:
   explicit nsContainerFrame(nsStyleContext* aContext) : nsSplittableFrame(aContext) {}
   ~nsContainerFrame();
