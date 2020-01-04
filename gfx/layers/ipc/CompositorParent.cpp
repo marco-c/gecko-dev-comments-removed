@@ -341,6 +341,16 @@ CompositorVsyncScheduler::ScheduleComposition()
   if (mAsapScheduling) {
     
     PostCompositeTask(TimeStamp::Now());
+#ifdef MOZ_WIDGET_ANDROID
+  } else if (mNeedsComposite >= 2 && mIsObservingVsync) {
+    
+    
+    
+    
+    
+    
+    PostCompositeTask(TimeStamp::Now());
+#endif
   } else {
     SetNeedsComposite();
   }
