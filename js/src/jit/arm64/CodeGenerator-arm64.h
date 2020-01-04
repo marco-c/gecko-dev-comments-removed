@@ -28,18 +28,6 @@ class CodeGeneratorARM64 : public CodeGeneratorShared
   protected:
     NonAssertingLabel deoptLabel_;
 
-    
-    
-    inline Operand ToOperand(const LAllocation& a) {
-        MOZ_CRASH("ToOperand");
-    }
-    inline Operand ToOperand(const LAllocation* a) {
-        return ToOperand(*a);
-    }
-    inline Operand ToOperand(const LDefinition* def) {
-        return ToOperand(def->output());
-    }
-
     MoveOperand toMoveOperand(const LAllocation a) const;
 
     void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
