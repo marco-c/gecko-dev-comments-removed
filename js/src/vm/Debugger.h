@@ -43,7 +43,7 @@ class DebuggerMemory;
 
 typedef HashSet<ReadBarrieredGlobalObject,
                 MovableCellHasher<ReadBarrieredGlobalObject>,
-                SystemAllocPolicy> WeakGlobalObjectSet;
+                RuntimeAllocPolicy> WeakGlobalObjectSet;
 
 
 
@@ -260,6 +260,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
     
     
+    
     bool observedGC(uint64_t majorGCNumber) const {
         return observedGCs.has(majorGCNumber);
     }
@@ -340,7 +341,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
     
     
-    js::HashSet<uint64_t> observedGCs;
+    using GCNumberSet = HashSet<uint64_t, DefaultHasher<uint64_t>, RuntimeAllocPolicy>;
+    GCNumberSet observedGCs;
 
     using TenurePromotionsLog = js::TraceableFifo<TenurePromotionsLogEntry>;
     TenurePromotionsLog tenurePromotionsLog;
