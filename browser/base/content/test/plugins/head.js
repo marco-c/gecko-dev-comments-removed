@@ -4,6 +4,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
   "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
+  "resource://gre/modules/PromiseUtils.jsm");
 
 
 
@@ -75,36 +77,40 @@ function waitForEvent(subject, eventName, checkFn, useCapture, useUntrusted) {
 
 
 
+function promiseTabLoadEvent(tab, url) {
+  let deferred = PromiseUtils.defer();
+  info("Wait tab event: load");
 
-
-function promiseTabLoadEvent(tab, url, eventType="load") {
-  return new Promise((resolve, reject) => {
-    info("Wait tab event: " + eventType);
-
-    function handle(event) {
-      if (event.originalTarget != tab.linkedBrowser.contentDocument ||
-          event.target.location.href == "about:blank" ||
-          (url && event.target.location.href != url)) {
-        info("Skipping spurious '" + eventType + "'' event" +
-              " for " + event.target.location.href);
-        return;
-      }
-      clearTimeout(timeout);
-      tab.linkedBrowser.removeEventListener(eventType, handle, true);
-      info("Tab event received: " + eventType);
-      resolve(event);
+  function handle(loadedUrl) {
+    if (loadedUrl === "about:blank" || (url && loadedUrl !== url)) {
+      info(`Skipping spurious load event for ${loadedUrl}`);
+      return false;
     }
 
-    let timeout = setTimeout(() => {
-      tab.linkedBrowser.removeEventListener(eventType, handle, true);
-      reject(new Error("Timed out while waiting for a '" + eventType + "'' event"));
-    }, 30000);
+    info("Tab event received: load");
+    return true;
+  }
 
-    tab.linkedBrowser.addEventListener(eventType, handle, true, true);
-    if (url) {
-      tab.linkedBrowser.loadURI(url);
-    }
+  
+  
+  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
+
+  let timeout = setTimeout(() => {
+    deferred.reject(new Error("Timed out while waiting for a 'load' event"));
+  }, 30000);
+
+  loaded.then(() => {
+    clearTimeout(timeout);
+    deferred.resolve()
   });
+
+  if (url)
+    BrowserTestUtils.loadURI(tab.linkedBrowser, url);
+
+  
+  
+  
+  return Promise.all([deferred.promise, loaded]);
 }
 
 function waitForCondition(condition, nextTest, errorMsg, aTries, aWait) {
