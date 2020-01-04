@@ -44,16 +44,17 @@ AndroidContentController::NotifyDefaultPrevented(APZCTreeManager* aManager,
 }
 
 void
-AndroidContentController::HandleSingleTap(const CSSPoint& aPoint,
-                                          Modifiers aModifiers,
-                                          const ScrollableLayerGuid& aGuid)
+AndroidContentController::HandleTap(TapType aType, const CSSPoint& aPoint,
+                                    Modifiers aModifiers,
+                                    const ScrollableLayerGuid& aGuid,
+                                    uint64_t aInputBlockId)
 {
     
     
     
     
     
-    if (NS_IsMainThread()) {
+    if (NS_IsMainThread() && aType == TapType::eSingleTap) {
         CSSPoint point = mozilla::layers::APZCCallbackHelper::ApplyCallbackTransform(aPoint, aGuid);
 
         nsIContent* content = nsLayoutUtils::FindContentFor(aGuid.mScrollId);
@@ -83,7 +84,7 @@ AndroidContentController::HandleSingleTap(const CSSPoint& aPoint,
         });
     }
 
-    ChromeProcessController::HandleSingleTap(aPoint, aModifiers, aGuid);
+    ChromeProcessController::HandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
 }
 
 void

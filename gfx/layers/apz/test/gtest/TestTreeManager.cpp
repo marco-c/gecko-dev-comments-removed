@@ -91,7 +91,7 @@ TEST_F(APZCTreeManagerTester, Bug1194876) {
   
   
 
-  EXPECT_CALL(*mcc, HandleLongTap(_, _, _, _)).Times(0);
+  EXPECT_CALL(*mcc, HandleTap(TapType::eLongTap, _, _, _, _)).Times(0);
 }
 
 TEST_F(APZCTreeManagerTester, Bug1198900) {

@@ -99,6 +99,7 @@ namespace layers {
 
 typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
 typedef GeckoContentController::APZStateChange APZStateChange;
+typedef GeckoContentController::TapType TapType;
 typedef mozilla::gfx::Point Point;
 typedef mozilla::gfx::Matrix4x4 Matrix4x4;
 using mozilla::gfx::PointTyped;
@@ -1995,7 +1996,7 @@ nsEventStatus AsyncPanZoomController::OnLongPress(const TapGestureInput& aEvent)
         return nsEventStatus_eIgnore;
       }
       uint64_t blockId = GetInputQueue()->InjectNewTouchBlock(this);
-      controller->HandleLongTap(geckoScreenPoint, aEvent.modifiers, GetGuid(), blockId);
+      controller->HandleTap(TapType::eLongTap, geckoScreenPoint, aEvent.modifiers, GetGuid(), blockId);
       return nsEventStatus_eConsumeNoDefault;
     }
   }
@@ -2034,11 +2035,12 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(const ScreenIntPoint& aP
       
       
       RefPtr<Runnable> runnable =
-        NewRunnableMethod<CSSPoint,
-                          mozilla::Modifiers,
-                          ScrollableLayerGuid>(controller, &GeckoContentController::HandleSingleTap,
-                                               geckoScreenPoint, aModifiers,
-                                               GetGuid());
+        NewRunnableMethod<TapType, CSSPoint, mozilla::Modifiers,
+                          ScrollableLayerGuid, uint64_t>(controller,
+                            &GeckoContentController::HandleTap,
+                            TapType::eSingleTap, geckoScreenPoint,
+                            aModifiers, GetGuid(),
+                            touch ? touch->GetBlockId() : 0);
 
       controller->PostDelayedTask(runnable.forget(), 0);
       return nsEventStatus_eConsumeNoDefault;
@@ -2076,7 +2078,8 @@ nsEventStatus AsyncPanZoomController::OnDoubleTap(const TapGestureInput& aEvent)
     if (mZoomConstraints.mAllowDoubleTapZoom && CurrentTouchBlock()->TouchActionAllowsDoubleTapZoom()) {
       CSSPoint geckoScreenPoint;
       if (ConvertToGecko(aEvent.mPoint, &geckoScreenPoint)) {
-        controller->HandleDoubleTap(geckoScreenPoint, aEvent.modifiers, GetGuid());
+        controller->HandleTap(TapType::eDoubleTap, geckoScreenPoint,
+            aEvent.modifiers, GetGuid(), CurrentTouchBlock()->GetBlockId());
       }
     }
     return nsEventStatus_eConsumeNoDefault;

@@ -41,29 +41,23 @@ public:
 
 
 
+  enum class TapType {
+    eSingleTap,
+    eDoubleTap,
+    eLongTap,
 
-
-  virtual void HandleDoubleTap(const CSSPoint& aPoint,
-                               Modifiers aModifiers,
-                               const ScrollableLayerGuid& aGuid) = 0;
-
-  
-
-
-
-
-  virtual void HandleSingleTap(const CSSPoint& aPoint,
-                               Modifiers aModifiers,
-                               const ScrollableLayerGuid& aGuid) = 0;
+    eSentinel,
+  };
 
   
 
 
 
-  virtual void HandleLongTap(const CSSPoint& aPoint,
-                             Modifiers aModifiers,
-                             const ScrollableLayerGuid& aGuid,
-                             uint64_t aInputBlockId) = 0;
+  virtual void HandleTap(TapType aType,
+                         const CSSPoint& aPoint,
+                         Modifiers aModifiers,
+                         const ScrollableLayerGuid& aGuid,
+                         uint64_t aInputBlockId) = 0;
 
   
 
