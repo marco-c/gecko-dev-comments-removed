@@ -401,18 +401,16 @@ var PinnedLinks = {
 
 
 
+
   pin: function PinnedLinks_pin(aLink, aIndex) {
     
     this.unpin(aLink);
 
     
-    
-    let updatePages = this._makeHistoryLink(aLink);
+    let changed = this._makeHistoryLink(aLink);
     this.links[aIndex] = aLink;
     this.save();
-    if (updatePages) {
-      AllPages.update();
-    }
+    return changed;
   },
 
   
