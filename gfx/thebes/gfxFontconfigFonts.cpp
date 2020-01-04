@@ -2180,6 +2180,7 @@ CreateScaledFont(FcPattern *aPattern, cairo_font_face_t *aFace)
             
             
             
+            MOZ_FALLTHROUGH;
         case FC_RGBA_RGB:
             subpixel_order = CAIRO_SUBPIXEL_ORDER_RGB;
             break;

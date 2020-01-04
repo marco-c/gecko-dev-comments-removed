@@ -703,6 +703,7 @@ PrepareFontOptions(FcPattern* aPattern,
             
             
             
+            MOZ_FALLTHROUGH;
         case FC_RGBA_RGB:
             subpixel_order = CAIRO_SUBPIXEL_ORDER_RGB;
             break;
