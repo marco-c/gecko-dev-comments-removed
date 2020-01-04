@@ -66,6 +66,10 @@ add_task(function*() {
 
   
   
-  let textContent = yield executeInContent("Test:GetStyleContent", null, null);
+  let textContent = yield ContentTask.spawn(gBrowser.selectedBrowser, null,
+    function*() {
+      return content.document.querySelector("style").textContent;
+    });
+
   isnot(textContent, expectedText, "changes not written back to style node");
 });

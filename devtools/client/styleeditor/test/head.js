@@ -6,17 +6,10 @@
 
 "use strict";
 
-const FRAME_SCRIPT_UTILS_URL =
-      "chrome://devtools/content/shared/frame-script-utils.js";
-const TEST_BASE =
-      "chrome://mochitests/content/browser/devtools/client/styleeditor/test/";
-const TEST_BASE_HTTP =
-      "http://example.com/browser/devtools/client/styleeditor/test/";
-const TEST_BASE_HTTPS =
-      "https://example.com/browser/devtools/client/styleeditor/test/";
+const TEST_BASE = "chrome://mochitests/content/browser/devtools/client/styleeditor/test/";
+const TEST_BASE_HTTP = "http://example.com/browser/devtools/client/styleeditor/test/";
+const TEST_BASE_HTTPS = "https://example.com/browser/devtools/client/styleeditor/test/";
 const TEST_HOST = "mochi.test:8888";
-
-const EDITOR_FRAME_SCRIPT = getRootDirectory(gTestPath) + "doc_frame_script.js";
 
 var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var {TargetFactory} = require("devtools/client/framework/target");
@@ -56,24 +49,44 @@ function addTab(url, win) {
 
 
 
-function navigateTo(url) {
+var navigateTo = Task.async(function*(url) {
+  info(`Navigating to ${url}`);
+  let browser = gBrowser.selectedBrowser;
+
   let navigating = promise.defer();
-  gBrowser.selectedBrowser.addEventListener("load", function onload() {
-    gBrowser.selectedBrowser.removeEventListener("load", onload, true);
+  browser.addEventListener("load", function onload() {
+    browser.removeEventListener("load", onload, true);
     navigating.resolve();
   }, true);
-  content.location = url;
-  return navigating.promise;
-}
 
-function* cleanup() {
+  browser.loadURI(url);
+
+  yield navigating.promise;
+});
+
+var navigateToAndWaitForStyleSheets = Task.async(function*(url, ui) {
+  let onReset = ui.once("stylesheets-reset");
+  yield navigateTo(url);
+  yield onReset;
+});
+
+var reloadPageAndWaitForStyleSheets = Task.async(function*(ui) {
+  info("Reloading the page.");
+
+  let onReset = ui.once("stylesheets-reset");
+  let browser = gBrowser.selectedBrowser;
+  yield ContentTask.spawn(browser, null, "() => content.location.reload()");
+  yield onReset;
+});
+
+registerCleanupFunction(function*() {
   while (gBrowser.tabs.length > 1) {
     let target = TargetFactory.forTab(gBrowser.selectedTab);
     yield gDevTools.closeToolbox(target);
 
     gBrowser.removeCurrentTab();
   }
-}
+});
 
 
 
@@ -94,12 +107,8 @@ var openStyleEditor = Task.async(function*(tab) {
 
 
 
-var openStyleEditorForURL = Task.async(function* (url, win) {
+var openStyleEditorForURL = Task.async(function*(url, win) {
   let tab = yield addTab(url, win);
-
-  gBrowser.selectedBrowser.messageManager.loadFrameScript(EDITOR_FRAME_SCRIPT,
-                                                          false);
-
   let result = yield openStyleEditor(tab);
   result.tab = tab;
   return result;
@@ -111,76 +120,17 @@ var openStyleEditorForURL = Task.async(function* (url, win) {
 
 
 
-function loadCommonFrameScript(tab) {
-  let browser = tab ? tab.linkedBrowser : gBrowser.selectedBrowser;
-
-  browser.messageManager.loadFrameScript(FRAME_SCRIPT_UTILS_URL, false);
-}
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function executeInContent(name, data = {}, objects = {},
-                          expectResponse = true) {
-  let mm = gBrowser.selectedBrowser.messageManager;
-
-  mm.sendAsyncMessage(name, data, objects);
-  if (expectResponse) {
-    return waitForContentMessage(name);
-  }
-  return promise.resolve();
-}
-
-
-
-
-
-
-
-
-function waitForContentMessage(name) {
-  let mm = gBrowser.selectedBrowser.messageManager;
-
-  let def = promise.defer();
-  mm.addMessageListener(name, function onMessage(msg) {
-    mm.removeMessageListener(name, onMessage);
-    def.resolve(msg.data);
-  });
-  return def.promise;
-}
-
-registerCleanupFunction(cleanup);
-
-
-
-
-
-
-
-
-
-
-
-
-function* getComputedStyleProperty(selector, pseudo, propName) {
-  return yield executeInContent("Test:GetComputedStylePropertyValue",
-                                {selector,
-                                pseudo,
-                                name: propName});
+function* getComputedStyleProperty(args) {
+  return yield ContentTask.spawn(gBrowser.selectedBrowser, args,
+    function({selector, pseudo, name}) {
+      let element = content.document.querySelector(selector);
+      let style = content.getComputedStyle(element, pseudo);
+      return style.getPropertyValue(name);
+    }
+  );
 }
