@@ -9,7 +9,9 @@
 
 #define CINTERFACE
 
+#include "mozilla/mscom/EnsureMTA.h"
 #include "mozilla/mscom/Registration.h"
+#include "mozilla/mscom/Utils.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
@@ -184,17 +186,21 @@ RegisteredProxy::RegisteredProxy(uintptr_t aModule, IUnknown* aClassObject,
   , mClassObject(aClassObject)
   , mRegCookie(aRegCookie)
   , mTypeLib(aTypeLib)
+  , mIsRegisteredInMTA(IsCurrentThreadMTA())
 {
   MOZ_ASSERT(aClassObject);
   MOZ_ASSERT(aTypeLib);
   AddToRegistry(this);
 }
 
+
+
 RegisteredProxy::RegisteredProxy(ITypeLib* aTypeLib)
   : mModule(0)
   , mClassObject(nullptr)
   , mRegCookie(0)
   , mTypeLib(aTypeLib)
+  , mIsRegisteredInMTA(false)
 {
   MOZ_ASSERT(aTypeLib);
   AddToRegistry(this);
@@ -207,8 +213,17 @@ RegisteredProxy::~RegisteredProxy()
     mTypeLib->lpVtbl->Release(mTypeLib);
   }
   if (mClassObject) {
-    ::CoRevokeClassObject(mRegCookie);
-    mClassObject->lpVtbl->Release(mClassObject);
+    
+    
+    auto cleanupFn = [&]() -> void {
+      ::CoRevokeClassObject(mRegCookie);
+      mClassObject->lpVtbl->Release(mClassObject);
+    };
+    if (mIsRegisteredInMTA) {
+      EnsureMTA mta(cleanupFn);
+    } else {
+      cleanupFn();
+    }
   }
   if (mModule) {
     ::FreeLibrary(reinterpret_cast<HMODULE>(mModule));
