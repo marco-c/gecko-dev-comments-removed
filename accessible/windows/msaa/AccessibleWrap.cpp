@@ -1422,56 +1422,54 @@ AccessibleWrap::GetXPAccessibleFor(const VARIANT& aVarChild)
   if (aVarChild.lVal == CHILDID_SELF)
     return this;
 
-  if (IsProxy()) {
-    if (Proxy()->MustPruneChildren())
-      return nullptr;
+  if (IsProxy() ? Proxy()->MustPruneChildren() : nsAccUtils::MustPrune(this)) {
+    return nullptr;
+  }
 
-    if (aVarChild.lVal > 0)
+  if (aVarChild.lVal > 0) {
+    
+    if (IsProxy()) {
       return WrapperFor(Proxy()->ChildAt(aVarChild.lVal - 1));
+    } else {
+      return GetChildAt(aVarChild.lVal - 1);
+    }
+  }
 
+  if (IsProxy()) {
     
     
     return nullptr;
   }
 
-  if (nsAccUtils::MustPrune(this))
-    return nullptr;
-
   
   
   
+  
+  void* uniqueID = reinterpret_cast<void*>(-aVarChild.lVal);
 
-  if (aVarChild.lVal < 0) {
-    
-    void* uniqueID = reinterpret_cast<void*>(-aVarChild.lVal);
-
-    DocAccessible* document = Document();
-    Accessible* child =
+  DocAccessible* document = Document();
+  Accessible* child =
 #ifdef _WIN64
     GetAccessibleInSubtree(document, static_cast<uint32_t>(aVarChild.lVal));
 #else
-      document->GetAccessibleByUniqueIDInSubtree(uniqueID);
+    document->GetAccessibleByUniqueIDInSubtree(uniqueID);
 #endif
 
 
-    if (IsDoc())
-      return child;
-
-    
-    
-    Accessible* parent = child;
-    while (parent && parent != document) {
-      if (parent == this)
-        return child;
-
-      parent = parent->Parent();
-    }
-
-    return nullptr;
-  }
+  if (IsDoc())
+    return child;
 
   
-  return GetChildAt(aVarChild.lVal - 1);
+  
+  Accessible* parent = child;
+  while (parent && parent != document) {
+    if (parent == this)
+      return child;
+
+    parent = parent->Parent();
+  }
+
+  return nullptr;
 }
 
 void
