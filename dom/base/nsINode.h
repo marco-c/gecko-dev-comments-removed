@@ -56,7 +56,7 @@ class nsDOMMutationObserver;
 
 
 struct ServoNodeData;
-extern "C" void Servo_DropNodeData(ServoNodeData*);
+extern "C" void Servo_NodeData_Drop(ServoNodeData*);
 namespace mozilla {
 template<>
 class DefaultDelete<ServoNodeData>
@@ -64,7 +64,7 @@ class DefaultDelete<ServoNodeData>
 public:
   void operator()(ServoNodeData* aPtr) const
   {
-    Servo_DropNodeData(aPtr);
+    Servo_NodeData_Drop(aPtr);
   }
 };
 } 
