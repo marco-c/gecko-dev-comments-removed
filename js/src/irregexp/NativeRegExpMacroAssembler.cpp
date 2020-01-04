@@ -155,8 +155,10 @@ NativeRegExpMacroAssembler::GenerateCode(JSContext* cx, bool match_only)
     masm.checkStackAlignment();
 
     
+    
+    
     Label stack_ok;
-    void* stack_limit = runtime->addressOfJitStackLimit();
+    void* stack_limit = runtime->addressOfJitStackLimitNoInterrupt();
     masm.branchStackPtrRhs(Assembler::Below, AbsoluteAddress(stack_limit), &stack_ok);
 
     
