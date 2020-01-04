@@ -58,6 +58,8 @@ function show(id) {
   }
 }
 
+
+
 var loadedDeferred = null;
 
 
@@ -66,14 +68,17 @@ function deferTransitionToRemoteAfterLoaded() {
   log.d('Waiting for LOADED message.');
   loadedDeferred = PromiseUtils.defer();
   loadedDeferred.promise.then(() => {
+    log.d('Got LOADED message!');
     document.getElementById("remote").style.opacity = 0;
     show("remote");
     document.getElementById("remote").style.opacity = 1;
+  })
+  .catch((e) => {
+    log.w('Did not get LOADED message: ' + e.toString());
   });
 }
 
 function handleLoadedMessage(message) {
-  log.d('Got LOADED message!');
   loadedDeferred.resolve();
 };
 
@@ -131,6 +136,12 @@ let wrapper = {
       
       if (failure && aStatus != Components.results.NS_BINDING_ABORTED) {
         aRequest.cancel(Components.results.NS_BINDING_ABORTED);
+        
+        
+        
+        
+        
+        loadedDeferred.reject(new Error("Failed in onStateChange!"));
         show("networkError");
       }
     },
@@ -138,6 +149,8 @@ let wrapper = {
     onLocationChange: function(aWebProgress, aRequest, aLocation, aFlags) {
       if (aRequest && aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) {
         aRequest.cancel(Components.results.NS_BINDING_ABORTED);
+        
+        loadedDeferred.reject(new Error("Failed in onLocationChange!"));
         show("networkError");
       }
     },
