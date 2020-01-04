@@ -9,8 +9,12 @@ let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 let isMulet = "ResponsiveUI" in browserWindow;
 Cu.import("resource://gre/modules/GlobalSimulatorScreen.jsm");
 
+window.addEventListener('ContentStart', onStart);
+window.addEventListener('SafeModeStart', onStart);
 
-window.addEventListener('ContentStart', function() {
+
+
+function onStart() {
   
   let shell = document.getElementById('shell');
 
@@ -262,4 +266,4 @@ window.addEventListener('ContentStart', function() {
     
     Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
   }
-});
+}
