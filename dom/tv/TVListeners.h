@@ -7,20 +7,13 @@
 #ifndef mozilla_dom_TVListeners_h
 #define mozilla_dom_TVListeners_h
 
+#include "mozilla/dom/TVSource.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsITVService.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace dom {
-
-class TVSource;
-
-
-
-
-
-
-
 
 class TVSourceListener final : public nsITVSourceListener
 {
@@ -29,24 +22,17 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS(TVSourceListener)
   NS_DECL_NSITVSOURCELISTENER
 
-  static already_AddRefed<TVSourceListener> Create(TVSource* aSource);
+  void RegisterSource(TVSource* aSource);
+
+  void UnregisterSource(TVSource* aSource);
 
 private:
-  explicit TVSourceListener(TVSource* aSource);
+  ~TVSourceListener() {}
 
-  ~TVSourceListener();
+  already_AddRefed<TVSource> GetSource(const nsAString& aTunerId,
+                                       const nsAString& aSourceType);
 
-  bool Init();
-
-  void Shutdown();
-
-  bool IsMatched(const nsAString& aTunerId, const nsAString& aSourceType);
-
-  RefPtr<TVSource> mSource;
-
-  
-  
-  nsString mTunerId;
+  nsTArray<RefPtr<TVSource>> mSources;
 };
 
 } 
