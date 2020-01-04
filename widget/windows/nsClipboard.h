@@ -51,7 +51,13 @@ public:
   static nsresult GetNativeDataOffClipboard(nsIWidget * aWindow, UINT aIndex, UINT aFormat, void ** aData, uint32_t * aLen);
   static nsresult GetNativeDataOffClipboard(IDataObject * aDataObject, UINT aIndex, UINT aFormat, const char * aMIMEImageFormat, void ** aData, uint32_t * aLen);
   static nsresult GetGlobalData(HGLOBAL aHGBL, void ** aData, uint32_t * aLen);
-  static UINT     GetFormat(const char* aMimeStr);
+
+  
+  
+  
+  
+  
+  static UINT     GetFormat(const char* aMimeStr, bool aMapHTMLMime = true);
 
   static UINT     CF_HTML;
   

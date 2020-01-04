@@ -541,14 +541,6 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor, bool *_retval)
         if (mDataObject->QueryGetData(&fe) == S_OK)
           *_retval = true;                 
       }
-      else if (strcmp(aDataFlavor, kHTMLMime) == 0) {
-        
-        format = nsClipboard::GetFormat(kHTMLMime);
-        SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
-                      TYMED_HGLOBAL);
-        if (mDataObject->QueryGetData(&fe) == S_OK)
-          *_retval = true;                 
-      }
     } 
   }
 

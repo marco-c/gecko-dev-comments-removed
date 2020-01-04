@@ -88,7 +88,7 @@ nsClipboard::Observe(nsISupports *aSubject, const char *aTopic,
 }
 
 
-UINT nsClipboard::GetFormat(const char* aMimeStr)
+UINT nsClipboard::GetFormat(const char* aMimeStr, bool aMapHTMLMime)
 {
   UINT format;
 
@@ -106,7 +106,7 @@ UINT nsClipboard::GetFormat(const char* aMimeStr)
            strcmp(aMimeStr, kFilePromiseMime) == 0)
     format = CF_HDROP;
   else if (strcmp(aMimeStr, kNativeHTMLMime) == 0 ||
-           strcmp(aMimeStr, kHTMLMime) == 0)
+           aMapHTMLMime && strcmp(aMimeStr, kHTMLMime) == 0)
     format = CF_HTML;
   else
     format = ::RegisterClipboardFormatW(NS_ConvertASCIItoUTF16(aMimeStr).get());
@@ -169,7 +169,9 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
     if ( currentFlavor ) {
       nsXPIDLCString flavorStr;
       currentFlavor->ToString(getter_Copies(flavorStr));
-      UINT format = GetFormat(flavorStr);
+      
+      
+      UINT format = GetFormat(flavorStr, false);
 
       
       
