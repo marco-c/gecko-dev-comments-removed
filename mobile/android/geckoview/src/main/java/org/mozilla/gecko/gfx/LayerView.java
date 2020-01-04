@@ -69,14 +69,12 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     
     private final Overscroll mOverscroll;
 
-
     private boolean mServerSurfaceValid;
     private int mWidth, mHeight;
 
     
-
     @WrapForJNI(stubName = "CompositorCreated", calledFrom = "ui")
-    private volatile boolean mCompositorCreated;
+     volatile boolean mCompositorCreated;
 
     private class Compositor extends JNIObject {
         public Compositor() {
@@ -110,11 +108,18 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
          native void syncInvalidateAndScheduleComposite();
 
         @WrapForJNI
-        private synchronized Object getSurface() {
-            if (LayerView.this.mServerSurfaceValid) {
-                return LayerView.this.getSurface();
+        private Object getSurface() {
+            synchronized (LayerView.this) {
+                if (LayerView.this.mServerSurfaceValid) {
+                    return LayerView.this.getSurface();
+                }
             }
             return null;
+        }
+
+        @WrapForJNI(calledFrom = "gecko")
+        private void reattach() {
+            mCompositorCreated = true;
         }
 
         @WrapForJNI(calledFrom = "gecko")
@@ -132,9 +137,7 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         }
     }
 
-
-    Compositor mCompositor;
-
+    private final Compositor mCompositor = new Compositor();
 
     
     public static final int PAINT_START = 0;
@@ -177,8 +180,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
             mOverscroll = null;
         }
         Tabs.registerOnTabsChangedListener(this);
-
-        mCompositor = new Compositor();
     }
 
     public LayerView(Context context) {
@@ -232,9 +233,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         }
         if (mRenderer != null) {
             mRenderer.destroy();
-        }
-        if (mCompositor != null) {
-            mCompositor = null;
         }
         Tabs.unregisterOnTabsChangedListener(this);
     }
@@ -431,8 +429,8 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     }
 
     public void requestRender() {
-        if (mListener != null) {
-            mListener.renderRequested();
+        if (mCompositorCreated) {
+            mCompositor.syncInvalidateAndScheduleComposite();
         }
     }
 
@@ -512,42 +510,25 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
             
             
             
-            resumeCompositor(mWidth, mHeight);
+            if (!mServerSurfaceValid) {
+                return;
+            }
+            
+            
+            
+            
+            
+            
+            mCompositor.syncResumeResizeCompositor(mWidth, mHeight);
             return;
         }
 
         
         
         
-        
         if (mServerSurfaceValid && getLayerClient().isGeckoReady()) {
+            mCompositorCreated = true;
             mCompositor.createCompositor(mWidth, mHeight);
-            compositorCreated();
-        }
-    }
-
-    void compositorCreated() {
-        
-        
-        mCompositorCreated = true;
-    }
-
-    void resumeCompositor(int width, int height) {
-        
-        
-        
-        
-        
-        
-        if (mServerSurfaceValid && mCompositorCreated) {
-            mCompositor.syncResumeResizeCompositor(width, height);
-            requestRender();
-        }
-    }
-
-     void invalidateAndScheduleComposite() {
-        if (mCompositorCreated) {
-            mCompositor.syncInvalidateAndScheduleComposite();
         }
     }
 
@@ -575,8 +556,8 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
             return;
         }
 
-        if (mListener != null) {
-            mListener.sizeChanged(width, height);
+        if (mCompositorCreated) {
+            mCompositor.syncResumeResizeCompositor(width, height);
         }
 
         if (mOverscroll != null) {
@@ -597,10 +578,7 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     }
 
     void notifySizeChanged(int windowWidth, int windowHeight, int screenWidth, int screenHeight) {
-        final Compositor compositor = mCompositor;
-        if (compositor != null) {
-            compositor.onSizeChanged(windowWidth, windowHeight, screenWidth, screenHeight);
-        }
+        mCompositor.onSizeChanged(windowWidth, windowHeight, screenWidth, screenHeight);
     }
 
     void serverSurfaceDestroyed() {
@@ -654,8 +632,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     }
 
     public interface Listener {
-        void renderRequested();
-        void sizeChanged(int width, int height);
         void surfaceChanged(int width, int height);
     }
 

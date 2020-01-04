@@ -180,6 +180,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         mPanZoomController.destroy();
         mToolbarAnimator.destroy();
         mDrawListeners.clear();
+        mGeckoIsReady = false;
     }
 
     
@@ -896,23 +897,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     private void geometryChanged(DisplayPortMetrics displayPort) {
         
         sendResizeEventIfNecessary(false, null);
-    }
-
-    
-    @Override
-    public void renderRequested() {
-        if (mView != null) {
-            mView.invalidateAndScheduleComposite();
-        }
-    }
-
-    
-    @Override
-    public void sizeChanged(int width, int height) {
-        
-        
-        
-        mView.resumeCompositor(width, height);
     }
 
     
