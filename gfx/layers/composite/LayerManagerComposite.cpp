@@ -859,10 +859,8 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion)
   }
 
   
-  mCompositor->GetWidget()->DrawWindowUnderlay(this, IntRect(actualBounds.x,
-                                                               actualBounds.y,
-                                                               actualBounds.width,
-                                                               actualBounds.height));
+  mCompositor->GetWidget()->DrawWindowUnderlay(
+    this, LayoutDeviceIntRect::FromUnknownRect(TruncatedToInt(actualBounds)));
 
   RefPtr<CompositingRenderTarget> previousTarget;
   if (haveLayerEffects) {
@@ -891,8 +889,7 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion)
 
   
   mCompositor->GetWidget()->DrawWindowOverlay(
-    this, LayoutDeviceIntRect(actualBounds.x, actualBounds.y,
-                              actualBounds.width, actualBounds.height));
+    this, LayoutDeviceIntRect::FromUnknownRect(TruncatedToInt(actualBounds)));
 
   
   RenderDebugOverlay(actualBounds);

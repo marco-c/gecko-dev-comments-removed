@@ -1225,7 +1225,8 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual void DrawWindowUnderlay(LayerManagerComposite* aManager, nsIntRect aRect) = 0;
+    virtual void DrawWindowUnderlay(LayerManagerComposite* aManager,
+                                    LayoutDeviceIntRect aRect) = 0;
 
     
 
