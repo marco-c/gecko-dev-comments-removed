@@ -1,14 +1,22 @@
-
-
-
 load(libdir + "asserts.js");
 
-var mistakes = [
-    "(...rest) => arguments",
-    "(...rest) => (x=arguments) => 0",
-    "function f(...rest) { return (x=arguments) => 0; }",
-    "function f(...rest) { return (x=(y=arguments) => 1) => 0; }",
-];
 
-for (var s of mistakes)
-    assertThrowsInstanceOf(function () { eval(s); }, SyntaxError);
+assertEq((function(...rest) { return (x => arguments)(1, 2)})().length, 0);
+
+function restAndArgs(...rest) {
+    return () => eval("arguments");
+}
+
+var args = restAndArgs(1, 2, 3)();
+assertEq(args.length, 3);
+assertDeepEq(args[0], [1, 2, 3], "This is bogus, see bug 1175394");
+assertEq(args[1], 2);
+assertEq(args[2], 3);
+
+(function() {
+    return ((...rest) => {
+        assertDeepEq(rest, [1, 2, 3]);
+        assertEq(arguments.length, 2);
+        assertEq(eval("arguments").length, 2);
+    })(1, 2, 3);
+})(4, 5);

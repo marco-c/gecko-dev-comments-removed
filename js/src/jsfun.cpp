@@ -131,14 +131,6 @@ ArgumentsRestrictions(JSContext* cx, HandleFunction fun)
 
     
     
-    if (fun->hasRest()) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
-                             JSMSG_FUNCTION_ARGUMENTS_AND_REST);
-        return false;
-    }
-
-    
-    
     if (!JS_ReportErrorFlagsAndNumber(cx, JSREPORT_WARNING | JSREPORT_STRICT, GetErrorMessage,
                                       nullptr, JSMSG_DEPRECATED_USAGE, js_arguments_str))
     {

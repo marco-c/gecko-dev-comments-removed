@@ -7583,8 +7583,6 @@ BytecodeEmitter::emitTree(ParseNode* pn)
         ParseNode* rest = nullptr;
         bool restIsDefn = false;
         if (fun->hasRest() && hasDefaults) {
-            MOZ_ASSERT(!sc->asFunctionBox()->argumentsHasLocalBinding());
-
             
             
             
@@ -7629,7 +7627,6 @@ BytecodeEmitter::emitTree(ParseNode* pn)
                 return false;
             if (pn2->pn_next == pnlast && fun->hasRest() && !hasDefaults) {
                 
-                MOZ_ASSERT(!sc->asFunctionBox()->argumentsHasLocalBinding());
                 switchToPrologue();
                 if (!emit1(JSOP_REST))
                     return false;
