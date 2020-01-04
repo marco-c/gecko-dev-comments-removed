@@ -20,10 +20,15 @@ struct MinimalAlloc {
     LifoAlloc lifo;
     TempAllocator alloc;
 
+    
+    
     MinimalAlloc()
-      : lifo(4096),
+      : lifo(128 * 1024),
         alloc(&lifo)
-    { }
+    {
+        if (!alloc.ensureBallast())
+            MOZ_CRASH("[OOM] Not enough RAM for the test.");
+    }
 };
 
 struct MinimalFunc : MinimalAlloc
