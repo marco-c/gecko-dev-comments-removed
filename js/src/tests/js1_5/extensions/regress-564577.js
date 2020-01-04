@@ -5,6 +5,7 @@
 
 
 
+
 var gTestfile = 'regress-564577.js';
 
 var BUGNUMBER = 564577;
@@ -13,7 +14,7 @@ var actual = '';
 var expect = '';
 
 
-
+enableNoSuchMethod();
 test();
 
 

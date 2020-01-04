@@ -1,6 +1,9 @@
 
 
 
+
+enableNoSuchMethod();
+
 var sym = Symbol("method");
 var hits = 0;
 var obj = {
