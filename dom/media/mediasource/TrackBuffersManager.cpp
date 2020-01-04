@@ -100,7 +100,6 @@ TrackBuffersManager::TrackBuffersManager(dom::SourceBufferAttributes* aAttribute
   , mTaskQueue(aParentDecoder->GetDemuxer()->GetTaskQueue())
   , mSourceBufferAttributes(aAttributes)
   , mParentDecoder(new nsMainThreadPtrHolder<MediaSourceDecoder>(aParentDecoder, false ))
-  , mMediaSourceDuration(mTaskQueue, Maybe<double>(), "TrackBuffersManager::mMediaSourceDuration (Mirror)")
   , mAbort(false)
   , mEvictionThreshold(Preferences::GetUint("media.mediasource.eviction_threshold",
                                             100 * (1 << 20)))
@@ -108,12 +107,6 @@ TrackBuffersManager::TrackBuffersManager(dom::SourceBufferAttributes* aAttribute
   , mMonitor("TrackBuffersManager")
 {
   MOZ_ASSERT(NS_IsMainThread(), "Must be instanciated on the main thread");
-  RefPtr<TrackBuffersManager> self = this;
-  nsCOMPtr<nsIRunnable> task =
-    NS_NewRunnableFunction([self] () {
-      self->mMediaSourceDuration.Connect(self->mParentDecoder->CanonicalExplicitDuration());
-    });
-  GetTaskQueue()->Dispatch(task.forget());
 }
 
 TrackBuffersManager::~TrackBuffersManager()
@@ -321,7 +314,6 @@ TrackBuffersManager::Detach()
                                            TimeUnit::FromInfinity()));
       self->mProcessingPromise.RejectIfExists(NS_ERROR_ABORT, __func__);
       self->mAppendPromise.RejectIfExists(NS_ERROR_ABORT, __func__);
-      self->mMediaSourceDuration.DisconnectIfConnected();
     });
   GetTaskQueue()->Dispatch(task.forget());
 }
@@ -496,15 +488,7 @@ TrackBuffersManager::CodedFrameRemoval(TimeInterval aInterval)
   MSE_DEBUG("From %.2fs to %.2f",
             aInterval.mStart.ToSeconds(), aInterval.mEnd.ToSeconds());
 
-  if (mMediaSourceDuration.Ref().isNothing() ||
-      IsNaN(mMediaSourceDuration.Ref().ref())) {
-    MSE_DEBUG("Nothing to remove, aborting");
-    return false;
-  }
-  TimeUnit duration{TimeUnit::FromSeconds(mMediaSourceDuration.Ref().ref())};
-
 #if DEBUG
-  MSE_DEBUG("duration:%.2f", duration.ToSeconds());
   if (HasVideo()) {
     MSE_DEBUG("before video ranges=%s",
               DumpTimeRanges(mVideoTracks.mBufferedRanges).get());
@@ -527,7 +511,14 @@ TrackBuffersManager::CodedFrameRemoval(TimeInterval aInterval)
     MSE_DEBUGV("Processing %s track", track->mInfo->mMimeType.get());
     
     
-    TimeUnit removeEndTimestamp = std::max(duration, track->mBufferedRanges.GetEnd());
+    
+    
+    TimeUnit removeEndTimestamp = track->mBufferedRanges.GetEnd();
+
+    if (start > removeEndTimestamp) {
+      
+      continue;
+    }
 
     
     
