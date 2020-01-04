@@ -393,12 +393,12 @@ public:
     { return InsertChildAt(mChildren.Length(), aChild); }
   virtual bool InsertChildAt(uint32_t aIndex, Accessible* aChild);
 
-  bool InsertAfter(Accessible* aNewChild, Accessible* aRefChild)
-  {
-    MOZ_ASSERT(aNewChild, "No new child to insert");
-    return InsertChildAt(aRefChild ? aRefChild->IndexInParent() + 1 : 0,
-                         aNewChild);
-  }
+  
+
+
+
+
+  bool InsertAfter(Accessible* aNewChild, Accessible* aRefChild);
 
   virtual bool RemoveChild(Accessible* aChild);
 
