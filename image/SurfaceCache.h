@@ -121,17 +121,11 @@ VectorSurfaceKey(const gfx::IntSize& aSize,
   return SurfaceKey(aSize, aSVGContext, aAnimationTime, DefaultSurfaceFlags());
 }
 
-enum class Lifetime : uint8_t {
-  Transient,
-  Persistent
-};
-
 enum class InsertOutcome : uint8_t {
   SUCCESS,                 
   FAILURE,                 
   FAILURE_ALREADY_PRESENT  
 };
-
 
 
 
@@ -275,15 +269,9 @@ struct SurfaceCache
 
 
 
-
-
-
-
-
   static InsertOutcome Insert(imgFrame*         aSurface,
                               const ImageKey    aImageKey,
-                              const SurfaceKey& aSurfaceKey,
-                              Lifetime          aLifetime);
+                              const SurfaceKey& aSurfaceKey);
 
   
 
@@ -333,7 +321,6 @@ struct SurfaceCache
   static bool CanHold(size_t aSize);
 
   
-
 
 
 
