@@ -1331,15 +1331,17 @@ gfxUserFontSet::UserFontCache::Entry::ReportMemory(nsIMemoryReporterCallback* aC
         if (mPrincipal) {
             nsCOMPtr<nsIURI> uri;
             mPrincipal->GetURI(getter_AddRefs(uri));
-            nsCString spec;
-            uri->GetSpec(spec);
-            if (!spec.IsEmpty()) {
-                
-                
-                
-                
-                spec.ReplaceChar('/', '\\');
-                path.AppendPrintf(", principal=%s", spec.get());
+            if (uri) {
+                nsCString spec;
+                uri->GetSpec(spec);
+                if (!spec.IsEmpty()) {
+                    
+                    
+                    
+                    
+                    spec.ReplaceChar('/', '\\');
+                    path.AppendPrintf(", principal=%s", spec.get());
+                }
             }
         }
     }
