@@ -242,12 +242,20 @@ PlatformDecoderModule::CreateDecoder(const TrackInfo& aConfig,
   }
 
   if (H264Converter::IsH264(aConfig)) {
-    m = new H264Converter(this,
+    nsRefPtr<H264Converter> h
+      = new H264Converter(this,
                           *aConfig.GetAsVideoInfo(),
                           aLayersBackend,
                           aImageContainer,
                           aTaskQueue,
                           callback);
+    const nsresult rv = h->GetLastError();
+    if (NS_SUCCEEDED(rv) || rv == NS_ERROR_NOT_INITIALIZED) {
+      
+      
+      
+      m = h.forget();
+    }
   } else if (!hasPlatformDecoder && VPXDecoder::IsVPX(aConfig.mMimeType)) {
     m = new VPXDecoder(*aConfig.GetAsVideoInfo(),
                        aImageContainer,

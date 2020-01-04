@@ -38,6 +38,7 @@ public:
 
   
   static bool IsH264(const TrackInfo& aConfig);
+  nsresult GetLastError() const { return mLastError; }
 
 private:
   
