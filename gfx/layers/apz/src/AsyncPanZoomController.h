@@ -879,7 +879,7 @@ private:
   
   void StartOverscrollAnimation(const ParentLayerPoint& aVelocity);
 
-  void StartSmoothScroll();
+  void SmoothScrollTo(const CSSPoint& aDestination);
 
   
   bool AllowScrollHandoffInCurrentBlock() const;
