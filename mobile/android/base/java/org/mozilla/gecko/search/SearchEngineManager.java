@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.search.providers;
+package org.mozilla.gecko.search;
 
 import android.content.Context;
 import android.content.SharedPreferences;

@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.search.providers;
+package org.mozilla.gecko.search;
 
 import android.net.Uri;
 import android.util.Log;
