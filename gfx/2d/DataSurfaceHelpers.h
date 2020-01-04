@@ -13,6 +13,28 @@
 namespace mozilla {
 namespace gfx {
 
+
+
+
+
+
+already_AddRefed<DataSourceSurface>
+CreateDataSourceSurfaceFromData(const IntSize& aSize,
+                                SurfaceFormat aFormat,
+                                const uint8_t* aData,
+                                int32_t aDataStride);
+
+
+
+
+
+already_AddRefed<DataSourceSurface>
+CreateDataSourceSurfaceWithStrideFromData(const IntSize &aSize,
+                                          SurfaceFormat aFormat,
+                                          int32_t aStride,
+                                          const uint8_t* aData,
+                                          int32_t aDataStride);
+
 void
 ConvertBGRXToBGRA(uint8_t* aData, const IntSize &aSize, const int32_t aStride);
 
@@ -73,7 +95,8 @@ BufferSizeFromStrideAndHeight(int32_t aStride,
 
 
 
-void
+
+bool
 CopyRect(DataSourceSurface* aSrc, DataSourceSurface* aDest,
          IntRect aSrcRect, IntPoint aDestPoint);
 
