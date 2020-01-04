@@ -906,7 +906,7 @@ js::IsWrappedArrayConstructor(JSContext* cx, const Value& v, bool* result)
     return true;
 }
 
-static bool
+ bool
 IsArraySpecies(JSContext* cx, HandleObject origArray)
 {
     RootedValue ctor(cx);
@@ -925,7 +925,7 @@ IsArraySpecies(JSContext* cx, HandleObject origArray)
     return IsSelfHostedFunctionWithName(getter, cx->names().ArraySpecies);
 }
 
-static bool
+ bool
 ArraySpeciesCreate(JSContext* cx, HandleObject origArray, uint32_t length, MutableHandleObject arr)
 {
     RootedId createId(cx, NameToId(cx->names().ArraySpeciesCreate));
@@ -2826,10 +2826,35 @@ NormalizeSliceTerm(T value, uint32_t length)
     return uint32_t(value);
 }
 
-static bool
-ArraySliceOrdinary(JSContext* cx, HandleObject obj, uint32_t length, uint32_t begin, uint32_t end,
-                   MutableHandleObject arr)
+bool
+js::array_slice(JSContext* cx, unsigned argc, Value* vp)
 {
+    AutoSPSEntry pseudoFrame(cx->runtime(), "Array.prototype.slice");
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    RootedObject obj(cx, ToObject(cx, args.thisv()));
+    if (!obj)
+        return false;
+
+    uint32_t length;
+    if (!GetLengthProperty(cx, obj, &length))
+        return false;
+
+    uint32_t begin = 0;
+    uint32_t end = length;
+    if (args.length() > 0) {
+        double d;
+        if (!ToInteger(cx, args[0], &d))
+            return false;
+        begin = NormalizeSliceTerm(d, length);
+
+        if (args.hasDefined(1)) {
+            if (!ToInteger(cx, args[1], &d))
+                return false;
+            end = NormalizeSliceTerm(d, length);
+        }
+    }
+
     if (begin > end)
         begin = end;
 
@@ -2849,7 +2874,7 @@ ArraySliceOrdinary(JSContext* cx, HandleObject obj, uint32_t length, uint32_t be
                 CopyAnyBoxedOrUnboxedDenseElements(cx, narr, obj, 0, begin, count);
             MOZ_ASSERT(result.value == DenseElementResult::Success);
         }
-        arr.set(narr);
+        args.rval().setObject(*narr);
         return true;
     }
 
@@ -2862,7 +2887,7 @@ ArraySliceOrdinary(JSContext* cx, HandleObject obj, uint32_t length, uint32_t be
         if (!op(cx, obj, begin, end, &adder))
             return false;
 
-        arr.set(narr);
+        args.rval().setObject(*narr);
         return true;
     }
 
@@ -2874,99 +2899,7 @@ ArraySliceOrdinary(JSContext* cx, HandleObject obj, uint32_t length, uint32_t be
             return false;
     }
 
-    arr.set(narr);
-    return true;
-}
-
-
-bool
-js::array_slice(JSContext* cx, unsigned argc, Value* vp)
-{
-    AutoSPSEntry pseudoFrame(cx->runtime(), "Array.prototype.slice");
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    RootedObject obj(cx, ToObject(cx, args.thisv()));
-    if (!obj)
-        return false;
-
-    
-    uint32_t length;
-    if (!GetLengthProperty(cx, obj, &length))
-        return false;
-
-    uint32_t k = 0;
-    uint32_t final = length;
-    if (args.length() > 0) {
-        double d;
-        
-        if (!ToInteger(cx, args[0], &d))
-            return false;
-
-        
-        k = NormalizeSliceTerm(d, length);
-
-        if (args.hasDefined(1)) {
-            
-            if (!ToInteger(cx, args[1], &d))
-                return false;
-
-            
-            final = NormalizeSliceTerm(d, length);
-        }
-    }
-
-    
-    uint32_t count = final > k ? final - k : 0;
-
-    RootedObject arr(cx);
-    if (IsArraySpecies(cx, obj)) {
-        
-        if (!ArraySliceOrdinary(cx, obj, length, k, final, &arr))
-            return false;
-
-        
-        args.rval().setObject(*arr);
-        return true;
-    }
-
-    
-    if (!ArraySpeciesCreate(cx, obj, count, &arr))
-        return false;
-
-    
-    uint32_t n = 0;
-
-    
-    RootedValue kValue(cx);
-    while (k < final) {
-        if (!CheckForInterrupt(cx))
-            return false;
-
-        
-        bool kNotPresent;
-        if (!GetElement(cx, obj, k, &kNotPresent, &kValue))
-            return false;
-
-        
-        if (!kNotPresent) {
-            
-            if (!DefineElement(cx, arr, n, kValue))
-                return false;
-        }
-        
-        k++;
-
-        
-        n++;
-    }
-
-    
-    if (!SetLengthProperty(cx, arr, n))
-        return false;
-
-    
-    args.rval().setObject(*arr);
+    args.rval().setObject(*narr);
     return true;
 }
 
@@ -3004,7 +2937,7 @@ JSObject*
 js::array_slice_dense(JSContext* cx, HandleObject obj, int32_t begin, int32_t end,
                       HandleObject result)
 {
-    if (result && IsArraySpecies(cx, obj)) {
+    if (result) {
         ArraySliceDenseKernelFunctor functor(cx, obj, begin, end, result);
         DenseElementResult rv = CallBoxedOrUnboxedSpecialization(functor, result);
         MOZ_ASSERT(rv != DenseElementResult::Incomplete);
