@@ -1968,6 +1968,7 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumStart(const PanGestureInput& 
   }
 
   SetState(PAN_MOMENTUM);
+  RequestSnapToDestination();
 
   
   OnPan(aEvent, false);
