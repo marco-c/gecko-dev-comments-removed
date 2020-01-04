@@ -12,10 +12,9 @@
 
 #include "OggDecoder.h"
 #include "OggReader.h"
-#ifdef MOZ_WAVE
+
 #include "WaveDecoder.h"
 #include "WaveReader.h"
-#endif
 
 #include "WebMDecoder.h"
 #include "WebMReader.h"
@@ -128,7 +127,6 @@ IsOggType(const nsACString& aType)
   return CodecListContains(gOggTypes, aType);
 }
 
-#ifdef MOZ_WAVE
 
 
 
@@ -154,7 +152,6 @@ IsWaveType(const nsACString& aType)
 
   return CodecListContains(gWaveTypes, aType);
 }
-#endif
 
 static bool
 IsWebMSupportedType(const nsACString& aType,
@@ -359,7 +356,6 @@ IsAACSupportedType(const nsACString& aType,
 
 bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType)
 {
-#ifdef MOZ_WAVE
   if (IsWaveType(nsDependentCString(aMIMEType))) {
     
     
@@ -368,7 +364,6 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType)
     
     return false;
   }
-#endif
   return CanHandleMediaType(aMIMEType, false, EmptyString()) != CANPLAY_NO;
 }
 
@@ -386,11 +381,9 @@ DecoderTraits::CanHandleCodecsType(const char* aMIMEType,
   if (IsOggType(nsDependentCString(aMIMEType))) {
     codecList = MediaDecoder::IsOpusEnabled() ? gOggCodecsWithOpus : gOggCodecs;
   }
-#ifdef MOZ_WAVE
   if (IsWaveType(nsDependentCString(aMIMEType))) {
     codecList = gWaveCodecs;
   }
-#endif
 #if !defined(MOZ_OMX_WEBM_DECODER)
   if (IsWebMTypeAndEnabled(nsDependentCString(aMIMEType))) {
     if (IsWebMSupportedType(nsDependentCString(aMIMEType), aRequestedCodecs)) {
@@ -488,11 +481,9 @@ DecoderTraits::CanHandleMediaType(const char* aMIMEType,
   if (IsOggType(nsDependentCString(aMIMEType))) {
     return CANPLAY_MAYBE;
   }
-#ifdef MOZ_WAVE
   if (IsWaveType(nsDependentCString(aMIMEType))) {
     return CANPLAY_MAYBE;
   }
-#endif
   if (IsMP4TypeAndEnabled(nsDependentCString(aMIMEType))) {
     return CANPLAY_MAYBE;
   }
@@ -575,12 +566,10 @@ InstantiateDecoder(const nsACString& aType, MediaDecoderOwner* aOwner)
     decoder = new OggDecoder(aOwner);
     return decoder.forget();
   }
-#ifdef MOZ_WAVE
   if (IsWaveType(aType)) {
     decoder = new WaveDecoder(aOwner);
     return decoder.forget();
   }
-#endif
 #ifdef MOZ_OMX_DECODER
   if (IsOmxSupportedType(aType)) {
     
@@ -674,11 +663,9 @@ MediaDecoderReader* DecoderTraits::CreateReader(const nsACString& aType, Abstrac
   if (IsOggType(aType)) {
     decoderReader = new OggReader(aDecoder);
   } else
-#ifdef MOZ_WAVE
   if (IsWaveType(aType)) {
     decoderReader = new WaveReader(aDecoder);
   } else
-#endif
 #ifdef MOZ_OMX_DECODER
   if (IsOmxSupportedType(aType)) {
     decoderReader = new MediaOmxReader(aDecoder);
