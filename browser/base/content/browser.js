@@ -183,6 +183,9 @@ if (AppConstants.MOZ_SAFE_BROWSING) {
     "resource://gre/modules/SafeBrowsing.jsm");
 }
 
+XPCOMUtils.defineLazyModuleGetter(this, "gCustomizationTabPreloader",
+  "resource:///modules/CustomizationTabPreloader.jsm", "CustomizationTabPreloader");
+
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
@@ -4338,7 +4341,7 @@ var XULBrowserWindow = {
         URLBarSetURI(aLocationURI);
 
         BookmarkingUI.onLocationChange();
-        SocialUI.updateState();
+        SocialUI.updateState(location);
         UITour.onLocationChange(location);
         gTabletModePageCounter.inc();
       }
@@ -4386,11 +4389,12 @@ var XULBrowserWindow = {
 
       
       
-      if (location == "about:blank" &&
-          gBrowser.selectedTab.hasAttribute("customizemode")) {
+      let customizingURI = "about:customizing";
+      if (location == customizingURI) {
         gCustomizeMode.enter();
-      } else if (CustomizationHandler.isEnteringCustomizeMode ||
-                 CustomizationHandler.isCustomizing()) {
+      } else if (location != customizingURI &&
+                 (CustomizationHandler.isEnteringCustomizeMode ||
+                  CustomizationHandler.isCustomizing())) {
         gCustomizeMode.exit();
       }
     }
@@ -4715,7 +4719,8 @@ nsBrowserAccess.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIBrowserDOMWindow, Ci.nsISupports]),
 
   _openURIInNewTab: function(aURI, aReferrer, aReferrerPolicy, aIsPrivate,
-                             aIsExternal, aForceNotRemote=false) {
+                             aIsExternal, aForceNotRemote=false,
+                             aUserContextId=Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID) {
     let win, needToFocusWin;
 
     
@@ -4742,6 +4747,7 @@ nsBrowserAccess.prototype = {
     let tab = win.gBrowser.loadOneTab(aURI ? aURI.spec : "about:blank", {
                                       referrerURI: aReferrer,
                                       referrerPolicy: aReferrerPolicy,
+                                      userContextId: aUserContextId,
                                       fromExternal: aIsExternal,
                                       inBackground: loadInBackground,
                                       forceNotRemote: aForceNotRemote});
@@ -4814,9 +4820,12 @@ nsBrowserAccess.prototype = {
         
         
         let forceNotRemote = !!aOpener;
+        let userContextId = aOpener && aOpener.document
+                              ? aOpener.document.nodePrincipal.originAttributes.userContextId
+                              : Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
         let browser = this._openURIInNewTab(aURI, referrer, referrerPolicy,
                                             isPrivate, isExternal,
-                                            forceNotRemote);
+                                            forceNotRemote, userContextId);
         if (browser)
           newWindow = browser.contentWindow;
         break;
@@ -4845,9 +4854,17 @@ nsBrowserAccess.prototype = {
     }
 
     var isExternal = (aContext == Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL);
+
+    var userContextId = aParams.openerOriginAttributes &&
+                        ("userContextId" in aParams.openerOriginAttributes)
+                          ? aParams.openerOriginAttributes.userContextId
+                          : Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID
+
     let browser = this._openURIInNewTab(aURI, aParams.referrer,
                                         aParams.referrerPolicy,
-                                        aParams.isPrivate, isExternal);
+                                        aParams.isPrivate,
+                                        isExternal, false,
+                                        userContextId);
     if (browser)
       return browser.QueryInterface(Ci.nsIFrameLoaderOwner);
 
@@ -6375,9 +6392,6 @@ function isTabEmpty(aTab) {
   if (aTab.hasAttribute("busy"))
     return false;
 
-  if (aTab.hasAttribute("customizemode"))
-    return false;
-
   let browser = aTab.linkedBrowser;
   if (!isBlankPageURL(browser.currentURI.spec))
     return false;
@@ -7280,6 +7294,7 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams={}) {
   
   const kPrivateBrowsingWhitelist = new Set([
     "about:addons",
+    "about:customizing",
   ]);
 
   let ignoreFragment = aOpenParams.ignoreFragment;
