@@ -4965,16 +4965,22 @@ nsTextFrame::GetTextDecorations(
   bool useOverride = false;
   nscolor overrideColor = NS_RGBA(0, 0, 0, 0);
 
-  
-  
-  
-  
-  
-  nscoord frameBStartOffset = mAscent,
-          baselineOffset = 0;
-
   bool nearestBlockFound = false;
-  bool vertical = GetWritingMode().IsVertical();
+  WritingMode wm = GetWritingMode();
+  bool vertical = wm.IsVertical();
+
+  
+  
+  
+  
+  
+  
+  nscoord physicalBlockStartOffset =
+    wm.IsVerticalRL() ? GetSize().width - mAscent : mAscent;
+  
+  
+  
+  nscoord baselineOffset = 0;
 
   for (nsIFrame* f = this, *fChild = nullptr;
        f;
@@ -5017,7 +5023,7 @@ nsTextFrame::GetTextDecorations(
         const nscoord lineBaselineOffset = LazyGetLineBaselineOffset(fChild,
                                                                      fBlock);
 
-        baselineOffset = frameBStartOffset - lineBaselineOffset -
+        baselineOffset = physicalBlockStartOffset - lineBaselineOffset -
           (vertical ? fChild->GetNormalPosition().x
                     : fChild->GetNormalPosition().y);
       }
@@ -5025,11 +5031,14 @@ nsTextFrame::GetTextDecorations(
     else if (!nearestBlockFound) {
       
       
-      baselineOffset = frameBStartOffset - f->GetLogicalBaseline(WritingMode());
+      nscoord offset = wm.IsVerticalRL() ?
+        f->GetSize().width - f->GetLogicalBaseline(wm) :
+        f->GetLogicalBaseline(wm);
+      baselineOffset = physicalBlockStartOffset - offset;
     }
 
     nearestBlockFound = nearestBlockFound || firstBlock;
-    frameBStartOffset +=
+    physicalBlockStartOffset +=
       vertical ? f->GetNormalPosition().x : f->GetNormalPosition().y;
 
     const uint8_t style = styleText->GetDecorationStyle();
