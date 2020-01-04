@@ -701,9 +701,6 @@ protected:
   bool mIgnoreResume;
 
   
-  MediaByteRange mByteRange;
-
-  
   
   bool mIsTransportSeekable;
 

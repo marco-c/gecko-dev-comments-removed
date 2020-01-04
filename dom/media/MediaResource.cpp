@@ -246,41 +246,25 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
       
       bool gotRangeHeader = NS_SUCCEEDED(rv);
 
-      if (!mByteRange.IsEmpty()) {
-        if (!gotRangeHeader) {
-          
-          
-          CMLOG("Error processing \'Content-Range' for "
-                "HTTP_PARTIAL_RESPONSE_CODE: rv[%x] channel[%p] decoder[%p]",
-                rv, hc.get(), mCallback.get());
-          mCallback->NotifyNetworkError();
-          CloseChannel();
-          return NS_OK;
-        }
+      if (gotRangeHeader) {
         
-        
-        NS_WARN_IF_FALSE(mByteRange.mStart == rangeStart,
-                         "response range start does not match request");
-        NS_WARN_IF_FALSE(mOffset == rangeStart,
-                         "response range start does not match current offset");
-        NS_WARN_IF_FALSE(mByteRange.mEnd == rangeEnd,
-                         "response range end does not match request");
         
         
         
         if (rangeTotal == -1) {
           boundedSeekLimit = false;
         } else {
-          mCacheStream.NotifyDataLength(rangeTotal);
+          contentLength = std::max(contentLength, rangeTotal);
         }
-        mCacheStream.NotifyDataStarted(rangeStart);
+        
+        
+        NS_WARN_IF_FALSE(mOffset == rangeStart,
+                         "response range start does not match current offset");
         mOffset = rangeStart;
-      } else if (gotRangeHeader && rangeTotal > 0) {
-        contentLength = std::max(contentLength, rangeTotal);
+        mCacheStream.NotifyDataStarted(rangeStart);
       }
       acceptsRanges = gotRangeHeader;
-    } else if (((mOffset > 0) || !mByteRange.IsEmpty())
-               && (responseStatus == HTTP_OK_CODE)) {
+    } else if (mOffset > 0 && responseStatus == HTTP_OK_CODE) {
       
       
       
@@ -301,8 +285,7 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
     
     
     
-    seekable =
-      responseStatus == HTTP_PARTIAL_RESPONSE_CODE || acceptsRanges;
+    seekable = acceptsRanges;
     if (seekable && boundedSeekLimit) {
       
       
@@ -539,17 +522,15 @@ nsresult ChannelMediaResource::OpenChannel(nsIStreamListener** aStreamListener)
     *aStreamListener = nullptr;
   }
 
-  if (mByteRange.IsEmpty()) {
-    
-    
-    
-    
-    nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(mChannel);
-    if (hc) {
-      int64_t cl = -1;
-      if (NS_SUCCEEDED(hc->GetContentLength(&cl)) && cl != -1) {
-        mCacheStream.NotifyDataLength(cl);
-      }
+  
+  
+  
+  
+  nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(mChannel);
+  if (hc) {
+    int64_t cl = -1;
+    if (NS_SUCCEEDED(hc->GetContentLength(&cl)) && cl != -1) {
+      mCacheStream.NotifyDataLength(cl);
     }
   }
 
@@ -586,18 +567,9 @@ nsresult ChannelMediaResource::SetupChannelHeaders()
   nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(mChannel);
   if (hc) {
     
-    
     nsAutoCString rangeString("bytes=");
-    if (!mByteRange.IsEmpty()) {
-      rangeString.AppendInt(mByteRange.mStart);
-      mOffset = mByteRange.mStart;
-    } else {
-      rangeString.AppendInt(mOffset);
-    }
+    rangeString.AppendInt(mOffset);
     rangeString.Append('-');
-    if (!mByteRange.IsEmpty()) {
-      rangeString.AppendInt(mByteRange.mEnd);
-    }
     nsresult rv = hc->SetRequestHeader(NS_LITERAL_CSTRING("Range"), rangeString, false);
     NS_ENSURE_SUCCESS(rv, rv);
 
