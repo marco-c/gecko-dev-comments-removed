@@ -138,17 +138,7 @@ public:
   void HidePluginWindow();
   
   
-  void* GetPluginPortCopy();
-  
-  
   void SetPluginPort();
-  
-  
-  
-  
-  
-  void BeginCGPaint();
-  void EndCGPaint();
 #else 
   void UpdateWindowPositionAndClipRect(bool aSetWindow);
   void UpdateWindowVisibility(bool aVisible);
@@ -293,11 +283,6 @@ private:
   RefPtr<nsPluginHost>      mPluginHost;
   
 #ifdef XP_MACOSX
-  NP_CGContext                              mCGPluginPortCopy;
-  int32_t                                   mInCGPaintLevel;
-  RefPtr<MacIOSurface>             mIOSurface;
-  RefPtr<nsCARenderer>             mCARenderer;
-  CGColorSpaceRef                           mColorProfile;
   static nsCOMPtr<nsITimer>                *sCATimer;
   static nsTArray<nsPluginInstanceOwner*>  *sCARefreshListeners;
   bool                                      mSentInitialTopLevelWindowEvent;
