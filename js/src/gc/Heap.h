@@ -43,9 +43,10 @@ namespace js {
 class AutoLockGC;
 class FreeOp;
 
-#ifdef DEBUG
 extern bool
 RuntimeFromMainThreadIsHeapMajorCollecting(JS::shadow::Zone* shadowZone);
+
+#ifdef DEBUG
 
 
 
@@ -1281,21 +1282,29 @@ TenuredCell::readBarrier(TenuredCell* thing)
 {
     MOZ_ASSERT(!CurrentThreadIsIonCompiling());
     MOZ_ASSERT(!isNullLike(thing));
-    if (thing->shadowRuntimeFromAnyThread()->isHeapCollecting())
-        return;
+
+    
+    
+    
+    
+    
+    
 
     JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
-    MOZ_ASSERT_IF(!CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread()),
-                  !shadowZone->needsIncrementalBarrier());
-
     if (shadowZone->needsIncrementalBarrier()) {
+        
         MOZ_ASSERT(!RuntimeFromMainThreadIsHeapMajorCollecting(shadowZone));
         Cell* tmp = thing;
         TraceManuallyBarrieredGenericPointerEdge(shadowZone->barrierTracer(), &tmp, "read barrier");
         MOZ_ASSERT(tmp == thing);
     }
-    if (thing->isMarked(GRAY))
-        UnmarkGrayCellRecursively(thing, thing->getTraceKind());
+
+    if (thing->isMarked(GRAY)) {
+        
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread()));
+        if (!RuntimeFromMainThreadIsHeapMajorCollecting(shadowZone))
+            UnmarkGrayCellRecursively(thing, thing->getTraceKind());
+    }
 }
 
 void
