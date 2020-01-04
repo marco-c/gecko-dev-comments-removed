@@ -2146,11 +2146,10 @@ nsFrameSelection::PhysicalMove(int16_t aDirection, int16_t aAmount,
     }
     
     
-    else if (mapping.amounts[aAmount] < eSelectLine) {
-      nsCOMPtr<nsISelectionController> controller = do_QueryInterface(mShell);
-      if (controller) {
-        rv = controller->CompleteMove(mapping.direction == eDirNext, aExtend);
-      }
+    
+    else if (mapping.amounts[aAmount] == eSelectWord &&
+             mapping.direction == eDirNext) {
+      rv = MoveCaret(eDirNext, aExtend, eSelectEndLine, eVisual);
     }
   }
 
