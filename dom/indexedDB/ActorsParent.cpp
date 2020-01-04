@@ -146,11 +146,11 @@ class VersionChangeTransaction;
 
 
 
-static_assert(JS_STRUCTURED_CLONE_VERSION == 5,
+static_assert(JS_STRUCTURED_CLONE_VERSION == 6,
               "Need to update the major schema version.");
 
 
-const uint32_t kMajorSchemaVersion = 21;
+const uint32_t kMajorSchemaVersion = 22;
 
 
 
@@ -4067,6 +4067,19 @@ UpgradeSchemaFrom20_0To21_0(mozIStorageConnection* aConnection)
 }
 
 nsresult
+UpgradeSchemaFrom21_0To22_0(mozIStorageConnection* aConnection)
+{
+  
+  
+  nsresult rv = aConnection->SetSchemaVersion(MakeSchemaVersion(22, 0));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+nsresult
 GetDatabaseFileURL(nsIFile* aDatabaseFile,
                    PersistenceType aPersistenceType,
                    const nsACString& aGroup,
@@ -4558,7 +4571,7 @@ CreateStorageConnection(nsIFile* aDBFile,
       }
     } else  {
       
-      static_assert(kSQLiteSchemaVersion == int32_t((21 << 4) + 0),
+      static_assert(kSQLiteSchemaVersion == int32_t((22 << 4) + 0),
                     "Upgrade function needed due to schema version increase.");
 
       while (schemaVersion != kSQLiteSchemaVersion) {
@@ -4598,6 +4611,8 @@ CreateStorageConnection(nsIFile* aDBFile,
           rv = UpgradeSchemaFrom19_0To20_0(aFMDirectory, connection);
         } else if (schemaVersion == MakeSchemaVersion(20, 0)) {
           rv = UpgradeSchemaFrom20_0To21_0(connection);
+        } else if (schemaVersion == MakeSchemaVersion(21, 0)) {
+          rv = UpgradeSchemaFrom21_0To22_0(connection);
         } else {
           IDB_WARNING("Unable to open IndexedDB database, no upgrade path is "
                       "available!");
