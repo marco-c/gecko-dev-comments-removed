@@ -24,6 +24,7 @@
 #include "nsStyleConsts.h"
 #include "gfxFontConstants.h"
 #include "WidgetUtils.h"
+#include "nsIXULRuntime.h"
 
 #include <dlfcn.h>
 
@@ -1097,16 +1098,18 @@ nsLookAndFeel::Init()
     
     GtkSettings *settings = gtk_settings_get_for_screen(gdk_screen_get_default());
 
-    
-    
-    
-    
-    const gchar* dark_setting = "gtk-application-prefer-dark-theme";
-    gboolean dark;
-    g_object_get(settings, dark_setting, &dark, nullptr);
+    if (!mozilla::BrowserTabsRemoteAutostart() || XRE_IsContentProcess()) {
+        
+        
+        
+        
+        const gchar* dark_setting = "gtk-application-prefer-dark-theme";
+        gboolean dark;
+        g_object_get(settings, dark_setting, &dark, nullptr);
 
-    if (dark) {
-        g_object_set(settings, dark_setting, FALSE, nullptr);
+        if (dark) {
+            g_object_set(settings, dark_setting, FALSE, nullptr);
+        }
     }
 
     GtkWidgetPath *path = gtk_widget_path_new();
