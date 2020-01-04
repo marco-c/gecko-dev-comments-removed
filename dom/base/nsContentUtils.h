@@ -34,6 +34,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/NotNull.h"
 #include "nsIContentPolicy.h"
+#include "nsPIDOMWindow.h"
 
 #if defined(XP_WIN)
 
@@ -2391,6 +2392,15 @@ public:
   static void CallOnAllRemoteChildren(nsPIDOMWindowOuter* aWindow,
                                       CallOnRemoteChildFunction aCallback,
                                       void* aArg);
+
+  
+
+
+
+
+  static void SetKeyboardIndicatorsOnRemoteChildren(nsPIDOMWindowOuter* aWindow,
+                                                    UIStateChangeType aShowAccelerators,
+                                                    UIStateChangeType aShowFocusRings);
 
   
 

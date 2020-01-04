@@ -1607,8 +1607,6 @@ public:
 
   virtual void SetKeyboardIndicators(UIStateChangeType aShowAccelerators,
                                      UIStateChangeType aShowFocusRings) override;
-  virtual void GetKeyboardIndicators(bool* aShowAccelerators,
-                                     bool* aShowFocusRings) override;
 
   
   void UpdateCanvasFocus(bool aFocusChanged, nsIContent* aNewContent);
@@ -1758,12 +1756,6 @@ protected:
   
   bool                   mNeedsFocus : 1;
   bool                   mHasFocus : 1;
-
-  
-  bool                   mShowAccelerators : 1;
-
-  
-  bool                   mShowFocusRings : 1;
 
   
   
