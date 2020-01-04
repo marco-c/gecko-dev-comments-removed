@@ -21,8 +21,8 @@ class Rule;
 } 
 
 #define NS_IDOCUMENT_OBSERVER_IID \
-{ 0x21c8ad67, 0x3a7d, 0x4881, \
-  { 0xa5, 0x43, 0xcb, 0xa9, 0xbb, 0xe4, 0x9e, 0x39 } }
+{ 0x71041fa3, 0x6dd7, 0x4cde, \
+  { 0xbb, 0x76, 0xae, 0xcc, 0x69, 0xe1, 0x75, 0x78 } }
 
 typedef uint32_t nsUpdateType;
 
@@ -147,22 +147,9 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
   virtual void StyleRuleChanged(nsIDocument *aDocument,
                                 mozilla::CSSStyleSheet* aStyleSheet,
-                                mozilla::css::Rule* aOldStyleRule,
-                                mozilla::css::Rule* aNewStyleRule) = 0;
+                                mozilla::css::Rule* aStyleRule) = 0;
 
   
 
@@ -238,8 +225,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
 #define NS_DECL_NSIDOCUMENTOBSERVER_STYLERULECHANGED                         \
     virtual void StyleRuleChanged(nsIDocument* aDocument,                    \
                                   mozilla::CSSStyleSheet* aStyleSheet,       \
-                                  mozilla::css::Rule* aOldStyleRule,         \
-                                  mozilla::css::Rule* aNewStyleRule) override;
+                                  mozilla::css::Rule* aStyleRule) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER_STYLERULEADDED                           \
     virtual void StyleRuleAdded(nsIDocument* aDocument,                      \
@@ -327,8 +313,7 @@ _class::StyleSheetApplicableStateChanged(nsIDocument* aDocument,          \
 void                                                                      \
 _class::StyleRuleChanged(nsIDocument* aDocument,                          \
                          mozilla::CSSStyleSheet* aStyleSheet,             \
-                         mozilla::css::Rule* aOldStyleRule,               \
-                         mozilla::css::Rule* aNewStyleRule)               \
+                         mozilla::css::Rule* aStyleRule)                  \
 {                                                                         \
 }                                                                         \
 void                                                                      \
