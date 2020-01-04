@@ -2293,11 +2293,6 @@ Object.defineProperty(BrowserAddonList.prototype, "onListChanged", {
 });
 
 BrowserAddonList.prototype.onInstalled = function (addon) {
-  if (this._actorByAddonId.get(addon.id)) {
-    
-    
-    this._actorByAddonId.delete(addon.id);
-  }
   this._notifyListChanged();
   this._adjustListener();
 };
