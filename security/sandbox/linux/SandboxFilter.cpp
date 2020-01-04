@@ -622,7 +622,17 @@ public:
     case __NR_inotify_add_watch:
     case __NR_inotify_rm_watch:
       return Allow();
+
+#ifdef __NR_rt_tgsigqueueinfo
+      
+    case __NR_rt_tgsigqueueinfo: {
+      Arg<pid_t> tgid(0);
+      return If(tgid == getpid(), Allow())
+        .Else(InvalidSyscall());
+    }
 #endif
+
+#endif 
 
       
       
