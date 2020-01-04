@@ -1117,7 +1117,7 @@ cert_CheckLeafTrust(CERTCertificate *cert, SECCertUsage certUsage,
                     *trusted = PR_TRUE;
                     return SECSuccess;
                 }
-                
+            
             case certUsageAnyCA:
             case certUsageUserCertImport:
                 
@@ -1137,7 +1137,7 @@ cert_CheckLeafTrust(CERTCertificate *cert, SECCertUsage certUsage,
                         return SECFailure;
                     }
                 }
-                
+            
             case certUsageProtectedObjectSigner:
                 flags = trust.objectSigningFlags;
                 if (flags & CERTDB_TERMINAL_RECORD) { 

@@ -92,16 +92,10 @@ typedef unsigned int  sigset_t;
 static int __sigtemp; 
 
 
-#define sigprocmask(how, set, oset) \
-  ((__sigtemp =                     \
-  (((how) == SIG_BLOCK) ?           \
-    sigblock(0) | *(set) :          \
-  (((how) == SIG_UNBLOCK) ?         \
-    sigblock(0) & ~(*(set)) :       \
-  ((how) == SIG_SETMASK ?           \
-    *(set) : sigblock(0))))),       \
-  ((oset) ? (*(oset ? oset : set) = sigsetmask(__sigtemp)) :  \
-    sigsetmask(__sigtemp)), 0)
+#define sigprocmask(how, set, oset)                                                                                                                            \
+    ((__sigtemp =                                                                                                                                              \
+          (((how) == SIG_BLOCK) ? sigblock(0) | *(set) : (((how) == SIG_UNBLOCK) ? sigblock(0) & ~(*(set)) : ((how) == SIG_SETMASK ? *(set) : sigblock(0))))), \
+     ((oset) ? (*(oset ? oset : set) = sigsetmask(__sigtemp)) : sigsetmask(__sigtemp)), 0)
 #endif
 
 

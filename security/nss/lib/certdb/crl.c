@@ -1618,20 +1618,20 @@ DPCache_Lookup(CRLDPCache* cache, const SECItem* sn, CERTCrlEntry** returned)
 
 #if defined(DPC_RWLOCK)
 
-#define DPCache_LockWrite()                                                    \
-    {                                                                          \
-        if (readlocked) {                                                      \
-            NSSRWLock_UnlockRead(cache->lock);                                 \
-        }                                                                      \
-        NSSRWLock_LockWrite(cache->lock);                                      \
+#define DPCache_LockWrite()                    \
+    {                                          \
+        if (readlocked) {                      \
+            NSSRWLock_UnlockRead(cache->lock); \
+        }                                      \
+        NSSRWLock_LockWrite(cache->lock);      \
     }
 
-#define DPCache_UnlockWrite()                                                  \
-    {                                                                          \
-        if (readlocked) {                                                      \
-            NSSRWLock_LockRead(cache->lock);                                   \
-        }                                                                      \
-        NSSRWLock_UnlockWrite(cache->lock);                                    \
+#define DPCache_UnlockWrite()                \
+    {                                        \
+        if (readlocked) {                    \
+            NSSRWLock_LockRead(cache->lock); \
+        }                                    \
+        NSSRWLock_UnlockWrite(cache->lock);  \
     }
 
 #else
@@ -1639,12 +1639,12 @@ DPCache_Lookup(CRLDPCache* cache, const SECItem* sn, CERTCrlEntry** returned)
 
 
 
-#define DPCache_LockWrite()                                                    \
-    {                                                                          \
+#define DPCache_LockWrite() \
+    {                       \
     }
 
-#define DPCache_UnlockWrite()                                                  \
-    {                                                                          \
+#define DPCache_UnlockWrite() \
+    {                         \
     }
 
 #endif

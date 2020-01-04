@@ -354,7 +354,7 @@ SEC_DerSignData(PLArenaPool *arena, SECItem *result,
 
     
     rv = DER_Encode(arena, result, CERTSignedDataTemplate, &sd);
-    
+
 
 loser:
     PORT_Free(it.data);

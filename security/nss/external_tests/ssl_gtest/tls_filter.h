@@ -21,8 +21,8 @@ class TlsRecordFilter : public PacketFilter {
  public:
   TlsRecordFilter() : count_(0) {}
 
-  virtual PacketFilter::Action Filter(const DataBuffer& input,
-                                      DataBuffer* output);
+  
+  PacketFilter::Action Filter(const DataBuffer& input, DataBuffer* output);
 
   
   size_t filtered_packets() const { return count_; }
@@ -30,6 +30,8 @@ class TlsRecordFilter : public PacketFilter {
   class Versioned {
    public:
     Versioned() : version_(0) {}
+    explicit Versioned(uint16_t version) : version_(version) {}
+
     bool is_dtls() const { return IsDtls(version_); }
     uint16_t version() const { return version_; }
 
@@ -39,8 +41,12 @@ class TlsRecordFilter : public PacketFilter {
 
   class RecordHeader : public Versioned {
    public:
-    RecordHeader()
-        : Versioned(), content_type_(0), sequence_number_(0) {}
+    RecordHeader() : Versioned(), content_type_(0), sequence_number_(0) {}
+    RecordHeader(uint16_t version, uint8_t content_type,
+                 uint64_t sequence_number)
+        : Versioned(version),
+          content_type_(content_type),
+          sequence_number_(sequence_number) {}
 
     uint8_t content_type() const { return content_type_; }
     uint64_t sequence_number() const { return sequence_number_; }
@@ -50,7 +56,8 @@ class TlsRecordFilter : public PacketFilter {
     bool Parse(TlsParser* parser, DataBuffer* body);
     
     
-    size_t Write(DataBuffer* buffer, size_t offset, const DataBuffer& body) const;
+    size_t Write(DataBuffer* buffer, size_t offset,
+                 const DataBuffer& body) const;
 
    private:
     uint8_t content_type_;
@@ -62,12 +69,24 @@ class TlsRecordFilter : public PacketFilter {
   
   
   
+  
+  
+  
+  virtual PacketFilter::Action FilterRecord(const RecordHeader& header,
+                                            const DataBuffer& record,
+                                            size_t* offset, DataBuffer* output);
+
+  
+  
+  
+  
   virtual PacketFilter::Action FilterRecord(const RecordHeader& header,
                                             const DataBuffer& data,
-                                            DataBuffer* changed) = 0;
+                                            DataBuffer* changed) {
+    return KEEP;
+  }
 
  private:
-
   size_t count_;
 };
 
@@ -80,8 +99,7 @@ class TlsHandshakeFilter : public TlsRecordFilter {
 
   class HandshakeHeader : public Versioned {
    public:
-    HandshakeHeader()
-        : Versioned(), handshake_type_(0), message_seq_(0) {}
+    HandshakeHeader() : Versioned(), handshake_type_(0), message_seq_(0) {}
 
     uint8_t handshake_type() const { return handshake_type_; }
     bool Parse(TlsParser* parser, const RecordHeader& record_header,
@@ -93,7 +111,7 @@ class TlsHandshakeFilter : public TlsRecordFilter {
     
     
     bool ReadLength(TlsParser* parser, const RecordHeader& header,
-                    uint32_t *length);
+                    uint32_t* length);
 
     uint8_t handshake_type_;
     uint16_t message_seq_;
@@ -174,9 +192,7 @@ class ChainedPacketFilter : public PacketFilter {
                                       DataBuffer* output);
 
   
-  void Add(PacketFilter* filter) {
-    filters_.push_back(filter);
-  }
+  void Add(PacketFilter* filter) { filters_.push_back(filter); }
 
  private:
   std::vector<PacketFilter*> filters_;
@@ -184,9 +200,9 @@ class ChainedPacketFilter : public PacketFilter {
 
 class TlsExtensionFilter : public TlsHandshakeFilter {
  protected:
-  virtual PacketFilter::Action FilterHandshake(
-      const HandshakeHeader& header,
-      const DataBuffer& input, DataBuffer* output);
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
+                                               const DataBuffer& input,
+                                               DataBuffer* output);
 
   virtual PacketFilter::Action FilterExtension(uint16_t extension_type,
                                                const DataBuffer& input,
@@ -205,11 +221,11 @@ class TlsExtensionFilter : public TlsHandshakeFilter {
 
 class TlsExtensionCapture : public TlsExtensionFilter {
  public:
-  TlsExtensionCapture(uint16_t ext)
-      : extension_(ext), data_() {}
+  TlsExtensionCapture(uint16_t ext) : extension_(ext), data_() {}
 
-  virtual PacketFilter::Action FilterExtension(
-      uint16_t extension_type, const DataBuffer& input, DataBuffer* output);
+  virtual PacketFilter::Action FilterExtension(uint16_t extension_type,
+                                               const DataBuffer& input,
+                                               DataBuffer* output);
   const DataBuffer& extension() const { return data_; }
 
  private:
@@ -217,25 +233,35 @@ class TlsExtensionCapture : public TlsExtensionFilter {
   DataBuffer data_;
 };
 
+class TlsExtensionReplacer : public TlsExtensionFilter {
+ public:
+  TlsExtensionReplacer(uint16_t extension, const DataBuffer& data)
+      : extension_(extension), data_(data) {}
+  PacketFilter::Action FilterExtension(uint16_t extension_type,
+                                       const DataBuffer& input,
+                                       DataBuffer* output) override;
+
+ private:
+  const uint16_t extension_;
+  const DataBuffer data_;
+};
+
 class TlsAgent;
 typedef std::function<void(void)> VoidFunction;
 
 class AfterRecordN : public TlsRecordFilter {
  public:
-  AfterRecordN(TlsAgent *src, TlsAgent *dest, unsigned int record,
-               VoidFunction func) :
-      src_(src),
-      dest_(dest),
-      record_(record),
-      func_(func),
-      counter_(0) {}
+  AfterRecordN(TlsAgent* src, TlsAgent* dest, unsigned int record,
+               VoidFunction func)
+      : src_(src), dest_(dest), record_(record), func_(func), counter_(0) {}
 
-  virtual PacketFilter::Action FilterRecord(
-      const RecordHeader& header, const DataBuffer& body, DataBuffer* out);
+  virtual PacketFilter::Action FilterRecord(const RecordHeader& header,
+                                            const DataBuffer& body,
+                                            DataBuffer* out);
 
  private:
-  TlsAgent *src_;
-  TlsAgent *dest_;
+  TlsAgent* src_;
+  TlsAgent* dest_;
   unsigned int record_;
   VoidFunction func_;
   unsigned int counter_;
@@ -247,9 +273,9 @@ class TlsInspectorClientHelloVersionChanger : public TlsHandshakeFilter {
  public:
   TlsInspectorClientHelloVersionChanger(TlsAgent* server) : server_(server) {}
 
-  virtual PacketFilter::Action FilterHandshake(
-      const HandshakeHeader& header,
-      const DataBuffer& input, DataBuffer* output);
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
+                                               const DataBuffer& input,
+                                               DataBuffer* output);
 
  private:
   TlsAgent* server_;

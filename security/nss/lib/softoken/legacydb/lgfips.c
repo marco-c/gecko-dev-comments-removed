@@ -23,7 +23,6 @@
 #endif
 
 
-
 #if defined(__GNUC__) && !defined(NSS_NO_INIT_SUPPORT)
 #define INIT_FUNCTION __attribute__((constructor))
 #else
@@ -37,32 +36,31 @@ static void INIT_FUNCTION lg_startup_tests(void);
 #include <windows.h>
 
 BOOL WINAPI DllMain(
-    HINSTANCE hinstDLL,  
-    DWORD fdwReason,     
-    LPVOID lpReserved )  
+    HINSTANCE hinstDLL, 
+    DWORD fdwReason,    
+    LPVOID lpReserved)  
 {
     
-    switch( fdwReason ) 
-    { 
+    switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
-         
-         
-	lg_startup_tests();
+            
+            
+            lg_startup_tests();
             break;
 
         case DLL_THREAD_ATTACH:
-         
+            
             break;
 
         case DLL_THREAD_DETACH:
-         
+            
             break;
 
         case DLL_PROCESS_DETACH:
-         
+            
             break;
     }
-    return TRUE;  
+    return TRUE; 
 }
 #endif
 
@@ -70,12 +68,14 @@ static PRBool lg_self_tests_ran = PR_FALSE;
 static PRBool lg_self_tests_success = PR_FALSE;
 
 static void
-lg_local_function(void) {}
+lg_local_function(void)
+{
+}
 
 
 
 
- 
+
 static void
 lg_startup_tests(void)
 {
@@ -88,10 +88,10 @@ lg_startup_tests(void)
 
     
     
-    if (!BLAPI_SHVerify(libraryName, (PRFuncPtr) &lg_local_function)) {
-	
+    if (!BLAPI_SHVerify(libraryName, (PRFuncPtr)&lg_local_function)) {
+        
 
-	return;
+        return;
     }
     
 
@@ -99,17 +99,17 @@ lg_startup_tests(void)
 }
 
 PRBool
-lg_FIPSEntryOK() {
+lg_FIPSEntryOK()
+{
 #ifdef NSS_NO_INIT_SUPPORT
-   
+    
 
 
 
 
     if (!lg_self_tests_ran) {
-	lg_startup_tests();
+        lg_startup_tests();
     }
 #endif
     return lg_self_tests_success;
 }
-

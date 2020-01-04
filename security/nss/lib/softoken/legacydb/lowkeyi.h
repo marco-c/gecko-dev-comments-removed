@@ -10,7 +10,7 @@
 #include "secoidt.h"
 #include "pcertt.h"
 #include "lowkeyti.h"
-#include "sdb.h" 
+#include "sdb.h"
 
 SEC_BEGIN_PROTOS
 
@@ -31,16 +31,16 @@ extern void lg_prepare_low_ec_priv_key_for_asn1(NSSLOWKEYPrivateKey *key);
 extern void lg_prepare_low_ecparams_for_asn1(ECParams *params);
 #endif 
 
-typedef char * (* NSSLOWKEYDBNameFunc)(void *arg, int dbVersion);
-    
+typedef char *(*NSSLOWKEYDBNameFunc)(void *arg, int dbVersion);
+
 
 
 
 extern NSSLOWKEYDBHandle *nsslowkey_OpenKeyDB(PRBool readOnly,
-					   const char *domain,
-					   const char *prefix,
-					   NSSLOWKEYDBNameFunc namecb,
-					   void *cbarg);
+                                              const char *domain,
+                                              const char *prefix,
+                                              NSSLOWKEYDBNameFunc namecb,
+                                              void *cbarg);
 
 
 
@@ -55,8 +55,8 @@ extern int nsslowkey_GetKeyDBVersion(NSSLOWKEYDBHandle *handle);
 
 
 
-extern SECStatus nsslowkey_DeleteKey(NSSLOWKEYDBHandle *handle, 
-				  const SECItem *pubkey);
+extern SECStatus nsslowkey_DeleteKey(NSSLOWKEYDBHandle *handle,
+                                     const SECItem *pubkey);
 
 
 
@@ -64,15 +64,15 @@ extern SECStatus nsslowkey_DeleteKey(NSSLOWKEYDBHandle *handle,
 
 
 
-extern SECStatus nsslowkey_StoreKeyByPublicKey(NSSLOWKEYDBHandle *handle, 
-					    NSSLOWKEYPrivateKey *pk,
-					    SECItem *pubKeyData,
-					    char *nickname,
-					    SDB *sdb);
+extern SECStatus nsslowkey_StoreKeyByPublicKey(NSSLOWKEYDBHandle *handle,
+                                               NSSLOWKEYPrivateKey *pk,
+                                               SECItem *pubKeyData,
+                                               char *nickname,
+                                               SDB *sdb);
 
 
 extern PRBool nsslowkey_KeyForCertExists(NSSLOWKEYDBHandle *handle,
-					 NSSLOWCERTCertificate *cert);
+                                         NSSLOWCERTCertificate *cert);
 
 extern PRBool nsslowkey_KeyForIDExists(NSSLOWKEYDBHandle *handle, SECItem *id);
 
@@ -93,17 +93,16 @@ extern void lg_nsslowkey_DestroyPublicKey(NSSLOWKEYPublicKey *key);
 
 
 
-
-extern NSSLOWKEYPublicKey 
-	*lg_nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privateKey);
-
+extern NSSLOWKEYPublicKey
+    *
+    lg_nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privateKey);
 
 SECStatus
 nsslowkey_UpdateNickname(NSSLOWKEYDBHandle *handle,
-                           NSSLOWKEYPrivateKey *privkey,
-                           SECItem *pubKeyData,
-                           char *nickname,
-                           SDB *sdb);
+                         NSSLOWKEYPrivateKey *privkey,
+                         SECItem *pubKeyData,
+                         char *nickname,
+                         SDB *sdb);
 
 
 
@@ -113,13 +112,13 @@ nsslowkey_UpdateNickname(NSSLOWKEYDBHandle *handle,
 
 
 
-extern SECStatus 
-nsslowkey_StoreKeyByPublicKeyAlg(NSSLOWKEYDBHandle *handle, 
-			      NSSLOWKEYPrivateKey *privkey, 
-			      SECItem *pubKeyData,
-			      char *nickname,
-			      SDB *sdb,
-                              PRBool update); 
+extern SECStatus
+nsslowkey_StoreKeyByPublicKeyAlg(NSSLOWKEYDBHandle *handle,
+                                 NSSLOWKEYPrivateKey *privkey,
+                                 SECItem *pubKeyData,
+                                 char *nickname,
+                                 SDB *sdb,
+                                 PRBool update);
 
 
 
@@ -128,12 +127,12 @@ nsslowkey_StoreKeyByPublicKeyAlg(NSSLOWKEYDBHandle *handle,
 
 
 extern NSSLOWKEYPrivateKey *
-nsslowkey_FindKeyByPublicKey(NSSLOWKEYDBHandle *handle, SECItem *modulus, 
-			  SDB *sdb);
+nsslowkey_FindKeyByPublicKey(NSSLOWKEYDBHandle *handle, SECItem *modulus,
+                             SDB *sdb);
 
 extern char *
 nsslowkey_FindKeyNicknameByPublicKey(NSSLOWKEYDBHandle *handle,
-                                        SECItem *modulus, SDB *sdb);
+                                     SECItem *modulus, SDB *sdb);
 
 #ifndef NSS_DISABLE_ECC
 
@@ -141,11 +140,11 @@ nsslowkey_FindKeyNicknameByPublicKey(NSSLOWKEYDBHandle *handle,
 
 
 SECStatus LGEC_FillParams(PLArenaPool *arena, const SECItem *encodedParams,
-    ECParams *params);
+                          ECParams *params);
 
 
 SECStatus LGEC_CopyParams(PLArenaPool *arena, ECParams *dstParams,
-	      const ECParams *srcParams);
+                          const ECParams *srcParams);
 #endif
 SEC_END_PROTOS
 

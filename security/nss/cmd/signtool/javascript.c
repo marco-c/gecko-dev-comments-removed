@@ -82,12 +82,9 @@ javascript_fn(char *relpath, char *basedir, char *reldir, char *filename, void *
 
     
 
-    if (!(PL_strcaserstr(filename, ".htm") == filename + strlen(filename) -
-                                                  4) &&
-        !(PL_strcaserstr(filename, ".html") == filename + strlen(filename) -
-                                                   5) &&
-        !(PL_strcaserstr(filename, ".shtml") == filename + strlen(filename) -
-                                                    6)) {
+    if (!(PL_strcaserstr(filename, ".htm") == filename + strlen(filename) - 4) &&
+        !(PL_strcaserstr(filename, ".html") == filename + strlen(filename) - 5) &&
+        !(PL_strcaserstr(filename, ".shtml") == filename + strlen(filename) - 6)) {
         return 0;
     }
 
@@ -382,8 +379,7 @@ ProcessTag(FileBuffer *fb, char **errStr)
                 }
             
             case GET_ATT_STATE:
-                if (isspace(curchar) || curchar == '=' || curchar ==
-                                                              '>') {
+                if (isspace(curchar) || curchar == '=' || curchar == '>') {
                     
                     curPos = FB_GetPointer(fb) - 2;
                     if (curPos >= startID) {

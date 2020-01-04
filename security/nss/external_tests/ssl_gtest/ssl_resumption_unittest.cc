@@ -4,23 +4,23 @@
 
 
 
-#include "secerr.h"
 #include "ssl.h"
+#include <functional>
+#include <memory>
+#include "secerr.h"
 #include "sslerr.h"
 #include "sslproto.h"
-#include <memory>
-#include <functional>
 
 extern "C" {
 
 #include "libssl_internals.h"
 }
 
-#include "scoped_ptrs.h"
-#include "tls_parser.h"
-#include "tls_filter.h"
-#include "tls_connect.h"
 #include "gtest_utils.h"
+#include "scoped_ptrs.h"
+#include "tls_connect.h"
+#include "tls_filter.h"
+#include "tls_parser.h"
 
 namespace nss_test {
 
@@ -206,12 +206,12 @@ TEST_P(TlsConnectGeneric, ConnectResumeClientBothTicketServerTicketForget) {
 
 
 
-static int32_t SwitchCertificates(TlsAgent& agent, const SECItem *srvNameArr,
+static int32_t SwitchCertificates(TlsAgent* agent, const SECItem* srvNameArr,
                                   uint32_t srvNameArrSize) {
-  bool ok = agent.ConfigServerCert("client");
+  bool ok = agent->ConfigServerCert("client");
   if (!ok) return SSL_SNI_SEND_ALERT;
 
-  return 0; 
+  return 0;  
 };
 
 TEST_P(TlsConnectGeneric, ServerSNICertSwitch) {
@@ -231,7 +231,7 @@ TEST_P(TlsConnectGeneric, ServerSNICertSwitch) {
 }
 
 TEST_P(TlsConnectGeneric, ServerSNICertTypeSwitch) {
-  Reset(TlsAgent::kServerEcdsa);
+  Reset(TlsAgent::kServerEcdsa256);
   Connect();
   ScopedCERTCertificate cert1(SSL_PeerCertificate(client_->ssl_fd()));
 
@@ -312,7 +312,6 @@ TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceNewKey) {
                         dhe1.public_key_.len())));
 }
 
-#ifdef NSS_ENABLE_TLS_1_3
 
 
 TEST_F(TlsConnectTest, TestTls13ResumptionTwice) {
@@ -322,15 +321,14 @@ TEST_F(TlsConnectTest, TestTls13ResumptionTwice) {
   server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
                            SSL_LIBRARY_VERSION_TLS_1_3);
   Connect();
-  SendReceive(); 
+  SendReceive();  
   CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
   uint16_t original_suite;
   EXPECT_TRUE(client_->cipher_suite(&original_suite));
 
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
-  TlsExtensionCapture *c1 =
-      new TlsExtensionCapture(kTlsExtensionPreSharedKey);
+  TlsExtensionCapture* c1 = new TlsExtensionCapture(kTlsExtensionPreSharedKey);
   client_->SetPacketFilter(c1);
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
                            SSL_LIBRARY_VERSION_TLS_1_3);
@@ -350,8 +348,7 @@ TEST_F(TlsConnectTest, TestTls13ResumptionTwice) {
   Reset();
   ClearStats();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
-  TlsExtensionCapture *c2 =
-      new TlsExtensionCapture(kTlsExtensionPreSharedKey);
+  TlsExtensionCapture* c2 = new TlsExtensionCapture(kTlsExtensionPreSharedKey);
   client_->SetPacketFilter(c2);
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
                            SSL_LIBRARY_VERSION_TLS_1_3);
@@ -385,12 +382,12 @@ TEST_F(TlsConnectTest, DisableClientPSKAndFailToResume) {
   server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
                            SSL_LIBRARY_VERSION_TLS_1_3);
   Connect();
-  SendReceive(); 
+  SendReceive();  
   CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
 
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
-  TlsExtensionCapture *capture =
+  TlsExtensionCapture* capture =
       new TlsExtensionCapture(kTlsExtensionPreSharedKey);
   client_->SetPacketFilter(capture);
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
@@ -414,15 +411,15 @@ TEST_F(TlsConnectTest, DisableServerPSKAndFailToResume) {
   server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
                            SSL_LIBRARY_VERSION_TLS_1_3);
   Connect();
-  SendReceive(); 
+  SendReceive();  
   CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
 
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
-  TlsExtensionCapture *clientCapture =
+  TlsExtensionCapture* clientCapture =
       new TlsExtensionCapture(kTlsExtensionPreSharedKey);
   client_->SetPacketFilter(clientCapture);
-  TlsExtensionCapture *serverCapture =
+  TlsExtensionCapture* serverCapture =
       new TlsExtensionCapture(kTlsExtensionPreSharedKey);
   server_->SetPacketFilter(serverCapture);
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
@@ -440,6 +437,5 @@ TEST_F(TlsConnectTest, DisableServerPSKAndFailToResume) {
   EXPECT_LT(0U, clientCapture->extension().len());
   EXPECT_EQ(0U, serverCapture->extension().len());
 }
-#endif
 
 }  

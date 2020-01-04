@@ -52,22 +52,19 @@ extern unsigned int nsslowkey_PublicModulusLen(NSSLOWKEYPublicKey *pubKey);
 
 
 
-
 extern unsigned int nsslowkey_PrivateModulusLen(NSSLOWKEYPrivateKey *privKey);
 
 
 
 
-
-extern NSSLOWKEYPublicKey 
-		*nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privateKey);
+extern NSSLOWKEYPublicKey *
+nsslowkey_ConvertToPublicKey(NSSLOWKEYPrivateKey *privateKey);
 
 
 
 
 extern NSSLOWKEYPrivateKey *
 nsslowkey_CopyPrivateKey(NSSLOWKEYPrivateKey *privKey);
-
 
 SEC_END_PROTOS
 

@@ -363,6 +363,13 @@ SSL_IMPORT SECStatus SSL_CipherPolicyGet(PRInt32 cipher, PRInt32 *policy);
 
 
 
+
+
+
+
+
+
+
 SSL_IMPORT SECStatus SSL_SignaturePrefSet(
     PRFileDesc *fd, const SSLSignatureAndHashAlg *algorithms,
     unsigned int count);
@@ -391,12 +398,21 @@ SSL_IMPORT unsigned int SSL_SignatureMaxCount();
 
 
 
+SSL_IMPORT SECStatus SSL_NamedGroupPrefSet(PRFileDesc *fd, SSLNamedGroup group,
+                                           PRBool enable);
+
+
+
+
+
+
+
+
+
 
 SSL_IMPORT SECStatus SSL_DHEGroupPrefSet(PRFileDesc *fd,
                                          const SSLDHEGroupType *groups,
                                          PRUint16 num_groups);
-
-
 
 
 

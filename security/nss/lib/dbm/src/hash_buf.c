@@ -317,7 +317,7 @@ newbuf(HTAB *hashp, uint32 addr, BUFHEAD *prev_bp)
 #endif
     bp->ovfl = NULL;
     if (prev_bp) {
-        
+
 
 
 

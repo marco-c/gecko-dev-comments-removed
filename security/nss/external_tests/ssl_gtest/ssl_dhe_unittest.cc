@@ -4,19 +4,19 @@
 
 
 
-#include "secerr.h"
 #include "ssl.h"
+#include <functional>
+#include <memory>
+#include <set>
+#include "secerr.h"
 #include "sslerr.h"
 #include "sslproto.h"
-#include <memory>
-#include <functional>
-#include <set>
 
-#include "scoped_ptrs.h"
-#include "tls_parser.h"
-#include "tls_filter.h"
-#include "tls_connect.h"
 #include "gtest_utils.h"
+#include "scoped_ptrs.h"
+#include "tls_connect.h"
+#include "tls_filter.h"
+#include "tls_parser.h"
 
 namespace nss_test {
 
@@ -62,7 +62,7 @@ static void CheckShares(const DataBuffer& shares,
   EXPECT_TRUE(shares.Read(0, 2, &tmp));
   EXPECT_EQ(shares.len() - 2, static_cast<size_t>(tmp));
   size_t i;
-  for(i = 2; i < shares.len(); i += 4 + tmp) {
+  for (i = 2; i < shares.len(); i += 4 + tmp) {
     ASSERT_TRUE(shares.Read(i, 2, &tmp));
     uint16_t group = static_cast<uint16_t>(tmp);
     group_set.AddAndCheckGroup(group);
@@ -72,7 +72,6 @@ static void CheckShares(const DataBuffer& shares,
   EXPECT_EQ(shares.len(), i);
 }
 
-#ifdef NSS_ENABLE_TLS_1_3
 TEST_P(TlsConnectTls13, SharesForBothEcdheAndDhe) {
   EnsureTlsSetup();
   client_->DisableAllCiphers();
@@ -119,19 +118,15 @@ TEST_P(TlsConnectTls13, NoDheOnEcdheConnections) {
   Connect();
 
   CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
-  auto is_ecc = [](uint16_t group) {
-                EXPECT_NE(0x100U, group & 0xff00U);
-  };
+  auto is_ecc = [](uint16_t group) { EXPECT_NE(0x100U, group & 0xff00U); };
   CheckGroups(groups_capture->extension(), is_ecc);
   CheckShares(shares_capture->extension(), is_ecc);
 }
-#endif
 
 TEST_P(TlsConnectGeneric, ConnectFfdheClient) {
   EnableOnlyDheCiphers();
-  EXPECT_EQ(SECSuccess,
-            SSL_OptionSet(client_->ssl_fd(),
-                          SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
+  EXPECT_EQ(SECSuccess, SSL_OptionSet(client_->ssl_fd(),
+                                      SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
   auto groups_capture = new TlsExtensionCapture(ssl_supported_groups_xtn);
   auto shares_capture = new TlsExtensionCapture(ssl_tls13_key_share_xtn);
   std::vector<PacketFilter*> captures;
@@ -142,12 +137,14 @@ TEST_P(TlsConnectGeneric, ConnectFfdheClient) {
   Connect();
 
   CheckKeys(ssl_kea_dh, ssl_auth_rsa_sign);
-  auto is_ffdhe_2048 = [](uint16_t group) {
-    EXPECT_EQ(0x100U, group);
+  auto is_ffdhe = [](uint16_t group) {
+    
+    EXPECT_LE(ssl_grp_ffdhe_2048, group);
+    EXPECT_GE(ssl_grp_ffdhe_8192, group);
   };
-  CheckGroups(groups_capture->extension(), is_ffdhe_2048);
+  CheckGroups(groups_capture->extension(), is_ffdhe);
   if (version_ == SSL_LIBRARY_VERSION_TLS_1_3) {
-    CheckShares(shares_capture->extension(), is_ffdhe_2048);
+    CheckShares(shares_capture->extension(), is_ffdhe);
   } else {
     EXPECT_EQ(0U, shares_capture->extension().len());
   }
@@ -158,9 +155,8 @@ TEST_P(TlsConnectGeneric, ConnectFfdheClient) {
 
 TEST_P(TlsConnectGenericPre13, ConnectFfdheServer) {
   EnableOnlyDheCiphers();
-  EXPECT_EQ(SECSuccess,
-            SSL_OptionSet(server_->ssl_fd(),
-                          SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
+  EXPECT_EQ(SECSuccess, SSL_OptionSet(server_->ssl_fd(),
+                                      SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
 
   if (version_ >= SSL_LIBRARY_VERSION_TLS_1_3) {
     Connect();
@@ -195,9 +191,8 @@ class TlsDheServerKeyExchangeDamager : public TlsHandshakeFilter {
 
 TEST_P(TlsConnectGenericPre13, DamageServerKeyShare) {
   EnableOnlyDheCiphers();
-  EXPECT_EQ(SECSuccess,
-            SSL_OptionSet(client_->ssl_fd(),
-                          SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
+  EXPECT_EQ(SECSuccess, SSL_OptionSet(client_->ssl_fd(),
+                                      SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
   server_->SetPacketFilter(new TlsDheServerKeyExchangeDamager());
 
   ConnectExpectFail();
@@ -220,8 +215,8 @@ class TlsDheSkeChangeY : public TlsHandshakeFilter {
   TlsDheSkeChangeY(ChangeYTo change) : change_Y_(change) {}
 
  protected:
-  void ChangeY(const DataBuffer& input, DataBuffer* output,
-               size_t offset, const DataBuffer& prime) {
+  void ChangeY(const DataBuffer& input, DataBuffer* output, size_t offset,
+               const DataBuffer& prime) {
     static const uint8_t kExtraZero = 0;
     static const uint8_t kTooLargeExtra = 1;
 
@@ -285,9 +280,7 @@ class TlsDheSkeChangeYServer : public TlsDheSkeChangeY {
   TlsDheSkeChangeYServer(ChangeYTo change, bool modify)
       : TlsDheSkeChangeY(change), modify_(modify), p_() {}
 
-  const DataBuffer& prime() const {
-    return p_;
-  }
+  const DataBuffer& prime() const { return p_; }
 
  protected:
   virtual PacketFilter::Action FilterHandshake(
@@ -324,7 +317,7 @@ class TlsDheSkeChangeYServer : public TlsDheSkeChangeY {
 class TlsDheSkeChangeYClient : public TlsDheSkeChangeY {
  public:
   TlsDheSkeChangeYClient(ChangeYTo change,
-                         const TlsDheSkeChangeYServer *server_filter)
+                         const TlsDheSkeChangeYServer* server_filter)
       : TlsDheSkeChangeY(change), server_filter_(server_filter) {}
 
  protected:
@@ -340,14 +333,14 @@ class TlsDheSkeChangeYClient : public TlsDheSkeChangeY {
   }
 
  private:
-  const TlsDheSkeChangeYServer *server_filter_;
+  const TlsDheSkeChangeYServer* server_filter_;
 };
 
 
 
 
-typedef std::tuple<std::string, uint16_t,
-                   TlsDheSkeChangeY::ChangeYTo, bool> DamageDHYProfile;
+typedef std::tuple<std::string, uint16_t, TlsDheSkeChangeY::ChangeYTo, bool>
+    DamageDHYProfile;
 class TlsDamageDHYTest
     : public TlsConnectTestBase,
       public ::testing::WithParamInterface<DamageDHYProfile> {
@@ -360,9 +353,8 @@ class TlsDamageDHYTest
 TEST_P(TlsDamageDHYTest, DamageServerY) {
   EnableOnlyDheCiphers();
   if (std::get<3>(GetParam())) {
-    EXPECT_EQ(SECSuccess,
-              SSL_OptionSet(client_->ssl_fd(),
-                            SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
+    EXPECT_EQ(SECSuccess, SSL_OptionSet(client_->ssl_fd(),
+                                        SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
   }
   TlsDheSkeChangeY::ChangeYTo change = std::get<2>(GetParam());
   server_->SetPacketFilter(new TlsDheSkeChangeYServer(change, true));
@@ -386,19 +378,17 @@ TEST_P(TlsDamageDHYTest, DamageServerY) {
 TEST_P(TlsDamageDHYTest, DamageClientY) {
   EnableOnlyDheCiphers();
   if (std::get<3>(GetParam())) {
-    EXPECT_EQ(SECSuccess,
-              SSL_OptionSet(client_->ssl_fd(),
-                            SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
+    EXPECT_EQ(SECSuccess, SSL_OptionSet(client_->ssl_fd(),
+                                        SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
   }
   
-  TlsDheSkeChangeYServer* server_filter
-      = new TlsDheSkeChangeYServer(TlsDheSkeChangeY::kYZero, false);
+  TlsDheSkeChangeYServer* server_filter =
+      new TlsDheSkeChangeYServer(TlsDheSkeChangeY::kYZero, false);
   server_->SetPacketFilter(server_filter);
 
   
   TlsDheSkeChangeY::ChangeYTo change = std::get<2>(GetParam());
-  client_->SetPacketFilter(
-      new TlsDheSkeChangeYClient(change, server_filter));
+  client_->SetPacketFilter(new TlsDheSkeChangeYClient(change, server_filter));
 
   ConnectExpectFail();
   if (change == TlsDheSkeChangeY::kYZeroPad) {
@@ -412,29 +402,23 @@ TEST_P(TlsDamageDHYTest, DamageClientY) {
 }
 
 static const TlsDheSkeChangeY::ChangeYTo kAllYArr[] = {
-  TlsDheSkeChangeY::kYZero,
-  TlsDheSkeChangeY::kYOne,
-  TlsDheSkeChangeY::kYPMinusOne,
-  TlsDheSkeChangeY::kYGreaterThanP,
-  TlsDheSkeChangeY::kYTooLarge,
-  TlsDheSkeChangeY::kYZeroPad
-};
-static ::testing::internal::ParamGenerator<TlsDheSkeChangeY::ChangeYTo>
-  kAllY = ::testing::ValuesIn(kAllYArr);
-static const bool kTrueFalseArr[] = { true, false };
-static ::testing::internal::ParamGenerator<bool>
-  kTrueFalse = ::testing::ValuesIn(kTrueFalseArr);
+    TlsDheSkeChangeY::kYZero,      TlsDheSkeChangeY::kYOne,
+    TlsDheSkeChangeY::kYPMinusOne, TlsDheSkeChangeY::kYGreaterThanP,
+    TlsDheSkeChangeY::kYTooLarge,  TlsDheSkeChangeY::kYZeroPad};
+static ::testing::internal::ParamGenerator<TlsDheSkeChangeY::ChangeYTo> kAllY =
+    ::testing::ValuesIn(kAllYArr);
+static const bool kTrueFalseArr[] = {true, false};
+static ::testing::internal::ParamGenerator<bool> kTrueFalse =
+    ::testing::ValuesIn(kTrueFalseArr);
 
 INSTANTIATE_TEST_CASE_P(DamageYStream, TlsDamageDHYTest,
-                        ::testing::Combine(
-                          TlsConnectTestBase::kTlsModesStream,
-                          TlsConnectTestBase::kTlsV10ToV12,
-                          kAllY, kTrueFalse));
-INSTANTIATE_TEST_CASE_P(DamageYDatagram, TlsDamageDHYTest,
-                        ::testing::Combine(
-                             TlsConnectTestBase::kTlsModesDatagram,
-                             TlsConnectTestBase::kTlsV11V12,
-                             kAllY, kTrueFalse));
+                        ::testing::Combine(TlsConnectTestBase::kTlsModesStream,
+                                           TlsConnectTestBase::kTlsV10ToV12,
+                                           kAllY, kTrueFalse));
+INSTANTIATE_TEST_CASE_P(
+    DamageYDatagram, TlsDamageDHYTest,
+    ::testing::Combine(TlsConnectTestBase::kTlsModesDatagram,
+                       TlsConnectTestBase::kTlsV11V12, kAllY, kTrueFalse));
 
 class TlsDheSkeMakePEven : public TlsHandshakeFilter {
  public:
@@ -483,8 +467,8 @@ class TlsDheSkeZeroPadP : public TlsHandshakeFilter {
     uint32_t dh_len = 0;
     EXPECT_TRUE(input.Read(0, 2, &dh_len));
     static const uint8_t kZeroPad = 0;
-    output->Write(0, dh_len + sizeof(kZeroPad), 2); 
-    output->Splice(&kZeroPad, sizeof(kZeroPad), 2); 
+    output->Write(0, dh_len + sizeof(kZeroPad), 2);  
+    output->Splice(&kZeroPad, sizeof(kZeroPad), 2);  
 
     return CHANGE;
   }
@@ -513,9 +497,8 @@ TEST_P(TlsConnectGenericPre13, PadDheP) {
 
 TEST_P(TlsConnectGenericPre13, WeakDHGroup) {
   EnableOnlyDheCiphers();
-  EXPECT_EQ(SECSuccess,
-            SSL_OptionSet(client_->ssl_fd(),
-                          SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
+  EXPECT_EQ(SECSuccess, SSL_OptionSet(client_->ssl_fd(),
+                                      SSL_REQUIRE_DH_NAMED_GROUPS, PR_TRUE));
   EXPECT_EQ(SECSuccess,
             SSL_EnableWeakDHEPrimeGroup(server_->ssl_fd(), PR_TRUE));
 
@@ -524,46 +507,36 @@ TEST_P(TlsConnectGenericPre13, WeakDHGroup) {
 
 TEST_P(TlsConnectGeneric, Ffdhe3072) {
   EnableOnlyDheCiphers();
-  static const SSLDHEGroupType groups[] = { ssl_ff_dhe_3072_group };
-  EXPECT_EQ(SECSuccess,
-            SSL_DHEGroupPrefSet(client_->ssl_fd(), groups,
-                                PR_ARRAY_SIZE(groups)));
-  EXPECT_EQ(SECSuccess,
-            SSL_DHEGroupPrefSet(server_->ssl_fd(), groups,
-                                PR_ARRAY_SIZE(groups)));
+  client_->ConfigNamedGroup(ssl_grp_ffdhe_2048, false);
 
   Connect();
 }
 
 TEST_P(TlsConnectGenericPre13, PreferredFfdhe) {
   EnableOnlyDheCiphers();
-  static const SSLDHEGroupType groups[] = {
-    ssl_ff_dhe_3072_group, ssl_ff_dhe_2048_group
-  };
-  EXPECT_EQ(SECSuccess,
-            SSL_DHEGroupPrefSet(server_->ssl_fd(), groups,
-                                PR_ARRAY_SIZE(groups)));
+  static const SSLDHEGroupType groups[] = {ssl_ff_dhe_3072_group,
+                                           ssl_ff_dhe_2048_group};
+  EXPECT_EQ(SECSuccess, SSL_DHEGroupPrefSet(server_->ssl_fd(), groups,
+                                            PR_ARRAY_SIZE(groups)));
 
   Connect();
   CheckKeys(ssl_kea_dh, ssl_auth_rsa_sign, 3072);
 }
 
-#ifdef NSS_ENABLE_TLS_1_3
-
 TEST_P(TlsConnectTls13, ResumeFfdhe) {
   EnableOnlyDheCiphers();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
   Connect();
-  SendReceive(); 
+  SendReceive();  
   CheckKeys(ssl_kea_dh, ssl_auth_rsa_sign);
 
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
   EnableOnlyDheCiphers();
-  TlsExtensionCapture *clientCapture =
+  TlsExtensionCapture* clientCapture =
       new TlsExtensionCapture(kTlsExtensionPreSharedKey);
   client_->SetPacketFilter(clientCapture);
-  TlsExtensionCapture *serverCapture =
+  TlsExtensionCapture* serverCapture =
       new TlsExtensionCapture(kTlsExtensionPreSharedKey);
   server_->SetPacketFilter(serverCapture);
   ExpectResumption(RESUME_TICKET);
@@ -573,6 +546,4 @@ TEST_P(TlsConnectTls13, ResumeFfdhe) {
   ASSERT_LT(0UL, serverCapture->extension().len());
 }
 
-#endif 
-
-} 
+}  

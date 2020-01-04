@@ -17,14 +17,14 @@
 
 struct NSSLOWKEYDBHandleStr {
     DB *db;
-    DB *updatedb;		
-    SECItem *global_salt;	
-    int version;		
-    char *appname;		
-    char *dbname;		
-    PRBool readOnly;		
+    DB *updatedb;         
+    SECItem *global_salt; 
+    int version;          
+    char *appname;        
+    char *dbname;         
+    PRBool readOnly;      
     PRLock *lock;
-    PRInt32 ref;		
+    PRInt32 ref; 
 };
 
 
@@ -33,8 +33,7 @@ struct NSSLOWKEYDBHandleStr {
 
 
 
-typedef SECStatus (* NSSLOWKEYTraverseKeysFunc)(DBT *key, DBT *data, void *pdata);
-
+typedef SECStatus (*NSSLOWKEYTraverseKeysFunc)(DBT *key, DBT *data, void *pdata);
 
 SEC_BEGIN_PROTOS
 
@@ -44,9 +43,9 @@ SEC_BEGIN_PROTOS
 
 
 
-extern SECStatus nsslowkey_TraverseKeys(NSSLOWKEYDBHandle *handle, 
-				NSSLOWKEYTraverseKeysFunc f,
-				void *udata);
+extern SECStatus nsslowkey_TraverseKeys(NSSLOWKEYDBHandle *handle,
+                                        NSSLOWKEYTraverseKeysFunc f,
+                                        void *udata);
 
 SEC_END_PROTOS
 

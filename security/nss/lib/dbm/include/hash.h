@@ -97,7 +97,7 @@ typedef struct hashhdr {
     int32 nkeys;             
     int32 hdrpages;          
     uint32 h_charkey;        
-#define NCACHED 32           /* number of bit maps and spare
+#define NCACHED 32           /* number of bit maps and spare \
                               * points */
     int32 spares[NCACHED];   
     uint16 bitmaps[NCACHED]; 

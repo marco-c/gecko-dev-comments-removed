@@ -150,12 +150,12 @@ typedef enum SECTrustTypeEnum {
     trustTypeNone = 3
 } SECTrustType;
 
-#define SEC_GET_TRUST_FLAGS(trust, type)                                       \
-    (((type) == trustSSL)                                                      \
-         ? ((trust)->sslFlags)                                                 \
-         : (((type) == trustEmail) ? ((trust)->emailFlags)                     \
-                                   : (((type) == trustObjectSigning)           \
-                                          ? ((trust)->objectSigningFlags)      \
+#define SEC_GET_TRUST_FLAGS(trust, type)                                  \
+    (((type) == trustSSL)                                                 \
+         ? ((trust)->sslFlags)                                            \
+         : (((type) == trustEmail) ? ((trust)->emailFlags)                \
+                                   : (((type) == trustObjectSigning)      \
+                                          ? ((trust)->objectSigningFlags) \
                                           : 0)))
 
 
@@ -428,12 +428,12 @@ struct CERTDistNamesStr {
 #define EXT_KEY_USAGE_TIME_STAMP (0x8000)
 #define EXT_KEY_USAGE_STATUS_RESPONDER (0x4000)
 
-#define NS_CERT_TYPE_APP                                                       \
-    (NS_CERT_TYPE_SSL_CLIENT | NS_CERT_TYPE_SSL_SERVER | NS_CERT_TYPE_EMAIL |  \
+#define NS_CERT_TYPE_APP                                                      \
+    (NS_CERT_TYPE_SSL_CLIENT | NS_CERT_TYPE_SSL_SERVER | NS_CERT_TYPE_EMAIL | \
      NS_CERT_TYPE_OBJECT_SIGNING)
 
-#define NS_CERT_TYPE_CA                                                        \
-    (NS_CERT_TYPE_SSL_CA | NS_CERT_TYPE_EMAIL_CA |                             \
+#define NS_CERT_TYPE_CA                            \
+    (NS_CERT_TYPE_SSL_CA | NS_CERT_TYPE_EMAIL_CA | \
      NS_CERT_TYPE_OBJECT_SIGNING_CA | EXT_KEY_USAGE_STATUS_RESPONDER)
 typedef enum SECCertUsageEnum {
     certUsageSSLClient = 0,
@@ -536,9 +536,9 @@ struct CERTIssuerAndSNStr {
 #define KU_KEY_CERT_SIGN (0x04)     /* bit 5 */
 #define KU_CRL_SIGN (0x02)          /* bit 6 */
 #define KU_ENCIPHER_ONLY (0x01)     /* bit 7 */
-#define KU_ALL                                                                 \
-    (KU_DIGITAL_SIGNATURE | KU_NON_REPUDIATION | KU_KEY_ENCIPHERMENT |         \
-     KU_DATA_ENCIPHERMENT | KU_KEY_AGREEMENT | KU_KEY_CERT_SIGN |              \
+#define KU_ALL                                                         \
+    (KU_DIGITAL_SIGNATURE | KU_NON_REPUDIATION | KU_KEY_ENCIPHERMENT | \
+     KU_DATA_ENCIPHERMENT | KU_KEY_AGREEMENT | KU_KEY_CERT_SIGN |      \
      KU_CRL_SIGN | KU_ENCIPHER_ONLY)
 
 
@@ -873,36 +873,36 @@ typedef struct {
 
 
 typedef enum {
-    cert_pi_end = 0,         
+    cert_pi_end = 0,              
 
-    cert_pi_nbioContext = 1, 
-
-
-
-
-
-    cert_pi_nbioAbort = 2,   
+    cert_pi_nbioContext = 1,      
 
 
 
 
 
-
-    cert_pi_certList = 3,    
-
-
-
-    cert_pi_policyOID = 4,   
+    cert_pi_nbioAbort = 2,        
 
 
 
 
-    cert_pi_policyFlags = 5, 
+
+
+    cert_pi_certList = 3,         
+
+
+
+    cert_pi_policyOID = 4,        
 
 
 
 
-    cert_pi_keyusage = 6,    
+    cert_pi_policyFlags = 5,      
+
+
+
+
+    cert_pi_keyusage = 6,         
 
 
 
@@ -946,7 +946,7 @@ typedef enum {
 
 
     cert_pi_useOnlyTrustAnchors = 14,
-        
+    
 
 
 

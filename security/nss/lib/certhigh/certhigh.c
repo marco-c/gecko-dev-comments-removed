@@ -256,8 +256,7 @@ CERT_FindUserCertByUsage(CERTCertDBHandle *handle,
             goto loser;
         }
         
-        if ((!validOnly || CERT_CheckCertValidTimes(cert, time, PR_FALSE) ==
-                               secCertTimeValid) &&
+        if ((!validOnly || CERT_CheckCertValidTimes(cert, time, PR_FALSE) == secCertTimeValid) &&
             (CERT_CheckKeyUsage(cert, requiredKeyUsage) == SECSuccess) &&
             (cert->nsCertType & requiredCertType) &&
             CERT_IsUserCert(cert)) {

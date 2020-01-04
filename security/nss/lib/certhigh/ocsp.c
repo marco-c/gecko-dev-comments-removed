@@ -5999,13 +5999,7 @@ CERT_EnableOCSPDefaultResponder(CERTCertDBHandle *handle)
     rv = CERT_VerifyCertificateNow(handle, cert, PR_TRUE,
                                    certificateUsageCheckAllUsages,
                                    NULL, &usage);
-    if (rv != SECSuccess || (usage & (certificateUsageSSLClient |
-                                      certificateUsageSSLServer |
-                                      certificateUsageSSLServerWithStepUp |
-                                      certificateUsageEmailSigner |
-                                      certificateUsageObjectSigner |
-                                      certificateUsageStatusResponder |
-                                      certificateUsageSSLCA)) == 0) {
+    if (rv != SECSuccess || (usage & (certificateUsageSSLClient | certificateUsageSSLServer | certificateUsageSSLServerWithStepUp | certificateUsageEmailSigner | certificateUsageObjectSigner | certificateUsageStatusResponder | certificateUsageSSLCA)) == 0) {
         PORT_SetError(SEC_ERROR_OCSP_RESPONDER_CERT_INVALID);
         return SECFailure;
     }

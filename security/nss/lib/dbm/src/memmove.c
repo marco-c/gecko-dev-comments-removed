@@ -76,7 +76,7 @@ register size_t length;
     if (length == 0 || dst == src) 
         goto done;
 
-    
+
 
 
 #define TLOOP(s) \

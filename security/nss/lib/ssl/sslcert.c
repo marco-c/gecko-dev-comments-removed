@@ -368,6 +368,7 @@ ssl_GetEcdhAuthType(CERTCertificate *cert)
     SECOidTag sigTag = SECOID_GetAlgorithmTag(&cert->signature);
     switch (sigTag) {
         case SEC_OID_PKCS1_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
         case SEC_OID_PKCS1_MD2_WITH_RSA_ENCRYPTION:
         case SEC_OID_PKCS1_MD4_WITH_RSA_ENCRYPTION:
         case SEC_OID_PKCS1_MD5_WITH_RSA_ENCRYPTION:
@@ -396,43 +397,80 @@ ssl_GetEcdhAuthType(CERTCertificate *cert)
 
 
 
+static SECStatus
+ssl_ConfigRsaPkcs1CertByUsage(sslSocket *ss, CERTCertificate *cert,
+                              sslKeyPair *keyPair,
+                              SSLExtraServerCertData *data)
+{
+    SECStatus rv = SECFailure;
+
+    PRBool ku_sig = (PRBool)(cert->keyUsage & KU_DIGITAL_SIGNATURE);
+    PRBool ku_enc = (PRBool)(cert->keyUsage & KU_KEY_ENCIPHERMENT);
+
+    if ((data->authType == ssl_auth_rsa_sign && ku_sig) ||
+        (data->authType == ssl_auth_rsa_pss && ku_sig) ||
+        (data->authType == ssl_auth_rsa_decrypt && ku_enc)) {
+        return ssl_ConfigCert(ss, cert, keyPair, data);
+    }
+
+    if (data->authType != ssl_auth_null || !(ku_sig || ku_enc)) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
+    if (ku_sig) {
+        data->authType = ssl_auth_rsa_sign;
+        rv = ssl_ConfigCert(ss, cert, keyPair, data);
+        if (rv != SECSuccess) {
+            return rv;
+        }
+
+        
+        data->authType = ssl_auth_rsa_pss;
+        rv = ssl_ConfigCert(ss, cert, keyPair, data);
+        if (rv != SECSuccess) {
+            return rv;
+        }
+    }
+
+    if (ku_enc) {
+        
+
+
+        data->authType = ssl_auth_rsa_decrypt;
+        rv = ssl_ConfigCert(ss, cert, keyPair, data);
+        if (rv != SECSuccess) {
+            return rv;
+        }
+    }
+
+    return rv;
+}
+
+
+
+
+
+
+
 
 static SECStatus
 ssl_ConfigCertByUsage(sslSocket *ss, CERTCertificate *cert,
                       sslKeyPair *keyPair, const SSLExtraServerCertData *data)
 {
     SECStatus rv = SECFailure;
-    SSLExtraServerCertData arg = {
-        ssl_auth_null, NULL, NULL, NULL
-    };
+    SSLExtraServerCertData arg;
     SECOidTag tag;
 
-    if (data) {
-        
-        memcpy(&arg, data, sizeof(arg));
-    }
+    PORT_Assert(data);
+    
+    memcpy(&arg, data, sizeof(arg));
+
     tag = SECOID_GetAlgorithmTag(&cert->subjectPublicKeyInfo.algorithm);
     switch (tag) {
         case SEC_OID_X500_RSA_ENCRYPTION:
         case SEC_OID_PKCS1_RSA_ENCRYPTION:
-            if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
-                if ((cert->keyUsage & KU_KEY_ENCIPHERMENT) &&
-                    arg.authType == ssl_auth_null) {
-                    
-
-
-                    arg.authType = ssl_auth_rsa_decrypt;
-                    rv = ssl_ConfigCert(ss, cert, keyPair, &arg);
-                    if (rv != SECSuccess) {
-                        return rv;
-                    }
-                }
-
-                arg.authType = ssl_auth_rsa_sign;
-            } else if (cert->keyUsage & KU_KEY_ENCIPHERMENT) {
-                arg.authType = ssl_auth_rsa_decrypt;
-            }
-            break;
+            return ssl_ConfigRsaPkcs1CertByUsage(ss, cert, keyPair, &arg);
 
         case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
             if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {

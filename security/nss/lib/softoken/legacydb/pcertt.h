@@ -18,17 +18,17 @@
 #include "prmon.h"
 
 
-typedef struct NSSLOWCERTCertDBHandleStr               NSSLOWCERTCertDBHandle;
-typedef struct NSSLOWCERTCertKeyStr                    NSSLOWCERTCertKey;
+typedef struct NSSLOWCERTCertDBHandleStr NSSLOWCERTCertDBHandle;
+typedef struct NSSLOWCERTCertKeyStr NSSLOWCERTCertKey;
 
-typedef struct NSSLOWCERTTrustStr                      NSSLOWCERTTrust;
-typedef struct NSSLOWCERTCertTrustStr                  NSSLOWCERTCertTrust;
-typedef struct NSSLOWCERTCertificateStr                NSSLOWCERTCertificate;
-typedef struct NSSLOWCERTCertificateListStr            NSSLOWCERTCertificateList;
-typedef struct NSSLOWCERTIssuerAndSNStr                NSSLOWCERTIssuerAndSN;
-typedef struct NSSLOWCERTSignedDataStr                 NSSLOWCERTSignedData;
-typedef struct NSSLOWCERTSubjectPublicKeyInfoStr       NSSLOWCERTSubjectPublicKeyInfo;
-typedef struct NSSLOWCERTValidityStr                   NSSLOWCERTValidity;
+typedef struct NSSLOWCERTTrustStr NSSLOWCERTTrust;
+typedef struct NSSLOWCERTCertTrustStr NSSLOWCERTCertTrust;
+typedef struct NSSLOWCERTCertificateStr NSSLOWCERTCertificate;
+typedef struct NSSLOWCERTCertificateListStr NSSLOWCERTCertificateList;
+typedef struct NSSLOWCERTIssuerAndSNStr NSSLOWCERTIssuerAndSN;
+typedef struct NSSLOWCERTSignedDataStr NSSLOWCERTSignedData;
+typedef struct NSSLOWCERTSubjectPublicKeyInfoStr NSSLOWCERTSubjectPublicKeyInfo;
+typedef struct NSSLOWCERTValidityStr NSSLOWCERTValidity;
 
 
 
@@ -81,10 +81,10 @@ struct NSSLOWCERTCertTrustStr {
 struct NSSLOWCERTTrustStr {
     NSSLOWCERTTrust *next;
     NSSLOWCERTCertDBHandle *dbhandle;
-    SECItem dbKey;			
-    certDBEntryCert *dbEntry;		
+    SECItem dbKey;            
+    certDBEntryCert *dbEntry; 
     NSSLOWCERTCertTrust *trust;
-    SECItem *derCert;			
+    SECItem *derCert; 
     unsigned char dbKeySpace[512];
 };
 
@@ -101,17 +101,17 @@ struct NSSLOWCERTCertificateStr {
     NSSLOWCERTCertificate *next;
     NSSLOWCERTCertDBHandle *dbhandle;
 
-    SECItem derCert;			
-    SECItem derIssuer;			
+    SECItem derCert;   
+    SECItem derIssuer; 
     SECItem derSN;
     SECItem serialNumber;
-    SECItem derSubject;			
+    SECItem derSubject; 
     SECItem derSubjKeyInfo;
     NSSLOWCERTSubjectPublicKeyInfo *subjectPublicKeyInfo;
-    SECItem certKey;			
+    SECItem certKey; 
     SECItem validity;
-    certDBEntryCert *dbEntry;		
-    SECItem subjectKeyID;	
+    certDBEntryCert *dbEntry; 
+    SECItem subjectKeyID;     
     SECItem extensions;
     char *nickname;
     char *emailAddr;
@@ -127,12 +127,12 @@ struct NSSLOWCERTCertificateStr {
     unsigned char certKeySpace[512];
 };
 
-#define SEC_CERTIFICATE_VERSION_1		0	/* default created */
-#define SEC_CERTIFICATE_VERSION_2		1	/* v2 */
-#define SEC_CERTIFICATE_VERSION_3		2	/* v3 extensions */
+#define SEC_CERTIFICATE_VERSION_1 0 /* default created */
+#define SEC_CERTIFICATE_VERSION_2 1 /* v2 */
+#define SEC_CERTIFICATE_VERSION_3 2 /* v3 extensions */
 
-#define SEC_CRL_VERSION_1		0	/* default */
-#define SEC_CRL_VERSION_2		1	/* v2 extensions */
+#define SEC_CRL_VERSION_1 0 /* default */
+#define SEC_CRL_VERSION_2 1 /* v2 extensions */
 
 #define NSS_MAX_LEGACY_DB_KEY_SIZE (60 * 1024)
 
@@ -141,15 +141,15 @@ struct NSSLOWCERTIssuerAndSNStr {
     SECItem serialNumber;
 };
 
-typedef SECStatus (* NSSLOWCERTCertCallback)(NSSLOWCERTCertificate *cert, void *arg);
+typedef SECStatus (*NSSLOWCERTCertCallback)(NSSLOWCERTCertificate *cert, void *arg);
 
 
 
-typedef char * (*NSSLOWCERTDBNameFunc)(void *arg, int dbVersion);
+typedef char *(*NSSLOWCERTDBNameFunc)(void *arg, int dbVersion);
 
 
 
-#include "secasn1t.h"	
+#include "secasn1t.h" 
 
 
 
@@ -157,12 +157,12 @@ typedef char * (*NSSLOWCERTDBNameFunc)(void *arg, int dbVersion);
 
 
 
-#define CERT_DB_FILE_VERSION		8
-#define CERT_DB_V7_FILE_VERSION		7
-#define CERT_DB_CONTENT_VERSION		2
+#define CERT_DB_FILE_VERSION 8
+#define CERT_DB_V7_FILE_VERSION 7
+#define CERT_DB_CONTENT_VERSION 2
 
-#define SEC_DB_ENTRY_HEADER_LEN		3
-#define SEC_DB_KEY_HEADER_LEN		1
+#define SEC_DB_ENTRY_HEADER_LEN 3
+#define SEC_DB_KEY_HEADER_LEN 1
 
 
 
@@ -339,11 +339,11 @@ typedef struct {
 
 
 
-#define DB_CRL_ENTRY_HEADER_LEN	4
+#define DB_CRL_ENTRY_HEADER_LEN 4
 struct _certDBEntryRevocation {
     certDBEntryCommon common;
-    SECItem	derCrl;
-    char	*url;	
+    SECItem derCrl;
+    char *url; 
 };
 
 
@@ -380,39 +380,39 @@ typedef struct {
 #define SEC_DB_CONTENT_VERSION_KEY_LEN sizeof(SEC_DB_CONTENT_VERSION_KEY)
 
 typedef union {
-    certDBEntryCommon         common;
-    certDBEntryCert           cert;
+    certDBEntryCommon common;
+    certDBEntryCert cert;
     certDBEntryContentVersion content;
-    certDBEntryNickname       nickname;
-    certDBEntryRevocation     revocation;
-    certDBEntrySMime          smime;
-    certDBEntrySubject        subject;
-    certDBEntryVersion        version;
+    certDBEntryNickname nickname;
+    certDBEntryRevocation revocation;
+    certDBEntrySMime smime;
+    certDBEntrySubject subject;
+    certDBEntryVersion version;
 } certDBEntry;
 
 
-#define DBCERT_V4_HEADER_LEN	7
-#define DB_CERT_V5_ENTRY_HEADER_LEN	7
-#define DB_CERT_V6_ENTRY_HEADER_LEN	7
-#define DB_CERT_ENTRY_HEADER_LEN	10
+#define DBCERT_V4_HEADER_LEN 7
+#define DB_CERT_V5_ENTRY_HEADER_LEN 7
+#define DB_CERT_V6_ENTRY_HEADER_LEN 7
+#define DB_CERT_ENTRY_HEADER_LEN 10
 
 
-#define CERTDB_TERMINAL_RECORD	(1u<<0)
-#define CERTDB_TRUSTED		(1u<<1)
-#define CERTDB_SEND_WARN	(1u<<2)
-#define CERTDB_VALID_CA		(1u<<3)
-#define CERTDB_TRUSTED_CA	(1u<<4) /* trusted for issuing server certs */
-#define CERTDB_NS_TRUSTED_CA	(1u<<5)
-#define CERTDB_USER		(1u<<6)
-#define CERTDB_TRUSTED_CLIENT_CA (1u<<7) /* trusted for issuing client certs */
-#define CERTDB_INVISIBLE_CA	(1u<<8) /* don't show in UI */
-#define CERTDB_GOVT_APPROVED_CA	(1u<<9) /* can do strong crypto in export ver */
-#define CERTDB_MUST_VERIFY	(1u<<10) /* explicitly don't trust this cert */
-#define CERTDB_TRUSTED_UNKNOWN	(1u<<11) /* accept trust from another source */
+#define CERTDB_TERMINAL_RECORD (1u << 0)
+#define CERTDB_TRUSTED (1u << 1)
+#define CERTDB_SEND_WARN (1u << 2)
+#define CERTDB_VALID_CA (1u << 3)
+#define CERTDB_TRUSTED_CA (1u << 4) /* trusted for issuing server certs */
+#define CERTDB_NS_TRUSTED_CA (1u << 5)
+#define CERTDB_USER (1u << 6)
+#define CERTDB_TRUSTED_CLIENT_CA (1u << 7) /* trusted for issuing client certs */
+#define CERTDB_INVISIBLE_CA (1u << 8)      /* don't show in UI */
+#define CERTDB_GOVT_APPROVED_CA (1u << 9)  /* can do strong crypto in export ver */
+#define CERTDB_MUST_VERIFY (1u << 10)      /* explicitly don't trust this cert */
+#define CERTDB_TRUSTED_UNKNOWN (1u << 11)  /* accept trust from another source */
 
 
-#define CERTDB_PRESERVE_TRUST_BITS (CERTDB_USER | \
-        CERTDB_NS_TRUSTED_CA | CERTDB_VALID_CA | CERTDB_INVISIBLE_CA | \
-                                        CERTDB_GOVT_APPROVED_CA)
+#define CERTDB_PRESERVE_TRUST_BITS (CERTDB_USER |                                                  \
+                                    CERTDB_NS_TRUSTED_CA | CERTDB_VALID_CA | CERTDB_INVISIBLE_CA | \
+                                    CERTDB_GOVT_APPROVED_CA)
 
 #endif 

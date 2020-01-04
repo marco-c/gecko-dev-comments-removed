@@ -11,9 +11,9 @@
 #include "secoidt.h"
 #include "hasht.h"
 
-typedef SECItem * (* SEC_PKCS5GetPBEPassword)(void *arg);
+typedef SECItem *(*SEC_PKCS5GetPBEPassword)(void *arg);
 
- 
+
 typedef enum {
     pbeBitGenIDNull = 0,
     pbeBitGenCipherKey = 0x01,
@@ -31,23 +31,22 @@ typedef struct NSSPKCS5PBEParameterStr NSSPKCS5PBEParameter;
 
 struct NSSPKCS5PBEParameterStr {
     PLArenaPool *poolp;
-    SECItem	salt;		
-    SECItem	iteration;	
-    SECItem	keyLength;	
+    SECItem salt;      
+    SECItem iteration; 
+    SECItem keyLength; 
 
     
-    int		iter;
-    int 	keyLen;
-    int		ivLen;
+    int iter;
+    int keyLen;
+    int ivLen;
     unsigned char *ivData;
     HASH_HashType hashType;
     NSSPKCS5PBEType pbeType;
-    SECAlgorithmID  prfAlg;	
-    PBEBitGenID	keyID;
-    SECOidTag	encAlg;
-    PRBool	is2KeyDES;
+    SECAlgorithmID prfAlg;
+    PBEBitGenID keyID;
+    SECOidTag encAlg;
+    PRBool is2KeyDES;
 };
-
 
 SEC_BEGIN_PROTOS
 
@@ -61,7 +60,7 @@ SEC_BEGIN_PROTOS
 
 extern SECAlgorithmID *
 nsspkcs5_CreateAlgorithmID(PLArenaPool *arena, SECOidTag algorithm,
-						NSSPKCS5PBEParameter *pbe);
+                           NSSPKCS5PBEParameter *pbe);
 
 
 
@@ -89,14 +88,13 @@ nsspkcs5_NewParam(SECOidTag alg, HASH_HashType hashType, SECItem *salt,
 
 
 
-
 extern SECItem *
 nsspkcs5_CipherData(NSSPKCS5PBEParameter *, SECItem *pwitem,
-		    SECItem *src, PRBool encrypt, PRBool *update);
+                    SECItem *src, PRBool encrypt, PRBool *update);
 
 extern SECItem *
 nsspkcs5_ComputeKeyAndIV(NSSPKCS5PBEParameter *, SECItem *pwitem,
-		    			SECItem *iv, PRBool faulty3DES);
+                         SECItem *iv, PRBool faulty3DES);
 
 
 extern void

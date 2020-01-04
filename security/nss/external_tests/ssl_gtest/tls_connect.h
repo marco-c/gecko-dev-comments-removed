@@ -19,6 +19,8 @@
 
 namespace nss_test {
 
+extern std::string VersionString(uint16_t version);
+
 
 class TlsConnectTestBase : public ::testing::Test {
  public:
@@ -57,7 +59,8 @@ class TlsConnectTestBase : public ::testing::Test {
   
   void Reset();
   
-  void Reset(const std::string& server_name);
+  void Reset(const std::string& server_name,
+             const std::string& client_name = "client");
 
   
   void Handshake();
@@ -110,7 +113,7 @@ class TlsConnectTestBase : public ::testing::Test {
   
   
   
-  const uint8_t alpn_dummy_val_[4] = { 0x01, 0x62, 0x01, 0x61 };
+  const uint8_t alpn_dummy_val_[4] = {0x01, 0x62, 0x01, 0x61};
 
  private:
   void CheckResumption(SessionResumptionMode expected);
@@ -124,7 +127,7 @@ class TlsConnectTestBase : public ::testing::Test {
 
 class TlsConnectTest : public TlsConnectTestBase {
  public:
- TlsConnectTest() : TlsConnectTestBase(STREAM, 0) {}
+  TlsConnectTest() : TlsConnectTestBase(STREAM, 0) {}
 };
 
 
@@ -141,8 +144,7 @@ class TlsConnectStream : public TlsConnectTestBase,
 };
 
 
-class TlsConnectStreamPre13 : public TlsConnectStream {
-};
+class TlsConnectStreamPre13 : public TlsConnectStream {};
 
 
 class TlsConnectDatagram : public TlsConnectTestBase,
@@ -155,57 +157,51 @@ class TlsConnectDatagram : public TlsConnectTestBase,
 
 
 class TlsConnectGeneric
-  : public TlsConnectTestBase,
-    public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
+    : public TlsConnectTestBase,
+      public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
  public:
   TlsConnectGeneric();
 };
 
 
 class TlsConnectPre12
-  : public TlsConnectTestBase,
-    public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
+    : public TlsConnectTestBase,
+      public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
  public:
   TlsConnectPre12();
 };
 
 
-class TlsConnectTls12
-  : public TlsConnectTestBase,
-    public ::testing::WithParamInterface<std::string> {
+class TlsConnectTls12 : public TlsConnectTestBase,
+                        public ::testing::WithParamInterface<std::string> {
  public:
   TlsConnectTls12();
 };
 
 
 class TlsConnectTls12Plus
-  : public TlsConnectTestBase,
-    public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
+    : public TlsConnectTestBase,
+      public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
  public:
   TlsConnectTls12Plus();
 };
 
-#ifdef NSS_ENABLE_TLS_1_3
 
-class TlsConnectTls13
-  : public TlsConnectTestBase,
-    public ::testing::WithParamInterface<std::string> {
+class TlsConnectTls13 : public TlsConnectTestBase,
+                        public ::testing::WithParamInterface<std::string> {
  public:
   TlsConnectTls13();
 };
 
-class TlsConnectDatagram13
-  : public TlsConnectTestBase {
+class TlsConnectDatagram13 : public TlsConnectTestBase {
  public:
   TlsConnectDatagram13()
       : TlsConnectTestBase(DGRAM, SSL_LIBRARY_VERSION_TLS_1_3) {}
 };
-#endif
 
 
-class TlsConnectGenericPre13 : public TlsConnectGeneric {
-};
+class TlsConnectGenericPre13 : public TlsConnectGeneric {};
 
-} 
+}  
 
 #endif
