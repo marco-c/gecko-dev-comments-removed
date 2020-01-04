@@ -35,6 +35,9 @@ extern mozilla::LogModule* GetPDMLog();
     return NS_ERROR_FAILURE;              \
   }                                       \
 
+
+#define ANDROID_OMX_VIDEO_CodingVP8 (static_cast<OMX_VIDEO_CODINGTYPE>(9))
+
 using namespace android;
 
 namespace mozilla {
@@ -618,12 +621,16 @@ GonkOmxPlatformLayer::FindComponents(const nsACString& aMimeType,
     useHardwareCodecOnly = true;
   }
 
+  const char* mime = aMimeType.Data();
+  
+  if (aMimeType.EqualsLiteral("video/webm; codecs=vp8")) {
+    mime = "video/x-vnd.on2.vp8";
+  }
+
   size_t start = 0;
   bool found = false;
   while (true) {
-    ssize_t index = codecs->findCodecByType(aMimeType.Data(),
-                                            false ,
-                                            start);
+    ssize_t index = codecs->findCodecByType(mime, false , start);
     if (index < 0) {
       break;
     }
@@ -650,6 +657,15 @@ GonkOmxPlatformLayer::FindComponents(const nsACString& aMimeType,
   }
 
   return found;
+}
+
+OMX_VIDEO_CODINGTYPE
+GonkOmxPlatformLayer::CompressionFormat()
+{
+  MOZ_ASSERT(mInfo);
+
+  return mInfo->mMimeType.EqualsLiteral("video/webm; codecs=vp8") ?
+    ANDROID_OMX_VIDEO_CodingVP8 : OmxPlatformLayer::CompressionFormat();
 }
 
 } 

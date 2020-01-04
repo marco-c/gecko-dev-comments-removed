@@ -156,6 +156,11 @@ public:
   static bool FindComponents(const nsACString& aMimeType,
                              nsTArray<ComponentInfo>* aComponents = nullptr);
 
+  
+  
+  
+  OMX_VIDEO_CODINGTYPE CompressionFormat() override;
+
 protected:
   friend GonkBufferData;
 
