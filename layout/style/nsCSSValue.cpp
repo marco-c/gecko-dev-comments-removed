@@ -2877,12 +2877,16 @@ nsCSSValueFloatColor::GetColorValue(nsCSSUnit aUnit) const
 {
   MOZ_ASSERT(nsCSSValue::IsFloatColorUnit(aUnit), "unexpected unit");
 
+  
+  
   if (aUnit == eCSSUnit_PercentageRGBColor ||
       aUnit == eCSSUnit_PercentageRGBAColor) {
-    return NS_RGBA(NSToIntRound(mComponent1 * 255.0f),
-                   NSToIntRound(mComponent2 * 255.0f),
-                   NSToIntRound(mComponent3 * 255.0f),
-                   NSToIntRound(mAlpha * 255.0f));
+    return NS_RGBA(
+      
+      NSToIntRound(mozilla::clamped(mComponent1, 0.0f, 1.0f) * 255.0f),
+      NSToIntRound(mozilla::clamped(mComponent2, 0.0f, 1.0f) * 255.0f),
+      NSToIntRound(mozilla::clamped(mComponent3, 0.0f, 1.0f) * 255.0f),
+      NSToIntRound(mozilla::clamped(mAlpha, 0.0f, 1.0f) * 255.0f));
   }
 
   

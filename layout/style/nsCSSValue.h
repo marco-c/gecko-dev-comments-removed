@@ -379,7 +379,13 @@ enum nsCSSUnit {
   eCSSUnit_HexColorAlpha       = 85,   
   eCSSUnit_ShortHexColorAlpha  = 86,   
   eCSSUnit_PercentageRGBColor  = 87,   
+                                       
+                                       
+                                       
   eCSSUnit_PercentageRGBAColor = 88,   
+                                       
+                                       
+                                       
   eCSSUnit_HSLColor            = 89,   
   eCSSUnit_HSLAColor           = 90,   
 
@@ -726,6 +732,12 @@ public:
 
   nscoord GetFixedLength(nsPresContext* aPresContext) const;
   nscoord GetPixelLength() const;
+
+  nsCSSValueFloatColor* GetFloatColorValue() const
+  {
+    MOZ_ASSERT(IsFloatColorUnit(), "not a float color value");
+    return mValue.mFloatColor;
+  }
 
   void Reset()  
   {
@@ -1687,6 +1699,10 @@ public:
   bool operator==(nsCSSValueFloatColor& aOther) const;
 
   nscolor GetColorValue(nsCSSUnit aUnit) const;
+  float Comp1() const { return mComponent1; }
+  float Comp2() const { return mComponent2; }
+  float Comp3() const { return mComponent3; }
+  float Alpha() const { return mAlpha; }
   bool IsNonTransparentColor() const;
 
   void AppendToString(nsCSSUnit aUnit, nsAString& aResult) const;
@@ -1697,10 +1713,19 @@ public:
 
 private:
   
-  float mComponent1;  
-  float mComponent2;  
-  float mComponent3;  
-  float mAlpha;       
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  float mComponent1;
+  float mComponent2;
+  float mComponent3;
+  float mAlpha;
 
   nsCSSValueFloatColor(const nsCSSValueFloatColor& aOther) = delete;
   nsCSSValueFloatColor& operator=(const nsCSSValueFloatColor& aOther)
