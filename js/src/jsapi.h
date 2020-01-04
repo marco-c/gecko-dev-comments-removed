@@ -9,6 +9,7 @@
 #ifndef jsapi_h
 #define jsapi_h
 
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
@@ -689,18 +690,6 @@ typedef void
 typedef void
 (* JSCompartmentNameCallback)(JSRuntime* rt, JSCompartment* compartment,
                               char* buf, size_t bufsize);
-
-
-
-
-
-
-
-
-
-
-typedef void*
-(* JSCurrentPerfGroupCallback)(JSContext*);
 
 
 
@@ -5654,170 +5643,101 @@ class AutoStopwatch;
 
 
 
-struct PerformanceData {
-    
-    
-    
-    
-    
-    
-    
-    uint64_t durations[10];
-
-    
-    
-    uint64_t totalUserTime;
-    uint64_t totalSystemTime;
-    uint64_t totalCPOWTime;
-
-    
-    
-    
-    uint64_t ticks;
-
-    PerformanceData()
-      : totalUserTime(0)
-      , totalSystemTime(0)
-      , totalCPOWTime(0)
-      , ticks(0)
-    {
-        mozilla::PodArrayZero(durations);
-    }
-    PerformanceData(const PerformanceData& from)
-      : totalUserTime(from.totalUserTime)
-      , totalSystemTime(from.totalSystemTime)
-      , totalCPOWTime(from.totalCPOWTime)
-      , ticks(from.ticks)
-    {
-        mozilla::PodArrayCopy(durations, from.durations);
-    }
-    PerformanceData& operator=(const PerformanceData& from)
-    {
-        mozilla::PodArrayCopy(durations, from.durations);
-        totalUserTime = from.totalUserTime;
-        totalSystemTime = from.totalSystemTime;
-        totalCPOWTime = from.totalCPOWTime;
-        ticks = from.ticks;
-        return *this;
-    }
-};
-
-
-
-
-
-
-
-
-
-
-
-
 
 struct PerformanceGroup {
+    PerformanceGroup();
 
     
-    PerformanceData data;
-
-    
-    const uint64_t uid;
-
-    
-    
-    
-    
-    uint64_t recentCycles;
-
-    
-    
-    uint64_t recentTicks;
-
-    
-    
-    uint64_t recentCPOW;
-
-    
-    uint64_t iteration() const {
-        return iteration_;
-    }
+    uint64_t iteration() const;
 
     
     
     
-    bool hasStopwatch(uint64_t it) const {
-        return stopwatch_ != nullptr && iteration_ == it;
-    }
+    bool isAcquired(uint64_t it) const;
 
     
     
     
-    bool hasStopwatch(uint64_t it, const AutoStopwatch* stopwatch) const {
-        return stopwatch_ == stopwatch && iteration_ == it;
-    }
+    bool isAcquired(uint64_t it, const AutoStopwatch* owner) const;
 
     
     
-    void acquireStopwatch(uint64_t it, const AutoStopwatch* stopwatch) {
-        if (iteration_ != it) {
-            
-            
-            resetRecentData();
-        }
-        iteration_ = it;
-        stopwatch_ = stopwatch;
-    }
+    void acquire(uint64_t it, const AutoStopwatch* owner);
 
     
     
-    void releaseStopwatch(uint64_t it, const AutoStopwatch* stopwatch) {
-        if (iteration_ != it)
-            return;
-
-        MOZ_ASSERT(stopwatch == stopwatch_ || stopwatch_ == nullptr);
-        stopwatch_ = nullptr;
-    }
-
-    
-    void resetRecentData() {
-        recentCycles = 0;
-        recentTicks = 0;
-        recentCPOW = 0;
-    }
-
-    
-    void AddRef();
-    void Release();
-
-    
-    explicit PerformanceGroup(JSRuntime* rt);
-
-    
-    explicit PerformanceGroup(JSContext* rt, void* key);
-
-private:
-    PerformanceGroup& operator=(const PerformanceGroup&) = delete;
-    PerformanceGroup(const PerformanceGroup&) = delete;
-
-    JSRuntime* runtime_;
+    void release(uint64_t it, const AutoStopwatch* owner);
 
     
     
-    const AutoStopwatch* stopwatch_;
+    
+    
+    uint64_t recentCycles(uint64_t iteration) const;
+    void addRecentCycles(uint64_t iteration, uint64_t cycles);
+
+    
+    
+    uint64_t recentTicks(uint64_t iteration) const;
+    void addRecentTicks(uint64_t iteration, uint64_t ticks);
+
+    
+    
+    uint64_t recentCPOW(uint64_t iteration) const;
+    void addRecentCPOW(uint64_t iteration, uint64_t CPOW);
+
+    
+    void resetRecentData();
+
+    
+    
+    bool isActive() const;
+    void setIsActive(bool);
+
+    
+    
+    bool isUsedInThisIteration() const;
+    void setIsUsedInThisIteration(bool);
+  protected:
+    
+    
+    virtual void Delete() = 0;
+
+  private:
+    
+    
+    
+    
+    uint64_t recentCycles_;
+
+    
+    
+    uint64_t recentTicks_;
+
+    
+    
+    uint64_t recentCPOW_;
 
     
     
     uint64_t iteration_;
 
     
-    void* const key_;
+    
+    bool isActive_;
 
     
+    
+    bool isUsedInThisIteration_;
+
+    
+    
+    const AutoStopwatch* owner_;
+
+  public:
+    
+    void AddRef();
+    void Release();
     uint64_t refCount_;
-
-    
-    
-    
-    const bool isSharedGroup_;
 };
 
 
@@ -5826,59 +5746,7 @@ private:
 
 
 
-
-struct PerformanceGroupHolder {
-    
-    
-    
-    js::PerformanceGroup* getSharedGroup(JSContext*);
-
-    
-    js::PerformanceGroup* getOwnGroup();
-
-    
-    
-    
-    
-    inline bool hasSharedGroup() const {
-        return sharedGroup_ != nullptr;
-    }
-    inline bool hasOwnGroup() const {
-        return ownGroup_ != nullptr;
-    }
-
-    
-    
-    
-    void unlink();
-
-    explicit PerformanceGroupHolder(JSRuntime* runtime)
-      : runtime_(runtime)
-    {   }
-    ~PerformanceGroupHolder();
-
-  private:
-    
-    
-    
-    void* getHashKey(JSContext* cx);
-
-    JSRuntime *runtime_;
-
-    
-    
-    
-    RefPtr<js::PerformanceGroup> sharedGroup_;
-    RefPtr<js::PerformanceGroup> ownGroup_;
-};
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(void)
+extern JS_PUBLIC_API(bool)
 FlushPerformanceMonitoring(JSRuntime*);
 
 
@@ -5886,6 +5754,12 @@ FlushPerformanceMonitoring(JSRuntime*);
 
 extern JS_PUBLIC_API(void)
 ResetPerformanceMonitoring(JSRuntime*);
+
+
+
+
+extern JS_PUBLIC_API(void)
+DisposePerformanceMonitoring(JSRuntime*);
 
 
 
@@ -5902,10 +5776,6 @@ extern JS_PUBLIC_API(bool)
 SetStopwatchIsMonitoringJank(JSRuntime*, bool);
 extern JS_PUBLIC_API(bool)
 GetStopwatchIsMonitoringJank(JSRuntime*);
-extern JS_PUBLIC_API(bool)
-SetStopwatchIsMonitoringPerCompartment(JSRuntime*, bool);
-extern JS_PUBLIC_API(bool)
-GetStopwatchIsMonitoringPerCompartment(JSRuntime*);
 
 extern JS_PUBLIC_API(bool)
 IsStopwatchActive(JSRuntime*);
@@ -5923,31 +5793,21 @@ extern JS_PUBLIC_API(void)
 AddCPOWPerformanceDelta(JSRuntime*, uint64_t delta);
 
 typedef bool
-(PerformanceStatsWalker)(JSContext* cx,
-                         const PerformanceData& stats, uint64_t uid,
-                         const uint64_t* parentId, void* closure);
-
-
-
-
-
-
+(*StopwatchStartCallback)(uint64_t, void*);
 extern JS_PUBLIC_API(bool)
-IterPerformanceStats(JSContext* cx, PerformanceStatsWalker* walker, js::PerformanceData* process, void* closure);
+SetStopwatchStartCallback(JSRuntime*, StopwatchStartCallback, void*);
+
+typedef bool
+(*StopwatchCommitCallback)(uint64_t, mozilla::Vector<RefPtr<PerformanceGroup>>&, void*);
+extern JS_PUBLIC_API(bool)
+SetStopwatchCommitCallback(JSRuntime*, StopwatchCommitCallback, void*);
+
+typedef bool
+(*GetGroupsCallback)(JSContext*, mozilla::Vector<RefPtr<PerformanceGroup>>&, void*);
+extern JS_PUBLIC_API(bool)
+SetGetPerformanceGroupsCallback(JSRuntime*, GetGroupsCallback, void*);
 
 } 
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-JS_SetCurrentPerfGroupCallback(JSRuntime *rt, JSCurrentPerfGroupCallback cb);
 
 
 #endif
