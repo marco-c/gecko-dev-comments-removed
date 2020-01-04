@@ -107,13 +107,13 @@ import java.util.concurrent.TimeUnit;
 
     private static final List<Processor> PROCESSORS = Arrays.asList(
             
-            new ColorProcessor(),
-
-            
             new DiskProcessor(),
 
             
             new ResizingProcessor(),
+
+            
+            new ColorProcessor(),
 
             
             new MemoryProcessor()
