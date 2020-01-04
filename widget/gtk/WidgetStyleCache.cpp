@@ -144,8 +144,6 @@ CreateWidget(WidgetNodeType aWidgetType)
       return CreateMenuItemWidget(MOZ_GTK_MENUBAR);
     case MOZ_GTK_MENUITEM:
       return CreateMenuItemWidget(MOZ_GTK_MENUPOPUP);
-    case MOZ_GTK_TOOLTIP:
-      return CreateTooltipWidget();
     default:
       
       return nullptr;
@@ -166,8 +164,9 @@ GetWidget(WidgetNodeType aWidgetType)
 GtkStyleContext*
 CreateStyleForWidget(GtkWidget* aWidget, GtkStyleContext* aParentStyle)
 {
-  GtkWidgetPath* path =
-    gtk_widget_path_copy(gtk_style_context_get_path(aParentStyle));
+  GtkWidgetPath* path = aParentStyle ?
+    gtk_widget_path_copy(gtk_style_context_get_path(aParentStyle)) :
+    gtk_widget_path_new();
 
   
   
@@ -276,13 +275,9 @@ GetCssNodeStyleInternal(WidgetNodeType aNodeType)
       return gtk_widget_get_style_context(widget);
   }
 
-  if (style) {
-    sStyleStorage[aNodeType] = style;
-    return style;
-  }
-
-  MOZ_ASSERT_UNREACHABLE("missing style context for node type");
-  return nullptr;
+  MOZ_ASSERT(style, "missing style context for node type");
+  sStyleStorage[aNodeType] = style;
+  return style;
 }
 
 static GtkStyleContext*
@@ -322,6 +317,20 @@ GetWidgetStyleInternal(WidgetNodeType aNodeType)
     case MOZ_GTK_PROGRESS_TROUGH:
       return GetWidgetStyleWithClass(MOZ_GTK_PROGRESSBAR,
                                      GTK_STYLE_CLASS_TROUGH);
+    case MOZ_GTK_TOOLTIP: {
+      GtkStyleContext* style = sStyleStorage[aNodeType];
+      if (style)
+        return style;
+
+      
+      
+      
+      GtkWidget* tooltipWindow = CreateTooltipWidget();
+      style = CreateStyleForWidget(tooltipWindow, nullptr);
+      gtk_widget_destroy(tooltipWindow); 
+      sStyleStorage[aNodeType] = style;
+      return style;
+    }
     default:
       GtkWidget* widget = GetWidget(aNodeType);
       MOZ_ASSERT(widget);
