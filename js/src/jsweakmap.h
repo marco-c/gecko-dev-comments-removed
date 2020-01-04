@@ -7,7 +7,6 @@
 #ifndef jsweakmap_h
 #define jsweakmap_h
 
-#include "mozilla/LinkedList.h"
 #include "mozilla/Move.h"
 
 #include "jscompartment.h"
@@ -36,12 +35,14 @@ class WeakMapBase;
 
 
 
+
+static WeakMapBase * const WeakMapNotInList = reinterpret_cast<WeakMapBase*>(1);
+
 typedef HashSet<WeakMapBase*, DefaultHasher<WeakMapBase*>, SystemAllocPolicy> WeakMapSet;
 
 
 
-class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase>
-{
+class WeakMapBase {
     friend void js::GCMarker::enterWeakMarkingMode();
 
   public:
@@ -74,11 +75,16 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase>
     
     static void traceAllMappings(WeakMapTracer* tracer);
 
+    bool isInList() { return next != WeakMapNotInList; }
+
     
     static bool saveZoneMarkedWeakMaps(JS::Zone* zone, WeakMapSet& markedWeakMaps);
 
     
     static void restoreMarkedWeakMaps(WeakMapSet& markedWeakMaps);
+
+    
+    static void removeWeakMapFromList(WeakMapBase* weakmap);
 
     
     
@@ -102,6 +108,11 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase>
 
     
     JS::Zone* zone;
+
+    
+    
+    
+    WeakMapBase* next;
 
     
     bool marked;
@@ -136,7 +147,8 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
     bool init(uint32_t len = 16) {
         if (!Base::init(len))
             return false;
-        zone->gcWeakMapList.insertFront(this);
+        next = zone->gcWeakMapList;
+        zone->gcWeakMapList = this;
         marked = JS::IsIncrementalGCInProgress(zone->runtimeFromMainThread());
         return true;
     }
@@ -164,9 +176,6 @@ class WeakMap : public HashMap<Key, Value, HashPolicy, RuntimeAllocPolicy>, publ
             exposeGCThingToActiveJS(p->value());
         return p;
     }
-
-    
-    using Base::remove;
 
     
     
@@ -409,6 +418,7 @@ class ObjectWeakMap
   public:
     explicit ObjectWeakMap(JSContext* cx);
     bool init();
+    ~ObjectWeakMap();
 
     JSObject* lookup(const JSObject* obj);
     bool add(JSContext* cx, JSObject* obj, JSObject* target);
