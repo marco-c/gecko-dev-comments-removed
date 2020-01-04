@@ -1497,19 +1497,22 @@ gfxFontUtils::ReadNames(const char *aNameData, uint32_t aDataLen,
         uint32_t platformID;
 
         
-        if (uint32_t(nameRecord->nameID) != aNameID)
+        if (uint32_t(nameRecord->nameID) != aNameID) {
             continue;
+        }
 
         
         platformID = nameRecord->platformID;
-        if (aPlatformID != PLATFORM_ALL
-            && platformID != uint32_t(aPlatformID))
+        if (aPlatformID != PLATFORM_ALL &&
+            platformID != uint32_t(aPlatformID)) {
             continue;
+        }
 
         
-        if (aLangID != LANG_ALL
-              && uint32_t(nameRecord->languageID) != uint32_t(aLangID))
+        if (aLangID != LANG_ALL &&
+            uint32_t(nameRecord->languageID) != uint32_t(aLangID)) {
             continue;
+        }
 
         
 
