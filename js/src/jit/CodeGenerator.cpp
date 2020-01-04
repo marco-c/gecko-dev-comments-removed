@@ -11215,6 +11215,11 @@ CodeGenerator::visitAsmJSParameter(LAsmJSParameter* lir)
 }
 
 void
+CodeGenerator::visitAsmJSParameterI64(LAsmJSParameterI64* lir)
+{
+}
+
+void
 CodeGenerator::visitAsmJSReturn(LAsmJSReturn* lir)
 {
     
