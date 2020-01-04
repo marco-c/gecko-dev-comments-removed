@@ -2496,14 +2496,14 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   styleContext->StartBackgroundImageLoads();
 
-  nsFrameConstructorSaveState absoluteSaveState;
+  nsFrameConstructorSaveState docElementContainingBlockAbsoluteSaveState;
   if (mHasRootAbsPosContainingBlock) {
     
     
     mDocElementContainingBlock->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
     state.PushAbsoluteContainingBlock(mDocElementContainingBlock,
                                       mDocElementContainingBlock,
-                                      absoluteSaveState);
+                                      docElementContainingBlockAbsoluteSaveState);
   }
 
   
@@ -2519,6 +2519,8 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   nsContainerFrame* contentFrame;
   nsIFrame* newFrame;
   bool processChildren = false;
+
+  nsFrameConstructorSaveState absoluteSaveState;
 
   
 #ifdef MOZ_XUL
@@ -2565,12 +2567,26 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
                         contentFrame);
     newFrame = contentFrame;
     processChildren = true;
+
+    newFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    if (display->IsAbsPosContainingBlock(newFrame)) {
+      state.PushAbsoluteContainingBlock(contentFrame, newFrame,
+                                        absoluteSaveState);
+    }
+
   } else if (display->mDisplay == NS_STYLE_DISPLAY_GRID) {
     contentFrame = NS_NewGridContainerFrame(mPresShell, styleContext);
     InitAndRestoreFrame(state, aDocElement, mDocElementContainingBlock,
                         contentFrame);
     newFrame = contentFrame;
     processChildren = true;
+
+    newFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    if (display->IsAbsPosContainingBlock(newFrame)) {
+      state.PushAbsoluteContainingBlock(contentFrame, newFrame,
+                                        absoluteSaveState);
+    }
+
   } else if (display->mDisplay == NS_STYLE_DISPLAY_TABLE) {
     
     
