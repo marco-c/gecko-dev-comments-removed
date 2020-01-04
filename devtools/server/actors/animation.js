@@ -410,7 +410,7 @@ var AnimationPlayerActor = ActorClass({
 
 
   setCurrentTime: method(function(currentTime) {
-    this.player.currentTime = currentTime;
+    this.player.currentTime = currentTime * this.player.playbackRate;
   }, {
     request: {
       currentTime: Arg(0, "number")
@@ -847,6 +847,23 @@ var AnimationsActor = exports.AnimationsActor = ActorClass({
       players: Arg(0, "array:animationplayer"),
       time: Arg(1, "number"),
       shouldPause: Arg(2, "boolean")
+    },
+    response: {}
+  }),
+
+  
+
+
+
+
+  setPlaybackRates: method(function(players, rate) {
+    for (let player of players) {
+      player.setPlaybackRate(rate);
+    }
+  }, {
+    request: {
+      players: Arg(0, "array:animationplayer"),
+      rate: Arg(1, "number")
     },
     response: {}
   })

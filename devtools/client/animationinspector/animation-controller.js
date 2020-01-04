@@ -86,6 +86,8 @@ var getServerTraits = Task.async(function*(target) {
      method: "stopAnimationPlayerUpdates" },
     { name: "hasSetPlaybackRate", actor: "animationplayer",
       method: "setPlaybackRate" },
+    { name: "hasSetPlaybackRates", actor: "animations",
+      method: "setPlaybackRates" },
     { name: "hasTargetNode", actor: "domwalker",
       method: "getNodeFromActor" },
     { name: "hasSetCurrentTimes", actor: "animations",
@@ -280,6 +282,23 @@ var AnimationsController = {
           yield animation.pause();
         }
         yield animation.setCurrentTime(time);
+      }
+    }
+  }),
+
+  
+
+
+
+
+  setPlaybackRateAll: Task.async(function*(rate) {
+    if (this.traits.hasSetPlaybackRates) {
+      
+      yield this.animationsFront.setPlaybackRates(this.animationPlayers, rate);
+    } else if (this.traits.hasSetPlaybackRate) {
+      
+      for (let animation of this.animationPlayers) {
+        yield animation.setPlaybackRate(rate);
       }
     }
   }),

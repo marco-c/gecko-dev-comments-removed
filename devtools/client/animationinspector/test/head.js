@@ -480,6 +480,11 @@ function* assertScrubberMoving(panel, isMoving) {
   }
 }
 
+
+
+
+
+
 function* clickTimelinePlayPauseButton(panel) {
   let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
 
@@ -491,6 +496,11 @@ function* clickTimelinePlayPauseButton(panel) {
   yield waitForAllAnimationTargets(panel);
 }
 
+
+
+
+
+
 function* clickTimelineRewindButton(panel) {
   let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
 
@@ -500,4 +510,53 @@ function* clickTimelineRewindButton(panel) {
 
   yield onUiUpdated;
   yield waitForAllAnimationTargets(panel);
+}
+
+
+
+
+
+
+
+function* changeTimelinePlaybackRate(panel, rate) {
+  let onUiUpdated = panel.once(panel.UI_UPDATED_EVENT);
+
+  let select = panel.rateSelectorEl.firstChild;
+  let win = select.ownerDocument.defaultView;
+
+  
+  let option = [...select.options].filter(o => o.value === rate + "")[0];
+  if (!option) {
+    ok(false,
+       "Could not find an option for rate " + rate + " in the rate selector. " +
+       "Values are: " + [...select.options].map(o => o.value));
+    return;
+  }
+
+  
+  EventUtils.synthesizeMouseAtCenter(select, {type: "mousedown"}, win);
+  EventUtils.synthesizeMouseAtCenter(option, {type: "mouseup"}, win);
+
+  yield onUiUpdated;
+  yield waitForAllAnimationTargets(panel);
+
+  
+  
+  EventUtils.synthesizeMouseAtCenter(win.document.querySelector("#timeline-toolbar"),
+                                     {type: "mousemove"}, win);
+}
+
+
+
+
+
+function disableHighlighter(toolbox) {
+  toolbox._highlighter = {
+    showBoxModel: () => new Promise(r => r()),
+    hideBoxModel: () => new Promise(r => r()),
+    pick: () => new Promise(r => r()),
+    cancelPick: () => new Promise(r => r()),
+    destroy: () => {},
+    traits: {}
+  };
 }

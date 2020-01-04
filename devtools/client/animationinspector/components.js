@@ -35,6 +35,8 @@ const MILLIS_TIME_FORMAT_MAX_DURATION = 4000;
 
 const TIME_GRADUATION_MIN_SPACING = 40;
 
+const PLAYBACK_RATES = [.1, .25, .5, 1, 2, 5, 10];
+
 
 const FAST_TRACK_ICON_SIZE = 20;
 
@@ -187,6 +189,10 @@ AnimationTargetNode.prototype = {
       this.previewEl.appendChild(document.createTextNode(">"));
     }
 
+    this.startListeners();
+  },
+
+  startListeners: function() {
     
     this.previewEl.addEventListener("mouseover", this.onPreviewMouseOver);
     this.previewEl.addEventListener("mouseout", this.onPreviewMouseOut);
@@ -200,15 +206,19 @@ AnimationTargetNode.prototype = {
     TargetNodeHighlighter.on("highlighted", this.onTargetHighlighterLocked);
   },
 
-  destroy: function() {
-    TargetNodeHighlighter.unhighlight().catch(e => console.error(e));
-
+  stopListeners: function() {
     TargetNodeHighlighter.off("highlighted", this.onTargetHighlighterLocked);
     this.inspector.off("markupmutation", this.onMarkupMutations);
     this.previewEl.removeEventListener("mouseover", this.onPreviewMouseOver);
     this.previewEl.removeEventListener("mouseout", this.onPreviewMouseOut);
     this.previewEl.removeEventListener("click", this.onSelectNodeClick);
     this.highlightNodeEl.removeEventListener("click", this.onHighlightNodeClick);
+  },
+
+  destroy: function() {
+    TargetNodeHighlighter.unhighlight().catch(e => console.error(e));
+
+    this.stopListeners();
 
     this.el.remove();
     this.el = this.tagNameEl = this.idEl = this.classEl = null;
@@ -217,21 +227,26 @@ AnimationTargetNode.prototype = {
   },
 
   get highlighterUtils() {
-    return this.inspector.toolbox.highlighterUtils;
+    if (this.inspector && this.inspector.toolbox) {
+      return this.inspector.toolbox.highlighterUtils;
+    }
+    return null;
   },
 
   onPreviewMouseOver: function() {
-    if (!this.nodeFront) {
+    if (!this.nodeFront || !this.highlighterUtils) {
       return;
     }
-    this.highlighterUtils.highlightNodeFront(this.nodeFront);
+    this.highlighterUtils.highlightNodeFront(this.nodeFront)
+                         .catch(e => console.error(e));
   },
 
   onPreviewMouseOut: function() {
-    if (!this.nodeFront) {
+    if (!this.nodeFront || !this.highlighterUtils) {
       return;
     }
-    this.highlighterUtils.unhighlight();
+    this.highlighterUtils.unhighlight()
+                         .catch(e => console.error(e));
   },
 
   onSelectNodeClick: function() {
@@ -329,6 +344,90 @@ AnimationTargetNode.prototype = {
 
     this.emit("target-retrieved");
   })
+};
+
+
+
+
+
+
+
+
+
+function RateSelector() {
+  this.onRateChanged = this.onRateChanged.bind(this);
+  EventEmitter.decorate(this);
+}
+
+exports.RateSelector = RateSelector;
+
+RateSelector.prototype = {
+  init: function(containerEl) {
+    this.selectEl = createNode({
+      parent: containerEl,
+      nodeType: "select",
+      attributes: {"class": "devtools-button"}
+    });
+
+    this.selectEl.addEventListener("change", this.onRateChanged);
+  },
+
+  destroy: function() {
+    this.selectEl.removeEventListener("change", this.onRateChanged);
+    this.selectEl.remove();
+    this.selectEl = null;
+  },
+
+  getAnimationsRates: function(animations) {
+    return sortedUnique(animations.map(a => a.state.playbackRate));
+  },
+
+  getAllRates: function(animations) {
+    let animationsRates = this.getAnimationsRates(animations);
+    if (animationsRates.length > 1) {
+      return PLAYBACK_RATES;
+    }
+
+    return sortedUnique(PLAYBACK_RATES.concat(animationsRates));
+  },
+
+  render: function(animations) {
+    let allRates = this.getAnimationsRates(animations);
+    let hasOneRate = allRates.length === 1;
+
+    this.selectEl.innerHTML = "";
+
+    if (!hasOneRate) {
+      
+      
+      createNode({
+        parent: this.selectEl,
+        nodeType: "option",
+        attributes: {value: "", selector: "true"},
+        textContent: "-"
+      });
+    }
+    for (let rate of this.getAllRates(animations)) {
+      let option = createNode({
+        parent: this.selectEl,
+        nodeType: "option",
+        attributes: {value: rate},
+        textContent: L10N.getFormatStr("player.playbackRateLabel", rate)
+      });
+
+      
+      if (hasOneRate && rate === allRates[0]) {
+        option.setAttribute("selected", "true");
+      }
+    }
+  },
+
+  onRateChanged: function() {
+    let rate = parseFloat(this.selectEl.value);
+    if (!isNaN(rate)) {
+      this.emit("rate-changed", rate);
+    }
+  }
 };
 
 
@@ -858,21 +957,49 @@ AnimationTimeBlock.prototype = {
   getTooltipText: function(state) {
     let getTime = time => L10N.getFormatStr("player.timeLabel",
                             L10N.numberWithDecimals(time / 1000, 2));
+
+    let text = "";
+
     
-    let title =
+    
+    text +=
       state.type
       ? L10N.getFormatStr("timeline." + state.type + ".nameLabel", state.name)
       : state.name;
-    let delay = L10N.getStr("player.animationDelayLabel") + " " +
-                getTime(state.delay);
-    let duration = L10N.getStr("player.animationDurationLabel") + " " +
-                   getTime(state.duration);
-    let iterations = L10N.getStr("player.animationIterationCountLabel") + " " +
-                     (state.iterationCount ||
-                      L10N.getStr("player.infiniteIterationCountText"));
-    let compositor = state.isRunningOnCompositor
-                     ? L10N.getStr("player.runningOnCompositorTooltip")
-                     : "";
-    return [title, duration, iterations, delay, compositor].join("\n");
+    text += "\n";
+
+    
+    text += L10N.getStr("player.animationDelayLabel") + " ";
+    text += getTime(state.delay);
+    text += "\n";
+
+    
+    text += L10N.getStr("player.animationDurationLabel") + " ";
+    text += getTime(state.duration);
+    text += "\n";
+
+    
+    
+    text += L10N.getStr("player.animationIterationCountLabel") + " ";
+    text += state.iterationCount ||
+            L10N.getStr("player.infiniteIterationCountText");
+    text += "\n";
+
+    
+    if (state.playbackRate !== 1) {
+      text += L10N.getStr("player.animationRateLabel") + " ";
+      text += state.playbackRate;
+      text += "\n";
+    }
+
+    
+    
+    if (state.isRunningOnCompositor) {
+      text += L10N.getStr("player.runningOnCompositorTooltip");
+    }
+
+    return text;
   }
 };
+
+let sortedUnique = arr => [...new Set(arr)].sort((a, b) => a > b);

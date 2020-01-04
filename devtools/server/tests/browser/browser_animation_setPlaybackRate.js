@@ -6,6 +6,7 @@
 
 
 
+
 add_task(function*() {
   let {client, walker, animations} =
     yield initAnimationsFrontForUrl(MAIN_DOMAIN + "animation.html");
@@ -31,6 +32,19 @@ add_task(function*() {
   info("Query the state again");
   state = yield player.getCurrentState();
   is(state.playbackRate, 1, "The playbackRate was changed back");
+
+  info("Retrieve several animation players and set their rates");
+  node = yield walker.querySelector(walker.rootNode, "body");
+  let players = yield animations.getAnimationPlayersForNode(node);
+
+  info("Change all animations in <body> to .5 rate");
+  yield animations.setPlaybackRates(players, .5);
+
+  info("Query their states and check they are correct");
+  for (let player of players) {
+    let state = yield player.getCurrentState();
+    is(state.playbackRate, .5, "The playbackRate was updated");
+  }
 
   yield closeDebuggerClient(client);
   gBrowser.removeCurrentTab();
