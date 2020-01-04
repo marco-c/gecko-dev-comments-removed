@@ -9082,16 +9082,8 @@ nsDocument::BlockOnload()
       
       ++mAsyncOnloadBlockCount;
       if (mAsyncOnloadBlockCount == 1) {
-        bool success = nsContentUtils::AddScriptRunner(
+        nsContentUtils::AddScriptRunner(
           NewRunnableMethod(this, &nsDocument::AsyncBlockOnload));
-
-        
-        
-        
-        if (!success) {
-          NS_WARNING("Disaster! Onload blocking script runner failed to add - expect bad things!");
-          mAsyncOnloadBlockCount = 0;
-        }
       }
       return;
     }

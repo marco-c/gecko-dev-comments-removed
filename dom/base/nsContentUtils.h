@@ -1607,9 +1607,8 @@ public:
 
 
 
-
-  static bool AddScriptRunner(already_AddRefed<nsIRunnable> aRunnable);
-  static bool AddScriptRunner(nsIRunnable* aRunnable);
+  static void AddScriptRunner(already_AddRefed<nsIRunnable> aRunnable);
+  static void AddScriptRunner(nsIRunnable* aRunnable);
 
   
 

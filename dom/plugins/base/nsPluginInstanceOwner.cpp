@@ -159,7 +159,8 @@ nsPluginInstanceOwner::NotifyPaintWaiter(nsDisplayListBuilder* aBuilder)
     nsCOMPtr<nsIRunnable> event = new AsyncPaintWaitEvent(content, false);
     
     
-    mWaitingForPaint = nsContentUtils::AddScriptRunner(event);
+    nsContentUtils::AddScriptRunner(event);
+    mWaitingForPaint = true;
   }
 }
 
