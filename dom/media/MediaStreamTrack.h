@@ -267,9 +267,18 @@ public:
   ApplyConstraints(const dom::MediaTrackConstraints& aConstraints, ErrorResult &aRv);
   already_AddRefed<MediaStreamTrack> Clone();
 
+  IMPL_EVENT_HANDLER(ended)
+
   bool Ended() const { return mEnded; }
+
   
-  void NotifyEnded() { mEnded = true; }
+
+
+
+
+
+
+  void NotifyEnded();
 
   
 
