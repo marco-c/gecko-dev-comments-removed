@@ -258,6 +258,18 @@ nsString gAbsoluteArgv0Path;
 extern "C" MFBT_API bool IsSignalHandlingBroken();
 #endif
 
+#ifdef LIBFUZZER
+#include "LibFuzzerRunner.h"
+
+namespace mozilla {
+LibFuzzerRunner* libFuzzerRunner = 0;
+} 
+
+extern "C" MOZ_EXPORT void XRE_LibFuzzerSetMain(int argc, char** argv, LibFuzzerMain main) {
+  mozilla::libFuzzerRunner->setParams(argc, argv, main);
+}
+#endif
+
 namespace mozilla {
 int (*RunGTest)() = 0;
 } 
@@ -1428,9 +1440,11 @@ ScopedXPCOMStartup::Initialize()
     mServiceManager = nullptr;
   }
   else {
+#ifdef DEBUG
     nsCOMPtr<nsIComponentRegistrar> reg =
       do_QueryInterface(mServiceManager);
     NS_ASSERTION(reg, "Service Manager doesn't QI to Registrar.");
+#endif
   }
 
   return rv;
@@ -3641,6 +3655,13 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   if (!gtk_parse_args(&gArgc, &gArgv))
     return 1;
 #endif 
+
+#ifdef LIBFUZZER
+  if (PR_GetEnv("LIBFUZZER")) {
+    *aExitFlag = true;
+    return mozilla::libFuzzerRunner->Run();
+  }
+#endif
 
   if (PR_GetEnv("MOZ_RUN_GTEST")) {
     int result;

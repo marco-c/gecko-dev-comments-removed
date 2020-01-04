@@ -323,7 +323,7 @@ IMEStateManager::OnRemoveContent(nsPresContext* aPresContext,
       
       
       
-      nsCOMPtr<nsIWidget> widget = aPresContext->GetRootWidget();
+      DebugOnly<void*> widget = aPresContext->GetRootWidget();
       MOZ_ASSERT(widget, "Why is there no widget?");
       nsresult rv =
         compositionInContent->NotifyIME(REQUEST_TO_CANCEL_COMPOSITION);

@@ -2658,8 +2658,10 @@ nsHTMLDocument::EditingStateChanged()
   if (existingEditor) {
     
     
+#ifdef DEBUG
     nsCOMPtr<nsIHTMLEditor> htmlEditor = do_QueryInterface(existingEditor);
     MOZ_ASSERT(htmlEditor, "If we have an editor, it must be an HTML editor");
+#endif
     uint32_t flags = 0;
     existingEditor->GetFlags(&flags);
     if (flags & nsIPlaintextEditor::eEditorMailMask) {

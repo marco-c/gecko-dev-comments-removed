@@ -545,7 +545,8 @@ static nsresult AppendDOMNode(nsITransferable *aTransferable,
   
   
   
-  nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(document, &rv);
+  DebugOnly<nsCOMPtr<nsIHTMLDocument>> htmlDoc =
+    nsCOMPtr<nsIHTMLDocument>(do_QueryInterface(document, &rv));
   NS_ENSURE_SUCCESS(rv, NS_OK);
 
   NS_ENSURE_TRUE(document->IsHTMLDocument(), NS_OK);
