@@ -20,6 +20,22 @@ class nsStyleContext;
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class RuleNodeCacheConditions
 {
 public:
@@ -45,12 +61,27 @@ public:
 
   bool Matches(nsStyleContext* aStyleContext) const;
 
+  
+
+
+
+
+
+
+
+
   void SetFontSizeDependency(nscoord aCoord)
   {
     MOZ_ASSERT(!(mBits & eHaveFontSize) || mFontSize == aCoord);
     mFontSize = aCoord;
     mBits |= eHaveFontSize;
   }
+
+  
+
+
+
+
 
   void SetWritingModeDependency(uint8_t aWritingMode)
   {
