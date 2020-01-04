@@ -1556,7 +1556,7 @@ nsHTMLEditRules::WillInsertBreak(Selection& aSelection, bool* aCancel,
   
   
   bool isEmpty;
-  IsEmptyBlock(*blockParent, &isEmpty);
+  IsEmptyBlock(GetAsDOMNode(blockParent), &isEmpty);
   if (isEmpty) {
     nsCOMPtr<Element> br = mHTMLEditor->CreateBR(blockParent,
                                                  blockParent->Length());
@@ -4495,18 +4495,23 @@ nsHTMLEditRules::CreateStyleForInsertText(Selection& aSelection,
 
 
 nsresult
-nsHTMLEditRules::IsEmptyBlock(Element& aNode,
-                              bool* aOutIsEmptyBlock,
-                              MozBRCounts aMozBRCounts)
+nsHTMLEditRules::IsEmptyBlock(nsIDOMNode *aNode,
+                              bool *outIsEmptyBlock,
+                              bool aMozBRDoesntCount,
+                              bool aListItemsNotEmpty)
 {
-  MOZ_ASSERT(aOutIsEmptyBlock);
-  *aOutIsEmptyBlock = true;
+  NS_ENSURE_TRUE(aNode && outIsEmptyBlock, NS_ERROR_NULL_POINTER);
+  *outIsEmptyBlock = true;
 
-  NS_ENSURE_TRUE(IsBlockNode(aNode.AsDOMNode()), NS_ERROR_NULL_POINTER);
 
-  return mHTMLEditor->IsEmptyNode(aNode.AsDOMNode(), aOutIsEmptyBlock,
-                                  aMozBRCounts == MozBRCounts::yes ? false
-                                                                   : true);
+  nsCOMPtr<nsIDOMNode> nodeToTest;
+  if (IsBlockNode(aNode)) nodeToTest = do_QueryInterface(aNode);
+
+
+
+  NS_ENSURE_TRUE(nodeToTest, NS_ERROR_NULL_POINTER);
+  return mHTMLEditor->IsEmptyNode(nodeToTest, outIsEmptyBlock,
+                     aMozBRDoesntCount, aListItemsNotEmpty);
 }
 
 
@@ -6284,7 +6289,7 @@ nsHTMLEditRules::ReturnInHeader(Selection& aSelection,
 
   
   bool isEmpty;
-  res = IsEmptyBlock(aHeader, &isEmpty, MozBRCounts::no);
+  res = IsEmptyBlock(aHeader.AsDOMNode(), &isEmpty, true);
   NS_ENSURE_SUCCESS(res, res);
   if (isEmpty) {
     res = mHTMLEditor->DeleteNode(&aHeader);
@@ -6537,7 +6542,7 @@ nsHTMLEditRules::ReturnInListItem(Selection& aSelection,
   
   
   bool isEmpty;
-  nsresult res = IsEmptyBlock(aListItem, &isEmpty, MozBRCounts::no);
+  nsresult res = IsEmptyBlock(aListItem.AsDOMNode(), &isEmpty, true, false);
   NS_ENSURE_SUCCESS(res, res);
   if (isEmpty && root != list && mReturnInEmptyLIKillsList) {
     
