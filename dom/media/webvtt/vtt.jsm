@@ -1436,6 +1436,11 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
 
         while (self.buffer) {
           if (!line) {
+            
+            
+            if (!/\r\n|\n/.test(self.buffer)) {
+              return this;
+            }
             line = collectNextLine();
           }
 
