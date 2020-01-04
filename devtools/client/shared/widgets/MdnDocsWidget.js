@@ -29,6 +29,8 @@ const defer = require("devtools/shared/defer");
 const {getCSSLexer} = require("devtools/shared/css-lexer");
 const {gDevTools} = require("devtools/client/framework/devtools");
 
+const XHTML_NS = "http://www.w3.org/1999/xhtml";
+
 
 
 const XHR_PARAMS = "?raw&macros";
@@ -87,7 +89,7 @@ function appendSyntaxHighlightedCSS(cssText, parentElement) {
 
 
   function createStyledNode(textContent, className) {
-    let newNode = doc.createElement("span");
+    let newNode = doc.createElementNS(XHTML_NS, "span");
     newNode.classList.add(className);
     newNode.textContent = textContent;
     return newNode;
@@ -235,20 +237,27 @@ exports.getCssDocs = getCssDocs;
 
 
 
+function MdnDocsWidget(tooltipContainer) {
+  tooltipContainer.innerHTML =
+    `<header>
+       <h1 class="mdn-property-name theme-fg-color5"></h1>
+     </header>
+     <div class="mdn-property-info">
+       <div class="mdn-summary"></div>
+       <pre class="mdn-syntax devtools-monospace"></pre>
+     </div>
+     <footer>
+       <a class="mdn-visit-page theme-link" href="#">Visit MDN (placeholder)</a>
+     </footer>`;
 
-
-
-function MdnDocsWidget(tooltipDocument) {
   
   this.elements = {
-    heading: tooltipDocument.getElementById("property-name"),
-    summary: tooltipDocument.getElementById("summary"),
-    syntax: tooltipDocument.getElementById("syntax"),
-    info: tooltipDocument.getElementById("property-info"),
-    linkToMdn: tooltipDocument.getElementById("visit-mdn-page")
+    heading: tooltipContainer.querySelector(".mdn-property-name"),
+    summary: tooltipContainer.querySelector(".mdn-summary"),
+    syntax: tooltipContainer.querySelector(".mdn-syntax"),
+    info: tooltipContainer.querySelector(".mdn-property-info"),
+    linkToMdn: tooltipContainer.querySelector(".mdn-visit-page")
   };
-
-  this.doc = tooltipDocument;
 
   
   this.elements.linkToMdn.textContent =
@@ -357,7 +366,6 @@ MdnDocsWidget.prototype = {
 
   destroy: function () {
     this.elements = null;
-    this.doc = null;
   }
 };
 
