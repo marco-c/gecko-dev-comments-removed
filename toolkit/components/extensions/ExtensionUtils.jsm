@@ -317,7 +317,6 @@ function LocaleData(data) {
   this.defaultLocale = data.defaultLocale;
   this.selectedLocale = data.selectedLocale;
   this.locales = data.locales || new Map();
-  this.warnedMissingKeys = new Set();
 
   
   
@@ -349,16 +348,8 @@ LocaleData.prototype = {
   },
 
   
-  localizeMessage(message, substitutions = [], options = {}) {
-    let defaultOptions = {
-      locale: this.selectedLocale,
-      defaultValue: "",
-      cloneScope: null,
-    };
-
-    options = Object.assign(defaultOptions, options);
-
-    let locales = new Set([this.BUILTIN, options.locale, this.defaultLocale]
+  localizeMessage(message, substitutions = [], locale = this.selectedLocale, defaultValue = "??") {
+    let locales = new Set([this.BUILTIN, locale, this.defaultLocale]
                           .filter(locale => this.messages.has(locale)));
 
     
@@ -407,15 +398,8 @@ LocaleData.prototype = {
       }
     }
 
-    if (!this.warnedMissingKeys.has(message)) {
-      let error = `Unknown localization message ${message}`;
-      if (options.cloneScope) {
-        error = new options.cloneScope.Error(error);
-      }
-      Cu.reportError(error);
-      this.warnedMissingKeys.add(message);
-    }
-    return options.defaultValue;
+    Cu.reportError(`Unknown localization message ${message}`);
+    return defaultValue;
   },
 
   
