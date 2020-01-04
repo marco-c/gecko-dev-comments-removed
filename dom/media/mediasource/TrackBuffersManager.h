@@ -153,7 +153,7 @@ private:
   Atomic<bool> mBufferFull;
   bool mFirstInitializationSegmentReceived;
   
-  bool mNewSegmentStarted;
+  bool mNewMediaSegmentStarted;
   bool mActiveTrack;
   Maybe<media::TimeUnit> mGroupStartTimestamp;
   media::TimeUnit mGroupEndTimestamp;
@@ -170,6 +170,11 @@ private:
   
   void AppendDataToCurrentInputBuffer(MediaByteBuffer* aData);
   nsRefPtr<MediaByteBuffer> mInitData;
+  
+  
+  
+  
+  nsRefPtr<MediaByteBuffer> mPendingInputBuffer;
   nsRefPtr<SourceBufferResource> mCurrentInputBuffer;
   nsRefPtr<MediaDataDemuxer> mInputDemuxer;
   

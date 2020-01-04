@@ -97,7 +97,7 @@ TrackBuffersManager::TrackBuffersManager(dom::SourceBufferAttributes* aAttribute
   , mAppendState(AppendState::WAITING_FOR_SEGMENT)
   , mBufferFull(false)
   , mFirstInitializationSegmentReceived(false)
-  , mNewSegmentStarted(false)
+  , mNewMediaSegmentStarted(false)
   , mActiveTrack(false)
   , mType(aType)
   , mParser(ContainerParser::CreateForMIMEType(aType))
@@ -656,12 +656,11 @@ TrackBuffersManager::SegmentParserLoop()
           
           RecreateParser(false);
         }
-        mNewSegmentStarted = true;
         continue;
       }
       if (mParser->IsMediaSegmentPresent(mInputBuffer)) {
         SetAppendState(AppendState::PARSING_MEDIA_SEGMENT);
-        mNewSegmentStarted = true;
+        mNewMediaSegmentStarted = true;
         continue;
       }
       
@@ -692,27 +691,43 @@ TrackBuffersManager::SegmentParserLoop()
         RejectAppend(NS_ERROR_FAILURE, __func__);
         return;
       }
-      
-      if (mParser->MediaHeaderRange().IsNull()) {
-        AppendDataToCurrentInputBuffer(mInputBuffer);
-        mInputBuffer = nullptr;
-        NeedMoreData();
-        return;
-      }
 
       
       
       
       
       
-      if (newData) {
-        if (mNewSegmentStarted && mLastParsedEndTime.isSome() &&
+      if (mNewMediaSegmentStarted) {
+        if (newData && mLastParsedEndTime.isSome() &&
             start < mLastParsedEndTime.ref().ToMicroseconds()) {
+          MSE_DEBUG("Re-creating demuxer");
           ResetDemuxingState();
           return;
         }
-        mNewSegmentStarted = false;
-        mLastParsedEndTime = Some(TimeUnit::FromMicroseconds(end));
+        if (newData || !mParser->MediaSegmentRange().IsNull()) {
+          if (mPendingInputBuffer) {
+            
+            
+            AppendDataToCurrentInputBuffer(mPendingInputBuffer);
+            mPendingInputBuffer = nullptr;
+          }
+          mNewMediaSegmentStarted = false;
+          if (newData) {
+            mLastParsedEndTime = Some(TimeUnit::FromMicroseconds(end));
+          }
+        } else {
+          
+          
+          
+          if (!mPendingInputBuffer) {
+            mPendingInputBuffer = mInputBuffer;
+          } else {
+            mPendingInputBuffer->AppendElements(*mInputBuffer);
+          }
+          mInputBuffer = nullptr;
+          NeedMoreData();
+          return;
+        }
       }
 
       
@@ -848,6 +863,16 @@ TrackBuffersManager::OnDemuxerResetDone(nsresult)
     mAudioTracks.mDemuxer = mInputDemuxer->GetTrackDemuxer(TrackInfo::kAudioTrack, 0);
     MOZ_ASSERT(mAudioTracks.mDemuxer);
   }
+
+  if (mPendingInputBuffer) {
+    
+    
+    int64_t start, end;
+    mParser->ParseStartAndEndTimestamps(mPendingInputBuffer, start, end);
+    mProcessedInput += mPendingInputBuffer->Length();
+  }
+
+  mLastParsedEndTime.reset();
 
   SegmentParserLoop();
 }
