@@ -9,6 +9,8 @@
 
 #include "mozilla/Atomics.h"
 
+class DeleteRunnable;
+
 
 
 
@@ -43,10 +45,9 @@ public:
   NS_IMETHODIMP Run() override;
 
   static void UploadEnded(bool deleteUploadFile);
-  
-  static mozilla::Atomic<bool> sIsUploading;
 
 private:
+  friend class DeleteRunnable;
 
   enum class Partition {
     Begining,
