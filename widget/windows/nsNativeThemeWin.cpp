@@ -1550,13 +1550,18 @@ AssumeThemePartAndStateAreTransparent(int32_t aPart, int32_t aState)
 
 
 
-static double
+static inline double
 GetThemeDpiScaleFactor(nsIFrame* aFrame)
 {
-  double primaryScale =
-    WinUtils::LogToPhysFactor(WinUtils::GetPrimaryMonitor());
-  nsIWidget* rootWidget = aFrame->PresContext()->GetRootWidget();
-  return rootWidget ? rootWidget->GetDefaultScale().scale / primaryScale : 1.0;
+  if (WinUtils::IsPerMonitorDPIAware() && GetSystemMetrics(SM_CMONITORS) > 1) {
+    nsIWidget* rootWidget = aFrame->PresContext()->GetRootWidget();
+    if (rootWidget) {
+      double primaryScale =
+        WinUtils::LogToPhysFactor(WinUtils::GetPrimaryMonitor());
+      return rootWidget->GetDefaultScale().scale / primaryScale;
+    }
+  }
+  return 1.0;
 }
 
 NS_IMETHODIMP
