@@ -832,7 +832,13 @@ InplaceEditor.prototype = {
       let input = this.input;
       let pre = "";
 
-      if (input.selectionStart < input.selectionEnd) {
+      
+      
+      
+      
+      
+      if (input.selectionStart < input.selectionEnd ||
+          this.contentType !== CONTENT_TYPES.CSS_MIXED) {
         pre = input.value.slice(0, input.selectionStart);
       } else {
         pre = input.value.slice(0, input.selectionStart - label.length +
