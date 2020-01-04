@@ -4644,7 +4644,7 @@ mozilla::BrowserTabsRemoteAutostart()
   
   
   
-  bool testPref = gfxPrefs::GetSingleton().LayersOffMainThreadCompositionTestingEnabled();
+  bool testPref = Preferences::GetBool("layers.offmainthreadcomposition.testing.enabled", false);
   if (testPref && optInPref) {
     gBrowserTabsRemoteAutostart = true;
   }
@@ -4672,8 +4672,8 @@ mozilla::BrowserTabsRemoteAutostart()
   
   if (gBrowserTabsRemoteAutostart) {
     
-    bool accelDisabled = gfxPrefs::GetSingleton().LayersAccelerationDisabled() &&
-                         !gfxPrefs::LayersAccelerationForceEnabled();
+    bool accelDisabled = Preferences::GetBool("layers.acceleration.disabled", false) &&
+                         !Preferences::GetBool("layers.acceleration.force-enabled", false);
 
     accelDisabled = accelDisabled || !nsCocoaFeatures::AccelerateByDefault();
 
