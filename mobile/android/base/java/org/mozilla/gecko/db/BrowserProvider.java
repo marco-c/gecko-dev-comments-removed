@@ -809,7 +809,9 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
                 DBUtils.qualifyColumn("bookmarks", Bookmarks.PARENT) + " < " + Bookmarks.FIXED_ROOT_ID + " AND " +
                 DBUtils.qualifyColumn("bookmarks", Bookmarks.IS_DELETED) + " == 0)" +
                 " AND " +
-                "(" + Combined.URL + " NOT LIKE ?)";
+                "(" + Combined.URL + " NOT LIKE ?)" +
+                " AND " +
+                "(" + Combined.LOCAL_VISITS_COUNT + " > 0)";
 
         final String[] ignoreForTopSitesArgs = new String[] {
                 AboutPages.URL_FILTER
