@@ -690,7 +690,7 @@ pref("ui.scrolling.min_scrollable_distance", -1);
 
 pref("ui.scrolling.axis_lock_mode", "standard");
 
-pref("ui.scrolling.negate_wheel_scrollY", true);
+pref("ui.scrolling.negate_wheel_scroll", true);
 
 
 pref("ui.scrolling.gamepad_dead_zone", 115);
