@@ -414,6 +414,10 @@ public:
   
 
 
+  void PlayVideo(MediaStream* aStream);
+  
+
+
 
 
   void OpenAudioInputImpl(int aID,

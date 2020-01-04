@@ -543,9 +543,7 @@ public:
   }
 
 protected:
-  
-  virtual void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime,
-                                                     GraphTime aBlockedTime)
+  void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime, GraphTime aBlockedTime)
   {
     mTracksStartTime += aBlockedTime;
     mTracks.ForgetUpTo(aCurrentTime - mTracksStartTime);
@@ -807,11 +805,6 @@ public:
 
   bool HasPendingAudioTrack();
 
-  TimeStamp GetStreamTracksStrartTimeStamp() {
-    MutexAutoLock lock(mMutex);
-    return mStreamTracksStartTimeStamp;
-  }
-
   
 
   friend class MediaStreamGraphImpl;
@@ -876,15 +869,6 @@ protected:
   void NotifyDirectConsumers(TrackData *aTrack,
                              MediaSegment *aSegment);
 
-  virtual void
-  AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime,
-                                        GraphTime aBlockedTime) override;
-  void SetStreamTracksStartTimeStamp(const TimeStamp& aTimeStamp)
-  {
-    MutexAutoLock lock(mMutex);
-    mStreamTracksStartTimeStamp = aTimeStamp;
-  }
-
   
   
   
@@ -896,10 +880,6 @@ protected:
   Mutex mMutex;
   
   StreamTime mUpdateKnownTracksTime;
-  
-  
-  
-  TimeStamp mStreamTracksStartTimeStamp;
   nsTArray<TrackData> mUpdateTracks;
   nsTArray<TrackData> mPendingTracks;
   nsTArray<RefPtr<DirectMediaStreamListener>> mDirectListeners;
