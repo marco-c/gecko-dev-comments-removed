@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* A higher-order macro for enumerating all cached property names. */
 
 #ifndef vm_CommonPropertyNames_h
 #define vm_CommonPropertyNames_h
@@ -96,6 +96,7 @@
     macro(era, era, "era") \
     macro(escape, escape, "escape") \
     macro(eval, eval, "eval") \
+    macro(exec, exec, "exec") \
     macro(false, false_, "false") \
     macro(fieldOffsets, fieldOffsets, "fieldOffsets") \
     macro(fieldTypes, fieldTypes, "fieldTypes") \
@@ -324,4 +325,4 @@
     /* Function names for properties named by symbols. */ \
     macro(Symbol_iterator_fun, Symbol_iterator_fun, "[Symbol.iterator]") \
 
-#endif 
+#endif /* vm_CommonPropertyNames_h */
