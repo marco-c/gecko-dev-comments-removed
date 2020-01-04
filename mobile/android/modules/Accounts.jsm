@@ -8,9 +8,9 @@ this.EXPORTED_SYMBOLS = ["Accounts"];
 
 const { utils: Cu } = Components;
 
-Cu.import("resource://gre/modules/Messaging.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Promise.jsm");
+Cu.import("resource://gre/modules/Messaging.jsm"); 
+Cu.import("resource://gre/modules/Promise.jsm"); 
+Cu.import("resource://gre/modules/Services.jsm"); 
 
 
 
@@ -68,6 +68,19 @@ let Accounts = Object.freeze({
     });
   },
 
+  _addDefaultEndpoints: function (json) {
+    let newData = Cu.cloneInto(json, {}, { cloneFunctions: false });
+    let associations = {
+      authServerEndpoint: 'identity.fxaccounts.auth.uri',
+      profileServerEndpoint: 'identity.fxaccounts.remote.profile.uri',
+      tokenServerEndpoint: 'identity.sync.tokenserver.uri'
+    };
+    for (let key in associations) {
+      newData[key] = newData[key] || Services.urlFormatter.formatURLPref(associations[key]);
+    }
+    return newData;
+  },
+
   
 
 
@@ -78,9 +91,45 @@ let Accounts = Object.freeze({
 
 
   createFirefoxAccountFromJSON: function (json) {
-    return Messaging.sendRequestForResponse({
+    return Messaging.sendRequestForResult({
       type: "Accounts:CreateFirefoxAccountFromJSON",
-      json: json
+      json: this._addDefaultEndpoints(json)
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  updateFirefoxAccountFromJSON: function (json) {
+    return Messaging.sendRequestForResult({
+      type: "Accounts:UpdateFirefoxAccountFromJSON",
+      json: this._addDefaultEndpoints(json)
+    });
+  },
+
+  
+
+
+
+
+
+  getFirefoxAccount: function () {
+    return Messaging.sendRequestForResult({
+      type: "Accounts:Exist",
+      kind: "fxa",
+    }).then(data => {
+      if (!data || !data.exists) {
+        return null;
+      }
+      delete data.exists;
+      return data;
     });
   }
 });
