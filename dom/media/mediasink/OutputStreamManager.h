@@ -24,7 +24,8 @@ public:
   void Init(OutputStreamManager* aOwner, ProcessedMediaStream* aStream);
 
   
-  void Connect(MediaStream* aStream);
+  
+  bool Connect(MediaStream* aStream);
   
   
   bool Disconnect();
