@@ -528,6 +528,11 @@ TextEventDispatcher::MaybeDispatchKeypressEvents(
   }
 
   
+  if (!aKeyboardEvent.ShouldCauseKeypressEvents()) {
+    return false;
+  }
+
+  
   
   
   
