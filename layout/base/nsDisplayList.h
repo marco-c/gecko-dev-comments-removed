@@ -3788,7 +3788,7 @@ private:
 class nsDisplaySVGEffects : public nsDisplayWrapList {
 public:
   nsDisplaySVGEffects(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                      nsDisplayList* aList);
+                      nsDisplayList* aList, bool aOpacityItemCreated);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplaySVGEffects();
 #endif
@@ -3842,6 +3842,9 @@ public:
 private:
   
   nsRect mEffectsBounds;
+  
+  
+  bool mOpacityItemCreated;
 };
 
 
