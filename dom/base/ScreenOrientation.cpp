@@ -478,7 +478,7 @@ ScreenOrientation::GetLockOrientationPermission(bool aCheckSandbox) const
   }
 
   
-  return doc->MozFullScreen() ? FULLSCREEN_LOCK_ALLOWED : LOCK_DENIED;
+  return doc->Fullscreen() ? FULLSCREEN_LOCK_ALLOWED : LOCK_DENIED;
 }
 
 nsIDocument*
@@ -647,7 +647,7 @@ ScreenOrientation::FullScreenEventListener::HandleEvent(nsIDOMEvent* aEvent)
   
   
   
-  if (doc->MozFullScreen()) {
+  if (doc->Fullscreen()) {
     return NS_OK;
   }
 
