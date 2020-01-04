@@ -4,8 +4,8 @@
 
 
 #include <stdint.h>
-#include <assert.h>
 #include "AudioBufferUtils.h"
+#include <mozilla/Assertions.h>
 
 const uint32_t FRAMES = 256;
 const uint32_t CHANNELS = 2;
@@ -26,34 +26,34 @@ int main() {
   mBuffer.SetBuffer(fromCallback, FRAMES);
 
   
-  assert(b.Fill(other, 15) == 15);
-  assert(b.Fill(other, 17) == 17);
+  MOZ_RELEASE_ASSERT(b.Fill(other, 15) == 15);
+  MOZ_RELEASE_ASSERT(b.Fill(other, 17) == 17);
   for (uint32_t i = 0; i < 32 * CHANNELS; i++) {
     other[i] = 0.0;
   }
 
   
-  assert(b.Empty(mBuffer) == 32);
+  MOZ_RELEASE_ASSERT(b.Empty(mBuffer) == 32);
 
   
-  assert(mBuffer.Available() == FRAMES - 32);
+  MOZ_RELEASE_ASSERT(mBuffer.Available() == FRAMES - 32);
 
   
   mBuffer.WriteFrames(other + 32 * CHANNELS, FRAMES - 32);
 
   
-  assert(mBuffer.Available() == 0);
+  MOZ_RELEASE_ASSERT(mBuffer.Available() == 0);
 
   for (uint32_t i = 0 ; i < SAMPLES; i++) {
     if (fromCallback[i] != 1.0) {
       fprintf(stderr, "Difference at %d (%f != %f)\n", i, fromCallback[i], 1.0);
-      assert(false);
+      MOZ_CRASH("Samples differ");
     }
   }
 
-  assert(b.Fill(other, FRAMES) == 128);
-  assert(b.Fill(other, FRAMES) == 0);
-  assert(b.Empty(mBuffer) == 0);
+  MOZ_RELEASE_ASSERT(b.Fill(other, FRAMES) == 128);
+  MOZ_RELEASE_ASSERT(b.Fill(other, FRAMES) == 0);
+  MOZ_RELEASE_ASSERT(b.Empty(mBuffer) == 0);
 
   return 0;
 }
