@@ -678,7 +678,6 @@ struct NewLayerEntry {
     , mOpaqueForAnimatedGeometryRootParent(false)
     , mPropagateComponentAlphaFlattening(true)
     , mUntransformedVisibleRegion(false)
-    , mIsPerspectiveItem(false)
   {}
   
   
@@ -714,7 +713,6 @@ struct NewLayerEntry {
   
   
   bool mUntransformedVisibleRegion;
-  bool mIsPerspectiveItem;
 };
 
 class PaintedLayerDataTree;
@@ -4155,9 +4153,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       newLayerEntry->mAnimatedGeometryRoot = animatedGeometryRoot;
       newLayerEntry->mScrollClip = agrScrollClip;
       newLayerEntry->mLayerState = layerState;
-      if (itemType == nsDisplayItem::TYPE_PERSPECTIVE) {
-        newLayerEntry->mIsPerspectiveItem = true;
-      }
 
       
       
