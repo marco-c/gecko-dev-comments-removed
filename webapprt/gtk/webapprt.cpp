@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
   }
 
   
-  if (!strcmp(buildid, NS_STRINGIFY(GRE_BUILDID))) {
+  if (!strcmp(buildid, NS_STRINGIFY(MOZ_BUILDID))) {
     if (GRELoadAndLaunch(firefoxDir, false))
       return 0;
   }
