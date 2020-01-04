@@ -21,7 +21,7 @@
   box-sizing: border-box; 
 }
 
-*|*::-moz-table-outer {
+*|*::-moz-table-wrapper {
   display: inherit !important; 
   margin: inherit ! important;
   padding: 0 ! important;
