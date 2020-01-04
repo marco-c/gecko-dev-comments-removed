@@ -1295,32 +1295,6 @@ public class ActivityChooserModel extends DataSetObservable {
     
 
 
-    private boolean hasOtherSyncClients() {
-        
-        
-        if (!FirefoxAccounts.firefoxAccountsExist(mContext) &&
-                !SyncAccounts.syncAccountsExist(mContext))  {
-            return false;
-        }
-
-        final BrowserDB browserDB = GeckoProfile.get(mContext).getDB();
-        final TabsAccessor tabsAccessor = browserDB.getTabsAccessor();
-        final Cursor remoteClientsCursor = tabsAccessor
-                .getRemoteClientsByRecencyCursor(mContext);
-        if (remoteClientsCursor == null) {
-            return false;
-        }
-
-        try {
-            return remoteClientsCursor.getCount() > 0;
-        } finally {
-            remoteClientsCursor.close();
-        }
-    }
-
-    
-
-
     private class SyncStatusDelegate implements SyncStatusListener {
         @Override
         public Context getContext() {
