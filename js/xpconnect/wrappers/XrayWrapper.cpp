@@ -8,8 +8,6 @@
 #include "AccessCheck.h"
 #include "WrapperFactory.h"
 
-#include "nsContentUtils.h"
-#include "nsIControllers.h"
 #include "nsDependentString.h"
 #include "nsIScriptError.h"
 #include "mozilla/dom/Element.h"
@@ -1256,17 +1254,10 @@ IsXPCWNHolderClass(const JSClass* clasp)
 static nsGlobalWindow*
 AsWindow(JSContext* cx, JSObject* wrapper)
 {
-  nsGlobalWindow* win;
   
   
   JSObject* target = XrayTraits::getTargetObject(wrapper);
-  nsresult rv = UNWRAP_OBJECT(Window, target, win);
-  if (NS_SUCCEEDED(rv))
-      return win;
-
-  nsCOMPtr<nsPIDOMWindowInner> piWin = do_QueryInterface(
-      nsContentUtils::XPConnect()->GetNativeOfWrapper(cx, target));
-  return nsGlobalWindow::Cast(piWin);
+  return WindowOrNull(target);
 }
 
 static bool
@@ -1305,53 +1296,6 @@ XPCWrappedNativeXrayTraits::resolveNativeProperty(JSContext* cx, HandleObject wr
     
     if (!JSID_IS_STRING(id))
         return true;
-
-    
-    
-    
-    nsGlobalWindow* win = nullptr;
-    if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_CONTROLLERS) &&
-        AccessCheck::isChrome(wrapper) &&
-        (win = AsWindow(cx, wrapper)))
-    {
-        nsCOMPtr<nsIControllers> c;
-        nsresult rv = win->GetControllers(getter_AddRefs(c));
-        if (NS_SUCCEEDED(rv) && c) {
-            rv = nsXPConnect::XPConnect()->WrapNativeToJSVal(cx, CurrentGlobalOrNull(cx),
-                                                             c, nullptr, nullptr, true,
-                                                             desc.value());
-        }
-
-        if (NS_FAILED(rv) || !c) {
-            JS_ReportError(cx, "Failed to invoke GetControllers via Xrays");
-            return false;
-        }
-
-        desc.object().set(wrapper);
-        return true;
-    }
-
-    
-    
-    
-    if (id == GetRTIdByIndex(cx, XPCJSRuntime::IDX_REALFRAMEELEMENT) &&
-        AccessCheck::isChrome(wrapper) &&
-        (win = AsWindow(cx, wrapper)))
-    {
-        ErrorResult rv;
-        Element* f = win->GetRealFrameElement(rv);
-        if (!f) {
-          desc.object().set(nullptr);
-          return true;
-        }
-
-        if (!GetOrCreateDOMReflector(cx, f, desc.value())) {
-          return false;
-        }
-
-        desc.object().set(wrapper);
-        return true;
-    }
 
     XPCNativeInterface* iface;
     XPCNativeMember* member;
@@ -1534,52 +1478,10 @@ XPCWrappedNativeXrayTraits::resolveOwnProperty(JSContext* cx, const Wrapper& jsW
         return ok;
 
     
-    int32_t index = GetArrayIndexFromId(cx, id);
-    if (IsArrayIndex(index)) {
-        nsGlobalWindow* win = AsWindow(cx, wrapper);
-        
-        if (win) {
-            nsCOMPtr<nsPIDOMWindowOuter> subframe = win->IndexedGetter(index);
-            if (subframe) {
-                subframe->EnsureInnerWindow();
-                nsGlobalWindow* global = nsGlobalWindow::Cast(subframe);
-                JSObject* obj = global->FastGetGlobalJSObject();
-                if (MOZ_UNLIKELY(!obj)) {
-                    
-                    return xpc::Throw(cx, NS_ERROR_FAILURE);
-                }
-                desc.value().setObject(*obj);
-                FillPropertyDescriptor(desc, wrapper, true);
-                return JS_WrapPropertyDescriptor(cx, desc);
-            }
-        }
-    }
-
-    
     
     MOZ_ASSERT(js::IsObjectInContextCompartment(wrapper, cx));
 
     return JS_GetOwnPropertyDescriptorById(cx, holder, id, desc);
-}
-
-bool
-XPCWrappedNativeXrayTraits::defineProperty(JSContext* cx, HandleObject wrapper, HandleId id,
-                                           Handle<PropertyDescriptor> desc,
-                                           Handle<PropertyDescriptor> existingDesc,
-                                           JS::ObjectOpResult& result, bool* defined)
-{
-    *defined = false;
-    RootedObject holder(cx, singleton.ensureHolder(cx, wrapper));
-
-    
-    
-    int32_t index = GetArrayIndexFromId(cx, id);
-    if (IsArrayIndex(index) && IsWindow(cx, wrapper)) {
-        *defined = true;
-        return result.succeed();
-    }
-
-    return true;
 }
 
 bool
