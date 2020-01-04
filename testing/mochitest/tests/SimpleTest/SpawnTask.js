@@ -268,8 +268,18 @@ var add_task = (function () {
       
       setTimeout(function () {
         spawn_task(function* () {
-          for (var task of task_list) {
-            yield task();
+          
+          
+          try {
+            for (var task of task_list) {
+              yield task();
+            }
+          } catch (ex) {
+            try {
+              ok(false, "" + ex);
+            } catch (ex2) {
+              ok(false, "(The exception cannot be converted to string.)");
+            }
           }
           
           SimpleTest.finish();
