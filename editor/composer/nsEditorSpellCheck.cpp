@@ -636,34 +636,6 @@ nsEditorSpellCheck::SetCurrentDictionary(const nsAString& aDictionary)
 }
 
 NS_IMETHODIMP
-nsEditorSpellCheck::CheckCurrentDictionary()
-{
-  mSpellChecker->CheckCurrentDictionary();
-
-  
-  nsAutoString currentDictionary;
-  nsresult rv = GetCurrentDictionary(currentDictionary);
-  if (NS_SUCCEEDED(rv) && !currentDictionary.IsEmpty()) {
-    return NS_OK;
-  }
-
-  
-  nsTArray<nsString> dictList;
-  rv = mSpellChecker->GetDictionaryList(&dictList);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (dictList.Length() > 0) {
-    
-    
-    UpdateDictionaryHolder holder(this);
-    rv = SetCurrentDictionary(dictList[0]);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsEditorSpellCheck::UninitSpellChecker()
 {
   NS_ENSURE_TRUE(mSpellChecker, NS_ERROR_NOT_INITIALIZED);
@@ -836,6 +808,14 @@ nsEditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher)
   }
 
   
+  nsresult rv2;
+
+  
+  nsTArray<nsString> dictList;
+  rv2 = mSpellChecker->GetDictionaryList(&dictList);
+  NS_ENSURE_SUCCESS(rv2, rv2);
+
+  
   
   
   
@@ -845,7 +825,7 @@ nsEditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher)
   if (!(flags & nsIPlaintextEditor::eEditorMailMask)) {
     dictName.Assign(aFetcher->mDictionary);
     if (!dictName.IsEmpty()) {
-      if (NS_SUCCEEDED(SetCurrentDictionary(dictName))) {
+      if (NS_SUCCEEDED(TryDictionary(dictName, dictList, DICT_NORMAL_COMPARE))) {
 #ifdef DEBUG_DICT
         printf("***** Assigned from content preferences |%s|\n",
                NS_ConvertUTF16toUTF8(dictName).get());
@@ -870,14 +850,6 @@ nsEditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher)
   printf("***** Assigned from element/doc |%s|\n",
          NS_ConvertUTF16toUTF8(dictName).get());
 #endif
-
-  
-  nsresult rv2;
-
-  
-  nsTArray<nsString> dictList;
-  rv2 = mSpellChecker->GetDictionaryList(&dictList);
-  NS_ENSURE_SUCCESS(rv2, rv2);
 
   
   nsAutoString preferredDict;
