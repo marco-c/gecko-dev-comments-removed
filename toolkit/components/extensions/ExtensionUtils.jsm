@@ -217,25 +217,36 @@ class BaseContext {
 
 
 
+
+
+
+
   wrapPromise(promise, callback = null) {
+    
+    
+    let runSafe = runSafeSync.bind(null, this);
+    if (promise.constructor === this.cloneScope.Promise) {
+      runSafe = runSafeSyncWithoutClone;
+    }
+
     if (callback) {
       promise.then(
         args => {
           if (args instanceof SpreadArgs) {
-            runSafeSync(this, callback, ...args);
+            runSafe(callback, ...args);
           } else {
-            runSafeSync(this, callback, args);
+            runSafe(callback, args);
           }
         },
         error => {
           this.withLastError(error, () => {
-            runSafeSync(this, callback);
+            runSafeSyncWithoutClone(callback);
           });
         });
     } else {
       return new this.cloneScope.Promise((resolve, reject) => {
         promise.then(
-          value => { runSafeSync(this, resolve, value); },
+          value => { runSafe(resolve, value); },
           value => {
             if (!(value instanceof this.cloneScope.Error)) {
               value = new this.cloneScope.Error(value.message);
