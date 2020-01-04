@@ -125,7 +125,7 @@ const CLOSED_MESSAGES = new Set([
 
 
 const TAB_EVENTS = [
-  "TabOpen", "TabClose", "TabSelect", "TabShow", "TabHide", "TabPinned",
+  "TabOpen", "TabBrowserCreated", "TabClose", "TabSelect", "TabShow", "TabHide", "TabPinned",
   "TabUnpinned"
 ];
 
@@ -894,7 +894,10 @@ var SessionStoreInternal = {
     let target = aEvent.originalTarget;
     switch (aEvent.type) {
       case "TabOpen":
-        this.onTabAdd(win, target);
+        this.onTabAdd(win);
+        break;
+      case "TabBrowserCreated":
+        this.onTabBrowserCreated(win, target);
         break;
       case "TabClose":
         
@@ -986,7 +989,7 @@ var SessionStoreInternal = {
 
     
     for (let i = 0; i < tabbrowser.tabs.length; i++) {
-      this.onTabAdd(aWindow, tabbrowser.tabs[i], true);
+      this.onTabBrowserCreated(aWindow, tabbrowser.tabs[i]);
     }
     
     TAB_EVENTS.forEach(function(aEvent) {
@@ -1684,21 +1687,24 @@ var SessionStoreInternal = {
 
 
 
+  onTabAdd: function ssi_onTabAdd(aWindow) {
+    this.saveStateDelayed(aWindow);
+  },
+
+  
 
 
 
 
-  onTabAdd: function ssi_onTabAdd(aWindow, aTab, aNoNotification) {
+
+
+  onTabBrowserCreated: function ssi_onTabBrowserCreated(aWindow, aTab) {
     let browser = aTab.linkedBrowser;
     browser.addEventListener("SwapDocShells", this);
     browser.addEventListener("oop-browser-crashed", this);
 
     if (browser.frameLoader) {
       this._lastKnownFrameLoader.set(browser.permanentKey, browser.frameLoader);
-    }
-
-    if (!aNoNotification) {
-      this.saveStateDelayed(aWindow);
     }
   },
 
