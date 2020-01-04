@@ -699,10 +699,6 @@ class Node {
     template<typename T>
     static const char16_t* canonicalTypeName() { return Concrete<T>::concreteTypeName; }
 
-    
-    
-    static const char16_t* getCanonicalTypeName(const char16_t* dupe, size_t length);
-
     template<typename T>
     bool is() const {
         return base()->typeName() == canonicalTypeName<T>();
