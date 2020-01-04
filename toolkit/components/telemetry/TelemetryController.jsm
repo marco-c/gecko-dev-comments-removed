@@ -671,19 +671,7 @@ var Impl = {
     const enabled = Utils.isTelemetryEnabled;
     const isOptout = IS_UNIFIED_TELEMETRY && (!Policy.isUnifiedOptin() || this._isInOptoutSample());
     Telemetry.canRecordBase = enabled || isOptout;
-
-    if (AppConstants.MOZILLA_OFFICIAL) {
-      
-      
-      
-      
-      
-      Telemetry.canRecordExtended = enabled && (Telemetry.isOfficialTelemetry || this._testMode);
-    } else {
-      
-      
-      Telemetry.canRecordExtended = enabled;
-    }
+    Telemetry.canRecordExtended = enabled;
 
     this._log.config("enableTelemetryRecording - canRecordBase:" + Telemetry.canRecordBase +
                      ", canRecordExtended: " + Telemetry.canRecordExtended);
