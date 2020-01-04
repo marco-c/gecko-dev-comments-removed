@@ -550,6 +550,9 @@ mozJSComponentLoader::PrepareObjectForLocation(JSContext* aCx,
 
         options.behaviors().setVersion(JSVERSION_LATEST);
 
+        if (xpc::SharedMemoryEnabled())
+            options.creationOptions().setSharedMemoryAndAtomicsEnabled(true);
+
         
         
         
