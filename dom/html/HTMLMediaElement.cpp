@@ -1876,7 +1876,8 @@ void HTMLMediaElement::SetVolumeInternal()
     }
   }
 
-  UpdateAudioChannelPlayingState();
+  NotifyAudioPlaybackChanged(
+    AudioChannelService::AudibleChangedReasons::eVolumeChanged);
 }
 
 NS_IMETHODIMP HTMLMediaElement::SetMuted(bool aMuted)
@@ -2281,7 +2282,8 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mHasUserInteraction(false),
     mFirstFrameLoaded(false),
     mDefaultPlaybackStartPosition(0.0),
-    mIsAudioTrackAudible(false)
+    mIsAudioTrackAudible(false),
+    mAudible(IsAudible())
 {
   mAudioChannel = AudioChannelService::GetDefaultAudioChannel();
 
@@ -4970,7 +4972,7 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
   }
 
   
-  if (mPaused || Muted()) {
+  if (mPaused) {
     return false;
   }
 
@@ -4981,11 +4983,6 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
 
   
   if (!HasAudio()) {
-    return false;
-  }
-
-  
-  if (std::fabs(Volume()) <= 1e-7) {
     return false;
   }
 
@@ -5053,7 +5050,7 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
     
     AudioPlaybackConfig config;
     nsresult rv = mAudioChannelAgent->NotifyStartedPlaying(&config,
-                                                           mIsAudioTrackAudible);
+                                                           IsAudible());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
@@ -5113,6 +5110,9 @@ HTMLMediaElement::WindowSuspendChanged(SuspendTypes aSuspend)
              ("HTMLMediaElement, WindowSuspendChanged, this = %p, "
               "Error : unknown suspended type!\n", this));
   }
+
+  NotifyAudioPlaybackChanged(
+    AudioChannelService::AudibleChangedReasons::ePauseStateChanged);
 
   return NS_OK;
 }
@@ -5609,16 +5609,45 @@ HTMLMediaElement::SetAudibleState(bool aAudible)
 {
   if (mIsAudioTrackAudible != aAudible) {
     mIsAudioTrackAudible = aAudible;
-    NotifyAudioPlaybackChanged();
+    NotifyAudioPlaybackChanged(
+      AudioChannelService::AudibleChangedReasons::eDataAudibleChanged);
   }
 }
 
 void
-HTMLMediaElement::NotifyAudioPlaybackChanged()
+HTMLMediaElement::NotifyAudioPlaybackChanged(AudibleChangedReasons aReason)
 {
-  if (mAudioChannelAgent) {
-    mAudioChannelAgent->NotifyStartedAudible(mIsAudioTrackAudible);
+  if (!mAudioChannelAgent) {
+    return;
   }
+
+  if (mAudible == IsAudible()) {
+    return;
+  }
+
+  mAudible = IsAudible();
+  mAudioChannelAgent->NotifyStartedAudible(mAudible, aReason);
+}
+
+bool
+HTMLMediaElement::IsAudible() const
+{
+  
+  if (Muted() || (std::fabs(Volume()) <= 1e-7)) {
+    return false;
+  }
+
+  
+  if (IsSuspendedByAudioChannel()) {
+    return false;
+  }
+
+  
+  if (!mIsAudioTrackAudible) {
+    return false;
+  }
+
+  return true;
 }
 
 } 

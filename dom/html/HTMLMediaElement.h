@@ -38,6 +38,7 @@
 typedef uint16_t nsMediaNetworkState;
 typedef uint16_t nsMediaReadyState;
 typedef uint32_t SuspendTypes;
+typedef uint32_t AudibleChangedReasons;
 
 namespace mozilla {
 class DecoderDoctorDiagnostics;
@@ -453,7 +454,7 @@ public:
   virtual void SetAudibleState(bool aAudible) final override;
 
   
-  void NotifyAudioPlaybackChanged();
+  void NotifyAudioPlaybackChanged(AudibleChangedReasons aReason);
 
   
   void SetPreload(const nsAString& aValue, ErrorResult& aRv)
@@ -1175,6 +1176,8 @@ protected:
 
   bool IsAllowedToPlay();
 
+  bool IsAudible() const;
+
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;
   
@@ -1608,6 +1611,9 @@ private:
 
   
   bool mIsAudioTrackAudible;
+
+  
+  bool mAudible;
 };
 
 } 
