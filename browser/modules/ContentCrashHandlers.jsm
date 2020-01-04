@@ -341,6 +341,8 @@ this.TabCrashHandler = {
 
 
 
+
+
 this.UnsubmittedCrashHandler = {
   init() {
     if (this.initialized) {
@@ -391,7 +393,11 @@ this.UnsubmittedCrashHandler = {
     }
 
     if (reportIDs.length) {
-      this.showPendingSubmissionsNotification(reportIDs);
+      if (CrashNotificationBar.autoSubmit) {
+        CrashNotificationBar.submitReports(reportIDs);
+      } else {
+        this.showPendingSubmissionsNotification(reportIDs);
+      }
     }
   }),
 
@@ -409,7 +415,7 @@ this.UnsubmittedCrashHandler = {
     }
 
     let messageTemplate =
-      gNavigatorBundle.GetStringFromName("pendingCrashReports.label");
+      gNavigatorBundle.GetStringFromName("pendingCrashReports2.label");
 
     let message = PluralForm.get(count, messageTemplate).replace("#1", count);
 
@@ -461,8 +467,15 @@ this.CrashNotificationBar = {
     }
 
     let buttons = [{
-      label: gNavigatorBundle.GetStringFromName("pendingCrashReports.submitAll"),
+      label: gNavigatorBundle.GetStringFromName("pendingCrashReports.send"),
       callback: () => {
+        this.submitReports(reportIDs);
+      },
+    },
+    {
+      label: gNavigatorBundle.GetStringFromName("pendingCrashReports.alwaysSend"),
+      callback: () => {
+        this.autoSubmit = true;
         this.submitReports(reportIDs);
       },
     },
@@ -490,6 +503,16 @@ this.CrashNotificationBar = {
                           "chrome://browser/skin/tab-crashed.svg",
                           nb.PRIORITY_INFO_HIGH, buttons,
                           eventCallback);
+  },
+
+  get autoSubmit() {
+    return Services.prefs
+                   .getBoolPref("browser.crashReports.unsubmittedCheck.autoSubmit");
+  },
+
+  set autoSubmit(val) {
+    Services.prefs.setBoolPref("browser.crashReports.unsubmittedCheck.autoSubmit",
+                               val);
   },
 
   
