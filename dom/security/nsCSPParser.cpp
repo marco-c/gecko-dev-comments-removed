@@ -901,27 +901,30 @@ nsCSPParser::sourceList(nsTArray<nsCSPBaseSrc*>& outSrcs)
 }
 
 void
-nsCSPParser::referrerDirectiveValue()
+nsCSPParser::referrerDirectiveValue(nsCSPDirective* aDir)
 {
   
   
   
   CSPPARSERLOG(("nsCSPParser::referrerDirectiveValue"));
 
-  if (mCurDir.Length() > 2) {
-    CSPPARSERLOG(("Too many tokens in referrer directive, got %d expected 1",
+  if (mCurDir.Length() != 2) {
+    CSPPARSERLOG(("Incorrect number of tokens in referrer directive, got %d expected 1",
                  mCurDir.Length() - 1));
+    delete aDir;
     return;
   }
 
   if (!mozilla::net::IsValidReferrerPolicy(mCurDir[1])) {
     CSPPARSERLOG(("invalid value for referrer directive: %s",
                   NS_ConvertUTF16toUTF8(mCurDir[1]).get()));
+    delete aDir;
     return;
   }
 
   
   mPolicy->setReferrerPolicy(&mCurDir[1]);
+  mPolicy->addDirective(aDir);
 }
 
 void
@@ -1040,13 +1043,6 @@ nsCSPParser::directiveValue(nsTArray<nsCSPBaseSrc*>& outSrcs)
   
   if (CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::REPORT_URI_DIRECTIVE)) {
     reportURIList(outSrcs);
-    return;
-  }
-
-  
-  
-  if (CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::REFERRER_DIRECTIVE)) {
-    referrerDirectiveValue();
     return;
   }
 
@@ -1206,6 +1202,13 @@ nsCSPParser::directive()
   
   if (cspDir->equals(nsIContentSecurityPolicy::REQUIRE_SRI_FOR)) {
     requireSRIForDirectiveValue(static_cast<nsRequireSRIForDirective*>(cspDir));
+    return;
+  }
+
+  
+  
+  if (cspDir->equals(nsIContentSecurityPolicy::REFERRER_DIRECTIVE)) {
+    referrerDirectiveValue(cspDir);
     return;
   }
 
