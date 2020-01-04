@@ -22,6 +22,7 @@
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersMessages.h" 
+#include "mozilla/layers/LayersTypes.h" 
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureClientPool.h"
 #include "ClientLayerManager.h"
@@ -225,9 +226,9 @@ struct TileClient
 
   void Flip();
 
-  void DumpTexture(std::stringstream& aStream) {
+  void DumpTexture(std::stringstream& aStream, TextureDumpMode aCompress) {
     
-    CompositableClient::DumpTextureClient(aStream, mFrontBuffer);
+    CompositableClient::DumpTextureClient(aStream, mFrontBuffer, aCompress);
   }
 
   
@@ -430,7 +431,8 @@ public:
 
   virtual void Dump(std::stringstream& aStream,
                     const char* aPrefix,
-                    bool aDumpHtml) {}
+                    bool aDumpHtml,
+                    TextureDumpMode aCompress) {}
 
   const CSSToParentLayerScale2D& GetFrameResolution() { return mFrameResolution; }
   void SetFrameResolution(const CSSToParentLayerScale2D& aResolution) { mFrameResolution = aResolution; }
@@ -507,8 +509,9 @@ public:
 
   void Dump(std::stringstream& aStream,
             const char* aPrefix,
-            bool aDumpHtml) override {
-    TiledLayerBuffer::Dump(aStream, aPrefix, aDumpHtml);
+            bool aDumpHtml,
+            TextureDumpMode aCompress) override {
+    TiledLayerBuffer::Dump(aStream, aPrefix, aDumpHtml, aCompress);
   }
 
   void ReadLock();
@@ -606,7 +609,8 @@ public:
 
   virtual void Dump(std::stringstream& aStream,
                     const char* aPrefix="",
-                    bool aDumpHtml=false);
+                    bool aDumpHtml=false,
+                    TextureDumpMode aCompress=TextureDumpMode::Compress) override;
 
   virtual TextureInfo GetTextureInfo() const override
   {

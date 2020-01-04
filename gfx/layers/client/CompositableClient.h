@@ -129,7 +129,8 @@ public:
 
   virtual void Dump(std::stringstream& aStream,
                     const char* aPrefix="",
-                    bool aDumpHtml=false) {};
+                    bool aDumpHtml=false,
+                    TextureDumpMode aCompress=TextureDumpMode::Compress) {};
 
   virtual TextureInfo GetTextureInfo() const = 0;
 
@@ -228,7 +229,9 @@ public:
 
   TextureClientRecycleAllocator* GetTextureClientRecycler();
 
-  static void DumpTextureClient(std::stringstream& aStream, TextureClient* aTexture);
+  static void DumpTextureClient(std::stringstream& aStream,
+                                TextureClient* aTexture,
+                                TextureDumpMode aCompress);
 protected:
   CompositableChild* mCompositableChild;
   CompositableForwarder* mForwarder;

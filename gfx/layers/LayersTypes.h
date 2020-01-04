@@ -279,6 +279,12 @@ operator|=(EventRegionsOverride& a, EventRegionsOverride b)
   return a;
 }
 
+
+enum TextureDumpMode {
+  Compress,      
+  DoNotCompress  
+};
+
 } 
 } 
 

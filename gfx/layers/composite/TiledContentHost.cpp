@@ -631,7 +631,8 @@ TiledContentHost::Dump(std::stringstream& aStream,
                        const char* aPrefix,
                        bool aDumpHtml)
 {
-  mTiledBuffer.Dump(aStream, aPrefix, aDumpHtml);
+  mTiledBuffer.Dump(aStream, aPrefix, aDumpHtml,
+      TextureDumpMode::DoNotCompress );
 }
 
 } 
