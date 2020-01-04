@@ -450,9 +450,21 @@ public:
     Iterator(Iterator&& aOther);
     ~Iterator();
 
-    bool Done() const;                
-    PLDHashEntryHdr* Get() const;     
-    void Next();                      
+    
+    bool Done() const { return mNexts == mNextsLimit; }
+
+    
+    PLDHashEntryHdr* Get() const
+    {
+      MOZ_ASSERT(!Done());
+
+      PLDHashEntryHdr* entry = reinterpret_cast<PLDHashEntryHdr*>(mCurrent);
+      MOZ_ASSERT(EntryIsLive(entry));
+      return entry;
+    }
+
+    
+    void Next();
 
     
     
@@ -498,11 +510,27 @@ private:
 
   static const PLDHashNumber kCollisionFlag = 1;
 
-  static bool EntryIsFree(PLDHashEntryHdr* aEntry);
-  static bool EntryIsRemoved(PLDHashEntryHdr* aEntry);
-  static bool EntryIsLive(PLDHashEntryHdr* aEntry);
-  static void MarkEntryFree(PLDHashEntryHdr* aEntry);
-  static void MarkEntryRemoved(PLDHashEntryHdr* aEntry);
+  static bool EntryIsFree(PLDHashEntryHdr* aEntry)
+  {
+    return aEntry->mKeyHash == 0;
+  }
+  static bool EntryIsRemoved(PLDHashEntryHdr* aEntry)
+  {
+    return aEntry->mKeyHash == 1;
+  }
+  static bool EntryIsLive(PLDHashEntryHdr* aEntry)
+  {
+    return aEntry->mKeyHash >= 2;
+  }
+
+  static void MarkEntryFree(PLDHashEntryHdr* aEntry)
+  {
+    aEntry->mKeyHash = 0;
+  }
+  static void MarkEntryRemoved(PLDHashEntryHdr* aEntry)
+  {
+    aEntry->mKeyHash = 1;
+  }
 
   PLDHashNumber Hash1(PLDHashNumber aHash0);
   void Hash2(PLDHashNumber aHash, uint32_t& aHash2Out, uint32_t& aSizeMaskOut);

@@ -274,33 +274,6 @@ PLDHashTable::Hash2(PLDHashNumber aHash,
 
 
 
- MOZ_ALWAYS_INLINE bool
-PLDHashTable::EntryIsFree(PLDHashEntryHdr* aEntry)
-{
-  return aEntry->mKeyHash == 0;
-}
- MOZ_ALWAYS_INLINE bool
-PLDHashTable::EntryIsRemoved(PLDHashEntryHdr* aEntry)
-{
-  return aEntry->mKeyHash == 1;
-}
- MOZ_ALWAYS_INLINE bool
-PLDHashTable::EntryIsLive(PLDHashEntryHdr* aEntry)
-{
-  return aEntry->mKeyHash >= 2;
-}
-
- MOZ_ALWAYS_INLINE void
-PLDHashTable::MarkEntryFree(PLDHashEntryHdr* aEntry)
-{
-  aEntry->mKeyHash = 0;
-}
- MOZ_ALWAYS_INLINE void
-PLDHashTable::MarkEntryRemoved(PLDHashEntryHdr* aEntry)
-{
-  aEntry->mKeyHash = 1;
-}
-
 
  bool
 PLDHashTable::MatchEntryKeyhash(PLDHashEntryHdr* aEntry, PLDHashNumber aKeyHash)
@@ -783,12 +756,6 @@ PLDHashTable::Iterator::~Iterator()
   }
 }
 
-bool
-PLDHashTable::Iterator::Done() const
-{
-  return mNexts == mNextsLimit;
-}
-
 MOZ_ALWAYS_INLINE bool
 PLDHashTable::Iterator::IsOnNonLiveEntry() const
 {
@@ -803,16 +770,6 @@ PLDHashTable::Iterator::MoveToNextEntry()
   if (mCurrent == mLimit) {
     mCurrent = mStart;  
   }
-}
-
-PLDHashEntryHdr*
-PLDHashTable::Iterator::Get() const
-{
-  MOZ_ASSERT(!Done());
-
-  PLDHashEntryHdr* entry = reinterpret_cast<PLDHashEntryHdr*>(mCurrent);
-  MOZ_ASSERT(EntryIsLive(entry));
-  return entry;
 }
 
 void
