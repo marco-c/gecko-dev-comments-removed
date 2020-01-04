@@ -8,6 +8,7 @@ import difflib
 import errno
 import os
 import shutil
+import ssl
 import stat
 import sys
 import subprocess
@@ -466,7 +467,15 @@ class MercurialSetupWizard(object):
                     print('Cleaning up old repository: %s' % path)
                     shutil.rmtree(path)
 
-        c.add_mozilla_host_fingerprints()
+        
+        
+        
+        
+        
+        
+        have_modern_ssl = hasattr(ssl.SSLContext, 'load_default_certs')
+        if hg_version < LooseVersion('3.4') or not have_modern_ssl:
+            c.add_mozilla_host_fingerprints()
 
         
         
