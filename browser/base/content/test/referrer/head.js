@@ -195,7 +195,7 @@ function doContextMenuCommand(aWindow, aMenu, aItemId) {
 
 
 
-function referrerTestCaseLoaded(aTestNumber) {
+function referrerTestCaseLoaded(aTestNumber, aParams) {
   let test = getReferrerTest(aTestNumber);
   let server = rounds == 0 ? REFERRER_POLICYSERVER_URL :
                              REFERRER_POLICYSERVER_URL_ATTRIBUTE;
@@ -204,7 +204,7 @@ function referrerTestCaseLoaded(aTestNumber) {
             "&policy=" + escape(test.policy || "") +
             "&rel=" + escape(test.rel || "");
   var browser = gTestWindow.gBrowser;
-  browser.selectedTab = browser.addTab(url);
+  browser.selectedTab = browser.addTab(url, aParams);
   return BrowserTestUtils.browserLoaded(browser.selectedBrowser);
 }
 
@@ -216,7 +216,7 @@ function referrerTestCaseLoaded(aTestNumber) {
 
 
 function checkReferrerAndStartNextTest(aTestNumber, aNewWindow, aNewTab,
-                                       aStartTestCase) {
+                                       aStartTestCase, aParams = {}) {
   referrerResultExtracted(aNewWindow || gTestWindow).then(function(result) {
     
     let test = getReferrerTest(aTestNumber);
@@ -232,13 +232,13 @@ function checkReferrerAndStartNextTest(aTestNumber, aNewWindow, aNewTab,
     
     var nextTestNumber = aTestNumber + 1;
     if (getReferrerTest(nextTestNumber)) {
-      referrerTestCaseLoaded(nextTestNumber).then(function() {
+      referrerTestCaseLoaded(nextTestNumber, aParams).then(function() {
         aStartTestCase(nextTestNumber);
       });
     } else if (rounds == 0) {
       nextTestNumber = 0;
       rounds = 1;
-      referrerTestCaseLoaded(nextTestNumber).then(function() {
+      referrerTestCaseLoaded(nextTestNumber, aParams).then(function() {
         aStartTestCase(nextTestNumber);
       });
     } else {
@@ -253,7 +253,7 @@ function checkReferrerAndStartNextTest(aTestNumber, aNewWindow, aNewTab,
 
 
 
-function startReferrerTest(aStartTestCase) {
+function startReferrerTest(aStartTestCase, params = {}) {
   waitForExplicitFinish();
 
   
@@ -264,7 +264,7 @@ function startReferrerTest(aStartTestCase) {
 
   
   delayedStartupFinished(gTestWindow).then(function() {
-    referrerTestCaseLoaded(0).then(function() {
+    referrerTestCaseLoaded(0, params).then(function() {
       aStartTestCase(0);
     });
   });
