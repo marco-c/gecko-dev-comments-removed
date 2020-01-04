@@ -124,7 +124,7 @@ add_task(function* setup() {
     return new Promise(resolve => {
       function cleanupAndFinish() {
         PlacesTestUtils.clearHistory().then(() => {
-          whenPagesUpdated(resolve);
+          whenPagesUpdated().then(resolve);
           NewTabUtils.restore();
         });
       }
@@ -141,7 +141,7 @@ add_task(function* setup() {
 
   let promiseReady = Task.spawn(function*() {
     yield watchLinksChangeOnce();
-    yield new Promise(resolve => whenPagesUpdated(resolve, true));
+    yield whenPagesUpdated();
   });
 
   
@@ -179,7 +179,7 @@ var TestRunner = {
   finish: function () {
     function cleanupAndFinish() {
       PlacesTestUtils.clearHistory().then(() => {
-        whenPagesUpdated(finish);
+        whenPagesUpdated().then(finish);
         NewTabUtils.restore();
       });
     }
@@ -502,7 +502,7 @@ function simulateExternalDrop(aDestIndex) {
     startAndCompleteDragOperation(link, dest, () => {
       
       
-      whenPagesUpdated(() => {
+      whenPagesUpdated().then(() => {
         
         iframe.remove();
         
@@ -723,19 +723,21 @@ function createDragEvent(aEventType, aData) {
 
 
 
-function whenPagesUpdated(aCallback = TestRunner.next) {
-  let page = {
-    observe: _ => _,
+function whenPagesUpdated() {
+  return new Promise(resolve => {
+    let page = {
+      observe: _ => _,
 
-    update() {
-      NewTabUtils.allPages.unregister(this);
-      executeSoon(aCallback);
-    }
-  };
+      update() {
+        NewTabUtils.allPages.unregister(this);
+        executeSoon(resolve);
+      }
+    };
 
-  NewTabUtils.allPages.register(page);
-  registerCleanupFunction(function () {
-    NewTabUtils.allPages.unregister(page);
+    NewTabUtils.allPages.register(page);
+    registerCleanupFunction(function () {
+      NewTabUtils.allPages.unregister(page);
+    });
   });
 }
 
