@@ -19,6 +19,8 @@
 #include <algorithm>
 #include "prenv.h"
 
+#include "mozilla/WindowsVersion.h"
+
 namespace {
 
 
@@ -294,7 +296,7 @@ bool LaunchApp(const std::wstring& cmdline,
 
   LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList = NULL;
   
-  if (win_util::GetWinVersion() >= win_util::WINVERSION_VISTA) {
+  if (mozilla::IsVistaOrLater()) {
     
     
     HANDLE handlesToInherit[2];
