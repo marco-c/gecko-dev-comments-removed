@@ -198,8 +198,9 @@ var FullScreen = {
 
     document.documentElement.setAttribute("inDOMFullscreen", true);
 
-    if (gFindBarInitialized)
-      gFindBar.close();
+    if (gFindBarInitialized) {
+      gFindBar.close(true);
+    }
 
     
     gBrowser.tabContainer.addEventListener("TabOpen", this.exitDomFullScreen);
