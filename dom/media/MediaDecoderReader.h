@@ -106,18 +106,6 @@ public:
       this, &MediaDecoderReader::ReleaseMediaResourcesInternal);
     OwnerThread()->Dispatch(r.forget());
   }
-
-  void DisableHardwareAcceleration()
-  {
-    if (OnTaskQueue()) {
-      DisableHardwareAccelerationInternal();
-      return;
-    }
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(
-      this, &MediaDecoderReader::DisableHardwareAccelerationInternal);
-    OwnerThread()->Dispatch(r.forget());
-  }
-
   
   
   
@@ -266,7 +254,6 @@ public:
 
 private:
   virtual void ReleaseMediaResourcesInternal() {}
-  virtual void DisableHardwareAccelerationInternal() {}
 
 protected:
   friend class TrackBuffer;
@@ -346,6 +333,8 @@ public:
   
   
   virtual bool VideoIsHardwareAccelerated() const { return false; }
+
+  virtual void DisableHardwareAcceleration() {}
 
   TimedMetadataEventSource& TimedMetadataEvent() {
     return mTimedMetadataEvent;
