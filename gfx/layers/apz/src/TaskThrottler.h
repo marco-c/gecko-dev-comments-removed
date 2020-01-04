@@ -71,15 +71,7 @@ public:
 
 
 
-  TimeDuration AverageDuration()
-  {
-    return mMean.empty() ? TimeDuration() : mMean.mean();
-  }
-
-  
-
-
-  bool IsOutstanding() { return mOutstanding; }
+  TimeDuration AverageDuration();
 
   
 
@@ -94,18 +86,13 @@ public:
   
 
 
-  void ClearHistory() { mMean.clear(); }
+  void ClearHistory();
 
   
 
 
 
-  void SetMaxDurations(uint32_t aMaxDurations)
-  {
-    if (aMaxDurations != mMean.maxValues()) {
-      mMean = RollingMean<TimeDuration, TimeDuration>(aMaxDurations);
-    }
-  }
+  void SetMaxDurations(uint32_t aMaxDurations);
 
 private:
   bool mOutstanding;
