@@ -301,12 +301,6 @@ public:
   InfallibleTArray<AnimationProperty>& Properties() {
     return mProperties;
   }
-  
-  
-  
-  
-  bool UpdateProperties(
-    const InfallibleTArray<AnimationProperty>& aProperties);
 
   
   
