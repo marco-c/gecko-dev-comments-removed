@@ -721,6 +721,21 @@ AboutReader.prototype = {
     this._headerElement.setAttribute("dir", article.dir);
   },
 
+  _fixLocalLinks() {
+    
+    
+    
+    
+    
+    
+    
+    let localLinks = this._contentElement.querySelectorAll("a[href^='#']");
+    for (let localLink of localLinks) {
+      
+      localLink.href = this._doc.documentURI + localLink.getAttribute("href");
+    }
+  },
+
   _showError: function() {
     this._headerElement.style.display = "none";
     this._contentElement.style.display = "none";
@@ -772,6 +787,7 @@ AboutReader.prototype = {
       false, articleUri, this._contentElement);
     this._contentElement.innerHTML = "";
     this._contentElement.appendChild(contentFragment);
+    this._fixLocalLinks();
     this._maybeSetTextDirection(article);
 
     this._contentElement.style.display = "block";
