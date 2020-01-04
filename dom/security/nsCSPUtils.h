@@ -70,24 +70,25 @@ void CSP_LogMessage(const nsAString& aMessage,
 
 
 static const char* CSPStrDirectives[] = {
-  "-error-",                  
-  "default-src",              
-  "script-src",               
-  "object-src",               
-  "style-src",                
-  "img-src",                  
-  "media-src",                
-  "frame-src",                
-  "font-src",                 
-  "connect-src",              
-  "report-uri",               
-  "frame-ancestors",          
-  "reflected-xss",            
-  "base-uri",                 
-  "form-action",              
-  "referrer",                 
-  "manifest-src",             
-  "upgrade-insecure-requests" 
+  "-error-",                   
+  "default-src",               
+  "script-src",                
+  "object-src",                
+  "style-src",                 
+  "img-src",                   
+  "media-src",                 
+  "frame-src",                 
+  "font-src",                  
+  "connect-src",               
+  "report-uri",                
+  "frame-ancestors",           
+  "reflected-xss",             
+  "base-uri",                  
+  "form-action",               
+  "referrer",                  
+  "manifest-src",              
+  "upgrade-insecure-requests", 
+  "child-src"                  
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir)
@@ -303,19 +304,43 @@ class nsCSPDirective {
     virtual void addSrcs(const nsTArray<nsCSPBaseSrc*>& aSrcs)
       { mSrcs = aSrcs; }
 
-    bool restrictsContentType(nsContentPolicyType aContentType) const;
+    virtual bool restrictsContentType(nsContentPolicyType aContentType) const;
 
     inline bool isDefaultDirective() const
      { return mDirective == nsIContentSecurityPolicy::DEFAULT_SRC_DIRECTIVE; }
 
-    inline bool equals(CSPDirective aDirective) const
-      { return (mDirective == aDirective); }
+    virtual bool equals(CSPDirective aDirective) const;
 
     void getReportURIs(nsTArray<nsString> &outReportURIs) const;
 
   private:
     CSPDirective            mDirective;
     nsTArray<nsCSPBaseSrc*> mSrcs;
+};
+
+
+
+
+
+
+
+
+
+
+
+class nsCSPChildSrcDirective : public nsCSPDirective {
+  public:
+    explicit nsCSPChildSrcDirective(CSPDirective aDirective);
+    virtual ~nsCSPChildSrcDirective();
+
+    void setHandleFrameSrc();
+
+    virtual bool restrictsContentType(nsContentPolicyType aContentType) const;
+
+    virtual bool equals(CSPDirective aDirective) const;
+
+  private:
+    bool mHandleFrameSrc;
 };
 
 
