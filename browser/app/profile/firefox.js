@@ -1312,7 +1312,7 @@ pref("media.eme.apiVisible", true);
 
 
 
-pref("media.gmp.decoder.enabled", true);
+pref("media.gmp.decoder.enabled", false);
 
 
 
