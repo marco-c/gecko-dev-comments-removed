@@ -3,11 +3,13 @@
 
 "use strict";
 
-const { Visitor, walk } = require("resource://devtools/shared/heapsnapshot/CensusUtils.js");
 const { immutableUpdate } = require("resource://devtools/shared/ThreadSafeDevToolsUtils.js");
+const { Visitor, walk } = require("resource://devtools/shared/heapsnapshot/CensusUtils.js");
+const { deduplicatePaths } = require("resource://devtools/shared/heapsnapshot/shortest-paths");
 
 const DEFAULT_MAX_DEPTH = 4;
 const DEFAULT_MAX_SIBLINGS = 15;
+const DEFAULT_MAX_NUM_PATHS = 5;
 
 
 
@@ -33,6 +35,10 @@ function DominatorTreeNode(nodeId, label, shallowSize, retainedSize) {
 
   
   this.children = undefined;
+
+  
+  
+  this.shortestPaths = undefined;
 
   
   
@@ -288,4 +294,43 @@ DominatorTreeNode.getNodeByIdAlongPath = function (id, tree, path) {
   }
 
   return find(tree, 0);
+};
+
+
+
+
+
+
+
+
+
+
+
+DominatorTreeNode.attachShortestPaths = function (snapshot,
+                                                  breakdown,
+                                                  start,
+                                                  treeNodes,
+                                                  maxNumPaths = DEFAULT_MAX_NUM_PATHS) {
+  const idToTreeNode = new Map();
+  const targets = [];
+  for (let node of treeNodes) {
+    const id = node.nodeId;
+    idToTreeNode.set(id, node);
+    targets.push(id);
+  }
+
+  const shortestPaths = snapshot.computeShortestPaths(start,
+                                                      targets,
+                                                      maxNumPaths);
+
+  for (let [target, paths] of shortestPaths) {
+    const deduped = deduplicatePaths(target, paths);
+    deduped.nodes = deduped.nodes.map(id => {
+      const { label } =
+        DominatorTreeNode.getLabelAndShallowSize(id, snapshot, breakdown);
+      return { id, label };
+    });
+
+    idToTreeNode.get(target).shortestPaths = deduped;
+  }
 };
