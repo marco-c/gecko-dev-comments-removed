@@ -5780,10 +5780,10 @@ struct AsmJSCacheOps
 };
 
 extern JS_PUBLIC_API(void)
-SetAsmJSCacheOps(JSRuntime* rt, const AsmJSCacheOps* callbacks);
+SetAsmJSCacheOps(JSContext* cx, const AsmJSCacheOps* callbacks);
 
 extern JS_PUBLIC_API(void)
-SetBuildIdOp(JSRuntime* rt, BuildIdOp buildIdOp);
+SetBuildIdOp(JSContext* cx, BuildIdOp buildIdOp);
 
 
 

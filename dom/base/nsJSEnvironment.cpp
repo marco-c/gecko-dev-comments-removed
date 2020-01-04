@@ -2454,7 +2454,7 @@ nsJSContext::EnsureStatics()
     AsmJSCacheOpenEntryForWrite,
     asmjscache::CloseEntryForWrite
   };
-  JS::SetAsmJSCacheOps(sRuntime, &asmJSCacheOps);
+  JS::SetAsmJSCacheOps(JS_GetContext(sRuntime), &asmJSCacheOps);
 
   
   Preferences::RegisterCallbackAndCall(SetMemoryHighWaterMarkPrefChangedCallback,
