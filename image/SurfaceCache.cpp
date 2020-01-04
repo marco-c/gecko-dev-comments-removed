@@ -22,7 +22,6 @@
 #include "mozilla/Tuple.h"
 #include "nsIMemoryReporter.h"
 #include "gfx2DGlue.h"
-#include "gfxPattern.h"  
 #include "gfxPlatform.h"
 #include "gfxPrefs.h"
 #include "imgFrame.h"
