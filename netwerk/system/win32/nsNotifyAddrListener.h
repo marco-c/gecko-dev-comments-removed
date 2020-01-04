@@ -83,6 +83,9 @@ private:
     bool mAllowChangedEvent;
 
     
+    bool mIPv6Changes;
+
+    
     bool mCoalescingActive;
 
     
