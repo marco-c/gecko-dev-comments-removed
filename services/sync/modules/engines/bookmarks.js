@@ -509,6 +509,57 @@ BookmarksEngine.prototype = {
     }
     return guids;
   },
+
+  
+  
+  _switchItemToDupe(localDupeGUID, incomingItem) {
+    
+    
+    
+    this._log.debug("Switching local ID to incoming: " + localDupeGUID + " -> " +
+                    incomingItem.id);
+    this._store.changeItemID(localDupeGUID, incomingItem.id);
+
+    
+    
+    
+    
+    let now = this._tracker._now();
+    let localID = this._store.idForGUID(incomingItem.id);
+    let localParentID = PlacesUtils.bookmarks.getFolderIdForItem(localID);
+    let localParentGUID = this._store.GUIDForId(localParentID);
+    this._modified.set(localParentGUID, { modified: now, deleted: false });
+
+    
+    
+    
+    
+    
+    
+    
+    if (localParentGUID != incomingItem.parentid) {
+      let remoteParentID = this._store.idForGUID(incomingItem.parentid);
+      if (remoteParentID > 0) {
+        
+        
+        
+        
+        this._modified.set(incomingItem.parentid, { modified: now, deleted: false });
+      } else {
+        
+        
+        
+        
+        this._log.debug(`Incoming duplicate item ${incomingItem.id} specifies ` +
+                        `non-existing parent ${incomingItem.parentid}`);
+      }
+    }
+
+    
+    
+    
+    this._modified.set(localDupeGUID, { modified: now, deleted: true });
+  },
 };
 
 function BookmarksStore(name, engine) {
@@ -565,7 +616,7 @@ BookmarksStore.prototype = {
     if (!parentGUID) {
       throw "Record " + record.id + " has invalid parentid: " + parentGUID;
     }
-    this._log.debug("Local parent is " + parentGUID);
+    this._log.debug("Remote parent is " + parentGUID);
 
     
     Store.prototype.applyIncoming.call(this, record);

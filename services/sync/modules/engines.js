@@ -150,7 +150,7 @@ Tracker.prototype = {
 
     
     if (when == null) {
-      when = Date.now() / 1000;
+      when = this._now();
     }
 
     
@@ -181,6 +181,10 @@ Tracker.prototype = {
     this._log.trace("Clearing changed ID list");
     this.changedIDs = {};
     this.saveChangedIDs();
+  },
+
+  _now() {
+    return Date.now() / 1000;
   },
 
   _isTracking: false,
@@ -1275,6 +1279,18 @@ SyncEngine.prototype = {
       this._delete.ids.push(id);
   },
 
+  _switchItemToDupe(localDupeGUID, incomingItem) {
+    
+    this._deleteId(localDupeGUID);
+
+    
+    
+    
+    this._log.debug("Switching local ID to incoming: " + localDupeGUID + " -> " +
+                    incomingItem.id);
+    this._store.changeItemID(localDupeGUID, incomingItem.id);
+  },
+
   
 
 
@@ -1348,39 +1364,31 @@ SyncEngine.prototype = {
     
     
     if (!existsLocally) {
-      let dupeID = this._findDupe(item);
-      if (dupeID) {
-        this._log.trace("Local item " + dupeID + " is a duplicate for " +
+      let localDupeGUID = this._findDupe(item);
+      if (localDupeGUID) {
+        this._log.trace("Local item " + localDupeGUID + " is a duplicate for " +
                         "incoming item " + item.id);
 
         
-        this._deleteId(dupeID);
+        
+        
+        existsLocally = this._store.itemExists(localDupeGUID);
 
         
         
-        
-        existsLocally = this._store.itemExists(dupeID);
-
-        
-        
-        
-        this._log.debug("Switching local ID to incoming: " + dupeID + " -> " +
-                        item.id);
-        this._store.changeItemID(dupeID, item.id);
-
-        
-        
-        if (this._modified.has(dupeID)) {
+        if (this._modified.has(localDupeGUID)) {
           locallyModified = true;
-          localAge = Date.now() / 1000 -
-            this._modified.getModifiedTimestamp(dupeID);
+          localAge = this._tracker._now() - this._modified.getModifiedTimestamp(localDupeGUID);
           remoteIsNewer = remoteAge < localAge;
 
-          this._modified.swap(dupeID, item.id);
+          this._modified.swap(localDupeGUID, item.id);
         } else {
           locallyModified = false;
           localAge = null;
         }
+
+        
+        this._switchItemToDupe(localDupeGUID, item);
 
         this._log.debug("Local item after duplication: age=" + localAge +
                         "; modified=" + locallyModified + "; exists=" +
