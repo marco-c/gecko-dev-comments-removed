@@ -3,14 +3,10 @@
 
 
 
+
 "use strict";
 
-const { waitForTime } = require("devtools/shared/DevToolsUtils");
-const { breakdowns } = require("devtools/client/memory/constants");
-const { toggleRecordingAllocationStacks } = require("devtools/client/memory/actions/allocations");
 const { takeSnapshotAndCensus } = require("devtools/client/memory/actions/snapshot");
-const breakdownActions = require("devtools/client/memory/actions/breakdown");
-const { toggleInvertedAndRefresh } = require("devtools/client/memory/actions/inverted");
 
 const TEST_URL = "http://example.com/browser/devtools/client/memory/test/browser/doc_steady_allocation.html";
 
