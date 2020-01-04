@@ -137,10 +137,10 @@ def timed_out(task, timeout):
 
 def reap_zombies(tasks, timeout):
     """
-    Search for children of this process that have finished.  If they are tasks,
-    then this routine will clean up the child and send a TestOutput to the
-    results channel.  This method returns a new task list that has had the ended
-    tasks removed.
+    Search for children of this process that have finished. If they are tasks,
+    then this routine will clean up the child. This method returns a new task
+    list that has had the ended tasks removed, followed by the list of finished
+    tasks.
     """
     finished = []
     while True:
@@ -182,7 +182,7 @@ def kill_undead(tasks, timeout):
         if timed_out(task, timeout):
             os.kill(task.pid, 9)
 
-def run_all_tests(tests, prefix, results, options):
+def run_all_tests(tests, prefix, pb, options):
     
     tests = list(tests)
     tests = tests[:]
@@ -208,3 +208,9 @@ def run_all_tests(tests, prefix, results, options):
         
         for out in finished:
             yield out
+
+        
+        
+        if len(finished) == 0:
+            pb.poke()
+
