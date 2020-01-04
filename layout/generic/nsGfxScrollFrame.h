@@ -101,6 +101,29 @@ public:
 
   bool IsSmoothScrollingEnabled();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   class ScrollEvent : public nsARefreshObserver {
   public:
     NS_INLINE_DECL_REFCOUNTING(ScrollEvent, override)
