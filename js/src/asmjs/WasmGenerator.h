@@ -105,6 +105,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     LinkData                        linkData_;
     MutableMetadata                 metadata_;
     ExportMap                       exportMap_;
+    DataSegmentVector               dataSegments_;
 
     
     UniqueModuleGeneratorData       shared_;
@@ -152,8 +153,10 @@ class MOZ_STACK_CLASS ModuleGenerator
     jit::MacroAssembler& masm() { return masm_; }
 
     
-    void initHeapUsage(HeapUsage heapUsage, uint32_t minHeapLength = 0);
+    void initHeapUsage(HeapUsage heapUsage, uint32_t initialHeapLength = 0);
     bool usesHeap() const;
+    uint32_t initialHeapLength() const;
+    MOZ_MUST_USE bool addDataSegment(DataSegment s) { return dataSegments_.append(s); }
 
     
     uint32_t numSigs() const { return numSigs_; }
