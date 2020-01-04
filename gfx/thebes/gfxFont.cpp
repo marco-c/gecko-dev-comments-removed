@@ -26,6 +26,7 @@
 #include "gfxGraphiteShaper.h"
 #include "gfxHarfBuzzShaper.h"
 #include "gfxUserFontSet.h"
+#include "nsIUGenCategory.h"
 #include "nsSpecialCasingData.h"
 #include "nsTextRunTransformations.h"
 #include "nsUnicodeProperties.h"
@@ -762,6 +763,16 @@ bool
 gfxShapedText::FilterIfIgnorable(uint32_t aIndex, uint32_t aCh)
 {
     if (IsDefaultIgnorable(aCh)) {
+        
+        
+        
+        
+        
+        if (GetGenCategory(aCh) == nsIUGenCategory::kLetter &&
+            aIndex + 1 < GetLength() &&
+            !GetCharacterGlyphs()[aIndex + 1].IsClusterStart()) {
+            return false;
+        }
         DetailedGlyph *details = AllocateDetailedGlyphs(aIndex, 1);
         details->mGlyphID = aCh;
         details->mAdvance = 0;
