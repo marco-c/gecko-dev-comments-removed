@@ -222,6 +222,9 @@ static const JSFunctionSpec SimdTypedObjectMethods[] = {
 
 
 
+
+
+
 namespace js {
 namespace jit {
 
