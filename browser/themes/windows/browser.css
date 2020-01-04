@@ -1971,16 +1971,6 @@ html|span.ac-emphasize-text-url {
 }
 
 
-
-
-
-
-
-#main-window[tabsintitlebar][sizemode=normal] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar .tab-background-middle:not([visuallyselected=true]) {
-  clip-path: url(chrome://browser/content/browser.xul#tab-hover-clip-path);
-}
-
-
 .tab-drop-indicator {
   list-style-image: url(chrome://browser/skin/tabbrowser/tabDragIndicator.png);
   margin-bottom: -9px;
@@ -2414,6 +2404,27 @@ notification.pluginVulnerable > .notification-inner > .messageCloseButton {
   background-image: linear-gradient(#B4211B, #8A1915);
   border-radius: 1px;
   margin-inline-end: 5px;
+}
+
+
+
+#socialActivatedNotification .popup-notification-button-container {
+  margin-left: 6px;
+}
+
+.social-activation-icon {
+  width: auto;
+  height: auto;
+  max-height: 64px;
+  max-width: 64px;
+}
+
+#social-activation-message {
+  max-width: 250px;
+}
+
+#social-activation-message > label {
+  margin: 0;
 }
 
 
