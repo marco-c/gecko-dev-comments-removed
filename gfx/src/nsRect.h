@@ -15,11 +15,9 @@
 #include "nsCoord.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsPoint.h"                    
+#include "nsMargin.h"                   
 #include "nsSize.h"                     
 #include "nscore.h"                     
-
-struct nsMargin;
-struct nsIntMargin;
 
 typedef mozilla::gfx::IntRect nsIntRect;
 
