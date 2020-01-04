@@ -4106,11 +4106,6 @@ this.DOMApplicationRegistry = {
   },
 
   doUninstall: Task.async(function*(aData, aMm) {
-    
-    
-    
-    aMm = Cu.getWeakReference(aMm);
-
     let response = "Webapps:Uninstall:Return:OK";
 
     try {
@@ -4140,9 +4135,7 @@ this.DOMApplicationRegistry = {
       response = "Webapps:Uninstall:Return:KO";
     }
 
-    if ((aMm = aMm.get())) {
-      aMm.sendAsyncMessage(response, this.formatMessage(aData));
-    }
+    aMm.sendAsyncMessage(response, this.formatMessage(aData));
   }),
 
   uninstall: function(aManifestURL) {
