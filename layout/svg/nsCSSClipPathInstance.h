@@ -50,6 +50,7 @@ private:
 
 
   nsRect ComputeHTMLReferenceRect();
+  nsRect ComputeSVGReferenceRect();
 
   
 
