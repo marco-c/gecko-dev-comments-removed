@@ -195,6 +195,15 @@ enum nsChangeHint {
   nsChangeHint_UpdateUsesOpacity = 1 << 25,
 
   
+
+
+
+
+
+
+  nsChangeHint_UpdateBackgroundPosition = 1 << 26,
+
+  
   
   
 };
@@ -303,7 +312,8 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight)
           nsChangeHint_ReflowChangesSizeOrPosition | \
           nsChangeHint_ClearAncestorIntrinsics | \
           nsChangeHint_UpdateComputedBSize | \
-          nsChangeHint_UpdateUsesOpacity)
+          nsChangeHint_UpdateUsesOpacity | \
+          nsChangeHint_UpdateBackgroundPosition)
 
 inline nsChangeHint NS_HintsNotHandledForDescendantsIn(nsChangeHint aChangeHint) {
   nsChangeHint result = nsChangeHint(aChangeHint & (
@@ -319,7 +329,8 @@ inline nsChangeHint NS_HintsNotHandledForDescendantsIn(nsChangeHint aChangeHint)
     nsChangeHint_UpdateContainingBlock |
     nsChangeHint_BorderStyleNoneChange |
     nsChangeHint_UpdateComputedBSize |
-    nsChangeHint_UpdateUsesOpacity));
+    nsChangeHint_UpdateUsesOpacity | \
+    nsChangeHint_UpdateBackgroundPosition));
 
   if (!NS_IsHintSubset(nsChangeHint_NeedDirtyReflow, aChangeHint)) {
     if (NS_IsHintSubset(nsChangeHint_NeedReflow, aChangeHint)) {
