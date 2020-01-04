@@ -78,6 +78,21 @@ ReturnLocalA()
   return Move(a);
 }
 
+static void
+TestDeleterType()
+{
+  
+  typedef int* Ptr;
+  struct Deleter {
+    typedef Ptr pointer;
+    Deleter() {}
+    void operator()(int*p) {
+      delete p;
+    }
+  };
+  UniquePtr<Ptr, Deleter> u(new int, Deleter());
+}
+
 static bool
 TestDefaultFreeGuts()
 {
@@ -550,6 +565,8 @@ TestMakeUnique()
 int
 main()
 {
+  TestDeleterType();
+
   if (!TestDefaultFree()) {
     return 1;
   }
