@@ -1,0 +1,14 @@
+
+
+
+"use strict";
+
+const {generateActorSpec} = require("devtools/shared/protocol");
+
+const threadSpec = generateActorSpec({
+  typeName: "context",
+
+  methods: {},
+});
+
+exports.threadSpec = threadSpec;
