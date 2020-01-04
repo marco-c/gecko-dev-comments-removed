@@ -91,9 +91,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ImportExport",
 XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "Messaging",
-                                  "resource://gre/modules/Messaging.jsm");
-
 #ifdef MOZ_WIDGET_GONK
 XPCOMUtils.defineLazyGetter(this, "libcutils", function() {
   Cu.import("resource://gre/modules/systemlibs.js");
@@ -198,7 +195,6 @@ this.DOMApplicationRegistry = {
   get kPackaged()       "packaged",
   get kHosted()         "hosted",
   get kHostedAppcache() "hosted-appcache",
-  get kAndroid()        "android-native",
 
   
   appsFile: null,
@@ -263,11 +259,6 @@ this.DOMApplicationRegistry = {
                                         this.getFullAppByManifestURL.bind(this));
 
     MessageBroadcaster.init(this.getAppByManifestURL);
-
-    if (AppConstants.MOZ_B2GDROID) {
-      Cu.import("resource://gre/modules/AndroidUtils.jsm");
-      AndroidUtils.init(this);
-    }
   },
 
   
@@ -473,9 +464,7 @@ this.DOMApplicationRegistry = {
   }),
 
   appKind: function(aApp, aManifest) {
-    if (aApp.origin.startsWith("android://")) {
-      return this.kAndroid;
-    } if (aApp.origin.startsWith("app://")) {
+    if (aApp.origin.startsWith("app://")) {
       return this.kPackaged;
     } else {
       
@@ -533,10 +522,7 @@ this.DOMApplicationRegistry = {
 
   
   installPreinstalledApp: function installPreinstalledApp(aId) {
-    if (!AppConstants.MOZ_B2GDROID && AppConstants.platform !== "gonk") {
-      return false;
-    }
-
+#ifdef MOZ_WIDGET_GONK
     
     
     
@@ -639,6 +625,7 @@ this.DOMApplicationRegistry = {
       zipReader.close();
     }
     return isPreinstalled;
+#endif
   },
 
   
@@ -805,10 +792,6 @@ this.DOMApplicationRegistry = {
           yield this.installSystemApps();
         }
 
-        if (AppConstants.MOZ_B2GDROID) {
-          yield AndroidUtils.installAndroidApps();
-        }
-
         
         for (let id in this.webapps) {
           let isPreinstalled = this.installPreinstalledApp(id);
@@ -821,7 +804,7 @@ this.DOMApplicationRegistry = {
         }
         
         
-        yield this._saveApps();
+        this._saveApps();
 
         Services.prefs.setBoolPref("dom.apps.reset-permissions", true);
       }
@@ -1212,9 +1195,6 @@ this.DOMApplicationRegistry = {
       Services.obs.removeObserver(this, "xpcom-shutdown");
       cpmm = null;
       ppmm = null;
-      if (AppConstants.MOZ_B2GDROID) {
-        AndroidUtils.uninit();
-      }
     } else if (aTopic == "memory-pressure") {
       
       this._manifestCache = {};
@@ -1324,22 +1304,22 @@ this.DOMApplicationRegistry = {
     this.registryReady.then( () => {
       switch (aMessage.name) {
         case "Webapps:Install": {
-          if (AppConstants.platform == "android" && !AppConstants.MOZ_B2GDROID) {
-            Services.obs.notifyObservers(mm, "webapps-runtime-install", JSON.stringify(msg));
-          } else {
-            this.doInstall(msg, mm);
-          }
+#ifdef MOZ_WIDGET_ANDROID
+          Services.obs.notifyObservers(mm, "webapps-runtime-install", JSON.stringify(msg));
+#else
+          this.doInstall(msg, mm);
+#endif
           break;
         }
         case "Webapps:GetSelf":
           this.getSelf(msg, mm);
           break;
         case "Webapps:Uninstall":
-          if (AppConstants.platform == "android" && !AppConstants.MOZ_B2GDROID) {
-            Services.obs.notifyObservers(mm, "webapps-runtime-uninstall", JSON.stringify(msg));
-          } else {
-            this.doUninstall(msg, mm);
-          }
+#ifdef MOZ_WIDGET_ANDROID
+          Services.obs.notifyObservers(mm, "webapps-runtime-uninstall", JSON.stringify(msg));
+#else
+          this.doUninstall(msg, mm);
+#endif
           break;
         case "Webapps:Launch":
           this.doLaunch(msg, mm);
@@ -1357,11 +1337,11 @@ this.DOMApplicationRegistry = {
           this.getNotInstalled(msg, mm);
           break;
         case "Webapps:InstallPackage": {
-          if (AppConstants.platform == "android" && !AppConstants.MOZ_B2GDROID) {
-            Services.obs.notifyObservers(mm, "webapps-runtime-install-package", JSON.stringify(msg));
-          } else {
-            this.doInstallPackage(msg, mm);
-          }
+#ifdef MOZ_WIDGET_ANDROID
+          Services.obs.notifyObservers(mm, "webapps-runtime-install-package", JSON.stringify(msg));
+#else
+          this.doInstallPackage(msg, mm);
+#endif
           break;
         }
         case "Webapps:Download":
@@ -1619,19 +1599,6 @@ this.DOMApplicationRegistry = {
     
     if (app.installState == "pending") {
       aOnFailure("PENDING_APP_NOT_LAUNCHABLE");
-      return;
-    }
-
-    
-    if (this.kAndroid == app.kind) {
-      debug("Launching android app " + app.origin);
-      let [packageName, className] =
-        AndroidUtils.getPackageAndClassFromManifestURL(aManifestURL);
-      debug("  " + packageName + " " + className);
-      Messaging.sendRequest({ type: "Apps:Launch",
-                              packagename: packageName,
-                              classname: className });
-      aOnSuccess();
       return;
     }
 
@@ -2080,8 +2047,7 @@ this.DOMApplicationRegistry = {
 
     
     
-    if (app.kind == this.kAndroid ||
-        (app.kind == this.kPackaged && app.manifestURL.startsWith("app://"))) {
+    if (app.kind == this.kPackaged && app.manifestURL.startsWith("app://")) {
       sendError("NOT_UPDATABLE");
       return;
     }
@@ -2814,9 +2780,7 @@ this.DOMApplicationRegistry = {
     let app = aData.app;
 
     
-    if (app.removable === undefined) {
-      app.removable = true;
-    }
+    app.removable = true;
 
     if (aData.isPackage) {
       
@@ -2849,8 +2813,7 @@ this.DOMApplicationRegistry = {
       appObject.downloading = true;
       appObject.downloadSize = aLocaleManifest.size;
       appObject.readyToApplyDownload = false;
-    } else if (appObject.kind == this.kHosted ||
-               appObject.kind == this.kAndroid) {
+    } else if (appObject.kind == this.kHosted) {
       appObject.installState = "installed";
       appObject.downloadAvailable = false;
       appObject.downloading = false;
@@ -2905,6 +2868,8 @@ this.DOMApplicationRegistry = {
     this._saveWidgetsFullPath(aLocaleManifest, app);
 
     app.appStatus = AppsUtils.getAppManifestStatus(aManifest);
+
+    app.removable = true;
 
     
     let uri = Services.io.newURI(app.origin, null, null);
@@ -2995,7 +2960,6 @@ this.DOMApplicationRegistry = {
     let appObject = this._cloneApp(aData, app, manifest, jsonManifest, id, localId);
 
     this.webapps[id] = appObject;
-    this._manifestCache[id] = jsonManifest;
 
     
     
@@ -3069,10 +3033,6 @@ this.DOMApplicationRegistry = {
     aData.isPackage ? appObject.updateManifest = jsonManifest :
                       appObject.manifest = jsonManifest;
     MessageBroadcaster.broadcastMessage("Webapps:AddApp", { id: id, app: appObject });
-
-    
-    delete appObject.updateManifest;
-    delete appObject.manifest;
 
     if (!aData.isPackage) {
       this.updateAppHandlers(null, app.manifest, app);
@@ -4104,24 +4064,12 @@ this.DOMApplicationRegistry = {
     try {
       aData.app = yield this._getAppWithManifest(aData.manifestURL);
 
-      if (this.kAndroid == aData.app.kind) {
-        debug("Uninstalling android app " + aData.app.origin);
-        let [packageName, className] =
-          AndroidUtils.getPackageAndClassFromManifestURL(aData.manifestURL);
-        Messaging.sendRequest({ type: "Apps:Uninstall",
-                                packagename: packageName,
-                                classname: className });
-        
-        
-        response = "Webapps:Uninstall:Return:KO";
+      let prefName = "dom.mozApps.auto_confirm_uninstall";
+      if (Services.prefs.prefHasUserValue(prefName) &&
+          Services.prefs.getBoolPref(prefName)) {
+        yield this._uninstallApp(aData.app);
       } else {
-        let prefName = "dom.mozApps.auto_confirm_uninstall";
-        if (Services.prefs.prefHasUserValue(prefName) &&
-            Services.prefs.getBoolPref(prefName)) {
-          yield this._uninstallApp(aData.app);
-        } else {
-          yield this._promptForUninstall(aData);
-        }
+        yield this._promptForUninstall(aData);
       }
     } catch (error) {
       aData.error = error;
