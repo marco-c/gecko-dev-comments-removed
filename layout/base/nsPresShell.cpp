@@ -3062,6 +3062,10 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
 
   esm->SetContentState(content, NS_EVENT_STATE_URLTARGET);
 
+#ifdef ACCESSIBILITY
+  nsIContent *anchorTarget = content;
+#endif
+
   nsIScrollableFrame* rootScroll = GetRootScrollFrameAsScrollable();
   if (rootScroll && rootScroll->DidHistoryRestore()) {
     
@@ -3092,11 +3096,10 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
     
     
     RefPtr<nsIDOMRange> jumpToRange = new nsRange(mDocument);
-    nsIContent* selectionTarget = content;
-    while (selectionTarget && selectionTarget->GetFirstChild()) {
-      selectionTarget = selectionTarget->GetFirstChild();
+    while (content && content->GetFirstChild()) {
+      content = content->GetFirstChild();
     }
-    nsCOMPtr<nsIDOMNode> node(do_QueryInterface(selectionTarget));
+    nsCOMPtr<nsIDOMNode> node(do_QueryInterface(content));
     NS_ASSERTION(node, "No nsIDOMNode for descendant of anchor");
     jumpToRange->SelectNodeContents(node);
     
@@ -3110,25 +3113,15 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
       }
     }
     
+    
+    nsPIDOMWindowOuter *win = mDocument->GetWindow();
 
-    
-    
-    
-    nsCOMPtr<nsIDOMElement> element(do_QueryInterface(content));
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
-    if (fm && element) {
-      bool isFocusable = false;
-      fm->ElementIsFocusable(element, 0, &isFocusable);
-      if (isFocusable) {
-        fm->SetFocus(element, 0);
-      } else {
-        nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
-        fm->GetFocusedWindow(getter_AddRefs(focusedWindow));
-
-        nsPIDOMWindowOuter* win = mDocument->GetWindow();
-        if (SameCOMIdentity(win, focusedWindow)) {
-          fm->ClearFocus(focusedWindow);
-        }
+    if (fm && win) {
+      nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
+      fm->GetFocusedWindow(getter_AddRefs(focusedWindow));
+      if (SameCOMIdentity(win, focusedWindow)) {
+        fm->ClearFocus(focusedWindow);
       }
     }
 
@@ -3154,10 +3147,10 @@ PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
   }
 
 #ifdef ACCESSIBILITY
-  if (content) {
+  if (anchorTarget) {
     nsAccessibilityService* accService = AccService();
     if (accService)
-      accService->NotifyOfAnchorJumpTo(content);
+      accService->NotifyOfAnchorJumpTo(anchorTarget);
   }
 #endif
 
