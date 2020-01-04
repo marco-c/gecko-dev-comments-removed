@@ -1068,7 +1068,7 @@ class RecompileInfo;
 
 bool
 FinishCompilation(JSContext* cx, HandleScript script, CompilerConstraintList* constraints,
-                  RecompileInfo* precompileInfo);
+                  RecompileInfo* precompileInfo, bool* isValidOut);
 
 
 void

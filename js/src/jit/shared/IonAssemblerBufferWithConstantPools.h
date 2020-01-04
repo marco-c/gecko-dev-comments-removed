@@ -518,7 +518,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     size_t size() const {
         
         
-        MOZ_ASSERT(pool_.numEntries() == 0);
+        MOZ_ASSERT_IF(!this->oom(), pool_.numEntries() == 0);
         return sizeExcludingCurrentPool();
     }
 
@@ -771,7 +771,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         
         Pool** tmp = &perforatedSlice->pool;
         *tmp = static_cast<Pool*>(this->lifoAlloc_.alloc(sizeof(Pool)));
-        if (tmp == nullptr) {
+        if (!*tmp) {
             this->fail_oom();
             return;
         }

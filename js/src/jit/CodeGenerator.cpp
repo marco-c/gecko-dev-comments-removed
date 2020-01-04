@@ -8008,7 +8008,11 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     
     uint32_t warmUpCount = script->getWarmUpCount();
     RecompileInfo recompileInfo;
-    if (!FinishCompilation(cx, script, constraints, &recompileInfo))
+    bool isValid;
+    if (!FinishCompilation(cx, script, constraints, &recompileInfo, &isValid))
+        return false;
+
+    if (!isValid)
         return true;
 
     

@@ -404,16 +404,18 @@ js::StartOffThreadParseScript(JSContext* cx, const ReadOnlyCompileOptions& optio
 
     if (OffThreadParsingMustWaitForGC(cx->runtime())) {
         AutoLockHelperThreadState lock;
-        if (!HelperThreadState().parseWaitingOnGC().append(task.get()))
+        if (!HelperThreadState().parseWaitingOnGC().append(task.get())) {
+            ReportOutOfMemory(cx);
             return false;
+        }
     } else {
-        task->activate(cx->runtime());
-
         AutoLockHelperThreadState lock;
-
-        if (!HelperThreadState().parseWorklist().append(task.get()))
+        if (!HelperThreadState().parseWorklist().append(task.get())) {
+            ReportOutOfMemory(cx);
             return false;
+        }
 
+        task->activate(cx->runtime());
         HelperThreadState().notifyOne(GlobalHelperThreadState::PRODUCER);
     }
 
@@ -1066,15 +1068,20 @@ GlobalHelperThreadState::finishParseTask(JSContext* maybecx, JSRuntime* rt, void
     if (cx->isExceptionPending())
         return nullptr;
 
-    if (script) {
-        
-        Debugger::onNewScript(cx, script);
-
+    if (!script) {
         
         
-        if (script->scriptSource()->hasCompressedSource())
-            script->scriptSource()->updateCompressedSourceSet(rt);
+        ReportOutOfMemory(cx);
+        return nullptr;
     }
+
+    
+    Debugger::onNewScript(cx, script);
+
+    
+    
+    if (script->scriptSource()->hasCompressedSource())
+        script->scriptSource()->updateCompressedSourceSet(rt);
 
     return script;
 }
