@@ -108,6 +108,11 @@ static MOZ_CONSTEXPR_VAR Register ABINonArgReg1 = r5;
 static MOZ_CONSTEXPR_VAR Register ABINonArgReturnReg0 = r4;
 static MOZ_CONSTEXPR_VAR Register ABINonArgReturnReg1 = r5;
 
+
+
+static MOZ_CONSTEXPR_VAR Register WasmTableCallPtrReg = ABINonArgReg0;
+static MOZ_CONSTEXPR_VAR Register WasmTableCallSigReg = ABINonArgReg1;
+
 static MOZ_CONSTEXPR_VAR Register PreBarrierReg = r1;
 
 static MOZ_CONSTEXPR_VAR Register InvalidReg = { Registers::invalid_reg };

@@ -726,6 +726,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         
         armbuffer_.align(alignment);
     }
+    void nopAlign(int alignment) {
+        MOZ_CRASH("NYI");
+    }
 
     void movePtr(Register src, Register dest) {
         Mov(ARMRegister(dest, 64), ARMRegister(src, 64));

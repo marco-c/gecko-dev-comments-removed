@@ -89,6 +89,11 @@ static MOZ_CONSTEXPR_VAR Register ABINonArgReturnReg0 = ecx;
 static MOZ_CONSTEXPR_VAR Register ABINonArgReturnReg1 = edx;
 static MOZ_CONSTEXPR_VAR Register ABINonVolatileReg = ebx;
 
+
+
+static MOZ_CONSTEXPR_VAR Register WasmTableCallPtrReg = ABINonArgReg0;
+static MOZ_CONSTEXPR_VAR Register WasmTableCallSigReg = ABINonArgReg1;
+
 static MOZ_CONSTEXPR_VAR Register OsrFrameReg = edx;
 static MOZ_CONSTEXPR_VAR Register PreBarrierReg = edx;
 

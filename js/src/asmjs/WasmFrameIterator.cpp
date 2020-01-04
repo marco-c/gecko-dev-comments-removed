@@ -284,7 +284,8 @@ GenerateProfilingEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason
 
 
 void
-wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, FuncOffsets* offsets)
+wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, uint32_t sigIndex,
+                               FuncOffsets* offsets)
 {
 #if defined(JS_CODEGEN_ARM)
     
@@ -300,6 +301,13 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, FuncO
 
     
     masm.haltingAlign(CodeAlignment);
+    offsets->tableEntry = masm.currentOffset();
+    masm.branch32(Assembler::Condition::NotEqual, WasmTableCallSigReg, Imm32(sigIndex),
+                  JumpTarget::BadIndirectCall);
+    offsets->tableProfilingJump = masm.nopPatchableToNearJump().offset();
+
+    
+    masm.nopAlign(CodeAlignment);
     offsets->nonProfilingEntry = masm.currentOffset();
     PushRetAddr(masm);
     masm.subFromStackPtr(Imm32(framePushed + AsmJSFrameBytesAfterReturnAddress));
@@ -477,6 +485,17 @@ ProfilingFrameIterator::initFromFP(const WasmActivation& activation)
 
 typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 
+static bool
+InThunk(const CodeRange& codeRange, uint32_t offsetInModule)
+{
+    if (codeRange.kind() == CodeRange::CallThunk)
+        return true;
+
+    return codeRange.isFunction() &&
+           offsetInModule >= codeRange.funcTableEntry() &&
+           offsetInModule < codeRange.funcNonProfilingEntry();
+}
+
 ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
                                                const RegisterState& state)
   : module_(&activation.module()),
@@ -526,7 +545,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
         uint32_t offsetInCodeRange = offsetInModule - codeRange->begin();
         void** sp = (void**)state.sp;
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-        if (offsetInCodeRange < PushedRetAddr || codeRange->kind() == CodeRange::CallThunk) {
+        if (offsetInCodeRange < PushedRetAddr || InThunk(*codeRange, offsetInModule)) {
             
             
             callerPC_ = state.lr;
@@ -541,7 +560,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
         } else
 #endif
         if (offsetInCodeRange < PushedFP || offsetInModule == codeRange->profilingReturn() ||
-            codeRange->kind() == CodeRange::CallThunk)
+            InThunk(*codeRange, offsetInModule))
         {
             
             
@@ -680,10 +699,8 @@ ProfilingFrameIterator::label() const
 
 
 
-
-
 void
-wasm::EnableProfilingPrologue(const Module& module, const CallSite& callSite, bool enabled)
+wasm::ToggleProfiling(const Module& module, const CallSite& callSite, bool enabled)
 {
     if (callSite.kind() != CallSite::Relative)
         return;
@@ -743,26 +760,29 @@ wasm::EnableProfilingPrologue(const Module& module, const CallSite& callSite, bo
 }
 
 void
-wasm::EnableProfilingThunk(const Module& module, const CallThunk& callThunk, bool enabled)
+wasm::ToggleProfiling(const Module& module, const CallThunk& callThunk, bool enabled)
 {
     const CodeRange& cr = module.codeRanges()[callThunk.u.codeRangeIndex];
     uint32_t calleeOffset = enabled ? cr.funcProfilingEntry() : cr.funcNonProfilingEntry();
     MacroAssembler::repatchThunk(module.code(), callThunk.offset, calleeOffset);
 }
 
-
-
 void
-wasm::EnableProfilingEpilogue(const Module& module, const CodeRange& codeRange, bool enabled)
+wasm::ToggleProfiling(const Module& module, const CodeRange& codeRange, bool enabled)
 {
     if (!codeRange.isFunction())
         return;
 
-    uint8_t* profilingJump = module.code() + codeRange.funcProfilingJump();
-    uint8_t* profilingEpilogue = module.code() + codeRange.funcProfilingEpilogue();
+    uint8_t* profilingEntry     = module.code() + codeRange.funcProfilingEntry();
+    uint8_t* tableProfilingJump = module.code() + codeRange.funcTableProfilingJump();
+    uint8_t* profilingJump      = module.code() + codeRange.funcProfilingJump();
+    uint8_t* profilingEpilogue  = module.code() + codeRange.funcProfilingEpilogue();
 
-    if (enabled)
+    if (enabled) {
+        MacroAssembler::patchNopToNearJump(tableProfilingJump, profilingEntry);
         MacroAssembler::patchNopToNearJump(profilingJump, profilingEpilogue);
-    else
+    } else {
+        MacroAssembler::patchNearJumpToNop(tableProfilingJump);
         MacroAssembler::patchNearJumpToNop(profilingJump);
+    }
 }

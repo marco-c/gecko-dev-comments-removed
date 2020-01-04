@@ -51,6 +51,11 @@ static MOZ_CONSTEXPR_VAR Register ABINonArgReg1 = t1;
 static MOZ_CONSTEXPR_VAR Register ABINonArgReturnReg0 = t0;
 static MOZ_CONSTEXPR_VAR Register ABINonArgReturnReg1 = t1;
 
+
+
+static MOZ_CONSTEXPR_VAR Register WasmTableCallPtrReg = ABINonArgReg0;
+static MOZ_CONSTEXPR_VAR Register WasmTableCallSigReg = ABINonArgReg1;
+
 static MOZ_CONSTEXPR_VAR Register JSReturnReg_Type = a3;
 static MOZ_CONSTEXPR_VAR Register JSReturnReg_Data = a2;
 static MOZ_CONSTEXPR_VAR Register64 ReturnReg64(InvalidReg, InvalidReg);
