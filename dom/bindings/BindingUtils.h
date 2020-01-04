@@ -3327,6 +3327,26 @@ DeprecationWarning(JSContext* aCx, JSObject* aObject,
 JSString*
 InterfaceObjectToString(JSContext* aCx, JS::Handle<JSObject*> aObject,
                         unsigned );
+
+namespace binding_detail {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JSObject* UnprivilegedJunkScopeOrWorkerGlobal();
+} 
+
 } 
 } 
 
