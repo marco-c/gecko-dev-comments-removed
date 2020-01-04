@@ -68,6 +68,7 @@ var template = function(node, data, options) {
 if (typeof exports !== 'undefined') {
   exports.template = template;
 }
+this.template = template;
 
 
 
