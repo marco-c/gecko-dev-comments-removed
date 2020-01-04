@@ -9,7 +9,7 @@
 define(function(require, exports, module) {
 
 
-const React = require("react");
+const React = require("devtools/client/shared/vendor/react");
 
 
 const { Undefined } = require("./undefined");

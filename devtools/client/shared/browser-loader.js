@@ -1,9 +1,15 @@
+
+
+
+"use strict";
+
 var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 const loaders = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
 const { devtools, DevToolsLoader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const { joinURI } = devtools.require("devtools/shared/path");
 const BROWSER_BASED_DIRS = [
+  "resource://devtools/client/jsonview",
   "resource://devtools/client/shared/vendor",
   "resource://devtools/client/shared/components",
   "resource://devtools/client/shared/redux"
@@ -54,6 +60,13 @@ function BrowserLoader(baseURI, window) {
       }
 
       return require(uri);
+    },
+    globals: {
+      
+      define: function(callback) {
+        callback(this.require, this.exports, this.module);
+        return this.exports;
+      }
     }
   };
 

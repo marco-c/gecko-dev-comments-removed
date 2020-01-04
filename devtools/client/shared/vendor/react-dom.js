@@ -6,7 +6,7 @@
 
   
   } else if (typeof define === "function" && define.amd) {
-    define(['react'], f);
+    define(['devtools/client/shared/vendor/react'], f);
 
   
   } else {
