@@ -12,10 +12,17 @@
 
 
 
-#include <stdlib.h>
-#include <string.h>
 #if defined(__cplusplus)
 #  include <new>
+
+
+
+
+#  include <cstdlib>
+#  include <cstring>
+#else
+#  include <stdlib.h>
+#  include <string.h>
 #endif
 
 #if defined(__cplusplus)
