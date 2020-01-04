@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+
 namespace test_scheduler {
 
 using namespace mozilla::gfx;
@@ -84,6 +85,9 @@ struct JoinTestSanityCheck : public SanityChecker {
   }
 };
 
+
+Atomic<int32_t> sTaskCount(0);
+
 class TestTask : public Task
 {
 public:
@@ -94,7 +98,14 @@ public:
   , mCmdId(aCmdId)
   , mCmdBufferId(aTaskId)
   , mSanityChecker(aChecker)
-  {}
+  {
+    ++sTaskCount;
+  }
+
+  ~TestTask()
+  {
+    --sTaskCount;
+  }
 
   TaskStatus Run()
   {
@@ -108,6 +119,21 @@ public:
   uint64_t mCmdBufferId;
   SanityChecker* mSanityChecker;
 };
+
+
+void Init()
+{
+  ASSERT_EQ(sTaskCount, 0);
+  sTaskCount = 0;
+}
+
+void ShutDown()
+{
+  
+  
+  ASSERT_EQ(sTaskCount, 0);
+  sTaskCount = 0;
+}
 
 
 
@@ -225,9 +251,11 @@ TEST(Moz2D, TaskScheduler_Join) {
   for (uint32_t threads = 1; threads < 16; ++threads) {
     for (uint32_t queues = 1; queues < threads; ++queues) {
       for (uint32_t buffers = 1; buffers < 100; buffers += 3) {
+        test_scheduler::Init();
         mozilla::gfx::TaskScheduler::Init(threads, queues);
         test_scheduler::TestSchedulerJoin(threads, buffers);
         mozilla::gfx::TaskScheduler::ShutDown();
+        test_scheduler::ShutDown();
       }
     }
   }
@@ -238,9 +266,11 @@ TEST(Moz2D, TaskScheduler_Chain) {
   for (uint32_t threads = 1; threads < 16; ++threads) {
     for (uint32_t queues = 1; queues < threads; ++queues) {
       for (uint32_t buffers = 1; buffers < 50; buffers += 3) {
+        test_scheduler::Init();
         mozilla::gfx::TaskScheduler::Init(threads, queues);
         test_scheduler::TestSchedulerChain(threads, buffers);
         mozilla::gfx::TaskScheduler::ShutDown();
+        test_scheduler::ShutDown();
       }
     }
   }
