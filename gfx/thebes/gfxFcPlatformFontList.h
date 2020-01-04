@@ -282,7 +282,13 @@ protected:
                     PrefFontList*> mGenericMappings;
 
     
-    nsRefPtrHashtable<nsCStringHashKey, gfxFontFamily> mFcSubstituteCache;
+    
+    
+    
+    
+    
+    nsDataHashtable<nsCStringHashKey,
+                    nsTArray<gfxFontFamily*>> mFcSubstituteCache;
 
     nsCOMPtr<nsITimer> mCheckFontUpdatesTimer;
     nsCountedRef<FcConfig> mLastConfig;

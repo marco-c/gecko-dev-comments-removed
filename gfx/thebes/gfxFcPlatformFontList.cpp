@@ -1210,7 +1210,7 @@ gfxFcPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
         mozilla::FontFamilyName::Convert(familyName).IsGeneric()) {
         PrefFontList* prefFonts = FindGenericFamilies(familyName, language);
         if (prefFonts && !prefFonts->IsEmpty()) {
-            aOutput->AppendElement((*prefFonts)[0]);
+            aOutput->AppendElements(*prefFonts);
             return true;
         }
         return false;
@@ -1233,12 +1233,16 @@ gfxFcPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
     
     
     NS_ConvertUTF16toUTF8 familyToFind(familyName);
-    gfxFontFamily* cached = mFcSubstituteCache.GetWeak(familyToFind);
-    if (cached) {
-        aOutput->AppendElement(cached);
+    AutoTArray<gfxFontFamily*,10> cachedFamilies;
+    if (mFcSubstituteCache.Get(familyToFind, &cachedFamilies)) {
+        if (cachedFamilies.IsEmpty()) {
+            return false;
+        }
+        aOutput->AppendElements(cachedFamilies);
         return true;
     }
 
+    
     const FcChar8* kSentinelName = ToFcChar8Ptr("-moz-sentinel");
     FcChar8* sentinelFirstFamily = nullptr;
     nsAutoRef<FcPattern> sentinelSubst(FcPatternCreate());
@@ -1265,20 +1269,17 @@ gfxFcPlatformFontList::FindAndAddFamilies(const nsAString& aFamily,
             FcStrCmp(substName, sentinelFirstFamily) == 0) {
             break;
         }
-        
-        
-        
-        AutoTArray<gfxFontFamily*,1> foundFamilies;
-        if (gfxPlatformFontList::FindAndAddFamilies(subst, &foundFamilies)) {
-            
-            
-            mFcSubstituteCache.Put(familyToFind, foundFamilies[0]);
-            aOutput->AppendElement(foundFamilies[0]);
-            return true;
-        }
+        gfxPlatformFontList::FindAndAddFamilies(subst, &cachedFamilies);
     }
 
-    return false;
+    
+    mFcSubstituteCache.Put(familyToFind, cachedFamilies);
+
+    if (cachedFamilies.IsEmpty()) {
+        return false;
+    }
+    aOutput->AppendElements(cachedFamilies);
+    return true;
 }
 
 bool
