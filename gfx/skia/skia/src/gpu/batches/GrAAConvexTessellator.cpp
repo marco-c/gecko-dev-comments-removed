@@ -835,6 +835,13 @@ void GrAAConvexTessellator::lineTo(SkPoint p, bool isCurve) {
         this->popLastPt();
         fNorms.pop();
         fIsCurve.pop();
+        
+        
+        
+        
+        if (duplicate_pt(p, this->lastPoint())) {
+          return;
+        }
     }
     SkScalar initialRingCoverage = fStrokeWidth < 0.0f ? 0.5f : 1.0f;
     this->addPt(p, 0.0f, initialRingCoverage, false, isCurve);
