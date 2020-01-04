@@ -66,6 +66,8 @@ var getArchivedPingsInfo = Task.async(function*() {
 
 function run_test() {
   do_get_profile(true);
+  
+  setEmptyPrefWatchlist();
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
   run_next_test();
 }

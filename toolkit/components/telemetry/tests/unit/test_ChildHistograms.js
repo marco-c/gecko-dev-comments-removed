@@ -71,6 +71,10 @@ add_task(function*() {
   loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
   yield TelemetryController.testSetup();
+  if (runningInParent) {
+    
+    setEmptyPrefWatchlist();
+  }
 
   
   let childPromise = run_test_in_child("test_ChildHistograms.js");

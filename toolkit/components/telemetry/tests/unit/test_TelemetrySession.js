@@ -412,6 +412,8 @@ function run_test() {
   
   do_get_profile();
   loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
+  
+  setEmptyPrefWatchlist();
 
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
   Services.prefs.setBoolPref(PREF_FHR_UPLOAD_ENABLED, true);

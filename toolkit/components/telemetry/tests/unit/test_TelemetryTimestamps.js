@@ -41,6 +41,9 @@ function run_test() {
   
   do_get_profile();
 
+  
+  setEmptyPrefWatchlist();
+
   do_test_pending();
   const Telemetry = Services.telemetry;
   Telemetry.asyncFetchTelemetryData(run_next_test);

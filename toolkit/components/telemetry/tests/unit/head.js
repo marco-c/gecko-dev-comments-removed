@@ -281,6 +281,13 @@ function getSnapshot(histogramId) {
   return Telemetry.getHistogramById(histogramId).snapshot();
 }
 
+
+function setEmptyPrefWatchlist() {
+  let TelemetryEnvironment =
+    Cu.import("resource://gre/modules/TelemetryEnvironment.jsm").TelemetryEnvironment;
+  TelemetryEnvironment.testWatchPreferences(new Map());
+}
+
 if (runningInParent) {
   
   Services.prefs.setCharPref("toolkit.telemetry.log.level", "Trace");

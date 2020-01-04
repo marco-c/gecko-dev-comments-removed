@@ -20,6 +20,9 @@ function run_test() {
   do_test_pending();
   do_get_profile();
 
+  
+  setEmptyPrefWatchlist();
+
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
   Services.prefs.setBoolPref(PREF_FHR_UPLOAD_ENABLED, true);
 
