@@ -13,6 +13,13 @@ loadHelperScript("helper_inplace_editor.js");
 
 
 
+
+
+
+
+
+
+
 const testData = [
   ["b", "block", -1, 0],
   ["VK_BACK_SPACE", "b", -1, 0],

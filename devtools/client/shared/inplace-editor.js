@@ -1431,7 +1431,7 @@ InplaceEditor.prototype = {
       
       if (finalList.length > 1) {
         
-        let indent = this.input.selectionStart - query.length;
+        let indent = this.input.selectionStart - startCheckQuery.length;
         let offset = indent * this.inputCharDimensions.width;
         offset = this._isSingleLine() ? offset : 0;
 
