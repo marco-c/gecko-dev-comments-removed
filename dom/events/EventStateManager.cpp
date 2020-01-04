@@ -3123,11 +3123,25 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
       
       
+      
+      nsIFrame* frameToScroll = nullptr;
+      nsPluginFrame* pluginFrame = nullptr;
+
+      
+      
       WheelPrefs::Action action;
       if (wheelEvent->mFlags.mHandledByAPZ) {
         action = WheelPrefs::ACTION_NONE;
       } else {
-        action = WheelPrefs::GetInstance()->ComputeActionFor(wheelEvent);
+        frameToScroll = ComputeScrollTarget(aTargetFrame, wheelEvent,
+                                            COMPUTE_DEFAULT_ACTION_TARGET);
+        pluginFrame = do_QueryFrame(frameToScroll);
+        if (pluginFrame) {
+          MOZ_ASSERT(pluginFrame->WantsToHandleWheelEventAsDefaultAction());
+          action = WheelPrefs::ACTION_SEND_TO_PLUGIN;
+        } else {
+          action = WheelPrefs::GetInstance()->ComputeActionFor(wheelEvent);
+        }
       }
       switch (action) {
         case WheelPrefs::ACTION_SCROLL: {
@@ -3138,22 +3152,6 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
           if (aEvent->mMessage != eWheel ||
               (!wheelEvent->deltaX && !wheelEvent->deltaY)) {
-            break;
-          }
-
-          nsIFrame* frameToScroll =
-            ComputeScrollTarget(aTargetFrame, wheelEvent,
-                                COMPUTE_DEFAULT_ACTION_TARGET);
-
-          
-          
-          
-          
-          nsPluginFrame* pluginFrame = do_QueryFrame(frameToScroll);
-          if (pluginFrame) {
-            
-            
-            pluginFrame->HandleWheelEventAsDefaultAction(wheelEvent);
             break;
           }
 
@@ -3201,6 +3199,12 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           DoScrollZoom(aTargetFrame, intDelta);
           break;
         }
+        case WheelPrefs::ACTION_SEND_TO_PLUGIN:
+          MOZ_ASSERT(pluginFrame);
+          
+          
+          pluginFrame->HandleWheelEventAsDefaultAction(wheelEvent);
+          break;
         case WheelPrefs::ACTION_NONE:
         default:
           bool allDeltaOverflown = false;
