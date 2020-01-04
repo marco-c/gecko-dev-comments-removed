@@ -10,11 +10,14 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Vector.h"
-#include "timeline/ObservedDocShell.h"
+#include "GeckoProfiler.h"
 
 class nsDocShell;
+class nsIDocShell;
+class TimelineMarker;
 
 namespace mozilla {
+class ObservedDocShell;
 
 class TimelineConsumers
 {
@@ -33,13 +36,46 @@ public:
   
   
   
+
+  
+  
+  
+  
+
+  
+  
+  static void AddMarkerForDocShell(nsDocShell* aDocShell,
+                                   const char* aName,
+                                   TracingMetadata aMetaData);
+  static void AddMarkerForDocShell(nsIDocShell* aDocShell,
+                                   const char* aName,
+                                   TracingMetadata aMetaData);
+
+  static void AddMarkerForDocShell(nsDocShell* aDocShell,
+                                   const char* aName,
+                                   const TimeStamp& aTime,
+                                   TracingMetadata aMetaData);
+  static void AddMarkerForDocShell(nsIDocShell* aDocShell,
+                                   const char* aName,
+                                   const TimeStamp& aTime,
+                                   TracingMetadata aMetaData);
+
+  
+  
   static void AddMarkerForDocShell(nsDocShell* aDocShell,
                                    UniquePtr<TimelineMarker>&& aMarker);
-  static void AddMarkerForDocShell(nsDocShell* aDocShell,
-                                   const char* aName, TracingMetadata aMetaData);
+  static void AddMarkerForDocShell(nsIDocShell* aDocShell,
+                                   UniquePtr<TimelineMarker>&& aMarker);
+
+  
   static void AddMarkerForDocShellsList(Vector<nsRefPtr<nsDocShell>>& aDocShells,
-                                        const char* aName, TracingMetadata aMetaData);
-  static void AddMarkerForAllObservedDocShells(const char* aName, TracingMetadata aMetaData);
+                                        const char* aName,
+                                        TracingMetadata aMetaData);
+
+  
+  
+  static void AddMarkerForAllObservedDocShells(const char* aName,
+                                               TracingMetadata aMetaData);
 };
 
 } 
