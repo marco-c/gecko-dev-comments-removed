@@ -136,6 +136,9 @@ GetFirstDollarIndex(JSContext* cx, unsigned argc, Value* vp);
 extern bool
 GetFirstDollarIndexRaw(JSContext* cx, HandleString str, int32_t* index);
 
+extern int32_t
+GetFirstDollarIndexRawFlat(JSLinearString* text);
+
 
 extern bool
 regexp_construct(JSContext* cx, unsigned argc, Value* vp);
