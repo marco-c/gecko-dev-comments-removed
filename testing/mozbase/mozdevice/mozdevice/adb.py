@@ -2,6 +2,7 @@
 
 
 
+from abc import ABCMeta, abstractmethod
 import os
 import posixpath
 import re
@@ -9,8 +10,6 @@ import subprocess
 import tempfile
 import time
 import traceback
-
-from abc import ABCMeta, abstractmethod
 
 
 class ADBProcess(object):
@@ -536,58 +535,50 @@ class ADBDevice(ADBCommand):
         self._have_su = False
         self._have_android_su = False
 
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        self._check_adb_root(timeout=timeout)
-
         uid = 'uid=0'
+        cmd_id = 'LD_LIBRARY_PATH=/vendor/lib:/system/lib id'
+        
+        
         
         try:
-            if self.shell_output("su -c id", timeout=timeout).find(uid) != -1:
-                self._have_su = True
-                self._logger.info("su -c supported")
+            if self.shell_output("id").find(uid) != -1:
+                self._have_root_shell = True
         except ADBError:
-            self._logger.debug("Check for su -c failed")
+            self._logger.debug("Check for root shell failed")
 
         
         try:
-            if self.shell_output("su 0 id", timeout=timeout).find(uid) != -1:
-                self._have_android_su = True
-                self._logger.info("su 0 supported")
+            if self.shell_output("su -c '%s'" % cmd_id).find(uid) != -1:
+                self._have_su = True
         except ADBError:
-            self._logger.debug("Check for su 0 failed")
+            self._logger.debug("Check for su failed")
+
+        
+        try:
+            if self.shell_output("su 0 id").find(uid) != -1:
+                self._have_android_su = True
+        except ADBError:
+            self._logger.debug("Check for Android su failed")
 
         self._mkdir_p = None
         
         
         
         
-        if self.shell_bool("/system/bin/ls /", timeout=timeout):
+        if self.shell_bool("/system/bin/ls /"):
             self._ls = "/system/bin/ls"
-        elif self.shell_bool("/system/xbin/ls /", timeout=timeout):
+        elif self.shell_bool("/system/xbin/ls /"):
             self._ls = "/system/xbin/ls"
         else:
             raise ADBError("ADBDevice.__init__: ls not found")
         try:
-            self.shell_output("%s -1A /" % self._ls, timeout=timeout)
+            self.shell_output("%s -1A /" % self._ls)
             self._ls += " -1A"
         except ADBError:
             self._ls += " -a"
 
         
-        self._have_cp = self.shell_bool("type cp", timeout=timeout)
+        self._have_cp = self.shell_bool("type cp")
 
         self._logger.debug("ADBDevice: %s" % self.__dict__)
 
@@ -623,28 +614,6 @@ class ADBDevice(ADBCommand):
             return "usb:%s" % usb
 
         raise ValueError("Unable to get device serial")
-
-    def _check_adb_root(self, timeout=None):
-        self._have_root_shell = False
-        uid = 'uid=0'
-        
-        try:
-            if self.shell_output("id", timeout=timeout).find(uid) != -1:
-                self._have_root_shell = True
-                self._logger.info("adbd running as root")
-        except ADBError:
-            self._logger.debug("Check for root shell failed")
-
-        
-        try:
-            if (not self._have_root_shell and
-                self.command_output(
-                    ["root"],
-                    timeout=timeout).find("cannot run as root") == -1):
-                self._have_root_shell = True
-                self._logger.info("adbd restarted as root")
-        except ADBError:
-            self._logger.debug("Check for root adbd failed")
 
 
     @staticmethod
@@ -984,15 +953,15 @@ class ADBDevice(ADBCommand):
         It is the caller's responsibilty to clean up by closing
         the stdout and stderr temporary files.
         """
-        if root and not self._have_root_shell:
-            
-            
-            
-            
-            if self._have_android_su:
-                cmd = "su 0 %s" % cmd
+        if root:
+            ld_library_path='LD_LIBRARY_PATH=/vendor/lib:/system/lib'
+            cmd = '%s %s' % (ld_library_path, cmd)
+            if self._have_root_shell:
+                pass
             elif self._have_su:
                 cmd = "su -c \"%s\"" % cmd
+            elif self._have_android_su:
+                cmd = "su 0 \"%s\"" % cmd
             else:
                 raise ADBRootError('Can not run command %s as root!' % cmd)
 
@@ -1891,7 +1860,6 @@ class ADBDevice(ADBCommand):
         
         
         self.command_output([], timeout=timeout)
-        self._check_adb_root(timeout=timeout)
         return self.is_device_ready(timeout=timeout)
 
     @abstractmethod
