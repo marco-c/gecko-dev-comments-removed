@@ -137,6 +137,9 @@ function convertCachedPacket(packet) {
   } else if (packet._type === "PageError") {
     convertPacket.pageError = packet;
     convertPacket.type = "pageError";
+  } else if ("_navPayload" in packet) {
+    convertPacket.type = "navigationMessage";
+    convertPacket.message = packet;
   } else {
     throw new Error("Unexpected packet type");
   }
