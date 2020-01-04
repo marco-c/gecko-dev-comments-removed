@@ -207,6 +207,21 @@ protected:
       uint32_t mEnd;
       int32_t mUntranslatedEnd;
     };
+  protected:
+    LineRange() {}
+  };
+
+  
+
+
+
+  struct TranslatedLineRange : public LineRange {
+    TranslatedLineRange(uint32_t aStart, uint32_t aEnd)
+    {
+      MOZ_ASSERT(aStart < aEnd && aEnd <= kTranslatedMaxLine);
+      mStart = aStart;
+      mEnd = aEnd;
+    }
   };
 
   
@@ -259,8 +274,15 @@ protected:
   };
 
   struct GridItemInfo {
-    explicit GridItemInfo(const GridArea& aArea) : mArea(aArea) {}
+    explicit GridItemInfo(const GridArea& aArea)
+      : mArea(aArea)
+    {
+      mIsFlexing[0] = false;
+      mIsFlexing[1] = false;
+    }
+
     GridArea mArea;
+    bool mIsFlexing[2]; 
 #ifdef DEBUG
     nsIFrame* mFrame;
 #endif
