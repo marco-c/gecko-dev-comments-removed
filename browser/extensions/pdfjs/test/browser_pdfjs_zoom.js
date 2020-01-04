@@ -1,6 +1,8 @@
 
 
 
+requestLongerTimeout(2);
+
 Components.utils.import("resource://gre/modules/Promise.jsm", this);
 
 const RELATIVE_DIR = "browser/extensions/pdfjs/test/";
