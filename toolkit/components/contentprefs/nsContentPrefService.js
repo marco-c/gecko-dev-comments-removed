@@ -1070,7 +1070,9 @@ ContentPrefService.prototype = {
       }
       
       
-      catch (e if e.result == Cr.NS_ERROR_FILE_CORRUPTED) {
+      catch (e) {
+        if (e.result != Cr.NS_ERROR_FILE_CORRUPTED)
+          throw e;
         dbConnection = this._dbBackUpAndRecreate(dbService, dbFile,
                                                  dbConnection);
       }

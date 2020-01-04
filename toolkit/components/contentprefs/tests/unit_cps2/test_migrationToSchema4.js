@@ -55,7 +55,7 @@ function run_test() {
 
 
 var tests = [
-  function testMigration() {
+  function* testMigration() {
     
     schemaVersionIs(4);
     let dbExpectedState = [
