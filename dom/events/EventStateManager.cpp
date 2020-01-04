@@ -711,7 +711,6 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     break;
   case eDragOver:
     
-    
     GenerateDragDropEnterExit(aPresContext, aEvent->AsDragEvent());
     break;
 
@@ -1785,8 +1784,6 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
       mCurrentTargetContent = targetContent;
 
       
-      
-      
       nsEventStatus status = nsEventStatus_eIgnore;
       EventDispatcher::Dispatch(targetContent, aPresContext, &startEvent,
                                 nullptr, &status);
@@ -1815,10 +1812,6 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
           aEvent->StopPropagation();
         }
       }
-
-      
-      
-      
 
       
       mCurrentTargetContent = targetBeforeEvent;
