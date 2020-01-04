@@ -3,10 +3,13 @@
 
 #include <jni.h>
 
+#include "mozilla/IndexSequence.h"
 #include "mozilla/Move.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/unused.h"
 #include "mozilla/jni/Accessors.h"
 #include "mozilla/jni/Refs.h"
 #include "mozilla/jni/Types.h"
@@ -172,6 +175,230 @@ struct NativePtr<Impl,  true>
 
 } 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct UsesNativeCallProxy
+{
+    template<class Functor>
+    static void OnNativeCall(Functor&& call)
+    {
+        
+        call();
+    }
+};
+
+namespace {
+
+
+
+
+template<typename T>
+struct ProxyArg
+{
+    static_assert(mozilla::IsPod<T>::value, "T must be primitive type");
+
+    
+    typedef T Type;
+    typedef typename TypeAdapter<T>::JNIType JNIType;
+
+    static void Clear(JNIEnv* env, Type&) {}
+
+    static Type From(JNIEnv* env, JNIType val)
+    {
+        return TypeAdapter<T>::ToNative(env, val);
+    }
+};
+
+template<class T>
+struct ProxyArg<Ref<T>>
+{
+    
+    typedef typename T::GlobalRef Type;
+    typedef typename TypeAdapter<Ref<T>>::JNIType JNIType;
+
+    static void Clear(JNIEnv* env, Type& ref) { ref.Clear(env); }
+
+    static Type From(JNIEnv* env, JNIType val)
+    {
+        return Type(env, T::Ref::From(val));
+    }
+};
+
+template<typename T> struct ProxyArg<const T&> : ProxyArg<T> {};
+template<> struct ProxyArg<Param<String>> : ProxyArg<Ref<String>> {};
+
+
+
+template<class Impl, class Owner, bool IsStatic,
+         bool HasThisArg ,
+         typename... Args>
+class ProxyNativeCall
+{
+    template<class T, class I, class A, bool S, bool V>
+    friend class NativeStubImpl;
+
+    
+    
+    
+    typedef typename mozilla::Conditional<IsStatic,
+            ClassObject, Owner>::Type ThisArgClass;
+    typedef typename mozilla::Conditional<IsStatic,
+            jclass, jobject>::Type ThisArgJNIType;
+
+    
+    
+    typedef typename mozilla::Conditional<IsStatic,
+            typename mozilla::Conditional<HasThisArg,
+                    void (*) (const ClassObject::LocalRef&, Args...),
+                    void (*) (Args...)>::Type,
+            typename mozilla::Conditional<HasThisArg,
+                    void (Impl::*) (const typename Owner::LocalRef&, Args...),
+                    void (Impl::*) (Args...)>::Type>::Type NativeCallType;
+
+    
+    const NativeCallType mNativeCall;
+    
+    typename ThisArgClass::GlobalRef mThisArg;
+    
+    mozilla::Tuple<typename ProxyArg<Args>::Type...> mArgs;
+
+    ProxyNativeCall(NativeCallType nativeCall,
+                    JNIEnv* env,
+                    ThisArgJNIType thisArg,
+                    typename ProxyArg<Args>::JNIType... args)
+        : mNativeCall(nativeCall)
+        , mThisArg(env, ThisArgClass::Ref::From(thisArg))
+        , mArgs(ProxyArg<Args>::From(env, args)...)
+    {}
+
+    
+    
+    
+
+    template<bool Static, bool ThisArg, size_t... Indices>
+    typename mozilla::EnableIf<Static && ThisArg, void>::Type
+    Call(const ClassObject::LocalRef& cls, mozilla::IndexSequence<Indices...>)
+    {
+        (*mNativeCall)(cls, mozilla::Get<Indices>(mArgs)...);
+    }
+
+    template<bool Static, bool ThisArg, size_t... Indices>
+    typename mozilla::EnableIf<Static && !ThisArg, void>::Type
+    Call(const ClassObject::LocalRef& cls, mozilla::IndexSequence<Indices...>)
+    {
+        (*mNativeCall)(mozilla::Get<Indices>(mArgs)...);
+    }
+
+    template<bool Static, bool ThisArg, size_t... Indices>
+    typename mozilla::EnableIf<!Static && ThisArg, void>::Type
+    Call(const typename Owner::LocalRef& inst,
+         mozilla::IndexSequence<Indices...>)
+    {
+        Impl* const impl = NativePtr<Impl>::Get(inst);
+        HandleUncaughtException(inst.Env());
+        (impl->*mNativeCall)(inst, mozilla::Get<Indices>(mArgs)...);
+    }
+
+    template<bool Static, bool ThisArg, size_t... Indices>
+    typename mozilla::EnableIf<!Static && !ThisArg, void>::Type
+    Call(const typename Owner::LocalRef& inst,
+         mozilla::IndexSequence<Indices...>)
+    {
+        Impl* const impl = NativePtr<Impl>::Get(inst);
+        HandleUncaughtException(inst.Env());
+        (impl->*mNativeCall)(mozilla::Get<Indices>(mArgs)...);
+    }
+
+    template<size_t... Indices>
+    void Clear(JNIEnv* env, mozilla::IndexSequence<Indices...>)
+    {
+        int dummy[] = {
+            (ProxyArg<Args>::Clear(env, Get<Indices>(mArgs)), 0)...
+        };
+        mozilla::unused << dummy;
+    }
+
+public:
+    static const bool isStatic = IsStatic;
+
+    ProxyNativeCall(ProxyNativeCall&&) = default;
+    ProxyNativeCall(const ProxyNativeCall&) = default;
+
+    
+    typename ThisArgClass::Param GetThisArg() { return mThisArg; }
+
+    
+    
+    
+    
+    bool IsTarget(NativeCallType call) { return call == mNativeCall; }
+    template<typename T> bool IsTarget(T&&) { return false; }
+
+    void operator()()
+    {
+        JNIEnv* const env = GetEnvForThread();
+        typename ThisArgClass::LocalRef thisArg(env, mThisArg);
+        Call<IsStatic, HasThisArg>(
+                thisArg, typename IndexSequenceFor<Args...>::Type());
+
+        
+        
+        
+        
+        Clear(env, typename IndexSequenceFor<Args...>::Type());
+    }
+};
+
+
+
+
+
+
+
+
+template<class Impl, class O, bool S, bool V, typename... A>
+typename mozilla::EnableIf<
+        mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value, void>::Type
+Dispatch(ProxyNativeCall<Impl, O, S, V, A...>&& call)
+{
+    Impl::OnNativeCall(mozilla::Move(call));
+}
+
+template<typename T>
+void Dispatch(const T&) {}
+
+} 
+
 template<class Cls, class Impl> class NativeImpl;
 
 namespace detail {
@@ -203,6 +430,9 @@ public:
     static ReturnJNIType Wrap(JNIEnv* env, jobject instance,
                               typename TypeAdapter<Args>::JNIType... args)
     {
+        static_assert(!mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value,
+                      "Native call proxy only supports void return type");
+
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return ReturnJNIType();
@@ -216,6 +446,9 @@ public:
     static ReturnJNIType Wrap(JNIEnv* env, jobject instance,
                               typename TypeAdapter<Args>::JNIType... args)
     {
+        static_assert(!mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value,
+                      "Native call proxy only supports void return type");
+
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return ReturnJNIType();
@@ -241,6 +474,12 @@ public:
     static void Wrap(JNIEnv* env, jobject instance,
                      typename TypeAdapter<Args>::JNIType... args)
     {
+        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
+            Dispatch(ProxyNativeCall<
+                     Impl, Owner,  false,  false,
+                     Args...>(Method, env, instance, args...));
+            return;
+        }
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return;
@@ -253,6 +492,12 @@ public:
     static void Wrap(JNIEnv* env, jobject instance,
                      typename TypeAdapter<Args>::JNIType... args)
     {
+        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
+            Dispatch(ProxyNativeCall<
+                     Impl, Owner,  false,  true,
+                     Args...>(Method, env, instance, args...));
+            return;
+        }
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return;
@@ -266,6 +511,11 @@ public:
     template<void (NativeImpl<Owner, Impl>::*Method) (const typename Owner::LocalRef&)>
     static void Wrap(JNIEnv* env, jobject instance)
     {
+        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
+            Dispatch(ProxyNativeCall<Impl, Owner,  false,
+                     true>(Method, env, instance));
+            return;
+        }
         Impl* const impl = NativePtr<Impl>::Get(env, instance);
         if (!impl) {
             return;
@@ -290,6 +540,9 @@ public:
     static ReturnJNIType Wrap(JNIEnv* env, jclass,
                               typename TypeAdapter<Args>::JNIType... args)
     {
+        static_assert(!mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value,
+                      "Native call proxy only supports void return type");
+
         return TypeAdapter<ReturnType>::FromNative(env,
                 (*Method)(TypeAdapter<Args>::ToNative(env, args)...));
     }
@@ -299,6 +552,9 @@ public:
     static ReturnJNIType Wrap(JNIEnv* env, jclass cls,
                               typename TypeAdapter<Args>::JNIType... args)
     {
+        static_assert(!mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value,
+                      "Native call proxy only supports void return type");
+
         auto clazz = ClassObject::LocalRef::Adopt(env, cls);
         const auto res = TypeAdapter<ReturnType>::FromNative(env,
                 (*Method)(clazz, TypeAdapter<Args>::ToNative(env, args)...));
@@ -312,12 +568,20 @@ template<class Traits, class Impl, typename... Args>
 class NativeStubImpl<Traits, Impl, jni::Args<Args...>,
                       true,  true>
 {
+    typedef typename Traits::Owner Owner;
+
 public:
     
     template<void (*Method) (Args...)>
-    static void Wrap(JNIEnv* env, jclass,
+    static void Wrap(JNIEnv* env, jclass cls,
                      typename TypeAdapter<Args>::JNIType... args)
     {
+        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
+            Dispatch(ProxyNativeCall<
+                    Impl, Owner,  true,  false,
+                    Args...>(Method, env, cls, args...));
+            return;
+        }
         (*Method)(TypeAdapter<Args>::ToNative(env, args)...);
     }
 
@@ -326,6 +590,12 @@ public:
     static void Wrap(JNIEnv* env, jclass cls,
                      typename TypeAdapter<Args>::JNIType... args)
     {
+        if (mozilla::IsBaseOf<UsesNativeCallProxy, Impl>::value) {
+            Dispatch(ProxyNativeCall<
+                    Impl, Owner,  true,  true,
+                    Args...>(Method, env, cls, args...));
+            return;
+        }
         auto clazz = ClassObject::LocalRef::Adopt(env, cls);
         (*Method)(clazz, TypeAdapter<Args>::ToNative(env, args)...);
         clazz.Forget();
