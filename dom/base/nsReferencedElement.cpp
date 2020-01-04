@@ -53,14 +53,14 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
       
       
       
+      
       Element* anonRoot =
         doc->GetAnonRootIfInAnonymousContentContainer(aFromContent);
       if (anonRoot) {
         mElement = nsContentUtils::MatchElementId(anonRoot, ref);
+        
+        return;
       }
-
-      
-      return;
     } else {
       bool isEqualExceptRef;
       rv = aURI->EqualsExceptRef(binding->PrototypeBinding()->DocURI(),
