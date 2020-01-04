@@ -555,6 +555,9 @@ HTMLTooltip.prototype = {
     panel.setAttribute("noautofocus", true);
     panel.setAttribute("ignorekeys", true);
 
+    
+    panel.setAttribute("type", "arrow");
+
     panel.setAttribute("level", "float");
     panel.setAttribute("class", "tooltip-xul-wrapper");
 
