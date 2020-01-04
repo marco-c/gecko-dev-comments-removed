@@ -17,7 +17,6 @@
 #include "MPAPI.h"
 #include "gfx2DGlue.h"
 #include "MediaStreamSource.h"
-#include "VideoFrameContainer.h"
 
 #define MAX_DROPPED_FRAMES 25
 
