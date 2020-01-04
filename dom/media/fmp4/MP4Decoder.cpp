@@ -31,6 +31,8 @@
 #include "FFmpegRuntimeLinker.h"
 #endif
 
+#include "PDMFactory.h"
+
 namespace mozilla {
 
 #if defined(MOZ_GONK_MEDIACODEC) || defined(XP_WIN) || defined(MOZ_APPLEMEDIA) || defined(MOZ_FFMPEG)
@@ -149,11 +151,8 @@ MP4Decoder::CanHandleMediaType(const nsACString& aMIMETypeExcludingCodecs,
   }
 
   
-  PlatformDecoderModule::Init();
-  RefPtr<PlatformDecoderModule> platform = PlatformDecoderModule::Create();
-  if (!platform) {
-    return false;
-  }
+  PDMFactory::Init();
+  nsRefPtr<PDMFactory> platform = new PDMFactory();
   for (const nsCString& codecMime : codecMimes) {
     if (!platform->SupportsMimeType(codecMime)) {
       return false;
@@ -184,8 +183,8 @@ IsFFmpegAvailable()
 #ifndef MOZ_FFMPEG
   return false;
 #else
-  PlatformDecoderModule::Init();
-  RefPtr<PlatformDecoderModule> m = FFmpegRuntimeLinker::CreateDecoderModule();
+  PDMFactory::Init();
+  nsRefPtr<PlatformDecoderModule> m = FFmpegRuntimeLinker::CreateDecoderModule();
   return !!m;
 #endif
 }
@@ -274,14 +273,14 @@ CreateTestH264Decoder(layers::LayersBackend aBackend,
   aConfig.mExtraData->AppendElements(sTestH264ExtraData,
                                      MOZ_ARRAY_LENGTH(sTestH264ExtraData));
 
-  PlatformDecoderModule::Init();
+  PDMFactory::Init();
 
-  RefPtr<PlatformDecoderModule> platform = PlatformDecoderModule::Create();
-  if (!platform || !platform->SupportsMimeType(NS_LITERAL_CSTRING("video/mp4"))) {
+  nsRefPtr<PDMFactory> platform = new PDMFactory();
+  if (!platform->SupportsMimeType(NS_LITERAL_CSTRING("video/mp4"))) {
     return nullptr;
   }
 
-  RefPtr<MediaDataDecoder> decoder(
+  nsRefPtr<MediaDataDecoder> decoder(
     platform->CreateDecoder(aConfig, nullptr, nullptr, aBackend, nullptr));
   if (!decoder) {
     return nullptr;
@@ -294,7 +293,7 @@ CreateTestH264Decoder(layers::LayersBackend aBackend,
 MP4Decoder::IsVideoAccelerated(layers::LayersBackend aBackend, nsACString& aFailureReason)
 {
   VideoInfo config;
-  RefPtr<MediaDataDecoder> decoder(CreateTestH264Decoder(aBackend, config));
+  nsRefPtr<MediaDataDecoder> decoder(CreateTestH264Decoder(aBackend, config));
   if (!decoder) {
     aFailureReason.AssignLiteral("Failed to create H264 decoder");
     return false;
@@ -313,7 +312,7 @@ MP4Decoder::CanCreateH264Decoder()
     return result;
   }
   VideoInfo config;
-  RefPtr<MediaDataDecoder> decoder(
+  nsRefPtr<MediaDataDecoder> decoder(
     CreateTestH264Decoder(layers::LayersBackend::LAYERS_BASIC, config));
   if (decoder) {
     decoder->Shutdown();
@@ -330,14 +329,14 @@ MP4Decoder::CanCreateH264Decoder()
 static already_AddRefed<MediaDataDecoder>
 CreateTestAACDecoder(AudioInfo& aConfig)
 {
-  PlatformDecoderModule::Init();
+  PDMFactory::Init();
 
-  RefPtr<PlatformDecoderModule> platform = PlatformDecoderModule::Create();
-  if (!platform || !platform->SupportsMimeType(NS_LITERAL_CSTRING("audio/mp4a-latm"))) {
+  nsRefPtr<PDMFactory> platform = new PDMFactory();
+  if (!platform->SupportsMimeType(NS_LITERAL_CSTRING("audio/mp4a-latm"))) {
     return nullptr;
   }
 
-  RefPtr<MediaDataDecoder> decoder(
+  nsRefPtr<MediaDataDecoder> decoder(
     platform->CreateDecoder(aConfig, nullptr, nullptr));
   if (!decoder) {
     return nullptr;
@@ -378,7 +377,7 @@ MP4Decoder::CanCreateAACDecoder()
                                               MOZ_ARRAY_LENGTH(sTestAACConfig));
   config.mExtraData->AppendElements(sTestAACExtraData,
                                     MOZ_ARRAY_LENGTH(sTestAACExtraData));
-  RefPtr<MediaDataDecoder> decoder(CreateTestAACDecoder(config));
+  nsRefPtr<MediaDataDecoder> decoder(CreateTestAACDecoder(config));
   if (decoder) {
     result = true;
   }
