@@ -26,7 +26,6 @@
 
 namespace js {
 
-class TypedArrayObject;
 class StringBuffer;
 
 namespace wasm {
@@ -35,7 +34,7 @@ namespace wasm {
 
 
 bool
-BinaryToText(JSContext* cx, Handle<TypedArrayObject*> code, StringBuffer& buffer);
+BinaryToText(JSContext* cx, const uint8_t* bytes, size_t length, StringBuffer& buffer);
 
 }  
 
