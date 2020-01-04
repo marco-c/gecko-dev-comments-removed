@@ -654,7 +654,7 @@ function BuildConditionSandbox(aURL) {
     sandbox.azureQuartz = info.AzureCanvasBackend == "quartz";
     sandbox.azureSkia = info.AzureCanvasBackend == "skia";
     sandbox.skiaContent = info.AzureContentBackend == "skia";
-    sandbox.azureSkiaGL = info.AzureCanvasAccelerated; 
+    sandbox.azureSkiaGL = info.AzureSkiaAccelerated; 
     
     sandbox.contentSameGfxBackendAsCanvas = info.AzureContentBackend == info.AzureCanvasBackend
                                             || (info.AzureContentBackend == "none" && info.AzureCanvasBackend == "cairo");
