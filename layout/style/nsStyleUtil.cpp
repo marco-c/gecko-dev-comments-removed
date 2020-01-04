@@ -687,7 +687,7 @@ nsStyleUtil::IsSignificantChild(nsIContent* aChild, bool aTextIsSignificant,
 
 
 static bool
-ObjectPositionCoordMightCauseOverflow(const Position::PositionCoord& aCoord)
+ObjectPositionCoordMightCauseOverflow(const Position::Coord& aCoord)
 {
   
   
