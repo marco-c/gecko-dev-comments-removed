@@ -260,7 +260,6 @@ nsHttpChannel::nsHttpChannel()
     , mPinCacheContent(0)
     , mIsPackagedAppResource(0)
     , mIsCorsPreflightDone(0)
-    , mStronglyFramed(false)
     , mPushedStream(nullptr)
     , mLocalBlocklist(false)
     , mWarningReporter(nullptr)
@@ -3407,13 +3406,6 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     bool isForcedValid = false;
     entry->GetIsForcedValid(&isForcedValid);
 
-    nsXPIDLCString framedBuf;
-    rv = entry->GetMetaDataElement("strongly-framed", getter_Copies(framedBuf));
-    
-    
-    bool weaklyFramed = NS_SUCCEEDED(rv) && framedBuf.EqualsLiteral("0");
-    bool isImmutable = !weaklyFramed && isHttps && mCachedResponseHead->Immutable();
-
     
     if (ResponseWouldVary(entry)) {
         LOG(("Validating based on Vary headers returning TRUE\n"));
@@ -3439,7 +3431,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     }
     
     
-    else if ((mLoadFlags & nsIRequest::VALIDATE_ALWAYS) && !isImmutable) {
+    else if (mLoadFlags & nsIRequest::VALIDATE_ALWAYS) {
         LOG(("Validating based on VALIDATE_ALWAYS load flag\n"));
         doValidation = true;
     }
@@ -3578,11 +3570,9 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
         
         
         
-        
-        
         if (!mCachedResponseHead->NoStore() &&
             (mRequestHead.IsGet() || mRequestHead.IsHead()) &&
-            !mCustomConditionalRequest && !weaklyFramed && !isImmutable &&
+            !mCustomConditionalRequest &&
             (mCachedResponseHead->Status() < 400)) {
 
             if (mConcurentCacheAccess) {
@@ -4367,9 +4357,6 @@ nsHttpChannel::InitCacheEntry()
     rv = UpdateExpirationTime();
     if (NS_FAILED(rv)) return rv;
 
-    
-    mCacheEntry->SetMetaDataElement("strongly-framed", "0");
-
     rv = AddCacheEntryHeaders(mCacheEntry);
     if (NS_FAILED(rv)) return rv;
 
@@ -4573,12 +4560,6 @@ nsresult
 nsHttpChannel::FinalizeCacheEntry()
 {
     LOG(("nsHttpChannel::FinalizeCacheEntry [this=%p]\n", this));
-
-    
-    if (mStronglyFramed && !mCachedContentIsValid && mCacheEntry) {
-        LOG(("nsHttpChannel::FinalizeCacheEntry [this=%p] Is Strongly Framed\n", this));
-        mCacheEntry->SetMetaDataElement("strongly-framed", "1");
-    }
 
     if (mResponseHead && mResponseHeadersModified) {
         
@@ -6087,9 +6068,6 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
     if (mTransaction) {
         
         bool authRetry = mAuthRetryPending && NS_SUCCEEDED(status);
-        mStronglyFramed = mTransaction->ResponseIsComplete();
-        LOG(("nsHttpChannel %p has a strongly framed transaction: %d",
-             this, mStronglyFramed));
 
         
         

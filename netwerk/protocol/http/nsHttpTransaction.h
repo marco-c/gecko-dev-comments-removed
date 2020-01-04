@@ -107,7 +107,6 @@ public:
 
     
     bool ResponseIsComplete() { return mResponseIsComplete; }
-    void SetResponseIsComplete() { mResponseIsComplete = true; }
 
     bool      ProxyConnectFailed() { return mProxyConnectFailed; }
 
@@ -272,9 +271,6 @@ private:
     int32_t                         mPipelinePosition;
     int64_t                         mMaxPipelineObjectSize;
 
-    nsHttpVersion                   mHttpVersion;
-    uint16_t                        mHttpResponseCode;
-
     
     
     
@@ -283,7 +279,9 @@ private:
     
     
     Atomic<uint32_t>                mCapsToClear;
-    Atomic<bool, ReleaseAcquire>    mResponseIsComplete;
+
+    nsHttpVersion                   mHttpVersion;
+    uint16_t                        mHttpResponseCode;
 
     
     
@@ -292,6 +290,7 @@ private:
     bool                            mHaveStatusLine;
     bool                            mHaveAllHeaders;
     bool                            mTransactionDone;
+    bool                            mResponseIsComplete;
     bool                            mDidContentStart;
     bool                            mNoContent; 
     bool                            mSentData;

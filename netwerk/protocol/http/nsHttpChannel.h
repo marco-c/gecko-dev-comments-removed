@@ -539,11 +539,6 @@ private:
     
     uint32_t                          mIsCorsPreflightDone : 1;
 
-    
-    
-    
-    uint32_t                          mStronglyFramed : 1;
-
     nsCOMPtr<nsIChannel>              mPreflightChannel;
 
     nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
