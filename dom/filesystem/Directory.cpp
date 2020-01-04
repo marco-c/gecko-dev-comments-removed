@@ -355,12 +355,20 @@ Directory::RemoveInternal(const StringOrFileOrDirectory& aPath, bool aRecursive,
 void
 Directory::GetPath(nsAString& aRetval, ErrorResult& aRv)
 {
-  if (mType == eDOMRootDirectory) {
-    aRetval.AssignLiteral(FILESYSTEM_DOM_PATH_SEPARATOR_LITERAL);
-  } else {
-    
-    GetName(aRetval, aRv);
+  
+  if (mPath.IsEmpty()) {
+    RefPtr<FileSystemBase> fs = GetFileSystem(aRv);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return;
+    }
+
+    fs->GetDOMPath(mFile, mType, mPath, aRv);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return;
+    }
   }
+
+  aRetval = mPath;
 }
 
 nsresult
