@@ -370,6 +370,12 @@ protected:
 
   void CancelPendingTasks();
 
+  
+
+
+
+  void ResetPendingTasks();
+
   bool IsPossiblyOrphanedPendingAnimation() const;
   StickyTimeDuration EffectEnd() const;
 
