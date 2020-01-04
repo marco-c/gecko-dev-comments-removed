@@ -1783,12 +1783,6 @@ int64_t MediaDecoderStateMachine::AudioDecodedUsecs()
   
   
   int64_t pushed = mMediaSink->IsStarted() ? (AudioEndTime() - GetMediaTime()) : 0;
-
-  
-  
-  if (IsRealTime()) {
-    return pushed + FramesToUsecs(AudioQueue().FrameCount(), mInfo.mAudio.mRate).value();
-  }
   return pushed + AudioQueue().Duration();
 }
 
