@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Front, FrontClassWithSpec } = require("devtools/shared/protocol.js");
+const { Front, FrontClassWithSpec } = require("devtools/shared/protocol");
 const {
   getIndentationFromPrefs,
   getIndentationFromString
@@ -13,10 +13,10 @@ const {
   mediaRuleSpec,
   styleSheetSpec,
   styleSheetsSpec
-} = require("devtools/shared/specs/stylesheets.js");
+} = require("devtools/shared/specs/stylesheets");
 const promise = require("promise");
 const { Task } = require("resource://gre/modules/Task.jsm");
-const events = require("sdk/event/core.js");
+const events = require("sdk/event/core");
 
 
 
