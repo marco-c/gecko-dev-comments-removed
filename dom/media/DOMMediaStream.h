@@ -530,17 +530,17 @@ public:
 
 
 
-  MediaStreamTrack* CreateOwnDOMTrack(TrackID aTrackID, MediaSegment::Type aType,
-                                      const nsString& aLabel,
-                                      MediaStreamTrackSource* aSource);
+  MediaStreamTrack* CreateDOMTrack(TrackID aTrackID, MediaSegment::Type aType,
+                                   const nsString& aLabel,
+                                   MediaStreamTrackSource* aSource);
 
   
 
 
 
 
-  already_AddRefed<MediaStreamTrack> CreateClonedDOMTrack(MediaStreamTrack& aTrack,
-                                                          TrackID aCloneTrackID);
+  already_AddRefed<MediaStreamTrack> CloneDOMTrack(MediaStreamTrack& aTrack,
+                                                   TrackID aCloneTrackID);
 
   
   
