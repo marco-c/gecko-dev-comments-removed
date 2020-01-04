@@ -1181,6 +1181,15 @@ InplaceEditor.prototype = {
       } else if (this.contentType == CONTENT_TYPES.CSS_MIXED &&
                  /^\s*style\s*=/.test(query)) {
         
+        let styleValue = query.replace(/^\s*style\s*=\s*/, "");
+        
+        if (/^("[^"]*"|'[^']*')/.test(styleValue)) {
+          
+          this.emit("after-suggest", "nothing to autocomplete");
+          return;
+        }
+
+        
         let match = query.match(/([:;"'=]?)\s*([^"';:=]+)?$/);
         if (match && match.length >= 2) {
           if (match[1] == ":") { 
