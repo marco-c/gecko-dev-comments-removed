@@ -965,7 +965,7 @@ ssl_IsSuiteEnabled(sslSocket *ss, const ssl3CipherSuite *list)
 }
 
 
-static PRBool
+PRBool
 ssl_IsECCEnabled(sslSocket *ss)
 {
     PK11SlotInfo *slot;
@@ -979,6 +979,12 @@ ssl_IsECCEnabled(sslSocket *ss)
 
     
     return ssl_IsSuiteEnabled(ss, ssl_all_ec_suites);
+}
+
+PRBool
+ssl_IsDHEEnabled(sslSocket *ss)
+{
+    return ssl_IsSuiteEnabled(ss, ssl_dhe_suites);
 }
 
 
@@ -1024,7 +1030,7 @@ ssl_SendSupportedGroupsXtn(sslSocket *ss, PRBool append, PRUint32 maxBytes)
 
     if (ss->opt.requireDHENamedGroups ||
         ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3) {
-        ff = ssl_IsSuiteEnabled(ss, ssl_dhe_suites);
+        ff = ssl_IsDHEEnabled(ss);
     }
     if (!ec && !ff) {
         return 0;

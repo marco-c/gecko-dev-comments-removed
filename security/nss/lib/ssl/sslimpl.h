@@ -894,6 +894,14 @@ typedef enum {
 } SSL3HandshakeHashType;
 
 
+typedef struct TLS13CertificateRequestStr {
+    PLArenaPool *arena;
+    SECItem context;
+    SECItem algorithms;
+    CERTDistNames ca_list;
+} TLS13CertificateRequest;
+
+
 
 
 
@@ -1002,28 +1010,26 @@ typedef struct SSL3HandshakeStateStr {
 
 
     
-    PK11Context *clientHelloHash;      
+    PK11Context *clientHelloHash;   
 
-    PRCList remoteKeyShares;           
-    PK11SymKey *currentSecret;         
+    PRCList remoteKeyShares;        
+    PK11SymKey *currentSecret;      
 
-    PK11SymKey *resumptionPsk;         
-    SECItem resumptionContext;         
-    PK11SymKey *dheSecret;             
-    PK11SymKey *earlyTrafficSecret;    
-    PK11SymKey *hsTrafficSecret;       
-    PK11SymKey *trafficSecret;         
+    PK11SymKey *resumptionPsk;      
+    SECItem resumptionContext;      
+    PK11SymKey *dheSecret;          
+    PK11SymKey *earlyTrafficSecret; 
+    PK11SymKey *hsTrafficSecret;    
+    PK11SymKey *trafficSecret;      
 
-    unsigned char certReqContext[255]; 
+    
+    TLS13CertificateRequest *certificateRequest;
+    ssl3CipherSuite origCipherSuite; 
 
-    PRUint8 certReqContextLen;         
+    PRCList cipherSpecs;             
 
-    ssl3CipherSuite origCipherSuite;   
-
-    PRCList cipherSpecs;               
-
-    PRBool doing0Rtt;                  
-    PRCList bufferedEarlyData;         
+    PRBool doing0Rtt;                
+    PRCList bufferedEarlyData;       
 
 } SSL3HandshakeState;
 
@@ -1737,7 +1743,8 @@ extern SECStatus ssl_ValidateDHENamedGroup(sslSocket *ss,
                                            const namedGroupDef **groupDef,
                                            const ssl3DHParams **dhParams);
 
-extern PRBool ssl3_IsECCEnabled(sslSocket *ss);
+extern PRBool ssl_IsECCEnabled(sslSocket *ss);
+extern PRBool ssl_IsDHEEnabled(sslSocket *ss);
 
 
 

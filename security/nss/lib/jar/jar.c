@@ -80,6 +80,8 @@ JAR_destroy(JAR *jar)
         PORT_Free(jar->url);
     if (jar->filename)
         PORT_Free(jar->filename);
+    if (jar->globalmeta)
+        PORT_Free(jar->globalmeta);
 
     
     jar_destroy_list(jar->manifest);
