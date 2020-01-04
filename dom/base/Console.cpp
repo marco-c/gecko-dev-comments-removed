@@ -2313,8 +2313,12 @@ Console::UnstoreCallData(ConsoleCallData* aCallData)
   AssertIsOnOwningThread();
 
   MOZ_ASSERT(aCallData);
-  MOZ_ASSERT(mCallDataStorage.Contains(aCallData));
+
   MOZ_ASSERT(!mCallDataStoragePending.Contains(aCallData));
+
+  
+  
+  
 
   mCallDataStorage.RemoveElement(aCallData);
 }
