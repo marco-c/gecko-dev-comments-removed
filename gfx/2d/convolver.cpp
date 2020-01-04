@@ -175,11 +175,11 @@ class CircularRowBuffer {
 
 template<bool has_alpha>
 void ConvolveHorizontally(const unsigned char* src_data,
-                          int begin, int end,
                           const ConvolutionFilter1D& filter,
                           unsigned char* out_row) {
+  int num_values = filter.num_values();
   
-  for (int out_x = begin; out_x < end; out_x++) {
+  for (int out_x = 0; out_x < num_values; out_x++) {
     
     int filter_offset, filter_length;
     const ConvolutionFilter1D::Fixed* filter_values =
@@ -227,10 +227,11 @@ template<bool has_alpha>
 void ConvolveVertically(const ConvolutionFilter1D::Fixed* filter_values,
                         int filter_length,
                         unsigned char* const* source_data_rows,
-                        int begin, int end, unsigned char* out_row) {
+                        int pixel_width,
+                        unsigned char* out_row) {
   
   
-  for (int out_x = begin; out_x < end; out_x++) {
+  for (int out_x = 0; out_x < pixel_width; out_x++) {
     
     
     int byte_offset = out_x * 4;
@@ -288,28 +289,29 @@ void ConvolveVertically(const ConvolutionFilter1D::Fixed* filter_values,
 void ConvolveVertically(const ConvolutionFilter1D::Fixed* filter_values,
                         int filter_length,
                         unsigned char* const* source_data_rows,
-                        int width, unsigned char* out_row,
+                        int pixel_width, unsigned char* out_row,
                         bool has_alpha, bool use_simd) {
-  int processed = 0;
 
 #if defined(USE_SSE2) || defined(_MIPS_ARCH_LOONGSON3A)
   
-  int simd_width = width & ~3;
-  if (use_simd && simd_width) {
+  if (use_simd) {
     ConvolveVertically_SIMD(filter_values, filter_length,
-                            source_data_rows, 0, simd_width,
+                            source_data_rows,
+                            pixel_width,
                             out_row, has_alpha);
-    processed = simd_width;
-  }
+  } else
 #endif
-    
-  if (width > processed) {
+  {
     if (has_alpha) {
-      ConvolveVertically<true>(filter_values, filter_length, source_data_rows,
-                               processed, width, out_row);
+      ConvolveVertically<true>(filter_values, filter_length,
+                               source_data_rows,
+                               pixel_width,
+                               out_row);
     } else {
-      ConvolveVertically<false>(filter_values, filter_length, source_data_rows,
-                                processed, width, out_row);
+      ConvolveVertically<false>(filter_values, filter_length,
+                                source_data_rows,
+                                pixel_width,
+                                out_row);
     }
   }
 }
@@ -326,16 +328,16 @@ void ConvolveHorizontally(const unsigned char* src_data,
     
     
     
-    ConvolveHorizontally_SSE2(src_data, 0, simd_width, filter, out_row);
+    ConvolveHorizontally_SSE2(src_data, filter, out_row);
     processed = simd_width;
   }
 #endif
 
   if (width > processed) {
     if (has_alpha) {
-      ConvolveHorizontally<true>(src_data, processed, width, filter, out_row);
+      ConvolveHorizontally<true>(src_data, filter, out_row);
     } else {
-      ConvolveHorizontally<false>(src_data, processed, width, filter, out_row);
+      ConvolveHorizontally<false>(src_data, filter, out_row);
     }
   }
 }
@@ -457,9 +459,23 @@ void BGRAConvolve2D(const unsigned char* source_data,
   int num_output_rows = filter_y.num_values();
   int pixel_width = filter_x.num_values();
 
+
   
   
   int last_filter_offset, last_filter_length;
+  
+  
+  
+  
+  
+  
+  
+  filter_x.FilterForValue(filter_x.num_values() - 1, &last_filter_offset,
+                          &last_filter_length);
+#if defined(USE_SSE2) || defined(_MIPS_ARCH_LOONGSON3A)
+  int avoid_simd_rows = 1 + 3 /
+      (last_filter_offset + last_filter_length);
+#endif
   filter_y.FilterForValue(num_output_rows - 1, &last_filter_offset,
                           &last_filter_length);
 
@@ -473,36 +489,32 @@ void BGRAConvolve2D(const unsigned char* source_data,
       
       
       while (next_x_row < filter_offset + filter_length) {
-        if (next_x_row + 3 < last_filter_offset + last_filter_length - 3) {
+        if (next_x_row + 3 < last_filter_offset + last_filter_length -
+            avoid_simd_rows) {
           const unsigned char* src[4];
           unsigned char* out_row[4];
           for (int i = 0; i < 4; ++i) {
             src[i] = &source_data[(next_x_row + i) * source_byte_row_stride];
             out_row[i] = row_buffer.AdvanceRow();
           }
-          ConvolveHorizontally4_SIMD(src, 0, pixel_width, filter_x, out_row);
+          ConvolveHorizontally4_SIMD(src, filter_x, out_row);
           next_x_row += 4;
         } else {
-          unsigned char* buffer = row_buffer.AdvanceRow();
-
           
-          
-          int simd_width = pixel_width & ~3;
-          if (simd_width) {
+          if (next_x_row < last_filter_offset + last_filter_length -
+              avoid_simd_rows) {
             ConvolveHorizontally_SIMD(
                 &source_data[next_x_row * source_byte_row_stride],
-                0, simd_width, filter_x, buffer);
-          }
-
-          if (pixel_width > simd_width) {
+                filter_x, row_buffer.AdvanceRow());
+          } else {
             if (source_has_alpha) {
               ConvolveHorizontally<true>(
                   &source_data[next_x_row * source_byte_row_stride],
-                  simd_width, pixel_width, filter_x, buffer);
+                  filter_x, row_buffer.AdvanceRow());
             } else {
               ConvolveHorizontally<false>(
                   &source_data[next_x_row * source_byte_row_stride],
-                  simd_width, pixel_width, filter_x, buffer);
+                  filter_x, row_buffer.AdvanceRow());
             }
           }
           next_x_row++;
@@ -513,12 +525,12 @@ void BGRAConvolve2D(const unsigned char* source_data,
       while (next_x_row < filter_offset + filter_length) {
         if (source_has_alpha) {
           ConvolveHorizontally<true>(
-              &source_data[next_x_row * source_byte_row_stride],
-              0, pixel_width, filter_x, row_buffer.AdvanceRow());
+                                     &source_data[next_x_row * source_byte_row_stride],
+                                     filter_x, row_buffer.AdvanceRow());
         } else {
           ConvolveHorizontally<false>(
-              &source_data[next_x_row * source_byte_row_stride],
-              0, pixel_width, filter_x, row_buffer.AdvanceRow());
+                                      &source_data[next_x_row * source_byte_row_stride],
+                                      filter_x, row_buffer.AdvanceRow());
         }
         next_x_row++;
       }

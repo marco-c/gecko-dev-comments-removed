@@ -91,7 +91,8 @@ Downscaler::BeginFrame(const nsIntSize& aOriginalSize,
                                mYFilter.get());
 
   
-  mRowBuffer = MakeUnique<uint8_t[]>(mOriginalSize.width * sizeof(uint32_t));
+  
+  mRowBuffer = MakeUnique<uint8_t[]>(mOriginalSize.width * sizeof(uint32_t) + 15);
   if (MOZ_UNLIKELY(!mRowBuffer)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -106,7 +107,8 @@ Downscaler::BeginFrame(const nsIntSize& aOriginalSize,
   }
 
   bool anyAllocationFailed = false;
-  const int rowSize = mTargetSize.width * sizeof(uint32_t);
+  
+  const int rowSize = mTargetSize.width * sizeof(uint32_t) + 15;
   for (int32_t i = 0; i < mWindowCapacity; ++i) {
     mWindow[i] = new uint8_t[rowSize];
     anyAllocationFailed = anyAllocationFailed || mWindow[i] == nullptr;

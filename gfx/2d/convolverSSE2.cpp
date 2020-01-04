@@ -37,24 +37,22 @@ namespace skia {
 
 
 void ConvolveHorizontally_SSE2(const unsigned char* src_data,
-                               int begin, int end,
                                const ConvolutionFilter1D& filter,
                                unsigned char* out_row) {
+  int num_values = filter.num_values();
 
   int filter_offset, filter_length;
   __m128i zero = _mm_setzero_si128();
-  __m128i mask[3];
+  __m128i mask[4];
   
   
-  mask[0] = _mm_set_epi16(0, 0, 0, 0, 0, 0, 0, -1);
-  mask[1] = _mm_set_epi16(0, 0, 0, 0, 0, 0, -1, -1);
-  mask[2] = _mm_set_epi16(0, 0, 0, 0, 0, -1, -1, -1);
+  
+  mask[1] = _mm_set_epi16(0, 0, 0, 0, 0, 0, 0, -1);
+  mask[2] = _mm_set_epi16(0, 0, 0, 0, 0, 0, -1, -1);
+  mask[3] = _mm_set_epi16(0, 0, 0, 0, 0, -1, -1, -1);
 
   
-  __m128i buffer;
-
-  
-  for (int out_x = begin; out_x < end; out_x++) {
+  for (int out_x = 0; out_x < num_values; out_x++) {
     const ConvolutionFilter1D::Fixed* filter_values =
         filter.FilterForValue(out_x, &filter_offset, &filter_length);
 
@@ -119,20 +117,19 @@ void ConvolveHorizontally_SSE2(const unsigned char* src_data,
     
     
     
-    int r = filter_length & 3;
+    int r = filter_length&3;
     if (r) {
-      memcpy(&buffer, row_to_filter, r * 4);
       
       __m128i coeff, coeff16;
       coeff = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(filter_values));
       
-      coeff = _mm_and_si128(coeff, mask[r-1]);
+      coeff = _mm_and_si128(coeff, mask[r]);
       coeff16 = _mm_shufflelo_epi16(coeff, _MM_SHUFFLE(1, 1, 0, 0));
       coeff16 = _mm_unpacklo_epi16(coeff16, coeff16);
 
       
       
-      __m128i src8 = _mm_loadu_si128(&buffer);
+      __m128i src8 = _mm_loadu_si128(row_to_filter);
       __m128i src16 = _mm_unpacklo_epi8(src8, zero);
       __m128i mul_hi = _mm_mulhi_epi16(src16, coeff16);
       __m128i mul_lo = _mm_mullo_epi16(src16, coeff16);
@@ -169,20 +166,22 @@ void ConvolveHorizontally_SSE2(const unsigned char* src_data,
 
 
 void ConvolveHorizontally4_SSE2(const unsigned char* src_data[4],
-                                int begin, int end,
                                 const ConvolutionFilter1D& filter,
                                 unsigned char* out_row[4]) {
+  int num_values = filter.num_values();
+
   int filter_offset, filter_length;
   __m128i zero = _mm_setzero_si128();
-  __m128i mask[3];
+  __m128i mask[4];
   
   
-  mask[0] = _mm_set_epi16(0, 0, 0, 0, 0, 0, 0, -1);
-  mask[1] = _mm_set_epi16(0, 0, 0, 0, 0, 0, -1, -1);
-  mask[2] = _mm_set_epi16(0, 0, 0, 0, 0, -1, -1, -1);
+  
+  mask[1] = _mm_set_epi16(0, 0, 0, 0, 0, 0, 0, -1);
+  mask[2] = _mm_set_epi16(0, 0, 0, 0, 0, 0, -1, -1);
+  mask[3] = _mm_set_epi16(0, 0, 0, 0, 0, -1, -1, -1);
 
   
-  for (int out_x = begin; out_x < end; out_x++) {
+  for (int out_x = 0; out_x < num_values; out_x++) {
     const ConvolutionFilter1D::Fixed* filter_values =
         filter.FilterForValue(out_x, &filter_offset, &filter_length);
 
@@ -240,7 +239,7 @@ void ConvolveHorizontally4_SSE2(const unsigned char* src_data[4],
       __m128i coeff;
       coeff = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(filter_values));
       
-      coeff = _mm_and_si128(coeff, mask[r-1]);
+      coeff = _mm_and_si128(coeff, mask[r]);
 
       __m128i coeff16lo = _mm_shufflelo_epi16(coeff, _MM_SHUFFLE(1, 1, 0, 0));
       
@@ -291,14 +290,15 @@ template<bool has_alpha>
 void ConvolveVertically_SSE2_impl(const ConvolutionFilter1D::Fixed* filter_values,
                                   int filter_length,
                                   unsigned char* const* source_data_rows,
-                                  int begin, int end,
+                                  int pixel_width,
                                   unsigned char* out_row) {
+  int width = pixel_width & ~3;
+
   __m128i zero = _mm_setzero_si128();
   __m128i accum0, accum1, accum2, accum3, coeff16;
   const __m128i* src;
-  int out_x;
   
-  for (out_x = begin; out_x + 3 < end; out_x += 4) {
+  for (int out_x = 0; out_x < width; out_x += 4) {
 
     
     accum0 = _mm_setzero_si128();
@@ -391,11 +391,7 @@ void ConvolveVertically_SSE2_impl(const ConvolutionFilter1D::Fixed* filter_value
 
   
   
-  int r = end - out_x;
-  if (r > 0) {
-    
-    __m128i *buffer = &accum3;
-
+  if (pixel_width & 3) {
     accum0 = _mm_setzero_si128();
     accum1 = _mm_setzero_si128();
     accum2 = _mm_setzero_si128();
@@ -403,9 +399,8 @@ void ConvolveVertically_SSE2_impl(const ConvolutionFilter1D::Fixed* filter_value
       coeff16 = _mm_set1_epi16(filter_values[filter_y]);
       
       src = reinterpret_cast<const __m128i*>(
-          &source_data_rows[filter_y][out_x * 4]);
-      memcpy(buffer, src, r * 4);
-      __m128i src8 = _mm_loadu_si128(buffer);
+          &source_data_rows[filter_y][width<<2]);
+      __m128i src8 = _mm_loadu_si128(src);
       
       __m128i src16 = _mm_unpacklo_epi8(src8, zero);
       __m128i mul_hi = _mm_mulhi_epi16(src16, coeff16);
@@ -451,7 +446,7 @@ void ConvolveVertically_SSE2_impl(const ConvolutionFilter1D::Fixed* filter_value
       accum0 = _mm_or_si128(accum0, mask);
     }
 
-    for (; out_x < end; out_x++) {
+    for (int out_x = width; out_x < pixel_width; out_x++) {
       *(reinterpret_cast<int*>(out_row)) = _mm_cvtsi128_si32(accum0);
       accum0 = _mm_srli_si128(accum0, 4);
       out_row += 4;
@@ -462,14 +457,14 @@ void ConvolveVertically_SSE2_impl(const ConvolutionFilter1D::Fixed* filter_value
 void ConvolveVertically_SSE2(const ConvolutionFilter1D::Fixed* filter_values,
                              int filter_length,
                              unsigned char* const* source_data_rows,
-                             int begin, int end,
+                             int pixel_width,
                              unsigned char* out_row, bool has_alpha) {
   if (has_alpha) {
     ConvolveVertically_SSE2_impl<true>(filter_values, filter_length,
-                                       source_data_rows, begin, end, out_row);
+                                       source_data_rows, pixel_width, out_row);
   } else {
     ConvolveVertically_SSE2_impl<false>(filter_values, filter_length,
-                                       source_data_rows, begin, end, out_row);
+                                       source_data_rows, pixel_width, out_row);
   }
 }
 
