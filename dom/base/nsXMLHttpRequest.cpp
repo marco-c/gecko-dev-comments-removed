@@ -1691,7 +1691,9 @@ nsXMLHttpRequest::Open(const nsACString& inMethod, const nsACString& url,
   }
 
   
-  if (doc) {
+  
+  
+  if (doc && doc->NodePrincipal() == mPrincipal) {
     rv = NS_NewChannel(getter_AddRefs(mChannel),
                        uri,
                        doc,
