@@ -9,11 +9,8 @@
 
 const {
   createFactory,
-  DOM: dom,
   PropTypes
 } = require("devtools/client/shared/vendor/react");
-const GripMessageBody = createFactory(require("devtools/client/webconsole/new-console-output/components/grip-message-body").GripMessageBody);
-const MessageIcon = createFactory(require("devtools/client/webconsole/new-console-output/components/message-icon").MessageIcon);
 
 EvaluationResult.displayName = "EvaluationResult";
 
@@ -23,27 +20,23 @@ EvaluationResult.propTypes = {
 
 function EvaluationResult(props) {
   const { message } = props;
-  const icon = MessageIcon({severity: message.severity});
+  let PreviewComponent = getPreviewComponent(message.data);
 
-  
-  
-  
-  return dom.div({
-    class: "message cm-s-mozilla",
-    is: "fdt-message",
+  return PreviewComponent({
+    data: message.data,
     category: message.category,
     severity: message.severity
-  },
-    
-    
-    icon,
-    dom.span(
-      {className: "message-body-wrapper message-body devtools-monospace"},
-      dom.span({},
-        GripMessageBody({grip: message.data})
-      )
-    )
-  );
+  });
+}
+
+function getPreviewComponent(data) {
+  if (typeof data.class != "undefined") {
+    switch (data.class) {
+      case "Date":
+        return createFactory(require("devtools/client/webconsole/new-console-output/components/message-types/date-preview").DatePreview);
+    }
+  }
+  return createFactory(require("devtools/client/webconsole/new-console-output/components/message-types/default-renderer").DefaultRenderer);
 }
 
 module.exports.EvaluationResult = EvaluationResult;
