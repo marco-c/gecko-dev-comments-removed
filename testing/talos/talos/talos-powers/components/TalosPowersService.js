@@ -7,10 +7,14 @@ const { interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
+  "resource://gre/modules/osfile.jsm");
 
 const FRAME_SCRIPT = "chrome://talos-powers/content/talos-powers-content.js";
 
-function TalosPowersService() {};
+function TalosPowersService() {
+  this.wrappedJSObject = this;
+};
 
 TalosPowersService.prototype = {
   classDescription: "Talos Powers",
@@ -25,9 +29,6 @@ TalosPowersService.prototype = {
         
         this.init();
         break;
-      case "sessionstore-windows-restored":
-        this.inject();
-        break;
       case "xpcom-shutdown":
         this.uninit();
         break;
@@ -35,25 +36,165 @@ TalosPowersService.prototype = {
   },
 
   init() {
-    
-    
-    Services.obs.addObserver(this, "sessionstore-windows-restored", false);
+    Services.mm.loadFrameScript(FRAME_SCRIPT, true);
+    Services.mm.addMessageListener("Talos:ForceQuit", this);
+    Services.mm.addMessageListener("TalosContentProfiler:Command", this);
     Services.obs.addObserver(this, "xpcom-shutdown", false);
   },
 
   uninit() {
-    Services.obs.removeObserver(this, "sessionstore-windows-restored", false);
     Services.obs.removeObserver(this, "xpcom-shutdown", false);
   },
 
-  inject() {
-    Services.mm.loadFrameScript(FRAME_SCRIPT, true);
-    Services.mm.addMessageListener("Talos:ForceQuit", this);
+  receiveMessage(message) {
+    switch(message.name) {
+      case "Talos:ForceQuit": {
+        this.forceQuit(message.data);
+        break;
+      }
+      case "TalosContentProfiler:Command": {
+        this.receiveProfileCommand(message);
+        break;
+      }
+    }
   },
 
-  receiveMessage(message) {
-    if (message.name == "Talos:ForceQuit") {
-      this.forceQuit(message.data);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  profilerBegin(data) {
+    Services.profiler
+            .StartProfiler(data.entries, data.interval,
+                           ["js", "leaf", "stackwalk", "threads"], 4,
+                           data.threadsArray, data.threadsArray.length);
+
+    Services.profiler.PauseSampling();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  profilerFinish(profileFile) {
+    return new Promise((resolve, reject) => {
+      Services.profiler.getProfileDataAsync().then((profile) => {
+        let encoder = new TextEncoder();
+        let array = encoder.encode(JSON.stringify(profile));
+
+        OS.File.writeAtomic(profileFile, array, {
+          tmpPath: profileFile + ".tmp",
+        }).then(() => {
+          Services.profiler.StopProfiler();
+          resolve();
+        });
+      }, (error) => {
+        Cu.reportError("Failed to gather profile: " + error);
+        
+        
+        reject();
+      });
+    });
+  },
+
+  
+
+
+
+
+
+
+  profilerPause(marker=null) {
+    if (marker) {
+      Services.profiler.AddMarker(marker);
+    }
+
+    Services.profiler.PauseSampling();
+  },
+
+  
+
+
+
+
+
+
+  profilerResume(marker=null) {
+    Services.profiler.ResumeSampling();
+
+    if (marker) {
+      Services.profiler.AddMarker(marker);
+    }
+  },
+
+  
+
+
+  profilerMarker(marker) {
+    Services.profiler.AddMarker(marker);
+  },
+
+  receiveProfileCommand(message) {
+    const ACK_NAME = "TalosContentProfiler:Response";
+    let mm = message.target.messageManager;
+    let name = message.data.name;
+    let data = message.data.data;
+
+    switch(name) {
+      case "Profiler:Begin": {
+        this.profilerBegin(data);
+        
+        
+        
+        
+        mm.sendAsyncMessage(ACK_NAME, { name });
+        break;
+      }
+
+      case "Profiler:Finish": {
+        
+        let profileFile = data.profileFile;
+        this.profilerFinish(data.profileFile).then(() => {
+          mm.sendAsyncMessage(ACK_NAME, { name });
+        });
+        break;
+      }
+
+      case "Profiler:Pause": {
+        this.profilerPause(data.marker);
+        mm.sendAsyncMessage(ACK_NAME, { name });
+        break;
+      }
+
+      case "Profiler:Resume": {
+        this.profilerResume(data.marker);
+        mm.sendAsyncMessage(ACK_NAME, { name });
+        break;
+      }
+
+      case "Profiler:Marker": {
+        this.profilerMarker(data.marker);
+        mm.sendAsyncMessage(ACK_NAME, { name });
+      }
     }
   },
 
