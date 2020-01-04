@@ -10,10 +10,25 @@
   if (this.module && module.id.indexOf("event-emitter") >= 0) { 
     factory.call(this, require, exports, module);
   } else { 
-      const Cu = Components.utils;
-      const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
       this.isWorker = false;
-      this.promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
+      
+      
+      
+      let require = function(module) {
+        const Cu = Components.utils;
+        switch(module) {
+          case "promise":
+            return Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
+          case "Services":
+            return Cu.import("resource://gre/modules/Services.jsm", {}).Services;
+          case "chrome":
+            return {
+              Cu,
+              components: Components
+            };
+        }
+        return null;
+      }
       factory.call(this, require, this, { exports: this });
       this.EXPORTED_SYMBOLS = ["EventEmitter"];
   }
@@ -21,6 +36,7 @@
 
 this.EventEmitter = function EventEmitter() {};
 module.exports = EventEmitter;
+
 
 const { Cu, components } = require("chrome");
 const Services = require("Services");
