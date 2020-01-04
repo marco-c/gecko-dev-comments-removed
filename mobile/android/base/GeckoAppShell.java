@@ -132,6 +132,8 @@ public class GeckoAppShell
     
     private GeckoAppShell() { }
 
+    private static GeckoEditableListener editableListener;
+
     private static final CrashHandler CRASH_HANDLER = new CrashHandler() {
         @Override
         protected String getAppPackageName() {
@@ -322,6 +324,17 @@ public class GeckoAppShell
             return;
         }
         sLayerView = lv;
+
+        
+        
+        
+        if (editableListener == null) {
+            
+            editableListener = new GeckoEditable();
+        } else {
+            
+            GeckoAppShell.notifyIMEContext(GeckoEditableListener.IME_STATE_DISABLED, "", "", "");
+        }
     }
 
     @RobocopTarget
@@ -404,6 +417,31 @@ public class GeckoAppShell
     @WrapForJNI(allowMultithread = true, noThrow = true)
     public static void handleUncaughtException(Thread thread, Throwable e) {
         CRASH_HANDLER.uncaughtException(thread, e);
+    }
+
+    @WrapForJNI
+    public static void notifyIME(int type) {
+        if (editableListener != null) {
+            editableListener.notifyIME(type);
+        }
+    }
+
+    @WrapForJNI
+    public static void notifyIMEContext(int state, String typeHint,
+                                        String modeHint, String actionHint) {
+        if (editableListener != null) {
+            editableListener.notifyIMEContext(state, typeHint,
+                                               modeHint, actionHint);
+        }
+    }
+
+    @WrapForJNI
+    public static void notifyIMEChange(String text, int start, int end, int newEnd) {
+        if (newEnd < 0) { 
+            editableListener.onSelectionChange(start, end);
+        } else { 
+            editableListener.onTextChange(text, start, end, newEnd);
+        }
     }
 
     private static final Object sEventAckLock = new Object();
