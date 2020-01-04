@@ -21,45 +21,26 @@ using mozilla::dom::ContentParent;
 using mozilla::LogLevel;
 using mozilla::Unused;
 
-#define kAPP           NS_LITERAL_CSTRING("app")
-#define kGRE           NS_LITERAL_CSTRING("gre")
+#define kAPP           "app"
+#define kGRE           "gre"
 
 nsresult
 nsResProtocolHandler::Init()
 {
     nsresult rv;
-    nsAutoCString appURI, greURI;
-    rv = mozilla::Omnijar::GetURIString(mozilla::Omnijar::APP, appURI);
+    rv = mozilla::Omnijar::GetURIString(mozilla::Omnijar::APP, mAppURI);
     NS_ENSURE_SUCCESS(rv, rv);
-    rv = mozilla::Omnijar::GetURIString(mozilla::Omnijar::GRE, greURI);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    
-    
-    nsCOMPtr<nsIURI> uri;
-    rv = NS_NewURI(getter_AddRefs(uri), appURI.Length() ? appURI : greURI);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = SetSubstitution(EmptyCString(), uri);
+    rv = mozilla::Omnijar::GetURIString(mozilla::Omnijar::GRE, mGREURI);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
     
-    
-    rv = SetSubstitution(kAPP, uri);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    
-    
-    if (appURI.Length()) { 
-        rv = NS_NewURI(getter_AddRefs(uri), greURI);
-        NS_ENSURE_SUCCESS(rv, rv);
+    mGREURI.Truncate(mGREURI.Length() - 1);
+    if (mAppURI.Length()) {
+      mAppURI.Truncate(mAppURI.Length() - 1);
+    } else {
+      mAppURI = mGREURI;
     }
-
-    rv = SetSubstitution(kGRE, uri);
-    NS_ENSURE_SUCCESS(rv, rv);
 
     
     
@@ -83,20 +64,36 @@ NS_IMPL_RELEASE_INHERITED(nsResProtocolHandler, SubstitutingProtocolHandler)
 nsresult
 nsResProtocolHandler::GetSubstitutionInternal(const nsACString& root, nsIURI **result)
 {
-    
+    nsAutoCString uri;
 
-    nsAutoCString key;
-    key.AssignLiteral("resource:");
-    key.Append(root);
-
-    nsCOMPtr<nsIFile> file;
-    nsresult rv = NS_GetSpecialDirectory(key.get(), getter_AddRefs(file));
-    if (NS_FAILED(rv))
+    if (!ResolveSpecialCases(root, NS_LITERAL_CSTRING("/"), uri)) {
         return NS_ERROR_NOT_AVAILABLE;
-        
-    rv = IOService()->NewFileURI(file, result);
-    if (NS_FAILED(rv))
-        return NS_ERROR_NOT_AVAILABLE;
+    }
 
-    return NS_OK;
+    return NS_NewURI(result, uri);
+}
+
+bool
+nsResProtocolHandler::ResolveSpecialCases(const nsACString& aHost,
+                                          const nsACString& aPath,
+                                          nsACString& aResult)
+{
+    if (aHost.Equals("") || aHost.Equals(kAPP)) {
+        aResult.Assign(mAppURI);
+    } else if (aHost.Equals(kGRE)) {
+        aResult.Assign(mGREURI);
+    } else {
+        return false;
+    }
+    aResult.Append(aPath);
+    return true;
+}
+
+nsresult
+nsResProtocolHandler::SetSubstitution(const nsACString& aRoot, nsIURI* aBaseURI)
+{
+    MOZ_ASSERT(!aRoot.Equals(""));
+    MOZ_ASSERT(!aRoot.Equals(kAPP));
+    MOZ_ASSERT(!aRoot.Equals(kGRE));
+    return SubstitutingProtocolHandler::SetSubstitution(aRoot, aBaseURI);
 }
