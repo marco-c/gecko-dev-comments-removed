@@ -225,6 +225,11 @@ const mozilla::Telemetry::ID kRecordingInitiallyDisabledIDs[] = {
 
 const uint32_t kBatchTimeoutMs = 2000;
 
+
+
+
+const size_t kAccumulationsArrayHighWaterMark = 5 * 1024;
+
 } 
 
 
@@ -1315,6 +1320,11 @@ internal_RemoteAccumulate(mozilla::Telemetry::ID aId, uint32_t aSample)
   if (!gAccumulations) {
     gAccumulations = new nsTArray<Accumulation>();
   }
+  if (gAccumulations->Length() == kAccumulationsArrayHighWaterMark) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction([]() -> void {
+      TelemetryHistogram::IPCTimerFired(nullptr, nullptr);
+    }));
+  }
   gAccumulations->AppendElement(Accumulation{aId, aSample});
   internal_armIPCTimer();
   return true;
@@ -1329,6 +1339,11 @@ internal_RemoteAccumulate(mozilla::Telemetry::ID aId,
   }
   if (!gKeyedAccumulations) {
     gKeyedAccumulations = new nsTArray<KeyedAccumulation>();
+  }
+  if (gKeyedAccumulations->Length() == kAccumulationsArrayHighWaterMark) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction([]() -> void {
+      TelemetryHistogram::IPCTimerFired(nullptr, nullptr);
+    }));
   }
   gKeyedAccumulations->AppendElement(KeyedAccumulation{aId, aSample, aKey});
   internal_armIPCTimer();
