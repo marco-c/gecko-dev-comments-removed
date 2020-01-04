@@ -926,8 +926,6 @@ public class Tabs implements GeckoEventListener {
 
         
         if (AboutPages.isBuiltinIconPage(url)) {
-            Log.d(LOGTAG, "Setting about: tab favicon inline.");
-            tabToSelect.addFavicon(url, Favicons.browserToolbarFaviconSize, "");
             tabToSelect.loadFavicon();
         }
 

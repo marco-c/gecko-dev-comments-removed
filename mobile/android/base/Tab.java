@@ -425,6 +425,11 @@ public class Tab {
 
     public void loadFavicon() {
         
+        if (AboutPages.isBuiltinIconPage(mUrl) && mFavicon != null) {
+            return;
+        }
+
+        
         if (!mAvailableFavicons.isEmpty()) {
             RemoteFavicon newFavicon = mAvailableFavicons.first();
 
@@ -667,6 +672,12 @@ public class Tab {
                 
                 
                 clearFavicon();
+
+                
+                if (AboutPages.isBuiltinIconPage(uri)) {
+                    loadFavicon();
+                }
+
                 updateTitle(null);
             }
         }
