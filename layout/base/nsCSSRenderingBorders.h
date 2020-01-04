@@ -76,7 +76,6 @@ public:
 
   nsCSSBorderRenderer(nsPresContext::nsPresContextType aPresContextType,
                       DrawTarget* aDrawTarget,
-                      const Rect& aDirtyRect,
                       Rect& aOuterRect,
                       const uint8_t* aBorderStyles,
                       const Float* aBorderWidths,
@@ -110,7 +109,6 @@ private:
 
   
   DrawTarget* mDrawTarget;
-  const Rect& mDirtyRect;
 
   
   Rect mOuterRect;
