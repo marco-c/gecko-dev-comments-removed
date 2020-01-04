@@ -2,153 +2,164 @@
 
 
 
-function test() {
-  
-
-  waitForExplicitFinish();
-
-  const PRIORITY_DELTA = -10; 
-
-  
-  
-  function getPriority(aBrowser) {
-    
-    if (!aBrowser.webNavigation)
-      aBrowser = aBrowser.linkedBrowser;
-    return aBrowser.webNavigation.QueryInterface(Ci.nsIDocumentLoader)
-                   .loadGroup.QueryInterface(Ci.nsISupportsPriority).priority;
-  }
-  function setPriority(aBrowser, aPriority) {
-    if (!aBrowser.webNavigation)
-      aBrowser = aBrowser.linkedBrowser;
-    aBrowser.webNavigation.QueryInterface(Ci.nsIDocumentLoader)
-            .loadGroup.QueryInterface(Ci.nsISupportsPriority).priority = aPriority;
-  }
-
-  function isWindowState(aWindow, aTabPriorities) {
-    let browsers = aWindow.gBrowser.browsers;
-    
-    is(browsers.length, aTabPriorities.length,
-       "Window has expected number of tabs");
-    
-    for (let i = 0; i < browsers.length; i++) {
-      is(getPriority(browsers[i]), aTabPriorities[i],
-         "Tab had expected priority");
-    }
-  }
 
 
-  
-  
-  
-  
-  function test_behavior() {
+const LOWEST  = Ci.nsISupportsPriority.PRIORITY_LOWEST;
+const LOW     = Ci.nsISupportsPriority.PRIORITY_LOW;
+const NORMAL  = Ci.nsISupportsPriority.PRIORITY_NORMAL;
+const HIGH    = Ci.nsISupportsPriority.PRIORITY_HIGH;
+const HIGHEST = Ci.nsISupportsPriority.PRIORITY_HIGHEST;
 
-    
-    let window_A = window;
-
-    
-    isWindowState(window_A, [-10]);
-
-    
-    let tab_A2 = window_A.gBrowser.addTab("http://example.com");
-    let tab_A3 = window_A.gBrowser.addTab("about:config");
-    tab_A3.linkedBrowser.addEventListener("load", function(aEvent) {
-      tab_A3.linkedBrowser.removeEventListener("load", arguments.callee, true);
-
-      
-      isWindowState(window_A, [-10, 0, 0]);
-
-      
-      window_A.gBrowser.selectedTab = tab_A2;
-      isWindowState(window_A, [0, -10, 0]);
-
-      window_A.gBrowser.removeTab(tab_A2);
-      
-      isWindowState(window_A, [0, -10]);
-
-      
-      let window_B = openDialog(location, "_blank", "chrome,all,dialog=no", "http://example.com");
-      window_B.addEventListener("load", function(aEvent) {
-        window_B.removeEventListener("load", arguments.callee, false);
-        window_B.gBrowser.addEventListener("load", function(aEvent) {
-          
-          
-          if (window_B.gBrowser.currentURI.spec == "about:blank")
-            return;
-          window_B.gBrowser.removeEventListener("load", arguments.callee, true);
-
-          waitForFocus(function() {
-            isWindowState(window_A, [10, 0]);
-            isWindowState(window_B, [-10]);
-
-            waitForFocus(function() {
-              isWindowState(window_A, [0, -10]);
-              isWindowState(window_B, [0]);
-
-              waitForFocus(function() {
-                isWindowState(window_A, [10, 0]);
-                isWindowState(window_B, [-10]);
-
-                
-                window_B.close();
-                window_A.gBrowser.removeTab(tab_A3);
-                executeSoon(runNextTest);
-              }, window_B);
-            }, window_A);
-          }, window_B);
-        }, true);
-      }, false);
-    }, true);
-
-  }
+const DELTA = NORMAL - LOW; 
 
 
-  
-  
-  
-  function test_extremePriorities() {
-    let tab_A1 = gBrowser.tabContainer.getItemAtIndex(0);
-    let oldPriority = getPriority(tab_A1);
 
-    
-    
-    setPriority(tab_A1, Ci.nsISupportsPriority.PRIORITY_LOWEST);
+function* getPriority(aBrowser) {
+  if (aBrowser.localName == "tab")
+    aBrowser = aBrowser.linkedBrowser;
 
-    let tab_A2 = gBrowser.addTab("http://example.com");
-    tab_A2.linkedBrowser.addEventListener("load", function(aEvent) {
-      tab_A2.linkedBrowser.removeEventListener("load", arguments.callee, true);
-      gBrowser.selectedTab = tab_A2;
-      is(getPriority(tab_A1), Ci.nsISupportsPriority.PRIORITY_LOWEST - PRIORITY_DELTA,
-         "Can adjust priority beyond 'lowest'");
-
-      
-      setPriority(tab_A1, Ci.nsISupportsPriority.PRIORITY_HIGHEST);
-      gBrowser.selectedTab = tab_A1;
-
-      is(getPriority(tab_A1), Ci.nsISupportsPriority.PRIORITY_HIGHEST + PRIORITY_DELTA,
-         "Can adjust priority beyond 'highest'");
-
-      
-      gBrowser.removeTab(tab_A2);
-      executeSoon(function() {
-        setPriority(tab_A1, oldPriority);
-        runNextTest();
-      });
-
-    }, true);
-  }
-
-
-  let tests = [test_behavior, test_extremePriorities];
-  function runNextTest() {
-    if (tests.length) {
-      
-      waitForFocus(tests.shift());
-    } else {
-      finish();
-    }
-  }
-
-  runNextTest();
+  return yield ContentTask.spawn(aBrowser, null, function* () {
+    return docShell.QueryInterface(Components.interfaces.nsIWebNavigation)
+                   .QueryInterface(Components.interfaces.nsIDocumentLoader)
+                   .loadGroup
+                   .QueryInterface(Components.interfaces.nsISupportsPriority)
+                   .priority;
+  });
 }
+
+function* setPriority(aBrowser, aPriority) {
+  if (aBrowser.localName == "tab")
+    aBrowser = aBrowser.linkedBrowser;
+
+  yield ContentTask.spawn(aBrowser, aPriority, function* (aPriority) {
+    docShell.QueryInterface(Components.interfaces.nsIWebNavigation)
+                                    .QueryInterface(Components.interfaces.nsIDocumentLoader)
+                                    .loadGroup
+                                    .QueryInterface(Ci.nsISupportsPriority)
+                                    .priority = aPriority;
+  });
+}
+
+function* isWindowState(aWindow, aTabPriorities) {
+  let browsers = aWindow.gBrowser.browsers;
+  
+  is(browsers.length, aTabPriorities.length,
+     "Window has expected number of tabs");
+  
+  for (let i = 0; i < browsers.length; i++) {
+    is(yield getPriority(browsers[i]), aTabPriorities[i],
+       "Tab " + i + " had expected priority");
+  }
+}
+
+function promiseWaitForFocus(aWindow) {
+  return new Promise((resolve) => {
+    waitForFocus(resolve, aWindow);
+  });
+}
+
+add_task(function*() {
+  
+  
+  
+  
+
+  
+  let window_A = window;
+
+  
+  yield isWindowState(window_A, [HIGH]);
+
+  
+  let tab_A2 = window_A.gBrowser.addTab("http://example.com");
+  let tab_A3 = window_A.gBrowser.addTab("about:config");
+  yield BrowserTestUtils.browserLoaded(tab_A3.linkedBrowser);
+
+  
+  yield isWindowState(window_A, [HIGH, NORMAL, NORMAL]);
+
+  
+  window_A.gBrowser.selectedTab = tab_A2;
+  yield isWindowState(window_A, [NORMAL, HIGH, NORMAL]);
+
+  window_A.gBrowser.removeTab(tab_A2);
+  
+  
+  yield isWindowState(window_A, [NORMAL, HIGH]);
+
+  
+  let window_B = yield BrowserTestUtils.openNewBrowserWindow();
+
+  yield promiseWaitForFocus(window_B);
+  yield isWindowState(window_A, [LOW, NORMAL]);
+  yield isWindowState(window_B, [HIGH]);
+
+  yield promiseWaitForFocus(window_A);
+  yield isWindowState(window_A, [NORMAL, HIGH]);
+  yield isWindowState(window_B, [NORMAL]);
+
+  yield promiseWaitForFocus(window_B);
+  yield isWindowState(window_A, [LOW, NORMAL]);
+  yield isWindowState(window_B, [HIGH]);
+
+  
+  window_A.gBrowser.removeTab(tab_A3);
+  yield BrowserTestUtils.closeWindow(window_B);
+});
+
+add_task(function*() {
+  
+  
+  
+
+  yield promiseWaitForFocus();
+
+  let tab1 = gBrowser.tabs[0];
+  let oldPriority = yield getPriority(tab1);
+
+  
+  
+  yield setPriority(tab1, LOWEST);
+
+  let tab2 = gBrowser.addTab("http://example.com");
+  yield BrowserTestUtils.browserLoaded(tab2.linkedBrowser);
+  gBrowser.selectedTab = tab2;
+  is(yield getPriority(tab1), LOWEST - DELTA, "Can adjust priority beyond 'lowest'");
+
+  
+  yield setPriority(tab1, HIGHEST);
+  gBrowser.selectedTab = tab1;
+
+  is(yield getPriority(tab1), HIGHEST + DELTA, "Can adjust priority beyond 'highest'");
+
+  
+  gBrowser.removeTab(tab2);
+  yield setPriority(tab1, oldPriority);
+});
+
+add_task(function*() {
+  
+
+  if (!gMultiProcessBrowser) {
+    return;
+  }
+
+  let browser = gBrowser.selectedBrowser;
+
+  browser.loadURI("http://example.com");
+  yield BrowserTestUtils.browserLoaded(browser);
+  ok(browser.isRemoteBrowser, "web page should be loaded in remote browser");
+  is(yield getPriority(browser), HIGH, "priority of selected tab should be 'high'");
+
+  browser.loadURI("about:rights");
+  yield BrowserTestUtils.browserLoaded(browser);
+  ok(!browser.isRemoteBrowser, "about:rights should switch browser to non-remote");
+  is(yield getPriority(browser), HIGH,
+     "priority of selected tab should be 'high' when going from remote to non-remote");
+
+  browser.loadURI("http://example.com");
+  yield BrowserTestUtils.browserLoaded(browser);
+  ok(browser.isRemoteBrowser, "going from about:rights to web page should switch browser to remote");
+  is(yield getPriority(browser), HIGH,
+     "priority of selected tab should be 'high' when going from non-remote to remote");
+});

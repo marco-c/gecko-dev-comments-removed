@@ -27,15 +27,17 @@ XPCOMUtils.defineLazyServiceGetter(this, "_focusManager",
 
 
 
-const TAB_EVENTS = ["TabOpen", "TabSelect"];
+const TAB_EVENTS = ["TabOpen", "TabSelect", "TabRemotenessChange"];
 const WINDOW_EVENTS = ["activate", "unload"];
 
-const PRIORITY_DELTA = -10;
+const PRIORITY_DELTA = Ci.nsISupportsPriority.PRIORITY_NORMAL - Ci.nsISupportsPriority.PRIORITY_LOW;
 
 
 
 var _lastFocusedWindow = null;
 var _windows = [];
+
+var _priorityBackup = new WeakMap();
 
 
 
@@ -56,6 +58,9 @@ function _handleEvent(aEvent) {
     case "activate":
       WindowHelper.onActivate(aEvent.target);
       break;
+    case "TabRemotenessChange":
+      BrowserHelper.onRemotenessChange(aEvent.target.linkedBrowser);
+      break;
     case "unload":
       WindowHelper.removeWindow(aEvent.currentTarget);
       break;
@@ -66,6 +71,8 @@ function _handleEvent(aEvent) {
 
 var BrowserHelper = {
   onOpen: function NP_BH_onOpen(aBrowser) {
+    _priorityBackup.set(aBrowser.permanentKey, Ci.nsISupportsPriority.PRIORITY_NORMAL);
+
     
     if (aBrowser.ownerDocument.defaultView != _lastFocusedWindow)
       this.decreasePriority(aBrowser);
@@ -80,12 +87,20 @@ var BrowserHelper = {
     windowEntry.lastSelectedBrowser = aBrowser;
   },
 
+  onRemotenessChange: function (aBrowser) {
+    aBrowser.setPriority(_priorityBackup.get(aBrowser.permanentKey));
+  },
+
   increasePriority: function NP_BH_increasePriority(aBrowser) {
     aBrowser.adjustPriority(PRIORITY_DELTA);
+    _priorityBackup.set(aBrowser.permanentKey,
+                        _priorityBackup.get(aBrowser.permanentKey) + PRIORITY_DELTA);
   },
 
   decreasePriority: function NP_BH_decreasePriority(aBrowser) {
     aBrowser.adjustPriority(PRIORITY_DELTA * -1);
+    _priorityBackup.set(aBrowser.permanentKey,
+                        _priorityBackup.get(aBrowser.permanentKey) - PRIORITY_DELTA);
   }
 };
 
