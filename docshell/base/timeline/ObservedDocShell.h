@@ -4,8 +4,8 @@
 
 
 
-#ifndef ObservedDocShell_h_
-#define ObservedDocShell_h_
+#ifndef mozilla_ObservedDocShell_h_
+#define mozilla_ObservedDocShell_h_
 
 #include "nsTArray.h"
 #include "mozilla/nsRefPtr.h"

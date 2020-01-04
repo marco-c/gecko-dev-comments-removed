@@ -8,10 +8,8 @@
 #define TimelineMarker_h_
 
 #include "nsString.h"
-#include "GeckoProfiler.h"
-#include "mozilla/dom/ProfileTimelineMarkerBinding.h"
 #include "nsContentUtils.h"
-#include "jsapi.h"
+#include "GeckoProfiler.h"
 
 class nsDocShell;
 
@@ -23,21 +21,28 @@ class TimelineMarker
 public:
   enum TimelineStackRequest { STACK, NO_STACK };
 
-  TimelineMarker(nsDocShell* aDocShell, const char* aName,
-                 TracingMetadata aMetaData);
-
-  TimelineMarker(nsDocShell* aDocShell, const char* aName,
-                 const mozilla::TimeStamp& aTime,
-                 TracingMetadata aMetaData);
-
-  TimelineMarker(nsDocShell* aDocShell, const char* aName,
+  TimelineMarker(const char* aName,
                  TracingMetadata aMetaData,
+                 TimelineStackRequest aStackRequest = STACK);
+
+  TimelineMarker(const char* aName,
+                 const mozilla::TimeStamp& aTime,
+                 TracingMetadata aMetaData,
+                 TimelineStackRequest aStackRequest = STACK);
+
+  TimelineMarker(const char* aName,
                  const nsAString& aCause,
+                 TracingMetadata aMetaData,
+                 TimelineStackRequest aStackRequest = STACK);
+
+  TimelineMarker(const char* aName,
+                 const nsAString& aCause,
+                 const mozilla::TimeStamp& aTime,
+                 TracingMetadata aMetaData,
                  TimelineStackRequest aStackRequest = STACK);
 
   virtual ~TimelineMarker();
 
-  
   
   
   virtual bool Equals(const TimelineMarker& aOther)
@@ -49,13 +54,10 @@ public:
   
   
   
-  
-  virtual void AddDetails(JSContext* aCx,
-                          mozilla::dom::ProfileTimelineMarker& aMarker)
+  virtual void AddDetails(JSContext* aCx, mozilla::dom::ProfileTimelineMarker& aMarker)
   {}
 
-  virtual void AddLayerRectangles(
-      mozilla::dom::Sequence<mozilla::dom::ProfileTimelineLayerRect>&)
+  virtual void AddLayerRectangles(mozilla::dom::Sequence<mozilla::dom::ProfileTimelineLayerRect>&)
   {
     MOZ_ASSERT_UNREACHABLE("can only be called on layer markers");
   }
@@ -89,15 +91,20 @@ protected:
 
 private:
   const char* mName;
-  TracingMetadata mMetaData;
-  DOMHighResTimeStamp mTime;
   nsString mCause;
+  DOMHighResTimeStamp mTime;
+  TracingMetadata mMetaData;
 
   
   
   
   
   JS::PersistentRooted<JSObject*> mStackTrace;
+
+  void SetCurrentTime();
+  void SetCustomTime(const mozilla::TimeStamp& aTime);
+  void CaptureStackIfNecessary(TracingMetadata aMetaData,
+                               TimelineStackRequest aStackRequest);
 };
 
 #endif 
