@@ -13,10 +13,8 @@
   %customizeToolbarDTD;
 <!ENTITY % placesDTD SYSTEM "chrome:
 %placesDTD;
-#ifdef MOZ_SAFE_BROWSING
 <!ENTITY % safebrowsingDTD SYSTEM "chrome:
 %safebrowsingDTD;
-#endif
 <!ENTITY % aboutHomeDTD SYSTEM "chrome:
 %aboutHomeDTD;
 <!ENTITY % syncBrandDTD SYSTEM "chrome:

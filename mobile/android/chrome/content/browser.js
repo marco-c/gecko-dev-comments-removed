@@ -57,10 +57,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerParent",
 XPCOMUtils.defineLazyModuleGetter(this, "Task", "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
-if (AppConstants.MOZ_SAFE_BROWSING) {
-  XPCOMUtils.defineLazyModuleGetter(this, "SafeBrowsing",
-                                    "resource://gre/modules/SafeBrowsing.jsm");
-}
+XPCOMUtils.defineLazyModuleGetter(this, "SafeBrowsing",
+                                  "resource://gre/modules/SafeBrowsing.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
                                   "resource://gre/modules/BrowserUtils.jsm");
@@ -549,10 +547,8 @@ var BrowserApp = {
       InitLater(() => Services.search.init(), Services, "search");
       InitLater(() => DownloadNotifications.init(), window, "DownloadNotifications");
 
-      if (AppConstants.MOZ_SAFE_BROWSING) {
-        
-        InitLater(() => SafeBrowsing.init(), window, "SafeBrowsing");
-      }
+      
+      InitLater(() => SafeBrowsing.init(), window, "SafeBrowsing");
 
       InitLater(() => Cc["@mozilla.org/login-manager;1"].getService(Ci.nsILoginManager));
       InitLater(() => LoginManagerParent.init(), window, "LoginManagerParent");
@@ -2998,8 +2994,7 @@ var NativeWindow = {
       if (href)
         return href;
 
-      href = aLink.getAttribute("href") ||
-             aLink.getAttributeNS(kXLinkNamespace, "href");
+      href = aLink.getAttributeNS(kXLinkNamespace, "href");
       if (!href || !href.match(/\S/)) {
         
         
@@ -6788,8 +6783,6 @@ var Distribution = {
   
   _file: null,
 
-  _preferencesJSON: null,
-
   init: function dc_init() {
     Services.obs.addObserver(this, "Distribution:Changed", false);
     Services.obs.addObserver(this, "Distribution:Set", false);
@@ -6815,13 +6808,6 @@ var Distribution = {
         
 
       case "Distribution:Set":
-        if (aData) {
-          try {
-            this._preferencesJSON = JSON.parse(aData);
-          } catch (e) {
-            console.log("Invalid distribution JSON.");
-          }
-        }
         
         Services.prefs.QueryInterface(Ci.nsIObserver).observe(null, "reload-default-prefs", null);
         this.installDistroAddons();
@@ -6856,12 +6842,6 @@ var Distribution = {
   },
 
   getPrefs: function dc_getPrefs() {
-    if (this._preferencesJSON) {
-        this.applyPrefs(this._preferencesJSON);
-        this._preferencesJSON = null;
-        return;
-    }
-
     
     let file = FileUtils.getDir("XREAppDist", [], false);
     if (!file.exists())

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 var gSafeBrowsing = {
 
   setReportPhishingMenu: function() {
