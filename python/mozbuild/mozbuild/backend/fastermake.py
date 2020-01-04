@@ -118,9 +118,6 @@ class FasterMakeBackend(CommonBackend):
             dest = mozpath.join(obj.install_target, pref_dir,
                                 mozpath.basename(obj.path))
             
-            if self.environment.substs['OS_ARCH'] == 'WINNT':
-                defines.append('--line-endings=crlf')
-            
             
             defines.append('--silence-missing-directive-warnings')
             self._preprocess_files[dest] = (obj.srcdir, obj.path, defines)
