@@ -105,7 +105,7 @@ class XPCShellTestThread(Thread):
     def __init__(self, test_object, event, cleanup_dir_list, retry=True,
             app_dir_key=None, interactive=False,
             verbose=False, pStdout=None, pStderr=None, keep_going=False,
-            log=None, **kwargs):
+            log=None, usingTSan=False, **kwargs):
         Thread.__init__(self)
         self.daemon = True
 
@@ -140,6 +140,7 @@ class XPCShellTestThread(Thread):
         self.pStderr = pStderr
         self.keep_going = keep_going
         self.log = log
+        self.usingTSan = usingTSan
 
         
         
@@ -699,7 +700,23 @@ class XPCShellTestThread(Thread):
                 self.parse_output(process_output)
 
             return_code = self.getReturnCode(proc)
-            passed = (not self.has_failure_output) and (return_code == 0)
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            TSAN_EXIT_CODE_WITH_RACES = 66
+
+            return_code_ok = (return_code == 0 or
+                              (self.usingTSan and
+                               return_code == TSAN_EXIT_CODE_WITH_RACES))
+            passed = (not self.has_failure_output) and return_code_ok
 
             status = 'PASS' if passed else 'FAIL'
             expected = 'PASS' if expect_pass else 'FAIL'
@@ -727,6 +744,12 @@ class XPCShellTestThread(Thread):
                             f.write('%s = %s\n' % (k, v))
 
             else:
+                
+                
+                
+                if self.usingTSan and return_code == TSAN_EXIT_CODE_WITH_RACES:
+                    self.log_full_output(self.output_lines)
+
                 self.log.test_end(name, status, expected=expected, message=message)
                 if self.verbose:
                     self.log_full_output(self.output_lines)
@@ -913,7 +936,8 @@ class XPCShellTests(object):
                 if usingASan:
                     self.env["ASAN_SYMBOLIZER_PATH"] = llvmsym
                 else:
-                    self.env["TSAN_OPTIONS"] = "external_symbolizer_path=%s" % llvmsym
+                    oldTSanOptions = self.env.get("TSAN_OPTIONS", "")
+                    self.env["TSAN_OPTIONS"] = "external_symbolizer_path={} {}".format(llvmsym, oldTSanOptions)
                 self.log.info("runxpcshelltests.py | using symbolizer at %s" % llvmsym)
             else:
                 self.log.error("TEST-UNEXPECTED-FAIL | runxpcshelltests.py | Failed to find symbolizer at %s" % llvmsym)
@@ -1263,6 +1287,10 @@ class XPCShellTests(object):
                 return False
 
         
+        
+        usingTSan = "tsan" in self.mozInfo and self.mozInfo["tsan"]
+
+        
         tests_queue = deque()
         
         sequential_tests = []
@@ -1284,7 +1312,7 @@ class XPCShellTests(object):
                     interactive=interactive,
                     verbose=verbose or test_object.get("verbose") == "true",
                     pStdout=pStdout, pStderr=pStderr,
-                    keep_going=keepGoing, log=self.log,
+                    keep_going=keepGoing, log=self.log, usingTSan=usingTSan,
                     mobileArgs=mobileArgs, **kwargs)
             if 'run-sequentially' in test_object or self.sequential:
                 sequential_tests.append(test)
