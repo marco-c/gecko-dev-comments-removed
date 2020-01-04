@@ -268,29 +268,6 @@ GetWebIDLCallerPrincipal()
   }
   AutoEntryScript* aes = static_cast<AutoEntryScript*>(entry);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!aes->CxPusherIsStackTop()) {
-    return nullptr;
-  }
-
   return aes->mWebIDLCallerPrincipal;
 }
 
@@ -755,9 +732,9 @@ danger::AutoCxPusher::AutoCxPusher(JSContext* cx, bool allowNull)
 
   XPCJSContextStack *stack = XPCJSRuntime::Get()->GetJSContextStack();
   stack->Push(cx);
-  mStackDepthAfterPush = stack->Count();
 
 #ifdef DEBUG
+  mStackDepthAfterPush = stack->Count();
   mPushedContext = cx;
   mCompartmentDepthOnEntry = cx ? js::GetEnterCompartmentDepth(cx) : 0;
 #endif
@@ -781,11 +758,11 @@ danger::AutoCxPusher::~AutoCxPusher()
   
   MOZ_ASSERT_IF(mPushedContext, mCompartmentDepthOnEntry ==
                                 js::GetEnterCompartmentDepth(mPushedContext));
-  DebugOnly<JSContext*> stackTop;
   MOZ_ASSERT(mPushedContext == nsXPConnect::XPConnect()->GetCurrentJSContext());
   XPCJSRuntime::Get()->GetJSContextStack()->Pop();
 }
 
+#ifdef DEBUG
 bool
 danger::AutoCxPusher::IsStackTop() const
 {
@@ -793,6 +770,7 @@ danger::AutoCxPusher::IsStackTop() const
   MOZ_ASSERT(currentDepth >= mStackDepthAfterPush);
   return currentDepth == mStackDepthAfterPush;
 }
+#endif
 
 } 
 
