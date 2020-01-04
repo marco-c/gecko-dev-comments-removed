@@ -570,14 +570,6 @@ KeyframeEffectReadOnly::ConstructKeyframeEffect(
 }
 
 void
-KeyframeEffectReadOnly::ResetWinsInCascade()
-{
-  for (AnimationProperty& property : mProperties) {
-    property.mWinsInCascade = false;
-  }
-}
-
-void
 KeyframeEffectReadOnly::UpdateTargetRegistration()
 {
   if (!mTarget) {
@@ -653,12 +645,12 @@ DumpAnimationProperties(nsTArray<AnimationProperty>& aAnimationProperties)
     printf("%s\n", nsCSSProps::GetStringValue(p.mProperty).get());
     for (auto& s : p.mSegments) {
       nsString fromValue, toValue;
-      Unused << StyleAnimationValue::UncomputeValue(p.mProperty,
-                                                    s.mFromValue,
-                                                    fromValue);
-      Unused << StyleAnimationValue::UncomputeValue(p.mProperty,
-                                                    s.mToValue,
-                                                    toValue);
+      StyleAnimationValue::UncomputeValue(p.mProperty,
+                                          s.mFromValue,
+                                          fromValue);
+      StyleAnimationValue::UncomputeValue(p.mProperty,
+                                          s.mToValue,
+                                          toValue);
       printf("  %f..%f: %s..%s\n", s.mFromKey, s.mToKey,
              NS_ConvertUTF16toUTF8(fromValue).get(),
              NS_ConvertUTF16toUTF8(toValue).get());
@@ -717,9 +709,7 @@ CreatePropertyValue(nsCSSPropertyID aProperty,
   aResult.mOffset = aOffset;
 
   nsString stringValue;
-  DebugOnly<bool> uncomputeResult =
-    StyleAnimationValue::UncomputeValue(aProperty, aValue, stringValue);
-  MOZ_ASSERT(uncomputeResult, "failed to uncompute value");
+  StyleAnimationValue::UncomputeValue(aProperty, aValue, stringValue);
   aResult.mValue = stringValue;
 
   if (aTimingFunction) {
@@ -1361,7 +1351,9 @@ KeyframeEffect::SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget)
   if (mTarget) {
     UnregisterTarget();
     ResetIsRunningOnCompositor();
-    ResetWinsInCascade();
+    
+    
+    
 
     RequestRestyle(EffectCompositor::RestyleType::Layer);
 

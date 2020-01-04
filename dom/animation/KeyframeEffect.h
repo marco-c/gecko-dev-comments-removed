@@ -319,8 +319,6 @@ protected:
                           const OptionsType& aOptions,
                           ErrorResult& aRv);
 
-  void ResetWinsInCascade();
-
   
   
   
