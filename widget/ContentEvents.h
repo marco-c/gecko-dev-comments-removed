@@ -123,7 +123,7 @@ public:
 
   InternalFormEvent(bool aIsTrusted, EventMessage aMessage)
     : WidgetEvent(aIsTrusted, aMessage, eFormEventClass)
-    , originator(nullptr)
+    , mOriginator(nullptr)
   {
   }
 
@@ -137,7 +137,7 @@ public:
     return result;
   }
 
-  nsIContent *originator;
+  nsIContent* mOriginator;
 
   void AssignFormEventData(const InternalFormEvent& aEvent, bool aCopyTargets)
   {

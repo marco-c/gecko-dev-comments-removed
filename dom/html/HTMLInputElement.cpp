@@ -3301,7 +3301,8 @@ HTMLInputElement::MaybeSubmitForm(nsPresContext* aPresContext)
     nsEventStatus status = nsEventStatus_eIgnore;
     shell->HandleDOMEventWithTarget(submitContent, &event, &status);
   } else if (!mForm->ImplicitSubmissionIsDisabled() &&
-             mForm->SubmissionCanProceed(nullptr)) {
+             (mForm->HasAttr(kNameSpaceID_None, nsGkAtoms::novalidate) ||
+              mForm->CheckValidFormSubmission())) {
     
     
     
@@ -4556,7 +4557,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           if (mForm) {
             InternalFormEvent event(true,
               (mType == NS_FORM_INPUT_RESET) ? eFormReset : eFormSubmit);
-            event.originator      = this;
+            event.mOriginator = this;
             nsEventStatus status  = nsEventStatus_eIgnore;
 
             nsCOMPtr<nsIPresShell> presShell =
@@ -4568,7 +4569,11 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
             
             
             if (presShell && (event.mMessage != eFormSubmit ||
-                              mForm->SubmissionCanProceed(this))) {
+                              mForm->HasAttr(kNameSpaceID_None, nsGkAtoms::novalidate) ||
+                              
+                              
+                              HasAttr(kNameSpaceID_None, nsGkAtoms::formnovalidate) ||
+                              mForm->CheckValidFormSubmission())) {
               
               RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
               presShell->HandleDOMEventWithTarget(mForm, &event, &status);
