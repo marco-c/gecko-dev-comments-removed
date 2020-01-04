@@ -236,43 +236,49 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
     
     bool boundedSeekLimit = true;
     
-    if (!mByteRange.IsEmpty() && (responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
+    if (responseStatus == HTTP_PARTIAL_RESPONSE_CODE) {
       
       int64_t rangeStart = 0;
       int64_t rangeEnd = 0;
       int64_t rangeTotal = 0;
       rv = ParseContentRangeHeader(hc, rangeStart, rangeEnd, rangeTotal);
-      if (NS_FAILED(rv)) {
+
+      
+      acceptsRanges = NS_SUCCEEDED(rv);
+
+      if (!mByteRange.IsEmpty()) {
+        if (!acceptsRanges) {
+          
+          
+          CMLOG("Error processing \'Content-Range' for "
+                "HTTP_PARTIAL_RESPONSE_CODE: rv[%x] channel[%p] decoder[%p]",
+                rv, hc.get(), mCallback.get());
+          mCallback->NotifyNetworkError();
+          CloseChannel();
+          return NS_OK;
+        }
         
-        CMLOG("Error processing \'Content-Range' for "
-              "HTTP_PARTIAL_RESPONSE_CODE: rv[%x] channel[%p] decoder[%p]",
-              rv, hc.get(), mCallback.get());
-        mCallback->NotifyNetworkError();
-        CloseChannel();
-        return NS_OK;
+        
+        NS_WARN_IF_FALSE(mByteRange.mStart == rangeStart,
+                         "response range start does not match request");
+        NS_WARN_IF_FALSE(mOffset == rangeStart,
+                         "response range start does not match current offset");
+        NS_WARN_IF_FALSE(mByteRange.mEnd == rangeEnd,
+                         "response range end does not match request");
+        
+        
+        
+        if (rangeTotal == -1) {
+          boundedSeekLimit = false;
+        } else {
+          mCacheStream.NotifyDataLength(rangeTotal);
+        }
+        mCacheStream.NotifyDataStarted(rangeStart);
+        mOffset = rangeStart;
+      } else if (contentLength < 0 && acceptsRanges && rangeTotal > 0) {
+        
+        contentLength = rangeTotal;
       }
-
-      
-      
-      NS_WARN_IF_FALSE(mByteRange.mStart == rangeStart,
-                       "response range start does not match request");
-      NS_WARN_IF_FALSE(mOffset == rangeStart,
-                       "response range start does not match current offset");
-      NS_WARN_IF_FALSE(mByteRange.mEnd == rangeEnd,
-                       "response range end does not match request");
-      
-      
-      
-      if (rangeTotal == -1) {
-        boundedSeekLimit = false;
-      } else {
-        mCacheStream.NotifyDataLength(rangeTotal);
-      }
-      mCacheStream.NotifyDataStarted(rangeStart);
-
-      mOffset = rangeStart;
-      
-      acceptsRanges = true;
     } else if (((mOffset > 0) || !mByteRange.IsEmpty())
                && (responseStatus == HTTP_OK_CODE)) {
       
@@ -283,12 +289,11 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest)
 
       
       acceptsRanges = false;
-    } else if (mOffset == 0 &&
-               (responseStatus == HTTP_OK_CODE ||
-                responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
-      if (contentLength >= 0) {
-        mCacheStream.NotifyDataLength(contentLength);
-      }
+    }
+    if (mOffset == 0 && contentLength >= 0 &&
+        (responseStatus == HTTP_OK_CODE ||
+         responseStatus == HTTP_PARTIAL_RESPONSE_CODE)) {
+      mCacheStream.NotifyDataLength(contentLength);
     }
     
     
