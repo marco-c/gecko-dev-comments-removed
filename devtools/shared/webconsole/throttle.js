@@ -13,6 +13,10 @@ const ArrayBufferInputStream = CC("@mozilla.org/io/arraybuffer-input-stream;1",
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
                              "nsIBinaryInputStream", "setInputStream");
 
+loader.lazyServiceGetter(this, "gActivityDistributor",
+                         "@mozilla.org/network/http-activity-distributor;1",
+                         "nsIHttpActivityDistributor");
+
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const {setTimeout} = Cu.import("resource://gre/modules/Timer.jsm", {});
 
@@ -32,6 +36,8 @@ function NetworkThrottleListener(queue) {
   this.pendingData = [];
   this.pendingException = null;
   this.offset = 0;
+  this.responseStarted = false;
+  this.activities = {};
 }
 
 NetworkThrottleListener.prototype = {
@@ -133,6 +139,9 @@ NetworkThrottleListener.prototype = {
     }
 
     this.offset += bytesPermitted;
+    
+    this.maybeEmitEvents();
+
     return {length: bytesPermitted, done};
   },
 
@@ -142,6 +151,71 @@ NetworkThrottleListener.prototype = {
 
   pendingCount: function () {
     return this.pendingData.length;
+  },
+
+  
+
+
+
+  addActivityCallback: function (callback, httpActivity, channel, activityType,
+                                 activitySubtype, timestamp, extraSizeData,
+                                 extraStringData) {
+    let datum = {callback, httpActivity, channel, activityType,
+                 activitySubtype, extraSizeData,
+                 extraStringData};
+    this.activities[activitySubtype] = datum;
+
+    if (activitySubtype ===
+        gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_COMPLETE) {
+      this.totalSize = extraSizeData;
+    }
+
+    this.maybeEmitEvents();
+  },
+
+  
+
+
+
+  responseStart: function () {
+    this.responseStarted = true;
+    this.maybeEmitEvents();
+  },
+
+  
+
+
+
+
+
+
+
+  maybeEmitEvents: function () {
+    if (this.responseStarted) {
+      this.maybeEmit(gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_START);
+      this.maybeEmit(gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_HEADER);
+    }
+
+    if (this.totalSize !== undefined && this.offset >= this.totalSize) {
+      this.maybeEmit(gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_COMPLETE);
+      this.maybeEmit(gActivityDistributor.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE);
+    }
+  },
+
+  
+
+
+
+  maybeEmit: function (code) {
+    if (this.activities[code] !== undefined) {
+      let {callback, httpActivity, channel, activityType,
+           activitySubtype, extraSizeData,
+           extraStringData} = this.activities[code];
+      let now = Date.now() * 1000;
+      callback(httpActivity, channel, activityType, activitySubtype,
+               now, extraSizeData, extraStringData);
+      this.activities[code] = undefined;
+    }
   },
 };
 
@@ -183,6 +257,7 @@ NetworkThrottleQueue.prototype = {
 
 
   allowDataFrom: function (throttleListener) {
+    throttleListener.responseStart();
     this.pendingRequests.delete(throttleListener);
     const count = throttleListener.pendingCount();
     for (let i = 0; i < count; ++i) {

@@ -557,8 +557,6 @@ NetworkResponseListener.prototype = {
       this.httpActivity.discardResponseBody
     );
 
-    this.httpActivity.channel = null;
-    this.httpActivity.owner = null;
     this.httpActivity = null;
     this.sink = null;
     this.inputStream = null;
@@ -672,6 +670,13 @@ NetworkMonitor.prototype = {
     0x804b000a: "STATUS_WAITING_FOR",
     0x804b0006: "STATUS_RECEIVING_FROM"
   },
+
+  httpDownloadActivities: [
+    gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_START,
+    gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_HEADER,
+    gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_COMPLETE,
+    gActivityDistributor.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE
+  ],
 
   
   
@@ -852,8 +857,53 @@ NetworkMonitor.prototype = {
     if (throttler) {
       let channel = subject.QueryInterface(Ci.nsIHttpChannel);
       if (matchRequest(channel, this.filters)) {
+        
+        let httpActivity = this.createOrGetActivityObject(channel);
+        this._onRequestBodySent(httpActivity);
         throttler.manageUpload(channel);
       }
+    }
+  },
+
+  
+
+
+
+
+  _dispatchActivity: function (httpActivity, channel, activityType,
+                               activitySubtype, timestamp, extraSizeData,
+                               extraStringData) {
+    let transCodes = this.httpTransactionCodes;
+
+    
+    if (activitySubtype in transCodes) {
+      let stage = transCodes[activitySubtype];
+      if (stage in httpActivity.timings) {
+        httpActivity.timings[stage].last = timestamp;
+      } else {
+        httpActivity.timings[stage] = {
+          first: timestamp,
+          last: timestamp,
+        };
+      }
+    }
+
+    switch (activitySubtype) {
+      case gActivityDistributor.ACTIVITY_SUBTYPE_REQUEST_BODY_SENT:
+        this._onRequestBodySent(httpActivity);
+        if (httpActivity.sentBody !== null) {
+          httpActivity.owner.addRequestPostData({ text: httpActivity.sentBody });
+          httpActivity.sentBody = null;
+        }
+        break;
+      case gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_HEADER:
+        this._onResponseHeader(httpActivity, extraStringData);
+        break;
+      case gActivityDistributor.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE:
+        this._onTransactionClose(httpActivity);
+        break;
+      default:
+        break;
     }
   },
 
@@ -893,46 +943,25 @@ NetworkMonitor.prototype = {
 
     
     
-    let httpActivity = null;
-    for (let id in this.openRequests) {
-      let item = this.openRequests[id];
-      if (item.channel === channel) {
-        httpActivity = item;
-        break;
-      }
-    }
-
+    let httpActivity = this._findActivityObject(channel);
     if (!httpActivity) {
       return;
     }
 
-    let transCodes = this.httpTransactionCodes;
-
     
-    if (activitySubtype in transCodes) {
-      let stage = transCodes[activitySubtype];
-      if (stage in httpActivity.timings) {
-        httpActivity.timings[stage].last = timestamp;
-      } else {
-        httpActivity.timings[stage] = {
-          first: timestamp,
-          last: timestamp,
-        };
-      }
-    }
-
-    switch (activitySubtype) {
-      case gActivityDistributor.ACTIVITY_SUBTYPE_REQUEST_BODY_SENT:
-        this._onRequestBodySent(httpActivity);
-        break;
-      case gActivityDistributor.ACTIVITY_SUBTYPE_RESPONSE_HEADER:
-        this._onResponseHeader(httpActivity, extraStringData);
-        break;
-      case gActivityDistributor.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE:
-        this._onTransactionClose(httpActivity);
-        break;
-      default:
-        break;
+    
+    
+    if (httpActivity.downloadThrottle &&
+        this.httpDownloadActivities.indexOf(activitySubtype) >= 0) {
+      let callback = this._dispatchActivity.bind(this);
+      httpActivity.downloadThrottle
+        .addActivityCallback(callback, httpActivity, channel, activityType,
+                             activitySubtype, timestamp, extraSizeData,
+                             extraStringData);
+    } else {
+      this._dispatchActivity(httpActivity, channel, activityType,
+                             activitySubtype, timestamp, extraSizeData,
+                             extraStringData);
     }
   }),
 
@@ -941,11 +970,7 @@ NetworkMonitor.prototype = {
 
   _createNetworkEvent: function (channel, { timestamp, extraStringData,
                                            fromCache, fromServiceWorker }) {
-    let win = NetworkHelper.getWindowForRequest(channel);
-    let httpActivity = this.createActivityObject(channel);
-
-    
-    httpActivity.charset = win ? win.document.characterSet : null;
+    let httpActivity = this.createOrGetActivityObject(channel);
 
     channel.QueryInterface(Ci.nsIPrivateBrowsingChannel);
     httpActivity.private = channel.isChannelPrivate;
@@ -1032,7 +1057,6 @@ NetworkMonitor.prototype = {
     httpActivity.owner.addRequestHeaders(headers, extraStringData);
     httpActivity.owner.addRequestCookies(cookies);
 
-    this.openRequests[httpActivity.id] = httpActivity;
     return httpActivity;
   },
 
@@ -1064,29 +1088,59 @@ NetworkMonitor.prototype = {
 
 
 
+  _findActivityObject: function (channel) {
+    for (let id in this.openRequests) {
+      let item = this.openRequests[id];
+      if (item.channel === channel) {
+        return item;
+      }
+    }
+    return null;
+  },
+
+  
 
 
 
 
 
-  createActivityObject: function (channel) {
-    return {
-      id: gSequenceId(),
-      channel: channel,
-      
-      charset: null,
-      url: channel.URI.spec,
-      
-      hostname: channel.URI.host,
-      discardRequestBody: !this.saveRequestAndResponseBodies,
-      discardResponseBody: !this.saveRequestAndResponseBodies,
-      
-      timings: {},
-      
-      responseStatus: null,
-      
-      owner: null,
-    };
+
+
+
+
+
+
+
+
+  createOrGetActivityObject: function (channel) {
+    let httpActivity = this._findActivityObject(channel);
+    if (!httpActivity) {
+      let win = NetworkHelper.getWindowForRequest(channel);
+      let charset = win ? win.document.characterSet : null;
+
+      httpActivity = {
+        id: gSequenceId(),
+        channel: channel,
+        
+        charset: charset,
+        sentBody: null,
+        url: channel.URI.spec,
+        
+        hostname: channel.URI.host,
+        discardRequestBody: !this.saveRequestAndResponseBodies,
+        discardResponseBody: !this.saveRequestAndResponseBodies,
+        
+        timings: {},
+        
+        responseStatus: null,
+        
+        owner: null,
+      };
+
+      this.openRequests[httpActivity.id] = httpActivity;
+    }
+
+    return httpActivity;
   },
 
   
@@ -1142,14 +1196,16 @@ NetworkMonitor.prototype = {
 
 
   _onRequestBodySent: function (httpActivity) {
-    if (httpActivity.discardRequestBody) {
+    
+    
+    if (httpActivity.discardRequestBody || httpActivity.sentBody !== null) {
       return;
     }
 
     let sentBody = NetworkHelper.readPostTextFromRequest(httpActivity.channel,
                                                          httpActivity.charset);
 
-    if (!sentBody && this.window &&
+    if (sentBody !== null && this.window &&
         httpActivity.url == this.window.location.href) {
       
       
@@ -1164,8 +1220,8 @@ NetworkMonitor.prototype = {
                  .readPostTextFromPageViaWebNav(webNav, httpActivity.charset);
     }
 
-    if (sentBody) {
-      httpActivity.owner.addRequestPostData({ text: sentBody });
+    if (sentBody !== null) {
+      httpActivity.sentBody = sentBody;
     }
   },
 
@@ -1290,12 +1346,10 @@ NetworkMonitor.prototype = {
       harTimings.connect = -1;
     }
 
-    if ((timings.STATUS_WAITING_FOR || timings.STATUS_RECEIVING_FROM) &&
-        (timings.STATUS_CONNECTED_TO || timings.STATUS_SENDING_TO)) {
-      harTimings.send = (timings.STATUS_WAITING_FOR ||
-                         timings.STATUS_RECEIVING_FROM).first -
-                        (timings.STATUS_CONNECTED_TO ||
-                         timings.STATUS_SENDING_TO).last;
+    if (timings.STATUS_SENDING_TO) {
+      harTimings.send = timings.STATUS_SENDING_TO.last - timings.STATUS_SENDING_TO.first;
+    } else if (timings.REQUEST_HEADER && timings.REQUEST_BODY_SENT) {
+      harTimings.send = timings.REQUEST_BODY_SENT.last - timings.REQUEST_HEADER.first;
     } else {
       harTimings.send = -1;
     }
