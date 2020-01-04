@@ -12,6 +12,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/IncrementalClearCOMRuleArray.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/StyleSheetInfo.h"
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/CSSStyleSheetBinding.h"
@@ -56,12 +57,11 @@ class CSSRuleList;
 
 
 
-class CSSStyleSheetInner
+class CSSStyleSheetInner : public StyleSheetInfo
 {
 public:
   friend class mozilla::CSSStyleSheet;
   friend class ::nsCSSRuleProcessor;
-  typedef net::ReferrerPolicy ReferrerPolicy;
 
 private:
   CSSStyleSheetInner(CSSStyleSheet* aPrimarySheet,
@@ -84,10 +84,6 @@ private:
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
   AutoTArray<CSSStyleSheet*, 8> mSheets;
-  nsCOMPtr<nsIURI>       mSheetURI; 
-  nsCOMPtr<nsIURI>       mOriginalSheetURI;  
-  nsCOMPtr<nsIURI>       mBaseURI; 
-  nsCOMPtr<nsIPrincipal> mPrincipal;
   IncrementalClearCOMRuleArray mOrderedRules;
   nsAutoPtr<nsXMLNameSpaceMap> mNameSpaceMap;
   
@@ -96,16 +92,6 @@ private:
   
   
   RefPtr<CSSStyleSheet> mFirstChild;
-  CORSMode               mCORSMode;
-  
-  
-  ReferrerPolicy         mReferrerPolicy;
-  dom::SRIMetadata       mIntegrity;
-  bool                   mComplete;
-
-#ifdef DEBUG
-  bool                   mPrincipalSet;
-#endif
 };
 
 
