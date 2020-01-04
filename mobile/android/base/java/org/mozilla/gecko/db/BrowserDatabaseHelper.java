@@ -1050,7 +1050,10 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP INDEX IF EXISTS reading_list_guid");
         db.execSQL("DROP INDEX IF EXISTS reading_list_content_status");
 
-        final String thisDevice = ReadingListProvider.PLACEHOLDER_THIS_DEVICE;
+        
+        
+        
+        final String thisDevice = "_fake_device_name_that_will_be_discarded_in_the_next_migration_";
         db.execSQL("INSERT INTO tmp_rl (" +
                    
                    ReadingListItems._ID + ", " +
