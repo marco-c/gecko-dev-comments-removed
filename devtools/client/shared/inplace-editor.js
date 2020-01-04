@@ -33,7 +33,10 @@ const CONTENT_TYPES = {
   CSS_MIXED: 2,
   CSS_PROPERTY: 3,
 };
-const MAX_POPUP_ENTRIES = 10;
+
+
+
+const MAX_POPUP_ENTRIES = 500;
 
 const FOCUS_FORWARD = Ci.nsIFocusManager.MOVEFOCUS_FORWARD;
 const FOCUS_BACKWARD = Ci.nsIFocusManager.MOVEFOCUS_BACKWARD;
@@ -728,6 +731,8 @@ InplaceEditor.prototype = {
         };
       }
     }
+
+    return null;
   },
 
   
@@ -1338,12 +1343,27 @@ InplaceEditor.prototype = {
       }
 
       
-      let cssValues = finalList.map(item => item.label);
-      let mostRelevantIndex = findMostRelevantCssPropertyIndex(cssValues);
+      
+      finalList.sort((item1, item2) => {
+        
+        let comparison = item1.label.localeCompare(item2.label);
+        if (/^\w/.test(item1.label) != /^\w/.test(item2.label)) {
+          
+          comparison = -1 * comparison;
+        }
+        return comparison;
+      });
+
+      let index = 0;
+      if (startCheckQuery) {
+        
+        let cssValues = finalList.map(item => item.label);
+        index = findMostRelevantCssPropertyIndex(cssValues);
+      }
 
       
-      if (autoInsert && finalList[mostRelevantIndex]) {
-        let item = finalList[mostRelevantIndex].label;
+      if (autoInsert && finalList[index]) {
+        let item = finalList[index].label;
         input.value = query + item.slice(startCheckQuery.length) +
                       input.value.slice(query.length);
         input.setSelectionRange(query.length, query.length + item.length -
@@ -1359,7 +1379,7 @@ InplaceEditor.prototype = {
         offset = this._isSingleLine() ? offset : 0;
 
         
-        let selectedIndex = autoInsert ? mostRelevantIndex : -1;
+        let selectedIndex = autoInsert ? index : -1;
 
         
         this.popup.setItems(finalList);
