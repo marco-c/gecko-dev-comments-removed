@@ -1623,15 +1623,6 @@ Engine.prototype = {
       return;
     }
 
-    var engineToUpdate = null;
-    if (aEngine._engineToUpdate) {
-      engineToUpdate = aEngine._engineToUpdate.wrappedJSObject;
-
-      
-      
-      aEngine._shortName = engineToUpdate._shortName;
-    }
-
     var parser = Cc["@mozilla.org/xmlextras/domparser;1"].
                  createInstance(Ci.nsIDOMParser);
     var doc = parser.parseFromBuffer(aBytes, aBytes.length, "text/xml");
@@ -1647,9 +1638,27 @@ Engine.prototype = {
       return;
     }
 
-    
-    
-    if (!engineToUpdate) {
+    if (aEngine._engineToUpdate) {
+      let engineToUpdate = aEngine._engineToUpdate.wrappedJSObject;
+
+      
+      
+      aEngine._shortName = engineToUpdate._shortName;
+      Object.keys(engineToUpdate._metaData).forEach(key => {
+        aEngine.setAttr(key, engineToUpdate.getAttr(key));
+      });
+      aEngine._loadPath = engineToUpdate._loadPath;
+
+      
+      
+      aEngine.setAttr("updatelastmodified", (new Date()).toUTCString());
+
+      
+      if (!aEngine._iconURI && engineToUpdate._iconURI)
+        aEngine._iconURI = engineToUpdate._iconURI;
+    } else {
+      
+      
       if (Services.search.getEngineByName(aEngine.name)) {
         
         
@@ -1663,38 +1672,24 @@ Engine.prototype = {
         LOG("_onLoad: duplicate engine found, bailing");
         return;
       }
-    }
 
-    
-    
-    
-    if (aEngine._confirm) {
-      var confirmation = aEngine._confirmAddEngine();
-      LOG("_onLoad: confirm is " + confirmation.confirmed +
-          "; useNow is " + confirmation.useNow);
-      if (!confirmation.confirmed) {
-        onError();
-        return;
+      
+      
+      
+      if (aEngine._confirm) {
+        var confirmation = aEngine._confirmAddEngine();
+        LOG("_onLoad: confirm is " + confirmation.confirmed +
+            "; useNow is " + confirmation.useNow);
+        if (!confirmation.confirmed) {
+          onError();
+          return;
+        }
+        aEngine._useNow = confirmation.useNow;
       }
-      aEngine._useNow = confirmation.useNow;
-    }
 
-    
-    
-    if (!aEngine._shortName)
       aEngine._shortName = sanitizeName(aEngine.name);
-
-    aEngine._loadPath = aEngine.getAnonymizedLoadPath(null, aEngine._uri);
-    aEngine.setAttr("loadPathHash", getVerificationHash(aEngine._loadPath));
-
-    if (engineToUpdate) {
-      
-      
-      aEngine.setAttr("updatelastmodified", (new Date()).toUTCString());
-
-      
-      if (!aEngine._iconURI && engineToUpdate._iconURI)
-        aEngine._iconURI = engineToUpdate._iconURI;
+      aEngine._loadPath = aEngine.getAnonymizedLoadPath(null, aEngine._uri);
+      aEngine.setAttr("loadPathHash", getVerificationHash(aEngine._loadPath));
     }
 
     
