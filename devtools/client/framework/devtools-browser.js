@@ -196,6 +196,15 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
    
+  openAboutDebugging: function(gBrowser, hash) {
+    let url = "about:debugging" + (hash ? "#" + hash : "");
+    gBrowser.selectedTab = gBrowser.addTab(url);
+  },
+
+  
+
+
+   
   openConnectScreen: function(gBrowser) {
     gBrowser.selectedTab = gBrowser.addTab("chrome://devtools/content/framework/connect/connect.xhtml");
   },

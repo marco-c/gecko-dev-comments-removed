@@ -121,6 +121,9 @@ let gDevToolsBrowserMethods = [
   "selectToolCommand",
 
   
+  "openAboutDebugging",
+
+  
   "openConnectScreen",
 
   
