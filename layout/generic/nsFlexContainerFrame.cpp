@@ -1986,54 +1986,6 @@ nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   }
 }
 
-#ifdef DEBUG
-
-bool
-FrameWantsToBeInAnonymousFlexItem(nsIFrame* aFrame)
-{
-  
-  
-  return (aFrame->IsFrameOfType(nsIFrame::eLineParticipant) ||
-          nsGkAtoms::placeholderFrame == aFrame->GetType());
-}
-
-
-
-
-
-
-
-
-
-
-
-
-void
-nsFlexContainerFrame::SanityCheckAnonymousFlexItems() const
-{
-  bool prevChildWasAnonFlexItem = false;
-  for (nsIFrame* child : mFrames) {
-    MOZ_ASSERT(!FrameWantsToBeInAnonymousFlexItem(child),
-               "frame wants to be inside an anonymous flex item, "
-               "but it isn't");
-    if (child->StyleContext()->GetPseudo() ==
-        nsCSSAnonBoxes::anonymousFlexItem) {
-      MOZ_ASSERT(!prevChildWasAnonFlexItem ||
-                 HasAnyStateBits(NS_STATE_FLEX_CHILDREN_REORDERED),
-                 "two anon flex items in a row (shouldn't happen, unless our "
-                 "children have been reordered with the 'order' property)");
-
-      nsIFrame* firstWrappedChild = child->PrincipalChildList().FirstChild();
-      MOZ_ASSERT(firstWrappedChild,
-                 "anonymous flex item is empty (shouldn't happen)");
-      prevChildWasAnonFlexItem = true;
-    } else {
-      prevChildWasAnonFlexItem = false;
-    }
-  }
-}
-#endif 
-
 void
 FlexLine::FreezeItemsEarly(bool aIsUsingFlexGrow)
 {
@@ -3629,10 +3581,6 @@ nsFlexContainerFrame::Reflow(nsPresContext*           aPresContext,
        eStyleUnit_Auto != stylePos->mOffset.GetBEndUnit(wm))) {
     AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
   }
-
-#ifdef DEBUG
-  SanityCheckAnonymousFlexItems();
-#endif 
 
   
   
