@@ -4591,7 +4591,11 @@ pref("layers.d3d11.disable-warp", true);
 #endif
 
 
+#ifdef XP_WIN
+pref("layers.shared-buffer-provider.enabled", false);
+#else
 pref("layers.shared-buffer-provider.enabled", true);
+#endif
 
 
 pref("layers.force-active", false);

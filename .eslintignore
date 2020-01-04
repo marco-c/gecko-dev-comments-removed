@@ -84,10 +84,6 @@ devtools/client/jsonview/lib/**
 devtools/client/memory/**
 devtools/client/netmonitor/test/**
 devtools/client/netmonitor/har/test/**
-devtools/client/performance/components/**
-devtools/client/performance/legacy/**
-devtools/client/performance/modules/**
-devtools/client/performance/test/**
 devtools/client/projecteditor/**
 devtools/client/promisedebugger/**
 devtools/client/responsivedesign/**
@@ -101,7 +97,7 @@ devtools/client/shared/redux/middleware/test/**
 devtools/client/shared/test/**
 !devtools/client/shared/test/test-actor-registry.js
 devtools/client/shared/widgets/*.jsm
-devtools/client/sourceeditor/**
+devtools/client/sourceeditor/test/*.js
 devtools/client/webaudioeditor/**
 devtools/client/webconsole/**
 !devtools/client/webconsole/panel.js
