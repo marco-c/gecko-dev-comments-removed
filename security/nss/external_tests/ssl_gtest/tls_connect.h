@@ -24,7 +24,6 @@ class TlsConnectTestBase : public ::testing::Test {
   static ::testing::internal::ParamGenerator<std::string> kTlsModesStream;
   static ::testing::internal::ParamGenerator<std::string> kTlsModesAll;
   static ::testing::internal::ParamGenerator<uint16_t> kTlsV10;
-  static ::testing::internal::ParamGenerator<uint16_t> kTlsV11;
   static ::testing::internal::ParamGenerator<uint16_t> kTlsV11V12;
   static ::testing::internal::ParamGenerator<uint16_t> kTlsV12Plus;
 
@@ -53,39 +52,26 @@ class TlsConnectTestBase : public ::testing::Test {
   
   void Connect();
   
-  void CheckConnected();
-  
   void ConnectExpectFail();
 
-  void SetExpectedVersion(uint16_t version);
-  
-  void ExpectResumption(SessionResumptionMode expected);
-  void DisableDheAndEcdheCiphers();
+  void EnableSomeEcdheCiphers();
   void DisableDheCiphers();
-  void DisableEcdheCiphers();
-  void EnableExtendedMasterSecret();
   void ConfigureSessionCache(SessionResumptionMode client,
                              SessionResumptionMode server);
+  void CheckResumption(SessionResumptionMode expected);
   void EnableAlpn();
   void EnableSrtp();
-  void CheckSrtp() const;
-  void SendReceive();
-  void ExpectExtendedMasterSecret(bool expected);
-
+  void CheckSrtp();
  protected:
+
   Mode mode_;
   TlsAgent* client_;
   TlsAgent* server_;
   uint16_t version_;
-  SessionResumptionMode expected_resumption_mode_;
   std::vector<std::vector<uint8_t>> session_ids_;
 
  private:
   void Reset(const std::string& server_name, SSLKEAType kea);
-  void CheckResumption(SessionResumptionMode expected);
-  void CheckExtendedMasterSecret();
-
-  bool expect_extended_master_secret_;
 };
 
 
@@ -110,22 +96,6 @@ class TlsConnectGeneric
     public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
  public:
   TlsConnectGeneric();
-};
-
-
-class TlsConnectPre12
-  : public TlsConnectTestBase,
-    public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
- public:
-  TlsConnectPre12();
-};
-
-
-class TlsConnectTls12
-  : public TlsConnectTestBase,
-    public ::testing::WithParamInterface<std::string> {
- public:
-  TlsConnectTls12();
 };
 
 } 

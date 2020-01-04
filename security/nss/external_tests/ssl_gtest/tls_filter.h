@@ -76,21 +76,6 @@ class TlsInspectorRecordHandshakeMessage : public TlsHandshakeFilter {
 };
 
 
-class TlsInspectorReplaceHandshakeMessage : public TlsHandshakeFilter {
- public:
-  TlsInspectorReplaceHandshakeMessage(uint8_t handshake_type,
-                                      const DataBuffer& replacement)
-      : handshake_type_(handshake_type), buffer_(replacement) {}
-
-  virtual bool FilterHandshake(uint16_t version, uint8_t handshake_type,
-                               const DataBuffer& input, DataBuffer* output);
-
- private:
-  uint8_t handshake_type_;
-  DataBuffer buffer_;
-};
-
-
 
 class TlsAlertRecorder : public TlsRecordFilter {
  public:

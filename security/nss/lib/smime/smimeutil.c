@@ -759,8 +759,6 @@ extern const char __nss_smime_version[];
 PRBool
 NSSSMIME_VersionCheck(const char *importedVersion)
 {
-#define NSS_VERSION_VARIABLE __nss_smime_version
-#include "verref.h"
     
 
 
@@ -769,6 +767,10 @@ NSSSMIME_VersionCheck(const char *importedVersion)
 
 
 
+
+    volatile char c; 
+
+    c = __nss_smime_version[0];
 
     return NSS_VersionCheck(importedVersion);
 }

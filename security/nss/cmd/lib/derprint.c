@@ -446,7 +446,7 @@ prettyPrintLength(FILE *out, const unsigned char *data, const unsigned char *end
 	}
 	lenLen = nb + 1;
 	if (raw) {
-	    unsigned int i;
+	    int i;
 
 	    rv = prettyPrintByte(out, lbyte, lv);
 	    if (rv < 0)
@@ -505,8 +505,7 @@ prettyPrintItem(FILE *out, const unsigned char *data, const unsigned char *end,
 	
 
 
-
-	if ((data + slen) >= end) {
+	if ((data + slen) > end) {
 	    PORT_SetError(SEC_ERROR_BAD_DER);
 	    return -1;
 	}

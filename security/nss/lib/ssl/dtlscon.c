@@ -104,7 +104,9 @@ ssl3_DisableNonDTLSSuites(sslSocket * ss)
     const ssl3CipherSuite * suite;
 
     for (suite = nonDTLSSuites; *suite; ++suite) {
-        PORT_CheckSuccess(ssl3_CipherPrefSet(ss, *suite, PR_FALSE));
+        SECStatus rv = ssl3_CipherPrefSet(ss, *suite, PR_FALSE);
+
+        PORT_Assert(rv == SECSuccess); 
     }
     return SECSuccess;
 }
@@ -394,7 +396,7 @@ dtls_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
 
 
 
-                if (fragment_offset <= (unsigned int)ss->ssl3.hs.recvdHighWater) {
+                if (fragment_offset <= ss->ssl3.hs.recvdHighWater) {
                     
 
                     ss->ssl3.hs.recvdHighWater = fragment_offset +
@@ -674,7 +676,7 @@ dtls_TransmitMessageFlight(sslSocket *ss)
 
                 
 
-                fragment_len = PR_MIN((PRUint32)room_left - (SSL3_BUFFER_FUDGE + 8),
+                fragment_len = PR_MIN(room_left - (SSL3_BUFFER_FUDGE + 8),
                                       content_len - fragment_offset);
                 PORT_Assert(fragment_len < DTLS_MAX_MTU - 12);
                 

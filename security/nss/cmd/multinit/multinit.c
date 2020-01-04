@@ -316,6 +316,27 @@ appendHex(unsigned char nibble)
 
 
 
+static void
+appendItem(SECItem *item)
+{
+    int i;
+
+    if (!buffer.data) {
+	return;
+    }
+
+    appendLabel(':');
+    for (i=0; i < item->len; i++) {
+	unsigned char byte=item->data[i];
+	appendHex(byte >> 4);
+	appendHex(byte & 0xf);
+	appendLabel(':');
+    }
+}
+
+
+
+
 
 static void
 appendInt(unsigned int value)
@@ -472,7 +493,7 @@ do_list_certs(const char *progName, int log)
    CERTCertList *sorted;
    CERTCertListNode *node;
    CERTCertTrust trust;
-   unsigned int i;
+   int i;
 
    list = PK11_ListCerts(PK11CertListUnique, NULL);
    if (list == NULL) {

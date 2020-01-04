@@ -491,6 +491,10 @@ struct NSSInitContextStr {
 #define NSS_INIT_MAGIC 0x1413A91C
 static SECStatus nss_InitShutdownList(void);
 
+#ifdef DEBUG
+static CERTCertificate dummyCert;
+#endif
+
 
 static PRCallOnceType nssInitOnce;
 static PZLock *nssInitLock;
@@ -567,11 +571,8 @@ nss_Init(const char *configdir, const char *certPrefix, const char *keyPrefix,
 
 
     if (!isReallyInitted) {
-#ifdef DEBUG
-        CERTCertificate dummyCert;
 	
 	PORT_Assert(sizeof(dummyCert.options) == sizeof(void *));
-#endif
 
 	if (SECSuccess != cert_InitLocks()) {
 	    goto loser;
@@ -1245,8 +1246,9 @@ NSS_VersionCheck(const char *importedVersion)
 
     int vmajor = 0, vminor = 0, vpatch = 0, vbuild = 0;
     const char *ptr = importedVersion;
-#define NSS_VERSION_VARIABLE __nss_base_version
-#include "verref.h"
+    volatile char c; 
+
+    c = __nss_base_version[0];
 
     while (isdigit(*ptr)) {
         vmajor = 10 * vmajor + *ptr - '0';

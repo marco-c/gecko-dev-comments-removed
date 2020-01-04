@@ -64,9 +64,6 @@ SECStatus SECMOD_UnloadUserModule(SECMODModule *mod);
 
 SECMODModule * SECMOD_CreateModule(const char *lib, const char *name,
 					const char *param, const char *nss);
-SECMODModule * SECMOD_CreateModuleEx(const char *lib, const char *name,
-					const char *param, const char *nss,
-					const char *config);
 
 
 

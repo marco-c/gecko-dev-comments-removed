@@ -196,14 +196,6 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 #define SSL_ENABLE_SERVER_DHE 29
 
-
-
-
-
-
-#define SSL_ENABLE_EXTENDED_MASTER_SECRET 30
-
-
 #ifdef SSL_DEPRECATED_FUNCTION 
 
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRBool on);
@@ -304,46 +296,6 @@ SSL_IMPORT SECStatus SSL_CipherPrefSetDefault(PRInt32 cipher, PRBool enabled);
 SSL_IMPORT SECStatus SSL_CipherPrefGetDefault(PRInt32 cipher, PRBool *enabled);
 SSL_IMPORT SECStatus SSL_CipherPolicySet(PRInt32 cipher, PRInt32 policy);
 SSL_IMPORT SECStatus SSL_CipherPolicyGet(PRInt32 cipher, PRInt32 *policy);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SSL_IMPORT SECStatus SSL_SignaturePrefSet(
-    PRFileDesc *fd, const SSLSignatureAndHashAlg *algorithms,
-    unsigned int count);
-
-
-
-
-
-
-
-
-SSL_IMPORT SECStatus SSL_SignaturePrefGet(
-    PRFileDesc *fd, SSLSignatureAndHashAlg *algorithms, unsigned int *count,
-    unsigned int maxCount);
-
-
-
-
-
-SSL_IMPORT unsigned int SSL_SignatureMaxCount();
 
 
 
@@ -990,25 +942,8 @@ SSL_IMPORT SSL3Statistics * SSL_GetStatistics(void);
 
 
 
-
-
-
-
-
 SSL_IMPORT SECStatus SSL_GetChannelInfo(PRFileDesc *fd, SSLChannelInfo *info,
                                         PRUintn len);
-
-
-
-
-
-
-
-
-SSL_IMPORT SECStatus
-SSL_GetPreliminaryChannelInfo(PRFileDesc *fd,
-                              SSLPreliminaryChannelInfo *info,
-                              PRUintn len);
 SSL_IMPORT SECStatus SSL_GetCipherSuiteInfo(PRUint16 cipherSuite, 
                                         SSLCipherSuiteInfo *info, PRUintn len);
 

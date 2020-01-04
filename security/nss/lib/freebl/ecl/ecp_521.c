@@ -17,7 +17,7 @@ ec_GFp_nistp521_mod(const mp_int *a, mp_int *r, const GFMethod *meth)
 {
 	mp_err res = MP_OKAY;
 	int a_bits = mpl_significant_bits(a);
-	unsigned int i;
+	int i;
 
 	
 	mp_int m1;

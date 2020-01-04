@@ -240,6 +240,14 @@ CERT_CopyAVA(PLArenaPool *arena, CERTAVA *from)
     return 0;
 }
 
+
+
+static const SEC_ASN1Template cert_RDNTemplate[] = {
+    { SEC_ASN1_SET_OF,
+	  offsetof(CERTRDN,avas), cert_AVATemplate, sizeof(CERTRDN) }
+};
+
+
 CERTRDN *
 CERT_CreateRDN(PLArenaPool *arena, CERTAVA *ava0, ...)
 {

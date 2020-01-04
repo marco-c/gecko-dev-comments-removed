@@ -1272,7 +1272,7 @@ DeleteCertTrustMatchingSlot(PK11SlotInfo *pk11slot, nssPKIObject *tObject)
 {
     int numNotDestroyed = 0;     
     int failureCount = 0;        
-    unsigned int index;
+    int index;
 
     nssPKIObject_AddRef(tObject);
     nssPKIObject_Lock(tObject);
@@ -1327,7 +1327,7 @@ STAN_DeleteCertTrustMatchingSlot(NSSCertificate *c)
     
     nssPKIObject *tobject = &nssTrust->object;
     nssPKIObject *cobject = &c->object;
-    unsigned int i;
+    int i;
 
     
 

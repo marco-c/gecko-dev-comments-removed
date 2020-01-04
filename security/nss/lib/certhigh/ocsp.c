@@ -559,19 +559,14 @@ ocsp_RemoveCacheItem(OCSPCacheData *cache, OCSPCacheItem *item)
 
 
 
+    PRBool couldRemoveFromHashTable;
     OCSP_TRACE(("OCSP ocsp_RemoveCacheItem, THREADID %p\n", PR_GetCurrentThread()));
     PR_EnterMonitor(OCSP_Global.monitor);
 
     ocsp_RemoveCacheItemFromLinkedList(cache, item);
-#ifdef DEBUG
-    {
-        PRBool couldRemoveFromHashTable = PL_HashTableRemove(cache->entries,
-                                                             item->certID);
-        PORT_Assert(couldRemoveFromHashTable);
-    }
-#else
-    PL_HashTableRemove(cache->entries, item->certID);
-#endif
+    couldRemoveFromHashTable = PL_HashTableRemove(cache->entries, 
+                                                  item->certID);
+    PORT_Assert(couldRemoveFromHashTable);
     --cache->numberOfEntries;
     ocsp_FreeCacheItem(item);
     PR_ExitMonitor(OCSP_Global.monitor);

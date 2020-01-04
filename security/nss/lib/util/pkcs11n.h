@@ -215,10 +215,6 @@
 #define CKM_NSS_TLS_MASTER_KEY_DERIVE_DH_SHA256 (CKM_NSS + 24)
 
 
-#define CKM_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE    (CKM_NSS + 25)
-#define CKM_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_DH (CKM_NSS + 26)
-
-
 
 
 
@@ -320,31 +316,6 @@ typedef struct CK_NSS_HKDFParams {
     CK_BYTE_PTR pInfo;
     CK_ULONG ulInfoLen;
 } CK_NSS_HKDFParams;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct CK_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_PARAMS {
-    CK_MECHANISM_TYPE prfHashMechanism;
-    CK_BYTE_PTR pSessionHash;
-    CK_ULONG ulSessionHashLen;
-    CK_VERSION_PTR pVersion;
-} CK_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_PARAMS;
-
 
 
 
@@ -481,7 +452,7 @@ typedef CK_TRUST __CKT_NSS_MUST_VERIFY __attribute__((deprecated
 #define SECMOD_MODULE_DB_FUNCTION_FIND  0
 #define SECMOD_MODULE_DB_FUNCTION_ADD   1
 #define SECMOD_MODULE_DB_FUNCTION_DEL   2
-#define SECMOD_MODULE_DB_FUNCTION_RELEASE 3
+#define SECMOD_MODULE_DB_FUNCTION_RELEASE 3 
 typedef char ** (PR_CALLBACK *SECMODModuleDBFunc)(unsigned long function,
                                         char *parameters, void *moduleSpec);
 

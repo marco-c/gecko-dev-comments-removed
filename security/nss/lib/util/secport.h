@@ -87,19 +87,6 @@ extern char *PORT_ArenaStrdup(PLArenaPool *arena, const char *str);
 SEC_END_PROTOS
 
 #define PORT_Assert PR_ASSERT
-
-
-
-
-
-
-
-
-#ifdef DEBUG
-#define PORT_CheckSuccess(f) PR_ASSERT((f) == SECSuccess)
-#else
-#define PORT_CheckSuccess(f) (f)
-#endif
 #define PORT_ZNew(type) (type*)PORT_ZAlloc(sizeof(type))
 #define PORT_New(type) (type*)PORT_Alloc(sizeof(type))
 #define PORT_ArenaNew(poolp, type)	\

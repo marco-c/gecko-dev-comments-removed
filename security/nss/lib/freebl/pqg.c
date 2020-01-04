@@ -494,7 +494,7 @@ makePrimefromPrimesShaweTaylor(
       mp_int    *   q,          
       mp_int    *   prime,      
       SECItem   *   prime_seed, 
-      unsigned int *prime_gen_counter) 
+      int       *   prime_gen_counter) 
 {
     mp_int c;
     mp_int c0_2;
@@ -727,7 +727,7 @@ makePrimefromSeedShaweTaylor(
 const SECItem   *   input_seed,       
       mp_int    *   prime,      
       SECItem   *   prime_seed, 
-      unsigned int *prime_gen_counter) 
+      int       *   prime_gen_counter) 
 {
     mp_int c;
     mp_int c0;
@@ -882,7 +882,7 @@ findQfromSeed(
 const SECItem   *   seed,       
       mp_int    *   Q,          
       mp_int    *   Q_,         
-      unsigned int *qseed_len,   
+      int       *  qseed_len,   
       HASH_HashType *hashtypePtr,  
       pqgGenType    *typePtr)      
 {
@@ -937,7 +937,7 @@ const SECItem   *   seed,
     firstseed.len = seed->len/3;
     for (hashtype = getFirstHash(L,N); hashtype != HASH_AlgTOTAL; 
 					hashtype=getNextHash(hashtype)) {
-	unsigned int count;
+	int count;
 
 	rv = makePrimefromSeedShaweTaylor(hashtype, N, &firstseed, Q_, 
 		&qseed, &count);
@@ -1143,7 +1143,7 @@ makeGfromIndex(HASH_HashType hashtype,
     unsigned int len;
     mp_err err = MP_OKAY;
     SECStatus rv = SECSuccess;
-    const SECHashObject *hashobj = NULL;
+    const SECHashObject *hashobj;
     void *hashcx = NULL;
 
     MP_DIGITS(&e) = 0;
@@ -1229,6 +1229,7 @@ pqg_ParamGen(unsigned int L, unsigned int N, pqgGenType type,
 	 unsigned int seedBytes, PQGParams **pParams, PQGVerify **pVfy)
 {
     unsigned int  n;        
+    unsigned int  b;        
     unsigned int  seedlen;  
     unsigned int  counter;  
     unsigned int  offset;   
@@ -1309,6 +1310,7 @@ pqg_ParamGen(unsigned int L, unsigned int N, pqgGenType type,
     
     n = (L - 1) / outlen; 
     
+    b = (L - 1) % outlen;
     seedlen = seedBytes * PR_BITS_PER_BYTE;    
 step_5:
     
@@ -1346,7 +1348,7 @@ step_5:
 	CHECK_SEC_OK( makeQ2fromSeed(hashtype, N, seed, &Q) );
     } else {
 	
-	unsigned int qgen_counter, pgen_counter;
+	int qgen_counter, pgen_counter;
 
         
 
@@ -1587,7 +1589,7 @@ PQG_VerifyParams(const PQGParams *params,
     mp_err err = MP_OKAY;
     int j;
     unsigned int counter_max = 0; 
-    unsigned int qseed_len;
+    int qseed_len;
     SECItem pseed_ = {0, 0, 0};
     HASH_HashType hashtype;
     pqgGenType type;
@@ -1680,8 +1682,8 @@ PQG_VerifyParams(const PQGParams *params,
     if (type == FIPS186_3_ST_TYPE) {
 	SECItem qseed = { 0, 0, 0 };
 	SECItem pseed = { 0, 0, 0 };
-	unsigned int first_seed_len;
-	unsigned int pgen_counter = 0;
+	int first_seed_len;
+	int pgen_counter = 0;
 
 	
 

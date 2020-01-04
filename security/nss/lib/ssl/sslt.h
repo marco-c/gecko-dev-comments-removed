@@ -5,7 +5,6 @@
 
 
 
-
 #ifndef __sslt_h_
 #define __sslt_h_
 
@@ -56,34 +55,12 @@ typedef enum {
 #define kt_ecdh   	ssl_kea_ecdh
 #define kt_kea_size	ssl_kea_size
 
-
-
-
 typedef enum {
     ssl_sign_null   = 0, 
     ssl_sign_rsa    = 1,
     ssl_sign_dsa    = 2,
     ssl_sign_ecdsa  = 3
 } SSLSignType;
-
-
-
-typedef enum {
-    
-
-    ssl_hash_none = 0,
-    ssl_hash_md5 = 1,
-    ssl_hash_sha1 = 2,
-    ssl_hash_sha224 = 3,
-    ssl_hash_sha256 = 4,
-    ssl_hash_sha384 = 5,
-    ssl_hash_sha512 = 6
-} SSLHashType;
-
-typedef struct SSLSignatureAndHashAlgStr {
-    SSLHashType hashAlg;
-    SSLSignType sigAlg;
-} SSLSignatureAndHashAlg;
 
 typedef enum {
     ssl_auth_null   = 0, 
@@ -145,30 +122,7 @@ typedef struct SSLChannelInfoStr {
     
     const char *         compressionMethodName;
     SSLCompressionMethod compressionMethod;
-
-    
-
-
-
-    PRBool               extendedMasterSecretUsed;
 } SSLChannelInfo;
-
-
-#define ssl_preinfo_version (1U << 0)
-#define ssl_preinfo_cipher_suite (1U << 1)
-#define ssl_preinfo_all (ssl_preinfo_version|ssl_preinfo_cipher_suite)
-
-typedef struct SSLPreliminaryChannelInfoStr {
-    
-    PRUint32 length;
-    
-
-    PRUint32 valuesSet;
-    
-    PRUint16 protocolVersion;
-    
-    PRUint16 cipherSuite;
-} SSLPreliminaryChannelInfo;
 
 typedef struct SSLCipherSuiteInfoStr {
     PRUint16             length;
@@ -235,14 +189,13 @@ typedef enum {
     ssl_use_srtp_xtn                 = 14,
     ssl_app_layer_protocol_xtn       = 16,
     ssl_padding_xtn                  = 21,
-    ssl_extended_master_secret_xtn   = 23,
     ssl_session_ticket_xtn           = 35,
     ssl_next_proto_nego_xtn          = 13172,
     ssl_renegotiation_info_xtn       = 0xff01,
     ssl_tls13_draft_version_xtn      = 0xff02   
 } SSLExtensionType;
 
-#define SSL_MAX_EXTENSIONS             12 /* doesn't include ssl_padding_xtn. */
+#define SSL_MAX_EXTENSIONS             11 /* doesn't include ssl_padding_xtn. */
 
 typedef enum {
     ssl_dhe_group_none = 0,
