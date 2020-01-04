@@ -47,8 +47,7 @@ add_test(function simple_callback_test() {
       do_throw("search callback returned error: " + errorCode);
     }
   }
-  Services.search.addEngine(gDataUrl + "engine.xml",
-                            Ci.nsISearchEngine.DATA_XML,
+  Services.search.addEngine(gDataUrl + "engine.xml", null,
                             null, false, searchCallback);
 });
 
@@ -65,8 +64,7 @@ add_test(function duplicate_failure_test() {
     }
   }
   
-  Services.search.addEngine(gDataUrl + "engine.xml",
-                            Ci.nsISearchEngine.DATA_XML,
+  Services.search.addEngine(gDataUrl + "engine.xml", null,
                             null, false, searchCallback);
 });
 
@@ -83,8 +81,7 @@ add_test(function load_failure_test() {
     }
   }
   
-  Services.search.addEngine("http://invalid/data/engine.xml",
-                            Ci.nsISearchEngine.DATA_XML,
+  Services.search.addEngine("http://invalid/data/engine.xml", null,
                             null, false, searchCallback);
 });
 

@@ -97,9 +97,6 @@ const SEARCH_SERVICE_METADATA_WRITTEN  = "write-metadata-to-disk-complete";
 
 const SEARCH_SERVICE_CACHE_WRITTEN  = "write-cache-to-disk-complete";
 
-const SEARCH_TYPE_MOZSEARCH      = Ci.nsISearchEngine.TYPE_MOZSEARCH;
-const SEARCH_TYPE_OPENSEARCH     = Ci.nsISearchEngine.TYPE_OPENSEARCH;
-
 
 const LAZY_SERIALIZE_DELAY = 100;
 
@@ -868,29 +865,6 @@ function getVerificationHash(aName) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-function checkNameSpace(aElement, aLocalNameArray, aNameSpaceArray) {
-  if (!aLocalNameArray || !aNameSpaceArray)
-    FAIL("missing aLocalNameArray or aNameSpaceArray for checkNameSpace");
-  return (aElement                                                &&
-          (aLocalNameArray.indexOf(aElement.localName)    != -1)  &&
-          (aNameSpaceArray.indexOf(aElement.namespaceURI) != -1));
-}
-
-
-
-
-
-
 function closeSafeOutputStream(aFOS) {
   if (aFOS instanceof Ci.nsISafeOutputStream) {
     try {
@@ -1426,8 +1400,6 @@ Engine.prototype = {
   _hidden: null,
   
   _name: null,
-  
-  _type: null,
   
   _queryCharset: null,
   
@@ -1970,20 +1942,13 @@ Engine.prototype = {
                 Cr.NS_ERROR_UNEXPECTED);
 
     
-    if (checkNameSpace(this._data, [MOZSEARCH_LOCALNAME],
-        [MOZSEARCH_NS_10])) {
+    let element = this._data;
+    if ((element.localName == MOZSEARCH_LOCALNAME &&
+         element.namespaceURI == MOZSEARCH_NS_10) ||
+        (element.localName == OPENSEARCH_LOCALNAME &&
+         OPENSEARCH_NAMESPACES.indexOf(element.namespaceURI) != -1)) {
+      LOG("_init: Initing search plugin from " + this._location);
 
-      LOG("_init: Initing MozSearch plugin from " + this._location);
-
-      this._type = SEARCH_TYPE_MOZSEARCH;
-      this._parse();
-
-    } else if (checkNameSpace(this._data, [OPENSEARCH_LOCALNAME],
-                              OPENSEARCH_NAMESPACES)) {
-
-      LOG("_init: Initing OpenSearch plugin from " + this._location);
-
-      this._type = SEARCH_TYPE_OPENSEARCH;
       this._parse();
 
     } else
@@ -2207,7 +2172,6 @@ Engine.prototype = {
     else
       this._hasPreferredIcon = false;
     this._hidden = aJson._hidden;
-    this._type = aJson.type || SEARCH_TYPE_MOZSEARCH;
     this._queryCharset = aJson.queryCharset || DEFAULT_QUERY_CHARSET;
     this.__searchForm = aJson.__searchForm;
     this.__installLocation = aJson._installLocation || SEARCH_APP_DIR;
@@ -2266,8 +2230,6 @@ Engine.prototype = {
       json._iconUpdateURL = this._iconUpdateURL;
     if (!this._hasPreferredIcon || !aFilter)
       json._hasPreferredIcon = this._hasPreferredIcon;
-    if (this.type != SEARCH_TYPE_MOZSEARCH || !aFilter)
-      json.type = this.type;
     if (this.queryCharset != DEFAULT_QUERY_CHARSET || !aFilter)
       json.queryCharset = this.queryCharset;
     if (!this._readOnly || !aFilter)
@@ -2649,10 +2611,6 @@ Engine.prototype = {
 
   get name() {
     return this._name;
-  },
-
-  get type() {
-    return this._type;
   },
 
   get searchForm() {
