@@ -80,16 +80,8 @@ class TooltoolMixin(object):
         if cache:
             cmd.extend(['-c', cache])
 
-        
-        
-        
-        if self.config.get('mock_target'):
-            cmd_runner = self.run_command_m
-        else:
-            cmd_runner = self.run_command
-
         self.retry(
-            cmd_runner,
+            self.run_command,
             args=(cmd, ),
             kwargs={'cwd': output_dir,
                     'error_list': TooltoolErrorList,
