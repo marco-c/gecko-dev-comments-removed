@@ -164,6 +164,11 @@ const MMI_KS_SERVICE_CLASS_DATA_ASYNC = "serviceClassDataAsync";
 const MMI_KS_SERVICE_CLASS_PACKET = "serviceClassPacket";
 const MMI_KS_SERVICE_CLASS_PAD = "serviceClassPad";
 
+
+const USSD_SESSION_DONE = "DONE";
+const USSD_SESSION_ONGOING = "ONGOING";
+const USSD_SESSION_CANCELLING = "CANCELLING";
+
 const MMI_PROC_TO_CF_ACTION = {};
 MMI_PROC_TO_CF_ACTION[MMI_PROCEDURE_ACTIVATION] = Ci.nsIMobileConnection.CALL_FORWARD_ACTION_ENABLE;
 MMI_PROC_TO_CF_ACTION[MMI_PROCEDURE_DEACTIVATION] = Ci.nsIMobileConnection.CALL_FORWARD_ACTION_DISABLE;
@@ -380,7 +385,7 @@ function TelephonyService() {
 
   for (let i = 0; i < this._numClients; ++i) {
     this._audioStates[i] = nsITelephonyAudioService.PHONE_STATE_NORMAL;
-    this._ussdSessions[i] = false;
+    this._ussdSessions[i] = USSD_SESSION_DONE;
     this._currentCalls[i] = {};
     this._enumerateCallsForClient(i);
   }
@@ -1070,7 +1075,7 @@ TelephonyService.prototype = {
 
       
       default:
-        if (this._ussdSessions[aClientId]) {
+        if (this._ussdSessions[aClientId] == USSD_SESSION_ONGOING) {
           
           this._cancelUSSDInternal(aClientId, aResponse => {
             
@@ -2154,8 +2159,11 @@ TelephonyService.prototype = {
   },
 
   _sendUSSDInternal: function(aClientId, aUssd, aCallback) {
+    this._ussdSessions[aClientId] = USSD_SESSION_ONGOING;
     this._sendToRilWorker(aClientId, "sendUSSD", { ussd: aUssd }, aResponse => {
-      this._ussdSessions[aClientId] = !aResponse.errorMsg;
+      if (aResponse.errorMsg) {
+        this._ussdSessions[aClientId] = USSD_SESSION_DONE;
+      }
       aCallback(aResponse);
     });
   },
@@ -2166,8 +2174,11 @@ TelephonyService.prototype = {
   },
 
   _cancelUSSDInternal: function(aClientId, aCallback) {
+    this._ussdSessions[aClientId] = USSD_SESSION_CANCELLING;
     this._sendToRilWorker(aClientId, "cancelUSSD", {}, aResponse => {
-      this._ussdSessions[aClientId] = !!aResponse.errorMsg;
+      if (aResponse.errorMsg) {
+        this._ussdSessions[aClientId] = USSD_SESSION_ONGOING;
+      }
       aCallback(aResponse);
     });
   },
@@ -2441,9 +2452,23 @@ TelephonyService.prototype = {
     }
 
     let oldSession = this._ussdSessions[aClientId];
-    this._ussdSessions[aClientId] = !aSessionEnded;
+    this._ussdSessions[aClientId] =
+      aSessionEnded ? USSD_SESSION_DONE : USSD_SESSION_ONGOING;
 
-    if (!oldSession && !this._ussdSessions[aClientId] && !aMessage) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (oldSession != USSD_SESSION_ONGOING &&
+        this._ussdSessions[aClientId] != USSD_SESSION_ONGOING &&
+        !aMessage) {
       return;
     }
 
