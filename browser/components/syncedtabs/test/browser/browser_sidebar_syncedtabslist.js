@@ -157,7 +157,7 @@ add_task(function* testSyncedTabsSidebarFilteredList() {
   
   yield syncedTabsDeckComponent.tabListComponent._store.getData();
 
-  let filterInput = syncedTabsDeckComponent.container.querySelector(".tabsFilter");
+  let filterInput = syncedTabsDeckComponent._window.document.querySelector(".tabsFilter");
   filterInput.value = "filter text";
   filterInput.blur();
 
