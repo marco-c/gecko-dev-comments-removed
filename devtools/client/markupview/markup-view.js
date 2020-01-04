@@ -406,6 +406,10 @@ MarkupView.prototype = {
   _isImagePreviewTarget: function(target) {
     
     
+    if (this.isDragging) {
+      return promise.reject(false);
+    }
+
     let parent = target, container;
     while (parent !== this.doc.body) {
       if (parent.container) {
