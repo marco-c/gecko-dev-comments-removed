@@ -228,7 +228,7 @@ nsTextBoxFrame::UpdateAttributes(nsIAtom*         aAttribute,
     if (aAttribute == nullptr || aAttribute == nsGkAtoms::crop) {
         static nsIContent::AttrValuesArray strings[] =
           {&nsGkAtoms::left, &nsGkAtoms::start, &nsGkAtoms::center,
-           &nsGkAtoms::right, &nsGkAtoms::end, nullptr};
+           &nsGkAtoms::right, &nsGkAtoms::end, &nsGkAtoms::none, nullptr};
         CroppingStyle cropType;
         switch (mContent->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::crop,
                                           strings, eCaseMatters)) {
@@ -243,8 +243,11 @@ nsTextBoxFrame::UpdateAttributes(nsIAtom*         aAttribute,
           case 4:
             cropType = CropRight;
             break;
-          default:
+          case 5:
             cropType = CropNone;
+            break;
+          default:
+            cropType = CropAuto;
             break;
         }
 
@@ -647,31 +650,37 @@ nsTextBoxFrame::CalculateTitleForWidth(nsRenderingContext& aRenderingContext,
     }
 
     const nsDependentString& kEllipsis = nsContentUtils::GetLocalizedEllipsis();
-    
-    mCroppedTitle.Assign(kEllipsis);
+    if (mCropType != CropNone) {
+      
+      mCroppedTitle.Assign(kEllipsis);
 
-    
-    
-    fm->SetTextRunRTL(false);
-    titleWidth = nsLayoutUtils::AppUnitWidthOfString(kEllipsis, *fm,
-                                                     drawTarget);
+      
+      
+      fm->SetTextRunRTL(false);
+      titleWidth = nsLayoutUtils::AppUnitWidthOfString(kEllipsis, *fm,
+                                                       drawTarget);
 
-    if (titleWidth > aWidth) {
-        mCroppedTitle.SetLength(0);
-        return 0;
+      if (titleWidth > aWidth) {
+          mCroppedTitle.SetLength(0);
+          return 0;
+      }
+
+      
+      if (titleWidth == aWidth)
+          return titleWidth;
+
+      aWidth -= titleWidth;
+    } else {
+      mCroppedTitle.Truncate(0);
+      titleWidth = 0;
     }
-
-    
-    if (titleWidth == aWidth)
-        return titleWidth;
-
-    aWidth -= titleWidth;
 
     
     
     
     switch (mCropType)
     {
+        case CropAuto:
         case CropNone:
         case CropRight:
         {
@@ -1126,7 +1135,7 @@ nsTextBoxFrame::GetMinSize(nsBoxLayoutState& aBoxLayoutState)
     DISPLAY_MIN_SIZE(this, size);
 
     
-    if (mCropType != CropNone) {
+    if (mCropType != CropNone && mCropType != CropAuto) {
         if (GetWritingMode().IsVertical()) {
             size.height = 0;
         } else {
