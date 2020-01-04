@@ -56,7 +56,7 @@ AudioStreamAnalyser.prototype = {
 
 
   enableDebugCanvas: function() {
-    var cvs = document.createElement("canvas");
+    var cvs = this.debugCanvas = document.createElement("canvas");
     document.getElementById("content").appendChild(cvs);
 
     
@@ -73,9 +73,24 @@ AudioStreamAnalyser.prototype = {
       for (var i = 0; i < array.length; i++) {
         c.fillRect(i, (256 - (array[i])), 1, 256);
       }
-      requestAnimationFrame(render);
+      if (!cvs.stopDrawing) {
+        requestAnimationFrame(render);
+      }
     }
     requestAnimationFrame(render);
+  },
+
+  
+
+
+
+  disableDebugCanvas: function() {
+    if (!this.debugCanvas || !this.debugCanvas.parentElement) {
+      return;
+    }
+
+    this.debugCanvas.stopDrawing = true;
+    this.debugCanvas.parentElement.removeChild(this.debugCanvas);
   },
 
   
