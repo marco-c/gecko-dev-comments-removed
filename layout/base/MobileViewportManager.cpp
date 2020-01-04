@@ -14,6 +14,7 @@
 #include "nsViewManager.h"
 #include "nsViewportInfo.h"
 #include "UnitTransforms.h"
+#include "nsIDocument.h"
 
 #define MVM_LOG(...)
 
