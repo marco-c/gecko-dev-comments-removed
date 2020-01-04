@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/FakeTVService.h"
 #include "mozilla/dom/TVListeners.h"
 #include "mozilla/Preferences.h"
 #include "nsITVService.h"
@@ -14,14 +15,26 @@
 namespace mozilla {
 namespace dom {
 
+ already_AddRefed<FakeTVService>
+TVServiceFactory::CreateFakeTVService()
+{
+  RefPtr<FakeTVService> service = new FakeTVService();
+  return service.forget();
+}
+
  already_AddRefed<nsITVService>
 TVServiceFactory::AutoCreateTVService()
 {
-  nsresult rv = NS_OK;
+  nsresult rv;
   nsCOMPtr<nsITVService> service = do_CreateInstance(TV_SERVICE_CONTRACTID);
   if (!service) {
-    
-    service = do_CreateInstance(TV_SIMULATOR_SERVICE_CONTRACTID, &rv);
+    if (Preferences::GetBool("dom.ignore_webidl_scope_checks", false)) {
+      
+      service = do_CreateInstance(FAKE_TV_SERVICE_CONTRACTID, &rv);
+    } else {
+      
+      service = do_CreateInstance(TV_SIMULATOR_SERVICE_CONTRACTID, &rv);
+    }
 
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
