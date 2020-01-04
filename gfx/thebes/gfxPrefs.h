@@ -132,12 +132,51 @@ public:
 
 private:
   
-  template <UpdatePolicy Update, class T, T Default(void), const char* Prefname(void)>
-  class PrefTemplate : public Pref
+  
+  template<class T>
+  class TypedPref : public Pref
   {
   public:
+    TypedPref(T aValue)
+      : mValue(aValue)
+    {}
+
+    void GetCachedValue(GfxPrefValue* aOutValue) const override {
+      CopyPrefValue(&mValue, aOutValue);
+    }
+    void SetCachedValue(const GfxPrefValue& aOutValue) override {
+      
+      MOZ_ASSERT(!IsPrefsServiceAvailable());
+
+      T newValue;
+      CopyPrefValue(&aOutValue, &newValue);
+
+      if (mValue != newValue) {
+        mValue = newValue;
+        FireChangeCallback();
+      }
+    }
+
+  protected:
+    T GetLiveValue(const char* aPrefName) const {
+      if (IsPrefsServiceAvailable()) {
+        return PrefGet(aPrefName, mValue);
+      }
+      return mValue;
+    }
+
+  public:
+    T mValue;
+  };
+
+  
+  template <UpdatePolicy Update, class T, T Default(void), const char* Prefname(void)>
+  class PrefTemplate final : public TypedPref<T>
+  {
+    typedef TypedPref<T> BaseClass;
+  public:
     PrefTemplate()
-    : mValue(Default())
+      : BaseClass(Default())
     {
       
       
@@ -162,10 +201,10 @@ private:
         case UpdatePolicy::Skip:
           break;
         case UpdatePolicy::Once:
-          mValue = PrefGet(aPreference, mValue);
+          this->mValue = PrefGet(aPreference, this->mValue);
           break;
         case UpdatePolicy::Live:
-          PrefAddVarCache(&mValue, aPreference, mValue);
+          PrefAddVarCache(&this->mValue, aPreference, this->mValue);
           break;
         default:
           MOZ_CRASH("Incomplete switch");
@@ -180,7 +219,7 @@ private:
         case UpdatePolicy::Live:
           break;
         case UpdatePolicy::Once:
-          mValue = PrefGet(aPref, mValue);
+          this->mValue = PrefGet(aPref, this->mValue);
           break;
         default:
           MOZ_CRASH("Incomplete switch");
@@ -193,30 +232,11 @@ private:
     
     
     T GetLiveValue() const {
-      if (IsPrefsServiceAvailable()) {
-        return PrefGet(Prefname(), mValue);
-      }
-      return mValue;
+      return BaseClass::GetLiveValue(Prefname());
     }
     bool HasDefaultValue() const override {
-      return mValue == Default();
+      return this->mValue == Default();
     }
-    void GetCachedValue(GfxPrefValue* aOutValue) const override {
-      CopyPrefValue(&mValue, aOutValue);
-    }
-    void SetCachedValue(const GfxPrefValue& aOutValue) override {
-      
-      MOZ_ASSERT(!IsPrefsServiceAvailable());
-
-      T newValue;
-      CopyPrefValue(&aOutValue, &newValue);
-
-      if (mValue != newValue) {
-        mValue = newValue;
-        FireChangeCallback();
-      }
-    }
-    T mValue;
   };
 
   
