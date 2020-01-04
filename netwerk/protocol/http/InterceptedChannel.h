@@ -35,9 +35,6 @@ protected:
   
   Maybe<nsAutoPtr<nsHttpResponseHead>> mSynthesizedResponseHead;
 
-  
-  bool mIsNavigation;
-
   void EnsureSynthesizedResponse();
   void DoNotifyController();
   nsresult DoSynthesizeStatus(uint16_t aStatus, const nsACString& aReason);
@@ -45,8 +42,7 @@ protected:
 
   virtual ~InterceptedChannelBase();
 public:
-  InterceptedChannelBase(nsINetworkInterceptController* aController,
-                         bool aIsNavigation);
+  explicit InterceptedChannelBase(nsINetworkInterceptController* aController);
 
   
   
@@ -55,7 +51,6 @@ public:
   NS_DECL_ISUPPORTS
 
   NS_IMETHOD GetResponseBody(nsIOutputStream** aOutput) override;
-  NS_IMETHOD GetIsNavigation(bool* aIsNavigation) override;
 };
 
 class InterceptedChannelChrome : public InterceptedChannelBase

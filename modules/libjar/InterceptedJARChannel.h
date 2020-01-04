@@ -44,14 +44,10 @@ class InterceptedJARChannel : public nsIInterceptedChannel
   
   nsCString mContentType;
 
-  
-  bool mIsNavigation;
-
   virtual ~InterceptedJARChannel() {};
 public:
   InterceptedJARChannel(nsJARChannel* aChannel,
-                        nsINetworkInterceptController* aController,
-                        bool aIsNavigation);
+                        nsINetworkInterceptController* aController);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIINTERCEPTEDCHANNEL
