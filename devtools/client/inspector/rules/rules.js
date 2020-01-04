@@ -477,11 +477,6 @@ CssRuleView.prototype = {
 
         
         text = text.replace(/(\r?\n)\r?\n/g, "$1");
-
-        
-        let inline = _strings.GetStringFromName("rule.sourceInline");
-        let rx = new RegExp("^" + inline + "\\r?\\n?", "g");
-        text = text.replace(rx, "");
       }
 
       clipboardHelper.copyString(text);
