@@ -47,9 +47,13 @@ public:
   
   
   int64_t GetPositionUnlocked() const;
+
   
-  
-  int64_t GetPositionInFrames() const;
+
+
+
+
+  int64_t GetPositionInFrames(int64_t frames) const;
 
   
 
