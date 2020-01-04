@@ -2,7 +2,7 @@
 
 
 
-from marionette import MarionetteTestCase
+from marionette import MarionetteTestCase, skip_if_b2g
 from marionette_driver.errors import MarionetteException, TimeoutException
 from marionette_driver.by import By
 
@@ -25,6 +25,7 @@ class TestNavigate(MarionetteTestCase):
         self.assertNotEqual("about:blank", self.location_href)
         self.assertEqual("Marionette Test", self.marionette.title)
 
+    @skip_if_b2g 
     def test_navigate_chrome_error(self):
         with self.marionette.using_context("chrome"):
             self.assertRaisesRegexp(MarionetteException, "Cannot navigate in chrome context",
@@ -79,6 +80,7 @@ class TestNavigate(MarionetteTestCase):
             "return window.document.getElementById('someDiv') == undefined"))
 
     """ Disabled due to Bug 977899
+    @skip_if_b2g
     def test_navigate_frame(self):
         self.marionette.navigate(self.marionette.absolute_url("test_iframe.html"))
         self.marionette.switch_to_frame(0)
@@ -101,6 +103,7 @@ class TestNavigate(MarionetteTestCase):
             print traceback.format_exc()
             self.fail("Should have thrown a MarionetteException instead of %s" % type(e))
 
+    @skip_if_b2g 
     def test_should_navigate_to_requested_about_page(self):
         self.marionette.navigate("about:neterror")
         self.assertEqual(self.marionette.get_url(), "about:neterror")

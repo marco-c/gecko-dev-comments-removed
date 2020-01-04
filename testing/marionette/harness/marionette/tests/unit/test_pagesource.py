@@ -2,8 +2,7 @@
 
 
 
-from marionette import MarionetteTestCase
-
+from marionette import MarionetteTestCase, skip_if_b2g
 
 class TestPageSource(MarionetteTestCase):
     def testShouldReturnTheSourceOfAPage(self):
