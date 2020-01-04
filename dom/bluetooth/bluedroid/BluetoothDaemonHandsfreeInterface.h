@@ -400,39 +400,39 @@ public:
 
   void Init(
     BluetoothHandsfreeNotificationHandler* aNotificationHandler,
-    int aMaxNumClients, BluetoothHandsfreeResultHandler* aRes);
-  void Cleanup(BluetoothHandsfreeResultHandler* aRes);
+    int aMaxNumClients, BluetoothHandsfreeResultHandler* aRes) override;
+  void Cleanup(BluetoothHandsfreeResultHandler* aRes) override;
 
   
 
   void Connect(const nsAString& aBdAddr,
-               BluetoothHandsfreeResultHandler* aRes);
+               BluetoothHandsfreeResultHandler* aRes) override;
   void Disconnect(const nsAString& aBdAddr,
-                  BluetoothHandsfreeResultHandler* aRes);
+                  BluetoothHandsfreeResultHandler* aRes) override;
   void ConnectAudio(const nsAString& aBdAddr,
-                    BluetoothHandsfreeResultHandler* aRes);
+                    BluetoothHandsfreeResultHandler* aRes) override;
   void DisconnectAudio(const nsAString& aBdAddr,
-                       BluetoothHandsfreeResultHandler* aRes);
+                       BluetoothHandsfreeResultHandler* aRes) override;
 
   
 
   void StartVoiceRecognition(const nsAString& aBdAddr,
-                             BluetoothHandsfreeResultHandler* aRes);
+                             BluetoothHandsfreeResultHandler* aRes) override;
   void StopVoiceRecognition(const nsAString& aBdAddr,
-                            BluetoothHandsfreeResultHandler* aRes);
+                            BluetoothHandsfreeResultHandler* aRes) override;
 
   
 
   void VolumeControl(BluetoothHandsfreeVolumeType aType, int aVolume,
                      const nsAString& aBdAddr,
-                     BluetoothHandsfreeResultHandler* aRes);
+                     BluetoothHandsfreeResultHandler* aRes) override;
 
   
 
   void DeviceStatusNotification(BluetoothHandsfreeNetworkState aNtkState,
                                 BluetoothHandsfreeServiceType aSvcType,
                                 int aSignal, int aBattChg,
-                                BluetoothHandsfreeResultHandler* aRes);
+                                BluetoothHandsfreeResultHandler* aRes) override;
 
   
 
@@ -442,12 +442,12 @@ public:
                     BluetoothHandsfreeCallState aCallSetupState,
                     int aSignal, int aRoam, int aBattChg,
                     const nsAString& aBdAddr,
-                    BluetoothHandsfreeResultHandler* aRes);
+                    BluetoothHandsfreeResultHandler* aRes) override;
   void FormattedAtResponse(const char* aRsp, const nsAString& aBdAddr,
-                           BluetoothHandsfreeResultHandler* aRes);
+                           BluetoothHandsfreeResultHandler* aRes) override;
   void AtResponse(BluetoothHandsfreeAtResponse aResponseCode, int aErrorCode,
                   const nsAString& aBdAddr,
-                  BluetoothHandsfreeResultHandler* aRes);
+                  BluetoothHandsfreeResultHandler* aRes) override;
   void ClccResponse(int aIndex, BluetoothHandsfreeCallDirection aDir,
                     BluetoothHandsfreeCallState aState,
                     BluetoothHandsfreeCallMode aMode,
@@ -455,7 +455,7 @@ public:
                     const nsAString& aNumber,
                     BluetoothHandsfreeCallAddressType aType,
                     const nsAString& aBdAddr,
-                    BluetoothHandsfreeResultHandler* aRes);
+                    BluetoothHandsfreeResultHandler* aRes) override;
 
   
 
@@ -463,12 +463,12 @@ public:
                         BluetoothHandsfreeCallState aCallSetupState,
                         const nsAString& aNumber,
                         BluetoothHandsfreeCallAddressType aType,
-                        BluetoothHandsfreeResultHandler* aRes);
+                        BluetoothHandsfreeResultHandler* aRes) override;
 
   
   void ConfigureWbs(const nsAString& aBdAddr,
                     BluetoothHandsfreeWbsConfig aConfig,
-                    BluetoothHandsfreeResultHandler* aRes);
+                    BluetoothHandsfreeResultHandler* aRes) override;
 
 private:
   void DispatchError(BluetoothHandsfreeResultHandler* aRes,
