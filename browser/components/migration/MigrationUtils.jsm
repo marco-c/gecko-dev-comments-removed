@@ -19,6 +19,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "BookmarkHTMLUtils",
                                   "resource://gre/modules/BookmarkHTMLUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
+                                  "resource://gre/modules/PromiseUtils.jsm");
 
 var gMigrators = null;
 var gProfileStartup = null;
@@ -228,15 +230,20 @@ this.MigratorPrototype = {
       resources = resources.filter(r => aItems & r.type);
 
     
-    function doMigrate() {
-      
-      
+    let unblockMainThread = function () {
+      return new Promise(resolve => {
+        Services.tm.mainThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
+      });
+    };
+
+    
+    let doMigrate = Task.async(function*() {
       let resourcesGroupedByItems = new Map();
       resources.forEach(function(resource) {
-        if (resourcesGroupedByItems.has(resource.type))
-          resourcesGroupedByItems.get(resource.type).push(resource);
-        else
-          resourcesGroupedByItems.set(resource.type, [resource]);
+        if (!resourcesGroupedByItems.has(resource.type)) {
+          resourcesGroupedByItems.set(resource.type, new Set());
+        }
+        resourcesGroupedByItems.get(resource.type).add(resource)
       });
 
       if (resourcesGroupedByItems.size == 0)
@@ -255,37 +262,45 @@ this.MigratorPrototype = {
 
         let itemSuccess = false;
         for (let res of itemResources) {
+          
           let resource = res;
+          let completeDeferred = PromiseUtils.defer();
           let resourceDone = function(aSuccess) {
-            let resourceIndex = itemResources.indexOf(resource);
-            if (resourceIndex != -1) {
-              itemResources.splice(resourceIndex, 1);
-              itemSuccess |= aSuccess;
-              if (itemResources.length == 0) {
-                resourcesGroupedByItems.delete(migrationType);
-                notify(itemSuccess ?
-                       "Migration:ItemAfterMigrate" : "Migration:ItemError",
-                       migrationType);
-                if (resourcesGroupedByItems.size == 0)
-                  notify("Migration:Ended");
+            itemResources.delete(resource);
+            itemSuccess |= aSuccess;
+            if (itemResources.size == 0) {
+              notify(itemSuccess ?
+                     "Migration:ItemAfterMigrate" : "Migration:ItemError",
+                     migrationType);
+              resourcesGroupedByItems.delete(migrationType);
+              if (resourcesGroupedByItems.size == 0) {
+                notify("Migration:Ended");
               }
             }
+            completeDeferred.resolve();
           }
 
-          Services.tm.mainThread.dispatch(function() {
-            
-            
-            try {
-              resource.migrate(resourceDone);
-            }
-            catch(ex) {
-              Cu.reportError(ex);
-              resourceDone(false);
-            }
-          }, Ci.nsIThread.DISPATCH_NORMAL);
+          
+          
+          try {
+            resource.migrate(resourceDone);
+          }
+          catch(ex) {
+            Cu.reportError(ex);
+            resourceDone(false);
+          }
+
+          
+          
+          if (migrationType == MigrationUtils.resourceTypes.BOOKMARKS ||
+              migrationType == MigrationUtils.resourceTypes.HISTORY) {
+            yield completeDeferred.promise;
+          }
+
+          yield unblockMainThread();
         }
       }
-    }
+    });
 
     if (MigrationUtils.isStartupMigration && !this.startupOnlyMigrator) {
       MigrationUtils.profileStartup.doStartup();

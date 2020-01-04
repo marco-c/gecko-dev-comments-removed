@@ -11,7 +11,7 @@ this.EXPORTED_SYMBOLS = [
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 
-const TRANSACTIONS_QUEUE_TIMEOUT_MS = 120000 
+const TRANSACTIONS_QUEUE_TIMEOUT_MS = 240000 
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
