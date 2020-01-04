@@ -370,6 +370,12 @@ public:
 
 
 
+  bool RelocateARIAOwnedIfNeeded(nsIContent* aEl);
+
+  
+
+
+
   DocAccessibleChild* IPCDoc() const { return mIPCDoc; }
 
 protected:
@@ -519,11 +525,6 @@ protected:
 
   uint32_t UpdateTreeInternal(Accessible* aChild, bool aIsInsert,
                               AccReorderEvent* aReorderEvent);
-
-  
-
-
-  void RelocateARIAOwnedIfNeeded(nsIContent* aEl);
 
   
 
