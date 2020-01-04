@@ -4535,6 +4535,10 @@ pref("dom.mozPermissionSettings.enabled", false);
 pref("dom.w3c_touch_events.enabled", 2);
 #endif
 
+#if MOZ_WIDGET_GTK == 3
+pref("dom.w3c_touch_events.enabled", 2);
+#endif
+
 
 pref("dom.w3c_pointer_events.enabled", false);
 
