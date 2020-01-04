@@ -33,6 +33,12 @@ import mozrunner
 from mozrunner.utils import get_stack_fixer_function, test_environment
 from mozscreenshot import printstatus, dump_screen
 
+try:
+    from marionette import Marionette
+    from marionette_driver.addons import Addons
+except ImportError:
+    Marionette=None
+
 from output import OutputHandler, ReftestFormatter
 import reftestcommandline
 
@@ -65,9 +71,9 @@ printLock = threading.Lock()
 
 
 class ReftestThread(threading.Thread):
-    def __init__(self, cmdlineArgs):
+    def __init__(self, cmdargs):
         threading.Thread.__init__(self)
-        self.cmdlineArgs = cmdlineArgs
+        self.cmdargs = cmdargs
         self.summaryMatches = {}
         self.retcode = -1
         for text, _ in summaryLines:
@@ -75,9 +81,9 @@ class ReftestThread(threading.Thread):
 
     def run(self):
         with printLock:
-            print "Starting thread with", self.cmdlineArgs
+            print "Starting thread with", self.cmdargs
             sys.stdout.flush()
-        process = subprocess.Popen(self.cmdlineArgs, stdout=subprocess.PIPE)
+        process = subprocess.Popen(self.cmdargs, stdout=subprocess.PIPE)
         for chunk in self.chunkForMergedOutput(process.stdout):
             with printLock:
                 print chunk,
@@ -191,7 +197,9 @@ class ReftestResolver(object):
                 manifests[key] = "|".join(list(manifests[key]))
         return manifests
 
+
 class RefTest(object):
+    use_marionette = True
     oldcwd = os.getcwd()
     resolver_cls = ReftestResolver
 
@@ -241,7 +249,8 @@ class RefTest(object):
         :param manifests: Dictionary of the form {manifest_path: [filters]}
         :param server: Server name to use for http tests
         :param profile_to_clone: Path to a profile to use as the basis for the
-                                 test profile"""
+                                 test profile
+        """
 
         locations = mozprofile.permissions.ServerLocations()
         locations.add_host(server, scheme='http', port=port)
@@ -270,57 +279,37 @@ class RefTest(object):
         prefs['reftest.logLevel'] = options.log_tbpl_level or 'info'
         prefs['reftest.manifests'] = json.dumps(manifests)
 
-        
-        
-        prefs['toolkit.telemetry.enabled'] = False
-        prefs['toolkit.telemetry.unified'] = False
-        
-        prefs['browser.safebrowsing.enabled'] = False
-        prefs['browser.safebrowsing.malware.enabled'] = False
-        
-        prefs['privacy.trackingprotection.enabled'] = False
-        prefs['privacy.trackingprotection.pbmode.enabled'] = False
-        
-        prefs['browser.snippets.enabled'] = False
-        prefs['browser.snippets.syncPromo.enabled'] = False
-        prefs['browser.snippets.firstrunHomepage.enabled'] = False
-        
-        prefs['general.useragent.updates.enabled'] = False
-        
-        prefs['browser.webapps.checkForUpdates'] = 0
-        
-        prefs['browser.newtabpage.directory.source'] = 'data:application/json,{"reftest":1}'
-        prefs['browser.newtabpage.directory.ping'] = ''
-        
-        
-        prefs["extensions.enabledScopes"] = 5
-        prefs["extensions.autoDisableScopes"] = 0
-        
-        prefs['xpinstall.signatures.required'] = False
-
-        
-        prefs['browser.tabs.remote.autostart.1'] = False
-        prefs['browser.tabs.remote.autostart.2'] = False
         if options.e10s:
             prefs['browser.tabs.remote.autostart'] = True
             prefs['extensions.e10sBlocksEnabling'] = False
+
+        if options.marionette:
+            port = options.marionette.split(':')[1]
+            prefs['marionette.defaultPrefs.port'] = int(port)
+
+        preference_file = os.path.join(here, 'reftest-preferences.js')
+        prefs.update(mozprofile.Preferences.read_prefs(preference_file))
 
         for v in options.extraPrefs:
             thispref = v.split('=')
             if len(thispref) < 2:
                 print "Error: syntax error in --setpref=" + v
                 sys.exit(1)
-            prefs[thispref[0]] = mozprofile.Preferences.cast(
-                thispref[1].strip())
+            prefs[thispref[0]] = thispref[1].strip()
 
-        
-        addons = [options.reftestExtensionPath]
+        addons = []
+        if not self.use_marionette:
+            addons.append(options.reftestExtensionPath)
 
         if options.specialPowersExtensionPath is not None:
-            addons.append(options.specialPowersExtensionPath)
+            if not self.use_marionette:
+                addons.append(options.specialPowersExtensionPath)
             
             
             prefs['security.turn_off_all_security_so_that_viruses_can_take_over_this_computer'] = True
+
+        for pref in prefs:
+            prefs[pref] = mozprofile.Preferences.cast(prefs[pref])
 
         
         distExtDir = os.path.join(options.app[:options.app.rfind(os.sep)],
@@ -405,7 +394,8 @@ class RefTest(object):
         if profileDir:
             shutil.rmtree(profileDir, True)
 
-    def runTests(self, tests, options, cmdlineArgs=None):
+    def runTests(self, tests, options, cmdargs=None):
+        cmdargs = cmdargs or []
         self._populate_logger(options)
 
         
@@ -420,8 +410,8 @@ class RefTest(object):
         if options.filter:
             manifests[""] = options.filter
 
-        if not hasattr(options, "runTestsInParallel") or not options.runTestsInParallel:
-            return self.runSerialTests(manifests, options, cmdlineArgs)
+        if not getattr(options, 'runTestsInParallel', False):
+            return self.runSerialTests(manifests, options, cmdargs)
 
         cpuCount = multiprocessing.cpu_count()
 
@@ -439,13 +429,20 @@ class RefTest(object):
         totalJobs = jobsWithoutFocus + 1
         perProcessArgs = [sys.argv[:] for i in range(0, totalJobs)]
 
+        host = 'localhost'
+        port = 2828
+        if options.marionette:
+            host, port = options.marionette.split(':')
+
         
         
         perProcessArgs[0].insert(-1, "--focus-filter-mode=needs-focus")
         for (chunkNumber, jobArgs) in enumerate(perProcessArgs[1:], start=1):
             jobArgs[-1:-1] = ["--focus-filter-mode=non-needs-focus",
                               "--total-chunks=%d" % jobsWithoutFocus,
-                              "--this-chunk=%d" % chunkNumber]
+                              "--this-chunk=%d" % chunkNumber,
+                              "--marionette=%s:%d" % (host, port)]
+            port += 1
 
         for jobArgs in perProcessArgs:
             try:
@@ -598,6 +595,24 @@ class RefTest(object):
                      outputTimeout=timeout)
         proc = runner.process_handler
 
+        if self.use_marionette:
+            marionette_args = { 'symbols_path': options.symbolsPath }
+            if options.marionette:
+                host, port = options.marionette.split(':')
+                marionette_args['host'] = host
+                marionette_args['port'] = int(port)
+
+            marionette = Marionette(**marionette_args)
+            marionette.start_session()
+
+            addons = Addons(marionette)
+            if options.specialPowersExtensionPath:
+                addons.install(options.specialPowersExtensionPath, temp=True)
+
+            addons.install(options.reftestExtensionPath, temp=True)
+
+            marionette.delete_session()
+
         status = runner.wait()
         runner.process_handler = None
 
@@ -617,7 +632,7 @@ class RefTest(object):
             status = 1
         return status
 
-    def runSerialTests(self, manifests, options, cmdlineArgs=None):
+    def runSerialTests(self, manifests, options, cmdargs=None):
         debuggerInfo = None
         if options.debugger:
             debuggerInfo = mozdebug.get_debugger_info(options.debugger, options.debuggerArgs,
@@ -625,8 +640,12 @@ class RefTest(object):
 
         profileDir = None
         try:
-            if cmdlineArgs is None:
-                cmdlineArgs = []
+            if cmdargs is None:
+                cmdargs = []
+
+            if self.use_marionette:
+                cmdargs.append('-marionette')
+
             profile = self.createReftestProfile(options, manifests)
             profileDir = profile.profile  
 
@@ -635,7 +654,7 @@ class RefTest(object):
 
             status = self.runApp(profile,
                                  binary=options.app,
-                                 cmdargs=cmdlineArgs,
+                                 cmdargs=cmdargs,
                                  
                                  
                                  env=browserEnv,

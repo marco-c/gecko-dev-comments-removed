@@ -339,6 +339,7 @@ class RemoteAutomation(Automation):
 
             self.logBuffer += newLogContent
             lines = self.logBuffer.split('\n')
+            lines = [l for l in lines if l]
 
             if lines:
                 
@@ -349,7 +350,6 @@ class RemoteAutomation(Automation):
                 return False
 
             for line in lines:
-                
                 
                 parsed_messages = self.messageLogger.write(line)
                 for message in parsed_messages:

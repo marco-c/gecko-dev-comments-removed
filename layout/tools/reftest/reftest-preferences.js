@@ -1,70 +1,112 @@
-    
-    
-    
-    
-    branch.setBoolPref("dom.use_xbl_scopes_for_remote_xul", false);
-    branch.setIntPref("gfx.color_management.mode", 2);
-    branch.setBoolPref("gfx.color_management.force_srgb", true);
-    branch.setBoolPref("browser.dom.window.dump.enabled", true);
-    branch.setIntPref("ui.caretBlinkTime", -1);
-    branch.setBoolPref("dom.send_after_paint_to_content", true);
-    
-    branch.setIntPref("dom.max_script_run_time", 0);
-    branch.setIntPref("dom.max_chrome_script_run_time", 0);
-    branch.setIntPref("hangmonitor.timeout", 0);
-    
-    branch.setBoolPref("media.autoplay.enabled", true);
-    
-    branch.setBoolPref("app.update.enabled", false);
-    
-    branch.setBoolPref("extensions.update.enabled", false);
-    branch.setBoolPref("extensions.getAddons.cache.enabled", false);
-    
-    branch.setBoolPref("extensions.blocklist.enabled", false);
-    
-    branch.setIntPref("urlclassifier.updateinterval", 172800);
-    
-    branch.setBoolPref("image.downscale-during-decode.enabled", false);
-    
-    
-    
-    branch.setBoolPref("image.single-color-optimization.enabled", false);
-    
-    
-    branch.setBoolPref("security.fileuri.strict_origin_policy", false);
-    
-    branch.setBoolPref("browser.pagethumbnails.capturing_disabled", true);
-    
-    
-    
-    
-    branch.setIntPref("browser.viewport.desktopWidth", 800);
-    
-    
-    
-    branch.setBoolPref("layout.testing.overlay-scrollbars.always-visible", true);
-    
-    
-    
-    
-    
-    
-    
-    branch.setBoolPref("layout.interruptible-reflow.enabled", false);
 
-    
-    
-    branch.setBoolPref("browser.search.isUS", true);
-    branch.setCharPref("browser.search.countryCode", "US");
-    
-    branch.setCharPref("browser.search.geoSpecificDefaults.url", "");
 
-    
-    branch.setCharPref("browser.selfsupport.url", "https://%(server)s/selfsupport-dummy/");
 
-    
-    branch.setBoolPref("dom.allow_XUL_XBL_for_file", true);
 
-    
-    
-    branch.setBoolPref("security.view-source.reachable-from-inner-protocol", true);
+user_pref("dom.use_xbl_scopes_for_remote_xul", false);
+user_pref("gfx.color_management.mode", 2);
+user_pref("gfx.color_management.force_srgb", true);
+user_pref("browser.dom.window.dump.enabled", true);
+user_pref("ui.caretBlinkTime", -1);
+user_pref("dom.send_after_paint_to_content", true);
+
+user_pref("dom.max_script_run_time", 0);
+user_pref("dom.max_chrome_script_run_time", 0);
+user_pref("hangmonitor.timeout", 0);
+
+user_pref("media.autoplay.enabled", true);
+
+user_pref("app.update.enabled", false);
+user_pref("app.update.staging.enabled", false);
+user_pref("app.update.url.android", "");
+
+user_pref("extensions.update.enabled", false);
+user_pref("extensions.systemAddon.update.url", "http://localhost/dummy-system-addons.xml");
+user_pref("extensions.getAddons.cache.enabled", false);
+
+user_pref("extensions.blocklist.enabled", false);
+
+user_pref("urlclassifier.updateinterval", 172800);
+
+user_pref("image.downscale-during-decode.enabled", false);
+
+
+
+user_pref("image.single-color-optimization.enabled", false);
+
+
+user_pref("security.fileuri.strict_origin_policy", false);
+
+user_pref("browser.pagethumbnails.capturing_disabled", true);
+
+
+
+
+user_pref("browser.viewport.desktopWidth", 800);
+
+
+
+user_pref("layout.testing.overlay-scrollbars.always-visible", true);
+
+
+
+
+
+
+
+user_pref("layout.interruptible-reflow.enabled", false);
+
+
+
+user_pref("browser.search.isUS", true);
+user_pref("browser.search.countryCode", "US");
+user_pref("browser.search.geoSpecificDefaults", false);
+
+
+user_pref("browser.selfsupport.url", "https://localhost/selfsupport-dummy/");
+
+
+user_pref("browser.startup.page", 0);
+
+
+user_pref("dom.allow_XUL_XBL_for_file", true);
+
+
+
+user_pref("security.view-source.reachable-from-inner-protocol", true);
+
+
+
+user_pref("toolkit.telemetry.enabled", false);
+user_pref("toolkit.telemetry.unified", false);
+
+user_pref("browser.safebrowsing.enabled", false);
+user_pref("browser.safebrowsing.malware.enabled", false);
+
+user_pref("privacy.trackingprotection.enabled", false);
+user_pref("privacy.trackingprotection.pbmode.enabled", false);
+
+user_pref("browser.snippets.enabled", false);
+user_pref("browser.snippets.syncPromo.enabled", false);
+user_pref("browser.snippets.firstrunHomepage.enabled", false);
+
+user_pref("general.useragent.updates.enabled", false);
+
+user_pref("browser.webapps.checkForUpdates", 0);
+
+user_pref("browser.newtabpage.directory.source", "data:application/json,{\"reftest\":1}");
+user_pref("browser.newtabpage.directory.ping", "");
+
+
+user_pref("extensions.enabledScopes", 5);
+user_pref("extensions.autoDisableScopes", 0);
+
+user_pref("xpinstall.signatures.required", false);
+
+
+user_pref("browser.tabs.remote.autostart.1", false);
+user_pref("browser.tabs.remote.autostart.2", false);
+
+user_pref("startup.homepage_welcome_url", "");
+user_pref("startup.homepage_override_url", "");
+
+user_pref("media.gmp-manager.url.override", "http://localhost/dummy-gmp-manager.xml");

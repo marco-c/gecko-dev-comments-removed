@@ -2,14 +2,7 @@
 
 
 
-function setDefaultPrefs() {
-    
-    var prefs = Cc["@mozilla.org/preferences-service;1"].
-                getService(Ci.nsIPrefService);
-    var branch = prefs.getDefaultBranch("");
-
-#include reftest-preferences.js
-}
+const { utils: Cu, classes: Cc, interfaces: Ci } = Components;
 
 function setPermissions() {
   if (__marionetteParams.length < 2) {
@@ -27,7 +20,7 @@ function setPermissions() {
 }
 
 var cm = Cc["@mozilla.org/categorymanager;1"]
-           .getService(Components.interfaces.nsICategoryManager);
+           .getService(Ci.nsICategoryManager);
 
 
 if (cm) {
@@ -40,8 +33,6 @@ var wm = Cc["@mozilla.org/appshell/window-mediator;1"]
             .getService(Ci.nsIWindowMediator);
 var win = wm.getMostRecentWindow('');
 
-
-setDefaultPrefs();
 setPermissions();
 
 
