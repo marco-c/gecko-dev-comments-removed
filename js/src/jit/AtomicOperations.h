@@ -328,6 +328,8 @@ AtomicOperations::isLockfree(int32_t size)
 # include "jit/mips-shared/AtomicOperations-mips-shared.h"
 #elif defined(__ppc__) || defined(__PPC__)
 # include "jit/none/AtomicOperations-ppc.h"
+#elif defined(__sparc__)
+# include "jit/none/AtomicOperations-sparc.h"
 #elif defined(JS_CODEGEN_NONE)
   
   
