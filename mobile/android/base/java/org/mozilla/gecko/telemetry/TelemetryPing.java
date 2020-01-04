@@ -10,6 +10,9 @@ import org.mozilla.gecko.sync.ExtendedJSONObject;
 
 
 
+
+
+
 public class TelemetryPing {
     private final String url;
     private final ExtendedJSONObject payload;
