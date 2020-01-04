@@ -91,7 +91,7 @@ public:
     
     
     
-    return mKey.SizeOfExcludingThisMustBeUnshared(aMallocSizeOf);
+    return mKey.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   }
 };
 
