@@ -1318,12 +1318,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline
 
   
   
+  
+  
+  
   nsStyleCoord  mOutlineWidth;    
   nscoord       mOutlineOffset;   
 
   nscoord GetOutlineWidth() const
   {
-    return mCachedOutlineWidth;
+    return mActualOutlineWidth;
   }
 
   uint8_t GetOutlineStyle() const
@@ -1366,7 +1369,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline
 protected:
   
   
-  nscoord       mCachedOutlineWidth;
+  
+  nscoord       mActualOutlineWidth;
 
   nscolor       mOutlineColor;    
 
