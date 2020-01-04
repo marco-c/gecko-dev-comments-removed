@@ -9,8 +9,7 @@
 
 #include "base/basictypes.h"
 #include "base/process.h"
-#include "mozilla/DebugOnly.h"
-#include "nscore.h"
+#include "mozilla/UniquePtr.h"
 
 #ifdef XP_WIN
 
@@ -47,49 +46,52 @@ public:
   typedef base::FileDescriptor PickleType;
 #endif
 
+  struct PlatformHandleHelper
+  {
+    MOZ_IMPLICIT PlatformHandleHelper(PlatformHandleType aHandle);
+    MOZ_IMPLICIT PlatformHandleHelper(std::nullptr_t);
+    bool operator != (std::nullptr_t) const;
+    operator PlatformHandleType () const;
+#ifdef XP_WIN
+    operator std::intptr_t () const;
+#endif
+  private:
+    PlatformHandleType mHandle;
+  };
+  struct PlatformHandleDeleter
+  {
+    typedef PlatformHandleHelper pointer;
+    void operator () (PlatformHandleHelper aHelper);
+  };
+  typedef UniquePtr<PlatformHandleType, PlatformHandleDeleter> UniquePlatformHandle;
+
   
   struct IPDLPrivate
   {};
 
+  
   FileDescriptor();
 
-  FileDescriptor(const FileDescriptor& aOther)
-    : mHandleCreatedByOtherProcess(false)
-#ifdef DEBUG
-    , mHandleCreatedByOtherProcessWasUsed(false)
-#endif
-  {
-    
-    
-    Assign(aOther);
-  }
+  
+  FileDescriptor(const FileDescriptor& aOther);
 
+  FileDescriptor(FileDescriptor&& aOther);
+
+  
+  
   explicit FileDescriptor(PlatformHandleType aHandle);
 
-  FileDescriptor(const IPDLPrivate&, const PickleType& aPickle)
-#ifdef XP_WIN
-  : mHandle(aPickle)
-#else
-  : mHandle(aPickle.fd)
-#endif
-  , mHandleCreatedByOtherProcess(true)
-#ifdef DEBUG
-  , mHandleCreatedByOtherProcessWasUsed(false)
-#endif
-  { }
+  
+  
+  FileDescriptor(const IPDLPrivate&, const PickleType& aPickle);
 
-  ~FileDescriptor()
-  {
-    CloseCurrentProcessHandle();
-  }
+  ~FileDescriptor();
 
   FileDescriptor&
-  operator=(const FileDescriptor& aOther)
-  {
-    CloseCurrentProcessHandle();
-    Assign(aOther);
-    return *this;
-  }
+  operator=(const FileDescriptor& aOther);
+
+  FileDescriptor&
+  operator=(FileDescriptor&& aOther);
 
   
   
@@ -100,70 +102,36 @@ public:
   
   
   bool
-  IsValid() const
-  {
-    return IsValid(mHandle);
-  }
+  IsValid() const;
 
-  PlatformHandleType
-  PlatformHandle() const
-  {
-#ifdef DEBUG
-    if (mHandleCreatedByOtherProcess) {
-      mHandleCreatedByOtherProcessWasUsed = true;
-    }
-#endif
-    return mHandle;
-  }
+  
+  
+  UniquePlatformHandle
+  ClonePlatformHandle() const;
 
+  
   bool
-  operator==(const FileDescriptor& aOther) const
-  {
-    return mHandle == aOther.mHandle;
-  }
+  operator==(const FileDescriptor& aOther) const;
 
 private:
+  friend struct PlatformHandleTrait;
+
   void
-  Assign(const FileDescriptor& aOther)
-  {
-    if (aOther.mHandleCreatedByOtherProcess) {
-      mHandleCreatedByOtherProcess = true;
-#ifdef DEBUG
-      mHandleCreatedByOtherProcessWasUsed =
-        aOther.mHandleCreatedByOtherProcessWasUsed;
-#endif
-      mHandle = aOther.PlatformHandle();
-    } else {
-      DuplicateInCurrentProcess(aOther.PlatformHandle());
-      mHandleCreatedByOtherProcess = false;
-#ifdef DEBUG
-      mHandleCreatedByOtherProcessWasUsed = false;
-#endif
-    }
-  }
+  Assign(const FileDescriptor& aOther);
+
+  void
+  Close();
 
   static bool
   IsValid(PlatformHandleType aHandle);
 
-  void
-  DuplicateInCurrentProcess(PlatformHandleType aHandle);
+  static PlatformHandleType
+  Clone(PlatformHandleType aHandle);
 
-  void
-  CloseCurrentProcessHandle();
+  static void
+  Close(PlatformHandleType aHandle);
 
   PlatformHandleType mHandle;
-
-  
-  
-  
-  
-  bool mHandleCreatedByOtherProcess;
-
-#ifdef DEBUG
-  
-  
-  mutable bool mHandleCreatedByOtherProcessWasUsed;
-#endif
 };
 
 } 
