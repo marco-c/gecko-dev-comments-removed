@@ -19,7 +19,8 @@ extern "C" {
 #endif
 
 
-static const int kCpuInitialized = 0x1;
+
+#define kCpuInit 0x1
 
 
 static const int kCpuHasARM = 0x2;
@@ -36,12 +37,12 @@ static const int kCpuHasAVX = 0x200;
 static const int kCpuHasAVX2 = 0x400;
 static const int kCpuHasERMS = 0x800;
 static const int kCpuHasFMA3 = 0x1000;
-static const int kCpuHasAVX3 = 0x2000;
 
 
 
 static const int kCpuHasMIPS = 0x10000;
-static const int kCpuHasDSPR2 = 0x20000;
+static const int kCpuHasMIPS_DSP = 0x20000;
+static const int kCpuHasMIPS_DSPR2 = 0x40000;
 
 
 LIBYUV_API
@@ -56,7 +57,7 @@ int ArmCpuCaps(const char* cpuinfo_name);
 
 static __inline int TestCpuFlag(int test_flag) {
   LIBYUV_API extern int cpu_info_;
-  return (!cpu_info_ ? InitCpuFlags() : cpu_info_) & test_flag;
+  return (cpu_info_ == kCpuInit ? InitCpuFlags() : cpu_info_) & test_flag;
 }
 
 

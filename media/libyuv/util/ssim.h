@@ -13,8 +13,6 @@
 #ifndef UTIL_SSIM_H_  
 #define UTIL_SSIM_H_
 
-#include <math.h>  
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,6 +24,7 @@ typedef unsigned char uint8;
 
 double CalcSSIM(const uint8* org, const uint8* rec,
                 const int image_width, const int image_height);
+
 
 double CalcLSSIM(double ssim);
 
