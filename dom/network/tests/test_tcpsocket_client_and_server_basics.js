@@ -347,9 +347,6 @@ function* test_basics() {
   serverQueue = connectedResult.queue;
 
   
-  
-  
-  bigUint8Array.toString = Object.prototype.toString;
   is(clientSocket.send(bigUint8Array), true,
      'Client sending a large non-string should only send a small string.');
   clientSocket.close();
