@@ -1535,7 +1535,7 @@ AndroidBridge::PostTaskToUiThread(already_AddRefed<Runnable> aTask, int aDelayMs
         
         
         
-        GeckoAppShell::RequestUiThreadCallback((int64_t)aDelayMs);
+        GeckoThread::RequestUiThreadCallback(int64_t(aDelayMs));
     }
 }
 
