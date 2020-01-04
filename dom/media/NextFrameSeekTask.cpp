@@ -53,7 +53,7 @@ NextFrameSeekTask::Discard()
   AssertOwnerThread();
 
   
-  RejectIfExist(__func__);
+  RejectIfExist(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
 
   
   CancelCallbacks();
@@ -253,7 +253,7 @@ NextFrameSeekTask::OnVideoNotDecoded(const MediaResult& aError)
         
         CancelCallbacks();
         
-        RejectIfExist(__func__);
+        RejectIfExist(aError, __func__);
         break;
     }
     return;
@@ -303,7 +303,7 @@ NextFrameSeekTask::SetCallbacks()
       } else {
         
         CancelCallbacks();
-        RejectIfExist(__func__);
+        RejectIfExist(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
       }
       return;
     }
