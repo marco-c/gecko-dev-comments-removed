@@ -91,6 +91,17 @@ public:
 
   virtual void NotifyAnimationUpdated(Animation& aAnimation);
 
+  
+
+
+
+
+
+
+  bool HasAnimations() const {
+    return !mAnimations.IsEmpty();
+  }
+
   void RemoveAnimation(Animation* aAnimation);
 
 protected:

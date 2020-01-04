@@ -5,6 +5,7 @@
 
 #include "SVGDocumentWrapper.h"
 
+#include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/Element.h"
 #include "nsICategoryManager.h"
 #include "nsIChannel.h"
@@ -115,8 +116,21 @@ bool
 SVGDocumentWrapper::IsAnimated()
 {
   nsIDocument* doc = mViewer->GetDocument();
-  return doc && doc->HasAnimationController() &&
-    doc->GetAnimationController()->HasRegisteredAnimations();
+  if (!doc) {
+    return false;
+  }
+  if (doc->Timeline()->HasAnimations()) {
+    
+    
+    
+    return true;
+  }
+  if (doc->HasAnimationController() &&
+      doc->GetAnimationController()->HasRegisteredAnimations()) {
+    
+    return true;
+  }
+  return false;
 }
 
 void
