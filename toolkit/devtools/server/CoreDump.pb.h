@@ -490,6 +490,18 @@ class Node : public ::google::protobuf::Message {
   inline void set_allocated_allocationstack(::mozilla::devtools::protobuf::StackFrame* allocationstack);
 
   
+  inline bool has_jsobjectclassname() const;
+  inline void clear_jsobjectclassname();
+  static const int kJsObjectClassNameFieldNumber = 6;
+  inline const ::std::string& jsobjectclassname() const;
+  inline void set_jsobjectclassname(const ::std::string& value);
+  inline void set_jsobjectclassname(const char* value);
+  inline void set_jsobjectclassname(const void* value, size_t size);
+  inline ::std::string* mutable_jsobjectclassname();
+  inline ::std::string* release_jsobjectclassname();
+  inline void set_allocated_jsobjectclassname(::std::string* jsobjectclassname);
+
+  
  private:
   inline void set_has_id();
   inline void clear_has_id();
@@ -499,6 +511,8 @@ class Node : public ::google::protobuf::Message {
   inline void clear_has_size();
   inline void set_has_allocationstack();
   inline void clear_has_allocationstack();
+  inline void set_has_jsobjectclassname();
+  inline void clear_has_jsobjectclassname();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -509,6 +523,7 @@ class Node : public ::google::protobuf::Message {
   ::google::protobuf::uint64 size_;
   ::google::protobuf::RepeatedPtrField< ::mozilla::devtools::protobuf::Edge > edges_;
   ::mozilla::devtools::protobuf::StackFrame* allocationstack_;
+  ::std::string* jsobjectclassname_;
   friend void  protobuf_AddDesc_CoreDump_2eproto();
   friend void protobuf_AssignDesc_CoreDump_2eproto();
   friend void protobuf_ShutdownFile_CoreDump_2eproto();
@@ -1236,6 +1251,82 @@ inline void Node::set_allocated_allocationstack(::mozilla::devtools::protobuf::S
     set_has_allocationstack();
   } else {
     clear_has_allocationstack();
+  }
+  
+}
+
+
+inline bool Node::has_jsobjectclassname() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
+}
+inline void Node::set_has_jsobjectclassname() {
+  _has_bits_[0] |= 0x00000020u;
+}
+inline void Node::clear_has_jsobjectclassname() {
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline void Node::clear_jsobjectclassname() {
+  if (jsobjectclassname_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    jsobjectclassname_->clear();
+  }
+  clear_has_jsobjectclassname();
+}
+inline const ::std::string& Node::jsobjectclassname() const {
+  
+  return *jsobjectclassname_;
+}
+inline void Node::set_jsobjectclassname(const ::std::string& value) {
+  set_has_jsobjectclassname();
+  if (jsobjectclassname_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    jsobjectclassname_ = new ::std::string;
+  }
+  jsobjectclassname_->assign(value);
+  
+}
+inline void Node::set_jsobjectclassname(const char* value) {
+  set_has_jsobjectclassname();
+  if (jsobjectclassname_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    jsobjectclassname_ = new ::std::string;
+  }
+  jsobjectclassname_->assign(value);
+  
+}
+inline void Node::set_jsobjectclassname(const void* value, size_t size) {
+  set_has_jsobjectclassname();
+  if (jsobjectclassname_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    jsobjectclassname_ = new ::std::string;
+  }
+  jsobjectclassname_->assign(reinterpret_cast<const char*>(value), size);
+  
+}
+inline ::std::string* Node::mutable_jsobjectclassname() {
+  set_has_jsobjectclassname();
+  if (jsobjectclassname_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    jsobjectclassname_ = new ::std::string;
+  }
+  
+  return jsobjectclassname_;
+}
+inline ::std::string* Node::release_jsobjectclassname() {
+  clear_has_jsobjectclassname();
+  if (jsobjectclassname_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = jsobjectclassname_;
+    jsobjectclassname_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void Node::set_allocated_jsobjectclassname(::std::string* jsobjectclassname) {
+  if (jsobjectclassname_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete jsobjectclassname_;
+  }
+  if (jsobjectclassname) {
+    set_has_jsobjectclassname();
+    jsobjectclassname_ = jsobjectclassname;
+  } else {
+    clear_has_jsobjectclassname();
+    jsobjectclassname_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   
 }
