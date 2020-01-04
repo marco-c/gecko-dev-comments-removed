@@ -3198,6 +3198,10 @@ XREMain::XRE_mainInit(bool* aExitFlag)
       CrashReporter::SetServerURL(nsDependentCString(mAppData->crashReporterURL));
 
     
+    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("StartupCrash"),
+                                       NS_LITERAL_CSTRING("1"));
+
+    
     if (mAppData->vendor)
       CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("Vendor"),
                                          nsDependentCString(mAppData->vendor));
@@ -4259,6 +4263,12 @@ XREMain::XRE_mainRun()
       obsService->NotifyObservers(nullptr, "final-ui-startup", nullptr);
 
     (void)appStartup->DoneStartingUp();
+
+#ifdef MOZ_CRASHREPORTER
+    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("StartupCrash"),
+                                       NS_LITERAL_CSTRING("0"));
+#endif
+
     appStartup->GetShuttingDown(&mShuttingDown);
   }
 

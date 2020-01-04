@@ -181,13 +181,14 @@ static xpstring *defaultMemoryReportPath = nullptr;
 static char const * const kCrashEventAnnotations[] = {
   "AsyncShutdownTimeout",
   "BuildID",
-  "TelemetryEnvironment",
   "ProductID",
   "ProductName",
   "ReleaseChannel",
   "SecondsSinceLastCrash",
   "ShutdownProgress",
-  "Version"
+  "StartupCrash"
+  "TelemetryEnvironment",
+  "Version",
   
   
   
@@ -330,10 +331,10 @@ private:
 #endif 
 
 
-
 static const char* kSubprocessBlacklist[] = {
   "FramePoisonBase",
   "FramePoisonSize",
+  "StartupCrash",
   "StartupTime",
   "URL"
 };
