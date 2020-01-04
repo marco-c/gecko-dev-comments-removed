@@ -66,15 +66,37 @@ public class CodeGenerator {
         return (includeScope ? clsName + "::" : "") + uniqueName + "_t";
     }
 
+    
+
+
+
+
+
+    private String getMatchingClassType(final Class<?> type) {
+        Class<?> cls = this.cls;
+        String clsName = this.clsName;
+
+        while (cls != null) {
+            if (type == cls) {
+                return clsName;
+            }
+            cls = cls.getDeclaringClass();
+            clsName = clsName.substring(0, Math.max(0, clsName.lastIndexOf("::")));
+        }
+        return null;
+    }
+
     private String getNativeParameterType(Class<?> type, AnnotationInfo info) {
-        if (type == cls) {
+        final String clsName = getMatchingClassType(type);
+        if (clsName != null) {
             return Utils.getUnqualifiedName(clsName) + "::Param";
         }
         return Utils.getNativeParameterType(type, info);
     }
 
     private String getNativeReturnType(Class<?> type, AnnotationInfo info) {
-        if (type == cls) {
+        final String clsName = getMatchingClassType(type);
+        if (clsName != null) {
             return Utils.getUnqualifiedName(clsName) + "::LocalRef";
         }
         return Utils.getNativeReturnType(type, info);
