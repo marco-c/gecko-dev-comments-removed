@@ -364,7 +364,11 @@ public:
   virtual void RemoveVideoOutput(VideoFrameContainer* aContainer);
   
   
-  virtual void ChangeExplicitBlockerCount(int32_t aDelta);
+  
+  
+  
+  virtual void Suspend();
+  virtual void Resume();
   void BlockStreamIfNeeded();
   void UnblockStreamIfNeeded();
   
