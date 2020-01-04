@@ -103,12 +103,12 @@ private:
   uint16_t mOffsetTail;  
 };
 
-class nsEventQueue : protected nsEventQueueBase<mozilla::ReentrantMonitor>
+class nsEventQueue : protected nsEventQueueBase<mozilla::Monitor>
 {
 private:
-  typedef nsEventQueueBase<mozilla::ReentrantMonitor> Base;
+  typedef nsEventQueueBase<mozilla::Monitor> Base;
   
-  friend class nsEventQueueBase<mozilla::ReentrantMonitor>;
+  friend class nsEventQueueBase<mozilla::Monitor>;
 
   typedef Base::Monitor MonitorType;
   typedef Base::MonitorAutoEnterType MonitorAutoEnterType;
