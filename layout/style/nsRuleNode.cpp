@@ -505,6 +505,10 @@ static nscoord CalcLengthWith(const nsCSSValue& aValue,
   }
   switch (aValue.GetUnit()) {
     case eCSSUnit_EM: {
+      if (aValue.GetFloatValue() == 0.0f) {
+        
+        return 0;
+      }
       
       
       aConditions.SetFontSizeDependency(aFontSize);
