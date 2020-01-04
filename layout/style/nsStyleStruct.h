@@ -2056,8 +2056,7 @@ struct nsStyleVisibility
 
   nsChangeHint CalcDifference(const nsStyleVisibility& aOther) const;
   static nsChangeHint MaxDifference() {
-    return NS_STYLE_HINT_FRAMECHANGE |
-           nsChangeHint_NeutralChange;
+    return NS_STYLE_HINT_FRAMECHANGE;
   }
   static nsChangeHint DifferenceAlwaysHandledForDescendants() {
     
@@ -2073,7 +2072,6 @@ struct nsStyleVisibility
   uint8_t mPointerEvents;              
   uint8_t mWritingMode;                
   uint8_t mTextOrientation;            
-  uint8_t mColorAdjust;                
 
   bool IsVisible() const {
     return (mVisible == NS_STYLE_VISIBILITY_VISIBLE);
