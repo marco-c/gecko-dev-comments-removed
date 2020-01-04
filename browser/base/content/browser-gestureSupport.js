@@ -255,7 +255,7 @@ var gGestureSupport = {
 
 
 
-  _power: function GS__power(aArray) {
+  _power: function* GS__power(aArray) {
     
     let num = 1 << aArray.length;
     while (--num >= 0) {
