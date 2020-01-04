@@ -2432,8 +2432,7 @@ IMMHandler::SetIMERelatedWindowsPosOnPlugin(nsWindow* aWindow,
   nsWindow* toplevelWindow = aWindow->GetTopLevelWindow(false);
   LayoutDeviceIntRect pluginRectInScreen =
     editorRectEvent.mReply.mRect + toplevelWindow->WidgetToScreenOffset();
-  LayoutDeviceIntRect winRectInScreen;
-  aWindow->GetClientBounds(winRectInScreen);
+  LayoutDeviceIntRect winRectInScreen = aWindow->GetClientBounds();
   
   winRectInScreen.width--;
   winRectInScreen.height--;
@@ -2756,7 +2755,6 @@ IMMHandler::OnKeyDownEvent(nsWindow* aWindow,
 void
 IMMHandler::SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm)
 {
-  
   
   
   if (aWindow->PluginHasFocus()) {

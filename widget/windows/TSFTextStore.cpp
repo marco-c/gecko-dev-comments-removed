@@ -859,75 +859,6 @@ public:
                             NS_LITERAL_STRING("ATOK "));
   }
 
-  bool IsATOK2011Active() const
-  {
-    
-    static const GUID kGUID = {
-      0xF9C24A5C, 0x8A53, 0x499D,
-        { 0x95, 0x72, 0x93, 0xB2, 0xFF, 0x58, 0x21, 0x15 }
-    };
-    return mActiveTIPGUID == kGUID;
-  }
-
-  bool IsATOK2012Active() const
-  {
-    
-    static const GUID kGUID = {
-      0x1DE01562, 0xF445, 0x401B,
-        { 0xB6, 0xC3, 0xE5, 0xB1, 0x8D, 0xB7, 0x94, 0x61 }
-    };
-    return mActiveTIPGUID == kGUID;
-  }
-
-  bool IsATOK2013Active() const
-  {
-    
-    static const GUID kGUID = {
-      0x3C4DB511, 0x189A, 0x4168,
-        { 0xB6, 0xEA, 0xBF, 0xD0, 0xB4, 0xC8, 0x56, 0x15 }
-    };
-    return mActiveTIPGUID == kGUID;
-  }
-
-  bool IsATOK2014Active() const
-  {
-    
-    static const GUID kGUID = {
-      0x4EF33B79, 0x6AA9, 0x4271,
-        { 0xB4, 0xBF, 0x93, 0x21, 0xC2, 0x79, 0x38, 0x1B }
-    };
-    return mActiveTIPGUID == kGUID;
-  }
-
-  bool IsATOK2015Active() const
-  {
-    
-    static const GUID kGUID = {
-      0xEAB4DC00, 0xCE2E, 0x483D,
-        { 0xA8, 0x6A, 0xE6, 0xB9, 0x9D, 0xA9, 0x59, 0x9A }
-    };
-    return mActiveTIPGUID == kGUID;
-  }
-
-  bool IsATOK2016Active() const
-  {
-    
-    static const GUID kGUID = {
-      0x0B557B4C, 0x5740, 0x4110,
-        { 0xA6, 0x0A, 0x14, 0x93, 0xFA, 0x10, 0xBF, 0x2B }
-    };
-    return mActiveTIPGUID == kGUID;
-  }
-
-  
-  
-  bool IsATOKReferringNativeCaretActive() const
-  {
-    return IsATOKActive() &&
-           (IsATOK2011Active() || IsATOK2012Active() || IsATOK2013Active() ||
-            IsATOK2014Active() || IsATOK2015Active() || IsATOK2016Active());
-  }
-
   
 
 
@@ -1263,8 +1194,7 @@ StaticRefPtr<ITfInputProcessorProfiles> TSFTextStore::sInputProcessorProfiles;
 StaticRefPtr<TSFTextStore> TSFTextStore::sEnabledTextStore;
 DWORD TSFTextStore::sClientId  = 0;
 
-bool TSFTextStore::sCreateNativeCaretForLegacyATOK = false;
-bool TSFTextStore::sDoNotReturnNoLayoutErrorToATOKOfCompositionString = false;
+bool TSFTextStore::sCreateNativeCaretForATOK = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToMSSimplifiedTIP = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToMSTraditionalTIP = false;
 bool TSFTextStore::sDoNotReturnNoLayoutErrorToFreeChangJie = false;
@@ -3747,22 +3677,6 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
     
     
     
-    
-    
-    
-    
-    else if (sDoNotReturnNoLayoutErrorToATOKOfCompositionString &&
-             kSink->IsATOKActive() &&
-             (!kSink->IsATOKReferringNativeCaretActive() ||
-              !sCreateNativeCaretForLegacyATOK) &&
-             mComposition.mStart == acpStart &&
-             mComposition.EndOffset() == acpEnd) {
-      dontReturnNoLayoutError = true;
-    }
-    
-    
-    
-    
     else if ((sDoNotReturnNoLayoutErrorToFreeChangJie &&
               kSink->IsFreeChangJieActive()) ||
              (sDoNotReturnNoLayoutErrorToEasyChangjei &&
@@ -3927,9 +3841,7 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
   
   
   
-  
-  if (sCreateNativeCaretForLegacyATOK &&
-      kSink->IsATOKReferringNativeCaretActive() &&
+  if (sCreateNativeCaretForATOK && kSink->IsATOKActive() &&
       mComposition.IsComposing() &&
       mComposition.mStart <= acpStart && mComposition.EndOffset() >= acpStart &&
       mComposition.mStart <= acpEnd && mComposition.EndOffset() >= acpEnd) {
@@ -4020,14 +3932,7 @@ TSFTextStore::GetScreenExtInternal(RECT& aScreenExt)
     return false;
   }
 
-  LayoutDeviceIntRect boundRect;
-  if (NS_FAILED(refWindow->GetClientBounds(boundRect))) {
-    MOZ_LOG(sTextStoreLog, LogLevel::Error,
-      ("0x%p   TSFTextStore::GetScreenExtInternal() FAILED due to "
-       "failed to get the client bounds", this));
-    return false;
-  }
-
+  LayoutDeviceIntRect boundRect = refWindow->GetClientBounds();
   boundRect.MoveTo(0, 0);
 
   
@@ -5766,12 +5671,8 @@ TSFTextStore::Initialize()
   sDisabledDocumentMgr = disabledDocumentMgr;
   sDisabledContext = disabledContext;
 
-  sCreateNativeCaretForLegacyATOK =
+  sCreateNativeCaretForATOK =
     Preferences::GetBool("intl.tsf.hack.atok.create_native_caret", true);
-  sDoNotReturnNoLayoutErrorToATOKOfCompositionString =
-    Preferences::GetBool(
-      "intl.tsf.hack.atok.do_not_return_no_layout_error_of_composition_string",
-      true);
   sDoNotReturnNoLayoutErrorToMSSimplifiedTIP =
     Preferences::GetBool(
       "intl.tsf.hack.ms_simplified_chinese.do_not_return_no_layout_error",
@@ -5805,16 +5706,14 @@ TSFTextStore::Initialize()
     ("  TSFTextStore::Initialize(), sThreadMgr=0x%p, "
      "sClientId=0x%08X, sDisplayAttrMgr=0x%p, "
      "sCategoryMgr=0x%p, sDisabledDocumentMgr=0x%p, sDisabledContext=%p, "
-     "sCreateNativeCaretForLegacyATOK=%s, "
-     "sDoNotReturnNoLayoutErrorToATOKOfCompositionString=%s, "
+     "sCreateNativeCaretForATOK=%s, "
      "sDoNotReturnNoLayoutErrorToFreeChangJie=%s, "
      "sDoNotReturnNoLayoutErrorToEasyChangjei=%s, "
      "sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar=%s, "
      "sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret=%s",
      sThreadMgr.get(), sClientId, sDisplayAttrMgr.get(),
      sCategoryMgr.get(), sDisabledDocumentMgr.get(), sDisabledContext.get(),
-     GetBoolName(sCreateNativeCaretForLegacyATOK),
-     GetBoolName(sDoNotReturnNoLayoutErrorToATOKOfCompositionString),
+     GetBoolName(sCreateNativeCaretForATOK),
      GetBoolName(sDoNotReturnNoLayoutErrorToFreeChangJie),
      GetBoolName(sDoNotReturnNoLayoutErrorToEasyChangjei),
      GetBoolName(sDoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar),

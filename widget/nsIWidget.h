@@ -864,17 +864,7 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD GetBounds(LayoutDeviceIntRect& aRect) = 0;
-
-    
-
-
-
-
-
-
-    NS_IMETHOD GetScreenBounds(LayoutDeviceIntRect& aRect) = 0;
+    virtual LayoutDeviceIntRect GetBounds() = 0;
 
     
 
@@ -882,13 +872,7 @@ class nsIWidget : public nsISupports
 
 
 
-
-
-
-
-
-
-    NS_IMETHOD GetRestoredBounds(LayoutDeviceIntRect& aRect) = 0;
+    virtual LayoutDeviceIntRect GetScreenBounds() = 0;
 
     
 
@@ -899,7 +883,21 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD GetClientBounds(LayoutDeviceIntRect& aRect) = 0;
+
+
+
+    virtual MOZ_MUST_USE nsresult
+    GetRestoredBounds(LayoutDeviceIntRect& aRect) = 0;
+
+    
+
+
+
+
+
+
+
+    virtual LayoutDeviceIntRect GetClientBounds() = 0;
 
     
 
@@ -933,9 +931,7 @@ class nsIWidget : public nsISupports
     virtual LayoutDeviceIntSize GetClientSize() {
       
       
-      LayoutDeviceIntRect rect;
-      GetClientBounds(rect);
-      return rect.Size();
+      return GetClientBounds().Size();
     }
 
     
@@ -1894,13 +1890,7 @@ public:
     virtual bool WidgetPaintsBackground() { return false; }
 
     virtual bool NeedsPaint() {
-       if (!IsVisible()) {
-           return false;
-       }
-       LayoutDeviceIntRect bounds;
-       nsresult rv = GetBounds(bounds);
-       NS_ENSURE_SUCCESS(rv, false);
-       return !bounds.IsEmpty();
+       return IsVisible() && !GetBounds().IsEmpty();
     }
 
     
@@ -1916,9 +1906,7 @@ public:
 
 
     virtual LayoutDeviceIntRect GetNaturalBounds() {
-        LayoutDeviceIntRect bounds;
-        GetBounds(bounds);
-        return bounds;
+        return GetBounds();
     }
 
     

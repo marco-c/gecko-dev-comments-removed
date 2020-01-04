@@ -1499,25 +1499,26 @@ nsWindow::SetFocus(bool aRaise)
     return NS_OK;
 }
 
-NS_IMETHODIMP
-nsWindow::GetScreenBounds(LayoutDeviceIntRect& aRect)
+LayoutDeviceIntRect
+nsWindow::GetScreenBounds()
 {
+    LayoutDeviceIntRect rect;
     if (mIsTopLevel && mContainer) {
         
         gint x, y;
         gdk_window_get_root_origin(gtk_widget_get_window(GTK_WIDGET(mContainer)), &x, &y);
-        aRect.MoveTo(GdkPointToDevicePixels({ x, y }));
+        rect.MoveTo(GdkPointToDevicePixels({ x, y }));
     } else {
-        aRect.MoveTo(WidgetToScreenOffset());
+        rect.MoveTo(WidgetToScreenOffset());
     }
     
     
     
     
-    aRect.SizeTo(mBounds.Size());
+    rect.SizeTo(mBounds.Size());
     LOG(("GetScreenBounds %d,%d | %dx%d\n",
-         aRect.x, aRect.y, aRect.width, aRect.height));
-    return NS_OK;
+         rect.x, rect.y, rect.width, rect.height));
+    return rect;
 }
 
 LayoutDeviceIntSize
@@ -1526,16 +1527,15 @@ nsWindow::GetClientSize()
   return LayoutDeviceIntSize(mBounds.width, mBounds.height);
 }
 
-NS_IMETHODIMP
-nsWindow::GetClientBounds(LayoutDeviceIntRect& aRect)
+LayoutDeviceIntRect
+nsWindow::GetClientBounds()
 {
     
     
     
-    GetBounds(aRect);
-    aRect.MoveBy(GetClientOffset());
-
-    return NS_OK;
+    LayoutDeviceIntRect rect = GetBounds();
+    rect.MoveBy(GetClientOffset());
+    return rect;
 }
 
 void
@@ -2227,8 +2227,7 @@ nsWindow::OnExposeEvent(cairo_t *cr)
             if (kid && gdk_window_is_visible(gdkWin)) {
                 AutoTArray<LayoutDeviceIntRect,1> clipRects;
                 kid->GetWindowClipRegion(&clipRects);
-                LayoutDeviceIntRect bounds;
-                kid->GetBounds(bounds);
+                LayoutDeviceIntRect bounds = kid->GetBounds();
                 for (uint32_t i = 0; i < clipRects.Length(); ++i) {
                     LayoutDeviceIntRect r = clipRects[i] + bounds.TopLeft();
                     region.Sub(region, r);
@@ -2429,8 +2428,7 @@ nsWindow::OnConfigureEvent(GtkWidget *aWidget, GdkEventConfigure *aEvent)
 
     mPendingConfigures--;
 
-    LayoutDeviceIntRect screenBounds;
-    GetScreenBounds(screenBounds);
+    LayoutDeviceIntRect screenBounds = GetScreenBounds();
 
     if (mWindowType == eWindowType_toplevel || mWindowType == eWindowType_dialog) {
         

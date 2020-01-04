@@ -603,8 +603,7 @@ nsViewManager::InvalidateWidgetArea(nsView *aWidgetView,
         
 #ifndef XP_MACOSX
         
-        LayoutDeviceIntRect bounds;
-        childWidget->GetBounds(bounds);
+        LayoutDeviceIntRect bounds = childWidget->GetBounds();
 
         nsTArray<LayoutDeviceIntRect> clipRects;
         childWidget->GetWindowClipRegion(&clipRects);

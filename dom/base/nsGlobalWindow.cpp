@@ -13827,11 +13827,7 @@ nsGlobalWindow::NotifyDefaultButtonLoaded(Element& aDefaultButton,
     aError.Throw(NS_ERROR_FAILURE);
     return;
   }
-  LayoutDeviceIntRect widgetRect;
-  aError = widget->GetScreenBounds(widgetRect);
-  if (aError.Failed()) {
-    return;
-  }
+  LayoutDeviceIntRect widgetRect = widget->GetScreenBounds();
 
   
   buttonRect -= widgetRect.TopLeft();

@@ -176,8 +176,7 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
                   deskRect,                           
                   &widgetInitData);                   
 
-  LayoutDeviceIntRect r;
-  mWindow->GetClientBounds(r);
+  LayoutDeviceIntRect r = mWindow->GetClientBounds();
   
   
   mWindow->SetBackgroundColor(NS_RGB(255,255,255));
