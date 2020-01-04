@@ -26,7 +26,6 @@
 #include "nsIObserverService.h"         
 #include "nsIRunnable.h"                
 #include "nsISupports.h"
-#include "nsString.h"               
 #include "nsTArray.h"                   
 #include "nsThreadUtils.h"              
 #include "nscore.h"                     
@@ -86,7 +85,7 @@ public:
 
 class AppendAppNotesRunnable : public nsCancelableRunnable {
 public:
-  explicit AppendAppNotesRunnable(nsAutoCString aFeatureStr)
+  explicit AppendAppNotesRunnable(const nsACString& aFeatureStr)
     : mFeatureString(aFeatureStr)
   {
   }
@@ -97,7 +96,7 @@ public:
   }
 
 private:
-  nsCString mFeatureString;
+  nsAutoCString mFeatureString;
 };
 
 void
@@ -118,17 +117,25 @@ ScopedGfxFeatureReporter::WriteAppNote(char statusChar)
 
   if (!gFeaturesAlreadyReported->Contains(featureString)) {
     gFeaturesAlreadyReported->AppendElement(featureString);
-    nsCOMPtr<nsIRunnable> r = new AppendAppNotesRunnable(featureString);
-    NS_DispatchToMainThread(r);
+    AppNote(featureString);
   }
 }
 
+void
+ScopedGfxFeatureReporter::AppNote(const nsACString& aMessage)
+{
+  nsCOMPtr<nsIRunnable> r = new AppendAppNotesRunnable(aMessage);
+  NS_DispatchToMainThread(r);
+}
+  
 } 
 
 #else
 
 namespace mozilla {
 void ScopedGfxFeatureReporter::WriteAppNote(char) {}
+void ScopedGfxFeatureReporter::AppNote(const nsACString&) {}
+  
 } 
 
 #endif
