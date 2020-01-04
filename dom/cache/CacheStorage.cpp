@@ -579,11 +579,13 @@ CacheStorage::AssertOwningThread() const
 }
 #endif
 
-CachePushStreamChild*
-CacheStorage::CreatePushStream(nsIAsyncInputStream* aStream)
+PBackgroundChild*
+CacheStorage::GetIPCManager()
 {
   
-  MOZ_CRASH("CacheStorage should never create a push stream.");
+  
+  
+  MOZ_CRASH("CacheStorage does not implement TypeUtils::GetIPCManager()");
 }
 
 CacheStorage::~CacheStorage()
@@ -607,7 +609,7 @@ CacheStorage::MaybeRunPendingRequests()
   for (uint32_t i = 0; i < mPendingRequests.Length(); ++i) {
     ErrorResult rv;
     nsAutoPtr<Entry> entry(mPendingRequests[i].forget());
-    AutoChildOpArgs args(this, entry->mArgs);
+    AutoChildOpArgs args(this, entry->mArgs, 1);
     if (entry->mRequest) {
       args.Add(entry->mRequest, IgnoreBody, IgnoreInvalidScheme, rv);
     }

@@ -8,11 +8,11 @@
 
 #include "mozilla/unused.h"
 #include "mozilla/dom/cache/AutoUtils.h"
-#include "mozilla/dom/cache/CachePushStreamParent.h"
 #include "mozilla/dom/cache/ReadStream.h"
 #include "mozilla/dom/cache/SavedTypes.h"
 #include "mozilla/ipc/FileDescriptorSetParent.h"
 #include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/ipc/SendStream.h"
 
 namespace mozilla {
 namespace dom {
@@ -20,6 +20,7 @@ namespace cache {
 
 using mozilla::ipc::FileDescriptorSetParent;
 using mozilla::ipc::PBackgroundParent;
+using mozilla::ipc::SendStreamParent;
 
 CacheOpParent::CacheOpParent(PBackgroundParent* aIpcManager, CacheId aCacheId,
                              const CacheOpArgs& aOpArgs)
@@ -170,13 +171,17 @@ CacheOpParent::OnOpComplete(ErrorResult&& aRv, const CacheOpResult& aResult,
     return;
   }
 
+  uint32_t entryCount = std::max(1lu, static_cast<unsigned long>(
+                                      std::max(aSavedResponseList.Length(),
+                                               aSavedRequestList.Length())));
+
   
   
   
   
   
   
-  AutoParentOpResult result(mIpcManager, aResult);
+  AutoParentOpResult result(mIpcManager, aResult, entryCount);
 
   if (aOpenedCacheId != INVALID_CACHE_ID) {
     result.Add(aOpenedCacheId, mManager);
@@ -204,16 +209,6 @@ CacheOpParent::DeserializeCacheStream(const CacheReadStreamOrVoid& aStreamOrVoid
   const CacheReadStream& readStream = aStreamOrVoid.get_CacheReadStream();
 
   
-  if (readStream.pushStreamParent()) {
-    MOZ_ASSERT(!readStream.controlParent());
-    CachePushStreamParent* pushStream =
-      static_cast<CachePushStreamParent*>(readStream.pushStreamParent());
-    stream = pushStream->TakeReader();
-    MOZ_ASSERT(stream);
-    return stream.forget();
-  }
-
-  
   
   stream = ReadStream::Create(readStream);
   if (stream) {
@@ -221,24 +216,9 @@ CacheOpParent::DeserializeCacheStream(const CacheReadStreamOrVoid& aStreamOrVoid
   }
 
   
-  AutoTArray<FileDescriptor, 4> fds;
-  if (readStream.fds().type() ==
-      OptionalFileDescriptorSet::TPFileDescriptorSetChild) {
-
-    FileDescriptorSetParent* fdSetActor =
-      static_cast<FileDescriptorSetParent*>(readStream.fds().get_PFileDescriptorSetParent());
-    MOZ_ASSERT(fdSetActor);
-
-    fdSetActor->ForgetFileDescriptors(fds);
-    MOZ_ASSERT(!fds.IsEmpty());
-
-    if (!fdSetActor->Send__delete__(fdSetActor)) {
-      
-      NS_WARNING("Cache failed to delete fd set actor.");
-    }
-  }
-
-  return DeserializeInputStream(readStream.params(), fds);
+  
+  
+  return DeserializeIPCStream(readStream.stream());
 }
 
 } 
