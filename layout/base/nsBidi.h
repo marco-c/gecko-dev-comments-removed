@@ -410,11 +410,20 @@ struct LevState {
 };
 
 namespace mozilla {
+
+
+static const nsBidiLevel kBidiLevelNone = 0xff;
+
 struct FrameBidiData
 {
   nsBidiLevel baseLevel;
   nsBidiLevel embeddingLevel;
+  
+  
+  
+  nsBidiLevel precedingControl;
 };
+
 } 
 
 

@@ -283,6 +283,11 @@ public:
   
 
 
+  static mozilla::FrameBidiData GetFrameBidiData(nsIFrame* aFrame);
+
+  
+
+
   static nsBidiLevel GetFrameEmbeddingLevel(nsIFrame* aFrame);
 
   
