@@ -275,8 +275,13 @@ public:
   
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
                     nsCSSPropertySet& aSetProperties);
+  
+  bool IsPropertyRunningOnCompositor(nsCSSProperty aProperty) const;
+  
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
+
+  bool CanThrottle() const;
 
   
   
