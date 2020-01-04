@@ -663,45 +663,10 @@ CodeGeneratorX86Shared::visitMinMaxD(LMinMaxD* ins)
     MOZ_ASSERT(first == output);
 #endif
 
-    Label done, nan, minMaxInst;
+    bool specialHandling = !ins->mir()->range() || ins->mir()->range()->canBeNaN();
+    bool isMax = ins->mir()->isMax();
 
-    
-    
-    
-    
-    
-    masm.vucomisd(second, first);
-    masm.j(Assembler::NotEqual, &minMaxInst);
-    if (!ins->mir()->range() || ins->mir()->range()->canBeNaN())
-        masm.j(Assembler::Parity, &nan);
-
-    
-    
-    
-    if (ins->mir()->isMax())
-        masm.vandpd(second, first, first);
-    else
-        masm.vorpd(second, first, first);
-    masm.jump(&done);
-
-    
-    
-    
-    if (!ins->mir()->range() || ins->mir()->range()->canBeNaN()) {
-        masm.bind(&nan);
-        masm.vucomisd(first, first);
-        masm.j(Assembler::Parity, &done);
-    }
-
-    
-    
-    masm.bind(&minMaxInst);
-    if (ins->mir()->isMax())
-        masm.vmaxsd(second, first, first);
-    else
-        masm.vminsd(second, first, first);
-
-    masm.bind(&done);
+    masm.minMaxDouble(first, second, specialHandling, isMax);
 }
 
 void
@@ -714,45 +679,10 @@ CodeGeneratorX86Shared::visitMinMaxF(LMinMaxF* ins)
     MOZ_ASSERT(first == output);
 #endif
 
-    Label done, nan, minMaxInst;
+    bool specialHandling = !ins->mir()->range() || ins->mir()->range()->canBeNaN();
+    bool isMax = ins->mir()->isMax();
 
-    
-    
-    
-    
-    
-    masm.vucomiss(second, first);
-    masm.j(Assembler::NotEqual, &minMaxInst);
-    if (!ins->mir()->range() || ins->mir()->range()->canBeNaN())
-        masm.j(Assembler::Parity, &nan);
-
-    
-    
-    
-    if (ins->mir()->isMax())
-        masm.vandps(second, first, first);
-    else
-        masm.vorps(second, first, first);
-    masm.jump(&done);
-
-    
-    
-    
-    if (!ins->mir()->range() || ins->mir()->range()->canBeNaN()) {
-        masm.bind(&nan);
-        masm.vucomiss(first, first);
-        masm.j(Assembler::Parity, &done);
-    }
-
-    
-    
-    masm.bind(&minMaxInst);
-    if (ins->mir()->isMax())
-        masm.vmaxss(second, first, first);
-    else
-        masm.vminss(second, first, first);
-
-    masm.bind(&done);
+    masm.minMaxFloat32(first, second, specialHandling, isMax);
 }
 
 void
