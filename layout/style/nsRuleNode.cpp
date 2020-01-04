@@ -2374,10 +2374,9 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
     PropagateDependentBit(aSID, ruleNode, startStruct);
     
     
-    
-    
-    
-    aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
+    if (!isReset) {
+      aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
+    }
     return startStruct;
   }
   if ((!startStruct && !isReset &&
@@ -2782,9 +2781,6 @@ nsRuleNode::SetDefaultOnRoot(const nsStyleStructID aSID, nsStyleContext* aContex
       SetStyleData(eStyleStruct_##type_, data_);                              \
     /* Propagate the bit down. */                                             \
     PropagateDependentBit(eStyleStruct_##type_, aHighestNode, data_);         \
-    /* Tell the context that we've gotten the data (separate meaning */       \
-    /* of mBits when the cached data pointer is null) */                      \
-    aContext->AddStyleBit(NS_STYLE_INHERIT_BIT(type_));                       \
   } else if (conditions.Cacheable()) {                                        \
     if (!mStyleData.mResetData) {                                             \
       mStyleData.mResetData = new (mPresContext) nsConditionalResetStyleData; \
@@ -9438,10 +9434,9 @@ nsRuleNode::GetStyleData(nsStyleStructID aSID,
     if (MOZ_LIKELY(data != nullptr)) {
       
       
-      
-      
-      
-      aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
+      if (!nsCachedStyleData::IsReset(aSID)) {
+        aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
+      }
       return data; 
     }
   }

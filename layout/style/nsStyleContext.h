@@ -560,7 +560,7 @@ private:
       }                                                                 \
       /* Have the rulenode deal */                                      \
       AUTO_CHECK_DEPENDENCY(eStyleStruct_##name_);                      \
-      return mRuleNode->GetStyle##name_<aComputeData>(this, mBits);     \
+      return mRuleNode->GetStyle##name_<aComputeData>(this);            \
     }
   #include "nsStyleStructList.h"
   #undef STYLE_STRUCT_RESET
@@ -626,10 +626,6 @@ private:
   nsResetStyleData*       mCachedResetData; 
   nsInheritedStyleData    mCachedInheritedData; 
 
-  
-  
-  
-  
   
   
   
