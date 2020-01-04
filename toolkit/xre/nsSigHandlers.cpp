@@ -264,7 +264,7 @@ void InstallSignalHandlers(const char *aProgname)
   sigaction(SIGFPE, &sa, &osa);
 #endif
 
-  if (XRE_IsContentProcess()) {
+  if (!XRE_IsParentProcess()) {
     
 
 
