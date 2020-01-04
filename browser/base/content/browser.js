@@ -857,15 +857,10 @@ function _loadURIWithFlags(browser, uri, params) {
     
     
     
-    
-    if (mustChangeProcess) {
-      Cu.reportError(e);
-      gBrowser.updateBrowserRemotenessByURL(browser, uri);
-      browser.webNavigation.loadURIWithOptions(uri, flags, referrer, referrerPolicy,
-                                               postData, null, null);
-    } else {
-      throw e;
-    }
+    Cu.reportError(e);
+    gBrowser.updateBrowserRemotenessByURL(browser, uri);
+    browser.webNavigation.loadURIWithOptions(uri, flags, referrer, referrerPolicy,
+                                             postData, null, null);
   } finally {
     if (browser.userTypedClear) {
       browser.userTypedClear--;
