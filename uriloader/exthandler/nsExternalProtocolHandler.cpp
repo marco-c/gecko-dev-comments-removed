@@ -26,6 +26,8 @@
 
 #include "nsCExternalHandlerService.h"
 #include "nsIExternalProtocolService.h"
+#include "nsIChildChannel.h"
+#include "nsIParentChannel.h"
 
 class nsILoadInfo;
 
@@ -34,12 +36,18 @@ class nsILoadInfo;
 
 
 
-class nsExtProtocolChannel : public nsIChannel
+class nsExtProtocolChannel : public nsIChannel,
+                             public nsIChildChannel,
+                             public nsIParentChannel
 {
 public:
     NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSICHANNEL
+    NS_DECL_NSIREQUESTOBSERVER
+    NS_DECL_NSISTREAMLISTENER
     NS_DECL_NSIREQUEST
+    NS_DECL_NSICHILDCHANNEL
+    NS_DECL_NSIPARENTCHANNEL
 
     nsExtProtocolChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo);
 
@@ -55,6 +63,11 @@ private:
     nsLoadFlags mLoadFlags;
     bool mWasOpened;
     
+    
+    
+    
+    bool mConnectedParent;
+    
     nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
     nsCOMPtr<nsILoadGroup> mLoadGroup;
     nsCOMPtr<nsILoadInfo> mLoadInfo;
@@ -67,6 +80,10 @@ NS_INTERFACE_MAP_BEGIN(nsExtProtocolChannel)
    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIChannel)
    NS_INTERFACE_MAP_ENTRY(nsIChannel)
    NS_INTERFACE_MAP_ENTRY(nsIRequest)
+   NS_INTERFACE_MAP_ENTRY(nsIChildChannel)
+   NS_INTERFACE_MAP_ENTRY(nsIParentChannel)
+   NS_INTERFACE_MAP_ENTRY(nsIStreamListener)
+   NS_INTERFACE_MAP_ENTRY(nsIRequestObserver)
 NS_INTERFACE_MAP_END_THREADSAFE
 
 nsExtProtocolChannel::nsExtProtocolChannel(nsIURI* aURI,
@@ -75,6 +92,7 @@ nsExtProtocolChannel::nsExtProtocolChannel(nsIURI* aURI,
   , mOriginalURI(aURI)
   , mStatus(NS_OK)
   , mWasOpened(false)
+  , mConnectedParent(false)
   , mLoadInfo(aLoadInfo)
 {
 }
@@ -184,6 +202,10 @@ NS_IMETHODIMP nsExtProtocolChannel::Open2(nsIInputStream** aStream)
 
 NS_IMETHODIMP nsExtProtocolChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *ctxt)
 {
+  if (mConnectedParent) {
+    return NS_OK;
+  }
+
   MOZ_ASSERT(!mLoadInfo ||
              mLoadInfo->GetSecurityMode() == 0 ||
              mLoadInfo->GetInitialSecurityCheckDone() ||
@@ -336,6 +358,81 @@ NS_IMETHODIMP nsExtProtocolChannel::Resume()
 {
   NS_NOTREACHED("Resume");
   return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+
+
+
+
+NS_IMETHODIMP nsExtProtocolChannel::ConnectParent(uint32_t registrarId)
+{
+  mozilla::dom::ContentChild::GetSingleton()->
+    SendExtProtocolChannelConnectParent(registrarId);
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsExtProtocolChannel::CompleteRedirectSetup(nsIStreamListener *listener,
+                                                          nsISupports *context)
+{
+  
+  
+  
+  return AsyncOpen(listener, context);
+}
+
+
+
+
+
+NS_IMETHODIMP nsExtProtocolChannel::SetParentListener(HttpChannelParentListener* aListener)
+{
+  
+  
+  
+  
+  
+  mConnectedParent = true;
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsExtProtocolChannel::NotifyTrackingProtectionDisabled()
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsExtProtocolChannel::Delete()
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsExtProtocolChannel::OnStartRequest(nsIRequest *aRequest,
+                                                   nsISupports *aContext)
+{
+  
+  MOZ_CRASH("No data expected from external protocol channel");
+  return NS_ERROR_UNEXPECTED;
+}
+
+NS_IMETHODIMP nsExtProtocolChannel::OnStopRequest(nsIRequest *aRequest,
+                                                  nsISupports *aContext,
+                                                  nsresult aStatusCode)
+{
+  
+  MOZ_CRASH("No data expected from external protocol channel");
+  return NS_ERROR_UNEXPECTED;
+}
+
+NS_IMETHODIMP nsExtProtocolChannel::OnDataAvailable(nsIRequest *aRequest,
+                                                    nsISupports *aContext,
+                                                    nsIInputStream *aInputStream,
+                                                    uint64_t aOffset,
+                                                    uint32_t aCount)
+{
+  
+  MOZ_CRASH("No data expected from external protocol channel");
+  return NS_ERROR_UNEXPECTED;
 }
 
 

@@ -142,6 +142,7 @@
 #include "nsIMutable.h"
 #include "nsINSSU2FToken.h"
 #include "nsIObserverService.h"
+#include "nsIParentChannel.h"
 #include "nsIPresShell.h"
 #include "nsIRemoteWindowContext.h"
 #include "nsIScriptError.h"
@@ -4416,6 +4417,32 @@ ContentParent::RecvLoadURIExternal(const URIParams& uri,
   RefPtr<RemoteWindowContext> context =
     new RemoteWindowContext(static_cast<TabParent*>(windowContext));
   extProtService->LoadURI(ourURI, context);
+  return true;
+}
+
+bool
+ContentParent::RecvExtProtocolChannelConnectParent(const uint32_t& registrarId)
+{
+  nsresult rv;
+
+  
+  nsCOMPtr<nsIChannel> channel;
+  rv = NS_LinkRedirectChannels(registrarId, nullptr, getter_AddRefs(channel));
+  NS_ENSURE_SUCCESS(rv, true);
+
+  nsCOMPtr<nsIParentChannel> parent = do_QueryInterface(channel, &rv);
+  NS_ENSURE_SUCCESS(rv, true);
+
+  
+  rv = NS_LinkRedirectChannels(registrarId, parent, getter_AddRefs(channel));
+  NS_ENSURE_SUCCESS(rv, true);
+
+  
+  
+  
+  
+  parent->SetParentListener(nullptr);
+
   return true;
 }
 
