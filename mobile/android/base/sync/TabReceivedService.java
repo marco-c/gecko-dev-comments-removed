@@ -36,6 +36,7 @@ public class TabReceivedService extends IntentService {
 
     public TabReceivedService() {
         super(LOGTAG);
+        setIntentRedelivery(true);
     }
 
     @Override
@@ -74,6 +75,10 @@ public class TabReceivedService extends IntentService {
         final NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.notify(notificationId, builder.build());
 
+        
+        
+        
+        
         prefs.edit().putInt(PREF_NOTIFICATION_ID, notificationId).apply();
     }
 
