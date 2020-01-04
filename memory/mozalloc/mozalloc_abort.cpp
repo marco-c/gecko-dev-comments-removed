@@ -78,6 +78,12 @@ void abort(void)
 #endif
 
     mozalloc_abort(msg);
+
+    
+    
+    
+    
+    MOZ_CRASH();
 }
 #endif
 
