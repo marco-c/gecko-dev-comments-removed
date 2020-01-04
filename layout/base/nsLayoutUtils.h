@@ -1335,6 +1335,18 @@ public:
 
 
 
+  static nscoord MinSizeContributionForAxis(mozilla::PhysicalAxis aAxis,
+                                            nsRenderingContext*   aRC,
+                                            nsIFrame*             aFrame,
+                                            IntrinsicISizeType    aType,
+                                            uint32_t              aFlags = 0);
+
+  
+
+
+
+
+
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
                                          const nsStyleCoord& aCoord);
 
