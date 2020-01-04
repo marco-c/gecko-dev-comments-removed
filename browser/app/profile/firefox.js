@@ -1627,16 +1627,16 @@ pref("browser.pocket.enabledLocales", "cs de en-GB en-US en-ZA es-ES es-MX fr hu
 
 pref("view_source.tab", true);
 
+#ifndef RELEASE_BUILD
 
 
 pref("dom.serviceWorkers.enabled", true);
 
-#ifndef RELEASE_BUILD
 pref("dom.serviceWorkers.interception.enabled", true);
-#endif
 
 
 pref("dom.push.enabled", true);
+#endif
 
 
 
