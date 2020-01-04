@@ -51,7 +51,7 @@ HMDInfoCardboard::HMDInfoCardboard()
 
 
 VRHMDSensorState
-HMDInfoCardboard::GetSensorState(double timeOffset)
+HMDInfoCardboard::GetSensorState()
 {
   
   
@@ -59,6 +59,13 @@ HMDInfoCardboard::GetSensorState(double timeOffset)
   result.Clear();
   return result;
 }
+
+VRHMDSensorState
+HMDInfoCardboard::GetImmediateSensorState()
+{
+  return GetSensorState();
+}
+
 
 void
 HMDInfoCardboard::ZeroSensor()

@@ -187,11 +187,18 @@ VRDeviceProxyOrientationFallBack::ComputeStateFromLastSensor()
 }
 
 VRHMDSensorState
-VRDeviceProxyOrientationFallBack::GetSensorState(double timeOffset)
+VRDeviceProxyOrientationFallBack::GetSensorState()
 {
   StartSensorTracking();
   ComputeStateFromLastSensor();
   return mSensorState;
+}
+
+VRHMDSensorState
+VRDeviceProxyOrientationFallBack::GetImmediateSensorState()
+{
+  
+  return GetSensorState();
 }
 
 } 

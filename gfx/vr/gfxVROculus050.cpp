@@ -462,14 +462,20 @@ HMDInfoOculus050::ZeroSensor()
 }
 
 VRHMDSensorState
-HMDInfoOculus050::GetSensorState(double timeOffset)
+HMDInfoOculus050::GetImmediateSensorState()
+{
+  return GetSensorState();
+}
+
+VRHMDSensorState
+HMDInfoOculus050::GetSensorState()
 {
   VRHMDSensorState result;
   result.Clear();
 
   
   
-  ovrTrackingState state = ovrHmd_GetTrackingState(mHMD, ovr_GetTimeInSeconds() + timeOffset);
+  ovrTrackingState state = ovrHmd_GetTrackingState(mHMD, ovr_GetTimeInSeconds());
   ovrPoseStatef& pose(state.HeadPose);
 
   result.timestamp = pose.TimeInSeconds;

@@ -4784,6 +4784,11 @@ pref("dom.vr.cardboard.enabled", false);
 pref("dom.vr.add-test-devices", 0);
 
 
+
+
+pref("dom.vr.poseprediction.enabled", false);
+
+
 pref("gfx.vr.mirror-textures", false);
 
 

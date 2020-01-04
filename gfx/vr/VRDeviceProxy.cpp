@@ -79,11 +79,19 @@ VRDeviceProxy::ZeroSensor()
 }
 
 VRHMDSensorState
-VRDeviceProxy::GetSensorState(double timeOffset)
+VRDeviceProxy::GetSensorState()
 {
   VRManagerChild *vm = VRManagerChild::Get();
   Unused << vm->SendKeepSensorTracking(mDeviceInfo.mDeviceID);
   return mSensorState;
+}
+
+VRHMDSensorState
+VRDeviceProxy::GetImmediateSensorState()
+{
+  
+  
+  return GetSensorState();
 }
 
 void
