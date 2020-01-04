@@ -131,9 +131,10 @@ class NestedStaticScope : public StaticScope
 class StaticBlockScope : public NestedStaticScope
 {
     static const unsigned LOCAL_OFFSET_SLOT = NestedStaticScope::RESERVED_SLOTS;
-    static const unsigned RESERVED_SLOTS = LOCAL_OFFSET_SLOT + 1;
 
   public:
+    static const unsigned RESERVED_SLOTS = LOCAL_OFFSET_SLOT + 1;
+
     
     uint32_t numVariables() const {
         
@@ -630,8 +631,6 @@ ScopeCoordinateFunctionScript(JSScript* script, jsbytecode* pc);
 
 
 
-
-
 class ScopeObject : public NativeObject
 {
   protected:
@@ -908,37 +907,15 @@ class DynamicWithObject : public NestedScopeObject
     }
 };
 
-class BlockObject : public NestedScopeObject
+class ClonedBlockObject : public NestedScopeObject
 {
+    static const unsigned THIS_VALUE_SLOT = 1;
+
   public:
     static const unsigned RESERVED_SLOTS = 2;
     static const Class class_;
 
-    
-    uint32_t numVariables() const {
-        
-        return propertyCount();
-    }
-
-    
-    
-    bool isExtensible() const;
-
-  protected:
-    
-    const Value& slotValue(unsigned i) {
-        return getSlotRef(RESERVED_SLOTS + i);
-    }
-
-    void setSlotValue(unsigned i, const Value& v) {
-        setSlot(RESERVED_SLOTS + i, v);
-    }
-};
-
-class ClonedBlockObject : public BlockObject
-{
-    static const unsigned THIS_VALUE_SLOT = 1;
-
+  private:
     static ClonedBlockObject* create(JSContext* cx, Handle<StaticBlockScope*> block,
                                      HandleObject enclosing);
 
@@ -954,6 +931,27 @@ class ClonedBlockObject : public BlockObject
     static ClonedBlockObject* createHollowForDebug(JSContext* cx,
                                                    Handle<StaticBlockScope*> block);
 
+    
+    uint32_t numVariables() const {
+        
+        return propertyCount();
+    }
+
+    
+    
+    bool isExtensible() const;
+
+  private:
+    
+    const Value& slotValue(unsigned i) {
+        return getSlotRef(RESERVED_SLOTS + i);
+    }
+
+    void setSlotValue(unsigned i, const Value& v) {
+        setSlot(RESERVED_SLOTS + i, v);
+    }
+
+  public:
     
     StaticBlockScope& staticBlock() const {
         return getProto()->as<StaticBlockScope>();
