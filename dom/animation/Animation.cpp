@@ -1048,6 +1048,46 @@ Animation::EffectEnd() const
          + mEffect->GetComputedTiming().mActiveDuration;
 }
 
+TimeStamp
+Animation::AnimationTimeToTimeStamp(const StickyTimeDuration& aTime) const
+{
+  
+  
+  TimeStamp result;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mTimeline) {
+    return result;
+  }
+
+  
+  if (aTime == TimeDuration::Forever() ||
+      mPlaybackRate == 0.0 ||
+      mStartTime.IsNull()) {
+    return result;
+  }
+
+  
+  
+  TimeDuration timelineTime =
+    TimeDuration(aTime).MultDouble(1.0 / mPlaybackRate) + mStartTime.Value();
+
+  result = mTimeline->ToTimeStamp(timelineTime);
+  return result;
+}
+
 nsIDocument*
 Animation::GetRenderedDocument() const
 {
