@@ -126,8 +126,7 @@ const PERMISSION_SAVE_LOGINS = "login-saving";
 
 
 
-function LoginStore(aPath)
-{
+function LoginStore(aPath) {
   this.path = aPath;
 
   this._saver = new DeferredTask(() => this.save(), kSaveDelayMs);
@@ -162,8 +161,7 @@ LoginStore.prototype = {
 
 
 
-  load: function ()
-  {
+  load() {
     return Task.spawn(function* () {
       try {
         let bytes = yield OS.File.read(this.path);
@@ -214,8 +212,7 @@ LoginStore.prototype = {
   
 
 
-  ensureDataReady: function ()
-  {
+  ensureDataReady() {
     if (this.dataReady) {
       return;
     }
@@ -266,8 +263,7 @@ LoginStore.prototype = {
   
 
 
-  _processLoadedData: function ()
-  {
+  _processLoadedData() {
     
     if (!this.data.logins) {
       this.data.logins = [];
@@ -307,8 +303,7 @@ LoginStore.prototype = {
   
 
 
-  saveSoon: function ()
-  {
+  saveSoon() {
     return this._saver.arm();
   },
 
@@ -326,8 +321,7 @@ LoginStore.prototype = {
 
 
 
-  save: function ()
-  {
+  save() {
     return Task.spawn(function* () {
       
       let bytes = gTextEncoder.encode(JSON.stringify(this.data));

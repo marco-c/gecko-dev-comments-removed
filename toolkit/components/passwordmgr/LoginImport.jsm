@@ -45,8 +45,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
 
 
 
-this.LoginImport = function (aStore, aPath)
-{
+this.LoginImport = function (aStore, aPath) {
   this.store = aStore;
   this.path = aPath;
 }
