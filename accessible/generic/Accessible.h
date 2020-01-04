@@ -536,11 +536,6 @@ public:
   
 
 
-  void ExtendSelection() { };
-
-  
-
-
   void TakeSelection();
 
   
