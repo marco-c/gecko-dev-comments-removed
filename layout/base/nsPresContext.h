@@ -1024,6 +1024,12 @@ public:
 
 
   bool HasPendingInterrupt() { return mHasPendingInterrupt; }
+  
+
+
+
+
+  void SetPendingInterruptFromTest() { mPendingInterruptFromTest = true; }
 
   
 
@@ -1317,6 +1323,7 @@ protected:
   mozilla::TimeStamp    mLastStyleUpdateForAllAnimations;
 
   unsigned              mHasPendingInterrupt : 1;
+  unsigned              mPendingInterruptFromTest : 1;
   unsigned              mInterruptsEnabled : 1;
   unsigned              mUseDocumentFonts : 1;
   unsigned              mUseDocumentColors : 1;
