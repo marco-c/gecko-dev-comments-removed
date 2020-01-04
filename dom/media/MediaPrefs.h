@@ -6,6 +6,10 @@
 #ifndef MEDIA_PREFS_H
 #define MEDIA_PREFS_H
 
+#ifdef MOZ_WIDGET_ANDROID
+#include "AndroidBridge.h"
+#endif
+
 
 
 
@@ -120,7 +124,7 @@ private:
   DECL_MEDIA_PREF("media.webspeech.recognition.force_enable", WebSpeechRecognitionForceEnabled, bool, false);
 
   DECL_MEDIA_PREF("media.num-decode-threads",                 MediaThreadPoolDefaultCount, uint32_t, 4);
-  DECL_MEDIA_PREF("media.decoder.limit",                      MediaDecoderLimit, uint32_t, -1);
+  DECL_MEDIA_PREF("media.decoder.limit",                      MediaDecoderLimit, int32_t, MediaDecoderLimitDefault());
 
 public:
   
@@ -130,6 +134,21 @@ public:
 private:
   template<class T> friend class StaticAutoPtr;
   static StaticAutoPtr<MediaPrefs> sInstance;
+
+  
+  static int32_t MediaDecoderLimitDefault()
+  {
+#ifdef MOZ_WIDGET_ANDROID
+    if (AndroidBridge::Bridge() &&
+        AndroidBridge::Bridge()->GetAPIVersion() < 18) {
+      
+      
+      return 1;
+    }
+#endif
+    
+    return -1;
+  }
 
   
   static void PrefAddVarCache(bool*, const char*, bool);
