@@ -1403,6 +1403,11 @@ bool SkDraw::ShouldDrawTextAsPaths(const SkPaint& paint, const SkMatrix& ctm) {
         return true;
     }
 
+    
+    if (paint.getTypeface()->hasColorGlyphs()) {
+      return false;
+    }
+
     SkMatrix textM;
     return SkPaint::TooBigToUseCache(ctm, *paint.setTextMatrix(&textM));
 }

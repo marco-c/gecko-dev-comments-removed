@@ -306,6 +306,12 @@ public:
     SkRect getBounds() const;
 
     
+
+
+
+    virtual bool hasColorGlyphs() const { return false; }
+
+    
     void filterRec(SkScalerContextRec* rec) const {
         this->onFilterRec(rec);
     }
