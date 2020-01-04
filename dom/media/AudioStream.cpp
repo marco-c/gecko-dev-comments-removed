@@ -441,7 +441,7 @@ AudioStream::Pause()
     return;
   }
 
-  if (mState != STARTED && mState != RUNNING) {
+  if (mState != STARTED) {
     mState = STOPPED; 
     return;
   }
@@ -625,11 +625,6 @@ AudioStream::DataCallback(void* aBuffer, long aFrames)
 
   
   
-
-  
-  if (mState == STARTED) {
-    mState = RUNNING;
-  }
 
   if (mInRate == mOutRate) {
     GetUnprocessed(writer);

@@ -364,7 +364,6 @@ private:
   enum StreamState {
     INITIALIZED, 
     STARTED,     
-    RUNNING,     
     STOPPED,     
     DRAINED,     
     ERRORED,     
