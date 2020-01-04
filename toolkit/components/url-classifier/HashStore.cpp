@@ -650,33 +650,46 @@ nsresult InflateReadTArray(nsIInputStream* aStream, FallibleTArray<T>* aOut,
 static nsresult
 ByteSliceWrite(nsIOutputStream* aOut, nsTArray<uint32_t>& aData)
 {
-  nsTArray<uint8_t> slice1;
-  nsTArray<uint8_t> slice2;
-  nsTArray<uint8_t> slice3;
-  nsTArray<uint8_t> slice4;
+  nsTArray<uint8_t> slice;
   uint32_t count = aData.Length();
 
-  slice1.SetCapacity(count);
-  slice2.SetCapacity(count);
-  slice3.SetCapacity(count);
-  slice4.SetCapacity(count);
-
-  for (uint32_t i = 0; i < count; i++) {
-    slice1.AppendElement( aData[i] >> 24);
-    slice2.AppendElement((aData[i] >> 16) & 0xFF);
-    slice3.AppendElement((aData[i] >>  8) & 0xFF);
-    slice4.AppendElement( aData[i]        & 0xFF);
+  
+  if (!slice.SetLength(count, fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  nsresult rv = DeflateWriteTArray(aOut, slice1);
+  
+  for (uint32_t i = 0; i < count; i++) {
+    slice[i] = (aData[i] >> 24);
+  }
+
+  nsresult rv = DeflateWriteTArray(aOut, slice);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = DeflateWriteTArray(aOut, slice2);
+
+  
+  for (uint32_t i = 0; i < count; i++) {
+    slice[i] = ((aData[i] >> 16) & 0xFF);
+  }
+
+  rv = DeflateWriteTArray(aOut, slice);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = DeflateWriteTArray(aOut, slice3);
+
+  
+  for (uint32_t i = 0; i < count; i++) {
+    slice[i] = ((aData[i] >> 8) & 0xFF);
+  }
+
+  rv = DeflateWriteTArray(aOut, slice);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  for (uint32_t i = 0; i < count; i++) {
+    slice[i] = (aData[i] & 0xFF);
+  }
+
   
   
-  rv = WriteTArray(aOut, slice4);
+  rv = WriteTArray(aOut, slice);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
