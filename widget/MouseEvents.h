@@ -207,7 +207,6 @@ protected:
     : mReason(eReal)
     , mContextMenuTrigger(eNormal)
     , mExitFrom(eChild)
-    , acceptActivation(false)
     , ignoreRootScrollFrame(false)
     , clickCount(0)
   {
@@ -219,7 +218,6 @@ protected:
     , mReason(aReason)
     , mContextMenuTrigger(eNormal)
     , mExitFrom(eChild)
-    , acceptActivation(false)
     , ignoreRootScrollFrame(false)
     , clickCount(0)
   {
@@ -237,7 +235,6 @@ public:
     , mReason(aReason)
     , mContextMenuTrigger(aContextMenuTrigger)
     , mExitFrom(eChild)
-    , acceptActivation(false)
     , ignoreRootScrollFrame(false)
     , clickCount(0)
   {
@@ -277,9 +274,6 @@ public:
   ExitFrom mExitFrom;
 
   
-  
-  bool acceptActivation;
-  
   bool ignoreRootScrollFrame;
 
   
@@ -290,7 +284,6 @@ public:
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent);
 
-    acceptActivation = aEvent.acceptActivation;
     ignoreRootScrollFrame = aEvent.ignoreRootScrollFrame;
     clickCount = aEvent.clickCount;
   }
