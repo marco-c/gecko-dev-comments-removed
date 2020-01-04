@@ -31,23 +31,6 @@ class FunctionGenerator;
 
 
 
-struct SlowFunction
-{
-    SlowFunction(uint32_t index, unsigned ms, unsigned lineOrBytecode)
-     : index(index), ms(ms), lineOrBytecode(lineOrBytecode)
-    {}
-
-    static const unsigned msThreshold = 250;
-
-    uint32_t index;
-    unsigned ms;
-    unsigned lineOrBytecode;
-};
-typedef Vector<SlowFunction> SlowFunctionVector;
-
-
-
-
 
 
 
@@ -122,7 +105,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     uint32_t                        globalDataLength_;
     MutableMetadata                 metadata_;
     MutableExportMap                exportMap_;
-    SlowFunctionVector              slowFuncs_;
 
     
     UniqueModuleGeneratorData       shared_;
@@ -196,8 +178,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     MOZ_MUST_USE bool startFuncDefs();
     MOZ_MUST_USE bool startFuncDef(uint32_t lineOrBytecode, FunctionGenerator* fg);
-    MOZ_MUST_USE bool finishFuncDef(uint32_t funcIndex, unsigned generateTime,
-                                    FunctionGenerator* fg);
+    MOZ_MUST_USE bool finishFuncDef(uint32_t funcIndex, FunctionGenerator* fg);
     MOZ_MUST_USE bool finishFuncDefs();
 
     
@@ -215,8 +196,7 @@ class MOZ_STACK_CLASS ModuleGenerator
                              UniqueCodeSegment* codeSegment,
                              SharedMetadata* metadata,
                              SharedStaticLinkData* staticLinkData,
-                             SharedExportMap* exportMap,
-                             SlowFunctionVector* slowFuncs);
+                             SharedExportMap* exportMap);
 };
 
 
