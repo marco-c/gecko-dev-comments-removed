@@ -212,36 +212,36 @@ NS_EVENT_MESSAGE(eCut,                  eClipboardEventFirst + 1)
 NS_EVENT_MESSAGE(ePaste,                eClipboardEventFirst + 2)
 
 
-NS_EVENT_MESSAGE(eQueryContentEventFirst,            3200)
+NS_EVENT_MESSAGE(eQueryContentEventFirst,       3200)
 
 
-NS_EVENT_MESSAGE(NS_QUERY_SELECTED_TEXT,             eQueryContentEventFirst)
-
-
-
-NS_EVENT_MESSAGE(NS_QUERY_TEXT_CONTENT,              eQueryContentEventFirst + 1)
-
-
-NS_EVENT_MESSAGE(NS_QUERY_CARET_RECT,                eQueryContentEventFirst + 3)
+NS_EVENT_MESSAGE(NS_QUERY_SELECTED_TEXT,        eQueryContentEventFirst)
 
 
 
-NS_EVENT_MESSAGE(NS_QUERY_TEXT_RECT,                 eQueryContentEventFirst + 4)
+NS_EVENT_MESSAGE(NS_QUERY_TEXT_CONTENT,         eQueryContentEventFirst + 1)
 
 
-NS_EVENT_MESSAGE(NS_QUERY_EDITOR_RECT,               eQueryContentEventFirst + 5)
-
-
-NS_EVENT_MESSAGE(NS_QUERY_CONTENT_STATE,             eQueryContentEventFirst + 6)
-
-NS_EVENT_MESSAGE(NS_QUERY_SELECTION_AS_TRANSFERABLE, eQueryContentEventFirst + 7)
+NS_EVENT_MESSAGE(NS_QUERY_CARET_RECT,           eQueryContentEventFirst + 3)
 
 
 
-NS_EVENT_MESSAGE(NS_QUERY_CHARACTER_AT_POINT,        eQueryContentEventFirst + 8)
+NS_EVENT_MESSAGE(NS_QUERY_TEXT_RECT,            eQueryContentEventFirst + 4)
 
 
-NS_EVENT_MESSAGE(NS_QUERY_DOM_WIDGET_HITTEST,        eQueryContentEventFirst + 9)
+NS_EVENT_MESSAGE(NS_QUERY_EDITOR_RECT,          eQueryContentEventFirst + 5)
+
+
+NS_EVENT_MESSAGE(NS_QUERY_CONTENT_STATE,        eQueryContentEventFirst + 6)
+
+NS_EVENT_MESSAGE(eQuerySelectionAsTransferable, eQueryContentEventFirst + 7)
+
+
+
+NS_EVENT_MESSAGE(NS_QUERY_CHARACTER_AT_POINT,   eQueryContentEventFirst + 8)
+
+
+NS_EVENT_MESSAGE(NS_QUERY_DOM_WIDGET_HITTEST,   eQueryContentEventFirst + 9)
 
 
 NS_EVENT_MESSAGE(eMediaEventFirst,      3300)
