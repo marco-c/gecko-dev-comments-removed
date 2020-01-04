@@ -2,7 +2,6 @@
 
 "use strict";
 
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   EventManager,
@@ -10,6 +9,7 @@ var {
 
 
 var pageActionMap = new WeakMap();
+
 
 
 
@@ -124,19 +124,6 @@ PageAction.prototype = {
   },
 
   
-
-
-
-
-
-  triggerAction(window) {
-    let pageAction = pageActionMap.get(this.extension);
-    if (pageAction.getProperty(window.gBrowser.selectedTab, "show")) {
-      pageAction.handleClick(window);
-    }
-  },
-
-  
   
   
   
@@ -176,6 +163,11 @@ PageAction.prototype = {
   },
 };
 
+PageAction.for = extension => {
+  return pageActionMap.get(extension);
+};
+
+
 
 extensions.on("manifest_page_action", (type, directive, extension, manifest) => {
   let pageAction = new PageAction(manifest.page_action, extension);
@@ -190,11 +182,6 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-PageAction.for = extension => {
-  return pageActionMap.get(extension);
-};
-
-global.pageActionFor = PageAction.for;
 
 extensions.registerSchemaAPI("pageAction", null, (extension, context) => {
   return {
