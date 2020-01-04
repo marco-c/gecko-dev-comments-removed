@@ -51,6 +51,7 @@
 #include "mozilla/dom/EncodingUtils.h"
 #include "nsContainerFrame.h"
 #include "nsBlockFrame.h"
+#include "nsComputedDOMStyle.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1428,10 +1429,6 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
     return NS_ERROR_NULL_POINTER;
   range->GetCommonAncestorContainer(getter_AddRefs(commonParent));
 
-  
-  
-  
-#ifndef MOZ_THUNDERBIRD
   for (nsCOMPtr<nsIContent> selContent(do_QueryInterface(commonParent));
        selContent;
        selContent = selContent->GetParent())
@@ -1442,6 +1439,20 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
       mIsTextWidget = true;
       break;
     }
+#ifdef MOZ_THUNDERBIRD
+    else if (selContent->IsElement()) {
+      nsRefPtr<nsStyleContext> styleContext =
+        nsComputedDOMStyle::GetStyleContextForElementNoFlush(
+          selContent->AsElement(), nullptr, nullptr);
+      if (styleContext) {
+        const nsStyleText* textStyle = styleContext->StyleText();
+        if (textStyle->mWhiteSpace == NS_STYLE_WHITESPACE_PRE_WRAP) {
+          mIsTextWidget = true;
+        }
+      }
+    }
+    break;
+#endif
   }
 
   
@@ -1451,7 +1462,6 @@ nsHTMLCopyEncoder::SetSelection(nsISelection* aSelection)
     mMimeType.AssignLiteral("text/plain");
     return NS_OK;
   }
-#endif
 
   
   nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
