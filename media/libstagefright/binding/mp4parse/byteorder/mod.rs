@@ -43,10 +43,8 @@
 use std::mem::transmute;
 use std::ptr::copy_nonoverlapping;
 
-#[cfg(not(feature = "no-std"))]
-pub use byteorder::new::{ReadBytesExt, WriteBytesExt, Error, Result};
+pub use byteorder::new::{ReadBytesExt, WriteBytesExt};
 
-#[cfg(not(feature = "no-std"))]
 
 pub mod new;
 
@@ -271,6 +269,18 @@ pub trait ByteOrder {
 
 
 
+
+
+
+
+
+
+pub type NetworkEndian = BigEndian;
+
+
+
+
+
 #[cfg(target_endian = "little")]
 pub type NativeEndian = LittleEndian;
 
@@ -283,10 +293,16 @@ pub type NativeEndian = BigEndian;
 
 macro_rules! read_num_bytes {
     ($ty:ty, $size:expr, $src:expr, $which:ident) => ({
+        assert!($size == ::std::mem::size_of::<$ty>());
         assert!($size <= $src.len());
+        let mut data: $ty = 0;
         unsafe {
-            (*($src.as_ptr() as *const $ty)).$which()
+            copy_nonoverlapping(
+                $src.as_ptr(),
+                &mut data as *mut $ty as *mut u8,
+                $size);
         }
+        data.$which()
     });
 }
 
