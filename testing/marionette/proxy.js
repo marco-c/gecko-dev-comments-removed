@@ -6,6 +6,7 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
+Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/modal.js");
 
 this.EXPORTED_SYMBOLS = ["proxy"];
@@ -44,7 +45,7 @@ this.proxy = {};
 
 
 proxy.toListener = function(mmFn, sendAsyncFn) {
-  let sender = new proxy.AsyncContentSender(mmFn, sendAsyncFn);
+  let sender = new proxy.AsyncMessageChannel(mmFn, sendAsyncFn);
   return new Proxy(sender, ownPriorityGetterTrap);
 };
 
@@ -56,8 +57,7 @@ proxy.toListener = function(mmFn, sendAsyncFn) {
 
 
 
-
-proxy.AsyncContentSender = class {
+proxy.AsyncMessageChannel = class {
   constructor(mmFn, sendAsyncFn) {
     this.sendAsync = sendAsyncFn;
     
@@ -87,21 +87,43 @@ proxy.AsyncContentSender = class {
 
 
 
+
+
+
+
+
+
+
+
+
+
   send(name, args = []) {
     let uuid = uuidgen.generateUUID().toString();
     
     this.activeMessageId = uuid;
 
     return new Promise((resolve, reject) => {
-      let path = proxy.AsyncContentSender.makeReplyPath(uuid);
+      let path = proxy.AsyncMessageChannel.makePath(uuid);
       let cb = msg => {
         this.activeMessageId = null;
-        if ("error" in msg.json) {
-          reject(msg.objects.error);
-        } else {
-          resolve(msg.json.value);
+
+        switch (msg.json.type) {
+          case proxy.AsyncMessageChannel.ReplyType.Ok:
+          case proxy.AsyncMessageChannel.ReplyType.Value:
+            resolve(msg.json.data);
+            break;
+
+          case proxy.AsyncMessageChannel.ReplyType.Error:
+            let err = error.fromJson(msg.json.data);
+            reject(err);
+            break;
+
+          default:
+            throw new TypeError(
+                `Unknown async response type: ${msg.json.type}`);
         }
       };
+
       this.dialogueObserver_ = (subject, topic) => {
         this.cancelAll();
         resolve();
@@ -112,13 +134,80 @@ proxy.AsyncContentSender = class {
       this.addListener_(path, cb);
       modal.addHandler(this.dialogueObserver_);
 
+      
       this.sendAsync(name, marshal(args), uuid);
     });
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  reply(uuid, obj = undefined) {
+    
+    
+    
+    if (typeof obj == "undefined") {
+      this.sendReply_(uuid, proxy.AsyncMessageChannel.ReplyType.Ok);
+    } else if (error.isError(obj)) {
+      let serr = error.toJson(obj);
+      this.sendReply_(uuid, proxy.AsyncMessageChannel.ReplyType.Error, serr);
+    } else {
+      this.sendReply_(uuid, proxy.AsyncMessageChannel.ReplyType.Value, obj);
+    }
+  }
+
+  sendReply_(uuid, type, data = undefined) {
+    let path = proxy.AsyncMessageChannel.makePath(uuid);
+    let msg = {type: type, data: data};
+    
+    
+    this.sendAsync(path, msg);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  static makePath(uuid) {
+    return "Marionette:asyncReply:" + uuid;
+  }
+
+  
+
+
+
   cancelAll() {
     this.removeAllListeners_();
     modal.removeHandler(this.dialogueObserver_);
+    
     this.sendAsync("cancelRequest");
   }
 
@@ -146,10 +235,11 @@ proxy.AsyncContentSender = class {
     }
     return ok;
   }
-
-  static makeReplyPath(uuid) {
-    return "Marionette:asyncReply:" + uuid;
-  }
+};
+proxy.AsyncMessageChannel.ReplyType = {
+  Ok: 0,
+  Value: 1,
+  Error: 2,
 };
 
 

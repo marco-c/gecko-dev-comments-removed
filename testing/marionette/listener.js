@@ -184,7 +184,7 @@ function dispatch(fn) {
       if (typeof rv == "undefined") {
         sendOk(id);
       } else {
-        sendResponse({value: rv}, id);
+        sendResponse(rv, id);
       }
     };
 
@@ -405,35 +405,49 @@ function deleteSession(msg) {
 
 
 
-function sendToServer(path, data = {}, objs, id) {
-  if (id) {
-    data.command_id = id;
-  }
-  sendAsyncMessage(path, data, objs);
+
+
+
+
+function sendToServer(uuid, data = undefined) {
+  let channel = new proxy.AsyncMessageChannel(
+      () => this,
+      sendAsyncMessage.bind(this));
+  channel.reply(uuid, data);
 }
 
 
 
 
-function sendResponse(value, id) {
-  let path = proxy.AsyncContentSender.makeReplyPath(id);
-  sendToServer(path, value, null, id);
+
+
+
+
+
+function sendResponse(obj, id) {
+  sendToServer(id, obj);
 }
 
 
 
 
-function sendOk(id) {
-  let path = proxy.AsyncContentSender.makeReplyPath(id);
-  sendToServer(path, {}, null, id);
+
+
+
+function sendOk(uuid) {
+  sendToServer(uuid);
 }
 
 
 
 
-function sendError(err, id) {
-  let path = proxy.AsyncContentSender.makeReplyPath(id);
-  sendToServer(path, {error: null}, {error: err}, id);
+
+
+
+
+
+function sendError(err, uuid) {
+  sendToServer(uuid, err);
 }
 
 
@@ -549,7 +563,7 @@ function createExecuteContentSandbox(win, timeout) {
           _emu_cbs = {};
           sendError(new WebDriverError("Emulator callback still pending when finish() called"), id);
         } else {
-          sendResponse({value: elementManager.wrapValue(obj)}, id);
+          sendResponse(elementManager.wrapValue(obj), id);
         }
       }
 
@@ -631,7 +645,7 @@ function executeScript(msg, directInject) {
         sendError(new JavaScriptError("Marionette.finish() not called"), asyncTestCommandId);
       }
       else {
-        sendResponse({value: elementManager.wrapValue(res)}, asyncTestCommandId);
+        sendResponse(elementManager.wrapValue(res), asyncTestCommandId);
       }
     }
     else {
@@ -657,7 +671,7 @@ function executeScript(msg, directInject) {
       sendSyncMessage("Marionette:shareData",
                       {log: elementManager.wrapValue(marionetteLogObj.getLogs())});
       marionetteLogObj.clearLogs();
-      sendResponse({value: elementManager.wrapValue(res)}, asyncTestCommandId);
+      sendResponse(elementManager.wrapValue(res), asyncTestCommandId);
     }
   } catch (e) {
     let err = new JavaScriptError(
@@ -1713,7 +1727,7 @@ function switchToFrame(msg) {
     checkTimer.initWithCallback(checkLoad, 100, Ci.nsITimer.TYPE_ONE_SHOT);
   }
 
-  sendResponse({value: rv}, command_id);
+  sendResponse(rv, command_id);
 }
 
 function addCookie(cookie) {
@@ -1766,8 +1780,8 @@ function deleteAllCookies() {
 }
 
 function getAppCacheStatus(msg) {
-  sendResponse({ value: curContainer.frame.applicationCache.status },
-               msg.json.command_id);
+  sendResponse(
+      curContainer.frame.applicationCache.status, msg.json.command_id);
 }
 
 

@@ -4,7 +4,7 @@
 
 "use strict";
 
-var {interfaces: Ci, utils: Cu} = Components;
+const {interfaces: Ci, utils: Cu} = Components;
 
 const errors = [
   "ElementNotAccessibleError",
@@ -98,13 +98,41 @@ error.stringify = function(err) {
 
 
 
+
+
 error.toJson = function(err) {
+  if (!error.isWebDriverError(err)) {
+    throw new TypeError(`Unserialisable error type: ${err}`);
+  }
+
   let json = {
     error: err.status,
     message: err.message || null,
     stacktrace: err.stack || null,
   };
   return json;
+};
+
+
+
+
+
+
+
+
+
+
+error.fromJson = function(json) {
+  if (!statusLookup.has(json.error)) {
+    throw new TypeError(`Undeserialisable error type: ${json.error}`);
+  }
+
+  let errCls = statusLookup.get(json.error);
+  let err = new errCls(json.message);
+  if ("stacktrace" in json) {
+    err.stack = json.stacktrace;
+  }
+  return err;
 };
 
 
@@ -297,3 +325,12 @@ this.UnsupportedOperationError = function(msg) {
   this.status = "unsupported operation";
 };
 UnsupportedOperationError.prototype = Object.create(WebDriverError.prototype);
+
+const nameLookup = new Map();
+const statusLookup = new Map();
+for (let s of errors) {
+  let cls = this[s];
+  let inst = new cls();
+  nameLookup.set(inst.name, cls);
+  statusLookup.set(inst.status, cls);
+};
