@@ -116,12 +116,12 @@ const AutoMigrate = {
       if (!suggestedProfile) {
         throw new Error("Profile specified was not found.");
       }
-      return suggestedProfile.id;
+      return suggestedProfile;
     }
     if (profiles && profiles.length > 1) {
       throw new Error("Don't know how to pick a profile when more than 1 profile is present.");
     }
-    return profiles ? profiles[0].id : null;
+    return profiles ? profiles[0] : null;
   },
 
   getUndoRange() {
@@ -145,26 +145,15 @@ const AutoMigrate = {
     
     
     let {fxAccounts} = Cu.import("resource://gre/modules/FxAccounts.jsm", {});
-    return fxAccounts.getSignedInUser().then(user => {
-      if (user) {
-        Services.telemetry.getHistogramById("FX_STARTUP_MIGRATION_CANT_UNDO_BECAUSE_SYNC").add(true);
-      }
-      return !user;
-    }, () => Promise.resolve(true));
+    return fxAccounts.getSignedInUser().then(user => !user, () => Promise.resolve(true));
   },
 
   undo: Task.async(function* () {
-    let histogram = Services.telemetry.getHistogramById("FX_STARTUP_MIGRATION_AUTOMATED_IMPORT_UNDO");
-    histogram.add(0);
     if (!(yield this.canUndo())) {
-      histogram.add(5);
       throw new Error("Can't undo!");
     }
 
-    histogram.add(10);
-
     yield PlacesUtils.bookmarks.eraseEverything();
-    histogram.add(15);
 
     
     
@@ -179,17 +168,14 @@ const AutoMigrate = {
       beginDate: new Date(0),
       endDate: range[1]
     });
-    histogram.add(20);
 
     try {
       Services.logins.removeAllLogins();
     } catch (ex) {
       
     }
-    histogram.add(25);
     Services.prefs.clearUserPref("browser.migrate.automigrate-started");
     Services.prefs.clearUserPref("browser.migrate.automigrate-finished");
-    histogram.add(30);
   }),
 };
 
