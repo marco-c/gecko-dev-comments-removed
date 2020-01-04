@@ -30,6 +30,8 @@ class WasmInstanceObject;
 
 namespace wasm {
 
+class GeneratedSourceMap;
+
 
 
 
@@ -47,6 +49,8 @@ class Instance
 
     bool                                 profilingEnabled_;
     CacheableCharsVector                 funcLabels_;
+
+    UniquePtr<GeneratedSourceMap>        maybeSourceMap_;
 
     
     uint8_t** addressOfMemoryBase() const;
@@ -103,7 +107,10 @@ class Instance
     
     
 
+    
+
     JSString* createText(JSContext* cx);
+    bool getLineOffsets(size_t lineno, Vector<uint32_t>& offsets);
 
     
     
