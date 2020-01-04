@@ -523,7 +523,7 @@ public:
 
   bool OnDecodeTaskQueue() const override;
 
-  MediaDecoderStateMachine* GetStateMachine() { return mDecoderStateMachine; }
+  MediaDecoderStateMachine* GetStateMachine() const;
   void SetStateMachine(MediaDecoderStateMachine* aStateMachine);
 
   
@@ -651,9 +651,6 @@ public:
   
   
   int64_t GetDownloadPosition();
-
-  
-  MediaDecoderStateMachine* GetStateMachine() const;
 
   
   virtual void BreakCycles();
