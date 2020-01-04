@@ -34,7 +34,6 @@ const ElectronKeysMapping = {
   "F22": "DOM_VK_F22",
   "F23": "DOM_VK_F23",
   "F24": "DOM_VK_F24",
-  "Plus": "DOM_VK_PLUS",
   "Space": "DOM_VK_SPACE",
   "Backspace": "DOM_VK_BACK_SPACE",
   "Delete": "DOM_VK_DELETE",
@@ -122,7 +121,13 @@ KeyShortcuts.parseElectronKey = function (window, str) {
     }
   }
 
-  if (typeof (key) === "string" && key.length === 1) {
+  
+  
+  if (key === "Plus") {
+    key = "+";
+  }
+
+  if (typeof key === "string" && key.length === 1) {
     
     shortcut.key = key.toLowerCase();
   } else if (key in ElectronKeysMapping) {

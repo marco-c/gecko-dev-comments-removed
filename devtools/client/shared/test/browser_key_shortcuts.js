@@ -9,6 +9,7 @@ add_task(function* () {
   });
   yield testSimple(shortcuts);
   yield testNonLetterCharacter(shortcuts);
+  yield testPlusCharacter(shortcuts);
   yield testMixup(shortcuts);
   yield testLooseDigits(shortcuts);
   yield testExactModifiers(shortcuts);
@@ -59,6 +60,20 @@ function testNonLetterCharacter(shortcuts) {
   });
 
   EventUtils.synthesizeKey("[", {}, window);
+  yield onKey;
+}
+
+
+
+
+function testPlusCharacter(shortcuts) {
+  info("Test 'Plus' key shortcuts");
+
+  let onKey = once(shortcuts, "Plus", (key, event) => {
+    is(event.key, "+");
+  });
+
+  EventUtils.synthesizeKey("+", { keyCode: 61, shiftKey: true }, window);
   yield onKey;
 }
 
