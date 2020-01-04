@@ -1116,11 +1116,6 @@ public:
   void SetAutofinishImpl(bool aAutofinish) { mAutofinish = aAutofinish; }
 
   
-
-
-  virtual void ForwardTrackEnabled(TrackID aOutputID, bool aEnabled) {};
-
-  
   
   
   bool InMutedCycle() const { return mCycleMarker; }
