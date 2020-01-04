@@ -155,14 +155,19 @@ TextEventDispatcher::InitEvent(WidgetGUIEvent& aEvent) const
   if (aEvent.mClass != eCompositionEventClass) {
     return;
   }
-  
-  
-  
-  
-  if (XRE_IsContentProcess()) {
-    aEvent.AsCompositionEvent()->
-      mNativeIMEContext.InitWithRawNativeIMEContext(mWidget);
+  void* pseudoIMEContext = GetPseudoIMEContext();
+  if (pseudoIMEContext) {
+    aEvent.AsCompositionEvent()->mNativeIMEContext.
+      InitWithRawNativeIMEContext(pseudoIMEContext);
   }
+#ifdef DEBUG
+  else {
+    MOZ_ASSERT(!XRE_IsContentProcess(),
+      "Why did the content process start native event transaction?");
+    MOZ_ASSERT(aEvent.AsCompositionEvent()->mNativeIMEContext.IsValid(),
+      "Native IME context shouldn't be invalid");
+  }
+#endif 
 }
 
 nsresult

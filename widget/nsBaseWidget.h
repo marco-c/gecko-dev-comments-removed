@@ -431,6 +431,12 @@ protected:
   virtual nsresult NotifyIMEInternal(const IMENotification& aIMENotification)
   { return NS_ERROR_NOT_IMPLEMENTED; }
 
+  
+
+
+
+  void* GetPseudoIMEContext();
+
 protected:
   
   

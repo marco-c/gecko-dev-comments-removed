@@ -100,6 +100,20 @@ public:
   
 
 
+
+
+  void* GetPseudoIMEContext() const
+  {
+    if (mInputTransactionType == eNoInputTransaction ||
+        mInputTransactionType == eNativeInputTransaction) {
+      return nullptr;
+    }
+    return const_cast<TextEventDispatcher*>(this);
+  }
+
+  
+
+
   nsresult StartComposition(nsEventStatus& aStatus);
 
   
