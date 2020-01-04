@@ -157,6 +157,7 @@ static const double SWIPE_MIN_DISTANCE_INCHES = 0.6;
 class nsWindow::Natives
     : public GeckoView::Window::Natives<Natives>
     , public SupportsWeakPtr<Natives>
+    , public UsesGeckoThreadProxy
 {
     typedef GeckoView::Window::Natives<Natives> Base;
 
@@ -164,6 +165,18 @@ class nsWindow::Natives
 
 public:
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Natives);
+
+    template<typename Functor>
+    static void OnNativeCall(Functor&& call)
+    {
+        if (call.IsTarget(&Open) && NS_IsMainThread()) {
+            
+            
+            
+            return call();
+        }
+        return UsesGeckoThreadProxy::OnNativeCall(mozilla::Move(call));
+    }
 
     Natives(nsWindow* w) : window(*w) {}
 
