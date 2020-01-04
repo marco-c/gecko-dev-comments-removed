@@ -42,6 +42,8 @@
 
 const Services = require("Services");
 const CSSLexer = require("devtools/shared/css-lexer");
+const {LocalizationHelper} = require("devtools/client/shared/l10n");
+const styleInspectorL10N = new LocalizationHelper("chrome://devtools-shared/locale/styleinspector.properties");
 
 
 
@@ -74,12 +76,9 @@ exports.STATUS = {
 
 
 
-exports.l10n = function (name) {
-  return exports._strings.GetStringFromName(name);
-};
 
-exports._strings = Services.strings
-  .createBundle("chrome://devtools-shared/locale/styleinspector.properties");
+
+exports.l10n = name => styleInspectorL10N.getStr(name);
 
 
 
