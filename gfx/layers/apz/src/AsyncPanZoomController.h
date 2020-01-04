@@ -863,7 +863,8 @@ public:
 
 
 
-  bool AttemptFling(ParentLayerPoint aVelocity,
+
+  bool AttemptFling(ParentLayerPoint& aVelocity,
                     const nsRefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
                     bool aHandoff);
 
@@ -889,7 +890,7 @@ private:
   void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity);
 
   
-  void AcceptFling(const ParentLayerPoint& aVelocity,
+  void AcceptFling(ParentLayerPoint& aVelocity,
                    const nsRefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
                    bool aHandoff);
 
@@ -968,8 +969,10 @@ public:
 
 
 
-  bool AttemptScroll(const ParentLayerPoint& aStartPoint,
-                     const ParentLayerPoint& aEndPoint,
+
+
+  bool AttemptScroll(ParentLayerPoint& aStartPoint,
+                     ParentLayerPoint& aEndPoint,
                      OverscrollHandoffState& aOverscrollHandoffState);
 
   void FlushRepaintForOverscrollHandoff();
@@ -1007,8 +1010,8 @@ private:
 
 
 
-  bool CallDispatchScroll(const ParentLayerPoint& aStartPoint,
-                          const ParentLayerPoint& aEndPoint,
+  void CallDispatchScroll(ParentLayerPoint& aStartPoint,
+                          ParentLayerPoint& aEndPoint,
                           OverscrollHandoffState& aOverscrollHandoffState);
 
   
@@ -1016,7 +1019,7 @@ private:
 
 
 
-  bool OverscrollForPanning(ParentLayerPoint aOverscroll,
+  void OverscrollForPanning(ParentLayerPoint& aOverscroll,
                             const ScreenPoint& aPanDistance);
 
   
@@ -1024,8 +1027,7 @@ private:
 
 
 
-
-  bool OverscrollBy(const ParentLayerPoint& aOverscroll);
+  void OverscrollBy(ParentLayerPoint& aOverscroll);
 
 
   

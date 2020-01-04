@@ -107,23 +107,10 @@ OverscrollHandoffChain::SnapBackOverscrolledApzc(const AsyncPanZoomController* a
   uint32_t i = IndexOf(aStart);
   for (; i < Length(); ++i) {
     AsyncPanZoomController* apzc = mChain[i];
-    if (!apzc->IsDestroyed() && apzc->SnapBackIfOverscrolled()) {
-      
-      break;
-    }
-  }
-
-  
-  
-#ifdef DEBUG
-  ++i;
-  for (; i < Length(); ++i) {
-    AsyncPanZoomController* apzc = mChain[i];
     if (!apzc->IsDestroyed()) {
-      MOZ_ASSERT(!apzc->IsOverscrolled());
+      apzc->SnapBackIfOverscrolled();
     }
   }
-#endif
 }
 
 bool

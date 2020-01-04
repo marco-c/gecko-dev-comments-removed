@@ -1227,6 +1227,10 @@ TransformDisplacement(APZCTreeManager* aTreeManager,
                       AsyncPanZoomController* aTarget,
                       ParentLayerPoint& aStartPoint,
                       ParentLayerPoint& aEndPoint) {
+  if (aSource == aTarget) {
+    return true;
+  }
+
   
   Matrix4x4 untransformToApzc = aTreeManager->GetScreenToApzcTransform(aSource).Inverse();
   ScreenPoint screenStart = TransformTo<ScreenPixel>(untransformToApzc, aStartPoint);
@@ -1246,10 +1250,10 @@ TransformDisplacement(APZCTreeManager* aTreeManager,
   return true;
 }
 
-bool
+void
 APZCTreeManager::DispatchScroll(AsyncPanZoomController* aPrev,
-                                ParentLayerPoint aStartPoint,
-                                ParentLayerPoint aEndPoint,
+                                ParentLayerPoint& aStartPoint,
+                                ParentLayerPoint& aEndPoint,
                                 OverscrollHandoffState& aOverscrollHandoffState)
 {
   const OverscrollHandoffChain& overscrollHandoffChain = aOverscrollHandoffState.mChain;
@@ -1259,34 +1263,39 @@ APZCTreeManager::DispatchScroll(AsyncPanZoomController* aPrev,
   
   if (overscrollHandoffChainIndex >= overscrollHandoffChain.Length()) {
     
-    return false;
+    return;
   }
 
   next = overscrollHandoffChain.GetApzcAtIndex(overscrollHandoffChainIndex);
 
   if (next == nullptr || next->IsDestroyed()) {
-    return false;
+    return;
   }
 
   
   
+  if (!TransformDisplacement(this, aPrev, next, aStartPoint, aEndPoint)) {
+    return;
+  }
+
   
   
-  
-  if (next != aPrev) {
-    if (!TransformDisplacement(this, aPrev, next, aStartPoint, aEndPoint)) {
-      return false;
+  if (!next->AttemptScroll(aStartPoint, aEndPoint, aOverscrollHandoffState)) {
+    
+    
+    
+    
+    
+    
+    if (!TransformDisplacement(this, next, aPrev, aStartPoint, aEndPoint)) {
+      NS_WARNING("Failed to untransform scroll points during dispatch");
     }
   }
-
-  
-  
-  return next->AttemptScroll(aStartPoint, aEndPoint, aOverscrollHandoffState);
 }
 
-bool
+void
 APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
-                               ParentLayerPoint aVelocity,
+                               ParentLayerPoint& aVelocity,
                                nsRefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
                                bool aHandoff)
 {
@@ -1303,7 +1312,7 @@ APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
   
   ParentLayerPoint startPoint;  
   ParentLayerPoint endPoint;
-  ParentLayerPoint transformedVelocity = aVelocity;
+  ParentLayerPoint usedTransformedVelocity = aVelocity;
 
   if (aHandoff) {
     startIndex = aOverscrollHandoffChain->IndexOf(aPrev) + 1;
@@ -1311,7 +1320,7 @@ APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
     
     
     if (startIndex >= aOverscrollHandoffChainLength) {
-      return false;
+      return;
     }
   } else {
     startIndex = 0;
@@ -1322,10 +1331,10 @@ APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
 
     
     if (current == nullptr || current->IsDestroyed()) {
-      return false;
+      return;
     }
 
-    endPoint = startPoint + transformedVelocity;
+    endPoint = startPoint + usedTransformedVelocity;
 
     
     if (startIndex > 0) {
@@ -1334,20 +1343,34 @@ APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
                             current,
                             startPoint,
                             endPoint)) {
-          return false;
+        return;
       }
     }
 
-    transformedVelocity = endPoint - startPoint;
+    ParentLayerPoint transformedVelocity = endPoint - startPoint;
+    usedTransformedVelocity = transformedVelocity;
 
-    if (current->AttemptFling(transformedVelocity,
+    if (current->AttemptFling(usedTransformedVelocity,
                               aOverscrollHandoffChain,
                               aHandoff)) {
-      return true;
+      if (IsZero(usedTransformedVelocity)) {
+        aVelocity = ParentLayerPoint();
+        return;
+      }
+
+      
+      if (!FuzzyEqualsAdditive(transformedVelocity.x,
+                               usedTransformedVelocity.x, COORDINATE_EPSILON)) {
+        aVelocity.x = aVelocity.x *
+          (usedTransformedVelocity.x / transformedVelocity.x);
+      }
+      if (!FuzzyEqualsAdditive(transformedVelocity.y,
+                               usedTransformedVelocity.y, COORDINATE_EPSILON)) {
+        aVelocity.y = aVelocity.y *
+          (usedTransformedVelocity.y / transformedVelocity.y);
+      }
     }
   }
-
-  return false;
 }
 
 bool

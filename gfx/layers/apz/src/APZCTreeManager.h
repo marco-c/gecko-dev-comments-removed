@@ -352,9 +352,10 @@ public:
 
 
 
-  bool DispatchScroll(AsyncPanZoomController* aApzc,
-                      ParentLayerPoint aStartPoint,
-                      ParentLayerPoint aEndPoint,
+
+  void DispatchScroll(AsyncPanZoomController* aApzc,
+                      ParentLayerPoint& aStartPoint,
+                      ParentLayerPoint& aEndPoint,
                       OverscrollHandoffState& aOverscrollHandoffState);
 
   
@@ -378,8 +379,9 @@ public:
 
 
 
-  bool DispatchFling(AsyncPanZoomController* aApzc,
-                     ParentLayerPoint aVelocity,
+
+  void DispatchFling(AsyncPanZoomController* aApzc,
+                     ParentLayerPoint& aVelocity,
                      nsRefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
                      bool aHandoff);
 
