@@ -13,6 +13,7 @@ class nsIGlobalObject;
 #include "mozilla/Attributes.h"
 #include "mozilla/EventListenerManager.h"
 #include "nsIDOMEventTarget.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsPIWindowRoot.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashtable.h"
@@ -103,7 +104,7 @@ protected:
   nsCOMPtr<nsPIDOMWindowOuter> mWindow;
   
   RefPtr<mozilla::EventListenerManager> mListenerManager; 
-  nsCOMPtr<nsIDOMNode> mPopupNode; 
+  nsWeakPtr mPopupNode;
 
   
   
