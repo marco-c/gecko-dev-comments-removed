@@ -2810,8 +2810,12 @@ protected:
   bool mHaveFiredTitleChange : 1;
 
   
+  
+  
+  
   bool mIsShowing : 1;
 
+  
   
   
   bool mVisible : 1;
