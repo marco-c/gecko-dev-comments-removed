@@ -2706,20 +2706,22 @@ nsWindow::InitButtonEvent(WidgetMouseEvent& aEvent,
     
     
     
-    
-    
-    if (aGdkEvent->type != GDK_BUTTON_RELEASE) {
-        switch (aGdkEvent->button) {
-            case 1:
-                modifierState |= GDK_BUTTON1_MASK;
-                break;
-            case 2:
-                modifierState |= GDK_BUTTON2_MASK;
-                break;
-            case 3:
-                modifierState |= GDK_BUTTON3_MASK;
-                break;
-        }
+    guint buttonMask = 0;
+    switch (aGdkEvent->button) {
+        case 1:
+            buttonMask = GDK_BUTTON1_MASK;
+            break;
+        case 2:
+            buttonMask = GDK_BUTTON2_MASK;
+            break;
+        case 3:
+            buttonMask = GDK_BUTTON3_MASK;
+            break;
+    }
+    if (aGdkEvent->type == GDK_BUTTON_RELEASE) {
+        modifierState &= ~buttonMask;
+    } else {
+        modifierState |= buttonMask;
     }
 
     KeymapWrapper::InitInputEvent(aEvent, modifierState);
