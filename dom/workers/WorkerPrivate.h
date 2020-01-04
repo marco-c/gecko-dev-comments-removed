@@ -218,13 +218,13 @@ private:
 
   
   bool
-  NotifyPrivate(JSContext* aCx, Status aStatus);
+  NotifyPrivate(Status aStatus);
 
   
   bool
   TerminatePrivate(JSContext* aCx)
   {
-    return NotifyPrivate(aCx, Terminating);
+    return NotifyPrivate(Terminating);
   }
 
   void
@@ -282,21 +282,21 @@ public:
 
   
   bool
-  Notify(JSContext* aCx, Status aStatus)
+  Notify(Status aStatus)
   {
-    return NotifyPrivate(aCx, aStatus);
+    return NotifyPrivate(aStatus);
   }
 
   bool
-  Cancel(JSContext* aCx)
+  Cancel()
   {
-    return Notify(aCx, Canceling);
+    return Notify(Canceling);
   }
 
   bool
   Kill(JSContext* aCx)
   {
-    return Notify(aCx, Killing);
+    return Notify(Killing);
   }
 
   
@@ -323,8 +323,10 @@ public:
   bool
   Close();
 
+  
+  
   bool
-  ModifyBusyCount(JSContext* aCx, bool aIncrease);
+  ModifyBusyCount(JSContext* , bool aIncrease);
 
   void
   ForgetOverridenLoadGroup(nsCOMPtr<nsILoadGroup>& aLoadGroupOut);
